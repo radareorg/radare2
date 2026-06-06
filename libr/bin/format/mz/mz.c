@@ -184,7 +184,7 @@ void *r_bin_mz_free (struct r_bin_mz_obj_t *bin) {
 }
 
 static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
-	int relocations_size, dos_file_size;
+	int i, relocations_size, dos_file_size;
 	MZ_image_dos_header *mz = R_NEW0 (MZ_image_dos_header);
 	bin->dos_header = mz;
 
@@ -267,16 +267,28 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
 	}
 
 	if (relocations_size > 0) {
-		if (!(bin->relocation_entries = malloc (relocations_size))) {
+		ut8 *relocation_entries = malloc (relocations_size);
+		if (!relocation_entries) {
 			r_sys_perror ("malloc (dos relocation entries)");
 			return false;
 		}
 		if (r_buf_read_at (bin->b, bin->dos_header->reloc_table_offset,
-			    (ut8 *)bin->relocation_entries, relocations_size) == -1) {
+			    relocation_entries, relocations_size) != relocations_size) {
 			R_LOG_ERROR ("read (dos relocation entries)");
-			R_FREE (bin->relocation_entries);
+			free (relocation_entries);
 			return false;
 		}
+		bin->relocation_entries = calloc (mz->num_relocs, sizeof (*bin->relocation_entries));
+		if (!bin->relocation_entries) {
+			free (relocation_entries);
+			return false;
+		}
+		for (i = 0; i < mz->num_relocs; i++) {
+			const ut8 *reloc = relocation_entries + (i * sizeof (MZ_image_relocation_entry));
+			bin->relocation_entries[i].offset = r_read_le16 (reloc);
+			bin->relocation_entries[i].segment = r_read_le16 (reloc + 2);
+		}
+		free (relocation_entries);
 	}
 	return true;
 }
