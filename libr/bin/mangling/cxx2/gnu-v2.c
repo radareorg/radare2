@@ -9,6 +9,7 @@
 
 #include <r_util.h>
 #include "cxx2.h"
+#include "cxx2_internal.h"
 
 #define GV2_MAX_DEPTH 200
 
@@ -59,29 +60,16 @@ static void gv2_push_type(GV2 *c, const char *s) {
 	if (c->fail || !s) {
 		return;
 	}
-	if (c->ntypes == c->captypes) {
-		int ncap = c->captypes ? c->captypes * 2 : 8;
-		char **nt = realloc (c->types, ncap * sizeof (char *));
-		if (!nt) {
-			c->fail = true;
-			return;
-		}
-		c->types = nt;
-		c->captypes = ncap;
+	if (!cxx2_strvec_push (&c->types, &c->ntypes, &c->captypes, s, 0)) {
+		c->fail = true;
 	}
-	c->types[c->ntypes++] = strdup (s);
 }
 
 // ---------------------------------------------------------------------------
 // operators
 // ---------------------------------------------------------------------------
 
-typedef struct {
-	const char *code;
-	const char *spelling; // appended after "operator"
-} Gv2Op;
-
-static const Gv2Op gv2_ops[] = {
+static const CXX2Op gv2_ops[] = {
 	{ "aa", "&&" }, { "aad", "&=" }, { "ad", "&" }, { "adv", "/=" },
 	{ "aer", "^=" }, { "als", "<<=" }, { "amd", "%=" }, { "ami", "-=" },
 	{ "aml", "*=" }, { "aor", "|=" }, { "apl", "+=" }, { "ars", ">>=" },
@@ -391,33 +379,6 @@ static void gv2_args(GV2 *c, RStrBuf *o) {
 // entry / top-level structure
 // ---------------------------------------------------------------------------
 
-// the last top-level "::"-separated component of an already-rendered qualified
-// name, with any template-argument list stripped (for ctor/dtor names): e.g.
-// "List<X>::Pix" -> "Pix", "vector<int>" -> "vector". Writes into `out`.
-static void gv2_basename(const char *qual, char *out, size_t outsz) {
-	const char *base = qual, *p;
-	int d = 0;
-	for (p = qual; *p; p++) {
-		if (*p == '<') {
-			d++;
-		} else if (*p == '>') {
-			d--;
-		} else if (d == 0 && p[0] == ':' && p[1] == ':') {
-			base = p + 2;
-			p++;
-		}
-	}
-	size_t n = 0;
-	d = 0;
-	for (p = base; *p && n + 1 < outsz; p++) {
-		if (*p == '<' && d == 0) {
-			break;
-		}
-		out[n++] = *p;
-	}
-	out[n] = 0;
-}
-
 // Demangle the special "_vt$foo$bar" / "_vt.foo.bar" virtual-table symbols.
 static char *gv2_vtable(const char *s) {
 	const char *p = s;
@@ -440,15 +401,15 @@ static char *gv2_vtable(const char *s) {
 		}
 		first = false;
 		// a component may be a mangled (template) class or a raw identifier
-		if (*p == 't' && isdigit ((unsigned char)p[1])) {
-			GV2 t = {0};
-			t.p = p;
-			t.end = e;
-			gv2_class (&t, o);
-			free (t.types);
-			if (t.fail) {
-				r_strbuf_free (o);
-				return NULL;
+			if (*p == 't' && isdigit ((unsigned char)p[1])) {
+				GV2 t = {0};
+				t.p = p;
+				t.end = e;
+				gv2_class (&t, o);
+				cxx2_strvec_fini (&t.types, &t.ntypes);
+				if (t.fail) {
+					r_strbuf_free (o);
+					return NULL;
 			}
 		} else {
 			r_strbuf_append_n (o, p, e - p);
@@ -515,15 +476,11 @@ char *r_demangle_gnu_v2(const char *mangled) {
 		if (!t.fail && t.p == t.end) {
 			res = r_str_newf ("%s type_info %s", ty, (s[3] == 'f') ? "function" : "node");
 		}
-		free (ty);
-		int i;
-		for (i = 0; i < t.ntypes; i++) {
-			free (t.types[i]);
-		}
-		free (t.types);
-		if (res) {
-			return res;
-		}
+			free (ty);
+			cxx2_strvec_fini (&t.types, &t.ntypes);
+			if (res) {
+				return res;
+			}
 	}
 	// static data member: _<class>$<member>  ->  class::member
 	if (s[0] == '_' && (isdigit ((unsigned char)s[1]) || s[1] == 'Q')) {
@@ -532,17 +489,17 @@ char *r_demangle_gnu_v2(const char *mangled) {
 			GV2 t = {0};
 			t.p = s + 1;
 			t.end = dollar;
-			RStrBuf *cb = r_strbuf_new ("");
-			gv2_class (&t, cb);
-			if (!t.fail && t.p == dollar) {
-				r_strbuf_appendf (cb, "::%s", dollar + 1);
-				free (t.types);
-				return r_strbuf_drain (cb);
+				RStrBuf *cb = r_strbuf_new ("");
+				gv2_class (&t, cb);
+				if (!t.fail && t.p == dollar) {
+					r_strbuf_appendf (cb, "::%s", dollar + 1);
+					cxx2_strvec_fini (&t.types, &t.ntypes);
+					return r_strbuf_drain (cb);
+				}
+				r_strbuf_free (cb);
+				cxx2_strvec_fini (&t.types, &t.ntypes);
 			}
-			r_strbuf_free (cb);
-			free (t.types);
 		}
-	}
 
 	GV2 c = {0};
 	RStrBuf *o = r_strbuf_new ("");
@@ -586,13 +543,17 @@ char *r_demangle_gnu_v2(const char *mangled) {
 			RStrBuf *tb = r_strbuf_new ("");
 			gv2_type (&t, tb, "");
 			convtype = r_strbuf_drain (tb);
-			} else {
-				int i;
-				for (i = 0; gv2_ops[i].code; i++) {
-					if (strlen (gv2_ops[i].code) == oplen && r_str_startswith (op, gv2_ops[i].code)) {
-						opspell = gv2_ops[i].spelling;
-						break;
-					}
+			if (t.fail || t.p != t.end || !convtype) {
+				free (convtype);
+				cxx2_strvec_fini (&t.types, &t.ntypes);
+				r_strbuf_free (o);
+				return NULL;
+			}
+			cxx2_strvec_fini (&t.types, &t.ntypes);
+		} else {
+			const CXX2Op *opinfo = cxx2_op_lookup (gv2_ops, op, oplen);
+			if (opinfo) {
+				opspell = opinfo->spelling;
 			}
 			if (!opspell) {
 				r_strbuf_free (o);
@@ -662,12 +623,16 @@ char *r_demangle_gnu_v2(const char *mangled) {
 		r_strbuf_append (o, cs);
 		r_strbuf_append (o, "::");
 		if (is_ctor || is_dtor) {
-			char bn[256];
-			gv2_basename (cs, bn, sizeof (bn));
+			char *bn = cxx2_basename (cs);
+			if (!bn) {
+				free (cs);
+				goto fail;
+			}
 			if (is_dtor) {
 				r_strbuf_append (o, "~");
 			}
 			r_strbuf_append (o, bn);
+			free (bn);
 		} else if (is_op) {
 			if (convtype) {
 				r_strbuf_appendf (o, "operator %s", convtype);
@@ -714,11 +679,7 @@ done:
 	r_strbuf_free (o);
 	r_strbuf_free (cls);
 	free (convtype);
-	int i;
-	for (i = 0; i < c.ntypes; i++) {
-		free (c.types[i]);
-	}
-	free (c.types);
+	cxx2_strvec_fini (&c.types, &c.ntypes);
 	if (res && !*res) {
 		free (res);
 		res = NULL;

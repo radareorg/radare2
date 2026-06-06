@@ -2482,7 +2482,7 @@ EXPECT=<<EOF
     "index": 30,
     "methods": [
       {
-        "name": "{lambda()#1}::operator()() const::{lambda(void*)#1}::__invoke({lambda()#1})",
+        "name": "{lambda()#1}::operator()() const::{lambda(void*)#1}::__invoke(void*)",
         "flag": "class.swift_voucher_needs_adopt_voucher_s_",
         "rawname": "__ZZZL25swift_voucher_needs_adoptP9voucher_sENKUlvE_clEvENUlPvE_8__invokeES2_",
         "addr": 4295111804

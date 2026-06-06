@@ -10,6 +10,7 @@
 
 #include <r_util.h>
 #include "cxx2.h"
+#include "cxx2_internal.h"
 
 #define IBMXL_MAX_DEPTH 128
 #define IBMXL_MAX_PARAMS 4096
@@ -32,12 +33,7 @@ typedef enum {
 	IBMXL_SYM_CONV
 } IBMXLSymKind;
 
-typedef struct {
-	const char *code;
-	const char *spelling;
-} IBMXLOp;
-
-static const IBMXLOp ibmxl_ops[] = {
+static const CXX2Op ibmxl_ops[] = {
 	{ "aa", "&&" }, { "aad", "&=" }, { "ad", "&" }, { "adv", "/=" },
 	{ "aer", "^=" }, { "als", "<<=" }, { "amd", "%=" }, { "ami", "-=" },
 	{ "aml", "*=" }, { "aor", "|=" }, { "apl", "+=" }, { "ars", ">>=" },
@@ -196,26 +192,10 @@ static bool ibmxl_push_param(IBMXLParser *p, const char *s) {
 	if (p->fail || !s) {
 		return false;
 	}
-	if (p->nparams >= IBMXL_MAX_PARAMS) {
+	if (!cxx2_strvec_push (&p->params, &p->nparams, &p->cparams, s, IBMXL_MAX_PARAMS)) {
 		p->fail = true;
 		return false;
 	}
-	if (p->nparams == p->cparams) {
-		int ncap = p->cparams ? p->cparams * 2 : 16;
-		char **np = realloc (p->params, ncap * sizeof (char *));
-		if (!np) {
-			p->fail = true;
-			return false;
-		}
-		p->params = np;
-		p->cparams = ncap;
-	}
-	p->params[p->nparams] = strdup (s);
-	if (!p->params[p->nparams]) {
-		p->fail = true;
-		return false;
-	}
-	p->nparams++;
 	return true;
 }
 
@@ -593,16 +573,6 @@ static char *ibmxl_type_string(IBMXLParser *p) {
 	return r_strbuf_drain (out);
 }
 
-static const IBMXLOp *ibmxl_op_lookup(const char *s, size_t n) {
-	int i;
-	for (i = 0; ibmxl_ops[i].code; i++) {
-		if (strlen (ibmxl_ops[i].code) == n && r_str_startswith (s, ibmxl_ops[i].code)) {
-			return &ibmxl_ops[i];
-		}
-	}
-	return NULL;
-}
-
 static char *ibmxl_basename(const char *name, bool strip_template) {
 	if (!name) {
 		return NULL;
@@ -837,7 +807,7 @@ static char *ibmxl_parse(const char *s) {
 			opspell = conv;
 			sig = sep + 2;
 		} else {
-			const IBMXLOp *opinfo = ibmxl_op_lookup (op, oplen);
+				const CXX2Op *opinfo = cxx2_op_lookup (ibmxl_ops, op, oplen);
 			if (!opinfo) {
 				return NULL;
 			}
@@ -864,11 +834,7 @@ static char *ibmxl_parse(const char *s) {
 		free ((char *)opspell);
 	}
 	free (root);
-	int i;
-	for (i = 0; i < p.nparams; i++) {
-		free (p.params[i]);
-	}
-	free (p.params);
+	cxx2_strvec_fini (&p.params, &p.nparams);
 	if (res && !*res) {
 		R_FREE (res);
 	}

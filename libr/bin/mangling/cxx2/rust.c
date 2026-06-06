@@ -186,6 +186,31 @@ static void v0_backref(RV0 *v, void (*fn)(RV0 *, bool), bool arg) {
 	v->pos = saved;
 }
 
+static void v0_skip_path(RV0 *v) {
+	RStrBuf *scratch = r_strbuf_new ("");
+	RStrBuf *saved = v->out;
+	v->out = scratch;
+	v0_path (v, false);
+	v->out = saved;
+	r_strbuf_free (scratch);
+}
+
+static bool v0_suffix(const char *s) {
+	if (*s != '.') {
+		return false;
+	}
+	for (; *s; s++) {
+		if (*s == '.') {
+			if (!isalnum ((unsigned char)s[1]) && s[1] != '_' && s[1] != '$') {
+				return false;
+			}
+		} else if (!isalnum ((unsigned char)*s) && *s != '_' && *s != '$') {
+			return false;
+		}
+	}
+	return true;
+}
+
 // <generic-arg> = <lifetime> | <type> | "K" <const>
 static void v0_generic_arg(RV0 *v) {
 	char c = v0_peek (v);
@@ -506,31 +531,21 @@ static void v0_path(RV0 *v, bool in_value) {
 		free (nm);
 		break;
 	}
-	case 'M': { // inherent impl: <impl-path> <type>   -> <Type>
-		(void)v0_disambiguator (v);
-		// impl-path: parsed for back-reference correctness, not printed
-		RStrBuf *scratch = r_strbuf_new ("");
-		RStrBuf *saved = v->out;
-		v->out = scratch;
-		v0_path (v, false);
-		v->out = saved;
-		r_strbuf_free (scratch);
-		v0_emit (v, "<");
-		v0_type (v);
-		v0_emit (v, ">");
+		case 'M': { // inherent impl: <impl-path> <type>   -> <Type>
+			(void)v0_disambiguator (v);
+			// impl-path: parsed for back-reference correctness, not printed
+			v0_skip_path (v);
+			v0_emit (v, "<");
+			v0_type (v);
+			v0_emit (v, ">");
 		break;
 	}
-	case 'X': { // trait impl: <impl-path> <type> <path> -> <Type as Trait>
-		(void)v0_disambiguator (v);
-		RStrBuf *scratch = r_strbuf_new ("");
-		RStrBuf *saved = v->out;
-		v->out = scratch;
-		v0_path (v, false);
-		v->out = saved;
-		r_strbuf_free (scratch);
-		v0_emit (v, "<");
-		v0_type (v);
-		v0_emit (v, " as ");
+		case 'X': { // trait impl: <impl-path> <type> <path> -> <Type as Trait>
+			(void)v0_disambiguator (v);
+			v0_skip_path (v);
+			v0_emit (v, "<");
+			v0_type (v);
+			v0_emit (v, " as ");
 		v0_path (v, false);
 		v0_emit (v, ">");
 		break;
@@ -588,6 +603,12 @@ char *r_demangle_rust_v0(const char *mangled) {
 	v.out = r_strbuf_new ("");
 	v0_path (&v, true);
 	// allow a trailing instantiating-crate path and a vendor suffix
+	if (!v.fail && v.pos < v.len && v.s[v.pos] != '.') {
+		v0_skip_path (&v);
+	}
+	if (!v.fail && v.pos < v.len && !v0_suffix (v.s + v.pos)) {
+		v.fail = true;
+	}
 	char *res = NULL;
 	if (!v.fail) {
 		res = r_strbuf_drain (v.out);

@@ -64,6 +64,7 @@ typedef enum {
 #define F_UNNAMED  (1 << 9) // K_NAME holds an unnamed type (num == #)
 #define F_PACKARG  (1 << 10) // K_LIST is a J...E template argument pack
 #define F_NOEXCEPT (1 << 11) // K_FUNC type is noexcept
+#define F_OWNED_S  (1 << 12) // s must be freed with the node
 
 typedef struct node_t {
 	ut16 kind;
@@ -72,7 +73,7 @@ typedef struct node_t {
 	int len;       // length of s (0 => use strlen)
 	struct node_t *a, *b, *c;
 	struct node_t **kids;
-	int nkids;
+	int nkids, capkids;
 	int num;
 } Node;
 
@@ -128,12 +129,20 @@ static void node_push_kid(CTX *c, Node *list, Node *kid) {
 	if (c->fail || !list || !kid) {
 		return;
 	}
-	Node **nk = realloc (list->kids, (list->nkids + 1) * sizeof (Node *));
-	if (!nk) {
-		c->fail = true;
-		return;
+	if (list->nkids == list->capkids) {
+		if (list->capkids > INT_MAX / 2) {
+			c->fail = true;
+			return;
+		}
+		int ncap = list->capkids ? list->capkids * 2 : 4;
+		Node **nk = realloc (list->kids, ncap * sizeof (Node *));
+		if (!nk) {
+			c->fail = true;
+			return;
+		}
+		list->kids = nk;
+		list->capkids = ncap;
 	}
-	list->kids = nk;
 	list->kids[list->nkids++] = kid;
 }
 
@@ -1117,20 +1126,26 @@ static Node *parse_type(CTX *c) {
 					lbl = r_str_newf ("std::bfloat%.*s_t", blen, st);
 				} else if (eat (c, 'x')) {
 					lbl = r_str_newf ("_Float%.*sx", blen, st);
+					} else {
+						(void)eat (c, '_');
+						lbl = (blen > 0 && blen < 16)
+							? r_str_newf ("_Float%.*s", blen, st)
+							: strdup ("_Float");
+					}
+					if (!lbl) {
+						c->fail = true;
+						break;
+					}
+					r = node_new (c, K_BUILTIN);
+					if (r) {
+						r->s = lbl;
+						r->len = (int)strlen (lbl);
+						r->flags |= F_OWNED_S;
+					} else {
+						free (lbl);
+					}
 				} else {
-					(void)eat (c, '_');
-					lbl = (blen > 0 && blen < 16)
-						? r_str_newf ("_Float%.*s", blen, st)
-						: strdup ("_Float");
-				}
-				r = node_new (c, K_BUILTIN);
-				if (r) {
-					r->s = lbl; // owned: freed via the owned-string marker below
-					r->len = (int)strlen (lbl);
-					r->num = 1;
-				}
-			} else {
-				c->p += 2;
+					c->p += 2;
 				r = mk_lit (c, K_BUILTIN, bt);
 			}
 			break;
@@ -1413,16 +1428,17 @@ static Node *parse_expression(CTX *c) {
 		c->p += 2;
 		int num = parse_num (c);
 		(void)eat (c, '_');
-		r = node_new (c, K_NAME);
-		if (r) {
-			char buf[32];
-			snprintf (buf, sizeof (buf), "{parm#%d}", (num < 0) ? 1 : num + 2);
-			r->s = strdup (buf);
-			r->len = (int)strlen (r->s);
-			r->num = 1; // owned string marker
-			r->kind = K_BUILTIN; // reuse the owned-string free path
-		}
-	} else if (a == 's' && b == 'Z') {
+			r = node_new (c, K_NAME);
+			if (r) {
+				r->s = r_str_newf ("{parm#%d}", (num < 0) ? 1 : num + 2);
+				if (!r->s) {
+					c->fail = true;
+					break;
+				}
+				r->len = (int)strlen (r->s);
+				r->flags |= F_OWNED_S;
+			}
+		} else if (a == 's' && b == 'Z') {
 		c->p += 2;
 		Node *e = parse_template_param (c);
 		r = mk1 (c, K_EXPR_UNARY, e);
@@ -2441,9 +2457,9 @@ char *r_demangle_itanium(const char *mangled) {
 	int i;
 	for (i = 0; i < c.nall; i++) {
 		Node *n = c.all[i];
-		if (n->kind == K_BUILTIN && n->num == 1) {
-			free ((void *)n->s); // owned _FloatN label
-		}
+			if (n->flags & F_OWNED_S) {
+				free ((void *)n->s);
+			}
 		free (n->kids);
 		free (n);
 	}

@@ -20,6 +20,7 @@
 
 #include <r_util.h>
 #include "cxx2.h"
+#include "cxx2_internal.h"
 
 #define ARM_MAX_DEPTH 200
 
@@ -70,35 +71,20 @@ static void arm_push_type(ARM *c, const char *s) {
 	if (c->fail || !s) {
 		return;
 	}
-	if (c->ntypes == c->captypes) {
-		int ncap = c->captypes ? c->captypes * 2 : 8;
-		char **nt = realloc (c->types, ncap * sizeof (char *));
-		if (!nt) {
-			c->fail = true;
-			return;
-		}
-		c->types = nt;
-		c->captypes = ncap;
+	if (!cxx2_strvec_push (&c->types, &c->ntypes, &c->captypes, s, 0)) {
+		c->fail = true;
 	}
-	c->types[c->ntypes++] = strdup (s);
 }
 
 static void arm_truncate_types(ARM *c, int n) {
-	while (c->ntypes > n) {
-		free (c->types[--c->ntypes]);
-	}
+	cxx2_strvec_truncate (c->types, &c->ntypes, n);
 }
 
 // ---------------------------------------------------------------------------
 // operators
 // ---------------------------------------------------------------------------
 
-typedef struct {
-	const char *code;
-	const char *spelling;
-} ArmOp;
-
-static const ArmOp arm_ops[] = {
+static const CXX2Op arm_ops[] = {
 	{ "aa", "&&" }, { "aad", "&=" }, { "ad", "&" }, { "adv", "/=" },
 	{ "aer", "^=" }, { "als", "<<=" }, { "amd", "%=" }, { "ami", "-=" },
 	{ "aml", "*=" }, { "amu", "*=" }, { "aor", "|=" }, { "apl", "+=" },
@@ -404,30 +390,6 @@ static void arm_args(ARM *c, RStrBuf *o) {
 // entry
 // ---------------------------------------------------------------------------
 
-// the bare class name (last "::" component, template args stripped)
-static void arm_basename(const char *qual, char *out, size_t outsz) {
-	const char *base = qual, *p;
-	int d = 0;
-	for (p = qual; *p; p++) {
-		if (*p == '<') {
-			d++;
-		} else if (*p == '>') {
-			d--;
-		} else if (d == 0 && p[0] == ':' && p[1] == ':') {
-			base = p + 2;
-			p++;
-		}
-	}
-	size_t n = 0;
-	for (p = base; *p && n + 1 < outsz; p++) {
-		if (*p == '<') {
-			break;
-		}
-		out[n++] = *p;
-	}
-	out[n] = 0;
-}
-
 char *r_demangle_arm(const char *mangled) {
 	if (R_STR_ISEMPTY (mangled)) {
 		return NULL;
@@ -454,9 +416,8 @@ char *r_demangle_arm(const char *mangled) {
 		} else {
 			r_strbuf_free (o);
 		}
-		arm_truncate_types (&t, 0);
-		free (t.types);
-		return res;
+			cxx2_strvec_fini (&t.types, &t.ntypes);
+			return res;
 	}
 
 	ARM c = {0};
@@ -482,12 +443,9 @@ char *r_demangle_arm(const char *mangled) {
 		} else if (oplen == 2 && !strncmp (op, "dt", 2)) {
 			is_dtor = true;
 		} else {
-			int i;
-			for (i = 0; arm_ops[i].code; i++) {
-				if (strlen (arm_ops[i].code) == oplen && !strncmp (op, arm_ops[i].code, oplen)) {
-					opspell = arm_ops[i].spelling;
-					break;
-				}
+			const CXX2Op *opinfo = cxx2_op_lookup (arm_ops, op, oplen);
+			if (opinfo) {
+				opspell = opinfo->spelling;
 			}
 			if (!opspell) {
 				r_strbuf_free (o);
@@ -542,16 +500,20 @@ char *r_demangle_arm(const char *mangled) {
 	if (member && cls) {
 		char *cs = r_strbuf_drain (cls);
 		cls = NULL;
-		r_strbuf_append (o, cs);
-		r_strbuf_append (o, "::");
-		if (is_ctor || is_dtor) {
-			char bn[256];
-			arm_basename (cs, bn, sizeof (bn));
-			if (is_dtor) {
-				r_strbuf_append (o, "~");
-			}
-			r_strbuf_append (o, bn);
-		} else if (is_op) {
+			r_strbuf_append (o, cs);
+			r_strbuf_append (o, "::");
+			if (is_ctor || is_dtor) {
+				char *bn = cxx2_basename (cs);
+				if (!bn) {
+					free (cs);
+					goto fail;
+				}
+				if (is_dtor) {
+					r_strbuf_append (o, "~");
+				}
+				r_strbuf_append (o, bn);
+				free (bn);
+			} else if (is_op) {
 			r_strbuf_appendf (o, "operator%s", opspell);
 		} else {
 			r_strbuf_append_n (o, name, namelen);
@@ -590,17 +552,15 @@ char *r_demangle_arm(const char *mangled) {
 	}
 	char *res = r_strbuf_drain (o);
 	o = NULL;
-	arm_truncate_types (&c, 0);
-	free (c.types);
-	if (res && !*res) {
-		free (res);
-		res = NULL;
+		cxx2_strvec_fini (&c.types, &c.ntypes);
+		if (res && !*res) {
+			free (res);
+			res = NULL;
 	}
 	return res;
 fail:
 	r_strbuf_free (o);
 	r_strbuf_free (cls);
-	arm_truncate_types (&c, 0);
-	free (c.types);
+	cxx2_strvec_fini (&c.types, &c.ntypes);
 	return NULL;
 }

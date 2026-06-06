@@ -127,10 +127,12 @@ static void d_identifier(DCTX *c, RStrBuf *o) {
 		c->p += 3;
 		// the template name
 		int n = d_number (c);
-		if (n > 0 && c->p + n <= c->end) {
-			r_strbuf_append_n (o, c->p, n);
-			c->p += n;
+		if (n <= 0 || c->p + n > c->end) {
+			c->fail = true;
+			return;
 		}
+		r_strbuf_append_n (o, c->p, n);
+		c->p += n;
 		r_strbuf_append (o, "!(");
 		int i = 0;
 		while (!c->fail && d_peek (c) && d_peek (c) != 'Z') {
@@ -148,7 +150,11 @@ static void d_identifier(DCTX *c, RStrBuf *o) {
 				break;
 			}
 		}
-		(void)(d_peek (c) == 'Z' && d_take (c));
+		if (d_peek (c) != 'Z') {
+			c->fail = true;
+			return;
+		}
+		c->p++;
 		r_strbuf_append (o, ")");
 		return;
 	}
@@ -198,6 +204,8 @@ static void d_params(DCTX *c, RStrBuf *o) {
 		r_strbuf_append (o, "..."); // typesafe variadic abuts the last param
 	} else if (term == 'Y') {
 		r_strbuf_append (o, i ? ", ..." : "...");
+	} else if (term != 'Z') {
+		c->fail = true;
 	}
 	r_strbuf_append (o, ")");
 	// the return type follows but is not shown for plain functions; callers
