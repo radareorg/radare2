@@ -88,38 +88,27 @@ static bool r_coff_decode_base64(const char *str, ut32 len, ut32 *res) {
 }
 
 R_IPI char *r_coff_symbol_name(RBinCoffObj *obj, void *ptr) {
+	if (!obj || !ptr) {
+		return NULL;
+	}
 	char n[256] = {0};
+	char name[9] = {0};
 	int len = 0;
 	ut32 offset = 0; // offset into the string table.
 
-	typedef union {
-		char name[9];
-		struct {
-			ut32 zero;
-			ut32 offset;
-		};
-	} NameOff;
-	NameOff no;
-	memcpy (&no, ptr, sizeof (no));
-	NameOff *p = &no;
-	if (!ptr) {
-		return NULL;
+	memcpy (name, ptr, 8);
+	if (r_read_ble32 (name, obj->endian) && *name != '/') {
+		return r_str_ndup (name, 8);
 	}
-
-	if (p->zero && *p->name != '/') {
-		return r_str_ndup (p->name, 8);
-	}
-	if (*p->name == '/') {
-		char *offset_str = (p->name + 1);
-		no.name[8] = 0;
+	if (*name == '/') {
+		char *offset_str = name + 1;
 		if (*offset_str == '/') {
-			r_coff_decode_base64 (p->name + 2, 6, &offset);
+			r_coff_decode_base64 (name + 2, 6, &offset);
 		} else {
-			// ensure null termination
 			offset = atoi (offset_str);
 		}
 	} else {
-		offset = p->offset;
+		offset = r_read_ble32 (name + 4, obj->endian);
 	}
 
 	// Calculate the actual pointer to the symbol/section name we're interested in.

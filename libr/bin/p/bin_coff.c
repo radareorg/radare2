@@ -548,61 +548,56 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool patch, ut
 		if (!co->scn_hdrs[i].s_nreloc) {
 			continue;
 		}
-		int len = 0;
-		size_t size = (size_t)co->scn_hdrs[i].s_nreloc * sizeof (struct coff_reloc);
-		struct coff_reloc *rel = calloc (1, size + sizeof (struct coff_reloc));
-		if (!rel) {
-			break;
-		}
-		if (co->scn_hdrs[i].s_relptr > co->size \
-			|| co->scn_hdrs[i].s_relptr + size > co->size) {
-			free (rel);
-			break;
-		}
-		len = r_buf_read_at (co->b, co->scn_hdrs[i].s_relptr, (ut8*)rel, size);
-		if (len != size) {
-			free (rel);
+		ut64 relptr = co->scn_hdrs[i].s_relptr;
+		ut64 size = (ut64)co->scn_hdrs[i].s_nreloc * sizeof (struct coff_reloc);
+		if (relptr > co->size || size > co->size - relptr) {
 			break;
 		}
 		for (j = 0; j < co->scn_hdrs[i].s_nreloc; j++) {
-			RBinSymbol *symbol = coff_symbol_at (bo, co, rel[j].r_symndx);
+			const ut64 at = relptr + (ut64)j * sizeof (struct coff_reloc);
+			struct coff_reloc rel = {
+				.r_vaddr = r_buf_read_ble32_at (co->b, at, co->endian),
+				.r_symndx = r_buf_read_ble32_at (co->b, at + 4, co->endian),
+				.r_type = r_buf_read_ble16_at (co->b, at + 8, co->endian),
+			};
+			RBinSymbol *symbol = coff_symbol_at (bo, co, rel.r_symndx);
 			if (!symbol) {
 				continue;
 			}
 			RBinReloc *reloc = R_NEW0 (RBinReloc);
 			reloc->symbol = symbol;
-			reloc->paddr = co->scn_hdrs[i].s_scnptr + rel[j].r_vaddr;
+			reloc->paddr = co->scn_hdrs[i].s_scnptr + rel.r_vaddr;
 			if (co->scn_va) {
-				reloc->vaddr = co->scn_va[i] + rel[j].r_vaddr;
+				reloc->vaddr = co->scn_va[i] + rel.r_vaddr;
 			}
-			reloc->type = rel[j].r_type;
+			reloc->type = rel.r_type;
 
 			ut64 sym_vaddr = symbol->vaddr;
 			if (symbol->is_imported) {
-				RBinImport *imp = coff_import_new (co, rel[j].r_symndx);
+				RBinImport *imp = coff_import_new (co, rel.r_symndx);
 				if (imp) {
 					reloc->import = imp;
 					if (patch_imports) {
 						bool found;
-						sym_vaddr = ht_uu_find (imp_vaddr_ht, (ut64)rel[j].r_symndx, &found);
+						sym_vaddr = ht_uu_find (imp_vaddr_ht, (ut64)rel.r_symndx, &found);
 						if (!found) {
 							sym_vaddr = imp_map;
 							imp_map += BYTES_PER_IMP_RELOC;
-							ht_uu_insert (imp_vaddr_ht, (ut64)rel[j].r_symndx, sym_vaddr);
+							ht_uu_insert (imp_vaddr_ht, (ut64)rel.r_symndx, sym_vaddr);
 							symbol->vaddr = sym_vaddr;
 						}
 					}
 				}
 			}
 
-			reloc->ntype = rel[j].r_type;
+			reloc->ntype = rel.r_type;
 			if (sym_vaddr) {
 				int plen = 0;
 				ut8 patch_buf[8];
 				ut16 magic = co->type == COFF_TYPE_BIGOBJ? co->bigobj_hdr.f_magic: co->hdr.f_magic;
 				switch (magic) {
 				case COFF_FILE_MACHINE_I386:
-					switch (rel[j].r_type) {
+					switch (rel.r_type) {
 					case COFF_REL_I386_DIR32:
 						reloc->type = R_BIN_RELOC_32;
 						r_write_le32 (patch_buf, (ut32)sym_vaddr);
@@ -623,7 +618,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool patch, ut
 					}
 					break;
 				case COFF_FILE_MACHINE_AMD64:
-					switch (rel[j].r_type) {
+					switch (rel.r_type) {
 					case COFF_REL_AMD64_REL32:
 						reloc->type = R_BIN_RELOC_32;
 						reloc->additive = 1;
@@ -639,7 +634,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool patch, ut
 					}
 					break;
 				case COFF_FILE_MACHINE_ARMNT:
-					switch (rel[j].r_type) {
+					switch (rel.r_type) {
 					case COFF_REL_ARM_BRANCH24T:
 					case COFF_REL_ARM_BLX23T:
 						reloc->type = R_BIN_RELOC_32;
@@ -664,7 +659,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool patch, ut
 					}
 					break;
 				case COFF_FILE_MACHINE_ARM64:
-					switch (rel[j].r_type) {
+					switch (rel.r_type) {
 					case COFF_REL_ARM64_BRANCH26:
 						reloc->type = R_BIN_RELOC_32;
 						ut32 data = _read_le32 (rbin, reloc->vaddr);
@@ -688,7 +683,6 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool patch, ut
 			}
 			r_list_append (list_rel, reloc);
 		}
-		free (rel);
 	}
 	ht_uu_free (imp_vaddr_ht);
 	return list_rel;
