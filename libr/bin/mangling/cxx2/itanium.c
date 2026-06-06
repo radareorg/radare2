@@ -1428,17 +1428,17 @@ static Node *parse_expression(CTX *c) {
 		c->p += 2;
 		int num = parse_num (c);
 		(void)eat (c, '_');
-			r = node_new (c, K_NAME);
-			if (r) {
-				r->s = r_str_newf ("{parm#%d}", (num < 0) ? 1 : num + 2);
-				if (!r->s) {
-					c->fail = true;
-					break;
-				}
+		r = node_new (c, K_NAME);
+		if (r) {
+			r->s = r_str_newf ("{parm#%d}", (num < 0) ? 1 : num + 2);
+			if (r->s) {
 				r->len = (int)strlen (r->s);
 				r->flags |= F_OWNED_S;
+			} else {
+				c->fail = true;
 			}
-		} else if (a == 's' && b == 'Z') {
+		}
+	} else if (a == 's' && b == 'Z') {
 		c->p += 2;
 		Node *e = parse_template_param (c);
 		r = mk1 (c, K_EXPR_UNARY, e);
@@ -2276,26 +2276,22 @@ static void emit_type(RStrBuf *o, Node *t, const char *inner, int depth) {
 		break;
 	}
 	case K_ARRAY: {
-		char dim[64];
-		if (t->s) {
-			snprintf (dim, sizeof (dim), "%.*s", t->len, t->s);
-		} else if (t->b) {
+		char *dim = NULL;
+		if (t->b) {
 			RStrBuf *eb = r_strbuf_new ("");
 			emit_expr (eb, t->b, depth);
-			char *e = r_strbuf_drain (eb);
-			snprintf (dim, sizeof (dim), "%s", r_str_get (e));
-			free (e);
-		} else {
-			dim[0] = 0;
+			dim = r_strbuf_drain (eb);
 		}
 		// "T [N]" but consecutive dimensions abut: "T [N][M]"
 		const char *pre = inner ? inner : "";
 		size_t pl = strlen (pre);
-		char *ni = (pl > 0 && pre[pl - 1] == ']')
-			? r_str_newf ("%s[%s]", pre, dim)
-			: r_str_newf ("%s [%s]", pre, dim);
+		bool abut = pl > 0 && pre[pl - 1] == ']';
+		char *ni = t->s
+			? r_str_newf (abut ? "%s[%.*s]" : "%s [%.*s]", pre, t->len, t->s)
+			: r_str_newf (abut ? "%s[%s]" : "%s [%s]", pre, r_str_get (dim));
 		emit_type (o, t->a, ni, depth + 1);
 		free (ni);
+		free (dim);
 		break;
 	}
 	case K_PTRMEM: {
