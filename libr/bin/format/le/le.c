@@ -56,6 +56,20 @@ static const char *__get_arch(RBinLEObj *bin) {
 	}
 }
 
+static bool read_le_image_header(RBuffer *buf, ut64 offset, LE_image_header *h) {
+	memset (h, 0, sizeof (*h));
+	const ut64 prefix_size = r_offsetof (LE_image_header, level);
+	if (r_buf_read_at (buf, offset, (ut8 *)h, prefix_size) != (st64)prefix_size) {
+		return false;
+	}
+	const bool be = h->worder != 0;
+	if (r_buf_fread_at (buf, offset + prefix_size, (ut8 *)&h->level, be ? "I2S39I" : "i2s39i", 1) < 0) {
+		return false;
+	}
+	(void)r_buf_fread_at (buf, offset + r_offsetof (LE_image_header, heapsize), (ut8 *)&h->heapsize, be ? "2I" : "2i", 1);
+	return true;
+}
+
 static ut64 get_object_base(RBinLEObj * bin, size_t idx) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->header && idx < bin->header->objcnt, 0);
 	if (idx < bin->n_bases) {
@@ -89,14 +103,37 @@ static RBinSymbol *__get_symbol(RBinLEObj *bin, ut64 *offset) {
 	}
 	sym->name = r_bin_name_new (name);
 	free (name);
-	ut16 entry_idx = r_buf_read_le16_at (bin->buf, *offset);
+	ut16 entry_idx = r_buf_read_ble16_at (bin->buf, *offset, bin->header->worder);
 	*offset += 2;
 	sym->ordinal = entry_idx;
 	return sym;
 }
 
+static st64 read_entry_bundle_entry(RBinLEObj *bin, ut64 offset, ut8 type, LE_entry_bundle_entry *e) {
+	const bool be = bin->header->worder != 0;
+	const char *fmt = NULL;
+	switch (type & ~ENTRY_PARAMETER_TYPING_PRESENT) {
+	case ENTRY16:
+		fmt = be ? "cS" : "cs";
+		break;
+	case CALLGATE:
+		fmt = be ? "c2S" : "c2s";
+		break;
+	case ENTRY32:
+		fmt = be ? "cI" : "ci";
+		break;
+	case FORWARDER:
+		fmt = be ? "cSI" : "csi";
+		break;
+	default:
+		return -1;
+	}
+	return r_buf_fread_at (bin->buf, offset, (ut8 *)e, fmt, 1);
+}
+
 static RList *__get_entries(RBinLEObj *bin) {
-	ut64 offset = (ut64)bin->header->enttab + bin->headerOff;
+	LE_image_header *h = bin->header;
+	ut64 offset = (ut64)h->enttab + bin->headerOff;
 	RList *l = r_list_newf (free);
 	if (!l) {
 		return NULL;
@@ -104,17 +141,14 @@ static RList *__get_entries(RBinLEObj *bin) {
 	while (true) {
 		LE_entry_bundle_header header = {0};
 		LE_entry_bundle_entry e = {{0}};
-#if 0
-		r_buf_read_at (bin->buf, offset, (ut8 *)&header, sizeof (header));
-#else
-		if (r_buf_fread_at (bin->buf, offset, (ut8*)&header, "ccs", 1) < 1) {
+		if (r_buf_fread_at (bin->buf, offset, (ut8 *)&header, h->worder ? "ccS" : "ccs", 1) < 1) {
 			break;
 		}
-#endif
 		if (!header.count) {
 			break;
 		}
-		if ((header.type & ~ENTRY_PARAMETER_TYPING_PRESENT) == UNUSED_ENTRY) {
+		ut8 type = header.type & ~ENTRY_PARAMETER_TYPING_PRESENT;
+		if (type == UNUSED_ENTRY) {
 			offset += sizeof (header.type) + sizeof (header.count);
 			while (header.count) {
 				r_list_append (l, strdup ("")); // (ut64 *)-1);
@@ -124,41 +158,37 @@ static RList *__get_entries(RBinLEObj *bin) {
 		}
 		offset += sizeof (LE_entry_bundle_header);
 		bool typeinfo = header.type & ENTRY_PARAMETER_TYPING_PRESENT;
+		bool has_base = header.objnum > 0 && header.objnum <= h->objcnt;
+		ut64 base = has_base ? get_object_base (bin, header.objnum - 1) : 0;
 		int i;
 		for (i = 0; i < header.count; i++) {
-			ut64 entry = -1;
-			r_buf_read_at (bin->buf, offset, (ut8 *)&e, sizeof (e));
-			switch (header.type & ~ENTRY_PARAMETER_TYPING_PRESENT) {
+			ut64 entry = UT64_MAX;
+			st64 read = read_entry_bundle_entry (bin, offset, type, &e);
+			if (read < 1) {
+				break;
+			}
+			offset += (ut64)read;
+			switch (type) {
 			case ENTRY16:
-				if ((header.objnum - 1) < bin->header->objcnt) {
-					entry = (ut64)e.entry_16.offset + get_object_base (bin, header.objnum - 1);
-				}
-				offset += sizeof (e.entry_16);
-				if (typeinfo) {
-					offset += (ut64)(e.entry_16.flags & ENTRY_PARAM_COUNT_MASK) * 2;
+				if (has_base) {
+					entry = base + e.entry_16.offset;
 				}
 				break;
 			case CALLGATE:
-				if ((header.objnum - 1) < bin->header->objcnt) {
-					entry = (ut64)e.callgate.offset + get_object_base (bin, header.objnum - 1);
-				}
-				offset += sizeof (e.callgate);
-				if (typeinfo) {
-					offset += (ut64)(e.callgate.flags & ENTRY_PARAM_COUNT_MASK) * 2;
+				if (has_base) {
+					entry = base + e.callgate.offset;
 				}
 				break;
 			case ENTRY32:
-				if ((header.objnum - 1) < bin->header->objcnt) {
-					entry = (ut64)e.entry_32.offset + get_object_base (bin, header.objnum - 1);
-				}
-				offset += sizeof (e.entry_32);
-				if (typeinfo) {
-					offset += (ut64)(e.entry_32.flags & ENTRY_PARAM_COUNT_MASK) * 2;
+				if (has_base) {
+					entry = base + e.entry_32.offset;
 				}
 				break;
 			case FORWARDER:
-				offset += sizeof (e.forwarder);
 				break;
+			}
+			if (typeinfo && type != FORWARDER) {
+				offset += (ut64)(e.entry_32.flags & ENTRY_PARAM_COUNT_MASK) * 2;
 			}
 			if (entry != UT64_MAX) {
 				r_list_append (l, r_str_newf ("0x%"PFMT64x, entry));
@@ -721,11 +751,10 @@ static bool __init_header(RBinLEObj *bin, RBuffer *buf) {
 	}
 	bin->header = R_NEW0 (LE_image_header);
 	if (bin->header) {
-#if 0
-		r_buf_read_at (buf, bin->headerOff, (ut8 *)bin->header, sizeof (LE_image_header));
-#else
-		r_buf_fread_at (buf, bin->headerOff, (ut8*)bin->header, "2s41i", 1);
-#endif
+		if (!read_le_image_header (buf, bin->headerOff, bin->header)) {
+			R_LOG_ERROR ("Cannot read LE header");
+			return false;
+		}
 	} else {
 		R_LOG_ERROR ("Failed to allocate memory");
 		return false;
