@@ -65,6 +65,36 @@ static bool esil_is_big_endian(REsil *esil) {
 	return cfg && R_ARCH_CONFIG_IS_BIG_ENDIAN (cfg);
 }
 
+static ut64 esil_read_ble(const ut8 *buf, int bits, bool be) {
+	switch (bits) {
+	case 8:
+		return buf[0];
+	case 16:
+		return r_read_ble16 (buf, be);
+	case 24:
+		return r_read_ble24 (buf, be);
+	case 32:
+		return r_read_ble32 (buf, be);
+	case 64:
+		return r_read_ble64 (buf, be);
+	default:
+		break;
+	}
+	ut64 n = 0;
+	int i;
+	const int bytes = R_MIN (8, bits / 8);
+	if (be) {
+		for (i = 0; i < bytes; i++) {
+			n = (n << 8) | buf[i];
+		}
+	} else {
+		for (i = bytes - 1; i >= 0; i--) {
+			n = (n << 8) | buf[i];
+		}
+	}
+	return n;
+}
+
 static ut8 esil_internal_sizeof_reg(REsil *esil, const char *r) {
 	if (!esil || !esil->reg_if.reg_size || !r) {
 		return 0;
@@ -1254,7 +1284,7 @@ static bool esil_poke_n(REsil *esil, int bits) {
 				r_esil_mem_read (esil, addr, b, bytes);
 				esil->cb.hook_mem_read = oldhook;
 				const bool be = esil_is_big_endian (esil);
-				n = r_read_ble64 (b, be);
+				n = esil_read_ble (b, bits, be);
 				esil->old = n;
 				esil->cur = num;
 				esil->lastsz = bits;
@@ -1359,14 +1389,7 @@ static bool esil_peek_n(REsil *esil, int bits) {
 		const ut64 bitmask = r_num_genmask (bits - 1);
 		ut8 a[sizeof (ut64)] = {0};
 		ret = !!r_esil_mem_read (esil, addr, a, bytes);
-#if 0
-		ut64 b = r_read_ble64 (a, esil_is_big_endian (esil));
-#else
-		ut64 b = r_read_ble64 (a, 0);
-		if (be) {
-			r_mem_swapendian ((ut8*)&b, (const ut8*)&b, bytes);
-		}
-#endif
+		ut64 b = esil_read_ble (a, bits, be);
 		r_esil_pushnum (esil, b & bitmask);
 		esil->lastsz = bits;
 	}

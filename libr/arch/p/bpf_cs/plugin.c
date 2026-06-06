@@ -48,6 +48,15 @@ static bool plugin_changed(RArchSession *s);
 
 static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr);
 
+static ut64 ebpf_jump(RAnalOp *op, cs_insn *insn) {
+	const st16 off = (st16)r_read_le16 (op->bytes + 2);
+	const ut64 base = op->addr + insn->size;
+	if (off < 0) {
+		return base - (ut64)(-(st32)off) * insn->size;
+	}
+	return base + (ut64)off * insn->size;
+}
+
 static char *mnemonics(RArchSession *s, int id, bool json) {
 	PluginData *pd = (PluginData *)s->data;
 	return r_arch_cs_mnemonics (s, pd->cpd.cs_handle, id, json);
@@ -393,7 +402,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 			case BPF_INS_JMP:
 #endif
 				op->type = R_ANAL_OP_TYPE_JMP;
-				op->jump = JUMP (0);
+				op->jump = a->config->bits == 64 ? ebpf_jump (op, insn) : JUMP (0);
 				break;
 			case BPF_INS_JEQ:
 			case BPF_INS_JGT:
@@ -411,7 +420,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 					op->jump = JUMP (1);
 					op->fail = (insn->detail->bpf.op_count == 3) ? JUMP (2) : op->addr + insn->size;
 				} else {
-					op->jump = JUMP (2);
+					op->jump = ebpf_jump (op, insn);
 					op->fail = op->addr + insn->size;
 				}
 				break;
