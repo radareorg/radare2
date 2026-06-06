@@ -201,7 +201,7 @@ static CPU_MODEL *__get_cpu_model_recursive(PluginData *pd, const char *model) {
 
 static CPU_MODEL *get_cpu_model(PluginData *pd, const char *model) {
 	if (!model) {
-		model = "ATmega8";
+		model = "ATxmega128a4u";
 	}
 	// cache
 	if (pd->cpu && pd->cpu->model && !r_str_casecmp (model, pd->cpu->model)) {
