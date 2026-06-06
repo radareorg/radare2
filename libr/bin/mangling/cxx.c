@@ -60,7 +60,22 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	/* Prefer the in-house MIT demangler (cxx2); fall back to the GPL libiberty
 	 * demangler for the rare constructs cxx2 does not yet handle, so there are
 	 * no regressions during the migration. */
-	char *out = r_demangle_ibmxl (p);
+	// The pre-Itanium cfront-family ABIs (IBM XL, ARM, g++ 2.x) encode their
+	// ctor/operator markers as a leading "__" (__ct__, __ls__, _$_, ...) which
+	// the macOS-style underscore strip above would clobber, so feed them the
+	// un-stripped symbol.
+	char *gv2in = (stripped_us && p > tmpstr && p[-1] == '_') ? p - 1 : p;
+	char *out = NULL;
+	// ARM/cfront templates (__pt__) are ARM-specific: IBM XL uses a different
+	// template syntax, so only the ARM engine can decode them (T5<x> vs the raw
+	// T5__pt__3_1x). It is full-consumption strict, so it never claims a
+	// non-ARM name. Let it go first for those.
+	if (strstr (p, "__pt__")) {
+		out = r_demangle_arm (gv2in);
+	}
+	if (!out) {
+		out = r_demangle_ibmxl (gv2in);
+	}
 	if (!out) {
 		out = r_demangle_itanium (p);
 	}
@@ -70,11 +85,13 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	}
 #endif
 	if (!out) {
-		// pre-Itanium g++ 2.x ABI (foo__1Ai, __ls__3fooi, _$_3foo, ...).
-		// v2 ctor/operator markers are a leading "__", which the macOS-style
-		// underscore strip above would clobber, so undo it for this engine.
-		char *gv2in = (stripped_us && p > tmpstr && p[-1] == '_') ? p - 1 : p;
-		out = r_demangle_gnu_v2 (gv2in);
+		// ARM/cfront (__ct__1cFi, bar__3fooFPv, ...) is full-consumption strict,
+		// so it only claims genuinely ARM-mangled names; try it before the
+		// looser g++ 2.x engine (foo__1Ai, __ls__3fooi, _$_3foo, ...).
+		out = r_demangle_arm (gv2in);
+		if (!out) {
+			out = r_demangle_gnu_v2 (gv2in);
+		}
 	}
 	free (tmpstr);
 	if (out) {

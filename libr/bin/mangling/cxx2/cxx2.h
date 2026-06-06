@@ -29,6 +29,7 @@ char *r_demangle_rust(const char *mangled);     // _R... (v0) or _ZN..E (legacy)
 char *r_demangle_rust_v0(const char *mangled);  // _R...   (Rust v0 only)
 char *r_demangle_dlang(const char *mangled);    // _D...   (D language)
 char *r_demangle_gnu_v2(const char *mangled);   // foo__1Ai (pre-Itanium g++ ABI)
+char *r_demangle_arm(const char *mangled);      // __ct__1cFi (pre-Itanium ARM/cfront ABI)
 
 // Convenience dispatcher: sniffs the mangling scheme and routes accordingly.
 char *r_demangle_cxx2(const char *mangled);

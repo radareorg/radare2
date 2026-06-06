@@ -27,6 +27,7 @@ OBJS+=mangling/cxx2/cxx2.o mangling/cxx2/itanium.o
 OBJS+=mangling/cxx2/rust.o mangling/cxx2/dlang.o
 OBJS+=mangling/cxx2/xlc.o
 OBJS+=mangling/cxx2/gnu-v2.o
+OBJS+=mangling/cxx2/armabi.o
 OBJS+=mangling/demangler.o
 OBJS+=mangling/microsoft.o
 OBJS+=mangling/objc.o mangling/cxx.o mangling/msvc.o

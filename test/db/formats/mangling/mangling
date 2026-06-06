@@ -96,6 +96,24 @@ foo()
 EOF
 RUN
 
+NAME=arm cfront cxx templates via cxx chain
+FILE=-
+CMDS=<<EOF
+!rabin2 -D cxx X__12T5__pt__3_1x
+!rabin2 -D cxx __dt__11T5__pt__2_iFv
+!rabin2 -D cxx __dt__11T5__pt__2_cFv
+!rabin2 -D cxx __ct__21T5__pt__11_PFiPPdPv_iFi
+!rabin2 -D cxx __dt__17T5__pt__8_PFcPv_iFv
+EOF
+EXPECT=<<EOF
+T5<x>::X
+T5<int>::~T5(void)
+T5<char>::~T5(void)
+T5<int (*)(int, double **, void *)>::T5(int)
+T5<int (*)(char, void *)>::~T5(void)
+EOF
+RUN
+
 NAME=cxx demangle respects bin.maxsymlen
 FILE=bins/elf/analysis/bigswitch_x86
 CMDS=<<EOF

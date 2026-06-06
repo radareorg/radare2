@@ -82,9 +82,15 @@ char *r_demangle_cxx2(const char *mangled) {
 			return r_demangle_dlang (mangled);
 		}
 	}
-	char *xlc = r_demangle_ibmxl (mangled);
-	if (xlc) {
-		return xlc;
+	// cfront-family (pre-Itanium) schemes overlap heavily; try the strict
+	// matchers first (ARM is full-consumption strict, so it only claims
+	// genuinely ARM-mangled names) then fall back to the looser g++ v2 engine.
+	char *out = r_demangle_ibmxl (mangled);
+	if (!out) {
+		out = r_demangle_arm (mangled);
 	}
-	return NULL;
+	if (!out) {
+		out = r_demangle_gnu_v2 (mangled);
+	}
+	return out;
 }
