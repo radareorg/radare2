@@ -7,7 +7,7 @@ static int lmf_header_load(lmf_header *lmfh, RBuffer *buf, Sdb *db) {
 	if (r_buf_size (buf) < sizeof (lmf_header)) {
 		return false;
 	}
-	if (r_buf_fread_at (buf, QNX_HEADER_ADDR, (ut8 *) lmfh, "iiiiiiiicccciiiicc", 1) != QNX_HDR_SIZE) {
+	if (r_buf_fread_at (buf, QNX_HEADER_ADDR, (ut8 *)lmfh, "12s6i", 1) != QNX_HDR_SIZE) {
 		return false;
 	}
 	r_strf_buffer (32);
