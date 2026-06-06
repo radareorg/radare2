@@ -15,8 +15,8 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 	switch (item->size) {
 	case 80: // word + qword
 		if (regset->arena->bytes && (off + 10 <= regset->arena->size)) {
-			val->v80.Low = *((ut64 *)(regset->arena->bytes + off));
-			val->v80.High = *((ut16 *)(regset->arena->bytes + off + 8));
+			val->v80.Low = r_read_le64 (regset->arena->bytes + off);
+			val->v80.High = r_read_le16 (regset->arena->bytes + off + 8);
 		} else {
 			R_LOG_WARN ("null or oob arena for current regset");
 		}
@@ -24,8 +24,8 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 		break;
 	case 96: // dword + qword
 		if (regset->arena->bytes && (off + 12 <= regset->arena->size)) {
-			val->v96.Low = *((ut64 *)(regset->arena->bytes + off));
-			val->v96.High = *((ut32 *)(regset->arena->bytes + off + 8));
+			val->v96.Low = r_read_le64 (regset->arena->bytes + off);
+			val->v96.High = r_read_le32 (regset->arena->bytes + off + 8);
 		} else {
 			R_LOG_WARN ("null or oob arena for current regset");
 		}
@@ -33,8 +33,8 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 		break;
 	case 128: // qword + qword
 		if (regset->arena->bytes && (off + 16 <= regset->arena->size)) {
-			val->v128.Low = *((ut64 *)(regset->arena->bytes + off));
-			val->v128.High = *((ut64 *)(regset->arena->bytes + off + 8));
+			val->v128.Low = r_read_le64 (regset->arena->bytes + off);
+			val->v128.High = r_read_le64 (regset->arena->bytes + off + 8);
 		} else {
 			R_LOG_WARN ("null or oob arena for current regset");
 		}
@@ -42,10 +42,10 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 		break;
 	case 256:// qword + qword + qword + qword
 		if (regset->arena->bytes && (off + 32 <= regset->arena->size)) {
-			val->v256.Low.Low = *((ut64 *)(regset->arena->bytes + off));
-			val->v256.Low.High = *((ut64 *)(regset->arena->bytes + off + 8));
-			val->v256.High.Low = *((ut64 *)(regset->arena->bytes + off + 16));
-			val->v256.High.High = *((ut64 *)(regset->arena->bytes + off + 24));
+			val->v256.Low.Low = r_read_le64 (regset->arena->bytes + off);
+			val->v256.Low.High = r_read_le64 (regset->arena->bytes + off + 8);
+			val->v256.High.Low = r_read_le64 (regset->arena->bytes + off + 16);
+			val->v256.High.High = r_read_le64 (regset->arena->bytes + off + 24);
 		} else {
 			R_LOG_WARN ("null or oob arena for current regset");
 		}
