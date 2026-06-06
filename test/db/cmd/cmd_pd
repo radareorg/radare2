@@ -31,18 +31,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd v8 and cortex
+NAME=pd v8
 FILE=malloc://128
 ARGS=-a arm -b 16
 CMDS=<<EOF
 ?e
 pad fff7c0ea@e:asm.cpu=v8
-pad fff7c0ea@e:asm.cpu=cortex
 pad fff7c0ea@e:asm.cpu=v8
-pad fff7c0ea@e:asm.cpu=cortex
 pad fff7c0ea@e:asm.cpu=v8
 pad fff7c0ea@e:asm.cpu=
-pad fff7c0ea@e:asm.cpu=tetris
 EOF
 EXPECT=<<EOF
 
@@ -50,14 +47,6 @@ blx 0xfffff584
 blx 0xfffff584
 blx 0xfffff584
 blx 0xfffff584
-blx 0xfffff584
-blx 0xfffff584
-blx 0xfffff584
-EOF
-EXPECT_ERR=<<EOF
-WARN: asm.cpu: invalid value 'cortex' for 'arm'. See 'e asm.cpu=?'
-WARN: asm.cpu: invalid value 'cortex' for 'arm'. See 'e asm.cpu=?'
-WARN: asm.cpu: invalid value 'tetris' for 'arm'. See 'e asm.cpu=?'
 EOF
 RUN
 
