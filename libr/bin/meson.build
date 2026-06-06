@@ -132,7 +132,6 @@ r_bin_sources = [
   'format/pdb/tpi.c',
 # symbol name manglers
   'mangling/cxx.c',
-  'mangling/cxx/cp-demangle.c',
   'mangling/cxx2/cxx2.c',
   'mangling/cxx2/itanium.c',
   'mangling/cxx2/rust.c',
@@ -150,6 +149,12 @@ r_bin_sources = [
   'mangling/swift-sd.c',
   'mangling/swift.c'
 ]
+
+if not get_option('nogpl')
+  r_bin_sources += [
+    'mangling/cxx/cp-demangle.c',
+  ]
+endif
 
 if bin_plugins.contains('pyc') or bin_plugins.contains('pickle')
   r_bin_sources += [

@@ -22,7 +22,10 @@ include $(LIBR)/magic/deps.mk
 STATIC_OBJS=$(addprefix $(LTOP)/bin/p/, $(STATIC_OBJ))
 OBJS=bin.o addrline.o bin_ldr.o bin_write.o demangle.o
 OBJS+=dwarf.o bfilter.o bfile.o bobj.o blang.o
-OBJS+=mangling/cxx/cp-demangle.o ${STATIC_OBJS}
+OBJS+=${STATIC_OBJS}
+ifeq (1,$(WITH_GPL))
+OBJS+=mangling/cxx/cp-demangle.o
+endif
 OBJS+=mangling/cxx2/cxx2.o mangling/cxx2/itanium.o
 OBJS+=mangling/cxx2/rust.o mangling/cxx2/dlang.o
 OBJS+=mangling/cxx2/xlc.o

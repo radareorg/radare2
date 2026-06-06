@@ -2,7 +2,9 @@
 
 #include <r_bin.h>
 #include "../i/private.h"
+#if WITH_GPL
 #include "./cxx/demangle.h"
+#endif
 #include "./cxx2/cxx2.h"
 
 R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
