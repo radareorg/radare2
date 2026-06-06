@@ -147,12 +147,12 @@ NAME=e asm.cpu rejects invalid value
 FILE=-
 ARGS=-a arm -b 16
 CMDS=<<EOF
-e asm.cpu=cortex
+e asm.cpu=v8
 e asm.cpu=tetris
 e asm.cpu
 EOF
 EXPECT=<<EOF
-cortex
+v8
 EOF
 RUN
 
@@ -172,11 +172,11 @@ NAME=e asm.cpu canonicalizes valid value
 FILE=-
 ARGS=-a arm -b 16
 CMDS=<<EOF
-e asm.cpu=CORTEX
+e asm.cpu=V8
 e asm.cpu
 EOF
 EXPECT=<<EOF
-cortex
+v8
 EOF
 RUN
 
@@ -184,7 +184,7 @@ NAME=e asm.cpu clears invalid value on arch switch
 FILE=-
 ARGS=-a arm -b 16
 CMDS=<<EOF
-e asm.cpu=cortex
+e asm.cpu=v8
 e asm.arch=v850
 e asm.cpu
 EOF

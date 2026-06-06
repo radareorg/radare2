@@ -47,12 +47,17 @@ EOF
 EXPECT=<<EOF
 
 blx 0xfffff584
-invalid
-blx 0xfffff584
-invalid
 blx 0xfffff584
 blx 0xfffff584
 blx 0xfffff584
+blx 0xfffff584
+blx 0xfffff584
+blx 0xfffff584
+EOF
+EXPECT_ERR=<<EOF
+WARN: asm.cpu: invalid value 'cortex' for 'arm'. See 'e asm.cpu=?'
+WARN: asm.cpu: invalid value 'cortex' for 'arm'. See 'e asm.cpu=?'
+WARN: asm.cpu: invalid value 'tetris' for 'arm'. See 'e asm.cpu=?'
 EOF
 RUN
 
