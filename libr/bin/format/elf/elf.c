@@ -2142,30 +2142,33 @@ static bool qnx_has_nx(ELFOBJ *eo) {
 		ut64 pos = sh->sh_offset;
 		const ut64 end = pos + sh->sh_size;
 		while (pos + sizeof (Elf_(Nhdr)) <= end) {
-			Elf_(Nhdr) nhdr = {0};
-			if (r_buf_fread_at (eo->b, pos, (ut8 *)&nhdr, "iii", 1) != sizeof (nhdr)) {
+			ut8 nhdr[sizeof (Elf_(Nhdr))] = {0};
+			if (r_buf_read_at (eo->b, pos, nhdr, sizeof (nhdr)) != sizeof (nhdr)) {
 				break;
 			}
-			if (!nhdr.n_namesz && !nhdr.n_descsz) {
+			ut32 n_namesz = r_read_ble32 (nhdr, eo->endian);
+			ut32 n_descsz = r_read_ble32 (nhdr + 4, eo->endian);
+			ut32 n_type = r_read_ble32 (nhdr + 8, eo->endian);
+			if (!n_namesz && !n_descsz) {
 				break;
 			}
 			pos += sizeof (nhdr);
 			const ut64 name_off = pos;
-			const ut64 desc_off = name_off + round_up (nhdr.n_namesz);
-			const ut64 next = desc_off + round_up (nhdr.n_descsz);
+			const ut64 desc_off = name_off + round_up (n_namesz);
+			const ut64 next = desc_off + round_up (n_descsz);
 			if (next > end || desc_off < name_off || next <= pos) {
 				break;
 			}
-			if (nhdr.n_namesz != sizeof (ELF_NOTE_QNX)) {
+			if (n_namesz != sizeof (ELF_NOTE_QNX)) {
 				continue;
 			}
 			char owner[sizeof (ELF_NOTE_QNX)] = {0};
-			ut32 readsz = R_MIN ((ut32)(sizeof (owner) - 1), nhdr.n_namesz);
+			ut32 readsz = R_MIN ((ut32)(sizeof (owner) - 1), n_namesz);
 			r_buf_read_at (eo->b, name_off, (ut8 *)owner, readsz);
-			if (!memcmp (owner, ELF_NOTE_QNX, sizeof (ELF_NOTE_QNX)) && nhdr.n_type == QNT_STACK && nhdr.n_descsz >= 12) {
+			if (!memcmp (owner, ELF_NOTE_QNX, sizeof (ELF_NOTE_QNX)) && n_type == QNT_STACK && n_descsz >= 12) {
 				ut8 desc[12];
 				if (r_buf_read_at (eo->b, desc_off, desc, sizeof (desc)) == sizeof (desc)) {
-					ut32 stack_flags = *(ut32 *)(desc + 8);
+					ut32 stack_flags = r_read_ble32 (desc + 8, eo->endian);
 					// QNX QNT_STACK notes use the last word to flag non-executable stacks
 					return stack_flags != 0;
 				}
@@ -3418,23 +3421,23 @@ static inline bool _calculate_reg_offset(ELFOBJ *eo, RegOffsetState *state) {
 	ut64 offset = 0;
 	const ut64 p_offset = eo->phdr[state->i].p_offset;
 	while (true) {
-		Elf_(Nhdr) elf_nhdr = {0};
+		ut8 elf_nhdr[sizeof (Elf_(Nhdr))] = {0};
 		const size_t elf_nhdr_size = sizeof (Elf_(Nhdr));
-		int ret = r_buf_read_at (eo->b, p_offset + offset, (ut8*) &elf_nhdr, elf_nhdr_size);
+		int ret = r_buf_read_at (eo->b, p_offset + offset, elf_nhdr, elf_nhdr_size);
 		if (ret != elf_nhdr_size) {
 			R_LOG_DEBUG ("Cannot read NOTES hdr from CORE file");
 			success = false;
 			break;
 		}
 
-		ut32 n_type = elf_nhdr.n_type;
+		ut32 n_namesz = r_read_ble32 (elf_nhdr, eo->endian);
+		ut32 n_descsz = r_read_ble32 (elf_nhdr + 4, eo->endian);
+		ut32 n_type = r_read_ble32 (elf_nhdr + 8, eo->endian);
 		if (n_type == NT_PRSTATUS) {
 			break;
 		}
 
-		ut32 n_descsz = round_up (elf_nhdr.n_descsz);
-		ut32 n_namesz = round_up (elf_nhdr.n_namesz);
-		offset += elf_nhdr_size + n_descsz + n_namesz;
+		offset += elf_nhdr_size + round_up (n_descsz) + round_up (n_namesz);
 	}
 
 	state->offset = offset;
@@ -6077,9 +6080,10 @@ static bool get_nt_file_maps(ELFOBJ *eo, RList *core_maps) {
 				return false;
 			}
 
-			ut32 n_descsz = round_up (((Elf_(Nhdr)*)elf_nhdr)->n_descsz);
-			ut32 n_namesz = round_up (((Elf_(Nhdr)*)elf_nhdr)->n_namesz);
-			ut32 n_type = ((Elf_(Nhdr)*)elf_nhdr)->n_type;
+			ut8 *nhdr = (ut8 *)elf_nhdr;
+			ut32 n_descsz = round_up (r_read_ble32 (nhdr + 4, eo->endian));
+			ut32 n_namesz = round_up (r_read_ble32 (nhdr, eo->endian));
+			ut32 n_type = r_read_ble32 (nhdr + 8, eo->endian);
 
 			// round_up can overflow to 0 for values near UT32_MAX
 			if (!n_descsz || !n_namesz) {
@@ -6277,14 +6281,15 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 			continue;
 		}
 		ut64 rvaddr = reloc->offset; // rva (eo, reloc->offset, reloc->rva);
-		ut64 pltptr = 0; // relocated buf tells the section to look at
+		ut64 pltptr = UT64_MAX; // relocated buf tells the section to look at
 #if R_BIN_ELF64
-		r_buf_read_at (eo->b, rvaddr, (ut8*)&pltptr, 8);
+		pltptr = r_buf_read_ble64_at (eo->b, rvaddr, eo->endian);
 #else
-		ut32 n32 = 0;
-		r_buf_read_at (eo->b, rvaddr, (ut8*)&n32, 4);
-		pltptr = n32;
+		pltptr = r_buf_read_ble32_at (eo->b, rvaddr, eo->endian);
 #endif
+		if (pltptr == UT64_MAX) {
+			continue;
+		}
 		bool ismagic = is_important (reloc);
 		if (ismagic) {
 			// text goes after the plt. so its possible that some symbols are pointed locally, thats all lsym is about
