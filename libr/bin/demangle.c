@@ -3,6 +3,7 @@
 #include <r_bin.h>
 #include "i/private.h"
 #include <cxx/demangle.h>
+#include "mangling/cxx2/cxx2.h"
 
 static char *demangle_trunc(RBinFile *bf, char *s) {
 	RBin *bin = bf? bf->rbin: NULL;
@@ -31,6 +32,7 @@ R_API void r_bin_demangle_list(RBin *bin) {
 		"dart",
 		"dlang",
 		"groovy",
+		"ibmxl",
 		"java",
 		"msvc",
 		"objc",
@@ -54,6 +56,14 @@ R_API void r_bin_demangle_list(RBin *bin) {
 			bin->cb_printf ("%s\n", plugin->meta.name);
 		}
 	}
+}
+
+R_API char *r_bin_demangle_dlang(const char *str) {
+	return r_demangle_dlang (str);
+}
+
+R_API char *r_bin_demangle_ibmxl(const char *str) {
+	return r_demangle_ibmxl (str);
 }
 
 R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) {
@@ -95,6 +105,9 @@ R_API int r_bin_demangle_type(const char *str) {
 		}
 		if (!strcmp (str, "cxx") || !strcmp (str, "c++")) {
 			return R_BIN_LANG_CXX;
+		}
+		if (!strcmp (str, "ibmxl") || !strcmp (str, "xlc") || !strcmp (str, "xlc++")) {
+			return R_BIN_LANG_IBMXL;
 		}
 		if (!strcmp (str, "dlang")) {
 			return R_BIN_LANG_DLANG;
@@ -190,9 +203,15 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	case R_BIN_LANG_OBJC: demangled = r_bin_demangle_objc (NULL, str); break;
 	case R_BIN_LANG_SWIFT: demangled = r_bin_demangle_swift (str, bin? bin->options.demangle_usecmd: false, trylib); break;
 	case R_BIN_LANG_CXX: demangled = r_bin_demangle_cxx (bf, str, vaddr); break;
+	case R_BIN_LANG_IBMXL: demangled = r_bin_demangle_ibmxl (str); break;
 	case R_BIN_LANG_PASCAL: demangled = r_bin_demangle_freepascal (str); break;
 	case R_BIN_LANG_MSVC: demangled = r_bin_demangle_msvc (str); break;
-	case R_BIN_LANG_DLANG: demangled = r_bin_demangle_plugin (bin, "dlang", str); break;
+	case R_BIN_LANG_DLANG:
+		demangled = r_demangle_dlang (str);
+		if (!demangled) {
+			demangled = r_bin_demangle_plugin (bin, "dlang", str);
+		}
+		break;
 	}
 	if (libs && demangled && lib) {
 		char *d = r_str_newf ("%s_%s", lib, demangled);

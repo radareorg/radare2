@@ -3,6 +3,7 @@
 #include <r_bin.h>
 #include "../i/private.h"
 #include "./cxx/demangle.h"
+#include "./cxx2/cxx2.h"
 
 R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	const char *rawname = str;
@@ -25,8 +26,10 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	if (p0 == 0) {
 		return p;
 	}
+	bool stripped_us = false;
 	if (p0 == p[1] && p0 == '_') {
 		p++;
+		stripped_us = true;
 	}
 	for (i = 0; prefixes[i]; i++) {
 		int plen = strlen (prefixes[i]);
@@ -47,12 +50,32 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 			*glibcxx = '\0';
 		}
 	}
+	/* JNI entry points (Java_*) are extern "C", never C++ mangled; the cfront
+	 * demanglers below would otherwise misread their embedded "__" as a
+	 * signature separator. */
+	if (r_str_startswith (p, "Java_")) {
+		free (tmpstr);
+		return NULL;
+	}
+	/* Prefer the in-house MIT demangler (cxx2); fall back to the GPL libiberty
+	 * demangler for the rare constructs cxx2 does not yet handle, so there are
+	 * no regressions during the migration. */
+	char *out = r_demangle_ibmxl (p);
+	if (!out) {
+		out = r_demangle_itanium (p);
+	}
 #if WITH_GPL
-	char *out = cplus_demangle_v3 (p, flags);
-#else
-	/* TODO: implement a non-gpl alternative to c++v3 demangler */
-	char *out = NULL;
+	if (!out) {
+		out = cplus_demangle_v3 (p, flags);
+	}
 #endif
+	if (!out) {
+		// pre-Itanium g++ 2.x ABI (foo__1Ai, __ls__3fooi, _$_3foo, ...).
+		// v2 ctor/operator markers are a leading "__", which the macOS-style
+		// underscore strip above would clobber, so undo it for this engine.
+		char *gv2in = (stripped_us && p > tmpstr && p[-1] == '_') ? p - 1 : p;
+		out = r_demangle_gnu_v2 (gv2in);
+	}
 	free (tmpstr);
 	if (out) {
 		char *sign = (char *)strchr (out, '(');
