@@ -908,10 +908,14 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		// Setting the right arch and bits, so regstate will be shown correctly
 		if (plugin->info) {
 			RBinInfo *inf = plugin->info (binfile);
-			R_LOG_INFO ("Setting up coredump arch-bits to: %s-%d", inf->arch, inf->bits);
-			r_config_set (r->config, "asm.arch", inf->arch);
-			r_config_set_i (r->config, "asm.bits", inf->bits);
-			r_bin_info_free (inf);
+			if (inf) {
+				R_LOG_INFO ("Setting up coredump arch-bits to: %s-%d", inf->arch, inf->bits);
+				r_config_set (r->config, "cfg.bigendian", r_str_bool (inf->big_endian));
+				r_config_set (r->config, "asm.arch", inf->arch);
+				r_config_set_i (r->config, "asm.bits", inf->bits);
+				r->anal->reg->endian = inf->big_endian? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
+				r_bin_info_free (inf);
+			}
 		}
 		if (binfile->bo->regstate) {
 			if (r_reg_arena_set_bytes (r->anal->reg, binfile->bo->regstate)) {
