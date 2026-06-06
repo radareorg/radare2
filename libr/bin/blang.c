@@ -62,12 +62,16 @@ static inline bool is_ibmxl_symbol(const char *name) {
 	if (r_str_startswith (name, "__ct__") || r_str_startswith (name, "__dt__") || r_str_startswith (name, "__vft")) {
 		return true;
 	}
-	if (name[0] == '_' && name[1] == '_' && islower ((unsigned char)name[2])) {
+	if (name[0] == '_' && name[1] == '_') {
 		const char *sep = strstr (name + 2, "__");
-		return sep && sep > name + 2;
+		if (!sep || sep == name + 2 || !islower ((unsigned char)name[2])) {
+			return false;
+		}
+		char ch = sep[2];
+		return ch == 'F' || ch == 'H' || ch == 'C' || ch == 'V' || ch == 'Q' || isdigit ((unsigned char)ch);
 	}
 	const char *sep = strstr (name, "__");
-	if (!sep) {
+	if (!sep || sep == name) {
 		return false;
 	}
 	char ch = sep[2];
