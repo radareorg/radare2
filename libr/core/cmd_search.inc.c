@@ -925,7 +925,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		}
 	} else if (!r_config_get_b (core->config, "cfg.debug") && !core->io->va) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
-	} else if (!strcmp (mode, "file")) {
+	} else if (!strcmp (mode, "file") || !strcmp (mode, "raw")) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
 	} else if (!strcmp (mode, "block")) {
 		append_bound (list, core->io, search_itv, core->addr, core->blocksize, 7);
@@ -935,8 +935,6 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 			append_bound (list, core->io, search_itv, m->itv.addr, m->itv.size, m->perm);
 		}
 	} else if (!strcmp (mode, "io.maps")) {
-		ut64 begin = UT64_MAX;
-		ut64 end = UT64_MAX;
 		RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 		RListIter *iter;
 		RIOMapRef *mapref;
@@ -949,25 +947,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 				const ut64 from = r_io_map_begin (map);
 				const ut64 to = r_io_map_end (map);
 				const int rwx = map->perm;
-				if (begin == UT64_MAX) {
-					begin = from;
-				}
-				if (end == UT64_MAX) {
-					end = to;
-				} else {
-					if (end == from) {
-						end = to;
-					} else {
-						append_bound (list, NULL, search_itv,
-							begin, end - begin, rwx);
-						begin = from;
-						end = to;
-					}
-				}
+				append_bound (list, core->io, search_itv, from, to - from, rwx);
 			}
-		}
-		if (end != UT64_MAX) {
-			append_bound (list, NULL, search_itv, begin, end - begin, 7);
 		}
 	} else if (r_str_startswith (mode, "io.maps.")) {
 		const char *sperm = mode + strlen ("io.maps.");

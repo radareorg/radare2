@@ -249,3 +249,64 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+NAME=p-j analysis metadata json keeps offsets
+FILE=-
+CMDS=o--;e hex.cols=4;e search.in=range;e search.from=0;e search.to=16;af+ 0 16 fcn_test;p-j 4~{ranges[0]};p-j 4~{blocks[0]};p-j 4~{blocks[3]}
+EXPECT=<<EOF
+{"from":0,"to":16}
+{"offset":0,"size":4,"flags":1,"functions":1,"in_functions":1,"perm":"r-x"}
+{"offset":12,"size":4,"in_functions":1,"perm":"r-x"}
+EOF
+RUN
+
+NAME=p= p- and p-j raw json ranges
+FILE=-
+CMDS=wx 00112233445566778899aabbccddeeff;e hex.cols=1;e zoom.in=raw;p=ej 1~{entropy[0].value};e search.in=raw;p-ej 1~{entropy[0].value};af+ 0 16 fcn_test;p-j 1~{ranges[0]};p-j 1~{blocks[0].perm}
+EXPECT=<<EOF
+9
+9
+{"from":0,"to":512}
+rwx
+EOF
+RUN
+
+NAME=p-j io.maps json keeps sparse holes addressable
+FILE=malloc://0x100
+CMDS=om-*;om `oq` 0x1000 0x10 0 rwx map1;om `oq` 0x2000 0x10 0 r-- map2;e search.in=io.maps;p-j 4~{ranges[1]};p-j 4~{blocks[1]};p-j 4~{blocks[15]}
+EXPECT=<<EOF
+{"from":8192,"to":8208}
+{"offset":4353,"size":257}
+{"offset":7951,"size":257,"perm":"r--"}
+EOF
+RUN
+
+NAME=p=ej and p-ej io.maps ignore sparse holes
+FILE=malloc://0x100
+CMDS=om-*;om `oq` 0x1000 0x10 0 rwx map1;om `oq` 0x800000000000 0x10 0 r-- map2;e hex.cols=4;e zoom.in=io.maps;p=ej 4~{blocksize};p=ej 4~{entropy[3]};e search.in=io.maps;p-ej 4~{entropy[3]}
+EXPECT=<<EOF
+35184372087812
+{"addr":105553116267532,"value":0}
+{"addr":105553116267532,"value":0}
+EOF
+RUN
+
+NAME=p-j analysis metadata after aa
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=aa;s main;e search.in=anal.fcn;p-j 4~{ranges[0]};p-j 4~{blocks[0].symbols};p-j 4~{blocks[20].perm}
+EXPECT=<<EOF
+{"from":4195580,"to":4195601}
+1
+r-x
+EOF
+RUN
+
+NAME=p-j analysis stats in_functions range relative
+FILE=malloc://0x1000
+CMDS=e search.in=range;e search.from=0x100;e search.to=0x200;e hex.cols=4;af+ 0x110 0x10 fcn_test;p-j 4~{blocksize};p-j 4~{blocks[0]};p-j 4~{blocks[1]}
+EXPECT=<<EOF
+64
+{"offset":256,"size":64,"flags":1,"functions":1,"in_functions":1,"perm":"rwx"}
+{"offset":320,"size":64,"perm":"rwx"}
+EOF
+RUN

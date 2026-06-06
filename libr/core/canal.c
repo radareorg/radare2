@@ -4768,7 +4768,9 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	for (at = from; at < to; at += step) {
 		RIOMap *map = r_io_map_get_at (core->io, at);
 		piece = (at - from) / step;
-		as->block[piece].perm = map ? map->perm: (core->io->desc ? core->io->desc->perm: 0);
+		as->block[piece].perm = map
+			? map->perm
+			: (!core->io->va && core->io->desc ? core->io->desc->perm: 0);
 	}
 	// iter all flags
 	struct block_flags_stat_t u = { .step = step, .from = from, .as = as, .f = core->flags };
@@ -4780,7 +4782,8 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 		}
 		piece = (F->addr - from) / step;
 		as->block[piece].functions++;
-		ut64 last_piece = R_MIN ((F->addr + r_anal_function_linear_size (F) - 1) / step, blocks - 1);
+		ut64 fend = F->addr + r_anal_function_linear_size (F) - 1;
+		ut64 last_piece = R_MIN ((fend - from) / step, blocks - 1);
 		for (; piece <= last_piece; piece++) {
 			as->block[piece].in_functions++;
 		}

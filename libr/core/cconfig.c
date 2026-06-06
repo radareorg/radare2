@@ -3499,6 +3499,7 @@ static bool cb_searchin(void *user, void *data) {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			r_cons_printf (core->cons, "Valid values for search.in (depends on .from/.to and io.va):\n"
 						"range              search between .from/.to boundaries\n"
+						"raw                search the whole file\n"
 						"flag               find boundaries in ranges defined by flags larger than 1 byte\n"
 						"flag:[glob]        find boundaries in flags matching given glob and larger than 1 byte\n"
 						"block              search in the current block\n"
