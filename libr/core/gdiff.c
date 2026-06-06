@@ -75,23 +75,22 @@ R_API bool r_core_gdiff(RCore *c, RCore *c2) {
 }
 
 /* copypasta from radiff2 */
-/// XXX use cb_printf and pass instance
-static void diffrow(ut64 addr, const char *name, ut32 size, int maxnamelen,
-		int digits, ut64 addr2, const char *name2, ut32 size2,
+static void diffrow(RCons *cons, ut64 addr, const char *name, ut32 size,
+		int maxnamelen, int digits, ut64 addr2, const char *name2, ut32 size2,
 		const char *match, double dist, int bare) {
-	// TODO: use RCons.printf
 	if (bare) {
 		if (addr2 == UT64_MAX || !name2) {
-			printf ("0x%016"PFMT64x" |%8s  (%f)\n", addr, match, dist);
+			r_cons_printf (cons, "0x%016"PFMT64x" |%8s  (%f)\n", addr, match, dist);
 		} else {
-			printf ("0x%016"PFMT64x" |%8s  (%f) | 0x%016"PFMT64x"\n", addr, match, dist, addr2);
+			r_cons_printf (cons, "0x%016"PFMT64x" |%8s  (%f) | 0x%016"PFMT64x"\n",
+				addr, match, dist, addr2);
 		}
 	} else {
 		if (addr2 == UT64_MAX || !name2) {
-			printf ("%*s %*d 0x%"PFMT64x" |%8s  (%f)\n",
+			r_cons_printf (cons, "%*s %*d 0x%"PFMT64x" |%8s  (%f)\n",
 				maxnamelen, name, digits, size, addr, match, dist);
 		} else {
-			printf ("%*s %*d 0x%"PFMT64x" |%8s  (%f) | 0x%"PFMT64x"  %*d %s\n",
+			r_cons_printf (cons, "%*s %*d 0x%"PFMT64x" |%8s  (%f) | 0x%"PFMT64x"  %*d %s\n",
 				maxnamelen, name, digits, size, addr, match, dist, addr2,
 				digits, size2, name2);
 		}
@@ -154,7 +153,7 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
 				f->diff->dist = 0;
 				break;
 			}
-			diffrow (f->addr, f->name, r_anal_function_linear_size (f), maxnamelen, digits,
+			diffrow (c->cons, f->addr, f->name, r_anal_function_linear_size (f), maxnamelen, digits,
 							f->diff->addr, f->diff->name, f->diff->size,
 							match, f->diff->dist, bare);
 			break;
@@ -167,7 +166,7 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
 		case R_ANAL_FCN_TYPE_FCN:
 		case R_ANAL_FCN_TYPE_SYM:
 			if (f->diff->type == R_ANAL_DIFF_TYPE_NULL) {
-				diffrow (f->addr, f->name, r_anal_function_linear_size (f), maxnamelen,
+				diffrow (c->cons, f->addr, f->name, r_anal_function_linear_size (f), maxnamelen,
 									digits, f->diff->addr, f->diff->name, f->diff->size,
 									"NEW", 0, bare); //f->diff->dist, bare);
 			}
@@ -243,7 +242,6 @@ R_API void r_core_diff_show_json(RCore *c, RCore *c2) {
 	pj_end (pj);
 
 	char *s = pj_drain (pj);
-	// XXX Use RCons instead
-	printf ("%s\n", s);
+	r_cons_printf (c->cons, "%s\n", s);
 	free (s);
 }
