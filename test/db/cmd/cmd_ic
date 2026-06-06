@@ -1246,5 +1246,29 @@ EXPECT=<<EOF
 - (void)setPasswordField:(UITextField *)arg0;
 // - (void).cxx_destruct;
 @end
+@interface -[AdminViewController deleteAllCredsBtnTap:]
+- (id)_(void);
+@end
+@interface -[MainViewController viewCredentialsTap:]
+- (id)_(void);
+@end
+@interface -[MainViewController showAlertWithTitle:message:]
+- (id)_(void);
+@end
+@interface -[LoginViewController sendUserInfo:withDeviceName:DeviceId:]
+- (id)_(void);
+@end
+@interface -[LoginViewController doLogin]
+- (id)_(void);
+@end
+@interface -[LoginViewController submit:]
+- (id)_(void);
+@end
+@interface -[LoginViewController getHint:]
+- (id)_(void);
+@end
+@interface -[LoginViewController showAlert:]
+- (id)_(void);
+@end
 EOF
 RUN
