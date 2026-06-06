@@ -19,13 +19,121 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
+static bool read_xbe_header(RBuffer *b, xbe_header *h) {
+	ut8 buf[sizeof (*h)];
+	if (r_buf_read_at (b, 0, buf, sizeof (buf)) != sizeof (buf)) {
+		return false;
+	}
+	const ut8 *p = buf;
+	h->magic = r_read_le32 (p);
+	p += sizeof (ut32);
+	memcpy (h->signature, p, sizeof (h->signature));
+	p += sizeof (h->signature);
+	h->base = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->headers_size = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->image_size = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->image_header_size = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->timestamp = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->cert_addr = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->sections = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->sechdr_addr = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->init_flags = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->ep = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->tls_addr = r_read_le32 (p);
+	p += sizeof (ut32);
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (h->pe_shit); i++) {
+		h->pe_shit[i] = r_read_le32 (p);
+		p += sizeof (ut32);
+	}
+	h->debug_path_addr = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->debug_name_addr = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->debug_uname_addr = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->kernel_thunk_addr = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->nonkernel_import_dir_addr = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->lib_versions = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->lib_versions_addr = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->kernel_lib_addr = r_read_le32 (p);
+	p += sizeof (ut32);
+	h->xapi_lib_addr = r_read_le32 (p);
+	p += sizeof (ut32);
+	for (i = 0; i < R_ARRAY_SIZE (h->shit); i++) {
+		h->shit[i] = r_read_le32 (p);
+		p += sizeof (ut32);
+	}
+	return h->magic == XBE_MAGIC;
+}
+
+static bool read_xbe_section(RBuffer *b, ut64 addr, xbe_section *sect) {
+	ut8 buf[sizeof (*sect)];
+	if (r_buf_read_at (b, addr, buf, sizeof (buf)) != sizeof (buf)) {
+		return false;
+	}
+	const ut8 *p = buf;
+	sect->flags = r_read_le32 (p);
+	p += sizeof (ut32);
+	sect->vaddr = r_read_le32 (p);
+	p += sizeof (ut32);
+	sect->vsize = r_read_le32 (p);
+	p += sizeof (ut32);
+	sect->offset = r_read_le32 (p);
+	p += sizeof (ut32);
+	sect->size = r_read_le32 (p);
+	p += sizeof (ut32);
+	sect->name_addr = r_read_le32 (p);
+	p += sizeof (ut32);
+	sect->refcount = r_read_le32 (p);
+	p += sizeof (ut32);
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (sect->shit); i++) {
+		sect->shit[i] = r_read_le32 (p);
+		p += sizeof (ut32);
+	}
+	memcpy (sect->digest, p, sizeof (sect->digest));
+	return true;
+}
+
+static bool read_xbe_lib(RBuffer *b, ut64 addr, xbe_lib *lib) {
+	ut8 buf[sizeof (*lib)];
+	if (r_buf_read_at (b, addr, buf, sizeof (buf)) != sizeof (buf)) {
+		return false;
+	}
+	const ut8 *p = buf;
+	memcpy (lib->name, p, sizeof (lib->name));
+	p += sizeof (lib->name);
+	lib->major = r_read_le16 (p);
+	p += sizeof (ut16);
+	lib->minor = r_read_le16 (p);
+	p += sizeof (ut16);
+	lib->build = r_read_le16 (p);
+	p += sizeof (ut16);
+	lib->flags = r_read_le16 (p);
+	return true;
+}
+
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	r_bin_xbe_obj_t *obj = R_NEW (r_bin_xbe_obj_t);
 	if (!obj) {
 		return false;
 	}
-	st64 r = r_buf_read_at (buf, 0, (ut8 *)&obj->header, sizeof (obj->header));
-	if (r != sizeof (obj->header)) {
+	if (!read_xbe_header (buf, &obj->header)) {
 		R_FREE (obj);
 		return false;
 	}
@@ -111,9 +219,10 @@ static bool sections_vec(RBinFile *bf) {
 	if (addr > bf->size || addr + (sizeof (xbe_section) * h->sections) > bf->size) {
 		goto out_error;
 	}
-	r = r_buf_read_at (bf->buf, addr, (ut8 *) sect, sizeof (xbe_section) * h->sections);
-	if (r < 1) {
-		goto out_error;
+	for (i = 0; i < h->sections; i++) {
+		if (!read_xbe_section (bf->buf, addr + (sizeof (xbe_section) * i), &sect[i])) {
+			goto out_error;
+		}
 	}
 	for (i = 0; i < h->sections; i++) {
 		addr = sect[i].name_addr - h->base;
@@ -153,7 +262,7 @@ out_error:
 static RList *libs(RBinFile *bf) {
 	r_bin_xbe_obj_t *obj;
 	xbe_header *h = NULL;
-	int i, off, libs, r;
+	int i, off, libs;
 	xbe_lib lib;
 	RList *ret;
 	char *s;
@@ -177,8 +286,7 @@ static RList *libs(RBinFile *bf) {
 	if (off > bf->size || off + sizeof (xbe_lib) > bf->size) {
 		goto out_error;
 	}
-	r = r_buf_read_at (bf->buf, off, (ut8 *) &lib, sizeof (xbe_lib));
-	if (r < 1) {
+	if (!read_xbe_lib (bf->buf, off, &lib)) {
 		goto out_error;
 	}
 	lib.name[7] = 0;
@@ -194,8 +302,7 @@ static RList *libs(RBinFile *bf) {
 	if (off > bf->size || off + sizeof (xbe_lib) > bf->size) {
 		goto out_error;
 	}
-	r = r_buf_read_at (bf->buf, off, (ut8 *) &lib, sizeof (xbe_lib));
-	if (r < 1) {
+	if (!read_xbe_lib (bf->buf, off, &lib)) {
 		goto out_error;
 	}
 
@@ -213,8 +320,7 @@ static RList *libs(RBinFile *bf) {
 		if (addr > bf->size || addr + sizeof (xbe_lib) > bf->size) {
 			goto out_error;
 		}
-		r = r_buf_read_at (bf->buf, addr, (ut8 *) &lib, sizeof (xbe_lib));
-		if (r < 1) {
+		if (!read_xbe_lib (bf->buf, addr, &lib)) {
 			goto out_error;
 		}
 		// make sure it ends with 0
@@ -261,8 +367,7 @@ static bool symbols_vec(RBinFile *bf) {
 		if (addr > bf->size || addr + sizeof (sect) > bf->size) {
 			return false;
 		}
-		st64 r = r_buf_read_at (bf->buf, addr, (ut8 *) &sect, sizeof (sect));
-		if (r != sizeof (sect)) {
+		if (!read_xbe_section (bf->buf, addr, &sect)) {
 			return false;
 		}
 		if (kt_addr >= sect.vaddr && kt_addr < sect.vaddr + sect.vsize) {
@@ -276,9 +381,13 @@ static bool symbols_vec(RBinFile *bf) {
 	if (addr > bf->size || addr + sizeof (thunk_addr) > bf->size) {
 		return false;
 	}
-	i = r_buf_read_at (bf->buf, addr, (ut8 *) &thunk_addr, sizeof (thunk_addr));
-	if (i != sizeof (thunk_addr)) {
+	ut8 thunk_buf[sizeof (thunk_addr)];
+	i = r_buf_read_at (bf->buf, addr, thunk_buf, sizeof (thunk_buf));
+	if (i != sizeof (thunk_buf)) {
 		return false;
+	}
+	for (i = 0; i < XBE_MAX_THUNK; i++) {
+		thunk_addr[i] = r_read_le32 (thunk_buf + (i * sizeof (ut32)));
 	}
 	for (i = 0; i < XBE_MAX_THUNK && thunk_addr[i]; i++) {
 		const ut32 thunk_index = thunk_addr[i] ^ 0x80000000;
