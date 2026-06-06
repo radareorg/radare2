@@ -535,6 +535,8 @@ static RBinWasmImportEntry *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut3
 	if (!consume_u7_r (b, bound, &ptr->kind)) {
 		goto beach;
 	}
+	st8 elem_type;
+	st8 content_type;
 	switch (ptr->kind) {
 	case R_BIN_WASM_EXTERNALKIND_Function:
 		if (!consume_u32_r (b, bound, &ptr->type_f)) {
@@ -542,9 +544,10 @@ static RBinWasmImportEntry *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut3
 		}
 		break;
 	case R_BIN_WASM_EXTERNALKIND_Table:
-		if (!consume_s7_r (b, bound, (st8 *)&ptr->type_t.elem_type)) {
+		if (!consume_s7_r (b, bound, &elem_type)) {
 			goto beach;
 		}
+		ptr->type_t.elem_type = (ut8)elem_type;
 		if (!consume_limits_r (b, bound, &ptr->type_t.limits)) {
 			goto beach;
 		}
@@ -555,10 +558,11 @@ static RBinWasmImportEntry *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut3
 		}
 		break;
 	case R_BIN_WASM_EXTERNALKIND_Global:
-		if (!consume_s7_r (b, bound, (st8 *)&ptr->type_g.content_type)) {
+		if (!consume_s7_r (b, bound, &content_type)) {
 			goto beach;
 		}
-		if (!consume_u1_r (b, bound, (ut8 *)&ptr->type_g.mutability)) {
+		ptr->type_g.content_type = (ut8)content_type;
+		if (!consume_u1_r (b, bound, &ptr->type_g.mutability)) {
 			goto beach;
 		}
 		break;
@@ -811,9 +815,11 @@ static RBinWasmGlobalEntry *parse_global_entry(RBinWasmObj *bin, ut64 bound, ut3
 	if (ptr) {
 		ptr->sec_i = index;
 		ptr->file_offset = r_buf_tell (b);
-		if (!consume_u7_r (b, bound, (ut8 *)&ptr->content_type)) {
+		ut8 content_type;
+		if (!consume_u7_r (b, bound, &content_type)) {
 			goto beach;
 		}
+		ptr->content_type = content_type;
 		if (!consume_u1_r (b, bound, &ptr->mutability)) {
 			goto beach;
 		}
