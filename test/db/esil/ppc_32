@@ -265,3 +265,62 @@ EXPECT=<<EOF
 efbeadde
 EOF
 RUN
+
+NAME=isel selects rA when eq condition bit set ppc-32
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 7c64289e @ 0
+aei
+aeim
+ar r4=0x11
+ar r5=0x22
+ar cr0=0
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000011
+EOF
+RUN
+
+NAME=isel selects rB when eq condition bit clear ppc-32
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 7c64289e @ 0
+aei
+aeim
+ar r4=0x11
+ar r5=0x22
+ar cr0=0x40
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000022
+EOF
+RUN
+
+NAME=isel uses literal zero for rA field r0 ppc-32
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 7c604f9e @ 0
+aei
+aeim
+ar r9=0x99
+ar cr7=0
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000000
+EOF
+RUN

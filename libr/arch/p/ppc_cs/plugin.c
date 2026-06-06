@@ -777,6 +777,24 @@ static char *getarg2(PluginData *pd, struct Getarg *gop, int n, const char *sets
 	return pd->words[n];
 }
 
+// Decode an isel CR-bit operand (named "cr<N><suffix>") into profile reg "crN"
+// and a condition 0=lt 1=gt 2=eq (-1 = unparseable or unmodelled so/un bit).
+static int ppc_isel_crbit(struct Getarg *gop, int n, char *regbuf, size_t sz) {
+	cs_ppc_op op = gop->insn->detail->ppc.operands[n];
+	if (op.type != PPC_OP_REG) {
+		return -1;
+	}
+	const char *name = cs_reg_name (gop->handle, op.reg);
+	if (!name || strncmp (name, "cr", 2) || name[2] < '0' || name[2] > '7') {
+		return -1;
+	}
+	const char *suf = name + 3;
+	snprintf (regbuf, sz, "cr%c", name[2]);
+	return !strcmp (suf, "lt") ? 0
+		: !strcmp (suf, "gt") ? 1
+		: !strcmp (suf, "eq") ? 2 : -1;
+}
+
 // Byte-reverse load/store ESIL for `nbytes` (2/4/8) at the indexed (rA|0)+rB
 // address, built per-byte so it is endianness-independent (ESIL has no bswap).
 static void ppc_esil_brx(RAnalOp *op, PluginData *pd, struct Getarg *gop, int nbytes, bool store) {
@@ -974,10 +992,33 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_RMOV;
 			esilprintf (op, "%s,%s,=", ARG (1), ARG (0));
 			break;
-		case PPC_INS_ISEL:
+		case PPC_INS_ISEL: {
+			// isel rD, rA, rB, crb -> rD = CR[crb] ? (rA|0) : rB
+			// unmodelled so/un bits decode to cond < 0: keep the type, emit no ESIL
 			op->type = R_ANAL_OP_TYPE_CMOV;
-			// no ESIL: BC selects an arbitrary CR bit but the CR model only tracks cr0
+			char crbuf[8];
+			int cond = ppc_isel_crbit (&gop, 3, crbuf, sizeof (crbuf));
+			if (cond < 0) {
+				break;
+			}
+			const char *src = (INSOP (1).type == PPC_OP_REG
+				&& INSOP (1).reg != PPC_REG_INVALID) ? ARG (1) : "0";
+			const char *rb = ARG (2);
+			const char *dst = ARG (0);
+			switch (cond) {
+			case 2:
+				esilprintf (op, "%s,!,?{,%s,}{,%s,},%s,=", crbuf, src, rb, dst);
+				break;
+			case 0:
+				esilprintf (op, "0x80,%s,&,!,!,?{,%s,}{,%s,},%s,=", crbuf, src, rb, dst);
+				break;
+			case 1:
+				esilprintf (op, "0x80,%s,&,!,%s,!,!,&,?{,%s,}{,%s,},%s,=",
+					crbuf, crbuf, src, rb, dst);
+				break;
+			}
 			break;
+		}
 		case PPC_INS_LI:
 			op->type = R_ANAL_OP_TYPE_MOV;
 			esilprintf (op, "%s,%s,=", ARG (1), ARG (0));
