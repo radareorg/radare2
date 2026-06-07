@@ -1,7 +1,7 @@
 PREFIX?=/usr
 DESTDIR?=/
 
-R2BINS=radare2 rabin2 rarun2 rasm2 ragg2 rahash2 rax2 ravc2 rafind2 radiff2
+R2BINS=radare2 rabin2 rarun2 rasm2 ragg2 rahash2 rax2 ravc2 rafind2 radiff2 rafs2
 BINS=r2blob
 
 SOURCES= r2blob.c
