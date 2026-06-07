@@ -5470,7 +5470,19 @@ R_API bool r_core_bin_delete(RCore *core, ut32 bf_id) {
 
 static const char *bin_file_arch_bits(RCore *core, RBinInfo *info, int *bits) {
 	const char *arch = info? info->arch: NULL;
-	*bits = (info && info->bits)? info->bits: r_config_get_i (core->config, "asm.bits");
+	if (info && info->bits) {
+		*bits = info->bits;
+	} else if (R_STR_ISEMPTY (arch)) {
+		RBinInfo *cur_info = r_bin_get_info (core->bin);
+		if (cur_info && cur_info != info && R_STR_ISNOTEMPTY (cur_info->arch)) {
+			arch = cur_info->arch;
+			*bits = cur_info->bits? cur_info->bits: r_config_get_i (core->config, "asm.bits");
+		} else {
+			*bits = r_config_get_i (core->config, "asm.bits");
+		}
+	} else {
+		*bits = r_config_get_i (core->config, "asm.bits");
+	}
 	if (R_STR_ISNOTEMPTY (arch)) {
 		return arch;
 	}
