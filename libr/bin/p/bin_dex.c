@@ -383,18 +383,6 @@ static const char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 	return method? dex_get_proto (bin, method->proto_id): NULL;
 }
 
-static ut32 read32(RBuffer* b, ut64 addr) {
-	ut32 n = 0;
-	r_buf_read_at (b, addr, (ut8*)&n, sizeof (n));
-	return r_read_le32 (&n);
-}
-
-static ut16 read16(RBuffer* b, ut64 addr) {
-	ut16 n = 0;
-	r_buf_read_at (b, addr, (ut8*)&n, sizeof (n));
-	return r_read_le16 (&n);
-}
-
 static RList *dex_method_signature2(RBinDexObj *bin, int method_idx) {
 	ut16 type_idx;
 	size_t i;
@@ -421,13 +409,13 @@ static RList *dex_method_signature2(RBinDexObj *bin, int method_idx) {
 	if (!params_off) {
 		return params;
 	}
-	ut32 list_size = read32 (bin->b, params_off);
+	ut32 list_size = r_buf_read_le32_at (bin->b, params_off);
 	for (i = 0; i < list_size; i++) {
 		ut64 of = params_off + 4 + (i * 2);
 		if (of >= bin->size || of < params_off) {
 			break;
 		}
-		type_idx = read16 (bin->b, of);
+		type_idx = r_buf_read_le16_at (bin->b, of);
 		if (type_idx >= bin->header.types_size || type_idx > bin->size) {
 			break;
 		}
@@ -1531,10 +1519,8 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		}
 		if (sb) {
 			for (z = 0; z < types_list_size; z++) {
-				ut16 le16;
 				ut32 off = ifoff + 4 + (z * 2);
-				r_buf_read_at (b, off, (ut8*)&le16, sizeof (le16));
-				int t = r_read_le16 (&le16);
+				int t = r_buf_read_le16_at (b, off);
 				if (t > 0 && t < hdr->types_size) {
 					int tid = dex->types[t].descriptor_id;
 					const char *cn = getstr (dex, tid);
