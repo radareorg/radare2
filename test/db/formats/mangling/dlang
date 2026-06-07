@@ -1,0 +1,39 @@
+NAME=dlang function with args
+FILE=-
+CMDS=!rabin2 -D dlang _D8demangle3fooFiZi
+EXPECT=<<EOF
+demangle.foo(int)
+EOF
+RUN
+
+NAME=dlang member function
+FILE=-
+CMDS=!rabin2 -D dlang _D3std5stdio4File5closeMFNeZv
+EXPECT=<<EOF
+std.stdio.File.close()
+EOF
+RUN
+
+NAME=dlang array type
+FILE=-
+CMDS=!rabin2 -D dlang _D8demangle8demangleFAyaZAya
+EXPECT=<<EOF
+demangle.demangle(immutable(char)[])
+EOF
+RUN
+
+NAME=dlang template and backref
+FILE=-
+CMDS=!rabin2 -D dlang _D8demangle__T3fooTiZQhFZv
+EXPECT=<<EOF
+demangle.foo!(int).foo()
+EOF
+RUN
+
+NAME=dlang D main
+FILE=-
+CMDS=!rabin2 -D dlang _Dmain
+EXPECT=<<EOF
+D main
+EOF
+RUN
