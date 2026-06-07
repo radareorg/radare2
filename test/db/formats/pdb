@@ -1,4 +1,5 @@
 NAME=PDB downloader check
+REQUIRE=network
 FILE=bins/pdb/user32.dll
 CMDS=<<EOF
 !!rabin2 -PP ${R2_FILE} ~PDB
@@ -9,6 +10,7 @@ EOF
 RUN
 
 NAME=PDB downloader json
+REQUIRE=network
 FILE=-
 CMDS=<<EOF
 !!rabin2 -PPj bins/pdb/user32.dll
@@ -19,6 +21,7 @@ EOF
 RUN
 
 NAME=idpdj
+REQUIRE=network
 FILE=bins/pdb/user32.dll
 CMDS=<<EOF
 idpdj

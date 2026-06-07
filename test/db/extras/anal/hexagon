@@ -1,4 +1,5 @@
 NAME=hexagon jumps
+REQUIRE=hexagon
 FILE=bins/elf/analysis/hexagon-hello-loop
 CMDS=<<EOF
 s sym.main

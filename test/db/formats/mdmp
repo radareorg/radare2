@@ -217,6 +217,7 @@ EOF
 RUN
 
 NAME=: 32bit - relocs following
+REQUIRE=network
 FILE=bins/mdmp/hello.dmp
 CMDS=pd 12 @[0x004061cc]
 EXPECT=<<EOF
@@ -349,6 +350,7 @@ EOF
 RUN
 
 NAME=: 64bit - relocs following
+REQUIRE=network
 FILE=bins/mdmp/hello64.dmp
 CMDS=pd 9 @[0x004083ac]
 EXPECT=<<EOF

@@ -97,6 +97,7 @@ static void helpvars(int workers_count) {
 		"R2R_JOBS=%d       # maximum parallel jobs\n"
 		"R2R_TIMEOUT=%d    # timeout after 1 minute (60 * 60)\n"
 		"R2R_OFFLINE=0       # same as passing -u\n"
+		"R2R_NETWORK=0       # run tests marked REQUIRE=network\n"
 		"R2R_SHALLOW=0       # skip 0-100%% random tests\n"
 		"R2R_RADARE2=radare2 # path to radare2 for the cmd tests\n",
 		workers_count,

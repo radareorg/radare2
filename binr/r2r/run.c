@@ -1965,6 +1965,9 @@ static bool require_check(const char *require) {
 		res &= false;
 #endif
 	}
+	if (require_has (require, "network")) {
+		res &= r_sys_getenv_asbool ("R2R_NETWORK");
+	}
 	return res;
 }
 
@@ -1983,6 +1986,9 @@ static bool check_cmd_test_skip(R2RRunConfig *config, R2RCmdTest *cmd_test) {
 		return true;
 	}
 	if (require_has (require, "x86.udis") && !rasm2_has_arch (config, "x86.udis")) {
+		return true;
+	}
+	if (require_has (require, "hexagon") && !rasm2_has_arch (config, "hexagon")) {
 		return true;
 	}
 #if R2R_ASAN
