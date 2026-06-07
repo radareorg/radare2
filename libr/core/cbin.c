@@ -848,6 +848,13 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 	bool havecode = is_executable (obj) | (!!obj->entries);
 	const char *compiled = get_compile_time (bf->sdb);
 	const bool isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
+	int bits = info->bits;
+	if (bits < 1) {
+		bits = r_config_get_i (core->config, "asm.bits");
+		if (bits < 1) {
+			bits = R_SYS_BITS;
+		}
+	}
 
 	if (IS_MODE_SET (mode)) {
 		r_config_set (core->config, "file.type", info->rclass);
@@ -873,7 +880,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 			if (info->arch) {
 				r_config_set (core->config, "asm.arch", info->arch);
 				r_config_set (core->config, "anal.arch", info->arch);
-				snprintf (str, sizeof (str), "%i", info->bits);
+				snprintf (str, sizeof (str), "%i", bits);
 				r_config_set (core->config, "asm.bits", str);
 			}
 			// r_config_set (core->config, "arch.decoder", info->arch);
@@ -899,7 +906,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 		if (R_STR_ISNOTEMPTY (info->charset)) {
 			r_cons_printf (core->cons, "charset %s\n", info->charset);
 		}
-		r_cons_printf (core->cons, "bits %d\n", info->bits);
+		r_cons_printf (core->cons, "bits %d\n", bits);
 		r_cons_printf (core->cons, "os %s\n", info->os);
 		r_cons_printf (core->cons, "endian %s\n", info->big_endian? "big": "little");
 	} else if (IS_MODE_RAD (mode)) {
@@ -914,7 +921,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 						"e asm.bits=%i\n"
 						"e asm.dwarf=%s\n",
 				r_str_bool (info->big_endian),
-				info->bits,
+				bits,
 				r_str_bool (R_BIN_DBG_STRIPPED & info->dbg_info));
 			int v = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 			r_cons_printf (core->cons, "e arch.codealign=%d\n", (v > 0)? v: 0);
@@ -962,7 +969,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 		if (R_STR_ISNOTEMPTY (info->charset)) {
 			pair_str (core, pj, "charset", info->charset);
 		}
-		pair_int (core, pj, "bits", info->bits);
+		pair_int (core, pj, "bits", bits);
 		pair_bool (core, pj, "canary", info->has_canary);
 		if (info->has_nobtcfi) {
 			pair_bool (core, pj, "nobtcfi", info->has_nobtcfi);
