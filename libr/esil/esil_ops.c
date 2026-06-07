@@ -2221,16 +2221,18 @@ static bool esil_double_to_float(REsil *esil) {
 
 static bool esil_float_to_double(REsil *esil) {
 	bool ret = false;
-	RNumFloat d;
+	RNumFloat d = {0};
 	ut64 s = 0;
+	ut64 raw = 0;
 	const RStrs dst = r_esil_pop (esil);
 	const RStrs src = r_esil_pop (esil);
 
-	if (r_esil_get_parm (esil, src, &s) && esil_get_parm_float_strs (esil, dst, &d.f64)) {
-		if (isnan (d.f64) || isinf (d.f64)) {
-			ret = esil_pushnum_float (esil, d.f64);
-		} else if (s == 32) {
-			ret = esil_pushnum_float (esil, (double)d.f32);
+	if (r_esil_get_parm (esil, src, &s) && r_esil_get_parm (esil, dst, &raw)) {
+		d.u64 = raw;
+		if (s == 32) {
+			RNumFloat f = {0};
+			f.u32 = (ut32)raw;
+			ret = esil_pushnum_float (esil, (double)f.f32);
 		} else if (s == 64) {
 			ret = esil_pushnum_float (esil, d.f64);
 		} else if (s == 80 || s == 96 || s == 128 || s == 256) {

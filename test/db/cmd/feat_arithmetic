@@ -94,6 +94,7 @@ NAME=invalid nums
 FILE=-
 CMDS=<<EOF
 e scr.interactive=true
+e asm.arch=x86
 s beach; s
 s batch; s
 s th; s
