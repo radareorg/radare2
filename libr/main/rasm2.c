@@ -463,6 +463,34 @@ static int is_binary(const char *s) {
 	return 0;
 }
 
+static int binstr_to_bytes(const char *s, ut8 *buf, int len) {
+	int bit_count = 0;
+	int byte_count = 0;
+	ut8 byte = 0;
+	for (; *s; s++) {
+		if (*s == '_' || IS_WHITESPACE (*s)) {
+			continue;
+		}
+		if (*s == 'b' && !s[1]) {
+			break;
+		}
+		if (*s != '0' && *s != '1') {
+			return -1;
+		}
+		byte = (byte << 1) | (*s - '0');
+		bit_count++;
+		if (bit_count == 8) {
+			if (byte_count >= len) {
+				return -1;
+			}
+			buf[byte_count++] = byte;
+			bit_count = 0;
+			byte = 0;
+		}
+	}
+	return bit_count? -1: byte_count;
+}
+
 static ut64 pcpos(const char *buf) {
 	ut64 pos = 0;
 	int pair = 0;
@@ -503,24 +531,18 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 	if (blen > 0) {
 		if (r_str_startswith (buf, "Bx")) {
 			buf += 2;
+		} else if (r_str_startswith (buf, "0b")) {
+			buf += 2;
 		}
-		char *nstr = r_str_newf ("%s%s", r_str_startswith (buf, "0b")? "": "0b", buf);
-		if (nstr[strlen (nstr) - 1] == 'b') {
-			nstr[strlen (nstr) - 1] = 0;
+		const int byte_len = binstr_to_bytes (buf, bbuf, sizeof (bbuf));
+		if (byte_len < 1) {
+			R_LOG_ERROR ("Invalid binary string");
+			return 0;
 		}
-		ut64 n = r_num_get (NULL, nstr);
-		free (nstr);
-		memcpy (bbuf, &n, 8);
 		buf = (const char *)&bbuf;
 		as->opt.bin = true;
 		hex = false;
-		if (blen > 32) {
-			r_write_ble64 (&bbuf, n, !R_SYS_ENDIAN);
-			len = 8;
-		} else {
-			r_write_ble32 (&bbuf, n, !R_SYS_ENDIAN);
-			len = 4;
-		}
+		len = byte_len;
 	}
 	ut64 pcaddr = UT64_MAX;
 	if (as->opt.bin) {
@@ -1007,8 +1029,10 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		ret = 0;
 		goto beach;
 	}
-	r_asm_set_bits (as->a, R_STR_ISNOTEMPTY (env_bits)? atoi (env_bits): bits);
-	r_anal_set_bits (as->anal, R_STR_ISNOTEMPTY (env_bits)? atoi (env_bits): bits);
+	bits = R_STR_ISNOTEMPTY (env_bits)? atoi (env_bits): bits;
+	r_asm_set_bits (as->a, bits);
+	r_anal_set_bits (as->anal, bits);
+	as->opt.bits = bits;
 	as->a->syscall = r_syscall_new ();
 	if (R_STR_ISNOTEMPTY (as->opt.cpu)) {
 		// check if selected cpu is valid
