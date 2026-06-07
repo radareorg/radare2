@@ -324,3 +324,294 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=negate ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c6400d0)
+EOF
+EXPECT=<<EOF
+neg r3, r4
+0x00000000 r4,0,-,r3,=
+EOF
+RUN
+
+NAME=subtract from carrying ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c642810)
+EOF
+EXPECT=<<EOF
+subfc r3, r4, r5
+0x00000000 r4,r5,-,r3,=
+EOF
+RUN
+
+NAME=and with complement ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c832878)
+EOF
+EXPECT=<<EOF
+andc r3, r4, r5
+0x00000000 0xffffffffffffffff,r5,^,r4,&,r3,=
+EOF
+RUN
+
+NAME=or with complement ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c832b38)
+EOF
+EXPECT=<<EOF
+orc r3, r4, r5
+0x00000000 0xffffffffffffffff,r5,^,r4,|,r3,=
+EOF
+RUN
+
+NAME=equivalence ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c832a38)
+EOF
+EXPECT=<<EOF
+eqv r3, r4, r5
+0x00000000 r5,r4,^,0xffffffffffffffff,^,r3,=
+EOF
+RUN
+
+NAME=nor bitwise complement ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c8320f8)
+EOF
+EXPECT=<<EOF
+nor r3, r4, r4
+0x00000000 r4,r4,|,0xffffffffffffffff,^,r3,=
+EOF
+RUN
+
+NAME=nand bitwise complement ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c8323b8)
+EOF
+EXPECT=<<EOF
+nand r3, r4, r4
+0x00000000 r4,r4,&,0xffffffffffffffff,^,r3,=
+EOF
+RUN
+
+NAME=rotate left word ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 5c83283e)
+EOF
+EXPECT=<<EOF
+rotlw r3, r4, r5
+0x00000000 r5,r4,ROL,r3,=
+EOF
+RUN
+
+NAME=rotate left word then mask ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 5c832c3c)
+EOF
+EXPECT=<<EOF
+rlwnm r3, r4, r5, 0x10, 0x1e
+0x00000000 r5,r4,ROL,0xfffe,&,r3,=
+EOF
+RUN
+
+NAME=signed modulo word ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c641e16)
+EOF
+EXPECT=<<EOF
+modsw r3, r4, r3
+0x00000000 r3,r4,~%,r3,=
+EOF
+RUN
+
+NAME=return from interrupt restores pc ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 4c000064)
+EOF
+EXPECT=<<EOF
+rfi
+0x00000000 srr0,pc,=
+EOF
+RUN
+
+NAME=subtract from zero extended has no esil without carry model ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 7c640190
+pi 1
+pdj 1~{0.esil}
+EOF
+EXPECT=<<EOF
+subfze r3, r4
+
+EOF
+RUN
+
+NAME=negate emulates ppc-32
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 7c6400d0 @ 0
+aei
+aeim
+ar r4=5
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0xfffffffb
+EOF
+RUN
+
+NAME=subtract from carrying emulates ppc-32
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 7c642810 @ 0
+aei
+aeim
+ar r4=3
+ar r5=10
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000007
+EOF
+RUN
+
+NAME=and with complement emulates ppc-32
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 7c832878 @ 0
+aei
+aeim
+ar r4=0xff
+ar r5=0x0f
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0x000000f0
+EOF
+RUN
+
+NAME=nor bitwise complement emulates ppc-32
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 7c8320f8 @ 0
+aei
+aeim
+ar r4=0x0f
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0xfffffff0
+EOF
+RUN
+
+NAME=nand bitwise complement emulates ppc-32
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 7c8323b8 @ 0
+aei
+aeim
+ar r4=0x0f
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0xfffffff0
+EOF
+RUN
+
+NAME=return from interrupt restores pc emulates ppc-32
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 4c000064 @ 0
+aei
+aeim
+ar srr0=0x40
+aes
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000040
+EOF
+RUN
