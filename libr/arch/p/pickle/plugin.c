@@ -73,9 +73,9 @@ static inline int handle_float(RAnalOp *op, const char *name, int sz) {
 	if (sz <= buflen && sz <= sizeof (op->val)) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		op->size = sz + 1;
+		ut64 raw = r_read_be64 (op->bytes + 1);
 		double d;
-		memcpy (&d, op->bytes + 1, sz);
-		r_mem_swap ((ut8 *)&d, sizeof (d));
+		memcpy (&d, &raw, sizeof (d));
 		op->ptr = op->addr + op->nopcode;
 		op->ptrsize = sz;
 		op->mnemonic = r_str_newf ("%s %lf", name, d);
@@ -520,8 +520,10 @@ static inline int assemble_float(const char *str, ut8 *outbuf, int outsz) {
 	}
 	RNum *num = r_num_new (NULL, NULL, NULL);
 	if (num) {
-		*((double *)outbuf) = r_num_get_double (num, str);
-		r_mem_swap (outbuf, sizeof (double));
+		double d = r_num_get_double (num, str);
+		ut64 raw;
+		memcpy (&raw, &d, sizeof (raw));
+		r_write_be64 (outbuf, raw);
 		r_num_free (num);
 		return sizeof (double);
 	}
