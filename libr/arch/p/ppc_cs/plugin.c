@@ -36,6 +36,8 @@ struct Getarg {
 
 #define PPC_INS_CMP PPC_INS_ALIAS_CMP
 #define PPC_INS_CMPI PPC_INS_ALIAS_CMPI
+#define PPC_INS_CMPL PPC_INS_ALIAS_CMPL
+#define PPC_INS_CMPLI PPC_INS_ALIAS_CMPLI
 #define PPC_INS_MR PPC_INS_ALIAS_MR
 #define PPC_INS_LI PPC_INS_ALIAS_LI
 #define PPC_INS_LIS PPC_INS_ALIAS_LIS
@@ -168,6 +170,9 @@ struct Getarg {
 #define PPC_INS_MTDEAR PPC_INS_ALIAS_MTDEAR
 #define PPC_INS_CLRLDI PPC_INS_ALIAS_CLRLDI
 #define PPC_INS_ROTLDI PPC_INS_ALIAS_ROTLDI
+#define PPC_INS_ROTLW PPC_INS_ALIAS_ROTLW
+#define PPC_INS_ROTLWI PPC_INS_ALIAS_ROTLWI
+#define PPC_INS_ROTLD PPC_INS_ALIAS_ROTLD
 #define PPC_INS_BDNZLRL PPC_INS_ALIAS_BDNZLRL
 
 #define PPC_BC_LT PPC_PRED_LT
@@ -971,6 +976,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 #if CS_API_MAJOR > 4
 		case PPC_INS_CMP:
 		case PPC_INS_CMPI:
+		case PPC_INS_CMPL:
+		case PPC_INS_CMPLI:
 #endif
 			op->type = R_ANAL_OP_TYPE_CMP;
 			op->sign = true;
@@ -1283,6 +1290,86 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				}
 			}
 			break;
+		case PPC_INS_STFD:
+		case PPC_INS_STFDU:
+		case PPC_INS_STFDUX:
+		case PPC_INS_STFDX:
+		case PPC_INS_STFS:
+		case PPC_INS_STFSU:
+		case PPC_INS_STFSUX:
+		case PPC_INS_STFSX:
+		case PPC_INS_STFIWX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			break;
+		case PPC_INS_FADD:
+		case PPC_INS_FADDS:
+		case PPC_INS_FSUB:
+		case PPC_INS_FSUBS:
+		case PPC_INS_FMUL:
+		case PPC_INS_FMULS:
+		case PPC_INS_FDIV:
+		case PPC_INS_FDIVS:
+		case PPC_INS_FMADD:
+		case PPC_INS_FMADDS:
+		case PPC_INS_FMSUB:
+		case PPC_INS_FMSUBS:
+		case PPC_INS_FNMADD:
+		case PPC_INS_FNMADDS:
+		case PPC_INS_FNMSUB:
+		case PPC_INS_FNMSUBS:
+		case PPC_INS_FSQRT:
+		case PPC_INS_FSQRTS:
+		case PPC_INS_FRE:
+		case PPC_INS_FRES:
+		case PPC_INS_FRSQRTE:
+		case PPC_INS_FRSQRTES:
+		case PPC_INS_FSEL:
+#if CS_API_MAJOR > 4
+		case PPC_INS_FTSQRT:
+#endif
+			op->type = R_ANAL_OP_TYPE_MOV;
+			break;
+		case PPC_INS_FMR:
+		case PPC_INS_FNEG:
+		case PPC_INS_FCPSGN:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			break;
+		case PPC_INS_FCMPU:
+			op->type = R_ANAL_OP_TYPE_CMP;
+			break;
+		case PPC_INS_FABS:
+		case PPC_INS_FNABS:
+			op->type = R_ANAL_OP_TYPE_ABS;
+			break;
+		case PPC_INS_FCFID:
+		case PPC_INS_FCFIDS:
+		case PPC_INS_FCFIDU:
+		case PPC_INS_FCFIDUS:
+		case PPC_INS_FCTID:
+		case PPC_INS_FCTIDUZ:
+		case PPC_INS_FCTIDZ:
+		case PPC_INS_FCTIW:
+		case PPC_INS_FCTIWUZ:
+#if CS_API_MAJOR > 4
+		case PPC_INS_FCTIDU:
+		case PPC_INS_FCTIWU:
+#endif
+		case PPC_INS_FCTIWZ:
+		case PPC_INS_FRSP:
+		case PPC_INS_FRIM:
+		case PPC_INS_FRIN:
+		case PPC_INS_FRIP:
+		case PPC_INS_FRIZ:
+			op->type = R_ANAL_OP_TYPE_CAST;
+			break;
+		case PPC_INS_LMW:
+		case PPC_INS_LSWI:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
+		case PPC_INS_STMW:
+		case PPC_INS_STSWI:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			break;
 		case PPC_INS_LHA:
 		case PPC_INS_LHAU:
 		case PPC_INS_LHAUX:
@@ -1396,9 +1483,18 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_SUBC:
 		case PPC_INS_SUBF:
 		case PPC_INS_SUBFIC:
-		case PPC_INS_SUBFZE:
+		case PPC_INS_SUBFC:
 			op->type = R_ANAL_OP_TYPE_SUB;
 			esilprintf (op, "%s,%s,-,%s,=", ARG (1), ARG (2), ARG (0));
+			break;
+		case PPC_INS_NEG:
+			op->type = R_ANAL_OP_TYPE_SUB;
+			esilprintf (op, "%s,0,-,%s,=", ARG (1), ARG (0));
+			break;
+		case PPC_INS_SUBFZE:
+		case PPC_INS_SUBFE:
+		case PPC_INS_SUBFME:
+			op->type = R_ANAL_OP_TYPE_SUB;
 			break;
 		case PPC_INS_ADD:
 		case PPC_INS_ADDI:
@@ -1788,9 +1884,25 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			}
 			break;
+		case PPC_INS_RFI:
+		case PPC_INS_RFID:
+			op->type = R_ANAL_OP_TYPE_RET;
+			op->eob = true;
+			esilprintf (op, "srr0,pc,=");
+			break;
+		case PPC_INS_RFCI:
+		case PPC_INS_RFDI:
+		case PPC_INS_RFMCI:
+#if CS_API_MAJOR > 4
+		case PPC_INS_RFEBB:
+		case PPC_INS_HRFID:
+#endif
+			op->type = R_ANAL_OP_TYPE_RET;
+			op->eob = true;
+			break;
 		case PPC_INS_NOR:
 			op->type = R_ANAL_OP_TYPE_NOR;
-			esilprintf (op, "%s,%s,|,!,%s,=", ARG (2), ARG (1), ARG (0));
+			esilprintf (op, "%s,%s,|,0xffffffffffffffff,^,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_XOR:
 		case PPC_INS_XORI:
@@ -1812,6 +1924,26 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_DIV;
 			esilprintf (op, "%s,%s,/,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
+#if CS_API_MAJOR > 4
+		case PPC_INS_DIVDE:
+		case PPC_INS_DIVWE:
+			op->sign = true;
+		case PPC_INS_DIVDEU:
+		case PPC_INS_DIVWEU:
+			op->type = R_ANAL_OP_TYPE_DIV;
+			break;
+		case PPC_INS_MODSW:
+		case PPC_INS_MODSD:
+			op->sign = true;
+			op->type = R_ANAL_OP_TYPE_MOD;
+			esilprintf (op, "%s,%s,~%%,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_MODUW:
+		case PPC_INS_MODUD:
+			op->type = R_ANAL_OP_TYPE_MOD;
+			esilprintf (op, "%s,%s,%%,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+#endif
 		case PPC_INS_BL:
 		case PPC_INS_BLA:
 			op->type = R_ANAL_OP_TYPE_CALL;
@@ -1824,10 +1956,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_TRAP;
 			break;
 		case PPC_INS_AND:
-		case PPC_INS_NAND:
 		case PPC_INS_ANDI:
 			op->type = R_ANAL_OP_TYPE_AND;
 			esilprintf (op, "%s,%s,&,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_NAND:
+			op->type = R_ANAL_OP_TYPE_AND;
+			esilprintf (op, "%s,%s,&,0xffffffffffffffff,^,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_ANDIS:
 			op->type = R_ANAL_OP_TYPE_AND;
@@ -1841,6 +1976,18 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_ORIS:
 			op->type = R_ANAL_OP_TYPE_OR;
 			esilprintf (op, "16,%s,<<,%s,|,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_ANDC:
+			op->type = R_ANAL_OP_TYPE_AND;
+			esilprintf (op, "0xffffffffffffffff,%s,^,%s,&,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_ORC:
+			op->type = R_ANAL_OP_TYPE_OR;
+			esilprintf (op, "0xffffffffffffffff,%s,^,%s,|,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_EQV:
+			op->type = R_ANAL_OP_TYPE_XOR;
+			esilprintf (op, "%s,%s,^,0xffffffffffffffff,^,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_MFPVR:
 			op->type = R_ANAL_OP_TYPE_MOV;
@@ -1904,6 +2051,21 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_ROL;
 			esilprintf (op, "%s,%s,ROL,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
+		case PPC_INS_ROTLW:
+		case PPC_INS_ROTLWI:
+		case PPC_INS_ROTLD:
+			op->type = R_ANAL_OP_TYPE_ROL;
+			esilprintf (op, "%s,%s,ROL,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_RLWNM:
+			op->type = R_ANAL_OP_TYPE_ROL;
+			if (ARG (3)[0] && ARG (4)[0]) {
+				esilprintf (op, "%s,%s,ROL,%s,&,%s,=", ARG (2), ARG (1), cmask32 (cmaskbuf, ARG (3), ARG (4)), ARG (0));
+			}
+			break;
+		case PPC_INS_RLWIMI:
+			op->type = R_ANAL_OP_TYPE_ROL;
+			break;
 		case PPC_INS_RLDCL:
 		case PPC_INS_RLDICL:
 			op->type = R_ANAL_OP_TYPE_ROL;
@@ -1920,6 +2082,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			// type only: rldic masks mb..63-sh and rldimi inserts into the
 			// destination; neither is expressible via cmask64(mb,me)
 			break;
+		}
+		const char m0 = insn->mnemonic[0];
+		if (op->type == R_ANAL_OP_TYPE_NULL && m0 == 't' && (insn->mnemonic[1] == 'w' || insn->mnemonic[1] == 'd')) {
+			op->sign = true;
+			op->type = R_ANAL_OP_TYPE_TRAP;
+		} else if (m0 == 'f') {
+			op->family = R_ANAL_OP_FAMILY_FPU;
 		}
 		if (mask & R_ARCH_OP_MASK_VAL) {
 			op_fillval (op, handle, insn);

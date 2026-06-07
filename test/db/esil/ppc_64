@@ -165,3 +165,75 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=unsigned modulo doubleword ppc-64
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c642a12)
+EOF
+EXPECT=<<EOF
+modud r3, r4, r5
+0x00000000 r5,r4,%,r3,=
+EOF
+RUN
+
+NAME=unsigned modulo doubleword emulates ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c642a12 @ 0
+aei
+aeim
+ar r4=17
+ar r5=5
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000002
+EOF
+RUN
+
+NAME=signed modulo doubleword emulates ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c642e12 @ 0
+aei
+aeim
+ar r4=0xffffffffffffffef
+ar r5=5
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0xfffffffffffffffe
+EOF
+RUN
+
+NAME=rotate left doubleword emulates ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 78832810 @ 0
+aei
+aeim
+ar r4=0x8000000000000001
+ar r5=1
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000003
+EOF
+RUN
