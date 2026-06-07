@@ -1850,10 +1850,11 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 
 		while (!found && level-- > 0) {
 			ut64 offset_in_got = addr_in_got - obj->pa2va_exec;
-			ut64 addr;
-			if (r_buf_read_at (cache_buf, offset_in_got, (ut8 *)&addr, 8) < 8) {
+			ut8 buf[sizeof (ut64)];
+			if (r_buf_read_at (cache_buf, offset_in_got, buf, sizeof (buf)) < sizeof (buf)) {
 				break;
 			}
+			ut64 addr = r_read_le64 (buf);
 
 			if (level == 2) {
 				target_addr = addr;
