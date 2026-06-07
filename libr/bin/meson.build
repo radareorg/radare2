@@ -134,6 +134,7 @@ r_bin_sources = [
   'mangling/cxx.c',
   'mangling/cxx/cp-demangle.c',
   'mangling/cxx2/armabi.c',
+  'mangling/cxx2/xlc.c',
   'mangling/pascal.c',
   'mangling/demangler.c',
   'mangling/rust.c',

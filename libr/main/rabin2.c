@@ -557,6 +557,7 @@ static char *__demangleAs(RBin *bin, int type, const char *file) {
 	char *res = NULL;
 	switch (type) {
 	case R_BIN_LANG_CXX: res = r_bin_demangle_cxx (NULL, file, 0); break;
+	case R_BIN_LANG_IBMXL: res = r_bin_demangle_ibmxl (file); break;
 	case R_BIN_LANG_JAVA: res = r_bin_demangle_java (file); break;
 	case R_BIN_LANG_OBJC: res = r_bin_demangle_objc (NULL, file); break;
 	case R_BIN_LANG_SWIFT: res = r_bin_demangle_swift (file, syscmd, bin->options.demangle_trylib); break;
@@ -995,7 +996,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				}
 				res = __demangleAs (bin, type, s);
 				if (!res) {
-					R_LOG_ERROR ("Unknown lang to demangle. Use: cxx, msvc, dlang, rust, pascal, java, objc, swift");
+					R_LOG_ERROR ("Unknown lang to demangle. Use: cxx, ibmxl, msvc, dlang, rust, pascal, java, objc, swift");
 					r_core_fini (&core);
 					free (state.stdin_buf);
 					return 1;

@@ -51,9 +51,36 @@ static inline bool is_cxx_symbol(const char *name) {
 	return false;
 }
 
+static inline bool is_ibmxl_symbol(const char *name) {
+	R_RETURN_VAL_IF_FAIL (name, false);
+	if (*name == '.') {
+		name++;
+	}
+	if (*name == '?' || r_str_startswith (name, "_Z") || r_str_startswith (name, "__Z")) {
+		return false;
+	}
+	if (r_str_startswith (name, "__ct__") || r_str_startswith (name, "__dt__") || r_str_startswith (name, "__vft")) {
+		return true;
+	}
+	if (name[0] == '_' && name[1] == '_') {
+		const char *sep = strstr (name + 2, "__");
+		if (!sep || sep == name + 2 || !islower ((unsigned char)name[2])) {
+			return false;
+		}
+		char ch = sep[2];
+		return ch == 'F' || ch == 'H' || ch == 'C' || ch == 'V' || ch == 'Q' || isdigit ((unsigned char)ch);
+	}
+	const char *sep = strstr (name, "__");
+	if (!sep || sep == name) {
+		return false;
+	}
+	char ch = sep[2];
+	return ch == 'F' || ch == 'H' || ch == 'C' || ch == 'V' || ch == 'Q' || isdigit ((unsigned char)ch);
+}
+
 static bool check_cxx(RBinSymbol *sym) {
 	const char *sym_name = r_bin_name_tostring2 (sym->name, 'o');
-	return is_cxx_symbol (sym_name);
+	return is_cxx_symbol (sym_name) || is_ibmxl_symbol (sym_name);
 }
 
 static bool check_msvc(RBinSymbol *sym) {
@@ -276,6 +303,9 @@ R_IPI int r_bin_lang_type(RBinFile * R_NULLABLE bf, const char * R_NULLABLE def,
 		return type;
 	}
 	if (sym) {
+		if (is_ibmxl_symbol (sym)) {
+			return R_BIN_LANG_IBMXL;
+		}
 		if (r_str_startswith (sym, "__")) {
 			return R_BIN_LANG_CXX;
 		}
@@ -306,6 +336,8 @@ R_API const char *r_bin_lang_tostring(int lang) {
 		return (lang & R_BIN_LANG_BLOCKS)? "c with blocks": "c";
 	case R_BIN_LANG_CXX:
 		return (lang & R_BIN_LANG_BLOCKS)? "c++ with blocks": "c++";
+	case R_BIN_LANG_IBMXL:
+		return "ibmxl";
 	case R_BIN_LANG_DLANG:
 		return "d";
 	case R_BIN_LANG_OBJC:

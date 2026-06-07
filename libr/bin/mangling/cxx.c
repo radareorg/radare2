@@ -57,8 +57,11 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	char *out = NULL;
 #endif
 	if (!out) {
-		char *arm_in = (stripped_us && p > tmpstr && p[-1] == '_') ? p - 1 : p;
-		out = r_demangle_arm (arm_in);
+		char *cxx2_in = (stripped_us && p > tmpstr && p[-1] == '_') ? p - 1 : p;
+		out = r_demangle_ibmxl (cxx2_in);
+		if (!out) {
+			out = r_demangle_arm (cxx2_in);
+		}
 	}
 	free (tmpstr);
 	if (out) {

@@ -16,6 +16,7 @@ c++
 dart
 dlang
 groovy
+ibmxl
 java
 msvc
 objc
@@ -32,6 +33,66 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 unit example sumofsquares(longint)longint
+EOF
+RUN
+
+NAME=ibm xl cxx global functions
+FILE=-
+CMDS=<<EOF
+!rabin2 -D ibmxl foo__Fv
+!rabin2 -D ibmxl foo__Fi
+!rabin2 -D ibmxl foo__FPCc
+EOF
+EXPECT=<<EOF
+foo()
+foo(int)
+foo(const char *)
+EOF
+RUN
+
+NAME=ibm xl cxx member functions
+FILE=-
+CMDS=<<EOF
+!rabin2 -D ibmxl bar__3Fooi
+!rabin2 -D ibmxl f__1XFi
+!rabin2 -D ibmxl getAverage__7AverageFv
+EOF
+EXPECT=<<EOF
+Foo::bar(int)
+X::f(int)
+Average::getAverage()
+EOF
+RUN
+
+NAME=ibm xl cxx constructors operators and templates
+FILE=-
+CMDS=<<EOF
+!rabin2 -D ibmxl __ct__3FooFv
+!rabin2 -D ibmxl __dt__3FooFv
+!rabin2 -D ibmxl __pl__F8IteratorXTi_l
+!rabin2 -D ibmxl f__1AXTi_Fv
+EOF
+EXPECT=<<EOF
+Foo::Foo()
+Foo::~Foo()
+operator+(Iterator<int>, long)
+A<int>::f()
+EOF
+RUN
+
+NAME=ibm xl cxx repeated parameters and qualified classes
+FILE=-
+CMDS=<<EOF
+!rabin2 -D ibmxl foo__FiT1
+!rabin2 -D ibmxl foo__FPPiPCPi
+!rabin2 -D ibmxl Q2_1X1Y
+!rabin2 -D cxx foo__Fv
+EOF
+EXPECT=<<EOF
+foo(int, int)
+foo(int **, int * const *)
+X::Y
+foo()
 EOF
 RUN
 

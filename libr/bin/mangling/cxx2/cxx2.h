@@ -23,6 +23,7 @@ extern "C" {
 // Core engines. Each takes the raw symbol (leading underscores optional) and
 // returns a newly allocated demangled string, or NULL on failure.
 char *r_demangle_arm(const char *mangled);      // __ct__1cFi (pre-Itanium ARM/cfront ABI)
+char *r_demangle_ibmxl(const char *mangled);    // foo__Fv (legacy IBM XL C++)
 
 #ifdef __cplusplus
 }
