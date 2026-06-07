@@ -438,6 +438,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=PE: reject fuzzed PL without PE optional header
+FILE=bins/fuzzed/minified_crash
+CMDS=aaa;afl~entry0
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME=EFI bootloader rv64
 FILE=bins/efi/haiku_loader_riscv64.efi
 CMDS=i~machine

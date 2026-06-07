@@ -11,6 +11,18 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return pe? pe->kv: NULL;
 }
 
+static ut64 pe_file_size_bound(RBinFile *bf, RBinPEObj *pe) {
+	ut64 size = pe->size;
+	ut64 fbufsize = bf->buf? r_buf_size (bf->buf): 0;
+	if (fbufsize && fbufsize != UT64_MAX && fbufsize < size) {
+		size = fbufsize;
+	}
+	if (bf->size && bf->size != UT64_MAX && bf->size < size) {
+		size = bf->size;
+	}
+	return size;
+}
+
 static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
 	RBinSymbol *m = r_bin_get_symbol_at (bf->rbin, vaddr);
@@ -201,6 +213,7 @@ static bool sections_vec(RBinFile *bf) {
 	}
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	struct r_bin_pe_section_t *sections = pe->sections;
+	const ut64 file_size = pe_file_size_bound (bf, pe);
 
 	PE_(r_bin_pe_check_sections) (pe, &sections);
 	for (i = 0; !sections[i].last; i++) {
@@ -215,8 +228,9 @@ static bool sections_vec(RBinFile *bf) {
 			sec->name = r_str_newf ("noname%d", i);
 		}
 		sec->size = sections[i].size;
-		if (sec->size > pe->size) {
-			if (sections[i].vsize < pe->size) {
+		const bool invalid_raw_range = sec->size > file_size || (sec->size > 0 && sections[i].paddr >= file_size);
+		if (sec->size > file_size) {
+			if (sections[i].vsize < file_size) {
 				sec->size = sections[i].vsize;
 			} else {
 				//hack give it page size
@@ -225,6 +239,9 @@ static bool sections_vec(RBinFile *bf) {
 		}
 		sec->vsize = sections[i].vsize;
 		if (!sec->vsize && sec->size) {
+			sec->vsize = sec->size;
+		}
+		if (invalid_raw_range && sec->vsize > sec->size) {
 			sec->vsize = sec->size;
 		}
 		sec->paddr = sections[i].paddr;
