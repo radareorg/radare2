@@ -77,10 +77,10 @@ R_IPI bool r_bin_mdt_check_buffer(RBuffer *b) {
 		return false;
 	}
 
-	// Simple check: read first segment flags to check for MDT layout marker
-	ut32 flags = 0;
-	if (r_buf_read_at (b, 0x34 + 0x18, (ut8*)&flags, 4) == 4) {
-		return is_layout_bin (flags);
+	ut8 flags[4];
+	if (r_buf_read_at (b, 0x34 + 0x18, flags, sizeof (flags)) == sizeof (flags)) {
+		ut32 p_flags = r_buf_read8_at (b, EI_DATA) == ELFDATA2MSB? r_read_be32 (flags): r_read_le32 (flags);
+		return is_layout_bin (p_flags);
 	}
 	return false;
 }
