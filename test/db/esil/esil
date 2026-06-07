@@ -412,6 +412,7 @@ RUN
 NAME=mnemonic shift/rotate ops
 FILE=-
 CMDS=<<EOF
+e asm.bits=64
 ae 1,2,LSL
 ae 1,4,LSR
 ae 1,0xffffffffffffffff,ASR

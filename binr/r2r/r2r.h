@@ -8,7 +8,6 @@
 
 typedef struct r2r_cmd_test_t R2RCmdTest;
 typedef struct r2r_asm_test_t R2RAsmTest;
-typedef struct r2r_test_to_skip_t R2RTestToSkip;
 typedef struct r2r_json_test_t R2RJsonTest;
 typedef struct r2r_fuzz_test_t R2RFuzzTest;
 typedef struct r2r_test_t R2RTest;
@@ -102,11 +101,6 @@ typedef struct r2r_asm_test_t {
 	size_t bytes_size;
 } R2RAsmTest;
 
-typedef struct r2r_test_to_skip_t {
-	const char *dir;
-	const char *name;
-} R2RTestToSkip;
-
 typedef struct r2r_json_test_t {
 	ut64 line;
 	char *cmd;
@@ -151,6 +145,7 @@ typedef struct r2r_test_database_t {
 typedef struct r2r_run_config_t {
 	char *r2_cmd;
 	char *rasm2_cmd;
+	char *rasm2_archs;
 	const char *json_test_file;
 	ut64 timeout_ms;
 	int shallow;
@@ -244,6 +239,7 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test,
 R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test);
 R_API bool r2r_check_jq_available(void);
 R_API bool r2r_check_valgrind_available(void);
+R_API void r2r_archs(R2RRunConfig *config);
 R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner, void *user);
 R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test);
 R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test);

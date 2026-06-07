@@ -1107,6 +1107,18 @@ static R2RProcessOutput *subprocess_runner(const char *file, const char *args[],
 	return out;
 }
 
+R_API void r2r_archs(R2RRunConfig *config) {
+	const char *argv[] = { "-L" };
+	R2RProcessOutput *out = subprocess_runner (config->rasm2_cmd, argv, R_ARRAY_SIZE (argv), NULL, NULL, 0, R_MIN (config->timeout_ms, 10000), NULL);
+	if (out && out->ret == 0 && out->out) {
+		config->rasm2_archs = strdup (out->out);
+	}
+	r2r_process_output_free (out);
+	if (!config->rasm2_archs) {
+		config->rasm2_archs = strdup ("");
+	}
+}
+
 #if R2__WINDOWS__
 static char *convert_win_cmds(const char *cmds) {
 	char *r = malloc (strlen (cmds) + 1);
@@ -1858,67 +1870,96 @@ R_API bool r2r_test_broken(R2RTest *test) {
 	return false;
 }
 
+static bool require_has(const char *require, const char *token) {
+	if (!require || !token) {
+		return false;
+	}
+	const size_t token_len = strlen (token);
+	const char *p = require;
+	while (*p) {
+		while (IS_WHITESPACE (*p) || *p == ',' || *p == ';') {
+			p++;
+		}
+		const char *q = p;
+		while (*q && !IS_WHITESPACE (*q) && *q != ',' && *q != ';') {
+			q++;
+		}
+		if (q - p == token_len && !strncmp (p, token, token_len)) {
+			return true;
+		}
+		p = q;
+	}
+	return false;
+}
+
 static bool require_check(const char *require) {
 	if (R_STR_ISEMPTY (require)) {
 		return true;
 	}
 	bool res = true;
-	if (strstr (require, "gas")) {
+	if (require_has (require, "gas")) {
 		char *as_bin = r_file_path ("as");
 		res &= (bool)as_bin;
 		free (as_bin);
 	}
-	if (strstr (require, "unix")) {
+	if (require_has (require, "unix")) {
 #if R2__UNIX__
 		res &= true;
 #else
 		res = false;
 #endif
 	}
-	if (strstr (require, "windows")) {
+	if (require_has (require, "windows")) {
 #if R2__WINDOWS__
 		res &= true;
 #else
 		res = false;
 #endif
 	}
-	if (strstr (require, "linux")) {
+	if (require_has (require, "linux")) {
 #if __linux__
 		res &= true;
 #else
 		res = false;
 #endif
 	}
-	if (strstr (require, "arm")) {
+	if (require_has (require, "arm")) {
 #if __arm64__ || __arm__
 		res &= true;
 #else
 		res &= false;
 #endif
 	}
-	if (strstr (require, "x86")) {
+	if (require_has (require, "x86")) {
 #if __i386__ || __x86_64__
 		res &= true;
 #else
 		res &= false;
 #endif
 	}
-	if (strstr (require, "little")) {
+	if (require_has (require, "little")) {
 #if R_SYS_ENDIAN == 0
 		res &= true;
 #else
 		res &= false;
 #endif
 	}
-	if (strstr (require, "gpl")) {
+	if (require_has (require, "gpl")) {
 #if WITH_GPL
 		res &= true;
 #else
 		res &= false;
 #endif
 	}
-	if (strstr (require, "zydis")) {
+	if (require_has (require, "zydis")) {
 #if WANT_ZYDIS
+		res &= true;
+#else
+		res &= false;
+#endif
+	}
+	if (require_has (require, "arm.v35")) {
+#if WANT_V35
 		res &= true;
 #else
 		res &= false;
@@ -1927,22 +1968,26 @@ static bool require_check(const char *require) {
 	return res;
 }
 
+static bool rasm2_has_arch(R2RRunConfig *config, const char *arch) {
+	if (!config || !config->rasm2_archs || R_STR_ISEMPTY (arch)) {
+		return true;
+	}
+	return require_has (config->rasm2_archs, arch);
+}
+
 // Check cmd/leak test compatibility and early skip conditions
-static bool check_cmd_test_skip(R2RCmdTest *cmd_test) {
+static bool check_cmd_test_skip(R2RRunConfig *config, R2RCmdTest *cmd_test) {
 	const char *require = cmd_test->require.value;
 	if (!require_check (require)) {
 		R_LOG_WARN ("Skipping because of %s", require);
 		return true;
 	}
+	if (require_has (require, "x86.udis") && !rasm2_has_arch (config, "x86.udis")) {
+		return true;
+	}
 #if R2R_ASAN
 	if (cmd_test->skiponasan.value) {
 		R_LOG_WARN ("Skipping test because of SKIPONASAN");
-		return true;
-	}
-#endif
-#if WANT_V35 == 0
-	if (cmd_test->args.value && strstr (cmd_test->args.value, "arm.v35")) {
-		R_LOG_WARN ("Skipping test because it requires arm.v35");
 		return true;
 	}
 #endif
@@ -1964,14 +2009,10 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			ret->run_failed = false;
 		} else {
 			R2RCmdTest *cmd_test = test->cmd_test;
-			if (check_cmd_test_skip (cmd_test)) {
+			if (check_cmd_test_skip (config, cmd_test)) {
 				success = true;
 				ret->run_failed = false;
-#if R2R_ASAN
-				if (cmd_test->skiponasan.value) {
-					ret->run_skipped = true;
-				}
-#endif
+				ret->run_skipped = true;
 				break;
 			}
 			R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
@@ -1987,6 +2028,12 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			ret->run_failed = false;
 		} else {
 			R2RAsmTest *at = test->asm_test;
+			if (!rasm2_has_arch (config, at->arch)) {
+				success = true;
+				ret->run_failed = false;
+				ret->run_skipped = true;
+				break;
+			}
 			R2RAsmTestOutput *out = r2r_run_asm_test (config, at);
 			success = r2r_check_asm_test (out, at);
 			const bool is_broken = at->mode & R2R_ASM_TEST_MODE_BROKEN;
@@ -2050,14 +2097,10 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			ret->run_failed = false;
 		} else {
 			R2RCmdTest *cmd_test = test->cmd_test;
-			if (check_cmd_test_skip (cmd_test)) {
+			if (check_cmd_test_skip (config, cmd_test)) {
 				success = true;
 				ret->run_failed = false;
-#if R2R_ASAN
-				if (cmd_test->skiponasan.value) {
-					ret->run_skipped = true;
-				}
-#endif
+				ret->run_skipped = true;
 				break;
 			}
 			R2RProcessOutput *out = r2r_run_leak_test (config, cmd_test, subprocess_runner, NULL);

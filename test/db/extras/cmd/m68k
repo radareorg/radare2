@@ -27,6 +27,7 @@ RUN
 NAME=negative branch bug 32bit
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.cpu=68020
 e asm.arch=m68k
 s 4
 wx 60fffffffffc
@@ -124,6 +125,7 @@ RUN
 
 NAME="m68k: m68k 32bit negative branch"
 CMDS=<<EOF
+e asm.cpu=68020
 e asm.arch=m68k
 s 0x100
 wx 6affffffff7e

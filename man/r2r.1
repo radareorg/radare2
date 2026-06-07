@@ -166,9 +166,40 @@ Extra arguments passed directly to r2 before
 .Dq -Qc
 and the command block.
 .It Cm REQUIRE
-Skip condition string. Supported tokens are
-.Dq gas , unix , windows , linux , arm , x86 , little .
-Known host tokens are checked at run time; if unsupported, the test is skipped.
+Whitespace-, comma- or semicolon-separated requirement tokens.
+All listed requirements must be available; otherwise the test is skipped.
+Accepted values are:
+.Bl -tag -width "x86.udis"
+.It Cm gas
+GNU assembler
+.Pq Pa as
+is available in
+.Ev PATH .
+.It Cm unix
+The host is Unix-like.
+.It Cm windows
+The host is Windows.
+.It Cm linux
+The host is Linux.
+.It Cm arm
+The host CPU is ARM.
+.It Cm x86
+The host CPU is x86.
+.It Cm little
+The host is little-endian.
+.It Cm gpl
+radare2 was built with GPL plugins enabled.
+.It Cm zydis
+radare2 was built with Zydis support.
+.It Cm arm.v35
+radare2 was built with ARM v35 support.
+.It Cm x86.udis
+The selected
+.Nm rasm2
+binary lists the
+.Cm x86.udis
+architecture.
+.El
 .It Cm REPEAT
 Numeric repeat count.
 The test command is executed that many times; only the last output is checked.

@@ -583,13 +583,6 @@ static R2RTestFrom test_type_for_path(const char *path) {
 }
 
 static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool skip_json_tests, bool skip_leak_tests) {
-#if WANT_V35 == 0
-	R2RTestToSkip v35_tests_to_skip[] = {
-		{ "asm", "arm.v35_64" },
-		{ "esil", "arm_64" },
-		{ "tools", "rasm2" },
-	};
-#endif
 	if (depth <= 0) {
 		R_LOG_ERROR ("Directories for loading tests too deep: %s", path);
 		return false;
@@ -614,26 +607,6 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 				R_LOG_WARN ("Skipping %s" R_SYS_DIR "%s because it requires additional dependencies", shortpath (path), subname);
 				continue;
 			}
-#if WANT_V35 == 0
-			bool skip = false;
-			size_t i = 0;
-			for (; i < sizeof (v35_tests_to_skip) / sizeof (R2RTestToSkip); i++) {
-				R2RTestToSkip test = v35_tests_to_skip[i];
-				char *testdir = r_str_newf (R_SYS_DIR "%s", test.dir);
-				bool is_dir = r_str_endswith (path, testdir);
-				free (testdir);
-				if (is_dir) {
-					if (!strcmp (subname, test.name)) {
-						R_LOG_WARN ("Skipping test %s" R_SYS_DIR "%s because it requires arm.v35", shortpath (path), subname);
-						skip = true;
-						break;
-					}
-				}
-			}
-			if (skip) {
-				continue;
-			}
-#endif
 			if (skip_asm && test_from.type == R2R_TEST_TYPE_ASM) {
 				R_LOG_INFO ("R2R_SKIP_ASM: Skipping %s", shortpath (path));
 				continue;
@@ -665,6 +638,10 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 		return true;
 	}
 	if (skip_leak_tests && tff.type == R2R_TEST_TYPE_LEAK) {
+		return true;
+	}
+	if (strstr (path, R_SYS_DIR "archos" R_SYS_DIR) && (r_sys_getenv_asbool ("R2R_SKIP_ARCHOS") || tff.archos)) {
+		R_LOG_INFO ("Skipping %s because it does not match the current platform \"%s\"", shortpath (path), R_SYS_ARCHOSBITS);
 		return true;
 	}
 	switch (tff.type) {

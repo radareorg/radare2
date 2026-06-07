@@ -177,7 +177,11 @@ else
 	QEMU_R2R="$QEMU_RUN"
 	WRAP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/r2-mipsbe.XXXXXX")" || exit 1
 	trap 'rm -rf "$WRAP_DIR"' EXIT HUP INT TERM
-	for bin in r2 radare2 rabin2 rarun2 rasm2 ragg2 rahash2 rax2 ravc2 rafind2 radiff2 ; do
+	mkdir -p "$WRAP_DIR/home" "$WRAP_DIR/data" "$WRAP_DIR/config"
+	HOME="$WRAP_DIR/home"
+	XDG_DATA_HOME="$WRAP_DIR/data"
+	XDG_CONFIG_HOME="$WRAP_DIR/config"
+	for bin in r2 radare2 rabin2 rarun2 rasm2 ragg2 rahash2 rax2 ravc2 rafind2 radiff2 rafs2 ; do
 		if [ -e "${ROOT}/binr/blob/$bin" ]; then
 			make_qemu_wrapper "$WRAP_DIR/$bin" "${ROOT}/binr/blob/$bin"
 		fi
@@ -186,13 +190,18 @@ else
 	R2R_RADARE2_BIN="$WRAP_DIR/radare2"
 	R2R_RASM2_BIN="$WRAP_DIR/rasm2"
 	PATH="${WRAP_DIR}:${PATH}"
+	R2R_SKIP_LEAK="${R2R_SKIP_LEAK:-1}"
 fi
 
 export PATH
+export HOME
+export XDG_DATA_HOME
+export XDG_CONFIG_HOME
+export R2R_SKIP_LEAK
 export R2_BIN="$R2_BIN_PATH"
 export R2R_RADARE2="$R2R_RADARE2_BIN"
 export R2R_RASM2="$R2R_RASM2_BIN"
-export R2R_JOBS="${R2R_JOBS:-8}"
+export R2R_JOBS="${R2R_JOBS:-1}"
 export R2_MAGICPATH="${R2_MAGICPATH:-${ROOT}/libr/magic/d/default}"
 need_file "$R2_MAGICPATH"
 

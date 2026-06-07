@@ -1,5 +1,6 @@
 NAME=String udis86
 FILE=bins/elf/analysis/main
+REQUIRE=x86.udis
 CMDS=<<EOF
 e asm.arch = x86.udis
 e asm.arch=x86
@@ -16,6 +17,7 @@ RUN
 
 NAME="16bit segment bounds"
 FILE=malloc://1024k
+REQUIRE=x86.udis
 CMDS=<<EOF
 e asm.arch=x86.udis
 e asm.bits=16
@@ -30,6 +32,7 @@ EOF
 RUN
 
 NAME="udis1"
+REQUIRE=x86.udis
 CMDS=<<EOF
 e asm.arch=x86.udis
 e asm.bits=32
@@ -47,6 +50,7 @@ EOF
 RUN
 
 NAME="udis2"
+REQUIRE=x86.udis
 CMDS=<<EOF
 e asm.arch=x86.udis
 e asm.bits=32
@@ -62,6 +66,7 @@ EOF
 RUN
 
 NAME="udis3"
+REQUIRE=x86.udis
 CMDS=<<EOF
 e asm.arch=x86.udis
 e asm.bits=32
@@ -80,6 +85,7 @@ RUN
 
 NAME="axt udis86"
 FILE=bins/elf/analysis/main
+REQUIRE=x86.udis
 CMDS=<<EOF
 e asm.arch = x86.udis
 e anal.arch = x86.udis
@@ -95,6 +101,7 @@ RUN
 
 NAME="axt udis86: IOLI0"
 FILE=bins/elf/ioli/crackme0x00
+REQUIRE=x86.udis
 CMDS=<<EOF
 e asm.arch = x86.udis
 e anal.arch = x86.udis
@@ -111,6 +118,7 @@ RUN
 NAME="axf string ref udis86"
 BROKEN=1
 FILE=bins/elf/ioli/crackme0x03
+REQUIRE=x86.udis
 CMDS=<<EOF
 e asm.arch = x86.udis
 e anal.arch = x86.udis

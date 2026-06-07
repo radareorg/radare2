@@ -598,6 +598,7 @@ static void r2r_state_fini(R2RState *state) {
 	r_th_cond_free (state->cond);
 	free (state->run_config.r2_cmd);
 	free (state->run_config.rasm2_cmd);
+	free (state->run_config.rasm2_archs);
 }
 
 // Returns: 0 = success, -1 = error, 1 = special exit (e.g., .c file handling)
@@ -1256,6 +1257,7 @@ int main(int argc, char **argv) {
 		goto cleanup;
 	}
 	atexit (r2r_subprocess_fini);
+	r2r_archs (&state.run_config);
 
 	int load_result = r2r_load_tests (&state, &opt, arg_ind, argc, argv, cwd);
 	free (cwd);

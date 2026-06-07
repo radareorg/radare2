@@ -37,6 +37,7 @@ RUN
 NAME=m1slice.v35
 ARGS=-a arm.v35
 FILE=bins/mach0/ls-m1
+REQUIRE=arm.v35
 CMDS=<<EOF
 pd 2
 ie
