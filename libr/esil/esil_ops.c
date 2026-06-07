@@ -1264,6 +1264,7 @@ static bool esil_poke_n(REsil *esil, int bits) {
 	if (!r_strs_empty (src) && r_esil_get_parm (esil, src, &num)) {
 		if (!r_strs_empty (dst) && r_esil_get_parm (esil, dst, &addr)) {
 			if (bits == 128) {
+				const bool be = esil_is_big_endian (esil);
 				char reg[32];
 				r_str_ncpy (reg, src.a, sizeof (reg) - 2);
 				size_t last = strlen (reg);
@@ -1274,8 +1275,10 @@ static bool esil_poke_n(REsil *esil, int bits) {
 				reg[last] = 'h';
 				ut64 high = 0;
 				(void)r_esil_reg_read_silent (esil, reg, &high, NULL);
-				ret = r_esil_mem_write (esil, addr, (const ut8*)&loow, 8);
-				ret = r_esil_mem_write (esil, addr + 8, (const ut8*)&high, 8);
+				ut8 b[16];
+				r_write_ble64 (b, loow, be);
+				r_write_ble64 (b + 8, high, be);
+				ret = r_esil_mem_write (esil, addr, b, sizeof (b)) == sizeof (b);
 			} else {
 				// this is a internal peek performed before a poke
 				// we disable hooks to avoid run hooks on internal peeks
