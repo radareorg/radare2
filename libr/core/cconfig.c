@@ -848,6 +848,17 @@ static void update_asmbits_options(RCore *core, RConfigNode *node) {
 	}
 }
 
+static int first_arch_bits(RSysBits bits) {
+	int i;
+	for (i = 0; i < 4; i++) {
+		const int b = (bits >> (i * R_SYS_BITS_SIZE)) & R_SYS_BITS_MASK;
+		if (b) {
+			return b;
+		}
+	}
+	return 0;
+}
+
 static bool cb_asmarch(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	R_RETURN_VAL_IF_FAIL (core && core->anal, false);
@@ -879,8 +890,14 @@ static bool cb_asmarch(void *user, void *data) {
 		return false;
 	}
 	r_config_set (core->config, "asm.parser", node->value);
-	if (core->anal->cur && ! (core->rasm->config->bits & core->anal->config->bits)) {
-		r_config_set_i (core->config, "asm.bits", bits);
+	RArchSession *as = R_UNWRAP3 (core->anal, arch, session);
+	RSysBits supported_bits = as && as->plugin? as->plugin->bits: 0;
+	if (supported_bits && !R_SYS_BITS_CHECK (supported_bits, bits)) {
+		const int arch_bits = first_arch_bits (supported_bits);
+		if (arch_bits) {
+			bits = arch_bits;
+			r_config_set_i (core->config, "asm.bits", bits);
+		}
 	}
 	r_debug_set_arch (core->dbg, node->value, bits);
 	if (!r_config_set (core->config, "anal.arch", node->value)) {

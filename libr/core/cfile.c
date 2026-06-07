@@ -563,9 +563,7 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 			R_CRITICAL_LEAVE (r);
 			return false;
 		}
-		info->bits = r->rasm->config->bits;
 		// set use of raw strings
-		r_core_bin_set_arch_bits (r, bf->file, info->arch, info->bits);
 		// r_config_set_i (r->config, "io.va", false);
 		// r_config_set_b (r->config, "bin.str.raw", true);
 		// get bin.str.min
