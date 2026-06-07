@@ -773,29 +773,30 @@ static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 	r_config_node_purge_options (node);
 	RArchPlugin *h;
 	r_list_foreach (core->anal->arch->libstore->plugins, iter, h) {
-		if (h->cpus && !strcmp (arch, h->meta.name)) {
-			char *c = strdup (h->cpus);
-			int i, n = r_str_split (c, ',');
-			for (i = 0; i < n; i++) {
-				const char *word = r_str_word_get0 (c, i);
-				if (word && *word) {
+		if (!strcmp (arch, h->meta.name)) {
+			RList *cpus = r_arch_plugin_cpus (h);
+			RListIter *iter2;
+			char *word;
+			r_list_foreach (cpus, iter2, word) {
+				if (R_STR_ISNOTEMPTY (word)) {
 					node->options->free = free;
 					SETOPTIONS (node, word, NULL);
 				}
 			}
-			free (c);
+			r_list_free (cpus);
 		}
 	}
 }
 static void list_cpus(RCore *core) {
 	RArchPlugin *ap = R_UNWRAP5 (core, anal, arch, session, plugin);
-	if (ap && ap->cpus) {
-		char *c = strdup (ap->cpus);
-		int i, n = r_str_split (c, ',');
-		for (i = 0; i < n; i++) {
-			r_cons_println (core->cons, r_str_word_get0 (c, i));
+	if (ap) {
+		RList *cpus = r_arch_plugin_cpus (ap);
+		RListIter *iter;
+		char *cpu;
+		r_list_foreach (cpus, iter, cpu) {
+			r_cons_println (core->cons, cpu);
 		}
-		free (c);
+		r_list_free (cpus);
 	}
 }
 
@@ -804,10 +805,18 @@ static bool cb_asmcpu(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
 		list_cpus (core);
-#if 0
-		update_asmcpu_options (core, node);
-#endif
-		return 0;
+		return false;
+	}
+	RArchPlugin *ap = R_UNWRAP5 (core, anal, arch, session, plugin);
+	if (ap) {
+		char *canon = r_arch_plugin_cpu_canonical (ap, node->value);
+		if (!canon) {
+			R_LOG_WARN ("asm.cpu: invalid value '%s'. See 'e asm.cpu=?'", node->value);
+			return false;
+		}
+		// canonicalize case in place (e.g. V8 -> v8)
+		free (node->value);
+		node->value = canon;
 	}
 	r_core_esil_unload_arch (core);
 	r_arch_config_set_cpu (core->rasm->config, node->value);
@@ -914,16 +923,6 @@ static bool cb_asmarch(void *user, void *data) {
 			free (s);
 		}
 	}
-	// set codealign
-	if (core->anal) {
-		const char *asmcpu = r_config_get (core->config, "asm.cpu");
-		const char *asmos = r_config_get (core->config, "asm.os");
-		int bits = (core->anal->config)? core->anal->config->bits: r_config_get_i (core->config, "asm.bits");
-		if (!r_syscall_setup (core->anal->syscall, node->value, bits, asmcpu, asmos)) {
-			// R_LOG_ERROR ("asm.arch: Cannot setup syscall '%s/%s' from '%s'",
-			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
-		}
-	}
 	// if (!strcmp (node->value, "bf"))
 	//	r_config_set (core->config, "dbg.backend", "bf");
 	__setsegoff (core->config, node->value, core->rasm->config->bits);
@@ -939,8 +938,28 @@ static bool cb_asmarch(void *user, void *data) {
 
 	RConfigNode *asmcpu = r_config_node_get (core->config, "asm.cpu");
 	if (asmcpu) {
-		r_arch_config_set_cpu (core->rasm->config, asmcpu->value);
 		update_asmcpu_options (core, asmcpu);
+		RArchPlugin *ap = R_UNWRAP5 (core, anal, arch, session, plugin);
+		char *canon = ap? r_arch_plugin_cpu_canonical (ap, asmcpu->value): strdup (asmcpu->value);
+		if (!canon) {
+			// asm.cpu is incompatible with the new arch: clear it silently
+			r_config_set (core->config, "asm.cpu", "");
+		} else {
+			if (strcmp (canon, asmcpu->value)) {
+				free (asmcpu->value);
+				asmcpu->value = canon;
+				canon = NULL;
+			}
+			r_arch_config_set_cpu (core->rasm->config, asmcpu->value);
+			free (canon);
+		}
+	}
+	// set up syscalls with the (now validated) cpu
+	if (core->anal) {
+		const char *asmcpu_value = r_config_get (core->config, "asm.cpu");
+		const char *asmos = r_config_get (core->config, "asm.os");
+		int bits = (core->anal->config)? core->anal->config->bits: r_config_get_i (core->config, "asm.bits");
+		(void)r_syscall_setup (core->anal->syscall, node->value, bits, asmcpu_value, asmos);
 	}
 	{
 		int v = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
