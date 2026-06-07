@@ -553,6 +553,7 @@ script_files = [
   'scripts/parseplug.r2.js',
   'scripts/r2sptrace.py',
   'scripts/tags.r2.js',
+  'scripts/ldmap.r2.js',
   'scripts/symbols.r2.js',
   'scripts/unzip.r2.js',
   'scripts/vsmap.r2.js',

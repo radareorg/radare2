@@ -141,6 +141,7 @@ FILE=bins/smd/LiquidSpaceDodgerV3.bin
 CMDS=<<EOF
 e asm.arch=m68k
 s 0x21a
+f-section*
 f sym.z80BusReq @ 0x00a11100
 pi 1
 EOF
