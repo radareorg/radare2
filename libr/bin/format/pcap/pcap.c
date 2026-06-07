@@ -110,11 +110,10 @@ static bool parse_ipv4(RBuffer *b, ut64 off, pcaprec_t *rec) {
 	case TRANSPORT_TCP:
 	{
 		ut32 tcpoff = ((ipv4->ver_len & 0x0F) * 4);
-		if (!parse_tcp (b, off, rec, ipv4->tot_len - tcpoff)) {// tot_len - tcpoff);
+		if (!parse_tcp (b, off + tcpoff, rec, ipv4->tot_len - tcpoff)) {
 			free (ipv4);
 			return false;
 		}
-		// rec, buf + tcpoff, ipv4->tot_len - tcpoff);
 		break;
 	}
 	default:
@@ -182,34 +181,26 @@ static bool pcap_obj_init_recs(pcap_obj_t *obj) {
 	}
 
 	while (off < size) {
+		ut64 rec_off = off;
 		pcaprec_hdr_t *rec_hdr = R_NEW0 (pcaprec_hdr_t);
 		rec_hdr->ts_sec = r_buf_read_ble32_at (obj->b, off, obj->bigendian);
 		rec_hdr->ts_usec = r_buf_read_ble32_at (obj->b, off + 4, obj->bigendian);
 		rec_hdr->incl_len = r_buf_read_ble32_at (obj->b, off + 8, obj->bigendian);
 		rec_hdr->orig_len = r_buf_read_ble32_at (obj->b, off + 12, obj->bigendian);
-		if (off + sizeof (pcaprec_hdr_t) + rec_hdr->incl_len > size) {
+		ut64 pkt_off = off + sizeof (pcaprec_hdr_t);
+		if (pkt_off + rec_hdr->incl_len > size) {
 			free (rec_hdr);
 			goto error;
 		}
-		off += 16;
 
 		pcaprec_t *rec = R_NEW0 (pcaprec_t);
-		rec->paddr = off;
+		rec->paddr = rec_off;
 		rec->hdr = rec_hdr;
-		ut8 *pktbuf = malloc (rec_hdr->incl_len);
-		if (!pktbuf) {
-			pcaprec_free (rec);
-			goto error;
-		}
-		if (r_buf_read_at (obj->b, off, pktbuf, rec_hdr->incl_len) != rec_hdr->incl_len) {
-			pcaprec_free (rec);
-			goto error;
-		}
 
 		bool itsok = true;
 		switch (obj->header->network) {
 		case LINK_ETHERNET:
-			if (!parse_ether (b, off, rec)) {
+			if (!parse_ether (b, pkt_off, rec)) {
 				itsok = false;
 				// ignore errors here	return false;
 			}
@@ -217,13 +208,12 @@ static bool pcap_obj_init_recs(pcap_obj_t *obj) {
 		default:
 			break;
 		}
-		free (pktbuf);
 		if (itsok) {
 			r_list_append (recs, rec);
 		} else {
-			free (rec);
+			pcaprec_free (rec);
 		}
-		off += rec_hdr->incl_len;
+		off = pkt_off + rec_hdr->incl_len;
 	}
 	obj->recs = recs;
 	return true;
@@ -269,6 +259,13 @@ pcap_obj_t *pcap_obj_new_buf(RBuffer *buf) {
 		return NULL;
 	}
 	return obj;
+}
+
+void pcaprec_frame_sym_add(RVecRBinSymbol *vec, pcaprec_t *rec, int n) {
+	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (vec);
+	ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": Frame %d, %"PFMT32u " bytes on wire, %"PFMT32u " bytes captured",
+		rec->paddr, n, rec->hdr->orig_len, rec->hdr->incl_len));
+	ptr->paddr = ptr->vaddr = rec->paddr;
 }
 
 static void pcaprec_tcp_sym_add(RVecRBinSymbol *vec, pcaprec_t* rec, ut64 paddr, int size) {

@@ -154,6 +154,7 @@ typedef struct pcap_obj_s {
 pcap_obj_t *pcap_obj_new_buf(RBuffer *buf);
 void pcap_obj_free (pcap_obj_t *obj);
 void pcaprec_free(pcaprec_t *rec);
+void pcaprec_frame_sym_add(RVecRBinSymbol *vec, pcaprec_t *rec, int n);
 void pcaprec_ether_sym_add(RVecRBinSymbol *vec, pcaprec_t *rec, ut64 paddr);
 const char* pcap_network_string(ut32 network);
 

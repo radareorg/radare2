@@ -1,21 +1,17 @@
 NAME="pcap info"
 FILE=bins/pcap/sample0.pcap
-CMDS=i
+CMDS=i~format,bintype,class,abi,endian
 EXPECT=<<EOF
-fd       6
-file     bins/pcap/sample0.pcap
-size     0xd4b64
-humansz  850.8K
-mode     -r--
 format   pcap
-iorw     false
-blksz    0x0
-block    0x100
-type     tcpdump capture file - version 2.4 (Ethernet, capture length 262144)
+bintype  v2.4
+class    tcpdump
+abi      pcap
+endian   little
 EOF
 RUN
 
 NAME="pcap file header"
+ARGS=-a x86
 FILE=bins/pcap/sample0.pcap
 CMDS=<<EOF
 pd 1
@@ -27,6 +23,7 @@ EOF
 RUN
 
 NAME="pcap frame header"
+ARGS=-a x86
 FILE=bins/pcap/sample0.pcap
 CMDS=<<EOF
 s 0x18
@@ -39,6 +36,7 @@ EOF
 RUN
 
 NAME="pcap ethernet header"
+ARGS=-a x86
 FILE=bins/pcap/sample0.pcap
 CMDS=<<EOF
 s 0x28
@@ -51,6 +49,7 @@ EOF
 RUN
 
 NAME="pcap ipv4 header"
+ARGS=-a x86
 FILE=bins/pcap/sample0.pcap
 CMDS=<<EOF
 s 0x36
@@ -63,6 +62,7 @@ EOF
 RUN
 
 NAME="pcap tcp header"
+ARGS=-a x86
 FILE=bins/pcap/sample0.pcap
 CMDS=<<EOF
 s 0x4a
@@ -75,6 +75,7 @@ EOF
 RUN
 
 NAME="pcap tcp string data"
+ARGS=-a x86
 FILE=bins/pcap/sample0.pcap
 CMDS=<<EOF
 s 0x3f3

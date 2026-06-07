@@ -536,6 +536,9 @@ static bool cb_archbits_getter(RCore *core, RConfigNode *node) {
 }
 
 static bool core_arch_set_endian_reload(RCore *core, ut32 endian) {
+	if (core->anal && core->anal->reg) {
+		core->anal->reg->endian = endian;
+	}
 	if (core->anal->arch->cfg && core->anal->arch->cfg->endian == endian) {
 		return true;
 	}

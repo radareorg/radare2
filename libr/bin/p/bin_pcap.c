@@ -13,7 +13,7 @@ static RBinInfo *info(RBinFile *bf) {
 	pcap_obj_t *obj = bf->bo->bin_obj;
 	pcap_hdr_t *header = obj->header;
 	ret->file = strdup (bf->file);
-	ret->big_endian = true;
+	ret->big_endian = obj->bigendian;
 	ret->abi = strdup ("pcap");
 	ret->type = strdup ("capture");
 	ret->bclass = strdup ("tcpdump");
@@ -64,9 +64,11 @@ static bool symbols_vec(RBinFile *bf) {
 	// Go through each record packet
 	RListIter *iter;
 	pcaprec_t *rec;
+	int n = 0;
 	switch (obj->header->network) {
 	case LINK_ETHERNET:
 		r_list_foreach (obj->recs, iter, rec) {
+			pcaprec_frame_sym_add (ret, rec, ++n);
 			pcaprec_ether_sym_add (ret, rec, rec->paddr + sizeof (pcaprec_hdr_t));
 		}
 		break;
