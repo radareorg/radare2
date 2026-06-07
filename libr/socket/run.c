@@ -373,6 +373,7 @@ static void restore_saved_fd(int saved, bool restore, int fd) {
 
 static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err) {
 #if HAVE_PTY
+	dyn_init ();
 	if (!dyn_forkpty) {
 		// No forkpty api found, maybe we should fallback to just fork without any pty allocated
 		return -1;
@@ -843,7 +844,11 @@ static bool redirect_socket_to_pty(RSocket *sock) {
 	// in case of interactive applications
 	int fdm = -1, fds = -1;
 
-	if (dyn_openpty && dyn_openpty (&fdm, &fds, NULL, NULL, NULL) == -1) {
+	dyn_init ();
+	if (!dyn_openpty) {
+		return false;
+	}
+	if (dyn_openpty (&fdm, &fds, NULL, NULL, NULL) == -1) {
 		r_sys_perror ("opening pty");
 		return false;
 	}
@@ -925,9 +930,6 @@ static bool redirect_socket_to_pty(RSocket *sock) {
 }
 
 R_API bool r_run_config_env(RRunProfile *p) {
-#if HAVE_PTY
-	dyn_init ();
-#endif
 	if (!p->_noprogram) {
 		if (!p->_program && !p->_system && !p->_runlib) {
 			R_LOG_ERROR ("No program, system or runlib rule defined");
