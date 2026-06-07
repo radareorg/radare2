@@ -9,8 +9,8 @@
 #define NIBBLES_BY_SUBKEY 32
 
 struct serpent_state {
-    ut32 key[8];
-    int key_size;
+	ut8 key[32];
+	int key_size;
 };
 
 /*

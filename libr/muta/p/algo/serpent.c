@@ -106,7 +106,7 @@ static bool serpent_keyschedule(struct serpent_state st, ut32 subkeys[NB_SUBKEYS
 	int i, j, l;
 
 	for (i = 0; i < st.key_size / 32; i++) {
-		tmpkeys[i] = st.key[i];
+		tmpkeys[i] = r_read_le32 (st.key + (4 * i));
 	}
 
 	// Padding key
