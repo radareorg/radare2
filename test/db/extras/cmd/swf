@@ -1,7 +1,7 @@
 NAME=SWF: open
 FILE=bins/swf/CurveBall.swf
-CMDS=iI~arch
+CMDS=pm~Macromedia
 EXPECT=<<EOF
-arch     swf
+0x00000000 0 Macromedia Flash data, version 5 file size (header included) 67765
 EOF
 RUN
