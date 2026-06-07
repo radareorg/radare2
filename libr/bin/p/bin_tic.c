@@ -23,6 +23,7 @@
 #define CHUNK_CODE_ZIP	16
 #define CHUNK_DEFAULT   17 // serves as a flag for default palette and waveforms should be loaded or not.
 #define CHUNK_SCREEN	18 // 16kb in length Stores a 240 x 136 x 4bpp raw buffer (ie, VRAM).
+#define TIC_CHUNK_HEADER_SIZE 4
 
 
 #if 0
@@ -63,6 +64,16 @@ static const char *chunk_name(int chunk_type) {
 	return "";
 }
 
+static bool read_chunk_header(RBuffer *buf, ut64 off, R_OUT ut8 *hb, R_OUT ut16 *chunk_length) {
+	ut8 header[TIC_CHUNK_HEADER_SIZE];
+	if (r_buf_read_at (buf, off, header, sizeof (header)) != sizeof (header)) {
+		return false;
+	}
+	*hb = header[0];
+	*chunk_length = r_read_le16 (header + 1);
+	return true;
+}
+
 static bool check(RBinFile *bf, RBuffer *buf) {
 	R_RETURN_VAL_IF_FAIL (buf, false);
 	if (bf && !r_str_endswith (bf->file, ".tic")) {
@@ -77,17 +88,13 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 	ut64 off = 0;
 	for (;off < sz;) {
 		ut8 hb;
-		if (r_buf_read_at (buf, off, &hb, 1) != 1) {
-			break;
-		}
-		off++;
-		const int bank_number = (hb >> 5) & 7;
-		const int chunk_type = hb & 0x1f;
-		ut16 chunk_length = 0;
-		if (r_buf_read_at (buf, off, (ut8*)&chunk_length, 2) != 2) {
+		ut16 chunk_length;
+		if (!read_chunk_header (buf, off, &hb, &chunk_length)) {
 			return false;
 		}
-		off += 3; // 16bit for length + 1 byte for padding
+		const int bank_number = (hb >> 5) & 7;
+		const int chunk_type = hb & 0x1f;
+		off += TIC_CHUNK_HEADER_SIZE;
 		switch (chunk_type) {
 		case CHUNK_TILES:
 		case CHUNK_SPRITES:
@@ -183,17 +190,13 @@ static bool sections_vec(RBinFile *bf) {
 	ut64 off = 0;
 	for (;off < sz;) {
 		ut8 hb;
-		if (r_buf_read_at (buf, off, &hb, 1) != 1) {
-			break;
-		}
-		off++;
-		int bank_number = (hb >> 5) & 7;
-		int chunk_type = hb & 0x1f;
-		ut16 chunk_length = 0;
-		if (r_buf_read_at (buf, off, (ut8*)&chunk_length, 2) != 2) {
+		ut16 chunk_length;
+		if (!read_chunk_header (buf, off, &hb, &chunk_length)) {
 			return false;
 		}
-		off += 3; // 16bit for length + 1 byte for padding
+		int bank_number = (hb >> 5) & 7;
+		int chunk_type = hb & 0x1f;
+		off += TIC_CHUNK_HEADER_SIZE;
 		ut64 vaddr = off;
 		switch (chunk_type) {
 		case CHUNK_TILES:
@@ -242,13 +245,13 @@ static bool sections_vec(RBinFile *bf) {
 		case CHUNK_PATTERNS:
 		case CHUNK_CODE_ZIP:
 		case CHUNK_DEFAULT:
-			case CHUNK_SCREEN:
-				{
-					char *n = r_str_newf ("%s.%d", chunk_name (chunk_type), bank_number);
-					add_section (bf, n, off, chunk_length, vaddr);
-					free (n);
-				}
-				R_LOG_DEBUG ("BANK %d CHUNK %2d (%s) LENGTH %d",
+		case CHUNK_SCREEN:
+			{
+				char *n = r_str_newf ("%s.%d", chunk_name (chunk_type), bank_number);
+				add_section (bf, n, off, chunk_length, vaddr);
+				free (n);
+			}
+			R_LOG_DEBUG ("BANK %d CHUNK %2d (%s) LENGTH %d",
 				bank_number, chunk_type,
 				chunk_name (chunk_type), chunk_length);
 			break;
