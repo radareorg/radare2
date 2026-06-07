@@ -77,9 +77,6 @@ static int r_asm_pseudo_string(RAnalOp *op, char *input, bool zero) {
 }
 
 static int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bool is_unsigned) {
-	short s;
-	int i;
-	long int l;
 	const char *err = NULL;
 	ut64 s64 = r_num_math_err (NULL, input, &err);
 	if (err) {
@@ -128,14 +125,11 @@ static int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bool is_u
 		if (n == 1) {
 			buf[0] = (ut8) (st64)s64;
 		} else if (n == 2) {
-			s = (short)s64;
-			r_write_ble16 (buf, s, be);
+			r_write_ble16 (buf, (ut16)(st64)s64, be);
 		} else if (n == 4) {
-			i = (int)s64;
-			r_write_ble32 (buf, i, be);
+			r_write_ble32 (buf, (ut32)(st64)s64, be);
 		} else if (n == 8) {
-			l = (long int)s64;
-			r_write_ble64 (buf, l, be);
+			r_write_ble64 (buf, (ut64)(st64)s64, be);
 		} else {
 			free (buf);
 			return 0;
@@ -1069,22 +1063,22 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		}
 		free (args);
 	} else if (r_str_startswith (ptr, ".float ")) {
-		const bool be = (a->config->big_endian & R_SYS_ENDIAN_BIG);
+		const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 		acode->cfloat_profile.big_endian = be;
-		// acode->cfloat_profile.big_endian = false;
 		ret = r_asm_pseudo_float (a, op, ptr + 7, &acode->cfloat_profile);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".double ")) {
-		const bool be = (a->config->big_endian & R_SYS_ENDIAN_BIG);
+		const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 		RCFloatProfile profile = { 1, 11, 52, 1023, be, false };
 		ret = r_asm_pseudo_float (a, op, ptr + 8, &profile);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".bf16 ")) {
-		RCFloatProfile profile = { 1, 8, 7, 127, false, false };
+		const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+		RCFloatProfile profile = { 1, 8, 7, 127, be, false };
 		ret = r_asm_pseudo_float (a, op, ptr + 6, &profile);
 		if (ret < 0) {
 			return ret;

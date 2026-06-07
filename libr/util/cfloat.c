@@ -190,6 +190,19 @@ static inline int value_get_bit(const RCFloatValue *value, int bit_index) {
 	return (int)extract_bits (value, bit_index, 1);
 }
 
+static bool increment_bit_field(RCFloatValue *value, int bit_offset, int num_bits) {
+	int i;
+	for (i = 0; i < num_bits; i++) {
+		const int bit = bit_offset + i;
+		if (!value_get_bit (value, bit)) {
+			set_bits (value, bit, 1, 1);
+			return false;
+		}
+		set_bits (value, bit, 1, 0);
+	}
+	return true;
+}
+
 static long double fraction_from_bits(const RCFloatValue *value, int bit_offset, int num_bits) {
 	if (num_bits <= 0) {
 		return 0.0L;
@@ -204,9 +217,9 @@ static long double fraction_from_bits(const RCFloatValue *value, int bit_offset,
 	return frac;
 }
 
-static void set_fraction_bits(RCFloatValue *value, int bit_offset, int num_bits, long double fractional) {
+static bool set_fraction_bits(RCFloatValue *value, int bit_offset, int num_bits, long double fractional) {
 	if (num_bits <= 0 || !value) {
-		return;
+		return false;
 	}
 	long double frac = fractional;
 	int i;
@@ -217,6 +230,11 @@ static void set_fraction_bits(RCFloatValue *value, int bit_offset, int num_bits,
 			frac -= 1.0L;
 		}
 	}
+	const long double round_bit = frac * 2.0L;
+	if (round_bit > 1.0L || (round_bit == 1.0L && value_get_bit (value, bit_offset))) {
+		return increment_bit_field (value, bit_offset, num_bits);
+	}
+	return false;
 }
 
 R_API bool r_cfloat_parse_ex(const ut8 *buf, size_t buf_size, const RCFloatProfile *profile, RCFloatValue *out) {
@@ -318,6 +336,28 @@ static void set_bits(RCFloatValue *value, int bit_offset, int num_bits, ut64 dat
 	}
 }
 
+static void clear_bit_field(RCFloatValue *value, int bit_offset, int num_bits) {
+	int bits_cleared = 0;
+	while (bits_cleared < num_bits) {
+		int bits_to_clear = num_bits - bits_cleared;
+		if (bits_to_clear > 64) {
+			bits_to_clear = 64;
+		}
+		set_bits (value, bit_offset + bits_cleared, bits_to_clear, 0);
+		bits_cleared += bits_to_clear;
+	}
+}
+
+static void increment_exponent_from_mantissa_carry(RCFloatValue *value, const RCFloatProfile *profile, int exp_pos, int mant_pos) {
+	ut64 exp = extract_bits (value, exp_pos, profile->exp_bits);
+	const ut64 exp_mask = cfloat_bit_mask (profile->exp_bits);
+	clear_bit_field (value, mant_pos, profile->mant_bits);
+	if (exp < exp_mask) {
+		exp++;
+	}
+	set_bits (value, exp_pos, profile->exp_bits, exp);
+}
+
 // Helper: write multi-word value to buffer
 static void write_multiword(const RCFloatValue *value, ut8 *buf, size_t buf_size, bool big_endian) {
 	memset (buf, 0, buf_size);
@@ -387,6 +427,7 @@ R_API void r_cfloat_value_from_double(RCFloatValue *value, double d, const RCFlo
 
 		if (profile->explicit_leading_bit && profile->mant_bits > 0) {
 			int msb = profile->mant_bits - 1;
+			bool carry;
 			if (stored_exp != 0) {
 				int leading = mantissa >= 1.0L? 1: 0;
 				set_bits (value, mant_pos + msb, 1, leading);
@@ -394,13 +435,18 @@ R_API void r_cfloat_value_from_double(RCFloatValue *value, double d, const RCFlo
 			} else {
 				set_bits (value, mant_pos + msb, 1, 0);
 			}
-			set_fraction_bits (value, mant_pos, R_MAX (msb, 0), mantissa);
+			carry = set_fraction_bits (value, mant_pos, R_MAX (msb, 0), mantissa);
+			if (carry) {
+				increment_exponent_from_mantissa_carry (value, profile, exp_pos, mant_pos);
+			}
 		} else {
 			long double fractional = (stored_exp == 0)? mantissa: (mantissa - 1.0L);
 			if (fractional < 0.0L) {
 				fractional = 0.0L;
 			}
-			set_fraction_bits (value, mant_pos, profile->mant_bits, fractional);
+			if (set_fraction_bits (value, mant_pos, profile->mant_bits, fractional)) {
+				increment_exponent_from_mantissa_carry (value, profile, exp_pos, mant_pos);
+			}
 		}
 	}
 }
