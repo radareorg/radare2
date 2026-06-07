@@ -237,3 +237,722 @@ EXPECT=<<EOF
 0x00000003
 EOF
 RUN
+
+NAME=fadd esil string ppc-64
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi fc22182a)
+EOF
+EXPECT=<<EOF
+fadd f1, f2, f3
+0x00000000 f3,f2,F+,f1,=
+EOF
+RUN
+
+NAME=fadds single precision esil string ppc-64
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi ec22182a)
+EOF
+EXPECT=<<EOF
+fadds f1, f2, f3
+0x00000000 32,DUP,f3,f2,F+,D2F,F2D,f1,=
+EOF
+RUN
+
+NAME=fmadd esil string ppc-64
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi fc2220fa)
+EOF
+EXPECT=<<EOF
+fmadd f1, f2, f3, f4
+0x00000000 f4,f3,f2,F*,F+,f1,=
+EOF
+RUN
+
+NAME=fcmpu esil string ppc-64
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi fc021800)
+EOF
+EXPECT=<<EOF
+fcmpu cr0, f2, f3
+0x00000000 0x80,f3,f2,F<,*,f2,f3,F<,+,cr0,=
+EOF
+RUN
+
+NAME=fmr/fneg/fabs sign esil strings ppc-64
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi fc201090)
+.(pi fc201050)
+.(pi fc201210)
+EOF
+EXPECT=<<EOF
+fmr f1, f2
+0x00000000 f2,f1,=
+fneg f1, f2
+0x00000000 0x8000000000000000,f2,^,f1,=
+fabs f1, f2
+0x00000000 0x7fffffffffffffff,f2,&,f1,=
+EOF
+RUN
+
+NAME=lfd/lfs/stfd/stfs esil strings ppc-64
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi c8230010)
+.(pi c0230010)
+.(pi d8230010)
+.(pi d0230010)
+EOF
+EXPECT=<<EOF
+lfd f1, 0x10(r3)
+0x00000000 16,r3,+,[8],f1,=
+lfs f1, 0x10(r3)
+0x00000000 32,16,r3,+,[4],F2D,f1,=
+stfd f1, 0x10(r3)
+0x00000000 f1,16,r3,+,=[8]
+stfs f1, 0x10(r3)
+0x00000000 32,f1,D2F,16,r3,+,=[4]
+EOF
+RUN
+
+NAME=fsub emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx fc221828 @ 0
+aei
+ar f2=0x4010000000000000
+ar f3=0x3ff8000000000000
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x4004000000000000
+EOF
+RUN
+
+NAME=fdiv emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx fc221824 @ 0
+aei
+ar f2=0x4008000000000000
+ar f3=0x4000000000000000
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x3ff8000000000000
+EOF
+RUN
+
+NAME=fadds single rounding emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx ec22182a @ 0
+aei
+ar f2=0x3ff199999999999a
+ar f3=0x400199999999999a
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x400a666660000000
+EOF
+RUN
+
+NAME=fmadd emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx fc2220fa @ 0
+aei
+ar f2=0x4000000000000000
+ar f3=0x4008000000000000
+ar f4=0x3ff0000000000000
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x401c000000000000
+EOF
+RUN
+
+NAME=fcfid int to double emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx fc20169c @ 0
+aei
+ar f2=5
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x4014000000000000
+EOF
+RUN
+
+NAME=fctidz double to int emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx fc20165e @ 0
+aei
+ar f2=0x4004000000000000
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x00000002
+EOF
+RUN
+
+NAME=fcmpu sets cr byte lt/gt/eq emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx fc021800 @ 0
+aei
+ar f2=0x3ff0000000000000
+ar f3=0x4000000000000000
+aepc 0
+aes
+ar cr0
+ar f2=0x4000000000000000
+ar f3=0x3ff0000000000000
+aepc 0
+aes
+ar cr0
+ar f3=0x4000000000000000
+aepc 0
+aes
+ar cr0
+EOF
+EXPECT=<<EOF
+0x00000080
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=stfd then lfd roundtrip emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+aei
+aeim
+ar r3=0
+ar f1=0x4004000000000000
+wx d8230020 @ 0
+aepc 0
+aes
+wx c8a30020 @ 0
+aepc 0
+aes
+ar f5
+EOF
+EXPECT=<<EOF
+0x4004000000000000
+EOF
+RUN
+
+NAME=fp single-precision arith esil strings ppc-64
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi ec221828)
+.(pi ec2200f2)
+.(pi ec221824)
+.(pi fc20102c)
+.(pi ec20102c)
+EOF
+EXPECT=<<EOF
+fsubs f1, f2, f3
+0x00000000 32,DUP,f3,f2,F-,D2F,F2D,f1,=
+fmuls f1, f2, f3
+0x00000000 32,DUP,f3,f2,F*,D2F,F2D,f1,=
+fdivs f1, f2, f3
+0x00000000 32,DUP,f3,f2,F/,D2F,F2D,f1,=
+fsqrt f1, f2
+0x00000000 f2,SQRT,f1,=
+fsqrts f1, f2
+0x00000000 32,DUP,f2,SQRT,D2F,F2D,f1,=
+EOF
+RUN
+
+NAME=fma family esil strings ppc-64
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi ec2220fa)
+.(pi fc2220f8)
+.(pi ec2220f8)
+.(pi fc2220fe)
+.(pi ec2220fe)
+.(pi fc2220fc)
+.(pi ec2220fc)
+EOF
+EXPECT=<<EOF
+fmadds f1, f2, f3, f4
+0x00000000 32,DUP,f4,f3,f2,F*,F+,D2F,F2D,f1,=
+fmsub f1, f2, f3, f4
+0x00000000 f4,f3,f2,F*,F-,f1,=
+fmsubs f1, f2, f3, f4
+0x00000000 32,DUP,f4,f3,f2,F*,F-,D2F,F2D,f1,=
+fnmadd f1, f2, f3, f4
+0x00000000 f4,f3,f2,F*,F+,-F,f1,=
+fnmadds f1, f2, f3, f4
+0x00000000 32,DUP,f4,f3,f2,F*,F+,-F,D2F,F2D,f1,=
+fnmsub f1, f2, f3, f4
+0x00000000 f4,f3,f2,F*,F-,-F,f1,=
+fnmsubs f1, f2, f3, f4
+0x00000000 32,DUP,f4,f3,f2,F*,F-,-F,D2F,F2D,f1,=
+EOF
+RUN
+
+NAME=fnabs/fcpsgn esil strings ppc-64
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi fc201110)
+.(pi fc221810)
+EOF
+EXPECT=<<EOF
+fnabs f1, f2
+0x00000000 0x8000000000000000,f2,|,f1,=
+fcpsgn f1, f2, f3
+0x00000000 0x8000000000000000,f2,&,0x7fffffffffffffff,f3,&,|,f1,=
+EOF
+RUN
+
+NAME=fp convert esil strings ppc-64
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi fc20179c)
+.(pi ec20169c)
+.(pi ec20179c)
+.(pi fc20165c)
+.(pi fc201018)
+.(pi fc2013d0)
+.(pi fc201390)
+.(pi fc201310)
+.(pi fc201350)
+EOF
+EXPECT=<<EOF
+fcfidu f1, f2
+0x00000000 f2,U2D,f1,=
+fcfids f1, f2
+0x00000000 32,DUP,f2,I2D,D2F,F2D,f1,=
+fcfidus f1, f2
+0x00000000 32,DUP,f2,U2D,D2F,F2D,f1,=
+fctid f1, f2
+0x00000000 f2,D2I,f1,=
+frsp f1, f2
+0x00000000 32,DUP,f2,D2F,F2D,f1,=
+frim f1, f2
+0x00000000 f2,FLOOR,f1,=
+frip f1, f2
+0x00000000 f2,CEIL,f1,=
+frin f1, f2
+0x00000000 f2,ROUND,f1,=
+friz f1, f2
+0x00000000 f2,D2I,I2D,f1,=
+EOF
+RUN
+
+NAME=fp indexed and update load/store esil strings ppc-64
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi cc230010)
+.(pi 7c2324ae)
+.(pi 7c2324ee)
+.(pi c4230010)
+.(pi 7c23242e)
+.(pi 7c23246e)
+.(pi dc230010)
+.(pi 7c2325ae)
+.(pi 7c2325ee)
+.(pi d4230010)
+.(pi 7c23252e)
+.(pi 7c23256e)
+.(pi 7c201eae)
+.(pi 7c201eee)
+.(pi 7c201fae)
+EOF
+EXPECT=<<EOF
+lfdu f1, 0x10(r3)
+0x00000000 16,r3,+,[8],f1,=,16,r3,+=
+lfdx f1, r3, r4
+0x00000000 r3,r4,+,[8],f1,=
+lfdux f1, r3, r4
+0x00000000 r3,r4,+,[8],f1,=,r3,r4,+,r3,=
+lfsu f1, 0x10(r3)
+0x00000000 32,16,r3,+,[4],F2D,f1,=,16,r3,+=
+lfsx f1, r3, r4
+0x00000000 32,r3,r4,+,[4],F2D,f1,=
+lfsux f1, r3, r4
+0x00000000 32,r3,r4,+,[4],F2D,f1,=,r3,r4,+,r3,=
+stfdu f1, 0x10(r3)
+0x00000000 f1,16,r3,+,=[8],16,r3,+=
+stfdx f1, r3, r4
+0x00000000 f1,r3,r4,+,=[8]
+stfdux f1, r3, r4
+0x00000000 f1,r3,r4,+,=[8],r3,r4,+,r3,=
+stfsu f1, 0x10(r3)
+0x00000000 32,f1,D2F,16,r3,+,=[4],16,r3,+=
+stfsx f1, r3, r4
+0x00000000 32,f1,D2F,r3,r4,+,=[4]
+stfsux f1, r3, r4
+0x00000000 32,f1,D2F,r3,r4,+,=[4],r3,r4,+,r3,=
+lfiwax f1, 0, r3
+0x00000000 r3,[4],f1,=
+lfiwzx f1, 0, r3
+0x00000000 r3,[4],f1,=
+stfiwx f1, 0, r3
+0x00000000 f1,r3,=[4]
+EOF
+RUN
+
+NAME=fsqrt emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx fc20102c @ 0
+aei
+ar f2=0x4030000000000000
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x4010000000000000
+EOF
+RUN
+
+NAME=fmsub emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx fc2220f8 @ 0
+aei
+ar f2=0x4000000000000000
+ar f3=0x4008000000000000
+ar f4=0x3ff0000000000000
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x4014000000000000
+EOF
+RUN
+
+NAME=fnmadd negate emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx fc2220fe @ 0
+aei
+ar f2=0x4000000000000000
+ar f3=0x4008000000000000
+ar f4=0x3ff0000000000000
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0xc01c000000000000
+EOF
+RUN
+
+NAME=fnabs emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx fc201110 @ 0
+aei
+ar f2=0x4004000000000000
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0xc004000000000000
+EOF
+RUN
+
+NAME=fcpsgn emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx fc221810 @ 0
+aei
+ar f2=0xbff0000000000000
+ar f3=0x4004000000000000
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0xc004000000000000
+EOF
+RUN
+
+NAME=fcfidu unsigned int to double emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx fc20179c @ 0
+aei
+ar f2=0xffffffffffffffff
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x43f0000000000000
+EOF
+RUN
+
+NAME=frsp round to single emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx fc201018 @ 0
+aei
+ar f2=0x400921fb54442d18
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x400921fb60000000
+EOF
+RUN
+
+NAME=frim/frip/frin/friz rounding emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+aei
+ar f2=0x4004000000000000
+wx fc2013d0 @ 0
+aepc 0
+aes
+ar f1
+wx fc201390 @ 0
+aepc 0
+aes
+ar f1
+wx fc201310 @ 0
+aepc 0
+aes
+ar f1
+ar f2=0x4007333333333333
+wx fc201350 @ 0
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x4000000000000000
+0x4008000000000000
+0x4008000000000000
+0x4000000000000000
+EOF
+RUN
+
+NAME=fsubs single rounding emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx ec221828 @ 0
+aei
+ar f2=0x4010000000000000
+ar f3=0x3ff199999999999a
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x4007333340000000
+EOF
+RUN
+
+NAME=lfdux indexed load with base update emulation ppc-64
+FILE=malloc://0x80
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 4004000000000000 @ 0x20
+wx 7c2324ee @ 0
+aei
+aeim
+ar r3=0x10
+ar r4=0x10
+aepc 0
+aes
+ar f1
+ar r3
+EOF
+EXPECT=<<EOF
+0x4004000000000000
+0x00000020
+EOF
+RUN
+
+NAME=stfdux indexed store with base update emulation ppc-64
+FILE=malloc://0x80
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c2325ee @ 0
+wx c8a30000 @ 4
+aei
+aeim
+ar f1=0x4004000000000000
+ar r3=0x10
+ar r4=0x10
+aepc 0
+aes
+aes
+ar f5
+ar r3
+EOF
+EXPECT=<<EOF
+0x4004000000000000
+0x00000020
+EOF
+RUN
+
+NAME=lfiwzx integer load to fpr emulation ppc-64
+FILE=malloc://0x80
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 00000005 @ 0x20
+wx 7c201eee @ 0
+aei
+aeim
+ar r3=0x20
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x00000005
+EOF
+RUN
+
+NAME=stfiwx integer store roundtrip emulation ppc-64
+FILE=malloc://0x80
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c201fae @ 0
+wx 7ca01eee @ 4
+aei
+aeim
+ar f1=0x1122334455667788
+ar r3=0x20
+aepc 0
+aes
+aes
+ar f5
+EOF
+EXPECT=<<EOF
+0x55667788
+EOF
+RUN

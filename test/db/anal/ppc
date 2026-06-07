@@ -944,7 +944,7 @@ EOF
 EXPECT=<<EOF
 type: store
 family: cpu
-type: mov
+type: add
 family: fpu
 type: cmp
 family: fpu
