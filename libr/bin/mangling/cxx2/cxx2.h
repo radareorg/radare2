@@ -22,8 +22,13 @@ extern "C" {
 
 // Core engines. Each takes the raw symbol (leading underscores optional) and
 // returns a newly allocated demangled string, or NULL on failure.
-char *r_demangle_arm(const char *mangled);      // __ct__1cFi (pre-Itanium ARM/cfront ABI)
+char *r_demangle_itanium(const char *mangled);  // _Z...   (C++ Itanium ABI)
 char *r_demangle_ibmxl(const char *mangled);    // foo__Fv (legacy IBM XL C++)
+char *r_demangle_gnu_v2(const char *mangled);   // foo__1Ai (pre-Itanium g++ ABI)
+char *r_demangle_arm(const char *mangled);      // __ct__1cFi (pre-Itanium ARM/cfront ABI)
+
+// Convenience dispatcher: sniffs the mangling scheme and routes accordingly.
+char *r_demangle_cxx2(const char *mangled);
 
 #ifdef __cplusplus
 }

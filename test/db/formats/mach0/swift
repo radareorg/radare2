@@ -100,6 +100,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=swift cxx lambda thunk with deep substitution
+FILE=-
+CMDS=!rabin2 -D cxx '__ZZZL26getExistentialTypeMetadataN5swift23ProtocolClassConstraintEPKNS_14TargetMetadataINS_9InProcessEEEmPKNS_27TargetProtocolDescriptorRefIS2_EEENK3$_3clEvENUlPvE_8__invokeESB_'
+EXPECT=<<EOF
+getExistentialTypeMetadata(swift::ProtocolClassConstraint, swift::TargetMetadata<swift::InProcess> const*, unsigned long, swift::TargetProtocolDescriptorRef<swift::InProcess> const*)::$_3::operator()() const::{lambda(void*)#1}::__invoke(void*)
+EOF
+RUN
+
 NAME=swift field types
 FILE=bins/mach0/WheresMyBrowser
 CMDS=<<EOF
@@ -2482,7 +2490,7 @@ EXPECT=<<EOF
     "index": 30,
     "methods": [
       {
-        "name": "{lambda()#1}::operator()() const::{lambda(void*)#1}::__invoke({lambda()#1})",
+        "name": "{lambda()#1}::operator()() const::{lambda(void*)#1}::__invoke(void*)",
         "flag": "class.swift_voucher_needs_adopt_voucher_s_",
         "rawname": "__ZZZL25swift_voucher_needs_adoptP9voucher_sENKUlvE_clEvENUlPvE_8__invokeES2_",
         "addr": 4295111804
