@@ -227,3 +227,28 @@ EXPECT=<<EOF
 e8698000
 EOF
 RUN
+
+NAME=PPC64 ELFv1 ET_REL: TOC base auto-resolved from .toc + 0x8000 when .opd descriptor is unfilled
+FILE=bins/elf/ppc64v1-crc32_generic.ko
+CMDS=ar r2
+EXPECT=<<EOF
+0x08008700
+EOF
+RUN
+
+NAME=PPC64 ELFv1 ET_REL: auto TOC base resolves addis+ld pair to a concrete data pointer
+FILE=bins/elf/ppc64v1-crc32_generic.ko
+ARGS=-e bin.relocs.apply=true
+CMDS=ao 2 @ 0x0800036c~ptr
+EXPECT=<<EOF
+ptr: 0x08000700
+EOF
+RUN
+
+NAME=PPC64 ELFv1 EXEC: TOC base still taken from the .opd descriptor (opd path preferred)
+FILE=bins/elf/ppc64v1-more
+CMDS=ar r2
+EXPECT=<<EOF
+0x00037f00
+EOF
+RUN

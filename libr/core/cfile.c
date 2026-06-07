@@ -34,30 +34,35 @@ static inline bool its_a_ppc64be(RCore *core) {
 		&& R_ARCH_CONFIG_IS_BIG_ENDIAN (cfg);
 }
 
-// PPC64 ELFv1: every function symbol points into .opd, an array of
-// 24-byte descriptors [code_ptr(8), toc(8), env(8)].  The TOC base used
-// throughout the binary is the toc field of the *first* .opd entry (offset
-// +8).  We read it here and populate anal->gp / config->gp so that the
-// ppc_cs arch plugin can resolve addis+ld/addi TOC-relative chains.
-// We set the fields directly rather than going through r_config_set_i() to
-// avoid the MIPS-specific 16-byte alignment applied in cb_anal_gp.
+// PPC64: set anal.gp to the TOC base (.opd[0]+8, else .toc/.got+0x8000) for ppc_cs
 static void load_toc(RCore *core) {
 	if (!its_a_ppc64be (core)) {
 		return;
 	}
+	ut64 toc = UT64_MAX;
 	ut64 opd = r_num_math (core->num, "section..opd");
-	if (!opd || opd == UT64_MAX) {
+	if (opd && opd != UT64_MAX) {
+		ut8 buf[8];
+		if (r_io_read_at (core->io, opd + 8, buf, 8)) {
+			ut64 v = r_read_be64 (buf);
+			if (v && v != UT64_MAX) {
+				toc = v;
+			}
+		}
+	}
+	if (toc == UT64_MAX) {
+		ut64 t = r_num_math (core->num, "section..toc");
+		if (!t || t == UT64_MAX) {
+			t = r_num_math (core->num, "section..got");
+		}
+		if (t && t != UT64_MAX) {
+			toc = t + 0x8000;
+		}
+	}
+	if (toc == UT64_MAX) {
 		return;
 	}
-	ut8 buf[8];
-	if (!r_io_read_at (core->io, opd + 8, buf, 8)) {
-		return;
-	}
-	ut64 toc = r_read_be64 (buf);
-	if (!toc || toc == UT64_MAX) {
-		return;
-	}
-	R_LOG_DEBUG ("[ppc64v1] toc: 0x%"PFMT64x, toc);
+	R_LOG_DEBUG ("[ppc64] toc: 0x%"PFMT64x, toc);
 	core->anal->gp = toc;
 	core->anal->config->gp = toc;
 	r_reg_setv (core->anal->reg, "r2", toc);
