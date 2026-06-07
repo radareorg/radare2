@@ -30,7 +30,7 @@ typedef struct v850_opcode {
 
 typedef struct {
 	int atype;
-	ut64 value;
+	st64 value;
 	const char *str;
 } v850_arg;
 
@@ -38,7 +38,7 @@ typedef struct {
 	char *text;
 	char *esil;
 	int size;
-	long value; // used to save references, values, immedaites, ..
+	st64 value; // used to save references, values, immedaites, ..
 	const v850_opcode *op;
 	v850_arg args[4];
 } v850np_inst;

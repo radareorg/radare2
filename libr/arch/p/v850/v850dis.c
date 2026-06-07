@@ -16,8 +16,15 @@ static const ut8 v850_cacheop_codes[] = {
 
 static const ut8 v850_prefop_codes[] = { 0x00, 0x04 };
 
-static void print_value(RStrBuf *sb, int flags, ut64 memaddr, long value) {
-	const char *format = (flags & V850_OPERAND_SIGNED)? "%ld": "%lu";
+static void print_value_dec(RStrBuf *sb, int flags, st64 value) {
+	if (flags & V850_OPERAND_SIGNED) {
+		r_strbuf_appendf (sb, "%"PFMT64d, value);
+	} else {
+		r_strbuf_appendf (sb, "%"PFMT64u, (ut64)value);
+	}
+}
+
+static void print_value(RStrBuf *sb, int flags, ut64 memaddr, st64 value) {
 	if (flags & V850_PCREL) {
 		ut64 addr = value + memaddr;
 		if (flags & V850_INVERSE_PCREL) {
@@ -25,25 +32,25 @@ static void print_value(RStrBuf *sb, int flags, ut64 memaddr, long value) {
 		}
 		r_strbuf_appendf (sb, "0x%"PFMT64x, (ut64)addr); // memaddr);
 	} else if (flags & V850_OPERAND_DISP) {
-		r_strbuf_appendf (sb, format, value);
+		print_value_dec (sb, flags, value);
 	} else if ((flags & V850E_IMMEDIATE32) || (flags & V850E_IMMEDIATE16HI)) {
 		r_strbuf_appendf (sb, "0x%"PFMT64x, (ut64)value);
 	} else {
-		r_strbuf_appendf (sb, format, value);
+		print_value_dec (sb, flags, value);
 	}
 }
 
-static long get_operand_value(const struct v850_operand *operand, unsigned long insn, const ut8* buffer, size_t len, bool *invalid) {
+static st64 get_operand_value(const struct v850_operand *operand, unsigned long insn, const ut8* buffer, size_t len, bool *invalid) {
 	if ((operand->flags & V850E_IMMEDIATE16) || (operand->flags & V850E_IMMEDIATE16HI)) {
 		if (len < 2) {
 			// truncated
 			return 0;
 		}
-		ut32 value = r_read_le16 (buffer);
+		st64 value = r_read_le16 (buffer);
 		if (operand->flags & V850E_IMMEDIATE16HI) {
 			value <<= 16;
 		} else if (value & 0x8000) {
-			value |= (UT64_MAX << 16);
+			value -= 0x10000;
 		}
 		return value;
 	}
@@ -62,19 +69,19 @@ static long get_operand_value(const struct v850_operand *operand, unsigned long 
 			return 0;
 		}
 		// len += 4;
-		return r_read_le32 (buffer);
+		return (ut32)r_read_le32 (buffer);
 	}
 	if (operand->extract) {
-		return operand->extract (insn, invalid);
+		return (st64)operand->extract (insn, invalid);
 	}
 	ut64 value = (operand->bits == -1)
 		? (insn & operand->shift)
-		: (insn >> operand->shift) & ((1UL << operand->bits) - 1);
+		: (insn >> operand->shift) & ((1ULL << operand->bits) - 1);
 	if (operand->flags & V850_OPERAND_SIGNED) {
-		unsigned long sign = 1UL << (operand->bits - 1);
+		ut64 sign = 1ULL << (operand->bits - 1);
 		value = (value ^ sign) - sign;
 	}
-	return value;
+	return (st64)value;
 }
 
 static const char *get_v850_sreg_name(size_t reg) {
@@ -185,7 +192,7 @@ static int print_cacheop(RStrBuf *sb, int value) {
 	return V850_ARG_TYPE_NUMBER;
 }
 
-static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_operand *operand, long value) {
+static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_operand *operand, st64 value) {
 	static const int list12_regs[32]  = {
 		30, 0, 0, 0, 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
 		0,  0, 0, 0, 0, 31, 29, 28, 23, 22, 21, 20, 27, 26, 25, 24
@@ -204,7 +211,7 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 	}
 
 	for (i = 0; i < 32; i++) {
-		if (value & (1u << i)) {
+		if ((ut64)value & (1ULL << i)) {
 			switch (regs[i]) {
 			case 0:
 				/* xgettext:c-format */
@@ -377,7 +384,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 
 			operand = &v850_operands[*opindex_ptr];
 
-			long value = get_operand_value (operand, insn, buffer, buffer_size, &invalid);
+			st64 value = get_operand_value (operand, insn, buffer, buffer_size, &invalid);
 			if (value) {
 				inst->value = value;
 			}
@@ -419,8 +426,8 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 		inst->value = 0;
 		opindex_ptr = op->operands;
 		opnum = 1;
-		long prevalue = 0;
-		long value = 0;
+		st64 prevalue = 0;
+		st64 value = 0;
 		for (; *opindex_ptr; opindex_ptr++, opnum++) {
 			bool square = false;
 
@@ -452,7 +459,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 					&& opnum == memop) {
 #if ABS_R0REF
 				if (opnum == 2 && value == 0) { // "-X[r0]"
-					ut32 addr = UT32_MAX + 1 + prevalue;
+					ut32 addr = (ut32)prevalue;
 					// uncommenting this breaks `rasm2 -a v850 -d 01fb`
 					// trim last char and append this
 					char *s = r_strbuf_drain (sb);
@@ -540,7 +547,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 				{
 #if ABS_R0REF
 					const struct v850_operand *nextop = &v850_operands[opindex_ptr[1]];
-					long nextvalue = get_operand_value (nextop, insn, buffer + 2, buffer_size - 2, &invalid);
+					st64 nextvalue = get_operand_value (nextop, insn, buffer + 2, buffer_size - 2, &invalid);
 					if (opnum > 0 && (v850_operands[*(opindex_ptr)].flags & V850_OPERAND_DISP)
 							&& opnum + 1 == memop && nextvalue == 0 && value < 1) {
 						// dont print coz we replace later
