@@ -104,21 +104,12 @@ static bool symbols_vec(RBinFile *bf) {
 		addsym (ret, "RuntimeAddress", r_read_le16 (&hdr->RuntimeAddress));
 		addsym (ret, "DeviceAddress", r_read_le16 (&hdr->DeviceAddress));
 		addsym (ret, "PointAddress", r_read_le16 (&hdr->PointAddress));
-
-		eprintf ("InitAddress: 0x%04x\n", (ut16) hdr->InitAddress);
-		eprintf ("RuntimeAddress: 0x%04x\n", (ut16) hdr->RuntimeAddress);
-		eprintf ("DeviceAddress: 0x%04x\n", (ut16) hdr->DeviceAddress);
-		eprintf ("PointAddress: 0x%04x\n", (ut16) hdr->PointAddress);
 	} else if (gbuf[0] == 0xFE) {
 		MSX_Header_BIN *hdr = (MSX_Header_BIN*)gbuf;
 		addsym (ret, "BINSignature", r_read_be8 (&hdr->BINSignature));
-		addsym (ret, "StartAddress", r_read_be16 (&hdr->StartAddress));
-		addsym (ret, "EndAddress", r_read_be16 (&hdr->EndAddress));
-		addsym (ret, "InitAddress", r_read_be16 (&hdr->InitAddress));
-
-		eprintf ("StartAddress: 0x%04x\n", (ut16) hdr->StartAddress);
-		eprintf ("EndAddress: 0x%04x\n", (ut16) hdr->EndAddress);
-		eprintf ("InitAddress: 0x%04x\n", (ut16) hdr->InitAddress);
+		addsym (ret, "StartAddress", r_read_le16 (&hdr->StartAddress));
+		addsym (ret, "EndAddress", r_read_le16 (&hdr->EndAddress));
+		addsym (ret, "InitAddress", r_read_le16 (&hdr->InitAddress));
 	}
 	return true;
 }
