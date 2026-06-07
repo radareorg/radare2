@@ -312,10 +312,11 @@ static int disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 
 
 static int arm_op32(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, int len, ut32 mask) {
+	const ut8 *odata = data;
 	const ut8 *b = (ut8 *) data;
 	ut8 ndata[4] = {0};
-	ut32 branch_dst_addr, i = 0;
-	ut32 *code = (ut32 *) data;
+	ut32 branch_dst_addr;
+	ut32 code = 0;
 
 	if (!data) {
 		return 0;
@@ -329,12 +330,17 @@ static int arm_op32(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, i
 	op->type = R_ANAL_OP_TYPE_UNK;
 
 	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)) {
+		int i;
+		const int oplen = R_MIN (len, 4);
+		for (i = 0; i < oplen; i++) {
+			ndata[i] = odata[oplen - i - 1];
+		}
 		b = data = ndata;
-		ut8 tmp = data[3];
-		ndata[0] = data[3];
-		ndata[1] = data[2];
-		ndata[2] = data[1];
-		ndata[3] = tmp;
+		if (len >= 4) {
+			code = r_read_be32 (odata);
+		}
+	} else if (len >= 4) {
+		code = r_read_le32 (odata);
 	}
 	if (as->config->bits == 16) {
 		arm_free (arminsn);
@@ -428,9 +434,9 @@ static int arm_op32(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, i
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->stackop = R_ANAL_STACK_INC;
 		op->val = -b[0];
-	} else if (code[i] == 0x1eff2fe1 || code[i] == 0xe12fff1e) {  // bx lr
+	} else if (code == 0x1eff2fe1 || code == 0xe12fff1e) {  // bx lr
 		op->type = R_ANAL_OP_TYPE_RET;
-	} else if (code[i] & ARM_DTX_LOAD) {  // IS_LOAD(code[i])) {
+	} else if (code & ARM_DTX_LOAD) {  // IS_LOAD(code)) {
 		ut32 ptr = 0;
 		op->type = R_ANAL_OP_TYPE_MOV;
 		if (b[2] == 0x1b) {
@@ -452,28 +458,26 @@ static int arm_op32(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, i
 		}
 	}
 
-	if (IS_LOAD (code[i])) {
+	if (IS_LOAD (code)) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->refptr = 4;
 	}
-	if (((((code[i] & 0xff) >= 0x10 && (code[i] & 0xff) < 0x20)) &&
-	     ((code[i] & 0xffffff00) == 0xe12fff00)) ||
-	    IS_EXITPOINT (code[i])) {
-		// if (IS_EXITPOINT (code[i])) {
-		b = data;
+	if (((((code & 0xff) >= 0x10 && (code & 0xff) < 0x20)) &&
+	     ((code & 0xffffff00) == 0xe12fff00)) ||
+	    IS_EXITPOINT (code)) {
+		// if (IS_EXITPOINT (code)) {
 		branch_dst_addr = disarm_branch_offset (
-			addr, b[0] | (b[1] << 8) |
-			(b[2] << 16));                // code[i]&0x00FFFFFF);
+			addr, code & 0x00ffffff);
 		op->ptr = 0;
-		if ((((code[i] & 0xff) >= 0x10 && (code[i] & 0xff) < 0x20)) &&
-		    ((code[i] & 0xffffff00) == 0xe12fff00)) {
+		if ((((code & 0xff) >= 0x10 && (code & 0xff) < 0x20)) &&
+		    ((code & 0xffffff00) == 0xe12fff00)) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
-		} else if (IS_BRANCHL (code[i])) {
+		} else if (IS_BRANCHL (code)) {
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = branch_dst_addr;
 			op->fail = addr + 4;
-		} else if (IS_BRANCH (code[i])) {
-			if (IS_CONDAL (code[i])) {
+		} else if (IS_BRANCH (code)) {
+			if (IS_CONDAL (code)) {
 				op->type = R_ANAL_OP_TYPE_JMP;
 				op->jump = branch_dst_addr;
 				op->fail = UT64_MAX;

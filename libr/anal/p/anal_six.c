@@ -90,12 +90,12 @@ static void append_signed_mem_instr(RStrBuf *sb, ut64 addr, bool is_adrp, ut32 r
 }
 
 static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, bool register_refs, ut64 search, const ut8 *mem, ut64 addr, int process_len, int mem_len) {
-	const ut32 *p = (const ut32 *)mem;
-	const ut32 *e = p + (mem_len / 4);
-	const ut32 *pe = p + (process_len / 4);
+	const ut8 *p = mem;
+	const ut8 *e = mem + (mem_len & ~3);
+	const ut8 *pe = mem + (process_len & ~3);
 
-	for (; p < pe; p++, addr += 4) {
-		ut32 v = *p;
+	for (; p < pe; p += 4, addr += 4) {
+		ut32 v = r_read_le32 (p);
 		if ((v & 0x1f000000) == 0x10000000) // adr and adrp
 		{
 			ut32 reg = v & 0x1f;
@@ -109,12 +109,12 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, bool register_refs, u
 				r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "\n", addr, is_adrp? "adrp": "adr", reg, target);
 			} else {
 				// More complicated cases - up to 3 instr
-				const ut32 *q = p + 1;
-				while (q < e && *q == 0xd503201f) { // nop
-					q++;
+				const ut8 *q = p + 4;
+				while (q < e && r_read_le32 (q) == 0xd503201f) { // nop
+					q += 4;
 				}
 				if (q < e) {
-					v = *q;
+					v = r_read_le32 (q);
 					ut32 reg2 = reg;
 					ut32 aoff = 0;
 					bool found = false;
@@ -129,12 +129,12 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, bool register_refs, u
 							found = true;
 						} else {
 							do {
-								q++;
-							} while (q < e && *q == 0xd503201f); // nop
+								q += 4;
+							} while (q < e && r_read_le32 (q) == 0xd503201f); // nop
 						}
 					}
 					if (!found && q < e) {
-						v = *q;
+						v = r_read_le32 (q);
 						if ((v & 0xff8003e0) == (0x91000000 | (reg2 << 5))) { // 64bit add, match reg
 							ut32 xoff = (v >> 10) & 0xfff;
 							if (v & 0x400000) {
