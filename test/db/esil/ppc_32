@@ -615,3 +615,57 @@ EXPECT=<<EOF
 0x00000040
 EOF
 RUN
+
+NAME=fadd esil string ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi fc22182a)
+EOF
+EXPECT=<<EOF
+fadd f1, f2, f3
+0x00000000 f3,f2,F+,f1,=
+EOF
+RUN
+
+NAME=fmul emulation ppc-32
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx fc2200f2 @ 0
+aei
+ar f2=0x3ff8000000000000
+ar f3=0x4000000000000000
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x4008000000000000
+EOF
+RUN
+
+NAME=lfs single widened to double emulation ppc-32
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 40400000 @ 0x20
+wx c0230020 @ 0
+aei
+aeim
+ar r3=0
+aepc 0
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x4008000000000000
+EOF
+RUN

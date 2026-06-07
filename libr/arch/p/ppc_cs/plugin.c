@@ -406,7 +406,39 @@ static char *regs(RArchSession *as) {
 			"gpr	dbat1u .32 268 0\n"
 			"gpr	dbat2u .32 276 0\n"
 			"gpr	dbat3u .32 284 0\n"
-			"gpr	mask   .32 288 0\n";
+			"gpr	mask   .32 288 0\n"
+			"fpu	f0  .64 292 0\n"
+			"fpu	f1  .64 300 0\n"
+			"fpu	f2  .64 308 0\n"
+			"fpu	f3  .64 316 0\n"
+			"fpu	f4  .64 324 0\n"
+			"fpu	f5  .64 332 0\n"
+			"fpu	f6  .64 340 0\n"
+			"fpu	f7  .64 348 0\n"
+			"fpu	f8  .64 356 0\n"
+			"fpu	f9  .64 364 0\n"
+			"fpu	f10 .64 372 0\n"
+			"fpu	f11 .64 380 0\n"
+			"fpu	f12 .64 388 0\n"
+			"fpu	f13 .64 396 0\n"
+			"fpu	f14 .64 404 0\n"
+			"fpu	f15 .64 412 0\n"
+			"fpu	f16 .64 420 0\n"
+			"fpu	f17 .64 428 0\n"
+			"fpu	f18 .64 436 0\n"
+			"fpu	f19 .64 444 0\n"
+			"fpu	f20 .64 452 0\n"
+			"fpu	f21 .64 460 0\n"
+			"fpu	f22 .64 468 0\n"
+			"fpu	f23 .64 476 0\n"
+			"fpu	f24 .64 484 0\n"
+			"fpu	f25 .64 492 0\n"
+			"fpu	f26 .64 500 0\n"
+			"fpu	f27 .64 508 0\n"
+			"fpu	f28 .64 516 0\n"
+			"fpu	f29 .64 524 0\n"
+			"fpu	f30 .64 532 0\n"
+			"fpu	f31 .64 540 0\n";
 		return strdup (p);
 	}
 
@@ -510,7 +542,39 @@ static char *regs(RArchSession *as) {
 		"gpr	dbat1u .32 468 0\n"
 		"gpr	dbat2u .32 476 0\n"
 		"gpr	dbat3u .32 484 0\n"
-		"gpr	mask   .64 488 0\n"; //not a real register used on complex functions
+		"gpr	mask   .64 488 0\n" //not a real register used on complex functions
+		"fpu	f0  .64 496 0\n"
+		"fpu	f1  .64 504 0\n"
+		"fpu	f2  .64 512 0\n"
+		"fpu	f3  .64 520 0\n"
+		"fpu	f4  .64 528 0\n"
+		"fpu	f5  .64 536 0\n"
+		"fpu	f6  .64 544 0\n"
+		"fpu	f7  .64 552 0\n"
+		"fpu	f8  .64 560 0\n"
+		"fpu	f9  .64 568 0\n"
+		"fpu	f10 .64 576 0\n"
+		"fpu	f11 .64 584 0\n"
+		"fpu	f12 .64 592 0\n"
+		"fpu	f13 .64 600 0\n"
+		"fpu	f14 .64 608 0\n"
+		"fpu	f15 .64 616 0\n"
+		"fpu	f16 .64 624 0\n"
+		"fpu	f17 .64 632 0\n"
+		"fpu	f18 .64 640 0\n"
+		"fpu	f19 .64 648 0\n"
+		"fpu	f20 .64 656 0\n"
+		"fpu	f21 .64 664 0\n"
+		"fpu	f22 .64 672 0\n"
+		"fpu	f23 .64 680 0\n"
+		"fpu	f24 .64 688 0\n"
+		"fpu	f25 .64 696 0\n"
+		"fpu	f26 .64 704 0\n"
+		"fpu	f27 .64 712 0\n"
+		"fpu	f28 .64 720 0\n"
+		"fpu	f29 .64 728 0\n"
+		"fpu	f30 .64 736 0\n"
+		"fpu	f31 .64 744 0\n";
 	return strdup (p);
 }
 
@@ -831,6 +895,40 @@ static void ppc_esil_brx(RAnalOp *op, PluginData *pd, struct Getarg *gop, int nb
 	r_strbuf_free (sb);
 }
 
+static char *ppc_idx_ea(PluginData *pd, struct Getarg *gop, char *buf, size_t sz) {
+	cs_insn *insn = gop->insn;
+	const char *rb = getarg2 (pd, gop, 2, "");
+	if (INSOP (1).type == PPC_OP_REG && INSOP (1).reg != PPC_REG_INVALID) {
+		snprintf (buf, sz, "%s,%s,+", getarg2 (pd, gop, 1, ""), rb);
+	} else {
+		snprintf (buf, sz, "%s", rb);
+	}
+	return buf;
+}
+
+static void ppc_fpop(RAnalOp *op, PluginData *pd, struct Getarg *gop, bool single, int nsrc, const char *fop) {
+	char body[96];
+	switch (nsrc) {
+	case 3:
+		snprintf (body, sizeof (body), "%s,%s,%s,%s",
+			getarg2 (pd, gop, 3, ""), getarg2 (pd, gop, 2, ""), getarg2 (pd, gop, 1, ""), fop);
+		break;
+	case 2:
+		snprintf (body, sizeof (body), "%s,%s,%s",
+			getarg2 (pd, gop, 2, ""), getarg2 (pd, gop, 1, ""), fop);
+		break;
+	default:
+		snprintf (body, sizeof (body), "%s,%s", getarg2 (pd, gop, 1, ""), fop);
+		break;
+	}
+	const char *dst = getarg2 (pd, gop, 0, "");
+	if (single) {
+		esilprintf (op, "32,DUP,%s,D2F,F2D,%s,=", body, dst);
+	} else {
+		esilprintf (op, "%s,%s,=", body, dst);
+	}
+}
+
 static int decompile_vle(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	vle_t* instr = 0;
 	vle_handle handle = {0};
@@ -896,6 +994,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 	int ret, ridx;
 	char *op1;
+	char ea[64];
 
 	PluginData *pd = as->data;
 	const char *cpu = as->config->cpu;
@@ -1271,18 +1370,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			ppc_esil_brx (op, pd, &gop, 8, false);
 			break;
 		case PPC_INS_LFD:
-		case PPC_INS_LFDU:
-		case PPC_INS_LFDUX:
-		case PPC_INS_LFDX:
-		case PPC_INS_LFIWAX:
-		case PPC_INS_LFIWZX:
-		case PPC_INS_LFS:
-		case PPC_INS_LFSU:
-		case PPC_INS_LFSUX:
-		case PPC_INS_LFSX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
-			esilprintf (op, "%s,%s,=", ARG2 (1, "[4]"), ARG (0));
-			/* PPC64 ELFv1 TOC chain: lfd/lfs fY, LO(rX) following addis rX, r2, HA */
+			esilprintf (op, "%s,%s,=", ARG2 (1, "[8]"), ARG (0));
 			if (INSOP(1).type == PPC_OP_MEM) {
 				ridx = toc_reg_idx (INSOP(1).mem.base);
 				if (ridx >= 0 && pd->toc_map[ridx]) {
@@ -1290,35 +1379,158 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				}
 			}
 			break;
+		case PPC_INS_LFDU:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			op1 = shrink (ARG (1));
+			if (!op1) {
+				break;
+			}
+			esilprintf (op, "%s,[8],%s,=,%s=", op1, ARG (0), op1);
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
+			break;
+		case PPC_INS_LFDX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			esilprintf (op, "%s,[8],%s,=", ppc_idx_ea (pd, &gop, ea, sizeof (ea)), ARG (0));
+			break;
+		case PPC_INS_LFDUX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_idx_ea (pd, &gop, ea, sizeof (ea));
+			esilprintf (op, "%s,[8],%s,=,%s,%s,=", ea, ARG (0), ea, ARG (1));
+			break;
+		case PPC_INS_LFS:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			esilprintf (op, "32,%s,F2D,%s,=", ARG2 (1, "[4]"), ARG (0));
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
+			break;
+		case PPC_INS_LFSU:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			op1 = shrink (ARG (1));
+			if (!op1) {
+				break;
+			}
+			esilprintf (op, "32,%s,[4],F2D,%s,=,%s=", op1, ARG (0), op1);
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
+			break;
+		case PPC_INS_LFSX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			esilprintf (op, "32,%s,[4],F2D,%s,=", ppc_idx_ea (pd, &gop, ea, sizeof (ea)), ARG (0));
+			break;
+		case PPC_INS_LFSUX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_idx_ea (pd, &gop, ea, sizeof (ea));
+			esilprintf (op, "32,%s,[4],F2D,%s,=,%s,%s,=", ea, ARG (0), ea, ARG (1));
+			break;
+		case PPC_INS_LFIWAX:
+		case PPC_INS_LFIWZX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			esilprintf (op, "%s,[4],%s,=", ppc_idx_ea (pd, &gop, ea, sizeof (ea)), ARG (0));
+			break;
 		case PPC_INS_STFD:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[8]"));
+			break;
 		case PPC_INS_STFDU:
-		case PPC_INS_STFDUX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			op1 = shrink (ARG (1));
+			if (!op1) {
+				break;
+			}
+			esilprintf (op, "%s,%s,=[8],%s=", ARG (0), op1, op1);
+			break;
 		case PPC_INS_STFDX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			esilprintf (op, "%s,%s,=[8]", ARG (0), ppc_idx_ea (pd, &gop, ea, sizeof (ea)));
+			break;
+		case PPC_INS_STFDUX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_idx_ea (pd, &gop, ea, sizeof (ea));
+			esilprintf (op, "%s,%s,=[8],%s,%s,=", ARG (0), ea, ea, ARG (1));
+			break;
 		case PPC_INS_STFS:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			esilprintf (op, "32,%s,D2F,%s", ARG (0), ARG2 (1, "=[4]"));
+			break;
 		case PPC_INS_STFSU:
-		case PPC_INS_STFSUX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			op1 = shrink (ARG (1));
+			if (!op1) {
+				break;
+			}
+			esilprintf (op, "32,%s,D2F,%s,=[4],%s=", ARG (0), op1, op1);
+			break;
 		case PPC_INS_STFSX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			esilprintf (op, "32,%s,D2F,%s,=[4]", ARG (0), ppc_idx_ea (pd, &gop, ea, sizeof (ea)));
+			break;
+		case PPC_INS_STFSUX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_idx_ea (pd, &gop, ea, sizeof (ea));
+			esilprintf (op, "32,%s,D2F,%s,=[4],%s,%s,=", ARG (0), ea, ea, ARG (1));
+			break;
 		case PPC_INS_STFIWX:
 			op->type = R_ANAL_OP_TYPE_STORE;
+			esilprintf (op, "%s,%s,=[4]", ARG (0), ppc_idx_ea (pd, &gop, ea, sizeof (ea)));
 			break;
 		case PPC_INS_FADD:
 		case PPC_INS_FADDS:
+			op->type = R_ANAL_OP_TYPE_ADD;
+			ppc_fpop (op, pd, &gop, insn->id == PPC_INS_FADDS, 2, "F+");
+			break;
 		case PPC_INS_FSUB:
 		case PPC_INS_FSUBS:
+			op->type = R_ANAL_OP_TYPE_SUB;
+			ppc_fpop (op, pd, &gop, insn->id == PPC_INS_FSUBS, 2, "F-");
+			break;
 		case PPC_INS_FMUL:
 		case PPC_INS_FMULS:
+			op->type = R_ANAL_OP_TYPE_MUL;
+			ppc_fpop (op, pd, &gop, insn->id == PPC_INS_FMULS, 2, "F*");
+			break;
 		case PPC_INS_FDIV:
 		case PPC_INS_FDIVS:
-		case PPC_INS_FMADD:
-		case PPC_INS_FMADDS:
-		case PPC_INS_FMSUB:
-		case PPC_INS_FMSUBS:
-		case PPC_INS_FNMADD:
-		case PPC_INS_FNMADDS:
-		case PPC_INS_FNMSUB:
-		case PPC_INS_FNMSUBS:
+			op->type = R_ANAL_OP_TYPE_DIV;
+			ppc_fpop (op, pd, &gop, insn->id == PPC_INS_FDIVS, 2, "F/");
+			break;
 		case PPC_INS_FSQRT:
 		case PPC_INS_FSQRTS:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			ppc_fpop (op, pd, &gop, insn->id == PPC_INS_FSQRTS, 1, "SQRT");
+			break;
+		case PPC_INS_FMADD:
+		case PPC_INS_FMADDS:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			ppc_fpop (op, pd, &gop, insn->id == PPC_INS_FMADDS, 3, "F*,F+");
+			break;
+		case PPC_INS_FMSUB:
+		case PPC_INS_FMSUBS:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			ppc_fpop (op, pd, &gop, insn->id == PPC_INS_FMSUBS, 3, "F*,F-");
+			break;
+		case PPC_INS_FNMADD:
+		case PPC_INS_FNMADDS:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			ppc_fpop (op, pd, &gop, insn->id == PPC_INS_FNMADDS, 3, "F*,F+,-F");
+			break;
+		case PPC_INS_FNMSUB:
+		case PPC_INS_FNMSUBS:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			ppc_fpop (op, pd, &gop, insn->id == PPC_INS_FNMSUBS, 3, "F*,F-,-F");
+			break;
 		case PPC_INS_FRE:
 		case PPC_INS_FRES:
 		case PPC_INS_FRSQRTE:
@@ -1330,21 +1542,41 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case PPC_INS_FMR:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			esilprintf (op, "%s,%s,=", ARG (1), ARG (0));
+			break;
 		case PPC_INS_FNEG:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			esilprintf (op, "0x8000000000000000,%s,^,%s,=", ARG (1), ARG (0));
+			break;
 		case PPC_INS_FCPSGN:
 			op->type = R_ANAL_OP_TYPE_MOV;
+			esilprintf (op, "0x8000000000000000,%s,&,0x7fffffffffffffff,%s,&,|,%s,=",
+				ARG (1), ARG (2), ARG (0));
+			break;
+		case PPC_INS_FABS:
+			op->type = R_ANAL_OP_TYPE_ABS;
+			esilprintf (op, "0x7fffffffffffffff,%s,&,%s,=", ARG (1), ARG (0));
+			break;
+		case PPC_INS_FNABS:
+			op->type = R_ANAL_OP_TYPE_ABS;
+			esilprintf (op, "0x8000000000000000,%s,|,%s,=", ARG (1), ARG (0));
 			break;
 		case PPC_INS_FCMPU:
 			op->type = R_ANAL_OP_TYPE_CMP;
-			break;
-		case PPC_INS_FABS:
-		case PPC_INS_FNABS:
-			op->type = R_ANAL_OP_TYPE_ABS;
+			esilprintf (op, "0x80,%s,%s,F<,*,%s,%s,F<,+,%s,=",
+				ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
 			break;
 		case PPC_INS_FCFID:
 		case PPC_INS_FCFIDS:
+			op->type = R_ANAL_OP_TYPE_CAST;
+			ppc_fpop (op, pd, &gop, insn->id == PPC_INS_FCFIDS, 1, "I2D");
+			break;
 		case PPC_INS_FCFIDU:
 		case PPC_INS_FCFIDUS:
+			op->type = R_ANAL_OP_TYPE_CAST;
+			ppc_fpop (op, pd, &gop, insn->id == PPC_INS_FCFIDUS, 1, "U2D");
+			break;
 		case PPC_INS_FCTID:
 		case PPC_INS_FCTIDUZ:
 		case PPC_INS_FCTIDZ:
@@ -1355,12 +1587,28 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_FCTIWU:
 #endif
 		case PPC_INS_FCTIWZ:
+			op->type = R_ANAL_OP_TYPE_CAST;
+			ppc_fpop (op, pd, &gop, false, 1, "D2I");
+			break;
 		case PPC_INS_FRSP:
+			op->type = R_ANAL_OP_TYPE_CAST;
+			esilprintf (op, "32,DUP,%s,D2F,F2D,%s,=", ARG (1), ARG (0));
+			break;
 		case PPC_INS_FRIM:
-		case PPC_INS_FRIN:
+			op->type = R_ANAL_OP_TYPE_CAST;
+			ppc_fpop (op, pd, &gop, false, 1, "FLOOR");
+			break;
 		case PPC_INS_FRIP:
+			op->type = R_ANAL_OP_TYPE_CAST;
+			ppc_fpop (op, pd, &gop, false, 1, "CEIL");
+			break;
+		case PPC_INS_FRIN:
+			op->type = R_ANAL_OP_TYPE_CAST;
+			ppc_fpop (op, pd, &gop, false, 1, "ROUND");
+			break;
 		case PPC_INS_FRIZ:
 			op->type = R_ANAL_OP_TYPE_CAST;
+			ppc_fpop (op, pd, &gop, false, 1, "D2I,I2D");
 			break;
 		case PPC_INS_LMW:
 		case PPC_INS_LSWI:
