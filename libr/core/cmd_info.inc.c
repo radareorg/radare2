@@ -2407,11 +2407,523 @@ static void cmd_idl(RCore *core, const char *input) {
 	free (linkname);
 }
 
+static char *idd_type_base(const char *type, int *ptrs, int *array_count) {
+	char *base = strdup (r_str_trim_head_ro (type));
+	if (!base) {
+		return NULL;
+	}
+	r_str_trim (base);
+	char *bracket = strchr (base, '[');
+	if (bracket) {
+		if (array_count) {
+			*array_count = atoi (bracket + 1);
+		}
+		*bracket = 0;
+	}
+	int n_ptrs = 0;
+	char *p = base;
+	while (*p) {
+		if (*p == '*') {
+			n_ptrs++;
+			*p = ' ';
+		}
+		p++;
+	}
+	if (ptrs) {
+		*ptrs = n_ptrs;
+	}
+	if (r_str_startswith (base, "const ")) {
+		memmove (base, base + 6, strlen (base + 6) + 1);
+	}
+	if (r_str_startswith (base, "volatile ")) {
+		memmove (base, base + 9, strlen (base + 9) + 1);
+	}
+	if (r_str_startswith (base, "struct ")) {
+		memmove (base, base + 7, strlen (base + 7) + 1);
+	} else if (r_str_startswith (base, "union ")) {
+		memmove (base, base + 6, strlen (base + 6) + 1);
+	}
+	r_str_trim (base);
+	return base;
+}
+
+static const char *idd_type_kind(RCore *core, const char *type) {
+	return sdb_const_get (core->anal->sdb_types, type, NULL);
+}
+
+static char *idd_type_display(RCore *core, const char *type) {
+	int ptrs = 0;
+	int array_count = 0;
+	char *base = idd_type_base (type, &ptrs, &array_count);
+	if (!base) {
+		return NULL;
+	}
+	const char *kind = idd_type_kind (core, base);
+	RStrBuf *sb = r_strbuf_new ("");
+	if (kind && !strcmp (kind, "struct")) {
+		r_strbuf_appendf (sb, "struct %s", base);
+	} else if (kind && !strcmp (kind, "union")) {
+		r_strbuf_appendf (sb, "union %s", base);
+	} else {
+		r_strbuf_append (sb, base);
+	}
+	if (ptrs > 0) {
+		r_strbuf_append (sb, " ");
+		int i;
+		for (i = 0; i < ptrs; i++) {
+			r_strbuf_append (sb, "*");
+		}
+	} else {
+		r_strbuf_append (sb, " ");
+	}
+	free (base);
+	return r_strbuf_drain (sb);
+}
+
+static int idd_type_size(RCore *core, const char *type);
+
+static int idd_struct_size(RCore *core, const char *kind, const char *name) {
+	char *members_key = r_str_newf ("%s.%s", kind, name);
+	char *members = sdb_get (core->anal->sdb_types, members_key, 0);
+	free (members_key);
+	if (!members) {
+		return 0;
+	}
+	int size = 0;
+	int nargs = r_str_split (members, ',');
+	int i;
+	for (i = 0; i < nargs; i++) {
+		const char *member = r_str_word_get0 (members, i);
+		char *member_key = r_str_newf ("%s.%s.%s", kind, name, member);
+		char *value = sdb_get (core->anal->sdb_types, member_key, 0);
+		free (member_key);
+		if (value) {
+			int vlen = r_str_split (value, ',');
+			if (vlen >= 2) {
+				const char *member_type = r_str_word_get0 (value, 0);
+				int offset = atoi (r_str_word_get0 (value, 1));
+				int end = offset + idd_type_size (core, member_type);
+				if (end > size) {
+					size = end;
+				}
+			}
+			free (value);
+		}
+	}
+	free (members);
+	return size;
+}
+
+static int idd_type_size(RCore *core, const char *type) {
+	int ptrs = 0;
+	int array_count = 0;
+	char *base = idd_type_base (type, &ptrs, &array_count);
+	if (!base) {
+		return 0;
+	}
+	int size = 0;
+	if (ptrs > 0) {
+		size = core->anal->config->bits / 8;
+	} else {
+		const char *kind = idd_type_kind (core, base);
+		if (kind && !strcmp (kind, "typedef")) {
+			char *key = r_str_newf ("typedef.%s", base);
+			const char *real_type = sdb_const_get (core->anal->sdb_types, key, NULL);
+			size = real_type? idd_type_size (core, real_type): 0;
+			free (key);
+		} else if (kind && (!strcmp (kind, "struct") || !strcmp (kind, "union"))) {
+			size = idd_struct_size (core, kind, base);
+		} else {
+			char *key = r_str_newf ("type.%s.size", base);
+			size = (int)(sdb_num_get (core->anal->sdb_types, key, 0) / 8);
+			free (key);
+			if (!size) {
+				char *sbase = strdup (base);
+				if (sbase) {
+					r_str_replace_char (sbase, ' ', '_');
+					key = r_str_newf ("type.%s.size", sbase);
+					size = (int)(sdb_num_get (core->anal->sdb_types, key, 0) / 8);
+					free (key);
+					free (sbase);
+				}
+			}
+			if (!size) {
+				if (strstr (base, "char")) {
+					size = 1;
+				} else if (strstr (base, "short")) {
+					size = 2;
+				} else if (!strcmp (base, "int") || !strcmp (base, "unsigned int")) {
+					size = 4;
+				} else if (strstr (base, "long") || !strcmp (base, "size_t")) {
+					size = 8;
+				}
+			}
+		}
+	}
+	free (base);
+	return size * R_MAX (1, array_count);
+}
+
+static bool idd_member_info(RCore *core, const char *type, const char *member, char **member_type, ut64 *offset) {
+	int ptrs = 0;
+	char *base = idd_type_base (type, &ptrs, NULL);
+	if (!base) {
+		return false;
+	}
+	const char *kind = idd_type_kind (core, base);
+	if (kind && !strcmp (kind, "typedef")) {
+		char *key = r_str_newf ("typedef.%s", base);
+		const char *real_type = sdb_const_get (core->anal->sdb_types, key, NULL);
+		if (real_type) {
+			free (base);
+			base = idd_type_base (real_type, NULL, NULL);
+			kind = base? idd_type_kind (core, base): NULL;
+		}
+		free (key);
+	}
+	if (!kind || (strcmp (kind, "struct") && strcmp (kind, "union"))) {
+		free (base);
+		return false;
+	}
+	char *key = r_str_newf ("%s.%s.%s", kind, base, member);
+	free (base);
+	char *value = sdb_get (core->anal->sdb_types, key, 0);
+	free (key);
+	if (!value) {
+		return false;
+	}
+	int vlen = r_str_split (value, ',');
+	if (vlen < 2) {
+		free (value);
+		return false;
+	}
+	*member_type = strdup (r_str_word_get0 (value, 0));
+	*offset = r_num_get (NULL, r_str_word_get0 (value, 1));
+	free (value);
+	return *member_type != NULL;
+}
+
+static ut64 idd_read_num(RCore *core, ut64 addr, int size) {
+	ut8 buf[8] = {0};
+	if (size < 1) {
+		size = 1;
+	} else if (size > 8) {
+		size = 8;
+	}
+	if (r_io_read_at (core->io, addr, buf, size) < 1) {
+		return 0;
+	}
+	return r_read_ble (buf, r_config_get_b (core->config, "cfg.bigendian"), size * 8);
+}
+
+static bool idd_resolve_path(RCore *core, const char *path, ut64 *addr, char **type) {
+	char *words = strdup (r_str_trim_head_ro (path));
+	if (!words) {
+		return false;
+	}
+	int nargs = r_str_split (words, '.');
+	if (nargs < 1) {
+		free (words);
+		return false;
+	}
+	char *cur_type = strdup (r_str_word_get0 (words, 0));
+	ut64 cur_addr = core->addr;
+	int i;
+	for (i = 1; i < nargs; i++) {
+		const char *member = r_str_word_get0 (words, i);
+		char *member_type = NULL;
+		ut64 offset = 0;
+		if (!idd_member_info (core, cur_type, member, &member_type, &offset)) {
+			free (cur_type);
+			free (words);
+			return false;
+		}
+		cur_addr += offset;
+		if (i + 1 < nargs) {
+			int ptrs = 0;
+			char *base = idd_type_base (member_type, &ptrs, NULL);
+			if (ptrs > 0) {
+				cur_addr = idd_read_num (core, cur_addr, core->anal->config->bits / 8);
+			}
+			free (cur_type);
+			cur_type = base;
+			free (member_type);
+		} else {
+			free (cur_type);
+			cur_type = member_type;
+		}
+	}
+	*addr = cur_addr;
+	*type = cur_type;
+	free (words);
+	return true;
+}
+
+static void cmd_iddd(RCore *core, const char *input, bool json) {
+	const char *name = r_str_trim_head_ro (input);
+	const char *kind = idd_type_kind (core, name);
+	if (!kind || (strcmp (kind, "struct") && strcmp (kind, "union"))) {
+		return;
+	}
+	char *members_key = r_str_newf ("%s.%s", kind, name);
+	char *members = sdb_get (core->anal->sdb_types, members_key, 0);
+	free (members_key);
+	if (!members) {
+		return;
+	}
+	int nargs = r_str_split (members, ',');
+	if (json) {
+		PJ *pj = r_core_pj_new (core);
+		pj_o (pj);
+		pj_ks (pj, "name", name);
+		pj_ki (pj, "size", idd_type_size (core, name));
+		pj_kb (pj, "inbits", false);
+		pj_kb (pj, kind, true);
+		pj_ka (pj, "members");
+		int i;
+		for (i = 0; i < nargs; i++) {
+			const char *member = r_str_word_get0 (members, i);
+			char *member_type = NULL;
+			ut64 offset = 0;
+			if (idd_member_info (core, name, member, &member_type, &offset)) {
+				int ptrs = 0;
+				int array_count = 0;
+				char *base = idd_type_base (member_type, &ptrs, &array_count);
+				const char *member_kind = base? idd_type_kind (core, base): NULL;
+				bool is_typedef = member_kind && !strcmp (member_kind, "typedef");
+				if (!is_typedef && !member_kind && base && r_str_endswith (base, "_t")) {
+					is_typedef = true;
+				}
+				char *display = idd_type_display (core, member_type);
+				pj_o (pj);
+				pj_ks (pj, "name", member);
+				pj_ks (pj, "type", display? display: member_type);
+				pj_kb (pj, "typedef", is_typedef);
+				pj_kb (pj, "struct", member_kind && !strcmp (member_kind, "struct"));
+				pj_kb (pj, "union", member_kind && !strcmp (member_kind, "union"));
+				pj_ki (pj, "pointer", ptrs);
+				pj_kb (pj, "const", strstr (member_type, "const ") != NULL);
+				pj_kb (pj, "volatile", strstr (member_type, "volatile ") != NULL);
+				pj_kb (pj, "function", false);
+				pj_kb (pj, "enum", member_kind && !strcmp (member_kind, "enum"));
+				pj_kb (pj, "array", array_count > 0);
+				if (array_count > 0) {
+					pj_ka (pj, "array_dimension");
+					pj_i (pj, array_count);
+					pj_end (pj);
+				}
+				pj_ki (pj, "size", idd_type_size (core, member_type));
+				pj_kb (pj, "inbits", false);
+				pj_ki (pj, "offset", offset);
+				pj_end (pj);
+				free (display);
+				free (base);
+				free (member_type);
+			}
+		}
+		pj_end (pj);
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		if (s) {
+			r_cons_print (core->cons, s);
+			free (s);
+		}
+	} else {
+		r_cons_printf (core->cons, "%s %s {\n", kind, name);
+		int i;
+		for (i = 0; i < nargs; i++) {
+			const char *member = r_str_word_get0 (members, i);
+			char *member_type = NULL;
+			ut64 offset = 0;
+			if (idd_member_info (core, name, member, &member_type, &offset)) {
+				int array_count = 0;
+				char *base = idd_type_base (member_type, NULL, &array_count);
+				free (base);
+				char *display = idd_type_display (core, member_type);
+				if (display) {
+					r_cons_printf (core->cons, "  %s%s", display, member);
+					free (display);
+				}
+				if (array_count > 0) {
+					r_cons_printf (core->cons, "[%d]", array_count);
+				}
+				r_cons_println (core->cons, ";");
+				free (member_type);
+			}
+		}
+		r_cons_println (core->cons, "};");
+	}
+	free (members);
+}
+
+static bool idd_sdb_function(void *user, const char *k, const char *v) {
+	return !strcmp (v, "fcn");
+}
+
+static int idd_symbol_size(RCore *core, const char *name) {
+	RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);
+	if (symbols) {
+		RBinSymbol *sym;
+		R_VEC_FOREACH (symbols, sym) {
+			const char *sname = r_bin_name_tostring2 (sym->name, 'o');
+			if (!strcmp (sname, name) || (r_str_startswith (sname, "sym.") && !strcmp (sname + 4, name))) {
+				return sym->size;
+			}
+		}
+	}
+	return 0;
+}
+
+static void cmd_iddlf(RCore *core) {
+	Sdb *dwarf_sdb = sdb_ns (core->anal->sdb, "dwarf", 0);
+	if (!dwarf_sdb) {
+		return;
+	}
+	SdbList *l = sdb_foreach_list_filter (dwarf_sdb, idd_sdb_function, false);
+	SdbListIter *iter;
+	SdbKv *kv;
+	ls_foreach (l, iter, kv) {
+		const char *key = sdbkv_key (kv);
+		char *name_key = r_str_newf ("fcn.%s.name", key);
+		const char *name = sdb_const_get (dwarf_sdb, name_key, NULL);
+		free (name_key);
+		if (R_STR_ISEMPTY (name)) {
+			name = key;
+		}
+		char *addr_key = r_str_newf ("fcn.%s.addr", key);
+		ut64 addr = sdb_num_get (dwarf_sdb, addr_key, 0);
+		free (addr_key);
+		int size = idd_symbol_size (core, name);
+		r_cons_printf (core->cons, "f sym.%s %d @ 0x%" PFMT64x "\n", name, size, addr);
+	}
+	ls_free (l);
+}
+
+static void cmd_iddlg(RCore *core) {
+	RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);
+	if (!symbols) {
+		return;
+	}
+	Sdb *seen = sdb_new0 ();
+	RBinSymbol *sym;
+	R_VEC_FOREACH (symbols, sym) {
+		if (sym->is_imported || !sym->type || strcmp (sym->type, R_BIN_TYPE_OBJECT_STR) || sym->size < 1) {
+			continue;
+		}
+		if (!sym->bind || strcmp (sym->bind, "GLOBAL")) {
+			continue;
+		}
+		const char *name = r_bin_name_tostring2 (sym->name, 'o');
+		if (r_str_startswith (name, "obj.")) {
+			name += 4;
+		}
+		if (r_str_startswith (name, "_fp_") || sdb_exists (seen, name)) {
+			continue;
+		}
+		sdb_set (seen, name, "1", 0);
+		r_cons_printf (core->cons, "f sym.%s %u @ 0x%" PFMT64x "\n", name, sym->size, sym->vaddr);
+	}
+	sdb_free (seen);
+}
+
+static void cmd_idd(RCore *core, const char *input) {
+	switch (input[2]) {
+	case 'i': { // "iddi"
+		const char *file = r_str_trim_head_ro (input + 3);
+		if (R_STR_ISNOTEMPTY (file) && (!core->bin->file || strcmp (core->bin->file, file))) {
+			if (r_core_file_open (core, file, R_PERM_R, 0)) {
+				r_core_bin_load (core, file, UT64_MAX);
+			}
+		}
+		const bool va = r_config_get_b (core->config, "io.va");
+		(void)r_core_bin_info (core, R_CORE_BIN_ACC_ADDRLINE, NULL, R_MODE_SET, va, NULL, NULL);
+		break;
+	}
+	case 'd': // "iddd"
+		cmd_iddd (core, input + (input[3] == 'j'? 4: 3), input[3] == 'j');
+		break;
+	case 'l': // "iddl"
+		if (input[3] == 'f') {
+			cmd_iddlf (core);
+		} else if (input[3] == 'g') {
+			cmd_iddlg (core);
+		}
+		break;
+	case 't': { // "iddt"
+		ut64 addr = 0;
+		char *type = NULL;
+		if (idd_resolve_path (core, input + 3, &addr, &type)) {
+			char *display = idd_type_display (core, type);
+			r_cons_printf (core->cons, "type : %s\n", display? display: type);
+			r_cons_printf (core->cons, "size : %d\n", idd_type_size (core, type));
+			free (display);
+			free (type);
+		}
+		break;
+	}
+	case 'a': // "idda"
+	case 'v': { // "iddv"
+		ut64 addr = 0;
+		char *type = NULL;
+		if (idd_resolve_path (core, input + 3, &addr, &type)) {
+			if (input[2] == 'a') {
+				r_cons_printf (core->cons, "addr = 0x%" PFMT64x "\n", addr);
+			} else {
+				r_cons_printf (core->cons, "0x%" PFMT64x "\n", idd_read_num (core, addr, idd_type_size (core, type)));
+			}
+			free (type);
+		}
+		break;
+	}
+	case ' ': { // "idd"
+		const char *arg = r_str_trim_head_ro (input + 2);
+		if (strchr (arg, '.')) {
+			ut64 addr = 0;
+			char *type = NULL;
+			if (idd_resolve_path (core, arg, &addr, &type)) {
+				r_cons_printf (core->cons, "addr = 0x%" PFMT64x "\n", addr);
+				free (type);
+			}
+			break;
+		}
+		const char *kind = idd_type_kind (core, arg);
+		if (!kind || (strcmp (kind, "struct") && strcmp (kind, "union"))) {
+			break;
+		}
+		char *members_key = r_str_newf ("%s.%s", kind, arg);
+		char *members = sdb_get (core->anal->sdb_types, members_key, 0);
+		free (members_key);
+		if (members) {
+			int nargs = r_str_split (members, ',');
+			int i;
+			for (i = 0; i < nargs; i++) {
+				const char *member = r_str_word_get0 (members, i);
+				char *member_type = NULL;
+				ut64 offset = 0;
+				if (idd_member_info (core, arg, member, &member_type, &offset)) {
+					ut64 value = idd_read_num (core, core->addr + offset, idd_type_size (core, member_type));
+					r_cons_printf (core->cons, "%s = 0x%" PFMT64x "%s\n", member, value, (i + 1 < nargs)? ",": "");
+					free (member_type);
+				}
+			}
+			free (members);
+		}
+		break;
+	}
+	default:
+		r_core_return_invalid_command (core, "idd", input[2]);
+		break;
+	}
+}
+
 static void cmd_id(RCore *core, PJ *pj, const char *input, bool is_array, int mode) {
 	const bool va = r_config_get_b (core->config, "io.va");
 	switch (input[1]) {
 	case '?': // "id?"
 		r_core_cmd_help (core, help_msg_id);
+		break;
+	case 'd': // "idd"
+		cmd_idd (core, input);
 		break;
 	case 'l': // "idl"
 		cmd_idl (core, input);
