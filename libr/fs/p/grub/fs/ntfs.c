@@ -537,6 +537,33 @@ free_file(struct grub_ntfs_file *mft) {
 	grub_free (mft->buf);
 }
 
+static char *
+utf16le_to_utf8(const char *src, int len) {
+	grub_uint16_t *tmp;
+	char *dst;
+	int i;
+
+	if (len < 0) {
+		return NULL;
+	}
+	tmp = grub_malloc ((len + 1) * sizeof (*tmp));
+	if (!tmp) {
+		return NULL;
+	}
+	dst = grub_malloc (len * 4 + 1);
+	if (!dst) {
+		grub_free (tmp);
+		return NULL;
+	}
+	for (i = 0; i < len; i++) {
+		const grub_uint8_t *p = (const grub_uint8_t *)src + (i * 2);
+		tmp[i] = (grub_uint16_t)(p[0] | (p[1] << 8));
+	}
+	*grub_utf16_to_utf8 ((grub_uint8_t *)dst, tmp, len) = '\0';
+	grub_free (tmp);
+	return dst;
+}
+
 static int
 list_file(struct grub_ntfs_file *diro, char *pos, int(*hook)(const char *filename, enum grub_fshelp_filetype filetype, grub_fshelp_node_t node, void *closure), void *closure) {
 	char *np;
@@ -578,12 +605,11 @@ list_file(struct grub_ntfs_file *diro, char *pos, int(*hook)(const char *filenam
 				fdiro->data = diro->data;
 				fdiro->ino = u32at (pos, 0);
 
-				ustr = grub_malloc (ns * 4 + 1);
+				ustr = utf16le_to_utf8 (np, ns);
 				if (ustr == NULL) {
 					grub_free (fdiro);
 					return 0;
 				}
-				*grub_utf16_to_utf8 ((grub_uint8_t *)ustr, (grub_uint16_t *)np, ns) = '\0';
 
 				if (namespace) {
 					type |= GRUB_FSHELP_CASE_INSENSITIVE;
@@ -993,10 +1019,11 @@ grub_ntfs_label(grub_device_t device, char **label) {
 		int len;
 
 		len = u32at (pa, 0x10) / 2;
-		buf = grub_malloc (len * 4 + 1);
 		pa += u16at (pa, 0x14);
-		*grub_utf16_to_utf8 ((grub_uint8_t *)buf, (grub_uint16_t *)pa, len) =
-			'\0';
+		buf = utf16le_to_utf8 (pa, len);
+		if (!buf) {
+			goto fail;
+		}
 		*label = buf;
 	}
 
