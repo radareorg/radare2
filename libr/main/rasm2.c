@@ -1005,9 +1005,6 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		rasm_env_print (opt.arg);
 		goto beach;
 	}
-	if (as->opt.cpu) {
-		r_arch_config_set_cpu (as->a->config, as->opt.cpu);
-	}
 	if (arch) {
 		if (!r_asm_use (as->a, arch)) {
 			R_LOG_ERROR ("Unknown asm plugin '%s'", arch);
@@ -1034,16 +1031,18 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	r_anal_set_bits (as->anal, bits);
 	as->opt.bits = bits;
 	as->a->syscall = r_syscall_new ();
+	char *asmcpu = NULL;
 	if (R_STR_ISNOTEMPTY (as->opt.cpu)) {
-		// check if selected cpu is valid
-		const char *cpus = R_UNWRAP4 (as->anal->arch, session, plugin, cpus);
-		if (cpus && !strstr (cpus, as->opt.cpu)) {
-			R_LOG_WARN ("Invalid CPU. See -a, -b and asm.cpu values (%s)", cpus);
+		RArchPlugin *ap = R_UNWRAP3 (as->anal->arch, session, plugin);
+		asmcpu = ap? r_arch_plugin_cpucheck (ap, as->opt.cpu): strdup (as->opt.cpu);
+		if (asmcpu) {
+			r_arch_config_set_cpu (as->a->config, asmcpu);
 		} else {
-			R_LOG_WARN ("Ignored -c asm.cpu, provided plugin exposes no CPUs models");
+			R_LOG_WARN ("Invalid CPU '%s'. See -a, -b and asm.cpu values", as->opt.cpu);
 		}
 	}
-	r_syscall_setup (as->a->syscall, arch, bits, as->opt.cpu, as->opt.kernel);
+	r_syscall_setup (as->a->syscall, arch, bits, asmcpu, as->opt.kernel);
+	free (asmcpu);
 	{
 		bool canbebig = r_asm_set_big_endian (as->a, as->opt.isbig);
 		if (as->opt.isbig && !canbebig) {

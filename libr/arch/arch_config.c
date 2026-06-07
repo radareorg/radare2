@@ -41,6 +41,40 @@ R_API void r_arch_config_set_cpu(RArchConfig *config, const char * R_NULLABLE cp
 	config->cpu = R_STR_ISNOTEMPTY (cpu) ? strdup (cpu) : NULL;
 }
 
+R_API RList *r_arch_plugin_cpus(RArchPlugin *plugin) {
+	R_RETURN_VAL_IF_FAIL (plugin, NULL);
+	return R_STR_ISNOTEMPTY (plugin->cpus)
+		? r_str_split_duplist (plugin->cpus, ",", true)
+		: r_list_newf (free);
+}
+
+R_API char *r_arch_plugin_cpucheck(RArchPlugin *plugin, const char *cpu) {
+	R_RETURN_VAL_IF_FAIL (plugin, NULL);
+	if (R_STR_ISEMPTY (cpu)) {
+		return strdup ("");
+	}
+	if (plugin->meta.name && !r_str_casecmp (plugin->meta.name, cpu)) {
+		return strdup (plugin->meta.name);
+	}
+	if (plugin->arch && !r_str_casecmp (plugin->arch, cpu)) {
+		return strdup (plugin->arch);
+	}
+	if (R_STR_ISEMPTY (plugin->cpus)) {
+		return strdup (cpu);
+	}
+	char *res = NULL, *word;
+	RListIter *iter;
+	RList *cpus = r_arch_plugin_cpus (plugin);
+	r_list_foreach (cpus, iter, word) {
+		if (!r_str_casecmp (word, cpu)) {
+			res = strdup (word);
+			break;
+		}
+	}
+	r_list_free (cpus);
+	return res;
+}
+
 R_API bool r_arch_config_set_bits(RArchConfig *config, int bits) {
 	R_RETURN_VAL_IF_FAIL (config, false);
 	// if the config is tied to a session, there must be a callback to notify the plugin

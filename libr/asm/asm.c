@@ -1465,10 +1465,9 @@ R_API int r_asm_mnemonics_byname(RAsm *a, const char *name) {
 
 R_API RList *r_asm_cpus(RAsm *a) {
 	R_RETURN_VAL_IF_FAIL (a, NULL);
-	// R2_600 move to r_arch api instead?
-	const char *cpus = R_UNWRAP5 (a, arch, session, plugin, cpus);
-	RList *list = cpus
-		? r_str_split_duplist (cpus, ",", 0)
+	RArchPlugin *plugin = R_UNWRAP4 (a, arch, session, plugin);
+	RList *list = plugin
+		? r_arch_plugin_cpus (plugin)
 		: r_list_newf (free);
 	r_list_sort (list, (RListComparator)strcmp);
 	return list;

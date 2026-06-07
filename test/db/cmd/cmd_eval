@@ -143,6 +143,31 @@ all
 EOF
 RUN
 
+NAME=e asm.cpu validation
+FILE=-
+ARGS=-a arm -b 16
+CMDS=<<EOF
+e asm.cpu=V8
+e asm.cpu
+e asm.cpu=tetris
+e asm.cpu
+e asm.arch=mips
+e asm.cpu=v
+e asm.cpu
+e asm.cpu=v3
+e asm.cpu
+e asm.arch=v850
+e asm.cpu
+EOF
+EXPECT=<<EOF
+v8
+v8
+
+v3
+
+EOF
+RUN
+
 NAME=e asm.syntax
 FILE=-
 CMDS=<<EOF

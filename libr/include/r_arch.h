@@ -216,6 +216,8 @@ R_API void r_arch_free(RArch *arch);
 // aconfig.c
 R_API void r_arch_config_use(RArchConfig *config, const char * R_NULLABLE arch);
 R_API void r_arch_config_set_cpu(RArchConfig *config, const char * R_NULLABLE cpu);
+R_API RList *r_arch_plugin_cpus(RArchPlugin *plugin);
+R_API char *r_arch_plugin_cpucheck(RArchPlugin *plugin, const char *cpu);
 R_API bool r_arch_config_set_syntax(RArchConfig *config, int syntax);
 R_API bool r_arch_config_set_bits(RArchConfig *c, int bits);
 R_API RArchConfig *r_arch_config_new(void);
