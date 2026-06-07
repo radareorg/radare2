@@ -292,6 +292,14 @@ mov eax, 0x21
 EOF
 RUN
 
+NAME=rasm2 tms320 c55x smem extension
+FILE=-
+CMDS=!rasm2 -a tms320 -c c55x -b 32 -d f41134127856 2>/dev/null
+EXPECT=<<EOF
+and 0x3412, abs16(0x7856)
+EOF
+RUN
+
 NAME=rasm2 -D
 FILE=-
 CMDS=!rasm2 -D -a x86 -b 32 "b821000000"

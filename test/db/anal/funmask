@@ -1,5 +1,5 @@
 NAME=function bytes
-ARGS=-a arm
+ARGS=-a arm -b 64
 FILE=bins/mach0/ls-m1
 CMDS=<<EOF
 af
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=function bytes + mask
-ARGS=-a arm
+ARGS=-a arm -b 64
 FILE=bins/mach0/ls-m1
 CMDS=<<EOF
 af
@@ -23,7 +23,7 @@ EOF
 RUN
 
 NAME=function bytes in json
-ARGS=-a arm
+ARGS=-a arm -b 64
 FILE=bins/mach0/ls-m1
 CMDS=<<EOF
 af
@@ -42,7 +42,7 @@ EOF
 RUN
 
 NAME=instruction bits and basic block bytes
-ARGS=-a arm
+ARGS=-a arm -b 64
 FILE=bins/mach0/ls-m1
 CMDS=<<EOF
 af
@@ -64,7 +64,7 @@ EOF
 RUN
 
 NAME=anal.mask=true
-ARGS=-a arm
+ARGS=-a arm -b 64
 FILE=bins/mach0/ls-m1
 CMDS=<<EOF
 af

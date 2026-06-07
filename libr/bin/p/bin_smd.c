@@ -163,7 +163,7 @@ static bool symbols_vec(RBinFile *bf) {
 	showstr ("DomesticName", hdr.DomesticName, sizeof (hdr.DomesticName));
 	showstr ("OverseasName", hdr.OverseasName, sizeof (hdr.OverseasName));
 	showstr ("ProductCode", hdr.ProductCode, sizeof (hdr.ProductCode));
-	R_LOG_INFO ("Checksum: 0x%04x", (ut32) hdr.CheckSum);
+	R_LOG_INFO ("Checksum: 0x%04x", (ut32)r_read_be16 (&hdr.CheckSum));
 	showstr ("Peripherals", hdr.Peripherals, sizeof (hdr.Peripherals));
 	showstr ("SramCode", hdr.SramCode, sizeof (hdr.SramCode));
 	showstr ("ModemCode", hdr.ModemCode, sizeof (hdr.ModemCode));

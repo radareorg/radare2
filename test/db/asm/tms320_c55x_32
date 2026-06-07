@@ -349,3 +349,5 @@ d "xcc ac0 == 0" 9e00
 d "xccpart ac0 == 0" 9e80
 d "xcc ac0 == 0" 9f00
 d "xccpart ac0 == 0" 9f80
+d "rpt 0x3412" 0c3412
+d "and 0x3412, abs16(0x7856)" f41134127856

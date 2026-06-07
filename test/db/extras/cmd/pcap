@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME="pcap file header"
-ARGS=-a x86
+ARGS=-a x86 -b 64
 FILE=bins/pcap/sample0.pcap
 CMDS=<<EOF
 pd 1
@@ -23,7 +23,7 @@ EOF
 RUN
 
 NAME="pcap frame header"
-ARGS=-a x86
+ARGS=-a x86 -b 64
 FILE=bins/pcap/sample0.pcap
 CMDS=<<EOF
 s 0x18
@@ -36,7 +36,7 @@ EOF
 RUN
 
 NAME="pcap ethernet header"
-ARGS=-a x86
+ARGS=-a x86 -b 64
 FILE=bins/pcap/sample0.pcap
 CMDS=<<EOF
 s 0x28
@@ -49,7 +49,7 @@ EOF
 RUN
 
 NAME="pcap ipv4 header"
-ARGS=-a x86
+ARGS=-a x86 -b 64
 FILE=bins/pcap/sample0.pcap
 CMDS=<<EOF
 s 0x36
@@ -62,7 +62,7 @@ EOF
 RUN
 
 NAME="pcap tcp header"
-ARGS=-a x86
+ARGS=-a x86 -b 64
 FILE=bins/pcap/sample0.pcap
 CMDS=<<EOF
 s 0x4a
@@ -70,20 +70,20 @@ pd 1
 EOF
 EXPECT=<<EOF
             ;-- 0x4a: Transmission Control Protocol, Src Port: 58728, Dst port: 8888, Len: 0:
-            0x0000004a      e568           in eax, 0x68                ; 'h'
+            0x0000004a      e568           in eax, 0x68
 EOF
 RUN
 
 NAME="pcap tcp string data"
-ARGS=-a x86
+ARGS=-a x86 -b 64
 FILE=bins/pcap/sample0.pcap
 CMDS=<<EOF
 s 0x3f3
 pd 2
 EOF
 EXPECT=<<EOF
-            0x000003f3  ~   d09824715375   rcr byte [rax + 0x75537124], 1
-            ;-- str._qSupported:multiprocess__swbreak__hwbreak__qRelocInsn__fork_events__vfork_events__exec_events__vContSupported__QThreadEvents__no_resumed__xmlRegisters_i386_6a:
-            0x000003f5     .string "$qSupported:multiprocess+;swbreak+;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+;xmlRegisters=i386#6a" ; len=160
+            ;-- str._qSupported:multiprocess_swbreak_hwbreak_qRelocInsn_fork_events_vfork_events_exec_events_vContSupported_QThreadEvents_no_resumed_xmlRegistersi3866am:
+            0x000003f3     .string "\xd0\x98$qSupported:multiprocess+;swbreak+;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+;xmlRegisters=i386#6am" ; len=163
+            0x00000496      ce             invalid
 EOF
 RUN

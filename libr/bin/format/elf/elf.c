@@ -2477,8 +2477,7 @@ ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
 
 	// X86-PIE
 	if (buf[0x00] == 0x48 && buf[0x1e] == 0x8d && buf[0x11] == 0xe8) {
-		ut32 *pmain = (ut32*)(buf + 0x30);
-		ut64 vmain = Elf_(p2v) (eo, (ut64)*pmain);
+		ut64 vmain = Elf_(p2v) (eo, (ut64)r_read_le32 (buf + 0x30));
 		ut64 ventry = Elf_(p2v) (eo, entry);
 		if (vmain != UT64_MAX && ventry != UT64_MAX && vmain >> 16 == ventry >> 16) {
 			return (ut64) vmain;

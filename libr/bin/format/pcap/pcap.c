@@ -51,15 +51,11 @@ static bool parse_tcp(RBuffer *b, ut64 off, pcaprec_t *rec, ut32 size) {
 
 	// data offset at (((tcp->hdr_len >> 4) & 0x0F) * 4)
 	ut32 dataoff = ((tcp->hdr_len & 0xF0) >> 2);
-	if (dataoff >= size) {
+	if (dataoff > size) {
 		free (tcp);
 		return false;
 	}
 	rec->datasz = size - dataoff;
-	if (rec->datasz < 1) {
-		free (tcp);
-		return false;
-	}
 #if 0
 	rec->data = malloc (rec->datasz + 1);
 	if (!rec->data) {
