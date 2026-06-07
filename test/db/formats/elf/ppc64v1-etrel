@@ -208,3 +208,22 @@ EXPECT=<<EOF
 8
 EOF
 RUN
+
+NAME=PPC64 ELFv1 ET_REL: TOC16_LO_DS reloc applied to ld immediate
+FILE=bins/elf/ppc64v1-crc32_generic.ko
+ARGS=-e bin.relocs.apply=true
+CMDS=pi 2 @ 0x0800036c
+EXPECT=<<EOF
+addis r9, r2, 0
+ld r3, -0x8000(r9)
+EOF
+RUN
+
+NAME=PPC64 ELFv1 ET_REL: TOC16_LO_DS patches the DS halfword keeping the ld sub-opcode
+FILE=bins/elf/ppc64v1-crc32_generic.ko
+ARGS=-e bin.relocs.apply=true
+CMDS=p8 4 @ 0x08000370
+EXPECT=<<EOF
+e8698000
+EOF
+RUN
