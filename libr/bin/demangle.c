@@ -58,6 +58,10 @@ R_API void r_bin_demangle_list(RBin *bin) {
 	}
 }
 
+R_API char *r_bin_demangle_dlang(const char *str) {
+	return r_demangle_dlang (str);
+}
+
 R_API char *r_bin_demangle_ibmxl(const char *str) {
 	return r_demangle_ibmxl (str);
 }
@@ -202,7 +206,12 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	case R_BIN_LANG_IBMXL: demangled = r_bin_demangle_ibmxl (str); break;
 	case R_BIN_LANG_PASCAL: demangled = r_bin_demangle_freepascal (str); break;
 	case R_BIN_LANG_MSVC: demangled = r_bin_demangle_msvc (str); break;
-	case R_BIN_LANG_DLANG: demangled = r_bin_demangle_plugin (bin, "dlang", str); break;
+	case R_BIN_LANG_DLANG:
+		demangled = r_demangle_dlang (str);
+		if (!demangled) {
+			demangled = r_bin_demangle_plugin (bin, "dlang", str);
+		}
+		break;
 	}
 	if (libs && demangled && lib) {
 		char *d = r_str_newf ("%s_%s", lib, demangled);

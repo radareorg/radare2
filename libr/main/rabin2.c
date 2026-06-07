@@ -563,6 +563,7 @@ static char *__demangleAs(RBin *bin, int type, const char *file) {
 	case R_BIN_LANG_SWIFT: res = r_bin_demangle_swift (file, syscmd, bin->options.demangle_trylib); break;
 	case R_BIN_LANG_MSVC: res = r_bin_demangle_msvc (file); break;
 	case R_BIN_LANG_RUST: res = r_bin_demangle_rust (NULL, file, 0); break;
+	case R_BIN_LANG_DLANG: res = r_bin_demangle_dlang (file); break;
 	default:
 		R_LOG_ERROR ("Unsupported demangler");
 		break;

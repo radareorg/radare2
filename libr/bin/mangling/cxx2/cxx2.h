@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2026 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: MIT
 //
-// cxx2: small, clean, dependency-light demanglers meant to replace the GNU
+// cxx2: a small, clean, dependency-light demangler for the Itanium C++ ABI,
+// legacy IBM XL C++, Rust (legacy + v0) and D, meant to replace the GNU
 // libiberty demangler.
 //
 // Design goals:
@@ -24,6 +25,9 @@ extern "C" {
 // returns a newly allocated demangled string, or NULL on failure.
 char *r_demangle_itanium(const char *mangled);  // _Z...   (C++ Itanium ABI)
 char *r_demangle_ibmxl(const char *mangled);    // foo__Fv (legacy IBM XL C++)
+char *r_demangle_rust(const char *mangled);     // _R... (v0) or _ZN..E (legacy)
+char *r_demangle_rust_v0(const char *mangled);  // _R...   (Rust v0 only)
+char *r_demangle_dlang(const char *mangled);    // _D...   (D language)
 char *r_demangle_gnu_v2(const char *mangled);   // foo__1Ai (pre-Itanium g++ ABI)
 char *r_demangle_arm(const char *mangled);      // __ct__1cFi (pre-Itanium ARM/cfront ABI)
 

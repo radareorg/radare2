@@ -49,3 +49,27 @@ EXPECT=<<EOF
 0x00002b40    1     31 sym.example::main::hf45903a20ef2ad21
 EOF
 RUN
+
+NAME=rust v0 nested path
+FILE=-
+CMDS=!rabin2 -D rust _RNvNtCs1234_7mycrate3foo3bar
+EXPECT=<<EOF
+mycrate::foo::bar
+EOF
+RUN
+
+NAME=rust v0 generic drop_in_place
+FILE=-
+CMDS=!rabin2 -D rust _RINvNtCsgEmfK2I1SDS_4core3ptr13drop_in_placeINtNtCslNYArtu3iFV_5alloc3vec3VeclEECs95EuknAPpYD_5v0src
+EXPECT=<<EOF
+core::ptr::drop_in_place::<alloc::vec::Vec<i32>>
+EOF
+RUN
+
+NAME=rust v0 closure
+FILE=-
+CMDS=!rabin2 -D rust _RNCNvCs95EuknAPpYD_5v0src8closures0B3_
+EXPECT=<<EOF
+v0src::closures::{closure#0}
+EOF
+RUN

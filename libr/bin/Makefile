@@ -27,6 +27,7 @@ ifeq (1,$(WITH_GPL))
 OBJS+=mangling/cxx/cp-demangle.o
 endif
 OBJS+=mangling/cxx2/cxx2.o mangling/cxx2/itanium.o
+OBJS+=mangling/cxx2/rust.o mangling/cxx2/dlang.o
 OBJS+=mangling/cxx2/xlc.o
 OBJS+=mangling/cxx2/gnu-v2.o
 OBJS+=mangling/cxx2/armabi.o

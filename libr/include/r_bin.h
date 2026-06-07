@@ -1001,6 +1001,7 @@ R_API char *r_bin_demangle_msvc(const char *str);
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib);
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
 R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *str, ut64 vaddr);
+R_API char *r_bin_demangle_dlang(const char *str);
 R_API char *r_bin_demangle_ibmxl(const char *str);
 R_API int r_bin_demangle_type(const char *str);
 R_API void r_bin_demangle_list(RBin *bin);
