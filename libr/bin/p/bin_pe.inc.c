@@ -566,12 +566,7 @@ static bool imports_vec(RBinFile *bf) {
 		rel->additive = 0;
 		rel->import = r_bin_import_clone (ptr);
 		rel->addend = 0;
-		{
-			ut8 addr[4];
-			r_buf_read_at (bf->buf, imp->paddr, addr, 4);
-			ut64 newaddr = (ut64) r_read_le32 (&addr);
-			rel->vaddr = newaddr;
-		}
+		rel->vaddr = r_buf_read_le32_at (bf->buf, imp->paddr);
 		rel->paddr = imp->paddr;
 		rel->ntype = imp->ntype;
 		r_list_append (relocs, rel);
@@ -667,10 +662,14 @@ static bool check_inlined_canary(RBinFile *bf) {
 	if (addr == UT64_MAX || !addr) {
 		goto out_fail;
 	}
-	if (r_buf_read_at (bf->buf, addr, buf, sizeof (buf)) < 1) {
+	st64 nread = r_buf_read_at (bf->buf, addr, buf, sizeof (buf));
+	if (nread < 1) {
 		goto out_fail;
 	}
 	if (buf[0] == 0x48) {
+		if (nread < 9) {
+			goto out_fail;
+		}
 		// x86-64
 #if 0
 	// X86-64
@@ -687,26 +686,27 @@ static bool check_inlined_canary(RBinFile *bf) {
 	0x1400015ca      483bc3         cmp   rax,  rbx
 #endif
 		// follow call
-		ut64 rel_addr = (ut64)((int)(buf[5] + (buf[6] << 8) + (buf[7] << 16) + (buf[8] << 24)));
-		ut64 calldst = addr + 5 + 4 + rel_addr;
-		if (r_buf_read_at (bf->buf, calldst, buf, sizeof (buf)) < 1) {
+		ut64 calldst = addr + 9 + (st32)r_read_le32 (buf + 5);
+		nread = r_buf_read_at (bf->buf, calldst, buf, sizeof (buf));
+		if (nread < 2) {
 			goto out_fail;
 		}
 		if (buf[0] != 0x48 && buf[1] != 0x89) {
 			goto out_fail;
 		}
-		ut64 canaddr = 0;
-		if (r_buf_read_at (bf->buf, calldst + 16, (ut8*)&canaddr, 4) < 1) {
-			goto out_fail;
-		}
-
-		ut32 panaddr = canaddr - 0x40; // PE_(va2pa)(bf->bo->bin_obj, canaddr);
 
 		ut8 can0[8] = {0};
-		r_buf_read_at (bf->buf, panaddr, can0, 8);
-		ut8 can1[8] = {0};
-		r_buf_read_at (bf->buf, calldst + 0x16, can1, 8);
-		if (!memcmp (can0, can1, 8)) {
+		const int can1_off = 0x16;
+		if (nread < can1_off + (int)sizeof (can0)) {
+			goto out_fail;
+		}
+		ut32 canaddr = r_read_le32 (buf + 16);
+		ut32 panaddr = canaddr - 0x40; // PE_(va2pa)(bf->bo->bin_obj, canaddr);
+
+		if (r_buf_read_at (bf->buf, panaddr, can0, sizeof (can0)) != sizeof (can0)) {
+			goto out_fail;
+		}
+		if (!memcmp (can0, buf + can1_off, sizeof (can0))) {
 			char *canstr = r_str_newf ("%02x%02x%02x%02x%02x%02x%02x%02x",
 				can0[0], can0[1], can0[2], can0[3],
 				can0[4], can0[5], can0[6], can0[7]);
@@ -729,22 +729,28 @@ static bool check_inlined_canary(RBinFile *bf) {
 	mov edi, 0xbb40e64e
 #endif
 		// follow call
-		ut64 rel_addr = (ut64)((int)(buf[1] + (buf[2] << 8) + (buf[3] << 16) + (buf[4] << 24)));
-		ut64 calldst = addr + 5 + rel_addr;
-		if (r_buf_read_at (bf->buf, calldst, buf, sizeof (buf)) < 1) {
+		if (nread < 5) {
+			goto out_fail;
+		}
+		ut64 calldst = addr + 5 + (st32)r_read_le32 (buf + 1);
+		nread = r_buf_read_at (bf->buf, calldst, buf, sizeof (buf));
+		if (nread < 3) {
 			goto out_fail;
 		}
 		if (buf[0] == 0x8b && buf[1] == 0xff && buf[2] == 0x55) {
 			goto out_succeed;
 		}
-		ut32 canaddr = 0;
-		r_buf_read_at (bf->buf, calldst + 2, (ut8*)&canaddr, 4);
-		ut32 panaddr = PE_(va2pa)(pe, canaddr);
 		ut8 can0[4] = {0};
-		r_buf_read_at (bf->buf, panaddr, can0, 4);
-		ut8 can1[4] = {0};
-		r_buf_read_at (bf->buf, calldst + 9, can1, 4);
-		if (!memcmp (can0, can1, 4)) {
+		const int can1_off = 9;
+		if (nread < can1_off + (int)sizeof (can0)) {
+			goto out_fail;
+		}
+		ut32 canaddr = r_read_le32 (buf + 2);
+		ut32 panaddr = PE_(va2pa)(pe, canaddr);
+		if (r_buf_read_at (bf->buf, panaddr, can0, sizeof (can0)) != sizeof (can0)) {
+			goto out_fail;
+		}
+		if (!memcmp (can0, buf + can1_off, sizeof (can0))) {
 			char *canstr = r_str_newf ("%02x%02x%02x%02x", can0[0], can0[1], can0[2], can0[3]);
 			sdb_set (bf->sdb, "canary.value", canstr, 0);
 			free (canstr);
