@@ -898,7 +898,7 @@ static RList* relocs(RBinFile *bf) {
 	return result;
 }
 
-static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
+static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 toc) {
 	ut64 V = 0;
 	ut64 A = rel->addend;
 	ut64 P = rel->rva;
@@ -1067,7 +1067,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		}
 		break;
 	case EM_PPC64: {
-		int low = 0, word = 0;
+		int low = 0, word = 0, ds = 0;
 		switch (rel->type) {
 		case R_PPC64_REL16_HA:
 			word = 2;
@@ -1105,6 +1105,32 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			word = 8;
 			V = B + A;
 			break;
+		case R_PPC64_TOC16_HA:
+			if (toc != UT64_MAX) {
+				word = 2;
+				V = (S + A - toc + 0x8000) >> 16;
+			}
+			break;
+		case R_PPC64_TOC16_HI:
+			if (toc != UT64_MAX) {
+				word = 2;
+				V = (S + A - toc) >> 16;
+			}
+			break;
+		case R_PPC64_TOC16:
+		case R_PPC64_TOC16_LO:
+			if (toc != UT64_MAX) {
+				word = 2;
+				V = (S + A - toc) & 0xffff;
+			}
+			break;
+		case R_PPC64_TOC16_DS:
+		case R_PPC64_TOC16_LO_DS:
+			if (toc != UT64_MAX) {
+				ds = 2;
+				V = (S + A - toc) & 0xfffc;
+			}
+			break;
 		default:
 			R_LOG_DEBUG ("unpatched PPC64 reloc type %d at 0x%"PFMT64x, rel->type, rel->rva);
 			break;
@@ -1139,6 +1165,11 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				iob->overlay_write_at (iob->io, rel->rva, buf, 8);
 				break;
 			}
+		} else if (ds) {
+			iob->read_at (iob->io, rel->rva, buf, 2);
+			ut16 cur = r_read_ble16 (buf, bo->endian);
+			r_write_ble16 (buf, (cur & 3) | (V & 0xfffc), bo->endian);
+			iob->overlay_write_at (iob->io, rel->rva, buf, 2);
 		}
 		break;
 	}
@@ -1456,6 +1487,16 @@ static RList* patch_relocs(RBinFile *bf) {
 		return NULL;
 	}
 	ut64 vaddr = n_vaddr;
+	ut64 toc_base = UT64_MAX;
+	if (eo->ehdr.e_machine == EM_PPC64) {
+		ut64 t = Elf_(get_section_addr) (eo, ".toc");
+		if (t == UT64_MAX) {
+			t = Elf_(get_section_addr) (eo, ".got");
+		}
+		if (t != UT64_MAX) {
+			toc_base = t + 0x8000;
+		}
+	}
 	RBinElfReloc *reloc;
 	R_VEC_FOREACH (relocs, reloc) {
 		ut64 plt_entry_addr = vaddr;
@@ -1481,7 +1522,7 @@ static RList* patch_relocs(RBinFile *bf) {
 		} else {
 			raddr = vaddr;
 		}
-		_patch_reloc (eo, eo->ehdr.e_machine, &b->iob, reloc, raddr, eo->baddr, plt_entry_addr);
+		_patch_reloc (eo, eo->ehdr.e_machine, &b->iob, reloc, raddr, eo->baddr, plt_entry_addr, toc_base);
 		ptr = reloc_convert (eo, reloc, n_vaddr);
 		if (!ptr) {
 			continue;
