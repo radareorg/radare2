@@ -779,7 +779,6 @@ static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 			char *word;
 			r_list_foreach (cpus, iter2, word) {
 				if (R_STR_ISNOTEMPTY (word)) {
-					node->options->free = free;
 					SETOPTIONS (node, word, NULL);
 				}
 			}
@@ -809,14 +808,13 @@ static bool cb_asmcpu(void *user, void *data) {
 	}
 	RArchPlugin *ap = R_UNWRAP5 (core, anal, arch, session, plugin);
 	if (ap) {
-		char *canon = r_arch_plugin_cpu_canonical (ap, node->value);
-		if (!canon) {
+		char *cpu = r_arch_plugin_cpucheck (ap, node->value);
+		if (!cpu) {
 			R_LOG_WARN ("asm.cpu: invalid value '%s'. See 'e asm.cpu=?'", node->value);
 			return false;
 		}
-		// canonicalize case in place (e.g. V8 -> v8)
 		free (node->value);
-		node->value = canon;
+		node->value = cpu;
 	}
 	r_core_esil_unload_arch (core);
 	r_arch_config_set_cpu (core->rasm->config, node->value);
@@ -940,21 +938,19 @@ static bool cb_asmarch(void *user, void *data) {
 	if (asmcpu) {
 		update_asmcpu_options (core, asmcpu);
 		RArchPlugin *ap = R_UNWRAP5 (core, anal, arch, session, plugin);
-		char *canon = ap? r_arch_plugin_cpu_canonical (ap, asmcpu->value): strdup (asmcpu->value);
-		if (!canon) {
-			// asm.cpu is incompatible with the new arch: clear it silently
+		char *cpu = ap? r_arch_plugin_cpucheck (ap, asmcpu->value): strdup (asmcpu->value);
+		if (!cpu) {
 			r_config_set (core->config, "asm.cpu", "");
 		} else {
-			if (strcmp (canon, asmcpu->value)) {
+			r_arch_config_set_cpu (core->rasm->config, cpu);
+			if (strcmp (cpu, asmcpu->value)) {
 				free (asmcpu->value);
-				asmcpu->value = canon;
-				canon = NULL;
+				asmcpu->value = cpu;
+			} else {
+				free (cpu);
 			}
-			r_arch_config_set_cpu (core->rasm->config, asmcpu->value);
-			free (canon);
 		}
 	}
-	// set up syscalls with the (now validated) cpu
 	if (core->anal) {
 		const char *asmcpu_value = r_config_get (core->config, "asm.cpu");
 		const char *asmos = r_config_get (core->config, "asm.os");

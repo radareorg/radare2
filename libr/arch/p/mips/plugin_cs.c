@@ -945,12 +945,7 @@ static bool plugin_changed(RArchSession *as) {
 	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config) != cpd->bigendian) {
 		return true;
 	}
-	if (cpd->cpu || as->config->cpu) {
-		if (!cpd->cpu || !as->config->cpu || strcmp (cpd->cpu, as->config->cpu)) {
-			return true;
-		}
-	}
-	return false;
+	return strcmp (r_str_get (cpd->cpu), r_str_get (as->config->cpu)) != 0;
 }
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {

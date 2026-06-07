@@ -43,16 +43,12 @@ R_API void r_arch_config_set_cpu(RArchConfig *config, const char * R_NULLABLE cp
 
 R_API RList *r_arch_plugin_cpus(RArchPlugin *plugin) {
 	R_RETURN_VAL_IF_FAIL (plugin, NULL);
-	return plugin->cpus
+	return R_STR_ISNOTEMPTY (plugin->cpus)
 		? r_str_split_duplist (plugin->cpus, ",", true)
 		: r_list_newf (free);
 }
 
-// Returns the canonical (plugin-cased) spelling of `cpu` for `plugin`, or NULL
-// if `cpu` is not a valid CPU. The empty string is valid (the default cpu), the
-// arch/plugin name is always accepted, and a plugin that exposes no cpu list
-// accepts any value, preserving old behavior.
-R_API char *r_arch_plugin_cpu_canonical(RArchPlugin *plugin, const char *cpu) {
+R_API char *r_arch_plugin_cpucheck(RArchPlugin *plugin, const char *cpu) {
 	R_RETURN_VAL_IF_FAIL (plugin, NULL);
 	if (R_STR_ISEMPTY (cpu)) {
 		return strdup ("");

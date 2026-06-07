@@ -1034,7 +1034,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	char *asmcpu = NULL;
 	if (R_STR_ISNOTEMPTY (as->opt.cpu)) {
 		RArchPlugin *ap = R_UNWRAP3 (as->anal->arch, session, plugin);
-		asmcpu = ap? r_arch_plugin_cpu_canonical (ap, as->opt.cpu): strdup (as->opt.cpu);
+		asmcpu = ap? r_arch_plugin_cpucheck (ap, as->opt.cpu): strdup (as->opt.cpu);
 		if (asmcpu) {
 			r_arch_config_set_cpu (as->a->config, asmcpu);
 		} else {
