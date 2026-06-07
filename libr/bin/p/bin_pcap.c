@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2025 - srimantabarua, abcSup, pancake */
+/* radare - LGPL - Copyright 2017-2026 - srimantabarua, abcSup, pancake */
 
 #include <r_bin.h>
 #include <r_lib.h>
@@ -68,7 +68,8 @@ static bool symbols_vec(RBinFile *bf) {
 	switch (obj->header->network) {
 	case LINK_ETHERNET:
 		r_list_foreach (obj->recs, iter, rec) {
-			pcaprec_frame_sym_add (ret, rec, ++n);
+			n++;
+			pcaprec_frame_sym_add (ret, rec, n);
 			pcaprec_ether_sym_add (ret, rec, rec->paddr + sizeof (pcaprec_hdr_t));
 		}
 		break;
