@@ -1515,6 +1515,7 @@ RUN
 
 # variable substitution doesnt yet work on zydis
 NAME=imul var sub zydis
+REQUIRE=zydis
 BROKEN=1
 FILE=bins/elf/ioli/crackme0x02
 CMDS=<<EOF
@@ -1547,6 +1548,7 @@ EOF
 RUN
 
 NAME=imul var xref zydis
+REQUIRE=zydis
 FILE=bins/elf/ioli/crackme0x02
 CMDS=<<EOF
 e asm.arch = x86.zydis

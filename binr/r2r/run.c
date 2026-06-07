@@ -1917,6 +1917,13 @@ static bool require_check(const char *require) {
 		res &= false;
 #endif
 	}
+	if (strstr (require, "zydis")) {
+#if WANT_ZYDIS
+		res &= true;
+#else
+		res &= false;
+#endif
+	}
 	return res;
 }
 
