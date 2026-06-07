@@ -846,17 +846,14 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 		if (!str[0] || !str[1]) {
 			return 0;
 		}
-		const char *q;
 		char *o = strdup (str + 1);
 		if (o) {
-			q = r_num_math_index (core->num, NULL);
-			if (q) {
-				if (r_str_replace_char (o, ']', 0)>0) {
-					n = r_num_math (core->num, o);
-					if (core->num->nc.errors) {
-						return 0;
-					}
-					r_num_math_index (core->num, q);
+			if (r_str_replace_char (o, ']', 0)>0) {
+				RNum inner = *core->num;
+				n = r_num_math (&inner, o);
+				if (inner.nc.errors) {
+					free (o);
+					return 0;
 				}
 			}
 			free (o);
