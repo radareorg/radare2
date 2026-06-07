@@ -18,8 +18,8 @@ static bool check(RBinFile *bf, RBuffer *b) {
 			r_buf_read_at (b, idx, buf, sizeof (buf));
 		 	// PL signature for Phar Lap TNT DOS extender 32bit executables
 			if (!memcmp (buf, "PL", 2)) {
-				// TODO: Add one more indicator, to prevent false positives
-				return true;
+				r_buf_read_at (b, idx + 0x18, buf, sizeof (buf));
+				return !memcmp (buf, "\x0b\x01", 2);
 			}
 			if (!memcmp (buf, "PE", 2)) {
 				r_buf_read_at (b, idx + 0x18, buf, sizeof (buf));
