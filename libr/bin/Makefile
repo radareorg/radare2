@@ -23,6 +23,7 @@ STATIC_OBJS=$(addprefix $(LTOP)/bin/p/, $(STATIC_OBJ))
 OBJS=bin.o addrline.o bin_ldr.o bin_write.o demangle.o
 OBJS+=dwarf.o bfilter.o bfile.o bobj.o blang.o
 OBJS+=mangling/cxx/cp-demangle.o ${STATIC_OBJS}
+OBJS+=mangling/cxx2/armabi.o
 OBJS+=mangling/demangler.o
 OBJS+=mangling/microsoft.o
 OBJS+=mangling/objc.o mangling/cxx.o mangling/msvc.o

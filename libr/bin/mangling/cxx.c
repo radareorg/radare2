@@ -3,6 +3,7 @@
 #include <r_bin.h>
 #include "../i/private.h"
 #include "./cxx/demangle.h"
+#include "./cxx2/cxx2.h"
 
 R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	const char *rawname = str;
@@ -25,8 +26,10 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	if (p0 == 0) {
 		return p;
 	}
+	bool stripped_us = false;
 	if (p0 == p[1] && p0 == '_') {
 		p++;
+		stripped_us = true;
 	}
 	for (i = 0; prefixes[i]; i++) {
 		int plen = strlen (prefixes[i]);
@@ -53,6 +56,10 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	/* TODO: implement a non-gpl alternative to c++v3 demangler */
 	char *out = NULL;
 #endif
+	if (!out) {
+		char *arm_in = (stripped_us && p > tmpstr && p[-1] == '_') ? p - 1 : p;
+		out = r_demangle_arm (arm_in);
+	}
 	free (tmpstr);
 	if (out) {
 		char *sign = (char *)strchr (out, '(');
