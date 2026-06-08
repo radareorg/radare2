@@ -1812,6 +1812,18 @@ spam._foo.cow
 EOF
 RUN
 
+NAME=ahts union nested
+FILE=-
+CMDS=<<EOF
+'td struct ahtpair {int a;int b;};
+'td union ahtunion {int raw;struct ahtpair pair;};
+ahts 4 ~ahtunion.
+EOF
+EXPECT=<<EOF
+ahtunion.pair.b
+EOF
+RUN
+
 NAME=aaft io.va side effect
 FILE=-
 ARGS=-eio.va=0 -a x86 -b 64
