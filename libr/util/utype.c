@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2025 - pancake, oddcoder, sivaramaaa */
+/* radare - LGPL - Copyright 2013-2026 - pancake, oddcoder, sivaramaaa */
 
 // R2R db/cmd/types
 
@@ -26,31 +26,31 @@ R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 R_API RTypeKind r_type_kind(Sdb *TDB, const char *name) {
 	R_RETURN_VAL_IF_FAIL (TDB && R_STR_ISNOTEMPTY (name), -1);
 	const char *type = sdb_const_get (TDB, name, 0);
-	if (!type) {
-		return R_TYPE_INVALID;
-	}
-	if (!strcmp (type, "enum")) {
-		return R_TYPE_ENUM;
-	}
-	if (!strcmp (type, "struct")) {
-		return R_TYPE_STRUCT;
-	}
-	if (!strcmp (type, "union")) {
-		return R_TYPE_UNION;
-	}
-	if (!strcmp (type, "func")) {
-		return R_TYPE_FUNCTION;
-	}
-	if (!strcmp (type, "type")) {
-		return R_TYPE_BASIC;
-	}
-	if (!strcmp (type, "typedef")) {
-		return R_TYPE_TYPEDEF;
+	if (type) {
+		if (!strcmp (type, "enum")) {
+			return R_TYPE_ENUM;
+		}
+		if (!strcmp (type, "struct")) {
+			return R_TYPE_STRUCT;
+		}
+		if (!strcmp (type, "union")) {
+			return R_TYPE_UNION;
+		}
+		if (!strcmp (type, "func")) {
+			return R_TYPE_FUNCTION;
+		}
+		if (!strcmp (type, "type")) {
+			return R_TYPE_BASIC;
+		}
+		if (!strcmp (type, "typedef")) {
+			return R_TYPE_TYPEDEF;
+		}
 	}
 	return R_TYPE_INVALID;
 }
 
 R_API RList *r_type_get_enum(Sdb *TDB, const char *name) {
+	R_RETURN_VAL_IF_FAIL (TDB && name, NULL);
 	char *p, var[130];
 	int n;
 
@@ -108,6 +108,7 @@ R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, u
 }
 
 R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
+	R_RETURN_VAL_IF_FAIL (TDB && name, NULL);
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}
@@ -136,15 +137,35 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 	return r_strbuf_drain (sb);
 }
 
+static const char *const type_qualifiers[] = {
+	"const", "volatile", "restrict", "atomic", "_Atomic", NULL
+};
+
+static const char *type_skip_qualifiers(const char *type) {
+	int i;
+	do {
+		type = r_str_trim_head_ro (type);
+		for (i = 0; type_qualifiers[i]; i++) {
+			size_t qlen = strlen (type_qualifiers[i]);
+			if (r_str_startswith (type, type_qualifiers[i]) && (!type[qlen] || IS_WHITESPACE (type[qlen]))) {
+				type += qlen;
+				break;
+			}
+		}
+	} while (type_qualifiers[i]);
+	return type;
+}
+
 R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
-	/* Filter out the structure keyword if type looks like "struct mystruc" */
-	const char *tmptype = type;
-	if (r_str_startswith (type, "struct ")) {
-		tmptype = type + strlen ("struct ");
-	} else if (r_str_startswith (type, "union ")) {
-		tmptype = type + strlen ("union ");
+	/* Filter out qualifiers and the structure keyword if type looks like "struct mystruc" */
+	const char *type_view = type_skip_qualifiers (type);
+	const char *tmptype = type_view;
+	if (r_str_startswith (tmptype, "struct ")) {
+		tmptype += strlen ("struct ");
+	} else if (r_str_startswith (tmptype, "union ")) {
+		tmptype += strlen ("union ");
 	}
-	if ((strstr (type, "*(") || strstr (type, " *")) && strcmp (type, "char *")) {
+	if ((strstr (type_view, "*(") || strstr (type_view, " *")) && strcmp (type_view, "char *")) {
 		return 32;
 	}
 	const char *t = sdb_const_get (TDB, tmptype, 0);
@@ -207,19 +228,6 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	return 0;
 }
 
-static const char *type_skip_qualifiers(const char *type) {
-	while (r_str_startswith (type, "const ")
-		|| r_str_startswith (type, "volatile ")
-		|| r_str_startswith (type, "restrict ")) {
-		const char *sp = strchr (type, ' ');
-		if (!sp || !sp[1]) {
-			break;
-		}
-		type = sp + 1;
-	}
-	return type;
-}
-
 static bool type_kind_is_aggregate(const char *kind) {
 	return kind && (!strcmp (kind, "struct") || !strcmp (kind, "union"));
 }
@@ -230,6 +238,7 @@ static const char *type_aggregate_kind(Sdb *TDB, char *type, const char **name) 
 	if (strchr (type_view, '*')) {
 		return NULL;
 	}
+	// AITODO this struct vs union stuff looks like spaguetty, also we hare more duplicated code related to struct/union, analyze deeply all its uses and aim for a clean redesign with focus on maximum LOC reduction and ease of mainainability
 	if (r_str_startswith (type_view, "struct ")) {
 		*name = type_view + strlen ("struct ");
 		return R_STR_ISNOTEMPTY (*name)? "struct": NULL;
@@ -703,7 +712,6 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 	if (!kind) {
 		return NULL;
 	}
-	// only supports struct atm
 	snprintf (var, sizeof (var), "%s.%s", kind, t);
 	if (!strcmp (kind, "type")) {
 		const char *fmt = sdb_const_get (TDB, var, NULL);
@@ -811,8 +819,8 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 
 // Strip leading __ prefix for type database lookup
 // This allows __strcpy_chk to match strcpy_chk in the database
-static inline const char *normalize_func_name(const char *name) {
-	while (name && name[0] == '_' && name[1] == '_') {
+static inline const char *trim_lodashes(const char *name) {
+	while (r_str_startswith (name, "__")) {
 		name += 2;
 	}
 	return name;
@@ -820,22 +828,22 @@ static inline const char *normalize_func_name(const char *name) {
 
 // Function prototypes api
 R_API int r_type_func_exist(Sdb *TDB, const char *func_name) {
-	const char *fcn = sdb_const_get (TDB, normalize_func_name (func_name), 0);
+	const char *fcn = sdb_const_get (TDB, trim_lodashes (func_name), 0);
 	return fcn && !strcmp (fcn, "func");
 }
 
 R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
-	r_strf_var (query, 64, "func.%s.ret", normalize_func_name (func_name));
+	r_strf_var (query, 64, "func.%s.ret", trim_lodashes (func_name));
 	return sdb_const_get (TDB, query, 0);
 }
 
 R_API int r_type_func_args_count(Sdb *TDB, const char *R_NONNULL func_name) {
-	r_strf_var (query, 64, "func.%s.args", normalize_func_name (func_name));
+	r_strf_var (query, 64, "func.%s.args", trim_lodashes (func_name));
 	return sdb_num_get (TDB, query, 0);
 }
 
 R_API R_OWNED char *r_type_func_args_type(Sdb *TDB, const char *R_NONNULL func_name, int i) {
-	char *query = r_str_newf ("func.%s.arg.%d", normalize_func_name (func_name), i);
+	char *query = r_str_newf ("func.%s.arg.%d", trim_lodashes (func_name), i);
 	char *ret = sdb_get (TDB, query, 0);
 	free (query);
 	if (ret) {
@@ -853,7 +861,7 @@ static const char *const argnames[10] = {
 };
 
 R_API const char *r_type_func_args_name(Sdb *TDB, const char *R_NONNULL func_name, int i) {
-	char *query = r_str_newf ("func.%s.arg.%d", normalize_func_name (func_name), i);
+	char *query = r_str_newf ("func.%s.arg.%d", trim_lodashes (func_name), i);
 	const char *row = sdb_const_get (TDB, query, 0);
 	free (query);
 	if (row) {
