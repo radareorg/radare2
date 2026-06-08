@@ -956,3 +956,753 @@ EXPECT=<<EOF
 0x55667788
 EOF
 RUN
+
+NAME=lwzx indexed load uses both base and index registers ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 1122334455667788 @ 0x108
+wx 7c85302e @ 0
+aei
+aeim
+ar r5=0x100
+ar r6=8
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x11223344
+EOF2
+RUN
+
+NAME=lwzx esil string adds index register ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c85302e @ 0
+aoj 1 @ 0~{[0].esil}
+EOF2
+EXPECT=<<EOF2
+r5,r6,+,[4],r4,=
+EOF2
+RUN
+
+NAME=ldx indexed load full doubleword ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 1122334455667788 @ 0x108
+wx 7c85302a @ 0
+aei
+aeim
+ar r5=0x100
+ar r6=8
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x1122334455667788
+EOF2
+RUN
+
+NAME=lhzux indexed load with update writes back effective address ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 1122334455667788 @ 0x108
+wx 7c85326e @ 0
+aei
+aeim
+ar r5=0x100
+ar r6=8
+aes
+ar r4
+ar r5
+EOF2
+EXPECT=<<EOF2
+0x00001122
+0x00000108
+EOF2
+RUN
+
+NAME=stwx indexed store uses both base and index registers ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c85312e @ 0
+aei
+aeim
+ar r4=0xaabbccddeeff0011
+ar r5=0x100
+ar r6=8
+aes
+pv4 @ 0x108
+EOF2
+EXPECT=<<EOF2
+0xeeff0011
+EOF2
+RUN
+
+NAME=stbux indexed store with update writes byte and updates base ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c8531ee @ 0
+aei
+aeim
+ar r4=0xaabbccddeeff0011
+ar r5=0x100
+ar r6=8
+aes
+pv1 @ 0x108
+ar r5
+EOF2
+EXPECT=<<EOF2
+0x11
+0x00000108
+EOF2
+RUN
+
+NAME=slw word shift left zero-extends to 32 bits ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7ca43030 @ 0
+aei
+aeim
+ar r5=0xfffffffffffffff0
+ar r6=4
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0xffffff00
+EOF2
+RUN
+
+NAME=srw word shift right is 32-bit logical ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7ca43430 @ 0
+aei
+aeim
+ar r5=0xfffffffffffffff0
+ar r6=4
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x0fffffff
+EOF2
+RUN
+
+NAME=rlwinm rotates the low 32 bits not the full register ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 54a4183e @ 0
+aei
+aeim
+ar r5=0xfffffffffffffff0
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0xffffff87
+EOF2
+RUN
+
+NAME=divw is a 32-bit signed divide ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c8533d6 @ 0
+aei
+aeim
+ar r5=0xfffffffffffffff0
+ar r6=7
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0xfffffffe
+EOF2
+RUN
+
+NAME=divwu is a 32-bit unsigned divide ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c853396 @ 0
+aei
+aeim
+ar r5=0xfffffffffffffff0
+ar r6=7
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x24924922
+EOF2
+RUN
+
+NAME=divd is a 64-bit signed divide ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c8533d2 @ 0
+aei
+aeim
+ar r5=0xfffffffffffffff0
+ar r6=7
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0xfffffffffffffffe
+EOF2
+RUN
+
+NAME=lbzx byte indexed load ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 1122334455667788 @ 0x108
+wx 7c8530ae @ 0
+aei
+aeim
+ar r5=0x100
+ar r6=8
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x00000011
+EOF2
+RUN
+
+NAME=ldux doubleword indexed load with update ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 1122334455667788 @ 0x108
+wx 7c85306a @ 0
+aei
+aeim
+ar r5=0x100
+ar r6=8
+ar pc=0
+s 0
+aes
+ar r4
+ar r5
+EOF2
+EXPECT=<<EOF2
+0x1122334455667788
+0x00000108
+EOF2
+RUN
+
+NAME=stdux doubleword indexed store with update ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c85316a @ 0
+aei
+aeim
+ar r4=0xaabbccddeeff0011
+ar r5=0x100
+ar r6=8
+ar pc=0
+s 0
+aes
+pv8 @ 0x108
+ar r5
+EOF2
+EXPECT=<<EOF2
+0xaabbccddeeff0011
+0x00000108
+EOF2
+RUN
+
+NAME=lwax algebraic indexed load uses both base and index ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 1122334455667788 @ 0x108
+wx 7c8532aa @ 0
+aei
+aeim
+ar r5=0x100
+ar r6=8
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x11223344
+EOF2
+RUN
+
+NAME=sld doubleword shift left is 64-bit ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7ca43036 @ 0
+aei
+aeim
+ar r5=0x8000000000000003
+ar r6=4
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x00000030
+EOF2
+RUN
+
+NAME=srd doubleword shift right is 64-bit logical ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7ca43436 @ 0
+aei
+aeim
+ar r5=0x8000000000000003
+ar r6=4
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x800000000000000
+EOF2
+RUN
+
+NAME=rotld doubleword rotate left is 64-bit ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 78a43010 @ 0
+aei
+aeim
+ar r5=0x8000000000000003
+ar r6=4
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x00000038
+EOF2
+RUN
+
+NAME=divdu is a 64-bit unsigned divide ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c853392 @ 0
+aei
+aeim
+ar r5=0x8000000000000003
+ar r6=4
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x2000000000000000
+EOF2
+RUN
+
+NAME=lhax algebraic indexed load sign-extends ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 8001800280038004 @ 0x108
+wx 7c8532ae @ 0
+aei
+aeim
+ar r5=0x100
+ar r6=8
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0xffffffffffff8001
+EOF2
+RUN
+
+NAME=lwax algebraic indexed load sign-extends 32 bits ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 8001800280038004 @ 0x108
+wx 7c8532aa @ 0
+aei
+aeim
+ar r5=0x100
+ar r6=8
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0xffffffff80018002
+EOF2
+RUN
+
+NAME=lha D-form load halfword algebraic sign-extends without writeback ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 8001800280038004 @ 0x110
+wx a8850010 @ 0
+aei
+aeim
+ar r5=0x100
+ar pc=0
+s 0
+aes
+ar r4
+ar r5
+EOF2
+EXPECT=<<EOF2
+0xffffffffffff8001
+0x00000100
+EOF2
+RUN
+
+NAME=lwa D-form load word algebraic sign-extends ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 8001800280038004 @ 0x110
+wx e8850012 @ 0
+aei
+aeim
+ar r5=0x100
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0xffffffff80018002
+EOF2
+RUN
+
+NAME=lhz D-form non-update load does not write back the base register ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 8001800280038004 @ 0x110
+wx a0850010 @ 0
+aei
+aeim
+ar r5=0x100
+ar pc=0
+s 0
+aes
+ar r4
+ar r5
+EOF2
+EXPECT=<<EOF2
+0x00008001
+0x00000100
+EOF2
+RUN
+
+NAME=lwarx load word and reserve uses both base and index registers ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c853028 @ 0
+aoj 1 @ 0~{[0].esil}
+EOF2
+EXPECT=<<EOF2
+r5,r6,+,[4],r4,=
+EOF2
+RUN
+
+NAME=lwarx load word and reserve indexed execution ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 1122334455667788 @ 0x108
+wx 7c853028 @ 0
+aei
+aeim
+ar r5=0x100
+ar r6=8
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x11223344
+EOF2
+RUN
+
+NAME=ldarx load doubleword and reserve indexed execution ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 1122334455667788 @ 0x108
+wx 7c8530a8 @ 0
+aei
+aeim
+ar r5=0x100
+ar r6=8
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x1122334455667788
+EOF2
+RUN
+
+NAME=stwcx store word conditional uses both base and index registers ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c85312d @ 0
+aoj 1 @ 0~{[0].esil}
+EOF2
+EXPECT=<<EOF2
+r4,r5,r6,+,=[4]
+EOF2
+RUN
+
+NAME=stwcx store word conditional indexed execution ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c85312d @ 0
+aei
+aeim
+ar r4=0xaabbccddeeff0011
+ar r5=0x100
+ar r6=8
+ar pc=0
+s 0
+aes
+pv4 @ 0x108
+EOF2
+EXPECT=<<EOF2
+0xeeff0011
+EOF2
+RUN
+
+NAME=stdcx store doubleword conditional indexed execution ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c8531ad @ 0
+aei
+aeim
+ar r4=0xaabbccddeeff0011
+ar r5=0x100
+ar r6=8
+ar pc=0
+s 0
+aes
+pv8 @ 0x108
+EOF2
+EXPECT=<<EOF2
+0xaabbccddeeff0011
+EOF2
+RUN
+
+NAME=sld doubleword shift left of count >= 64 yields zero ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7ca43036 @ 0
+aei
+aeim
+ar r5=0x8000000000000003
+ar r6=65
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x00000000
+EOF2
+RUN
+
+NAME=sld doubleword shift left count uses low 7 bits ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7ca43036 @ 0
+aei
+aeim
+ar r5=0x8000000000000003
+ar r6=128
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x8000000000000003
+EOF2
+RUN
+
+NAME=srd doubleword shift right of count >= 64 yields zero ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7ca43436 @ 0
+aei
+aeim
+ar r5=0x8000000000000003
+ar r6=64
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x00000000
+EOF2
+RUN
+
+NAME=rlwinm wrapping mask fills the high word with the rotated value ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 54a42706 @ 0
+aei
+aeim
+ar r5=0x12345678
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x2345678120000001
+EOF2
+RUN
+
+NAME=rlwnm wrapping mask fills the high word with the rotated value ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 5ca43706 @ 0
+aei
+aeim
+ar r5=0x12345678
+ar r6=8
+ar pc=0
+s 0
+aes
+ar r4
+EOF2
+EXPECT=<<EOF2
+0x3456781230000002
+EOF2
+RUN

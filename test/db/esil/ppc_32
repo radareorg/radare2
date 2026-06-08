@@ -441,7 +441,7 @@ e cfg.bigendian=true
 EOF
 EXPECT=<<EOF
 rotlw r3, r4, r5
-0x00000000 r5,r4,ROL,r3,=
+0x00000000 r5,0x1f,&,r4,<<,r5,0x1f,&,32,-,r4,0xffffffff,&,>>,|,0xffffffff,&,0xffffffff,&,r3,=
 EOF
 RUN
 
@@ -456,7 +456,7 @@ e cfg.bigendian=true
 EOF
 EXPECT=<<EOF
 rlwnm r3, r4, r5, 0x10, 0x1e
-0x00000000 r5,r4,ROL,0xfffe,&,r3,=
+0x00000000 r5,0x1f,&,r4,<<,r5,0x1f,&,32,-,r4,0xffffffff,&,>>,|,0xffffffff,&,0xfffe,&,r3,=
 EOF
 RUN
 

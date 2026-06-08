@@ -906,6 +906,64 @@ static char *ppc_idx_ea(PluginData *pd, struct Getarg *gop, char *buf, size_t sz
 	return buf;
 }
 
+// signbits != 0 sign-extends the load (algebraic forms)
+static void ppc_ldbody(char *load, size_t sz, const char *ea, int width, int signbits) {
+	if (signbits) {
+		snprintf (load, sz, "%d,%s,[%d],~", signbits, ea, width);
+	} else {
+		snprintf (load, sz, "%s,[%d]", ea, width);
+	}
+}
+
+static void ppc_esil_ldx(RAnalOp *op, PluginData *pd, struct Getarg *gop, int width, bool update, int signbits) {
+	char ea[64], load[96];
+	ppc_idx_ea (pd, gop, ea, sizeof (ea));
+	const char *rd = getarg2 (pd, gop, 0, "");
+	ppc_ldbody (load, sizeof (load), ea, width, signbits);
+	if (update) {
+		esilprintf (op, "%s,%s,=,%s,%s,=", load, rd, ea, getarg2 (pd, gop, 1, ""));
+	} else {
+		esilprintf (op, "%s,%s,=", load, rd);
+	}
+}
+
+// D-form load; update writes back rA via ea+=
+static void ppc_esil_ld(RAnalOp *op, const char *ea, const char *rd, int width, bool update, int signbits) {
+	char load[96];
+	ppc_ldbody (load, sizeof (load), ea, width, signbits);
+	if (update) {
+		esilprintf (op, "%s,%s,=,%s=", load, rd, ea);
+	} else {
+		esilprintf (op, "%s,%s,=", load, rd);
+	}
+}
+
+static void ppc_esil_stx(RAnalOp *op, PluginData *pd, struct Getarg *gop, int width, bool update) {
+	char ea[64];
+	ppc_idx_ea (pd, gop, ea, sizeof (ea));
+	const char *rs = getarg2 (pd, gop, 0, "");
+	if (update) {
+		esilprintf (op, "%s,%s,=[%d],%s,%s,=", rs, ea, width, ea, getarg2 (pd, gop, 1, ""));
+	} else {
+		esilprintf (op, "%s,%s,=[%d]", rs, ea, width);
+	}
+}
+
+// 32-bit rotate by hand (ESIL ROL is 64-bit); wrapping mask (MB>ME) also fills bits 32:63
+static void ppc_esil_rlwnm(RAnalOp *op, PluginData *pd, struct Getarg *gop, const char *mask, bool wrap) {
+	const char *sh = getarg2 (pd, gop, 2, "");
+	const char *rs = getarg2 (pd, gop, 1, "");
+	const char *rd = getarg2 (pd, gop, 0, "");
+	char rot[128];
+	snprintf (rot, sizeof (rot), "%s,0x1f,&,%s,<<,%s,0x1f,&,32,-,%s,0xffffffff,&,>>,|,0xffffffff,&",
+		sh, rs, sh, rs);
+	if (wrap) {
+		esilprintf (op, "%s,%s,&,32,%s,<<,|,%s,=", rot, mask, rot, rd);
+	} else {
+		esilprintf (op, "%s,%s,&,%s,=", rot, mask, rd);
+	}
+}
+
 static void ppc_fpop(RAnalOp *op, PluginData *pd, struct Getarg *gop, bool single, int nsrc, const char *fop) {
 	char body[96];
 	switch (nsrc) {
@@ -1139,7 +1197,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case PPC_INS_RLWINM:
 			op->type = R_ANAL_OP_TYPE_ROL;
-			esilprintf (op, "%s,%s,ROL,%s,&,%s,=", ARG (2), ARG (1), cmask32 (cmaskbuf, ARG (3), ARG (4)), ARG (0));
+			ppc_esil_rlwnm (op, pd, &gop, cmask32 (cmaskbuf, ARG (3), ARG (4)), getarg (&gop, 3) > getarg (&gop, 4));
 			break;
 		case PPC_INS_SC:
 			op->type = R_ANAL_OP_TYPE_SWI;
@@ -1184,9 +1242,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			esilprintf (op, ",");
 			break;
 		case PPC_INS_STW:
-		case PPC_INS_STWUX:
-		case PPC_INS_STWX:
-		case PPC_INS_STWCX:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[4]"));
 			/* PPC64 ELFv1 TOC chain: stw rY, LO(rX) following addis rX, r2, HA */
@@ -1229,7 +1284,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			ppc_esil_brx (op, pd, &gop, 8, true);
 			break;
 		case PPC_INS_STB:
-		case PPC_INS_STBX:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[1]"));
 			/* PPC64 ELFv1 TOC chain: stb rY, LO(rX) following addis rX, r2, HA */
@@ -1256,7 +1310,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			}
 			break;
 		case PPC_INS_STH:
-		case PPC_INS_STHX:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[2]"));
 			/* PPC64 ELFv1 TOC chain: sth rY, LO(rX) following addis rX, r2, HA */
@@ -1283,7 +1336,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			}
 			break;
 		case PPC_INS_STD:
-		case PPC_INS_STDX:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[8]"));
 			/* PPC64 ELFv1 TOC chain: std rY, LO(rX) following addis rX, r2, HA */
@@ -1310,7 +1362,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			}
 			break;
 		case PPC_INS_LBZU:
-		case PPC_INS_LBZUX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			op1 = shrink(ARG(1));
 			if (!op1) {
@@ -1329,7 +1380,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 #if CS_API_MAJOR >= 4
 		case PPC_INS_LBZCIX:
 #endif
-		case PPC_INS_LBZX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			esilprintf (op, "%s,%s,=", ARG2 (1, "[1]"), ARG (0));
 			/* PPC64 ELFv1 TOC chain: lbz rY, LO(rX) following addis rX, r2, HA */
@@ -1341,12 +1391,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			}
 			break;
 		case PPC_INS_LD:
-		case PPC_INS_LDARX:
 #if CS_API_MAJOR >= 4
 		case PPC_INS_LDCIX:
 #endif
 		case PPC_INS_LDU:
-		case PPC_INS_LDUX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			op1 = shrink (ARG(1));
 			if (!op1) {
@@ -1361,9 +1409,103 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				}
 			}
 			break;
+		// X-form indexed: EA = rA + rB (separate capstone regs)
+		case PPC_INS_LBZX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_ldx (op, pd, &gop, 1, false, 0);
+			break;
+		case PPC_INS_LBZUX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_ldx (op, pd, &gop, 1, true, 0);
+			break;
+		case PPC_INS_LHZX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_ldx (op, pd, &gop, 2, false, 0);
+			break;
+		case PPC_INS_LHAX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_ldx (op, pd, &gop, 2, false, 16);
+			break;
+		case PPC_INS_LHZUX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_ldx (op, pd, &gop, 2, true, 0);
+			break;
+		case PPC_INS_LHAUX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_ldx (op, pd, &gop, 2, true, 16);
+			break;
+		case PPC_INS_LWZX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_ldx (op, pd, &gop, 4, false, 0);
+			break;
+		case PPC_INS_LWAX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_ldx (op, pd, &gop, 4, false, 32);
+			break;
+		case PPC_INS_LWZUX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_ldx (op, pd, &gop, 4, true, 0);
+			break;
+		case PPC_INS_LWAUX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_ldx (op, pd, &gop, 4, true, 32);
+			break;
 		case PPC_INS_LDX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
-			esilprintf (op, "%s,%s,=", ARG2 (1, "[8]"), ARG (0));
+			ppc_esil_ldx (op, pd, &gop, 8, false, 0);
+			break;
+		case PPC_INS_LDUX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_ldx (op, pd, &gop, 8, true, 0);
+			break;
+		case PPC_INS_STBX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_esil_stx (op, pd, &gop, 1, false);
+			break;
+		case PPC_INS_STBUX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_esil_stx (op, pd, &gop, 1, true);
+			break;
+		case PPC_INS_STHX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_esil_stx (op, pd, &gop, 2, false);
+			break;
+		case PPC_INS_STHUX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_esil_stx (op, pd, &gop, 2, true);
+			break;
+		case PPC_INS_STWX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_esil_stx (op, pd, &gop, 4, false);
+			break;
+		case PPC_INS_STWUX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_esil_stx (op, pd, &gop, 4, true);
+			break;
+		case PPC_INS_STDX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_esil_stx (op, pd, &gop, 8, false);
+			break;
+		case PPC_INS_STDUX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_esil_stx (op, pd, &gop, 8, true);
+			break;
+		// larx/stcx.: only the memory access is modelled, not the reservation/CR0
+		case PPC_INS_LWARX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_ldx (op, pd, &gop, 4, false, 0);
+			break;
+		case PPC_INS_LDARX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_ldx (op, pd, &gop, 8, false, 0);
+			break;
+		case PPC_INS_STWCX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_esil_stx (op, pd, &gop, 4, false);
+			break;
+		case PPC_INS_STDCX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_esil_stx (op, pd, &gop, 8, false);
 			break;
 		case PPC_INS_LDBRX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
@@ -1620,8 +1762,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case PPC_INS_LHA:
 		case PPC_INS_LHAU:
-		case PPC_INS_LHAUX:
-		case PPC_INS_LHAX:
 		case PPC_INS_LHZ:
 		case PPC_INS_LHZU:
 			op->type = R_ANAL_OP_TYPE_LOAD;
@@ -1629,8 +1769,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			if (!op1) {
 				break;
 			}
-			esilprintf (op, "%s,[2],%s,=,%s=", op1, ARG (0), op1);
-			/* PPC64 ELFv1 TOC chain: lha/lhz rY, LO(rX) following addis rX, r2, HA */
+			// algebraic (sign-extend 16); only *u forms update rA
+			ppc_esil_ld (op, op1, ARG (0), 2,
+				insn->id == PPC_INS_LHAU || insn->id == PPC_INS_LHZU,
+				(insn->id == PPC_INS_LHA || insn->id == PPC_INS_LHAU)? 16: 0);
 			if (INSOP(1).type == PPC_OP_MEM) {
 				ridx = toc_reg_idx (INSOP(1).mem.base);
 				if (ridx >= 0 && pd->toc_map[ridx]) {
@@ -1638,23 +1780,24 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				}
 			}
 			break;
-		case PPC_INS_LHZX:
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			esilprintf (op, "%s,%s,=", ARG2 (1, "[2]"), ARG (0));
-			break;
 		case PPC_INS_LHBRX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			ppc_esil_brx (op, pd, &gop, 2, false);
 			break;
 		case PPC_INS_LWA:
-		case PPC_INS_LWARX:
-		case PPC_INS_LWAUX:
-		case PPC_INS_LWAX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			esilprintf (op, "32,%s,~,%s,=", ARG2 (1, "[4]"), ARG (0));
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
+			break;
 		case PPC_INS_LWZ:
 #if CS_API_MAJOR >= 4
 		case PPC_INS_LWZCIX:
 #endif
-		case PPC_INS_LWZX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			esilprintf (op, "%s,%s,=", ARG2 (1, "[4]"), ARG (0));
 			/* PPC64 ELFv1 TOC chain: lwz rY, LO(rX) following addis rX, r2, HA */
@@ -1666,7 +1809,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			}
 			break;
 		case PPC_INS_LWZU:
-		case PPC_INS_LWZUX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			op1 = shrink(ARG(1));
 			if (!op1) {
@@ -1687,17 +1829,25 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case PPC_INS_SLW:
 		case PPC_INS_SLWI:
+			op->type = R_ANAL_OP_TYPE_SHL;
+			esilprintf (op, "%s,0x3f,&,%s,<<,0xffffffff,&,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
 		case PPC_INS_SLD:
 		case PPC_INS_SLDI:
 			op->type = R_ANAL_OP_TYPE_SHL;
-			esilprintf (op, "%s,%s,<<,%s,=", ARG (2), ARG (1), ARG (0));
+			// rB[57:63] shift count; >= 64 yields 0
+			esilprintf (op, "%s,0x40,&,!,%s,0x3f,&,%s,<<,*,%s,=", ARG (2), ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_SRW:
 		case PPC_INS_SRWI:
+			op->type = R_ANAL_OP_TYPE_SHR;
+			esilprintf (op, "%s,0x3f,&,%s,0xffffffff,&,>>,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
 		case PPC_INS_SRD:
 		// case PPC_INS_SRDI: // not available in some capstone versions
 			op->type = R_ANAL_OP_TYPE_SHR;
-			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
+			// rB[57:63] shift count; >= 64 yields 0
+			esilprintf (op, "%s,0x40,&,!,%s,0x3f,&,%s,>>,*,%s,=", ARG (2), ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_SRAW:
 		case PPC_INS_SRAWI:
@@ -2162,15 +2312,22 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			esilprintf (op, "16,%s,<<,%s,^,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_DIVD:
+			op->sign = true;
+			op->type = R_ANAL_OP_TYPE_DIV;
+			esilprintf (op, "%s,%s,~/,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
 		case PPC_INS_DIVW:
 			op->sign = true;
 			op->type = R_ANAL_OP_TYPE_DIV;
-			esilprintf (op, "%s,%s,/,%s,=", ARG (2), ARG (1), ARG (0));
+			esilprintf (op, "32,%s,~,32,%s,~,~/,0xffffffff,&,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_DIVDU:
-		case PPC_INS_DIVWU:
 			op->type = R_ANAL_OP_TYPE_DIV;
 			esilprintf (op, "%s,%s,/,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_DIVWU:
+			op->type = R_ANAL_OP_TYPE_DIV;
+			esilprintf (op, "%s,0xffffffff,&,%s,0xffffffff,&,/,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 #if CS_API_MAJOR > 4
 		case PPC_INS_DIVDE:
@@ -2299,16 +2456,19 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_ROL;
 			esilprintf (op, "%s,%s,ROL,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
-		case PPC_INS_ROTLW:
-		case PPC_INS_ROTLWI:
 		case PPC_INS_ROTLD:
 			op->type = R_ANAL_OP_TYPE_ROL;
 			esilprintf (op, "%s,%s,ROL,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
+		case PPC_INS_ROTLW:
+		case PPC_INS_ROTLWI:
+			op->type = R_ANAL_OP_TYPE_ROL;
+			ppc_esil_rlwnm (op, pd, &gop, "0xffffffff", false);
+			break;
 		case PPC_INS_RLWNM:
 			op->type = R_ANAL_OP_TYPE_ROL;
 			if (ARG (3)[0] && ARG (4)[0]) {
-				esilprintf (op, "%s,%s,ROL,%s,&,%s,=", ARG (2), ARG (1), cmask32 (cmaskbuf, ARG (3), ARG (4)), ARG (0));
+				ppc_esil_rlwnm (op, pd, &gop, cmask32 (cmaskbuf, ARG (3), ARG (4)), getarg (&gop, 3) > getarg (&gop, 4));
 			}
 			break;
 		case PPC_INS_RLWIMI:

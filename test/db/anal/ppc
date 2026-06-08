@@ -1025,11 +1025,11 @@ EOF
 EXPECT=<<EOF
 mnemonic: sld
 type: shl
-esil: r10,r9,<<,r9,=
+esil: r10,0x40,&,!,r10,0x3f,&,r9,<<,*,r9,=
 --
 mnemonic: srd
 type: shr
-esil: r28,r9,>>,r9,=
+esil: r28,0x40,&,!,r28,0x3f,&,r9,>>,*,r9,=
 --
 mnemonic: sradi
 type: sar
@@ -1043,19 +1043,19 @@ type: mov
 --
 mnemonic: stbx
 type: store
-esil: r7,r30=[1]
+esil: r7,r30,r10,+,=[1]
 --
 mnemonic: sthx
 type: store
-esil: r9,r30=[2]
+esil: r9,r30,r8,+,=[2]
 --
 mnemonic: stdx
 type: store
-esil: r30,r10=[8]
+esil: r30,r10,r9,+,=[8]
 --
 mnemonic: lhzx
 type: load
-esil: r8[2],r10,=
+esil: r8,r10,+,[2],r10,=
 --
 mnemonic: mfcr
 type: mov
