@@ -702,6 +702,7 @@ static RCoreHelpMessage help_msg_dyncc = {
 	"!TN", "", "T role at logical argument N; !Tloc for concrete location",
 	"!RN", "", "R role at logical argument N; !VN, !EN and !XN use the same form",
 	"!xN", "", "custom lowercase role except p; value must be one location",
+	"!d/!t", "", "standard lowercase roles: descriptor/thread; !c code, !g global, !i ic data",
 	"Example:", "dyncc:v6:v0", "arg in v6, return in v0",
 	"Example:", "dyncc:a0+4'^0+4,^:v0", "MIPS o32-style arg homes",
 	"Example:", "dyncc:^0,^1,^2,^3:eax!p16", "Win32 stdcall MessageBoxA-style",
@@ -5562,6 +5563,11 @@ static char *afch_tostring(RCore *core, RAnalFunction *fcn, bool json) {
 	afch_append_role (sb, anal, cc, "V", "V");
 	afch_append_role (sb, anal, cc, "E", "E");
 	afch_append_role (sb, anal, cc, "X", "X");
+	afch_append_role (sb, anal, cc, "d", "descriptor");
+	afch_append_role (sb, anal, cc, "t", "thread");
+	afch_append_role (sb, anal, cc, "c", "code");
+	afch_append_role (sb, anal, cc, "g", "global");
+	afch_append_role (sb, anal, cc, "i", "ic");
 	const int max = r_anal_cc_max_arg (anal, cc);
 	int i;
 	for (i = 0; i < max; i++) {

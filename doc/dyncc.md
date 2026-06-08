@@ -146,6 +146,20 @@ locations such as `^0` or `^-0` when a specific call-frame slot is needed.
 !xloc     custom lowercase one-letter role x is concrete location loc
 ```
 
+The lowercase role namespace is extensible, but these tags have stable meanings
+when an ABI needs sideband state:
+
+```text
+!dloc     descriptor for dynamic/invocation arguments
+!tloc     runtime thread/context register
+!cloc     code object/context register
+!gloc     global/table/pool pointer
+!iloc     inline-cache or dispatch data
+```
+
+The lowercase `t` role is distinct from uppercase `T`: `!T...` marks the
+receiver/self role, while `!t...` marks runtime thread state.
+
 There is no separate static/instance mode. Instance-ness is represented by the
 presence of the `T` role.
 
@@ -158,6 +172,10 @@ metadata.
 Role values must identify exactly one location. A role can point to a logical
 argument (`!T0`) or to one concrete location (`!Tx20`), but ranges that expand
 to more than one location and multiple-home values are rejected.
+
+`!C(...)` describes registers clobbered after the call edge. It does not remove
+those registers from argument or role locations; an input register can also be
+listed as clobbered if the callee does not preserve its value after entry.
 
 ## Register-Name Conflicts
 
@@ -285,6 +303,39 @@ ret0  = x0
 T     = x20
 E     = x21
 ```
+
+### Dart AOT ARM64
+
+Dart AOT on ARM64 uses `x1`, `x2`, `x3`, `x5`, `x6`, and `x7` for positional
+arguments, then the call-frame tail. `x4` is a descriptor sideband register, not
+the fourth positional argument. Instance methods mark the receiver as logical
+argument 0:
+
+```text
+dyncc:x1,x2,x3,x5,x6,x7,^:x0!T0!dx4!tx26!cx24!gx27!C(x26,x27,x24,x5)
+```
+
+```text
+arg0       = x1
+arg1       = x2
+arg2       = x3
+arg3       = x5
+arg4       = x6
+arg5       = x7
+arg6+      = ^
+ret0       = x0
+T          = arg0
+descriptor = x4
+thread     = x26
+code       = x24
+global     = x27
+clobbers   = x26, x27, x24, x5
+```
+
+For Dart dispatch stubs where `x5` carries inline-cache data instead of a
+positional argument, encode that edge with `!ix5`. Do not use `!ix5` on the
+concrete function-entry expression above unless that edge really treats `x5` as
+dispatch sideband data.
 
 ### Dalvik Instance Method
 

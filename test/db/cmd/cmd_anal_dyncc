@@ -336,6 +336,27 @@ callconv: dyncc:l0+1:!T0
 EOF
 RUN
 
+NAME=afch reports standard lowercase dyncc roles
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx c3
+af
+afc dyncc:x1,x2,x3,x5,^:x0!T0!dx4!tx26!cx24!gx27!ix8!C(x26,x27,x24,x5) @ 0
+afch @ 0~callconv:,T:,descriptor:,thread:,code:,global:,ic:
+EOF
+EXPECT=<<EOF
+callconv: dyncc:x1,x2,x3,x5,^:x0!T0!dx4!tx26!cx24!gx27!ix8!C(x26,x27,x24,x5)
+T: x1
+descriptor: x4
+thread: x26
+code: x24
+global: x27
+ic: x8
+EOF
+RUN
+
 NAME=afch reports non-dyncc functions
 FILE=bins/elf/ls
 CMDS=<<EOF
