@@ -207,54 +207,59 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	return 0;
 }
 
-static bool type_aggregate_kind(Sdb *TDB, char *type, const char **kind, const char **name) {
-	r_str_trim (type);
-	const char *type_view = type;
-	while (r_str_startswith (type_view, "const ")
-		|| r_str_startswith (type_view, "volatile ")
-		|| r_str_startswith (type_view, "restrict ")) {
-		const char *sp = strchr (type_view, ' ');
+static const char *type_skip_qualifiers(const char *type) {
+	while (r_str_startswith (type, "const ")
+		|| r_str_startswith (type, "volatile ")
+		|| r_str_startswith (type, "restrict ")) {
+		const char *sp = strchr (type, ' ');
 		if (!sp || !sp[1]) {
 			break;
 		}
-		type_view = sp + 1;
+		type = sp + 1;
 	}
-	if (strchr (type_view, '*')) {
-		return false;
-	}
-	if (r_str_startswith (type_view, "struct ")) {
-		*kind = "struct";
-		*name = type_view + strlen ("struct ");
-		return R_STR_ISNOTEMPTY (*name);
-	}
-	if (r_str_startswith (type_view, "union ")) {
-		*kind = "union";
-		*name = type_view + strlen ("union ");
-		return R_STR_ISNOTEMPTY (*name);
-	}
-	const char *type_kind = sdb_const_get (TDB, type_view, NULL);
-	if (type_kind && (!strcmp (type_kind, "struct") || !strcmp (type_kind, "union"))) {
-		*kind = type_kind;
-		*name = type_view;
-		return true;
-	}
-	return false;
+	return type;
 }
 
-static bool type_members_by_offset(Sdb *TDB, RList *out, const char *kind, const char *type, int offset, const char *path, bool all) {
+static bool type_kind_is_aggregate(const char *kind) {
+	return kind && (!strcmp (kind, "struct") || !strcmp (kind, "union"));
+}
+
+static const char *type_aggregate_kind(Sdb *TDB, char *type, const char **name) {
+	r_str_trim (type);
+	const char *type_view = type_skip_qualifiers (type);
+	if (strchr (type_view, '*')) {
+		return NULL;
+	}
+	if (r_str_startswith (type_view, "struct ")) {
+		*name = type_view + strlen ("struct ");
+		return R_STR_ISNOTEMPTY (*name)? "struct": NULL;
+	}
+	if (r_str_startswith (type_view, "union ")) {
+		*name = type_view + strlen ("union ");
+		return R_STR_ISNOTEMPTY (*name)? "union": NULL;
+	}
+	const char *type_kind = sdb_const_get (TDB, type_view, NULL);
+	if (type_kind_is_aggregate (type_kind)) {
+		*name = type_view;
+		return type_kind;
+	}
+	return NULL;
+}
+
+static char *type_get_memb(Sdb *TDB, const char *kind, const char *type, int offset, const char *path) {
 	int i, next_offset = 0;
-	bool found = false;
 
 	if (offset < 0) {
-		return false;
+		return NULL;
 	}
 	char *query = r_str_newf ("%s.%s", kind, type);
 	char *members = sdb_get (TDB, query, 0);
 	free (query);
 	if (!members) {
-		// eprintf ("%s is not an aggregate\n", type);
-		return false;
+		return NULL;
 	}
+	char *res = NULL;
+	bool is_struct = !strcmp (kind, "struct");
 	int nargs = r_str_split (members, ',');
 	for (i = 0; i < nargs; i++) {
 		const char *name = r_str_word_get0 (members, i);
@@ -273,7 +278,7 @@ static bool type_members_by_offset(Sdb *TDB, RList *out, const char *kind, const
 			break;
 		}
 		int cur_offset = r_num_math (NULL, r_str_word_get0 (subtype, len - 2));
-		if (!strcmp (kind, "struct")) {
+		if (is_struct) {
 			if (cur_offset > 0 && cur_offset < next_offset) {
 				free (subtype);
 				break;
@@ -283,43 +288,34 @@ static bool type_members_by_offset(Sdb *TDB, RList *out, const char *kind, const
 			}
 		}
 		if (cur_offset == offset) {
-			char *res = r_str_newf ("%s.%s", path, name);
-			if (res) {
-				r_list_append (out, res);
-				found = true;
-			}
-			if (!all) {
-				free (subtype);
-				break;
-			}
+			res = r_str_newf ("%s.%s", path, name);
+			free (subtype);
+			break;
 		}
 		int arrsz = r_num_math (NULL, r_str_word_get0 (subtype, len - 1));
 		int fsize = (r_type_get_bitsize (TDB, subtype) * (arrsz ? arrsz : 1)) / 8;
 		if (!fsize) {
 			free (subtype);
-			if (!strcmp (kind, "struct")) {
+			if (is_struct) {
 				break;
 			}
 			continue;
 		}
 		int member_end = cur_offset + fsize;
-		if (!strcmp (kind, "struct")) {
+		if (is_struct) {
 			next_offset = member_end;
 		}
-		// Handle nested structs and unions
 		if (offset > cur_offset && offset < member_end) {
 			char *nested_type = (char *)r_str_word_get0 (subtype, 0);
-			const char *nested_kind = NULL;
 			const char *nested_name = NULL;
-			if (nested_type && type_aggregate_kind (TDB, nested_type, &nested_kind, &nested_name)) {
+			const char *nested_kind = nested_type? type_aggregate_kind (TDB, nested_type, &nested_name): NULL;
+			if (nested_kind) {
 				char *nested_path = r_str_newf ("%s.%s", path, name);
 				if (nested_path) {
-					if (type_members_by_offset (TDB, out, nested_kind, nested_name, offset - cur_offset, nested_path, all)) {
-						found = true;
-					}
+					res = type_get_memb (TDB, nested_kind, nested_name, offset - cur_offset, nested_path);
 					free (nested_path);
 				}
-				if (found && !all) {
+				if (res) {
 					free (subtype);
 					break;
 				}
@@ -328,37 +324,31 @@ static bool type_members_by_offset(Sdb *TDB, RList *out, const char *kind, const
 		free (subtype);
 	}
 	free (members);
-	return found;
+	return res;
 }
 
 R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
-	if (offset < 0) {
-		return NULL;
-	}
-	RList *members = r_list_newf (free);
-	if (!members) {
-		return NULL;
-	}
-	char *res = NULL;
-	if (type_members_by_offset (TDB, members, "struct", type, offset, type, false)) {
-		res = r_list_pop (members);
-	}
-	r_list_free (members);
-	return res;
+	return type_get_memb (TDB, "struct", type, offset, type);
 }
 
 // XXX this function is slow!
 R_API RList *r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	RList *offtypes = r_list_newf (free);
+	if (offset > ST32_MAX) {
+		return offtypes;
+	}
 	SdbList *ls = sdb_foreach_list (TDB, true);
 	SdbListIter *lsi;
 	SdbKv *kv;
 	ls_foreach (ls, lsi, kv) {
 		const char *kk = sdbkv_key (kv);
 		const char *vv = sdbkv_value (kv);
-		if (offset <= ST32_MAX && (!strcmp (vv, "struct") || !strcmp (vv, "union"))
+		if (type_kind_is_aggregate (vv)
 			&& !r_str_startswith (kk, "struct.") && !r_str_startswith (kk, "union.")) {
-			type_members_by_offset (TDB, offtypes, vv, kk, offset, kk, true);
+			char *res = type_get_memb (TDB, vv, kk, offset, kk);
+			if (res) {
+				r_list_append (offtypes, res);
+			}
 		}
 	}
 	ls_free (ls);
@@ -521,17 +511,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 			char type_name[256] = { 0 };
 			const char *enum_name = NULL;
 			r_str_trim (type);
-			const char *type_view = type;
-			while (r_str_startswith (type_view, "const ")
-				|| r_str_startswith (type_view, "volatile ")
-				|| r_str_startswith (type_view, "restrict ")) {
-				const char *sp = strchr (type_view, ' ');
-				if (!sp || !sp[1]) {
-					break;
-				}
-				type_view = sp + 1;
-			}
-			r_str_ncpy (type_name, type_view, sizeof (type_name));
+			r_str_ncpy (type_name, type_skip_qualifiers (type), sizeof (type_name));
 			r_str_trim (type_name);
 			char *arr = strchr (type_name, '[');
 			if (arr) {
