@@ -34,64 +34,76 @@ static inline bool its_a_ppc64be(RCore *core) {
 		&& R_ARCH_CONFIG_IS_BIG_ENDIAN (cfg);
 }
 
-// PPC64: set anal.gp to the TOC base (.opd[0]+8, else .toc/.got+0x8000) for ppc_cs
-static void load_toc(RCore *core) {
-	if (!its_a_ppc64be (core)) {
-		return;
-	}
-	ut64 toc = UT64_MAX;
-	ut64 opd = r_num_math (core->num, "section..opd");
-	if (opd && opd != UT64_MAX) {
-		ut8 buf[8];
-		if (r_io_read_at (core->io, opd + 8, buf, 8)) {
-			ut64 v = r_read_be64 (buf);
-			if (v && v != UT64_MAX) {
-				toc = v;
-			}
-		}
-	}
-	if (toc == UT64_MAX) {
-		ut64 t = r_num_math (core->num, "section..toc");
-		if (!t || t == UT64_MAX) {
-			t = r_num_math (core->num, "section..got");
-		}
-		if (t && t != UT64_MAX) {
-			toc = t + 0x8000;
-		}
-	}
-	if (toc == UT64_MAX) {
-		return;
-	}
-	R_LOG_DEBUG ("[ppc64] toc: 0x%"PFMT64x, toc);
-	core->anal->gp = toc;
-	core->anal->config->gp = toc;
-	r_reg_setv (core->anal->reg, "r2", toc);
+static bool num_get(RCore *core, const char *str, ut64 *n) {
+	const char *err = NULL;
+	*n = r_num_get_err (core->num, str, &err);
+	return !err;
 }
 
-static void load_gp(RCore *core) {
-	// R2R db/cmd/cmd_eval
-	if (its_a_mips (core)) {
-	ut64 e0 = r_num_math (core->num, "entry0");
-	ut64 gp = r_num_math (core->num, "loc._gp");
-	if ((!gp || gp == UT64_MAX) && (e0 && e0 != UT64_MAX)) {
+static void load_gp_mips(RCore *core) {
+	ut64 e0 = 0;
+	bool has_e0 = num_get (core, "entry0", &e0);
+	ut64 gp = UT64_MAX;
+	bool has_gp = num_get (core, "loc._gp", &gp) && gp != UT64_MAX;
+	if (!has_gp && has_e0) {
 		r_core_cmd0 (core, "aeim;s entry0;dr PC=entry0");
 		r_config_set (core->config, "anal.roregs", "zero"); // gp is writable here
 		r_core_cmd0 (core, "10aes");
 		gp = r_reg_getv (core->anal->reg, "gp");
 		r_core_cmd0 (core, "dr0;aeim");
 		// Align MIPS GP to 16-byte boundary
-		gp = (gp == UT64_MAX)? gp: (gp + 0xf) & ~(ut64)0xf;
-		if (gp != UT64_MAX) {
+		has_gp = gp != UT64_MAX;
+		if (has_gp) {
+			gp = (gp + 0xf) & ~(ut64)0xf;
 			r_reg_setv (core->anal->reg, "gp", gp);
 		}
 		r_config_set (core->config, "anal.roregs", "zero,gp");
 	}
-	if (gp != UT64_MAX) {
-		// Align MIPS GP to 16-byte boundary
-		gp = (gp + 0xf) & ~(ut64)0xf;
+	if (!has_gp) {
+		return;
 	}
-		R_LOG_DEBUG ("[mips] gp: 0x%08"PFMT64x, gp);
+	// Align MIPS GP to 16-byte boundary
+	gp = (gp + 0xf) & ~(ut64)0xf;
+	R_LOG_DEBUG ("[mips] gp: 0x%08"PFMT64x, gp);
+	r_config_set_i (core->config, "anal.gp", gp);
+}
+
+static void load_gp_ppc(RCore *core) {
+	ut64 gp = UT64_MAX;
+	ut64 opd = UT64_MAX;
+	if (num_get (core, "section..opd", &opd) && opd != UT64_MAX) {
+		ut8 buf[8];
+		if (r_io_read_at (core->io, opd + 8, buf, 8)) {
+			ut64 v = r_read_be64 (buf);
+			if (v && v != UT64_MAX) {
+				gp = v;
+			}
+		}
+	}
+	if (gp == UT64_MAX) {
+		ut64 t = UT64_MAX;
+		bool has_t = num_get (core, "section..toc", &t);
+		if (!has_t || t == UT64_MAX) {
+			has_t = num_get (core, "section..got", &t);
+		}
+		if (has_t && t != UT64_MAX) {
+			gp = t + 0x8000;
+		}
+	}
+	if (gp != UT64_MAX) {
+		R_LOG_DEBUG ("[ppc64] toc: 0x%"PFMT64x, gp);
 		r_config_set_i (core->config, "anal.gp", gp);
+		r_reg_setv (core->anal->reg, "r2", gp);
+	}
+}
+
+// R2R db/cmd/cmd_eval
+static void load_gp(RCore *core) {
+	// PPC64: set anal.gp to the TOC base (.opd[0]+8, else .toc/.got+0x8000) for ppc_cs
+	if (its_a_ppc64be (core)) {
+		load_gp_ppc (core);
+	} else if (its_a_mips (core)) {
+		load_gp_mips (core);
 	}
 }
 
@@ -247,7 +259,6 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		r_core_call (core, "sr PC");
 	} else {
 		load_gp (core);
-		load_toc (core);
 	}
 	// update anal io bind
 	r_io_bind (core->io, &(core->anal->iob));
@@ -850,7 +861,6 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 	if (!r_config_get_b (r->config, "cfg.debug")) {
 		load_gp (r);
-		load_toc (r);
 	}
 	if (r_config_get_b (r->config, "bin.libs")) {
 		const char *lib;
