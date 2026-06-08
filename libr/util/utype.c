@@ -156,14 +156,29 @@ static const char *type_skip_qualifiers(const char *type) {
 	return type;
 }
 
+static bool type_kind_is_aggregate(const char *kind) {
+	return kind && (!strcmp (kind, "struct") || !strcmp (kind, "union"));
+}
+
+static const char *type_aggregate_prefixed(const char *type, const char **name) {
+	const char *kind = r_str_startswith (type, "struct")? "struct": r_str_startswith (type, "union")? "union": NULL;
+	if (kind) {
+		size_t klen = strlen (kind);
+		if (IS_WHITESPACE (type[klen])) {
+			*name = r_str_trim_head_ro (type + klen);
+			return R_STR_ISNOTEMPTY (*name)? kind: NULL;
+		}
+	}
+	return NULL;
+}
+
 R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	/* Filter out qualifiers and the structure keyword if type looks like "struct mystruc" */
 	const char *type_view = type_skip_qualifiers (type);
 	const char *tmptype = type_view;
-	if (r_str_startswith (tmptype, "struct ")) {
-		tmptype += strlen ("struct ");
-	} else if (r_str_startswith (tmptype, "union ")) {
-		tmptype += strlen ("union ");
+	const char *name = NULL;
+	if (type_aggregate_prefixed (tmptype, &name)) {
+		tmptype = name;
 	}
 	if ((strstr (type_view, "*(") || strstr (type_view, " *")) && strcmp (type_view, "char *")) {
 		return 32;
@@ -228,24 +243,14 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	return 0;
 }
 
-static bool type_kind_is_aggregate(const char *kind) {
-	return kind && (!strcmp (kind, "struct") || !strcmp (kind, "union"));
-}
-
-static const char *type_aggregate_kind(Sdb *TDB, char *type, const char **name) {
-	r_str_trim (type);
+static const char *type_aggregate_kind(Sdb *TDB, const char *type, const char **name) {
 	const char *type_view = type_skip_qualifiers (type);
 	if (strchr (type_view, '*')) {
 		return NULL;
 	}
-	// AITODO this struct vs union stuff looks like spaguetty, also we hare more duplicated code related to struct/union, analyze deeply all its uses and aim for a clean redesign with focus on maximum LOC reduction and ease of mainainability
-	if (r_str_startswith (type_view, "struct ")) {
-		*name = type_view + strlen ("struct ");
-		return R_STR_ISNOTEMPTY (*name)? "struct": NULL;
-	}
-	if (r_str_startswith (type_view, "union ")) {
-		*name = type_view + strlen ("union ");
-		return R_STR_ISNOTEMPTY (*name)? "union": NULL;
+	const char *kind = type_aggregate_prefixed (type_view, name);
+	if (kind) {
+		return kind;
 	}
 	const char *type_kind = sdb_const_get (TDB, type_view, NULL);
 	if (type_kind_is_aggregate (type_kind)) {
@@ -558,26 +563,13 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 			// Handle general pointers except for char *
 			if ((strstr (base_type, "*(") || strstr (base_type, " *")) && !r_str_startswith (base_type, "char *")) {
 				isfp = true;
-			} else if (r_str_startswith (base_type, "struct ")) {
-				struct_name = (char *)base_type + 7;
-				// TODO: iterate over all the struct fields, and format the format and vars
-				snprintf (var3, sizeof (var3), "struct.%.*s",
-						(int)(sizeof (var3) - sizeof ("struct.")), struct_name);
-				tfmt = sdb_const_get (TDB, var3, NULL);
-				isStruct = true;
 			} else {
-				// Check if the type is a struct/union without explicit prefix
-				const char *type_kind = sdb_const_get (TDB, base_type, NULL);
-				if (type_kind && !strcmp (type_kind, "struct")) {
-					struct_name = (char *)base_type;
-					snprintf (var3, sizeof (var3), "struct.%.*s",
-							(int)(sizeof (var3) - sizeof ("struct.")), base_type);
-					tfmt = sdb_const_get (TDB, var3, NULL);
-					isStruct = true;
-				} else if (type_kind && !strcmp (type_kind, "union")) {
-					struct_name = (char *)base_type;
-					snprintf (var3, sizeof (var3), "union.%.*s",
-							(int)(sizeof (var3) - sizeof ("union.")), base_type);
+				const char *aggregate_name = NULL;
+				const char *type_kind = type_aggregate_kind (TDB, base_type, &aggregate_name);
+				if (type_kind) {
+					struct_name = (char *)aggregate_name;
+					int name_len = (int)(sizeof (var3) - strlen (type_kind) - 2);
+					snprintf (var3, sizeof (var3), "%s.%.*s", type_kind, name_len, aggregate_name);
 					tfmt = sdb_const_get (TDB, var3, NULL);
 					isStruct = true;
 				} else {
