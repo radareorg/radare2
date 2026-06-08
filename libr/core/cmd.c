@@ -117,23 +117,23 @@ static RCoreHelpMessage help_msg_equal_l = {
 	NULL
 };
 static RCoreHelpMessage help_msg_dollar = {
-	"Usage:", "$alias[=cmd] [args...]", "Alias commands and data (see ?$? for help on $variables)",
-	"$", "", "list all defined aliases",
-	"$*", "", "list all defined aliases and their values, with unprintable characters escaped",
-	"$**", "", "same as above, but if an alias contains unprintable characters, b64 encode it",
+	"Usage:", "$alias[=cmd] [args...]", "Manage command/data aliases",
+	"$", "", "list aliases",
+	"$*", "", "list aliases and their values",
+	"$**", "", "like $*, but b64-encode unprintable chars",
 	"$", "foo:=123", "alias for 'f foo=123'",
 	"$", "foo-=4", "alias for 'f foo-=4'",
 	"$", "foo+=4", "alias for 'f foo+=4'",
-	"$", "foo", "alias for 's foo' (note that command aliases can override flag resolution)",
-	"$", "dis=base64:AAA=", "alias $dis to the raw bytes from decoding this base64 string",
+	"$", "foo", "alias for 's foo'; aliases override flag resolution",
+	"$", "dis=base64:AAA=", "alias $dis to decoded b64 bytes",
 	"$", "dis=$hello world", "alias $dis to the string after '$'",
-	"$", "dis=$hello\\\\nworld\\\\0a", "string aliases accept double-backslash and hex escaping",
-	"$", "dis=-", "edit $dis in cfg.editor (use single-backslashes for escaping)",
+	"$", "dis=$hello\\\\nworld\\\\0a", "string aliases accept double \\ and hex escaping",
+	"$", "dis=-", "edit $dis in cfg.editor; use single \\ escapes",
 	"$", "dis=af", "alias $dis to the af command",
-	"\"$", "dis=af;pdf\"", "alias $dis to run af, then pdf. you must quote the whole command.",
+	"\"$", "dis=af;pdf\"", "alias $dis to run af, then pdf (quote whole command)",
 	"$", "test=. /tmp/test.js", "create command - rlangpipe script",
 	"$", "dis=", "undefine alias",
-	"$", "dis", "execute a defined command alias, or print a data alias with unprintable characters escaped",
+	"$", "dis", "run cmd alias or print data alias",
 	"$", "dis?", "show commands aliased by $dis",
 	NULL
 };
