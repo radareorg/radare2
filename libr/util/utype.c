@@ -141,7 +141,7 @@ static const char *const type_qualifiers[] = {
 	"const", "volatile", "restrict", "atomic", "_Atomic", NULL
 };
 
-static const char *type_skip_qualifiers(const char *type) {
+static const char *type_skip_qualifiers(const char *R_NONNULL type) {
 	int i;
 	do {
 		type = r_str_trim_head_ro (type);
@@ -156,11 +156,11 @@ static const char *type_skip_qualifiers(const char *type) {
 	return type;
 }
 
-static bool type_kind_is_aggregate(const char *kind) {
-	return kind && (!strcmp (kind, "struct") || !strcmp (kind, "union"));
+static bool type_kind_is_aggregate(const char *R_NONNULL kind) {
+	return !strcmp (kind, "struct") || !strcmp (kind, "union");
 }
 
-static const char *type_aggregate_prefixed(const char *type, const char **name) {
+static const char *type_aggregate_prefixed(const char *R_NONNULL type, const char **R_NONNULL name) {
 	const char *kind = r_str_startswith (type, "struct")? "struct": r_str_startswith (type, "union")? "union": NULL;
 	if (kind) {
 		size_t klen = strlen (kind);
@@ -172,7 +172,8 @@ static const char *type_aggregate_prefixed(const char *type, const char **name) 
 	return NULL;
 }
 
-R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
+R_API ut64 r_type_get_bitsize(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
+	R_RETURN_VAL_IF_FAIL (TDB && type, 0);
 	/* Filter out qualifiers and the structure keyword if type looks like "struct mystruc" */
 	const char *type_view = type_skip_qualifiers (type);
 	const char *tmptype = type_view;
@@ -243,7 +244,7 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	return 0;
 }
 
-static const char *type_aggregate_kind(Sdb *TDB, const char *type, const char **name) {
+static const char *type_aggregate_kind(Sdb *R_NONNULL TDB, const char *R_NONNULL type, const char **R_NONNULL name) {
 	const char *type_view = type_skip_qualifiers (type);
 	if (strchr (type_view, '*')) {
 		return NULL;
@@ -253,14 +254,14 @@ static const char *type_aggregate_kind(Sdb *TDB, const char *type, const char **
 		return kind;
 	}
 	const char *type_kind = sdb_const_get (TDB, type_view, NULL);
-	if (type_kind_is_aggregate (type_kind)) {
+	if (type_kind && type_kind_is_aggregate (type_kind)) {
 		*name = type_view;
 		return type_kind;
 	}
 	return NULL;
 }
 
-static char *type_get_memb(Sdb *TDB, const char *kind, const char *type, int offset, const char *path) {
+static char *type_get_memb(Sdb *R_NONNULL TDB, const char *R_NONNULL kind, const char *R_NONNULL type, int offset, const char *R_NONNULL path) {
 	int i, next_offset = 0;
 
 	if (offset < 0) {
@@ -277,9 +278,6 @@ static char *type_get_memb(Sdb *TDB, const char *kind, const char *type, int off
 	int nargs = r_str_split (members, ',');
 	for (i = 0; i < nargs; i++) {
 		const char *name = r_str_word_get0 (members, i);
-		if (!name) {
-			break;
-		}
 		char *query = r_str_newf ("%s.%s.%s", kind, type, name);
 		char *subtype = sdb_get (TDB, query, 0);
 		free (query);
@@ -320,9 +318,9 @@ static char *type_get_memb(Sdb *TDB, const char *kind, const char *type, int off
 			next_offset = member_end;
 		}
 		if (offset > cur_offset && offset < member_end) {
-			char *nested_type = (char *)r_str_word_get0 (subtype, 0);
+			const char *nested_type = r_str_word_get0 (subtype, 0);
 			const char *nested_name = NULL;
-			const char *nested_kind = nested_type? type_aggregate_kind (TDB, nested_type, &nested_name): NULL;
+			const char *nested_kind = type_aggregate_kind (TDB, nested_type, &nested_name);
 			if (nested_kind) {
 				char *nested_path = r_str_newf ("%s.%s", path, name);
 				if (nested_path) {
@@ -341,12 +339,14 @@ static char *type_get_memb(Sdb *TDB, const char *kind, const char *type, int off
 	return res;
 }
 
-R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
+R_API char *r_type_get_struct_memb(Sdb *R_NONNULL TDB, const char *R_NONNULL type, int offset) {
+	R_RETURN_VAL_IF_FAIL (TDB && type, NULL);
 	return type_get_memb (TDB, "struct", type, offset, type);
 }
 
 // XXX this function is slow!
-R_API RList *r_type_get_by_offset(Sdb *TDB, ut64 offset) {
+R_API RList *r_type_get_by_offset(Sdb *R_NONNULL TDB, ut64 offset) {
+	R_RETURN_VAL_IF_FAIL (TDB, NULL);
 	RList *offtypes = r_list_newf (free);
 	if (offset > ST32_MAX) {
 		return offtypes;
