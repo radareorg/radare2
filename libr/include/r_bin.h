@@ -421,6 +421,7 @@ typedef struct r_bin_object_t {
 	RVecRBinImport imports_vec;
 	RVecRBinSymbol symbols_vec;
 	RVecRBinSection sections_vec;
+	RBinSection *cached_section;
 	RVecRBinEntry entries_vec;
 	RList/*<??>*/ *entries;
 	RList/*<??>*/ *fields;

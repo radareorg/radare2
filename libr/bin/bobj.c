@@ -213,6 +213,7 @@ static void object_delete_items(RBinObject *o) {
 	RVecRBinImport_fini (&o->imports_vec);
 	RVecRBinSymbol_fini (&o->symbols_vec);
 	RVecRBinSection_fini (&o->sections_vec);
+	o->cached_section = NULL;
 
 	r_list_free (o->classes);
 	ht_pp_free (o->classes_ht);
@@ -597,6 +598,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 				r_bin_filter_sections_vec (bf, &bo->sections_vec);
 			}
 		}
+		bo->cached_section = NULL;
 	}
 	// Load classes before reloc creation. Class-method-creating plugins
 	// (objc/pe/java/demangler/...) push into bo->symbols_vec via
