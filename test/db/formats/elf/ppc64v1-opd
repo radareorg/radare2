@@ -43,3 +43,19 @@ EXPECT=<<EOF
 0x10001854
 EOF
 RUN
+
+NAME=ELF v2: TOC base taken from .got + 0x8000 when there is no .opd
+FILE=bins/elf/ppc64_sudoku_dwarf
+CMDS=ar r2
+EXPECT=<<EOF
+0x10027f00
+EOF
+RUN
+
+NAME=ppc64le: TOC base auto-load skipped on little-endian despite .got present
+FILE=bins/elf/mosquito-ppc64le
+CMDS=ar r2
+EXPECT=<<EOF
+0x00000000
+EOF
+RUN
