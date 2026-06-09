@@ -1,8 +1,9 @@
 NAME=Pebble: Open/iI
 FILE=bins/pebble/pebble-app.bin
-CMDS=iI~?pebble
+CMDS=iI~os,subsys
 EXPECT=<<EOF
-1
+os       pebble
+subsys   pebble
 EOF
 RUN
 

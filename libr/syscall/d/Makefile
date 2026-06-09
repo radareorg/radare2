@@ -8,6 +8,7 @@ F+= linux-x86-32
 F+= linux-x86-64
 F+= linux-arm-32
 F+= linux-arm-64
+F+= pebble-arm-16
 F+= s110-arm-16
 F+= linux-mips-32
 F+= linux-ppc-32

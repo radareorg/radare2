@@ -27,6 +27,7 @@ OBJS+=d/linux-x86-64.o
 OBJS+=d/netbsd-x86-32.o
 OBJS+=d/openbsd-x86-32.o
 OBJS+=d/openbsd-x86-64.o
+OBJS+=d/pebble-arm-16.o
 OBJS+=d/s110-arm-16.o
 OBJS+=d/windows-x86-32.o
 OBJS+=d/windows-x86-64.o
