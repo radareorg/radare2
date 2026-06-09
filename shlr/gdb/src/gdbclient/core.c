@@ -75,6 +75,7 @@ static struct {
 	ut8 *buf;
 	ut64 buflen, maxlen;
 	bool valid, init;
+	libgdbr_t *owner;
 } reg_cache;
 
 static bool reg_cache_ensure_size(size_t len) {
@@ -98,6 +99,7 @@ static void reg_cache_fini(void) {
 	reg_cache.maxlen = 0;
 	reg_cache.valid = false;
 	reg_cache.init = false;
+	reg_cache.owner = NULL;
 }
 
 static void reg_cache_update(libgdbr_t *g) {
@@ -112,12 +114,14 @@ static void reg_cache_update(libgdbr_t *g) {
 	memcpy (reg_cache.buf, g->data, len);
 	reg_cache.buflen = (ut64)len;
 	reg_cache.valid = true;
+	reg_cache.owner = g;
 }
 
 static void reg_cache_init(libgdbr_t *g) {
 	reg_cache.buflen = 0;
 	reg_cache.valid = false;
 	reg_cache.init = false;
+	reg_cache.owner = NULL;
 	if (g && g->data_max > 0) {
 		reg_cache_ensure_size ((size_t)g->data_max);
 	}
@@ -723,7 +727,7 @@ int gdbr_read_registers(libgdbr_t *g) {
 	if (!g || !g->data) {
 		return -1;
 	}
-	if (reg_cache.init && reg_cache.valid) {
+	if (reg_cache.init && reg_cache.valid && reg_cache.owner == g && reg_cache.buflen <= g->data_max) {
 		g->data_len = reg_cache.buflen;
 		memcpy (g->data, reg_cache.buf, reg_cache.buflen);
 		return 0;
