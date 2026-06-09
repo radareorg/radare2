@@ -22,18 +22,6 @@ R_API bool r_core_file_close_all_but(RCore *core) {
 	return true;
 }
 
-static inline bool its_a_mips(RCore *core) {
-	RArchConfig *cfg = core->rasm->config;
-	return cfg && r_str_startswith (cfg->arch, "mips");
-}
-
-static inline bool its_a_ppc64be(RCore *core) {
-	RArchConfig *cfg = core->rasm->config;
-	return cfg && r_str_startswith (cfg->arch, "ppc")
-		&& cfg->bits == 64
-		&& R_ARCH_CONFIG_IS_BIG_ENDIAN (cfg);
-}
-
 static bool num_get(RCore *core, const char *str, ut64 *n) {
 	const char *err = NULL;
 	*n = r_num_get_err (core->num, str, &err);
@@ -69,6 +57,7 @@ static void load_gp_mips(RCore *core) {
 }
 
 static void load_gp_ppc(RCore *core) {
+	// PPC64: set anal.gp to the TOC base (.opd[0]+8, else .toc/.got+0x8000) for ppc_cs
 	ut64 gp = UT64_MAX;
 	ut64 opd = UT64_MAX;
 	if (num_get (core, "section..opd", &opd) && opd != UT64_MAX) {
@@ -99,11 +88,20 @@ static void load_gp_ppc(RCore *core) {
 
 // R2R db/cmd/cmd_eval
 static void load_gp(RCore *core) {
-	// PPC64: set anal.gp to the TOC base (.opd[0]+8, else .toc/.got+0x8000) for ppc_cs
-	if (its_a_ppc64be (core)) {
-		load_gp_ppc (core);
-	} else if (its_a_mips (core)) {
-		load_gp_mips (core);
+	RArchConfig *cfg = core->rasm->config;
+	if (cfg) {
+		bool isppc = false;
+		bool ismips = r_str_startswith (cfg->arch, "mips");
+		if (!ismips) {
+			isppc = r_str_startswith (cfg->arch, "ppc")
+				&& cfg->bits == 64
+				&& R_ARCH_CONFIG_IS_BIG_ENDIAN (cfg);
+		}
+		if (isppc) {
+			load_gp_ppc (core);
+		} else if (ismips) {
+			load_gp_mips (core);
+		}
 	}
 }
 
