@@ -19,6 +19,7 @@ sdb_files = [
   'netbsd-x86-32',
   'openbsd-x86-32',
   'openbsd-x86-64',
+  'pebble-arm-16',
   's110-arm-16',
   'windows-x86-32',
   'windows-x86-64',
