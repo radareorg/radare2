@@ -1929,7 +1929,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			 * Pattern: addis rX, r2, HA  where r2 holds the TOC base.
 			 * Record  config->gp + (HA<<16)  in toc_map[X] so that any later
 			 * ld/addi/st using rX as base can resolve the full address.
-			 * config->gp is auto-detected by load_toc() or set via
+			 * config->gp is auto-detected by load_gp() or set via
 			 * e anal.gp=<toc_addr>. */
 			if (INSOP(0).type == PPC_OP_REG) {
 				ridx = toc_reg_idx (INSOP(0).reg);
