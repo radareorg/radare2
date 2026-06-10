@@ -43,6 +43,41 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=md r2 codelines
+FILE=bins/elf/dwarf3_line
+CMDS=<<EOF
+e bin.dbginfo=true
+m r2 /r2
+md /r2
+?e --
+md /r2/cl
+?e --
+md /r2/cl/usr/w/g/radare2/test/bins/src
+?e --
+md /r2/cl/usr/w/g/radare2/test/bins/src/dwarf-line
+?e --
+mc /r2/cl/usr/w/g/radare2/test/bins/src/dwarf-line.c~0x00001197[0,1]
+EOF
+EXPECT=<<EOF
+d cfg
+d cl
+d flags
+f version
+f seek
+f bsize
+--
+d tmp
+d usr
+--
+d dwarf-line
+f dwarf-line.c
+--
+f bar.c
+--
+0x00001197 8
+EOF
+RUN
+
 NAME=md iso
 FILE=bins/fs/iso.img
 CMDS=md /root

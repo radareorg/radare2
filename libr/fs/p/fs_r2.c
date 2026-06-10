@@ -10,6 +10,13 @@ typedef int (*CatHandler)(RFSRoot *root, RFSFile *file, const char *path);
 typedef int (*WriteHandler)(RFSFile *file, ut64 addr, const ut8 *data, int len);
 
 typedef struct {
+	char *file;
+	char *vpath;
+	ut64 addr;
+	int line;
+} R2ClLine;
+
+typedef struct {
 	const char *path;
 	DirHandler dir;
 	CatHandler cat;
@@ -27,9 +34,12 @@ static int __version(RFSRoot *root, RFSFile *file, const char *path);
 static RList *__root(RFSRoot *root, const char *path);
 static RList *__cfg(RFSRoot *root, const char *path);
 static RList *__flags(RFSRoot *root, const char *path);
+static RList *__cl(RFSRoot *root, const char *path);
+static int __cl_cat(RFSRoot *root, RFSFile *file, const char *path);
 
 static Routes routes[] = {
 	{ "/cfg", &__cfg, &__cfg_cat, &__cfg_write },
+	{ "/cl", &__cl, &__cl_cat, NULL },
 	{ "/flags", &__flags, &__flags_cat, NULL},
 	{ "/version", NULL, &__version, NULL},
 	{ "/seek", NULL, &__seek_cat, &__seek_write },
@@ -37,6 +47,14 @@ static Routes routes[] = {
 	{ "/", &__root},
 	{NULL, NULL}
 };
+
+static void cl_line_free(R2ClLine *line) {
+	if (line) {
+		free (line->file);
+		free (line->vpath);
+		free (line);
+	}
+}
 
 static void append_file(RList *list, const char *name, int type, int time, ut64 size) {
 	if (!list || !name || !*name) {
@@ -50,6 +68,23 @@ static void append_file(RList *list, const char *name, int type, int time, ut64 
 	fsf->time = time;
 	fsf->size = size;
 	r_list_append (list, fsf);
+}
+
+static void append_unique_file(RList *list, const char *name, int type, int time, ut64 size) {
+	if (!list || !name || !*name) {
+		return;
+	}
+	RListIter *iter;
+	RFSFile *fsf;
+	r_list_foreach (list, iter, fsf) {
+		if (!strcmp (fsf->name, name)) {
+			if (type == 'd') {
+				fsf->type = type;
+			}
+			return;
+		}
+	}
+	append_file (list, name, type, time, size);
 }
 
 static RList *fscmd(RFSRoot *root, const char *cmd, int type) {
@@ -75,6 +110,101 @@ static RList *fscmd(RFSRoot *root, const char *cmd, int type) {
 	return NULL;
 }
 
+static char *cl_normalize_vpath(const char *path) {
+	if (R_STR_ISEMPTY (path)) {
+		return NULL;
+	}
+	char *dup = strdup (path);
+	if (!dup) {
+		return NULL;
+	}
+	r_str_replace_char (dup, '\\', '/');
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
+		free (dup);
+		return NULL;
+	}
+	char *p = dup;
+	while (*p) {
+		while (*p == '/') {
+			p++;
+		}
+		char *seg = p;
+		while (*p && *p != '/') {
+			p++;
+		}
+		char ch = *p;
+		*p = 0;
+		if (*seg && strcmp (seg, ".") && strcmp (seg, "..")) {
+			if (r_strbuf_length (sb) > 0) {
+				r_strbuf_append (sb, "/");
+			}
+			r_strbuf_append (sb, seg);
+		}
+		if (!ch) {
+			break;
+		}
+		p++;
+	}
+	free (dup);
+	char *res = r_strbuf_drain (sb);
+	if (R_STR_ISEMPTY (res)) {
+		free (res);
+		return NULL;
+	}
+	return res;
+}
+
+static RList *cl_load(RFSRoot *root) {
+	R_RETURN_VAL_IF_FAIL (root, NULL);
+	char *res = root->cob.cmdStr (root->cob.core, "CLj");
+	if (!res) {
+		return NULL;
+	}
+	RJson *json = r_json_parse (res);
+	if (!json || json->type != R_JSON_ARRAY) {
+		r_json_free (json);
+		free (res);
+		return NULL;
+	}
+	RList *lines = r_list_newf ((RListFree)cl_line_free);
+	if (!lines) {
+		r_json_free (json);
+		free (res);
+		return NULL;
+	}
+	RJson *child;
+	for (child = json->children.first; child; child = child->next) {
+		if (child->type != R_JSON_OBJECT) {
+			continue;
+		}
+		const char *file = r_json_get_str (child, "file");
+		char *vpath = cl_normalize_vpath (file);
+		if (!vpath) {
+			continue;
+		}
+		R2ClLine *line = R_NEW0 (R2ClLine);
+		line->file = strdup (file);
+		line->vpath = vpath;
+		line->addr = (ut64)r_json_get_num (child, "addr");
+		line->line = (int)r_json_get_num (child, "line");
+		r_list_append (lines, line);
+	}
+	r_json_free (json);
+	free (res);
+	return lines;
+}
+
+static char *cl_path_vpath(const char *path) {
+	if (!strcmp (path, "/cl")) {
+		return strdup ("");
+	}
+	if (!strncmp (path, "/cl/", 4)) {
+		return cl_normalize_vpath (path + 4);
+	}
+	return NULL;
+}
+
 static RFSFile* fs_r2_open(RFSRoot *root, const char *path, bool create) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
 	int i;
@@ -96,10 +226,11 @@ static int fs_r2_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 	const char *name = file->name;
 	for (i = 0; routes[i].path; i++) {
 		if (routes[i].write) {
-			if (!strncmp (name, routes[i].path + 1, strlen (routes[i].path) - 1)) {
+			const size_t rpl = strlen (routes[i].path);
+			if (!strncmp (name, routes[i].path + 1, rpl - 1)) {
 				return routes[i].write (file, addr, data, len);
 			}
-			if (!strncmp (path, routes[i].path, strlen (routes[i].path))) {
+			if (!strncmp (path, routes[i].path, rpl)) {
 				return routes[i].write (file, addr, data, len);
 			}
 		}
@@ -256,6 +387,80 @@ static RList *__cfg(RFSRoot *root, const char *path) {
 		return list;
 	}
 	return NULL;
+}
+
+static RList *__cl(RFSRoot *root, const char *path) {
+	R_RETURN_VAL_IF_FAIL (root && path, NULL);
+	char *cwd = cl_path_vpath (path);
+	if (!cwd) {
+		return NULL;
+	}
+	RList *lines = cl_load (root);
+	RList *list = r_list_newf ((RListFree)r_fs_file_free);
+	if (lines && list) {
+		const size_t cwd_len = strlen (cwd);
+		RListIter *iter;
+		R2ClLine *line;
+		r_list_foreach (lines, iter, line) {
+			const char *rel = NULL;
+			if (!cwd_len) {
+				rel = line->vpath;
+			} else if (r_str_startswith (line->vpath, cwd) && line->vpath[cwd_len] == '/') {
+				rel = line->vpath + cwd_len + 1;
+			}
+			if (R_STR_ISEMPTY (rel)) {
+				continue;
+			}
+			const char *slash = strchr (rel, '/');
+			char *name = slash? r_str_ndup (rel, slash - rel): strdup (rel);
+			append_unique_file (list, name, slash? 'd': 'f', 0, 0);
+			free (name);
+		}
+	}
+	r_list_free (lines);
+	free (cwd);
+	return list;
+}
+
+static int __cl_cat(RFSRoot *root, RFSFile *file, const char *path) {
+	R_RETURN_VAL_IF_FAIL (root && file && path, -1);
+	char *vpath = cl_path_vpath (path);
+	if (R_STR_ISEMPTY (vpath)) {
+		free (vpath);
+		return -1;
+	}
+	RList *lines = cl_load (root);
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!lines || !sb) {
+		r_list_free (lines);
+		free (vpath);
+		r_strbuf_free (sb);
+		return -1;
+	}
+	RListIter *iter;
+	R2ClLine *line;
+	r_list_foreach (lines, iter, line) {
+		if (strcmp (line->vpath, vpath)) {
+			continue;
+		}
+		char *row = line->line > 0? r_file_slurp_line (line->file, line->line, 0): NULL;
+		r_strbuf_appendf (sb, "0x%08" PFMT64x "\t%d\t%s\n",
+			line->addr, line->line, r_str_get (row));
+		free (row);
+	}
+	r_list_free (lines);
+	free (vpath);
+	char *res = r_strbuf_drain (sb);
+	if (R_STR_ISEMPTY (res)) {
+		free (res);
+		return -1;
+	}
+	file->ptr = NULL;
+	free (file->data);
+	file->data = (ut8*)res;
+	file->p = root->p;
+	file->size = strlen (res);
+	return file->size;
 }
 
 static RList *__root(RFSRoot *root, const char *path) {
