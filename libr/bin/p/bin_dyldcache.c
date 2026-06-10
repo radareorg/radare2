@@ -547,6 +547,8 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 		R_LOG_INFO ("bin.dyldcache: Use R_DYLDCACHE_FILTER to specify a colon ':' separated list of names to avoid loading all the files in memory");
 	}
 
+	bool load_deps = !(r_sys_getenv_asbool ("R_DYLDCACHE_NO_DEPS"));
+
 	cache_img_t *img = NULL;
 	if (cache->images_are_global) {
 		img = read_cache_images (cache->buf, cache->hdr, 0);
@@ -611,7 +613,7 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 				R_FREE (lib_name);
 				deps[j]++;
 
-				if (extras && depArray && j < extras_count) {
+				if (load_deps && extras && depArray && j < extras_count) {
 					ut32 k;
 					for (k = extras[j].dependentsStartArrayIndex; k < depListCount && depArray[k] != 0xffff; k++) {
 						ut16 dep_index = depArray[k] & 0x7fff;
@@ -630,7 +632,7 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 						}
 						free (dep_name);
 					}
-				} else if (path_to_idx) {
+				} else if (load_deps && path_to_idx) {
 					carve_deps_at_address (cache, img, path_to_idx, img[j].address, deps, printing);
 				}
 			}
