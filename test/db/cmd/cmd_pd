@@ -888,6 +888,41 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ptrsize bounded overlapped string
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=pickle
+wx 5504414243444546474800
+f str.ABCD 4 @ 2
+f str.ABCDEFGH 8 @ 2
+e asm.cmt.off=true
+e asm.bytes=false
+e scr.strconv=esc
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000  ~   short_binstring "ABCD"                     ; str.ABCD ; 0x2 ; "ABCD"
+EOF
+RUN
+
+NAME=ptrsize bounded utf16le string
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=pickle
+wx 550641004200000043004400
+f str.AB_wide 6 @ 2
+f str.ABCD_wide 10 @ 2
+e asm.cmt.off=true
+e asm.bytes=false
+e scr.strconv=esc
+e bin.str.enc=utf16le
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000  ~   short_binstring "A\x00B\x00\x00\x00"       ; str.AB_wide ; 0x2 ; u"AB"
+EOF
+RUN
+
 NAME=bin.str.enc utf8
 FILE=bins/elf/strenc
 CMDS=<<EOF
