@@ -5016,18 +5016,22 @@ static RFlagItem *ds_sized_str_flag(RDisasmState *ds, ut64 addr) {
 	if (size <= 0) {
 		return NULL;
 	}
+	RFlagItem *match = NULL;
+	int count = 0;
 	const RList *list = r_flag_get_list (flags, addr);
 	if (list) {
 		RFlagItem *fi;
 		RListIter *iter;
 		r_list_foreach (list, iter, fi) {
-			if (fi->addr == addr && (int)fi->size == size
-					&& fi->name && r_str_startswith (fi->name, "str.")) {
-				return fi;
+			if (fi->addr == addr && fi->name && r_str_startswith (fi->name, "str.")) {
+				count++;
+				if ((int)fi->size == size) {
+					match = fi;
+				}
 			}
 		}
 	}
-	return NULL;
+	return count > 1? match: NULL;
 }
 
 static RFlagItem *ds_flag_get_in(RDisasmState *ds, ut64 addr) {
@@ -5076,12 +5080,15 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 		}
 	}
 	if (!escstr) {
-		if (flag_len == len) {
-			flag_len = ds_str_flag_len (r_flag_get_at (ds->core->flags, refaddr, false), len);
+		if (flag_len < len) {
+			escstr = ds_getstring_bound (ds, str, flag_len, &prefix);
+		} else {
+			RFlagItem *fi = r_flag_get_at (ds->core->flags, refaddr, false);
+			if (fi && fi->size > 1 && (int)fi->size < len) {
+				len = (int)fi->size;
+			}
+			escstr = ds_getstring (ds, str, len, &prefix);
 		}
-		escstr = flag_len < len
-			? ds_getstring_bound (ds, str, flag_len, &prefix)
-			: ds_getstring (ds, str, len, &prefix);
 	}
 	if (escstr) {
 		bool inv = ds->show_color && !ds->show_emu_strinv;
