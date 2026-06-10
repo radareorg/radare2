@@ -75,7 +75,7 @@ R_API void r_anal_class_delete(RAnal *anal, const char *name) {
 	r_anal_class_method_delete_class (anal, class_name_sanitized);
 	r_anal_class_vtable_delete_class (anal, class_name_sanitized);
 
-	if (!sdb_remove (anal->sdb_classes, key_class (class_name_sanitized), 0)) {
+	if (!sdb_unset (anal->sdb_classes, key_class (class_name_sanitized), 0)) {
 		free (class_name_sanitized);
 		return;
 	}
@@ -87,14 +87,14 @@ R_API void r_anal_class_delete(RAnal *anal, const char *name) {
 	sdb_aforeach (attr_type, attr_type_array) {
 		key = key_attr_type_attrs (class_name_sanitized, attr_type);
 		char *attr_id_array = sdb_get (anal->sdb_classes_attrs, key, 0);
-		sdb_remove (anal->sdb_classes_attrs, key, 0);
+		sdb_unset (anal->sdb_classes_attrs, key, 0);
 		if (attr_id_array) {
 			char *attr_id;
 			sdb_aforeach (attr_id, attr_id_array) {
 				key = key_attr_content (class_name_sanitized, attr_type, attr_id);
-				sdb_remove (anal->sdb_classes_attrs, key, 0);
+				sdb_unset (anal->sdb_classes_attrs, key, 0);
 				key = key_attr_content_specific (class_name_sanitized, attr_type, attr_id);
-				sdb_remove (anal->sdb_classes_attrs, key, 0);
+				sdb_unset (anal->sdb_classes_attrs, key, 0);
 				sdb_aforeach_next (attr_id);
 			}
 			free (attr_id_array);
@@ -103,7 +103,7 @@ R_API void r_anal_class_delete(RAnal *anal, const char *name) {
 	}
 	free (attr_type_array);
 
-	sdb_remove (anal->sdb_classes_attrs, key_attr_types (class_name_sanitized), 0);
+	sdb_unset (anal->sdb_classes_attrs, key_attr_types (class_name_sanitized), 0);
 
 	REventClass event = { .name = class_name_sanitized };
 	r_event_send (anal->ev, R_EVENT_CLASS_DELETED, &event);
@@ -140,7 +140,7 @@ static bool rename_key(Sdb *sdb, const char *key_old, const char *key_new) {
 	if (!content) {
 		return false;
 	}
-	sdb_remove (sdb, key_old, 0);
+	sdb_unset (sdb, key_old, 0);
 	sdb_set (sdb, key_new, content, 0);
 	free (content);
 	return true;
@@ -304,9 +304,9 @@ static RAnalClassErr r_anal_class_delete_attr_raw(RAnal *anal, const char *class
 	const char *attr_type_str = attr_type_id (attr_type);
 
 	char *key = key_attr_content (class_name, attr_type_str, attr_id);
-	sdb_remove (anal->sdb_classes_attrs, key, 0);
+	sdb_unset (anal->sdb_classes_attrs, key, 0);
 	key = key_attr_content_specific (class_name, attr_type_str, attr_id);
-	sdb_remove (anal->sdb_classes_attrs, key, 0);
+	sdb_unset (anal->sdb_classes_attrs, key, 0);
 
 	key = key_attr_type_attrs (class_name, attr_type_str);
 	sdb_array_remove (anal->sdb_classes_attrs, key, attr_id, 0);
@@ -361,7 +361,7 @@ static RAnalClassErr r_anal_class_rename_attr_raw(RAnal *anal, const char *class
 	key = key_attr_content (class_name, attr_type_str, attr_id_old);
 	char *content = sdb_get (anal->sdb_classes_attrs, key, 0);
 	if (content) {
-		sdb_remove (anal->sdb_classes_attrs, key, 0);
+		sdb_unset (anal->sdb_classes_attrs, key, 0);
 		key = key_attr_content (class_name, attr_type_str, attr_id_new);
 		sdb_set (anal->sdb_classes_attrs, key, content, 0);
 		free (content);
@@ -370,7 +370,7 @@ static RAnalClassErr r_anal_class_rename_attr_raw(RAnal *anal, const char *class
 	key = key_attr_content_specific (class_name, attr_type_str, attr_id_old);
 	content = sdb_get (anal->sdb_classes_attrs, key, 0);
 	if (content) {
-		sdb_remove (anal->sdb_classes_attrs, key, 0);
+		sdb_unset (anal->sdb_classes_attrs, key, 0);
 		key = key_attr_content_specific (class_name, attr_type_str, attr_id_new);
 		sdb_set (anal->sdb_classes_attrs, key, content, 0);
 		free (content);

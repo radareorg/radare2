@@ -572,7 +572,7 @@ static char *serialize_value(RSignItem *it) {
 	return r_strbuf_drain (sb);
 }
 
-static RList *deserialize_sign_space(RAnal *a, RSpace *space) {
+static RList *deserialize_sign_space(RAnal *a, const RSpace *space) {
 	R_RETURN_VAL_IF_FAIL (a && space, NULL);
 
 	char *key = space_serialize_key (space, "");
@@ -1239,7 +1239,7 @@ struct ctxDeleteCB {
 static bool deleteBySpaceCB(void *user, const char *k, const char *v) {
 	struct ctxDeleteCB *ctx = (struct ctxDeleteCB *) user;
 	if (!strncmp (k, ctx->key, ctx->len)) {
-		sdb_remove (ctx->anal->sdb_zigns, k, 0);
+		sdb_unset (ctx->anal->sdb_zigns, k, 0);
 	}
 	return true;
 }
@@ -1265,7 +1265,7 @@ R_API bool r_sign_delete(RAnal *a, const char *name) {
 		// Remove specific zign
 		char *key = space_serialize_key (r_spaces_current (&a->zign_spaces), name);
 		if (key) {
-			retval = sdb_remove (a->sdb_zigns, key, 0);
+			retval = sdb_unset (a->sdb_zigns, key, 0);
 			free (key);
 		}
 	}
@@ -2100,51 +2100,15 @@ static bool countForCB(RSignItem *it, void *user) {
 	return true;
 }
 
-static bool unsetForCB(RSignItem *it, void *user) {
-	Sdb *db = (Sdb *)user;
-	char *key = item_serialize_key (it);
-	if (key) {
-		sdb_remove (db, key, 0);
-		free (key);
-	}
-	it->space = NULL;
-	r_sign_set_item (db, it, NULL);
-	return true;
-}
-
-struct ctxRenameForCB {
-	RAnal *anal;
-	char *oprefix; // old prefix
-	const char *newname;
-	size_t oldlen;
-};
-
-static bool renameForCB(void *user, const char *k, const char *v) {
-	struct ctxRenameForCB *ctx = (struct ctxRenameForCB *) user;
-	Sdb *db = ctx->anal->sdb_zigns;
-	if (!strncmp (k, ctx->oprefix, ctx->oldlen)) {
-		char *nk = str_serialize_key (ctx->newname, k + ctx->oldlen);
-		char *nv = strdup (v);
-		if (nk && nv) {
-			// must remove before set, must alloc new nk and nv before hand
-			sdb_remove (db, k, 0);
-			sdb_set (db, nk, nv, 0);
-		}
-		free (nv);
-		free (nk);
-	}
-	return true;
-}
-
 R_API void r_sign_space_rename_for(RAnal *a, const RSpace *space, const char *oname, const char *nname) {
 	R_RETURN_IF_FAIL (a && space && oname && nname);
-	struct ctxRenameForCB ctx = { .anal = a, .newname = nname };
-	ctx.oprefix = str_serialize_key (oname, "");
-	if (ctx.oprefix) {
-		ctx.oldlen = strlen (ctx.oprefix);
-		sdb_foreach (a->sdb_zigns, renameForCB, &ctx);
+	char *oprefix = str_serialize_key (oname, "");
+	char *nprefix = str_serialize_key (nname, "");
+	if (oprefix && nprefix) {
+		sdb_rename_prefix (a->sdb_zigns, oprefix, nprefix);
 	}
-	free (ctx.oprefix);
+	free (nprefix);
+	free (oprefix);
 }
 
 struct ctxForeachCB {
@@ -2191,7 +2155,13 @@ R_API int r_sign_space_count_for(RAnal *a, const RSpace *space) {
 }
 
 R_API void r_sign_space_unset_for(RAnal *a, const RSpace *space) {
-	local_foreach_item (a, unsetForCB, space, true, a->sdb_zigns);
+	char *oprefix = space_serialize_key (space, "");
+	char *nprefix = space_serialize_key (NULL, "");
+	if (oprefix && nprefix) {
+		sdb_rename_prefix (a->sdb_zigns, oprefix, nprefix);
+	}
+	free (nprefix);
+	free (oprefix);
 }
 
 R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user) {
