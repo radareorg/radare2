@@ -2100,30 +2100,69 @@ static bool countForCB(RSignItem *it, void *user) {
 	return true;
 }
 
+struct ctxPrefixKeysCB {
+	const char *prefix;
+	size_t len;
+	RList *keys;
+};
+
+static bool collectPrefixKeysCB(void *user, const char *k, const char *v) {
+	struct ctxPrefixKeysCB *ctx = (struct ctxPrefixKeysCB *)user;
+	(void)v;
+	if (strncmp (k, ctx->prefix, ctx->len)) {
+		return true;
+	}
+	char *key = strdup (k);
+	if (!key) {
+		return false;
+	}
+	if (!r_list_append (ctx->keys, key)) {
+		free (key);
+		return false;
+	}
+	return true;
+}
+
+static RList *sign_space_keys(RAnal *a, const char *prefix) {
+	RList *keys = r_list_newf ((RListFree)free);
+	if (!keys) {
+		return NULL;
+	}
+	struct ctxPrefixKeysCB ctx = {
+		.prefix = prefix,
+		.len = strlen (prefix),
+		.keys = keys
+	};
+	if (!sdb_foreach (a->sdb_zigns, collectPrefixKeysCB, &ctx)) {
+		r_list_free (keys);
+		return NULL;
+	}
+	return keys;
+}
+
 R_API void r_sign_space_rename_for(RAnal *a, const RSpace *space, const char *oname, const char *nname) {
 	R_RETURN_IF_FAIL (a && space && oname && nname);
 	char *oprefix = str_serialize_key (oname, "");
 	if (!oprefix) {
 		return;
 	}
-	SdbList *zigns = sdb_foreach_match (a->sdb_zigns, oprefix, false);
-	if (zigns) {
-		size_t oldlen = strlen (oprefix);
-		SdbListIter *iter;
-		SdbKv *kv;
-		ls_foreach (zigns, iter, kv) {
-			const char *k = kv->base.key;
-			const char *v = kv->base.value;
-			if (k && v && !strncmp (k, oprefix, oldlen)) {
+	size_t oldlen = strlen (oprefix);
+	RList *keys = sign_space_keys (a, oprefix);
+	if (keys) {
+		RListIter *iter;
+		char *k;
+		r_list_foreach (keys, iter, k) {
+			const char *v = sdb_const_get (a->sdb_zigns, k, NULL);
+			if (v) {
 				char *nk = str_serialize_key (nname, k + oldlen);
 				if (nk) {
-					sdb_unset (a->sdb_zigns, k, 0);
 					sdb_set (a->sdb_zigns, nk, v, 0);
+					sdb_unset (a->sdb_zigns, k, 0);
 					free (nk);
 				}
 			}
 		}
-		ls_free (zigns);
+		r_list_free (keys);
 	}
 	free (oprefix);
 }
@@ -2172,22 +2211,27 @@ R_API int r_sign_space_count_for(RAnal *a, const RSpace *space) {
 }
 
 R_API void r_sign_space_unset_for(RAnal *a, const RSpace *space) {
-	RList *zigns = deserialize_sign_space (a, space);
-	if (!zigns) {
+	char *prefix = space_serialize_key (space, "");
+	if (!prefix) {
+		return;
+	}
+	RList *keys = sign_space_keys (a, prefix);
+	free (prefix);
+	if (!keys) {
 		return;
 	}
 	RListIter *iter;
-	RSignItem *it;
-	r_list_foreach (zigns, iter, it) {
-		char *key = item_serialize_key (it);
-		if (key) {
+	char *key;
+	r_list_foreach (keys, iter, key) {
+		RSignItem *it = sign_get_sdb_item (a, key);
+		if (it) {
 			sdb_unset (a->sdb_zigns, key, 0);
-			free (key);
+			it->space = NULL;
+			r_sign_set_item (a->sdb_zigns, it, NULL);
+			r_sign_item_free (it);
 		}
-		it->space = NULL;
-		r_sign_set_item (a->sdb_zigns, it, NULL);
 	}
-	r_list_free (zigns);
+	r_list_free (keys);
 }
 
 R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user) {
