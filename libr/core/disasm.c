@@ -727,6 +727,27 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 		ds->core->anal->esil->cb.user = NULL;
 	}
 }
+static RStrEnc encstrtype(const char *es) {
+	if (es) {
+		if (!strcmp (es, "latin1")) {
+			return R_STRING_ENC_LATIN1;
+		}
+		if (r_str_startswith (es, "utf")) {
+			if (!strcmp (es, "utf8")) {
+				return R_STRING_ENC_UTF8;
+			} else if (!strcmp (es, "utf16le")) {
+				return R_STRING_ENC_UTF16LE;
+			} else if (!strcmp (es, "utf32le")) {
+				return R_STRING_ENC_UTF32LE;
+			} else if (!strcmp (es, "utf16be")) {
+				return R_STRING_ENC_UTF16BE;
+			} else if (!strcmp (es, "utf32be")) {
+				return R_STRING_ENC_UTF32BE;
+			}
+		}
+	}
+	return R_STRING_ENC_GUESS;
+}
 
 static RDisasmState *ds_init(RCore *core, bool for_json) {
 	RDisasmState *ds = R_NEW0 (RDisasmState);
@@ -879,12 +900,12 @@ static RDisasmState *ds_init(RCore *core, bool for_json) {
 		ds->emustack_max = addr + size;
 		ds->stackFd = r_io_fd_open (core->io, uri, R_PERM_RW, 0);
 		RIOMap *map = r_io_map_add (core->io, ds->stackFd, R_PERM_RW, 0LL, addr, size);
-		if (!map) {
+		if (map) {
+			r_io_map_set_name (map, "fake.stack");
+		} else {
 			r_io_fd_close (core->io, ds->stackFd);
 			R_LOG_ERROR ("Cannot create map for tha stack, fd %d got closed again", ds->stackFd);
 			ds->stackFd = -1;
-		} else {
-			r_io_map_set_name (map, "fake.stack");
 		}
 	}
 	ds->stackptr = core->anal->stackptr;
@@ -949,24 +970,7 @@ static RDisasmState *ds_init(RCore *core, bool for_json) {
 	ds->show_functions = r_config_get_b (core->config, "asm.functions");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
 	ds->show_asciidot = !strcmp (core->print->strconv_mode, "asciidot");
-	const char *strenc_str = r_config_get (core->config, "bin.str.enc");
-	if (!strenc_str) {
-		ds->strenc = R_STRING_ENC_GUESS;
-	} else if (!strcmp (strenc_str, "latin1")) {
-		ds->strenc = R_STRING_ENC_LATIN1;
-	} else if (!strcmp (strenc_str, "utf8")) {
-		ds->strenc = R_STRING_ENC_UTF8;
-	} else if (!strcmp (strenc_str, "utf16le")) {
-		ds->strenc = R_STRING_ENC_UTF16LE;
-	} else if (!strcmp (strenc_str, "utf32le")) {
-		ds->strenc = R_STRING_ENC_UTF32LE;
-	} else if (!strcmp (strenc_str, "utf16be")) {
-		ds->strenc = R_STRING_ENC_UTF16BE;
-	} else if (!strcmp (strenc_str, "utf32be")) {
-		ds->strenc = R_STRING_ENC_UTF32BE;
-	} else {
-		ds->strenc = R_STRING_ENC_GUESS;
-	}
+	ds->strenc = encstrtype (r_config_get (core->config, "bin.str.enc"));
 	core->print->bytespace = r_config_get_i (core->config, "asm.bytes.space");
 	ds->cursor = 0;
 	ds->nb = 0;

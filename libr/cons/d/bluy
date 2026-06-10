@@ -33,7 +33,7 @@ ec ucall rgb:6af
 ec nop rgb:33a
 ec ret white
 ec trap blue
-ec swi rgb:e34
+ec swi white . bold
 ec cmp rgb:aaa
 ec reg rgb:3cf
 ec creg rgb:09f
