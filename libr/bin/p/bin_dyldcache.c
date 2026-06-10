@@ -97,25 +97,52 @@ static cache_img_t *read_cache_images(RBuffer *cache_buf, cache_hdr_t *hdr, ut64
 	return images;
 }
 
-static void match_bin_entries(RDyldCache *cache, void *entries, ut64 entries_count, bool has_large_entries) {
-	R_RETURN_IF_FAIL (cache && cache->bin_by_pa && entries);
+static ut64 locsym_entry_get(const void *entries, ut32 i, bool has_large_entries, ut32 *start_index, ut32 *count) {
+	if (has_large_entries) {
+		const cache_locsym_entry_large_t *e = &((const cache_locsym_entry_large_t *) entries)[i];
+		*start_index = e->nlistStartIndex;
+		*count = e->nlistCount;
+		return e->dylibOffset;
+	}
+	const cache_locsym_entry_t *e = &((const cache_locsym_entry_t *) entries)[i];
+	*start_index = e->nlistStartIndex;
+	*count = e->nlistCount;
+	return e->dylibOffset;
+}
 
+static RDyldBinImage *find_bin_by_locsym_offset(RDyldCache *cache, ut64 dylib_offset, ut64 cache_size) {
+	RDyldBinImage *bin = ht_up_find (cache->bin_by_pa, dylib_offset, NULL);
+	if (bin) {
+		return bin;
+	}
+	ut32 i;
+	for (i = 0; i < cache->n_hdr; i++) {
+		const ut64 from = cache->hdr_offset[i];
+		const ut64 to = i + 1 < cache->n_hdr? cache->hdr_offset[i + 1]: cache_size;
+		if (dylib_offset >= from && dylib_offset < to) {
+			const ut64 neg_locdiff = cache->hdr_overhead[i];
+			return (neg_locdiff && dylib_offset >= neg_locdiff)
+				? ht_up_find (cache->bin_by_pa, dylib_offset - neg_locdiff, NULL)
+				: NULL;
+		}
+	}
+	return NULL;
+}
+
+static void match_bin_entries(RDyldCache *cache, void *entries, ut64 entries_count, bool has_large_entries) {
+	if (!cache || !cache->bin_by_pa || !entries) {
+		return;
+	}
+	const ut64 cache_size = r_buf_size (cache->buf);
 	ut32 i;
 	for (i = 0; i < entries_count; i++) {
-		if (has_large_entries) {
-			cache_locsym_entry_large_t *e = &((cache_locsym_entry_large_t *) entries)[i];
-			RDyldBinImage *bin = ht_up_find (cache->bin_by_pa, e->dylibOffset, NULL);
-			if (bin) {
-				bin->nlist_start_index = e->nlistStartIndex;
-				bin->nlist_count = e->nlistCount;
-			}
-		} else {
-			cache_locsym_entry_t *e = &((cache_locsym_entry_t *) entries)[i];
-			RDyldBinImage *bin = ht_up_find (cache->bin_by_pa, e->dylibOffset, NULL);
-			if (bin) {
-				bin->nlist_start_index = e->nlistStartIndex;
-				bin->nlist_count = e->nlistCount;
-			}
+		ut32 start_index = 0;
+		ut32 count = 0;
+		ut64 dylib_offset = locsym_entry_get (entries, i, has_large_entries, &start_index, &count);
+		RDyldBinImage *bin = find_bin_by_locsym_offset (cache, dylib_offset, cache_size);
+		if (bin) {
+			bin->nlist_start_index = start_index;
+			bin->nlist_count = count;
 		}
 	}
 }
@@ -240,6 +267,8 @@ static void symbols_from_locsym(RDyldCache *cache, RDyldBinImage *bin, RBinFile 
 		RBinSymbol *sym = RVecRBinSymbol_emplace_back (&bf->bo->symbols_vec);
 		memset (sym, 0, sizeof (RBinSymbol));
 		sym->type = R_BIN_TYPE_FUNC_STR;
+		sym->bind = R_BIN_BIND_LOCAL_STR;
+		sym->forwarder = "NONE";
 		sym->vaddr = nlist->n_value;
 		sym->paddr = va2pa (nlist->n_value, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
 		sym->name = r_bin_name_new_from (symstr);
@@ -519,13 +548,14 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 	int *deps = NULL;
 	char *target_libs = NULL;
 	RList *target_lib_names = NULL;
+	HtUP *bin_by_pa = NULL;
 
 	ut64 extras_count = 0;
 	cache_imgxtr_t *extras = NULL;
 	if (!bins) {
 		return;
 	}
-	HtUP *bin_by_pa = ht_up_new0 ();
+	bin_by_pa = ht_up_new0 ();
 	if (!bin_by_pa) {
 		goto end;
 	}
@@ -534,14 +564,11 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 	if (target_libs) {
 		target_lib_names = r_str_split_list (target_libs, ":", 0);
 		if (!target_lib_names) {
-			r_list_free (bins);
-			return;
+			goto end;
 		}
 		deps = R_NEWS0 (int, cache->hdr->imagesCount);
 		if (!deps) {
-			r_list_free (bins);
-			r_list_free (target_lib_names);
-			return;
+			goto end;
 		}
 	} else {
 		R_LOG_INFO ("bin.dyldcache: Use R_DYLDCACHE_FILTER to specify a colon ':' separated list of names to avoid loading all the files in memory");
@@ -553,8 +580,7 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 	if (cache->images_are_global) {
 		img = read_cache_images (cache->buf, cache->hdr, 0);
 		if (!img) {
-			free (deps);
-			return;
+			goto end;
 		}
 	}
 
