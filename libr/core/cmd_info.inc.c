@@ -84,7 +84,7 @@ static RCoreHelpMessage help_msg_iz = {
 	"iz.", "", "show string at current address",
 	"iz,", "[:help]", "perform a table query on strings listing",
 	"iz-", " ([addr]) ([len]) ([type])", "delete string at address (uses current seek if addr not specified, len/type for matching)",
-	"iz+", " ([addr]) ([len]) ([type])", "add string manually (addr=current seek if not specified, len=auto, type=auto-detect)",
+	"iz+", " [addr] ([len]) ([type])", "add string manually (len=auto, type=auto-detect)",
 	"iz*", "", "print flags and comments r2 commands for all the strings",
 	"izc", "", "count the strings in data sections",
 	"izj", "", "strings in data sections in JSON format",
@@ -1752,6 +1752,15 @@ static void parse_iz_args(RCore *core, const char *input, int skip, IzArgs *args
 }
 
 static void cmd_izplus(RCore *core, const char *input) {
+	const char *arg = r_str_trim_head_ro (input + 2);
+	if (R_STR_ISEMPTY (arg) || *arg == '?') {
+		r_core_cmd_help_match (core, help_msg_iz, "iz+");
+		return;
+	}
+	if (input[2] != ' ') {
+		r_core_return_invalid_command (core, "iz+", input[2]);
+		return;
+	}
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (!bf || !bf->bo) {
 		R_LOG_ERROR ("No file selected");

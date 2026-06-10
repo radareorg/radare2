@@ -516,7 +516,6 @@ RUN
 NAME=iz+
 FILE=bins/elf/analysis/hello-utf-16
 CMDS=<<EOF
-iz+
 iz~Hello
 iz+ 0x004005e8
 iz~Hello
@@ -527,6 +526,22 @@ EXPECT=<<EOF
 0   0x000005e8 0x004005e8 11  24   .rodata utf16le Hello World
 0   0x000005e8 0x004005e8 11  24   .rodata utf16le Hello World
 0   0x000005e8 0x004005e8 11  24   .rodata utf16le Hello World
+EOF
+RUN
+
+NAME=iz+ requires spaced argument
+FILE=malloc://1024
+CMDS=<<EOF
+iz+~manually
+iz+?~manually
+iz+0x100
+EOF
+EXPECT=<<EOF
+| iz+ [addr] ([len]) ([type])  add string manually (len=auto, type=auto-detect)
+| iz+ [addr] ([len]) ([type])  add string manually (len=auto, type=auto-detect)
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid `0` subcommand, try `iz+?`
 EOF
 RUN
 
