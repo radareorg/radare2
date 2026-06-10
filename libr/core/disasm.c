@@ -5010,6 +5010,53 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	return escstr;
 }
 
+static RFlagItem *ds_sized_str_flag(RDisasmState *ds, ut64 addr) {
+	RFlag *flags = ds->core->flags;
+	int size = ds->analop.ptrsize;
+	if (size <= 0) {
+		return NULL;
+	}
+	RFlagItem *match = NULL;
+	int count = 0;
+	const RList *list = r_flag_get_list (flags, addr);
+	if (list) {
+		RFlagItem *fi;
+		RListIter *iter;
+		r_list_foreach (list, iter, fi) {
+			if (fi->addr == addr && fi->name && r_str_startswith (fi->name, "str.")) {
+				count++;
+				if ((int)fi->size == size) {
+					match = fi;
+				}
+			}
+		}
+	}
+	return count > 1? match: NULL;
+}
+
+static RFlagItem *ds_flag_get_in(RDisasmState *ds, ut64 addr) {
+	RFlagItem *fi = ds_sized_str_flag (ds, addr);
+	return fi? fi: r_flag_get_in (ds->core->flags, addr);
+}
+
+static int ds_str_flag_len(RFlagItem *fi, int len) {
+	if (fi && fi->size > 1 && fi->size < (ut64)len) {
+		return (int)fi->size;
+	}
+	return len;
+}
+
+static char *ds_getstring_bound(RDisasmState *ds, const char *str, int len, const char **prefix) {
+	char *s = calloc ((size_t)len + 1, 1);
+	if (!s) {
+		return NULL;
+	}
+	memcpy (s, str, len);
+	char *res = ds_getstring (ds, s, len, prefix);
+	free (s);
+	return res;
+}
+
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr) {
 	if (!ds->show_cmt_strings) {
 		return;
@@ -5025,21 +5072,23 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 	}
 	const char *prefix = "";
 	char *escstr = NULL;
-	// Use Cs metadata string only when guessing encoding (highest priority)
-	if (ds->strenc == R_STRING_ENC_GUESS) {
+	int flag_len = ds_str_flag_len (ds_sized_str_flag (ds, refaddr), len);
+	if (flag_len == len && ds->strenc == R_STRING_ENC_GUESS) {
 		const char *meta_str = r_meta_get_string (ds->core->anal, R_META_TYPE_STRING, refaddr);
 		if (R_STR_ISNOTEMPTY (meta_str)) {
-			// metadata string is already escaped, just duplicate it
 			escstr = strdup (meta_str);
 		}
 	}
 	if (!escstr) {
-		// Fall back to flag size if available
-		RFlagItem *fi = r_flag_get_at (ds->core->flags, refaddr, false);
-		if (fi && fi->size > 1 && (int)fi->size < len) {
-			len = (int)fi->size;
+		if (flag_len < len) {
+			escstr = ds_getstring_bound (ds, str, flag_len, &prefix);
+		} else {
+			RFlagItem *fi = r_flag_get_at (ds->core->flags, refaddr, false);
+			if (fi && fi->size > 1 && (int)fi->size < len) {
+				len = (int)fi->size;
+			}
+			escstr = ds_getstring (ds, str, len, &prefix);
 		}
-		escstr = ds_getstring (ds, str, len, &prefix);
 	}
 	if (escstr) {
 		bool inv = ds->show_color && !ds->show_emu_strinv;
@@ -5144,7 +5193,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			R_VEC_FOREACH (refs, ref) {
 				int rt = R_ANAL_REF_TYPE_MASK (ref->type);
 				if (rt == R_ANAL_REF_TYPE_STRN || rt == R_ANAL_REF_TYPE_DATA) {
-					if ((f = r_flag_get_in (core->flags, ref->addr))) {
+					if ((f = ds_flag_get_in (ds, ref->addr))) {
 						refaddr = ref->addr;
 						break;
 					}
@@ -5174,7 +5223,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		char *msg = calloc (sizeof (char), len);
 		ut64 last_flag_addr = UT64_MAX;
 		if (((st64)p) > 0) {
-			f = r_flag_get_in (core->flags, p);
+			f = ds_flag_get_in (ds, p);
 			last_flag_addr = p;
 			if (f) {
 				ut64 subrel_addr = core->rasm->parse->subrel_addr;
@@ -5201,7 +5250,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
 				char str[128] = {0};
 				if (last_flag_addr != refaddr) {
-					f = r_flag_get_in (core->flags, refaddr);
+					f = ds_flag_get_in (ds, refaddr);
 					last_flag_addr = refaddr;
 				}
 				if (!f && ds->show_slow) {
@@ -5307,7 +5356,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		}
 #endif
 		if (last_flag_addr != refaddr) {
-			f = r_flag_get_in (core->flags, refaddr);
+			f = ds_flag_get_in (ds, refaddr);
 			last_flag_addr = refaddr;
 		}
 		if (f) {
