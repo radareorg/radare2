@@ -1,0 +1,57 @@
+NAME=PPC64 pseudo compare and conditional branch
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+e asm.pseudo=true
+wx 2c290000418202083d001000556a063e
+pd 4
+pi 4
+EOF
+EXPECT=<<EOF
+            0x00000000      2c290000       cr0 = (r9 == 0)
+        ,=< 0x00000004      41820208       if (cr0 & FLG_EQ) goto 0x20c
+        |   0x00000008      3d001000       r8 = (0x1000 << 16)
+        |   0x0000000c      556a063e       r10 = r11 & mask(0, 0x18)
+cr0 = (r9 == 0)
+if (cr0 & FLG_EQ) goto 0x20c
+r8 = (0x1000 << 16)
+r10 = r11 & mask(0, 0x18)
+EOF
+RUN
+
+NAME=PPC64 pseudo with asm.sub.names disabled
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+e asm.pseudo=true
+e asm.sub.names=false
+wx 2c29000041820208
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000000      2c290000       cr0 = (r9 == 0)
+        ,=< 0x00000004      41820208       if (cr0 & FLG_EQ) goto 0x20c
+EOF
+RUN
+
+NAME=PPC64 pseudo with comments printed on their own line
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+e asm.pseudo=true
+e asm.cmt.right=false
+wx 2c29000041820208
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000000      2c290000       cr0 = (r9 == 0)
+        ,=< 0x00000004      41820208       if (cr0 & FLG_EQ) goto 0x20c
+EOF
+RUN
+
