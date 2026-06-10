@@ -306,3 +306,268 @@ void fcn.00000000 (int64_t arg1) {
 EOF
 RUN
 
+
+NAME=pdc ppc64 fold resolved toc global load
+FILE=malloc://0x9000
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+e anal.gp=0x10000
+f obj.myglobal @ 0x8008
+wx 3d220000e86980084e800020
+af
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+int fcn.00000000 (int r3, int r4) {
+        // ICOD XREF from fcn.00000000 @ 0x4(x)
+        r3 = [obj.myglobal]
+        return
+}
+
+EOF
+RUN
+
+NAME=pdc ppc64 fold resolved toc string load
+FILE=malloc://0x9000
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+e anal.gp=0x10000
+s 0x8008
+w hello
+s 0
+f str.hello @ 0x8008
+wx 3d220000e86980084e800020
+af
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+int fcn.00000000 (int r3, int r4) {
+        r3 = "hello"
+        return
+}
+
+EOF
+RUN
+
+NAME=pdc ppc64 fold resolved toc global store
+FILE=malloc://0x9000
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+e anal.gp=0x10000
+f obj.myglobal @ 0x8008
+wx 3d220000f8a980084e800020
+af
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+void fcn.00000000 (int64_t arg1) {
+        [obj.myglobal] = r5
+        return
+}
+
+EOF
+RUN
+
+NAME=pdc ppc64 keep toc setup when its reg has other uses
+FILE=malloc://0x9000
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+e anal.gp=0x10000
+f obj.myglobal @ 0x8008
+wx 3d220000e86980087c894a144e800020
+af
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+int fcn.00000000 (int r3, int r4) {
+        // ICOD XREF from fcn.00000000 @ 0x4(x)
+        r9 = r2 + (0 << 16)
+        r3 = [obj.myglobal]
+        r4 = r9 + r9
+        return
+}
+
+EOF
+RUN
+
+NAME=pdc ppc64 no fold without a confirming flag
+FILE=malloc://0x9000
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+e anal.gp=0x10000
+wx 3d220000e86980084e800020
+af
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+int fcn.00000000 (int r3, int r4) {
+        // ICOD XREF from fcn.00000000 @ 0x4(x)
+        r9 = r2 + (0 << 16)
+        r3 = [r9 - 0x7ff8] // 0x8008
+        return
+}
+
+EOF
+RUN
+
+NAME=pdc ppc64 drop toc setup when reg is overwritten later
+FILE=malloc://0x9000
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+e anal.gp=0x10000
+f obj.myglobal @ 0x8008
+wx 3d220000e8698008392000004e800020
+af
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+int fcn.00000000 (int r3, int r4) {
+        // ICOD XREF from fcn.00000000 @ 0x4(x)
+        r3 = [obj.myglobal]
+        r9 = 0
+        return
+}
+
+EOF
+RUN
+
+NAME=pdc ppc64 fold two loads sharing one toc setup
+FILE=malloc://0x9000
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+e anal.gp=0x10000
+f obj.first @ 0x8008
+f obj.second @ 0x8010
+wx 3d220000e8698008e88980104e800020
+af
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+int fcn.00000000 (int r3, int r4) {
+        // ICOD XREFS from fcn.00000000 @ 0x4(x), 0x8(x)
+        r3 = [obj.first]
+        r4 = [obj.second]
+        return
+}
+
+EOF
+RUN
+
+NAME=pdc ppc64 fold toc load that clobbers its own base
+FILE=malloc://0x9000
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+e anal.gp=0x10000
+f obj.myglobal @ 0x8008
+wx 3d220000e92980084e800020
+af
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+int fcn.00000000 (int r3, int r4) {
+        // ICOD XREF from fcn.00000000 @ 0x4(x)
+        r9 = [obj.myglobal]
+        return
+}
+
+EOF
+RUN
+
+NAME=pdc ppc64 toc setup reg use detection is word exact
+FILE=malloc://0x9000
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+e anal.gp=0x10000
+f obj.myglobal @ 0x8008
+wx 3d220000e86980087c939a144e800020
+af
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+int fcn.00000000 (int r3, int r4) {
+        // ICOD XREF from fcn.00000000 @ 0x4(x)
+        r3 = [obj.myglobal]
+        r4 = r19 + r19
+        return
+}
+
+EOF
+RUN
+
+NAME=pdco ppc64 fold keeps the offset column
+FILE=malloc://0x9000
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+e anal.gp=0x10000
+f obj.myglobal @ 0x8008
+wx 3d220000e86980084e800020
+af
+pdco
+EOF
+EXPECT=<<EOF
+ 0x00000000 |                                | // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+ 0x00000000 |                                | int fcn.00000000 (int r3, int r4) {
+ 0x00000000 |         // ICOD XREF from fcn.00000000 @ 0x4(x)
+ 0x00000004 |         r3 = [obj.myglobal]
+ 0x00000008 |         return
+ 0x00000008 | }
+
+EOF
+RUN
+
+NAME=pdc emits goto on its own line
+FILE=malloc://0x20
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 2c2300004182000c386000014e8000204bfffff8
+af
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+void fcn.00000000 (int64_t arg1) {
+        cr0 = (r3 == 0) // arg1
+        if (cr0 & FLG_EQ) goto 0x10 // likely
+        return r3;
+    loc_0x00000010:
+        goto 8
+            goto loc_0x00000008;
+    loc_0x00000008:
+        // CODE XREF from fcn.00000000 @ 0x10(x)
+        r3 = 1        // "#"
+        return
+}
+
+EOF
+RUN

@@ -198,6 +198,192 @@ static void find_and_change(char *in, int len) {
 	}
 }
 
+static bool word_in(const char *s, const char *w) {
+	size_t wl = strlen (w);
+	const char *p = s;
+	while ((p = strstr (p, w))) {
+		bool lb = (p == s) || (!isalnum ((ut8)p[-1]) && p[-1] != '_');
+		bool rb = !isalnum ((ut8)p[wl]) && p[wl] != '_';
+		if (lb && rb) {
+			return true;
+		}
+		p += wl;
+	}
+	return false;
+}
+
+typedef struct {
+	char reg[16];
+	int line;
+	bool folded;
+	bool used;
+} PDCPendingRef;
+
+static void pending_resolve(PDCPendingRef *p, bool *drop) {
+	if (p->reg[0] && p->folded && !p->used) {
+		drop[p->line] = true;
+	}
+	p->reg[0] = 0;
+}
+
+// matches the ppc64 toc idiom "rX = r2 + (imm << 16)" and returns the dst register length, or 0
+static size_t toc_setup_reg(const char *body) {
+	const char *eq = strstr (body, " = r2 + (");
+	if (!eq) {
+		return 0;
+	}
+	const char *imm = eq + strlen (" = r2 + (");
+	if (*imm == '-') {
+		imm++;
+	}
+	bool hex = imm[0] == '0' && imm[1] == 'x';
+	size_t dl = strspn (hex? imm + 2: imm, hex? "0123456789abcdef": "0123456789");
+	const char *end = (hex? imm + 2: imm) + dl;
+	if (dl < 1 || !r_str_startswith (end, " << 16)")) {
+		return 0;
+	}
+	size_t reglen = eq - body;
+	size_t k = 0;
+	while (k < reglen && (isalnum ((ut8)body[k]) || body[k] == '_')) {
+		k++;
+	}
+	return (k == reglen)? reglen: 0;
+}
+
+// returns the flag named in the comment iff the comment also cites its address
+static RFlagItem *comment_flag(RFlag *flags, const char *cmt) {
+	RFlagItem *fi = NULL;
+	ut64 addr = UT64_MAX;
+	const char *p = cmt;
+	while (*p && !(fi && addr != UT64_MAX)) {
+		p += strspn (p, " \t/");
+		size_t tl = strcspn (p, " \t");
+		if (tl < 1) {
+			break;
+		}
+		if (!fi && memchr (p, '.', tl)) {
+			char *tok = r_str_ndup (p, tl);
+			fi = r_flag_get (flags, tok);
+			free (tok);
+		} else if (addr == UT64_MAX && tl > 2 && tl <= 18 && r_str_startswith (p, "0x") && strspn (p + 2, "0123456789abcdefABCDEF") == tl - 2) {
+			addr = r_num_get (NULL, p);
+		}
+		p += tl;
+	}
+	return (fi && fi->addr == addr)? fi: NULL;
+}
+
+// rewrites "dst = [reg ± off] // 0xaddr // name" into "dst = [name]" (or the string itself)
+static char *fold_line(RFlag *flags, const char *line, const char *body, char *base, size_t basesz) {
+	const char *br = strchr (body, '[');
+	const char *cb = br? strchr (br, ']'): NULL;
+	if (!br || !cb || !isalpha ((ut8)br[1])) {
+		return NULL;
+	}
+	size_t bl = 0;
+	while (bl < basesz - 1 && (isalnum ((ut8)br[1 + bl]) || br[1 + bl] == '_')) {
+		base[bl] = br[1 + bl];
+		bl++;
+	}
+	const char *cmt = strstr (cb, "//");
+	RFlagItem *fi = cmt? comment_flag (flags, cmt): NULL;
+	if (!fi) {
+		return NULL;
+	}
+	char *pfx = r_str_ndup (line, br - line);
+	char *mid = r_str_ndup (cb + 1, cmt - (cb + 1));
+	r_str_trim (mid);
+	char *res = NULL;
+	if (r_str_startswith (fi->name, "str.")) {
+		const char *q1 = strchr (cmt, '"');
+		const char *q2 = q1? strchr (q1 + 1, '"'): NULL;
+		// the loaded value is the string itself: drop the deref
+		if (q2 && R_STR_ISEMPTY (mid) && br - line > 2 && !strncmp (br - 2, "= ", 2)) {
+			res = r_str_newf ("%s%.*s", pfx, (int)(q2 + 1 - q1), q1);
+		}
+	}
+	if (!res) {
+		res = r_str_newf ("%s[%s]%s%s", pfx, fi->name, *mid? " ": "", mid);
+	}
+	free (pfx);
+	free (mid);
+	return res;
+}
+
+static char *fold_resolved_refs(RCore *core, char *code) {
+	int n = r_str_char_count (code, '\n') + 1;
+	char **out = R_NEWS0 (char *, n);
+	bool *drop = R_NEWS0 (bool, n);
+	if (!out || !drop) {
+		free (out);
+		free (drop);
+		return code;
+	}
+	PDCPendingRef pend = {0};
+	const char *ptr = code;
+	int i;
+	for (i = 0; i < n; i++) {
+		const char *lend = strchr (ptr, '\n');
+		size_t ll = lend? (size_t)(lend - ptr): strlen (ptr);
+		char *line = r_str_ndup (ptr, ll);
+		ptr = lend? lend + 1: ptr + ll;
+		out[i] = line;
+		const char *body = r_str_trim_head_ro (line);
+		if (r_str_startswith (body, "0x")) {
+			const char *sp = strchr (body, ' ');
+			if (sp) {
+				body = r_str_trim_head_ro (sp);
+			}
+		}
+		// the addis rX,r2,hi seed; the paired ld/st carries the resolved target
+		size_t reglen = toc_setup_reg (body);
+		if (reglen > 0 && reglen < sizeof (pend.reg)) {
+			pending_resolve (&pend, drop);
+			r_str_ncpy (pend.reg, body, reglen + 1);
+			pend.line = i;
+			continue;
+		}
+		char base[16] = {0};
+		char *folded = fold_line (core->flags, line, body, base, sizeof (base));
+		if (folded) {
+			free (out[i]);
+			out[i] = folded;
+			if (pend.reg[0] && !strcmp (base, pend.reg)) {
+				pend.folded = true;
+				// base reg overwritten by its own load: liveness ends here
+				if (word_in (folded, pend.reg)) {
+					pending_resolve (&pend, drop);
+				}
+			}
+		} else if (pend.reg[0] && word_in (body, pend.reg)) {
+			// a plain write to the reg ends liveness without being a use
+			size_t rl = strlen (pend.reg);
+			bool wr = !strncmp (body, pend.reg, rl)
+				&& !strncmp (body + rl, " = ", 3)
+				&& !word_in (body + rl + 3, pend.reg);
+			pend.used = !wr;
+			pending_resolve (&pend, drop);
+		}
+	}
+	pending_resolve (&pend, drop);
+	RStrBuf *sb = r_strbuf_new ("");
+	bool first = true;
+	for (i = 0; i < n; i++) {
+		if (!drop[i] && out[i]) {
+			if (!first) {
+				r_strbuf_append (sb, "\n");
+			}
+			first = false;
+			r_strbuf_append (sb, out[i]);
+		}
+		free (out[i]);
+	}
+	free (out);
+	free (drop);
+	free (code);
+	return r_strbuf_drain (sb);
+}
+
 static RCoreHelpMessage help_msg_pdc = {
 	"Usage: pdc[oj]", "", "experimental, unreliable and hacky pseudo-decompiler",
 	"pdc", "", "pseudo decompile function in current offset",
@@ -496,7 +682,7 @@ static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
 	}
 	code[len - 1] = 0;
 	find_and_change (code, len);
-	return code;
+	return fold_resolved_refs (state->core, code);
 }
 
 static bool is_known_loop_header(PDCState *state, ut64 addr) {
@@ -1470,6 +1656,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				if (indent > nindent) {
 					emit_close_braces (&state, bb->addr, indent, nindent);
 				}
+				print_newline_synthetic (&state, addr, nindent);
 				PRINTF ("goto loc_0x%08" PFMT64x ";", addr);
 				indent = nindent;
 			}
@@ -1516,6 +1703,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		s = r_str_replace (s, ";", "//", true);
 		s = r_str_replace (s, "goto ", "// goto loc_", true);
 		s = cleancomments (s);
+		s = fold_resolved_refs (core, s);
 		if (state.show_asm) {
 			RList *rows = r_str_split_list (s, "\n", 0);
 			char *row;
