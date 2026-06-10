@@ -5010,6 +5010,27 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	return escstr;
 }
 
+// Prefer a str. flag at addr whose size matches the op-provided content size
+// (RAnalOp.ptrsize). Disambiguates overlapping non-null-terminated strings that
+// share a storage offset (e.g. Hermes "default"/"defaultProps" at one address).
+static RFlagItem *ds_flag_str_by_size(RFlag *flags, ut64 addr, int size) {
+	if (size <= 0) {
+		return NULL;
+	}
+	const RList *list = r_flag_get_list (flags, addr);
+	if (list) {
+		RFlagItem *fi;
+		RListIter *iter;
+		r_list_foreach (list, iter, fi) {
+			if (fi->addr == addr && (int)fi->size == size
+					&& fi->name && r_str_startswith (fi->name, "str.")) {
+				return fi;
+			}
+		}
+	}
+	return NULL;
+}
+
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr) {
 	if (!ds->show_cmt_strings) {
 		return;
@@ -5025,8 +5046,23 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 	}
 	const char *prefix = "";
 	char *escstr = NULL;
+	// When the op exposes the size of the pointed string (RAnalOp.ptrsize) and a
+	// matching str. flag exists, read exactly that many bytes. This disambiguates
+	// overlapping non-null-terminated strings (e.g. Hermes "default" sharing an
+	// offset with "defaultProps") that address-keyed metadata/flags cannot.
+	RFlagItem *szf = ds_flag_str_by_size (ds->core->flags, refaddr, ds->analop.ptrsize);
+	if (szf && szf->size > 1 && (int)szf->size < len) {
+		// The pointed string shares storage with longer ones and is not
+		// null-terminated at this length, so bound a copy before escaping
+		// (the escapers read to the terminator, ignoring len).
+		char *bounded = r_str_ndup (str, (int)szf->size);
+		if (bounded) {
+			escstr = ds_getstring (ds, bounded, (int)szf->size, &prefix);
+			free (bounded);
+		}
+	}
 	// Use Cs metadata string only when guessing encoding (highest priority)
-	if (ds->strenc == R_STRING_ENC_GUESS) {
+	if (!escstr && ds->strenc == R_STRING_ENC_GUESS) {
 		const char *meta_str = r_meta_get_string (ds->core->anal, R_META_TYPE_STRING, refaddr);
 		if (R_STR_ISNOTEMPTY (meta_str)) {
 			// metadata string is already escaped, just duplicate it
@@ -5174,7 +5210,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		char *msg = calloc (sizeof (char), len);
 		ut64 last_flag_addr = UT64_MAX;
 		if (((st64)p) > 0) {
-			f = r_flag_get_in (core->flags, p);
+			f = ds_flag_str_by_size (core->flags, p, ds->analop.ptrsize);
+			if (!f) {
+				f = r_flag_get_in (core->flags, p);
+			}
 			last_flag_addr = p;
 			if (f) {
 				ut64 subrel_addr = core->rasm->parse->subrel_addr;
@@ -5307,7 +5346,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		}
 #endif
 		if (last_flag_addr != refaddr) {
-			f = r_flag_get_in (core->flags, refaddr);
+			f = ds_flag_str_by_size (core->flags, refaddr, ds->analop.ptrsize);
+			if (!f) {
+				f = r_flag_get_in (core->flags, refaddr);
+			}
 			last_flag_addr = refaddr;
 		}
 		if (f) {
