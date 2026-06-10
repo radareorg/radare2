@@ -1239,7 +1239,7 @@ struct ctxDeleteCB {
 static bool deleteBySpaceCB(void *user, const char *k, const char *v) {
 	struct ctxDeleteCB *ctx = (struct ctxDeleteCB *) user;
 	if (!strncmp (k, ctx->key, ctx->len)) {
-		sdb_remove (ctx->anal->sdb_zigns, k, 0);
+		sdb_unset (ctx->anal->sdb_zigns, k, 0);
 	}
 	return true;
 }
@@ -1265,7 +1265,7 @@ R_API bool r_sign_delete(RAnal *a, const char *name) {
 		// Remove specific zign
 		char *key = space_serialize_key (r_spaces_current (&a->zign_spaces), name);
 		if (key) {
-			retval = sdb_remove (a->sdb_zigns, key, 0);
+			retval = sdb_unset (a->sdb_zigns, key, 0);
 			free (key);
 		}
 	}
@@ -2104,7 +2104,7 @@ static bool unsetForCB(RSignItem *it, void *user) {
 	Sdb *db = (Sdb *)user;
 	char *key = item_serialize_key (it);
 	if (key) {
-		sdb_remove (db, key, 0);
+		sdb_unset (db, key, 0);
 		free (key);
 	}
 	it->space = NULL;
@@ -2127,7 +2127,7 @@ static bool renameForCB(void *user, const char *k, const char *v) {
 		char *nv = strdup (v);
 		if (nk && nv) {
 			// must remove before set, must alloc new nk and nv before hand
-			sdb_remove (db, k, 0);
+			sdb_unset (db, k, 0);
 			sdb_set (db, nk, nv, 0);
 		}
 		free (nv);
