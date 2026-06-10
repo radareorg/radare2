@@ -1275,6 +1275,14 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		// asmop works, analop fails hard
 		ds->opstr = strdup (r_str_get (ds->asmop.mnemonic));
 	}
+	if (ds->pseudo) {
+		// applied before any substitution: subvar and flag names must land on pseudo output
+		char *res = r_asm_parse_pseudo (core->rasm, ds->opstr);
+		if (res) {
+			free (ds->opstr);
+			ds->opstr = res;
+		}
+	}
 	/* initialize */
 	core->rasm->parse->subrel = r_config_get_b (core->config, "asm.sub.rel");
 	core->rasm->parse->subreg = r_config_get_b (core->config, "asm.sub.reg");
@@ -1349,13 +1357,6 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				ut64 killme = UT64_MAX;
 				r_io_read_i (core->io, ds->analop.ptr, &killme, ds->analop.refptr, be);
 				core->rasm->parse->subrel_addr = killme;
-			}
-		}
-		if (ds->pseudo) {
-			char *res = r_asm_parse_pseudo (core->rasm, ds->opstr);
-			if (res) {
-				free (ds->opstr);
-				ds->opstr = res;
 			}
 		}
 		bool isjmp = false;
@@ -3129,7 +3130,11 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		}
 	}
 	r_anal_op_fini (&ds->asmop);
+	// keep the mnemonic raw; ds_build_op_str applies the pseudo filter once
+	const bool opseudo = core->rasm->pseudo;
+	core->rasm->pseudo = false;
 	ret = r_asm_disassemble (core->rasm, &ds->asmop, buf, len);
+	core->rasm->pseudo = opseudo;
 	if (len > ds->asmop.size) {
 		len = ds->asmop.size;
 	}
@@ -3270,14 +3275,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		}
 	}
 	ds->oplen = ds->asmop.size;
-	if (ds->pseudo) {
-		const char *str = ds->opstr ? ds->opstr : ds->asmop.mnemonic;
-		char *res = r_asm_parse_pseudo (core->rasm, str);
-		if (res) {
-			free (ds->opstr);
-			ds->opstr = strdup (res);
-		}
-	}
 	if (ds->acase) {
 		r_str_case (ds->asmop.mnemonic, 1);
 	} else if (ds->capitalize) {
@@ -7202,9 +7199,8 @@ toro:
 			ds_print_demangled (ds);
 			ds_print_pins (ds);
 			ds_print_color_reset (ds);
-			if (!ds->pseudo) {
-				R_FREE (ds->opstr);
-			}
+			// drop the built opstr so the next ds_build_op_str starts from the raw mnemonic
+			R_FREE (ds->opstr);
 			if (ds->show_emu) {
 				ds_print_esil_anal (ds);
 			}
