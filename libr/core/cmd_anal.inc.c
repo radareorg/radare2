@@ -4264,8 +4264,7 @@ static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
 	// rename type
 	const char *type = sdb_const_get (DB, oname, 0);
 	if (type && !strcmp (type, "func")) {
-		sdb_unset (DB, oname, 0);
-		sdb_set (DB, nname, "func", 0);
+		sdb_rename (DB, oname, nname, 0);
 	}
 	// rename args
 	char *k = r_str_newf ("func.%s.args", oname);
@@ -4285,15 +4284,10 @@ static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
 	free (k);
 	for (i = 0; i < args; i++) {
 		k = r_str_newf ("func.%s.arg.%d", oname, i);
-		char *v = sdb_get (DB, k, 0);
-		if (v) {
-			sdb_unset (DB, k, 0);
-			free (k);
-			k = r_str_newf ("func.%s.arg.%d", nname, i);
-			sdb_set (DB, k, v, 0);
-			free (v);
-		}
+		v = r_str_newf ("func.%s.arg.%d", nname, i);
+		sdb_rename (DB, k, v, 0);
 		free (k);
+		free (v);
 	}
 	// unset the leftovers
 	for (; i < args + 8; i++) {

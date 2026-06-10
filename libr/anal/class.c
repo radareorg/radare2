@@ -135,15 +135,11 @@ R_API void r_anal_class_foreach(RAnal *anal, SdbForeachCallback cb, void *user) 
 	sdb_foreach (anal->sdb_classes, cb, user);
 }
 
-static bool rename_key(Sdb *sdb, const char *key_old, const char *key_new) {
-	char *content = sdb_get (sdb, key_old, 0);
-	if (!content) {
-		return false;
-	}
-	sdb_unset (sdb, key_old, 0);
-	sdb_set (sdb, key_new, content, 0);
-	free (content);
-	return true;
+static bool rename_key_owned(Sdb *sdb, char *key_old, char *key_new) {
+	bool ret = sdb_rename (sdb, key_old, key_new, 0);
+	free (key_old);
+	free (key_new);
+	return ret;
 }
 
 R_API RAnalClassErr r_anal_class_rename(RAnal *anal, const char *old_name, const char *new_name) {
@@ -168,7 +164,7 @@ R_API RAnalClassErr r_anal_class_rename(RAnal *anal, const char *old_name, const
 	r_anal_class_method_rename_class (anal, old_name, new_name);
 	r_anal_class_vtable_rename_class (anal, old_name, new_name);
 
-	if (!rename_key (anal->sdb_classes, key_class (old_name_sanitized), key_class (new_name_sanitized))) {
+	if (!sdb_rename (anal->sdb_classes, key_class (old_name_sanitized), key_class (new_name_sanitized), 0)) {
 		err = R_ANAL_CLASS_ERR_NONEXISTENT_CLASS;
 		goto beach;
 	}
@@ -184,7 +180,7 @@ R_API RAnalClassErr r_anal_class_rename(RAnal *anal, const char *old_name, const
 
 		char *attr_id_cur;
 		sdb_aforeach (attr_id_cur, attr_ids) {
-			rename_key (anal->sdb_classes_attrs,
+			rename_key_owned (anal->sdb_classes_attrs,
 					key_attr_content (old_name, attr_type_cur, attr_id_cur),
 					key_attr_content (new_name, attr_type_cur, attr_id_cur));
 			sdb_aforeach_next (attr_id_cur);
@@ -192,7 +188,7 @@ R_API RAnalClassErr r_anal_class_rename(RAnal *anal, const char *old_name, const
 
 		free (attr_type_attrs_key);
 		free (attr_ids);
-		rename_key (anal->sdb_classes_attrs,
+		rename_key_owned (anal->sdb_classes_attrs,
 				key_attr_type_attrs (old_name, attr_type_cur),
 				key_attr_type_attrs (new_name, attr_type_cur));
 
@@ -200,7 +196,7 @@ R_API RAnalClassErr r_anal_class_rename(RAnal *anal, const char *old_name, const
 	}
 	free (attr_types);
 
-	rename_key (anal->sdb_classes_attrs, key_attr_types (old_name_sanitized),
+	rename_key_owned (anal->sdb_classes_attrs, key_attr_types (old_name_sanitized),
 			key_attr_types (new_name_sanitized));
 
 	REventClassRename event = {
@@ -349,32 +345,24 @@ static RAnalClassErr r_anal_class_rename_attr_raw(RAnal *anal, const char *class
 	char *key = key_attr_type_attrs (class_name, attr_type_str);
 
 	if (sdb_array_contains (anal->sdb_classes_attrs, key, attr_id_new, 0)) {
+		free (key);
 		return R_ANAL_CLASS_ERR_CLASH;
 	}
 
 	if (!sdb_array_remove (anal->sdb_classes_attrs, key, attr_id_old, 0)) {
+		free (key);
 		return R_ANAL_CLASS_ERR_NONEXISTENT_ATTR;
 	}
 
 	sdb_array_add (anal->sdb_classes_attrs, key, attr_id_new, 0);
+	free (key);
 
-	key = key_attr_content (class_name, attr_type_str, attr_id_old);
-	char *content = sdb_get (anal->sdb_classes_attrs, key, 0);
-	if (content) {
-		sdb_unset (anal->sdb_classes_attrs, key, 0);
-		key = key_attr_content (class_name, attr_type_str, attr_id_new);
-		sdb_set (anal->sdb_classes_attrs, key, content, 0);
-		free (content);
-	}
-
-	key = key_attr_content_specific (class_name, attr_type_str, attr_id_old);
-	content = sdb_get (anal->sdb_classes_attrs, key, 0);
-	if (content) {
-		sdb_unset (anal->sdb_classes_attrs, key, 0);
-		key = key_attr_content_specific (class_name, attr_type_str, attr_id_new);
-		sdb_set (anal->sdb_classes_attrs, key, content, 0);
-		free (content);
-	}
+	rename_key_owned (anal->sdb_classes_attrs,
+			key_attr_content (class_name, attr_type_str, attr_id_old),
+			key_attr_content (class_name, attr_type_str, attr_id_new));
+	rename_key_owned (anal->sdb_classes_attrs,
+			key_attr_content_specific (class_name, attr_type_str, attr_id_old),
+			key_attr_content_specific (class_name, attr_type_str, attr_id_new));
 
 	REventClassAttrRename event = {
 		.attr = {
