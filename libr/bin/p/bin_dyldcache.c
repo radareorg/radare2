@@ -110,36 +110,38 @@ static ut64 locsym_entry_get(const void *entries, ut32 i, bool has_large_entries
 	return e->dylibOffset;
 }
 
-static RDyldBinImage *find_bin_by_locsym_offset(RDyldCache *cache, ut64 dylib_offset, ut64 cache_size) {
-	RDyldBinImage *bin = ht_up_find (cache->bin_by_pa, dylib_offset, NULL);
-	if (bin) {
-		return bin;
+static RDyldBinImage *find_bin_by_locsym_offset(RDyldCache *cache, ut64 dylib_offset) {
+	// The 'dylibOffset' stored in a local-symbols entry is the unslid VM offset
+	// of the dylib's mach header relative to the cache base address (the vaddr
+	// of the first mapping), *not* a file offset into the concatenated subcache
+	// buffer. Matching it against bin->va is independent of how the subcaches
+	// are laid out on disk (codesignature padding, inter-subcache VM gaps, ...),
+	// which is what previously broke local symbols for images living in any
+	// subcache other than the first one.
+	if (!cache->n_maps) {
+		return NULL;
 	}
-	ut32 i;
-	for (i = 0; i < cache->n_hdr; i++) {
-		const ut64 from = cache->hdr_offset[i];
-		const ut64 to = i + 1 < cache->n_hdr? cache->hdr_offset[i + 1]: cache_size;
-		if (dylib_offset >= from && dylib_offset < to) {
-			const ut64 neg_locdiff = cache->hdr_overhead[i];
-			return (neg_locdiff && dylib_offset >= neg_locdiff)
-				? ht_up_find (cache->bin_by_pa, dylib_offset - neg_locdiff, NULL)
-				: NULL;
+	const ut64 target_va = cache->maps[0].address + dylib_offset;
+	RListIter *iter;
+	RDyldBinImage *bin;
+	r_list_foreach (cache->bins, iter, bin) {
+		if (bin->va == target_va) {
+			return bin;
 		}
 	}
 	return NULL;
 }
 
 static void match_bin_entries(RDyldCache *cache, void *entries, ut64 entries_count, bool has_large_entries) {
-	if (!cache || !cache->bin_by_pa || !entries) {
+	if (!cache || !cache->bins || !entries) {
 		return;
 	}
-	const ut64 cache_size = r_buf_size (cache->buf);
 	ut32 i;
 	for (i = 0; i < entries_count; i++) {
 		ut32 start_index = 0;
 		ut32 count = 0;
 		ut64 dylib_offset = locsym_entry_get (entries, i, has_large_entries, &start_index, &count);
-		RDyldBinImage *bin = find_bin_by_locsym_offset (cache, dylib_offset, cache_size);
+		RDyldBinImage *bin = find_bin_by_locsym_offset (cache, dylib_offset);
 		if (bin) {
 			bin->nlist_start_index = start_index;
 			bin->nlist_count = count;
