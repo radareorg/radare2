@@ -10,7 +10,7 @@ WRAP_wrap_git_depth:=1
 .PHONY: capstone-next_clean capstone-next_all
 
 capstone-next:
-	if [ ! -d "capstone-next" -o "25c4796307cadd60e138adf713ab19b28a3ff8aa" != "$(shell cd capstone-next 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "capstone-next"; ${MAKE} capstone-next_all; fi
+	if [ ! -d "capstone-next" ] || ! (cd "capstone-next" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse '25c4796307cadd60e138adf713ab19b28a3ff8aa^{commit}' 2>/dev/null)"); then rm -rf "capstone-next"; ${MAKE} capstone-next_all; fi
 
 capstone-next_all:
 	git clone --no-checkout --depth=1 https://github.com/capstone-engine/capstone.git capstone-next

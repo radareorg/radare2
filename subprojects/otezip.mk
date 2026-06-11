@@ -9,7 +9,7 @@ WRAP_wrap_git_depth:=1
 .PHONY: otezip_clean otezip_all
 
 otezip:
-	if [ ! -d "otezip" -o "0.4.8" != "$(shell cd otezip 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "otezip"; ${MAKE} otezip_all; fi
+	if [ ! -d "otezip" ] || ! (cd "otezip" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse '0.4.8^{commit}' 2>/dev/null)"); then rm -rf "otezip"; ${MAKE} otezip_all; fi
 
 otezip_all:
 	git clone --no-checkout --depth=1 https://github.com/trufae/otezip.git otezip

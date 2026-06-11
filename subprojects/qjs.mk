@@ -9,7 +9,7 @@ WRAP_wrap_git_depth:=1
 .PHONY: qjs_clean qjs_all
 
 qjs:
-	if [ ! -d "qjs" -o "3087a2ce5bcb66cc1fcd9f34d3e5ce3bd43a67d9" != "$(shell cd qjs 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "qjs"; ${MAKE} qjs_all; fi
+	if [ ! -d "qjs" ] || ! (cd "qjs" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse '3087a2ce5bcb66cc1fcd9f34d3e5ce3bd43a67d9^{commit}' 2>/dev/null)"); then rm -rf "qjs"; ${MAKE} qjs_all; fi
 
 qjs_all:
 	git clone --no-checkout --depth=1 https://github.com/quickjs-ng/quickjs.git qjs
