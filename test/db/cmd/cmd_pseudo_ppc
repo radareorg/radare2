@@ -55,3 +55,32 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+NAME=PPC64 pad applies the pseudo filter once
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+e asm.pseudo=true
+pad 2c29000041820208
+EOF
+EXPECT=<<EOF
+cr0 = (r9 == 0)
+if (cr0 & FLG_EQ) goto 0x20c
+EOF
+RUN
+
+NAME=PPC64 pad without pseudo is unfiltered
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+pad 2c29000041820208
+EOF
+EXPECT=<<EOF
+cmpdi r9, 0
+beq 0x20c
+EOF
+RUN

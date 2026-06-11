@@ -1007,3 +1007,28 @@ EXPECT=<<EOF
 4c89f8
 EOF
 RUN
+
+NAME=rasm2 -d ppc pseudo applied once
+FILE=-
+CMDS=!rasm2 -a ppc -b 64 -e -F ppc.pseudo -d 2c29000041820208
+EXPECT=<<EOF
+cr0 = (r9 == 0)
+if (cr0 & FLG_EQ) goto 0x20c
+EOF
+RUN
+
+NAME=rasm2 -D ppc pseudo applied once
+FILE=-
+CMDS=!rasm2 -a ppc -b 64 -e -F ppc.pseudo -D 2c290000
+EXPECT=<<EOF
+0x00000000   4                 2c290000  cr0 = (r9 == 0)
+EOF
+RUN
+
+NAME=rasm2 -d arm64 pseudo branch applied once
+FILE=-
+CMDS=!rasm2 -a arm -b 64 -F arm.pseudo -d 800000b4
+EXPECT=<<EOF
+if (!x0) goto 0x10
+EOF
+RUN

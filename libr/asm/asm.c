@@ -741,15 +741,8 @@ R_API RAsmCode *r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		r_anal_op_init (&op);
 		r_asm_set_pc (a, pc + idx);
 		// we can change this to return RAnalOp* instead of passing it as arg here
-		ret = r_asm_disassemble_do (a, &op, buf + idx, len - idx);
+		r_asm_disassemble_do (a, &op, buf + idx, len - idx);
 		ret = (op.size > 0)? op.size: mininstrsize;
-		if (a->pseudo) {
-			char *newtext = r_asm_parse_pseudo (a, op.mnemonic);
-			if (newtext) {
-				free (op.mnemonic);
-				op.mnemonic = newtext;
-			}
-		}
 		if (op.mnemonic) {
 			r_strbuf_append (sb, op.mnemonic);
 			r_strbuf_append (sb, "\n");
@@ -772,7 +765,7 @@ R_API RAsmCode *r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr
 		return NULL;
 	}
 	RAsmCode *ret = r_asm_mdisassemble (a, buf, (ut64)len);
-	if (ret && p) {
+	if (ret && p && !a->pseudo) {
 		char *res = r_asm_parse_pseudo (a, ret->assembly);
 		if (res) {
 			free (ret->assembly);
