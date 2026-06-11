@@ -4,6 +4,10 @@
 #include <r_lib.h>
 #include "../io_memory.h"
 
+#if R2__WINDOWS__
+#include <io.h>
+#endif
+
 #if R2__UNIX__ && !__wasi__
 #define HAVE_FIFO 1
 #else
@@ -38,8 +42,23 @@ static bool check_for_blockdevice(RIOMMapFileObj *mmo) {
 		}
 	}
 	return mmo->isblk == 1;
-#endif
+#elif R2__WINDOWS__
+	R_RETURN_VAL_IF_FAIL (mmo, false);
+	if (mmo->isblk == -1) {
+		mmo->isblk = 0;
+		if (mmo->fd != -1) {
+			HANDLE h = (HANDLE)_get_osfhandle (mmo->fd);
+			if (h != INVALID_HANDLE_VALUE) {
+				mmo->isblk = (GetFileType (h) == FILE_TYPE_CHAR)? 1: 0;
+			}
+		}
+	}
+	return mmo->isblk == 1;
+#else
+	R_RETURN_VAL_IF_FAIL (mmo, false);
+	mmo->isblk = 0;
 	return false;
+#endif
 }
 
 #if HAVE_FIFO
@@ -139,7 +158,7 @@ static ut64 mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
 			if (mmo->isblk == -1) {
 				check_for_blockdevice (mmo);
 			}
-			if (mmo->isblk) {
+			if (mmo->isblk == 1) {
 				return UT64_MAX - 1;
 			}
 		}
