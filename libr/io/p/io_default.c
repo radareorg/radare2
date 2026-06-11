@@ -4,6 +4,10 @@
 #include <r_lib.h>
 #include "../io_memory.h"
 
+#if R2__WINDOWS__
+#include <io.h>
+#endif
+
 #if R2__UNIX__ && !__wasi__
 #define HAVE_FIFO 1
 #else
@@ -27,19 +31,27 @@ typedef struct r_io_mmo_t {
 } RIOMMapFileObj;
 
 static bool check_for_blockdevice(RIOMMapFileObj *mmo) {
-#if R2__UNIX__
 	R_RETURN_VAL_IF_FAIL (mmo, false);
 	if (mmo->isblk == -1) {
+		mmo->isblk = 0;
+#if R2__UNIX__
 		struct stat buf;
-		if (fstat (mmo->fd, &buf) == -1) {
-			mmo->isblk = 0;
-		} else {
+		if (fstat (mmo->fd, &buf) != -1) {
 			mmo->isblk = ((buf.st_mode & S_IFBLK) == S_IFBLK)? 1: 0;
 		}
+#elif R2__WINDOWS__
+		// GetFileType reports FILE_TYPE_CHAR for console, serial and pipe
+		// handles: like a block device, their size can't be obtained by
+		// seeking, so flag them here to avoid a bogus SEEK_END size.
+		if (mmo->fd != -1) {
+			HANDLE h = (HANDLE)_get_osfhandle (mmo->fd);
+			if (h != INVALID_HANDLE_VALUE) {
+				mmo->isblk = (GetFileType (h) == FILE_TYPE_CHAR)? 1: 0;
+			}
+		}
+#endif
 	}
 	return mmo->isblk == 1;
-#endif
-	return false;
 }
 
 #if HAVE_FIFO
@@ -139,7 +151,7 @@ static ut64 mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
 			if (mmo->isblk == -1) {
 				check_for_blockdevice (mmo);
 			}
-			if (mmo->isblk) {
+			if (mmo->isblk == 1) {
 				return UT64_MAX - 1;
 			}
 		}
@@ -468,7 +480,7 @@ RIOPlugin r_io_plugin_default = {
 	.seek = __lseek,
 	.write = __write,
 	.resize = __resize,
-#if R2__UNIX__
+#if R2__UNIX__ || R2__WINDOWS__
 	.is_blockdevice = __is_blockdevice,
 #endif
 };
