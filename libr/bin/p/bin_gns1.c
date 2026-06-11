@@ -54,6 +54,14 @@ static ut64 translate_vaddr(ut32 paddr) {
 	return paddr;
 }
 
+static bool is_erased_segment(const Gns1SegmentEntry *e) {
+	return e->size == UT32_MAX && e->paddr == UT32_MAX && e->offset == UT32_MAX;
+}
+
+static bool is_first_segment(const Gns1SegmentEntry *e) {
+	return !is_erased_segment (e) && e->type == GNS1_SEG_TEXT && e->region != GNS1_REGION_UNKNOWN;
+}
+
 static bool parse_segment(RBuffer *b, ut64 *off, Gns1SegmentEntry *e) {
 	ut8 buf[12];
 	if (r_buf_read_at (b, *off, buf, sizeof (buf)) != sizeof (buf)) {
@@ -75,6 +83,9 @@ static bool check_buffer(RBuffer *b) {
 	ut64 off = 0;
 	Gns1SegmentEntry entry;
 	if (!parse_segment (b, &off, &entry)) {
+		return false;
+	}
+	if (!is_first_segment (&entry)) {
 		return false;
 	}
 	ut64 buf_size = r_buf_size (b);
@@ -99,7 +110,7 @@ static Gns1Obj *load_buffer(RBuffer *b) {
 	while (parse_segment (b, &off, &entry)) {
 		ut64 seg_size = entry.size;
 		ut64 seg_off = entry.offset;
-		if (entry.size == 0) {
+		if (entry.size == 0 || is_erased_segment (&entry)) {
 			break;
 		}
 		if (seg_size > file_size || seg_off >= file_size || seg_off > file_size - seg_size) {
