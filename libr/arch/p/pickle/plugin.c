@@ -617,7 +617,7 @@ static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 	if (arg && *arg == ' ') {
 		*arg = '\0';
 		arg++;
-		arg = r_str_ichr (arg, ' ');
+		arg = (char *) r_str_ichr (arg, ' ');
 	} else {
 		arg = "";
 	}
