@@ -67,3 +67,55 @@ total running: 1
 
 EOF
 RUN
+
+NAME=& analysis capture
+FILE=hex://554889e5b82a0000005dc3
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+'& af @ 0;?e task-analysis;aflq
+&& 1
+&= 1
+EOF
+EXPECT=<<EOF
+[1] af @ 0;?e task-analysis;aflq
+task-analysis
+0x00000000
+
+EOF
+RUN
+
+NAME=& analysis capture with main output
+FILE=hex://554889e5b82a0000005dc3
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+'& af @ 0;?e task-only;aflq
+?e main-only
+&& 1
+&= 1
+EOF
+EXPECT=<<EOF
+[1] af @ 0;?e task-only;aflq
+main-only
+task-only
+0x00000000
+
+EOF
+RUN
+
+NAME=& webserver command help
+FILE=-
+CMDS=<<EOF
+'& =h?~http server
+&& 1
+&= 1
+EOF
+EXPECT=<<EOF
+[1] =h?~http server
+Usage:  =[hH] [...]   # http server
+http server:
+| =h& port      start http server on 'port' in background
+| =H port       start http server on 'port' (launch browser)
+| =H& port      start http server on 'port' in background (launch browser)
+
+EOF
+RUN
