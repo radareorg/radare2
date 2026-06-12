@@ -1177,3 +1177,28 @@ arg int64_t arg_88h @ r1+0x88
 arg int64_t arg_90h @ r1+0x90
 EOF
 RUN
+
+NAME=esil does not turn analysed code into a string
+FILE=bins/elf/ppc64_sudoku_dwarf
+CMDS=<<EOF2
+e bin.relocs.apply=true
+aaa
+Cs. @ 0x10001d68
+pi 1 @ 0x10001d68
+EOF2
+EXPECT=<<EOF2
+addi r1, r1, 0x20
+EOF2
+RUN
+
+NAME=esil keeps real strings in data sections
+FILE=bins/elf/ppc64_sudoku_dwarf
+CMDS=<<EOF2
+e bin.relocs.apply=true
+aaa
+Cs. @ 0x10001d78
+EOF2
+EXPECT=<<EOF2
+"sh -c clear"
+EOF2
+RUN

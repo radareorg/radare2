@@ -4320,7 +4320,7 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 	const int reftype = R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
 	int len = 0;
 	char str[STRSZ] = {0};
-	if (xref_to == UT64_MAX || !xref_to) {
+	if (xref_to == UT64_MAX || !xref_to || r_anal_get_fcn_in (core->anal, xref_to, 0)) {
 		return;
 	}
 	if (!xref_from || xref_from == UT64_MAX) {
