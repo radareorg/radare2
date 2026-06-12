@@ -54,10 +54,8 @@ jobs:
         export R2R_SKIP_ASM=1
         export R2R_SKIP_ARCHOS=1
         status=0
-        make -j -C test RUNTEST="r2r -L -o /tmp/r2r.json" || status=$?
-        if [ -f /tmp/r2r.json ]; then
-          cat /tmp/r2r.json
-        fi
+        report=/tmp/r2r.json
+        make -j -C test RUNTEST="r2r -L -o ${report}" || status=$?
         exit $status
     - name: Upload r2r report
       if: always()
