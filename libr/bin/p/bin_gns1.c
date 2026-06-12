@@ -284,7 +284,11 @@ static bool parse_gns1(RBuffer *b, RVecGns1Segment *segments, Gns1Obj *obj) {
 }
 
 static bool check_buffer(RBuffer *b) {
-	return parse_gns1 (b, NULL, NULL);
+	if (!b) {
+		return false;
+	}
+	ut64 table_size = 0;
+	return parse_segment_table (b, NULL, 0, r_buf_size (b), &table_size);
 }
 
 static Gns1Obj *load_buffer(RBuffer *b) {
@@ -373,6 +377,8 @@ static bool gns1_sections_vec(RBinFile *bf) {
 		sec->vaddr = translate_vaddr (e->paddr);
 		sec->perm = ((e->paddr & GNS1_ADDRMASK) == 0)? R_PERM_RX: R_PERM_RW;
 		sec->add = true;
+		sec->arch = "arc";
+		sec->bits = 16;
 		const char *seg_type = e->type == GNS1_SEG_TEXT? "text": "data";
 		const char *region = e->region == GNS1_REGION_A? "region_a": (e->region == GNS1_REGION_B? "region_b": NULL);
 		sec->name = region? r_str_newf ("%s_%s_%u", region, seg_type, idx)

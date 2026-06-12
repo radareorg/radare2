@@ -26,7 +26,11 @@ static bool ftab_check_buffer(RBuffer *b) {
 }
 
 static bool check(RBinFile *bf, RBuffer *b) {
-	return ftab_check_buffer (b);
+	return false;
+}
+
+static bool tag_is(const FtabEntry *entry, const char *tag) {
+	return !strncmp (entry->tag, tag, 4);
 }
 
 static bool parse_ftab_entries(RBuffer *b, RVecFtabEntry *entries) {
@@ -75,8 +79,14 @@ static RBinXtrMetadata *metadata_from_entry(const FtabEntry *entry) {
 	if (!strcmp (entry->tag, "GNS1")) {
 		meta->arch = strdup ("arc");
 		meta->bits = 16;
-	} else {
-		meta->arch = strdup ("unknown");
+	} else if (tag_is (entry, "illb") || tag_is (entry, "rkos") || tag_is (entry, "rkol") ||
+			tag_is (entry, "l1cs") || tag_is (entry, "cdpd") || tag_is (entry, "cdpu") ||
+			tag_is (entry, "sbd1")) {
+		meta->arch = strdup ("arm");
+		meta->bits = 64;
+	} else if (tag_is (entry, "cdph") || tag_is (entry, "pmfw") || tag_is (entry, "apmu")) {
+		meta->arch = strdup ("arm");
+		meta->bits = 32;
 	}
 	return meta;
 }
