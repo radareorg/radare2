@@ -67,13 +67,10 @@ static int _cmd_tasks_impl(void *data, const char *input) {
 			r_core_task_list (core, 0);
 			break;
 		}
-		// capture output into task->res
+		// Capture output into task->res.
 		RCoreTask *t = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true, cmd, NULL, NULL);
 		if (t) {
-			// Announce the task and flush before starting the thread:
-			// once it runs, the task swaps the shared cons context to
-			// capture its output, and anything the main thread prints
-			// or flushes meanwhile would land in (or wipe) that buffer.
+			// Flush before the task installs its capture context.
 			r_cons_printf (core->cons, "[%d] %s\n", t->id, cmd);
 			r_cons_flush (core->cons);
 			r_core_task_run_threaded (&core->tasks, t);

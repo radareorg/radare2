@@ -653,7 +653,7 @@ R_API RCoreTask *r_core_task_get(RCoreTaskScheduler *scheduler, int id) {
 	RCoreTask *res = NULL;
 	RListIter *iter;
 	TASK_SIGSET_T old_sigset;
-	// the scheduler lock is recursive, so this is safe from locked callers
+	// The scheduler lock is recursive, so this is safe from locked callers.
 	tasks_lock_enter (scheduler, &old_sigset);
 	r_list_foreach (scheduler->tasks, iter, task) {
 		if (task->id == id) {

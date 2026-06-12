@@ -104,11 +104,7 @@ static bool r_cmd_qjs_call(RCorePluginSession *cps, const char *input) {
 		return false;
 	}
 	if (!r_th_tid_equal (hack->tid, r_th_self ())) {
-		// QuickJS runtimes are single-threaded: calling into JS from
-		// another thread (e.g. a background task) triggers a bogus
-		// stack-overflow exception, which used to be reported as a
-		// truthy result, making this plugin swallow every command
-		// executed from a task. Let the native handlers run instead.
+		// QuickJS runtimes must run on their owner thread.
 		return false;
 	}
 	JSContext *ctx = hack->ctx;
@@ -117,7 +113,7 @@ static bool r_cmd_qjs_call(RCorePluginSession *cps, const char *input) {
 	JSValue res = JS_Call (ctx, func, JS_UNDEFINED, countof (args), args);
 	bool ret = false;
 	if (JS_IsException (res)) {
-		// an erroring plugin must not claim the command as handled
+		// An erroring plugin must not claim the command as handled.
 		JSValue e = JS_GetException (ctx);
 		JS_FreeValue (ctx, e);
 	} else {

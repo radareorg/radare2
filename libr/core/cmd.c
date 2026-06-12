@@ -6816,8 +6816,8 @@ R_API char *r_core_cmd_file_str(RCore *core, const char *file, bool *ok) {
 	if (ok) {
 		*ok = ret;
 	}
-	// Keep noflush set until pop (see r_core_cmd_str)
-	--core->cons->context->cmd_str_depth;
+	// Keep noflush set until pop.
+	core->cons->context->cmd_str_depth--;
 	r_cons_filter (core->cons);
 	const char *static_str = r_cons_get_buffer (core->cons, NULL);
 	char *retstr = strdup (r_str_get (static_str));
@@ -7046,17 +7046,16 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	core->cons->context->cmd_str_depth++;
 	if (cmd && r_core_cmd (core, cmd, 0) == -1) { // dbl Free
 		//eprintf ("Invalid command: %s\n", cmd);
-		if (--core->cons->context->cmd_str_depth == 0) {
+		core->cons->context->cmd_str_depth--;
+		if (core->cons->context->cmd_str_depth == 0) {
 			core->cons->context->noflush = false;
 			r_cons_flush (core->cons);
 		}
 		r_cons_pop (core->cons);
 		return NULL;
 	}
-	// Keep noflush set until the context is popped: clearing it before
-	// capturing the buffer would let a concurrent flush (from the main
-	// thread while a background task runs this) print and reset it.
-	--core->cons->context->cmd_str_depth;
+	// Keep noflush set until pop.
+	core->cons->context->cmd_str_depth--;
 	r_cons_filter (core->cons);
 	const char *static_str = r_cons_get_buffer (core->cons, NULL);
 	char *retstr = strdup (r_str_get (static_str));
@@ -7071,15 +7070,16 @@ R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd) {
 	core->cons->context->cmd_str_depth++;
 	if (r_core_cmd0 (core, cmd) == -1) {
 		//eprintf ("Invalid command: %s\n", cmd);
-		if (--core->cons->context->cmd_str_depth == 0) {
+		core->cons->context->cmd_str_depth--;
+		if (core->cons->context->cmd_str_depth == 0) {
 			core->cons->context->noflush = false;
 			r_cons_flush (core->cons);
 		}
 		r_cons_pop (core->cons);
 		return NULL;
 	}
-	// Keep noflush set until pop (see r_core_cmd_str)
-	--core->cons->context->cmd_str_depth;
+	// Keep noflush set until pop.
+	core->cons->context->cmd_str_depth--;
 	r_cons_filter (core->cons);
 	size_t bsz;
 	const char *buf = r_cons_get_buffer (core->cons, &bsz);
