@@ -18,7 +18,7 @@ dr PC=0xdeadbeef
 aes
 EOF
 EXPECT=<<EOF
-its a trap 0 7
+its a trap 0xdeadbeef 7
 EOF
 RUN
 
@@ -34,7 +34,7 @@ aes
 EOF
 EXPECT=<<EOF
 type: ill
-its a trap 0 7
+its a trap 0x0 7
 EOF
 RUN
 
@@ -74,9 +74,9 @@ aer rax=0xdeadbeef
 aes
 EOF
 EXPECT=<<EOF
-its an ioer 0 0
-its an ioer 0 0
-its an ioer 0 1
+its an ioer 0x0 0
+its an ioer 0x0 0
+its an ioer 0x0 1
 EOF
 RUN
 
@@ -103,7 +103,7 @@ e cmd.esil.step=?e step triggered
 aes
 EOF
 EXPECT=<<EOF
-step triggered 0 0
+step triggered 0x0 0
 EOF
 RUN
 

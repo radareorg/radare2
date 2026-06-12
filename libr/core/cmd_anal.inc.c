@@ -7777,52 +7777,98 @@ static void core_esil_trace_legacy_op(RCore *core, RAnalOp *op) {
 	}
 }
 
-static void core_esil_drop_stepback(RCore *core) {
-	RCoreEsilStepBack *cesb = r_list_pop (&core->esil.sb.list);
-	if (cesb) {
-		free (cesb->expr);
-		free (cesb);
+static bool core_esil_decode_op(RCore *core, RAnalOp *op, ut64 addr) {
+	int max_opsize = R_MIN (64, r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE));
+	if (R_UNLIKELY (max_opsize < 1)) {
+		max_opsize = 32;
 	}
+	ut8 buf[64];
+	if (R_UNLIKELY (!r_io_read_at (core->io, addr, buf, max_opsize))) {
+		R_LOG_ERROR ("Couldn't read data to decode from 0x%" PFMT64x, addr);
+		return false;
+	}
+	r_anal_op_init (op);
+	r_anal_op_set_bytes (op, addr, buf, max_opsize);
+	r_arch_decode (core->anal->arch, op, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL);
+	return true;
 }
 
+// Advance PC to the next instruction without emulating the current one
+static bool core_esil_skip_op(RCore *core, RAnalOp *op, ut64 addr) {
+	const int align = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
+	if (align > 1 && (addr % align)) {
+		if (R_STR_ISNOTEMPTY (core->esil.cmds.trap)) {
+			r_core_cmd0 (core, core->esil.cmds.trap);
+		}
+		return false;
+	}
+	core_esil_trace_legacy_op (core, op);
+	char *expr = r_str_newf ("0x%" PFMT64x ",PC,:=", op->addr + op->size);
+	const bool ok = expr && r_core_esil_run_expr_at (core, expr, addr);
+	free (expr);
+	if (!ok) {
+		R_LOG_ERROR ("Failed to advance PC for step-over at 0x%" PFMT64x, op->addr);
+		return false;
+	}
+	core->esil.esil.trap = R_ANAL_TRAP_NONE;
+	core->esil.esil.trap_code = 0;
+	return true;
+}
+
+// Run one instruction in the core ESIL VM, skipping calls and jumps when
+// step_over is set and stepping single rep iterations in r2wars mode
+static bool core_esil_step_one(RCore *core, ut64 addr, bool step_over, bool r2wars) {
+	bool handled = false;
+	bool ok = false;
+	if (step_over || r2wars) {
+		RAnalOp op;
+		if (!core_esil_decode_op (core, &op, addr)) {
+			return false;
+		}
+		if (step_over && is_steporeable (op.type)) {
+			handled = true;
+			ok = core_esil_skip_op (core, &op, addr);
+		} else if (r2wars && (op.prefix & R_ANAL_OP_PREFIX_REP) && r_reg_getv (core->anal->reg, "ecx") > 1) {
+			// run a single rep iteration, keeping PC on the instruction until ecx is exhausted
+			char *expr = strdup (R_STRBUF_SAFEGET (&op.esil));
+			char *tail = expr? strstr (expr, ",0,GOTO"): NULL;
+			if (tail) {
+				tail[0] = 0;
+				handled = true;
+				ok = r_core_esil_run_expr_at (core, expr, addr);
+			}
+			free (expr);
+		}
+		r_anal_op_fini (&op);
+	}
+	return handled? ok: r_core_esil_single_step (core);
+}
+
+// Steps the core ESIL VM until a stop condition is reached. Returns true when
+// the until condition was reached or the single step completed, and false when
+// emulation stopped early: trap, breakpoint, timeout, user interrupt or an
+// undecodable instruction
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
 	const int esiltimeout = r_config_get_i (core->config, "esil.timeout");
-	int ret = true;
-	ut64 startTime = 0;
-
-	if (esiltimeout > 0) {
-		startTime = r_time_now_mono ();
-	}
-	ut64 addr = r_reg_getv (core->anal->reg, "PC");
+	const bool breakoninvalid = r_config_get_b (core->config, "esil.breakoninvalid");
+	const st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
+	const char *arch = r_config_get (core->config, "asm.arch");
+	const bool r2wars = r_str_startswith (arch, "x86") && r_config_get_b (core->config, "cfg.r2wars");
 	const bool single_step = until_addr == UT64_MAX && !until_expr;
+	const ut64 start = esiltimeout > 0? r_time_now_mono (): 0;
+	ut64 addr = r_reg_getv (core->anal->reg, "PC");
+	int ret = true;
 	r_cons_break_push (core->cons, NULL, NULL);
 	while (single_step || addr != until_addr) {
-		if (esiltimeout > 0) {
-			ut64 elapsedTime = r_time_now_mono () - startTime;
-			elapsedTime >>= 20;
-			if (elapsedTime >= esiltimeout) {
-				R_LOG_INFO ("[ESIL] Timeout exceeded");
-				ret = false;
-				break;
-			}
+		if (r_cons_is_breaked (core->cons)) {
+			R_LOG_INFO ("[+] ESIL emulation interrupted at 0x%08" PFMT64x, addr);
+			ret = false;
+			break;
 		}
-		RAnalOp op;
-		if (stepOver) {
-			r_anal_op_init (&op);
-			int max_opsize = R_MIN (64,
-				r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE));
-			if (R_UNLIKELY (max_opsize < 1)) {
-				max_opsize = 32;
-			}
-			ut8 buf[64];
-			if (R_UNLIKELY (!r_io_read_at (core->io, addr, buf, max_opsize))) {
-				R_LOG_ERROR ("Couldn't read data to decode from 0x%"PFMT64x, addr);
-				r_anal_op_fini (&op);
-				ret = false;
-				goto out;
-			}
-			r_anal_op_set_bytes (&op, addr, buf, max_opsize);
-			r_arch_decode (core->anal->arch, &op, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL);
+		if (esiltimeout > 0 && ((r_time_now_mono () - start) >> 20) >= esiltimeout) {
+			R_LOG_INFO ("[ESIL] Timeout exceeded");
+			ret = false;
+			break;
 		}
 		if (prev_addr) {
 			prev_addr[0] = addr;
@@ -7830,82 +7876,61 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		if (core->dbg && core->dbg->trace && core->dbg->trace->enabled) {
 			r_debug_trace_pc (core->dbg, addr);
 		}
-		if (stepOver && is_steporeable (op.type)) {
-			if (addr % R_MAX (r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN), 1)) {
-				if (core->esil.cmds.trap) {
-					r_core_cmd0 (core, core->esil.cmds.trap);
-				}
-				r_anal_op_fini (&op);
-				goto out;
-			}
-			core_esil_trace_legacy_op (core, &op);
-			r_reg_setv (core->anal->reg, "PC", addr);
-			char *expr = r_str_newf ("0x%"PFMT64x",PC,:=", op.addr + op.size);
-			if (!expr || !r_core_esil_run_expr_at (core, expr, addr)) {
-				R_LOG_ERROR ("Failed to advance PC for step-over at 0x%"PFMT64x, op.addr);
-				free (expr);
-				core_esil_sync_legacy_trap (core);
-				r_anal_op_fini (&op);
-				ret = false;
-				goto out;
-			}
-			free (expr);
-			addr = r_reg_getv (core->anal->reg, "PC");
-			core->esil.esil.trap = R_ANAL_TRAP_NONE;
-			core->esil.esil.trap_code = 0;
-			core_esil_sync_legacy_trap (core);
-			r_anal_op_fini (&op);
-			if (single_step) {
-				break;
-			}
-			continue;
-		}
-		if (stepOver) {
-			r_anal_op_fini (&op);
-		}
 		const ut64 prev_pc = addr;
-		if (!r_core_esil_single_step (core)) {
-			core_esil_sync_legacy_trap (core);
-			ret = false;
-			if (single_step) {
-				break;
-			}
-			// honor until_addr/until_expr: ignore traps and keep going,
-			// but bail if PC did not advance to avoid an infinite loop.
-			addr = r_reg_getv (core->anal->reg, "PC");
-			if (addr == prev_pc) {
-				break;
-			}
-			core->esil.esil.trap = R_ANAL_TRAP_NONE;
-			core->esil.esil.trap_code = 0;
-			continue;
-		}
+		const bool stepped = core_esil_step_one (core, addr, stepOver, r2wars);
 		core_esil_sync_legacy_trap (core);
 		addr = r_reg_getv (core->anal->reg, "PC");
-		if (until_expr) {
-			const int trap = core->esil.esil.trap;
-			const ut32 trap_code = core->esil.esil.trap_code;
-			if (r_esil_condition (&core->esil.esil, until_expr)) {
-				if (trap) {
-					core->esil.esil.trap = trap;
-					core->esil.esil.trap_code = trap_code;
-				} else {
-					core->esil.esil.trap = R_ANAL_TRAP_NONE;
-				}
+		if (stepped && addr == prev_pc) {
+			// escape self-loops like the legacy stepper: when the executed
+			// instruction does not advance PC, move to the next one
+			RAnalOp op;
+			if (core_esil_decode_op (core, &op, addr)) {
+				addr += R_MAX (1, op.size);
+				r_reg_setv (core->anal->reg, "PC", addr);
+				r_anal_op_fini (&op);
+			}
+		}
+		if (!stepped) {
+			ret = false;
+			if (single_step || until_expr) {
 				break;
 			}
-			if (trap) {
-				core->esil.esil.trap = trap;
-				core->esil.esil.trap_code = trap_code;
-			} else {
-				core->esil.esil.trap = R_ANAL_TRAP_NONE;
+			if (breakoninvalid) {
+				R_LOG_INFO ("Stopped execution in an invalid instruction (see e??esil.breakoninvalid)");
+				break;
+			}
+			if (addr == prev_pc) {
+				// the trap handlers did not advance PC, stop to avoid an endless loop
+				break;
+			}
+			core->esil.esil.trap = R_ANAL_TRAP_NONE;
+			core->esil.esil.trap_code = 0;
+			ret = true;
+			continue;
+		}
+		if (follow > 0 && (addr < core->addr || addr > (core->addr + follow))) {
+			r_core_seek (core, addr, true);
+		}
+		if (r_bp_get_at (core->dbg->bp, addr)) {
+			R_LOG_INFO ("esil breakpoint hit at 0x%" PFMT64x, addr);
+			ret = false;
+			break;
+		}
+		if (until_expr) {
+			// keep the trap state of the step across the condition evaluation
+			const int trap = core->esil.esil.trap;
+			const ut32 trap_code = core->esil.esil.trap_code;
+			const bool matched = r_esil_condition (&core->esil.esil, until_expr);
+			core->esil.esil.trap = trap;
+			core->esil.esil.trap_code = trap_code;
+			if (matched) {
+				break;
 			}
 		}
 		if (single_step) {
 			break;
 		}
 	}
-out:
 	r_cons_break_pop (core->cons);
 	return ret;
 }

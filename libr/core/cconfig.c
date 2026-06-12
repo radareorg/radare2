@@ -3069,6 +3069,7 @@ static bool cb_exectrap(void *user, void *data) {
 	if (core->anal && core->anal->esil) {
 		core->anal->esil->exectrap = node->i_value;
 	}
+	core->esil.esil.exectrap = node->i_value;
 	return true;
 }
 

@@ -27,11 +27,13 @@ static bool core_esil_op_interrupt(REsil *esil) {
 	return r_esil_fire_interrupt (esil, (ut32)interrupt);
 }
 
-static bool core_esil_cmd(RCore *core, const char *cmd, ut64 a1, ut64 a2) {
+// the first argument passed to esil cmd handlers is an address, the second one
+// is a small number with a meaning depending on the handler (trap code, write flag, ..)
+static bool core_esil_cmd(RCore *core, const char *cmd, ut64 addr, ut64 a2) {
 	if (R_STR_ISEMPTY (cmd)) {
 		return false;
 	}
-	r_core_cmdf (core, "%s %" PFMT64d " %" PFMT64d, cmd, a1, a2);
+	r_core_cmdf (core, "%s 0x%" PFMT64x " %" PFMT64d, cmd, addr, a2);
 	return core->num->value;
 }
 
@@ -57,8 +59,14 @@ static bool core_esil_trap_revert_start(RCore *core, const char *pc_name, ut64 p
 	return true;
 }
 
+// XXX transitional: the core esil VM operates on the shared anal reg until a
+// sync mechanism between the isolated core->esil.reg and the anal/dbg regs lands
+static RReg *core_esil_reg(void *core) {
+	return ((RCore *)core)->anal->reg;
+}
+
 static bool core_esil_is_reg(void *core, const char *name) {
-	RRegItem *ri = r_reg_get (((RCore *)core)->esil.reg, name, -1);
+	RRegItem *ri = r_reg_get (core_esil_reg (core), name, -1);
 	if (!ri) {
 		return false;
 	}
@@ -67,7 +75,7 @@ static bool core_esil_is_reg(void *core, const char *name) {
 }
 
 static bool core_esil_reg_read(void *core, const char *name, ut64 *val) {
-	RReg *reg = ((RCore *)core)->esil.reg;
+	RReg *reg = core_esil_reg (core);
 	RRegItem *ri = r_reg_get (reg, name, -1);
 	if (!ri) {
 		return false;
@@ -78,11 +86,11 @@ static bool core_esil_reg_read(void *core, const char *name, ut64 *val) {
 }
 
 static bool core_esil_reg_write(void *core, const char *name, ut64 val) {
-	return r_reg_setv (((RCore *)core)->esil.reg, name, val);
+	return r_reg_setv (core_esil_reg (core), name, val);
 }
 
 static ut32 core_esil_reg_size(void *core, const char *name) {
-	RRegItem *ri = r_reg_get (((RCore *)core)->esil.reg, name, -1);
+	RRegItem *ri = r_reg_get (core_esil_reg (core), name, -1);
 	if (!ri) {
 		return 0;
 	}
@@ -92,7 +100,7 @@ static ut32 core_esil_reg_size(void *core, const char *name) {
 }
 
 static ut32 core_esil_reg_packed_size(void *core, const char *name) {
-	RRegItem *ri = r_reg_get (((RCore *)core)->esil.reg, name, -1);
+	RRegItem *ri = r_reg_get (core_esil_reg (core), name, -1);
 	if (!ri) {
 		return 0;
 	}
@@ -102,7 +110,7 @@ static ut32 core_esil_reg_packed_size(void *core, const char *name) {
 }
 
 static bool core_esil_reg_alias(void *core, int alias, const char *name) {
-	return r_reg_alias_setname (((RCore *)core)->esil.reg, alias, name);
+	return r_reg_alias_setname (core_esil_reg (core), alias, name);
 }
 
 static bool core_esil_mem_switch(void *core, ut32 idx) {
@@ -213,7 +221,7 @@ static void core_esil_voyeur_trap_revert_reg_alias(void *user, int alias, const 
 	if (! (cesil->cfg & R_CORE_ESIL_TRAP_REVERT)) {
 		return;
 	}
-	const char *old_name = r_reg_alias_getname (core->esil.reg, alias);
+	const char *old_name = r_reg_alias_getname (core_esil_reg (core), alias);
 	const char *alias_name = r_reg_alias_tostring (alias);
 	if (!old_name || !alias_name) {
 		return;
@@ -464,7 +472,7 @@ R_API void r_core_esil_unload_arch(RCore *core) {
 R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (expr && core && core->anal && core->anal->arch && core->io && core->esil.reg, false);
 	core->esil.esil.anal = core->anal;
-	const char *pc_name = r_reg_alias_getname (core->esil.reg, R_REG_ALIAS_PC);
+	const char *pc_name = r_reg_alias_getname (core_esil_reg (core), R_REG_ALIAS_PC);
 	if (!pc_name) {
 		R_LOG_ERROR ("CoreEsil reg profile has no pc register");
 		return false;
@@ -502,7 +510,7 @@ R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr) {
 R_API bool r_core_esil_single_step(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core && core->anal && core->anal->arch && core->io && core->esil.reg, false);
 	core->esil.esil.anal = core->anal;
-	const char *pc_name = r_reg_alias_getname (core->esil.reg, R_REG_ALIAS_PC);
+	const char *pc_name = r_reg_alias_getname (core_esil_reg (core), R_REG_ALIAS_PC);
 	if (!pc_name) {
 		R_LOG_ERROR ("CoreEsil reg profile has no pc register");
 		return false;
@@ -522,18 +530,16 @@ R_API bool r_core_esil_single_step(RCore *core) {
 		goto trap;
 	}
 	trap_code = R_ANAL_TRAP_INVALID;
-#if 0
-	if (!r_io_is_valid_offset (core->io, pc, false)) {
-		goto trap;
-	}
-#endif
+	const int eperm = core->esil.esil.exectrap? R_PERM_X: 0;
 	RIORegion region;
 	const bool has_region = r_io_get_region_at (core->io, &region, pc);
-	if (!has_region) {
-		goto trap;
-	}
-	if ((region.perm & (R_PERM_R | R_PERM_X)) != (R_PERM_R | R_PERM_X) ||
-		(!core->io->va && ! (region.perm & R_PERM_R))) {
+	if (has_region) {
+		if (eperm && ! (region.perm & eperm)) {
+			trap_code = R_ANAL_TRAP_EXEC_ERR;
+			goto trap;
+		}
+	} else if (!r_io_is_valid_offset (core->io, pc, eperm)) {
+		// unmapped offsets can still hold code when io.cache is enabled
 		goto trap;
 	}
 	trap_code = R_ANAL_TRAP_NONE;
@@ -584,7 +590,7 @@ R_API bool r_core_esil_single_step(RCore *core) {
 		trap_code = R_ANAL_TRAP_INVALID;
 		goto op_trap;
 	}
-	if (has_region && !r_itv_contain (region.itv, pc + op.size)) {
+	if (has_region && !r_itv_contain (region.itv, pc + op.size - 1)) {
 		trap_code = R_ANAL_TRAP_INVALID;
 		goto op_trap;
 	}
