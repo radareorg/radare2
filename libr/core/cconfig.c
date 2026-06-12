@@ -421,11 +421,13 @@ static bool cb_analarch(void *user, void *data) {
 		return false;
 	}
 	if (*node->value) {
+		r_core_esil_unload_arch (core);
 		if (r_anal_use (core->anal, node->value)) {
 			if (core->print) {
 				core->print->reg = core->anal->reg;
 				core->print->get_register = r_reg_get;
 			}
+			r_core_esil_load_arch (core);
 			return true;
 		}
 		char *p = strchr (node->value, '.');
@@ -439,12 +441,15 @@ static bool cb_analarch(void *user, void *data) {
 					core->print->reg = core->anal->reg;
 					core->print->get_register = r_reg_get;
 				}
+				r_core_esil_load_arch (core);
 				return true;
 			}
 		}
 		const char *aa = r_config_get (core->config, "asm.arch");
 		if (!aa || strcmp (aa, node->value)) {
 			R_LOG_ERROR ("anal.arch: cannot find '%s'", node->value);
+			// the old arch is still in use, reload its esil callbacks
+			r_core_esil_load_arch (core);
 		} else {
 			r_config_set (core->config, "anal.arch", "null");
 			return true;
