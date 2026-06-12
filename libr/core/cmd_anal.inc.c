@@ -2628,14 +2628,12 @@ static void val_tojson(PJ *pj, RAnalValue *val) {
 	pj_end (pj);
 }
 
-static bool mw2(void *null, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
+static void mw2(void *null, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
 	R_LOG_INFO ("WRITE 0x%08"PFMT64x" %d", addr, len);
-	return true;
 }
 
-static bool mr2(void *null, ut64 addr, const ut8 *buf, int len) {
+static void mr2(void *null, ut64 addr, const ut8 *buf, int len) {
 	R_LOG_INFO ("READ 0x%08"PFMT64x" %d", addr, len);
-	return true;
 }
 
 static void esilmemrefs(RCore *core, const char *expr) {
@@ -9233,7 +9231,9 @@ R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
 	} else {
 		R_LOG_ERROR ("Cannot find function at 0x%08" PFMT64x, addr);
 	}
-	r_esil_del_voyeur (core->anal->esil, vid);
+	if (vid != R_ESIL_VOYEUR_ERR) {
+		r_esil_del_voyeur (core->anal->esil, vid);
+	}
 	r_reg_setv (core->anal->reg, "PC", old_pc);
 }
 
