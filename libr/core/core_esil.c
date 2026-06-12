@@ -27,10 +27,6 @@ static bool core_esil_op_interrupt(REsil *esil) {
 	return r_esil_fire_interrupt (esil, (ut32)interrupt);
 }
 
-static RReg *core_esil_reg(RCore *core) {
-	return R_UNWRAP3 (core, anal, reg);
-}
-
 static bool core_esil_cmd(RCore *core, const char *cmd, ut64 a1, ut64 a2) {
 	if (R_STR_ISEMPTY (cmd)) {
 		return false;
@@ -450,10 +446,7 @@ R_API void r_core_esil_load_arch(RCore *core) {
 		R_LOG_WARN ("Couldn't set reg profile");
 		return;
 	}
-	RReg *reg = core_esil_reg (core);
-	if (reg) {
-		r_reg_set_profile_string (reg, rp);
-	}
+	r_reg_set_profile_string (core->esil.reg, rp);
 	free (rp);
 }
 

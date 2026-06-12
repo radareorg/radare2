@@ -448,6 +448,8 @@ static bool cb_analarch(void *user, void *data) {
 		const char *aa = r_config_get (core->config, "asm.arch");
 		if (!aa || strcmp (aa, node->value)) {
 			R_LOG_ERROR ("anal.arch: cannot find '%s'", node->value);
+			// the old arch is still in use, reload its esil callbacks
+			r_core_esil_load_arch (core);
 		} else {
 			r_config_set (core->config, "anal.arch", "null");
 			return true;
