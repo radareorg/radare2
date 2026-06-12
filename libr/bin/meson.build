@@ -80,6 +80,7 @@ r_bin_sources = [
   'p/bin_xcoff64.c',
   'p/bin_xnu_kernelcache.c',
   'p/bin_xtr_dyldcache.c',
+  'p/bin_xtr_ftab.c',
   'p/bin_xtr_pemixed.c',
   'p/bin_xtr_xalz.c',
   'p/bin_z64.c',
