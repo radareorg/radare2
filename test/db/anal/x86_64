@@ -3543,7 +3543,7 @@ FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 f-sym.func.*
 aap
-pi 2 @ fcn.1000010f8
+pi 2 @ sub.strcoll
 EOF
 EXPECT=<<EOF
 push rbp

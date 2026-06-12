@@ -115,3 +115,53 @@ CMDS=ii~0xffffff
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=ELF v1 shared lib: import call stub named after the import
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=<<EOF2
+e bin.relocs.apply=true
+aa
+afi @ 0x3c60 ~name[1]
+afi @ 0x3d00 ~name[1]
+EOF2
+EXPECT=<<EOF2
+sub.memcpy
+sub.malloc
+EOF2
+RUN
+
+NAME=ELF v1 shared lib: import stub call site renders the import name
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=<<EOF2
+e bin.relocs.apply=true
+aa
+pi 1 @ 0x7be8
+EOF2
+EXPECT=<<EOF2
+bl sub.memcpy
+EOF2
+RUN
+
+NAME=ELF v1 shared lib: exactly the import stubs are named, no others
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=<<EOF2
+e bin.relocs.apply=true
+aa
+afl~sub.?
+EOF2
+EXPECT=<<EOF2
+5
+EOF2
+RUN
+
+NAME=ELF v1 exec: direct-PLT imports yield no spurious stub names
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EOF2
+e bin.relocs.apply=true
+aa
+afl~sub.?
+EOF2
+EXPECT=<<EOF2
+0
+EOF2
+RUN

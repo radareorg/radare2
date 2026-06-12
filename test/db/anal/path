@@ -190,7 +190,7 @@ pdb @@= 0x000067d0 0x00004df0 0x000132d0 0x000132de 0x00004960
 |           0x00004e4b      e800faffff     call sym.imp.textdomain     ; char *textdomain(char *domainname)
 |           0x00004e50      488d3d8991..   lea rdi, [0x0000dfe0]
 |           0x00004e57      c70597e301..   mov dword [obj.exit_failure], 2 ; [0x231f8:4]=1
-|           0x00004e61      e8fa260100     call fcn.00017560
+|           0x00004e61      e8fa260100     call sub.__cxa_atexit
 |           0x00004e66      c6054bf401..   mov byte [0x000242b8], 1    ; [0x242b8:1]=0
 |           0x00004e6d      48b8000000..   movabs rax, 0x8000000000000000
 |           0x00004e77      488905f2f4..   mov qword [0x00024370], rax ; [0x24370:8]=0
