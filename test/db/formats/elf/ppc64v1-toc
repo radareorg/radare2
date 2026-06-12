@@ -52,3 +52,28 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=ELF v1: stale TOC cache no longer floods an address with false xrefs
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EOF2
+e bin.relocs.apply=true
+aaa
+axt @ 0x7f9c ~?
+EOF2
+EXPECT=<<EOF2
+0
+EOF2
+RUN
+
+NAME=ELF v1: legit TOC data xref survives full analysis (RET cache reset is not over-eager)
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EOF2
+e bin.relocs.apply=true
+e anal.gp=0x37f00
+aaa
+axt @ 0x2f5d0 ~?
+EOF2
+EXPECT=<<EOF2
+1
+EOF2
+RUN
