@@ -226,6 +226,7 @@ R_API bool r_th_is_running(RThread *th);
 R_API void *r_th_kill_free(RThread *th);
 R_API bool r_th_kill(RThread *th, bool force);
 R_API R_TH_TID r_th_self(void);
+R_API bool r_th_tid_equal(R_TH_TID a, R_TH_TID b);
 R_API bool r_th_setname(RThread *th, const char *name);
 R_API bool r_th_getname(RThread *th, char *name, size_t len);
 R_API bool r_th_setaffinity(RThread *th, int cpuid);

@@ -62,6 +62,7 @@
 typedef struct {
 	JSContext *ctx;
 	JSValue func;
+	R_TH_TID tid; // thread owning the JS runtime
 } Hack;
 Hack *hack = NULL;
 
@@ -99,14 +100,25 @@ static void qjs_core_plugin_free(void *data) {
 // TODO maybe add a function to call by plugin name? (is 1 extra arg)
 static bool r_cmd_qjs_call(RCorePluginSession *cps, const char *input) {
 	Hack *hack = cps->data;
+	if (!hack) {
+		return false;
+	}
+	if (!r_th_tid_equal (hack->tid, r_th_self ())) {
+		// QuickJS runtimes must run on their owner thread.
+		return false;
+	}
 	JSContext *ctx = hack->ctx;
 	JSValue func = hack->func;
-	// RCore *core = cps->core;
-	// QjsCorePlugin *plugin;
-	// QjsContext *qc = cps->data;
 	JSValue args[1] = { JS_NewString (ctx, input) };
 	JSValue res = JS_Call (ctx, func, JS_UNDEFINED, countof (args), args);
-	bool ret = JS_ToBool (ctx, res);
+	bool ret = false;
+	if (JS_IsException (res)) {
+		// An erroring plugin must not claim the command as handled.
+		JSValue e = JS_GetException (ctx);
+		JS_FreeValue (ctx, e);
+	} else {
+		ret = JS_ToBool (ctx, res) == 1;
+	}
 	JS_FreeValue (ctx, res);
 	JS_FreeValue (ctx, args[0]);
 	return ret;
@@ -216,6 +228,7 @@ static JSValue r2plugin_core_load(JSContext *ctx, JSValueConst this_val, int arg
 	hack = R_NEW0 (Hack);
 	hack->ctx = ctx;
 	hack->func = func;
+	hack->tid = r_th_self ();
 	int opened = r_lib_open_ptr (pm->core->lib, plugin_name, NULL, lib);
 	free (lib);
 	if (opened != 1) {

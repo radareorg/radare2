@@ -67,11 +67,13 @@ static int _cmd_tasks_impl(void *data, const char *input) {
 			r_core_task_list (core, 0);
 			break;
 		}
-		// schedule command using cooperative mode for backward compatibility; capture output into task->res
-		RCoreTask *t = r_core_task_submit (core, cmd, NULL, NULL, true, R_CORE_TASK_MODE_THREAD);
+		// Capture output into task->res.
+		RCoreTask *t = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true, cmd, NULL, NULL);
 		if (t) {
-			int tid = r_core_task_id (t);
-			r_cons_printf (core->cons, "[%d] %s\n", tid, cmd);
+			// Flush before the task installs its capture context.
+			r_cons_printf (core->cons, "[%d] %s\n", t->id, cmd);
+			r_cons_flush (core->cons);
+			r_core_task_run_threaded (&core->tasks, t);
 		}
 		break;
 	}
