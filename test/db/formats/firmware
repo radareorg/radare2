@@ -226,7 +226,7 @@ iorw     false
 block    0x100
 type     GNS1
 arch     arc
-cpu      ARC700
+cpu      hs
 baddr    0x10000000
 binsz    148
 bintype  firmware
@@ -234,6 +234,8 @@ bits     16
 canary   false
 injprot  false
 retguard false
+class    raw
+flags    gns1.offset=0x00000000,gns1.size=0x00000094
 crypto   false
 endian   little
 havecode true
@@ -252,9 +254,26 @@ subsys   baseband
 va       true
 nth paddr       size vaddr       vsize perm flags type name
 -----------------------------------------------------------
-0   0x00000064  0x10 0x10000000   0x10 -r-x 0x0   ---- region_a_text_0
-1   0x00000074   0x8 0x10001000    0x8 -rw- 0x0   ---- region_a_data_1
-2   0x0000007c  0x10 0x15000000   0x10 -r-x 0x0   ---- region_b_text_2
-3   0x0000008c   0x8 0x15001000    0x8 -rw- 0x0   ---- region_b_data_3
+0   0x00000000  0x64 0x00000000   0x64 -r-- 0x0   GNS1 gns1_segments
+1   0x00000064  0x10 0x10000000   0x10 -r-x 0x0   ---- region_a_text_0
+2   0x00000074   0x8 0x10001000    0x8 -rw- 0x0   ---- region_a_data_1
+3   0x0000007c  0x10 0x15000000   0x10 -r-x 0x0   ---- region_b_text_2
+4   0x0000008c   0x8 0x15001000    0x8 -rw- 0x0   ---- region_b_data_3
+EOF
+RUN
+
+NAME=apple baseband rejects dyldcache
+FILE=bins/firmware/gns1_test.bin
+CMDS=!!rabin2 -I -F gns1 bins/mach0/dyld_shared_cache_arm64-macOS~Apple~?
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+NAME=dyldcache dsc handler is not gns1
+FILE=bins/firmware/gns1_test.bin
+CMDS=!!rabin2 -I dsc://bins/mach0/dyld_shared_cache_arm64-macOS~class
+EXPECT=<<EOF
+class    dyldcache
 EOF
 RUN
