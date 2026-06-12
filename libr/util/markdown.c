@@ -4,16 +4,46 @@
 #include <r_util/r_table.h>
 
 static void fill_line(RStrBuf *sb, int maxcol) {
-	int i;
 	if (maxcol < 1) {
 		return;
 	}
-	for (i = 0; i < maxcol; i++) {
-		r_strbuf_append (sb, " ");
-	}
+	r_strbuf_appendf (sb, "%*s", maxcol, "");
 	r_strbuf_append (sb, Color_RESET_BG);
 	r_strbuf_append (sb, Color_RESET);
 	r_strbuf_append (sb, "\n");
+}
+
+static void cb_start(RStrBuf *sb, bool usecolor) {
+	if (usecolor) {
+		r_strbuf_append (sb, "  \x1b[48;5;234m " Color_WHITE);
+	} else {
+		r_strbuf_append (sb, "   ");
+	}
+}
+
+static int md_render_hr(const char *b, RStrBuf *sb, const RMarkdownOptions *options, int maxcol) {
+	const char *eol = strchr (b, '\n');
+	const size_t len = eol? (size_t)(eol - b): strlen (b);
+	char *text = r_str_trim_ndup (b, len);
+	if (!text) {
+		return 0;
+	}
+	const char *p = text;
+	while (*p == '-') {
+		p++;
+	}
+	if (p - text < 3 || *p) {
+		free (text);
+		return 0;
+	}
+	free (text);
+	const int width = maxcol / 2;
+	char *line = r_str_repeat (options && options->utf8? RUNE_LONG_LINE_HORIZ: "-", width);
+	if (line) {
+		r_strbuf_appendf (sb, "%*s%s\n", (maxcol - width) / 2, "", line);
+		free (line);
+	}
+	return (int)(eol? eol + 1 - b: len);
 }
 
 static bool md_table_is_sep(const char *line, size_t len) {
@@ -32,36 +62,36 @@ static bool md_table_is_sep(const char *line, size_t len) {
 
 static RList *md_table_split_row(const char *line, size_t len) {
 	RList *cells = r_list_newf (free);
-	const char *p = line;
-	const char *end = line + len;
-	while (p < end && (*p == ' ' || *p == '\t')) {
-		p++;
+	char *row = r_str_trim_ndup (line, len);
+	if (!row) {
+		return cells;
 	}
-	const bool had_leading_pipe = (p < end && *p == '|');
+	char *p = row;
+	const bool had_leading_pipe = *p == '|';
 	if (had_leading_pipe) {
 		p++;
 	}
-	while (p <= end) {
-		const char *start = p;
-		while (p < end && *p != '|') {
-			if (*p == '\\' && p + 1 < end && p[1] == '|') {
+	for (;;) {
+		char *start = p;
+		while (*p && *p != '|') {
+			if (*p == '\\' && p[1] == '|') {
 				p++;
 			}
 			p++;
 		}
-		const char *s = start;
-		const char *e = p;
-		while (s < e && (*s == ' ' || *s == '\t')) {
-			s++;
+		bool have_sep = *p;
+		if (have_sep) {
+			*p++ = 0;
 		}
-		while (e > s && (e[-1] == ' ' || e[-1] == '\t')) {
-			e--;
-		}
-		r_list_append (cells, r_str_ndup (s, e - s));
-		if (p >= end) {
+		r_str_trim (start);
+		r_list_append (cells, strdup (start));
+		if (!have_sep) {
 			break;
 		}
-		p++; // skip '|'
+		if (!*p) {
+			r_list_append (cells, strdup (""));
+			break;
+		}
 	}
 	if (had_leading_pipe && !r_list_empty (cells)) {
 		char *last = r_list_last (cells);
@@ -69,20 +99,19 @@ static RList *md_table_split_row(const char *line, size_t len) {
 			free (r_list_pop (cells));
 		}
 	}
+	free (row);
 	return cells;
 }
 
 static int md_table_col_align(const char *cell, size_t len) {
-	const char *s = cell;
-	const char *e = cell + len;
-	while (s < e && (*s == ' ' || *s == '\t')) {
-		s++;
+	char *s = r_str_trim_ndup (cell, len);
+	if (!s) {
+		return R_TABLE_ALIGN_LEFT;
 	}
-	while (e > s && (e[-1] == ' ' || e[-1] == '\t')) {
-		e--;
-	}
-	bool left = (s < e && *s == ':');
-	bool right = (e > s && e[-1] == ':');
+	size_t slen = strlen (s);
+	bool left = *s == ':';
+	bool right = slen > 0 && s[slen - 1] == ':';
+	free (s);
 	if (left && right) {
 		return R_TABLE_ALIGN_CENTER;
 	}
@@ -118,6 +147,7 @@ static int md_render_table(const char *b, RStrBuf *out, const RMarkdownOptions *
 	RTableOptions table_options = {
 		.utf8 = options && options->utf8,
 		.utf8_curvy = options && options->utf8_curvy,
+		.wrap = true,
 	};
 	RTable *t = r_table_new ("md", &table_options);
 	RListIter *iter;
@@ -343,7 +373,6 @@ static int md_render_title(const char *b, RStrBuf *sb, const RMarkdownOptions *o
 		md_render_slide_title (sb, title, title_len, level, maxcol, usecolor);
 	} else {
 		int i;
-		r_strbuf_append (sb, "  ");
 		if (usecolor) {
 			r_strbuf_append (sb, Color_BBLUE);
 		}
@@ -399,16 +428,20 @@ R_API char *r_str_md2txt(const char *md, const RMarkdownOptions *options) {
 			if (codeblock) {
 				const int j = maxcol - 4;
 				if (usecolor) {
+					if (col == 0) {
+						cb_start (sb, true);
+					}
 					fill_line (sb, j - col);
+				} else {
+					r_strbuf_append (sb, "\n");
 				}
-			}
-			col = 0;
-			if (usecolor) {
+			} else if (usecolor) {
 				r_strbuf_append (sb, Color_RESET);
-			}
-			if (!codeblock) {
+				r_strbuf_append (sb, "\n");
+			} else {
 				r_strbuf_append (sb, "\n");
 			}
+			col = 0;
 			if (codeblockline) {
 				codeblock = false;
 				codeblockline = false;
@@ -453,6 +486,9 @@ R_API char *r_str_md2txt(const char *md, const RMarkdownOptions *options) {
 					if (usecolor && !codeblock) {
 						r_strbuf_append (sb, Color_RESET_BG);
 					}
+					if (*b == '\n') {
+						b++;
+					}
 					continue;
 				}
 				if (!codeblock) {
@@ -462,6 +498,11 @@ R_API char *r_str_md2txt(const char *md, const RMarkdownOptions *options) {
 						col = 0;
 						continue;
 					}
+					tlen = md_render_hr (b, sb, options, maxcol);
+					if (tlen > 0) {
+						b += tlen;
+						continue;
+					}
 					tlen = md_render_table (b, sb, options);
 					if (tlen > 0) {
 						b += tlen;
@@ -469,11 +510,7 @@ R_API char *r_str_md2txt(const char *md, const RMarkdownOptions *options) {
 					}
 				}
 				if (codeblock) {
-					if (usecolor) {
-						r_strbuf_append (sb, "  " Color_BGGRAY " " Color_WHITE);
-					} else {
-						r_strbuf_append (sb, "   ");
-					}
+					cb_start (sb, usecolor);
 				} else {
 					r_strbuf_append (sb, "  ");
 				}

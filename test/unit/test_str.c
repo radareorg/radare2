@@ -1,6 +1,16 @@
 #include <r_util.h>
 #include "minunit.h"
 
+static int count_substr(const char *s, const char *needle) {
+	const size_t nlen = strlen (needle);
+	int n = 0;
+	while (s && (s = strstr (s, needle))) {
+		n++;
+		s += nlen;
+	}
+	return n;
+}
+
 bool test_r_file(void) {
 	char *s = r_file_new ("/foo", "bar", NULL);
 	mu_assert_streq (s, "/foo/bar", "error, invalid path");
@@ -14,10 +24,32 @@ bool test_r_file(void) {
 //TODO test r_str_chop_path
 bool test_r_str_wrap(void) {
 	char *s = r_str_wrap ("hello world\nhow are you\n", 5);
-	char *res = strdup ("hello\n world\nhow ar\ne you\n");
+	char *res = strdup ("hello\nworld\nhow\nare\nyou\n");
 	mu_assert_streq (s, res, "error, invalid string wrapping");
 	free (s);
 	free (res);
+	mu_end;
+}
+
+bool test_r_str_md2txt_rendering(void) {
+	RMarkdownOptions options = {
+		.utf8 = true,
+	};
+	char *line = r_str_repeat ("\xe2\x80\x95", 37);
+	char *expected = r_str_newf ("# T\n%*s%s\n", 19, "", line);
+	char *s = r_str_md2txt ("# T\n---\n", &options);
+	mu_assert_streq (s, expected, "markdown title and hr rendering");
+	free (s);
+	free (expected);
+	free (line);
+
+	RMarkdownOptions color_options = {
+		.color = true,
+	};
+	s = r_str_md2txt ("```\n\nx\n```\n", &color_options);
+	mu_assert_eq (count_substr (s, "\x1b[48;5;234m"), 2, "markdown codeblock background rows");
+	mu_assert_eq (count_substr (s, "\x1b[48;5;236m"), 0, "markdown codeblock old background color");
+	free (s);
 	mu_end;
 }
 
@@ -781,6 +813,7 @@ bool test_r_str_font(void) {
 bool all_tests(void) {
 	mu_run_test (test_r_file);
 	mu_run_test (test_r_str_wrap);
+	mu_run_test (test_r_str_md2txt_rendering);
 	mu_run_test (test_r_str_newf);
 	mu_run_test (test_r_str_replace_char_once);
 	mu_run_test (test_r_str_replace_char);

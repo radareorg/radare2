@@ -58,6 +58,7 @@ typedef struct {
 typedef struct r_table_options_t {
 	bool utf8;
 	bool utf8_curvy;
+	bool wrap;
 } RTableOptions;
 
 typedef struct {
@@ -82,6 +83,7 @@ R_API RTableColumnType *r_table_type(const char *name);
 R_API RTable *r_table_new(const char *name, const RTableOptions *options);
 R_API RTable *r_table_clone(const RTable *t);
 R_API void r_table_free(RTable *t);
+R_API void r_table_set_width(RTable *t, int maxColumnWidth, bool wrap);
 R_API int r_table_column_nth(RTable *t, const char *name);
 R_API void r_table_add_column(RTable *t, RTableColumnType *type, const char *name, int maxWidth);
 R_API void r_table_set_columnsf(RTable *t, const char *fmt, ...);
