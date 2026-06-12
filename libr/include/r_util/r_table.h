@@ -59,6 +59,7 @@ typedef struct r_table_options_t {
 	bool utf8;
 	bool utf8_curvy;
 	bool wrap;
+	bool trim;
 } RTableOptions;
 
 typedef struct {

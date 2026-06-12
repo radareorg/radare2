@@ -481,6 +481,71 @@ bool test_r_table_fancy_wrap(void) {
 	mu_end;
 }
 
+bool test_r_table_trim_ascii(void) {
+	RTableOptions options = {
+		.trim = true,
+	};
+	RTable *t = r_table_new ("trim_ascii", &options);
+	r_table_set_width (t, 8, false);
+	RTableColumnType *typeString = r_table_type ("string");
+	r_table_add_column (t, typeString, "key", 0);
+	r_table_add_column (t, typeString, "value", 0);
+	r_table_add_row (t, "short", "abcdefghijklmnopqrstuvwxyz", NULL);
+	r_table_add_row (t, "abcdefghijklmnopqrstuvwxyz", "ok", NULL);
+
+	char *s = r_table_tostring (t);
+	mu_assert_streq (s,
+		"key     value\n"
+		"-------------\n"
+		"short   abcde...\n"
+		"abcd... ok\n",
+		"simple table trims long cells with ascii ellipsis");
+	free (s);
+	r_table_free (t);
+	mu_end;
+}
+
+bool test_r_table_trim_utf8_fancy(void) {
+	RTableOptions options = {
+		.utf8 = true,
+		.trim = true,
+	};
+	RTable *t = r_table_new ("trim_utf8", &options);
+	r_table_set_width (t, 6, false);
+	RTableColumnType *typeString = r_table_type ("string");
+	r_table_add_column (t, typeString, "key", 0);
+	r_table_add_column (t, typeString, "value", 0);
+	r_table_add_row (t, "x", "abcdefghijklmnopqrstuvwxyz", NULL);
+
+	char *s = r_table_tofancystring (t);
+	mu_assert_notnull (s, "trimmed fancy table not null");
+	mu_assert ("fancy table uses utf8 ellipsis", strstr (s, "abcde\xe2\x80\xa6"));
+	char *dup = strdup (s);
+	char *p = dup;
+	int expected_width = -1;
+	while (p && *p) {
+		char *nl = strchr (p, '\n');
+		if (nl) {
+			*nl = 0;
+		}
+		if (*p) {
+			int width = r_str_display_width (p);
+			if (expected_width < 0) {
+				expected_width = width;
+			}
+			mu_assert_eq (width, expected_width, "all trimmed fancy table lines have equal display width");
+		}
+		if (!nl) {
+			break;
+		}
+		p = nl + 1;
+	}
+	free (dup);
+	free (s);
+	r_table_free (t);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test(test_r_table);
 	mu_run_test(test_r_table_column_type);
@@ -492,6 +557,8 @@ bool all_tests(void) {
 	mu_run_test (test_r_table_tocsv_escape);
 	mu_run_test (test_r_table_fancy_emoji_width);
 	mu_run_test (test_r_table_fancy_wrap);
+	mu_run_test (test_r_table_trim_ascii);
+	mu_run_test (test_r_table_trim_utf8_fancy);
 	return tests_passed != tests_run;
 }
 
