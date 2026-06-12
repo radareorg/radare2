@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2025 - oddcoder, sivaramaaa, pancake */
+/* radare - LGPL - Copyright 2016-2026 - oddcoder, sivaramaaa, pancake */
 /* type matching - type propagation */
 
 #include <r_anal.h>

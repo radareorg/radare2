@@ -2628,22 +2628,19 @@ static void val_tojson(PJ *pj, RAnalValue *val) {
 	pj_end (pj);
 }
 
-
-static bool mw2(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+static void mw2(void *null, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
 	R_LOG_INFO ("WRITE 0x%08"PFMT64x" %d", addr, len);
-	return true;
 }
 
-static bool mr2(REsil *esil, ut64 addr, ut8 *buf, int len) {
+static void mr2(void *null, ut64 addr, const ut8 *buf, int len) {
 	R_LOG_INFO ("READ 0x%08"PFMT64x" %d", addr, len);
-	return true;
 }
 
 static void esilmemrefs(RCore *core, const char *expr) {
-	REsil *e = r_esil_new (256, 0, 0);
-	r_esil_setup (e, core->anal, false, false, false);
-	e->cb.mem_read = mr2;
-	e->cb.mem_write = mw2;
+	REsil *e = r_esil_new_simple (0, core->anal->reg, &core->anal->iob);
+	r_esil_add_voyeur (e, NULL, mw2, R_ESIL_VOYEUR_MEM_WRITE);
+	r_esil_add_voyeur (e, NULL, mr2, R_ESIL_VOYEUR_MEM_READ);
+	e->anal = core->anal;	//XXX
 	r_esil_parse (e, expr);
 	r_esil_free (e);
 }
@@ -2661,7 +2658,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	ut64 addr;
 	PJ *pj = NULL;
 	int totalsize = 0;
-	// Variables required for setting up ESIL to REIL conversion
 	if (use_color) {
 		color = core->cons->context->pal.label;
 	}
@@ -9148,13 +9144,15 @@ R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
 	return type;
 }
 
-static bool regwrite_hook(REsil *esil, const char *name, ut64 *val) {
-	RCore *core = esil->user;
-	int type = core_type_by_addr (core, *val);
-	if (type != -1) {
-		r_anal_xrefs_set (core->anal, esil->addr, *val, type);
+static void regwrite_voy(void *user, const char *name, ut64 old, ut64 val) {
+	(void)name;
+	(void)old;
+	RCore *core = user;
+	const int type = core_type_by_addr (core, val);
+	if (type == -1) {
+		return;
 	}
-	return false;
+	r_anal_xrefs_set (core->anal, core->anal->esil->addr, val, type);
 }
 
 R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
@@ -9168,10 +9166,7 @@ R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
 	if (!sdb_const_get (core->sdb, "aeim.fd", 0)) {
 		r_core_call (core, "aeim"); // should be set by default imho
 	}
-	void *u = core->anal->esil->user;
-	core->anal->esil->user = core;
-	void *p = core->anal->esil->cb.hook_reg_write;
-	core->anal->esil->cb.hook_reg_write = regwrite_hook;
+	const ut32 vid = r_esil_add_voyeur (core->anal->esil, core, regwrite_voy, R_ESIL_VOYEUR_REG_WRITE);
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
 			addr, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 	const ut64 old_pc = r_reg_getv (core->anal->reg, "PC");
@@ -9236,8 +9231,9 @@ R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
 	} else {
 		R_LOG_ERROR ("Cannot find function at 0x%08" PFMT64x, addr);
 	}
-	core->anal->esil->cb.hook_reg_write = p;
-	core->anal->esil->user = u;
+	if (vid != R_ESIL_VOYEUR_ERR) {
+		r_esil_del_voyeur (core->anal->esil, vid);
+	}
 	r_reg_setv (core->anal->reg, "PC", old_pc);
 }
 

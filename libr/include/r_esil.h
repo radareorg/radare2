@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2022-2024 - pancake */
+/* radare2 - LGPL - Copyright 2022-2026 - pancake */
 
 #ifndef R_ESIL_H
 #define R_ESIL_H
@@ -288,9 +288,6 @@ typedef struct r_esil_t {
 	void *user;
 	int stack_fd;	// ahem, let's not do this
 	bool in_cmd_step;
-#if 0
-	bool trace_enabled;
-#endif
 	RLibStore *libstore;
 } REsil;
 
