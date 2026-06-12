@@ -1,0 +1,11 @@
+NAME=TIC-80 chunk sections
+FILE=bins/other/lovebyte.tic
+CMDS=<<EOF
+iS~tiles.0
+iS~samples.0
+EOF
+EXPECT=<<EOF
+0   0x00000004  0x2a0 0x00004000  0x2a0 -rw- 0x0   ---- tiles.0
+1   0x000002a8   0x3e 0x000100e4   0x3e -rw- 0x0   ---- samples.0
+EOF
+RUN

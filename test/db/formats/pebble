@@ -28,3 +28,22 @@ EXPECT=<<EOF
 - 1 fd: 3 +0x00000000 0x00000000 - 0x0000007b r-- r-- fmap.header
 EOF
 RUN
+
+NAME=Pebble: resolve libpebble stubs
+FILE=bins/pebble/hello-stub.bin
+ARGS=-e bin.relocs.apply=true -e scr.color=0 -e asm.lines=false -e asm.bytes=false -e asm.flags=false
+CMDS=<<EOF
+. ../scripts/pebble.r2.js
+pd 3 @ sym.pebble.window_create~Pebble API stub
+pd 3 @ sym.pebble.app_log~Pebble API stub
+pd 3 @ sym.pebble.text_layer_set_text~Pebble API stub
+EOF
+EXPECT=<<EOF
+0x00000420      push {r0, r1, r2, r3}                                  ; Pebble API stub window_create index=271 offset=0x43c
+0x0000039c      push {r0, r1, r2, r3}                                  ; Pebble API stub app_log index=34 offset=0x88
+0x000004d4      push {r0, r1, r2, r3}                                  ; Pebble API stub text_layer_set_text index=471 offset=0x75c
+Pebble stubs: named=32 unknown=0 total=32
+Pebble trampoline hits: 1
+Pebble stub resolver complete: 32 named stubs
+EOF
+RUN
