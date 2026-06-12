@@ -128,6 +128,14 @@ R_API R_TH_TID r_th_self(void) {
 #endif
 }
 
+R_API bool r_th_tid_equal(R_TH_TID a, R_TH_TID b) {
+#if HAVE_PTHREAD
+	return pthread_equal (a, b) != 0;
+#else
+	return a == b;
+#endif
+}
+
 R_API bool r_th_setname(RThread *th, const char *name) {
 #if defined(HAVE_PTHREAD_NP) && HAVE_PTHREAD_NP
 #if __linux__ || __sun

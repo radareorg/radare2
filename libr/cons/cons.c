@@ -119,10 +119,15 @@ static void break_stack_free(void *ptr) {
 	free (b);
 }
 
-static void consctx_unref(void *ptr) {
-	RConsContext *ctx = ptr;
-	r_unref (ctx);
-}
+// Frame pushed on cons->ctx_stack by r_cons_push. Tagging each frame with
+// the pushing thread keeps push/pop pairing correct when several threads
+// capture concurrently (e.g. background tasks): a thread must restore the
+// context *it* displaced, not whatever another thread installed meanwhile.
+typedef struct {
+	R_TH_TID tid; // thread that performed the push
+	RConsContext *parent; // displaced context; this frame owns its reference
+	RConsContext *child; // context created by the push (weak alias)
+} ConsCtxFrame;
 
 static void grep_word_free(RConsGrepWord *gw) {
 	if (gw) {
@@ -243,7 +248,7 @@ static inline void init_cons_input(InputState *state) {
 R_API RCons *r_cons_new2(void) {
 	RCons *cons = R_NEW0 (RCons);
 	cons->context = R_NEW0 (RConsContext);
-	cons->ctx_stack = r_list_newf ((RListFree)consctx_unref);
+	cons->ctx_stack = r_list_newf (free);
 	init_cons_context (cons, NULL);
 	// eprintf ("CTX %p %p\n", cons, cons->context);
 	init_cons_input (&cons->input_state);
@@ -1595,8 +1600,9 @@ R_API bool r_cons_context_is_main(RCons *cons, RConsContext *ctx) {
 	if (r_list_length (cons->ctx_stack) == 0) {
 		return true;
 	}
-	RConsContext *first_context = r_list_get_n (cons->ctx_stack, 0);
-	return ctx == first_context;
+	// the bottom frame's parent is the original (main) context
+	ConsCtxFrame *first_frame = r_list_get_n (cons->ctx_stack, 0);
+	return ctx == first_frame->parent;
 }
 
 R_API void r_cons_break_end(RCons *cons) {
@@ -1674,15 +1680,23 @@ R_API bool r_cons_drop(RCons *cons, int n) {
 
 R_API void r_cons_push(RCons *cons) {
 	r_th_lock_enter (cons->lock);
-	// Push the current context to the stack.
-	// The stack's free function will handle the refcount.
-	r_list_push (cons->ctx_stack, cons->context);
 	RConsContext *nc = r_cons_context_clone (cons->context);
 	// Free the buffer in the cloned context since we're going to reset it anyway
 	free (nc->buffer);
 	nc->buffer = NULL;
 	nc->buffer_sz = 0;
 	nc->buffer_len = 0;
+	// A pushed context exists to capture output, so it must be born
+	// unflushable: a flush from another thread (e.g. the main command
+	// loop while a background task captures) would otherwise print and
+	// reset this buffer, losing the capture and its grep state.
+	// Callers that want to flush before popping must clear noflush first.
+	nc->noflush = true;
+	ConsCtxFrame *frame = R_NEW0 (ConsCtxFrame);
+	frame->tid = r_th_self ();
+	frame->parent = cons->context;
+	frame->child = nc;
+	r_list_push (cons->ctx_stack, frame);
 	cons->context = nc;
 	// global hacks
 	RCons *Gcons = r_cons_singleton ();
@@ -1693,6 +1707,42 @@ R_API void r_cons_push(RCons *cons) {
 	r_th_lock_leave (cons->lock);
 }
 
+// Remove the given frame from the context stack, restoring its parent.
+// Must be called with cons->lock held.
+static void cons_pop_frame(RCons *cons, RListIter *iter) {
+	ConsCtxFrame *frame = iter->data;
+	ConsCtxFrame *above = iter->n? iter->n->data: NULL;
+	RConsContext *child = frame->child;
+	RConsContext *parent = frame->parent;
+	// Propagate palette changes from child to parent before freeing
+	if (child->pal_dirty) {
+		memcpy (&parent->cpal, &child->cpal, sizeof (parent->cpal));
+		parent->pal_dirty = true;
+	}
+	// Propagate color_mode changes from child to parent
+	parent->color_mode = child->color_mode;
+	if (above && above->parent == child) {
+		// Another thread pushed on top of our child while we were
+		// capturing: hand our parent over so its pop restores it.
+		above->parent = parent;
+	} else if (cons->context == child) {
+		cons->context = parent;
+		// global hacks
+		RCons *Gcons = r_cons_singleton ();
+		if (cons == Gcons) {
+			Gcons->context = parent;
+		}
+	} else {
+		// Unbalanced push/pop pairing; do not leak the parent
+		R_LOG_WARN ("Unbalanced cons context pop");
+		r_unref (parent);
+	}
+	r_unref (child);
+	r_list_split_iter (cons->ctx_stack, iter);
+	free (iter);
+	free (frame);
+}
+
 R_API bool r_cons_pop(RCons *cons) {
 	r_th_lock_enter (cons->lock);
 	if (r_list_empty (cons->ctx_stack)) {
@@ -1700,24 +1750,22 @@ R_API bool r_cons_pop(RCons *cons) {
 		R_LOG_INFO ("Nothing to pop");
 		return false;
 	}
-	RConsContext *parent = r_list_pop (cons->ctx_stack);
-	// Propagate palette changes from child to parent before freeing
-	if (cons->context->pal_dirty) {
-		memcpy (&parent->cpal, &cons->context->cpal, sizeof (parent->cpal));
-		parent->pal_dirty = true;
+	// Pop the topmost frame pushed by this thread, so concurrent captures
+	// (background tasks) cannot free a context another thread still uses.
+	const R_TH_TID self = r_th_self ();
+	RListIter *iter = cons->ctx_stack->tail;
+	while (iter) {
+		ConsCtxFrame *frame = iter->data;
+		if (r_th_tid_equal (frame->tid, self)) {
+			break;
+		}
+		iter = iter->p;
 	}
-	// Propagate color_mode changes from child to parent
-	parent->color_mode = cons->context->color_mode;
-	// Unref the current context we're done with
-	r_unref (cons->context);
-	cons->context = parent;
-	// The parent context is now the current context with original refcount
-
-	// global hacks
-	RCons *Gcons = r_cons_singleton ();
-	if (cons == Gcons) {
-		Gcons->context = parent;
+	if (!iter) {
+		// no frame owned by this thread (e.g. teardown); take the top
+		iter = cons->ctx_stack->tail;
 	}
+	cons_pop_frame (cons, iter);
 	r_th_lock_leave (cons->lock);
 	return true;
 }

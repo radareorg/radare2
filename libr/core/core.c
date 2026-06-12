@@ -69,6 +69,8 @@ static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
 		r_core_cmd0 (core, bpi->data);
 	}
 	if (may_output) {
+		// pushed contexts are unflushable by default
+		core->cons->context->noflush = false;
 		r_cons_flush (core->cons);
 		r_cons_pop (core->cons);
 	}
@@ -310,7 +312,6 @@ static bool __syncDebugMaps(RCore *core) {
 R_API char *r_core_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (core && core->cons, NULL);
 	r_cons_push (core->cons);
-	core->cons->context->noflush = true;
 	core->cons->context->cmd_str_depth++;
 	if (cmd && r_core_call_at (core, addr, cmd) == -1) {
 		// eprintf ("Invalid command: %s\n", cmd);
@@ -321,9 +322,10 @@ R_API char *r_core_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 		r_cons_pop (core->cons);
 		return NULL;
 	}
-	if (--core->cons->context->cmd_str_depth == 0) {
-		core->cons->context->noflush = false;
-	}
+	// Keep noflush set until the context is popped: clearing it before
+	// capturing the buffer would let a concurrent flush (from the main
+	// thread while a background task runs this) print and reset it.
+	--core->cons->context->cmd_str_depth;
 	r_cons_filter (core->cons);
 	const char *static_str = r_cons_get_buffer (core->cons, NULL);
 	char *retstr = strdup (r_str_get (static_str));
