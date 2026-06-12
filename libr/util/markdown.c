@@ -288,25 +288,71 @@ static int md_strikethrough(const char *b, RStrBuf *sb, bool *strike) {
 	return 0;
 }
 
+static int md_backtick_run(const char *b) {
+	int n = 0;
+	while (b[n] == '`') {
+		n++;
+	}
+	return n;
+}
+
+static int md_render_code_span(const char *b, RStrBuf *sb, const RMarkdownOptions *options, int *cols) {
+	const int ticks = md_backtick_run (b);
+	if (ticks < 1) {
+		return 0;
+	}
+	const char *code = b + ticks;
+	const char *p = code;
+	while (*p && *p != '\n') {
+		if (*p == '`') {
+			int n = md_backtick_run (p);
+			if (n == ticks) {
+				const size_t code_len = p - code;
+				if (options && options->color) {
+					r_strbuf_append (sb, "\x1b[48;5;234m" Color_WHITE);
+				}
+				r_strbuf_append_n (sb, code, code_len);
+				if (options && options->color) {
+					r_strbuf_append (sb, Color_RESET_BG);
+					r_strbuf_append (sb, Color_RESET);
+				}
+				if (cols) {
+					*cols = (int)code_len;
+				}
+				return (int)(p + ticks - b);
+			}
+			p += n;
+		} else {
+			p++;
+		}
+	}
+	return 0;
+}
+
 static char *md_render_inline(const char *b, const RMarkdownOptions *options) {
 	R_RETURN_VAL_IF_FAIL (b, NULL);
-	if (!options || !options->utf8) {
-		return strdup (b);
-	}
+	const bool useattrs = options && options->utf8;
 	RStrBuf *sb = r_strbuf_new ("");
 	bool bold = false;
 	bool italic = false;
 	bool strike = false;
 	while (*b) {
 		int ch = *b;
-		if (ch == '*' || ch == '_') {
+		if (ch == '`') {
+			int n = md_render_code_span (b, sb, options, NULL);
+			if (n > 0) {
+				b += n;
+				continue;
+			}
+		}
+		if (useattrs && (ch == '*' || ch == '_')) {
 			int n = md_emphasis (b, sb, &bold, &italic, &strike);
 			if (n > 0) {
 				b += n;
 				continue;
 			}
 		}
-		if (ch == '~') {
+		if (useattrs && ch == '~') {
 			int n = md_strikethrough (b, sb, &strike);
 			if (n > 0) {
 				b += n;
@@ -557,6 +603,15 @@ R_API char *r_str_md2txt(const char *md, const RMarkdownOptions *options) {
 					cb_start (sb, usecolor);
 				} else {
 					r_strbuf_append (sb, "  ");
+				}
+			}
+			if (!codeblock && ch == '`') {
+				int code_cols = 0;
+				int n = md_render_code_span (b, sb, options, &code_cols);
+				if (n > 0) {
+					b += n - 1;
+					col += code_cols;
+					break;
 				}
 			}
 			if (useutf8 && !codeblock && (ch == '*' || ch == '_')) {

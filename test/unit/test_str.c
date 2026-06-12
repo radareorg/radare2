@@ -51,11 +51,25 @@ bool test_r_str_md2txt_rendering(void) {
 	mu_assert_eq (count_substr (s, "\x1b[48;5;236m"), 0, "markdown codeblock old background color");
 	free (s);
 
+	s = r_str_md2txt ("Use `foo` here\n", &color_options);
+	mu_assert_eq (count_substr (s, "`foo`"), 0, "markdown inline code marker is not raw text");
+	mu_assert_eq (count_substr (s, "\x1b[48;5;234m" Color_WHITE "foo" Color_RESET_BG Color_RESET), 1, "markdown inline code rendering");
+	free (s);
+
 	s = r_str_md2txt ("| attr | plain |\n| --- | --- |\n| **cell** | ~~gone~~ |\n", &options);
 	mu_assert_eq (count_substr (s, "**cell**"), 0, "markdown table bold marker is not raw text");
 	mu_assert_eq (count_substr (s, "~~gone~~"), 0, "markdown table strike marker is not raw text");
 	mu_assert_eq (count_substr (s, Color_BOLD "cell" Color_BOLD_RESET), 1, "markdown table bold cell rendering");
 	mu_assert_eq (count_substr (s, Color_STRIKE "gone" Color_STRIKE_RESET), 1, "markdown table strike cell rendering");
+	free (s);
+
+	RMarkdownOptions table_code_options = {
+		.color = true,
+		.utf8 = true,
+	};
+	s = r_str_md2txt ("| attr |\n| --- |\n| `code` |\n", &table_code_options);
+	mu_assert_eq (count_substr (s, "`code`"), 0, "markdown table inline code marker is not raw text");
+	mu_assert_eq (count_substr (s, "\x1b[48;5;234m" Color_WHITE "code" Color_RESET_BG Color_RESET), 1, "markdown table inline code rendering");
 	free (s);
 	mu_end;
 }
