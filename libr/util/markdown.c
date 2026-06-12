@@ -121,6 +121,8 @@ static int md_table_col_align(const char *cell, size_t len) {
 	return R_TABLE_ALIGN_LEFT;
 }
 
+static char *md_render_inline(const char *b, const RMarkdownOptions *options);
+
 static int md_render_table(const char *b, RStrBuf *out, const RMarkdownOptions *options) {
 	const char *header_end = strchr (b, '\n');
 	if (!header_end) {
@@ -154,7 +156,9 @@ static int md_render_table(const char *b, RStrBuf *out, const RMarkdownOptions *
 	const char *h;
 	int idx = 0;
 	r_list_foreach (headers, iter, h) {
-		r_table_add_column (t, r_table_type ("string"), h, 0);
+		char *rh = md_render_inline (h, options);
+		r_table_add_column (t, r_table_type ("string"), rh? rh: h, 0);
+		free (rh);
 		const char *sep_cell = r_list_get_n (seps, idx);
 		if (sep_cell) {
 			r_table_align (t, idx, md_table_col_align (sep_cell, strlen (sep_cell)));
@@ -192,6 +196,15 @@ static int md_render_table(const char *b, RStrBuf *out, const RMarkdownOptions *
 		while (nc > ncols) {
 			free (r_list_pop (cells));
 			nc--;
+		}
+		char *cell;
+		RListIter *citer;
+		r_list_foreach (cells, citer, cell) {
+			char *rendered = md_render_inline (cell, options);
+			if (rendered) {
+				free (cell);
+				citer->data = rendered;
+			}
 		}
 		r_table_add_row_list (t, cells);
 		if (!eol) {
@@ -273,6 +286,37 @@ static int md_strikethrough(const char *b, RStrBuf *sb, bool *strike) {
 		p++;
 	}
 	return 0;
+}
+
+static char *md_render_inline(const char *b, const RMarkdownOptions *options) {
+	R_RETURN_VAL_IF_FAIL (b, NULL);
+	if (!options || !options->utf8) {
+		return strdup (b);
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	bool bold = false;
+	bool italic = false;
+	bool strike = false;
+	while (*b) {
+		int ch = *b;
+		if (ch == '*' || ch == '_') {
+			int n = md_emphasis (b, sb, &bold, &italic, &strike);
+			if (n > 0) {
+				b += n;
+				continue;
+			}
+		}
+		if (ch == '~') {
+			int n = md_strikethrough (b, sb, &strike);
+			if (n > 0) {
+				b += n;
+				continue;
+			}
+		}
+		r_strbuf_appendf (sb, "%c", ch);
+		b++;
+	}
+	return r_strbuf_drain (sb);
 }
 
 static int md_title_level(const char *b) {
