@@ -376,24 +376,24 @@ static int __strbuf_append_col_aligned_fancy(RTable *t, RStrBuf *sb, RTableColum
 	const bool use_utf8_curvy = t->options.utf8_curvy;
 	const char *v_line = (use_utf8 || use_utf8_curvy) ? RUNE_LINE_VERT : "|";
 	int ll = r_strbuf_length (sb);
+	int len = r_str_len_utf8_ansi (str);
+	int pad = R_MAX (0, col->width - len);
+	int left = 0;
+	int right = pad;
 	switch (col->align) {
 	case R_TABLE_ALIGN_LEFT:
-		r_strbuf_appendf (sb, "%s %-*s ", v_line, col->width, str);
 		break;
 	case R_TABLE_ALIGN_RIGHT:
-		r_strbuf_appendf (sb, "%s %*s ", v_line, col->width, str);
+		left = pad;
+		right = 0;
 		break;
 	case R_TABLE_ALIGN_CENTER:
-		{
-			int len = r_str_len_utf8 (str);
-			int pad = (col->width - len) / 2;
-			int left = col->width - (pad * 2 + len);
-			r_strbuf_appendf (sb, "%s %-*s ", v_line, pad, " ");
-			r_strbuf_appendf (sb, "%-*s ", pad + left, str);
-		}
+		left = pad / 2;
+		right = pad - left;
 		break;
 	}
-	return r_strbuf_length (sb) - ll;
+	r_strbuf_appendf (sb, "%s %*s%s%*s ", v_line, left, "", str, right, "");
+	return r_str_len_utf8_ansi (r_strbuf_get (sb) + ll);
 }
 
 static void __computeTotal(RTable *t) {
@@ -511,7 +511,7 @@ static int __strbuf_append_col_aligned(RStrBuf *sb, RTableColumn *col, const cha
 			}
 		}
 	}
-	return r_strbuf_length (sb) - ll;
+	return r_str_len_utf8_ansi (r_strbuf_get (sb) + ll);
 }
 
 R_API char *r_table_tostring(RTable *t) {

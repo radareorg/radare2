@@ -312,6 +312,18 @@ bool test_r_str_ansi_len(void) {
 	len = r_str_ansi_len ("radar\xf0\x9d\x84\x9e""2");
 	mu_assert_eq (len, 7, "len(ascii + 4 byte utf-8 counted as 1 char)");
 
+	len = r_str_ansi_len ("x\xe2\x9c\x85""y");
+	mu_assert_eq (len, 4, "len(ascii + emoji check mark counted as 2 cells)");
+
+	len = r_str_ansi_len ("x\xe2\x9a\xa0\xef\xb8\x8f""y");
+	mu_assert_eq (len, 4, "len(ascii + emoji variation selector counted as 2 cells)");
+
+	len = r_str_ansi_len ("x\xf0\x9f\x93\x8a""y");
+	mu_assert_eq (len, 4, "len(ascii + 4 byte emoji counted as 2 cells)");
+
+	len = r_utf8_display_width ((const ut8 *)"\xe2\x9c\x85");
+	mu_assert_eq (len, 2, "utf8 display width counts emoji check mark as 2 cells");
+
 	mu_end;
 }
 

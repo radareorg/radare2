@@ -1862,17 +1862,23 @@ R_API char *r_str_format_msvc_argv(size_t argc, const char **argv) {
 }
 
 static int rune_display_width(RRune ch) {
+	if (ch == 0x200d || R_BETWEEN (0x0300, ch, 0x036f) ||
+		R_BETWEEN (0xfe00, ch, 0xfe0f) ||
+		R_BETWEEN (0xe0100, ch, 0xe01ef)) {
+		return 0;
+	}
 	if (ch < 0x80) {
 		return 1;
 	}
 	// CJK and wide characters
 	if ((ch >= 0x1100 && ch <= 0x115F) || // Hangul Jamo
+		(ch >= 0x2600 && ch <= 0x27BF) || // Emoji symbols
 		(ch >= 0x2E80 && ch <= 0x9FFF) || // CJK
 		(ch >= 0xAC00 && ch <= 0xD7AF) || // Hangul Syllables
 		(ch >= 0xF900 && ch <= 0xFAFF) || // CJK Compatibility Ideographs
 		(ch >= 0xFE10 && ch <= 0xFE1F) || // Vertical Forms
 		(ch >= 0xFE30 && ch <= 0xFE4F) || // CJK Compatibility Forms
-		(ch >= 0x1F000 && ch <= 0x1FFFF) || // Emojis and symbols
+		(ch >= 0x1F000 && ch <= 0x1FAFF) || // Emojis and symbols
 		(ch >= 0x20000 && ch <= 0x2FFFF)) { // CJK Extension B, C, D, E, F
 		return 2;
 	}
@@ -1919,41 +1925,36 @@ static size_t __str_ansi_length(char const *str) {
 	return i;
 }
 
+static size_t str_dwidth(const char *str, size_t slen, bool ansi) {
+	size_t i = 0, len = 0;
+	const size_t maxlen = slen > 0? slen: (size_t)-1;
+	while (str[i] && i < maxlen) {
+		if (ansi && str[i] == 0x1b) {
+			i += __str_ansi_length (str + i);
+			continue;
+		}
+		if (((ut8)str[i] & 0xc0) == 0x80) {
+			i++;
+			continue;
+		}
+		RRune ch;
+		const size_t left_sz = maxlen - i;
+		const int left = slen > 0? R_MIN (left_sz, INT_MAX): -1;
+		int ulen = r_utf8_decode ((const ut8 *)str + i, left, &ch);
+		if (ulen > 0) {
+			len += rune_display_width (ch);
+			i += ulen;
+		} else {
+			len++;
+			i++;
+		}
+	}
+	return (ansi && slen > 0 && len < 1)? 1: len;
+}
+
 /* ansi helpers */
 R_API size_t r_str_ansi_nlen(const char *str, size_t slen) {
-	size_t i = 0, len = 0;
-	if (slen > 0) {
-		while (str[i] && i < slen) {
-			size_t chlen = __str_ansi_length (str + i);
-			if (str[i] != 0x1b) {
-				// UTF-8 character
-				RRune ch;
-				int ulen = r_utf8_decode ((const ut8 *)str + i, chlen, &ch);
-				if (ulen > 0) {
-					len += rune_display_width (ch);
-				} else {
-					len += 1; // invalid byte
-				}
-			}
-			i += chlen;
-		}
-		return len > 0? len: 1;
-	}
-	while (str[i]) {
-		size_t chlen = __str_ansi_length (str + i);
-		if (str[i] != 0x1b) {
-			// UTF-8 character
-			RRune ch;
-			int ulen = r_utf8_decode ((const ut8 *)str + i, chlen, &ch);
-			if (ulen > 0) {
-				len += rune_display_width (ch);
-			} else {
-				len += 1; // invalid byte
-			}
-		}
-		i += chlen;
-	}
-	return len; // len > 0? len: 1;
+	return str_dwidth (str, slen, true);
 }
 
 static size_t __str_ansi_sanitize_length(char const *str) {
@@ -2844,46 +2845,11 @@ R_API size_t r_str_len_utf8char(const char *s, int left) {
 }
 
 R_API size_t r_str_len_utf8(const char *s) {
-	size_t i, j = 0, fullwidths = 0;
-	size_t slen = strlen (s);
-	for (i = 0; i < slen; i++) {
-		if ((s[i] & 0xc0) != 0x80) {
-			j++;
-			if (r_str_char_fullwidth (s + i, slen - i)) {
-				fullwidths++;
-			}
-		}
-	}
-	return j + fullwidths;
+	return str_dwidth (s, 0, false);
 }
 
 R_API size_t r_str_len_utf8_ansi(const char *str) {
-	int i = 0, len = 0, fullwidths = 0;
-	int str_len = strlen (str);
-	while (str[i]) {
-		char ch = str[i];
-		size_t chlen = __str_ansi_length (str + i);
-		if (chlen > 1) {
-			if (str[i] != 0x1b) {
-				len++; // multi-byte UTF-8
-				if (str_len - i >= 4) {
-					if (r_str_char_fullwidth (str + i, 4)) {
-						fullwidths++;
-					}
-				}
-			}
-			i += chlen - 1;
-		} else if ((ch & 0xc0) != 0x80) { // utf8
-			len++;
-			if (str_len - i >= 4) {
-				if (r_str_char_fullwidth (str + i, 4)) {
-					fullwidths++;
-				}
-			}
-		}
-		i++;
-	}
-	return len + fullwidths;
+	return str_dwidth (str, 0, true);
 }
 
 // XXX must find across the ansi tags, as well as support utf8
