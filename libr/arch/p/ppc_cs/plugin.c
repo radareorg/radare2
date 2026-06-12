@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2025 - pancake */
+/* radare2 - LGPL - Copyright 2013-2026 - pancake, phix33 */
 
 #include <r_arch.h>
 #include <r_esil.h>
@@ -2490,6 +2490,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			// type only: rldic masks mb..63-sh and rldimi inserts into the
 			// destination; neither is expressible via cmask64(mb,me)
 			break;
+		}
+		if (op->type == R_ANAL_OP_TYPE_RET || op->type == R_ANAL_OP_TYPE_CRET) {
+			memset (pd->toc_map, 0, sizeof (pd->toc_map));
 		}
 		const char m0 = insn->mnemonic[0];
 		if (op->type == R_ANAL_OP_TYPE_NULL && m0 == 't' && (insn->mnemonic[1] == 'w' || insn->mnemonic[1] == 'd')) {
