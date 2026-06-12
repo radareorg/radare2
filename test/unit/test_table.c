@@ -438,6 +438,49 @@ bool test_r_table_fancy_emoji_width(void) {
 	mu_end;
 }
 
+bool test_r_table_fancy_wrap(void) {
+	RTableOptions options = {
+		.utf8 = true,
+		.wrap = true,
+	};
+	RTable *t = r_table_new ("wrap", &options);
+	r_table_set_width (t, 12, false);
+	RTableColumnType *typeString = r_table_type ("string");
+	r_table_add_column (t, typeString, "key", 0);
+	r_table_add_column (t, typeString, "why", 0);
+	r_table_add_row (t, "x", "abcdefghijklmnopqrstuvwxyz", NULL);
+
+	char *s = r_table_tofancystring (t);
+	mu_assert_notnull (s, "wrapped fancy table not null");
+	char *dup = strdup (s);
+	char *p = dup;
+	int expected_width = -1;
+	int lines = 0;
+	while (p && *p) {
+		char *nl = strchr (p, '\n');
+		if (nl) {
+			*nl = 0;
+		}
+		if (*p) {
+			lines++;
+			int width = r_str_display_width (p);
+			if (expected_width < 0) {
+				expected_width = width;
+			}
+			mu_assert_eq (width, expected_width, "all wrapped fancy table lines have equal display width");
+		}
+		if (!nl) {
+			break;
+		}
+		p = nl + 1;
+	}
+	mu_assert ("wrapped table uses more than one row line", lines > 5);
+	free (dup);
+	free (s);
+	r_table_free (t);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test(test_r_table);
 	mu_run_test(test_r_table_column_type);
@@ -448,6 +491,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_table_columns);
 	mu_run_test (test_r_table_tocsv_escape);
 	mu_run_test (test_r_table_fancy_emoji_width);
+	mu_run_test (test_r_table_fancy_wrap);
 	return tests_passed != tests_run;
 }
 

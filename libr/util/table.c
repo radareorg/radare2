@@ -218,7 +218,7 @@ static bool __addRow(RTable *t, RList *items, const char *arg, int col) {
 }
 
 static void wrap_items(RTable *t, RList *items) {
-	if (t->wrapColumns && t->maxColumnWidth > 0) {
+	if (t->wrapColumns && !t->options.wrap && t->maxColumnWidth > 0) {
 		char *item;
 		RListIter *iter;
 		r_list_foreach (items, iter, item) {
@@ -371,7 +371,7 @@ R_API void r_table_add_row(RTable *t, const char *name, ...) {
 
 // import / export
 
-static int __strbuf_append_col_aligned_fancy(RTable *t, RStrBuf *sb, RTableColumn *col, char *str) {
+static int __strbuf_append_col_aligned_fancy(RTable *t, RStrBuf *sb, RTableColumn *col, const char *str) {
 	const bool use_utf8 = t->options.utf8;
 	const bool use_utf8_curvy = t->options.utf8_curvy;
 	const char *v_line = (use_utf8 || use_utf8_curvy) ? RUNE_LINE_VERT : "|";
@@ -394,6 +394,71 @@ static int __strbuf_append_col_aligned_fancy(RTable *t, RStrBuf *sb, RTableColum
 	}
 	r_strbuf_appendf (sb, "%s %*s%s%*s ", v_line, left, "", str, right, "");
 	return r_str_len_utf8_ansi (r_strbuf_get (sb) + ll);
+}
+
+static void row_fancy(RTable *t, RStrBuf *sb, RTableRow *row, const char *v_line) {
+	RListIter *iter;
+	char *item;
+	int c = 0;
+	r_list_foreach (row->items, iter, item) {
+		RTableColumn *col = r_list_get_n (t->cols, c);
+		if (col) {
+			__strbuf_append_col_aligned_fancy (t, sb, col, item);
+		}
+		c++;
+	}
+	r_strbuf_appendf (sb, "%s\n", v_line);
+}
+
+static void lines_free(void *lines) {
+	r_list_free (lines);
+}
+
+static RList *cell_wrap(const char *s, int width) {
+	char *wrapped = r_str_wrap (s, width);
+	if (!wrapped) {
+		return NULL;
+	}
+	RList *lines = r_str_split_duplist (wrapped, "\n", false);
+	free (wrapped);
+	return lines;
+}
+
+static bool wraprow(RTable *t, RStrBuf *sb, RTableRow *row, const char *v_line) {
+	RList *line_cols = r_list_newf (lines_free);
+	RListIter *iter;
+	char *item;
+	int height = 1;
+	int c = 0;
+	r_list_foreach (row->items, iter, item) {
+		RTableColumn *col = r_list_get_n (t->cols, c);
+		if (col) {
+			RList *lines = cell_wrap (item, col->width);
+			if (!lines) {
+				r_list_free (line_cols);
+				return false;
+			}
+			height = R_MAX (height, r_list_length (lines));
+			r_list_append (line_cols, lines);
+		}
+		c++;
+	}
+	int i;
+	for (i = 0; i < height; i++) {
+		c = 0;
+		RList *lines;
+		r_list_foreach (line_cols, iter, lines) {
+			RTableColumn *col = r_list_get_n (t->cols, c);
+			if (col) {
+				const char *line = r_list_get_n (lines, i);
+				__strbuf_append_col_aligned_fancy (t, sb, col, line? line: "");
+			}
+			c++;
+		}
+		r_strbuf_appendf (sb, "%s\n", v_line);
+	}
+	r_list_free (line_cols);
+	return true;
 }
 
 static void __computeTotal(RTable *t) {
@@ -422,7 +487,7 @@ R_API char *r_table_tofancystring(RTable *t) {
 	RStrBuf *sb = r_strbuf_new ("");
 	RTableRow *row;
 	RTableColumn *col;
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	bool useUtf8 = t->options.utf8;
 	bool useUtf8Curvy = t->options.utf8_curvy;
 	const char *v_line = useUtf8 || useUtf8Curvy ? RUNE_LINE_VERT : "|";
@@ -438,8 +503,7 @@ R_API char *r_table_tofancystring(RTable *t) {
 	r_list_foreach (t->cols, iter, col) {
 		__strbuf_append_col_aligned_fancy (t, sb, col, col->name);
 	}
-	int len = r_str_len_utf8_ansi (r_strbuf_get (sb)) - 1;
-	int maxlen = len;
+	int maxlen = r_str_len_utf8_ansi (r_strbuf_get (sb)) - 1;
 	char *h_line_str = r_str_repeat (h_line, maxlen);
 	{
 		char *s = r_str_newf ("%s%s%s\n", tl_corner, h_line_str, tr_corner);
@@ -449,17 +513,9 @@ R_API char *r_table_tofancystring(RTable *t) {
 
 	r_strbuf_appendf (sb, "%s\n%s%s%s\n", v_line, l_intersect, h_line_str, r_intersect);
 	r_list_foreach (t->rows, iter, row) {
-		char *item;
-		int c = 0;
-		r_list_foreach (row->items, iter2, item) {
-			RTableColumn *col = r_list_get_n (t->cols, c);
-			if (col) {
-				int l = __strbuf_append_col_aligned_fancy (t, sb, col, item);
-				len = R_MAX (len, l);
-			}
-			c++;
+		if (!t->options.wrap || !wraprow (t, sb, row, v_line)) {
+			row_fancy (t, sb, row, v_line);
 		}
-		r_strbuf_appendf (sb, "%s\n", v_line);
 	}
 
 	if (SHOULD_SHOW_SUM (t)) {
@@ -468,8 +524,7 @@ R_API char *r_table_tofancystring(RTable *t) {
 		r_strbuf_appendf (sb, "%s%s%s\n", l_intersect, h_line_str, r_intersect);
 		r_list_foreach (t->cols, iter, col) {
 			char *num = col->total == -1 ? "" : sdb_itoa (col->total, 10, tmp, sizeof (tmp));
-			int l = __strbuf_append_col_aligned_fancy (t, sb, col, num);
-			len = R_MAX (len, l);
+			__strbuf_append_col_aligned_fancy (t, sb, col, num);
 		}
 		r_strbuf_appendf (sb, "%s\n", v_line);
 	}

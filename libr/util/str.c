@@ -3322,7 +3322,15 @@ R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y,
 	return ret;
 }
 
-// TODO: improve loop to wrap by words. add a boolean to wrap by words
+static int wrap_width(const char *str, size_t len) {
+	if (*str == 0x1b) {
+		return 0;
+	}
+	RRune ch;
+	int ulen = r_utf8_decode ((const ut8 *)str, len, &ch);
+	return ulen > 0? rune_display_width (ch): 1;
+}
+
 R_API char *r_str_wrap(const char *str, int w) {
 	if (w < 1 || !str) {
 		return strdup ("");
@@ -3337,71 +3345,58 @@ R_API char *r_str_wrap(const char *str, int w) {
 		return NULL;
 	}
 	char *ret = r;
+	char *line = r;
+	char *last = NULL;
 	char *end = r + r_size;
 	int cw = 0;
+	int lastw = 0;
 	while (*str && r + 1 < end) {
-		size_t ansilen = __str_ansi_length (str);
-		if (ansilen > 1) {
-			if (*str == 0x1b) {
-				// ANSI
-				memcpy (r, str, ansilen);
-				str += ansilen;
-				r += ansilen;
-				continue;
-			} else {
-				// UTF-8 multi-byte
-				RRune ch;
-				int ulen = r_utf8_decode ((const ut8 *)str, ansilen, &ch);
-				if (ulen > 0) {
-					int dw = rune_display_width (ch);
-					if (cw + dw > w) {
-						*r++ = '\n';
-						cw = dw;
-					} else {
-						cw += dw;
-					}
-					memcpy (r, str, ansilen);
-					str += ansilen;
-					r += ansilen;
-				} else {
-					// invalid
-					if (cw >= w) {
-						*r++ = '\n';
-						cw = 1;
-					} else {
-						cw++;
-					}
-					*r++ = *str++;
-				}
-				continue;
-			}
-		}
+		size_t len = __str_ansi_length (str);
 		if (*str == '\t') {
 			str++;
-		} else if (*str == '\r') {
-			str++;
-		} else if (*str == '\n') {
-			*r++ = *str++;
-			cw = 0;
-		} else if (*str == ' ') {
-			if (cw >= w) {
-				*r++ = '\n';
-				cw = 1;
-			} else {
-				cw++;
-			}
-			*r++ = *str++;
 			continue;
-		} else {
-			if (cw > w) {
+		}
+		if (*str == '\r') {
+			str++;
+			continue;
+		}
+		if (*str == '\n') {
+			*r++ = *str++;
+			line = r;
+			last = NULL;
+			cw = 0;
+			continue;
+		}
+		int dw = wrap_width (str, len);
+		if (dw > 0 && cw + dw > w && r > line) {
+			if (last) {
+				int tail = cw - lastw;
+				*last = '\n';
+				line = last + 1;
+				last = NULL;
+				cw = tail;
+			}
+			if (cw + dw > w && r > line) {
 				*r++ = '\n';
-				*r++ = *str++;
-				cw = 1;
-			} else {
-				*r++ = *str++;
-				cw++;
+				line = r;
+				cw = 0;
 			}
 		}
+		if (*str == ' ' && r == line) {
+			str++;
+			continue;
+		}
+		if (len >= (size_t)(end - r)) {
+			break;
+		}
+		if (*str == ' ') {
+			last = r;
+			lastw = cw + dw;
+		}
+		memcpy (r, str, len);
+		r += len;
+		str += len;
+		cw += dw;
 	}
 	*r = 0;
 	return ret;
