@@ -397,6 +397,47 @@ bool test_r_table_tocsv_escape(void) {
 	mu_end;
 }
 
+bool test_r_table_fancy_emoji_width(void) {
+	RTableOptions options = {
+		.utf8 = true,
+	};
+	RTable *t = r_table_new ("emoji_width", &options);
+	RTableColumnType *typeString = r_table_type ("string");
+	r_table_add_column (t, typeString, "emoji", 0);
+	r_table_add_column (t, typeString, "value", 0);
+	r_table_add_row (t, "\xe2\x9c\x85", "check", NULL);
+	r_table_add_row (t, "\xe2\x9a\xa0\xef\xb8\x8f", "warn", NULL);
+	r_table_add_row (t, "\xe2\x9d\x8c", "cross", NULL);
+	r_table_add_row (t, "\xf0\x9f\x93\x8a", "chart", NULL);
+
+	char *s = r_table_tofancystring (t);
+	mu_assert_notnull (s, "fancy emoji table not null");
+	char *dup = strdup (s);
+	char *p = dup;
+	int expected_width = -1;
+	while (p && *p) {
+		char *nl = strchr (p, '\n');
+		if (nl) {
+			*nl = 0;
+		}
+		if (*p) {
+			int width = r_str_display_width (p);
+			if (expected_width < 0) {
+				expected_width = width;
+			}
+			mu_assert_eq (width, expected_width, "all fancy emoji table lines have equal display width");
+		}
+		if (!nl) {
+			break;
+		}
+		p = nl + 1;
+	}
+	free (dup);
+	free (s);
+	r_table_free (t);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test(test_r_table);
 	mu_run_test(test_r_table_column_type);
@@ -406,6 +447,7 @@ bool all_tests(void) {
 	mu_run_test(test_r_table_group);
 	mu_run_test (test_r_table_columns);
 	mu_run_test (test_r_table_tocsv_escape);
+	mu_run_test (test_r_table_fancy_emoji_width);
 	return tests_passed != tests_run;
 }
 

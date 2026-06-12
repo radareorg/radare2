@@ -470,7 +470,7 @@ R_API char *r_str_md2txt(const char *md, const RMarkdownOptions *options) {
 				}
 				if (codeblock) {
 					if (usecolor) {
-						r_strbuf_append (sb, "  " Color_BGYELLOW " " Color_BLACK);
+						r_strbuf_append (sb, "  " Color_BGGRAY " " Color_WHITE);
 					} else {
 						r_strbuf_append (sb, "   ");
 					}
