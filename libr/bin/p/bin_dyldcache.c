@@ -110,30 +110,31 @@ static ut64 locsym_entry_get(const void *entries, ut32 i, bool has_large_entries
 	return e->dylibOffset;
 }
 
-static RDyldBinImage *find_bin_by_locsym_offset(RDyldCache *cache, ut64 dylib_offset) {
-	// The 'dylibOffset' stored in a local-symbols entry is the unslid VM offset
-	// of the dylib's mach header relative to the cache base address (the vaddr
-	// of the first mapping), *not* a file offset into the concatenated subcache
-	// buffer. Matching it against bin->va is independent of how the subcaches
-	// are laid out on disk (codesignature padding, inter-subcache VM gaps, ...),
-	// which is what previously broke local symbols for images living in any
-	// subcache other than the first one.
+static HtUP *create_bin_by_locsym_offset(RDyldCache *cache) {
 	if (!cache->n_maps) {
 		return NULL;
 	}
-	const ut64 target_va = cache->maps[0].address + dylib_offset;
+	HtUP *bin_by_locsym = ht_up_new0 ();
+	if (!bin_by_locsym) {
+		return NULL;
+	}
+	const ut64 base_va = cache->maps[0].address;
 	RListIter *iter;
 	RDyldBinImage *bin;
 	r_list_foreach (cache->bins, iter, bin) {
-		if (bin->va == target_va) {
-			return bin;
+		if (bin->va >= base_va) {
+			ht_up_insert (bin_by_locsym, bin->va - base_va, bin);
 		}
 	}
-	return NULL;
+	return bin_by_locsym;
 }
 
 static void match_bin_entries(RDyldCache *cache, void *entries, ut64 entries_count, bool has_large_entries) {
 	if (!cache || !cache->bins || !entries) {
+		return;
+	}
+	HtUP *bin_by_locsym = create_bin_by_locsym_offset (cache);
+	if (!bin_by_locsym) {
 		return;
 	}
 	ut32 i;
@@ -141,12 +142,13 @@ static void match_bin_entries(RDyldCache *cache, void *entries, ut64 entries_cou
 		ut32 start_index = 0;
 		ut32 count = 0;
 		ut64 dylib_offset = locsym_entry_get (entries, i, has_large_entries, &start_index, &count);
-		RDyldBinImage *bin = find_bin_by_locsym_offset (cache, dylib_offset);
+		RDyldBinImage *bin = ht_up_find (bin_by_locsym, dylib_offset, NULL);
 		if (bin) {
 			bin->nlist_start_index = start_index;
 			bin->nlist_count = count;
 		}
 	}
+	ht_up_free (bin_by_locsym);
 }
 
 static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
