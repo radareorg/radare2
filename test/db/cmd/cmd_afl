@@ -259,7 +259,7 @@ EXPECT=<<EOF
   1 sym.imp.getopt_long
   1 sym.imp.ioctl
   1 fcn.00016d50
-  1 fcn.00017560
+  1 sub.__cxa_atexit
   1 sym.imp.setlocale
   1 fcn.00015b10
   1 sym.imp.strcmp

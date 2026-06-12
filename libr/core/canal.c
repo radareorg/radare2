@@ -571,6 +571,46 @@ static void function_rename(RFlag *flags, RAnalFunction *fcn) {
 	}
 }
 
+static void autoname_tail_jmp_stub(RCore *core, RAnalFunction *fcn) {
+	if (!r_str_startswith (fcn->name, "fcn.") || r_anal_function_linear_size (fcn) > 64
+			|| r_anal_function_count_refs (fcn, R_ANAL_REF_TYPE_CALL) > 0) {
+		return;
+	}
+	RListIter *iter;
+	RAnalBlock *bb;
+	const char *impname = NULL;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->ninstr < 1) {
+			continue;
+		}
+		ut64 last = r_anal_bb_opaddr_i (bb, bb->ninstr - 1);
+		RAnalOp *op = r_core_anal_op (core, last, R_ARCH_OP_MASK_BASIC);
+		if (!op) {
+			continue;
+		}
+		if ((op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_JMP) {
+			RFlagItem *flg = r_flag_get_in (core->flags, op->jump);
+			if (flg && (r_str_startswith (flg->name, "sym.imp.") || r_str_startswith (flg->name, "loc.imp."))) {
+				impname = flg->name + strlen ("sym.imp.");
+			}
+		}
+		r_anal_op_free (op);
+		if (impname) {
+			break;
+		}
+	}
+	if (impname) {
+		char *newname = r_str_newf ("sub.%s", impname);
+		if (r_anal_get_function_byname (core->anal, newname)) {
+			// duplicate names make r_anal_add_function drop the function
+			free (newname);
+			newname = r_str_newf ("sub.%s_%"PFMT64x, impname, fcn->addr);
+		}
+		free (fcn->name);
+		fcn->name = newname;
+	}
+}
+
 static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 	if (r_list_length (fcn->bbs) == 1 && ((RAnalBlock *) r_list_first (fcn->bbs))->ninstr == 1) {
 		// TODO seems wasteful, maybe we should add a function to only retrieve the first?
@@ -587,7 +627,9 @@ static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 			}
 		}
 		RVecAnalRef_free (refs);
+		return;
 	}
+	autoname_tail_jmp_stub (core, fcn);
 }
 
 static bool set_fcn_name_from_flag(RCore *core, RAnalFunction *fcn, RFlagItem *f, const char *fcnpfx) {
