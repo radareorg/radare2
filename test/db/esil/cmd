@@ -18,7 +18,7 @@ dr PC=0xdeadbeef
 aes
 EOF
 EXPECT=<<EOF
-its a trap 0 7
+its a trap 3735928559 7
 EOF
 RUN
 
@@ -35,6 +35,35 @@ EOF
 EXPECT=<<EOF
 type: ill
 its a trap 0 7
+EOF
+RUN
+
+NAME=aesu steps over invalid op by default
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e io.cache=1
+wx 9006909090
+aesu 0x4
+dr rip
+EOF
+EXPECT=<<EOF
+0x00000004
+EOF
+RUN
+
+NAME=aesu stops on invalid op with breakoninvalid
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e io.cache=1
+e esil.breakoninvalid=1
+wx 9006909090
+aesu 0x4
+dr rip
+EOF
+EXPECT=<<EOF
+0x00000001
 EOF
 RUN
 
@@ -74,6 +103,7 @@ aer rax=0xdeadbeef
 aes
 EOF
 EXPECT=<<EOF
+its an ioer 0 0
 its an ioer 0 0
 its an ioer 0 1
 EOF
