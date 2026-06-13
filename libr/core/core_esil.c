@@ -29,11 +29,14 @@ static bool core_esil_op_interrupt(REsil *esil) {
 	return r_esil_fire_interrupt (esil, (ut32)interrupt);
 }
 
-static bool core_esil_cmd(RCore *core, const char *cmd, ut64 a1, ut64 a2) {
+// the first argument passed to esil cmd handlers is an address, the second one
+// is a meaning-dependent value (trap code, write flag, ..). Both are printed in
+// hex so addresses like 0xdeadbeef stay readable
+static bool core_esil_cmd(RCore *core, const char *cmd, ut64 addr, ut64 a2) {
 	if (R_STR_ISEMPTY (cmd)) {
 		return false;
 	}
-	r_core_cmdf (core, "%s %" PFMT64d " %" PFMT64d, cmd, a1, a2);
+	r_core_cmdf (core, "%s 0x%" PFMT64x " 0x%" PFMT64x, cmd, addr, a2);
 	return core->num->value;
 }
 
