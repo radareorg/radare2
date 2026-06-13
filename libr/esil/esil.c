@@ -109,7 +109,6 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 		free (esil);
 		return NULL;
 	}
-	esil->verbose = false;
 	esil->stacksize = stacksize;
 	esil->parse_goto_count = R_ESIL_GOTO_LIMIT;
 	esil->ops = esil_ops_new ();
@@ -634,9 +633,7 @@ static bool internal_esil_reg_read(REsil *esil, const char *regname, ut64 *num, 
 		}
 		if (num) {
 			*num = r_reg_get_value (esil->anal->reg, ri);
-			if (esil->verbose) {
-				eprintf ("%s < %x\n", regname, (int)*num);
-			}
+			R_LOG_DEBUG ("%s < %x", regname, (int)*num);
 		}
 		r_unref (ri);
 		return true;
@@ -1127,9 +1124,7 @@ static int eval_word(REsil *esil, const char *ostr, const char **str) {
 			esil->parse_goto = -1;
 			return 2;
 		}
-		if (esil->verbose) {
-			R_LOG_ERROR ("Cannot find word %d", esil->parse_goto);
-		}
+		R_LOG_DEBUG ("Cannot find word %d", esil->parse_goto);
 		return 1;
 	}
 	if (esil->parse_stop) {

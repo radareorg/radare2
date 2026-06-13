@@ -2596,7 +2596,6 @@ static inline REsil *esil_new_setup(RCore *core) {
 		bool stats = r_config_get_b (core->config, "esil.stats");
 		bool nonull = r_config_get_b (core->config, "esil.nonull");
 		r_esil_setup (esil, core->anal, romem, stats, nonull);
-		esil->verbose = r_config_get_i (core->config, "esil.verbose");
 		esil->cmd = r_core_esil_cmd;
 		const char *et = r_config_get (core->config, "cmd.esil.trap");
 		esil->cmd_trap = R_STR_ISNOTEMPTY (et)? strdup (et): NULL;
