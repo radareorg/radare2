@@ -11,7 +11,6 @@
 #include <float.h>
 #include <fenv.h>
 
-#define IFDBG if (esil->verbose > 1)
 #define OP(v, w, x, y, z) r_esil_set_op (esil, v, w, x, y, z, NULL)
 #define OP2(v, w, x, y, z, i) r_esil_set_op (esil, v, w, x, y, z, i)
 #define	OT_UNK	R_ESIL_OP_TYPE_UNKNOWN
@@ -755,9 +754,7 @@ static bool esil_lsreq(REsil *esil) {
 	if (!r_strs_empty (dst) && r_esil_reg_read (esil, dst.a, &num, NULL)) {
 		if (!r_strs_empty (src) && r_esil_get_parm (esil, src, &num2)) {
 			if (num2 > 63) {
-				if (esil->verbose) {
-					R_LOG_WARN ("Invalid shift at 0x%08"PFMT64x, esil->addr);
-				}
+				R_LOG_DEBUG ("Invalid shift at 0x%08"PFMT64x, esil->addr);
 				num2 = 63;
 			}
 			esil->old = num;
@@ -783,9 +780,7 @@ static bool esil_asr(REsil *esil) {
 		if (!r_strs_empty (param) && r_esil_get_parm (esil, param, &param_num)) {
 			if (param_num > regsize - 1) {
 				// capstone bug?
-				if (esil->verbose) {
-					R_LOG_WARN ("Invalid asr shift of %"PFMT64d" at 0x%"PFMT64x, param_num, esil->addr);
-				}
+				R_LOG_DEBUG ("Invalid asr shift of %"PFMT64d" at 0x%"PFMT64x, param_num, esil->addr);
 				param_num = 30;
 			}
 			bool isNegative;
@@ -1445,9 +1440,7 @@ static bool esil_peek_some(REsil *esil) {
 					}
 					bool oks = r_esil_mem_read (esil, ptr, a, 4);
 					if (!oks) {
-						if (esil->verbose) {
-							R_LOG_ERROR ("Cannot peek from 0x%08" PFMT64x, ptr);
-						}
+						R_LOG_DEBUG ("Cannot peek from 0x%08" PFMT64x, ptr);
 						return false;
 					}
 					ut32 num32 = r_read_ble32 (a, esil_is_big_endian (esil));

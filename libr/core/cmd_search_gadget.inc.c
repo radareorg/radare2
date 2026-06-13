@@ -331,7 +331,6 @@ static REsil *gadget_esil_new(RCore *core) {
 		r_io_bind (core->io, &core->anal->iob);
 		bool nonull = r_config_get_b (core->config, "esil.nonull");
 		r_esil_setup (esil, core->anal, true, false, nonull);
-		esil->verbose = 0;
 		esil->nowrite = true;
 	}
 	return esil;

@@ -1994,7 +1994,6 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
 		r_esil_stack_free (&esil);
-		esil.verbose = 0;
 
 		r_cons_break_push (core->cons, NULL, NULL);
 		for (addr = from; addr < to; addr++) {

@@ -239,7 +239,6 @@ typedef struct r_esil_t {
 	int parse_stop;
 	int parse_goto;
 	int parse_goto_count;
-	int verbose;
 	ut64 flags;
 	ut64 addr;
 	ut64 stack_addr;
