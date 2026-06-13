@@ -109,6 +109,34 @@ its an ioer 0 1
 EOF
 RUN
 
+NAME=esil.iotrap traps invalid writes
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8900  # mov dword [rax], eax
+e cmd.esil.trap=?e trapped
+aer rax=0xdeadbeef
+aes
+EOF
+EXPECT=<<EOF
+trapped 0 3735928559
+EOF
+RUN
+
+NAME=esil.iotrap=0 ignores invalid writes
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8900  # mov dword [rax], eax
+e esil.iotrap=0
+e cmd.esil.trap=?e trapped
+aer rax=0xdeadbeef
+aes
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME=cmd.esil.pin
 FILE=-
 ARGS=-a x86 -b 64

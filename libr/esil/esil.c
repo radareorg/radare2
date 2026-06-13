@@ -467,8 +467,10 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 	if (!esil_legacy_mem_cb (esil, false) && esil_invalid_mem_access (esil, addr)) {
-		esil->trap = R_ANAL_TRAP_READ_ERR;
-		esil->trap_code = addr;
+		if (esil->iotrap) {
+			esil->trap = R_ANAL_TRAP_READ_ERR;
+			esil->trap_code = addr;
+		}
 		esil_cmd_ioer (esil, false);
 	}
 	ut32 i;
@@ -619,8 +621,10 @@ R_API bool r_esil_mem_write_silent(REsil *esil, ut64 addr, const ut8 *buf, int l
 	if (R_LIKELY (esil->mem_if.mem_write (esil->mem_if.mem, addr & esil->addrmask, buf, len))) {
 		return true;
 	}
-	esil->trap = R_ANAL_TRAP_WRITE_ERR;
-	esil->trap_code = addr;
+	if (esil->iotrap) {
+		esil->trap = R_ANAL_TRAP_WRITE_ERR;
+		esil->trap_code = addr;
+	}
 	return false;
 }
 
