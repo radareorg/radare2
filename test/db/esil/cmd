@@ -38,6 +38,20 @@ its a trap 0x0 7
 EOF
 RUN
 
+NAME=aesu stops on invalid cached op
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e io.cache=1
+wx 90ffff9090
+aesu 0x5
+dr rip
+EOF
+EXPECT=<<EOF
+0x00000001
+EOF
+RUN
+
 NAME=cmd.esil.trap hint TRAP
 FILE=-
 ARGS=-a x86 -b 64

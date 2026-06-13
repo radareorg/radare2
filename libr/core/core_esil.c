@@ -586,6 +586,10 @@ R_API bool r_core_esil_single_step(RCore *core) {
 	}
 	const bool has_esil = R_STR_ISNOTEMPTY (R_STRBUF_SAFEGET (&op.esil));
 	const bool invalid_op = !has_esil && (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_TRAP || op.type == R_ANAL_OP_TYPE_UNK);
+	if (invalid_op) {
+		trap_code = R_ANAL_TRAP_INVALID;
+		goto op_trap;
+	}
 	if (op.size < 1) {
 		trap_code = R_ANAL_TRAP_INVALID;
 		goto op_trap;
@@ -609,9 +613,6 @@ R_API bool r_core_esil_single_step(RCore *core) {
 	char *expr = r_strbuf_drain_nofree (&op.esil);
 	r_esil_reg_write_silent (&core->esil.esil, pc_name, pc);
 	r_anal_op_fini (&op);
-	if (invalid_op && R_STR_ISNOTEMPTY (core->esil.cmds.trap)) {
-		core_esil_cmd (core, core->esil.cmds.trap, old_pc, R_ANAL_TRAP_INVALID);
-	}
 	if (R_STR_ISNOTEMPTY (core->esil.cmds.step)) {
 		if (core_esil_cmd (core, core->esil.cmds.step, old_pc, 0)) {
 			free (expr);
