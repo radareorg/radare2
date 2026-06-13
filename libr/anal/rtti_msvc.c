@@ -248,8 +248,7 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 				return NULL;
 			}
 			const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (context->anal->config);
-			ut32 (*read_32)(const void *src) = be? r_read_be32 : r_read_le32; // TODO: use ble32 instead
-			ut32 bcdOffset = read_32 (tmp);
+			ut32 bcdOffset = r_read_ble32 (tmp, be);
 			if (bcdOffset == UT32_MAX) {
 				break;
 			}
