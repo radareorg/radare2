@@ -7778,18 +7778,19 @@ static void core_esil_trace_legacy_op(RCore *core, RAnalOp *op) {
 }
 
 static bool core_esil_decode_op(RCore *core, RAnalOp *op, ut64 addr) {
+	const int opflags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_ESIL;
 	int max_opsize = R_MIN (64, r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE));
 	if (R_UNLIKELY (max_opsize < 1)) {
 		max_opsize = 32;
 	}
 	ut8 buf[64];
-	if (R_UNLIKELY (!r_io_read_at (core->io, addr, buf, max_opsize))) {
+	if (!r_io_read_at (core->io, addr, buf, max_opsize)) {
 		R_LOG_ERROR ("Couldn't read data to decode from 0x%" PFMT64x, addr);
 		return false;
 	}
 	r_anal_op_init (op);
 	r_anal_op_set_bytes (op, addr, buf, max_opsize);
-	r_arch_decode (core->anal->arch, op, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL);
+	r_arch_decode (core->anal->arch, op, opflags);
 	return true;
 }
 
