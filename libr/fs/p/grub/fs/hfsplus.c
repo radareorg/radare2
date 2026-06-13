@@ -488,18 +488,18 @@ static int grub_hfsplus_cmp_catkey(struct grub_hfsplus_key *keya,
 	struct grub_hfsplus_key_internal *keyb) {
 	struct grub_hfsplus_catkey *catkey_a = &keya->catkey;
 	struct grub_hfsplus_catkey_internal *catkey_b = &keyb->catkey;
-	char *filename;
-	grub_uint16_t namelen;
 	int i;
-	int diff;
+	int diff = grub_be_to_cpu32 (catkey_a->parent) - catkey_b->parent;
 
-	diff = grub_be_to_cpu32 (catkey_a->parent) - catkey_b->parent;
 	if (diff) {
 		return diff;
 	}
-	namelen = grub_be_to_cpu16 (catkey_a->namelen);
+	grub_uint16_t namelen = grub_be_to_cpu16 (catkey_a->namelen);
+	if (!*catkey_b->name) {
+		return namelen;
+	}
 
-	filename = grub_malloc ((grub_size_t) namelen * 4 + 1);
+	char *filename = grub_malloc ((grub_size_t) namelen * 4 + 1);
 	if (!filename) {
 		return -1;
 	}
