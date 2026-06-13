@@ -489,6 +489,7 @@ static int grub_hfsplus_cmp_catkey(struct grub_hfsplus_key *keya,
 	struct grub_hfsplus_catkey *catkey_a = &keya->catkey;
 	struct grub_hfsplus_catkey_internal *catkey_b = &keyb->catkey;
 	char *filename;
+	grub_uint16_t namelen;
 	int i;
 	int diff;
 
@@ -496,26 +497,30 @@ static int grub_hfsplus_cmp_catkey(struct grub_hfsplus_key *keya,
 	if (diff) {
 		return diff;
 	}
+	namelen = grub_be_to_cpu16 (catkey_a->namelen);
+
+	filename = grub_malloc ((grub_size_t) namelen * 4 + 1);
+	if (!filename) {
+		return -1;
+	}
 
 	/* Change the filename in keya so the endianness is correct.  */
-	for (i = 0; i < grub_be_to_cpu16 (catkey_a->namelen); i++) {
+	for (i = 0; i < namelen; i++) {
 		catkey_a->name[i] = grub_be_to_cpu16 (catkey_a->name[i]);
 	}
 
-	filename = grub_malloc (grub_be_to_cpu16 (catkey_a->namelen) + 1);
-
-	if (!grub_utf16_to_utf8 ((grub_uint8_t *)filename, catkey_a->name, grub_be_to_cpu16 (catkey_a->namelen))) {
-		return -1; /* XXX: This error never occurs, but in case it happens
+	if (!grub_utf16_to_utf8 ((grub_uint8_t *)filename, catkey_a->name, namelen)) {
+		diff = -1; /* XXX: This error never occurs, but in case it happens
 			just skip this entry.  */
+	} else {
+		diff = strncmp (filename, catkey_b->name, namelen);
 	}
-
-	diff = strncmp (filename, catkey_b->name, grub_be_to_cpu16 (catkey_a->namelen));
 
 	grub_free (filename);
 
 	/* The endianness was changed to host format, change it back to
 	whatever it was.  */
-	for (i = 0; i < grub_be_to_cpu16 (catkey_a->namelen); i++) {
+	for (i = 0; i < namelen; i++) {
 		catkey_a->name[i] = grub_cpu_to_be16 (catkey_a->name[i]);
 	}
 	return diff;
@@ -686,12 +691,14 @@ list_nodes(void *record, void *closure) {
 	struct grub_hfsplus_iterate_dir_closure *c = closure;
 	struct grub_hfsplus_catkey *catkey;
 	char *filename;
+	grub_uint16_t namelen;
 	int i;
 	struct grub_fshelp_node *node;
 	struct grub_hfsplus_catfile *fileinfo;
 	enum grub_fshelp_filetype type = GRUB_FSHELP_UNKNOWN;
 
 	catkey = (struct grub_hfsplus_catkey *)record;
+	namelen = grub_be_to_cpu16 (catkey->namelen);
 
 	fileinfo =
 		(struct grub_hfsplus_catfile *) ((char *)record + grub_be_to_cpu16 (catkey->keylen) + 2 + (grub_be_to_cpu16 (catkey->keylen) % 2));
@@ -721,7 +728,7 @@ list_nodes(void *record, void *closure) {
 	}
 
 	/* Make sure the byte order of the UTF16 string is correct.  */
-	for (i = 0; i < grub_be_to_cpu16 (catkey->namelen); i++) {
+	for (i = 0; i < namelen; i++) {
 		catkey->name[i] = grub_be_to_cpu16 (catkey->name[i]);
 
 		/* If the name is obviously invalid, skip this node.  */
@@ -730,20 +737,20 @@ list_nodes(void *record, void *closure) {
 		}
 	}
 
-	filename = grub_malloc (grub_be_to_cpu16 (catkey->namelen) + 1);
+	filename = grub_malloc ((grub_size_t) namelen * 4 + 1);
 	if (!filename) {
 		return 0;
 	}
 
-	if (!grub_utf16_to_utf8 ((grub_uint8_t *)filename, catkey->name, grub_be_to_cpu16 (catkey->namelen))) {
+	if (!grub_utf16_to_utf8 ((grub_uint8_t *)filename, catkey->name, namelen)) {
 		grub_free (filename);
 		return 0;
 	}
 
-	filename[grub_be_to_cpu16 (catkey->namelen)] = '\0';
+	filename[namelen] = '\0';
 
 	/* Restore the byte order to what it was previously.  */
-	for (i = 0; i < grub_be_to_cpu16 (catkey->namelen); i++) {
+	for (i = 0; i < namelen; i++) {
 		catkey->name[i] = grub_be_to_cpu16 (catkey->name[i]);
 	}
 
@@ -753,7 +760,7 @@ list_nodes(void *record, void *closure) {
 	}
 
 	/* Only accept valid nodes.  */
-	if (grub_strlen (filename) == grub_be_to_cpu16 (catkey->namelen)) {
+	if (grub_strlen (filename) == namelen) {
 		/* A valid node is found; setup the node and call the
 		callback function.  */
 		node = grub_malloc (sizeof (*node));
