@@ -7893,15 +7893,36 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		}
 		if (!stepped) {
 			ret = false;
+			const bool invalid = core->esil.esil.trap_code == R_ANAL_TRAP_INVALID;
+			if (invalid) {
+				if (breakoninvalid) {
+					R_LOG_INFO ("Stopped execution in an invalid instruction (see e??esil.breakoninvalid)");
+					break;
+				}
+				// step over the invalid instruction and keep going;
+				// cmd.esil.trap already fired inside the step
+				RAnalOp op;
+				ut64 next = addr + 1;
+				if (core_esil_decode_op (core, &op, addr)) {
+					next = addr + R_MAX (1, op.size);
+					r_anal_op_fini (&op);
+				}
+				addr = next;
+				r_reg_setv (core->anal->reg, "PC", addr);
+				core->esil.esil.trap = R_ANAL_TRAP_NONE;
+				core->esil.esil.trap_code = 0;
+				ret = true;
+				if (single_step) {
+					break;
+				}
+				continue;
+			}
+			// runtime trap (bad memory access, ...)
 			if (single_step || until_expr) {
 				break;
 			}
-			if (breakoninvalid) {
-				R_LOG_INFO ("Stopped execution in an invalid instruction (see e??esil.breakoninvalid)");
-				break;
-			}
 			if (addr == prev_pc) {
-				// the trap handlers did not advance PC, stop to avoid an endless loop
+				// the trap did not advance PC, stop to avoid an endless loop
 				break;
 			}
 			core->esil.esil.trap = R_ANAL_TRAP_NONE;

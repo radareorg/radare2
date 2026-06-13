@@ -3079,6 +3079,7 @@ static bool cb_iotrap(void *user, void *data) {
 	if (core->anal && core->anal->esil) {
 		core->anal->esil->iotrap = node->i_value;
 	}
+	core->esil.esil.iotrap = node->i_value;
 	return true;
 }
 

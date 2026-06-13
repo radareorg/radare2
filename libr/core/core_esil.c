@@ -418,7 +418,7 @@ R_API bool r_core_esil_init(RCore *core) {
 		.user = core,
 		.set_bits = core_esil_set_bits,
 	};
-	if (!r_esil_init (&core->esil.esil, 4096, false, 64, &reg_if, &mem_if, &util_if)) {
+	if (!r_esil_init (&core->esil.esil, 4096, true, 64, &reg_if, &mem_if, &util_if)) {
 		goto init_fail;
 	}
 	core->esil.esil.anal = core->anal;

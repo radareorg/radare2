@@ -38,13 +38,28 @@ its a trap 0x0 7
 EOF
 RUN
 
-NAME=aesu stops on invalid cached op
+NAME=aesu steps over invalid op by default
 FILE=-
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e io.cache=1
-wx 90ffff9090
-aesu 0x5
+wx 9006909090
+aesu 0x4
+dr rip
+EOF
+EXPECT=<<EOF
+0x00000004
+EOF
+RUN
+
+NAME=aesu stops on invalid op with breakoninvalid
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e io.cache=1
+e esil.breakoninvalid=1
+wx 9006909090
+aesu 0x4
 dr rip
 EOF
 EXPECT=<<EOF
@@ -91,6 +106,34 @@ EXPECT=<<EOF
 its an ioer 0x0 0
 its an ioer 0x0 0
 its an ioer 0x0 1
+EOF
+RUN
+
+NAME=esil.iotrap traps invalid writes
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8900  # mov dword [rax], eax
+e cmd.esil.trap=?e trapped
+aer rax=0xdeadbeef
+aes
+EOF
+EXPECT=<<EOF
+trapped 0x0 3735928559
+EOF
+RUN
+
+NAME=esil.iotrap=0 ignores invalid writes
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8900  # mov dword [rax], eax
+e esil.iotrap=0
+e cmd.esil.trap=?e trapped
+aer rax=0xdeadbeef
+aes
+EOF
+EXPECT=<<EOF
 EOF
 RUN
 
