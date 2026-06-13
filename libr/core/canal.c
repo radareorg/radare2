@@ -621,8 +621,13 @@ static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 			if (rt != R_ANAL_REF_TYPE_CALL) { /* Some fcns don't return */
 				RFlagItem *flg = r_flag_get_in (core->flags, ref->addr);
 				if (flg && r_str_startswith (flg->name, "sym.imp.")) {
-					R_FREE (fcn->name);
-					fcn->name = r_str_newf ("sub.%s", flg->name + 8);
+					char *newname = r_str_newf ("sub.%s", flg->name + 8);
+					if (r_anal_get_function_byname (core->anal, newname)) {
+						free (newname);
+						newname = r_str_newf ("sub.%s_%"PFMT64x, flg->name + 8, fcn->addr);
+					}
+					free (fcn->name);
+					fcn->name = newname;
 				}
 			}
 		}

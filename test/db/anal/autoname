@@ -327,3 +327,115 @@ EXPECT=<<EOF
 0x1000073cc    1     44 sub.printscol_1000073cc
 EOF
 RUN
+
+NAME=duplicate single-instruction import trampolines kept distinct
+FILE=bins/pe/bdc1.ex
+CMDS=<<EOF2
+af @ 0x40706c
+af @ 0x407014
+af @ 0x40709c
+af @ 0x4070a4
+s 0x40706c
+afn
+s 0x407014
+afn
+s 0x40709c
+afn
+s 0x4070a4
+afn
+EOF2
+EXPECT=<<EOF2
+sub.user32.dll_GetWindow
+sub.user32.dll_GetWindow_407014
+sub.user32.dll_GetWindowThreadProcessId
+sub.user32.dll_GetWindowThreadProcessId_4070a4
+EOF2
+RUN
+
+NAME=duplicate single-instruction import trampolines x86-64
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+f sym.imp.foo @ 0x800
+wa jmp 0x800 @ 0x100
+wa jmp 0x800 @ 0x200
+axc 0x800 @ 0x100
+axc 0x800 @ 0x200
+af @ 0x100
+af @ 0x200
+s 0x100
+afn
+s 0x200
+afn
+EOF2
+EXPECT=<<EOF2
+sub.foo
+sub.foo_200
+EOF2
+RUN
+
+NAME=duplicate single-instruction import trampolines arm64
+FILE=malloc://4096
+ARGS=-a arm -b 64
+CMDS=<<EOF2
+f sym.imp.foo @ 0x800
+wa b 0x800 @ 0x100
+wa b 0x800 @ 0x200
+axc 0x800 @ 0x100
+axc 0x800 @ 0x200
+af @ 0x100
+af @ 0x200
+s 0x100
+afn
+s 0x200
+afn
+EOF2
+EXPECT=<<EOF2
+sub.foo
+sub.foo_200
+EOF2
+RUN
+
+NAME=duplicate single-instruction import trampolines arm
+FILE=malloc://4096
+ARGS=-a arm -b 32
+CMDS=<<EOF2
+f sym.imp.foo @ 0x800
+wa b 0x800 @ 0x100
+wa b 0x800 @ 0x200
+axc 0x800 @ 0x100
+axc 0x800 @ 0x200
+af @ 0x100
+af @ 0x200
+s 0x100
+afn
+s 0x200
+afn
+EOF2
+EXPECT=<<EOF2
+sub.foo
+sub.foo_200
+EOF2
+RUN
+
+NAME=duplicate single-instruction import trampolines ppc64
+FILE=malloc://4096
+ARGS=-a ppc -b 64
+CMDS=<<EOF2
+f sym.imp.foo @ 0x800
+wa b 0x800 @ 0x100
+wa b 0x800 @ 0x200
+axc 0x800 @ 0x100
+axc 0x800 @ 0x200
+af @ 0x100
+af @ 0x200
+s 0x100
+afn
+s 0x200
+afn
+EOF2
+EXPECT=<<EOF2
+sub.foo
+sub.foo_200
+EOF2
+RUN
