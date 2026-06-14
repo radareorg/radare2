@@ -600,7 +600,8 @@ R_API bool r_core_esil_single_step(RCore *core) {
 		goto skip;
 	}
 	REsil *trace_esil = R_UNWRAP4 (core, dbg, anal, esil);
-	if (trace_esil && trace_esil->trace) {
+	// Legacy trace execution mutates shared state; keep stepback history authoritative.
+	if (trace_esil && trace_esil->trace && !core->esil.sb.max) {
 		r_esil_trace_op (trace_esil, &op);
 	}
 	char *expr = r_strbuf_drain_nofree (&op.esil);
@@ -678,16 +679,17 @@ trap:
 	return false;
 }
 
-R_API void r_core_esil_stepback(RCore *core) {
-	R_RETURN_IF_FAIL (core && core->io && core->anal && core->esil.reg);
+R_API bool r_core_esil_stepback(RCore *core) {
+	R_RETURN_VAL_IF_FAIL (core && core->io && core->anal && core->esil.reg && core->esil.sb.list.free, false);
 	if (!r_list_length (&core->esil.sb.list)) {
 		// not an error
-		return;
+		return false;
 	}
 	RCoreEsilStepBack *cesb = r_list_pop (&core->esil.sb.list);
 	core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
-	r_esil_parse (&core->esil.esil, cesb->expr);
+	const bool ret = r_esil_parse (&core->esil.esil, cesb->expr);
 	core_esil_stepback_free (cesb);
+	return ret;
 }
 
 R_API void r_core_esil_set_max_stepback(RCore *core, ut32 max_stepback) {
