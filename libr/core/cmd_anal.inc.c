@@ -7772,20 +7772,9 @@ static void core_esil_sync_legacy_trap(RCore *core) {
 
 static void core_esil_trace_legacy_op(RCore *core, RAnalOp *op) {
 	REsil *esil = R_UNWRAP3 (core, anal, esil);
-	if (esil && esil->trace) {
+	// Legacy trace execution mutates shared state; keep stepback history authoritative.
+	if (esil && esil->trace && !core->esil.sb.max) {
 		r_esil_trace_op (esil, op);
-	}
-}
-
-static void core_esil_drop_stepback(RCore *core) {
-	RCoreEsilStepBack *cesb = r_list_pop (&core->esil.sb.list);
-	if (cesb) {
-		if (core->esil.sb.list.free) {
-			core->esil.sb.list.free (cesb);
-		} else {
-			free (cesb->expr);
-			free (cesb);
-		}
 	}
 }
 
@@ -8052,21 +8041,6 @@ R_API RCoreEsilStepStatus r_core_esil_step_until(RCore *core, ut64 until_addr, c
 
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
 	return r_core_esil_step_until (core, until_addr, until_expr, prev_addr, stepOver, NULL) == R_CORE_ESIL_STEP_STATUS_DONE;
-}
-
-R_API bool r_core_esil_step_back(RCore *core) {
-	R_RETURN_VAL_IF_FAIL (core && core->io && core->anal && core->anal->reg, false);
-	REsil *esil = core->anal->esil;
-	if (esil && esil->trace && esil->trace->idx > 0) {
-		core_esil_drop_stepback (core);
-		r_esil_trace_restore (esil, esil->trace->idx - 1);
-		return true;
-	}
-	if (!r_list_length (&core->esil.sb.list)) {
-		return false;
-	}
-	r_core_esil_stepback (core);
-	return true;
 }
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
@@ -9531,7 +9505,7 @@ static void cmd_aes(RCore *core, const char *input) {
 		if (input[2] == '?') {
 			r_core_cmd_help_contains (core, help_msg_aes, "aesb");
 		} else {
-			if (!r_core_esil_step_back (core)) {
+			if (!r_core_esil_stepback (core)) {
 				R_LOG_ERROR ("Cannot step back");
 			}
 			r_core_cmd0 (core, ".ar*");
