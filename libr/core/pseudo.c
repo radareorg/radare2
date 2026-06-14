@@ -250,27 +250,71 @@ static size_t toc_setup_reg(const char *body) {
 	return (k == reglen)? reglen: 0;
 }
 
-// returns the flag named in the comment iff the comment also cites its address
-static RFlagItem *comment_flag(RFlag *flags, const char *cmt) {
-	RFlagItem *fi = NULL;
-	ut64 addr = UT64_MAX;
-	const char *p = cmt;
-	while (*p && !(fi && addr != UT64_MAX)) {
+static ut64 cited_addr(const char *p) {
+	const char *hex = "0123456789abcdefABCDEF";
+	while (*p) {
 		p += strspn (p, " \t/");
 		size_t tl = strcspn (p, " \t");
 		if (tl < 1) {
 			break;
 		}
-		if (!fi && memchr (p, '.', tl)) {
-			char *tok = r_str_ndup (p, tl);
-			fi = r_flag_get (flags, tok);
-			free (tok);
-		} else if (addr == UT64_MAX && tl > 2 && tl <= 18 && r_str_startswith (p, "0x") && strspn (p + 2, "0123456789abcdefABCDEF") == tl - 2) {
-			addr = r_num_get (NULL, p);
+		const char *err = NULL;
+		if (tl > 2 && tl <= 18 && r_str_startswith (p, "0x") && strspn (p + 2, hex) == tl - 2) {
+			ut64 v = r_num_get_err (NULL, p, &err);
+			if (!err) {
+				return v;
+			}
+		} else if (r_str_startswith (p, "[0x") && strspn (p + 3, hex) > 0) {
+			ut64 v = r_num_get_err (NULL, p + 1, &err);
+			if (!err) {
+				return v;
+			}
 		}
 		p += tl;
 	}
-	return (fi && fi->addr == addr)? fi: NULL;
+	return UT64_MAX;
+}
+
+// returns the flag named in the comment iff the comment also cites its address
+static RFlagItem *comment_flag(RFlag *flags, const char *cmt) {
+	RFlagItem *fi = NULL;
+	const char *p = cmt;
+	while (*p && !fi) {
+		p += strspn (p, " \t/");
+		size_t tl = strcspn (p, " \t");
+		if (tl < 1) {
+			break;
+		}
+		if (memchr (p, '.', tl)) {
+			char *tok = r_str_ndup (p, tl);
+			fi = r_flag_get (flags, tok);
+			free (tok);
+		}
+		p += tl;
+	}
+	return (fi && fi->addr == cited_addr (cmt))? fi: NULL;
+}
+
+static inline bool is_flagchar(char c) {
+	return isalnum ((ut8)c) || c == '_' || c == '.';
+}
+
+static RFlagItem *bracket_flag(RFlag *flags, const char *inner, const char *cb, const char *cmt) {
+	const char *dot = memchr (inner, '.', cb - inner);
+	if (!dot) {
+		return NULL;
+	}
+	const char *s = dot, *e = dot;
+	while (s > inner && is_flagchar (s[-1])) {
+		s--;
+	}
+	while (e < cb && is_flagchar (*e)) {
+		e++;
+	}
+	char *name = r_str_ndup (s, e - s);
+	RFlagItem *fi = r_flag_get (flags, name);
+	free (name);
+	return (fi && fi->addr == cited_addr (cmt))? fi: NULL;
 }
 
 // rewrites "dst = [reg ± off] // 0xaddr // name" into "dst = [name]" (or the string itself)
@@ -287,6 +331,9 @@ static char *fold_line(RFlag *flags, const char *line, const char *body, char *b
 	}
 	const char *cmt = strstr (cb, "//");
 	RFlagItem *fi = cmt? comment_flag (flags, cmt): NULL;
+	if (!fi && cmt) {
+		fi = bracket_flag (flags, br + 1, cb, cmt);
+	}
 	if (!fi) {
 		return NULL;
 	}
@@ -1283,6 +1330,56 @@ static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList
 	return r_anal_bb_from_offset (state->core->anal, test_bb->fail);
 }
 
+static int pdc_argnum_cmp(RAnalVar *const *a, RAnalVar *const *b) {
+	return r_anal_var_get_argnum (*a) - r_anal_var_get_argnum (*b);
+}
+
+// "type name, type name, ..." for the true args (isarg) ordered by argnum
+static char *pdc_signature_args(RAnal *anal, RAnalFunction *fcn) {
+	RVecAnalVarPtr *vars = r_anal_function_vars (anal, fcn);
+	if (!vars) {
+		return NULL;
+	}
+	RVecAnalVarPtr_sort (vars, pdc_argnum_cmp);
+	RStrBuf *sb = r_strbuf_new ("");
+	RAnalVar **it;
+	bool first = true;
+	R_VEC_FOREACH (vars, it) {
+		RAnalVar *var = *it;
+		if (!var->isarg) {
+			continue;
+		}
+		const char *nm = R_STR_ISNOTEMPTY (var->name)? var->name: var->regname;
+		const char *ty = R_STR_ISNOTEMPTY (var->type)? var->type: "int";
+		r_strbuf_appendf (sb, "%s%s %s", first? "": ", ", ty, nm? nm: "arg");
+		first = false;
+	}
+	RVecAnalVarPtr_free (vars);
+	return r_strbuf_drain (sb);
+}
+
+static char *pdc_return_type(const char *fs, const char *name) {
+	if (R_STR_ISEMPTY (fs)) {
+		return NULL;
+	}
+	const char *paren = strchr (fs, '(');
+	const char *nm = NULL;
+	const char *p = fs;
+	while ((p = strstr (p, name))) {
+		if (paren && p >= paren) {
+			break;
+		}
+		nm = p;
+		p += strlen (name);
+	}
+	if (!nm || nm == fs) {
+		return NULL;
+	}
+	char *ret = r_str_ndup (fs, nm - fs);
+	r_str_trim (ret);
+	return ret;
+}
+
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	bool show_c_headers = *input == 'c';
 	if (*input == '?') {
@@ -1422,16 +1519,13 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	if (state.show_addr || state.show_asm) {
 		print_pipe_header (&state, state.fcn->addr);
 	}
-	if (R_STR_ISEMPTY (fs) || (r_str_startswith (fs, "void") && strstr (fs, "()"))) {
-		if (!strcmp (a0, a1)) {
-			PRINTF ("int %s (int %s) {", state.fcn->name, a0);
-		} else {
-			PRINTF ("int %s (int %s, int %s) {", state.fcn->name, a0, a1);
-		}
-	} else {
-		r_str_replace_char (fs, ';', ' ');
-		r_str_trim (fs);
-		PRINTF ("%s {", fs);
+	{
+		char *params = pdc_signature_args (core->anal, state.fcn);
+		char *rettype = pdc_return_type (fs, state.fcn->name);
+		PRINTF ("%s %s (%s) {", R_STR_ISNOTEMPTY (rettype)? rettype: "int", state.fcn->name,
+			R_STR_ISNOTEMPTY (params)? params: "void");
+		free (params);
+		free (rettype);
 	}
 	free (fs);
 	indent++;
