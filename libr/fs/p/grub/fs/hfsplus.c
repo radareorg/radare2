@@ -483,12 +483,31 @@ fail:
 	return 0;
 }
 
+static char *
+grub_hfsplus_catkey_to_utf8(struct grub_hfsplus_catkey *catkey, grub_uint16_t namelen) {
+	char *filename = grub_malloc ((grub_size_t) namelen * 4 + 1);
+	if (!filename) {
+		return NULL;
+	}
+
+	int i;
+	for (i = 0; i < namelen; i++) {
+		catkey->name[i] = grub_be_to_cpu16 (catkey->name[i]);
+	}
+
+	*grub_utf16_to_utf8 ((grub_uint8_t *)filename, catkey->name, namelen) = '\0';
+
+	for (i = 0; i < namelen; i++) {
+		catkey->name[i] = grub_cpu_to_be16 (catkey->name[i]);
+	}
+	return filename;
+}
+
 /* Compare the on disk catalog key KEYA with the catalog key we are looking for (KEYB) */
 static int grub_hfsplus_cmp_catkey(struct grub_hfsplus_key *keya,
 	struct grub_hfsplus_key_internal *keyb) {
 	struct grub_hfsplus_catkey *catkey_a = &keya->catkey;
 	struct grub_hfsplus_catkey_internal *catkey_b = &keyb->catkey;
-	int i;
 	int diff = grub_be_to_cpu32 (catkey_a->parent) - catkey_b->parent;
 
 	if (diff) {
@@ -499,30 +518,15 @@ static int grub_hfsplus_cmp_catkey(struct grub_hfsplus_key *keya,
 		return namelen;
 	}
 
-	char *filename = grub_malloc ((grub_size_t) namelen * 4 + 1);
+	char *filename = grub_hfsplus_catkey_to_utf8 (catkey_a, namelen);
 	if (!filename) {
 		return -1;
 	}
 
-	/* Change the filename in keya so the endianness is correct.  */
-	for (i = 0; i < namelen; i++) {
-		catkey_a->name[i] = grub_be_to_cpu16 (catkey_a->name[i]);
-	}
-
-	if (!grub_utf16_to_utf8 ((grub_uint8_t *)filename, catkey_a->name, namelen)) {
-		diff = -1; /* XXX: This error never occurs, but in case it happens
-			just skip this entry.  */
-	} else {
-		diff = strncmp (filename, catkey_b->name, namelen);
-	}
+	diff = strcmp (filename, catkey_b->name);
 
 	grub_free (filename);
 
-	/* The endianness was changed to host format, change it back to
-	whatever it was.  */
-	for (i = 0; i < namelen; i++) {
-		catkey_a->name[i] = grub_cpu_to_be16 (catkey_a->name[i]);
-	}
 	return diff;
 }
 
@@ -727,31 +731,16 @@ list_nodes(void *record, void *closure) {
 		return 0;
 	}
 
-	/* Make sure the byte order of the UTF16 string is correct.  */
+	/* If the name is obviously invalid, skip this node.  */
 	for (i = 0; i < namelen; i++) {
-		catkey->name[i] = grub_be_to_cpu16 (catkey->name[i]);
-
-		/* If the name is obviously invalid, skip this node.  */
 		if (catkey->name[i] == 0) {
 			return 0;
 		}
 	}
 
-	filename = grub_malloc ((grub_size_t) namelen * 4 + 1);
+	filename = grub_hfsplus_catkey_to_utf8 (catkey, namelen);
 	if (!filename) {
 		return 0;
-	}
-
-	if (!grub_utf16_to_utf8 ((grub_uint8_t *)filename, catkey->name, namelen)) {
-		grub_free (filename);
-		return 0;
-	}
-
-	filename[namelen] = '\0';
-
-	/* Restore the byte order to what it was previously.  */
-	for (i = 0; i < namelen; i++) {
-		catkey->name[i] = grub_be_to_cpu16 (catkey->name[i]);
 	}
 
 	/* hfs+ is case insensitive.  */
@@ -759,23 +748,22 @@ list_nodes(void *record, void *closure) {
 		type |= GRUB_FSHELP_CASE_INSENSITIVE;
 	}
 
-	/* Only accept valid nodes.  */
-	if (grub_strlen (filename) == namelen) {
-		/* A valid node is found; setup the node and call the
-		callback function.  */
-		node = grub_malloc (sizeof (*node));
-		node->data = c->dir->data;
+	node = grub_malloc (sizeof (*node));
+	if (!node) {
+		grub_free (filename);
+		return 0;
+	}
+	node->data = c->dir->data;
 
-		grub_memcpy (node->extents, fileinfo->data.extents, sizeof (node->extents));
-		node->mtime = grub_be_to_cpu32 (fileinfo->mtime) - 2082844800;
-		node->size = grub_be_to_cpu64 (fileinfo->data.size);
-		node->fileid = grub_be_to_cpu32 (fileinfo->fileid);
+	grub_memcpy (node->extents, fileinfo->data.extents, sizeof (node->extents));
+	node->mtime = grub_be_to_cpu32 (fileinfo->mtime) - 2082844800;
+	node->size = grub_be_to_cpu64 (fileinfo->data.size);
+	node->fileid = grub_be_to_cpu32 (fileinfo->fileid);
 
-		if (c->hook == NULL) {
-			c->ret = 0;
-		} else {
-			c->ret = c->hook (filename, type, node, c->closure);
-		}
+	if (c->hook == NULL) {
+		c->ret = 0;
+	} else {
+		c->ret = c->hook (filename, type, node, c->closure);
 	}
 
 	grub_free (filename);
