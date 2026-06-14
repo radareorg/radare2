@@ -559,10 +559,9 @@ R_API int r_str_word_count(const char *string) {
 
 // Returns a pointer to the first instance of a character that isn't chr in a
 // string.
-// TODO: make this const-correct.
 // XXX if the string is only made up of chr, then the pointer will just point to
 // a null byte!
-R_API char *r_str_ichr(char *str, char chr) {
+R_API const char *r_str_ichr(const char *str, char chr) {
 	while (*str == chr) {
 		str++;
 	}

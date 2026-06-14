@@ -209,7 +209,7 @@ static const char* getargpos(const char *buf, int pos) {
 		if (!buf) {
 			break;
 		}
-		buf = r_str_ichr ((char *) buf, ' ');
+		buf = r_str_ichr (buf, ' ');
 	}
 	return buf;
 }
@@ -828,7 +828,7 @@ int run_new_command(RIO *io, RIODesc *iodesc, const char *buf) {
 }
 
 int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
-	buf = r_str_ichr ((char *) buf, ' ');
+	buf = r_str_ichr (buf, ' ');
 
 	if (!run_new_command (io, iodesc, buf)) {
 		return run_old_command (io, iodesc, buf);
