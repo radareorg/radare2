@@ -1,33 +1,34 @@
 NAME=ESIL single stepback
-FILE=bins/elf/analysis/calls_x64
+FILE=malloc://4096
+ARGS=-a x86 -b 64
 CMDS=<<EOF
-e asm.emu=true
-e asm.bits=64
 e asm.arch=x86
-e emu.write=true
+e asm.bits=64
 e io.cache=true
-s loc.main
+wx b801000000bb02000000
+s 0
 aei
 aeim
 aeip
 aets+
 aeso
 aeso
-dr rip,rsp
-pf q @ rsp
+?e after PC=`dr rip`
+?e after eax=`dr eax`
+?e after ebx=`dr ebx`
 aesb
-dr rip,rsp
-pf q @ rsp
-dk 9
+?e back PC=`dr rip`
+?e back eax=`dr eax`
+?e back ebx=`dr ebx`
 aets-
 EOF
 EXPECT=<<EOF
-0x0040052f
-0x00177fe0
-0x00177fe0 = (qword)0x000000000040057c
-0x00400575
-0x00177ff8
-0x00177ff8 = (qword)0x0000000000178000
+after PC=0x0000000a
+after eax=0x00000001
+after ebx=0x00000002
+back PC=0x00000005
+back eax=0x00000001
+back ebx=0x00000000
 EOF
 RUN
 

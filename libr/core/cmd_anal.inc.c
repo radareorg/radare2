@@ -7857,30 +7857,94 @@ static bool core_esil_step_one(RCore *core, ut64 addr, bool step_over, bool r2wa
 	return handled? ok: r_core_esil_single_step (core);
 }
 
-// Steps the core ESIL VM until a stop condition is reached. Returns true when
-// the until condition was reached or the single step completed, and false when
-// emulation stopped early: trap, breakpoint, timeout, user interrupt or an
-// undecodable instruction
-R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
+static void core_esil_set_pc(RCore *core, ut64 pc) {
+	r_reg_setv (core->anal->reg, "PC", pc);
+	if (core->dbg && core->dbg->reg && core->anal->reg != core->dbg->reg) {
+		r_reg_setv (core->dbg->reg, "PC", pc);
+	}
+}
+
+static RCoreEsilStepStatus core_esil_step_status_from_trap(RCore *core) {
+	const int trap = core->esil.esil.trap;
+	const ut32 trap_code = core->esil.esil.trap_code;
+	if (trap == R_ANAL_TRAP_BREAKPOINT || trap_code == R_ANAL_TRAP_BREAKPOINT) {
+		return R_CORE_ESIL_STEP_STATUS_BREAKPOINT;
+	}
+	if (trap == R_ANAL_TRAP_READ_ERR || trap == R_ANAL_TRAP_WRITE_ERR
+			|| trap_code == R_ANAL_TRAP_READ_ERR || trap_code == R_ANAL_TRAP_WRITE_ERR) {
+		return R_CORE_ESIL_STEP_STATUS_IOTRAP;
+	}
+	if (trap == R_ANAL_TRAP_INVALID || trap == R_ANAL_TRAP_UNALIGNED || trap == R_ANAL_TRAP_EXEC_ERR
+			|| trap_code == R_ANAL_TRAP_INVALID || trap_code == R_ANAL_TRAP_UNALIGNED || trap_code == R_ANAL_TRAP_EXEC_ERR) {
+		return R_CORE_ESIL_STEP_STATUS_INVALID;
+	}
+	if (trap || trap_code) {
+		return R_CORE_ESIL_STEP_STATUS_TRAP;
+	}
+	return R_CORE_ESIL_STEP_STATUS_ERROR;
+}
+
+static const char *core_esil_step_status_name(RCoreEsilStepStatus status) {
+	switch (status) {
+	case R_CORE_ESIL_STEP_STATUS_INTERRUPTED:
+		return "user interrupt";
+	case R_CORE_ESIL_STEP_STATUS_TIMEOUT:
+		return "timeout exceeded";
+	case R_CORE_ESIL_STEP_STATUS_MAXSTEPS:
+		return "maximum steps exceeded";
+	case R_CORE_ESIL_STEP_STATUS_BREAKPOINT:
+		return "breakpoint hit";
+	case R_CORE_ESIL_STEP_STATUS_INVALID:
+		return "invalid instruction";
+	case R_CORE_ESIL_STEP_STATUS_IOTRAP:
+		return "I/O trap";
+	case R_CORE_ESIL_STEP_STATUS_TRAP:
+		return "ESIL trap";
+	case R_CORE_ESIL_STEP_STATUS_ERROR:
+		return "step error";
+	case R_CORE_ESIL_STEP_STATUS_DONE:
+		break;
+	}
+	return "completed";
+}
+
+// Steps the core ESIL VM until a stop condition is reached.
+static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver, bool stop_on_fault, ut64 *stop_addr) {
 	const int esiltimeout = r_config_get_i (core->config, "esil.timeout");
 	const bool breakoninvalid = r_config_get_b (core->config, "esil.breakoninvalid");
+	const st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
 	const st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	const bool r2wars = r_str_startswith (arch, "x86") && r_config_get_b (core->config, "cfg.r2wars");
 	const bool single_step = until_addr == UT64_MAX && !until_expr;
 	const ut64 start = esiltimeout > 0? r_time_now_mono (): 0;
 	ut64 addr = r_reg_getv (core->anal->reg, "PC");
-	int ret = true;
+	ut64 steps = 0;
+	RCoreEsilStepStatus status = R_CORE_ESIL_STEP_STATUS_DONE;
 	r_cons_break_push (core->cons, NULL, NULL);
 	while (single_step || addr != until_addr) {
+		if (stop_addr) {
+			stop_addr[0] = addr;
+		}
+		if (!single_step && maxsteps > 0 && steps >= (ut64)maxsteps) {
+			if (!stop_on_fault) {
+				R_LOG_INFO ("[ESIL] Maximum steps exceeded at 0x%08" PFMT64x, addr);
+			}
+			status = R_CORE_ESIL_STEP_STATUS_MAXSTEPS;
+			break;
+		}
 		if (r_cons_is_breaked (core->cons)) {
-			R_LOG_INFO ("[+] ESIL emulation interrupted at 0x%08" PFMT64x, addr);
-			ret = false;
+			if (!stop_on_fault) {
+				R_LOG_INFO ("[+] ESIL emulation interrupted at 0x%08" PFMT64x, addr);
+			}
+			status = R_CORE_ESIL_STEP_STATUS_INTERRUPTED;
 			break;
 		}
 		if (esiltimeout > 0 && ((r_time_now_mono () - start) >> 20) >= esiltimeout) {
-			R_LOG_INFO ("[ESIL] Timeout exceeded");
-			ret = false;
+			if (!stop_on_fault) {
+				R_LOG_INFO ("[ESIL] Timeout exceeded at 0x%08" PFMT64x, addr);
+			}
+			status = R_CORE_ESIL_STEP_STATUS_TIMEOUT;
 			break;
 		}
 		if (prev_addr) {
@@ -7891,6 +7955,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		}
 		const ut64 prev_pc = addr;
 		const bool stepped = core_esil_step_one (core, addr, stepOver, r2wars);
+		steps++;
 		core_esil_sync_legacy_trap (core);
 		addr = r_reg_getv (core->anal->reg, "PC");
 		if (stepped && addr == prev_pc) {
@@ -7904,11 +7969,17 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 		}
 		if (!stepped) {
-			ret = false;
+			status = core_esil_step_status_from_trap (core);
+			if (stop_addr) {
+				stop_addr[0] = prev_pc;
+			}
+			if (stop_on_fault) {
+				break;
+			}
 			const bool invalid = core->esil.esil.trap_code == R_ANAL_TRAP_INVALID;
 			if (invalid) {
 				if (breakoninvalid) {
-					R_LOG_INFO ("Stopped execution in an invalid instruction (see e??esil.breakoninvalid)");
+					R_LOG_INFO ("Stopped execution in an invalid instruction at 0x%08" PFMT64x " (see e??esil.breakoninvalid)", prev_pc);
 					break;
 				}
 				// step over the invalid instruction and keep going;
@@ -7923,7 +7994,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				r_reg_setv (core->anal->reg, "PC", addr);
 				core->esil.esil.trap = R_ANAL_TRAP_NONE;
 				core->esil.esil.trap_code = 0;
-				ret = true;
+				status = R_CORE_ESIL_STEP_STATUS_DONE;
 				if (single_step) {
 					break;
 				}
@@ -7939,15 +8010,20 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 			core->esil.esil.trap = R_ANAL_TRAP_NONE;
 			core->esil.esil.trap_code = 0;
-			ret = true;
+			status = R_CORE_ESIL_STEP_STATUS_DONE;
 			continue;
 		}
 		if (follow > 0 && (addr < core->addr || addr > (core->addr + follow))) {
 			r_core_seek (core, addr, true);
 		}
-		if (r_bp_get_at (core->dbg->bp, addr)) {
-			R_LOG_INFO ("esil breakpoint hit at 0x%" PFMT64x, addr);
-			ret = false;
+		if (core->dbg && core->dbg->bp && r_bp_get_at (core->dbg->bp, addr)) {
+			if (!stop_on_fault) {
+				R_LOG_INFO ("esil breakpoint hit at 0x%" PFMT64x, addr);
+			}
+			if (stop_addr) {
+				stop_addr[0] = addr;
+			}
+			status = R_CORE_ESIL_STEP_STATUS_BREAKPOINT;
 			break;
 		}
 		if (until_expr) {
@@ -7966,7 +8042,16 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		}
 	}
 	r_cons_break_pop (core->cons);
-	return ret;
+	return status;
+}
+
+R_API RCoreEsilStepStatus r_core_esil_step_until(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver, ut64 *stop_addr) {
+	R_RETURN_VAL_IF_FAIL (core && core->io && core->config && core->anal && core->anal->reg && core->anal->arch && core->cons, R_CORE_ESIL_STEP_STATUS_ERROR);
+	return core_esil_step_until_internal (core, until_addr, until_expr, prev_addr, stepOver, false, stop_addr);
+}
+
+R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
+	return r_core_esil_step_until (core, until_addr, until_expr, prev_addr, stepOver, NULL) == R_CORE_ESIL_STEP_STATUS_DONE;
 }
 
 R_API bool r_core_esil_step_back(RCore *core) {
@@ -9362,6 +9447,50 @@ static void cmd_aep(RCore *core, const char *input) {
 	}
 }
 
+static bool core_esil_op_is_call(int type) {
+	switch (type) {
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_RCALL:
+		return true;
+	}
+	return false;
+}
+
+static void core_esil_log_step_over_stop(RCore *core, RCoreEsilStepStatus status, ut64 stop_addr, ut64 ret_addr) {
+	if (status == R_CORE_ESIL_STEP_STATUS_DONE) {
+		return;
+	}
+	R_LOG_WARN ("ESIL step-over stopped at 0x%08" PFMT64x " before return to 0x%08" PFMT64x ": %s",
+		stop_addr, ret_addr, core_esil_step_status_name (status));
+	if (status == R_CORE_ESIL_STEP_STATUS_IOTRAP || status == R_CORE_ESIL_STEP_STATUS_TRAP) {
+		const int trap = core->esil.esil.trap;
+		const ut32 trap_code = core->esil.esil.trap_code;
+		R_LOG_WARN ("ESIL trap '%s' (%" PFMT32u ") at 0x%08" PFMT64x,
+			r_esil_trapstr (trap), trap_code, stop_addr);
+	}
+}
+
+static void core_esil_step_over(RCore *core, RAnalOp *op) {
+	if (!op || !core_esil_op_is_call (op->type)) {
+		r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+		return;
+	}
+	const ut64 ret_addr = op->addr + op->size;
+	ut64 stop_addr = op->addr;
+	const RCoreEsilStepStatus status = core_esil_step_until_internal (core, ret_addr, NULL, NULL, false, true, &stop_addr);
+	if (status == R_CORE_ESIL_STEP_STATUS_DONE) {
+		return;
+	}
+	core_esil_log_step_over_stop (core, status, stop_addr, ret_addr);
+	if (status != R_CORE_ESIL_STEP_STATUS_BREAKPOINT && r_config_get_b (core->config, "esil.stepover.force")) {
+		core_esil_set_pc (core, ret_addr);
+		R_LOG_WARN ("ESIL step-over forced PC to 0x%08" PFMT64x " (see e??esil.stepover.force)", ret_addr);
+		return;
+	}
+	core_esil_set_pc (core, stop_addr);
+}
+
 static void cmd_aes(RCore *core, const char *input) {
 	ut64 until_addr = UT64_MAX;
 	ut64 adr;
@@ -9468,26 +9597,10 @@ static void cmd_aes(RCore *core, const char *input) {
 			r_core_esil_step (core, until_addr, until_expr, NULL, true);
 			r_core_cmd0 (core, ".ar*");
 		} else if (!input[2] || input[2] == ' ') { // "aeso [addr]"
-			// step over
 			op = r_core_anal_op (core, r_reg_getv (core->anal->reg,
 				r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC)),
 				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
-			bool step_over = true;
-			if (op) {
-				switch (op->type) {
-				case R_ANAL_OP_TYPE_CALL:
-					until_addr = op->addr + op->size;
-					step_over = false;
-					break;
-				case R_ANAL_OP_TYPE_UCALL:
-				case R_ANAL_OP_TYPE_RCALL:
-					step_over = false;
-					break;
-				default:
-					break;
-				}
-			}
-			r_core_esil_step (core, until_addr, until_expr, NULL, step_over);
+			core_esil_step_over (core, op);
 			r_anal_op_free (op);
 			r_core_cmd0 (core, ".ar*");
 		} else {

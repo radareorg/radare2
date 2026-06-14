@@ -156,3 +156,188 @@ EXPECT=<<EOF
 0x00178000
 EOF
 RUN
+
+NAME=aeso steps over direct call until return
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx e803000000909090b878560000c3
+s 0
+aei
+aeim
+aeip
+aeso
+?e pc=`dr rip`
+?e eax=`dr eax`
+EOF
+EXPECT=<<EOF
+pc=0x00000005
+eax=0x00005678
+EOF
+RUN
+
+NAME=aeso steps over indirect call until return
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx ffd0909090909090bb34120000c3
+s 0
+aei
+aeim
+aeip
+dr rax=8
+aeso
+?e pc=`dr rip`
+?e ebx=`dr ebx`
+EOF
+EXPECT=<<EOF
+pc=0x00000002
+ebx=0x00001234
+EOF
+RUN
+
+NAME=aeso executes plain jump
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx eb0390909090
+s 0
+aei
+aeim
+aeip
+aeso
+?e pc=`dr rip`
+EOF
+EXPECT=<<EOF
+pc=0x00000005
+EOF
+RUN
+
+NAME=aeso executes ret
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c390
+s 0
+aei
+aeim 0x1000 0x100
+aeip
+dr rsp=0x1000
+wx 2301000000000000 @ 0x1000
+aeso
+?e pc=`dr rip`
+EOF
+EXPECT=<<EOF
+pc=0x00000123
+EOF
+RUN
+
+NAME=aeso strict stops on maxsteps before call returns
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e esil.maxsteps=3
+wx e80300000090909090ebfd
+s 0
+aei
+aeim
+aeip
+aeso
+?e pc=`dr rip`
+EOF
+EXPECT=<<EOF
+pc=0x00000008
+EOF
+EXPECT_ERR=<<EOF
+WARN: ESIL step-over stopped at 0x00000008 before return to 0x00000005: maximum steps exceeded
+EOF
+RUN
+
+NAME=aeso force recovers from maxsteps before call returns
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e esil.maxsteps=3
+e esil.stepover.force=true
+wx e80300000090909090ebfd
+s 0
+aei
+aeim
+aeip
+aeso
+?e pc=`dr rip`
+EOF
+EXPECT=<<EOF
+pc=0x00000005
+EOF
+EXPECT_ERR=<<EOF
+WARN: ESIL step-over stopped at 0x00000008 before return to 0x00000005: maximum steps exceeded
+WARN: ESIL step-over forced PC to 0x00000005 (see e??esil.stepover.force)
+EOF
+RUN
+
+NAME=aeso force respects breakpoint in call
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e esil.stepover.force=true
+wx e803000000909090b878560000c3
+db 0x8
+s 0
+aei
+aeim
+aeip
+aeso
+?e pc=`dr rip`
+EOF
+EXPECT=<<EOF
+pc=0x00000008
+EOF
+EXPECT_ERR=<<EOF
+WARN: ESIL step-over stopped at 0x00000008 before return to 0x00000005: breakpoint hit
+EOF
+RUN
+
+NAME=aeso strict stops on invalid instruction in call
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx e80300000090909006c3
+s 0
+aei
+aeim
+aeip
+aeso
+?e pc=`dr rip`
+EOF
+EXPECT=<<EOF
+pc=0x00000008
+EOF
+EXPECT_ERR=<<EOF
+WARN: ESIL step-over stopped at 0x00000008 before return to 0x00000005: invalid instruction
+EOF
+RUN
+
+NAME=aeso force recovers from iotrap in call
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e esil.stepover.force=true
+wx e8030000009090908b00c3
+s 0
+aei
+aeim
+aeip
+dr rax=0xdeadbeef
+aeso
+?e pc=`dr rip`
+EOF
+EXPECT=<<EOF
+pc=0x00000005
+EOF
+EXPECT_ERR=<<EOF
+WARN: ESIL step-over stopped at 0x00000008 before return to 0x00000005: I/O trap
+WARN: ESIL trap 'read-err' (3735928559) at 0x00000008
+WARN: ESIL step-over forced PC to 0x00000005 (see e??esil.stepover.force)
+EOF
+RUN
