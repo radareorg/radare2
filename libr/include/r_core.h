@@ -755,7 +755,6 @@ R_API int r_core_anal_refs(RCore *core, const char *input);
 R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input);
 R_API bool r_core_esil_cmd(REsil *esil, const char *cmd, ut64 a1, ut64 a2);
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
-R_API bool r_core_esil_step_back(RCore *core);
 R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr);
 R_API bool r_core_anal_bb_seek(RCore *core, ut64 addr);
 R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth);
@@ -827,7 +826,7 @@ R_API void r_core_esil_load_arch(RCore *core);
 R_API void r_core_esil_unload_arch(RCore *core);
 R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr);
 R_API bool r_core_esil_single_step(RCore *core);
-R_API void r_core_esil_stepback(RCore *core);	//replacement for r_core_esil_step_back; rename later
+R_API bool r_core_esil_stepback(RCore *core);
 R_API void r_core_esil_set_max_stepback(RCore *core, ut32 max_stepback);
 
 // both do the same, we should get rid of one of them

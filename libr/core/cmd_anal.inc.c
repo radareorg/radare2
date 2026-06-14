@@ -7772,7 +7772,8 @@ static void core_esil_sync_legacy_trap(RCore *core) {
 
 static void core_esil_trace_legacy_op(RCore *core, RAnalOp *op) {
 	REsil *esil = R_UNWRAP3 (core, anal, esil);
-	if (esil && esil->trace) {
+	// Legacy trace execution mutates shared state; keep stepback history authoritative.
+	if (esil && esil->trace && !core->esil.sb.max) {
 		r_esil_trace_op (esil, op);
 	}
 }
@@ -7955,22 +7956,6 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	}
 	r_cons_break_pop (core->cons);
 	return ret;
-}
-
-R_API bool r_core_esil_step_back(RCore *core) {
-	R_RETURN_VAL_IF_FAIL (core && core->anal, false);
-#if 0
-	if (!core->anal->esil || !core->anal->esil->trace) {
-		R_LOG_INFO ("Run `aeim` to initialize the esil VM and enable e dbg.trace=true");
-		return false;
-	}
-#endif
-	REsil *esil = core->anal->esil;
-	if (esil && esil->trace && esil->trace->idx > 0) {
-		r_esil_trace_restore (esil, esil->trace->idx - 1);
-		return true;
-	}
-	return false;
 }
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
@@ -9391,7 +9376,7 @@ static void cmd_aes(RCore *core, const char *input) {
 		if (input[2] == '?') {
 			r_core_cmd_help_contains (core, help_msg_aes, "aesb");
 		} else {
-			if (!r_core_esil_step_back (core)) {
+			if (!r_core_esil_stepback (core)) {
 				R_LOG_ERROR ("Cannot step back");
 			}
 			r_core_cmd0 (core, ".ar*");
