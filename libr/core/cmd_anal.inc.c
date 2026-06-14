@@ -9351,6 +9351,24 @@ static void cmd_aep(RCore *core, const char *input) {
 	}
 }
 
+static bool core_esil_op_is_call(int type) {
+	switch (type) {
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_RCALL:
+		return true;
+	}
+	return false;
+}
+
+static void core_esil_step_over(RCore *core, RAnalOp *op) {
+	if (op && core_esil_op_is_call (op->type)) {
+		r_core_esil_step (core, op->addr + op->size, NULL, NULL, false);
+		return;
+	}
+	r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+}
+
 static void cmd_aes(RCore *core, const char *input) {
 	ut64 until_addr = UT64_MAX;
 	ut64 adr;
@@ -9457,14 +9475,10 @@ static void cmd_aes(RCore *core, const char *input) {
 			r_core_esil_step (core, until_addr, until_expr, NULL, true);
 			r_core_cmd0 (core, ".ar*");
 		} else if (!input[2] || input[2] == ' ') { // "aeso [addr]"
-			// step over
 			op = r_core_anal_op (core, r_reg_getv (core->anal->reg,
 				r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC)),
 				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
-			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
-				until_addr = op->addr + op->size;
-			}
-			r_core_esil_step (core, until_addr, until_expr, NULL, false);
+			core_esil_step_over (core, op);
 			r_anal_op_free (op);
 			r_core_cmd0 (core, ".ar*");
 		} else {
