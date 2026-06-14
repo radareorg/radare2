@@ -8043,10 +8043,6 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	return r_core_esil_step_until (core, until_addr, until_expr, prev_addr, stepOver, NULL) == R_CORE_ESIL_STEP_STATUS_DONE;
 }
 
-R_API bool r_core_esil_step_back(RCore *core) {
-	return r_core_esil_stepback (core);
-}
-
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 	ut64 addr = R_STR_ISEMPTY (addrstr)? core->addr: r_num_math (core->num, addrstr);
 	ut64 type = r_core_anal_address (core, addr);

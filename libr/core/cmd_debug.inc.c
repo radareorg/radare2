@@ -5649,7 +5649,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 				R_LOG_ERROR ("stepping back failed");
 			}
 		} else {
-			if (r_core_esil_step_back (core)) {
+			if (r_core_esil_stepback (core)) {
 				r_core_cmd0 (core, ".dr*");
 			} else {
 				R_LOG_ERROR ("cannot step back");
