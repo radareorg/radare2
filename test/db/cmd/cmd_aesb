@@ -2,8 +2,6 @@ NAME=ESIL single stepback
 FILE=malloc://4096
 ARGS=-a x86 -b 64
 CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
 e io.cache=true
 wx b801000000bb02000000
 s 0
@@ -96,5 +94,107 @@ after_mov_jmp PC=0x00000107
 after_mov_jmp rax=0x00000001
 back_after_mov PC=0x00000105
 back_after_mov rax=0x00000001
+EOF
+RUN
+
+NAME=ESIL stepback without trace session
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e io.cache=true
+wx b801000000bb02000000
+s 0
+aei
+aeim
+aeip
+aes
+aes
+?e after PC=`dr rip`
+?e after eax=`dr eax`
+?e after ebx=`dr ebx`
+aesb
+?e back PC=`dr rip`
+?e back eax=`dr eax`
+?e back ebx=`dr ebx`
+EOF
+EXPECT=<<EOF
+after PC=0x0000000a
+after eax=0x00000001
+after ebx=0x00000002
+back PC=0x00000005
+back eax=0x00000001
+back ebx=0x00000000
+EOF
+RUN
+
+NAME=ESIL stepback restores push memory
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e io.cache=true
+wx 50
+s 0
+aei
+aeim 0x1000 0x100
+aeip
+dr rsp=0x1080
+dr rax=0x1122334455667788
+?e before rsp=`dr rsp`
+?e before mem=`pv8 @ 0x1078`
+aes
+?e after rsp=`dr rsp`
+?e after mem=`pv8 @ 0x1078`
+aesb
+?e back rsp=`dr rsp`
+?e back mem=`pv8 @ 0x1078`
+EOF
+EXPECT=<<EOF
+before rsp=0x00001080
+before mem=0x0000000000000000
+after rsp=0x00001078
+after mem=0x1122334455667788
+back rsp=0x00001080
+back mem=0x0000000000000000
+EOF
+RUN
+
+NAME=ESIL maxbacksteps prunes old history
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e io.cache=true
+e esil.maxbacksteps=1
+wx b801000000bb02000000
+s 0
+aei
+aeim
+aeip
+aes
+aes
+?e after PC=`dr rip`
+?e after eax=`dr eax`
+?e after ebx=`dr ebx`
+aesb
+?e back1 PC=`dr rip`
+?e back1 eax=`dr eax`
+?e back1 ebx=`dr ebx`
+aesb
+?e back2 PC=`dr rip`
+?e back2 eax=`dr eax`
+?e back2 ebx=`dr ebx`
+EOF
+EXPECT=<<EOF
+after PC=0x0000000a
+after eax=0x00000001
+after ebx=0x00000002
+back1 PC=0x00000005
+back1 eax=0x00000001
+back1 ebx=0x00000000
+back2 PC=0x00000005
+back2 eax=0x00000001
+back2 ebx=0x00000000
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot step back
 EOF
 RUN
