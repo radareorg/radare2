@@ -7777,6 +7777,18 @@ static void core_esil_trace_legacy_op(RCore *core, RAnalOp *op) {
 	}
 }
 
+static void core_esil_drop_stepback(RCore *core) {
+	RCoreEsilStepBack *cesb = r_list_pop (&core->esil.sb.list);
+	if (cesb) {
+		if (core->esil.sb.list.free) {
+			core->esil.sb.list.free (cesb);
+		} else {
+			free (cesb->expr);
+			free (cesb);
+		}
+	}
+}
+
 static bool core_esil_decode_op(RCore *core, RAnalOp *op, ut64 addr) {
 	const int opflags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_ESIL;
 	int max_opsize = R_MIN (64, r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE));
