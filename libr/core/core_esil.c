@@ -302,10 +302,10 @@ static void core_esil_record_stepback(RCore *core) {
 	cesb->addr = sb->old_pc;
 }
 
-static bool core_esil_step_delay_slot(RCore *core, RArchSession *as, const char *pc_name, ut64 ds_addr, int max_opsize) {
+static bool core_esil_step_delay_slot(RCore *core, RArchSession *as, ut64 ds_addr, int max_opsize) {
 	REsil *esil = &core->esil.esil;
 	ut64 pc_after_op = 0;
-	if (!r_esil_reg_read_silent (esil, pc_name, &pc_after_op, NULL)) {
+	if (!r_esil_reg_read_silent (esil, "PC", &pc_after_op, NULL)) {
 		return false;
 	}
 	const char *arch = r_config_get (core->config, "asm.arch");
@@ -331,12 +331,12 @@ static bool core_esil_step_delay_slot(RCore *core, RArchSession *as, const char 
 			esil->jump_target_set = 0;
 			esil->delay = 0;
 		} else if (saved_pc != UT64_MAX) {
-			r_esil_reg_write_silent (esil, pc_name, saved_pc);
+			r_esil_reg_write_silent (esil, "PC", saved_pc);
 			esil->delay = 0;
 		}
 		return true;
 	}
-	r_esil_reg_write_silent (esil, pc_name, ds_addr);
+	r_esil_reg_write_silent (esil, "PC", ds_addr);
 	char *expr = r_strbuf_drain_nofree (&op.esil);
 	if (R_STR_ISNOTEMPTY (expr)) {
 		esil->addr = ds_addr;
@@ -345,31 +345,31 @@ static bool core_esil_step_delay_slot(RCore *core, RArchSession *as, const char 
 	}
 	free (expr);
 	ut64 pc_ds = 0;
-	(void)r_esil_reg_read_silent (esil, pc_name, &pc_ds, NULL);
+	(void)r_esil_reg_read_silent (esil, "PC", &pc_ds, NULL);
 	if (pc_ds == ds_addr) {
-		r_esil_reg_write_silent (esil, pc_name, ds_addr + op.size);
+		r_esil_reg_write_silent (esil, "PC", ds_addr + op.size);
 		pc_ds = ds_addr + op.size;
 	}
 	if (saved_pc != UT64_MAX && !esil->jump_target_set &&
 		(pc_ds == ds_addr || pc_ds == ds_addr + op.size)) {
-		r_esil_reg_write_silent (esil, pc_name, saved_pc);
+		r_esil_reg_write_silent (esil, "PC", saved_pc);
 	}
 	r_anal_op_fini (&op);
 	return true;
 }
 
-static void core_esil_align_pc(RCore *core, const char *pc_name) {
+static void core_esil_align_pc(RCore *core) {
 	RArchConfig *cfg = R_UNWRAP3 (core, anal, config);
 	if (!cfg || cfg->codealign < 1) {
 		return;
 	}
 	ut64 pc = 0;
-	if (r_esil_reg_read_silent (&core->esil.esil, pc_name, &pc, NULL)) {
-		r_esil_reg_write_silent (&core->esil.esil, pc_name, pc - (pc % cfg->codealign));
+	if (r_esil_reg_read_silent (&core->esil.esil, "PC", &pc, NULL)) {
+		r_esil_reg_write_silent (&core->esil.esil, "PC", pc - (pc % cfg->codealign));
 	}
 }
 
-static bool core_esil_run_pin(RCore *core, ut64 pc, const char *pc_name, int size) {
+static bool core_esil_run_pin(RCore *core, ut64 pc, int size) {
 	const char *pin = r_anal_pin_at (core->anal, pc);
 	if (R_STR_ISEMPTY (pin) || r_str_startswith (pin, "soft.")) {
 		return false;
@@ -384,11 +384,11 @@ static bool core_esil_run_pin(RCore *core, ut64 pc, const char *pc_name, int siz
 		r_core_cmd0 (core, pin);
 	}
 	ut64 pin_pc = 0;
-	if (!r_esil_reg_read_silent (&core->esil.esil, pc_name, &pin_pc, NULL)) {
+	if (!r_esil_reg_read_silent (&core->esil.esil, "PC", &pin_pc, NULL)) {
 		return true;
 	}
 	if (pin_pc == pc) {
-		r_esil_reg_write_silent (&core->esil.esil, pc_name, pc + size);
+		r_esil_reg_write_silent (&core->esil.esil, "PC", pc + size);
 	}
 	return true;
 }
@@ -475,18 +475,13 @@ R_API void r_core_esil_unload_arch(RCore *core) {
 R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (expr && core && core->anal && core->anal->arch && core->io && core->esil.reg, false);
 	core->esil.esil.anal = core->anal;
-	const char *pc_name = r_reg_alias_getname (core_esil_reg (core), R_REG_ALIAS_PC);
-	if (!pc_name) {
-		R_LOG_ERROR ("CoreEsil reg profile has no pc register");
-		return false;
-	}
 	ut64 pc;
-	if (!r_esil_reg_read_silent (&core->esil.esil, pc_name, &pc, NULL)) {
+	if (!r_esil_reg_read_silent (&core->esil.esil, "PC", &pc, NULL)) {
 		R_LOG_ERROR ("Couldn't read from PC register");
 		return false;
 	}
-	const bool trap_revert = core_esil_trap_revert_start (core, pc_name, pc);
-	r_esil_reg_write_silent (&core->esil.esil, pc_name, addr);
+	const bool trap_revert = core_esil_trap_revert_start (core, "PC", pc);
+	r_esil_reg_write_silent (&core->esil.esil, "PC", addr);
 	if (r_esil_parse (&core->esil.esil, expr) || !core->esil.esil.trap) {
 		if (trap_revert) {
 			core_esil_record_stepback (core);
@@ -502,7 +497,7 @@ R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr) {
 		r_esil_parse (&core->esil.esil, expr);
 		free (expr);
 	} else {
-		r_esil_reg_write_silent (&core->esil.esil, pc_name, pc);
+		r_esil_reg_write_silent (&core->esil.esil, "PC", pc);
 	}
 	if (R_STR_ISNOTEMPTY (core->esil.cmds.trap)) {
 		core_esil_cmd (core, core->esil.cmds.trap, pc, core->esil.esil.trap_code);
@@ -513,13 +508,8 @@ R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr) {
 R_API bool r_core_esil_single_step(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core && core->anal && core->anal->arch && core->io && core->esil.reg, false);
 	core->esil.esil.anal = core->anal;
-	const char *pc_name = r_reg_alias_getname (core_esil_reg (core), R_REG_ALIAS_PC);
-	if (!pc_name) {
-		R_LOG_ERROR ("CoreEsil reg profile has no pc register");
-		return false;
-	}
 	ut64 pc;
-	if (!r_esil_reg_read_silent (&core->esil.esil, pc_name, &pc, NULL)) {
+	if (!r_esil_reg_read_silent (&core->esil.esil, "PC", &pc, NULL)) {
 		R_LOG_ERROR ("Couldn't read from PC register");
 		return false;
 	}
@@ -601,11 +591,11 @@ R_API bool r_core_esil_single_step(RCore *core) {
 		trap_code = R_ANAL_TRAP_INVALID;
 		goto op_trap;
 	}
-	trap_revert = core_esil_trap_revert_start (core, pc_name, old_pc);
+	trap_revert = core_esil_trap_revert_start (core, "PC", old_pc);
 	pc += op.size;
 	const ut64 ds_addr = pc;
 	const bool has_delay = op.delay > 0;
-	if (core_esil_run_pin (core, old_pc, pc_name, op.size)) {
+	if (core_esil_run_pin (core, old_pc, op.size)) {
 		r_anal_op_fini (&op);
 		goto skip;
 	}
@@ -614,7 +604,7 @@ R_API bool r_core_esil_single_step(RCore *core) {
 		r_esil_trace_op (trace_esil, &op);
 	}
 	char *expr = r_strbuf_drain_nofree (&op.esil);
-	r_esil_reg_write_silent (&core->esil.esil, pc_name, pc);
+	r_esil_reg_write_silent (&core->esil.esil, "PC", pc);
 	r_anal_op_fini (&op);
 	if (R_STR_ISNOTEMPTY (core->esil.cmds.step)) {
 		if (core_esil_cmd (core, core->esil.cmds.step, old_pc, 0)) {
@@ -632,12 +622,12 @@ R_API bool r_core_esil_single_step(RCore *core) {
 	free (expr);
 	if (suc) {
 		if (has_delay && core->esil.esil.delay &&
-			!core_esil_step_delay_slot (core, as, pc_name, ds_addr, max_opsize)) {
+			!core_esil_step_delay_slot (core, as, ds_addr, max_opsize)) {
 			trap_code = R_ANAL_TRAP_INVALID;
 			r_unref (as);
 			goto trap;
 		}
-		core_esil_align_pc (core, pc_name);
+		core_esil_align_pc (core);
 skip:
 		if (trap_revert) {
 			core_esil_record_stepback (core);
@@ -663,7 +653,7 @@ skip:
 		r_esil_parse (&core->esil.esil, expr);
 		free (expr);
 		if (!trap_revert_config) {
-			r_esil_reg_write_silent (&core->esil.esil, pc_name, pc);
+			r_esil_reg_write_silent (&core->esil.esil, "PC", pc);
 		}
 		core->esil.esil.trap = trap_type;
 		core->esil.esil.trap_code = trap_code;
