@@ -237,17 +237,19 @@ R_API RAnal *r_anal_new(void) {
 	anal->zign_path = strdup ("");
 	anal->cb_printf = (PrintfCallback) printf;
 	anal->reg = r_reg_new ();
-	anal->esil = r_esil_new_simple (1, anal->reg, &anal->iob);
-	anal->esil->mem_if = (REsilMemInterface) {
+	REsilOptions esil_opt = r_esil_options (anal->reg, NULL);
+	esil_opt.addrsize = 1;
+	esil_opt.ifaces.mem = (REsilMemInterface) {
 		.mem = anal,
 		.mem_switch = anal_esil_mem_switch,
 		.mem_read = anal_esil_mem_read,
 		.mem_write = anal_esil_mem_write,
 	};
-	anal->esil->util_if = (REsilUtilInterface) {
+	esil_opt.ifaces.util = (REsilUtilInterface) {
 		.user = anal,
 		.set_bits = anal_esil_set_bits,
 	};
+	anal->esil = r_esil_new (&esil_opt);
 	anal->esil->anal = anal;
 	(void)r_anal_pin_init (anal);
 	(void)r_anal_xrefs_init (anal);

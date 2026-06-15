@@ -1967,7 +1967,11 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	const bool nonull = r_config_get_b (core->config, "esil.nonull");
 	const int stacksize = R_MAX (r_config_get_i (core->config, "esil.stack.size"), 16);
 	REsil esil = {0};
-	if (!r_esil_init (&esil, stacksize, iotrap, addrsize, NULL, NULL, NULL)) {
+	REsilOptions opt = r_esil_options (NULL, NULL);
+	opt.stacksize = stacksize;
+	opt.iotrap = iotrap;
+	opt.addrsize = addrsize;
+	if (!r_esil_init (&esil, &opt)) {
 		R_LOG_ERROR ("Cannot initialize search esil instance");
 		return;
 	}
@@ -1976,8 +1980,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		R_LOG_ERROR ("Cannot push reg arena instance");
 		return;
 	}
-	RArch *arch = core->anal->arch;
-	const bool arch_inited = r_esil_setup (&esil, core->anal, false,
+	r_esil_setup (&esil, core->anal, false,
 		r_config_get_b (core->config, "esil.stats"),
 		nonull);
 	esil.cb.hook_mem_write = search_esil_mem_write_ro;
@@ -2070,9 +2073,6 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	r_cons_clear_line (core->cons, true, true);
 	if (param->outmode == R_MODE_JSON) {
 		pj_end (param->pj);
-	}
-	if (arch_inited && arch) {
-		r_arch_esilcb (arch, &esil, R_ARCH_ESIL_ACTION_FINI);
 	}
 	r_esil_fini (&esil);
 	r_reg_arena_pop (core->anal->reg);

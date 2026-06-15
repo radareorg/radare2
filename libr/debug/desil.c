@@ -221,7 +221,10 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 	int ret = 1;
 	dbg = d;
 	if (!ESIL) {
-		ESIL = r_esil_new (32, true, 64);
+		REsilOptions opt = r_esil_options (NULL, NULL);
+		opt.stacksize = 32;
+		opt.iotrap = true;
+		ESIL = r_esil_new (&opt);
 		// TODO setup something?
 		if (!ESIL) {
 			return false;

@@ -1526,7 +1526,9 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal *anal, bool use_map_info, bool use
 		free (dfg);
 		return NULL;
 	}
-	dfg->esil = r_esil_new_simple (1, anal->reg, &anal->iob);
+	REsilOptions dfg_opt = r_esil_options (anal->reg, &anal->iob);
+	dfg_opt.addrsize = 1;
+	dfg->esil = r_esil_new (&dfg_opt);
 	if (!dfg->esil) {
 		r_reg_free (dfg->reg);
 		free (dfg);
@@ -1616,7 +1618,9 @@ R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg) {
 R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *R_NULLABLE dfg, const char *expr,
 	bool use_map_info, bool use_maps) {
 	R_RETURN_VAL_IF_FAIL (anal && expr, NULL);
-	REsil *esil = r_esil_new_simple (1, anal->reg, &anal->iob);
+	REsilOptions esil_opt = r_esil_options (anal->reg, &anal->iob);
+	esil_opt.addrsize = 1;
+	REsil *esil = r_esil_new (&esil_opt);
 	if (!esil) {
 		return NULL;
 	}
@@ -1974,7 +1978,9 @@ R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg) {
 		}
 	}
 
-	REsil *esil = r_esil_new (4096, 0, 1);
+	REsilOptions esil_opt = r_esil_options (NULL, NULL);
+	esil_opt.addrsize = 1;
+	REsil *esil = r_esil_new (&esil_opt);
 	r_esil_setup (esil, anal, 1, 0, 0);
 	RGraphVisitor vi = { _dfg_const_reducer_rev_dfs_cb, NULL, NULL, NULL, NULL, &reducer };
 	RRBNode *first_node;

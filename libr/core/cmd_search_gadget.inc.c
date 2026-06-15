@@ -322,10 +322,11 @@ static bool gadget_esil_find_cond_end(RCore *core, RList *hitlist, int gadget_ty
 }
 
 static REsil *gadget_esil_new(RCore *core) {
-	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-	bool iotrap = r_config_get_b (core->config, "esil.iotrap");
-	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-	REsil *esil = r_esil_new (stacksize, iotrap, addrsize);
+	REsilOptions opt = r_esil_options (NULL, NULL);
+	opt.stacksize = r_config_get_i (core->config, "esil.stack.depth");
+	opt.iotrap = r_config_get_b (core->config, "esil.iotrap");
+	opt.addrsize = r_config_get_i (core->config, "esil.addr.size");
+	REsil *esil = r_esil_new (&opt);
 	if (esil) {
 		esil->anal = core->anal;
 		r_io_bind (core->io, &core->anal->iob);

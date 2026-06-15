@@ -2559,7 +2559,12 @@ static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 		.mem_read = ec_mem_read,
 		.mem_write = ec_mem_write_silent,
 	};
-	REsil *e = r_esil_new_ex (256, false, 0, &reg_if, &mem_if, NULL);
+	REsilOptions opt = r_esil_options (NULL, NULL);
+	opt.stacksize = 256;
+	opt.addrsize = 0;
+	opt.ifaces.reg = reg_if;
+	opt.ifaces.mem = mem_if;
+	REsil *e = r_esil_new (&opt);
 	if (!e) {
 		return ec.cost;
 	}
@@ -2585,10 +2590,11 @@ static void cmd_syscall_do(RCore *core, st64 n, ut64 addr) {
 }
 
 static inline REsil *esil_new_setup(RCore *core) {
-	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-	bool iotrap = r_config_get_b (core->config, "esil.iotrap");
-	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-	REsil *esil = r_esil_new (stacksize, iotrap, addrsize);
+	REsilOptions opt = r_esil_options (NULL, NULL);
+	opt.stacksize = r_config_get_i (core->config, "esil.stack.depth");
+	opt.iotrap = r_config_get_b (core->config, "esil.iotrap");
+	opt.addrsize = r_config_get_i (core->config, "esil.addr.size");
+	REsil *esil = r_esil_new (&opt);
 	if (esil) {
 		esil->anal = core->anal;
 		r_io_bind (core->io, &(core->anal->iob));
@@ -2636,7 +2642,9 @@ static void mr2(void *null, ut64 addr, const ut8 *buf, int len) {
 }
 
 static void esilmemrefs(RCore *core, const char *expr) {
-	REsil *e = r_esil_new_simple (0, core->anal->reg, &core->anal->iob);
+	REsilOptions opt = r_esil_options (core->anal->reg, &core->anal->iob);
+	opt.addrsize = 0;
+	REsil *e = r_esil_new (&opt);
 	r_esil_add_voyeur (e, NULL, mw2, R_ESIL_VOYEUR_MEM_WRITE);
 	r_esil_add_voyeur (e, NULL, mr2, R_ESIL_VOYEUR_MEM_READ);
 	e->anal = core->anal;	//XXX

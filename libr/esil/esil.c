@@ -98,97 +98,9 @@ static bool esil_stack_alloc(REsil *esil, int stacksize) {
 	return true;
 }
 
-R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
-	REsil *esil = R_NEW0 (REsil);
-	if (stacksize < 4) {
-		R_LOG_ERROR ("Esil stacksize must be at least 4 bytes");
-		free (esil);
-		return NULL;
-	}
-	if (!esil_stack_alloc (esil, stacksize)) {
-		free (esil);
-		return NULL;
-	}
-	esil->stacksize = stacksize;
-	esil->parse_goto_count = R_ESIL_GOTO_LIMIT;
-	esil->ops = esil_ops_new ();
-	esil->iotrap = iotrap;
-	r_esil_handlers_init (esil);
-	r_esil_plugins_init (esil);
-	if (R_UNLIKELY (!esil_voyeurs_init (esil))) {
-		r_esil_plugins_fini (esil);
-		r_esil_handlers_fini (esil);
-		ht_pp_free (esil->ops);
-		free (esil->stack);
-		free (esil->stack_buf);
-		free (esil);
-		return NULL;
-	}
-	esil->addrmask = r_num_genmask (addrsize - 1);
-	esil->trace = r_esil_trace_new (esil);
-	r_esil_setup_ops (esil);
-	return esil;
-}
-
-R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap, ut32 addrsize,
-	REsilRegInterface *reg_if, REsilMemInterface *mem_if, REsilUtilInterface *R_NULLABLE util_if) {
-	R_RETURN_VAL_IF_FAIL (esil && (stacksize > 2), false);
-	R_RETURN_VAL_IF_FAIL (!reg_if || (reg_if->is_reg && reg_if->reg_read &&
-		reg_if->reg_write && reg_if->reg_size), false);
-	R_RETURN_VAL_IF_FAIL (!mem_if || (mem_if->mem_read && mem_if->mem_write), false);
-	//do not check for mem_switch, as that is optional
-	if (R_UNLIKELY (!esil_stack_alloc (esil, stacksize))) {
-		return false;
-	}
-	esil->ops = esil_ops_new ();
-	if (R_UNLIKELY (!r_esil_setup_ops (esil) || !r_esil_handlers_init (esil))) {
-		goto ops_setup_fail;
-	}
-	if (R_UNLIKELY (!r_esil_plugins_init (esil))) {
-		goto plugins_fail;
-	}
-	if (R_UNLIKELY (!esil_voyeurs_init (esil))) {
-		goto voyeur_fail;
-	}
-	//not initializing stats here, it needs get reworked and should live in anal
-	//same goes for trace, probably
-	esil->stacksize = stacksize;
-	esil->parse_goto_count = R_ESIL_GOTO_LIMIT;
-	esil->iotrap = iotrap;
-	esil->addrmask = r_num_genmask (addrsize - 1);
-	if (reg_if) {
-		esil->reg_if = *reg_if;
-	}
-	if (mem_if) {
-		esil->mem_if = *mem_if;
-	}
-	if (util_if) {
-		esil->util_if = *util_if;
-	}
-	return true;
-voyeur_fail:
-	r_esil_plugins_fini (esil);
-plugins_fail:
-	r_esil_handlers_fini (esil);
-ops_setup_fail:
-	ht_pp_free (esil->ops);
-	esil->ops = NULL;
-	free (esil->stack);
-	free (esil->stack_buf);
-	return false;
-}
-
-R_API REsil *r_esil_new_ex(int stacksize, bool iotrap, ut32 addrsize,
-	REsilRegInterface *reg_if, REsilMemInterface *mem_if, REsilUtilInterface *R_NULLABLE util_if) {
-	REsil *esil = R_NEW0 (REsil);
-	if (R_UNLIKELY (!r_esil_init (esil, stacksize, iotrap,
-		addrsize, reg_if, mem_if, util_if))) {
-		free (esil);
-		return NULL;
-	}
-	return esil;
-}
-
+// Default "simple" host callbacks: registers via RReg, memory via RIOBind.
+// Used both by r_esil_options and as the fallbacks filled in by r_esil_init
+// when a host provides only a user pointer.
 static bool default_is_reg(void *reg, const char *name) {
 	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
 	if (!ri) {
@@ -232,15 +144,6 @@ static bool default_reg_alias(void *reg, int alias, const char *name) {
 	return r_reg_alias_setname (reg, alias, name);
 }
 
-static REsilRegInterface simple_reg_if = {
-	.is_reg = default_is_reg,
-	.reg_read = default_reg_read,
-	.reg_write = (REsilRegWrite)r_reg_setv,
-	.reg_alias = default_reg_alias,
-	.reg_size = default_reg_size,
-	.reg_packed_size = default_reg_packed_size,
-};
-
 static bool simple_mem_switch(void *iob, ut32 idx) {
 	RIOBind *bnd = iob;
 	return bnd->bank_use? bnd->bank_use (bnd->io, idx): false;
@@ -256,17 +159,110 @@ static bool simple_mem_write(void *iob, ut64 addr, const ut8 *buf, int len) {
 	return bnd->write_at? bnd->write_at (bnd->io, addr, buf, len): false;
 }
 
-R_API REsil *r_esil_new_simple(ut32 addrsize, void *reg, void *iob) {
-	RIOBind *bnd = iob;
-	R_RETURN_VAL_IF_FAIL (reg && iob, NULL);
-	simple_reg_if.reg = reg;
-	REsilMemInterface simple_mem_if = {
-		.mem = bnd,
-		.mem_switch = simple_mem_switch,
-		.mem_read = simple_mem_read,
-		.mem_write = simple_mem_write,
+// Fill in any missing callback slots with the default implementations, leaving
+// host-provided ones untouched.
+static void fill_default_reg_if(REsilRegInterface *r) {
+	if (!r->is_reg) {
+		r->is_reg = default_is_reg;
+	}
+	if (!r->reg_read) {
+		r->reg_read = default_reg_read;
+	}
+	if (!r->reg_write) {
+		r->reg_write = (REsilRegWrite)r_reg_setv;
+	}
+	if (!r->reg_alias) {
+		r->reg_alias = default_reg_alias;
+	}
+	if (!r->reg_size) {
+		r->reg_size = default_reg_size;
+	}
+	if (!r->reg_packed_size) {
+		r->reg_packed_size = default_reg_packed_size;
+	}
+}
+
+static void fill_default_mem_if(REsilMemInterface *m) {
+	if (!m->mem_switch) {
+		m->mem_switch = simple_mem_switch;
+	}
+	if (!m->mem_read) {
+		m->mem_read = simple_mem_read;
+	}
+	if (!m->mem_write) {
+		m->mem_write = simple_mem_write;
+	}
+}
+
+R_API REsilOptions r_esil_options(void *reg, void *iob) {
+	REsilOptions opt = {
+		.stacksize = 4096,
+		.iotrap = false,
+		.addrsize = 64,
 	};
-	return r_esil_new_ex (4096, false, addrsize, &simple_reg_if, &simple_mem_if, NULL);
+	opt.ifaces.reg.reg = reg;
+	opt.ifaces.mem.mem = iob;
+	return opt;
+}
+
+R_API bool r_esil_init(REsil *esil, REsilOptions *R_NULLABLE opt) {
+	R_RETURN_VAL_IF_FAIL (esil, false);
+	REsilOptions defopt = r_esil_options (NULL, NULL);
+	if (!opt) {
+		opt = &defopt;
+	}
+	const int stacksize = opt->stacksize;
+	R_RETURN_VAL_IF_FAIL (stacksize > 2, false);
+	if (R_UNLIKELY (!esil_stack_alloc (esil, stacksize))) {
+		return false;
+	}
+	esil->ops = esil_ops_new ();
+	if (R_UNLIKELY (!r_esil_setup_ops (esil) || !r_esil_handlers_init (esil))) {
+		goto ops_setup_fail;
+	}
+	if (R_UNLIKELY (!r_esil_plugins_init (esil))) {
+		goto plugins_fail;
+	}
+	if (R_UNLIKELY (!esil_voyeurs_init (esil))) {
+		goto voyeur_fail;
+	}
+	//not initializing stats here, it needs get reworked and should live in anal
+	//trace is created on demand once the vm stack is set up (see aeim)
+	esil->stacksize = stacksize;
+	esil->parse_goto_count = R_ESIL_GOTO_LIMIT;
+	esil->iotrap = opt->iotrap;
+	esil->addrmask = r_num_genmask (opt->addrsize - 1);
+	esil->reg_if = opt->ifaces.reg;
+	esil->mem_if = opt->ifaces.mem;
+	esil->util_if = opt->ifaces.util;
+	// A host that only handed us a user pointer gets the simple defaults; a
+	// fully-zeroed interface is left for r_esil_setup to wire up later.
+	if (esil->reg_if.reg && !esil->reg_if.reg_read) {
+		fill_default_reg_if (&esil->reg_if);
+	}
+	if (esil->mem_if.mem && !esil->mem_if.mem_read) {
+		fill_default_mem_if (&esil->mem_if);
+	}
+	return true;
+voyeur_fail:
+	r_esil_plugins_fini (esil);
+plugins_fail:
+	r_esil_handlers_fini (esil);
+ops_setup_fail:
+	ht_pp_free (esil->ops);
+	esil->ops = NULL;
+	free (esil->stack);
+	free (esil->stack_buf);
+	return false;
+}
+
+R_API REsil *r_esil_new(REsilOptions *R_NULLABLE opt) {
+	REsil *esil = R_NEW0 (REsil);
+	if (R_UNLIKELY (!r_esil_init (esil, opt))) {
+		free (esil);
+		return NULL;
+	}
+	return esil;
 }
 
 R_API ut32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType vt) {
@@ -367,21 +363,6 @@ R_API void r_esil_fini(REsil *esil) {
 	if (!esil) {
 		return;
 	}
-	esil_voyeurs_fini (esil);
-	r_esil_plugins_fini (esil);
-	r_esil_handlers_fini (esil);
-	ht_pp_free (esil->ops);
-	esil->ops = NULL;
-	r_esil_stack_free (esil);
-	free (esil->stack);
-	free (esil->stack_buf);
-}
-
-R_API void r_esil_free(REsil *esil) {
-	if (!esil) {
-		return;
-	}
-
 	// Try arch esil fini cb first, then anal as fallback
 	RArch *arch = R_UNWRAP3 (esil, anal, arch);
 	RArchSession *as = R_UNWRAP2 (arch, session);
@@ -403,19 +384,27 @@ R_API void r_esil_free(REsil *esil) {
 	ht_pp_free (esil->ops);
 	esil->ops = NULL;
 	sdb_free (esil->stats);
+	esil->stats = NULL;
 	r_esil_stack_free (esil);
-	free (esil->stack);
-	free (esil->stack_buf);
-
+	R_FREE (esil->stack);
+	R_FREE (esil->stack_buf);
 	r_esil_trace_free (esil->trace);
-	free (esil->cmd_intr);
-	free (esil->cmd_trap);
-	free (esil->cmd_mdev);
-	free (esil->cmd_todo);
-	free (esil->cmd_step);
-	free (esil->cmd_step_out);
-	free (esil->cmd_ioer);
-	free (esil->mdev_range);
+	esil->trace = NULL;
+	R_FREE (esil->cmd_intr);
+	R_FREE (esil->cmd_trap);
+	R_FREE (esil->cmd_mdev);
+	R_FREE (esil->cmd_todo);
+	R_FREE (esil->cmd_step);
+	R_FREE (esil->cmd_step_out);
+	R_FREE (esil->cmd_ioer);
+	R_FREE (esil->mdev_range);
+}
+
+R_API void r_esil_free(REsil *esil) {
+	if (!esil) {
+		return;
+	}
+	r_esil_fini (esil);
 	free (esil);
 }
 

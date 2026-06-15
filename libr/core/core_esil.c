@@ -419,7 +419,12 @@ R_API bool r_core_esil_init(RCore *core) {
 		.user = core,
 		.set_bits = core_esil_set_bits,
 	};
-	if (!r_esil_init (&core->esil.esil, 4096, true, 64, &reg_if, &mem_if, &util_if)) {
+	REsilOptions opt = r_esil_options (NULL, NULL);
+	opt.iotrap = true;
+	opt.ifaces.reg = reg_if;
+	opt.ifaces.mem = mem_if;
+	opt.ifaces.util = util_if;
+	if (!r_esil_init (&core->esil.esil, &opt)) {
 		goto init_fail;
 	}
 	core->esil.esil.anal = core->anal;
