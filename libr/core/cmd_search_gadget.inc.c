@@ -63,6 +63,11 @@ typedef struct {
 	ut64 target;
 } RCoreGadgetEsilRun;
 
+typedef struct {
+	REsil *esil;
+	RIOBind iob;
+} RCoreGadgetEsilSaved;
+
 static const char *gadget_esil_cond_tostring(RCoreGadgetEsilCond cond) {
 	switch (cond) {
 	case R_CORE_GADGET_ESIL_COND_ALWAYS:
@@ -322,19 +327,30 @@ static bool gadget_esil_find_cond_end(RCore *core, RList *hitlist, int gadget_ty
 }
 
 static REsil *gadget_esil_new(RCore *core) {
+	RAnal *anal = core->anal;
 	REsilOptions opt = r_esil_options (NULL, NULL);
 	opt.stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	opt.iotrap = r_config_get_b (core->config, "esil.iotrap");
 	opt.addrsize = r_config_get_i (core->config, "esil.addr.size");
 	REsil *esil = r_esil_new (&opt);
 	if (esil) {
-		esil->anal = core->anal;
-		r_io_bind (core->io, &core->anal->iob);
+		esil->anal = anal;
+		anal->esil = esil;
+		r_io_bind (core->io, &anal->iob);
 		bool nonull = r_config_get_b (core->config, "esil.nonull");
-		r_esil_setup (esil, core->anal, true, false, nonull);
+		if (!r_esil_setup (esil, anal, true, false, nonull)) {
+			r_esil_free (esil);
+			return NULL;
+		}
 		esil->nowrite = true;
 	}
 	return esil;
+}
+
+static void gadget_esil_restore(RCore *core, const RCoreGadgetEsilSaved *saved, REsil *esil) {
+	r_esil_free (esil);
+	core->anal->esil = saved->esil;
+	core->anal->iob = saved->iob;
 }
 
 static void gadget_esil_seed_registers(RCore *core, ut64 seed) {
@@ -355,20 +371,20 @@ static bool gadget_esil_eval_run(RCore *core, RList *hitlist, ut64 cond_addr, ut
 	RCoreAsmHit *hit;
 	bool found = false;
 	bool ok = true;
-	REsil *saved_esil = core->anal->esil;
-	RIOBind saved_iob = core->anal->iob;
+	RAnal *anal = core->anal;
+	RCoreGadgetEsilSaved saved = {
+		.esil = anal->esil,
+		.iob = anal->iob,
+	};
 	REsil *esil = gadget_esil_new (core);
 
 	memset (run, 0, sizeof (*run));
 	if (!esil) {
-		core->anal->esil = saved_esil;
-		core->anal->iob = saved_iob;
+		gadget_esil_restore (core, &saved, NULL);
 		return false;
 	}
-	if (!r_reg_arena_push (core->anal->reg)) {
-		r_esil_free (esil);
-		core->anal->esil = saved_esil;
-		core->anal->iob = saved_iob;
+	if (!r_reg_arena_push (anal->reg)) {
+		gadget_esil_restore (core, &saved, esil);
 		return false;
 	}
 	gadget_esil_seed_registers (core, seed);
@@ -414,10 +430,8 @@ static bool gadget_esil_eval_run(RCore *core, RList *hitlist, ut64 cond_addr, ut
 		}
 		r_anal_op_fini (&op);
 	}
-	r_reg_arena_pop (core->anal->reg);
-	r_esil_free (esil);
-	core->anal->esil = saved_esil;
-	core->anal->iob = saved_iob;
+	r_reg_arena_pop (anal->reg);
+	gadget_esil_restore (core, &saved, esil);
 	run->ok = ok && found && !run->trapped;
 	return run->ok;
 }
