@@ -2023,7 +2023,8 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 			if (!i) {
 				r_io_read_at (core->io, at, buf, bsize);
 			}
-			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ARCH_OP_MASK_VAL);
+			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i,
+				R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 			if (ret <= 0) {
 				i += minopcode;
 				at += minopcode;
@@ -2079,11 +2080,16 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 			} else if (dlink) {
 				set_offset_hint (core, &aop, dlink, dst_addr, at - ret, dst_imm);
 			}
+			r_reg_set_value (esil->anal->reg, pc, aop.addr + aop.size);
 			if (r_anal_op_nonlinear (aop.type)) {
-				r_reg_set_value (esil->anal->reg, pc, at);
-				set_retval (core, at - ret);
+				set_retval (core, aop.addr);
 			} else {
-				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+				const char *expr = R_STRBUF_SAFEGET (&aop.esil);
+				esil->addr = aop.addr;
+				if (R_STR_ISNOTEMPTY (expr)) {
+					r_esil_parse (esil, expr);
+					r_esil_stack_free (esil);
+				}
 			}
 			free (dlink);
 			free (vlink);
