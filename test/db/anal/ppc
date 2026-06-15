@@ -1033,7 +1033,7 @@ esil: r28,0x40,&,!,r28,0x3f,&,r9,>>,*,r9,=
 --
 mnemonic: sradi
 type: sar
-esil: 0x3,r4,ASR,r4,=
+esil: 0x8000000000000000,r4,&,!,!,0x7,r4,&,0xffffffffffffffff,&,!,!,&,ca,=,0x3,r4,ASR,r4,=
 --
 mnemonic: cntlzw
 type: mov
