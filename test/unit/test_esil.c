@@ -69,8 +69,13 @@ bool test_setup_keeps_custom_interfaces(void) {
 		.mem_read = test_mem_read,
 		.mem_write = test_mem_write,
 	};
-	REsil *esil = r_esil_new_ex (32, false, 32, &reg_if, &mem_if, NULL);
-	mu_assert_notnull (esil, "r_esil_new_ex failed");
+	REsilOptions opt = r_esil_options (NULL, NULL);
+	opt.stacksize = 32;
+	opt.addrsize = 32;
+	opt.ifaces.reg = reg_if;
+	opt.ifaces.mem = mem_if;
+	REsil *esil = r_esil_new (&opt);
+	mu_assert_notnull (esil, "r_esil_new failed");
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "r_anal_new failed");
 
@@ -92,7 +97,10 @@ bool test_setup_keeps_custom_interfaces(void) {
 }
 
 bool test_setup_installs_default_interfaces(void) {
-	REsil *esil = r_esil_new (32, false, 32);
+	REsilOptions opt = r_esil_options (NULL, NULL);
+	opt.stacksize = 32;
+	opt.addrsize = 32;
+	REsil *esil = r_esil_new (&opt);
 	mu_assert_notnull (esil, "r_esil_new failed");
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "r_anal_new failed");

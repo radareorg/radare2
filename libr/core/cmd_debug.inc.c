@@ -6272,13 +6272,14 @@ static int cmd_debug(void *data, const char *input) {
 #if 0
 		case 'e': // "dte"
 			if (!core->anal->esil) {
-				int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 				int romem = r_config_get_i (core->config, "esil.romem");
 				int stats = r_config_get_i (core->config, "esil.stats");
-				int iotrap = r_config_get_i (core->config, "esil.iotrap");
 				int nonull = r_config_get_i (core->config, "esil.nonull");
-				unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-				if (!(core->anal->esil = r_esil_new (stacksize, iotrap, addrsize))) {
+				REsilOptions opt = r_esil_options (NULL, NULL);
+				opt.stacksize = r_config_get_i (core->config, "esil.stack.depth");
+				opt.iotrap = r_config_get_i (core->config, "esil.iotrap");
+				opt.addrsize = r_config_get_i (core->config, "esil.addr.size");
+				if (!(core->anal->esil = r_esil_new (&opt))) {
 					return 0;
 				}
 				r_esil_setup (core->anal->esil, core->anal, romem, stats, nonull);

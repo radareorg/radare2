@@ -12,7 +12,9 @@ bool test_filter_regs(void) {
 	r_anal_set_reg_profile (anal, NULL);
 	RIO *io = r_io_new ();
 	r_io_bind (io, &anal->iob);
-	REsil *esil = r_esil_new_simple (1, anal->reg, &anal->iob);
+	REsilOptions opt = r_esil_options (anal->reg, &anal->iob);
+	opt.addrsize = 1;
+	REsil *esil = r_esil_new (&opt);
 	esil->anal = anal;
 
 	// create expected results

@@ -193,7 +193,9 @@ static void showreg(RCore *core, const char *rn, const char *desc) {
 }
 
 static REsil *visual_esil_new(RCore *core, unsigned int addrsize) {
-	REsil *esil = r_esil_new_simple (addrsize, core->anal->reg, &core->anal->iob);
+	REsilOptions opt = r_esil_options (core->anal->reg, &core->anal->iob);
+	opt.addrsize = addrsize;
+	REsil *esil = r_esil_new (&opt);
 	if (esil) {
 		if (r_esil_setup (esil, core->anal, false, false, false)) {
 			r_esil_set_pc (esil, core->addr);

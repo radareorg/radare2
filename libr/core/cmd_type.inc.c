@@ -1962,12 +1962,13 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	const char *varpfx;
 	int dbg_follow = r_config_get_i (core->config, "dbg.follow");
 	Sdb *TDB = core->anal->sdb_types;
-	int iotrap = r_config_get_i (core->config, "esil.iotrap");
-	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	RRegItem *pc = r_reg_get (core->anal->reg, "PC", -1);
 
-	REsil *esil = r_esil_new (stacksize, iotrap, addrsize);
+	REsilOptions opt = r_esil_options (NULL, NULL);
+	opt.stacksize = r_config_get_i (core->config, "esil.stack.depth");
+	opt.iotrap = r_config_get_i (core->config, "esil.iotrap");
+	opt.addrsize = r_config_get_i (core->config, "esil.addr.size");
+	REsil *esil = r_esil_new (&opt);
 	if (!esil) {
 		return;
 	}

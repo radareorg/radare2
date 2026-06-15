@@ -174,6 +174,25 @@ typedef struct r_esil_util_interface_t {
 	REsilSetBits set_bits;
 } REsilUtilInterface;
 
+// Bundle of the callback interfaces an esil talks to its host through. An
+// interface left fully zeroed is wired later by r_esil_setup. An interface
+// with a user pointer but no read callback gets the default implementations
+// at init time (reg via r_reg, mem via RIOBind).
+typedef struct r_esil_ifaces_t {
+	REsilRegInterface reg;
+	REsilMemInterface mem;
+	REsilUtilInterface util;
+} REsilIfaces;
+
+// Write-once construction options. Build one on the stack with r_esil_options
+// (or zero-init + tweak the fields) and hand it to r_esil_init / r_esil_new.
+typedef struct r_esil_options_t {
+	int stacksize;
+	bool iotrap;
+	ut32 addrsize;
+	REsilIfaces ifaces;
+} REsilOptions;
+
 typedef void (*REsilVoyeurRegRead)(void *user, const char *name, ut64 val);
 typedef void (*REsilVoyeurRegWrite)(void *user, const char *name, ut64 old, ut64 val);
 typedef void (*REsilVoyeurRegAlias)(void *user, int alias, const char *name);
@@ -213,12 +232,6 @@ typedef enum {
 #define	VOYEUR_SHIFT_LEFT	((sizeof (ut32) << 3) - VOYEUR_TYPE_BITS)
 #define	VOYEUR_TYPE_MASK	((ut32)R_ESIL_VOYEUR_HIGH_MASK << VOYEUR_SHIFT_LEFT)
 #define	MAX_VOYEURS	(UT32_MAX ^ VOYEUR_TYPE_MASK)
-
-typedef struct r_esil_options_t {
-	int nowrite;
-	int iotrap;
-	int exectrap;
-} REsilOptions;
 
 typedef struct r_esil_t {
 	struct r_anal_t *anal; // required for io, reg, and call esil_init/fini of the selected arch plugin
@@ -314,14 +327,12 @@ typedef struct r_esil_active_plugin_t {
 	void *user;
 } REsilActivePlugin;
 
-R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize);
-R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap,
-	ut32 addrsize, REsilRegInterface *reg_if, REsilMemInterface *mem_if, REsilUtilInterface *util_if);
-R_API REsil *r_esil_new_ex(int stacksize, bool iotrap, ut32 addrsize,
-	REsilRegInterface *reg_if, REsilMemInterface *mem_if, REsilUtilInterface *R_NULLABLE util_if);
-//this should replace existing r_esil_new
-R_API REsil *r_esil_new_simple(ut32 addrsize, void *reg, void *iob);
-//R_API REsil *r_esil_new_simple(ut32 addrsize, struct r_reg_t *reg, struct r_io_bind_t *iob);
+// Stack-built options for the common "simple" host: reg via r_reg, mem via
+// RIOBind. Pass NULL,NULL for an anal-backed/standalone base (interfaces wired
+// later by r_esil_setup). Tweak the returned struct's fields before use.
+R_API REsilOptions r_esil_options(void *reg, void *iob);
+R_API bool r_esil_init(REsil *esil, REsilOptions *R_NULLABLE opt);
+R_API REsil *r_esil_new(REsilOptions *R_NULLABLE opt);
 R_API ut32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType vt);
 R_API void r_esil_del_voyeur(REsil *esil, ut32 vid);
 R_API void r_esil_reset(REsil *esil);

@@ -20,15 +20,20 @@ which maintains a stack, registers, memory interfaces, and operation handlers fo
 Create and configure ESIL contexts and their runtime dependencies so they are ready
 for parsing, execution and interaction with radare2 analysis and I/O layers.
 .Pp
-.Ft REsil *
-.Fn r_esil_new "int stacksize" "int iotrap" "unsigned int addrsize"
+.Ft REsilOptions
+.Fn r_esil_options "void *reg" "void *iob"
 .Pp
-Creates a new ESIL instance with the specified stack size, I/O trap settings, and address size.
+Returns a stack-allocated REsilOptions struct prefilled with sane defaults (stacksize 4096, no iotrap, 64bit addresses). When reg and/or iob are passed they bind the simple register (RReg) and memory (RIOBind) interfaces; pass NULL,NULL for an anal-backed or standalone instance whose interfaces are wired later by r_esil_setup. Tweak the returned struct's fields before handing it to a constructor.
+.Pp
+.Ft REsil *
+.Fn r_esil_new "REsilOptions *opt"
+.Pp
+Allocates and initializes a new ESIL instance from the given options (or built-in defaults when opt is NULL).
 .Pp
 .Ft bool
-.Fn r_esil_init "REsil *esil" "int stacksize" "bool iotrap" "ut32 addrsize" "REsilRegInterface *reg_if" "REsilMemInterface *mem_if"
+.Fn r_esil_init "REsil *esil" "REsilOptions *opt"
 .Pp
-Initializes an existing ESIL structure with register and memory interfaces.
+Initializes a caller-owned ESIL structure in place from the given options. Any interface that has a user pointer but no callbacks is filled with the default implementations.
 .Pp
 .Ft void
 .Fn r_esil_free "REsil *esil"
@@ -225,7 +230,11 @@ int main(void) {
     REsilRegInterface reg_if = { .reg = NULL, .is_reg = my_is_reg, .reg_read = my_reg_read, .reg_write = my_reg_write, .reg_size = my_reg_size };
     REsilMemInterface mem_if = { .mem = NULL, .mem_read = my_mem_read, .mem_write = my_mem_write };
 
-    REsil *esil = r_esil_new_ex (128, false, 64, &reg_if, &mem_if);
+    REsilOptions opt = r_esil_options (NULL, NULL);
+    opt.stacksize = 128;
+    opt.ifaces.reg = reg_if;
+    opt.ifaces.mem = mem_if;
+    REsil *esil = r_esil_new (&opt);
     if (!esil) return -1;
 
     // Evaluate an expression that reads RAX, adds 8 and leaves the result on the stack
@@ -245,7 +254,9 @@ int main(void) {
 Low-level example: push/pop and expression-level debugging similar to the
 esil debugger (show stack, run a single operation):
 .Bd -literal -offset indent
-REsil *esil = r_esil_new (32, 0, 64);
+REsilOptions opt = r_esil_options (NULL, NULL);
+opt.stacksize = 32;
+REsil *esil = r_esil_new (&opt);
 // push two numbers, run the '+' op and inspect the result
 r_esil_pushnum (esil, 2);
 r_esil_pushnum (esil, 3);

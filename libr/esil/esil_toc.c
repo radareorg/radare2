@@ -181,7 +181,9 @@ static void esil2c_setup(REsil *esil) {
 R_API REsilC *r_esil_toc_new(RAnal *anal, const int bits) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	REsilC *ec = R_NEW0 (REsilC);
-	REsil *esil = r_esil_new_simple (bits, anal->reg, &anal->iob);
+	REsilOptions opt = r_esil_options (anal->reg, &anal->iob);
+	opt.addrsize = bits;
+	REsil *esil = r_esil_new (&opt);
 	if (esil) {
 		esil->anal = anal;
 		esil->user = ec;
