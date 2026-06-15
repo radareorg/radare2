@@ -145,13 +145,6 @@ static void cons_grep_reset(RConsGrep *grep) {
 	}
 }
 
-static void mark_free(RConsMark *m) {
-	if (m) {
-		free (m->name);
-		free (m);
-	}
-}
-
 /*
  * Update the color_limit based on TERM environment variable.
  *
@@ -201,7 +194,7 @@ static void rcons_update_color_limit_from_term(RCons *cons) {
 static void init_cons_context(RCons *cons, RConsContext *R_NULLABLE parent) {
 	RConsContext *ctx = cons->context;
 	r_ref_init (ctx, r_cons_context_free_internal);
-	ctx->marks = r_list_newf ((RListFree)mark_free);
+	ctx->marks = r_list_newf (free);
 	ctx->breaked = false;
 	// ctx->cmd_depth = R_CONS_CMD_DEPTH + 1;
 	ctx->buffer_sz = 0;
@@ -216,6 +209,7 @@ static void init_cons_context(RCons *cons, RConsContext *R_NULLABLE parent) {
 	ctx->log_callback = NULL;
 	ctx->cmd_str_depth = 0;
 	ctx->noflush = false;
+	r_str_constpool_init (&ctx->constpool);
 	if (parent) {
 		ctx->color_mode = parent->color_mode;
 		ctx->color_limit = parent->color_limit;
@@ -1330,7 +1324,7 @@ R_API void r_cons_mark(RCons *cons, ut64 addr, const char *name) {
 	RConsContext *ctx = cons->context;
 	mark->addr = addr;
 	int row = 0, col = r_cons_get_cursor (cons, &row);
-	mark->name = strdup (name); // TODO. use a const pool instead
+	mark->name = r_str_constpool_get (&ctx->constpool, name);
 	mark->pos = ctx->buffer_len;
 	mark->col = col;
 	mark->row = row;
@@ -1343,7 +1337,7 @@ R_API RConsMark *r_cons_mark_at(RCons *cons, ut64 addr, const char *name) {
 	RConsMark *mark;
 	r_list_foreach (C->marks, iter, mark) {
 		if (R_STR_ISNOTEMPTY (name)) {
-			if (strcmp (mark->name, name)) {
+			if (!mark->name || strcmp (mark->name, name)) {
 				continue;
 			}
 			return mark;
@@ -1539,6 +1533,7 @@ R_API bool r_cons_reset_terminal(RCons *cons) {
 static void r_cons_context_free_internal(RConsContext *ctx) {
 	r_cons_context_pal_free (ctx);
 	r_stack_free (ctx->break_stack);
+	r_str_constpool_fini (&ctx->constpool);
 	r_list_free (ctx->marks);
 	r_list_free (ctx->grep.strings);
 	free (ctx->grep.str);
@@ -1575,8 +1570,9 @@ R_API RConsContext *r_cons_context_clone(RConsContext *R_NULLABLE ctx) {
 	if (ctx->lastOutput) {
 		c->lastOutput = r_mem_dup (ctx->lastOutput, ctx->lastLength);
 	}
+	r_str_constpool_init (&c->constpool);
 	// Don't clone marks to avoid double free issues
-	c->marks = r_list_newf ((RListFree)mark_free);
+	c->marks = r_list_newf (free);
 	if (ctx->sorted_lines) {
 		c->sorted_lines = r_list_clone (ctx->sorted_lines, (RListClone)strdup);
 	}

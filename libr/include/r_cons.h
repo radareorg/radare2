@@ -82,7 +82,7 @@ typedef struct r_cons_code_colors_t {
 
 typedef struct r_cons_mark_t {
 	ut64 addr;
-	char *name;
+	const char *name;
 	int row;
 	int col;
 	int pos;
@@ -472,6 +472,7 @@ typedef struct r_cons_context_t {
 	bool flush;
 	int colors[256];
 	RList *marks;
+	RStrConstPool constpool; // Pool for mark names
 } RConsContext;
 
 #define HUD_BUF_SIZE 512
