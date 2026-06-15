@@ -375,9 +375,6 @@ R_API void r_esil_fini(REsil *esil) {
 	if (esil->anal && esil == esil->anal->esil) {
 		esil->anal->esil = NULL;
 	}
-	if (arch && esil == arch->esil) {
-		arch->esil = NULL;
-	}
 	esil_voyeurs_fini (esil);
 	r_esil_plugins_fini (esil);
 	r_esil_handlers_fini (esil);

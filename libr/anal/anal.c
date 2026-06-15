@@ -303,7 +303,6 @@ R_API void r_anal_free(RAnal *a) {
 	r_th_lock_free (a->lock);
 	r_interval_tree_fini (&a->meta);
 	r_unref (a->config);
-	a->arch->esil = NULL;
 	r_arch_free (a->arch);
 	a->arch = NULL;
 	free (a->zign_path);

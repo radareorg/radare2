@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2022-2025 - pancake, condret */
+/* radare2 - LGPL - Copyright 2022-2026 - pancake, condret */
 
 #ifndef R2_ARCH_H
 #define R2_ARCH_H
@@ -109,7 +109,6 @@ typedef enum {
 
 typedef struct r_arch_t {
 	RBinBind binb; // required for java, dalvik, wasm, pickle and pyc plugin... pending refactor
-	struct r_esil_t *esil;
 	RNum *num; // XXX maybe not required
 	struct r_arch_session_t *session;
 	RArchConfig *cfg; // global / default config
