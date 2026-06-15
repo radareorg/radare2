@@ -438,7 +438,8 @@ static char *regs(RArchSession *as) {
 			"fpu	f28 .64 516 0\n"
 			"fpu	f29 .64 524 0\n"
 			"fpu	f30 .64 532 0\n"
-			"fpu	f31 .64 540 0\n";
+			"fpu	f31 .64 540 0\n"
+			"gpr	ca .1 292 0\n";
 		return strdup (p);
 	}
 
@@ -574,7 +575,8 @@ static char *regs(RArchSession *as) {
 		"fpu	f28 .64 720 0\n"
 		"fpu	f29 .64 728 0\n"
 		"fpu	f30 .64 736 0\n"
-		"fpu	f31 .64 744 0\n";
+		"fpu	f31 .64 744 0\n"
+		"gpr	ca .1 496 0\n";
 	return strdup (p);
 }
 
@@ -842,6 +844,33 @@ static void toc_invalidate(PluginData *pd, RAnalOp *op, cs_insn *insn) {
 			}
 		}
 		break;
+	}
+}
+
+// algebraic shift right: ca = sign(rs) & (low bits shifted out != 0); set ca before rd to stay alias-safe
+static void set_sra(RAnalOp *op, const char *rd, const char *rs, const char *cnt, bool w64, const char *mask) {
+	const char *sgn = w64? "0x8000000000000000": "0x80000000";
+	const char *lo = w64? "0xffffffffffffffff": "0xffffffff";
+	esilprintf (op, "%s,%s,&,!,!,%s,%s,&,%s,&,!,!,&,ca,=,%s,%s,ASR,%s,=",
+		sgn, rs, mask, rs, lo, cnt, rs, rd);
+}
+
+// ca = (val <unsigned a) | (cin & val==a), then store val into rd LAST so the carry stays
+// correct when rd aliases ra. wm masks val to the register width; sub uses ~ra (subf forms).
+static void set_ca(RAnalOp *op, const char *ra, const char *wm, bool sub, const char *rd, const char *cin, const char *val) {
+	const char *sb = "0x8000000000000000"; // sign bit for the unsigned-< sign flip
+	char abuf[80], v[128];
+	const char *a = ra;
+	if (sub) {
+		snprintf (abuf, sizeof (abuf), "%s,%s,^", ra, wm);
+		a = abuf;
+	}
+	snprintf (v, sizeof (v), "%s,%s,&", val, wm);
+	if (!strcmp (cin, "0")) {
+		esilprintf (op, "%s,%s,^,%s,%s,^,<,%s,%s,=,ca,=", sb, a, sb, v, val, rd);
+	} else {
+		esilprintf (op, "%s,%s,^,%s,%s,^,<,%s,%s,%s,-,!,&,|,%s,%s,=,ca,=",
+			sb, a, sb, v, cin, a, v, val, rd);
 	}
 }
 
@@ -1116,9 +1145,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	int ret, ridx;
 	char *op1;
 	char ea[64];
+	char vbuf[96];
 
 	PluginData *pd = as->data;
 	const char *cpu = as->config->cpu;
+	const char *cm = (as->config->bits == 32)? "0xffffffff": "0xffffffffffffffff";
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	ut8 csbuf[4];
 	memcpy (csbuf, buf, 4);
@@ -1805,12 +1836,26 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			esilprintf (op, "%s,0x40,&,!,%s,0x3f,&,%s,>>,*,%s,=", ARG (2), ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_SRAW:
-		case PPC_INS_SRAWI:
 		case PPC_INS_SRAD:
+			{
+				char m[32];
+				const bool w64 = insn->id == PPC_INS_SRAD;
+				op->sign = true;
+				op->type = R_ANAL_OP_TYPE_SAR;
+				snprintf (m, sizeof (m), "1,%s,0x3f,&,1,<<,-", ARG (2));
+				set_sra (op, ARG (0), ARG (1), ARG (2), w64, m);
+			}
+			break;
+		case PPC_INS_SRAWI:
 		case PPC_INS_SRADI:
-			op->sign = true;
-			op->type = R_ANAL_OP_TYPE_SAR;
-			esilprintf (op, "%s,%s,ASR,%s,=", ARG (2), ARG (1), ARG (0));
+			{
+				char m[24];
+				const bool w64 = insn->id == PPC_INS_SRADI;
+				op->sign = true;
+				op->type = R_ANAL_OP_TYPE_SAR;
+				snprintf (m, sizeof (m), "0x%"PFMT64x, (ut64)((1ULL << (INSOP (2).imm & (w64? 63: 31))) - 1));
+				set_sra (op, ARG (0), ARG (1), ARG (2), w64, m);
+			}
 			break;
 		case PPC_INS_CNTLZW:
 		case PPC_INS_CNTLZD:
@@ -1835,19 +1880,33 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_SUB:
 		case PPC_INS_SUBC:
 		case PPC_INS_SUBF:
+			op->type = R_ANAL_OP_TYPE_SUB;
+			esilprintf (op, "%s,%s,-,%s,=", ARG (1), ARG (2), ARG (0));
+			break;
 		case PPC_INS_SUBFIC:
 		case PPC_INS_SUBFC:
 			op->type = R_ANAL_OP_TYPE_SUB;
-			esilprintf (op, "%s,%s,-,%s,=", ARG (1), ARG (2), ARG (0));
+			snprintf (vbuf, sizeof (vbuf), "%s,%s,-", ARG (1), ARG (2));
+			set_ca (op, ARG (1), cm, true, ARG (0), "1", vbuf);
 			break;
 		case PPC_INS_NEG:
 			op->type = R_ANAL_OP_TYPE_SUB;
 			esilprintf (op, "%s,0,-,%s,=", ARG (1), ARG (0));
 			break;
-		case PPC_INS_SUBFZE:
 		case PPC_INS_SUBFE:
+			op->type = R_ANAL_OP_TYPE_SUB;
+			snprintf (vbuf, sizeof (vbuf), "%s,%s,^,%s,+,ca,+", ARG (1), cm, ARG (2));
+			set_ca (op, ARG (1), cm, true, ARG (0), "ca", vbuf);
+			break;
+		case PPC_INS_SUBFZE:
+			op->type = R_ANAL_OP_TYPE_SUB;
+			snprintf (vbuf, sizeof (vbuf), "%s,%s,^,ca,+", ARG (1), cm);
+			set_ca (op, ARG (1), cm, true, ARG (0), "ca", vbuf);
+			break;
 		case PPC_INS_SUBFME:
 			op->type = R_ANAL_OP_TYPE_SUB;
+			snprintf (vbuf, sizeof (vbuf), "%s,%s,^,%s,+,ca,+", ARG (1), cm, cm);
+			set_ca (op, ARG (1), cm, true, ARG (0), "ca", vbuf);
 			break;
 		case PPC_INS_ADD:
 		case PPC_INS_ADDI:
@@ -1868,7 +1927,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_ADDC:
 		case PPC_INS_ADDIC:
 			op->type = R_ANAL_OP_TYPE_ADD;
-			esilprintf (op, "%s,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
+			snprintf (vbuf, sizeof (vbuf), "%s,%s,+", ARG (2), ARG (1));
+			set_ca (op, ARG (1), cm, false, ARG (0), "0", vbuf);
 			break;
 		case PPC_INS_ADDIS:
 			op->type = R_ANAL_OP_TYPE_ADD;
@@ -1895,10 +1955,19 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			}
 			break;
 		case PPC_INS_ADDE:
-		case PPC_INS_ADDME:
+			op->type = R_ANAL_OP_TYPE_ADD;
+			snprintf (vbuf, sizeof (vbuf), "%s,%s,+,ca,+", ARG (2), ARG (1));
+			set_ca (op, ARG (1), cm, false, ARG (0), "ca", vbuf);
+			break;
 		case PPC_INS_ADDZE:
 			op->type = R_ANAL_OP_TYPE_ADD;
-			esilprintf (op, "%s,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
+			snprintf (vbuf, sizeof (vbuf), "ca,%s,+", ARG (1));
+			set_ca (op, ARG (1), cm, false, ARG (0), "ca", vbuf);
+			break;
+		case PPC_INS_ADDME:
+			op->type = R_ANAL_OP_TYPE_ADD;
+			snprintf (vbuf, sizeof (vbuf), "%s,%s,+,ca,+", ARG (1), cm);
+			set_ca (op, ARG (1), cm, false, ARG (0), "ca", vbuf);
 			break;
 		case PPC_INS_MTSPR:
 			op->type = R_ANAL_OP_TYPE_MOV;

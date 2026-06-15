@@ -1706,3 +1706,310 @@ EXPECT=<<EOF2
 0x3456781230000002
 EOF2
 RUN
+
+NAME=addc carry-out ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7c853014 @ 0
+aei
+aeim
+ar r5=0xffffffffffffffff
+ar r6=2
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=addc-adde 128-bit add carry chain ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7d253014 @ 0
+wx 7c874114 @ 4
+aei
+aeim
+ar r5=0xffffffffffffffff
+ar r6=1
+ar r7=0xffffffffffffffff
+ar r8=0
+aes
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+EOF
+RUN
+
+NAME=subfc-subfe 128-bit subtract borrow chain ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7d253010 @ 0
+wx 7c874110 @ 4
+aei
+aeim
+ar r5=1
+ar r6=5
+ar r7=0x10
+ar r8=0x40
+aes
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0x00000030
+0x00000001
+EOF
+RUN
+
+NAME=addic carry-out ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 30850002 @ 0
+aei
+aeim
+ar r5=0xffffffffffffffff
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=subfic no-borrow sets carry ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 20850002 @ 0
+aei
+aeim
+ar r5=1
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=addze consumes carry-in ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7c870194 @ 0
+aei
+aeim
+ar r7=0x100
+ar ca=1
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0x00000101
+0x00000000
+EOF
+RUN
+
+NAME=addme consumes carry-in ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7c8701d4 @ 0
+aei
+aeim
+ar r7=0x100
+ar ca=1
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0x00000100
+0x00000001
+EOF
+RUN
+
+NAME=subfme consumes carry-in ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7c8701d0 @ 0
+aei
+aeim
+ar r7=0x100
+ar ca=1
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0xfffffffffffffeff
+0x00000001
+EOF
+RUN
+
+NAME=subfic borrow clears carry ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 20850002 @ 0
+aei
+aeim
+ar r5=5
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0xfffffffffffffffd
+0x00000000
+EOF
+RUN
+
+NAME=subf does not touch carry ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7c853050 @ 0
+aei
+aeim
+ar r5=2
+ar r6=10
+ar ca=1
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0x00000008
+0x00000001
+EOF
+RUN
+
+NAME=srawi sets carry from shifted-out sign bits ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7ca42670 @ 0
+aei
+aeim
+ar r5=0xfffffffffffffff8
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+0x00000001
+EOF
+RUN
+
+NAME=srawi on positive value clears carry ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7ca42670 @ 0
+aei
+aeim
+ar r5=0x1f
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=sraw register count sets carry ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7ca43630 @ 0
+aei
+aeim
+ar r5=0xfffffffffffffff8
+ar r6=4
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+0x00000001
+EOF
+RUN
+
+NAME=sradi sets carry ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7ca4fe76 @ 0
+aei
+aeim
+ar r5=0xfffffffffffffff0
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+0x00000001
+EOF
+RUN
+
+NAME=addc carry-out with destination aliasing first operand ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7c632014 @ 0
+aei
+aeim
+ar r3=0xffffffffffffffff
+ar r4=2
+aes
+ar r3
+ar ca
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=srad register count sets carry ppc-64
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7ca43634 @ 0
+aei
+aeim
+ar r5=0xfffffffffffffff8
+ar r6=4
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+0x00000001
+EOF
+RUN

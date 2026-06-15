@@ -351,7 +351,7 @@ e cfg.bigendian=true
 EOF
 EXPECT=<<EOF
 subfc r3, r4, r5
-0x00000000 r4,r5,-,r3,=
+0x00000000 0x8000000000000000,r4,0xffffffff,^,^,0x8000000000000000,r4,r5,-,0xffffffff,&,^,<,1,r4,0xffffffff,^,r4,r5,-,0xffffffff,&,-,!,&,|,r4,r5,-,r3,=,ca,=
 EOF
 RUN
 
@@ -490,7 +490,7 @@ rfi
 EOF
 RUN
 
-NAME=subtract from zero extended has no esil without carry model ppc-32
+NAME=subtract from zero extended carrying ppc-32
 FILE=-
 CMDS=<<EOF
 e asm.arch=ppc
@@ -502,7 +502,7 @@ pdj 1~{0.esil}
 EOF
 EXPECT=<<EOF
 subfze r3, r4
-
+0x8000000000000000,r4,0xffffffff,^,^,0x8000000000000000,r4,0xffffffff,^,ca,+,0xffffffff,&,^,<,ca,r4,0xffffffff,^,r4,0xffffffff,^,ca,+,0xffffffff,&,-,!,&,|,r4,0xffffffff,^,ca,+,r3,=,ca,=
 EOF
 RUN
 
@@ -667,5 +667,47 @@ ar f1
 EOF
 EXPECT=<<EOF
 0x4008000000000000
+EOF
+RUN
+
+NAME=addc carry-out ppc-32
+ARGS=-a ppc -e asm.bits=32 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7c853014 @ 0
+aei
+aeim
+ar r5=0xffffffff
+ar r6=2
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=subfc-subfe subtract borrow chain ppc-32
+ARGS=-a ppc -e asm.bits=32 -e cfg.bigendian=true
+FILE=malloc://0x100
+CMDS=<<EOF
+wx 7d253010 @ 0
+wx 7c874110 @ 4
+aei
+aeim
+ar r5=1
+ar r6=5
+ar r7=0x10
+ar r8=0x40
+aes
+aes
+ar r4
+ar ca
+EOF
+EXPECT=<<EOF
+0x00000030
+0x00000001
 EOF
 RUN
