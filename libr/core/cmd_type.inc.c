@@ -1925,7 +1925,7 @@ R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to) {
 	return maxstack;
 }
 
-static void set_retval(RCore *core, ut64 at) {
+static void set_retval(RCore *core, RReg *reg, ut64 at) {
 	RAnal *anal = core->anal;
 	RAnalHint *hint = r_anal_hint_get (anal, at);
 	RAnalFunction *fcn = r_anal_get_fcn_in (anal, at, 0);
@@ -1939,14 +1939,44 @@ static void set_retval(RCore *core, ut64 at) {
 	const char *cc = r_anal_cc_func (core->anal, fcn->name);
 	const char *regname = r_anal_cc_ret (anal, cc, 0);
 	if (regname) {
-		RRegItem *reg = r_reg_get (anal->reg, regname, -1);
-		if (reg) {
-			r_reg_set_value (anal->reg, reg, hint->ret);
-		}
+		r_reg_setv (reg, regname, hint->ret);
 	}
 beach:
 	r_anal_hint_free (hint);
 	return;
+}
+
+static int link_stroff_stack_new(RCore *core, RReg *reg) {
+	ut64 size = r_config_get_i (core->config, "esil.stack.size");
+	ut64 addr = r_config_get_i (core->config, "esil.stack.addr");
+	const ut64 esaddr = addr;
+	const ut64 mapinc = r_config_get_i (core->config, "io.mapinc");
+	if (!r_io_map_locate (core->io, &addr, size, esaddr) || addr != esaddr) {
+		addr = esaddr;
+		if (!r_io_map_locate (core->io, &addr, size, mapinc)) {
+			addr = 0;
+			if (!r_io_map_locate (core->io, &addr, size, mapinc)) {
+				return -1;
+			}
+		}
+	}
+	char *uri = r_str_newf ("malloc://0x%" PFMT64x, size);
+	if (!uri) {
+		return -1;
+	}
+	int fd = r_io_fd_open (core->io, uri, R_PERM_RW, 0);
+	free (uri);
+	if (fd < 0) {
+		return -1;
+	}
+	if (!r_io_map_add (core->io, fd, R_PERM_RW, 0, addr, size)) {
+		r_io_fd_close (core->io, fd);
+		return -1;
+	}
+	const ut64 sp = addr + (size / 2);
+	r_reg_setv (reg, "SP", sp);
+	r_reg_setv (reg, "BP", sp);
+	return fd;
 }
 
 R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
@@ -1957,19 +1987,24 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	RListIter *it;
 	RAnalOp aop = {0};
 	bool ioCache = r_config_get_b (core->config, "io.cache");
-	bool stack_set = false;
+	int stack_fd = -1;
 	bool resolved = false;
 	const char *varpfx;
 	int dbg_follow = r_config_get_i (core->config, "dbg.follow");
 	Sdb *TDB = core->anal->sdb_types;
-	RRegItem *pc = r_reg_get (core->anal->reg, "PC", -1);
+	RReg *reg = r_reg_clone (core->anal->reg);
+	if (!reg) {
+		return;
+	}
 
 	REsilOptions opt = r_esil_options (NULL, NULL);
 	opt.stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	opt.iotrap = r_config_get_i (core->config, "esil.iotrap");
 	opt.addrsize = r_config_get_i (core->config, "esil.addr.size");
+	opt.ifaces.reg.reg = reg;
 	REsil *esil = r_esil_new (&opt);
 	if (!esil) {
+		r_reg_free (reg);
 		return;
 	}
 	r_esil_setup (esil, core->anal, 0, 0, 0);
@@ -1981,24 +2016,20 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	if (!buf) {
 		free (buf);
 		r_esil_free (esil);
+		r_reg_free (reg);
 		return;
 	}
-	r_reg_arena_push (core->anal->reg);
-	r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
-	ut64 spval = r_reg_getv (esil->anal->reg, "SP");
+	ut64 spval = r_reg_getv (reg, "SP");
 	if (spval) {
 		// reset stack pointer to initial value
-		RRegItem *sp = r_reg_get (esil->anal->reg, "SP", -1);
-		ut64 curpc = r_reg_getv (esil->anal->reg, "PC");
+		ut64 curpc = r_reg_getv (reg, "PC");
 		int stacksz = r_core_get_stacksz (core, fcn->addr, curpc);
 		if (stacksz > 0) {
-			r_reg_arena_zero (esil->anal->reg); // clear prev reg values
-			r_reg_set_value (esil->anal->reg, sp, spval + stacksz);
+			r_reg_arena_zero (reg); // clear prev reg values
+			r_reg_setv (reg, "SP", spval + stacksz);
 		}
 	} else {
-		// initialize stack
-		r_core_call (core, "aeim");
-		stack_set = true;
+		stack_fd = link_stroff_stack_new (core, reg);
 	}
 	r_config_set_b (core->config, "io.cache", true);
 	r_config_set_i (core->config, "dbg.follow", 0);
@@ -2009,7 +2040,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	r_list_foreach (fcn->bbs, it, bb) {
 		ut64 at = bb->addr;
 		ut64 to = bb->addr + bb->size;
-		r_reg_set_value (esil->anal->reg, pc, at);
+		r_reg_setv (reg, "PC", at);
 		for (i = 0; at < to; i++) {
 			if (r_cons_is_breaked (core->cons)) {
 				goto beach;
@@ -2035,7 +2066,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 			at += ret;
 			int index = 0;
 			if (aop.ireg) {
-				index = r_reg_getv (esil->anal->reg, aop.ireg) * aop.scale;
+				index = r_reg_getv (reg, aop.ireg) * aop.scale;
 			}
 			int src_imm = -1, dst_imm = -1;
 			ut64 src_addr = UT64_MAX;
@@ -2043,13 +2074,13 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 			RAnalValue *src = NULL;
 			R_VEC_FOREACH (&aop.srcs, src) {
 				if (src && src->reg) {
-					src_addr = r_reg_getv (esil->anal->reg, src->reg) + index;
+					src_addr = r_reg_getv (reg, src->reg) + index;
 					src_imm = src->delta;
 				}
 			}
 			RAnalValue *dst = RVecRArchValue_at (&aop.dsts, 0);
 			if (dst && dst->reg) {
-				dst_addr = r_reg_getv (esil->anal->reg, dst->reg) + index;
+				dst_addr = r_reg_getv (reg, dst->reg) + index;
 				dst_imm = dst->delta;
 			}
 			RAnalVar *var = r_anal_get_used_function_var (core->anal, aop.addr);
@@ -2080,9 +2111,9 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 			} else if (dlink) {
 				set_offset_hint (core, &aop, dlink, dst_addr, at - ret, dst_imm);
 			}
-			r_reg_set_value (esil->anal->reg, pc, aop.addr + aop.size);
+			r_reg_setv (reg, "PC", aop.addr + aop.size);
 			if (r_anal_op_nonlinear (aop.type)) {
-				set_retval (core, aop.addr);
+				set_retval (core, reg, aop.addr);
 			} else {
 				const char *expr = R_STRBUF_SAFEGET (&aop.esil);
 				esil->addr = aop.addr;
@@ -2099,15 +2130,14 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	}
 beach:
 	r_core_call (core, "wc-*"); // drop cache writes
+	if (stack_fd >= 0) {
+		r_io_fd_close (core->io, stack_fd);
+	}
 	r_config_set_b (core->config, "io.cache", ioCache);
 	r_config_set_i (core->config, "dbg.follow", dbg_follow);
-	if (stack_set) {
-		r_core_call (core, "aeim-");
-	}
 	r_core_seek (core, oldoff, true);
 	r_esil_free (esil);
-	r_reg_arena_pop (core->anal->reg);
-	r_core_cmd0 (core, ".ar*");
+	r_reg_free (reg);
 	r_cons_break_pop (core->cons);
 	free (buf);
 }
