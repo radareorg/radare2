@@ -77,3 +77,72 @@ EXPECT=<<EOF2
 1
 EOF2
 RUN
+
+NAME=PPC64 ELFv1: addis+ld resolves op->ptr (synthetic control)
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true -e anal.gp=0x10020000
+FILE=malloc://64
+CMDS=<<EOF
+wx 3d62ffffe98b76d0
+ao 2~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x100176d0
+EOF
+RUN
+
+NAME=PPC64 ELFv1: overwriting the holding register drops the pending TOC entry
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true -e anal.gp=0x10020000
+FILE=malloc://64
+CMDS=<<EOF
+wx 3d62ffff39600000e98b76d0
+ao 3~^ptr
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=PPC64 ELFv1: a call clobbers volatile r3 so a later load does not resolve
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true -e anal.gp=0x10020000
+FILE=malloc://64
+CMDS=<<EOF
+wx 3c62ffff48000001e9830000
+ao 3~^ptr
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=PPC64 ELFv1: a call preserves a callee-saved TOC base (r30 survives)
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true -e anal.gp=0x10020000
+FILE=malloc://64
+CMDS=<<EOF
+wx 3fc2ffff48000001e99e0000
+ao 3~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x10010000
+EOF
+RUN
+
+NAME=PPC64 ELFv1: storing the TOC base does not invalidate its entry
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true -e anal.gp=0x10020000
+FILE=malloc://64
+CMDS=<<EOF
+wx 3d22ffff9123000ce9890000
+ao 3~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x10010000
+EOF
+RUN
+
+NAME=PPC64 ELFv1: reloading r2 invalidates every pending TOC entry
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true -e anal.gp=0x10020000
+FILE=malloc://64
+CMDS=<<EOF
+wx 3d62ffff7c822378e98b0000
+ao 3~^ptr
+EOF
+EXPECT=<<EOF
+EOF
+RUN
