@@ -1519,7 +1519,13 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	if (state.show_addr || state.show_asm) {
 		print_pipe_header (&state, state.fcn->addr);
 	}
-	{
+	if (R_STR_ISNOTEMPTY (fs) && !(r_str_startswith (fs, "void") && strstr (fs, "()"))) {
+		// afs carries a real prototype (named/typed args): use it verbatim
+		r_str_replace_char (fs, ';', ' ');
+		r_str_trim (fs);
+		PRINTF ("%s {", fs);
+	} else {
+		// no prototype recovered: build the signature from recovered variables
 		char *params = pdc_signature_args (core->anal, state.fcn);
 		char *rettype = pdc_return_type (fs, state.fcn->name);
 		PRINTF ("%s %s (%s) {", R_STR_ISNOTEMPTY (rettype)? rettype: "int", state.fcn->name,
