@@ -571,3 +571,19 @@ void fcn.00000000 (int64_t arg1) {
 
 EOF
 RUN
+
+NAME=pdc temporarily clears asm.addr.relto
+FILE=malloc://16
+ARGS=-a x86 -b 64 -e scr.color=0
+CMDS=<<EOF
+wx c3
+af
+e asm.addr.relto=func
+pdc~return
+e asm.addr.relto
+EOF
+EXPECT=<<EOF
+        return
+func
+EOF
+RUN

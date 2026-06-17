@@ -1292,6 +1292,11 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 
 	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
 	if (R_STR_ISNOTEMPTY (cmdPdc) && !strstr (cmdPdc, "pdc")) {
+		RConfigHold *hc = r_config_hold_new (core->config);
+		if (hc) {
+			r_config_hold (hc, "asm.addr.relto", NULL);
+			r_config_set (core->config, "asm.addr.relto", "");
+		}
 		if (strstr (cmdPdc, "!*") || strstr (cmdPdc, "#!")) {
 			if (!strcmp (input, "*")) {
 				input = " -r2";
@@ -1301,7 +1306,10 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				input = " -h";
 			}
 		}
-		return r_core_cmdf (core, "%s%s", cmdPdc, input);
+		int ret = r_core_cmdf (core, "%s%s", cmdPdc, input);
+		r_config_hold_restore (hc);
+		r_config_hold_free (hc);
+		return ret;
 	}
 
 	PDCState state = { 0 };
@@ -1339,7 +1347,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_hold (hc, "asm.addr", "asm.flags", "asm.lines.fcn", "asm.comments", NULL);
 	r_config_hold (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.sub.names", NULL);
 	r_config_hold (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
-	r_config_hold (hc, "io.cache", "asm.syntax", NULL);
+	r_config_hold (hc, "io.cache", "asm.syntax", "asm.addr.relto", NULL);
 	r_config_set_i (core->config, "scr.color", 0);
 	r_config_set_b (core->config, "asm.stackptr", false);
 	r_config_set_b (core->config, "asm.pseudo", true);
@@ -1360,6 +1368,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_set_i (core->config, "asm.cmt.col", 30);
 	r_config_set_b (core->config, "io.cache", true);
 	r_config_set (core->config, "asm.syntax", "intel");
+	r_config_set (core->config, "asm.addr.relto", "");
 	r_core_cmd0 (core, "aeim");
 
 	r_strf_buffer (64);
