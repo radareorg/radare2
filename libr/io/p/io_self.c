@@ -372,6 +372,16 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return r_str_startswith (file, "self://");
 }
 
+static void self_data_free(SelfData *sd) {
+	if (sd) {
+		int i;
+		for (i = 0; i < sd->self_sections_count; i++) {
+			free (sd->self_sections[i].name);
+		}
+		free (sd);
+	}
+}
+
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (r_sandbox_enable (0)) {
 		return NULL;
@@ -381,8 +391,14 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (update_self_regions (io, pid, sd)) {
 		return r_io_desc_new (io, &r_io_plugin_self, file, rw, mode, sd);
 	}
-	free (sd);
+	self_data_free (sd);
 	return NULL;
+}
+
+static bool __close(RIODesc *desc) {
+	self_data_free (desc->data);
+	desc->data = NULL;
+	return true;
 }
 
 static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
@@ -617,6 +633,7 @@ RIOPlugin r_io_plugin_self = {
 	},
 	.uris = "self://",
 	.open = __open,
+	.close = __close,
 	.read = __read,
 	.check = __plugin_open,
 	.seek = __lseek,
