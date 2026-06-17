@@ -70,6 +70,7 @@ static RCoreHelpMessage help_msg_CC = {
 static RCoreHelpMessage help_msg_CL = {
 	"Usage: CL", ".j-", "@addr - manage code-line references (loaded via bin.dbginfo and shown when asm.dwarf)",
 	"CL", "", "list all code line information (virtual address <-> source file:line)",
+	"CLd", "[aoj*]", "decompile current function from dwarf line info (usable via cmd.pdc)",
 	"CLf", " [addr]", "show filename for current or given offset",
 	"CLj", "", "same as above but in JSON format (See dir.source to change the path to find the referenced lines)",
 	"CL*", "", "same as above but in r2 commands format",
@@ -305,6 +306,9 @@ static bool cmd_meta_lineinfo_print_source(RCore *core, ut64 at) {
 	return found;
 }
 
+// CLd command family (in its own file to keep this one small)
+#include "cmd_meta_cld.inc.c"
+
 static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	int ret;
 	ut64 offset = UT64_MAX; // use this as error value
@@ -319,6 +323,9 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	if (*p == '?') {
 		r_core_cmd_help (core, help_msg_CL);
 		return 0;
+	}
+	if (*p == 'd') { // "CLd" - decompile current function from dwarf line info
+		return cmd_meta_lineinfo_decompile (core, p + 1);
 	}
 	if (*p == 'L') { // "CLL"
 		if (p[1] == 'f') { // "CLLf"

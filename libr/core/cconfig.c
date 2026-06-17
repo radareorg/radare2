@@ -1835,6 +1835,7 @@ static bool cb_cmdpdc(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
 		r_cons_printf (core->cons, "pdc\n");
+		r_cons_printf (core->cons, "CLd\n"); // dwarf line-info source view
 		RListIter *iter;
 		RCorePluginSession *cps;
 		r_list_foreach (core->rcmd->libstore->plugins, iter, cps) {

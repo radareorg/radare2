@@ -213,3 +213,38 @@ file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line/bar.c
 EOF
 RUN
+
+NAME=CLd decompile from dwarf line info
+FILE=bins/elf/dwarf3_line
+CMDS=<<EOF
+e bin.dbginfo=true
+af @ main
+s main
+CLd
+EOF
+EXPECT=<<EOF
+// /usr/w/g/radare2/test/bins/src/dwarf-line.c:20 @ 0x000011ad main
+// dwarf-line.c:20
+// dwarf-line.c:21
+// dwarf-line.c:22
+// dwarf-line.c:24
+// dwarf-line.c:25
+// dwarf-line.c:26
+// dwarf-line.c:27
+EOF
+RUN
+
+NAME=CLd codemeta json offsets
+FILE=bins/elf/dwarf3_line
+CMDS=<<EOF
+e bin.dbginfo=true
+af @ main
+s main
+CLdj~{annotations[2].offset}
+CLdj~{annotations[2].type}
+EOF
+EXPECT=<<EOF
+4540
+offset
+EOF
+RUN
