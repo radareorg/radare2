@@ -1,28 +1,29 @@
 /* radare - LGPL - Copyright 2014-2026 - pancake */
 
-// XXX check if its already opened
-static RIODesc *openself(void) {
-	RIODesc *fd = NULL;
-	char *out = r_core_cmd_str (core, "o");
-	if (out) {
-		if (!strstr (out, "self://")) {
-			fd = r_core_file_open (core, "self://", R_PERM_RW, 0);
+static RIODesc *openself(bool refresh) {
+	RIODesc *fd = r_io_desc_get_byuri (core->io, "self://");
+	if (fd) {
+		if (refresh) {
+			const int oldfd = fd->fd;
+			if (!r_io_reopen (core->io, oldfd, R_PERM_RW, 0)) {
+				return fd;
+			}
+			fd = r_io_desc_get (core->io, oldfd);
 		}
-		free (out);
+		return fd;
 	}
-	return fd;
+	return r_core_file_open (core, "self://", R_PERM_RW, 0);
 }
 
 static void sigusr1(int s) {
-	RIODesc *fd = openself ();
+	(void)s;
+	(void)openself (true);
 	r_core_prompt_loop (core);
-	if (fd) {
-		r_io_desc_close (fd);
-	}
 }
 
 static void sigusr2(int s) {
-	(void)openself ();
+	(void)s;
+	(void)openself (true);
 	r_core_cmd0 (core, "=H&");
 }
 
@@ -38,11 +39,10 @@ static void _libwrap_init(void) {
 	web = r_sys_getenv ("RARUN2_WEB");
 	core = r_core_new ();
 	r_core_loadlibs (core, R_LIB_LOAD_ALL, NULL);
+	(void)openself (false);
 	if (web) {
 		r_core_cmd0 (core, "=H&");
 		r_sys_setenv ("RARUN2_WEB", NULL);
 		free (web);
 	}
-	// TODO: maybe reopen every time a signal is spawned to reload memory regions information
-	// TODO: open io_self
 }
