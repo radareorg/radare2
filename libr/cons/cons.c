@@ -1541,6 +1541,8 @@ static void r_cons_context_free_internal(RConsContext *ctx) {
 	r_stack_free (ctx->break_stack);
 	r_list_free (ctx->marks);
 	r_list_free (ctx->grep.strings);
+	free (ctx->grep.str);
+	free (ctx->grep.json_path);
 	r_list_free (ctx->sorted_lines);
 	r_list_free (ctx->unsorted_lines);
 	free (ctx->buffer);
