@@ -401,7 +401,7 @@ static int r_print_addr_base(RPrint *p) {
 	if (p) {
 		if (p->coreb.cfgGetI) {
 			ut64 base = p->coreb.cfgGetI (p->coreb.core, "asm.addr.base");
-			if (base == 10 || base == 16 || base == 36) {
+			if (base == 8 || base == 10 || base == 16 || base == 36) {
 				return (int)base;
 			}
 		}
@@ -442,6 +442,12 @@ static int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_siz
 		}
 	}
 	// Note: Color_RESET is only needed in use_color paths, so it's inlined directly in those format strings
+	if (addrbase == 8) {
+		if (use_color) {
+			return snprintf (buf, buf_size, "%s0%" PFMT64o Color_RESET "%c", pre, addr, ch);
+		}
+		return snprintf (buf, buf_size, "0%" PFMT64o "%c", addr, ch);
+	}
 	if (addrbase == 36) {
 		char b36str[16];
 		b36_fromnum (b36str, addr);
@@ -524,6 +530,7 @@ R_API bool r_print_offset_strbuf(RPrint *p, RStrBuf *sb, ut64 off, int invert, i
 	const int segbas = p->config->segbas;
 	const int seggrn = p->config->seggrn;
 	const int offseg = (p->flags & R_PRINT_FLAGS_SEGOFF) != 0;
+	const bool base8 = addrbase == 8;
 	const bool base36 = addrbase == 36;
 	char space[32] = { 0 };
 	const char *reset = p->resetbg? Color_RESET: Color_RESET_NOBG;
@@ -543,6 +550,14 @@ R_API bool r_print_offset_strbuf(RPrint *p, RStrBuf *sb, ut64 off, int invert, i
 		if (!k) {
 			k = "";
 		}
+	}
+	if (base8) {
+		if (show_color) {
+			ok &= r_strbuf_appendf (sb, "%s%s0%" PFMT64o "%s", k, inv, off, reset);
+		} else {
+			ok &= r_strbuf_appendf (sb, "0%" PFMT64o, off);
+		}
+		return ok && r_strbuf_append (sb, " ");
 	}
 	if (base36) {
 		char b36str[16];

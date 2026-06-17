@@ -2042,7 +2042,7 @@ static bool cb_addrbase(void *user, void *data) {
 		print_node_options (user, node);
 		return false;
 	}
-	if (node->i_value != 10 && node->i_value != 16 && node->i_value != 36) {
+	if (node->i_value != 8 && node->i_value != 10 && node->i_value != 16 && node->i_value != 36) {
 		node->i_value = 16;
 		free (node->value);
 		node->value = strdup ("16");
@@ -4383,8 +4383,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("asm.addr", "true", "show offsets in disassembly");
 	SETCB ("asm.addr.segment", "false", &cb_segoff, "show segmented address in prompt (x86-16)");
 	SETICB ("asm.addr.segment.bits", 4, &cb_asm_addr_segment_bits, "segment granularity in bits (x86-16)");
-	n = SETICB ("asm.addr.base", 16, &cb_addrbase, "show address in base 10, 16 or 36");
-	SETOPTIONS (n, "10", "16", "36", NULL);
+	n = SETICB ("asm.addr.base", 16, &cb_addrbase, "show address in base 8, 10, 16 or 36");
+	SETOPTIONS (n, "8", "10", "16", "36", NULL);
 	SETCB ("asm.addr.relto", "", &cb_reloff, "show offset relative to fun,map,sec,flg");
 	SETB ("asm.addr.focus", "false", "show only the addresses that branch or located at the beginning of a basic block");
 	SETB ("asm.section", "false", "show section name before offset");

@@ -115,22 +115,28 @@ CMDS=<<EOF
 e asm.addr.base
 e asm.addr.base=?
 e asm.addr.base
+e asm.addr.base=8
+e asm.addr.base
+px 1 @ 35~00[0]
 e asm.addr.base=10
 e asm.addr.base
 px 1 @ 35~00[0]
 e asm.addr.base=36
 e asm.addr.base
 px 1 @ 35~00[0]
-e asm.addr.base=8
+e asm.addr.base=7
 e asm.addr.base
 px 1 @ 35~00[0]
 EOF
 EXPECT=<<EOF
 16
+8
 10
 16
 36
 16
+8
+043
 10
 35
 36
