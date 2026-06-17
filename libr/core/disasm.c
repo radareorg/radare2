@@ -871,7 +871,7 @@ static RDisasmState *ds_init(RCore *core, bool for_json) {
 	ds->asm_describe = r_config_get_b (core->config, "asm.describe");
 	ds->show_offset = r_config_get_b (core->config, "asm.addr");
 	ds->show_offset_focus = r_config_get_b (core->config, "asm.addr.focus");
-	ds->show_offdec = r_config_get_i (core->config, "asm.addr.base10");
+	ds->show_offdec = r_config_get_i (core->config, "asm.addr.base") == 10;
 	ds->show_bbline = r_config_get_i (core->config, "asm.lines.bb");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
 	ds->show_section_col = r_config_get_i (core->config, "asm.section.col");

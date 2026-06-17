@@ -397,10 +397,29 @@ R_API void r_print_cursor(RPrint *p, int cur, int len, int set) {
 	}
 }
 
+static int r_print_addr_base(RPrint *p) {
+	if (p) {
+		if (p->coreb.cfgGetI) {
+			ut64 base = p->coreb.cfgGetI (p->coreb.core, "asm.addr.base");
+			if (base == 10 || base == 16 || base == 36) {
+				return (int)base;
+			}
+		}
+		if (p->base36) {
+			return 36;
+		}
+		if (p->flags & R_PRINT_FLAGS_ADDRDEC) {
+			return 10;
+		}
+	}
+	return 16;
+}
+
 static int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_size) {
 	bool use_segoff = p ? (p->flags & R_PRINT_FLAGS_SEGOFF) : false;
 	bool use_color = p ? (p->flags & R_PRINT_FLAGS_COLOR) : false;
-	bool dec = p ? (p->flags & R_PRINT_FLAGS_ADDRDEC) : false;
+	int addrbase = r_print_addr_base (p);
+	bool dec = addrbase == 10;
 	bool mod = p ? (p->flags & R_PRINT_FLAGS_ADDRMOD) : false;
 	char ch = p ? ((p->addrmod && mod) ? ((addr % p->addrmod) ? ' ' : ',') : ' ') : ' ';
 	if (p && (p->flags & R_PRINT_FLAGS_COMPACT) && p->col == 1) {
@@ -423,6 +442,14 @@ static int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_siz
 		}
 	}
 	// Note: Color_RESET is only needed in use_color paths, so it's inlined directly in those format strings
+	if (addrbase == 36) {
+		char b36str[16];
+		b36_fromnum (b36str, addr);
+		if (use_color) {
+			return snprintf (buf, buf_size, "%s%s" Color_RESET "%c", pre, b36str, ch);
+		}
+		return snprintf (buf, buf_size, "%s%c", b36str, ch);
+	}
 	if (use_segoff) {
 		const ut32 a = addr & 0xffff;
 		const ut32 s = (addr - a) >> ((p && p->config) ? p->config->seggrn : 4);
@@ -492,32 +519,43 @@ static int print_offset_len(ut64 off, bool with_delta) {
 
 R_API bool r_print_offset_strbuf(RPrint *p, RStrBuf *sb, ut64 off, int invert, int delta, const char *label) {
 	R_RETURN_VAL_IF_FAIL (p && p->config && sb, false);
-	const int offdec = (p->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
+	const int addrbase = r_print_addr_base (p);
+	const int offdec = addrbase == 10;
 	const int segbas = p->config->segbas;
 	const int seggrn = p->config->seggrn;
 	const int offseg = (p->flags & R_PRINT_FLAGS_SEGOFF) != 0;
-	const bool base36 = p->coreb.cfgGetB? p->coreb.cfgGetB (p->coreb.core, "asm.addr.base36"): p->base36;
+	const bool base36 = addrbase == 36;
 	char space[32] = { 0 };
 	const char *reset = p->resetbg? Color_RESET: Color_RESET_NOBG;
 	const bool show_color = p->flags & R_PRINT_FLAGS_COLOR;
+	char rgbstr[32];
+	const char *k = "";
+	const char *inv = "";
 	bool ok = true;
 
 	if (show_color) {
-		char rgbstr[32];
 		RCons *cons = p->consb.cons;
-		const char *k = (cons && cons->context)? cons->context->pal.addr: "";
-		const char *inv = invert? R_CONS_INVERT (true, true): "";
+		k = (cons && cons->context)? cons->context->pal.addr: "";
+		inv = invert? R_CONS_INVERT (true, true): "";
 		if ((p->flags & R_PRINT_FLAGS_RAINBOW) && cons && cons->rgbstr) {
 			k = cons->rgbstr (cons, rgbstr, sizeof (rgbstr), off);
 		}
 		if (!k) {
 			k = "";
 		}
-		if (base36) {
-			char b36str[16];
-			b36_fromnum (b36str, off);
+	}
+	if (base36) {
+		char b36str[16];
+		b36_fromnum (b36str, off);
+		if (show_color) {
 			ok &= r_strbuf_appendf (sb, "%s%s%s%s", k, inv, b36str, reset);
-		} else if (offseg) {
+		} else {
+			ok &= r_strbuf_append (sb, b36str);
+		}
+		return ok && r_strbuf_append (sb, " ");
+	}
+	if (show_color) {
+		if (offseg) {
 			ut32 s, a;
 			r_num_segaddr (off, segbas, seggrn, &s, &a);
 			if (offdec) {

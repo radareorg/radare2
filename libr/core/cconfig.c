@@ -2035,10 +2035,20 @@ static bool cb_reloff(void *user, void *data) {
 	return true;
 }
 
-static bool cb_decoff(void *user, void *data) {
+static bool cb_addrbase(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (node->i_value) {
+	if (!strcmp (node->value, "?")) {
+		print_node_options (user, node);
+		return false;
+	}
+	if (node->i_value != 10 && node->i_value != 16 && node->i_value != 36) {
+		node->i_value = 16;
+		free (node->value);
+		node->value = strdup ("16");
+	}
+	core->print->base36 = node->i_value == 36;
+	if (node->i_value == 10) {
 		core->print->flags |= R_PRINT_FLAGS_ADDRDEC;
 	} else {
 		core->print->flags &= (~R_PRINT_FLAGS_ADDRDEC);
@@ -4371,10 +4381,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.rainbow", "false", &cb_scrrainbow, "shows rainbow colors depending of address");
 	SETCB ("scr.last", "true", &cb_scrlast, "cache last output after flush to make _ command work (disable for performance)");
 	SETB ("asm.addr", "true", "show offsets in disassembly");
-	SETB ("asm.addr.base36", "false", "use base36 for addresses");
 	SETCB ("asm.addr.segment", "false", &cb_segoff, "show segmented address in prompt (x86-16)");
 	SETICB ("asm.addr.segment.bits", 4, &cb_asm_addr_segment_bits, "segment granularity in bits (x86-16)");
-	SETCB ("asm.addr.base10", "false", &cb_decoff, "show address in base 10 instead of hexadecimal");
+	n = SETICB ("asm.addr.base", 16, &cb_addrbase, "show address in base 10, 16 or 36");
+	SETOPTIONS (n, "10", "16", "36", NULL);
 	SETCB ("asm.addr.relto", "", &cb_reloff, "show offset relative to fun,map,sec,flg");
 	SETB ("asm.addr.focus", "false", "show only the addresses that branch or located at the beginning of a basic block");
 	SETB ("asm.section", "false", "show section name before offset");
