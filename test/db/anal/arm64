@@ -24,6 +24,28 @@ call
 EOF
 RUN
 
+NAME=arm64 stub island branch targets
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 10080010510080d21056118b00021fd6100000d010d2089100021fd6
+s 0xc
+ao~ptr,type,jump
+?e --
+s 0x18
+ao~ptr,type,jump
+EOF
+EXPECT=<<EOF
+ptr: 0x00400100
+type: jmp
+jump: 0x00400100
+--
+ptr: 0x00002234
+type: jmp
+jump: 0x00002234
+EOF
+RUN
+
 NAME=noreturn errno
 FILE=bins/mach0/BatteryLife.arm_64.1
 CMDS=<<EOF
