@@ -142,25 +142,36 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t l) {
 	return true;
 }
 
-// TODO: there's room for optimizations here
 R_API bool r_strbuf_slice(RStrBuf *sb, int from, int len) {
 	R_RETURN_VAL_IF_FAIL (sb && from >= 0 && len >= 0, false);
 	if (from < 1 && len >= sb->len) {
 		return false;
 	}
-	const char *s = r_strbuf_get (sb);
-	const char *fr = r_str_ansi_chrn (s, from + 1);
-	const char *to = r_str_ansi_chrn (s, from + len + 1);
-	char *r = R_STR_NDUP (fr, to - fr);
-	r_strbuf_fini (sb);
-	r_strbuf_init (sb);
 	if (from >= len) {
 		r_strbuf_set (sb, "");
-		free (r);
 		return false;
 	}
-	r_strbuf_set (sb, r);
-	free (r);
+	char *s = r_strbuf_get (sb);
+	// Scan from the start position, then continue from there to find the end,
+	// avoiding a full re-scan from the beginning. Shift the slice in-place.
+	const char *fr = r_str_ansi_chrn (s, from + 1);
+	const char *to = r_str_ansi_chrn (fr, len + 1);
+	size_t slice_len = to - fr;
+	if (sb->weakref) {
+		char *ns = malloc (slice_len + 1);
+		if (!ns) {
+			return false;
+		}
+		memcpy (ns, fr, slice_len);
+		ns[slice_len] = 0;
+		sb->ptr = ns;
+		sb->ptrlen = slice_len + 1;
+		sb->weakref = false;
+	} else {
+		memmove (s, fr, slice_len);
+		s[slice_len] = 0;
+	}
+	sb->len = slice_len;
 	return true;
 }
 
