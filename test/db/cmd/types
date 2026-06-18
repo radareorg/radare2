@@ -374,6 +374,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=tsn <size>
+FILE=-
+CMDS=<<EOF
+'td struct One { int a; };
+'td struct Two { int a; int b; };
+'td struct AlsoTwo { char a[8]; };
+tsn 4+4
+tsn
+tsn?
+EOF
+EXPECT=<<EOF
+AlsoTwo
+Two
+| tsn <size>  list all structs matching the given size
+| tsn <size>  list all structs matching the given size
+EOF
+RUN
+
 NAME=enum32
 FILE=-
 CMDS=<<EOF

@@ -177,6 +177,7 @@ static RCoreHelpMessage help_msg_ts = {
 	"ts*", " [type]", "show pf.<name> format string for given struct",
 	"tsc", "<name>", "list all/given loaded structs in C output format with newlines",
 	"tsd", "", "list all loaded structs in C output format without newlines",
+	"tsn", " <size>", "list all structs matching the given size",
 	"tss", " [type]", "display size of struct",
 	"tsv", " [name]", "view all/given structs in C format with field offsets",
 	NULL
@@ -817,6 +818,38 @@ static int print_struct_union_list_json(RCore *core, Sdb *TDB, SdbForeachCallbac
 	pj_free (pj);
 	ls_free (l);
 	return 1;
+}
+
+static ut64 struct_type_size(Sdb *TDB, const char *name, const char *kind) {
+	if (!strcmp (kind, "typedef")) {
+		char *typedef_key = r_str_newf ("typedef.%s", name);
+		const char *type = sdb_const_get (TDB, typedef_key, NULL);
+		free (typedef_key);
+		if (R_STR_ISNOTEMPTY (type)) {
+			return r_type_get_bitsize (TDB, type) / 8;
+		}
+	}
+	return r_type_get_bitsize (TDB, name) / 8;
+}
+
+static void print_structs_by_size(RCore *core, Sdb *TDB, ut64 size) {
+	SdbList *l = sdb_foreach_list_filter (TDB, stdifstruct, true);
+	if (!l) {
+		return;
+	}
+	SdbListIter *it;
+	SdbKv *kv;
+	ls_foreach (l, it, kv) {
+		const char *name = sdbkv_key (kv);
+		const char *kind = sdbkv_value (kv);
+		if (R_STR_ISEMPTY (name) || !kind) {
+			continue;
+		}
+		if (struct_type_size (TDB, name, kind) == size) {
+			r_cons_println (core->cons, name);
+		}
+	}
+	ls_free (l);
 }
 
 // Rename to char *RAnal.type_to_c() {}
@@ -2436,6 +2469,20 @@ static int cmd_type(void *data, const char *input) {
 		}
 		case ' ':
 			showFormat (core, r_str_trim_head_ro (input + 1), 0);
+			break;
+		case 'n': // "tsn"
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ts, "tsn");
+			} else if (input[2] == ' ') {
+				const char *arg = r_str_trim_head_ro (input + 2);
+				if (R_STR_ISEMPTY (arg)) {
+					r_core_cmd_help_match (core, help_msg_ts, "tsn");
+				} else {
+					print_structs_by_size (core, TDB, r_num_math (core->num, arg));
+				}
+			} else {
+				r_core_cmd_help_match (core, help_msg_ts, "tsn");
+			}
 			break;
 		case 's': // "tss"
 			if (input[2] == ' ') {
