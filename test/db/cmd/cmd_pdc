@@ -102,7 +102,7 @@ EXPECT=<<EOF
 |           0x00402074      6a00           push 0
 \           0x00402076      ff1584304000   call dword [ExitProcess]    ; 0x403084 ; VOID ExitProcess(UINT uExitCode)
 // callconv: eax cdecl (stack);
-int entry0 (int stack) {
+void entry0 (void) {
         si = 3
         fcn.00402000 ()
         
@@ -136,7 +136,7 @@ int entry0 (int stack) {
 }
 
  0x0040200f |                                | // callconv: eax cdecl (stack);
- 0x0040200f |                                | int entry0 (int stack) {
+ 0x0040200f |                                | void entry0 (void) {
  0x0040200f |         si = 3
  0x00402013 |         fcn.00402000 ()
  0x00402018 |         
@@ -321,7 +321,7 @@ pdc
 EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
-int fcn.00000000 (int r3, int r4) {
+void fcn.00000000 (void) {
         // ICOD XREF from fcn.00000000 @ 0x4(x)
         r3 = [obj.myglobal]
         return
@@ -347,7 +347,7 @@ pdc
 EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
-int fcn.00000000 (int r3, int r4) {
+void fcn.00000000 (void) {
         r3 = "hello"
         return
 }
@@ -391,7 +391,7 @@ pdc
 EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
-int fcn.00000000 (int r3, int r4) {
+void fcn.00000000 (void) {
         // ICOD XREF from fcn.00000000 @ 0x4(x)
         r9 = r2 + (0 << 16)
         r3 = [obj.myglobal]
@@ -415,7 +415,7 @@ pdc
 EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
-int fcn.00000000 (int r3, int r4) {
+void fcn.00000000 (void) {
         // ICOD XREF from fcn.00000000 @ 0x4(x)
         r9 = r2 + (0 << 16)
         r3 = [r9 - 0x7ff8] // 0x8008
@@ -439,7 +439,7 @@ pdc
 EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
-int fcn.00000000 (int r3, int r4) {
+void fcn.00000000 (void) {
         // ICOD XREF from fcn.00000000 @ 0x4(x)
         r3 = [obj.myglobal]
         r9 = 0
@@ -464,7 +464,7 @@ pdc
 EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
-int fcn.00000000 (int r3, int r4) {
+void fcn.00000000 (void) {
         // ICOD XREFS from fcn.00000000 @ 0x4(x), 0x8(x)
         r3 = [obj.first]
         r4 = [obj.second]
@@ -488,7 +488,7 @@ pdc
 EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
-int fcn.00000000 (int r3, int r4) {
+void fcn.00000000 (void) {
         // ICOD XREF from fcn.00000000 @ 0x4(x)
         r9 = [obj.myglobal]
         return
@@ -511,7 +511,7 @@ pdc
 EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
-int fcn.00000000 (int r3, int r4) {
+void fcn.00000000 (void) {
         // ICOD XREF from fcn.00000000 @ 0x4(x)
         r3 = [obj.myglobal]
         r4 = r19 + r19
@@ -535,7 +535,7 @@ pdco
 EOF
 EXPECT=<<EOF
  0x00000000 |                                | // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
- 0x00000000 |                                | int fcn.00000000 (int r3, int r4) {
+ 0x00000000 |                                | void fcn.00000000 (void) {
  0x00000000 |         // ICOD XREF from fcn.00000000 @ 0x4(x)
  0x00000004 |         r3 = [obj.myglobal]
  0x00000008 |         return
@@ -585,5 +585,67 @@ EOF
 EXPECT=<<EOF
         return
 func
+EOF
+RUN
+
+NAME=pdc signature from recovered args
+FILE=malloc://0x40
+ARGS=-a mips -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 008510210046102103e0000800000000
+af
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: v0 n32 (a0, a1, a2, a3, a4, a5, a6, a7, stack);
+void fcn.00000000 (int32_t arg1, int32_t arg2, int32_t arg3) {
+        v0 = a0 + a1  // arg2
+        v0 += a2      // arg3
+        ret
+}
+
+EOF
+RUN
+
+NAME=pdc mips fold resolved gp global load
+FILE=malloc://0x100
+ARGS=-a mips -b 32 -e cfg.bigendian=true -e anal.gp=0x90000
+CMDS=<<EOF
+f obj.myglobal=0x88010
+wx 8f8480100000000003e00008
+af
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: v0 n32 (a0, a1, a2, a3, a4, a5, a6, a7, stack);
+void fcn.00000000 (void) {
+        a0 = [obj.myglobal]
+        ret
+}
+
+EOF
+RUN
+
+NAME=pdc mips gp load not folded without a flag
+FILE=malloc://0x100
+ARGS=-a mips -b 32 -e cfg.bigendian=true -e anal.gp=0x90000
+CMDS=<<EOF
+wx 8f8480100000000003e00008
+af
+pdc~a0 =
+EOF
+EXPECT=<<EOF
+        a0 = [gp - 0x7ff0] // [0x88010:4]=-1
+EOF
+RUN
+
+NAME=pdc mips real binary gp global fold
+FILE=bins/elf/boa-mips
+CMDS=<<EOF
+aaa
+pdc @ sym.updateCurNetworkSpeed~v0 = [obj
+EOF
+EXPECT=<<EOF
+        v0 = [obj.tc_meter_enable]
 EOF
 RUN
