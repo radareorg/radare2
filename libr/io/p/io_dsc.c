@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2025 - mrmacete, pancake */
+/* radare - LGPL - Copyright 2008-2026 - mrmacete, pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -1407,12 +1407,6 @@ next_page:
 	}
 }
 
-#if R2__UNIX__
-static bool __is_blockdevice(RIODesc *desc) {
-	return false;
-}
-#endif
-
 static RDSCHeader * dsc_read_header(int fd, ut64 offset) {
 	ut8 tmp[16];
 
@@ -1904,9 +1898,6 @@ RIOPlugin r_io_plugin_dsc = {
 	.check = __check,
 	.seek = __lseek_dsc,
 	.system = __system,
-#if R2__UNIX__
-	.is_blockdevice = __is_blockdevice,
-#endif
 };
 
 #ifndef R2_PLUGIN_INCORE
