@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2025 - condret, pancake, alvaro_fe */
+/* radare2 - LGPL - Copyright 2008-2026 - condret, pancake, alvaro_fe */
 
 #include <r_io.h>
 #include <sdb/sdb.h>
@@ -157,22 +157,23 @@ R_API void r_io_close_all(RIO* io) {
 
 R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
 	R_RETURN_VAL_IF_FAIL (io && buf && len >= 0, -1);
-	if (!io->desc) {
+	int fd = r_io_fd_get_current (io);
+	if (fd < 0) {
 		return -1;
 	}
 	if (io->ff) {
 		memset (buf, io->Oxff, len);
 	}
-	// XXX io->desc is wrong because it assumes the current desc which shouldnt exist
-	return r_io_desc_read_at (io->desc, paddr, buf, len);
+	return r_io_fd_read_at (io, fd, paddr, buf, len);
 }
 
 R_API int r_io_pwrite_at(RIO* io, ut64 paddr, const ut8* buf, int len) {
 	R_RETURN_VAL_IF_FAIL (io && buf && len > 0, -1);
-	if (!io->desc) {
+	int fd = r_io_fd_get_current (io);
+	if (fd < 0) {
 		return -1;
 	}
-	return r_io_desc_write_at (io->desc, paddr, buf, len);
+	return r_io_fd_write_at (io, fd, paddr, buf, len);
 }
 
 // Returns true iff all reads on mapped regions are successful and complete.
