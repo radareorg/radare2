@@ -543,31 +543,17 @@ static void prepare_indentstr(PDCState *state, int indent) {
 	state->indentstr[pos] = '\0';
 }
 
-static void print_newline(PDCState *state, ut64 addr, int indent) {
+static void print_newline(PDCState *state, ut64 addr, int indent, bool synthetic) {
 	prepare_indentstr (state, indent);
 	RStrBuf *sb = state_sb (state);
 	r_strbuf_append (sb, "\n");
 	if (state->show_asm) {
-		asm_append (sb, state->core, addr, " ");
-		r_strbuf_append (sb, " | ");
-		r_strbuf_append (sb, state->indentstr);
-	} else if (state->show_addr) {
-		const char *lead = state->pj? "": " ";
-		r_strbuf_appendf (sb, "%s0x%08" PFMT64x " | %s", lead, addr, state->indentstr);
-	} else {
-		r_strbuf_append (sb, state->indentstr);
-	}
-}
-
-// Synthetic lines (goto/return/labels/braces) leave the asm column blank.
-static void print_newline_synthetic(PDCState *state, ut64 addr, int indent) {
-	prepare_indentstr (state, indent);
-	RStrBuf *sb = state_sb (state);
-	r_strbuf_append (sb, "\n");
-	if (state->show_asm) {
-		r_strbuf_appendf (sb, " 0x%08" PFMT64x " | ", addr);
-		r_strbuf_pad (sb, ' ', 30);
-		r_strbuf_append (sb, " | ");
+		if (synthetic) {
+			print_pipe_header (state, addr);
+		} else {
+			asm_append (sb, state->core, addr, " ");
+			r_strbuf_append (sb, " | ");
+		}
 		r_strbuf_append (sb, state->indentstr);
 	} else if (state->show_addr) {
 		const char *lead = state->pj? "": " ";
@@ -642,7 +628,7 @@ static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr
 	sdb_set (gc, r_strf ("%" PFMT64x ".to.%" PFMT64x, curr_addr, dst_addr), "1", 0);
 
 	if (dst_addr != bb->addr) {
-		print_newline_synthetic (state, bb->addr, indent);
+		print_newline (state, bb->addr, indent, true);
 		print_goto_or_return (state, dst_addr, " ");
 	}
 }
@@ -655,13 +641,13 @@ static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut
 	const char *key = r_strf ("%" PFMT64x ".addr", curr_addr);
 	if (!sdb_exists (state->goto_cache, key)) {
 		sdb_set (state->goto_cache, key, "1", 0);
-		print_newline_synthetic (state, bb->addr, indent);
+		print_newline (state, bb->addr, indent, true);
 		print_goto_or_return (state, dst_addr, "");
 	}
 }
 
 #define PRINTF(...) print_str(&state, __VA_ARGS__)
-#define NEWLINE(addr, indent) print_newline(&state, addr, indent)
+#define NEWLINE(addr, indent) print_newline(&state, addr, indent, false)
 #define PRINTGOTO(dst_addr, curr_addr) print_goto(&state, bb, dst_addr, curr_addr, indent)
 #define PRINTGOTO_DIRECT(dst_addr, curr_addr) print_goto_direct(&state, bb, dst_addr, curr_addr, indent)
 
@@ -717,6 +703,19 @@ static bool is_known_loop_header(PDCState *state, ut64 addr) {
 	return sdb_num_get (state->db, r_strf ("loop_header.%" PFMT64x, addr), 0) != 0;
 }
 
+static bool line_is_goto(const char *line) {
+	return r_str_startswith (line, "goto ") || r_str_startswith (line, "jmp ");
+}
+
+static bool line_is_known_loop_goto(PDCState *state, const char *line) {
+	const char *num = line_is_goto (line)? strstr (line, "0x"): NULL;
+	if (!num) {
+		return false;
+	}
+	ut64 dst = r_num_get (NULL, num);
+	return dst && dst != UT64_MAX && is_known_loop_header (state, dst);
+}
+
 static bool part_of_a_switch(PDCState *state, ut64 addr) {
 	return state->switch_addrs && r_bitset_test (state->switch_addrs, addr);
 }
@@ -766,17 +765,9 @@ static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 		if (R_STR_ISNOTEMPTY (line)) {
 			// drop tail goto into a structured loop header (the while/do owns that edge)
 			const char *t = r_str_trim_head_ro (line);
-			if (r_str_startswith (t, "goto ") || r_str_startswith (t, "jmp ")) {
-				if (strstr (t, "switch table")) {
-					continue;
-				}
-				const char *num = strstr (t, "0x");
-				if (num) {
-					ut64 dst = r_num_get (NULL, num);
-					if (dst && dst != UT64_MAX && is_known_loop_header (state, dst)) {
-						continue;
-					}
-				}
+			if (line_is_goto (t) && (strstr (t, "switch table")
+					|| line_is_known_loop_goto (state, t))) {
+				continue;
 			}
 		}
 		if (emit_pj && state->pj) {
@@ -788,7 +779,7 @@ static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 			pj_end (state->pj);
 		}
 		if (R_STR_ISNOTEMPTY (line)) {
-			print_newline (state, addr, indent);
+			print_newline (state, addr, indent, false);
 			print_str (state, "%s", line);
 		}
 	}
@@ -799,7 +790,7 @@ static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 static void emit_close_braces(PDCState *state, ut64 addr, int from, int to) {
 	int i;
 	for (i = from; i > to; i--) {
-		print_newline (state, addr, i);
+		print_newline (state, addr, i, false);
 		print_str (state, "}");
 	}
 }
@@ -918,7 +909,7 @@ static void render_case_body_lines(PDCState *state, ut64 case_addr, int indent) 
 }
 
 static void emit_case_label(PDCState *state, ut64 value, ut64 target, int indent) {
-	print_newline (state, target, indent);
+	print_newline (state, target, indent, false);
 	if (IS_PRINTABLE (value)) {
 		print_str (state, "case %" PFMT64d ": // '%c' 0x%08" PFMT64x,
 			value, (int)value, target);
@@ -928,7 +919,7 @@ static void emit_case_label(PDCState *state, ut64 value, ut64 target, int indent
 }
 
 static void emit_case_range_label(PDCState *state, ut64 lo, ut64 hi, ut64 target, int indent) {
-	print_newline (state, target, indent);
+	print_newline (state, target, indent, false);
 	if (IS_PRINTABLE (lo) && IS_PRINTABLE (hi)) {
 		print_str (state, "case %" PFMT64d "...%" PFMT64d ": // '%c'..'%c' 0x%08" PFMT64x,
 			lo, hi, (int)lo, (int)hi, target);
@@ -956,12 +947,12 @@ static void render_arm_body(PDCState *state, RList *visited, ut64 target, int in
 	if (cbb && r_anal_function_contains (state->fcn, target) && !r_list_contains (visited, cbb)) {
 		render_case_body_lines (state, target, indent);
 		if (!bb_ends_with_terminator (state->core, cbb)) {
-			print_newline (state, target, indent);
+			print_newline (state, target, indent, false);
 			print_str (state, "break;");
 		}
 		mark_bb_visited (state, visited, cbb);
 	} else {
-		print_newline (state, target, indent);
+		print_newline (state, target, indent, false);
 		print_goto_or_return (state, target, "");
 	}
 }
@@ -1005,7 +996,7 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 	}
 	char *expr = find_switch_expr (state->core, state->fcn, sw_bb);
 	ut64 table_addr = sop->daddr != UT64_MAX? sop->daddr: sw_bb->addr;
-	print_newline (state, sw_bb->addr, indent);
+	print_newline (state, sw_bb->addr, indent, false);
 	print_str (state, "switch (%s) { // jump table of %d cases at 0x%08" PFMT64x,
 		expr, i, table_addr);
 	free (expr);
@@ -1030,12 +1021,12 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 	}
 
 	if (sop->def_val != UT64_MAX) {
-		print_newline (state, sop->def_val, indent + 1);
+		print_newline (state, sop->def_val, indent + 1, false);
 		print_str (state, "default: // 0x%08" PFMT64x, sop->def_val);
 		render_arm_body (state, visited, sop->def_val, indent + 2);
 	}
 
-	print_newline (state, sw_bb->addr, indent);
+	print_newline (state, sw_bb->addr, indent, false);
 	print_str (state, "}");
 	free (arr);
 }
@@ -1125,19 +1116,10 @@ static char *extract_loop_cond(PDCState *state, RAnalBlock *test_bb, ut64 back_t
 
 static bool line_is_branch_to(const char *line, const char *target_hex) {
 	const char *t = r_str_trim_head_ro (line);
-	if (R_STR_ISEMPTY (t)) {
-		return false;
-	}
-	if (r_str_startswith (t, "goto ") && strstr (t, target_hex)) {
-		return true;
-	}
-	if (r_str_startswith (t, "jmp ") && strstr (t, target_hex)) {
-		return true;
-	}
-	if (r_str_startswith (t, "if ") && strstr (t, "goto ") && strstr (t, target_hex)) {
-		return true;
-	}
-	return false;
+	return R_STR_ISNOTEMPTY (t)
+		&& strstr (t, target_hex)
+		&& (line_is_goto (t)
+			|| (r_str_startswith (t, "if ") && strstr (t, "goto ")));
 }
 
 static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList *visited, int indent);
@@ -1175,17 +1157,10 @@ static void emit_bb_body_no_back_jump(PDCState *state, RAnalBlock *bb, ut64 back
 				|| line_is_branch_to (rendered, back_hex_short)) {
 			continue;
 		}
-		const char *rt = r_str_trim_head_ro (rendered);
-		if (r_str_startswith (rt, "goto ") || r_str_startswith (rt, "jmp ")) {
-			const char *num = strstr (rt, "0x");
-			if (num) {
-				ut64 dst = r_num_get (NULL, num);
-				if (dst && dst != UT64_MAX && is_known_loop_header (state, dst)) {
-					continue;
-				}
-			}
+		if (line_is_known_loop_goto (state, r_str_trim_head_ro (rendered))) {
+			continue;
 		}
-		print_newline (state, addr, indent);
+		print_newline (state, addr, indent, false);
 		print_str (state, "%s", rendered);
 	}
 	r_list_free (lines);
@@ -1208,7 +1183,7 @@ static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList
 		return NULL;
 	}
 	char *cond = extract_loop_cond (state, test_bb, test_bb->jump);
-	print_newline (state, test_bb->addr, indent);
+	print_newline (state, test_bb->addr, indent, false);
 	if (self_loop) {
 		print_str (state, "do {");
 	} else {
@@ -1222,7 +1197,7 @@ static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList
 	if (self_loop) {
 		emit_bb_body_no_back_jump (state, test_bb, test_bb->addr, indent + 1);
 		mark_bb_visited (state, visited, test_bb);
-		print_newline (state, test_bb->addr, indent);
+		print_newline (state, test_bb->addr, indent, false);
 		if (cond) {
 			print_str (state, "} while (%s);", cond);
 		} else {
@@ -1303,7 +1278,7 @@ static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList
 		}
 		r_list_free (sorted);
 		mark_bb_visited (state, visited, test_bb);
-		print_newline (state, test_bb->addr, indent);
+		print_newline (state, test_bb->addr, indent, false);
 		print_str (state, "}");
 	}
 	free (cond);
@@ -1595,7 +1570,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					queuegoto = 0LL;
 				}
 				if (bb_addr_is_goto_target (state.fcn, bb->addr)) {
-					print_newline_synthetic (&state, bb->addr, indent - 1);
+					print_newline (&state, bb->addr, indent - 1, true);
 					PRINTF ("loc_0x%08" PFMT64x ":", bb->addr);
 				}
 				addr = emit_code_lines (&state, code, bb->addr, indent, true);
@@ -1647,7 +1622,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			if (addr == UT64_MAX) {
 				closed = true;
 				if (!bb_ends_with_terminator (core, bb)) {
-					print_newline_synthetic (&state, bb->addr, indent);
+					print_newline (&state, bb->addr, indent, true);
 					PRINTF (r0? "return %s;": "return;", r0);
 					sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
 				}
@@ -1746,7 +1721,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				if (indent > nindent) {
 					emit_close_braces (&state, bb->addr, indent, nindent);
 				}
-				print_newline_synthetic (&state, addr, nindent);
+				print_newline (&state, addr, nindent, true);
 				PRINTF ("goto loc_0x%08" PFMT64x ";", addr);
 				indent = nindent;
 			}
@@ -1870,7 +1845,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 			if (bb->jump == UT64_MAX) {
 				if (!bb_ends_with_terminator (core, bb)) {
-					print_newline_synthetic (&state, bb->addr, indent);
+					print_newline (&state, bb->addr, indent, true);
 					PRINTF (r0? "return %s;": "return;", r0);
 					sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
 				}
@@ -1883,7 +1858,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_list_free (visited);
 	indent = 0;
 	if (state.show_asm && bb) {
-		print_newline_synthetic (&state, bb->addr, indent);
+		print_newline (&state, bb->addr, indent, true);
 	} else {
 		NEWLINE (addr, indent);
 	}
