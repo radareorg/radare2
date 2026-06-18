@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2025 - condret, pancake, alvaro */
+/* radare2 - LGPL - Copyright 2017-2026 - condret, pancake, alvaro */
 
 #include <r_io.h>
 
@@ -178,7 +178,7 @@ R_API bool r_io_desc_close(RIODesc *desc) {
 	return true;
 }
 
-//returns length of written bytes
+// returns length of written bytes
 R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
 	R_RETURN_VAL_IF_FAIL (desc && buf, -1);
 	if (len < 0) {
@@ -186,8 +186,8 @@ R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
 	}
 	// check pointers and pcache
 	if (desc->io && (desc->io->p_cache & 2)) {
-		return r_io_desc_cache_write (desc,
-				r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR), buf, len);
+		const ut64 addr = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
+		return r_io_desc_cache_write (desc, addr, buf, len);
 	}
 	return r_io_plugin_write (desc, buf, len);
 }
@@ -234,7 +234,7 @@ typedef struct desc_map_resize_t {
 	int fd;
 } DescMapResize;
 
-static bool _resize_affected_maps (void *user, void *data, ut32 id) {
+static bool _resize_affected_maps(void *user, void *data, ut32 id) {
 	DescMapResize *dmr = (DescMapResize *)user;
 	RIOMap *map = (RIOMap *)data;
 	if (map->fd == dmr->fd) {
@@ -359,7 +359,7 @@ R_API int r_io_desc_get_pid(RIODesc *desc) {
 }
 
 R_API int r_io_desc_get_tid(RIODesc *desc) {
-	//-1 and -2 are reserved
+	// -1 and -2 are reserved
 	if (!desc) {
 		return -3;
 	}
@@ -403,17 +403,6 @@ R_API bool r_io_desc_extend(RIODesc *desc, ut64 size) {
 	return 0;
 }
 
-/* lifecycle */
-
-// TODO: move into io.c : r_io_init
-R_IPI bool r_io_desc_init(RIO *io) {
-	R_RETURN_VAL_IF_FAIL (io, false);
-	r_io_desc_fini (io);
-	// TODO: it leaks if called twice
-	// fd is signed
-	return r_id_storage_init (&io->files, 3, 0x80000000);
-}
-
 static bool desc_fini_cb(void *user, void *data, ut32 id) {
 	RIODesc* desc = (RIODesc*) data;
 	if (desc && desc->plugin && desc->plugin->close) {
@@ -423,12 +412,12 @@ static bool desc_fini_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-//closes all descs and frees all descs and io->files
+// closes all descs and frees all descs and io->files
 R_IPI void r_io_desc_fini(RIO* io) {
 	R_RETURN_IF_FAIL (io);
 	r_id_storage_foreach (&io->files, desc_fini_cb, io);
 	r_id_storage_fini (&io->files);
 	io->files = (const RIDStorage){0};
-	//no map-cleanup here, to keep it modular useable
+	// no map-cleanup here, to keep it modular useable
 	io->desc = NULL;
 }
