@@ -1674,8 +1674,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
 	RIO *io = (RIO *)user;
 	RIODesc *desc = (RIODesc *)data;
+	RIODescInfo di = r_io_desc_info (desc);
 
-	if (r_io_desc_is_blockdevice (desc) || r_io_desc_is_dbg (desc)) {
+	if (di.blkdev || di.isdbg) {
 		return true;
 	}
 
