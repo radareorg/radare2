@@ -360,6 +360,7 @@ R_API void r_string_appendf(RString *a, const char * R_NONNULL fmt, ...);
 R_API char *r_str_pseudo_transform(const char **rules, const char *asm_str);
 R_API char *r_str_pseudo_subvar(char *pseudo, void *varmap);
 
+R_API char *r_str_jwtdec(const char *token);
 
 #ifdef __cplusplus
 }

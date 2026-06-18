@@ -134,11 +134,13 @@ static RCoreHelpMessage help_msg_p6 = {
 };
 
 static RCoreHelpMessage help_msg_pF = {
-	"Usage: pF[apdbA][*vqj]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf, axml",
+	"Usage: pF[abJopxABX][*vqjz]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf, axml, JWT",
 	"pFa", "[jqt] [len]", "decode ASN1/DER from current block (PEM is B64(DER))",
 	"pFA", "[j] [len]", "decode Android Binary XML from current block",
 	"pFb", "[vj] [len]", "decode raw proto buffers in (verbose, JSON) format",
 	"pFB", "[j] [len]", "decode iOS Binary PLIST from current block",
+	"pFJ", "[len]", "decode JWT from current block",
+	"pFJz", "[len]", "decode null-terminated JWT from current block",
 	"pFo", "[j] [len]", "decode ASN1 OID",
 	"pFp", "[j] [len]", "decode PKCS7",
 	"pFx", "[j] [len]", "Same with X509",
@@ -1922,6 +1924,28 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8 *data, i
 				r_cons_print (core->cons, s);
 				free (s);
 			}
+		}
+		break;
+	case 'J': // "pFJ"
+		if (input[1] == '?' || (input[1] == 'z' && input[2] == '?')) {
+			r_core_cmd_help_contains (core, help_msg_pF, "pFJ");
+		} else if (input[1] && input[1] != ' ' && input[1] != 'z') {
+			r_core_return_invalid_command (core, "pFJ", input[1]);
+		} else {
+			const bool is_zero_terminated = input[1] == 'z';
+			const int token_len = is_zero_terminated? r_str_nlen ((const char *)data, size): size;
+			char *token = r_str_trim_ndup ((const char *)data, token_len);
+			if (!token) {
+				break;
+			}
+			char *s = r_jwt_decode (token);
+			if (s) {
+				r_cons_println (core->cons, s);
+				free (s);
+			} else {
+				R_LOG_ERROR ("Malformed JWT");
+			}
+			free (token);
 		}
 		break;
 	case 'A': // "pFA"

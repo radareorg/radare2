@@ -34,6 +34,7 @@ r_util_sources = [
   'intervaltree.c',
   'json_indent.c',
   'json_parser.c',
+  'jwt.c',
   'lib.c',
   'libstore.c',
   'list.c',
