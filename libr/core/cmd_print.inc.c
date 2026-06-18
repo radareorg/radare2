@@ -1938,7 +1938,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8 *data, i
 			if (!token) {
 				break;
 			}
-			char *s = r_jwt_decode (token);
+			char *s = r_str_jwtdec (token);
 			if (s) {
 				r_cons_println (core->cons, s);
 				free (s);
