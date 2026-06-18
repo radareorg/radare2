@@ -120,6 +120,9 @@ static RCoreHelpMessage help_msg_te = {
 	"tee", " <name>", "edit enum with cfg.editor",
 	"tej", "", "list all loaded enums in json",
 	"tej", " <enum>", "show enum in json",
+	"ten", " <value>", "show enum type and name for given number",
+	"tenj", " <value>", "show enum type and name for given number in json",
+	"tenq", " <value>", "show enum type.name for given number",
 	"test", " [-x,f,d] [path]", "test if executable, file or directory exists",
 	"tev", " [name]", "view all/given enums in C format with member values",
 	NULL
@@ -1544,6 +1547,54 @@ static void print_enum_list_json(RCore *core, Sdb *TDB, const char *name) {
 	pj_free (pj);
 }
 
+static void print_enum_by_num(RCore *core, Sdb *TDB, ut64 value, char mode) {
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = r_core_pj_new (core);
+		pj_a (pj);
+	}
+	SdbList *l = sdb_foreach_list (TDB, true);
+	if (l) {
+		SdbKv *kv;
+		SdbListIter *iter;
+		ls_foreach (l, iter, kv) {
+			if (strcmp (sdbkv_value (kv), "enum")) {
+				continue;
+			}
+			const char *enum_name = sdbkv_key (kv);
+			RList *list = r_type_get_enum (TDB, enum_name);
+			if (list) {
+				RListIter *miter;
+				RTypeEnum *member;
+				r_list_foreach (list, miter, member) {
+					ut64 member_value = r_num_math (core->num, member->val);
+					if (member_value != value) {
+						continue;
+					}
+					if (mode == 'j') {
+						pj_o (pj);
+						pj_ks (pj, "type", enum_name);
+						pj_ks (pj, "name", member->name);
+						pj_kn (pj, "value", member_value);
+						pj_end (pj);
+					} else if (mode == 'q') {
+						r_cons_printf (core->cons, "%s.%s\n", enum_name, member->name);
+					} else {
+						r_cons_printf (core->cons, "%s.%s = %s\n", enum_name, member->name, member->val);
+					}
+				}
+				r_list_free (list);
+			}
+		}
+		ls_free (l);
+	}
+	if (pj) {
+		pj_end (pj);
+		r_cons_printf (core->cons, "%s\n", pj_string (pj));
+		pj_free (pj);
+	}
+}
+
 static void print_enum_in_c_format(RCore *core, Sdb *TDB, const char *arg, bool multiline) {
 	char *name = NULL;
 	SdbKv *kv;
@@ -2432,6 +2483,46 @@ static int cmd_type(void *data, const char *input) {
 		}
 		char *res = NULL, *temp = strchr (input, ' ');
 		Sdb *TDB = core->anal->sdb_types;
+		if (input[1] == 'n') { // "ten"
+			char mode = 0;
+			const char *arg = NULL;
+			const char *help_cmd = "ten";
+			switch (input[2]) {
+			case '?': // "ten?"
+				r_core_cmd_help_contains (core, help_msg_te, "ten");
+				break;
+			case 'j': // "tenj"
+			case 'q': // "tenq"
+				mode = input[2];
+				help_cmd = mode == 'j'? "tenj": "tenq";
+				if (input[3] == '?') {
+					r_core_cmd_help_match (core, help_msg_te, help_cmd);
+					break;
+				}
+				arg = r_str_trim_head_ro (input + 3);
+				if (R_STR_ISEMPTY (arg)) {
+					r_core_cmd_help_match (core, help_msg_te, help_cmd);
+					break;
+				}
+				print_enum_by_num (core, TDB, r_num_math (core->num, arg), mode);
+				break;
+			case ' ': // "ten "
+				arg = r_str_trim_head_ro (input + 2);
+				if (R_STR_ISEMPTY (arg)) {
+					r_core_cmd_help_match (core, help_msg_te, help_cmd);
+					break;
+				}
+				print_enum_by_num (core, TDB, r_num_math (core->num, arg), mode);
+				break;
+			case '\0':
+				r_core_cmd_help_match (core, help_msg_te, help_cmd);
+				break;
+			default:
+				r_core_return_invalid_command (core, "ten", input[2]);
+				break;
+			}
+			break;
+		}
 		char *name = temp ? strdup (temp + 1): NULL;
 		char *member_name = name ? strchr (name, ' '): NULL;
 

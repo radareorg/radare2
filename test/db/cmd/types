@@ -643,6 +643,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ten <value>
+FILE=-
+CMDS=<<EOF
+'td enum Alpha {ONE=1,TWO=2};
+'td enum Beta {UNO=2,DOS=3};
+ten 1+1
+tenq 2
+tenj 2
+EOF
+EXPECT=<<EOF
+Alpha.TWO = 0x2
+Beta.UNO = 0x2
+Alpha.TWO
+Beta.UNO
+[{"type":"Alpha","name":"TWO","value":2},{"type":"Beta","name":"UNO","value":2}]
+EOF
+RUN
+
 NAME=afsafv
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
