@@ -21,11 +21,11 @@ typedef struct {
 } PDCState;
 
 static const char *pseudo_arg_name(RAnal *anal, const char *arg) {
-	const char *first = arg? r_anal_cc_location_first (anal, arg): NULL;
+	const char *first = r_anal_cc_location_first (anal, arg);
 	if (first) {
 		arg = first;
 	}
-	if (arg && (!strcmp (arg, "^") || !strcmp (arg, "^-"))) {
+	if (!strcmp (arg, "^") || !strcmp (arg, "^-")) {
 		return "stack";
 	}
 	return arg;
@@ -70,7 +70,7 @@ static void set_right_token(RFindCTX *ctx, char *token) {
 }
 
 static void set_left_length(RFindCTX *ctx, const char *in, int extra) {
-	if (!ctx->leftlen && ctx->left && isspace (*in)) {
+	if (!ctx->leftlen && isspace (*in)) {
 		ctx->leftlen = in - ctx->left + extra;
 	}
 }
@@ -82,10 +82,6 @@ static void set_right_length(RFindCTX *ctx, const char *in, int extra) {
 }
 
 static void find_function_name(RFindCTX *ctx, const char *in) {
-	if (!ctx->comment || *in != '(' || !isalpha (in[-1]) || ctx->right) {
-		return;
-	}
-
 	ctx->right = (char *) (in - 1);
 	while (isalpha (*ctx->right) || *ctx->right == '_' || *ctx->right == '*') {
 		ctx->right--;
@@ -103,9 +99,6 @@ static void find_function_name(RFindCTX *ctx, const char *in) {
 static void swap_strings(RFindCTX *ctx) {
 	char *copy = NULL;
 	size_t len;
-	if (!ctx->right || !ctx->left || ctx->rightlen <= 0 || ctx->leftlen <= 0) {
-		return;
-	}
 	if (ctx->leftlen > ctx->rightlen) {
 		len = ctx->leftlen;
 		copy = R_NEWS (char, len);
@@ -149,7 +142,7 @@ static void swap_strings(RFindCTX *ctx) {
 }
 
 static void find_and_change(char *in, int len) {
-	if (!in || len < 1) {
+	if (len < 1) {
 		return;
 	}
 	RFindCTX ctx = { 0 };
@@ -590,10 +583,7 @@ static bool bb_addr_is_goto_target(RAnalFunction *fcn, ut64 addr) {
 static int bb_last_op_type(RCore *core, RAnalBlock *bb);
 
 static bool pdc_is_ret_only_bb(RCore *core, ut64 addr) {
-	if (addr == UT64_MAX) {
-		return false;
-	}
-	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, addr);
+	RAnalBlock *bb = addr != UT64_MAX? r_anal_bb_from_offset (core->anal, addr): NULL;
 	if (!bb || bb->jump != UT64_MAX || bb->fail != UT64_MAX) {
 		return false;
 	}
@@ -652,10 +642,7 @@ static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut
 #define PRINTGOTO_DIRECT(dst_addr, curr_addr) print_goto_direct(&state, bb, dst_addr, curr_addr, indent)
 
 static int bb_last_op_type(RCore *core, RAnalBlock *bb) {
-	if (!bb || bb->ninstr < 1) {
-		return -1;
-	}
-	ut64 last_addr = r_anal_bb_opaddr_i (bb, bb->ninstr - 1);
+	ut64 last_addr = bb->ninstr > 0? r_anal_bb_opaddr_i (bb, bb->ninstr - 1): UT64_MAX;
 	if (last_addr == UT64_MAX) {
 		return -1;
 	}
@@ -709,10 +696,7 @@ static bool line_is_goto(const char *line) {
 
 static bool line_is_known_loop_goto(PDCState *state, const char *line) {
 	const char *num = line_is_goto (line)? strstr (line, "0x"): NULL;
-	if (!num) {
-		return false;
-	}
-	ut64 dst = r_num_get (NULL, num);
+	ut64 dst = num? r_num_get (NULL, num): 0;
 	return dst && dst != UT64_MAX && is_known_loop_header (state, dst);
 }
 
@@ -826,9 +810,6 @@ static char *pdc_prefix_lines(const char *s, const char *prefix, bool addr_pipe)
 }
 
 static void mark_bb_visited(PDCState *state, RList *visited, RAnalBlock *cbb) {
-	if (!cbb) {
-		return;
-	}
 	r_bitset_set (state->marked, cbb->addr);
 	if (!r_list_contains (visited, cbb)) {
 		r_list_append (visited, cbb);
@@ -871,11 +852,7 @@ static char *find_switch_expr(RCore *core, RAnalFunction *fcn, RAnalBlock *sw_bb
 			if (!r_str_startswith (t, "cmp ")) {
 				continue;
 			}
-			const char *sp = strchr (t, ' ');
-			if (!sp) {
-				continue;
-			}
-			const char *op1 = r_str_trim_head_ro (sp + 1);
+			const char *op1 = r_str_trim_head_ro (t + 4);
 			const char *comma = strchr (op1, ',');
 			if (!comma || comma <= op1) {
 				continue;
@@ -895,11 +872,7 @@ static char *find_switch_expr(RCore *core, RAnalFunction *fcn, RAnalBlock *sw_bb
 	return strdup ("switch_var");
 }
 
-static void render_case_body_lines(PDCState *state, ut64 case_addr, int indent) {
-	RAnalBlock *cbb = r_anal_bb_from_offset (state->core->anal, case_addr);
-	if (!cbb) {
-		return;
-	}
+static void render_case_body_lines(PDCState *state, RAnalBlock *cbb, int indent) {
 	char *code = fetch_bb_pseudo (state, cbb);
 	if (!code) {
 		return;
@@ -908,19 +881,14 @@ static void render_case_body_lines(PDCState *state, ut64 case_addr, int indent) 
 	free (code);
 }
 
-static void emit_case_label(PDCState *state, ut64 value, ut64 target, int indent) {
+static void emit_case_label(PDCState *state, ut64 lo, ut64 hi, ut64 target, int indent) {
 	print_newline (state, target, indent, false);
-	if (IS_PRINTABLE (value)) {
+	if (lo == hi && IS_PRINTABLE (lo)) {
 		print_str (state, "case %" PFMT64d ": // '%c' 0x%08" PFMT64x,
-			value, (int)value, target);
-	} else {
-		print_str (state, "case %" PFMT64d ": // 0x%08" PFMT64x, value, target);
-	}
-}
-
-static void emit_case_range_label(PDCState *state, ut64 lo, ut64 hi, ut64 target, int indent) {
-	print_newline (state, target, indent, false);
-	if (IS_PRINTABLE (lo) && IS_PRINTABLE (hi)) {
+			lo, (int)lo, target);
+	} else if (lo == hi) {
+		print_str (state, "case %" PFMT64d ": // 0x%08" PFMT64x, lo, target);
+	} else if (IS_PRINTABLE (lo) && IS_PRINTABLE (hi)) {
 		print_str (state, "case %" PFMT64d "...%" PFMT64d ": // '%c'..'%c' 0x%08" PFMT64x,
 			lo, hi, (int)lo, (int)hi, target);
 	} else {
@@ -945,7 +913,7 @@ static void render_arm_body(PDCState *state, RList *visited, ut64 target, int in
 	}
 	RAnalBlock *cbb = r_anal_bb_from_offset (state->core->anal, target);
 	if (cbb && r_anal_function_contains (state->fcn, target) && !r_list_contains (visited, cbb)) {
-		render_case_body_lines (state, target, indent);
+		render_case_body_lines (state, cbb, indent);
 		if (!bb_ends_with_terminator (state->core, cbb)) {
 			print_newline (state, target, indent, false);
 			print_str (state, "break;");
@@ -959,7 +927,7 @@ static void render_arm_body(PDCState *state, RList *visited, ut64 target, int in
 
 static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, int indent) {
 	RAnalSwitchOp *sop = sw_bb->switch_op;
-	if (!sop || !sop->cases) {
+	if (!sop->cases) {
 		return;
 	}
 	int n = r_list_length (sop->cases);
@@ -1009,11 +977,11 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 		}
 		ut64 target = arr[c].jump;
 		if (k - c >= 2 && pdc_range_is_contiguous (arr, c, k)) {
-			emit_case_range_label (state, arr[c].value, arr[k].value, target, indent + 1);
+			emit_case_label (state, arr[c].value, arr[k].value, target, indent + 1);
 		} else {
 			int j;
 			for (j = c; j <= k; j++) {
-				emit_case_label (state, arr[j].value, target, indent + 1);
+				emit_case_label (state, arr[j].value, arr[j].value, target, indent + 1);
 			}
 		}
 		render_arm_body (state, visited, target, indent + 2);
@@ -1116,8 +1084,7 @@ static char *extract_loop_cond(PDCState *state, RAnalBlock *test_bb, ut64 back_t
 
 static bool line_is_branch_to(const char *line, const char *target_hex) {
 	const char *t = r_str_trim_head_ro (line);
-	return R_STR_ISNOTEMPTY (t)
-		&& strstr (t, target_hex)
+	return strstr (t, target_hex)
 		&& (line_is_goto (t)
 			|| (r_str_startswith (t, "if ") && strstr (t, "goto ")));
 }
@@ -1169,13 +1136,9 @@ static void emit_bb_body_no_back_jump(PDCState *state, RAnalBlock *bb, ut64 back
 
 // Renders body+tail-test as while, single-bb self-loop as do/while; returns post-loop exit bb or NULL.
 static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList *visited, int indent) {
-	if (!test_bb || test_bb->jump == UT64_MAX || test_bb->fail == UT64_MAX) {
-		return NULL;
-	}
-	if (!r_anal_function_contains (state->fcn, test_bb->jump)) {
-		return NULL;
-	}
-	if (!r_anal_function_contains (state->fcn, test_bb->fail)) {
+	if (test_bb->jump == UT64_MAX || test_bb->fail == UT64_MAX
+			|| !r_anal_function_contains (state->fcn, test_bb->jump)
+			|| !r_anal_function_contains (state->fcn, test_bb->fail)) {
 		return NULL;
 	}
 	bool self_loop = (test_bb->jump == test_bb->addr);
