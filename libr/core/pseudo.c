@@ -250,75 +250,44 @@ static size_t toc_setup_reg(const char *body) {
 	return (k == reglen)? reglen: 0;
 }
 
-static ut64 cited_addr(const char *p) {
-	const char *hex = "0123456789abcdefABCDEF";
-	while (*p) {
-		p += strspn (p, " \t/");
-		size_t tl = strcspn (p, " \t");
-		if (tl < 1) {
-			break;
-		}
-		const char *err = NULL;
-		if (tl > 2 && tl <= 18 && r_str_startswith (p, "0x") && strspn (p + 2, hex) == tl - 2) {
-			ut64 v = r_num_get_err (NULL, p, &err);
-			if (!err) {
-				return v;
-			}
-		} else if (r_str_startswith (p, "[0x") && strspn (p + 3, hex) > 0) {
-			ut64 v = r_num_get_err (NULL, p + 1, &err);
-			if (!err) {
-				return v;
-			}
-		}
-		p += tl;
-	}
-	return UT64_MAX;
-}
-
-// returns the flag named in the comment iff the comment also cites its address
-static RFlagItem *comment_flag(RFlag *flags, const char *cmt) {
-	RFlagItem *fi = NULL;
-	const char *p = cmt;
-	while (*p && !fi) {
-		p += strspn (p, " \t/");
-		size_t tl = strcspn (p, " \t");
-		if (tl < 1) {
-			break;
-		}
-		if (memchr (p, '.', tl)) {
-			char *tok = r_str_ndup (p, tl);
-			fi = r_flag_get (flags, tok);
-			free (tok);
-		}
-		p += tl;
-	}
-	return (fi && fi->addr == cited_addr (cmt))? fi: NULL;
-}
-
-static inline bool is_flagchar(char c) {
-	return isalnum ((ut8)c) || c == '_' || c == '.';
-}
-
-static RFlagItem *bracket_flag(RFlag *flags, const char *inner, const char *cb, const char *cmt) {
-	const char *dot = memchr (inner, '.', cb - inner);
-	if (!dot) {
+static RFlagItem *pdc_flag_at(RCore *core, ut64 addr) {
+	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	const char *s = dot, *e = dot;
-	while (s > inner && is_flagchar (s[-1])) {
-		s--;
-	}
-	while (e < cb && is_flagchar (*e)) {
-		e++;
-	}
-	char *name = r_str_ndup (s, e - s);
-	RFlagItem *fi = r_flag_get (flags, name);
-	free (name);
-	return (fi && fi->addr == cited_addr (cmt))? fi: NULL;
+	RFlagItem *fi = r_core_flag_get_by_spaces (core->flags, false, addr);
+	return fi? fi: r_flag_get_in (core->flags, addr);
 }
 
-// rewrites "dst = [reg ± off] // 0xaddr // name" into "dst = [name]" (or the string itself)
-static char *fold_line(RFlag *flags, const char *line, const char *body, char *base, size_t basesz) {
+static RFlagItem *pdc_ref_flag(RCore *core, ut64 addr) {
+	if (addr == UT64_MAX) {
+		return NULL;
+	}
+	RVecAnalRef *refs = r_anal_refs_get (core->anal, addr);
+	if (refs) {
+		RAnalRef *ref;
+		R_VEC_FOREACH (refs, ref) {
+			int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+			if (rt == R_ANAL_REF_TYPE_DATA || rt == R_ANAL_REF_TYPE_STRN) {
+				RFlagItem *fi = pdc_flag_at (core, ref->addr);
+				if (fi) {
+					RVecAnalRef_free (refs);
+					return fi;
+				}
+			}
+		}
+		RVecAnalRef_free (refs);
+	}
+	RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_VAL);
+	if (!op) {
+		return NULL;
+	}
+	RFlagItem *fi = op->ptr != UT64_MAX? pdc_flag_at (core, op->ptr): NULL;
+	r_anal_op_free (op);
+	return fi;
+}
+
+// rewrites "dst = [reg +/- off]" into "dst = [name]" when analysis resolved the target.
+static char *fold_line(RCore *core, const char *line, const char *body, ut64 addr, const char *pending_reg, char *base, size_t basesz) {
 	const char *br = strchr (body, '[');
 	const char *cb = br? strchr (br, ']'): NULL;
 	if (!br || !cb || !isalpha ((ut8)br[1])) {
@@ -329,19 +298,25 @@ static char *fold_line(RFlag *flags, const char *line, const char *body, char *b
 		base[bl] = br[1 + bl];
 		bl++;
 	}
-	const char *cmt = strstr (cb, "//");
-	RFlagItem *fi = cmt? comment_flag (flags, cmt): NULL;
-	if (!fi && cmt) {
-		fi = bracket_flag (flags, br + 1, cb, cmt);
+	if (!r_reg_get (core->anal->reg, base, -1)) {
+		return NULL;
 	}
+	bool named = memchr (br + 1, '.', cb - (br + 1));
+	bool global_base = !strcmp (base, "gp") || (pending_reg && *pending_reg && !strcmp (base, pending_reg));
+	if (!named && !global_base) {
+		return NULL;
+	}
+	const char *cmt = strstr (cb, "//");
+	RFlagItem *fi = pdc_ref_flag (core, addr);
 	if (!fi) {
 		return NULL;
 	}
 	char *pfx = r_str_ndup (line, br - line);
-	char *mid = r_str_ndup (cb + 1, cmt - (cb + 1));
+	const char *mid_end = cmt? cmt: line + strlen (line);
+	char *mid = r_str_ndup (cb + 1, mid_end - (cb + 1));
 	r_str_trim (mid);
 	char *res = NULL;
-	if (r_str_startswith (fi->name, "str.")) {
+	if (cmt && r_str_startswith (fi->name, "str.")) {
 		const char *q1 = strchr (cmt, '"');
 		const char *q2 = q1? strchr (q1 + 1, '"'): NULL;
 		// the loaded value is the string itself: drop the deref
@@ -368,6 +343,7 @@ static char *fold_resolved_refs(RCore *core, char *code) {
 	}
 	PDCPendingRef pend = {0};
 	const char *ptr = code;
+	ut64 addr = UT64_MAX;
 	int i;
 	for (i = 0; i < n; i++) {
 		const char *lend = strchr (ptr, '\n');
@@ -377,6 +353,10 @@ static char *fold_resolved_refs(RCore *core, char *code) {
 		out[i] = line;
 		const char *body = r_str_trim_head_ro (line);
 		if (r_str_startswith (body, "0x")) {
+			ut64 at = r_num_get (NULL, body);
+			if (at != UT64_MAX) {
+				addr = at;
+			}
 			const char *sp = strchr (body, ' ');
 			if (sp) {
 				body = r_str_trim_head_ro (sp);
@@ -391,7 +371,7 @@ static char *fold_resolved_refs(RCore *core, char *code) {
 			continue;
 		}
 		char base[16] = {0};
-		char *folded = fold_line (core->flags, line, body, base, sizeof (base));
+		char *folded = fold_line (core, line, body, addr, pend.reg, base, sizeof (base));
 		if (folded) {
 			free (out[i]);
 			out[i] = folded;
