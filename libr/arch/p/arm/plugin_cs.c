@@ -90,141 +90,6 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define SHIFTTYPE(x) insn->detail->arm.operands[x].shift.type
 #define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
 
-#define ARM64_ADR_MASK 0x9f000000u
-#define ARM64_ADR_BASE 0x10000000u
-#define ARM64_ADRP_BASE 0x90000000u
-#define ARM64_ADD_IMM64_MASK 0xff000000u
-#define ARM64_ADD_IMM64_BASE 0x91000000u
-#define ARM64_ADD_SHIFT64_MASK 0xffc00000u
-#define ARM64_ADD_SHIFT64_BASE 0x8b000000u
-#define ARM64_MOVZ64_MASK 0xff800000u
-#define ARM64_MOVZ64_BASE 0xd2800000u
-#define ARM64_BR_MASK 0xfffffc1fu
-#define ARM64_BR_BASE 0xd61f0000u
-
-static st64 arm64_simm(ut64 v, int bits) {
-	ut64 sign = 1ULL << (bits - 1);
-	ut64 mask = (1ULL << bits) - 1;
-	v &= mask;
-	if (v & sign) {
-		return -(st64)(((~v) & mask) + 1);
-	}
-	return (st64)v;
-}
-
-static bool arm64_parse_adr(ut32 insn, ut64 addr, ut32 reg, ut64 *target) {
-	if ((insn & ARM64_ADR_MASK) != ARM64_ADR_BASE &&
-			(insn & ARM64_ADR_MASK) != ARM64_ADRP_BASE) {
-		return false;
-	}
-	if ((insn & 0x1fu) != reg) {
-		return false;
-	}
-
-	ut64 immlo = (insn >> 29) & 0x3u;
-	ut64 immhi = (insn >> 5) & 0x7ffffu;
-	st64 simm21 = arm64_simm ((immhi << 2) | immlo, 21);
-	if ((insn & ARM64_ADR_MASK) == ARM64_ADRP_BASE) {
-		*target = (addr & ~0xfffULL) + ((ut64)simm21 << 12);
-	} else {
-		*target = addr + simm21;
-	}
-	return true;
-}
-
-static bool arm64_parse_add_imm(ut32 insn, ut32 reg, ut64 base, ut64 *target) {
-	if ((insn & ARM64_ADD_IMM64_MASK) != ARM64_ADD_IMM64_BASE) {
-		return false;
-	}
-	ut32 rd = insn & 0x1fu;
-	ut32 rn = (insn >> 5) & 0x1fu;
-	if (rd != reg || rn != reg) {
-		return false;
-	}
-	ut64 imm = (insn >> 10) & 0xfffu;
-	if ((insn >> 22) & 1u) {
-		imm <<= 12;
-	}
-	*target = base + imm;
-	return true;
-}
-
-static bool arm64_parse_movz(ut32 insn, ut32 reg, ut64 *value) {
-	if ((insn & ARM64_MOVZ64_MASK) != ARM64_MOVZ64_BASE) {
-		return false;
-	}
-	if ((insn & 0x1fu) != reg) {
-		return false;
-	}
-	ut64 imm = (insn >> 5) & 0xffffu;
-	ut32 hw = (insn >> 21) & 0x3u;
-	*value = imm << (hw * 16);
-	return true;
-}
-
-static bool arm64_parse_add_shift(ut32 insn, ut32 dst_reg, ut32 add_reg, ut64 add_value, ut64 base, ut64 *target) {
-	if ((insn & ARM64_ADD_SHIFT64_MASK) != ARM64_ADD_SHIFT64_BASE) {
-		return false;
-	}
-	ut32 rd = insn & 0x1fu;
-	ut32 rn = (insn >> 5) & 0x1fu;
-	ut32 rm = (insn >> 16) & 0x1fu;
-	ut32 shift = (insn >> 10) & 0x3fu;
-	if (rd != dst_reg || rn != dst_reg || rm != add_reg || shift >= 64) {
-		return false;
-	}
-	*target = base + (add_value << shift);
-	return true;
-}
-
-static bool arm64_read_prev(RArchSession *as, ut64 addr, ut8 *buf, int len) {
-	if (!as || !as->arch || addr < (ut64)len) {
-		return false;
-	}
-	RBin *bin = as->arch->binb.bin;
-	return bin && bin->iob.read_at && bin->iob.read_at (bin->iob.io, addr - len, buf, len);
-}
-
-static bool arm64_resolve_stub_branch(RArchSession *as, ut64 addr, const ut8 *buf, int len, ut64 *target) {
-	R_RETURN_VAL_IF_FAIL (target, false);
-	PluginData *pd = as? (PluginData*)as->data: NULL;
-	if (!pd || pd->bigendian || len < 4) {
-		return false;
-	}
-
-	ut32 br = r_read_le32 (buf);
-	if ((br & ARM64_BR_MASK) != ARM64_BR_BASE) {
-		return false;
-	}
-	ut32 br_reg = (br >> 5) & 0x1fu;
-
-	ut8 prev[12];
-	if (arm64_read_prev (as, addr, prev, 8)) {
-		ut32 i0 = r_read_le32 (prev);
-		ut32 i1 = r_read_le32 (prev + 4);
-		ut64 base = 0;
-		if (arm64_parse_adr (i0, addr - 8, br_reg, &base) &&
-				arm64_parse_add_imm (i1, br_reg, base, target)) {
-			return true;
-		}
-	}
-
-	if (arm64_read_prev (as, addr, prev, sizeof (prev))) {
-		ut32 i0 = r_read_le32 (prev);
-		ut32 i1 = r_read_le32 (prev + 4);
-		ut32 i2 = r_read_le32 (prev + 8);
-		ut64 base = 0;
-		ut64 add = 0;
-		ut32 add_reg = i1 & 0x1fu;
-		if (arm64_parse_adr (i0, addr - 12, br_reg, &base) &&
-				arm64_parse_movz (i1, add_reg, &add) &&
-				arm64_parse_add_shift (i2, br_reg, add_reg, add, base, target)) {
-			return true;
-		}
-	}
-	return false;
-}
-
 #if CS_API_MAJOR < 6
 #define SHIFTTYPEREG(x) (\
 		SHIFTTYPE(x) == ARM_SFT_ASR_REG || SHIFTTYPE(x) == ARM_SFT_LSL_REG || \
@@ -3571,7 +3436,7 @@ static int cond_cs2r2(int cc) {
 	return cc;
 }
 
-static void anop64(RArchSession *as, csh handle, RAnalOp *op, cs_insn *insn, const ut8 *buf, int len) {
+static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
 
 	/* grab family */
@@ -4050,14 +3915,6 @@ static void anop64(RArchSession *as, csh handle, RAnalOp *op, cs_insn *insn, con
 		op->type = R_ANAL_OP_TYPE_RJMP;
 		op->eob = true;
 		op->reg = cs_reg_name (handle, insn->detail->arm64.operands[0].reg);
-		{
-			ut64 target = UT64_MAX;
-			if (arm64_resolve_stub_branch (as, addr, buf, len, &target)) {
-				op->type = R_ANAL_OP_TYPE_JMP;
-				op->jump = target;
-				op->ptr = target;
-			}
-		}
 		break;
 	case ARM64_INS_B:
 		// BX LR == RET
@@ -4959,7 +4816,7 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 		op->size = insn->size;
 		op->id = insn->id;
 		if (as->config->bits == 64) {
-			anop64 (as, *cs_handle, op, insn, buf, len);
+			anop64 (*cs_handle, op, insn);
 			if (mask & R_ARCH_OP_MASK_OPEX) {
 				opex64 (&op->opex, *cs_handle, insn);
 			}
