@@ -3582,8 +3582,7 @@ static int __dbg_swstep_getter(void *user, RConfigNode *node) {
 }
 
 static bool cb_dirpfx(RCore *core, RConfigNode *node) {
-	char *pfx = r_sys_prefix (node->value);
-	free (pfx);
+	free (r_sys_prefix (node->value));
 	return true;
 }
 
@@ -4063,6 +4062,15 @@ static bool cb_prjvctype(void *user, void *data) {
 	}
 	R_LOG_ERROR ("Unknown version control '%s'", node->value);
 	return false;
+}
+
+static char *get_www_root(RCore *core) {
+	char *wwwenv = r_sys_getenv ("R2_WWWROOT");
+	if (wwwenv) {
+		return wwwenv;
+	}
+	free (wwwenv);
+	return strdup (R2_WWWROOT);
 }
 
 R_API int r_core_config_init(RCore *core) {
@@ -4870,25 +4878,9 @@ R_API int r_core_config_init(RCore *core) {
 		SETS ("http.homeroot", www, "http home root directory");
 		free (www);
 	}
-#if R2_USE_BUNDLE_PREFIX
-	{
-		char *pfx = r_sys_prefix (NULL);
-		char *wwwroot = r_file_new (pfx, "www", NULL);
-		free (pfx);
-		SETS ("http.root", wwwroot, "http root directory");
-		free (wwwroot);
-	}
-#elif R2__WINDOWS__
-	{
-		char *pfx = r_sys_prefix (NULL);
-		char *wwwroot = r_str_newf ("%s\\share\\www", pfx);
-		free (pfx);
-		SETS ("http.root", wwwroot, "http root directory");
-		free (wwwroot);
-	}
-#else
-	SETS ("http.root", R2_WWWROOT, "http root directory");
-#endif
+	char *wwwroot = get_www_root (core);
+	SETS ("http.root", wwwroot, "http root directory");
+	free (wwwroot);
 	SETS ("http.port", "9090", "http server port");
 	SETS ("http.basepath", "/", "define base path for http requests");
 	SETS ("http.maxport", "9999", "last HTTP server port");
