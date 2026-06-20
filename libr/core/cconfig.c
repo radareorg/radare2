@@ -4064,9 +4064,9 @@ static bool cb_prjvctype(void *user, void *data) {
 	return false;
 }
 
-static char *get_www_root(RCore *core) {
+static char *get_www_root(void) {
 	char *wwwenv = r_sys_getenv ("R2_WWWROOT");
-	if (wwwenv) {
+	if (!R_STR_ISEMPTY (wwwenv)) {
 		return wwwenv;
 	}
 	free (wwwenv);
@@ -4878,7 +4878,7 @@ R_API int r_core_config_init(RCore *core) {
 		SETS ("http.homeroot", www, "http home root directory");
 		free (www);
 	}
-	char *wwwroot = get_www_root (core);
+	char *wwwroot = get_www_root ();
 	SETS ("http.root", wwwroot, "http root directory");
 	free (wwwroot);
 	SETS ("http.port", "9090", "http server port");

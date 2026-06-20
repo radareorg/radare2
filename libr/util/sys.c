@@ -1507,11 +1507,14 @@ R_API char *r_sys_prefix(const char *pfx) {
 		free (r2prefix);
 #if R2__WINDOWS__
 		r2prefix = r_sys_get_src_dir_w32 ();
+		if (!r2prefix) {
+			r2prefix = strdup (R2_PREFIX);
+		}
 #else
 		r2prefix = strdup (R2_PREFIX);
 #endif
 	}
-	if (pfx && strcmp (pfx, r2prefix)) {
+	if (pfx && (!r2prefix || strcmp (pfx, r2prefix))) {
 		r_sys_setenv ("R2_PREFIX", pfx);
 	}
 	return r2prefix;
