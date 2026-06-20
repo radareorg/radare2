@@ -43,7 +43,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	}
 	const char *section_name = s ? s->name : "";
 	const char *type_string = r_bin_string_type (string->type);
-	ut64 vaddr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
+	ut64 vaddr = io->va ? r_bin_get_vaddr (bin, string->paddr, string->vaddr) : string->paddr;
 	ut64 addr = vaddr; // bf->bo? vaddr: string->vaddr;
 
 	// If raw string dump mode, use printf to dump directly to stdout.
