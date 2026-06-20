@@ -69,6 +69,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=e anal.gp(ppc32 sda base)
+FILE=bins/elf/ppc_classes
+CMDS=e anal.gp
+EXPECT=<<EOF
+0x10028034
+EOF
+RUN
+
+NAME=e anal.gp(ppc32 no sdata, not seeded)
+FILE=bins/elf/hello.ppc
+CMDS=e anal.gp
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+NAME=e anal.gp(ppc32 shared object not seeded)
+FILE=bins/elf/dropbear_powerpc-linux-gnu_gcc_-O2
+CMDS=e anal.gp
+EXPECT=<<EOF
+0
+EOF
+RUN
+
 NAME=e asm.os
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=e asm.os=?
