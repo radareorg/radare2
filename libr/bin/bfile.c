@@ -100,6 +100,18 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	}
 }
 
+static void string_set_addrs(RBinString *bs, ut64 str_start, ut64 pdelta, ut64 vdelta, ut64 baddr, ut64 maddr) {
+	ut64 addr = 0;
+	bs->paddr = r_add_overflow (str_start, baddr, &addr) ? str_start : addr;
+	if (r_sub_overflow (str_start, pdelta, &addr) ||
+			r_add_overflow (addr, vdelta, &addr) ||
+			r_add_overflow (addr, baddr, &addr) ||
+			r_add_overflow (addr, maddr, &addr)) {
+		addr = str_start;
+	}
+	bs->vaddr = addr;
+}
+
 // TODO: this code must be implemented in RSearch as options for the strings mode
 static int string_scan_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_index, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
 	RBin *bin = bf->rbin;
@@ -423,8 +435,7 @@ static int string_scan_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_i
 				baddr = bf->bo->baddr;
 			}
 			ut64 maddr = bf->bo? 0: bf->loadaddr;
-			bs.vaddr = str_start - pdelta + vdelta + baddr + maddr;
-			bs.paddr = str_start + baddr;
+			string_set_addrs (&bs, str_start, pdelta, vdelta, baddr, maddr);
 			char *str = r_strbuf_drain (sb);
 			sb = r_strbuf_new ("");
 			size_t before = strlen (str);
@@ -1434,7 +1445,11 @@ R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr) {
 		if (bo->baddr_shift && vaddr < file_baddr) {
 			return paddr;
 		}
-		return bo->baddr_shift + vaddr;
+		if (bo->baddr_shift) {
+			ut64 addr = 0;
+			return r_add_overflow (bo->baddr, vaddr - file_baddr, &addr) ? paddr : addr;
+		}
+		return vaddr;
 	}
 	return paddr;
 }
