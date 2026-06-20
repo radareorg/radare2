@@ -259,7 +259,7 @@ static void set_opdir(RAnalOp *op) {
 }
 
 #define CSINC RISCV
-#if CS_NEXT_VERSION >= 6
+#if defined(CS_VERSION_PRE_RELEASE) && CS_VERSION_PRE_RELEASE != CS_VERSION_STABLE
 #define CSINC_MODE (CS_MODE_RISCV_C | ((as->config->bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32))
 #else
 #define CSINC_MODE (CS_MODE_RISCVC | ((as->config->bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32))
