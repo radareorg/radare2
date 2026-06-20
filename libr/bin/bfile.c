@@ -1428,8 +1428,13 @@ R_API RBinField *r_bin_file_add_field(RBinFile *binfile, const char *classname, 
  * bin, paddr otherwise */
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, paddr);
-	if (bf->bo->info && bf->bo->info->has_va) {
-		return bf->bo->baddr_shift + vaddr;
+	RBinObject *bo = bf->bo;
+	if (bo->info && bo->info->has_va) {
+		const ut64 file_baddr = bo->baddr - (ut64)bo->baddr_shift;
+		if (bo->baddr_shift && vaddr < file_baddr) {
+			return paddr;
+		}
+		return bo->baddr_shift + vaddr;
 	}
 	return paddr;
 }
