@@ -419,7 +419,9 @@ static int string_scan_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_i
 				}
 			}
 			ut64 baddr = bf->loadaddr && bf->bo? bf->bo->baddr: bf->loadaddr;
-			// ut64 baddr = bf->bo? bf->bo->baddr: bf->loadaddr;
+			if (!s && bf->bo && RVecRBinSection_empty (&bf->bo->sections_vec) && !bf->loadaddr && bf->bo->baddr != UT64_MAX) {
+				baddr = bf->bo->baddr;
+			}
 			ut64 maddr = bf->bo? 0: bf->loadaddr;
 			bs.vaddr = str_start - pdelta + vdelta + baddr + maddr;
 			bs.paddr = str_start + baddr;
