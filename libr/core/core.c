@@ -1691,6 +1691,7 @@ static void init_cmd_suggestions(RCore *core) {
 	}
 	// Fallback commands with? e (safe echo) for missing plugin commands
 	// Using fallbackcmd.* prefix to distinguish from regular SDB entries
+	sdb_set (core->sdb, "fallbackcmd.r2vsql", "?e You need to install the plugin with r2pm -ci r2vsql", 0);
 	sdb_set (core->sdb, "fallbackcmd.pdd", "?e You need to install the plugin with r2pm -ci r2dec", 0);
 	sdb_set (core->sdb, "fallbackcmd.pdg", "?e You need to install the plugin with r2pm -ci r2ghidra", 0);
 	sdb_set (core->sdb, "fallbackcmd.pd:g", "?e You need to install the plugin with r2pm -ci r2ghidra", 0);
