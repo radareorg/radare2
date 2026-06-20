@@ -232,6 +232,14 @@ Password:
 EOF
 RUN
 
+NAME=rabin2 -B -zzq raw strings
+FILE=bins/other/hello.txt
+CMDS=!rabin2 -B 0x1000 -zzq ${R2_FILE}
+EXPECT=<<EOF
+0x1000 24 24 hello world\nSecond Line\n
+EOF
+RUN
+
 NAME=rabin2 -z elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!!rabin2 -z ${R2_FILE}~?
