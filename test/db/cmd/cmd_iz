@@ -123,6 +123,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=izzq high base strings (file x86_64)
+ARGS=-B 0xfffffffffffffffe
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+izzq~puts
+izzzq~puts
+EOF
+EXPECT=<<EOF
+0x2fa 5 4 puts
+0x1953 18 17 puts@@GLIBC_2.2.5
+0x000002fa puts
+0x00001953 puts@@GLIBC_2.2.5
+EOF
+RUN
+
 NAME=izzqq (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=izzqq~puts
@@ -143,6 +158,23 @@ Rfh-c
 h/sh
 h/bin
 echo "" > /etc/shadow ; echo "" > /etc/passwd ; rm -Rf /
+EOF
+RUN
+
+NAME=izzq high base raw strings
+ARGS=-w -B 0xfffffffffffffffe
+FILE=malloc://32
+CMDS=<<EOF
+wx 0000000068656c6c6f206869676820626173650a00
+izzq
+izzzq
+EOF
+EXPECT=<<EOF
+0x4 17 16 hello high base\n
+0x00000004 hello high base\n
+EOF
+EXPECT_ERR=<<EOF
+WARN: Don't use -B on unknown files. Consider using -m
 EOF
 RUN
 
