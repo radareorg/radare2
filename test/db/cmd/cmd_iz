@@ -113,6 +113,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=izzq rebased strings (file x86_64)
+ARGS=-B 0x1000
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=izzq~puts
+EXPECT=<<EOF
+0x12fa 5 4 puts
+0x1953 18 17 puts@@GLIBC_2.2.5
+EOF
+RUN
+
 NAME=izzqq (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=izzqq~puts

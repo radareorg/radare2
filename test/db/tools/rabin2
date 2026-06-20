@@ -240,6 +240,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rabin2 -B -zzq elf strings
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=!rabin2 -B 0x1000 -zzq ${R2_FILE} | grep puts
+EXPECT=<<EOF
+0x12fa 5 4 puts
+0x1953 18 17 puts@@GLIBC_2.2.5
+EOF
+RUN
+
 NAME=rabin2 -z elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!!rabin2 -z ${R2_FILE}~?
