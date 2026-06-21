@@ -254,6 +254,66 @@ static char *__msl_reg_profile(RDebug *dbg) {
 	return r_anal_get_reg_profile (dbg->anal);
 }
 
+// Expose the captured memory regions as debug maps (so dm/om work and `dgm`
+// can re-dump). Uncompressed regions only.
+static RList *__msl_map_get(RDebug *dbg) {
+	RCore *core = dbg->coreb.core;
+	const char *path = (core && core->io && core->io->desc)? core->io->desc->name: NULL;
+	if (!path) {
+		return NULL;
+	}
+	if (r_str_startswith (path, "msl://")) {
+		path += strlen ("msl://");
+	}
+	RBuffer *b = r_buf_new_mmap (path, R_PERM_R);
+	if (!b) {
+		return NULL;
+	}
+	RList *list = r_list_newf ((RListFree)r_debug_map_free);
+	ut8 h[16];
+	if (r_buf_read_at (b, 0, h, sizeof (h)) != sizeof (h) || memcmp (h, MSL_FILE_MAGIC, 8)
+			|| (r_read_le32 (h + 12) & MSL_HDR_FLAG_ENCRYPTED)) {
+		r_unref (b);
+		return list;
+	}
+	ut64 fsize = r_buf_size (b);
+	ut64 off = h[9];
+	while (off + MSL_BLOCK_HEADER_SIZE <= fsize) {
+		ut8 bh[MSL_BLOCK_HEADER_SIZE];
+		if (r_buf_read_at (b, off, bh, sizeof (bh)) != sizeof (bh) || memcmp (bh, MSL_BLOCK_MAGIC, 4)) {
+			break;
+		}
+		ut16 btype = r_read_le16 (bh + 4);
+		ut16 bflags = r_read_le16 (bh + 6);
+		ut32 blen = r_read_le32 (bh + 8);
+		if (blen < MSL_BLOCK_HEADER_SIZE) {
+			break;
+		}
+		if (btype == 0x0001 && !(bflags & 1)) {  // uncompressed Memory Region
+			ut8 p[32];
+			if (r_buf_read_at (b, off + MSL_BLOCK_HEADER_SIZE, p, sizeof (p)) == sizeof (p)) {
+				ut64 base = r_read_le64 (p);
+				ut64 size = r_read_le64 (p + 8);
+				ut8 prot = p[16];
+				int perm = ((prot & 1)? R_PERM_R: 0) | ((prot & 2)? R_PERM_W: 0)
+					| ((prot & 4)? R_PERM_X: 0);
+				char *nm = strdup ("msl");
+				RDebugMap *m = r_debug_map_new (nm, base, base + size, perm, 0);
+				free (nm);
+				if (m) {
+					r_list_append (list, m);
+				}
+			}
+		}
+		if (btype == 0x0FFF) {
+			break;
+		}
+		off += blen;
+	}
+	r_unref (b);
+	return list;
+}
+
 // Mirror the ESIL/anal register arena so `dr` reflects emulation progress.
 static bool __msl_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	RCore *core = dbg->coreb.core;
@@ -294,6 +354,7 @@ RDebugPlugin r_debug_plugin_msl = {
 	.reg_profile = &__msl_reg_profile,
 	.reg_read = &__msl_reg_read,
 	.reg_write = &__msl_reg_write,
+	.map_get = &__msl_map_get,
 };
 
 #ifndef R2_PLUGIN_INCORE

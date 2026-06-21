@@ -82,6 +82,26 @@ backend) rather than running forever — set `e esil.maxsteps=0` for unlimited.
 The seek follows the PC after each step (`dbg.follow=1`), so the disassembly and
 visual modes track execution.
 
+## Producing a slice from radare2
+
+While debugging a process, write the current state as a slice with `dgm`
+(debug-generate memory-slice):
+
+```
+[0xphysical]> dgm dump.msl        # or just `dgm` -> <pid>.msl
+```
+
+It writes the file header, a Process Identity block, a Thread Context with the
+current thread's registers, and one Memory Region per debug map (three-state
+page map: pages that read back become Captured, the rest Failed). The integrity
+chain uses SHA-256 (radare2 has no BLAKE3; the format allows SHA-256 via
+HashAlgo 0x01). The resulting `.msl` is readable by these plugins and by
+memslicer / `memslicer-emu`.
+
+Maps are read in 1 MiB chunks; unreadable maps are skipped. By default `dgm`
+skips very large maps (over 512 MiB — e.g. the macOS dyld shared cache) so the
+dump stays small and fast; use `dgma` to include everything.
+
 ## Format reference
 
 The `.msl` binary format is specified in the
