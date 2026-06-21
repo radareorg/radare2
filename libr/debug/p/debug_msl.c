@@ -158,6 +158,10 @@ static void msl_ensure(RDebug *dbg) {
 	// without a breakpoint would run forever. Bound it; override with
 	// `e esil.maxsteps=0` for unlimited.
 	dbg->coreb.cmd (core, "e esil.maxsteps=1000000");
+	// Enable ESIL step-back recording (reverse/time-travel debugging via
+	// dsb/aesb). The config callback only applies once esil.reg exists, i.e.
+	// after aei, so (re)set it here.
+	dbg->coreb.cmd (core, "e esil.maxbacksteps=256");
 	// Follow the PC after each step (the default 32-byte threshold leaves the
 	// seek behind for small instructions).
 	dbg->coreb.cmd (core, "e dbg.follow=1");

@@ -65,10 +65,16 @@ Single-step and inspect with the usual debugger commands:
 [0x00401000]> ds                    # step one instruction
 [0x00401000]> dr rax                # observe the change
 [0x00401000]> dso                   # step over
+[0x00401000]> dsb                   # step BACK (reverse / time-travel)
 [0x00401000]> db 0x401040 ; dc      # run to a breakpoint
 [0x00401000]> dr rcx=0x10           # modify a register
 [0x00401000]> pd 4 @ rip            # disassemble at the current PC
 ```
+
+**Reverse execution.** The backend records ESIL step history
+(`esil.maxbacksteps`, default 256), so `dsb` (or `aesb`) steps execution
+*backwards*, reverting both the program counter and register/memory changes —
+useful for walking back from a fault or an interesting state in the snapshot.
 
 The backend clears `cfg.debug` after seeding so that `ds`/`dso` dispatch to the
 ESIL stepper instead of radare2's `r_debug_step` machinery (software
