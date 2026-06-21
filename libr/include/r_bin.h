@@ -1079,6 +1079,7 @@ extern RBinPlugin r_bin_plugin_dex;
 extern RBinPlugin r_bin_plugin_dis;
 extern RBinPlugin r_bin_plugin_dmp64;
 extern RBinPlugin r_bin_plugin_dol;
+extern RBinPlugin r_bin_plugin_msl;
 extern RBinPlugin r_bin_plugin_dyldcache;
 extern RBinPlugin r_bin_plugin_elf;
 extern RBinPlugin r_bin_plugin_elf64;

@@ -701,6 +701,7 @@ static inline void *r_debug_ptrace_func(RDebug *dbg, void *(*func)(void *), void
 /* plugin pointers */
 extern RDebugPlugin r_debug_plugin_native;
 extern RDebugPlugin r_debug_plugin_esil;
+extern RDebugPlugin r_debug_plugin_msl;
 extern RDebugPlugin r_debug_plugin_rap;
 extern RDebugPlugin r_debug_plugin_gdb;
 extern RDebugPlugin r_debug_plugin_bf;

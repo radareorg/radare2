@@ -37,6 +37,7 @@ r_io_sources = [
   'p/io_xattr.c',
   'p/io_xalz.c',
   'p/io_mmap.c',
+  'p/io_msl.c',
   'p/io_null.c',
   'p/io_procpid.c',
   'p/io_ptrace.c',

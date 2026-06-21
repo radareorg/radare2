@@ -27,6 +27,7 @@ r_bin_sources = [
   'p/bin_dis.c',
   'p/bin_dmp64.c',
   'p/bin_dol.c',
+  'p/bin_msl.c',
   'p/bin_dyldcache.c',
   'p/bin_elf.c',
   'p/bin_elf64.c',

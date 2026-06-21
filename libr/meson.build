@@ -24,7 +24,7 @@ bp_plugins = [ 'null' ]
 muta_plugins = [ 'null' ]
 core_plugins += [ 'prj', 'writedwarf', 'agD' ]
 egg_plugins = [ 'xor' ]
-debug_plugins = [ 'null', 'io', 'esil', 'rap' ]
+debug_plugins = [ 'null', 'io', 'esil', 'msl', 'rap' ]
 lang_plugins = [ 'lib', 'pipe', 'qjs', 'tsc', 'spp' ]
 
 if get_option('nogpl')
@@ -240,6 +240,7 @@ if get_option('plugins') == ''
     'dis',
     'dmp64',
     'dol',
+    'msl',
     'dyldcache',
     'elf',
     'elf64',
@@ -382,6 +383,7 @@ io_plugins += [
     'srec',
     'mach',
     'mmap',
+    'msl',
     'procpid',
     'ptrace',
     'qnx',
