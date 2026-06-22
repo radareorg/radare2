@@ -33,7 +33,7 @@ let
   sdb = fetchFromGitHub {
     owner = "radareorg";
     repo = "sdb";
-    tag = "2.4.4";
+    rev = "b2c50e519f0b1dc7edf2417281e46bc793cd40a6";
     hash = "sha256-JN27SkDqHtX83d1CPUF9hbVKwE/dwhDgn5MlCX9RPrc=";
   };
 
