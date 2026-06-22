@@ -2,10 +2,7 @@
 
 #include <r_arch.h>
 
-/* Forward+backward compat: CS_MODE_RISCVC -> CS_MODE_RISCV_C rename.
- * #if can't pick the right name (identical macros across alpha6/7),
- * so we pre-rename the enum before including capstone.h.
- * ideally remove when capstone 6 gets fully released. */
+// TODO remove as soon as capstone 6 is released
 #define CS_MODE_RISCVC CS_MODE_RISCV_C
 #include <capstone/capstone.h>
 #if CS_API_MAJOR >= 5
