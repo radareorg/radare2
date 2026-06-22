@@ -25,6 +25,8 @@ typedef struct r_core_priv_t {
 	bool autocomplete_loaded;
 	RDebugSession *debug_replay_session;
 	HtUP *debug_replay;
+	RList *cmdqueue;
+	RThreadLock *cmdqueue_lock;
 	// disasm cache
 	ut64 goaddr;
 	char *section;
