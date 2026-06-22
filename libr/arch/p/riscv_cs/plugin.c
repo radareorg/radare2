@@ -2,6 +2,8 @@
 
 #include <r_arch.h>
 
+// TODO remove as soon as capstone 6 is released
+#define CS_MODE_RISCVC CS_MODE_RISCV_C
 #include <capstone/capstone.h>
 #if CS_API_MAJOR >= 5
 #include <capstone/riscv.h>
@@ -259,11 +261,7 @@ static void set_opdir(RAnalOp *op) {
 }
 
 #define CSINC RISCV
-#if defined(CS_VERSION_PRE_RELEASE) && CS_VERSION_PRE_RELEASE != CS_VERSION_STABLE
 #define CSINC_MODE (CS_MODE_RISCV_C | ((as->config->bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32))
-#else
-#define CSINC_MODE (CS_MODE_RISCVC | ((as->config->bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32))
-#endif
 #include "../capstone.inc.c"
 
 static bool riscv_decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
