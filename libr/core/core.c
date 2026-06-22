@@ -2380,30 +2380,16 @@ R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 off)
 		NULL);
 }
 
-// Serializes core->cmdqueue, which can be appended from other threads (io plugins).
-static inline void cmdqueue_enter(RCore *core) {
-	RCorePriv *priv = core->priv;
-	if (priv->cmdqueue_lock) {
-		r_th_lock_enter (priv->cmdqueue_lock);
-	}
-}
-
-static inline void cmdqueue_leave(RCore *core) {
-	RCorePriv *priv = core->priv;
-	if (priv->cmdqueue_lock) {
-		r_th_lock_leave (priv->cmdqueue_lock);
-	}
-}
-
 static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 	RCore *core = user;
+	RCorePriv *priv = core->priv;
 	REventIOWrite *iow = data;
 	if (r_config_get_i (core->config, "anal.onchange")) {
 		// works, but loses varnames and such, but at least is not crashing
 		char *cmd = r_str_newf ("af-0x%08" PFMT64x ";af 0x%08" PFMT64x, iow->addr, iow->addr);
-		cmdqueue_enter (core);
-		r_list_append (core->cmdqueue, cmd);
-		cmdqueue_leave (core);
+		r_th_lock_enter (priv->cmdqueue_lock);
+		r_list_append (priv->cmdqueue, cmd);
+		r_th_lock_leave (priv->cmdqueue_lock);
 #if 0
 		r_anal_update_analysis_range (core->anal, iow->addr, iow->len);
 		if (core->cons->event_resize && core->cons->event_data) {
@@ -2565,7 +2551,7 @@ R_API bool r_core_init(RCore *core) {
 	// sdb_ns_set (core->sdb, "charset", core->print->charset->db);
 	core->stkcmd = NULL;
 	priv->cmdqueue_lock = r_th_lock_new (false);
-	core->cmdqueue = r_list_newf (free);
+	priv->cmdqueue = r_list_newf (free);
 	core->cmdrepeat = true;
 	core->yank_buf = r_buf_new ();
 	// Initialize RMuta and wire print charset callbacks
@@ -2786,12 +2772,10 @@ R_API void r_core_fini(RCore *c) {
 	r_table_free (c->table);
 	R_FREE (c->cmdlog);
 	free (c->lastsearch);
-	cmdqueue_enter (c);
-	r_list_free (c->cmdqueue);
-	c->cmdqueue = NULL;
-	cmdqueue_leave (c);
+	r_th_lock_enter (priv->cmdqueue_lock);
+	r_list_free (priv->cmdqueue);
+	r_th_lock_leave (priv->cmdqueue_lock);
 	r_th_lock_free (priv->cmdqueue_lock);
-	priv->cmdqueue_lock = NULL;
 	free (c->lastcmd);
 	free (c->stkcmd);
 	r_project_free (c->prj);
@@ -3039,12 +3023,13 @@ R_API void r_core_cmd_queue_wait(RCore *core) {
 	if (!interactive) {
 		return;
 	}
+	RCorePriv *priv = core->priv;
 	r_cons_push (core->cons);
 	r_cons_break_push (core->cons, NULL, NULL);
 	while (!r_cons_is_breaked (core->cons)) {
-		cmdqueue_enter (core);
-		char *cmd = r_list_pop (core->cmdqueue);
-		cmdqueue_leave (core);
+		r_th_lock_enter (priv->cmdqueue_lock);
+		char *cmd = r_list_pop (priv->cmdqueue);
+		r_th_lock_leave (priv->cmdqueue_lock);
 		if (cmd) {
 			r_core_cmd0 (core, cmd);
 			r_cons_flush (core->cons);
@@ -3057,14 +3042,15 @@ R_API void r_core_cmd_queue_wait(RCore *core) {
 }
 
 R_API void r_core_cmd_queue(RCore *core, const char *line) {
-	cmdqueue_enter (core);
+	RCorePriv *priv = core->priv;
+	r_th_lock_enter (priv->cmdqueue_lock);
 	if (line) {
-		r_list_append (core->cmdqueue, strdup (line));
+		r_list_append (priv->cmdqueue, strdup (line));
 	} else {
-		r_list_free (core->cmdqueue);
-		core->cmdqueue = r_list_newf (free);
+		r_list_free (priv->cmdqueue);
+		priv->cmdqueue = r_list_newf (free);
 	}
-	cmdqueue_leave (core);
+	r_th_lock_leave (priv->cmdqueue_lock);
 }
 
 R_API int r_core_prompt(RCore *r, int sync) {
@@ -3097,10 +3083,11 @@ R_API int r_core_prompt(RCore *r, int sync) {
 
 R_API int r_core_prompt_exec(RCore *r) {
 	int ret = -1;
+	RCorePriv *priv = r->priv;
 	while (true) {
-		cmdqueue_enter (r);
-		char *cmd = r_list_pop (r->cmdqueue);
-		cmdqueue_leave (r);
+		r_th_lock_enter (priv->cmdqueue_lock);
+		char *cmd = r_list_pop (priv->cmdqueue);
+		r_th_lock_leave (priv->cmdqueue_lock);
 		if (!cmd) {
 			break;
 		}
