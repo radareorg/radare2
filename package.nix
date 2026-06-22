@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
+  fetchurl,
   buildPackages,
   capstone,
   file,
@@ -41,6 +42,13 @@ let
     repo = "quickjs";
     rev = "3087a2ce5bcb66cc1fcd9f34d3e5ce3bd43a67d9";
     hash = "sha256-Z6DUe/W1+3SYPRPCiL3oNL5ovXCsW3dsFuGkA9WF3W4=";
+  };
+
+  zydis-tarball = fetchurl {
+    urls = [
+      "https://github.com/zyantific/zydis/releases/download/v4.1.0/zydis-amalgamated.tar.gz"
+    ];
+    hash = "sha256-qpuCvjo3opmL2OFs9YO78rbD2A6X3CBQQWncMsoc7Vk=";
   };
 in
 stdenv.mkDerivation (finalAttrs: {
@@ -103,6 +111,9 @@ stdenv.mkDerivation (finalAttrs: {
     cp -r ${qjs} qjs
     chmod -R +w qjs
     cp packagefiles/qjs/meson.build qjs
+
+    mkdir -p packagecache
+    cp ${zydis-tarball} packagecache/zydis-amalgamated.tar.gz
 
     popd
   '';
