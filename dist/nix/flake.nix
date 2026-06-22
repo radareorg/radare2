@@ -22,14 +22,16 @@
         "aarch64-linux"
         "aarch64-darwin"
       ];
+
+      src = ../..;
     in
     {
       overlays.default = final: _: {
-        radare2 = final.callPackage ./package.nix { src = self; };
+        radare2 = final.callPackage ./package.nix { inherit src; };
       };
 
       packages = forAllSystems (pkgs: {
-        radare2 = pkgs.callPackage ./package.nix { src = self; };
+        radare2 = pkgs.callPackage ./package.nix { inherit src; };
         default = self.packages.${pkgs.stdenv.hostPlatform.system}.radare2;
       });
 
