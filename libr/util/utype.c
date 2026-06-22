@@ -830,8 +830,10 @@ R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
 }
 
 R_API int r_type_func_args_count(Sdb *TDB, const char *R_NONNULL func_name) {
-	r_strf_var (query, 64, "func.%s.args", trim_lodashes (func_name));
-	return sdb_num_get (TDB, query, 0);
+	char *query = r_str_newf ("func.%s.args", trim_lodashes (func_name));
+	int ret = sdb_num_get (TDB, query, 0);
+	free (query);
+	return ret;
 }
 
 R_API R_OWNED char *r_type_func_args_type(Sdb *TDB, const char *R_NONNULL func_name, int i) {
