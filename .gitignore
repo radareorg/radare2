@@ -189,3 +189,4 @@ libr/xps/deps.h
 libr/xps/static.cfg
 libr/xps/p/meson.build
 libr/xps/r2plugins.h
+result*
