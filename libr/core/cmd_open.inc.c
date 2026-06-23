@@ -462,7 +462,22 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		} else if (input[2] == ' ') {
 			r_core_cmdf (core, "oba 0 %s", input + 3);
 		} else {
+			// Bare "obf" reloads bin info in place. On a true reload (not the
+			// `r2 -n` first load) drop the old object and its stale maps first,
+			// else each reload stacks a duplicate RBinFile and overlapping maps.
+			RIODesc *cd = core->io->desc;
+			RBinFile *prev_bf = cd? r_bin_file_find_by_fd (core->bin, cd->fd): NULL;
+			const ut32 prev_id = prev_bf? prev_bf->id: 0;
+			if (prev_bf && cd) {
+				r_io_map_del_for_fd (core->io, cd->fd);
+			}
 			r_core_bin_load (core, NULL, UT64_MAX);
+			if (prev_bf) {
+				RBinFile *nbf = r_bin_cur (core->bin);
+				if (nbf && nbf->id != prev_id) {
+					r_bin_file_delete (core->bin, prev_id);
+				}
+			}
 			value = input[2] ? input + 2 : NULL;
 		}
 		break;

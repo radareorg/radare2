@@ -727,3 +727,40 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=obf reload does not duplicate bin objects or maps
+FILE=bins/elf/dwarf_lief_extrasec.elf
+ARGS=-e bin.relocs=false
+CMDS=<<EOF2
+?e ob=`ob~?` om=`om~?` iS=`iS~?`
+obf
+obf
+obf
+?e ob=`ob~?` om=`om~?` iS=`iS~?`
+s `iS~mysec1[3]`
+?e mysec1_at_seek=`iS.~mysec1[8]`
+EOF2
+EXPECT=<<EOF2
+ob=1  om=7  iS=40
+ob=1  om=7  iS=40
+mysec1_at_seek=.mysec1
+EOF2
+RUN
+
+NAME=obf reload does not duplicate bin objects (generic elf)
+FILE=bins/elf/analysis/hello-linux-x86_64
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF2
+ob~?
+obf
+obf
+obf
+ob~?
+iS~?
+EOF2
+EXPECT=<<EOF2
+1
+1
+32
+EOF2
+RUN
