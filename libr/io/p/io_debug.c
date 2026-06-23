@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2025 - pancake */
+/* radare - LGPL - Copyright 2007-2026 - pancake */
 
 #include <errno.h>
 #include <r_lib.h>
@@ -371,6 +371,10 @@ static void fork_child_callback(void *user) {
 	char **argv = r_str_argv (data->cmd, NULL);
 	if (!argv) {
 		exit (1);
+	}
+	if (!data->io->envprofile) {
+		char **env = r_sys_get_environ ();
+		data->io->envprofile = r_run_get_environ_profile (env);
 	}
 	r_sys_clearenv ();
 	RRunProfile *rp = _get_run_profile (data->io, data->bits, argv);
