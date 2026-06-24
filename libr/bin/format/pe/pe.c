@@ -37,7 +37,11 @@ typedef struct {
 } SCV_RSDS_HEADER;
 
 R_API RBinPEObj *PE_(get)(RBinFile *bf) {
-	return (bf && bf->bo)? bf->bo->bin_obj: NULL;
+	RBinPEObj *pe = (bf && bf->bo)? bf->bo->bin_obj: NULL;
+	if (pe && bf->rbin) {
+		pe->sdbdir = bf->rbin->sdbdir;
+	}
+	return pe;
 }
 
 static inline int is_thumb(RBinPEObj *pe) {
@@ -511,6 +515,23 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	return NULL;
 }
 
+static Sdb *loadModuleOrdinals(const char *sdbdir, const char *module, char **filename) {
+	if (R_STR_ISEMPTY (sdbdir) || R_STR_ISEMPTY (module) || !filename) {
+		return NULL;
+	}
+	R_FREE (*filename);
+	char *sdb_name = r_str_newf ("%s.sdb", module);
+	if (!sdb_name) {
+		return NULL;
+	}
+	*filename = r_file_new (sdbdir, sdb_name, NULL);
+	free (sdb_name);
+	if (*filename && r_file_exists (*filename)) {
+		return sdb_new (NULL, *filename, 0);
+	}
+	return NULL;
+}
+
 static bool bin_pe_parse_imports(RBinPEObj *pe,
 	RVecPEImport *imports,
 	const char *dll_name,
@@ -527,7 +548,6 @@ static bool bin_pe_parse_imports(RBinPEObj *pe,
 	char *symname = NULL;
 	char *symdllname = NULL;
 	char *filename = NULL;
-	char *lower_symdllname = NULL;
 
 	if (R_STR_ISEMPTY (dll_name) || *dll_name == '0') {
 		return false;
@@ -588,22 +608,9 @@ static bool bin_pe_parse_imports(RBinPEObj *pe,
 					db = NULL;
 					free (sdb_module);
 					sdb_module = strdup (symdllname);
-					filename = r_str_newf ("%s.sdb", symdllname);
-					if (filename && r_file_exists (filename)) {
-						db = sdb_new (NULL, filename, 0);
-					} else {
-						char *dirPrefix = r_sys_prefix (NULL);
-						lower_symdllname = strdup (symdllname);
-						r_str_case (lower_symdllname, false);
-						free (filename);
-						filename = r_str_newf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
-							dirPrefix, lower_symdllname);
-						free (dirPrefix);
-						free (lower_symdllname);
-						lower_symdllname = NULL;
-						if (r_file_exists (filename)) {
-							db = sdb_new (NULL, filename, 0);
-						}
+					db = loadModuleOrdinals (pe->sdbdir, symdllname, &filename);
+					if (!db && filename) {
+						R_LOG_DEBUG ("Cannot find %s", filename);
 					}
 				}
 				if (db) {
@@ -615,8 +622,6 @@ static bool bin_pe_parse_imports(RBinPEObj *pe,
 						}
 						R_FREE (symname);
 					}
-				} else {
-					R_LOG_ERROR ("Cannot find %s", filename);
 				}
 				R_FREE (filename);
 			} else {
@@ -680,7 +685,6 @@ error:
 	}
 	free (symname);
 	free (filename);
-	free (lower_symdllname);
 	free (symdllname);
 	free (sdb_module);
 	RVecPEImport_clear (imports);
