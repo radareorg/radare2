@@ -4,10 +4,8 @@
 
 R_API RFlagZoneItem *r_flag_zone_get(RFlag *f, const char *name) {
 	R_RETURN_VAL_IF_FAIL (f && name, NULL);
-	RListIter *iter;
 	RFlagZoneItem *zi;
-	RList *db = f->zones;
-	r_list_foreach (db, iter, zi) {
+	R_VEC_FOREACH (&f->zones, zi) {
 		if (!strcmp (name, zi->name)) {
 			return zi;
 		}
@@ -16,10 +14,8 @@ R_API RFlagZoneItem *r_flag_zone_get(RFlag *f, const char *name) {
 }
 
 static RFlagZoneItem *r_flag_zone_get_inrange(RFlag *f, ut64 from, ut64 to) {
-	RListIter *iter;
 	RFlagZoneItem *zi;
-	RList *db = f->zones;
-	r_list_foreach (db, iter, zi) {
+	R_VEC_FOREACH (&f->zones, zi) {
 		if (R_INBETWEEN (zi->from, zi->to, from, to)) {
 			return zi;
 		}
@@ -38,35 +34,37 @@ R_API bool r_flag_zone_add(RFlag *f, const char *name, ut64 addr) {
 			zi->to = addr;
 		}
 	} else {
-		if (!f->zones) {
-			r_flag_zone_reset (f);
+		zi = RVecFlagZoneItem_emplace_back (&f->zones);
+		if (!zi) {
+			return false;
 		}
-		zi = R_NEW0 (RFlagZoneItem);
 		zi->name = strdup (name);
+		if (!zi->name) {
+			RVecFlagZoneItem_pop_back (&f->zones);
+			return false;
+		}
 		r_name_filter (zi->name, -1);
 		zi->from = zi->to = addr;
-		r_list_append (f->zones, zi);
 	}
 	return true;
 }
 
 R_API bool r_flag_zone_reset(RFlag *f) {
 	R_RETURN_VAL_IF_FAIL (f, false);
-	r_list_free (f->zones);
-	f->zones = r_list_newf (r_flag_zone_item_free);
+	RVecFlagZoneItem_clear (&f->zones);
 	return true;
 }
 
 R_API bool r_flag_zone_del(RFlag *f, const char *name) {
 	R_RETURN_VAL_IF_FAIL (f && name, false);
-	RListIter *iter;
+	size_t i = 0;
 	RFlagZoneItem *zi;
-	RList *db = f->zones;
-	r_list_foreach (db, iter, zi) {
+	R_VEC_FOREACH (&f->zones, zi) {
 		if (!strcmp (name, zi->name)) {
-			r_list_delete (db, iter);
+			RVecFlagZoneItem_remove (&f->zones, i);
 			return true;
 		}
+		i++;
 	}
 	return false;
 }
@@ -74,14 +72,13 @@ R_API bool r_flag_zone_del(RFlag *f, const char *name) {
 R_API void r_flag_zone_item_free(void *a) {
 	if (R_UNLIKELY (a)) {
 		RFlagZoneItem *zi = a;
-		free (zi->name);
+		r_flag_zone_item_fini (zi);
 		free (zi);
 	}
 }
 
 R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char ** R_NULLABLE prev, const char ** R_NULLABLE next) {
 	R_RETURN_VAL_IF_FAIL (f, false);
-	RListIter *iter;
 	RFlagZoneItem *zi;
 	if (prev) {
 		*prev = NULL;
@@ -90,10 +87,9 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char ** R_NULLABLE prev
 		*next = NULL;
 	}
 	ut64 h = UT64_MAX, l = UT64_MAX;
-	RList *db = f->zones;
 
 	bool res = false;
-	r_list_foreach (db, iter, zi) {
+	R_VEC_FOREACH (&f->zones, zi) {
 		if (zi->from > addr) {
 			if (h == UT64_MAX) {
 				h = zi->from;
@@ -180,11 +176,9 @@ R_API RList *r_flag_zone_barlist(RFlag *f, ut64 from, ut64 bsize, int rows) {
 
 R_API char *r_flag_zone_list(RFlag *f, int mode) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
-	RListIter *iter;
 	RFlagZoneItem *zi;
-	RList *db = f->zones;
 	RStrBuf *sb = r_strbuf_new ("");
-	r_list_foreach (db, iter, zi) {
+	R_VEC_FOREACH (&f->zones, zi) {
 		if (mode == '*') {
 			r_strbuf_appendf (sb, "'@0x%08"PFMT64x"'fz %s\n", zi->from, zi->name);
 			r_strbuf_appendf (sb, "'f %s %"PFMT64d" 0x%08"PFMT64x"\n", zi->name,

@@ -1889,15 +1889,15 @@ cleanup:
 	return true;
 }
 
-static int flag_name_sort(const void *a, const void *b) {
-	const RFlagItem *fa = (const RFlagItem *)a;
-	const RFlagItem *fb = (const RFlagItem *)b;
+static int flag_name_sort(RFlagItem * const *a, RFlagItem * const *b) {
+	const RFlagItem *fa = *a;
+	const RFlagItem *fb = *b;
 	return strcmp (fa->name, fb->name);
 }
 
-static int flag_offset_sort(const void *a, const void *b) {
-	const RFlagItem *fa = (const RFlagItem *)a;
-	const RFlagItem *fb = (const RFlagItem *)b;
+static int flag_offset_sort(RFlagItem * const *a, RFlagItem * const *b) {
+	const RFlagItem *fa = *a;
+	const RFlagItem *fb = *b;
 	if (fa->addr < fb->addr) {
 		return -1;
 	}
@@ -1907,13 +1907,13 @@ static int flag_offset_sort(const void *a, const void *b) {
 	return 0;
 }
 
-static void sort_flags(RList *l, int sort) {
+static void sort_flags(RVecFlagItemPtr *l, int sort) {
 	switch (sort) {
 	case SORT_NAME:
-		r_list_sort (l, flag_name_sort);
+		RVecFlagItemPtr_sort (l, flag_name_sort);
 		break;
 	case SORT_ADDR:
-		r_list_sort (l, flag_offset_sort);
+		RVecFlagItemPtr_sort (l, flag_offset_sort);
 		break;
 	case SORT_NONE:
 	default:
@@ -2215,11 +2215,11 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 				r_flag_space_cur_name (core->flags));
 			hit = 0;
 			i = j = 0;
-			RList *l = r_flag_all_list (core->flags, true);
-			RListIter *iter;
+			RVecFlagItemPtr *l = r_flag_all_list (core->flags, true);
+			RFlagItem **iter;
 			RFlagItem *fi;
 			sort_flags (l, sort);
-			r_list_foreach (l, iter, fi) {
+			r_flag_item_vec_foreach (l, iter, fi) {
 				if (option == i) {
 					fs2 = fi->name;
 					hit = 1;
@@ -2238,7 +2238,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 				}
 				i++;
 			}
-			r_list_free (l);
+			RVecFlagItemPtr_free (l);
 
 			if (!hit && i > 0) {
 				option = i - 1;

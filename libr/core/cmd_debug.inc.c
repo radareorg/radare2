@@ -1499,7 +1499,6 @@ end:
 
 static bool step_until_flag(RCore *core, const char *instr) {
 	R_RETURN_VAL_IF_FAIL (core && instr && core->dbg, false);
-	RListIter *iter;
 	RFlagItem *f;
 
 	bool honorbps = r_config_get_b (core->config, "dbg.bpforuntil");
@@ -1519,8 +1518,9 @@ static bool step_until_flag(RCore *core, const char *instr) {
 				break;
 			}
 		}
-		const RList *list = r_flag_get_list (core->flags, pc);
-		r_list_foreach (list, iter, f) {
+		const RVecFlagItemPtr *list = r_flag_get_vec (core->flags, pc);
+		RFlagItem **viter;
+		r_flag_item_vec_foreach (list, viter, f) {
 			if (R_STR_ISEMPTY (instr) || (f->realname && strstr (f->realname, instr))) {
 				r_cons_printf (core->cons, "[ 0x%08"PFMT64x" ] %s\n", f->addr, f->realname);
 				r_cons_break_pop (core->cons);

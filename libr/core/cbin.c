@@ -2564,13 +2564,13 @@ static char *unique_symflag_for_addr(RCore *core, const char *pfx, const char *l
 	if (!base) {
 		return NULL;
 	}
-	const RList *lst = r_flag_get_list (core->flags, vaddr);
+	const RVecFlagItemPtr *lst = r_flag_get_vec (core->flags, vaddr);
 	if (lst) {
 		RFlagItem *match = NULL;
 		RFlagItem *firstsym = NULL;
-		RListIter *it;
+		RFlagItem **it;
 		RFlagItem *f_at;
-		r_list_foreach (lst, it, f_at) {
+		r_flag_item_vec_foreach (lst, it, f_at) {
 			if (!f_at || !f_at->name || !r_str_startswith (f_at->name, "sym.")) {
 				continue;
 			}
@@ -2658,11 +2658,11 @@ static void set_symbol_flag(RCore *core, RBinSymbol *symbol, const SymName *sn, 
 		return;
 	}
 	if (IS_MODE_RAD (mode) && r_str_startswith (fn, "sym.")) {
-		const RList *lst = r_flag_get_list (core->flags, addr);
+		const RVecFlagItemPtr *lst = r_flag_get_vec (core->flags, addr);
 		if (lst) {
 			RFlagItem *fi;
-			RListIter *it;
-			r_list_foreach (lst, it, fi) {
+			RFlagItem **it;
+			r_flag_item_vec_foreach (lst, it, fi) {
 				if (fi && fi->name && r_str_startswith (fi->name, "sym.")) {
 					return;
 				}
@@ -3028,11 +3028,11 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 				/* Ignore duplicate sym.* names if the target address already holds one. */
 				if (IS_MODE_RAD (mode) && r_str_startswith (fn, "sym.")) {
 					RFlagItem *fi_at = NULL;
-					const RList *lst = r_flag_get_list (core->flags, addr);
+					const RVecFlagItemPtr *lst = r_flag_get_vec (core->flags, addr);
 					if (lst) {
-						RListIter *it;
+						RFlagItem **it;
 						RFlagItem *fi;
-						r_list_foreach (lst, it, fi) {
+						r_flag_item_vec_foreach (lst, it, fi) {
 							if (fi && fi->name && r_str_startswith (fi->name, "sym.")) {
 								fi_at = fi;
 								break;

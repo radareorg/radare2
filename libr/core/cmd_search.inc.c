@@ -905,20 +905,20 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		perm = R_PERM_RWX;
 	}
 	if (!strcmp (mode, "flag")) {
-		const RList *ls = r_flag_get_list (core->flags, core->addr);
+		const RVecFlagItemPtr *ls = r_flag_get_vec (core->flags, core->addr);
 		RFlagItem *fi;
-		RListIter *iter;
-		r_list_foreach (ls, iter, fi) {
+		RFlagItem **iter;
+		r_flag_item_vec_foreach (ls, iter, fi) {
 			if (fi->size > 1) {
 				append_bound (list, core->io, search_itv, fi->addr, fi->size, 7);
 			}
 		}
 	} else if (r_str_startswith (mode, "flag:")) {
 		const char *match = mode + 5;
-		const RList *ls = r_flag_get_list (core->flags, core->addr);
+		const RVecFlagItemPtr *ls = r_flag_get_vec (core->flags, core->addr);
 		RFlagItem *fi;
-		RListIter *iter;
-		r_list_foreach (ls, iter, fi) {
+		RFlagItem **iter;
+		r_flag_item_vec_foreach (ls, iter, fi) {
 			if (fi->size > 1 && r_str_glob (fi->name, match)) {
 				append_bound (list, core->io, search_itv, fi->addr, fi->size, 7);
 			}

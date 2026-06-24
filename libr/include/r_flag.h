@@ -3,7 +3,7 @@
 
 #include <r_types.h>
 #include <r_util.h>
-#include <r_list.h>
+#include <r_vec.h>
 #include <r_skiplist.h>
 
 #ifdef __cplusplus
@@ -20,11 +20,36 @@ typedef struct r_flag_zone_item_t {
 	char *name;
 } RFlagZoneItem;
 
+static inline void r_flag_zone_item_fini(RFlagZoneItem *zi) {
+	if (zi) {
+		free (zi->name);
+	}
+}
+
+R_VEC_TYPE_WITH_FINI (RVecFlagZoneItem, RFlagZoneItem, r_flag_zone_item_fini);
+
 /* flag.c */
+
+typedef struct r_flag_item_t RFlagItem;
+
+R_VEC_TYPE (RVecFlagItemPtr, RFlagItem *);
+
+#define r_flag_item_vec_foreach(list, it, pos) \
+	if (list) \
+		for (it = R_VEC_START_ITER (list); it != R_VEC_END_ITER (list) && (pos = *it, 1); it++)
+
+static inline RFlagItem *r_flag_item_vec_last(const RVecFlagItemPtr *list) {
+	RFlagItem **item = list? RVecFlagItemPtr_last (list): NULL;
+	return item? *item: NULL;
+}
+
+static inline size_t r_flag_item_vec_length(const RVecFlagItemPtr *list) {
+	return list? RVecFlagItemPtr_length (list): 0;
+}
 
 typedef struct r_flags_at_addr_t {
 	ut64 addr;
-	RList *flags;   /* list of RFlagItem at addr */
+	RVecFlagItemPtr flags; /* RFlagItem at addr */
 } RFlagsAtOffset;
 
 typedef struct r_flag_item_meta_t {
@@ -32,12 +57,9 @@ typedef struct r_flag_item_meta_t {
 	char *color;    /* item color */
 	char *comment;  /* item comment */
 	char *alias;    /* used to define a flag based on a math expression (e.g. foo + 3) */
-#if 0
-	bool demangled; /* real name from demangling? */
-#endif
 } RFlagItemMeta;
 
-typedef struct r_flag_item_t {
+struct r_flag_item_t {
 	ut32 id;        /* unique identifier, maybe use ut64? */
 	char *name;     /* unique name, escaped to avoid issues with r2 shell */
 	char *realname; /* real demangled, display name, without any escaping */
@@ -49,7 +71,7 @@ typedef struct r_flag_item_t {
 	ut64 addr;      /* address of the flag */
 	ut64 size;      /* size of the flag item */
 	RSpace *space;  /* flag space this item belongs to */
-} RFlagItem;
+};
 
 typedef struct r_flag_t {
 	RSpaces spaces;   /* handle flag spaces */
@@ -61,7 +83,7 @@ typedef struct r_flag_t {
 	RSkipList *by_addr; /* flags sorted by addr, value=RFlagsAtOffset */
 	HtPP *ht_name; /* hashmap key=item name, value=RFlagItem */
 	HtUP *ht_meta; // hashtable for the flags metadata
-	RList *zones;
+	RVecFlagZoneItem zones;
 	ut64 mask;
 	RThreadLock *lock;
 	ut32 lastid;
@@ -75,7 +97,7 @@ typedef bool (*RFlagExistAt)(RFlag *f, const char *flag_prefix, ut16 fp_size, ut
 typedef RFlagItem* (*RFlagGet)(RFlag *f, const char *name);
 typedef RFlagItem* (*RFlagGetAtAddr) (RFlag *f, bool prionospace, ut64);
 typedef RFlagItem* (*RFlagGetAt)(RFlag *f, ut64 addr, bool closest);
-typedef const RList* (*RFlagGetList)(RFlag *f, ut64 addr);
+typedef const RVecFlagItemPtr* (*RFlagGetVec)(RFlag *f, ut64 addr);
 typedef RFlagItem* (*RFlagSet)(RFlag *f, const char *name, ut64 addr, ut32 size);
 typedef bool (*RFlagUnset)(RFlag *f, RFlagItem *item);
 typedef bool (*RFlagUnsetName)(RFlag *f, const char *name);
@@ -92,7 +114,7 @@ typedef struct r_flag_bind_t {
 	RFlagExistAt exist_at;
 	RFlagGet get;
 	RFlagGetAt get_at;
-	RFlagGetList get_list;
+	RFlagGetVec get_vec;
 	RFlagSet set;
 	RFlagUnset unset;
 	RFlagUnsetName unset_name;
@@ -122,8 +144,8 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 addr, ...
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 addr, bool closest);
 R_API RFlagItem *r_flag_closest_in_space(RFlag *f, const char *space, ut64 addr, ut64 radius);
 R_API RFlagItem *r_flag_closest_with_prefix(RFlag *f, const char *pfx, ut64 addr, ut64 radius);
-R_API RList *r_flag_all_list(RFlag *f, bool by_space);
-R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 addr);
+R_API RVecFlagItemPtr *r_flag_all_list(RFlag *f, bool by_space);
+R_API const RVecFlagItemPtr* /*<RFlagItem*>*/ r_flag_get_vec(RFlag *f, ut64 addr);
 R_API char *r_flag_get_liststr(RFlag *f, ut64 addr);
 R_API bool r_flag_unset(RFlag *f, RFlagItem *item);
 R_API bool r_flag_unset_name(RFlag *f, const char *name);

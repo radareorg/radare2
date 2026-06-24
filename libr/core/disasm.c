@@ -1398,10 +1398,10 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				e = strdup (e);
 				ut64 addr = r_num_get (NULL, ox);
 				if (addr > ds->min_ref_addr) {
-					const RList *ls = r_flag_get_list (ds->core->flags, addr);
+					const RVecFlagItemPtr *ls = r_flag_get_vec (ds->core->flags, addr);
 					RFlagItem *fi;
-					RListIter *iter;
-					r_list_foreach (ls, iter, fi) {
+					RFlagItem **iter;
+					r_flag_item_vec_foreach (ls, iter, fi) {
 						const char *fsname = R_UNWRAP3 (fi, space, name);
 						if (fsname && (!strcmp (fsname, "format") || !strcmp (fsname, "segments") || !strcmp (fsname, "sections"))) {
 							// ignore
@@ -1589,10 +1589,10 @@ static void ds_show_refs(RDisasmState *ds) {
 	RAnalRef *ref;
 	R_VEC_FOREACH (refs, ref) {
 		const char *cmt = r_meta_get_string (ds->core->anal, R_META_TYPE_COMMENT, ref->addr);
-		const RList *fls = r_flag_get_list (ds->core->flags, ref->addr);
-		RListIter *iter2;
+		const RVecFlagItemPtr *fls = r_flag_get_vec (ds->core->flags, ref->addr);
+		RFlagItem **iter2;
 		RFlagItem *fis;
-		r_list_foreach (fls, iter2, fis) {
+		r_flag_item_vec_foreach (fls, iter2, fis) {
 			ds_begin_comment (ds);
 			ds_comment (ds, true, "%s (%s)", ds->cmtoken, fis->name);
 		}
@@ -2733,8 +2733,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	ds->show_cmt_right = scr;
 }
 
-static ut64 flagVal(const void *a) {
-	const RFlagItem *fa = a;
+static ut64 flagVal(const RFlagItem *fa) {
 	return r_str_hash64 (fa->realname? fa->realname: fa->name);
 }
 
@@ -2794,39 +2793,55 @@ static bool is_first(const char *fs) {
 	return false;
 }
 
-static RList *custom_sorted_flags(const RList *flaglist) {
+static bool flag_vec_has_name(const RVecFlagItemPtr *list, const RFlagItem *flag) {
+	const ut64 hash = flagVal (flag);
+	RFlagItem **iter;
+	RFlagItem *fi;
+	r_flag_item_vec_foreach (list, iter, fi) {
+		if (hash == flagVal (fi)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static RVecFlagItemPtr *custom_sorted_flags(const RVecFlagItemPtr *flaglist) {
 	if (!flaglist) {
 		return NULL;
 	}
-	RListIter *iter;
+	RVecFlagItemPtr *res = RVecFlagItemPtr_new ();
+	if (!res) {
+		return NULL;
+	}
+	RVecFlagItemPtr rest;
+	RVecFlagItemPtr tail;
+	RVecFlagItemPtr_init (&rest);
+	RVecFlagItemPtr_init (&tail);
+	RFlagItem **iter;
 	RFlagItem *fi;
-	RList *list = r_list_uniq (flaglist, flagVal);
-	RList *res = r_list_newf (NULL);
-	RList *rest = r_list_newf (NULL);
-	RList *tail = r_list_newf (NULL);
-	r_list_foreach (list, iter, fi) {
+	r_flag_item_vec_foreach (flaglist, iter, fi) {
+		if (flag_vec_has_name (res, fi) || flag_vec_has_name (&rest, fi)) {
+			continue;
+		}
 		const char *fs = fi->space? fi->space->name: NULL;
 		if (is_first (fs)) {
-			r_list_append (res, fi);
+			RVecFlagItemPtr_push_back (res, &fi);
 		} else {
-			r_list_append (rest, fi);
+			RVecFlagItemPtr_push_back (&rest, &fi);
 		}
 	}
-	r_list_foreach (rest, iter, fi) {
+	R_VEC_FOREACH (&rest, iter) {
+		fi = *iter;
 		const char *fs = R_UNWRAP3 (fi, space, name);
 		if (fs && !strcmp (fs, "registers")) {
-			r_list_append (tail, fi);
+			RVecFlagItemPtr_push_back (&tail, &fi);
 		} else {
-			r_list_append (res, fi);
+			RVecFlagItemPtr_push_back (res, &fi);
 		}
 	}
-	r_list_foreach (tail, iter, fi) {
-		r_list_append (res, fi);
-	}
-	r_list_free (tail);
-	r_list_free (rest);
-	list->free = NULL;
-	r_list_free (list);
+	RVecFlagItemPtr_append (res, &tail, NULL);
+	RVecFlagItemPtr_fini (&tail);
+	RVecFlagItemPtr_fini (&rest);
 	return res;
 }
 
@@ -2834,7 +2849,6 @@ static RList *custom_sorted_flags(const RList *flaglist) {
 static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 	RCons *cons = ds->core->cons;
 	RFlagItem *flag;
-	RListIter *iter;
 
 	if (ds->asm_flags_right || !ds->show_flags) {
 		return false;
@@ -2844,8 +2858,8 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 	ut64 switch_addr = UT64_MAX;
 	int case_start = -1, case_prev = 0, case_current = 0;
 	RAnalFunction *f = r_anal_get_function_at (ds->core->anal, ds->at);
-	const RList *flaglist = r_flag_get_list (core->flags, ds->at);
-	RList *uniqlist = custom_sorted_flags (flaglist);
+	const RVecFlagItemPtr *flaglist = r_flag_get_vec (core->flags, ds->at);
+	RVecFlagItemPtr *uniqlist = custom_sorted_flags (flaglist);
 	const char *ellipsis = r_print_ellipsis (core->print, NULL, NULL);
 	int count = 0;
 	bool outline = !ds->flags_inline;
@@ -2854,7 +2868,10 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 	bool docolon = true;
 	int nth = 0;
 	bool any = false;
-	r_list_foreach (uniqlist, iter, flag) {
+	size_t i;
+	for (i = 0; i < r_flag_item_vec_length (uniqlist); i++) {
+		flag = *RVecFlagItemPtr_at (uniqlist, i);
+		bool last = i + 1 == r_flag_item_vec_length (uniqlist);
 		if (!overlapped && f && f->addr == flag->addr && !strcmp (flag->name, f->name)) {
 			// do not show non-overlapped flags that have the same name as the function
 			// do not show flags that have the same name as the function
@@ -2887,13 +2904,13 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 					switch_addr = saddr;
 					case_prev = case_current;
 					case_start = case_current;
-					if (iter != uniqlist->tail) {
+					if (!last) {
 						continue;
 					}
 				}
 				if (case_current == case_prev + 1 && switch_addr == saddr) {
 					case_prev = case_current;
-					if (iter != uniqlist->tail) {
+					if (!last) {
 						continue;
 					}
 				}
@@ -2954,8 +2971,8 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 					nth = 0;
 				} else if (case_prev != case_start) {
 					ds_printf_font (ds, ds->font_flag, "case %d...%d:", case_start, case_prev);
-					if (iter != uniqlist->head && iter != uniqlist->tail) {
-						iter = iter->p;
+					if (i > 0 && !last) {
+						i--;
 					}
 					case_start = case_current;
 				} else {
@@ -3021,7 +3038,7 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 		}
 		ds_newline (ds);
 	}
-	r_list_free (uniqlist);
+	RVecFlagItemPtr_free (uniqlist);
 	return any;
 }
 
@@ -3787,10 +3804,10 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 			}
 		}
 		if (n >= ds->min_ref_addr) {
-			const RList *flags = r_flag_get_list (core->flags, n);
-			RListIter *iter;
+			const RVecFlagItemPtr *flags = r_flag_get_vec (core->flags, n);
+			RFlagItem **iter;
 			RFlagItem *fi;
-			r_list_foreach (flags, iter, fi) {
+			r_flag_item_vec_foreach (flags, iter, fi) {
 				r_cons_printf (cons, " %s %s", ds->cmtoken, fi->name);
 			}
 		}
@@ -5018,16 +5035,14 @@ static RFlagItem *ds_sized_str_flag(RDisasmState *ds, ut64 addr) {
 	}
 	RFlagItem *match = NULL;
 	int count = 0;
-	const RList *list = r_flag_get_list (flags, addr);
-	if (list) {
-		RFlagItem *fi;
-		RListIter *iter;
-		r_list_foreach (list, iter, fi) {
-			if (fi->addr == addr && fi->name && r_str_startswith (fi->name, "str.")) {
-				count++;
-				if ((int)fi->size == size) {
-					match = fi;
-				}
+	const RVecFlagItemPtr *list = r_flag_get_vec (flags, addr);
+	RFlagItem **iter;
+	RFlagItem *fi;
+	r_flag_item_vec_foreach (list, iter, fi) {
+		if (fi->addr == addr && fi->name && r_str_startswith (fi->name, "str.")) {
+			count++;
+			if ((int)fi->size == size) {
+				match = fi;
 			}
 		}
 	}
@@ -6403,17 +6418,18 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		mi = NULL;
 	}
 	if (ds->asm_flags_right) {
-		const RList *flaglist = r_flag_get_list (core->flags, ds->at);
+		const RVecFlagItemPtr *flaglist = r_flag_get_vec (core->flags, ds->at);
 		RFlagItem *fi;
-		RListIter *iter;
-		if (!r_list_empty (flaglist)) {
+		RFlagItem **iter;
+		if (flaglist && !RVecFlagItemPtr_empty (flaglist)) {
 			ds_align_comment (ds);
 			if (ds->show_color) {
 				r_cons_print (core->cons, ds->color_comment);
 			}
 			r_cons_print (core->cons, ";-- ");
-			r_list_foreach (flaglist, iter, fi) {
-				ds_printf_font (ds, ds->font_flag, "%s%s", fi->name, iter->n? ", ": " ");
+			r_flag_item_vec_foreach (flaglist, iter, fi) {
+				ds_printf_font (ds, ds->font_flag, "%s%s", fi->name,
+					iter + 1 != R_VEC_END_ITER (flaglist)? ", ": " ");
 			}
 		}
 		return;
@@ -8070,13 +8086,13 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		}
 		/* add flags */
 		{
-			const RList *flags = r_flag_get_list (core->flags, at);
+			const RVecFlagItemPtr *flags = r_flag_get_vec (core->flags, at);
 			RFlagItem *flag;
-			RListIter *iter;
-			if (flags && !r_list_empty (flags)) {
+			RFlagItem **iter;
+			if (flags && !RVecFlagItemPtr_empty (flags)) {
 				pj_k (pj, "flags");
 				pj_a (pj);
-				r_list_foreach (flags, iter, flag) {
+				r_flag_item_vec_foreach (flags, iter, flag) {
 					pj_s (pj, flag->name);
 				}
 				pj_end (pj);

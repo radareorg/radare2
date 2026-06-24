@@ -405,16 +405,16 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 
 static bool check_string_at(RCore *core, ut64 addr) {
 	// TODO: improve with data analysis instead
-	const RList *flags = r_flag_get_list (core->flags, addr);
-	RListIter *iter;
+	const RVecFlagItemPtr *flags = r_flag_get_vec (core->flags, addr);
+	RFlagItem **iter;
 	RFlagItem *fi;
-	r_list_foreach (flags, iter, fi) {
+	r_flag_item_vec_foreach (flags, iter, fi) {
 		if (r_str_startswith (fi->name, "str.")) {
 			return true;
 		}
 	}
 	// fallback with data analysis
-	if (r_list_empty (flags)) {
+	if (!flags || RVecFlagItemPtr_empty (flags)) {
 		const char *r = r_anal_data_kind (core->anal,
 			core->addr, core->block, core->blocksize);
 		if (strstr (r, "text")) {
@@ -1875,11 +1875,6 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
 	return 0;
 }
 
-static int find_sym_flag(const void *a1, const void *a2) {
-	const RFlagItem *f = (const RFlagItem *)a2;
-	return f->space && !strcmp (f->space->name, R_FLAGS_FS_SYMBOLS)? 0: 1;
-}
-
 static bool is_skippable_addr(RCore *core, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (!fcn) {
@@ -1888,8 +1883,15 @@ static bool is_skippable_addr(RCore *core, ut64 addr) {
 	if (fcn->addr == addr) {
 		return true;
 	}
-	const RList *flags = r_flag_get_list (core->flags, addr);
-	return !(flags && r_list_find (flags, fcn, find_sym_flag));
+	const RVecFlagItemPtr *flags = r_flag_get_vec (core->flags, addr);
+	RFlagItem **iter;
+	RFlagItem *flag;
+	r_flag_item_vec_foreach (flags, iter, flag) {
+		if (flag->space && !strcmp (flag->space->name, R_FLAGS_FS_SYMBOLS)) {
+			return false;
+		}
+	}
+	return true;
 }
 
 static RAnalFunction *anal_fcn_find_existing(RAnal *anal, ut64 at, ut64 from, int reftype) {
