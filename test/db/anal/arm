@@ -319,12 +319,28 @@ pd 4
 EOF
 EXPECT=<<EOF
 / (fcn) fcn.00000000 16
-// void fcn.00000000 (int32_t arg1);
-| `- args(r1)
-|           0x00000000      021081e0       add r1, r1, r2              ; arg2
+// void fcn.00000000 (int32_t arg1, int32_t arg2);
+| `- args(r1, r2)
+|           0x00000000      021081e0       add r1, r1, r2              ; arg3
 |           0x00000004      1eff2f01       bxeq lr
 |           0x00000008      0020a0e3       mov r2, 0
 \           0x0000000c      1eff2fe1       bx lr
+EOF
+RUN
+
+NAME=arm32 register args r0 to r3
+FILE=malloc://64
+ARGS=-a arm -e asm.bits=32
+CMDS=<<EOF
+wx 010080e0020080e0030080e01eff2fe1
+af
+afv
+EOF
+EXPECT=<<EOF
+arg int32_t arg1 @ r0
+arg int32_t arg2 @ r1
+arg int32_t arg3 @ r2
+arg int32_t arg4 @ r3
 EOF
 RUN
 

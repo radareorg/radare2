@@ -71,3 +71,21 @@ svc 0x42
 svc 0xb6
 EOF
 RUN
+
+NAME=arm32 convention resolves r0 to r3 in thumb mode
+FILE=malloc://64
+ARGS=-a arm -e asm.bits=16
+CMDS=<<EOF
+wx 40188018c0187047
+af
+afc arm32
+afva
+afv
+EOF
+EXPECT=<<EOF
+arg int16_t arg1 @ r0
+arg int16_t arg2 @ r1
+arg int16_t arg3 @ r2
+arg int16_t arg4 @ r3
+EOF
+RUN

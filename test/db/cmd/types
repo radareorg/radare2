@@ -1477,7 +1477,7 @@ var char * var_24h @ fp-0x20
 var int32_t var_28h @ fp-0x24
 var char * src @ fp-0x28
 var int32_t var_30h @ fp-0x2c
-var char * v2 @ fp-0x30
+var char * v4 @ fp-0x30
 var pid_t pid @ fp-0x34
 var int32_t var_3ch @ fp-0x38
 var int32_t var_40h @ fp-0x3c

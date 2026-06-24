@@ -364,30 +364,36 @@ pdf
 agf
 EOF
 EXPECT=<<EOF
-/ 4: fcn.00008174 (func main, int argc);
+/ 4: fcn.00008174 (func main, int argc, char **ubp_av, func init);
 |           ; arg func main @ r0
 |           ; arg int argc @ r1
+|           ; arg char **ubp_av @ r2
+|           ; arg func init @ r3
 \           0x00008174      b80000eb       bl sym.__libc_start_main    ; lr=0x8178 -> 0xeb0002a4 ; pc=0x845c -> 0xe92d41f0
-\                                                                      ; int __libc_start_main(0, 0, -1, -1, -1, -1, -1)
+\                                                                      ; int __libc_start_main(0, 0, 0, 0, 0x00000000, 0x00000000, 0x00000000)
 
-/ 4: fcn.00008174 (func main, int argc);
+/ 4: fcn.00008174 (func main, int argc, char **ubp_av, func init);
 |           ; arg func main @ r0
 |           ; arg int argc @ r1
+|           ; arg char **ubp_av @ r2
+|           ; arg func init @ r3
 |              ; lr=0x8178 -> 0xeb0002a4
 |              ; pc=0x845c -> 0xe92d41f0 sym.__libc_start_main
-|              ; int __libc_start_main(0, 0, -1, -1, -1, -1, -1)
+|              ; int __libc_start_main(0, 0, 0, 0, 0x00000000, 0x00000000, 0x00000000)
 \           0x00008174      b80000eb       bl sym.__libc_start_main
 
-.------------------------------------------------------.
-|  0x8174                                              |
-| 4: fcn.00008174 (func main, int argc);               |
-| ; arg func main @ r0                                 |
-| ; arg int argc @ r1                                  |
-|    ; lr=0x8178 -> 0xeb0002a4                         |
-|    ; pc=0x845c -> 0xe92d41f0 sym.__libc_start_main   |
-|    ; int __libc_start_main(0, 0, -1, -1, -1, -1, -1) |
-| bl sym.__libc_start_main;[oa]                        |
-`------------------------------------------------------'
+.------------------------------------------------------------------.
+|  0x8174                                                          |
+| 4: fcn.00008174 (func main, int argc, char **ubp_av, func init); |
+| ; arg func main @ r0                                             |
+| ; arg int argc @ r1                                              |
+| ; arg char **ubp_av @ r2                                         |
+| ; arg func init @ r3                                             |
+|    ; lr=0x8178 -> 0xeb0002a4                                     |
+|    ; pc=0x845c -> 0xe92d41f0 sym.__libc_start_main               |
+|    ; int __libc_start_main(0, 0, 0, 0, NULL, NULL, NULL)         |
+| bl sym.__libc_start_main;[oa]                                    |
+`------------------------------------------------------------------'
 EOF
 RUN
 
