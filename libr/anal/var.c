@@ -485,11 +485,11 @@ R_API RList *r_anal_var_deserialize(const char *ser) {
 		nxt++;
 		ser = nxt;
 
-		// type
+		// type (may be empty, e.g. the "..." vararg argument)
 		for (i = 0; *nxt && *nxt != ','; i++) {
 			nxt++;
 		}
-		v->type = R_STR_NDUP (ser, i);
+		v->type = i > 0 ? r_str_ndup (ser, i) : strdup ("");
 		if (!v->type) {
 			goto bad_serial;
 		}
