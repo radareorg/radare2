@@ -2,6 +2,8 @@
 
 #include <r_util.h>
 
+#define SBSZ 512
+
 // Base growth: +12.5%, with adaptive slack to avoid size-class boundaries
 static inline size_t growlog(size_t cap, size_t required) {
 	// assume cap can't be zero because minimum if sizeof (buf)
@@ -14,6 +16,34 @@ static inline size_t growlog(size_t cap, size_t required) {
 	}
 	// avoids sharp size-class boundaries
 	return grown + (grown < 1024? 64: (grown >> 4));
+}
+
+static bool strbuf_vprintf(RStrBuf *sb, const char *fmt, va_list ap, size_t len, bool prepend) {
+	size_t required;
+	if (r_add_overflow (sb->len, len + 1, &required) || !r_strbuf_reserve (sb, required - 1)) {
+		return false;
+	}
+	char *buf = r_strbuf_get (sb);
+	const size_t oldlen = sb->len;
+	if (prepend && oldlen > 0) {
+		memmove (buf + len, buf, oldlen);
+	}
+	char first = prepend && oldlen > 0? buf[len]: 0;
+	int ret = vsnprintf (buf + (prepend? 0: oldlen), len + 1, fmt, ap);
+	if (ret < 0 || (size_t)ret != len) {
+		if (prepend && oldlen > 0) {
+			buf[len] = first;
+			memmove (buf, buf + len, oldlen);
+		}
+		buf[oldlen] = 0;
+		return false;
+	}
+	if (prepend && oldlen > 0) {
+		buf[len] = first;
+	}
+	sb->len += len;
+	buf[sb->len] = 0;
+	return true;
 }
 
 R_API RStrBuf *R_NONNULL r_strbuf_new(const char *str) {
@@ -219,7 +249,7 @@ R_API const char *r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) {
 	const char *ret = NULL;
 	va_list ap2;
 	va_copy (ap2, ap);
-	char string[1024];
+	char string[SBSZ];
 	int rc = vsnprintf (string, sizeof (string), fmt, ap);
 	if (rc >= sizeof (string)) {
 		char *p = malloc (rc + 1);
@@ -239,23 +269,7 @@ done:
 
 R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s) {
 	R_RETURN_VAL_IF_FAIL (sb && s, false);
-	int l = strlen (s);
-	// fast path if no chars to append
-	if (l == 0) {
-		return true;
-	}
-	int newlen = l + sb->len;
-	char *ns = malloc (newlen + 1);
-	bool ret = false;
-	if (ns) {
-		memcpy (ns, s, l);
-		char *s = sb->ptr? sb->ptr: sb->buf;
-		memcpy (ns + l, s, sb->len);
-		ns[newlen] = 0;
-		ret = r_strbuf_set (sb, ns);
-		free (ns);
-	}
-	return ret;
+	return r_strbuf_prepend_n (sb, s, strlen (s));
 }
 
 R_API bool r_strbuf_append(RStrBuf *sb, const char *s) {
@@ -332,7 +346,7 @@ R_API bool r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 
 R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_list ap2;
-	char string[1024];
+	char string[SBSZ];
 
 	R_RETURN_VAL_IF_FAIL (sb && fmt, false);
 
@@ -342,15 +356,7 @@ R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_copy (ap2, ap);
 	int ret = vsnprintf (string, sizeof (string), fmt, ap);
 	if (ret >= sizeof (string)) {
-		char *p = malloc (ret + 1);
-		if (!p) {
-			va_end (ap2);
-			return false;
-		}
-		*p = 0;
-		vsnprintf (p, ret + 1, fmt, ap2);
-		ret = r_strbuf_append_n (sb, p, ret);
-		free (p);
+		ret = strbuf_vprintf (sb, fmt, ap2, ret, false);
 	} else if (ret >= 0) {
 		ret = r_strbuf_append_n (sb, string, ret);
 	} else {
@@ -445,7 +451,7 @@ R_API bool r_strbuf_pad(RStrBuf *sb, char ch, int sz) {
 
 R_API bool r_strbuf_vprependf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_list ap2;
-	char string[1024];
+	char string[SBSZ];
 
 	R_RETURN_VAL_IF_FAIL (sb && fmt, false);
 
@@ -455,15 +461,7 @@ R_API bool r_strbuf_vprependf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_copy (ap2, ap);
 	int ret = vsnprintf (string, sizeof (string), fmt, ap);
 	if (ret >= sizeof (string)) {
-		char *p = malloc (ret + 1);
-		if (!p) {
-			va_end (ap2);
-			return false;
-		}
-		*p = 0;
-		vsnprintf (p, ret + 1, fmt, ap2);
-		ret = r_strbuf_prepend_n (sb, p, ret);
-		free (p);
+		ret = strbuf_vprintf (sb, fmt, ap2, ret, true);
 	} else if (ret >= 0) {
 		ret = r_strbuf_prepend_n (sb, string, ret);
 	} else {
