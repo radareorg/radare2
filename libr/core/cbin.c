@@ -1845,6 +1845,24 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	return foo;
 }
 
+static Sdb *loadModuleOrdinals(const char *sdbdir, const char *module) {
+	if (R_STR_ISEMPTY (sdbdir) || R_STR_ISEMPTY (module)) {
+		return NULL;
+	}
+	char *sdb_name = r_str_newf ("%s.sdb", module);
+	if (!sdb_name) {
+		return NULL;
+	}
+	char *filename = r_file_new (sdbdir, sdb_name, NULL);
+	free (sdb_name);
+	Sdb *db = NULL;
+	if (filename && r_file_exists (filename)) {
+		db = sdb_new (NULL, filename, 0);
+	}
+	free (filename);
+	return db;
+}
+
 // name can be optionally used to explicitly set the used base name (for example for demangling), otherwise the import name will be used.
 static char *construct_reloc_name(RBinReloc *R_NONNULL reloc, const char *R_NULLABLE name) {
 	RStrBuf *buf = r_strbuf_new ("");
@@ -1898,7 +1916,6 @@ static void ri_init(RCore *core, RelocInfo *ri) {
 
 static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
 	RCore *core = ri->core;
-	r_strf_buffer (64);
 
 	const char *name = reloc->import? r_bin_name_tostring (reloc->import->name): NULL;
 	if (ri->is_pe && name && reloc->import->libname && r_str_startswith (name, "Ordinal_")) {
@@ -1913,26 +1930,13 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 
 		const char *import = name + strlen ("Ordinal_");
 		if (import) {
-			char *filename = NULL;
 			int ordinal = atoi (import);
 			if (!*sdb_module || strcmp (module, *sdb_module)) {
 				sdb_free (*db);
 				*db = NULL;
 				free (*sdb_module);
 				*sdb_module = strdup (module);
-				/* always lowercase */
-				filename = r_strf ("%s.sdb", module);
-				r_str_case (filename, false);
-				if (r_file_exists (filename)) {
-					*db = sdb_new (NULL, filename, 0);
-				} else {
-					char *dirPrefix = r_sys_prefix (NULL);
-					filename = r_strf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"), dirPrefix, module);
-					free (dirPrefix);
-					if (r_file_exists (filename)) {
-						*db = sdb_new (NULL, filename, 0);
-					}
-				}
+				*db = loadModuleOrdinals (core->bin->sdbdir, module);
 			}
 			if (*db) {
 				// ordinal-1 because we enumerate starting at 0

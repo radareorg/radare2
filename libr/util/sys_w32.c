@@ -24,10 +24,14 @@ R_API char *r_sys_get_src_dir_w32(void) {
 	}
 	char *path = r_sys_conv_win_to_utf8 (shortpath);
 	char *dir = r_file_dirname (path);
-	if (!r_sys_getenv_asbool ("R_ALT_SRC_DIR")) {
-		char *tmp = dir;
-		dir = r_file_dirname (tmp);
-		free (tmp);
+	free (path);
+	if (r_sys_getenv_asbool ("R_ALT_SRC_DIR")) {
+		return dir;
+	}
+	if (!r_str_casecmp (r_file_basename (dir), "bin")) {
+		char *root = r_file_dirname (dir);
+		free (dir);
+		return root;
 	}
 	return dir;
 }

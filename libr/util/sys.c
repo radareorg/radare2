@@ -1507,7 +1507,8 @@ R_API char *r_sys_prefix(const char *pfx) {
 		free (r2prefix);
 #if R2__WINDOWS__
 		r2prefix = r_sys_get_src_dir_w32 ();
-		if (!r2prefix) {
+		if (R_STR_ISEMPTY (r2prefix)) {
+			free (r2prefix);
 			r2prefix = strdup (R2_PREFIX);
 		}
 #else
