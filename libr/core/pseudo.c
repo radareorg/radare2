@@ -405,8 +405,9 @@ static char *fold_resolved_refs(RCore *core, char *code) {
 }
 
 static RCoreHelpMessage help_msg_pdc = {
-	"Usage: pdc[oj]", "", "experimental, unreliable and hacky pseudo-decompiler",
+	"Usage: pdc[oj*]", "", "experimental, unreliable and hacky pseudo-decompiler",
 	"pdc", "", "pseudo decompile function in current offset",
+	"pdc*", "", "emit decompiled lines as CCu comment commands",
 	"pdca", "", "side by side comparing assembly and pseudo",
 	"pdcc", "", "pseudo-decompile with C helpers around",
 	"pdco", "", "show associated offset next to pseudecompiled output",
@@ -1298,6 +1299,60 @@ static char *pdc_return_type(const char *fs, const char *name) {
 	return ret;
 }
 
+static bool pdc_comment_line_is_meaningful(const char *line) {
+	if (R_STR_ISEMPTY (line) || !strcmp (line, "{") || !strcmp (line, "}")) {
+		return false;
+	}
+	return !r_str_startswith (line, "// callconv:");
+}
+
+static void pdc_print_comment_cmds(RCore *core, const char *s) {
+	while (R_STR_ISNOTEMPTY (s)) {
+		const char *end = strchr (s, '\n');
+		size_t len = end? (size_t)(end - s): strlen (s);
+		char *line = r_str_ndup (s, len);
+		if (!line) {
+			return;
+		}
+		const char *p = r_str_trim_head_ro (line);
+		if (r_str_startswith (p, "0x")) {
+			const char *q = p + 2;
+			while (IS_HEXCHAR (*q)) {
+				q++;
+			}
+			if (q > p + 2) {
+				ut64 addr = r_num_get (core->num, p);
+				while (*q == ' ') {
+					q++;
+				}
+				if (*q == '|') {
+					const char *body = r_str_trim_head_ro (q + 1);
+					if (*body == '|') {
+						body = r_str_trim_head_ro (body + 1);
+					}
+					char *comment = strdup (body);
+					if (comment) {
+						r_str_trim_tail (comment);
+						if (pdc_comment_line_is_meaningful (comment)) {
+							char *b64 = r_base64_encode_dyn ((const ut8 *)comment, -1);
+							if (b64) {
+								r_cons_printf (core->cons, "CCu base64:%s @ 0x%08" PFMT64x "\n", b64, addr);
+								free (b64);
+							}
+						}
+						free (comment);
+					}
+				}
+			}
+		}
+		free (line);
+		if (!end) {
+			break;
+		}
+		s = end + 1;
+	}
+}
+
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	bool show_c_headers = *input == 'c';
 	if (*input == '?') {
@@ -1337,7 +1392,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	state.marked = r_bitset_new ();
 	state.pj = (*input == 'j')? r_core_pj_new (core): NULL;
 	state.show_asm = (*input == 'a');
-	state.show_addr = state.show_asm || (*input == 'o');
+	const bool comment_cmds = *input == '*';
+	state.show_addr = state.show_asm || (*input == 'o') || comment_cmds;
 	state.fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 
 	ut64 queuegoto = 0LL;
@@ -1840,13 +1896,17 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_strbuf_free (state.out);
 	} else {
 		char *s = r_strbuf_drain (state.out);
-		if (r_config_get_i (state.core->config, "scr.color") > 0) {
+		if (comment_cmds) {
+			pdc_print_comment_cmds (core, s);
+		} else if (r_config_get_i (state.core->config, "scr.color") > 0) {
 			RConsCodeColors codecolors = r_cons_codecolors (core->cons);
 			char *ss = r_print_code_tocolor (s, &codecolors);
 			free (s);
 			s = ss;
 		}
-		r_cons_printf (state.core->cons, "%s\n", s);
+		if (!comment_cmds) {
+			r_cons_printf (state.core->cons, "%s\n", s);
+		}
 		free (s);
 		r_strbuf_free (state.codestr);
 	}

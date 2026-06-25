@@ -588,6 +588,21 @@ func
 EOF
 RUN
 
+NAME=pdc* emits comment commands
+FILE=malloc://16
+ARGS=-a x86 -b 64 -e scr.color=0
+CMDS=<<EOF
+wx 31c0c3
+af
+pdc*
+EOF
+EXPECT=<<EOF
+CCu base64:dm9pZCBmY24uMDAwMDAwMDAgKHZvaWQpIHs= @ 0x00000000
+CCu base64:ZWF4ID0gMA== @ 0x00000000
+CCu base64:cmV0dXJuIGVheA== @ 0x00000002
+EOF
+RUN
+
 NAME=pdc signature from recovered args
 FILE=malloc://0x40
 ARGS=-a mips -b 32 -e cfg.bigendian=true
