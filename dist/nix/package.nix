@@ -34,7 +34,7 @@ let
     owner = "radareorg";
     repo = "sdb";
     rev = "2.4.6";
-    hash = "sha256-JmY5tNS4ASN1bmLgaYvCQdT2SypCwMzEtb7SL7AJvRA=";
+    hash = "sha256-5DuHC5uL4gXBJPGW2awDq/5Ufdi1RoEJnm+eAU3X8S4=";
   };
 
   qjs = fetchFromGitHub {
