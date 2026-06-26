@@ -5836,6 +5836,9 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo) {
 		return NULL;
 	}
 	RBinElfSymbol *symbol;
+	// section-less ELFs skip the section path that fills symbols_by_ord; their dynsym ordinals equal reloc->sym, so name defined slots here
+	RBinSymbol **sbo = eo->ehdr.e_shnum? NULL: eo->symbols_by_ord;
+	const size_t sbo_size = eo->symbols_by_ord_size;
 	R_VEC_FOREACH (elf_symbols, symbol) {
 		if (symbol->is_sht_null) {
 			continue;
@@ -5845,6 +5848,9 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo) {
 		}
 		RBinSymbol sym;
 		fill_symbol (eo, symbol, &sym);
+		if (sbo && !symbol->is_imported && symbol->ordinal < sbo_size && !sbo[symbol->ordinal]) {
+			sbo[symbol->ordinal] = r_bin_symbol_clone (&sym);
+		}
 		RVecRBinSymbol_push_back (&eo->symbols_cache, &sym);
 	}
 	eo->symbols_cached = true;
