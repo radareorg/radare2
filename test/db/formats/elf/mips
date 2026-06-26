@@ -72,3 +72,11 @@ EXPECT=<<EOF
 0x004f4ac0 strftime
 EOF
 RUN
+
+NAME=mips defined global GOT slot gets named reloc in section-less elf
+FILE=bins/elf/boa-mips
+CMDS=ir~tc_meter_enable[0,4]
+EXPECT=<<EOF
+0x004f50ac tc_meter_enable
+EOF
+RUN
