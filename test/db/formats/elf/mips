@@ -64,3 +64,11 @@ jal sym.imp.__uClibc_main
 sw sp, 0x18(sp)
 EOF
 RUN
+
+NAME=mips implicit global GOT slots get named relocs
+FILE=bins/elf/boa-mips
+CMDS=ir~strftime[0,4]
+EXPECT=<<EOF
+0x004f4ac0 strftime
+EOF
+RUN

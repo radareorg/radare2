@@ -517,6 +517,9 @@ static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	di->dt_jmprel = R_BIN_ELF_ADDR_MAX;
 	di->dt_pltgot = R_BIN_ELF_ADDR_MAX;
 	di->dt_mips_pltgot = R_BIN_ELF_ADDR_MAX;
+	di->dt_mips_local_gotno = 0;
+	di->dt_mips_gotsym = R_BIN_ELF_XWORD_MAX;
+	di->dt_mips_symtabno = 0;
 	di->dt_ppc64_glink = R_BIN_ELF_ADDR_MAX;
 	di->dt_crel = R_BIN_ELF_ADDR_MAX;
 	di->dt_bind_now = false;
@@ -614,6 +617,15 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 			break;
 		case DT_MIPS_PLTGOT:
 			di->dt_mips_pltgot = d.d_un.d_ptr;
+			break;
+		case DT_MIPS_LOCAL_GOTNO:
+			di->dt_mips_local_gotno = d.d_un.d_val;
+			break;
+		case DT_MIPS_GOTSYM:
+			di->dt_mips_gotsym = d.d_un.d_val;
+			break;
+		case DT_MIPS_SYMTABNO:
+			di->dt_mips_symtabno = d.d_un.d_val;
 			break;
 		case DT_PPC64_GLINK:
 			di->dt_ppc64_glink = d.d_un.d_ptr;
@@ -3858,6 +3870,14 @@ static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 v
 	return true;
 }
 
+static size_t get_num_relocs_mips_got(ELFOBJ *eo) {
+	const RBinElfDynamicInfo *di = &eo->dyn_info;
+	if (eo->ehdr.e_machine != EM_MIPS || di->dt_pltgot == R_BIN_ELF_ADDR_MAX || di->dt_mips_gotsym == R_BIN_ELF_XWORD_MAX || di->dt_mips_symtabno <= di->dt_mips_gotsym) {
+		return 0;
+	}
+	return di->dt_mips_symtabno - di->dt_mips_gotsym;
+}
+
 static size_t get_num_relocs_dynamic(ELFOBJ *eo) {
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
 	size_t res = 0;
@@ -3878,7 +3898,7 @@ static size_t get_num_relocs_dynamic(ELFOBJ *eo) {
 		// If relrent is not set, assume it's the size of an address
 		res += di->dt_relrsz / sizeof (Elf_(Addr));
 	}
-	return res + get_num_relocs_dynamic_plt (eo);
+	return res + get_num_relocs_dynamic_plt (eo) + get_num_relocs_mips_got (eo);
 }
 
 static bool section_is_valid(ELFOBJ *eo, RBinElfSection *sect) {
@@ -4027,6 +4047,39 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 			fix_rva_and_offset_exec_file (eo, reloc);
 			pos++;
 		}
+	}
+	return pos;
+}
+
+// MIPS has no explicit relocs for its global GOT (dynsym [gotsym, symtabno)); synthesize them so cbin names the slots
+static size_t populate_relocs_record_from_mips_got(ELFOBJ *eo, size_t pos, size_t num_relocs) {
+	const RBinElfDynamicInfo *di = &eo->dyn_info;
+	if (!get_num_relocs_mips_got (eo)) {
+		return pos;
+	}
+	const ut64 wordsize = sizeof (Elf_(Addr));
+	const ut64 gotsym = di->dt_mips_gotsym;
+	const ut64 symtabno = di->dt_mips_symtabno;
+	const ut64 global_got = di->dt_pltgot + di->dt_mips_local_gotno * wordsize;
+	ut64 i;
+	for (i = gotsym; i < symtabno && pos < num_relocs; i++) {
+		// skip entries already covered by an explicit reloc to avoid a duplicate flag
+		if (ht_uu_find (eo->rel_cache, i + 1, NULL) > 0) {
+			continue;
+		}
+		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
+		if (!reloc) {
+			break;
+		}
+		memset (reloc, 0, sizeof (*reloc));
+		reloc->sym = (int)i;
+		reloc->type = R_MIPS_REL32;
+		reloc->mode = DT_REL;
+		reloc->offset = global_got + (i - gotsym) * wordsize;
+		fix_rva_and_offset_exec_file (eo, reloc);
+		int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
+		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
+		pos++;
 	}
 	return pos;
 }
@@ -4187,6 +4240,7 @@ static bool populate_relocs_record(ELFOBJ *eo) {
 
 	size_t i = 0;
 	i = populate_relocs_record_from_dynamic (eo, i, num_relocs);
+	i = populate_relocs_record_from_mips_got (eo, i, num_relocs);
 	i = populate_relocs_record_from_section (eo, i, num_relocs);
 	eo->g_reloc_num = i;
 	return true;
