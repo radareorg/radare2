@@ -5289,6 +5289,14 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 	// TODO: we must use this for step 'ds' too maybe...
 	switch (input[1]) {
 	case 0: // "dc"
+		if (!r_config_get_b (core->config, "cfg.debug")) {
+			// Emulated target (ESIL): no live process to resume, so
+			// continue via the ESIL VM. Mirrors how "ds" dispatches to
+			// "aes" when cfg.debug is unset; stops at a breakpoint, an
+			// invalid instruction or a memory fault.
+			r_core_cmd0 (core, "aec");
+			break;
+		}
 		r_reg_arena_swap (core->dbg->reg, true);
 #if 0
 		// This has been disabled as it caused `dc; dc; ood; dc` to
