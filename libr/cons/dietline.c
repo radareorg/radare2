@@ -1085,9 +1085,12 @@ R_API void r_line_autocomplete(RCons *cons) {
 	if (argc == 1) {
 		const char *end_word = r_sub_str_rchr (line->buffer.data,
 			line->buffer.index, strlen (line->buffer.data), ' ');
-		const char *t = end_word? end_word: line->buffer.data + line->buffer.index;
+		const char *t = end_word? end_word: "";
 		int largv0 = strlen (r_str_get (argv[0]));
 		size_t len_t = strlen (t);
+		while (len_t > 0 && t[len_t - 1] == ' ') {
+			len_t--;
+		}
 		p[largv0] = '\0';
 
 		if ((p - line->buffer.data) + largv0 + 1 + len_t < plen) {
@@ -1097,6 +1100,7 @@ R_API void r_line_autocomplete(RCons *cons) {
 					p[tt++] = ' ';
 				}
 				memmove (p + tt, t, len_t);
+				p[tt + len_t] = '\0';
 			}
 			memcpy (p, argv[0], largv0);
 
@@ -1112,10 +1116,15 @@ R_API void r_line_autocomplete(RCons *cons) {
 	} else if (argc > 0) {
 		if (*p) {
 			// TODO: avoid overflow
-			const char *t = line->buffer.data + line->buffer.index;
+			const char *end_word = r_sub_str_rchr (line->buffer.data,
+				line->buffer.index, strlen (line->buffer.data), ' ');
+			const char *t = end_word? end_word: "";
 			const char *root = argv[0];
 			int min_common_len = strlen (root);
 			size_t len_t = strlen (t);
+			while (len_t > 0 && t[len_t - 1] == ' ') {
+				len_t--;
+			}
 
 			// try to autocomplete argument
 			for (i = 0; i < argc; i++) {
