@@ -71,11 +71,71 @@ bool test_prompt_format_preserves_trailing_escaped_newline(void) {
 	mu_end;
 }
 
+bool test_autocomplete_find_prefers_exact_match(void) {
+	RCoreAutocomplete *root = R_NEW0 (RCoreAutocomplete);
+	RCoreAutocomplete *oe = r_core_autocomplete_add (root, "oe", R_CORE_AUTOCMPLT_FILE, true);
+	RCoreAutocomplete *o = r_core_autocomplete_add (root, "o", R_CORE_AUTOCMPLT_FILE, true);
+	RCoreAutocomplete *open = r_core_autocomplete_add (root, "open", R_CORE_AUTOCMPLT_FILE, true);
+	mu_assert_notnull (oe, "Couldn't add oe autocomplete");
+	mu_assert_notnull (o, "Couldn't add o autocomplete");
+	mu_assert_notnull (open, "Couldn't add open autocomplete");
+
+	mu_assert_ptreq (r_core_autocomplete_find (root, "o", false), o, "Prefix lookup should prefer exact command matches");
+	mu_assert_ptreq (r_core_autocomplete_find (root, "op", false), open, "Prefix lookup should still find longer matches");
+
+	r_core_autocomplete_free (root);
+	mu_end;
+}
+
+bool test_o_autocomplete_uses_file_completion(void) {
+	char *dir = r_file_temp ("r2-ac");
+	mu_assert_notnull (dir, "Couldn't create temporary path");
+	mu_assert_true (r_sys_mkdir (dir), "Couldn't create temporary directory");
+
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "Couldn't create new RCore");
+
+	RLineCompletion completion = {0};
+	r_line_completion_init (&completion, 16);
+
+	RLineBuffer buf = {0};
+	char *cmd = r_str_newf ("o %s", dir);
+	mu_assert_notnull (cmd, "Couldn't create autocomplete command");
+	r_str_ncpy (buf.data, cmd, sizeof (buf.data));
+	buf.length = strlen (buf.data);
+	buf.index = buf.length;
+
+	r_core_autocomplete (core, &completion, &buf, R_LINE_PROMPT_DEFAULT);
+
+	char *expected = r_str_newf ("%s%s", dir, R_SYS_DIR);
+	mu_assert_notnull (expected, "Couldn't create expected completion");
+	bool found = false;
+	char **it;
+	R_VEC_FOREACH (&completion.args, it) {
+		if (!strcmp (*it, expected)) {
+			found = true;
+			break;
+		}
+	}
+
+	free (expected);
+	free (cmd);
+	r_line_completion_clear (&completion);
+	RVecCString_fini (&completion.args);
+	r_core_free (core);
+	r_file_rm (dir);
+	free (dir);
+	mu_assert_true (found, "o <path> should use file completion");
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_cmd_str_issue_18799);
 	mu_run_test (test_prompt_utf8_ellipsis_width);
 	mu_run_test (test_prompt_format_preserves_trailing_escaped_space);
 	mu_run_test (test_prompt_format_preserves_trailing_escaped_newline);
+	mu_run_test (test_autocomplete_find_prefers_exact_match);
+	mu_run_test (test_o_autocomplete_uses_file_completion);
 	return tests_passed != tests_run;
 }
 

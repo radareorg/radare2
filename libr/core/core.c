@@ -3756,16 +3756,19 @@ R_API void r_core_autocomplete_free(RCoreAutocomplete *obj) {
 R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char *cmd, bool exact) {
 	R_RETURN_VAL_IF_FAIL (parent && cmd, NULL);
 	size_t len = strlen (cmd);
+	RCoreAutocomplete *prefix = NULL;
 	RCoreAutocomplete *iter;
 	R_VEC_FOREACH (&parent->subcmds, iter) {
-		if (exact && len != iter->length) {
-			continue;
-		}
 		if (!strncmp (cmd, iter->cmd, len)) {
-			return iter;
+			if (len == iter->length) {
+				return iter;
+			}
+			if (!exact && !prefix) {
+				prefix = iter;
+			}
 		}
 	}
-	return NULL;
+	return exact? NULL: prefix;
 }
 
 R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char *cmd) {
