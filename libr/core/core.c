@@ -981,6 +981,12 @@ static void autocomplete_vars(RCore *core, RLineCompletion *completion, const ch
 	if (!fcn) {
 		return;
 	}
+	// Autocomplete for last argument
+	const char *sp = r_str_rchr (str, NULL, ' ');
+	if (!sp) {
+		return;
+	}
+	str = sp + 1;
 	size_t len = strlen (str);
 	RAnalVar **it;
 	R_VEC_FOREACH (&fcn->vars, it) {
