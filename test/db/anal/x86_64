@@ -2086,7 +2086,7 @@ fastcall
 |           0x0804843e      ff75f0         push dword [var_10h]
 |           0x08048441      ff75f4         push dword [var_ch]
 |           0x08048444      6874850408     push str._i__i__i_n         ; 0x8048574 ; "%i %i %i\n"
-|           0x08048449      e8a2feffff     call sym.imp.printf         ; int printf(const char *format)
+|           0x08048449      e8a2feffff     call sym.imp.printf         ; int printf(const char *format, ...)
 |           0x0804844e      83c410         add esp, 0x10
 |           0x08048451      90             nop
 |           0x08048452      c9             leave

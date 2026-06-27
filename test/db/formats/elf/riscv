@@ -554,7 +554,7 @@ EXPECT=<<EOF
 |           ; CODE XREFS from main @ 0x101c8(x), 0x101d8(x)
 |      ..-> 0x00010170      b7170200       lui a5, 0x21
 |      ::   0x00010174      1385874f       addi a0, a5, 1272
-|      ::   0x00010178      ef00c01f       jal ra, sym.printf          ; int printf(const char *format)
+|      ::   0x00010178      ef00c01f       jal ra, sym.printf          ; int printf(const char *format, ...)
 |      ::   0x0001017c      930784fe       addi a5, s0, -24
 |      ::   0x00010180      93850700       mv a1, a5
 |      ::   0x00010184      b7170200       lui a5, 0x21
@@ -681,7 +681,7 @@ EXPECT=<<EOF
 |      ..-> 0x00010170      b7170200       lui a5, 0x21                ; a5=0x21000
 |      ::   0x00010174      1385874f       addi a0, a5, 1272           ; a0=0x214f8 "Enter your guess : " section..rodata
 |      ::   0x00010178      ef00c01f       jal ra, sym.printf          ; ra=0x1017c -> 0xfe840793 ; pc=0x10374 -> 0x8101b283
-|      ::                                                              ; int printf("Enter your guess : ")
+|      ::                                                              ; int printf("Enter your guess : ", 0)
 |      ::   0x0001017c      930784fe       addi a5, s0, -24            ; a5=0x177fe8
 |      ::   0x00010180      93850700       mv a1, a5                   ; a1=0x177fe8
 |      ::   0x00010184      b7170200       lui a5, 0x21                ; a5=0x21000

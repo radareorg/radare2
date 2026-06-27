@@ -45,7 +45,7 @@ EXPECT=<<EOF
 |           0x0040204e      ff1588304000   dword [GetProcessHeap] ()   ; 0x403088 ; HANDLE GetProcessHeap(void)
 |           0x00402054      50             push (eax)
 |           0x00402055      6814104000     push (">%p\\n")             ; 0x401014
-|           0x0040205a      ff15e0304000   dword [printf] ()           ; 0x4030e0 ; int printf(const char *format)
+|           0x0040205a      ff15e0304000   dword [printf] ()           ; 0x4030e0 ; int printf(const char *format, ...)
 |           0x00402060      6a00           push (0)
 |           0x00402062      6800104000     push ("Hello, World!")      ; section..data
 |                                                                      ; 0x401000
@@ -91,7 +91,7 @@ EXPECT=<<EOF
 |           0x0040204e      ff1588304000   call dword [GetProcessHeap] ; 0x403088 ; HANDLE GetProcessHeap(void)
 |           0x00402054      50             push eax
 |           0x00402055      6814104000     push ">%p\\n"               ; 0x401014
-|           0x0040205a      ff15e0304000   call dword [printf]         ; 0x4030e0 ; int printf(const char *format)
+|           0x0040205a      ff15e0304000   call dword [printf]         ; 0x4030e0 ; int printf(const char *format, ...)
 |           0x00402060      6a00           push 0
 |           0x00402062      6800104000     push "Hello, World!"        ; section..data
 |                                                                      ; 0x401000
@@ -125,7 +125,7 @@ void entry0 (void) {
         dword [GetProcessHeap] () // 0x403088 // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
         push (eax)
         push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
-        dword [printf] () // 0x4030e0 // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_printf // int printf(">%p\n")
+        dword [printf] () // 0x4030e0 // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_printf // int printf(">%p\n", -1)
         push (0)
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
@@ -159,7 +159,7 @@ void entry0 (void) {
  0x0040204e |         dword [GetProcessHeap] () // 0x403088 // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
  0x00402054 |         push (eax)
  0x00402055 |         push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
- 0x0040205a |         dword [printf] () // 0x4030e0 // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_printf // int printf(">%p\n")
+ 0x0040205a |         dword [printf] () // 0x4030e0 // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_printf // int printf(">%p\n", -1)
  0x00402060 |         push (0)
  0x00402062 |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x00402067 |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
