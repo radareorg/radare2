@@ -67,6 +67,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aec stops at unmapped pc
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e esil.maxsteps=4
+omv 1 0x1000
+aei
+dr rip=0
+aec
+dr rip
+EOF
+EXPECT=<<EOF
+0x00000000
+EOF
+RUN
+
 NAME=cmd.esil.trap hint TRAP
 FILE=-
 ARGS=-a x86 -b 64

@@ -7975,6 +7975,9 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 			}
 			const bool invalid = core->esil.esil.trap_code == R_ANAL_TRAP_INVALID;
 			if (invalid) {
+				if (!r_io_is_valid_offset (core->io, prev_pc, 0)) {
+					break;
+				}
 				if (breakoninvalid) {
 					R_LOG_INFO ("Stopped execution in an invalid instruction at 0x%08" PFMT64x " (see e??esil.breakoninvalid)", prev_pc);
 					break;
