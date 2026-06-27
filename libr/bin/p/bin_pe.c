@@ -180,7 +180,8 @@ static RList *fields(RBinFile *bf) {
 	int i;
 	ut64 tmp = addr;
 	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
-		if (pe->nt_headers->optional_header.DataDirectory[i].Size > 0) {
+		if (pe->nt_headers->optional_header.DataDirectory[i].VirtualAddress ||
+			pe->nt_headers->optional_header.DataDirectory[i].Size) {
 			addr = tmp + i*8;
 			switch (i) {
 			case PE_IMAGE_DIRECTORY_ENTRY_EXPORT:
@@ -349,7 +350,8 @@ static char *header(RBinFile *bf, int mode) {
 	}
 	int i;
 	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
-		if (pe->nt_headers->optional_header.DataDirectory[i].Size > 0) {
+		if (pe->nt_headers->optional_header.DataDirectory[i].VirtualAddress ||
+			pe->nt_headers->optional_header.DataDirectory[i].Size) {
 			switch (i) {
 			case PE_IMAGE_DIRECTORY_ENTRY_EXPORT:
 				p ("IMAGE_DIRECTORY_ENTRY_EXPORT\n");

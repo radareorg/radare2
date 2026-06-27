@@ -5,7 +5,6 @@ CMDS=q!
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
-WARN: Invalid import directory size: 0xffff is now 0x1d0
 EOF
 RUN
 
