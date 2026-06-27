@@ -792,7 +792,7 @@ R_API int r_line_hist_list(RLine *line, bool full) {
 		i = full? 0: line->history.load_index;
 		for (; i < line->history.size && line->history.data[i]; i++) {
 			int slen = strlen (line->history.data[i]);
-			int padlen = (32 > slen) ? 32 - slen : 0;
+			int padlen = (32 > slen)? 32 - slen: 0;
 			r_cons_printf (line->cons, "%s %*s# !%d\n", line->history.data[i], padlen, "", i);
 		}
 	}
@@ -1084,7 +1084,9 @@ R_API void r_line_autocomplete(RCons *cons) {
 	/* autocomplete */
 	if (argc == 1) {
 		const char *end_word = r_sub_str_rchr (line->buffer.data,
-			line->buffer.index, strlen (line->buffer.data), ' ');
+			line->buffer.index,
+			line->buffer.length,
+			' ');
 		const char *t = end_word? end_word: "";
 		int largv0 = strlen (r_str_get (argv[0]));
 		size_t len_t = strlen (t);
@@ -1117,7 +1119,9 @@ R_API void r_line_autocomplete(RCons *cons) {
 		if (*p) {
 			// TODO: avoid overflow
 			const char *end_word = r_sub_str_rchr (line->buffer.data,
-				line->buffer.index, line->buffer.length, ' ');
+				line->buffer.index,
+				line->buffer.length,
+				' ');
 			const char *t = end_word? end_word: "";
 			const char *root = argv[0];
 			int min_common_len = strlen (root);
@@ -1204,6 +1208,7 @@ static inline void rotate_kill_ring(RCons *cons) {
 	if (D.enable_yank_pop) {
 		line->buffer.index -= strlen (r_list_get_n (line->kill_ring, line->kill_ring_ptr));
 		line->buffer.data[line->buffer.index] = 0;
+		line->buffer.length = line->buffer.index;
 		line->kill_ring_ptr -= 1;
 		if (line->kill_ring_ptr < 0) {
 			line->kill_ring_ptr = line->kill_ring->length - 1;
@@ -1798,8 +1803,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 		goto _end;
 	}
 	if (line->contents) {
-		memmove (line->buffer.data, line->contents,
-			R_MIN (strlen (line->contents) + 1, R_LINE_BUFSIZE - 1));
+		memmove (line->buffer.data, line->contents, R_MIN (strlen (line->contents) + 1, R_LINE_BUFSIZE - 1));
 		line->buffer.data[R_LINE_BUFSIZE - 1] = '\0';
 		line->buffer.index = line->buffer.length = strlen (line->contents);
 	}
@@ -1874,7 +1878,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 		bool o_do_setup_match = line->history.do_setup_match;
 		line->history.do_setup_match = true;
 		// Avoid clearing the whole line before redraw to prevent flicker.
-	repeat:
+repeat:
 		(void)r_cons_get_size (cons, &rows);
 		switch (*buf) {
 		case 0: // control-space
@@ -1903,13 +1907,11 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 				tmp_ed_cmd = line->cons->cb_editor (line->user, NULL, line->buffer.data);
 				if (tmp_ed_cmd) {
 					/* copied from yank (case 25) */
-					line->buffer.length = strlen (tmp_ed_cmd);
-					if (line->buffer.length < R_LINE_BUFSIZE) {
+					size_t len = r_str_nlen (tmp_ed_cmd, R_LINE_BUFSIZE);
+					if (len < R_LINE_BUFSIZE) {
+						line->buffer.length = (int)len;
 						line->buffer.index = line->buffer.length;
-						strncpy (line->buffer.data, tmp_ed_cmd, R_LINE_BUFSIZE - 1);
-						line->buffer.data[R_LINE_BUFSIZE - 1] = '\0';
-					} else {
-						line->buffer.length -= strlen (tmp_ed_cmd);
+						memcpy (line->buffer.data, tmp_ed_cmd, len + 1);
 					}
 					free (tmp_ed_cmd);
 				}
@@ -2151,7 +2153,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 						case 84:
 							{
 								int fkey = kbuf - 80 + 1;
-							if (fkey > 0 && fkey < 13) {
+								if (fkey > 0 && fkey < 13) {
 									line->cb_fkey (line->user, fkey);
 								}
 							}
