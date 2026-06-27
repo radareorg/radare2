@@ -5290,10 +5290,6 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 	switch (input[1]) {
 	case 0: // "dc"
 		if (!r_config_get_b (core->config, "cfg.debug")) {
-			// Emulated target (ESIL): no live process to resume, so
-			// continue via the ESIL VM. Mirrors how "ds" dispatches to
-			// "aes" when cfg.debug is unset; stops at a breakpoint, an
-			// invalid instruction or a memory fault.
 			r_core_cmd0 (core, "aec");
 			break;
 		}
