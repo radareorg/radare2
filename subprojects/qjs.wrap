@@ -3,4 +3,5 @@ url = https://github.com/quickjs-ng/quickjs.git
 revision = 3087a2ce5bcb66cc1fcd9f34d3e5ce3bd43a67d9
 directory = qjs
 patch_directory = qjs
+diff_files = qjs/qjs-patches/i386-fpcw-optout.patch
 depth = 1

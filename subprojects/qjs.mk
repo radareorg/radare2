@@ -4,6 +4,7 @@ WRAP_wrap_git_url:=https://github.com/quickjs-ng/quickjs.git
 WRAP_wrap_git_revision:=3087a2ce5bcb66cc1fcd9f34d3e5ce3bd43a67d9
 WRAP_wrap_git_directory:=qjs
 WRAP_wrap_git_patch_directory:=qjs
+WRAP_wrap_git_diff_files:=qjs/qjs-patches/i386-fpcw-optout.patch
 WRAP_wrap_git_depth:=1
 
 .PHONY: qjs_clean qjs_all
@@ -16,6 +17,7 @@ qjs_all:
 	cd qjs && git fetch --depth=1 origin 3087a2ce5bcb66cc1fcd9f34d3e5ce3bd43a67d9
 	cd qjs && git checkout FETCH_HEAD
 	cp -rf packagefiles/qjs/* qjs
+	for a in qjs/qjs-patches/i386-fpcw-optout.patch ; do echo "patch -d qjs -p1 < $$a" ; patch -d qjs -p1 < $$a ; done
 
 qjs_clean:
 	rm -rf qjs

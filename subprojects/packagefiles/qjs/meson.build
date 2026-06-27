@@ -11,6 +11,12 @@ incs = include_directories('.')
 
 qjs_c_args = ['-DWIN32_LEAN_AND_MEAN', '-D_WIN32_WINNT=0x0602']
 
+# Build qjs without inline assembly (see the cutils.h i386-fpcw-optout patch).
+# Its only inline asm is the 32-bit x86 x87 FPU control-word macro, which on
+# i386 (e.g. alpine-x86-32 / iSH) expands to a declaration right after a label
+# and breaks the build. No-op on every other target.
+qjs_c_args += ['-DJS_NO_INLINE_ASM']
+
 visibility_flags = [
   '-fvisibility=hidden',
   '-Dutf8_encode=utf8_encode_r2'

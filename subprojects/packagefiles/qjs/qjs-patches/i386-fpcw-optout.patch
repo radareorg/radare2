@@ -1,0 +1,13 @@
+diff --git a/cutils.h b/cutils.h
+index 358fa79..c192310 100644
+--- a/cutils.h
++++ b/cutils.h
+@@ -684,7 +684,7 @@ static inline int js_thread_join(js_thread_t thrd);
+ // and disable x87 80-bits extended precision for intermediate floating-point
+ // results. 0x300 is extended  precision, 0x200 is double precision.
+ // Note that `*&cw` in the asm constraints looks redundant but isn't.
+-#if defined(__i386__) && !defined(_MSC_VER)
++#if defined(__i386__) && !defined(_MSC_VER) && !defined(JS_NO_INLINE_ASM)
+ #define JS_X87_FPCW_SAVE_AND_ADJUST(cw)                                     \
+     unsigned short cw;                                                      \
+     __asm__ __volatile__("fnstcw %0" : "=m"(*&cw));                         \

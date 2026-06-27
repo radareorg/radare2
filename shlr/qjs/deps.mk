@@ -3,6 +3,11 @@ include ../../libr/config.mk
 LINK_QJS_ARCHIVE=0
 QJS_LIBC=0
 QJS_CFLAGS+=-Dutf8_encode=utf8_encode_r2
+# Build qjs without inline assembly. Its only inline asm is the 32-bit x86
+# x87 FPU control-word macro in cutils.h, which on i386 (e.g. alpine-x86-32 /
+# iSH) expands to a declaration right after a label and breaks the build (and
+# the fnstcw/fldcw ops are unreliable under x86 emulators). No-op elsewhere.
+QJS_CFLAGS+=-DJS_NO_INLINE_ASM
 
 ifeq ($(OSTYPE),android)
 # Android's clang/lld can leave references to QuickJS cutils static inlines.
