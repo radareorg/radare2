@@ -2446,3 +2446,49 @@ EXPECT=<<EOF
 0x00000004
 EOF
 RUN
+
+NAME=tfv xref resolves afs prototype on prefixed function name
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.xrefs=true
+CMDS=<<EOF
+wa mov edi, 5
+wa call 0x20 @ 0x5
+wa ret @ 0x20
+af @ 0x20
+afn sym.foo @ 0x20
+s 0x20
+'afs int sym.foo(int myarg)
+af @ 0x0
+afn caller @ 0x0
+tfv sym.foo
+EOF
+EXPECT=<<EOF
+             ; XREF[x] 0x00000005 caller
+0x00000000 int sym.foo ( // cc:cdecl ret:?
+0x00000000   int myarg // stack
+0x00000004 );
+EOF
+RUN
+
+NAME=tfv xref resolves afs prototype on import-prefixed function name
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.xrefs=true
+CMDS=<<EOF
+wa mov edi, 5
+wa call 0x20 @ 0x5
+wa ret @ 0x20
+af @ 0x20
+afn sym.imp.bar @ 0x20
+s 0x20
+'afs int sym.imp.bar(int myarg)
+af @ 0x0
+afn caller @ 0x0
+tfv sym.imp.bar
+EOF
+EXPECT=<<EOF
+             ; XREF[x] 0x00000005 caller
+0x00000000 int sym.imp.bar ( // cc:cdecl ret:?
+0x00000000   int myarg // stack
+0x00000004 );
+EOF
+RUN
