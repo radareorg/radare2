@@ -211,9 +211,10 @@ func.strtonum.arg.3=const char **,errstr
 func.strtonum.ret=long long
 
 ioctl=func
-func.ioctl.args=2
+func.ioctl.args=3
 func.ioctl.arg.0=int,fd
 func.ioctl.arg.1=unsigned long,request
+func.ioctl.arg.2=,...
 func.ioctl.ret=int
 
 isatty=func
@@ -2022,9 +2023,10 @@ func.strftime.arg.3=const tm *,timeptr
 func.strftime.ret=size_t
 
 fwprintf=func
-func.fwprintf.args=2
+func.fwprintf.args=3
 func.fwprintf.arg.0=FILE *,stream
 func.fwprintf.arg.1=const wchar_t *,format
+func.fwprintf.arg.2=,...
 func.fwprintf.ret=int
 
 fwscanf=func
@@ -2034,10 +2036,11 @@ func.fwscanf.arg.1=const wchar_t *,format
 func.fwscanf.ret=int
 
 swprintf=func
-func.swprintf.args=3
+func.swprintf.args=4
 func.swprintf.arg.0=wchar_t *,s
 func.swprintf.arg.1=size_t,n
 func.swprintf.arg.2=const wchar_t *,format
+func.swprintf.arg.3=,...
 func.swprintf.ret=int
 
 swscanf=func
@@ -2088,8 +2091,9 @@ func.vwscanf.arg.1=va_list,arg
 func.vwscanf.ret=int
 
 wprintf=func
-func.wprintf.args=1
+func.wprintf.args=2
 func.wprintf.arg.0=const wchar_t *,format
+func.wprintf.arg.1=,...
 func.wprintf.ret=int
 
 wscanf=func
@@ -2592,8 +2596,9 @@ func.fscanf.arg.2=,...
 func.fscanf.ret=int
 
 printf=func
-func.printf.args=1
+func.printf.args=2
 func.printf.arg.0=const char *,format
+func.printf.arg.1=,...
 func.printf.ret=int
 
 lstat=func
@@ -3064,16 +3069,18 @@ func.swift_beginAccess.ret=void
 
 err=func
 func.err.noreturn=true
-func.err.args=2
+func.err.args=3
 func.err.arg.0=int,eval
 func.err.arg.1=const char *,fmt
+func.err.arg.2=,...
 func.err.ret=void
 
 errx=func
 func.errx.noreturn=true
-func.errx.args=2
+func.errx.args=3
 func.errx.arg.0=int,eval
 func.errx.arg.1=const char *,fmt
+func.errx.arg.2=,...
 func.errx.ret=void
 
 errc=func
@@ -3086,15 +3093,21 @@ func.errc.ret=void
 
 warn=func
 func.warn.args=2
-func.warn.arg.0=int,eval
-func.warn.arg.1=const char *,fmt
+func.warn.arg.0=const char *,fmt
+func.warn.arg.1=,...
 func.warn.ret=void
 
 warnx=func
 func.warnx.args=2
-func.warnx.arg.0=int,eval
-func.warnx.arg.1=const char *,fmt
+func.warnx.arg.0=const char *,fmt
+func.warnx.arg.1=,...
 func.warnx.ret=void
+syslog=func
+func.syslog.args=3
+func.syslog.arg.0=int,priority
+func.syslog.arg.1=const char *,format
+func.syslog.arg.2=,...
+func.syslog.ret=void
 
 warnc=func
 func.warnc.args=3
