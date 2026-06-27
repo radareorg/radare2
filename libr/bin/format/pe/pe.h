@@ -12,11 +12,11 @@
 #define R_BIN_PE_SCN_IS_READABLE(x)        x & PE_IMAGE_SCN_MEM_READ
 #define R_BIN_PE_SCN_IS_WRITABLE(x)        x & PE_IMAGE_SCN_MEM_WRITE
 
-struct r_bin_pe_addr_t {
+typedef struct r_bin_pe_addr_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut64 haddr;
-};
+} RBinPEAddr;
 
 struct r_bin_pe_section_t {
 	ut8 name[PE_IMAGE_SIZEOF_SHORT_NAME * 3];
@@ -174,12 +174,12 @@ R_API char* PE_(r_bin_pe_get_class)(RBinPEObj* bin);
 R_API int PE_(r_bin_pe_get_bits)(RBinPEObj* bin);
 R_API int PE_(r_bin_pe_get_section_alignment)(RBinPEObj* bin);
 R_API char* PE_(r_bin_pe_get_subsystem)(RBinPEObj* bin);
-R_API int PE_(r_bin_pe_is_dll)(RBinPEObj* bin);
-R_API int PE_(r_bin_pe_is_big_endian)(RBinPEObj* bin);
-R_API int PE_(r_bin_pe_is_stripped_relocs)(RBinPEObj* bin);
-R_API int PE_(r_bin_pe_is_stripped_line_nums)(RBinPEObj* bin);
-R_API int PE_(r_bin_pe_is_stripped_local_syms)(RBinPEObj* bin);
-R_API int PE_(r_bin_pe_is_stripped_debug)(RBinPEObj* bin);
+R_API bool PE_(r_bin_pe_is_dll)(RBinPEObj* bin);
+R_API bool PE_(r_bin_pe_is_big_endian)(RBinPEObj* bin);
+R_API bool PE_(r_bin_pe_is_stripped_relocs)(RBinPEObj* bin);
+R_API bool PE_(r_bin_pe_is_stripped_line_nums)(RBinPEObj* bin);
+R_API bool PE_(r_bin_pe_is_stripped_local_syms)(RBinPEObj* bin);
+R_API bool PE_(r_bin_pe_is_stripped_debug)(RBinPEObj* bin);
 R_API void* PE_(r_bin_pe_free)(RBinPEObj* bin);
 R_API RBinPEObj* PE_(r_bin_pe_new)(const char* file, bool verbose);
 R_API RBinPEObj* PE_(r_bin_pe_new_buf)(RBuffer* buf, bool verbose);

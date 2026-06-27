@@ -1,11 +1,10 @@
-/* radare - LGPL - Copyright 2008-2025 nibble, pancake, inisider */
+/* radare - LGPL - Copyright 2008-2026 nibble, pancake, inisider */
 
 #include <limits.h>
 #include <r_util.h>
 #include <sdb/ht_uu.h>
 #include "pe.h"
 #include "dotnet.h"
-#include "r_util/r_str.h"
 
 #define MAX_METADATA_STRING_LENGTH 256
 #define COFF_SYMBOL_SIZE 18
@@ -55,24 +54,26 @@ static inline bool is_arm(RBinPEObj *pe) {
 	return false;
 }
 
-static inline bool read_and_follow_jump(struct r_bin_pe_addr_t *entry, RBuffer *buf, ut8 *b, int len, bool big_endian) {
-	if (!r_buf_read_at (buf, entry->paddr, b, len)) {
+static inline RBinPEAddr *peaddr_add(RBinPEAddr *pa, int inc) {
+	pa->paddr += inc;
+	pa->vaddr += inc;
+	return pa;
+}
+
+static inline bool read_jump(RBinPEObj *pe, RBinPEAddr *addr, ut8 *b, int len) {
+	if (!r_buf_read_at (pe->b, addr->paddr, b, len)) {
 		return false;
 	}
 	if (b[0] != 0xe9) {
 		return true;
 	}
-	const st32 jmp_dst = r_read_ble32 (b + 1, big_endian) + 5;
-	entry->paddr += jmp_dst;
-	entry->vaddr += jmp_dst;
-	return r_buf_read_at (buf, entry->paddr, b, len) > 0;
+	peaddr_add (addr, r_read_le32 (b + 1) + 5);
+	return r_buf_read_at (pe->b, addr->paddr, b, len) > 0;
 }
 
-static inline bool follow_offset(struct r_bin_pe_addr_t *entry, RBuffer *buf, ut8 *b, int len, bool big_endian, size_t instr_off) {
-	const st32 dst_offset = r_read_ble32 (b + instr_off + 1, big_endian) + instr_off + 5;
-	entry->paddr += dst_offset;
-	entry->vaddr += dst_offset;
-	return read_and_follow_jump (entry, buf, b, len, big_endian);
+static inline bool follow_offset(RBinPEObj *pe, RBinPEAddr *addr, size_t offset, ut8 *b, int len) {
+	const st32 off = r_read_le32 (b + offset + 1) + offset + 5;
+	return read_jump (pe, peaddr_add (addr, off), b, len);
 }
 
 static st32 sign_extend(ut32 n, ut32 bits) {
@@ -81,18 +82,17 @@ static st32 sign_extend(ut32 n, ut32 bits) {
 	return (n ^ m) - m;
 }
 
-static inline bool follow_offset_arm64(struct r_bin_pe_addr_t *entry, RBuffer *buf, ut8 *b, int len, bool big_endian, size_t instr_off) {
-	const st32 dst_offset = sign_extend (r_read_ble32 (b + instr_off, big_endian) & 0x3ffffff, 26) * 4 + instr_off;
-	entry->paddr += dst_offset;
-	entry->vaddr += dst_offset;
-	return r_buf_read_at (buf, entry->paddr, b, len) > 0;
+static inline bool follow_offset_arm64(RBinPEObj *pe, RBinPEAddr *addr, size_t instr_off, ut8 *b, int len) {
+	const st32 dst_offset = sign_extend (r_read_le32 (b + instr_off) & 0x3ffffff, 26) * 4 + instr_off;
+	peaddr_add (addr, dst_offset);
+	return r_buf_read_at (pe->b, addr->paddr, b, len) > 0;
 }
 
-struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
+RBinPEAddr *PE_(check_msvcseh)(RBinPEObj *pe) {
 	R_RETURN_VAL_IF_FAIL (pe && pe->b, NULL);
 	ut8 b[512];
 	size_t n = 0;
-	struct r_bin_pe_addr_t *entry = PE_(r_bin_pe_get_entrypoint) (pe);
+	RBinPEAddr *entry = PE_(r_bin_pe_get_entrypoint) (pe);
 	ZERO_FILL (b);
 	if (r_buf_read_at (pe->b, entry->paddr, b, sizeof (b)) < 0) {
 		R_LOG_WARN ("Cannot read entry at 0x%08" PFMT64x, entry->paddr);
@@ -100,13 +100,14 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 		return NULL;
 	}
 
-	read_and_follow_jump (entry, pe->b, b, sizeof (b), pe->big_endian);
+	// read_and_follow_jump (entry, pe->b, b, sizeof (b), pe->big_endian);
+	read_jump (pe, entry, b, sizeof (b));
 
 	// MSVC SEH
 	// E8 13 09 00 00  call    0x44C388
 	// E9 05 00 00 00  jmp     0x44BA7F
 	if (b[0] == 0xe8 && b[5] == 0xe9) {
-		if (follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, 5)) {
+		if (follow_offset (pe, entry, 5, b, sizeof (b))) {
 			// case1:
 			// from des address of jmp search for 68 xx xx xx xx e8 and test xx xx xx xx = imagebase
 			// 68 00 00 40 00  push    0x400000
@@ -115,7 +116,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 			for (n = 0; n < sizeof (b) - 6; n++) {
 				const ut32 tmp_imgbase = r_read_ble32 (b + n + 1, pe->big_endian);
 				if (b[n] == 0x68 && tmp_imgbase == imageBase && b[n + 5] == 0xe8) {
-					follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, n + 5);
+					follow_offset (pe, entry, n + 5, b, sizeof (b));
 					return entry;
 				}
 			}
@@ -127,7 +128,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 			// E8 6F FC FF FF call    _main
 			for (n = 0; n < sizeof (b) - 6; n++) {
 				if (b[n] == 0x50 && b[n + 1] == 0xff && b[n + 3] == 0xff && b[n + 5] == 0xe8) {
-					follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, n + 5);
+					follow_offset (pe, entry, n + 5, b, sizeof (b));
 					return entry;
 				}
 			}
@@ -138,7 +139,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 			// E8 2B FD FF FF                             call    _main
 			for (n = 0; n < sizeof (b) - 20; n++) {
 				if (b[n] == 0x50 && b[n + 1] == 0xff && b[n + 7] == 0xff && b[n + 13] == 0xe8) {
-					follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, n + 13);
+					follow_offset (pe, entry, n + 13, b, sizeof (b));
 					return entry;
 				}
 			}
@@ -149,7 +150,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 			// E8 D9 FD FF FF                            call    _main
 			for (n = 0; n < sizeof (b) - 5; n++) {
 				if (b[n] == 0x50 && b[n + 1] == 0x57 && b[n + 2] == 0xff && b[n + 4] == 0xe8) {
-					follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, n + 4);
+					follow_offset (pe, entry, n + 4, b, sizeof (b));
 					return entry;
 				}
 			}
@@ -160,7 +161,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 			// E8 D9 FD FF FF                            call    _main
 			for (n = 0; n < sizeof (b) - 5; n++) {
 				if (b[n] == 0x57 && b[n + 1] == 0x56 && b[n + 2] == 0xff && b[n + 4] == 0xe8) {
-					follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, n + 4);
+					follow_offset (pe, entry, n + 4, b, sizeof (b));
 					return entry;
 				}
 			}
@@ -174,7 +175,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 		// E8 xx xx xx xx        call xxxxxxxx
 		// 5D                    pop ebp
 		// C3                    ret
-		follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, 3);
+		follow_offset (pe, entry, 3, b, sizeof (b));
 		if (b[8] == 0xe8) {
 			// 55                    push ebp
 			// 8B EC                 mov ebp, esp
@@ -182,7 +183,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 			// E8 xx xx xx xx        call xxxxxxxx <- Follow this
 			// 5D                    pop ebp
 			// C3                    ret
-			follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, 8);
+			follow_offset (pe, entry, 8, b, sizeof (b));
 			for (n = 0; n + 16 < sizeof (b); n++) {
 				// E8 xx xx xx xx    call sub.ucrtbased.dll__register_thread_local_exe_atexit_callback
 				// 83 C4 04          add esp, 4
@@ -190,14 +191,14 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 				// 89 xx xx          mov dword [xxxx], eax
 				// E8 xx xx xx xx    call xxxxxxxx
 				if (b[n] == 0xe8 && n + 8 <= sizeof (b) && !memcmp (b + n + 5, "\x83\xc4\x04", 3) && b[n + 8] == 0xe8 && b[n + 13] == 0x89 && b[n + 16] == 0xe8) {
-					follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, n + 8);
+					follow_offset (pe, entry, n + 8, b, sizeof (b));
 					int j, calls = 0;
 					for (j = 0; j < sizeof (b) - 4; j++) {
 						if (b[j] == 0xe8) {
 							// E8 xx xx xx xx        call xxxxxxxx
 							calls++;
 							if (calls == 4) {
-								follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, j);
+								follow_offset (pe, entry, j, b, sizeof (b));
 								return entry;
 							}
 						}
@@ -215,24 +216,24 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 			// E8 xx xx xx xx    call    xxxxxxxx
 			// 48 83 C4 28       add     rsp, 0x28
 			// E9 xx xx xx xx    jmp     xxxxxxxx <- Follow this
-			found_caller = follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, 13);
+			found_caller = follow_offset (pe, entry, 13, b, sizeof (b));
 		} else {
 			// Debug
 			// 48 83 EC 28       sub     rsp, 0x28
 			// E8 xx xx xx xx    call    xxxxxxxx
 			// 48 83 C4 28       add     rsp, 0x28
 			// C3                ret
-			follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, 4);
+			follow_offset (pe, entry, 4, b, sizeof (b));
 			if (b[9] == 0xe8) {
 				// 48 83 EC 28       sub     rsp, 0x28
 				// E8 xx xx xx xx    call    xxxxxxxx
 				// E8 xx xx xx xx    call    xxxxxxxx <- Follow this
 				// 48 83 C4 28       add     rsp, 0x28
 				// C3                ret
-				follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, 9);
+				follow_offset (pe, entry, 9, b, sizeof (b));
 				if (b[0x129] == 0xe8) {
 					// E8 xx xx xx xx        call xxxxxxxx
-					found_caller = follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, 0x129);
+					found_caller = follow_offset (pe, entry, 0x129, b, sizeof (b));
 				}
 			}
 		}
@@ -249,11 +250,11 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 			// E8 xx xx xx xx              call    main
 			for (n = 0; n + 14 < sizeof (b); n++) {
 				if (b[n] == 0x4c && b[n + 3] == 0x48 && b[n + 6] == 0x8b && b[n + 8] == 0xe8) {
-					follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, n + 8);
+					follow_offset (pe, entry, n + 8, b, sizeof (b));
 					return entry;
 				}
 				if (b[n] == 0x4c && b[n + 5] == 0x48 && b[n + 10] == 0x8b && b[n + 14] == 0xe8) {
-					follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, n + 14);
+					follow_offset (pe, entry, n + 14, b, sizeof (b));
 					return entry;
 				}
 			}
@@ -270,14 +271,14 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 		// fd 7b c1 a8     ldp        x29=>local_10,x30,[sp], #0x10
 		// ff 23 03 d5     autibsp
 		// c0 03 5f d6     ret
-		if (follow_offset_arm64 (entry, pe->b, b, sizeof (b), pe->big_endian, 16)) {
+		if (follow_offset_arm64 (pe, entry, 16, b, sizeof (b))) {
 			// case 1
 			// e2 03 14 aa  mov        x2,x20
 			// e1 03 13 aa  mov        x1,x19
 			// xx xx xx 94 	bl         main
 			for (n = 0; n < sizeof (b) - 12; n++) {
 				if (b[n] == 0xe2 && b[n + 1] == 0x03 && b[n + 2] == 0x14 && b[n + 3] == 0xaa && b[n + 4] == 0xe1 && b[n + 5] == 0x03 && b[n + 6] == 0x13 && b[n + 7] == 0xaa && (b[n + 11] & 0xfc) == 0x94) {
-					follow_offset_arm64 (entry, pe->b, b, sizeof (b), pe->big_endian, 8 + n);
+					follow_offset_arm64 (pe, entry, n + 8, b, sizeof (b));
 					return entry;
 				}
 			}
@@ -288,7 +289,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 			// xx xx xx 97     bl         main
 			for (n = 0; n < sizeof (b) - 12; n++) {
 				if (b[n] == 0x33 && b[n + 4] == 0x60 && b[n + 5] == 0x02 && b[n + 6] == 0x40 && b[n + 7] == 0xb9 && (b[n + 11] & 0xfc) == 0x94) {
-					follow_offset_arm64 (entry, pe->b, b, sizeof (b), pe->big_endian, 8 + n);
+					follow_offset_arm64 (pe, entry, n + 8, b, sizeof (b));
 					return entry;
 				}
 			}
@@ -300,7 +301,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 			// xx xx xx 94     bl         wWinMain
 			for (n = 0; n < sizeof (b) - 16; n++) {
 				if (b[n] == 0x01 && b[n + 1] == 0x00 && b[n + 2] == 0x80 && b[n + 3] == 0xd2 && (b[n + 4] & 0x1f) == 0x8 && (b[n + 7] & 0x9f) == 0x90 && b[n + 8] == 0 && (b[n + 9] & 3) == 1 && (b[n + 11] & 0x7f) == 0x11 && (b[n + 15] & 0xfc) == 0x94) {
-					follow_offset_arm64 (entry, pe->b, b, sizeof (b), pe->big_endian, 12 + n);
+					follow_offset_arm64 (pe, entry, n + 12, b, sizeof (b));
 					return entry;
 				}
 			}
@@ -319,12 +320,12 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 	//  50                  push    eax
 	//  E8 2D 00 00  00     call 0x4015a6
 	if (b[188] == 0x50 && b[201] == 0xe8) {
-		follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, 201);
+		follow_offset (pe, entry, 201, b, sizeof (b));
 		return entry;
 	}
 
 	if (b[292] == 0x50 && b[303] == 0xe8) {
-		follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, 303);
+		follow_offset (pe, entry, 303, b, sizeof (b));
 		return entry;
 	}
 
@@ -332,14 +333,15 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 	return NULL;
 }
 
-struct r_bin_pe_addr_t *PE_(check_mingw)(RBinPEObj *pe) {
+RBinPEAddr *PE_(check_mingw)(RBinPEObj *pe) {
 	bool sw = false;
 	ut8 b[1024] = { 0 };
 	size_t n = 0;
 	if (!pe || !pe->b) {
-		return 0LL;
+		return NULL;
 	}
-	struct r_bin_pe_addr_t *entry = PE_(r_bin_pe_get_entrypoint) (pe);
+	// if arch != x86 || bits != 32 return NULL;
+	RBinPEAddr *entry = PE_(r_bin_pe_get_entrypoint) (pe);
 	if (r_buf_read_at (pe->b, entry->paddr, b, sizeof (b)) < 0) {
 		R_LOG_WARN ("Cannot read entry at 0x%08" PFMT64x, entry->paddr);
 		free (entry);
@@ -353,14 +355,14 @@ struct r_bin_pe_addr_t *PE_(check_mingw)(RBinPEObj *pe) {
 	// FF 15 C8 63 41 00                          call    ds : __imp____set_app_type
 	// E8 B8 FE FF FF                             call    ___mingw_CRTStartup
 	if (b[0] == 0x55 && b[1] == 0x89 && b[3] == 0x83 && b[6] == 0xc7 && b[13] == 0xff && b[19] == 0xe8) {
-		sw = follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, 19);
+		sw = follow_offset (pe, entry, 19, b, sizeof (b));
 	}
 	// 83 EC 1C                                   sub     esp, 1Ch
 	// C7 04 24 01 00 00 00                       mov[esp + 1Ch + var_1C], 1
 	// FF 15 F8 60 40 00                          call    ds : __imp____set_app_type
 	// E8 6B FD FF FF                             call    ___mingw_CRTStartup
 	if (b[0] == 0x83 && b[3] == 0xc7 && b[10] == 0xff && b[16] == 0xe8) {
-		sw = follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, 16);
+		sw = follow_offset (pe, entry, 16, b, sizeof (b));
 	}
 	// 83 EC 0C                                            sub     esp, 0Ch
 	// C7 05 F4 0A 81 00 00 00 00 00                       mov     ds : _mingw_app_type, 0
@@ -368,7 +370,7 @@ struct r_bin_pe_addr_t *PE_(check_mingw)(RBinPEObj *pe) {
 	// F2 83 C4 0C                                            add     esp, 0Ch
 	// F5 E9 86 FC FF FF                                      jmp     ___tmainCRTStartup
 	if (b[0] == 0x83 && b[3] == 0xc7 && b[13] == 0xe8 && b[18] == 0x83 && b[21] == 0xe9) {
-		sw = follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, 21);
+		sw = follow_offset (pe, entry, 21, b, sizeof (b));
 	}
 	if (sw) {
 		// case1:
@@ -378,7 +380,7 @@ struct r_bin_pe_addr_t *PE_(check_mingw)(RBinPEObj *pe) {
 		// E8 A3 01 00 00                             call    sub_4013EE
 		for (n = 0; n < sizeof (b) - 12; n++) {
 			if (b[n] == 0xa1 && b[n + 5] == 0x89 && b[n + 8] == 0xe8) {
-				sw = follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, n + 8);
+				sw = follow_offset (pe, entry, n + 8, b, sizeof (b));
 				return entry;
 			}
 		}
@@ -387,8 +389,8 @@ struct r_bin_pe_addr_t *PE_(check_mingw)(RBinPEObj *pe) {
 	return NULL;
 }
 
-struct r_bin_pe_addr_t *PE_(check_unknow)(RBinPEObj *pe) {
-	struct r_bin_pe_addr_t *entry;
+RBinPEAddr *PE_(check_unknow)(RBinPEObj *pe) {
+	RBinPEAddr *entry;
 	if (!pe || !pe->b) {
 		return 0LL;
 	}
@@ -406,7 +408,7 @@ struct r_bin_pe_addr_t *PE_(check_unknow)(RBinPEObj *pe) {
 	write down. */
 	// this is dirty only a single byte check, can return false positives
 	if (b[367] == 0xe8) {
-		follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, 367);
+		follow_offset (pe, entry, 367, b, sizeof (b));
 		return entry;
 	}
 	size_t i;
@@ -415,7 +417,7 @@ struct r_bin_pe_addr_t *PE_(check_unknow)(RBinPEObj *pe) {
 		if (!memcmp (b + i, "\xff\x15", 2)) {
 			if (b[i + 6] == 0x50) {
 				if (b[i + 7] == 0xe8) {
-					follow_offset (entry, pe->b, b, sizeof (b), pe->big_endian, i + 7);
+					follow_offset (pe, entry, i + 7, b, sizeof (b));
 					return entry;
 				}
 			}
@@ -425,8 +427,8 @@ struct r_bin_pe_addr_t *PE_(check_unknow)(RBinPEObj *pe) {
 	return NULL;
 }
 
-struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(RBinPEObj *pe) {
-	struct r_bin_pe_addr_t *winmain = PE_(check_msvcseh) (pe);
+RBinPEAddr *PE_(r_bin_pe_get_main_vaddr)(RBinPEObj *pe) {
+	RBinPEAddr *winmain = PE_(check_msvcseh) (pe);
 	if (!winmain) {
 		winmain = PE_(check_mingw) (pe);
 		if (!winmain) {
@@ -3613,13 +3615,13 @@ const char *PE_(r_bin_pe_get_arch)(RBinPEObj *pe) {
 	return arch;
 }
 
-struct r_bin_pe_addr_t *PE_(r_bin_pe_get_entrypoint)(RBinPEObj *pe) {
+RBinPEAddr *PE_(r_bin_pe_get_entrypoint)(RBinPEObj *pe) {
 	int i;
 	ut64 base_addr = PE_(r_bin_pe_get_image_base) (pe);
 	if (!pe || !pe->optional_header) {
 		return NULL;
 	}
-	struct r_bin_pe_addr_t *entry = R_NEW (struct r_bin_pe_addr_t);
+	RBinPEAddr *entry = R_NEW (RBinPEAddr);
 	PE_DWord pe_entry = pe->optional_header->AddressOfEntryPoint;
 	entry->vaddr = bin_pe_rva_to_va (pe, pe_entry);
 	entry->paddr = PE_(va2pa) (pe, pe_entry);
@@ -4336,6 +4338,7 @@ int PE_(r_bin_pe_get_bits)(RBinPEObj *pe) {
 			if (is_thumb (pe)) {
 				bits = 16;
 			}
+			// AITODO its never arm64 !??!?
 		} else {
 			switch (pe->nt_headers->optional_header.Magic) {
 			case PE_IMAGE_FILE_TYPE_PE32: bits = 32; break;
@@ -4372,71 +4375,15 @@ char *PE_(r_bin_pe_get_cc)(RBinPEObj *pe) {
 void PE_(r_bin_pe_check_sections)(RBinPEObj *pe, struct r_bin_pe_section_t **sects) {
 	int i = 0;
 	struct r_bin_pe_section_t *sections = *sects;
-	ut64 addr_beg, addr_end, new_section_size, new_perm, base_addr;
-	struct r_bin_pe_addr_t *entry = PE_(r_bin_pe_get_entrypoint) (pe);
-
+	ut64 addr_beg, addr_end;
+	RBinPEAddr *entry = PE_(r_bin_pe_get_entrypoint) (pe);
 	if (!entry) {
 		return;
 	}
-	new_section_size = pe->size;
-	new_section_size -= entry->paddr > pe->size? 0: entry->paddr;
-	new_perm = (PE_IMAGE_SCN_MEM_READ | PE_IMAGE_SCN_MEM_WRITE | PE_IMAGE_SCN_MEM_EXECUTE);
-	base_addr = PE_(r_bin_pe_get_image_base) (pe);
+	ut64 new_section_size = pe->size - (entry->paddr > pe->size? 0: entry->paddr);
+	ut64 new_perm = (PE_IMAGE_SCN_MEM_READ | PE_IMAGE_SCN_MEM_WRITE | PE_IMAGE_SCN_MEM_EXECUTE);
+	ut64 base_addr = PE_(r_bin_pe_get_image_base) (pe);
 
-#if 0
-	for (i = 0; !sections[i].last; i++) {
-		//strcmp against .text doesn't work in somes cases
-		if (strstr ((const char*) sections[i].name, "text")) {
-			bool fix = false;
-			int j;
-			//check paddr boundaries
-			addr_beg = sections[i].paddr;
-			addr_end = addr_beg + sections[i].size;
-			if (entry->paddr < addr_beg || entry->paddr > addr_end) {
-				fix = true;
-			}
-			//check vaddr boundaries
-			addr_beg = sections[i].vaddr + base_addr;
-			addr_end = addr_beg + sections[i].vsize;
-			if (entry->vaddr < addr_beg || entry->vaddr > addr_end) {
-				fix = true;
-			}
-			//look for other segment with x that is already mapped and hold entrypoint
-			for (j = 0; !sections[j].last; j++) {
-				addr_beg = sections[j].paddr;
-				addr_end = addr_beg + sections[j].size;
-				if (addr_beg <= entry->paddr && entry->paddr < addr_end) {
-					if (!sections[j].vsize) {
-						sections[j].vsize = sections[j].size;
-					}
-					addr_beg = sections[j].vaddr + base_addr;
-					addr_end = addr_beg + sections[j].vsize;
-					if (addr_beg <= entry->vaddr || entry->vaddr < addr_end) {
-						if (! (sections[j].perm & PE_IMAGE_SCN_MEM_EXECUTE)) {
-							if (pe->verbose) {
-								R_LOG_WARN ("Found entrypoint in non-executable section");
-							}
-							sections[j].perm |= PE_IMAGE_SCN_MEM_EXECUTE;
-						}
-						fix = false;
-						break;
-					}
-				}
-			}
-#if 0
-			//if either vaddr or paddr fail we should update this section
-			if (fix) {
-				strcpy ((char*) sections[i].name, "blob");
-				sections[i].paddr = entry->paddr;
-				sections[i].vaddr = entry->vaddr - base_addr;
-				sections[i].size = sections[i].vsize = new_section_size;
-				sections[i].perm = new_perm;
-			}
-#endif
-			goto out_function;
-		}
-	}
-#endif
 	// if we arrive til here means there is no text section find one that is holding the code
 	for (i = 0; !sections[i].last; i++) {
 		if (sections[i].size > pe->size) {
@@ -4612,14 +4559,14 @@ char *PE_(r_bin_pe_get_subsystem)(RBinPEObj *pe) {
 
 #define HASCHR(x) (pe->nt_headers->file_header.Characteristics &(x))
 
-int PE_(r_bin_pe_is_dll)(RBinPEObj *pe) {
+bool PE_(r_bin_pe_is_dll)(RBinPEObj *pe) {
 	if (!pe || !pe->nt_headers) {
 		return false;
 	}
 	return HASCHR (PE_IMAGE_FILE_DLL);
 }
 
-int PE_(r_bin_pe_is_pie)(RBinPEObj *pe) {
+bool PE_(r_bin_pe_is_pie)(RBinPEObj *pe) {
 	if (!pe || !pe->nt_headers) {
 		return false;
 	}
@@ -4631,7 +4578,7 @@ int PE_(r_bin_pe_is_pie)(RBinPEObj *pe) {
 #endif
 }
 
-int PE_(r_bin_pe_is_big_endian)(RBinPEObj *pe) {
+bool PE_(r_bin_pe_is_big_endian)(RBinPEObj *pe) {
 	if (!pe || !pe->nt_headers) {
 		return false;
 	}
@@ -4646,28 +4593,28 @@ int PE_(r_bin_pe_is_big_endian)(RBinPEObj *pe) {
 	return HASCHR (PE_IMAGE_FILE_BYTES_REVERSED_HI);
 }
 
-int PE_(r_bin_pe_is_stripped_relocs)(RBinPEObj *pe) {
+bool PE_(r_bin_pe_is_stripped_relocs)(RBinPEObj *pe) {
 	if (!pe || !pe->nt_headers) {
 		return false;
 	}
 	return HASCHR (PE_IMAGE_FILE_RELOCS_STRIPPED);
 }
 
-int PE_(r_bin_pe_is_stripped_line_nums)(RBinPEObj *pe) {
+bool PE_(r_bin_pe_is_stripped_line_nums)(RBinPEObj *pe) {
 	if (!pe || !pe->nt_headers) {
 		return false;
 	}
 	return HASCHR (PE_IMAGE_FILE_LINE_NUMS_STRIPPED);
 }
 
-int PE_(r_bin_pe_is_stripped_local_syms)(RBinPEObj *pe) {
+bool PE_(r_bin_pe_is_stripped_local_syms)(RBinPEObj *pe) {
 	if (!pe || !pe->nt_headers) {
 		return false;
 	}
 	return HASCHR (PE_IMAGE_FILE_LOCAL_SYMS_STRIPPED);
 }
 
-int PE_(r_bin_pe_is_stripped_debug)(RBinPEObj *pe) {
+bool PE_(r_bin_pe_is_stripped_debug)(RBinPEObj *pe) {
 	if (!pe || !pe->nt_headers) {
 		return false;
 	}
@@ -4711,16 +4658,13 @@ void *PE_(r_bin_pe_free)(RBinPEObj *pe) {
 }
 
 RBinPEObj *PE_(r_bin_pe_new)(const char *file, bool verbose) {
-	RBinPEObj *pe = R_NEW0 (RBinPEObj);
-	if (!pe) {
-		return NULL;
-	}
-	pe->file = file;
 	size_t binsz;
 	ut8 *buf = (ut8 *)r_file_slurp (file, &binsz);
+	RBinPEObj *pe = R_NEW0 (RBinPEObj);
+	pe->file = file;
 	pe->size = binsz;
 	if (!buf) {
-		return PE_(r_bin_pe_free) (pe);
+		return NULL;
 	}
 	pe->b = r_buf_new ();
 	if (!r_buf_set_bytes (pe->b, buf, pe->size)) {
