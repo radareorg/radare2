@@ -54,6 +54,16 @@ static inline bool is_arm(RBinPEObj *pe) {
 	return false;
 }
 
+static inline bool is_arm64(RBinPEObj *pe) {
+	switch (pe->nt_headers->file_header.Machine) {
+	case PE_IMAGE_FILE_MACHINE_ARM64:
+	case PE_IMAGE_FILE_MACHINE_ARM64X:
+	case PE_IMAGE_FILE_MACHINE_ARM64EC:
+		return true;
+	}
+	return false;
+}
+
 static inline RBinPEAddr *peaddr_add(RBinPEAddr *pa, int inc) {
 	pa->paddr += inc;
 	pa->vaddr += inc;
@@ -4252,6 +4262,9 @@ char *PE_(r_bin_pe_get_machine)(RBinPEObj *pe) {
 		case PE_IMAGE_FILE_MACHINE_AM33: machine = "AM33"; break;
 		case PE_IMAGE_FILE_MACHINE_AMD64: machine = "AMD 64"; break;
 		case PE_IMAGE_FILE_MACHINE_ARM: machine = "ARM"; break;
+		case PE_IMAGE_FILE_MACHINE_ARM64: machine = "ARM64"; break;
+		case PE_IMAGE_FILE_MACHINE_ARM64EC: machine = "ARM64EC"; break;
+		case PE_IMAGE_FILE_MACHINE_ARM64X: machine = "ARM64X"; break;
 		case PE_IMAGE_FILE_MACHINE_CEE: machine = "CEE"; break;
 		case PE_IMAGE_FILE_MACHINE_CEF: machine = "CEF"; break;
 		case PE_IMAGE_FILE_MACHINE_EBC: machine = "EBC"; break;
@@ -4334,11 +4347,12 @@ char *PE_(r_bin_pe_get_class)(RBinPEObj *pe) {
 int PE_(r_bin_pe_get_bits)(RBinPEObj *pe) {
 	int bits = 32;
 	if (pe && pe->nt_headers) {
-		if (is_arm (pe)) {
+		if (is_arm64 (pe)) {
+			bits = 64;
+		} else if (is_arm (pe)) {
 			if (is_thumb (pe)) {
 				bits = 16;
 			}
-			// AITODO its never arm64 !??!?
 		} else {
 			switch (pe->nt_headers->optional_header.Magic) {
 			case PE_IMAGE_FILE_TYPE_PE32: bits = 32; break;
@@ -4352,7 +4366,9 @@ int PE_(r_bin_pe_get_bits)(RBinPEObj *pe) {
 
 char *PE_(r_bin_pe_get_cc)(RBinPEObj *pe) {
 	if (pe && pe->nt_headers) {
-		if (is_arm (pe)) {
+		if (is_arm64 (pe)) {
+			return strdup ("arm64");
+		} else if (is_arm (pe)) {
 			if (is_thumb (pe)) {
 				return strdup ("arm16");
 			}

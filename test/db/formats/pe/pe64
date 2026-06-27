@@ -25,3 +25,14 @@ EXPECT=<<EOF
 ms
 EOF
 RUN
+
+NAME=pe64 arm64 info
+FILE=bins/pe/pe-arm64-test.exe
+CMDS=iI~arch,bits,machine,cc
+EXPECT=<<EOF
+arch     arm
+bits     64
+machine  ARM64
+cc       arm64
+EOF
+RUN
