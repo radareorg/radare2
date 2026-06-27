@@ -950,7 +950,7 @@ static void clean_function_name(char *func_name) {
 // - symbol names are long and noisy, some of them might not be matched due
 //	 to additional information added around name
 R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name) {
-	R_RETURN_VAL_IF_FAIL (TDB && func_name, false);
+	R_RETURN_VAL_IF_FAIL (TDB && func_name, NULL);
 	const char *str = func_name;
 	char *result = NULL;
 
@@ -965,6 +965,11 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name)
 	str = strip_dll_prefix (str, &dll_stripped);
 
 	if ((result = type_func_try_guess (TDB, str))) {
+		return result;
+	}
+
+	// afs stores prototypes under the prefixed name, retry it unstripped
+	if (str != func_name && (result = type_func_try_guess (TDB, func_name))) {
 		return result;
 	}
 
