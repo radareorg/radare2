@@ -1117,12 +1117,12 @@ R_API void r_line_autocomplete(RCons *cons) {
 		if (*p) {
 			// TODO: avoid overflow
 			const char *end_word = r_sub_str_rchr (line->buffer.data,
-				line->buffer.index, strlen (line->buffer.data), ' ');
+				line->buffer.index, line->buffer.length, ' ');
 			const char *t = end_word? end_word: "";
 			const char *root = argv[0];
 			int min_common_len = strlen (root);
 			size_t len_t = strlen (t);
-			while (len_t > 0 && t[len_t - 1] == ' ') {
+			while (len_t > 0 && isspace (t[len_t - 1])) {
 				len_t--;
 			}
 
