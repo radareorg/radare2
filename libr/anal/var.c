@@ -1514,6 +1514,20 @@ static bool op_is_call(RAnalOp *op) {
 	return type == R_ANAL_OP_TYPE_CALL || type == R_ANAL_OP_TYPE_UCALL;
 }
 
+// the "..." arg name is the variadic slot (its type is empty or whitespace)
+static bool is_vararg_arg(const char *name) {
+	return name && !strcmp (name, "...");
+}
+
+// arg count excluding the trailing "..." slot, which is no real caller arg register
+static int func_fixed_args(Sdb *TDB, const char *name) {
+	int argc = r_type_func_args_count (TDB, name);
+	if (argc > 0 && is_vararg_arg (r_type_func_args_name (TDB, name, argc - 1))) {
+		argc--;
+	}
+	return argc;
+}
+
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
 	int i = 0, argc = 0;
 	R_RETURN_IF_FAIL (anal && op && fcn);
@@ -1551,14 +1565,14 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				if (callee) {
 					const char *cc = r_anal_cc_func (anal, callee);
 					if (cc && !strcmp (fcn->callconv, cc)) {
-						callee_rargs = R_MIN (max_count, r_type_func_args_count (TDB, callee));
+						callee_rargs = R_MIN (max_count, func_fixed_args (TDB, callee));
 					}
 				}
 			}
 		} else if (!f->is_variadic && fcn->callconv && f->callconv && !strcmp (fcn->callconv, f->callconv)) {
 			callee = r_type_func_guess (TDB, f->name);
 			if (callee) {
-				callee_rargs = R_MIN (max_count, r_type_func_args_count (TDB, callee));
+				callee_rargs = R_MIN (max_count, func_fixed_args (TDB, callee));
 			}
 			callee_rargs = callee_rargs
 				? callee_rargs
@@ -2152,7 +2166,7 @@ R_API char *r_anal_function_format_sig(RAnal * R_NONNULL anal, RAnalFunction * R
 		for (i = 0; i < argc; i++) {
 			char *type = r_type_func_args_type (TDB, type_fcn_name, i);
 			const char *name = r_type_func_args_name (TDB, type_fcn_name, i);
-			if (R_STR_ISEMPTY (type) && !strcmp (name, "...")) {
+			if (is_vararg_arg (name)) {
 				R_LOG_DEBUG ("Detected, but unhandled vararg type"); // TODO implement vararg support
 				// this is vararg type!
 				free (type);
