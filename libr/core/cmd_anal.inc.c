@@ -7905,6 +7905,123 @@ static const char *core_esil_step_status_name(RCoreEsilStepStatus status) {
 	return "completed";
 }
 
+static int core_esil_stop_trap_type(RCore *core) {
+	const int trap = core->esil.esil.trap;
+	const ut32 trap_code = core->esil.esil.trap_code;
+	if (trap > R_ANAL_TRAP_NONE && trap <= R_ANAL_TRAP_HALT) {
+		return trap;
+	}
+	if (trap_code > R_ANAL_TRAP_NONE && trap_code <= R_ANAL_TRAP_HALT) {
+		return trap_code;
+	}
+	return R_ANAL_TRAP_NONE;
+}
+
+static RDebugReasonType core_esil_debug_reason_from_stop(RCoreEsilStepStatus status, int trap_type) {
+	switch (status) {
+	case R_CORE_ESIL_STEP_STATUS_INTERRUPTED:
+		return R_DEBUG_REASON_USERSUSP;
+	case R_CORE_ESIL_STEP_STATUS_TIMEOUT:
+	case R_CORE_ESIL_STEP_STATUS_MAXSTEPS:
+		return R_DEBUG_REASON_STOPPED;
+	case R_CORE_ESIL_STEP_STATUS_BREAKPOINT:
+		return R_DEBUG_REASON_BREAKPOINT;
+	case R_CORE_ESIL_STEP_STATUS_IOTRAP:
+		if (trap_type == R_ANAL_TRAP_WRITE_ERR) {
+			return R_DEBUG_REASON_WRITERR;
+		}
+		return R_DEBUG_REASON_READERR;
+	case R_CORE_ESIL_STEP_STATUS_INVALID:
+		if (trap_type == R_ANAL_TRAP_EXEC_ERR) {
+			return R_DEBUG_REASON_SEGFAULT;
+		}
+		return R_DEBUG_REASON_ILLEGAL;
+	case R_CORE_ESIL_STEP_STATUS_TRAP:
+		if (trap_type == R_ANAL_TRAP_DIVBYZERO) {
+			return R_DEBUG_REASON_DIVBYZERO;
+		}
+		if (trap_type == R_ANAL_TRAP_BREAKPOINT) {
+			return R_DEBUG_REASON_BREAKPOINT;
+		}
+		return R_DEBUG_REASON_TRAP;
+	case R_CORE_ESIL_STEP_STATUS_ERROR:
+		return R_DEBUG_REASON_ERROR;
+	case R_CORE_ESIL_STEP_STATUS_DONE:
+		break;
+	}
+	return R_DEBUG_REASON_NONE;
+}
+
+static const char *core_esil_fault_stop_name(RCoreEsilStepStatus status, int trap_type) {
+	switch (status) {
+	case R_CORE_ESIL_STEP_STATUS_IOTRAP:
+		if (trap_type == R_ANAL_TRAP_WRITE_ERR) {
+			return "write error";
+		}
+		return "read error";
+	case R_CORE_ESIL_STEP_STATUS_INVALID:
+		if (trap_type == R_ANAL_TRAP_EXEC_ERR) {
+			return "execute error";
+		}
+		if (trap_type == R_ANAL_TRAP_UNALIGNED) {
+			return "unaligned instruction";
+		}
+		return "invalid instruction";
+	case R_CORE_ESIL_STEP_STATUS_TRAP:
+		return r_esil_trapstr (trap_type);
+	case R_CORE_ESIL_STEP_STATUS_ERROR:
+		return "step error";
+	default:
+		break;
+	}
+	return core_esil_step_status_name (status);
+}
+
+static void core_esil_update_debug_reason(RCore *core, RCoreEsilStepStatus status, ut64 stop_addr) {
+	if (!core->dbg || status == R_CORE_ESIL_STEP_STATUS_DONE) {
+		return;
+	}
+	const int trap_type = core_esil_stop_trap_type (core);
+	const ut64 trap_code = core->esil.esil.trap_code;
+	core->dbg->reason.type = core_esil_debug_reason_from_stop (status, trap_type);
+	core->dbg->reason.signum = -1;
+	core->dbg->reason.tid = core->dbg->tid;
+	core->dbg->reason.bp_addr = status == R_CORE_ESIL_STEP_STATUS_BREAKPOINT? stop_addr: 0;
+	core->dbg->reason.timestamp = r_time_now ();
+	core->dbg->reason.ptr = trap_code;
+	if (trap_type == R_ANAL_TRAP_READ_ERR || trap_type == R_ANAL_TRAP_WRITE_ERR) {
+		core->dbg->reason.addr = trap_code;
+	} else {
+		core->dbg->reason.addr = stop_addr;
+	}
+	core->dbg->stopaddr = stop_addr;
+}
+
+static void core_esil_log_stop_reason(RCore *core, RCoreEsilStepStatus status, ut64 stop_addr) {
+	switch (status) {
+	case R_CORE_ESIL_STEP_STATUS_INVALID:
+	case R_CORE_ESIL_STEP_STATUS_IOTRAP:
+	case R_CORE_ESIL_STEP_STATUS_TRAP:
+	case R_CORE_ESIL_STEP_STATUS_ERROR:
+		break;
+	default:
+		return;
+	}
+	const int trap_type = core_esil_stop_trap_type (core);
+	const ut64 trap_code = core->esil.esil.trap_code;
+	const char *reason = core_esil_fault_stop_name (status, trap_type);
+	if ((trap_type == R_ANAL_TRAP_READ_ERR || trap_type == R_ANAL_TRAP_WRITE_ERR)
+			&& trap_code != UT64_MAX) {
+		R_LOG_ERROR ("ESIL stopped at 0x%08" PFMT64x ": %s (%s at 0x%08" PFMT64x ")",
+			stop_addr, reason, r_esil_trapstr (trap_type), trap_code);
+	} else if (trap_type != R_ANAL_TRAP_NONE) {
+		R_LOG_ERROR ("ESIL stopped at 0x%08" PFMT64x ": %s (%s)",
+			stop_addr, reason, r_esil_trapstr (trap_type));
+	} else {
+		R_LOG_ERROR ("ESIL stopped at 0x%08" PFMT64x ": %s", stop_addr, reason);
+	}
+}
+
 // Steps the core ESIL VM until a stop condition is reached.
 static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver, bool stop_on_fault, ut64 *stop_addr) {
 	const int esiltimeout = r_config_get_i (core->config, "esil.timeout");
@@ -7916,6 +8033,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 	const bool single_step = until_addr == UT64_MAX && !until_expr;
 	const ut64 start = esiltimeout > 0? r_time_now_mono (): 0;
 	ut64 addr = r_reg_getv (core->anal->reg, "PC");
+	ut64 stop_reason_addr = addr;
 	ut64 steps = 0;
 	RCoreEsilStepStatus status = R_CORE_ESIL_STEP_STATUS_DONE;
 	r_cons_break_push (core->cons, NULL, NULL);
@@ -7928,6 +8046,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 				R_LOG_INFO ("[ESIL] Maximum steps exceeded at 0x%08" PFMT64x, addr);
 			}
 			status = R_CORE_ESIL_STEP_STATUS_MAXSTEPS;
+			stop_reason_addr = addr;
 			break;
 		}
 		if (r_cons_is_breaked (core->cons)) {
@@ -7935,6 +8054,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 				R_LOG_INFO ("[+] ESIL emulation interrupted at 0x%08" PFMT64x, addr);
 			}
 			status = R_CORE_ESIL_STEP_STATUS_INTERRUPTED;
+			stop_reason_addr = addr;
 			break;
 		}
 		if (esiltimeout > 0 && ((r_time_now_mono () - start) >> 20) >= esiltimeout) {
@@ -7942,6 +8062,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 				R_LOG_INFO ("[ESIL] Timeout exceeded at 0x%08" PFMT64x, addr);
 			}
 			status = R_CORE_ESIL_STEP_STATUS_TIMEOUT;
+			stop_reason_addr = addr;
 			break;
 		}
 		if (prev_addr) {
@@ -7970,6 +8091,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 			if (stop_addr) {
 				stop_addr[0] = prev_pc;
 			}
+			stop_reason_addr = prev_pc;
 			if (stop_on_fault) {
 				break;
 			}
@@ -7979,7 +8101,6 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 					break;
 				}
 				if (breakoninvalid) {
-					R_LOG_INFO ("Stopped execution in an invalid instruction at 0x%08" PFMT64x " (see e??esil.breakoninvalid)", prev_pc);
 					break;
 				}
 				// step over the invalid instruction and keep going;
@@ -8024,6 +8145,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 				stop_addr[0] = addr;
 			}
 			status = R_CORE_ESIL_STEP_STATUS_BREAKPOINT;
+			stop_reason_addr = addr;
 			break;
 		}
 		if (until_expr) {
@@ -8042,6 +8164,10 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 		}
 	}
 	r_cons_break_pop (core->cons);
+	core_esil_update_debug_reason (core, status, stop_reason_addr);
+	if (!stop_on_fault) {
+		core_esil_log_stop_reason (core, status, stop_reason_addr);
+	}
 	return status;
 }
 

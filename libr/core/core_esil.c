@@ -538,6 +538,7 @@ R_API bool r_core_esil_single_step(RCore *core) {
 		}
 	} else if (!r_io_is_valid_offset (core->io, pc, eperm)) {
 		// unmapped offsets can still hold code when io.cache is enabled
+		trap_code = R_ANAL_TRAP_EXEC_ERR;
 		goto trap;
 	}
 	trap_code = R_ANAL_TRAP_NONE;

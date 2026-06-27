@@ -991,12 +991,16 @@ R_API const char *r_esil_trapstr(int type) {
 		return "unhandled";
 	case R_ANAL_TRAP_DIVBYZERO:
 		return "divbyzero";
+	case R_ANAL_TRAP_EXEC_ERR:
+		return "execute-err";
 	case R_ANAL_TRAP_INVALID:
 		return "invalid";
 	case R_ANAL_TRAP_UNALIGNED:
 		return "unaligned";
 	case R_ANAL_TRAP_TODO:
 		return "todo";
+	case R_ANAL_TRAP_HALT:
+		return "halt";
 	default:
 		return "unknown";
 	}

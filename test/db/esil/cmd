@@ -18,7 +18,10 @@ dr PC=0xdeadbeef
 aes
 EOF
 EXPECT=<<EOF
-its a trap 0xdeadbeef 0x7
+its a trap 0xdeadbeef 0x6
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0xdeadbeef: execute error (execute-err)
 EOF
 RUN
 
@@ -35,6 +38,9 @@ EOF
 EXPECT=<<EOF
 type: ill
 its a trap 0x0 0x7
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000000: invalid instruction (invalid)
 EOF
 RUN
 
@@ -65,6 +71,9 @@ EOF
 EXPECT=<<EOF
 0x00000001
 EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000001: invalid instruction (invalid)
+EOF
 RUN
 
 NAME=aec stops at unmapped pc
@@ -77,9 +86,14 @@ aei
 dr rip=0
 aec
 dr rip
+diq
 EOF
 EXPECT=<<EOF
 0x00000000
+segfault at 0x00000000
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000000: execute error (execute-err)
 EOF
 RUN
 
@@ -123,6 +137,9 @@ its an ioer 0x0 0x0
 its an ioer 0x0 0x0
 its an ioer 0x0 0x1
 EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000000: write error (write-err at 0xdeadbeef)
+EOF
 RUN
 
 NAME=esil.iotrap traps invalid writes
@@ -136,6 +153,9 @@ aes
 EOF
 EXPECT=<<EOF
 trapped 0x0 0xdeadbeef
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000000: write error (write-err at 0xdeadbeef)
 EOF
 RUN
 
