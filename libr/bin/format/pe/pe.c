@@ -111,12 +111,20 @@ RBinPEAddr *PE_(check_msvcseh)(RBinPEObj *pe) {
 	}
 
 	// read_and_follow_jump (entry, pe->b, b, sizeof (b), pe->big_endian);
-	read_jump (pe, entry, b, sizeof (b));
+	if (!read_jump (pe, entry, b, sizeof (b))) {
+		free (entry);
+		return NULL;
+	}
+
+	const ut16 machine = pe->nt_headers->file_header.Machine;
+	bool x86_32 = machine == PE_IMAGE_FILE_MACHINE_I386;
+	bool x86_64 = machine == PE_IMAGE_FILE_MACHINE_AMD64;
+	bool arm_64 = is_arm64 (pe);
 
 	// MSVC SEH
 	// E8 13 09 00 00  call    0x44C388
 	// E9 05 00 00 00  jmp     0x44BA7F
-	if (b[0] == 0xe8 && b[5] == 0xe9) {
+	if (x86_32 && b[0] == 0xe8 && b[5] == 0xe9) {
 		if (follow_offset (pe, entry, 5, b, sizeof (b))) {
 			// case1:
 			// from des address of jmp search for 68 xx xx xx xx e8 and test xx xx xx xx = imagebase
@@ -179,7 +187,7 @@ RBinPEAddr *PE_(check_msvcseh)(RBinPEObj *pe) {
 	}
 
 	// MSVC 32bit debug
-	if (b[3] == 0xe8) {
+	if (x86_32 && b[3] == 0xe8) {
 		// 55                    push ebp
 		// 8B EC                 mov ebp, esp
 		// E8 xx xx xx xx        call xxxxxxxx
@@ -219,7 +227,7 @@ RBinPEAddr *PE_(check_msvcseh)(RBinPEObj *pe) {
 	}
 
 	// MSVC AMD64
-	if (b[4] == 0xe8) {
+	if (x86_64 && b[4] == 0xe8) {
 		bool found_caller = false;
 		if (b[13] == 0xe9) {
 			// 48 83 EC 28       sub     rsp, 0x28
@@ -272,7 +280,7 @@ RBinPEAddr *PE_(check_msvcseh)(RBinPEObj *pe) {
 	}
 
 	// MSVC Arm64
-	if (b[0] == 0x7f && b[1] == 0x23 && b[2] == 0x03 && b[3] == 0xd5) {
+	if (arm_64 && b[0] == 0x7f && b[1] == 0x23 && b[2] == 0x03 && b[3] == 0xd5) {
 		// 7f 23 03 d5     pacibsp
 		// fd 7b bf a9     stp        x29,x30,[sp, #local_10]!
 		// fd 03 00 91     mov        x29,sp
@@ -329,7 +337,7 @@ RBinPEAddr *PE_(check_msvcseh)(RBinPEObj *pe) {
 	//  89 45 A0            mov dword [ebp - local_60h], eax
 	//  50                  push    eax
 	//  E8 2D 00 00  00     call 0x4015a6
-	if (b[188] == 0x50 && b[201] == 0xe8) {
+	if (x86_32 && b[188] == 0x50 && b[201] == 0xe8) {
 		follow_offset (pe, entry, 201, b, sizeof (b));
 		return entry;
 	}
