@@ -1084,7 +1084,7 @@ R_API void r_line_autocomplete(RCons *cons) {
 	/* autocomplete */
 	if (argc == 1) {
 		const char *end_word = r_sub_str_rchr (line->buffer.data,
-			line->buffer.index, strlen (line->buffer.data), ' ');
+			line->buffer.index, line->buffer.length, ' ');
 		const char *t = end_word? end_word: line->buffer.data + line->buffer.index;
 		int largv0 = strlen (r_str_get (argv[0]));
 		size_t len_t = strlen (t);
