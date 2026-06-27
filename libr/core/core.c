@@ -981,6 +981,12 @@ static void autocomplete_vars(RCore *core, RLineCompletion *completion, const ch
 	if (!fcn) {
 		return;
 	}
+	// Autocomplete for last argument
+	const char *sp = r_str_rchr (str, NULL, ' ');
+	if (!sp) {
+		return;
+	}
+	str = sp + 1;
 	size_t len = strlen (str);
 	RAnalVar **it;
 	R_VEC_FOREACH (&fcn->vars, it) {
@@ -1202,8 +1208,13 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 	R_RETURN_VAL_IF_FAIL (core && completion && buf, false);
 	RCoreAutocomplete *child = NULL;
 	RCoreAutocomplete *parent = core->autocomplete;
+	// Only look at text up to cursor
+	size_t len = R_MIN (buf->index, buf->length);
+	char saved = buf->data[len];
+	buf->data[len] = 0;
 	const char *p = buf->data;
 	if (!*p) {
+		buf->data[len] = saved;
 		return false;
 	}
 	char arg[256];
@@ -1211,12 +1222,13 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 	while (*p) {
 		const char *e = r_str_trim_head_wp (p);
 		if (!e || (e - p) >= 256 || e == p) {
+			buf->data[len] = saved;
 			return false;
 		}
 		memcpy (arg, p, e - p);
 		arg[e - p] = 0;
 		child = r_core_autocomplete_find (parent, arg, false);
-		if (child && child->length < buf->length && p[child->length] == ' ') {
+		if (child && child->length < len && p[child->length] == ' ') {
 			// if is spaced then i can provide the
 			// next subtree as suggestion..
 			p = r_str_trim_head_ro (p + child->length);
@@ -1293,6 +1305,7 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 		}
 		break;
 	}
+	buf->data[len] = saved;
 	return true;
 }
 
