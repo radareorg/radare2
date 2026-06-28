@@ -450,6 +450,13 @@ static bool __close(RIODesc *fd) {
 	return true;
 }
 
+static RIODescInfo __info(RIODesc *desc) {
+	RIODescInfo di = {0};
+	RIOMMapFileObj *mmo = desc->data;
+	di.blkdev = (mmo && mmo->isblk == 1);
+	return di;
+}
+
 static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 	R_RETURN_VAL_IF_FAIL (io && fd && fd->data, false);
 	RIOMMapFileObj *mmo = fd->data;
@@ -462,7 +469,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 static bool __is_blockdevice(RIODesc *desc) {
 	R_RETURN_VAL_IF_FAIL (desc && desc->data, false);
 	RIOMMapFileObj *mmo = desc->data;
-	return mmo? mmo->isblk == 1: false;
+	return (mmo && mmo->isblk == 1);
 }
 
 RIOPlugin r_io_plugin_default = {
@@ -480,9 +487,8 @@ RIOPlugin r_io_plugin_default = {
 	.seek = __lseek,
 	.write = __write,
 	.resize = __resize,
-#if R2__UNIX__ || R2__WINDOWS__
-	.is_blockdevice = __is_blockdevice,
-#endif
+	.getinfo = __info,
+	.is_blockdevice = __is_blockdevice, // DEPRECATE
 };
 
 #ifndef R2_PLUGIN_INCORE
