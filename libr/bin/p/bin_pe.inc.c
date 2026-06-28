@@ -204,63 +204,63 @@ static RList* entries(RBinFile *bf) {
 
 static bool sections_vec(RBinFile *bf) {
 	ut64 ba = baddr (bf);
-	int i;
+	int i = 0;
 	const int limit = bf->rbin->options.limit;
 
 	RBinPEObj *pe = PE_(get) (bf);
-	if (!pe || !pe->sections) {
+	if (!pe) {
 		return false;
 	}
 	RVecRBinSection_clear (&bf->bo->sections_vec);
-	struct r_bin_pe_section_t *sections = pe->sections;
 	const ut64 file_size = pe_file_size_bound (bf, pe);
 
-	PE_(r_bin_pe_check_sections) (pe, &sections);
-	for (i = 0; !sections[i].last; i++) {
+	PE_(r_bin_pe_check_sections) (pe);
+	struct r_bin_pe_section_t *section;
+	R_VEC_FOREACH (&pe->sections, section) {
 		if (limit > 0 && RVecRBinSection_length (&bf->bo->sections_vec) >= (size_t)limit) {
 			break;
 		}
 		RBinSection *sec = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (R_STR_ISNOTEMPTY (sections[i].name)) {
-			sec->name = strdup ((const char*)sections[i].name);
+		if (R_STR_ISNOTEMPTY (section->name)) {
+			sec->name = strdup ((const char*)section->name);
 		} else {
 			R_LOG_WARN ("Missing name for section");
 			sec->name = r_str_newf ("noname%d", i);
 		}
-		sec->size = sections[i].size;
-		const bool invalid_raw_range = sec->size > file_size || (sec->size > 0 && sections[i].paddr >= file_size);
+		sec->size = section->size;
+		const bool invalid_raw_range = sec->size > file_size || (sec->size > 0 && section->paddr >= file_size);
 		if (sec->size > file_size) {
-			if (sections[i].vsize < file_size) {
-				sec->size = sections[i].vsize;
+			if (section->vsize < file_size) {
+				sec->size = section->vsize;
 			} else {
 				//hack give it page size
 				sec->size = 4096;
 			}
 		}
-		sec->vsize = sections[i].vsize;
+		sec->vsize = section->vsize;
 		if (!sec->vsize && sec->size) {
 			sec->vsize = sec->size;
 		}
 		if (invalid_raw_range && sec->vsize > sec->size) {
 			sec->vsize = sec->size;
 		}
-		sec->paddr = sections[i].paddr;
-		sec->vaddr = sections[i].vaddr + ba;
+		sec->paddr = section->paddr;
+		sec->vaddr = section->vaddr + ba;
 		sec->add = true;
 		sec->perm = 0;
-		sec->flags = sections[i].flags;
-		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].perm)) {
+		sec->flags = section->flags;
+		if (R_BIN_PE_SCN_IS_EXECUTABLE (section->perm)) {
 			sec->perm |= R_PERM_X;
 			sec->perm |= R_PERM_R; // implicit
 		}
-		if (R_BIN_PE_SCN_IS_WRITABLE (sections[i].perm)) {
+		if (R_BIN_PE_SCN_IS_WRITABLE (section->perm)) {
 			sec->perm |= R_PERM_W;
 		}
-		if (R_BIN_PE_SCN_IS_READABLE (sections[i].perm)) {
+		if (R_BIN_PE_SCN_IS_READABLE (section->perm)) {
 			sec->perm |= R_PERM_R;
 		}
 		// this is causing may tests to fail because rx != srx
-		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].perm)) {
+		if (R_BIN_PE_SCN_IS_SHAREABLE (section->perm)) {
 			sec->perm |= R_PERM_SHAR;
 		}
 		if ((sec->perm & R_PERM_RW) && !(sec->perm & R_PERM_X) && sec->size > 0) {
@@ -269,6 +269,7 @@ static bool sections_vec(RBinFile *bf) {
 				sec->is_data = true;
 			}
 		}
+		i++;
 	}
 	return true;
 }
@@ -431,47 +432,48 @@ static char* types(RBinFile *bf) {
 
 static bool symbols_vec(RBinFile *bf) {
 	RBinSymbol *ptr = NULL;
-	struct r_bin_pe_export_t *symbols = NULL;
-	struct r_bin_pe_import_t *imports = NULL;
-	int i;
+	RVecPEExport *symbols = NULL;
+	RVecPEImport *imports = NULL;
 	const int limit = bf->rbin->options.limit;
 
 	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	RBinPEObj *pe = PE_(get) (bf);
 	if ((symbols = PE_(r_bin_pe_get_exports)(pe))) {
-		for (i = 0; !symbols[i].last; i++) {
+		struct r_bin_pe_export_t *symbol;
+		R_VEC_FOREACH (symbols, symbol) {
 			if (limit_reached_vec (ret, limit)) {
 				break;
 			}
 			ptr = RVecRBinSymbol_emplace_back (ret);
-			ptr->name = r_bin_name_new ((char *)symbols[i].name);
-			ptr->libname = *symbols[i].libname ? strdup ((char *)symbols[i].libname) : NULL;
-			ptr->forwarder = r_str_constpool_get (&bf->rbin->constpool, (char *)symbols[i].forwarder);
+			ptr->name = r_bin_name_new ((char *)symbol->name);
+			ptr->libname = *symbol->libname ? strdup ((char *)symbol->libname) : NULL;
+			ptr->forwarder = r_str_constpool_get (&bf->rbin->constpool, (char *)symbol->forwarder);
 			ptr->bind = R_BIN_BIND_GLOBAL_STR;
 			ptr->type = R_BIN_TYPE_FUNC_STR;
-			ptr->vaddr = symbols[i].vaddr;
-			ptr->paddr = symbols[i].paddr;
-			ptr->ordinal = symbols[i].ordinal;
+			ptr->vaddr = symbol->vaddr;
+			ptr->paddr = symbol->paddr;
+			ptr->ordinal = symbol->ordinal;
 		}
-		free (symbols);
+		RVecPEExport_free (symbols);
 	}
 
 	if ((imports = PE_(r_bin_pe_get_imports)(pe))) {
-		for (i = 0; !imports[i].last; i++) {
+		struct r_bin_pe_import_t *import;
+		R_VEC_FOREACH (imports, import) {
 			if (limit_reached_vec (ret, limit)) {
 				break;
 			}
 			ptr = RVecRBinSymbol_emplace_back (ret);
-			ptr->name = r_bin_name_new ((const char *)imports[i].name);
-			ptr->libname = strdup ((const char *)imports[i].libname);
+			ptr->name = r_bin_name_new ((const char *)import->name);
+			ptr->libname = strdup ((const char *)import->libname);
 			ptr->is_imported = true;
 			ptr->bind = "NONE";
 			ptr->type = R_BIN_TYPE_FUNC_STR;
-			ptr->vaddr = imports[i].vaddr;
-			ptr->paddr = imports[i].paddr;
-			ptr->ordinal = imports[i].ordinal;
+			ptr->vaddr = import->vaddr;
+			ptr->paddr = import->paddr;
+			ptr->ordinal = import->ordinal;
 		}
-		free (imports);
+		RVecPEImport_free (imports);
 	}
 	if (limit_reached_vec (ret, limit)) {
 		find_pe_overlay (bf);
@@ -542,7 +544,6 @@ static void filter_import(ut8 *n) {
 }
 
 static bool imports_vec(RBinFile *bf) {
-	int i;
 	const int limit = bf->rbin->options.limit;
 
 	RBinPEObj *pe = PE_(get) (bf);
@@ -557,15 +558,15 @@ static bool imports_vec(RBinFile *bf) {
 	}
 	pe->relocs = relocs;
 
-	struct r_bin_pe_import_t *imports = PE_(r_bin_pe_get_imports)(pe);
+	RVecPEImport *imports = PE_(r_bin_pe_get_imports)(pe);
 	if (!imports) {
 		return true;
 	}
-	for (i = 0; !imports[i].last; i++) {
+	struct r_bin_pe_import_t *imp;
+	R_VEC_FOREACH (imports, imp) {
 		if (limit_reached_vec_imports (ret, limit)) {
 			break;
 		}
-		struct r_bin_pe_import_t *imp = &imports[i];
 		filter_import (imp->name);
 		RBinImport *ptr = RVecRBinImport_emplace_back (ret);
 		ptr->name = r_bin_name_new ((char*)imp->name);
@@ -588,7 +589,7 @@ static bool imports_vec(RBinFile *bf) {
 		rel->ntype = imp->ntype;
 		r_list_append (relocs, rel);
 	}
-	free (imports);
+	RVecPEImport_free (imports);
 	return true;
 }
 
@@ -604,10 +605,9 @@ static RList* relocs(RBinFile *bf) {
 }
 
 static RList* libs(RBinFile *bf) {
-	struct r_bin_pe_lib_t *libs = NULL;
+	RVecPELib *libs = NULL;
 	RList *ret = NULL;
 	char *ptr = NULL;
-	int i;
 	const int limit = bf->rbin->options.limit;
 
 	if (!(ret = r_list_new ())) {
@@ -618,50 +618,43 @@ static RList* libs(RBinFile *bf) {
 	if (!(libs = PE_(r_bin_pe_get_libs)(pe))) {
 		return ret;
 	}
-	for (i = 0; !libs[i].last; i++) {
+	struct r_bin_pe_lib_t *lib;
+	R_VEC_FOREACH (libs, lib) {
 		if (limit_reached (ret, limit)) {
 			break;
 		}
-		ptr = strdup (libs[i].name);
+		ptr = strdup (lib->name);
 		r_list_append (ret, ptr);
 	}
-	free (libs);
+	RVecPELib_free (libs);
 	return ret;
 }
 
-static bool is_dot_net(RBinFile *bf) {
+static bool has_pe_lib(RBinFile *bf, const char *name) {
 	RBinPEObj *pe = PE_(get) (bf);
-	struct r_bin_pe_lib_t *libs = PE_(r_bin_pe_get_libs)(pe);
+	RVecPELib *libs = PE_(r_bin_pe_get_libs)(pe);
 	if (!libs) {
 		return false;
 	}
 
-	size_t i;
-	for (i = 0; !libs[i].last; i++) {
-		if (!strcmp (libs[i].name, "mscoree.dll")) {
-			free (libs);
-			return true;
+	bool found = false;
+	struct r_bin_pe_lib_t *lib;
+	R_VEC_FOREACH (libs, lib) {
+		if (!strcmp (lib->name, name)) {
+			found = true;
+			break;
 		}
 	}
-	free (libs);
-	return false;
+	RVecPELib_free (libs);
+	return found;
+}
+
+static bool is_dot_net(RBinFile *bf) {
+	return has_pe_lib (bf, "mscoree.dll");
 }
 
 static bool is_vb6(RBinFile *bf) {
-	int i;
-	RBinPEObj *pe = PE_(get) (bf);
-	struct r_bin_pe_lib_t *libs = PE_(r_bin_pe_get_libs)(pe);
-	if (!libs) {
-		return false;
-	}
-	for (i = 0; !libs[i].last; i++) {
-		if (!strcmp (libs[i].name, "msvbvm60.dll")) {
-			free (libs);
-			return true;
-		}
-	}
-	free (libs);
-	return false;
+	return has_pe_lib (bf, "msvbvm60.dll");
 }
 
 static bool check_inlined_canary(RBinFile *bf) {
@@ -848,14 +841,14 @@ static bool is_suspicious_library_export(const char *name) {
 
 static bool has_uncaps_exports(RBinPEObj *pe) {
 	R_RETURN_VAL_IF_FAIL (pe, false);
-	struct r_bin_pe_export_t *exports = PE_(r_bin_pe_get_exports) (pe);
+	RVecPEExport *exports = PE_(r_bin_pe_get_exports) (pe);
 	if (!exports) {
 		return false;
 	}
 	const bool is_dll = PE_(r_bin_pe_is_dll) (pe);
 	bool uncaps = false;
 	struct r_bin_pe_export_t *exp;
-	for (exp = exports; !exp->last; exp++) {
+	R_VEC_FOREACH (exports, exp) {
 		const char *name = (const char *)exp->name;
 		if (!R_STR_ISNOTEMPTY (name)) {
 			continue;
@@ -869,7 +862,7 @@ static bool has_uncaps_exports(RBinPEObj *pe) {
 			break;
 		}
 	}
-	free (exports);
+	RVecPEExport_free (exports);
 	return uncaps;
 }
 

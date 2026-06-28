@@ -26,8 +26,9 @@ struct r_bin_pe_section_t {
 	ut64 paddr;
 	ut64 perm;
 	ut32 flags;
-	int last;
 };
+
+R_VEC_TYPE (RVecPESection, struct r_bin_pe_section_t);
 
 #define IMAGE_REL_BASED_ABSOLUTE       0  //The base relocation is skipped. This type can be used to pad a block.
 #define IMAGE_REL_BASED_HIGH           1  //The base relocation adds the high 16 bits of the difference to the 16-bit field at offset. The 16-bit field represents the high value of a 32-bit word.
@@ -52,8 +53,9 @@ struct r_bin_pe_import_t {
 	ut64 hint;
 	ut64 ordinal;
 	int ntype;
-	int last;
 };
+
+R_VEC_TYPE (RVecPEImport, struct r_bin_pe_import_t);
 
 struct r_bin_pe_export_t {
 	ut8 name[PE_NAME_LENGTH + 1];
@@ -62,8 +64,9 @@ struct r_bin_pe_export_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut64 ordinal;
-	int last;
 };
+
+R_VEC_TYPE (RVecPEExport, struct r_bin_pe_export_t);
 
 struct r_bin_pe_string_t {
 	char string[PE_STRING_LENGTH];
@@ -76,8 +79,9 @@ struct r_bin_pe_string_t {
 
 struct r_bin_pe_lib_t {
 	char name[PE_STRING_LENGTH];
-	int last;
 };
+
+R_VEC_TYPE (RVecPELib, struct r_bin_pe_lib_t);
 
 typedef struct _PE_RESOURCE {
 	char *timestr;
@@ -119,7 +123,7 @@ struct PE_(r_bin_pe_obj_t) {
 	RList *dotnet_symbols;
 
 	/* store the section information for future use */
-	struct r_bin_pe_section_t *sections;
+	RVecPESection sections;
 
 	// these values define the real offset into the untouched binary
 	ut64 rich_header_offset;
@@ -162,11 +166,11 @@ R_API const char* PE_(r_bin_pe_get_arch)(RBinPEObj* bin);
 R_API char *PE_(r_bin_pe_get_cc)(RBinPEObj* bin);
 R_API struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* bin);
 R_API struct r_bin_pe_addr_t* PE_(r_bin_pe_get_main_vaddr)(RBinPEObj* bin);
-R_API struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(RBinPEObj* bin); // TODO
+R_API RVecPEExport *PE_(r_bin_pe_get_exports)(RBinPEObj* bin);
 R_API int PE_(r_bin_pe_get_file_alignment)(RBinPEObj* bin);
 R_API ut64 PE_(r_bin_pe_get_image_base)(RBinPEObj* bin);
-R_API struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(RBinPEObj* bin); // TODO
-R_API struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(RBinPEObj* bin);
+R_API RVecPEImport *PE_(r_bin_pe_get_imports)(RBinPEObj* bin); // TODO
+R_API RVecPELib *PE_(r_bin_pe_get_libs)(RBinPEObj* bin);
 R_API int PE_(r_bin_pe_get_image_size)(RBinPEObj* bin);
 R_API char* PE_(r_bin_pe_get_machine)(RBinPEObj* bin);
 R_API char* PE_(r_bin_pe_get_os)(RBinPEObj* bin);
@@ -189,7 +193,7 @@ R_API int PE_(bin_pe_get_actual_checksum)(RBinPEObj* bin);
 R_API const char* PE_(bin_pe_compute_authentihash)(RBinPEObj* bin);
 R_API int PE_(bin_pe_is_authhash_valid)(RBinPEObj* bin);
 R_API int PE_(bin_pe_get_overlay)(RBinPEObj* bin, ut64* size);
-R_API void PE_(r_bin_pe_check_sections)(RBinPEObj* bin, struct r_bin_pe_section_t** sects);
+R_API void PE_(r_bin_pe_check_sections)(RBinPEObj* bin);
 R_API struct r_bin_pe_addr_t *PE_(check_unknow)(RBinPEObj *bin);
 R_API struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *bin);
 R_API struct r_bin_pe_addr_t *PE_(check_mingw)(RBinPEObj *bin);
