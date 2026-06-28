@@ -21,6 +21,7 @@ static RCoreHelpMessage help_msg_o = {
 	"o:", " [len]", "open a malloc://[len] copying the bytes from current offset", // XXX R2_590 - should be an alias for ':' no need for a malloc:// wrapper imho
 	"o=", "(#fd)", "select fd or list opened files in ascii-art",
 	"oL", "", "list all IO plugins registered",
+	"oS", "[j] [file]", "list subbinaries/slices in 'file' (fatmach0, apk, dyldcache, ...)",
 	"oa", "[-] [A] [B] [file]", "specify arch and bits for given 'file'",
 	"ob", "[?] [lbdos] [...]", "list opened binary files backed by fd",
 	"oc", " [file]", "open core file, like relaunching r2",
@@ -2680,6 +2681,59 @@ static int cmd_open(void *data, const char *input) {
 			r_core_list_io (core, NULL, input[1]);
 		}
 		break;
+	case 'S': { // "oS"
+		bool as_json = (input[1] == 'j');
+		const char *arg = input + 1;
+		if (as_json) {
+			arg++;
+		}
+		while (*arg == ' ') {
+			arg++;
+		}
+		const char *target = *arg ? arg : (core->io && core->io->desc ? core->io->desc->uri : NULL);
+		if (R_STR_ISEMPTY (target)) {
+			R_LOG_ERROR ("Usage: oS[j] <file>");
+			break;
+		}
+		RCoreSubs *subs = r_core_file_subs (core, target);
+		if (!subs) {
+			R_LOG_INFO ("No subbinaries found in %s", target);
+			break;
+		}
+		if (as_json) {
+			PJ *pj = pj_new ();
+			pj_o (pj);
+			pj_ks (pj, "uri", subs->uri);
+			pj_ks (pj, "format", subs->format);
+			pj_ka (pj, "options");
+			RListIter *it;
+			RCoreSubOption *o;
+			r_list_foreach (subs->options, it, o) {
+				pj_o (pj);
+				pj_ki (pj, "index", o->index);
+				pj_ki (pj, "kind", (int)o->kind);
+				pj_ks (pj, "name", r_str_get (o->name));
+				if (o->uri) { pj_ks (pj, "uri", o->uri); }
+				if (o->arch) { pj_ks (pj, "arch", o->arch); }
+				if (o->cpu) { pj_ks (pj, "cpu", o->cpu); }
+				if (o->bits) { pj_ki (pj, "bits", o->bits); }
+				if (o->machine) { pj_ks (pj, "machine", o->machine); }
+				pj_kN (pj, "offset", o->offset);
+				pj_kN (pj, "size", o->size);
+				if (o->hint) { pj_ks (pj, "hint", o->hint); }
+				if (o->envs) { pj_ks (pj, "envs", o->envs); }
+				pj_end (pj);
+			}
+			pj_end (pj);
+			pj_end (pj);
+			r_cons_printf (core->cons, "%s\n", pj_string (pj));
+			pj_free (pj);
+		} else {
+			r_core_subs_print (core, subs);
+		}
+		r_core_subs_free (subs);
+		break;
+	}
 	case 'u': { // "ou"
 		core->switch_file_view = 0;
 		int num = atoi (input + 2);
