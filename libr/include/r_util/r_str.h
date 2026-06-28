@@ -270,6 +270,7 @@ R_API char *r_str_escape_json_strip(const char *buf, int buf_size);
 R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding);
 R_API R_MUSTUSE char *r_str_r2_prefix(const char *str);
 R_API size_t r_str_nlen(const char *s, int n);
+R_API size_t r_str_pnlen(const char *s, int n);
 R_API size_t r_str_nlen_w(const char *s, int n);
 R_API size_t r_wstr_clen(const char *s);
 R_API char *r_str_prepend(char *ptr, const char *string);

@@ -14804,13 +14804,7 @@ static bool check_string_at(RCore *core, ut64 addr, bool and_print_it) {
 		nullbyte--;
 	}
 	if (nullbyte < len && nullbyte > 3) {
-		is_ascii = true;
-		// it's a null terminated string!
-		for (i = 0; i < nullbyte; i++) {
-			if (!IS_PRINTABLE (buf[i])) {
-				is_ascii = false;
-			}
-		}
+		is_ascii = r_str_pnlen ((const char *)buf, nullbyte) == (size_t)nullbyte;
 		if (!is_ascii) {
 			is_utf8 = true;
 			if ((buf[0] & 0xf0) == 0xf0 && (buf[1] & 0xf0) == 0xf0) {
@@ -14846,16 +14840,9 @@ static bool check_string_at(RCore *core, ut64 addr, bool and_print_it) {
 	{
 		ut8 plen = buf[0];
 		if (plen > 1 && plen < len) {
-			is_pascal1 = true;
-			int i;
-			for (i = 1; i < plen; i++) {
-				if (!IS_PRINTABLE (buf[i])) {
-					is_pascal1 = false;
-					break;
-				}
-			}
+			is_pascal1 = r_str_pnlen ((const char *)buf + 1, plen - 1) == (size_t)(plen - 1);
 			if (is_pascal1) {
-				char *oout = r_str_ndup ((const char *)buf + 1, i);
+				char *oout = r_str_ndup ((const char *)buf + 1, plen);
 				free (out);
 				out = oout;
 			}
@@ -14864,15 +14851,9 @@ static bool check_string_at(RCore *core, ut64 addr, bool and_print_it) {
 	if (!is_pascal1) {
 		ut8 plen = r_read_le16 (buf);
 		if (plen > 2 && plen < len) {
-			is_pascal2 = true;
-			for (i = 2; i < plen; i++) {
-				if (!IS_PRINTABLE (buf[i])) {
-					is_pascal2 = false;
-					break;
-				}
-			}
+			is_pascal2 = r_str_pnlen ((const char *)buf + 2, plen - 2) == (size_t)(plen - 2);
 			if (is_pascal2) {
-				char *oout = r_str_ndup ((const char *)buf + 2, i);
+				char *oout = r_str_ndup ((const char *)buf + 2, plen);
 				free (out);
 				out = oout;
 			}

@@ -697,8 +697,8 @@ static bool read_libname(RBinPEObj *pe, ut64 paddr, char *name, size_t name_size
 		return false;
 	}
 	name[len] = '\0';
-	size_t name_len = r_str_nlen (name, len);
-	if (name_len >= (size_t)len || name_len <= 4) {
+	size_t name_len = r_str_pnlen (name, len);
+	if (name_len <= 4) {
 		return false;
 	}
 	name[name_len] = '\0';

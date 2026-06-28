@@ -8497,7 +8497,7 @@ static int cmd_print(void *data, const char *input) {
 			} else if (l > 0) {
 				ut8 *buf = malloc (1024 + 1);
 				int delta = 512;
-				ut8 *p, *e, *b;
+				ut8 *p, *b;
 				if (!buf) {
 					return 0;
 				}
@@ -8513,16 +8513,10 @@ static int cmd_print(void *data, const char *input) {
 						break;
 					}
 				}
-				for (e = p; e < (buf + 1024); e++) {
-					if (!IS_PRINTABLE (*b)) {
-						*e = 0;
-						e--;
-						break;
-					}
-				}
+				b[r_str_pnlen ((const char *)b, (int)(buf + 1024 - b))] = 0;
 				r_cons_println (core->cons, (const char *)b);
 				// r_print_string (core->print, core->addr, b,
-				// (size_t) (e-b), 0);
+				// strlen ((const char *)b), 0);
 				free (buf);
 			}
 			break;

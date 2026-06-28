@@ -2020,6 +2020,17 @@ R_API size_t r_str_nlen(const char *str, int n) {
 	return len;
 }
 
+R_API size_t r_str_pnlen(const char *str, int n) {
+	R_RETURN_VAL_IF_FAIL (str && n >= 0, 0);
+	size_t len = 0;
+	while (n > 0 && IS_PRINTABLE ((ut8)*str)) {
+		len++;
+		str++;
+		n--;
+	}
+	return len;
+}
+
 // to handle wide string as well
 // XXX can be error prone
 R_API size_t r_str_nlen_w(const char *str, int n) {
@@ -2415,16 +2426,8 @@ R_API size_t r_str_utf8_charsize_last(const char *str) {
 }
 
 R_API void r_str_filter_zeroline(char *str, int len) {
-	int i;
-	for (i = 0; i < len && str[i]; i++) {
-		if (str[i] == '\n' || str[i] == '\r') {
-			break;
-		}
-		if (!IS_PRINTABLE (str[i])) {
-			break;
-		}
-	}
-	str[i] = 0;
+	R_RETURN_IF_FAIL (str);
+	str[r_str_pnlen (str, len)] = 0;
 }
 
 R_API void r_str_filter(char *str, int len) {
