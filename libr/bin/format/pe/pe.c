@@ -4107,22 +4107,23 @@ fail:
 	return NULL;
 }
 
-static bool bin_pe_append_lib(RVecPELib *libs, char *name) {
+static bool bin_pe_append_lib(RVecPELib *libs, HtPP *lib_map, char *name) {
 	if (R_STR_ISEMPTY (name)) {
 		return true;
 	}
 	r_str_case (name, 0);
-	struct r_bin_pe_lib_t *lib;
-	R_VEC_FOREACH (libs, lib) {
-		if (!strcmp (lib->name, name)) {
-			return true;
-		}
+	if (sdb_ht_find (lib_map, name, NULL)) {
+		return true;
 	}
-	lib = RVecPELib_emplace_back (libs);
+	struct r_bin_pe_lib_t *lib = RVecPELib_emplace_back (libs);
 	if (!lib) {
 		return false;
 	}
 	r_str_ncpy (lib->name, name, sizeof (lib->name));
+	if (!sdb_ht_insert (lib_map, lib->name, "a")) {
+		RVecPELib_pop_back (libs);
+		return false;
+	}
 	return true;
 }
 
@@ -4138,6 +4139,11 @@ RVecPELib *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
 	ut64 off; // cache value
 	RVecPELib *libs = RVecPELib_new ();
 	if (!libs) {
+		return NULL;
+	}
+	HtPP *lib_map = sdb_ht_new ();
+	if (!lib_map) {
+		RVecPELib_free (libs);
 		return NULL;
 	}
 
@@ -4170,7 +4176,7 @@ RVecPELib *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
 				break;
 			}
 			name[len - 1] = '\0';
-			if (!bin_pe_append_lib (libs, name)) {
+			if (!bin_pe_append_lib (libs, lib_map, name)) {
 				goto out_error;
 			}
 		next:
@@ -4207,7 +4213,7 @@ RVecPELib *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
 				break;
 			}
 			name[len - 1] = '\0';
-			if (!bin_pe_append_lib (libs, name)) {
+			if (!bin_pe_append_lib (libs, lib_map, name)) {
 				goto out_error;
 			}
 			did++;
@@ -4215,8 +4221,10 @@ RVecPELib *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
 				&curr_delay_import_dir);
 		}
 	}
+	sdb_ht_free (lib_map);
 	return libs;
 out_error:
+	sdb_ht_free (lib_map);
 	RVecPELib_free (libs);
 	return NULL;
 }
