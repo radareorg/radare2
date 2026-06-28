@@ -134,51 +134,49 @@ void PE_(r_bin_mdmp_pe_load_sections) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin, R
 	if (!pe_bin || !vec) {
 		return;
 	}
-	int i;
 	ut64 ba = pe_bin->vaddr; //baddr (arch);
-	struct r_bin_pe_section_t *sections = NULL;
-	if (!pe_bin->bin || !(sections = pe_bin->bin->sections)) {
+	if (!pe_bin->bin) {
 		return;
 	}
-	PE_(r_bin_pe_check_sections)
-	(pe_bin->bin, &sections);
-	for (i = 0; !sections[i].last; i++) {
+	PE_(r_bin_pe_check_sections) (pe_bin->bin);
+	struct r_bin_pe_section_t *section;
+	R_VEC_FOREACH (&pe_bin->bin->sections, section) {
 		RBinSection *ptr = RVecRBinSection_emplace_back (vec);
 		if (!ptr) {
 			break;
 		}
-		if (sections[i].name[0]) {
-			ptr->name = strdup ((char *)sections[i].name);
+		if (section->name[0]) {
+			ptr->name = strdup ((char *)section->name);
 		} else {
 			ptr->name = strdup ("");
 		}
-		ptr->size = sections[i].size;
+		ptr->size = section->size;
 		if (ptr->size > pe_bin->bin->size) {
-			if (sections[i].vsize < pe_bin->bin->size) {
-				ptr->size = sections[i].vsize;
+			if (section->vsize < pe_bin->bin->size) {
+				ptr->size = section->vsize;
 			} else {
 				//hack give it page size
 				ptr->size = 4096;
 			}
 		}
-		ptr->vsize = sections[i].vsize;
+		ptr->vsize = section->vsize;
 		if (!ptr->vsize && ptr->size) {
 			ptr->vsize = ptr->size;
 		}
-		ptr->paddr = sections[i].paddr + pe_bin->paddr;
-		ptr->vaddr = sections[i].vaddr + ba;
+		ptr->paddr = section->paddr + pe_bin->paddr;
+		ptr->vaddr = section->vaddr + ba;
 		ptr->add = false;
 		ptr->perm = 0;
-		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].perm)) {
+		if (R_BIN_PE_SCN_IS_EXECUTABLE (section->perm)) {
 			ptr->perm |= R_PERM_X;
 		}
-		if (R_BIN_PE_SCN_IS_WRITABLE (sections[i].perm)) {
+		if (R_BIN_PE_SCN_IS_WRITABLE (section->perm)) {
 			ptr->perm |= R_PERM_W;
 		}
-		if (R_BIN_PE_SCN_IS_READABLE (sections[i].perm)) {
+		if (R_BIN_PE_SCN_IS_READABLE (section->perm)) {
 			ptr->perm |= R_PERM_R;
 		}
-		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].perm)) {
+		if (R_BIN_PE_SCN_IS_SHAREABLE (section->perm)) {
 			ptr->perm |= R_PERM_SHAR;
 		}
 		if ((ptr->perm & R_PERM_R) && !(ptr->perm & R_PERM_X) && ptr->size > 0) {

@@ -204,63 +204,63 @@ static RList* entries(RBinFile *bf) {
 
 static bool sections_vec(RBinFile *bf) {
 	ut64 ba = baddr (bf);
-	int i;
+	int i = 0;
 	const int limit = bf->rbin->options.limit;
 
 	RBinPEObj *pe = PE_(get) (bf);
-	if (!pe || !pe->sections) {
+	if (!pe) {
 		return false;
 	}
 	RVecRBinSection_clear (&bf->bo->sections_vec);
-	struct r_bin_pe_section_t *sections = pe->sections;
 	const ut64 file_size = pe_file_size_bound (bf, pe);
 
-	PE_(r_bin_pe_check_sections) (pe, &sections);
-	for (i = 0; !sections[i].last; i++) {
+	PE_(r_bin_pe_check_sections) (pe);
+	struct r_bin_pe_section_t *section;
+	R_VEC_FOREACH (&pe->sections, section) {
 		if (limit > 0 && RVecRBinSection_length (&bf->bo->sections_vec) >= (size_t)limit) {
 			break;
 		}
 		RBinSection *sec = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (R_STR_ISNOTEMPTY (sections[i].name)) {
-			sec->name = strdup ((const char*)sections[i].name);
+		if (R_STR_ISNOTEMPTY (section->name)) {
+			sec->name = strdup ((const char*)section->name);
 		} else {
 			R_LOG_WARN ("Missing name for section");
 			sec->name = r_str_newf ("noname%d", i);
 		}
-		sec->size = sections[i].size;
-		const bool invalid_raw_range = sec->size > file_size || (sec->size > 0 && sections[i].paddr >= file_size);
+		sec->size = section->size;
+		const bool invalid_raw_range = sec->size > file_size || (sec->size > 0 && section->paddr >= file_size);
 		if (sec->size > file_size) {
-			if (sections[i].vsize < file_size) {
-				sec->size = sections[i].vsize;
+			if (section->vsize < file_size) {
+				sec->size = section->vsize;
 			} else {
 				//hack give it page size
 				sec->size = 4096;
 			}
 		}
-		sec->vsize = sections[i].vsize;
+		sec->vsize = section->vsize;
 		if (!sec->vsize && sec->size) {
 			sec->vsize = sec->size;
 		}
 		if (invalid_raw_range && sec->vsize > sec->size) {
 			sec->vsize = sec->size;
 		}
-		sec->paddr = sections[i].paddr;
-		sec->vaddr = sections[i].vaddr + ba;
+		sec->paddr = section->paddr;
+		sec->vaddr = section->vaddr + ba;
 		sec->add = true;
 		sec->perm = 0;
-		sec->flags = sections[i].flags;
-		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].perm)) {
+		sec->flags = section->flags;
+		if (R_BIN_PE_SCN_IS_EXECUTABLE (section->perm)) {
 			sec->perm |= R_PERM_X;
 			sec->perm |= R_PERM_R; // implicit
 		}
-		if (R_BIN_PE_SCN_IS_WRITABLE (sections[i].perm)) {
+		if (R_BIN_PE_SCN_IS_WRITABLE (section->perm)) {
 			sec->perm |= R_PERM_W;
 		}
-		if (R_BIN_PE_SCN_IS_READABLE (sections[i].perm)) {
+		if (R_BIN_PE_SCN_IS_READABLE (section->perm)) {
 			sec->perm |= R_PERM_R;
 		}
 		// this is causing may tests to fail because rx != srx
-		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].perm)) {
+		if (R_BIN_PE_SCN_IS_SHAREABLE (section->perm)) {
 			sec->perm |= R_PERM_SHAR;
 		}
 		if ((sec->perm & R_PERM_RW) && !(sec->perm & R_PERM_X) && sec->size > 0) {
@@ -269,6 +269,7 @@ static bool sections_vec(RBinFile *bf) {
 				sec->is_data = true;
 			}
 		}
+		i++;
 	}
 	return true;
 }
