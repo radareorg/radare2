@@ -899,8 +899,14 @@ R_API RVecRBinSection *r_bin_file_get_sections_vec(RBinFile *bf) {
 
 R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	R_RETURN_VAL_IF_FAIL (o, NULL);
-	RBinSection *section;
-	// TODO: must be O (1) .. use memoization or tree or so
+	RBinSection *section = o->cached_section;
+	if (section) {
+		ut64 from = va? o->baddr_shift + section->vaddr: section->paddr;
+		ut64 to = from + (va? section->vsize: section->size);
+		if (off >= from && off < to) {
+			return section;
+		}
+	}
 	R_VEC_FOREACH (&o->sections_vec, section) {
 		if (section->is_segment) {
 			continue;
@@ -908,9 +914,11 @@ R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 		ut64 from = va? o->baddr_shift + section->vaddr: section->paddr;
 		ut64 to = from + (va? section->vsize: section->size);
 		if (off >= from && off < to) {
+			o->cached_section = section;
 			return section;
 		}
 	}
+	o->cached_section = NULL;
 	return NULL;
 }
 
