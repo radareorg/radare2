@@ -924,6 +924,7 @@ RUN
 NAME=/as x86_64 syscall search repeatability
 FILE=-
 CMDS=<<EOF
+e bin.cache=true
 e asm.arch=x86
 e asm.bits=64
 e asm.os=linux
@@ -946,6 +947,22 @@ EXPECT=<<EOF
 0x00000012 futex
 0x00000019 rt_sigprocmask
 0x0000001e futex
+EOF
+RUN
+
+NAME=/as x86_64 syscall candidate scan
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+wx b8010000000f34b83c000000cd80b83c000000660f05
+/as
+EOF
+EXPECT=<<EOF
+0x00000005 write
+0x0000000c exit
+0x00000013 exit
 EOF
 RUN
 
@@ -974,6 +991,47 @@ af @ 0
 /as
 EOF
 EXPECT=<<EOF
+EOF
+RUN
+
+NAME=/as arm64 aligned svc candidate
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e asm.os=linux
+wx a80b80d2010000d4
+/as
+EOF
+EXPECT=<<EOF
+0x00000004 exit
+EOF
+RUN
+
+NAME=/as arm64 unaligned svc candidate ignored
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e asm.os=linux
+wx 00010000d4
+/as
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=/as thumb svc candidate
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.os=linux
+wx 012700df
+/as
+EOF
+EXPECT=<<EOF
+0x00000002 exit
 EOF
 RUN
 

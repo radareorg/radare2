@@ -841,43 +841,616 @@ static SyscallNumberAt syscall_function_number_at(RCore *core, SyscallRegMap *re
 	return SYSNUM_AT_NONE;
 }
 
-static void do_syscall_search(RCore *core, struct search_parameters *param) {
-	RSearch *search = core->search;
+static RAnalFunction *syscall_function_covered_at(RCore *core, ut64 at, ut64 *covered_until) {
+	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, at);
+	if (!bb || !bb->fcns || r_list_empty (bb->fcns)) {
+		*covered_until = 0;
+		return NULL;
+	}
+	if (bb->size > UT64_MAX - bb->addr) {
+		*covered_until = UT64_MAX;
+	} else {
+		*covered_until = bb->addr + bb->size;
+	}
+	if (*covered_until <= at) {
+		*covered_until = at + 1;
+	}
+	return r_list_first (bb->fcns);
+}
+
+typedef enum {
+	SYSCALL_SEARCH_UNSUPPORTED,
+	SYSCALL_SEARCH_X86,
+	SYSCALL_SEARCH_ARM64,
+	SYSCALL_SEARCH_ARM32,
+	SYSCALL_SEARCH_THUMB
+} SyscallSearchKind;
+
+static int syscall_addr_cmp(const ut64 *a, const ut64 *b) {
+	return (*a > *b)? 1: (*a < *b)? -1: 0;
+}
+
+static bool syscall_candidate_aligned(ut64 addr, int natural_align, int search_align) {
+	if (natural_align > 1 && (addr % natural_align)) {
+		return false;
+	}
+	return search_align <= 1 || !(addr % search_align);
+}
+
+static bool syscall_candidate_add(RVecSearchAddr *candidates, ut64 addr) {
+	ut64 *slot = RVecSearchAddr_emplace_back (candidates);
+	if (!slot) {
+		return false;
+	}
+	*slot = addr;
+	return true;
+}
+
+static SyscallSearchKind syscall_search_kind(RCore *core) {
+	RArchConfig *cfg = R_UNWRAP3 (core, anal, config);
+	const char *arch = cfg? cfg->arch: NULL;
+	if (r_str_startswith (arch, "x86")) {
+		return SYSCALL_SEARCH_X86;
+	}
+	if (arch && !strcmp (arch, "arm")) {
+		if (cfg->bits == 64) {
+			return SYSCALL_SEARCH_ARM64;
+		}
+		if (cfg->bits == 16) {
+			return SYSCALL_SEARCH_THUMB;
+		}
+		if (cfg->bits == 32) {
+			return SYSCALL_SEARCH_ARM32;
+		}
+	}
+	return SYSCALL_SEARCH_UNSUPPORTED;
+}
+
+static bool syscall_x86_prefix_byte(ut8 b, int bits) {
+	if (b == 0xf0 || b == 0xf2 || b == 0xf3 || b == 0x2e || b == 0x36 || b == 0x3e
+			|| b == 0x26 || b == 0x64 || b == 0x65 || b == 0x66 || b == 0x67) {
+		return true;
+	}
+	return bits == 64 && b >= 0x40 && b <= 0x4f;
+}
+
+static const char syscall_cand_direct[] = "direct";
+static const char syscall_cand_x86_prefixable[] = "x86-prefixable";
+
+typedef struct {
+	RCore *core;
+	RVecSearchAddr *candidates;
+	ut64 from;
+	int search_align;
+	int natural_align;
+	int bits;
+	bool ok;
+} SyscallCandidateSearchCtx;
+
+typedef struct {
+	RCore *core;
+	struct search_parameters *param;
+	SyscallRegMap *regmap;
+	RVecSyscallFunctionCache *fcn_cache;
+	const char *screg;
+	int kwidx;
+	int *count;
+	bool isx86;
+} SyscallSearchCtx;
+
+static int syscall_gcd_int(int a, int b) {
+	while (b) {
+		const int t = a % b;
+		a = b;
+		b = t;
+	}
+	return a;
+}
+
+static int syscall_effective_align(int natural_align, int search_align) {
+	if (natural_align <= 1) {
+		return search_align > 1? search_align: 0;
+	}
+	if (search_align <= 1) {
+		return natural_align;
+	}
+	const int gcd = syscall_gcd_int (natural_align, search_align);
+	const int div = natural_align / gcd;
+	if (div > ST32_MAX / search_align) {
+		return 0;
+	}
+	return div * search_align;
+}
+
+static int syscall_code_align(RCore *core) {
+	const int align = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
+	return R_MAX (1, align);
+}
+
+static bool syscall_candidate_search_add(SyscallCandidateSearchCtx *ctx, ut64 addr) {
+	if (!syscall_candidate_aligned (addr, ctx->natural_align, ctx->search_align)) {
+		return true;
+	}
+	ctx->ok = syscall_candidate_add (ctx->candidates, addr);
+	return ctx->ok;
+}
+
+static void syscall_collect_x86_prefix_candidates(SyscallCandidateSearchCtx *ctx, ut64 where) {
+	ut8 buf[14];
+	int n;
+	int i;
+	if (where <= ctx->from) {
+		return;
+	}
+	n = (int)R_MIN ((ut64)sizeof (buf), where - ctx->from);
+	if (!r_io_read_at (ctx->core->io, where - n, buf, n)) {
+		return;
+	}
+	for (i = n - 1; i >= 0; i--) {
+		const ut8 b = buf[i];
+		if (!syscall_x86_prefix_byte (b, ctx->bits)) {
+			break;
+		}
+		if (!syscall_candidate_search_add (ctx, where - (n - i))) {
+			break;
+		}
+	}
+}
+
+static int syscall_candidate_search_hit(RSearchKeyword *kw, void *user, ut64 where) {
+	SyscallCandidateSearchCtx *ctx = (SyscallCandidateSearchCtx *)user;
+	if (!syscall_candidate_search_add (ctx, where)) {
+		return 0;
+	}
+	if ((const void *)kw->data == (const void *)syscall_cand_x86_prefixable) {
+		syscall_collect_x86_prefix_candidates (ctx, where);
+	}
+	return ctx->ok? 1: 0;
+}
+
+static bool syscall_search_kw_add(RSearch *search, const ut8 *bytes, int len, const ut8 *mask, int mask_len, const char *data, int align) {
+	RSearchKeyword *kw = r_search_keyword_new (bytes, len, mask, mask_len, data);
+	if (!kw) {
+		return false;
+	}
+	kw->align = align;
+	if (!r_search_kw_add (search, kw)) {
+		r_search_keyword_free (kw);
+		return false;
+	}
+	return true;
+}
+
+static bool syscall_candidate_search_init(RSearch *search, SyscallSearchKind kind, bool be, int align) {
+	switch (kind) {
+	case SYSCALL_SEARCH_X86: {
+		static const ut8 syscall_bytes[] = { 0x0f, 0x05 };
+		static const ut8 sysenter_bytes[] = { 0x0f, 0x34 };
+		static const ut8 int_bytes[] = { 0xcd, 0x00 };
+		static const ut8 int_mask[] = { 0xff, 0x00 };
+		static const ut8 int1_bytes[] = { 0xf1 };
+		static const ut8 into_bytes[] = { 0xce };
+		return syscall_search_kw_add (search, syscall_bytes, sizeof (syscall_bytes), NULL, 0, syscall_cand_x86_prefixable, 0)
+			&& syscall_search_kw_add (search, sysenter_bytes, sizeof (sysenter_bytes), NULL, 0, syscall_cand_x86_prefixable, 0)
+			&& syscall_search_kw_add (search, int_bytes, sizeof (int_bytes), int_mask, sizeof (int_mask), syscall_cand_direct, align)
+			&& syscall_search_kw_add (search, int1_bytes, sizeof (int1_bytes), NULL, 0, syscall_cand_direct, align)
+			&& syscall_search_kw_add (search, into_bytes, sizeof (into_bytes), NULL, 0, syscall_cand_direct, align);
+	}
+	case SYSCALL_SEARCH_ARM64: {
+		static const ut8 arm64_le_bytes[] = { 0x01, 0x00, 0x00, 0xd4 };
+		static const ut8 arm64_le_mask[] = { 0x1f, 0x00, 0xe0, 0xff };
+		static const ut8 arm64_be_bytes[] = { 0xd4, 0x00, 0x00, 0x01 };
+		static const ut8 arm64_be_mask[] = { 0xff, 0xe0, 0x00, 0x1f };
+		const ut8 *bytes = be? arm64_be_bytes: arm64_le_bytes;
+		const ut8 *mask = be? arm64_be_mask: arm64_le_mask;
+		return syscall_search_kw_add (search, bytes, 4, mask, 4, syscall_cand_direct, align);
+	}
+	case SYSCALL_SEARCH_ARM32: {
+		static const ut8 arm32_le_bytes[] = { 0x00, 0x00, 0x00, 0x0f };
+		static const ut8 arm32_le_mask[] = { 0x00, 0x00, 0x00, 0x0f };
+		static const ut8 arm32_be_bytes[] = { 0x0f, 0x00, 0x00, 0x00 };
+		static const ut8 arm32_be_mask[] = { 0x0f, 0x00, 0x00, 0x00 };
+		const ut8 *bytes = be? arm32_be_bytes: arm32_le_bytes;
+		const ut8 *mask = be? arm32_be_mask: arm32_le_mask;
+		return syscall_search_kw_add (search, bytes, 4, mask, 4, syscall_cand_direct, align);
+	}
+	case SYSCALL_SEARCH_THUMB: {
+		static const ut8 thumb_le_bytes[] = { 0x00, 0xdf };
+		static const ut8 thumb_le_mask[] = { 0x00, 0xff };
+		static const ut8 thumb_be_bytes[] = { 0xdf, 0x00 };
+		static const ut8 thumb_be_mask[] = { 0xff, 0x00 };
+		const ut8 *bytes = be? thumb_be_bytes: thumb_le_bytes;
+		const ut8 *mask = be? thumb_be_mask: thumb_le_mask;
+		return syscall_search_kw_add (search, bytes, 2, mask, 2, syscall_cand_direct, align);
+	}
+	default:
+		return false;
+	}
+}
+
+static bool syscall_collect_candidates(RCore *core, RVecSearchAddr *candidates, SyscallSearchKind kind, ut64 from, ut64 to, int search_align) {
+	const RArchConfig *cfg = R_UNWRAP3 (core, anal, config);
+	const bool be = cfg && R_ARCH_CONFIG_IS_BIG_ENDIAN (cfg);
+	const int bits = cfg? cfg->bits: 0;
+	const int natural_align = syscall_code_align (core);
+	const int effective_align = syscall_effective_align (natural_align, search_align);
+	const int bsize = R_MAX (4096, core->blocksize);
+	RSearch *search = r_search_new (R_SEARCH_KEYWORD);
+	SyscallCandidateSearchCtx ctx = { core, candidates, from, search_align, natural_align, bits, true };
+	ut8 *buf;
+	ut64 at = from;
+
+	if (!search) {
+		return false;
+	}
+	search->align = kind == SYSCALL_SEARCH_X86? 0: effective_align;
+	search->overlap = true;
+	search->contiguous = 1;
+	r_search_set_callback (search, syscall_candidate_search_hit, &ctx);
+	if (!syscall_candidate_search_init (search, kind, be, effective_align)) {
+		r_search_free (search);
+		return false;
+	}
+	r_search_begin (search);
+	buf = malloc (bsize);
+	if (!buf) {
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
+		r_search_free (search);
+		return false;
+	}
+	while (at < to) {
+		const ut64 left = to - at;
+		const int len = (int)R_MIN ((ut64)bsize, left);
+		if (r_cons_is_breaked (core->cons)) {
+			break;
+		}
+		if (!r_io_read_at (core->io, at, buf, len)) {
+			ctx.ok = false;
+			break;
+		}
+		if (r_search_update (search, at, buf, len) == -1 || !ctx.ok) {
+			ctx.ok = false;
+			break;
+		}
+		at += len;
+	}
+	free (buf);
+	r_search_free (search);
+	if (ctx.ok) {
+		RVecSearchAddr_sort (candidates, syscall_addr_cmp);
+		RVecSearchAddr_uniq (candidates, syscall_addr_cmp);
+	}
+	return ctx.ok;
+}
+
+static int syscall_read_op(RCore *core, ut64 at, ut64 to, ut8 *buf, int buflen) {
+	if (at >= to) {
+		return 0;
+	}
+	int len = (int)R_MIN ((ut64)buflen, to - at);
+	return r_io_read_at (core->io, at, buf, len)? len: 0;
+}
+
+static bool syscall_handle_hit(SyscallSearchCtx *ctx, RAnalOp *op, int oplen, RAnalFunction *fcn, SyscallRegValue fallback, bool have_fallback) {
+	RCore *core = ctx->core;
+	struct search_parameters *param = ctx->param;
+	int scVector = op->val; // int 0x80, svc 0x70, ...
+	int scNumber = -1; // r0/eax/...
+	SyscallNumberAt fcn_num = SYSNUM_AT_NONE;
+	if (fcn) {
+		fcn_num = syscall_function_number_at (core, ctx->regmap, ctx->fcn_cache, fcn, ctx->screg, op->addr, &scNumber);
+	}
+	if (fcn && fcn_num == SYSNUM_AT_NONE) {
+		return true;
+	}
+	if (fcn_num == SYSNUM_AT_NONE && have_fallback) {
+		const bool valid_fallback = (fallback.kind == SYSREG_VAL_CONST) && (fallback.value <= 0xFFFFF);
+		scNumber = valid_fallback? (int)fallback.value: -1;
+	}
+	if (ctx->isx86 && op->val == 0 && op->bytes && ((op->bytes[0] == 0xcd) || (op->bytes[0] == 0x64))) {
+		return true;
+	}
+	if (scNumber < 0 || scNumber > 0xFFFFF) {
+		if (ctx->isx86 && fcn_num == SYSNUM_AT_UNKNOWN) {
+			return true;
+		}
+		scNumber = op->val;
+		if (scNumber < 0 || scNumber > 0xFFFFF) {
+			R_LOG_DEBUG ("Invalid syscall number %d at 0x%08"PFMT64x, scNumber, op->addr);
+			return true;
+		}
+	}
+	scVector = (op->val > 0)? op->val: -1; // int 0x80 (op->val = 0x80)
+	RSyscallItem *item = r_syscall_get (core->anal->syscall, scNumber, scVector);
+	if (!item && !ctx->isx86 && scVector > 10 && scVector < 200) {
+		item = r_syscall_get (core->anal->syscall, scVector, -1);
+	}
+	if (item) {
+		if (param->pj) {
+			pj_o (param->pj);
+			pj_kn (param->pj, "addr", op->addr);
+			pj_ks (param->pj, "name", item->name);
+			pj_kn (param->pj, "sysnum", item->num);
+			if (op->val && op->val != UT64_MAX) {
+				pj_kn (param->pj, "num", op->val);
+			}
+			pj_end (param->pj);
+		} else {
+			r_cons_printf (core->cons, "0x%08"PFMT64x" %s\n", op->addr, item->name);
+		}
+	} else {
+		R_LOG_DEBUG ("Cant find an syscall for %d %d", scNumber, scVector);
+	}
+	if (param->searchflags) {
+		char *flag = r_str_newf ("%s%d_%d.%s", param->searchprefix, ctx->kwidx, *ctx->count, item? item->name: "syscall");
+		r_flag_set (core->flags, flag, op->addr, oplen);
+		free (flag);
+	}
+	r_syscall_item_free (item);
+	if (*param->cmd_hit) {
+		ut64 here = core->addr;
+		r_core_seek (core, op->addr, true);
+		r_core_cmd (core, param->cmd_hit, 0);
+		r_core_seek (core, here, true);
+	}
+	(*ctx->count)++;
+	return (core->search->maxhits <= 0) || (*ctx->count < core->search->maxhits);
+}
+
+static bool syscall_process_function_block_candidates(SyscallSearchCtx *ctx, RVecSearchAddr *candidates, size_t *candidate_idx, RAnalBlock *bb) {
+	RCore *core = ctx->core;
+	const size_t candidate_count = RVecSearchAddr_length (candidates);
+	ut64 block_end = bb->size > UT64_MAX - bb->addr? UT64_MAX: bb->addr + bb->size;
+	bool keep_going = true;
+
+	while (*candidate_idx < candidate_count) {
+		ut64 *candidate = RVecSearchAddr_at (candidates, *candidate_idx);
+		if (!candidate || *candidate >= block_end) {
+			break;
+		}
+		if (*candidate < bb->addr) {
+			(*candidate_idx)++;
+			continue;
+		}
+		if (r_anal_block_op_starts_at (bb, *candidate)) {
+			RAnalOp op = {0};
+			ut8 opbuf[64];
+			int len = syscall_read_op (core, *candidate, block_end, opbuf, sizeof (opbuf));
+			int oplen = r_anal_op (core->anal, &op, *candidate, opbuf, len, R_ARCH_OP_MASK_VAL);
+			if (oplen > 0 && (op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_SWI) {
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, *candidate, 0);
+				keep_going = syscall_handle_hit (ctx, &op, oplen, fcn, syscall_reg_unknown (), false);
+			}
+			r_anal_op_fini (&op);
+			if (!keep_going) {
+				break;
+			}
+		}
+		(*candidate_idx)++;
+	}
+	return keep_going;
+}
+
+static bool syscall_search_candidates(SyscallSearchCtx *ctx, RIOMap *map, SyscallSearchKind kind) {
+	RCore *core = ctx->core;
+	RVecSearchAddr candidates;
+	ut64 from = r_io_map_begin (map);
+	ut64 to = r_io_map_end (map);
+	SyscallRegState local_state;
+	const int mininstrsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
+	const int minopcode = R_MAX (1, mininstrsz);
+	const int natural_align = syscall_code_align (core);
+	int bsize = R_MAX (64, core->blocksize);
+	ut8 *buf;
+	size_t candidate_idx = 0;
+	ut64 buf_at = UT64_MAX;
+	bool keep_going = true;
+
+	RVecSearchAddr_init (&candidates);
+	if (!syscall_collect_candidates (core, &candidates, kind, from, to, core->search->align)) {
+		RVecSearchAddr_fini (&candidates);
+		return false;
+	}
+	const size_t candidate_count = RVecSearchAddr_length (&candidates);
+	if (candidate_count < 1) {
+		RVecSearchAddr_fini (&candidates);
+		return true;
+	}
+	if (!syscall_state_init (&local_state, ctx->regmap, true)) {
+		RVecSearchAddr_fini (&candidates);
+		return false;
+	}
+	syscall_state_set_unknown (&local_state, true);
+	buf = malloc (bsize);
+	if (!buf) {
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
+		syscall_state_fini (&local_state);
+		RVecSearchAddr_fini (&candidates);
+		return false;
+	}
+	const ut64 last_candidate = *RVecSearchAddr_last (&candidates);
+	ut64 at = from;
+	if (natural_align > 1 && (at % natural_align)) {
+		at += natural_align - (at % natural_align);
+	}
+	while (at < to && at <= last_candidate) {
+		RAnalOp op = {0};
+		int ret = 0;
+		if (r_cons_is_breaked (core->cons)) {
+			keep_going = false;
+			break;
+		}
+		while (candidate_idx < candidate_count) {
+			ut64 *candidate = RVecSearchAddr_at (&candidates, candidate_idx);
+			if (candidate && *candidate >= at) {
+				break;
+			}
+			candidate_idx++;
+		}
+		if (candidate_idx >= candidate_count) {
+			break;
+		}
+		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, at);
+		if (bb && bb->fcns && !r_list_empty (bb->fcns)) {
+			keep_going = syscall_process_function_block_candidates (ctx, &candidates, &candidate_idx, bb);
+			syscall_state_set_unknown (&local_state, true);
+			if (!keep_going) {
+				break;
+			}
+			if (bb->size > UT64_MAX - bb->addr) {
+				break;
+			}
+			if (bb->addr + bb->size <= at) {
+				at++;
+			} else {
+				at = bb->addr + bb->size;
+			}
+			buf_at = UT64_MAX;
+			continue;
+		}
+		if (buf_at == UT64_MAX || at < buf_at || at - buf_at >= (ut64)(bsize - 32)) {
+			buf_at = at;
+			if (!r_io_read_at (core->io, at, buf, bsize)) {
+				keep_going = false;
+				break;
+			}
+		}
+		const int buf_delta = (int)(at - buf_at);
+		ret = r_anal_op (core->anal, &op, at, buf + buf_delta, bsize - buf_delta, R_ARCH_OP_MASK_VAL);
+		if (ret > 0 && candidate_idx < candidate_count) {
+			ut64 *candidate = RVecSearchAddr_at (&candidates, candidate_idx);
+				if (candidate && *candidate == at && (op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_SWI) {
+					RAnalBlock *opbb = r_anal_bb_from_offset (core->anal, at);
+					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
+					SyscallRegValue fallback = syscall_state_read (ctx->regmap, &local_state, ctx->screg);
+					if (!opbb || r_anal_block_op_starts_at (opbb, at)) {
+						keep_going = syscall_handle_hit (ctx, &op, ret, fcn, fallback, !fcn);
+					}
+				candidate_idx++;
+			}
+		}
+		if (ret > 0) {
+			syscall_transfer_op (core, ctx->regmap, &local_state, &op, ctx->screg);
+		}
+		int step = ret > 0? ret: minopcode;
+		if (step < 1) {
+			step = 1;
+		}
+		at += step;
+		r_anal_op_fini (&op);
+		if (!keep_going) {
+			break;
+		}
+	}
+	free (buf);
+	syscall_state_fini (&local_state);
+	RVecSearchAddr_fini (&candidates);
+	return keep_going;
+}
+
+static bool syscall_search_decode_scan(SyscallSearchCtx *ctx, RIOMap *map) {
+	RCore *core = ctx->core;
+	RAnalOp op = {0};
+	SyscallRegState local_state;
+	ut64 from = r_io_map_begin (map);
+	ut64 to = r_io_map_end (map);
 	ut64 at;
-	int count = 0;
-	RAnalOp aop = {0};
-	int i, ret, bsize = R_MAX (64, core->blocksize);
-	int kwidx = core->search->n_kws;
-	RIOMap *map;
-	RListIter *iter;
+	int i, bsize = R_MAX (64, core->blocksize);
 	const int mininstrsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	const int cfg_align = core->search->align;
 	const bool use_align = cfg_align > 0;
-	const int align = use_align? cfg_align: 1;
-	RArchConfig *cfg = R_UNWRAP3 (core, anal, config);
-	const bool isx86 = r_str_startswith (cfg? cfg->arch: NULL, "x86");
-	SyscallRegMap regmap;
-	SyscallRegState local_state;
-	RVecSyscallFunctionCache fcn_cache;
-	const char *screg = get_syscall_register (core);
+	const int align = use_align? R_MAX (1, cfg_align): 1;
 	ut8 *buf = malloc (bsize);
+	bool keep_going = true;
+	bool linear_in_function = false;
+	ut64 covered_until = 0;
+	RAnalFunction *covered_fcn = NULL;
 
 	if (!buf) {
 		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
-		return;
+		return false;
 	}
+	if (!syscall_state_init (&local_state, ctx->regmap, true)) {
+		free (buf);
+		return false;
+	}
+	syscall_state_set_unknown (&local_state, true);
+	at = from;
+	if (use_align && align > 1 && (at % align)) {
+		at += align - (at % align);
+	}
+	for (i = 0; at < to;) {
+		if (r_cons_is_breaked (core->cons)) {
+			keep_going = false;
+			break;
+		}
+		if (i >= (bsize - 32)) {
+			i = 0;
+		}
+		if (!i) {
+			if (!r_io_read_at (core->io, at, buf, bsize)) {
+				keep_going = false;
+				break;
+			}
+		}
+		int ret = r_anal_op (core->anal, &op, at, buf + i, bsize - i, R_ARCH_OP_MASK_VAL);
+		bool op_in_function = false;
+		RAnalFunction *op_fcn = NULL;
+		if (ret > 0) {
+			if (!covered_fcn || at >= covered_until) {
+				covered_fcn = syscall_function_covered_at (core, at, &covered_until);
+			}
+			op_fcn = covered_fcn;
+			op_in_function = (op_fcn != NULL);
+			if (op_in_function != linear_in_function) {
+				syscall_state_set_unknown (&local_state, true);
+				linear_in_function = op_in_function;
+			}
+		}
+		if (((op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_SWI) && ret > 0) {
+			RAnalFunction *fcn = op_fcn? op_fcn: r_anal_get_fcn_in (core->anal, at, 0);
+			SyscallRegValue fallback = syscall_state_read (ctx->regmap, &local_state, ctx->screg);
+			keep_going = syscall_handle_hit (ctx, &op, ret, fcn, fallback, !fcn);
+		}
+		if (ret > 0 && !op_in_function) {
+			syscall_transfer_op (core, ctx->regmap, &local_state, &op, ctx->screg);
+		}
+		int step = use_align? align: ret;
+		if (step < 1) {
+			step = minopcode;
+		}
+		i += step;
+		at += step;
+		r_anal_op_fini (&op);
+		if (!keep_going) {
+			break;
+		}
+	}
+	free (buf);
+	syscall_state_fini (&local_state);
+	return keep_going;
+}
+
+static void do_syscall_search(RCore *core, struct search_parameters *param) {
+	int count = 0;
+	int kwidx = core->search->n_kws;
+	RIOMap *map;
+	RListIter *iter;
+	RArchConfig *cfg = R_UNWRAP3 (core, anal, config);
+	const bool isx86 = r_str_startswith (cfg? cfg->arch: NULL, "x86");
+	const SyscallSearchKind kind = syscall_search_kind (core);
+	SyscallRegMap regmap;
+	RVecSyscallFunctionCache fcn_cache;
+	const char *screg = get_syscall_register (core);
+
 	if (!syscall_regmap_init (&regmap, core->anal->reg)) {
-		free (buf);
-		return;
-	}
-	if (!syscall_state_init (&local_state, &regmap, true)) {
-		free (buf);
-		syscall_regmap_fini (&regmap);
 		return;
 	}
 	RVecSyscallFunctionCache_init (&fcn_cache);
-
+	SyscallSearchCtx sctx = {
+		core, param, &regmap, &fcn_cache, screg, kwidx, &count, isx86
+	};
 	r_cons_break_push (core->cons, NULL, NULL);
 	if (param->pj) {
 		pj_o (param->pj);
@@ -887,135 +1460,30 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
+		bool keep_going;
 		if (from >= to) {
 			R_LOG_ERROR ("from must be lower than to");
-			goto beach;
+			break;
 		}
 		if (to == UT64_MAX) {
 			R_LOG_ERROR ("Invalid destination boundary");
-			goto beach;
+			break;
 		}
-		syscall_state_set_unknown (&local_state, true);
-		for (i = 0, at = from; at < to; at++, i++) {
-			if (r_cons_is_breaked (core->cons)) {
-				break;
-			}
-			if (i >= (bsize - 32)) {
-				i = 0;
-			}
-			if (use_align && align > 1 && (at % align)) {
-				continue;
-			}
-			if (!i) {
-				r_io_read_at (core->io, at, buf, bsize);
-			}
-			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i,
-				R_ARCH_OP_MASK_VAL);
-			if (((aop.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_SWI) && ret > 0) { // && (aop.val > 10)) {
-				int scVector = aop.val; // int 0x80, svc 0x70, ...
-				int scNumber = -1; // r0/eax/...
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
-				SyscallRegValue fallback = syscall_state_read (&regmap, &local_state, screg);
-				SyscallNumberAt fcn_num = SYSNUM_AT_NONE;
-				if (fcn) {
-					fcn_num = syscall_function_number_at (core, &regmap, &fcn_cache, fcn, screg, at, &scNumber);
-				}
-				if (fcn_num == SYSNUM_AT_NONE) {
-					scNumber = (fallback.kind == SYSREG_VAL_CONST && fallback.value <= 0xFFFFF)
-						? (int)fallback.value: -1;
-				}
-				if (isx86 && aop.val == 0 && (aop.bytes[0] == 0xcd || aop.bytes[0] == 0x64)) {
-					goto theverynext;
-				}
-#if 1
-				// scNumber = aop.val;
-				if (scNumber < 0 || scNumber > 0xFFFFF) {
-					if (isx86 && fcn_num == SYSNUM_AT_UNKNOWN) {
-						goto theverynext;
-					}
-					scNumber = aop.val;
-					if (scNumber < 0 || scNumber > 0xFFFFF) {
-						R_LOG_DEBUG ("Invalid syscall number %d at 0x%08"PFMT64x, scNumber, aop.addr);
-						// r_core_cmd0 (core, "dr0");
-						goto theverynext;
-					}
-				}
-#endif
-				scVector = (aop.val > 0)? aop.val: -1; // int 0x80 (aop.val = 0x80)
-				RSyscallItem *item = r_syscall_get (core->anal->syscall, scNumber, scVector);
-				if (!item && !isx86 && scVector > 10 && scVector < 200) {
-					item = r_syscall_get (core->anal->syscall, scVector, -1);
-				}
-				if (item) {
-					if (param->pj) {
-						pj_o (param->pj);
-						pj_kn (param->pj, "addr", at);
-						pj_ks (param->pj, "name", item->name);
-						pj_kn (param->pj, "sysnum", item->num);
-						if (aop.val && aop.val != UT64_MAX) {
-							pj_kn (param->pj, "num", aop.val);
-						}
-						pj_end (param->pj);
-					} else {
-						r_cons_printf (core->cons, "0x%08"PFMT64x" %s\n", at, item->name);
-					}
-#if 0
-				} else {
-					if (param->pj) {
-						pj_o (param->pj);
-						pj_kn (param->pj, "addr", at);
-						pj_kn (param->pj, "sysnum", scNumber);
-						pj_kn (param->pj, "num", scVector);
-						pj_end (param->pj);
-					} else {
-						r_cons_printf (core->cons, "0x%08"PFMT64x" %d\n", at, scNumber);
-					}
-#endif
-				} else {
-					R_LOG_DEBUG ("Cant find an syscall for %d %d", scNumber, scVector);
-				}
-				if (param->searchflags) {
-					char *flag = r_str_newf ("%s%d_%d.%s", param->searchprefix, kwidx, count, item? item->name: "syscall");
-					r_flag_set (core->flags, flag, at, ret);
-					free (flag);
-				}
-				r_syscall_item_free (item);
-				if (*param->cmd_hit) {
-					ut64 here = core->addr;
-					r_core_seek (core, at, true);
-					r_core_cmd (core, param->cmd_hit, 0);
-					r_core_seek (core, here, true);
-				}
-				count++;
-				// r_core_cmd0 (core, "dr0");
-				if (search->maxhits > 0 && count >= search->maxhits) {
-					r_anal_op_fini (&aop);
-					break;
-				}
-			}
-theverynext:
-			{
-				int inc = use_align? align - 1: ret - 1;
-				if (inc < 0) {
-					inc = minopcode;
-				}
-				if (ret > 0) {
-					syscall_transfer_op (core, &regmap, &local_state, &aop, screg);
-				}
-				i += inc;
-				at += inc;
-				r_anal_op_fini (&aop);
-			}
-			}
+		if (kind == SYSCALL_SEARCH_UNSUPPORTED) {
+			// Unsupported architectures keep the old decode-scan search path.
+			keep_going = syscall_search_decode_scan (&sctx, map);
+		} else {
+			keep_going = syscall_search_candidates (&sctx, map, kind);
 		}
-beach:
-		if (param->pj) {
-			pj_end (param->pj);
-			pj_end (param->pj);
+		if (!keep_going) {
+			break;
 		}
-		r_cons_break_pop (core->cons);
-		free (buf);
-		RVecSyscallFunctionCache_fini (&fcn_cache);
-		syscall_state_fini (&local_state);
-		syscall_regmap_fini (&regmap);
 	}
+	if (param->pj) {
+		pj_end (param->pj);
+		pj_end (param->pj);
+	}
+	r_cons_break_pop (core->cons);
+	RVecSyscallFunctionCache_fini (&fcn_cache);
+	syscall_regmap_fini (&regmap);
+}
