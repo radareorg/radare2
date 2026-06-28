@@ -63,8 +63,9 @@ struct r_bin_pe_export_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut64 ordinal;
-	int last;
 };
+
+R_VEC_TYPE (RVecPEExport, struct r_bin_pe_export_t);
 
 struct r_bin_pe_string_t {
 	char string[PE_STRING_LENGTH];
@@ -77,8 +78,9 @@ struct r_bin_pe_string_t {
 
 struct r_bin_pe_lib_t {
 	char name[PE_STRING_LENGTH];
-	int last;
 };
+
+R_VEC_TYPE (RVecPELib, struct r_bin_pe_lib_t);
 
 typedef struct _PE_RESOURCE {
 	char *timestr;
@@ -163,11 +165,11 @@ R_API const char* PE_(r_bin_pe_get_arch)(RBinPEObj* bin);
 R_API char *PE_(r_bin_pe_get_cc)(RBinPEObj* bin);
 R_API struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* bin);
 R_API struct r_bin_pe_addr_t* PE_(r_bin_pe_get_main_vaddr)(RBinPEObj* bin);
-R_API struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(RBinPEObj* bin); // TODO
+R_API RVecPEExport *PE_(r_bin_pe_get_exports)(RBinPEObj* bin);
 R_API int PE_(r_bin_pe_get_file_alignment)(RBinPEObj* bin);
 R_API ut64 PE_(r_bin_pe_get_image_base)(RBinPEObj* bin);
 R_API RVecPEImport *PE_(r_bin_pe_get_imports)(RBinPEObj* bin); // TODO
-R_API struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(RBinPEObj* bin);
+R_API RVecPELib *PE_(r_bin_pe_get_libs)(RBinPEObj* bin);
 R_API int PE_(r_bin_pe_get_image_size)(RBinPEObj* bin);
 R_API char* PE_(r_bin_pe_get_machine)(RBinPEObj* bin);
 R_API char* PE_(r_bin_pe_get_os)(RBinPEObj* bin);

@@ -230,8 +230,7 @@ static RBinInfo *info(RBinFile *bf) {
 
 static RList* libs(RBinFile *bf) {
 	char *ptr = NULL;
-	int i;
-	struct r_bin_pe_lib_t *libs = NULL;
+	RVecPELib *libs = NULL;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
 	RList *ret = NULL;
@@ -252,21 +251,23 @@ static RList* libs(RBinFile *bf) {
 		if (!(libs = Pe32_r_bin_pe_get_libs (pe32_bin->bin))) {
 			return ret;
 		}
-		for (i = 0; !libs[i].last; i++) {
-			ptr = r_str_newf ("[0x%.08" PFMT64x "] - %s", pe32_bin->vaddr, libs[i].name);
+		struct r_bin_pe_lib_t *lib;
+		R_VEC_FOREACH (libs, lib) {
+			ptr = r_str_newf ("[0x%.08" PFMT64x "] - %s", pe32_bin->vaddr, lib->name);
 			r_list_append (ret, ptr);
 		}
-		free (libs);
+		RVecPELib_free (libs);
 	}
 	r_list_foreach (mdmp->pe64_bins, it, pe64_bin) {
 		if (!(libs = Pe64_r_bin_pe_get_libs (pe64_bin->bin))) {
 			return ret;
 		}
-		for (i = 0; !libs[i].last; i++) {
-			ptr = r_str_newf ("[0x%.08"PFMT64x"] - %s", pe64_bin->vaddr, libs[i].name);
+		struct r_bin_pe_lib_t *lib;
+		R_VEC_FOREACH (libs, lib) {
+			ptr = r_str_newf ("[0x%.08"PFMT64x"] - %s", pe64_bin->vaddr, lib->name);
 			r_list_append (ret, ptr);
 		}
-		free (libs);
+		RVecPELib_free (libs);
 	}
 	return ret;
 }
@@ -288,8 +289,7 @@ static bool sections_vec(RBinFile *bf) {
 	struct minidump_module *module;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
-	RList *pe_secs;
-	RListIter *it, *it0, *it1;
+	RListIter *it, *it0;
 	RBinSection *ptr;
 	ut64 index;
 
@@ -362,32 +362,12 @@ static bool sections_vec(RBinFile *bf) {
 		/* Grab the pe sections */
 		r_list_foreach (obj->pe32_bins, it0, pe32_bin) {
 			if (pe32_bin->vaddr == module->base_of_image && pe32_bin->bin) {
-				pe_secs = Pe32_r_bin_mdmp_pe_get_sections(pe32_bin);
-				if (pe_secs) {
-					RBinSection *pe_sec;
-					r_list_foreach (pe_secs, it1, pe_sec) {
-						RBinSection *dst = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-						*dst = *pe_sec;
-						dst->name = pe_sec->name? strdup (pe_sec->name): NULL;
-						dst->format = pe_sec->format? strdup (pe_sec->format): NULL;
-					}
-					r_list_free (pe_secs);
-				}
+				Pe32_r_bin_mdmp_pe_load_sections (pe32_bin, &bf->bo->sections_vec);
 			}
 		}
 		r_list_foreach (obj->pe64_bins, it0, pe64_bin) {
 			if (pe64_bin->vaddr == module->base_of_image && pe64_bin->bin) {
-				pe_secs = Pe64_r_bin_mdmp_pe_get_sections(pe64_bin);
-				if (pe_secs) {
-					RBinSection *pe_sec;
-					r_list_foreach (pe_secs, it1, pe_sec) {
-						RBinSection *dst = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-						*dst = *pe_sec;
-						dst->name = pe_sec->name? strdup (pe_sec->name): NULL;
-						dst->format = pe_sec->format? strdup (pe_sec->format): NULL;
-					}
-					r_list_free (pe_secs);
-				}
+				Pe64_r_bin_mdmp_pe_load_sections (pe64_bin, &bf->bo->sections_vec);
 			}
 		}
 	}

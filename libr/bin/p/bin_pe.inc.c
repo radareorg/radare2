@@ -431,29 +431,29 @@ static char* types(RBinFile *bf) {
 
 static bool symbols_vec(RBinFile *bf) {
 	RBinSymbol *ptr = NULL;
-	struct r_bin_pe_export_t *symbols = NULL;
+	RVecPEExport *symbols = NULL;
 	RVecPEImport *imports = NULL;
-	int i;
 	const int limit = bf->rbin->options.limit;
 
 	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	RBinPEObj *pe = PE_(get) (bf);
 	if ((symbols = PE_(r_bin_pe_get_exports)(pe))) {
-		for (i = 0; !symbols[i].last; i++) {
+		struct r_bin_pe_export_t *symbol;
+		R_VEC_FOREACH (symbols, symbol) {
 			if (limit_reached_vec (ret, limit)) {
 				break;
 			}
 			ptr = RVecRBinSymbol_emplace_back (ret);
-			ptr->name = r_bin_name_new ((char *)symbols[i].name);
-			ptr->libname = *symbols[i].libname ? strdup ((char *)symbols[i].libname) : NULL;
-			ptr->forwarder = r_str_constpool_get (&bf->rbin->constpool, (char *)symbols[i].forwarder);
+			ptr->name = r_bin_name_new ((char *)symbol->name);
+			ptr->libname = *symbol->libname ? strdup ((char *)symbol->libname) : NULL;
+			ptr->forwarder = r_str_constpool_get (&bf->rbin->constpool, (char *)symbol->forwarder);
 			ptr->bind = R_BIN_BIND_GLOBAL_STR;
 			ptr->type = R_BIN_TYPE_FUNC_STR;
-			ptr->vaddr = symbols[i].vaddr;
-			ptr->paddr = symbols[i].paddr;
-			ptr->ordinal = symbols[i].ordinal;
+			ptr->vaddr = symbol->vaddr;
+			ptr->paddr = symbol->paddr;
+			ptr->ordinal = symbol->ordinal;
 		}
-		free (symbols);
+		RVecPEExport_free (symbols);
 	}
 
 	if ((imports = PE_(r_bin_pe_get_imports)(pe))) {
@@ -604,10 +604,9 @@ static RList* relocs(RBinFile *bf) {
 }
 
 static RList* libs(RBinFile *bf) {
-	struct r_bin_pe_lib_t *libs = NULL;
+	RVecPELib *libs = NULL;
 	RList *ret = NULL;
 	char *ptr = NULL;
-	int i;
 	const int limit = bf->rbin->options.limit;
 
 	if (!(ret = r_list_new ())) {
@@ -618,50 +617,43 @@ static RList* libs(RBinFile *bf) {
 	if (!(libs = PE_(r_bin_pe_get_libs)(pe))) {
 		return ret;
 	}
-	for (i = 0; !libs[i].last; i++) {
+	struct r_bin_pe_lib_t *lib;
+	R_VEC_FOREACH (libs, lib) {
 		if (limit_reached (ret, limit)) {
 			break;
 		}
-		ptr = strdup (libs[i].name);
+		ptr = strdup (lib->name);
 		r_list_append (ret, ptr);
 	}
-	free (libs);
+	RVecPELib_free (libs);
 	return ret;
 }
 
-static bool is_dot_net(RBinFile *bf) {
+static bool has_pe_lib(RBinFile *bf, const char *name) {
 	RBinPEObj *pe = PE_(get) (bf);
-	struct r_bin_pe_lib_t *libs = PE_(r_bin_pe_get_libs)(pe);
+	RVecPELib *libs = PE_(r_bin_pe_get_libs)(pe);
 	if (!libs) {
 		return false;
 	}
 
-	size_t i;
-	for (i = 0; !libs[i].last; i++) {
-		if (!strcmp (libs[i].name, "mscoree.dll")) {
-			free (libs);
-			return true;
+	bool found = false;
+	struct r_bin_pe_lib_t *lib;
+	R_VEC_FOREACH (libs, lib) {
+		if (!strcmp (lib->name, name)) {
+			found = true;
+			break;
 		}
 	}
-	free (libs);
-	return false;
+	RVecPELib_free (libs);
+	return found;
+}
+
+static bool is_dot_net(RBinFile *bf) {
+	return has_pe_lib (bf, "mscoree.dll");
 }
 
 static bool is_vb6(RBinFile *bf) {
-	int i;
-	RBinPEObj *pe = PE_(get) (bf);
-	struct r_bin_pe_lib_t *libs = PE_(r_bin_pe_get_libs)(pe);
-	if (!libs) {
-		return false;
-	}
-	for (i = 0; !libs[i].last; i++) {
-		if (!strcmp (libs[i].name, "msvbvm60.dll")) {
-			free (libs);
-			return true;
-		}
-	}
-	free (libs);
-	return false;
+	return has_pe_lib (bf, "msvbvm60.dll");
 }
 
 static bool check_inlined_canary(RBinFile *bf) {
@@ -848,14 +840,14 @@ static bool is_suspicious_library_export(const char *name) {
 
 static bool has_uncaps_exports(RBinPEObj *pe) {
 	R_RETURN_VAL_IF_FAIL (pe, false);
-	struct r_bin_pe_export_t *exports = PE_(r_bin_pe_get_exports) (pe);
+	RVecPEExport *exports = PE_(r_bin_pe_get_exports) (pe);
 	if (!exports) {
 		return false;
 	}
 	const bool is_dll = PE_(r_bin_pe_is_dll) (pe);
 	bool uncaps = false;
 	struct r_bin_pe_export_t *exp;
-	for (exp = exports; !exp->last; exp++) {
+	R_VEC_FOREACH (exports, exp) {
 		const char *name = (const char *)exp->name;
 		if (!R_STR_ISNOTEMPTY (name)) {
 			continue;
@@ -869,7 +861,7 @@ static bool has_uncaps_exports(RBinPEObj *pe) {
 			break;
 		}
 	}
-	free (exports);
+	RVecPEExport_free (exports);
 	return uncaps;
 }
 

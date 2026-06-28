@@ -886,68 +886,36 @@ static int bin_pe_init_hdr(RBinPEObj *pe) {
 	return true;
 }
 
-static struct r_bin_pe_export_t *parse_symbol_table(RBinPEObj *pe, struct r_bin_pe_export_t *exports, int sz) {
-	ut64 sym_tbl_off, num = 0;
-	const int srsz = COFF_SYMBOL_SIZE; // symbol record size
-	struct r_bin_pe_section_t *sections;
-	struct r_bin_pe_export_t *exp;
-	struct r_bin_pe_export_t *new_exports = NULL;
-	const size_t export_t_sz = sizeof (struct r_bin_pe_export_t);
-	int bufsz, i, shsz;
+static void parse_symbol_table(RBinPEObj *pe, RVecPEExport *exports) {
+	if (!pe || !pe->nt_headers || !exports) {
+		return;
+	}
+	const ut64 sym_tbl_off = pe->nt_headers->file_header.PointerToSymbolTable;
+	const ut64 num = pe->nt_headers->file_header.NumberOfSymbols;
+	if (!num || num > (ut64)ST32_MAX / COFF_SYMBOL_SIZE) {
+		return;
+	}
+	const ut64 bufsz64 = num * COFF_SYMBOL_SIZE;
+	if (pe->size < 1 || bufsz64 > (ut64)pe->size) {
+		return;
+	}
+	const size_t length = RVecPEExport_length (exports);
+	if (num > (ut64)(SZT_MAX - length) || !RVecPEExport_reserve (exports, length + (size_t)num)) {
+		return;
+	}
+	char *buf = calloc ((size_t)num, COFF_SYMBOL_SIZE);
+	if (!buf) {
+		return;
+	}
+	const int bufsz = (int)bufsz64;
+	const int shsz = bufsz;
 	ut64 text_off = 0LL;
 	ut64 text_rva = 0LL;
 	int textn = 0;
-	int exports_sz;
 	int symctr = 0;
-	char *buf;
 
-	if (!pe || !pe->nt_headers) {
-		return NULL;
-	}
-
-	sym_tbl_off = pe->nt_headers->file_header.PointerToSymbolTable;
-	num = pe->nt_headers->file_header.NumberOfSymbols;
-	shsz = bufsz = num * srsz;
-	if (bufsz < 1 || bufsz > pe->size) {
-		return NULL;
-	}
-	buf = calloc (num, srsz);
-	if (!buf) {
-		return NULL;
-	}
-	st64 tmp_exports_sz;
-	if (r_mul_overflow ((st64)export_t_sz, (st64)num, &tmp_exports_sz) || tmp_exports_sz > ST32_MAX) {
-		free (buf);
-		return NULL;
-	}
-	exports_sz = (int)tmp_exports_sz;
-	if (exports) {
-		int osz = sz;
-		int newsz;
-		if (r_add_overflow (sz, exports_sz, &newsz) || newsz < 0 || (size_t)newsz + export_t_sz < (size_t)newsz) {
-			free (buf);
-			return NULL;
-		}
-		sz = newsz;
-		new_exports = realloc (exports, sz + export_t_sz);
-		if (!new_exports) {
-			free (buf);
-			return NULL;
-		}
-		exports = new_exports;
-		new_exports = NULL;
-		exp = (struct r_bin_pe_export_t *) (((const ut8 *)exports) + osz);
-	} else {
-		sz = exports_sz;
-		exports = malloc (sz + export_t_sz);
-		exp = exports;
-		if (!exports) {
-			free (buf);
-			return NULL;
-		}
-	}
-
-	sections = pe->sections;
+	struct r_bin_pe_section_t *sections = pe->sections;
+	int i;
 	for (i = 0; i < pe->num_sections; i++) {
 		// XXX search by section with +x permission since the section can be left blank
 		if (!strcmp ((char *)sections[i].name, ".text")) {
@@ -958,8 +926,9 @@ static struct r_bin_pe_export_t *parse_symbol_table(RBinPEObj *pe, struct r_bin_
 	}
 	symctr = 0;
 	if (r_buf_read_at (pe->b, sym_tbl_off, (ut8 *)buf, bufsz) > 0) {
-		for (i = 0; i < shsz; i += srsz) {
-			if (i + srsz > bufsz) {
+		int i;
+		for (i = 0; i < shsz; i += COFF_SYMBOL_SIZE) {
+			if (i + COFF_SYMBOL_SIZE > bufsz) {
 				break;
 			}
 			ut32 value = r_read_le32 (buf + i + 8);
@@ -967,38 +936,37 @@ static struct r_bin_pe_export_t *parse_symbol_table(RBinPEObj *pe, struct r_bin_
 			ut16 symtype = r_read_le16 (buf + i + 14);
 			if (secnum == textn) {
 				if (symtype == 32) {
+					struct r_bin_pe_export_t *exp = RVecPEExport_emplace_back (exports);
+					if (!exp) {
+						break;
+					}
 					char shortname[9];
 					memcpy (shortname, buf + i, 8);
 					shortname[8] = 0;
 					if (*shortname) {
-						strncpy ((char *)exp[symctr].name, shortname, PE_NAME_LENGTH - 1);
-						exp[symctr].name[PE_NAME_LENGTH - 1] = '\0';
+						r_str_ncpy ((char *)exp->name, shortname, sizeof (exp->name));
 					} else {
 						char name[128];
 						ut32 idx = r_read_le32 (buf + i + 4);
 						int nr = r_buf_read_at (pe->b, sym_tbl_off + idx + shsz, (ut8 *)name, sizeof (name));
 						if (nr > 0) {
 							name[R_MIN (nr, (int)sizeof (name)) - 1] = 0;
-							strncpy ((char *)exp[symctr].name, name, PE_NAME_LENGTH - 1);
-							exp[symctr].name[PE_NAME_LENGTH - 1] = '\0';
+							r_str_ncpy ((char *)exp->name, name, sizeof (exp->name));
 						} else {
-							snprintf ((char *)exp[symctr].name, sizeof (exp[symctr].name), "unk_%d", symctr);
+							snprintf ((char *)exp->name, sizeof (exp->name), "unk_%d", symctr);
 						}
 					}
-					exp[symctr].libname[0] = '\0';
-					exp[symctr].vaddr = bin_pe_rva_to_va (pe, text_rva + value);
-					exp[symctr].paddr = text_off + value;
-					exp[symctr].ordinal = symctr;
-					exp[symctr].forwarder[0] = 0;
-					exp[symctr].last = 0;
+					exp->libname[0] = '\0';
+					exp->vaddr = bin_pe_rva_to_va (pe, text_rva + value);
+					exp->paddr = text_off + value;
+					exp->ordinal = symctr;
+					exp->forwarder[0] = 0;
 					symctr++;
 				}
 			}
 		} // for
 	} // if read ok
-	exp[symctr].last = 1;
 	free (buf);
-	return exports;
 }
 
 int PE_(read_image_section_header)(RBuffer *b, ut64 addr, PE_(image_section_header) * section_header) {
@@ -3712,43 +3680,37 @@ RBinPEAddr *PE_(r_bin_pe_get_entrypoint)(RBinPEObj *pe) {
 	return entry;
 }
 
-struct r_bin_pe_export_t *PE_(r_bin_pe_get_exports)(RBinPEObj *pe) {
+RVecPEExport *PE_(r_bin_pe_get_exports)(RBinPEObj *pe) {
 	R_RETURN_VAL_IF_FAIL (pe, NULL);
-	struct r_bin_pe_export_t *exp, *exports = NULL;
 	PE_Word function_ordinal = 0;
 	PE_VWord functions_paddr, names_paddr, ordinals_paddr, function_rva, name_vaddr, name_paddr;
-	char function_name[PE_NAME_LENGTH + 1], forwarder_name[PE_NAME_LENGTH + 1];
-	char dll_name[PE_NAME_LENGTH + 1];
-	PE_(image_data_directory) * data_dir_export;
-	PE_VWord export_dir_rva;
-	int n, i, export_dir_size;
-	st64 exports_sz = 0;
+	char function_name[PE_NAME_LENGTH + 1] = { 0 };
+	char forwarder_name[PE_NAME_LENGTH + 1] = { 0 };
+	char dll_name[PE_NAME_LENGTH + 1] = { 0 };
 
 	if (!pe->data_directory) {
 		return NULL;
 	}
-	data_dir_export = &pe->data_directory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
-	export_dir_rva = data_dir_export->VirtualAddress;
-	export_dir_size = data_dir_export->Size;
+	PE_(image_data_directory) *data_dir_export = &pe->data_directory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
+	PE_VWord export_dir_rva = data_dir_export->VirtualAddress;
+	int export_dir_size = data_dir_export->Size;
+	RVecPEExport *exports = RVecPEExport_new ();
+	if (!exports) {
+		return NULL;
+	}
 	PE_VWord *func_rvas = NULL;
 	PE_Word *ordinals = NULL;
 	if (pe->export_directory) {
-		if (pe->export_directory->NumberOfFunctions + 1 <
-			pe->export_directory->NumberOfFunctions) {
-			// avoid integer overflow
-			return NULL;
-		}
-		exports_sz = (pe->export_directory->NumberOfFunctions + 1) * sizeof (struct r_bin_pe_export_t);
-		// we cant exit with export_sz > pe->size, us r_bin_pe_export_t is 256+256+8+8+8+4 bytes is easy get over file size
-		// to avoid fuzzing we can abort on export_directory->NumberOfFunctions>0xffff
-		if (exports_sz < 0 || pe->export_directory->NumberOfFunctions + 1 > 0xffff) {
-			return NULL;
+		const ut32 nfuncs = pe->export_directory->NumberOfFunctions;
+		// Avoid fuzzing inputs that claim an unreasonable export count.
+		if (nfuncs >= 0xffff) {
+			goto beach;
 		}
 		if (pe->export_directory->NumberOfNames > pe->export_directory->NumberOfFunctions) {
-			return NULL;
+			goto beach;
 		}
-		if (! (exports = malloc (exports_sz))) {
-			return NULL;
+		if (!RVecPEExport_reserve (exports, nfuncs)) {
+			goto beach;
 		}
 		if (r_buf_read_at (pe->b, PE_(va2pa) (pe, pe->export_directory->Name), (ut8 *)dll_name, PE_NAME_LENGTH) < 1) {
 			// we dont stop if dll name cant be read, we set dllname to null and continue
@@ -3761,26 +3723,31 @@ struct r_bin_pe_export_t *PE_(r_bin_pe_get_exports)(RBinPEObj *pe) {
 
 		const size_t names_sz = pe->export_directory->NumberOfNames * sizeof (PE_Word);
 		const size_t funcs_sz = pe->export_directory->NumberOfFunctions * sizeof (PE_VWord);
-		ordinals = malloc (names_sz);
-		func_rvas = malloc (funcs_sz);
-		if (!ordinals || !func_rvas) {
+		ordinals = names_sz ? malloc (names_sz) : NULL;
+		func_rvas = funcs_sz ? malloc (funcs_sz) : NULL;
+		if ((names_sz && !ordinals) || (funcs_sz && !func_rvas)) {
 			goto beach;
 		}
-		int r = r_buf_read_at (pe->b, ordinals_paddr, (ut8 *)ordinals, names_sz);
-		if (r != names_sz) {
+		int r = names_sz ? r_buf_read_at (pe->b, ordinals_paddr, (ut8 *)ordinals, names_sz) : 0;
+		if (r != (int)names_sz) {
 			goto beach;
 		}
-		r = r_buf_read_at (pe->b, functions_paddr, (ut8 *)func_rvas, funcs_sz);
-		if (r != funcs_sz) {
+		r = funcs_sz ? r_buf_read_at (pe->b, functions_paddr, (ut8 *)func_rvas, funcs_sz) : 0;
+		if (r != (int)funcs_sz) {
 			goto beach;
 		}
+		int i;
 		for (i = 0; i < pe->export_directory->NumberOfFunctions; i++) {
+			function_name[0] = '\0';
+			forwarder_name[0] = '\0';
 			// get vaddr from AddressOfFunctions array
 			function_rva = r_read_at_ble32 ((ut8 *)func_rvas, i * sizeof (PE_VWord), pe->endian);
+			function_ordinal = i;
 			// have exports by name?
 			if (pe->export_directory->NumberOfNames > 0) {
 				// search for value of i into AddressOfOrdinals
 				name_vaddr = 0;
+				int n;
 				for (n = 0; n < pe->export_directory->NumberOfNames; n++) {
 					PE_Word fo = r_read_at_ble16 ((ut8 *)ordinals, n * sizeof (PE_Word), pe->endian);
 					// if exist this index into AddressOfOrdinals
@@ -3797,11 +3764,9 @@ struct r_bin_pe_export_t *PE_(r_bin_pe_get_exports)(RBinPEObj *pe) {
 					name_paddr = PE_(va2pa) (pe, name_vaddr);
 					if (r_buf_read_at (pe->b, name_paddr, (ut8 *)function_name, PE_NAME_LENGTH) < 1) {
 						R_LOG_WARN ("read (function name)");
-						exports[i].last = 1;
-						return exports;
+						break;
 					}
 				} else { // No name export, get the ordinal
-					function_ordinal = i;
 					snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", i + pe->export_directory->Base);
 				}
 			} else { // if export by name dont exist, get the ordinal taking in mind the Base value.
@@ -3811,38 +3776,38 @@ struct r_bin_pe_export_t *PE_(r_bin_pe_get_exports)(RBinPEObj *pe) {
 			if (function_rva >= export_dir_rva && function_rva < (export_dir_rva + export_dir_size)) {
 				// if forwarder, the VA point to Forwarded name
 				if (r_buf_read_at (pe->b, PE_(va2pa) (pe, function_rva), (ut8 *)forwarder_name, PE_NAME_LENGTH) < 1) {
-					exports[i].last = 1;
-					return exports;
+					break;
 				}
 			} else { // no forwarder export
-				snprintf (forwarder_name, PE_NAME_LENGTH, "NONE");
+				r_str_ncpy (forwarder_name, "NONE", sizeof (forwarder_name));
 			}
 			dll_name[PE_NAME_LENGTH] = '\0';
 			function_name[PE_NAME_LENGTH] = '\0';
-			exports[i].vaddr = bin_pe_rva_to_va (pe, function_rva);
-			exports[i].paddr = PE_(va2pa) (pe, function_rva);
-			exports[i].ordinal = function_ordinal + pe->export_directory->Base;
-			memcpy (exports[i].forwarder, forwarder_name, PE_NAME_LENGTH);
-			exports[i].forwarder[PE_NAME_LENGTH] = '\0';
-			memcpy (exports[i].name, function_name, PE_NAME_LENGTH);
-			exports[i].name[PE_NAME_LENGTH] = '\0';
-			memcpy (exports[i].libname, dll_name, PE_NAME_LENGTH);
-			exports[i].libname[PE_NAME_LENGTH] = '\0';
-			exports[i].last = 0;
+			forwarder_name[PE_NAME_LENGTH] = '\0';
+			struct r_bin_pe_export_t *exp = RVecPEExport_emplace_back (exports);
+			if (!exp) {
+				break;
+			}
+			exp->vaddr = bin_pe_rva_to_va (pe, function_rva);
+			exp->paddr = PE_(va2pa) (pe, function_rva);
+			exp->ordinal = function_ordinal + pe->export_directory->Base;
+			r_str_ncpy ((char *)exp->forwarder, forwarder_name, sizeof (exp->forwarder));
+			r_str_ncpy ((char *)exp->name, function_name, sizeof (exp->name));
+			r_str_ncpy ((char *)exp->libname, dll_name, sizeof (exp->libname));
 		}
-		exports[i].last = 1;
-		free (ordinals);
-		free (func_rvas);
+		R_FREE (ordinals);
+		R_FREE (func_rvas);
 	}
-	exp = parse_symbol_table (pe, exports, exports_sz - sizeof (struct r_bin_pe_export_t));
-	if (exp) {
-		exports = exp;
+	parse_symbol_table (pe, exports);
+	if (RVecPEExport_empty (exports)) {
+		RVecPEExport_free (exports);
+		return NULL;
 	}
 	return exports;
 beach:
-	free (exports);
 	free (ordinals);
 	free (func_rvas);
+	RVecPEExport_free (exports);
 	return NULL;
 }
 
@@ -4141,37 +4106,50 @@ fail:
 	return NULL;
 }
 
-struct r_bin_pe_lib_t *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
+static bool bin_pe_append_lib(RVecPELib *libs, char *name) {
+	if (R_STR_ISEMPTY (name)) {
+		return true;
+	}
+	r_str_case (name, 0);
+	struct r_bin_pe_lib_t *lib;
+	R_VEC_FOREACH (libs, lib) {
+		if (!strcmp (lib->name, name)) {
+			return true;
+		}
+	}
+	lib = RVecPELib_emplace_back (libs);
+	if (!lib) {
+		return false;
+	}
+	r_str_ncpy (lib->name, name, sizeof (lib->name));
+	return true;
+}
+
+RVecPELib *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
 	if (!pe) {
 		return NULL;
 	}
-	struct r_bin_pe_lib_t *libs = NULL;
-	struct r_bin_pe_lib_t *new_libs = NULL;
 	PE_(image_import_directory)
 	curr_import_dir;
 	PE_(image_delay_import_directory)
 	curr_delay_import_dir;
 	PE_DWord name_off = 0;
-	HtPP *lib_map = NULL;
 	ut64 off; // cache value
-	int index = 0;
-	int len = 0;
-	int max_libs = 20;
-	libs = calloc (max_libs + 1, sizeof (struct r_bin_pe_lib_t));
+	RVecPELib *libs = RVecPELib_new ();
 	if (!libs) {
-		r_sys_perror ("malloc (libs)");
 		return NULL;
 	}
 
-	if (pe->import_directory_offset + pe->import_directory_size > pe->size) {
+	if (pe->size < 1 || pe->import_directory_size < 0 || pe->import_directory_size > pe->size ||
+		(pe->import_directory_size > 0 && pe->import_directory_offset > (ut64)(pe->size - pe->import_directory_size))) {
 		R_LOG_WARN ("import directory offset bigger than file");
 		goto out_error;
 	}
-	lib_map = sdb_ht_new ();
 	off = pe->import_directory_offset;
 	if (off < pe->size && off > 0) {
 		ut64 last;
 		int iidi = 0;
+		RVecPELib_reserve (libs, pe->import_directory_size / sizeof (curr_import_dir));
 		// normal imports
 		if (off + sizeof (PE_(image_import_directory)) > pe->size) {
 			goto out_error;
@@ -4181,29 +4159,18 @@ struct r_bin_pe_lib_t *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
 		last = off + pe->import_directory_size;
 		while (r == sizeof (curr_import_dir) && off + (iidi + 1) * sizeof (curr_import_dir) <= last && (curr_import_dir.FirstThunk || curr_import_dir.Name || curr_import_dir.TimeDateStamp || curr_import_dir.Characteristics || curr_import_dir.ForwarderChain)) {
 			name_off = PE_(va2pa) (pe, curr_import_dir.Name);
-			len = r_buf_read_at (pe->b, name_off, (ut8 *)libs[index].name, PE_STRING_LENGTH);
-			if (!libs[index].name[0]) { // minimum string length
+			char name[PE_STRING_LENGTH + 1] = { 0 };
+			int len = r_buf_read_at (pe->b, name_off, (ut8 *)name, PE_STRING_LENGTH);
+			if (!name[0]) { // minimum string length
 				goto next;
 			}
-			if (len < 2 || libs[index].name[0] == 0) { // minimum string length
+			if (len < 2) { // minimum string length
 				R_LOG_WARN ("read (libs - import dirs) %d", len);
 				break;
 			}
-			libs[index].name[len - 1] = '\0';
-			r_str_case (libs[index].name, 0);
-			if (!sdb_ht_find (lib_map, libs[index].name, NULL)) {
-				sdb_ht_insert (lib_map, libs[index].name, "a");
-				libs[index++].last = 0;
-				if (index >= max_libs) {
-					new_libs = realloc (libs, (max_libs * 2) * sizeof (struct r_bin_pe_lib_t));
-					if (!new_libs) {
-						r_sys_perror ("realloc (libs)");
-						goto out_error;
-					}
-					libs = new_libs;
-					new_libs = NULL;
-					max_libs *= 2;
-				}
+			name[len - 1] = '\0';
+			if (!bin_pe_append_lib (libs, name)) {
+				goto out_error;
 			}
 		next:
 			iidi++;
@@ -4232,38 +4199,24 @@ struct r_bin_pe_lib_t *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
 			if (name_off > pe->size || name_off + PE_STRING_LENGTH > pe->size) {
 				goto out_error;
 			}
-			len = r_buf_read_at (pe->b, name_off, (ut8 *)libs[index].name, PE_STRING_LENGTH);
+			char name[PE_STRING_LENGTH + 1] = { 0 };
+			int len = r_buf_read_at (pe->b, name_off, (ut8 *)name, PE_STRING_LENGTH);
 			if (len != PE_STRING_LENGTH) {
 				R_LOG_WARN ("read (libs - delay import dirs)");
 				break;
 			}
-			libs[index].name[len - 1] = '\0';
-			r_str_case (libs[index].name, 0);
-			if (!sdb_ht_find (lib_map, libs[index].name, NULL)) {
-				sdb_ht_insert (lib_map, libs[index].name, "a");
-				libs[index++].last = 0;
-				if (index >= max_libs) {
-					new_libs = realloc (libs, (max_libs * 2) * sizeof (struct r_bin_pe_lib_t));
-					if (!new_libs) {
-						r_sys_perror ("realloc (libs)");
-						goto out_error;
-					}
-					libs = new_libs;
-					new_libs = NULL;
-					max_libs *= 2;
-				}
+			name[len - 1] = '\0';
+			if (!bin_pe_append_lib (libs, name)) {
+				goto out_error;
 			}
 			did++;
 			r = read_image_delay_import_directory (pe->b, off + did * sizeof (curr_delay_import_dir),
 				&curr_delay_import_dir);
 		}
 	}
-	sdb_ht_free (lib_map);
-	libs[index].last = 1;
 	return libs;
 out_error:
-	sdb_ht_free (lib_map);
-	free (libs);
+	RVecPELib_free (libs);
 	return NULL;
 }
 
