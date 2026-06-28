@@ -52,8 +52,9 @@ struct r_bin_pe_import_t {
 	ut64 hint;
 	ut64 ordinal;
 	int ntype;
-	int last;
 };
+
+R_VEC_TYPE (RVecPEImport, struct r_bin_pe_import_t);
 
 struct r_bin_pe_export_t {
 	ut8 name[PE_NAME_LENGTH + 1];
@@ -165,7 +166,7 @@ R_API struct r_bin_pe_addr_t* PE_(r_bin_pe_get_main_vaddr)(RBinPEObj* bin);
 R_API struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(RBinPEObj* bin); // TODO
 R_API int PE_(r_bin_pe_get_file_alignment)(RBinPEObj* bin);
 R_API ut64 PE_(r_bin_pe_get_image_base)(RBinPEObj* bin);
-R_API struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(RBinPEObj* bin); // TODO
+R_API RVecPEImport *PE_(r_bin_pe_get_imports)(RBinPEObj* bin); // TODO
 R_API struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(RBinPEObj* bin);
 R_API int PE_(r_bin_pe_get_image_size)(RBinPEObj* bin);
 R_API char* PE_(r_bin_pe_get_machine)(RBinPEObj* bin);

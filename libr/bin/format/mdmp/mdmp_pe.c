@@ -86,25 +86,25 @@ static inline void filter_import(ut8 *n) {
 }
 
 void PE_(r_bin_mdmp_pe_load_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin, RVecRBinImport *vec) {
-	struct r_bin_pe_import_t *imports = PE_(r_bin_pe_get_imports) (pe_bin->bin);
+	RVecPEImport *imports = PE_(r_bin_pe_get_imports) (pe_bin->bin);
 	if (!imports) {
 		return;
 	}
 	RList *relocs = r_list_newf ((RListFree)r_bin_reloc_free);
 	if (!relocs) {
-		free (imports);
+		RVecPEImport_free (imports);
 		return;
 	}
 	pe_bin->bin->relocs = relocs;
-	int i;
-	for (i = 0; !imports[i].last; i++) {
-		filter_import (imports[i].name);
+	struct r_bin_pe_import_t *import;
+	R_VEC_FOREACH (imports, import) {
+		filter_import (import->name);
 		RBinImport *ptr = RVecRBinImport_emplace_back (vec);
-		ptr->name = r_bin_name_new ((const char *)imports[i].name);
-		ptr->libname = *imports[i].libname ? strdup ((const char *)imports[i].libname) : NULL;
+		ptr->name = r_bin_name_new ((const char *)import->name);
+		ptr->libname = *import->libname ? strdup ((const char *)import->libname) : NULL;
 		ptr->bind = "NONE";
 		ptr->type = R_BIN_TYPE_FUNC_STR;
-		ptr->ordinal = imports[i].ordinal;
+		ptr->ordinal = import->ordinal;
 
 		RBinReloc *rel = R_NEW0 (RBinReloc);
 		if (!rel) {
@@ -115,7 +115,7 @@ void PE_(r_bin_mdmp_pe_load_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin, RV
 #else
 		rel->type = R_BIN_RELOC_32;
 #endif
-		ut64 offset = imports[i].vaddr;
+		ut64 offset = import->vaddr;
 		if (offset > pe_bin->vaddr) {
 			offset -= pe_bin->vaddr;
 		}
@@ -123,10 +123,10 @@ void PE_(r_bin_mdmp_pe_load_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin, RV
 		rel->import = r_bin_import_clone (ptr);
 		rel->addend = 0;
 		rel->vaddr = offset + pe_bin->vaddr;
-		rel->paddr = imports[i].paddr + pe_bin->paddr;
+		rel->paddr = import->paddr + pe_bin->paddr;
 		r_list_append (relocs, rel);
 	}
-	free (imports);
+	RVecPEImport_free (imports);
 }
 
 RList *PE_(r_bin_mdmp_pe_get_sections) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
@@ -200,7 +200,7 @@ void PE_(r_bin_mdmp_pe_load_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin) 
 	int i;
 	ut64 offset;
 	struct r_bin_pe_export_t *symbols = NULL;
-	struct r_bin_pe_import_t *imports = NULL;
+	RVecPEImport *imports = NULL;
 
 	/* TODO: Load symbol table from pdb file */
 	if ((symbols = PE_(r_bin_pe_get_exports) (pe_bin->bin))) {
@@ -224,22 +224,23 @@ void PE_(r_bin_mdmp_pe_load_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin) 
 	}
 	/* Calling imports is unstable at the moment, I think this is an issue in pe.c */
 	if ((imports = PE_(r_bin_pe_get_imports) (pe_bin->bin))) {
-		for (i = 0; !imports[i].last; i++) {
+		struct r_bin_pe_import_t *import;
+		R_VEC_FOREACH (imports, import) {
 			RBinSymbol *ptr = RVecRBinSymbol_emplace_back (vec);
-			offset = imports[i].vaddr;
+			offset = import->vaddr;
 			if (offset > pe_bin->vaddr) {
 				offset -= pe_bin->vaddr;
 			}
-			ptr->name = r_bin_name_new ((const char *)imports[i].name);
-			ptr->libname = *imports[i].libname ? strdup ((const char *)imports[i].libname) : NULL;
+			ptr->name = r_bin_name_new ((const char *)import->name);
+			ptr->libname = *import->libname ? strdup ((const char *)import->libname) : NULL;
 			ptr->is_imported = true;
 			ptr->bind = "NONE";
 			ptr->type = R_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
 			ptr->vaddr = offset + pe_bin->vaddr;
-			ptr->paddr = imports[i].paddr + pe_bin->paddr;
-			ptr->ordinal = imports[i].ordinal;
+			ptr->paddr = import->paddr + pe_bin->paddr;
+			ptr->ordinal = import->ordinal;
 		}
-		free (imports);
+		RVecPEImport_free (imports);
 	}
 }

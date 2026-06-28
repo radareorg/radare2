@@ -432,7 +432,7 @@ static char* types(RBinFile *bf) {
 static bool symbols_vec(RBinFile *bf) {
 	RBinSymbol *ptr = NULL;
 	struct r_bin_pe_export_t *symbols = NULL;
-	struct r_bin_pe_import_t *imports = NULL;
+	RVecPEImport *imports = NULL;
 	int i;
 	const int limit = bf->rbin->options.limit;
 
@@ -457,21 +457,22 @@ static bool symbols_vec(RBinFile *bf) {
 	}
 
 	if ((imports = PE_(r_bin_pe_get_imports)(pe))) {
-		for (i = 0; !imports[i].last; i++) {
+		struct r_bin_pe_import_t *import;
+		R_VEC_FOREACH (imports, import) {
 			if (limit_reached_vec (ret, limit)) {
 				break;
 			}
 			ptr = RVecRBinSymbol_emplace_back (ret);
-			ptr->name = r_bin_name_new ((const char *)imports[i].name);
-			ptr->libname = strdup ((const char *)imports[i].libname);
+			ptr->name = r_bin_name_new ((const char *)import->name);
+			ptr->libname = strdup ((const char *)import->libname);
 			ptr->is_imported = true;
 			ptr->bind = "NONE";
 			ptr->type = R_BIN_TYPE_FUNC_STR;
-			ptr->vaddr = imports[i].vaddr;
-			ptr->paddr = imports[i].paddr;
-			ptr->ordinal = imports[i].ordinal;
+			ptr->vaddr = import->vaddr;
+			ptr->paddr = import->paddr;
+			ptr->ordinal = import->ordinal;
 		}
-		free (imports);
+		RVecPEImport_free (imports);
 	}
 	if (limit_reached_vec (ret, limit)) {
 		find_pe_overlay (bf);
@@ -542,7 +543,6 @@ static void filter_import(ut8 *n) {
 }
 
 static bool imports_vec(RBinFile *bf) {
-	int i;
 	const int limit = bf->rbin->options.limit;
 
 	RBinPEObj *pe = PE_(get) (bf);
@@ -557,15 +557,15 @@ static bool imports_vec(RBinFile *bf) {
 	}
 	pe->relocs = relocs;
 
-	struct r_bin_pe_import_t *imports = PE_(r_bin_pe_get_imports)(pe);
+	RVecPEImport *imports = PE_(r_bin_pe_get_imports)(pe);
 	if (!imports) {
 		return true;
 	}
-	for (i = 0; !imports[i].last; i++) {
+	struct r_bin_pe_import_t *imp;
+	R_VEC_FOREACH (imports, imp) {
 		if (limit_reached_vec_imports (ret, limit)) {
 			break;
 		}
-		struct r_bin_pe_import_t *imp = &imports[i];
 		filter_import (imp->name);
 		RBinImport *ptr = RVecRBinImport_emplace_back (ret);
 		ptr->name = r_bin_name_new ((char*)imp->name);
@@ -588,7 +588,7 @@ static bool imports_vec(RBinFile *bf) {
 		rel->ntype = imp->ntype;
 		r_list_append (relocs, rel);
 	}
-	free (imports);
+	RVecPEImport_free (imports);
 	return true;
 }
 

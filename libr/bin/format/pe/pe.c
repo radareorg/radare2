@@ -510,8 +510,8 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	return NULL;
 }
 
-static int bin_pe_parse_imports(RBinPEObj *pe,
-	struct r_bin_pe_import_t **importp, int *nimp,
+static bool bin_pe_parse_imports(RBinPEObj *pe,
+	RVecPEImport *imports,
 	const char *dll_name,
 	PE_DWord OriginalFirstThunk,
 	PE_DWord FirstThunk) {
@@ -529,7 +529,7 @@ static int bin_pe_parse_imports(RBinPEObj *pe,
 	char *lower_symdllname = NULL;
 
 	if (R_STR_ISEMPTY (dll_name) || *dll_name == '0') {
-		return 0;
+		return false;
 	}
 
 #if 0
@@ -538,12 +538,12 @@ static int bin_pe_parse_imports(RBinPEObj *pe,
 	if (!off) {
 		off = PE_(va2pa) (pe, FirstThunk);
 		if (!off) {
-			return 0;
+			return false;
 		}
 	}
 #else
 	if (! (off = PE_(va2pa) (pe, OriginalFirstThunk)) && ! (off = PE_(va2pa) (pe, FirstThunk))) {
-		return 0;
+		return false;
 	}
 #endif
 	do {
@@ -554,6 +554,9 @@ static int bin_pe_parse_imports(RBinPEObj *pe,
 			break;
 		}
 		import_table = R_BUF_READ_PE_DWORD_AT (pe->b, off + i * sizeof (PE_DWord));
+		if (!import_table) {
+			break;
+		}
 		if (import_table == PE_DWORD_MAX) {
 			R_LOG_WARN ("read (import table)");
 			goto error;
@@ -642,25 +645,21 @@ static int bin_pe_parse_imports(RBinPEObj *pe,
 					R_LOG_WARN ("Import name '%s' has been truncated", import_name);
 				}
 			}
-			struct r_bin_pe_import_t *new_importp = realloc (*importp, (*nimp + 1) * sizeof (struct r_bin_pe_import_t));
-			if (!new_importp) {
+			struct r_bin_pe_import_t *import = RVecPEImport_emplace_back (imports);
+			if (!import) {
 				r_sys_perror ("realloc (import)");
 				goto error;
 			}
-			// XXX too much indirections here
-			*importp = new_importp;
-			memcpy ((*importp)[*nimp].name, import_name, PE_NAME_LENGTH);
-			(*importp)[*nimp].name[PE_NAME_LENGTH] = '\0';
-			memcpy ((*importp)[*nimp].libname, dll_name, PE_NAME_LENGTH);
-			(*importp)[*nimp].libname[PE_NAME_LENGTH] = '\0';
+			memcpy (import->name, import_name, PE_NAME_LENGTH);
+			import->name[PE_NAME_LENGTH] = '\0';
+			memcpy (import->libname, dll_name, PE_NAME_LENGTH);
+			import->libname[PE_NAME_LENGTH] = '\0';
 			ut64 addr = FirstThunk + (i * sizeof (PE_DWord));
-			(*importp)[*nimp].vaddr = bin_pe_rva_to_va (pe, addr);
-			(*importp)[*nimp].paddr = PE_(va2pa) (pe, addr);
-			(*importp)[*nimp].hint = import_hint;
-			(*importp)[*nimp].ntype = IMAGE_REL_BASED_HIGHLOW; // ABSOLUTE; // TODO
-			(*importp)[*nimp].ordinal = import_ordinal;
-			(*importp)[*nimp].last = 0;
-			(*nimp)++;
+			import->vaddr = bin_pe_rva_to_va (pe, addr);
+			import->paddr = PE_(va2pa) (pe, addr);
+			import->hint = import_hint;
+			import->ntype = IMAGE_REL_BASED_HIGHLOW; // ABSOLUTE; // TODO
+			import->ordinal = import_ordinal;
 			i++;
 		}
 	} while (import_table);
@@ -671,7 +670,7 @@ static int bin_pe_parse_imports(RBinPEObj *pe,
 	}
 	free (symdllname);
 	free (sdb_module);
-	return i;
+	return i > 0;
 
 error:
 	if (db) {
@@ -683,12 +682,7 @@ error:
 	free (lower_symdllname);
 	free (symdllname);
 	free (sdb_module);
-	// Free any partially allocated import structures
-	if (*importp) {
-		free (*importp);
-		*importp = NULL;
-		*nimp = 0;
-	}
+	RVecPEImport_clear (imports);
 	return false;
 }
 
@@ -4019,10 +4013,8 @@ int PE_(r_bin_pe_get_debug_data)(RBinPEObj *pe, SDebugInfo *res) {
 	return result;
 }
 
-struct r_bin_pe_import_t *PE_(r_bin_pe_get_imports)(RBinPEObj *pe) {
-	struct r_bin_pe_import_t *imps, *imports = NULL;
+RVecPEImport *PE_(r_bin_pe_get_imports)(RBinPEObj *pe) {
 	char dll_name[PE_NAME_LENGTH + 1];
-	int nimp = 0;
 	ut64 off; // used to cache value
 	PE_DWord dll_name_offset = 0;
 	PE_DWord paddr = 0;
@@ -4042,20 +4034,21 @@ struct r_bin_pe_import_t *PE_(r_bin_pe_get_imports)(RBinPEObj *pe) {
 		return NULL;
 	}
 
+	RVecPEImport *imports = RVecPEImport_new ();
 	off = pe->import_directory_offset;
 	if (off < pe->size && off > 0) {
 		ut64 last;
 		int idi = 0;
 		if (off + sizeof (PE_(image_import_directory)) > pe->size) {
-			return NULL;
+			goto fail;
 		}
 		int r = read_image_import_directory (pe->b, pe->import_directory_offset + idi * sizeof (curr_import_dir), &curr_import_dir);
 		if (r < 0) {
-			return NULL;
+			goto fail;
 		}
 
 		if (pe->import_directory_size < 1) {
-			return NULL;
+			goto fail;
 		}
 		if (off + pe->import_directory_size > pe->size) {
 			// why chopping instead of returning and cleaning?
@@ -4083,7 +4076,7 @@ struct r_bin_pe_import_t *PE_(r_bin_pe_get_imports)(RBinPEObj *pe) {
 				}
 				dll_name[PE_NAME_LENGTH] = '\0';
 			}
-			if (!bin_pe_parse_imports (pe, &imports, &nimp, dll_name,
+			if (!bin_pe_parse_imports (pe, imports, dll_name,
 				curr_import_dir.Characteristics,
 				curr_import_dir.FirstThunk)) {
 				break;
@@ -4091,8 +4084,7 @@ struct r_bin_pe_import_t *PE_(r_bin_pe_get_imports)(RBinPEObj *pe) {
 			idi++;
 			r = read_image_import_directory (pe->b, pe->import_directory_offset + idi * sizeof (curr_import_dir), &curr_import_dir);
 			if (r < 0) {
-				free (imports);
-				return NULL;
+				goto fail;
 			}
 		}
 	}
@@ -4131,24 +4123,22 @@ struct r_bin_pe_import_t *PE_(r_bin_pe_get_imports)(RBinPEObj *pe) {
 				goto beach;
 			}
 			dll_name[PE_NAME_LENGTH] = '\0';
-			if (!bin_pe_parse_imports (pe, &imports, &nimp, dll_name, import_func_name_offset,
+			if (!bin_pe_parse_imports (pe, imports, dll_name, import_func_name_offset,
 				curr_delay_import_dir.DelayImportAddressTable)) {
 				break;
 			}
 		}
 	}
 beach:
-	if (nimp) {
-		imps = realloc (imports, (nimp + 1) * sizeof (struct r_bin_pe_import_t));
-		if (!imps) {
-			r_sys_perror ("realloc (import)");
-			free (imports);
-			return NULL;
-		}
-		imports = imps;
-		imports[nimp].last = 1;
+	if (RVecPEImport_empty (imports)) {
+		RVecPEImport_free (imports);
+		return NULL;
 	}
 	return imports;
+
+fail:
+	RVecPEImport_free (imports);
+	return NULL;
 }
 
 struct r_bin_pe_lib_t *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
