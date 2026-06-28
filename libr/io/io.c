@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2025 - condret, pancake, alvaro_fe */
+/* radare2 - LGPL - Copyright 2008-2026 - condret, pancake, alvaro_fe */
 
 #include <r_io.h>
 #include <sdb/sdb.h>
@@ -9,6 +9,12 @@ R_LIB_VERSION (r_io);
 static RIOPlugin *io_static_plugins[] = {
 	R_IO_STATIC_PLUGINS
 };
+
+static bool iodesc_reset(RIO *io) {
+	r_io_desc_fini (io);
+	// TODO: it leaks if called twice
+	return r_id_storage_init (&io->files, 3, 0x80000000);
+}
 
 R_API RIO* r_io_new(void) {
 	RIO *io = R_NEW0 (RIO);
@@ -21,7 +27,7 @@ R_API void r_io_init(RIO* io) {
 	io->addrbytes = 1;
 	io->overlay = true;
 	io->cb_printf = printf;
-	r_io_desc_init (io);
+	iodesc_reset (io);
 	r_io_bank_init (io);
 	r_io_map_init (io);
 	r_io_cache_init (io);
@@ -149,7 +155,7 @@ R_API void r_io_close_all(RIO* io) {
 	R_RETURN_IF_FAIL (io);
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
-	r_io_desc_init (io);
+	iodesc_reset (io);
 	r_io_map_init (io);
 	r_io_cache_reset (io);
 	r_io_plugins_reset (io);
@@ -157,22 +163,23 @@ R_API void r_io_close_all(RIO* io) {
 
 R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
 	R_RETURN_VAL_IF_FAIL (io && buf && len >= 0, -1);
-	if (!io->desc) {
+	int fd = r_io_fd_get_current (io);
+	if (fd < 0) {
 		return -1;
 	}
 	if (io->ff) {
 		memset (buf, io->Oxff, len);
 	}
-	// XXX io->desc is wrong because it assumes the current desc which shouldnt exist
-	return r_io_desc_read_at (io->desc, paddr, buf, len);
+	return r_io_fd_read_at (io, fd, paddr, buf, len);
 }
 
 R_API int r_io_pwrite_at(RIO* io, ut64 paddr, const ut8* buf, int len) {
 	R_RETURN_VAL_IF_FAIL (io && buf && len > 0, -1);
-	if (!io->desc) {
+	int fd = r_io_fd_get_current (io);
+	if (fd < 0) {
 		return -1;
 	}
-	return r_io_desc_write_at (io->desc, paddr, buf, len);
+	return r_io_fd_write_at (io, fd, paddr, buf, len);
 }
 
 // Returns true iff all reads on mapped regions are successful and complete.
@@ -338,7 +345,8 @@ R_API bool r_io_write(RIO* io, ut8* buf, int len) {
 
 // TODO: rethink this, maybe not needed
 R_API ut64 r_io_size(RIO* io) {
-	return io? r_io_desc_size (io->desc): 0LL;
+	R_RETURN_VAL_IF_FAIL (io && io->desc, 0LL);
+	return r_io_desc_size (io->desc);
 }
 
 R_API bool r_io_is_listener(RIO* io) {

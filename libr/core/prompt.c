@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2025 - pancake */
+/* radare2 - LGPL - Copyright 2025-2026 - pancake */
 
 #include <r_core.h>
 
@@ -146,7 +146,6 @@ static char *r_core_prompt_substitute(RCore *core, char *key) {
 			: "0x%08" PFMT64x;
 		return r_str_newf (fmt_addr, core->addr);
 	} else if (!strcmp (key, "paddr")) {
-
 		ut64 paddr = r_io_v2p (core->io, core->addr);
 		const char *fmt_addr = (core->print->wide_offsets && R_SYS_BITS_CHECK (core->dbg->bits, 64))
 			? "0x%016" PFMT64x
@@ -155,14 +154,13 @@ static char *r_core_prompt_substitute(RCore *core, char *key) {
 	} else if (r_str_startswith (key, "r:")) {
 		const char *regname = key + 2;
 		RRegItem *reg = r_reg_get (core->dbg->reg, regname, -1);
-		if (reg) {
-			ut64 val = r_reg_get_value (core->dbg->reg, reg);
-			const char *fmt_addr = (core->print->wide_offsets && R_SYS_BITS_CHECK (core->dbg->bits, 64))
-				? "0x%016" PFMT64x
-				: "0x%08" PFMT64x;
-			return r_str_newf (fmt_addr, val);
+		if (!reg) {
+			return strdup ("");
 		}
-		return strdup ("");
+		ut64 val = r_reg_get_value (core->dbg->reg, reg);
+		const char *fmt_addr = (core->print->wide_offsets && R_SYS_BITS_CHECK (core->dbg->bits, 64))
+			? "0x%016" PFMT64x: "0x%08" PFMT64x;
+		return r_str_newf (fmt_addr, val);
 	} else if (!strcmp (key, "relto")) {
 		int mask = prompt_reloff_mask (core);
 		if (mask) {
@@ -213,28 +211,25 @@ static char *r_core_prompt_substitute(RCore *core, char *key) {
 		char pm[32] = "[XADVC]";
 		int i;
 		for (i = 0; i < 6; i++) {
-			if (core->visual.printidx == i) {
-				pm[i + 1] = toupper ((unsigned char)pm[i + 1]);
-			} else {
-				pm[i + 1] = tolower ((unsigned char)pm[i + 1]);
-			}
+			char ch = pm[i + 1];
+			pm[i + 1] = (core->visual.printidx == i)
+				? toupper (ch) : tolower (ch);
 		}
 		return strdup (pm);
 	} else if (!strcmp (key, "vfmt")) {
 		return r_str_newf ("%d", core->visual.currentFormat);
 	} else if (!strcmp (key, "vpcs")) {
 		ut64 sz = r_io_size (core->io);
+		if (sz == UT64_MAX) {
+			return strdup ("");
+		}
 		ut64 pa = core->addr;
 		RIOMap *map = r_io_map_get_at (core->io, core->addr);
 		if (map) {
 			pa = map->delta;
 		}
-		if (sz == UT64_MAX) {
-			return strdup ("");
-		} else {
-			int pc = (!sz || pa > sz)? 0: (pa * 100) / sz;
-			return r_str_newf ("%d%% ", pc);
-		}
+		int pc = (!sz || pa > sz)? 0: (pa * 100) / sz;
+		return r_str_newf ("%d%% ", pc);
 	} else if (!strcmp (key, "vbs")) {
 		return r_str_newf ("%d", core->blocksize);
 	} else if (!strcmp (key, "vbar")) {

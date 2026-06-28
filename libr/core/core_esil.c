@@ -94,22 +94,22 @@ static bool core_esil_reg_write(void *core, const char *name, ut64 val) {
 
 static ut32 core_esil_reg_size(void *core, const char *name) {
 	RRegItem *ri = r_reg_get (core_esil_reg (core), name, -1);
-	if (!ri) {
-		return 0;
+	if (ri) {
+		const ut32 size = ri->size;
+		r_unref (ri);
+		return size;
 	}
-	const ut32 size = ri->size;
-	r_unref (ri);
-	return size;
+	return 0;
 }
 
 static ut32 core_esil_reg_packed_size(void *core, const char *name) {
 	RRegItem *ri = r_reg_get (core_esil_reg (core), name, -1);
-	if (!ri) {
-		return 0;
+	if (ri) {
+		const ut32 psize = ri->packed_size > 0? (ut32)ri->packed_size: 0;
+		r_unref (ri);
+		return psize;
 	}
-	const ut32 psize = ri->packed_size > 0? (ut32)ri->packed_size: 0;
-	r_unref (ri);
-	return psize;
+	return 0;
 }
 
 static bool core_esil_reg_alias(void *core, int alias, const char *name) {
