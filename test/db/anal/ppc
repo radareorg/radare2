@@ -1202,3 +1202,25 @@ EXPECT=<<EOF2
 "sh -c clear"
 EOF2
 RUN
+
+NAME=ppc plt-call stub toc save is not recovered as an argument
+FILE=bins/elf/ppc64_sudoku_dwarf
+CMDS=<<EOF2
+aa
+afs @ loc.00000018.plt_call.__libc_start_main
+EOF2
+EXPECT=<<EOF2
+void loc.00000018.plt_call.__libc_start_main ();
+EOF2
+RUN
+
+NAME=ppc toc restore load is not recovered as an argument
+FILE=bins/elf/ppc64_sudoku_dwarf
+CMDS=<<EOF2
+aa
+afs @ fcn.10000c54
+EOF2
+EXPECT=<<EOF2
+void fcn.10000c54 (int64_t arg1, int64_t arg_10h);
+EOF2
+RUN
