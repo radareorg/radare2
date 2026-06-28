@@ -687,6 +687,24 @@ error:
 	return false;
 }
 
+static bool read_libname(RBinPEObj *pe, ut64 paddr, char *name, size_t name_size) {
+	if (paddr >= pe->size) {
+		return false;
+	}
+	const int max_read = (int)R_MIN ((ut64)name_size - 1, (ut64)pe->size - paddr);
+	int len = r_buf_read_at (pe->b, paddr, (ut8 *)name, max_read);
+	if (len < 1) {
+		return false;
+	}
+	name[len] = '\0';
+	size_t name_len = r_str_nlen (name, len);
+	if (name_len >= (size_t)len || name_len <= 4) {
+		return false;
+	}
+	name[name_len] = '\0';
+	return true;
+}
+
 int PE_(read_dos_header)(RBuffer *b, PE_(image_dos_header) * header) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
 	if (r_buf_seek (b, 0, R_BUF_SET) == -1) {
@@ -4023,24 +4041,10 @@ RVecPEImport *PE_(r_bin_pe_get_imports)(RBinPEObj *pe) {
 		}
 		last = pe->import_directory_offset + pe->import_directory_size;
 		while (r == sizeof (curr_import_dir) && pe->import_directory_offset + (idi + 1) * sizeof (curr_import_dir) <= last && (curr_import_dir.FirstThunk != 0 || curr_import_dir.Name != 0 || curr_import_dir.TimeDateStamp != 0 || curr_import_dir.Characteristics != 0 || curr_import_dir.ForwarderChain != 0)) {
-			int rr;
 			dll_name_offset = curr_import_dir.Name;
 			paddr = PE_(va2pa) (pe, dll_name_offset);
-			if (paddr > pe->size) {
-				goto beach;
-			}
-			if (paddr + PE_NAME_LENGTH > pe->size) {
-				rr = r_buf_read_at (pe->b, paddr, (ut8 *)dll_name, pe->size - paddr);
-				if (rr != pe->size - paddr) {
-					goto beach;
-				}
-				dll_name[pe->size - paddr] = '\0';
-			} else {
-				rr = r_buf_read_at (pe->b, paddr, (ut8 *)dll_name, PE_NAME_LENGTH);
-				if (rr != PE_NAME_LENGTH) {
-					goto beach;
-				}
-				dll_name[PE_NAME_LENGTH] = '\0';
+			if (!read_libname (pe, paddr, dll_name, sizeof (dll_name))) {
+				break;
 			}
 			if (!bin_pe_parse_imports (pe, imports, dll_name,
 				curr_import_dir.Characteristics,
@@ -4081,14 +4085,9 @@ RVecPEImport *PE_(r_bin_pe_get_imports)(RBinPEObj *pe) {
 				dll_name_offset = PE_(va2pa) (pe, curr_delay_import_dir.Name);
 				import_func_name_offset = curr_delay_import_dir.DelayImportNameTable;
 			}
-			if (dll_name_offset > pe->size || dll_name_offset + PE_NAME_LENGTH > pe->size) {
-				goto beach;
+			if (!read_libname (pe, dll_name_offset, dll_name, sizeof (dll_name))) {
+				break;
 			}
-			int rr = r_buf_read_at (pe->b, dll_name_offset, (ut8 *)dll_name, PE_NAME_LENGTH);
-			if (rr < 5) {
-				goto beach;
-			}
-			dll_name[PE_NAME_LENGTH] = '\0';
 			if (!bin_pe_parse_imports (pe, imports, dll_name, import_func_name_offset,
 				curr_delay_import_dir.DelayImportAddressTable)) {
 				break;
@@ -4156,7 +4155,6 @@ RVecPELib *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
 	if (off < pe->size && off > 0) {
 		ut64 last;
 		int iidi = 0;
-		RVecPELib_reserve (libs, pe->import_directory_size / sizeof (curr_import_dir));
 		// normal imports
 		if (off + sizeof (PE_(image_import_directory)) > pe->size) {
 			goto out_error;
@@ -4167,19 +4165,12 @@ RVecPELib *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
 		while (r == sizeof (curr_import_dir) && off + (iidi + 1) * sizeof (curr_import_dir) <= last && (curr_import_dir.FirstThunk || curr_import_dir.Name || curr_import_dir.TimeDateStamp || curr_import_dir.Characteristics || curr_import_dir.ForwarderChain)) {
 			name_off = PE_(va2pa) (pe, curr_import_dir.Name);
 			char name[PE_STRING_LENGTH + 1] = { 0 };
-			int len = r_buf_read_at (pe->b, name_off, (ut8 *)name, PE_STRING_LENGTH);
-			if (!name[0]) { // minimum string length
-				goto next;
-			}
-			if (len < 2) { // minimum string length
-				R_LOG_WARN ("read (libs - import dirs) %d", len);
+			if (!read_libname (pe, name_off, name, sizeof (name))) {
 				break;
 			}
-			name[len - 1] = '\0';
 			if (!bin_pe_append_lib (libs, lib_map, name)) {
 				goto out_error;
 			}
-		next:
 			iidi++;
 			r = read_image_import_directory (pe->b, off + iidi * sizeof (curr_import_dir),
 				&curr_import_dir);
@@ -4203,16 +4194,10 @@ RVecPELib *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
 				break;
 			}
 			name_off = PE_(va2pa) (pe, curr_delay_import_dir.Name);
-			if (name_off > pe->size || name_off + PE_STRING_LENGTH > pe->size) {
-				goto out_error;
-			}
 			char name[PE_STRING_LENGTH + 1] = { 0 };
-			int len = r_buf_read_at (pe->b, name_off, (ut8 *)name, PE_STRING_LENGTH);
-			if (len != PE_STRING_LENGTH) {
-				R_LOG_WARN ("read (libs - delay import dirs)");
+			if (!read_libname (pe, name_off, name, sizeof (name))) {
 				break;
 			}
-			name[len - 1] = '\0';
 			if (!bin_pe_append_lib (libs, lib_map, name)) {
 				goto out_error;
 			}
