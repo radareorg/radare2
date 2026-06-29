@@ -103,7 +103,7 @@ CMDS=<<EOF
 e asm.lines.jmp=0
 e asm.bytes=0
 e asm.comments=0
-s sym.static_int_Test::callMeNot
+s method.class.Test.callMeNot
 # s+2
 pi 2
 EOF

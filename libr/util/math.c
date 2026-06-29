@@ -87,6 +87,28 @@ static void error(RNum *num, RNumCalc *nc, const char *s) {
 	//fprintf (stderr, "error: %s\n", s);
 }
 
+static ut64 calc_num_get(RNum *num, RNumCalc *nc, const char *str) {
+	const char *err = NULL;
+	RNumCalc saved = {0};
+	if (num) {
+		saved = num->nc;
+		num->nc = *nc;
+		num->nc.errors = 0;
+		num->nc.calc_err = NULL;
+		num->nc.under_calc = true;
+	}
+	ut64 ret = r_num_get_err (num, str, &err);
+	if (num) {
+		nc->curr_tok = num->nc.curr_tok;
+		nc->number_value = num->nc.number_value;
+		num->nc = saved;
+	}
+	if (err) {
+		error (num, nc, err);
+	}
+	return ret;
+}
+
 static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
 	RNumCalcValue left = term (num, nc, get);
 	for (;;) {
@@ -154,7 +176,7 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		// fprintf (stderr, "error: unknown keyword (%s)\n", nc->string_value);
 		// double& v = table[nc->string_value];
 		r_str_trim (nc->string_value);
-		v = Nset (r_num_get (num, nc->string_value));
+		v = Nset (calc_num_get (num, nc, nc->string_value));
 #if 0
 		if (num && num->nc.errors > 0) {
 			return v;
@@ -281,7 +303,7 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	}
 	str[i] = 0;
 #if 1
-	*n = Nset (r_num_get (num, str));
+	*n = Nset (calc_num_get (num, nc, str));
 #else
 	ut64 v = r_num_get (num, str);
 	if (num && num->nc.errors > 0) {
