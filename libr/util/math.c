@@ -454,28 +454,20 @@ static void load_token(RNum *num, RNumCalc *nc, const char *s) {
 
 R_API ut64 r_num_math_err(RNum *num, const char *str, const char **err) {
 	RNumCalcValue n;
-	RNumCalc *nc;
 	RNum num_local = {0};
 	if (R_STR_ISEMPTY (str)) {
 		return 0LL;
 	}
 	if (num) {
-		nc = &num->nc;
 		num->dbz = 0;
 	} else {
 		num = &num_local;
-		nc = &num->nc;
 	}
+	// Keep tokenizer state local to avoid races when concurrent calls share an RNum.
+	RNumCalc lnc = {0};
+	RNumCalc *nc = &lnc;
 	/* init */
 	nc->curr_tok = RNCPRINT;
-	nc->number_value.d = 0.0;
-	nc->number_value.n = 0LL;
-	nc->errors = 0;
-	nc->oc = 0;
-	nc->calc_err = NULL;
-	nc->calc_i = 0;
-	nc->calc_len = 0;
-	nc->calc_buf = NULL;
 	nc->under_calc = true;
 
 	load_token (num, nc, str);
@@ -484,11 +476,11 @@ R_API ut64 r_num_math_err(RNum *num, const char *str, const char **err) {
 	if (err) {
 		*err = nc->calc_err;
 	}
-	if (num) {
-		num->fvalue = n.d;
-		num->value = n.n;
-	}
-	nc->under_calc = false;
+	num->fvalue = n.d;
+	num->value = n.n;
+	// Publish diagnostics for callers that read num->nc after the call.
+	num->nc.errors = nc->errors;
+	num->nc.calc_err = nc->calc_err;
 	return n.n;
 }
 
