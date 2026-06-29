@@ -395,3 +395,29 @@ vaddr      paddr      type   ntype name
 0x0007ce98 0x0007be98 SET_64 1027
 EOF
 RUN
+
+NAME=elf/arm64 relocs.apply patches RELATIVE entries
+FILE=bins/elf/libtool-checker.so
+ARGS=-e bin.relocs.apply=true -e bin.cache=true
+CMDS=<<EOF
+pxq 8 @ 0x2d78
+pxq 8 @ 0x2d80
+pxq 8 @ 0x2d88
+EOF
+EXPECT=<<EOF
+0x00002d78  0x00000000000009a0                       ........
+0x00002d80  0x0000000000000990                       ........
+0x00002d88  0x0000000000002d88                       .-......
+EOF
+RUN
+
+NAME=elf/arm64 relocs.apply patches JUMP_SLOT entries
+FILE=bins/elf/ls-toybox
+ARGS=-e bin.relocs.apply=true -e bin.cache=true
+CMDS=<<EOF
+pxq 8 @ 0x0007b480
+EOF
+EXPECT=<<EOF
+0x0007b480  0x0000000000083a09                       .:......
+EOF
+RUN
