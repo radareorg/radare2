@@ -19,6 +19,8 @@ static const char *rprj_entry_type_tostring(int a) {
 	case RPRJ_EVAL: return "Evals";
 	case RPRJ_XREF: return "Xrefs";
 	case RPRJ_FUNC: return "Functions";
+	case RPRJ_BRKP: return "Breakpoints";
+	case RPRJ_SIGS: return "Signals";
 	}
 	return "UNKNOWN";
 }
@@ -107,6 +109,30 @@ static void rprj_hint_write(RBuffer *b, R2ProjectHint *hint) {
 	r_buf_write (b, buf, sizeof (buf));
 }
 
+static void rprj_breakpoint_write_record(RBuffer *b, R2ProjectBreakpoint *bp) {
+	ut8 buf[RPRJ_BREAKPOINT_SIZE] = {0};
+	r_write_le32 (buf, bp->addr.mod);
+	r_write_le64 (buf + 4, bp->addr.delta);
+	r_write_le32 (buf + 12, bp->name);
+	r_write_le32 (buf + 16, bp->data);
+	r_write_le32 (buf + 20, bp->cond);
+	r_write_le32 (buf + 24, bp->expr);
+	r_write_le32 (buf + 28, bp->size);
+	r_write_le32 (buf + 32, bp->perm);
+	r_write_le32 (buf + 36, bp->hw);
+	r_write_le32 (buf + 40, bp->flags);
+	r_write_le32 (buf + 44, bp->togglehits);
+	r_write_le32 (buf + 48, bp->hits);
+	r_buf_write (b, buf, sizeof (buf));
+}
+
+static void rprj_signal_write_record(RBuffer *b, R2ProjectSignal *sig) {
+	ut8 buf[RPRJ_SIGNAL_SIZE] = {0};
+	r_write_le32 (buf, sig->signum);
+	r_write_le32 (buf + 4, sig->option);
+	r_buf_write (b, buf, sizeof (buf));
+}
+
 static bool rprj_read_exact(RBuffer *b, ut8 *buf, size_t len) {
 	return r_buf_read (b, buf, len) == (st64)len;
 }
@@ -192,6 +218,36 @@ static bool rprj_hint_read(RBuffer *b, R2ProjectHint *hint) {
 	hint->mod = r_read_le32 (buf + r_offsetof (R2ProjectHint, mod));
 	hint->delta = r_read_le64 (buf + r_offsetof (R2ProjectHint, delta));
 	hint->value = r_read_le64 (buf + r_offsetof (R2ProjectHint, value));
+	return true;
+}
+
+static bool rprj_breakpoint_read(RBuffer *b, R2ProjectBreakpoint *bp) {
+	ut8 buf[RPRJ_BREAKPOINT_SIZE];
+	if (!rprj_read_exact (b, buf, sizeof (buf))) {
+		return false;
+	}
+	bp->addr.mod = r_read_le32 (buf);
+	bp->addr.delta = r_read_le64 (buf + 4);
+	bp->name = r_read_le32 (buf + 12);
+	bp->data = r_read_le32 (buf + 16);
+	bp->cond = r_read_le32 (buf + 20);
+	bp->expr = r_read_le32 (buf + 24);
+	bp->size = r_read_le32 (buf + 28);
+	bp->perm = r_read_le32 (buf + 32);
+	bp->hw = r_read_le32 (buf + 36);
+	bp->flags = r_read_le32 (buf + 40);
+	bp->togglehits = r_read_le32 (buf + 44);
+	bp->hits = r_read_le32 (buf + 48);
+	return true;
+}
+
+static bool rprj_signal_read(RBuffer *b, R2ProjectSignal *sig) {
+	ut8 buf[RPRJ_SIGNAL_SIZE];
+	if (!rprj_read_exact (b, buf, sizeof (buf))) {
+		return false;
+	}
+	sig->signum = r_read_le32 (buf);
+	sig->option = r_read_le32 (buf + 4);
 	return true;
 }
 
