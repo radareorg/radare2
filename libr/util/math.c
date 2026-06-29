@@ -98,15 +98,30 @@ static ut64 calc_num_get(RNum *num, RNumCalc *nc, const char *str) {
 		num->nc.under_calc = true;
 	}
 	ut64 ret = r_num_get_err (num, str, &err);
+	int errors = 0;
+	const char *calc_err = NULL;
 	if (num) {
+		errors = num->nc.errors;
+		calc_err = num->nc.calc_err;
 		nc->curr_tok = num->nc.curr_tok;
 		nc->number_value = num->nc.number_value;
 		num->nc = saved;
 	}
-	if (err) {
-		error (num, nc, err);
+	if (err || errors > 0) {
+		error (num, nc, err? err: calc_err);
 	}
 	return ret;
+}
+
+static const char *math_err_export(RNum *num, RNumCalc *nc) {
+	const char *err = nc->calc_err;
+	const ut64 err_addr = (ut64)(uintptr_t)err;
+	const ut64 str_addr = (ut64)(uintptr_t)nc->string_value;
+	if (num && err && err_addr >= str_addr && err_addr < str_addr + sizeof (nc->string_value)) {
+		r_str_ncpy (num->nc.string_value, err, sizeof (num->nc.string_value));
+		err = num->nc.string_value;
+	}
+	return err;
 }
 
 static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
@@ -496,13 +511,13 @@ R_API ut64 r_num_math_err(RNum *num, const char *str, const char **err) {
 	get_token (num, nc);
 	n = expr (num, nc, 0);
 	if (err) {
-		*err = nc->calc_err;
+		*err = math_err_export (num, nc);
 	}
 	num->fvalue = n.d;
 	num->value = n.n;
 	// Publish diagnostics for callers that read num->nc after the call.
 	num->nc.errors = nc->errors;
-	num->nc.calc_err = nc->calc_err;
+	num->nc.calc_err = math_err_export (num, nc);
 	return n.n;
 }
 
