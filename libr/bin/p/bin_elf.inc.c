@@ -1059,7 +1059,6 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			r_write_ble64 (buf, V, bo->endian);
 			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
 			break;
-
 		case R_AARCH64_GLOB_DAT:
 		case R_AARCH64_JUMP_SLOT:
 		case R_AARCH64_ABS64:
