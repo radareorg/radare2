@@ -1492,6 +1492,9 @@ static void cmd_aft(RCore *core, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_aft);
 		break;
+	default:
+		r_core_return_invalid_command (core, "aft", *input);
+		break;
 	}
 	r_cons_break_pop (core->cons);
 }
@@ -2219,7 +2222,7 @@ static int cmd_afv(RCore *core, const char *str) {
 		break;
 	default:
 		if (str[0]) {
-			r_core_cmd_help (core, help_msg_afv);
+			r_core_return_invalid_command (core, "afv", str[0]);
 			return false;
 		}
 	}
@@ -2358,7 +2361,10 @@ static int cmd_afv(RCore *core, const char *str) {
 		  }
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_afv);
+		{
+			const char *base = type == 'b'? "afvb": type == 'r'? "afvr": "afvs";
+			r_core_return_invalid_command (core, base, str[1]);
+		}
 		break;
 	}
 	free (ostr);
@@ -6528,7 +6534,7 @@ static int cmd_af(RCore *core, const char *input) {
 			}
 			break;
 		default:
-			r_core_cmd_help (core, help_msg_afi);
+			r_core_return_invalid_command (core, "afi", input[2]);
 			break;
 		}
 		break;
@@ -6539,7 +6545,6 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case 'x': // "aflx"
 			switch (input[3]) {
-			default:
 			case '?':
 				r_core_cmd_help (core, help_msg_aflx);
 				return true;
@@ -6592,6 +6597,9 @@ static int cmd_af(RCore *core, const char *input) {
 			case 'j': // "aflxj"
 				cmd_aflxj (core);
 				break;
+			default:
+				r_core_return_invalid_command (core, "aflx", input[3]);
+				break;
 			}
 			break;
 		case 's': // "afls"
@@ -6638,7 +6646,7 @@ static int cmd_af(RCore *core, const char *input) {
 			r_core_anal_fcn_list (core, NULL, "o");
 			break;
 		default: // "afl "
-			r_core_cmd_help (core, help_msg_afl);
+			r_core_return_invalid_command (core, "afl", input[2]);
 			break;
 		}
 		break;
@@ -6759,8 +6767,11 @@ static int cmd_af(RCore *core, const char *input) {
 				cmd_afsv (core, pc, 0);
 			}
 			break;
-		default:
+		case '?':
 			r_core_cmd_help (core, help_msg_afs);
+			break;
+		default:
+			r_core_return_invalid_command (core, "afs", input[2]);
 			break;
 		}
 		break;
@@ -7175,7 +7186,7 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 			}
 		default:
-			R_LOG_ERROR ("Invalid command. Look at af?");
+			r_core_return_invalid_command (core, "afx", input[2]);
 			break;
 		}
 		break;
@@ -7458,7 +7469,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			r_reg_arena_set_bytes (core->anal->reg, str + 1);
 			break;
 		default:
-			r_core_cmd_help (core, help_msg_arw);
+			r_core_return_invalid_command (core, "arw", str[1]);
 			break;
 		}
 		break;
@@ -10080,7 +10091,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			cmd_aei (core);
 			break;
 		default:
-			r_core_cmd_help (core, help_msg_aei);
+			r_core_return_invalid_command (core, "aei", input[1]);
 			break;
 		}
 		break;
@@ -10103,8 +10114,11 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				sdb_reset (esil->stats);
 			}
 			break;
-		default:
+		case '?':
 			r_core_cmd_help (core, help_msg_aek);
+			break;
+		default:
+			r_core_return_invalid_command (core, "aek", input[1]);
 			break;
 		}
 		break;
@@ -10684,8 +10698,10 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			r_core_call (core, "/atl");
 		} else if (input[1] == '\0') {
 			r_core_cmd0 (core, "ao~^type[1]");
-		} else {
+		} else if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_aot);
+		} else {
+			r_core_return_invalid_command (core, "aot", input[1]);
 		}
 		break;
 	case 'm': // "aom"
@@ -10770,8 +10786,10 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			} else {
 				R_LOG_ERROR ("Unknown mnemonic");
 			}
-		} else {
+		} else if (input[1] == '?') {
 			r_core_cmd_help_contains (core, help_msg_ao, "aod");
+		} else {
+			r_core_return_invalid_command (core, "aod", input[1]);
 		}
 		break;
 	case '*':
@@ -10818,9 +10836,11 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			}
 		}
 		break;
-	default:
 	case '?':
 		r_core_cmd_help (core, help_msg_ao);
+		break;
+	default:
+		r_core_return_invalid_command (core, "ao", input[0]);
 		break;
 	}
 }
@@ -11120,6 +11140,19 @@ static void cmd_sdbk(RCore *core, Sdb *db, const char *input) {
 	}
 }
 
+static void cmd_as(RCore *core, const char *sn) {
+	st64 num = r_syscall_get_num (core->anal->syscall, sn);
+	if (num == -1) {
+		const char *err = NULL;
+		num = (st64)r_num_math_err (core->num, sn, &err);
+		if (err || r_num_failed (core->num)) {
+			R_LOG_ERROR ("Unknown syscall");
+			return;
+		}
+	}
+	cmd_syscall_do (core, num, -1);
+}
+
 static void cmd_anal_syscall(RCore *core, const char *input) {
 	char snstr[32];
 	PJ *pj = NULL;
@@ -11241,23 +11274,13 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		cmd_syscall_do (core, -1, core->addr);
 		break;
 	case ' ':
-		{
-		const char *sn = r_str_trim_head_ro (input + 1);
-		st64 num = r_syscall_get_num (core->anal->syscall, sn);
-		if (num == -1) {
-			const char *err = NULL;
-			num = (st64)r_num_math_err (core->num, sn, &err);
-			if (err || r_num_failed (core->num)) {
-				R_LOG_ERROR ("Unknown syscall");
-				break;
-			}
-		}
-		cmd_syscall_do (core, num, -1);
-		}
+		cmd_as (core, r_str_trim_head_ro (input + 1));
 		break;
-	default:
 	case '?':
 		r_core_cmd_help (core, help_msg_as);
+		break;
+	default:
+		r_core_return_invalid_command (core, "as", input[0]);
 		break;
 	}
 }
@@ -11271,7 +11294,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 	if (is_json && !pj) {
 		return;
 	}
-	if (input && *input) {
+	if (R_STR_ISNOTEMPTY (input)) {
 		addr = r_num_math (core->num, input);
 	}
 	// eprintf ("Path between 0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", core->addr, addr);
@@ -11714,8 +11737,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		case 'q': // "axlq"
 			r_core_call (core, "axq");
 			break;
-		default:
+		case '\0': // "axl"
 			r_core_call (core, "ax");
+			break;
+		default:
+			r_core_return_invalid_command (core, "axl", input[1]);
 			break;
 		}
 		break;
@@ -11930,12 +11956,26 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					free (buf_fcn);
 				}
 			} else {
-				r_core_cmd_help (core, help_msg_axt);
+				r_core_return_invalid_command (core, "axt", input[1]);
 				break;
 			}
 		} else {
-			if (input[1] == 'j') { // "axtj"
+			switch (input[1]) {
+			case 'j': // "axtj"
 				r_cons_println (core->cons, "[]");
+				break;
+			case '\0':
+			case ' ':
+			case '.':
+			case ',':
+			case 'f':
+			case 'g':
+			case 'q':
+			case '*':
+				break;
+			default:
+				r_core_return_invalid_command (core, "axt", input[1]);
+				break;
 			}
 		}
 		RVecAnalRef_free (list);
@@ -12162,9 +12202,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			free (ptr);
 		}
 		break;
-	default:
 	case '?':
 		r_core_cmd_help (core, help_msg_ax);
+		break;
+	default:
+		r_core_return_invalid_command (core, "ax", input[0]);
 		break;
 	}
 
@@ -12627,8 +12669,12 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_op_fini (&op);
 			free (type);
 		} break;
-		default:
+		case '?':
+		case '\0':
 			r_core_cmd_help (core, help_msg_aht);
+			break;
+		default:
+			r_core_return_invalid_command (core, "aht", input[1]);
 			break;
 		}
 	}
@@ -12845,8 +12891,11 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 		break;
 	}
 	case '?':
-	default:
+	case '\0':
 		r_core_cmd_help (core, help_msg_agn);
+		break;
+	default:
+		r_core_return_invalid_command (core, "agn", *input);
 		break;
 	}
 }
@@ -12912,8 +12961,11 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 		cmd_ageh (core, input + 1);
 		break;
 	case '?':
-	default:
+	case '\0':
 		r_core_cmd_help (core, help_msg_age);
+		break;
+	default:
+		r_core_return_invalid_command (core, "age", *input);
 		break;
 	}
 }
@@ -13405,7 +13457,29 @@ static char *_graph_node_info_get_body(void *data, void *user) {
 	return (info && info->body)? strdup (info->body): NULL;
 }
 
-static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, int use_utf, bool use_offset, const char *input) {
+static bool r_core_graph_print_is_valid_format(char ch) {
+	switch (ch) {
+	case 0:
+	case '*':
+	case '?':
+	case 'J':
+	case 'M':
+	case 'd':
+	case 'g':
+	case 'i':
+	case 'j':
+	case 'k':
+	case 'm':
+	case 't':
+	case 'v':
+	case 'w':
+		return true;
+	default:
+		return false;
+	}
+}
+
+static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, int use_utf, bool use_offset, const char *input, const char *basecmd) {
 	RAGraph *agraph = NULL;
 	RListIter *it;
 	RGraphNode *graphNode, *target;
@@ -13542,8 +13616,11 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 	case 'M':
 		mermaid_graph (core, graph, mermaid_nodeinfo_disasm);
 		break;
-	default:
+	case '?':
 		r_core_cmd_help (core, help_msg_ag);
+		break;
+	default:
+		r_core_return_invalid_command (core, basecmd, *input);
 		break;
 	}
 }
@@ -13844,8 +13921,11 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 				free (cmdargs);
 			}
 			break;
-		default:
+		case '?':
 			r_core_cmd_help (core, help_msg_ag);
+			break;
+		default:
+			r_core_return_invalid_command (core, "agf", input[1]);
 			break;
 		}
 		break;
@@ -13894,8 +13974,11 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case '*':
 			r_core_anal_callgraph (core, UT64_MAX, R_GRAPH_FORMAT_CMD);
 			break;
-		default:
+		case '?':
 			r_core_cmd_help (core, help_msg_ag);
+			break;
+		default:
+			r_core_return_invalid_command (core, "agC", input[1]);
 			break;
 		}
 		break;
@@ -13938,22 +14021,38 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		}
 		break;
 	case 'x': {// "agx" cross refs
+		if (!r_core_graph_print_is_valid_format (input[1])) {
+			r_core_return_invalid_command (core, "agx", input[1]);
+			break;
+		}
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_ag);
+			break;
+		}
 		RGraph *graph = r_core_anal_codexrefs (core, core->addr);
 		if (!graph) {
 			R_LOG_ERROR ("Cannot create graph");
 			break;
 		}
-		r_core_graph_print (core, graph, -1, true, input + 1);
+		r_core_graph_print (core, graph, -1, true, input + 1, "agx");
 		r_graph_free (graph);
 		break;
 	}
 	case 'i': { // "agi" import graph
+		if (!r_core_graph_print_is_valid_format (input[1])) {
+			r_core_return_invalid_command (core, "agi", input[1]);
+			break;
+		}
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_ag);
+			break;
+		}
 		RGraph *graph = r_core_anal_importxrefs (core);
 		if (!graph) {
 			R_LOG_ERROR ("Cannot create graph");
 			break;
 		}
-		r_core_graph_print (core, graph, -1, true, input + 1);
+		r_core_graph_print (core, graph, -1, true, input + 1, "agi");
 		r_graph_free (graph);
 		break;
 	}
@@ -13992,8 +14091,11 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_core_anal_callgraph (core, core->addr, R_GRAPH_FORMAT_CMD);
 			break;
 		}
-		default:
+		case '?':
 			r_core_cmd_help (core, help_msg_ag);
+			break;
+		default:
+			r_core_return_invalid_command (core, "agc", input[1]);
 			break;
 		}
 		break;
@@ -14085,6 +14187,12 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 				  free (cmdargs);
 				  break;
 			  }
+		case '?':
+				  r_core_cmd_help (core, help_msg_ag);
+				  break;
+		default:
+				  r_core_return_invalid_command (core, "agd", input[1]);
+				  break;
 		}
 		break;
 	}
@@ -14099,7 +14207,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		}
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_ag);
+		r_core_return_invalid_command (core, "ag", input[0]);
 		break;
 	}
 }
@@ -15484,7 +15592,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_cmd0 (core, "afr@@c:isq");
 			r_config_set_b (core->config, "anal.hasnext", analHasnext);
 		} else {
-			r_core_cmd_help (core, help_msg_aaf);
+			r_core_return_invalid_command (core, "aaf", input[1]);
 		}
 		break;
 	case 'c': // "aac"
@@ -15575,7 +15683,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			if (!input[1] || input[1] == ' ' || input[1] == 'a') {
 				r_core_anal_inflags (core, input + 1);
 			} else {
-				r_core_cmd_help_contains (core, help_msg_aa, "aaF");
+				r_core_return_invalid_command (core, "aaF", input[1]);
 			}
 		}
 		break;
@@ -16172,8 +16280,12 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		free (cstr);
 		break;
 	}
-	default:
+	case '?':
+	case '\0':
 		r_core_cmd_help (core, help_msg_ac);
+		break;
+	default:
+		r_core_return_invalid_command (core, "acv", input[0]);
 		break;
 	}
 	if (err == R_ANAL_CLASS_ERR_NONEXISTENT_CLASS) {
@@ -16264,12 +16376,20 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		cmd_anal_class_method (core, input + 1);
 		break;
 	case 'g': { // "acg"
+		if (!r_core_graph_print_is_valid_format (input[1])) {
+			r_core_return_invalid_command (core, "acg", input[1]);
+			break;
+		}
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_ac, "acg");
+			break;
+		}
 		RGraph *graph = r_anal_class_get_inheritance_graph (core->anal);
 		if (!graph) {
 			R_LOG_ERROR ("Couldn't create graph");
 			break;
 		}
-		r_core_graph_print (core, graph, -1, false, input + 1);
+		r_core_graph_print (core, graph, -1, false, input + 1, "acg");
 		r_graph_free (graph);
 	} break;
 	case '?': // "ac?"
