@@ -2438,9 +2438,7 @@ char *r_demangle_itanium(const char *mangled) {
 				// numeric ".N" groups attach to the current clone unit
 				while (rest[0] == '.' && isdigit ((unsigned char)rest[1])) {
 					rest++;
-					while (isdigit ((unsigned char)*rest)) {
-						rest++;
-					}
+					rest = r_str_trim_head_digits (rest);
 				}
 				r_strbuf_append (o, " [clone ");
 				r_strbuf_append_n (o, start, (int)(rest - start));

@@ -111,9 +111,7 @@ R_IPI bool r_bin_name_is_unnamed(const char *name) {
 	}
 	if (r_str_startswith (name, "UnknownModule")) {
 		const char *p = name + strlen ("UnknownModule");
-		while (isdigit (*p)) {
-			p++;
-		}
+		p = r_str_trim_head_digits (p);
 		return *p == '_' && is_hex_number (p + 1);
 	}
 	return false;

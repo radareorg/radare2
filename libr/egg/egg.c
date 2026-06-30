@@ -469,10 +469,7 @@ R_API int r_egg_run_rop(REgg *egg) {
 #define R_EGG_FILL_TYPE_SEQ
 
 static inline char *eon(char *n) {
-	while (*n && (*n >= '0' && *n <= '9')) {
-		n++;
-	}
-	return n;
+	return r_str_trim_head_digits (n);
 }
 
 /* padding looks like:

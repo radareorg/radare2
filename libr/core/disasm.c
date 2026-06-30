@@ -6712,9 +6712,7 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 					char *s = colon + 1;
 					if (s && isdigit ((ut8)*s)) {
 						char *e = s;
-						while (*e && isdigit ((ut8)*e)) {
-							e++;
-						}
+						e = r_str_trim_head_digits (e);
 						if (!*e || IS_SEPARATOR (*e) || *e == 0x1b) {
 							size_suffix = true;
 							suffix_end = e;

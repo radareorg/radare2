@@ -2082,7 +2082,7 @@ R_IPI bool r_anal_var_is_default_argname(const char *name) {
 	}
 	const char *ptr = name + 3;
 	for (; *ptr; ptr++) {
-		if (!IS_DIGIT (*ptr)) {
+		if (!isdigit ((ut8)*ptr)) {
 			return false;
 		}
 	}

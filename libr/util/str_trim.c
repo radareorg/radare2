@@ -114,6 +114,15 @@ R_API const char *r_str_trim_head_ro(const char *str) {
 	return str;
 }
 
+R_API char *r_str_trim_head_digits(const char *str) {
+	R_RETURN_VAL_IF_FAIL (str, NULL);
+	const char *p = str;
+	for (; isdigit ((ut8)*p); p++) {
+		;
+	}
+	return (char *)p;
+}
+
 // TODO: find better name
 R_API const char *r_str_trim_head_wp(const char *str) {
 	R_RETURN_VAL_IF_FAIL (str, NULL);

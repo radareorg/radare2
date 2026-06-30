@@ -218,8 +218,8 @@ static bool gadget_esil_token_is_controlled(const char *token) {
 	if (R_STR_ISEMPTY (token)) {
 		return false;
 	}
-	if (r_str_startswith (token, "0x") || IS_DIGIT (*token)
-			|| ((*token == '-' || *token == '+') && IS_DIGIT (token[1]))) {
+	if (r_str_startswith (token, "0x") || isdigit ((ut8)*token)
+			|| ((*token == '-' || *token == '+') && isdigit ((ut8)token[1]))) {
 		return false;
 	}
 	return true;

@@ -594,9 +594,7 @@ char *r_demangle_rust_v0(const char *mangled) {
 	}
 	p += 2;
 	// an optional leading decimal (encoding version) precedes the path
-	while (isdigit ((unsigned char)*p)) {
-		p++;
-	}
+	p = r_str_trim_head_digits (p);
 	RV0 v = {0};
 	v.s = p;
 	v.len = (int)strlen (p);

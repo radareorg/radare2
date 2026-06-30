@@ -3141,7 +3141,7 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinFile *bf, RVecDwarfAbbrevDe
 	ls_foreach (ls, iter, kv) {
 		const char *k = sdbkv_key (kv);
 		const char *v = sdbkv_value (kv);
-		if (r_str_startswith (k, "DW_AT_comp_dir") && IS_DIGIT (k[14])) {
+		if (r_str_startswith (k, "DW_AT_comp_dir") && isdigit ((ut8)k[14])) {
 			ut64 offset = r_num_get (NULL, k + 14);
 			dwarf_metadata_set_comp_dir (bf, offset, true, v);
 		}

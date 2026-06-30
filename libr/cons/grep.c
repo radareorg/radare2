@@ -233,9 +233,7 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 				} else {
 					grep->sort_invert = false;
 				}
-				while (*ptr && isdigit (*ptr)) {
-					ptr++;
-				}
+				ptr = r_str_trim_head_digits (ptr);
 				if (*ptr == ':') {
 					ptr++;
 					grep->sort_row = atoi (ptr);

@@ -244,9 +244,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 			char *s = colon + 1;
 			if (s && isdigit ((ut8)*s)) {
 				char *e = s;
-				while (*e && isdigit ((ut8)*e)) {
-					e++;
-				}
+				e = r_str_trim_head_digits (e);
 				if (!*e || IS_SEPARATOR (*e) || *e == '\x1b') {
 					size_suffix = true;
 				}

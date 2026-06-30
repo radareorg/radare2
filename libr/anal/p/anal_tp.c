@@ -615,9 +615,7 @@ static bool parse_format(TPState *tps, const char *fmt, RVecString *vec) {
 	while (ptr) {
 		ptr++;
 		// strip [width] specifier
-		while (isdigit (*ptr)) {
-			ptr++;
-		}
+		ptr = r_str_trim_head_digits (ptr);
 		r_str_ncpy (arr, ptr, sizeof (arr) - 1);
 		char *tmp = arr;
 		while (isalpha (*tmp)) {

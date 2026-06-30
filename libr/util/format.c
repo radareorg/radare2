@@ -2071,9 +2071,7 @@ R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const 
 	/* get times */
 	otimes = times = atoi (arg);
 	if (times > 0) {
-		while (isdigit (*arg)) {
-			arg++;
-		}
+		arg = r_str_trim_head_digits (arg);
 	}
 
 	char *bracket = strchr (arg, '{');
