@@ -3751,7 +3751,6 @@ static char *strchr_ansi(const char *s, int c) {
 R_API char *r_str_highlight(char *str, const char *word, const char *color, const char *color_reset) {
 	R_RETURN_VAL_IF_FAIL (str, NULL);
 	if (!*str) {
-		// not sure if that shuold be a valid case
 		return NULL;
 	}
 	ut32 i = 0, j = 0, to_copy;
@@ -3762,7 +3761,7 @@ R_API char *r_str_highlight(char *str, const char *word, const char *color, cons
 	if (!color) {
 		return strdup (str);
 	}
-	if (!word || !*word) {
+	if (R_STR_ISEMPTY (word)) {
 		return r_str_newf ("%s%s%s", color, str, color_reset);
 	}
 	ut32 l_word = strlen (word);
