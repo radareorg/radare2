@@ -1069,3 +1069,28 @@ EXPECT=<<EOF
 ]
 EOF
 RUN
+
+NAME=pfp printf format string to pf (64bit)
+FILE=-
+ARGS=-e asm.bits=64
+CMDS=pfp %s%d%f%x
+EXPECT=<<EOF2
+SiFx
+EOF2
+RUN
+
+NAME=pfp printf format string to pf (32bit)
+FILE=-
+ARGS=-e asm.bits=32
+CMDS=pfp %ld%s
+EXPECT=<<EOF2
+is
+EOF2
+RUN
+
+NAME=pfp rejects unsupported format
+FILE=-
+CMDS=pfp %1$s
+EXPECT=<<EOF2
+EOF2
+RUN

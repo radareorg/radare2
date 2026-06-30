@@ -3921,6 +3921,146 @@ R_API char *r_str_from_ut64(ut64 val) {
 	return str;
 }
 
+static void conv_append(RStrBuf *sb, bool as_pf, const char *type, const char *pf) {
+	if (as_pf) {
+		r_strbuf_append (sb, pf);
+		return;
+	}
+	if (r_strbuf_length (sb)) {
+		r_strbuf_append (sb, ",");
+	}
+	r_strbuf_append (sb, type);
+}
+
+static const char *skip_digits(const char *p) {
+	while (isdigit ((unsigned char)*p)) {
+		p++;
+	}
+	return p;
+}
+
+// mode '*' returns a pf format string (bits resolves long/size_t/pointer width); otherwise a comma-separated list of C type names; NULL if any conversion is unsupported
+R_API char *r_str_printfmt(const char *fmt, int mode, int bits) {
+	R_RETURN_VAL_IF_FAIL (fmt, NULL);
+	const bool as_pf = mode == '*';
+	const bool w8 = bits == 64;
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
+		return NULL;
+	}
+	for (const char *p = fmt; *p; p++) {
+		if (*p != '%') {
+			continue;
+		}
+		p++;
+		if (*p == '%') {
+			continue;
+		}
+		if (*p == '\0') {
+			goto fail;
+		}
+		if (*skip_digits (p) == '$') {
+			goto fail; // positional %m$ unsupported
+		}
+		while (*p && strchr ("-+ #0'", *p)) {
+			p++;
+		}
+		if (*p == '*') {
+			conv_append (sb, as_pf, "int", "i");
+			p++;
+		} else {
+			p = skip_digits (p);
+		}
+		if (*p == '.') {
+			p++;
+			if (*p == '*') {
+				conv_append (sb, as_pf, "int", "i");
+				p++;
+			} else {
+				p = skip_digits (p);
+			}
+		}
+		int isize = 4; // default-promoted int
+		bool longdbl = false;
+		if (*p == 'h') {
+			p++;
+			if (*p == 'h') {
+				p++;
+			}
+		} else if (*p == 'l') {
+			p++;
+			if (*p == 'l') {
+				p++;
+				isize = 8;
+			} else {
+				isize = 0; // long
+			}
+		} else if (*p == 'L') {
+			p++;
+			longdbl = true;
+		} else if (*p == 'j' || *p == 'q') {
+			p++;
+			isize = 8;
+		} else if (*p == 'z' || *p == 't') {
+			p++;
+			isize = 0;
+		}
+		const bool wide = (isize == 8) || (isize == 0 && w8);
+		const char *type = NULL, *pf = NULL;
+		switch (*p) {
+		case 'd': case 'i':
+			type = isize == 8? "long long": isize == 0? "long": "int";
+			pf = wide? "q": "i";
+			break;
+		case 'u': case 'o': case 'x': case 'X':
+			type = isize == 8? "unsigned long long": isize == 0? "unsigned long": "unsigned int";
+			pf = wide? "q": "x";
+			break;
+		case 'c':
+			type = "int";
+			pf = "i";
+			break;
+		case 's':
+			type = "char *";
+			pf = w8? "S": "s";
+			break;
+		case 'p':
+			type = "void *";
+			pf = "p";
+			break;
+		case 'n':
+			type = "int *";
+			pf = "p";
+			break;
+		case 'f': case 'F': case 'e': case 'E': case 'g': case 'G': case 'a': case 'A':
+			type = longdbl? "long double": "double";
+			pf = longdbl? "G": "F";
+			break;
+		default:
+			goto fail;
+		}
+		conv_append (sb, as_pf, type, pf);
+	}
+	return r_strbuf_drain (sb);
+fail:
+	r_strbuf_free (sb);
+	return NULL;
+}
+
+R_API int r_str_fmtargs(const char *fmt) {
+	int n = 0;
+	while (*fmt) {
+		if (*fmt == '%') {
+			if (fmt[1] == '*') {
+				n++;
+			}
+			n++;
+		}
+		fmt++;
+	}
+	return n;
+}
+
 // Strips all the lines in str that contain key
 R_API void r_str_stripLine(char *str, const char *key) {
 	if (!str || !key) {
@@ -3979,21 +4119,6 @@ R_API char *r_str_array_join(const char **a, size_t n, const char *sep) {
 		r_strbuf_append (sb, a[i]);
 	}
 	return r_strbuf_drain (sb);
-}
-
-/* return the number of arguments expected as extra arguments */
-R_API int r_str_fmtargs(const char *fmt) {
-	int n = 0;
-	while (*fmt) {
-		if (*fmt == '%') {
-			if (fmt[1] == '*') {
-				n++;
-			}
-			n++;
-		}
-		fmt++;
-	}
-	return n;
 }
 
 // str-bool

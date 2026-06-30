@@ -831,6 +831,33 @@ bool test_r_str_font(void) {
 	mu_end;
 }
 
+bool test_r_str_printfmt_types(void) {
+	mu_assert_streq_free (r_str_printfmt ("%s %d %f %x\n", 0, 0),
+		"char *,int,double,unsigned int", "printf conversions to C types");
+	mu_assert_streq_free (r_str_printfmt ("%ld %lld %zu", 0, 0),
+		"long,long long,unsigned long", "length modifiers");
+	mu_assert_streq_free (r_str_printfmt ("%c %p %Lf", 0, 0),
+		"int,void *,long double", "char/pointer/long double");
+	mu_assert_streq_free (r_str_printfmt ("%*d", 0, 0),
+		"int,int", "star width consumes an int arg");
+	mu_assert_streq_free (r_str_printfmt ("100%% done", 0, 0),
+		"", "literal percent takes no arg");
+	mu_assert_null (r_str_printfmt ("%1$s", 0, 0), "positional args unsupported");
+	mu_assert_null (r_str_printfmt ("%y", 0, 0), "unknown conversion rejected");
+	mu_end;
+}
+
+bool test_r_str_printfmt_pf(void) {
+	mu_assert_streq_free (r_str_printfmt ("%s %d %f %x\n", '*', 64),
+		"SiFx", "printf conversions to pf (64-bit)");
+	mu_assert_streq_free (r_str_printfmt ("%ld %p", '*', 64),
+		"qp", "long is qword on 64-bit");
+	mu_assert_streq_free (r_str_printfmt ("%ld %s", '*', 32),
+		"is", "long is dword-signed and string ptr is 32-bit on 32-bit");
+	mu_assert_null (r_str_printfmt ("%y", '*', 64), "unknown conversion rejected");
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_file);
 	mu_run_test (test_r_str_wrap);
@@ -873,6 +900,8 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_ndup_zero_len);
 	mu_run_test (test_r_str_word_get0set);
 	mu_run_test (test_r_str_font);
+	mu_run_test (test_r_str_printfmt_types);
+	mu_run_test (test_r_str_printfmt_pf);
 	return tests_passed != tests_run;
 }
 

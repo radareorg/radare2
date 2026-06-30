@@ -436,6 +436,7 @@ static RCoreHelpMessage help_msg_pf = {
 	"pfj ", "fmt_name|fmt", "show data using (named) format in JSON",
 	"pfo", " fdf_name", "load a Format Definition File (fdf)",
 	"pfo", "", "list all format definition files (fdf)",
+	"pfp", " printf-fmt", "convert a printf-style format string to a pf format string (honors asm.bits)",
 	"pfq", " fmt ...", "quiet print format (do now show address)",
 	"pfs", "[.fmt_name|fmt]", "print the size of (named) format in bytes",
 	"pfv.", "fmt_name[.field]", "print value(s) only for named format. Useful for one-liners",
@@ -2444,6 +2445,34 @@ static void cmd_pfb(RCore *core, const char *_input) {
 	}
 }
 
+static void cmd_pfp(RCore *core, const char *_input) {
+	switch (_input[2]) {
+	case ' ':
+		{
+			const char *fmt = r_str_trim_head_ro (_input + 2);
+			if (R_STR_ISEMPTY (fmt)) {
+				r_core_cmd_help_match (core, help_msg_pf, "pfp");
+				break;
+			}
+			char *s = r_str_printfmt (fmt, '*', r_config_get_i (core->config, "asm.bits"));
+			if (!s) {
+				R_LOG_ERROR ("Cannot map printf format string to pf");
+				break;
+			}
+			r_cons_println (core->cons, s);
+			free (s);
+		}
+		break;
+	case '?':
+	case 0:
+		r_core_cmd_help_match (core, help_msg_pf, "pfp");
+		break;
+	default:
+		r_core_return_invalid_command (core, "pfp", _input[2]);
+		break;
+	}
+}
+
 static bool is_pfo_file(const char *fn) {
 	if (*fn != '.') {
 		if (r_str_endswith (fn, ".r2")) {
@@ -2545,6 +2574,9 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8 *block, 
 		return;
 	case 'b': // "pfb"
 		cmd_pfb (core, _input);
+		return;
+	case 'p': // "pfp"
+		cmd_pfp (core, _input);
 		return;
 	case 'o': // "pfo"
 		if (_input[2] == '?') {
