@@ -328,7 +328,7 @@ R_API const char *r_str_last(const char *in, const char *ch);
 R_API char* r_str_highlight(char *str, const char *word, const char *color, const char *color_reset);
 R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool inverted);
 R_API char *r_str_from_ut64(ut64 val);
-R_API void r_str_stripLine(char *str, const char *key);
+R_API void r_str_stripline(char *str, const char *key);
 R_API char *r_str_list_join(RList *str, const char *sep);
 R_API char *r_str_array_join(const char **a, size_t n, const char *sep);
 

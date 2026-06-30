@@ -138,40 +138,24 @@ static void cmd_Pn(RCore *core, const char *input, const char *fileproject) {
 	switch (input[1]) {
 	case '-': // "Pn-"
 		/* remove lines containing specific words */
-	{
-		char *notes_file = r_core_project_notes_file (core, fileproject);
-		if (!notes_file) {
-			break;
-		}
-		FILE *fd = r_sandbox_fopen (notes_file, "w");
-		if (!fd) {
-			R_LOG_ERROR ("Cannot open %s", notes_file);
-		} else {
-			char *data = r_file_slurp (notes_file, NULL);
-			int count = 0;
-			if (data) {
-				char *ptr, *nl;
-				for (ptr = data; ptr; ptr = nl) {
-					nl = strchr (ptr, '\n');
-					if (nl) {
-						*nl++ = 0;
-						if (strstr (ptr, input + 2)) {
-							count++;
-						} else {
-							fprintf (fd, "%s\n", ptr);
-						}
-					}
+		{
+			char *notes_file = r_core_project_notes_file (core, fileproject);
+			if (!notes_file) {
+				break;
+			}
+			if (input[2]) {
+				char *data = r_file_slurp (notes_file, NULL);
+				if (data) {
+					r_str_stripline (data, input + 2);
+					r_file_dump (notes_file, (const ut8 *)data, -1, false);
+					free (data);
 				}
-				free (data);
+			} else {
+				r_file_dump (notes_file, NULL, 0, false);
 			}
-			if (count > 0) {
-				R_LOG_ERROR ("Deleted %d lines", count);
-			}
-			fclose (fd);
+			free (notes_file);
 		}
-		free (notes_file);
-	}
-	break;
+		break;
 	case ' ': // "Pn "
 	{
 		char *notes_file = r_core_project_notes_file (core, fileproject);

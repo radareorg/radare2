@@ -247,7 +247,7 @@ static bool r_egg_cfile_parseCompiled(const char *file) {
 	const char *words[] = { ".cstring", "size", "___main", "section", "__alloca", "zero", "cfi" };
 	size_t i;
 	for (i = 0; i < 7; i++) {
-		r_str_stripLine (buffer, words[i]);
+		r_str_stripline (buffer, words[i]);
 	}
 
 	free (fileExt);

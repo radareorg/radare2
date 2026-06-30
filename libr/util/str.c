@@ -3278,6 +3278,7 @@ R_API int r_str_bounds(const char *_str, int *h) {
  * is a newly allocated string, that should be deallocated by the user */
 R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y,
 	unsigned int x2, unsigned int y2) {
+	R_RETURN_VAL_IF_FAIL (str, NULL);
 	char *r, *ret;
 	unsigned int ch = 0, cw = 0;
 	if (x2 < 1 || y2 < 1 || !str) {
@@ -3405,17 +3406,16 @@ R_API char *r_str_wrap(const char *str, int w) {
 }
 
 R_API int r_str_do_until_token(str_operation op, char *str, const char tok) {
-	int ret;
-	if (!str) {
-		return -1;
-	}
-	if (!op) {
-		for (ret = 0; (str[ret] != tok) && str[ret]; ret++) {
-			// empty body
-		}
-	} else {
-		for (ret = 0; (str[ret] != tok) && str[ret]; ret++) {
-			op (str + ret);
+	int ret = -1;
+	if (str) {
+		if (op) {
+			for (ret = 0; (str[ret] != tok) && str[ret]; ret++) {
+				op (str + ret);
+			}
+		} else {
+			for (ret = 0; (str[ret] != tok) && str[ret]; ret++) {
+				// empty body
+			}
 		}
 	}
 	return ret;
@@ -3456,13 +3456,10 @@ R_API char *r_str_repeat(const char *ch, int sz) {
 }
 
 R_API char *r_str_between(const char *cmt, const char *prefix, const char *suffix) {
-	const char *c0, *c1;
-	if (!cmt || !prefix || !suffix || !*cmt) {
-		return NULL;
-	}
-	c0 = strstr (cmt, prefix);
+	R_RETURN_VAL_IF_FAIL (cmt && prefix && suffix, NULL);
+	const char *c0 = strstr (cmt, prefix);
 	if (c0) {
-		c1 = strstr (c0 + strlen (prefix), suffix);
+		const char *c1 = strstr (c0 + strlen (prefix), suffix);
 		if (c1) {
 			return r_str_ndup (c0 + strlen (prefix), (c1 - c0 - strlen (prefix)));
 		}
@@ -3530,7 +3527,7 @@ R_API RVecStringSlice *r_str_split_vec(const char *str, const char *c, int n) {
 R_API RList *r_str_split_list_dup(char *str, const char *c, int n) {
 	R_RETURN_VAL_IF_FAIL (str && c, NULL);
 	RList *lst = r_list_newf (NULL);
-	char *aux = str; // R2_600 - XXX should be an strdup
+	char *aux = str; // R2_600 - XXX should be an strdup to not modify the string passed
 	int i = 0;
 	char *e = aux;
 	const size_t clen = strlen (c);
@@ -3618,25 +3615,18 @@ R_API RList *r_str_split_duplist(const char *_str, const char *c, bool trim) {
 }
 
 R_API size_t *r_str_split_lines(char *str, size_t *count) {
-	int i;
-	size_t lines = 0;
 	if (!str) {
 		return NULL;
 	}
-	size_t *indexes = NULL;
-	// count lines
-	for (i = 0; str[i]; i++) {
-		if (str[i] == '\n') {
-			lines++;
-		}
-	}
+	size_t lines = r_str_char_count (str, '\n');
 	// allocate and set indexes
-	indexes = calloc (sizeof (count[0]), lines + 1);
+	size_t *indexes = calloc (sizeof (indexes[0]), lines + 1);
 	if (!indexes) {
 		return NULL;
 	}
 	size_t line = 0;
 	indexes[line++] = 0;
+	size_t i;
 	for (i = 0; str[i]; i++) {
 		if (str[i] == '\n') {
 			str[i] = 0;
@@ -3706,7 +3696,7 @@ static int strncpy_with_color_codes(char *s1, char *s2, int n) {
 	return i;
 }
 
-static int strncmp_skip_color_codes(const char *s1, const char *s2, int n) {
+static int strncmp_ansi(const char *s1, const char *s2, int n) {
 	int i = 0, j = 0;
 	int count = 0;
 	for (i = 0, j = 0; s1[i] && s2[j] && count < n; i++, j++, count++) {
@@ -3738,7 +3728,7 @@ static int strncmp_skip_color_codes(const char *s1, const char *s2, int n) {
 	return 0;
 }
 
-static char *strchr_skip_color_codes(const char *s, int c) {
+static char *strchr_ansi(const char *s, int c) {
 	int i = 0;
 	for (i = 0; s[i]; i++) {
 		while (s[i] && s[i] == 0x1b) {
@@ -3759,7 +3749,9 @@ static char *strchr_skip_color_codes(const char *s, int c) {
 // Global buffer to speed up colorizing performance
 
 R_API char *r_str_highlight(char *str, const char *word, const char *color, const char *color_reset) {
-	if (!str || !*str) {
+	R_RETURN_VAL_IF_FAIL (str, NULL);
+	if (!*str) {
+		// not sure if that shuold be a valid case
 		return NULL;
 	}
 	ut32 i = 0, j = 0, to_copy;
@@ -3779,7 +3771,7 @@ R_API char *r_str_highlight(char *str, const char *word, const char *color, cons
 	while (start && (start < str + l_str)) {
 		int copied = 0;
 		// find first letter
-		start = strchr_skip_color_codes (str + i, *word);
+		start = strchr_ansi (str + i, *word);
 		if (start) {
 			to_copy = start - (str + i);
 			if (to_copy + j + 1 > sizeof (o)) {
@@ -3789,7 +3781,7 @@ R_API char *r_str_highlight(char *str, const char *word, const char *color, cons
 			strncpy (o + j, str + i, to_copy);
 			i += to_copy;
 			j += to_copy;
-			if (!strncmp_skip_color_codes (start, word, l_word)) {
+			if (!strncmp_ansi (start, word, l_word)) {
 				if (j + strlen (color) >= sizeof (o)) {
 					// XXX. no limits
 					break;
@@ -3824,14 +3816,11 @@ R_API char *r_str_highlight(char *str, const char *word, const char *color, cons
 }
 
 R_API wchar_t *r_str_mb_to_wc_l(const char *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (buf && len > 0, NULL);
 	wchar_t *res_buf = NULL;
-	size_t sz;
 	bool fail = true;
 
-	if (!buf || len <= 0) {
-		return NULL;
-	}
-	sz = mbstowcs (NULL, buf, len);
+	size_t sz = mbstowcs (NULL, buf, len);
 	if (sz == (size_t)-1) {
 		goto err_r_str_mb_to_wc;
 	}
@@ -4061,11 +4050,9 @@ R_API int r_str_fmtargs(const char *fmt) {
 	return n;
 }
 
-// Strips all the lines in str that contain key
-R_API void r_str_stripLine(char *str, const char *key) {
-	if (!str || !key) {
-		return;
-	}
+// Strips in-place all the lines in str that contain key
+R_API void r_str_stripline(char *str, const char *key) {
+	R_RETURN_IF_FAIL (str && key);
 	size_t i, j;
 	size_t klen = strlen (key);
 	size_t slen = strlen (str);
