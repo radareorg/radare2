@@ -154,6 +154,7 @@ R_API double GH(get_glibc_version)(RCore *core, const char *libc_path) {
 		fseek (libc_file, version_symbol, SEEK_SET);
 		if (fread (version_buffer, 1, 4, libc_file) != 4)	{
 			R_LOG_WARN ("resolve_glibc_version: Failed to read 4 bytes of version symbol");
+			fclose (libc_file);
 			return false;
 		};
 
