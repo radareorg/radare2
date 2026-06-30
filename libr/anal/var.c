@@ -1231,6 +1231,19 @@ static bool extract_arm_stack_restore_arg(RAnal *anal, RAnalFunction *fcn, RAnal
 	return true;
 }
 
+// the ppc PLT/call stubs save the TOC pointer (std/ld r2, N(r1)) into the caller linkage area, which is not an incoming stack arg
+static bool op_is_ppc_toc_save(RAnal *anal, RAnalOp *op) {
+	const ut32 ot = op->type & R_ANAL_OP_TYPE_MASK;
+	if (ot != R_ANAL_OP_TYPE_STORE && ot != R_ANAL_OP_TYPE_LOAD) {
+		return false;
+	}
+	if (strcmp (anal->config->arch, "ppc")) {
+		return false;
+	}
+	RAnalValue *toc = RVecRArchValue_at (ot == R_ANAL_OP_TYPE_STORE? &op->srcs: &op->dsts, 0);
+	return toc && toc->reg && !strcmp (toc->reg, "r2");
+}
+
 static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
 	st64 ptr = 0;
 	const st64 maxstackframe = 1024 * 8;
@@ -1243,6 +1256,10 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	R_RETURN_IF_FAIL (anal && fcn && op && reg);
 
 	r_anal_function_cc (fcn); // resolve a lazy dyncc marker before reading fcn->callconv
+
+	if (op_is_ppc_toc_save (anal, op)) {
+		return;
+	}
 
 	R_VEC_FOREACH (&op->srcs, val) {
 		if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size)) {
