@@ -664,3 +664,29 @@ EXPECT=<<EOF
         v0 = [obj.tc_meter_enable]
 EOF
 RUN
+
+NAME=pdc expands printf varargs from the literal format string
+FILE=bins/elf/format
+CMDS=<<EOF2
+aa
+s main
+pdc~printf("Results
+pdc~printf("msg
+EOF2
+EXPECT=<<EOF2
+         sym.imp.printf () // int printf("Results : a : %u , b: %ld\n", 21, 21)
+         sym.imp.printf () // int printf("msg : %s\n", "")
+EOF2
+RUN
+
+NAME=pdc leaves x86-32 cdecl stack varargs unexpanded (register-ABI only)
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF2
+aa
+s main
+pdc~printf("IOLI
+EOF2
+EXPECT=<<EOF2
+        sym.imp.printf () // int printf("IOLI Crackme Level 0x00\n", -1)
+EOF2
+RUN

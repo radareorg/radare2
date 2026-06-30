@@ -201,6 +201,94 @@ static void r_anal_function_arg_free(RAnalFuncArg *arg) {
 	}
 }
 
+// printf-family formatters whose vararg list is described by the fixed arg right before "..."
+static bool is_format_function(const char *name) {
+	const char *base = r_str_rchr (name, NULL, '.');
+	base = base? base + 1: name;
+	static const char *const fns[] = {
+		"printf", "fprintf", "dprintf", "sprintf", "snprintf", "asprintf",
+		"syslog", "err", "errx", "warn", "warnx",
+		"wprintf", "fwprintf", "swprintf",
+		"__printf_chk", "__fprintf_chk", "__sprintf_chk", "__snprintf_chk", NULL
+	};
+	int i;
+	for (i = 0; fns[i]; i++) {
+		if (!strcmp (base, fns[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static char *read_format_string(RCore *core, ut64 ptr) {
+	if (!ptr || ptr == UT64_MAX) {
+		return NULL;
+	}
+	ut8 buf[256];
+	if (!r_io_read_at (core->io, ptr, buf, sizeof (buf) - 1)) {
+		return NULL;
+	}
+	buf[sizeof (buf) - 1] = 0;
+	if (!buf[0] || !IS_PRINTABLE (buf[0])) {
+		return NULL;
+	}
+	return strdup ((const char *)buf);
+}
+
+static RAnalFuncArg *make_vararg(RCore *core, const char *cc, int slot, const char *ctype, ut64 *spv, ut64 s_width) {
+	RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
+	arg->orig_c_type = strdup (ctype);
+	arg->c_type = arg->orig_c_type;
+	arg->name = "";
+	arg->size = s_width;
+	// "z" makes print_fcn_arg/print_format_values render the string; scalars print their raw value
+	arg->fmt = !strcmp (ctype, "char *")? "z": NULL;
+	arg->cc_source = r_anal_cc_argloc (core->anal, cc, slot, 0, -1);
+	if (cc_source_on_stack (core->anal, arg->cc_source)) {
+		arg->src = *spv;
+		*spv += s_width;
+	} else {
+		const char *reg = cc_source_reg (core->anal, arg->cc_source);
+		if (reg) {
+			arg->src = r_reg_getv (core->anal->reg, reg);
+		}
+	}
+	return arg;
+}
+
+// false leaves the "..." placeholder in place: the format arg isn't a resolvable literal
+static bool append_format_varargs(RCore *core, RList *list, const char *cc, int nargs, ut64 *spv, ut64 s_width) {
+	const char *floc = r_anal_cc_argloc (core->anal, cc, nargs - 2, 0, -1);
+	const char *freg = cc_source_reg (core->anal, floc);
+	if (!freg) {
+		return false;
+	}
+	char *fmt = read_format_string (core, r_reg_getv (core->anal->reg, freg));
+	if (!fmt) {
+		return false;
+	}
+	char *types = r_str_printfmt (fmt, core->anal->config->bits, 0);
+	free (fmt);
+	if (!types) {
+		return false;
+	}
+	int k = 0;
+	char *vt = types;
+	while (*vt) {
+		char *comma = strchr (vt, ',');
+		char *t = comma? r_str_ndup (vt, comma - vt): strdup (vt);
+		r_list_append (list, make_vararg (core, cc, nargs - 1 + k, t, spv, s_width));
+		free (t);
+		k++;
+		if (!comma) {
+			break;
+		}
+		vt = comma + 1;
+	}
+	free (types);
+	return true;
+}
+
 /* Returns a list of RAnalFuncArg */
 R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	if (!fcn_name || !core->anal) {
@@ -231,7 +319,13 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 			r_list_append (list, arg);
 		}
 	} else {
+		bool variadic = nargs > 1 && is_format_function (key)
+			&& !strcmp (r_type_func_args_name (TDB, key, nargs - 1), "...");
 		for (i = 0; i < nargs; i++) {
+			if (variadic && i == nargs - 1
+				&& append_format_varargs (core, list, cc, nargs, &spv, s_width)) {
+				continue;
+			}
 			RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
 			set_fcn_args_info (arg, core->anal, key, cc, i);
 			if (cc_source_on_stack (core->anal, arg->cc_source)) {
