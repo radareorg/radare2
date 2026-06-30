@@ -67,7 +67,7 @@ ST_FUNC void dynarray_add(void ***ptab, int *nb_ptr, void *data) {
 			nb_alloc = nb * 2;
 		}
 		void **tmp_pp = realloc (pp, nb_alloc * sizeof (void *));
-		if (!tmp_pp){
+		if (!tmp_pp) {
 			return;
 		}
 		pp = tmp_pp;
