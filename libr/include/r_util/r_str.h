@@ -149,6 +149,7 @@ R_API const char *r_str_perm(int perm, bool with_dash);
 R_API const char *r_str_rwx_i(int rwx);  // Deprecated: use r_str_perm(rwx, false)
 R_API const char *r_str_srwx_i(int rwx);  // Deprecated: use r_str_perm(rwx, true)
 R_API int r_str_fmtargs(const char *fmt);
+R_API char *r_str_printfmt(const char *fmt, int bits, int mode);
 R_API char *r_str_arg_escape(const char *arg);
 R_API int r_str_arg_unescape(char *arg);
 R_API char **r_str_argv(const char *str, int *_argc);
