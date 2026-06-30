@@ -848,13 +848,13 @@ bool test_r_str_printfmt_types(void) {
 }
 
 bool test_r_str_printfmt_pf(void) {
-	mu_assert_streq_free (r_str_printfmt ("%s %d %f %x\n", '*', 64),
+	mu_assert_streq_free (r_str_printfmt ("%s %d %f %x\n", 64, '*'),
 		"SiFx", "printf conversions to pf (64-bit)");
-	mu_assert_streq_free (r_str_printfmt ("%ld %p", '*', 64),
+	mu_assert_streq_free (r_str_printfmt ("%ld %p", 64, '*'),
 		"qp", "long is qword on 64-bit");
-	mu_assert_streq_free (r_str_printfmt ("%ld %s", '*', 32),
+	mu_assert_streq_free (r_str_printfmt ("%ld %s", 32, '*'),
 		"is", "long is dword-signed and string ptr is 32-bit on 32-bit");
-	mu_assert_null (r_str_printfmt ("%y", '*', 64), "unknown conversion rejected");
+	mu_assert_null (r_str_printfmt ("%y", 64, '*'), "unknown conversion rejected");
 	mu_end;
 }
 

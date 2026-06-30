@@ -3940,7 +3940,7 @@ static const char *skip_digits(const char *p) {
 }
 
 // mode '*' returns a pf format string (bits resolves long/size_t/pointer width); otherwise a comma-separated list of C type names; NULL if any conversion is unsupported
-R_API char *r_str_printfmt(const char *fmt, int mode, int bits) {
+R_API char *r_str_printfmt(const char *fmt, int bits, int mode) {
 	R_RETURN_VAL_IF_FAIL (fmt, NULL);
 	const bool as_pf = mode == '*';
 	const bool w8 = bits == 64;

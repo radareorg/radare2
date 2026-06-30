@@ -2454,7 +2454,7 @@ static void cmd_pfp(RCore *core, const char *_input) {
 				r_core_cmd_help_match (core, help_msg_pf, "pfp");
 				break;
 			}
-			char *s = r_str_printfmt (fmt, '*', r_config_get_i (core->config, "asm.bits"));
+			char *s = r_str_printfmt (fmt, r_config_get_i (core->config, "asm.bits"), '*');
 			if (!s) {
 				R_LOG_ERROR ("Cannot map printf format string to pf");
 				break;
