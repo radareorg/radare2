@@ -2363,3 +2363,18 @@ EXPECT=<<EOF
             0x00000000      48b8000000..   movabs rax, -9223372036854775808
 EOF
 RUN
+
+NAME=pdf emu expands printf-family varargs from the format string
+FILE=bins/elf/format
+CMDS=<<EOF2
+aa
+s main
+e asm.emu=1
+e emu.str=1
+e emu.write=1
+pdf~int printf("Results
+EOF2
+EXPECT=<<EOF2
+|                                                                      ; int printf("Results : a : %u , b: %ld\n", 0xffffffff, -1)
+EOF2
+RUN
