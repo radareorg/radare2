@@ -1008,11 +1008,7 @@ static const char *cc_group_next(const char *s, const char *end) {
 			return p;
 		}
 		if (*p == ':') {
-			const char *n = s;
-			while (n < p && isdigit ((ut8)*n)) {
-				n++;
-			}
-			if (n != p) {
+			if (r_str_trim_head_digits (s) != p) {
 				return p;
 			}
 		}

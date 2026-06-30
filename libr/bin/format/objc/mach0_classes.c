@@ -1072,15 +1072,6 @@ static void get_protocol_list_of_lists(RBinFile *bf, RBinClass *klass, objc_cach
 	iterate_list_of_lists (bf, on_protocol_list, &ctx, p);
 }
 
-#if 0
-static inline const char *skipnum(const char *s) {
-	while (isdigit (*s)) {
-		s++;
-	}
-	return s;
-}
-#endif
-
 static char *demangle_classname(RBin *rbin, const char *s) {
 	char *ret;
 	if (r_str_startswith (s, "_TtC")) {

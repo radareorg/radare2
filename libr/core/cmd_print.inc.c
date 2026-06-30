@@ -2172,10 +2172,7 @@ static int whatbpos(const char *arg) {
 				R_LOG_ERROR ("Too large. Max is 64");
 				return bpos;
 			}
-			while (isdigit (*arg)) {
-				arg += 1;
-			}
-			arg--;
+			arg = r_str_trim_head_digits (arg) - 1;
 		} else if (*arg == '.') {
 			if (n < 1) {
 				n = 1;
@@ -2263,10 +2260,7 @@ static void pfb(RCore *core, const char *arg, int mode) {
 				pj_free (pj);
 				return;
 			}
-			while (isdigit (*arg)) {
-				arg += 1;
-			}
-			arg--;
+			arg = r_str_trim_head_digits (arg) - 1;
 		} else if (*arg == '.') {
 			// skip bit
 			if (n < 1) {
@@ -3256,10 +3250,8 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 	if (count > ST32_MAX / 8) {
 		count = ST32_MAX / 8;
 	}
-	// skipspaces
-	while (*str >= '0' && *str <= '9') {
-		str++;
-	}
+	// skip count
+	str = r_str_trim_head_digits (str);
 	// "px/" alone isn't a full command.
 	if (!str[0]) {
 		return;

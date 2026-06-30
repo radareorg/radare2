@@ -77,7 +77,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		num[0] = 0;
 		for (arr += 2; bufi < count && *arr; arr++) {
 			const char c = *arr;
-			if (IS_DIGIT (c)) {
+			if (isdigit ((ut8)c)) {
 				if (numi < (int)sizeof (num) - 1) {
 					num[numi++] = c;
 					num[numi] = 0;

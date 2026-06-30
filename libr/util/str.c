@@ -3921,13 +3921,6 @@ static void conv_append(RStrBuf *sb, bool as_pf, const char *type, const char *p
 	r_strbuf_append (sb, type);
 }
 
-static const char *skip_digits(const char *p) {
-	while (isdigit ((unsigned char)*p)) {
-		p++;
-	}
-	return p;
-}
-
 // mode '*' returns a pf format string (bits resolves long/size_t/pointer width); otherwise a comma-separated list of C type names; NULL if any conversion is unsupported
 R_API char *r_str_printfmt(const char *fmt, int bits, int mode) {
 	R_RETURN_VAL_IF_FAIL (fmt, NULL);
@@ -3948,7 +3941,7 @@ R_API char *r_str_printfmt(const char *fmt, int bits, int mode) {
 		if (*p == '\0') {
 			goto fail;
 		}
-		if (*skip_digits (p) == '$') {
+		if (*r_str_trim_head_digits (p) == '$') {
 			goto fail; // positional %m$ unsupported
 		}
 		while (*p && strchr ("-+ #0'", *p)) {
@@ -3958,7 +3951,7 @@ R_API char *r_str_printfmt(const char *fmt, int bits, int mode) {
 			conv_append (sb, as_pf, "int", "i");
 			p++;
 		} else {
-			p = skip_digits (p);
+			p = r_str_trim_head_digits (p);
 		}
 		if (*p == '.') {
 			p++;
@@ -3966,7 +3959,7 @@ R_API char *r_str_printfmt(const char *fmt, int bits, int mode) {
 				conv_append (sb, as_pf, "int", "i");
 				p++;
 			} else {
-				p = skip_digits (p);
+				p = r_str_trim_head_digits (p);
 			}
 		}
 		int isize = 4; // default-promoted int

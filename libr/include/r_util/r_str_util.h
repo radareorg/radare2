@@ -12,8 +12,6 @@ extern "C" {
 		(x) == '(' || (x) == ')' || (x) == '{' || (x) == '}')
 #define IS_HEXCHAR(x) (((x) >= '0' && (x) <= '9') || ((x) >= 'a' && (x) <= 'f') || ((x) >= 'A' && (x) <= 'F'))
 #define IS_PRINTABLE(x) ((x) >=' ' && (x) <= '~')
-// R2_600 - deprecate
-#define IS_DIGIT(x) isdigit((x))
 #define IS_OCTAL(x) ((x) >= '0' && (x) <= '7')
 #define IS_WHITESPACE(x) ((x) == ' ' || (x) == '\t')
 #define IS_UPPER(c) isupper((c))

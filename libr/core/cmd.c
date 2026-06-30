@@ -3914,9 +3914,7 @@ static bool is_macro_command(const char *ptr) {
 		return false;
 	}
 	ptr = r_str_trim_head_ro (ptr);
-	while (isdigit (*ptr)) {
-		ptr++;
-	}
+	ptr = r_str_trim_head_digits (ptr);
 	return *ptr == '(';
 }
 
@@ -4085,9 +4083,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	// repeat command N times
 	if ((st64)rep > 0) {
-		while (isdigit (*cmd)) {
-			cmd++;
-		}
+		cmd = r_str_trim_head_digits (cmd);
 		// do not repeat null cmd
 		if (!*cmd) {
 			goto beach;
