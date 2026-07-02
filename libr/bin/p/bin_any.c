@@ -1,45 +1,10 @@
 /* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_bin.h>
-#include <r_magic.h>
-#include <r_util/r_file.h>
-
-static char *get_filetype(RBuffer *b) {
-	RMagic *ck = r_magic_new (0);
-	if (ck) {
-		char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
-		if (!magicpath) {
-			r_magic_free (ck);
-			return NULL;
-		}
-		if (!r_file_is_directory (magicpath) && !r_file_exists (magicpath)) {
-			free (magicpath);
-			r_magic_free (ck);
-			return NULL;
-		}
-		if (!r_magic_load (ck, magicpath)) {
-			free (magicpath);
-			r_magic_free (ck);
-			return NULL;
-		}
-		free (magicpath);
-		ut8 buf[256] = {0};
-		if (r_buf_read_at (b, 0, buf, sizeof (buf)) < 1) {
-			r_magic_free (ck);
-			return NULL;
-		}
-		const char *tmp = r_magic_buffer (ck, buf, sizeof (buf));
-		char *res = tmp? strdup (tmp): NULL;
-		r_magic_free (ck);
-		return res;
-	}
-	return NULL;
-}
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->file = bf->file? strdup (bf->file): NULL;
-	ret->type = get_filetype (bf->buf);
 	ret->has_retguard = -1;
 	return ret;
 }
