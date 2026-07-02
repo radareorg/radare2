@@ -1066,7 +1066,7 @@ R_API void r_bin_section_free(RBinSection *bs);
 
 /* plugin pointers */
 extern RBinLdrPlugin r_bin_ldr_plugin_ldr_linux;
-extern RBinPlugin r_bin_plugin_any;
+extern RBinPlugin r_bin_plugin_null;
 extern RBinPlugin r_bin_plugin_art;
 extern RBinPlugin r_bin_plugin_avr;
 extern RBinPlugin r_bin_plugin_bf;

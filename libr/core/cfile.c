@@ -517,7 +517,7 @@ static int r_core_file_load_for_debug(RCore *r, ut64 baseaddr, const char * R_NU
 	r_core_bin_set_env (r, bf);
 	plugin = r_bin_file_cur_plugin (bf);
 	const char *plugin_name = plugin? plugin->meta.name: "";
-	if (!strcmp (plugin_name, "any")) {
+	if (!strcmp (plugin_name, "null")) {
 		// set use of raw strings
 		// r_config_set_i (r->config, "io.va", false);
 		// r_config_set_b (r->config, "bin.str.raw", true);
@@ -597,7 +597,7 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 		}
 	}
 	plugin = r_bin_file_cur_plugin (bf);
-	if (plugin && !strcmp (plugin->meta.name, "any")) {
+	if (plugin && !strcmp (plugin->meta.name, "null")) {
 		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
@@ -836,7 +836,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 
 	if (desc && plugin && plugin->meta.name) {
-		if (!strcmp (plugin->meta.name, "any")) {
+		if (!strcmp (plugin->meta.name, "null")) {
 			ut64 size = (desc->name && (r_str_startswith (desc->name, "rap") && strstr (desc->name, "://")))
 				? UT64_MAX : r_io_desc_size (desc);
 			r_io_map_add (r->io, desc->fd, desc->perm, 0, laddr, size);

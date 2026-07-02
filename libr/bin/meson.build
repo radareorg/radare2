@@ -12,7 +12,7 @@ r_bin_sources = [
   'bobj.c',
 # plugins
   'p/bin_io.c',
-  'p/bin_any.c',
+  'p/bin_null.c',
   'p/bin_art.c',
   'p/bin_avr.c',
   'p/bin_bf.c',

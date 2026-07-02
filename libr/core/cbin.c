@@ -665,7 +665,7 @@ R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 co
 		return false;
 	}
 	if (plugin->info && plugin->meta.name) {
-		if (!strcmp (plugin->meta.name, "any") && !rawstr) {
+		if (!strcmp (plugin->meta.name, "null") && !rawstr) {
 			if (IS_MODE_JSON (mode)) {
 				pj_a (pj);
 				pj_end (pj);

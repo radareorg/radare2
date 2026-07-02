@@ -81,7 +81,7 @@ file     malloc://1025
 size     0x401
 humansz  1.0K
 mode     rwx
-format   any
+format   null
 iorw     true
 block    0x100
 nth vaddr bind type lib name
@@ -124,7 +124,7 @@ file     malloc://1024
 size     0x400
 humansz  1K
 mode     rwx
-format   any
+format   null
 iorw     true
 block    0x100
 e cfg.bigendian=false

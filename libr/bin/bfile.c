@@ -770,7 +770,7 @@ static RBinPlugin *get_plugin_from_buffer(RBin *bin, RBinFile *bf, const char *p
 		if (!plugin) {
 			plugin = r_bin_get_binplugin_by_buffer (bin, bf, buf);
 			if (!plugin) {
-				return r_libstore_find_name (bin->libstore, "any");
+				return r_libstore_find_name (bin->libstore, "null");
 			}
 		}
 	}

@@ -574,7 +574,7 @@ file     malloc://512
 size     0x200
 humansz  512
 mode     rwx
-format   any
+format   null
 iorw     true
 block    0x100
 EOF
