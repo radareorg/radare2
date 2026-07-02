@@ -2585,6 +2585,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	int msr_flags;
 	int pcdelta = (thumb? 4: 8);
 	ut32 mask = UT32_MAX;
+	int ldsz = 4;
 	int str_ldr_bytes = 4;
 	unsigned int width = 0;
 
@@ -3158,6 +3159,13 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		case ARM_INS_LDRSH:
 		case ARM_INS_LDRSHT:
 			mask = UT16_MAX;
+			ldsz = 2;
+			break;
+		case ARM_INS_LDRBT:
+		case ARM_INS_LDRSB:
+		case ARM_INS_LDRSBT:
+			mask = UT8_MAX;
+			ldsz = 1;
 			break;
 		default:
 			mask = UT32_MAX;
@@ -3169,17 +3177,17 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,0x%"PFMT64x
-					",>>,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
-					(ut64)MEMDISP(1), addr + pcdelta, mask, REG(0));
+					",>>,<<,+,0xffffffff,&,[%d],0x%x,&,%s,=",
+					(ut64)MEMDISP(1), addr + pcdelta, ldsz, mask, REG(0));
 			} else {
 				int disp = MEMDISP(1);
 				// not refptr, because we can't grab the reg value statically op->refptr = 4;
 				if (disp < 0) {
-					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,-,0xffffffff,&,[4],0x%x,&,%s,=",
-							(ut64)-disp, MEMBASE(1), mask, REG(0));
+					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,-,0xffffffff,&,[%d],0x%x,&,%s,=",
+							(ut64)-disp, MEMBASE(1), ldsz, mask, REG(0));
 				} else {
-					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
-							(ut64)disp, MEMBASE(1), mask, REG(0));
+					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,+,0xffffffff,&,[%d],0x%x,&,%s,=",
+							(ut64)disp, MEMBASE(1), ldsz, mask, REG(0));
 				}
 			}
 		} else {
@@ -3188,31 +3196,31 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				if (ISMEM(1) && LSHIFT2(1)) {
 					r_strbuf_appendf (&op->esil, "2,2,0x%"PFMT64x
-						",>>,<<,%d,%s,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
-						addr + pcdelta, LSHIFT2(1), MEMINDEX(1), mask, REG(0));
+						",>>,<<,%d,%s,<<,+,0xffffffff,&,[%d],0x%x,&,%s,=",
+						addr + pcdelta, LSHIFT2(1), MEMINDEX(1), ldsz, mask, REG(0));
 				} else {
 					if (ISREG(1)) {
 						const char op_index = ISMEMINDEXSUB (1)? '-': '+';
 						r_strbuf_appendf (&op->esil, "%s,2,2,0x%"PFMT64x
-							",>>,<<,%c,0xffffffff,&,[4],0x%x,&,%s,=",
-							MEMINDEX (1), addr + pcdelta, op_index, mask, REG (0));
+							",>>,<<,%c,0xffffffff,&,[%d],0x%x,&,%s,=",
+							MEMINDEX (1), addr + pcdelta, op_index, ldsz, mask, REG (0));
 					} else {
 						r_strbuf_appendf (&op->esil, "2,2,0x%"PFMT64x
-							",>>,<<,%d,+,0xffffffff,&,[4],0x%x,&,%s,=",
-							addr + pcdelta, MEMDISP(1), mask, REG(0));
+							",>>,<<,%d,+,0xffffffff,&,[%d],0x%x,&,%s,=",
+							addr + pcdelta, MEMDISP(1), ldsz, mask, REG(0));
 					}
 				}
 			} else {
 				if (ISMEM(1) && LSHIFT2(1)) {
-					r_strbuf_appendf (&op->esil, "%s,%d,%s,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
-						MEMBASE (1), LSHIFT2 (1), MEMINDEX (1), mask, REG (0));
+					r_strbuf_appendf (&op->esil, "%s,%d,%s,<<,+,0xffffffff,&,[%d],0x%x,&,%s,=",
+						MEMBASE (1), LSHIFT2 (1), MEMINDEX (1), ldsz, mask, REG (0));
 				} else if (HASMEMINDEX(1)) {	// e.g. `ldr r2, [r3, r1]`
 					const char op_index = ISMEMINDEXSUB (1)? '-': '+';
-					r_strbuf_appendf (&op->esil, "%s,%s,%c,0xffffffff,&,[4],0x%x,&,%s,=",
-						MEMINDEX (1), MEMBASE (1), op_index, mask, REG (0));
+					r_strbuf_appendf (&op->esil, "%s,%s,%c,0xffffffff,&,[%d],0x%x,&,%s,=",
+						MEMINDEX (1), MEMBASE (1), op_index, ldsz, mask, REG (0));
 				} else {
-					r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
-						MEMDISP (1), MEMBASE (1), mask, REG (0));
+					r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&,[%d],0x%x,&,%s,=",
+						MEMDISP (1), MEMBASE (1), ldsz, mask, REG (0));
 				}
 				if (ISWRITEBACK32 ()) {
 					if (ISPOSTINDEX32 ()) {
