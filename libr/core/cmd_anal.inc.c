@@ -868,6 +868,7 @@ static RCoreHelpMessage help_msg_afs = {
 static RCoreHelpMessage help_msg_aft = {
 	"Usage:", "aft", "",
 	"aft", "", "type matching analysis for current function",
+	"afts", "", "synthesize struct types from pointer-argument access patterns",
 	NULL
 };
 
@@ -1487,6 +1488,11 @@ static void cmd_aft(RCore *core, const char *input) {
 		seek = core->addr;
 		r_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->addr);
 		r_core_cmd0 (core, "a:tp");
+		r_core_seek (core, seek, true);
+		break;
+	case 's': // "afts"
+		seek = core->addr;
+		r_core_cmd0 (core, "a:tp synth");
 		r_core_seek (core, seek, true);
 		break;
 	case '?':

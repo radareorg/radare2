@@ -21,7 +21,7 @@ typedef struct {
 
 typedef struct {
 	ut64 addr;
-	// TODO: size
+	int size;
 } TypeTraceMemoryAccess;
 
 typedef struct {
@@ -113,6 +113,7 @@ static void type_trace_voyeur_mem_read(void *user, ut64 addr, const ut8 *buf, in
 	TypeTraceAccess *access = VecAccess_emplace_back (&db->accesses);
 	access->is_reg = false;
 	access->mem.addr = addr;
+	access->mem.size = len;
 	access->is_write = false;
 	update_trace_db_op (db);
 }
@@ -123,6 +124,7 @@ static void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, c
 	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
 	access->is_reg = false;
 	access->mem.addr = addr;
+	access->mem.size = len;
 	access->is_write = true;
 
 	if (trace->enable_rollback && old) {
@@ -1139,7 +1141,8 @@ static TPState *tps_init(RAnal *anal) {
 	r_reg_setv (reg, "SP", sp);
 	r_reg_setv (reg, "BP", sp);
 	REsilOptions esil_opt = r_esil_options (NULL, NULL);
-	esil_opt.addrsize = anal->config->bits;
+	// anal->config->bits is the decode width (16 on arm thumb), not the address width
+	esil_opt.addrsize = anal->coreb.cfgGetI? anal->coreb.cfgGetI (anal->coreb.core, "esil.addr.size"): 64;
 	esil_opt.ifaces.reg = tps->reg_if;
 	esil_opt.ifaces.mem = tps->mem_if;
 	if (!r_esil_init (&tps->esil, &esil_opt)) {
@@ -1606,7 +1609,403 @@ out_function_no_aop:
 	tps_fini (tps);
 }
 // TODO: infer const qualifier from usage patterns
-// TODO: struct/union field type propagation
+
+static const char *synth_type_for_size(int sz) {
+	switch (sz) {
+	case 1: return "uint8_t";
+	case 2: return "uint16_t";
+	case 4: return "uint32_t";
+	}
+	return "uint64_t";
+}
+
+#define SYNTH_WINDOW 0x100000ULL // per-arg sentinel window
+#define SYNTH_MAXARGS 8
+#define SYNTH_REGION (SYNTH_WINDOW * SYNTH_MAXARGS)
+#define SYNTH_DETW 0x4000ULL // per-arg span scanned for pointer fields
+#define SYNTH_PSTRIDE 0x800ULL // child-window size per pointer slot
+#define SYNTH_SLOTS(psz) (SYNTH_DETW / (psz))
+#define SYNTH_PSIZE(psz) (SYNTH_SLOTS (psz) * SYNTH_MAXARGS * SYNTH_PSTRIDE)
+#define SYNTH_MIN_FIELDS 2
+
+typedef struct {
+	int arg;
+	ut64 off;
+	int size;
+	bool is_ptr;
+	ut64 child; // for poison hits: offset accessed through the pointer (nested field)
+} SynthField;
+
+typedef struct {
+	int arg;
+	ut64 off;
+	char *name;
+} SynthChild;
+
+static int synth_key_cmp(const SynthField *x, const SynthField *y) {
+	if (x->arg != y->arg) {
+		return x->arg - y->arg;
+	}
+	if (x->off != y->off) {
+		return (x->off < y->off)? -1: 1;
+	}
+	return 0;
+}
+
+static int synth_field_cmp(const void *a, const void *b) {
+	const int d = synth_key_cmp (a, b);
+	return d? d: ((const SynthField *)b)->size - ((const SynthField *)a)->size; // larger width first
+}
+
+// sort poison hits so all children of one pointer field are adjacent
+static int synth_child_cmp(const void *a, const void *b) {
+	const SynthField *x = a, *y = b;
+	int d = synth_key_cmp (x, y);
+	if (!d && x->child != y->child) {
+		d = (x->child < y->child)? -1: 1;
+	}
+	return d? d: y->size - x->size;
+}
+
+static bool synth_grow(SynthField **arr, size_t n, size_t *cap) {
+	if (n < *cap) {
+		return true;
+	}
+	const size_t ncap = *cap? *cap * 2: 64;
+	SynthField *tmp = realloc (*arr, ncap * sizeof (SynthField));
+	if (!tmp) {
+		return false;
+	}
+	*arr = tmp;
+	*cap = ncap;
+	return true;
+}
+
+// takes ownership of type; returns the new end offset
+static ut64 synth_add_member(RAnalBaseType *bt, ut64 off, int size, char *type) {
+	RAnalStructMember *m = RVecAnalStructMember_emplace_back (&bt->struct_data.members);
+	m->name = r_str_newf ("field_0x%" PFMT64x, off);
+	m->type = type;
+	m->offset = off;
+	m->size = (size_t)size * 8;
+	return off + (ut64)size;
+}
+
+// each pointer-sized slot holds a strided poison pointer into its own child window, so a deref decodes back to the exact parent field offset
+static int synth_poison_map(RAnal *anal, ut64 sbase, int align, int psz, ut64 *pbase) {
+	RIOBind *iob = &anal->iob;
+	RIO *io = iob->io;
+	if (!iob->map_locate (io, pbase, SYNTH_PSIZE (psz), align)) {
+		return -1;
+	}
+	char *uri = r_str_newf ("malloc://0x%" PFMT64x, (ut64)SYNTH_PSIZE (psz));
+	const int fd = uri? iob->fd_open (io, uri, R_PERM_RW, 0): -1;
+	free (uri);
+	if (fd < 0) {
+		return -1;
+	}
+	ut8 *win = iob->map_add (io, fd, R_PERM_RW, 0, *pbase, SYNTH_PSIZE (psz))? malloc (SYNTH_DETW): NULL;
+	if (!win) {
+		iob->fd_close (io, fd);
+		return -1;
+	}
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
+	int ai;
+	for (ai = 0; ai < SYNTH_MAXARGS; ai++) {
+		ut64 o;
+		for (o = 0; o < SYNTH_DETW; o += psz) {
+			const ut64 slot = (ut64)ai * SYNTH_SLOTS (psz) + o / psz;
+			r_write_ble (win + o, *pbase + slot * SYNTH_PSTRIDE, be, psz * 8);
+		}
+		iob->write_at (io, sbase + (ut64)ai * SYNTH_WINDOW, win, (int)SYNTH_DETW);
+	}
+	free (win);
+	return fd;
+}
+
+// emulate the function linearly, letting the mem voyeurs record base+offset accesses
+static void synth_emulate(RAnal *anal, TPState *tps, RAnalFunction *fcn) {
+	RCons *cons = r_cons_singleton ();
+	const int minop = R_MAX (1, r_arch_info (anal->arch, R_ARCH_INFO_MINOP_SIZE));
+	const int opts = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL;
+	const int max_total = 200000;
+	int total = 0;
+	r_reg_setv (tps->tt.reg, "PC", fcn->addr);
+	r_list_sort (fcn->bbs, bb_cmpaddr);
+	r_cons_break_push (cons, NULL, NULL);
+	RListIter *it;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, it, bb) {
+		if (r_cons_is_breaked (cons) || total > max_total) {
+			break;
+		}
+		ut8 *bytes = malloc (bb->size + 8);
+		if (!bytes) {
+			continue;
+		}
+		if (anal->iob.read_at (anal->iob.io, bb->addr, bytes, bb->size) < 1) {
+			free (bytes);
+			continue;
+		}
+		ut64 addr = bb->addr;
+		int off = 0;
+		while (off < (int)bb->size) {
+			if (r_cons_is_breaked (cons) || total++ > max_total) {
+				break;
+			}
+			RAnalOp aop = { 0 };
+			if (r_anal_op (anal, &aop, addr, bytes + off, bb->size - off, opts) <= 0) {
+				r_anal_op_fini (&aop);
+				off += minop;
+				addr += minop;
+				continue;
+			}
+			if (aop.type == R_ANAL_OP_TYPE_RET || type_trace_loopcount (&tps->tt, addr) > LOOP_MAX) {
+				r_anal_op_fini (&aop);
+				break;
+			}
+			type_trace_loopcount_increment (&tps->tt, addr);
+			r_reg_setv (tps->tt.reg, "PC", addr + aop.size);
+			if (!r_anal_op_nonlinear (aop.type)) {
+				type_trace_op (&tps->tt, &tps->esil, &aop);
+			}
+			off += aop.size;
+			addr += aop.size;
+			r_anal_op_fini (&aop);
+		}
+		free (bytes);
+	}
+	r_cons_break_pop (cons);
+}
+
+// seed each arg reg with a sentinel base and turn observed base+offset accesses into struct fields
+static RList *type_synth(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
+	TPState *tps = tps_init (anal);
+	if (!tps) {
+		return NULL;
+	}
+	RIOBind *iob = &anal->iob;
+	RIO *io = iob->io;
+	const int align = R_MAX (1, r_arch_info (anal->arch, R_ARCH_INFO_DATA_ALIGN));
+	ut64 sbase = 0;
+	if (!iob->map_locate || !iob->map_locate (io, &sbase, SYNTH_REGION, align)) {
+		tps_fini (tps);
+		return NULL;
+	}
+	char *uri = r_str_newf ("malloc://0x%" PFMT64x, (ut64)SYNTH_REGION);
+	const int sfd = uri? iob->fd_open (io, uri, R_PERM_RW, 0): -1;
+	free (uri);
+	if (sfd < 0 || !iob->map_add (io, sfd, R_PERM_RW, 0, sbase, SYNTH_REGION)) {
+		if (sfd >= 0) {
+			iob->fd_close (io, sfd);
+		}
+		tps_fini (tps);
+		return NULL;
+	}
+	const char *cc = r_anal_function_cc (fcn);
+	if (!cc) {
+		cc = r_anal_cc_default (anal);
+	}
+	// pointer width comes from the arg registers, not config->bits (16 on arm thumb)
+	int psz = anal->config->bits > 32? 8: 4;
+	int i;
+	for (i = 0; i < SYNTH_MAXARGS; i++) {
+		const char *place = cc? r_anal_cc_argloc (anal, cc, i, 0, -1): NULL;
+		if (place && *place && *place != '^') {
+			RRegItem *ri = r_reg_get (tps->tt.reg, place, -1);
+			if (ri && ri->size >= 32) {
+				psz = ri->size / 8;
+			}
+			break;
+		}
+	}
+	ut64 pbase = 0;
+	const int pfd = synth_poison_map (anal, sbase, align, psz, &pbase);
+	for (i = 0; i < SYNTH_MAXARGS; i++) {
+		const char *place = cc? r_anal_cc_argloc (anal, cc, i, 0, -1): NULL;
+		if (place && *place && *place != '^') {
+			r_reg_setv (tps->tt.reg, place, sbase + (ut64)i * SYNTH_WINDOW);
+		}
+	}
+	synth_emulate (anal, tps, fcn);
+
+	// collect accesses in the arg windows (fields) and the poison region (deref evidence)
+	SynthField *fields = NULL, *porig = NULL;
+	size_t nfields = 0, cap = 0, nporig = 0, pcap = 0;
+	const ut32 nacc = VecAccess_length (&tps->tt.db.accesses);
+	ut32 k;
+	for (k = 0; k < nacc; k++) {
+		TypeTraceAccess *a = VecAccess_at (&tps->tt.db.accesses, k);
+		if (!a || a->is_reg) {
+			continue;
+		}
+		const ut64 ma = a->mem.addr;
+		const int asz = a->mem.size > 0? a->mem.size: 1;
+		if (pfd >= 0 && ma >= pbase && ma < pbase + SYNTH_PSIZE (psz)) {
+			// decode the poison slot back to the exact (arg, parent field offset)
+			const ut64 slot = (ma - pbase) / SYNTH_PSTRIDE;
+			if (!synth_grow (&porig, nporig, &pcap)) {
+				break;
+			}
+			porig[nporig++] = (SynthField){
+				.arg = (int)(slot / SYNTH_SLOTS (psz)),
+				.off = (slot % SYNTH_SLOTS (psz)) * psz,
+				.child = (ma - pbase) % SYNTH_PSTRIDE,
+				.size = asz,
+			};
+			continue;
+		}
+		if (ma < sbase || ma >= sbase + SYNTH_REGION) {
+			continue;
+		}
+		const ut64 woff = (ma - sbase) % SYNTH_WINDOW;
+		if (woff >= SYNTH_WINDOW / 2) {
+			continue; // negative offsets off a neighboring arg land in the window tail
+		}
+		if (!synth_grow (&fields, nfields, &cap)) {
+			break;
+		}
+		fields[nfields++] = (SynthField){
+			.arg = (int)((ma - sbase) / SYNTH_WINDOW),
+			.off = woff,
+			.size = asz,
+		};
+	}
+	if (fields && nfields > 1) {
+		qsort (fields, nfields, sizeof (SynthField), synth_field_cmp);
+	}
+	if (porig && nporig > 1) {
+		qsort (porig, nporig, sizeof (SynthField), synth_child_cmp);
+	}
+	// a field whose loaded value was dereferenced is a pointer; both arrays sort by (arg, off)
+	size_t pi = 0, fi = 0;
+	while (pi < nporig && fi < nfields) {
+		const int d = synth_key_cmp (&porig[pi], &fields[fi]);
+		if (d > 0) {
+			fi++;
+		} else if (d < 0) {
+			pi++;
+		} else {
+			fields[fi++].is_ptr = true;
+		}
+	}
+	// pointer fields with enough distinct child accesses get a nested child struct
+	RList *names = r_list_newf (free);
+	char *fname = r_str_sanitize_sdb_key (fcn->name);
+	SynthChild *children = NULL;
+	size_t nch = 0, chcap = 0;
+	size_t ci = 0;
+	while (porig && ci < nporig) {
+		const int carg = porig[ci].arg;
+		const ut64 coff = porig[ci].off;
+		RAnalBaseType *cbt = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+		if (!cbt) {
+			break;
+		}
+		ut64 ccur = 0;
+		int ccount = 0;
+		size_t cj = ci;
+		while (cj < nporig && porig[cj].arg == carg && porig[cj].off == coff) {
+			const ut64 choff = porig[cj].child;
+			const int csize = porig[cj].size;
+			do {
+				cj++;
+			} while (cj < nporig && porig[cj].arg == carg && porig[cj].off == coff
+				&& porig[cj].child == choff);
+			if (choff < ccur) {
+				continue;
+			}
+			ccur = synth_add_member (cbt, choff, csize, strdup (synth_type_for_size (csize)));
+			ccount++;
+		}
+		if (ccount >= SYNTH_MIN_FIELDS) {
+			char *cn = r_str_newf ("%s_arg%d_0x%" PFMT64x, fname, carg, coff);
+			cbt->name = strdup (cn);
+			cbt->size = ccur;
+			r_anal_save_base_type (anal, cbt);
+			r_list_append (names, strdup (cn));
+			if (nch == chcap) {
+				const size_t ncap = chcap? chcap * 2: 16;
+				SynthChild *tmp = realloc (children, ncap * sizeof (SynthChild));
+				if (tmp) {
+					children = tmp;
+					chcap = ncap;
+				}
+			}
+			if (nch < chcap) {
+				children[nch].arg = carg;
+				children[nch].off = coff;
+				children[nch].name = cn;
+				nch++;
+			} else {
+				free (cn);
+			}
+		}
+		r_anal_base_type_free (cbt);
+		ci = cj;
+	}
+	free (porig);
+
+	// one struct per argument that accumulated enough non-overlapping fields
+	size_t p = 0;
+	while (fields && p < nfields) {
+		const int arg = fields[p].arg;
+		RAnalBaseType *bt = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+		if (!bt) {
+			break;
+		}
+		ut64 cur = 0;
+		int count = 0;
+		size_t q = p;
+		while (q < nfields && fields[q].arg == arg) {
+			const ut64 foff = fields[q].off;
+			const int fsize = fields[q].size;
+			const bool fptr = fields[q].is_ptr;
+			do {
+				q++; // skip duplicate offsets (largest width sorts first)
+			} while (q < nfields && fields[q].arg == arg && fields[q].off == foff);
+			if (foff < cur) {
+				continue; // overlaps the previous member
+			}
+			const char *cty = NULL;
+			if (fptr) {
+				size_t z;
+				for (z = 0; z < nch; z++) {
+					if (children[z].arg == arg && children[z].off == foff) {
+						cty = children[z].name;
+						break;
+					}
+				}
+			}
+			char *ty = cty? r_str_newf ("struct %s *", cty)
+				: strdup (fptr? "void *": synth_type_for_size (fsize));
+			cur = synth_add_member (bt, foff, fsize, ty);
+			count++;
+		}
+		if (count >= SYNTH_MIN_FIELDS) {
+			bt->name = r_str_newf ("%s_arg%d", fname, arg);
+			bt->size = cur;
+			r_anal_save_base_type (anal, bt);
+			r_list_append (names, strdup (bt->name));
+		}
+		r_anal_base_type_free (bt);
+		p = q;
+	}
+	free (fname);
+	free (fields);
+	size_t z;
+	for (z = 0; z < nch; z++) {
+		free (children[z].name);
+	}
+	free (children);
+	iob->fd_close (io, sfd);
+	if (pfd >= 0) {
+		iob->fd_close (io, pfd);
+	}
+	tps_fini (tps);
+	return names;
+}
 
 static bool tp_requirements_met(RAnal *anal, bool noisy) {
 	if (!anal) {
@@ -1674,6 +2073,7 @@ beach:
 static RCoreHelpMessage help_msg_tp = {
 	"Usage:", "a:tp", "propagate types for current function",
 	"a:tp", "all", "propagate types for every function (aaft)",
+	"a:tp", "synth", "synthesize struct types from pointer-argument accesses (afts)",
 	"a:tp", "?", "show this help",
 	NULL
 };
@@ -1716,6 +2116,27 @@ static char *tp_cmd(RAnal *anal, const char *input) {
 		} else {
 			R_LOG_WARN ("Cannot run 'aaft' because core bindings are missing");
 		}
+		return strdup ("");
+	}
+	if (!strcmp (args, "synth")) {
+		ut64 cur_addr = anal->coreb.numGet? anal->coreb.numGet (core, "$$"): 0;
+		RAnalFunction *fcn = r_anal_get_fcn_in (anal, cur_addr, -1);
+		if (!fcn) {
+			R_LOG_WARN ("Cannot find function at current offset");
+			return strdup ("");
+		}
+		RList *names = type_synth (anal, fcn);
+		RListIter *it;
+		char *nm;
+		r_list_foreach (names, it, nm) {
+			if (anal->coreb.cmdf) {
+				anal->coreb.cmdf (core, "tsc %s", nm);
+			}
+		}
+		if (r_list_empty (names)) {
+			R_LOG_INFO ("no pointer-argument struct recovered here");
+		}
+		r_list_free (names);
 		return strdup ("");
 	}
 	if (anal->coreb.help && core) {
