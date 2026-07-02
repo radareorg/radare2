@@ -1010,7 +1010,7 @@ RUN
 
 NAME=rabin2 -L
 FILE=-
-CMDS=!rabin2 -L | grep -c any
+CMDS=!rabin2 -L | grep -c null
 EXPECT=<<EOF
 1
 EOF
@@ -1018,7 +1018,7 @@ RUN
 
 NAME=rabin2 -Lq
 FILE=-
-CMDS=!rabin2 -Lq | grep -c any
+CMDS=!rabin2 -Lq | grep -c null
 EXPECT=<<EOF
 1
 EOF
@@ -1026,15 +1026,15 @@ RUN
 
 NAME=rabin2 -Lj
 FILE=-
-CMDS=!rabin2 -Lj | grep -c any
+CMDS=!rabin2 -Lj | grep -c null
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=rabin2 -Lj any
+NAME=rabin2 -Lj null
 FILE=-
-CMDS=!rabin2 -Lj any | grep -c Dummy
+CMDS=!rabin2 -Lj null | grep -c Dummy
 EXPECT=<<EOF
 1
 EOF
