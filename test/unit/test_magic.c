@@ -95,6 +95,14 @@ static bool test_r_magic_buffer_formats_string_precision_descriptions(void) {
 	return check_magic_output (magic_source, probe, sizeof (probe) - 1, "ABC");
 }
 
+static bool test_r_magic_load_buffer_accepts_long_regex(void) {
+	const char magic_source[] =
+		"0\tregex\t=^[\\ \\t]{0,10}(call|CALL)[\\ \\t]{1,10}(rxfunc|RXFUNC)\tOS/2 REXX batch file text\n";
+	const ut8 probe[] = "call rxfunc";
+
+	return check_magic_output (magic_source, probe, sizeof (probe) - 1, "OS/2 REXX batch file text");
+}
+
 static bool test_r_magic_file_uses_slurp_and_buffer(void) {
 	const char magic_source[] = "0\tstring\tABCD\tfile magic\n";
 	char *filename = NULL;
@@ -192,6 +200,7 @@ int all_tests(void) {
 	mu_run_test (test_r_magic_load_buffer_accepts_printf_suffixes);
 	mu_run_test (test_r_magic_buffer_formats_byte_char_descriptions);
 	mu_run_test (test_r_magic_buffer_formats_string_precision_descriptions);
+	mu_run_test (test_r_magic_load_buffer_accepts_long_regex);
 	mu_run_test (test_r_magic_file_uses_slurp_and_buffer);
 	mu_run_test (test_r_magic_load_buffers_merges_multiple_databases);
 	mu_run_test (test_r_magic_getflags_returns_current_flags);

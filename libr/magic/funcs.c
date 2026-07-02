@@ -136,8 +136,13 @@ R_IPI int __magic_file_buffer(RMagic *ms, int fd, const char *inname, const void
 	if ((ms->flags & R_MAGIC_NO_CHECK_TAR) != 0 ||
 		(m = __magic_file_is_tar (ms, buf, nb)) == 0) {
 		/* try tests in /etc/magic (or surrogate magic file) */
-		if ((ms->flags & R_MAGIC_NO_CHECK_SOFT) != 0 ||
-			(m = __magic_file_softmagic (ms, buf, nb, BINTEST)) == 0) {
+		if ((ms->flags & R_MAGIC_NO_CHECK_SOFT) == 0) {
+			m = __magic_file_softmagic (ms, buf, nb, BINTEST);
+			if (m == 0) {
+				m = __magic_file_softmagic (ms, buf, nb, TEXTTEST);
+			}
+		}
+		if (m == 0) {
 			/* abandon hope, all ye who remain here */
 			{
 				if ((!mime || (mime & R_MAGIC_MIME_TYPE))) {
