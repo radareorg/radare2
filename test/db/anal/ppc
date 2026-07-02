@@ -1224,3 +1224,32 @@ EXPECT=<<EOF2
 void fcn.10000c54 (int64_t arg1, int64_t arg_10h);
 EOF2
 RUN
+
+NAME=ppc64 esil emulation: ld does not update the base register
+FILE=-
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF2
+aei
+aeim
+ar r3=0x178000
+s 0
+wx e8830008
+ar PC=0
+aes
+?e ld
+ar r3
+ar r3=0x178000
+s 0
+wx e8830009
+ar PC=0
+aes
+?e ldu
+ar r3
+EOF2
+EXPECT=<<EOF2
+ld
+0x00178000
+ldu
+0x00178008
+EOF2
+RUN
