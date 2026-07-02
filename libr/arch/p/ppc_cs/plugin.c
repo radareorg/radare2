@@ -1434,7 +1434,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			if (!op1) {
 				break;
 			}
-			esilprintf (op, "%s,[8],%s,=,%s=", op1, ARG (0), op1);
+			// only ldu writes back rA
+			ppc_esil_ld (op, op1, ARG (0), 8, insn->id == PPC_INS_LDU, 0);
 			set_toc_ptr (op, pd, insn, 1);
 			break;
 		// X-form indexed: EA = rA + rB (separate capstone regs)
