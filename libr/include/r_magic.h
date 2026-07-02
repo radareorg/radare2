@@ -21,7 +21,7 @@ R_LIB_VERSION_HEADER (r_magic);
 #endif
 #define MAXDESC     64
 #define MAXMAGIS    8192            /* max entries in any one magic file or directory */
-#define MAXstring   32              /* max leng of "string" types */
+#define MAXstring   128             /* max length of "string" and "regex" values */
 
 /* define this outside to fix build for g++ */
 union VALUETYPE {
@@ -39,9 +39,9 @@ union VALUETYPE {
 
 /* constants */
 #define MAGICNO         0xF11E041C
-#define VERSIONNO       5
+#define VERSIONNO       6
 #define R_MAGIC_VERSION VERSIONNO
-#define FILE_MAGICSIZE  (32 * 6)
+#define FILE_MAGICSIZE  (32 * 9)
 
 #define	FILE_LOAD       0
 #define FILE_CHECK      1
