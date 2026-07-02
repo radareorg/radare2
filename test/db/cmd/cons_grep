@@ -223,7 +223,7 @@ fd       3
 file     malloc://1024
 humansz  1K
 mode     rwx
-format   any
+format   null
 iorw     true
 block    0x100
 EOF
@@ -238,7 +238,7 @@ fd       3
 file     malloc://1024
 humansz  1K
 mode     rwx
-format   any
+format   null
 iorw     true
 block    0x100
 EOF
@@ -253,7 +253,7 @@ file     malloc://1024
 size     0x400
 humansz  1K
 mode     rwx
-format   any
+format   null
 iorw     true
 block    0x100
 EOF
@@ -272,7 +272,7 @@ FILE=malloc://1024
 CMDS=i~f~!file
 EXPECT=<<EOF
 fd       3
-format   any
+format   null
 EOF
 RUN
 
@@ -386,9 +386,9 @@ i~^f~or~?
 i~?&f,or
 i~or~true
 i~&or,true
-i~or~ny[0]
-i~&or,ny[0]
-i~or[1]~any
+i~or~nu[0]
+i~&or,nu[0]
+i~or[1]~null
 i~or[1]~:1
 EOF
 EXPECT=<<EOF
@@ -400,7 +400,7 @@ iorw     true
 iorw     true
 format
 format
-any
+null
 true
 EOF
 RUN
@@ -663,7 +663,7 @@ CMDS=<<EOF
 ij~{}~fo
 EOF
 EXPECT=<<EOF
-    "format": "any"
+    "format": "null"
 EOF
 RUN
 
