@@ -841,7 +841,7 @@ static SyscallNumberAt syscall_function_number_at(RCore *core, SyscallRegMap *re
 	return SYSNUM_AT_NONE;
 }
 
-static void do_syscall_search(RCore *core, struct search_parameters *param) {
+static void do_syscall_search(RCore *core, RSearchParameters *param) {
 	RSearch *search = core->search;
 	ut64 at;
 	int count = 0;

@@ -245,7 +245,7 @@ static RCoreHelpMessage help_msg_slash_x = {
 
 // clang-format on
 
-struct search_parameters {
+typedef struct {
 	RCore *core;
 	RList *boundaries;
 	const char *mode;
@@ -261,14 +261,14 @@ struct search_parameters {
 	int c; // used for progress
 	int count;
 	bool progressbar;
-};
+} RSearchParameters;
 
 struct endlist_pair {
 	int instr_offset;
 	int delay_size;
 };
 
-static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_parameters *param) {
+static inline void print_search_progress(ut64 at, ut64 to, int n, RSearchParameters *param) {
 	if (!param->progressbar) {
 		return;
 	}
@@ -285,7 +285,7 @@ static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_
 	}
 }
 
-static int search_hash(RCore *core, const char *hashname, const char *hashstr, ut32 minlen, ut32 maxlen, struct search_parameters *param) {
+static int search_hash(RCore *core, const char *hashname, const char *hashstr, ut32 minlen, ut32 maxlen, RSearchParameters *param) {
 	RIOMap *map;
 	ut8 *buf;
 	int i, j;
@@ -710,7 +710,7 @@ static char *getstring(char *b, int l) {
 
 static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (kw && user, -1);
-	struct search_parameters *param = user;
+	RSearchParameters *param = user;
 	RCore *core = param->core;
 	ut64 base_addr = 0;
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
@@ -830,7 +830,7 @@ static int _cb_hit(RSearchKeyword * R_NULLABLE kw, void *user, ut64 addr) {
 	RSearchKeyword *kw_used = &kw_fake;
 	int klen = 0;
 	if (kw) {
-		struct search_parameters *param = user;
+		RSearchParameters *param = user;
 		const RSearch *search = param->core->search;
 		klen = kw? kw->keyword_length + (search->mode == R_SEARCH_DELTAKEY): 0;
 		kw_used = kw;
@@ -1634,7 +1634,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 	}
 }
 
-static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type, int opt, const char *grep, int regexp, struct search_parameters *param) {
+static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type, int opt, const char *grep, int regexp, RSearchParameters *param) {
 	const ut8 crop = r_config_get_i (core->config, "gadget.cond"); // decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const bool gadget_esil = r_config_get_b (core->config, "gadget.esil");
 	const ut8 subchain = r_config_get_i (core->config, "gadget.subchains");
@@ -1947,7 +1947,7 @@ static bool esil_address(REsil *esil) {
 	return r_esil_pushnum (esil, esil->addr);
 }
 
-static void do_esil_search(RCore *core, struct search_parameters *param, const char *input) {
+static void do_esil_search(RCore *core, RSearchParameters *param, const char *input) {
 	const int hit_combo_limit = r_config_get_i (core->config, "search.esilcombo");
 	RSearch *search = core->search;
 	RSearchKeyword kw = {0};
@@ -2081,7 +2081,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 
 #include "cmd_scsearch.inc.c"
 
-static void cb_ref_hit(RCore *core, const RAnalRef *ref, ut64 from, ut64 to, struct search_parameters *param) {
+static void cb_ref_hit(RCore *core, const RAnalRef *ref, ut64 from, ut64 to, RSearchParameters *param) {
 	ut8 buf[32];
 	if (from > ref->addr || to < ref->addr) {
 		return;
@@ -2118,7 +2118,7 @@ static void cb_ref_hit(RCore *core, const RAnalRef *ref, ut64 from, ut64 to, str
 	r_anal_op_fini (&asmop);
 }
 
-static void print_ref_search(RCore *core, ut64 addr, ut64 from, ut64 to, struct search_parameters *param) {
+static void print_ref_search(RCore *core, ut64 addr, ut64 from, ut64 to, RSearchParameters *param) {
 	RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, addr);
 	if (xrefs) {
 		RAnalRef *ref;
@@ -2162,7 +2162,7 @@ static bool parse_targets(RCore *core, const char *args, RVecSearchAddr *targets
 	return ok;
 }
 
-static void refsearch_targets(RCore *core, int mode, bool print_hits, struct search_parameters *param, const RVecSearchAddr *targets) {
+static void refsearch_targets(RCore *core, int mode, bool print_hits, RSearchParameters *param, const RVecSearchAddr *targets) {
 	const size_t target_count = RVecSearchAddr_length (targets);
 	ut64 scan_addr = UT64_MAX;
 	if (target_count == 1) {
@@ -2192,7 +2192,7 @@ static void refsearch_targets(RCore *core, int mode, bool print_hits, struct sea
 	}
 }
 
-static void esilsearch_targets(RCore *core, struct search_parameters *param, const RVecSearchAddr *targets) {
+static void esilsearch_targets(RCore *core, RSearchParameters *param, const RVecSearchAddr *targets) {
 	const ut64 curseek = core->addr;
 	RListIter *iter;
 	RIOMap *map;
@@ -2299,7 +2299,7 @@ static bool check_false_positive(const char *s) {
 }
 
 // XXX must use searchhit and be generic RSearchHit *hit) {
-static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsmHit *hit, const char *str) {
+static void search_hit_at(RCore *core, RSearchParameters *param, RCoreAsmHit *hit, const char *str) {
 	bool asm_sub_names = r_config_get_b (core->config, "asm.sub.names");
 	const int kwidx = core->search->n_kws;
 	const char *cmdhit = r_config_get (core->config, "cmd.hit");
@@ -2373,7 +2373,7 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 	}
 }
 
-static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
+static void do_unkjmp_search(RCore *core, RSearchParameters *param, bool quiet, const char *input) {
 	const int flags = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM;
 	const bool badpages = r_config_get_b (core->config, "search.badpages");
 	RAnalOp aop;
@@ -2566,7 +2566,7 @@ static char *print_analstr(RCore *core, ut64 addr, int maxlen) {
 }
 
 // R2R db/cmd/cmd_search_asm
-static bool do_analstr_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
+static bool do_analstr_search(RCore *core, RSearchParameters *param, bool quiet, const char *input) {
 	const bool badpages = r_config_get_b (core->config, "search.badpages");
 	bool silent = false;
 	if (!input) {
@@ -2764,7 +2764,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	return false;
 }
 
-static bool do_anal_search(RCore *core, struct search_parameters *param, const char *input) {
+static bool do_anal_search(RCore *core, RSearchParameters *param, const char *input) {
 	RSearch *search = core->search;
 	ut64 at;
 	RAnalOp aop;
@@ -3008,7 +3008,7 @@ done:
 	return false;
 }
 
-static void do_section_search(RCore *core, struct search_parameters *param, const char *input) {
+static void do_section_search(RCore *core, RSearchParameters *param, const char *input) {
 	double threshold = 1;
 	bool r2mode = false;
 	if (R_STR_ISNOTEMPTY (input)) {
@@ -3096,7 +3096,7 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 	}
 }
 
-static void do_asm_search(RCore *core, struct search_parameters *param, const char *input, int mode, RInterval search_itv) {
+static void do_asm_search(RCore *core, RSearchParameters *param, const char *input, int mode, RInterval search_itv) {
 	RCoreAsmHit *hit; // WTF LOL must use RSearchHit in here!
 	RListIter *iter, *itermap;
 	int count = 0;
@@ -3167,7 +3167,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	r_config_set_i (core->config, "search.kwidx", ++core->search->n_kws);
 }
 
-static void do_string_search(RCore *core, RInterval search_itv, struct search_parameters *param) {
+static void do_string_search(RCore *core, RInterval search_itv, RSearchParameters *param) {
 	ut64 at;
 	ut8 *buf;
 	RSearch *search = core->search;
@@ -3334,7 +3334,7 @@ static void search_similar_pattern_in(RCore *core, int count, ut64 from, ut64 to
 	free (block);
 }
 
-static void search_similar_pattern(RCore *core, int count, struct search_parameters *param) {
+static void search_similar_pattern(RCore *core, int count, RSearchParameters *param) {
 	RIOMap *p;
 	RListIter *iter;
 	r_cons_break_push (core->cons, NULL, NULL);
@@ -3355,7 +3355,7 @@ static bool isArm(RCore *core) {
 }
 
 void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
-	struct search_parameters *param = user;
+	RSearchParameters *param = user;
 	const bool isarm = isArm (core);
 	// this is expensive operation that could be cached but is a callback
 	// and for not messing adding a new param
@@ -4084,7 +4084,7 @@ static void cmd_search_baddr(RCore *core, const char *input) {
 	r_list_free (bounds);
 }
 
-static bool cmd_search_gadget(RCore *core, RInterval search_itv, const char *input, struct search_parameters *param) {
+static bool cmd_search_gadget(RCore *core, RInterval search_itv, const char *input, RSearchParameters *param) {
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_slash_G);
 		return true;
@@ -4155,7 +4155,7 @@ static bool cmd_search_gadget(RCore *core, RInterval search_itv, const char *inp
 	return true;
 }
 
-static void cmd_search_magic(RCore *core, struct search_parameters *param, const char *file, bool text) {
+static void cmd_search_magic(RCore *core, RSearchParameters *param, const char *file, bool text) {
 	if (core->magic) {
 		r_magic_free (core->magic);
 		core->magic = NULL;
@@ -4213,7 +4213,7 @@ static int cmd_search(void *data, const char *input) {
 	bool dosearch_read = false;
 	int errcode = -1;
 	RCore *core = (RCore *) data;
-	struct search_parameters param = {
+	RSearchParameters param = {
 		.core = core,
 		.cmd_hit = r_config_get (core->config, "cmd.hit"),
 		.outmode = 0,
