@@ -170,7 +170,7 @@ static RCoreHelpMessage help_msg_aaf = {
 static RCoreHelpMessage help_msg_aaa = {
 	"Usage:", "aaa[a[a]]", " # automatically analyze the whole program",
 	"aaa", "", "perform deeper analysis, most common use",
-	"aaaa", "", "same as aaa but adds a bunch of experimental iterations",
+	"aaaa", "", "same as aaa plus aggressive plugin/native analysis",
 	"aaaaa", "", "refine the analysis to find more functions after aaaa",
 	NULL
 };
@@ -573,6 +573,8 @@ static RCoreHelpMessage help_msg_af = {
 	"af+", " addr name [type] [diff]", "hand craft a function (requires afb+)",
 	"af-", " [addr]", "clean all function analysis data (or function at addr)",
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
+	"afAj", " [json-array]", "get/set user-owned function analysis assumptions",
+	"afA-", "", "clear user-owned function analysis assumptions",
 	"afB", " 16", "set current function as thumb (change asm.bits)",
 	"afb", "[?] [addr]", "List basic blocks of given function",
 	"afc", "[?] type @[addr]", "set calling convention for function",
@@ -4556,7 +4558,17 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 		}
 		pj_free (j);
 	} else {
-		char *sig = r_anal_function_format_sig (core->anal, fcn, fcn_name, NULL, NULL, NULL);
+		char *sig = NULL;
+		RAnalFunctionSignature *signature = r_anal_function_get_signature (fcn);
+		if (signature) {
+			if (R_STR_ISNOTEMPTY (signature->ret_type) && signature->signature) {
+				sig = strdup (signature->signature);
+			}
+			r_anal_function_signature_free (signature);
+		}
+		if (!sig) {
+			sig = r_anal_function_format_sig (core->anal, fcn, fcn_name, NULL, NULL, NULL);
+		}
 		if (sig) {
 			r_cons_printf (core->cons, "%s\n", sig);
 			free (sig);
@@ -6166,9 +6178,50 @@ static void cmd_afla(RCore *core, const char *input) {
 	ht_up_free (ht);
 }
 
+static void cmd_af_assumptions(RCore *core, const char *input) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
+	if (!fcn) {
+		R_LOG_ERROR ("No function at current address");
+		return;
+	}
+	if (input[2] == '?') {
+		r_core_cmd_help_match (core, help_msg_af, "afA");
+		return;
+	}
+	if (input[2] == '-') {
+		if (!r_anal_function_clear_assumptions (core->anal, fcn)) {
+			R_LOG_ERROR ("Failed to clear function assumptions");
+		}
+		return;
+	}
+	if (input[2] != 'j') {
+		r_core_cmd_help_match (core, help_msg_af, "afA");
+		return;
+	}
+	const char *arg = r_str_trim_head_ro (input + 3);
+	if (R_STR_ISEMPTY (arg)) {
+		char *assumptions = r_anal_function_get_assumptions_json (core->anal, fcn);
+		r_cons_println (core->cons, assumptions? assumptions: "[]");
+		free (assumptions);
+		return;
+	}
+	char *json = strdup (arg);
+	if (!json) {
+		R_LOG_ERROR ("Failed to allocate assumptions payload");
+		return;
+	}
+	if (!r_anal_function_set_assumptions_json (core->anal, fcn, json)) {
+		R_LOG_ERROR ("Invalid function assumptions; expected a JSON array");
+	}
+	free (json);
+}
+
 static int cmd_af(RCore *core, const char *input) {
 	r_cons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
+	case 'A': // "afA"
+		cmd_af_assumptions (core, input);
+		break;
 	case '-': // "af-"
 		if (!input[2]) { // "af-"
 			cmd_af (core, "f-$$");
@@ -12655,7 +12708,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 						// TODO: I don't think we should silently error, it is confusing
 						if (!strcmp (type, otype)) {
 							//eprintf ("Adding type offset %s\n", type);
-							r_type_link_offset (a->sdb_types, type, addr);
+							r_anal_types_set_link_offset (a, type, addr);
 							r_anal_hint_set_offset (a, addr, otype);
 							break;
 						}
@@ -15098,6 +15151,16 @@ static int cmpfn_bw(const void *a, const void *b) {
 	return 0;
 }
 
+static void r_core_sleigh_post_analysis_depth(RCore *core, RAnalPluginAnalysisDepth depth) {
+	if (!core || !core->anal) {
+		return;
+	}
+	RAnalPluginAnalysisDepth saved_depth = core->anal->plugin_analysis_depth;
+	core->anal->plugin_analysis_depth = depth;
+	r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, NULL);
+	core->anal->plugin_analysis_depth = saved_depth;
+}
+
 static bool cmd_aa(RCore *core, bool aaa) {
 	const RList *list;
 	RListIter *iter;
@@ -15217,6 +15280,10 @@ static bool cmd_aa(RCore *core, bool aaa) {
 				}
 			}
 		}
+		if (!r_cons_is_breaked (core->cons)) {
+			logline (core, 24, "Running r2sleigh basic post-analysis hooks");
+			r_core_sleigh_post_analysis_depth (core, R_ANAL_PLUGIN_ANALYSIS_DEPTH_BASIC);
+		}
 	}
 	r_cons_break_pop (core->cons);
 	return true;
@@ -15229,6 +15296,20 @@ static bool is_swift(RCore *core) {
 		return !strcmp (lang, "swift");
 	}
 	return false;
+}
+
+static void recover_function_vars_for_analysis(RCore *core, RAnalFunction *fcn) {
+	if (!core || !core->anal || !fcn) {
+		return;
+	}
+	char *type = r_str_newf ("func.%s.ret", fcn->name);
+	if (type && sdb_exists (core->anal->sdb_types, type)) {
+		free (type);
+		return;
+	}
+	free (type);
+	r_anal_function_delete_all_vars (fcn);
+	r_core_recover_vars (core, fcn, false);
 }
 
 static void cmd_aaa(RCore *core, const char *input) {
@@ -15287,8 +15368,15 @@ static void cmd_aaa(RCore *core, const char *input) {
 	// Run afvn in all fcns
 	if (r_config_get_b (core->config, "anal.vars")) {
 		logline (core, 15, "Analyze all functions arguments/locals (afva@@F)");
-		// r_core_cmd0 (core, "afva@@f");
-		r_core_cmd0 (core, "afva@@F");
+		RAnalFunction *fcni;
+		RListIter *iter;
+		r_list_foreach (core->anal->fcns, iter, fcni) {
+			if (r_cons_is_breaked (core->cons)) {
+				break;
+			}
+			recover_function_vars_for_analysis (core, fcni);
+			r_core_task_yield (&core->tasks);
+		}
 	}
 #endif
 	// Run pending analysis immediately after analysis
@@ -15483,8 +15571,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 			logline (core, 96, "Enable types.constraint for experimental type propagation");
 			r_config_set_b (core->config, "types.constraint", true);
 			// Plugin post-analysis hooks (for advanced analysis like taint, symbolic)
-			logline (core, 97, "Running plugin post-analysis hooks");
-			r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, NULL);
+			r_core_sleigh_post_analysis_depth (core, R_ANAL_PLUGIN_ANALYSIS_DEPTH_AGGRESSIVE);
 			if (input[2] == 'a') { // "aaaaa"
 				logline (core, 97, "Reanalyzing graph references to adjust functions count (aarr)");
 				r_core_call (core, "aarr");
@@ -15493,6 +15580,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 				r_core_cmd0 (core, ".afna@@c:afla");
 			}
 		} else {
+			r_core_sleigh_post_analysis_depth (core, R_ANAL_PLUGIN_ANALYSIS_DEPTH_BALANCED);
 			R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
 		}
 		if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {

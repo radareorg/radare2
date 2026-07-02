@@ -3000,7 +3000,7 @@ static int cmd_type(void *data, const char *input) {
 			r_str_trim (type);
 			char *tmp = sdb_get (TDB, type, 0);
 			if (R_STR_ISNOTEMPTY (tmp)) {
-				r_type_set_link (TDB, type, addr);
+				r_anal_types_set_link (core->anal, type, addr);
 				RList *fcns = r_anal_get_functions_in (core->anal, core->addr);
 				if (r_list_length (fcns) > 1) {
 					R_LOG_ERROR ("Multiple functions found in here");
@@ -3038,7 +3038,7 @@ static int cmd_type(void *data, const char *input) {
 			case ' ': {
 				const char *ptr = input + 3;
 				ut64 addr = r_num_math (core->num, ptr);
-				r_type_unlink (TDB, addr);
+				r_anal_types_unlink (core->anal, addr);
 				break;
 			}
 			}

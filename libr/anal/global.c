@@ -32,7 +32,7 @@ R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *type_name, cons
 	}
 	r_meta_set (anal, R_META_TYPE_FORMAT, addr, fmtsize, fmtstr);
 	// implicit
-	r_type_set_link (anal->sdb_types, fmtstr, addr);
+	r_anal_types_set_link (anal, fmtstr, addr);
 	return true;
 }
 
@@ -42,7 +42,7 @@ R_API bool r_anal_global_del(RAnal *anal, ut64 addr) {
 		RFlag *flags = anal->flb.f;
 		r_meta_del (anal, R_META_TYPE_FORMAT, addr, 0);
 		r_flag_unset (flags, fi);
-		r_type_unlink (anal->sdb_types, addr);
+		r_anal_types_unlink (anal, addr);
 		return true;
 	}
 	return false;

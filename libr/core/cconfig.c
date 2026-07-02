@@ -1860,6 +1860,7 @@ static bool cb_cmdpdc(void *user, void *data) {
 			RAnalPlugin *ap;
 			r_list_foreach (core->anal->libstore->plugins, it, ap) {
 				if (!strcmp (ap->meta.name, "sla")) {
+					r_cons_println (core->cons, "pdd");
 					r_cons_println (core->cons, "a:sla.dec");
 					break;
 				}
