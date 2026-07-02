@@ -2000,8 +2000,9 @@ a:tp?
 EOF
 EXPECT=<<EOF
 Usage: a:tp  propagate types for current function
-| a:tpall  propagate types for every function (aaft)
-| a:tp?    show this help
+| a:tpall    propagate types for every function (aaft)
+| a:tpsynth  synthesize struct types from pointer-argument accesses (afts)
+| a:tp?      show this help
 EOF
 RUN
 
@@ -2490,5 +2491,290 @@ EXPECT=<<EOF
 0x00000000 int sym.imp.bar ( // cc:cdecl ret:?
 0x00000000   int myarg // stack
 0x00000004 );
+EOF
+RUN
+
+NAME=afts synthesizes struct from pointer-argument accesses
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint32_t field_0x8;
+  uint32_t field_0x10;
+};
+EOF
+RUN
+
+NAME=afts types a dereferenced field as a pointer
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b07488b4f088b1101d0c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  void *field_0x8;
+};
+EOF
+RUN
+
+NAME=afts emits a nested child struct for a dereferenced pointer field
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b07488b4f088b118b711001d001f0c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x8 {
+  uint32_t field_0x0;
+  uint32_t field_0x10;
+};
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  struct fcn_00000000_arg0_0x8 *field_0x8;
+};
+EOF
+RUN
+
+NAME=afts ignores negative-offset accesses from a neighboring argument
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b46f88b0e8b560801c801d0c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg1 {
+  uint32_t field_0x0;
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts types fields by access width
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 0fb6070fb74f02488b5708c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint8_t field_0x0;
+  uint16_t field_0x2;
+  uint64_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts records store accesses as fields
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8907894f08c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts synthesizes a struct per pointer argument
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b168b5e04c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint32_t field_0x8;
+};
+struct fcn_00000000_arg1 {
+  uint32_t field_0x0;
+  uint32_t field_0x4;
+};
+EOF
+RUN
+
+NAME=afts emits nothing below the two-field threshold
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b07c3
+af
+afts
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=afts synthesizes struct fields on arm64
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 010040b9020840b92000020bc0035fd6
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts synthesizes struct fields on ppc64 big-endian
+FILE=malloc://256
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 8083000080a300087c642a144e800020
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts emits a nested child struct on ppc64 big-endian
+FILE=malloc://256
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx e883000880a4000080c4001080e300004e800020
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x8 {
+  uint32_t field_0x0;
+  uint32_t field_0x10;
+};
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  struct fcn_00000000_arg0_0x8 *field_0x8;
+};
+EOF
+RUN
+
+NAME=afts recovers the z_stream state pointer in ppc64be inflateReset
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=<<EOF
+aa
+s sym.inflateReset
+afts
+EOF
+EXPECT=<<EOF
+struct sym_inflateReset_arg0_0x38 {
+  uint64_t field_0x0;
+  uint32_t field_0x8;
+  uint32_t field_0x3c;
+  uint64_t field_0x40;
+};
+struct sym_inflateReset_arg0 {
+  struct sym_inflateReset_arg0_0x38 *field_0x38;
+  uint64_t field_0x40;
+  uint64_t field_0x48;
+};
+EOF
+RUN
+
+NAME=afts types fields with load width on arm32
+FILE=malloc://256
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 003090e5b820d0e10c10d0e51eff2fe1
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint16_t field_0x8;
+  uint8_t field_0xc;
+};
+EOF
+RUN
+
+NAME=afts detects a pointer field at a 4-byte-aligned offset on arm32
+FILE=malloc://256
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 043090e5002093e5041093e5102090e51eff2fe1
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x4 {
+  uint32_t field_0x0;
+  uint32_t field_0x4;
+};
+struct fcn_00000000_arg0 {
+  struct fcn_00000000_arg0_0x4 *field_0x4;
+  uint32_t field_0x10;
+};
+EOF
+RUN
+
+NAME=afts emits a nested child struct on arm32 big-endian
+FILE=malloc://256
+ARGS=-a arm -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx e5903000e5932004e5931008e5902008e12fff1e
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x0 {
+  uint32_t field_0x4;
+  uint32_t field_0x8;
+};
+struct fcn_00000000_arg0 {
+  struct fcn_00000000_arg0_0x0 *field_0x0;
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts emits a nested child struct on arm thumb
+FILE=malloc://256
+ARGS=-a arm -b 16
+CMDS=<<EOF
+wx 03685a68996882687047
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x0 {
+  uint32_t field_0x4;
+  uint32_t field_0x8;
+};
+struct fcn_00000000_arg0 {
+  struct fcn_00000000_arg0_0x0 *field_0x0;
+  uint32_t field_0x8;
+};
 EOF
 RUN
