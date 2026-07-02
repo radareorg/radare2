@@ -80,6 +80,7 @@ static RCoreHelpMessage help_msg_slash_ad = {
 static RCoreHelpMessage help_msg_slash_magic = {
 	"/m", "", "search for known magic patterns",
 	"/m", " [file]", "same as above but using the given magic file",
+	"/mt", " [file]", "search for text-based magic patterns",
 	"/me", " [msg]", "like ?e similar to IRC's /me",
 	"/mm", "", "search for known filesystems and mount them automatically",
 	"/mb", "", "search recognized RBin headers",
@@ -108,7 +109,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/h", "[?*] [algo] [digest] [size]", "find block of size bytes having this digest (see ph)",
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/k", " foo", "search for string 'foo' using Rabin Karp alg",
-	"/m", "[?][ebm] magicfile", "search for magic, filesystems or binary headers",
+	"/m", "[?][ebmt] magicfile", "search for magic, filesystems or binary headers",
 	"/o", " [n]", "show offset of n instructions backward",
 	"/O", " [n]", "same as /o, but with a different fallback if anal cannot be used",
 	"/p", "[?][p] patternsize", "search for pattern of given size",
@@ -4154,6 +4155,59 @@ static bool cmd_search_gadget(RCore *core, RInterval search_itv, const char *inp
 	return true;
 }
 
+static void cmd_search_magic(RCore *core, struct search_parameters *param, const char *file, bool text) {
+	if (core->magic) {
+		r_magic_free (core->magic);
+		core->magic = NULL;
+	}
+
+	RSearchKeyword *kw = r_search_keyword_new_hexmask ("00", NULL);
+	kw->keyword_length = 1;
+	r_search_reset (core->search, R_SEARCH_MAGIC);
+	r_search_kw_add (core->search, kw);
+
+	if (param->outmode == R_MODE_JSON) {
+		pj_a (param->pj);
+	}
+
+	int maxHits = r_config_get_i (core->config, "search.maxhits");
+	MagicContext mc = {
+		.core = core,
+		.ofile = NULL,
+		.hits = 0,
+		.text = text
+	};
+	ut64 addr;
+	RListIter *iter;
+	RIOMap *map;
+	r_list_foreach (param->boundaries, iter, map) {
+		if (param->outmode != R_MODE_JSON) {
+			eprintf ("-- %"PFMT64x" %"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+		}
+		r_cons_break_push (core->cons, NULL, NULL);
+		for (addr = r_io_map_begin (map); addr < r_io_map_end (map); addr++) {
+			if (r_cons_is_breaked (core->cons)) {
+				break;
+			}
+			int ret = magic_at (&mc, kw, file, addr, 0, false,
+					param->outmode == R_MODE_JSON? param->pj: NULL);
+			if (ret == -1) {
+				break;
+			}
+			if (maxHits && mc.hits >= maxHits) {
+				break;
+			}
+			addr += ret - 1;
+		}
+		r_cons_clear_line (core->cons, true, true);
+		r_cons_break_pop (core->cons);
+	}
+	free (mc.ofile);
+	if (param->outmode == R_MODE_JSON) {
+		pj_end (param->pj);
+	}
+}
+
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	bool dosearch_read = false;
@@ -4856,56 +4910,27 @@ reread:
 				break;
 			}
 			r_cons_printf (core->cons, "* r2 thinks%s\n", input + 2);
+		} else if (input[1] == 't') { // "/mt"
+			const char *file = NULL;
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_magic, "/mt");
+			} else if (input[2] == ' ') {
+				file = input + 3;
+				cmd_search_magic (core, &param, file, true);
+			} else if (input[2] == '\0') {
+				cmd_search_magic (core, &param, NULL, true);
+			} else if (input[2] == 'j' && (input[3] == '\0' || input[3] == ' ')) {
+				file = input[3] == ' '? input + 4: NULL;
+				cmd_search_magic (core, &param, file, true);
+			} else {
+				r_core_cmd_help (core, help_msg_slash_magic);
+			}
 		} else if (input[1] == ' ' || input[1] == '\0' || param.outmode == R_MODE_JSON) {
-			int ret;
-			const char *file = input[param_offset - 1]? input + param_offset: NULL;
-			ut64 addr = search_itv.addr;
-			RListIter *iter;
-			RIOMap *map;
-			RSearchKeyword *kw;
-
-			kw = r_search_keyword_new_hexmask ("00", NULL);
-			kw->keyword_length = 1;
-			r_search_reset (core->search, R_SEARCH_MAGIC);
-			r_search_kw_add (core->search, kw);
-
-			if (param.outmode == R_MODE_JSON) {
-				pj_a (param.pj);
+			const char *file = NULL;
+			if (input[param_offset - 1]) {
+				file = input + param_offset;
 			}
-
-			int maxHits = r_config_get_i (core->config, "search.maxhits");
-			MagicContext mc = {
-				.core = core,
-				.ofile = NULL,
-				.hits = 0
-			};
-			r_list_foreach (param.boundaries, iter, map) {
-				if (param.outmode != R_MODE_JSON) {
-					eprintf ("-- %"PFMT64x" %"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
-				}
-				r_cons_break_push (core->cons, NULL, NULL);
-				for (addr = r_io_map_begin (map); addr < r_io_map_end (map); addr++) {
-					if (r_cons_is_breaked (core->cons)) {
-						break;
-					}
-					ret = magic_at (&mc, kw, file, addr, 0, false,
-							param.outmode == R_MODE_JSON? param.pj: NULL);
-					if (ret == -1) {
-						// something went terribly wrong.
-						break;
-					}
-					if (maxHits && mc.hits >= maxHits) {
-						break;
-					}
-					addr += ret - 1;
-				}
-				r_cons_clear_line (core->cons, true, true);
-				r_cons_break_pop (core->cons);
-			}
-			free (mc.ofile);
-			if (param.outmode == R_MODE_JSON) {
-				pj_end (param.pj);
-			}
+			cmd_search_magic (core, &param, file, false);
 		} else {
 			r_core_cmd_help (core, help_msg_slash_magic);
 		}

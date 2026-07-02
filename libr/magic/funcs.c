@@ -138,7 +138,7 @@ R_IPI int __magic_file_buffer(RMagic *ms, int fd, const char *inname, const void
 		/* try tests in /etc/magic (or surrogate magic file) */
 		if ((ms->flags & R_MAGIC_NO_CHECK_SOFT) == 0) {
 			m = __magic_file_softmagic (ms, buf, nb, BINTEST);
-			if (m == 0) {
+			if (m == 0 && (ms->flags & R_MAGIC_CHECK_TEXT)) {
 				m = __magic_file_softmagic (ms, buf, nb, TEXTTEST);
 			}
 		}

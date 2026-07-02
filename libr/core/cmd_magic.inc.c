@@ -8,6 +8,7 @@ typedef struct {
 	RCore *core;
 	char *ofile;
 	int hits;
+	bool text;
 	// TODO: add PJ and other stuff
 } MagicContext;
 
@@ -71,7 +72,7 @@ static int magic_at(MagicContext *mc, RSearchKeyword *kw, const char *file, ut64
 		}
 	}
 	if (!core->magic) {
-		core->magic = r_magic_new (0);
+		core->magic = r_magic_new (mc->text? R_MAGIC_CHECK_TEXT: 0);
 		if (file) {
 			char *tmp = strdup (file);
 			free (mc->ofile);

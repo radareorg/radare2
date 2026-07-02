@@ -224,6 +224,7 @@ R_VEC_TYPE (RVecMagicMList, struct mlist);
 #define R_MAGIC_NO_CHECK_ELF        0x010000 /* Don't check for elf details */
 #define R_MAGIC_NO_CHECK_ASCII      0x020000 /* Don't check for ascii files */
 #define R_MAGIC_NO_CHECK_TOKENS     0x100000 /* Don't check ascii/tokens */
+#define R_MAGIC_CHECK_TEXT          0x200000 /* Check text magic entries */
 
 /* Defined for backwards compatibility; do nothing */
 #define MAGIC_NO_CHECK_FORTRAN      0x000000 /* Don't check ascii/fortran */
