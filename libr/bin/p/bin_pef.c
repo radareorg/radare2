@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2025 - elliotnunn */
+/* radare - LGPL - Copyright 2025-2026 - elliotnunn */
 
 #include <r_lib.h>
 #include <r_bin.h>
@@ -213,6 +213,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 	ut32 codeA = 0, dataA = 1, rSymI = 0, rAddr = 0;
 	ut32 loopInstruct = UT32_MAX;
 	ut32 loopDone = 0;
+	ut32 executedInstructions = 0;
 	int i;
 
 #define dbg(name, format, ...) \
@@ -225,6 +226,9 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 
 	ut32 pc = 0;
 	while (pc < instCount) {
+		if (executedInstructions++ >= PEF_MAX_RELOC_INSTRUCTIONS) {
+			goto fail;
+		}
 		ut32 printpc = pc;
 		ut16 op = r_buf_read_be16_at (b, at + 2 * pc++);
 
@@ -523,6 +527,24 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	ut32 relocInstrOffset = r_buf_read_be32_at (bf->buf, pef->ldrsec + 36);
 	if (importedLibraryCount > 0x10000000 || totalImportedSymbolCount > 0x10000000 || relocSecCount > 0x10000000) {
 		// integer overflow prevented
+		return false;
+	}
+
+	ut64 bsz = r_buf_size (bf->buf);
+	ut64 reloc_table = 56;
+	ut64 n = 0;
+	if (r_add_overflow ((ut64)pef->ldrsec, reloc_table, &n) || n > bsz) {
+		return false;
+	}
+	if (r_mul_overflow ((ut64)importedLibraryCount, (ut64)24, &n) ||
+		r_add_overflow (reloc_table, n, &reloc_table) ||
+		r_mul_overflow ((ut64)totalImportedSymbolCount, (ut64)4, &n) ||
+		r_add_overflow (reloc_table, n, &reloc_table) ||
+		r_add_overflow ((ut64)pef->ldrsec, reloc_table, &reloc_table) ||
+		reloc_table > bsz) {
+		return false;
+	}
+	if ((ut64)relocSecCount > (bsz - reloc_table) / 12) {
 		return false;
 	}
 
