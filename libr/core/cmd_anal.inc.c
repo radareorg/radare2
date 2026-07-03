@@ -2206,6 +2206,9 @@ static int cmd_afv(RCore *core, const char *str) {
 				return false;
 			}
 			if (type) {
+				r_str_trim (type);
+				// mid-line quotes reach the handler verbatim, keep them out of the type
+				r_str_trim_args (type);
 				r_anal_var_set_type (core->anal, v1, type);
 			} else {
 				r_cons_printf (core->cons, "%s\n", v1->type);

@@ -15,6 +15,22 @@ int64_t
 EOF
 RUN
 
+NAME=afvt strips wrapping quotes from the type
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+af
+afvt argv "char *"
+afvt argv
+afvt argv 'int **'
+afvt argv
+EOF
+EXPECT=<<EOF
+char *
+int **
+EOF
+RUN
+
 NAME=pdf
 FILE=bins/elf/ls
 CMDS=<<EOF
