@@ -99,6 +99,26 @@ typedef struct qjs_io_plugin_t {
 	// JSValue encode_func;
 } QjsIoPlugin;
 
+typedef struct qjs_timer_t {
+	int id;
+	ut64 when;
+	ut64 interval;
+	bool active;
+	R_UNOWNED JSContext *ctx;
+	JSValue func;
+	int argc;
+	JSValue *argv;
+} QjsTimer;
+
+static void qjs_timer_free(void *ptr);
+static JSValue qjs_set_timeout(JSContext *ctx, int argc, JSValueConst *argv, bool interval);
+static JSValue qjs_clear_timer(JSContext *ctx, int argc, JSValueConst *argv);
+static bool qjs_drain_jobs(JSContext *ctx, bool wait);
+static JSPromiseStateEnum qjs_await_promise(JSContext *ctx, JSValueConst promise);
+static JSValue js_os_setTimeout(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+static JSValue js_os_setInterval(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+static JSValue js_os_clear_timer(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+
 static void parse_plugin_fini(QjsAsmPlugin *cp) {
 	qjs_free_value (cp->ctx, &cp->fn_parse_js);
 	free (cp->name);
@@ -138,6 +158,8 @@ typedef struct qjs_plugin_manager_t {
 	R_UNOWNED RCore *core;
 	R_UNOWNED JSRuntime *rt;
 	QjsContext default_ctx; // context for running normal JS code
+	RList *timers;
+	int next_timer_id;
 	RVecCorePlugin core_plugins;
 	RVecArchPlugin arch_plugins;
 	RVecIoPlugin io_plugins;
@@ -147,6 +169,8 @@ typedef struct qjs_plugin_manager_t {
 static bool plugin_manager_init(QjsPluginManager *pm, RCore *core, JSRuntime *rt) {
 	pm->core = core;
 	pm->rt = rt;
+	pm->timers = r_list_newf (qjs_timer_free);
+	pm->next_timer_id = 1;
 	RVecCorePlugin_init (&pm->core_plugins);
 	RVecArchPlugin_init (&pm->arch_plugins);
 	RVecIoPlugin_init (&pm->io_plugins);
@@ -308,6 +332,8 @@ static bool plugin_manager_remove_plugin(QjsPluginManager *pm, const char *type,
 }
 
 static void plugin_manager_fini(QjsPluginManager *pm) {
+	r_list_free (pm->timers);
+	pm->timers = NULL;
 	RVecCorePlugin_fini (&pm->core_plugins);
 	RVecArchPlugin_fini (&pm->arch_plugins);
 	RVecIoPlugin_fini (&pm->io_plugins);
@@ -324,15 +350,90 @@ static void plugin_manager_fini(QjsPluginManager *pm) {
 
 static bool eval(JSContext *ctx, const char *code);
 
-static void eval_jobs(JSContext *ctx) {
+static ut64 qjs_next_timer_delay(JSContext *ctx) {
 	JSRuntime *rt = JS_GetRuntime (ctx);
-	JSContext *pctx = NULL;
-	do {
-		int res = JS_ExecutePendingJob (rt, &pctx);
-		if (res == -1) {
-			R_LOG_ERROR ("Exception in pending job");
+	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
+	if (!pm || !pm->timers) {
+		return UT64_MAX;
+	}
+	QjsTimer *timer;
+	RListIter *iter;
+	ut64 best = UT64_MAX;
+	const ut64 now = r_time_now_mono ();
+	r_list_foreach (pm->timers, iter, timer) {
+		if (!timer->active || timer->ctx != ctx) {
+			continue;
 		}
-	} while (pctx);
+		if (timer->when <= now) {
+			return 0;
+		}
+		const ut64 delta = timer->when - now;
+		if (delta < best) {
+			best = delta;
+		}
+	}
+	return best;
+}
+
+static bool qjs_run_due_timers(JSContext *ctx);
+
+static bool qjs_drain_jobs(JSContext *ctx, bool wait) {
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
+	bool did = false;
+	for (;;) {
+		bool progressed = false;
+		for (;;) {
+			JSContext *pctx = NULL;
+			int res = JS_ExecutePendingJob (rt, &pctx);
+			if (res <= 0) {
+				if (res == -1) {
+					R_LOG_ERROR ("Exception in pending job");
+				}
+				break;
+			}
+			progressed = true;
+			did = true;
+		}
+		if (qjs_run_due_timers (ctx)) {
+			progressed = true;
+			did = true;
+			continue;
+		}
+		if (progressed || !wait) {
+			if (progressed) {
+				continue;
+			}
+			break;
+		}
+		if (pm && pm->core && pm->core->cons && pm->core->cons->context && pm->core->cons->context->breaked) {
+			break;
+		}
+		ut64 delay = qjs_next_timer_delay (ctx);
+		if (delay == UT64_MAX) {
+			break;
+		}
+		if (delay > 0) {
+			r_sys_usleep ((int)R_MIN (delay, 10000));
+		}
+	}
+	return did;
+}
+
+static void eval_jobs(JSContext *ctx) {
+	qjs_drain_jobs (ctx, false);
+}
+
+static JSPromiseStateEnum qjs_await_promise(JSContext *ctx, JSValueConst promise) {
+	for (;;) {
+		JSPromiseStateEnum state = JS_PromiseState (ctx, promise);
+		if (state != JS_PROMISE_PENDING) {
+			return state;
+		}
+		if (!qjs_drain_jobs (ctx, true)) {
+			return JS_PROMISE_PENDING;
+		}
+	}
 }
 
 static void r2qjs_dump_obj(JSContext *ctx, JSValueConst val) {
@@ -361,6 +462,134 @@ static void js_std_dump_error(JSContext *ctx) {
 	JSValue exception_val = JS_GetException (ctx);
 	js_std_dump_error1 (ctx, exception_val);
 	JS_FreeValue (ctx, exception_val);
+}
+
+static void qjs_timer_free(void *ptr) {
+	QjsTimer *timer = ptr;
+	if (!timer) {
+		return;
+	}
+	JS_FreeValue (timer->ctx, timer->func);
+	int i;
+	for (i = 0; i < timer->argc; i++) {
+		JS_FreeValue (timer->ctx, timer->argv[i]);
+	}
+	free (timer->argv);
+	free (timer);
+}
+
+static bool qjs_run_due_timers(JSContext *ctx) {
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
+	if (!pm || !pm->timers) {
+		return false;
+	}
+	QjsTimer *timer;
+	RListIter *iter, *tmp;
+	bool did = false;
+	const ut64 now = r_time_now_mono ();
+	r_list_foreach_safe (pm->timers, iter, tmp, timer) {
+		if (!timer->active) {
+			r_list_delete (pm->timers, iter);
+			did = true;
+			continue;
+		}
+		if (timer->ctx != ctx || timer->when > now) {
+			continue;
+		}
+		JSValue ret = JS_Call (ctx, timer->func, JS_UNDEFINED, timer->argc, (JSValueConst *)timer->argv);
+		if (JS_IsException (ret)) {
+			js_std_dump_error (ctx);
+		} else {
+			JS_FreeValue (ctx, ret);
+		}
+		if (timer->active && timer->interval) {
+			timer->when = now + timer->interval;
+		} else {
+			r_list_delete (pm->timers, iter);
+		}
+		did = true;
+	}
+	return did;
+}
+
+static JSValue js_os_setTimeout(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	return qjs_set_timeout (ctx, argc, argv, false);
+}
+
+static JSValue js_os_setInterval(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	return qjs_set_timeout (ctx, argc, argv, true);
+}
+
+static JSValue qjs_set_timeout(JSContext *ctx, int argc, JSValueConst *argv, bool interval) {
+	if (argc < 1 || !JS_IsFunction (ctx, argv[0])) {
+		return JS_ThrowTypeError (ctx, "setTimeout expects a function");
+	}
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
+	if (!pm || !pm->timers) {
+		return JS_ThrowPlainError (ctx, "timer queue is unavailable");
+	}
+	double delay = 0;
+	if (argc > 1 && JS_ToFloat64 (ctx, &delay, argv[1])) {
+		return JS_EXCEPTION;
+	}
+	if (!(delay > 0)) {
+		delay = 0;
+	}
+	if (interval && delay < 1) {
+		delay = 1;
+	}
+	const ut64 delay_us = (ut64)(delay * R_USEC_PER_MSEC);
+	QjsTimer *timer = R_NEW0 (QjsTimer);
+	timer->id = pm->next_timer_id++;
+	if (pm->next_timer_id <= 0) {
+		pm->next_timer_id = 1;
+	}
+	timer->ctx = ctx;
+	timer->active = true;
+	timer->interval = interval? delay_us: 0;
+	timer->when = r_time_now_mono () + delay_us;
+	timer->func = JS_DupValue (ctx, argv[0]);
+	timer->argc = argc > 2? argc - 2: 0;
+	if (timer->argc > 0) {
+		timer->argv = calloc (timer->argc, sizeof (JSValue));
+		if (!timer->argv) {
+			qjs_timer_free (timer);
+			return JS_ThrowOutOfMemory (ctx);
+		}
+		int i;
+		for (i = 0; i < timer->argc; i++) {
+			timer->argv[i] = JS_DupValue (ctx, argv[i + 2]);
+		}
+	}
+	r_list_append (pm->timers, timer);
+	return JS_NewInt32 (ctx, timer->id);
+}
+
+static JSValue qjs_clear_timer(JSContext *ctx, int argc, JSValueConst *argv) {
+	int32_t id = 0;
+	if (argc > 0 && JS_ToInt32 (ctx, &id, argv[0])) {
+		return JS_EXCEPTION;
+	}
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
+	if (!pm || !pm->timers) {
+		return JS_UNDEFINED;
+	}
+	QjsTimer *timer;
+	RListIter *iter;
+	r_list_foreach (pm->timers, iter, timer) {
+		if (timer->ctx == ctx && timer->id == id) {
+			timer->active = false;
+			break;
+		}
+	}
+	return JS_UNDEFINED;
+}
+
+static JSValue js_os_clear_timer(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	return qjs_clear_timer (ctx, argc, argv);
 }
 
 static JSValue r2log(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
@@ -663,11 +892,10 @@ static const JSCFunctionListEntry js_os_funcs[] = {
 	JS_CFUNC_MAGIC_DEF ("read", 4, js_os_read_write, 0),
 	JS_CFUNC_MAGIC_DEF ("write", 4, js_os_read_write, 1),
 	JS_CFUNC_MAGIC_DEF ("pending", 4, js_os_pending, 0),
-#if 0
-	JS_CFUNC_MAGIC_DEF ("setReadHandler", 2, js_os_setReadHandler, 0 ),
-	JS_CFUNC_DEF ("setTimeout", 2, js_os_setTimeout ),
-	JS_CFUNC_DEF ("clearTimeout", 1, js_os_clearTimeout ),
-#endif
+	JS_CFUNC_DEF ("setTimeout", 2, js_os_setTimeout),
+	JS_CFUNC_DEF ("setInterval", 2, js_os_setInterval),
+	JS_CFUNC_DEF ("clearTimeout", 1, js_os_clear_timer),
+	JS_CFUNC_DEF ("clearInterval", 1, js_os_clear_timer),
 	// JS_CFUNC_DEF ("open", 2, js_os_open ),
 	// OS_FLAG (O_RDONLY),
 };
@@ -871,8 +1099,11 @@ static void register_helpers(JSContext *ctx) {
 	JS_SetPropertyStr (ctx, global_obj, "write", JS_NewCFunction (ctx, js_write, "write", 1));
 	JS_SetPropertyStr (ctx, global_obj, "flush", JS_NewCFunction (ctx, js_flush, "flush", 1));
 	JS_SetPropertyStr (ctx, global_obj, "print", JS_NewCFunction (ctx, js_print, "print", 1));
+	JS_SetPropertyStr (ctx, global_obj, "setTimeout", JS_NewCFunction (ctx, js_os_setTimeout, "setTimeout", 2));
+	JS_SetPropertyStr (ctx, global_obj, "setInterval", JS_NewCFunction (ctx, js_os_setInterval, "setInterval", 2));
+	JS_SetPropertyStr (ctx, global_obj, "clearTimeout", JS_NewCFunction (ctx, js_os_clear_timer, "clearTimeout", 1));
+	JS_SetPropertyStr (ctx, global_obj, "clearInterval", JS_NewCFunction (ctx, js_os_clear_timer, "clearInterval", 1));
 	JS_FreeValue (ctx, global_obj);
-	eval (ctx, "setTimeout = (x,y) => x ();");
 	eval (ctx, "function dump (x) {"
 		"if (typeof x==='object' && Object.keys (x)[0] != '0') { for (let k of Object.keys (x)) { console.log (k);}} else "
 		"if (typeof x==='number'&& x > 0x1000){console.log (R.hex (x));}else"
@@ -971,6 +1202,13 @@ static bool eval(JSContext *ctx, const char *code) {
 		JSValue e = JS_GetException (ctx);
 		r2qjs_dump_obj (ctx, e);
 		JS_FreeValue (ctx, e);
+	} else if (JS_IsPromise (v)) {
+		JSPromiseStateEnum state = qjs_await_promise (ctx, v);
+		if (state == JS_PROMISE_REJECTED) {
+			JSValue e = JS_PromiseResult (ctx, v);
+			js_std_dump_error1 (ctx, e);
+			JS_FreeValue (ctx, e);
+		}
 	}
 	eval_jobs (ctx);
 	if (wantRaw) {
