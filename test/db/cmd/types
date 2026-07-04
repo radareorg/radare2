@@ -972,16 +972,16 @@ NAME=ts function pointer test
 FILE=-
 CMDS=<<EOF
 e asm.bits=64
-ws hello @ 0xc
+ws hello @ 0x10
 'td struct foo {int x; int (*fp)(int a , int b ); char *b;};
 ts foo
 .ts foo
 EOF
 EXPECT=<<EOF
-pf dpz x fp b
+pf d[4].pz x fp b
   x : 0x00000000 = 0x00000000
- fp : 0x00000004 = (qword)0x0000000000000000
-  b : 0x0000000c = "\x05hello"
+ fp : 0x00000008 = (qword)0x0000000000000000
+  b : 0x00000010 = "\x05hello"
 EOF
 RUN
 
@@ -1023,6 +1023,89 @@ struct with_array {
   int x;
   char y[50];
   float z;
+};
+EOF
+RUN
+
+NAME=tsc pads only non-natural struct gaps
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+tk G=struct
+tk struct.G=a,b,c
+tk struct.G.a=int32_t,0,0
+tk struct.G.b=char *,8,0
+tk struct.G.c=int32_t,24,0
+tsc G
+EOF
+EXPECT=<<EOF
+struct G {
+  int32_t a;
+  char *b;
+  uint8_t pad_0x10[8]; // gap
+  int32_t c;
+};
+EOF
+RUN
+
+NAME=td sizes pointer members by asm.bits
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+'td struct P {char *p; int c;};
+tk struct.P.c
+EOF
+EXPECT=<<EOF
+int,8,0
+EOF
+RUN
+
+NAME=td sizes pointer members by asm.bits on 32bit
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+'td struct P {char *p; int c;};
+tk struct.P.c
+EOF
+EXPECT=<<EOF
+int,4,0
+EOF
+RUN
+
+NAME=pad members keep their offsets across td and tsc
+FILE=malloc://1024
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+'td struct H {int32_t a; uint8_t pad[8]; char *b; int32_t c;};
+tk struct.H.b
+tk struct.H.c
+tsc H
+EOF
+EXPECT=<<EOF
+char *,16,0
+int32_t,24,0
+struct H {
+  int32_t a;
+  uint8_t pad[8];
+  char *b;
+  int32_t c;
+};
+EOF
+RUN
+
+NAME=tsc does not pad unions
+FILE=-
+CMDS=<<EOF
+tk U=union
+tk union.U=a,b
+tk union.U.a=int32_t,0,0
+tk union.U.b=int64_t,0,0
+tuc U
+EOF
+EXPECT=<<EOF
+union U {
+  int32_t a;
+  int64_t b;
 };
 EOF
 RUN

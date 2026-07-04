@@ -23,6 +23,7 @@ typedef struct {
 	TypedefEntry tdefs[64];
 	size_t tdef_count;
 	int struct_pack;
+	int ptr_size;
 } KVCParser;
 
 typedef bool(*KVCParserCallback)(KVCParser *, const char *);
@@ -393,7 +394,10 @@ static void token_typename(RStrs *fun_rtyp, RStrs *fun_name) {
 	}
 }
 
-static int kvc_typesize(KVCParser *kvc, const char *name, int dimension) {
+R_IPI int kvc_type_size(const char *name, int dimension, int ptr_size) {
+	if (strchr (name, '*')) {
+		return ptr_size * dimension;
+	}
 	if (!strcmp (name, "char") || r_str_endswith (name, "8")) {
 		return 1 * dimension;
 	}
@@ -412,7 +416,10 @@ static int kvc_typesize(KVCParser *kvc, const char *name, int dimension) {
 	return 4;
 }
 
-static int kvc_typealign(KVCParser *kvc, const char *name) {
+R_IPI int kvc_type_align(const char *name, int ptr_size) {
+	if (strchr (name, '*')) {
+		return ptr_size;
+	}
 	if (!strcmp (name, "char") || r_str_endswith (name, "8")) {
 		return 1;
 	}
@@ -423,6 +430,23 @@ static int kvc_typealign(KVCParser *kvc, const char *name) {
 		return 8;
 	}
 	return 4;
+}
+
+static int kvc_typesize(KVCParser *kvc, const char *name, int dimension) {
+	return kvc_type_size (name, dimension, kvc->ptr_size);
+}
+
+static int kvc_typealign(KVCParser *kvc, const char *name) {
+	return kvc_type_align (name, kvc->ptr_size);
+}
+
+static void kvc_align_offset(KVCParser *kvc, int *off, int av) {
+	if (kvc->struct_pack > 0 && av > kvc->struct_pack) {
+		av = kvc->struct_pack;
+	}
+	if (av > 1 && (*off % av)) {
+		*off += av - (*off % av);
+	}
 }
 
 static void trim_underscores(RStrs *t) {
@@ -1292,6 +1316,9 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				char *fulltype = r_str_newf ("%s * (%s)", rtype, args? args: "");
 				// We'll reference the function-pointer's type by a struct-prefixed name: <struct>.<member>
 				char *type_name = r_str_newf ("%s.%s", sn, mname);
+				if (!strcmp (type, "struct")) {
+					kvc_align_offset (kvc, &off, kvc->ptr_size);
+				}
 				// Emit the struct member referring to that type name (no commas in the type)
 				r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,0\n", sn, mname, type_name, off);
 				char *fname = r_str_newf ("%s.%s", sn, mname);
@@ -1349,6 +1376,9 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 							}
 						}
 						// For typedef function-pointer types, reference the typedef alias as the field's type
+						if (!strcmp (type, "struct")) {
+							kvc_align_offset (kvc, &off, kvc->ptr_size);
+						}
 						r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,0\n", sn, mname, mt_check, off);
 						off += kvc_typesize (kvc, tdef, 1);
 						r_strbuf_appendf (args_sb, "%s%s", member_idx? ",": "", mname);
@@ -1708,7 +1738,7 @@ static bool tryparse(KVCParser *kvc, const char *word, const char *type, KVCPars
 	return false;
 }
 
-R_IPI char *kvc_parse(const char *header_content, char **errmsg) {
+R_IPI char *kvc_parse(const char *header_content, int ptr_size, char **errmsg) {
 	// Initialize a preprocessing state for this parse
 	PPState *pps = pp_new ();
 	char *pre = pp_preprocess (pps, header_content);
@@ -1720,6 +1750,7 @@ R_IPI char *kvc_parse(const char *header_content, char **errmsg) {
 	KVCParser _kvc = { 0 };
 	KVCParser *kvc = &_kvc;
 	kvcparser_init (&_kvc, pre);
+	kvc->ptr_size = ptr_size > 0? ptr_size: 8;
 	while (!r_strs_empty (kvc->s)) {
 		skip_ws (kvc);
 		const char *word = kvc_peekn (kvc, 6);
@@ -1780,7 +1811,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	char *errmsg = NULL;
-	char *result = kvc_parse ((const char *)content, &errmsg);
+	char *result = kvc_parse ((const char *)content, 8, &errmsg);
 	if (errmsg) {
 		R_LOG_ERROR ("Parsing problem %s", errmsg);
 		free (errmsg);

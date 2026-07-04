@@ -2,7 +2,9 @@
 
 #include <r_anal.h>
 
-R_IPI char* kvc_parse(const char* header_content, char **errmsg);
+R_IPI char* kvc_parse(const char* header_content, int ptr_size, char **errmsg);
+R_IPI int kvc_type_size(const char *name, int dimension, int ptr_size);
+R_IPI int kvc_type_align(const char *name, int ptr_size);
 
 static RAnalPlugin *resolve_plugin (RAnal *anal, int type) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
@@ -14,9 +16,23 @@ static RAnalPlugin *resolve_plugin (RAnal *anal, int type) {
 	return NULL;
 }
 
+static int cparse_ptr_size(RAnal *anal) {
+	const int bits = (anal && anal->config)? anal->config->bits: 0;
+	return bits > 0? bits / 8: 8;
+}
+
 R_API char *r_anal_cparse2(RAnal *anal, const char *code, char **error_msg) {
-	// TODO: this is a thin 1 line wrapper function that can be inlined
-	return kvc_parse (code, error_msg);
+	return kvc_parse (code, cparse_ptr_size (anal), error_msg);
+}
+
+R_API int r_anal_cparse_typesize(const char *type, int dimension, int ptr_size) {
+	R_RETURN_VAL_IF_FAIL (type, 0);
+	return kvc_type_size (type, dimension > 0? dimension: 1, ptr_size > 0? ptr_size: 8);
+}
+
+R_API int r_anal_cparse_typealign(const char *type, int ptr_size) {
+	R_RETURN_VAL_IF_FAIL (type, 1);
+	return kvc_type_align (type, ptr_size > 0? ptr_size: 8);
 }
 
 R_API char *r_anal_cparse_file(RAnal *anal, const char *path, const char *dir, char **error_msg) {
