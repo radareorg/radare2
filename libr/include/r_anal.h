@@ -206,6 +206,7 @@ typedef struct r_anal_struct_member_t {
 	char *type;
 	size_t offset; // in bytes
 	size_t size; // in bits? rename to 'bitsize'
+	size_t count; // array element count, 0 when not an array
 } RAnalStructMember;
 
 typedef struct r_anal_union_member_t {

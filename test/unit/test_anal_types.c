@@ -338,9 +338,48 @@ static bool test_anal_get_base_type_not_found(void) {
 	mu_end;
 }
 
+static bool test_anal_base_type_struct_array_roundtrip(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("arr");
+
+	RAnalStructMember member = {
+		.offset = 0,
+		.type = strdup ("int32_t"),
+		.name = strdup ("scalar"),
+		.count = 0
+	};
+	RVecAnalStructMember_push_back (&base->struct_data.members, &member);
+
+	member.offset = 4;
+	member.type = strdup ("char");
+	member.name = strdup ("buf");
+	member.count = 16;
+	RVecAnalStructMember_push_back (&base->struct_data.members, &member);
+
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	RAnalBaseType *got = r_anal_get_base_type (anal, "arr");
+	mu_assert_notnull (got, "reload struct with array member");
+
+	RAnalStructMember *m = RVecAnalStructMember_at (&got->struct_data.members, 0);
+	mu_assert_eq (m->count, 0, "scalar member count survives as 0");
+	m = RVecAnalStructMember_at (&got->struct_data.members, 1);
+	mu_assert_eq (m->offset, 4, "array member offset survives");
+	mu_assert_eq (m->count, 16, "array member count survives the roundtrip");
+
+	r_anal_base_type_free (got);
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_anal_get_base_type_struct);
 	mu_run_test (test_anal_save_base_type_struct);
+	mu_run_test (test_anal_base_type_struct_array_roundtrip);
 	mu_run_test (test_anal_get_base_type_union);
 	mu_run_test (test_anal_save_base_type_union);
 	mu_run_test (test_anal_get_base_type_enum);
