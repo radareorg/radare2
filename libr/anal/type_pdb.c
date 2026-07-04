@@ -171,7 +171,9 @@ static void parse_structure(const RAnal *anal, STpiStream *ss, SType *type, RLis
 		type_info->get_name &&
 		type_info->get_val);
 
-	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	bool is_struct = (type_info->leaf_type == eLF_STRUCTURE || type_info->leaf_type == eLF_CLASS);
+	RAnalBaseType *base_type = r_anal_base_type_new (
+		is_struct? R_ANAL_BASE_TYPE_KIND_STRUCT: R_ANAL_BASE_TYPE_KIND_UNION);
 	if (!base_type) {
 		return;
 	}
@@ -196,14 +198,17 @@ static void parse_structure(const RAnal *anal, STpiStream *ss, SType *type, RLis
 		if (!struct_member) {
 			continue; // skip the failure
 		}
-		RAnalStructMember *slot = RVecAnalStructMember_emplace_back (&base_type->struct_data.members);
-		*slot = *struct_member;
+		if (is_struct) {
+			RAnalStructMember *slot = RVecAnalStructMember_emplace_back (&base_type->struct_data.members);
+			*slot = *struct_member;
+		} else {
+			RAnalUnionMember *slot = RVecAnalUnionMember_emplace_back (&base_type->union_data.members);
+			slot->name = struct_member->name;
+			slot->type = struct_member->type;
+			slot->offset = struct_member->offset;
+			slot->size = struct_member->size;
+		}
 		free (struct_member);
-	}
-	if (type_info->leaf_type == eLF_STRUCTURE || type_info->leaf_type == eLF_CLASS) {
-		base_type->kind = R_ANAL_BASE_TYPE_KIND_STRUCT;
-	} else { // union
-		base_type->kind = R_ANAL_BASE_TYPE_KIND_UNION;
 	}
 	char *sname = r_str_sanitize_sdb_key (name);
 	base_type->name = sname;

@@ -606,6 +606,13 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 				RAnalStructMember *result = parse_struct_member (ctx, j, &member);
 				if (!result) {
 					goto cleanup;
+				}
+				if (kind == R_ANAL_BASE_TYPE_KIND_UNION) {
+					RAnalUnionMember *slot = RVecAnalUnionMember_emplace_back (&base_type->union_data.members);
+					slot->name = member.name;
+					slot->type = member.type;
+					slot->offset = member.offset;
+					slot->size = member.size;
 				} else {
 					RAnalStructMember *slot = RVecAnalStructMember_emplace_back (&base_type->struct_data.members);
 					*slot = member;
