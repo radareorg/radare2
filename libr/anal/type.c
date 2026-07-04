@@ -543,7 +543,7 @@ R_API RList *r_anal_types_baselist(RAnal *anal) {
 static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 	R_RETURN_IF_FAIL (anal && type && type->name
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
-	char *kind = "struct";
+	const char *kind = "struct";
 	/*
 		C:
 		struct name {type param1; type param2; type paramN;};
@@ -554,9 +554,30 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 		struct.name.param2=type,4,0
 		struct.name.paramN=type,8,0
 	*/
+	Sdb *db = anal->sdb_types;
 	char *sname = r_str_sanitize_sdb_key (type->name);
+	char *key = r_str_newf ("%s.%s", kind, sname);
+	char *old = sdb_get (db, key, 0);
+	if (old && RVecAnalStructMember_empty (&type->struct_data.members)) {
+		// a forward declaration must not clobber the full definition
+		R_LOG_DEBUG ("Ignoring overwrite of type '%s' with an empty declaration", key);
+		free (old);
+		free (key);
+		free (sname);
+		return;
+	}
+	if (old) {
+		// drop the members of the replaced definition before writing the new ones
+		char *p;
+		sdb_aforeach (p, old) {
+			r_strf_var (mk, KSZ, "%s.%s.%s", kind, sname, p);
+			sdb_unset (db, mk, 0);
+			sdb_aforeach_next (p);
+		}
+		free (old);
+	}
 	// name=struct
-	sdb_set (anal->sdb_types, sname, kind, 0);
+	sdb_set (db, sname, kind, 0);
 
 	RStrBuf *arglist = r_strbuf_new ("");
 
@@ -567,19 +588,13 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
 		r_strf_var (k, KSZ, "%s.%s.%s", kind, sname, member_sname);
 		r_strf_var (v, KSZ, "%s,%u,%u", member->type, (unsigned int)member->offset, (unsigned int)member->count);
-		sdb_set (anal->sdb_types, k, v, 0);
+		sdb_set (db, k, v, 0);
 		free (member_sname);
 
 		r_strbuf_appendf (arglist, (i++ == 0) ? "%s" : ",%s", member->name);
 	}
 	// struct.name=param1,param2,paramN
-	char *key = r_str_newf ("%s.%s", kind, sname);
-	if (sdb_exists (anal->sdb_types, key)) {
-		R_LOG_DEBUG ("Ignoring overwrite of type '%s' in sdb_types", key);
-		r_strbuf_free (arglist);
-	} else {
-		sdb_set_owned (anal->sdb_types, key, r_strbuf_drain (arglist), 0);
-	}
+	sdb_set_owned (db, key, r_strbuf_drain (arglist), 0);
 
 	free (key);
 	free (sname);
