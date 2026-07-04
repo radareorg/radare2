@@ -21,7 +21,7 @@ typedef struct {
 
 typedef struct {
 	ut64 addr;
-	// TODO: size
+	int size;
 } TypeTraceMemoryAccess;
 
 typedef struct {
@@ -113,6 +113,7 @@ static void type_trace_voyeur_mem_read(void *user, ut64 addr, const ut8 *buf, in
 	TypeTraceAccess *access = VecAccess_emplace_back (&db->accesses);
 	access->is_reg = false;
 	access->mem.addr = addr;
+	access->mem.size = len;
 	access->is_write = false;
 	update_trace_db_op (db);
 }
@@ -123,6 +124,7 @@ static void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, c
 	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
 	access->is_reg = false;
 	access->mem.addr = addr;
+	access->mem.size = len;
 	access->is_write = true;
 
 	if (trace->enable_rollback && old) {
@@ -286,8 +288,7 @@ typedef struct tp_state_t {
 	bool cfg_chk_constraint;
 	bool cfg_rollback;
 	bool old_follow;
-	void (*on_call)(struct tp_state_t *tps, ut64 addr, const char *name);
-	void *hook_user;
+	RList *clobber; // caller-saved regs to poison across skipped calls (synth only)
 } TPState;
 
 /// BEGIN /////////////////// esil trace helpers ///////////////////////
@@ -982,6 +983,7 @@ static bool bblist_from_cfg(RAnalFunction *fcn, RVecUT64 *bblist) {
 
 static void tps_fini(TPState *tps) {
 	R_RETURN_IF_FAIL (tps);
+	r_list_free (tps->clobber);
 	type_trace_fini (&tps->tt, &tps->esil);
 	r_esil_fini (&tps->esil);
 	if (tps->anal->iob.fd_close) {
@@ -1145,6 +1147,32 @@ static bool tt_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return ret;
 }
 
+// back a located address range with an anonymous malloc:// map; returns the fd or -1
+static int tp_map_anon(RAnal *anal, ut64 size, int align, ut64 *base, ut32 *map_id) {
+	RIOBind *iob = &anal->iob;
+	RIO *io = iob->io;
+	if (iob->map_locate && !iob->map_locate (io, base, size, align)) {
+		return -1;
+	}
+	char *uri = r_str_newf ("malloc://0x%" PFMT64x, size);
+	const int fd = (uri && iob->fd_open)? iob->fd_open (io, uri, R_PERM_RW, 0): -1;
+	free (uri);
+	if (fd < 0) {
+		return -1;
+	}
+	RIOMap *map = iob->map_add? iob->map_add (io, fd, R_PERM_RW, 0, *base, size): NULL;
+	if (!map) {
+		if (iob->fd_close) {
+			iob->fd_close (io, fd);
+		}
+		return -1;
+	}
+	if (map_id) {
+		*map_id = map->id;
+	}
+	return fd;
+}
+
 static TPState *tps_init(RAnal *anal) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->iob.io && anal->esil, NULL);
 	RIO *io = anal->iob.io;
@@ -1156,26 +1184,8 @@ static TPState *tps_init(RAnal *anal) {
 	tps->stack_base = anal->coreb.cfgGetI? anal->coreb.cfgGetI (anal->coreb.core, "esil.stack.addr"): 0x100000;
 	ut64 stack_size = anal->coreb.cfgGetI? anal->coreb.cfgGetI (anal->coreb.core, "esil.stack.size"): 0xf0000;
 	// ideally this all would happen in a dedicated temporal io bank
-	if (anal->iob.map_locate && !anal->iob.map_locate (io, &tps->stack_base, stack_size, align)) {
-		free (tps);
-		return NULL;
-	}
-	char *uri = r_str_newf ("malloc://0x%" PFMT64x, stack_size);
-	if (!uri) {
-		free (tps);
-		return NULL;
-	}
-	tps->stack_fd = anal->iob.fd_open? anal->iob.fd_open (io, uri, R_PERM_RW, 0): -1;
-	free (uri);
+	tps->stack_fd = tp_map_anon (anal, stack_size, align, &tps->stack_base, &tps->stack_map);
 	if (tps->stack_fd < 0) {
-		free (tps);
-		return NULL;
-	}
-	RIOMap *map = anal->iob.map_add? anal->iob.map_add (io, tps->stack_fd, R_PERM_RW, 0, tps->stack_base, stack_size): NULL;
-	if (!map) {
-		if (anal->iob.fd_close) {
-			anal->iob.fd_close (io, tps->stack_fd);
-		}
 		free (tps);
 		return NULL;
 	}
@@ -1188,7 +1198,6 @@ static TPState *tps_init(RAnal *anal) {
 		free (tps);
 		return NULL;
 	}
-	tps->stack_map = map->id;
 	tps->reg_if.reg = reg;
 	tps->reg_if.is_reg = tt_is_reg;
 	tps->reg_if.reg_read = tt_reg_read;
@@ -1204,7 +1213,18 @@ static TPState *tps_init(RAnal *anal) {
 	r_reg_setv (reg, "SP", sp);
 	r_reg_setv (reg, "BP", sp);
 	REsilOptions esil_opt = r_esil_options (NULL, NULL);
-	esil_opt.addrsize = anal->config->bits;
+	// VM address width, not the decode width (config->bits is 16 on thumb); SP-reg width is the library-mode fallback
+	ut64 aw = 64;
+	if (anal->coreb.cfgGetI) {
+		aw = anal->coreb.cfgGetI (anal->coreb.core, "esil.addr.size");
+	} else {
+		RRegItem *spri = r_reg_get (reg, "SP", -1);
+		if (spri) {
+			aw = spri->size? spri->size: aw;
+			r_unref (spri);
+		}
+	}
+	esil_opt.addrsize = aw;
 	esil_opt.ifaces.reg = tps->reg_if;
 	esil_opt.ifaces.mem = tps->mem_if;
 	if (!r_esil_init (&tps->esil, &esil_opt)) {
@@ -1262,7 +1282,7 @@ typedef struct type_prop_state_t {
 	RAnalVar *prev_var;
 	bool str_flag;
 	bool prop;
-	char prev_type[256];
+	char *prev_type;
 } TypePropState;
 
 static inline void tp_state_reset(TypePropState *state) {
@@ -1274,48 +1294,40 @@ static inline void tp_state_reset(TypePropState *state) {
 static inline void tp_state_fini(TypePropState *state) {
 	R_FREE (state->ret_type);
 	R_FREE (state->ret_reg);
+	R_FREE (state->prev_type);
 }
 
-R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
-	R_RETURN_IF_FAIL (anal && fcn);
+typedef enum {
+	TP_EMU_DONE = 0,
+	TP_EMU_BREAK, // interrupted by the user
+	TP_EMU_RETRY, // a block vanished or an esil step failed, the caller may re-run
+	TP_EMU_FAIL, // invalid instruction with esil.breakoninvalid set
+	TP_EMU_BUDGET, // the max_ops emulation budget was hit; the trace is partial
+} TPEmuResult;
 
-	// const int op_tions = R_ARCH_OP_MASK_BASIC ;//| R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT;
+// next_op is zeroed when no lookahead op was decoded
+typedef void (*TPEmulateOpCb)(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 addr, ut64 bb_addr);
+
+// step the type-trace esil over the linear ops of every block; op_cb also enables the one-op lookahead
+static TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPEmulateOpCb op_cb, void *user) {
+	RAnal *anal = tps->anal;
 	const int op_tions = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_ESIL;
-	RAnalBlock *bb;
-	RListIter *it;
+	const int minopcode = R_MAX (1, r_arch_info (anal->arch, R_ARCH_INFO_MINOP_SIZE));
 	RAnalOp aop = { 0 };
-	TypePropState tp_state = { 0 };
-	Sdb *TDB = anal->sdb_types;
-	int ret;
-	const int mininstrsz = r_arch_info (anal->arch, R_ARCH_INFO_MINOP_SIZE);
-	const int minopcode = R_MAX (1, mininstrsz);
-	int cur_idx, prev_idx = 0;
-	TPState *tps = tps_init (anal);
-	if (!tps) {
-		return;
-	}
-
-	tps->tt.cur_idx = 0;
-	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
-	char *fcn_name = NULL;
-	r_cons_break_push (r_cons_singleton (), NULL, NULL);
+	int ret, total = 0;
+	TPEmuResult res = TP_EMU_DONE;
+	RAnalOp *next_op = R_NEW0 (RAnalOp);
+	RCons *cons = r_cons_singleton ();
+	r_cons_break_push (cons, NULL, NULL);
 	RVecBuf buf;
 	RVecBuf_init (&buf);
 	RVecUT64 bblist;
 	RVecUT64_init (&bblist);
-	RAnalOp *next_op = R_NEW0 (RAnalOp);
 	r_list_sort (fcn->bbs, bb_cmpaddr);
-	int retries = 2;
-repeat:
-	if (retries < 0) {
-		goto out_function_no_aop;
-	}
-	if (tps->cfg_rollback && retries < 2) {
-		type_trace_rollback (&tps->tt, &tps->esil);
-	}
-	RVecUT64_clear (&bblist);
 	size_t bblist_size = r_list_length (fcn->bbs); // TODO: Use ut64
 	RVecUT64_reserve (&bblist, bblist_size);
+	RAnalBlock *bb;
+	RListIter *it;
 	if (!bblist_from_cfg (fcn, &bblist)) {
 		R_LOG_DEBUG ("cannot compute cfg order at 0x%08" PFMT64x ", using address order", fcn->addr);
 		r_list_foreach (fcn->bbs, it, bb) {
@@ -1325,13 +1337,14 @@ repeat:
 	int i, j;
 	TypeTrace *etrace = &tps->tt;
 	RIO *io = anal->iob.io;
+	// blocks swept in CFG order still inherit register state across non-adjacent boundaries: a coverage/accuracy tradeoff
 	for (j = 0; j < bblist_size; j++) {
 		const ut64 bbat = *RVecUT64_at (&bblist, j);
 		bb = r_anal_get_block_at (anal, bbat);
 		if (!bb) {
 			R_LOG_WARN ("basic block at 0x%08" PFMT64x " was removed during analysis", bbat);
-			retries--;
-			goto repeat;
+			res = TP_EMU_RETRY;
+			goto beach;
 		}
 		ut64 bb_addr = bb->addr;
 		ut64 bb_size = bb->size;
@@ -1346,8 +1359,13 @@ repeat:
 		ut64 addr = bb_addr;
 		bool have_cached_op = false;
 		for (i = 0; i < bb_size;) {
-			if (r_cons_is_breaked (r_cons_singleton ())) {
-				goto out_function;
+			if (r_cons_is_breaked (cons)) {
+				res = TP_EMU_BREAK;
+				goto beach;
+			}
+			if (max_ops && ++total > max_ops) {
+				res = TP_EMU_BUDGET;
+				goto beach;
 			}
 			ut64 bb_left = bb_size - i;
 			if ((addr >= bb_addr + bb_size) || (addr < bb_addr)) {
@@ -1369,265 +1387,57 @@ repeat:
 					continue;
 				}
 			}
-			const int loop_count = type_trace_loopcount (etrace, addr);
-#if 1
-			if (loop_count > LOOP_MAX || aop.type == R_ANAL_OP_TYPE_RET) {
+			if (type_trace_loopcount (etrace, addr) > LOOP_MAX || aop.type == R_ANAL_OP_TYPE_RET) {
 				r_anal_op_fini (&aop);
 				break;
 			}
-#endif
 			type_trace_loopcount_increment (etrace, addr);
 			r_reg_setv (etrace->reg, "PC", addr + aop.size);
 			if (!r_anal_op_nonlinear (aop.type)) { // skip jmp/cjmp/trap/ret/call ops
-				// this shit probably needs further refactoring. i hate this code
 				if (aop.type == R_ANAL_OP_TYPE_ILL || aop.type == R_ANAL_OP_TYPE_UNK) {
 					if (tps->cfg_breakoninvalid) {
 						R_LOG_ERROR ("step failed at 0x%08" PFMT64x, addr);
 						r_anal_op_fini (&aop);
-						retries = -1;
-						goto repeat;
+						res = TP_EMU_FAIL;
+						goto beach;
 					}
 					goto skip_trace;
 				}
 				if (!type_trace_op (etrace, &tps->esil, &aop) && tps->cfg_breakoninvalid) {
 					R_LOG_ERROR ("step failed at 0x%08" PFMT64x, addr);
 					r_anal_op_fini (&aop);
-					retries--;
-					goto repeat;
+					res = TP_EMU_RETRY;
+					goto beach;
+				}
+			} else if (tps->clobber) {
+				// UCALL is the base value 4, not a flag, so match on the base type
+				const int base = aop.type & 0xff;
+				if (base == R_ANAL_OP_TYPE_CALL || base == R_ANAL_OP_TYPE_UCALL) {
+					// a skipped call clobbers caller-saved regs; drop their sentinels so returns aren't misread as arg fields
+					RListIter *cit;
+					const char *rn;
+					r_list_foreach (tps->clobber, cit, rn) {
+						r_reg_setv (etrace->reg, rn, 0);
+					}
 				}
 			}
 		skip_trace:
-			tp_state.userfnc = false;
-			tps->tt.cur_idx = etrace_index (etrace);
-			cur_idx = tps->tt.cur_idx - 1;
-			if (cur_idx < 0) {
-				cur_idx = 0;
-			}
-			RAnalVar *var = r_anal_get_used_function_var (anal, aop.addr);
-
-			// Parse next_op with full options so it can be reused as aop next iteration
-			if (i + aop.size < bb_size) {
-				int left = bb_left - ret;
-				if (left < 1) {
-					r_anal_op_fini (&aop);
-					break;
+			if (op_cb) {
+				// Parse next_op with full options so it can be reused as aop next iteration
+				if (i + aop.size < bb_size) {
+					int left = bb_left - ret;
+					if (left < 1) {
+						r_anal_op_fini (&aop);
+						break;
+					}
+					if (r_anal_op (anal, next_op, addr + ret, buf_ptr + i + ret, left, op_tions) < 1) {
+						r_anal_op_fini (&aop);
+						r_anal_op_fini (next_op);
+						break;
+					}
+					have_cached_op = true;
 				}
-				int ret2 = r_anal_op (anal, next_op, addr + ret, buf_ptr + i + ret, left, op_tions);
-				if (ret2 < 1) {
-					r_anal_op_fini (&aop);
-					r_anal_op_fini (next_op);
-					break;
-				}
-				have_cached_op = true;
-			}
-
-			ut32 type = aop.type & R_ANAL_OP_TYPE_MASK;
-			if (type == R_ANAL_OP_TYPE_CALL || type & R_ANAL_OP_TYPE_UCALL) {
-				char *full_name = NULL;
-				RAnalFunction *fcn_call = NULL;
-				ut64 callee_addr = UT64_MAX;
-				if (type == R_ANAL_OP_TYPE_CALL) {
-					fcn_call = r_anal_get_fcn_in (anal, aop.jump, -1);
-					if (fcn_call) {
-						full_name = fcn_call->name;
-						callee_addr = fcn_call->addr;
-					}
-				} else if (aop.ptr != UT64_MAX) {
-					RFlagItem *flag = anal->flb.f? r_flag_get_by_spaces (anal->flb.f, false, aop.ptr, "imports", NULL): NULL;
-					if (flag && flag->realname) {
-						full_name = flag->realname;
-						callee_addr = aop.ptr;
-					}
-				}
-				if (full_name) {
-					if (r_type_func_exist (TDB, full_name)) {
-						fcn_name = strdup (full_name);
-					} else {
-						fcn_name = r_type_func_guess (TDB, full_name);
-					}
-					if (!fcn_name) {
-						fcn_name = strdup (full_name);
-						tp_state.userfnc = true;
-					}
-					const char *Cc = NULL;
-					if (fcn_call) {
-						Cc = r_anal_function_cc (fcn_call);
-					}
-					if (!Cc) {
-						Cc = r_anal_cc_func (anal, fcn_name);
-					}
-					R_LOG_DEBUG ("CC can %s %s", Cc, fcn_name);
-					if (Cc && r_anal_cc_exist (anal, Cc)) {
-						if (tps->on_call) {
-							tps->on_call (tps, callee_addr, fcn_name);
-						}
-						type_match (tps, fcn_name, addr, bb->addr, Cc, prev_idx, tp_state.userfnc);
-						// prev_idx = tps->tt.cur_idx;
-						prev_idx = etrace->cur_idx;
-						R_FREE (tp_state.ret_type);
-						const char *rt = r_type_func_ret (TDB, fcn_name);
-						if (rt) {
-							tp_state.ret_type = strdup (rt);
-						}
-						R_FREE (tp_state.ret_reg);
-						const char *rr = r_anal_cc_ret (anal, Cc, 0);
-						if (rr) {
-							tp_state.ret_reg = strdup (rr);
-						}
-						tp_state.resolved = false;
-					}
-					if (r_str_endswith (fcn_name, "stack_chk_fail")) {
-						// r_strf_var (query, 32, "%d.addr", cur_idx - 1);
-						// ut64 mov_addr = sdb_num_get (trace, query, 0);
-						// cur_idx = tps->tt.cur_idx - 2;
-						cur_idx = etrace->cur_idx - 2;
-						// eprintf (Color_GREEN"ADDROF %d\n"Color_RESET, cur_idx);
-						ut64 mov_addr = etrace_addrof (etrace, cur_idx);
-						RAnalOp *mop = tp_anal_op (anal, mov_addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_BASIC);
-						if (mop) {
-							RAnalVar *mopvar = r_anal_get_used_function_var (anal, mop->addr);
-							ut32 vt = mop->type & R_ANAL_OP_TYPE_MASK;
-							if (vt == R_ANAL_OP_TYPE_MOV) {
-								var_rename (anal, mopvar, "canary", addr);
-							}
-						}
-						r_anal_op_free (mop);
-					}
-					free (fcn_name);
-				}
-			} else if (!tp_state.resolved && tp_state.ret_type && tp_state.ret_reg) {
-				// Forward propgation of function return type
-				char src[REGNAME_SIZE] = { 0 };
-				// r_strf_var (query, 32, "%d.reg.write", cur_idx);
-				// const char *cur_dest = sdb_const_get (trace, query, 0);
-				// sdb_const_get (trace, query, 0);
-				// cur_idx = tps->tt.cur_idx - 1;
-				cur_idx = etrace->cur_idx - 1;
-				const char *cur_dest = etrace_regwrite (etrace, cur_idx);
-				get_src_regname_from_esil (anal, r_strbuf_get (&aop.esil), aop.addr, src, sizeof (src));
-				if (reg_token_contains (tp_state.ret_reg, src)) {
-					if (var && aop.direction == R_ANAL_OP_DIR_WRITE) {
-						var_retype (anal, var, NULL, tp_state.ret_type, false, false);
-						tp_state.resolved = true;
-					} else if (type == R_ANAL_OP_TYPE_MOV) {
-						R_FREE (tp_state.ret_reg);
-						if (cur_dest) {
-							tp_state.ret_reg = strdup (cur_dest);
-						}
-					}
-				} else if (cur_dest) {
-					const char *tmp = strchr (cur_dest, ',');
-					if (reg_token_contains_len (tp_state.ret_reg, cur_dest, tmp? (size_t)(tmp - cur_dest): strlen (cur_dest))
-						|| reg_token_contains (tp_state.ret_reg, tmp? tmp + 1: NULL)) {
-						tp_state.resolved = true;
-					} else if (type == R_ANAL_OP_TYPE_MOV && (next_op && next_op->type == R_ANAL_OP_TYPE_MOV)) {
-						// Progate return type passed using pointer
-						// int *ret; *ret = strlen (s);
-						// TODO: memref check , dest and next src match
-						char nsrc[REGNAME_SIZE] = { 0 };
-						get_src_regname_from_esil (anal, r_strbuf_get (&next_op->esil), next_op->addr, nsrc, sizeof (nsrc));
-						if (reg_token_contains (tp_state.ret_reg, nsrc) && var && aop.direction == R_ANAL_OP_DIR_READ) {
-							var_retype (anal, var, NULL, tp_state.ret_type, true, false);
-						}
-					}
-				}
-			}
-			// Type propagation using instruction access pattern
-			if (var) {
-				bool sign = false;
-				if ((type == R_ANAL_OP_TYPE_CMP) && next_op) {
-					if (next_op->sign) {
-						sign = true;
-					} else {
-						// cmp [local_ch], rax ; jb
-						var_retype (anal, var, NULL, "unsigned", false, true);
-					}
-				}
-				// cmp [local_ch], rax ; jge
-				if (sign || aop.sign) {
-					var_retype (anal, var, NULL, "signed", false, true);
-				}
-				// lea rax , str.hello  ; mov [local_ch], rax;
-				// mov rdx , [local_4h] ; mov [local_8h], rdx;
-				if (tp_state.prev_dest && (type == R_ANAL_OP_TYPE_MOV || type == R_ANAL_OP_TYPE_STORE)) {
-					char reg[REGNAME_SIZE] = { 0 };
-					get_src_regname_from_esil (anal, r_strbuf_get (&aop.esil), addr, reg, sizeof (reg));
-					bool match = reg_token_contains (tp_state.prev_dest, reg);
-					if (tp_state.str_flag && match) {
-						var_retype (anal, var, NULL, "const char *", false, false);
-					}
-					if (tp_state.prop && match && tp_state.prev_var) {
-						var_retype (anal, var, NULL, tp_state.prev_type, false, false);
-					}
-				}
-				if (tps->cfg_chk_constraint && var && (type == R_ANAL_OP_TYPE_CMP && aop.disp != UT64_MAX) && next_op && next_op->type == R_ANAL_OP_TYPE_CJMP) {
-					bool jmp = false;
-					RAnalOp *jmp_op = { 0 };
-					ut64 jmp_addr = next_op->jump;
-					RAnalBlock *jmpbb = r_anal_function_bbget_in (anal, fcn, jmp_addr);
-					RAnalBlock jbb = { 0 };
-					if (jmpbb) {
-						// Copy only fields needed for r_anal_block_contains check.
-						// The bb can be invalidated in the loop below, so avoid
-						// shallow-copying pointer members from jmpbb.
-						jbb.addr = jmpbb->addr;
-						jbb.size = jmpbb->size;
-					}
-
-					// Check exit status of jmp branch
-					int k;
-					for (k = 0; k < MAX_INSTR; k++) {
-						jmp_op = tp_anal_op (anal, jmp_addr, R_ARCH_OP_MASK_BASIC);
-						if (!jmp_op) {
-							break;
-						}
-						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_block_contains (&jbb, jmp_addr)) || jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
-							jmp = true;
-							r_anal_op_free (jmp_op);
-							break;
-						}
-						jmp_addr += jmp_op->size;
-						r_anal_op_free (jmp_op);
-					}
-					RAnalVarConstraint constr = {
-						.cond = jmp? cond_invert (anal, next_op->cond): next_op->cond,
-						.val = aop.val
-					};
-					r_anal_var_add_constraint (var, &constr);
-				}
-			}
-			tp_state.prev_var = (var && aop.direction == R_ANAL_OP_DIR_READ)? var: NULL;
-			tp_state_reset (&tp_state);
-			switch (type) {
-			case R_ANAL_OP_TYPE_MOV:
-			case R_ANAL_OP_TYPE_LEA:
-			case R_ANAL_OP_TYPE_LOAD:
-				if (aop.ptr && aop.refptr && aop.ptr != UT64_MAX) {
-					if (type == R_ANAL_OP_TYPE_LOAD) {
-						ut8 sbuf[256] = { 0 };
-						if (anal->iob.read_at) {
-							anal->iob.read_at (io, aop.ptr, sbuf, sizeof (sbuf) - 1);
-						}
-						ut64 ptr = r_read_ble (sbuf, be, aop.refptr * 8);
-						if (ptr && ptr != UT64_MAX) {
-							RFlagItem *f = anal->flb.f? r_flag_get_by_spaces (anal->flb.f, false, ptr, "strings", NULL): NULL;
-							if (f) {
-								tp_state.str_flag = true;
-							}
-						}
-					} else if (anal->flb.f && r_flag_exist_at (anal->flb.f, "str", 3, aop.ptr)) {
-						tp_state.str_flag = true;
-					}
-				}
-				// mov dword [local_4h], str.hello;
-				if (var && tp_state.str_flag) {
-					var_retype (anal, var, NULL, "const char *", false, false);
-				}
-				tp_state.prev_dest = etrace_regwrite (etrace, cur_idx);
-				if (var) {
-					r_str_ncpy (tp_state.prev_type, var->type, sizeof (tp_state.prev_type) - 1);
-					tp_state.prop = true;
-				}
+				op_cb (user, &aop, next_op, addr, bb_addr);
 			}
 			i += ret;
 			addr += ret;
@@ -1639,6 +1449,268 @@ repeat:
 		}
 		if (tps->cfg_rollback) {
 			type_trace_rollback_clear (etrace);
+		}
+	}
+beach:
+	r_anal_op_fini (&aop);
+	r_anal_op_free (next_op); // a cached lookahead op may still be live on a break/budget exit
+	r_cons_break_pop (cons);
+	RVecBuf_fini (&buf);
+	RVecUT64_fini (&bblist);
+	return res;
+}
+
+typedef struct {
+	RAnal *anal;
+	RAnalFunction *fcn;
+	TPState *tps;
+	TypePropState tp;
+	int prev_idx;
+	bool be;
+} TypeMatchCtx;
+
+// the called function/import name for a call op, plus its RAnalFunction when direct
+static const char *tp_call_target_name(RAnal *anal, RAnalOp *aop, ut32 type, RAnalFunction **fcn_call) {
+	*fcn_call = NULL;
+	if (type == R_ANAL_OP_TYPE_CALL) {
+		*fcn_call = r_anal_get_fcn_in (anal, aop->jump, -1);
+		return *fcn_call? (*fcn_call)->name: NULL;
+	}
+	if (aop->ptr != UT64_MAX && anal->flb.f) {
+		RFlagItem *flag = r_flag_get_by_spaces (anal->flb.f, false, aop->ptr, "imports", NULL);
+		if (flag) {
+			return flag->realname;
+		}
+	}
+	return NULL;
+}
+
+// per-op type propagation body run by tp_emulate_linear for r_anal_type_match
+static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 addr, ut64 bb_addr) {
+	TypeMatchCtx *c = user;
+	RAnal *anal = c->anal;
+	TPState *tps = c->tps;
+	TypeTrace *etrace = &tps->tt;
+	Sdb *TDB = anal->sdb_types;
+	char *fcn_name = NULL;
+	c->tp.userfnc = false;
+	tps->tt.cur_idx = etrace_index (etrace);
+	int cur_idx = tps->tt.cur_idx - 1;
+	if (cur_idx < 0) {
+		cur_idx = 0;
+	}
+	RAnalVar *var = r_anal_get_used_function_var (anal, aop->addr);
+	ut32 type = aop->type & R_ANAL_OP_TYPE_MASK;
+	// master idiom: type & UCALL also matches RET/ILL/UNK but the body no-ops there (the clobber path needs exact matching)
+	if (type == R_ANAL_OP_TYPE_CALL || type & R_ANAL_OP_TYPE_UCALL) {
+		RAnalFunction *fcn_call = NULL;
+		const char *full_name = tp_call_target_name (anal, aop, type, &fcn_call);
+		if (full_name) {
+			if (r_type_func_exist (TDB, full_name)) {
+				fcn_name = strdup (full_name);
+			} else {
+				fcn_name = r_type_func_guess (TDB, full_name);
+			}
+			if (!fcn_name) {
+				fcn_name = strdup (full_name);
+				c->tp.userfnc = true;
+			}
+			const char *Cc = NULL;
+			if (fcn_call) {
+				Cc = r_anal_function_cc (fcn_call);
+			}
+			if (!Cc) {
+				Cc = r_anal_cc_func (anal, fcn_name);
+			}
+			R_LOG_DEBUG ("CC can %s %s", Cc, fcn_name);
+			if (Cc && r_anal_cc_exist (anal, Cc)) {
+				type_match (tps, fcn_name, addr, bb_addr, Cc, c->prev_idx, c->tp.userfnc);
+				c->prev_idx = etrace->cur_idx;
+				R_FREE (c->tp.ret_type);
+				const char *rt = r_type_func_ret (TDB, fcn_name);
+				if (rt) {
+					c->tp.ret_type = strdup (rt);
+				}
+				R_FREE (c->tp.ret_reg);
+				const char *rr = r_anal_cc_ret (anal, Cc, 0);
+				if (rr) {
+					c->tp.ret_reg = strdup (rr);
+				}
+				c->tp.resolved = false;
+			}
+			if (r_str_endswith (fcn_name, "stack_chk_fail")) {
+				cur_idx = etrace->cur_idx - 2;
+				ut64 mov_addr = etrace_addrof (etrace, cur_idx);
+				RAnalOp *mop = tp_anal_op (anal, mov_addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_BASIC);
+				if (mop) {
+					RAnalVar *mopvar = r_anal_get_used_function_var (anal, mop->addr);
+					ut32 vt = mop->type & R_ANAL_OP_TYPE_MASK;
+					if (vt == R_ANAL_OP_TYPE_MOV) {
+						var_rename (anal, mopvar, "canary", addr);
+					}
+				}
+				r_anal_op_free (mop);
+			}
+			free (fcn_name);
+		}
+	} else if (!c->tp.resolved && c->tp.ret_type && c->tp.ret_reg) {
+		// Forward propgation of function return type
+		char src[REGNAME_SIZE] = { 0 };
+		cur_idx = etrace->cur_idx - 1;
+		const char *cur_dest = etrace_regwrite (etrace, cur_idx);
+		get_src_regname_from_esil (anal, r_strbuf_get (&aop->esil), aop->addr, src, sizeof (src));
+		if (reg_token_contains (c->tp.ret_reg, src)) {
+			if (var && aop->direction == R_ANAL_OP_DIR_WRITE) {
+				var_retype (anal, var, NULL, c->tp.ret_type, false, false);
+				c->tp.resolved = true;
+			} else if (type == R_ANAL_OP_TYPE_MOV) {
+				R_FREE (c->tp.ret_reg);
+				if (cur_dest) {
+					c->tp.ret_reg = strdup (cur_dest);
+				}
+			}
+		} else if (cur_dest) {
+			const char *tmp = strchr (cur_dest, ',');
+			if (reg_token_contains_len (c->tp.ret_reg, cur_dest, tmp? (size_t)(tmp - cur_dest): strlen (cur_dest))
+				|| reg_token_contains (c->tp.ret_reg, tmp? tmp + 1: NULL)) {
+				c->tp.resolved = true;
+			} else if (type == R_ANAL_OP_TYPE_MOV && (next_op && next_op->type == R_ANAL_OP_TYPE_MOV)) {
+				// Progate return type passed using pointer
+				// int *ret; *ret = strlen (s);
+				// TODO: memref check , dest and next src match
+				char nsrc[REGNAME_SIZE] = { 0 };
+				get_src_regname_from_esil (anal, r_strbuf_get (&next_op->esil), next_op->addr, nsrc, sizeof (nsrc));
+				if (reg_token_contains (c->tp.ret_reg, nsrc) && var && aop->direction == R_ANAL_OP_DIR_READ) {
+					var_retype (anal, var, NULL, c->tp.ret_type, true, false);
+				}
+			}
+		}
+	}
+	// Type propagation using instruction access pattern
+	if (var) {
+		bool sign = false;
+		if ((type == R_ANAL_OP_TYPE_CMP) && next_op) {
+			if (next_op->sign) {
+				sign = true;
+			} else {
+				// cmp [local_ch], rax ; jb
+				var_retype (anal, var, NULL, "unsigned", false, true);
+			}
+		}
+		// cmp [local_ch], rax ; jge
+		if (sign || aop->sign) {
+			var_retype (anal, var, NULL, "signed", false, true);
+		}
+		// lea rax , str.hello  ; mov [local_ch], rax;
+		// mov rdx , [local_4h] ; mov [local_8h], rdx;
+		if (c->tp.prev_dest && (type == R_ANAL_OP_TYPE_MOV || type == R_ANAL_OP_TYPE_STORE)) {
+			char reg[REGNAME_SIZE] = { 0 };
+			get_src_regname_from_esil (anal, r_strbuf_get (&aop->esil), addr, reg, sizeof (reg));
+			bool match = reg_token_contains (c->tp.prev_dest, reg);
+			if (c->tp.str_flag && match) {
+				var_retype (anal, var, NULL, "const char *", false, false);
+			}
+			if (c->tp.prop && match && c->tp.prev_var) {
+				var_retype (anal, var, NULL, c->tp.prev_type, false, false);
+			}
+		}
+		if (tps->cfg_chk_constraint && var && (type == R_ANAL_OP_TYPE_CMP && aop->disp != UT64_MAX) && next_op && next_op->type == R_ANAL_OP_TYPE_CJMP) {
+			bool jmp = false;
+			RAnalOp *jmp_op = NULL;
+			ut64 jmp_addr = next_op->jump;
+			RAnalBlock *jmpbb = r_anal_function_bbget_in (anal, c->fcn, jmp_addr);
+			RAnalBlock jbb = { 0 };
+			if (jmpbb) {
+				// Copy only fields needed for r_anal_block_contains check.
+				// The bb can be invalidated in the loop below, so avoid
+				// shallow-copying pointer members from jmpbb.
+				jbb.addr = jmpbb->addr;
+				jbb.size = jmpbb->size;
+			}
+
+			// Check exit status of jmp branch
+			int k;
+			for (k = 0; k < MAX_INSTR; k++) {
+				jmp_op = tp_anal_op (anal, jmp_addr, R_ARCH_OP_MASK_BASIC);
+				if (!jmp_op) {
+					break;
+				}
+				if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_block_contains (&jbb, jmp_addr)) || jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
+					jmp = true;
+					r_anal_op_free (jmp_op);
+					break;
+				}
+				jmp_addr += jmp_op->size;
+				r_anal_op_free (jmp_op);
+			}
+			RAnalVarConstraint constr = {
+				.cond = jmp? cond_invert (anal, next_op->cond): next_op->cond,
+				.val = aop->val
+			};
+			r_anal_var_add_constraint (var, &constr);
+		}
+	}
+	c->tp.prev_var = (var && aop->direction == R_ANAL_OP_DIR_READ)? var: NULL;
+	tp_state_reset (&c->tp);
+	switch (type) {
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_LOAD:
+		if (aop->ptr && aop->refptr && aop->ptr != UT64_MAX) {
+			if (type == R_ANAL_OP_TYPE_LOAD) {
+				ut8 sbuf[256] = { 0 };
+				if (anal->iob.read_at) {
+					anal->iob.read_at (anal->iob.io, aop->ptr, sbuf, sizeof (sbuf) - 1);
+				}
+				ut64 ptr = r_read_ble (sbuf, c->be, aop->refptr * 8);
+				if (ptr && ptr != UT64_MAX) {
+					RFlagItem *f = anal->flb.f? r_flag_get_by_spaces (anal->flb.f, false, ptr, "strings", NULL): NULL;
+					if (f) {
+						c->tp.str_flag = true;
+					}
+				}
+			} else if (anal->flb.f && r_flag_exist_at (anal->flb.f, "str", 3, aop->ptr)) {
+				c->tp.str_flag = true;
+			}
+		}
+		// mov dword [local_4h], str.hello;
+		if (var && c->tp.str_flag) {
+			var_retype (anal, var, NULL, "const char *", false, false);
+		}
+		c->tp.prev_dest = etrace_regwrite (etrace, cur_idx);
+		if (var) {
+			free (c->tp.prev_type);
+			c->tp.prev_type = strdup (r_str_get (var->type));
+			c->tp.prop = true;
+		}
+	}
+}
+
+R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_IF_FAIL (anal && fcn);
+	TPState *tps = tps_init (anal);
+	if (!tps) {
+		return;
+	}
+	tps->tt.cur_idx = 0;
+	TypeMatchCtx ctx = {
+		.anal = anal,
+		.fcn = fcn,
+		.tps = tps,
+		.be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config),
+	};
+	int retries = 2;
+	for (;;) {
+		const TPEmuResult res = tp_emulate_linear (tps, fcn, 0, type_match_op_cb, &ctx);
+		if (res == TP_EMU_DONE || res == TP_EMU_BUDGET) {
+			break;
+		}
+		if (res != TP_EMU_RETRY || retries < 1) {
+			goto beach;
+		}
+		retries--;
+		if (tps->cfg_rollback) {
+			type_trace_rollback (&tps->tt, &tps->esil);
 		}
 	}
 
@@ -1662,18 +1734,734 @@ repeat:
 			}
 		}
 	}
-out_function:
-	r_anal_op_fini (&aop);
-out_function_no_aop:
-	R_FREE (next_op);
-	tp_state_fini (&tp_state);
-	r_cons_break_pop (r_cons_singleton ());
-	RVecBuf_fini (&buf);
-	RVecUT64_fini (&bblist);
+beach:
+	tp_state_fini (&ctx.tp);
 	tps_fini (tps);
 }
 // TODO: infer const qualifier from usage patterns
-// TODO: struct/union field type propagation
+
+static const char *synth_type_for_size(int sz) {
+	switch (sz) {
+	case 1: return "uint8_t";
+	case 2: return "uint16_t";
+	case 4: return "uint32_t";
+	}
+	return "uint64_t";
+}
+
+// malloc:// maps are demand-zero, so resident cost tracks the written SYNTH_DETW*MAXARGS, not the full region
+#define SYNTH_WINDOW 0x40000ULL // per-arg sentinel window (field offsets capped at WINDOW/2)
+#define SYNTH_MAXARGS 8 // args past this are not seeded (not recovered)
+#define SYNTH_REGION (SYNTH_WINDOW * SYNTH_MAXARGS) // whole sentinel region
+// per-arg span scanned for pointer fields; a pointer field past this is not nested
+#define SYNTH_DETW 0x1000ULL
+// child-window size per pointer slot; a deref offset past this aliases the next slot and is lost
+#define SYNTH_PSTRIDE 0x400ULL
+#define SYNTH_SLOTS(psz) (SYNTH_DETW / (psz)) // detectable pointer slots per arg
+#define SYNTH_PSIZE(psz) (SYNTH_SLOTS (psz) * SYNTH_MAXARGS * SYNTH_PSTRIDE) // whole poison region
+#define SYNTH_MIN_FIELDS 2 // smallest field count worth emitting as a struct
+#define SYNTH_ARR_MIN 4 // shortest constant-stride run collapsed into an array member
+#define SYNTH_SPROOM 0x80ULL // stack-map room above SP for stack-arg sentinels (SYNTH_MAXARGS * 8 + slack)
+#define SYNTH_MAXOPS 200000 // emulation budget, the recorded trace is partial beyond it
+
+typedef struct {
+	ut64 off;
+	ut64 child; // for poison hits: offset accessed through the pointer (nested field)
+	ut64 iaddr; // address of the accessing instruction
+	int arg;
+	int size;
+	bool is_ptr;
+} SynthField;
+
+// one access site contributing a field, for disasm hints and command emission
+typedef struct {
+	ut64 off;
+	ut64 iaddr;
+} SynthSite;
+
+R_VEC_TYPE (RVecSynthSite, SynthSite);
+
+// a collapsed constant-stride run: an array member at off with count elements of elsize bytes
+typedef struct {
+	ut64 off;
+	int elsize;
+	int count;
+} SynthArr;
+
+R_VEC_TYPE (RVecSynthArr, SynthArr);
+
+// one synthesized struct: a per-arg parent, or a nested child hanging off a parent pointer field
+typedef struct {
+	ut64 off; // parent field offset holding the pointer (child structs only)
+	char *var; // arg var the parent type was applied to
+	RAnalBaseType *bt;
+	RVecSynthSite sites;
+	RVecSynthArr arrs;
+	int arg;
+	bool child;
+} SynthRec;
+
+static int synth_key_cmp(const SynthField *x, const SynthField *y) {
+	if (x->arg != y->arg) {
+		return x->arg - y->arg;
+	}
+	if (x->off != y->off) {
+		return (x->off < y->off)? -1: 1;
+	}
+	return 0;
+}
+
+static int synth_field_cmp(const SynthField *a, const SynthField *b) {
+	const int d = synth_key_cmp (a, b);
+	return d? d: b->size - a->size; // larger width first
+}
+
+// sort poison hits so all children of one pointer field are adjacent
+static int synth_child_cmp(const SynthField *x, const SynthField *y) {
+	int d = synth_key_cmp (x, y);
+	if (!d && x->child != y->child) {
+		d = (x->child < y->child)? -1: 1;
+	}
+	return d? d: y->size - x->size;
+}
+
+static void synth_rec_fini(SynthRec *r) {
+	free (r->var);
+	r_anal_base_type_free (r->bt);
+	RVecSynthSite_fini (&r->sites);
+	RVecSynthArr_fini (&r->arrs);
+}
+
+R_VEC_TYPE (RVecSynthField, SynthField);
+R_VEC_TYPE_WITH_FINI (RVecSynthRec, SynthRec, synth_rec_fini);
+
+// the array member covering off, or NULL for a scalar access
+static SynthArr *synth_arr_at(SynthRec *rec, ut64 off) {
+	SynthArr *a;
+	R_VEC_FOREACH (&rec->arrs, a) {
+		if (off >= a->off && off < a->off + (ut64)a->elsize * a->count) {
+			return a;
+		}
+	}
+	return NULL;
+}
+
+static SynthRec *synth_rec_find(RVecSynthRec *recs, int arg, bool child, ut64 off) {
+	SynthRec *r;
+	R_VEC_FOREACH (recs, r) {
+		if (r->child == child && r->arg == arg && (!child || r->off == off)) {
+			return r;
+		}
+	}
+	return NULL;
+}
+
+// remember each access site in its struct's rec, for hints and command emission
+static void synth_collect_sites(RVecSynthRec *recs, RVecSynthField *fields, bool child) {
+	SynthField *f;
+	R_VEC_FOREACH (fields, f) {
+		SynthRec *rc = synth_rec_find (recs, f->arg, child, child? f->off: 0);
+		if (rc) {
+			SynthSite *st = RVecSynthSite_emplace_back (&rc->sites);
+			if (st) {
+				*st = (SynthSite){ .off = child? f->child: f->off, .iaddr = f->iaddr };
+			}
+		}
+	}
+}
+
+// make disasm render the member name at the accessing instruction
+static void synth_hint(RAnal *anal, SynthRec *rec, ut64 off, ut64 iaddr) {
+	const char *sname = rec->bt->name;
+	char *memb = r_type_get_struct_memb (anal->sdb_types, sname, (int)off);
+	if (!memb) {
+		// interior of an atomic array member doesn't resolve; snap to its base
+		SynthArr *a = synth_arr_at (rec, off);
+		if (a) {
+			memb = r_type_get_struct_memb (anal->sdb_types, sname, (int)a->off);
+		}
+	}
+	if (off > 0) {
+		if (memb) {
+			r_anal_hint_set_offset (anal, iaddr, memb);
+		}
+	} else {
+		// off 0 with no resolved member is a whole-struct access ([reg]); label it with the type
+		r_meta_set_string (anal, R_META_TYPE_VARTYPE, iaddr, memb? memb: sname);
+	}
+	free (memb);
+}
+
+// takes ownership of type; returns the new end offset
+static ut64 synth_add_member(RAnalBaseType *bt, ut64 off, int size, int count, char *type) {
+	RAnalStructMember *m = RVecAnalStructMember_emplace_back (&bt->struct_data.members);
+	if (!m) {
+		free (type);
+		return off;
+	}
+	m->name = r_str_newf ("field_0x%" PFMT64x, off);
+	m->type = type;
+	m->offset = off;
+	m->size = (size_t)size * 8;
+	m->count = count;
+	return off + (ut64)size;
+}
+
+static const char *synth_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
+	const char *cc = r_anal_function_cc (fcn);
+	return cc? cc: r_anal_cc_default (anal);
+}
+
+// the cc's caller-saved register names, poisoned across skipped calls
+static RList *synth_clobber_regs(RAnal *anal, const char *cc) {
+	RList *list = NULL;
+	RListIter *iter;
+	RRegItem *item;
+	r_list_foreach (anal->reg->regset[R_REG_TYPE_GPR].regs, iter, item) {
+		if (r_anal_cc_isclobber (anal, cc, item->name)) {
+			if (!list) {
+				list = r_list_newf (free);
+			}
+			r_list_append (list, strdup (item->name));
+		}
+	}
+	return list;
+}
+
+static RAnalVar *synth_arg_var(RAnal *anal, RAnalFunction *fcn, const char *cc, int argi) {
+	const char *place = cc? r_anal_cc_argloc (anal, cc, argi, 0, -1): NULL;
+	if (R_STR_ISEMPTY (place)) {
+		return NULL;
+	}
+	if (*place != '^') {
+		RRegItem *ri = r_reg_get (anal->reg, place, -1);
+		if (!ri) {
+			return NULL;
+		}
+		const int index = ri->index;
+		r_unref (ri);
+		return r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, index);
+	}
+	// the n-th stack argloc maps to the n-th arg-kind stack var in delta order
+	int nth = 0;
+	int i;
+	for (i = 0; i < argi; i++) {
+		const char *p = r_anal_cc_argloc (anal, cc, i, 0, -1);
+		if (p && *p == '^') {
+			nth++;
+		}
+	}
+	RAnalVar *pick = NULL;
+	int lastd = INT_MIN;
+	int n;
+	for (n = 0; n <= nth; n++) {
+		pick = NULL;
+		int bestd = INT_MAX;
+		RAnalVar **vp;
+		R_VEC_FOREACH (&fcn->vars, vp) {
+			RAnalVar *v = *vp;
+			if (v->kind == R_ANAL_VAR_KIND_REG || !v->isarg) {
+				continue;
+			}
+			// BPV and SPV deltas use different bases, so normalize before ordering
+			const int off = v->kind == R_ANAL_VAR_KIND_BPV? v->delta + fcn->bp_off: v->delta;
+			if (off > lastd && off < bestd) {
+				bestd = off;
+				pick = v;
+			}
+		}
+		if (!pick) {
+			return NULL;
+		}
+		lastd = bestd;
+	}
+	return pick;
+}
+
+// each pointer slot holds a strided poison pointer into its own child window (a deref decodes back to the parent offset); one level deep, child windows hold no further poison
+static int synth_poison_map(RAnal *anal, ut64 sbase, int align, int psz, ut64 *pbase) {
+	RIOBind *iob = &anal->iob;
+	RIO *io = iob->io;
+	const int fd = tp_map_anon (anal, SYNTH_PSIZE (psz), align, pbase, NULL);
+	if (fd < 0) {
+		return -1;
+	}
+	ut8 *win = malloc (SYNTH_DETW);
+	if (!win) {
+		iob->fd_close (io, fd);
+		return -1;
+	}
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
+	int ai;
+	for (ai = 0; ai < SYNTH_MAXARGS; ai++) {
+		ut64 o;
+		for (o = 0; o < SYNTH_DETW; o += psz) {
+			const ut64 slot = ((ut64)ai * SYNTH_SLOTS (psz)) + (o / psz);
+			r_write_ble (win + o, *pbase + slot * SYNTH_PSTRIDE, be, psz * 8);
+		}
+		iob->write_at (io, sbase + (ut64)ai * SYNTH_WINDOW, win, (int)SYNTH_DETW);
+	}
+	free (win);
+	return fd;
+}
+
+// seed each arg reg with a sentinel base and turn observed base+offset accesses into struct fields
+// recs may be NULL when the caller only wants the apply side effects
+static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec *recs) {
+	R_RETURN_IF_FAIL (anal && fcn);
+	RVecSynthRec local;
+	const bool own_recs = !recs;
+	if (own_recs) {
+		RVecSynthRec_init (&local);
+		recs = &local;
+	}
+	TPState *tps = tps_init (anal);
+	if (!tps) {
+		if (own_recs) {
+			RVecSynthRec_fini (recs);
+		}
+		return;
+	}
+	RIOBind *iob = &anal->iob;
+	RIO *io = iob->io;
+	const int align = R_MAX (1, r_arch_info (anal->arch, R_ARCH_INFO_DATA_ALIGN));
+	ut64 sbase = 0;
+	const int sfd = tp_map_anon (anal, SYNTH_REGION, align, &sbase, NULL);
+	if (sfd < 0) {
+		tps_fini (tps);
+		return;
+	}
+	const char *cc = synth_fcn_cc (anal, fcn);
+	tps->clobber = synth_clobber_regs (anal, cc);
+	// pointer width comes from the arg registers, not config->bits (16 on arm thumb)
+	int psz = anal->config->bits > 32? 8: 4;
+	int i;
+	for (i = 0; i < SYNTH_MAXARGS; i++) {
+		const char *place = cc? r_anal_cc_argloc (anal, cc, i, 0, -1): NULL;
+		if (place && *place && *place != '^') {
+			RRegItem *ri = r_reg_get (tps->tt.reg, place, -1);
+			if (ri) {
+				if (ri->size >= 32) {
+					psz = ri->size / 8;
+				}
+				r_unref (ri);
+			}
+			break;
+		}
+	}
+	psz = R_MIN (psz, 8); // the poison slots and the sbuf[8] stack write assume <= 8 bytes
+	ut64 pbase = 0;
+	const int pfd = synth_poison_map (anal, sbase, align, psz, &pbase);
+	// on link-register archs the first stack arg is [SP]; on x86 it follows the return address slot
+	const bool ra_reg = r_reg_alias_getname (tps->tt.reg, R_REG_ALIAS_LR)
+		|| r_reg_alias_getname (tps->tt.reg, R_REG_ALIAS_RA);
+	const bool sbe = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
+	// tps_init leaves only align * 8 bytes of map above SP
+	const ut64 spv = r_reg_getv (tps->tt.reg, "SP") - SYNTH_SPROOM;
+	r_reg_setv (tps->tt.reg, "SP", spv);
+	r_reg_setv (tps->tt.reg, "BP", spv);
+	ut64 soff = ra_reg? 0: (ut64)psz;
+	for (i = 0; i < SYNTH_MAXARGS; i++) {
+		const char *place = cc? r_anal_cc_argloc (anal, cc, i, 0, -1): NULL;
+		if (R_STR_ISEMPTY (place)) {
+			continue;
+		}
+		const ut64 sval = sbase + (ut64)i * SYNTH_WINDOW;
+		if (*place == '^') {
+			ut8 sbuf[8] = {0};
+			r_write_ble (sbuf, sval, sbe, psz * 8);
+			iob->write_at (io, spv + soff, sbuf, psz);
+			soff += psz;
+		} else {
+			r_reg_setv (tps->tt.reg, place, sval);
+		}
+	}
+	// emulate the function linearly, letting the mem voyeurs record base+offset accesses
+	r_reg_setv (tps->tt.reg, "PC", fcn->addr);
+	if (tp_emulate_linear (tps, fcn, SYNTH_MAXOPS, NULL, NULL) == TP_EMU_BUDGET) {
+		R_LOG_WARN ("Struct synthesis hit the %d-op budget at 0x%08" PFMT64x "; result is partial", SYNTH_MAXOPS, fcn->addr);
+	}
+
+	// collect accesses in the arg windows (fields) and the poison region (deref evidence)
+	RVecSynthField vfields;
+	RVecSynthField vporig;
+	RVecSynthField_init (&vfields);
+	RVecSynthField_init (&vporig);
+	const ut32 nacc = VecAccess_length (&tps->tt.db.accesses);
+	const ut32 nops = VecTraceOp_length (&tps->tt.db.ops);
+	bool oom = false;
+	ut32 oi;
+	for (oi = 0; oi < nops && !oom; oi++) {
+		TypeTraceOp *top = VecTraceOp_at (&tps->tt.db.ops, oi);
+		const ut32 kend = R_MIN (top->end, nacc);
+		ut32 k;
+		for (k = top->start; k < kend; k++) {
+			TypeTraceAccess *a = VecAccess_at (&tps->tt.db.accesses, k);
+			if (!a || a->is_reg) {
+				continue;
+			}
+			const ut64 ma = a->mem.addr;
+			const int asz = a->mem.size > 0? a->mem.size: 1;
+			if (pfd >= 0 && ma >= pbase && ma < pbase + SYNTH_PSIZE (psz)) {
+				// decode the poison slot back to the exact (arg, parent field offset)
+				const ut64 slot = (ma - pbase) / SYNTH_PSTRIDE;
+				SynthField *sf = RVecSynthField_emplace_back (&vporig);
+				if (!sf) {
+					oom = true;
+					break;
+				}
+				*sf = (SynthField){
+					.arg = (int)(slot / SYNTH_SLOTS (psz)),
+					.off = (slot % SYNTH_SLOTS (psz)) * psz,
+					.child = (ma - pbase) % SYNTH_PSTRIDE,
+					.size = asz,
+					.iaddr = top->addr,
+				};
+				continue;
+			}
+			if (ma < sbase || ma >= sbase + SYNTH_REGION) {
+				continue;
+			}
+			const ut64 woff = (ma - sbase) % SYNTH_WINDOW;
+			if (woff >= SYNTH_WINDOW / 2) {
+				continue; // negative offsets off a neighboring arg land in the window tail
+			}
+			SynthField *sf = RVecSynthField_emplace_back (&vfields);
+			if (!sf) {
+				oom = true;
+				break;
+			}
+			*sf = (SynthField){
+				.arg = (int)((ma - sbase) / SYNTH_WINDOW),
+				.off = woff,
+				.size = asz,
+				.iaddr = top->addr,
+			};
+		}
+	}
+	RVecSynthField_sort (&vfields, synth_field_cmp);
+	RVecSynthField_sort (&vporig, synth_child_cmp);
+	const size_t nfields = RVecSynthField_length (&vfields);
+	const size_t nporig = RVecSynthField_length (&vporig);
+	SynthField *fields = R_VEC_START_ITER (&vfields);
+	SynthField *porig = R_VEC_START_ITER (&vporig);
+	// a field whose loaded value was dereferenced is a pointer; both arrays sort by (arg, off)
+	size_t pi = 0, fi = 0;
+	while (pi < nporig && fi < nfields) {
+		const int d = synth_key_cmp (&porig[pi], &fields[fi]);
+		if (d > 0) {
+			fi++;
+		} else if (d < 0) {
+			pi++;
+		} else {
+			fields[fi++].is_ptr = true;
+		}
+	}
+	// pointer fields with enough distinct child accesses get a nested child struct
+	char *fname = r_str_sanitize_sdb_key (fcn->name);
+	size_t ci = 0;
+	while (ci < nporig) {
+		const int carg = porig[ci].arg;
+		const ut64 coff = porig[ci].off;
+		RAnalBaseType *cbt = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+		ut64 ccur = 0;
+		int ccount = 0;
+		size_t cj = ci;
+		while (cj < nporig && porig[cj].arg == carg && porig[cj].off == coff) {
+			const ut64 choff = porig[cj].child;
+			const int csize = porig[cj].size;
+			do {
+				cj++;
+			} while (cj < nporig && porig[cj].arg == carg && porig[cj].off == coff
+				&& porig[cj].child == choff);
+			if (choff < ccur) {
+				continue; // overlaps the previous member (widest-wins, like the parent)
+			}
+			ccur = synth_add_member (cbt, choff, csize, 0, strdup (synth_type_for_size (csize)));
+			ccount++;
+		}
+		if (ccount >= SYNTH_MIN_FIELDS) {
+			cbt->name = r_str_newf ("%s_arg%d_0x%" PFMT64x, fname, carg, coff);
+			cbt->size = ccur;
+			SynthRec *rec = RVecSynthRec_emplace_back (recs);
+			if (rec) {
+				*rec = (SynthRec){ .arg = carg, .child = true, .off = coff, .bt = cbt };
+				RVecSynthSite_init (&rec->sites);
+				RVecSynthArr_init (&rec->arrs);
+				cbt = NULL;
+			}
+		}
+		if (cbt) {
+			r_anal_base_type_free (cbt);
+		}
+		ci = cj;
+	}
+
+	// one struct per argument that accumulated enough non-overlapping fields
+	size_t p = 0;
+	while (p < nfields) {
+		const int arg = fields[p].arg;
+		RAnalBaseType *bt = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+		ut64 cur = 0;
+		int count = 0;
+		size_t q = p;
+		// unique members, widest access per offset wins; a narrower overlapping access is dropped (no union-ish layouts)
+		RVecSynthField uniq;
+		RVecSynthField_init (&uniq);
+		while (q < nfields && fields[q].arg == arg) {
+			const ut64 foff = fields[q].off;
+			const int fsize = fields[q].size;
+			const bool fptr = fields[q].is_ptr;
+			do {
+				q++; // skip duplicate offsets (largest width sorts first)
+			} while (q < nfields && fields[q].arg == arg && fields[q].off == foff);
+			if (foff < cur) {
+				continue; // overlaps the previous member
+			}
+			cur = foff + fsize;
+			SynthField *u = RVecSynthField_emplace_back (&uniq);
+			if (u) {
+				*u = (SynthField){ .arg = arg, .off = foff, .size = fsize, .is_ptr = fptr };
+			}
+		}
+		// emit members, collapsing constant-stride non-pointer runs into arrays
+		RVecSynthArr arrs;
+		RVecSynthArr_init (&arrs);
+		const size_t un = RVecSynthField_length (&uniq);
+		cur = 0;
+		size_t u = 0;
+		while (u < un) {
+			SynthField *m = RVecSynthField_at (&uniq, u);
+			size_t run = 1;
+			if (!m->is_ptr) {
+				while (u + run < un) {
+					SynthField *nx = RVecSynthField_at (&uniq, u + run);
+					if (nx->is_ptr || nx->size != m->size
+						|| nx->off != m->off + (ut64)m->size * run) {
+						break;
+					}
+					run++;
+				}
+			}
+			if (run >= SYNTH_ARR_MIN) {
+				SynthArr *a = RVecSynthArr_emplace_back (&arrs);
+				if (a) {
+					*a = (SynthArr){ .off = m->off, .elsize = m->size, .count = (int)run };
+				}
+				synth_add_member (bt, m->off, m->size, (int)run, strdup (synth_type_for_size (m->size)));
+				cur = m->off + (ut64)m->size * run;
+				count++;
+				u += run;
+			} else {
+				const char *cty = NULL;
+				if (m->is_ptr) {
+					SynthRec *rc = synth_rec_find (recs, arg, true, m->off);
+					if (rc) {
+						cty = rc->bt->name;
+					}
+				}
+				char *ty = cty? r_str_newf ("struct %s *", cty)
+					: strdup (m->is_ptr? "void *": synth_type_for_size (m->size));
+				cur = synth_add_member (bt, m->off, m->size, 0, ty);
+				count++;
+				u++;
+			}
+		}
+		RVecSynthField_fini (&uniq);
+		// a single big array is still a meaningful struct, so keep it too
+		SynthRec *rec = NULL;
+		if (count >= SYNTH_MIN_FIELDS || !RVecSynthArr_empty (&arrs)) {
+			bt->name = r_str_newf ("%s_arg%d", fname, arg);
+			bt->size = cur;
+			rec = RVecSynthRec_emplace_back (recs);
+		}
+		if (rec) {
+			*rec = (SynthRec){ .arg = arg, .bt = bt };
+			RVecSynthSite_init (&rec->sites);
+			rec->arrs = arrs;
+		} else {
+			RVecSynthArr_fini (&arrs);
+			r_anal_base_type_free (bt);
+		}
+		p = q;
+	}
+	// remember the access sites per struct, for hints and command emission
+	synth_collect_sites (recs, &vfields, false);
+	synth_collect_sites (recs, &vporig, true);
+	if (apply) {
+		// bookkeeping lives in the root sdb to keep it out of the type namespace
+		Sdb *bookdb = anal->sdb;
+		char *key = r_str_newf ("synth.%08" PFMT64x, fcn->addr);
+		// re-runs and function renames would leave stale types behind otherwise
+		char *stale = sdb_get (bookdb, key, 0);
+		if (stale) {
+			char *sp;
+			sdb_aforeach (sp, stale) {
+				r_anal_remove_parsed_type (anal, sp);
+				sdb_aforeach_next (sp);
+			}
+			free (stale);
+			sdb_unset (bookdb, key, 0);
+		}
+		if (!RVecSynthRec_empty (recs)) {
+			RStrBuf sb;
+			r_strbuf_init (&sb);
+			SynthRec *rec;
+			R_VEC_FOREACH (recs, rec) {
+				r_anal_save_base_type (anal, rec->bt);
+				r_strbuf_appendf (&sb, "%s%s", r_strbuf_length (&sb)? ",": "", rec->bt->name);
+				if (!rec->child) {
+					RAnalVar *av = synth_arg_var (anal, fcn, cc, rec->arg);
+					if (av) {
+						char *ty = r_str_newf ("struct %s *", rec->bt->name);
+						if (ty) {
+							r_anal_var_set_type (anal, av, ty);
+							free (ty);
+						}
+						rec->var = strdup (av->name);
+					}
+				}
+			}
+			sdb_set (bookdb, key, r_strbuf_get (&sb), 0);
+			r_strbuf_fini (&sb);
+			// annotate the accessing instructions so disasm renders member names
+			R_VEC_FOREACH (recs, rec) {
+				SynthSite *st;
+				R_VEC_FOREACH (&rec->sites, st) {
+					synth_hint (anal, rec, st->off, st->iaddr);
+				}
+			}
+		}
+		free (key);
+	}
+	free (fname);
+	RVecSynthField_fini (&vfields);
+	RVecSynthField_fini (&vporig);
+	iob->fd_close (io, sfd);
+	if (pfd >= 0) {
+		iob->fd_close (io, pfd);
+	}
+	tps_fini (tps);
+	if (own_recs) {
+		RVecSynthRec_fini (recs);
+	}
+}
+
+static char *synth_json(RVecSynthRec *recs) {
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return NULL;
+	}
+	pj_a (pj);
+	SynthRec *rec;
+	R_VEC_FOREACH (recs, rec) {
+		pj_o (pj);
+		pj_ks (pj, "name", rec->bt->name);
+		pj_ki (pj, "arg", rec->arg);
+		pj_kb (pj, "child", rec->child);
+		if (rec->child) {
+			pj_kn (pj, "offset", rec->off);
+		}
+		if (rec->var) {
+			pj_ks (pj, "var", rec->var);
+		}
+		pj_kn (pj, "size", rec->bt->size);
+		pj_ka (pj, "members");
+		RAnalStructMember *m;
+		R_VEC_FOREACH (&rec->bt->struct_data.members, m) {
+			pj_o (pj);
+			pj_ks (pj, "name", m->name);
+			pj_ks (pj, "type", m->type);
+			pj_kn (pj, "offset", m->offset);
+			pj_kn (pj, "size", (ut64)m->size / 8);
+			SynthArr *a = synth_arr_at (rec, m->offset);
+			if (a) {
+				pj_ki (pj, "count", a->count);
+			}
+			pj_end (pj);
+		}
+		pj_end (pj);
+		pj_end (pj);
+	}
+	pj_end (pj);
+	return pj_drain (pj);
+}
+
+// the same synthesis serialized as r2 commands instead of being applied
+static char *synth_commands(RAnal *anal, RAnalFunction *fcn, RVecSynthRec *recs) {
+	const char *cc = synth_fcn_cc (anal, fcn);
+	RStrBuf *sb = r_strbuf_new ("");
+	SynthRec *rec;
+	R_VEC_FOREACH (recs, rec) {
+		r_strbuf_appendf (sb, "'td struct %s {", rec->bt->name);
+		ut64 cur = 0;
+		RAnalStructMember *m;
+		R_VEC_FOREACH (&rec->bt->struct_data.members, m) {
+			if (m->offset > cur) {
+				// pad the gaps so the C layout keeps the observed offsets
+				r_strbuf_appendf (sb, "uint8_t pad_0x%" PFMT64x "[%" PFMT64u "];", cur, m->offset - cur);
+			}
+			SynthArr *a = synth_arr_at (rec, m->offset);
+			if (a) {
+				r_strbuf_appendf (sb, "%s %s[%d];", m->type, m->name, a->count);
+				cur = m->offset + (ut64)a->elsize * a->count;
+			} else {
+				r_strbuf_appendf (sb, "%s %s;", m->type, m->name);
+				cur = m->offset + m->size / 8;
+			}
+		}
+		r_strbuf_append (sb, "};\n");
+	}
+	R_VEC_FOREACH (recs, rec) {
+		if (rec->child) {
+			continue;
+		}
+		RAnalVar *av = synth_arg_var (anal, fcn, cc, rec->arg);
+		if (!av) {
+			continue;
+		}
+		if (av->kind == R_ANAL_VAR_KIND_REG) {
+			RRegItem *ri = r_reg_index_get (anal->reg, av->delta);
+			if (ri) {
+				r_strbuf_appendf (sb, "'afvr %s %s struct %s *\n", ri->name, av->name, rec->bt->name);
+			}
+		} else {
+			const int delta = av->kind == R_ANAL_VAR_KIND_BPV? av->delta + fcn->bp_off: av->delta;
+			r_strbuf_appendf (sb, "'afv%c %d %s struct %s *\n", av->kind, delta, av->name, rec->bt->name);
+		}
+	}
+	R_VEC_FOREACH (recs, rec) {
+		SynthSite *st;
+		R_VEC_FOREACH (&rec->sites, st) {
+			// aht cannot address inside an atomic array, so only the base element is emitted (the applied path hints all)
+			SynthArr *a = synth_arr_at (rec, st->off);
+			if (a && st->off != a->off) {
+				continue;
+			}
+			if (st->off > 0) {
+				r_strbuf_appendf (sb, "'@0x%08" PFMT64x "'aht %s.field_0x%" PFMT64x "\n",
+					st->iaddr, rec->bt->name, st->off);
+			} else {
+				r_strbuf_appendf (sb, "'@0x%08" PFMT64x "'Ct %s.field_0x0\n", st->iaddr, rec->bt->name);
+			}
+		}
+	}
+	char *res = r_strbuf_drain (sb);
+	r_str_trim_tail (res);
+	return res;
+}
+
+// true when type matching left an argument with a plain non-pointer type
+static bool synth_args_untyped(RAnalFunction *fcn) {
+	RAnalVar **vp;
+	R_VEC_FOREACH (&fcn->vars, vp) {
+		RAnalVar *v = *vp;
+		if (v->isarg && v->type && !strchr (v->type, '*') && !r_str_startswith (v->type, "struct")) {
+			return true;
+		}
+	}
+	return false;
+}
 
 static bool tp_requirements_met(RAnal *anal, bool noisy) {
 	if (!anal) {
@@ -1741,9 +2529,50 @@ beach:
 static RCoreHelpMessage help_msg_tp = {
 	"Usage:", "a:tp", "propagate types for current function",
 	"a:tp", "all", "propagate types for every function (aaft)",
+	"a:tp", "synth", "synthesize struct types from pointer-argument accesses (afts)",
+	"a:tp", "synth*", "show the synthesis as r2 commands without applying (afts*)",
+	"a:tp", "synthj", "apply the synthesis and report it in json (aftsj)",
 	"a:tp", "?", "show this help",
 	NULL
 };
+
+// afts / afts* / aftsj: synthesize struct types at the current function; suffix selects the mode
+static char *tp_synth_cmd(RAnal *anal, void *core, const char *suffix) {
+	const char mode = *suffix;
+	if (mode && !((mode == '*' || mode == 'j') && !suffix[1])) {
+		if (anal->coreb.help) {
+			anal->coreb.help (core, help_msg_tp);
+		}
+		return strdup ("");
+	}
+	const ut64 cur_addr = anal->coreb.numGet? anal->coreb.numGet (core, "$$"): 0;
+	RAnalFunction *fcn = r_anal_get_fcn_in (anal, cur_addr, -1);
+	if (!fcn) {
+		R_LOG_WARN ("Cannot find function at current offset");
+		return strdup ("");
+	}
+	RVecSynthRec recs;
+	RVecSynthRec_init (&recs);
+	type_synth (anal, fcn, mode != '*', &recs);
+	char *res = NULL;
+	if (mode == 'j') {
+		res = synth_json (&recs);
+	} else if (mode == '*') {
+		res = synth_commands (anal, fcn, &recs);
+	} else {
+		SynthRec *rec;
+		R_VEC_FOREACH (&recs, rec) {
+			if (anal->coreb.cmdf) {
+				anal->coreb.cmdf (core, "tsc %s", rec->bt->name);
+			}
+		}
+		if (RVecSynthRec_empty (&recs)) {
+			R_LOG_INFO ("no pointer-argument struct recovered here");
+		}
+	}
+	RVecSynthRec_fini (&recs);
+	return res? res: strdup ("");
+}
 
 static char *tp_cmd(RAnal *anal, const char *input) {
 	R_RETURN_VAL_IF_FAIL (anal && input, NULL);
@@ -1775,6 +2604,9 @@ static char *tp_cmd(RAnal *anal, const char *input) {
 		r_esil_set_pc (anal->esil, fcn->addr);
 		r_anal_type_match (anal, fcn);
 		r_cons_break_pop (r_cons_singleton ());
+		if (anal->coreb.cfgGetB && anal->coreb.cfgGetB (core, "types.synth") && synth_args_untyped (fcn)) {
+			type_synth (anal, fcn, true, NULL);
+		}
 		return strdup ("");
 	}
 	if (!strcmp (args, "all")) {
@@ -1784,6 +2616,9 @@ static char *tp_cmd(RAnal *anal, const char *input) {
 			R_LOG_WARN ("Cannot run 'aaft' because core bindings are missing");
 		}
 		return strdup ("");
+	}
+	if (r_str_startswith (args, "synth")) {
+		return tp_synth_cmd (anal, core, args + 5);
 	}
 	if (anal->coreb.help && core) {
 		anal->coreb.help (core, help_msg_tp);
