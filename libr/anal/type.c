@@ -361,11 +361,13 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
 			free (values);
 			goto error;
 		}
-		offset = sdb_anext (offset, NULL);
+		char *count = NULL;
+		offset = sdb_anext (offset, &count);
 		RAnalStructMember cas = {
 			.name = strdup (cur),
 			.type = strdup (type),
-			.offset = strtol (offset, NULL, 10)
+			.offset = strtol (offset, NULL, 10),
+			.count = (count && *count) ? strtoul (count, NULL, 10) : 0
 		};
 
 		free (values);
@@ -561,10 +563,10 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 	int i = 0;
 	RAnalStructMember *member;
 	R_VEC_FOREACH (&type->struct_data.members, member) {
-		// struct.name.param=type,offset,argsize
+		// struct.name.param=type,offset,arraycount
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
 		r_strf_var (k, KSZ, "%s.%s.%s", kind, sname, member_sname);
-		r_strf_var (v, KSZ, "%s,%u,0", member->type, (unsigned int)member->offset);
+		r_strf_var (v, KSZ, "%s,%u,%u", member->type, (unsigned int)member->offset, (unsigned int)member->count);
 		sdb_set (anal->sdb_types, k, v, 0);
 		free (member_sname);
 
