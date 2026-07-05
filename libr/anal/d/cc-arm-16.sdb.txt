@@ -7,6 +7,8 @@ cc.arm16.arg2=r2
 cc.arm16.arg3=r3
 cc.arm16.argn=stack
 cc.arm16.ret0=r0
+cc.arm16.clobber=r0,r1,r2,r3,r12,lr
+cc.arm16.preserve=r4,r5,r6,r7,r8,r9,r10,r11,sp
 
 arm32=cc
 cc.arm32.arg0=r0
@@ -15,3 +17,5 @@ cc.arm32.arg2=r2
 cc.arm32.arg3=r3
 cc.arm32.argn=stack
 cc.arm32.ret0=r0
+cc.arm32.clobber=r0,r1,r2,r3,r12,lr,d0,d1,d2,d3,d4,d5,d6,d7,d16,d17,d18,d19,d20,d21,d22,d23,d24,d25,d26,d27,d28,d29,d30,d31
+cc.arm32.preserve=r4,r5,r6,r7,r8,r9,r10,r11,sp,d8,d9,d10,d11,d12,d13,d14,d15
