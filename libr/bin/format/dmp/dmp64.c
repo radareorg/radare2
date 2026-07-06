@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2020-2024 - abcSup */
+/* radare2 - LGPL - Copyright 2020-2026 - abcSup */
 
 #include "dmp64.h"
 
@@ -15,11 +15,12 @@ static int r_bin_dmp64_init_memory_runs(struct r_bin_dmp64_obj_t *obj) {
 		return false;
 	}
 	obj->pages = r_list_newf (free);
-	if (!obj->pages) {
+	dmp_p_memory_run *runs = calloc (num_runs, sizeof (dmp_p_memory_run));
+	if (!runs) {
 		return false;
 	}
-	dmp_p_memory_run *runs = calloc (num_runs, sizeof (dmp_p_memory_run));
 	ut64 runs_offset = r_offsetof (dmp64_header, PhysicalMemoryBlockBuffer) + r_offsetof (dmp64_p_memory_desc, Run);
+	// XXX this needs to care about endianness. use r_buf_fread or use r_read_ after that to validate boundaries
 	if (r_buf_read_at (obj->b, runs_offset, (ut8*)runs, num_runs * sizeof (dmp_p_memory_run)) < 0) {
 		R_LOG_WARN ("read memory runs");
 		free (runs);
@@ -30,12 +31,12 @@ static int r_bin_dmp64_init_memory_runs(struct r_bin_dmp64_obj_t *obj) {
 	ut64 base = sizeof (dmp64_header);
 	for (i = 0; i < num_runs; i++) {
 		dmp_p_memory_run *run = &(runs[i]);
-		for (j = 0; j < run->PageCount; j++) {
+		if (run->PageCount < 1 || run->PageCount >= ST32_MAX) {
+			continue;
+		}
+		int pcount = run->PageCount;
+		for (j = 0; j < pcount ; j++) {
 			dmp_page_desc *page = R_NEW0 (dmp_page_desc);
-			if (!page) {
-				free (runs);
-				return false;
-			}
 			page->start = (run->BasePage + j) * DMP_PAGE_SIZE;
 			page->file_offset = base + num_page * DMP_PAGE_SIZE;
 			r_list_append (obj->pages, page);
@@ -57,10 +58,6 @@ static int r_bin_dmp64_init_header(struct r_bin_dmp64_obj_t *obj) {
 		return false;
 	}
 	obj->header = R_NEW0 (dmp64_header);
-	if (!obj->header) {
-		r_sys_perror ("R_NEW0 (header)");
-		return false;
-	}
 	memcpy (obj->header, buf, sizeof (buf));
 #define DMPREAD(x) obj->header->x = r_read_le32 (buf + r_offsetof (dmp64_header, x))
 #define DMPREAD_64(x) obj->header->x = r_read_le64 (buf + r_offsetof (dmp64_header, x))
@@ -117,10 +114,6 @@ static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
 	size_t i = 0;
 	while ((i = r_bitmap_find_next_set (bitmap, i)) != SZT_MAX) {
 		dmp_page_desc *page = R_NEW0 (dmp_page_desc);
-		if (R_UNLIKELY (!page)) {
-			r_bitmap_free (bitmap);
-			return false;
-		}
 		page->start = (ut64)i * DMP_PAGE_SIZE;
 		page->file_offset = paddr_base + num_bitset * DMP_PAGE_SIZE;
 		r_list_append (obj->pages, page);
@@ -138,10 +131,7 @@ static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
 }
 
 static int r_bin_dmp64_init_bmp_header(struct r_bin_dmp64_obj_t *obj) {
-	if (!(obj->bmp_header = R_NEW0 (dmp_bmp_header))) {
-		r_sys_perror ("R_NEW0 (dmp_bmp_header)");
-		return false;
-	}
+	obj->bmp_header = R_NEW0 (dmp_bmp_header);
 	if (r_buf_read_at (obj->b, sizeof (dmp64_header), (ut8*)obj->bmp_header,
 			r_offsetof (dmp_bmp_header, Bitmap)) < 0) {
 		R_LOG_WARN ("read bmp_header");
@@ -213,9 +203,6 @@ R_IPI void r_bin_dmp64_free(struct r_bin_dmp64_obj_t *obj) {
 
 R_IPI struct r_bin_dmp64_obj_t *r_bin_dmp64_new_buf(RBuffer* buf) {
 	struct r_bin_dmp64_obj_t *obj = R_NEW0 (struct r_bin_dmp64_obj_t);
-	if (!obj) {
-		return NULL;
-	}
 	obj->kv = sdb_new0 ();
 	obj->size = (ut32) r_buf_size (buf);
 	obj->b = r_ref (buf);
