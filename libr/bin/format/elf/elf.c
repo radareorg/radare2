@@ -194,17 +194,24 @@ ut64 Elf_(get_phnum)(ELFOBJ *eo) {
 	if (eo->ehdr.e_phnum == UT16_MAX) {
 		// sh_info member of the initial entry in section header table.
 		if (eo->ehdr.e_shnum > 0) {
-			Elf_(Shdr) shdr = {0};
-			int r = r_buf_read_at (eo->b, eo->ehdr.e_shoff, (ut8 *)&shdr, sizeof (shdr));
+			if (eo->ehdr.e_shoff > eo->size || sizeof (Elf_(Shdr)) > eo->size - eo->ehdr.e_shoff) {
+				return 0;
+			}
+			ut8 shdr[sizeof (Elf_(Shdr))] = {0};
+			int r = r_buf_read_at (eo->b, eo->ehdr.e_shoff, shdr, sizeof (shdr));
 			if (r != sizeof (shdr)) {
 				return 0;
 			}
-#if R_BIN_ELF64
-			ut64 num = r_read_ble64 (&shdr.sh_info, eo->endian);
-#else
-			ut64 num = (ut64)r_read_ble32 (&shdr.sh_info, eo->endian);
-#endif
-			if ((int) num < 1) {
+			int i = 0;
+			(void)READ32 (shdr, i);
+			(void)READ32 (shdr, i);
+			(void)R_BIN_ELF_READWORD (shdr, i);
+			(void)R_BIN_ELF_READWORD (shdr, i);
+			(void)R_BIN_ELF_READWORD (shdr, i);
+			(void)R_BIN_ELF_READWORD (shdr, i);
+			(void)READ32 (shdr, i);
+			ut64 num = READ32 (shdr, i);
+			if (!num) {
 				return UT16_MAX;
 			}
 			return num;
@@ -307,22 +314,18 @@ static int init_phdr(ELFOBJ *eo) {
 		return false;
 	}
 
-	ut32 phdr_size;
-	if (!UT32_MUL (&phdr_size, (ut32)eo->ehdr.e_phnum, sizeof (Elf_(Phdr)))) {
-		return false;
-	}
-	if (!phdr_size || phdr_size > (ut32) eo->size) {
-		return false;
-	}
-	if (eo->ehdr.e_phoff > eo->size || eo->ehdr.e_phoff + phdr_size > eo->size) {
-		return false;
-	}
 	eo->phnum = Elf_(get_phnum) (eo);
+	ut64 phdr_size;
+	if (!UT64_MUL (&phdr_size, eo->phnum, sizeof (Elf_(Phdr)))) {
+		return false;
+	}
+	if (!phdr_size || phdr_size > eo->size) {
+		return false;
+	}
 	if (eo->phnum > SIZE_MAX / sizeof (Elf_(Phdr))) {
 		return false;
 	}
-	// Ensure phnum-based allocation doesn't exceed file size
-	if (eo->phnum * sizeof (Elf_(Phdr)) > eo->size) {
+	if (eo->ehdr.e_phoff > eo->size || phdr_size > eo->size - eo->ehdr.e_phoff) {
 		return false;
 	}
 	if (!(eo->phdr = R_NEWS0 (Elf_(Phdr), eo->phnum))) {
@@ -398,6 +401,9 @@ static int init_shdr(ELFOBJ *eo) {
 		sh->sh_addr = R_BIN_ELF_READWORD (shdr, j);
 		sh->sh_offset = R_BIN_ELF_READWORD (shdr, j);
 		sh->sh_size = R_BIN_ELF_READWORD (shdr, j);
+		if (sh->sh_size > ST32_MAX) {
+			sh->sh_size = 0;
+		}
 		sh->sh_link = READ32 (shdr, j);
 		sh->sh_info = READ32 (shdr, j);
 		sh->sh_addralign = R_BIN_ELF_READWORD (shdr, j);
@@ -481,8 +487,8 @@ static bool init_strtab(ELFOBJ *eo) {
 }
 
 static Elf_(Phdr) *get_dynamic_segment(ELFOBJ *eo) {
-	int i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+	size_t i;
+	for (i = 0; i < eo->phnum; i++) {
 		Elf_(Phdr) *p = &eo->phdr[i];
 		if (p->p_type != PT_DYNAMIC) {
 			continue;
@@ -680,10 +686,10 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 }
 
 static int init_dynamic_section(ELFOBJ *eo) {
-	set_default_value_dynamic_info(eo);
-
 	R_RETURN_VAL_IF_FAIL (eo, false);
-	if (!eo->phdr || !eo->ehdr.e_phnum) {
+
+	set_default_value_dynamic_info (eo);
+	if (!eo->phdr || !eo->phnum) {
 		return false;
 	}
 
@@ -692,10 +698,10 @@ static int init_dynamic_section(ELFOBJ *eo) {
 		return false;
 	}
 
-  ut64 loaded_offset = Elf_(v2p) (eo, dyn_phdr->p_vaddr);
-  if (loaded_offset == UT64_MAX) {
-	  return false;
-  }
+	ut64 loaded_offset = Elf_(v2p) (eo, dyn_phdr->p_vaddr);
+	if (loaded_offset == UT64_MAX) {
+		return false;
+	}
 
 	ut64 dyn_size = dyn_phdr->p_filesz;
 
@@ -1266,14 +1272,6 @@ typedef struct process_verneed_state_t {
 	Elf_(Shdr) *shdr;
 } ProcessVerneedState;
 
-#define USE_SINGLE_SDB 0
-#if USE_SINGLE_SDB
-static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state) {
-	// R2_590
-	// TODO: rewrite the function to use only one SDB instead of 65000 with mutated.
-}
-#else
-
 static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state) {
 	Elf_(Shdr) *shdr = state->shdr;
 	ut8* need = state->need;
@@ -1382,7 +1380,6 @@ static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state
 
 	return true;
 }
-#endif
 
 static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
 	if (!eo->dynstr) {
@@ -1392,7 +1389,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) 
 		return NULL;
 	}
 #ifdef R_BIN_ELF64
-	// R2_590 delete the else block , this chk must be generic
+	// R2_600 delete the else block , this chk must be generic
 	if ((int)shdr->sh_size < 1 || shdr->sh_size > SIZE_MAX) {
 		return NULL;
 	}
@@ -2194,7 +2191,7 @@ static bool qnx_has_nx(ELFOBJ *eo) {
 static bool compute_has_nx(ELFOBJ *eo) {
 	if (eo->phdr) {
 		size_t i;
-		for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		for (i = 0; i < eo->phnum; i++) {
 			Elf_(Phdr) *p = &eo->phdr[i];
 			if (p->p_type == PT_GNU_STACK) {
 				return !(p->p_flags & 1);
@@ -2220,7 +2217,7 @@ int Elf_(has_relro)(ELFOBJ *bin) {
 			have_bind_now = di->dt_flags_1 & DF_1_NOW;
 		}
 		size_t i;
-		for (i = 0; i < bin->ehdr.e_phnum; i++) {
+		for (i = 0; i < bin->phnum; i++) {
 			if (bin->phdr[i].p_type == PT_GNU_RELRO) {
 				return have_bind_now? R_ELF_FULL_RELRO: R_ELF_PART_RELRO;
 			}
@@ -2243,7 +2240,7 @@ ut64 Elf_(get_baddr)(ELFOBJ *eo) {
 	ut64 base = UT64_MAX;
 	if (eo->phdr) {
 		size_t i;
-		for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		for (i = 0; i < eo->phnum; i++) {
 			Elf_(Phdr) *p = &eo->phdr[i];
 			if (p->p_type == PT_LOAD) {
 				ut64 tmp = (ut64)p->p_vaddr & ELF_PAGE_MASK;
@@ -2273,7 +2270,7 @@ ut64 Elf_(get_boffset)(ELFOBJ *eo) {
 
 	ut64 base = UT64_MAX;
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+	for (i = 0; i < eo->phnum; i++) {
 		Elf_(Phdr) *p = &eo->phdr[i];
 		if (p->p_type == PT_LOAD) {
 			ut64 tmp = (ut64)p->p_offset & ELF_PAGE_MASK;
@@ -2565,7 +2562,7 @@ static bool has_interp_program_header(ELFOBJ *eo) {
 		return false;
 	}
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+	for (i = 0; i < eo->phnum; i++) {
 		if (eo->phdr[i].p_type == PT_INTERP) {
 			return true;
 		}
@@ -2654,8 +2651,8 @@ char *Elf_(intrp)(ELFOBJ *eo) {
 		return NULL;
 	}
 
-	int i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+	size_t i;
+	for (i = 0; i < eo->phnum; i++) {
 		Elf_(Phdr) *p = &eo->phdr[i];
 		if (p->p_type != PT_INTERP) {
 			continue;
@@ -2692,7 +2689,7 @@ bool Elf_(is_static)(ELFOBJ *eo) {
 		return false;
 	}
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+	for (i = 0; i < eo->phnum; i++) {
 		const Elf_(Word) pt = eo->phdr[i].p_type;
 		if (pt == PT_INTERP || pt == PT_DYNAMIC) {
 			return false;
@@ -3237,8 +3234,8 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 		const ut32 mips_type = eo->ehdr.e_flags & EF_MIPS_ARCH;
 		if (eo->ehdr.e_type == ET_EXEC) {
 			bool have_interp = false;
-			int i;
-			for (i = 0; i < eo->ehdr.e_phnum; i++) {
+			size_t i;
+			for (i = 0; i < eo->phnum; i++) {
 				if (eo->phdr[i].p_type == PT_INTERP) {
 					have_interp = true;
 					break;
@@ -3462,7 +3459,7 @@ ut8 *Elf_(grab_regstate)(ELFOBJ *eo, int *len) {
 	}
 
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+	for (i = 0; i < eo->phnum; i++) {
 		Elf_(Phdr) *p = &eo->phdr[i];
 		if (p->p_type != PT_NOTE) {
 			continue;
@@ -4307,7 +4304,7 @@ static void create_section_from_phdr(ELFOBJ *eo, const char *name, ut64 addr, ut
 static const RVecRBinElfSection *load_sections_from_phdr(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo && eo->phdr, NULL);
 
-	if (!eo->ehdr.e_phnum) {
+	if (!eo->phnum) {
 		return NULL;
 	}
 
@@ -5136,7 +5133,7 @@ static ut64 get_phdr_symtab_upper_bound(ELFOBJ *eo, ut64 addr_sym_table) {
 static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
-	if (!eo->phdr || !eo->ehdr.e_phnum) {
+	if (!eo->phdr || !eo->phnum) {
 		return NULL;
 	}
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
@@ -5936,7 +5933,7 @@ const RVecRBinElfField* Elf_(load_fields)(ELFOBJ *eo) {
 	eo->fields_loaded = true;
 	RVecRBinElfField_init (&eo->g_fields);
 
-	ut64 num_fields = eo->ehdr.e_phnum + 3;
+	ut64 num_fields = eo->phnum + 3;
 	if (!(RVecRBinElfField_reserve (&eo->g_fields, num_fields))) {
 		return NULL;
 	}
@@ -5953,10 +5950,10 @@ const RVecRBinElfField* Elf_(load_fields)(ELFOBJ *eo) {
 	r_str_ncpy (new_field->name, "phoff", ELF_STRING_LENGTH);
 	new_field->offset = eo->ehdr.e_phoff;
 
-	int i;
-	for (i = 0; eo->phdr && i < eo->ehdr.e_phnum; i++) {
+	size_t i;
+	for (i = 0; eo->phdr && i < eo->phnum; i++) {
 		new_field = RVecRBinElfField_emplace_back (&eo->g_fields);
-		snprintf (new_field->name, ELF_STRING_LENGTH, "phdr_%i", i);
+		snprintf (new_field->name, ELF_STRING_LENGTH, "phdr_%zu", i);
 		new_field->offset = eo->phdr[i].p_offset;
 	}
 	return &eo->g_fields;
@@ -6051,7 +6048,7 @@ ut64 Elf_(p2v)(ELFOBJ *eo, ut64 paddr) {
 		// p_vaddr match so p2v/v2p round-trip at the real code region.
 		Elf_(Phdr) *best = NULL;
 		size_t i;
-		for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		for (i = 0; i < eo->phnum; i++) {
 			Elf_(Phdr) *p = &eo->phdr[i];
 			if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
 				if (!best || p->p_vaddr > best->p_vaddr) {
@@ -6085,7 +6082,7 @@ ut64 Elf_(v2p)(ELFOBJ *eo, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
 	if (eo->phdr) {
 		size_t i;
-		for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		for (i = 0; i < eo->phnum; i++) {
 			Elf_(Phdr) *p = &eo->phdr[i];
 			if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
 				return p->p_offset + vaddr - p->p_vaddr;
@@ -6111,8 +6108,8 @@ ut64 Elf_(v2p)(ELFOBJ *eo, ut64 vaddr) {
 }
 
 static bool get_nt_file_maps(ELFOBJ *eo, RList *core_maps) {
-	ut16 ph;
-	for (ph = 0; ph < eo->ehdr.e_phnum; ph++) {
+	size_t ph;
+	for (ph = 0; ph < eo->phnum; ph++) {
 		Elf_(Phdr) *p = &eo->phdr[ph];
 		if (p->p_type != PT_NOTE) {
 			continue;
@@ -6204,12 +6201,8 @@ RList *Elf_(get_maps)(ELFOBJ *eo) {
 	}
 
 	RList *maps = r_list_newf ((RListFree)r_bin_elf_map_free);
-	if (!maps) {
-		return NULL;
-	}
-
-	ut16 ph_num = eo->ehdr.e_phnum; //Skip PT_NOTE
-	ut16 ph;
+	size_t ph_num = eo->phnum; //Skip PT_NOTE
+	size_t ph;
 	for (ph = 0; ph < ph_num; ph++) {
 		Elf_(Phdr) *p = &eo->phdr[ph];
 		if (p->p_type != PT_LOAD) {
@@ -6241,7 +6234,7 @@ char *Elf_(compiler)(ELFOBJ *eo) {
 	}
 
 	ut32 sz = R_MIN (section->size, 128);
-	if (sz < 1) {
+	if (sz < 1 || sz >= ST32_MAX) {
 		return NULL;
 	}
 
