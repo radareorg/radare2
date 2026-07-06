@@ -1346,37 +1346,41 @@ R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBu
 				free (s);
 				return;
 			}
-			eprintf ("%s%s\n%s", core->cons->line->prompt, buf->data, s);
-			RList *list = r_str_split_list (s, "\n", 0);
-			RListIter *iter;
-			char *line;
-			r_list_foreach (list, iter, line) {
-				char *bracket_start = strstr (line, " [");
-				if (bracket_start) {
-					if (r_str_startswith (bracket_start, " [addr]") || r_str_startswith (bracket_start, " [file]")) {
-						const char *registered_option = strstr (bracket_start, "addr")? "'!!!%s $flag": "'!!!%s $file";
-						char *cur = strchr (line, '[');
-						if (cur) {
-							*cur = 0;
+			if (R_STR_ISNOTEMPTY (s)) {
+				eprintf ("\r%s%s\r\n", core->cons->line->prompt, buf->data);
+				RList *list = r_str_split_list (s, "\n", 0);
+				RListIter *iter;
+				char *line;
+				r_list_foreach (list, iter, line) {
+					eprintf ("%s\r\n", line);
+					char *bracket_start = strstr (line, " [");
+					if (bracket_start) {
+						if (r_str_startswith (bracket_start, " [addr]") || r_str_startswith (bracket_start, " [file]")) {
+							const char *registered_option = strstr (bracket_start, "addr")? "'!!!%s $flag": "'!!!%s $file";
+							char *cur = strchr (line, '[');
+							if (cur) {
+								*cur = 0;
+							}
+							cur = strchr (line, '|');
+							if (cur) {
+								*cur = 0;
+							}
+							cur = strchr (line, '>');
+							if (cur) {
+								*cur = 0;
+							}
+							*bracket_start = 0;
+							const char *cmd = line;
+							r_core_cmdf (core, "'!!!-%s", cmd);
+							r_core_cmdf (core, registered_option, cmd);
 						}
-						cur = strchr (line, '|');
-						if (cur) {
-							*cur = 0;
-						}
-						cur = strchr (line, '>');
-						if (cur) {
-							*cur = 0;
-						}
-						*bracket_start = 0;
-						const char *cmd = line;
-						r_core_cmdf (core, "'!!!-%s", cmd);
-						r_core_cmdf (core, registered_option, cmd);
 					}
 				}
+				r_list_free (list);
+				free (s);
+				return;
 			}
-			r_list_free (list);
 			free (s);
-			return;
 		}
 	}
 	r_line_completion_clear (completion);
