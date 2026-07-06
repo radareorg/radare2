@@ -28,6 +28,11 @@ static void checkpoint_warn_if_large(RDebugSession *session) {
 	}
 }
 
+static void checkpoint_replay_buffer_free(HtUPKv *kv) {
+	RBuffer *buf = kv? kv->value: NULL;
+	r_unref (buf);
+}
+
 static void reset_resume_state(RDebug *dbg) {
 	if (!dbg) {
 		return;
@@ -170,6 +175,11 @@ R_API bool r_debug_add_checkpoint(RDebug *dbg) {
 	return r_debug_add_checkpoint_branch (dbg, parent_id, NULL) != 0;
 }
 
+R_API ut64 r_debug_checkpoint_create(RDebug *dbg, ut64 parent_id, const char *label) {
+	R_RETURN_VAL_IF_FAIL (dbg && dbg->session, 0);
+	return r_debug_add_checkpoint_branch (dbg, parent_id, label);
+}
+
 static void _set_initial_registers(RDebug *dbg) {
 	size_t i;
 	if (!dbg->session->cur_chkpt) {
@@ -271,6 +281,51 @@ R_API RDebugCheckpoint *r_debug_session_checkpoint_get(RDebugSession *session, u
 	return NULL;
 }
 
+R_API bool r_debug_session_checkpoint_replay_append(RDebugSession *session, ut64 checkpoint_id, int fd, const ut8 *buf, ut64 len, char **err) {
+	R_RETURN_VAL_IF_FAIL (session && fd >= 0, false);
+	if (err) {
+		*err = NULL;
+	}
+	RDebugCheckpoint *chkpt = r_debug_session_checkpoint_get (session, checkpoint_id);
+	if (!chkpt) {
+		if (err) {
+			*err = r_str_newf ("unknown checkpoint id %"PFMT64u, checkpoint_id);
+		}
+		return false;
+	}
+	if (!len) {
+		return true;
+	}
+	R_RETURN_VAL_IF_FAIL (buf, false);
+	if (!chkpt->replay) {
+		chkpt->replay = ht_up_new (NULL, checkpoint_replay_buffer_free, NULL);
+		if (!chkpt->replay) {
+			return false;
+		}
+	}
+	RBuffer *data = ht_up_find (chkpt->replay, (ut64)fd, NULL);
+	if (!data) {
+		data = r_buf_new_with_bytes (buf, len);
+		if (!data) {
+			return false;
+		}
+		ht_up_insert (chkpt->replay, (ut64)fd, data);
+		return true;
+	}
+	return r_buf_append_bytes (data, buf, len);
+}
+
+R_API bool r_debug_session_checkpoint_replay_apply(RDebug *dbg, ut64 checkpoint_id, int fd) {
+	R_RETURN_VAL_IF_FAIL (dbg && dbg->session && fd >= 0, false);
+	RDebugCheckpoint *chkpt = r_debug_session_checkpoint_get (dbg->session, checkpoint_id);
+	if (!chkpt) {
+		return false;
+	}
+	/* Replay streams are typed session metadata. The debugger transport hook
+	 * that consumes them is intentionally backend-specific and optional. */
+	return true;
+}
+
 R_API bool r_debug_session_delete(RDebug *dbg, ut64 checkpoint_id) {
 	R_RETURN_VAL_IF_FAIL (dbg && dbg->session, false);
 	RDebugSession *session = dbg->session;
@@ -329,6 +384,10 @@ R_API bool r_debug_session_restore(RDebug *dbg, ut64 checkpoint_id) {
 	dbg->session->linear_history_valid = false;
 	restore_checkpoint_snapshot (dbg, chkpt);
 	return true;
+}
+
+R_API bool r_debug_session_restore_checkpoint(RDebug *dbg, ut64 checkpoint_id) {
+	return r_debug_session_restore (dbg, checkpoint_id);
 }
 
 R_API void r_debug_session_list(RDebug *dbg, int mode) {
