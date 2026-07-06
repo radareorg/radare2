@@ -6242,9 +6242,16 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				goto repeat;
 			}
 			switch (op.type & R_ANAL_OP_TYPE_MASK) {
+			case R_ANAL_OP_TYPE_CALL:
+				if (anal_cc_clobber) {
+					// the main opcode switch that runs the havoc in the
+					// non-lazy path is skipped for direct calls here
+					esil_havoc_call_clobbers (core->anal, &ctx, &op);
+				}
+				i += op.size - 1;
+				goto repeat;
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CJMP:
-			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_RET:
 			case R_ANAL_OP_TYPE_ILL:
 			case R_ANAL_OP_TYPE_NOP:
