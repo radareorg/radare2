@@ -1110,6 +1110,39 @@ static bool r_anal_cc_regset_contains(const char *regset, const char *reg) {
 	return false;
 }
 
+static bool cc_regset_foreach(RAnal *anal, const char *regset, const char *skipset, RAnalCcRegCb cb, void *user) {
+	R_RETURN_VAL_IF_FAIL (anal && regset && cb, false);
+	const char *s = regset;
+	if (*s == '(') {
+		s++;
+	}
+	while (*s) {
+		while (*s == ',' || isspace ((ut8)*s)) {
+			s++;
+		}
+		const char *e = s;
+		while (*e && *e != ',' && *e != ')') {
+			e++;
+		}
+		const char *t = e;
+		while (t > s && isspace ((ut8)t[-1])) {
+			t--;
+		}
+		if (t > s) {
+			const char *reg = dyncc_intern (anal, s, t - s);
+			if (reg && !(R_STR_ISNOTEMPTY (skipset) && r_anal_cc_regset_contains (skipset, reg))
+					&& !cb (anal, reg, user)) {
+				return false;
+			}
+		}
+		if (*e == ')') {
+			break;
+		}
+		s = e;
+	}
+	return true;
+}
+
 R_API bool r_anal_cc_argclob(RAnal *anal, const char *caller_cc, int n, const char *callee_cc) {
 	R_RETURN_VAL_IF_FAIL (anal && caller_cc && n >= 0, false);
 	const char *loc = r_anal_cc_argloc (anal, caller_cc, n, 0, 0);
@@ -1123,6 +1156,16 @@ R_API bool r_anal_cc_argclob(RAnal *anal, const char *caller_cc, int n, const ch
 			&& !r_anal_cc_location_in_regset (anal, loc, preserves, true);
 	}
 	return R_STR_ISEMPTY (preserves) || !r_anal_cc_location_in_regset (anal, loc, preserves, true);
+}
+
+R_API bool r_anal_cc_foreach_clobber(RAnal *anal, const char *convention, RAnalCcRegCb cb, void *user) {
+	R_RETURN_VAL_IF_FAIL (anal && convention && cb, false);
+	const char *clobbers = cc_regset (anal, convention, "clobber");
+	if (R_STR_ISEMPTY (clobbers)) {
+		return true;
+	}
+	const char *preserves = cc_regset (anal, convention, "preserve");
+	return cc_regset_foreach (anal, clobbers, preserves, cb, user);
 }
 
 R_API const char *r_anal_cc_default(RAnal *anal) {

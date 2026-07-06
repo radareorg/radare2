@@ -1440,6 +1440,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 R_API R_OWNED RVecAnalVarPtr *r_anal_var_vec(RAnal *anal, RAnalFunction *fcn, int kind);
 
 // calling conventions API
+typedef bool (*RAnalCcRegCb)(RAnal *anal, const char *reg, void *user);
 R_API bool r_anal_cc_exist(RAnal *anal, const char *convention);
 R_API void r_anal_cc_reset(RAnal *anal);
 R_API void r_anal_cc_del(RAnal *anal, const char *name);
@@ -1454,6 +1455,7 @@ R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc);
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n);
 R_API bool r_anal_cc_argclob(RAnal *anal, const char *caller_cc, int n, const char *callee_cc);
+R_API bool r_anal_cc_foreach_clobber(RAnal *anal, const char *convention, RAnalCcRegCb cb, void *user);
 R_API const char *r_anal_cc_default(RAnal *anal);
 R_API const char *r_anal_function_cc(RAnalFunction *fcn);
 R_API const char *r_anal_call_convention(RAnal *anal, RAnalOp *op);

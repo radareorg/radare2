@@ -10,6 +10,14 @@ HEAPTYPE (ut64);
 R_VEC_TYPE(RVecIntPtr, int *);
 R_VEC_TYPE(RVecUT64, ut64);
 
+typedef struct {
+	int arena;
+	int offset;
+	int size;
+} EsilRegTaint;
+
+R_VEC_TYPE(RVecEsilRegTaint, EsilRegTaint);
+
 // used to speedup strcmp with rconfig.get in loops
 enum {
 	R2_ARCH_THUMB,
@@ -5222,9 +5230,124 @@ typedef struct {
 	RAnalFunction *fcn;
 	char *spname;
 	ut64 initial_sp;
+	RVecEsilRegTaint reg_taints;
+	bool read_clobbered;
 } EsilBreakCtx;
 
 typedef int RPerm;
+
+static bool esil_reg_taint_overlap_item(const EsilRegTaint *taint, const RRegItem *item) {
+	if (!taint || !item || taint->arena != item->arena || taint->size < 1 || item->size < 1) {
+		return false;
+	}
+	const int taint_end = taint->offset + taint->size;
+	const int item_end = item->offset + item->size;
+	return taint->offset < item_end && item->offset < taint_end;
+}
+
+static bool esil_reg_taint_has_item(EsilBreakCtx *ctx, const RRegItem *item) {
+	if (!ctx || !item) {
+		return false;
+	}
+	size_t i;
+	for (i = 0; i < RVecEsilRegTaint_length (&ctx->reg_taints); i++) {
+		const EsilRegTaint *taint = RVecEsilRegTaint_at (&ctx->reg_taints, i);
+		if (esil_reg_taint_overlap_item (taint, item)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static void esil_reg_taint_add_item(EsilBreakCtx *ctx, const RRegItem *item) {
+	if (!ctx || !item || item->size < 1) {
+		return;
+	}
+	EsilRegTaint span = {
+		.arena = item->arena,
+		.offset = item->offset,
+		.size = item->size,
+	};
+	size_t i;
+	for (i = 0; i < RVecEsilRegTaint_length (&ctx->reg_taints); i++) {
+		EsilRegTaint *taint = RVecEsilRegTaint_at (&ctx->reg_taints, i);
+		if (taint->arena != span.arena) {
+			continue;
+		}
+		const int taint_end = taint->offset + taint->size;
+		const int span_end = span.offset + span.size;
+		if (taint->offset <= span_end && span.offset <= taint_end) {
+			const int start = R_MIN (taint->offset, span.offset);
+			const int end = R_MAX (taint_end, span_end);
+			taint->offset = start;
+			taint->size = end - start;
+			return;
+		}
+	}
+	RVecEsilRegTaint_push_back (&ctx->reg_taints, &span);
+}
+
+static void esil_reg_taint_clear_item(EsilBreakCtx *ctx, const RRegItem *item) {
+	if (!ctx || !item || item->size < 1) {
+		return;
+	}
+	const int clear_start = item->offset;
+	const int clear_end = item->offset + item->size;
+	size_t i = 0;
+	while (i < RVecEsilRegTaint_length (&ctx->reg_taints)) {
+		EsilRegTaint *taint = RVecEsilRegTaint_at (&ctx->reg_taints, i);
+		if (!esil_reg_taint_overlap_item (taint, item)) {
+			i++;
+			continue;
+		}
+		const int taint_start = taint->offset;
+		const int taint_end = taint->offset + taint->size;
+		if (clear_start <= taint_start && clear_end >= taint_end) {
+			RVecEsilRegTaint_remove (&ctx->reg_taints, i);
+			continue;
+		}
+		if (clear_start <= taint_start) {
+			taint->offset = clear_end;
+			taint->size = taint_end - clear_end;
+			i++;
+			continue;
+		}
+		if (clear_end >= taint_end) {
+			taint->size = clear_start - taint_start;
+			i++;
+			continue;
+		}
+		EsilRegTaint tail = {
+			.arena = taint->arena,
+			.offset = clear_end,
+			.size = taint_end - clear_end,
+		};
+		taint->size = clear_start - taint_start;
+		RVecEsilRegTaint_push_back (&ctx->reg_taints, &tail);
+		i++;
+	}
+}
+
+static bool esil_call_clobber_cb(RAnal *anal, const char *regname, void *user) {
+	EsilBreakCtx *ctx = user;
+	RRegItem *item = r_reg_get (anal->reg, regname, -1);
+	if (item) {
+		esil_reg_taint_add_item (ctx, item);
+		r_reg_set_value (anal->reg, item, 0);
+		r_unref (item);
+	}
+	return true;
+}
+
+static void esil_havoc_call_clobbers(RAnal *anal, EsilBreakCtx *ctx, RAnalOp *op) {
+	const char *cc = r_anal_call_convention (anal, op);
+	if (!cc) {
+		cc = r_anal_cc_default (anal);
+	}
+	if (cc) {
+		r_anal_cc_foreach_clobber (anal, cc, esil_call_clobber_cb, ctx);
+	}
+}
 
 static const char *reg_name_for_access(RAnalOp* op, RPerm type) {
 	if (type == R_PERM_W) {
@@ -5300,6 +5423,11 @@ static bool is_stack(RIO *io, ut64 addr) {
 }
 
 static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
+	EsilBreakCtx *ctx = esil->user;
+	if (ctx->read_clobbered) {
+		return true;
+	}
 	RCore *core = esil->anal->coreb.core;
 	handle_var_stack_access (esil, addr, R_PERM_W, len);
 	// ignore writes in stack
@@ -5323,6 +5451,12 @@ static R_TH_LOCAL ut64 ntarget = UT64_MAX;
 // TODO differentiate endian-aware mem_read with other reads; move ntarget handling to another function
 static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
+	EsilBreakCtx *ctx = esil->user;
+	if (ctx->read_clobbered) {
+		esilbreak_last_read = UT64_MAX;
+		esilbreak_last_data = UT64_MAX;
+		return false;
+	}
 	RCore *core = esil->anal->coreb.core;
 	ut8 str[128];
 	if (addr != UT64_MAX) {
@@ -5374,12 +5508,43 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	return false; // fallback
 }
 
+static bool esilbreak_reg_read(REsil *esil, const char *name, ut64 *res, int *size) {
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user && name, false);
+	EsilBreakCtx *ctx = esil->user;
+	RRegItem *item = r_reg_get (esil->anal->reg, name, -1);
+	if (!item) {
+		return false;
+	}
+	const bool tainted = esil_reg_taint_has_item (ctx, item);
+	if (tainted) {
+		ctx->read_clobbered = true;
+		if (res) {
+			*res = 0;
+		}
+		if (size) {
+			*size = item->size;
+		}
+	}
+	r_unref (item);
+	return tainted;
+}
+
 static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
 	RAnal *anal = esil->anal;
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
 	RCore *core = anal->coreb.core;
+	RRegItem *item = r_reg_get (anal->reg, name, -1);
+	if (item) {
+		if (ctx->read_clobbered) {
+			esil_reg_taint_add_item (ctx, item);
+			r_unref (item);
+			return false;
+		}
+		esil_reg_taint_clear_item (ctx, item);
+		r_unref (item);
+	}
 	handle_var_stack_access (esil, *val, R_PERM_NONE, esil->anal->config->bits / 8);
 	const bool is_arm = r_str_startswith (core->anal->config->arch, "arm");
 	//specific case to handle blx/bx cases in arm through emulation
@@ -5773,11 +5938,13 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	}
 	char *spname = strdup (kspname);
 	EsilBreakCtx ctx = {
-		&op,
-		fcn,
-		spname,
-		r_reg_getv (core->anal->reg, spname) // initial_sp
+		.op = &op,
+		.fcn = fcn,
+		.spname = spname,
+		.initial_sp = r_reg_getv (core->anal->reg, spname),
 	};
+	RVecEsilRegTaint_init (&ctx.reg_taints);
+	ESIL->cb.hook_reg_read = &esilbreak_reg_read;
 	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
 	//this is necessary for the hook to read the id of analop
 	ESIL->user = &ctx;
@@ -5840,6 +6007,13 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	if (!buf) {
 		free (sn);
 		free (spname);
+		ESIL->cb.hook_mem_read = NULL;
+		ESIL->cb.hook_mem_write = NULL;
+		ESIL->cb.hook_reg_read = NULL;
+		ESIL->cb.hook_reg_write = NULL;
+		ESIL->user = NULL;
+		RVecEsilRegTaint_fini (&ctx.reg_taints);
+		r_cons_break_pop (core->cons);
 		r_reg_arena_pop (core->anal->reg);
 		return;
 	}
@@ -5960,9 +6134,13 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		if (gp_fixed && gp_reg) {
 			r_reg_setv (core->anal->reg, gp_reg, gp);
 		}
+		ctx.read_clobbered = false;
 		(void)r_esil_parse (ESIL, esilstr);
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_LEA:
+			if (ctx.read_clobbered) {
+				break;
+			}
 			// arm64
 			if (cur && arch == R2_ARCH_ARM64) {
 				if (CHECKREF (ESIL->cur)) {
@@ -6008,6 +6186,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			}
 			break;
 		case R_ANAL_OP_TYPE_ADD:
+			if (ctx.read_clobbered) {
+				break;
+			}
 			/* TODO: test if this is valid for other archs too */
 			if (archIsArm) {
 				/* This code is known to work on Thumb, ARM and ARM64 */
@@ -6066,6 +6247,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			}
 			break;
 		case R_ANAL_OP_TYPE_LOAD:
+			if (ctx.read_clobbered) {
+				break;
+			}
 			{
 				ut64 dst = esilbreak_last_read;
 				if (dst != UT64_MAX && CHECKREF (dst)) {
@@ -6098,6 +6282,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			}
 			break;
 		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_CCALL:
 			{
 				ut64 dst = op.jump;
 				if (CHECKREF (dst) || (target && dst == ntarget)) {
@@ -6107,6 +6292,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					ESIL->old = cur + op.size;
 					getpcfromstack (core, ESIL);
 				}
+				esil_havoc_call_clobbers (core->anal, &ctx, &op);
 			}
 			break;
 		case R_ANAL_OP_TYPE_UJMP:
@@ -6115,12 +6301,13 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		case R_ANAL_OP_TYPE_RCALL:
 		case R_ANAL_OP_TYPE_IRCALL:
 		case R_ANAL_OP_TYPE_MJMP:
+		case R_ANAL_OP_TYPE_UCCALL:
 			{
 				ut64 dst = core->anal->esil->jump_target;
 				if (dst == 0 || dst == UT64_MAX) {
 					dst = r_reg_getv (core->anal->reg, "PC");
 				}
-				if (CHECKREF (dst)) {
+				if (!ctx.read_clobbered && CHECKREF (dst)) {
 					if (myvalid (core, dst)) {
 						RAnalRefType ref =
 							(op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL
@@ -6131,6 +6318,16 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 							r_core_anal_fcn (core, dst, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 						}
 					}
+				}
+				switch (op.type & R_ANAL_OP_TYPE_MASK) {
+				case R_ANAL_OP_TYPE_UCALL:
+				case R_ANAL_OP_TYPE_ICALL:
+				case R_ANAL_OP_TYPE_RCALL:
+				case R_ANAL_OP_TYPE_IRCALL:
+					esil_havoc_call_clobbers (core->anal, &ctx, &op);
+					break;
+				default:
+					break;
 				}
 			}
 			break;
@@ -6161,8 +6358,10 @@ repeat:
 	free (buf);
 	ESIL->cb.hook_mem_read = NULL;
 	ESIL->cb.hook_mem_write = NULL;
+	ESIL->cb.hook_reg_read = NULL;
 	ESIL->cb.hook_reg_write = NULL;
 	ESIL->user = NULL;
+	RVecEsilRegTaint_fini (&ctx.reg_taints);
 	r_anal_op_fini (&op);
 	r_cons_break_pop (core->cons);
 	r_reg_arena_pop (core->anal->reg);
