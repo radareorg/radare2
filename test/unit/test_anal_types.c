@@ -376,10 +376,59 @@ static bool test_anal_base_type_struct_array_roundtrip(void) {
 	mu_end;
 }
 
+static bool test_anal_save_base_type_struct_redefine(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("kappa");
+	RAnalStructMember member = {
+		.offset = 0,
+		.type = strdup ("int32_t"),
+		.name = strdup ("bar")
+	};
+	RVecAnalStructMember_push_back (&base->struct_data.members, &member);
+	member.offset = 4;
+	member.type = strdup ("int32_t");
+	member.name = strdup ("cow");
+	RVecAnalStructMember_push_back (&base->struct_data.members, &member);
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	// a redefinition replaces the member list and drops the stale member keys
+	base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("kappa");
+	member.offset = 0;
+	member.type = strdup ("int64_t");
+	member.name = strdup ("cow");
+	RVecAnalStructMember_push_back (&base->struct_data.members, &member);
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	Sdb *reg = sdb_new0 ();
+	sdb_set (reg, "kappa", "struct", 0);
+	sdb_set (reg, "struct.kappa", "cow", 0);
+	sdb_set (reg, "struct.kappa.cow", "int64_t,0,0", 0);
+	assert_sdb_eq (anal->sdb_types, reg, "redefined struct type");
+
+	// an empty declaration must not clobber the full definition
+	base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("kappa");
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	assert_sdb_eq (anal->sdb_types, reg, "empty declaration kept the definition");
+	sdb_free (reg);
+
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_anal_get_base_type_struct);
 	mu_run_test (test_anal_save_base_type_struct);
 	mu_run_test (test_anal_base_type_struct_array_roundtrip);
+	mu_run_test (test_anal_save_base_type_struct_redefine);
 	mu_run_test (test_anal_get_base_type_union);
 	mu_run_test (test_anal_save_base_type_union);
 	mu_run_test (test_anal_get_base_type_enum);
