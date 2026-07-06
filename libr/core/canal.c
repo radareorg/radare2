@@ -5643,20 +5643,40 @@ static bool esilbreak_reg_read(REsil *esil, const char *name, ut64 *res, int *si
 	return tainted;
 }
 
+// compare register storage instead of names: esil expressions use "pc"
+// while the profile alias can resolve to another name like "r15" on arm
+static bool esil_reg_item_is_pc(RAnal *anal, const RRegItem *item) {
+	const char *pcname = r_reg_alias_getname (anal->reg, R_REG_ALIAS_PC);
+	if (R_STR_ISEMPTY (pcname)) {
+		return false;
+	}
+	RRegItem *pc = r_reg_get (anal->reg, pcname, -1);
+	if (!pc) {
+		return false;
+	}
+	EsilRegTaint span = {
+		.arena = pc->arena,
+		.offset = pc->offset,
+		.size = pc->size,
+	};
+	const bool is_pc = esil_reg_taint_overlap_item (&span, item);
+	r_unref (pc);
+	return is_pc;
+}
+
 static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
 	RAnal *anal = esil->anal;
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
 	RCore *core = anal->coreb.core;
-	const char *pcname = r_reg_alias_getname (anal->reg, R_REG_ALIAS_PC);
 	if (ctx->read_clobbered || !esil_reg_taint_empty (ctx)) {
 		RRegItem *item = r_reg_get (anal->reg, name, -1);
 		if (item) {
 			if (ctx->read_clobbered) {
 				if (ctx->read_clean_mem && (op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_LOAD) {
 					esil_reg_taint_clear_item (ctx, item);
-				} else if (!pcname || strcmp (name, pcname)) {
+				} else if (!esil_reg_item_is_pc (anal, item)) {
 					esil_reg_taint_add_item (ctx, item);
 				}
 				r_unref (item);
@@ -6168,6 +6188,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		if (opalign > 0) {
 			cur -= (cur % opalign);
 		}
+		if (!esil_reg_taint_empty (&ctx) && r_anal_get_function_at (core->anal, cur)) {
+			// entering another function in the linear sweep: taint from the
+			// previous function must not leak in when it ends without a ret
+			// (tail call, noreturn call, undecoded or esil-less instructions)
+			esil_reg_taint_clear_all (&ctx);
+		}
 		i_old = i;
 		if (i >= iend) {
 			goto repeat;
@@ -6198,6 +6224,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		if (op.size < 1) {
 			i += minopsize - 1;
 			goto repeat;
+		}
+		if (op.type == R_ANAL_OP_TYPE_RET || op.type == R_ANAL_OP_TYPE_CRET) {
+			// clear before the emu.lazy and empty-esil shortcuts below,
+			// which skip the main opcode switch
+			esil_reg_taint_clear_all (&ctx);
 		}
 		// TODO: rename emu.lazy to emu.slow ? or just reuse anal.slow
 		if (emu_lazy) {
@@ -6424,10 +6455,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					esil_havoc_call_clobbers (core->anal, &ctx, &op);
 				}
 			}
-			break;
-		case R_ANAL_OP_TYPE_RET:
-		case R_ANAL_OP_TYPE_CRET:
-			esil_reg_taint_clear_all (&ctx);
 			break;
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_UCALL:
