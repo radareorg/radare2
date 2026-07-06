@@ -4470,6 +4470,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("asm.cmt.token", ";", "token to use before printing a comment");
 	SETB ("asm.cmt.strings", "true", "show comment strings referenced by aop.ptr");
 	SETB ("asm.cmt.flgrefs", "true", "show comment flags associated to branch reference");
+	SETB ("asm.cmt.reguse", "false", "show register-use analysis comments in disasm");
 	SETB ("asm.cmt.right", "true", "show comments at right of disassembly if they fit in screen");
 	SETB ("asm.cmt.esil", "false", "show ESIL expressions as comments");
 	SETI ("asm.cmt.col", 71, "column to align comments");

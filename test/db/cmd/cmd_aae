@@ -27,16 +27,18 @@ aae 0x10
 axq~0x00000180
 ?e --
 e anal.cc.clobber
+e asm.cmt.reguse
 EOF
 EXPECT=<<EOF
 0x0000010c -> 0x00000180  STRN:r--
 --
 --
 true
+false
 EOF
 RUN
 
-NAME=aae keeps real stack vars when stored value is call-clobbered
+NAME=aae names real stack vars storing call-clobbered regs
 FILE=bins/elf/truechin.so
 ARGS=-NN -A
 CMDS=<<EOF
@@ -49,16 +51,16 @@ e anal.cc=arm64
 e anal.cc.clobber=true
 af
 s 0x000017f4
-pdui ret~var_80h
+pdui ret~var_clob_80h
 ?e --
-pdui ret~var_78h
+pdui ret~var_clob_78h
 EOF
 EXPECT=<<EOF
-0x00001804      str x0, [var_80h]
-0x00001808      ldr x1, [var_80h]
+0x00001804      str x0, [var_clob_80h]
+0x00001808      ldr x1, [var_clob_80h]
 --
-0x00001820      str x0, [var_78h]
-0x00001830      ldr x1, [var_78h]                 ;  ...
-0x00001844      ldr x0, [var_78h]                 ; int64_t arg1
+0x00001820      str x0, [var_clob_78h]
+0x00001830      ldr x1, [var_clob_78h]            ;  ...
+0x00001844      ldr x0, [var_clob_78h]            ; int64_t arg1
 EOF
 RUN

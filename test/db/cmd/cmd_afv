@@ -10,3 +10,16 @@ EXPECT=<<EOF
 not segfaulted
 EOF
 RUN
+
+NAME=afvt without variable name
+FILE=bins/elf/truechin.so
+CMDS=<<EOF
+s 0x1750
+af
+afvt
+?e survived
+EOF
+EXPECT=<<EOF
+survived
+EOF
+RUN

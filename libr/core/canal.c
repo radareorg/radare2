@@ -5231,7 +5231,9 @@ typedef struct {
 	char *spname;
 	ut64 initial_sp;
 	RVecEsilRegTaint reg_taints;
+	char read_tainted_reg[64];
 	bool read_clobbered;
+	bool comment_reguse;
 } EsilBreakCtx;
 
 typedef int RPerm;
@@ -5383,7 +5385,16 @@ static ut64 delta_for_access(RAnalOp *op, RPerm type) {
 	return 0;
 }
 
-static void handle_var_stack_access(REsil *esil, ut64 addr, RPerm type, int len) {
+static char *esilbreak_clobbered_varname(RAnalOp *op, RPerm type, int stack_off) {
+	ut64 delta = delta_for_access (op, type);
+	return r_str_newf (VARPREFIX"_clob_%"PFMT64x"h", delta? delta: (ut64)R_ABS (stack_off));
+}
+
+static bool esilbreak_is_default_stack_var(const char *name) {
+	return r_str_startswith (name, VARPREFIX"_") && !r_str_startswith (name, VARPREFIX"_clob_");
+}
+
+static void handle_var_stack_access(REsil *esil, ut64 addr, RPerm type, int len, bool clobbered_write) {
 	R_RETURN_IF_FAIL (esil && esil->user);
 	EsilBreakCtx *ctx = esil->user;
 	const char *regname = reg_name_for_access (ctx->op, type);
@@ -5399,10 +5410,17 @@ static void handle_var_stack_access(REsil *esil, ut64 addr, RPerm type, int len)
 			}
 			if (!var && stack_off >= -ctx->fcn->maxstack) {
 				char *varname;
-				varname = ctx->fcn->anal->opt.varname_stack
+				varname = clobbered_write
+					? esilbreak_clobbered_varname (ctx->op, type, stack_off)
+					: ctx->fcn->anal->opt.varname_stack
 					? r_str_newf (VARPREFIX"_%xh", R_ABS (stack_off))
 					: r_anal_function_autoname_var (ctx->fcn, R_ANAL_VAR_KIND_SPV, VARPREFIX, delta_for_access (ctx->op, type));
 				var = r_anal_function_set_var (ctx->fcn, stack_off, R_ANAL_VAR_KIND_SPV, NULL, len, false, varname);
+				free (varname);
+			}
+			if (var && clobbered_write && esilbreak_is_default_stack_var (var->name)) {
+				char *varname = esilbreak_clobbered_varname (ctx->op, type, stack_off);
+				r_anal_var_rename (ctx->fcn->anal, var, varname);
 				free (varname);
 			}
 			if (var) {
@@ -5438,10 +5456,64 @@ static bool esilbreak_addr_tainted(REsil *esil, RPerm type) {
 	return tainted;
 }
 
+static bool esilbreak_note_tainted_reg(EsilBreakCtx *ctx, const char *regname) {
+	if (!*regname) {
+		return false;
+	}
+	if (!ctx->read_tainted_reg[0]) {
+		r_str_ncpy (ctx->read_tainted_reg, regname, sizeof (ctx->read_tainted_reg));
+	}
+	return true;
+}
+
+static bool esilbreak_find_tainted_reg(RAnal *anal, EsilBreakCtx *ctx, const char *esilstr) {
+	char *s = strdup (esilstr);
+	if (!s) {
+		return false;
+	}
+	bool found = false;
+	char *save_ptr = NULL;
+	char *tok = r_str_tok_r (s, ",", &save_ptr);
+	while (tok) {
+		RRegItem *item = r_reg_get (anal->reg, tok, -1);
+		if (item) {
+			if (esil_reg_taint_has_item (ctx, item)) {
+				found = esilbreak_note_tainted_reg (ctx, tok);
+				r_unref (item);
+				break;
+			}
+			r_unref (item);
+		}
+		tok = r_str_tok_r (NULL, ",", &save_ptr);
+	}
+	free (s);
+	return found;
+}
+
+static void esilbreak_comment_reguse(RAnal *anal, ut64 addr, const char *regname) {
+	if (!*regname) {
+		return;
+	}
+	const char *marker = "reguse: ";
+	const char *comment = r_meta_get_string (anal, R_META_TYPE_COMMENT, addr);
+	if (comment && strstr (comment, marker)) {
+		return;
+	}
+	char *msg = r_str_newf ("%s%s is call-clobbered", marker, regname);
+	if (comment && *comment) {
+		char *next = r_str_newf ("%s; %s", comment, msg);
+		free (msg);
+		msg = next;
+	}
+	r_meta_set_string (anal, R_META_TYPE_COMMENT, addr, msg);
+	free (msg);
+}
+
 static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
+	EsilBreakCtx *ctx = esil->user;
 	RCore *core = esil->anal->coreb.core;
-	handle_var_stack_access (esil, addr, R_PERM_W, len);
+	handle_var_stack_access (esil, addr, R_PERM_W, len, ctx->read_clobbered);
 	if (esilbreak_addr_tainted (esil, R_PERM_W)) {
 		return true;
 	}
@@ -5476,7 +5548,7 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (addr != UT64_MAX) {
 		esilbreak_last_read = addr;
 	}
-	handle_var_stack_access (esil, addr, R_PERM_R, len);
+	handle_var_stack_access (esil, addr, R_PERM_R, len, false);
 	if (myvalid (core, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
 		ut64 refptr = UT64_MAX;
 		bool trace = true;
@@ -5532,6 +5604,7 @@ static bool esilbreak_reg_read(REsil *esil, const char *name, ut64 *res, int *si
 	const bool tainted = esil_reg_taint_has_item (ctx, item);
 	if (tainted) {
 		ctx->read_clobbered = true;
+		esilbreak_note_tainted_reg (ctx, name);
 		if (res) {
 			*res = 0;
 		}
@@ -5559,7 +5632,7 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 		esil_reg_taint_clear_item (ctx, item);
 		r_unref (item);
 	}
-	handle_var_stack_access (esil, *val, R_PERM_NONE, esil->anal->config->bits / 8);
+	handle_var_stack_access (esil, *val, R_PERM_NONE, esil->anal->config->bits / 8, false);
 	const bool is_arm = r_str_startswith (core->anal->config->arch, "arm");
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
@@ -5835,6 +5908,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	bool cfg_anal_strings = r_config_get_b (core->config, "anal.strings");
 	bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
 	const bool anal_cc_clobber = r_config_get_b (core->config, "anal.cc.clobber");
+	const bool asm_cmt_reguse = r_config_get_b (core->config, "asm.cmt.reguse");
 	const bool gp_fixed = r_config_get_b (core->config, "anal.fixed.gp");
 	bool newstack = r_config_get_b (core->config, "anal.var.newstack");
 	REsil *ESIL = core->anal->esil;
@@ -5957,6 +6031,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		.fcn = fcn,
 		.spname = spname,
 		.initial_sp = r_reg_getv (core->anal->reg, spname),
+		.comment_reguse = asm_cmt_reguse,
 	};
 	RVecEsilRegTaint_init (&ctx.reg_taints);
 	ESIL->cb.hook_reg_read = &esilbreak_reg_read;
@@ -6150,7 +6225,14 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			r_reg_setv (core->anal->reg, gp_reg, gp);
 		}
 		ctx.read_clobbered = false;
+		ctx.read_tainted_reg[0] = 0;
+		if (ctx.comment_reguse) {
+			esilbreak_find_tainted_reg (core->anal, &ctx, esilstr);
+		}
 		(void)r_esil_parse (ESIL, esilstr);
+		if (ctx.comment_reguse && ctx.read_tainted_reg[0]) {
+			esilbreak_comment_reguse (core->anal, cur, ctx.read_tainted_reg);
+		}
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_LEA:
 			if (ctx.read_clobbered) {
