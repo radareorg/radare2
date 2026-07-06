@@ -5422,14 +5422,29 @@ static bool is_stack(RIO *io, ut64 addr) {
 	return false;
 }
 
-static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool esilbreak_addr_tainted(REsil *esil, RPerm type) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
 	EsilBreakCtx *ctx = esil->user;
-	if (ctx->read_clobbered) {
-		return true;
+	const char *regname = reg_name_for_access (ctx->op, type);
+	if (!regname) {
+		return ctx->read_clobbered;
 	}
+	RRegItem *item = r_reg_get (esil->anal->reg, regname, -1);
+	if (!item) {
+		return ctx->read_clobbered;
+	}
+	const bool tainted = esil_reg_taint_has_item (ctx, item);
+	r_unref (item);
+	return tainted;
+}
+
+static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
 	RCore *core = esil->anal->coreb.core;
 	handle_var_stack_access (esil, addr, R_PERM_W, len);
+	if (esilbreak_addr_tainted (esil, R_PERM_W)) {
+		return true;
+	}
 	// ignore writes in stack
 	if (myvalid (core, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
 		if (!is_stack (core->io, addr)) {
@@ -5451,8 +5466,7 @@ static R_TH_LOCAL ut64 ntarget = UT64_MAX;
 // TODO differentiate endian-aware mem_read with other reads; move ntarget handling to another function
 static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
-	EsilBreakCtx *ctx = esil->user;
-	if (ctx->read_clobbered) {
+	if (esilbreak_addr_tainted (esil, R_PERM_R)) {
 		esilbreak_last_read = UT64_MAX;
 		esilbreak_last_data = UT64_MAX;
 		return false;
@@ -5820,6 +5834,7 @@ static ut64 pulldata(RCore *core, ut8 *buf, size_t buf_size, ut64 start, ut64 en
 R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *target /* addr */) {
 	bool cfg_anal_strings = r_config_get_b (core->config, "anal.strings");
 	bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
+	const bool anal_cc_clobber = r_config_get_b (core->config, "anal.cc.clobber");
 	const bool gp_fixed = r_config_get_b (core->config, "anal.fixed.gp");
 	bool newstack = r_config_get_b (core->config, "anal.var.newstack");
 	REsil *ESIL = core->anal->esil;
@@ -6292,7 +6307,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					ESIL->old = cur + op.size;
 					getpcfromstack (core, ESIL);
 				}
-				esil_havoc_call_clobbers (core->anal, &ctx, &op);
+				if (anal_cc_clobber) {
+					esil_havoc_call_clobbers (core->anal, &ctx, &op);
+				}
 			}
 			break;
 		case R_ANAL_OP_TYPE_UJMP:
@@ -6324,7 +6341,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				case R_ANAL_OP_TYPE_ICALL:
 				case R_ANAL_OP_TYPE_RCALL:
 				case R_ANAL_OP_TYPE_IRCALL:
-					esil_havoc_call_clobbers (core->anal, &ctx, &op);
+					if (anal_cc_clobber) {
+						esil_havoc_call_clobbers (core->anal, &ctx, &op);
+					}
 					break;
 				default:
 					break;

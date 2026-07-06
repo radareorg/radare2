@@ -4131,6 +4131,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.prefix.radius", 0x1000, &cb_prefix_radius, "max distance to consider a flag as valid for prefix assignment");
 	const char *analcc = r_anal_cc_default (core->anal);
 	SETCB ("anal.cc", analcc? analcc: "", (RConfigCallback)&cb_analcc, "specify default calling convention");
+	SETB ("anal.cc.clobber", "true", "honor calling convention clobber sets during ESIL analysis");
 	const char *analsyscc = r_anal_syscc_default (core->anal);
 	SETCB ("anal.syscc", analsyscc? analsyscc: "", (RConfigCallback)&cb_analsyscc, "specify default syscall calling convention");
 	SETCB ("anal.verbose", "false", &cb_analverbose, "show RAnal warnings when analyzing code");
