@@ -1292,3 +1292,29 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=arm32 cc clobber and preserve register sets
+FILE=malloc://16
+ARGS=-a arm -b 32 -e anal.arch=arm
+CMDS=<<EOF
+k anal/cc/cc.arm32.clobber
+k anal/cc/cc.arm32.preserve
+EOF
+EXPECT=<<EOF
+r0,r1,r2,r3,r12,lr,d0,d1,d2,d3,d4,d5,d6,d7,d16,d17,d18,d19,d20,d21,d22,d23,d24,d25,d26,d27,d28,d29,d30,d31
+r4,r5,r6,r7,r8,r9,r10,r11,sp,d8,d9,d10,d11,d12,d13,d14,d15
+EOF
+RUN
+
+NAME=arm16 cc clobber and preserve register sets
+FILE=malloc://16
+ARGS=-a arm -b 16 -e anal.arch=arm
+CMDS=<<EOF
+k anal/cc/cc.arm16.clobber
+k anal/cc/cc.arm16.preserve
+EOF
+EXPECT=<<EOF
+r0,r1,r2,r3,r12,lr
+r4,r5,r6,r7,r8,r9,r10,r11,sp
+EOF
+RUN
