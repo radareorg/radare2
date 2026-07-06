@@ -15,20 +15,50 @@ wx 48c7c080010000e814000000488d18c3
 s 0x120
 wx c3
 s 0x100
-e anal.cc=reg
+e anal.cc=amd64
+e anal.cc.clobber=false
 aae 0x10
 axq~0x00000180
 ?e --
 ax-*
 s 0x100
-e anal.cc=amd64
+e anal.cc.clobber=true
 aae 0x10
 axq~0x00000180
 ?e --
+e anal.cc.clobber
 EOF
 EXPECT=<<EOF
 0x0000010c -> 0x00000180  STRN:r--
 --
 --
+true
+EOF
+RUN
+
+NAME=aae keeps real stack vars when stored value is call-clobbered
+FILE=bins/elf/truechin.so
+ARGS=-NN -A
+CMDS=<<EOF
+e asm.bytes=0
+e asm.lines=0
+e asm.cmt.col=50
+e emu.str=true
+e scr.strconv=raw
+e anal.cc=arm64
+e anal.cc.clobber=true
+af
+s 0x000017f4
+pdui ret~var_80h
+?e --
+pdui ret~var_78h
+EOF
+EXPECT=<<EOF
+0x00001804      str x0, [var_80h]
+0x00001808      ldr x1, [var_80h]
+--
+0x00001820      str x0, [var_78h]
+0x00001830      ldr x1, [var_78h]                 ;  ...
+0x00001844      ldr x0, [var_78h]                 ; int64_t arg1
 EOF
 RUN
