@@ -215,14 +215,14 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 			tmp |= n << left;
 			left += 15;
 
-			while (left >= 4 && j >= 0) {
+			while (left >= 4 && j > 0) {
 				hexstr[--j] = digist2hex[tmp & 0xf];
 				tmp >>= 4;
 				left -= 4;
 			}
 		}
 
-		if (tmp) {
+		if (tmp && j > 0) {
 			hexstr[--j] = digist2hex[tmp & 0xf];
 		}
 
