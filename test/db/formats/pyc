@@ -29,6 +29,13 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=pyc malformed refs do not crash
+FILE=bins/fuzzed/rep8
+CMDS=
+EXPECT=
+EXPECT_ERR=
+RUN
+
 NAME=pyc load version38
 FILE=bins/pyc/py38.pyc
 CMDS=<<EOF

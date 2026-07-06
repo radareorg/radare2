@@ -671,6 +671,9 @@ static void free_object(pyc_object *object) {
 }
 
 static pyc_object *copy_object(pyc_object *object) {
+	if (!object) {
+		return NULL;
+	}
 	pyc_object *copy = R_NEW0 (pyc_object);
 	copy->type = object->type;
 	if ((int)object->type != 0) {

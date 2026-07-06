@@ -860,7 +860,8 @@ static RList* relocs(RBinFile *bf) {
 
 	RBinElfReloc *reloc;
 	R_VEC_FOREACH (relocs, reloc) {
-		RBinReloc *already_inserted = ht_up_find (reloc_ht, reloc->rva, NULL);
+		bool already_inserted = false;
+		ht_up_find (reloc_ht, reloc->rva, &already_inserted);
 		if (already_inserted) {
 			continue;
 		}
@@ -871,7 +872,8 @@ static RList* relocs(RBinFile *bf) {
 			ht_up_insert (reloc_ht, reloc->rva, ptr);
 		} else {
 			if (ptr) {
-				ht_up_insert (reloc_ht, reloc->rva, ptr);
+				ht_up_insert (reloc_ht, reloc->rva, NULL);
+				r_bin_reloc_free (ptr);
 			} else {
 				if (reloc->rva != reloc->offset) {
 					ht_up_insert (reloc_ht, reloc->rva, ptr);
