@@ -79,6 +79,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME="fuzzed compressed dwarf section header"
+FILE=bins/fuzzed/id:000019,sig:11,src:002311,time:33421657,op:havoc,rep:8
+ARGS=-e log.level=0
+CMDS=<<EOF
+e scr.null=true
+iH
+aaa
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME="ansi injection via dwarf"
 FILE=bins/elf/dwarf_test_func_patched
 ARGS=-AA
