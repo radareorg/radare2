@@ -5330,12 +5330,30 @@ static void esil_reg_taint_clear_item(EsilBreakCtx *ctx, const RRegItem *item) {
 	}
 }
 
+static bool esil_reg_taint_empty(EsilBreakCtx *ctx) {
+	return RVecEsilRegTaint_length (&ctx->reg_taints) == 0;
+}
+
+static void esil_reg_taint_clear_all(EsilBreakCtx *ctx) {
+	RVecEsilRegTaint_clear (&ctx->reg_taints);
+}
+
+static bool esilbreak_skip_ref_op(int type) {
+	switch (type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_LOAD:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static bool esil_call_clobber_cb(RAnal *anal, const char *regname, void *user) {
 	EsilBreakCtx *ctx = user;
 	RRegItem *item = r_reg_get (anal->reg, regname, -1);
 	if (item) {
 		esil_reg_taint_add_item (ctx, item);
-		r_reg_set_value (anal->reg, item, 0);
 		r_unref (item);
 	}
 	return true;
@@ -5541,7 +5559,10 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (esilbreak_addr_tainted (esil, R_PERM_R)) {
 		esilbreak_last_read = UT64_MAX;
 		esilbreak_last_data = UT64_MAX;
-		return false;
+		if (buf && len > 0) {
+			memset (buf, 0, len);
+		}
+		return true;
 	}
 	RCore *core = esil->anal->coreb.core;
 	ut8 str[128];
@@ -5597,6 +5618,9 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 static bool esilbreak_reg_read(REsil *esil, const char *name, ut64 *res, int *size) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user && name, false);
 	EsilBreakCtx *ctx = esil->user;
+	if (esil_reg_taint_empty (ctx)) {
+		return false;
+	}
 	RRegItem *item = r_reg_get (esil->anal->reg, name, -1);
 	if (!item) {
 		return false;
@@ -5622,15 +5646,17 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
 	RCore *core = anal->coreb.core;
-	RRegItem *item = r_reg_get (anal->reg, name, -1);
-	if (item) {
-		if (ctx->read_clobbered) {
-			esil_reg_taint_add_item (ctx, item);
+	if (ctx->read_clobbered || !esil_reg_taint_empty (ctx)) {
+		RRegItem *item = r_reg_get (anal->reg, name, -1);
+		if (item) {
+			if (ctx->read_clobbered) {
+				esil_reg_taint_add_item (ctx, item);
+				r_unref (item);
+				return false;
+			}
+			esil_reg_taint_clear_item (ctx, item);
 			r_unref (item);
-			return false;
 		}
-		esil_reg_taint_clear_item (ctx, item);
-		r_unref (item);
 	}
 	handle_var_stack_access (esil, *val, R_PERM_NONE, esil->anal->config->bits / 8, false);
 	const bool is_arm = r_str_startswith (core->anal->config->arch, "arm");
@@ -6233,11 +6259,13 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		if (ctx.comment_reguse && ctx.read_tainted_reg[0]) {
 			esilbreak_comment_reguse (core->anal, cur, ctx.read_tainted_reg);
 		}
+		const bool skip_ref = ctx.read_clobbered;
+		if (skip_ref && esilbreak_skip_ref_op (op.type)) {
+			r_esil_stack_free (ESIL);
+			goto repeat;
+		}
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_LEA:
-			if (ctx.read_clobbered) {
-				break;
-			}
 			// arm64
 			if (cur && arch == R2_ARCH_ARM64) {
 				if (CHECKREF (ESIL->cur)) {
@@ -6283,9 +6311,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			}
 			break;
 		case R_ANAL_OP_TYPE_ADD:
-			if (ctx.read_clobbered) {
-				break;
-			}
 			/* TODO: test if this is valid for other archs too */
 			if (archIsArm) {
 				/* This code is known to work on Thumb, ARM and ARM64 */
@@ -6344,9 +6369,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			}
 			break;
 		case R_ANAL_OP_TYPE_LOAD:
-			if (ctx.read_clobbered) {
-				break;
-			}
 			{
 				ut64 dst = esilbreak_last_read;
 				if (dst != UT64_MAX && CHECKREF (dst)) {
@@ -6394,6 +6416,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				}
 			}
 			break;
+		case R_ANAL_OP_TYPE_RET:
+		case R_ANAL_OP_TYPE_CRET:
+			esil_reg_taint_clear_all (&ctx);
+			break;
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_ICALL:
@@ -6406,7 +6432,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				if (dst == 0 || dst == UT64_MAX) {
 					dst = r_reg_getv (core->anal->reg, "PC");
 				}
-				if (!ctx.read_clobbered && CHECKREF (dst)) {
+				if (!skip_ref && CHECKREF (dst)) {
 					if (myvalid (core, dst)) {
 						RAnalRefType ref =
 							(op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL

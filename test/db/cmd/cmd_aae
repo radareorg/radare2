@@ -38,6 +38,31 @@ false
 EOF
 RUN
 
+NAME=aae clears call-clobbered taint on ret
+FILE=malloc://0x400
+ARGS=-w -a x86 -b 64
+CMDS=<<EOF
+s 0x100
+wx 48c7c080010000e814000000c3
+s 0x10d
+wx 90909090909090909090909090909090909090
+s 0x120
+wx c3
+s 0x121
+wx 909090909090909090909090909090
+s 0x130
+wx 488d18c3
+s 0x100
+e anal.cc=amd64
+e anal.cc.clobber=true
+aae 0x34
+axq~0x00000130
+EOF
+EXPECT=<<EOF
+0x00000130 -> 0x00000180  STRN:r--
+EOF
+RUN
+
 NAME=aae names real stack vars storing call-clobbered regs
 FILE=bins/elf/truechin.so
 ARGS=-NN -A
