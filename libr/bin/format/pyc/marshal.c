@@ -76,7 +76,7 @@ static double get_float64(RBuffer *buffer, bool *error) {
 }
 
 static ut8 *get_bytes(RBuffer *buffer, ut32 size) {
-	if (size < 1 || size >= ST32_MAX) {
+	if (size >= ST32_MAX) {
 		return NULL;
 	}
 	ut8 *ret = R_NEWS0 (ut8, size + 1);
@@ -364,7 +364,7 @@ static pyc_object *get_binary_complex_object(RBuffer *buffer) {
 static pyc_object *get_string_object(RBuffer *buffer) {
 	bool error = false;
 	ut32 n = get_ut32 (buffer, &error);
-	if (!error && n > 0 && n < ST32_MAX) {
+	if (!error && n < ST32_MAX) {
 		ut8 *data = get_bytes (buffer, n);
 		if (data) {
 			pyc_object *ret = R_NEW0 (pyc_object);
@@ -380,7 +380,7 @@ static pyc_object *get_unicode_object(RBuffer *buffer) {
 	bool error = false;
 
 	ut32 n = get_ut32 (buffer, &error);
-	if (n < 1 || error || n > ST32_MAX) {
+	if (error || n > ST32_MAX) {
 		return NULL;
 	}
 	ut8 *data = get_bytes (buffer, n);
