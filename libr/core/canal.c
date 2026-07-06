@@ -5278,7 +5278,7 @@ static void esil_reg_taint_add_item(EsilBreakCtx *ctx, const RRegItem *item) {
 		}
 		const int taint_end = taint->offset + taint->size;
 		const int span_end = span.offset + span.size;
-		if (taint->offset <= span_end && span.offset <= taint_end) {
+		if (taint->offset < span_end && span.offset < taint_end) {
 			const int start = R_MIN (taint->offset, span.offset);
 			const int end = R_MAX (taint_end, span_end);
 			taint->offset = start;
@@ -5646,11 +5646,14 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
 	RCore *core = anal->coreb.core;
+	const char *pcname = r_reg_alias_getname (anal->reg, R_REG_ALIAS_PC);
 	if (ctx->read_clobbered || !esil_reg_taint_empty (ctx)) {
 		RRegItem *item = r_reg_get (anal->reg, name, -1);
 		if (item) {
 			if (ctx->read_clobbered) {
-				esil_reg_taint_add_item (ctx, item);
+				if (!pcname || strcmp (name, pcname)) {
+					esil_reg_taint_add_item (ctx, item);
+				}
 				r_unref (item);
 				return false;
 			}
