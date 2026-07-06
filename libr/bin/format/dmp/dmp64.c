@@ -3,51 +3,67 @@
 #include "dmp64.h"
 
 static int r_bin_dmp64_init_memory_runs(struct r_bin_dmp64_obj_t *obj) {
-	int i, j;
 	dmp64_p_memory_desc *mem_desc = &obj->header->PhysicalMemoryBlockBuffer;
 	if (!memcmp (mem_desc, DMP_UNUSED_MAGIC, 4)) {
 		R_LOG_WARN ("Invalid PhysicalMemoryDescriptor");
 		return false;
 	}
-	ut64 num_runs = mem_desc->NumberOfRuns;
-	if (num_runs < 1 || num_runs * sizeof (dmp_p_memory_run) >= r_offsetof (dmp64_header, ContextRecord)) {
+	const ut8 *mem_desc_buf = (const ut8 *)mem_desc;
+	ut32 num_runs = r_read_le32 (mem_desc_buf + r_offsetof (dmp64_p_memory_desc, NumberOfRuns));
+	ut64 expected_pages = r_read_le64 (mem_desc_buf + r_offsetof (dmp64_p_memory_desc, NumberOfPages));
+	ut64 runs_offset = r_offsetof (dmp64_header, PhysicalMemoryBlockBuffer) + r_offsetof (dmp64_p_memory_desc, Run);
+	ut64 max_runs_size = r_offsetof (dmp64_header, ContextRecord) - runs_offset;
+	ut64 runs_size = 0;
+	if (num_runs < 1 || r_mul_overflow ((ut64)num_runs, (ut64)sizeof (dmp_p_memory_run), &runs_size) || runs_size > max_runs_size) {
 		R_LOG_WARN ("Invalid PhysicalMemoryDescriptor");
 		return false;
 	}
-	obj->pages = r_list_newf (free);
-	dmp_p_memory_run *runs = calloc (num_runs, sizeof (dmp_p_memory_run));
-	if (!runs) {
+	ut64 file_size = r_buf_size (obj->b);
+	ut64 base = sizeof (dmp64_header);
+	if (file_size < base) {
+		R_LOG_WARN ("Invalid dump size");
 		return false;
 	}
-	ut64 runs_offset = r_offsetof (dmp64_header, PhysicalMemoryBlockBuffer) + r_offsetof (dmp64_p_memory_desc, Run);
-	// XXX this needs to care about endianness. use r_buf_fread or use r_read_ after that to validate boundaries
-	if (r_buf_read_at (obj->b, runs_offset, (ut8*)runs, num_runs * sizeof (dmp_p_memory_run)) < 0) {
-		R_LOG_WARN ("read memory runs");
-		free (runs);
-		return false;
-	};
+	ut64 max_file_pages = (file_size - base) / DMP_PAGE_SIZE;
+	obj->pages = r_list_newf (free);
 
 	ut64 num_page = 0;
-	ut64 base = sizeof (dmp64_header);
+	ut32 i;
 	for (i = 0; i < num_runs; i++) {
-		dmp_p_memory_run *run = &(runs[i]);
-		if (run->PageCount < 1 || run->PageCount >= ST32_MAX) {
-			continue;
+		ut8 run_buf[sizeof (dmp_p_memory_run)];
+		ut64 run_offset = runs_offset + (ut64)i * sizeof (dmp_p_memory_run);
+		if (r_buf_read_at (obj->b, run_offset, run_buf, sizeof (run_buf)) != sizeof (run_buf)) {
+			R_LOG_WARN ("read memory run");
+			return false;
 		}
-		int pcount = run->PageCount;
-		for (j = 0; j < pcount ; j++) {
+		ut64 base_page = r_read_le64 (run_buf + r_offsetof (dmp_p_memory_run, BasePage));
+		ut64 page_count = r_read_le64 (run_buf + r_offsetof (dmp_p_memory_run, PageCount));
+		if (page_count < 1 || num_page > max_file_pages || page_count > max_file_pages - num_page) {
+			R_LOG_WARN ("Invalid PageCount");
+			return false;
+		}
+		if (num_page >= ST32_MAX || page_count > (ut64)ST32_MAX - num_page) {
+			R_LOG_WARN ("Invalid PageCount");
+			return false;
+		}
+		ut64 last_page = 0;
+		if (r_add_overflow (base_page, page_count - 1, &last_page) || last_page > UT64_MAX / DMP_PAGE_SIZE) {
+			R_LOG_WARN ("Invalid PageCount");
+			return false;
+		}
+		ut64 j;
+		for (j = 0; j < page_count; j++) {
 			dmp_page_desc *page = R_NEW0 (dmp_page_desc);
-			page->start = (run->BasePage + j) * DMP_PAGE_SIZE;
+			page->start = (base_page + j) * DMP_PAGE_SIZE;
 			page->file_offset = base + num_page * DMP_PAGE_SIZE;
 			r_list_append (obj->pages, page);
 			num_page++;
 		}
 	}
-	if (mem_desc->NumberOfPages != num_page) {
+	if (expected_pages != num_page) {
 		R_LOG_WARN ("Number of Pages not matches");
 	}
 
-	free (runs);
 	return true;
 }
 
@@ -178,7 +194,9 @@ static int r_bin_dmp64_init(struct r_bin_dmp64_obj_t *obj) {
 		}
 		break;
 	case DMP_DUMPTYPE_FULL:
-		r_bin_dmp64_init_memory_runs (obj);
+		if (!r_bin_dmp64_init_memory_runs (obj)) {
+			return false;
+		}
 		break;
 	default:
 		break;
