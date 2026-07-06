@@ -1200,18 +1200,30 @@ static int visual_meta_delta(RCore *core, ut64 addr, int size) {
 		}
 		return R_MAX (1, (int)delta);
 	}
-	int i;
-	for (i = 1; i < size; i++) {
-		ut64 next = addr + i;
-		if (next < addr) {
-			break;
-		}
-		if (r_meta_get_at (core->anal, next, R_META_TYPE_DATA, NULL)
-				|| r_meta_get_at (core->anal, next, R_META_TYPE_STRING, NULL)) {
-			return i;
+	if (size < 2) {
+		return 0;
+	}
+	ut64 next = addr + 1;
+	if (next <= addr) {
+		return 0;
+	}
+	RVecIntervalNodePtr *metas = r_meta_get_all_intersect (core->anal, next, size - 1, R_META_TYPE_ANY);
+	if (!metas) {
+		return 0;
+	}
+	ut64 delta = 0;
+	RIntervalNode **it;
+	R_VEC_FOREACH (metas, it) {
+		RIntervalNode *node = *it;
+		RAnalMetaItem *mi = node->data;
+		if (mi && (mi->type == R_META_TYPE_DATA || mi->type == R_META_TYPE_STRING)
+				&& node->start > addr) {
+			ut64 d = node->start - addr;
+			delta = delta? R_MIN (delta, d): d;
 		}
 	}
-	return 0;
+	RVecIntervalNodePtr_free (metas);
+	return delta > INT_MAX? INT_MAX: (int)delta;
 }
 
 static ut64 visual_align_code(RCore *core, ut64 addr) {
