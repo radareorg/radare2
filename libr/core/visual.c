@@ -1178,96 +1178,47 @@ static void setprintmode(RCore *core, int n) {
 	}
 }
 
-static bool visual_meta_type(RAnalMetaType type) {
-	switch (type) {
-	case R_META_TYPE_DATA:
-	case R_META_TYPE_STRING:
-	case R_META_TYPE_FORMAT:
-	case R_META_TYPE_MAGIC:
-	case R_META_TYPE_HIDE:
-	case R_META_TYPE_RUN:
-		return true;
-	default:
-		return false;
+static int visual_meta_delta(RCore *core, ut64 addr, int size) {
+	if (size < 1) {
+		return 0;
 	}
-}
-
-static bool visual_meta_get_in(RCore *core, ut64 addr, ut64 *end) {
-	R_RETURN_VAL_IF_FAIL (core && core->anal, false);
-	RVecIntervalNodePtr *metas = r_meta_get_all_in (core->anal, addr, R_META_TYPE_ANY);
-	if (!metas) {
-		return false;
+	RIntervalNode *in = r_meta_get_in (core->anal, addr, R_META_TYPE_DATA);
+	if (!in) {
+		in = r_meta_get_in (core->anal, addr, R_META_TYPE_STRING);
 	}
-	RIntervalNode *fallback = NULL;
-	RIntervalNode **it;
-	R_VEC_FOREACH (metas, it) {
-		RIntervalNode *node = *it;
-		RAnalMetaItem *mi = node->data;
-		if (!mi || !visual_meta_type (mi->type)) {
-			continue;
+	if (in) {
+		ut64 delta = r_meta_node_size (in) - (addr - in->start);
+		const int hexcols = r_config_get_i (core->config, "hex.cols");
+		if (hexcols > 0 && delta > hexcols) {
+			delta = hexcols - (addr % hexcols);
+			if (delta < 1) {
+				delta = hexcols;
+			}
 		}
-		if (node->start == addr) {
-			fallback = node;
+		if (delta > INT_MAX) {
+			return INT_MAX;
+		}
+		return R_MAX (1, (int)delta);
+	}
+	int i;
+	for (i = 1; i < size; i++) {
+		ut64 next = addr + i;
+		if (next < addr) {
 			break;
 		}
-		if (!fallback || node->start > fallback->start) {
-			fallback = node;
+		if (r_meta_get_at (core->anal, next, R_META_TYPE_DATA, NULL)
+				|| r_meta_get_at (core->anal, next, R_META_TYPE_STRING, NULL)) {
+			return i;
 		}
 	}
-	bool found = fallback != NULL;
-	if (fallback) {
-		if (end) {
-			*end = fallback->end;
-		}
-	}
-	RVecIntervalNodePtr_free (metas);
-	return found;
-}
-
-static int visual_meta_delta(RCore *core, ut64 addr) {
-	ut64 end;
-	if (!visual_meta_get_in (core, addr, &end)) {
-		return 0;
-	}
-	if (end < addr) {
-		return 0;
-	}
-	ut64 delta = end - addr + 1;
-	if (delta > 1) {
-		RVecIntervalNodePtr *metas = r_meta_get_all_intersect (core->anal,
-			addr + 1, delta - 1, R_META_TYPE_ANY);
-		if (metas) {
-			RIntervalNode **it;
-			R_VEC_FOREACH (metas, it) {
-				RIntervalNode *next = *it;
-				RAnalMetaItem *mi = next->data;
-				if (mi && visual_meta_type (mi->type) &&
-						next->start > addr && next->start <= end) {
-					delta = next->start - addr;
-				}
-			}
-			RVecIntervalNodePtr_free (metas);
-		}
-	}
-	const int hexcols = r_config_get_i (core->config, "hex.cols");
-	if (hexcols > 0 && delta > hexcols) {
-		int pad = addr % hexcols;
-		delta = hexcols - pad;
-		if (delta < 1) {
-			delta = hexcols;
-		}
-	}
-	if (delta > INT_MAX) {
-		return INT_MAX;
-	}
-	return R_MAX (1, (int)delta);
+	return 0;
 }
 
 static ut64 visual_align_code(RCore *core, ut64 addr) {
 	if (addr == UT64_MAX) {
 		return addr;
 	}
-	if (visual_meta_get_in (core, addr, NULL)) {
+	if (visual_meta_delta (core, addr, 1) > 0) {
 		return addr;
 	}
 	const int codealign = core->anal->config->codealign;
@@ -1275,10 +1226,8 @@ static ut64 visual_align_code(RCore *core, ut64 addr) {
 		const int mod = addr % codealign;
 		if (mod) {
 			ut64 aligned = addr - mod;
-			if (visual_meta_get_in (core, aligned, NULL)) {
-				return addr;
-			}
-			addr = aligned;
+			int delta = visual_meta_delta (core, aligned, codealign);
+			addr = delta > mod? aligned + delta: aligned;
 		}
 	}
 	return addr;
@@ -3628,24 +3577,19 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 				} else {
 					int times = R_MAX (1, wheelspeed);
-					int metadelta = visual_meta_delta (core, core->addr);
-					if (metadelta > 0) {
-						r_core_seek_delta (core, metadelta);
-					} else {
-						int distance = numbuf_pull (core);
-						if (distance > 1) {
-							times = distance;
+					int distance = numbuf_pull (core);
+					if (distance > 1) {
+						times = distance;
+					}
+					while (times--) {
+						RAnalOp op;
+						if (isVisualDisasm (core)) {
+							r_core_visual_disasm_down (core, &op, &cols);
+							r_anal_op_fini (&op);
+						} else if (!strcmp (vprintcmd (core), "prc")) {
+							cols = r_config_get_i (core->config, "hex.cols");
 						}
-						while (times--) {
-							RAnalOp op;
-							if (isVisualDisasm (core)) {
-								r_core_visual_disasm_down (core, &op, &cols);
-								r_anal_op_fini (&op);
-							} else if (!strcmp (vprintcmd (core), "prc")) {
-								cols = r_config_get_i (core->config, "hex.cols");
-							}
-							r_core_seek (core, core->addr + cols, true);
-						}
+						r_core_seek (core, core->addr + cols, true);
 					}
 				}
 			}
@@ -4855,6 +4799,10 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 		}
 	}
 	int nvars = varcount (core, f);
+	int delta = visual_meta_delta (core, orig, *cols);
+	if (delta > 0) {
+		*cols = delta;
+	}
 	if (f && f->addr == orig && nvars < 20) {
 		// skip line by line here
 		if (nvars <= core->skiplines) {
