@@ -76,6 +76,9 @@ static double get_float64(RBuffer *buffer, bool *error) {
 }
 
 static ut8 *get_bytes(RBuffer *buffer, ut32 size) {
+	if (size >= ST32_MAX) {
+		return NULL;
+	}
 	ut8 *ret = R_NEWS0 (ut8, size + 1);
 	if (ret && r_buf_read (buffer, ret, size) < size) {
 		free (ret);
@@ -330,11 +333,11 @@ static pyc_object *get_complex_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
 	} else {
 		n1 = get_st32 (buffer, &error);
 	}
-	if (error || n1 < 1) {
+	if (error || n1 < 1 || n1 >= ST32_MAX) {
 		free (ret);
 		return NULL;
 	}
-	ut8 *s1 = malloc (n1 + 1);
+	ut8 *s1 = malloc ((ut32)n1 + 1);
 	if (!s1) {
 		free (ret);
 		return NULL;
@@ -353,11 +356,15 @@ static pyc_object *get_complex_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
 	} else {
 		n2 = get_st32 (buffer, &error);
 	}
-	if (error || n2 < 1) {
+	if (error || n2 < 1 || n2 >= ST32_MAX) {
+		R_FREE (s1);
+		R_FREE (ret);
 		return NULL;
 	}
-	ut8 *s2 = malloc (n2 + 1);
+	ut8 *s2 = malloc ((ut32)n2 + 1);
 	if (!s2) {
+		R_FREE (s1);
+		R_FREE (ret);
 		return NULL;
 	}
 	/* object contain string representation of the number */
