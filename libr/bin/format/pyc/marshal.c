@@ -531,48 +531,56 @@ static pyc_object *get_set_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
 	return ret;
 }
 
-static pyc_object *get_ascii_object_generic(RBuffer *buffer, ut32 size, bool interned) {
+static pyc_object *get_ascii_object_generic(PycUnmarshalCtx *ctx, RBuffer *buffer, ut32 size, bool interned) {
 	ut8 *data = get_bytes (buffer, size);
 	if (data) {
 		pyc_object *ret = R_NEW0 (pyc_object);
 		ret->type = TYPE_ASCII;
 		ret->data = data;
+		if (interned && ctx && ctx->interned_table) {
+			if (!r_list_append (ctx->interned_table, ret->data)) {
+				R_LOG_DEBUG ("bad marshal data (interned table append failed)");
+				R_FREE (ret->data);
+				R_FREE (ret);
+				return NULL;
+			}
+		}
 		return ret;
 	}
 	return NULL;
 }
 
-static pyc_object *get_ascii_object(RBuffer *buffer) {
+static pyc_object *get_ascii_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
 	bool error = false;
 	ut32 n = get_ut32 (buffer, &error);
 	if (error) {
 		return NULL;
 	}
-	return get_ascii_object_generic (buffer, n, true);
+	return get_ascii_object_generic (ctx, buffer, n, false);
 }
 
-static pyc_object *get_ascii_interned_object(RBuffer *buffer) {
+static pyc_object *get_ascii_interned_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
 	bool error = false;
 	ut32 n = get_ut32 (buffer, &error);
 	if (error) {
 		return NULL;
 	}
-	return get_ascii_object_generic (buffer, n, true);
+	return get_ascii_object_generic (ctx, buffer, n, true);
 }
 
-static pyc_object *get_short_ascii_object(RBuffer *buffer) {
+static pyc_object *get_short_ascii_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
 	bool error = false;
 	ut8 n = get_ut8 (buffer, &error);
 	if (error) {
 		return NULL;
 	}
-	return get_ascii_object_generic (buffer, n, false);
+	return get_ascii_object_generic (ctx, buffer, n, false);
 }
 
-static pyc_object *get_short_ascii_interned_object(RBuffer *buffer) {
+static pyc_object *get_short_ascii_interned_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
 	bool error = false;
 	ut8 n = get_ut8 (buffer, &error);
-	return error? NULL: get_ascii_object_generic (buffer, n, true);
+	return error? NULL: get_ascii_object_generic (ctx, buffer, n, true);
 }
 
 static pyc_object *get_ref_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
@@ -952,16 +960,16 @@ static pyc_object *get_object(PycUnmarshalCtx *ctx, RBuffer *buffer, int wanted_
 		ret = get_int_object (buffer);
 		break;
 	case TYPE_ASCII_INTERNED:
-		ret = get_ascii_interned_object (buffer);
+		ret = get_ascii_interned_object (ctx, buffer);
 		break;
 	case TYPE_SHORT_ASCII:
-		ret = get_short_ascii_object (buffer);
+		ret = get_short_ascii_object (ctx, buffer);
 		break;
 	case TYPE_ASCII:
-		ret = get_ascii_object (buffer);
+		ret = get_ascii_object (ctx, buffer);
 		break;
 	case TYPE_SHORT_ASCII_INTERNED:
-		ret = get_short_ascii_interned_object (buffer);
+		ret = get_short_ascii_interned_object (ctx, buffer);
 		break;
 	case TYPE_INT64:
 		ret = get_int64_object (buffer);
@@ -1049,6 +1057,9 @@ static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RLis
 		return false;
 	}
 	RBinSection *section = R_NEW0 (RBinSection);
+	if (!section) {
+		goto fail;
+	}
 	prefix = r_str_newf ("%s%s%s", r_str_get (prefix),
 		prefix? ".": "", (const char *)cobj->name->data);
 	if (!prefix) {
@@ -1058,10 +1069,14 @@ static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RLis
 	if (!section->name) {
 		goto fail;
 	}
+	if (cobj->end_offset <= cobj->start_offset) {
+		goto fail;
+	}
+	const ut64 size = (ut64)(cobj->end_offset - cobj->start_offset);
 	section->paddr = cobj->start_offset;
 	section->vaddr = cobj->start_offset;
-	section->size = cobj->end_offset - cobj->start_offset;
-	section->vsize = cobj->end_offset - cobj->start_offset;
+	section->size = size;
+	section->vsize = size;
 	if (!r_list_append (sections, section)) {
 		goto fail;
 	}
@@ -1072,7 +1087,7 @@ static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RLis
 	RBinSymbol *symbol = RVecRBinSymbol_emplace_back (symbols);
 	symbol->name = r_bin_name_new (prefix);
 	symbol->type = R_BIN_TYPE_FUNC_STR;
-	symbol->size = cobj->end_offset - cobj->start_offset;
+	symbol->size = size;
 	symbol->vaddr = cobj->start_offset;
 	symbol->paddr = cobj->start_offset;
 	symbol->ordinal = ctx->scount++;
