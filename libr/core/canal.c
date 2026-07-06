@@ -5233,6 +5233,7 @@ typedef struct {
 	RVecEsilRegTaint reg_taints;
 	char read_tainted_reg[64];
 	bool read_clobbered;
+	bool read_clean_mem;
 	bool comment_reguse;
 } EsilBreakCtx;
 
@@ -5569,6 +5570,7 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	ut8 str[128];
 	if (addr != UT64_MAX) {
 		esilbreak_last_read = addr;
+		ctx->read_clean_mem = true;
 	}
 	handle_var_stack_access (esil, addr, R_PERM_R, len, false);
 	if (myvalid (core, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
@@ -5652,7 +5654,9 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 		RRegItem *item = r_reg_get (anal->reg, name, -1);
 		if (item) {
 			if (ctx->read_clobbered) {
-				if (!pcname || strcmp (name, pcname)) {
+				if (ctx->read_clean_mem && (op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_LOAD) {
+					esil_reg_taint_clear_item (ctx, item);
+				} else if (!pcname || strcmp (name, pcname)) {
 					esil_reg_taint_add_item (ctx, item);
 				}
 				r_unref (item);
@@ -6255,6 +6259,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			r_reg_setv (core->anal->reg, gp_reg, gp);
 		}
 		ctx.read_clobbered = false;
+		ctx.read_clean_mem = false;
 		ctx.read_tainted_reg[0] = 0;
 		if (ctx.comment_reguse) {
 			esilbreak_find_tainted_reg (core->anal, &ctx, esilstr);
