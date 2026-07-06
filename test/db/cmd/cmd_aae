@@ -38,6 +38,25 @@ false
 EOF
 RUN
 
+NAME=aae keeps write xrefs to constant addresses after calls
+FILE=malloc://0x400
+ARGS=-w -a x86 -b 64
+CMDS=<<EOF
+s 0x100
+wx e80b00000089042500020000c3
+s 0x110
+wx c3
+s 0x100
+e anal.cc=amd64
+e anal.cc.clobber=true
+aae 0x10
+axq~0x00000200
+EOF
+EXPECT=<<EOF
+0x00000105 -> 0x00000200  DATA:-w-
+EOF
+RUN
+
 NAME=aae clears call-clobbered taint on ret
 FILE=malloc://0x400
 ARGS=-w -a x86 -b 64

@@ -5459,16 +5459,21 @@ static bool is_stack(RIO *io, ut64 addr) {
 	return false;
 }
 
+// only taint on the address register matters here: a stale stored value does
+// not make the write target wrong. when the destination operand is unknown
+// (op->dsts is only filled for some archs in this loop) do not suppress:
+// tainted reads evaluate as zero, so a stale address degrades to the bare
+// displacement, which the myvalid() check filters out
 static bool esilbreak_addr_tainted(REsil *esil, RPerm type) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
 	EsilBreakCtx *ctx = esil->user;
 	const char *regname = reg_name_for_access (ctx->op, type);
 	if (!regname) {
-		return ctx->read_clobbered;
+		return false;
 	}
 	RRegItem *item = r_reg_get (esil->anal->reg, regname, -1);
 	if (!item) {
-		return ctx->read_clobbered;
+		return false;
 	}
 	const bool tainted = esil_reg_taint_has_item (ctx, item);
 	r_unref (item);
