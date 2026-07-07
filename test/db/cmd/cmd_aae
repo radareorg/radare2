@@ -57,6 +57,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aae zeroing idioms clear the clobber taint
+FILE=malloc://0x400
+ARGS=-w -a x86 -b 64
+CMDS=<<EOF
+s 0x100
+wx 48c7c080010000e81400000031c0488d9880010000c3
+s 0x120
+wx c3
+s 0x100
+e anal.cc=amd64
+e anal.cc.clobber=true
+aae 0x20
+axq~0x00000180
+?e --
+ax-*
+s 0x100
+wx 48c7c080010000e8140000004889c3488d9b80010000c3
+aae 0x20
+axq~STRN
+?e --
+EOF
+EXPECT=<<EOF
+0x0000010e -> 0x00000180  STRN:r--
+--
+--
+EOF
+RUN
+
 NAME=aae honors call clobbers with emu.lazy
 FILE=malloc://0x400
 ARGS=-w -a x86 -b 64

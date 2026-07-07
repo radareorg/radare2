@@ -5231,10 +5231,12 @@ typedef struct {
 	char *spname;
 	ut64 initial_sp;
 	RVecEsilRegTaint reg_taints;
+	EsilRegTaint read_tainted_span;
+	int read_tainted_reads;
+	bool read_tainted_other;
 	char read_tainted_reg[64];
 	bool read_clobbered;
 	bool read_clean_mem;
-	bool comment_reguse;
 } EsilBreakCtx;
 
 typedef int RPerm;
@@ -5480,38 +5482,28 @@ static bool esilbreak_addr_tainted(REsil *esil, RPerm type) {
 	return tainted;
 }
 
-static bool esilbreak_note_tainted_reg(EsilBreakCtx *ctx, const char *regname) {
-	if (!*regname) {
-		return false;
-	}
+static void esilbreak_note_tainted_read(EsilBreakCtx *ctx, const char *regname, const RRegItem *item) {
 	if (!ctx->read_tainted_reg[0]) {
 		r_str_ncpy (ctx->read_tainted_reg, regname, sizeof (ctx->read_tainted_reg));
+		ctx->read_tainted_span.arena = item->arena;
+		ctx->read_tainted_span.offset = item->offset;
+		ctx->read_tainted_span.size = item->size;
+	} else if (!esil_reg_taint_overlap_item (&ctx->read_tainted_span, item)) {
+		ctx->read_tainted_other = true;
 	}
-	return true;
+	ctx->read_tainted_reads++;
 }
 
-static bool esilbreak_find_tainted_reg(RAnal *anal, EsilBreakCtx *ctx, const char *esilstr) {
-	char *s = strdup (esilstr);
-	if (!s) {
-		return false;
+// v^v and v-v do not depend on v: a xor or sub that combines the overwritten
+// register with itself defines a clean value, like the "xor eax, eax" idiom
+static bool esilbreak_erasing_write(EsilBreakCtx *ctx, const RAnalOp *op, const RRegItem *item) {
+	switch (op->type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND) {
+	case R_ANAL_OP_TYPE_XOR:
+	case R_ANAL_OP_TYPE_SUB:
+		return ctx->read_tainted_reads > 1 && !ctx->read_tainted_other
+			&& esil_reg_taint_overlap_item (&ctx->read_tainted_span, item);
 	}
-	bool found = false;
-	char *save_ptr = NULL;
-	char *tok = r_str_tok_r (s, ",", &save_ptr);
-	while (tok) {
-		RRegItem *item = r_reg_get (anal->reg, tok, -1);
-		if (item) {
-			if (esil_reg_taint_has_item (ctx, item)) {
-				found = esilbreak_note_tainted_reg (ctx, tok);
-				r_unref (item);
-				break;
-			}
-			r_unref (item);
-		}
-		tok = r_str_tok_r (NULL, ",", &save_ptr);
-	}
-	free (s);
-	return found;
+	return false;
 }
 
 static void esilbreak_comment_reguse(RAnal *anal, ut64 addr, const char *regname) {
@@ -5636,7 +5628,7 @@ static bool esilbreak_reg_read(REsil *esil, const char *name, ut64 *res, int *si
 	const bool tainted = esil_reg_taint_has_item (ctx, item);
 	if (tainted) {
 		ctx->read_clobbered = true;
-		esilbreak_note_tainted_reg (ctx, name);
+		esilbreak_note_tainted_read (ctx, name, item);
 		if (res) {
 			*res = 0;
 		}
@@ -5681,7 +5673,8 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 			if (ctx->read_clobbered) {
 				// strip the COND bit: if this hook fired for a conditional
 				// load then the esil condition held and the load did happen
-				if (ctx->read_clean_mem && (op->type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND) == R_ANAL_OP_TYPE_LOAD) {
+				if ((ctx->read_clean_mem && (op->type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND) == R_ANAL_OP_TYPE_LOAD)
+						|| esilbreak_erasing_write (ctx, op, item)) {
 					esil_reg_taint_clear_item (ctx, item);
 				} else if (!esil_reg_item_is_pc (anal, item)) {
 					esil_reg_taint_add_item (ctx, item);
@@ -6092,7 +6085,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		.fcn = fcn,
 		.spname = spname,
 		.initial_sp = r_reg_getv (core->anal->reg, spname),
-		.comment_reguse = asm_cmt_reguse,
 	};
 	RVecEsilRegTaint_init (&ctx.reg_taints);
 	ESIL->cb.hook_reg_read = &esilbreak_reg_read;
@@ -6305,12 +6297,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		}
 		ctx.read_clobbered = false;
 		ctx.read_clean_mem = false;
+		ctx.read_tainted_other = false;
+		ctx.read_tainted_reads = 0;
 		ctx.read_tainted_reg[0] = 0;
-		if (ctx.comment_reguse) {
-			esilbreak_find_tainted_reg (core->anal, &ctx, esilstr);
-		}
 		(void)r_esil_parse (ESIL, esilstr);
-		if (ctx.comment_reguse && ctx.read_tainted_reg[0]) {
+		if (asm_cmt_reguse && ctx.read_tainted_reg[0]) {
 			esilbreak_comment_reguse (core->anal, cur, ctx.read_tainted_reg);
 		}
 		const bool skip_ref = ctx.read_clobbered;
