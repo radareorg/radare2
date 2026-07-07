@@ -5679,7 +5679,9 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 		RRegItem *item = r_reg_get (anal->reg, name, -1);
 		if (item) {
 			if (ctx->read_clobbered) {
-				if (ctx->read_clean_mem && (op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_LOAD) {
+				// strip the COND bit: if this hook fired for a conditional
+				// load then the esil condition held and the load did happen
+				if (ctx->read_clean_mem && (op->type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND) == R_ANAL_OP_TYPE_LOAD) {
 					esil_reg_taint_clear_item (ctx, item);
 				} else if (!esil_reg_item_is_pc (anal, item)) {
 					esil_reg_taint_add_item (ctx, item);
@@ -6480,10 +6482,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				if (dst == 0 || dst == UT64_MAX) {
 					dst = r_reg_getv (core->anal->reg, "PC");
 				}
+				// the type mask preserves the COND bit, strip it too so
+				// conditional variants like UCCALL are handled as calls
+				const int utype = op.type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND;
 				if (!skip_ref && CHECKREF (dst)) {
 					if (myvalid (core, dst)) {
-						RAnalRefType ref =
-							(op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL
+						RAnalRefType ref = utype == R_ANAL_OP_TYPE_UCALL
 							? R_ANAL_REF_TYPE_CALL
 							: R_ANAL_REF_TYPE_CODE;
 						r_anal_xrefs_setf (core->anal, fcn, cur, dst, ref | R_ANAL_REF_TYPE_EXEC);
@@ -6492,7 +6496,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 						}
 					}
 				}
-				switch (op.type & R_ANAL_OP_TYPE_MASK) {
+				switch (utype) {
 				case R_ANAL_OP_TYPE_UCALL:
 				case R_ANAL_OP_TYPE_ICALL:
 				case R_ANAL_OP_TYPE_RCALL:
