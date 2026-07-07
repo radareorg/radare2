@@ -997,7 +997,6 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		} else {
 			rarch2_list (as, opt.argv[opt.ind]);
 		}
-		ret = 1;
 		goto beach;
 	}
 
