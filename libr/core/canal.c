@@ -5231,6 +5231,8 @@ typedef struct {
 	char *spname;
 	ut64 initial_sp;
 	RVecEsilRegTaint reg_taints;
+	EsilRegTaint pc_span;
+	bool pc_span_valid;
 	EsilRegTaint read_tainted_span;
 	int read_tainted_reads;
 	bool read_tainted_other;
@@ -5339,6 +5341,16 @@ static bool esil_reg_taint_empty(EsilBreakCtx *ctx) {
 
 static void esil_reg_taint_clear_all(EsilBreakCtx *ctx) {
 	RVecEsilRegTaint_clear (&ctx->reg_taints);
+}
+
+static void esilbreak_ctx_fini(REsil *esil, EsilBreakCtx *ctx) {
+	esil->cb.hook_mem_read = NULL;
+	esil->cb.hook_mem_write = NULL;
+	esil->cb.hook_reg_read = NULL;
+	esil->cb.hook_reg_write = NULL;
+	esil->user = NULL;
+	RVecEsilRegTaint_fini (&ctx->reg_taints);
+	free (ctx->spname);
 }
 
 static bool esilbreak_skip_ref_op(int type) {
@@ -5469,6 +5481,9 @@ static bool is_stack(RIO *io, ut64 addr) {
 static bool esilbreak_addr_tainted(REsil *esil, RPerm type) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
 	EsilBreakCtx *ctx = esil->user;
+	if (esil_reg_taint_empty (ctx)) {
+		return false;
+	}
 	const char *regname = reg_name_for_access (ctx->op, type);
 	if (!regname) {
 		return false;
@@ -5642,7 +5657,7 @@ static bool esilbreak_reg_read(REsil *esil, const char *name, ut64 *res, int *si
 
 // compare register storage instead of names: esil expressions use "pc"
 // while the profile alias can resolve to another name like "r15" on arm
-static bool esil_reg_item_is_pc(RAnal *anal, const RRegItem *item) {
+static bool esil_reg_pc_span(RAnal *anal, EsilRegTaint *span) {
 	const char *pcname = r_reg_alias_getname (anal->reg, R_REG_ALIAS_PC);
 	if (R_STR_ISEMPTY (pcname)) {
 		return false;
@@ -5651,14 +5666,15 @@ static bool esil_reg_item_is_pc(RAnal *anal, const RRegItem *item) {
 	if (!pc) {
 		return false;
 	}
-	EsilRegTaint span = {
-		.arena = pc->arena,
-		.offset = pc->offset,
-		.size = pc->size,
-	};
-	const bool is_pc = esil_reg_taint_overlap_item (&span, item);
+	span->arena = pc->arena;
+	span->offset = pc->offset;
+	span->size = pc->size;
 	r_unref (pc);
-	return is_pc;
+	return true;
+}
+
+static bool esil_reg_item_is_pc(EsilBreakCtx *ctx, const RRegItem *item) {
+	return ctx->pc_span_valid && esil_reg_taint_overlap_item (&ctx->pc_span, item);
 }
 
 static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
@@ -5676,7 +5692,7 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 				if ((ctx->read_clean_mem && (op->type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND) == R_ANAL_OP_TYPE_LOAD)
 						|| esilbreak_erasing_write (ctx, op, item)) {
 					esil_reg_taint_clear_item (ctx, item);
-				} else if (!esil_reg_item_is_pc (anal, item)) {
+				} else if (!esil_reg_item_is_pc (ctx, item)) {
 					esil_reg_taint_add_item (ctx, item);
 				}
 				r_unref (item);
@@ -6087,6 +6103,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		.initial_sp = r_reg_getv (core->anal->reg, spname),
 	};
 	RVecEsilRegTaint_init (&ctx.reg_taints);
+	ctx.pc_span_valid = esil_reg_pc_span (core->anal, &ctx.pc_span);
 	ESIL->cb.hook_reg_read = &esilbreak_reg_read;
 	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
 	//this is necessary for the hook to read the id of analop
@@ -6149,13 +6166,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	buf = malloc (buf_size);
 	if (!buf) {
 		free (sn);
-		free (spname);
-		ESIL->cb.hook_mem_read = NULL;
-		ESIL->cb.hook_mem_write = NULL;
-		ESIL->cb.hook_reg_read = NULL;
-		ESIL->cb.hook_reg_write = NULL;
-		ESIL->user = NULL;
-		RVecEsilRegTaint_fini (&ctx.reg_taints);
+		esilbreak_ctx_fini (ESIL, &ctx);
 		r_cons_break_pop (core->cons);
 		r_reg_arena_pop (core->anal->reg);
 		return;
@@ -6521,17 +6532,11 @@ repeat:
 		}
 	} while (get_next_i (&ictx, &i));
 	free (sn);
-	free (spname);
 	r_list_free (ictx.bbl);
 	r_list_free (ictx.path);
 	r_list_free (ictx.switch_path);
 	free (buf);
-	ESIL->cb.hook_mem_read = NULL;
-	ESIL->cb.hook_mem_write = NULL;
-	ESIL->cb.hook_reg_read = NULL;
-	ESIL->cb.hook_reg_write = NULL;
-	ESIL->user = NULL;
-	RVecEsilRegTaint_fini (&ctx.reg_taints);
+	esilbreak_ctx_fini (ESIL, &ctx);
 	r_anal_op_fini (&op);
 	r_cons_break_pop (core->cons);
 	r_reg_arena_pop (core->anal->reg);
