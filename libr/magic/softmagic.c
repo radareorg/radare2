@@ -1069,8 +1069,8 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut32 *min
 
 		if ((m->flag & BINTEST) != mode) {
 			/* Skip sub-tests */
-			while (magic[magindex + 1].cont_level != 0 && ++magindex < nmagic - 1) {
-				continue;
+			while (magindex < nmagic - 1 && magic[magindex + 1].cont_level != 0) {
+				magindex++;
 			}
 			continue; /* Skip to next top-level test*/
 		}
