@@ -4184,6 +4184,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETS ("types.spec", "gcc", "set profile for specifying format chars used in type analysis");
 	SETB ("types.verbose", "false", "verbose output from type analysis");
 	SETB ("types.constraint", "false", "enable constraint types analysis for variables");
+	SETB ("types.fields", "false", "propagate callee types into struct and union members during type analysis");
 	SETB ("types.rollback", "false", "enable state rollback for type propagation recovery");
 	SETB ("types.synth", "false", "synthesize struct types for untyped pointer args after type matching (see afts)");
 	SETB ("types.xrefs", "true", "show xrefs in type view commands (tv, tfv, tsv, ...)");

@@ -628,17 +628,13 @@ static bool emit_typedef_forward(KVCParser *kvc, const char *kind, const char *t
 	}
 	alias.b = kvc->s.a;
 	char *alias_str = r_strs_tostring (alias);
-	if (ptr_depth > 0) {
-		char *ptrs = make_ptr_suffix (ptr_depth);
-		char *target = r_str_newf ("%s %s%s", kind, tag_str, ptrs);
-		r_strbuf_appendf (kvc->sb, "typedef.%s=%s\n", alias_str, target);
-		r_strbuf_appendf (kvc->sb, "%s=typedef\n", alias_str);
-		kvc_register_typedef (kvc, alias_str, target);
-		free (target);
-		free (ptrs);
-	} else {
-		r_strbuf_appendf (kvc->sb, "typedef.%s=%s %s\n", alias_str, kind, tag_str);
-	}
+	char *ptrs = make_ptr_suffix (ptr_depth);
+	char *target = r_str_newf ("%s %s%s", kind, tag_str, ptrs);
+	r_strbuf_appendf (kvc->sb, "typedef.%s=%s\n", alias_str, target);
+	r_strbuf_appendf (kvc->sb, "%s=typedef\n", alias_str);
+	kvc_register_typedef (kvc, alias_str, target);
+	free (target);
+	free (ptrs);
 	free (alias_str);
 	skip_ws (kvc);
 	return true;

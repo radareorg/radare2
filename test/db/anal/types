@@ -37,3 +37,988 @@ var int64_t var_10h @ sp+0x10
 \           0x100003f9c      c0035fd6       ret
 EOF
 RUN
+
+NAME=struct field type propagation from callee prototype
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rax, [rdi+8]
+wa mov rdi, rax @ 4
+wa call 0x20 @ 7
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  char *field_8;
+};
+EOF
+RUN
+
+NAME=struct field type propagation through nested struct pointers
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rax, [rdi+8]
+wa mov rax, [rax+0x10] @ 4
+wa mov rdi, rax @ 8
+wa call 0x20 @ 0xb
+wa ret @ 0x10
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Inner { char pad2[16]; int field_16; };"
+"td struct Outer { char pad[8]; struct Inner *inner; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "struct Outer *" @ 0
+aei
+aeim
+aaft
+aaft
+tsc Outer
+tsc Inner
+EOF
+EXPECT=<<EOF
+struct Outer {
+  char pad[8];
+  struct Inner *inner;
+};
+struct Inner {
+  char pad2[16];
+  char *field_16;
+};
+EOF
+RUN
+
+NAME=struct field type propagation through callee-saved pointer copy
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rbx, rdi
+wa mov rdi, [rbx+8] @ 3
+wa call 0x20 @ 7
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  char *field_8;
+};
+EOF
+RUN
+
+NAME=struct field type propagation through typedef pointer
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rax, [rdi+8]
+wa mov rdi, rax @ 4
+wa call 0x20 @ 7
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+"td typedef struct Ctx CtxAlias;"
+afs int helper(char *s) @ 0x20
+afvt arg1 "CtxAlias *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  char *field_8;
+};
+EOF
+RUN
+
+NAME=struct field type propagation folds lea displacement into the deref
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa lea rax, [rdi+8]
+wa mov rdi, [rax+0x10] @ 4
+wa call 0x20 @ 8
+wa ret @ 0xd
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Big { char pad[16]; int a; int a2; int b; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "struct Big *" @ 0
+aei
+aeim
+aaft
+tsc Big
+EOF
+EXPECT=<<EOF
+struct Big {
+  char pad[16];
+  int a;
+  int a2;
+  char *b;
+};
+EOF
+RUN
+
+NAME=struct field type propagation folds lea displacement across nested structs
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa lea rax, [rdi+8]
+wa mov rax, [rax+0x10] @ 4
+wa mov rdi, [rax+4] @ 8
+wa call 0x20 @ 0xc
+wa ret @ 0x11
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Inner { char c[4]; int y; };"
+"td struct Outer { char pad[16]; char pad2[8]; struct Inner *inner; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "struct Outer *" @ 0
+aei
+aeim
+aaft
+tsc Outer
+tsc Inner
+EOF
+EXPECT=<<EOF
+struct Outer {
+  char pad[16];
+  char pad2[8];
+  struct Inner *inner;
+};
+struct Inner {
+  char c[4];
+  char *y;
+};
+EOF
+RUN
+
+NAME=struct field type propagation through a spilled pointer reload
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov [rsp+0x10], rdi
+wa mov rax, [rsp+0x10] @ 5
+wa mov rax, [rax+8] @ 0xa
+wa mov rdi, rax @ 0xe
+wa call 0x20 @ 0x11
+wa ret @ 0x16
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+afs int helper(char *s) @ 0x20
+afvt arg_10h "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  char *field_8;
+};
+EOF
+RUN
+
+NAME=no struct field propagation when the base pointer is modified arithmetically
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa add rax, rdi
+wa mov rdi, [rax+0x10] @ 3
+wa call 0x20 @ 7
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[16]; int a; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[16];
+  int a;
+};
+EOF
+RUN
+
+NAME=array struct member not retyped by field propagation
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rax, [rdi]
+wa mov rdi, rax @ 3
+wa call 0x20 @ 6
+wa ret @ 0xb
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  int field_8;
+};
+EOF
+RUN
+
+NAME=no struct field propagation through stack pointer reloads
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov [rsp+0x10], rdi
+wa mov rax, [rsp+0x10] @ 5
+wa mov rdi, rax @ 0xa
+wa call 0x20 @ 0xd
+wa ret @ 0x12
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[16]; int a; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+afv-arg_10h @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[16];
+  int a;
+};
+EOF
+RUN
+
+NAME=struct field type not downgraded by weaker callee type
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rax, [rdi+8]
+wa mov rdi, rax @ 4
+wa call 0x20 @ 7
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; char *field_8; };"
+afs int helper(void *p) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  char *field_8;
+};
+EOF
+RUN
+
+NAME=struct field void pointer upgraded to char pointer
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rax, [rdi+8]
+wa mov rdi, rax @ 4
+wa call 0x20 @ 7
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; void *field_8; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  char *field_8;
+};
+EOF
+RUN
+
+NAME=struct field retype rejected when it would overlap next member
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rax, [rdi+8]
+wa mov rdi, rax @ 4
+wa call 0x20 @ 7
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Pair { char pad[8]; int a; int b; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "struct Pair *" @ 0
+aei
+aeim
+aaft
+tsc Pair
+EOF
+EXPECT=<<EOF
+struct Pair {
+  char pad[8];
+  int a;
+  int b;
+};
+EOF
+RUN
+
+NAME=struct field typed from callee return value stored into it
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rbx, rdi
+wa call 0x20 @ 3
+wa mov [rbx+8], rax @ 8
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+"td char *helper();"
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  char *field_8;
+};
+EOF
+RUN
+
+NAME=struct field typed from address passed as out parameter
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa lea rax, [rdi+8]
+wa mov rdi, rax @ 4
+wa call 0x20 @ 7
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Thing { int x; };"
+"td struct Ctx { char pad[8]; int field_8; };"
+afs int helper(struct Thing **out) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  struct Thing *field_8;
+};
+EOF
+RUN
+
+NAME=struct field keeps const from prototype when never written
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rax, [rdi+8]
+wa mov rdi, rax @ 4
+wa call 0x20 @ 7
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+afs int helper(const char *s) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  const char *field_8;
+};
+EOF
+RUN
+
+NAME=struct field const dropped when a write to it is observed
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov [rdi+8], rcx
+wa mov rax, [rdi+8] @ 4
+wa mov rdi, rax @ 8
+wa call 0x20 @ 0xb
+wa ret @ 0x10
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+afs int helper(const char *s) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  char *field_8;
+};
+EOF
+RUN
+
+NAME=struct field const dropped when a return value is stored into it
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rbx, rdi
+wa call 0x20 @ 3
+wa mov [rbx+8], rax @ 8
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; const char *field_8; };"
+"td char *helper();"
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  char *field_8;
+};
+EOF
+RUN
+
+NAME=union member typed from callee prototype when unambiguous
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rax, [rdi]
+wa mov rdi, rax @ 3
+wa call 0x20 @ 6
+wa ret @ 0xb
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td union Cell { long num; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "union Cell *" @ 0
+aei
+aeim
+aaft
+tuc Cell
+EOF
+EXPECT=<<EOF
+union Cell {
+  char *num;
+};
+EOF
+RUN
+
+NAME=union member not retyped when the access is ambiguous
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rax, [rdi]
+wa mov rdi, rax @ 3
+wa call 0x20 @ 6
+wa ret @ 0xb
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td union Cell2 { long num; void *ptr; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "union Cell2 *" @ 0
+aei
+aeim
+aaft
+tuc Cell2
+EOF
+EXPECT=<<EOF
+union Cell2 {
+  long num;
+  void *ptr;
+};
+EOF
+RUN
+
+NAME=no struct field propagation from stack slot loads
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov [rsp+8], rdi
+wa mov rdi, [rsp+8] @ 5
+wa call 0x20 @ 0xa
+wa ret @ 0xf
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+afs int helper(char *s) @ 0x20
+afvt arg_8h "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  int field_8;
+};
+EOF
+RUN
+
+NAME=struct field propagation keeps zero-displacement derefs in the chain
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rbx, rdi
+wa mov rax, [rbx] @ 3
+wa mov rdi, [rax+8] @ 6
+wa call 0x20 @ 0xa
+wa ret @ 0xf
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Inner { char pad2[8]; int fld; };"
+"td struct Outer { struct Inner *inner; int keep; int at8; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "struct Outer *" @ 0
+aei
+aeim
+aaft
+tsc Outer
+tsc Inner
+EOF
+EXPECT=<<EOF
+struct Outer {
+  struct Inner *inner;
+  int keep;
+  int at8;
+};
+struct Inner {
+  char pad2[8];
+  char *fld;
+};
+EOF
+RUN
+
+NAME=union array member survives a sibling retype
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rax, [rdi]
+wa mov rdi, rax @ 3
+wa call 0x20 @ 6
+wa ret @ 0xb
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td union Cell3 { long num; char buf[16]; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "union Cell3 *" @ 0
+aei
+aeim
+aaft
+tuc Cell3
+EOF
+EXPECT=<<EOF
+union Cell3 {
+  char *num;
+  char buf[16];
+};
+EOF
+RUN
+
+NAME=no struct field propagation when types.fields is disabled
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wa mov rax, [rdi+8]
+wa mov rdi, rax @ 4
+wa call 0x20 @ 7
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  int field_8;
+};
+EOF
+RUN
+
+NAME=struct field not retyped through a rebased store pointer
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rdi, [rdi+0x18]
+wa call 0x20 @ 4
+wa mov [rdi+8], rax @ 9
+wa ret @ 0xd
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+"td char *helper();"
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  int field_8;
+};
+EOF
+RUN
+
+NAME=char pointer member survives a scalar pointer prototype
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rax, [rdi+8]
+wa mov rdi, rax @ 4
+wa call 0x20 @ 7
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; char *field_8; };"
+afs int helper(int *p) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  char *field_8;
+};
+EOF
+RUN
+
+NAME=struct field const dropped when the write follows the call
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rbx, rdi
+wa mov rax, [rdi+8] @ 3
+wa mov rdi, rax @ 7
+wa call 0x20 @ 0xa
+wa mov [rbx+8], rcx @ 0xf
+wa ret @ 0x13
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+afs int helper(const char *s) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  char *field_8;
+};
+EOF
+RUN
+
+NAME=dead store to the argument register does not divert field typing
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rax, rsi
+wa mov rdi, [rdi+0x20] @ 3
+wa mov rdi, [rax+8] @ 7
+wa call 0x20 @ 0xb
+wa ret @ 0x10
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct C { char p[8]; int m8; };"
+"td struct A { char p[32]; struct C *e; };"
+"td struct B { char p[8]; long y; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "struct A *" @ 0
+afvt arg2 "struct B *" @ 0
+aei
+aeim
+aaft
+tsc C
+tsc B
+EOF
+EXPECT=<<EOF
+struct C {
+  char p[8];
+  int m8;
+};
+struct B {
+  char p[8];
+  char *y;
+};
+EOF
+RUN
+
+NAME=base pointer vars keep their types during field propagation
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov [rsp+0x10], rdi
+wa mov rax, [rsp+0x10] @ 5
+wa mov rax, [rax+8] @ 0xa
+wa mov rdi, rax @ 0xe
+wa call 0x20 @ 0x11
+wa ret @ 0x16
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+afs int helper(char *s) @ 0x20
+aei
+aeim
+aaft
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+arg int64_t arg_10h @ rsp+0x10
+EOF
+RUN
+
+NAME=struct field typed from return value stored at offset zero
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rbx, rdi
+wa call 0x20 @ 3
+wa mov [rbx], rax @ 8
+wa ret @ 0xb
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Zed { long first; };"
+"td char *helper();"
+afvt arg1 "struct Zed *" @ 0
+aei
+aeim
+aaft
+tsc Zed
+EOF
+EXPECT=<<EOF
+struct Zed {
+  char *first;
+};
+EOF
+RUN
+
+NAME=struct field typed from return value stored at a large displacement
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rbx, rdi
+wa call 0x20 @ 3
+wa mov [rbx+0x800], rax @ 8
+wa ret @ 0xf
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Far { char pad[2048]; long deep; };"
+"td char *helper();"
+afvt arg1 "struct Far *" @ 0
+aei
+aeim
+aaft
+tsc Far
+EOF
+EXPECT=<<EOF
+struct Far {
+  char pad[2048];
+  char *deep;
+};
+EOF
+RUN
+
+NAME=hex array dimension survives a sibling member retype
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rax, [rdi+8]
+wa mov rdi, rax @ 4
+wa call 0x20 @ 7
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td typedef int handle_t;"
+"td struct Hz { char pad[8]; int x; char tail[0x10]; };"
+afs int helper(handle_t h) @ 0x20
+afvt arg1 "struct Hz *" @ 0
+aei
+aeim
+aaft
+tk struct.Hz.x
+tk struct.Hz.tail
+EOF
+EXPECT=<<EOF
+handle_t,8,0
+char,12,16
+EOF
+RUN
+
+NAME=struct typedef gets a toplevel kind key
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"td struct Ctx { int x; };"
+"td typedef struct Ctx CtxAlias;"
+tk CtxAlias
+tk typedef.CtxAlias
+EOF
+EXPECT=<<EOF
+typedef
+struct Ctx
+EOF
+RUN
