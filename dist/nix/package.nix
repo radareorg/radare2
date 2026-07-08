@@ -53,7 +53,7 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "radare2";
-  version = "6.1.7";
+  version = "6.1.9";
 
   inherit src;
 
