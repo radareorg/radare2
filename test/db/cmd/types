@@ -1554,7 +1554,7 @@ var int32_t var_1460h @ sp+0x0
 var char * option @ fp-0xc
 var int32_t var_14h @ fp-0x10
 var int32_t var_18h @ fp-0x14
-var char * var_1ch @ fp-0x18
+var char * options @ fp-0x18
 var char * s @ fp-0x1c
 var char * var_24h @ fp-0x20
 var int32_t var_28h @ fp-0x24
@@ -1887,6 +1887,7 @@ fcn.00010010
 fcn.0000e780
 fcn.0000c0f0
 =
+fcn.0000bd00
 fcn.00011b90
 fcn.00014d50
 EOF
@@ -2573,5 +2574,67 @@ EXPECT=<<EOF
 0x00000000 int sym.imp.bar ( // cc:cdecl ret:?
 0x00000000   int myarg // stack
 0x00000004 );
+EOF
+RUN
+
+NAME=aaft function with switch table
+FILE=bins/jmptbl/test_gcc_5.5.0_64.out
+CMDS=<<EOF
+aa
+aaft
+s main
+afv
+?e =
+afb
+EOF
+EXPECT=<<EOF
+arg uint32_t argc @ rdi
+=
+0x00000580 0x0000058d 00:0000 13 j 0x00000622 f 0x0000058d
+0x0000058d 0x0000059f 00:0000 18 s 0x00000622 s 0x000005b2 s 0x000005c0 s 0x000005ce s 0x000005dc s 0x000005ea s 0x000005f8 s 0x00000606 s 0x00000614 s 0x0000059f
+0x0000059f 0x000005ab 00:0000 12 j 0x000005ab
+0x000005ab 0x000005b2 00:0000 7
+0x000005b2 0x000005c0 00:0000 14 j 0x000005ab
+0x000005c0 0x000005ce 00:0000 14 j 0x000005ab
+0x000005ce 0x000005dc 00:0000 14 j 0x000005ab
+0x000005dc 0x000005ea 00:0000 14 j 0x000005ab
+0x000005ea 0x000005f8 00:0000 14 j 0x000005ab
+0x000005f8 0x00000606 00:0000 14 j 0x000005ab
+0x00000606 0x00000614 00:0000 14 j 0x000005ab
+0x00000614 0x00000622 00:0000 14 j 0x000005ab
+0x00000622 0x00000633 00:0000 17 j 0x000005ab
+EOF
+RUN
+
+NAME=aaft function with unreachable block
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4889f8c3
+wx 48c7c303000000c3 @ 0x10
+af+ 0 fcn.unreach
+afb+ 0 0 4
+afb+ 0 0x10 8
+aaft
+afb
+?e ok
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000004 00:0000 4
+0x00000010 0x00000018 00:0000 8
+ok
+EOF
+RUN
+
+NAME=aaft function without basic blocks
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+af+ 0 fcn.empty
+aaft
+?e ok
+EOF
+EXPECT=<<EOF
+ok
 EOF
 RUN
