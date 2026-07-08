@@ -39,6 +39,7 @@ $EDITOR README.md
 $EDITOR sys/install-debs.sh
 $EDITOR dist/rpm/radare2.spec
 $EDITOR dist/npm/package.json
+$EDITOR dist/nix/package.nix
 for a in dist/wapm/*/*.toml ; do
 	$EDITOR $a
 done
