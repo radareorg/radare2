@@ -878,6 +878,9 @@ static void print_struct_union_in_c_format(RCore *core, Sdb *TDB, SdbForeachCall
 			}
 		}
 		r_strbuf_appendf (sb, "%s %s {%s", sdbkv_value (kv), name, multiline? "\n": "");
+		const bool is_struct = !strcmp (sdbkv_value (kv), "struct");
+		const int ptr_size = R_MAX (1, (int)core->anal->config->bits / 8);
+		ut64 run = 0;
 		char *p, *var = r_str_newf ("%s.%s", sdbkv_value (kv), name);
 		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 			char *var2 = r_str_newf ("%s.%s", var, p);
@@ -887,6 +890,28 @@ static void print_struct_union_in_c_format(RCore *core, Sdb *TDB, SdbForeachCall
 					char *arr = sdb_array_get (TDB, var2, 2, NULL);
 					int arrnum = arr? atoi (arr): 0;
 					free (arr);
+					const ut64 moff = sdb_array_get_num (TDB, var2, 1, NULL);
+					if (is_struct) {
+						// function-pointer members store a func alias as their type; the parser lays them out as pointers
+						const char *tv = sdb_const_get (TDB, val, 0);
+						const bool is_fptr = tv && !strcmp (tv, "func");
+						const int av = is_fptr? ptr_size: r_anal_cparse_typealign (val, ptr_size);
+						ut64 natural = run;
+						if (av > 1 && (natural % av)) {
+							natural += av - (natural % av);
+						}
+						// pad only gaps that natural alignment cannot reproduce on re-parse
+						if (moff > run && moff != natural && !(moff % av)) {
+							if (multiline) {
+								r_strbuf_appendf (sb, "  uint8_t pad_0x%" PFMT64x "[%" PFMT64u "]; // gap\n", run, moff - run);
+							} else {
+								r_strbuf_appendf (sb, "%suint8_t pad_0x%" PFMT64x "[%" PFMT64u "];", space, run, moff - run);
+								space = " ";
+							}
+						}
+						const ut64 mb = is_fptr? ptr_size: r_anal_cparse_typesize (val, arrnum > 0? arrnum: 1, ptr_size);
+						run = R_MAX (run, moff + mb); // monotonic: overlapping members never force a pad
+					}
 					// Check for metadata attributes for this field
 					RStrBuf *attrs_sb = r_strbuf_new ("");
 					SdbList *all_keys = sdb_foreach_list (TDB, true);

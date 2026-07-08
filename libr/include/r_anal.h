@@ -1741,6 +1741,8 @@ R_VEC_TYPE_WITH_FINI (RVecAnalVTable, RAnalVTable, r_anal_class_vtable_fini);
 /* c */
 R_API char *r_anal_cparse(RAnal *anal, const char *code, char **error_msg);
 R_API char *r_anal_cparse_file(RAnal *anal, const char *path, const char *dir, char **error_msg);
+R_API int r_anal_cparse_typesize(const char *type, int dimension, int ptr_size);
+R_API int r_anal_cparse_typealign(const char *type, int ptr_size);
 
 R_API void r_anal_class_create(RAnal *anal, const char *name);
 R_API void r_anal_class_delete(RAnal *anal, const char *name);

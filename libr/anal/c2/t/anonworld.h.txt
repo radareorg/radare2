@@ -1,7 +1,7 @@
 Bar=struct
 struct.Bar.hello=char *,0,0
 struct.Bar.hello.meta=0
-struct.Bar.world=int,4,0
+struct.Bar.world=int,8,0
 struct.Bar.world.meta=0
 typedef.Bar=struct Bar
 struct.Bar=hello,world
