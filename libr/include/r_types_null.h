@@ -10,7 +10,12 @@ extern "C" {
 // -Wno-nullability-completeness
 
 #ifdef __clang__
+#if __has_warning("-Wnullability-completeness")
 #pragma clang diagnostic ignored "-Wnullability-completeness"
+#endif
+#if __has_warning("-Wnullability-extension")
+#pragma clang diagnostic ignored "-Wnullability-extension"
+#endif
 #endif
 
 #if defined(__clang__)
