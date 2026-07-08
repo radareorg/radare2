@@ -306,7 +306,8 @@ static int main_help(int line) {
 										" R2_ARGS         ignore cli arguments and use these ones instead\n"
 										" R2_DEBUG        if defined, show error messages and crash signal\n"
 										" R2_CFLAGS       compiler flags to build against libr\n"
-										" R2_LDFLAGS      linker flags to build against libr\n"
+										" R2_LDFLAGS      linker search path flags to build against libr\n"
+										" R2_LIBS         library flags to link against libr\n"
 										" R2_PAPI_SCRIPT  path to the custom r2papi csript\n"
 										" R2_DEBUG_NOPAPI do not load r2papi in the -j qjs shell\n"
 										" R2_DEBUG_NOLANG do not load rlang plugins (except qjs)\n"
@@ -377,7 +378,8 @@ static int main_print_var(const char *var_name) {
 	char *r2prefix = r_sys_prefix (NULL);
 	char *r2_cflags = NULL;
 	char *r2_ldflags = NULL;
-	r_main_r2_build_flags (&r2_cflags, &r2_ldflags);
+	char *r2_libs = NULL;
+	r_main_buildflags (&r2_cflags, &r2_ldflags, &r2_libs);
 	struct {
 		const char *name;
 		const char *value;
@@ -407,6 +409,7 @@ static int main_print_var(const char *var_name) {
 		{ "R2_ZIGNS_HOME", homezigns },
 		{ "R2_CFLAGS", r2_cflags },
 		{ "R2_LDFLAGS", r2_ldflags },
+		{ "R2_LIBS", r2_libs },
 		{ NULL, NULL }
 	};
 	int delta = 0;
@@ -441,6 +444,7 @@ static int main_print_var(const char *var_name) {
 	free (magicpath);
 	free (r2_cflags);
 	free (r2_ldflags);
+	free (r2_libs);
 	free (r2prefix);
 	return 0;
 }

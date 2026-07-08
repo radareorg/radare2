@@ -500,19 +500,24 @@ static void r2pm_set_ldpath(const char *r2pm_libdir) {
 #endif
 }
 
-static void r2pm_set_cflags(void) {
+static void r2pm_set_build_flags(void) {
 	char *r2_cflags = NULL;
 	char *r2_ldflags = NULL;
-	if (r_main_r2_build_flags (&r2_cflags, &r2_ldflags)) {
+	char *r2_libs = NULL;
+	if (r_main_buildflags (&r2_cflags, &r2_ldflags, &r2_libs)) {
 		if (r2_cflags) {
 			r_sys_setenv ("R2_CFLAGS", r2_cflags);
 		}
 		if (r2_ldflags) {
 			r_sys_setenv ("R2_LDFLAGS", r2_ldflags);
 		}
+		if (r2_libs) {
+			r_sys_setenv ("R2_LIBS", r2_libs);
+		}
 	}
 	free (r2_cflags);
 	free (r2_ldflags);
+	free (r2_libs);
 }
 
 // set python virtual environment when available
@@ -627,7 +632,7 @@ static void r2pm_setenv(R2Pm *r2pm) {
 	char *r2pm_libdir = r_str_newf ("%s/lib", r2_prefix);
 	r_sys_setenv ("R2PM_LIBDIR", r2pm_libdir);
 	r2pm_set_ldpath (r2pm_libdir);
-	r2pm_set_cflags ();
+	r2pm_set_build_flags ();
 	free (r2pm_libdir);
 
 	char *incdir = r_str_newf ("%s/include", r2_prefix);
@@ -1351,6 +1356,7 @@ static void r2pm_envhelp(void) {
 	char *r2pm_giturl = r_sys_getenv ("R2PM_GITURL");
 	char *r2_cflags = r_sys_getenv ("R2_CFLAGS");
 	char *r2_ldflags = r_sys_getenv ("R2_LDFLAGS");
+	char *r2_libs = r_sys_getenv ("R2_LIBS");
 	bool r2pm_offline = r_sys_getenv_asbool ("R2PM_OFFLINE");
 	char *r2pm_plugdir2 = r_str_newf (R2_LIBDIR "/radare2/" R2_VERSION);
 	printf ("R2_LOG_LEVEL=%d         # define log.level for r2pm\n"
@@ -1369,7 +1375,8 @@ static void r2pm_envhelp(void) {
 	"R2PM_GITDIR=%s\n"
 	"R2PM_GITURL=%s\n"
 	"R2_CFLAGS=%s\n"
-	"R2_LDFLAGS=%s\n",
+	"R2_LDFLAGS=%s\n"
+	"R2_LIBS=%s\n",
 		r2pm_log_level,
 		r2pm_offline,
 		r2pm_plugdir,
@@ -1383,7 +1390,8 @@ static void r2pm_envhelp(void) {
 		r2pm_gitdir,
 		r2pm_giturl,
 		r2_cflags? r2_cflags: "",
-		r2_ldflags? r2_ldflags: "");
+		r2_ldflags? r2_ldflags: "",
+		r2_libs? r2_libs: "");
 	free (r2pm_plugdir);
 	free (r2pm_plugdir2);
 	free (r2pm_prefix);
@@ -1396,6 +1404,7 @@ static void r2pm_envhelp(void) {
 	free (r2pm_giturl);
 	free (r2_cflags);
 	free (r2_ldflags);
+	free (r2_libs);
 }
 
 static void r2pm_varprint(const char *name) {
