@@ -4,3 +4,5 @@ stm8=cc
 cc.stm8.arg0=x
 cc.stm8.arg1=y
 cc.stm8.ret0=a
+cc.stm8.clobber=a,x,y,cc
+cc.stm8.preserve=sp

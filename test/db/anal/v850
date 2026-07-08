@@ -505,3 +505,16 @@ EXPECT=<<EOF
 sld.b 1, lp
 EOF
 RUN
+
+NAME=v850 cc clobber and preserve register sets
+FILE=malloc://16
+ARGS=-e anal.arch=v850 -e asm.bits=32
+CMDS=<<EOF
+k anal/cc/cc.stdc.clobber
+k anal/cc/cc.stdc.preserve
+EOF
+EXPECT=<<EOF
+r1,r6,r7,r8,r9,r10,r11,r12,r13,r14,r15,r16,r17,r18,r19,lp
+r2,r20,r21,r22,r23,r24,r25,r26,r27,r28,r29,sp,gp,tp,ep
+EOF
+RUN

@@ -7,20 +7,23 @@ extern SdbGperf gperf_cc_arm_16;
 extern SdbGperf gperf_cc_arm_32;
 extern SdbGperf gperf_cc_arm_64;
 extern SdbGperf gperf_cc_avr_8;
-// extern SdbGperf gperf_cc_hexagon_32;
+extern SdbGperf gperf_cc_hexagon_32;
 extern SdbGperf gperf_cc_m68k_32;
+extern SdbGperf gperf_cc_mips_16;
 extern SdbGperf gperf_cc_mips_32;
 extern SdbGperf gperf_cc_mips_64;
 extern SdbGperf gperf_cc_ppc_32;
 extern SdbGperf gperf_cc_ppc_64;
 extern SdbGperf gperf_cc_riscv_64;
 extern SdbGperf gperf_cc_s390_64;
+extern SdbGperf gperf_cc_sh_32;
 extern SdbGperf gperf_cc_sparc_32;
+extern SdbGperf gperf_cc_stm8_16;
 extern SdbGperf gperf_cc_v850_32;
 extern SdbGperf gperf_cc_x86_16;
 extern SdbGperf gperf_cc_x86_32;
 extern SdbGperf gperf_cc_x86_64;
-//extern SdbGperf gperf_cc_xtensa_32;
+extern SdbGperf gperf_cc_xtensa_32;
 extern SdbGperf gperf_spec;
 extern SdbGperf gperf_types_16;
 extern SdbGperf gperf_types_32;
@@ -43,20 +46,23 @@ static const SdbGperf *gperfs_cc[] = {
 	&gperf_cc_arm_32,
 	&gperf_cc_arm_64,
 	&gperf_cc_avr_8,
-	// &gperf_cc_hexagon_32,
+	&gperf_cc_hexagon_32,
 	&gperf_cc_m68k_32,
+	&gperf_cc_mips_16,
 	&gperf_cc_mips_32,
 	&gperf_cc_mips_64,
 	&gperf_cc_ppc_32,
 	&gperf_cc_ppc_64,
 	&gperf_cc_riscv_64,
 	&gperf_cc_s390_64,
+	&gperf_cc_sh_32,
 	&gperf_cc_sparc_32,
+	&gperf_cc_stm8_16,
 	&gperf_cc_v850_32,
 	&gperf_cc_x86_16,
 	&gperf_cc_x86_32,
 	&gperf_cc_x86_64,
-	// &gperf_cc_xtensa_32,
+	&gperf_cc_xtensa_32,
 	NULL
 };
 static const SdbGperf *gperfs_types[] = {
