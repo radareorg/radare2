@@ -97,6 +97,39 @@ static void dyn_init(void) {
 
 #endif
 
+typedef void (*RRunCall0)(void);
+typedef void (*RRunCall1)(void *);
+typedef void (*RRunCall2)(void *, void *);
+typedef void (*RRunCall3)(void *, void *, void *);
+typedef void (*RRunCall4)(void *, void *, void *, void *);
+typedef void (*RRunCall5)(void *, void *, void *, void *, void *);
+typedef void (*RRunCall6)(void *, void *, void *, void *, void *, void *);
+typedef void (*RRunCall7)(void *, void *, void *, void *, void *, void *, void *);
+typedef void (*RRunCall8)(void *, void *, void *, void *, void *, void *, void *, void *);
+typedef void (*RRunCall9)(void *, void *, void *, void *, void *, void *, void *, void *, void *);
+typedef void (*RRunCall10)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+
+typedef union {
+	void *ptr;
+	RRunCall0 call0;
+	RRunCall1 call1;
+	RRunCall2 call2;
+	RRunCall3 call3;
+	RRunCall4 call4;
+	RRunCall5 call5;
+	RRunCall6 call6;
+	RRunCall7 call7;
+	RRunCall8 call8;
+	RRunCall9 call9;
+	RRunCall10 call10;
+} RRunCall;
+
+static RRunCall r_run_call(void *ptr) {
+	RRunCall call = {0};
+	call.ptr = ptr;
+	return call;
+}
+
 R_API RRunProfile *r_run_new(const char *R_NULLABLE str) {
 	RRunProfile *p = R_NEW0 (RRunProfile);
 	r_run_reset (p);
@@ -1484,49 +1517,48 @@ R_API bool r_run_start(RRunProfile *p) {
 			R_LOG_ERROR ("Could not load the library '%s'", p->_runlib);
 			return false;
 		}
-		void (*fcn) (void) = r_lib_dl_sym (addr, p->_runlib_fcn);
-		if (!fcn) {
+		RRunCall fcn = r_run_call (r_lib_dl_sym (addr, p->_runlib_fcn));
+		if (!fcn.ptr) {
 			R_LOG_ERROR ("Could not find the function '%s'", p->_runlib_fcn);
 			return false;
 		}
 		switch (p->_argc) {
 		case 0:
-			fcn ();
+			fcn.call0 ();
 			break;
 		case 1:
-			r_run_call1 (fcn, p->_args[1]);
+			fcn.call1 (p->_args[1]);
 			break;
 		case 2:
-			r_run_call2 (fcn, p->_args[1], p->_args[2]);
+			fcn.call2 (p->_args[1], p->_args[2]);
 			break;
 		case 3:
-			r_run_call3 (fcn, p->_args[1], p->_args[2], p->_args[3]);
+			fcn.call3 (p->_args[1], p->_args[2], p->_args[3]);
 			break;
 		case 4:
-			r_run_call4 (fcn, p->_args[1], p->_args[2], p->_args[3], p->_args[4]);
+			fcn.call4 (p->_args[1], p->_args[2], p->_args[3], p->_args[4]);
 			break;
 		case 5:
-			r_run_call5 (fcn, p->_args[1], p->_args[2], p->_args[3], p->_args[4],
-				p->_args[5]);
+			fcn.call5 (p->_args[1], p->_args[2], p->_args[3], p->_args[4], p->_args[5]);
 			break;
 		case 6:
-			r_run_call6 (fcn, p->_args[1], p->_args[2], p->_args[3], p->_args[4],
+			fcn.call6 (p->_args[1], p->_args[2], p->_args[3], p->_args[4],
 				p->_args[5], p->_args[6]);
 			break;
 		case 7:
-			r_run_call7 (fcn, p->_args[1], p->_args[2], p->_args[3], p->_args[4],
+			fcn.call7 (p->_args[1], p->_args[2], p->_args[3], p->_args[4],
 				p->_args[5], p->_args[6], p->_args[7]);
 			break;
 		case 8:
-			r_run_call8 (fcn, p->_args[1], p->_args[2], p->_args[3], p->_args[4],
+			fcn.call8 (p->_args[1], p->_args[2], p->_args[3], p->_args[4],
 				p->_args[5], p->_args[6], p->_args[7], p->_args[8]);
 			break;
 		case 9:
-			r_run_call9 (fcn, p->_args[1], p->_args[2], p->_args[3], p->_args[4],
+			fcn.call9 (p->_args[1], p->_args[2], p->_args[3], p->_args[4],
 				p->_args[5], p->_args[6], p->_args[7], p->_args[8], p->_args[9]);
 			break;
 		case 10:
-			r_run_call10 (fcn, p->_args[1], p->_args[2], p->_args[3], p->_args[4],
+			fcn.call10 (p->_args[1], p->_args[2], p->_args[3], p->_args[4],
 				p->_args[5], p->_args[6], p->_args[7], p->_args[8], p->_args[9], p->_args[10]);
 			break;
 		default:
