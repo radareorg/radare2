@@ -17,3 +17,16 @@ EXPECT=<<EOF
 cycles: 14
 EOF
 RUN
+
+NAME=m68k cc clobber and preserve register sets
+FILE=malloc://16
+ARGS=-e anal.arch=m68k -e asm.bits=32
+CMDS=<<EOF
+k anal/cc/cc.m68k.clobber
+k anal/cc/cc.m68k.preserve
+EOF
+EXPECT=<<EOF
+d0,d1,a0,a1,fp0,fp1
+d2,d3,d4,d5,d6,d7,a2,a3,a4,a5,a6,a7,fp2,fp3,fp4,fp5,fp6,fp7
+EOF
+RUN

@@ -891,3 +891,29 @@ EXPECT=<<EOF
 [{"addr":5169860,"jump":5169860,"value":0},{"addr":5169720,"jump":5169720,"value":1},{"addr":5169860,"jump":5169860,"value":2},{"addr":5170872,"jump":5170872,"value":3},{"addr":5170928,"jump":5170928,"value":4},{"addr":5169720,"jump":5169720,"value":18446744073709551615}]
 EOF
 RUN
+
+NAME=mips o32 cc clobber and preserve register sets
+FILE=malloc://16
+ARGS=-e anal.arch=mips -e asm.bits=32
+CMDS=<<EOF
+k anal/cc/cc.o32.clobber
+k anal/cc/cc.o32.preserve
+EOF
+EXPECT=<<EOF
+at,v0,v1,a0,a1,a2,a3,t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,gp,ra,f0,f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13,f14,f15,f16,f17,f18,f19
+s0,s1,s2,s3,s4,s5,s6,s7,sp,fp,f20,f21,f22,f23,f24,f25,f26,f27,f28,f29,f30,f31
+EOF
+RUN
+
+NAME=mips n32 cc clobber and preserve register sets
+FILE=malloc://16
+ARGS=-e anal.arch=mips -e asm.bits=32
+CMDS=<<EOF
+k anal/cc/cc.n32.clobber
+k anal/cc/cc.n32.preserve
+EOF
+EXPECT=<<EOF
+at,v0,v1,a0,a1,a2,a3,a4,a5,a6,a7,t4,t5,t6,t7,t8,t9,ra,f0,f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13,f14,f15,f16,f17,f18,f19,f20,f21,f22,f23
+s0,s1,s2,s3,s4,s5,s6,s7,gp,sp,fp,f24,f25,f26,f27,f28,f29,f30,f31
+EOF
+RUN

@@ -41,3 +41,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+NAME=xtensa call0 cc clobber and preserve register sets
+FILE=malloc://16
+ARGS=-e anal.arch=xtensa -e asm.bits=32
+CMDS=<<EOF
+k anal/cc/cc.call0.clobber
+k anal/cc/cc.call0.preserve
+EOF
+EXPECT=<<EOF
+a0,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11
+a1,a12,a13,a14,a15
+EOF
+RUN
