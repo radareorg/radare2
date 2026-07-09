@@ -2463,7 +2463,7 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 		}
 	}
 
-	if (!has_chained_fixups && mo->hdr.cputype == CPU_TYPE_ARM64 && (mo->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
+	if (has_chained_fixups && mo->hdr.cputype == CPU_TYPE_ARM64 && (mo->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
 		reconstruct_chained_fixup (mo);
 	}
 	return true;
