@@ -2507,7 +2507,7 @@ static inline bool cur_points_to_bb(RAnalBlock *curbb, RAnalBlock *bb) {
 		RListIter *it;
 		RAnalCaseOp *cop;
 		r_list_foreach (curbb->switch_op->cases, it, cop) {
-			if (cop->addr == bb->addr) {
+			if (cop->jump == bb->addr) {
 				return true;
 			}
 		}
@@ -2626,7 +2626,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 			RListIter *it;
 			RAnalCaseOp *cop;
 			r_list_foreach (bb->switch_op->cases, it, cop) {
-				add_child (core, g, u, cop->addr);
+				add_child (core, g, u, cop->jump);
 			}
 		}
 	}
