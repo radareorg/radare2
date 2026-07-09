@@ -82,6 +82,29 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=visual string meta scroll up rows
+FILE=-
+CMDS=<<EOF
+e scr.interactive=true
+e asm.arch=x86
+e asm.bits=64
+e asm.hints=false
+e hex.cols=16
+wx 909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090
+Cs 32 @ 0x10
+s 0x20
+Vpkq
+s
+s 0x30
+Vpkq
+s
+EOF
+EXPECT=<<EOF
+0x10
+0x20
+EOF
+RUN
+
 NAME=visual hex pP scroll
 FILE=-
 CMDS=<<EOF

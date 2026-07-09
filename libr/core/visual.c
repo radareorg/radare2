@@ -1226,6 +1226,33 @@ static int visual_meta_delta(RCore *core, ut64 addr, int size) {
 	return delta > INT_MAX? INT_MAX: (int)delta;
 }
 
+static ut64 visual_meta_prev_addr(RCore *core, ut64 addr) {
+	if (addr < 1) {
+		return UT64_MAX;
+	}
+	ut64 prev = addr - 1;
+	RIntervalNode *in = r_meta_get_in (core->anal, prev, R_META_TYPE_DATA);
+	if (!in) {
+		in = r_meta_get_in (core->anal, prev, R_META_TYPE_STRING);
+	}
+	if (!in) {
+		return UT64_MAX;
+	}
+	ut64 res = in->start;
+	const int hexcols = r_config_get_i (core->config, "hex.cols");
+	if (hexcols > 0 && r_meta_node_size (in) > hexcols) {
+		ut64 delta = addr % hexcols;
+		if (delta < 1) {
+			delta = hexcols;
+		}
+		res = addr - delta;
+		if (res < in->start) {
+			res = in->start;
+		}
+	}
+	return res < addr? res: UT64_MAX;
+}
+
 static ut64 visual_align_code(RCore *core, ut64 addr) {
 	if (addr == UT64_MAX) {
 		return addr;
@@ -1251,14 +1278,9 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	ut64 target, base;
 	RAnalOp op;
 	int len, ret, i;
-	RIntervalNode *in = r_meta_get_in (core->anal, addr, R_META_TYPE_DATA);
-	if (in) {
-		const int hexcols = r_config_get_i (core->config, "hex.cols");
-		int amisize = r_meta_item_size (in->start, in->end);
-		if (amisize > hexcols) {
-			return addr - hexcols;
-		}
-		return addr - amisize;
+	ut64 meta_prev = visual_meta_prev_addr (core, addr);
+	if (meta_prev != UT64_MAX) {
+		return meta_prev;
 	}
 
 	const int minop = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
