@@ -4186,6 +4186,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("types.rollback", "false", "enable state rollback for type propagation recovery");
 	SETB ("types.xrefs", "true", "show xrefs in type view commands (tv, tfv, tsv, ...)");
 	SETCB ("anal.vars", "true", &cb_analvars, "analyze local variables and arguments");
+	SETB ("anal.vars.clobber", "true", "honor calling convention clobber sets during ESIL analysis");
 	SETCB ("anal.vars.maxbbsize", "64K", &cb_analvars_maxbbsize, "maximum basic block size for variable analysis (0 = unlimited)");
 	SETCB ("anal.vars.maxframe", "8K", &cb_analvars_maxframe, "maximum stack-frame delta in bytes for variable takeover (0 = unlimited)");
 	SETCB ("anal.vars.stackname", "false", &cb_analvars_stackname, "name variables based on their offset on the stack");
