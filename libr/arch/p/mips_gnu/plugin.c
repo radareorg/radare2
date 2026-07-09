@@ -1211,8 +1211,19 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 
 	/* prepare disassembler */
 	PluginData *pd = as->data;
-	if (cpu && (!pd->pre_cpu || !strcmp (cpu, pd->pre_cpu))) {
-		if (!r_str_casecmp (cpu, "mips64r2")) {
+	disasm_obj.mach = bfd_mach_mips_loongson_2f;
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		if (!r_str_casecmp (cpu, "mips1")) {
+			disasm_obj.mach = bfd_mach_mips3000;
+		} else if (!r_str_casecmp (cpu, "mips2")) {
+			disasm_obj.mach = bfd_mach_mips6000;
+		} else if (!r_str_casecmp (cpu, "mips3")) {
+			disasm_obj.mach = bfd_mach_mips4000;
+		} else if (!r_str_casecmp (cpu, "mips4")) {
+			disasm_obj.mach = bfd_mach_mips5000;
+		} else if (!r_str_casecmp (cpu, "mips5")) {
+			disasm_obj.mach = bfd_mach_mips5;
+		} else if (!r_str_casecmp (cpu, "mips64r2")) {
 			disasm_obj.mach = bfd_mach_mipsisa64r2;
 		} else if (!r_str_casecmp (cpu, "micro")) {
 			disasm_obj.mach = bfd_mach_mips_micromips;
@@ -1239,10 +1250,10 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 			// Fallback for default config
 			disasm_obj.mach = bfd_mach_mips_loongson_2f;
 		}
-		free (pd->pre_cpu);
-		pd->pre_cpu = strdup (cpu);
-	} else {
-		disasm_obj.mach = bfd_mach_mips_loongson_2f;
+		if (!pd->pre_cpu || strcmp (cpu, pd->pre_cpu)) {
+			free (pd->pre_cpu);
+			pd->pre_cpu = strdup (cpu);
+		}
 	}
 
 	const char *abi = as->config->abi;
@@ -2094,7 +2105,7 @@ const RArchPlugin r_arch_plugin_mips_gnu = {
 		.desc = "MIPS RISC architecture",
 		.license = "LGPL-3.0-only",
 	},
-	.cpus = "micro,mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
+	.cpus = "micro,mips1,mips2,mips3,mips4,mips5,mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
 	.arch = "mips",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.info = archinfo,

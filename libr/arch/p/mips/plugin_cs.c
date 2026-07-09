@@ -870,9 +870,9 @@ static int get_capstone_mode(RArchSession *as) {
 			mode |= CS_MODE_MICRO;
 		} else if (!strcmp (cpu, "r6")) {
 			mode |= CS_MODE_MIPS32R6;
-		} else if (!strcmp (cpu, "v3")) {
+		} else if (!strcmp (cpu, "v3") || !strcmp (cpu, "mips3")) {
 			mode |= CS_MODE_MIPS3;
-		} else if (!strcmp (cpu, "v2")) {
+		} else if (!strcmp (cpu, "v2") || !strcmp (cpu, "mips2")) {
 #if CS_API_MAJOR > 3
 			mode |= CS_MODE_MIPS2;
 #endif
@@ -1494,7 +1494,7 @@ const RArchPlugin r_arch_plugin_mips_cs = {
 		.license = "Apache-2.0",
 	},
 	.arch = "mips",
-	.cpus = "mips32/64,micro,r6,v3,v2",
+	.cpus = "mips32/64,mips1,mips2,mips3,mips4,mips5,mips32,mips32r2,mips64,mips64r2,micro,r6,v3,v2",
 	.regs = get_reg_profile,
 	.info = archinfo,
 	.preludes = preludes,
