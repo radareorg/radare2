@@ -607,3 +607,24 @@ ireturn
 EOF
 BROKEN=1
 RUN
+
+NAME=java tableswitch case edges reach the dominator tree
+FILE=malloc://128
+ARGS=-a java
+CMDS=<<EOF
+wx 033b033ca7003c1a08703d1caa0000000000003200000000000000030000002000000026000000320000002c840202a70011840203a7000b840209a70005033c1a100aa1ffc41bac00000003000a0000
+af
+agDd~?label
+agDd~-\>
+EOF
+EXPECT=<<EOF
+8
+  "n0" -> "n1";
+  "n1" -> "n2";
+  "n1" -> "n7";
+  "n2" -> "n3";
+  "n2" -> "n4";
+  "n2" -> "n5";
+  "n2" -> "n6";
+EOF
+RUN

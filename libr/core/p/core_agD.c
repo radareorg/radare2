@@ -75,7 +75,6 @@ static bool r_cmd_agD_call(RCorePluginSession *cps, const char *input) {
 		r_agraph_free (dtagraph);
 		r_graph_free (fcn_dtgraph);
 		r_graph_free (fcn_graph);
-		r_cons_flush (core->cons);
 		return true;
 	}
 	switch (sub) {
@@ -125,7 +124,6 @@ static bool r_cmd_agD_call(RCorePluginSession *cps, const char *input) {
 	r_agraph_free (dtagraph);
 	r_graph_free (fcn_dtgraph);
 	r_graph_free (fcn_graph);
-	r_cons_flush (core->cons);
 	return true;
 }
 

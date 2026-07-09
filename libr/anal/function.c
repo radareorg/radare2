@@ -728,8 +728,7 @@ R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_pt
 			RListIter *ator;
 			RAnalCaseOp *co;
 			r_list_foreach (bb->switch_op->cases, ator, co) {
-				RGraphNode *_node = NULL;
-				_node = (RGraphNode *)ht_up_find (nodes, co->addr, NULL);
+				RGraphNode *_node = (RGraphNode *)ht_up_find (nodes, co->jump, NULL);
 				if (!_node) {
 					R_LOG_ERROR ("Broken fcn");
 					ht_up_free (nodes);
