@@ -419,6 +419,26 @@ bool test_r_str_len_utf8_ansi_truncated_utf8_tail(void) {
 	mu_end;
 }
 
+bool test_r_str_utf16_to_utf8(void) {
+	ut8 le[] = { 'r', 0, '2', 0 };
+	ut8 be[] = { 0, 'r', 0, '2' };
+	char out[8];
+
+	memset (out, 0xff, sizeof (out));
+	int len = r_str_utf16_to_utf8 ((ut8 *)out, sizeof (out), le, sizeof (le), true);
+	mu_assert_eq (len, 2, "utf16le byte length");
+	mu_assert_streq (out, "r2", "utf16le string");
+	mu_assert_eq ((ut8)out[2], 0, "utf16le string terminator");
+
+	memset (out, 0xff, sizeof (out));
+	len = r_str_utf16_to_utf8 ((ut8 *)out, sizeof (out), be, sizeof (be), false);
+	mu_assert_eq (len, 2, "utf16be byte length");
+	mu_assert_streq (out, "r2", "utf16be string");
+	mu_assert_eq ((ut8)out[2], 0, "utf16be string terminator");
+
+	mu_end;
+}
+
 bool test_r_str_utf8_charsize(void) {
 	char s[16] = "\x61\xc3\xa1\xe6\x97\xa5\xf0\x9f\x91\x8c\xf0\x9f\x91\x8c\x8c"; // aá日👌
 	int sz;
@@ -885,6 +905,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_ansi_len);
 	mu_run_test (test_r_str_len_utf8_ansi);
 	mu_run_test (test_r_str_len_utf8_ansi_truncated_utf8_tail);
+	mu_run_test (test_r_str_utf16_to_utf8);
 	mu_run_test (test_r_str_utf8_charsize);
 	mu_run_test (test_r_str_utf8_charsize_prev);
 	mu_run_test (test_r_str_sanitize_sdb_key);
