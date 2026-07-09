@@ -5001,6 +5001,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("scr.wheel.speed", 4, "mouse wheel speed");
 #endif
 	SETB ("scr.responsive", "false", "auto-adjust Visual depending on screen (e.g. unset asm.bytes)");
+	SETB ("scr.wheel.hscroll", "false", "enable horizontal mouse wheel in visual modes");
 	SETB ("scr.wheel.nkey", "false", "use sn/sp and scr.nkey on wheel instead of scroll");
 	// RENAME TO scr.mouse
 	SETB ("scr.wheel", "true", "mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
