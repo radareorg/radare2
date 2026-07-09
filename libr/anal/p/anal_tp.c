@@ -704,7 +704,7 @@ static bool etrace_memread_first_addr(TypeTrace *etrace, ut32 idx, ut64 *addr) {
  *
  * \param fcn_name name of the callee
  * \param addr addr of the call instruction
- * \param baddr addr of the caller function
+ * \param baddr addr of the basic block containing the call
  * \param cc cc of the callee
  * \param prev_idx index in the esil trace
  * \param userfnc whether the callee is a user function (affects propagation direction)
@@ -913,6 +913,71 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 static int bb_cmpaddr(const void *_a, const void *_b) {
 	const RAnalBlock *a = _a, *b = _b;
 	return a->addr > b->addr? 1: (a->addr < b->addr? -1: 0);
+}
+
+typedef struct {
+	HtUP *blocks;
+	HtUU *seen;
+	RVecUT64 postorder;
+} RpoCtx;
+
+static bool rpo_visit(RAnalBlock *bb, void *user) {
+	return true;
+}
+
+static bool rpo_collect(RAnalBlock *bb, void *user) {
+	RpoCtx *ctx = user;
+	if (ht_up_find (ctx->blocks, bb->addr, NULL)) {
+		ht_uu_update (ctx->seen, bb->addr, 1);
+		RVecUT64_push_back (&ctx->postorder, &bb->addr);
+	}
+	return true;
+}
+
+// reverse post-order via r_anal_block_recurse_depth_first's on_exit callback
+static bool bblist_from_cfg(RAnalFunction *fcn, RVecUT64 *bblist) {
+	RAnalBlock *bb;
+	RAnalBlock *entry = NULL;
+	RListIter *it;
+	RpoCtx ctx = { ht_up_new0 (), ht_uu_new0 () };
+	RVecUT64_init (&ctx.postorder);
+	if (!ctx.blocks || !ctx.seen) {
+		ht_up_free (ctx.blocks);
+		ht_uu_free (ctx.seen);
+		return false;
+	}
+	r_list_foreach (fcn->bbs, it, bb) {
+		ht_up_insert (ctx.blocks, bb->addr, bb);
+		if (!entry && r_anal_block_contains (bb, fcn->addr)) {
+			entry = bb;
+		}
+	}
+	if (!entry) {
+		ht_up_free (ctx.blocks);
+		ht_uu_free (ctx.seen);
+		return false;
+	}
+	r_anal_block_recurse_depth_first (entry, rpo_visit, rpo_collect, &ctx);
+	ht_up_free (ctx.blocks);
+	ut64 *pa;
+	R_VEC_FOREACH_PREV (&ctx.postorder, pa) {
+		RVecUT64_push_back (bblist, pa);
+	}
+	RVecUT64_fini (&ctx.postorder);
+	// blocks unreachable from the entry still get emulated, in address order
+	r_list_foreach (fcn->bbs, it, bb) {
+		bool found = false;
+		ht_uu_find (ctx.seen, bb->addr, &found);
+		if (!found) {
+			RVecUT64_push_back (bblist, &bb->addr);
+		}
+	}
+	ht_uu_free (ctx.seen);
+	if (RVecUT64_length (bblist) != r_list_length (fcn->bbs)) {
+		RVecUT64_clear (bblist);
+		return false;
+	}
+	return true;
 }
 
 static void tps_fini(TPState *tps) {
@@ -1239,7 +1304,7 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 	RVecUT64 bblist;
 	RVecUT64_init (&bblist);
 	RAnalOp *next_op = R_NEW0 (RAnalOp);
-	r_list_sort (fcn->bbs, bb_cmpaddr); // TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
+	r_list_sort (fcn->bbs, bb_cmpaddr);
 	int retries = 2;
 repeat:
 	if (retries < 0) {
@@ -1251,9 +1316,11 @@ repeat:
 	RVecUT64_clear (&bblist);
 	size_t bblist_size = r_list_length (fcn->bbs); // TODO: Use ut64
 	RVecUT64_reserve (&bblist, bblist_size);
-	// TODO: add a dependency graph out of it, maybe just saving the depth index is enough so we save and restore the state on each level
-	r_list_foreach (fcn->bbs, it, bb) {
-		RVecUT64_push_back (&bblist, &bb->addr);
+	if (!bblist_from_cfg (fcn, &bblist)) {
+		R_LOG_DEBUG ("cannot compute cfg order at 0x%08" PFMT64x ", using address order", fcn->addr);
+		r_list_foreach (fcn->bbs, it, bb) {
+			RVecUT64_push_back (&bblist, &bb->addr);
+		}
 	}
 	int i, j;
 	TypeTrace *etrace = &tps->tt;
