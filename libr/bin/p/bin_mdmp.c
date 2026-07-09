@@ -69,13 +69,12 @@ static ut32 extract_rtm_from_modules(RBinMdmpObj *mdmp, ut32 major, ut32 minor, 
 			if (str_length == 0 || str_length > 256) {
 				continue;
 			}
-			/* Validate bounds: length is in UTF-16 characters, need to multiply by 2 for bytes */
-			if (module->module_name_rva + sizeof (struct minidump_string) + (str_length * 2) > r_buf_size (mdmp->b)) {
+			if (module->module_name_rva + sizeof (struct minidump_string) + str_length > r_buf_size (mdmp->b)) {
 				continue;
 			}
 			memset (module_name, 0, sizeof (module_name));
 			r_str_utf16_to_utf8 ((ut8 *)module_name, str_length * 4,
-				(const ut8 *)(b + sizeof (ut32)), str_length, mdmp->endian);
+				(const ut8 *)(b + sizeof (ut32)), str_length, true);
 
 			/* Extract just the filename from the full path */
 			const char *filename = strrchr (module_name, '\\');
@@ -348,7 +347,7 @@ static bool sections_vec(RBinFile *bf) {
 			continue;
 		}
 		r_str_utf16_to_utf8 ((ut8 *)name, str_length * 2,
-				b + sizeof (ut32), str_length, obj->endian);
+				b + sizeof (ut32), str_length, true);
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		ptr->name = name;
 		ptr->vaddr = module->base_of_image;
