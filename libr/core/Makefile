@@ -35,6 +35,8 @@ first:: all
 
 include ${STATIC_CORE_PLUGINS}
 
+canal.o: canal_esil.inc.c
+
 STATIC_OBJS=$(addprefix $(LTOP)/core/p/,$(STATIC_OBJ))
 OBJS+=$(STATIC_OBJS)
 OBJS+=$(EXTERNAL_STATIC_OBJS)
