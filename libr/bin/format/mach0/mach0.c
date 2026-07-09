@@ -2408,24 +2408,33 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 			sdb_set (mo->kv, cmd_flagname, "data_in_code", 0);
 			if (mo->verbose) {
 				ut8 buf[8];
-				r_buf_read_at (mo->b, off + 8, buf, sizeof (buf));
+				if (r_buf_read_at (mo->b, off + 8, buf, sizeof (buf)) != sizeof (buf)) {
+					break;
+				}
 				ut32 dataoff = r_read_ble32 (buf, mo->big_endian);
 				ut32 datasize = r_read_ble32 (buf + 4, mo->big_endian);
 				R_LOG_INFO ("data-in-code at 0x%x size %d", dataoff, datasize);
+				if (datasize > ST32_MAX || !fits_in (mo->size, dataoff, datasize)) {
+					R_LOG_WARN ("Invalid LC_DATA_IN_CODE range");
+					break;
+				}
 				ut8 *db = (ut8 *)malloc (datasize);
 				if (db) {
-					r_buf_read_at (mo->b, dataoff, db, datasize);
-					// TODO table of non-instructions regions in __text
-					int j;
-					for (j = 0; j < datasize; j += 8) {
-						ut32 dw = r_read_ble32 (db + j, mo->big_endian);
-						// int kind = r_read_ble16 (db + i + 4 + 2, mo->big_endian);
-						int len = r_read_ble16 (db + j + 4, mo->big_endian);
-						ut64 va = offset_to_vaddr (mo, dw);
-						//	eprintf ("# 0x%x -> 0x%x\n", dw, va);
-						//	eprintf ("0x%x kind %d len %d\n", dw, kind, len);
-						eprintf ("Cd 8 %d @ 0x%" PFMT64x "\n", len / 8, va);
+					if (r_buf_read_at (mo->b, dataoff, db, (int)datasize) == (int)datasize) {
+						// TODO table of non-instructions regions in __text
+						const ut64 entry_size = sizeof (struct data_in_code_entry);
+						ut64 j;
+						for (j = 0; j + entry_size <= datasize; j += entry_size) {
+							ut32 dw = r_read_ble32 (db + j, mo->big_endian);
+							// int kind = r_read_ble16 (db + i + 4 + 2, mo->big_endian);
+							int len = r_read_ble16 (db + j + 4, mo->big_endian);
+							ut64 va = offset_to_vaddr (mo, dw);
+							//	eprintf ("# 0x%x -> 0x%x\n", dw, va);
+							//	eprintf ("0x%x kind %d len %d\n", dw, kind, len);
+							eprintf ("Cd 8 %d @ 0x%" PFMT64x "\n", len / 8, va);
+						}
 					}
+					free (db);
 				}
 			}
 			break;
