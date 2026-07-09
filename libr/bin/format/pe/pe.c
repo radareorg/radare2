@@ -2236,25 +2236,24 @@ static String *Pe_r_bin_pe_parse_string(RBinPEObj *pe, PE_DWord *curAddr) {
 	}
 
 	for (i = 0; *curAddr < begAddr + string->wLength; i++, *curAddr += sizeof (ut16)) {
-		ut8 utf16_char[sizeof (ut16)];
+		ut16 utf16_char;
 		ut16 *tmpKey;
 		if (*curAddr > pe->size || *curAddr + sizeof (ut16) > pe->size) {
 			goto out_error;
 		}
-		if (r_buf_read_at (pe->b, *curAddr, utf16_char, sizeof (utf16_char)) != sizeof (utf16_char)) {
+		if (r_buf_read_at (pe->b, *curAddr, (ut8 *)&utf16_char, sizeof (utf16_char)) != sizeof (utf16_char)) {
 			R_LOG_WARN ("check (String szKey)");
 			goto out_error;
 		}
-		ut16 ch = r_read_le16 (utf16_char);
 		tmpKey = (ut16 *)realloc (string->szKey, (i + 1) * sizeof (ut16));
 		if (!tmpKey) {
 			R_LOG_WARN ("realloc (String szKey)");
 			goto out_error;
 		}
 		string->szKey = tmpKey;
-		string->szKey[i] = ch;
+		string->szKey[i] = utf16_char;
 		string->wKeyLen += sizeof (ut16);
-		if (!ch) {
+		if (!utf16_char) {
 			*curAddr += sizeof (ut16);
 			break;
 		}
@@ -2273,21 +2272,9 @@ static String *Pe_r_bin_pe_parse_string(RBinPEObj *pe, PE_DWord *curAddr) {
 	if (*curAddr > pe->size || *curAddr + len_value > pe->size) {
 		goto out_error;
 	}
-	if (len_value > 0) {
-		ut8 *value = (ut8 *)malloc (len_value);
-		if (!value) {
-			R_LOG_WARN ("malloc (String Value buffer)");
-			goto out_error;
-		}
-		if (r_buf_read_at (pe->b, *curAddr, value, len_value) != len_value) {
-			R_LOG_WARN ("read (String Value)");
-			free (value);
-			goto out_error;
-		}
-		for (i = 0; i + 1 < len_value; i += sizeof (ut16)) {
-			string->Value[i / sizeof (ut16)] = r_read_le16 (value + i);
-		}
-		free (value);
+	if (r_buf_read_at (pe->b, *curAddr, (ut8 *)string->Value, len_value) != len_value) {
+		R_LOG_WARN ("read (String Value)");
+		goto out_error;
 	}
 	*curAddr += len_value;
 	return string;
