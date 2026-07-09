@@ -514,6 +514,11 @@ static bool pdb7_parse(RBinPdb *pdb) {
 		goto error;
 	}
 
+	if (root_size < 0) {
+		R_LOG_ERROR ("Invalid root size");
+		goto error;
+	}
+
 	int num_root_pages = count_pages (root_size, page_size);
 	if (num_root_pages < 1) {
 		R_LOG_ERROR ("Invalid page count");
