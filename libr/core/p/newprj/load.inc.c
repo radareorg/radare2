@@ -1143,6 +1143,296 @@ static void rprj_hint_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	r_list_free (seen);
 }
 
+static const char *rprj_st_get_optional(R2ProjectStringTable *st, ut32 idx) {
+	return idx != UT32_MAX? rprj_st_get (st, idx): NULL;
+}
+
+static const char *rprj_breakpoint_module_name(RPrjCursor *cur, R2ProjectAddr *addr) {
+	R2ProjectMod *mod = rprj_mod_get (cur, addr->mod);
+	if (!mod) {
+		return NULL;
+	}
+	const char *file = rprj_st_get_optional (cur->st, mod->file);
+	if (R_STR_ISNOTEMPTY (file)) {
+		return file;
+	}
+	return rprj_st_get_optional (cur->st, mod->name);
+}
+
+static const char *rprj_breakpoint_watch_perm(int perm) {
+	if (perm & R_BP_PROT_ACCESS) {
+		return "rw";
+	}
+	const bool r = perm & R_BP_PROT_READ;
+	const bool w = perm & R_BP_PROT_WRITE;
+	return r && w? "rw": w? "w": "r";
+}
+
+static void rprj_print_breakpoint_add(RPrjCursor *cur, R2ProjectBreakpoint *pbp, ut64 va) {
+	const bool watch = pbp->flags & RPRJ_BREAKPOINT_WATCH;
+	if (watch) {
+		r_strbuf_appendf (cur->out, "'dbw 0x%08"PFMT64x" %s\n",
+			va, rprj_breakpoint_watch_perm ((int)pbp->perm));
+	} else if (pbp->hw == R_BP_TYPE_HW) {
+		r_strbuf_appendf (cur->out, "'dbH 0x%08"PFMT64x"\n", va);
+	} else {
+		r_strbuf_appendf (cur->out, "'db 0x%08"PFMT64x"\n", va);
+	}
+	if (pbp->flags & RPRJ_BREAKPOINT_TRACE) {
+		r_strbuf_appendf (cur->out, "'dbte 0x%08"PFMT64x"\n", va);
+	}
+	if (pbp->flags & RPRJ_BREAKPOINT_ENABLED) {
+		if (pbp->togglehits) {
+			r_strbuf_appendf (cur->out, "'dbe 0x%08"PFMT64x" %u\n", va, pbp->togglehits);
+		}
+	} else {
+		r_strbuf_appendf (cur->out, "'dbd 0x%08"PFMT64x" %u\n", va, pbp->togglehits);
+	}
+	const char *data = rprj_st_get_optional (cur->st, pbp->data);
+	if (data) {
+		r_strbuf_appendf (cur->out, "'dbc 0x%08"PFMT64x" %s\n", va, data);
+	}
+	const char *cond = rprj_st_get_optional (cur->st, pbp->cond);
+	if (cond) {
+		r_strbuf_appendf (cur->out, "'dbC 0x%08"PFMT64x" %s\n", va, cond);
+	}
+	const char *name = rprj_st_get_optional (cur->st, pbp->name);
+	if (name) {
+		r_strbuf_appendf (cur->out, "'@0x%08"PFMT64x"'dbn %s\n", va, name);
+	}
+	const char *expr = rprj_st_get_optional (cur->st, pbp->expr);
+	if (expr) {
+		r_strbuf_appendf (cur->out, "'@0x%08"PFMT64x"'dbx %s\n", va, expr);
+	}
+}
+
+static void rprj_print_current_breakpoint(RPrjCursor *cur, RBreakpointItem *bp) {
+	if (!bp || bp->internal) {
+		return;
+	}
+	R2ProjectBreakpoint pbp = {
+		.name = rprj_st_append_opt (cur->st, bp->name),
+		.data = rprj_st_append_opt (cur->st, bp->data),
+		.cond = rprj_st_append_opt (cur->st, bp->cond),
+		.expr = rprj_st_append_opt (cur->st, bp->expr),
+		.size = (ut32)R_MAX (bp->size, 0),
+		.perm = (ut32)bp->perm,
+		.hw = (ut32)bp->hw,
+		.togglehits = (ut32)R_MAX (bp->togglehits, 0),
+		.hits = (ut32)R_MAX (bp->hits, 0),
+	};
+	if (bp->trace) {
+		pbp.flags |= RPRJ_BREAKPOINT_TRACE;
+	}
+	if (bp->enabled) {
+		pbp.flags |= RPRJ_BREAKPOINT_ENABLED;
+	}
+	if (bp->swstep) {
+		pbp.flags |= RPRJ_BREAKPOINT_SWSTEP;
+	}
+	if (bp->perm & (R_BP_PROT_READ | R_BP_PROT_WRITE | R_BP_PROT_ACCESS)) {
+		pbp.flags |= RPRJ_BREAKPOINT_WATCH;
+	}
+	rprj_print_breakpoint_add (cur, &pbp, bp->addr);
+}
+
+static bool rprj_breakpoint_differs(RPrjCursor *cur, R2ProjectBreakpoint *pbp, RBreakpointItem *bp) {
+	if (!bp || bp->size != (int)pbp->size || bp->perm != (int)pbp->perm
+			|| bp->hw != (int)pbp->hw || bp->togglehits != (int)pbp->togglehits
+			|| bp->hits != (int)pbp->hits) {
+		return true;
+	}
+	ut32 flags = 0;
+	if (bp->trace) {
+		flags |= RPRJ_BREAKPOINT_TRACE;
+	}
+	if (bp->enabled) {
+		flags |= RPRJ_BREAKPOINT_ENABLED;
+	}
+	if (bp->swstep) {
+		flags |= RPRJ_BREAKPOINT_SWSTEP;
+	}
+	if (bp->perm & (R_BP_PROT_READ | R_BP_PROT_WRITE | R_BP_PROT_ACCESS)) {
+		flags |= RPRJ_BREAKPOINT_WATCH;
+	}
+	if (flags != pbp->flags) {
+		return true;
+	}
+	const char *name = rprj_st_get_optional (cur->st, pbp->name);
+	const char *data = rprj_st_get_optional (cur->st, pbp->data);
+	const char *cond = rprj_st_get_optional (cur->st, pbp->cond);
+	const char *expr = rprj_st_get_optional (cur->st, pbp->expr);
+	return strcmp (r_str_get (name), r_str_get (bp->name))
+		|| strcmp (r_str_get (data), r_str_get (bp->data))
+		|| strcmp (r_str_get (cond), r_str_get (bp->cond))
+		|| strcmp (r_str_get (expr), r_str_get (bp->expr));
+}
+
+static void rprj_breakpoint_set_string(char **dst, const char *src) {
+	free (*dst);
+	*dst = R_STR_ISNOTEMPTY (src)? strdup (src): NULL;
+}
+
+static RBreakpointItem *rprj_breakpoint_add(RPrjCursor *cur, R2ProjectBreakpoint *pbp, ut64 va) {
+	RDebug *dbg = cur->core->dbg;
+	if (!dbg || !dbg->bp || va == UT64_MAX || pbp->size < 1 || pbp->size > ST32_MAX) {
+		return NULL;
+	}
+	RBreakpoint *bp = dbg->bp;
+	RBreakpointItem *old = r_bp_get_at (bp, va);
+	if (old && (old->size != (int)pbp->size || old->perm != (int)pbp->perm || old->hw != (int)pbp->hw)) {
+		r_bp_del (bp, va);
+	}
+	RBreakpointItem *bpi = NULL;
+	const bool watch = pbp->flags & RPRJ_BREAKPOINT_WATCH;
+	if (watch) {
+		bpi = r_bp_watch_add (bp, va, (int)pbp->size, (int)pbp->hw, (int)pbp->perm);
+	} else if (pbp->hw == R_BP_TYPE_HW) {
+		bpi = r_bp_add_hw (bp, va, (int)pbp->size, (int)pbp->perm);
+	} else if (pbp->hw == R_BP_TYPE_FAULT) {
+		r_bp_add_fault (bp, va, (int)pbp->size, (int)pbp->perm);
+		bpi = r_bp_get_at (bp, va);
+	} else {
+		bpi = r_bp_add_sw (bp, va, (int)pbp->size, (int)pbp->perm);
+	}
+	if (!bpi) {
+		bpi = r_bp_get_at (bp, va);
+	}
+	if (!bpi) {
+		return NULL;
+	}
+	const char *name = rprj_st_get_optional (cur->st, pbp->name);
+	const char *data = rprj_st_get_optional (cur->st, pbp->data);
+	const char *cond = rprj_st_get_optional (cur->st, pbp->cond);
+	const char *expr = rprj_st_get_optional (cur->st, pbp->expr);
+	rprj_breakpoint_set_string (&bpi->name, name);
+	rprj_breakpoint_set_string (&bpi->data, data);
+	rprj_breakpoint_set_string (&bpi->cond, cond);
+	rprj_breakpoint_set_string (&bpi->expr, expr);
+	const char *module = rprj_breakpoint_module_name (cur, &pbp->addr);
+	rprj_breakpoint_set_string (&bpi->module_name, module);
+	bpi->module_delta = pbp->addr.mod != UT32_MAX? (st64)pbp->addr.delta: 0;
+	bpi->delta = bpi->addr - bp->baddr;
+	bpi->enabled = (pbp->flags & RPRJ_BREAKPOINT_ENABLED)? 1: 0;
+	bpi->trace = (pbp->flags & RPRJ_BREAKPOINT_TRACE)? 1: 0;
+	bpi->swstep = (pbp->flags & RPRJ_BREAKPOINT_SWSTEP)? 1: 0;
+	bpi->togglehits = (int)pbp->togglehits;
+	bpi->hits = (int)pbp->hits;
+	return bpi;
+}
+
+static void rprj_breakpoint_load(RPrjCursor *cur, int mode, ut64 next_entry) {
+	RBuffer *b = cur->b;
+	const bool diff = (mode & R_CORE_NEWPRJ_MODE_DIFF) != 0;
+	RList *seen = diff? r_list_newf (free): NULL;
+	while (rprj_entry_remaining (b, next_entry) >= RPRJ_BREAKPOINT_SIZE) {
+		const ut64 at = r_buf_at (b);
+		R2ProjectBreakpoint bp;
+		if (!rprj_breakpoint_read (b, &bp)) {
+			R_LOG_WARN ("Truncated breakpoint record at 0x%08"PFMT64x, at);
+			break;
+		}
+		ut64 va = UT64_MAX;
+		if (!rprj_mod_va (cur, &bp.addr, &va) || va == UT64_MAX) {
+			R_LOG_WARN ("Cannot resolve breakpoint record at 0x%08"PFMT64x, at);
+			continue;
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_LOG) {
+			const char *name = rprj_st_get_optional (cur->st, bp.name);
+			r_strbuf_appendf (cur->out, "      0x%08"PFMT64x" size=%u perm=%u hw=%u flags=0x%x name=%s\n",
+				va, bp.size, bp.perm, bp.hw, bp.flags, r_str_get (name));
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_SCRIPT) {
+			rprj_print_breakpoint_add (cur, &bp, va);
+		}
+		if (diff) {
+			rprj_diff_seen_addr (seen, va);
+			RBreakpointItem *curbp = cur->core->dbg && cur->core->dbg->bp
+				? r_bp_get_at (cur->core->dbg->bp, va): NULL;
+			if (!curbp) {
+				r_strbuf_appendf (cur->out, "'db- 0x%08"PFMT64x"\n", va);
+			} else if (rprj_breakpoint_differs (cur, &bp, curbp)) {
+				r_strbuf_appendf (cur->out, "'db- 0x%08"PFMT64x"\n", va);
+				rprj_print_current_breakpoint (cur, curbp);
+			}
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_LOAD) {
+			rprj_breakpoint_add (cur, &bp, va);
+		}
+	}
+	if (diff && cur->core->dbg && cur->core->dbg->bp) {
+		RBreakpointItem *bp;
+		RListIter *iter;
+		r_list_foreach (cur->core->dbg->bp->bps, iter, bp) {
+			if (bp && !bp->internal && !rprj_diff_has_addr (seen, bp->addr)) {
+				rprj_print_current_breakpoint (cur, bp);
+			}
+		}
+	}
+	r_list_free (seen);
+}
+
+static void rprj_print_signal_option(RPrjCursor *cur, ut32 signum, ut32 option) {
+	if (!option) {
+		r_strbuf_appendf (cur->out, "'dko %u\n", signum);
+	} else if (option & R_DBG_SIGNAL_CONT) {
+		r_strbuf_appendf (cur->out, "'dko %u cont\n", signum);
+	} else if (option & R_DBG_SIGNAL_SKIP) {
+		r_strbuf_appendf (cur->out, "'dko %u skip\n", signum);
+	}
+}
+
+static bool rprj_signal_diff_cb(void *user, const char *k, const char *v) {
+	R2ProjectDiffCtx *ctx = (R2ProjectDiffCtx *)user;
+	if (!r_str_startswith (k, "cfg.")) {
+		return true;
+	}
+	const int signum = atoi (k + 4);
+	const int option = atoi (v);
+	if (signum > 0 && option && !rprj_diff_has_addr (ctx->seen, (ut64)signum)) {
+		rprj_print_signal_option (ctx->cur, (ut32)signum, (ut32)option);
+	}
+	return true;
+}
+
+static void rprj_signal_load(RPrjCursor *cur, int mode, ut64 next_entry) {
+	RBuffer *b = cur->b;
+	const bool diff = (mode & R_CORE_NEWPRJ_MODE_DIFF) != 0;
+	RList *seen = diff? r_list_newf (free): NULL;
+	while (rprj_entry_remaining (b, next_entry) >= RPRJ_SIGNAL_SIZE) {
+		const ut64 at = r_buf_at (b);
+		R2ProjectSignal sig;
+		if (!rprj_signal_read (b, &sig)) {
+			R_LOG_WARN ("Truncated signal record at 0x%08"PFMT64x, at);
+			break;
+		}
+		if (!sig.signum) {
+			continue;
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_LOG) {
+			r_strbuf_appendf (cur->out, "      signal=%u option=%u\n", sig.signum, sig.option);
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_SCRIPT) {
+			rprj_print_signal_option (cur, sig.signum, sig.option);
+		}
+		if (diff) {
+			rprj_diff_seen_addr (seen, (ut64)sig.signum);
+			const int option = cur->core->dbg? r_debug_signal_what (cur->core->dbg, (int)sig.signum): 0;
+			if (option != (int)sig.option) {
+				rprj_print_signal_option (cur, sig.signum, (ut32)option);
+			}
+		}
+		if ((mode & R_CORE_NEWPRJ_MODE_LOAD) && cur->core->dbg) {
+			r_debug_signal_setup (cur->core->dbg, (int)sig.signum, (int)sig.option);
+		}
+	}
+	if (diff && cur->core->dbg && cur->core->dbg->sgnls) {
+		R2ProjectDiffCtx ctx = { cur, seen };
+		sdb_foreach (cur->core->dbg->sgnls, rprj_signal_diff_cb, &ctx);
+	}
+	r_list_free (seen);
+}
+
 static void rprj_strs_log(RPrjCursor *cur, ut64 next_entry) {
 	RBuffer *b = cur->b;
 	ut64 size;
@@ -1333,6 +1623,12 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 			break;
 		case RPRJ_HINT:
 			rprj_hint_load (&cur, mode, next_entry);
+			break;
+		case RPRJ_BRKP:
+			rprj_breakpoint_load (&cur, mode, next_entry);
+			break;
+		case RPRJ_SIGS:
+			rprj_signal_load (&cur, mode, next_entry);
 			break;
 		}
 		if (mode & R_CORE_NEWPRJ_MODE_LOG) {

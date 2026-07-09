@@ -20,10 +20,12 @@ enum {
 	RPRJ_EVAL,
 	RPRJ_XREF,
 	RPRJ_FUNC,
+	RPRJ_BRKP,
+	RPRJ_SIGS,
 	RPRJ_MAGIC = 0x4a525052,
 };
 
-#define RPRJ_VERSION 5
+#define RPRJ_VERSION 6
 #define RPRJ_HEADER_SIZE (r_offsetof (R2ProjectHeader, version) + sizeof (ut32))
 #define RPRJ_ENTRY_SIZE (r_offsetof (R2ProjectEntry, type) + sizeof (ut32))
 #define RPRJ_INFO_SIZE (r_offsetof (R2ProjectInfo, time) + sizeof (ut64))
@@ -39,9 +41,18 @@ enum {
 #define RPRJ_COLOR_SIZE 9
 #define RPRJ_BLOCK_SIZE (RPRJ_ADDR_SIZE + 8 + RPRJ_ADDR_SIZE + RPRJ_ADDR_SIZE + 4)
 #define RPRJ_VAR_SIZE 16
+#define RPRJ_BREAKPOINT_SIZE (RPRJ_ADDR_SIZE + 40)
+#define RPRJ_SIGNAL_SIZE 8
 
 enum {
 	RPRJ_FUNC_ATTR_NORETURN = 1 << 0,
+};
+
+enum {
+	RPRJ_BREAKPOINT_TRACE = 1 << 0,
+	RPRJ_BREAKPOINT_ENABLED = 1 << 1,
+	RPRJ_BREAKPOINT_SWSTEP = 1 << 2,
+	RPRJ_BREAKPOINT_WATCH = 1 << 3,
 };
 
 enum {
@@ -156,6 +167,25 @@ typedef struct {
 } R2ProjectAddr;
 
 typedef struct {
+	R2ProjectAddr addr;
+	ut32 name;
+	ut32 data;
+	ut32 cond;
+	ut32 expr;
+	ut32 size;
+	ut32 perm;
+	ut32 hw;
+	ut32 flags;
+	ut32 togglehits;
+	ut32 hits;
+} R2ProjectBreakpoint;
+
+typedef struct {
+	ut32 signum;
+	ut32 option;
+} R2ProjectSignal;
+
+typedef struct {
 	R2ProjectAddr from;
 	R2ProjectAddr to;
 	ut32 type;
@@ -266,6 +296,8 @@ static void rprj_write_project_addr(RBuffer *b, R2ProjectAddr addr);
 static void rprj_info_write(RBuffer *b, R2ProjectInfo *info);
 static void rprj_cmnt_write_record(RBuffer *b, R2ProjectComment *cmnt);
 static void rprj_hint_write(RBuffer *b, R2ProjectHint *hint);
+static void rprj_breakpoint_write_record(RBuffer *b, R2ProjectBreakpoint *bp);
+static void rprj_signal_write_record(RBuffer *b, R2ProjectSignal *sig);
 static bool rprj_color_is_set(const RColor *color);
 static bool rprj_color_eq(const RColor *a, const RColor *b);
 static void rprj_write_color(RBuffer *b, const RColor *color);
@@ -274,6 +306,8 @@ static bool rprj_read_le32(RBuffer *b, ut32 *out);
 static bool rprj_cmnt_read(RBuffer *b, R2ProjectComment *cmnt);
 static bool rprj_flag_read(RBuffer *b, R2ProjectFlag *flag);
 static bool rprj_hint_read(RBuffer *b, R2ProjectHint *hint);
+static bool rprj_breakpoint_read(RBuffer *b, R2ProjectBreakpoint *bp);
+static bool rprj_signal_read(RBuffer *b, R2ProjectSignal *sig);
 static bool rprj_xref_read(RBuffer *b, R2ProjectXref *xref);
 static bool rprj_function_read(RBuffer *b, R2ProjectFunction *fcn);
 static bool rprj_function_attr_read(RBuffer *b, R2ProjectFunctionAttr *attr);
