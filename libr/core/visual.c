@@ -2955,7 +2955,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		ch = 'q';
 	}
 	ch = r_cons_arrow_to_hjkl (core->cons, ch);
-	int wheelspeed = (core->cons->mouse_event)
+	const bool is_wheel = core->cons->mouse_event;
+	if (is_wheel && (ch == 'h' || ch == 'l') &&
+			!r_config_get_b (core->config, "scr.wheel.hscroll")) {
+		return 1;
+	}
+	int wheelspeed = is_wheel
 		? r_config_get_i (core->config, "scr.wheel.speed"): 1;
 	ch = visual_nkey (core, ch);
 	if (ch < 2) {

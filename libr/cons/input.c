@@ -66,6 +66,23 @@ static bool readpush_front(RCons *cons, int ch) {
 	return true;
 }
 
+static int r_cons_mouse_wheel_key(int button) {
+	if (!(button & 64)) {
+		return 0;
+	}
+	switch (button & 3) {
+	case 0: // wheel up
+		return 'k';
+	case 1: // wheel down
+		return 'j';
+	case 2: // wheel left
+		return 'h';
+	case 3: // wheel right
+		return 'l';
+	}
+	return 0;
+}
+
 static int r_cons_urxvt_mouse_event(RCons *cons, int first) {
 	char button[8];
 	size_t i = 0;
@@ -94,21 +111,7 @@ static int r_cons_urxvt_mouse_event(RCons *cons, int first) {
 		}
 	} while (ch != 'M' && ch != 'm');
 	cons->mouse_event = true;
-	switch (atoi (button)) {
-	case 64: // wheel up
-		return 'k';
-	case 65: // wheel down
-		return 'j';
-	case 66: // wheel left
-		return 'h';
-	case 67: // wheel right
-		return 'l';
-	case 80: // control+wheel up
-		return 'h';
-	case 81: // control+wheel down
-		return 'l';
-	}
-	return 0;
+	return r_cons_mouse_wheel_key (atoi (button));
 }
 
 static int r_cons_sgr_mouse_event(RCons *cons) {
@@ -152,21 +155,13 @@ static int r_cons_sgr_mouse_event(RCons *cons) {
 	ypos[i] = 0;
 	cons->mouse_event = true;
 	int b = atoi (button);
+	int wheel = r_cons_mouse_wheel_key (b);
+	if (wheel) {
+		return wheel;
+	}
 	switch (b) {
 	case 2: // right click
 		return ch == 'M'? INT8_MAX: -INT8_MAX;
-	case 64: // wheel up
-		return 'k';
-	case 65: // wheel down
-		return 'j';
-	case 66: // wheel left
-		return 'h';
-	case 67: // wheel right
-		return 'l';
-	case 80: // control+wheel up
-		return 'h';
-	case 81: // control+wheel down
-		return 'l';
 	}
 	if (ch == 'm') {
 		r_cons_set_click (cons, atoi (xpos), atoi (ypos));
