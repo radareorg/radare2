@@ -262,7 +262,7 @@ def main():
             remote = re.search(r'(.*?)\t.*radareorg/radare2 \(fetch\)', upstream_remote).group(1)
         except AttributeError: # If search misses, None.group() throws this
             remote = 'https://github.com/radareorg/radare2'
-        os.system(f'git pull {remote} master')
+        subprocess.call(['git', 'pull', remote, 'master'])
     if args.project and args.backend == 'ninja':
         log.error('--project is not compatible with --backend ninja')
         sys.exit(1)
