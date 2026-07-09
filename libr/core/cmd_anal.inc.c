@@ -3722,7 +3722,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 				RListIter *iter;
 				r_list_uniq_inplace (b->switch_op->cases, caseval);
 				r_list_foreach (b->switch_op->cases, iter, cop) {
-					r_cons_printf (core->cons, " s 0x%08" PFMT64x, cop->addr);
+					r_cons_printf (core->cons, " s 0x%08" PFMT64x, cop->jump);
 				}
 			}
 			r_cons_newline (core->cons);
@@ -13690,7 +13690,7 @@ static bool r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 				bool found;
 				int i = ht_uu_find (ht, bb->addr, &found);
 				if (found) {
-					int i2 = ht_uu_find (ht, cop->addr, &found);
+					int i2 = ht_uu_find (ht, cop->jump, &found);
 					if (found) {
 						r_cons_printf (core->cons, "  edge [\n"
 								"    source  %d\n"

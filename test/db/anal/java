@@ -628,3 +628,27 @@ EXPECT=<<EOF
   "n2" -> "n6";
 EOF
 RUN
+
+NAME=java tableswitch case edges point at the case targets in agf output
+FILE=malloc://128
+ARGS=-a java
+CMDS=<<EOF
+wx 033b033ca7003c1a08703d1caa0000000000003200000000000000030000002000000026000000320000002c840202a70011840203a7000b840209a70005033c1a100aa1ffc41bac00000003000a0000
+af
+agfd~-\>
+EOF
+EXPECT=<<EOF
+        "0x00000000" -> "0x00000040" [color="#3a96dd"];
+        "0x00000040" -> "0x00000007" [color="#13a10e"];
+        "0x00000040" -> "0x00000046" [color="#c50f1f"];
+        "0x00000007" -> "0x0000000d" [color="#c50f1f"];
+        "0x00000007" -> "0x0000000d" [color="#c50f1f"];
+        "0x00000007" -> "0x0000002c" [color="#3a96dd"];
+        "0x00000007" -> "0x00000032" [color="#3a96dd"];
+        "0x00000007" -> "0x0000003e" [color="#3a96dd"];
+        "0x0000002c" -> "0x00000040" [color="#3a96dd"];
+        "0x00000032" -> "0x00000040" [color="#3a96dd"];
+        "0x0000003e" -> "0x00000040" [color="#3a96dd"];
+        "0x0000000d" -> "0x0000002c" [color="#3a96dd"];
+EOF
+RUN

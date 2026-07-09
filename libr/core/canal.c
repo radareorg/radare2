@@ -1505,18 +1505,18 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 				} else if (is_html) {
 					r_cons_printf (core->cons, "<div class=\"connector _0x%08" PFMT64x " _0x%08" PFMT64x "\">\n"
 							"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
-							bbi->addr, caseop->addr);
+							bbi->addr, caseop->jump);
 				} else if (!is_json) {
 					if (is_star) {
 						char *from = get_title (bbi->addr);
-						char *to = get_title (caseop->addr);
+						char *to = get_title (caseop->jump);
 						r_cons_printf (core->cons, "age %s %s\n", from ,to);
 						free (from);
 						free (to);
 					} else {
 						r_cons_printf (core->cons, "        \"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" "
 								"[color=\"%s\"];\n",
-								bbi->addr, caseop->addr, pal_trfa);
+								bbi->addr, caseop->jump, pal_trfa);
 						core_anal_color_curr_node (core, bbi);
 					}
 				}
@@ -2078,7 +2078,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 			RListIter *it;
 			RAnalCaseOp *cop;
 			r_list_foreach (bb->switch_op->cases, it, cop) {
-				v = get_title (cop->addr);
+				v = get_title (cop->jump);
 				r_cons_printf (core->cons, "age %s %s\n", u, v);
 				free (v);
 			}
