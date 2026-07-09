@@ -2190,10 +2190,11 @@ static int cmd_afv(RCore *core, const char *str) {
 	case 't': // "afvt"
 		if (fcn) {
 			p = strchr (ostr, ' ');
-			if (!p++) {
+			if (!p) {
 				free (ostr);
 				return false;
 			}
+			p++;
 
 			char *type = strchr (p, ' ');
 			if (type) {
