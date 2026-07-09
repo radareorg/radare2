@@ -1125,6 +1125,16 @@ R_API bool r_anal_cc_argclob(RAnal *anal, const char *caller_cc, int n, const ch
 	return R_STR_ISEMPTY (preserves) || !r_anal_cc_location_in_regset (anal, loc, preserves, true);
 }
 
+R_API bool r_anal_cc_isclobber(RAnal *anal, const char *cc, const char *reg) {
+	R_RETURN_VAL_IF_FAIL (anal && cc && reg, false);
+	const char *clobbers = cc_regset (anal, cc, "clobber");
+	if (R_STR_ISEMPTY (clobbers) || !r_anal_cc_regset_contains (clobbers, reg)) {
+		return false;
+	}
+	const char *preserves = cc_regset (anal, cc, "preserve");
+	return R_STR_ISEMPTY (preserves) || !r_anal_cc_regset_contains (preserves, reg);
+}
+
 R_API const char *r_anal_cc_default(RAnal *anal) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	return sdb_const_get (DB, "default.cc", 0);
