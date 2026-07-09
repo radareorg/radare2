@@ -132,7 +132,7 @@ R_API RStrsStore *r_strs_store_from_utf16le(const ut8 *src, ut32 src_len, const 
 			slen = src_len - soff;
 		}
 		int n = r_str_utf16_to_utf8 ((ut8 *)ss->base + pos,
-			ss->base_cap - pos, src + soff, slen, true);
+			ss->base_cap - pos, src + soff, slen, false);
 		ut32 utf8_len = (n > 0)? (ut32)n: 0;
 		ss->entries[i] = (RStrsEntry){ pos, utf8_len };
 		pos += utf8_len;

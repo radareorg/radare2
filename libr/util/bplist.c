@@ -186,7 +186,7 @@ static bool parse_unicode_node(RBPlist *bplist, const char **bnode, ut64 size) {
 		return false;
 	}
 	const ut8 *src = (const ut8*)*bnode;
-	if (r_str_utf16_to_utf8 (dst, dst_size, src, src_size, false) < 0) {
+	if (r_str_utf16_to_utf8 (dst, dst_size, src, src_size, true) < 0) {
 		free (dst);
 		return false;
 	}

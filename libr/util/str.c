@@ -3006,13 +3006,12 @@ R_API char *r_str_uri_encode(const char *s) {
 	return trimDown? trimDown: od;
 }
 
-// XXX antipattern, bigendian should be 1 not 0
-R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian) {
+R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, bool big_endian) {
+	R_RETURN_VAL_IF_FAIL (dst && src, -1);
 	ut8 *outstart = dst;
 	const ut8 *in = src;
 	const ut8 *inend;
 
-	R_RETURN_VAL_IF_FAIL (dst && src, -1);
 	if (len_dst < 1 || len_src < 1) {
 		if (len_dst > 0) {
 			*dst = 0;
@@ -3024,7 +3023,7 @@ R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src
 	}
 	inend = in + len_src;
 	while (in < inend) {
-		ut32 c = little_endian? r_read_le16 (in): r_read_be16 (in);
+		ut32 c = big_endian? r_read_be16 (in): r_read_le16 (in);
 		in += 2;
 		if (!c) {
 			break;
@@ -3033,7 +3032,7 @@ R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src
 			if (in >= inend) { /*(in > inend) shouldn't happens */
 				break;
 			}
-			ut32 d = little_endian? r_read_le16 (in): r_read_be16 (in);
+			ut32 d = big_endian? r_read_be16 (in): r_read_le16 (in);
 			in += 2;
 			if ((d & 0xFC00) == 0xDC00) {
 				c &= 0x03FF;

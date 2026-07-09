@@ -14935,14 +14935,14 @@ static bool check_string_at(RCore *core, ut64 addr, bool and_print_it) {
 	// utf16le check
 	if (strnullpad_check (buf, R_MIN (len, 10), 10, 2, false)) {
 		out = malloc (len + 1);
-		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, true) < 1) {
+		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, false) < 1) {
 			R_FREE (out);
 		}
 	}
 	// utf16be check
 	if (strnullpad_check (buf, R_MIN (len, 10), 10, 2, true)) {
 		out = malloc (len + 1);
-		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, false) < 1) {
+		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, true) < 1) {
 			R_FREE (out);
 		}
 	}

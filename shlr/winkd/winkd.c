@@ -568,7 +568,7 @@ RList *winkd_list_modules(WindCtx *ctx) {
 			wind_module_free (mod);
 			break;
 		}
-		r_str_utf16_to_utf8 ((ut8 *)mod->name, utf8sz, unname, length, true);
+		r_str_utf16_to_utf8 ((ut8 *)mod->name, utf8sz, unname, length, false);
 		free (unname);
 		ptr = next;
 

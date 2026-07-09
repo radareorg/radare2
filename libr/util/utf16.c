@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2024 - kazarmy */
+/* radare2 - LGPL - Copyright 2017-2026 - kazarmy */
 
 #include <r_types.h>
 #include <r_util.h>

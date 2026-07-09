@@ -425,13 +425,13 @@ bool test_r_str_utf16_to_utf8(void) {
 	char out[8];
 
 	memset (out, 0xff, sizeof (out));
-	int len = r_str_utf16_to_utf8 ((ut8 *)out, sizeof (out), le, sizeof (le), true);
+	int len = r_str_utf16_to_utf8 ((ut8 *)out, sizeof (out), le, sizeof (le), false);
 	mu_assert_eq (len, 2, "utf16le byte length");
 	mu_assert_streq (out, "r2", "utf16le string");
 	mu_assert_eq ((ut8)out[2], 0, "utf16le string terminator");
 
 	memset (out, 0xff, sizeof (out));
-	len = r_str_utf16_to_utf8 ((ut8 *)out, sizeof (out), be, sizeof (be), false);
+	len = r_str_utf16_to_utf8 ((ut8 *)out, sizeof (out), be, sizeof (be), true);
 	mu_assert_eq (len, 2, "utf16be byte length");
 	mu_assert_streq (out, "r2", "utf16be string");
 	mu_assert_eq ((ut8)out[2], 0, "utf16be string terminator");
