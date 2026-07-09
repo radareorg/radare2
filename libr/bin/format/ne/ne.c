@@ -505,26 +505,22 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 				reloc->additive = 1;
 				r_list_append (relocs, reloc);
 			} else {
-				do {
-#define NE_BUG 0
-#if NE_BUG
-					if (reloc->paddr + 4 < r_buf_size (bin->buf)) {
-						break;
-					}
-#endif
-					r_list_append (relocs, reloc);
+				int chainlen;
+				r_list_append (relocs, reloc);
+				for (chainlen = 0; chainlen < 0xFFFF; chainlen++) {
 					offset = r_buf_read_le16_at (bin->buf, reloc->paddr);
-					RBinReloc *tmp = reloc;
-					reloc = R_NEW0 (RBinReloc);
-					if (!reloc) {
+					if (offset == 0xFFFF) {
 						break;
 					}
-					*reloc = *tmp;
-					if (reloc->import)
-						reloc->import = r_bin_import_clone (reloc->import);
-					reloc->paddr = seg->paddr + offset;
-				} while (offset != 0xFFFF);
-				free (reloc);
+					RBinReloc *next = R_NEW0 (RBinReloc);
+					*next = *reloc;
+					if (next->import) {
+						next->import = r_bin_import_clone (next->import);
+					}
+					next->paddr = seg->paddr + offset;
+					r_list_append (relocs, next);
+					reloc = next;
+				}
 			}
 
 			off += sizeof (NE_image_reloc_item);
