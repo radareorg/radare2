@@ -175,12 +175,18 @@ static bool parse_string_node(RBPlist *bplist, const char **bnode, ut64 size) {
 }
 
 static bool parse_unicode_node(RBPlist *bplist, const char **bnode, ut64 size) {
-	ut8 *dst = malloc (size + 1);
+	if (size > (ut64)ST32_MAX / 3) {
+		R_LOG_ERROR ("BPLIST_UNICODE data size is too large");
+		return false;
+	}
+	int src_size = (int)(size * 2);
+	int dst_size = (int)(size * 3) + 1;
+	ut8 *dst = malloc (dst_size);
 	if (!dst) {
 		return false;
 	}
 	const ut8 *src = (const ut8*)*bnode;
- 	if (!r_str_utf16_to_utf8 (dst, size, src, size, false)) {
+	if (r_str_utf16_to_utf8 (dst, dst_size, src, src_size, false) < 0) {
 		free (dst);
 		return false;
 	}
