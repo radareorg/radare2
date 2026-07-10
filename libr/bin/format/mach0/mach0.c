@@ -1807,8 +1807,11 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * mo, ut32 offset, ut32 si
 	return true;
 }
 
-static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
-	R_LOG_DEBUG ("reconstructing chained fixups");
+// Build mo->chained_starts out of the BIND_OPCODE_THREADED opcodes found in
+// LC_DYLD_INFO. This is how arm64e binaries encoded pointer chains before
+// LC_DYLD_CHAINED_FIXUPS existed, so it only applies when dyld_info is set.
+static bool parse_threaded_rebase(struct MACH0_(obj_t) * mo) {
+	R_LOG_DEBUG ("parsing threaded rebase opcodes");
 	if (!mo->dyld_info) {
 		return false;
 	}
@@ -2376,7 +2379,7 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 			break;
 		}
 	}
-	bool has_chained_fixups = false;
+	bool have_chained_starts = false;
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + mo->header_at;
 		i < mo->hdr.ncmds;
 		i++, off += lc.cmdsize) {
@@ -2456,15 +2459,21 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 					ut32 dataoff = r_read_ble32 (buf, mo->big_endian);
 					ut32 datasize = r_read_ble32 (buf + 4, mo->big_endian);
 					R_LOG_DEBUG ("chained fixups at 0x%08x with size %d", (ut64)dataoff, (int)datasize);
-					has_chained_fixups = parse_chained_fixups (mo, dataoff, datasize);
+					have_chained_starts = parse_chained_fixups (mo, dataoff, datasize);
 				}
 			}
 			break;
 		}
 	}
 
-	if (!has_chained_fixups && mo->hdr.cputype == CPU_TYPE_ARM64 && (mo->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
-		reconstruct_chained_fixup (mo);
+	// old arm64e binaries have no LC_DYLD_CHAINED_FIXUPS, they encode the
+	// chains as threaded rebase opcodes inside LC_DYLD_INFO instead
+	if (!have_chained_starts && !skip_chained_fixups) {
+		bool isarm64e = mo->hdr.cputype == CPU_TYPE_ARM64 \
+			&& (mo->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E;
+		if (isarm64e) {
+			parse_threaded_rebase (mo);
+		}
 	}
 	return true;
 }
