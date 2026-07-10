@@ -379,6 +379,24 @@ static bool dyncc_role_tag(char tag) {
 	}
 }
 
+R_IPI const char *r_anal_cc_rolelabel(char tag, char label[2], int *slot) {
+	if (!dyncc_role_tag (tag)) {
+		return NULL;
+	}
+	const char *roles = "TRVEX";
+	const char *role = strchr (roles, tag);
+	*slot = role? 26 + (int)(role - roles): tag - 'a';
+	const char *tags = "dtcgi";
+	const char *p = strchr (tags, tag);
+	if (p) {
+		const char *names[] = { "descriptor", "thread", "code", "global", "ic" };
+		return names[p - tags];
+	}
+	label[0] = tag;
+	label[1] = 0;
+	return label;
+}
+
 static int dyncc_find_role(const RAnalDynCC *d, char tag) {
 	int i;
 	for (i = 0; i < d->role_count; i++) {
