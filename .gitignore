@@ -85,6 +85,7 @@ config-user.mk
 libr/bin/d/dll/dll
 test/unit/test_anal_cc
 test/unit/test_anal_hints
+test/unit/test_anal_types
 test/unit/test_bin
 test/unit/test_reg
 libr/config.h
