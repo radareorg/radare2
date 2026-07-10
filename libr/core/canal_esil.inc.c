@@ -549,7 +549,7 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
 	const bool is_arm = r_str_startswith (anal->config->arch, "arm");
-	const bool is_arm32 = is_arm && anal->config->bits != 64;
+	const bool is_arm_non64 = is_arm && anal->config->bits != 64;
 	const bool is_arm64 = is_arm && anal->config->bits == 64;
 	if (ctx->clob.enabled && (ctx->clob.read_clobbered || RVecEsilRegTaint_length (&ctx->clob.reg_taints) > 0)) {
 		RRegItem *item = r_reg_get (anal->reg, name, -1);
@@ -589,7 +589,7 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	ut64 at = *val;
 	if (is_arm) {
 		if (anal->opt.armthumb) {
-			if (is_arm32 && !strcmp (name, "pc") && op) {
+			if (is_arm_non64 && !strcmp (name, "pc") && op) {
 				const bool is_ubranch = (op->type == R_ANAL_OP_TYPE_UCALL || op->type == R_ANAL_OP_TYPE_UJMP);
 				if (is_ubranch) {
 					if ((*val & 1)) {
@@ -605,7 +605,7 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 				}
 			}
 		}
-		if (is_arm32) {
+		if (anal->config->bits == 32) {
 			if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
 				add_string_ref (anal->coreb.core, esil->addr, at);
 			}
