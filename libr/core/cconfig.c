@@ -4184,6 +4184,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("types.verbose", "false", "verbose output from type analysis");
 	SETB ("types.constraint", "false", "enable constraint types analysis for variables");
 	SETB ("types.rollback", "false", "enable state rollback for type propagation recovery");
+	SETB ("types.synth", "false", "synthesize struct types for untyped pointer args after type matching (see afts)");
 	SETB ("types.xrefs", "true", "show xrefs in type view commands (tv, tfv, tsv, ...)");
 	SETCB ("anal.vars", "true", &cb_analvars, "analyze local variables and arguments");
 	SETB ("anal.vars.clobber", "true", "honor calling convention clobber sets during ESIL analysis");
