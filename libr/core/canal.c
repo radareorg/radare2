@@ -1031,6 +1031,9 @@ static void print_hint_h_format(RCore *core, HintNode *node) {
 			case R_ANAL_ADDR_HINT_TYPE_ENUM:
 				r_cons_printf (core->cons, " enum='%s'", record->enum_name);
 				break;
+			case R_ANAL_ADDR_HINT_TYPE_REGUSE:
+				r_cons_printf (core->cons, " reguse='%s'", record->reguse);
+				break;
 			}
 		}
 		break;
@@ -1116,6 +1119,9 @@ static void hint_node_print(RCore *core, HintNode *node, int mode, PJ *pj) {
 				case R_ANAL_ADDR_HINT_TYPE_ENUM:
 					hint_addr_str (core, node->addr, "ahie", record->enum_name);
 					break;
+				case R_ANAL_ADDR_HINT_TYPE_REGUSE:
+					hint_addr_str (core, node->addr, "ahR", record->reguse);
+					break;
 				}
 			}
 			break;
@@ -1188,6 +1194,9 @@ static void hint_node_print(RCore *core, HintNode *node, int mode, PJ *pj) {
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_ENUM:
 					pj_ks (pj, "enum", record->enum_name);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_REGUSE:
+					pj_ks (pj, "reguse", record->reguse);
 					break;
 				}
 			}

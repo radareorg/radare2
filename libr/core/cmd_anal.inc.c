@@ -1021,6 +1021,7 @@ static RCoreHelpMessage help_msg_ah = {
 	"aho", " call", "change opcode type (see aho?)",
 	"ahp", " addr", "set pointer hint",
 	"ahr", " val", "set hint for return value of a function",
+	"ahR", " text", "set register-use comment hint",
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
 	"aht", "[?][s] <type>", "mark immediate as a type offset (deprecated, moved to \"aho\")",
@@ -12527,6 +12528,19 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_set_pointer (a, core->addr, r_num_math (core->num, input + 1));
 		} else if (input[1] == '-') { // "ahp-"
 			r_anal_hint_unset_pointer (a, core->addr);
+		}
+		break;
+	case 'R': // "ahR"
+		if (input[1] == ' ') {
+			r_anal_hint_set_reguse (a, core->addr, input + 2);
+		} else if (input[1] == '-') {
+			r_anal_hint_set_reguse (a, core->addr, NULL);
+		} else {
+			RAnalHint *hint = r_anal_hint_get (a, core->addr);
+			if (hint && hint->reguse) {
+				r_cons_println (core->cons, hint->reguse);
+			}
+			r_anal_hint_free (hint);
 		}
 		break;
 	case 'r': // "ahr"

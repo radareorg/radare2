@@ -1578,6 +1578,8 @@ R_API void r_anal_hint_set_ret(RAnal *a, ut64 addr, ut64 val);
 R_API void r_anal_hint_set_high(RAnal *a, ut64 addr);
 R_API void r_anal_hint_set_stackframe(RAnal *a, ut64 addr, ut64 size);
 R_API void r_anal_hint_set_val(RAnal *a, ut64 addr, ut64 v);
+R_API void r_anal_hint_set_reguse(RAnal *a, ut64 addr, const char *reguse);
+R_API void r_anal_hint_append_reguse(RAnal *a, ut64 addr, const char *reguse);
 R_API void r_anal_hint_set_arch(RAnal *a, ut64 addr, const char * R_NULLABLE arch); // arch == NULL => use global default
 R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, int bits); // bits == NULL => use global default
 R_API void r_anal_hint_unset_val(RAnal *a, ut64 addr);

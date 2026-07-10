@@ -51,6 +51,9 @@ static void addr_hint_record_fini(void *element, void *user) {
 	case R_ANAL_ADDR_HINT_TYPE_ENUM:
 		free (record->enum_name);
 		break;
+	case R_ANAL_ADDR_HINT_TYPE_REGUSE:
+		free (record->reguse);
+		break;
 	default:
 		break;
 	}
@@ -310,6 +313,56 @@ R_API void r_anal_hint_set_val(RAnal *a, ut64 addr, ut64 v) {
 	SET_HINT (R_ANAL_ADDR_HINT_TYPE_VAL, r->val = v;);
 }
 
+R_API void r_anal_hint_set_reguse(RAnal *a, ut64 addr, const char *reguse) {
+	if (R_STR_ISEMPTY (reguse)) {
+		unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_REGUSE, addr);
+		return;
+	}
+	SET_HINT (R_ANAL_ADDR_HINT_TYPE_REGUSE,
+		free (r->reguse);
+		r->reguse = strdup (reguse);
+	);
+}
+
+static char *reguse_append_text(const char *list, const char *item) {
+	if (R_STR_ISEMPTY (list)) {
+		return strdup (item);
+	}
+	if (strstr (list, item)) {
+		return NULL;
+	}
+	const char *item_is = strstr (item, " is ");
+	if (item_is) {
+		r_strf_var (prefix, 128, "%.*s is ", (int)(item_is - item), item);
+		const char *p = strstr (list, prefix);
+		if (p) {
+			const char *role = item_is + 4;
+			if (strstr (p, role)) {
+				return NULL;
+			}
+			const char *end = strstr (p, "; ");
+			const int len = end? (int)(end - list): strlen (list);
+			return r_str_newf ("%.*s, %s%s", len, list, role, end? end: "");
+		}
+	}
+	return r_str_newf ("%s; %s", list, item);
+}
+
+R_API void r_anal_hint_append_reguse(RAnal *a, ut64 addr, const char *reguse) {
+	if (R_STR_ISEMPTY (reguse)) {
+		return;
+	}
+	RAnalAddrHintRecord *r = ensure_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_REGUSE, addr);
+	if (!r) {
+		return;
+	}
+	char *msg = reguse_append_text (r->reguse, reguse);
+	if (msg) {
+		free (r->reguse);
+		r->reguse = msg;
+	}
+}
+
 R_API void r_anal_hint_set_arch(RAnal *a, ut64 addr, const char *arch) {
 	RAnalArchHintRecord *record = (RAnalArchHintRecord *)ensure_ranged_hint_record (&a->arch_hints, addr, sizeof (RAnalArchHintRecord));
 	if (!record) {
@@ -435,6 +488,7 @@ R_API void r_anal_hint_free(RAnalHint *h) {
 		free (h->syntax);
 		free (h->offset);
 		free (h->enum_name);
+		free (h->reguse);
 		free (h);
 	}
 }
@@ -562,6 +616,9 @@ static void hint_merge(RAnalHint *hint, RAnalAddrHintRecord *record) {
 		break;
 	case R_ANAL_ADDR_HINT_TYPE_ENUM:
 		hint->enum_name = record->enum_name ? strdup (record->enum_name) : NULL;
+		break;
+	case R_ANAL_ADDR_HINT_TYPE_REGUSE:
+		hint->reguse = record->reguse ? strdup (record->reguse) : NULL;
 		break;
 	}
 }
