@@ -215,6 +215,7 @@ typedef struct r_anal_union_member_t {
 	char *type;
 	size_t offset; // in bytes
 	size_t size; // in bits? TODO rename to 'bitsize'
+	size_t count; // array element count, 0 when not an array
 } RAnalUnionMember;
 
 typedef enum {
@@ -1803,6 +1804,7 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
 R_API RList *r_anal_types_baselist(RAnal *anal);
 R_API void r_parse_pdb_types(const RAnal *anal, const RBinPdb *pdb);
 R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);
+R_API char *r_anal_base_type_to_kv(const RAnalBaseType *type);
 R_API void r_anal_base_type_free(RAnalBaseType *type);
 R_API RAnalBaseType *r_anal_base_type_new(RAnalBaseTypeKind kind);
 R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx);
