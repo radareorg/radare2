@@ -2,6 +2,7 @@
 
 #if R_INCLUDE_BEGIN
 
+// move into RCorePriv
 static R_TH_LOCAL char *oldcwd = NULL;
 
 // clang-format off

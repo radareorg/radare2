@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2009-2026 - pancake */
+
 typedef struct {
 	int arena;
 	int offset;
@@ -16,12 +18,10 @@ static void cccb(void *u) {
 // dup with isValidAddress wtf
 static bool myvalid(RCore *core, ut64 addr) {
 	RIO *io = core->io;
-#if 1
 	RFlagItem *fi = r_flag_get_in (core->flags, addr);
 	if (fi && strchr (fi->name, '.')) {
 		return true;
 	}
-#endif
 	if (addr < 0x100) {
 		return false;
 	}
@@ -548,60 +548,64 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	RAnal *anal = esil->anal;
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
-	RCore *core = anal->coreb.core;
+	const int bits = anal->config->bits;
+	const bool is_arm = r_str_startswith (anal->config->arch, "arm");
+	const bool is_arm64 = is_arm && bits == 64;
 	if (ctx->clob.enabled && (ctx->clob.read_clobbered || RVecEsilRegTaint_length (&ctx->clob.reg_taints) > 0)) {
 		RRegItem *item = r_reg_get (anal->reg, name, -1);
 		if (item) {
+			RRegItem *clear_item = item;
+			RRegItem *xitem = NULL;
+			if (is_arm64 && item->type == R_REG_TYPE_GPR && item->size == 32 && item->name[0] == 'w') {
+				r_strf_var (xname, 8, "x%s", item->name + 1);
+				xitem = r_reg_get (anal->reg, xname, -1);
+				if (xitem && xitem->arena == item->arena && xitem->offset == item->offset && xitem->size > item->size) {
+					clear_item = xitem;
+				}
+			}
 			if (ctx->clob.read_clobbered) {
 				// strip the COND bit: if this hook fired for a conditional
 				// load then the esil condition held and the load did happen
 				if ((ctx->clob.read_clean_mem && (op->type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND) == R_ANAL_OP_TYPE_LOAD)
 						|| esilbreak_erasing_write (ctx, op, item)) {
-					esil_reg_taint_clear_item (ctx, item);
+					esil_reg_taint_clear_item (ctx, clear_item);
 				} else if (ctx->clob.pc_span.size < 1
 						|| !esil_reg_taint_overlap_item (&ctx->clob.pc_span, item)) {
+					esil_reg_taint_clear_item (ctx, clear_item);
 					esil_reg_taint_add_item (ctx, item);
 				}
+				r_unref (xitem);
 				r_unref (item);
 				return false;
 			}
-			esil_reg_taint_clear_item (ctx, item);
+			esil_reg_taint_clear_item (ctx, clear_item);
+			r_unref (xitem);
 			r_unref (item);
 		}
 	}
-	handle_var_stack_access (esil, *val, R_PERM_NONE, esil->anal->config->bits / 8, false);
-	const bool is_arm = r_str_startswith (core->anal->config->arch, "arm");
+	handle_var_stack_access (esil, *val, R_PERM_NONE, bits / 8, false);
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
 	ut64 at = *val;
 	if (is_arm) {
-		if (anal && anal->opt.armthumb) {
-			if (anal->config->bits < 33 && is_arm && !strcmp (name, "pc") && op) {
-				switch (op->type) {
-				case R_ANAL_OP_TYPE_UCALL: // BLX
-				case R_ANAL_OP_TYPE_UJMP: // BX
-							  // R2_600 - maybe UJMP/UCALL is enough here
-					if (!(*val & 1)) {
-						r_anal_hint_set_bits (anal, *val, 32);
-					} else {
+		if (anal->opt.armthumb) {
+			if (bits != 64 && !strcmp (name, "pc") && op) {
+				const bool is_ubranch = (op->type == R_ANAL_OP_TYPE_UCALL || op->type == R_ANAL_OP_TYPE_UJMP);
+				if (is_ubranch) {
+					if ((*val & 1)) {
 						ut64 snv = r_reg_getv (anal->reg, "pc");
 						if (snv != UT32_MAX && snv != UT64_MAX) {
 							if (r_io_is_valid_offset (anal->iob.io, *val, 1)) {
 								r_anal_hint_set_bits (anal, *val - 1, 16);
 							}
 						}
+					} else {
+						r_anal_hint_set_bits (anal, *val, 32);
 					}
-					break;
-				default:
-					break;
 				}
 			}
 		}
-		if (core->rasm && core->rasm->config && core->rasm->config->bits == 32 && strstr (core->rasm->config->arch, "arm")) {
-			if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
-				add_string_ref (anal->coreb.core, esil->addr, at);
-			}
-		} else if (core->anal && core->anal->config && core->anal->config->bits == 32 && strstr (core->anal->config->arch, "arm")) {
+		if (bits == 32) {
 			if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
 				add_string_ref (anal->coreb.core, esil->addr, at);
 			}

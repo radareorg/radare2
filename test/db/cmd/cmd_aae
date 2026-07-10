@@ -83,6 +83,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aae clears arm64 x taint on w writes
+FILE=malloc://0x400
+ARGS=-w -a arm -b 64
+CMDS=<<EOF
+wx 08000094e00f40b9080b008b083d40b9c0035fd6 @ 0x100
+wx c0035fd6 @ 0x120
+e anal.cc=arm64
+e anal.vars.clobber=true
+aae 0x14 @ 0x100
+ah*~call-clobbered?
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
+
 NAME=aae honors call clobbers with emu.lazy
 FILE=malloc://0x400
 ARGS=-w -a x86 -b 64
