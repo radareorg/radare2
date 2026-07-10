@@ -186,6 +186,7 @@ typedef struct r_disasm_state_t {
 	bool show_cmt_flgrefs;
 	bool show_cmt_esil;
 	bool show_cmt_pseudo;
+	bool show_cmt_reguse;
 	bool show_cmt_strings;
 	bool show_cycles;
 	bool show_refptr;
@@ -955,6 +956,7 @@ static RDisasmState *ds_init(RCore *core, bool for_json) {
 	ds->cmtcol = r_config_get_i (core->config, "asm.cmt.col");
 	ds->show_cmt_esil = r_config_get_b (core->config, "asm.cmt.esil");
 	ds->show_cmt_pseudo = r_config_get_b (core->config, "asm.cmt.pseudo");
+	ds->show_cmt_reguse = r_config_get_b (core->config, "asm.cmt.reguse");
 	ds->show_cmt_strings = r_config_get_b (core->config, "asm.cmt.strings");
 	ds->show_cmt_flgrefs = r_config_get_b (core->config, "asm.cmt.flgrefs");
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
@@ -2649,6 +2651,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
 	// vartype also contains varname, so we use varname color to display it
 	const char *vartype = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, ds->at);
+	const char *reguse = ds->show_cmt_reguse && ds->hint? ds->hint->reguse: NULL;
 	if (!comment) {
 		if (vartype) {
 			R_FREE (ds->comment);
@@ -2663,10 +2666,18 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		}
 	} else if (vartype) {
 		ds->comment = r_str_newf ("%s%s %s %s%s%s %s",
-				COLOR_ARG (ds, color_usrcmt), ds->cmtoken, vartype, COLOR_RESET (ds),
-				COLOR (ds, color_usrcmt), ds->cmtoken, comment);
+			COLOR_ARG (ds, color_usrcmt), ds->cmtoken, vartype, COLOR_RESET (ds),
+			COLOR (ds, color_usrcmt), ds->cmtoken, comment);
 	} else {
 		ds->comment = r_str_newf ("%s%s %s", COLOR_ARG (ds, color_usrcmt), ds->cmtoken, comment);
+	}
+	if (reguse) {
+		if (R_STR_ISEMPTY (ds->comment)) {
+			free (ds->comment);
+			ds->comment = r_str_newf ("%s%s reguse: %s", COLOR_ARG (ds, color_usrcmt), ds->cmtoken, reguse);
+		} else {
+			ds->comment = r_str_appendf (ds->comment, "; reguse: %s", reguse);
+		}
 	}
 	if (R_STR_ISEMPTY (ds->comment)) {
 		R_FREE (ds->comment);

@@ -27,12 +27,32 @@ aae 0x10
 axq~0x00000180
 ?e --
 e anal.vars.clobber
+e asm.cmt.reguse
 EOF
 EXPECT=<<EOF
 0x0000010c -> 0x00000180  STRN:r--
 --
 --
 true
+false
+EOF
+RUN
+
+NAME=asm.cmt.reguse compares call-clobbered register comments
+FILE=malloc://0x400
+ARGS=-w -a x86 -b 64
+CMDS=<<EOF
+wx e81b000000488d18488d0ac3 @ 0x100;wx c3 @ 0x120
+e anal.cc=amd64;e anal.vars.clobber=true
+aae 0x10 @ 0x100
+ah*~rdx is call-clobbered?
+pd 4 @ 0x100~reguse?
+e asm.cmt.reguse=true;pd 4 @ 0x100~reguse?
+EOF
+EXPECT=<<EOF
+1
+0
+1
 EOF
 RUN
 

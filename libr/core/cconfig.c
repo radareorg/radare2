@@ -4459,20 +4459,21 @@ R_API int r_core_config_init(RCore *core) {
 	// options for the comments in the disassembly
 	SETB ("asm.anos", "true", "show annotations (see ano command)");
 	SETB ("asm.comments", "true", "show comments in disassembly view (see 'e asm.cmt.')");
-	SETB ("asm.cmt.wrap", "true", "wrap long comments lines on top ignoring asm.cmt.right");
 	SETB ("asm.cmt.calls", "true", "show callee function related info as comments in disasm");
-	SETB ("asm.cmt.user", "false", "show user comments even if asm.comments is false");
+	SETI ("asm.cmt.col", 71, "column to align comments");
+	SETB ("asm.cmt.esil", "false", "show ESIL expressions as comments");
+	SETB ("asm.cmt.flgrefs", "true", "show comment flags associated to branch reference");
+	SETB ("asm.cmt.fold", "false", "fold comments, toggle with Vz");
+	SETB ("asm.cmt.off", "nodup", "show offset comment in disasm (true, false, nodup)");
+	SETB ("asm.cmt.patch", "false", "show patch comments in disasm");
 	SETB ("asm.cmt.pseudo", "false", "show pseudo disasm as comments (see asm.pseudo)");
 	SETB ("asm.cmt.refs", "false", "show flag and comments from refs in disasm");
-	SETB ("asm.cmt.patch", "false", "show patch comments in disasm");
-	SETB ("asm.cmt.off", "nodup", "show offset comment in disasm (true, false, nodup)");
-	SETB ("asm.cmt.fold", "false", "fold comments, toggle with Vz");
-	SETB ("asm.cmt.token", ";", "token to use before printing a comment");
-	SETB ("asm.cmt.strings", "true", "show comment strings referenced by aop.ptr");
-	SETB ("asm.cmt.flgrefs", "true", "show comment flags associated to branch reference");
+	SETB ("asm.cmt.reguse", "false", "show register-use comments in disassembly");
 	SETB ("asm.cmt.right", "true", "show comments at right of disassembly if they fit in screen");
-	SETB ("asm.cmt.esil", "false", "show ESIL expressions as comments");
-	SETI ("asm.cmt.col", 71, "column to align comments");
+	SETB ("asm.cmt.strings", "true", "show comment strings referenced by aop.ptr");
+	SETB ("asm.cmt.token", ";", "token to use before printing a comment");
+	SETB ("asm.cmt.user", "false", "show user comments even if asm.comments is false");
+	SETB ("asm.cmt.wrap", "true", "wrap long comments lines on top ignoring asm.cmt.right");
 	SETB ("asm.payloads", "false", "show payload bytes in disasm");
 
 	/* bin */

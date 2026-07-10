@@ -82,6 +82,23 @@ static bool esil_reg_taint_has_item(EsilBreakCtx *ctx, const RRegItem *item) {
 	return false;
 }
 
+static bool cc_retreg(RAnal *anal, const char *cc, const RRegItem *item) {
+	int i;
+	const char *ret;
+	for (i = 0; cc && (ret = r_anal_cc_ret (anal, cc, i)); i++) {
+		RRegItem *retitem = r_reg_get (anal->reg, ret, -1);
+		if (retitem) {
+			EsilRegTaint rettaint = { retitem->arena, retitem->offset, retitem->size };
+			bool is_ret = esil_reg_taint_overlap_item (&rettaint, item);
+			r_unref (retitem);
+			if (is_ret) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 static void esil_reg_taint_add_item(EsilBreakCtx *ctx, const RRegItem *item) {
 	if (item->size < 1) {
 		return;
@@ -385,8 +402,6 @@ static void esilbreak_note_tainted_read(EsilBreakCtx *ctx, const char *regname, 
 	ctx->clob.read_tainted_reads++;
 }
 
-// v^v and v-v do not depend on v: a xor or sub that combines the overwritten
-// register with itself defines a clean value, like the "xor eax, eax" idiom
 static bool esilbreak_erasing_write(EsilBreakCtx *ctx, const RAnalOp *op, const RRegItem *item) {
 	const int type = op->type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND;
 	return (type == R_ANAL_OP_TYPE_XOR || type == R_ANAL_OP_TYPE_SUB)
@@ -410,6 +425,18 @@ static bool iscall(const RAnalOp *op) {
 static bool clob_op_end(EsilBreakCtx *ctx, RAnalOp *op) {
 	if (!ctx->clob.enabled) {
 		return false;
+	}
+	if (ctx->clob.read_tainted_reg[0]) {
+		RRegItem *item = r_reg_get (ctx->anal->reg, ctx->clob.read_tainted_reg, -1);
+		const char *cc = ctx->fcn? r_anal_function_cc (ctx->fcn): NULL;
+		cc = cc? cc: r_anal_cc_default (ctx->anal);
+		if (item && item->type != R_REG_TYPE_FLG && item->size > 1
+				&& strcmp (ctx->clob.read_tainted_reg, ctx->spname)
+				&& !esilbreak_erasing_write (ctx, op, item) && !cc_retreg (ctx->anal, cc, item)) {
+			r_strf_var (text, 96, "%s is call-clobbered", ctx->clob.read_tainted_reg);
+			r_anal_hint_append_reguse (ctx->anal, op->addr, text);
+		}
+		r_unref (item);
 	}
 	if (iscall (op)) {
 		esil_delay_call_clobbers (ctx->anal, ctx, op);

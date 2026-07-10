@@ -3701,7 +3701,7 @@ static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
 	return NULL;
 }
 
-#define REG_SET_SIZE (R_ANAL_CC_MAXARG + 2)
+#define REG_SET_SIZE (R_ANAL_CC_MAXARG + 2 + R_ANAL_CC_DYNSLOT_COUNT)
 
 typedef struct {
 	int count;
