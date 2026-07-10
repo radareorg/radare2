@@ -1,0 +1,592 @@
+NAME=afts synthesizes struct from pointer-argument accesses
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[4]; // gap
+  uint32_t field_0x10;
+};
+EOF
+RUN
+
+NAME=afts ignores accesses through a caller-clobbered register after a call
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 448b07448b4f084889f8e800000000448b7010c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts types a dereferenced field as a pointer
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b07488b4f088b1101d0c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  void *field_0x8;
+};
+EOF
+RUN
+
+NAME=afts emits a nested child struct for a dereferenced pointer field
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b07488b4f088b118b711001d001f0c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x8 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[12]; // gap
+  uint32_t field_0x10;
+};
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  struct fcn_00000000_arg0_0x8 *field_0x8;
+};
+EOF
+RUN
+
+NAME=afts ignores negative-offset accesses from a neighboring argument
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b46f88b0e8b560801c801d0c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg1 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts types fields by access width
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 0fb6070fb74f02488b5708c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint8_t field_0x0;
+  uint16_t field_0x2;
+  uint64_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts records store accesses as fields
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8907894f08c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts collapses a constant-stride run into an array member
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b47048b47088b470c8b47108b47148b47188b471cc3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0[8];
+};
+EOF
+RUN
+
+NAME=afts annotates an interior element of a collapsed array member
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b47048b47088b470c8b47108b47148b47188b471cc3
+af
+afts > /dev/null
+pd 1 @ 0x5
+EOF
+EXPECT=<<EOF
+|           0x00000005      8b4708         mov eax, dword [rdi + fcn_00000000_arg0.field_0x0] ; arg1
+EOF
+RUN
+
+NAME=afts array member reports its count in json
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b47048b47088b470c8b47108b47148b47188b471cc3
+af
+aftsj~{[0].members[0].count}
+EOF
+EXPECT=<<EOF
+8
+EOF
+RUN
+
+NAME=afts array preview interpreted with . reproduces the type
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b47048b47088b470c8b47108b47148b47188b471cc3
+af
+.afts*
+ts fcn_00000000_arg0
+afv
+EOF
+EXPECT=<<EOF
+pf [8]d field_0x0
+arg struct fcn_00000000_arg0 * arg1 @ rdi
+EOF
+RUN
+
+NAME=afts synthesizes a struct per pointer argument
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b168b5e04c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+struct fcn_00000000_arg1 {
+  uint32_t field_0x0;
+  uint32_t field_0x4;
+};
+EOF
+RUN
+
+NAME=afts emits nothing below the two-field threshold
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b07c3
+af
+afts
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=afts synthesizes struct fields on arm64
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 010040b9020840b92000020bc0035fd6
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts synthesizes struct fields on ppc64 big-endian
+FILE=malloc://256
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 8083000080a300087c642a144e800020
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts emits a nested child struct on ppc64 big-endian
+FILE=malloc://256
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx e883000880a4000080c4001080e300004e800020
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x8 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[12]; // gap
+  uint32_t field_0x10;
+};
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  struct fcn_00000000_arg0_0x8 *field_0x8;
+};
+EOF
+RUN
+
+NAME=afts recovers the z_stream state pointer in ppc64be inflateReset
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=<<EOF
+aa
+s sym.inflateReset
+afts
+EOF
+EXPECT=<<EOF
+struct sym_inflateReset_arg0_0x38 {
+  uint64_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[48]; // gap
+  uint32_t field_0x3c;
+  uint64_t field_0x40;
+};
+struct sym_inflateReset_arg0 {
+  uint8_t pad_0x0[56]; // gap
+  struct sym_inflateReset_arg0_0x38 *field_0x38;
+  uint64_t field_0x40;
+  uint8_t pad_0x44[4]; // gap
+  uint64_t field_0x48;
+};
+EOF
+RUN
+
+NAME=afts types fields with load width on arm32
+FILE=malloc://256
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 003090e5b820d0e10c10d0e51eff2fe1
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint16_t field_0x8;
+  uint8_t field_0xc;
+};
+EOF
+RUN
+
+NAME=afts detects a pointer field at a 4-byte-aligned offset on arm32
+FILE=malloc://256
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 043090e5002093e5041093e5102090e51eff2fe1
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x4 {
+  uint32_t field_0x0;
+  uint32_t field_0x4;
+};
+struct fcn_00000000_arg0 {
+  uint8_t pad_0x0[4]; // gap
+  struct fcn_00000000_arg0_0x4 *field_0x4;
+  uint8_t pad_0x8[8]; // gap
+  uint32_t field_0x10;
+};
+EOF
+RUN
+
+NAME=afts emits a nested child struct on arm32 big-endian
+FILE=malloc://256
+ARGS=-a arm -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx e5903000e5932004e5931008e5902008e12fff1e
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x0 {
+  uint8_t pad_0x0[4]; // gap
+  uint32_t field_0x4;
+  uint32_t field_0x8;
+};
+struct fcn_00000000_arg0 {
+  struct fcn_00000000_arg0_0x0 *field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts emits a nested child struct on arm thumb
+FILE=malloc://256
+ARGS=-a arm -b 16
+CMDS=<<EOF
+wx 03685a68996882687047
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x0 {
+  uint8_t pad_0x0[4]; // gap
+  uint32_t field_0x4;
+  uint32_t field_0x8;
+};
+struct fcn_00000000_arg0 {
+  struct fcn_00000000_arg0_0x0 *field_0x0;
+  uint8_t pad_0x2[6]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts synthesizes struct from a stack argument on x86-32
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 8b4424048b088b500801d1c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts synthesizes struct from a stack argument on arm32
+FILE=malloc://256
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 00309de5000093e5081093e5010080e01eff2fe1
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg4 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts stack-arg sentinel survives an ebp prologue on x86-32
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e58b45088b088b500801d15dc3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts applies the synthesized type to a register argument
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+afts
+afv
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[4]; // gap
+  uint32_t field_0x10;
+};
+arg struct fcn_00000000_arg0 * arg1 @ rdi
+EOF
+RUN
+
+NAME=afts applies the synthesized type to a stack argument
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 8b4424048b088b500801d1c3
+af
+afts
+afv
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+arg struct fcn_00000000_arg0 * arg_4h @ esp+0x4
+EOF
+RUN
+
+NAME=aft synthesizes struct types for untyped pointer args when types.synth is set
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.synth=true
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+aft
+afv
+EOF
+EXPECT=<<EOF
+arg struct fcn_00000000_arg0 * arg1 @ rdi
+EOF
+RUN
+
+NAME=aft leaves args alone when types.synth is unset
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+aft
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+EOF
+RUN
+
+NAME=afts annotates the accessing instructions with member offsets
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+afts > /dev/null
+pdf~field_0x
+EOF
+EXPECT=<<EOF
+|           0x00000000      8b07           mov eax, dword [rdi]        ; fcn_00000000_arg0.field_0x0
+|           0x00000002      8b4f08         mov ecx, dword [rdi + fcn_00000000_arg0.field_0x8] ; arg1
+|           0x00000005      8b5710         mov edx, dword [rdi + fcn_00000000_arg0.field_0x10] ; arg1
+EOF
+RUN
+
+NAME=afts drops its stale types when the function is renamed
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+afts > /dev/null
+afn renamed
+afts > /dev/null
+ts
+EOF
+EXPECT=<<EOF
+renamed_arg0
+EOF
+RUN
+
+NAME=afts* previews the synthesis as commands without applying
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+afts*
+afv
+EOF
+EXPECT=<<EOF
+'td struct fcn_00000000_arg0 {uint32_t field_0x0;uint8_t pad_0x4[4];uint32_t field_0x8;uint8_t pad_0xc[4];uint32_t field_0x10;};
+'afvr rdi arg1 struct fcn_00000000_arg0 *
+'@0x00000000'Ct fcn_00000000_arg0.field_0x0
+'@0x00000002'aht fcn_00000000_arg0.field_0x8
+'@0x00000005'aht fcn_00000000_arg0.field_0x10
+arg int64_t arg1 @ rdi
+EOF
+RUN
+
+NAME=afts* output interpreted with . reproduces the applied type
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+.afts*
+afv
+EOF
+EXPECT=<<EOF
+arg struct fcn_00000000_arg0 * arg1 @ rdi
+EOF
+RUN
+
+NAME=aftsj reports the synthesis in json
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b07488b4f088b1101d0c3
+af
+aftsj
+EOF
+EXPECT=<<EOF
+[{"name":"fcn_00000000_arg0","arg":0,"child":false,"var":"arg1","size":16,"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"field_0x8","type":"void *","offset":8,"size":8}]}]
+EOF
+RUN
+
+NAME=afts rejects trailing garbage instead of applying a type
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+aftsjunk~NADA
+afts*junk~NADA
+afv
+ts~fcn_00000000
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+EOF
+RUN
