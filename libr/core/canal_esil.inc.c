@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2009-2026 - pancake */
+
 typedef struct {
 	int arena;
 	int offset;
@@ -16,12 +18,10 @@ static void cccb(void *u) {
 // dup with isValidAddress wtf
 static bool myvalid(RCore *core, ut64 addr) {
 	RIO *io = core->io;
-#if 1
 	RFlagItem *fi = r_flag_get_in (core->flags, addr);
 	if (fi && strchr (fi->name, '.')) {
 		return true;
 	}
-#endif
 	if (addr < 0x100) {
 		return false;
 	}
@@ -548,9 +548,9 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	RAnal *anal = esil->anal;
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
+	const int bits = anal->config->bits;
 	const bool is_arm = r_str_startswith (anal->config->arch, "arm");
-	const bool is_arm_non64 = is_arm && anal->config->bits != 64;
-	const bool is_arm64 = is_arm && anal->config->bits == 64;
+	const bool is_arm64 = is_arm && bits == 64;
 	if (ctx->clob.enabled && (ctx->clob.read_clobbered || RVecEsilRegTaint_length (&ctx->clob.reg_taints) > 0)) {
 		RRegItem *item = r_reg_get (anal->reg, name, -1);
 		if (item) {
@@ -583,13 +583,13 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 			r_unref (item);
 		}
 	}
-	handle_var_stack_access (esil, *val, R_PERM_NONE, esil->anal->config->bits / 8, false);
+	handle_var_stack_access (esil, *val, R_PERM_NONE, bits / 8, false);
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
 	ut64 at = *val;
 	if (is_arm) {
 		if (anal->opt.armthumb) {
-			if (is_arm_non64 && !strcmp (name, "pc") && op) {
+			if (bits != 64 && !strcmp (name, "pc") && op) {
 				const bool is_ubranch = (op->type == R_ANAL_OP_TYPE_UCALL || op->type == R_ANAL_OP_TYPE_UJMP);
 				if (is_ubranch) {
 					if ((*val & 1)) {
@@ -605,7 +605,7 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 				}
 			}
 		}
-		if (anal->config->bits == 32) {
+		if (bits == 32) {
 			if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
 				add_string_ref (anal->coreb.core, esil->addr, at);
 			}
