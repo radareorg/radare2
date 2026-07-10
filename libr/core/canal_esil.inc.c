@@ -548,16 +548,15 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	RAnal *anal = esil->anal;
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
-	RCore *core = anal->coreb.core;
 	const bool is_arm = r_str_startswith (anal->config->arch, "arm");
+	const bool is_arm32 = is_arm && anal->config->bits != 64;
+	const bool is_arm64 = is_arm && anal->config->bits == 64;
 	if (ctx->clob.enabled && (ctx->clob.read_clobbered || RVecEsilRegTaint_length (&ctx->clob.reg_taints) > 0)) {
 		RRegItem *item = r_reg_get (anal->reg, name, -1);
 		if (item) {
 			RRegItem *clear_item = item;
 			RRegItem *xitem = NULL;
-			if (is_arm && anal->config->bits == 64
-					&& item->type == R_REG_TYPE_GPR && item->size == 32
-					&& item->name[0] == 'w' && isdigit ((ut8)item->name[1])) {
+			if (is_arm64 && item->type == R_REG_TYPE_GPR && item->size == 32 && item->name[0] == 'w') {
 				r_strf_var (xname, 8, "x%s", item->name + 1);
 				xitem = r_reg_get (anal->reg, xname, -1);
 				if (xitem && xitem->arena == item->arena && xitem->offset == item->offset && xitem->size > item->size) {
@@ -590,32 +589,23 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	ut64 at = *val;
 	if (is_arm) {
 		if (anal->opt.armthumb) {
-			if (anal->config->bits < 33 && !strcmp (name, "pc") && op) {
-				switch (op->type) {
-				case R_ANAL_OP_TYPE_UCALL: // BLX
-				case R_ANAL_OP_TYPE_UJMP: // BX
-							  // R2_600 - maybe UJMP/UCALL is enough here
-					if (!(*val & 1)) {
-						r_anal_hint_set_bits (anal, *val, 32);
-					} else {
+			if (is_arm32 && !strcmp (name, "pc") && op) {
+				const bool is_ubranch = (op->type == R_ANAL_OP_TYPE_UCALL || op->type == R_ANAL_OP_TYPE_UJMP);
+				if (is_ubranch) {
+					if ((*val & 1)) {
 						ut64 snv = r_reg_getv (anal->reg, "pc");
 						if (snv != UT32_MAX && snv != UT64_MAX) {
 							if (r_io_is_valid_offset (anal->iob.io, *val, 1)) {
 								r_anal_hint_set_bits (anal, *val - 1, 16);
 							}
 						}
+					} else {
+						r_anal_hint_set_bits (anal, *val, 32);
 					}
-					break;
-				default:
-					break;
 				}
 			}
 		}
-		if (core->rasm && core->rasm->config && core->rasm->config->bits == 32 && strstr (core->rasm->config->arch, "arm")) {
-			if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
-				add_string_ref (anal->coreb.core, esil->addr, at);
-			}
-		} else if (core->anal && core->anal->config && core->anal->config->bits == 32 && strstr (core->anal->config->arch, "arm")) {
+		if (is_arm32) {
 			if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
 				add_string_ref (anal->coreb.core, esil->addr, at);
 			}
