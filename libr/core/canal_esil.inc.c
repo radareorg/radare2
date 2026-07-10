@@ -150,39 +150,6 @@ static void esil_reg_taint_clear_item(EsilBreakCtx *ctx, const RRegItem *item) {
 	}
 }
 
-// AArch64 W-register writes zero-extend into the paired X register.
-static RRegItem *esilbreak_arm64_zeroext_item(RAnal *anal, const RRegItem *item) {
-	if (item->type != R_REG_TYPE_GPR || anal->config->bits != 64 || !r_str_startswith (anal->config->arch, "arm")) {
-		return NULL;
-	}
-	if (item->size != 32 || item->name[0] != 'w') {
-		return NULL;
-	}
-	const char *num = item->name + 1;
-	if (!isdigit ((ut8)*num)) {
-		return NULL;
-	}
-	char *end = NULL;
-	long idx = strtol (num, &end, 10);
-	if (*end || idx > 30) {
-		return NULL;
-	}
-	char xname[8];
-	snprintf (xname, sizeof (xname), "x%ld", idx);
-	RRegItem *xitem = r_reg_get (anal->reg, xname, -1);
-	if (!xitem || xitem->arena != item->arena || xitem->offset != item->offset || xitem->size <= item->size) {
-		r_unref (xitem);
-		return NULL;
-	}
-	return xitem;
-}
-
-static void esil_reg_taint_clear_write_item(EsilBreakCtx *ctx, const RRegItem *item) {
-	RRegItem *zeroext_item = esilbreak_arm64_zeroext_item (ctx->anal, item);
-	esil_reg_taint_clear_item (ctx, zeroext_item? zeroext_item: item);
-	r_unref (zeroext_item);
-}
-
 static void esil_clear_flow_taint(EsilBreakCtx *ctx) {
 	RVecEsilRegTaint_clear (&ctx->clob.reg_taints);
 	R_FREE (ctx->clob.delayed_call_cc);
@@ -582,35 +549,48 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
 	RCore *core = anal->coreb.core;
+	const bool is_arm = r_str_startswith (anal->config->arch, "arm");
 	if (ctx->clob.enabled && (ctx->clob.read_clobbered || RVecEsilRegTaint_length (&ctx->clob.reg_taints) > 0)) {
 		RRegItem *item = r_reg_get (anal->reg, name, -1);
 		if (item) {
+			RRegItem *clear_item = item;
+			RRegItem *xitem = NULL;
+			if (is_arm && anal->config->bits == 64
+					&& item->type == R_REG_TYPE_GPR && item->size == 32
+					&& item->name[0] == 'w' && isdigit ((ut8)item->name[1])) {
+				r_strf_var (xname, 8, "x%s", item->name + 1);
+				xitem = r_reg_get (anal->reg, xname, -1);
+				if (xitem && xitem->arena == item->arena && xitem->offset == item->offset && xitem->size > item->size) {
+					clear_item = xitem;
+				}
+			}
 			if (ctx->clob.read_clobbered) {
 				// strip the COND bit: if this hook fired for a conditional
 				// load then the esil condition held and the load did happen
 				if ((ctx->clob.read_clean_mem && (op->type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND) == R_ANAL_OP_TYPE_LOAD)
 						|| esilbreak_erasing_write (ctx, op, item)) {
-					esil_reg_taint_clear_write_item (ctx, item);
+					esil_reg_taint_clear_item (ctx, clear_item);
 				} else if (ctx->clob.pc_span.size < 1
 						|| !esil_reg_taint_overlap_item (&ctx->clob.pc_span, item)) {
-					esil_reg_taint_clear_write_item (ctx, item);
+					esil_reg_taint_clear_item (ctx, clear_item);
 					esil_reg_taint_add_item (ctx, item);
 				}
+				r_unref (xitem);
 				r_unref (item);
 				return false;
 			}
-			esil_reg_taint_clear_write_item (ctx, item);
+			esil_reg_taint_clear_item (ctx, clear_item);
+			r_unref (xitem);
 			r_unref (item);
 		}
 	}
 	handle_var_stack_access (esil, *val, R_PERM_NONE, esil->anal->config->bits / 8, false);
-	const bool is_arm = r_str_startswith (core->anal->config->arch, "arm");
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
 	ut64 at = *val;
 	if (is_arm) {
-		if (anal && anal->opt.armthumb) {
-			if (anal->config->bits < 33 && is_arm && !strcmp (name, "pc") && op) {
+		if (anal->opt.armthumb) {
+			if (anal->config->bits < 33 && !strcmp (name, "pc") && op) {
 				switch (op->type) {
 				case R_ANAL_OP_TYPE_UCALL: // BLX
 				case R_ANAL_OP_TYPE_UJMP: // BX
