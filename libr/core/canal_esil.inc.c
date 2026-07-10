@@ -150,6 +150,39 @@ static void esil_reg_taint_clear_item(EsilBreakCtx *ctx, const RRegItem *item) {
 	}
 }
 
+// AArch64 W-register writes zero-extend into the paired X register.
+static RRegItem *esilbreak_arm64_zeroext_item(RAnal *anal, const RRegItem *item) {
+	if (item->type != R_REG_TYPE_GPR || anal->config->bits != 64 || !r_str_startswith (anal->config->arch, "arm")) {
+		return NULL;
+	}
+	if (item->size != 32 || item->name[0] != 'w') {
+		return NULL;
+	}
+	const char *num = item->name + 1;
+	if (!isdigit ((ut8)*num)) {
+		return NULL;
+	}
+	char *end = NULL;
+	long idx = strtol (num, &end, 10);
+	if (*end || idx > 30) {
+		return NULL;
+	}
+	char xname[8];
+	snprintf (xname, sizeof (xname), "x%ld", idx);
+	RRegItem *xitem = r_reg_get (anal->reg, xname, -1);
+	if (!xitem || xitem->arena != item->arena || xitem->offset != item->offset || xitem->size <= item->size) {
+		r_unref (xitem);
+		return NULL;
+	}
+	return xitem;
+}
+
+static void esil_reg_taint_clear_write_item(EsilBreakCtx *ctx, const RRegItem *item) {
+	RRegItem *zeroext_item = esilbreak_arm64_zeroext_item (ctx->anal, item);
+	esil_reg_taint_clear_item (ctx, zeroext_item? zeroext_item: item);
+	r_unref (zeroext_item);
+}
+
 static void esil_clear_flow_taint(EsilBreakCtx *ctx) {
 	RVecEsilRegTaint_clear (&ctx->clob.reg_taints);
 	R_FREE (ctx->clob.delayed_call_cc);
@@ -557,15 +590,16 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 				// load then the esil condition held and the load did happen
 				if ((ctx->clob.read_clean_mem && (op->type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND) == R_ANAL_OP_TYPE_LOAD)
 						|| esilbreak_erasing_write (ctx, op, item)) {
-					esil_reg_taint_clear_item (ctx, item);
+					esil_reg_taint_clear_write_item (ctx, item);
 				} else if (ctx->clob.pc_span.size < 1
 						|| !esil_reg_taint_overlap_item (&ctx->clob.pc_span, item)) {
+					esil_reg_taint_clear_write_item (ctx, item);
 					esil_reg_taint_add_item (ctx, item);
 				}
 				r_unref (item);
 				return false;
 			}
-			esil_reg_taint_clear_item (ctx, item);
+			esil_reg_taint_clear_write_item (ctx, item);
 			r_unref (item);
 		}
 	}
