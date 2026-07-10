@@ -176,6 +176,7 @@ enum {
 };
 
 #define R_ANAL_CC_MAXARG 16
+#define R_ANAL_CC_DYNSLOT_COUNT (26 + 5)
 
 enum {
 	R_ANAL_FCN_TYPE_NULL = 0,
