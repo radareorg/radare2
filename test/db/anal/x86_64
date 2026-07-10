@@ -3605,6 +3605,10 @@ EXPECT=<<EOF
 0x00000870 data Cd 4
 0x00000874 data Cd 4
 0x00000878 data Cd 4
+ 0x00000642 => reguse='rdx is arg2'
+ 0x00000774 => reguse='rdi is arg0'
+ 0x0000078b => reguse='rsi is arg1'
+ 0x0000078e => reguse='rdx is arg2'
  0x00000844 => immbase=10
  0x00000848 => immbase=10
  0x0000084c => immbase=10
