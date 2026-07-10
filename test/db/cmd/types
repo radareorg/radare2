@@ -2673,3 +2673,28 @@ union KU {
 };
 EOF
 RUN
+
+NAME=td array dimensions in hex
+FILE=malloc://32
+CMDS=<<EOF
+"td struct Hex { char pad[0x8]; int x; char tail[0x10]; };"
+tk struct.Hex.x
+tk struct.Hex.tail
+"td typedef struct Tg { char b[0x10]; } TgT;"
+tk struct.Tg.b
+"td typedef union Ug { char c[0x18]; int v; } UgT;"
+tk union.Ug.c
+tsc Hex
+EOF
+EXPECT=<<EOF
+int,8,0
+char,12,16
+char,0,16
+char,0,24
+struct Hex {
+  char pad[8];
+  int x;
+  char tail[16];
+};
+EOF
+RUN

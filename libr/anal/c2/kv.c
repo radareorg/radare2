@@ -797,7 +797,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 				}
 			}
 			if (!_is_fp_field) {
-				kvc_basetype_add_member (bt, mn, mt, off, R_STR_ISNOTEMPTY (md)? atoi (md): 0);
+				kvc_basetype_add_member (bt, mn, mt, off, R_STR_ISNOTEMPTY (md)? (int)r_num_math (NULL, md): 0);
 				r_strbuf_appendf (kvc->sb, "struct.%s.%s.meta=0\n", struct_tag, mn);
 				off += kvc_typesize (kvc, mt, 1);
 				apply_attributes (kvc, "struct", full_scope);
@@ -936,7 +936,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 				}
 			}
 			if (!_is_fp_field) {
-				kvc_basetype_add_member (bt, mn, mt, off, R_STR_ISNOTEMPTY (md)? atoi (md): 0);
+				kvc_basetype_add_member (bt, mn, mt, off, R_STR_ISNOTEMPTY (md)? (int)r_num_math (NULL, md): 0);
 				apply_attributes (kvc, "union", full_scope);
 				free (mt);
 				free (mn);
@@ -1485,7 +1485,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 			off += rest;
 		}
 		if (R_STR_ISNOTEMPTY (md)) {
-			dimension = atoi (md);
+			dimension = (int)r_num_math (NULL, md);
 		}
 		kvc_basetype_add_member (bt, mn, mt, off, R_STR_ISNOTEMPTY (md)? dimension: 0);
 		if (!is_union) {
