@@ -3234,3 +3234,34 @@ EXPECT=<<EOF
 arg int64_t arg1 @ rdi
 EOF
 RUN
+NAME=td struct and union array counts reach sdb via base type serializer
+FILE=-
+CMDS=<<EOF
+'td struct KS {int a; char buf[16];}
+'td union KU {char buf[8]; int x;}
+tk KS
+tk struct.KS
+tk struct.KS.buf
+tk KU
+tk union.KU
+tk union.KU.buf
+tsc KS
+tuc KU
+EOF
+EXPECT=<<EOF
+struct
+a,buf
+char,4,16
+union
+buf,x
+char,0,8
+struct KS {
+  int a;
+  char buf[16];
+};
+union KU {
+  char buf[8];
+  int x;
+};
+EOF
+RUN

@@ -417,8 +417,18 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
 		if (!values) {
 			goto error;
 		}
-		char *value = sdb_anext (values, NULL);
-		RAnalUnionMember cas = { .name = strdup (cur), .type = strdup (value) };
+		char *offset = NULL;
+		char *value = sdb_anext (values, &offset);
+		char *count = NULL;
+		if (offset) {
+			offset = sdb_anext (offset, &count);
+		}
+		RAnalUnionMember cas = {
+			.name = strdup (cur),
+			.type = strdup (value),
+			.offset = offset? strtoul (offset, NULL, 10): 0,
+			.count = count? strtoul (count, NULL, 10): 0
+		};
 		free (values);
 
 		RAnalUnionMember *element = RVecAnalUnionMember_emplace_back (members);
@@ -540,6 +550,65 @@ R_API RList *r_anal_types_baselist(RAnal *anal) {
 	return types;
 }
 
+// canonical serialization of a struct/union member value: "type,offset,arraycount"
+static char *member_value_kv(const char *type, size_t offset, size_t count) {
+	return r_str_newf ("%s,%u,%u", type, (unsigned int)offset, (unsigned int)count);
+}
+
+/* Serialize a struct or union base type into the sdb-types text lines that
+ * get_struct_type/get_union_type read back:
+ *   name=struct
+ *   struct.name.member=type,offset,arraycount
+ *   struct.name=member1,member2
+ * The returned string can be applied with sdb_query_lines() and is the
+ * canonical schema shared with the C parser (c2/kv.c). */
+R_API char *r_anal_base_type_to_kv(const RAnalBaseType *type) {
+	R_RETURN_VAL_IF_FAIL (type && type->name, NULL);
+	const char *kind;
+	switch (type->kind) {
+	case R_ANAL_BASE_TYPE_KIND_STRUCT:
+		kind = "struct";
+		break;
+	case R_ANAL_BASE_TYPE_KIND_UNION:
+		kind = "union";
+		break;
+	default:
+		// enum/typedef/atomic serialization is not unified through here yet
+		return NULL;
+	}
+	char *sname = r_str_sanitize_sdb_key (type->name);
+	RStrBuf *sb = r_strbuf_new ("");
+	RStrBuf *list = r_strbuf_new ("");
+	r_strbuf_appendf (sb, "%s=%s\n", sname, kind);
+	int i = 0;
+	if (type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT) {
+		RAnalStructMember *member;
+		R_VEC_FOREACH (&type->struct_data.members, member) {
+			char *mname = r_str_sanitize_sdb_key (member->name);
+			char *value = member_value_kv (member->type, member->offset, member->count);
+			r_strbuf_appendf (sb, "%s.%s.%s=%s\n", kind, sname, mname, value);
+			r_strbuf_appendf (list, "%s%s", i++? ",": "", mname);
+			free (value);
+			free (mname);
+		}
+	} else {
+		RAnalUnionMember *member;
+		R_VEC_FOREACH (&type->union_data.members, member) {
+			char *mname = r_str_sanitize_sdb_key (member->name);
+			char *value = member_value_kv (member->type, member->offset, member->count);
+			r_strbuf_appendf (sb, "%s.%s.%s=%s\n", kind, sname, mname, value);
+			r_strbuf_appendf (list, "%s%s", i++? ",": "", mname);
+			free (value);
+			free (mname);
+		}
+	}
+	char *lists = r_strbuf_drain (list);
+	r_strbuf_appendf (sb, "%s.%s=%s\n", kind, sname, lists);
+	free (lists);
+	free (sname);
+	return r_strbuf_drain (sb);
+}
+
 static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 	R_RETURN_IF_FAIL (anal && type && type->name
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
@@ -587,8 +656,8 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 		// struct.name.param=type,offset,arraycount
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
 		r_strf_var (k, KSZ, "%s.%s.%s", kind, sname, member_sname);
-		r_strf_var (v, KSZ, "%s,%u,%u", member->type, (unsigned int)member->offset, (unsigned int)member->count);
-		sdb_set (db, k, v, 0);
+		sdb_set_owned (db, k,
+			member_value_kv (member->type, member->offset, member->count), 0);
 		free (member_sname);
 
 		r_strbuf_appendf (arglist, (i++ == 0) ? "%s" : ",%s", member->name);
@@ -623,11 +692,11 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 	int i = 0;
 	RAnalUnionMember *member;
 	R_VEC_FOREACH (&type->union_data.members, member) {
-		// union.name.arg1=type,offset,argsize
+		// union.name.arg1=type,offset,arraycount
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
 		r_strf_var (k, KSZ, "%s.%s.%s", kind, sname, member_sname);
-		r_strf_var (v, KSZ, "%s,%u,%d", member->type, (unsigned int)member->offset, 0);
-		sdb_set (anal->sdb_types, k, v, 0);
+		sdb_set_owned (anal->sdb_types, k,
+			member_value_kv (member->type, member->offset, member->count), 0);
 		free (member_sname);
 		r_strbuf_appendf (arglist, "%s%s", (i++ == 0) ? "" : ",", member->name);
 	}

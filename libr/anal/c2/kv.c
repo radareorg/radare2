@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2024-2026 - pancake */
 
 #include <r_util.h>
+#include <r_anal.h>
 
 typedef struct {
 	RStrs keys[10];
@@ -27,6 +28,39 @@ typedef struct {
 } KVCParser;
 
 typedef bool(*KVCParserCallback)(KVCParser *, const char *);
+
+/* Accumulate a parsed struct/union member into the base type model. The
+ * definition is later serialized with r_anal_base_type_to_kv() so the
+ * C parser and the debug-info importers share a single sdb schema. */
+static void kvc_basetype_add_member(RAnalBaseType *bt, const char *name, const char *type, int offset, int count) {
+	const size_t mcount = (count > 0)? (size_t)count: 0;
+	if (bt->kind == R_ANAL_BASE_TYPE_KIND_UNION) {
+		RAnalUnionMember *m = RVecAnalUnionMember_emplace_back (&bt->union_data.members);
+		if (m) {
+			m->name = strdup (name);
+			m->type = strdup (type);
+			m->offset = offset;
+			m->count = mcount;
+		}
+	} else {
+		RAnalStructMember *m = RVecAnalStructMember_emplace_back (&bt->struct_data.members);
+		if (m) {
+			m->name = strdup (name);
+			m->type = strdup (type);
+			m->offset = offset;
+			m->count = mcount;
+		}
+	}
+}
+
+static void kvc_basetype_emit(KVCParser *kvc, RAnalBaseType *bt) {
+	char *kv = r_anal_base_type_to_kv (bt);
+	if (kv) {
+		r_strbuf_append (kvc->sb, kv);
+		free (kv);
+	}
+	r_anal_base_type_free (bt);
+}
 
 static char *collapse_whitespace(RStrs s) {
 	r_strs_trim (&s);
@@ -670,10 +704,13 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		}
 		kvc_getch (kvc);
 		char *struct_tag = has_tag? r_strs_tostring (tag): lookahead_alias_after_brace (kvc, "anon_struct");
-		r_strbuf_appendf (kvc->sb, "%s=struct\n", struct_tag);
 		apply_attributes (kvc, "struct", struct_tag);
-		RStrBuf *args_sb = r_strbuf_new ("");
-		int member_idx = 0;
+		RAnalBaseType *bt = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+		if (!bt) {
+			free (struct_tag);
+			return false;
+		}
+		bt->name = strdup (struct_tag);
 		int off = 0;
 		while (true) {
 			skip_spaces (kvc);
@@ -691,7 +728,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			member_type.b = scan_to_semicolon (kvc, false);
 			if (!member_type.b) {
 				kvc_error (kvc, "Missing semicolon in struct member");
-				r_strbuf_free (args_sb);
+				r_anal_base_type_free (bt);
 				free (struct_tag);
 				return false;
 			}
@@ -731,7 +768,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 				if (close) {
 					member_dimm.b = close;
 				} else {
-					r_strbuf_free (args_sb);
+					r_anal_base_type_free (bt);
 					free (struct_tag);
 					kvc_error (kvc, "Missing ] in struct member dimension");
 					return false;
@@ -760,12 +797,10 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 				}
 			}
 			if (!_is_fp_field) {
-				r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,%s\n", struct_tag, mn, mt, off, R_STR_ISNOTEMPTY (md)? md: "0");
+				kvc_basetype_add_member (bt, mn, mt, off, R_STR_ISNOTEMPTY (md)? atoi (md): 0);
 				r_strbuf_appendf (kvc->sb, "struct.%s.%s.meta=0\n", struct_tag, mn);
 				off += kvc_typesize (kvc, mt, 1);
 				apply_attributes (kvc, "struct", full_scope);
-				r_strbuf_appendf (args_sb, "%s%s", member_idx? ",": "", mn);
-				member_idx++;
 				free (mt);
 				free (mn);
 				free (md);
@@ -783,7 +818,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		RStrs alias = { .a = consume_word (kvc) };
 		if (!alias.a) {
 			kvc_error (kvc, "Missing alias in typedef struct");
-			r_strbuf_free (args_sb);
+			r_anal_base_type_free (bt);
 			free (struct_tag);
 			return false;
 		}
@@ -791,10 +826,8 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		char *alias_str = r_strs_tostring (alias);
 		r_strbuf_appendf (kvc->sb, "typedef.%s=struct %s\n", alias_str, struct_tag);
 		skip_ws (kvc);
-		char *argstr = r_strbuf_drain (args_sb);
-		r_strbuf_appendf (kvc->sb, "struct.%s=%s\n", struct_tag, argstr);
+		kvc_basetype_emit (kvc, bt);
 		r_strbuf_appendf (kvc->sb, "%s=struct\n", alias_str);
-		free (argstr);
 		free (struct_tag);
 		free (alias_str);
 		return true;
@@ -825,10 +858,13 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		kvc_getch (kvc);
 		char *union_tag = has_tag? r_strs_tostring (tag): lookahead_alias_after_brace (kvc, "anon_union");
 		/* Begin output for the union definition */
-		r_strbuf_appendf (kvc->sb, "%s=union\n", union_tag);
 		apply_attributes (kvc, "union", union_tag);
-		RStrBuf *args_sb = r_strbuf_new ("");
-		int member_idx = 0;
+		RAnalBaseType *bt = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
+		if (!bt) {
+			free (union_tag);
+			return false;
+		}
+		bt->name = strdup (union_tag);
 		int off = 0;
 		while (true) {
 			skip_spaces (kvc);
@@ -846,7 +882,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			member_type.b = scan_to_semicolon (kvc, false);
 			if (!member_type.b) {
 				kvc_error (kvc, "Missing semicolon in union member");
-				r_strbuf_free (args_sb);
+				r_anal_base_type_free (bt);
 				free (union_tag);
 				return false;
 			}
@@ -871,7 +907,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 				if (close) {
 					member_dimm.b = close;
 				} else {
-					r_strbuf_free (args_sb);
+					r_anal_base_type_free (bt);
 					free (union_tag);
 					kvc_error (kvc, "Missing ] in union member dimension");
 					return false;
@@ -900,10 +936,8 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 				}
 			}
 			if (!_is_fp_field) {
-				r_strbuf_appendf (kvc->sb, "union.%s.%s=%s,%d,%s\n", union_tag, mn, mt, off, R_STR_ISNOTEMPTY (md)? md: "0");
+				kvc_basetype_add_member (bt, mn, mt, off, R_STR_ISNOTEMPTY (md)? atoi (md): 0);
 				apply_attributes (kvc, "union", full_scope);
-				r_strbuf_appendf (args_sb, "%s%s", member_idx? ",": "", mn);
-				member_idx++;
 				free (mt);
 				free (mn);
 				free (md);
@@ -921,7 +955,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		RStrs alias = { .a = consume_word (kvc) };
 		if (!alias.a) {
 			kvc_error (kvc, "Missing alias in typedef union");
-			r_strbuf_free (args_sb);
+			r_anal_base_type_free (bt);
 			free (union_tag);
 			return false;
 		}
@@ -929,10 +963,8 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		char *alias_str = r_strs_tostring (alias);
 		r_strbuf_appendf (kvc->sb, "typedef.%s=union %s\n", alias_str, union_tag);
 		skip_ws (kvc);
-		char *argstr = r_strbuf_drain (args_sb);
-		r_strbuf_appendf (kvc->sb, "union.%s=%s\n", union_tag, argstr);
+		kvc_basetype_emit (kvc, bt);
 		r_strbuf_appendf (kvc->sb, "%s=union\n", alias_str);
-		free (argstr);
 		free (union_tag);
 		free (alias_str);
 		return true;
@@ -1172,10 +1204,16 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		free (sn);
 		return false;
 	}
-	RStrBuf *args_sb = r_strbuf_new ("");
 	kvc_getch (kvc);
 	char *sn = r_strs_tostring (struct_name);
-	r_strbuf_appendf (kvc->sb, "%s=%s\n", sn, type);
+	const bool is_union = !strcmp (type, "union");
+	RAnalBaseType *bt = r_anal_base_type_new (is_union
+		? R_ANAL_BASE_TYPE_KIND_UNION: R_ANAL_BASE_TYPE_KIND_STRUCT);
+	if (!bt) {
+		free (sn);
+		return false;
+	}
+	bt->name = strdup (sn);
 	const char *pack_attr = kvc_attr (kvc, "pack");
 	const char *packed_attr = kvc_attr (kvc, "packed");
 	if (pack_attr) {
@@ -1223,7 +1261,6 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 			}
 		}
 	}
-	int member_idx = 0;
 	int off = 0;
 	while (true) {
 		parse_attributes (kvc);
@@ -1250,7 +1287,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 					break;
 				}
 				kvc_error (kvc, "Missing semicolon in struct member");
-				r_strbuf_free (args_sb);
+				r_anal_base_type_free (bt);
 				free (sn);
 				return false;
 			}
@@ -1260,7 +1297,8 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				member_type.b = attrp - 1;
 				kvc->s.a = attrp;
 				if (!parse_c_attributes (kvc)) {
-					r_strbuf_free (args_sb);
+					r_anal_base_type_free (bt);
+					free (sn);
 					return false;
 				}
 				skip_spaces (kvc);
@@ -1298,6 +1336,11 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 					r_strs_trim (&mname_tok);
 					mname = r_strs_tostring (mname_tok);
 				}
+				if (!mname) {
+					// unnamed function pointer member, malformed input
+					free (rtype);
+					continue;
+				}
 				// argument types
 				const char *args_start = NULL;
 				if (name_end) {
@@ -1319,8 +1362,8 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				if (!strcmp (type, "struct")) {
 					kvc_align_offset (kvc, &off, kvc->ptr_size);
 				}
-				// Emit the struct member referring to that type name (no commas in the type)
-				r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,0\n", sn, mname, type_name, off);
+				// Add the member referring to that type name (no commas in the type)
+				kvc_basetype_add_member (bt, mname, type_name, off, 0);
 				char *fname = r_str_newf ("%s.%s", sn, mname);
 				emit_func_args (kvc, fname, args);
 				free (fname);
@@ -1331,9 +1374,6 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				// store the canonical signature too
 				r_strbuf_appendf (kvc->sb, "func.%s.%s=%s\n", sn, mname, args? args: "");
 				off += kvc_typesize (kvc, fulltype, 1);
-				// add member name to struct's args list and advance index
-				r_strbuf_appendf (args_sb, "%s%s", member_idx? ",": "", mname);
-				member_idx++;
 				{
 					r_strf_var (full_scope, 512, "%s.%s", sn, mname);
 					apply_attributes (kvc, "struct", full_scope);
@@ -1379,10 +1419,8 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 						if (!strcmp (type, "struct")) {
 							kvc_align_offset (kvc, &off, kvc->ptr_size);
 						}
-						r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,0\n", sn, mname, mt_check, off);
+						kvc_basetype_add_member (bt, mname, mt_check, off, 0);
 						off += kvc_typesize (kvc, tdef, 1);
-						r_strbuf_appendf (args_sb, "%s%s", member_idx? ",": "", mname);
-						member_idx++;
 						{
 							r_strf_var (full_scope, 512, "%s.%s", sn, mname);
 							apply_attributes (kvc, "struct", full_scope);
@@ -1448,25 +1486,19 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		}
 		if (R_STR_ISNOTEMPTY (md)) {
 			dimension = atoi (md);
-			r_strbuf_appendf (kvc->sb, "%s.%s=%s,%d,%s\n", type, full_scope, mt, off, md);
-		} else {
-			r_strbuf_appendf (kvc->sb, "%s.%s=%s,%d,0\n", type, full_scope, mt, off);
 		}
-		if (!strcmp (type, "struct")) {
+		kvc_basetype_add_member (bt, mn, mt, off, R_STR_ISNOTEMPTY (md)? dimension: 0);
+		if (!is_union) {
 			off += kvc_typesize (kvc, mt, dimension);
 		}
 		// r_strbuf_appendf (kvc->sb, "%s.%s.meta=0\n", type, mn);
 		apply_attributes (kvc, type, full_scope);
-		r_strbuf_appendf (args_sb, "%s%s", member_idx? ",": "", mn);
-		member_idx++;
 		free (mt);
 		free (mn);
 		free (md);
 	}
 	skip_ws (kvc);
-	char *argstr = r_strbuf_drain (args_sb);
-	r_strbuf_appendf (kvc->sb, "%s.%s=%s\n", type, sn, argstr);
-	free (argstr);
+	kvc_basetype_emit (kvc, bt);
 	free (sn);
 	return true;
 }

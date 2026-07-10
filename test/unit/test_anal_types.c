@@ -419,8 +419,93 @@ static bool test_anal_save_base_type_struct_redefine(void) {
 
 	assert_sdb_eq (anal->sdb_types, reg, "empty declaration kept the definition");
 	sdb_free (reg);
-
 	r_anal_free (anal);
+	mu_end;
+}
+
+static bool test_anal_base_type_union_array_roundtrip(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
+	base->name = strdup ("uarr");
+
+	RAnalUnionMember member = {
+		.offset = 0,
+		.type = strdup ("int32_t"),
+		.name = strdup ("scalar"),
+		.count = 0
+	};
+	RVecAnalUnionMember_push_back (&base->union_data.members, &member);
+
+	member.offset = 0;
+	member.type = strdup ("char");
+	member.name = strdup ("buf");
+	member.count = 16;
+	RVecAnalUnionMember_push_back (&base->union_data.members, &member);
+
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	RAnalBaseType *got = r_anal_get_base_type (anal, "uarr");
+	mu_assert_notnull (got, "reload union with array member");
+
+	RAnalUnionMember *m = RVecAnalUnionMember_at (&got->union_data.members, 0);
+	mu_assert_eq (m->count, 0, "scalar member count survives as 0");
+	m = RVecAnalUnionMember_at (&got->union_data.members, 1);
+	mu_assert_eq (m->count, 16, "array member count survives the roundtrip");
+
+	r_anal_base_type_free (got);
+	r_anal_free (anal);
+	mu_end;
+}
+
+static bool test_anal_base_type_to_kv(void) {
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("kv");
+
+	RAnalStructMember member = {
+		.offset = 0,
+		.type = strdup ("int32_t"),
+		.name = strdup ("scalar"),
+		.count = 0
+	};
+	RVecAnalStructMember_push_back (&base->struct_data.members, &member);
+
+	member.offset = 4;
+	member.type = strdup ("char");
+	member.name = strdup ("buf");
+	member.count = 16;
+	RVecAnalStructMember_push_back (&base->struct_data.members, &member);
+
+	char *kv = r_anal_base_type_to_kv (base);
+	mu_assert_streq (kv,
+		"kv=struct\n"
+		"struct.kv.scalar=int32_t,0,0\n"
+		"struct.kv.buf=char,4,16\n"
+		"struct.kv=scalar,buf\n",
+		"canonical struct kv serialization");
+	free (kv);
+	r_anal_base_type_free (base);
+
+	base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
+	base->name = strdup ("ukv");
+	RAnalUnionMember umember = {
+		.offset = 0,
+		.type = strdup ("char"),
+		.name = strdup ("buf"),
+		.count = 8
+	};
+	RVecAnalUnionMember_push_back (&base->union_data.members, &umember);
+
+	kv = r_anal_base_type_to_kv (base);
+	mu_assert_streq (kv,
+		"ukv=union\n"
+		"union.ukv.buf=char,0,8\n"
+		"union.ukv=buf\n",
+		"canonical union kv serialization");
+	free (kv);
+	r_anal_base_type_free (base);
 	mu_end;
 }
 
@@ -429,6 +514,8 @@ int all_tests(void) {
 	mu_run_test (test_anal_save_base_type_struct);
 	mu_run_test (test_anal_base_type_struct_array_roundtrip);
 	mu_run_test (test_anal_save_base_type_struct_redefine);
+	mu_run_test (test_anal_base_type_union_array_roundtrip);
+	mu_run_test (test_anal_base_type_to_kv);
 	mu_run_test (test_anal_get_base_type_union);
 	mu_run_test (test_anal_save_base_type_union);
 	mu_run_test (test_anal_get_base_type_enum);
