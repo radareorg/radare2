@@ -514,7 +514,7 @@ static bool pdb7_parse(RBinPdb *pdb) {
 		goto error;
 	}
 
-	if (root_size < 0) {
+	if (root_size <= 0) {
 		R_LOG_ERROR ("Invalid root size");
 		goto error;
 	}
