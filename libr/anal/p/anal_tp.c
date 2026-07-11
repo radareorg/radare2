@@ -1894,7 +1894,7 @@ static void synth_hint(RAnal *anal, SynthRec *rec, ut64 off, ut64 iaddr) {
 
 // takes ownership of type; returns the new end offset
 static ut64 synth_add_member(RAnalBaseType *bt, ut64 off, int size, int count, char *type) {
-	RAnalStructMember *m = RVecAnalStructMember_emplace_back (&bt->struct_data.members);
+	RAnalTypeMember *m = RVecAnalTypeMember_emplace_back (&bt->struct_data.members);
 	if (!m) {
 		free (type);
 		return off;
@@ -1902,7 +1902,7 @@ static ut64 synth_add_member(RAnalBaseType *bt, ut64 off, int size, int count, c
 	m->name = r_str_newf ("field_0x%" PFMT64x, off);
 	m->type = type;
 	m->offset = off;
-	m->size = (size_t)size * 8;
+	m->bitsize = (size_t)size * 8;
 	m->count = count;
 	return off + (ut64)size;
 }
@@ -2367,13 +2367,13 @@ static char *synth_json(RVecSynthRec *recs) {
 		}
 		pj_kn (pj, "size", rec->bt->size);
 		pj_ka (pj, "members");
-		RAnalStructMember *m;
+		RAnalTypeMember *m;
 		R_VEC_FOREACH (&rec->bt->struct_data.members, m) {
 			pj_o (pj);
 			pj_ks (pj, "name", m->name);
 			pj_ks (pj, "type", m->type);
 			pj_kn (pj, "offset", m->offset);
-			pj_kn (pj, "size", (ut64)m->size / 8);
+			pj_kn (pj, "size", (ut64)m->bitsize / 8);
 			SynthArr *a = synth_arr_at (rec, m->offset);
 			if (a) {
 				pj_ki (pj, "count", a->count);
@@ -2395,7 +2395,7 @@ static char *synth_commands(RAnal *anal, RAnalFunction *fcn, RVecSynthRec *recs)
 	R_VEC_FOREACH (recs, rec) {
 		r_strbuf_appendf (sb, "'td struct %s {", rec->bt->name);
 		ut64 cur = 0;
-		RAnalStructMember *m;
+		RAnalTypeMember *m;
 		R_VEC_FOREACH (&rec->bt->struct_data.members, m) {
 			if (m->offset > cur) {
 				// pad the gaps so the C layout keeps the observed offsets
@@ -2407,7 +2407,7 @@ static char *synth_commands(RAnal *anal, RAnalFunction *fcn, RVecSynthRec *recs)
 				cur = m->offset + (ut64)a->elsize * a->count;
 			} else {
 				r_strbuf_appendf (sb, "%s %s;", m->type, m->name);
-				cur = m->offset + m->size / 8;
+				cur = m->offset + m->bitsize / 8;
 			}
 		}
 		r_strbuf_append (sb, "};\n");

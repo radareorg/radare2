@@ -202,21 +202,16 @@ typedef struct r_anal_enum_case_t {
 	int val;
 } RAnalEnumCase;
 
-typedef struct r_anal_struct_member_t {
+typedef struct r_anal_type_member_t {
 	char *name;
 	char *type;
 	size_t offset; // in bytes
-	size_t size; // in bits? rename to 'bitsize'
+	size_t bitsize;
 	size_t count; // array element count, 0 when not an array
-} RAnalStructMember;
+} RAnalTypeMember;
 
-typedef struct r_anal_union_member_t {
-	char *name;
-	char *type;
-	size_t offset; // in bytes
-	size_t size; // in bits? TODO rename to 'bitsize'
-	size_t count; // array element count, 0 when not an array
-} RAnalUnionMember;
+typedef RAnalTypeMember RAnalStructMember;
+typedef RAnalTypeMember RAnalUnionMember;
 
 typedef enum {
 	R_ANAL_BASE_TYPE_KIND_STRUCT,
@@ -226,12 +221,7 @@ typedef enum {
 	R_ANAL_BASE_TYPE_KIND_ATOMIC, // For real atomic base types
 } RAnalBaseTypeKind;
 
-static inline void anal_struct_member_fini(RAnalStructMember *member) {
-	free (member->name);
-	free (member->type);
-}
-
-static inline void anal_union_member_fini(RAnalUnionMember *member) {
+static inline void anal_type_member_fini(RAnalTypeMember *member) {
 	free (member->name);
 	free (member->type);
 }
@@ -240,17 +230,12 @@ static inline void anal_enum_case_fini(RAnalEnumCase *cas) {
 	free (cas->name);
 }
 
-R_VEC_TYPE_WITH_FINI (RVecAnalStructMember, RAnalStructMember, anal_struct_member_fini);
-R_VEC_TYPE_WITH_FINI (RVecAnalUnionMember, RAnalUnionMember, anal_union_member_fini);
+R_VEC_TYPE_WITH_FINI (RVecAnalTypeMember, RAnalTypeMember, anal_type_member_fini);
 R_VEC_TYPE_WITH_FINI (RVecAnalEnumCase, RAnalEnumCase, anal_enum_case_fini);
 
-typedef struct r_anal_base_type_struct_t {
-	RVecAnalStructMember members;
-} RAnalBaseTypeStruct;
-
-typedef struct r_anal_base_type_union_t {
-	RVecAnalUnionMember members;
-} RAnalBaseTypeUnion;
+typedef struct r_anal_base_type_composite_t {
+	RVecAnalTypeMember members;
+} RAnalBaseTypeStruct, RAnalBaseTypeUnion;
 
 typedef struct r_anal_base_type_enum_t {
 	RVecAnalEnumCase cases; // list of all the enum casessssss
@@ -267,6 +252,11 @@ typedef struct r_anal_base_type_t {
 		RAnalBaseTypeUnion union_data;
 	};
 } RAnalBaseType;
+
+// valid only for struct and union kinds; both share the composite layout
+static inline RVecAnalTypeMember *r_anal_base_type_members(const RAnalBaseType *bt) {
+	return (RVecAnalTypeMember *)&bt->struct_data.members;
+}
 
 typedef struct r_anal_function_param_t {
 	char *name;

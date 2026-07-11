@@ -5,7 +5,6 @@
 #include <r_anal.h>
 #include "../bin/format/pdb/types.h"
 #include "../bin/format/pdb/tpi.h"
-#include "base_types.h"
 
 static bool is_parsable_type(const ELeafType type) {
 	return (type == eLF_STRUCTURE ||
@@ -198,16 +197,13 @@ static void parse_structure(const RAnal *anal, STpiStream *ss, SType *type, RLis
 		if (!struct_member) {
 			continue; // skip the failure
 		}
-		if (is_struct) {
-			RAnalStructMember *slot = RVecAnalStructMember_emplace_back (&base_type->struct_data.members);
-			*slot = *struct_member;
-		} else {
-			RAnalUnionMember *slot = RVecAnalUnionMember_emplace_back (&base_type->union_data.members);
-			slot->name = struct_member->name;
-			slot->type = struct_member->type;
-			slot->offset = struct_member->offset;
-			slot->size = struct_member->size;
+		RAnalTypeMember *slot = RVecAnalTypeMember_emplace_back (r_anal_base_type_members (base_type));
+		if (!slot) {
+			anal_type_member_fini (struct_member);
+			free (struct_member);
+			continue;
 		}
+		*slot = *struct_member;
 		free (struct_member);
 	}
 	char *sname = r_str_sanitize_sdb_key (name);
