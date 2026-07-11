@@ -674,6 +674,21 @@ R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunctio
 	return ctx;
 }
 
+typedef struct {
+	RGraph *graph;
+	HtUP *nodes;
+	RGraphNode *from;
+} EdgeCtx;
+
+static bool add_edge_cb(ut64 addr, void *user) {
+	EdgeCtx *ctx = user;
+	RGraphNode *to = ht_up_find (ctx->nodes, addr, NULL);
+	if (to) {
+		r_graph_add_edge (ctx->graph, ctx->from, to);
+	}
+	return to != NULL;
+}
+
 R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_ptr, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (fcn && fcn->bbs && r_list_length (fcn->bbs), NULL);
 	HtUP *nodes = ht_up_new0 ();
@@ -690,56 +705,20 @@ R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_pt
 		}
 		ht_up_insert (nodes, bb->addr, node);
 	}
+	EdgeCtx ctx = { g, nodes, NULL };
 	r_list_foreach (fcn->bbs, iter, bb) {
-		if (bb->jump == UT64_MAX  &&
-			(!bb->switch_op || !bb->switch_op->cases || !r_list_length (bb->switch_op->cases))) {
+		if (bb->jump == UT64_MAX && (!bb->switch_op || r_list_empty (bb->switch_op->cases))) {
 			continue;
 		}
-		RGraphNode *node = (RGraphNode *)ht_up_find (nodes, bb->addr, NULL);
-		if (bb->jump != UT64_MAX) {
-			RGraphNode *_node = NULL;
-			_node = (RGraphNode *)ht_up_find (nodes, bb->jump, NULL);
-			if (!_node) {
-				R_LOG_ERROR ("Broken fcn");
-				ht_up_free (nodes);
-				r_graph_free (g);
-				if (node_ptr) {
-					*node_ptr = NULL;
-				}
-				return NULL;
+		ctx.from = ht_up_find (nodes, bb->addr, NULL);
+		if (!r_anal_block_successor_addrs_foreach (bb, add_edge_cb, &ctx)) {
+			R_LOG_ERROR ("Broken fcn");
+			ht_up_free (nodes);
+			r_graph_free (g);
+			if (node_ptr) {
+				*node_ptr = NULL;
 			}
-			r_graph_add_edge (g, node, _node);
-		}
-		if (bb->fail != UT64_MAX) {
-			RGraphNode *_node = NULL;
-			_node = (RGraphNode *)ht_up_find (nodes, bb->fail, NULL);
-			if (!_node) {
-				R_LOG_ERROR ("Broken fcn");
-				ht_up_free (nodes);
-				r_graph_free (g);
-				if (node_ptr) {
-					*node_ptr = NULL;
-				}
-				return NULL;
-			}
-			r_graph_add_edge (g, node, _node);
-		}
-		if (bb->switch_op && bb->switch_op->cases && r_list_length (bb->switch_op->cases)) {
-			RListIter *ator;
-			RAnalCaseOp *co;
-			r_list_foreach (bb->switch_op->cases, ator, co) {
-				RGraphNode *_node = (RGraphNode *)ht_up_find (nodes, co->jump, NULL);
-				if (!_node) {
-					R_LOG_ERROR ("Broken fcn");
-					ht_up_free (nodes);
-					r_graph_free (g);
-					if (node_ptr) {
-						*node_ptr = NULL;
-					}
-					return NULL;
-				}
-				r_graph_add_edge (g, node, _node);
-			}
+			return NULL;
 		}
 	}
 	ht_up_free (nodes);
