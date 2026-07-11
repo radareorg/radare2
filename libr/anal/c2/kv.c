@@ -29,27 +29,14 @@ typedef struct {
 
 typedef bool(*KVCParserCallback)(KVCParser *, const char *);
 
-/* Accumulate a parsed struct/union member into the base type model. The
- * definition is later serialized with r_anal_base_type_to_kv() so the
- * C parser and the debug-info importers share a single sdb schema. */
+// serialized later with r_anal_base_type_to_kv() so parser and importers share one sdb schema
 static void kvc_basetype_add_member(RAnalBaseType *bt, const char *name, const char *type, int offset, int count) {
-	const size_t mcount = (count > 0)? (size_t)count: 0;
-	if (bt->kind == R_ANAL_BASE_TYPE_KIND_UNION) {
-		RAnalUnionMember *m = RVecAnalUnionMember_emplace_back (&bt->union_data.members);
-		if (m) {
-			m->name = strdup (name);
-			m->type = strdup (type);
-			m->offset = offset;
-			m->count = mcount;
-		}
-	} else {
-		RAnalStructMember *m = RVecAnalStructMember_emplace_back (&bt->struct_data.members);
-		if (m) {
-			m->name = strdup (name);
-			m->type = strdup (type);
-			m->offset = offset;
-			m->count = mcount;
-		}
+	RAnalTypeMember *m = RVecAnalTypeMember_emplace_back (r_anal_base_type_members (bt));
+	if (m) {
+		m->name = strdup (name);
+		m->type = strdup (type);
+		m->offset = offset;
+		m->count = (count > 0)? (size_t)count: 0;
 	}
 }
 

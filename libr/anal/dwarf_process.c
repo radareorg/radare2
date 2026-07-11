@@ -3,7 +3,6 @@
 #include <ctype.h>
 #include <r_anal.h>
 #include <r_bin_dwarf.h>
-#include "base_types.h"
 
 typedef struct dwarf_parse_context_t {
 	const RAnal *anal;
@@ -485,7 +484,7 @@ static RAnalStructMember *parse_struct_member(Context *ctx, ut64 idx, RAnalStruc
 	free (type);
 	r_strbuf_fini (&strbuf);
 	result->offset = offset;
-	result->size = size;
+	result->bitsize = size;
 	return result;
 cleanup:
 	free (type);
@@ -607,16 +606,12 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 				if (!result) {
 					goto cleanup;
 				}
-				if (kind == R_ANAL_BASE_TYPE_KIND_UNION) {
-					RAnalUnionMember *slot = RVecAnalUnionMember_emplace_back (&base_type->union_data.members);
-					slot->name = member.name;
-					slot->type = member.type;
-					slot->offset = member.offset;
-					slot->size = member.size;
-				} else {
-					RAnalStructMember *slot = RVecAnalStructMember_emplace_back (&base_type->struct_data.members);
-					*slot = member;
+				RAnalTypeMember *slot = RVecAnalTypeMember_emplace_back (r_anal_base_type_members (base_type));
+				if (!slot) {
+					anal_type_member_fini (&member);
+					goto cleanup;
 				}
+				*slot = member;
 			}
 			if (child_die->has_children) {
 				child_depth++;
