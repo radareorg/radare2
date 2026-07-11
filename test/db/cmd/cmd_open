@@ -325,6 +325,20 @@ b32ae931000000000200
 EOF
 RUN
 
+NAME=oba loads default slice from fat macho header
+FILE=bins/mach0/libexpat.1.dylib
+ARGS=-n
+CMDS=<<EOF
+oba $$
+i~^arch[1]
+i~^bintype[1]
+EOF
+EXPECT=<<EOF
+x86
+mach0
+EOF
+RUN
+
 NAME=ob select files
 FILE=malloc://1024
 CMDS=<<EOF
