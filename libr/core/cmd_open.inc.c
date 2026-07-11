@@ -255,6 +255,14 @@ static ut64 oba_memsize(RDebug *dbg, ut64 addr) {
 	return R_MIN (hi - lo, (ut64)32 * 1024 * 1024);
 }
 
+// fat Mach-O and other xtr containers defer their slice load, finish it here
+static void oba_finish_load(RCore *core) {
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (bf && !bf->bo && bf->xtr_data && !r_list_empty (bf->xtr_data)) {
+		r_core_bin_update_arch_bits (core);
+	}
+}
+
 static void cmd_oba(RCore *core, const char *input) {
 	if (input[2] == '?') {
 		r_core_cmd_help (core, help_msg_oba);
@@ -306,6 +314,7 @@ static void cmd_oba(RCore *core, const char *input) {
 					opt.sz = 1024 * 1024;
 				}
 				r_bin_open_io (core->bin, &opt);
+				oba_finish_load (core);
 				r_core_cmd0 (core, ".is*");
 			} else {
 				R_LOG_ERROR ("No file to load bin from?");
@@ -322,6 +331,7 @@ static void cmd_oba(RCore *core, const char *input) {
 					opt.sz = 1024 * 1024;
 				}
 				r_bin_open_io (core->bin, &opt);
+				oba_finish_load (core);
 				r_core_cmd0 (core, ".is*");
 			} else {
 				R_LOG_ERROR ("No file to load bin from?");
