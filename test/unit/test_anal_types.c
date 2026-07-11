@@ -423,6 +423,67 @@ static bool test_anal_save_base_type_struct_redefine(void) {
 	mu_end;
 }
 
+static bool test_anal_base_type_struct_comma_type_roundtrip(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("tpl");
+
+	RAnalStructMember member = {
+		.offset = 8,
+		.type = strdup ("pair<int, char>"),
+		.name = strdup ("p"),
+		.count = 0
+	};
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
+
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	RAnalBaseType *got = r_anal_get_base_type (anal, "tpl");
+	mu_assert_notnull (got, "reload struct with comma in member type");
+
+	RAnalStructMember *m = RVecAnalTypeMember_at (&got->struct_data.members, 0);
+	mu_assert_streq (m->type, "pair<int, char>", "member type with comma survives the roundtrip");
+	mu_assert_eq (m->offset, 8, "offset not shifted by the comma in the type");
+	mu_assert_eq (m->count, 0, "no count fabricated from comma-shifted fields");
+
+	r_anal_base_type_free (got);
+	r_anal_free (anal);
+	mu_end;
+}
+
+static bool test_anal_base_type_union_comma_type_roundtrip(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
+	base->name = strdup ("utpl");
+
+	RAnalUnionMember member = {
+		.offset = 0,
+		.type = strdup ("pair<int, char>"),
+		.name = strdup ("p"),
+		.count = 4
+	};
+	RVecAnalTypeMember_push_back (&base->union_data.members, &member);
+
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	RAnalBaseType *got = r_anal_get_base_type (anal, "utpl");
+	mu_assert_notnull (got, "reload union with comma in member type");
+
+	RAnalUnionMember *m = RVecAnalTypeMember_at (&got->union_data.members, 0);
+	mu_assert_streq (m->type, "pair<int, char>", "member type with comma survives the roundtrip");
+	mu_assert_eq (m->count, 4, "count not shifted by the comma in the type");
+
+	r_anal_base_type_free (got);
+	r_anal_free (anal);
+	mu_end;
+}
+
 static bool test_anal_base_type_union_array_roundtrip(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
@@ -561,6 +622,8 @@ int all_tests(void) {
 	mu_run_test (test_anal_save_base_type_struct);
 	mu_run_test (test_anal_base_type_struct_array_roundtrip);
 	mu_run_test (test_anal_save_base_type_struct_redefine);
+	mu_run_test (test_anal_base_type_struct_comma_type_roundtrip);
+	mu_run_test (test_anal_base_type_union_comma_type_roundtrip);
 	mu_run_test (test_anal_base_type_union_array_roundtrip);
 	mu_run_test (test_anal_save_base_type_union_redefine);
 	mu_run_test (test_anal_base_type_to_kv);
