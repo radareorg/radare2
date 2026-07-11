@@ -221,15 +221,14 @@ static void shadow_var_struct_members(RAnal *anal, RAnalVar *var) {
 			if (snprintf (field_key, sizeof (field_key), "%s.%s", type_key, field) < 0) {
 				continue;
 			}
-			char *field_type = sdb_array_get (TDB, field_key, 0, NULL);
-			ut64 field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
+			ut64 field_offset = 0;
+			free (r_type_get_member (TDB, field_key, &field_offset, NULL));
 			if (field_offset != 0) { // delete variables which are overlaid by structure
 				RAnalVar *other = r_anal_function_get_var (var->fcn, var->kind, var->delta + field_offset);
 				if (other && other != var) {
 					r_anal_var_delete (anal, other);
 				}
 			}
-			free (field_type);
 			free (field);
 		}
 		free (type_key);
@@ -1035,15 +1034,14 @@ static bool var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, RList *list
 		char *type_key = r_str_newf ("%s.%s", type_kind, av->type);
 		for (field_n = 0; (field_name = sdb_array_get (TDB, type_key, field_n, NULL)); field_n++) {
 			char *field_key = r_str_newf ("%s.%s", type_key, field_name);
-			char *field_type = sdb_array_get (TDB, field_key, 0, NULL);
-			ut64 field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
+			ut64 field_offset = 0;
+			free (r_type_get_member (TDB, field_key, &field_offset, NULL));
 			new_name = r_str_newf ("%s.%s", av->name, field_name);
 			RAnalVarField *field = R_NEW0 (RAnalVarField);
 			field->name = new_name;
 			field->delta = av->delta + field_offset;
 			field->field = true;
 			r_list_append (list, field);
-			free (field_type);
 			free (field_key);
 			free (field_name);
 		}

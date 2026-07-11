@@ -2698,3 +2698,65 @@ struct Hex {
 };
 EOF
 RUN
+
+NAME=tsc struct member type with comma survives
+FILE=-
+CMDS=<<EOF
+tk tpl=struct
+tk struct.tpl=p
+'tk struct.tpl.p=pair<int, char>,8,0
+tsc tpl
+tsv tpl
+EOF
+EXPECT=<<EOF
+struct tpl {
+  uint8_t pad_0x0[8]; // gap
+  pair<int, char> p;
+};
+0x00000000 struct tpl {
+0x00000000   pair<int, char> p;
+0x00000001 };
+EOF
+RUN
+
+NAME=tuc union member type with comma survives
+FILE=-
+CMDS=<<EOF
+tk utpl=union
+tk union.utpl=p,q
+'tk union.utpl.p=pair<int, char>,0,4
+tk union.utpl.q=int32_t,0,0
+tuc utpl
+tuv utpl
+EOF
+EXPECT=<<EOF
+union utpl {
+  pair<int, char> p[4];
+  int32_t q;
+};
+0x00000000 union utpl {
+0x00000000   pair<int, char> p[4];
+0x00000000   int32_t q;
+0x00000000 };
+EOF
+RUN
+
+NAME=comma member type resolves for sizeof and pf format
+FILE=-
+CMDS=<<EOF
+'tk pair<int, char>=struct
+'tk struct.pair<int, char>=a,b
+'tk struct.pair<int, char>.a=int32_t,0,0
+'tk struct.pair<int, char>.b=int32_t,4,0
+tk outer=struct
+tk struct.outer=p,x
+'tk struct.outer.p=pair<int, char>,0,0
+tk struct.outer.x=int32_t,8,0
+tss outer
+ts outer
+EOF
+EXPECT=<<EOF
+12
+pf ?[4].d (pair<int, char>)p x
+EOF
+RUN
