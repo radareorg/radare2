@@ -455,6 +455,28 @@ static RCoreHelpMessage help_msg_drv = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_arv = {
+	"Usage: arv", " [reg] [idx] [wordsize] [= value]", "Show analysis vector packed registers",
+	"arv", "", "show XMM registers",
+	"arv", " xmm0", "show all packings of xmm0",
+	"arv", " xmm0 0 32 = 12", "set the first 32 bit word of the xmm0 reg to 12",
+	"arvb", " [reg]", "show registers as bytes",
+	"arvw", " [reg]", "show registers as words",
+	"arvd", " [reg]", "show registers as doublewords",
+	"arvq", " [reg]", "show registers as quadwords",
+	"arvq", " xmm0~[0]", "show first quadword of xmm0",
+	"arvf", " [reg]", "show registers as 32-bit floating point",
+	"arvl", " [reg]", "show registers as 64-bit floating point",
+	"arvyb", " [reg]", "show YMM registers as bytes",
+	"arvyw", " [reg]", "show YMM registers as words",
+	"arvyd", " [reg]", "show YMM registers as doublewords",
+	"arvyq", " [reg]", "show YMM registers as quadwords",
+	"arvq", " ymm0~[3]", "show fourth quadword of ymm0",
+	"arvyf", " [reg]", "show YMM registers as 32-bit floating point",
+	"arvyl", " [reg]", "show YMM registers as 64-bit floating point",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_ds = {
 	"Usage: ds", "", "Step commands",
 	"ds", "", "step one instruction",
@@ -3003,20 +3025,20 @@ static const char *pack_format[NUM_PACK_TYPES] = {
 
 #define pack_print(i, reg, pack_type_index) r_cons_printf (core->cons, pack_format[pack_type_index], i != 0 ? " " : "", reg);
 
-static void cmd_debug_reg_print_packed_reg(RCore *core, RRegItem *item, char explicit_size, char* pack_show)	{
+static void cmd_reg_print_packed_reg(RCore *core, RReg *reg, RRegItem *item, char explicit_size, char *pack_show) {
 	int pi, i;
 	for (pi = 0; pi < NUM_PACK_TYPES; pi++) {
 		if (!explicit_size || pack_show[pi]) {
 			for (i = 0; i < item->packed_size / pack_sizes[pi]; i++) {
-				ut64 res = r_reg_get_pack(core->dbg->reg, item, i, pack_sizes[pi]);
-				if (pi > NUM_INT_PACK_TYPES-1)	{ // are we printing int or double?
-					if (pack_sizes[pi] == 64)	{
+				ut64 res = r_reg_get_pack (reg, item, i, pack_sizes[pi]);
+				if (pi > NUM_INT_PACK_TYPES - 1) { // are we printing int or double?
+					if (pack_sizes[pi] == 64) {
 						double dres;
-						memcpy ((void*)&dres, (void*)&res, 8);
+						memcpy ((void *)&dres, (void *)&res, 8);
 						pack_print (i, dres, pi);
 					} else if (pack_sizes[pi] == 32) {
 						float fres;
-						memcpy ((void*)&fres, (void*)&res, 4);
+						memcpy ((void *)&fres, (void *)&res, 4);
 						pack_print (i, fres, pi);
 					}
 				} else {
@@ -3024,6 +3046,168 @@ static void cmd_debug_reg_print_packed_reg(RCore *core, RRegItem *item, char exp
 				}
 			}
 			r_cons_newline (core->cons);
+		}
+	}
+}
+
+static void cmd_reg_vector_sync(RCore *core, RRegType type, bool write, bool debug) {
+	if (debug) {
+		r_debug_reg_sync (core->dbg, type, write);
+	}
+}
+
+static void cmd_reg_vector_list(RCore *core, RReg *reg, RRegType type, int bits) {
+	RReg *debug_reg = core->dbg->reg;
+	core->dbg->reg = reg;
+	r_debug_reg_list (core->dbg, type, bits, NULL, 0, NULL);
+	core->dbg->reg = debug_reg;
+}
+
+static void cmd_reg_vector(RCore *core, RReg *reg, const char *str, bool debug, RCoreHelpMessage help) {
+	if (str[1] == '?') {
+		r_core_cmd_help (core, help);
+		return;
+	}
+	if (!str[1] || (str[1] == 'y' && !str[2])) {
+		RRegType type = str[1] == 'y'? R_REG_TYPE_VEC256: R_REG_TYPE_VEC128;
+		cmd_reg_vector_sync (core, type, false, debug);
+		cmd_reg_vector_list (core, reg, type, type == R_REG_TYPE_VEC256? 256: 128);
+		return;
+	}
+	char mode = str[1] == 'y'? str[2]: str[1];
+	if (mode != ' ' && mode != 'b' && mode != 'd' && mode != 'w' && mode != 'q' && mode != 'l' && mode != 'f') {
+		r_core_return_invalid_command (core, debug? "drv": "arv", mode);
+		return;
+	}
+
+	char explicit_index = 0;
+	char explicit_size = 0;
+	char explicit_name = 0;
+	char pack_show[NUM_PACK_TYPES] = { 0, 0, 0, 0, 0, 0 };
+	int index = 0;
+	int size = 0; // auto
+	char *q, *p, *name;
+	char *eq = NULL;
+	RRegType reg_type = R_REG_TYPE_VEC128;
+	if ((str[1] == ' ' && str[2]) || (str[1] == 'y' && str[2] == ' ' && str[3])) {
+		if (str[1] == 'y') { // support `drvy ymm0`, `drv ymm0` and their `ar` variants
+			str++;
+			reg_type = R_REG_TYPE_VEC256;
+		}
+		name = strdup (str + 2);
+		explicit_name = 1;
+		eq = strchr (name, '=');
+		if (eq) {
+			*eq++ = 0;
+		}
+		p = strchr (name, ' ');
+		if (p) {
+			*p++ = 0;
+			q = strchr (p, ' ');
+			if (p[0] != '*') {
+				explicit_index = 1;
+				index = r_num_math (core->num, p);
+			}
+			if (q) {
+				*q++ = 0;
+				size = r_num_math (core->num, q);
+				size_t i;
+				for (i = 0; i < NUM_PACK_TYPES; i++) {
+					if (size == pack_sizes[i]) {
+						explicit_size = 1;
+						pack_show[i] = 1;
+					}
+				}
+				if (!explicit_size) {
+					R_LOG_ERROR ("Unsupported wordsize %d", size);
+					free (name);
+					return;
+				}
+			}
+		}
+	} else {
+		explicit_size = 1;
+		if (str[1] == 'y') {
+			reg_type = R_REG_TYPE_VEC256;
+			str++;
+		}
+		if (str[2] == ' ' && str[3]) {
+			name = strdup (str + 3);
+			explicit_name = 1;
+		}
+		switch (str[1]) {
+		case 'b':
+			size = pack_sizes[0];
+			pack_show[0] = 1;
+			break;
+		case 'w':
+			size = pack_sizes[1];
+			pack_show[1] = 1;
+			break;
+		case 'd':
+			size = pack_sizes[2];
+			pack_show[2] = 1;
+			break;
+		case 'q':
+			size = pack_sizes[3];
+			pack_show[3] = 1;
+			break;
+		case 'f':
+			size = pack_sizes[4];
+			pack_show[4] = 1;
+			break;
+		case 'l':
+			size = pack_sizes[5];
+			pack_show[5] = 1;
+			break;
+		default:
+			R_LOG_ERROR ("Unknown command");
+			return;
+		}
+	}
+
+	if (explicit_name) {
+		RRegItem *item = r_reg_get (reg, name, -1);
+		if (item && item->type != R_REG_TYPE_VEC128 && item->type != R_REG_TYPE_VEC256) {
+			r_unref (item);
+			item = NULL;
+		}
+		if (!item) {
+			R_LOG_ERROR ("Cannot find vector register '%s'", name);
+			free (name);
+			return;
+		}
+		reg_type = item->type;
+		if (eq) {
+			if (reg_type == R_REG_TYPE_VEC256) {
+				R_LOG_WARN ("Setting ymm registers not supported yet!");
+			} else {
+				ut64 val = r_num_math (core->num, eq);
+				r_reg_set_pack (reg, item, index, size, val);
+				cmd_reg_vector_sync (core, reg_type, true, debug);
+			}
+		} else {
+			cmd_reg_vector_sync (core, reg_type, false, debug);
+			if (!explicit_index) {
+				cmd_reg_print_packed_reg (core, reg, item, explicit_size, pack_show);
+			} else {
+				ut64 res = r_reg_get_pack (reg, item, index, size);
+				r_cons_printf (core->cons, "0x%08" PFMT64x "\n", res);
+			}
+		}
+		r_unref (item);
+		free (name);
+		return;
+	}
+
+	cmd_reg_vector_sync (core, reg_type, false, debug);
+	RList *head = r_reg_get_list (reg, reg_type);
+	RListIter *iter;
+	RRegItem *item;
+	r_list_foreach (head, iter, item) {
+		if (item->type == reg_type) {
+			r_cons_printf (core->cons, "%-5s = ", item->name);
+			cmd_reg_print_packed_reg (core, reg, item, explicit_size, pack_show);
 		}
 	}
 }
@@ -3375,146 +3559,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'v': // "drv"
-		if (str[1] == '?') {
-			r_core_cmd_help (core, help_msg_drv);
-		} else if (str[1] == ' ' || str[1] == 'b' || str[1] == 'd' || str[1] == 'w' || str[1] == 'q' || str[1] == 'l'
-				   || str[1] == 'f' || (str[1] == 'y' && str[2] != '\x00')) {
-			char explicit_index = 0;
-			char explicit_size = 0;
-			char explicit_name = 0;
-			char pack_show[NUM_PACK_TYPES] = { 0, 0, 0, 0, 0, 0};
-			int index = 0;
-			int size = 0; // auto
-			char *q, *p, *name;
-			char *eq = NULL;
-			RRegType reg_type = R_REG_TYPE_VEC128;
-			if ((str[1] == ' ' && str[2] != '\x00') || (str[1] == 'y' && str[2] == ' ' && str[3] != '\x00')) {
-				if (str[1] == 'y') { // support `drvy ymm0` and `drv ymm0`
-					str = str + 1;
-				}
-				name = strdup (str + 2);
-				explicit_name = 1;
-				eq = strchr (name, '=');
-				if (eq) {
-					*eq++ = 0;
-				}
-				p = strchr (name, ' ');
-				if (p) {
-					*p++ = 0;
-					q = strchr (p, ' ');
-					if (p[0] != '*') {
-						// do not show whole register
-						explicit_index = 1;
-						index = r_num_math (core->num, p);
-					}
-					if (q) {
-						*q++ = 0;
-						size = r_num_math (core->num, q);
-						for (i = 0; i < NUM_PACK_TYPES; i++) {
-							if (size == pack_sizes[i]) {
-								explicit_size = 1;
-								pack_show[i] = 1;
-							}
-						}
-						if (!explicit_size) {
-							R_LOG_ERROR ("Unsupported wordsize %d", size);
-							break;
-						}
-					}
-				}
-			} else {
-				explicit_size = 1;
-				if (str[1] == 'y') {
-					reg_type = R_REG_TYPE_VEC256;
-					str = str + 1;
-				}
-				if (str[2] == ' ' && str[3] != '\x00') {
-					name = strdup (str + 3);
-					explicit_name = 1;
-				}
-				switch (str[1])	{
-				case 'b': // "drvb"
-					size = pack_sizes[0];
-					pack_show[0] = 1;
-					break;
-				case 'w': // "drvw"
-					size = pack_sizes[1];
-					pack_show[1] = 1;
-					break;
-				case 'd': // "drvd"
-					size = pack_sizes[2];
-					pack_show[2] = 1;
-					break;
-				case 'q': // "drvq"
-					size = pack_sizes[3];
-					pack_show[3] = 1;
-					break;
-				case 'f': // "drvf"
-					size = pack_sizes[4];
-					pack_show[4] = 1;
-					break;
-				case 'l': // "drvl"
-					size = pack_sizes[5];
-					pack_show[5] = 1;
-					break;
-				default:
-					R_LOG_ERROR ("Unknown command");
-					return;
-				}
-			}
-			if (explicit_name) {
-				RRegItem *item = r_reg_get (core->dbg->reg, name, -1);
-				if (item) {
-					if (eq) {
-						// TODO: support setting YMM registers
-						if (reg_type == R_REG_TYPE_VEC256) {
-							R_LOG_WARN ("Setting ymm registers not supported yet!");
-						} else {
-							ut64 val = r_num_math (core->num, eq);
-							r_reg_set_pack (core->dbg->reg, item, index, size, val);
-							r_debug_reg_sync (core->dbg, reg_type, true);
-						}
-					} else {
-						r_debug_reg_sync (core->dbg, reg_type, false);
-						if (!explicit_index) {
-							cmd_debug_reg_print_packed_reg (core, item, explicit_size, pack_show);
-						} else {
-							ut64 res = r_reg_get_pack (core->dbg->reg, item, index, size);
-							// print selected index / wordsize
-							r_cons_printf (core->cons, "0x%08" PFMT64x "\n", res);
-						}
-					}
-				} else {
-					R_LOG_ERROR ("Cannot find vector register '%s'", name);
-				}
-				free (name);
-			} else {
-				// explicit size no name
-				RListIter *iter;
-				RRegItem *item;
-				RList *head;
-				r_debug_reg_sync (core->dbg, reg_type, false);
-				head = r_reg_get_list (core->dbg->reg, reg_type);
-				if (head) {
-					r_list_foreach (head, iter, item) {
-						if (item->type != reg_type) {
-							continue;
-						}
-						r_cons_printf (core->cons, "%-5s = ", item->name);
-						cmd_debug_reg_print_packed_reg (core, item, explicit_size, pack_show);
-					}
-				}
-			}
-		} else { // drv # no arg
-			if (str[1] == 'y') { // drvy
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_VEC256, false);
-				r_debug_reg_list (core->dbg, R_REG_TYPE_VEC256, 256, NULL, 0, 0);
-			} else { // drv
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_VEC128, false);
-				r_debug_reg_list (core->dbg, R_REG_TYPE_VEC128, 128, NULL, 0, 0);
-			}
-		}
-		//r_debug_drx_list (core->dbg);
+		cmd_reg_vector (core, core->dbg->reg, str, true, help_msg_drv);
 		break;
 	case 'f': // "drf"
 		// r_debug_drx_list (core->dbg);
@@ -6481,6 +6526,8 @@ static int cmd_debug(void *data, const char *input) {
 	case 'r': // "dr"
 		if (r_config_get_b (core->config, "cfg.debug") || input[1] == '?') {
 			cmd_debug_reg (core, input + 1);
+		} else if (input[1] == 'v') {
+			cmd_reg_vector (core, core->anal->reg, input + 1, false, help_msg_drv);
 		} else {
 			cmd_anal_reg (core, input + 1);
 		}
