@@ -40,8 +40,8 @@ static RCoreHelpMessage help_msg_C = {
 	"Ch", "[-] [size] [@addr]", "hide data",
 	"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (see pm?)",
 	"Cs", "[?] [-] [size] [@addr]", "add string",
-	"Ct", "[?] [-] [comment-text] [@addr]", "add/remove type analysis comment",
-	"Ct.", "[@addr]", "show comment at current or specified address",
+	"Ct", "[?*j,=.-] [annotation] [@addr]", "manage type analysis annotations",
+	"Ct.", "[@addr]", "show type analysis annotation at current or specified address",
 	"Cv", "[?][bsr]", "add comments to args",
 	NULL
 };
@@ -86,11 +86,17 @@ static RCoreHelpMessage help_msg_CL = {
 };
 
 static RCoreHelpMessage help_msg_Ct = {
-	"Usage: Ct", "[.|-] [@ addr]", " # Manage comments for variable types",
-	"Ct", "", "list all variable type comments",
-	"Ct", " [base64:..|comment-text] [@ addr]", "place comment at current or specified address",
-	"Ct.", " [@ addr]", "show comment at current or specified address",
-	"Ct-", " [@ addr]", "remove comment at current or specified address",
+	"Usage: Ct", "[?*j,=.-] [annotation] [@ addr]", " # Manage address-based type analysis annotations",
+	"Ct", "", "list all type analysis annotations",
+	"Ct", " [base64:..|annotation] [@ addr]", "append an annotation at the current or specified address",
+	"Ct=", " [base64:..|annotation] [@ addr]", "set the annotation at the current or specified address",
+	"Ct.", " [@ addr]", "show the annotation at the current or specified address",
+	"Ct-", " [@ addr]", "remove the annotation at the current or specified address",
+	"Ct-*", "", "remove all type analysis annotations in the current metaspace",
+	"Ct*", "", "list all type analysis annotations as r2 commands",
+	"Ctj", "", "list all type analysis annotations as JSON",
+	"Ct,", " [table-query]", "list all type analysis annotations as a table",
+	"NOTE:", "", "Ct annotations are display metadata and do not change analyzed types",
 	NULL
 };
 
@@ -749,6 +755,47 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	return true;
 }
 
+static char *meta_vartype_decode(const char *text) {
+	if (R_STR_ISEMPTY (text)) {
+		return NULL;
+	}
+	if (r_str_startswith (text, "base64:")) {
+		char *decoded = (char *)sdb_decode (text + 7, NULL);
+		if (!decoded) {
+			R_LOG_ERROR ("Invalid base64 string");
+		}
+		return decoded;
+	}
+	char *decoded = strdup (text);
+	if (decoded) {
+		r_str_unescape (decoded);
+	}
+	return decoded;
+}
+
+static void meta_vartype_set(RCore *core, const char *input, bool append) {
+	const char *arg = r_str_trim_head_ro (input);
+	char *annotation = meta_vartype_decode (arg);
+	if (!annotation) {
+		r_core_cmd_help (core, help_msg_Ct);
+		return;
+	}
+	const ut64 addr = core->addr;
+	const char *current = append
+		? r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr)
+		: NULL;
+	if (current) {
+		char *text = r_str_newf ("%s %s", current, annotation);
+		if (text) {
+			r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, text);
+			free (text);
+		}
+	} else {
+		r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, annotation);
+	}
+	free (annotation);
+}
+
 static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 	ut64 addr = core->addr;
 	switch (input[1]) {
@@ -759,34 +806,10 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, 0, NULL, NULL);
 		break;
 	case ' ': // "Ct <vartype comment> @ addr"
-		{
-		const char *newcomment = r_str_trim_head_ro (input + 2);
-		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
-		char *nc;
-		if (r_str_startswith (newcomment, "base64:")) {
-			nc = (char *)sdb_decode (newcomment + 7, NULL);
-			if (!nc) {
-				R_LOG_ERROR ("Invalid base64 string");
-				break;
-			}
-		} else {
-			nc = strdup (newcomment);
-			if (!nc) {
-				break;
-			}
-			r_str_unescape (nc);
-		}
-		if (comment) {
-			char *text = r_str_newf ("%s %s", comment, nc);
-			if (R_LIKELY (text)) {
-				r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, text);
-				free (text);
-			}
-		} else {
-			r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, nc);
-		}
-		free (nc);
-		}
+		meta_vartype_set (core, input + 2, true);
+		break;
+	case '=': // "Ct="
+		meta_vartype_set (core, input + 2, false);
 		break;
 	case '.': // "Ct. @ addr"
 		{
@@ -798,7 +821,24 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 		}
 		break;
 	case '-': // "Ct-"
-		r_meta_del (core->anal, R_META_TYPE_VARTYPE, core->addr, 1);
+		if (!input[2]) {
+			r_meta_del (core->anal, R_META_TYPE_VARTYPE, core->addr, 1);
+		} else if (input[2] == '*' && !input[3]) {
+			r_meta_del (core->anal, R_META_TYPE_VARTYPE, 0, UT64_MAX);
+		} else {
+			r_core_cmd_help (core, help_msg_Ct);
+		}
+		break;
+	case '*': // "Ct*"
+		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, 1, NULL, NULL);
+		break;
+	case 'j': // "Ctj"
+		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, 'j', NULL, NULL);
+		break;
+	case ',': { // "Ct,"
+		RTable *t = r_core_table_new (core, "meta");
+		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, ',', input + 2, t);
+		}
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_Ct);

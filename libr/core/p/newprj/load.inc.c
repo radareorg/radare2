@@ -444,14 +444,16 @@ static void rprj_diff_seen_addr(RList *seen, ut64 addr) {
 	r_list_append (seen, a);
 }
 
-static void rprj_print_comment_script(RPrjCursor *cur, ut64 addr, const char *comment) {
-	if (R_STR_ISEMPTY (comment)) {
-		r_strbuf_appendf (cur->out, "'CC- @ 0x%08"PFMT64x"\n", addr);
+static void rprj_print_meta_script(RPrjCursor *cur, RAnalMetaType type, ut64 addr, const char *text) {
+	const bool vartype = type == R_META_TYPE_VARTYPE;
+	if (R_STR_ISEMPTY (text)) {
+		r_strbuf_appendf (cur->out, "'%s- @ 0x%08"PFMT64x"\n", vartype? "Ct": "CC", addr);
 		return;
 	}
-	char *b64 = sdb_encode ((const ut8 *)comment, strlen (comment));
+	char *b64 = sdb_encode ((const ut8 *)text, strlen (text));
 	if (b64) {
-		r_strbuf_appendf (cur->out, "'@0x%08"PFMT64x"'CCu base64:%s\n", addr, b64);
+		r_strbuf_appendf (cur->out, "'@0x%08"PFMT64x"'%s base64:%s\n",
+			addr, vartype? "Ct=": "CCu", b64);
 		free (b64);
 	}
 }
@@ -958,32 +960,34 @@ static void rprj_info_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	}
 }
 
-static void rprj_cmnt_load(RPrjCursor *cur, int mode, ut64 next_entry) {
+static void rprj_meta_load(RPrjCursor *cur, int mode, ut64 next_entry, RAnalMetaType type) {
 	RCore *core = cur->core;
 	RBuffer *b = cur->b;
+	const bool vartype = type == R_META_TYPE_VARTYPE;
+	const char *kind = vartype? "type annotation": "comment";
 	const bool diff = (mode & R_CORE_NEWPRJ_MODE_DIFF) != 0;
 	RList *seen = diff? r_list_newf (free): NULL;
 	while (rprj_entry_remaining (b, next_entry) >= RPRJ_CMNT_SIZE) {
 		const ut64 at = r_buf_at (b);
 		R2ProjectComment cmnt;
 		if (!rprj_cmnt_read (b, &cmnt)) {
-			R_LOG_WARN ("Truncated comment record at 0x%08"PFMT64x, at);
+			R_LOG_WARN ("Truncated %s record at 0x%08"PFMT64x, kind, at);
 			break;
 		}
 		const char *cmnt_text = rprj_st_get (cur->st, cmnt.text);
 		if (!cmnt_text) {
-			R_LOG_WARN ("Invalid comment string index %u", cmnt.text);
+			R_LOG_WARN ("Invalid %s string index %u", kind, cmnt.text);
 			continue;
 		}
 		R2ProjectAddr addr = { .mod = cmnt.mod, .delta = cmnt.delta };
 		ut64 va = UT64_MAX;
 		if (!rprj_mod_va (cur, &addr, &va)) {
-			R_LOG_WARN ("Cannot resolve address for comment %s", cmnt_text);
+			R_LOG_WARN ("Cannot resolve address for %s %s", kind, cmnt_text);
 			continue;
 		}
 		char *b64 = sdb_encode ((const ut8 *)cmnt_text, strlen (cmnt_text));
 		if (b64) {
-			char *cmd = r_str_newf ("CCu base64:%s", b64);
+			char *cmd = r_str_newf (vartype? "Ct= base64:%s": "CCu base64:%s", b64);
 			if (mode & R_CORE_NEWPRJ_MODE_SCRIPT) {
 				r_strbuf_appendf (cur->out, "'@0x%08"PFMT64x"'%s\n", va, cmd);
 			}
@@ -995,9 +999,9 @@ static void rprj_cmnt_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 		}
 		if (diff) {
 			rprj_diff_seen_addr (seen, va);
-			const char *current = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, va);
+			const char *current = r_meta_get_string (core->anal, type, va);
 			if (strcmp (r_str_get (current), cmnt_text)) {
-				rprj_print_comment_script (cur, va, current);
+				rprj_print_meta_script (cur, type, va, current);
 			}
 		}
 	}
@@ -1006,12 +1010,20 @@ static void rprj_cmnt_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 		RAnalMetaItem *item;
 		r_interval_tree_foreach (&core->anal->meta, it, item) {
 			RIntervalNode *node = r_interval_tree_iter_get (&it);
-			if (item->type == R_META_TYPE_COMMENT && !rprj_diff_has_addr (seen, node->start)) {
-				rprj_print_comment_script (cur, node->start, item->str);
+			if (item->type == type && !rprj_diff_has_addr (seen, node->start)) {
+				rprj_print_meta_script (cur, type, node->start, item->str);
 			}
 		}
 	}
 	r_list_free (seen);
+}
+
+static void rprj_cmnt_load(RPrjCursor *cur, int mode, ut64 next_entry) {
+	rprj_meta_load (cur, mode, next_entry, R_META_TYPE_COMMENT);
+}
+
+static void rprj_vart_load(RPrjCursor *cur, int mode, ut64 next_entry) {
+	rprj_meta_load (cur, mode, next_entry, R_META_TYPE_VARTYPE);
 }
 
 static void rprj_xref_load(RPrjCursor *cur, int mode, ut64 next_entry) {
@@ -1318,6 +1330,9 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 			break;
 		case RPRJ_CMNT:
 			rprj_cmnt_load (&cur, mode, next_entry);
+			break;
+		case RPRJ_VART:
+			rprj_vart_load (&cur, mode, next_entry);
 			break;
 		case RPRJ_FLAG:
 			rprj_flag_load (&cur, mode, next_entry);

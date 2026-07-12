@@ -89,15 +89,23 @@ static void rprj_cmnt_write_one(RPrjCursor *cur, RIntervalNode *node, RAnalMetaI
 	rprj_cmnt_write_record (cur->b, &cmnt);
 }
 
-static void rprj_cmnt_write(RPrjCursor *cur) {
+static void rprj_meta_write(RPrjCursor *cur, RAnalMetaType type) {
 	RIntervalTreeIter it;
 	RAnalMetaItem *item;
 	r_interval_tree_foreach (&cur->core->anal->meta, it, item) {
 		RIntervalNode *node = r_interval_tree_iter_get (&it);
-		if (item->type == R_META_TYPE_COMMENT) {
+		if (item->type == type && R_STR_ISNOTEMPTY (item->str)) {
 			rprj_cmnt_write_one (cur, node, item);
 		}
 	}
+}
+
+static void rprj_cmnt_write(RPrjCursor *cur) {
+	rprj_meta_write (cur, R_META_TYPE_COMMENT);
+}
+
+static void rprj_vart_write(RPrjCursor *cur) {
+	rprj_meta_write (cur, R_META_TYPE_VARTYPE);
 }
 
 static void rprj_xref_write_one(RPrjCursor *cur, RAnalRef *ref) {
@@ -410,6 +418,7 @@ static bool r_core_newprj_save(RCore *core, const char *file) {
 	rprj_write_entry (&cur, RPRJ_EVAL, rprj_eval_write);
 	rprj_write_entry (&cur, RPRJ_FLAG, rprj_flag_write);
 	rprj_write_entry (&cur, RPRJ_CMNT, rprj_cmnt_write);
+	rprj_write_entry (&cur, RPRJ_VART, rprj_vart_write);
 	rprj_write_entry (&cur, RPRJ_HINT, rprj_hints_write);
 	rprj_write_entry (&cur, RPRJ_FUNC, rprj_function_write);
 	rprj_write_entry (&cur, RPRJ_XREF, rprj_xref_write);

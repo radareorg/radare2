@@ -450,7 +450,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 				if (rad) {
 					char *s = sdb_encode ((const ut8 *)d->str, -1);
 					if (s) {
-						a->cb_printf ("'@0x%08" PFMT64x "'%s base64:%s\n",
+						a->cb_printf ("'@0x%08" PFMT64x "'%s= base64:%s\n",
 							start, r_meta_type_tostring (d->type), s);
 						free (s);
 					}

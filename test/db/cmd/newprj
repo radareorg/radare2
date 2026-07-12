@@ -648,6 +648,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=newprj Ct metadata round-trip
+FILE=malloc://0x100
+CMDS=<<EOF
+mkdir .tmp
+rm -f .tmp/newprj-ctmeta.prj
+Ct= base64:c3RkOjp2ZWN0b3I8aW50PiAqZm9vLT5iYXIgQCBzbG90OyAicXVvdGVkIiBcXHBhdGg= @ 0x10
+prj save .tmp/newprj-ctmeta.prj > /dev/null
+Ct= changed @ 0x10
+prj r2 .tmp/newprj-ctmeta.prj~Ct=
+prj load .tmp/newprj-ctmeta.prj > /dev/null
+Ct. @ 0x10
+Ct= live @ 0x10
+prj diff .tmp/newprj-ctmeta.prj~Ct=
+rm .tmp/newprj-ctmeta.prj
+EOF
+EXPECT=<<EOF
+'@0x00000010'Ct= base64:c3RkOjp2ZWN0b3I8aW50PiAqZm9vLT5iYXIgQCBzbG90OyAicXVvdGVkIiBcXHBhdGg=
+std::vector<int> *foo->bar @ slot; "quoted" \\path
+'@0x00000010'Ct= base64:bGl2ZQ==
+EOF
+RUN
+
 NAME=newprj diff covers function blocks colors and vars
 FILE=malloc://0x100
 CMDS=<<EOF
