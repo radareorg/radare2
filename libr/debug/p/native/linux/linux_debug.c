@@ -646,14 +646,19 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 		} else {
 			ret = waitpid (pid, &status, flags);
 		}
+		const int wait_errno = errno;
 		r_cons_sleep_end (core->cons, bed);
+		if (ret < 0 && wait_errno == EINTR) {
+			// A signal interrupted the wait. Consume any pending break
+			// while our wait-break handler is still pushed, so a ^C stops
+			// the debuggee before waitpid blocks again.
+			r_cons_is_breaked (core->cons);
+			r_cons_break_pop (core->cons);
+			continue;
+		}
 		r_cons_break_pop (core->cons);
 
 		if (ret < 0) {
-			// Continue when interrupted by user;
-			if (errno == EINTR) {
-				continue;
-			}
 			r_sys_perror ("waitpid");
 			break;
 		} else if (ret == 0) {

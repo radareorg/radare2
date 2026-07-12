@@ -16,22 +16,37 @@ static RCons *I = NULL;
 #define WRITE_LIT(fd, s) (write ((fd), (s), sizeof (s) - 1) == (int)(sizeof (s) - 1))
 
 #if R2__UNIX__
-static volatile sig_atomic_t break_signal_pending = 0;
+static volatile R_ATOMIC_BOOL break_signal_pending = 0;
 
 static void __break_signal(int sig) {
 	(void)sig;
-	break_signal_pending = 1;
+	r_atomic_store (&break_signal_pending, true);
+	// Data-only store so code polling context->breaked directly
+	// (r_cons_write, r_print loops, ..) observes the interrupt
+	// immediately. The interrupt callbacks are not run here: they may
+	// allocate or lock, so they are deferred to the next
+	// r_cons_is_breaked() call, which consumes the pending flag.
+	RCons *cons = I;
+	if (cons && cons->context) {
+		cons->context->breaked = true;
+	}
 }
 #endif
 
 #if R2__WINDOWS__
-static volatile LONG break_signal_pending = 0;
 static volatile LONG control_handler_registered = 0;
 static HANDLE h = 0;
 
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
-		InterlockedExchange (&break_signal_pending, 1);
+		// Unlike a UNIX signal handler, this runs in a dedicated thread,
+		// so it is safe to dispatch the break (and its callbacks, which
+		// blocking waiters like WaitForDebugEvent depend on) right away.
+		RCons *cons = I;
+		if (cons) {
+			r_cons_context_break (cons->context);
+		}
+		eprintf ("^C pressed\n");
 		return true;
 	}
 	return false;
@@ -39,15 +54,11 @@ static BOOL __w32_control(DWORD type) {
 #endif
 
 static bool consume_break_signal(void) {
-#if R2__WINDOWS__
-	return InterlockedExchange (&break_signal_pending, 0) != 0;
-#elif R2__UNIX__
-	if (break_signal_pending) {
-		break_signal_pending = 0;
-		return true;
-	}
-#endif
+#if R2__UNIX__
+	return r_atomic_exchange (&break_signal_pending, false);
+#else
 	return false;
+#endif
 }
 
 static unsigned int count_display_lines(RCons *cons, const char *buffer, size_t len) {
@@ -480,6 +491,8 @@ R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBr
 	// if we don't have any element in the stack start the signal
 	RConsBreakStack *b = R_NEW0 (RConsBreakStack);
 	if (r_stack_is_empty (context->break_stack)) {
+		// Discard any stale pending signal from a previous break scope so
+		// the first poll in this scope doesn't fire its callback spuriously
 		consume_break_signal ();
 #if R2__UNIX__
 		if (!context->unbreakable && !cons->is_embedded) {
@@ -541,11 +554,11 @@ R_API bool r_cons_was_breaked(RCons *cons) {
 }
 
 R_API bool r_cons_is_breaked(RCons *cons) {
+#if WANT_DEBUGSTUFF
 	RConsContext *C = cons->context;
 	if (R_UNLIKELY (consume_break_signal ())) {
 		r_cons_context_break (C);
 	}
-#if WANT_DEBUGSTUFF
 	if (R_UNLIKELY (cons->cb_break)) {
 		cons->cb_break (cons->user);
 	}
