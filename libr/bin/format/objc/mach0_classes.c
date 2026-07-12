@@ -1473,7 +1473,7 @@ static inline st32 swift_read_s32_le(const void *data, size_t idx) {
 static SwiftType parse_type_entry(RBinFile *bf, ut64 typeaddr) {
 	SwiftType st = {0};
 	ut8 words[16 * sizeof (ut32)] = {0};
-	if (r_buf_read_at (bf->buf, typeaddr, words, sizeof (words)) < 1) {
+	if (r_buf_read_at (bf->buf, typeaddr, words, sizeof (words)) != sizeof (words)) {
 		R_LOG_DEBUG ("Invalid pointers");
 		return st;
 	}
@@ -1795,6 +1795,9 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 					st32 word = swift_read_s32_le (types, i);
 					ut64 type_address = ms.types.addr + (i * 4) + word;
 					SwiftType st = parse_type_entry (bf, type_address);
+					if (!st.valid) {
+						continue;
+					}
 					st.addr = type_address;
 					st.fieldmd_data = fieldmd;
 					st.fieldmd.addr = ms.fieldmd.addr;
