@@ -1649,17 +1649,21 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 		}
 	}
 
-	if (st.fields != UT64_MAX) {
+	if (st.fields != UT64_MAX && st.fields >= st.fieldmd.addr) {
+		const ut64 fieldmd_delta = st.fields - st.fieldmd.addr;
+		const ut64 dmax = st.fieldmd.size / sizeof (ut32);
+		const ut64 max_idx = (ut64)SZT_MAX / sizeof (ut32);
+		const ut64 j = fieldmd_delta / sizeof (ut32);
 		int i;
-		size_t dmax = st.fieldmd.size / 4;
 		for (i = 0; i < 128; i += 3) {
-			const int j = (st.fields - st.fieldmd.addr) / 4;
-			const int d = 6 + j + i;
-			if (d >= dmax) {
+			const ut64 d = 6 + j + i;
+			if (fieldmd_delta >= st.fieldmd.size || d >= dmax || d > max_idx) {
 				break;
 			}
-			ut64 field_name_addr = st.fieldmd.addr + (d * 4) + swift_read_s32_le (st.fieldmd_data, d);
-			ut64 field_type_addr = st.fieldmd.addr + (d * 4) + swift_read_s32_le (st.fieldmd_data, d - 1) - 4;
+			const size_t idx = (size_t)d;
+			const ut64 field_addr = st.fieldmd.addr + (d * sizeof (ut32));
+			ut64 field_name_addr = field_addr + swift_read_s32_le (st.fieldmd_data, idx);
+			ut64 field_type_addr = field_addr + swift_read_s32_le (st.fieldmd_data, idx - 1) - 4;
 			ut64 field_method_addr = field_name_addr;
 			ut64 vaddr = r_bin_file_get_baddr (bf) + field_method_addr;
 			char *field_name = readstr (bf, field_name_addr, NULL, NULL);
