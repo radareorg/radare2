@@ -954,9 +954,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set_b (r->config, "bin.usextr", false);
 			break;
 		case 'E':
-			r_core_cmd0 (r, "ed!");
+			ret = r_core_call (r, "ed!");
 			mainr2_fini (&mr);
-			return 0;
+			return ret == R_CMD_RC_SUCCESS? 0: 1;
 		case 'c':
 			r_list_append (mr.cmds, (void *)strdup (opt.arg));
 			break;

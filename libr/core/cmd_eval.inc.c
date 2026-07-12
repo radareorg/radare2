@@ -862,8 +862,15 @@ static int cmd_eval(void *data, const char *input) {
 			r_core_cmd_help_contains (core, help_msg_e, "ed");
 		} else if (input[1] == '!') {
 			char *file = r_core_get_radare2rc ();
-			free (r_cons_editor (cons, file, NULL));
+			char *res = file? r_cons_editor (cons, file, NULL): NULL;
+			const int rc = res? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE;
+			if (rc == R_CMD_RC_FAILURE) {
+				R_LOG_ERROR ("Failed to edit the user rc file");
+			}
+			free (res);
 			free (file);
+			r_core_return_value (core, rc);
+			return rc;
 		} else if (input[1] == '*') {
 			char *file = r_core_get_radare2rc ();
 			char *data = r_file_slurp (file, NULL);
