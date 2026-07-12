@@ -5015,104 +5015,62 @@ static void bin_mach0_versioninfo(RCore *core) {
 	/* TODO */
 }
 
-static void bin_pe_resources(RCore *core, PJ *pj, int mode) {
-	Sdb *sdb = NULL;
-	int index = 0;
-	const char *pe_path = "bin/cur/info/pe_resource";
-	if (! (sdb = sdb_ns_path (core->sdb, pe_path, 0))) {
-		return;
+static bool bin_resources(RCore *core, PJ *pj, int mode) {
+	RBinFile *bf = r_bin_cur (core->bin);
+	RVecRBinResource *resources = bf? r_bin_file_get_resources (bf): NULL;
+	bool loaded = resources != NULL;
+	RVecRBinResource empty = {0};
+	if (!resources) {
+		resources = &empty;
 	}
-	if (IS_MODE_SET (mode)) {
+	bool has_resources = !RVecRBinResource_empty (resources);
+	if (IS_MODE_SET (mode) && has_resources) {
 		r_flag_space_set (core->flags, R_FLAGS_FS_RESOURCES);
-	} else if (IS_MODE_RAD (mode)) {
+	} else if (IS_MODE_RAD (mode) && has_resources) {
 		r_cons_printf (core->cons, "fs resources\n");
 	} else if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	}
-	while (true) {
-		r_strf_var (timestrKey, 32, "resource.%d.timestr", index);
-		r_strf_var (vaddrKey, 32, "resource.%d.vaddr", index);
-		r_strf_var (sizeKey, 32, "resource.%d.size", index);
-		r_strf_var (typeKey, 32, "resource.%d.type", index);
-		r_strf_var (languageKey, 32, "resource.%d.language", index);
-		r_strf_var (nameKey, 32, "resource.%d.name", index);
-		char *timestr = sdb_get (sdb, timestrKey, 0);
-		if (!timestr) {
-			break;
-		}
-		ut64 vaddr = sdb_num_get (sdb, vaddrKey, 0);
-		int size = (int)sdb_num_get (sdb, sizeKey, 0);
-		char *name = sdb_get (sdb, nameKey, 0);
-		char *type = sdb_get (sdb, typeKey, 0);
-		char *lang = sdb_get (sdb, languageKey, 0);
-
+	RBinResource *resource;
+	R_VEC_FOREACH (resources, resource) {
 		if (IS_MODE_SET (mode)) {
-			r_strf_var (name, 32, "resource.%d", index);
-			r_flag_set (core->flags, name, vaddr, size);
+			r_strf_var (flagname, 32, "resource.%u", resource->index);
+			r_flag_set (core->flags, flagname, resource->vaddr, resource->size);
 		} else if (IS_MODE_RAD (mode)) {
-			r_cons_printf (core->cons, "f resource.%d %d 0x%08" PFMT64x "\n", index, size, vaddr);
+			r_cons_printf (core->cons, "f resource.%u %" PFMT64u " 0x%08" PFMT64x "\n",
+				resource->index, resource->size, resource->vaddr);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
-			pj_ks (pj, "name", name);
-			pj_ki (pj, "index", index);
-			if (R_STR_ISNOTEMPTY (type)) {
-				pj_ks (pj, "type", type);
+			pj_ks (pj, "name", r_str_get (resource->name));
+			pj_ki (pj, "index", resource->index);
+			if (R_STR_ISNOTEMPTY (resource->type)) {
+				pj_ks (pj, "type", resource->type);
 			}
-			pj_kn (pj, "vaddr", vaddr);
-			pj_ki (pj, "size", size);
-			if (lang && *lang != '?') {
-				pj_ks (pj, "lang", lang);
+			pj_kn (pj, "vaddr", resource->vaddr);
+			pj_kn (pj, "size", resource->size);
+			if (resource->language && *resource->language != '?') {
+				pj_ks (pj, "lang", resource->language);
 			}
-			pj_ks (pj, "timestamp", timestr);
+			pj_ks (pj, "timestamp", r_str_get (resource->timestamp));
 			pj_end (pj);
 		} else {
 			char humansz[8];
-			r_num_units (humansz, sizeof (humansz), size);
-			r_cons_printf (core->cons, "Resource %d\n", index);
-			r_cons_printf (core->cons, "  name: %s\n", name);
-			r_cons_printf (core->cons, "  timestamp: %s\n", timestr);
-			r_cons_printf (core->cons, "  vaddr: 0x%08" PFMT64x "\n", vaddr);
+			r_num_units (humansz, sizeof (humansz), resource->size);
+			r_cons_printf (core->cons, "Resource %u\n", resource->index);
+			r_cons_printf (core->cons, "  name: %s\n", r_str_get (resource->name));
+			r_cons_printf (core->cons, "  timestamp: %s\n", r_str_get (resource->timestamp));
+			r_cons_printf (core->cons, "  vaddr: 0x%08" PFMT64x "\n", resource->vaddr);
 			r_cons_printf (core->cons, "  size: %s\n", humansz);
-			r_cons_printf (core->cons, "  type: %s\n", type);
-			r_cons_printf (core->cons, "  language: %s\n", lang);
+			r_cons_printf (core->cons, "  type: %s\n", r_str_get (resource->type));
+			r_cons_printf (core->cons, "  language: %s\n", r_str_get (resource->language));
 		}
-
-		R_FREE (timestr);
-		R_FREE (name);
-		R_FREE (type);
-		R_FREE (lang)
-
-		index++;
 	}
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
-	} else if (IS_MODE_RAD (mode)) {
+	} else if (IS_MODE_RAD (mode) && has_resources) {
 		r_cons_println (core->cons, "fs *");
 	}
-}
-
-static void bin_no_resources(RCore *core, PJ *pj, int mode) {
-	if (IS_MODE_JSON (mode)) {
-		pj_a (pj);
-		pj_end (pj);
-	}
-}
-
-static bool bin_resources(RCore *core, PJ *pj, int mode) {
-	const RBinInfo *info = r_bin_get_info (core->bin);
-	if (!info || !info->rclass) {
-		if (IS_MODE_JSON (mode)) {
-			pj_o (pj);
-			pj_end (pj);
-		}
-		return false;
-	}
-	if (!strncmp ("pe", info->rclass, 2)) {
-		bin_pe_resources (core, pj, mode);
-	} else {
-		bin_no_resources (core, pj, mode);
-	}
-	return true;
+	return loaded;
 }
 
 static void bin_mdmp_versioninfo(RCore *core, PJ *pj, int mode) {
