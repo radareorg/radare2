@@ -89,6 +89,9 @@ typedef struct _PE_RESOURCE {
 	char *language;
 	char *name;
 	Pe_image_resource_data_entry *data;
+	ut32 type_id;
+	ut32 language_id;
+	bool named;
 } r_pe_resource;
 
 #define GUIDSTR_LEN 41
@@ -199,4 +202,5 @@ R_API struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *bin);
 R_API struct r_bin_pe_addr_t *PE_(check_mingw)(RBinPEObj *bin);
 R_API bool PE_(r_bin_pe_section_perms)(RBinFile *bf, const char *name, int perms);
 R_API void PE_(bin_pe_parse_resource)(RBinPEObj *bin);
+R_API bool PE_(r_bin_pe_load_resources)(RBinPEObj *bin, RVecRBinResource *resources);
 R_API RBinPEObj* PE_(get)(RBinFile *bf);

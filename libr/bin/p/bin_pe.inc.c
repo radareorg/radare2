@@ -11,6 +11,21 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return pe? pe->kv: NULL;
 }
 
+static bool load_resources(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
+	RBinPEObj *pe = PE_(get) (bf);
+	if (!pe || !PE_(r_bin_pe_load_resources) (pe, &bf->bo->resources_vec)) {
+		return false;
+	}
+	RBinResource *resource;
+	R_VEC_FOREACH (&bf->bo->resources_vec, resource) {
+		if (resource->paddr != UT64_MAX) {
+			resource->paddr += bf->bo->loadaddr;
+		}
+	}
+	return true;
+}
+
 static ut64 pe_file_size_bound(RBinFile *bf, RBinPEObj *pe) {
 	ut64 size = pe->size;
 	ut64 fbufsize = bf->buf? r_buf_size (bf->buf): 0;

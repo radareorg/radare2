@@ -525,7 +525,8 @@ RBinPlugin r_bin_plugin_pe64 = {
 	.get_vaddr = &get_vaddr,
 	.trycatch = &trycatch,
 	.write = &r_bin_write_pe64,
-	.hashes = &compute_hashes
+	.hashes = &compute_hashes,
+	.load_resources = &load_resources
 };
 
 #ifndef R2_PLUGIN_INCORE

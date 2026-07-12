@@ -470,7 +470,8 @@ RBinPlugin r_bin_plugin_pe = {
 	.create = &create,
 	.get_vaddr = &get_vaddr,
 	.write = &r_bin_write_pe,
-	.hashes = &compute_hashes
+	.hashes = &compute_hashes,
+	.load_resources = &load_resources
 };
 
 #ifndef R2_PLUGIN_INCORE
