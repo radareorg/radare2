@@ -897,6 +897,34 @@ R_API RVecRBinSection *r_bin_file_get_sections_vec(RBinFile *bf) {
 	return &bf->bo->sections_vec;
 }
 
+R_API void r_bin_resource_fini(RBinResource *resource) {
+	R_RETURN_IF_FAIL (resource);
+	free (resource->name);
+	free (resource->type);
+	free (resource->language);
+	free (resource->timestamp);
+}
+
+R_API RVecRBinResource *r_bin_file_get_resources(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
+	RBinObject *bo = bf->bo;
+	if (!bo->resources_loaded) {
+		RVecRBinResource_clear (&bo->resources_vec);
+		RBinPlugin *plugin = bo->plugin;
+		if (plugin && plugin->load_resources && !plugin->load_resources (bf)) {
+			RVecRBinResource_clear (&bo->resources_vec);
+			return NULL;
+		}
+		int limit = bf->rbin? bf->rbin->options.limit: 0;
+		if (limit > 0 && RVecRBinResource_length (&bo->resources_vec) > (size_t)limit) {
+			RVecRBinResource_erase_back (&bo->resources_vec, RVecRBinResource_at (&bo->resources_vec, limit));
+		}
+		RVecRBinResource_shrink_to_fit (&bo->resources_vec);
+		bo->resources_loaded = true;
+	}
+	return &bo->resources_vec;
+}
+
 R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	R_RETURN_VAL_IF_FAIL (o, NULL);
 	RBinSection *section;
