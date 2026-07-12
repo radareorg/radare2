@@ -1166,6 +1166,7 @@ static RCoreHelpMessage help_msg_ar = {
 	"ars", "", "stack register state",
 	"arS", "", "show the size of the register profile",
 	"art", "", "list all register types",
+	"arv", "[?]", "show vector registers (also known as sve / packed / vector)",
 	"arw", " <hexnum>", "set contents of the register arena",
 	NULL
 };
@@ -7676,6 +7677,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		break;
 	case 'n': // "arn"
 		cmd_drn (core, str);
+		break;
+	case 'v': // "arv"
+		cmd_reg_vector (core, core->anal->reg, str, false, help_msg_arv);
 		break;
 	case 'd': // "ard"
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, core->anal->config->bits,
