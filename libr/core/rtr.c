@@ -1309,7 +1309,7 @@ static void rtr_cmds_break_poll(uv_timer_t *timer) {
 	uv_async_t *async = timer->data;
 	RCore *core = async->data;
 	if (r_cons_is_breaked (core->cons)) {
-		uv_async_send (async);
+		rtr_cmds_break (async);
 	}
 }
 
