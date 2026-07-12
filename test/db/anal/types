@@ -586,6 +586,97 @@ struct Ctx {
 EOF
 RUN
 
+NAME=const array member keeps its qualifier when the write follows the call
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rbx, rdi
+wa mov rax, [rdi+8] @ 3
+wa mov rdi, rax @ 7
+wa call 0x20 @ 0xa
+wa mov [rbx+8], rcx @ 0xf
+wa ret @ 0x13
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; const char field_8[4]; };"
+afs int helper(const char *s) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  const char field_8[4];
+};
+EOF
+RUN
+
+NAME=struct field const dropped by an overlapping partial write
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rbx, rdi
+wa mov rax, [rdi+8] @ 3
+wa mov rdi, rax @ 7
+wa call 0x20 @ 0xa
+wa mov dword [rbx+12], ecx @ 0xf
+wa ret @ 0x13
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+afs int helper(const char *s) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  char *field_8;
+};
+EOF
+RUN
+
+NAME=struct field type propagation on aarch64
+FILE=malloc://64
+ARGS=-a arm -b 64 -e types.fields=true
+CMDS=<<EOF
+wa ldr x1, [x0, 8]
+wa mov x0, x1 @ 4
+wa bl 0x20 @ 8
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[8]; int field_8; };"
+afs int helper(char *s) @ 0x20
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[8];
+  char *field_8;
+};
+EOF
+RUN
+
 NAME=union member typed from callee prototype when unambiguous
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e types.fields=true
