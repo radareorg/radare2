@@ -255,6 +255,7 @@ static int main_help(int line) {
 			" -d           debug the executable 'file' or running process 'pid'\n"
 			" -D [backend] enable debug mode (e cfg.debug=true)\n"
 			" -e k=v       evaluate config var\n"
+			" -E           open cfg.editor with .radare2rc\n"
 			" -f           block size = file size\n"
 			" -F [binplug] force to use that rbin plugin\n"
 			" -h, -hh      show help message, -hh for long\n"

@@ -19,7 +19,7 @@
 .Op Fl r Ar rarun2
 .Op Fl R Ar rr2rule
 .Op Fl s Ar addr
-.Op Fl 012AdDjwntLquvVxX
+.Op Fl 012AdDEjwntLquvVxX
 .Ar -|--|=|file
 .Sh DESCRIPTION
 An advanced command-line hex editor, disassembler, and debugger, providing interactive reverse engineering, scripting, and automation capabilities for binary analysis and vulnerability research.
@@ -54,6 +54,8 @@ Start in debugger mode
 Enable debug mode. Set cfg.debug=true
 .It Fl e Ar k=v
 Set configuration eval variable key=value. For example \-e scr.color=false. When -e is passed after -j, it will set the script source to run instead of setting eval vars.
+.It Fl E
+Edit .radare2rc startup script using the cfg.editor (EDITOR env) of choice
 .It Fl f
 Blocksize = file size
 .It Fl j
