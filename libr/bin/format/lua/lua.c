@@ -21,8 +21,12 @@ static inline RLuaHeader *lua_header_new(void) {
 	return lh;
 }
 
+static inline bool has_bytes(const ut64 size, const ut64 offset, const ut64 len) {
+	return offset <= size && len <= size - offset;
+}
+
 static ut64 parseProtos(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, LuaFunction *func, ParseStruct *parseStruct) {
-	if (offset + lh->intSize >= size) {
+	if (!has_bytes (size, offset, lh->intSize)) {
 		return 0;
 	}
 	ut64 length = parseInt (data + offset);
@@ -66,46 +70,51 @@ static LuaFunction *findLuaFunction(RLuaHeader *lh, ut64 addr) {
 }
 
 static ut64 parseCode(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct) {
-	if (offset + lh->intSize >= size) {
+	if (!has_bytes (size, offset, lh->intSize)) {
 		return 0;
 	}
 	ut64 length = parseInt (data + offset);
 	offset += lh->intSize;
 
-	if (offset + length * lh->instructionSize >= size) {
+	ut64 code_size = 0;
+	if (r_mul_overflow (length, (ut64)lh->instructionSize, &code_size) || !has_bytes (size, offset, code_size)) {
 		return 0;
 	}
 	R_LOG_DEBUG ("Function has %" PFMT64x " Instructions", length);
 
-	return offset + length * lh->instructionSize;
+	return offset + code_size;
 }
 
 static ut64 parseStringR(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, char **str_ptr, ut64 *str_len, ParseStruct *parseStruct) {
-	if (offset + 8 > size) {
+	if (!has_bytes (size, offset, 1)) {
 		R_LOG_DEBUG ("Prevented oobread");
 		return 0;
 	}
 	ut64 functionNameSize = data[offset];
 	offset += 1;
 	if (functionNameSize == 0xFF) {
+		if (!has_bytes (size, offset, lh->sizeSize)) {
+			return 0;
+		}
 		functionNameSize = parseSize (data + offset);
 		offset += lh->sizeSize;
 	}
 	if (functionNameSize != 0) {
-		if (offset + functionNameSize - 1 > size) {
+		functionNameSize--;
+		if (!has_bytes (size, offset, functionNameSize)) {
 			return 0;
 		}
 		if (str_ptr) {
-			*str_ptr = r_str_ndup ((char *) (data + offset), functionNameSize - 1);
+			*str_ptr = r_str_ndup ((char *) (data + offset), functionNameSize);
 		}
 		if (str_len) {
-			*str_len = functionNameSize - 1;
+			*str_len = functionNameSize;
 		}
 		if (parseStruct && parseStruct->onString) {
-			parseStruct->onString (data, offset, functionNameSize - 1, parseStruct);
+			parseStruct->onString (data, offset, functionNameSize, parseStruct);
 		}
-		R_LOG_DEBUG ("String %.*s", (int) (functionNameSize - 1), data + offset);
-		offset += functionNameSize - 1;
+		R_LOG_DEBUG ("String %.*s", (int)R_MIN (functionNameSize, (ut64)ST32_MAX), data + offset);
+		offset += functionNameSize;
 	}
 	return offset;
 }
@@ -115,7 +124,7 @@ static ut64 parseString(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64
 }
 
 static ut64 parseConstants(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct) {
-	if (offset + lh->intSize >= size) {
+	if (!has_bytes (size, offset, lh->intSize)) {
 		return 0;
 	}
 	ut64 length = parseInt (data + offset);
@@ -124,7 +133,7 @@ static ut64 parseConstants(RLuaHeader *lh, const ut8 *data, ut64 offset, const u
 
 	int i;
 	for (i = 0; i < length; i++) {
-		if (offset >= size) {
+		if (!has_bytes (size, offset, 1)) {
 			return 0;
 		}
 		R_LOG_DEBUG ("%d: ", i);
@@ -135,14 +144,14 @@ static ut64 parseConstants(RLuaHeader *lh, const ut8 *data, ut64 offset, const u
 			R_LOG_DEBUG ("Nil");
 			break;
 		case 1: // Boolean
-			if (offset >= size) {
+			if (!has_bytes (size, offset, 1)) {
 				return 0;
 			}
 			R_LOG_DEBUG ("Boolean %d", data[offset]);
 			offset += 1;
 			break;
 		case (3 | (0 << 4)): // Number
-			if (offset + lh->luaNumberSize > size) {
+			if (!has_bytes (size, offset, lh->luaNumberSize)) {
 				return 0;
 			}
 		{
@@ -151,10 +160,10 @@ static ut64 parseConstants(RLuaHeader *lh, const ut8 *data, ut64 offset, const u
 			R_LOG_DEBUG ("Number %f", *((double *)&num));
 #endif
 			offset += lh->luaNumberSize;
-		}
-		break;
+			}
+			break;
 		case (3 | (1 << 4)): // Integer
-			if (offset + lh->luaIntSize > size) {
+			if (!has_bytes (size, offset, lh->luaIntSize)) {
 				return 0;
 			}
 			R_LOG_DEBUG ("Integer %" PFMT64x, parseLuaInt (data + offset));
@@ -176,7 +185,7 @@ static ut64 parseConstants(RLuaHeader *lh, const ut8 *data, ut64 offset, const u
 }
 
 static ut64 parseDebug(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct) {
-	if (offset + lh->intSize >= size) {
+	if (!has_bytes (size, offset, lh->intSize)) {
 		return 0;
 	}
 	ut64 length = parseInt (data + offset);
@@ -184,7 +193,8 @@ static ut64 parseDebug(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 
 
 	if (length != 0) {
 		R_LOG_DEBUG ("Instruction-Line Mappings %" PFMT64x, length);
-		if (offset + lh->intSize * length >= size) {
+		ut64 lines_size = 0;
+		if (r_mul_overflow ((ut64)lh->intSize, length, &lines_size) || !has_bytes (size, offset, lines_size)) {
 			return 0;
 		}
 		int i;
@@ -193,7 +203,7 @@ static ut64 parseDebug(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 
 			offset += lh->intSize;
 		}
 	}
-	if (offset + lh->intSize >= size) {
+	if (!has_bytes (size, offset, lh->intSize)) {
 		return 0;
 	}
 	length = parseInt (data + offset);
@@ -207,17 +217,20 @@ static ut64 parseDebug(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 
 			if (offset == 0) {
 				return 0;
 			}
-#ifdef LUA_DEBUG
+			if (!has_bytes (size, offset, lh->intSize * 2)) {
+				return 0;
+			}
+	#ifdef LUA_DEBUG
 			ut64 num1 = parseInt (data + offset);
-#endif
+	#endif
 			offset += lh->intSize;
-#ifdef LUA_DEBUG
+	#ifdef LUA_DEBUG
 			ut64 num2 = parseInt (data + offset);
-#endif
+	#endif
 			offset += lh->intSize;
 		}
 	}
-	if (offset + lh->intSize >= size) {
+	if (!has_bytes (size, offset, lh->intSize)) {
 		return 0;
 	}
 	length = parseInt (data + offset);
@@ -250,7 +263,7 @@ static inline ut64 buf_parse_int(RBuffer *buf, int size, bool le) {
 }
 
 static ut64 parseUpvalues(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct) {
-	if (offset + lh->intSize >= size) {
+	if (!has_bytes (size, offset, lh->intSize)) {
 		return 0;
 	}
 	ut64 length = parseInt (data + offset);
@@ -258,6 +271,9 @@ static ut64 parseUpvalues(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut
 
 	R_LOG_DEBUG ("Function has %" PFMT64x " Upvalues", length);
 
+	if (length > (size - offset) / 2) {
+		return 0;
+	}
 	int i;
 	for (i = 0; i < length; i++) {
 		R_LOG_DEBUG ("%d: inStack: %d id: %d", i, data[offset + 0], data[offset + 1]);
@@ -420,7 +436,7 @@ ut64 lua53parseFunction(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64
 	function->parent_func = parent_func;
 	function->offset = offset;
 	offset = parseStringR (lh, data, offset, size, &function->name_ptr, &function->name_size, parseStruct);
-	if (!offset || offset > size || size - offset < lh->intSize * 2 + 3) {
+	if (!offset || !has_bytes (size, offset, lh->intSize * 2 + 3)) {
 		goto beach;
 	}
 
