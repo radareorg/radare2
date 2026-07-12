@@ -34,7 +34,7 @@ static const char help_message[] = \
 "* Use the `?*~...` command to inspect all the commands in visual mode\n" \
 "\n" \
 "Use the `e` command to change the configuration options.\n" \
-"* Run `edit` to tweak your ~/.radare2rc script\n" \
+"* Run `edit` to tweak your user rc script\n" \
 "\n" \
 "Basic commands:\n" \
 "\n" \
@@ -1980,8 +1980,8 @@ static int cmd_stdin(void *data, const char *input) {
 			break;
 		case 'E': // "-E"
 			r_core_cmd0 (core, "ed!");
-			char *file = r_file_home (".radare2rc");
-			r_core_callf (core, ". %s", file);
+			char *file = r_core_get_radare2rc ();
+			r_core_cmd_file (core, file);
 			free (file);
 			break;
 		case 'A': // -A

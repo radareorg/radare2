@@ -68,6 +68,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=radare2 -E honors R2_RCFILE
+FILE=-
+ARGS=-escr.interactive=1 -E
+ENV=R2_RCFILE=scripts/palette.r2;HOME=scripts/no-nl-at-eof.r2;USERPROFILE=scripts/no-nl-at-eof.r2;VISUAL=radare2 -NNQqc o.;EDITOR=radare2 -NNQqc o.
+CMDS=q
+EXPECT=<<EOF
+scripts/palette.r2
+EOF
+RUN
+
 NAME=radare2 -h
 FILE=-
 CMDS=!!radare2 -h~Usage?

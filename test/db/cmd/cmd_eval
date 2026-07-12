@@ -21,6 +21,15 @@ scr.color.regs    false
 EOF
 RUN
 
+NAME=ed* honors R2_RCFILE
+FILE=-
+ENV=R2_RCFILE=scripts/no-nl-at-eof.r2;HOME=scripts/no-nl-at-eof.r2;USERPROFILE=scripts/no-nl-at-eof.r2
+CMDS=ed*
+EXPECT=<<EOF
+!!rahash2 -v~commit?
+EOF
+RUN
+
 NAME=deprecated cmd.onsyscall aliases cmd.syscall.enter
 FILE=-
 ARGS=-e log.level=0

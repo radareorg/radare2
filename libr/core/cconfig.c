@@ -5226,15 +5226,17 @@ R_API int r_core_config_init(RCore *core) {
 	return true;
 }
 
-R_API void r_core_parse_radare2rc(RCore *r) {
+R_IPI char *r_core_get_radare2rc(void) {
 	char *rcfile = r_sys_getenv ("R2_RCFILE");
-	char *homerc = NULL;
-	if (!R_STR_ISEMPTY (rcfile)) {
-		homerc = rcfile;
-	} else {
+	if (R_STR_ISEMPTY (rcfile)) {
 		free (rcfile);
-		homerc = r_file_home (".radare2rc");
+		rcfile = r_file_home (".radare2rc");
 	}
+	return rcfile;
+}
+
+R_API void r_core_parse_radare2rc(RCore *r) {
+	char *homerc = r_core_get_radare2rc ();
 	if (homerc && r_file_is_regular (homerc)) {
 		R_LOG_DEBUG ("user script loaded from %s", homerc);
 		r_core_cmd_file (r, homerc);
