@@ -7,6 +7,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Ct preserves serialized annotation text
+FILE=malloc://0x100
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/ct-meta.r2
+Ct base64:c3RkOjp2ZWN0b3I8aW50PiAqZm9vLT5iYXIgQCBzbG90OyAicXVvdGVkIiBcXHBhdGg= @ 0x10
+Ct
+Cj
+C* > .tmp/ct-meta.r2
+Ct- @ 0x10
+. .tmp/ct-meta.r2
+Ct. @ 0x10
+rm .tmp/ct-meta.r2
+EOF
+EXPECT=<<EOF
+0x00000010 std::vector<int> *foo->bar @ slot; \"quoted\" \\\\path
+[{"offset":16,"type":"Ct","name":"std::vector<int> *foo->bar @ slot; \"quoted\" \\\\path"}]
+std::vector<int> *foo->bar @ slot; "quoted" \\path
+EOF
+RUN
+
 NAME=Csp
 FILE=-
 CMDS=<<EOF

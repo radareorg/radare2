@@ -282,10 +282,6 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 		} else if (d->type == 's') {
 			pstr = str;
 		} else if (d->type == 't') {
-			// Sanitize (don't escape) Ct comments so we can see "char *", etc.
-			free (str);
-			str = strdup (d->str);
-			r_str_sanitize (str);
 			pstr = str;
 		} else if (d->type != 'C') {
 			r_name_filter (str, 0);
@@ -316,7 +312,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 				if (d->type == 's' && (base64_str = r_base64_encode_dyn ((const ut8 *)d->str, -1))) {
 					pj_s (pj, base64_str);
 				} else {
-					pj_s (pj, str);
+					pj_s (pj, d->type == R_META_TYPE_VARTYPE? d->str: str);
 				}
 			}
 			if (d->type == 'd') {
@@ -452,8 +448,12 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 				break;
 			case R_META_TYPE_VARTYPE:
 				if (rad) {
-					a->cb_printf ("'@0x%08" PFMT64x "'%s %s\n",
-						start, r_meta_type_tostring (d->type), pstr);
+					char *s = sdb_encode ((const ut8 *)d->str, -1);
+					if (s) {
+						a->cb_printf ("'@0x%08" PFMT64x "'%s base64:%s\n",
+							start, r_meta_type_tostring (d->type), s);
+						free (s);
+					}
 				} else {
 					a->cb_printf ("0x%08" PFMT64x " %s\n", start, pstr);
 				}

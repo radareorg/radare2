@@ -88,7 +88,7 @@ static RCoreHelpMessage help_msg_CL = {
 static RCoreHelpMessage help_msg_Ct = {
 	"Usage: Ct", "[.|-] [@ addr]", " # Manage comments for variable types",
 	"Ct", "", "list all variable type comments",
-	"Ct", " comment-text [@ addr]", "place comment at current or specified address",
+	"Ct", " [base64:..|comment-text] [@ addr]", "place comment at current or specified address",
 	"Ct.", " [@ addr]", "show comment at current or specified address",
 	"Ct-", " [@ addr]", "remove comment at current or specified address",
 	NULL
@@ -760,10 +760,22 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 		break;
 	case ' ': // "Ct <vartype comment> @ addr"
 		{
-		const char* newcomment = r_str_trim_head_ro (input + 2);
+		const char *newcomment = r_str_trim_head_ro (input + 2);
 		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
-		char *nc = strdup (newcomment);
-		r_str_unescape (nc);
+		char *nc;
+		if (r_str_startswith (newcomment, "base64:")) {
+			nc = (char *)sdb_decode (newcomment + 7, NULL);
+			if (!nc) {
+				R_LOG_ERROR ("Invalid base64 string");
+				break;
+			}
+		} else {
+			nc = strdup (newcomment);
+			if (!nc) {
+				break;
+			}
+			r_str_unescape (nc);
+		}
 		if (comment) {
 			char *text = r_str_newf ("%s %s", comment, nc);
 			if (R_LIKELY (text)) {
