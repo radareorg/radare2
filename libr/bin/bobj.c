@@ -213,6 +213,7 @@ static void object_delete_items(RBinObject *o) {
 	RVecRBinImport_fini (&o->imports_vec);
 	RVecRBinSymbol_fini (&o->symbols_vec);
 	RVecRBinSection_fini (&o->sections_vec);
+	RVecRBinResource_fini (&o->resources_vec);
 
 	r_list_free (o->classes);
 	ht_pp_free (o->classes_ht);
@@ -385,6 +386,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	RVecRBinSymbol_init (&bo->symbols_vec);
 	RVecRBinImport_init (&bo->imports_vec);
 	RVecRBinSection_init (&bo->sections_vec);
+	RVecRBinResource_init (&bo->resources_vec);
 	RVecRBinString_init (&bo->strings);
 	bo->pool = r_strpool_new ();
 	bf->bo = bo;
@@ -425,6 +427,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 fail:
 	r_strpool_free (bo->pool);
 	RVecRBinSymbol_fini (&bo->symbols_vec);
+	RVecRBinResource_fini (&bo->resources_vec);
 	RVecRBinString_fini (&bo->strings);
 	if (bo->import_name_ht || bo->import_addr_ht) {
 		import_cache_cleanup (bo);
@@ -675,6 +678,9 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			sdb_free (bo->kv);
 		}
 		bo->kv = new_kv;
+	}
+	if (bin->filter_rules & R_BIN_REQ_RESOURCES) {
+		r_bin_file_get_resources (bf);
 	}
 	if (p->mem)  {
 		bo->mem = p->mem (bf);

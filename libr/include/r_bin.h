@@ -403,10 +403,26 @@ R_API void r_bin_section_fini(RBinSection *sec);
 R_API void r_bin_symbol_fini(RBinSymbol *sym);
 R_API void r_bin_import_fini(RBinImport *sym);
 R_API void r_bin_string_fini(RBinString *str);
+typedef struct r_bin_resource_t {
+	char *name;
+	char *type;
+	char *language;
+	char *timestamp;
+	ut64 vaddr;
+	ut64 paddr;
+	ut64 size;
+	ut32 index;
+	ut32 type_id;
+	ut32 language_id;
+	ut32 codepage;
+	bool named;
+} RBinResource;
+R_API void r_bin_resource_fini(RBinResource *resource);
 R_VEC_TYPE_WITH_FINI (RVecRBinImport, RBinImport, r_bin_import_fini);
 R_VEC_TYPE_WITH_FINI (RVecRBinSymbol, RBinSymbol, r_bin_symbol_fini);
 R_VEC_TYPE_WITH_FINI (RVecRBinSection, RBinSection, r_bin_section_fini);
 R_VEC_TYPE_WITH_FINI (RVecRBinString, RBinString, r_bin_string_fini);
+R_VEC_TYPE_WITH_FINI (RVecRBinResource, RBinResource, r_bin_resource_fini);
 R_VEC_TYPE(RVecRBinEntry, RBinSymbol);
 R_VEC_TYPE(RVecBinSymclassGlob, char *);
 
@@ -421,6 +437,7 @@ typedef struct r_bin_object_t {
 	RVecRBinImport imports_vec;
 	RVecRBinSymbol symbols_vec;
 	RVecRBinSection sections_vec;
+	RVecRBinResource resources_vec;
 	RVecRBinEntry entries_vec;
 	RList/*<??>*/ *entries;
 	RList/*<??>*/ *fields;
@@ -447,6 +464,7 @@ typedef struct r_bin_object_t {
 	void *filters; // symbol/section filter tables (HtPP/HtSU) owned by object
 	void *bin_obj; // internal pointer used by formats... TODO: RENAME TO internal object or sthg
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
+	bool resources_loaded;
 } RBinObject;
 
 typedef struct r_bin_file_options_t {
@@ -704,6 +722,7 @@ typedef struct r_bin_plugin_t {
 	char strfilter;
 	bool weak_guess;
 	void *user;
+	bool (*load_resources)(RBinFile *bf);
 } RBinPlugin;
 
 typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);
@@ -960,6 +979,7 @@ R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
 R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf);
 R_API RVecRBinImport *r_bin_file_get_imports_vec(RBinFile *bf);
 R_API RVecRBinSection *r_bin_file_get_sections_vec(RBinFile *bf);
+R_API RVecRBinResource *r_bin_file_get_resources(RBinFile *bf);
 //
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr);
 // RBinFile.add
