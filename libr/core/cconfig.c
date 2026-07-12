@@ -4139,6 +4139,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.cs", 0, (RConfigCallback)&cb_anal_cs, "set the value for the x86-16 CS segment register (see asm.addr.segment and asm.addr.segment.bits)");
 	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "global pointer value: MIPS gp register / PPC64 ELFv1 TOC base (r2); auto-detected on file load");
 	SETB ("anal.fixed.gp", "true", "set gp register to anal.gp before emulating each instruction in aae");
+	SETS ("anal.gpseed", "", "seed this register with anal.gp at the start of each ESIL function emulation (PIC base register, e.g. PPC32 r30)");
 	SETCB ("anal.fixed.arch", "false", &cb_anal_fixed_arch, "permit arch changes during analysis");
 	SETCB ("anal.fixed.bits", "false", &cb_anal_fixed_bits, "permit bits changes during analysis (arm/thumb)");
 	SETCB ("anal.fixed.thumb", "true", &cb_anal_fixed_thumb, "permit switching between arm:32 and arm:16 during analysis");

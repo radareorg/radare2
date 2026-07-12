@@ -6,6 +6,36 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=anal.gpseed seeds a base register during aae emulation
+FILE=malloc://0x1000
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+e anal.gpseed=r30
+e anal.gp=0x800
+wa lwz r3, 0(r30) @ 0
+wa lwz r4, 4(r30) @ 4
+aae 8 0 @ 0
+axq
+EOF
+EXPECT=<<EOF
+0x00000000 -> 0x00000800  DATA:r--
+0x00000004 -> 0x00000804  DATA:r--
+EOF
+RUN
+
+NAME=anal.gpseed unset leaves base register at zero
+FILE=malloc://0x1000
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wa lwz r3, 0(r30) @ 0
+wa lwz r4, 4(r30) @ 4
+aae 8 0 @ 0
+axq
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME=aae clears call-clobbered regs before xref inference
 FILE=malloc://0x400
 ARGS=-w -a x86 -b 64
