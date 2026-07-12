@@ -21,11 +21,8 @@ static volatile R_ATOMIC_BOOL break_signal_pending = 0;
 static void __break_signal(int sig) {
 	(void)sig;
 	r_atomic_store (&break_signal_pending, true);
-	// Data-only store so code polling context->breaked directly
-	// (r_cons_write, r_print loops, ..) observes the interrupt
-	// immediately. The interrupt callbacks are not run here: they may
-	// allocate or lock, so they are deferred to the next
-	// r_cons_is_breaked() call, which consumes the pending flag.
+	// Let direct breaked pollers observe SIGINT immediately; defer callbacks, which may
+	// allocate or lock, until r_cons_is_breaked() consumes the pending signal.
 	RCons *cons = I;
 	if (cons && cons->context) {
 		cons->context->breaked = true;
@@ -39,9 +36,7 @@ static HANDLE h = 0;
 
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
-		// Unlike a UNIX signal handler, this runs in a dedicated thread,
-		// so it is safe to dispatch the break (and its callbacks, which
-		// blocking waiters like WaitForDebugEvent depend on) right away.
+		// Windows uses a dedicated thread, so callbacks can run immediately and unblock waiters.
 		RCons *cons = I;
 		if (cons) {
 			r_cons_context_break (cons->context);
@@ -491,8 +486,7 @@ R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBr
 	// if we don't have any element in the stack start the signal
 	RConsBreakStack *b = R_NEW0 (RConsBreakStack);
 	if (r_stack_is_empty (context->break_stack)) {
-		// Discard any stale pending signal from a previous break scope so
-		// the first poll in this scope doesn't fire its callback spuriously
+		// Avoid dispatching a stale pending signal through the new scope's callback.
 		consume_break_signal ();
 #if R2__UNIX__
 		if (!context->unbreakable && !cons->is_embedded) {
@@ -1635,14 +1629,14 @@ R_API bool r_cons_context_is_main(RCons *cons, RConsContext *ctx) {
 
 R_API void r_cons_break_end(RCons *cons) {
 	RConsContext *C = cons->context;
-	consume_break_signal ();
-	C->breaked = false;
-	cons->timeout = 0;
 #if R2__UNIX__ && !__wasi__
 	if (!C->unbreakable && !cons->is_embedded) {
 		r_sys_signal (SIGINT, SIG_IGN);
 	}
 #endif
+	consume_break_signal ();
+	C->breaked = false;
+	cons->timeout = 0;
 	if (!r_stack_is_empty (C->break_stack)) {
 		// recreate another a new break stack
 		r_stack_free (C->break_stack);
