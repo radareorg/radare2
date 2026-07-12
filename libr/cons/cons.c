@@ -15,27 +15,51 @@ static RCons *I = NULL;
 // The argument MUST be a string literal or char[] (sizeof must be the array size).
 #define WRITE_LIT(fd, s) (write ((fd), (s), sizeof (s) - 1) == (int)(sizeof (s) - 1))
 
-#if R2__UNIX__ || R2__WINDOWS__
+#if R2__UNIX__
+static volatile R_ATOMIC_BOOL break_signal_pending = 0;
+
 static void __break_signal(int sig) {
-	if (I) {
-		r_cons_context_break (I->context);
-	} else {
-		R_LOG_WARN ("Global cons is null");
+	(void)sig;
+	r_atomic_store (&break_signal_pending, true);
+	// Data-only store so code polling context->breaked directly
+	// (r_cons_write, r_print loops, ..) observes the interrupt
+	// immediately. The interrupt callbacks are not run here: they may
+	// allocate or lock, so they are deferred to the next
+	// r_cons_is_breaked() call, which consumes the pending flag.
+	RCons *cons = I;
+	if (cons && cons->context) {
+		cons->context->breaked = true;
 	}
 }
 #endif
 
 #if R2__WINDOWS__
+static volatile LONG control_handler_registered = 0;
 static HANDLE h = 0;
+
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
-		__break_signal (2); // SIGINT
+		// Unlike a UNIX signal handler, this runs in a dedicated thread,
+		// so it is safe to dispatch the break (and its callbacks, which
+		// blocking waiters like WaitForDebugEvent depend on) right away.
+		RCons *cons = I;
+		if (cons) {
+			r_cons_context_break (cons->context);
+		}
 		eprintf ("^C pressed\n");
 		return true;
 	}
 	return false;
 }
 #endif
+
+static bool consume_break_signal(void) {
+#if R2__UNIX__
+	return r_atomic_exchange (&break_signal_pending, false);
+#else
+	return false;
+#endif
+}
 
 static unsigned int count_display_lines(RCons *cons, const char *buffer, size_t len) {
 	int columns, rows;
@@ -292,9 +316,11 @@ R_API RCons *r_cons_new2(void) {
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &cons->term_buf);
 	cons->term_raw = 0;
-	I = cons;
-	if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE)) {
-		R_LOG_ERROR ("Cannot set control console handler");
+	if (InterlockedCompareExchange (&control_handler_registered, 1, 0) == 0) {
+		if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE)) {
+			InterlockedExchange (&control_handler_registered, 0);
+			R_LOG_ERROR ("Cannot set control console handler");
+		}
 	}
 #endif
 	cons->pager = NULL; /* no pager by default */
@@ -453,6 +479,7 @@ R_API RCons *r_cons_singleton(void) {
 
 R_API void r_cons_break_clear(RCons *cons) {
 	RConsContext *ctx = cons->context;
+	consume_break_signal ();
 	ctx->was_breaked = false;
 	ctx->breaked = false;
 }
@@ -464,6 +491,9 @@ R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBr
 	// if we don't have any element in the stack start the signal
 	RConsBreakStack *b = R_NEW0 (RConsBreakStack);
 	if (r_stack_is_empty (context->break_stack)) {
+		// Discard any stale pending signal from a previous break scope so
+		// the first poll in this scope doesn't fire its callback spuriously
+		consume_break_signal ();
 #if R2__UNIX__
 		if (!context->unbreakable && !cons->is_embedded) {
 			if (sig && r_cons_context_is_main (cons, context)) {
@@ -526,6 +556,9 @@ R_API bool r_cons_was_breaked(RCons *cons) {
 R_API bool r_cons_is_breaked(RCons *cons) {
 #if WANT_DEBUGSTUFF
 	RConsContext *C = cons->context;
+	if (R_UNLIKELY (consume_break_signal ())) {
+		r_cons_context_break (C);
+	}
 	if (R_UNLIKELY (cons->cb_break)) {
 		cons->cb_break (cons->user);
 	}
@@ -1602,6 +1635,7 @@ R_API bool r_cons_context_is_main(RCons *cons, RConsContext *ctx) {
 
 R_API void r_cons_break_end(RCons *cons) {
 	RConsContext *C = cons->context;
+	consume_break_signal ();
 	C->breaked = false;
 	cons->timeout = 0;
 #if R2__UNIX__ && !__wasi__
