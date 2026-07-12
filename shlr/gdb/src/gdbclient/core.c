@@ -1290,7 +1290,11 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	}
 
 	bed = r_cons_sleep_begin (cons);
-	while ((ret = read_packet (g, true)) < 0 && !g->isbreaked && r_socket_is_connected (g->sock));
+	while ((ret = read_packet (g, true)) < 0 && !g->isbreaked && r_socket_is_connected (g->sock)) {
+		if (r_cons_is_breaked (cons)) {
+			g->isbreaked = true;
+		}
+	}
 	if (g->isbreaked) {
 		g->isbreaked = false;
 		// Stop target

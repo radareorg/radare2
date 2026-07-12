@@ -30,7 +30,10 @@ typedef struct libbochs_t {
 	bool isRunning;
 } libbochs_t;
 
+typedef void (*BochsWaitPoll)(void *user);
+
 bool bochs_wait(libbochs_t *b);
+bool bochs_wait_poll(libbochs_t *b, BochsWaitPoll poll, void *user);
 void bochs_reset_buffer(libbochs_t* b);
 bool bochs_cmd_stop(libbochs_t * b);
 void bochs_send_cmd(libbochs_t* b, const char * comando, bool bWait);

@@ -66,12 +66,14 @@ bool bochs_cmd_stop(libbochs_t * b) {
 #endif
 	ExitCode = RunRemoteThread_ (b, (const ut8*)&buffer, 0x1Eu, 0, &ExitCode) && ExitCode;
 	return ExitCode;
+#elif __wasi__
+	return false;
 #else
-	return 0;
+	return b->pid > 0 && kill (b->pid, SIGINT) == 0;
 #endif
 }
 
-bool bochs_wait(libbochs_t *b) {
+bool bochs_wait_poll(libbochs_t *b, BochsWaitPoll poll, void *user) {
 #if __wasi__
 	return false;
 #elif R2__WINDOWS__
@@ -79,8 +81,11 @@ bool bochs_wait(libbochs_t *b) {
 	DWORD dwRead, aval, leftm;
 	bochs_reset_buffer(b);
 	do {
+		if (poll) {
+			poll (user);
+		}
 		while (PeekNamedPipe (b->hReadPipeIn, NULL, 0, NULL, &aval, &leftm)) {
-			if (aval < 0) {
+			if (!aval) {
 				break;
 			}
 			if (!ReadFile (b->hReadPipeIn, &b->data[b->punteroBuffer], SIZE_BUF, &dwRead, 0)) {
@@ -101,8 +106,13 @@ bool bochs_wait(libbochs_t *b) {
 	int flags,n;
 	bochs_reset_buffer (b);
 	flags = fcntl (b->hReadPipeIn, F_GETFL, 0);
-	(void) fcntl (b->hReadPipeIn, (flags | O_NONBLOCK));
+	if (flags < 0 || fcntl (b->hReadPipeIn, F_SETFL, flags | O_NONBLOCK) < 0) {
+		return false;
+	}
 	for (;;) {
+		if (poll) {
+			poll (user);
+		}
 		n = read (b->hReadPipeIn, lpTmpBuffer, SIZE_BUF - 1);
 		if (n > 0) {
 			lpTmpBuffer[n] = 0;
@@ -115,11 +125,17 @@ bool bochs_wait(libbochs_t *b) {
 			if (strstr (&b->data[0], "<bochs:")) {
 				break;
 			}
+		} else {
+			r_sys_usleep (5 * 1000);
 		}
 	}
-	(void) fcntl (b->hReadPipeIn, (flags | ~O_NONBLOCK));
+	(void) fcntl (b->hReadPipeIn, F_SETFL, flags);
 	return true;
 #endif
+}
+
+bool bochs_wait(libbochs_t *b) {
+	return bochs_wait_poll (b, NULL, NULL);
 }
 
 void bochs_send_cmd(libbochs_t* b, const char *cmd, bool bWait) {

@@ -622,12 +622,9 @@ static void linux_dbg_wait_break(RDebug *dbg) {
 RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 	int tid = pid;
-	int status, flags = __WALL;
+	int status, flags = __WALL | WNOHANG;
 	int ret = -1;
-
-	if (pid == -1) {
-		flags |= WNOHANG;
-	}
+	int wait_errno = 0;
 
 	for (;;) {
 		// In the main context, SIGINT is propagated to the debuggee if it is
@@ -640,29 +637,26 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 		} else {
 			r_cons_break_push (core->cons, (RConsBreak)linux_dbg_wait_break, dbg);
 		}
-		void *bed = r_cons_sleep_begin (core->cons);
-		if (dbg->options.continue_all_threads) {
-			ret = waitpid (-1, &status, flags);
-		} else {
-			ret = waitpid (pid, &status, flags);
-		}
-		const int wait_errno = errno;
-		r_cons_sleep_end (core->cons, bed);
-		if (ret < 0 && wait_errno == EINTR) {
-			// Consume the pending break while its callback can stop the debuggee before retrying waitpid().
+		do {
+			void *bed = r_cons_sleep_begin (core->cons);
+			if (dbg->options.continue_all_threads) {
+				ret = waitpid (-1, &status, flags);
+			} else {
+				ret = waitpid (pid, &status, flags);
+			}
+			wait_errno = errno;
+			if (!ret) {
+				r_sys_usleep (10000);
+			}
+			r_cons_sleep_end (core->cons, bed);
 			r_cons_is_breaked (core->cons);
-			r_cons_break_pop (core->cons);
-			continue;
-		}
+		} while (!ret || (ret < 0 && wait_errno == EINTR));
 		r_cons_break_pop (core->cons);
 
 		if (ret < 0) {
 			errno = wait_errno;
 			r_sys_perror ("waitpid");
 			break;
-		} else if (ret == 0) {
-			// Unset WNOHANG to call next waitpid in blocking mode.
-			flags &= ~WNOHANG;
 		} else {
 			tid = ret;
 
