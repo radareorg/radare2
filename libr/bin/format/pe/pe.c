@@ -3346,15 +3346,51 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 			rs->timestr = r_time_secs_tostring (dir->TimeDateStamp);
 		}
 		rs->type = _resource_type_str (type);
-		rs->language = strdup (_resource_lang_str (entry.u1.Name & 0x3ff));
+		rs->type_id = type;
+		rs->language_id = entry.u1.Name & 0xffff;
+		rs->language = strdup (_resource_lang_str (rs->language_id & 0x3ff));
 		rs->data = data;
 		if (resource_name) {
 			rs->name = strdup (resource_name);
+			rs->named = true;
 		} else {
 			rs->name = r_str_newf ("%d", id);
 		}
 		r_list_append (pe->resources, rs);
 	}
+}
+
+R_API bool PE_(r_bin_pe_load_resources)(RBinPEObj *pe, RVecRBinResource *resources) {
+	R_RETURN_VAL_IF_FAIL (pe && resources, false);
+	RListIter *iter;
+	r_pe_resource *rs;
+	ut32 index = 0;
+	r_list_foreach (pe->resources, iter, rs) {
+		if (!rs->data) {
+			return false;
+		}
+		RBinResource *resource = RVecRBinResource_emplace_back (resources);
+		if (!resource) {
+			return false;
+		}
+		resource->name = rs->name? strdup (rs->name): NULL;
+		resource->type = rs->type? strdup (rs->type): NULL;
+		resource->language = rs->language? strdup (rs->language): NULL;
+		resource->timestamp = rs->timestr? strdup (rs->timestr): NULL;
+		if ((rs->name && !resource->name) || (rs->type && !resource->type)
+			|| (rs->language && !resource->language) || (rs->timestr && !resource->timestamp)) {
+			return false;
+		}
+		resource->vaddr = bin_pe_rva_to_va (pe, rs->data->OffsetToData);
+		resource->paddr = PE_(va2pa) (pe, rs->data->OffsetToData);
+		resource->size = rs->data->Size;
+		resource->index = index++;
+		resource->type_id = rs->type_id;
+		resource->language_id = rs->language_id;
+		resource->codepage = rs->data->CodePage;
+		resource->named = rs->named;
+	}
+	return true;
 }
 
 static void _store_resource_sdb(RBinPEObj *pe) {
