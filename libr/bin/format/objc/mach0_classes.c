@@ -898,6 +898,7 @@ static void get_protocol_list(RBinFile *bf, RBinClass *klass, objc_cache_opt_inf
 	ut8 sptr[sizeof (mach0_ut)] = {0};
 
 	const bool bigendian = bf->bo->info->big_endian;
+	const size_t ptr_size = sizeof (mach0_ut);
 	mach0_ut r = va2pa (bf, p, &offset, &left);
 	if (!r || r + left < r || r + sizeof (struct MACH0_(SProtocolList)) < r) {
 		return;
@@ -919,6 +920,9 @@ static void get_protocol_list(RBinFile *bf, RBinClass *klass, objc_cache_opt_inf
 		}
 	}
 	pl.count = r_read_ble (&spl[0], bigendian, 8 * sizeof (mach0_ut));
+	if (pl.count < 1 || pl.count > ST32_MAX) {
+		return;
+	}
 
 	p += sizeof (struct MACH0_(SProtocolList));
 	offset += sizeof (struct MACH0_(SProtocolList));
@@ -935,15 +939,12 @@ static void get_protocol_list(RBinFile *bf, RBinClass *klass, objc_cache_opt_inf
 		if (r + sizeof (mach0_ut) > bf->size) {
 			return;
 		}
-		if (left < sizeof (ut32)) {
-			if (r_buf_read_at (bf->buf, r, sptr, left) != left) {
-				return;
-			}
-		} else {
-			len = r_buf_read_at (bf->buf, r, sptr, sizeof (mach0_ut));
-			if (len != sizeof (mach0_ut)) {
-				return;
-			}
+		if (left < ptr_size) {
+			return;
+		}
+		len = r_buf_read_at (bf->buf, r, sptr, ptr_size);
+		if (len != ptr_size) {
+			return;
 		}
 		q = r_read_ble (&sptr[0], bigendian, 8 * sizeof (mach0_ut));
 		if (!(r = va2pa (bf, q, &offset, &left))) {
@@ -1023,8 +1024,8 @@ static void get_protocol_list(RBinFile *bf, RBinClass *klass, objc_cache_opt_inf
 			get_method_list (bf, klass, class_name, true, oi, pc.classMethods);
 		}
 		R_FREE (class_name);
-		p += sizeof (ut32);
-		offset += sizeof (ut32);
+		p += ptr_size;
+		offset += ptr_size;
 	}
 }
 
