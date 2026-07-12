@@ -304,6 +304,25 @@ error:
 	return NULL;
 }
 
+// values is "type,offset,count"; split from the end since the type may itself contain commas
+static void split_member_csv(char *values, const char **offset, const char **count) {
+	*offset = NULL;
+	*count = NULL;
+	char *last = (char *)r_str_rchr (values, NULL, ',');
+	if (!last) {
+		return;
+	}
+	*last = 0;
+	char *mid = (char *)r_str_rchr (values, last - 1, ',');
+	if (mid) {
+		*mid = 0;
+		*offset = mid + 1;
+		*count = last + 1;
+	} else {
+		*offset = last + 1;
+	}
+}
+
 static RAnalBaseType *get_composite_type(RAnal *anal, const char *sname, RAnalBaseTypeKind kind) {
 	R_RETURN_VAL_IF_FAIL (anal && sname, NULL);
 
@@ -335,17 +354,14 @@ static RAnalBaseType *get_composite_type(RAnal *anal, const char *sname, RAnalBa
 		if (!values) {
 			goto error;
 		}
-		char *offset = NULL;
-		char *type = sdb_anext (values, &offset);
-		char *count = NULL;
-		if (offset) {
-			offset = sdb_anext (offset, &count);
-		}
+		const char *offset = NULL;
+		const char *count = NULL;
+		split_member_csv (values, &offset, &count);
 		RAnalTypeMember memb = {
 			.name = strdup (cur),
-			.type = strdup (type),
+			.type = strdup (values),
 			.offset = offset? strtoul (offset, NULL, 10): 0,
-			.count = count? strtoul (count, NULL, 10): 0
+			.count = R_STR_ISNOTEMPTY (count)? strtoul (count, NULL, 10): 0
 		};
 		free (values);
 
