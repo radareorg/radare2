@@ -38,10 +38,10 @@ static RCoreHelpMessage help_msg_e = {
 	"e!", "a", "invert the boolean value of 'a' var",
 	"ec", "[?] [k] [color]", "set color for given key (prompt, offset, ...)",
 	"ee", " [var]", "open cfg.editor to change the value of var",
-	"ed", " ([file])", "open editor to change the ~/.radare2rc or [file]",
-	"ed*", "", "show contents of your ~/.radare2c",
-	"ed+", "", "add or set an eval config line into your ~/.radare2c",
-	"ed-", "[!]", "delete ~/.radare2c (Use ed-! to delete without prompting)",
+	"ed", " ([file])", "open editor to change the user rc file or [file]",
+	"ed*", "", "show contents of the user rc file",
+	"ed+", "", "add or set an eval config line in the user rc file",
+	"ed-", "[!]", "delete the user rc file (Use ed-! to delete without prompting)",
 	"ej", "", "list config vars in JSON",
 	"eJ", "", "list config vars in verbose JSON",
 	"en", "", "list environment vars",
@@ -648,7 +648,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 }
 
 static void r2rc_set(RCore *core, const char *R_NULLABLE k, const char *R_NULLABLE v) {
-	char *rcfile = r_file_home (".radare2rc");
+	char *rcfile = r_core_get_radare2rc ();
 	char *rcdata = r_file_slurp (rcfile, NULL);
 	if (k) {
 		char *line;
@@ -861,11 +861,11 @@ static int cmd_eval(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help_contains (core, help_msg_e, "ed");
 		} else if (input[1] == '!') {
-			char *file = r_file_home (".radare2rc");
+			char *file = r_core_get_radare2rc ();
 			free (r_cons_editor (cons, file, NULL));
 			free (file);
 		} else if (input[1] == '*') {
-			char *file = r_file_home (".radare2rc");
+			char *file = r_core_get_radare2rc ();
 			char *data = r_file_slurp (file, NULL);
 			r_cons_println (cons, data);
 			free (data);
@@ -874,9 +874,9 @@ static int cmd_eval(void *data, const char *input) {
 			cmd_eplus (core, input + 2);
 		} else if (input[1] == '-') { // "ed-"
 			const bool prompt = (input[2] != '!');
-			char *file = r_file_home (".radare2rc");
+			char *file = r_core_get_radare2rc ();
 			if (file) {
-				const bool rmfile = !prompt || r_cons_yesno (cons, 'n', "Do you want to delete ~/.radare2? (Y/n)");
+				const bool rmfile = !prompt || r_cons_yesno (cons, 'n', "Do you want to delete the user rc file? (Y/n)");
 				if (rmfile) {
 					r_file_rm (file);
 				}
@@ -895,7 +895,7 @@ static int cmd_eval(void *data, const char *input) {
 				}
 				is_config = false;
 			} else {
-				file = r_file_home (".radare2rc");
+				file = r_core_get_radare2rc ();
 			}
 			if (file) {
 				if (r_cons_is_interactive (cons)) {
@@ -905,12 +905,12 @@ static int cmd_eval(void *data, const char *input) {
 					char *res = r_cons_editor (cons, file, NULL);
 					if (res && is_config) {
 						if (r_cons_yesno (cons, 'y', "Reload? (Y/n)")) {
-							r_core_run_script (core, file);
+							r_core_cmd_file (core, file);
 						}
 					}
 					free (res);
 				} else if (is_config) {
-					r_core_run_script (core, file);
+					r_core_cmd_file (core, file);
 				}
 			}
 			free (file);

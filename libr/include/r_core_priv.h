@@ -33,6 +33,7 @@ typedef struct r_core_priv_t {
 } RCorePriv;
 
 R_IPI bool isVisualDisasm(RCore *core);
+R_IPI R_OWNED char * R_NULLABLE r_core_get_radare2rc(void);
 
 #ifdef __cplusplus
 }
