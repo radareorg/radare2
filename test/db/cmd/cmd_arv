@@ -1,0 +1,24 @@
+NAME=arv and drv share vector register implementation
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+ar?~arv
+arv?~^Usage
+drv?~^Usage
+arv xmm0 0 64 = 0x1122334455667788
+drv xmm0 0 64
+drv xmm0 1 64 = 0x8877665544332211
+arv xmm0 1 64
+arv rax
+EOF
+EXPECT=<<EOF
+| arv[?]                show vector registers (also known as sve / packed / vector)
+Usage: arv  [reg] [idx] [wordsize] [= value]  Show analysis vector packed registers
+Usage: drv  [reg] [idx] [wordsize] [= value]  Show vector packed registers
+0x1122334455667788
+0x8877665544332211
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot find vector register 'rax'
+EOF
+RUN
