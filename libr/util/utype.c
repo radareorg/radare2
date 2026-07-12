@@ -12,9 +12,10 @@ R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 		const char *p = sdb_const_get (TDB, kind, NULL);
 		if (p) {
 			char *v = r_str_newf ("%s.%s.%s", p, kind, field);
-			int off = sdb_array_get_num (TDB, v, 1, NULL);
+			ut64 off = 0;
+			char *mtype = r_type_get_member (TDB, v, &off, NULL);
+			free (mtype);
 			free (v);
-			// int siz = sdb_array_get_num (DB, var, 2, NULL);
 			eprintf ("wv 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", val, at + off);
 			return true;
 		}
@@ -47,6 +48,40 @@ R_API RTypeKind r_type_kind(Sdb *TDB, const char *name) {
 		}
 	}
 	return R_TYPE_INVALID;
+}
+
+// key is "struct.name.member" holding "type,offset,count"; split from the end since the type may itself contain commas
+R_API R_OWNED char *r_type_get_member(Sdb *TDB, const char *key, ut64 *offset, int *count) {
+	R_RETURN_VAL_IF_FAIL (TDB && key, NULL);
+	if (offset) {
+		*offset = 0;
+	}
+	if (count) {
+		*count = 0;
+	}
+	char *val = sdb_get (TDB, key, NULL);
+	if (R_STR_ISEMPTY (val)) {
+		free (val);
+		return NULL;
+	}
+	char *last = (char *)r_str_rchr (val, NULL, ',');
+	if (!last) {
+		return val;
+	}
+	*last = 0;
+	char *mid = (char *)r_str_rchr (val, last - 1, ',');
+	const char *offstr = last + 1;
+	if (mid) {
+		*mid = 0;
+		offstr = mid + 1;
+		if (count) {
+			*count = (int)sdb_atoi (last + 1);
+		}
+	}
+	if (offset) {
+		*offset = sdb_atoi (offstr);
+	}
+	return val;
 }
 
 R_API RList *r_type_get_enum(Sdb *TDB, const char *name) {
@@ -211,28 +246,20 @@ R_API ut64 r_type_get_bitsize(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
 					break;
 				}
 				char *query = r_str_newf ("%s.%s.%s", t, tmptype, name);
-				char *subtype = sdb_get (TDB, query, 0);
+				int elements = 0;
+				char *subtype = r_type_get_member (TDB, query, NULL, &elements);
 				free (query);
 				if (!subtype) {
 					break;
 				}
-				char *tmp = strchr (subtype, ',');
-				if (tmp) {
-					*tmp++ = 0;
-					tmp = strchr (tmp, ',');
-					if (tmp) {
-						*tmp++ = 0;
-					}
-					int elements = r_num_math (NULL, tmp);
-					if (elements == 0) {
-						elements = 1;
-					}
-					if (!strcmp (t, "struct")) {
-						ret += r_type_get_bitsize (TDB, subtype) * elements;
-					} else {
-						ut64 sz = r_type_get_bitsize (TDB, subtype) * elements;
-						ret = sz > ret ? sz : ret;
-					}
+				if (elements == 0) {
+					elements = 1;
+				}
+				if (!strcmp (t, "struct")) {
+					ret += r_type_get_bitsize (TDB, subtype) * elements;
+				} else {
+					ut64 sz = r_type_get_bitsize (TDB, subtype) * elements;
+					ret = sz > ret ? sz : ret;
 				}
 				free (subtype);
 				ptr = next;
@@ -504,7 +531,10 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 		bool isfp = false;
 		bool isHidden = false;
 		snprintf (var2, sizeof (var2), "%s.%s", var, p);
-		int field_offset = sdb_array_get_num (TDB, var2, 1, NULL);
+		ut64 member_offset = 0;
+		int elements = 0;
+		char *type = r_type_get_member (TDB, var2, &member_offset, &elements);
+		int field_offset = (int)member_offset;
 		if (field_offset > current_offset) {
 			int pad = field_offset - current_offset;
 			r_strbuf_appendf (fmt_sb, "[%d].", pad);
@@ -517,9 +547,6 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 		if (visibility && !strcmp (visibility, "hidden")) {
 			isHidden = true;
 		}
-		size_t alen = sdb_array_size (TDB, var2);
-		int elements = sdb_array_get_num (TDB, var2, alen - 1, NULL);
-		char *type = sdb_array_get (TDB, var2, 0, NULL);
 		if (type) {
 			char var3[128] = { 0 };
 			char type_name[256] = { 0 };

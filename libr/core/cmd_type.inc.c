@@ -885,12 +885,10 @@ static void print_struct_union_in_c_format(RCore *core, Sdb *TDB, SdbForeachCall
 		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 			char *var2 = r_str_newf ("%s.%s", var, p);
 			if (var2) {
-				char *val = sdb_array_get (TDB, var2, 0, NULL);
+				ut64 moff = 0;
+				int arrnum = 0;
+				char *val = r_type_get_member (TDB, var2, &moff, &arrnum);
 				if (val) {
-					char *arr = sdb_array_get (TDB, var2, 2, NULL);
-					int arrnum = arr? atoi (arr): 0;
-					free (arr);
-					const ut64 moff = sdb_array_get_num (TDB, var2, 1, NULL);
 					if (is_struct) {
 						// function-pointer members store a func alias as their type; the parser lays them out as pointers
 						const char *tv = sdb_const_get (TDB, val, 0);
@@ -1171,11 +1169,10 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 			char *var2 = r_str_newf ("%s.%s", var, p);
 			if (var2) {
-				char *val = sdb_array_get (TDB, var2, 0, NULL);
+				ut64 moff = 0;
+				int arrnum = 0;
+				char *val = r_type_get_member (TDB, var2, &moff, &arrnum);
 				if (val) {
-					char *arr = sdb_array_get (TDB, var2, 2, NULL);
-					int arrnum = arr? atoi (arr): 0;
-					free (arr);
 					ut32 type_size;
 					if (strchr (val, '*')) {
 						type_size = core->anal->config->bits / 8;
