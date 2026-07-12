@@ -1574,78 +1574,85 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 		return;
 	}
 	if (st.members != UT64_MAX) {
-		ut8 buf[MAX_SWIFT_MEMBERS * 16];
+		ut8 buf[MAX_SWIFT_MEMBERS * 16] = {0};
 		int i = 0;
+		bool parse_members = true;
 		R_LOG_DEBUG ("parse_type.st.members 0x%08"PFMT64x, st.members);
-		if ((int)st.members < 1 || st.members > bf->size) {
+		if (st.members < 1 || st.members >= bf->size) {
 			R_LOG_DEBUG ("out of bounds");
+			parse_members = false;
 		}
-		int res = r_buf_read_at (bf->buf, st.members, buf, sizeof (buf));
-		if (res != sizeof (buf)) {
-			R_LOG_DEBUG ("Partial read on st.members");
+		if (parse_members) {
+			st64 res = r_buf_read_at (bf->buf, st.members, buf, sizeof (buf));
+			if (res != sizeof (buf)) {
+				R_LOG_DEBUG ("Partial read on st.members");
+				parse_members = false;
+			}
 		}
-		ut32 count = R_MIN (MAX_SWIFT_MEMBERS, r_read_le32 (buf + 3));
-		for (i = 0; i < count; i++) {
-			int pos = (i * 8) + 3 + 8 + 8;
-			st32 n = r_read_le32 (buf + pos);
-			ut64 method_addr = st.members + pos + n;
-			if (method_addr > r_buf_size (bf->buf)) {
-				break;
-			}
-			method_addr += bf->bo->baddr;
-			RBinSymbol *sym = NULL;
-			char *method_name;
-			char *rawname = NULL;
-			if (symbols_ht && (sym = ht_up_find (symbols_ht, method_addr, NULL))) {
-				rawname = strdup (r_bin_name_tostring (sym->name));
-				method_name = r_name_filter_dup (rawname); // r_bin_name_tostring (sym->name));
-				r_bin_name_filtered (sym->name, method_name);
-				char *dname = r_bin_demangle_swift (method_name, usecmd, trylib);
-				if (dname) {
-					r_bin_name_demangled (sym->name, dname);
-					free (sym->name->oname);
-					sym->name->oname = strdup (rawname);
-					free (method_name);
-					method_name = dname;
+		if (parse_members) {
+			ut32 count = R_MIN (MAX_SWIFT_MEMBERS, r_read_le32 (buf + 3));
+			for (i = 0; i < count; i++) {
+				int pos = (i * 8) + 3 + 8 + 8;
+				st32 n = r_read_le32 (buf + pos);
+				ut64 method_addr = st.members + pos + n;
+				if (method_addr > r_buf_size (bf->buf)) {
+					break;
 				}
-			} else {
-				if (!load_unnamed (bf)) {
-					continue;
+				method_addr += bf->bo->baddr;
+				RBinSymbol *sym = NULL;
+				char *method_name;
+				char *rawname = NULL;
+				if (symbols_ht && (sym = ht_up_find (symbols_ht, method_addr, NULL))) {
+					rawname = strdup (r_bin_name_tostring (sym->name));
+					method_name = r_name_filter_dup (rawname); // r_bin_name_tostring (sym->name));
+					r_bin_name_filtered (sym->name, method_name);
+					char *dname = r_bin_demangle_swift (method_name, usecmd, trylib);
+					if (dname) {
+						r_bin_name_demangled (sym->name, dname);
+						free (sym->name->oname);
+						sym->name->oname = strdup (rawname);
+						free (method_name);
+						method_name = dname;
+					}
+				} else {
+					if (!load_unnamed (bf)) {
+						continue;
+					}
+					method_name = r_str_newf ("%d", i);
 				}
-				method_name = r_str_newf ("%d", i);
-			}
-			// skip namespace
-			char *dot = strchr (method_name, '.');
-			if (dot) {
-				// skip classname
-				dot = strchr (dot + 1, '.');
+				// skip namespace
+				char *dot = strchr (method_name, '.');
 				if (dot) {
-					char *p = method_name;
-					method_name = strdup (dot + 1);
-					free (p);
+					// skip classname
+					dot = strchr (dot + 1, '.');
+					if (dot) {
+						char *p = method_name;
+						method_name = strdup (dot + 1);
+						free (p);
+					}
 				}
-			}
-			if (rawname) {
-				sym = r_bin_symbol_new (rawname, method_addr, method_addr);
-				r_bin_name_demangled (sym->name, method_name);
-			} else {
-				sym = r_bin_symbol_new (method_name, method_addr, method_addr);
-			}
-			free (rawname);
+				if (rawname) {
+					sym = r_bin_symbol_new (rawname, method_addr, method_addr);
+					r_bin_name_demangled (sym->name, method_name);
+				} else {
+					sym = r_bin_symbol_new (method_name, method_addr, method_addr);
+				}
+				free (rawname);
 #if 0
-			if (oname) {
-				r_bin_name_free (sym->name);
-				sym->name = r_bin_name_clone (oname);
-			}
+				if (oname) {
+					r_bin_name_free (sym->name);
+					sym->name = r_bin_name_clone (oname);
+				}
 #endif
-			sym->lang = R_BIN_LANG_SWIFT;
-			RVecRBinSymbol_push_back (&klass->methods, sym);
-			free (sym);
+				sym->lang = R_BIN_LANG_SWIFT;
+				RVecRBinSymbol_push_back (&klass->methods, sym);
+				free (sym);
 #if 0
-			// TODO. try to resolve the method name by symbol table or debug info
-			r_cons_printf ("f sym.swift.%s.method.%s = 0x%" PFMT64x"\n", typename, method_name, method_addr);
+				// TODO. try to resolve the method name by symbol table or debug info
+				r_cons_printf ("f sym.swift.%s.method.%s = 0x%" PFMT64x"\n", typename, method_name, method_addr);
 #endif
-			free (method_name);
+				free (method_name);
+			}
 		}
 	}
 
