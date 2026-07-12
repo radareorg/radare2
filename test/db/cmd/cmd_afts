@@ -522,7 +522,7 @@ af
 afts > /dev/null
 afn renamed
 afts > /dev/null
-ts
+ts~_arg0
 EOF
 EXPECT=<<EOF
 renamed_arg0
