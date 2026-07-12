@@ -370,6 +370,10 @@ R_API bool r_lang_prompt(RLang *lang) {
 				char *foo, *code = NULL;
 				do {
 					foo = r_cons_editor (lang->cons, NULL, code);
+					if (!foo) {
+						free (code);
+						break;
+					}
 					r_lang_run (lang, foo, 0);
 					free (code);
 					code = foo;

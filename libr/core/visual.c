@@ -2093,7 +2093,9 @@ static void visual_comma(RCore *core) {
 			goto beach;
 		}
 		char *data = r_core_editor (core, NULL, odata);
-		r_file_dump (cwf, (const ut8 *) data, -1, 0);
+		if (data) {
+			r_file_dump (cwf, (const ut8 *)data, -1, false);
+		}
 		free (data);
 		free (odata);
 		free (cwf);

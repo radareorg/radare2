@@ -90,8 +90,6 @@ R_IPI void visual_add_comment(RCore *core, ut64 at) {
 					r_str_ansi_strip (out);
 					r_meta_set_string (core->anal, R_META_TYPE_COMMENT, at, out);
 					free (out);
-				} else {
-					r_meta_del (core->anal, R_META_TYPE_COMMENT, at, 1);
 				}
 			}
 			break;

@@ -3619,6 +3619,9 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 			const size_t str_len = strlen (str);
 			if (write (fd, str, str_len) != str_len) {
 				close (fd);
+				if (tempfile) {
+					r_file_rm (name);
+				}
 				free (name);
 				return NULL;
 			}
@@ -3626,18 +3629,38 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 	}
 	close (fd);
 
+	bool edited = true;
 	if (name && (R_STR_ISEMPTY (editor) || !strcmp (editor, "-"))) {
 		RCons *cons = core->cons;
 		void *tmp = cons->cb_editor;
 		cons->cb_editor = NULL;
-		free (r_cons_editor (cons, name, NULL));
+		char *res = r_cons_editor (cons, name, NULL);
 		cons->cb_editor = tmp;
+		// The built-in editor uses NULL for cancellation; keep it as a successful no-op.
+		free (res);
 	} else {
+		edited = false;
 		if (editor && name) {
-			char *escaped_name = r_str_escape_sh (name);
-			r_sys_cmdf ("%s \"%s\"", editor, escaped_name);
-			free (escaped_name);
+			if (r_sandbox_enable (0)) {
+				R_LOG_ERROR ("Cannot run editor in sandbox mode");
+			} else {
+				char *escaped_name = r_str_escape_sh (name);
+				if (escaped_name) {
+					edited = !r_sys_cmdf ("%s \"%s\"", editor, escaped_name);
+				}
+				free (escaped_name);
+				if (!edited) {
+					R_LOG_ERROR ("Editor command failed");
+				}
+			}
 		}
+	}
+	if (!edited) {
+		if (tempfile) {
+			r_file_rm (name);
+		}
+		free (name);
+		return NULL;
 	}
 	size_t len = 0;
 	ret = name? r_file_slurp (name, &len): 0;
@@ -3645,9 +3668,9 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		if (len && ret[len - 1] == '\n') {
 			ret[len - 1] = 0; // chop
 		}
-		if (tempfile) {
-			r_file_rm (name);
-		}
+	}
+	if (tempfile) {
+		r_file_rm (name);
 	}
 	free (name);
 	return ret;

@@ -1979,11 +1979,7 @@ static int cmd_stdin(void *data, const char *input) {
 			r_core_cmdf (core, "%s", input);
 			break;
 		case 'E': // "-E"
-			r_core_cmd0 (core, "ed!");
-			char *file = r_core_get_radare2rc ();
-			r_core_cmd_file (core, file);
-			free (file);
-			break;
+			return r_core_callf (core, "ed%s", input + 1);
 		case 'A': // -A
 			if (*arg == '?') {
 				r_core_call (core, "aaa?");
