@@ -1053,6 +1053,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	}
 
 	r_reg_arena_push (core->anal->reg);
+	// PIC base register (e.g. PPC32 r30): seeded once at entry, then mutated locally, so unlike gp it is never re-fixed
+	const char *gpseed = r_config_get (core->config, "anal.gpseed");
+	if (R_STR_ISNOTEMPTY (gpseed)) {
+		r_reg_setv (core->anal->reg, gpseed, gp);
+	}
 	char *sn = (char *)r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SN);
 	if (sn) {
 		sn = strdup (sn);

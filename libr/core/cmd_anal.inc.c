@@ -9259,6 +9259,11 @@ R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
 	const ut64 old_pc = r_reg_getv (core->anal->reg, "PC");
 	if (fcn) {
 		bool anal_verbose = r_config_get_b (core->config, "anal.verbose");
+		// PIC base register (e.g. PPC32 r30): seed at function entry so its SDA base derivation resolves
+		const char *gpseed = r_config_get (core->config, "anal.gpseed");
+		if (R_STR_ISNOTEMPTY (gpseed)) {
+			r_reg_setv (core->anal->reg, gpseed, r_config_get_i (core->config, "anal.gp"));
+		}
 		// emulate every instruction in the function recursively across all the basic blocks
 		r_list_foreach (fcn->bbs, iter, bb) {
 			ut64 pc = bb->addr;
