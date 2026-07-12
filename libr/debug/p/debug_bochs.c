@@ -313,7 +313,10 @@ static RDebugReasonType r_debug_bochs_wait(RDebug *dbg, int pid) {
 		r_cons_break_push (core->cons, bochs_debug_break, dbg);
 		i = 500;
 		do {
-			bochs_wait_poll (pd->desc, bochs_break_poll, core->cons);
+			if (!bochs_wait_poll (pd->desc, bochs_break_poll, core->cons)) {
+				r_cons_break_pop (core->cons);
+				return R_DEBUG_REASON_DEAD;
+			}
 			if (pd->bBreak) {
 				if (pd->desc->data[0]) {
 					R_LOG_INFO ("ctrl+c %s", pd->desc->data);

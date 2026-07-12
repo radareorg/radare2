@@ -1429,6 +1429,9 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	if (!cons) {
 		own_cons = true;
 		cons = r_cons_new2 ();
+#if R2__WINDOWS__
+		r_cons_global (cons);
+#endif
 	}
 #if R2__UNIX__
 	char *wd = getcwd (NULL, 0);

@@ -50,6 +50,15 @@ static BOOL __w32_control(DWORD type) {
 
 static bool consume_break_signal(void) {
 #if R2__UNIX__
+	bool pending;
+#if __GNUC__ && !__TINYC__ && !(__APPLE__ && __ppc__)
+	pending = __atomic_load_n (&break_signal_pending, __ATOMIC_RELAXED);
+#else
+	pending = break_signal_pending;
+#endif
+	if (R_LIKELY (!pending)) {
+		return false;
+	}
 	return r_atomic_exchange (&break_signal_pending, false);
 #else
 	return false;

@@ -627,6 +627,7 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 	int wait_errno = 0;
 
 	for (;;) {
+		int wait_delay = 50;
 		// In the main context, SIGINT is propagated to the debuggee if it is
 		// in the same process group. Otherwise, the task is running in
 		// background and SIGINT will not be propagated to the debuggee.
@@ -646,7 +647,8 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 			}
 			wait_errno = errno;
 			if (!ret) {
-				r_sys_usleep (10000);
+				r_sys_usleep (wait_delay);
+				wait_delay = R_MIN (wait_delay * 2, 10000);
 			}
 			r_cons_sleep_end (core->cons, bed);
 			r_cons_is_breaked (core->cons);
