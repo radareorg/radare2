@@ -788,18 +788,14 @@ static ut64 tp_type_bits(RAnal *anal, const char *t) {
 }
 
 // reject retypes that would overlap the next member; growing the last member is fine
-static bool tp_member_fits(RAnal *anal, RAnalBaseType *bt, const RAnalStructMember *m, const char *type) {
-	// an array member is a deliberate type and its count would outlive the retype
-	if (m->count) {
-		return false;
-	}
+static bool tp_member_fits(RAnal *anal, RAnalBaseType *bt, const RAnalTypeMember *m, const char *type) {
 	const ut64 bits = tp_type_bits (anal, type);
 	if (!bits) {
 		return false;
 	}
 	ut64 next = UT64_MAX;
-	RAnalStructMember *it;
-	R_VEC_FOREACH (&bt->struct_data.members, it) {
+	RAnalTypeMember *it;
+	R_VEC_FOREACH (r_anal_base_type_members (bt), it) {
 		if (it->offset > m->offset && it->offset < next) {
 			next = it->offset;
 		}
@@ -838,20 +834,10 @@ static RAnalBaseType *tp_resolve_ptr_base(RAnal *anal, const char *ptr_type) {
 	return bt;
 }
 
-static RAnalStructMember *tp_member_at(RAnalBaseType *bt, ut64 off) {
-	RAnalStructMember *m;
-	R_VEC_FOREACH (&bt->struct_data.members, m) {
-		if (m->offset == off) {
-			return m;
-		}
-	}
-	return NULL;
-}
-
-// union members share their offset, so act only on the single width-matching candidate
-static RAnalUnionMember *tp_union_candidate(RAnal *anal, RAnalBaseType *bt, ut64 off, int width, bool follow) {
-	RAnalUnionMember *m, *cand = NULL;
-	R_VEC_FOREACH (&bt->union_data.members, m) {
+// the single member at off; a nonzero width disambiguates union members sharing their offset
+static RAnalTypeMember *tp_pick_member(RAnal *anal, RAnalBaseType *bt, ut64 off, int width) {
+	RAnalTypeMember *m, *cand = NULL;
+	R_VEC_FOREACH (r_anal_base_type_members (bt), m) {
 		if (m->offset != off) {
 			continue;
 		}
@@ -864,13 +850,7 @@ static RAnalUnionMember *tp_union_candidate(RAnal *anal, RAnalBaseType *bt, ut64
 		cand = m;
 	}
 	// an array member is a deliberate type, neither retype nor follow it
-	if (!cand || cand->count) {
-		return NULL;
-	}
-	if (follow) {
-		return (cand->type && strchr (cand->type, '*'))? cand: NULL;
-	}
-	return cand;
+	return (cand && !cand->count)? cand: NULL;
 }
 
 // walk deref hops through nested struct pointers and retype the member behind the last one
@@ -890,40 +870,29 @@ static bool tp_retype_field_chain(RAnal *anal, const char *ptr_type, const ut64 
 			break;
 		}
 		const bool last = i == len - 1;
-		char **mtype = NULL;
-		bool fits = false;
-		if (bt->kind == R_ANAL_BASE_TYPE_KIND_UNION) {
-			RAnalUnionMember *um = tp_union_candidate (anal, bt, hops[i], last? width: 0, !last);
-			if (um) {
-				mtype = &um->type;
-				fits = true;
-			}
-		} else {
-			RAnalStructMember *m = tp_member_at (bt, hops[i]);
-			if (m) {
-				mtype = &m->type;
-				fits = tp_member_fits (anal, bt, m, type);
-			}
-		}
-		if (!mtype) {
+		const bool is_union = bt->kind == R_ANAL_BASE_TYPE_KIND_UNION;
+		RAnalTypeMember *m = tp_pick_member (anal, bt, hops[i], (is_union && last)? width: 0);
+		if (!m) {
 			r_anal_base_type_free (bt);
 			break;
 		}
 		if (last) {
 			// a store into the member disproves an inferred const qualifier
-			if (store_dir && r_str_startswith (*mtype, "const ")) {
-				char *demoted = strdup (r_str_skip_prefix (*mtype, "const "));
+			if (store_dir && r_str_startswith (m->type, "const ")) {
+				char *demoted = strdup (r_str_skip_prefix (m->type, "const "));
 				if (demoted) {
-					free (*mtype);
-					*mtype = demoted;
+					free (m->type);
+					m->type = demoted;
 					changed = true;
 				}
 			}
-			if (fits && tp_type_rank (type) > tp_type_rank (*mtype)) {
+			// overlap only matters for structs; union members all start at their shared offset
+			const bool fits = is_union || tp_member_fits (anal, bt, m, type);
+			if (fits && tp_type_rank (type) > tp_type_rank (m->type)) {
 				char *nt = strdup (type);
 				if (nt) {
-					free (*mtype);
-					*mtype = nt;
+					free (m->type);
+					m->type = nt;
 					changed = true;
 				}
 			}
@@ -932,7 +901,7 @@ static bool tp_retype_field_chain(RAnal *anal, const char *ptr_type, const ut64 
 			}
 		} else {
 			free (pt);
-			pt = strdup (*mtype);
+			pt = strdup (m->type);
 		}
 		r_anal_base_type_free (bt);
 		if (!pt) {
@@ -970,11 +939,12 @@ static bool etrace_memread_first_addr(TypeTrace *etrace, ut32 idx, ut64 *addr) {
 	return true;
 }
 
-// any write in the trace so far to the given memory address
-static bool etrace_memwrite_at(TypeTrace *tt, ut64 addr) {
+// any write in the trace overlapping the field at [addr, addr + width)
+static bool etrace_memwrite_at(TypeTrace *tt, ut64 addr, int width) {
+	const ut64 w = R_MAX (width, 1);
 	const TypeTraceAccess *a;
 	R_VEC_FOREACH (&tt->db.accesses, a) {
-		if (!a->is_reg && a->is_write && a->mem.addr == addr) {
+		if (!a->is_reg && a->is_write && a->mem.addr < addr + w && addr < a->mem.addr + a->mem.size) {
 			return true;
 		}
 	}
@@ -983,7 +953,7 @@ static bool etrace_memwrite_at(TypeTrace *tt, ut64 addr) {
 
 // follow the base register of a plain base+disp load and record the disp as a deref hop
 static bool tp_chain_collect(TypeTrace *tt, int idx, RAnalOp *op, TPFieldChain *chain, char *regname, int size) {
-	if (!etrace_have_memread (tt, idx)) {
+	if (!chain->ok || !etrace_have_memread (tt, idx)) {
 		return false;
 	}
 	const ut32 ot = op->type & R_ANAL_OP_TYPE_MASK;
@@ -1079,46 +1049,65 @@ static void tp_field_from_arg(TPState *tps, int idx, RAnalVar *var, RAnalOp *op,
 		// a lea can only start the chain, so the folded disp lands on the first hop
 		seq[0] += lea_off;
 	}
-	// keep a prototype const qualifier only when the field slot shows no write in the trace
-	const char *use_type = type;
-	char *deconst = NULL;
 	const int width = chain->len? chain->width: op->refptr;
 	if (r_str_startswith (type, "const ")) {
 		const char *unconst = r_str_skip_prefix (type, "const ");
-		if (slot == UT64_MAX || etrace_memwrite_at (tt, slot)) {
-			deconst = strdup (unconst);
-			use_type = deconst;
-		} else {
-			// the trace only reaches the call site here, so revisit once the whole function ran
-			TPPendingConst pc = {
-				.ptr_type = strdup (var->type),
-				.type = strdup (unconst),
-				.slot = slot,
-				.n = n,
-				.width = width
-			};
-			memcpy (pc.seq, seq, sizeof (pc.seq));
-			if (pc.ptr_type && pc.type) {
-				RVecTPPendingConst_push_back (&tps->pending_const, &pc);
-			} else {
-				tp_pending_const_fini (&pc);
-			}
+		if (slot == UT64_MAX) {
+			// no slot to gather write evidence for, so the qualifier cannot be kept
+			tp_retype_field_chain (anal, var->type, seq, n, unconst, width, false);
+			return;
 		}
+		// the trace only reaches the call site here, so retype once the whole function ran
+		TPPendingConst pc = {
+			.ptr_type = strdup (var->type),
+			.type = strdup (unconst),
+			.slot = slot,
+			.n = n,
+			.width = width
+		};
+		memcpy (pc.seq, seq, sizeof (pc.seq));
+		if (pc.ptr_type && pc.type) {
+			RVecTPPendingConst_push_back (&tps->pending_const, &pc);
+		} else {
+			tp_pending_const_fini (&pc);
+		}
+		return;
 	}
-	tp_retype_field_chain (anal, var->type, seq, n, use_type, width, false);
-	free (deconst);
+	tp_retype_field_chain (anal, var->type, seq, n, type, width, false);
 }
 
-// drop const from members whose slot turned out to be written later in the function
+// with a deref chain the var holds the base pointer, so only its member is typed
+static void tp_apply_arg_type(TPState *tps, int j, RAnalVar *var, RAnalOp *op, TPFieldChain *chain,
+		const char *name, const char *type, int memref, bool lea_adjust,
+		const char *fcn_name, bool in_stack, const char *place, int size, ut64 addr, bool userfnc) {
+	if (!tps->cfg_fields || !chain->len) {
+		int var_memref = var->isarg? 0: memref;
+		if (lea_adjust && op->type == R_ANAL_OP_TYPE_LEA) {
+			var_memref--;
+		}
+		propagate_arg_type (tps->anal, var, name, type, var_memref,
+			fcn_name, in_stack, place, size, addr, userfnc);
+	}
+	if (tps->cfg_fields) {
+		tp_field_from_arg (tps, j, var, op, chain, type, userfnc);
+	}
+}
+
+// keep a prototype const qualifier only when the field slot shows no write in the whole trace
 static void tp_flush_pending_const(TPState *tps) {
 	TPPendingConst *pc;
 	R_VEC_FOREACH (&tps->pending_const, pc) {
-		if (etrace_memwrite_at (&tps->tt, pc->slot)) {
-			tp_retype_field_chain (tps->anal, pc->ptr_type, pc->seq, pc->n, pc->type, pc->width, true);
+		const bool written = etrace_memwrite_at (&tps->tt, pc->slot, pc->width);
+		char *t = written? strdup (pc->type): r_str_newf ("const %s", pc->type);
+		if (t) {
+			tp_retype_field_chain (tps->anal, pc->ptr_type, pc->seq, pc->n, t, pc->width, written);
+			free (t);
 		}
 	}
 	RVecTPPendingConst_clear (&tps->pending_const);
 }
+
+#define TP_REGCOPY_MAX 4
 
 // resolve a register to the type of the reg arg it was copied from, following plain reg copies
 static char *tp_reg_var_type(TPState *tps, RAnalFunction *fcn, const char *reg) {
@@ -1129,7 +1118,7 @@ static char *tp_reg_var_type(TPState *tps, RAnalFunction *fcn, const char *reg) 
 	int j = tt->cur_idx - 1;
 	int steps = 0;
 	int depth;
-	for (depth = 0; depth < TP_CHAIN_MAX; depth++) {
+	for (depth = 0; depth < TP_REGCOPY_MAX; depth++) {
 		bool found = false;
 		for (; j >= 0 && steps < TYPE_MATCH_MAX_BACKTRACE; j--, steps++) {
 			if (etrace_regwrite_contains (tt, j, cur)) {
@@ -1356,22 +1345,12 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 				}
 				if (var) {
 					R_LOG_DEBUG ("retype var %s", name);
-					// with a deref chain the var holds the base pointer, so only its member is typed
-					if (!tps->cfg_fields || !chain.len) {
-						int var_memref = var->isarg? 0: memref;
-						if (op->type == R_ANAL_OP_TYPE_LEA) {
-							var_memref--;
-						}
-						propagate_arg_type (anal, var, name, type, var_memref,
-							fcn_name, in_stack, place, size, addr, userfnc);
-					}
-					if (tps->cfg_fields) {
-						tp_field_from_arg (tps, j, var, op, &chain, type, userfnc);
-					}
+					tp_apply_arg_type (tps, j, var, op, &chain, name, type, memref, true,
+						fcn_name, in_stack, place, size, addr, userfnc);
 					res = true;
 				} else {
 					// a memread is a deref, not a copy, even with a zero displacement
-					const bool hop = tps->cfg_fields && chain.ok
+					const bool hop = tps->cfg_fields
 						&& tp_chain_collect (tt, j, op, &chain, regname, sizeof (regname));
 					if (!hop) {
 						char src_reg[REGNAME_SIZE] = { 0 };
@@ -1401,22 +1380,15 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 					}
 				}
 				if (var) {
-					// with a deref chain the var holds the base pointer, so only its member is typed
-					if (!tps->cfg_fields || !chain.len) {
-						int var_memref = var->isarg? 0: memref;
-						propagate_arg_type (anal, var, name, type, var_memref,
-							fcn_name, in_stack, place, size, addr, userfnc);
-					}
-					if (tps->cfg_fields) {
-						tp_field_from_arg (tps, j, var, op, &chain, type, userfnc);
-					}
+					tp_apply_arg_type (tps, j, var, op, &chain, name, type, memref, false,
+						fcn_name, in_stack, place, size, addr, userfnc);
 					res = true;
 				} else {
 					switch (op->type) {
 					case R_ANAL_OP_TYPE_MOV:
 					case R_ANAL_OP_TYPE_PUSH:
 						// a memread mov is a deref, not a copy, even with a zero displacement
-						if (tps->cfg_fields && chain.ok && op->type == R_ANAL_OP_TYPE_MOV
+						if (tps->cfg_fields && op->type == R_ANAL_OP_TYPE_MOV
 								&& tp_chain_collect (tt, j, op, &chain, regname, sizeof (regname))) {
 							break;
 						}
