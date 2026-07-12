@@ -420,9 +420,8 @@ ut64 lua53parseFunction(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64
 	function->parent_func = parent_func;
 	function->offset = offset;
 	offset = parseStringR (lh, data, offset, size, &function->name_ptr, &function->name_size, parseStruct);
-	if (offset == 0) {
-		free (function);
-		return 0;
+	if (!offset || offset > size || size - offset < lh->intSize * 2 + 3) {
+		goto beach;
 	}
 
 	function->lineDefined = parseInt (data + offset);
@@ -439,38 +438,33 @@ ut64 lua53parseFunction(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64
 	offset += 3;
 
 	function->code_offset = offset;
-	function->code_size = parseInt (data + offset);
 	offset = parseCode (lh, data, offset, size, parseStruct);
 	if (offset == 0) {
-		free (function);
-		return 0;
+		goto beach;
 	}
+	function->code_size = parseInt (data + function->code_offset);
 	function->const_offset = offset;
-	function->const_size = parseInt (data + offset);
 	offset = parseConstants (lh, data, offset, size, parseStruct);
 	if (offset == 0) {
-		free (function);
-		return 0;
+		goto beach;
 	}
+	function->const_size = parseInt (data + function->const_offset);
 	function->upvalue_offset = offset;
-	function->upvalue_size = parseInt (data + offset);
 	offset = parseUpvalues (lh, data, offset, size, parseStruct);
 	if (offset == 0) {
-		free (function);
-		return 0;
+		goto beach;
 	}
+	function->upvalue_size = parseInt (data + function->upvalue_offset);
 	function->protos_offset = offset;
-	function->protos_size = parseInt (data + offset);
 	offset = parseProtos (lh, data, offset, size, function, parseStruct);
 	if (offset == 0) {
-		free (function);
-		return 0;
+		goto beach;
 	}
+	function->protos_size = parseInt (data + function->protos_offset);
 	function->debug_offset = offset;
 	offset = parseDebug (lh, data, offset, size, parseStruct);
 	if (offset == 0) {
-		free (function);
-		return 0;
+		goto beach;
 	}
 
 	function->size = offset - baseoffset;
@@ -481,4 +475,7 @@ ut64 lua53parseFunction(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64
 		free (function);
 	}
 	return offset;
+beach:
+	free (function);
+	return 0;
 }
