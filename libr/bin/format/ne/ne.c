@@ -49,6 +49,26 @@ static char *__read_nonnull_str_at(RBuffer *buf, ut64 offset) {
 	return str;
 }
 
+static char *__read_nonnull_str_at_bound(RBuffer *buf, ut64 offset, ut64 end) {
+	if (offset >= end) {
+		return NULL;
+	}
+	ut8 size = r_buf_read8_at (buf, offset);
+	if (!size || size > end - offset - 1) {
+		return NULL;
+	}
+	char *str = malloc ((ut64)size + 1);
+	if (!str) {
+		return NULL;
+	}
+	if (r_buf_read_at (buf, offset + 1, (ut8 *)str, size) != size) {
+		free (str);
+		return NULL;
+	}
+	str[size] = 0;
+	return str;
+}
+
 static char *__func_name_from_ord(const char *module, ut16 ordinal) {
 	if (!module) {
 		return NULL;
@@ -224,48 +244,87 @@ static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 			return false;
 		}
 	}
-	ut16 resoff = bin->ne_header->ResTableOffset + bin->header_offset;
+	ut64 bufsz = r_buf_size (bin->buf);
+	ut64 resoff = (ut64)bin->ne_header->ResTableOffset + bin->header_offset;
+	ut64 resend = (ut64)bin->ne_header->ResidNamTable + bin->header_offset;
+	if (!bin->ne_header->ResTableOffset || !bin->ne_header->ResidNamTable
+		|| resoff >= resend || resend > bufsz || resend - resoff < sizeof (ut16)) {
+		return true;
+	}
 	ut16 alignment = r_buf_read_le16_at (bin->buf, resoff);
-	ut32 off = resoff + 2;
-	while (true) {
+	ut64 off = resoff + 2;
+	while (off <= resend && resend - off >= sizeof (NE_image_typeinfo_entry)) {
 		NE_image_typeinfo_entry ti = {0};
+		if (r_buf_fread_at (bin->buf, off, (ut8 *)&ti, "2si", 1) != sizeof (ti)) {
+			return false;
+		}
+		if (!ti.rtTypeID) {
+			return true;
+		}
+		off += sizeof (NE_image_typeinfo_entry);
+		if (ti.rtResourceCount > (resend - off) / sizeof (NE_image_nameinfo_entry)) {
+			return false;
+		}
 		r_ne_resource *res = R_NEW0 (r_ne_resource);
 		res->entry = r_list_newf (__free_resource_entry);
 		if (!res->entry) {
-			break;
+			free (res);
+			return false;
 		}
-		r_buf_fread_at (bin->buf, off, (ut8 *)&ti, "2si", 1);
-		if (!ti.rtTypeID) {
-			break;
-		} else if (ti.rtTypeID & 0x8000) {
-			res->name = __resource_type_str (ti.rtTypeID & ~0x8000);
+		if (ti.rtTypeID & 0x8000) {
+			res->type_id = ti.rtTypeID & ~0x8000;
+			res->name = __resource_type_str (res->type_id);
+		} else if (ti.rtTypeID < resend - resoff) {
+			res->named = true;
+			res->name = __read_nonnull_str_at_bound (bin->buf, resoff + ti.rtTypeID, resend);
 		} else {
-			// Offset to resident name table
-			res->name = __read_nonnull_str_at (bin->buf, (ut64)resoff + ti.rtTypeID);
+			__free_resource (res);
+			return false;
 		}
-		off += sizeof (NE_image_typeinfo_entry);
+		if (!res->name) {
+			__free_resource (res);
+			return false;
+		}
 		const ut32 max_shift = (sizeof (ut32) * 8U) - 1;
 		int i;
 		for (i = 0; i < ti.rtResourceCount; i++) {
-			NE_image_nameinfo_entry ni;
+			NE_image_nameinfo_entry ni = {0};
+			if (r_buf_fread_at (bin->buf, off, (ut8 *)&ni, "6s", 1) != sizeof (ni)) {
+				__free_resource (res);
+				return false;
+			}
+			off += sizeof (NE_image_nameinfo_entry);
 			r_ne_resource_entry *ren = R_NEW0 (r_ne_resource_entry);
-			r_buf_fread_at (bin->buf, off, (ut8 *)&ni, "6s", 1);
 			ut32 shift = alignment;
 			if (shift > max_shift) {
 				shift = max_shift;
 			}
-			ren->offset = (ut32)((ut64)ni.rnOffset << shift);
-			ren->size = ni.rnLength;
+			ren->offset = (ut64)ni.rnOffset << shift;
+			ren->size = (ut64)ni.rnLength << shift;
+			ren->flags = ni.rnFlags;
 			if (ni.rnID & 0x8000) {
-				ren->name = r_str_newf ("%d", ni.rnID & ~0x8000);
+				ren->id = ni.rnID & ~0x8000;
+				ren->name = r_str_newf ("%d", ren->id);
 			} else {
 				// Offset to resident name table
-				ren->name = __read_nonnull_str_at (bin->buf, (ut64)resoff + ni.rnID);
+				ren->named = true;
+				if (ni.rnID >= resend - resoff) {
+					free (ren);
+					continue;
+				}
+				ren->name = __read_nonnull_str_at_bound (bin->buf, resoff + ni.rnID, resend);
+			}
+			if (ren->offset > bufsz || ren->size > bufsz - ren->offset || !ren->name) {
+				__free_resource_entry (ren);
+				continue;
 			}
 			r_list_append (res->entry, ren);
-			off += sizeof (NE_image_nameinfo_entry);
 		}
-		r_list_append (bin->resources, res);
+		if (r_list_empty (res->entry)) {
+			__free_resource (res);
+		} else {
+			r_list_append (bin->resources, res);
+		}
 	}
 	return true;
 }

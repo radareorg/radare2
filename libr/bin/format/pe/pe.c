@@ -3354,6 +3354,7 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 			rs->name = strdup (resource_name);
 			rs->named = true;
 		} else {
+			rs->id = id;
 			rs->name = r_str_newf ("%d", id);
 		}
 		r_list_append (pe->resources, rs);
@@ -3384,6 +3385,7 @@ R_API bool PE_(r_bin_pe_load_resources)(RBinPEObj *pe, RVecRBinResource *resourc
 		resource->vaddr = bin_pe_rva_to_va (pe, rs->data->OffsetToData);
 		resource->paddr = PE_(va2pa) (pe, rs->data->OffsetToData);
 		resource->size = rs->data->Size;
+		resource->id = rs->named? UT64_MAX: rs->id;
 		resource->index = index++;
 		resource->type_id = rs->type_id;
 		resource->language_id = rs->language_id;

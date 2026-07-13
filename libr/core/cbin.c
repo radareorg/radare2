@@ -5051,18 +5051,26 @@ static bool bin_resources(RCore *core, PJ *pj, int mode) {
 			if (resource->language && *resource->language != '?') {
 				pj_ks (pj, "lang", resource->language);
 			}
-			pj_ks (pj, "timestamp", r_str_get (resource->timestamp));
+			if (R_STR_ISNOTEMPTY (resource->timestamp)) {
+				pj_ks (pj, "timestamp", resource->timestamp);
+			}
 			pj_end (pj);
 		} else {
 			char humansz[8];
 			r_num_units (humansz, sizeof (humansz), resource->size);
 			r_cons_printf (core->cons, "Resource %u\n", resource->index);
 			r_cons_printf (core->cons, "  name: %s\n", r_str_get (resource->name));
-			r_cons_printf (core->cons, "  timestamp: %s\n", r_str_get (resource->timestamp));
+			if (R_STR_ISNOTEMPTY (resource->timestamp)) {
+				r_cons_printf (core->cons, "  timestamp: %s\n", resource->timestamp);
+			}
 			r_cons_printf (core->cons, "  vaddr: 0x%08" PFMT64x "\n", resource->vaddr);
 			r_cons_printf (core->cons, "  size: %s\n", humansz);
-			r_cons_printf (core->cons, "  type: %s\n", r_str_get (resource->type));
-			r_cons_printf (core->cons, "  language: %s\n", r_str_get (resource->language));
+			if (R_STR_ISNOTEMPTY (resource->type)) {
+				r_cons_printf (core->cons, "  type: %s\n", resource->type);
+			}
+			if (R_STR_ISNOTEMPTY (resource->language)) {
+				r_cons_printf (core->cons, "  language: %s\n", resource->language);
+			}
 		}
 	}
 	if (IS_MODE_JSON (mode)) {

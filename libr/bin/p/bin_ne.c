@@ -111,6 +111,40 @@ static bool sections_vec(RBinFile *bf) {
 	return r_bin_ne_load_segments (bf->bo->bin_obj, &bf->bo->sections_vec);
 }
 
+static bool load_resources(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
+	r_bin_ne_obj_t *ne = bf->bo->bin_obj;
+	if (!ne) {
+		return false;
+	}
+	ut32 index = 0;
+	RListIter *iter;
+	r_ne_resource *res;
+	r_list_foreach (ne->resources, iter, res) {
+		RListIter *entry_iter;
+		r_ne_resource_entry *entry;
+		r_list_foreach (res->entry, entry_iter, entry) {
+			RBinResource *resource = RVecRBinResource_emplace_back (&bf->bo->resources_vec);
+			if (!resource) {
+				return false;
+			}
+			resource->name = entry->name? strdup (entry->name): NULL;
+			resource->type = res->name? strdup (res->name): NULL;
+			if ((entry->name && !resource->name) || (res->name && !resource->type)) {
+				return false;
+			}
+			resource->paddr = entry->offset + bf->bo->loadaddr;
+			resource->vaddr = resource->paddr;
+			resource->size = entry->size;
+			resource->id = entry->named? UT64_MAX: entry->id;
+			resource->index = index++;
+			resource->type_id = res->named? UT32_MAX: res->type_id;
+			resource->named = entry->named;
+		}
+	}
+	return true;
+}
+
 RBinPlugin r_bin_plugin_ne = {
 	.meta = {
 		.name = "ne",
@@ -128,7 +162,8 @@ RBinPlugin r_bin_plugin_ne = {
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,
 	.relocs = &relocs,
-	.minstrlen = 4
+	.minstrlen = 4,
+	.load_resources = &load_resources
 };
 
 #ifndef R2_PLUGIN_INCORE

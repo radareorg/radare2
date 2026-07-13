@@ -8,13 +8,18 @@
 
 typedef struct {
 	char *name;
-	ut32 offset;
-	ut32 size;
+	ut64 offset;
+	ut64 size;
+	ut16 id;
+	ut16 flags;
+	bool named;
 } r_ne_resource_entry;
 
 typedef struct {
 	char *name;
 	RList /*<r_ne_resource_entry>*/ *entry;
+	ut16 type_id;
+	bool named;
 } r_ne_resource;
 
 typedef struct {
