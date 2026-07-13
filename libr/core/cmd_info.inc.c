@@ -164,7 +164,7 @@ static RCoreHelpMessage help_msg_i = {
 	"io", " [file]", "load info from file (or last opened) use bin.baddr",
 	"iO", "[?]", "perform binary operation (dump, resize, change sections, ...)",
 	"ir", "", "list the relocations",
-	"iR", "", "list the resources",
+	"iR", "[?][jq*]", "list the resources",
 	"is", "[?]", "list the symbols",
 	"iS", "[?]", "list sections, segments and compute their hash",
 	"it", "", "file hashes", // hashes in it? wtf, thats a pretty bad subcommand

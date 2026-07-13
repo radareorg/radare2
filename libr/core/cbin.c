@@ -5015,7 +5015,7 @@ static void bin_mach0_versioninfo(RCore *core) {
 	/* TODO */
 }
 
-static bool bin_resources(RCore *core, PJ *pj, int mode) {
+static bool bin_resources(RCore *core, PJ *pj, int mode, int va) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	RVecRBinResource *resources = bf? r_bin_file_get_resources (bf): NULL;
 	bool loaded = resources != NULL;
@@ -5033,44 +5033,82 @@ static bool bin_resources(RCore *core, PJ *pj, int mode) {
 	}
 	RBinResource *resource;
 	R_VEC_FOREACH (resources, resource) {
+		ut64 addr = va? resource->vaddr: resource->paddr;
+		const char *name = R_STR_ISNOTEMPTY (resource->name)? resource->name: "-";
+		const char *type = R_STR_ISNOTEMPTY (resource->type)? resource->type: "-";
 		if (IS_MODE_SET (mode)) {
 			r_strf_var (flagname, 32, "resource.%u", resource->index);
-			r_flag_set (core->flags, flagname, resource->vaddr, resource->size);
+			r_flag_set (core->flags, flagname, addr, resource->size);
 		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf (core->cons, "f resource.%u %" PFMT64u " 0x%08" PFMT64x "\n",
-				resource->index, resource->size, resource->vaddr);
+				resource->index, resource->size, addr);
+		} else if (IS_MODE_SIMPLEST (mode)) {
+			r_cons_println (core->cons, name);
+		} else if (IS_MODE_SIMPLE (mode)) {
+			r_cons_printf (core->cons, "0x%08" PFMT64x " %" PFMT64u " %s %s\n",
+				addr, resource->size, type, name);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
 			pj_ks (pj, "name", r_str_get (resource->name));
 			pj_ki (pj, "index", resource->index);
 			if (R_STR_ISNOTEMPTY (resource->type)) {
 				pj_ks (pj, "type", resource->type);
+			} else {
+				pj_knull (pj, "type");
 			}
 			pj_kn (pj, "vaddr", resource->vaddr);
+			pj_kn (pj, "paddr", resource->paddr);
 			pj_kn (pj, "size", resource->size);
+			if (resource->id == UT64_MAX) {
+				pj_knull (pj, "id");
+			} else {
+				pj_kn (pj, "id", resource->id);
+			}
+			if (resource->type_id == UT32_MAX) {
+				pj_knull (pj, "type_id");
+			} else {
+				pj_kn (pj, "type_id", resource->type_id);
+			}
 			if (resource->language && *resource->language != '?') {
 				pj_ks (pj, "lang", resource->language);
+			} else {
+				pj_knull (pj, "lang");
 			}
+			pj_kn (pj, "language_id", resource->language_id);
+			pj_kn (pj, "codepage", resource->codepage);
+			pj_kb (pj, "named", resource->named);
 			if (R_STR_ISNOTEMPTY (resource->timestamp)) {
 				pj_ks (pj, "timestamp", resource->timestamp);
+			} else {
+				pj_knull (pj, "timestamp");
 			}
 			pj_end (pj);
 		} else {
 			char humansz[8];
 			r_num_units (humansz, sizeof (humansz), resource->size);
 			r_cons_printf (core->cons, "Resource %u\n", resource->index);
-			r_cons_printf (core->cons, "  name: %s\n", r_str_get (resource->name));
-			if (R_STR_ISNOTEMPTY (resource->timestamp)) {
-				r_cons_printf (core->cons, "  timestamp: %s\n", resource->timestamp);
+			r_cons_printf (core->cons, "  name: %s\n", name);
+			if (resource->id == UT64_MAX) {
+				r_cons_println (core->cons, "  id: -");
+			} else {
+				r_cons_printf (core->cons, "  id: %" PFMT64u "\n", resource->id);
 			}
+			r_cons_printf (core->cons, "  named: %s\n", r_str_bool (resource->named));
+			r_cons_printf (core->cons, "  timestamp: %s\n",
+				R_STR_ISNOTEMPTY (resource->timestamp)? resource->timestamp: "-");
 			r_cons_printf (core->cons, "  vaddr: 0x%08" PFMT64x "\n", resource->vaddr);
+			r_cons_printf (core->cons, "  paddr: 0x%08" PFMT64x "\n", resource->paddr);
 			r_cons_printf (core->cons, "  size: %s\n", humansz);
-			if (R_STR_ISNOTEMPTY (resource->type)) {
-				r_cons_printf (core->cons, "  type: %s\n", resource->type);
+			r_cons_printf (core->cons, "  type: %s\n", type);
+			if (resource->type_id == UT32_MAX) {
+				r_cons_println (core->cons, "  type_id: -");
+			} else {
+				r_cons_printf (core->cons, "  type_id: %" PFMT32u "\n", resource->type_id);
 			}
-			if (R_STR_ISNOTEMPTY (resource->language)) {
-				r_cons_printf (core->cons, "  language: %s\n", resource->language);
-			}
+			r_cons_printf (core->cons, "  language: %s\n",
+				R_STR_ISNOTEMPTY (resource->language)? resource->language: "-");
+			r_cons_printf (core->cons, "  language_id: %" PFMT32u "\n", resource->language_id);
+			r_cons_printf (core->cons, "  codepage: %" PFMT32u "\n", resource->codepage);
 		}
 	}
 	if (IS_MODE_JSON (mode)) {
@@ -5307,7 +5345,7 @@ R_API bool r_core_bin_info(RCore *core, ut64 action, PJ *pj, int mode, int va, R
 		ret &= bin_versioninfo (core, pj, mode);
 	}
 	if ((action & R_CORE_BIN_ACC_RESOURCES)) {
-		ret &= bin_resources (core, pj, mode);
+		ret &= bin_resources (core, pj, mode, va);
 	}
 	if ((action & R_CORE_BIN_ACC_SIGNATURE)) {
 		ret &= bin_signature (core, pj, mode);

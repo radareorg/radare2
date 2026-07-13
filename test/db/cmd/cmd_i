@@ -3678,8 +3678,14 @@ EXPECT=<<EOF
     "index": 0,
     "type": "ICON",
     "vaddr": 4198784,
+    "paddr": 896,
     "size": 5672,
+    "id": 1576,
+    "type_id": 3,
     "lang": "LANG_NEUTRAL",
+    "language_id": 0,
+    "codepage": 0,
+    "named": false,
     "timestamp": "Thu Jan  1 00:00:00 1970"
   },
   {
@@ -3687,8 +3693,14 @@ EXPECT=<<EOF
     "index": 1,
     "type": "STRING",
     "vaddr": 4205072,
+    "paddr": 7184,
     "size": 76,
+    "id": 10,
+    "type_id": 6,
     "lang": "LANG_NEUTRAL",
+    "language_id": 0,
+    "codepage": 0,
+    "named": false,
     "timestamp": "Thu Jan  1 00:00:00 1970"
   },
   {
@@ -3696,8 +3708,14 @@ EXPECT=<<EOF
     "index": 2,
     "type": "GROUP_ICON",
     "vaddr": 4204464,
+    "paddr": 6576,
     "size": 20,
+    "id": 788,
+    "type_id": 14,
     "lang": "LANG_NEUTRAL",
+    "language_id": 0,
+    "codepage": 0,
+    "named": false,
     "timestamp": "Thu Jan  1 00:00:00 1970"
   },
   {
@@ -3705,8 +3723,14 @@ EXPECT=<<EOF
     "index": 3,
     "type": "VERSION",
     "vaddr": 4204496,
+    "paddr": 6608,
     "size": 452,
+    "id": 1,
+    "type_id": 16,
     "lang": "LANG_NEUTRAL",
+    "language_id": 0,
+    "codepage": 0,
+    "named": false,
     "timestamp": "Thu Jan  1 00:00:00 1970"
   },
   {
@@ -3714,11 +3738,44 @@ EXPECT=<<EOF
     "index": 4,
     "type": "MANIFEST",
     "vaddr": 4204960,
+    "paddr": 7072,
     "size": 74,
+    "id": 1,
+    "type_id": 24,
     "lang": "LANG_NEUTRAL",
+    "language_id": 0,
+    "codepage": 0,
+    "named": false,
     "timestamp": "Thu Jan  1 00:00:00 1970"
   }
 ]
+EOF
+RUN
+
+NAME=iR quiet and physical modes
+FILE=bins/pe/standard.exe
+CMDS=<<EOF
+iRq
+iRqq
+e io.va=false
+iRq
+EOF
+EXPECT=<<EOF
+0x00401180 5672 ICON 1576
+0x00402a10 76 STRING 10
+0x004027b0 20 GROUP_ICON 788
+0x004027d0 452 VERSION 1
+0x004029a0 74 MANIFEST 1
+1576
+10
+788
+1
+1
+0x00000380 5672 ICON 1576
+0x00001c10 76 STRING 10
+0x000019b0 20 GROUP_ICON 788
+0x000019d0 452 VERSION 1
+0x00001ba0 74 MANIFEST 1
 EOF
 RUN
 
