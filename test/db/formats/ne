@@ -75,6 +75,52 @@ nth paddr         size vaddr        vsize perm flags type name
 EOF
 RUN
 
+NAME=NE Resources JSON
+FILE=bins/ne/anim8.exe
+CMDS=iRj~{}~name
+EXPECT=<<EOF
+    "name": "ICONX",
+    "name": "FRAME_1",
+    "name": "FRAME_10",
+    "name": "FRAME_11",
+    "name": "FRAME_12",
+    "name": "FRAME_13",
+    "name": "FRAME_14",
+    "name": "FRAME_15",
+    "name": "FRAME_16",
+    "name": "FRAME_17",
+    "name": "FRAME_18",
+    "name": "FRAME_19",
+    "name": "FRAME_2",
+    "name": "FRAME_20",
+    "name": "FRAME_21",
+    "name": "FRAME_22",
+    "name": "FRAME_23",
+    "name": "FRAME_24",
+    "name": "FRAME_25",
+    "name": "FRAME_26",
+    "name": "FRAME_27",
+    "name": "FRAME_28",
+    "name": "FRAME_29",
+    "name": "FRAME_3",
+    "name": "FRAME_30",
+    "name": "FRAME_4",
+    "name": "FRAME_5",
+    "name": "FRAME_6",
+    "name": "FRAME_7",
+    "name": "FRAME_8",
+    "name": "FRAME_9",
+    "name": "MENUS",
+    "name": "DIAL_ABOUT",
+    "name": "4",
+    "name": "5",
+    "name": "9",
+    "name": "626",
+    "name": "ACCELS",
+    "name": "1",
+EOF
+RUN
+
 NAME=NE Module imports
 FILE=bins/ne/anim8.exe
 CMDS=ii

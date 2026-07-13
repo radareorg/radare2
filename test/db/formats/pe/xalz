@@ -81,7 +81,6 @@ EXPECT=<<EOF
 info
 pe
 vs_version_info
-pe_resource
 --
 archs=0:0:x86:32
 actual_checksum=0x00223928
@@ -138,7 +137,6 @@ EXPECT=<<EOF
 info
 pe
 vs_version_info
-pe_resource
 --
 archs=0:0:x86:32
 actual_checksum=0x00223928
