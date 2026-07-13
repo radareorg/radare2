@@ -368,7 +368,7 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 		r_list_append (entries, entry);
 	}
 	int off = 0;
-	size_t tableat = bin->header_offset + bin->ne_header->EntryTableOffset;
+	ut64 tableat = (ut64)bin->header_offset + bin->ne_header->EntryTableOffset;
 	while (off < bin->ne_header->EntryTableLength) {
 		if (tableat + off >= r_buf_size (bin->buf)) {
 			break;
@@ -496,7 +496,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 				break;
 			}
 
-			ut32 offset;
+			ut64 offset;
 			if (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {
 				RBinImport *imp = R_NEW0 (RBinImport);
 				if (!imp) {
@@ -507,7 +507,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 				if (rel.index > bin->ne_header->ModRefs) {
 					name = r_str_newf ("UnknownModule%d_%x", rel.index, off); // ????
 				} else if (rel.index > 0) {
-					offset = modref[rel.index - 1] + bin->header_offset + bin->ne_header->ImportNameTable;
+					offset = (ut64)bin->header_offset + bin->ne_header->ImportNameTable + modref[rel.index - 1];
 					name = pascalstr_at (bin->buf, offset, bufsz, NULL);
 				}
 				if (rel.flags & IMPORTED_ORD) {
@@ -516,7 +516,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 					imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", r_str_get (name), r_str_get (fname)));
 					free (fname);
 				} else {
-					offset = bin->header_offset + bin->ne_header->ImportNameTable + rel.name_off;
+					offset = (ut64)bin->header_offset + bin->ne_header->ImportNameTable + rel.name_off;
 					char *func = pascalstr_at (bin->buf, offset, bufsz, NULL);
 					imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", r_str_get (name), r_str_get (func)));
 					free (func);
@@ -592,7 +592,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 }
 
 void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
-	bin->header_offset = r_buf_read_le16_at (buf, 0x3c);
+	bin->header_offset = r_buf_read_le32_at (buf, 0x3c);
 	bin->ne_header = R_NEW0 (NE_image_header);
 	bin->buf = buf;
 	if (r_buf_fread_at (buf, bin->header_offset, (ut8 *)bin->ne_header, "4c2si4c4si8si3s2c3s2c", 1) < 1) {
@@ -602,7 +602,7 @@ void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
 	if (bin->ne_header->FileAlnSzShftCnt > 15) {
 		bin->ne_header->FileAlnSzShftCnt = 15;
 	}
-	ut64 from = bin->ne_header->ModRefTable + bin->header_offset;
+	ut64 from = (ut64)bin->ne_header->ModRefTable + bin->header_offset;
 	ut64 bufsz = r_buf_size (bin->buf);
 	if (from >= bufsz) {
 		bin->ne_header->ModRefs = 0;
@@ -618,12 +618,12 @@ void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
 	}
 	bin->os = __get_target_os (bin);
 
-	ut16 offset = bin->ne_header->SegTableOffset + bin->header_offset;
+	ut64 offset = (ut64)bin->ne_header->SegTableOffset + bin->header_offset;
 	size_t size = bin->ne_header->SegCount * sizeof (NE_image_segment_entry);
 	if (offset >= r_buf_size (bin->buf)) {
 		return;
 	}
-	size_t remaining = r_buf_size (bin->buf) - offset;
+	ut64 remaining = r_buf_size (bin->buf) - offset;
 	size = R_MIN (remaining, size);
 	bin->ne_header->SegCount = size / sizeof (NE_image_segment_entry); // * sizeof (NE_image_segment_entry);
 	bin->segment_entries = calloc (1, size);
