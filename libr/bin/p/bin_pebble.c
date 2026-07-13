@@ -6,9 +6,14 @@
 #include <r_bin.h>
 
 // Taken from https://pebbledev.org/wiki/Applications
+// Resource packs: https://github.com/google/pebble/blob/main/tools/pbpack.py
 
 #define APP_NAME_BYTES 32
 #define COMPANY_NAME_BYTES 32
+#define RESOURCE_PACK_MANIFEST_SIZE 12
+#define RESOURCE_PACK_ENTRY_SIZE 16
+#define APP_RESOURCE_TABLE_SIZE 256
+#define SYSTEM_RESOURCE_TABLE_SIZE 512
 
 R_PACKED (
 typedef struct  {
@@ -34,6 +39,21 @@ typedef struct  {
 	ut32 num_reloc_entries;       //!< The number of entries in the address relocation list
 	ut8 uuid[16];
 }) PebbleAppInfo;
+
+typedef struct {
+	ut32 id;
+	ut32 offset;
+	ut32 size;
+	ut32 crc;
+} PebbleResourceEntry;
+
+typedef struct {
+	ut32 num_files;
+	ut32 crc;
+	ut32 timestamp;
+	ut32 table_size;
+	ut64 content_start;
+} PebbleResourcePack;
 
 static bool read_pebble_app_info(RBuffer *b, PebbleAppInfo *pai) {
 	ut8 buf[sizeof (*pai)];
@@ -73,12 +93,80 @@ static bool read_pebble_app_info(RBuffer *b, PebbleAppInfo *pai) {
 	return !memcmp (pai->header, "PBLAPP\x00\x00", 8);
 }
 
-static bool check(RBinFile *bf, RBuffer *b) {
-	ut8 magic[8];
-	if (r_buf_read_at (b, 0, magic, sizeof (magic)) != sizeof (magic)) {
+static bool read_resource_entry(RBuffer *b, ut64 at, PebbleResourceEntry *entry) {
+	ut8 buf[RESOURCE_PACK_ENTRY_SIZE];
+	if (r_buf_read_at (b, at, buf, sizeof (buf)) != sizeof (buf)) {
 		return false;
 	}
-	return !memcmp (magic, "PBLAPP\x00\x00", 8);
+	entry->id = r_read_le32 (buf);
+	entry->offset = r_read_le32 (buf + 4);
+	entry->size = r_read_le32 (buf + 8);
+	entry->crc = r_read_le32 (buf + 12);
+	return true;
+}
+
+static bool read_resource_pack_with_table(RBuffer *b, ut32 table_size, PebbleResourcePack *pack) {
+	ut64 size = r_buf_size (b);
+	ut64 content_start = RESOURCE_PACK_MANIFEST_SIZE + (ut64)table_size * RESOURCE_PACK_ENTRY_SIZE;
+	if (size < content_start) {
+		return false;
+	}
+	ut8 manifest[RESOURCE_PACK_MANIFEST_SIZE];
+	if (r_buf_read_at (b, 0, manifest, sizeof (manifest)) != sizeof (manifest)) {
+		return false;
+	}
+	ut32 num_files = r_read_le32 (manifest);
+	if (num_files > table_size) {
+		return false;
+	}
+	ut64 content_size = size - content_start;
+	ut64 max_end = 0;
+	ut32 i;
+	// Keep damaged packs inspectable: bounds, not payload CRCs, define extractability.
+	for (i = 0; i < num_files; i++) {
+		PebbleResourceEntry entry;
+		ut64 at = RESOURCE_PACK_MANIFEST_SIZE + (ut64)i * RESOURCE_PACK_ENTRY_SIZE;
+		if (!read_resource_entry (b, at, &entry) || entry.id != i + 1) {
+			return false;
+		}
+		ut64 end = (ut64)entry.offset + entry.size;
+		if (end > content_size) {
+			return false;
+		}
+		max_end = R_MAX (max_end, end);
+	}
+	ut8 padding[RESOURCE_PACK_ENTRY_SIZE];
+	for (; i < table_size; i++) {
+		ut64 at = RESOURCE_PACK_MANIFEST_SIZE + (ut64)i * RESOURCE_PACK_ENTRY_SIZE;
+		if (r_buf_read_at (b, at, padding, sizeof (padding)) != sizeof (padding)
+			|| !r_mem_is_zero (padding, sizeof (padding))) {
+			return false;
+		}
+	}
+	if (max_end != content_size) {
+		return false;
+	}
+	pack->num_files = num_files;
+	pack->crc = r_read_le32 (manifest + 4);
+	pack->timestamp = r_read_le32 (manifest + 8);
+	pack->table_size = table_size;
+	pack->content_start = content_start;
+	return true;
+}
+
+static bool read_resource_pack(RBuffer *b, PebbleResourcePack *pack) {
+	return read_resource_pack_with_table (b, APP_RESOURCE_TABLE_SIZE, pack)
+		|| read_resource_pack_with_table (b, SYSTEM_RESOURCE_TABLE_SIZE, pack);
+}
+
+static bool check(RBinFile *bf, RBuffer *b) {
+	ut8 magic[8];
+	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == sizeof (magic)
+		&& !memcmp (magic, "PBLAPP\x00\x00", 8)) {
+		return true;
+	}
+	PebbleResourcePack pack;
+	return read_resource_pack (b, &pack);
 }
 
 static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
@@ -90,6 +178,20 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RBinInfo* info(RBinFile *bf) {
+	PebbleResourcePack pack;
+	if (read_resource_pack (bf->buf, &pack)) {
+		RBinInfo *ret = R_NEW0 (RBinInfo);
+		ret->file = strdup (bf->file);
+		ret->type = strdup ("Pebble resource pack");
+		ret->bclass = strdup (pack.table_size == APP_RESOURCE_TABLE_SIZE? "application": "system");
+		ret->rclass = strdup ("resource pack");
+		ret->os = strdup ("pebble");
+		ret->subsystem = strdup ("pebble");
+		ret->machine = strdup ("watch");
+		ret->has_va = false;
+		ret->bits = 8;
+		return ret;
+	}
 	PebbleAppInfo pai = {0};
 	if (!read_pebble_app_info (bf->buf, &pai)) {
 		R_LOG_ERROR ("Truncated Header");
@@ -113,6 +215,31 @@ static RBinInfo* info(RBinFile *bf) {
 }
 
 static bool sections_vec(RBinFile *bf) {
+	PebbleResourcePack pack;
+	if (read_resource_pack (bf->buf, &pack)) {
+		RVecRBinSection_clear (&bf->bo->sections_vec);
+		RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		ptr->name = strdup ("manifest");
+		ptr->vaddr = ptr->paddr = 0;
+		ptr->vsize = ptr->size = RESOURCE_PACK_MANIFEST_SIZE;
+		ptr->perm = R_PERM_R;
+		ptr->add = true;
+
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		ptr->name = strdup ("resource_table");
+		ptr->vaddr = ptr->paddr = RESOURCE_PACK_MANIFEST_SIZE;
+		ptr->vsize = ptr->size = (ut64)pack.table_size * RESOURCE_PACK_ENTRY_SIZE;
+		ptr->perm = R_PERM_R;
+		ptr->add = true;
+
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		ptr->name = strdup ("resources");
+		ptr->vaddr = ptr->paddr = pack.content_start;
+		ptr->vsize = ptr->size = r_buf_size (bf->buf) - pack.content_start;
+		ptr->perm = R_PERM_R;
+		ptr->add = true;
+		return true;
+	}
 	ut64 textsize = UT64_MAX;
 	RBinSection *ptr = NULL;
 	PebbleAppInfo pai = {{0}};
@@ -185,6 +312,10 @@ static RList* relocs(RBinFile *bf) {
 #endif
 
 static RList* entries(RBinFile *bf) {
+	PebbleResourcePack pack;
+	if (read_resource_pack (bf->buf, &pack)) {
+		return r_list_newf (free);
+	}
 	PebbleAppInfo pai = {{0}};
 	if (!read_pebble_app_info (bf->buf, &pai)) {
 		R_LOG_ERROR ("Truncated Header");
@@ -199,10 +330,42 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
+static bool load_resources(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->buf, false);
+	PebbleResourcePack pack;
+	if (!read_resource_pack (bf->buf, &pack)) {
+		return true;
+	}
+	ut32 i;
+	for (i = 0; i < pack.num_files; i++) {
+		PebbleResourceEntry entry;
+		ut64 at = RESOURCE_PACK_MANIFEST_SIZE + (ut64)i * RESOURCE_PACK_ENTRY_SIZE;
+		if (!read_resource_entry (bf->buf, at, &entry)) {
+			return false;
+		}
+		RBinResource *resource = RVecRBinResource_emplace_back (&bf->bo->resources_vec);
+		if (!resource) {
+			return false;
+		}
+		resource->name = r_str_newf ("%u", entry.id);
+		resource->type = strdup ("RESOURCE");
+		if (!resource->name || !resource->type) {
+			return false;
+		}
+		resource->paddr = pack.content_start + entry.offset;
+		resource->vaddr = resource->paddr;
+		resource->size = entry.size;
+		resource->id = entry.id;
+		resource->index = i;
+		resource->type_id = UT32_MAX;
+	}
+	return true;
+}
+
 RBinPlugin r_bin_plugin_pebble = {
 	.meta = {
 		.name = "pebble",
-		.desc = "Pebble Watch App",
+		.desc = "Pebble Watch App and Resource Pack",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
@@ -212,6 +375,7 @@ RBinPlugin r_bin_plugin_pebble = {
 	.entries = entries,
 	.sections_vec = &sections_vec,
 	.info = &info,
+	.load_resources = &load_resources,
 	//.relocs = &relocs
 };
 
