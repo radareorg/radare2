@@ -555,22 +555,32 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 				reloc->additive = 1;
 				r_list_append (relocs, reloc);
 			} else {
-				int chainlen;
+				RBitset *visited = r_bitset_new ();
 				r_list_append (relocs, reloc);
-				for (chainlen = 0; chainlen < 0xFFFF; chainlen++) {
-					offset = r_buf_read_le16_at (bin->buf, reloc->paddr);
-					if (offset == 0xFFFF) {
-						break;
+				if (r_bitset_set (visited, rel.offset)) {
+					while (reloc->paddr <= bufsz && bufsz - reloc->paddr >= sizeof (ut16)) {
+						offset = r_buf_read_le16_at (bin->buf, reloc->paddr);
+						if (offset == UT16_MAX || !r_bitset_set (visited, offset)) {
+							break;
+						}
+						if (seg->paddr > bufsz || offset > bufsz - seg->paddr) {
+							break;
+						}
+						ut64 next_paddr = seg->paddr + offset;
+						if (bufsz - next_paddr < sizeof (ut16)) {
+							break;
+						}
+						RBinReloc *next = R_NEW0 (RBinReloc);
+						*next = *reloc;
+						if (next->import) {
+							next->import = r_bin_import_clone (next->import);
+						}
+						next->paddr = next_paddr;
+						r_list_append (relocs, next);
+						reloc = next;
 					}
-					RBinReloc *next = R_NEW0 (RBinReloc);
-					*next = *reloc;
-					if (next->import) {
-						next->import = r_bin_import_clone (next->import);
-					}
-					next->paddr = seg->paddr + offset;
-					r_list_append (relocs, next);
-					reloc = next;
 				}
+				r_bitset_free (visited);
 			}
 
 			off += sizeof (NE_image_reloc_item);
