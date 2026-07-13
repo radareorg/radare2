@@ -34,6 +34,7 @@ typedef struct {
 	char *os;
 } r_bin_ne_obj_t;
 
+bool r_bin_ne_get_header_offset(RBuffer *buf, R_OUT ut32 *offset);
 void r_bin_ne_free(r_bin_ne_obj_t *bin);
 r_bin_ne_obj_t *r_bin_ne_new_buf(RBuffer *buf, bool verbose);
 RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBinSection *sections);

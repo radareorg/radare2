@@ -9,18 +9,11 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	if (length < 0x40) {
 		return false;
 	}
-	ut32 idx = r_buf_read_le32_at (b, 0x3c);
-	if ((ut64)idx + 26 < length) {
-		ut8 buf[2];
-		r_buf_read_at (b, 0, buf, sizeof (buf));
-		if (!memcmp (buf, "MZ", 2)) {
-			r_buf_read_at (b, idx, buf, sizeof (buf));
-			if (!memcmp (buf, "NE", 2)) {
-				return true;
-			}
-		}
-	}
-	return false;
+	ut8 magic[2];
+	ut32 offset;
+	return r_buf_read_at (b, 0, magic, sizeof (magic)) == sizeof (magic)
+		&& !memcmp (magic, "MZ", sizeof (magic))
+		&& r_bin_ne_get_header_offset (b, &offset);
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
