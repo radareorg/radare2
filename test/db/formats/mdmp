@@ -79,6 +79,50 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=: 32bit - resources
+FILE=bins/mdmp/hello.dmp
+CMDS=<<EOF
+iRq
+iRj~{}~origin~hello.exe
+iRj~{}~origin~ntdll.dll
+EOF
+EXPECT=<<EOF
+0x00409058 1167 MANIFEST 1
+0x75d93460 208 UNKNOWN (160) 1
+0x75d930b0 940 VERSION 1
+0x77417060 916 VERSION 1
+0x778c7f60 200 UNKNOWN (232) 1
+0x7786e470 367340 MESSAGETABLE 1
+0x7786e0f0 896 VERSION 1
+0x7500d060 908 VERSION 1
+0x74fc9060 948 VERSION 1
+0x74f66060 912 VERSION 1
+    "origin": "hello.exe"
+    "origin": "ntdll.dll"
+    "origin": "ntdll.dll"
+    "origin": "ntdll.dll"
+EOF
+RUN
+
+NAME=: 32bit - resource extraction
+FILE=bins/mdmp/hello.dmp
+CMDS=<<EOF
+!rm -rf .tmp/rabin2-mdmp-resource-extract
+!rabin2 -xU -o .tmp/rabin2-mdmp-resource-extract ${R2_FILE} >/dev/null
+!find .tmp/rabin2-mdmp-resource-extract -type f | wc -l | tr -d ' '
+!rabin2 -Z .tmp/rabin2-mdmp-resource-extract/resource_MANIFEST_1_0.bin
+!rabin2 -Z .tmp/rabin2-mdmp-resource-extract/resource_MESSAGETABLE_1_5.bin
+!grep -ac requestedExecutionLevel .tmp/rabin2-mdmp-resource-extract/resource_MANIFEST_1_0.bin
+!rm -rf .tmp/rabin2-mdmp-resource-extract
+EOF
+EXPECT=<<EOF
+10
+1167
+367340
+1
+EOF
+RUN
+
 NAME=: test format definitions
 FILE=bins/mdmp/hello.dmp
 ARGS=-nn
@@ -250,6 +294,26 @@ FILE=bins/mdmp/hello64.dmp
 CMDS=il~?
 EXPECT=<<EOF
 49
+EOF
+RUN
+
+NAME=: 64bit - resources
+FILE=bins/mdmp/hello64.dmp
+CMDS=<<EOF
+iRq
+iRj~{}~origin~hello64.exe
+EOF
+EXPECT=<<EOF
+0x0040b058 1167 MANIFEST 1
+0x778c7f60 200 UNKNOWN (232) 1
+0x7786e470 367340 MESSAGETABLE 1
+0x7786e0f0 896 VERSION 1
+0x77616458 208 UNKNOWN (160) 1
+0x776160b0 932 VERSION 1
+0x7fefd508460 208 UNKNOWN (160) 1
+0x7fefd5080b0 940 VERSION 1
+0x7fefdb4d060 916 VERSION 1
+    "origin": "hello64.exe"
 EOF
 RUN
 

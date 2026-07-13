@@ -5082,6 +5082,9 @@ static bool bin_resources(RCore *core, PJ *pj, int mode, int va) {
 			} else {
 				pj_knull (pj, "timestamp");
 			}
+			if (R_STR_ISNOTEMPTY (resource->origin)) {
+				pj_ks (pj, "origin", resource->origin);
+			}
 			pj_end (pj);
 		} else {
 			char humansz[8];
@@ -5096,6 +5099,9 @@ static bool bin_resources(RCore *core, PJ *pj, int mode, int va) {
 			r_cons_printf (core->cons, "  named: %s\n", r_str_bool (resource->named));
 			r_cons_printf (core->cons, "  timestamp: %s\n",
 				R_STR_ISNOTEMPTY (resource->timestamp)? resource->timestamp: "-");
+			if (R_STR_ISNOTEMPTY (resource->origin)) {
+				r_cons_printf (core->cons, "  origin: %s\n", resource->origin);
+			}
 			r_cons_printf (core->cons, "  vaddr: 0x%08" PFMT64x "\n", resource->vaddr);
 			r_cons_printf (core->cons, "  paddr: 0x%08" PFMT64x "\n", resource->paddr);
 			r_cons_printf (core->cons, "  size: %s\n", humansz);
