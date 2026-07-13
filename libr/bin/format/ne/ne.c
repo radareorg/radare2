@@ -35,21 +35,7 @@ static int __translate_perms(int flags) {
 	return perms;
 }
 
-static char *__read_nonnull_str_at(RBuffer *buf, ut64 offset) {
-	ut8 sz = r_buf_read8_at (buf, offset);
-	if (!sz) {
-		return NULL;
-	}
-	char *str = malloc ((ut64)sz + 1);
-	if (!str) {
-		return NULL;
-	}
-	r_buf_read_at (buf, offset + 1, (ut8 *)str, sz);
-	str[sz] = '\0';
-	return str;
-}
-
-static char *__read_nonnull_str_at_bound(RBuffer *buf, ut64 offset, ut64 end) {
+static char *pascalstr_at(RBuffer *buf, ut64 offset, ut64 end, R_OUT ut8 * R_NULLABLE size_out) {
 	if (offset >= end) {
 		return NULL;
 	}
@@ -66,6 +52,9 @@ static char *__read_nonnull_str_at_bound(RBuffer *buf, ut64 offset, ut64 end) {
 		return NULL;
 	}
 	str[size] = 0;
+	if (size_out) {
+		*size_out = size;
+	}
 	return str;
 }
 
@@ -133,39 +122,43 @@ void r_bin_ne_load_symbols(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols) {
 	if (!bin->ne_header) {
 		return;
 	}
-	ut16 off = bin->ne_header->ResidNamTable + bin->header_offset;
+	ut64 bufsz = r_buf_size (bin->buf);
+	ut64 off = (ut64)bin->ne_header->ResidNamTable + bin->header_offset;
 	RList *entries = r_bin_ne_get_entrypoints (bin);
 	bool resident = true, first = true;
 	while (entries) {
+		if (off >= bufsz) {
+			break;
+		}
 		ut8 sz = r_buf_read8_at (bin->buf, off);
 		if (!sz) {
 			first = true;
 			if (resident) {
 				resident = false;
 				off = bin->ne_header->OffStartNonResTab;
-				sz = r_buf_read8_at (bin->buf, off);
-				if (!sz) {
+				if (off >= bufsz || !r_buf_read8_at (bin->buf, off)) {
 					break;
 				}
 			} else {
 				break;
 			}
 		}
-		char *name = malloc ((ut64)sz + 1);
+		char *name = pascalstr_at (bin->buf, off, bufsz, &sz);
 		if (!name) {
 			break;
 		}
-		off++;
-		r_buf_read_at (bin->buf, off, (ut8 *)name, sz);
-		name[sz] = '\0';
-		off += sz;
+		off += (ut64)sz + 1;
+		if (bufsz - off < sizeof (ut16)) {
+			free (name);
+			break;
+		}
+		ut16 entry_off = r_buf_read_le16_at (bin->buf, off);
+		off += sizeof (ut16);
 		RBinSymbol *sym = RVecRBinSymbol_emplace_back (symbols);
 		sym->name = r_bin_name_new_from (name);
 		if (!first) {
 			sym->bind = R_BIN_BIND_GLOBAL_STR;
 		}
-		ut16 entry_off = r_buf_read_le16_at (bin->buf, off);
-		off += 2;
 		RBinAddr *entry = r_list_get_n (entries, entry_off);
 		sym->paddr = entry? entry->paddr: -1;
 		sym->ordinal = entry_off;
@@ -280,7 +273,7 @@ static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 			res->name = __resource_type_str (res->type_id);
 		} else if (ti.rtTypeID < resend - resoff) {
 			res->named = true;
-			res->name = __read_nonnull_str_at_bound (bin->buf, resoff + ti.rtTypeID, resend);
+			res->name = pascalstr_at (bin->buf, resoff + ti.rtTypeID, resend, NULL);
 		} else {
 			__free_resource (res);
 			return false;
@@ -314,7 +307,7 @@ static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 					free (ren);
 					continue;
 				}
-				ren->name = __read_nonnull_str_at_bound (bin->buf, resoff + ni.rnID, resend);
+				ren->name = pascalstr_at (bin->buf, resoff + ni.rnID, resend, NULL);
 			}
 			if (ren->offset > bufsz || ren->size > bufsz - ren->offset || !ren->name) {
 				__free_resource_entry (ren);
@@ -335,25 +328,20 @@ void r_bin_ne_load_imports(r_bin_ne_obj_t *bin, RVecRBinImport *vec) {
 	if (!bin->ne_header) {
 		return;
 	}
-	ut16 off = bin->ne_header->ImportNameTable + bin->header_offset + 1;
+	ut64 bufsz = r_buf_size (bin->buf);
+	ut64 off = (ut64)bin->ne_header->ImportNameTable + bin->header_offset + 1;
 	RVecRBinImport_reserve (vec, bin->ne_header->ModRefs);
 	int i;
 	for (i = 0; i < bin->ne_header->ModRefs; i++) {
-		ut8 sz = r_buf_read8_at (bin->buf, off);
-		if (!sz) {
-			break;
-		}
-		off++;
-		char *name = malloc ((ut64)sz + 1);
+		ut8 sz;
+		char *name = pascalstr_at (bin->buf, off, bufsz, &sz);
 		if (!name) {
 			break;
 		}
-		r_buf_read_at (bin->buf, off, (ut8 *)name, sz);
-		name[sz] = '\0';
 		RBinImport *imp = RVecRBinImport_emplace_back (vec);
 		imp->name = r_bin_name_new_from (name);
 		imp->ordinal = i + 1;
-		off += sz;
+		off += (ut64)sz + 1;
 	}
 }
 
@@ -444,6 +432,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 	if (!symbols) {
 		return NULL;
 	}
+	ut64 bufsz = r_buf_size (bin->buf);
 	RList *entries = r_bin_ne_get_entrypoints (bin);
 	if (!entries) {
 		return NULL;
@@ -519,17 +508,17 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 					name = r_str_newf ("UnknownModule%d_%x", rel.index, off); // ????
 				} else if (rel.index > 0) {
 					offset = modref[rel.index - 1] + bin->header_offset + bin->ne_header->ImportNameTable;
-					name = __read_nonnull_str_at (bin->buf, offset);
+					name = pascalstr_at (bin->buf, offset, bufsz, NULL);
 				}
 				if (rel.flags & IMPORTED_ORD) {
 					imp->ordinal = rel.func_ord;
 					char *fname = __func_name_from_ord (name, rel.func_ord);
-					imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", name, fname));
+					imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", r_str_get (name), r_str_get (fname)));
 					free (fname);
 				} else {
 					offset = bin->header_offset + bin->ne_header->ImportNameTable + rel.name_off;
-					char *func = __read_nonnull_str_at (bin->buf, offset);
-					imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", name, func));
+					char *func = pascalstr_at (bin->buf, offset, bufsz, NULL);
+					imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", r_str_get (name), r_str_get (func)));
 					free (func);
 				}
 				free (name);
