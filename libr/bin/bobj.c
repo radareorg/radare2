@@ -92,7 +92,9 @@ static bool bin_name_has_value(RBinName *name) {
 }
 
 static bool symbol_has_value(RBinSymbol *sym) {
-	return sym && !(sym->attr & R_BIN_ATTR_SYNTHETIC) && bin_name_has_value (sym->name);
+	const char *name = sym && sym->name? sym->name->name: NULL;
+	bool entry = name && r_str_startswith (name, "entry") && r_str_isnumber (name + 5);
+	return sym && !(sym->attr & R_BIN_ATTR_SYNTHETIC) && (entry || bin_name_has_value (sym->name));
 }
 
 static void filter_unnamed_symbols_vec(RVecRBinSymbol *symbols) {

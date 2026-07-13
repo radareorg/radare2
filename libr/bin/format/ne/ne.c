@@ -2,6 +2,33 @@
 
 #include "ne.h"
 
+static bool ne_header_at(RBuffer *buf, ut64 offset) {
+	ut64 bufsz = r_buf_size (buf);
+	if (offset > bufsz || bufsz - offset <= 26) {
+		return false;
+	}
+	ut8 magic[2];
+	return r_buf_read_at (buf, offset, magic, sizeof (magic)) == sizeof (magic)
+		&& !memcmp (magic, "NE", sizeof (magic));
+}
+
+bool r_bin_ne_get_header_offset(RBuffer *buf, R_OUT ut32 *offset) {
+	if (!buf || !offset || r_buf_size (buf) < 0x40) {
+		return false;
+	}
+	ut32 candidate = r_buf_read_le32_at (buf, 0x3c);
+	if (ne_header_at (buf, candidate)) {
+		*offset = candidate;
+		return true;
+	}
+	ut16 legacy = candidate;
+	if (legacy != candidate && ne_header_at (buf, legacy)) {
+		*offset = legacy;
+		return true;
+	}
+	return false;
+}
+
 static char *__get_target_os(r_bin_ne_obj_t *bin) {
 	const int targetOS = (bin->ne_header) ? bin->ne_header->targOS: 0;
 	switch (targetOS) {
@@ -592,9 +619,11 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 }
 
 void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
-	bin->header_offset = r_buf_read_le32_at (buf, 0x3c);
-	bin->ne_header = R_NEW0 (NE_image_header);
 	bin->buf = buf;
+	if (!r_bin_ne_get_header_offset (buf, &bin->header_offset)) {
+		return;
+	}
+	bin->ne_header = R_NEW0 (NE_image_header);
 	if (r_buf_fread_at (buf, bin->header_offset, (ut8 *)bin->ne_header, "4c2si4c4si8si3s2c3s2c", 1) < 1) {
 		R_FREE (bin->ne_header);
 		return;

@@ -36,6 +36,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=NE detect minimal low-offset header
+FILE=bins/fuzzed/nepoc00
+CMDS=i~format
+EXPECT=<<EOF
+format   ne
+EOF
+RUN
+
+NAME=NE recover low header offset with poisoned high word
+FILE=bins/fuzzed/nepocaligns-06
+CMDS=i~format
+EXPECT=<<EOF
+format   ne
+EOF
+RUN
+
+NAME=NE preserve entries with zero-extended header offset
+FILE=bins/fuzzed/nepocaligns-09
+CMDS=<<EOF
+i~format
+is~entry~?
+EOF
+EXPECT=<<EOF
+format   ne
+8
+EOF
+RUN
+
 NAME=NE Segments
 FILE=bins/ne/anim8.exe
 CMDS=iSS
