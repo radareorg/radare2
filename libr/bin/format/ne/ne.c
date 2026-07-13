@@ -252,6 +252,10 @@ static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 		return true;
 	}
 	ut16 alignment = r_buf_read_le16_at (bin->buf, resoff);
+	if (alignment >= sizeof (ut64) * 8) {
+		return false;
+	}
+	ut64 shift_limit = bufsz >> alignment;
 	ut64 off = resoff + 2;
 	while (off <= resend && resend - off >= sizeof (NE_image_typeinfo_entry)) {
 		NE_image_typeinfo_entry ti = {0};
@@ -285,7 +289,6 @@ static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 			__free_resource (res);
 			return false;
 		}
-		const ut32 max_shift = (sizeof (ut32) * 8U) - 1;
 		int i;
 		for (i = 0; i < ti.rtResourceCount; i++) {
 			NE_image_nameinfo_entry ni = {0};
@@ -294,13 +297,12 @@ static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 				return false;
 			}
 			off += sizeof (NE_image_nameinfo_entry);
-			r_ne_resource_entry *ren = R_NEW0 (r_ne_resource_entry);
-			ut32 shift = alignment;
-			if (shift > max_shift) {
-				shift = max_shift;
+			if (ni.rnOffset > shift_limit || ni.rnLength > shift_limit) {
+				continue;
 			}
-			ren->offset = (ut64)ni.rnOffset << shift;
-			ren->size = (ut64)ni.rnLength << shift;
+			r_ne_resource_entry *ren = R_NEW0 (r_ne_resource_entry);
+			ren->offset = (ut64)ni.rnOffset << alignment;
+			ren->size = (ut64)ni.rnLength << alignment;
 			ren->flags = ni.rnFlags;
 			if (ni.rnID & 0x8000) {
 				ren->id = ni.rnID & ~0x8000;
