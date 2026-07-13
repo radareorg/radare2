@@ -89,6 +89,7 @@ typedef struct _PE_RESOURCE {
 	char *language;
 	char *name;
 	Pe_image_resource_data_entry *data;
+	ut32 id;
 	ut32 type_id;
 	ut32 language_id;
 	bool named;

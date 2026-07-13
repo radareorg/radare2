@@ -411,8 +411,9 @@ typedef struct r_bin_resource_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut64 size;
+	ut64 id; // UT64_MAX when the resource has a textual name
 	ut32 index;
-	ut32 type_id;
+	ut32 type_id; // UT32_MAX when the resource type has a textual name
 	ut32 language_id;
 	ut32 codepage;
 	bool named;
