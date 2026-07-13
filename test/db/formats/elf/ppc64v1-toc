@@ -146,3 +146,49 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=PPC64 ELFv1: update-form store writes back the base so its pending TOC entry drops
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true -e anal.gp=0x10020000
+FILE=malloc://64
+CMDS=<<EOF
+wx 3d22ffff94090010e9890000
+ao 3~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x10010010
+EOF
+RUN
+
+NAME=PPC64 ELFv1: indexed update-form store writes back the base so its pending TOC entry drops
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true -e anal.gp=0x10020000
+FILE=malloc://64
+CMDS=<<EOF
+wx 3d22ffff7c09296ee9890000
+ao 3~^ptr
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=PPC64 ELFv1: update-form load invalidates the base register entry, not only the destination
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true -e anal.gp=0x10020000
+FILE=malloc://64
+CMDS=<<EOF
+wx 3d22ffff84890010e9890000
+ao 3~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x10010010
+EOF
+RUN
+
+NAME=PPC64 ELFv1: update-form store through r2 rewrites the TOC base and drops every entry
+ARGS=-a ppc -e asm.bits=64 -e cfg.bigendian=true -e anal.gp=0x10020000
+FILE=malloc://64
+CMDS=<<EOF
+wx 3d22fffff922ffe1e9890000
+ao 3~^ptr
+EOF
+EXPECT=<<EOF
+EOF
+RUN

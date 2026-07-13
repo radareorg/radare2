@@ -799,6 +799,36 @@ static void set_toc_val(RAnalOp *op, PluginData *pd, cs_insn *insn, int regidx, 
 	}
 }
 
+// Update-form ld/st writes the EA back into the base register; op0 keying misses it and capstone has no writeback flag
+static int toc_update_form_base(cs_insn *insn) {
+	switch (insn->id) {
+	case PPC_INS_LBZU: case PPC_INS_LBZUX: case PPC_INS_LHZU: case PPC_INS_LHZUX:
+	case PPC_INS_LHAU: case PPC_INS_LHAUX: case PPC_INS_LWZU: case PPC_INS_LWZUX:
+	case PPC_INS_LWAUX: case PPC_INS_LDU: case PPC_INS_LDUX: case PPC_INS_LFSU:
+	case PPC_INS_LFSUX: case PPC_INS_LFDU: case PPC_INS_LFDUX: case PPC_INS_STBU:
+	case PPC_INS_STBUX: case PPC_INS_STHU: case PPC_INS_STHUX: case PPC_INS_STWU:
+	case PPC_INS_STWUX: case PPC_INS_STDU: case PPC_INS_STDUX: case PPC_INS_STFSU:
+	case PPC_INS_STFSUX: case PPC_INS_STFDU: case PPC_INS_STFDUX:
+		break;
+	default:
+		return -1;
+	}
+	cs_ppc_op *base = &INSOP (1);
+	if (base->type == PPC_OP_MEM) {
+		return toc_reg_idx (base->mem.base);
+	}
+	return (base->type == PPC_OP_REG)? toc_reg_idx (base->reg): -1;
+}
+
+// A write into r2 drops every derived entry, any other GPR only its own
+static void toc_clobber(PluginData *pd, int ridx) {
+	if (ridx == 2) {
+		memset (pd->toc_map, 0, sizeof (pd->toc_map));
+	} else if (ridx >= 0) {
+		pd->toc_map[ridx] = 0;
+	}
+}
+
 // Invalidate toc_map entries made stale by a return, a call, or a write to the holding/r2 base
 static void toc_invalidate(PluginData *pd, RAnalOp *op, cs_insn *insn) {
 	if (op->type == R_ANAL_OP_TYPE_RET || op->type == R_ANAL_OP_TYPE_CRET) {
@@ -813,6 +843,7 @@ static void toc_invalidate(PluginData *pd, RAnalOp *op, cs_insn *insn) {
 		}
 		return;
 	}
+	toc_clobber (pd, toc_update_form_base (insn));
 	// addis owns its entry; PPC capstone lacks cs_regs_access so infer the written GPR from op0
 	if (insn->id == PPC_INS_ADDIS || INSOP (0).type != PPC_OP_REG) {
 		return;
@@ -835,14 +866,7 @@ static void toc_invalidate(PluginData *pd, RAnalOp *op, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_ROR:
 	case R_ANAL_OP_TYPE_NOT:
 	case R_ANAL_OP_TYPE_CPL:
-		{
-			int ridx = toc_reg_idx (INSOP (0).reg);
-			if (ridx == 2) {
-				memset (pd->toc_map, 0, sizeof (pd->toc_map)); // r2 reload drops every derived entry
-			} else if (ridx >= 0) {
-				pd->toc_map[ridx] = 0;
-			}
-		}
+		toc_clobber (pd, toc_reg_idx (INSOP (0).reg));
 		break;
 	}
 }
