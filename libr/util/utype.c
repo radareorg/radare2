@@ -852,8 +852,10 @@ R_API int r_type_func_exist(Sdb *TDB, const char *func_name) {
 }
 
 R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
-	r_strf_var (query, 64, "func.%s.ret", trim_lodashes (func_name));
-	return sdb_const_get (TDB, query, 0);
+	char *query = r_str_newf ("func.%s.ret", trim_lodashes (func_name));
+	const char *ret = sdb_const_get (TDB, query, 0);
+	free (query);
+	return ret;
 }
 
 R_API int r_type_func_args_count(Sdb *TDB, const char *R_NONNULL func_name) {
