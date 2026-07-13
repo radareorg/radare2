@@ -24,7 +24,7 @@ typedef struct {
 
 typedef struct {
 	NE_image_header *ne_header;
-	ut16 header_offset;
+	ut32 header_offset;
 	ut16 alignment;
 	NE_image_segment_entry *segment_entries;
 	ut8 *entry_table;
