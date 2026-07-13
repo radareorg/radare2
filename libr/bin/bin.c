@@ -925,6 +925,15 @@ R_API RVecRBinResource *r_bin_file_get_resources(RBinFile *bf) {
 	return &bo->resources_vec;
 }
 
+R_API RBuffer *r_bin_file_get_resource_data(RBinFile *bf, const RBinResource *resource) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->buf && resource, NULL);
+	ut64 buffer_size = r_buf_size (bf->buf);
+	if (resource->paddr > buffer_size || resource->size > buffer_size - resource->paddr) {
+		return NULL;
+	}
+	return r_buf_new_slice (bf->buf, resource->paddr, resource->size);
+}
+
 R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	R_RETURN_VAL_IF_FAIL (o, NULL);
 	RBinSection *section;

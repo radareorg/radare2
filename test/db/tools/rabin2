@@ -1118,6 +1118,50 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rabin2 raw resource extraction
+FILE=bins/pe/standard.exe
+CMDS=<<EOF
+!rm -rf .tmp/rabin2-resource-extract
+!rabin2 -xU -o .tmp/rabin2-resource-extract ${R2_FILE}
+!rabin2 -xU -o .tmp/rabin2-resource-extract ${R2_FILE} 2>/dev/null
+!rabin2 -Z .tmp/rabin2-resource-extract/resource_ICON_1576_0.bin
+!rabin2 -Z .tmp/rabin2-resource-extract/resource_STRING_10_1.bin
+!rabin2 -Z .tmp/rabin2-resource-extract/resource_GROUP_ICON_788_2.bin
+!rabin2 -Z .tmp/rabin2-resource-extract/resource_VERSION_1_3.bin
+!rabin2 -Z .tmp/rabin2-resource-extract/resource_MANIFEST_1_4.bin
+!rm -rf .tmp/rabin2-resource-extract
+EOF
+EXPECT=<<EOF
+.tmp/rabin2-resource-extract/resource_ICON_1576_0.bin created (5672)
+.tmp/rabin2-resource-extract/resource_STRING_10_1.bin created (76)
+.tmp/rabin2-resource-extract/resource_GROUP_ICON_788_2.bin created (20)
+.tmp/rabin2-resource-extract/resource_VERSION_1_3.bin created (452)
+.tmp/rabin2-resource-extract/resource_MANIFEST_1_4.bin created (74)
+5672
+76
+20
+452
+74
+EOF
+RUN
+
+NAME=rabin2 raw named resource extraction
+FILE=bins/ne/anim8.exe
+CMDS=<<EOF
+!rm -rf .tmp/rabin2-named-resource-extract
+!rabin2 -xU -o .tmp/rabin2-named-resource-extract ${R2_FILE} >/dev/null
+!find .tmp/rabin2-named-resource-extract -type f | wc -l | tr -d ' '
+!rabin2 -Z .tmp/rabin2-named-resource-extract/resource_GROUP_ICON_named_0.bin
+!rabin2 -Z .tmp/rabin2-named-resource-extract/resource_ICON_1_38.bin
+!rm -rf .tmp/rabin2-named-resource-extract
+EOF
+EXPECT=<<EOF
+39
+512
+1024
+EOF
+RUN
+
 NAME=rabin2 -E
 FILE=bins/pe/dll.dll
 CMDS=!rabin2 -E ${R2_FILE}

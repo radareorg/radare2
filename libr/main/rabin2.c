@@ -100,7 +100,7 @@ static int rabin_show_help(int line) {
 			" -v              display version and quit\n"
 			" -V              show binary version information\n"
 			" -w              display try/catch blocks\n"
-			" -x              extract bins contained in file\n"
+			" -x              extract bins contained in file (-xU for resources)\n"
 			" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
 			" -y              show types (structs, enums, function signatures)\n"
 			" -z              strings (from data section)\n"
@@ -245,6 +245,126 @@ static int rabin_extract(RBin *bin, int all) {
 		res = extract_binobj (bf, data, 0);
 	}
 	return res;
+}
+
+static void sanitize_resource_component(char *dst, size_t dst_size, const char *src) {
+	R_RETURN_IF_FAIL (dst && dst_size > 0);
+	if (R_STR_ISEMPTY (src)) {
+		src = "unknown";
+	}
+	size_t i;
+	for (i = 0; i + 1 < dst_size && src[i]; i++) {
+		char ch = src[i];
+		if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
+			|| (ch >= '0' && ch <= '9') || ch == '_' || ch == '-') {
+			dst[i] = ch;
+		} else {
+			dst[i] = '_';
+		}
+	}
+	dst[i] = 0;
+}
+
+static bool dump_resource_buffer(const char *file, RBuffer *buf) {
+	int fd = r_sandbox_open (file, O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0644);
+	if (fd < 0) {
+		R_LOG_ERROR ("Cannot create resource file '%s' without overwriting it", file);
+		return false;
+	}
+	ut8 bytes[4096];
+	ut64 offset = 0;
+	ut64 size = r_buf_size (buf);
+	bool success = true;
+	while (offset < size) {
+		int chunk_size = R_MIN ((ut64)sizeof (bytes), size - offset);
+		if (r_buf_read_at (buf, offset, bytes, chunk_size) != chunk_size) {
+			success = false;
+			break;
+		}
+		int written = 0;
+		while (written < chunk_size) {
+			int n = r_sandbox_write (fd, bytes + written, chunk_size - written);
+			if (n < 1) {
+				success = false;
+				break;
+			}
+			written += n;
+		}
+		if (!success) {
+			break;
+		}
+		offset += chunk_size;
+	}
+	if (r_sandbox_close (fd) < 0) {
+		success = false;
+	}
+	if (!success) {
+		r_file_rm (file);
+		R_LOG_ERROR ("Cannot write resource file '%s'", file);
+	}
+	return success;
+}
+
+static char *resource_output_directory(const RBinFile *bf, const char *output) {
+	if (R_STR_ISNOTEMPTY (output)) {
+		return strdup (output);
+	}
+	char *path = bf && bf->file? strdup (bf->file): NULL;
+	if (!path) {
+		return NULL;
+	}
+	const char *basename = r_file_basename (path);
+	char *outdir = r_str_newf ("%s.resources", basename);
+	free (path);
+	return outdir;
+}
+
+static bool rabin_extract_resources(RBin *bin, const char *output) {
+	RBinFile *bf = r_bin_cur (bin);
+	RVecRBinResource *resources = bf? r_bin_file_get_resources (bf): NULL;
+	if (!resources || RVecRBinResource_empty (resources)) {
+		R_LOG_ERROR ("Cannot extract resources: no resources found");
+		return false;
+	}
+	char *outdir = resource_output_directory (bf, output);
+	if (!outdir || !r_sys_mkdirp (outdir) || !r_file_is_directory (outdir)) {
+		R_LOG_ERROR ("Cannot create resource output directory '%s'", r_str_get (outdir));
+		free (outdir);
+		return false;
+	}
+	bool success = true;
+	RBinResource *resource;
+	R_VEC_FOREACH (resources, resource) {
+		char type[64];
+		if (R_STR_ISNOTEMPTY (resource->type)) {
+			sanitize_resource_component (type, sizeof (type), resource->type);
+		} else if (resource->type_id != UT32_MAX) {
+			snprintf (type, sizeof (type), "type_%" PFMT32u, resource->type_id);
+		} else {
+			r_str_ncpy (type, "unknown", sizeof (type));
+		}
+		char *outfile;
+		if (resource->id == UT64_MAX) {
+			outfile = r_str_newf ("%s%sresource_%s_named_%u.bin", outdir,
+				R_SYS_DIR, type, resource->index);
+		} else {
+			outfile = r_str_newf ("%s%sresource_%s_%" PFMT64u "_%u.bin", outdir,
+				R_SYS_DIR, type, resource->id, resource->index);
+		}
+		RBuffer *buf = r_bin_file_get_resource_data (bf, resource);
+		if (!outfile || !buf || !dump_resource_buffer (outfile, buf)) {
+			if (!buf) {
+				R_LOG_ERROR ("Cannot read resource %u at 0x%08" PFMT64x, resource->index, resource->paddr);
+			}
+			success = false;
+		} else {
+			printf ("%s created (%" PFMT64u ")\n", outfile, resource->size);
+		}
+		r_unref (buf);
+		free (outfile);
+	}
+	free (outdir);
+	return success;
 }
 
 static int rabin_dump_symbols(RBin *bin, int len) {
@@ -623,6 +743,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	int xtr_idx = 0; // load all files if extraction is necessary.
 	int rawstr = 0;
 	int fd = -1;
+	int retval = 0;
 	RCore core = { 0 };
 	ut64 at = UT64_MAX;
 
@@ -1303,7 +1424,9 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	run_action ("classes", R_BIN_REQ_CLASSES, R_CORE_BIN_ACC_CLASSES);
 	run_action ("symbols", R_BIN_REQ_SYMBOLS, R_CORE_BIN_ACC_SYMBOLS);
 	run_action ("exports", R_BIN_REQ_EXPORTS, R_CORE_BIN_ACC_EXPORTS);
-	run_action ("resources", R_BIN_REQ_RESOURCES, R_CORE_BIN_ACC_RESOURCES);
+	if (!(action & R_BIN_REQ_EXTRACT)) {
+		run_action ("resources", R_BIN_REQ_RESOURCES, R_CORE_BIN_ACC_RESOURCES);
+	}
 	run_action ("strings", R_BIN_REQ_STRINGS, R_CORE_BIN_ACC_STRINGS);
 	run_action ("info", R_BIN_REQ_INFO, R_CORE_BIN_ACC_INFO);
 	run_action ("fields", R_BIN_REQ_FIELDS, R_CORE_BIN_ACC_FIELDS);
@@ -1323,11 +1446,17 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		rabin_show_srcline (bin, at);
 	}
 	if (action & R_BIN_REQ_EXTRACT) {
-		RBinFile *bf = r_bin_cur (bin);
-		if (bf && bf->xtr_data) {
-			rabin_extract (bin, (!arch && !arch_name && !bits));
+		if (action & R_BIN_REQ_RESOURCES) {
+			if (!rabin_extract_resources (bin, output)) {
+				retval = 1;
+			}
 		} else {
-			R_LOG_ERROR ("Cannot extract bins from '%s'. No supported plugins found!", bin->file);
+			RBinFile *bf = r_bin_cur (bin);
+			if (bf && bf->xtr_data) {
+				rabin_extract (bin, (!arch && !arch_name && !bits));
+			} else {
+				R_LOG_ERROR ("Cannot extract bins from '%s'. No supported plugins found!", bin->file);
+			}
 		}
 	}
 	if (op && action & R_BIN_REQ_OPERATION) {
@@ -1344,5 +1473,5 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	r_syscmd_popalld ();
 	free (state.stdin_buf);
 
-	return 0;
+	return retval;
 }

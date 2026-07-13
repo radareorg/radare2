@@ -144,7 +144,13 @@ Show binary version information
 .It Fl w
 Display try/catch blocks
 .It Fl x
-Extract sub-binaries contained in file (for example inside FAT mach-o binaries)
+Extract sub-binaries contained in file (for example inside FAT Mach-O binaries).
+Combine with
+.Fl U
+to extract raw resources instead. Resource files are named from their type,
+numeric identifier and index, and existing files are never overwritten. Use
+.Fl o Ar dir
+to select the output directory.
 .It Fl X Ar format file ...
 Package in fat or zip the given files
 .It Fl z
