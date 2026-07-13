@@ -37,6 +37,7 @@ static void destroy(RBinFile *bf) {
 	QnxObj *qo = bf->bo->bin_obj;
 	r_list_free (qo->sections);
 	r_list_free (qo->fixups);
+	r_list_free (qo->resources);
 	bf->bo->bin_obj = NULL;
 	free (qo);
 }
@@ -52,11 +53,13 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	ut64 offset = QNX_RECORD_SIZE;
 	RList *sections = NULL;
 	RList *fixups = NULL;
+	RList *resources = NULL;
 
 	if (!qo) {
 		goto beach;
 	}
-	if (!(sections = r_list_newf ((RListFree)r_bin_section_free)) || !(fixups = r_list_new ())) {
+	if (!(sections = r_list_newf ((RListFree)r_bin_section_free))
+		|| !(fixups = r_list_new ()) || !(resources = r_list_newf (free))) {
 		goto beach;
 	}
 	qo->kv = sdb_new0 ();
@@ -81,20 +84,27 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 			break;
 		} else if (lrec.rec_type == LMF_RESOURCE_REC) {
 			RBinSection *ptr = R_NEW0 (RBinSection);
-			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&lres, "ssss", 1) != sizeof (lmf_resource)) {
-				free (ptr);
-				goto beach;
-			}
 			if (lrec.data_nbytes < sizeof (lmf_resource)) {
 				free (ptr);
 				goto beach;
 			}
+			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&lres, "ssss", 1) != sizeof (lmf_resource)) {
+				free (ptr);
+				goto beach;
+			}
+			ut64 payload = offset + sizeof (lmf_resource);
+			ut64 payload_size = lrec.data_nbytes - sizeof (lmf_resource);
 			ptr->name = strdup ("LMF_RESOURCE");
-			ptr->paddr = offset;
-			ptr->vsize = lrec.data_nbytes - sizeof (lmf_resource);
+			ptr->paddr = payload;
+			ptr->vsize = payload_size;
 			ptr->size = ptr->vsize;
 			ptr->add = true;
-		 	r_list_append (sections, ptr);
+			r_list_append (sections, ptr);
+			QnxResourceEntry *resource = R_NEW0 (QnxResourceEntry);
+			resource->type = lres.res_type;
+			resource->paddr = payload;
+			resource->size = payload_size;
+			r_list_append (resources, resource);
 		} else if (lrec.rec_type == LMF_LOAD_REC) {
 			RBinSection *ptr = R_NEW0 (RBinSection);
 			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) != sizeof (lmf_data)) {
@@ -138,6 +148,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	sdb_ns_set (bf->sdb, "info", qo->kv);
 	qo->sections = sections;
 	qo->fixups = fixups;
+	qo->resources = resources;
 	bf->bo->bin_obj = qo;
 	return true;
 beach:
@@ -147,6 +158,7 @@ beach:
 	}
 	r_list_free (fixups);
 	r_list_free (sections);
+	r_list_free (resources);
 	return false;
 }
 
@@ -234,6 +246,38 @@ static bool sections_vec(RBinFile *bf) {
 	return true;
 }
 
+static const char *resource_type_name(ut16 type) {
+	return type == RES_USAGE? "USAGE": "RESOURCE";
+}
+
+static bool load_resources(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
+	QnxObj *qo = bf->bo->bin_obj;
+	if (!qo || !qo->resources) {
+		return false;
+	}
+	ut32 index = 0;
+	RListIter *iter;
+	QnxResourceEntry *entry;
+	r_list_foreach (qo->resources, iter, entry) {
+		RBinResource *resource = RVecRBinResource_emplace_back (&bf->bo->resources_vec);
+		if (!resource) {
+			return false;
+		}
+		resource->type = strdup (resource_type_name (entry->type));
+		if (!resource->type) {
+			return false;
+		}
+		resource->paddr = entry->paddr;
+		resource->vaddr = entry->paddr;
+		resource->size = entry->size;
+		resource->id = UT64_MAX;
+		resource->index = index++;
+		resource->type_id = entry->type;
+	}
+	return true;
+}
+
 /*
  * Returns the sdb
  * @param RBinFile
@@ -310,7 +354,8 @@ RBinPlugin r_bin_plugin_qnx = {
 	.symbols_vec = &symbols_vec,
 	.signature = &signature,
 	.get_vaddr = &get_vaddr,
-	.info = &info
+	.info = &info,
+	.load_resources = &load_resources
 };
 
 #ifndef R2_PLUGIN_INCORE
