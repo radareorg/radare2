@@ -3395,36 +3395,6 @@ R_API bool PE_(r_bin_pe_load_resources)(RBinPEObj *pe, RVecRBinResource *resourc
 	return true;
 }
 
-static void _store_resource_sdb(RBinPEObj *pe) {
-	r_strf_buffer (64);
-	RListIter *iter;
-	r_pe_resource *rs;
-	int index = 0;
-	ut64 vaddr = 0;
-	char *key;
-	Sdb *sdb = sdb_new0 ();
-	if (!sdb) {
-		return;
-	}
-	r_list_foreach (pe->resources, iter, rs) {
-		key = r_strf ("resource.%d.timestr", index);
-		sdb_set (sdb, key, rs->timestr, 0);
-		key = r_strf ("resource.%d.vaddr", index);
-		vaddr = bin_pe_rva_to_va (pe, rs->data->OffsetToData);
-		sdb_num_set (sdb, key, vaddr, 0);
-		key = r_strf ("resource.%d.name", index);
-		sdb_set (sdb, key, rs->name, 0);
-		key = r_strf ("resource.%d.size", index);
-		sdb_num_set (sdb, key, rs->data->Size, 0);
-		key = r_strf ("resource.%d.type", index);
-		sdb_set (sdb, key, rs->type, 0);
-		key = r_strf ("resource.%d.language", index);
-		sdb_set (sdb, key, rs->language, 0);
-		index++;
-	}
-	sdb_ns_set (pe->kv, "pe_resource", sdb);
-}
-
 R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 	int index = 0;
 	ut64 off = 0, rsrc_base = pe->resource_directory_offset;
@@ -3468,7 +3438,6 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 		}
 	}
 	r_bitset_free (dirs);
-	_store_resource_sdb (pe);
 }
 
 static void free_security_directory(Pe_image_security_directory *security_directory) {

@@ -1070,6 +1070,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rabin2 -Uj PE
+FILE=bins/pe/standard.exe
+CMDS=!rabin2 -j -U ${R2_FILE}
+EXPECT=<<EOF
+{"resources":[{"name":"1576","index":0,"type":"ICON","vaddr":4198784,"size":5672,"lang":"LANG_NEUTRAL","timestamp":"Thu Jan  1 00:00:00 1970"},{"name":"10","index":1,"type":"STRING","vaddr":4205072,"size":76,"lang":"LANG_NEUTRAL","timestamp":"Thu Jan  1 00:00:00 1970"},{"name":"788","index":2,"type":"GROUP_ICON","vaddr":4204464,"size":20,"lang":"LANG_NEUTRAL","timestamp":"Thu Jan  1 00:00:00 1970"},{"name":"1","index":3,"type":"VERSION","vaddr":4204496,"size":452,"lang":"LANG_NEUTRAL","timestamp":"Thu Jan  1 00:00:00 1970"},{"name":"1","index":4,"type":"MANIFEST","vaddr":4204960,"size":74,"lang":"LANG_NEUTRAL","timestamp":"Thu Jan  1 00:00:00 1970"}]}
+EOF
+RUN
+
+NAME=rabin2 -Uj NE
+FILE=bins/ne/anim8.exe
+CMDS=<<EOF
+!rabin2 -j -U ${R2_FILE} | grep -o '"name":"ICONX","index":0,"type":"GROUP_ICON","vaddr":47104,"size":512'
+!rabin2 -j -U ${R2_FILE} | grep -o '"name":"1","index":38,"type":"ICON","vaddr":312832,"size":1024'
+!rabin2 -j -U ${R2_FILE} | grep -o '"index":' | wc -l | tr -d ' '
+EOF
+EXPECT=<<EOF
+"name":"ICONX","index":0,"type":"GROUP_ICON","vaddr":47104,"size":512
+"name":"1","index":38,"type":"ICON","vaddr":312832,"size":1024
+39
+EOF
+RUN
+
 NAME=rabin2 -E
 FILE=bins/pe/dll.dll
 CMDS=!rabin2 -E ${R2_FILE}
