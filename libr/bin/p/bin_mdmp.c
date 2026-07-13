@@ -499,6 +499,107 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
+static char *module_name(RBinMdmpObj *mdmp, ut64 vaddr) {
+	struct minidump_module *module;
+	RListIter *it;
+	r_list_foreach (mdmp->streams.modules, it, module) {
+		if (module->base_of_image != vaddr) {
+			continue;
+		}
+		ut64 at = module->module_name_rva;
+		ut64 size = r_buf_size (mdmp->b);
+		if (at > size || sizeof (ut32) > size - at) {
+			break;
+		}
+		ut32 utf16_size = r_buf_read_le32_at (mdmp->b, at);
+		at += sizeof (ut32);
+		if (!utf16_size || utf16_size > 4096 || at > size || utf16_size > size - at) {
+			break;
+		}
+		ut8 *utf16 = malloc (utf16_size);
+		char *name = calloc (1, utf16_size * 2 + 1);
+		if (!utf16 || !name || r_buf_read_at (mdmp->b, at, utf16, utf16_size) != utf16_size) {
+			free (utf16);
+			free (name);
+			break;
+		}
+		r_str_utf16_to_utf8 ((ut8 *)name, utf16_size * 2, utf16, utf16_size, false);
+		free (utf16);
+		const char *basename = strrchr (name, '\\');
+		if (!basename) {
+			basename = strrchr (name, '/');
+		}
+		if (basename) {
+			basename++;
+		} else {
+			basename = name;
+		}
+		char *result = strdup (basename);
+		free (name);
+		return result;
+	}
+	return r_str_newf ("0x%08" PFMT64x, vaddr);
+}
+
+static bool rebase_resources(RVecRBinResource *resources, size_t start, ut64 paddr, ut64 vaddr, ut64 image_base, const char *origin) {
+	size_t i;
+	for (i = start; i < RVecRBinResource_length (resources); i++) {
+		RBinResource *resource = RVecRBinResource_at (resources, i);
+		resource->origin = strdup (origin);
+		if (!resource->origin || resource->vaddr < image_base || i > UT32_MAX) {
+			return false;
+		}
+		ut64 offset = resource->vaddr - image_base;
+		if (offset > UT64_MAX - vaddr
+			|| (resource->paddr != UT64_MAX && resource->paddr > UT64_MAX - paddr)) {
+			return false;
+		}
+		resource->vaddr = vaddr + offset;
+		if (resource->paddr != UT64_MAX) {
+			resource->paddr += paddr;
+		}
+		resource->index = (ut32)i;
+	}
+	return true;
+}
+
+static bool load_resources(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
+	RBinMdmpObj *mdmp = bf->bo->bin_obj;
+	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
+	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
+	RListIter *it;
+	r_list_foreach (mdmp->pe32_bins, it, pe32_bin) {
+		size_t start = RVecRBinResource_length (&bf->bo->resources_vec);
+		if (!Pe32_r_bin_pe_load_resources (pe32_bin->bin, &bf->bo->resources_vec)) {
+			return false;
+		}
+		char *origin = module_name (mdmp, pe32_bin->vaddr);
+		bool ok = origin && rebase_resources (&bf->bo->resources_vec, start,
+			pe32_bin->paddr, pe32_bin->vaddr,
+			Pe32_r_bin_pe_get_image_base (pe32_bin->bin), origin);
+		free (origin);
+		if (!ok) {
+			return false;
+		}
+	}
+	r_list_foreach (mdmp->pe64_bins, it, pe64_bin) {
+		size_t start = RVecRBinResource_length (&bf->bo->resources_vec);
+		if (!Pe64_r_bin_pe_load_resources (pe64_bin->bin, &bf->bo->resources_vec)) {
+			return false;
+		}
+		char *origin = module_name (mdmp, pe64_bin->vaddr);
+		bool ok = origin && rebase_resources (&bf->bo->resources_vec, start,
+			pe64_bin->paddr, pe64_bin->vaddr,
+			Pe64_r_bin_pe_get_image_base (pe64_bin->bin), origin);
+		free (origin);
+		if (!ok) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 magic[6];
 	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == 6) {
@@ -526,6 +627,7 @@ RBinPlugin r_bin_plugin_mdmp = {
 	.relocs = &relocs,
 	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
+	.load_resources = &load_resources,
 };
 
 #ifndef R2_PLUGIN_INCORE

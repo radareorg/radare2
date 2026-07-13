@@ -408,6 +408,7 @@ typedef struct r_bin_resource_t {
 	char *type;
 	char *language;
 	char *timestamp;
+	char *origin; // source module or container, when applicable
 	ut64 vaddr;
 	ut64 paddr;
 	ut64 size;

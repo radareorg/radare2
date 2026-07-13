@@ -903,6 +903,7 @@ R_API void r_bin_resource_fini(RBinResource *resource) {
 	free (resource->type);
 	free (resource->language);
 	free (resource->timestamp);
+	free (resource->origin);
 }
 
 R_API RVecRBinResource *r_bin_file_get_resources(RBinFile *bf) {

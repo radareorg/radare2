@@ -1,0 +1,12 @@
+NAME=stm8 cc clobber and preserve register sets
+FILE=malloc://16
+ARGS=-e anal.arch=stm8 -e asm.bits=16
+CMDS=<<EOF
+k anal/cc/cc.stm8.clobber
+k anal/cc/cc.stm8.preserve
+EOF
+EXPECT=<<EOF
+a,x,y,cc
+sp
+EOF
+RUN
