@@ -776,7 +776,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	}
 #undef SET
 #undef ADD
-	free (r);
+	r_bin_reloc_free (r);
 	return NULL;
 }
 
