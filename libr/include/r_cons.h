@@ -924,7 +924,7 @@ R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBr
 R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig);
 
 /* control */
-R_API char *r_cons_editor(RCons *cons, const char *file, const char *str);
+R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, R_OUT bool * R_NULLABLE canceled);
 R_API void r_cons_stdout_open(const char *file, int append);
 R_API int  r_cons_stdout_set_fd(int fd);
 R_API int r_cons_get_cur_line(void);

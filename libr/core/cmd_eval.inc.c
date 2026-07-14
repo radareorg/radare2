@@ -445,7 +445,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 		}
 		break;
 		case '!':
-			free (r_core_editor (core, core->themepath, NULL));
+			free (r_core_editor (core, core->themepath, NULL, NULL));
 			cmd_load_theme (core, core->theme); // reload
 			break;
 		case ' ':
@@ -869,12 +869,9 @@ static int cmd_eval(void *data, const char *input) {
 			r_core_cmd_help_contains (core, help_msg_e, "ed");
 		} else if (input[1] == '!') {
 			char *file = r_core_get_radare2rc ();
-			char *res = file? r_cons_editor (cons, file, NULL): NULL;
-			const int rc = res? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE;
-			if (rc == R_CMD_RC_FAILURE) {
-				R_LOG_ERROR ("Failed to edit the user rc file");
-			}
-			free (res);
+			char *result = file? r_core_editor (core, file, NULL, NULL): NULL;
+			const int rc = result? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE;
+			free (result);
 			free (file);
 			r_core_return_value (core, rc);
 			return rc;
@@ -911,23 +908,27 @@ static int cmd_eval(void *data, const char *input) {
 			} else {
 				file = r_core_get_radare2rc ();
 			}
-			if (file) {
-				if (r_cons_is_interactive (cons)) {
-					if (is_config) {
-						r_file_touch (file);
-					}
-					char *res = r_cons_editor (cons, file, NULL);
-					if (res && is_config) {
-						if (r_cons_yesno (cons, 'y', "Reload? (Y/n)")) {
-							r_core_cmd_file (core, file);
-						}
-					}
-					free (res);
-				} else if (is_config) {
-					r_core_cmd_file (core, file);
+			int rc = R_CMD_RC_SUCCESS;
+			if (!file) {
+				rc = R_CMD_RC_FAILURE;
+			} else if (r_cons_is_interactive (cons)) {
+				bool canceled = false;
+				char *result = r_core_editor (core, file, NULL, &canceled);
+				const bool ok = result != NULL;
+				free (result);
+				if (!ok) {
+					rc = R_CMD_RC_FAILURE;
+				} else if (!canceled && is_config
+						&& r_cons_yesno (cons, 'y', "Reload? (Y/n)")
+						&& !r_core_cmd_file (core, file)) {
+					rc = R_CMD_RC_FAILURE;
 				}
+			} else if (is_config && !r_core_cmd_file (core, file)) {
+				rc = R_CMD_RC_FAILURE;
 			}
 			free (file);
+			r_core_return_value (core, rc);
+			return rc;
 		}
 		break;
 	case '+': // "e+"
@@ -939,7 +940,7 @@ static int cmd_eval(void *data, const char *input) {
 			const char *input2 = strchr (input + 2, ' ');
 			input2 = (input2)? input2 + 1: input + 2;
 			const char *val = r_config_get (core->config, input2);
-			p = r_core_editor (core, NULL, val);
+			p = r_core_editor (core, NULL, val, NULL);
 			if (p) {
 				r_str_replace_char (p, '\n', ';');
 				r_config_set (core->config, input2, p);

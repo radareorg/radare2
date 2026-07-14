@@ -2092,7 +2092,7 @@ static void visual_comma(RCore *core) {
 			free (cwf);
 			goto beach;
 		}
-		char *data = r_core_editor (core, NULL, odata);
+		char *data = r_core_editor (core, NULL, odata, NULL);
 		if (data) {
 			r_file_dump (cwf, (const ut8 *)data, -1, false);
 		}

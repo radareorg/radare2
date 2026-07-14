@@ -85,7 +85,7 @@ R_IPI void visual_add_comment(RCore *core, ut64 at) {
 			} else {
 				// Open editor with current comment
 				const char *current_comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, at);
-				char *out = r_core_editor (core, NULL, current_comment);
+				char *out = r_core_editor (core, NULL, current_comment, NULL);
 				if (out) {
 					r_str_ansi_strip (out);
 					r_meta_set_string (core->anal, R_META_TYPE_COMMENT, at, out);
@@ -2607,7 +2607,7 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 	} else {
 		// XXX: use config_set () to run callbacks!
 		if (editor) {
-			char *buf = r_core_editor (core, NULL, node->value);
+			char *buf = r_core_editor (core, NULL, node->value, NULL);
 			if (buf) {
 				free (node->value);
 				node->value = buf;

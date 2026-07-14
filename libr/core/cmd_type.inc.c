@@ -689,7 +689,7 @@ static void cmd_type_edit(RCore *core, const char *typename, const char *c_cmd) 
 		free (str);
 		return;
 	}
-	char *tmp = r_core_editor (core, "*.h", str);
+	char *tmp = r_core_editor (core, "*.h", str, NULL);
 	if (tmp) {
 		r_str_trim (tmp);
 		char *str_trimmed = strdup (str);
@@ -2730,7 +2730,7 @@ static int cmd_type(void *data, const char *input) {
 					}
 				}
 				if (!strcmp (filename, "-")) {
-					char *tmp = r_core_editor (core, "*.h", "");
+					char *tmp = r_core_editor (core, "*.h", "", NULL);
 					if (tmp) {
 						char *errmsg = NULL;
 						char *out = r_anal_cparse (core->anal, tmp, &errmsg);
@@ -2784,7 +2784,7 @@ static int cmd_type(void *data, const char *input) {
 				}
 			}  else if (input[1] == 'e') { // "toe"
 				char *str = r_core_cmd_strf (core , "tc %s", input + 2);
-				char *tmp = r_core_editor (core, "*.h", str);
+				char *tmp = r_core_editor (core, "*.h", str, NULL);
 				if (tmp) {
 					char *errmsg = NULL;
 					char *out = r_anal_cparse (core->anal, tmp, &errmsg);
@@ -2813,7 +2813,7 @@ static int cmd_type(void *data, const char *input) {
 			r_core_cmd_help_contains (core, help_msg_t, "td");
 		} else if (input[1] == 'e') { // "tde"
 			for (;;) {
-				char *tmp = r_core_editor (core, "*.h", "");
+				char *tmp = r_core_editor (core, "*.h", "", NULL);
 				if (!tmp) {
 					break;
 				}

@@ -906,10 +906,10 @@ static int cmd_alias(void *data, const char *input) {
 					char *n;
 					if (v) {
 						char *v_str = r_cmd_alias_val_strdup (v);
-						n = r_cons_editor (core->cons, NULL, v_str);
+						n = r_cons_editor (core->cons, NULL, v_str, NULL);
 						free (v_str);
 					} else {
-						n = r_cons_editor (core->cons, NULL, NULL);
+						n = r_cons_editor (core->cons, NULL, NULL, NULL);
 					}
 
 					if (n) {
@@ -1387,7 +1387,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 	r_list_push (core->scriptstack, strdup (file));
 
 	if (!strcmp (file, "-")) {
-		char *out = r_core_editor (core, NULL, NULL);
+		char *out = r_core_editor (core, NULL, NULL, NULL);
 		if (out) {
 			ret = r_core_cmd_lines (core, out);
 			free (out);
@@ -3151,7 +3151,7 @@ static int cmd_panels(void *data, const char *input) {
 	if (*input == 'i') {
 		char *sp = strchr (input, ' ');
 		if (sp) {
-			char *r = r_core_editor (core, sp + 1, NULL);
+			char *r = r_core_editor (core, sp + 1, NULL, NULL);
 			if (r) {
 				free (r);
 			} else {
