@@ -386,7 +386,7 @@ bool test_sandbox_localhost(void) {
 }
 
 bool test_sys_executable_path(void) {
-	char *path = r_sys_executable_path ();
+	char *path = r_sys_exepath ();
 	char *pidpath = r_sys_pidpath (r_sys_getpid ());
 #if R2__WINDOWS__ || __APPLE__ || __linux__ || __FreeBSD__ || __DragonFly__ || __NetBSD__ || __HAIKU__ || __sun
 	mu_assert_notnull (path, "current executable path should be available");

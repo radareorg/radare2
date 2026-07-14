@@ -1438,7 +1438,7 @@ R_API char *r_sys_pidpath(int pid) {
 #endif
 }
 
-R_API char *r_sys_executable_path(void) {
+R_API char *r_sys_exepath(void) {
 #if R2__WINDOWS__
 	TCHAR path[MAX_PATH + 1];
 	DWORD length = GetModuleFileName (NULL, path, R_ARRAY_SIZE (path));
@@ -1584,7 +1584,7 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 }
 
 static char *r_sys_prefix_from_executable(void) {
-	char *path = r_sys_executable_path ();
+	char *path = r_sys_exepath ();
 	if (R_STR_ISEMPTY (path)) {
 		free (path);
 		return NULL;
