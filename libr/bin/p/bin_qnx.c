@@ -1,4 +1,4 @@
-/* radare2 - LGPL3 - 2015-2022 - deepakchethan */
+/* radare2 - LGPL3 - 2015-2026 - pancake, deepakchethan */
 
 #include "qnx/qnx.h"
 #include "../i/private.h"
@@ -27,9 +27,13 @@ static int lmf_header_load(lmf_header *lmfh, RBuffer *buf, Sdb *db) {
 }
 
 static bool check(RBinFile *bf, RBuffer *buf) {
-	ut8 tmp[6];
-	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
-	return r == sizeof (tmp) && !memcmp (tmp, QNX_MAGIC, sizeof (tmp));
+	lmf_record record;
+	if (r_buf_fread_at (buf, 0, (ut8 *)&record, "ccss", 1) != sizeof (record)) {
+		return false;
+	}
+	ut64 size = r_buf_size (buf);
+	return record.rec_type == LMF_HEADER_REC && !record.reserved && !record.spare
+		&& record.data_nbytes >= QNX_HDR_SIZE && record.data_nbytes <= size - sizeof (record);
 }
 
 // Frees the bin_obj of the binary file
@@ -44,9 +48,6 @@ static void destroy(RBinFile *bf) {
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	QnxObj *qo = R_NEW0 (QnxObj);
-	if (!qo) {
-		return false;
-	}
 	lmf_record lrec;
 	lmf_resource lres;
 	lmf_data ldata;
@@ -170,9 +171,6 @@ beach:
 static RBinInfo *info(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("QNX Executable");
 	ret->bclass = strdup ("qnx");
@@ -308,15 +306,12 @@ static ut64 baddr(RBinFile *bf) {
  */
 static RList* entries(RBinFile *bf) {
 	RList *ret;
-	RBinAddr *ptr = NULL;
 	QnxObj *qo = bf->bo->bin_obj;
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	ptr->paddr = qo->lmfh.code_offset;
 	ptr->vaddr = qo->lmfh.code_offset + baddr (bf);
 	r_list_append (ret, ptr);
