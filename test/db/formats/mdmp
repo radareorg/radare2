@@ -82,9 +82,9 @@ RUN
 NAME=: 32bit - resources
 FILE=bins/mdmp/hello.dmp
 CMDS=<<EOF
-iRq
-iRj~{}~origin~hello.exe
-iRj~{}~origin~ntdll.dll
+iUq
+iUj~{}~origin~hello.exe
+iUj~{}~origin~ntdll.dll
 EOF
 EXPECT=<<EOF
 0x00409058 1167 MANIFEST 1
@@ -300,8 +300,8 @@ RUN
 NAME=: 64bit - resources
 FILE=bins/mdmp/hello64.dmp
 CMDS=<<EOF
-iRq
-iRj~{}~origin~hello64.exe
+iUq
+iUj~{}~origin~hello64.exe
 EOF
 EXPECT=<<EOF
 0x0040b058 1167 MANIFEST 1

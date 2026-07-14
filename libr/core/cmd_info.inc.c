@@ -163,8 +163,8 @@ static RCoreHelpMessage help_msg_i = {
 	"iM", "", "show main address",
 	"io", " [file]", "load info from file (or last opened) use bin.baddr",
 	"iO", "[?]", "perform binary operation (dump, resize, change sections, ...)",
-	"ir", "", "list the relocations",
-	"iR", "[?][jq*]", "list the resources",
+	"ir", "[?][jq*]", "list the relocations (iR is an accidental alias for 'ir')",
+	"iU", "[?][jq*x]", "list or extract binary resources",
 	"is", "[?]", "list the symbols",
 	"iS", "[?]", "list sections, segments and compute their hash",
 	"it", "", "file hashes", // hashes in it? wtf, thats a pretty bad subcommand
@@ -172,6 +172,18 @@ static RCoreHelpMessage help_msg_i = {
 	"iv", "", "display file version info", // wtf why not iv
 	"iw", "", "show try/catch blocks", // bad naming..
 	"iz", "[?]", "strings in data sections (in JSON/Base64)",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_iU = {
+	"Usage: iU", "[jq*x] [directory]", "Inspect or safely extract binary resources",
+	"iU", "", "list resources with all available metadata",
+	"iU*", "", "emit resource flags as radare commands",
+	"iUj", "", "list resources in JSON",
+	"iUq", "", "list resource address, size, type and name",
+	"iUqq", "", "list resource names only",
+	"iUx", " [directory]", "extract all resources (default: <file>.resources)",
+	"", "", "output names are sanitized and existing files are never overwritten",
 	NULL
 };
 
@@ -3350,6 +3362,9 @@ static int cmd_info(void *data, const char *input) {
 		case 'S': // "iS?"
 			r_core_cmd_help (core, help_msg_iS);
 			break;
+		case 'U': // "iU?"
+			r_core_cmd_help (core, help_msg_iU);
+			break;
 		case 'z': // "iz?"
 			r_core_cmd_help (core, help_msg_iz);
 			break;
@@ -3624,8 +3639,20 @@ static int cmd_info(void *data, const char *input) {
 	case 'Z': // "iZ"
 		RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0);
 		break;
-	case 'R': // "iR"
-		RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
+	case 'U': // "iU"
+		if (question) {
+			char *cmd = r_str_newf ("i%.*s", (int)(question - input), input);
+			r_core_cmd_help_match (core, help_msg_iU, cmd);
+			free (cmd);
+		} else if (input[1] == 'x') {
+			const char *output = r_str_trim_head_ro (input + 2);
+			RBinFile *bf = r_bin_cur (core->bin);
+			if (!r_bin_file_extract_resources (bf, output)) {
+				r_core_return_value (core, 1);
+			}
+		} else {
+			RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
+		}
 		break;
 	case 'g': // "ig"
 		if (input[1] == '?') {
@@ -3758,23 +3785,24 @@ static int cmd_info(void *data, const char *input) {
 			r_list_free (objs);
 		}
 		break;
+	case 'R': // "iR", accidental alias for "ir"
 	case 'r': // "ir"
-	{
-		RList *objs = r_core_bin_files (core);
-		RListIter *iter;
-		RBinFile *bf;
-		RBinFile *cur = core->bin->cur;
-		if (!cur && pj) {
-			r_cons_print (core->cons, "[]");
+		{
+			RList *objs = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
+			RBinFile *cur = core->bin->cur;
+			if (!cur && pj) {
+				r_cons_print (core->cons, "[]");
+			}
+			r_list_foreach (objs, iter, bf) {
+				core->bin->cur = bf;
+				RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0);
+			}
+			core->bin->cur = cur;
+			r_list_free (objs);
 		}
-		r_list_foreach (objs, iter, bf) {
-			core->bin->cur = bf;
-			RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0);
-		}
-		core->bin->cur = cur;
-		r_list_free (objs);
-	}
-	break;
+		break;
 	case 'S': // "iS"
 		cmd_iS (core, input, &pj, mode, va, is_array);
 		break;
