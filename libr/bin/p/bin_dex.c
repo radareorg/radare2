@@ -105,6 +105,7 @@ static ut64 get_method_attr(ut64 MA) {
 
 static ut64 method_addr(RBinFile *bf, int idx) {
 	RBinDexObj *dex = bf->bo->bin_obj;
+	// AITODO: we can use sdb_num_getf (dex->mdb, NULL, "method.%d", idx); instead
 	// ut64 off = dex->header.method_offset + idx;
 	r_strf_var (key, 64, "method.%d", idx);
 	return sdb_num_get (dex->mdb, key, 0);
@@ -542,9 +543,15 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		case DBG_START_LOCAL:
 			{
 			ut64 register_num, name_idx, type_idx;
-			r_buf_uleb128 (b, &register_num);
-			r_buf_uleb128 (b, &name_idx);
-			r_buf_uleb128 (b, &type_idx);
+			if (r_buf_uleb128 (b, &register_num) < 1) {
+				goto beach;
+			}
+			if (r_buf_uleb128 (b, &name_idx) < 1) {
+				goto beach;
+			}
+			if (r_buf_uleb128 (b, &type_idx) < 1) {
+				goto beach;
+			}
 			name_idx--;
 			type_idx--;
 			if (register_num >= regsz) {
@@ -580,10 +587,18 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		case DBG_START_LOCAL_EXTENDED:
 			{
 			ut64 register_num, name_idx, type_idx, sig_idx;
-			r_buf_uleb128 (b, &register_num);
-			r_buf_uleb128 (b, &name_idx);
-			r_buf_uleb128 (b, &type_idx);
-			r_buf_uleb128 (b, &sig_idx);
+			if (r_buf_uleb128 (b, &register_num) < 1) {
+				goto beach;
+			}
+			if (r_buf_uleb128 (b, &name_idx) < 1) {
+				goto beach;
+			}
+			if (r_buf_uleb128 (b, &type_idx) < 1) {
+				goto beach;
+			}
+			if (r_buf_uleb128 (b, &sig_idx) < 1) {
+				goto beach;
+			}
 			sig_idx--;
 			type_idx--;
 			name_idx--;
