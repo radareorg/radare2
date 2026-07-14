@@ -385,6 +385,22 @@ bool test_sandbox_localhost(void) {
 	mu_end;
 }
 
+bool test_sys_executable_path(void) {
+	char *path = r_sys_executable_path ();
+	char *pidpath = r_sys_pidpath (r_sys_getpid ());
+#if R2__WINDOWS__ || __APPLE__ || __linux__ || __FreeBSD__ || __DragonFly__ || __NetBSD__ || __HAIKU__ || __sun
+	mu_assert_notnull (path, "current executable path should be available");
+	mu_assert_true (r_file_is_abspath (path), "current executable path should be absolute");
+	mu_assert_true (r_file_exists (path), "current executable path should exist");
+	mu_assert_notnull (pidpath, "current PID path should be available");
+	mu_assert_true (r_file_is_abspath (pidpath), "current PID path should be absolute");
+	mu_assert_true (r_file_exists (pidpath), "current PID path should exist");
+#endif
+	free (path);
+	free (pidpath);
+	mu_end;
+}
+
 bool test_sandbox_hidden_path(void) {
 	bool was_enabled = r_sandbox_enable (false);
 	int old_grain = r_sandbox_grain (R_SANDBOX_GRAIN_FILES);
@@ -427,6 +443,7 @@ int all_tests(void) {
 	mu_run_test (test_endian_fromstring);
 	mu_run_test (test_endian_is);
 	mu_run_test (test_endian_roundtrip);
+	mu_run_test (test_sys_executable_path);
 	mu_run_test (test_sandbox_localhost);
 	mu_run_test (test_sandbox_hidden_path);
 	return tests_passed != tests_run;

@@ -1845,7 +1845,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	RDebugMap *map;
 	r_debug_select (dbg, pid, tid);
 	r_debug_map_sync (dbg);
-	char *abspath = r_sys_pid_to_path (pid);
+	char *abspath = r_sys_pidpath (pid);
 	if (file) {
 #if !R2__WINDOWS__
 		if (!abspath) {
