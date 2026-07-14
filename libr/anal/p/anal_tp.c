@@ -1109,8 +1109,8 @@ static void tp_flush_pending_const(TPState *tps) {
 
 #define TP_REGCOPY_MAX 4
 
-// resolve a register to the type of the reg arg it was copied from, following plain reg copies
-static char *tp_reg_var_type(TPState *tps, RAnalFunction *fcn, const char *reg) {
+// resolve a register to the type of the reg arg it was copied from, following copies and deref hops
+static char *tp_reg_var_type(TPState *tps, RAnalFunction *fcn, const char *reg, TPFieldChain *chain) {
 	RAnal *anal = tps->anal;
 	TypeTrace *tt = &tps->tt;
 	char cur[REGNAME_SIZE] = { 0 };
@@ -1142,7 +1142,7 @@ static char *tp_reg_var_type(TPState *tps, RAnalFunction *fcn, const char *reg) 
 			}
 			return NULL;
 		}
-		RAnalOp *op = tp_anal_op (anal, etrace_addrof (tt, j), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL);
+		RAnalOp *op = tp_anal_op (anal, etrace_addrof (tt, j), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL);
 		if (!op) {
 			return NULL;
 		}
@@ -1150,6 +1150,9 @@ static char *tp_reg_var_type(TPState *tps, RAnalFunction *fcn, const char *reg) 
 		char src[REGNAME_SIZE] = { 0 };
 		if (copy) {
 			get_src_regname_from_esil (anal, r_strbuf_get (&op->esil), op->addr, src, sizeof (src));
+		} else {
+			// a base+disp load is a deref hop, keep following the base pointer
+			tp_chain_collect (tt, j, op, chain, src, sizeof (src));
 		}
 		r_anal_op_free (op);
 		if (!src[0]) {
@@ -1183,13 +1186,20 @@ static bool tp_field_from_ret(TPState *tps, RAnalFunction *fcn, RAnalOp *op, con
 	if (!base[0]) {
 		return false;
 	}
-	char *ptr_type = tp_reg_var_type (tps, fcn, base);
+	TPFieldChain chain = { .slot_addr = UT64_MAX, .ok = true };
+	char *ptr_type = tp_reg_var_type (tps, fcn, base, &chain);
 	if (!ptr_type) {
 		return false;
 	}
 	// the assignment itself disproves const on the member
 	ret_type = r_str_skip_prefix (ret_type, "const ");
-	const bool changed = tp_retype_field_chain (anal, ptr_type, &disp, 1, ret_type, op->refptr, true);
+	ut64 seq[TP_CHAIN_MAX + 1];
+	int i, n = 0;
+	for (i = chain.len - 1; i >= 0; i--) { // hops were collected walking backwards
+		seq[n++] = chain.hops[i];
+	}
+	seq[n++] = disp;
+	const bool changed = tp_retype_field_chain (anal, ptr_type, seq, n, ret_type, op->refptr, true);
 	free (ptr_type);
 	return changed;
 }

@@ -497,6 +497,103 @@ struct Ctx {
 EOF
 RUN
 
+NAME=struct field typed from return value stored through a nested pointer
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rbx, [rdi+8]
+wa call 0x20 @ 4
+wa mov [rbx+0x10], rax @ 9
+wa ret @ 0xd
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Inner { char pad2[16]; int field_16; };"
+"td struct Outer { char pad[8]; struct Inner *inner; };"
+"td char *helper();"
+afvt arg1 "struct Outer *" @ 0
+aei
+aeim
+aaft
+tsc Outer
+tsc Inner
+EOF
+EXPECT=<<EOF
+struct Outer {
+  char pad[8];
+  struct Inner *inner;
+};
+struct Inner {
+  char pad2[16];
+  char *field_16;
+};
+EOF
+RUN
+
+NAME=struct field typed from return value through a copied deref base
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rbx, [rdi+8]
+wa mov rcx, rbx @ 4
+wa call 0x20 @ 7
+wa mov [rcx+0x10], rax @ 0xc
+wa ret @ 0x10
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Inner { char pad2[16]; int field_16; };"
+"td struct Outer { char pad[8]; struct Inner *inner; };"
+"td char *helper();"
+afvt arg1 "struct Outer *" @ 0
+aei
+aeim
+aaft
+tsc Inner
+EOF
+EXPECT=<<EOF
+struct Inner {
+  char pad2[16];
+  char *field_16;
+};
+EOF
+RUN
+
+NAME=struct field not retyped when the store base was modified by arithmetic
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov rbx, [rdi+8]
+wa add rbx, 8 @ 4
+wa call 0x20 @ 8
+wa mov [rbx+0x10], rax @ 0xd
+wa ret @ 0x11
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Inner { char pad2[16]; int field_16; };"
+"td struct Outer { char pad[8]; struct Inner *inner; };"
+"td char *helper();"
+afvt arg1 "struct Outer *" @ 0
+aei
+aeim
+aaft
+tsc Inner
+EOF
+EXPECT=<<EOF
+struct Inner {
+  char pad2[16];
+  int field_16;
+};
+EOF
+RUN
+
 NAME=struct field typed from address passed as out parameter
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e types.fields=true
@@ -887,7 +984,7 @@ struct Ctx {
 EOF
 RUN
 
-NAME=struct field not retyped through a rebased store pointer
+NAME=struct field not retyped when the deref hop offset matches no member
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e types.fields=true
 CMDS=<<EOF
