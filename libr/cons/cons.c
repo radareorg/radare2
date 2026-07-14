@@ -703,6 +703,34 @@ R_API RCons *r_cons_new(void) {
 	return cons;
 }
 
+// Create a console owned by a background task. It NEVER becomes the global
+// singleton (only the primary console owns it) and inherits the parent's output
+// formatting so captured output matches. Each clone is used by a single thread,
+// so its context stack stays race-free without sharing state with the parent.
+R_API RCons *r_cons_clone(RCons *parent) {
+	R_RETURN_VAL_IF_FAIL (parent, NULL);
+	RCons *saved = I;
+	RCons *cons = r_cons_new2 ();
+	I = saved; // r_cons_new2 may set I on some platforms; never hijack it here
+	if (!cons) {
+		return NULL;
+	}
+	if (parent->context) {
+		r_cons_context_free (cons->context);
+		cons->context = r_cons_context_clone (parent->context);
+	}
+	cons->vtmode = parent->vtmode;
+	cons->use_utf8 = parent->use_utf8;
+	cons->use_utf8_curvy = parent->use_utf8_curvy;
+	cons->columns = parent->columns;
+	cons->rows = parent->rows;
+	cons->null = parent->null;
+	cons->maxpage = parent->maxpage;
+	cons->fdout = parent->fdout;
+	cons->main_tid = r_th_self ();
+	return cons;
+}
+
 R_API void r_cons_free(RCons *cons) {
 	r_cons_free2 (cons);
 	if (cons == I) {

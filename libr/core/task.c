@@ -10,24 +10,48 @@ static RCore *r_core_clone_for_task(RCore *core);
 static int _task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task);
 static int _task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task);
 
-#define CUSTOMCORE 0
+#define CUSTOMCORE 1
 
+// Build an isolated RCore for a background task. It is a shallow copy that
+// SHARES the heavy read-mostly subsystems (io, anal, flags, bin, config, ...)
+// but OWNS two things so the task's command OUTPUT never races the main thread:
+//   - its own RCons (the task captures into this console)
+//   - its own RCmd whose ->data is this clone, so command handlers (which are
+//     dispatched with rcmd->data, cmd_api.c r_cmd_call) run against the task's
+//     core+console instead of the parent's. The RCmd is a shallow shell: the
+//     command table and helpers stay shared (read-only at dispatch).
+// Created on the spawning thread while the parent console is quiescent.
 static RCore *mycore_new(RCore *core) {
 #if CUSTOMCORE
 	RCore *c = R_NEW (RCore);
+	if (!c) {
+		return core;
+	}
 	memcpy (c, core, sizeof (RCore));
-	c->cons = r_cons_new ();
-	// XXX: RConsBind must disappear. its used in bin, fs and search
-	// TODO: use r_cons_clone instead
+	c->cons = r_cons_clone (core->cons);
+	if (!c->cons) {
+		free (c);
+		return core;
+	}
+	RCmd *rc = R_NEW (RCmd);
+	if (rc) {
+		memcpy (rc, core->rcmd, sizeof (RCmd));
+		rc->data = c;
+		c->rcmd = rc;
+	}
 	return c;
 #else
 	return core;
 #endif
 }
 
-static void mycore_free(RCore *a) {
+static void mycore_free(RCore *c) {
 #if CUSTOMCORE
-	r_cons_free (a->cons);
+	if (c) {
+		free (c->rcmd); // shell only; the command table is shared with the parent
+		r_cons_free (c->cons);
+		free (c);
+	}
 #endif
 }
 
@@ -309,6 +333,10 @@ static void task_free(RCoreTask *task) {
 	r_th_sem_free (task->running_sem);
 	r_th_cond_free (task->dispatch_cond);
 	r_cons_context_free (task->cons_context);
+	if (task->task_core) {
+		mycore_free (task->task_core);
+		task->task_core = NULL;
+	}
 	if (lock) {
 		r_th_lock_leave (lock);
 	}
@@ -463,15 +491,18 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 		goto stillbirth;
 	}
 
-	RCore *local_core = mycore_new (core);
 	char *res_str;
 	if (task == scheduler->main_task) {
-		r_core_cmd (local_core, task->cmd, task->cmd_log);
+		// The main task drives the real console for live output.
+		r_core_cmd (core, task->cmd, task->cmd_log);
 		res_str = NULL;
 	} else {
+		// Background tasks run on their own isolated core (own console + own
+		// rcmd), created on the spawning thread (task->task_core). Cooperative
+		// tasks have no clone and run synchronously on the shared core.
+		RCore *local_core = task->task_core? task->task_core: core;
 		res_str = r_core_cmd_str (local_core, task->cmd);
 	}
-	mycore_free (local_core);
 
 	free (task->res);
 	task->res = res_str;

@@ -1200,6 +1200,7 @@ R_API void r_cons_set_last_interactive(RCons *cons);
 R_API void r_cons_flush(RCons * R_NONNULL cons);
 R_API void r_cons_last(RCons *cons);
 R_API RCons * R_NONNULL r_cons_new2(void);
+R_API RCons *r_cons_clone(RCons *parent);
 R_API bool r_cons_pop(RCons * R_NONNULL cons);
 R_API void r_cons_free2(RCons * R_NULLABLE cons);
 R_API void r_cons_print_clear(RCons *cons);
