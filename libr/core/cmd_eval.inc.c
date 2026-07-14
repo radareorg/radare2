@@ -160,18 +160,25 @@ static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 }
 
 static char *get_theme_path(RCore *core, const char *theme_name) {
+	char *name = strdup (theme_name);
+	if (!name || r_str_filter_file (name)) {
+		free (name);
+		return NULL;
+	}
 	// check home directory
 	char *home = r_xdg_datadir ("cons");
-	char *theme_path = r_file_new (home, theme_name, NULL);
+	char *theme_path = r_file_new (home, name, NULL);
 	if (r_file_exists (theme_path)) {
 		// TODO read this one
+		free (name);
 		return theme_path;
 	}
 	free (theme_path);
 	// check system directory
 	char *r2pfx = r_sys_prefix (NULL);
-	theme_path = r_file_new (r2pfx, R2_THEMES, theme_name, NULL);
+	theme_path = r_file_new (r2pfx, R2_THEMES, name, NULL);
 	free (r2pfx);
+	free (name);
 	if (r_file_exists (theme_path)) {
 		return theme_path;
 	}

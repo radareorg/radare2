@@ -121,6 +121,22 @@ bool test_r_str_replace_char(void) {
 	mu_end;
 }
 
+bool test_r_str_filter_file(void) {
+	char file[32] = "theme.zip";
+	mu_assert ("single dot is valid", !r_str_filter_file (file));
+	mu_assert_streq (file, "theme.zip", "single dot changed");
+	r_str_ncpy (file, "..", sizeof (file));
+	mu_assert ("parent directory was not filtered", r_str_filter_file (file));
+	mu_assert_streq (file, "._", "parent directory filter");
+	r_str_ncpy (file, "theme..zip", sizeof (file));
+	mu_assert ("double dot was not filtered", r_str_filter_file (file));
+	mu_assert_streq (file, "theme._zip", "double dot filter");
+	r_str_ncpy (file, "dir/theme\\file", sizeof (file));
+	mu_assert ("path separators were not filtered", r_str_filter_file (file));
+	mu_assert_streq (file, "dir_theme_file", "path separator filter");
+	mu_end;
+}
+
 //TODO test r_str_bits
 
 bool test_r_str_bits64(void) {
@@ -885,6 +901,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_newf);
 	mu_run_test (test_r_str_replace_char_once);
 	mu_run_test (test_r_str_replace_char);
+	mu_run_test (test_r_str_filter_file);
 	mu_run_test (test_r_str_replace);
 	mu_run_test (test_r_str_bits64);
 	mu_run_test (test_r_str_rwx);

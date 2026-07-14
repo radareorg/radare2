@@ -2442,6 +2442,23 @@ R_API void r_str_filter(char *str, int len) {
 	}
 }
 
+R_API bool r_str_filter_file(char *str) {
+	R_RETURN_VAL_IF_FAIL (str, false);
+	bool changed = false;
+	char *p;
+	for (p = str; *p; p++) {
+		if (!IS_PRINTABLE (*p) || *p == '/' || *p == '\\') {
+			*p = '_';
+			changed = true;
+		}
+		if (p > str && p[-1] == '.' && *p == '.') {
+			*p = '_';
+			changed = true;
+		}
+	}
+	return changed;
+}
+
 R_API bool r_str_glob(const char *str, const char *glob) {
 	if (!glob) {
 		return true;
