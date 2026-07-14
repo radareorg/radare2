@@ -551,8 +551,7 @@ R_API bool r_anal_switch_set(RAnal *anal, ut64 startea, const RAnalSwitchSpec *s
 R_API bool r_anal_switch_get(RAnal *anal, ut64 startea, RAnalSwitchSpec *out) {
 	R_RETURN_VAL_IF_FAIL (anal && out, false);
 	Sdb *db = switch_sdb (anal, false);
-	r_strf_var (key, 32, "0x%" PFMT64x, startea);
-	const char *v = sdb_const_get (db, key, NULL);
+	const char *v = sdb_const_getf (db, NULL, "0x%" PFMT64x, startea);
 	switch_spec_deserialize (anal, v, out);
 	out->startea = startea;
 	return true;

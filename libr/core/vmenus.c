@@ -108,8 +108,8 @@ R_IPI void visual_add_comment(RCore *core, ut64 at) {
 }
 
 static inline char *getformat(RCoreVisualTypes *vt, const char *k) {
-	r_strf_var (key, 64, "type.%s", k);
-	return sdb_get (vt->core->anal->sdb_types, key, 0);
+	const char *format = sdb_const_getf (vt->core->anal->sdb_types, NULL, "type.%s", k);
+	return format? strdup (format): NULL;
 }
 
 static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype, ut64 addr) {

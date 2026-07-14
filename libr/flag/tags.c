@@ -13,8 +13,8 @@ R_API RList *r_flag_tags_list(RFlag *f, const char * R_NULLABLE name) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
 	RList *res = r_list_newf (free);
 	if (name) {
-		r_strf_var (k, 64, "tag.%s", name);
-		char *words = sdb_get (f->tags, k, NULL);
+		const char *value = sdb_const_getf (f->tags, NULL, "tag.%s", name);
+		char *words = value? strdup (value): NULL;
 		if (R_STR_ISNOTEMPTY (words)) {
 			RListIter *iter;
 			char *word;
@@ -72,9 +72,9 @@ static bool iter_glob_flag(RFlagItem *fi, void *user) {
 
 R_API RList *r_flag_tags_get(RFlag *f, const char *name) {
 	R_RETURN_VAL_IF_FAIL (f && name, NULL);
-	r_strf_var (k, 64, "tag.%s", name);
 	RList *res = r_list_newf (NULL);
-	char *words = sdb_get (f->tags, k, NULL);
+	const char *value = sdb_const_getf (f->tags, NULL, "tag.%s", name);
+	char *words = value? strdup (value): NULL;
 	if (words) {
 		RList *list = r_str_split_list (words, " ",  0);
 		struct iter_glob_flag_t u = { .res = res, .words = list };

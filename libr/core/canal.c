@@ -1446,9 +1446,8 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 					free (from);
 					free (to);
 				} else {
-					r_strf_buffer (128);
 					const char* edge_color = bbi->fail != -1 ? pal_jump : pal_trfa;
-					if (sdb_const_get (core->sdb, r_strf ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", bbi->addr, bbi->jump), 0)) {
+					if (sdb_const_getf (core->sdb, NULL, "agraph.edge.0x%" PFMT64x "_0x%" PFMT64x ".highlight", bbi->addr, bbi->jump)) {
 						edge_color = "cyan";
 					}
 					r_cons_printf (core->cons, "        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "

@@ -203,15 +203,12 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 			}
 			flagname = dup;
 			int fmtsize = r_print_format_struct_size (core->print, v, 0, 0);
-			char *offset_key = r_str_newf ("%s.offset", flagname);
-			const char *off = sdb_const_get (db, offset_key, 0);
+			const char *off = sdb_const_getf (db, NULL, "%s.offset", flagname);
 			if (fmtsize < 1) {
-				free (offset_key);
 				free (dup);
 				continue;
 			}
 			fmtsize += 4;
-			free (offset_key);
 			if (off) {
 				if (IS_MODE_RAD (mode)) {
 					r_cons_printf (core->cons, "'@%s'Cf %d %s\n", off, fmtsize, v);
@@ -1834,9 +1831,9 @@ static ut8 bin_reloc_size(RBinReloc *reloc) {
 }
 
 static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
-	r_strf_buffer (64);
 	Sdb *db = sdb;
-	char *foo = sdb_get (db, r_strf ("%d", ordinal), 0);
+	const char *value = sdb_const_getf (db, NULL, "%d", ordinal);
+	char *foo = value? strdup (value): NULL;
 	if (foo) {
 		if (!*foo) {
 			R_FREE (foo);
@@ -4883,8 +4880,7 @@ static void bin_elf_versioninfo(RCore *core, PJ *pj, int mode) {
 		}
 		int i;
 		for (i = 0; i < num_entries; i++) {
-			r_strf_var (key, 32, "entry%d", i);
-			const char *const value = sdb_const_get (sdb, key, 0);
+			const char *const value = sdb_const_getf (sdb, NULL, "entry%d", i);
 			if (value) {
 				if (oValue && !strcmp (value, oValue)) {
 					continue;

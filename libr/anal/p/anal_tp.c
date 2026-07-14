@@ -643,8 +643,7 @@ static bool parse_format(TPState *tps, const char *fmt, RVecString *vec) {
 			tmp++;
 		}
 		*tmp = '\0';
-		r_strf_var (query, 128, "spec.%s.%s", tps->cfg_spec, arr);
-		const char *type = sdb_const_get (s, query, 0); // maybe better to return an owned pointer here?
+		const char *type = sdb_const_getf (s, NULL, "spec.%s.%s", tps->cfg_spec, arr);
 		if (type) {
 			RVecString_push_back (vec, &type);
 		}
@@ -760,8 +759,7 @@ static char *tp_unwrap_typedef(RAnal *anal, const char *name) {
 	char *cur = strdup (name);
 	int depth;
 	for (depth = 0; cur && depth < TP_TYPEDEF_MAX; depth++) {
-		r_strf_var (tk, 256, "typedef.%s", cur);
-		const char *tgt = sdb_const_get (anal->sdb_types, tk, 0);
+		const char *tgt = sdb_const_getf (anal->sdb_types, NULL, "typedef.%s", cur);
 		if (!tgt) {
 			break;
 		}

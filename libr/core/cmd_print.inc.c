@@ -7484,16 +7484,10 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 	{
 		// Check for fallback command in SDB (fallbackcmd.* namespace)
 		char cmd_name[4] = { 'p', 'd', input[1], '\0' };
-		char *fallback_key = r_str_newf ("fallbackcmd.%s", cmd_name);
-		if (fallback_key) {
-			const char *fallback_cmd = sdb_const_get (core->sdb, fallback_key, NULL);
-			if (fallback_cmd && r_str_startswith (fallback_cmd, "?e ")) {
-				// Execute safe? e (echo) command only
-				r_core_cmd0 (core, fallback_cmd);
-			} else {
-				R_LOG_ERROR ("Missing plugin for '%s'", cmd_name);
-			}
-			free (fallback_key);
+		const char *fallback_cmd = sdb_const_getf (core->sdb, NULL, "fallbackcmd.%s", cmd_name);
+		if (fallback_cmd && r_str_startswith (fallback_cmd, "?e ")) {
+			// Execute safe? e (echo) command only
+			r_core_cmd0 (core, fallback_cmd);
 		} else {
 			R_LOG_ERROR ("Missing plugin for '%s'", cmd_name);
 		}

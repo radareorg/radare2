@@ -6,27 +6,22 @@
 #include "mdmp_pe.h"
 
 static void PE_(add_tls_callbacks)(struct PE_(r_bin_pe_obj_t) *bin, RList *list) {
-	r_strf_buffer (64);
-	char *key;
 	int count = 0;
 	PE_DWord haddr, paddr, vaddr;
 	RBinAddr *ptr = NULL;
 
 	do {
-		key = r_strf ("pe.tls_callback%d_paddr", count);
-		paddr = sdb_num_get (bin->kv, key, 0);
+		paddr = sdb_num_getf (bin->kv, 0, "pe.tls_callback%d_paddr", count);
 		if (!paddr) {
 			break;
 		}
 
-		key = r_strf ("pe.tls_callback%d_vaddr", count);
-		vaddr = sdb_num_get (bin->kv, key, 0);
+		vaddr = sdb_num_getf (bin->kv, 0, "pe.tls_callback%d_vaddr", count);
 		if (!vaddr) {
 			break;
 		}
 
-		key = r_strf ("pe.tls_callback%d_haddr", count);
-		haddr = sdb_num_get (bin->kv, key, 0);
+		haddr = sdb_num_getf (bin->kv, 0, "pe.tls_callback%d_haddr", count);
 		if (!haddr) {
 			break;
 		}

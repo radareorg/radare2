@@ -7114,8 +7114,8 @@ toro:
 		}
 		ds_show_comments_right (ds);
 		// TRY adding here
-		r_strf_var (link_key, 32, "link.%08" PFMT64x, ds->addr + ds->index);
-		const char *link_type = sdb_const_get (core->anal->sdb_types, link_key, 0);
+		const char *link_type = sdb_const_getf (core->anal->sdb_types, NULL,
+			"link.%08" PFMT64x, ds->addr + ds->index);
 		if (link_type) {
 			char *fmt = r_type_format (core->anal->sdb_types, link_type);
 			if (fmt) {

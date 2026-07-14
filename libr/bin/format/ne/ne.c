@@ -95,20 +95,16 @@ static char *__func_name_from_ord(const char *module, ut16 ordinal) {
 	char *path = r_str_newf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"), pfx, lower_module);
 	free (pfx);
 	free (lower_module);
-	char *ord = r_str_newf ("%d", ordinal);
-	char *name;
+	char *name = NULL;
 	if (r_file_exists (path)) {
 		Sdb *sdb = sdb_new (NULL, path, 0);
-		name = sdb_get (sdb, ord, NULL);
-		if (!name) {
-			name = ord;
-		} else {
-			free (ord);
-		}
+		const char *value = sdb_const_getf (sdb, NULL, "%d", ordinal);
+		name = value? strdup (value): NULL;
 		sdb_close (sdb);
 		free (sdb);
-	} else {
-		name = ord;
+	}
+	if (!name) {
+		name = r_str_newf ("%d", ordinal);
 	}
 	free (path);
 	return name;

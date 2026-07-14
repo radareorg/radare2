@@ -204,20 +204,16 @@ R_API int r_syscall_get_swi(RSyscall *s) {
 
 R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 	R_RETURN_VAL_IF_FAIL (s && s->db, NULL);
-	char key[128];
 	swi = getswi (s, swi);
-	if (swi < 16) {
-		snprintf (key, sizeof (key), "%d.%d", swi, num);
-	} else {
-		snprintf (key, sizeof (key), "0x%02x.%d", swi, num);
-	}
-	const char *ret = sdb_const_get (s->db, key, 0);
+	const char *ret = swi < 16
+		? sdb_const_getf (s->db, 0, "%d.%d", swi, num)
+		: sdb_const_getf (s->db, 0, "0x%02x.%d", swi, num);
 	if (!ret) {
-		snprintf (key, sizeof (key), "0x%02x.0x%02x", swi, num); // Workaround until Syscall SDB is fixed
-		ret = sdb_const_get (s->db, key, 0);
+		// Workaround until Syscall SDB is fixed
+		ret = sdb_const_getf (s->db, 0, "0x%02x.0x%02x", swi, num);
 		if (!ret) {
-			snprintf (key, sizeof (key), "0x%02x.%d", num, swi); // Workaround until Syscall SDB is fixed
-			ret = sdb_const_get (s->db, key, 0);
+			// Workaround until Syscall SDB is fixed
+			ret = sdb_const_getf (s->db, 0, "0x%02x.%d", num, swi);
 			if (!ret) {
 				return NULL;
 			}
@@ -247,10 +243,8 @@ R_API int r_syscall_get_num(RSyscall *s, const char *str) {
 
 R_API const char *r_syscall_get_i(RSyscall *s, int num, int swi) {
 	R_RETURN_VAL_IF_FAIL (s && s->db, NULL);
-	char foo[32];
 	swi = getswi (s, swi);
-	snprintf (foo, sizeof (foo), "0x%x.%d", swi, num);
-	return sdb_const_get (s->db, foo, 0);
+	return sdb_const_getf (s->db, 0, "0x%x.%d", swi, num);
 }
 
 static bool callback_list(void *u, const char *k, const char *v) {
@@ -297,6 +291,5 @@ R_API const char *r_syscall_get_io(RSyscall *s, int ioport) {
 
 R_API const char* r_syscall_sysreg(RSyscall *s, const char *type, ut64 num) {
 	R_RETURN_VAL_IF_FAIL (s && s->db, NULL);
-	r_strf_var (key, 64, "%s,%"PFMT64d, type, num);
-	return sdb_const_get (s->db, key, 0);
+	return sdb_const_getf (s->db, NULL, "%s,%" PFMT64d, type, num);
 }

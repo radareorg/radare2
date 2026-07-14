@@ -2585,9 +2585,8 @@ static char *idd_type_display(RCore *core, const char *type) {
 static int idd_type_size(RCore *core, const char *type);
 
 static int idd_struct_size(RCore *core, const char *kind, const char *name) {
-	char *members_key = r_str_newf ("%s.%s", kind, name);
-	char *members = sdb_get (core->anal->sdb_types, members_key, 0);
-	free (members_key);
+	const char *value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s", kind, name);
+	char *members = value? strdup (value): NULL;
 	if (!members) {
 		return 0;
 	}
@@ -2596,20 +2595,19 @@ static int idd_struct_size(RCore *core, const char *kind, const char *name) {
 	int i;
 	for (i = 0; i < nargs; i++) {
 		const char *member = r_str_word_get0 (members, i);
-		char *member_key = r_str_newf ("%s.%s.%s", kind, name, member);
-		char *value = sdb_get (core->anal->sdb_types, member_key, 0);
-		free (member_key);
-		if (value) {
-			int vlen = r_str_split (value, ',');
+		const char *member_value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s.%s", kind, name, member);
+		char *member_data = member_value? strdup (member_value): NULL;
+		if (member_data) {
+			int vlen = r_str_split (member_data, ',');
 			if (vlen >= 2) {
-				const char *member_type = r_str_word_get0 (value, 0);
-				int offset = atoi (r_str_word_get0 (value, 1));
+				const char *member_type = r_str_word_get0 (member_data, 0);
+				int offset = atoi (r_str_word_get0 (member_data, 1));
 				int end = offset + idd_type_size (core, member_type);
 				if (end > size) {
 					size = end;
 				}
 			}
-			free (value);
+			free (member_data);
 		}
 	}
 	free (members);
@@ -2629,23 +2627,17 @@ static int idd_type_size(RCore *core, const char *type) {
 	} else {
 		const char *kind = idd_type_kind (core, base);
 		if (kind && !strcmp (kind, "typedef")) {
-			char *key = r_str_newf ("typedef.%s", base);
-			const char *real_type = sdb_const_get (core->anal->sdb_types, key, NULL);
+			const char *real_type = sdb_const_getf (core->anal->sdb_types, NULL, "typedef.%s", base);
 			size = real_type? idd_type_size (core, real_type): 0;
-			free (key);
 		} else if (kind && (!strcmp (kind, "struct") || !strcmp (kind, "union"))) {
 			size = idd_struct_size (core, kind, base);
 		} else {
-			char *key = r_str_newf ("type.%s.size", base);
-			size = (int)(sdb_num_get (core->anal->sdb_types, key, 0) / 8);
-			free (key);
+			size = (int)(sdb_num_getf (core->anal->sdb_types, NULL, "type.%s.size", base) / 8);
 			if (!size) {
 				char *sbase = strdup (base);
 				if (sbase) {
 					r_str_replace_char (sbase, ' ', '_');
-					key = r_str_newf ("type.%s.size", sbase);
-					size = (int)(sdb_num_get (core->anal->sdb_types, key, 0) / 8);
-					free (key);
+					size = (int)(sdb_num_getf (core->anal->sdb_types, NULL, "type.%s.size", sbase) / 8);
 					free (sbase);
 				}
 			}
@@ -2674,23 +2666,20 @@ static bool idd_member_info(RCore *core, const char *type, const char *member, c
 	}
 	const char *kind = idd_type_kind (core, base);
 	if (kind && !strcmp (kind, "typedef")) {
-		char *key = r_str_newf ("typedef.%s", base);
-		const char *real_type = sdb_const_get (core->anal->sdb_types, key, NULL);
+		const char *real_type = sdb_const_getf (core->anal->sdb_types, NULL, "typedef.%s", base);
 		if (real_type) {
 			free (base);
 			base = idd_type_base (real_type, NULL, NULL);
 			kind = base? idd_type_kind (core, base): NULL;
 		}
-		free (key);
 	}
 	if (!kind || (strcmp (kind, "struct") && strcmp (kind, "union"))) {
 		free (base);
 		return false;
 	}
-	char *key = r_str_newf ("%s.%s.%s", kind, base, member);
+	const char *member_value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s.%s", kind, base, member);
 	free (base);
-	char *value = sdb_get (core->anal->sdb_types, key, 0);
-	free (key);
+	char *value = member_value? strdup (member_value): NULL;
 	if (!value) {
 		return false;
 	}
@@ -2767,9 +2756,8 @@ static void cmd_iddd(RCore *core, const char *input, bool json) {
 	if (!kind || (strcmp (kind, "struct") && strcmp (kind, "union"))) {
 		return;
 	}
-	char *members_key = r_str_newf ("%s.%s", kind, name);
-	char *members = sdb_get (core->anal->sdb_types, members_key, 0);
-	free (members_key);
+	const char *value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s", kind, name);
+	char *members = value? strdup (value): NULL;
 	if (!members) {
 		return;
 	}
@@ -2886,15 +2874,11 @@ static void cmd_iddlf(RCore *core) {
 	SdbKv *kv;
 	ls_foreach (l, iter, kv) {
 		const char *key = sdbkv_key (kv);
-		char *name_key = r_str_newf ("fcn.%s.name", key);
-		const char *name = sdb_const_get (dwarf_sdb, name_key, NULL);
-		free (name_key);
+		const char *name = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.name", key);
 		if (R_STR_ISEMPTY (name)) {
 			name = key;
 		}
-		char *addr_key = r_str_newf ("fcn.%s.addr", key);
-		ut64 addr = sdb_num_get (dwarf_sdb, addr_key, 0);
-		free (addr_key);
+		ut64 addr = sdb_num_getf (dwarf_sdb, NULL, "fcn.%s.addr", key);
 		int size = idd_symbol_size (core, name);
 		r_cons_printf (core->cons, "f sym.%s %d @ 0x%" PFMT64x "\n", name, size, addr);
 	}
@@ -2992,9 +2976,8 @@ static void cmd_idd(RCore *core, const char *input) {
 		if (!kind || (strcmp (kind, "struct") && strcmp (kind, "union"))) {
 			break;
 		}
-		char *members_key = r_str_newf ("%s.%s", kind, arg);
-		char *members = sdb_get (core->anal->sdb_types, members_key, 0);
-		free (members_key);
+		const char *value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s", kind, arg);
+		char *members = value? strdup (value): NULL;
 		if (members) {
 			int nargs = r_str_split (members, ',');
 			int i;

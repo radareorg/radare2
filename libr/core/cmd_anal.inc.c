@@ -5002,12 +5002,7 @@ R_API char *fcnshowr(RAnalFunction *function) {
 		realname = function->name;
 	}
 
-	char *args = strdup ("");
-	char *sdb_ret = r_str_newf ("func.%s.ret", realname);
-	char *sdb_args = r_str_newf ("func.%s.args", realname);
-	// RList *args_list = r_list_newf ((RListFree) free);
-	// const char *ret_type = sdb_const_get (a->sdb_types, sdb_ret, 0);
-	const char *argc_str = sdb_const_get (a->sdb_types, sdb_args, 0);
+	const char *argc_str = sdb_const_getf (a->sdb_types, NULL, "func.%s.args", realname);
 	const int argc = argc_str? atoi (argc_str): 0;
 
 	const bool no_return = r_anal_noreturn_at_addr (a, function->addr);
@@ -5019,8 +5014,8 @@ R_API char *fcnshowr(RAnalFunction *function) {
 	}
 	int i;
 	for (i = 0; i < argc; i++) {
-		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", realname, i);
-		char *type = sdb_get (a->sdb_types, sdb_arg_i, 0);
+		const char *value = sdb_const_getf (a->sdb_types, NULL, "func.%s.arg.%d", realname, i);
+		char *type = value? strdup (value): NULL;
 		if (!type) {
 			continue;
 		}
@@ -5031,11 +5026,7 @@ R_API char *fcnshowr(RAnalFunction *function) {
 			r_strbuf_appendf (sb, "afvr %s %s %s\n", cc_arg, comma + 1, type);
 		}
 		free (type);
-		free (sdb_arg_i);
 	}
-	free (sdb_args);
-	free (sdb_ret);
-	free (args);
 	return r_strbuf_drain (sb);
 }
 
@@ -5070,13 +5061,9 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 		realname = fcn->name;
 	}
 
-	char *args = strdup ("");
-	char *sdb_ret = r_str_newf ("func.%s.ret", realname);
-	char *sdb_args = r_str_newf ("func.%s.args", realname);
-	// RList *args_list = r_list_newf ((RListFree) free);
 	unsigned int i;
-	const char *ret_type = sdb_const_get (a->sdb_types, sdb_ret, 0);
-	const char *argc_str = sdb_const_get (a->sdb_types, sdb_args, 0);
+	const char *ret_type = sdb_const_getf (a->sdb_types, NULL, "func.%s.ret", realname);
+	const char *argc_str = sdb_const_getf (a->sdb_types, NULL, "func.%s.args", realname);
 
 	int argc = argc_str? atoi (argc_str): 0;
 
@@ -5095,8 +5082,8 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 	pj_k (pj, "args");
 	pj_a (pj);
 	for (i = 0; i < argc; i++) {
-		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", realname, i);
-		char *arg_i = sdb_get (a->sdb_types, sdb_arg_i, 0);
+		const char *value = sdb_const_getf (a->sdb_types, NULL, "func.%s.arg.%d", realname, i);
+		char *arg_i = value? strdup (value): NULL;
 		if (!arg_i) {
 			continue;
 		}
@@ -5112,13 +5099,9 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 			}
 		}
 		free (arg_i);
-		free (sdb_arg_i);
 		pj_end (pj);
 	}
 	pj_end (pj);
-	free (sdb_args);
-	free (sdb_ret);
-	free (args);
 	pj_end (pj);
 	char *s = pj_drain (pj);
 	r_cons_println (core->cons, s);
@@ -6929,54 +6912,46 @@ static int cmd_af(RCore *core, const char *input) {
 				}
 				pj_o (pj);
 			}
-			char *cmd = r_str_newf ("cc.%s.ret0", fcn->callconv);
-			const char *regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+			const char *regname = sdb_const_getf (core->anal->sdb_cc, NULL, "cc.%s.ret0", fcn->callconv);
 			if (regname) {
 				if (json) {
 					pj_ks (pj, "ret", regname);
 				} else {
-					r_cons_printf (core->cons, "%s: %s\n", cmd, regname);
+					r_cons_printf (core->cons, "cc.%s.ret0: %s\n", fcn->callconv, regname);
 				}
 			}
-			free (cmd);
 			if (json) {
 				pj_ka (pj, "args");
 			}
 			for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-				cmd = r_str_newf ("cc.%s.arg%d", fcn->callconv, i);
-				regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+				regname = sdb_const_getf (core->anal->sdb_cc, NULL, "cc.%s.arg%d", fcn->callconv, i);
 				if (regname) {
 					if (json) {
 						pj_s (pj, regname);
 					} else {
-						r_cons_printf (core->cons, "%s: %s\n", cmd, regname);
+						r_cons_printf (core->cons, "cc.%s.arg%d: %s\n", fcn->callconv, i, regname);
 					}
 				}
-				free (cmd);
 			}
 			if (json) {
 				pj_end (pj);
 			}
-			cmd = r_str_newf ("cc.%s.self", fcn->callconv);
-			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+			regname = sdb_const_getf (core->anal->sdb_cc, NULL, "cc.%s.self", fcn->callconv);
 			if (regname) {
 				if (json) {
 					pj_ks (pj, "self", regname);
 				} else {
-					r_cons_printf (core->cons, "%s: %s\n", cmd, regname);
+					r_cons_printf (core->cons, "cc.%s.self: %s\n", fcn->callconv, regname);
 				}
 			}
-			free (cmd);
-			cmd = r_str_newf ("cc.%s.error", fcn->callconv);
-			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+			regname = sdb_const_getf (core->anal->sdb_cc, NULL, "cc.%s.error", fcn->callconv);
 			if (regname) {
 				if (json) {
 					pj_ks (pj, "error", regname);
 				} else {
-					r_cons_printf (core->cons, "%s: %s\n", cmd, regname);
+					r_cons_printf (core->cons, "cc.%s.error: %s\n", fcn->callconv, regname);
 				}
 			}
-			free (cmd);
 			if (json) {
 				pj_end (pj);
 				r_cons_println (core->cons, pj_string (pj));
