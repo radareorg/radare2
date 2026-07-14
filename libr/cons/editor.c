@@ -95,7 +95,7 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str) {
 		r_str_trim (data);
 		if (*data) {
 			r_list_free (editor.lines);
-			editor.lines = r_str_split_list (data, "\n", 0);
+			editor.lines = r_str_split_duplist (data, "\n", false);
 		}
 		free (data);
 		if (!editor.lines) {
