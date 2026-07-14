@@ -2047,7 +2047,7 @@ static ut64 r_bin_java_parse_cp_pool(RBinJavaObj *bin, const ut64 offset, const 
 			}
 		} else {
 			R_LOG_DEBUG ("Failed to read ConstantPoolItem %d", bin->cp_idx);
-			bin->cp_size = UT64_MAX;
+			bin->cp_size = UT32_MAX;
 			return UT64_MAX;
 		}
 	}
