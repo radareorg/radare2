@@ -40,33 +40,8 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	if (len >= bin->size) {
 		return NULL;
 	}
-	const ut64 data_off = sidx + uleblen;
-	if (data_off < sidx || data_off >= bin->size) {
-		return NULL;
-	}
-	ut64 data_len = 0;
-	ut8 strbuf[128];
-	size_t i;
-	while (data_off + data_len < bin->size) {
-		const ut64 left = bin->size - data_off - data_len;
-		const ut64 read_len = R_MIN (left, sizeof (strbuf));
-		if (r_buf_read_at (bin->b, data_off + data_len, strbuf, read_len) != read_len) {
-			return NULL;
-		}
-		for (i = 0; i < read_len; i++) {
-			if (!strbuf[i]) {
-				goto found;
-			}
-		}
-		data_len += read_len;
-	}
-	return NULL;
-found:
-	data_len += i;
-	ut8 *ptr = R_NEWS (ut8, data_len + 1);
+	ut8 *ptr = (ut8 *)r_buf_get_string (bin->b, (ut64)sidx + uleblen);
 	if (ptr) {
-		r_buf_read_at (bin->b, data_off, ptr, data_len);
-		ptr[data_len] = 0;
 		if (len != r_utf8_strlen (ptr)) {
 			free (ptr);
 			return NULL;
@@ -316,7 +291,7 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	dexhdr->class_offset = r_buf_read_le32 (dex->b);
 	dexhdr->data_size = r_buf_read_le32 (dex->b);
 	dexhdr->data_offset = r_buf_read_le32 (dex->b);
-	if (dexhdr->header_size != sizeof (DexHeader) || dexhdr->size < dexhdr->header_size || dexhdr->size > dex->size) {
+	if (dexhdr->header_size < sizeof (DexHeader) || dexhdr->size < dexhdr->header_size) {
 		goto fail;
 	}
 	if (dexhdr->endian != DEX_ENDIAN_CONSTANT && dexhdr->endian != DEX_REVERSE_ENDIAN_CONSTANT) {

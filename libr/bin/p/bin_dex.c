@@ -147,35 +147,10 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 	if (len >= dex->size) {
 		return NULL;
 	}
-	const ut64 data_off = string_index + uleblen;
-	if (data_off < string_index || data_off >= dex->size) {
-		return NULL;
-	}
-	ut64 data_len = 0;
-	ut8 strbuf[128];
-	size_t i;
-	while (data_off + data_len < dex->size) {
-		const ut64 left = dex->size - data_off - data_len;
-		const ut64 read_len = R_MIN (left, sizeof (strbuf));
-		if (r_buf_read_at (b, data_off + data_len, strbuf, read_len) != read_len) {
-			return NULL;
-		}
-		for (i = 0; i < read_len; i++) {
-			if (!strbuf[i]) {
-				goto found;
-			}
-		}
-		data_len += read_len;
-	}
-	return NULL;
-found:
-	data_len += i;
-	ut8 *ptr = malloc (data_len + 1);
+	char *ptr = r_buf_get_string (b, (ut64)string_index + uleblen);
 	if (ptr) {
-		r_buf_read_at (b, data_off, ptr, data_len);
-		ptr[data_len] = 0;
-		cs[idx] = (char *)ptr;
-		return (const char *)ptr;
+		cs[idx] = ptr;
+		return ptr;
 	}
 	return NULL;
 }
