@@ -775,7 +775,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 	ut8 buffer[1024];
 	char *outputptr = NULL;
 	char *inputptr = (char *)input;
-	int pid, bytes = 0, status;
+	int pid, bytes = 0, status = 0;
 	int sh_in[2], sh_out[2], sh_err[2];
 
 	if (len) {
@@ -914,15 +914,20 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 		}
 		close (sh_err[0]);
 		close (sh_in[1]);
-		waitpid (pid, &status, 0);
-		bool ret = true;
-		if (status) {
+		int waitret;
+		do {
+			waitret = waitpid (pid, &status, 0);
+		} while (waitret == -1 && errno == EINTR);
+		bool ret = waitret == pid;
+		if (ret && status) {
 			// char *escmd = r_str_escape (cmd);
 			// R_LOG_ERROR ("error code %d (%s): %s", WEXITSTATUS (status), escmd, *sterr);
 			// eprintf ("(%s)\n", output);
 			R_LOG_DEBUG ("command failed: %s", cmd);
 			// free (escmd);
 			ret = false;
+		} else if (!ret) {
+			R_LOG_ERROR ("waitpid failed: %s", strerror (errno));
 		}
 		if (len) {
 			*len = out_len;
