@@ -1327,9 +1327,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		opcode = r_read_ble16 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
 	}
 
-	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", buf[0], buf[1], buf[2], buf[3], as->big_endian);
 	if (opcode == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			r_strbuf_set (&op->esil, ",");
+		}
 		return oplen;
 	}
 

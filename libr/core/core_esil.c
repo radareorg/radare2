@@ -338,11 +338,10 @@ static bool core_esil_step_delay_slot(RCore *core, RArchSession *as, ut64 ds_add
 	}
 	r_esil_reg_write_silent (esil, "PC", ds_addr);
 	char *expr = r_strbuf_drain_nofree (&op.esil);
-	if (R_STR_ISNOTEMPTY (expr)) {
-		esil->addr = ds_addr;
-		(void)r_esil_parse (esil, expr);
-		esil->trap = false;
-	}
+	esil->addr = ds_addr;
+	// "," for ESIL-less slot ops (e.g. mips.gnu movn) so r_esil_parse still consumes the pending branch
+	(void)r_esil_parse (esil, R_STR_ISNOTEMPTY (expr)? expr: ",");
+	esil->trap = false;
 	free (expr);
 	ut64 pc_ds = 0;
 	(void)r_esil_reg_read_silent (esil, "PC", &pc_ds, NULL);
