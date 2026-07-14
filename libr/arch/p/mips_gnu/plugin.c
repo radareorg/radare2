@@ -8,7 +8,6 @@
 
 typedef struct plugin_data_t {
 	char *pre_cpu;
-	ut64 t9_pre;
 } PluginData;
 
 static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
@@ -1340,7 +1339,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	int optype = buf[0] >> 2;
 	insn.optype = optype;
 	insn.id = 0;
-	PluginData *pd = as->data;
 	if (optype == 0) {
 		/*
 			R-TYPE
@@ -1410,9 +1408,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			insn.id = MIPS_INS_JR;
 			if (rs == 31) {
 				op->type = R_ANAL_OP_TYPE_RET;
-			} else if (rs == 25) {
-				op->type = R_ANAL_OP_TYPE_RJMP;
-				op->jump = pd->t9_pre;
 			} else {
 				op->type = R_ANAL_OP_TYPE_RJMP;
 			}
@@ -1423,7 +1418,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			insn.id = MIPS_INS_JALR;
 			if (rs == 25) {
 				op->type = R_ANAL_OP_TYPE_RCALL;
-				op->jump = pd->t9_pre;
 				break;
 			}
 			op->type = R_ANAL_OP_TYPE_UCALL;
@@ -1800,13 +1794,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			} else {
 				op->ptr = imm;
 			}
-			if (rt == 25) {
-				pd->t9_pre = op->ptr;
-				const ut64 ptrv = mips_read_ptr_at (as->arch->binb.bin, op->ptr, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config), as->config->bits);
-				if (ptrv != UT64_MAX) {
-					pd->t9_pre = ptrv;
-				}
-			}
 			if (mask & R_ARCH_OP_MASK_VAL) {
 				if (mips_reg_is_stack_base (rs)) {
 					mips_fill_load_values (op, rt, rs, imm);
@@ -2086,7 +2073,6 @@ static bool init(RArchSession *as) {
 		return false;
 	}
 
-	pd->t9_pre = UT64_MAX;
 	return true;
 }
 

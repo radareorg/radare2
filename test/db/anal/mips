@@ -917,3 +917,127 @@ at,v0,v1,a0,a1,a2,a3,a4,a5,a6,a7,t4,t5,t6,t7,t8,t9,ra,f0,f1,f2,f3,f4,f5,f6,f7,f8
 s0,s1,s2,s3,s4,s5,s6,s7,gp,sp,fp,f24,f25,f26,f27,f28,f29,f30,f31
 EOF
 RUN
+
+NAME=mips jalr t9 resolves through the gp-relative got load
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010000000000320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00401000
+EOF
+RUN
+
+NAME=mips write into t9 after the gp load drops the pending jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f9900103c1900050320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips three-register addu into t9 does not fabricate a jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f9900100322c8210320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips addiu with a non-t9 source drops the pending jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010261900200320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips addiu lo-adjust applies exactly once to the pending jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010273900200320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00401020
+EOF
+RUN
+
+NAME=mips addiu on an unknown t9 does not fabricate a jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 273900200320f809
+ao 2~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips conditional move into t9 drops the pending jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f9900100085c80b0320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips rotate into t9 drops the pending jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f9900100039c9020320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips.gnu jalr t9 keeps no cross-instruction decoder state
+FILE=malloc://64
+ARGS=-e anal.arch=mips.gnu -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010000000000320f809
+ao 3~type,jump
+EOF
+EXPECT=<<EOF
+type: load
+type: nop
+type: rcall
+EOF
+RUN
+
+NAME=mips untyped sltu write into t9 drops the pending jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f9900100085c82b0320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN

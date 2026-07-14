@@ -890,8 +890,9 @@ typedef struct plugin_data_t {
 	CapstonePluginData cpd;
 	RRegItem reg;
 	char *cpu;
-	int bigendian;
 	ut64 t9_pre;
+	ut64 t9_adj;
+	bool bigendian;
 	int last_syntax;
 } PluginData;
 
@@ -910,6 +911,7 @@ static bool init(RArchSession *as) {
 	}
 
 	pd->t9_pre = UT64_MAX;
+	pd->t9_adj = UT64_MAX;
 	pd->bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
 	if (!r_arch_cs_init (as, &pd->cpd.cs_handle)) {
@@ -946,6 +948,46 @@ static bool plugin_changed(RArchSession *as) {
 		return true;
 	}
 	return strcmp (r_str_get (cpd->cpu), r_str_get (as->config->cpu)) != 0;
+}
+
+// t9_pre only survives writes the decoder models (gp-load set, addiu lo-adjust); any other write to t9 stales it
+static void t9_invalidate(PluginData *pd, RAnalOp *op, cs_insn *insn) {
+	if (pd->t9_pre == UT64_MAX || insn->detail->mips.op_count < 1) {
+		return;
+	}
+	if (OPERAND (0).type != MIPS_OP_REG || REGID (0) != MIPS_REG_T9) {
+		return;
+	}
+	if ((insn->id == MIPS_INS_ADDIU || insn->id == MIPS_INS_DADDIU) && insn->detail->mips.op_count == 3
+			&& OPERAND (1).type == MIPS_OP_REG && REGID (1) == MIPS_REG_T9 && OPERAND (2).type == MIPS_OP_IMM) {
+		// decode runs several times per op; apply the lo-adjust only once per address
+		if (pd->t9_adj != op->addr) {
+			pd->t9_pre += IMM (2);
+			pd->t9_adj = op->addr;
+		}
+		return;
+	}
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_NULL: // slt/mflo and friends leave no type; treat any untyped op0 write as a clobber
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_MUL:
+	case R_ANAL_OP_TYPE_DIV:
+	case R_ANAL_OP_TYPE_MOD:
+	case R_ANAL_OP_TYPE_AND:
+	case R_ANAL_OP_TYPE_OR:
+	case R_ANAL_OP_TYPE_XOR:
+	case R_ANAL_OP_TYPE_SHL:
+	case R_ANAL_OP_TYPE_SHR:
+	case R_ANAL_OP_TYPE_SAR:
+	case R_ANAL_OP_TYPE_NOT:
+	case R_ANAL_OP_TYPE_CMOV:
+	case R_ANAL_OP_TYPE_ROL:
+	case R_ANAL_OP_TYPE_ROR:
+		pd->t9_pre = UT64_MAX;
+		break;
+	}
 }
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
@@ -1040,6 +1082,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 					op->ptr = as->config->gp + OPERAND (1).mem.disp;
 					if (REGID (0) == MIPS_REG_T9) {
 						pd->t9_pre = op->ptr;
+						pd->t9_adj = UT64_MAX;
 						RBin *bin = as->arch->binb.bin;
 						const ut64 ptrv = mips_read_ptr_at (bin, op->ptr, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config), as->config->bits);
 						if (ptrv != UT64_MAX) {
@@ -1144,9 +1187,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		SET_VAL (op, 2);
 		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD);
 		op->type = R_ANAL_OP_TYPE_ADD;
-		if (REGID(0) == MIPS_REG_T9) {
-				pd->t9_pre += IMM(2);
-		}
 		if (REGID(0) == MIPS_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -IMM(2);
@@ -1319,6 +1359,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		SET_VAL (op,2);
 		break;
 	}
+	t9_invalidate (pd, op, insn);
 beach:
 	set_opdir (op);
 	if (insn && mask & R_ARCH_OP_MASK_OPEX) {
