@@ -1342,33 +1342,6 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 }
 #endif
 
-#if !R2__WINDOWS__ && !__APPLE__ && !__FreeBSD__ && !__DragonFly__ && !__NetBSD__ && !__HAIKU__
-static char *readlink_dup(const char *path) {
-	size_t size = 256;
-	for (;;) {
-		char *buf = malloc (size);
-		if (!buf) {
-			return NULL;
-		}
-		ssize_t length = readlink (path, buf, size - 1);
-		if (length < 0) {
-			free (buf);
-			return NULL;
-		}
-		if ((size_t)length < size - 1) {
-			buf[length] = 0;
-			return buf;
-		}
-		free (buf);
-		size_t new_size;
-		if (r_mul_overflow_size_t (size, 2, &new_size)) {
-			return NULL;
-		}
-		size = new_size;
-	}
-}
-#endif
-
 R_API char *r_sys_pidpath(int pid) {
 #if R2__WINDOWS__
 	HANDLE processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
@@ -1426,13 +1399,17 @@ R_API char *r_sys_pidpath(int pid) {
 		pathbuf[0] = '\0';
 	}
 #else
-	char pathbuf[128];
+	char buf[128], pathbuf[1024];
 #if __OpenBSD__
-	snprintf (pathbuf, sizeof (pathbuf), "/proc/%d/file", pid);
+	snprintf (buf, sizeof (buf), "/proc/%d/file", pid);
 #else
-	snprintf (pathbuf, sizeof (pathbuf), "/proc/%d/exe", pid);
+	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
 #endif
-	return readlink_dup (pathbuf);
+	int ret = readlink (buf, pathbuf, sizeof (pathbuf) - 1);
+	if (ret < 1) {
+		return NULL;
+	}
+	pathbuf[ret] = 0;
 #endif
 	return strdup (pathbuf);
 #endif
