@@ -935,6 +935,62 @@ R_API RBuffer *r_bin_file_get_resource_data(RBinFile *bf, const RBinResource *re
 	return r_buf_new_slice (bf->buf, resource->paddr, resource->size);
 }
 
+static char *resource_type(const RBinResource *res) {
+	if (R_STR_ISNOTEMPTY (res->type)) {
+		char *type = strdup (res->type);
+		r_str_filter_file (type);
+		return type;
+	}
+	if (res->type_id != UT32_MAX) {
+		return r_str_newf ("type_%" PFMT32u, res->type_id);
+	}
+	return strdup ("unknown");
+}
+
+static char *resource_filename(const char *dir, const RBinResource *res) {
+	const ut64 id = (res->id == UT64_MAX)? 0: res->id;
+	char *type = resource_type (res);
+	char *file = r_str_newf ("%s%sresource_%s_%"PFMT64u"_%u.bin",
+			dir, R_SYS_DIR, type, id, res->index);
+	free (type);
+	return file;
+}
+
+R_API bool r_bin_file_extract_resources(RBinFile *bf, const char *output) {
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
+	RVecRBinResource *res = r_bin_file_get_resources (bf);
+	if (!res || RVecRBinResource_empty (res)) {
+		R_LOG_ERROR ("No resources to extract");
+		return false;
+	}
+	char *outdir = NULL;
+	const char *dir = output;
+	if (R_STR_ISEMPTY (dir)) {
+		dir = outdir = bf->file? r_str_newf ("%s.resources", r_file_basename (bf->file)): NULL;
+	}
+	if (!dir || !r_sys_mkdirp (dir) || !r_file_is_directory (dir)) {
+		R_LOG_ERROR ("Cannot create resource output directory '%s'", r_str_get (dir));
+		free (outdir);
+		return NULL;
+	}
+	bool ok = true;
+	RBinResource *r;
+	R_VEC_FOREACH (res, r) {
+		char *outfile = resource_filename (dir, r);
+		RBuffer *buf = r_bin_file_get_resource_data (bf, r);
+		if (buf && r_buf_dump (buf, outfile)) {
+			R_LOG_INFO ("%s created (%"PFMT64u")", outfile, r_buf_size (buf));
+		} else {
+			R_LOG_ERROR ("Cannot dump resource %u at 0x%08" PFMT64x, r->index, r->paddr);
+			ok = false;
+		}
+		free (outfile);
+		r_unref (buf);
+	}
+	free (outdir);
+	return ok;
+}
+
 R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	R_RETURN_VAL_IF_FAIL (o, NULL);
 	RBinSection *section;

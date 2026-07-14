@@ -247,124 +247,23 @@ static int rabin_extract(RBin *bin, int all) {
 	return res;
 }
 
-static void sanitize_resource_component(char *dst, size_t dst_size, const char *src) {
-	R_RETURN_IF_FAIL (dst && dst_size > 0);
-	if (R_STR_ISEMPTY (src)) {
-		src = "unknown";
-	}
-	size_t i;
-	for (i = 0; i + 1 < dst_size && src[i]; i++) {
-		char ch = src[i];
-		if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
-			|| (ch >= '0' && ch <= '9') || ch == '_' || ch == '-') {
-			dst[i] = ch;
-		} else {
-			dst[i] = '_';
-		}
-	}
-	dst[i] = 0;
-}
-
-static bool dump_resource_buffer(const char *file, RBuffer *buf) {
-	int fd = r_sandbox_open (file, O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0644);
-	if (fd < 0) {
-		R_LOG_ERROR ("Cannot create resource file '%s' without overwriting it", file);
-		return false;
-	}
-	ut8 bytes[4096];
-	ut64 offset = 0;
-	ut64 size = r_buf_size (buf);
-	bool success = true;
-	while (offset < size) {
-		int chunk_size = R_MIN ((ut64)sizeof (bytes), size - offset);
-		if (r_buf_read_at (buf, offset, bytes, chunk_size) != chunk_size) {
-			success = false;
-			break;
-		}
-		int written = 0;
-		while (written < chunk_size) {
-			int n = r_sandbox_write (fd, bytes + written, chunk_size - written);
-			if (n < 1) {
-				success = false;
-				break;
-			}
-			written += n;
-		}
-		if (!success) {
-			break;
-		}
-		offset += chunk_size;
-	}
-	if (r_sandbox_close (fd) < 0) {
-		success = false;
-	}
-	if (!success) {
-		r_file_rm (file);
-		R_LOG_ERROR ("Cannot write resource file '%s'", file);
-	}
-	return success;
-}
-
-static char *resource_output_directory(const RBinFile *bf, const char *output) {
-	if (R_STR_ISNOTEMPTY (output)) {
-		return strdup (output);
-	}
-	char *path = bf && bf->file? strdup (bf->file): NULL;
-	if (!path) {
-		return NULL;
-	}
-	const char *basename = r_file_basename (path);
-	char *outdir = r_str_newf ("%s.resources", basename);
-	free (path);
-	return outdir;
-}
-
 static bool rabin_extract_resources(RBin *bin, const char *output) {
 	RBinFile *bf = r_bin_cur (bin);
-	RVecRBinResource *resources = bf? r_bin_file_get_resources (bf): NULL;
-	if (!resources || RVecRBinResource_empty (resources)) {
-		R_LOG_ERROR ("Cannot extract resources: no resources found");
+	RList *files = bf? r_bin_file_extract_resources (bf, output): NULL;
+	if (!files) {
 		return false;
 	}
-	char *outdir = resource_output_directory (bf, output);
-	if (!outdir || !r_sys_mkdirp (outdir) || !r_file_is_directory (outdir)) {
-		R_LOG_ERROR ("Cannot create resource output directory '%s'", r_str_get (outdir));
-		free (outdir);
-		return false;
-	}
-	bool success = true;
+	RVecRBinResource *resources = r_bin_file_get_resources (bf);
+	RListIter *iter;
+	char *file;
+	ut32 index = 0;
 	RBinResource *resource;
-	R_VEC_FOREACH (resources, resource) {
-		char type[64];
-		if (R_STR_ISNOTEMPTY (resource->type)) {
-			sanitize_resource_component (type, sizeof (type), resource->type);
-		} else if (resource->type_id != UT32_MAX) {
-			snprintf (type, sizeof (type), "type_%" PFMT32u, resource->type_id);
-		} else {
-			r_str_ncpy (type, "unknown", sizeof (type));
-		}
-		char *outfile;
-		if (resource->id == UT64_MAX) {
-			outfile = r_str_newf ("%s%sresource_%s_named_%u.bin", outdir,
-				R_SYS_DIR, type, resource->index);
-		} else {
-			outfile = r_str_newf ("%s%sresource_%s_%" PFMT64u "_%u.bin", outdir,
-				R_SYS_DIR, type, resource->id, resource->index);
-		}
-		RBuffer *buf = r_bin_file_get_resource_data (bf, resource);
-		if (!outfile || !buf || !dump_resource_buffer (outfile, buf)) {
-			if (!buf) {
-				R_LOG_ERROR ("Cannot read resource %u at 0x%08" PFMT64x, resource->index, resource->paddr);
-			}
-			success = false;
-		} else {
-			printf ("%s created (%" PFMT64u ")\n", outfile, resource->size);
-		}
-		r_unref (buf);
-		free (outfile);
+	r_list_foreach (files, iter, file) {
+		resource = RVecRBinResource_at (resources, index++);
+		printf ("%s created (%" PFMT64u ")\n", file, resource->size);
 	}
-	free (outdir);
-	return success;
+	r_list_free (files);
+	return true;
 }
 
 static int rabin_dump_symbols(RBin *bin, int len) {
