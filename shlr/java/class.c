@@ -1416,11 +1416,12 @@ static RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 of
 	ut32 i, idx;
 	ut8 buf[8];
 	RBinJavaCPTypeObj *item = NULL;
-	const ut8 *f_buf = buffer + offset;
+	const ut8 *f_buf;
 	ut64 adv = 0;
-	if (!bin || offset + 8 >= len) {
+	if (!bin || !buffer || offset > len || len - offset < 8) {
 		return NULL;
 	}
+	f_buf = buffer + offset;
 	RBinJavaField *field = (RBinJavaField *)R_NEW0 (RBinJavaField);
 	field->metas = (RBinJavaMetaInfo *)R_NEW0 (RBinJavaMetaInfo);
 	memcpy (buf, f_buf, 8);
@@ -1479,11 +1480,7 @@ static RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 of
 		attr = r_bin_java_read_next_attr (bin, offset + adv, buffer, len);
 		if (!attr) {
 			R_LOG_ERROR ("unable to parse remainder of classfile after Field Attribute: %d", i);
-			free (field->metas);
-			free (field->class_name);
-			free (field->flags_str);
-			// free (field->type);
-			free (field);
+			r_bin_java_fmtype_free (field);
 			return NULL;
 		}
 		if ((r_bin_java_get_attr_type_by_name (attr->name))->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) {
@@ -1529,6 +1526,9 @@ static RBinJavaCPTypeObj *r_bin_java_read_next_constant_pool_item(RBinJavaObj *b
 	ut8 tag = 0;
 	ut32 str_len = 0;
 	RBinJavaCPTypeObj *java_obj = NULL;
+	if (!buf || offset >= len) {
+		return NULL;
+	}
 	tag = buf[offset];
 	if (tag >= R_BIN_JAVA_CP_METAS_SZ) {
 		R_LOG_ERROR ("Invalid tag '%d' at offset 0x%08" PFMT64x, tag, (ut64)offset);
@@ -1540,7 +1540,7 @@ static RBinJavaCPTypeObj *r_bin_java_read_next_constant_pool_item(RBinJavaObj *b
 	}
 	size_t buf_sz = java_constant_info->len;
 	if (java_constant_info->tag == 1) {
-		if (offset + 32 < len) {
+		if (len - offset >= 3) {
 			str_len = R_BIN_JAVA_USHORT (buf, offset + 1);
 			buf_sz += str_len;
 		} else {
@@ -1556,7 +1556,7 @@ static RBinJavaCPTypeObj *r_bin_java_read_next_constant_pool_item(RBinJavaObj *b
 	if (!cp_buf) {
 		return java_obj;
 	}
-	if (offset + buf_sz < len) {
+	if (buf_sz <= len - offset) {
 		memcpy (cp_buf, (ut8 *)buf + offset, buf_sz);
 		R_LOG_DEBUG ("Parsed the tag '%d':%s and create object from offset 0x%08" PFMT64x,
 			tag,
@@ -1997,7 +1997,7 @@ static ut64 r_bin_java_read_class_file2(RBinJavaObj *bin, const ut64 offset, con
 	ut16 super_class;
 	 */
 	if (cf2_buf + 6 > obuf + len) {
-		return 0;
+		return UT64_MAX;
 	}
 	bin->cf2.cf2_size = 6;
 	bin->cf2.access_flags = R_BIN_JAVA_USHORT (cf2_buf, 0);
@@ -2016,6 +2016,9 @@ static ut64 r_bin_java_parse_cp_pool(RBinJavaObj *bin, const ut64 offset, const 
 	int ord = 0;
 	ut64 adv = 0;
 	RBinJavaCPTypeObj *obj = NULL;
+	if (!buf || offset > len || len - offset < 2) {
+		return UT64_MAX;
+	}
 	const ut8 *cp_buf = buf + offset;
 	r_list_free (bin->cp_list);
 	bin->cp_list = r_list_newf (r_bin_java_constant_pool);
@@ -2044,7 +2047,8 @@ static ut64 r_bin_java_parse_cp_pool(RBinJavaObj *bin, const ut64 offset, const 
 			}
 		} else {
 			R_LOG_DEBUG ("Failed to read ConstantPoolItem %d", bin->cp_idx);
-			break;
+			bin->cp_size = UT64_MAX;
+			return UT64_MAX;
 		}
 	}
 	// Update the imports
@@ -2063,7 +2067,7 @@ static ut64 r_bin_java_parse_interfaces(RBinJavaObj *bin, const ut64 offset, con
 	bin->interfaces_list = r_list_newf (r_bin_java_interface_free);
 	if (offset + 2 > len) {
 		bin->interfaces_size = 0;
-		return 0;
+		return UT64_MAX;
 	}
 	bin->interfaces_count = R_BIN_JAVA_USHORT (if_buf, 0);
 	adv += 2;
@@ -2092,7 +2096,7 @@ static ut64 r_bin_java_parse_fields(RBinJavaObj *bin, const ut64 offset, const u
 	r_list_free (bin->fields_list);
 	bin->fields_list = r_list_newf (r_bin_java_fmtype_free);
 	bin->fields_offset = offset;
-	if (offset + 2 >= len) {
+	if (offset > len || len - offset < 2) {
 		return UT64_MAX;
 	}
 	bin->fields_count = R_BIN_JAVA_USHORT (fm_buf, 0);
@@ -2165,8 +2169,8 @@ static ut64 r_bin_java_parse_methods(RBinJavaObj *bin, const ut64 offset, const 
 	r_list_free (bin->methods_list);
 	bin->methods_list = r_list_newf (r_bin_java_fmtype_free);
 
-	if (offset + 2 >= len) {
-		return 0LL;
+	if (offset > len || len - offset < 2) {
+		return UT64_MAX;
 	}
 	bin->methods_offset = offset;
 	bin->methods_count = R_BIN_JAVA_USHORT (fm_buf, 0);
@@ -2232,7 +2236,7 @@ R_API int r_bin_java_new_bin(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv, const ut8
 
 R_API int r_bin_java_load_bin(RBinJavaObj *bin, const ut8 *buf, ut64 buf_sz) {
 	ut64 adv = 0;
-	if (!bin) {
+	if (!bin || !buf || buf_sz < 10) {
 		return false;
 	}
 	r_bin_java_reset_bin_info (bin);
@@ -2249,36 +2253,49 @@ R_API int r_bin_java_load_bin(RBinJavaObj *bin, const ut8 *buf, ut64 buf_sz) {
 		R_LOG_ERROR ("Java CLASS with MACH0 header?");
 		return false;
 	}
+	if (bin->cf.cp_count == 0) {
+		R_LOG_ERROR ("Invalid constant pool count");
+		return false;
+	}
 	adv += 8;
 	// -2 so that the cp_count will be parsed
-	adv += r_bin_java_parse_cp_pool (bin, adv, buf, buf_sz);
-	if (adv > buf_sz) {
+	ut64 size = r_bin_java_parse_cp_pool (bin, adv, buf, buf_sz);
+	if (size == UT64_MAX || size > buf_sz - adv) {
 		R_LOG_ERROR ("unable to parse remainder of classfile after Constant Pool");
-		return true;
+		return false;
 	}
-	adv += r_bin_java_read_class_file2 (bin, adv, buf, buf_sz);
-	if (adv > buf_sz) {
+	adv += size;
+	size = r_bin_java_read_class_file2 (bin, adv, buf, buf_sz);
+	if (size == UT64_MAX || size > buf_sz - adv) {
 		R_LOG_ERROR ("unable to parse remainder of classfile after class file info");
-		return true;
+		return false;
 	}
+	adv += size;
 	// eprintf ("This class: %d %s\n", bin->cf2.this_class, bin->cf2.this_class_name);
 	// eprintf ("0x%"PFMT64x " Access flags: 0x%04x\n", adv, bin->cf2.access_flags);
-	adv += r_bin_java_parse_interfaces (bin, adv, buf, buf_sz);
-	if (adv > buf_sz) {
+	size = r_bin_java_parse_interfaces (bin, adv, buf, buf_sz);
+	if (size == UT64_MAX || size > buf_sz - adv) {
 		R_LOG_ERROR ("unable to parse remainder of classfile after Interfaces");
-		return true;
+		return false;
 	}
-	adv += r_bin_java_parse_fields (bin, adv, buf, buf_sz);
-	if (adv > buf_sz) {
+	adv += size;
+	size = r_bin_java_parse_fields (bin, adv, buf, buf_sz);
+	if (size == UT64_MAX || size > buf_sz - adv) {
 		R_LOG_ERROR ("unable to parse remainder of classfile after Fields");
-		return true;
+		return false;
 	}
-	adv += r_bin_java_parse_methods (bin, adv, buf, buf_sz);
-	if (adv > buf_sz) {
+	adv += size;
+	size = r_bin_java_parse_methods (bin, adv, buf, buf_sz);
+	if (size == UT64_MAX || size > buf_sz - adv) {
 		R_LOG_ERROR ("unable to parse remainder of classfile after Methods");
-		return true;
+		return false;
 	}
+	adv += size;
 	adv += r_bin_java_parse_attrs (bin, adv, buf, buf_sz);
+	if (adv > buf_sz) {
+		R_LOG_ERROR ("unable to parse remainder of classfile after Attributes");
+		return false;
+	}
 	bin->calc_size = adv;
 	// if (adv > buf_sz) {
 	// eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Attributes.\n");
