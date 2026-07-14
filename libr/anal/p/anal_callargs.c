@@ -163,7 +163,6 @@ static int emit_signature(RAnal *a, const char *fcn_name, bool quiet, PJ *pj, RS
 	}
 	int s_width = (a->config->bits == 64) ? 8 : 4;
 	ut64 spv = r_reg_getv (a->reg, "SP") + s_width;
-	r_strf_buffer (256);
 	int i;
 	for (i = 0; i < nargs; i++) {
 		const char *name = r_type_func_args_name (a->sdb_types, key, i);
@@ -172,8 +171,8 @@ static int emit_signature(RAnal *a, const char *fcn_name, bool quiet, PJ *pj, RS
 		if (ctype && r_str_startswith (ctype, "const ")) {
 			ctype += 6;
 		}
-		const char *fmt = ctype ? sdb_const_get (a->sdb_types, r_strf ("type.%s", ctype), 0) : NULL;
-		int size = ctype ? (int)(sdb_num_get (a->sdb_types, r_strf ("type.%s.size", ctype), 0) / 8) : 0;
+		const char *fmt = ctype? sdb_const_getf (a->sdb_types, NULL, "type.%s", ctype): NULL;
+		int size = ctype? (int)(sdb_num_getf (a->sdb_types, NULL, "type.%s.size", ctype) / 8): 0;
 		const char *src = r_anal_cc_argloc (a, cc, i, 0, -1);
 		ut64 raw = SENT;
 		bool on_stack = false;

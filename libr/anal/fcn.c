@@ -2595,15 +2595,10 @@ static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
 
 static const char *function_signature_callconv(RAnal *anal, RAnalFunction *fcn, const char *type_name) {
 	const char *callconv = NULL;
-	char *key;
 
 	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
 	if (R_STR_ISNOTEMPTY (type_name)) {
-		key = r_str_newf ("func.%s.cc", type_name);
-		if (key) {
-			callconv = sdb_const_get (anal->sdb_types, key, 0);
-			free (key);
-		}
+		callconv = sdb_const_getf (anal->sdb_types, NULL, "func.%s.cc", type_name);
 	}
 	if (R_STR_ISNOTEMPTY (callconv) && r_anal_cc_exist (anal, callconv)) {
 		return callconv;
@@ -2623,12 +2618,7 @@ static bool function_signature_is_noreturn(Sdb *types, const char *type_name, bo
 	if (R_STR_ISEMPTY (type_name)) {
 		return fallback;
 	}
-	char *key = r_str_newf ("func.%s.noreturn", type_name);
-	if (!key) {
-		return fallback;
-	}
-	const char *value = sdb_const_get (types, key, 0);
-	free (key);
+	const char *value = sdb_const_getf (types, NULL, "func.%s.noreturn", type_name);
 	return value? r_str_is_true (value): fallback;
 }
 

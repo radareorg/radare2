@@ -421,9 +421,8 @@ static void cmd_tcc(RCore *core, const char *input) {
 static void add_type_fields_to_json(RCore *core, PJ *pj, const char *struct_name, const char *type_name) {
 	const bool is_union = !strcmp (type_name, "union");
 	// Get struct members list
-	char *members_query = r_str_newf ("%s.%s", type_name, struct_name);
-	char *members = sdb_get (core->anal->sdb_types, members_query, 0);
-	free (members_query);
+	const char *value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s", type_name, struct_name);
+	char *members = value? strdup (value): NULL;
 	if (!members) {
 		return;
 	}
@@ -438,9 +437,8 @@ static void add_type_fields_to_json(RCore *core, PJ *pj, const char *struct_name
 		if (!member_name || R_STR_ISEMPTY (member_name)) {
 			continue;
 		}
-		char *member_query = r_str_newf ("%s.%s.%s", type_name, struct_name, member_name);
-		char *member_details = sdb_get (core->anal->sdb_types, member_query, 0);
-		free (member_query);
+		value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s.%s", type_name, struct_name, member_name);
+		char *member_details = value? strdup (value): NULL;
 		if (!member_details) {
 			continue;
 		}
@@ -721,9 +719,7 @@ static bool stdifstruct(void *user, const char *k, const char *v) {
 		return true;
 	}
 	if (!strcmp (v, "typedef")) {
-		char *typedef_key = r_str_newf ("typedef.%s", k);
-		const char *type = sdb_const_get (TDB, typedef_key, NULL);
-		free (typedef_key);
+		const char *type = sdb_const_getf (TDB, NULL, "typedef.%s", k);
 		if (type && r_str_startswith (type, "struct")) {
 			return true;
 		}
@@ -822,9 +818,7 @@ static int print_struct_union_list_json(RCore *core, Sdb *TDB, SdbForeachCallbac
 
 static ut64 struct_type_size(Sdb *TDB, const char *name, const char *kind) {
 	if (!strcmp (kind, "typedef")) {
-		char *typedef_key = r_str_newf ("typedef.%s", name);
-		const char *type = sdb_const_get (TDB, typedef_key, NULL);
-		free (typedef_key);
+		const char *type = sdb_const_getf (TDB, NULL, "typedef.%s", name);
 		if (R_STR_ISNOTEMPTY (type)) {
 			return r_type_get_bitsize (TDB, type) / 8;
 		}
@@ -1321,9 +1315,7 @@ static void print_basic_type_with_offsets(RCore *core, Sdb *TDB, const char *arg
 				continue;
 			}
 		}
-		char *size_key = r_str_newf ("type.%s.size", name);
-		const char *size_str = sdb_const_get (TDB, size_key, NULL);
-		free (size_key);
+		const char *size_str = sdb_const_getf (TDB, NULL, "type.%s.size", name);
 		ut32 size = size_str ? (ut32)(atoi (size_str) / 8) : 0;
 		if (show_xrefs) {
 			RList *type_xrefs = collect_type_xrefs (core, name);
@@ -1406,7 +1398,6 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 	}
 
 	RStrBuf *sb = r_strbuf_new ("");
-	r_strf_buffer (256);
 
 	ls_foreach (l, iter, kv) {
 		const char *name = sdbkv_key (kv);
@@ -1418,12 +1409,12 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 			}
 		}
 
-		int args = sdb_num_get (TDB, r_strf ("func.%s.args", name), 0);
-		const char *ret = sdb_const_get (TDB, r_strf ("func.%s.ret", name), 0);
+		int args = sdb_num_getf (TDB, NULL, "func.%s.args", name);
+		const char *ret = sdb_const_getf (TDB, NULL, "func.%s.ret", name);
 		if (!ret) {
 			ret = "void";
 		}
-		const char *cc = sdb_const_get (TDB, r_strf ("func.%s.cc", name), 0);
+		const char *cc = sdb_const_getf (TDB, NULL, "func.%s.cc", name);
 		if (!cc) {
 			cc = r_anal_cc_default (core->anal);
 			if (!cc) {
@@ -1456,7 +1447,8 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 		int max_cc_args = cc ? r_anal_cc_max_arg (core->anal, cc) : 0;
 		ut32 current_offset = 0;
 		for (i = 0; i < args; i++) {
-			char *type = sdb_get (TDB, r_strf ("func.%s.arg.%d", name, i), 0);
+			const char *value = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", name, i);
+			char *type = value? strdup (value): NULL;
 			if (!type) {
 				continue;
 			}
@@ -1536,9 +1528,7 @@ static void print_type_view(RCore *core, const char *arg) {
 			} else if (!strcmp (type_kind, "func")) {
 				print_func_with_offsets (core, TDB, arg);
 			} else if (!strcmp (type_kind, "typedef")) {
-				char *typedef_key = r_str_newf ("typedef.%s", arg);
-				const char *real_type = sdb_const_get (TDB, typedef_key, NULL);
-				free (typedef_key);
+				const char *real_type = sdb_const_getf (TDB, NULL, "typedef.%s", arg);
 				if (real_type) {
 					print_type_view (core, real_type);
 				}
@@ -1706,8 +1696,8 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 	r_strf_buffer (256);
 	char *res = sdb_querys (TDB, NULL, -1, r_strf ("func.%s.args", input));
 	const char *name = r_str_trim_head_ro (input);
-	int i, args = sdb_num_get (TDB, r_strf ("func.%s.args", name), 0);
-	const char *ret = sdb_const_get (TDB, r_strf ("func.%s.ret", name), 0);
+	int i, args = sdb_num_getf (TDB, NULL, "func.%s.args", name);
+	const char *ret = sdb_const_getf (TDB, NULL, "func.%s.ret", name);
 	if (!ret) {
 		ret = "void";
 	}
@@ -1718,7 +1708,8 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 
 	r_cons_printf (core->cons, "%s %s (", ret, name);
 	for (i = 0; i < args; i++) {
-		char *type = sdb_get (TDB, r_strf ("func.%s.arg.%d", name, i), 0);
+		const char *value = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", name, i);
+		char *type = value? strdup (value): NULL;
 		if (!type) {
 			continue;
 		}
@@ -1746,11 +1737,10 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 	RCore *core = ctx->core;
 	Sdb *tdb = core->anal->sdb_types;
 	PJ *pj = ctx->pj;
-	r_strf_buffer (256);
 	const char *name = r_str_trim_head_ro (input);
-	int i, args = sdb_num_get (tdb, r_strf ("func.%s.args", name), 0);
-	const char *ret = sdb_const_get (tdb, r_strf ("func.%s.ret", name), 0);
-	const char *cc = sdb_const_get (tdb, r_strf ("func.%s.cc", name), 0);
+	int i, args = sdb_num_getf (tdb, NULL, "func.%s.args", name);
+	const char *ret = sdb_const_getf (tdb, NULL, "func.%s.ret", name);
+	const char *cc = sdb_const_getf (tdb, NULL, "func.%s.cc", name);
 	if (!ret) {
 		ret = "void";
 	}
@@ -1777,7 +1767,8 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 	pj_ka (pj, "args");
 	ut32 current_offset = 0;
 	for (i = 0; i < args; i++) {
-		char *type = sdb_get (tdb, r_strf ("func.%s.arg.%d", name, i), 0);
+		const char *value = sdb_const_getf (tdb, NULL, "func.%s.arg.%d", name, i);
+		char *type = value? strdup (value): NULL;
 		if (type) {
 			char *argname = strchr (type, ',');
 			if (argname) {
@@ -1917,21 +1908,17 @@ static bool print_typelist_json_cb(void *p, const char *k, const char *v) {
 	}
 	pj_o (pj);
 	Sdb *sdb = core->anal->sdb_types;
-	char *sizecmd = r_str_newf ("type.%s.size", k);
-	char *size_s = sdb_get (sdb, sizecmd, NULL);
-	char *formatcmd = r_str_newf ("type.%s", k);
+	const char *size_s = sdb_const_getf (sdb, NULL, "type.%s.size", k);
 	pj_ks (pj, "type", k);
 	pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
-	char *format_s = sdb_get (sdb, formatcmd, NULL);
+	const char *value = sdb_const_getf (sdb, NULL, "type.%s", k);
+	char *format_s = value? strdup (value): NULL;
 	if (format_s) {
 		r_str_trim (format_s);
 		pj_ks (pj, "format", format_s);
 		free (format_s);
 	}
 	pj_end (pj);
-	free (size_s);
-	free (sizecmd);
-	free (formatcmd);
 	return true;
 }
 
@@ -1993,11 +1980,9 @@ static void set_offset_hint(RCore *core, RAnalOp *op, const char *type, ut64 lad
 	const char *cmt = ((offimm == 0) && res)? res: type;
 	if (offimm > 0) {
 		// set hint only if link is present
-		char* query = r_str_newf ("link.%08"PFMT64x, laddr);
-		if (res && sdb_const_get (core->anal->sdb_types, query, 0)) {
+		if (res && sdb_const_getf (core->anal->sdb_types, NULL, "link.%08" PFMT64x, laddr)) {
 			r_anal_hint_set_offset (core->anal, at, res);
 		}
-		free (query);
 	} else if (cmt && r_anal_op_ismemref (op->type)) {
 		r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, at, cmt);
 	}
@@ -2712,8 +2697,7 @@ static int cmd_type(void *data, const char *input) {
 			  const char *typdef = sdb_const_get (core->anal->sdb_types, token, 0);
 			  // Resolve typedef if any
 			  if (typdef && !strcmp (typdef, "typedef")) {
-				  r_strf_var (a, 128, "typedef.%s", token);
-				  const char *tokendef = sdb_const_get (core->anal->sdb_types, a, 0);
+				  const char *tokendef = sdb_const_getf (core->anal->sdb_types, NULL, "typedef.%s", token);
 				  if (tokendef) {
 					  token = tokendef;
 				  }
@@ -3287,13 +3271,11 @@ static int cmd_type(void *data, const char *input) {
 						if (!input[1]) {
 							r_cons_println (core->cons, name);
 						} else {
-							char *q = r_str_newf ("typedef.%s", name);
-							const char *res = sdb_const_get (TDB, q, 0);
+							const char *res = sdb_const_getf (TDB, NULL, "typedef.%s", name);
 							if (!res) {
 								res = "";
 							}
 							pj_ks (pj, name, res);
-							free (q);
 						}
 					}
 				}
@@ -3328,9 +3310,7 @@ static int cmd_type(void *data, const char *input) {
 								continue;
 							}
 						}
-						char *q = r_str_newf ("typedef.%s", name);
-						const char *res = sdb_const_get (TDB, q, 0);
-						free (q);
+						const char *res = sdb_const_getf (TDB, NULL, "typedef.%s", name);
 						if (res) {
 							r_cons_printf (core->cons, "%s %s %s;\n", sdbkv_value (kv), res, name);
 						}
@@ -3360,12 +3340,10 @@ static int cmd_type(void *data, const char *input) {
 		const char *istypedef;
 		istypedef = sdb_const_get (TDB, s, 0);
 		if (istypedef && !strncmp (istypedef, "typedef", 7)) {
-			char *q = r_str_newf ("typedef.%s", s);
-			const char *res = sdb_const_get (TDB, q, 0);
+			const char *res = sdb_const_getf (TDB, NULL, "typedef.%s", s);
 			if (res) {
 				r_cons_println (core->cons, res);
 			}
-			free (q);
 		} else {
 			R_LOG_ERROR ("This is not a typedef");
 		}

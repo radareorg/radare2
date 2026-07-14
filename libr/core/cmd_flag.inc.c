@@ -794,8 +794,7 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 		const char *tag;
 		RList *list = r_flag_tags_list (core->flags, NULL);
 		r_list_foreach (list, iter, tag) {
-			r_strf_var (key, 128, "tag.%s", tag);
-			const char *flags = sdb_get (core->flags->tags, key, NULL);
+			const char *flags = sdb_const_getf (core->flags->tags, NULL, "tag.%s", tag);
 			r_cons_printf (core->cons, "'ft %s %s\n", tag, flags);
 		}
 		r_list_free (list);

@@ -501,8 +501,8 @@ static PE_DWord bin_pe_va_to_rva(RBinPEObj *pe, PE_DWord va) {
 
 static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	Sdb *db = sdb;
-	r_strf_var (key, 32, "%d", ordinal);
-	char *foo = sdb_get (db, key, 0);
+	const char *value = sdb_const_getf (db, NULL, "%d", ordinal);
+	char *foo = value? strdup (value): NULL;
 	if (foo && *foo) {
 		return foo;
 	} else {

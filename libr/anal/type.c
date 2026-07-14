@@ -23,13 +23,8 @@ static char *is_type(char *type) {
 }
 
 static char *get_type_data(Sdb *sdb_types, const char *type, const char *sname) {
-	char *key = r_str_newf ("%s.%s", type, sname);
-	if (!key) {
-		return NULL;
-	}
-	char *members = sdb_get (sdb_types, key, NULL);
-	free (key);
-	return members;
+	const char *value = sdb_const_getf (sdb_types, NULL, "%s.%s", type, sname);
+	return value? strdup (value): NULL;
 }
 
 static void sdb_concat_by_path(Sdb *s, const char *path) {
@@ -276,12 +271,7 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 
 	char *cur;
 	sdb_aforeach (cur, members) {
-		char *val_key = r_str_newf ("enum.%s.%s", sname, cur);
-		if (!val_key) {
-			goto error;
-		}
-		const char *value = sdb_const_get (anal->sdb_types, val_key, NULL);
-		free (val_key);
+		const char *value = sdb_const_getf (anal->sdb_types, NULL, "enum.%s.%s", sname, cur);
 
 		if (!value) { // if nothing is found, ret NULL
 			goto error;
@@ -344,12 +334,8 @@ static RAnalBaseType *get_composite_type(RAnal *anal, const char *sname, RAnalBa
 
 	char *cur;
 	sdb_aforeach (cur, sdb_members) {
-		char *type_key = r_str_newf ("%s.%s.%s", kindstr, sname, cur);
-		if (!type_key) {
-			goto error;
-		}
-		char *values = sdb_get (anal->sdb_types, type_key, NULL);
-		free (type_key);
+		const char *value = sdb_const_getf (anal->sdb_types, NULL, "%s.%s.%s", kindstr, sname, cur);
+		char *values = value? strdup (value): NULL;
 
 		if (!values) {
 			goto error;
@@ -401,12 +387,11 @@ error:
 
 static RAnalBaseType *get_atomic_type(RAnal *anal, const char *sname) {
 	R_RETURN_VAL_IF_FAIL (anal && R_STR_ISNOTEMPTY (sname), NULL);
-	r_strf_buffer (KSZ);
 	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ATOMIC);
 	if (base_type) {
 		base_type->type = get_type_data (anal->sdb_types, "type", sname);
 		if (base_type->type) {
-			base_type->size = sdb_num_get (anal->sdb_types, r_strf ("type.%s.size", sname), 0);
+			base_type->size = sdb_num_getf (anal->sdb_types, NULL, "type.%s.size", sname);
 			return base_type;
 		}
 		r_anal_base_type_free (base_type);

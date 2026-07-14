@@ -609,8 +609,7 @@ static bool dyncc_ref_exists(RAnal *anal, const RAnalDynCCSlice *ref) {
 	if (dyncc_slice_empty (ref)) {
 		return true;
 	}
-	r_strf_var (refcc, R_ANAL_DYNCC_NAME_SIZE, "%.*s", (int)ref->len, ref->p);
-	const char *x = sdb_const_get (DB, refcc, 0);
+	const char *x = sdb_const_getf (DB, NULL, "%.*s", (int)ref->len, ref->p);
 	return x && !strcmp (x, "cc");
 }
 
@@ -771,8 +770,7 @@ static char *cc_sig_tostring(const RAnalCCSig *sig) {
 		if (is_dyn) {
 			arg = dyncc_arg_home (sig->anal, sig->dyncc, i, 0, -1);
 		} else {
-			r_strf_var (key, 128, "cc.%s.arg%d", sig->name, i);
-			arg = sdb_const_get (sig->db, key, 0);
+			arg = sdb_const_getf (sig->db, NULL, "cc.%s.arg%d", sig->name, i);
 		}
 		if (!arg) {
 			if (!is_dyn) {
@@ -787,8 +785,7 @@ static char *cc_sig_tostring(const RAnalCCSig *sig) {
 	if (is_dyn) {
 		argn = dyncc_arg_home (sig->anal, sig->dyncc, max, 0, -1);
 	} else {
-		r_strf_var (key, 128, "cc.%s.argn", sig->name);
-		argn = sdb_const_get (sig->db, key, 0);
+		argn = sdb_const_getf (sig->db, NULL, "cc.%s.argn", sig->name);
 	}
 	if (argn) {
 		r_strbuf_appendf (sb, "%s%s", is_first? "": ", ", argn);
@@ -802,8 +799,7 @@ static char *cc_sig_tostring(const RAnalCCSig *sig) {
 	}
 	r_strbuf_append (sb, ";");
 	if (!is_dyn) {
-		r_strf_var (key, 128, "cc.%s.revarg", sig->name);
-		if (!r_str_is_true (sdb_const_get (sig->db, key, 0))) {
+		if (!r_str_is_true (sdb_const_getf (sig->db, NULL, "cc.%s.revarg", sig->name))) {
 			return r_strbuf_drain (sb);
 		}
 		r_strbuf_append (sb, " // revarg");
@@ -860,21 +856,17 @@ R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home,
 		return NULL;
 	}
 	Sdb *db = DB;
-	r_strf_buffer (64);
 	if (argc > 0) {
-		char *revarg = r_strf ("cc.%s.revarg", cc);
-		if (r_str_is_true (sdb_const_get (db, revarg, 0))) {
+		if (r_str_is_true (sdb_const_getf (db, NULL, "cc.%s.revarg", cc))) {
 			if (n >= argc) {
 				return NULL;
 			}
 			n = argc - n - 1;
 		}
 	}
-	char *query = r_strf ("cc.%s.arg%d", cc, n);
-	const char *ret = sdb_const_get (db, query, 0);
+	const char *ret = sdb_const_getf (db, NULL, "cc.%s.arg%d", cc, n);
 	if (!ret) {
-		query = r_strf ("cc.%s.argn", cc);
-		ret = sdb_const_get (db, query, 0);
+		ret = sdb_const_getf (db, NULL, "cc.%s.argn", cc);
 	}
 	return ret? dyncc_from_static_loc (anal, ret): NULL;
 }
@@ -885,11 +877,8 @@ R_API const char *r_anal_cc_roleloc(RAnal *anal, const char *convention, const c
 	if (dyncc_parse (convention, &d)) {
 		return role[0] && !role[1]? dyncc_role_loc (anal, &d, role[0]): NULL;
 	}
-	RStrBuf sb;
-	const char *key = r_strbuf_initf (&sb, "cc.%s.%s", convention, role);
-	const char *value = sdb_const_get (DB, key, 0);
+	const char *value = sdb_const_getf (DB, 0, "cc.%s.%s", convention, role);
 	const char *res = value? r_str_constpool_get (&anal->constpool, value): NULL;
-	r_strbuf_fini (&sb);
 	return res;
 }
 
@@ -926,8 +915,7 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	}
 
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-		r_strf_var (query, 64, "cc.%s.arg%d", cc, i);
-		const char *res = sdb_const_get (DB, query, 0);
+		const char *res = sdb_const_getf (DB, NULL, "cc.%s.arg%d", cc, i);
 		if (!res) {
 			break;
 		}
@@ -941,19 +929,18 @@ R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n) {
 	if (dyncc_parse (convention, &d)) {
 		return dyncc_ret (anal, &d, n);
 	}
-	r_strf_buffer (64);
 	if (n > 0) {
-		int retn = sdb_num_get (DB, r_strf ("cc.%s.retn", convention), 0);
+		int retn = sdb_num_getf (DB, NULL, "cc.%s.retn", convention);
 		if (n >= retn) {
 			return NULL;
 		}
 	}
-	const char *ret = sdb_const_get (DB, r_strf ("cc.%s.ret%d", convention, n), 0);
+	const char *ret = sdb_const_getf (DB, NULL, "cc.%s.ret%d", convention, n);
 	if (ret) {
 		return ret;
 	}
 	if (n == 0) {
-		return sdb_const_get (DB, r_strf ("cc.%s.ret", convention), 0);
+		return sdb_const_getf (DB, NULL, "cc.%s.ret", convention);
 	}
 	return NULL;
 }
@@ -964,8 +951,7 @@ R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention) {
 	if (dyncc_parse (convention, &d)) {
 		return d.stack_pop;
 	}
-	r_strf_var (query, 64, "cc.%s.pop", convention);
-	const char *pop = sdb_const_get (DB, query, 0);
+	const char *pop = sdb_const_getf (DB, NULL, "cc.%s.pop", convention);
 	int ret = 0;
 	return cc_parse_stack_pop (pop, &ret)? ret: 0;
 }
@@ -976,8 +962,7 @@ static const char *cc_regset(RAnal *anal, const char *convention, const char *fi
 		const RAnalDynCCSlice *slice = !strcmp (field, "clobber")? &d.clobbers: &d.preserves;
 		return dyncc_intern (anal, slice->p, slice->len);
 	}
-	r_strf_var (query, 64, "cc.%s.%s", convention, field);
-	const char *ret = sdb_const_get (DB, query, 0);
+	const char *ret = sdb_const_getf (DB, NULL, "cc.%s.%s", convention, field);
 	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
 }
 
@@ -1175,7 +1160,6 @@ R_API void r_anal_set_syscc_default(RAnal *anal, const char *cc) {
 
 R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name) {
 	R_RETURN_VAL_IF_FAIL (anal && func_name, NULL);
-	r_strf_var (query, 64, "func.%s.cc", func_name);
-	const char *cc = sdb_const_get (anal->sdb_types, query, 0);
+	const char *cc = sdb_const_getf (anal->sdb_types, NULL, "func.%s.cc", func_name);
 	return cc ? cc : r_anal_cc_default (anal);
 }

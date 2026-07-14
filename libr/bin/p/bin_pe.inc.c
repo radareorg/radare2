@@ -123,25 +123,20 @@ static RBinAddr* binsym(RBinFile *bf, int type) {
 }
 
 static void add_tls_callbacks(RBinFile *bf, RList* list, int limit) {
-	r_strf_buffer (64);
 	PE_DWord paddr, vaddr, haddr;
 	int count = 0;
 	RBinPEObj *pe = PE_(get) (bf);
-	const char *key;
 
 	do {
-		key =  r_strf ("pe.tls_callback%d_paddr", count);
-		paddr = sdb_num_get (pe->kv, key, 0);
+		paddr = sdb_num_getf (pe->kv, NULL, "pe.tls_callback%d_paddr", count);
 		if (!paddr) {
 			break;
 		}
-		key =  r_strf ("pe.tls_callback%d_vaddr", count);
-		vaddr = sdb_num_get (pe->kv, key, 0);
+		vaddr = sdb_num_getf (pe->kv, NULL, "pe.tls_callback%d_vaddr", count);
 		if (!vaddr) {
 			break;
 		}
-		key = r_strf ("pe.tls_callback%d_haddr", count);
-		haddr = sdb_num_get (pe->kv, key, 0);
+		haddr = sdb_num_getf (pe->kv, NULL, "pe.tls_callback%d_haddr", count);
 		if (!haddr) {
 			break;
 		}

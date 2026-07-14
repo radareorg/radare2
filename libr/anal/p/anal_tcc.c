@@ -52,7 +52,6 @@ extern int tcc_sym_push(TCCState *s1, char *typename, int typesize, int meta);
 /* parse C code and return it in key-value form */
 
 static bool __typeLoad(void *p, const char *k, const char *v) {
-	r_strf_buffer (128);
 	if (!p) {
 		return false;
 	}
@@ -69,8 +68,8 @@ static bool __typeLoad(void *p, const char *k, const char *v) {
 		const char *typename = k;
 		int typesize = 0;
 		// TODO: Add typesize here
-		char* query = r_strf ("struct.%s", k);
-		char *members = sdb_get (anal->sdb_types, query, 0);
+		const char *value = sdb_const_getf (anal->sdb_types, NULL, "struct.%s", k);
+		char *members = value? strdup (value): NULL;
 		char *next, *ptr = members;
 		if (members) {
 			do {
@@ -78,8 +77,8 @@ static bool __typeLoad(void *p, const char *k, const char *v) {
 				if (!name) {
 					break;
 				}
-				query = r_strf ("struct.%s.%s", k, name);
-				char *subtype = sdb_get (anal->sdb_types, query, 0);
+				value = sdb_const_getf (anal->sdb_types, NULL, "struct.%s.%s", k, name);
+				char *subtype = value? strdup (value): NULL;
 				if (!subtype) {
 					break;
 				}
@@ -92,8 +91,7 @@ static bool __typeLoad(void *p, const char *k, const char *v) {
 					}
 					char *subname = tmp;
 					// TODO: Go recurse here
-					query = r_strf ("struct.%s.%s.meta", subtype, subname);
-					btype = sdb_num_get (anal->sdb_types, query, 0);
+					btype = sdb_num_getf (anal->sdb_types, NULL, "struct.%s.%s.meta", subtype, subname);
 					tcc_sym_push (s1, subtype, 0, btype);
 				}
 				free (subtype);

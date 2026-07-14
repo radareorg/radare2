@@ -687,8 +687,7 @@ static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
 }
 
 static bool is_known_loop_header(PDCState *state, ut64 addr) {
-	r_strf_buffer (64);
-	return sdb_num_get (state->db, r_strf ("loop_header.%" PFMT64x, addr), 0) != 0;
+	return sdb_num_getf (state->db, NULL, "loop_header.%" PFMT64x, addr) != 0;
 }
 
 static bool line_is_goto(const char *line) {
@@ -1634,7 +1633,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		} else {
 			closed = true;
 		}
-		if (sdb_const_get (state.db, K_INDENT (bb->addr), 0)) {
+		if (sdb_const_getf (state.db, 0, "loc.%" PFMT64x, bb->addr)) {
 			unvisit (visited, bb);
 			R_LOG_DEBUG ("// 0x%08" PFMT64x " already analyzed", bb->addr);
 			ut64 addr = sdb_array_pop_num (state.db, "indent", NULL);
@@ -1674,7 +1673,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				R_LOG_ERROR ("failed block");
 				break;
 			}
-			nindent = sdb_num_get (state.db, K_INDENT (addr), NULL);
+			nindent = sdb_num_getf (state.db, NULL, "loc.%" PFMT64x, addr);
 			if (indent > nindent && !strcmp (blocktype, "else")) {
 				emit_close_braces (&state, addr, indent, nindent);
 			}
@@ -1697,8 +1696,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						break;
 					}
 				}
-				if (sdb_get (state.db, K_INDENT (jump), 0)) {
-					if (fail != UT64_MAX && !sdb_get (state.db, K_INDENT (fail), 0)) {
+				if (sdb_const_getf (state.db, 0, "loc.%" PFMT64x, jump)) {
+					if (fail != UT64_MAX && !sdb_const_getf (state.db, 0, "loc.%" PFMT64x, fail)) {
 						bb = r_anal_bb_from_offset (core->anal, fail);
 					} else if (fail == UT64_MAX) {
 						resume_from_indent = true;
@@ -1713,7 +1712,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					}
 					if (fail != UT64_MAX) {
 						indent++;
-						if (sdb_get (state.db, K_INDENT (bb->fail), 0)) {
+						if (sdb_const_getf (state.db, 0, "loc.%" PFMT64x, bb->fail)) {
 							R_LOG_DEBUG ("There's already a block at 0x%" PFMT64x, bb->addr);
 						} else {
 							sdb_array_push_num (state.db, "indent", fail, 0);
@@ -1736,7 +1735,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					break;
 				}
 				bb = r_anal_bb_from_offset (core->anal, addr);
-				nindent = sdb_num_get (state.db, K_INDENT (addr), NULL);
+				nindent = sdb_num_getf (state.db, NULL, "loc.%" PFMT64x, addr);
 				if (indent > nindent) {
 					emit_close_braces (&state, bb->addr, indent, nindent);
 				}
