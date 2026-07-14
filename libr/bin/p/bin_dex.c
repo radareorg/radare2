@@ -103,7 +103,7 @@ static ut64 get_method_attr(ut64 MA) {
 	return flags;
 }
 
-static ut64 offset_of_method_idx(RBinFile *bf, int idx) {
+static ut64 method_addr(RBinFile *bf, int idx) {
 	RBinDexObj *dex = bf->bo->bin_obj;
 	// ut64 off = dex->header.method_offset + idx;
 	r_strf_var (key, 64, "method.%d", idx);
@@ -2039,7 +2039,7 @@ static ut64 getoffset(RBinFile *bf, int type, int idx) {
 	switch (type) {
 	case 'm': // methods
 		// TODO: ADD CHECK
-		off = offset_of_method_idx (bf, idx);
+		off = method_addr (bf, idx);
 		break;
 	case 'f':
 		off = dex_field_offset (dex, idx);

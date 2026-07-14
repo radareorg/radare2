@@ -31,6 +31,7 @@ if get_option('enable_tests')
     'dwarf_integration',
     'esil',
     'esil_dfg_filter',
+    'egg_lang',
     'event',
     'flags',
     'glob',
