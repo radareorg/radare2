@@ -2019,8 +2019,8 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 	}
 	RAnalVar *var = r_anal_get_used_function_var (anal, aop->addr);
 	ut32 type = aop->type & R_ANAL_OP_TYPE_MASK;
-	// master idiom: type & UCALL also matches RET/ILL/UNK but the body no-ops there (the clobber path needs exact matching)
-	if (type == R_ANAL_OP_TYPE_CALL || type & R_ANAL_OP_TYPE_UCALL) {
+	// UCALL is the base value 4, not a flag: type & UCALL also matches STORE and swallows the return-value consumer below
+	if (type == R_ANAL_OP_TYPE_CALL || type == R_ANAL_OP_TYPE_UCALL || type == R_ANAL_OP_TYPE_UCCALL) {
 		RAnalFunction *fcn_call = NULL;
 		const char *full_name = tp_call_target_name (anal, aop, type, &fcn_call);
 		if (full_name) {

@@ -468,6 +468,35 @@ struct Ctx {
 EOF
 RUN
 
+NAME=struct field typed from callee return value stored on arm64
+FILE=malloc://64
+ARGS=-a arm -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov x2, x0
+wa bl 0x20 @ 4
+wa str x0, [x2, 0x10] @ 8
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Ctx { char pad[16]; int field_16; };"
+"td char *helper();"
+afvt arg1 "struct Ctx *" @ 0
+aei
+aeim
+aaft
+tsc Ctx
+EOF
+EXPECT=<<EOF
+struct Ctx {
+  char pad[16];
+  char *field_16;
+};
+EOF
+RUN
+
 NAME=struct field typed from address passed as out parameter
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e types.fields=true
