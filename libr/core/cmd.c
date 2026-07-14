@@ -2503,8 +2503,8 @@ R_API int r_line_hist_sdb_up(RLine *line) {
 		return false;
 	}
 	line->sdbshell_hist_iter = line->sdbshell_hist_iter->n;
-	strncpy (line->buffer.data, line->sdbshell_hist_iter->data, R_LINE_BUFSIZE - 1);
-	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	strncpy (line->state.buffer.data, line->sdbshell_hist_iter->data, R_LINE_BUFSIZE - 1);
+	line->state.buffer.index = line->state.buffer.length = strlen (line->state.buffer.data);
 	return true;
 }
 
@@ -2513,8 +2513,8 @@ R_API int r_line_hist_sdb_down(RLine *line) {
 		return false;
 	}
 	line->sdbshell_hist_iter = line->sdbshell_hist_iter->p;
-	strncpy (line->buffer.data, line->sdbshell_hist_iter->data, R_LINE_BUFSIZE - 1);
-	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	strncpy (line->state.buffer.data, line->sdbshell_hist_iter->data, R_LINE_BUFSIZE - 1);
+	line->state.buffer.index = line->state.buffer.length = strlen (line->state.buffer.data);
 	return true;
 }
 

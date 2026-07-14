@@ -5438,8 +5438,8 @@ static int file_history_up(RLine *line) {
 	line->file_hist_index++;
 	RIODesc *desc = r_list_get_n (files, num_files - line->file_hist_index);
 	if (desc) {
-		strncpy (line->buffer.data, desc->name, R_LINE_BUFSIZE - 1);
-		line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+		strncpy (line->state.buffer.data, desc->name, R_LINE_BUFSIZE - 1);
+		line->state.buffer.index = line->state.buffer.length = strlen (line->state.buffer.data);
 	}
 	r_list_free (files);
 	return true;
@@ -5454,14 +5454,14 @@ static int file_history_down(RLine *line) {
 	}
 	line->file_hist_index--;
 	if (line->file_hist_index <= 0) {
-		line->buffer.data[0] = '\0';
-		line->buffer.index = line->buffer.length = 0;
+		line->state.buffer.data[0] = '\0';
+		line->state.buffer.index = line->state.buffer.length = 0;
 		return false;
 	}
 	RIODesc *desc = r_list_get_n (files, num_files - line->file_hist_index);
 	if (desc) {
-		strncpy (line->buffer.data, desc->name, R_LINE_BUFSIZE - 1);
-		line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+		strncpy (line->state.buffer.data, desc->name, R_LINE_BUFSIZE - 1);
+		line->state.buffer.index = line->state.buffer.length = strlen (line->state.buffer.data);
 	}
 	r_list_free (files);
 	return true;

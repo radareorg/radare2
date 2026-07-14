@@ -1350,7 +1350,7 @@ R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBu
 				return;
 			}
 			if (R_STR_ISNOTEMPTY (s)) {
-				eprintf ("\r%s%s\r\n", core->cons->line->prompt, buf->data);
+				eprintf ("\r%s%s\r\n", core->cons->line->state.prompt, buf->data);
 				RList *list = r_str_split_list (s, "\n", 0);
 				RListIter *iter;
 				char *line;
@@ -1640,7 +1640,7 @@ R_API int r_core_fgets(RCons *cons, char *buf, int len) {
 	if (!ptr) {
 		return -1;
 	}
-	if (cons->line->buffer.length >= len - 2) {
+	if (cons->line->state.buffer.length >= len - 2) {
 		R_LOG_ERROR ("input is too large");
 		*buf = 0;
 		return 0;

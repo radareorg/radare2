@@ -426,7 +426,7 @@ R_API int r_cons_fgets(RCons *cons, char *buf, int len, int argc, const char **a
 	if (cons->user_fgets) {
 		RETURN (cons->user_fgets (cons, buf, len));
 	}
-	const char *prompt = cons->line->prompt;
+	const char *prompt = cons->line->state.prompt;
 	P (prompt);
 	*buf = '\0';
 	if (color) {

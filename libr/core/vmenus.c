@@ -359,9 +359,9 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			#define I core->cons
 			const char *cmd = r_config_get (core->config, "cmd.vprompt");
 			r_line_set_prompt (core->cons->line, "cmd.vprompt> ");
-			I->line->contents = strdup (cmd);
+			I->line->state.contents = strdup (cmd);
 			buf = r_line_readline (core->cons);
-			I->line->contents = NULL;
+			I->line->state.contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
 			r_core_visual_showcursor (core, false);
 		}
@@ -825,9 +825,9 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			#define I core->cons
 			const char *cmd = r_config_get (core->config, "cmd.vprompt");
 			r_line_set_prompt (core->cons->line, "cmd.vprompt> ");
-			I->line->contents = strdup (cmd);
+			I->line->state.contents = strdup (cmd);
 			buf = r_line_readline (core->cons);
-			I->line->contents = NULL;
+			I->line->state.contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
 			r_core_visual_showcursor (core, false);
 		}

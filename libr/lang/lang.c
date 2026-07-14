@@ -341,7 +341,8 @@ R_API bool r_lang_prompt(RLang *lang) {
 	RLineHistory histnull = {0};
 	RLineCompletion oc = line->completion;
 	RLineCompletion ocnull = {0};
-	char *prompt = strdup (line->prompt);
+	RLineState state = line->state;
+	line->state.prompt = NULL;
 	line->completion = ocnull;
 	line->history = histnull;
 
@@ -391,8 +392,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 			continue;
 		}
 		if (!strcmp (buf, "q")) {
-			free (prompt);
-			return true;
+			break;
 		}
 		if (!strcmp (buf, "?")) {
 			RLangDef *def;
@@ -417,11 +417,11 @@ R_API bool r_lang_prompt(RLang *lang) {
 		}
 	}
 	// XXX: leaking history
-	r_line_set_prompt (line->cons->line, prompt);
+	free (line->state.prompt);
+	line->state = state;
 	line->completion = oc;
 	line->history = hist;
 	clearerr (stdin);
 	printf ("\n");
-	free (prompt);
 	return true;
 }

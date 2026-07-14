@@ -20,10 +20,10 @@ static void setcurline(RCons *cons) {
 	const char *nline = r_list_get_n (editor->lines, editor->n);
 	const char *curline = r_str_get (nline);
 	RLine *line = cons->line;
-	r_str_ncpy (line->buffer.data, curline, sizeof (line->buffer.data) - 1);
-	line->buffer.data[sizeof (line->buffer.data) - 1] = '\0';
-	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
-	line->contents = (char*)curline;
+	r_str_ncpy (line->state.buffer.data, curline, sizeof (line->state.buffer.data) - 1);
+	line->state.buffer.data[sizeof (line->state.buffer.data) - 1] = '\0';
+	line->state.buffer.index = line->state.buffer.length = strlen (line->state.buffer.data);
+	line->state.contents = (char*)curline;
 }
 
 static void emptyline(RCons *cons) {
@@ -97,15 +97,10 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, bool *
 	RConsEditor editor = { 0 };
 	RConsEditor *old_editor = cons->editor;
 	RLine *line = cons->line;
-	RLineBuffer old_buffer = line->buffer;
-	int (*old_hist_up)(RCons *cons, void *user) = line->hist_up;
-	int (*old_hist_down)(RCons *cons, void *user) = line->hist_down;
-	char *old_contents = line->contents;
-	RConsFunctionKey old_cb_fkey = line->cb_fkey;
+	RLineState old_state = line->state;
+	line->state.prompt = NULL;
 	int old_echo = cons->echo;
-	char *old_prompt = NULL;
 	char *result = NULL;
-	bool restore_line = false;
 
 	editor.lines = r_list_newf (free);
 	if (!editor.lines) {
@@ -131,16 +126,11 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, bool *
 		}
 		free (data);
 	}
-	old_prompt = r_line_get_prompt (line);
-	if (!old_prompt) {
-		goto beach;
-	}
 	cons->editor = &editor;
-	restore_line = true;
 	R_LOG_INFO ("Loaded %d lines. Use ^D or '.' to save and quit", r_list_length (editor.lines));
-	line->hist_up = up;
-	line->hist_down = down;
-	line->contents = line->buffer.data;
+	line->state.hist_up = up;
+	line->state.hist_down = down;
+	line->state.contents = line->state.buffer.data;
 	cons->echo = false;
 	for (;;) {
 		setcurline (cons);
@@ -198,17 +188,10 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, bool *
 	}
 
 beach:
-	if (restore_line) {
-		r_line_set_prompt (line, old_prompt);
-		line->buffer = old_buffer;
-		line->hist_up = old_hist_up;
-		line->hist_down = old_hist_down;
-		line->contents = old_contents;
-		line->cb_fkey = old_cb_fkey;
-		cons->echo = old_echo;
-	}
+	free (line->state.prompt);
+	line->state = old_state;
+	cons->echo = old_echo;
 	cons->editor = old_editor;
 	r_list_free (editor.lines);
-	free (old_prompt);
 	return result;
 }
