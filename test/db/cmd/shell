@@ -119,6 +119,7 @@ CMDS=<<EOF
 _
 ?e hello|!grep hell
 _
+?e hello|!sh -c 'cat >/dev/null; dd if=/dev/zero bs=1M count=1 1>&2'
 EOF
 EXPECT=<<EOF
 hello

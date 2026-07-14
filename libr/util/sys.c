@@ -841,6 +841,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 		close (sh_in[0]);
 		if (R_STR_ISEMPTY (inputptr)) {
 			close (sh_in[1]);
+			sh_in[1] = -1;
 		}
 		// we should handle broken pipes somehow better
 		r_sys_signal (SIGPIPE, SIG_IGN);
@@ -861,7 +862,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 			if (sterr) {
 				FD_SET (sh_err[0], &rfds);
 			}
-			if (inputptr && *inputptr) {
+			if (inputptr && *inputptr && written < ilen) {
 				FD_SET (sh_in[1], &wfds);
 				if (sh_in[1] > maxfd) {
 					maxfd = sh_in[1];
@@ -870,8 +871,12 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 			memset (buffer, 0, sizeof (buffer));
 
 			nfd = select (maxfd + 1, &rfds, &wfds, NULL, NULL);
-			if (nfd < 0 && errno == EINTR) {
-				continue;
+			if (nfd < 0) {
+				if (errno == EINTR) {
+					continue;
+				}
+				R_LOG_ERROR ("select failed: %s", strerror (errno));
+				break;
 			}
 
 			if (output && FD_ISSET (sh_out[0], &rfds)) {
@@ -905,6 +910,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 				written += bytes;
 				if (written >= ilen) {
 					close (sh_in[1]);
+					sh_in[1] = -1;
 					// break;
 				}
 			}
@@ -913,7 +919,9 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 			close (sh_out[0]);
 		}
 		close (sh_err[0]);
-		close (sh_in[1]);
+		if (sh_in[1] >= 0) {
+			close (sh_in[1]);
+		}
 		int waitret;
 		do {
 			waitret = waitpid (pid, &status, 0);
