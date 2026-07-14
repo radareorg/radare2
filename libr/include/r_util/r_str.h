@@ -227,6 +227,7 @@ R_API char *r_str_ndup(const char *ptr, int len);
 R_API int r_str_inject(char *begin, char *end, char *str, int maxlen);
 R_API int r_str_delta(char *p, char a, char b);
 R_API void r_str_filter(char *str, int len);
+R_API bool r_str_filter_file(char *str);
 R_API const char *r_str_tok(const char *str1, const char b, size_t len);
 R_API char *r_str_tok_next(char *s);
 

@@ -12,9 +12,12 @@
 // TODO: Use .zrp as in zipped radare project
 
 static bool is_valid_project_name(const char *name) {
-	if (r_str_len_utf8 (name) >= 64) {
+	char *filtered = strdup (name);
+	if (!filtered || r_str_filter_file (filtered) || r_str_len_utf8 (name) >= 64) {
+		free (filtered);
 		return false;
 	}
+	free (filtered);
 	const char *const extension = r_str_endswith (name, ".zip")? r_str_last (name, ".zip"): NULL;
 	for (; *name && name != extension; name++) {
 		if (isdigit (*name) || islower (*name) || *name == '_') {
