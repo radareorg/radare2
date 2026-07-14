@@ -983,6 +983,7 @@ R_API RVecRBinImport *r_bin_file_get_imports_vec(RBinFile *bf);
 R_API RVecRBinSection *r_bin_file_get_sections_vec(RBinFile *bf);
 R_API RVecRBinResource *r_bin_file_get_resources(RBinFile *bf);
 R_API RBuffer *r_bin_file_get_resource_data(RBinFile *bf, const RBinResource *resource);
+R_API bool r_bin_file_extract_resources(RBinFile *bf, const char *output);
 //
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr);
 // RBinFile.add

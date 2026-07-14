@@ -1132,16 +1132,20 @@ CMDS=<<EOF
 !rm -rf .tmp/rabin2-resource-extract
 EOF
 EXPECT=<<EOF
-.tmp/rabin2-resource-extract/resource_ICON_1576_0.bin created (5672)
-.tmp/rabin2-resource-extract/resource_STRING_10_1.bin created (76)
-.tmp/rabin2-resource-extract/resource_GROUP_ICON_788_2.bin created (20)
-.tmp/rabin2-resource-extract/resource_VERSION_1_3.bin created (452)
-.tmp/rabin2-resource-extract/resource_MANIFEST_1_4.bin created (74)
 5672
 76
 20
 452
 74
+EOF
+EXPECT_ERR=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+INFO: .tmp/rabin2-resource-extract/resource_ICON_1576_0.bin created (5672)
+INFO: .tmp/rabin2-resource-extract/resource_STRING_10_1.bin created (76)
+INFO: .tmp/rabin2-resource-extract/resource_GROUP_ICON_788_2.bin created (20)
+INFO: .tmp/rabin2-resource-extract/resource_VERSION_1_3.bin created (452)
+INFO: .tmp/rabin2-resource-extract/resource_MANIFEST_1_4.bin created (74)
+WARN: failed to init section header
 EOF
 RUN
 
@@ -1157,7 +1161,6 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 39
-512
 1024
 EOF
 RUN
