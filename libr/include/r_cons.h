@@ -413,6 +413,8 @@ typedef struct r_cons_canvas_t {
 // Variation Selectors
 #define R_UTF8_VS16 "\xef\xb8\x8f"
 
+typedef struct r_cons_editor_t RConsEditor;
+
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
 typedef int (*RConsClickCallback)(void *core, int x, int y);
 typedef void (*RConsBreakCallback)(void *core);
@@ -544,6 +546,7 @@ typedef struct r_cons_t {
 	int mouse;
 	int is_wine; // -1, 0, 1
 	struct r_line_t *line;
+	RConsEditor *editor;
 	const char **vline;
 	int vtmode;
 	bool use_utf8; // use utf8 features
