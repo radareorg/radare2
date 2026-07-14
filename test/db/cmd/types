@@ -1564,7 +1564,7 @@ var char * v4 @ fp-0x30
 var pid_t pid @ fp-0x34
 var int32_t var_3ch @ fp-0x38
 var int32_t var_40h @ fp-0x3c
-var int32_t var_44h @ fp-0x40
+var void * var_44h @ fp-0x40
 var char * var_48h @ fp-0x44
 var int32_t var_4ch @ fp-0x48
 var int32_t wstatus @ fp-0x4c
