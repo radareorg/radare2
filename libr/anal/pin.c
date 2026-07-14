@@ -43,15 +43,10 @@ R_API const char *r_anal_pin_get(RAnal *a, const char *name) {
 	return sdb_const_getf (a->sdb_pins, NULL, "cmd.%s", name);
 }
 
-static const char *pin_lookup_at(RAnal *a, ut64 addr) {
-	if (addr) {
-		return sdb_const_getf (a->sdb_pins, NULL, "0x%" PFMT64x, addr);
-	}
-	return sdb_const_get (a->sdb_pins, "0", NULL);
-}
-
 R_API const char *r_anal_pin_at(RAnal *a, ut64 addr) {
-	return pin_lookup_at (a, addr);
+	char buf[SDB_NUM_BUFSZ];
+	const char *key = sdb_itoa (addr, 16, buf, sizeof (buf));
+	return sdb_const_get (a->sdb_pins, key, NULL);
 }
 
 R_API bool r_anal_pin_set(RAnal *a, const char *name, const char *cmd) {
@@ -105,8 +100,13 @@ R_API void r_anal_pin_unset(RAnal *a, ut64 addr) {
 }
 
 R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
-	const char *name = pin_lookup_at (a, addr);
-	if (name) {
+	char buf[SDB_NUM_BUFSZ];
+	const char *key = sdb_itoa (addr, 16, buf, sizeof (buf));
+	if (key) {
+		const char *name = sdb_const_get (DB, key, NULL);
+		if (!name) {
+			return NULL;
+		}
 		if (r_str_startswith (name, "soft.")) {
 			// do not call soft esil pins from here
 			return NULL;
