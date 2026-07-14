@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2024 pancake */
+/* radare2 - LGPL - Copyright 2015-2026 pancake */
 
 #include <r_core.h>
 #if R2__WINDOWS__
@@ -121,7 +121,6 @@ static void lang_pipe_run_win(RLangSession *s) {
 static void env(const char *s, int f) {
 	char *a = r_str_newf ("%d", f);
 	r_sys_setenv (s, a);
-//	eprintf ("%s %s\n", s, a);
 	free (a);
 }
 #endif
@@ -134,14 +133,16 @@ static bool lang_pipe_run(RLangSession *s, const char *code, int len) {
 	int output[2];
 
 	if (pipe (input) != 0) {
-		R_LOG_WARN ("r_lang_pipe: pipe failed on input");
+		R_LOG_WARN ("pipe failed on input");
 		if (safe_in != -1) {
 			close (safe_in);
 		}
 		return false;
 	}
 	if (pipe (output) != 0) {
-		eprintf ("r_lang_pipe: pipe failed on output\n");
+		R_LOG_WARN ("pipe failed on output");
+		close (input[0]);
+		close (input[1]);
 		if (safe_in != -1) {
 			close (safe_in);
 		}
@@ -202,7 +203,7 @@ static bool lang_pipe_run(RLangSession *s, const char *code, int len) {
 				}
 				free (res);
 			} else {
-				eprintf ("r_lang_pipe: NULL reply for (%s)\n", buf);
+				R_LOG_WARN ("NULL reply for (%s)", buf);
 				if (write (input[1], "", 1) != 1) {
 					break;
 				}
