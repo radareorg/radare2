@@ -1342,11 +1342,11 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 }
 #endif
 
-R_API char *r_sys_pid_to_path(int pid) {
+R_API char *r_sys_pidpath(int pid) {
 #if R2__WINDOWS__
 	HANDLE processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (!processHandle) {
-		// R_LOG_ERROR ("r_sys_pid_to_path: Cannot open process");
+		// R_LOG_ERROR ("r_sys_pidpath: Cannot open process");
 		return NULL;
 	}
 	char *filename = r_w32_handle_to_path (processHandle);
@@ -1374,6 +1374,14 @@ R_API char *r_sys_pid_to_path(int pid) {
 	if (ret != 0) {
 		return NULL;
 	}
+#elif __NetBSD__
+	char pathbuf[PATH_MAX];
+	size_t pathbufl = sizeof (pathbuf);
+	int mib[4] = {CTL_KERN, KERN_PROC_ARGS, pid, KERN_PROC_PATHNAME};
+	int ret = sysctl (mib, 4, pathbuf, &pathbufl, NULL, 0);
+	if (ret != 0) {
+		return NULL;
+	}
 #elif __HAIKU__
 	char pathbuf[MAXPATHLEN];
 	int32 group = 0;
@@ -1392,17 +1400,55 @@ R_API char *r_sys_pid_to_path(int pid) {
 	}
 #else
 	char buf[128], pathbuf[1024];
+#if __OpenBSD__
+	snprintf (buf, sizeof (buf), "/proc/%d/file", pid);
+#else
 	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
-	int ret = readlink (buf, pathbuf, sizeof (pathbuf)-1);
+#endif
+	int ret = readlink (buf, pathbuf, sizeof (pathbuf) - 1);
 	if (ret < 1) {
 		return NULL;
-	}
-	if ((size_t)ret >= sizeof (pathbuf)) {
-		ret = sizeof (pathbuf) - 1;
 	}
 	pathbuf[ret] = 0;
 #endif
 	return strdup (pathbuf);
+#endif
+}
+
+R_API char *r_sys_exepath(void) {
+#if R2__WINDOWS__
+	TCHAR path[MAX_PATH + 1];
+	DWORD length = GetModuleFileName (NULL, path, R_ARRAY_SIZE (path));
+	if (!length || length >= R_ARRAY_SIZE (path)) {
+		return NULL;
+	}
+	return r_sys_conv_win_to_utf8 (path);
+#elif __APPLE__
+	ut32 size = 1024;
+	char *path = malloc (size);
+	if (!path) {
+		return NULL;
+	}
+	if (_NSGetExecutablePath (path, &size) < 0) {
+		char *new_path = realloc (path, size);
+		if (!new_path) {
+			free (path);
+			return NULL;
+		}
+		path = new_path;
+		if (_NSGetExecutablePath (path, &size) < 0) {
+			free (path);
+			return NULL;
+		}
+	}
+	char *absolute_path = r_file_abspath (path);
+	free (path);
+	return absolute_path;
+#elif __sun
+	const char *path = getexecname ();
+	return R_STR_ISNOTEMPTY (path)? r_file_abspath (path): NULL;
+#else
+	return r_sys_pidpath (r_sys_getpid ());
 #endif
 }
 
@@ -1514,18 +1560,41 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 	return false;
 }
 
+static char *r_sys_prefix_from_executable(void) {
+	char *path = r_sys_exepath ();
+	if (R_STR_ISEMPTY (path)) {
+		free (path);
+		return NULL;
+	}
+	char *dir = r_file_dirname (path);
+	free (path);
+	if (!r_sys_getenv_asbool ("R_ALT_SRC_DIR") && !r_str_casecmp (r_file_basename (dir), "bin")) {
+		char *root = r_file_dirname (dir);
+		free (dir);
+		return root;
+	}
+	return dir;
+}
+
+#if R2__WINDOWS__
+R_API char *r_sys_get_src_dir_w32(void) {
+	return r_sys_prefix_from_executable ();
+}
+#endif
+
 R_API char *r_sys_prefix(const char *pfx) {
 	char *r2prefix = r_sys_getenv ("R2_PREFIX");
 	if (R_STR_ISEMPTY (r2prefix)) {
 		free (r2prefix);
 #if R2__WINDOWS__
 		r2prefix = r_sys_get_src_dir_w32 ();
-		if (!r2prefix) {
+#else
+		r2prefix = R_STR_ISEMPTY (R2_PREFIX)? r_sys_prefix_from_executable (): strdup (R2_PREFIX);
+#endif
+		if (R_STR_ISEMPTY (r2prefix)) {
+			free (r2prefix);
 			r2prefix = strdup (R2_PREFIX);
 		}
-#else
-		r2prefix = strdup (R2_PREFIX);
-#endif
 	}
 	if (pfx && (!r2prefix || strcmp (pfx, r2prefix))) {
 		r_sys_setenv ("R2_PREFIX", pfx);

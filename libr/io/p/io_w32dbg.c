@@ -195,7 +195,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		}
 		ret = r_io_desc_new (io, &r_io_plugin_w32dbg,
 				file, rw | R_PERM_X, mode, wrap);
-		ret->name = r_sys_pid_to_path (wrap->pi.dwProcessId);
+		ret->name = r_sys_pidpath (wrap->pi.dwProcessId);
 		return ret;
 	}
 	return NULL;

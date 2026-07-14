@@ -1750,7 +1750,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case 'e': // "dpe"
 		{
 			int pid = (input[2] == ' ')? atoi (input + 2): core->dbg->pid;
-			char *exe = r_sys_pid_to_path (pid);
+			char *exe = r_sys_pidpath (pid);
 			if (exe) {
 				r_cons_println (core->cons, exe);
 				free (exe);

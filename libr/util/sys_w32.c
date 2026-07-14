@@ -14,24 +14,6 @@ void r_sys_perror_str(const char *fun);
 #define ErrorExit(x) { r_sys_perror(x); return false; }
 char *ReadFromPipe(HANDLE fh, int *outlen);
 
-R_API char *r_sys_get_src_dir_w32(void) {
-	TCHAR fullpath[MAX_PATH + 1];
-	TCHAR shortpath[MAX_PATH + 1];
-
-	if (!GetModuleFileName (NULL, fullpath, MAX_PATH + 1) ||
-		!GetShortPathName (fullpath, shortpath, MAX_PATH + 1)) {
-		return NULL;
-	}
-	char *path = r_sys_conv_win_to_utf8 (shortpath);
-	char *dir = r_file_dirname (path);
-	if (!r_sys_getenv_asbool ("R_ALT_SRC_DIR")) {
-		char *tmp = dir;
-		dir = r_file_dirname (tmp);
-		free (tmp);
-	}
-	return dir;
-}
-
 R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, int ilen, char **output, int *outlen, char **sterr) {
 	HANDLE in = NULL;
 	HANDLE out = NULL;
