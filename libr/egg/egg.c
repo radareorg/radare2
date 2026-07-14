@@ -32,9 +32,6 @@ void egg_patch_free(void *p) {
 
 R_API REgg *r_egg_new(void) {
 	REgg *egg = R_NEW0 (REgg);
-	if (!egg) {
-		return NULL;
-	}
 	egg->src = r_buf_new ();
 	if (!egg->src) {
 		goto beach;

@@ -387,7 +387,10 @@ static const char *str_callback(RNum *user, ut64 off, bool *ok) {
 
 R_API RCore *r_core_new(void) {
 	RCore *c = R_NEW0 (RCore);
-	r_core_init (c);
+	if (!r_core_init (c)) {
+		free (c);
+		return NULL;
+	}
 	return c;
 }
 
@@ -2577,6 +2580,10 @@ R_API bool r_core_init(RCore *core) {
 	core->print->charset_decode = r_core_charset_decode_cb;
 	core->print->charset_encode = r_core_charset_encode_cb;
 	core->egg = r_egg_new ();
+	if (!core->egg) {
+		R_LOG_ERROR ("Cannot initialize REgg");
+		return false;
+	}
 	// 	core->egg->rasm = core->rasm;
 
 	core->undos = r_list_newf ((RListFree)r_core_undo_free);
