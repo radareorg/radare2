@@ -1041,3 +1041,72 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=mips.gnu esil step applies delayed jump over nop delay slot
+FILE=malloc://32
+ARGS=-a mips.gnu -e asm.bits=32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 0320000800000000
+aei
+aeim
+aer t9=0x2000
+aes
+aer pc
+aoj 1 @ 4~{[0].esil}
+EOF
+EXPECT=<<EOF
+0x00002000
+,
+EOF
+RUN
+
+NAME=mips.gnu esil step applies delayed jump over esil-less delay slot op
+FILE=malloc://32
+ARGS=-a mips.gnu -e asm.bits=32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 0320000800a6200b
+aei
+aeim
+aer t9=0x2000
+aes
+aer pc
+EOF
+EXPECT=<<EOF
+0x00002000
+EOF
+RUN
+
+NAME=mips.gnu esil step falls through not-taken branch with nop delay slot
+FILE=malloc://32
+ARGS=-a mips.gnu -e asm.bits=32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 1085000300000000
+aei
+aeim
+aer a0=1
+aer a1=2
+aes
+aes
+aer pc
+EOF
+EXPECT=<<EOF
+0x00000008
+EOF
+RUN
+
+NAME=mips.gnu esil step takes conditional branch over nop delay slot
+FILE=malloc://32
+ARGS=-a mips.gnu -e asm.bits=32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 1085000300000000
+aei
+aeim
+aer a0=1
+aer a1=1
+aes
+aer pc
+EOF
+EXPECT=<<EOF
+0x00000010
+EOF
+RUN
