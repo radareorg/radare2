@@ -1165,6 +1165,7 @@ R_API char *r_core_rtr_cmds_query(RCore *core, const char *host, const char *por
 
 typedef struct rtr_cmds_context_t {
 	uv_tcp_t server;
+	uv_timer_t break_timer;
 	RVecUVTcpPtr clients;
 	void *bed;
 } rtr_cmds_context;
@@ -1290,6 +1291,7 @@ static void rtr_cmds_stop(uv_async_t *handle) {
 
 	rtr_cmds_context *context = handle->loop->data;
 
+	uv_close ((uv_handle_t *) &context->break_timer, NULL);
 	uv_close ((uv_handle_t *) &context->server, NULL);
 
 	uv_tcp_t **it;
@@ -1301,6 +1303,14 @@ static void rtr_cmds_stop(uv_async_t *handle) {
 
 static void rtr_cmds_break(uv_async_t *async) {
 	uv_async_send (async);
+}
+
+static void rtr_cmds_break_poll(uv_timer_t *timer) {
+	uv_async_t *async = timer->data;
+	RCore *core = async->data;
+	if (r_cons_is_breaked (core->cons)) {
+		rtr_cmds_break (async);
+	}
 }
 
 R_API bool r_core_rtr_cmds(RCore *core, const char *port) {
@@ -1332,6 +1342,10 @@ R_API bool r_core_rtr_cmds(RCore *core, const char *port) {
 	} else {
 		uv_async_t stop_async;
 		uv_async_init (loop, &stop_async, rtr_cmds_stop);
+		stop_async.data = core;
+		uv_timer_init (loop, &context.break_timer);
+		context.break_timer.data = &stop_async;
+		uv_timer_start (&context.break_timer, rtr_cmds_break_poll, 50, 50);
 
 		r_cons_break_push (core->cons, (RConsBreak) rtr_cmds_break, &stop_async);
 		context.bed = r_cons_sleep_begin (core->cons);

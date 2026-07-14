@@ -622,14 +622,12 @@ static void linux_dbg_wait_break(RDebug *dbg) {
 RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 	int tid = pid;
-	int status, flags = __WALL;
+	int status, flags = __WALL | WNOHANG;
 	int ret = -1;
-
-	if (pid == -1) {
-		flags |= WNOHANG;
-	}
+	int wait_errno = 0;
 
 	for (;;) {
+		int wait_delay = 50;
 		// In the main context, SIGINT is propagated to the debuggee if it is
 		// in the same process group. Otherwise, the task is running in
 		// background and SIGINT will not be propagated to the debuggee.
@@ -640,25 +638,27 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 		} else {
 			r_cons_break_push (core->cons, (RConsBreak)linux_dbg_wait_break, dbg);
 		}
-		void *bed = r_cons_sleep_begin (core->cons);
-		if (dbg->options.continue_all_threads) {
-			ret = waitpid (-1, &status, flags);
-		} else {
-			ret = waitpid (pid, &status, flags);
-		}
-		r_cons_sleep_end (core->cons, bed);
+		do {
+			void *bed = r_cons_sleep_begin (core->cons);
+			if (dbg->options.continue_all_threads) {
+				ret = waitpid (-1, &status, flags);
+			} else {
+				ret = waitpid (pid, &status, flags);
+			}
+			wait_errno = errno;
+			if (!ret) {
+				r_sys_usleep (wait_delay);
+				wait_delay = R_MIN (wait_delay * 2, 10000);
+			}
+			r_cons_sleep_end (core->cons, bed);
+			r_cons_is_breaked (core->cons);
+		} while (!ret || (ret < 0 && wait_errno == EINTR));
 		r_cons_break_pop (core->cons);
 
 		if (ret < 0) {
-			// Continue when interrupted by user;
-			if (errno == EINTR) {
-				continue;
-			}
+			errno = wait_errno;
 			r_sys_perror ("waitpid");
 			break;
-		} else if (ret == 0) {
-			// Unset WNOHANG to call next waitpid in blocking mode.
-			flags &= ~WNOHANG;
 		} else {
 			tid = ret;
 

@@ -34,7 +34,8 @@ static R_TH_LOCAL JSContext *current_ctx = NULL;
 
 static int qjs_interrupt_handler(JSRuntime *rt, void *opaque) {
 	RCons *cons = (RCons *)opaque;
-	if (cons && cons->context && cons->context->breaked) {
+	// This is the VM's only poll point, so consume pending SIGINT to stop runaway scripts.
+	if (cons && cons->context && r_cons_is_breaked (cons)) {
 		return 1;
 	}
 	return 0;

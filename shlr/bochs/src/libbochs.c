@@ -66,12 +66,14 @@ bool bochs_cmd_stop(libbochs_t * b) {
 #endif
 	ExitCode = RunRemoteThread_ (b, (const ut8*)&buffer, 0x1Eu, 0, &ExitCode) && ExitCode;
 	return ExitCode;
+#elif __wasi__
+	return false;
 #else
-	return 0;
+	return b->pid > 0 && kill (b->pid, SIGINT) == 0;
 #endif
 }
 
-bool bochs_wait(libbochs_t *b) {
+bool bochs_wait_poll(libbochs_t *b, BochsWaitPoll poll, void *user) {
 #if __wasi__
 	return false;
 #elif R2__WINDOWS__
@@ -79,8 +81,11 @@ bool bochs_wait(libbochs_t *b) {
 	DWORD dwRead, aval, leftm;
 	bochs_reset_buffer(b);
 	do {
+		if (poll) {
+			poll (user);
+		}
 		while (PeekNamedPipe (b->hReadPipeIn, NULL, 0, NULL, &aval, &leftm)) {
-			if (aval < 0) {
+			if (!aval) {
 				break;
 			}
 			if (!ReadFile (b->hReadPipeIn, &b->data[b->punteroBuffer], SIZE_BUF, &dwRead, 0)) {
@@ -98,11 +103,17 @@ bool bochs_wait(libbochs_t *b) {
 	} while (--times);
 	return true;
 #else
-	int flags,n;
+	int flags, n;
+	bool result = false;
 	bochs_reset_buffer (b);
 	flags = fcntl (b->hReadPipeIn, F_GETFL, 0);
-	(void) fcntl (b->hReadPipeIn, (flags | O_NONBLOCK));
+	if (flags < 0 || fcntl (b->hReadPipeIn, F_SETFL, flags | O_NONBLOCK) < 0) {
+		return false;
+	}
 	for (;;) {
+		if (poll) {
+			poll (user);
+		}
 		n = read (b->hReadPipeIn, lpTmpBuffer, SIZE_BUF - 1);
 		if (n > 0) {
 			lpTmpBuffer[n] = 0;
@@ -113,13 +124,23 @@ bool bochs_wait(libbochs_t *b) {
 			memcpy (b->data + b->punteroBuffer, lpTmpBuffer, n + 1);
 			b->punteroBuffer += n;
 			if (strstr (&b->data[0], "<bochs:")) {
+				result = true;
 				break;
 			}
+		} else if (!n) {
+			break;
+		} else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+			r_sys_usleep (5 * 1000);
+		} else if (errno != EINTR) {
+			break;
 		}
 	}
-	(void) fcntl (b->hReadPipeIn, (flags | ~O_NONBLOCK));
-	return true;
+	return fcntl (b->hReadPipeIn, F_SETFL, flags) == 0 && result;
 #endif
+}
+
+bool bochs_wait(libbochs_t *b) {
+	return bochs_wait_poll (b, NULL, NULL);
 }
 
 void bochs_send_cmd(libbochs_t* b, const char *cmd, bool bWait) {
@@ -186,9 +207,18 @@ void bochs_close(libbochs_t* b) {
 	free (b->data);
 	free (lpTmpBuffer);
 #else
-	close (b->hReadPipeIn);
-	close (b->hWritePipeOut);
-	kill (b->pid, SIGKILL);
+	if (b->hReadPipeIn >= 0) {
+		close (b->hReadPipeIn);
+		b->hReadPipeIn = -1;
+	}
+	if (b->hWritePipeOut >= 0) {
+		close (b->hWritePipeOut);
+		b->hWritePipeOut = -1;
+	}
+	if (b->pid > 0) {
+		kill (b->pid, SIGKILL);
+		b->pid = -1;
+	}
 	R_FREE (b->data);
 	R_FREE (lpTmpBuffer);
 #endif
@@ -254,6 +284,9 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 	int aStdinPipe[2];
 	int aStdoutPipe[2];
 	int nChild;
+	b->hReadPipeIn = -1;
+	b->hWritePipeOut = -1;
+	b->pid = -1;
 
 	if (pipe (aStdinPipe) < 0) {
 		R_LOG_ERROR ("allocating pipe for child input redirect");
@@ -300,19 +333,19 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 	} else if (nChild > 0) {
 		close (aStdinPipe[PIPE_READ]);
 		close (aStdoutPipe[PIPE_WRITE]);
+		b->hReadPipeIn = aStdoutPipe[PIPE_READ];
+		b->hWritePipeOut = aStdinPipe[PIPE_WRITE];
+		b->pid = nChild;
 
-		if (read (aStdoutPipe[PIPE_READ], lpTmpBuffer, 1) != 1) {
+		if (read (b->hReadPipeIn, lpTmpBuffer, 1) != 1) {
 			R_LOG_ERROR ("boch_open failed");
 			bochs_close (b);
 		} else {
-			b->hReadPipeIn  = aStdoutPipe[PIPE_READ];
-			b->hWritePipeOut = aStdinPipe[PIPE_WRITE];
 			b->isRunning = true;
 			bochs_reset_buffer (b);
 			R_LOG_INFO ("Waiting for bochs");
 			if (bochs_wait (b)) {
 				R_LOG_INFO ("Ready");
-				b->pid = nChild;
 				result = true;
 			} else {
 				bochs_close (b);

@@ -1648,7 +1648,8 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		RDebugReasonType reason;
 		RCore *core = (RCore *)dbg->coreb.core;
 
-		if (core->cons->context->breaked) {
+		// r_cons_is_breaked() consumes pending SIGINT; a direct breaked read cannot.
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 #if __linux__

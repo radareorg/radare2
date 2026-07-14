@@ -291,6 +291,10 @@ static void bochs_debug_break(void *user) {
 	pd->bBreak = true;
 }
 
+static void bochs_break_poll(void *user) {
+	r_cons_is_breaked (user);
+}
+
 static RDebugReasonType r_debug_bochs_wait(RDebug *dbg, int pid) {
 	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
 	if (!is_bochs (dbg) || !pd) {
@@ -309,7 +313,10 @@ static RDebugReasonType r_debug_bochs_wait(RDebug *dbg, int pid) {
 		r_cons_break_push (core->cons, bochs_debug_break, dbg);
 		i = 500;
 		do {
-			bochs_wait (pd->desc);
+			if (!bochs_wait_poll (pd->desc, bochs_break_poll, core->cons)) {
+				r_cons_break_pop (core->cons);
+				return R_DEBUG_REASON_DEAD;
+			}
 			if (pd->bBreak) {
 				if (pd->desc->data[0]) {
 					R_LOG_INFO ("ctrl+c %s", pd->desc->data);
