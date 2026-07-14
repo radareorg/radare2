@@ -463,11 +463,14 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 	// The state machine consists of five registers
 	ut32 address = 0;
 	ut32 line = line_start;
+	struct dex_debug_local_t *debug_locals = R_NEWS0 (struct dex_debug_local_t, regsz + 1);
+	if (!debug_locals) {
+		return;
+	}
 	RList *debug_positions = r_list_newf ((RListFree)free);
 	RList *emitted_debug_locals = r_list_newf ((RListFree)free);
 
-	struct dex_debug_local_t *debug_locals = calloc (sizeof (struct dex_debug_local_t), regsz + 1);
-	if (!(MA & 0x0008)) {
+	if (!(MA & R_DEX_METH_STATIC)) {
 		debug_locals[argReg].name = "this";
 		debug_locals[argReg].descriptor = r_str_newf ("%s;", class_name);
 		debug_locals[argReg].startAddress = 0;
