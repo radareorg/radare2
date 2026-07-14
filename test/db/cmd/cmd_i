@@ -3673,7 +3673,7 @@ iU?~iUx
 iU?~overwritten
 EOF
 EXPECT=<<EOF
-| iUx [directory]  extract all resources (default: <file>.resources)
+| iUx [directory]  extract all resources (default: <file>.resources; alias for ixU)
 |                  output names are sanitized and existing files are never overwritten
 EOF
 RUN
@@ -3692,7 +3692,51 @@ EXPECT=<<EOF
 | iUj  list resources in JSON
 | iUq  list resource address, size, type and name
 | iUqq  list resource names only
-| iUx [directory]  extract all resources (default: <file>.resources)
+| iUx [directory]  extract all resources (default: <file>.resources; alias for ixU)
+EOF
+RUN
+
+NAME=ix help
+FILE=-
+CMDS=<<EOF
+ix?~extract all
+iS?~extract all
+EOF
+EXPECT=<<EOF
+| ixU [directory]   extract all resources (alias for iUx)
+| ixS [directory]   extract all sections (alias for iSx)
+| ixSS [directory]  extract all segments (alias for iSSx)
+| iSx [directory]       extract all sections (default: <file>.sections; alias for ixS)
+| iSSx [directory]      extract all segments (default: <file>.segments; alias for ixSS)
+EOF
+RUN
+
+NAME=ix section and segment aliases
+FILE=bins/elf/analysis/hello-linux-x86_64
+ARGS=-e log.level=0
+CMDS=<<EOF
+rmrf .tmp/ix-sections-a
+rmrf .tmp/ix-sections-b
+rmrf .tmp/ix-segments-a
+rmrf .tmp/ix-segments-b
+iSx .tmp/ix-sections-a
+ixS .tmp/ix-sections-b
+iSSx .tmp/ix-segments-a
+ixSS .tmp/ix-segments-b
+!!rahash2 -qq -a sha256 .tmp/ix-sections-a/section_.text_13.bin
+!!rahash2 -qq -a sha256 .tmp/ix-sections-b/section_.text_13.bin
+!!rahash2 -qq -a sha256 .tmp/ix-segments-a/segment_LOAD0_2.bin
+!!rahash2 -qq -a sha256 .tmp/ix-segments-b/segment_LOAD0_2.bin
+rmrf .tmp/ix-sections-a
+rmrf .tmp/ix-sections-b
+rmrf .tmp/ix-segments-a
+rmrf .tmp/ix-segments-b
+EOF
+EXPECT=<<EOF
+dcb90dd685b3db105be06c136ec2d1d5416e00906e28cc71eebb131cd7b6c206
+dcb90dd685b3db105be06c136ec2d1d5416e00906e28cc71eebb131cd7b6c206
+fb026f99dd41eb994947dc2314fb40e7c016ebbdb7533a2efd51629f3bf234db
+fb026f99dd41eb994947dc2314fb40e7c016ebbdb7533a2efd51629f3bf234db
 EOF
 RUN
 

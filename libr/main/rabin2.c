@@ -79,7 +79,7 @@ static int rabin_show_help(int line) {
 			" -M              main (show address of main symbol)\n"
 			" -n [str]        show section, symbol or import named str\n"
 			" -N [min:max]    force min:max number of chars per string (see -z and -zz)\n"
-			" -o [str]        output file/folder for write operations (out by default)\n"
+			" -o [str]        output file or extraction directory for write operations\n"
 			" -O [str]        write/extract operations (-O help)\n"
 			" -p              show always physical addresses\n"
 			" -P              show debug/pdb information\n"
@@ -100,7 +100,7 @@ static int rabin_show_help(int line) {
 			" -v              display version and quit\n"
 			" -V              show binary version information\n"
 			" -w              display try/catch blocks\n"
-			" -x              extract bins contained in file (-xU for resources)\n"
+			" -x              extract sub-binaries (-xS sections, -xSS segments, -xU resources)\n"
 			" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
 			" -y              show types (structs, enums, function signatures)\n"
 			" -z              strings (from data section)\n"
@@ -249,21 +249,7 @@ static int rabin_extract(RBin *bin, int all) {
 
 static bool rabin_extract_resources(RBin *bin, const char *output) {
 	RBinFile *bf = r_bin_cur (bin);
-	RList *files = bf? r_bin_file_extract_resources (bf, output): NULL;
-	if (!files) {
-		return false;
-	}
-	RVecRBinResource *resources = r_bin_file_get_resources (bf);
-	RListIter *iter;
-	char *file;
-	ut32 index = 0;
-	RBinResource *resource;
-	r_list_foreach (files, iter, file) {
-		resource = RVecRBinResource_at (resources, index++);
-		printf ("%s created (%" PFMT64u ")\n", file, resource->size);
-	}
-	r_list_free (files);
-	return true;
+	return bf && r_bin_file_extract_resources (bf, output);
 }
 
 static int rabin_dump_symbols(RBin *bin, int len) {
@@ -1314,8 +1300,10 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		free (tmp);
 	}
 
-	run_action ("sections", R_BIN_REQ_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
-	run_action ("segments", R_BIN_REQ_SEGMENTS, R_CORE_BIN_ACC_SEGMENTS);
+	if (!(action & R_BIN_REQ_EXTRACT)) {
+		run_action ("sections", R_BIN_REQ_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
+		run_action ("segments", R_BIN_REQ_SEGMENTS, R_CORE_BIN_ACC_SEGMENTS);
+	}
 	run_action ("entries", R_BIN_REQ_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
 	run_action ("initfini", R_BIN_REQ_INITFINI, R_CORE_BIN_ACC_INITFINI);
 	run_action ("main", R_BIN_REQ_MAIN, R_CORE_BIN_ACC_MAIN);
@@ -1345,16 +1333,27 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		rabin_show_srcline (bin, at);
 	}
 	if (action & R_BIN_REQ_EXTRACT) {
-		if (action & R_BIN_REQ_RESOURCES) {
-			if (!rabin_extract_resources (bin, output)) {
-				retval = 1;
-			}
-		} else {
-			RBinFile *bf = r_bin_cur (bin);
+		const bool extract_sections = action & R_BIN_REQ_SECTIONS;
+		const bool extract_segments = action & R_BIN_REQ_SEGMENTS;
+		const bool extract_resources = action & R_BIN_REQ_RESOURCES;
+		RBinFile *bf = r_bin_cur (bin);
+		if (extract_sections && (!bf || !r_bin_file_extract_sections (bf, output, false))) {
+			retval = 1;
+		}
+		if (extract_segments && (!bf || !r_bin_file_extract_sections (bf, output, true))) {
+			retval = 1;
+		}
+		if (extract_resources && !rabin_extract_resources (bin, output)) {
+			retval = 1;
+		}
+		if (!extract_sections && !extract_segments && !extract_resources) {
 			if (bf && bf->xtr_data) {
-				rabin_extract (bin, (!arch && !arch_name && !bits));
+				if (!rabin_extract (bin, (!arch && !arch_name && !bits))) {
+					retval = 1;
+				}
 			} else {
 				R_LOG_ERROR ("Cannot extract bins from '%s'. No supported plugins found!", bin->file);
+				retval = 1;
 			}
 		}
 	}

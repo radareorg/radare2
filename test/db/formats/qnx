@@ -84,16 +84,19 @@ RUN
 
 NAME=Open Watcom QNX LMF resource extraction
 FILE=bins/qnx/qnx_resource.lmf
+ARGS=-e log.level=0
 CMDS=<<EOF
-!rm -rf .tmp/qnx-resource-extract
-iUx .tmp/qnx-resource-extract
-!rabin2 -Z .tmp/qnx-resource-extract/resource_USAGE_named_0.bin
-!cat .tmp/qnx-resource-extract/resource_USAGE_named_0.bin
-!rm -rf .tmp/qnx-resource-extract
+rmrf .tmp/qnx-resource-extract-a
+rmrf .tmp/qnx-resource-extract-b
+iUx .tmp/qnx-resource-extract-a
+ixU .tmp/qnx-resource-extract-b
+!!rahash2 -qq -a sha256 .tmp/qnx-resource-extract-a/resource_USAGE_named_0.bin
+!!rahash2 -qq -a sha256 .tmp/qnx-resource-extract-b/resource_USAGE_named_0.bin
+rmrf .tmp/qnx-resource-extract-a
+rmrf .tmp/qnx-resource-extract-b
 EOF
 EXPECT=<<EOF
-.tmp/qnx-resource-extract/resource_USAGE_named_0.bin created (25)
-25
-QNX LMF resource fixture
+ecbb18d099d8b23e1a9e1eba38bce7bec52841952eb383fec02416c1186a934a
+ecbb18d099d8b23e1a9e1eba38bce7bec52841952eb383fec02416c1186a934a
 EOF
 RUN

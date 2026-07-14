@@ -1,4 +1,4 @@
-.Dd Jul 10, 2025
+.Dd July 14, 2026
 .Dt RABIN2 1
 .Sh NAME
 .Nm rabin2
@@ -91,7 +91,7 @@ Show section, symbol or import named str
 .It Fl N Ar minlen:maxlen
 Force min:max number of chars per string (see -z and -zz)
 .It Fl o Ar str
-Output file/folder for write operations (out by default)
+Output file or extraction directory for write operations
 .It Fl O Ar binop
 Perform binary operation on target binary (dump, resize, change sections, ...). Use -O help for more information:
 .Bd -literal -offset indent
@@ -144,13 +144,36 @@ Show binary version information
 .It Fl w
 Display try/catch blocks
 .It Fl x
-Extract sub-binaries contained in file (for example inside FAT Mach-O binaries).
+Extract sub-binaries contained in the file (for example, architectures inside a
+FAT Mach-O binary).
 Combine with
+.Fl S ,
+.Fl SS ,
+or
 .Fl U
-to extract raw resources instead. Resource files are named from their type,
-numeric identifier and index, and existing files are never overwritten. Use
+to extract sections, segments, or raw resources instead.
+Thus,
+.Fl xS
+extracts sections,
+.Fl xSS
+extracts segments, and
+.Fl xU
+extracts resources.
+Resource extraction may be combined with section or segment extraction.
+Section, segment, and resource filenames include their kind, sanitized name or
+type, and index; existing files are never overwritten.
+Use
 .Fl o Ar dir
 to select the output directory.
+Without it, sections, segments, and resources are written below
+.Pa <file>.sections ,
+.Pa <file>.segments ,
+and
+.Pa <file>.resources ,
+respectively.
+Sub-binaries retain the traditional
+.Pa <file>.fat
+directory.
 .It Fl X Ar format file ...
 Package in fat or zip the given files
 .It Fl z

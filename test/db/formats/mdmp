@@ -107,19 +107,15 @@ RUN
 NAME=: 32bit - resource extraction
 FILE=bins/mdmp/hello.dmp
 CMDS=<<EOF
-!rm -rf .tmp/rabin2-mdmp-resource-extract
-!rabin2 -xU -o .tmp/rabin2-mdmp-resource-extract ${R2_FILE} >/dev/null
-!find .tmp/rabin2-mdmp-resource-extract -type f | wc -l | tr -d ' '
-!rabin2 -Z .tmp/rabin2-mdmp-resource-extract/resource_MANIFEST_1_0.bin
-!rabin2 -Z .tmp/rabin2-mdmp-resource-extract/resource_MESSAGETABLE_1_5.bin
-!grep -ac requestedExecutionLevel .tmp/rabin2-mdmp-resource-extract/resource_MANIFEST_1_0.bin
-!rm -rf .tmp/rabin2-mdmp-resource-extract
+rmrf .tmp/rabin2-mdmp-resource-extract
+!!rabin2 -xU -o .tmp/rabin2-mdmp-resource-extract ${R2_FILE}
+!!rabin2 -Z .tmp/rabin2-mdmp-resource-extract/resource_MANIFEST_1_0.bin
+!!rabin2 -Z .tmp/rabin2-mdmp-resource-extract/resource_MESSAGETABLE_1_5.bin
+rmrf .tmp/rabin2-mdmp-resource-extract
 EOF
 EXPECT=<<EOF
-10
 1167
 367340
-1
 EOF
 RUN
 

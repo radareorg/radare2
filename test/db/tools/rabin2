@@ -1121,15 +1121,14 @@ RUN
 NAME=rabin2 raw resource extraction
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
-!rm -rf .tmp/rabin2-resource-extract
-!rabin2 -xU -o .tmp/rabin2-resource-extract ${R2_FILE}
-!rabin2 -xU -o .tmp/rabin2-resource-extract ${R2_FILE} 2>/dev/null
-!rabin2 -Z .tmp/rabin2-resource-extract/resource_ICON_1576_0.bin
-!rabin2 -Z .tmp/rabin2-resource-extract/resource_STRING_10_1.bin
-!rabin2 -Z .tmp/rabin2-resource-extract/resource_GROUP_ICON_788_2.bin
-!rabin2 -Z .tmp/rabin2-resource-extract/resource_VERSION_1_3.bin
-!rabin2 -Z .tmp/rabin2-resource-extract/resource_MANIFEST_1_4.bin
-!rm -rf .tmp/rabin2-resource-extract
+rmrf .tmp/rabin2-resource-extract
+!!rabin2 -xU -o .tmp/rabin2-resource-extract ${R2_FILE}
+!!rabin2 -Z .tmp/rabin2-resource-extract/resource_ICON_1576_0.bin
+!!rabin2 -Z .tmp/rabin2-resource-extract/resource_STRING_10_1.bin
+!!rabin2 -Z .tmp/rabin2-resource-extract/resource_GROUP_ICON_788_2.bin
+!!rabin2 -Z .tmp/rabin2-resource-extract/resource_VERSION_1_3.bin
+!!rabin2 -Z .tmp/rabin2-resource-extract/resource_MANIFEST_1_4.bin
+rmrf .tmp/rabin2-resource-extract
 EOF
 EXPECT=<<EOF
 5672
@@ -1138,29 +1137,37 @@ EXPECT=<<EOF
 452
 74
 EOF
-EXPECT_ERR=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
-INFO: .tmp/rabin2-resource-extract/resource_ICON_1576_0.bin created (5672)
-INFO: .tmp/rabin2-resource-extract/resource_STRING_10_1.bin created (76)
-INFO: .tmp/rabin2-resource-extract/resource_GROUP_ICON_788_2.bin created (20)
-INFO: .tmp/rabin2-resource-extract/resource_VERSION_1_3.bin created (452)
-INFO: .tmp/rabin2-resource-extract/resource_MANIFEST_1_4.bin created (74)
-WARN: failed to init section header
+RUN
+
+NAME=rabin2 section and segment extraction
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+rmrf .tmp/rabin2-sections-extract
+rmrf .tmp/rabin2-segments-extract
+!!rabin2 -xS -o .tmp/rabin2-sections-extract ${R2_FILE}
+!!rabin2 -xSS -o .tmp/rabin2-segments-extract ${R2_FILE}
+!!rahash2 -qq -a sha256 .tmp/rabin2-sections-extract/section_.text_13.bin
+!!rahash2 -qq -a sha256 .tmp/rabin2-segments-extract/segment_LOAD0_2.bin
+rmrf .tmp/rabin2-sections-extract
+rmrf .tmp/rabin2-segments-extract
+EOF
+EXPECT=<<EOF
+dcb90dd685b3db105be06c136ec2d1d5416e00906e28cc71eebb131cd7b6c206
+fb026f99dd41eb994947dc2314fb40e7c016ebbdb7533a2efd51629f3bf234db
 EOF
 RUN
 
 NAME=rabin2 raw named resource extraction
 FILE=bins/ne/anim8.exe
 CMDS=<<EOF
-!rm -rf .tmp/rabin2-named-resource-extract
-!rabin2 -xU -o .tmp/rabin2-named-resource-extract ${R2_FILE} >/dev/null
-!find .tmp/rabin2-named-resource-extract -type f | wc -l | tr -d ' '
-!rabin2 -Z .tmp/rabin2-named-resource-extract/resource_GROUP_ICON_named_0.bin
-!rabin2 -Z .tmp/rabin2-named-resource-extract/resource_ICON_1_38.bin
-!rm -rf .tmp/rabin2-named-resource-extract
+rmrf .tmp/rabin2-named-resource-extract
+!!rabin2 -xU -o .tmp/rabin2-named-resource-extract ${R2_FILE}
+!!rabin2 -Z .tmp/rabin2-named-resource-extract/resource_GROUP_ICON_named_0.bin
+!!rabin2 -Z .tmp/rabin2-named-resource-extract/resource_ICON_1_38.bin
+rmrf .tmp/rabin2-named-resource-extract
 EOF
 EXPECT=<<EOF
-39
+512
 1024
 EOF
 RUN

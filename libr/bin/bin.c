@@ -948,37 +948,56 @@ static char *resource_type(const RBinResource *res) {
 }
 
 static char *resource_filename(const char *dir, const RBinResource *res) {
-	const ut64 id = (res->id == UT64_MAX)? 0: res->id;
 	char *type = resource_type (res);
-	char *file = r_str_newf ("%s%sresource_%s_%"PFMT64u"_%u.bin",
-			dir, R_SYS_DIR, type, id, res->index);
+	char *file = (res->id == UT64_MAX)
+		? r_str_newf ("%s%sresource_%s_named_%u.bin", dir, R_SYS_DIR, type, res->index)
+		: r_str_newf ("%s%sresource_%s_%"PFMT64u"_%u.bin",
+			dir, R_SYS_DIR, type, res->id, res->index);
 	free (type);
 	return file;
 }
 
+static bool extract_buffer(RBuffer *buf, const char *file) {
+	if (r_file_exists (file)) {
+		R_LOG_ERROR ("Cannot create extraction file '%s' without overwriting it", file);
+		return false;
+	}
+	return r_buf_dump (buf, file);
+}
+
+static char *extract_directory(RBinFile *bf, const char *output, const char *suffix) {
+	if (R_STR_ISNOTEMPTY (output)) {
+		return strdup (output);
+	}
+	return bf->file? r_str_newf ("%s.%s", r_file_basename (bf->file), suffix): NULL;
+}
+
+static bool prepare_extract_directory(const char *dir) {
+	if (!dir || !r_sys_mkdirp (dir) || !r_file_is_directory (dir)) {
+		R_LOG_ERROR ("Cannot create extraction output directory '%s'", r_str_get (dir));
+		return false;
+	}
+	return true;
+}
+
 R_API bool r_bin_file_extract_resources(RBinFile *bf, const char *output) {
-	R_RETURN_VAL_IF_FAIL (bf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf, false);
 	RVecRBinResource *res = r_bin_file_get_resources (bf);
 	if (!res || RVecRBinResource_empty (res)) {
 		R_LOG_ERROR ("No resources to extract");
 		return false;
 	}
-	char *outdir = NULL;
-	const char *dir = output;
-	if (R_STR_ISEMPTY (dir)) {
-		dir = outdir = bf->file? r_str_newf ("%s.resources", r_file_basename (bf->file)): NULL;
-	}
-	if (!dir || !r_sys_mkdirp (dir) || !r_file_is_directory (dir)) {
-		R_LOG_ERROR ("Cannot create resource output directory '%s'", r_str_get (dir));
-		free (outdir);
-		return NULL;
+	char *dir = extract_directory (bf, output, "resources");
+	if (!prepare_extract_directory (dir)) {
+		free (dir);
+		return false;
 	}
 	bool ok = true;
 	RBinResource *r;
 	R_VEC_FOREACH (res, r) {
 		char *outfile = resource_filename (dir, r);
 		RBuffer *buf = r_bin_file_get_resource_data (bf, r);
-		if (buf && r_buf_dump (buf, outfile)) {
+		if (buf && outfile && extract_buffer (buf, outfile)) {
 			R_LOG_INFO ("%s created (%"PFMT64u")", outfile, r_buf_size (buf));
 		} else {
 			R_LOG_ERROR ("Cannot dump resource %u at 0x%08" PFMT64x, r->index, r->paddr);
@@ -987,7 +1006,63 @@ R_API bool r_bin_file_extract_resources(RBinFile *bf, const char *output) {
 		free (outfile);
 		r_unref (buf);
 	}
-	free (outdir);
+	free (dir);
+	return ok;
+}
+
+R_API bool r_bin_file_extract_sections(RBinFile *bf, const char *output, bool segments) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->buf, false);
+	RVecRBinSection *sections = r_bin_file_get_sections_vec (bf);
+	if (!sections || RVecRBinSection_empty (sections)) {
+		R_LOG_ERROR ("No %s to extract", segments? "segments": "sections");
+		return false;
+	}
+	bool found = false;
+	RBinSection *section;
+	R_VEC_FOREACH (sections, section) {
+		if (section->is_segment == segments) {
+			found = true;
+			break;
+		}
+	}
+	if (!found) {
+		R_LOG_ERROR ("No %s to extract", segments? "segments": "sections");
+		return false;
+	}
+	const char *kind = segments? "segment": "section";
+	char *dir = extract_directory (bf, output, segments? "segments": "sections");
+	if (!prepare_extract_directory (dir)) {
+		free (dir);
+		return false;
+	}
+	bool ok = true;
+	ut32 index = 0;
+	R_VEC_FOREACH (sections, section) {
+		if (section->is_segment != segments) {
+			continue;
+		}
+		ut32 current_index = index++;
+		char *name = strdup (R_STR_ISNOTEMPTY (section->name)? section->name: "unknown");
+		r_str_filter_file (name);
+		char *outfile = r_str_newf ("%s%s%s_%s_%u.bin", dir, R_SYS_DIR,
+			kind, name, current_index);
+		free (name);
+		ut64 buffer_size = r_buf_size (bf->buf);
+		RBuffer *buf = NULL;
+		if (section->paddr <= buffer_size && section->size <= buffer_size - section->paddr) {
+			buf = r_buf_new_slice (bf->buf, section->paddr, section->size);
+		}
+		if (buf && outfile && extract_buffer (buf, outfile)) {
+			R_LOG_INFO ("%s created (%"PFMT64u")", outfile, r_buf_size (buf));
+		} else {
+			R_LOG_ERROR ("Cannot dump %s %s at 0x%08"PFMT64x,
+				kind, r_str_get (section->name), section->paddr);
+			ok = false;
+		}
+		free (outfile);
+		r_unref (buf);
+	}
+	free (dir);
 	return ok;
 }
 

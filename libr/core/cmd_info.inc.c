@@ -114,6 +114,8 @@ static RCoreHelpMessage help_msg_iS = {
 	"iS,", "[table-query]", "list sections in table using given expression",
 	"iS=", "", "show ascii-art color bars with the section ranges",
 	"iSS", "[,tablequery]", "list memory segments (maps with om)",
+	"iSx", " [directory]", "extract all sections (default: <file>.sections; alias for ixS)",
+	"iSSx", " [directory]", "extract all segments (default: <file>.segments; alias for ixSS)",
 	"iSm", "[cj]", "list sections with the symbols contained (iSmc for count only, iSmj for json)",
 	NULL
 };
@@ -165,6 +167,7 @@ static RCoreHelpMessage help_msg_i = {
 	"iO", "[?]", "perform binary operation (dump, resize, change sections, ...)",
 	"ir", "[?][jq*]", "list the relocations (iR is an accidental alias for 'ir')",
 	"iU", "[?][jq*x]", "list or extract binary resources",
+	"ix", "[?][U|S|SS] [directory]", "extract resources, sections or segments",
 	"is", "[?]", "list the symbols",
 	"iS", "[?]", "list sections, segments and compute their hash",
 	"it", "", "file hashes", // hashes in it? wtf, thats a pretty bad subcommand
@@ -182,7 +185,17 @@ static RCoreHelpMessage help_msg_iU = {
 	"iUj", "", "list resources in JSON",
 	"iUq", "", "list resource address, size, type and name",
 	"iUqq", "", "list resource names only",
-	"iUx", " [directory]", "extract all resources (default: <file>.resources)",
+	"iUx", " [directory]", "extract all resources (default: <file>.resources; alias for ixU)",
+	"", "", "output names are sanitized and existing files are never overwritten",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_ix = {
+	"Usage: ix", "[U|S|SS] [directory]", "Extract binary data to disk",
+	"ixU", " [directory]", "extract all resources (alias for iUx)",
+	"ixS", " [directory]", "extract all sections (alias for iSx)",
+	"ixSS", " [directory]", "extract all segments (alias for iSSx)",
+	"", "", "default directories are <file>.resources, <file>.sections and <file>.segments",
 	"", "", "output names are sanitized and existing files are never overwritten",
 	NULL
 };
@@ -2036,8 +2049,39 @@ static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bo
 	}
 }
 
+static void cmd_info_extract(RCore *core, const char *output, bool resources, bool segments) {
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (!bf) {
+		R_LOG_ERROR ("No binary file loaded");
+		r_core_return_value (core, 1);
+		return;
+	}
+	bool ok = resources
+		? r_bin_file_extract_resources (bf, output)
+		: r_bin_file_extract_sections (bf, output, segments);
+	if (!ok) {
+		r_core_return_value (core, 1);
+	}
+}
+
 static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const bool va, const bool is_array) {
 	PJ *pj = *_pj;
+	if (input[1] == 'x') { // "iSx"
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_iS, "iSx");
+		} else {
+			cmd_info_extract (core, r_str_trim_head_ro (input + 2), false, false);
+		}
+		return;
+	}
+	if (input[1] == 'S' && input[2] == 'x') { // "iSSx"
+		if (input[3] == '?') {
+			r_core_cmd_help_match (core, help_msg_iS, "iSSx");
+		} else {
+			cmd_info_extract (core, r_str_trim_head_ro (input + 3), false, true);
+		}
+		return;
+	}
 	RBinInfo *info = r_bin_get_info (core->bin);
 	if (!info && pj) {
 		r_cons_print (core->cons, "[]");
@@ -2106,6 +2150,43 @@ static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const boo
 		core->bin->cur = cur;
 		r_list_free (objs);
 	}
+}
+
+static void cmd_ix(RCore *core, const char *input) {
+	const char *command = NULL;
+	const char *output = NULL;
+	bool resources = false;
+	bool segments = false;
+	switch (input[1]) {
+	case 'U': // "ixU"
+		command = "ixU";
+		output = input + 2;
+		resources = true;
+		break;
+	case 'S': // "ixS", "ixSS"
+		if (input[2] == 'S') {
+			command = "ixSS";
+			output = input + 3;
+			segments = true;
+		} else {
+			command = "ixS";
+			output = input + 2;
+		}
+		break;
+	case '?':
+	case '\0':
+	case ' ':
+		r_core_cmd_help (core, help_msg_ix);
+		return;
+	default:
+		r_core_return_invalid_command (core, "ix", input[1]);
+		return;
+	}
+	if (*output == '?') {
+		r_core_cmd_help_match (core, help_msg_ix, command);
+		return;
+	}
+	cmd_info_extract (core, r_str_trim_head_ro (output), resources, segments);
 }
 
 static bool bin_header(RCore *r, int mode, PJ *pj) {
@@ -3365,6 +3446,9 @@ static int cmd_info(void *data, const char *input) {
 		case 'U': // "iU?"
 			r_core_cmd_help (core, help_msg_iU);
 			break;
+		case 'x': // "ix?"
+			r_core_cmd_help (core, help_msg_ix);
+			break;
 		case 'z': // "iz?"
 			r_core_cmd_help (core, help_msg_iz);
 			break;
@@ -3645,14 +3729,13 @@ static int cmd_info(void *data, const char *input) {
 			r_core_cmd_help_match (core, help_msg_iU, cmd);
 			free (cmd);
 		} else if (input[1] == 'x') {
-			const char *output = r_str_trim_head_ro (input + 2);
-			RBinFile *bf = r_bin_cur (core->bin);
-			if (!r_bin_file_extract_resources (bf, output)) {
-				r_core_return_value (core, 1);
-			}
+			cmd_info_extract (core, r_str_trim_head_ro (input + 2), true, false);
 		} else {
 			RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
 		}
+		break;
+	case 'x': // "ix"
+		cmd_ix (core, input);
 		break;
 	case 'g': // "ig"
 		if (input[1] == '?') {
