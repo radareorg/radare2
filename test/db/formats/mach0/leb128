@@ -19,7 +19,7 @@ RUN
 NAME=macho trie malformed uleb128
 FILE=bins/mach0/macho-trie-bad-export-size
 CMDS=<<EOF
-iR
+iU
 EOF
 EXPECT=
 EXPECT_ERR=<<EOF

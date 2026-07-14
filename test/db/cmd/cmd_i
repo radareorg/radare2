@@ -2604,6 +2604,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=iR aliases ir relocations
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+ir~?
+iR~?
+EOF
+EXPECT=<<EOF
+6
+6
+EOF
+RUN
+
 NAME=is (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=is
@@ -3654,9 +3666,39 @@ imp.exit
 EOF
 RUN
 
-NAME=iR*
+NAME=iU help
+FILE=-
+CMDS=<<EOF
+iU?~iUx
+iU?~overwritten
+EOF
+EXPECT=<<EOF
+| iUx [directory]  extract all resources (default: <file>.resources)
+|                  output names are sanitized and existing files are never overwritten
+EOF
+RUN
+
+NAME=iU subcommand help
+FILE=-
+CMDS=<<EOF
+iU*?
+iUj?
+iUq?
+iUqq?
+iUx?
+EOF
+EXPECT=<<EOF
+| iU*  emit resource flags as radare commands
+| iUj  list resources in JSON
+| iUq  list resource address, size, type and name
+| iUqq  list resource names only
+| iUx [directory]  extract all resources (default: <file>.resources)
+EOF
+RUN
+
+NAME=iU*
 FILE=bins/pe/standard.exe
-CMDS=iR*
+CMDS=iU*
 EXPECT=<<EOF
 fs resources
 f resource.0 5672 0x00401180
@@ -3668,9 +3710,9 @@ fs *
 EOF
 RUN
 
-NAME=iRj
+NAME=iUj
 FILE=bins/pe/standard.exe
-CMDS=iRj~{}
+CMDS=iUj~{}
 EXPECT=<<EOF
 [
   {
@@ -3752,13 +3794,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=iR quiet and physical modes
+NAME=iU quiet and physical modes
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
-iRq
-iRqq
+iUq
+iUqq
 e io.va=false
-iRq
+iUq
 EOF
 EXPECT=<<EOF
 0x00401180 5672 ICON 1576
