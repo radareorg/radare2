@@ -123,7 +123,7 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 	char **cs = dex->cal_strings;
 	if (cs) {
 		const char *p = cs[idx];
-		if (!R_STR_ISEMPTY (p)) {
+		if (p) {
 			return p;
 		}
 	} else {
@@ -144,13 +144,36 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 	if (!uleblen || uleblen >= dex->size || uleblen >= strings_size) {
 		return NULL;
 	}
-	if (!len || len >= dex->size) {
+	if (len >= dex->size) {
 		return NULL;
 	}
-	ut8 *ptr = malloc (len + 1);
+	const ut64 data_off = string_index + uleblen;
+	if (data_off < string_index || data_off >= dex->size) {
+		return NULL;
+	}
+	ut64 data_len = 0;
+	ut8 strbuf[128];
+	size_t i;
+	while (data_off + data_len < dex->size) {
+		const ut64 left = dex->size - data_off - data_len;
+		const ut64 read_len = R_MIN (left, sizeof (strbuf));
+		if (r_buf_read_at (b, data_off + data_len, strbuf, read_len) != read_len) {
+			return NULL;
+		}
+		for (i = 0; i < read_len; i++) {
+			if (!strbuf[i]) {
+				goto found;
+			}
+		}
+		data_len += read_len;
+	}
+	return NULL;
+found:
+	data_len += i;
+	ut8 *ptr = malloc (data_len + 1);
 	if (ptr) {
-		r_buf_read_at (b, string_index + uleblen, ptr, len);
-		ptr[len] = 0;
+		r_buf_read_at (b, data_off, ptr, data_len);
+		ptr[data_len] = 0;
 		cs[idx] = (char *)ptr;
 		return (const char *)ptr;
 	}
