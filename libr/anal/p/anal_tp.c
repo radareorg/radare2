@@ -269,13 +269,19 @@ R_VEC_TYPE(RVecBuf, ut8);
 
 #define TP_CHAIN_MAX 4
 
+// bounded deref-offset sequence, outermost hop first: up to TP_CHAIN_MAX
+// backtraced hops plus one disp taken from the call/store instruction itself
+typedef struct {
+	ut64 off[TP_CHAIN_MAX + 1];
+	int len;
+} TPHopSeq;
+
 // a const member retype kept on call-site evidence, revisited once the whole function is traced
 typedef struct {
 	char *ptr_type;
 	char *type; // already stripped of the const qualifier
-	ut64 seq[TP_CHAIN_MAX + 1];
+	TPHopSeq seq;
 	ut64 slot;
-	int n;
 	int width;
 } TPPendingConst;
 
@@ -852,8 +858,8 @@ static RAnalTypeMember *tp_pick_member(RAnal *anal, RAnalBaseType *bt, ut64 off,
 }
 
 // walk deref hops through nested struct pointers and retype the member behind the last one
-static bool tp_retype_field_chain(RAnal *anal, const char *ptr_type, const ut64 *hops, int len, const char *type, int width, bool store_dir) {
-	if (len < 1 || R_STR_ISEMPTY (type)) {
+static bool tp_retype_field_chain(RAnal *anal, const char *ptr_type, const TPHopSeq *seq, const char *type, int width, bool store_dir) {
+	if (seq->len < 1 || R_STR_ISEMPTY (type)) {
 		return false;
 	}
 	char *pt = strdup (ptr_type);
@@ -862,14 +868,14 @@ static bool tp_retype_field_chain(RAnal *anal, const char *ptr_type, const ut64 
 	}
 	bool changed = false;
 	int i;
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < seq->len; i++) {
 		RAnalBaseType *bt = tp_resolve_ptr_base (anal, pt);
 		if (!bt) {
 			break;
 		}
-		const bool last = i == len - 1;
+		const bool last = i == seq->len - 1;
 		const bool is_union = bt->kind == R_ANAL_BASE_TYPE_KIND_UNION;
-		RAnalTypeMember *m = tp_pick_member (anal, bt, hops[i], (is_union && last)? width: 0);
+		RAnalTypeMember *m = tp_pick_member (anal, bt, seq->off[i], (is_union && last)? width: 0);
 		if (!m) {
 			r_anal_base_type_free (bt);
 			break;
@@ -926,6 +932,16 @@ typedef struct {
 	bool ok;
 } TPFieldChain;
 
+// hops were collected walking backwards, so append them outermost-first
+static void tp_seq_from_chain(TPHopSeq *seq, const TPFieldChain *chain) {
+	// the seq must hold a full chain plus the one hop call sites push themselves
+	R_STATIC_ASSERT (R_ARRAY_SIZE (((TPHopSeq *)0)->off) >= R_ARRAY_SIZE (((TPFieldChain *)0)->hops) + 1);
+	int i;
+	for (i = chain->len - 1; i >= 0; i--) {
+		seq->off[seq->len++] = chain->hops[i];
+	}
+}
+
 static bool etrace_memread_first_addr(TypeTrace *etrace, ut32 idx, ut64 *addr) {
 	const TypeTraceAccess *access = etrace_find_access (etrace, idx, etrace_is_memread, NULL);
 	if (!access) {
@@ -971,13 +987,18 @@ static bool tp_chain_collect(TypeTrace *tt, int idx, RAnalOp *op, TPFieldChain *
 		chain->ok = false;
 		return false;
 	}
-	if (!tp_field_disp_ok (op) || chain->len >= TP_CHAIN_MAX) {
+	if (!tp_field_disp_ok (op)) {
 		chain->ok = false;
 		return false;
 	}
 	if (!chain->len) {
 		etrace_memread_first_addr (tt, idx, &chain->slot_addr);
 		chain->width = v->memref;
+	}
+	// a chain deeper than the budget is abandoned, truncating would mistype
+	if (chain->len >= (int)R_ARRAY_SIZE (chain->hops)) {
+		chain->ok = false;
+		return false;
 	}
 	chain->hops[chain->len++] = op->disp;
 	r_str_ncpy (regname, v->reg, size);
@@ -994,8 +1015,7 @@ static void tp_field_from_arg(TPState *tps, int idx, RAnalVar *var, RAnalOp *op,
 	if (!chain->ok) {
 		return;
 	}
-	ut64 seq[TP_CHAIN_MAX + 1];
-	int n = 0;
+	TPHopSeq seq = { .len = 0 };
 	ut64 lea_off = 0;
 	const ut32 ot = op->type & R_ANAL_OP_TYPE_MASK;
 	const bool reg_kind = var->kind == R_ANAL_VAR_KIND_REG;
@@ -1011,8 +1031,8 @@ static void tp_field_from_arg(TPState *tps, int idx, RAnalVar *var, RAnalOp *op,
 			char *deref = star? r_str_ndup (type, star - type): NULL;
 			if (deref) {
 				r_str_trim (deref);
-				const ut64 hop = op->disp;
-				tp_retype_field_chain (anal, var->type, &hop, 1, deref, 0, false);
+				const TPHopSeq hop = { .off = { op->disp }, .len = 1 };
+				tp_retype_field_chain (anal, var->type, &hop, deref, 0, false);
 				free (deref);
 			}
 			return;
@@ -1031,39 +1051,35 @@ static void tp_field_from_arg(TPState *tps, int idx, RAnalVar *var, RAnalOp *op,
 			if (!chain->len) {
 				etrace_memread_first_addr (tt, idx, &slot);
 			}
-			seq[n++] = op->disp;
+			seq.off[seq.len++] = op->disp;
 		}
 	} else if (!reg_kind || ot != R_ANAL_OP_TYPE_MOV) {
 		return;
 	}
-	int i;
-	for (i = chain->len - 1; i >= 0; i--) {  // hops were collected walking backwards
-		seq[n++] = chain->hops[i];
-	}
-	if (!n) {
+	tp_seq_from_chain (&seq, chain);
+	if (!seq.len) {
 		return;
 	}
 	if (lea_off) {
 		// a lea can only start the chain, so the folded disp lands on the first hop
-		seq[0] += lea_off;
+		seq.off[0] += lea_off;
 	}
 	const int width = chain->len? chain->width: op->refptr;
 	if (r_str_startswith (type, "const ")) {
 		const char *unconst = r_str_skip_prefix (type, "const ");
 		if (slot == UT64_MAX) {
 			// no slot to gather write evidence for, so the qualifier cannot be kept
-			tp_retype_field_chain (anal, var->type, seq, n, unconst, width, false);
+			tp_retype_field_chain (anal, var->type, &seq, unconst, width, false);
 			return;
 		}
 		// the trace only reaches the call site here, so retype once the whole function ran
 		TPPendingConst pc = {
 			.ptr_type = strdup (var->type),
 			.type = strdup (unconst),
+			.seq = seq,
 			.slot = slot,
-			.n = n,
 			.width = width
 		};
-		memcpy (pc.seq, seq, sizeof (pc.seq));
 		if (pc.ptr_type && pc.type) {
 			RVecTPPendingConst_push_back (&tps->pending_const, &pc);
 		} else {
@@ -1071,7 +1087,7 @@ static void tp_field_from_arg(TPState *tps, int idx, RAnalVar *var, RAnalOp *op,
 		}
 		return;
 	}
-	tp_retype_field_chain (anal, var->type, seq, n, type, width, false);
+	tp_retype_field_chain (anal, var->type, &seq, type, width, false);
 }
 
 // with a deref chain the var holds the base pointer, so only its member is typed
@@ -1098,7 +1114,7 @@ static void tp_flush_pending_const(TPState *tps) {
 		const bool written = etrace_memwrite_at (&tps->tt, pc->slot, pc->width);
 		char *t = written? strdup (pc->type): r_str_newf ("const %s", pc->type);
 		if (t) {
-			tp_retype_field_chain (tps->anal, pc->ptr_type, pc->seq, pc->n, t, pc->width, written);
+			tp_retype_field_chain (tps->anal, pc->ptr_type, &pc->seq, t, pc->width, written);
 			free (t);
 		}
 	}
@@ -1191,13 +1207,10 @@ static bool tp_field_from_ret(TPState *tps, RAnalFunction *fcn, RAnalOp *op, con
 	}
 	// the assignment itself disproves const on the member
 	ret_type = r_str_skip_prefix (ret_type, "const ");
-	ut64 seq[TP_CHAIN_MAX + 1];
-	int i, n = 0;
-	for (i = chain.len - 1; i >= 0; i--) { // hops were collected walking backwards
-		seq[n++] = chain.hops[i];
-	}
-	seq[n++] = disp;
-	const bool changed = tp_retype_field_chain (anal, ptr_type, seq, n, ret_type, op->refptr, true);
+	TPHopSeq seq = { .len = 0 };
+	tp_seq_from_chain (&seq, &chain);
+	seq.off[seq.len++] = disp;
+	const bool changed = tp_retype_field_chain (anal, ptr_type, &seq, ret_type, op->refptr, true);
 	free (ptr_type);
 	return changed;
 }
