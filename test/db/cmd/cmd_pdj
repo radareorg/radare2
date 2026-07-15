@@ -45,3 +45,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pdj negative count without analysis
+FILE=malloc://32
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+wx 1e0080d2e50300aa1f2003d5c0035fd6
+s 8
+pdj -2~{[0].addr}
+pdj -2~{[0].opcode}
+pdj -2~{[1].addr}
+pdj -2~{[1].opcode}
+EOF
+EXPECT=<<EOF
+0
+mov x30, 0
+4
+mov x5, x0
+EOF
+RUN

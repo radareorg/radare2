@@ -7840,41 +7840,29 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 	}
 	if (nb_opcodes) { // Disassemble `nb_opcodes` opcodes.
 		if (nb_opcodes < 0) {
-			int count, nbytes = 0;
-
-			/* Backward disassembly of `nb_opcodes` opcodes:
-			 * - We compute the new starting offset
-			 * - Read at the new offset */
 			nb_opcodes = -nb_opcodes;
-
 			if (nb_opcodes > 0xffff) {
 				R_LOG_ERROR ("Too many backward instructions");
 				return false;
 			}
+			int nbytes = 0;
 			if (r_core_prevop_addr (core, core->addr, nb_opcodes, &addr)) {
 				nbytes = old_offset - addr;
-			} else if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
-				/* workaround to avoid empty arrays */
-#define BWRETRY 0
-#if BWRETRY
-				nb_opcodes ++;
+			} else {
+				// r_core_prevop_addr sets addr to UT64_MAX on failure
+				addr = old_offset;
 				if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
-#endif
 					pj_end (pj);
 					return false;
-#if BWRETRY
-				}
-#endif
-			}
-			count = R_MIN (nb_bytes, nbytes);
-			if (count > 0) {
-				r_io_read_at (core->io, addr, buf, count);
-				r_io_read_at (core->io, addr + count, buf + count, nb_bytes - count);
-			} else {
-				if (nb_bytes > 0) {
-					memset (buf, core->io->Oxff, nb_bytes);
 				}
 			}
+			if (nbytes < 1) {
+				pj_end (pj);
+				return false;
+			}
+			const int count = R_MIN (nb_bytes, nbytes);
+			r_io_read_at (core->io, addr, buf, count);
+			r_io_read_at (core->io, addr + count, buf + count, nb_bytes - count);
 		} else {
 			// If we are disassembling a positive number of lines, enable dis_opcodes
 			// to be used to finish the loop

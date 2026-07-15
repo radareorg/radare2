@@ -549,12 +549,13 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
+		r_asm_set_pc (core->rasm, addr - (idx / addrbytes));
 		c = r_asm_mdisassemble (core->rasm, buf + len - idx, idx);
 		if (!c || !c->assembly) {
 			r_asm_code_free (c);
 			continue;
 		}
-		if (strstr (c->assembly, "invalid") || strstr (c->assembly, ".byte")) {
+		if (strstr (c->assembly, "invalid") || strstr (c->assembly, ".byte") || strstr (c->assembly, "unaligned")) {
 			r_asm_code_free (c);
 			continue;
 		}
@@ -571,16 +572,19 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		}
 	}
 
-	ut64 at = addr - idx / addrbytes;
+	ut64 at = addr - (idx / addrbytes);
 
-	r_asm_set_pc (core->rasm, at);
 	for (hit_count = 0; hit_count < n; hit_count++) {
 		RAnalOp op;
+		r_asm_set_pc (core->rasm, at);
 		int instrlen = r_asm_disassemble (core->rasm, &op,
 			buf + len - addrbytes * (addr - at), addrbytes * (addr - at));
+		r_anal_op_fini (&op);
+		if (instrlen < 1) {
+			break;
+		}
 		add_hit_to_hits (hits, at, instrlen, true);
 		at += instrlen;
-		r_anal_op_fini (&op);
 	}
 	free (buf);
 	return hits;
@@ -817,15 +821,19 @@ R_API ut32 r_core_asm_bwdis_len(RCore* core, int* instr_len, ut64* start_addr, u
 		*instr_len = 0;
 	}
 	if (hits && r_list_length (hits) > 0) {
-		hit = r_list_first (hits);
-		if (start_addr) {
-			*start_addr = hit->addr;
-		}
 		r_list_foreach (hits, iter, hit) {
-			instr_run += hit->len;
+			if (hit->len > 0) {
+				instr_run += hit->len;
+			}
 		}
-		if (instr_len) {
-			*instr_len = instr_run;
+		if (instr_run > 0) {
+			hit = r_list_first (hits);
+			if (start_addr) {
+				*start_addr = hit->addr;
+			}
+			if (instr_len) {
+				*instr_len = instr_run;
+			}
 		}
 	}
 	r_list_free (hits);
