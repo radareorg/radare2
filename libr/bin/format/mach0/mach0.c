@@ -989,6 +989,8 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 	link.cmdsize = r_read_ble32 (&lit[4], mo->big_endian);
 	link.dataoff = r_read_ble32 (&lit[8], mo->big_endian);
 	link.datasize = r_read_ble32 (&lit[12], mo->big_endian);
+	mo->cs_paddr = link.dataoff;
+	mo->cs_size = link.datasize;
 
 	data = link.dataoff;
 	if (link.datasize < sizeof (struct super_blob_t) || !fits_in (mo->size, data, link.datasize)) {
@@ -1102,6 +1104,8 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 					&& sig_length <= super.blob.length
 					&& idx.offset <= super.blob.length - sig_length) {
 					mo->cs_has_cms = true;
+					mo->cert_paddr = slot_off;
+					mo->cert_size = sig_length;
 				}
 			}
 			if (show_codesign) {

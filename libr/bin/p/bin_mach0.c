@@ -1095,6 +1095,77 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 
 static bool sections_vec(RBinFile *bf);
 
+static bool load_resources(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
+	RVecSegment *sections = MACH0_(get_segments_vec) (bf, mo);
+	if (!sections) {
+		return false;
+	}
+	ut32 index = 0;
+	RBinSection *section;
+	R_VEC_FOREACH (sections, section) {
+		const char *type = NULL;
+		if (strstr (section->name, ".__TEXT.__info_plist")) {
+			type = "plist";
+		} else if (strstr (section->name, ".__TEXT.__launchd_plist")) {
+			type = "launchd_plist";
+		} else if (strstr (section->name, ".__TEXT.__entitlements")) {
+			type = "entitlements";
+		}
+		if (!type || !section->size) {
+			continue;
+		}
+		RBinResource *resource = RVecRBinResource_emplace_back (&bf->bo->resources_vec);
+		if (!resource) {
+			return false;
+		}
+		resource->name = strdup (section->name);
+		resource->type = strdup (type);
+		resource->paddr = section->paddr;
+		resource->vaddr = section->vaddr;
+		resource->size = section->size;
+		resource->id = UT64_MAX;
+		resource->index = index++;
+		resource->type_id = UT32_MAX;
+		resource->language_id = UT32_MAX;
+		resource->named = true;
+	}
+	if (mo->cs_present && mo->cs_size) {
+		RBinResource *resource = RVecRBinResource_emplace_back (&bf->bo->resources_vec);
+		if (!resource) {
+			return false;
+		}
+		resource->name = strdup ("CodeSignature");
+		resource->type = strdup ("signature");
+		resource->paddr = mo->cs_paddr;
+		resource->vaddr = mo->cs_paddr;
+		resource->size = mo->cs_size;
+		resource->id = UT64_MAX;
+		resource->index = index++;
+		resource->type_id = UT32_MAX;
+		resource->language_id = UT32_MAX;
+		resource->named = true;
+		if (mo->cert_size) {
+			resource = RVecRBinResource_emplace_back (&bf->bo->resources_vec);
+			if (!resource) {
+				return false;
+			}
+			resource->name = strdup ("Certificate");
+			resource->type = strdup ("certificate");
+			resource->paddr = mo->cert_paddr;
+			resource->vaddr = mo->cert_paddr;
+			resource->size = mo->cert_size;
+			resource->id = UT64_MAX;
+			resource->index = index++;
+			resource->type_id = UT32_MAX;
+			resource->language_id = UT32_MAX;
+			resource->named = true;
+		}
+	}
+	return true;
+}
+
 static ut64 size(RBinFile *bf) {
 	ut64 off = 0;
 	ut64 len = 0;
@@ -1125,6 +1196,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.signature = &entitlements,
+	.load_resources = &load_resources,
 	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,
