@@ -1146,10 +1146,12 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 		goto end;
 	}
 
-	gdbr_read_registers (g);
+	if (gdbr_read_registers (g) < 0) {
+		goto end;
+	}
 	reg_cache.valid = false;
 	len = strlen (registers);
-	buff = calloc (len, sizeof (char));
+	buff = calloc (len + 1, sizeof (char));
 	if (!buff) {
 		ret = -1;
 		goto end;
@@ -1166,10 +1168,18 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 		*name_end = '\0'; // change '=' to '\0'
 
 		// time to find the current register
+		i = 0;
 		while (g->registers[i].size > 0) {
 			if (strcmp (g->registers[i].name, reg) == 0) {
-				const ut64 register_size = g->registers[i].size;
-				const ut64 offset = g->registers[i].offset;
+				const ut64 register_size = g->registers[i].size / 8;
+				const ut64 offset = g->registers[i].offset / 8;
+				if (!register_size || g->data_max < 1 || g->data_len < 1
+				    || offset >= (ut64)g->data_max || register_size > (ut64)g->data_max - offset
+				    || offset >= (ut64)g->data_len || register_size > (ut64)g->data_len - offset) {
+					R_LOG_ERROR ("%s: register %s exceeds data buffer", __func__, reg);
+					ret = -1;
+					goto end;
+				}
 				value = calloc (register_size + 1, 2);
 				if (!value) {
 					ret = -1;
@@ -1179,11 +1189,16 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 				memset (value, '0', register_size * 2);
 				name_end++;
 				// be able to take hex with and without 0x
-				if (name_end[1] == 'x' || name_end[1] == 'X') {
+				if (name_end[0] == '0' && (name_end[1] == 'x' || name_end[1] == 'X')) {
 					name_end += 2;
 				}
-				const int val_len = strlen (name_end); // size of the rest
-				strcpy (value + (register_size * 2 - val_len), name_end);
+				const size_t val_len = strlen (name_end); // size of the rest
+				if (val_len > register_size * 2) {
+					R_LOG_ERROR ("%s: value for register %s is too large", __func__, reg);
+					ret = -1;
+					goto end;
+				}
+				memcpy (value + (register_size * 2 - val_len), name_end, val_len);
 
 				for (x = 0; x < register_size; x++) {
 					g->data[offset + register_size - x - 1] = hex2char (&value[x * 2]);
