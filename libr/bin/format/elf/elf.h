@@ -230,6 +230,7 @@ int Elf_(is_big_endian)(struct Elf_(obj_t) *bin);
 const RVecRBinElfReloc *Elf_(load_relocs)(struct Elf_(obj_t) *bin);
 const RVecRBinElfLib *Elf_(load_libs)(struct Elf_(obj_t) *bin);
 const RVecRBinSection *Elf_(load_sections)(RBinFile *bf, ELFOBJ *eo);
+bool Elf_(load_gresources)(RBinFile *bf, ELFOBJ *eo, RVecRBinResource *resources);
 bool Elf_(load_symbols)(ELFOBJ *eo);
 bool Elf_(load_imports)(ELFOBJ *eo);
 RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo);

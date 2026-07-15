@@ -115,6 +115,13 @@ static bool sections_vec(RBinFile *bf) {
 	return true;
 }
 
+#ifndef R_BIN_CGC
+static bool load_resources(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
+	return Elf_(load_gresources) (bf, bf->bo->bin_obj, &bf->bo->resources_vec);
+}
+#endif
+
 static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, int type, int bits) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 

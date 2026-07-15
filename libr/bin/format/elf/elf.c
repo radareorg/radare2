@@ -6626,3 +6626,5 @@ static void sdb_init_const(ELFOBJ *eo) {
 	sdb_init_dtypes (eo);
 	sdb_init_fmt (eo);
 }
+
+#include "gres.c"
