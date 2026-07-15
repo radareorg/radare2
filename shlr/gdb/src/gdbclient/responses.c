@@ -116,8 +116,7 @@ int handle_vFile_open(libgdbr_t *g) {
 
 int handle_vFile_pread(libgdbr_t *g, ut8 *buf, size_t max_len) {
 	send_ack (g);
-	char *ptr;
-	int len;
+	char *ptr, *end;
 	if (g->data_len < 3 || g->data[0] != 'F') {
 		return -1;
 	}
@@ -126,25 +125,29 @@ int handle_vFile_pread(libgdbr_t *g, ut8 *buf, size_t max_len) {
 	if (g->data[1] == '-') {
 		return 0;
 	}
-	if (!isxdigit ((unsigned char)g->data[1])) {
+	if (!isxdigit ((ut8)g->data[1])) {
 		return -1;
 	}
-	if (sscanf (g->data, "F%x;", &len) != 1) {
+	ptr = memchr (g->data + 2, ';', g->data_len - 2);
+	if (!ptr) {
+		return -1;
+	}
+	unsigned long declared_len = strtoul (g->data + 1, &end, 16);
+	if (end != ptr || declared_len > INT_MAX) {
 		return -1;
 	}
 	// Again, this is probably the end of file
-	if (len == 0) {
+	if (!declared_len) {
 		return 0;
 	}
-	if (!(ptr = strchr (g->data, ';')) || ptr >= g->data + g->data_len) {
-		return -1;
-	}
 	ptr++;
-	if (len > 0) {
-		len = R_MIN (len, max_len);
-		memcpy (buf, ptr, len);
+	size_t available_len = g->data_len - (ptr - g->data);
+	size_t copy_len = R_MIN ((size_t)declared_len, max_len);
+	copy_len = R_MIN (copy_len, available_len);
+	if (copy_len > 0) {
+		memcpy (buf, ptr, copy_len);
 	}
-	return len;
+	return (int)copy_len;
 }
 
 int handle_vFile_close(libgdbr_t *g) {
