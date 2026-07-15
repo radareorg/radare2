@@ -213,7 +213,7 @@ static void run_oversized_gdb_server(int port) {
 	r_sys_exit (0, true);
 }
 
-static void run_xml_gdb_server(int port, bool recursive_include) {
+static void run_xml_gdb_server(int port, bool recursive_include, ut32 regnum) {
 	int sockfd = socket (AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
 		r_sys_exit (1, true);
@@ -251,9 +251,9 @@ static void run_xml_gdb_server(int port, bool recursive_include) {
 	}
 	if (!recursive_include) {
 		r_strbuf_pad (xml, 'A', 200);
-		r_strbuf_append (xml, "\" bitsize=\"64\" type=\"code_ptr\" regnum=\"16\"/>\n"
+		r_strbuf_appendf (xml, "\" bitsize=\"64\" type=\"code_ptr\" regnum=\"%u\"/>\n"
 			"</feature>\n"
-			"</target>");
+			"</target>", regnum);
 	}
 	const char *target_xml = r_strbuf_get (xml);
 	const size_t xml_len = strlen (target_xml);
@@ -428,7 +428,7 @@ bool test_r2_gdb_long_xml_reg_name(void) {
 		mu_assert ("fork failed", false);
 	}
 	if (pid == 0) {
-		run_xml_gdb_server (port, false);
+		run_xml_gdb_server (port, false, 16);
 	}
 
 	r_sys_usleep (500000);
@@ -470,7 +470,7 @@ bool test_r2_gdb_recursive_xml_include(void) {
 		mu_assert ("fork failed", false);
 	}
 	if (pid == 0) {
-		run_xml_gdb_server (port, true);
+		run_xml_gdb_server (port, true, 0);
 	}
 
 	r_sys_usleep (500000);
@@ -495,6 +495,48 @@ bool test_r2_gdb_recursive_xml_include(void) {
 	free (uri);
 
 	mu_assert_eq (ret, 0, "recursive gdb XML include failed");
+	mu_end;
+#else
+	mu_ignore;
+#endif
+}
+
+bool test_r2_gdb_oversized_xml_regnum(void) {
+#if __linux__
+	int port = pick_free_port ();
+	if (port <= 0) {
+		mu_ignore;
+	}
+	pid_t pid = r_sys_fork ();
+	if (pid < 0) {
+		mu_assert ("fork failed", false);
+	}
+	if (pid == 0) {
+		run_xml_gdb_server (port, false, 200000000);
+	}
+
+	r_sys_usleep (500000);
+	char *uri = r_str_newf ("gdb://127.0.0.1:%d", port);
+	const char *argv[] = { "radare2", "-q", "-d", "-D", "gdb", "-Qc", "q", uri, NULL };
+	int ret = r_main_radare2 (8, argv);
+	int status = 0;
+	int waited = 0;
+	int wpid = 0;
+	while (waited < 20) {
+		wpid = waitpid (pid, &status, WNOHANG);
+		if (wpid == pid) {
+			break;
+		}
+		r_sys_usleep (100000);
+		waited++;
+	}
+	if (wpid == 0) {
+		kill (pid, SIGKILL);
+		waitpid (pid, &status, 0);
+	}
+	free (uri);
+
+	mu_assert_eq (ret, 0, "oversized gdb XML regnum failed");
 	mu_end;
 #else
 	mu_ignore;
@@ -536,6 +578,7 @@ int all_tests(void) {
 	mu_run_test (test_r2_gdb_oversized_reg_response);
 	mu_run_test (test_r2_gdb_long_xml_reg_name);
 	mu_run_test (test_r2_gdb_recursive_xml_include);
+	mu_run_test (test_r2_gdb_oversized_xml_regnum);
 	mu_run_test (test_r_debug_reg_offset);
 	return tests_passed != tests_run;
 }

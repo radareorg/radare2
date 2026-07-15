@@ -596,9 +596,7 @@ static RList *_extract_flags(char *flagstr) {
 			goto exit_err;
 		}
 		*flagsend = '\0';
-		if (!(tmpflag = calloc (1, sizeof (gdbr_xml_flags_t)))) {
-			goto exit_err;
-		}
+		tmpflag = R_NEW0 (gdbr_xml_flags_t);
 		// Get id
 		if (!(tmp1 = strstr (flagstr, "id="))) {
 			goto exit_err;
@@ -745,7 +743,7 @@ static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
 	RListIter *iter;
 	gdbr_xml_reg_t *tmpreg;
 	gdbr_xml_flags_t *tmpflag;
-	if (!(regs = r_list_new ())) {
+	if (!(regs = r_list_newf (free))) {
 		return NULL;
 	}
 	// Set gpr as the default register type for all of the following registers until `feature` is found
@@ -819,10 +817,15 @@ static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
 		regnum = UINT32_MAX;
 		if ((tmp1 = strstr (regstr, "regnum="))) {
 			tmp1 += 8;
-			if (!isdigit ((unsigned char)*tmp1)) {
+			if (!isdigit ((ut8)*tmp1)) {
 				goto exit_err;
 			}
-			regnum = strtoul (tmp1, NULL, 10);
+			char *end;
+			unsigned long parsed_regnum = strtoul (tmp1, &end, 10);
+			if (*end != '"' || parsed_regnum >= R_REG_VBANK_MAX_REGS) {
+				goto exit_err;
+			}
+			regnum = (ut32)parsed_regnum;
 		}
 		flagnum = r_list_length (flags);
 		if ((tmp1 = strstr (regstr, "group="))) {
@@ -874,9 +877,10 @@ static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
 		if (regsize == 128 && !strcmp (regtype, "fpu")) {
 			regtype = "vec128";
 		}
-		if (!(tmpreg = calloc (1, sizeof (gdbr_xml_reg_t)))) {
+		if (regnum == UINT32_MAX && r_list_length (regs) >= R_REG_VBANK_MAX_REGS) {
 			goto exit_err;
 		}
+		tmpreg = R_NEW0 (gdbr_xml_reg_t);
 		regname[regname_len] = '\0';
 		if (regname_len > sizeof (tmpreg->name) - 1) {
 			R_LOG_WARN ("Register name too long: %s", regname);
@@ -896,9 +900,7 @@ static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
 		} else if (regnum >= r_list_length (regs)) {
 			int i;
 			for (i = regnum - r_list_length (regs); i > 0; i--) {
-				// temporary placeholder reg. we trust the xml is correct and this will be replaced.
-				r_list_push (regs, tmpreg);
-				r_list_tail (regs)->data = NULL;
+				r_list_push (regs, NULL);
 			}
 			r_list_push (regs, tmpreg);
 		} else {
@@ -913,12 +915,8 @@ static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
 			typegroup = "gpr";
 		}
 	}
-	regs->free = free;
 	return regs;
 exit_err:
-	if (regs) {
-		regs->free = free;
-		r_list_free (regs);
-	}
+	r_list_free (regs);
 	return NULL;
 }
