@@ -414,7 +414,7 @@ static int _server_handle_p(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	if (!isxdigit ((unsigned char)g->data[1]) || !g->registers) {
+	if (!isxdigit ((ut8)g->data[1]) || !g->registers) {
 		return send_msg (g, "E01");
 	}
 	regnum = strtol (g->data + 1, NULL, 16);
@@ -445,7 +445,7 @@ static int _server_handle_P(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	if (!isxdigit ((unsigned char)g->data[1]) || !g->registers || !(ptr = strchr (g->data, '='))) {
+	if (!isxdigit ((ut8)g->data[1]) || !g->registers || !(ptr = strchr (g->data, '='))) {
 		return send_msg (g, "E01");
 	}
 	ptr++;
