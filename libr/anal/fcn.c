@@ -925,6 +925,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
 
+	if (anal->opt.stateful) {
+		r_arch_session_reset (anal->arch->session);
+	}
 	bb = fcn_append_basic_block (anal, fcn, addr);
 	if (!bb) {
 		// we checked before whether there is a bb at addr, so the create should have succeeded
@@ -1006,7 +1009,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	RAnalOp op_storage;
 	r_anal_op_init (&op_storage);
 	op = &op_storage;
-	const ut32 opflags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT;
+	const ut32 opflags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT
+		| (anal->opt.stateful? R_ARCH_OP_MASK_STATEFUL: 0);
 	while (addrbytes * idx < maxlen) {
 		if (!last_is_reg_mov_lea) {
 			last_reg_mov_lea_name = NULL;
@@ -1833,6 +1837,7 @@ noskip:
 						RAnalOp prev_op_storage;
 						r_anal_op_init (&prev_op_storage);
 						anal->iob.read_at (anal->iob.io, op->addr - op->size, buf, sizeof (buf));
+						// out-of-order prev-op probe: must stay non-STATEFUL
 						if (r_anal_op (anal, &prev_op_storage, op->addr - op->size, buf, sizeof (buf), R_ARCH_OP_MASK_VAL) > 0) {
 							RAnalValue *prev_dst = RVecRArchValue_at (&prev_op_storage.dsts, 0);
 							bool prev_op_has_dst_name = prev_dst && prev_dst->reg;

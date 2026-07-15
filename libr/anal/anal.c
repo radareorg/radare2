@@ -206,6 +206,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->config = r_arch_config_new ();
 	anal->arch = r_arch_new ();
 	anal->esil_goto_limit = R_ESIL_GOTO_LIMIT;
+	anal->opt.stateful = true;
 	anal->opt.nopskip = true; // skip nops in code analysis
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	anal->opt.vars_maxbbsize = 16 * 1024;
@@ -455,6 +456,7 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 		return NULL;
 	}
 
+	// stays pure: this sweep can run nested inside a caller's decode window
 	// TODO: use the bitfliping thing to guess the mask in here
 	int idx = 0;
 	while (idx < size) {

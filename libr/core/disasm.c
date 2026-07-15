@@ -1056,6 +1056,11 @@ static RDisasmState *ds_init(RCore *core, bool for_json) {
 	if (for_json || ds->use_esil || ds->show_emu || ds->show_cmt_esil || ds->show_emu_bb || (ds->asm_hints && ds->asm_hint_cdiv)) {
 		ds->decode_mask |= R_ARCH_OP_MASK_ESIL;
 	}
+	if (core->anal->opt.stateful) {
+		ds->decode_mask |= R_ARCH_OP_MASK_STATEFUL;
+		// each render is one linear decode window
+		r_arch_session_reset (core->anal->arch->session);
+	}
 	return ds;
 }
 

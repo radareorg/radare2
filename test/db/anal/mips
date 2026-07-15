@@ -1042,6 +1042,72 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=mips pending t9 target does not leak into a later decode window
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010000000000320f809
+ao 2 > /dev/null
+ao 1 @ 8 ~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips anal.stateful=false disables t9 tracking
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20 -e anal.stateful=false
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010000000000320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips jalr t9 resolution is deterministic across repeated windows
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010000000000320f809
+ao 3~jump:
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00401000
+jump: 0x00401000
+EOF
+RUN
+
+NAME=mips t9 tracking survives the nested anal.mask sweep
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20 -e anal.mask=true
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010000000000320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00401000
+EOF
+RUN
+
+NAME=mips t9 tracking survives the aoj mask lookahead
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010000000000320f809
+aoj 3~{2.jump}
+EOF
+EXPECT=<<EOF
+4198400
+EOF
+RUN
+
 NAME=mips.gnu esil step applies delayed jump over nop delay slot
 FILE=malloc://32
 ARGS=-a mips.gnu -e asm.bits=32 -e cfg.bigendian=true

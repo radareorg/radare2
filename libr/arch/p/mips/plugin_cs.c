@@ -933,6 +933,14 @@ static bool fini(RArchSession *as) {
 	return true;
 }
 
+static bool reset(RArchSession *as) {
+	R_RETURN_VAL_IF_FAIL (as && as->data, false);
+	PluginData *pd = as->data;
+	pd->t9_pre = UT64_MAX;
+	pd->t9_adj = UT64_MAX;
+	return true;
+}
+
 static csh cs_handle_for_session(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
 	CapstonePluginData *pd = as->data;
@@ -994,6 +1002,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
+	const bool stateful = mask & R_ARCH_OP_MASK_STATEFUL;
 	csh handle = cs_handle_for_session (as);
 	PluginData *pd;
 	if (plugin_changed (as)) {
@@ -1080,7 +1089,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			case MIPS_OP_MEM:
 				if (OPERAND (1).mem.base == MIPS_REG_GP) {
 					op->ptr = as->config->gp + OPERAND (1).mem.disp;
-					if (REGID (0) == MIPS_REG_T9) {
+					if (stateful && REGID (0) == MIPS_REG_T9) {
 						pd->t9_pre = op->ptr;
 						pd->t9_adj = UT64_MAX;
 						RBin *bin = as->arch->binb.bin;
@@ -1089,7 +1098,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 							pd->t9_pre = ptrv;
 						}
 					}
-				} else if (REGID (0) == MIPS_REG_T9) {
+				} else if (stateful && REGID (0) == MIPS_REG_T9) {
 					pd->t9_pre = UT64_MAX;
 				}
 				break;
@@ -1129,8 +1138,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->delay = 1;
 		if (REGID (0) == MIPS_REG_25) {
 			op->type = R_ANAL_OP_TYPE_RCALL;
-			op->jump = pd->t9_pre;
-			pd->t9_pre = UT64_MAX;
+			if (stateful) {
+				op->jump = pd->t9_pre;
+				pd->t9_pre = UT64_MAX;
+			}
 		}
 		break;
 	case MIPS_INS_JAL:
@@ -1324,9 +1335,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		// register is $ra, so jmp is a return
 		if (insn->detail->mips.operands[0].reg == MIPS_REG_RA) {
 			op->type = R_ANAL_OP_TYPE_RET;
-			pd->t9_pre = UT64_MAX;
+			if (stateful) {
+				pd->t9_pre = UT64_MAX;
+			}
 		}
-		if (REGID (0) == MIPS_REG_25) {
+		if (stateful && REGID (0) == MIPS_REG_25) {
 			op->jump = pd->t9_pre;
 			pd->t9_pre = UT64_MAX;
 		}
@@ -1359,7 +1372,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		SET_VAL (op,2);
 		break;
 	}
-	t9_invalidate (pd, op, insn);
+	if (stateful) {
+		t9_invalidate (pd, op, insn);
+	}
 beach:
 	set_opdir (op);
 	if (insn && mask & R_ARCH_OP_MASK_OPEX) {
@@ -1543,6 +1558,7 @@ const RArchPlugin r_arch_plugin_mips_cs = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.init = init,
 	.fini = fini,
+	.reset = reset,
 	.decode = decode,
 	.encode = encode,
 	.mnemonics = mnemonics,

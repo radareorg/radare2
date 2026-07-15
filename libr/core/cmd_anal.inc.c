@@ -2693,13 +2693,18 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		pj_a (pj);
 	}
 	const bool smart_mask = r_config_get_b (core->config, "anal.mask");
+	const bool stateful = core->anal->opt.stateful;
+	const ut32 opmask = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_OPEX | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_DISASM
+		| (stateful? R_ARCH_OP_MASK_STATEFUL: 0);
+	if (stateful) {
+		r_arch_session_reset (core->anal->arch->session);
+	}
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		RAnalOp asmop = {0};
 		addr = core->addr + idx;
 		r_asm_set_pc (core->rasm, addr);
 		hint = r_anal_hint_get (core->anal, addr);
-		ret = r_anal_op (core->anal, &op, addr, buf + idx, len - idx,
-			R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_OPEX | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_DISASM);
+		ret = r_anal_op (core->anal, &op, addr, buf + idx, len - idx, opmask);
 		(void)r_asm_disassemble (core->rasm, &asmop, buf + idx, len - idx);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);

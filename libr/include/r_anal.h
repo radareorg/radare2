@@ -451,6 +451,7 @@ typedef struct r_anal_options_t {
 	bool norevisit;
 	int recont; // continue on recurse analysis mode
 	int noncode;
+	bool stateful; // let arch plugins use cross-instruction decode state inside linear windows
 	bool nopskip; // skip nops at the beginning of functions
 	int hpskip; // skip `mov reg,reg` and `lea reg,[reg]`
 	int jmptbl; // analyze jump tables
