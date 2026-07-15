@@ -440,21 +440,33 @@ static int _server_handle_p(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 
 // Write register number
 static int _server_handle_P(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	char *ptr, *cmd;
-	int regnum, len, i;
+	char *ptr, *end, *cmd;
+	int regnum, i;
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	if (!isxdigit ((ut8)g->data[1]) || !g->registers || !(ptr = strchr (g->data, '='))) {
+	if (g->data_len < 4 || !g->registers || !isxdigit ((ut8)g->data[1])) {
 		return send_msg (g, "E01");
 	}
+	ptr = memchr (g->data + 2, '=', g->data_len - 2);
+	if (!ptr) {
+		return send_msg (g, "E01");
+	}
+	long parsed_regnum = strtol (g->data + 1, &end, 16);
+	if (parsed_regnum < 0 || parsed_regnum > INT_MAX || end != ptr) {
+		return send_msg (g, "E01");
+	}
+	regnum = (int)parsed_regnum;
 	ptr++;
-	if (!isxdigit ((unsigned char)*ptr)) {
+	size_t value_len = g->data_len - (ptr - g->data);
+	if (!value_len || value_len > ST32_MAX) {
 		return send_msg (g, "E01");
 	}
-	regnum = strtol (g->data + 1, NULL, 16);
-	if (regnum < 0) {
-		return send_msg (g, "E01");
+	size_t value_pos;
+	for (value_pos = 0; value_pos < value_len; value_pos++) {
+		if (!isxdigit ((ut8)ptr[value_pos])) {
+			return send_msg (g, "E01");
+		}
 	}
 	// We need to do this because length of register set is not known
 	for (i = 0; i < regnum; i++) {
@@ -462,11 +474,10 @@ static int _server_handle_P(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 			return send_msg (g, "E01");
 		}
 	}
-	len = strlen (g->registers[regnum].name) + strlen (ptr) + 10;
-	if (!(cmd = calloc (len, sizeof (char)))) {
+	cmd = r_str_newf ("dr %s=0x%.*s", g->registers[regnum].name, (int)value_len, ptr);
+	if (!cmd) {
 		return send_msg (g, "E01");
 	}
-	snprintf (cmd, len - 1, "dr %s=0x%s", g->registers[regnum].name, ptr);
 	if (cmd_cb (g, core_ptr, cmd, NULL, 0) < 0) {
 		free (cmd);
 		send_msg (g, "E01");
