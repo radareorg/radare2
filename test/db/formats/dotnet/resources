@@ -1,0 +1,8 @@
+NAME=.NET PE manifest resources
+FILE=bins/cil/AStyleWhore.exe
+CMDS=iUq~MANIFESTRESOURCE
+EXPECT=<<EOF
+0x0040261c 180 MANIFESTRESOURCE AStyleWhore.Properties.Resources.resources
+0x004026d4 15652 MANIFESTRESOURCE AStyleWhore.Form1.resources
+EOF
+RUN
