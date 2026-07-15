@@ -10,8 +10,13 @@
 #include <r_debug.h>
 
 #define MAX_PID_CHARS (5)
+#define MAX_FEATURE_DEPTH (16)
 
-static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
+static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len, int depth) {
+	if (depth >= MAX_FEATURE_DEPTH) {
+		*tot_len = 0;
+		return NULL;
+	}
 	ut64 retlen = 0, off = 0, len = g->stub_features.pkt_sz - 2,
 		subret_space = 0, subret_len = 0;
 	char *tmp, *tmp2, *tmp3, *ret = NULL, *subret = NULL, msg[128] = {0},
@@ -70,36 +75,37 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 		}
 		tmpchar = *tmp3;
 		*tmp3 = '\0';
-		subret = gdbr_read_feature (g, tmp2, &subret_len);
+		subret = gdbr_read_feature (g, tmp2, &subret_len, depth + 1);
 		*tmp3 = tmpchar;
-		if (subret) {
-			if (subret_len <= subret_space) {
-				memcpy (tmp, subret, subret_len);
-				memcpy (tmp + subret_len, tmp + subret_space,
-					retlen - (tmp + subret_space - ret));
-				retlen -= subret_space - subret_len;
-				ret[retlen] = '\0';
-				tmp = strstr (tmp3, "<xi:include");
-				free (subret);
-				continue;
-			}
-			if (subret_len > subret_space) {
-				int ptrdiff = tmp - ret;
-				tmp3 = realloc (ret, retlen + subret_len + 1);
-				if (!tmp3) {
-					free (subret);
-					goto exit_err;
-				}
-				tmp = tmp3 + ptrdiff;
-				ret = tmp3;
-			}
-			memmove (tmp + subret_len, tmp + subret_space,
-				retlen - (tmp + subret_space - ret));
-			memcpy (tmp, subret, subret_len);
-			retlen += subret_len - subret_space;
-			ret[retlen] = '\0';
-			free (subret);
+		if (!subret) {
+			goto exit_err;
 		}
+		if (subret_len <= subret_space) {
+			memcpy (tmp, subret, subret_len);
+			memcpy (tmp + subret_len, tmp + subret_space,
+				retlen - (tmp + subret_space - ret));
+			retlen -= subret_space - subret_len;
+			ret[retlen] = '\0';
+			tmp = strstr (tmp3, "<xi:include");
+			free (subret);
+			continue;
+		}
+		if (subret_len > subret_space) {
+			int ptrdiff = tmp - ret;
+			tmp3 = realloc (ret, retlen + subret_len + 1);
+			if (!tmp3) {
+				free (subret);
+				goto exit_err;
+			}
+			tmp = tmp3 + ptrdiff;
+			ret = tmp3;
+		}
+		memmove (tmp + subret_len, tmp + subret_space,
+			retlen - (tmp + subret_space - ret));
+		memcpy (tmp, subret, subret_len);
+		retlen += subret_len - subret_space;
+		ret[retlen] = '\0';
+		free (subret);
 		tmp = strstr (tmp3, "<xi:include");
 	}
 	*tot_len = retlen;
@@ -460,7 +466,7 @@ int gdbr_read_target_xml(libgdbr_t *g) {
 	}
 	char *data;
 	ut64 len;
-	if (!(data = gdbr_read_feature (g, "target.xml", &len))) {
+	if (!(data = gdbr_read_feature (g, "target.xml", &len, 0))) {
 		return -1;
 	}
 	gdbr_parse_target_xml (g, data, len);
