@@ -1,5 +1,6 @@
 /*  Rakholiya Jenish - 2017 */
 
+#include "r_util/r_log.h"
 #include <r_types.h>
 #include <r_util.h>
 
@@ -63,35 +64,43 @@ ut8 *utf32toutf8 (ut32 *input) {
 	return result;
 }
 
-ut32 *utf8toutf32 (const ut8 *input) {
+ut32 *utf8toutf32 (const ut8 *input, int inputlen, ut32* dstlen) {
 	if (!input) {
 		return NULL;
 	}
 
 	int i = 0;
-	int j = 0;
 	int val = 0;
-	int len = strlen ((const char *) input);
-	ut32 *result = calloc (strlen ((const char *) input) + 1, 4);
+	ut32 *result = calloc (inputlen, sizeof(ut32));
 
 	if (!result) {
 		return NULL;
 	}
+	if(!dstlen){
+		return NULL;
+	}
+	*dstlen = 0;
 
-	while (i < len) {
+	while (i < inputlen) {
 		if (input[i] >> 7 == 0) {
 			val = input[i];
 			i += 1;
 		} else if (input[i] >> 5 == 0x6) {
+			if (i > inputlen - 1)
+				goto truncate;
 			val = (((input[i] & 0x1f) << 6) & 0xfc0) |
 			(input[i + 1] & 0x3f);
 			i += 2;
 		} else if (input[i] >> 4 == 0xe) {
+			if (i > inputlen - 2)
+				goto truncate;
 			val = (((input[i] & 0xf) << 12) & 0xf000) |
 			(((input[i + 1] & 0x3f) << 6) & 0xffc0) |
 			(input[i + 2] & 0x3f);
 			i += 3;
 		} else if (input[i] >> 3 == 0x1e) {
+			if (i > inputlen - 3)
+				goto truncate;
 			val = (((input[i] & 0xf) << 18) & 0x1c0000) |
 			(((input[i + 1] & 0x3f) << 12) & 0x1ff000) |
 			(((input[i + 2] & 0x3f) << 6) & 0x1fffc0) |
@@ -102,10 +111,15 @@ ut32 *utf8toutf32 (const ut8 *input) {
 			free (result);
 			return NULL;
 		}
-		result[j] = val;
-		j++;
+		result[*dstlen] = val;
+		*dstlen += 1;
+
 	}
 
+	return result;
+
+truncate:
+	R_LOG_WARN("utf8toutf32: string malformed, result truncated.")
 	return result;
 }
 
@@ -176,13 +190,27 @@ static ut32 decode_digit(ut32 v) {
 	return UT32_MAX;
 }
 
+static inline bool punycode_write_at(char** dst, ut32 di, ut32* clamp, char value){
+	if (di >= *clamp){
+		*clamp *= 2;
+		char* tmp = realloc(*dst, *clamp);
+		if(!tmp){
+			return false;
+		}
+		*dst = tmp;
+	}
+	(*dst)[di] = value;
+	return true;
+}
+
 R_API char *r_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
 	ut32 m, n;
 	ut32 b, h;
 	ut32 si, di;
 	ut32 delta, bias;
 	ut32 *actualsrc = NULL;
-	ut32 len = 0;
+	ut32 actualsrclen = 0;
+	ut32 dstCap;
 	char *dst = NULL;
 
 	*dstlen = 0;
@@ -191,59 +219,84 @@ R_API char *r_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
 		return NULL;
 	}
 
-	actualsrc = utf8toutf32 (src);
+	// todo: basically strlen, fix
+	actualsrc = utf8toutf32 (src, srclen, &actualsrclen);
 	if (!actualsrc) {
 		return NULL;
 	}
+	// todo: basically strlen, fix
+	// len = utf32len (actualsrc);
 
-	len = utf32len (actualsrc);
+	dstCap = 2 * actualsrclen;
+	dst = calloc (dstCap, 1);
+	if (!dst)
+		goto beach;
 
-	dst = calloc (2 * len + 10, 1);
-	if (!dst) {
-		free (actualsrc);
-		return NULL;
-	}
-
-	for (si = 0, di = 0; si < len; si++) {
+	for (si = 0, di = 0; si < actualsrclen; si++) {
 		if (actualsrc[si] < 128) {
-			dst[di++] = actualsrc[si];
+			// dst[di++] = actualsrc[si];
+			if (!punycode_write_at(&dst, di++, &dstCap, actualsrc[si]))
+				goto beach;
 		}
 	}
 
 	b = h = di;
 
 	if (di > 0) {
-		dst[di++] = '-';
+		// dst[di++] = '-';
+		if (!punycode_write_at(&dst, di++, &dstCap, '-'))
+			goto beach;
 	}
 
 	n = INITIAL_N;
 	bias = INITIAL_BIAS;
 
-	for (delta = 0; h < len; n++, delta++) {
-		for (m = UT32_MAX, si = 0; si < len; si++) {
+	for (delta = 0; h < actualsrclen; n++, delta++) {
+		for (m = UT32_MAX, si = 0; si < actualsrclen; si++) {
 			if (actualsrc[si] >= n && actualsrc[si] < m) {
 				m = actualsrc[si];
 			}
 		}
 
-		if ((m - n) > (UT32_MAX - delta) / (h + 1)) {
-			free (actualsrc);
-			free (dst);
-			return NULL;
-		}
+		if ((m - n) > (UT32_MAX - delta) / (h + 1))
+			goto beach;
 
 		delta += (m - n) * (h + 1);
 		n = m;
 
-		for (si = 0; si < len; si++) {
+		for (si = 0; si < actualsrclen; si++) {
 			if (actualsrc[si] < n) {
-				if (++delta == 0) {
-					free (actualsrc);
-					free (dst);
-					return NULL;
-				}
+				if (++delta == 0)
+					goto beach;
 			} else if (actualsrc[si] == n) {
-				di += encode_var_int (bias, delta, &dst[di]);
+				// di += encode_var_int (bias, delta, &dst[di]);
+				ut32 k, q, t;
+				k = BASE;
+				q = delta;
+				while (true) {
+					if (k <= bias) {
+						t = TMIN;
+					} else if (k >= bias + TMAX) {
+						t = TMAX;
+					} else {
+						t = k - bias;
+					}
+
+					if (q < t) {
+						break;
+					}
+
+					// dst[di++] = encode_digit (t + (q - t) % (BASE - t));
+					if (!punycode_write_at(&dst, di++, &dstCap, encode_digit (t + (q - t) % (BASE - t))))
+						goto beach;
+
+					q = (q - t) / (BASE - t);
+					k += BASE;
+				}
+				// dst[di++] = encode_digit (q);
+				if (!punycode_write_at(&dst, di++, &dstCap, encode_digit (q)))
+					goto beach;
+
 				bias = adapt_bias (delta, h + 1, h == b);
 				delta = 0;
 				h++;
@@ -253,6 +306,11 @@ R_API char *r_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
 	*dstlen = di;
 	free (actualsrc);
 	return dst;
+
+beach:
+	free (actualsrc);
+	free (dst);
+	return NULL;
 }
 
 R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen) {
