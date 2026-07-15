@@ -1625,7 +1625,8 @@ static bool import_dwarf_function_fallback(RAnal *anal, const char *typed_name, 
 		sdb_setf (types, "...,varg", 0, "func.%s.arg.%d", typed_name, arg_index);
 		arg_index++;
 	}
-	sdb_num_setf (types, arg_index, 0, "func.%s.args", typed_name);
+	r_strf_buffer (16);
+	sdb_setf (types, r_strf ("%d", arg_index), 0, "func.%s.args", typed_name);
 
 	sdb_setf (types, r_strbuf_get (&argnames), 0, "func.%s", typed_name);
 	r_strbuf_fini (&argnames);

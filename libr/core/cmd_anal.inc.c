@@ -1422,7 +1422,8 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	}
 	//	sdb_num_set (core->anal->sdb_types, args, (int)arg_count, 0);
 	if (arg_count > 0) {
-		sdb_num_setf (core->anal->sdb_types, arg_count, 0, "func.%s.args", fcn->name);
+		r_strf_buffer (16);
+		sdb_setf (core->anal->sdb_types, r_strf ("%d", (int)arg_count), 0, "func.%s.args", fcn->name);
 	}
 	r_anal_function_vars_cache_fini (&cache);
 }
@@ -4299,7 +4300,8 @@ static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
 	int i, args = r_num_get (NULL, argstr);
 	sdb_unset (DB, k, 0);
 	free (k);
-	sdb_num_setf (DB, args, 0, "func.%s.args", nname);
+	r_strf_buffer (16);
+	sdb_setf (DB, r_strf ("%d", (int)args), 0, "func.%s.args", nname);
 	// rename arg#
 	for (i = 0; i < args; i++) {
 		k = r_str_newf ("func.%s.arg.%d", oname, i);
