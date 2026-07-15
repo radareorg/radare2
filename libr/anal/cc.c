@@ -689,13 +689,13 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 		int n = 0;
 		r_list_foreach (ccRets, iter, ret) {
 			r_str_trim (ret);
-			sdb_set (DB, r_strf ("cc.%s.ret%d", ccname, n), ret, 0);
+			sdb_setf (DB, ret, 0, "cc.%s.ret%d", ccname, n);
 			n++;
 		}
-		sdb_num_set (DB, r_strf ("cc.%s.retn", ccname), n, 0);
+			sdb_num_setf (DB, n, 0, "cc.%s.retn", ccname);
 		r_list_free (ccRets);
 	} else {
-		sdb_set (DB, r_strf ("cc.%s.ret0", ccname), e, 0);
+		sdb_setf (DB, e, 0, "cc.%s.ret0", ccname);
 		sdb_unset (DB, r_strf ("cc.%s.retn", ccname), 0);
 	}
 
@@ -705,9 +705,9 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 	int n = 0;
 	r_list_foreach (ccArgs, iter, arg) {
 		if (!strcmp (arg, "stack")) {
-			sdb_set (DB, r_strf ("cc.%s.argn", ccname), arg, 0);
+			sdb_setf (DB, arg, 0, "cc.%s.argn", ccname);
 		} else {
-			sdb_set (DB, r_strf ("cc.%s.arg%d", ccname, n), arg, 0);
+			sdb_setf (DB, arg, 0, "cc.%s.arg%d", ccname, n);
 			n++;
 		}
 	}

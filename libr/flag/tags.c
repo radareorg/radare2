@@ -4,8 +4,7 @@
 
 R_API RList *r_flag_tags_set(RFlag *f, const char *name, const char *words) {
 	R_RETURN_VAL_IF_FAIL (f && name && words, NULL);
-	r_strf_var (k, 64, "tag.%s", name);
-	sdb_set (f->tags, k, words, -1);
+	sdb_setf (f->tags, words, -1, "tag.%s", name);
 	return NULL;
 }
 

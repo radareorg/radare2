@@ -1436,8 +1436,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				if (!dex->mdb) {
 					dex->mdb = sdb_new0 ();
 				}
-				r_strf_var (methvar, 64, "method.%"PFMT64u, MI);
-				sdb_num_set (dex->mdb, methvar, sym->paddr, 0);
+				sdb_num_setf (dex->mdb, sym->paddr, 0, "method.%"PFMT64u, MI);
 				// -----------------
 				// WORK IN PROGRESS
 				// -----------------
@@ -1447,7 +1446,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 						if (!cdb) {
 							cdb = sdb_new0 ();
 						}
-						sdb_num_set (cdb, r_strf ("%d", c->class_id), sym->paddr, 0);
+						sdb_num_setf (cdb, sym->paddr, 0, "%d", c->class_id);
 					}
 				}
 #endif
@@ -1751,8 +1750,7 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym.ordinal = sym_count++;
 				sym.lang = R_BIN_LANG_JAVA;
 				RVecRBinSymbol_push_back (&dex->symbols_vec, &sym);
-				r_strf_var (mname, 64, "method.%"PFMT64u, (ut64)i);
-				sdb_num_set (dex->mdb, mname, sym.paddr, 0);
+				sdb_num_setf (dex->mdb, sym.paddr, 0, "method.%"PFMT64u, (ut64)i);
 			}
 			free (class_name);
 		}

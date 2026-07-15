@@ -444,10 +444,8 @@ R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
 
 R_API int r_type_set_link(Sdb *TDB, const char *type, ut64 addr) {
 	if (sdb_const_get (TDB, type, 0)) {
-		char *laddr = r_str_newf ("link.%08" PFMT64x, addr);
-		sdb_set (TDB, laddr, type, 0);
+		sdb_setf (TDB, type, 0, "link.%08" PFMT64x, addr);
 		types_range_add (TDB, addr);
-		free (laddr);
 		return true;
 	}
 	return false;
@@ -455,9 +453,7 @@ R_API int r_type_set_link(Sdb *TDB, const char *type, ut64 addr) {
 
 R_API int r_type_link_offset(Sdb *TDB, const char *type, ut64 addr) {
 	if (sdb_const_get (TDB, type, 0)) {
-		char *laddr = r_str_newf ("offset.%08" PFMT64x, addr);
-		sdb_set (TDB, laddr, type, 0);
-		free (laddr);
+		sdb_setf (TDB, type, 0, "offset.%08" PFMT64x, addr);
 		return true;
 	}
 	return false;

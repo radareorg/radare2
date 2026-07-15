@@ -356,7 +356,6 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 	ut32 size_sects;
 	ut8 segcom[sizeof (struct MACH0_(segment_command))] = { 0 };
 	ut8 sec[sizeof (struct MACH0_(section))] = { 0 };
-	char section_flagname[128];
 
 	if (!UT32_MUL (&size_sects, mo->nsegs, sizeof (struct MACH0_(segment_command)))) {
 		return false;
@@ -413,14 +412,11 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 	scp += sizeof (ut32);
 	seg->flags = r_read_ble32 (scp, be);
 
-	char *segment_flagname = NULL;
 #if R_BIN_MACH064
-	segment_flagname = r_str_newf ("mach0_segment64_%u.offset", (ut32)j);
+	sdb_num_setf (mo->kv, off, 0, "mach0_segment64_%u.offset", (ut32)j);
 #else
-	segment_flagname = r_str_newf ("mach0_segment_%u.offset", (ut32)j);
+	sdb_num_setf (mo->kv, off, 0, "mach0_segment_%u.offset", (ut32)j);
 #endif
-	sdb_num_set (mo->kv, segment_flagname, off, 0);
-	free (segment_flagname);
 	sdb_num_set (mo->kv, "mach0_segments.count", 0, 0);
 
 	if (seg->nsects > 0) {
@@ -478,14 +474,14 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 			i += 16;
 			memcpy (&sk->segname, &sec[i], 16); // INFO: Remember: it's not null terminated!
 			i += 16;
-			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.offset", sk->segname, sk->sectname);
-			sdb_num_set (mo->kv, section_flagname, offset, 0);
+			sdb_num_setf (mo->kv, offset, 0,
+				"mach0_section_%.16s_%.16s.offset", sk->segname, sk->sectname);
 #if R_BIN_MACH064
-			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.format", sk->segname, sk->sectname);
-			sdb_set (mo->kv, section_flagname, "mach0_section64", 0);
+			sdb_setf (mo->kv, "mach0_section64", 0,
+				"mach0_section_%.16s_%.16s.format", sk->segname, sk->sectname);
 #else
-			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.format", sk->segname, sk->sectname);
-			sdb_set (mo->kv, section_flagname, "mach0_section", 0);
+			sdb_setf (mo->kv, "mach0_section", 0,
+				"mach0_section_%.16s_%.16s.format", sk->segname, sk->sectname);
 #endif
 
 			const ut8 *scp = &sec[i];
@@ -2032,14 +2028,12 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 			R_LOG_WARN ("mach0_header %d = cmdsize<1. (0x%" PFMT64x " vs 0x%" PFMT64x ")", i, off + lc.cmdsize, mo->size);
 			break;
 		}
-		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.offset", i);
-		sdb_num_set (mo->kv, cmd_flagname, off, 0);
+		sdb_num_setf (mo->kv, off, 0, "mach0_cmd_%d.offset", i);
 		const char *format_name = cmd_to_pf_definition (lc.cmd);
-		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.format", i);
 		if (format_name) {
-			sdb_set (mo->kv, cmd_flagname, format_name, 0);
+			sdb_setf (mo->kv, format_name, 0, "mach0_cmd_%d.format", i);
 		} else {
-			sdb_set (mo->kv, cmd_flagname, "[4]Ed (mach_load_command_type)cmd size", 0);
+			sdb_setf (mo->kv, "[4]Ed (mach_load_command_type)cmd size", 0, "mach0_cmd_%d.format", i);
 		}
 
 		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.cmd", i);
@@ -2113,11 +2107,9 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 					return false;
 				}
 				if (r_buf_fread_at (mo->b, off, (ut8 *)&uc, "24c", 1) != -1) {
-					char key[128];
 					char val[128];
-					snprintf (key, sizeof (key) - 1, "uuid.%d", mo->uuidn++);
 					r_hex_bin2str ((ut8 *)&uc.uuid, 16, val);
-					sdb_set (mo->kv, key, val, 0);
+					sdb_setf (mo->kv, val, 0, "uuid.%d", mo->uuidn++);
 					// for (i=0;i<16; i++) bprintf ("%02x%c", uc.uuid[i], (i==15)? '\n': '-');
 				}
 			}
@@ -2169,8 +2161,7 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 						if (buf) {
 							r_buf_read_at (mo->b, off + name_off, (ut8 *)buf, str_len);
 							buf[str_len] = 0;
-							r_strf_var (key, 64, "mach0.dyld_environment.%d", i);
-							sdb_set (mo->kv, key, buf, 0);
+							sdb_setf (mo->kv, buf, 0, "mach0.dyld_environment.%d", i);
 							free (buf);
 						}
 					}
@@ -2395,14 +2386,12 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 			R_LOG_DEBUG ("mach0_header %d = cmdsize<1. (0x%" PFMT64x " vs 0x%" PFMT64x ")", i, (ut64) (off + lc.cmdsize), (ut64) (mo->size));
 			break;
 		}
-		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.offset", i);
-		sdb_num_set (mo->kv, cmd_flagname, off, 0);
+		sdb_num_setf (mo->kv, off, 0, "mach0_cmd_%d.offset", i);
 		const char *format_name = cmd_to_pf_definition (lc.cmd);
-		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.format", i);
 		if (format_name) {
-			sdb_set (mo->kv, cmd_flagname, format_name, 0);
+			sdb_setf (mo->kv, format_name, 0, "mach0_cmd_%d.format", i);
 		} else {
-			sdb_set (mo->kv, cmd_flagname, "[4]Ed (mach_load_command_type)cmd size", 0);
+			sdb_setf (mo->kv, "[4]Ed (mach_load_command_type)cmd size", 0, "mach0_cmd_%d.format", i);
 		}
 
 		switch (lc.cmd) {
@@ -4550,11 +4539,9 @@ struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * mo) {
 
 void MACH0_(kv_loadlibs)(struct MACH0_(obj_t) * mo) {
 	int i;
-	char lib_flagname[128];
 	for (i = 0; i < mo->nlibs; i++) {
-		snprintf (lib_flagname, sizeof (lib_flagname), "libs.%d.name", i);
 		char **lib = RVecMach0Lib_at (&mo->libs_cache, i);
-		sdb_set (mo->kv, lib_flagname, lib? *lib: NULL, 0);
+		sdb_setf (mo->kv, lib? *lib: NULL, 0, "libs.%d.name", i);
 	}
 }
 

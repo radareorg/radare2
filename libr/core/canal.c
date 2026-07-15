@@ -1423,9 +1423,7 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 		if (bbi->jump != UT64_MAX) {
 			nodes++;
 			if (is_keva) {
-				char key[128];
 				char val[128];
-				snprintf (key, sizeof (key), "bb.0x%08"PFMT64x".to", bbi->addr);
 				if (bbi->fail != UT64_MAX) {
 					snprintf (val, sizeof (val), "0x%08"PFMT64x, bbi->jump);
 				} else {
@@ -1433,7 +1431,7 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 							bbi->jump, bbi->fail);
 				}
 				// bb.<addr>.to=<jump>,<fail>
-				sdb_set (DB, key, val, 0);
+				sdb_setf (DB, val, 0, "bb.0x%08"PFMT64x".to", bbi->addr);
 			} else if (is_html) {
 				r_cons_printf (core->cons, "<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
 						"  <img class=\"connector-end\" src=\"img/arrow.gif\" /></div>\n",
@@ -1503,10 +1501,8 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 				nodes++;
 				if (is_keva) {
 					char key[128];
-					snprintf (key, sizeof (key),
-							"bb.0x%08"PFMT64x".switch.%"PFMT64d,
-							bbi->addr, caseop->value);
-					sdb_num_set (DB, key, caseop->jump, 0);
+					sdb_num_setf (DB, caseop->jump, 0,
+						"bb.0x%08"PFMT64x".switch.%"PFMT64d, bbi->addr, caseop->value);
 					snprintf (key, sizeof (key),
 							"bb.0x%08"PFMT64x".switch", bbi->addr);
 							sdb_array_add_num (DB, key, caseop->value, 0);
@@ -1558,10 +1554,8 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 	int nodes = 0;
 	r_list_foreach (fcn->bbs, iter, bbi) {
 		if (is_keva) {
-			char key[128];
 			sdb_array_push_num (DB, "bbs", bbi->addr, 0);
-			snprintf (key, sizeof (key), "bb.0x%08"PFMT64x".size", bbi->addr);
-			sdb_num_set (DB, key, bbi->size, 0); // bb.<addr>.size=<num>
+			sdb_num_setf (DB, bbi->size, 0, "bb.0x%08"PFMT64x".size", bbi->addr); // bb.<addr>.size=<num>
 		} else if (is_json) {
 			RDebugTracepointItem *t = r_debug_trace_get (core->dbg, bbi->addr);
 			pj_o (pj);

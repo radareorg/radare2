@@ -1579,9 +1579,7 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal *anal, bool use_map_info, bool use
 		const ut32 from = ri->offset;
 		const ut32 to = from + ri->size - 1; // closed intervals because of FUCK YOU
 		const ut64 v = to | (((ut64)from) << 32);
-		char *reg = r_str_newf ("reg.%s", ri->name);
-		sdb_num_set (dfg->regs, reg, v, 0);
-		free (reg);
+		sdb_num_setf (dfg->regs, v, 0, "reg.%s", ri->name);
 	}
 	r_reg_set_profile_string (dfg->reg, anal->reg->reg_profile_str);
 	r_esil_setup (dfg->esil, anal, 0, 0, 0);

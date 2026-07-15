@@ -615,8 +615,8 @@ static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr
 		|| sdb_exists (gc, r_strf ("return.%" PFMT64x, bb->addr))) {
 		return;
 	}
-	sdb_set (gc, r_strf ("%" PFMT64x ".to.%" PFMT64x, bb->addr, dst_addr), "1", 0);
-	sdb_set (gc, r_strf ("%" PFMT64x ".to.%" PFMT64x, curr_addr, dst_addr), "1", 0);
+	sdb_setf (gc, "1", 0, "%" PFMT64x ".to.%" PFMT64x, bb->addr, dst_addr);
+	sdb_setf (gc, "1", 0, "%" PFMT64x ".to.%" PFMT64x, curr_addr, dst_addr);
 
 	if (dst_addr != bb->addr) {
 		print_newline (state, bb->addr, indent, true);
@@ -1520,8 +1520,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					&& pbb->jump <= pbb->addr
 					&& r_anal_function_contains (state.fcn, pbb->jump)
 					&& r_anal_function_contains (state.fcn, pbb->fail)) {
-				sdb_num_set (state.db,
-					r_strf ("loop_header.%" PFMT64x, pbb->addr), 1, 0);
+				sdb_num_setf (state.db, 1, 0, "loop_header.%" PFMT64x, pbb->addr);
 			}
 		}
 	}
@@ -1562,13 +1561,10 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			ut64 test_addr = bb->addr;
 			RAnalBlock *exit_bb = render_loop_while (&state, bb, visited, indent - 1);
 			if (exit_bb) {
-				sdb_set (state.goto_cache,
-					r_strf ("%" PFMT64x ".addr", test_addr), "1", 0);
+				sdb_setf (state.goto_cache, "1", 0, "%" PFMT64x ".addr", test_addr);
 				r_bitset_set (state.marked, test_addr);
-				sdb_num_set (state.db,
-					r_strf ("structured.%" PFMT64x, test_addr), 1, 0);
-				sdb_num_set (state.db,
-					r_strf ("structured.%" PFMT64x, exit_bb->addr), 1, 0);
+				sdb_num_setf (state.db, 1, 0, "structured.%" PFMT64x, test_addr);
+				sdb_num_setf (state.db, 1, 0, "structured.%" PFMT64x, exit_bb->addr);
 				if (r_bitset_test (state.marked, exit_bb->addr)) {
 					break;
 				}
@@ -1609,16 +1605,12 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			if (sw_bb) {
 				render_switch (&state, sw_bb, visited, indent - 1);
 				r_bitset_set (state.marked, sw_bb->addr);
-				sdb_num_set (state.db,
-					r_strf ("structured.%" PFMT64x, sw_bb->addr), 1, 0);
+				sdb_num_setf (state.db, 1, 0, "structured.%" PFMT64x, sw_bb->addr);
 				if (!r_list_contains (visited, sw_bb)) {
 					r_list_append (visited, sw_bb);
 				}
-				sdb_set (state.goto_cache,
-					r_strf ("%" PFMT64x ".addr", bb->addr), "1", 0);
-				sdb_set (state.goto_cache,
-					r_strf ("%" PFMT64x ".to.%" PFMT64x, bb->addr, sw_bb->addr),
-					"1", 0);
+				sdb_setf (state.goto_cache, "1", 0, "%" PFMT64x ".addr", bb->addr);
+				sdb_setf (state.goto_cache, "1", 0, "%" PFMT64x ".to.%" PFMT64x, bb->addr, sw_bb->addr);
 				break;
 			}
 		}
@@ -1642,7 +1634,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				if (!bb_ends_with_terminator (core, bb)) {
 					print_newline (&state, bb->addr, indent, true);
 					PRINTF (r0? "return %s;": "return;", r0);
-					sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
+					sdb_setf (state.goto_cache, "1", 0, "return.%" PFMT64x, bb->addr);
 				}
 				RAnalBlock *nbb = r_anal_bb_from_offset (core->anal, bb->fail);
 				if (r_list_contains (visited, nbb)) {
@@ -1865,7 +1857,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				if (!bb_ends_with_terminator (core, bb)) {
 					print_newline (&state, bb->addr, indent, true);
 					PRINTF (r0? "return %s;": "return;", r0);
-					sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
+					sdb_setf (state.goto_cache, "1", 0, "return.%" PFMT64x, bb->addr);
 				}
 			} else {
 				PRINTGOTO (nextbbaddr, bb->jump);
