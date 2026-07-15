@@ -442,7 +442,7 @@ R_IPI RList *r_bin_le_get_libs(RBinLEObj *bin) {
 *	page->size is the total size of iter records that describe the page
 *	TODO: Don't do this
 */
-static bool __create_iter_sections(RVecRBinSection *sections, RBinLEObj *bin, RBinSection *sec, LE_object_page_entry *page, ut64 vaddr, int cur_page) {
+static bool __create_iter_sections(RVecRBinSection *sections, RBinLEObj *bin, RBinSection *sec, LE_object_page_entry *page, ut64 vaddr, ut32 cur_page) {
 	R_RETURN_VAL_IF_FAIL (sections && bin && sec && page, false);
 	LE_image_header *h = bin->header;
 	if (h->pageshift > ST16_MAX || h->pageshift < 0) {
@@ -473,7 +473,7 @@ static bool __create_iter_sections(RVecRBinSection *sections, RBinLEObj *bin, RB
 		tot_size = 0;
 		for (i = 0; i < iter_n; i++) {
 			RBinSection *s = RVecRBinSection_emplace_back (sections);
-			s->name = r_str_newf ("%s.page.%d.iter.%d", sec->name, cur_page, iter_cnt);
+			s->name = r_str_newf ("%s.page.%u.iter.%d", sec->name, cur_page, iter_cnt);
 			s->bits = sec->bits;
 			s->perm = sec->perm;
 			s->size = data_size;
@@ -509,7 +509,7 @@ static bool __create_iter_sections(RVecRBinSection *sections, RBinLEObj *bin, RB
 	}
 	if (tot_size < h->pagesize) {
 		RBinSection *s = RVecRBinSection_emplace_back (sections);
-		s->name = r_str_newf ("%s.page.%d.iter.zerofill", sec->name, cur_page);
+		s->name = r_str_newf ("%s.page.%u.iter.zerofill", sec->name, cur_page);
 		s->bits = sec->bits;
 		s->perm = sec->perm;
 		s->vsize = h->pagesize - tot_size;
@@ -557,15 +557,16 @@ R_IPI bool r_bin_le_load_sections(RBinLEObj *bin, RVecRBinSection *sections) {
 			*dst = *sec;
 			free (sec);
 		}
-		int j;
-		ut32 page_size_sum = 0;
-		ut32 next_idx = i < h->objcnt - 1 ? bin->objtbl[i + 1].page_tbl_idx - 1 : UT32_MAX;
-		ut32 objmaptbloff = h->objmap + bin->headerOff;
-		ut64 objpageentrysz =  bin->is_le ? sizeof (ut32) : sizeof (LE_object_page_entry);
-		for (j = 0; j < entry->page_tbl_entries; j++) {
+		ut32 j;
+		ut64 page_size_sum = 0;
+		ut64 next_idx = i < h->objcnt - 1 ? bin->objtbl[i + 1].page_tbl_idx : UT64_MAX;
+		ut64 objmaptbloff = (ut64)h->objmap + bin->headerOff;
+		ut64 objpageentrysz = bin->is_le ? sizeof (ut32) : sizeof (LE_object_page_entry);
+		ut64 page_count = h->pagesize ? R_MIN (entry->page_tbl_entries, (sec->vsize + h->pagesize - 1) / h->pagesize) : 0;
+		for (j = 0; entry->page_tbl_idx && j < page_count && page_size_sum < sec->vsize; j++) {
 			LE_object_page_entry page = {0};
 
-			int cur_idx = entry->page_tbl_idx + j - 1;
+			ut64 cur_idx = (ut64)entry->page_tbl_idx + j - 1;
 			ut64 page_entry_off = objpageentrysz * cur_idx + objmaptbloff;
 #if 0
 			int r = r_buf_read_at (bin->buf, page_entry_off, (ut8 *)&page, sizeof (page));
@@ -578,15 +579,15 @@ R_IPI bool r_bin_le_load_sections(RBinLEObj *bin, RVecRBinSection *sections) {
 				return true;
 			}
 			RBinSection *s = R_NEW0 (RBinSection);
-			s->name = r_str_newf ("%s.page.%d", sec->name, j);
+			s->name = r_str_newf ("%s.page.%u", sec->name, j);
 			s->is_data = sec->is_data;
-			if (cur_idx < next_idx) { // If not true rest of pages will be zeroes
+			if (cur_idx + 1 < next_idx) { // If not true rest of pages will be zeroes
 
 				if (bin->is_le) {
 					// Why is it big endian???
 					ut64 offset = r_buf_read_be32_at (bin->buf, page_entry_off) >> 8;
 					s->paddr = (offset - 1) * h->pagesize + pages_start_off;
-					if (entry->page_tbl_idx + j == h->mpages) {
+					if (cur_idx + 1 == h->mpages) {
 						page.size = h->pageshift;
 					} else {
 						page.size = h->pagesize;
@@ -655,8 +656,79 @@ static char *__get_modname_by_ord(RBinLEObj *bin, ut32 ordinal) {
 	return modname;
 }
 
+static st64 reloc_source_offset(ut16 raw) {
+	return raw & 0x8000 ? (st64)raw - 0x10000 : raw;
+}
+
+static RBinReloc *reloc_clone(const RBinReloc *reloc) {
+	RBinReloc *clone = R_NEW0 (RBinReloc);
+	*clone = *reloc;
+	clone->import = reloc->import ? r_bin_import_clone (reloc->import) : NULL;
+	return clone;
+}
+
+static bool reloc_page_bounds(RBinLEObj *bin, ut64 page, ut64 fixup_end, ut64 *start, ut64 *end) {
+	LE_image_header *h = bin->header;
+	ut64 page_offset = (ut64)h->fpagetab + bin->headerOff + page * sizeof (ut32);
+	if (page_offset > fixup_end || fixup_end - page_offset < sizeof (ut32) * 2) {
+		return false;
+	}
+	ut32 first = r_buf_read_ble32_at (bin->buf, page_offset, h->worder);
+	ut32 last = r_buf_read_ble32_at (bin->buf, page_offset + sizeof (ut32), h->worder);
+	if (first == UT32_MAX || last == UT32_MAX) {
+		return false;
+	}
+	ut64 records = (ut64)h->frectab + bin->headerOff;
+	*start = records + first;
+	*end = records + last;
+	return *start <= *end && *end <= fixup_end;
+}
+
+static bool reloc_record_end(RBuffer *buf, ut64 offset, ut64 limit, ut64 *end) {
+	if (offset > limit || limit - offset < sizeof (LE_fixup_record_header)) {
+		return false;
+	}
+	ut8 source = r_buf_read8_at (buf, offset);
+	ut8 target = r_buf_read8_at (buf, offset + 1);
+	bool source_list = source & F_SOURCE_LIST;
+	ut64 size = sizeof (LE_fixup_record_header) + (source_list ? sizeof (ut8) : sizeof (ut16));
+	if (size > limit - offset) {
+		return false;
+	}
+	ut8 count = source_list ? r_buf_read8_at (buf, offset + sizeof (LE_fixup_record_header)) : 0;
+	size += target & F_TARGET_ORD16 ? sizeof (ut16) : sizeof (ut8);
+	switch (target & F_TARGET_TYPE_MASK) {
+	case INTERNAL:
+		if ((source & F_SOURCE_TYPE_MASK) != SELECTOR16) {
+			size += target & F_TARGET_OFF32 ? sizeof (ut32) : sizeof (ut16);
+		}
+		break;
+	case IMPORTORD:
+		if (target & F_TARGET_ORD8) {
+			size += sizeof (ut8);
+		} else {
+			size += target & F_TARGET_OFF32 ? sizeof (ut32) : sizeof (ut16);
+		}
+		break;
+	case IMPORTNAME:
+		size += target & F_TARGET_OFF32 ? sizeof (ut32) : sizeof (ut16);
+		break;
+	case INTERNALENTRY:
+		break;
+	}
+	if (target & F_TARGET_ADDITIVE) {
+		size += target & F_TARGET_ADD32 ? sizeof (ut32) : sizeof (ut16);
+	}
+	size += (ut64)count * sizeof (ut16);
+	if (size > limit - offset) {
+		return false;
+	}
+	*end = offset + size;
+	return true;
+}
+
 R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
-	RList *l = r_list_newf ((RListFree)free);
+	RList *l = r_list_newf ((RListFree)r_bin_reloc_free);
 	if (!l) {
 		return NULL;
 	}
@@ -668,143 +740,121 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 		return NULL;
 	}
 	LE_image_header *h = bin->header;
-	ut64 cur_page = 0;
-	const ut64 fix_rec_tbl_off = (ut64)h->frectab + bin->headerOff;
-	ut32 ofa = r_buf_read_ble32_at (bin->buf, (ut64)h->fpagetab + bin->headerOff + cur_page * sizeof (ut32), h->worder);
-	if (ofa == UT32_MAX) {
-		r_list_free (entries);
-		RVecRBinSection_fini (&sections);
-		r_list_free (l);
-		return NULL;
-	}
-	ut64 offset = fix_rec_tbl_off + ofa;
-	ut32 ofb = r_buf_read_ble32_at (bin->buf, (ut64)h->fpagetab + bin->headerOff + (cur_page + 1) * sizeof (ut32), h->worder);
-	if (ofb == UT32_MAX) {
-		r_list_free (entries);
-		RVecRBinSection_fini (&sections);
-		r_list_free (l);
-		return NULL;
-	}
-	ut64 end = fix_rec_tbl_off + ofb;
-	const RBinSection *cur_section = RVecRBinSection_at (&sections, cur_page);
-	ut64 cur_page_offset = cur_section ? cur_section->vaddr : 0;
-	while (cur_page < h->mpages) {
-		bool rel_appended = false; // whether rel has been appended to l and must not be freed
-		RBinReloc *rel = R_NEW0 (RBinReloc);
-		if (!rel) {
+	const ut64 fixup_start = (ut64)h->fpagetab + bin->headerOff;
+	const ut64 fixup_end = R_MIN (fixup_start + h->fixupsize, r_buf_size (bin->buf));
+	ut64 cur_page;
+	for (cur_page = 0; cur_page < h->mpages; cur_page++) {
+		ut64 offset;
+		ut64 end;
+		if (!reloc_page_bounds (bin, cur_page, fixup_end, &offset, &end)) {
 			break;
 		}
-		ut8 header_source = r_buf_read8_at (bin->buf, offset);
-		ut8 header_target = r_buf_read8_at (bin->buf, offset + 1);
-		if (offset + 2 > r_buf_size (bin->buf)) {
-			R_LOG_WARN ("oobread in LE header parsing relocs");
-			break;
-		}
-		offset += 2;
-		switch (header_source & F_SOURCE_TYPE_MASK) {
-		case BYTEFIXUP:
-			rel->type = R_BIN_RELOC_8;
-			break;
-		case SELECTOR16:
-		case OFFSET16:
-			rel->type = R_BIN_RELOC_16;
-			break;
-		case OFFSET32:
-		case POINTER32:
-		case SELFOFFSET32:
-			rel->type = R_BIN_RELOC_32;
-			break;
-		case POINTER48:
-			rel->type = 48;
-			break;
-		}
-		ut64 repeat = 0;
-		st16 source = 0;
-		if (header_source & F_SOURCE_LIST) {
-			repeat = r_buf_read8_at (bin->buf, offset);
-			offset += sizeof (ut8);
-		} else {
-			source = r_buf_read_ble16_at (bin->buf, offset, h->worder);
-			offset += sizeof (st16);
-		}
-		ut32 ordinal;
-		if (header_target & F_TARGET_ORD16) {
-			ordinal = r_buf_read_ble16_at (bin->buf, offset, h->worder);
-			if (ordinal == UT16_MAX) {
+		const RBinSection *cur_section = RVecRBinSection_at (&sections, cur_page);
+		ut64 cur_page_offset = cur_section ? cur_section->vaddr : 0;
+		while (offset < end) {
+			ut64 record_end;
+			if (!reloc_record_end (bin->buf, offset, end, &record_end)) {
+				R_LOG_WARN ("Invalid LE relocation record");
 				break;
 			}
-			offset += sizeof (ut16);
-		} else {
-			ordinal = r_buf_read8_at (bin->buf, offset);
-			offset += sizeof (ut8);
-		}
-		rel->ntype = header_source & F_SOURCE_TYPE_MASK; // XXX correct?
-		switch (header_target & F_TARGET_TYPE_MASK) {
-		case INTERNAL:
-			if ((ordinal - 1) < bin->header->objcnt) {
-				rel->addend = get_object_base (bin, ordinal - 1);
-				if ((header_source & F_SOURCE_TYPE_MASK) != SELECTOR16) {
-					if (header_target & F_TARGET_OFF32) {
-						rel->addend += r_buf_read_ble32_at (bin->buf, offset, h->worder);
-						offset += sizeof (ut32);
-					} else {
-						rel->addend += r_buf_read_ble16_at (bin->buf, offset, h->worder);
-						offset += sizeof (ut16);
-					}
-				}
-			}
-			break;
-		case IMPORTORD:
-		{
-			RBinImport *imp = R_NEW0 (RBinImport);
-			if (!imp) {
+			bool rel_appended = false;
+			RBinReloc *rel = R_NEW0 (RBinReloc);
+			ut8 header_source = r_buf_read8_at (bin->buf, offset);
+			ut8 header_target = r_buf_read8_at (bin->buf, offset + 1);
+			offset += sizeof (LE_fixup_record_header);
+			switch (header_source & F_SOURCE_TYPE_MASK) {
+			case BYTEFIXUP:
+				rel->type = R_BIN_RELOC_8;
+				break;
+			case SELECTOR16:
+			case OFFSET16:
+				rel->type = R_BIN_RELOC_16;
+				break;
+			case OFFSET32:
+			case POINTER32:
+			case SELFOFFSET32:
+				rel->type = R_BIN_RELOC_32;
+				break;
+			case POINTER48:
+				rel->type = 48;
 				break;
 			}
-			char *mod_name = __get_modname_by_ord (bin, ordinal);
-			if (!mod_name) {
-				r_bin_import_free (imp);
-				break;
-			}
-
-			if (header_target & F_TARGET_ORD8) {
-				ordinal = r_buf_read8_at (bin->buf, offset);
+			ut64 repeat = 0;
+			st64 source = 0;
+			if (header_source & F_SOURCE_LIST) {
+				repeat = r_buf_read8_at (bin->buf, offset);
 				offset += sizeof (ut8);
-			} else if (header_target & F_TARGET_OFF32) {
-				ordinal = r_buf_read_ble32_at (bin->buf, offset, h->worder);
-				offset += sizeof (ut32);
 			} else {
+				source = reloc_source_offset (r_buf_read_ble16_at (bin->buf, offset, h->worder));
+				offset += sizeof (ut16);
+			}
+			ut32 ordinal;
+			if (header_target & F_TARGET_ORD16) {
 				ordinal = r_buf_read_ble16_at (bin->buf, offset, h->worder);
 				offset += sizeof (ut16);
+			} else {
+				ordinal = r_buf_read8_at (bin->buf, offset);
+				offset += sizeof (ut8);
 			}
-			imp->name = r_bin_name_new_from (r_str_newf ("%s.%u", mod_name, ordinal));
-			imp->ordinal = ordinal;
-			rel->import = imp;
-			free (mod_name);
-			break;
-		}
-		case IMPORTNAME:
-		{
-			RBinImport *imp = R_NEW0 (RBinImport);
-			if (!imp) {
+			rel->ntype = header_source & F_SOURCE_TYPE_MASK; // XXX correct?
+			switch (header_target & F_TARGET_TYPE_MASK) {
+			case INTERNAL:
+				if ((ordinal - 1) < bin->header->objcnt) {
+					rel->addend = get_object_base (bin, ordinal - 1);
+					if ((header_source & F_SOURCE_TYPE_MASK) != SELECTOR16) {
+						if (header_target & F_TARGET_OFF32) {
+							rel->addend += r_buf_read_ble32_at (bin->buf, offset, h->worder);
+							offset += sizeof (ut32);
+						} else {
+							rel->addend += r_buf_read_ble16_at (bin->buf, offset, h->worder);
+							offset += sizeof (ut16);
+						}
+					}
+				}
+				break;
+			case IMPORTORD: {
+				RBinImport *imp = R_NEW0 (RBinImport);
+				char *mod_name = __get_modname_by_ord (bin, ordinal);
+				if (!mod_name) {
+					r_bin_import_free (imp);
+					break;
+				}
+
+				if (header_target & F_TARGET_ORD8) {
+					ordinal = r_buf_read8_at (bin->buf, offset);
+					offset += sizeof (ut8);
+				} else if (header_target & F_TARGET_OFF32) {
+					ordinal = r_buf_read_ble32_at (bin->buf, offset, h->worder);
+					offset += sizeof (ut32);
+				} else {
+					ordinal = r_buf_read_ble16_at (bin->buf, offset, h->worder);
+					offset += sizeof (ut16);
+				}
+				imp->name = r_bin_name_new_from (r_str_newf ("%s.%u", mod_name, ordinal));
+				imp->ordinal = ordinal;
+				rel->import = imp;
+				free (mod_name);
 				break;
 			}
-			ut32 nameoff;
-			if (header_target & F_TARGET_OFF32) {
-				nameoff = r_buf_read_ble32_at (bin->buf, offset, h->worder);
-				offset += sizeof (ut32);
-			} else {
-				nameoff = r_buf_read_ble16_at (bin->buf, offset, h->worder);
-				offset += sizeof (ut16);
+			case IMPORTNAME: {
+				RBinImport *imp = R_NEW0 (RBinImport);
+				ut32 nameoff;
+				if (header_target & F_TARGET_OFF32) {
+					nameoff = r_buf_read_ble32_at (bin->buf, offset, h->worder);
+					offset += sizeof (ut32);
+				} else {
+					nameoff = r_buf_read_ble16_at (bin->buf, offset, h->worder);
+					offset += sizeof (ut16);
+				}
+				ut64 off = (ut64)h->impproc + nameoff + bin->headerOff;
+				char *proc_name = __read_nonnull_str_at (bin->buf, &off);
+				char *mod_name = __get_modname_by_ord (bin, ordinal);
+				imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", r_str_get (mod_name), r_str_get (proc_name)));
+				rel->import = imp;
+				free (mod_name);
+				free (proc_name);
+				break;
 			}
-			ut64 off = (ut64)h->impproc + nameoff + bin->headerOff;
-			char *proc_name = __read_nonnull_str_at (bin->buf, &off);
-			char *mod_name = __get_modname_by_ord (bin, ordinal);
-			imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", r_str_get (mod_name), r_str_get (proc_name)));
-			rel->import = imp;
-			free (mod_name);
-			free (proc_name);
-			break;
-		}
 			case INTERNALENTRY: {
 				const char *n = r_list_get_n (entries, ordinal - 1);
 				if (n) {
@@ -812,84 +862,63 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 				}
 				break;
 			}
-		}
-		if (header_target & F_TARGET_ADDITIVE) {
-			ut32 additive = 0;
-			if (header_target & F_TARGET_ADD32) {
-				additive = r_buf_read_ble32_at (bin->buf, offset, h->worder);
-				offset += sizeof (ut32);
-			} else {
-				additive = r_buf_read_ble16_at (bin->buf, offset, h->worder);
-				offset += sizeof (ut16);
 			}
-			rel->addend += additive;
-		}
-		if (!repeat && source >= 0) {
-			/* Negative source means we already handled the cross-page
-			 * fixup in the previous page, so there's no need to dupe it
-			 */
-			rel->vaddr = cur_page_offset + (st64) source;
-			rel->paddr = cur_section ? cur_section->paddr + (st64) source : 0;
-			r_list_append (l, rel);
-			rel_appended = true;
-		}
-
-		if (header_target & F_TARGET_CHAIN) {
-			// TODO: add tests for this case
-			ut32 chain_limit = h->pagesize / sizeof (ut32);
-			ut64 source = 0;
-			ut32 fixupinfo = r_buf_read_ble32_at (bin->buf, cur_page_offset + source, h->worder);
-			ut64 base_target_address = rel->addend - (fixupinfo & 0xFFFFF);
-			do {
-				fixupinfo = r_buf_read_ble32_at (bin->buf, cur_page_offset + source, h->worder);
-				RBinReloc *new = R_NEW0 (RBinReloc);
-				*new = *rel;
-				if (rel->import) {
-					new->import = R_NEW0 (RBinImport);
-					new->import->name = rel->import->name ? r_bin_name_clone (rel->import->name) : NULL;
-					new->import->ordinal = rel->import->ordinal;
+			if (header_target & F_TARGET_ADDITIVE) {
+				ut32 additive = 0;
+				if (header_target & F_TARGET_ADD32) {
+					additive = r_buf_read_ble32_at (bin->buf, offset, h->worder);
+					offset += sizeof (ut32);
+				} else {
+					additive = r_buf_read_ble16_at (bin->buf, offset, h->worder);
+					offset += sizeof (ut16);
 				}
-				new->addend = base_target_address + (fixupinfo & 0xFFFFF);
-				r_list_append (l, new);
-				source = (fixupinfo >> 20) & 0xFFF;
-			} while (source != 0xFFF && chain_limit-- > 0);
-		}
+				rel->addend += additive;
+			}
+			ut64 source_list_size = repeat * sizeof (ut16);
+			if (offset != record_end - source_list_size) {
+				offset = record_end;
+				r_bin_reloc_free (rel);
+				continue;
+			}
+			if (!repeat && source >= 0) {
+				/* Negative source means we already handled the cross-page
+				 * fixup in the previous page, so there's no need to dupe it
+				 */
+				rel->vaddr = cur_page_offset + source;
+				rel->paddr = cur_section ? cur_section->paddr + source : 0;
+				r_list_append (l, rel);
+				rel_appended = true;
+			}
 
-		while (repeat) {
-			ut16 off =  r_buf_read_ble16_at (bin->buf, offset, h->worder);
-			rel->vaddr = cur_page_offset + off;
-			rel->paddr = cur_section ? cur_section->paddr + off : 0;
-			RBinReloc *new = R_NEW0 (RBinReloc);
-			*new = *rel;
-			if (rel->import) {
-				new->import = R_NEW0 (RBinImport);
-				new->import->name = rel->import->name ? r_bin_name_clone (rel->import->name) : NULL;
-				new->import->ordinal = rel->import->ordinal;
+			if (header_target & F_TARGET_CHAIN) {
+				// TODO: add tests for this case
+				ut32 chain_limit = h->pagesize / sizeof (ut32);
+				ut64 chain_source = 0;
+				ut32 fixupinfo = r_buf_read_ble32_at (bin->buf, cur_page_offset + chain_source, h->worder);
+				ut64 base_target_address = rel->addend - (fixupinfo & 0xFFFFF);
+				do {
+					fixupinfo = r_buf_read_ble32_at (bin->buf, cur_page_offset + chain_source, h->worder);
+					RBinReloc *new = reloc_clone (rel);
+					new->addend = base_target_address + (fixupinfo & 0xFFFFF);
+					r_list_append (l, new);
+					chain_source = (fixupinfo >> 20) & 0xFFF;
+				} while (chain_source != 0xFFF && chain_limit-- > 0);
 			}
-			r_list_append (l, new);
-			offset += sizeof (ut16);
-			repeat--;
-		}
-		while (offset >= end) {
-			cur_page++;
-			if (cur_page >= h->mpages) {
-				break;
+
+			while (repeat) {
+				st64 off = reloc_source_offset (r_buf_read_ble16_at (bin->buf, offset, h->worder));
+				offset += sizeof (ut16);
+				repeat--;
+				if (off < 0) {
+					continue;
+				}
+				rel->vaddr = cur_page_offset + off;
+				rel->paddr = cur_section ? cur_section->paddr + off : 0;
+				r_list_append (l, reloc_clone (rel));
 			}
-			ut64 at = h->fpagetab + bin->headerOff;
-			ut32 w0 = r_buf_read_ble32_at (bin->buf, at + cur_page * sizeof (ut32), h->worder);
-			ut32 w1 = r_buf_read_ble32_at (bin->buf, at + (cur_page + 1) * sizeof (ut32), h->worder);
-			if (w0 == UT32_MAX || w1 == UT32_MAX) {
-				break;
+			if (!rel_appended) {
+				r_bin_reloc_free (rel);
 			}
-			offset = fix_rec_tbl_off + w0;
-			end = fix_rec_tbl_off + w1;
-			if (offset < end) {
-				cur_section = RVecRBinSection_at (&sections, cur_page);
-				cur_page_offset = cur_section ? cur_section->vaddr : 0;
-			}
-		}
-		if (!rel_appended) {
-			free (rel);
 		}
 	}
 	r_list_free (entries);
@@ -901,7 +930,7 @@ static bool __init_header(RBinLEObj *bin, RBuffer *buf) {
 	ut8 magic[2];
 	r_buf_read_at (buf, 0, magic, sizeof (magic));
 	if (!memcmp (&magic, "MZ", 2)) {
-		bin->headerOff = r_buf_read_le16_at (buf, 0x3c);
+		bin->headerOff = r_buf_read_le32_at (buf, 0x3c);
 	} else {
 		bin->headerOff = 0;
 	}
