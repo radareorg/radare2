@@ -12,7 +12,7 @@ RBinDemanglePlugin r_bin_demangle_plugin_ibmxl = {
 	.meta = {
 		.name = "ibmxl",
 		.desc = "IBM XL C++ demangler",
-		.license = "LGPL-3.0-only",
+		.license = "MIT",
 	},
 	.type = R_BIN_LANG_IBMXL,
 	.aliases = "xlc,xlc++",

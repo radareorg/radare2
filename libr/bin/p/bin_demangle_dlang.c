@@ -12,7 +12,7 @@ RBinDemanglePlugin r_bin_demangle_plugin_dlang = {
 	.meta = {
 		.name = "dlang",
 		.desc = "D language demangler",
-		.license = "LGPL-3.0-only",
+		.license = "MIT",
 	},
 	.type = R_BIN_LANG_DLANG,
 	.aliases = "d",

@@ -6,7 +6,7 @@ RBinDemanglePlugin r_bin_demangle_plugin_cxx = {
 	.meta = {
 		.name = "c++",
 		.desc = "C++ demangler",
-		.license = "LGPL-3.0-only",
+		.license = WITH_GPL ? "GPL-2.0-or-later" : "MIT",
 	},
 	.type = R_BIN_LANG_CXX,
 	.aliases = "cxx",

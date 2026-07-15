@@ -6,7 +6,7 @@ RBinDemanglePlugin r_bin_demangle_plugin_rust = {
 	.meta = {
 		.name = "rust",
 		.desc = "Rust demangler",
-		.license = "LGPL-3.0-only",
+		.license = WITH_GPL ? "GPL-2.0-or-later" : "MIT",
 	},
 	.type = R_BIN_LANG_RUST,
 	.demangle = r_bin_demangle_rust,
