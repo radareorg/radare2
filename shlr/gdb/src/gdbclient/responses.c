@@ -336,7 +336,7 @@ int handle_lldb_read_reg(libgdbr_t *g) {
 		}
 	}
 	tot_regs = regnum;
-	if (buflen > (size_t)g->read_max || buflen > (size_t)g->data_max) {
+	if (buflen >= (size_t)g->read_max || buflen >= (size_t)g->data_max) {
 		R_LOG_ERROR ("%s: register buffer %zu exceeds io buffers", __func__, buflen);
 		return -1;
 	}
@@ -349,7 +349,7 @@ int handle_lldb_read_reg(libgdbr_t *g) {
 		return -1;
 	}
 	while (ptr) {
-		if (isxdigit ((unsigned char)*ptr)) {
+		if (isxdigit ((ut8)*ptr)) {
 			regnum = (int) strtoul (ptr, NULL, 16);
 			if (regnum < tot_regs && (ptr2 = strchr (ptr, ':'))) {
 				const size_t roff = g->registers[regnum].offset;

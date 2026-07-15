@@ -4,6 +4,7 @@
 #include <r_util/r_file.h>
 #include <r_util/r_str.h>
 #include <r_util/r_sys.h>
+#include "../../shlr/gdb/include/arch.h"
 #include "minunit.h"
 #if __linux__
 #include <arpa/inet.h>
@@ -33,6 +34,27 @@ bool test_r_debug_use(void) {
 	mu_assert_eq (res, true, "r_debug_use () failed");
 
 	r_debug_free (dbg);
+	mu_end;
+}
+
+bool test_gdb_reg_profile_parser(void) {
+	gdb_reg_t *regs = arch_parse_reg_profile (
+		"gpr eax .32 0\n"
+		"# unterminated comment");
+	mu_assert_notnull (regs, "valid profile with unterminated comment");
+	mu_assert_streq (regs[0].name, "eax", "parsed register name");
+	free (regs);
+
+	regs = arch_parse_reg_profile ("gpr short\n");
+	mu_assert_null (regs, "short first profile line must fail");
+
+	regs = arch_parse_reg_profile (
+		"gpr eax .32 0\n"
+		"gpr short\n");
+	mu_assert_null (regs, "short profile line must fail");
+
+	regs = arch_parse_reg_profile ("gpr eax .32 invalid\n");
+	mu_assert_null (regs, "invalid register offset must fail");
 	mu_end;
 }
 
@@ -572,6 +594,7 @@ bool test_r_debug_reg_offset(void) {
 
 int all_tests(void) {
 	mu_run_test (test_r_debug_use);
+	mu_run_test (test_gdb_reg_profile_parser);
 	mu_run_test (test_r2_gdb_remote_open);
 	mu_run_test (test_r2_gdb_oversized_reg_response);
 	mu_run_test (test_r2_gdb_long_xml_reg_name);

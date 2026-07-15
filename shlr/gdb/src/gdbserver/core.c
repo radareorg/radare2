@@ -201,7 +201,9 @@ static int _server_handle_z(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	int type;
 	ut64 addr;
 	char cmd[64];
-	sscanf (g->data, "%c%d,%"PFMT64x, &set, &type, &addr);
+	if (sscanf (g->data, "%c%d,%"PFMT64x, &set, &type, &addr) != 3) {
+		return send_msg (g, "E01");
+	}
 	if (type != 0) {
 		// TODO handle hw breakpoints and watchpoints
 		return send_msg (g, "E01");
@@ -280,19 +282,21 @@ static int _server_handle_Hg(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 	// We don't yet support multiprocess. Client is not supposed to send Hgp. If we receive it anyway,
 	// send error
 	char cmd[32];
-	int tid;
+	unsigned int tid;
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	if (g->data_len <= 2 || isalpha ((unsigned char)g->data[2])) {
+	if (g->data_len <= 2 || isalpha ((ut8)g->data[2])) {
 		return send_msg (g, "E01");
 	}
 	// Hg-1 = "all threads", Hg0 = "pick any thread"
 	if (g->data[2] == '0' || !strncmp (g->data + 2, "-1", 2)) {
 		return send_msg (g, "OK");
 	}
-	sscanf (g->data + 2, "%x", &tid);
-	snprintf (cmd, sizeof (cmd) - 1, "dpt=%d", tid);
+	if (sscanf (g->data + 2, "%x", &tid) != 1) {
+		return send_msg (g, "E01");
+	}
+	snprintf (cmd, sizeof (cmd) - 1, "dpt=%u", tid);
 	// Set thread for future operations
 	if (cmd_cb (g, core_ptr, cmd, NULL, 0) < 0) {
 		send_msg (g, "E01");
@@ -305,19 +309,21 @@ static int _server_handle_Hg(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 static int _server_handle_Hc(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	// Usually this is only sent with Hc-1. Still. Set the threads for next operations
 	char cmd[32];
-	int tid;
+	unsigned int tid;
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	if (g->data_len <= 2 || isalpha ((unsigned char)g->data[2])) {
+	if (g->data_len <= 2 || isalpha ((ut8)g->data[2])) {
 		return send_msg (g, "E01");
 	}
 	// Hc-1 = "all threads", Hc0 = "pick any thread"
 	if (g->data[2] == '0' || !strncmp (g->data + 2, "-1", 2)) {
 		return send_msg (g, "OK");
 	}
-	sscanf (g->data + 2, "%x", &tid);
-	snprintf (cmd, sizeof (cmd) - 1, "dpt=%d", tid);
+	if (sscanf (g->data + 2, "%x", &tid) != 1) {
+		return send_msg (g, "E01");
+	}
+	snprintf (cmd, sizeof (cmd) - 1, "dpt=%u", tid);
 	// Set thread for future operations
 	if (cmd_cb (g, core_ptr, cmd, NULL, 0) < 0) {
 		send_msg (g, "E01");
