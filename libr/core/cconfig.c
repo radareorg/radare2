@@ -1719,11 +1719,10 @@ static bool cb_dirtmp(void *user, void *data) {
 static bool cb_dirbinsdb(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	RCore *core = (RCore *)user;
-	char *value = R_STR_ISNOTEMPTY (node->value)? node->value: NULL;
-	if (value) {
-		char *newva = r_file_abspath (value);
+	if (R_STR_ISNOTEMPTY (node->value)) {
+		char *abs = r_file_abspath (node->value);
 		free (node->value);
-		node->value = newva;
+		node->value = abs;
 	}
 	free (core->bin->sdbdir);
 	core->bin->sdbdir = R_STR_ISNOTEMPTY (node->value)? strdup (node->value): NULL;

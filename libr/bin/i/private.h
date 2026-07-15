@@ -15,6 +15,19 @@ R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const c
 R_IPI bool r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
 
 R_IPI RBinPlugin *r_bin_get_binplugin_any(RBin *bin);
+
+static inline Sdb *open_ordinalsdb(const char *sdbdir, const char *module) {
+	char *sdb_name = r_str_newf ("%s.sdb", module);
+	char *filename = r_file_new (r_str_get_fail (sdbdir, "."), sdb_name, NULL);
+	free (sdb_name);
+	Sdb *db = r_file_exists (filename)? sdb_new (NULL, filename, 0): NULL;
+	if (!db) {
+		R_LOG_DEBUG ("Cannot find %s", filename);
+	}
+	free (filename);
+	return db;
+}
+
 static inline bool limit_reached(const RList *list, int limit) {
 	return limit > 0 && r_list_length (list) >= limit;
 }

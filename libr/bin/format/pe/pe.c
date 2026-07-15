@@ -5,6 +5,7 @@
 #include <sdb/ht_uu.h>
 #include "pe.h"
 #include "dotnet.h"
+#include "../../i/private.h"
 
 #define MAX_METADATA_STRING_LENGTH 256
 #define COFF_SYMBOL_SIZE 18
@@ -37,11 +38,7 @@ typedef struct {
 } SCV_RSDS_HEADER;
 
 R_API RBinPEObj *PE_(get)(RBinFile *bf) {
-	RBinPEObj *pe = (bf && bf->bo)? bf->bo->bin_obj: NULL;
-	if (pe && bf->rbin) {
-		pe->sdbdir = bf->rbin->sdbdir;
-	}
-	return pe;
+	return (bf && bf->bo)? bf->bo->bin_obj: NULL;
 }
 
 static inline int is_thumb(RBinPEObj *pe) {
@@ -503,35 +500,6 @@ static PE_DWord bin_pe_va_to_rva(RBinPEObj *pe, PE_DWord va) {
 	return va - imageBase;
 }
 
-static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
-	Sdb *db = sdb;
-	const char *value = sdb_const_getf (db, NULL, "%d", ordinal);
-	char *foo = value? strdup (value): NULL;
-	if (foo && *foo) {
-		return foo;
-	} else {
-		free (foo); // should never happen
-	}
-	return NULL;
-}
-
-static Sdb *loadModuleOrdinals(const char *sdbdir, const char *module, char **filename) {
-	if (R_STR_ISEMPTY (sdbdir) || R_STR_ISEMPTY (module) || !filename) {
-		return NULL;
-	}
-	R_FREE (*filename);
-	char *sdb_name = r_str_newf ("%s.sdb", module);
-	if (!sdb_name) {
-		return NULL;
-	}
-	*filename = r_file_new (sdbdir, sdb_name, NULL);
-	free (sdb_name);
-	if (*filename && r_file_exists (*filename)) {
-		return sdb_new (NULL, *filename, 0);
-	}
-	return NULL;
-}
-
 static bool bin_pe_parse_imports(RBinPEObj *pe,
 	RVecPEImport *imports,
 	const char *dll_name,
@@ -545,9 +513,7 @@ static bool bin_pe_parse_imports(RBinPEObj *pe,
 	size_t len;
 	Sdb *db = NULL;
 	char *sdb_module = NULL;
-	char *symname = NULL;
 	char *symdllname = NULL;
-	char *filename = NULL;
 
 	if (R_STR_ISEMPTY (dll_name) || *dll_name == '0') {
 		return false;
@@ -608,22 +574,17 @@ static bool bin_pe_parse_imports(RBinPEObj *pe,
 					db = NULL;
 					free (sdb_module);
 					sdb_module = strdup (symdllname);
-					db = loadModuleOrdinals (pe->sdbdir, symdllname, &filename);
-					if (!db && filename) {
-						R_LOG_DEBUG ("Cannot find %s", filename);
-					}
+					db = open_ordinalsdb (pe->sdbdir, symdllname);
 				}
 				if (db) {
-					symname = resolveModuleOrdinal (db, symdllname, import_ordinal);
+					const char *symname = sdb_const_getf (db, NULL, "%d", import_ordinal);
 					if (symname) {
 						len = snprintf (import_name, sizeof (import_name), "%s", symname);
 						if (len >= sizeof (import_name)) {
 							R_LOG_WARN ("Import name truncated: %s", import_name);
 						}
-						R_FREE (symname);
 					}
 				}
-				R_FREE (filename);
 			} else {
 				import_ordinal++;
 				const ut64 off = PE_(va2pa) (pe, import_table);
@@ -683,8 +644,6 @@ error:
 		sdb_free (db);
 		db = NULL;
 	}
-	free (symname);
-	free (filename);
 	free (symdllname);
 	free (sdb_module);
 	RVecPEImport_clear (imports);
@@ -4605,6 +4564,7 @@ void *PE_(r_bin_pe_free)(RBinPEObj *pe) {
 	free (pe->metadata_header);
 	RVecPESection_fini (&pe->sections);
 	free (pe->authentihash);
+	free (pe->sdbdir);
 	r_list_free (pe->rich_entries);
 	r_list_free (pe->relocs);
 	r_list_free (pe->resources);
