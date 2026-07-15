@@ -341,3 +341,17 @@ EXPECT=<<EOF
 ]
 EOF
 RUN
+
+NAME=pdi negative count without analysis
+FILE=malloc://32
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+wx 1e0080d2e50300aa1f2003d5c0035fd6
+s 8
+pdi -2
+EOF
+EXPECT=<<EOF
+0x00000000             1e0080d2  mov x30, 0
+0x00000004             e50300aa  mov x5, x0
+EOF
+RUN
