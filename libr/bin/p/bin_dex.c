@@ -105,8 +105,6 @@ static ut64 get_method_attr(ut64 MA) {
 
 static ut64 method_addr(RBinFile *bf, int idx) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	// AITODO: we can use sdb_num_getf (dex->mdb, NULL, "method.%d", idx); instead
-	// ut64 off = dex->header.method_offset + idx;
 	return sdb_num_getf (dex->mdb, NULL, "method.%d", idx);
 }
 
