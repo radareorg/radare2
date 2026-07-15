@@ -1032,6 +1032,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rabin2 -L lists demanglers
+FILE=-
+CMDS=!rabin2 -L | grep -c '^dem  c++'
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=rabin2 -Lj lists demanglers
+FILE=-
+CMDS=!rabin2 -Lj | grep -c '"dem":'
+EXPECT=<<EOF
+1
+EOF
+RUN
+
 NAME=rabin2 -Lj null
 FILE=-
 CMDS=!rabin2 -Lj null | grep -c Dummy

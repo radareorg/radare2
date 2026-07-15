@@ -758,27 +758,26 @@ R_API void r_bin_free(RBin *bin) {
 	}
 }
 
-// TODO: this is now a generic function that can reuse RPluginMeta
-static bool r_bin_print_plugin_details(RBin *bin, RBinPlugin *bp, PJ *pj, int json) {
+static bool r_bin_print_plugin_details(RBin *bin, const RPluginMeta *meta, PJ *pj, int json) {
 	if (json == 'q') {
-		bin->cb_printf ("%s\n", bp->meta.name);
+		bin->cb_printf ("%s\n", meta->name);
 	} else if (json) {
 		pj_o (pj);
-		pj_ks (pj, "name", bp->meta.name);
-		pj_ks (pj, "description", bp->meta.desc);
-		pj_ks (pj, "license", r_str_get_fail (bp->meta.license, "???"));
+		pj_ks (pj, "name", meta->name);
+		pj_ks (pj, "description", meta->desc);
+		pj_ks (pj, "license", r_str_get_fail (meta->license, "???"));
 		pj_end (pj);
 	} else {
-		bin->cb_printf ("Name: %s\n", bp->meta.name);
-		bin->cb_printf ("Description: %s\n", bp->meta.desc);
-		if (bp->meta.license) {
-			bin->cb_printf ("License: %s\n", bp->meta.license);
+		bin->cb_printf ("Name: %s\n", meta->name);
+		bin->cb_printf ("Description: %s\n", meta->desc);
+		if (meta->license) {
+			bin->cb_printf ("License: %s\n", meta->license);
 		}
-		if (bp->meta.version) {
-			bin->cb_printf ("Version: %s\n", bp->meta.version);
+		if (meta->version) {
+			bin->cb_printf ("Version: %s\n", meta->version);
 		}
-		if (bp->meta.author) {
-			bin->cb_printf ("Author: %s\n", bp->meta.author);
+		if (meta->author) {
+			bin->cb_printf ("Author: %s\n", meta->author);
 		}
 	}
 	return true;
@@ -816,12 +815,14 @@ R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json) {
 	RList *xtrs = bin->libstore->xtrs;
 	RListIter *it;
 	RBinXtrPlugin *bx;
+	RBinDemanglePlugin *dem;
 	RBinPlugin *prefix_bp = NULL;
 	RBinXtrPlugin *prefix_bx = NULL;
+	RBinDemanglePlugin *prefix_dem = NULL;
 
 	RBinPlugin *bp = r_libstore_find_name (bin->libstore, name);
 	if (bp) {
-		return r_bin_print_plugin_details (bin, bp, pj, json);
+		return r_bin_print_plugin_details (bin, &bp->meta, pj, json);
 	}
 	r_list_foreach (plugins, it, bp) {
 		if (!prefix_bp && r_str_startswith (bp->meta.name, name)) {
@@ -829,7 +830,7 @@ R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json) {
 		}
 	}
 	if (prefix_bp) {
-		return r_bin_print_plugin_details (bin, prefix_bp, pj, json);
+		return r_bin_print_plugin_details (bin, &prefix_bp->meta, pj, json);
 	}
 	bx = r_libstore_find_name_in (bin->libstore, bin->libstore->xtrs, name);
 	if (bx) {
@@ -845,6 +846,18 @@ R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json) {
 		__printXtrPluginDetails (bin, prefix_bx, json);
 		return true;
 	}
+	dem = r_bin_demangle_plugin_find (bin, name);
+	if (dem) {
+		return r_bin_print_plugin_details (bin, &dem->meta, pj, json);
+	}
+	r_list_foreach (bin->demangle_plugins, it, dem) {
+		if (!prefix_dem && r_str_startswith (dem->meta.name, name)) {
+			prefix_dem = dem;
+		}
+	}
+	if (prefix_dem) {
+		return r_bin_print_plugin_details (bin, &prefix_dem->meta, pj, json);
+	}
 
 	R_LOG_ERROR ("Cannot find plugin %s", name);
 	return false;
@@ -856,10 +869,12 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 	RList *plugins = bin->libstore->plugins;
 	RList *xtrs = bin->libstore->xtrs;
 	RList *ldrs = bin->libstore->ldrs;
+	RList *demanglers = bin->demangle_plugins;
 	RListIter *it;
 	RBinPlugin *bp;
 	RBinXtrPlugin *bx;
 	RBinLdrPlugin *ld;
+	RBinDemanglePlugin *dem;
 	bool local_pj = (format == 'j' && pj == NULL);
 	if (local_pj) {
 		pj = pj_new ();
@@ -871,6 +886,12 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 		}
 		r_list_foreach (xtrs, it, bx) {
 			bin->cb_printf ("%s\n", bx->meta.name);
+		}
+		r_list_foreach (ldrs, it, ld) {
+			bin->cb_printf ("%s\n", ld->meta.name);
+		}
+		r_list_foreach (demanglers, it, dem) {
+			bin->cb_printf ("%s\n", dem->meta.name);
 		}
 	} else if (pj) {
 		pj_o (pj);
@@ -901,6 +922,15 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 			pj_end (pj);
 		}
 		pj_end (pj);
+		pj_ka (pj, "dem");
+		r_list_foreach (demanglers, it, dem) {
+			pj_o (pj);
+			pj_ks (pj, "name", dem->meta.name);
+			pj_ks (pj, "description", dem->meta.desc);
+			pj_ks (pj, "license", r_str_get_fail (dem->meta.license, "???"));
+			pj_end (pj);
+		}
+		pj_end (pj);
 		pj_end (pj);
 	} else {
 		r_list_foreach (plugins, it, bp) {
@@ -914,6 +944,9 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 		r_list_foreach (ldrs, it, ld) {
 			const char *name = strncmp (ld->meta.name, "ldr.", 4)? ld->meta.name: ld->meta.name + 3;
 			bin->cb_printf ("ldr  %-11s %s\n", name, ld->meta.desc);
+		}
+		r_list_foreach (demanglers, it, dem) {
+			bin->cb_printf ("dem  %-11s %s\n", dem->meta.name, dem->meta.desc);
 		}
 	}
 	if (local_pj) {
