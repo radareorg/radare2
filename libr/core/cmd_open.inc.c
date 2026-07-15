@@ -2429,7 +2429,7 @@ static int cmd_open(void *data, const char *input) {
 	case 'e': // "oe"
 		if (input[1] == ' ') {
 			const char *arg = r_str_trim_head_ro (input + 1);
-			free (r_core_editor (core, arg, NULL));
+			free (r_core_editor (core, arg, NULL, NULL));
 		} else {
 			r_core_cmd_help_contains (core, help_msg_o, "oe");
 		}

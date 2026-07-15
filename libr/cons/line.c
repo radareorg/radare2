@@ -7,12 +7,7 @@
 R_API RLine *r_line_new(RCons *cons) {
 	RLine *line = R_NEW0 (RLine);
 	line->cons = cons;
-	line->hist_up = NULL;
-	line->hist_down = NULL;
-	line->prompt = strdup ("> ");
-	line->contents = NULL;
-	line->enable_vi_mode = false;
-	line->clipboard = NULL;
+	line->state.prompt = strdup ("> ");
 	line->hist_size = R_LINE_HISTSIZE;
 	line->kill_ring = r_list_newf (free);
 	line->kill_ring_ptr = -1;
@@ -27,8 +22,7 @@ R_API RLine *r_line_new(RCons *cons) {
 
 R_API void r_line_free(RLine *line) {
 	if (line) {
-		free ((void *)line->prompt);
-		line->prompt = NULL;
+		free (line->state.prompt);
 		r_list_free (line->kill_ring);
 		r_line_hist_free (line);
 		r_line_completion_clear (&line->completion);
@@ -45,15 +39,15 @@ R_API void r_line_clipboard_push(RLine *line, const char *str) {
 // handle const or dynamic prompts?
 R_API void r_line_set_prompt(RLine *line, const char *prompt) {
 	R_RETURN_IF_FAIL (line && prompt);
-	free (line->prompt);
-	line->prompt = strdup (prompt);
-	line->cb_fkey = line->cons->cb_fkey;
+	free (line->state.prompt);
+	line->state.prompt = strdup (prompt);
+	line->state.cb_fkey = line->cons->cb_fkey;
 }
 
 // handle const or dynamic prompts?
 R_API char *r_line_get_prompt(RLine *line) {
 	R_RETURN_VAL_IF_FAIL (line, NULL);
-	return strdup (line->prompt);
+	return strdup (line->state.prompt);
 }
 
 R_API void r_line_completion_init(RLineCompletion *completion, size_t args_limit) {

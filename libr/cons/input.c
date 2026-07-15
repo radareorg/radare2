@@ -426,7 +426,7 @@ R_API int r_cons_fgets(RCons *cons, char *buf, int len, int argc, const char **a
 	if (cons->user_fgets) {
 		RETURN (cons->user_fgets (cons, buf, len));
 	}
-	const char *prompt = cons->line->prompt;
+	const char *prompt = cons->line->state.prompt;
 	P (prompt);
 	*buf = '\0';
 	if (color) {
@@ -738,7 +738,7 @@ R_API int r_cons_readchar(RCons *cons) {
 #endif
 }
 
-static int cons_yesnobut_normalize(int key, int def, int but) {
+static int yesnobut(int key, int def, int but) {
 	if (key == '\n' || key == '\r') {
 		key = def;
 	}
@@ -747,9 +747,9 @@ static int cons_yesnobut_normalize(int key, int def, int but) {
 	return (key == 'y' || key == but)? key: 'n';
 }
 
-static int cons_yesnobut(RCons *cons, int def, int but, const char *fmt, va_list ap) {
+static int cons_yesnobut_read(RCons *cons, int def, const char *fmt, va_list ap) {
 	if (!r_cons_is_interactive (cons)) {
-		return cons_yesnobut_normalize (def, def, but);
+		return def;
 	}
 	vfprintf (stderr, fmt, ap);
 	fflush (stderr);
@@ -761,10 +761,16 @@ static int cons_yesnobut(RCons *cons, int def, int but, const char *fmt, va_list
 		(void)write (2, buf, 3);
 	}
 	r_cons_set_raw (cons, false);
-	return cons_yesnobut_normalize (key, def, but);
+	return key;
+}
+
+static int cons_yesnobut(RCons *cons, int def, int but, const char *fmt, va_list ap) {
+	int key = cons_yesnobut_read (cons, def, fmt, ap);
+	return yesnobut (key, def, but);
 }
 
 R_API bool r_cons_yesno(RCons *cons, int def, const char *fmt, ...) {
+	R_RETURN_VAL_IF_FAIL (cons && fmt, false);
 	va_list ap;
 	va_start (ap, fmt);
 	int key = cons_yesnobut (cons, def, 0, fmt, ap);

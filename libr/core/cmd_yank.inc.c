@@ -151,7 +151,7 @@ static int cmd_yank(void *data, const char *input) {
 				free (sig);
 				sig = strdup ("'wx 10203040");
 			}
-			char *data = r_core_editor (core, NULL, sig);
+			char *data = r_core_editor (core, NULL, sig, NULL);
 			if (data) {
 				char *save_ptr = NULL;
 				(void) r_str_tok_r (data, ";\n", &save_ptr);
@@ -176,4 +176,3 @@ static int cmd_yank(void *data, const char *input) {
 	}
 	return true;
 }
-

@@ -4239,7 +4239,7 @@ R_API void r_core_visual_find(RCore *core, RAGraph *g) {
 		}
 
 	find_next:
-		if (cons->line->contents != NULL && strcmp (buf, cons->line->contents) == 0) {
+		if (cons->line->state.contents != NULL && strcmp (buf, cons->line->state.contents) == 0) {
 			offset += 1;
 			if (offset >= offset_max) {
 				offset = 0;
@@ -4252,8 +4252,8 @@ R_API void r_core_visual_find(RCore *core, RAGraph *g) {
 		r_config_set_b (core->config, "asm.lines", 0);
 
 		if (offset == 0) {
-			free (cons->line->contents);
-			cons->line->contents = strdup (buf);
+			free (cons->line->state.contents);
+			cons->line->state.contents = strdup (buf);
 
 			char *lines_nbr = r_core_cmd_strf (core, "pdr~%s~^0x~?", buf);
 			offset_max = atoi (lines_nbr);
@@ -4332,8 +4332,8 @@ R_API void r_core_visual_find(RCore *core, RAGraph *g) {
 		}
 	}
 
-	free (cons->line->contents);
-	cons->line->contents = NULL;
+	free (cons->line->state.contents);
+	cons->line->state.contents = NULL;
 	r_config_set (core->config, "scr.highlight", "");
 	cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
 	r_config_set_b (core->config, "asm.addr", asm_addr);
@@ -4738,9 +4738,9 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 				showcursor (core, true);
 				const char *cmd = r_config_get (core->config, "cmd.gprompt");
 				r_line_set_prompt (core->cons->line, "cmd.gprompt> ");
-				core->cons->line->contents = strdup (cmd);
+				core->cons->line->state.contents = strdup (cmd);
 				const char *buf = r_line_readline (core->cons);
-				core->cons->line->contents = NULL;
+				core->cons->line->state.contents = NULL;
 				r_config_set (core->config, "cmd.gprompt", buf);
 				showcursor (core, false);
 			}

@@ -698,7 +698,7 @@ static bool cmd_wff(RCore *core, const char *input) {
 	if (*arg == '?' || !*arg) {
 		r_core_cmd_help_contains (core, help_msg_w, "wf");
 	} else if (!strcmp (arg, "-")) {
-		char *out = r_core_editor (core, NULL, NULL);
+		char *out = r_core_editor (core, NULL, NULL, NULL);
 		if (out) {
 			if (!r_io_write_at (core->io, core->addr, (ut8*)out, strlen (out))) {
 				R_LOG_ERROR ("write fail at 0x%08"PFMT64x, core->addr);
@@ -1271,7 +1271,7 @@ static int cmd_we(void *data, const char *input) {
 static int cmd_wp(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (input[0] == '-' || (input[0] == ' ' && input[1] == '-')) {
-		char *out = r_core_editor (core, NULL, NULL);
+		char *out = r_core_editor (core, NULL, NULL, NULL);
 		if (out) {
 			r_core_patch (core, out);
 			free (out);
@@ -2048,7 +2048,7 @@ static int cmd_wx(void *data, const char *input) {
 		if (!strcmp (arg, "-")) {
 			int len;
 			ut8 *out;
-			char *in = r_core_editor (core, NULL, NULL);
+			char *in = r_core_editor (core, NULL, NULL, NULL);
 			if (in) {
 				out = (ut8 *)strdup (in);
 				if (out) {

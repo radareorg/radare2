@@ -6670,7 +6670,7 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case '!': { // "afs!"
 			char *sig = r_core_cmd_str (core, "afs");
-			char *data = r_core_editor (core, NULL, sig);
+			char *data = r_core_editor (core, NULL, sig, NULL);
 			if (sig && data) {
 				r_core_callf (core, "afs %s", data);
 			}
@@ -16720,7 +16720,7 @@ static void cmd_ano(RCore *core, const char *input) {
 		if (fcn) {
 			char *f = anopath (core, fcn);
 			if (f) {
-				free (r_cons_editor (core->cons, f, NULL));
+				free (r_cons_editor (core->cons, f, NULL, NULL));
 				free (f);
 			}
 		} else {
@@ -16788,13 +16788,13 @@ static void cmd_ano(RCore *core, const char *input) {
 					r_str_trim (s);
 					if (R_STR_ISEMPTY (s)) {
 						r_file_rm (f);
-						free (r_cons_editor (core->cons, f, NULL));
+						free (r_cons_editor (core->cons, f, NULL, NULL));
 					} else {
 						r_cons_printf (core->cons, "%s\n", s);
 					}
 					free (s);
 				} else {
-					free (r_cons_editor (core->cons, f, NULL));
+					free (r_cons_editor (core->cons, f, NULL, NULL));
 				}
 				free (f);
 			}

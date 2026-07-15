@@ -1350,7 +1350,7 @@ R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBu
 				return;
 			}
 			if (R_STR_ISNOTEMPTY (s)) {
-				eprintf ("\r%s%s\r\n", core->cons->line->prompt, buf->data);
+				eprintf ("\r%s%s\r\n", core->cons->line->state.prompt, buf->data);
 				RList *list = r_str_split_list (s, "\n", 0);
 				RListIter *iter;
 				char *line;
@@ -1640,7 +1640,7 @@ R_API int r_core_fgets(RCons *cons, char *buf, int len) {
 	if (!ptr) {
 		return -1;
 	}
-	if (cons->line->buffer.length >= len - 2) {
+	if (cons->line->state.buffer.length >= len - 2) {
 		R_LOG_ERROR ("input is too large");
 		*buf = 0;
 		return 0;
@@ -2762,11 +2762,15 @@ R_API void __cons_cb_fkey(RCore *core, int fkey) {
 	}
 }
 
+static char *r_core_editor_cb(void *core, const char *file, const char *str, bool *canceled) {
+	return r_core_editor (core, file, str, canceled);
+}
+
 R_API void r_core_bind_cons(RCore *core) {
 	R_RETURN_IF_FAIL (core);
 	core->cons->num = core->num;
 	core->cons->cb_fkey = (RConsFunctionKey)__cons_cb_fkey;
-	core->cons->cb_editor = (RConsEditorCallback)r_core_editor;
+	core->cons->cb_editor = r_core_editor_cb;
 	core->cons->cb_break = NULL; // (RConsBreakCallback)r_core_break;
 	core->cons->cb_sleep_begin = (RConsSleepBeginCallback)r_core_sleep_begin;
 	core->cons->cb_sleep_end = (RConsSleepEndCallback)r_core_sleep_end;
@@ -3590,19 +3594,28 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 }
 #endif
 
-R_API char *r_core_editor(const RCore *core, const char *file, const char *str) {
+R_API char *r_core_editor(const RCore *core, const char *file, const char *str, bool *canceled) {
+	if (canceled) {
+		*canceled = false;
+	}
+	R_RETURN_VAL_IF_FAIL (core && core->cons && core->config, NULL);
 	const bool interactive = r_cons_is_interactive (core->cons);
 	const char *editor = r_config_get (core->config, "cfg.editor");
 	char *name = NULL, *ret = NULL;
-	int fd;
+	int fd = -1;
+	bool tempfile = false;
+	bool was_canceled = false;
 
 	if (!interactive) {
-		return NULL;
+		R_LOG_ERROR ("Editor requires an interactive terminal");
+		goto beach;
 	}
 	bool readonly = false;
-	bool tempfile = false;
 	if (file && *file != '*') {
 		name = strdup (file);
+		if (!name) {
+			goto beach;
+		}
 		fd = r_sandbox_open (file, O_RDWR, 0644);
 		if (fd == -1) {
 			fd = r_sandbox_open (file, O_RDWR | O_CREAT, 0644);
@@ -3616,67 +3629,72 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		fd = r_file_mkstemp (file, &name);
 	}
 	if (fd == -1) {
-		free (name);
-		return NULL;
+		if (tempfile) {
+			R_LOG_ERROR ("Cannot create temporary editor file");
+		} else {
+			R_LOG_ERROR ("Cannot open '%s' for editing", file);
+		}
+		goto beach;
 	}
 	if (readonly) {
 		R_LOG_INFO ("Opening in read-only");
-	} else {
-		if (str) {
-			const size_t str_len = strlen (str);
-			if (write (fd, str, str_len) != str_len) {
-				close (fd);
-				if (tempfile) {
-					r_file_rm (name);
-				}
-				free (name);
-				return NULL;
-			}
+	} else if (str) {
+		const size_t str_len = strlen (str);
+		if (write (fd, str, str_len) != str_len) {
+			R_LOG_ERROR ("Cannot write editor contents to '%s'", name);
+			goto beach;
 		}
 	}
 	close (fd);
+	fd = -1;
 
-	bool edited = true;
 	if (name && (R_STR_ISEMPTY (editor) || !strcmp (editor, "-"))) {
 		RCons *cons = core->cons;
-		void *tmp = cons->cb_editor;
+		RConsEditorCallback cb_editor = cons->cb_editor;
 		cons->cb_editor = NULL;
-		char *res = r_cons_editor (cons, name, NULL);
-		cons->cb_editor = tmp;
-		// The built-in editor uses NULL for cancellation; keep it as a successful no-op.
-		free (res);
+		char *result = r_cons_editor (cons, name, NULL, &was_canceled);
+		cons->cb_editor = cb_editor;
+		if (!result && !was_canceled) {
+			goto beach;
+		}
+		free (result);
 	} else {
-		edited = false;
-		if (editor && name) {
-			if (r_sandbox_enable (0)) {
-				R_LOG_ERROR ("Cannot run editor in sandbox mode");
-			} else {
-				char *escaped_name = r_str_escape_sh (name);
-				if (escaped_name) {
-					edited = !r_sys_cmdf ("%s \"%s\"", editor, escaped_name);
-				}
-				free (escaped_name);
-				if (!edited) {
-					R_LOG_ERROR ("Editor command failed");
-				}
-			}
+		if (!editor || !name) {
+			goto beach;
 		}
-	}
-	if (!edited) {
-		if (tempfile) {
-			r_file_rm (name);
+		if (r_sandbox_enable (0)) {
+			R_LOG_ERROR ("Cannot run editor in sandbox mode");
+			goto beach;
 		}
-		free (name);
-		return NULL;
+		char *escaped_name = r_str_escape_sh (name);
+		if (!escaped_name) {
+			goto beach;
+		}
+		const int rc = r_sys_cmdf ("%s \"%s\"", editor, escaped_name);
+		free (escaped_name);
+		if (rc) {
+			R_LOG_ERROR ("Editor command failed");
+			goto beach;
+		}
 	}
 	size_t len = 0;
-	ret = name? r_file_slurp (name, &len): 0;
-	if (ret) {
-		if (len && ret[len - 1] == '\n') {
-			ret[len - 1] = 0; // chop
-		}
+	ret = name? r_file_slurp (name, &len): NULL;
+	if (!ret) {
+		R_LOG_ERROR ("Cannot read edited file '%s'", name);
+		goto beach;
 	}
-	if (tempfile) {
+	if (len && ret[len - 1] == '\n') {
+		ret[len - 1] = 0; // chop
+	}
+	if (canceled) {
+		*canceled = was_canceled;
+	}
+
+beach:
+	if (fd != -1) {
+		close (fd);
+	}
+	if (tempfile && name) {
 		r_file_rm (name);
 	}
 	free (name);

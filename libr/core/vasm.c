@@ -30,13 +30,13 @@ static int readline_callback(RCons *cons, void *_a, const char *str) {
 	r_asm_set_pc (core->rasm, a->off);
 	if (*str == '!') {
 		a->amode = !a->amode;
-		line->buffer.data[0] = 0;
-		line->buffer.length = 0;
+		line->state.buffer.data[0] = 0;
+		line->state.buffer.length = 0;
 	} else if (r_str_endswith (str, "!")) {
 		a->amode = !a->amode;
 		const char *src = a->otherstr? a->otherstr: "";
-		line->buffer.length = r_str_ncpy (line->buffer.data, src, sizeof (line->buffer.data));
-		line->buffer.index = line->buffer.length;
+		line->state.buffer.length = r_str_ncpy (line->state.buffer.data, src, sizeof (line->state.buffer.data));
+		line->state.buffer.index = line->state.buffer.length;
 	} else if (*str == '?') {
 		r_cons_printf (core->cons, "[VA]> ?\n\n"
 			"Visual assembler help:\n\n"

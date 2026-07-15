@@ -1384,8 +1384,8 @@ R_API int r_line_hist_offset_up(RLine *line) {
 	char *command = (f && f->addr == off && f->addr > 0)
 		? r_str_newf ("%s", f->name)
 		: r_str_newf ("0x%"PFMT64x, off);
-	r_str_ncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
-	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	r_str_ncpy (line->state.buffer.data, command, R_LINE_BUFSIZE - 1);
+	line->state.buffer.index = line->state.buffer.length = strlen (line->state.buffer.data);
 	free (command);
 	return true;
 }
@@ -1398,8 +1398,8 @@ R_API int r_line_hist_offset_down(RLine *line) {
 	}
 	line->offset_hist_index++;
 	if (line->offset_hist_index == undo->redos) {
-		line->buffer.data[0] = '\0';
-		line->buffer.index = line->buffer.length = 0;
+		line->state.buffer.data[0] = '\0';
+		line->state.buffer.index = line->state.buffer.length = 0;
 		return false;
 	}
 	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
@@ -1407,8 +1407,8 @@ R_API int r_line_hist_offset_down(RLine *line) {
 	char *command = (f && f->addr == off && f->addr > 0)
 		? r_str_newf ("%s", f->name)
 		: r_str_newf ("0x%"PFMT64x, off);
-	r_str_ncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
-	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	r_str_ncpy (line->state.buffer.data, command, R_LINE_BUFSIZE - 1);
+	line->state.buffer.index = line->state.buffer.length = strlen (line->state.buffer.data);
 	free (command);
 	return true;
 }
@@ -1997,9 +1997,9 @@ static void visual_textlogs(RCore *core) {
 				#define I core->cons
 				const char *cmd = r_config_get (core->config, "cmd.vprompt");
 				r_line_set_prompt (cons->line, "cmd.vprompt> ");
-				I->line->contents = strdup (cmd);
+				I->line->state.contents = strdup (cmd);
 				buf = r_line_readline (core->cons);
-				I->line->contents = NULL;
+				I->line->state.contents = NULL;
 				(void)r_config_set (core->config, "cmd.vprompt", buf);
 				r_core_visual_showcursor (core, false);
 			}
@@ -2092,7 +2092,7 @@ static void visual_comma(RCore *core) {
 			free (cwf);
 			goto beach;
 		}
-		char *data = r_core_editor (core, NULL, odata);
+		char *data = r_core_editor (core, NULL, odata, NULL);
 		if (data) {
 			r_file_dump (cwf, (const ut8 *)data, -1, false);
 		}
@@ -3162,9 +3162,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_showcursor (core, true);
 			const char *cmd = r_config_get (core->config, "cmd.vprompt");
 			r_line_set_prompt (core->cons->line, "cmd.vprompt> ");
-			core->cons->line->contents = strdup (cmd);
+			core->cons->line->state.contents = strdup (cmd);
 			const char *buf = r_line_readline (core->cons);
-			core->cons->line->contents = NULL;
+			core->cons->line->state.contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
 			r_core_visual_showcursor (core, false);
 		}
@@ -3175,15 +3175,15 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			RCons *cons = core->cons;
 			const char *cmd = r_config_get (core->config, "cmd.cprompt");
 			r_line_set_prompt (cons->line, "cmd.cprompt> ");
-			I->line->contents = strdup (cmd);
+			I->line->state.contents = strdup (cmd);
 			const char *buf = r_line_readline (cons);
 			if (buf && !strcmp (buf, "|")) {
-				R_FREE (I->line->contents);
+				R_FREE (I->line->state.contents);
 				core->print->cur_enabled = true;
 				core->print->cur = 0;
 				(void)r_config_set (core->config, "cmd.cprompt", "p=e $r-2");
 			} else {
-				R_FREE (cons->line->contents);
+				R_FREE (cons->line->state.contents);
 				(void)r_config_set (core->config, "cmd.cprompt", r_str_get (buf));
 			}
 			r_core_visual_showcursor (core, false);

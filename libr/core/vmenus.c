@@ -85,7 +85,7 @@ R_IPI void visual_add_comment(RCore *core, ut64 at) {
 			} else {
 				// Open editor with current comment
 				const char *current_comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, at);
-				char *out = r_core_editor (core, NULL, current_comment);
+				char *out = r_core_editor (core, NULL, current_comment, NULL);
 				if (out) {
 					r_str_ansi_strip (out);
 					r_meta_set_string (core->anal, R_META_TYPE_COMMENT, at, out);
@@ -359,9 +359,9 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			#define I core->cons
 			const char *cmd = r_config_get (core->config, "cmd.vprompt");
 			r_line_set_prompt (core->cons->line, "cmd.vprompt> ");
-			I->line->contents = strdup (cmd);
+			I->line->state.contents = strdup (cmd);
 			buf = r_line_readline (core->cons);
-			I->line->contents = NULL;
+			I->line->state.contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
 			r_core_visual_showcursor (core, false);
 		}
@@ -825,9 +825,9 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			#define I core->cons
 			const char *cmd = r_config_get (core->config, "cmd.vprompt");
 			r_line_set_prompt (core->cons->line, "cmd.vprompt> ");
-			I->line->contents = strdup (cmd);
+			I->line->state.contents = strdup (cmd);
 			buf = r_line_readline (core->cons);
-			I->line->contents = NULL;
+			I->line->state.contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
 			r_core_visual_showcursor (core, false);
 		}
@@ -2607,7 +2607,7 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 	} else {
 		// XXX: use config_set () to run callbacks!
 		if (editor) {
-			char *buf = r_core_editor (core, NULL, node->value);
+			char *buf = r_core_editor (core, NULL, node->value, NULL);
 			if (buf) {
 				free (node->value);
 				node->value = buf;

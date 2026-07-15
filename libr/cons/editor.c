@@ -20,44 +20,49 @@ static void setcurline(RCons *cons) {
 	const char *nline = r_list_get_n (editor->lines, editor->n);
 	const char *curline = r_str_get (nline);
 	RLine *line = cons->line;
-	r_str_ncpy (line->buffer.data, curline, sizeof (line->buffer.data) - 1);
-	line->buffer.data[sizeof (line->buffer.data) - 1] = '\0';
-	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
-	line->contents = (char*)curline;
+	r_str_ncpy (line->state.buffer.data, curline, sizeof (line->state.buffer.data) - 1);
+	line->state.buffer.data[sizeof (line->state.buffer.data) - 1] = '\0';
+	line->state.buffer.index = line->state.buffer.length = strlen (line->state.buffer.data);
+	line->state.contents = (char*)curline;
 }
 
-static void emptyline(RCons *cons, const char *str) {
+static void emptyline(RCons *cons) {
 	RConsEditor *editor = cons->editor;
-	if (editor->n == r_list_length (editor->lines)) {
-		// r_list_append (editor->lines, strdup (str));
-	} else {
+	if (editor->n != r_list_length (editor->lines)) {
 		RListIter *iter = r_list_get_nth (editor->lines, editor->n);
 		if (iter) {
 			r_list_delete (editor->lines, iter);
 		}
 	}
-	setprompt (cons);
 	setcurline (cons);
 }
 
-static void saveline(RCons *cons, const char *str) {
+static bool saveline(RCons *cons, const char *str) {
 	RConsEditor *editor = cons->editor;
 	char *s = strdup (str? str: "");
+	if (!s) {
+		return false;
+	}
+	RListIter *inserted;
 	if (editor->n == r_list_length (editor->lines)) {
-		r_list_append (editor->lines, s);
+		inserted = r_list_append (editor->lines, s);
 	} else {
 		if (str) {
 			RListIter *iter = r_list_get_nth (editor->lines, editor->n);
 			if (iter) {
 				r_list_delete (editor->lines, iter);
 			}
-			r_list_insert (editor->lines, editor->n, s);
+			inserted = r_list_insert (editor->lines, editor->n, s);
 		} else {
-			r_list_insert (editor->lines, editor->n, s);
+			inserted = r_list_insert (editor->lines, editor->n, s);
 		}
 	}
-	setprompt (cons);
+	if (!inserted) {
+		free (s);
+		return false;
+	}
 	setcurline (cons);
+	return true;
 }
 
 static int up(RCons *cons, void *n) {
@@ -80,84 +85,113 @@ static int down(RCons *cons, void *n) {
 	return 0;
 }
 
-R_API char *r_cons_editor(RCons *cons, const char *file, const char *str) {
+R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, bool *canceled) {
+	if (canceled) {
+		*canceled = false;
+	}
+	R_RETURN_VAL_IF_FAIL (cons && cons->line, NULL);
 	// bool visual = false; // TODO: should be an argument
 	if (cons->cb_editor) {
-		return cons->cb_editor (cons->line->user, file, str);
+		return cons->cb_editor (cons->line->user, file, str, canceled);
 	}
-	RConsEditor editor = {0};
+	RConsEditor editor = { 0 };
 	RConsEditor *old_editor = cons->editor;
-	cons->editor = &editor;
+	RLine *line = cons->line;
+	RLineState old_state = line->state;
+	line->state.prompt = NULL;
+	int old_echo = cons->echo;
+	char *result = NULL;
+
 	editor.lines = r_list_newf (free);
+	if (!editor.lines) {
+		goto beach;
+	}
 	if (R_STR_ISNOTEMPTY (file)) {
 		size_t sz = 0;
 		char *data = r_file_slurp (file, &sz);
+		if (!data) {
+			R_LOG_ERROR ("Failed to load '%s'", file);
+			goto beach;
+		}
 		r_str_trim (data);
 		if (*data) {
+			RList *lines = r_str_split_duplist (data, "\n", false);
+			if (!lines) {
+				free (data);
+				R_LOG_ERROR ("Failed to load '%s'", file);
+				goto beach;
+			}
 			r_list_free (editor.lines);
-			editor.lines = r_str_split_duplist (data, "\n", false);
+			editor.lines = lines;
 		}
 		free (data);
-		if (!editor.lines) {
-			R_LOG_ERROR ("Failed to load '%s'", file);
-			cons->editor = old_editor;
-			return NULL;
-		}
 	}
+	cons->editor = &editor;
 	R_LOG_INFO ("Loaded %d lines. Use ^D or '.' to save and quit", r_list_length (editor.lines));
-	RLine *line = cons->line;
-	line->hist_up = up;
-	line->hist_down = down;
-	line->contents = line->buffer.data;
+	line->state.hist_up = up;
+	line->state.hist_down = down;
+	line->state.contents = line->state.buffer.data;
 	cons->echo = false;
 	for (;;) {
 		setcurline (cons);
-		const char *line = r_line_readline (cons);
-		if (R_STR_ISNOTEMPTY (line)) {
-			r_str_trim ((char *)line);
-			if (!strcmp (line, ".")) {
+		const char *input = r_line_readline (cons);
+		if (!input) {
+			break;
+		}
+		if (R_STR_ISNOTEMPTY (input)) {
+			r_str_trim ((char *)input);
+			if (!strcmp (input, ".")) {
 				break;
 			}
-			if (r_str_endswith (line, "\\")) {
-				((char *)line)[strlen (line) - 1] = 0;
-				saveline (cons, line);
-				setcurline (cons);
+			if (r_str_endswith (input, "\\")) {
+				((char *)input)[strlen (input) - 1] = 0;
+				if (!saveline (cons, input)) {
+					goto beach;
+				}
 				editor.n++;
-				saveline (cons, NULL);
-				setcurline (cons);
+				if (!saveline (cons, NULL)) {
+					goto beach;
+				}
 			} else {
-				saveline (cons, *line? line: "\\");
+				if (!saveline (cons, *input? input: "\\")) {
+					goto beach;
+				}
 				editor.n++;
 			}
 		} else {
-			if (!line) {
-				break;
-			}
 			if (editor.n == r_list_length (editor.lines)) {
 				RListIter *iter;
 				int n = 0;
-				r_list_foreach (editor.lines, iter, line) {
-					eprintf ("%2d| %s\n", n++, line);
+				const char *list_line;
+				r_list_foreach (editor.lines, iter, list_line) {
+					eprintf ("%2d| %s\n", n++, list_line);
 				}
 			} else {
-				emptyline (cons, line);
+				emptyline (cons);
 			}
 		}
 	}
 	if (!r_cons_yesno (cons, 'y', "Save? (Y/n)")) {
-		r_list_free (editor.lines);
-		cons->editor = old_editor;
-		return NULL;
+		if (canceled) {
+			*canceled = true;
+		}
+		goto beach;
 	}
-	char *s = r_str_list_join (editor.lines, "\n");
-	r_str_trim (s);
-	line->hist_up = NULL;
-	line->hist_down = NULL;
-	line->contents = NULL;
-	r_list_free (editor.lines);
+	result = r_str_list_join (editor.lines, "\n");
+	if (!result) {
+		goto beach;
+	}
+	r_str_trim (result);
+	if (file && !r_file_dump (file, (const ut8 *)result, -1, false)) {
+		R_FREE (result);
+		goto beach;
+	}
+
+beach:
+	free (line->state.prompt);
+	line->state = old_state;
+	cons->echo = old_echo;
 	cons->editor = old_editor;
-	if (file) {
-		r_file_dump (file, (const ut8*)s, -1, 0);
-	}
-	return s;
+	r_list_free (editor.lines);
+	return result;
 }

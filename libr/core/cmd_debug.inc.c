@@ -6758,7 +6758,7 @@ static int cmd_debug(void *data, const char *input) {
 					char **env = r_sys_get_environ ();
 					core->io->envprofile = r_run_get_environ_profile (env);
 				}
-				char *out = r_core_editor (core, NULL, core->io->envprofile);
+				char *out = r_core_editor (core, NULL, core->io->envprofile, NULL);
 				if (out) {
 					free (core->io->envprofile);
 					core->io->envprofile = out;

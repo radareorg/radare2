@@ -619,7 +619,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case '!': // "CC!"
 		{
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-			char *out = r_core_editor (core, NULL, comment);
+			char *out = r_core_editor (core, NULL, comment, NULL);
 			if (out) {
 				r_str_ansi_strip (out);
 				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
@@ -1068,7 +1068,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case '!': // "Cf!", "Cd!", ...
 		{
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-			char *out = r_core_editor (core, NULL, comment);
+			char *out = r_core_editor (core, NULL, comment, NULL);
 			if (out) {
 				r_str_ansi_strip (out);
 				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
@@ -1440,7 +1440,7 @@ static void cmd_Cv(RCore *core, const char *input) {
 			R_LOG_ERROR ("can't find variable named `%s`", name);
 			break;
 		}
-		comment = r_core_editor (core, NULL, var->comment);
+		comment = r_core_editor (core, NULL, var->comment, NULL);
 		if (comment) {
 			free (var->comment);
 			var->comment = comment;

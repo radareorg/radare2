@@ -415,7 +415,7 @@ typedef struct r_cons_canvas_t {
 
 typedef struct r_cons_editor_t RConsEditor;
 
-typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
+typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str, R_OUT bool * R_NULLABLE canceled);
 typedef int (*RConsClickCallback)(void *core, int x, int y);
 typedef void (*RConsBreakCallback)(void *core);
 typedef void *(*RConsSleepBeginCallback)(void *core);
@@ -924,7 +924,7 @@ R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBr
 R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig);
 
 /* control */
-R_API char *r_cons_editor(RCons *cons, const char *file, const char *str);
+R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, R_OUT bool * R_NULLABLE canceled);
 R_API void r_cons_stdout_open(const char *file, int append);
 R_API int  r_cons_stdout_set_fd(int fd);
 R_API int r_cons_get_cur_line(void);
@@ -1110,28 +1110,31 @@ typedef char* (*RLineEditorCb)(void *core, const char *file, const char *str);
 typedef int (*RLineHistoryUpCb)(RLine* line);
 typedef int (*RLineHistoryDownCb)(RLine* line);
 
+typedef struct r_line_state_t {
+	RLineBuffer buffer;
+	RConsFunctionKey cb_fkey;
+	int (*hist_up)(RCons *cons, void *user);
+	int (*hist_down)(RCons *cons, void *user);
+	char *contents;
+	char *prompt;
+} RLineState;
+
 struct r_line_t {
 	struct r_cons_t *cons;
 	RLineCompletion completion;
-	RLineBuffer buffer;
+	RLineState state;
 	RLineHistory history;
 	RSelWidget *sel_widget;
 	/* callbacks */
 	RLineHistoryUpCb cb_history_up;
 	RLineHistoryDownCb cb_history_down;
-	// RLineFunctionKeyCb cb_fkey;
-	RConsFunctionKey cb_fkey;
 	bool echo;
-	char *prompt;
 	RList/*<str>*/ *kill_ring;
 	int kill_ring_ptr;
 	char *clipboard;
 	bool disable;
 	void *user;
 	bool histfilter;
-	int (*hist_up)(RCons *cons, void *user);
-	int (*hist_down)(RCons *cons, void *user);
-	char *contents;
 	bool zerosep;
 	bool enable_vi_mode; // can be merged with vi_mode
 	int vi_mode;

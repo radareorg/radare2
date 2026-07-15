@@ -124,7 +124,7 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 	char *ret, msg[1024] = {0};
 
 	R_LOG_INFO ("Type '/help' for commands and ^D to quit:");
-	char *oldprompt = strdup (core->cons->line->prompt);
+	char *oldprompt = strdup (core->cons->line->state.prompt);
 	snprintf (prompt, sizeof (prompt) - 1, "[%s]> ", me);
 	r_line_set_prompt (core->cons->line, prompt);
 	ret = rtrcmd (T, msg);
