@@ -1109,7 +1109,7 @@ static int check_pe64_buf(RBuffer *buf, ut64 length) {
 	return ret;
 }
 
-static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
+static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj, const char *sdbdir) {
 	ut64 paddr;
 	struct minidump_module *module;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin, *pe32_dup;
@@ -1148,6 +1148,7 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 				pe32_bin->paddr = paddr;
 				pe32_bin->bin = Pe32_r_bin_pe_new_buf (buf, 0);
 				if (pe32_bin->bin) {
+					pe32_bin->bin->sdbdir = R_STR_ISNOTEMPTY (sdbdir)? strdup (sdbdir): NULL;
 					r_list_append (obj->pe32_bins, pe32_bin);
 				} else {
 					free (pe32_bin);
@@ -1167,6 +1168,7 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 				pe64_bin->paddr = paddr;
 				pe64_bin->bin = Pe64_r_bin_pe_new_buf (buf, 0);
 				if (pe64_bin->bin) {
+					pe64_bin->bin->sdbdir = R_STR_ISNOTEMPTY (sdbdir)? strdup (sdbdir): NULL;
 					r_list_append (obj->pe64_bins, pe64_bin);
 				} else {
 					free (pe64_bin);
@@ -1178,7 +1180,7 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 	return true;
 }
 
-static int r_bin_mdmp_init(struct r_bin_mdmp_obj *obj) {
+static int r_bin_mdmp_init(struct r_bin_mdmp_obj *obj, const char *sdbdir) {
 	r_bin_mdmp_init_parsing (obj);
 
 	if (!r_bin_mdmp_init_hdr (obj)) {
@@ -1191,7 +1193,7 @@ static int r_bin_mdmp_init(struct r_bin_mdmp_obj *obj) {
 		return false;
 	}
 
-	if (!r_bin_mdmp_init_pe_bins (obj)) {
+	if (!r_bin_mdmp_init_pe_bins (obj, sdbdir)) {
 		R_LOG_ERROR ("[ERROR] Failed to initialise pe binaries");
 		return false;
 	}
@@ -1199,7 +1201,7 @@ static int r_bin_mdmp_init(struct r_bin_mdmp_obj *obj) {
 	return true;
 }
 
-struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(RBuffer *buf) {
+struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(RBuffer *buf, const char *sdbdir) {
 	bool fail = false;
 	struct r_bin_mdmp_obj *obj = R_NEW0 (struct r_bin_mdmp_obj);
 	obj->kv = sdb_new0 ();
@@ -1225,7 +1227,7 @@ struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(RBuffer *buf) {
 	}
 
 	obj->b = r_ref (buf);
-	if (!r_bin_mdmp_init (obj)) {
+	if (!r_bin_mdmp_init (obj, sdbdir)) {
 		r_bin_mdmp_free (obj);
 		return NULL;
 	}

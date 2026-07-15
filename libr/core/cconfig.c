@@ -1716,6 +1716,19 @@ static bool cb_dirtmp(void *user, void *data) {
 	return true;
 }
 
+static bool cb_dirbinsdb(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	RCore *core = (RCore *)user;
+	if (R_STR_ISNOTEMPTY (node->value)) {
+		char *abs = r_file_abspath (node->value);
+		free (node->value);
+		node->value = abs;
+	}
+	free (core->bin->sdbdir);
+	core->bin->sdbdir = R_STR_ISNOTEMPTY (node->value)? strdup (node->value): NULL;
+	return true;
+}
+
 static bool cb_dirsrc(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	RCore *core = (RCore *)user;
@@ -4644,6 +4657,10 @@ R_API int r_core_config_init(RCore *core) {
 	}
 	SETCB ("dir.source.base", "", &cb_dirsrc_base, "path to trim out from the one in dwarf");
 	SETCB ("dir.source", "", &cb_dirsrc, "path to find source files");
+	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
+	char *binsdb = R_STR_ISNOTEMPTY (dir_prefix)? r_file_new (dir_prefix, R2_SDB_FORMAT, "dll", NULL): NULL;
+	SETCB ("dir.binsdb", r_str_get (binsdb), &cb_dirbinsdb, "path to PE import ordinal SDB files");
+	free (binsdb);
 	SETS ("dir.debuglink", "/usr/lib/debug/", "default path for debuglink files (idl* command)");
 	SETS ("dir.types", "/usr/include", "default colon-separated list of paths to find C headers to cparse types");
 	SETS ("dir.libs", "", "specify path to find libraries to load when bin.libs=true");

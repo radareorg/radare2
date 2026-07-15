@@ -273,7 +273,7 @@ static RList* libs(RBinFile *bf) {
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	R_RETURN_VAL_IF_FAIL (buf, false);
-	struct r_bin_mdmp_obj *res = r_bin_mdmp_new_buf (buf);
+	struct r_bin_mdmp_obj *res = r_bin_mdmp_new_buf (buf, bf->rbin->sdbdir);
 	if (R_LIKELY (res)) {
 		sdb_ns_set (bf->sdb, "info", res->kv);
 		bf->bo->bin_obj = res;

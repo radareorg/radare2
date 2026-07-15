@@ -5,6 +5,7 @@
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "core.bin"
 #include <r_core.h>
+#include "../bin/i/private.h"
 
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
@@ -1830,18 +1831,6 @@ static ut8 bin_reloc_size(RBinReloc *reloc) {
 #undef CASE
 }
 
-static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
-	Sdb *db = sdb;
-	const char *value = sdb_const_getf (db, NULL, "%d", ordinal);
-	char *foo = value? strdup (value): NULL;
-	if (foo) {
-		if (!*foo) {
-			R_FREE (foo);
-		}
-	}
-	return foo;
-}
-
 // name can be optionally used to explicitly set the used base name (for example for demangling), otherwise the import name will be used.
 static char *construct_reloc_name(RBinReloc *R_NONNULL reloc, const char *R_NULLABLE name) {
 	RStrBuf *buf = r_strbuf_new ("");
@@ -1895,7 +1884,6 @@ static void ri_init(RCore *core, RelocInfo *ri) {
 
 static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
 	RCore *core = ri->core;
-	r_strf_buffer (64);
 
 	const char *name = reloc->import? r_bin_name_tostring (reloc->import->name): NULL;
 	if (ri->is_pe && name && reloc->import->libname && r_str_startswith (name, "Ordinal_")) {
@@ -1910,38 +1898,21 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 
 		const char *import = name + strlen ("Ordinal_");
 		if (import) {
-			char *filename = NULL;
 			int ordinal = atoi (import);
 			if (!*sdb_module || strcmp (module, *sdb_module)) {
 				sdb_free (*db);
 				*db = NULL;
 				free (*sdb_module);
 				*sdb_module = strdup (module);
-				/* always lowercase */
-				filename = r_strf ("%s.sdb", module);
-				r_str_case (filename, false);
-				if (r_file_exists (filename)) {
-					*db = sdb_new (NULL, filename, 0);
-				} else {
-					char *dirPrefix = r_sys_prefix (NULL);
-					filename = r_strf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"), dirPrefix, module);
-					free (dirPrefix);
-					if (r_file_exists (filename)) {
-						*db = sdb_new (NULL, filename, 0);
-					}
-				}
+				*db = open_ordinalsdb (core->bin->sdbdir, module);
 			}
 			if (*db) {
 				// ordinal-1 because we enumerate starting at 0
-				char *symname = resolveModuleOrdinal (*db, module, ordinal - 1); // uses sdb_get
+				const char *symname = sdb_const_getf (*db, NULL, "%d", ordinal - 1);
 				if (symname) {
-					char *s = symname;
-					if (core->bin->prefix) {
-						s = r_str_newf ("%s.%s", core->bin->prefix, symname);
-						R_FREE (symname);
-					}
-					r_bin_name_demangled (reloc->import->name, s);
-					free (s);
+					char *prefixed = core->bin->prefix? r_str_newf ("%s.%s", core->bin->prefix, symname): NULL;
+					r_bin_name_demangled (reloc->import->name, prefixed? prefixed: symname);
+					free (prefixed);
 				}
 			}
 		}
