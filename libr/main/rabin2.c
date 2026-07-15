@@ -557,23 +557,31 @@ static bool __lib_bin_ldr_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
+static bool __lib_bin_demangle_cb(RLibPlugin *pl, void *user, void *data) {
+	RBinDemanglePlugin *plugin = data;
+	return r_bin_demangle_plugin_add (user, plugin);
+}
+
+static bool __lib_bin_demangle_dt(RLibPlugin *pl, void *user, void *data) {
+	return true;
+}
+
 static char *__demangleAs(RBin *bin, int type, const char *file) {
-	bool syscmd = bin->options.demangle_usecmd;
-	char *res = NULL;
+	const char *name = NULL;
 	switch (type) {
-	case R_BIN_LANG_CXX: res = r_bin_demangle_cxx (NULL, file, 0); break;
-	case R_BIN_LANG_IBMXL: res = r_bin_demangle_ibmxl (file); break;
-	case R_BIN_LANG_JAVA: res = r_bin_demangle_java (file); break;
-	case R_BIN_LANG_OBJC: res = r_bin_demangle_objc (NULL, file); break;
-	case R_BIN_LANG_SWIFT: res = r_bin_demangle_swift (file, syscmd, bin->options.demangle_trylib); break;
-	case R_BIN_LANG_MSVC: res = r_bin_demangle_msvc (file); break;
-	case R_BIN_LANG_RUST: res = r_bin_demangle_rust (NULL, file, 0); break;
-	case R_BIN_LANG_DLANG: res = r_bin_demangle_dlang (file); break;
+	case R_BIN_LANG_CXX: name = "cxx"; break;
+	case R_BIN_LANG_IBMXL: name = "ibmxl"; break;
+	case R_BIN_LANG_JAVA: name = "java"; break;
+	case R_BIN_LANG_OBJC: name = "objc"; break;
+	case R_BIN_LANG_SWIFT: name = "swift"; break;
+	case R_BIN_LANG_MSVC: name = "msvc"; break;
+	case R_BIN_LANG_RUST: name = "rust"; break;
+	case R_BIN_LANG_DLANG: name = "dlang"; break;
 	default:
 		R_LOG_ERROR ("Unsupported demangler");
-		break;
+		return NULL;
 	}
-	return res;
+	return r_bin_demangle_plugin (bin, name, file);
 }
 
 static void list_plugins(RBin *bin, const char *plugin_name, PJ *pj, int rad) {
@@ -658,6 +666,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			&__lib_bin_xtr_cb, &__lib_bin_xtr_dt, bin);
 		r_lib_add_handler (l, R_LIB_TYPE_BIN_LDR, "bin ldr plugins",
 			&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, bin);
+		r_lib_add_handler (l, R_LIB_TYPE_BIN_DEMANGLE, "bin demangler plugins",
+			&__lib_bin_demangle_cb, &__lib_bin_demangle_dt, bin);
 		r_lib_load_default_paths (l, R_LIB_LOAD_DEFAULT);
 		r_lib_free (l);
 	} else {

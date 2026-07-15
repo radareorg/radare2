@@ -138,7 +138,7 @@ static bool symbols_vec(RBinFile *bf) {
 		sctn_header = r_list_get_n (pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
 			RBinSymbol *sym = RVecRBinSymbol_emplace_back (ret);
-			char *demangled_name = r_bin_demangle_msvc (gdata->name.name);
+			char *demangled_name = r_bin_demangle (bf, "msvc", gdata->name.name, 0, false);
 			const char *name = demangled_name? demangled_name: gdata->name.name;
 
 			sym->name = r_bin_name_new (name);

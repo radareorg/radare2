@@ -1073,10 +1073,14 @@ static void get_protocol_list_of_lists(RBinFile *bf, RBinClass *klass, objc_cach
 	iterate_list_of_lists (bf, on_protocol_list, &ctx, p);
 }
 
-static char *demangle_classname(RBin *rbin, const char *s) {
+static char *demangle_swift(RBinFile *bf, const char *s) {
+	return r_bin_demangle (bf, "swift", s, 0, false);
+}
+
+static char *demangle_classname(RBinFile *bf, const char *s) {
 	char *ret;
 	if (r_str_startswith (s, "_TtC")) {
-		ret = r_bin_demangle_swift (s, rbin->options.demangle_usecmd, rbin->options.demangle_trylib);
+		ret = demangle_swift (bf, s);
 	} else {
 		ret = strdup (s);
 	}
@@ -1262,7 +1266,7 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 			}
 			r_bin_name_free (klass->name);
 			klass->name = r_bin_name_new (name);
-			char *dn = demangle_classname (bf->rbin, name);
+			char *dn = demangle_classname (bf, name);
 			if (dn) {
 				r_bin_name_demangled (klass->name, dn);
 				free (dn);
@@ -1325,9 +1329,6 @@ static mach0_ut get_isa_value(void) {
 
 void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, const RSkipList *relocs, objc_cache_opt_info *oi) {
 	R_RETURN_IF_FAIL (bf && bf->bo && bf->bo->info);
-	RBin *bin = bf->rbin;
-	bool trylib = bin? bin->options.demangle_trylib: false;
-	bool usecmd = bin? bin->options.demangle_usecmd: false;
 	struct MACH0_(SClass) c = {0};
 	const int size = sizeof (struct MACH0_(SClass));
 	ut32 offset = 0, left = 0;
@@ -1380,7 +1381,7 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 				klass->super = r_list_newf ((void *)r_bin_name_free);
 			}
 			RBinName *bn = r_bin_name_new (klass_name);
-			char *dn = demangle_classname (bf->rbin, klass_name);
+			char *dn = demangle_classname (bf, klass_name);
 #if 0
 			// avoid registering when demangled baseklass == demangled superklass
 			const char *base_klass_name = r_bin_name_tostring2 (klass->name, 'd');
@@ -1410,7 +1411,7 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 				target_class_name += _objc_class_len;
 				r_bin_name_demangled (sup, target_class_name);
 				if (r_str_startswith (target_class_name, "_T")) {
-					char *dsuper = r_bin_demangle_swift (target_class_name, usecmd, trylib);
+					char *dsuper = demangle_swift (bf, target_class_name);
 					if (dsuper && strcmp (dsuper, target_class_name)) {
 						r_bin_name_demangled (sup, dsuper);
 					}
@@ -1543,9 +1544,6 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 		free (otypename);
 		return;
 	}
-	RBin *bin = bf->rbin;
-	bool trylib = bin? bin->options.demangle_trylib: false;
-	bool usecmd = bin? bin->options.demangle_usecmd: false;
 	char *typename = r_name_filter_dup (otypename);
 	RBinClass *klass = r_bin_class_new (typename, NULL, false);
 	klass->origin = R_BIN_CLASS_ORIGIN_BIN;
@@ -1554,7 +1552,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 		if ((st8)*super_name > 5) {
 			klass->super = r_list_newf ((void *)r_bin_name_free);
 			RBinName *bn = r_bin_name_new (super_name);
-			char *sname = r_bin_demangle_swift (super_name, usecmd, trylib);
+			char *sname = demangle_swift (bf, super_name);
 			if (R_STR_ISNOTEMPTY (sname)) {
 				r_bin_name_demangled (bn, sname);
 			}
@@ -1605,7 +1603,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 					rawname = strdup (r_bin_name_tostring (sym->name));
 					method_name = r_name_filter_dup (rawname); // r_bin_name_tostring (sym->name));
 					r_bin_name_filtered (sym->name, method_name);
-					char *dname = r_bin_demangle_swift (method_name, usecmd, trylib);
+					char *dname = demangle_swift (bf, method_name);
 					if (dname) {
 						r_bin_name_demangled (sym->name, dname);
 						free (sym->name->oname);
@@ -1690,7 +1688,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 					ftype += r_str_nlen (ftype, 6);
 				}
 				field->type = r_bin_name_new (ftype);
-				char *demangled_type = r_bin_demangle_swift (ftype, usecmd, trylib);
+				char *demangled_type = demangle_swift (bf, ftype);
 				if (demangled_type) {
 					r_bin_name_demangled (field->type, demangled_type);
 					free (demangled_type);
@@ -2052,7 +2050,7 @@ void MACH0_(get_category_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, const RS
 		if (target_class_name) {
 			char *kname = r_str_newf ("%s(%s)", target_class_name, category_name);
 			klass->name = r_bin_name_new (kname);
-			char *demangled = demangle_classname (bf->rbin, target_class_name);
+			char *demangled = demangle_classname (bf, target_class_name);
 			if (demangled) {
 				char *dname = r_str_newf ("%s(%s)", demangled, category_name);
 				r_bin_name_demangled (klass->name, dname);

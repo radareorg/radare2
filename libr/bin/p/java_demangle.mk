@@ -1,0 +1,10 @@
+OBJ_DEMANGLE_JAVA=bin_demangle_java.o ../mangling/java.o
+
+CFLAGS+=-DR_BIN_DEMANGLE_JAVA=1
+STATIC_OBJ+=${OBJ_DEMANGLE_JAVA}
+TARGET_DEMANGLE_JAVA=bin_demangle_java.${EXT_SO}
+ALL_TARGETS+=${TARGET_DEMANGLE_JAVA}
+
+${TARGET_DEMANGLE_JAVA}: ${OBJ_DEMANGLE_JAVA}
+	${CC} $(call libname,bin_demangle_java) ${CFLAGS} -o $@ \
+		${OBJ_DEMANGLE_JAVA} $(LINK) $(LDFLAGS)

@@ -26,7 +26,11 @@ FORMATS+=mdmp.mk z64.mk qnx.mk prg.mk dmp64.mk xtac.mk pef.mk mdt.mk som.mk
 
 FORMATS+=xtr_dyldcache.mk xtr_ftab.mk
 
-include $(FORMATS)
+DEMANGLERS=cxx_demangle.mk dlang_demangle.mk ibmxl_demangle.mk
+DEMANGLERS+=java_demangle.mk msvc_demangle.mk objc_demangle.mk
+DEMANGLERS+=pascal_demangle.mk rust_demangle.mk swift_demangle.mk
+
+include $(FORMATS) $(DEMANGLERS)
 
 clean:
 	-rm -f *.so *.o ${STATIC_OBJ}

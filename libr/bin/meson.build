@@ -5,6 +5,7 @@ r_bin_sources = [
   'bin_write.c',
   'addrline.c',
   'demangle.c',
+  'demangle_stubs.c',
   'dwarf.c',
   'blang.c',
   'bfilter.c',
@@ -132,30 +133,64 @@ r_bin_sources = [
   'format/pdb/stream_file.c',
   'format/pdb/stream_pe.c',
   'format/pdb/tpi.c',
-# symbol name manglers
-  'mangling/cxx.c',
-  'mangling/cxx2/cxx2.c',
-  'mangling/cxx2/itanium.c',
-  'mangling/cxx2/rust.c',
-  'mangling/cxx2/dlang.c',
-  'mangling/cxx2/xlc.c',
-  'mangling/cxx2/gnu-v2.c',
-  'mangling/cxx2/armabi.c',
-  'mangling/pascal.c',
-  'mangling/demangler.c',
-  'mangling/rust.c',
-  'mangling/java.c',
-  'mangling/microsoft.c',
-  'mangling/msvc.c',
-  'mangling/objc.c',
-  'mangling/swift-sd.c',
+# language detection
   'mangling/swift.c'
 ]
 
-if not get_option('nogpl')
+demangle_c_args = []
+need_cxx_demangler = bin_demangle_plugins.contains('cxx') or bin_demangle_plugins.contains('rust')
+
+if need_cxx_demangler
+  demangle_c_args += ['-DR_BIN_DEMANGLE_CXX=1']
   r_bin_sources += [
-    'mangling/cxx/cp-demangle.c',
+    'mangling/cxx.c',
+    'mangling/cxx2/itanium.c',
+    'mangling/cxx2/xlc.c',
+    'mangling/cxx2/gnu-v2.c',
+    'mangling/cxx2/armabi.c',
   ]
+  if not get_option('nogpl')
+    r_bin_sources += ['mangling/cxx/cp-demangle.c']
+  endif
+endif
+
+if bin_demangle_plugins.contains('cxx')
+  r_bin_sources += ['p/bin_demangle_cxx.c']
+endif
+if bin_demangle_plugins.contains('dlang')
+  demangle_c_args += ['-DR_BIN_DEMANGLE_DLANG=1']
+  r_bin_sources += ['p/bin_demangle_dlang.c', 'mangling/dlang.c', 'mangling/cxx2/dlang.c']
+endif
+if bin_demangle_plugins.contains('ibmxl')
+  demangle_c_args += ['-DR_BIN_DEMANGLE_IBMXL=1']
+  r_bin_sources += ['p/bin_demangle_ibmxl.c', 'mangling/ibmxl.c']
+  if not need_cxx_demangler
+    r_bin_sources += ['mangling/cxx2/xlc.c']
+  endif
+endif
+if bin_demangle_plugins.contains('java')
+  demangle_c_args += ['-DR_BIN_DEMANGLE_JAVA=1']
+  r_bin_sources += ['p/bin_demangle_java.c', 'mangling/java.c']
+endif
+if bin_demangle_plugins.contains('msvc')
+  demangle_c_args += ['-DR_BIN_DEMANGLE_MSVC=1']
+  r_bin_sources += ['p/bin_demangle_msvc.c', 'mangling/msvc.c', 'mangling/microsoft.c', 'mangling/demangler.c']
+endif
+if bin_demangle_plugins.contains('objc')
+  demangle_c_args += ['-DR_BIN_DEMANGLE_OBJC=1']
+  r_bin_sources += ['p/bin_demangle_objc.c', 'mangling/objc.c']
+endif
+if bin_demangle_plugins.contains('pascal')
+  demangle_c_args += ['-DR_BIN_DEMANGLE_PASCAL=1']
+  r_bin_sources += ['p/bin_demangle_pascal.c', 'mangling/pascal.c']
+endif
+if bin_demangle_plugins.contains('rust')
+  demangle_c_args += ['-DR_BIN_DEMANGLE_RUST=1']
+  r_bin_sources += ['p/bin_demangle_rust.c', 'mangling/rust.c', 'mangling/cxx2/rust.c']
+endif
+if bin_demangle_plugins.contains('swift')
+  demangle_c_args += ['-DR_BIN_DEMANGLE_SWIFT=1']
+  r_bin_sources += ['p/bin_demangle_swift.c', 'mangling/swift-sd.c']
 endif
 
 if bin_plugins.contains('pyc') or bin_plugins.contains('pickle')
@@ -177,7 +212,7 @@ endif
 
 r_bin = library('r_bin', r_bin_sources,
   include_directories: r_bin_inc,
-  c_args: ['-DR_API_BIN_ONLY=1'] + library_cflags,
+  c_args: ['-DR_API_BIN_ONLY=1'] + demangle_c_args + library_cflags,
   dependencies: [
     r_util_dep,
     r_cons_dep,
@@ -202,7 +237,7 @@ r_bin_dep = declare_dependency(link_with: r_bin,
 if get_option('blob')
 r_bin_static = static_library('r_bin_static', r_bin_sources,
   include_directories: r_bin_inc,
-  c_args: ['-DR_API_BIN_ONLY=1'] + library_cflags,
+  c_args: ['-DR_API_BIN_ONLY=1'] + demangle_c_args + library_cflags,
   dependencies: [
     r_util_static_dep,
     r_cons_static_dep,

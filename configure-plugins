@@ -171,7 +171,11 @@ generate_configmk () {
         fi
       done
     fi
-    printf " p/${plg}.mk"
+    if [ "$lib" = "bin_demangle" ]; then
+      printf " p/${plg}_demangle.mk"
+    else
+      printf " p/${plg}.mk"
+    fi
   done
 
   echo
@@ -184,7 +188,11 @@ generate_configmk () {
       splugins="${splugins} __${uclib}"
       printf "SHARED_${uclib}_TARGETS="
     fi
-    printf " p/io_${plg}.${EXT}"
+    if [ "$lib" = "bin_demangle" ]; then
+      printf " p/bin_demangle_${plg}.${EXT}"
+    else
+      printf " p/io_${plg}.${EXT}"
+    fi
   done
   echo
 }

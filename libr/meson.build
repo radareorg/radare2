@@ -11,6 +11,7 @@ asm_plugins = [ 'null', 'att2intel' ]
 anal_plugins = [ 'null', 'autoname', 'a2f', 'tcc', 'blaze', 'tp', 'sbpf', 'path', 'drcov', 'callargs' ]
 arch_plugins = [ 'null' ]
 bin_plugins = [ 'null' ]
+bin_demangle_plugins = get_option('demanglers')
 bin_ldr_plugins = [ 'ldr_linux' ]
 bin_xtr_plugins = []
 io_plugins = [ 'malloc', 'cyclic', 'xattr', 'fd', 'tap', 'default', 'null', 'rbuf', 'r2pipe' ]

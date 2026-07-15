@@ -30,6 +30,20 @@ CB(egg, egg)
 CB(fs, fs)
 CB(arch, anal->arch);
 
+static bool __lib_bin_demangle_cb(RLibPlugin *pl, void *user, void *data) {
+	RCore *core = user;
+	RPluginMeta *meta = data;
+	pl->free = NULL;
+	pl->name = strdup (meta->name);
+	return r_bin_demangle_plugin_add (core->bin, data);
+}
+
+static bool __lib_bin_demangle_dt(RLibPlugin *pl, void *user, void *data) {
+	RCore *core = user;
+	free (pl->name);
+	return r_bin_demangle_plugin_remove (core->bin, data);
+}
+
 static void core_load_internal_plugins(void *user) {
 	RCore *core = (RCore *)user;
 	r_libstore_load (core->libstore);
@@ -92,6 +106,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (ASM, "assembly plugins", asm);
 	// DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);
+	DF (BIN_DEMANGLE, "bin demangler plugins", bin_demangle);
 	DF (EGG, "egg plugins", egg);
 	DF (FS, "fs plugins", fs);
 	DF (ARCH, "arch plugins", arch);
