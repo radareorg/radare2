@@ -1,0 +1,17 @@
+NAME=GNOME GLib GResource bundle
+FILE=bins/elf/gnome-extensions
+CMDS=iUq
+EXPECT=<<EOF
+0x0000a340 18632 gresource-bundle .gresource.gnome_extensions_tool
+0x0000b660 2984 gresource /org/gnome/extensions-tool/templates/00-plain.desktop
+0x0000c7d8 4023 gresource /org/gnome/extensions-tool/templates/indicator.desktop
+0x0000e478 1892 gresource /org/gnome/extensions-tool/templates/indicator/extension.js
+0x0000a570 45 gresource /org/gnome/extensions-tool/templates/indicator/stylesheet.css
+0x0000d7e8 906 gresource /org/gnome/extensions-tool/templates/plain/extension.js
+0x0000dbe0 45 gresource /org/gnome/extensions-tool/templates/plain/stylesheet.css
+0x0000c220 1385 gresource /org/gnome/extensions-tool/templates/prefs.js
+0x0000a5e0 4188 gresource /org/gnome/extensions-tool/templates/quick-settings.desktop
+0x0000dc30 2090 gresource /org/gnome/extensions-tool/templates/quick-settings/extension.js
+0x0000db90 45 gresource /org/gnome/extensions-tool/templates/quick-settings/stylesheet.css
+EOF
+RUN

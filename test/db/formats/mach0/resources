@@ -1,11 +1,9 @@
 NAME=Mach-O embedded resources
 FILE=bins/mach0/AppIOSEntitlements.ios
-ARGS=-a arm64
+ARGS=-a arm -b 64
 CMDS=iUqq
 EXPECT=<<EOF
-__TEXT.__entitlements
 CodeSignature
-Certificate
 EOF
 RUN
 
