@@ -111,6 +111,10 @@ static ut32 dotnet_stream_offset(PSTREAM_HEADER stream) {
 	return r_read_le32 ((const ut8 *)&stream->Offset);
 }
 
+static ut32 dotnet_stream_size(PSTREAM_HEADER stream) {
+	return r_read_le32 ((const ut8 *)&stream->Size);
+}
+
 static const ut8 *dotnet_stream_data(PE *pe, ut64 metadata_root, PSTREAM_HEADER stream) {
 	if (!pe || !stream || metadata_root >= pe->data_size) {
 		return NULL;
@@ -365,7 +369,7 @@ static bool dotnet_tilde_table_size(R_IN const ROWS *rows, R_IN const INDEX_SIZE
 		table_size64 = (ut64)(4) * num_rows;
 		break;
 	case BIT_ASSEMBLY:
-		table_size64 = (ut64)(2 + 2 + 2 + 2 + 4 + index_sizes->blob + (index_sizes->string * 2)) * num_rows;
+		table_size64 = (ut64)(4 + 2 + 2 + 2 + 2 + 4 + index_sizes->blob + (index_sizes->string * 2)) * num_rows;
 		break;
 	case BIT_ASSEMBLYPROCESSOR:
 		table_size64 = (ut64)(4) * num_rows;
@@ -390,7 +394,7 @@ static bool dotnet_tilde_table_size(R_IN const ROWS *rows, R_IN const INDEX_SIZE
 		table_size64 = (ut64)(4 + 4 + (index_sizes->string * 2) + (row_count > (0xFFFF >> 0x02)? 4: 2)) * num_rows;
 		break;
 	case BIT_MANIFESTRESOURCE:
-		row_count = max_rows (2, rows->file, rows->assemblyref);
+		row_count = max_rows (3, rows->file, rows->assemblyref, rows->exportedtype);
 		table_size64 = (ut64)(4 + 4 + index_sizes->string + (row_count > (0xFFFF >> 0x02)? 4: 2)) * num_rows;
 		break;
 	case BIT_NESTEDCLASS:
@@ -445,15 +449,21 @@ static const ut8 *dotnet_tilde_table_offset(PE *pe, PTILDE_HEADER tilde_header, 
 		}
 
 		num_rows = dotnet_row_count_at (row_offset, matched_bits);
+		if (bit_check == target_bit) {
+			ut32 row_size;
+			if (table_offset > pe->data_size ||
+				!dotnet_tilde_table_size (rows, index_sizes, bit_check, 1, &row_size)) {
+				return NULL;
+			}
+			*target_rows = R_MIN (num_rows, dotnet_max_rows_at (pe,
+				pe->data + table_offset, row_size));
+			return pe->data + table_offset;
+		}
 		if (!dotnet_tilde_table_size (rows, index_sizes, bit_check, num_rows, &table_size)) {
 			return NULL;
 		}
 		if (table_offset > pe->data_size || table_size > pe->data_size - table_offset) {
 			return NULL;
-		}
-		if (bit_check == target_bit) {
-			*target_rows = num_rows;
-			return pe->data + table_offset;
 		}
 
 		table_offset += table_size;
@@ -493,15 +503,15 @@ static STREAMS dotnet_parse_stream_headers(PE *pe, ut64 offset, ut64 metadata_ro
 		r_str_ncpy (stream_name, start, R_MIN (name_len + 1, DOTNET_STREAM_NAME_SIZE + 1));
 
 		// Store necessary bits to parse these later
-		if (r_str_startswith (stream_name, "#GUID")) {
+		if (!strcmp (stream_name, "#GUID")) {
 			headers.guid = stream_header;
-		} else if (r_str_startswith (stream_name, "#~") && !headers.tilde) {
+		} else if ((!strcmp (stream_name, "#~") || !strcmp (stream_name, "#-")) && !headers.tilde) {
 			headers.tilde = stream_header;
-		} else if (r_str_startswith (stream_name, "#Strings") && !headers.string) {
+		} else if (!strcmp (stream_name, "#Strings") && !headers.string) {
 			headers.string = stream_header;
-		} else if (r_str_startswith (stream_name, "#Blob")) {
+		} else if (!strcmp (stream_name, "#Blob")) {
 			headers.blob = stream_header;
-		} else if (r_str_startswith (stream_name, "#US") && !headers.us) {
+		} else if (!strcmp (stream_name, "#US") && !headers.us) {
 			headers.us = stream_header;
 		}
 
@@ -1385,7 +1395,7 @@ static void dotnet_parse_tilde_methoddef(
 				table_size = (4) * num_rows;
 				break;
 			case BIT_ASSEMBLY:
-				table_size = (2 + 2 + 2 + 2 + 4 + index_sizes.blob + (index_sizes.string * 2)) * num_rows;
+				table_size = (4 + 2 + 2 + 2 + 2 + 4 + index_sizes.blob + (index_sizes.string * 2)) * num_rows;
 				break;
 			case BIT_ASSEMBLYPROCESSOR:
 				table_size = (4) * num_rows;
@@ -1410,7 +1420,7 @@ static void dotnet_parse_tilde_methoddef(
 				table_size = (4 + 4 + (index_sizes.string * 2) + (row_count > (0xFFFF >> 0x02)? 4: 2)) * num_rows;
 				break;
 			case BIT_MANIFESTRESOURCE:
-				row_count = max_rows (2, rows.file, rows.assemblyref);
+				row_count = max_rows (3, rows.file, rows.assemblyref, rows.exportedtype);
 				table_size = (4 + 4 + index_sizes.string + (row_count > (0xFFFF >> 0x02)? 4: 2)) * num_rows;
 				break;
 			case BIT_NESTEDCLASS:
@@ -1833,6 +1843,128 @@ RList *dotnet_parse(const ut8 *buf, int size, ut64 baddr) {
 	}
 	PE pe = { buf, (ut32)size, NULL };
 	return dotnet_parse_com (&pe, baddr);
+}
+
+static void dotnet_manifest_resource_free(void *ptr) {
+	DotNetManifestResource *resource = ptr;
+	free (resource->name);
+	free (resource);
+}
+
+static const ut8 *dotnet_bounded_stream_data(PE *pe, PSTREAM_HEADER stream, R_OUT ut32 *size) {
+	if (!pe || !stream || !size) {
+		return NULL;
+	}
+	ut32 offset = dotnet_stream_offset (stream);
+	ut32 stream_size = dotnet_stream_size (stream);
+	if (offset > pe->data_size || stream_size > pe->data_size - offset) {
+		return NULL;
+	}
+	*size = stream_size;
+	return pe->data + offset;
+}
+
+static char *dotnet_manifest_resource_name(const ut8 *strings, ut32 strings_size, ut32 index) {
+	if (!strings || !index || index >= strings_size) {
+		return NULL;
+	}
+	const char *name = (const char *)strings + index;
+	size_t remaining = strings_size - index;
+	return memchr (name, 0, remaining)? strdup (name): NULL;
+}
+
+RList *dotnet_parse_manifest_resources(RBuffer *buf, ut64 metadata_paddr, ut64 metadata_size) {
+	if (!buf || metadata_size < sizeof (NET_METADATA) || metadata_size > SIZE_MAX) {
+		return NULL;
+	}
+	ut64 file_size = r_buf_size (buf);
+	if (metadata_paddr > file_size || metadata_size > file_size - metadata_paddr) {
+		return NULL;
+	}
+	ut8 *data = malloc ((size_t)metadata_size);
+	if (!data) {
+		return NULL;
+	}
+	RList *resources = r_list_newf (dotnet_manifest_resource_free);
+	if (!resources) {
+		free (data);
+		return NULL;
+	}
+	if ((ut64)r_buf_read_at (buf, metadata_paddr, data, metadata_size) != metadata_size) {
+		goto done;
+	}
+	PE metadata_pe = { data, (size_t)metadata_size, NULL };
+	PE *pe = &metadata_pe;
+	PNET_METADATA metadata = (PNET_METADATA)data;
+	if (!dotnet_metadata_magic_at (data)) {
+		goto done;
+	}
+	ut32 version_size = dotnet_metadata_length (metadata);
+	if ((version_size & 3) || version_size > metadata_size - sizeof (NET_METADATA) ||
+		metadata_size - sizeof (NET_METADATA) - version_size < 4) {
+		goto done;
+	}
+	ut64 stream_offset = sizeof (NET_METADATA) + version_size;
+	ut16 num_streams = r_read_le16 (data + stream_offset + 2);
+	stream_offset += 4;
+	STREAMS streams = dotnet_parse_stream_headers (pe, stream_offset, 0, num_streams);
+	if (!streams.tilde || !streams.string) {
+		goto done;
+	}
+	ut32 tables_size;
+	const ut8 *tables_data = dotnet_bounded_stream_data (pe, streams.tilde, &tables_size);
+	ut32 strings_size;
+	const ut8 *strings_data = dotnet_bounded_stream_data (pe, streams.string, &strings_size);
+	if (!tables_data || !strings_data || tables_size < sizeof (TILDE_HEADER)) {
+		goto done;
+	}
+	PE tables_pe = { tables_data, tables_size, NULL };
+	PTILDE_HEADER tilde_header = (PTILDE_HEADER)tables_data;
+	ROWS rows;
+	INDEX_SIZES index_sizes;
+	if (!dotnet_parse_tilde_rows (&tables_pe, tilde_header, &rows, &index_sizes)) {
+		goto done;
+	}
+	ut32 num_rows;
+	const ut8 *row = dotnet_tilde_table_offset (&tables_pe, tilde_header, &rows,
+		&index_sizes, BIT_MANIFESTRESOURCE, &num_rows);
+	if (!row) {
+		goto done;
+	}
+	ut32 implementation_rows = max_rows (3, rows.file, rows.assemblyref, rows.exportedtype);
+	ut8 implementation_size = implementation_rows > (0xFFFF >> 2)? 4: 2;
+	ut32 row_size = 8 + index_sizes.string + implementation_size;
+	ut32 i;
+	for (i = 0; i < num_rows; i++, row += row_size) {
+		ut32 flags = r_read_le32 (row + 4);
+		ut32 visibility = flags & 7;
+		if (visibility != 1 && visibility != 2) {
+			continue;
+		}
+		ut32 name_index = index_sizes.string == 4
+			? r_read_le32 (row + 8): r_read_le16 (row + 8);
+		const ut8 *implementation_ptr = row + 8 + index_sizes.string;
+		ut32 implementation = implementation_size == 4
+			? r_read_le32 (implementation_ptr): r_read_le16 (implementation_ptr);
+		char *name = dotnet_manifest_resource_name (strings_data, strings_size, name_index);
+		if (!name) {
+			continue;
+		}
+		DotNetManifestResource *resource = R_NEW0 (DotNetManifestResource);
+		resource->name = name;
+		resource->offset = r_read_le32 (row);
+		resource->flags = flags;
+		resource->implementation = implementation;
+		if (!r_list_append (resources, resource)) {
+			dotnet_manifest_resource_free (resource);
+			r_list_free (resources);
+			resources = NULL;
+			break;
+		}
+	}
+done:
+	free (data);
+	return resources;
 }
 
 RList *dotnet_parse_libs(const ut8 *buf, int size) {

@@ -3361,6 +3361,98 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 	}
 }
 
+static bool bin_pe_load_managed_resources(RBinPEObj *pe, RVecRBinResource *resources, ut32 *index) {
+	if (!pe->clr_hdr || !pe->clr_hdr->MetaDataDirectoryAddress ||
+		!pe->clr_hdr->MetaDataDirectorySize || !pe->clr_hdr->ResourcesDirectoryAddress ||
+		!pe->clr_hdr->ResourcesDirectorySize) {
+		return true;
+	}
+	PE_DWord metadata_paddr = PE_(va2pa) (pe, pe->clr_hdr->MetaDataDirectoryAddress);
+	ut64 file_size = r_buf_size (pe->b);
+	if (pe->clr_hdr->MetaDataDirectorySize < sizeof (NET_METADATA) ||
+		metadata_paddr > file_size || pe->clr_hdr->MetaDataDirectorySize > file_size - metadata_paddr) {
+		return true;
+	}
+	RList *managed = dotnet_parse_manifest_resources (pe->b, metadata_paddr,
+		pe->clr_hdr->MetaDataDirectorySize);
+	if (!managed) {
+		return false;
+	}
+	RListIter *iter;
+	DotNetManifestResource *entry;
+	r_list_foreach (managed, iter, entry) {
+		R_LOG_DEBUG ("Managed resource %s offset 0x%x flags 0x%x implementation 0x%x",
+			entry->name, entry->offset, entry->flags, entry->implementation);
+		if (entry->implementation) {
+			continue;
+		}
+		ut64 directory_size = pe->clr_hdr->ResourcesDirectorySize;
+		if (entry->offset > directory_size || directory_size - entry->offset < 4) {
+			R_LOG_DEBUG ("Invalid managed resource offset 0x%x", entry->offset);
+			continue;
+		}
+		ut64 prefix_rva = (ut64)pe->clr_hdr->ResourcesDirectoryAddress + entry->offset;
+		if (prefix_rva > PE_DWORD_MAX) {
+			continue;
+		}
+		ut64 prefix_paddr = PE_(va2pa) (pe, (PE_DWord)prefix_rva);
+		if (prefix_paddr > file_size || file_size - prefix_paddr < 4) {
+			continue;
+		}
+		ut8 size_buf[4];
+		if (r_buf_read_at (pe->b, prefix_paddr, size_buf, sizeof (size_buf)) != sizeof (size_buf)) {
+			continue;
+		}
+		ut32 payload_size = r_read_le32 (size_buf);
+		if (payload_size > directory_size - entry->offset - 4) {
+			R_LOG_DEBUG ("Managed resource payload exceeds the CLR resource directory");
+			continue;
+		}
+		ut64 payload_rva = prefix_rva + 4;
+		if (payload_rva > PE_DWORD_MAX) {
+			continue;
+		}
+		ut64 payload_paddr = PE_(va2pa) (pe, (PE_DWord)payload_rva);
+		if (payload_paddr > file_size || payload_size > file_size - payload_paddr) {
+			continue;
+		}
+		if (payload_size) {
+			ut64 last_rva = payload_rva + payload_size - 1;
+			ut64 last_paddr = payload_paddr + payload_size - 1;
+			if (last_rva > PE_DWORD_MAX ||
+				PE_(va2pa) (pe, (PE_DWord)last_rva) != last_paddr) {
+				continue;
+			}
+		}
+		char *name = strdup (entry->name);
+		char *type = strdup ("MANIFESTRESOURCE");
+		if (!name || !type) {
+			free (name);
+			free (type);
+			r_list_free (managed);
+			return false;
+		}
+		RBinResource *resource = RVecRBinResource_emplace_back (resources);
+		if (!resource) {
+			free (name);
+			free (type);
+			r_list_free (managed);
+			return false;
+		}
+		resource->name = name;
+		resource->type = type;
+		resource->vaddr = bin_pe_rva_to_va (pe, (PE_DWord)payload_rva);
+		resource->paddr = payload_paddr;
+		resource->size = payload_size;
+		resource->id = UT64_MAX;
+		resource->index = (*index)++;
+		resource->type_id = UT32_MAX;
+		resource->named = true;
+	}
+	r_list_free (managed);
+	return true;
+}
+
 R_API bool PE_(r_bin_pe_load_resources)(RBinPEObj *pe, RVecRBinResource *resources) {
 	R_RETURN_VAL_IF_FAIL (pe && resources, false);
 	RListIter *iter;
@@ -3392,7 +3484,7 @@ R_API bool PE_(r_bin_pe_load_resources)(RBinPEObj *pe, RVecRBinResource *resourc
 		resource->codepage = rs->data->CodePage;
 		resource->named = rs->named;
 	}
-	return true;
+	return bin_pe_load_managed_resources (pe, resources, &index);
 }
 
 R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {

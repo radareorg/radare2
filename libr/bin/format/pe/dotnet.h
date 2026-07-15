@@ -3,6 +3,7 @@
 
 #include <r_types.h>
 #include <r_list.h>
+#include <r_util/r_buf.h>
 
 #pragma pack(push, 1)
 
@@ -407,6 +408,13 @@ typedef struct {
 	char *asm_name;
 } DotNetVersionInfo;
 
+typedef struct {
+	char *name;
+	ut32 offset;
+	ut32 flags;
+	ut32 implementation;
+} DotNetManifestResource;
+
 #pragma pack(pop)
 
 #ifdef __cplusplus
@@ -417,6 +425,7 @@ RList* dotnet_parse(const ut8 *buf, int size, ut64 baddr);
 RList* dotnet_parse_libs(const ut8 *buf, int size);
 RList* dotnet_parse_imports(const ut8 *buf, int size);
 DotNetVersionInfo* dotnet_parse_version_info(const ut8 *buf, int size);
+RList *dotnet_parse_manifest_resources(RBuffer *buf, ut64 metadata_paddr, ut64 metadata_size);
 
 #ifdef __cplusplus
 }
