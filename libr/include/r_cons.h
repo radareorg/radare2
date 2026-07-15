@@ -415,7 +415,7 @@ typedef struct r_cons_canvas_t {
 
 typedef struct r_cons_editor_t RConsEditor;
 
-typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
+typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str, R_OUT bool * R_NULLABLE canceled);
 typedef int (*RConsClickCallback)(void *core, int x, int y);
 typedef void (*RConsBreakCallback)(void *core);
 typedef void *(*RConsSleepBeginCallback)(void *core);

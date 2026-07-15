@@ -92,7 +92,7 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, bool *
 	R_RETURN_VAL_IF_FAIL (cons && cons->line, NULL);
 	// bool visual = false; // TODO: should be an argument
 	if (cons->cb_editor) {
-		return cons->cb_editor (cons->line->user, file, str);
+		return cons->cb_editor (cons->line->user, file, str, canceled);
 	}
 	RConsEditor editor = { 0 };
 	RConsEditor *old_editor = cons->editor;

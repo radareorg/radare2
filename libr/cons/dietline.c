@@ -1904,7 +1904,7 @@ repeat:
 				D.gcomp = 0;
 			} else if (prev == 24) { // ^X = 0x18
 				line->state.buffer.data[line->state.buffer.length] = 0; // probably unnecessary
-				tmp_ed_cmd = line->cons->cb_editor (line->user, NULL, line->state.buffer.data);
+				tmp_ed_cmd = line->cons->cb_editor (line->user, NULL, line->state.buffer.data, NULL);
 				if (tmp_ed_cmd) {
 					/* copied from yank (case 25) */
 					size_t len = r_str_nlen (tmp_ed_cmd, R_LINE_BUFSIZE);

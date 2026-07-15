@@ -2762,8 +2762,8 @@ R_API void __cons_cb_fkey(RCore *core, int fkey) {
 	}
 }
 
-static char *r_core_editor_cb(void *core, const char *file, const char *str) {
-	return r_core_editor (core, file, str, NULL);
+static char *r_core_editor_cb(void *core, const char *file, const char *str, bool *canceled) {
+	return r_core_editor (core, file, str, canceled);
 }
 
 R_API void r_core_bind_cons(RCore *core) {
