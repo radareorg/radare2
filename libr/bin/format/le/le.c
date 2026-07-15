@@ -258,7 +258,7 @@ R_IPI bool r_bin_le_load_resources(RBinLEObj *bin, RVecRBinResource *resources) 
 	for (i = 0; i < h->rsrccnt; i++) {
 		LE_resource_entry entry = {0};
 		ut64 offset = table_offset + (ut64)i * sizeof (entry);
-		ut64 paddr;
+		ut64 paddr = 0;
 		if (!read_resource_entry (bin, offset, &entry) || !resource_paddr (bin, &entry, &paddr)) {
 			return false;
 		}
@@ -270,6 +270,7 @@ R_IPI bool r_bin_le_load_resources(RBinLEObj *bin, RVecRBinResource *resources) 
 		resource->name = r_str_newf ("%u", entry.name_id);
 		resource->type = type? strdup (type): NULL;
 		if (!resource->name || (type && !resource->type)) {
+			RVecRBinResource_pop_back (resources);
 			return false;
 		}
 		resource->vaddr = get_object_base (bin, entry.object - 1) + entry.offset;

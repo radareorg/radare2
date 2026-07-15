@@ -174,8 +174,7 @@ static void pal_refresh(RCons *cons, bool rain) {
 		R_FREE (*color);
 		*color = r_cons_rgb_str_mode (cons, NULL, 0, rcolor);
 		if (db && is_valid_color (*rcolor)) {
-			r_strf_var (rgbstr, 16, "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
-			sdb_set (db, rgbstr, "1", 0);
+			sdb_setf (db, "1", 0, "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
 		}
 	}
 	if (rain && db) {

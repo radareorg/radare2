@@ -1270,9 +1270,7 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 		}
 		//eprintf ("0x%x  %s\n", s, klass->name);
 		const char *klass_name = r_bin_name_tostring2 (klass->name, 'o');
-		char *k = r_str_newf ("objc_class_%s.offset", klass_name);
-		sdb_num_set (bin->kv, k, s, 0);
-		free (k);
+		sdb_num_setf (bin->kv, s, 0, "objc_class_%s.offset", klass_name);
 	}
 	if (!klass->name && !want_unnamed) {
 		return;

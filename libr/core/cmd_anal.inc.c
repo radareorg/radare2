@@ -1422,12 +1422,8 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	}
 	//	sdb_num_set (core->anal->sdb_types, args, (int)arg_count, 0);
 	if (arg_count > 0) {
-		char *k = r_str_newf ("func.%s.args", fcn->name);
-		char *v = r_str_newf ("%d", (int)arg_count);
-		sdb_set (core->anal->sdb_types, k, v, 0);
-		// sdb_num_set (core->anal->sdb_types, k, (ut64)arg_count, 0);
-		free (k);
-		free (v);
+		r_strf_buffer (16);
+		sdb_setf (core->anal->sdb_types, r_strf ("%d", (int)arg_count), 0, "func.%s.args", fcn->name);
 	}
 	r_anal_function_vars_cache_fini (&cache);
 }
@@ -4295,6 +4291,7 @@ static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
 	}
 	// rename args
 	char *k = r_str_newf ("func.%s.args", oname);
+	char *v;
 	const char *argstr = sdb_const_get (DB, k, 0);
 	if (R_STR_ISEMPTY (argstr)) {
 		free (k);
@@ -4303,12 +4300,9 @@ static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
 	int i, args = r_num_get (NULL, argstr);
 	sdb_unset (DB, k, 0);
 	free (k);
-	k = r_str_newf ("func.%s.args", nname);
-	char *v = r_str_newf ("%d", (int)args);
-	sdb_set (DB, k, v, 0);
-	free (v);
+	r_strf_buffer (16);
+	sdb_setf (DB, r_strf ("%d", (int)args), 0, "func.%s.args", nname);
 	// rename arg#
-	free (k);
 	for (i = 0; i < args; i++) {
 		k = r_str_newf ("func.%s.arg.%d", oname, i);
 		v = r_str_newf ("func.%s.arg.%d", nname, i);
@@ -12934,8 +12928,8 @@ static bool cmd_ageh(RCore *core, const char *input) {
 	ut64 a = r_num_math (core->num, arg);
 	ut64 b = r_num_math (core->num, sp);
 
-	r_strf_var (k, 64, "agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
-	sdb_set (core->sdb, k, add? "true": "", 0);
+	sdb_setf (core->sdb, add? "true": "", 0,
+		"agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
 	free (arg);
 	return true;
 }

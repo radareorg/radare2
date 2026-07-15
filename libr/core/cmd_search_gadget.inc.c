@@ -1031,16 +1031,11 @@ static void gadget_store_classes(Sdb *db, const RCoreGadgetEsilInfo *info, const
 		if (!(info->classes & gadget_class_names[i].bit)) {
 			continue;
 		}
-		char *gkey = r_str_newf ("%s_%s", gadget_class_names[i].name, key);
-		if (!gkey) {
-			return;
-		}
 		char *value = gadget_sdb_value (info, size, gadget_class_names[i].name);
 		if (value) {
-			sdb_set (db, gkey, value, 0);
+			sdb_setf (db, value, 0, "%s_%s", gadget_class_names[i].name, key);
 			free (value);
 		}
-		free (gkey);
 	}
 }
 

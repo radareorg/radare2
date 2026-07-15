@@ -2932,18 +2932,10 @@ static void agraph_set_layout(RAGraph *g) {
 		if (a->is_dummy) {
 			continue;
 		}
-		char *k = r_str_newf ("agraph.nodes.%s.x", a->title);
-		sdb_num_set (g->db, k, rebase (g, a->x), 0);
-		free (k);
-		k = r_str_newf ("agraph.nodes.%s.y", a->title);
-		sdb_num_set (g->db, k, rebase (g, a->y), 0);
-		free (k);
-		k = r_str_newf ("agraph.nodes.%s.w", a->title);
-		sdb_num_set (g->db, k, a->w, 0);
-		free (k);
-		k = r_str_newf ("agraph.nodes.%s.h", a->title);
-		sdb_num_set (g->db, k, a->h, 0);
-		free (k);
+		sdb_num_setf (g->db, rebase (g, a->x), 0, "agraph.nodes.%s.x", a->title);
+		sdb_num_setf (g->db, rebase (g, a->y), 0, "agraph.nodes.%s.y", a->title);
+		sdb_num_setf (g->db, a->w, 0, "agraph.nodes.%s.w", a->title);
+		sdb_num_setf (g->db, a->h, 0, "agraph.nodes.%s.h", a->title);
 	}
 }
 
@@ -4015,10 +4007,8 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 		s = r_str_newf ("base64:%s", estr);
 		free (estr);
 		free (b);
-		char *k = r_str_newf ("agraph.nodes.%s.body", res->title);
-		sdb_set (g->db, k, s, 0);
+		sdb_setf (g->db, s, 0, "agraph.nodes.%s.body", res->title);
 		free (s);
-		free (k);
 	}
 	return res;
 }
@@ -4036,13 +4026,13 @@ R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {
 	}
 	ht_pp_delete (g->nodes, res->title);
 	sdb_array_remove (g->db, "agraph.nodes", res->title, 0);
-	sdb_set (g->db, r_strf ("agraph.nodes.%s", res->title), NULL, 0);
-	sdb_set (g->db, r_strf ("agraph.nodes.%s.body", res->title), 0, 0);
-	sdb_set (g->db, r_strf ("agraph.nodes.%s.x", res->title), NULL, 0);
-	sdb_set (g->db, r_strf ("agraph.nodes.%s.y", res->title), NULL, 0);
-	sdb_set (g->db, r_strf ("agraph.nodes.%s.w", res->title), NULL, 0);
-	sdb_set (g->db, r_strf ("agraph.nodes.%s.h", res->title), NULL, 0);
-	sdb_set (g->db, r_strf ("agraph.nodes.%s.neighbours", res->title), NULL, 0);
+	sdb_setf (g->db, NULL, 0, "agraph.nodes.%s", res->title);
+	sdb_setf (g->db, NULL, 0, "agraph.nodes.%s.body", res->title);
+	sdb_setf (g->db, NULL, 0, "agraph.nodes.%s.x", res->title);
+	sdb_setf (g->db, NULL, 0, "agraph.nodes.%s.y", res->title);
+	sdb_setf (g->db, NULL, 0, "agraph.nodes.%s.w", res->title);
+	sdb_setf (g->db, NULL, 0, "agraph.nodes.%s.h", res->title);
+	sdb_setf (g->db, NULL, 0, "agraph.nodes.%s.neighbours", res->title);
 
 	const RVecGraphNodePtr *innodes = r_graph_innodes (g->graph, res->gnode);
 	RGraphNode **vit;
@@ -4131,8 +4121,8 @@ R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b, bool highli
 	if (highlight) {
 		ut64 aa = r_num_get (NULL, a->title);
 		ut64 bb = r_num_get (NULL, b->title);
-		r_strf_var (k, 64, "agraph.edge.0x%" PFMT64x "_0x%" PFMT64x ".highlight", aa, bb);
-		sdb_set (g->db, k, "true", 0);
+		sdb_setf (g->db, "true", 0,
+			"agraph.edge.0x%" PFMT64x "_0x%" PFMT64x ".highlight", aa, bb);
 	}
 	if (agraph_node_is_indexed (g, a) && agraph_node_is_indexed (g, b)) {
 		char *k = r_str_newf ("agraph.nodes.%s.neighbours", a->title);
@@ -5303,9 +5293,8 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 				RIOUndos *undo = r_io_sundo (core->io, core->addr);
 				if (undo) {
 					r_io_sundo_redo (core->io);
-					char *c = r_str_newf ("agraph.edge.0x%" PFMT64x "_0x%" PFMT64x ".highlight", undo->off, core->addr);
-					sdb_set (g->db, c, "true", 0);
-					free (c);
+					sdb_setf (g->db, "true", 0,
+						"agraph.edge.0x%" PFMT64x "_0x%" PFMT64x ".highlight", undo->off, core->addr);
 				}
 			}
 			break;

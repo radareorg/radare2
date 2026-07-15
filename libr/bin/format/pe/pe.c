@@ -1811,11 +1811,9 @@ static int bin_pe_init_resource(RBinPEObj *pe) {
 }
 
 static void bin_pe_store_tls_callbacks(RBinPEObj *pe, PE_DWord callbacks) {
-	r_strf_buffer (64);
 	PE_DWord paddr, haddr;
 	int count = 0;
 	PE_DWord addressOfTLSCallback = 1;
-	char *key;
 
 	while (addressOfTLSCallback != 0) {
 		addressOfTLSCallback = R_BUF_READ_PE_DWORD_AT (pe->b, callbacks);
@@ -1831,14 +1829,11 @@ static void bin_pe_store_tls_callbacks(RBinPEObj *pe, PE_DWord callbacks) {
 				break;
 			}
 		}
-		key = r_strf ("pe.tls_callback%d_vaddr", count);
-		sdb_num_set (pe->kv, key, addressOfTLSCallback, 0);
-		key = r_strf ("pe.tls_callback%d_paddr", count);
+		sdb_num_setf (pe->kv, addressOfTLSCallback, 0, "pe.tls_callback%d_vaddr", count);
 		paddr = PE_(va2pa) (pe, bin_pe_va_to_rva (pe, (PE_DWord)addressOfTLSCallback));
-		sdb_num_set (pe->kv, key, paddr, 0);
-		key = r_strf ("pe.tls_callback%d_haddr", count);
+		sdb_num_setf (pe->kv, paddr, 0, "pe.tls_callback%d_paddr", count);
 		haddr = callbacks;
-		sdb_num_set (pe->kv, key, haddr, 0);
+		sdb_num_setf (pe->kv, haddr, 0, "pe.tls_callback%d_haddr", count);
 		count++;
 		callbacks += sizeof (addressOfTLSCallback);
 	}
@@ -2552,14 +2547,12 @@ out_error:
 
 static Sdb *Pe_r_bin_store_var(Var *var) {
 	unsigned int i = 0;
-	char key[20];
 	Sdb *sdb = NULL;
 	if (var) {
 		sdb = sdb_new0 ();
 		if (sdb) {
 			for (; i < var->numOfValues; i++) {
-				snprintf (key, 20, "%d", i);
-				sdb_num_set (sdb, key, var->Value[i], 0);
+				sdb_num_setf (sdb, var->Value[i], 0, "%d", i);
 			}
 		}
 	}

@@ -75,9 +75,8 @@ static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 		if (from > block_start) {
 			// from inside
 			// RESIZE this
-			r_strf_var (bbst, 64, "bb.%"PFMT64x, block_start);
 			r_strf_var (bben, 64, "bb.%"PFMT64x".to", block_start);
-			sdb_num_set (db, bbst, from, 0);
+			sdb_num_setf (db, from, 0, "bb.%"PFMT64x, block_start);
 			sdb_num_set (db, bben, from, 0);
 			sdb_array_set_num (db, bben, 0, from, 0);
 			sdb_array_set_num (db, bben, 1, UT64_MAX, 0);

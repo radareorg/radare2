@@ -88,10 +88,8 @@ R_API void r_anal_pin(RAnal *a, ut64 addr, const char *name) {
 	const char *eq = strchr (name, '=');
 	if (eq) {
 		char *n = r_str_ndup (name, (int)(size_t)(eq -name));
-		char *key = r_str_newf ("cmd.%s", n);
+		sdb_setf (DB, eq + 1, 0, "cmd.%s", n);
 		free (n);
-		sdb_set (DB, key, eq + 1, 0);
-		free (key);
 	} else {
 		const char *key = sdb_itoa (addr, 16, buf, sizeof (buf));
 		sdb_set (DB, key, name, 0);

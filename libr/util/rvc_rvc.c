@@ -748,12 +748,9 @@ static bool branch_rvc(Rvc *rvc, const char *bname) {
 		return false;
 	}
 	commits = sdb_const_get (rvc->db, current_branch, 0);
-	char *nbn = r_str_newf (BPREFIX "%s", bname);
-	if (!nbn) {
+	if (!sdb_setf (rvc->db, commits, 0, BPREFIX "%s", bname)) {
 		return false;
 	}
-	sdb_set (rvc->db, nbn, commits, 0);
-	free (nbn);
 	return save_rvc (rvc);
 }
 

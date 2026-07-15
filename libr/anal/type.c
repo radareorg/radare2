@@ -600,11 +600,9 @@ static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 	R_VEC_FOREACH (&type->enum_data.cases, cas) {
 		// enum.name.arg1=type,offset,???
 		char *case_sname = r_str_sanitize_sdb_key (cas->name);
-		r_strf_var (param_key, KSZ, "enum.%s.%s", sname, case_sname);
 		r_strf_var (param_val, KSZ, "0x%" PFMT32x, cas->val);
-		r_strf_var (param_key2, KSZ, "enum.%s.0x%" PFMT32x, sname, cas->val);
-		sdb_set (anal->sdb_types, param_key, param_val, 0);
-		sdb_set (anal->sdb_types, param_key2, case_sname, 0);
+		sdb_setf (anal->sdb_types, param_val, 0, "enum.%s.%s", sname, case_sname);
+		sdb_setf (anal->sdb_types, case_sname, 0, "enum.%s.0x%" PFMT32x, sname, cas->val);
 		free (case_sname);
 		r_strbuf_appendf (arglist, (i++ == 0) ? "%s" : ",%s", cas->name);
 	}
@@ -635,12 +633,11 @@ static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
 	char *ns = r_str_newf ("%" PFMT64u, (ut64)type->size);
 	sdb_set_owned (anal->sdb_types, r_strf ("type.%s.size", sname), ns, 0);
 #endif
-	sdb_set (anal->sdb_types, r_strf ("type.%s", sname), type->type, 0);
+	sdb_setf (anal->sdb_types, type->type, 0, "type.%s", sname);
 	free (sname);
 }
 
 static void save_typedef(const RAnal *anal, const RAnalBaseType *type) {
-	r_strf_buffer (KSZ);
 	R_RETURN_IF_FAIL (anal && type && type->name && type->kind == R_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	/*
 		C:
@@ -652,7 +649,7 @@ static void save_typedef(const RAnal *anal, const RAnalBaseType *type) {
 	*/
 	char *sname = r_str_sanitize_sdb_key (type->name);
 	sdb_set (anal->sdb_types, sname, "typedef", 0);
-	sdb_set (anal->sdb_types, r_strf ("typedef.%s", sname), type->type, 0);
+	sdb_setf (anal->sdb_types, type->type, 0, "typedef.%s", sname);
 #if 0
 	sdb_set (anal->sdb_types, r_strf ("type.%s", sname), "typedef", 0);
 #endif
