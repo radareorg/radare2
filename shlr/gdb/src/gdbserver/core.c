@@ -383,19 +383,14 @@ static int _server_handle_g(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 }
 
 static int _server_handle_m(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	ut64 addr;
 	int length;
-	char *cmd, *buf;
 	if (send_ack (g) < 0) {
 		return -1;
 	}
 	g->data[g->data_len] = 0;
-	sscanf (g->data, "m%"PFMT64x, &addr);
-	if (!(cmd = strdup (g->data))) {
-		send_msg (g, "E01");
-		return -1;
-	}
-	if (!(buf = malloc (g->data_max / 2))) {
+	char *cmd = strdup (g->data);
+	char *buf = malloc (g->data_max / 2);
+	if (!buf) {
 		free (cmd);
 		send_msg (g, "E01");
 		return -1;
