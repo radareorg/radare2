@@ -110,12 +110,31 @@ static bool read_resource_entry(RBinLEObj *bin, ut64 offset, LE_resource_entry *
 	return r_buf_fread_at (bin->buf, offset, (ut8 *)entry, fmt, 1) == sizeof (*entry);
 }
 
-static bool resource_page(RBinLEObj *bin, const LE_object_entry *object, ut32 page_index, ut64 *paddr, ut64 *data_size) {
+typedef struct {
+	LE_object_page_entry entry;
+	ut64 paddr;
+	ut64 data_size;
+	ut64 vaddr;
+	ut64 vsize;
+	bool has_data;
+} LEObjectPage;
+
+static bool object_page(RBinLEObj *bin, ut32 object_index, ut32 page_index, LEObjectPage *result) {
 	LE_image_header *h = bin->header;
-	if (!h->pagesize || !object->page_tbl_idx || page_index >= object->page_tbl_entries) {
+	if (object_index >= h->objcnt || !h->pagesize) {
+		return false;
+	}
+	const LE_object_entry *object = &bin->objtbl[object_index];
+	if (!object->page_tbl_idx || page_index >= object->page_tbl_entries) {
 		return false;
 	}
 	ut64 table_index = (ut64)object->page_tbl_idx - 1 + page_index;
+	if (object_index + 1 < h->objcnt) {
+		ut32 next_index = bin->objtbl[object_index + 1].page_tbl_idx;
+		if (!next_index || table_index >= (ut64)next_index - 1) {
+			return false;
+		}
+	}
 	ut64 entry_size = bin->is_le? sizeof (ut32): sizeof (LE_object_page_entry);
 	ut64 entry_delta;
 	ut64 entry_offset;
@@ -123,33 +142,63 @@ static bool resource_page(RBinLEObj *bin, const LE_object_entry *object, ut32 pa
 		|| r_add_overflow ((ut64)bin->headerOff + h->objmap, entry_delta, &entry_offset)) {
 		return false;
 	}
-	ut64 page_offset;
+	*result = (LEObjectPage){0};
 	if (bin->is_le) {
 		ut8 raw[sizeof (ut32)];
 		if (r_buf_read_at (bin->buf, entry_offset, raw, sizeof (raw)) != sizeof (raw)) {
 			return false;
 		}
 		ut32 page = r_read_be32 (raw);
-		if ((page & 0xff) != P_LEGAL || !(page >>= 8) || page > h->mpages) {
-			return false;
-		}
-		page_offset = ((ut64)page - 1) * h->pagesize;
-		*data_size = page == h->mpages && h->pageshift? h->pageshift: h->pagesize;
+		result->entry.flags = page & 0xff;
+		result->entry.offset = page >> 8;
+		result->data_size = result->entry.offset == h->mpages && h->pageshift? h->pageshift: h->pagesize;
 	} else {
-		LE_object_page_entry page = {0};
 		const char *fmt = h->worder? "ISS": "iss";
-		if (r_buf_fread_at (bin->buf, entry_offset, (ut8 *)&page, fmt, 1) != sizeof (page)
-			|| page.flags != P_LEGAL || h->pageshift > 63) {
+		if (r_buf_fread_at (bin->buf, entry_offset, (ut8 *)&result->entry, fmt, 1) != sizeof (result->entry)) {
 			return false;
 		}
-		page_offset = (ut64)page.offset << h->pageshift;
-		*data_size = page.size;
+		result->data_size = result->entry.size;
 	}
-	if (r_add_overflow ((ut64)h->datapage, page_offset, paddr)) {
+	ut64 logical_offset;
+	if (r_mul_overflow ((ut64)page_index, (ut64)h->pagesize, &logical_offset)
+		|| logical_offset >= object->virtual_size
+		|| r_add_overflow (get_object_base (bin, object_index), logical_offset, &result->vaddr)) {
 		return false;
 	}
+	result->vsize = R_MIN ((ut64)h->pagesize, (ut64)object->virtual_size - logical_offset);
+	ut64 page_offset;
+	ut64 base;
+	switch (result->entry.flags) {
+	case P_LEGAL:
+		base = h->datapage;
+		if (bin->is_le) {
+			if (!result->entry.offset || result->entry.offset > h->mpages
+				|| r_mul_overflow ((ut64)result->entry.offset - 1, (ut64)h->pagesize, &page_offset)) {
+				return false;
+			}
+		} else {
+			if (h->pageshift > 63 || r_mul_overflow ((ut64)result->entry.offset, (ut64)1 << h->pageshift, &page_offset)) {
+				return false;
+			}
+		}
+		break;
+	case P_ITERATED:
+		base = h->itermap;
+		if ((!bin->is_le && h->pageshift > 63) || r_mul_overflow ((ut64)result->entry.offset,
+			(ut64)1 << (bin->is_le ? 0 : h->pageshift), &page_offset)) {
+			return false;
+		}
+		break;
+	default:
+		return true;
+	}
 	ut64 file_size = r_buf_size (bin->buf);
-	return *paddr <= file_size && *data_size <= file_size - *paddr;
+	if (r_add_overflow (base, page_offset, &result->paddr)
+		|| result->paddr > file_size || result->data_size > file_size - result->paddr) {
+		return false;
+	}
+	result->has_data = true;
+	return true;
 }
 
 static bool resource_paddr(RBinLEObj *bin, const LE_resource_entry *entry, ut64 *paddr) {
@@ -168,17 +217,16 @@ static bool resource_paddr(RBinLEObj *bin, const LE_resource_entry *entry, ut64 
 	do {
 		ut64 page_index = logical_offset / h->pagesize;
 		ut64 in_page = logical_offset % h->pagesize;
-		ut64 page_paddr;
-		ut64 page_data_size;
-		if (page_index > UT32_MAX || !resource_page (bin, object, page_index, &page_paddr, &page_data_size)
-			|| in_page > page_data_size) {
+		LEObjectPage page;
+		if (page_index > UT32_MAX || !object_page (bin, entry->object - 1, page_index, &page)
+			|| page.entry.flags != P_LEGAL || !page.has_data || in_page > page.data_size) {
 			return false;
 		}
 		ut64 chunk = R_MIN (remaining, (ut64)h->pagesize - in_page);
-		if (chunk > page_data_size - in_page) {
+		if (chunk > page.data_size - in_page) {
 			return false;
 		}
-		ut64 current = page_paddr + in_page;
+		ut64 current = page.paddr + in_page;
 		if (first) {
 			*paddr = current;
 			first = false;
@@ -437,84 +485,55 @@ R_IPI RList *r_bin_le_get_libs(RBinLEObj *bin) {
 	return l;
 }
 
-/*
-*	Creates & appends to l iter_n sections with the same paddr for each iter record.
-*	page->size is the total size of iter records that describe the page
-*	TODO: Don't do this
-*/
-static bool __create_iter_sections(RVecRBinSection *sections, RBinLEObj *bin, RBinSection *sec, LE_object_page_entry *page, ut64 vaddr, ut32 cur_page) {
-	R_RETURN_VAL_IF_FAIL (sections && bin && sec && page, false);
+static bool create_iter_sections(RVecRBinSection *sections, RBinLEObj *bin, RBinSection *sec, const LEObjectPage *page, ut32 cur_page) {
 	LE_image_header *h = bin->header;
-	if (h->pageshift > ST16_MAX || h->pageshift < 0) {
-		// early quit before using an invalid offset
-		return true;
+	ut64 end;
+	if (!page->has_data || page->entry.flags != P_ITERATED || !page->data_size
+		|| r_add_overflow (page->paddr, page->data_size, &end)) {
+		return false;
 	}
-	ut32 pageshift = R_MIN ((ut64)h->pageshift, 63);
-	ut32 offset = (h->itermap + ((ut64)page->offset << (bin->is_le ? 0 : pageshift)));
-
-	// Gets the first iter record
-	ut16 iter_n = r_buf_read_ble16_at (bin->buf, offset, h->worder);
-	if (iter_n == UT16_MAX) {
-		return true;
-	}
-	offset += sizeof (ut16);
-	ut16 data_size = r_buf_read_ble16_at (bin->buf, offset, h->worder);
-	if (data_size == UT16_MAX) {
-		return true;
-	}
-	offset += sizeof (ut16);
-
-	ut64 total_size = r_buf_size (bin->buf);
-	ut64 tot_size = 0;
+	ut64 offset = page->paddr;
+	ut64 vaddr = page->vaddr;
+	ut64 remaining = page->vsize;
 	int iter_cnt = 0;
-	ut64 bytes_left = page->size;
-	while (iter_n > 0 && bytes_left > 0) {
-		int i;
-		tot_size = 0;
-		for (i = 0; i < iter_n; i++) {
+	while (offset < end) {
+		if (end - offset < sizeof (ut16) * 2) {
+			return false;
+		}
+		ut16 iter_n = r_buf_read_ble16_at (bin->buf, offset, h->worder);
+		ut16 data_size = r_buf_read_ble16_at (bin->buf, offset + sizeof (ut16), h->worder);
+		offset += sizeof (ut16) * 2;
+		if (!iter_n || !data_size || data_size > end - offset) {
+			return false;
+		}
+		ut16 i;
+		for (i = 0; i < iter_n && remaining; i++) {
+			ut64 size = R_MIN ((ut64)data_size, remaining);
 			RBinSection *s = RVecRBinSection_emplace_back (sections);
 			s->name = r_str_newf ("%s.page.%u.iter.%d", sec->name, cur_page, iter_cnt);
 			s->bits = sec->bits;
 			s->perm = sec->perm;
-			s->size = data_size;
-			s->vsize = data_size;
+			s->size = size;
+			s->vsize = size;
 			s->paddr = offset;
 			s->vaddr = vaddr;
 			s->add = true;
-			vaddr += data_size;
-			tot_size += data_size;
-			if (tot_size > total_size) {
-				R_LOG_DEBUG ("section exceeds file size");
-		//		break;
-			}
+			s->is_data = sec->is_data;
+			vaddr += size;
+			remaining -= size;
 			iter_cnt++;
 		}
-		ut64 consumed = sizeof (ut16) * 2 + data_size;
-		if (consumed > bytes_left) {
-			break;
-		}
-		bytes_left -= consumed;
-		// Get the next iter record
 		offset += data_size;
-		iter_n = r_buf_read_ble16_at (bin->buf, offset, h->worder);
-		if (iter_n == UT16_MAX) {
-			break;
-		}
-		offset += sizeof (ut16);
-		data_size = r_buf_read_ble16_at (bin->buf, offset, h->worder);
-		if (data_size == UT16_MAX) {
-			break;
-		}
-		offset += sizeof (ut16);
 	}
-	if (tot_size < h->pagesize) {
+	if (remaining) {
 		RBinSection *s = RVecRBinSection_emplace_back (sections);
 		s->name = r_str_newf ("%s.page.%u.iter.zerofill", sec->name, cur_page);
 		s->bits = sec->bits;
 		s->perm = sec->perm;
-		s->vsize = h->pagesize - tot_size;
+		s->vsize = remaining;
 		s->vaddr = vaddr;
 		s->add = true;
+		s->is_data = sec->is_data;
 	}
 	return true;
 }
@@ -524,15 +543,10 @@ R_IPI bool r_bin_le_load_sections(RBinLEObj *bin, RVecRBinSection *sections) {
 	R_RETURN_VAL_IF_FAIL (bin && sections, false);
 	RVecRBinSection_clear (sections);
 	LE_image_header *h = bin->header;
-	ut32 pages_start_off = h->datapage;
 	int i;
 	for (i = 0; i < h->objcnt; i++) {
 		RBinSection *sec = R_NEW0 (RBinSection);
-		LE_object_entry *entry = &bin->objtbl[i];
-		if  (!entry) {
-			free (sec);
-			return true;
-		}
+		const LE_object_entry *entry = &bin->objtbl[i];
 		sec->name = r_str_newf ("obj.%d", i + 1);
 		sec->vsize = entry->virtual_size;
 		sec->vaddr = get_object_base (bin, i);
@@ -556,91 +570,57 @@ R_IPI bool r_bin_le_load_sections(RBinLEObj *bin, RVecRBinSection *sections) {
 			RBinSection *dst = RVecRBinSection_emplace_back (sections);
 			*dst = *sec;
 			free (sec);
+			continue;
 		}
 		ut32 j;
 		ut64 page_size_sum = 0;
-		ut64 next_idx = i < h->objcnt - 1 ? bin->objtbl[i + 1].page_tbl_idx : UT64_MAX;
-		ut64 objmaptbloff = (ut64)h->objmap + bin->headerOff;
-		ut64 objpageentrysz = bin->is_le ? sizeof (ut32) : sizeof (LE_object_page_entry);
 		ut64 page_count = h->pagesize ? R_MIN (entry->page_tbl_entries, (sec->vsize + h->pagesize - 1) / h->pagesize) : 0;
 		for (j = 0; entry->page_tbl_idx && j < page_count && page_size_sum < sec->vsize; j++) {
-			LE_object_page_entry page = {0};
-
-			ut64 cur_idx = (ut64)entry->page_tbl_idx + j - 1;
-			ut64 page_entry_off = objpageentrysz * cur_idx + objmaptbloff;
-#if 0
-			int r = r_buf_read_at (bin->buf, page_entry_off, (ut8 *)&page, sizeof (page));
-#else
-			int r = r_buf_fread_at (bin->buf, page_entry_off, (ut8 *)&page, "iss", 1);
-#endif
-			if (r < (int)sizeof (page)) {
+			LEObjectPage page;
+			if (!object_page (bin, i, j, &page)) {
 				R_LOG_WARN ("Cannot read out of bounds page table entry");
-				r_bin_section_free (sec);
-				return true;
+				break;
 			}
 			RBinSection *s = R_NEW0 (RBinSection);
 			s->name = r_str_newf ("%s.page.%u", sec->name, j);
 			s->is_data = sec->is_data;
-			if (cur_idx + 1 < next_idx) { // If not true rest of pages will be zeroes
-
-				if (bin->is_le) {
-					// Why is it big endian???
-					ut64 offset = r_buf_read_be32_at (bin->buf, page_entry_off) >> 8;
-					s->paddr = (offset - 1) * h->pagesize + pages_start_off;
-					if (cur_idx + 1 == h->mpages) {
-						page.size = h->pageshift;
-					} else {
-						page.size = h->pagesize;
-					}
-				} else if (page.flags == P_ITERATED) {
-					ut64 vaddr = sec->vaddr + page_size_sum;
-					if (!__create_iter_sections (sections, bin, sec, &page, vaddr, j)) {
-						r_bin_section_free (s);
-						r_bin_section_free (sec);
-						return false;
-					}
+			if (page.entry.flags == P_ITERATED) {
+				if (!create_iter_sections (sections, bin, sec, &page, j)) {
 					r_bin_section_free (s);
-					page_size_sum += h->pagesize;
-					continue;
-				} else if (page.flags == P_COMPRESSED) {
-					// TODO
-					R_LOG_WARN ("Compressed page not handled: %s", s->name);
-				} else if (page.flags != P_ZEROED) {
-					if (h->pageshift > 63) {
-						r_bin_section_free (s);
-						continue;
-					}
-					ut32 pageshift = R_MIN (h->pageshift, 63);
-					s->paddr = ((ut64)page.offset << pageshift) + pages_start_off;
+					r_bin_section_free (sec);
+					return false;
 				}
+				r_bin_section_free (s);
+				page_size_sum += page.vsize;
+				continue;
 			}
-			s->vsize = R_MIN (h->pagesize, sec->vsize - page_size_sum);
-			s->vaddr = sec->vaddr + page_size_sum;
+			if (page.entry.flags == P_COMPRESSED) {
+				R_LOG_WARN ("Compressed page not handled: %s", s->name);
+			} else if (page.has_data) {
+				s->paddr = page.paddr;
+			}
+			s->vsize = page.vsize;
+			s->vaddr = page.vaddr;
 			s->perm = sec->perm;
-			s->size = R_MIN (page.size, s->vsize);
+			s->size = R_MIN (page.data_size, s->vsize);
 			s->add = true;
 			s->bits = sec->bits;
-			ut64 vsize = s->vsize;
 			RBinSection *dst = RVecRBinSection_emplace_back (sections);
 			*dst = *s;
 			free (s);
-			page_size_sum += vsize;
+			page_size_sum += page.vsize;
 		}
-		if (entry->page_tbl_entries) {
-			if (page_size_sum < sec->vsize) {
-				RBinSection *s = RVecRBinSection_emplace_back (sections);
-				ut64 remainder_size = sec->vsize - page_size_sum;
-				s->vsize = remainder_size;
-				s->vaddr = sec->vaddr + page_size_sum;
-				s->perm = sec->perm;
-				s->size = 0;
-				s->add = true;
-				s->bits = sec->bits;
-				s->name = r_str_newf ("%s.page.zerofill", sec->name);
-				s->is_data = sec->is_data;
-			}
-			r_bin_section_free (sec);
+		if (page_size_sum < sec->vsize) {
+			RBinSection *s = RVecRBinSection_emplace_back (sections);
+			s->vsize = sec->vsize - page_size_sum;
+			s->vaddr = sec->vaddr + page_size_sum;
+			s->perm = sec->perm;
+			s->add = true;
+			s->bits = sec->bits;
+			s->name = r_str_newf ("%s.page.zerofill", sec->name);
+			s->is_data = sec->is_data;
 		}
+		r_bin_section_free (sec);
 	}
 	return true;
 }
@@ -656,15 +636,45 @@ static char *__get_modname_by_ord(RBinLEObj *bin, ut32 ordinal) {
 	return modname;
 }
 
-static st64 reloc_source_offset(ut16 raw) {
-	return raw & 0x8000 ? (st64)raw - 0x10000 : raw;
+static bool object_page_at(RBinLEObj *bin, ut64 table_index, ut32 *object_index, LEObjectPage *page) {
+	while (*object_index < bin->header->objcnt) {
+		const LE_object_entry *object = &bin->objtbl[*object_index];
+		if (!object->page_tbl_idx) {
+			(*object_index)++;
+			continue;
+		}
+		ut64 first = (ut64)object->page_tbl_idx - 1;
+		if (table_index < first) {
+			return false;
+		}
+		ut64 relative = table_index - first;
+		if (relative < object->page_tbl_entries) {
+			return object_page (bin, *object_index, relative, page);
+		}
+		(*object_index)++;
+	}
+	return false;
 }
 
-static RBinReloc *reloc_clone(const RBinReloc *reloc) {
+static st32 reloc_source_offset(ut16 raw) {
+	return raw & 0x8000 ? (st32)raw - 0x10000 : raw;
+}
+
+static void reloc_emit(RList *relocs, const RBinReloc *reloc, const LEObjectPage *page, st32 source, st64 addend) {
+	ut64 vaddr;
+	if (!page || source < 0 || (ut32)source >= page->vsize
+		|| r_add_overflow (page->vaddr, (ut32)source, &vaddr)) {
+		return;
+	}
 	RBinReloc *clone = R_NEW0 (RBinReloc);
 	*clone = *reloc;
 	clone->import = reloc->import ? r_bin_import_clone (reloc->import) : NULL;
-	return clone;
+	clone->vaddr = vaddr;
+	clone->paddr = page->has_data && (ut32)source < page->data_size ? page->paddr + source : 0;
+	clone->addend = addend;
+	if (!r_list_append (relocs, clone)) {
+		r_bin_reloc_free (clone);
+	}
 }
 
 static bool reloc_page_bounds(RBinLEObj *bin, ut64 page, ut64 fixup_end, ut64 *start, ut64 *end) {
@@ -733,15 +743,10 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 		return NULL;
 	}
 	RList *entries = __get_entries (bin);
-	RVecRBinSection sections = {0};
-	if (!r_bin_le_load_sections (bin, &sections)) {
-		r_list_free (entries);
-		r_list_free (l);
-		return NULL;
-	}
 	LE_image_header *h = bin->header;
 	const ut64 fixup_start = (ut64)h->fpagetab + bin->headerOff;
 	const ut64 fixup_end = R_MIN (fixup_start + h->fixupsize, r_buf_size (bin->buf));
+	ut32 object_index = 0;
 	ut64 cur_page;
 	for (cur_page = 0; cur_page < h->mpages; cur_page++) {
 		ut64 offset;
@@ -749,15 +754,14 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 		if (!reloc_page_bounds (bin, cur_page, fixup_end, &offset, &end)) {
 			break;
 		}
-		const RBinSection *cur_section = RVecRBinSection_at (&sections, cur_page);
-		ut64 cur_page_offset = cur_section ? cur_section->vaddr : 0;
+		LEObjectPage page;
+		const LEObjectPage *page_ref = object_page_at (bin, cur_page, &object_index, &page) ? &page : NULL;
 		while (offset < end) {
 			ut64 record_end;
 			if (!reloc_record_end (bin->buf, offset, end, &record_end)) {
 				R_LOG_WARN ("Invalid LE relocation record");
 				break;
 			}
-			bool rel_appended = false;
 			RBinReloc *rel = R_NEW0 (RBinReloc);
 			ut8 header_source = r_buf_read8_at (bin->buf, offset);
 			ut8 header_target = r_buf_read8_at (bin->buf, offset + 1);
@@ -780,7 +784,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 				break;
 			}
 			ut64 repeat = 0;
-			st64 source = 0;
+			st32 source = 0;
 			if (header_source & F_SOURCE_LIST) {
 				repeat = r_buf_read8_at (bin->buf, offset);
 				offset += sizeof (ut8);
@@ -880,49 +884,38 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 				r_bin_reloc_free (rel);
 				continue;
 			}
-			if (!repeat && source >= 0) {
-				/* Negative source means we already handled the cross-page
-				 * fixup in the previous page, so there's no need to dupe it
-				 */
-				rel->vaddr = cur_page_offset + source;
-				rel->paddr = cur_section ? cur_section->paddr + source : 0;
-				r_list_append (l, rel);
-				rel_appended = true;
-			}
-
-			if (header_target & F_TARGET_CHAIN) {
-				// TODO: add tests for this case
-				ut32 chain_limit = h->pagesize / sizeof (ut32);
-				ut64 chain_source = 0;
-				ut32 fixupinfo = r_buf_read_ble32_at (bin->buf, cur_page_offset + chain_source, h->worder);
-				ut64 base_target_address = rel->addend - (fixupinfo & 0xFFFFF);
-				do {
-					fixupinfo = r_buf_read_ble32_at (bin->buf, cur_page_offset + chain_source, h->worder);
-					RBinReloc *new = reloc_clone (rel);
-					new->addend = base_target_address + (fixupinfo & 0xFFFFF);
-					r_list_append (l, new);
-					chain_source = (fixupinfo >> 20) & 0xFFF;
-				} while (chain_source != 0xFFF && chain_limit-- > 0);
-			}
-
-			while (repeat) {
-				st64 off = reloc_source_offset (r_buf_read_ble16_at (bin->buf, offset, h->worder));
-				offset += sizeof (ut16);
-				repeat--;
-				if (off < 0) {
-					continue;
+			if (repeat) {
+				while (repeat--) {
+					st32 list_source = reloc_source_offset (r_buf_read_ble16_at (bin->buf, offset, h->worder));
+					offset += sizeof (ut16);
+					reloc_emit (l, rel, page_ref, list_source, rel->addend);
 				}
-				rel->vaddr = cur_page_offset + off;
-				rel->paddr = cur_section ? cur_section->paddr + off : 0;
-				r_list_append (l, reloc_clone (rel));
+			} else if ((header_target & F_TARGET_CHAIN) && page_ref && page_ref->has_data) {
+				ut32 chain_limit = h->pagesize / sizeof (ut32);
+				st32 chain_source = source;
+				st64 base_target_address = rel->addend;
+				bool first = true;
+				while (chain_limit-- && chain_source >= 0
+					&& page_ref->data_size >= sizeof (ut32)
+					&& (ut32)chain_source <= page_ref->data_size - sizeof (ut32)) {
+					ut32 fixupinfo = r_buf_read_ble32_at (bin->buf, page_ref->paddr + chain_source, h->worder);
+					if (first) {
+						base_target_address -= fixupinfo & 0xFFFFF;
+						first = false;
+					}
+					reloc_emit (l, rel, page_ref, chain_source, base_target_address + (fixupinfo & 0xFFFFF));
+					chain_source = (fixupinfo >> 20) & 0xFFF;
+					if (chain_source == 0xFFF) {
+						break;
+					}
+				}
+			} else {
+				reloc_emit (l, rel, page_ref, source, rel->addend);
 			}
-			if (!rel_appended) {
-				r_bin_reloc_free (rel);
-			}
+			r_bin_reloc_free (rel);
 		}
 	}
 	r_list_free (entries);
-	RVecRBinSection_fini (&sections);
 	return l;
 }
 

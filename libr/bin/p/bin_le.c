@@ -126,7 +126,7 @@ static RList *relocs(RBinFile *bf) {
 }
 
 static RList* patch_relocs(RBinFile * bf) {
-	RList *ret = r_list_newf ((RListFree)free);
+	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
 	RBin *b = bf->rbin;
 	RBinLEObj *bin = bf->bo->bin_obj;
 	LE_image_header *h = bin->header;
@@ -145,10 +145,6 @@ static RList* patch_relocs(RBinFile * bf) {
 		}
 
 		RBinReloc * r = R_NEW0 (RBinReloc);
-		if (!r) {
-			break;
-		}
-
 		r->import = NULL;
 		r->symbol = NULL;
 		r->is_ifunc = false;
