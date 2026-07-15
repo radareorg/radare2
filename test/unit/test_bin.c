@@ -105,10 +105,105 @@ bool test_r_bin_pebble_resources(void) {
 	mu_end;
 }
 
+static RBuffer *le_resource_binary(bool is_le) {
+	const ut32 object_table = 0xb0;
+	const ut32 page_table = object_table + 48;
+	const ut32 resource_table = page_table + (is_le? 8: 16);
+	const ut32 resident_table = resource_table + 28;
+	const ut32 data_pages = 0x200;
+	ut8 *bytes = calloc (1, 0x300);
+	if (!bytes) {
+		return NULL;
+	}
+	memcpy (bytes, is_le? "LE": "LX", 2);
+	r_write_le16 (bytes + 8, 2);
+	r_write_le16 (bytes + 10, 1);
+	r_write_le32 (bytes + 0x14, 1);
+	r_write_le32 (bytes + 0x28, 0x100);
+	r_write_le32 (bytes + 0x2c, is_le? 0x100: 0);
+	r_write_le32 (bytes + 0x40, object_table);
+	r_write_le32 (bytes + 0x44, 2);
+	r_write_le32 (bytes + 0x48, page_table);
+	r_write_le32 (bytes + 0x50, resource_table);
+	r_write_le32 (bytes + 0x54, 2);
+	r_write_le32 (bytes + 0x58, resident_table);
+	r_write_le32 (bytes + 0x80, data_pages);
+	r_write_le32 (bytes + object_table, 0x100);
+	r_write_le32 (bytes + object_table + 8, 1);
+	r_write_le32 (bytes + object_table + 12, 1);
+	r_write_le32 (bytes + object_table + 16, 1);
+	r_write_le32 (bytes + object_table + 24, 0x100);
+	r_write_le32 (bytes + object_table + 28, 0x1000);
+	r_write_le32 (bytes + object_table + 32, 9);
+	r_write_le32 (bytes + object_table + 36, 2);
+	r_write_le32 (bytes + object_table + 40, 1);
+	if (is_le) {
+		bytes[page_table + 3] = 3;
+		bytes[page_table + 6] = 1;
+	} else {
+		r_write_le16 (bytes + page_table + 6, 3);
+		r_write_le16 (bytes + page_table + 12, 0x100);
+	}
+	r_write_le16 (bytes + resource_table, 2);
+	r_write_le16 (bytes + resource_table + 2, 7);
+	r_write_le32 (bytes + resource_table + 4, 4);
+	r_write_le16 (bytes + resource_table + 8, 2);
+	r_write_le32 (bytes + resource_table + 10, 0x20);
+	r_write_le16 (bytes + resource_table + 14, 5);
+	r_write_le16 (bytes + resource_table + 16, 3);
+	r_write_le32 (bytes + resource_table + 18, 6);
+	r_write_le16 (bytes + resource_table + 22, 2);
+	r_write_le32 (bytes + resource_table + 24, 0x30);
+	memcpy (bytes + data_pages + 0x20, "ICON", 4);
+	memcpy (bytes + data_pages + 0x30, "hello", 6);
+	RBuffer *buf = r_buf_new_with_bytes (bytes, 0x300);
+	free (bytes);
+	return buf;
+}
+
+bool test_r_bin_le_resources(void) {
+	int i;
+	for (i = 0; i < 2; i++) {
+		RBuffer *buf = le_resource_binary (i == 0);
+		mu_assert_notnull (buf, "LE/LX allocation");
+		RBin *bin = r_bin_new ();
+		RIO *io = r_io_new ();
+		r_io_bind (io, &bin->iob);
+		RBinFileOptions opt = {0};
+		r_bin_file_options_init (&opt, -1, 0, 0, 0);
+		opt.filename = i == 0? "resources.le": "resources.lx";
+		mu_assert_true (r_bin_open_buf (bin, buf, &opt), "LE/LX resource binary open");
+		RBinFile *bf = r_bin_cur (bin);
+		mu_assert_notnull (bf, "LE/LX resource binfile");
+		RVecRBinResource *resources = r_bin_file_get_resources (bf);
+		mu_assert_notnull (resources, "LE/LX resources");
+		mu_assert_eq (RVecRBinResource_length (resources), 2, "LE/LX resource count");
+		RBinResource *resource = RVecRBinResource_at (resources, 0);
+		mu_assert_streq (resource->name, "7", "LE/LX resource name ID");
+		mu_assert_streq (resource->type, "BITMAP", "LE/LX resource type");
+		mu_assert_eq (resource->id, 7, "LE/LX resource ID");
+		mu_assert_eq (resource->type_id, 2, "LE/LX resource type ID");
+		mu_assert_eq (resource->paddr, 0x220, "LE/LX resource physical address");
+		mu_assert_eq (resource->vaddr, 0x1020, "LE/LX resource virtual address");
+		mu_assert_eq (resource->size, 4, "LE/LX resource size");
+		RBuffer *data = r_bin_file_get_resource_data (bf, resource);
+		mu_assert_notnull (data, "LE/LX resource data");
+		ut8 bytes[4];
+		mu_assert_eq (r_buf_read_at (data, 0, bytes, sizeof (bytes)), sizeof (bytes), "Read LE/LX resource data");
+		mu_assert_memeq (bytes, (const ut8 *)"ICON", sizeof (bytes), "LE/LX resource contents");
+		r_unref (data);
+		r_bin_free (bin);
+		r_io_free (io);
+		r_unref (buf);
+	}
+	mu_end;
+}
+
 
 bool all_tests(void) {
 	mu_run_test(test_r_bin);
 	mu_run_test(test_r_bin_pebble_resources);
+	mu_run_test(test_r_bin_le_resources);
 	return tests_passed != tests_run;
 }
 

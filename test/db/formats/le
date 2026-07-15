@@ -6,6 +6,30 @@ LE
 EOF
 RUN
 
+NAME=LX resources
+FILE=bins/le/WSSFILL.EXE
+ARGS=-e bin.cache=true
+CMDS=<<EOF
+iU > $resources
+cat $resources~^Resource~?
+cat $resources~type: POINTER~?
+cat $resources~type: BITMAP~?
+cat $resources~type: DIALOG~?
+cat $resources~type: RCDATA~?
+cat $resources~paddr: 0x00020a00~?
+cat $resources~paddr: 0x00029c00~?
+EOF
+EXPECT=<<EOF
+57
+1
+53
+2
+1
+1
+1
+EOF
+RUN
+
 NAME=cdogs.exe entrypoint
 FILE=bins/le/cdogs.exe
 CMDS=ie=

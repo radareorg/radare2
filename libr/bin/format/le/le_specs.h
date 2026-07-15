@@ -34,6 +34,14 @@ typedef enum {
 	LE_RT_FD = 21, /* DBCS uniq/font driver */
 } LE_resource_type;
 
+R_PACKED (typedef struct LE_resource_entry_s {
+	ut16 type_id;
+	ut16 name_id;
+	ut32 size;
+	ut16 object;
+	ut32 offset;
+}) LE_resource_entry;
+
 // This bit signifies that additional information is contained in the linear EXE module
 // and will be used in the future for parameter type checking.
 #define ENTRY_PARAMETER_TYPING_PRESENT 0x80

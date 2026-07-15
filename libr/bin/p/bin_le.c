@@ -224,6 +224,23 @@ static bool sections_vec(RBinFile *bf) {
 	return r_bin_le_load_sections (bf->bo->bin_obj, &bf->bo->sections_vec);
 }
 
+static bool load_resources(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
+	RBinLEObj *bin = bf->bo->bin_obj;
+	if (!bin || !r_bin_le_load_resources (bin, &bf->bo->resources_vec)) {
+		return false;
+	}
+	RBinResource *resource;
+	R_VEC_FOREACH (&bf->bo->resources_vec, resource) {
+		ut64 paddr;
+		if (r_add_overflow (resource->paddr, bf->bo->loadaddr, &paddr)) {
+			return false;
+		}
+		resource->paddr = paddr;
+	}
+	return true;
+}
+
 RBinPlugin r_bin_plugin_le = {
 	.meta = {
 		.name = "le",
@@ -238,6 +255,7 @@ RBinPlugin r_bin_plugin_le = {
 	.info = &info,
 	.header = &header,
 	.sections_vec = &sections_vec,
+	.load_resources = &load_resources,
 	.entries = &entries,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,

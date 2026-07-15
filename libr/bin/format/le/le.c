@@ -78,6 +78,162 @@ static ut64 get_object_base(RBinLEObj * bin, size_t idx) {
 	return bin->objtbl[idx].reloc_base_addr;
 }
 
+static const char *resource_type_name(ut16 type) {
+	switch (type) {
+	case LE_RT_POINTER: return "POINTER";
+	case LE_RT_BITMAP: return "BITMAP";
+	case LE_RT_MENU: return "MENU";
+	case LE_RT_DIALOG: return "DIALOG";
+	case LE_RT_STRING: return "STRING";
+	case LE_RT_FONTDIR: return "FONTDIR";
+	case LE_RT_FONT: return "FONT";
+	case LE_RT_ACCELTABLE: return "ACCELTABLE";
+	case LE_RT_RCDATA: return "RCDATA";
+	case LE_RT_MESSAGE: return "MESSAGE";
+	case LE_RT_DLGINCLUDE: return "DLGINCLUDE";
+	case LE_RT_VKEYTBL: return "VKEYTBL";
+	case LE_RT_KEYTBL: return "KEYTBL";
+	case LE_RT_CHARTBL: return "CHARTBL";
+	case LE_RT_DISPLAYINFO: return "DISPLAYINFO";
+	case LE_RT_FKASHORT: return "FKASHORT";
+	case LE_RT_FKALONG: return "FKALONG";
+	case LE_RT_HELPTABLE: return "HELPTABLE";
+	case LE_RT_HELPSUBTABLE: return "HELPSUBTABLE";
+	case LE_RT_FDDIR: return "FDDIR";
+	case LE_RT_FD: return "FD";
+	default: return NULL;
+	}
+}
+
+static bool read_resource_entry(RBinLEObj *bin, ut64 offset, LE_resource_entry *entry) {
+	const char *fmt = bin->header->worder? "2SISI": "2sisi";
+	return r_buf_fread_at (bin->buf, offset, (ut8 *)entry, fmt, 1) == sizeof (*entry);
+}
+
+static bool resource_page(RBinLEObj *bin, const LE_object_entry *object, ut32 page_index, ut64 *paddr, ut64 *data_size) {
+	LE_image_header *h = bin->header;
+	if (!h->pagesize || !object->page_tbl_idx || page_index >= object->page_tbl_entries) {
+		return false;
+	}
+	ut64 table_index = (ut64)object->page_tbl_idx - 1 + page_index;
+	ut64 entry_size = bin->is_le? sizeof (ut32): sizeof (LE_object_page_entry);
+	ut64 entry_delta;
+	ut64 entry_offset;
+	if (r_mul_overflow (table_index, entry_size, &entry_delta)
+		|| r_add_overflow ((ut64)bin->headerOff + h->objmap, entry_delta, &entry_offset)) {
+		return false;
+	}
+	ut64 page_offset;
+	if (bin->is_le) {
+		ut8 raw[sizeof (ut32)];
+		if (r_buf_read_at (bin->buf, entry_offset, raw, sizeof (raw)) != sizeof (raw)) {
+			return false;
+		}
+		ut32 page = r_read_be32 (raw);
+		if ((page & 0xff) != P_LEGAL || !(page >>= 8) || page > h->mpages) {
+			return false;
+		}
+		page_offset = ((ut64)page - 1) * h->pagesize;
+		*data_size = page == h->mpages && h->pageshift? h->pageshift: h->pagesize;
+	} else {
+		LE_object_page_entry page = {0};
+		const char *fmt = h->worder? "ISS": "iss";
+		if (r_buf_fread_at (bin->buf, entry_offset, (ut8 *)&page, fmt, 1) != sizeof (page)
+			|| page.flags != P_LEGAL || h->pageshift > 63) {
+			return false;
+		}
+		page_offset = (ut64)page.offset << h->pageshift;
+		*data_size = page.size;
+	}
+	if (r_add_overflow ((ut64)h->datapage, page_offset, paddr)) {
+		return false;
+	}
+	ut64 file_size = r_buf_size (bin->buf);
+	return *paddr <= file_size && *data_size <= file_size - *paddr;
+}
+
+static bool resource_paddr(RBinLEObj *bin, const LE_resource_entry *entry, ut64 *paddr) {
+	LE_image_header *h = bin->header;
+	if (!entry->object || entry->object > h->objcnt || !h->pagesize) {
+		return false;
+	}
+	LE_object_entry *object = &bin->objtbl[entry->object - 1];
+	if (entry->offset > object->virtual_size || entry->size > object->virtual_size - entry->offset) {
+		return false;
+	}
+	ut64 logical_offset = entry->offset;
+	ut64 remaining = entry->size;
+	ut64 consumed = 0;
+	bool first = true;
+	do {
+		ut64 page_index = logical_offset / h->pagesize;
+		ut64 in_page = logical_offset % h->pagesize;
+		ut64 page_paddr;
+		ut64 page_data_size;
+		if (page_index > UT32_MAX || !resource_page (bin, object, page_index, &page_paddr, &page_data_size)
+			|| in_page > page_data_size) {
+			return false;
+		}
+		ut64 chunk = R_MIN (remaining, (ut64)h->pagesize - in_page);
+		if (chunk > page_data_size - in_page) {
+			return false;
+		}
+		ut64 current = page_paddr + in_page;
+		if (first) {
+			*paddr = current;
+			first = false;
+		} else if (current != *paddr + consumed) {
+			return false;
+		}
+		logical_offset += chunk;
+		consumed += chunk;
+		remaining -= chunk;
+	} while (remaining);
+	return true;
+}
+
+R_IPI bool r_bin_le_load_resources(RBinLEObj *bin, RVecRBinResource *resources) {
+	R_RETURN_VAL_IF_FAIL (bin && bin->header && bin->objtbl && resources, false);
+	LE_image_header *h = bin->header;
+	if (!h->rsrccnt) {
+		return true;
+	}
+	ut64 table_offset;
+	ut64 table_size;
+	ut64 file_size = r_buf_size (bin->buf);
+	if (!h->rsrctab || r_add_overflow ((ut64)bin->headerOff, (ut64)h->rsrctab, &table_offset)
+		|| r_mul_overflow ((ut64)h->rsrccnt, (ut64)sizeof (LE_resource_entry), &table_size)
+		|| table_offset > file_size || table_size > file_size - table_offset) {
+		return false;
+	}
+	ut32 i;
+	for (i = 0; i < h->rsrccnt; i++) {
+		LE_resource_entry entry = {0};
+		ut64 offset = table_offset + (ut64)i * sizeof (entry);
+		ut64 paddr;
+		if (!read_resource_entry (bin, offset, &entry) || !resource_paddr (bin, &entry, &paddr)) {
+			return false;
+		}
+		RBinResource *resource = RVecRBinResource_emplace_back (resources);
+		if (!resource) {
+			return false;
+		}
+		const char *type = resource_type_name (entry.type_id);
+		resource->name = r_str_newf ("%u", entry.name_id);
+		resource->type = type? strdup (type): NULL;
+		if (!resource->name || (type && !resource->type)) {
+			return false;
+		}
+		resource->vaddr = get_object_base (bin, entry.object - 1) + entry.offset;
+		resource->paddr = paddr;
+		resource->size = entry.size;
+		resource->id = entry.name_id;
+		resource->index = i;
+		resource->type_id = entry.type_id;
+	}
+	return true;
+}
+
 static char *__read_nonnull_str_at(RBuffer *buf, ut64 *offset) {
 	ut8 size = r_buf_read8_at (buf, *offset);
 	size &= 0x7F; // Max is 127
