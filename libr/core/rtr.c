@@ -362,6 +362,24 @@ static int swap_big_regs(char *dest, ut64 sz, const char *src, int regsz) {
 	}
 }
 
+// Handle the gdb 'm' (read memory) command: "m<addr>,<len>".
+// The client-requested length is clamped to the output buffer size to avoid
+// a heap buffer overflow (see issue #26255). Returns the number of bytes read
+// into out_buf, or -1 on error.
+static int gdb_cmd_read_memory(RCore *core, const char *cmd, char *out_buf, size_t max_len) {
+	ut64 addr = 0, len = 0;
+	if (sscanf (cmd + 1, "%"PFMT64x",%"PFMT64x, &addr, &len) != 2) {
+		return -1;
+	}
+	if (len > max_len) {
+		len = max_len;
+	}
+	if (len == 0 || !r_io_read_at (core->io, addr, (ut8 *)out_buf, (int)len)) {
+		return -1;
+	}
+	return (int)len;
+}
+
 static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 			     char *out_buf, size_t max_len) {
 	int ret;
@@ -370,7 +388,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 	gdb_reg_t *gdb_reg;
 	RRegItem *r;
 	utX val_big;
-	ut64 m_off, reg_val;
+	ut64 reg_val;
 	bool be;
 	RDebugPid *dbgpid;
 	if (!core_ptr || !cmd) {
@@ -556,11 +574,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		}
 		break;
 	case 'm':
-		sscanf (cmd + 1, "%"PFMT64x",%x", &m_off, &ret);
-		if (r_io_read_at (core->io, m_off, (ut8*) out_buf, ret)) {
-			return ret;
-		}
-		return -1;
+		return gdb_cmd_read_memory (core, cmd, out_buf, max_len);
 	default:
 		return r_core_cmd (core, cmd, 0);
 	}
