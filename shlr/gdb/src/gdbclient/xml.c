@@ -908,9 +908,9 @@ static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
 			r_list_set_n (regs, regnum, tmpreg);
 		}
 		*regstr_end = '/';
-		regstr = regstr_end + 3;
+		regstr = regstr_end + 2;
 		if (r_str_startswith (regstr, "</feature>")) {
-			regstr += sizeof ("</feature>");
+			regstr += sizeof ("</feature>") - 1;
 			// Revert to default
 			typegroup = "gpr";
 		}

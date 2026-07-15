@@ -251,9 +251,7 @@ static void run_xml_gdb_server(int port, bool recursive_include, ut32 regnum) {
 	}
 	if (!recursive_include) {
 		r_strbuf_pad (xml, 'A', 200);
-		r_strbuf_appendf (xml, "\" bitsize=\"64\" type=\"code_ptr\" regnum=\"%u\"/>\n"
-			"</feature>\n"
-			"</target>", regnum);
+		r_strbuf_appendf (xml, "\" bitsize=\"64\" type=\"code_ptr\" regnum=\"%u\"/>", regnum);
 	}
 	const char *target_xml = r_strbuf_get (xml);
 	const size_t xml_len = strlen (target_xml);
