@@ -147,36 +147,6 @@ char encode_digit(int c) {
 	return c + 'a';
 }
 
-static ut32 encode_var_int(const ut32 bias, const ut32 delta, char *dst) {
-	ut32 i, k, q, t;
-	i = 0;
-	k = BASE;
-	q = delta;
-
-	while (true) {
-		if (k <= bias) {
-			t = TMIN;
-		} else if (k >= bias + TMAX) {
-			t = TMAX;
-		} else {
-			t = k - bias;
-		}
-
-		if (q < t) {
-			break;
-		}
-
-		dst[i++] = encode_digit (t + (q - t) % (BASE - t));
-
-		q = (q - t) / (BASE - t);
-		k += BASE;
-	}
-
-	dst[i++] = encode_digit (q);
-
-	return i;
-}
-
 static ut32 decode_digit(ut32 v) {
 	if (isdigit (v)) {
 		return v - 22;
@@ -219,13 +189,10 @@ R_API char *r_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
 		return NULL;
 	}
 
-	// todo: basically strlen, fix
 	actualsrc = utf8toutf32 (src, srclen, &actualsrclen);
 	if (!actualsrc) {
 		return NULL;
 	}
-	// todo: basically strlen, fix
-	// len = utf32len (actualsrc);
 
 	dstCap = 2 * actualsrclen;
 	dst = calloc (dstCap, 1);
@@ -234,7 +201,6 @@ R_API char *r_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
 
 	for (si = 0, di = 0; si < actualsrclen; si++) {
 		if (actualsrc[si] < 128) {
-			// dst[di++] = actualsrc[si];
 			if (!punycode_write_at(&dst, di++, &dstCap, actualsrc[si]))
 				goto beach;
 		}
@@ -243,7 +209,6 @@ R_API char *r_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
 	b = h = di;
 
 	if (di > 0) {
-		// dst[di++] = '-';
 		if (!punycode_write_at(&dst, di++, &dstCap, '-'))
 			goto beach;
 	}
@@ -269,7 +234,6 @@ R_API char *r_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
 				if (++delta == 0)
 					goto beach;
 			} else if (actualsrc[si] == n) {
-				// di += encode_var_int (bias, delta, &dst[di]);
 				ut32 k, q, t;
 				k = BASE;
 				q = delta;
@@ -286,14 +250,12 @@ R_API char *r_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
 						break;
 					}
 
-					// dst[di++] = encode_digit (t + (q - t) % (BASE - t));
 					if (!punycode_write_at(&dst, di++, &dstCap, encode_digit (t + (q - t) % (BASE - t))))
 						goto beach;
 
 					q = (q - t) / (BASE - t);
 					k += BASE;
 				}
-				// dst[di++] = encode_digit (q);
 				if (!punycode_write_at(&dst, di++, &dstCap, encode_digit (q)))
 					goto beach;
 
