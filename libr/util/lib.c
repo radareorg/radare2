@@ -7,8 +7,9 @@ R_LIB_VERSION (r_lib);
 
 /* XXX : this must be registered at runtime instead of hardcoded */
 static const char *const r_lib_types[] = {
-	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bin_xtr", "bin_ldr",
-	"bp", "syscall", "fastcall", "muta", "core", "egg", "fs", "arch", NULL
+	"io", "dbg", "lang", "asm", "anal", "bin", "bin_xtr", "bin_ldr",
+	"bp", "syscall", "fastcall", "crypto", "core", "egg", "fs", "esil",
+	"arch", "muta", "bin_demangle", NULL
 };
 
 R_API void *r_lib_dl_open(const char *libname, bool safe_mode) {

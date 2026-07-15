@@ -116,6 +116,7 @@ enum {
 	R_LIB_TYPE_ESIL,    /* r_anal.esil plugin */
 	R_LIB_TYPE_ARCH,    /* arch plugins */
 	R_LIB_TYPE_MUTA,    /* mutator */
+	R_LIB_TYPE_BIN_DEMANGLE, /* bin demanglers */
 	R_LIB_TYPE_LAST
 };
 

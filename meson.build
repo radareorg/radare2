@@ -262,6 +262,7 @@ conf_data.set('plugins_arch', '&r_arch_plugin_' + ', &r_arch_plugin_'.join(arch_
 conf_data.set('plugins_asm', '&r_asm_plugin_' + ', &r_asm_plugin_'.join(asm_plugins) + ', 0')
 conf_data.set('plugins_bp', '&r_bp_plugin_' + ', &r_bp_plugin_'.join(bp_plugins) + ', 0')
 conf_data.set('plugins_bin', '&r_bin_plugin_' + ', &r_bin_plugin_'.join(bin_plugins) + ', 0')
+conf_data.set('plugins_bin_demangle', bin_demangle_plugins.length() > 0 ? '&r_bin_demangle_plugin_' + ', &r_bin_demangle_plugin_'.join(bin_demangle_plugins) + ', 0' : '0')
 conf_data.set('plugins_bin_ldr', '&r_bin_ldr_plugin_' + ', &r_bin_ldr_plugin_'.join(bin_ldr_plugins) + ', 0')
 conf_data.set('plugins_bin_xtr', '&r_bin_xtr_plugin_' + ', &r_bin_xtr_plugin_'.join(bin_xtr_plugins) + ', 0')
 conf_data.set('plugins_muta', '&r_muta_plugin_' + ', &r_muta_plugin_'.join(muta_plugins) + ', 0')

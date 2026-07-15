@@ -22,10 +22,14 @@ R_LIB_VERSION(r_bin);
 #if !defined(R_BIN_LDR_STATIC_PLUGINS)
 #define R_BIN_LDR_STATIC_PLUGINS 0
 #endif
+#if !defined(R_BIN_DEMANGLE_STATIC_PLUGINS)
+#define R_BIN_DEMANGLE_STATIC_PLUGINS 0
+#endif
 
 static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
 static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
+static RBinDemanglePlugin *bin_demangle_static_plugins[] = { R_BIN_DEMANGLE_STATIC_PLUGINS, NULL };
 
 static void bin_plugin_fini(void *user, void *plugin) {
 	RBinPlugin *plug = plugin;
@@ -42,6 +46,7 @@ static bool bin_load_plugins(RLibStore *store) {
 	r_lib_add_static (bin, bin_static_plugins, (RLibPluginAddCb)r_bin_plugin_add);
 	r_lib_add_static (bin, bin_xtr_static_plugins, (RLibPluginAddCb)r_bin_xtr_add);
 	r_lib_add_static (bin, bin_ldr_static_plugins, (RLibPluginAddCb)r_bin_ldr_add);
+	r_lib_add_static (bin, bin_demangle_static_plugins, (RLibPluginAddCb)r_bin_demangle_plugin_add);
 	return true;
 }
 
@@ -593,6 +598,114 @@ R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin) {
 	return false;
 }
 
+static int demangle_type_index(RBinLanguage type) {
+	ut32 value = (ut32)type & 0xffff;
+	if (!value || (value & (value - 1))) {
+		return -1;
+	}
+	int index = r_bits_ctz32 (value);
+	return index < R_BIN_DEMANGLE_TYPE_SLOTS? index: -1;
+}
+
+static void demangle_names_remove(RBin *bin, RBinDemanglePlugin *plugin) {
+	ht_pp_delete (bin->demangle_by_name, plugin->meta.name);
+	if (R_STR_ISEMPTY (plugin->aliases)) {
+		return;
+	}
+	char *aliases = strdup (plugin->aliases);
+	RList *list = r_str_split_list (aliases, ",", 0);
+	RListIter *iter;
+	const char *alias;
+	r_list_foreach (list, iter, alias) {
+		if (R_STR_ISNOTEMPTY (alias)) {
+			ht_pp_delete (bin->demangle_by_name, alias);
+		}
+	}
+	r_list_free (list);
+	free (aliases);
+}
+
+R_API RBinDemanglePlugin *r_bin_demangle_plugin_find(RBin *bin, const char *name) {
+	R_RETURN_VAL_IF_FAIL (bin && name, NULL);
+	return ht_pp_find (bin->demangle_by_name, name, NULL);
+}
+
+R_API bool r_bin_demangle_plugin_add(RBin *bin, RBinDemanglePlugin *plugin) {
+	R_RETURN_VAL_IF_FAIL (bin && plugin && plugin->meta.name && plugin->demangle, false);
+	int type_index = demangle_type_index (plugin->type);
+	if (plugin->type != R_BIN_LANG_NONE && type_index < 0) {
+		R_LOG_WARN ("Invalid demangler language type for '%s'", plugin->meta.name);
+		return false;
+	}
+	if (r_bin_demangle_plugin_find (bin, plugin->meta.name)
+			|| (type_index >= 0 && bin->demangle_by_type[type_index])) {
+		R_LOG_WARN ("Demangler plugin '%s' is already registered", plugin->meta.name);
+		return false;
+	}
+	HtPP *seen = ht_pp_new0 ();
+	ht_pp_insert (seen, plugin->meta.name, plugin);
+	char *aliases = R_STR_ISNOTEMPTY (plugin->aliases)? strdup (plugin->aliases): NULL;
+	RList *list = aliases? r_str_split_list (aliases, ",", 0): NULL;
+	RListIter *iter;
+	const char *alias;
+	r_list_foreach (list, iter, alias) {
+		if (R_STR_ISEMPTY (alias) || ht_pp_find (seen, alias, NULL)
+				|| r_bin_demangle_plugin_find (bin, alias)) {
+			R_LOG_WARN ("Duplicate demangler alias '%s'", r_str_get (alias));
+			ht_pp_free (seen);
+			r_list_free (list);
+			free (aliases);
+			return false;
+		}
+		ht_pp_insert (seen, alias, plugin);
+	}
+	ht_pp_free (seen);
+	RBinDemanglePlugin *copy = R_NEW0 (RBinDemanglePlugin);
+	*copy = *plugin;
+	if (!ht_pp_insert (bin->demangle_by_name, copy->meta.name, copy)) {
+		r_list_free (list);
+		free (aliases);
+		free (copy);
+		return false;
+	}
+	r_list_foreach (list, iter, alias) {
+		if (!ht_pp_insert (bin->demangle_by_name, alias, copy)) {
+			demangle_names_remove (bin, copy);
+			r_list_free (list);
+			free (aliases);
+			free (copy);
+			return false;
+		}
+	}
+	if (!r_list_append (bin->demangle_plugins, copy)) {
+		demangle_names_remove (bin, copy);
+		r_list_free (list);
+		free (aliases);
+		free (copy);
+		return false;
+	}
+	if (type_index >= 0) {
+		bin->demangle_by_type[type_index] = copy;
+	}
+	r_list_free (list);
+	free (aliases);
+	return true;
+}
+
+R_API bool r_bin_demangle_plugin_remove(RBin *bin, RBinDemanglePlugin *plugin) {
+	R_RETURN_VAL_IF_FAIL (bin && plugin && plugin->meta.name, false);
+	RBinDemanglePlugin *registered = r_bin_demangle_plugin_find (bin, plugin->meta.name);
+	if (!registered || strcmp (registered->meta.name, plugin->meta.name)) {
+		return false;
+	}
+	int type_index = demangle_type_index (registered->type);
+	if (type_index >= 0 && bin->demangle_by_type[type_index] == registered) {
+		bin->demangle_by_type[type_index] = NULL;
+	}
+	demangle_names_remove (bin, registered);
+	return r_list_delete_data (bin->demangle_plugins, registered);
+}
+
 R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo) {
 	R_RETURN_VAL_IF_FAIL (bin && foo, false);
 	RList *ldrs = bin->libstore->ldrs;
@@ -636,6 +749,8 @@ R_API void r_bin_free(RBin *bin) {
 		}
 		RVecBinSymclassGlob_fini (&bin->symclass_globs);
 		r_libstore_free (bin->libstore);
+		r_list_free (bin->demangle_plugins);
+		ht_pp_free (bin->demangle_by_name);
 		sdb_free (bin->sdb);
 		r_id_storage_free (bin->ids);
 		r_str_constpool_fini (&bin->constpool);
@@ -1216,6 +1331,8 @@ R_API RBin *r_bin_new(void) {
 	bin->ids = r_id_storage_new (0, ST32_MAX);
 
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
+	bin->demangle_plugins = r_list_newf ((RListFree)free);
+	bin->demangle_by_name = ht_pp_new0 ();
 	r_libstore_new (&bin->libstore, bin, NULL, (RListFree)free, bin_load_plugins, (RLibPluginAddCb)r_bin_plugin_add, (RLibPluginAddCb)r_bin_plugin_remove);
 	return bin;
 }

@@ -543,6 +543,15 @@ typedef struct r_bin_file_t {
 	RArena *arena;
 } RBinFile;
 
+#define R_BIN_DEMANGLE_TYPE_SLOTS 16
+
+typedef struct r_bin_demangle_plugin_t {
+	RPluginMeta meta;
+	RBinLanguage type;
+	const char *aliases;
+	char *(*demangle)(RBinFile *bf, const char *symbol, ut64 vaddr);
+} RBinDemanglePlugin;
+
 typedef struct r_bin_create_options_t {
 	const char *pluginname;
 	ut64 baseaddr; // where the linker maps the binary in memory
@@ -608,6 +617,9 @@ struct r_bin_t {
 	RStrConstPool constpool;
 	RBinOptions options;
 	RLibStore *libstore;
+	RList /*<RBinDemanglePlugin *>*/ *demangle_plugins;
+	HtPP /*<char *, RBinDemanglePlugin *>*/ *demangle_by_name;
+	RBinDemanglePlugin *demangle_by_type[R_BIN_DEMANGLE_TYPE_SLOTS];
 	struct r_fs_t *fs; // optional: r_bin_open_buf probes containers via r_fs
 };
 
@@ -916,6 +928,9 @@ R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *plugin);
 R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin);
 R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo);
+R_API bool r_bin_demangle_plugin_add(RBin *bin, RBinDemanglePlugin *plugin);
+R_API bool r_bin_demangle_plugin_remove(RBin *bin, RBinDemanglePlugin *plugin);
+R_API RBinDemanglePlugin *r_bin_demangle_plugin_find(RBin *bin, const char *name);
 R_API void r_bin_list(RBin *bin, PJ *pj, int format);
 R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json);
 R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBinFile *bf, RBuffer *buf);
@@ -1092,6 +1107,15 @@ R_API void r_bin_section_free(RBinSection *bs);
 
 /* plugin pointers */
 extern RBinLdrPlugin r_bin_ldr_plugin_ldr_linux;
+extern RBinDemanglePlugin r_bin_demangle_plugin_cxx;
+extern RBinDemanglePlugin r_bin_demangle_plugin_dlang;
+extern RBinDemanglePlugin r_bin_demangle_plugin_ibmxl;
+extern RBinDemanglePlugin r_bin_demangle_plugin_java;
+extern RBinDemanglePlugin r_bin_demangle_plugin_msvc;
+extern RBinDemanglePlugin r_bin_demangle_plugin_objc;
+extern RBinDemanglePlugin r_bin_demangle_plugin_pascal;
+extern RBinDemanglePlugin r_bin_demangle_plugin_rust;
+extern RBinDemanglePlugin r_bin_demangle_plugin_swift;
 extern RBinPlugin r_bin_plugin_null;
 extern RBinPlugin r_bin_plugin_art;
 extern RBinPlugin r_bin_plugin_avr;
