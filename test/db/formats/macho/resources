@@ -1,0 +1,17 @@
+NAME=Mach-O embedded resources
+FILE=bins/macho/AppIOSEntitlements.ios
+ARGS=-a arm -b 64
+CMDS=iUqq
+EXPECT=<<EOF
+CodeSignature
+EOF
+RUN
+
+NAME=Mach-O resources from a signed application
+FILE=bins/macho/MASTestApp
+CMDS=iUqq
+EXPECT=<<EOF
+CodeSignature
+Certificate
+EOF
+RUN

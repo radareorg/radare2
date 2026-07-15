@@ -152,7 +152,7 @@ EOF
 RUN
 
 NAME="open companion file for macho dwarf"
-FILE=bins/mach0/dwarf/a.out
+FILE=bins/macho/dwarf/a.out
 CMDS=<<EOF
 CL
 EOF
@@ -205,7 +205,7 @@ EOF
 RUN
 
 NAME="Mach-O dSYM lines (armv7)"
-FILE=bins/mach0/TestRTTI-armv7-dSYM
+FILE=bins/macho/TestRTTI-armv7-dSYM
 CMDS=<<EOF
 CL 0x0000a24e
 EOF
@@ -218,7 +218,7 @@ EOF
 RUN
 
 NAME="Mach-O dSYM symbols (armv7)"
-FILE=bins/mach0/TestRTTI-armv7-dSYM
+FILE=bins/macho/TestRTTI-armv7-dSYM
 CMDS=<<EOF
 is~main[1]
 EOF

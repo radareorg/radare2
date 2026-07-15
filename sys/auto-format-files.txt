@@ -47,7 +47,7 @@ libr/bin/bin.c
 libr/bin/bin_write.c
 libr/bin/dbginfo.c
 libr/bin/filter.c
-libr/bin/format/objc/mach0_classes.c
+libr/bin/format/objc/macho_classes.c
 
 libr/cons/hud.c
 libr/cons/msg.c

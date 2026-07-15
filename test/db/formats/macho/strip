@@ -1,0 +1,111 @@
+NAME=stripped check 0
+FILE=bins/macho/aout-notstripped
+CMDS=<<EOF
+i~^stripp
+i~^uncaps
+EOF
+EXPECT=<<EOF
+stripped false
+uncaps   true
+EOF
+RUN
+
+NAME=stripped check 1
+FILE=bins/macho/aout-stripped
+CMDS=<<EOF
+i~^stripp
+i~^uncaps
+EOF
+EXPECT=<<EOF
+stripped true
+uncaps   false
+EOF
+RUN
+
+NAME=stripped check 2
+FILE=bins/macho/aout-notstripped
+CMDS=<<EOF
+%RABIN2_MACHO_NOFUNCSTARTS=0
+!!rabin2 -I bins/macho/aout-notstripped~^strip
+!!rabin2 -I bins/macho/aout-notstripped~^uncaps
+EOF
+EXPECT=<<EOF
+stripped false
+uncaps   true
+EOF
+RUN
+
+NAME=stripped check 3
+FILE=bins/macho/aout-stripped
+CMDS=<<EOF
+%RABIN2_MACHO_NOFUNCSTARTS=0
+!!rabin2 -I bins/macho/aout-stripped~^strip
+!!rabin2 -I bins/macho/aout-stripped~^uncaps
+EOF
+EXPECT=<<EOF
+stripped true
+uncaps   false
+EOF
+RUN
+
+NAME=stripped check 4
+FILE=bins/macho/aout-notstripped
+CMDS=<<EOF
+%RABIN2_MACHO_NOFUNCSTARTS=1
+!!rabin2 -I bins/macho/aout-notstripped~^strip
+!!rabin2 -I bins/macho/aout-notstripped~^uncaps
+EOF
+EXPECT=<<EOF
+stripped false
+uncaps   true
+EOF
+RUN
+
+NAME=stripped check 5
+FILE=bins/macho/aout-stripped
+CMDS=<<EOF
+%RABIN2_MACHO_NOFUNCSTARTS=1
+!!rabin2 -I bins/macho/aout-stripped~^strip
+!!rabin2 -I bins/macho/aout-stripped~^uncaps
+EOF
+EXPECT=<<EOF
+stripped true
+uncaps   false
+EOF
+RUN
+
+NAME=stripped check 6
+FILE=bins/macho/hello-osx-x86_64
+CMDS=<<EOF
+i~^stripp
+i~^uncaps
+EOF
+EXPECT=<<EOF
+stripped true
+uncaps   true
+EOF
+RUN
+
+NAME=stripped check 7
+FILE=bins/macho/Alamofire-stripped
+CMDS=<<EOF
+i~^stripp
+i~^uncaps
+EOF
+EXPECT=<<EOF
+stripped true
+uncaps   false
+EOF
+RUN
+
+NAME=stripped check 8 swift thunks
+FILE=bins/macho/libswift-thunks.dylib
+CMDS=<<EOF
+i~^stripp
+i~^uncaps
+EOF
+EXPECT=<<EOF
+stripped false
+uncaps   false
+EOF
+RUN

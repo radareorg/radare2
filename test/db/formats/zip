@@ -1,5 +1,5 @@
 NAME=zip0://
-FILE=zip0://bins/mach0/io.zip
+FILE=zip0://bins/macho/io.zip
 CMDS=<<EOF
 iI
 pd 10
@@ -8,11 +8,11 @@ EXPECT=<<EOF
 arch     arm
 baddr    0x0
 binsz    47904
-bintype  mach0
+bintype  macho
 bits     64
 canary   false
 injprot  false
-class    MACH064
+class    MACHO64
 compiler clang
 crypto   false
 endian   little

@@ -52,7 +52,7 @@ EOF
 RUN
 
 NAME=io.baddr -x86_32 entry0 data
-FILE=bins/mach0/fatmach0-3true
+FILE=bins/macho/fatmacho-3true
 ARGS=-a x86 -b 32 -e io.basemap=true
 CMDS=<<EOF
 ie
@@ -73,7 +73,7 @@ EOF
 RUN
 
 NAME=io.baddr -x86_32 entry0 data nobasemap
-FILE=bins/mach0/fatmach0-3true
+FILE=bins/macho/fatmacho-3true
 ARGS=-a x86 -b 32 -e io.basemap=false
 CMDS=<<EOF
 ie

@@ -354,7 +354,7 @@ EOF
 RUN
 
 NAME=cmp against all functions
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b 64
 CMDS=<<EOF
 aa

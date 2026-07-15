@@ -378,7 +378,7 @@ static void setASLR(RRunProfile *r, int enabled) {
 		: r->_program? r->_program
 		: r->_args[0]? r->_args[0]
 				: "/path/to/exec";
-	R_LOG_INFO ("To disable aslr patch mach0.hdr.flags with: r2 -qwnc 'wx 000000 @ 0x18' %s", argv0);
+	R_LOG_INFO ("To disable aslr patch macho.hdr.flags with: r2 -qwnc 'wx 000000 @ 0x18' %s", argv0);
 	// f MH_PIE=0x00200000; wB-MH_PIE @ 24\n");
 	// for osxver>=10.7
 	// "unset the MH_PIE bit in an already linked executable" with --no-pie flag of the script

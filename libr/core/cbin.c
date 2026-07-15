@@ -1035,7 +1035,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 			}
 			pair_str (core, pj, "rpath", info->rpath);
 			if (info->rclass && !strcmp (info->rclass, "pe")) {
-				// this should be moved if added to mach0 (or others)
+				// this should be moved if added to macho (or others)
 				pair_bool (core, pj, "signed", info->signature);
 			}
 			pair_bool (core, pj, "sanitize", info->has_sanitizers);
@@ -4978,7 +4978,7 @@ static void bin_elf_versioninfo(RCore *core, PJ *pj, int mode) {
 	}
 }
 
-static void bin_mach0_versioninfo(RCore *core) {
+static void bin_macho_versioninfo(RCore *core) {
 	/* TODO */
 }
 
@@ -5154,8 +5154,8 @@ static bool bin_versioninfo(RCore *core, PJ *pj, int mode) {
 		bin_pe_versioninfo (core, pj, mode);
 	} else if (r_str_startswith (rclass, "elf")) {
 		bin_elf_versioninfo (core, pj, mode);
-	} else if (r_str_startswith (rclass, "mach0")) {
-		bin_mach0_versioninfo (core); // TODO
+	} else if (r_str_startswith (rclass, "macho")) {
+		bin_macho_versioninfo (core); // TODO
 	} else if (!strcmp (rclass, "mdmp")) {
 		bin_mdmp_versioninfo (core, pj, mode);
 	} else {

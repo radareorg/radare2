@@ -3581,7 +3581,7 @@ EOF
 RUN
 
 NAME=iI~laddr
-FILE=bins/mach0/fatmach0-3true
+FILE=bins/macho/fatmacho-3true
 ARGS=-m 0x5000
 CMDS=iI~laddr
 EXPECT=<<EOF
@@ -3590,33 +3590,33 @@ EOF
 RUN
 
 NAME=ik-macho
-FILE=bins/mach0/fatmach0-3true
-CMDS=ik info/mach0.entry.vaddr~?0x100000ef8
+FILE=bins/macho/fatmacho-3true
+CMDS=ik info/macho.entry.vaddr~?0x100000ef8
 EXPECT=<<EOF
 1
 EOF
 RUN
 
 NAME=ikv
-FILE=bins/mach0/fatmach0-3true
-CMDS=ikv info/mach0.entry.vaddr
+FILE=bins/macho/fatmacho-3true
+CMDS=ikv info/macho.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
 EOF
 RUN
 
 NAME=ik.
-FILE=bins/mach0/fatmach0-3true
-CMDS=ik. info/mach0.entry.vaddr
+FILE=bins/macho/fatmacho-3true
+CMDS=ik. info/macho.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
 EOF
 RUN
 
 NAME=ik*
-FILE=bins/mach0/fatmach0-3true
+FILE=bins/macho/fatmacho-3true
 ARGS=-e bin.types=true
-CMDS=ik*~?mach0_segment64_0
+CMDS=ik*~?macho_segment64_0
 EXPECT=<<EOF
 1
 EOF
@@ -3624,7 +3624,7 @@ RUN
 
 NAME=ik?
 BROKEN=1
-FILE=bins/mach0/fatmach0-3true
+FILE=bins/macho/fatmacho-3true
 CMDS=ik?~?Usage
 EXPECT=<<EOF
 1
@@ -3632,7 +3632,7 @@ EOF
 RUN
 
 NAME=iS=
-FILE=bins/mach0/fatmach0-3true
+FILE=bins/macho/fatmacho-3true
 CMDS=iS=
 EXPECT=<<EOF
 0*  0x100000ef8 ######------------------------ 0x100000f3f r-x   71    0.__TEXT.__text
@@ -3649,7 +3649,7 @@ EOF
 RUN
 
 NAME=iSq.
-FILE=bins/mach0/fatmach0-3true
+FILE=bins/macho/fatmacho-3true
 CMDS=iSq.
 EXPECT=<<EOF
 0x100000ef8 0x100000f3f -r-x 0.__TEXT.__text
@@ -3657,7 +3657,7 @@ EOF
 RUN
 
 NAME=isqq
-FILE=bins/mach0/fatmach0-3true
+FILE=bins/macho/fatmacho-3true
 CMDS=isqq
 EXPECT=<<EOF
 __mh_execute_header
@@ -3889,7 +3889,7 @@ NAME=it2
 FILE=--
 CMDS=<<EOF
 mkdir .tmp
-cp bins/mach0/fatmach0-3true .tmp/it2-modfile
+cp bins/macho/fatmacho-3true .tmp/it2-modfile
 o .tmp/it2-modfile
 om
 oo+
@@ -3940,7 +3940,7 @@ EOF
 RUN
 
 NAME=macho-ghost-symbols
-FILE=bins/mach0/libr_flag.dylib
+FILE=bins/macho/libr_flag.dylib
 CMDS=<<EOF
 is~?
 is~entry?
@@ -3972,7 +3972,7 @@ EOF
 RUN
 
 NAME=isqq bug
-FILE=bins/mach0/WheresMyBrowser
+FILE=bins/macho/WheresMyBrowser
 CMDS=<<EOF
 is.@0x100023b68
 EOF
@@ -3984,7 +3984,7 @@ EOF
 RUN
 
 NAME=iS ssdeep
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b64
 CMDS=<<EOF
 iS ssdeep
@@ -4007,7 +4007,7 @@ EOF
 RUN
 
 NAME=iS sha1
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b64
 CMDS=<<EOF
 iS sha1,crc32
@@ -4030,7 +4030,7 @@ EOF
 RUN
 
 NAME=iSS sha1
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b64
 CMDS=<<EOF
 iSS sha1,crc32
@@ -4061,12 +4061,12 @@ nth vaddr      bind   type   lib name
 EOF
 RUN
 
-NAME=mach0 listings respect bin.limit after open
+NAME=macho listings respect bin.limit after open
 FILE=-
 CMDS=<<EOF
 e bin.relocs=false
 e bin.limit=3
-o bins/mach0/hello-osx-x86_64
+o bins/macho/hello-osx-x86_64
 is
 ii
 ie

@@ -1,5 +1,5 @@
 NAME=afcf ls
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 af@main
 afcf main @ 0
@@ -14,7 +14,7 @@ EOF
 RUN
 
 NAME=af localflag
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 af
 f.foobar=0x100001216
@@ -27,7 +27,7 @@ EOF
 RUN
 
 NAME=af switch test
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 af
 axf@0x100001308
@@ -78,7 +78,7 @@ EOF
 RUN
 
 NAME=af import
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 s sym.imp.write
 af
@@ -92,7 +92,7 @@ EOF
 RUN
 
 NAME=afll
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=aa ; afll~?main
 EXPECT=<<EOF
 1
@@ -470,7 +470,7 @@ EOF
 RUN
 
 NAME=af with custom sym.il name
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b 64
 CMDS=<<EOF
 sn

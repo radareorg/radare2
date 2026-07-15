@@ -1,5 +1,5 @@
 NAME=aavr async swift
-FILE=bins/mach0/SwiftAsynciOS
+FILE=bins/macho/SwiftAsynciOS
 CMDS=<<EOF
 s 0x100007504
 e anal.in=bin.sections.rw
@@ -12,7 +12,7 @@ EOF
 RUN
 
 NAME=aaa in swift implies avr on rw sections
-FILE=bins/mach0/SwiftAsynciOS
+FILE=bins/macho/SwiftAsynciOS
 CMDS=<<EOF
 s 0x100007504
 aaa

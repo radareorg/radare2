@@ -9,7 +9,7 @@ EOF
 RUN
 
 NAME=@@c:/c fs:
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 e asm.bytes=0
 e search.in = bin.sections
@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=@@c:/c/a fs:
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 e asm.bytes=0
 e search.in = bin.sections

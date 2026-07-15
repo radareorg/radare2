@@ -1,5 +1,5 @@
 NAME=pd varsub-issue
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 s 0x100001232
 e asm.sub.var=0
@@ -616,7 +616,7 @@ EOF
 RUN
 
 NAME=pds change name
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 e asm.flags=false
 s sym.func.100004401

@@ -1,5 +1,5 @@
 NAME=asm.trace
-FILE=bins/mach0/main-loop
+FILE=bins/macho/main-loop
 CMDS=<<EOF
 af
 e asm.var.summary=0

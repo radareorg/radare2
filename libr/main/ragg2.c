@@ -85,8 +85,8 @@ static int usage(int v) {
 			" -D [off:qword]  patch qword (8 bytes) at given offset\n"
 			" -e [egg-expr]   take egg program from string instead of file\n"
 			" -E [encoder]    use specific encoder. see -L\n"
-			" -f [format]     output format (raw, c, pe, elf, mach0, python, javascript)\n"
-			" -F              output native format (osx=mach0, linux=elf, ..)\n"
+			" -f [format]     output format (raw, c, pe, elf, macho, python, javascript)\n"
+			" -F              output native format (osx=macho, linux=elf, ..)\n"
 			" -h              show this help\n"
 			" -H ([var])      display variable\n"
 			" -i [shellcode]  include shellcode plugin, uses options. see -L\n"
@@ -383,7 +383,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			break;
 		case 'F':
 #if __APPLE__
-			format = "mach0";
+			format = "macho";
 #elif R2__WINDOWS__
 			format = "pe";
 #else
@@ -456,8 +456,8 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	}
 
 	if (bits == 64) {
-		if (!strcmp (format, "mach0")) {
-			format = "mach064";
+		if (!strcmp (format, "macho")) {
+			format = "macho64";
 		} else if (!strcmp (format, "elf")) {
 			format = "elf64";
 		} else if (!strcmp (format, "pe")) {
@@ -730,7 +730,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				}
 				break;
 			case 'e': // ELF
-			case 'm': // MACH0
+			case 'm': // MACHO
 				create (format, arch, bits, tmp, tmpsz);
 				break;
 			default:

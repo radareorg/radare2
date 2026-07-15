@@ -55,7 +55,7 @@ static int rabin_show_help(int line) {
 			" -B [addr]       override base address (pie bins)\n"
 			" -c              list classes\n"
 			" -cc             list classes in header format\n"
-			" -C [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
+			" -C [fmt:C:D]    create [elf,macho,pe] with Code and Data hexpairs (see -a)\n"
 			" -d              show debug/dwarf information\n"
 			" -D lang name    demangle symbol name (-D all for bin.demangle=true)\n"
 			" -e              program entrypoint\n"
@@ -1276,7 +1276,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	if (pj) {
 		pj_o (pj);
 	}
-	// List fatmach0 sub-binaries, etc
+	// List fatmacho sub-binaries, etc
 	if (action & R_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) && !r_bin_select (bin, arch, bits, arch_name))) {
 		if (rad == R_MODE_SIMPLEST || rad == R_MODE_SIMPLE) {
 			r_bin_list_archs (bin, pj, NULL, 'q');

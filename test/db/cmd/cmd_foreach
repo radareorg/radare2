@@ -66,7 +66,7 @@ EOF
 RUN
 
 NAME=foreach iterator on imports at macho
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 ?e hello
 ii~?
@@ -104,7 +104,7 @@ EOF
 RUN
 
 NAME=foreach iterator for other stuff
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 ARGS=-e bin.types=true
 CMDS=<<EOF
 ?e hello

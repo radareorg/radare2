@@ -1274,7 +1274,7 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 	if (s && s->name[0]) {
 		bool in_plt = strstr (s->name, ".plt");
 		if (!in_plt && strstr (s->name, "_stubs")) {
-			/* for mach0 */
+			/* for macho */
 			in_plt = true;
 		}
 		if (in_plt) {

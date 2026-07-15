@@ -15,7 +15,7 @@ NAME=wen 3 writable bin
 FILE=--
 CMDS=<<EOF
 mkdir .tmp
-cp bins/mach0/mac-ls2 .tmp/ls-wen
+cp bins/macho/mac-ls2 .tmp/ls-wen
 o .tmp/ls-wen
 r
 wen 3
@@ -35,7 +35,7 @@ EOF
 RUN
 
 NAME=wen 3 in readonly bin
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 # cannot resize in va and non-write mode
 r

@@ -1,4 +1,4 @@
-OBJ_XTR_DYLDCACHE=bin_xtr_dyldcache.o ../format/mach0/dyldcache.o
+OBJ_XTR_DYLDCACHE=bin_xtr_dyldcache.o ../format/macho/dyldcache.o
 
 STATIC_OBJ+=${OBJ_XTR_DYLDCACHE}
 TARGET_XTR_DYLDCACHE=bin_xtr_dyldcache.${EXT_SO}

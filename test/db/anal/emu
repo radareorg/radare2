@@ -18,7 +18,7 @@ EOF
 RUN
 
 NAME=emu ret0
-FILE=bins/mach0/ret0ret1restr
+FILE=bins/macho/ret0ret1restr
 ARGS=-1
 CMDS=<<EOF
 aaa 2> /dev/null
@@ -52,7 +52,7 @@ EOF
 RUN
 
 NAME=emu paths
-FILE=bins/mach0/ret0ret1restr
+FILE=bins/macho/ret0ret1restr
 ARGS=-1
 CMDS=<<EOF
 e asm.var.summary=0
@@ -135,7 +135,7 @@ EOF
 RUN
 
 NAME=emu paths with a macro
-FILE=bins/mach0/ret0ret1restr
+FILE=bins/macho/ret0ret1restr
 ARGS=-1
 CMDS=<<EOF
 aeim
@@ -173,7 +173,7 @@ EOF
 RUN
 
 NAME=emu trace infloop
-FILE=bins/mach0/infloop
+FILE=bins/macho/infloop
 CMDS=<<EOF
 af
 aeim

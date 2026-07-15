@@ -1,5 +1,5 @@
 NAME=att subrel
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 e asm.syntax=att
 e asm.lines.jmp=0
@@ -35,7 +35,7 @@ EOF
 RUN
 
 NAME=att varsub
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 af
 e asm.syntax=att

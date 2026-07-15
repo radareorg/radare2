@@ -46,7 +46,7 @@ if user_plugins.contains('apple') or user_plugins.contains('macos') or user_plug
     'mach',
   ]
   bin_plugins += [
-    'mach0', 'mach064',
+    'macho', 'macho64',
     'dyldcache',
     'xnu_kernelcache',
   ]
@@ -249,8 +249,8 @@ if get_option('plugins') == ''
     'java',
     'le',
     'hunk',
-    'mach0',
-    'mach064',
+    'macho',
+    'macho64',
     'mbn',
     'mdmp',
     'mclf',

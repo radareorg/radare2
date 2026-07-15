@@ -8,7 +8,7 @@
 #define FATMACHO_ARCH_SIZE 20
 #define FATMACHO_NFAT_MAX 32
 
-// cputype constants match Apple's loader.h without pulling mach0 specs into r_fs.
+// cputype constants match Apple's loader.h without pulling macho specs into r_fs.
 #define CPU_ARCH_ABI64   0x01000000
 #define CPU_TYPE_VAX     1
 #define CPU_TYPE_MC680x0 6

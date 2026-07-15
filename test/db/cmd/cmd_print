@@ -673,8 +673,8 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pm mach0/fatmach0-3true
-FILE=bins/mach0/fatmach0-3true
+NAME=pm macho/fatmacho-3true
+FILE=bins/macho/fatmacho-3true
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
@@ -1117,7 +1117,7 @@ EOF
 RUN
 
 NAME=pso
-FILE=bins/mach0/swift-main3
+FILE=bins/macho/swift-main3
 CMDS=<<EOF
 s 0x100003ed8
 pd 10

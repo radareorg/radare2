@@ -1,5 +1,5 @@
 NAME=strcpy lowerdashes
-FILE=bins/mach0/strcpy-overflow
+FILE=bins/macho/strcpy-overflow
 CMDS=<<EOF
 af;pdc~strcp
 EOF
@@ -680,7 +680,7 @@ EOF
 RUN
 
 NAME=afsafv
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 aa
 s main
@@ -2221,7 +2221,7 @@ EOF
 RUN
 
 NAME=types json fields
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 ARGS=-b64
 CMDS=<<EOF
 tsj NSString~{}

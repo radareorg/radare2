@@ -2,11 +2,11 @@
 
 #include <r_core.h>
 #include <sdb/ht_su.h>
-// #include "../format/mach0/mach0_defines.h"
+// #include "../format/macho/macho_defines.h"
 #include "../i/private.h"
-#define R_BIN_MACH064 1
-#include "../format/mach0/mach0.h"
-#include "objc/mach0_classes.h"
+#define R_BIN_MACHO64 1
+#include "../format/macho/macho.h"
+#include "objc/macho_classes.h"
 #define MAX_N_HDR 128
 
 typedef struct {
@@ -234,13 +234,13 @@ static void symbols_from_locsym(RDyldCache *cache, RDyldBinImage *bin, RBinFile 
 		return;
 	}
 
-	ut64 nlists_size = sizeof (struct MACH0_(nlist)) * bin->nlist_count;
-	struct MACH0_(nlist) *nlists = R_NEWS0 (struct MACH0_(nlist), bin->nlist_count);
+	ut64 nlists_size = sizeof (struct MACHO_(nlist)) * bin->nlist_count;
+	struct MACHO_(nlist) *nlists = R_NEWS0 (struct MACHO_(nlist), bin->nlist_count);
 	if (!nlists) {
 		return;
 	}
 	ut64 nlists_offset = locsym->local_symbols_offset + locsym->nlists_offset +
-		bin->nlist_start_index * sizeof (struct MACH0_(nlist));
+		bin->nlist_start_index * sizeof (struct MACHO_(nlist));
 	if (r_buf_fread_at (cache->buf, nlists_offset, (ut8*) nlists, "iccsl", bin->nlist_count) != nlists_size) {
 		free (nlists);
 		return;
@@ -250,7 +250,7 @@ static void symbols_from_locsym(RDyldCache *cache, RDyldBinImage *bin, RBinFile 
 	ut64 str_base = locsym->local_symbols_offset + locsym->strings_offset;
 	ut32 j;
 	for (j = 0; j != bin->nlist_count; j++) {
-		struct MACH0_(nlist) *nlist = &nlists[j];
+		struct MACHO_(nlist) *nlist = &nlists[j];
 		if (set_u_contains (hash, (ut64)nlist->n_value)) {
 			continue;
 		}
@@ -304,7 +304,7 @@ static ut64 bin_obj_va2pa(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf) {
 		return 0;
 	}
 
-	RDyldCache *cache = (RDyldCache*) ((struct MACH0_(obj_t)*)bf->bo->bin_obj)->user;
+	RDyldCache *cache = (RDyldCache*) ((struct MACHO_(obj_t)*)bf->bo->bin_obj)->user;
 	if (!cache) {
 		return 0;
 	}
@@ -317,7 +317,7 @@ static ut64 bin_obj_va2pa(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	return res;
 }
 
-static struct MACH0_(obj_t) *bin_to_mach0(RBinFile *bf, RDyldBinImage *bin) {
+static struct MACHO_(obj_t) *bin_to_macho(RBinFile *bf, RDyldBinImage *bin) {
 	if (!bin || !bf) {
 		return NULL;
 	}
@@ -332,21 +332,21 @@ static struct MACH0_(obj_t) *bin_to_mach0(RBinFile *bf, RDyldBinImage *bin) {
 		return NULL;
 	}
 
-	struct MACH0_(opts_t) opts;
-	MACH0_(opts_set_default) (&opts, bf);
+	struct MACHO_(opts_t) opts;
+	MACHO_(opts_set_default) (&opts, bf);
 	opts.header_at = bin->header_at - bin->hdr_offset;
 	if (bin->symbols_off) {
 		opts.symbols_off = bin->symbols_off - bin->hdr_offset;
 	}
 
-	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (bf, buf, &opts);
-	if (mach0) {
-		mach0->user = cache;
-		mach0->va2pa = &bin_obj_va2pa;
+	struct MACHO_(obj_t) *macho = MACHO_(new_buf) (bf, buf, &opts);
+	if (macho) {
+		macho->user = cache;
+		macho->va2pa = &bin_obj_va2pa;
 	}
 	r_unref (buf);
 
-	return mach0;
+	return macho;
 }
 
 static int prot2perm(int x) {
@@ -440,14 +440,14 @@ static void carve_deps_at_address(RDyldCache *cache, cache_img_t *img, HtSU *pat
 	if (pa == UT64_MAX) {
 		return;
 	}
-	struct MACH0_(mach_header) mh;
-	if (r_buf_fread_at (cache->buf, pa, (ut8*) &mh, "8i", 1) != sizeof (struct MACH0_(mach_header))) {
+	struct MACHO_(mach_header) mh;
+	if (r_buf_fread_at (cache->buf, pa, (ut8*) &mh, "8i", 1) != sizeof (struct MACHO_(mach_header))) {
 		return;
 	}
 	if (mh.magic != MH_MAGIC_64 || mh.sizeofcmds == 0) {
 		return;
 	}
-	ut64 cmds_at = pa + sizeof (struct MACH0_(mach_header));
+	ut64 cmds_at = pa + sizeof (struct MACHO_(mach_header));
 	ut8 *cmds = malloc (mh.sizeofcmds + 1);
 	if (!cmds || r_buf_read_at (cache->buf, cmds_at, cmds, mh.sizeofcmds) != mh.sizeofcmds) {
 		goto beach;
@@ -491,14 +491,14 @@ beach:
 }
 
 static ut64 resolve_symbols_off(RDyldCache *cache, ut64 pa) {
-	struct MACH0_(mach_header) mh;
-	if (r_buf_fread_at (cache->buf, pa, (ut8*) &mh, "8i", 1) != sizeof (struct MACH0_(mach_header))) {
+	struct MACHO_(mach_header) mh;
+	if (r_buf_fread_at (cache->buf, pa, (ut8*) &mh, "8i", 1) != sizeof (struct MACHO_(mach_header))) {
 		return 0;
 	}
 	if (mh.magic != MH_MAGIC_64 || mh.sizeofcmds == 0) {
 		return 0;
 	}
-	ut64 cmds_at = pa + sizeof (struct MACH0_(mach_header));
+	ut64 cmds_at = pa + sizeof (struct MACHO_(mach_header));
 	ut64 cursor = cmds_at;
 	ut64 end = cursor + mh.sizeofcmds;
 	while (cursor < end) {
@@ -998,20 +998,20 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 			continue;
 		}
 
-		struct MACH0_(opts_t) opts = {0};
-		MACH0_(opts_set_default) (&opts, bf);
+		struct MACHO_(opts_t) opts = {0};
+		MACHO_(opts_set_default) (&opts, bf);
 		opts.verbose = bf->rbin->options.verbose;
 		opts.header_at = bin->header_at;
 		opts.symbols_off = 0;
 
-		struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (bf, cache->buf, &opts);
-		if (!mach0) {
+		struct MACHO_(obj_t) *macho = MACHO_(new_buf) (bf, cache->buf, &opts);
+		if (!macho) {
 			goto beach;
 		}
 
-		const RVecSection *sections = MACH0_(load_sections) (mach0);
+		const RVecSection *sections = MACHO_(load_sections) (macho);
 		if (!sections) {
-			MACH0_(mach0_free) (mach0);
+			MACHO_(macho_free) (macho);
 			goto beach;
 		}
 
@@ -1065,7 +1065,7 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 			}
 		}
 
-		MACH0_(mach0_free) (mach0);
+		MACHO_(macho_free) (macho);
 
 		if (!selrefs_offset || !selrefs_size) {
 			selrefs_offset = const_selrefs_offset;
@@ -1230,13 +1230,13 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 void symbols_from_bin(RBinFile *bf, RDyldBinImage *bin) {
-	struct MACH0_(obj_t) *mo = bin_to_mach0 (bf, bin);
+	struct MACHO_(obj_t) *mo = bin_to_macho (bf, bin);
 	if (!mo) {
 		return;
 	}
 
-	MACH0_(load_symbols) (mo);
-	MACH0_(mach0_free) (mo);
+	MACHO_(load_symbols) (mo);
+	MACHO_(macho_free) (mo);
 }
 
 static bool __is_data_section(const char *name) {
@@ -1253,14 +1253,14 @@ static bool sections_from_bin(RBinFile *bf, RDyldBinImage *bin) {
 		return false;
 	}
 
-	struct MACH0_(obj_t) *mach0 = bin_to_mach0 (bf, bin);
-	if (!mach0) {
+	struct MACHO_(obj_t) *macho = bin_to_macho (bf, bin);
+	if (!macho) {
 		return false;
 	}
 
-	const RVecSection *sections = MACH0_(load_sections) (mach0);
+	const RVecSection *sections = MACHO_(load_sections) (macho);
 	if (!sections) {
-		MACH0_(mach0_free) (mach0);
+		MACHO_(macho_free) (macho);
 		return false;
 	}
 
@@ -1287,7 +1287,7 @@ static bool sections_from_bin(RBinFile *bf, RDyldBinImage *bin) {
 		}
 		ptr->perm = section->perm;
 	}
-	MACH0_(mach0_free) (mach0);
+	MACHO_(macho_free) (macho);
 	return true;
 }
 
@@ -1468,14 +1468,14 @@ static RList *classes(RBinFile *bf) {
 			R_LOG_INFO ("Parsing classes stopped %d / %d", i, r_list_length (cache->bins));
 			break;
 		}
-		struct MACH0_(obj_t) *mach0 = bin_to_mach0 (bf, bin);
-		if (!mach0) {
+		struct MACHO_(obj_t) *macho = bin_to_macho (bf, bin);
+		if (!macho) {
 			goto beach;
 		}
 
-		const RVecSection *sections = MACH0_(load_sections) (mach0);
+		const RVecSection *sections = MACHO_(load_sections) (macho);
 		if (!sections) {
-			MACH0_(mach0_free) (mach0);
+			MACHO_(macho_free) (macho);
 			goto beach;
 		}
 
@@ -1513,12 +1513,12 @@ static RList *classes(RBinFile *bf) {
 				RVecRBinField_init (&klass->fields);
 				klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 
-				bf->bo->bin_obj = mach0;
+				bf->bo->bin_obj = macho;
 				bf->buf = cache->buf;
 				if (is_classlist) {
-					MACH0_(get_class_t) (bf, klass, pointer_to_class, false, NULL, cache->oi);
+					MACHO_(get_class_t) (bf, klass, pointer_to_class, false, NULL, cache->oi);
 				} else {
-					MACH0_(get_category_t) (bf, klass, pointer_to_class, NULL, cache->oi);
+					MACHO_(get_category_t) (bf, klass, pointer_to_class, NULL, cache->oi);
 				}
 				bf->bo->bin_obj = cache;
 				bf->buf = orig_buf;
@@ -1544,7 +1544,7 @@ static RList *classes(RBinFile *bf) {
 			R_FREE (pointers);
 		}
 
-		MACH0_(mach0_free) (mach0);
+		MACHO_(macho_free) (macho);
 	}
 
 	return ret;

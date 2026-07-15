@@ -1,7 +1,7 @@
-NAME=mach0 function dwarf
-FILE=bins/mach0/twocall
+NAME=macho function dwarf
+FILE=bins/macho/twocall
 CMDS=<<EOF
-e dir.source=./bins/mach0
+e dir.source=./bins/macho
 CLL
 ?e --
 CLL
@@ -23,27 +23,27 @@ EXPECT=<<EOF
 0x100003f84  	scanf ("Hello\n");
 0x100003f8c  }
 --
-file: /Users/pancake/prg/radare2/test/bins/mach0/twocall.c
+file: /Users/pancake/prg/radare2/test/bins/macho/twocall.c
 line: 2
 colu: 0
 addr: 0x100003f64
-file: /Users/pancake/prg/radare2/test/bins/mach0/twocall.c
+file: /Users/pancake/prg/radare2/test/bins/macho/twocall.c
 line: 0
 colu: 0
 addr: 0x100003f70
-file: /Users/pancake/prg/radare2/test/bins/mach0/twocall.c
+file: /Users/pancake/prg/radare2/test/bins/macho/twocall.c
 line: 3
 colu: 2
 addr: 0x100003f7c
-file: /Users/pancake/prg/radare2/test/bins/mach0/twocall.c
+file: /Users/pancake/prg/radare2/test/bins/macho/twocall.c
 line: 4
 colu: 2
 addr: 0x100003f84
-file: /Users/pancake/prg/radare2/test/bins/mach0/twocall.c
+file: /Users/pancake/prg/radare2/test/bins/macho/twocall.c
 line: 5
 colu: 1
 addr: 0x100003f8c
-file: /Users/pancake/prg/radare2/test/bins/mach0/twocall.c
+file: /Users/pancake/prg/radare2/test/bins/macho/twocall.c
 line: 5
 colu: 1
 addr: 0x100003f98

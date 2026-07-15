@@ -34,7 +34,7 @@ EOF
 RUN
 
 NAME=seek preludes
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 b 4096
 s
@@ -57,7 +57,7 @@ EOF
 RUN
 
 NAME=seekinstr
-FILE=bins//mach0/ired-arm64
+FILE=bins//macho/ired-arm64
 CMDS=<<EOF
 afr
 ?v $BE
@@ -78,7 +78,7 @@ EOF
 RUN
 
 NAME=seekop
-FILE=bins//mach0/ired-arm64
+FILE=bins//macho/ired-arm64
 CMDS=<<EOF
 s
 so+3
@@ -161,7 +161,7 @@ EOF
 RUN
 
 NAME=seek line
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 sl 1; ?v $$
 e lines.from=0x100002000

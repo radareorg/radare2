@@ -82,7 +82,7 @@ EOF
 RUN
 
 NAME=emulate imports
-FILE=bins/mach0/hello-puts
+FILE=bins/macho/hello-puts
 CMDS=<<EOF
 s main
 aepc $$

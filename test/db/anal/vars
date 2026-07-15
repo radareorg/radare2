@@ -265,7 +265,7 @@ EOF
 RUN
 
 NAME=afvx2
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 af
 afvx
@@ -605,7 +605,7 @@ EOF
 RUN
 
 NAME=arm64 stack variables
-FILE=bins/mach0/arm_snippet_1
+FILE=bins/macho/arm_snippet_1
 CMDS=<<EOF
 e asm.var.summary=0
 e asm.sub.var=true

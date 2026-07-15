@@ -1,5 +1,5 @@
 NAME=pd inv fcnsign
-FILE=bins/mach0/mac-ls3
+FILE=bins/macho/mac-ls3
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e asm.cmt.col=0
@@ -35,7 +35,7 @@ EOF
 RUN
 
 NAME=emustr on calls
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b64
 CMDS=<<EOF
 e emu.str=true
@@ -57,7 +57,7 @@ EOF
 RUN
 
 NAME=relocs and overlay
-FILE=bins/mach0/TrollStore.fat/TrollStore.arm_64.1
+FILE=bins/macho/TrollStore.fat/TrollStore.arm_64.1
 ARGS=-e emu.str=true -e bin.relocs.apply=true
 CMDS=<<EOF
 pd 10 @ 0x100016c40
@@ -81,7 +81,7 @@ EOF
 RUN
 
 NAME=relocs without cache
-FILE=bins/mach0/TrollStore.fat/TrollStore.arm_64.1
+FILE=bins/macho/TrollStore.fat/TrollStore.arm_64.1
 ARGS=-e emu.str=true -e bin.relocs.apply=false
 CMDS=<<EOF
 pd 10 @ 0x100016c40

@@ -1,5 +1,5 @@
 NAME=symbols crash because of missing sections
-FILE=bins/mach0/symbols-crash
+FILE=bins/macho/symbols-crash
 CMDS=iI~?switch
 EXPECT=<<EOF
 0

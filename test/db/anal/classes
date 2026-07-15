@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=anal classes armv7
-FILE=bins/mach0/TestRTTI-armv7
+FILE=bins/macho/TestRTTI-armv7
 CMDS=<<EOF
 avrr
 acl
@@ -78,7 +78,7 @@ EOF
 RUN
 
 NAME=anal classes arm64
-FILE=bins/mach0/TestRTTI-arm64
+FILE=bins/macho/TestRTTI-arm64
 CMDS=<<EOF
 avrr
 acl
@@ -156,7 +156,7 @@ EOF
 RUN
 
 NAME=anal classes arm64e
-FILE=bins/mach0/TestRTTI-arm64e
+FILE=bins/macho/TestRTTI-arm64e
 ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
 avrr

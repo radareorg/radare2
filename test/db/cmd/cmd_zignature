@@ -30,7 +30,7 @@ EOF
 RUN
 
 NAME=zj c++
-FILE=bins/mach0/hellocxx-osx-i386
+FILE=bins/macho/hellocxx-osx-i386
 REQUIRE=gpl
 CMDS=<<EOF
 0x00001d9a
@@ -1829,7 +1829,7 @@ EOF
 RUN
 
 NAME=Mangled zignatures
-FILE=bins/mach0/mangled
+FILE=bins/macho/mangled
 REQUIRE=gpl
 CMDS=<<EOF
 e zign.mangled=true

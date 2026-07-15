@@ -142,7 +142,7 @@ EOF
 #if __APPLE__
 #define R_EGG_OS_DEFAULT R_EGG_OS_OSX
 #define R_EGG_OS_NAME "darwin"
-#define R_EGG_FORMAT_DEFAULT "mach0"
+#define R_EGG_FORMAT_DEFAULT "macho"
 #elif R2__WINDOWS__
 #define R_EGG_OS_DEFAULT R_EGG_OS_W32
 #define R_EGG_OS_NAME "windows"

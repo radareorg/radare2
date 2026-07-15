@@ -222,7 +222,7 @@ e search.to = 0x10
 /mb
 EOF
 EXPECT=<<EOF
-0x00000000  mach064
+0x00000000  macho64
 EOF
 RUN
 

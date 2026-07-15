@@ -206,7 +206,7 @@ EOF
 RUN
 
 NAME=ahd with asm.tabs
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 e asm.flags=0
 pd 3

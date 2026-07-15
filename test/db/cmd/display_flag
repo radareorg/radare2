@@ -35,7 +35,7 @@ EOF
 RUN
 
 NAME=ANSI injection vuln
-FILE=bins/mach0/ansi
+FILE=bins/macho/ansi
 CMDS=<<EOF
 sp
 e asm.lines=0

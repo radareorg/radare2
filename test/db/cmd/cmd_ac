@@ -265,7 +265,7 @@ EOF
 RUN
 
 NAME=acb objc inheritance
-FILE=bins/mach0/objc-employee
+FILE=bins/macho/objc-employee
 ARGS=-e bin.cache=true -e log.quiet=true
 CMDS=<<EOF
 aaa

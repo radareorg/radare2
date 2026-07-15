@@ -93,7 +93,7 @@ EOF
 RUN
 
 NAME=/aI infinite loop instructions
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=/aI
 EXPECT=<<EOF
 0x10000166f
@@ -105,7 +105,7 @@ EOF
 RUN
 
 NAME=/ai finding immediates
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=/ai 0x648
 EXPECT=<<EOF
 0x1000013e5       4881ec48060000  sub rsp, 0x648
@@ -114,7 +114,7 @@ EOF
 RUN
 
 NAME=/ai arm64 finding immediates
-FILE=bins/mach0/BatteryLife.arm_64.1
+FILE=bins/macho/BatteryLife.arm_64.1
 CMDS=/ai 0x100
 EXPECT=<<EOF
 0x100007d4c             168140f9  ldr x22, [x8, 0x100]
@@ -412,7 +412,7 @@ EOF
 RUN
 
 NAME=/j escaped
-FILE=bins/mach0/escaped
+FILE=bins/macho/escaped
 CMDS=/j hello
 EXPECT=<<EOF
 [{"addr":8019,"type":"string","data":"]c:\\hello\\worldM"}]

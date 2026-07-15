@@ -1,5 +1,5 @@
 NAME=write string ref x64
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 aae
@@ -24,7 +24,7 @@ EOF
 RUN
 
 NAME=write string ref arm64
-FILE=bins/mach0/mac-ls4
+FILE=bins/macho/mac-ls4
 ARGS=-a arm -b 64
 CMDS=<<EOF
 aae
@@ -40,7 +40,7 @@ EOF
 RUN
 
 NAME=write string ref arm64
-FILE=bins/mach0/mac-ls4
+FILE=bins/macho/mac-ls4
 ARGS=-a arm -b 64
 CMDS=<<EOF
 aae
@@ -53,7 +53,7 @@ EOF
 RUN
 
 NAME=write string ref 2
-FILE=bins/mach0/ls-sequoia
+FILE=bins/macho/ls-sequoia
 ARGS=-a arm -b 64
 CMDS=<<EOF
 aar
@@ -262,7 +262,7 @@ EOF
 RUN
 
 NAME=noreturn errno
-FILE=bins/mach0/BatteryLife.arm_64.1
+FILE=bins/macho/BatteryLife.arm_64.1
 CMDS=<<EOF
 s sym.imp.SCNetworkReachabilityGetFlags
 /rc $$
@@ -274,7 +274,7 @@ EOF
 RUN
 
 NAME=ab cases
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b 64
 CMDS=<<EOF
 af
