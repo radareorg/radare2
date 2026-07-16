@@ -740,6 +740,8 @@ typedef struct r_bin_plugin_t {
 	bool weak_guess;
 	void *user;
 	bool (*load_resources)(RBinFile *bf);
+	/* Optional raw-data resolver. The returned buffer is owned by the caller. */
+	RBuffer *(*get_resource_data)(RBinFile *bf, const RBinResource *resource);
 } RBinPlugin;
 
 typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);

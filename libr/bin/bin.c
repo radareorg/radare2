@@ -1192,12 +1192,21 @@ static RBuffer *resource_decode_buffer(RBuffer *raw, const char *encoding) {
 }
 
 R_API RBuffer *r_bin_file_get_resource_data(RBinFile *bf, const RBinResource *resource, bool decode) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->buf && resource, NULL);
-	ut64 buffer_size = r_buf_size (bf->buf);
-	if (resource->paddr > buffer_size || resource->size > buffer_size - resource->paddr) {
-		return NULL;
+	R_RETURN_VAL_IF_FAIL (bf && resource, NULL);
+	RBinPlugin *plugin = bf->bo? bf->bo->plugin: NULL;
+	RBuffer *raw;
+	if (plugin && plugin->get_resource_data) {
+		raw = plugin->get_resource_data (bf, resource);
+	} else {
+		if (!bf->buf) {
+			return NULL;
+		}
+		ut64 buffer_size = r_buf_size (bf->buf);
+		if (resource->paddr > buffer_size || resource->size > buffer_size - resource->paddr) {
+			return NULL;
+		}
+		raw = r_buf_new_slice (bf->buf, resource->paddr, resource->size);
 	}
-	RBuffer *raw = r_buf_new_slice (bf->buf, resource->paddr, resource->size);
 	if (!raw || !decode || R_STR_ISEMPTY (resource->encoding) || r_str_eqi (resource->encoding, "raw")) {
 		return raw;
 	}

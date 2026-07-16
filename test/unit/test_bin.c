@@ -211,6 +211,41 @@ static RBuffer *decode_resource(const ut8 *data, size_t size, const char *encodi
 	return decoded;
 }
 
+static RBuffer *external_resource_data(RBinFile *bf, const RBinResource *resource) {
+	(void)bf;
+	return resource->index? NULL
+		: r_buf_new_with_bytes ((const ut8 *)"SIDE", 4);
+}
+
+bool test_r_bin_external_resource_data(void) {
+	RBinPlugin plugin = {
+		.get_resource_data = external_resource_data,
+	};
+	RBinObject bo = {
+		.plugin = &plugin,
+	};
+	RBinFile bf = {
+		.bo = &bo,
+		.buf = r_buf_new_with_bytes ((const ut8 *)"MAIN", 4),
+	};
+	RBinResource resource = {
+		.size = 4,
+	};
+	RBuffer *data = r_bin_file_get_resource_data (&bf, &resource, false);
+	mu_assert_notnull (data, "External resource data");
+	ut8 bytes[4];
+	mu_assert_eq (r_buf_read_at (data, 0, bytes, sizeof (bytes)),
+		sizeof (bytes), "Read external resource data");
+	mu_assert_memeq (bytes, (const ut8 *)"SIDE", sizeof (bytes),
+		"External resolver must override the main file");
+	r_unref (data);
+	resource.index = 1;
+	data = r_bin_file_get_resource_data (&bf, &resource, false);
+	mu_assert_null (data, "External resolver failure must not fall back");
+	r_unref (bf.buf);
+	mu_end;
+}
+
 bool test_r_bin_resource_decoding(void) {
 	const char base64[] = "aGVsbG8";
 	const char data_uri[] = "data:image/png;charset=utf-8;base64,iVBORw0KGgo=";
@@ -324,6 +359,7 @@ bool all_tests(void) {
 	mu_run_test(test_r_bin);
 	mu_run_test(test_r_bin_pebble_resources);
 	mu_run_test(test_r_bin_le_resources);
+	mu_run_test(test_r_bin_external_resource_data);
 	mu_run_test(test_r_bin_resource_decoding);
 	mu_run_test(test_r_bin_resource_raw_extraction);
 	return tests_passed != tests_run;
