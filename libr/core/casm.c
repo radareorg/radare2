@@ -277,7 +277,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					r_regex_free (rx);
 				}
 			}
-			if (align && align > 1) {
+			if (!matchcount && align && align > 1) {
 				if (addr % align) {
 					matches = false;
 				}

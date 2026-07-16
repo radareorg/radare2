@@ -102,6 +102,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/ad sequence alignment checks hit start
+FILE=malloc://5
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90c3cc90c3
+e search.align=2
+"/ad/ nop;ret"
+q
+EOF
+EXPECT=<<EOF
+0x00000000                   90  nop
+0x00000001                   c3  ret
+EOF
+RUN
+
 NAME=/adj match instructions with json output
 FILE=bins/mach0/iGoat-Swift.arm_64.1
 CMDS=<<EOF
