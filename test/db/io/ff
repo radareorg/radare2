@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=presection read
-FILE=bins/mach0/ls-ios
+FILE=bins/macho/ls-ios
 CMDS=<<EOF
 s 0x8000
 p8 16

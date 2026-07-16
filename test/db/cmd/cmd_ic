@@ -1112,7 +1112,7 @@ EOF
 RUN
 
 NAME=InsecurePasswordStore
-FILE=bins/mach0/InsecurePasswordStore
+FILE=bins/macho/InsecurePasswordStore
 CMDS=icc objc
 EXPECT=<<EOF
 @interface Utils : NSObject

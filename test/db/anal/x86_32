@@ -293,7 +293,7 @@ EOF
 RUN
 
 NAME=bug-cjmp
-FILE=bins/mach0/bug-cjmp
+FILE=bins/macho/bug-cjmp
 CMDS=<<EOF
 af
 afb
@@ -307,7 +307,7 @@ EOF
 RUN
 
 NAME=bug-cjmp-ok
-FILE=bins/mach0/bug-cjmp-ok
+FILE=bins/macho/bug-cjmp-ok
 CMDS=<<EOF
 af
 afb
@@ -749,7 +749,7 @@ EOF
 RUN
 
 NAME=mac-ls switch count
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 aaa
 f~?switch
@@ -760,7 +760,7 @@ EOF
 RUN
 
 NAME=mac-ls main switch
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 s main;af
 f~switch
@@ -773,7 +773,7 @@ EOF
 RUN
 
 NAME=mac-ls switch count2
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 aaa
 f~?case

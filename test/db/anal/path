@@ -1,5 +1,5 @@
 NAME=abp
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 aaa
 abp 0x10000168b @ 0x1000011e8
@@ -17,7 +17,7 @@ EOF
 RUN
 
 NAME=abp2
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 aaa
 abp 0x1000015ac @ 0x1000011e8
@@ -35,7 +35,7 @@ EOF
 RUN
 
 NAME=abp3
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 aaa
 abp 0x1000016cd @ 0x1000011e8
@@ -55,7 +55,7 @@ EOF
 RUN
 
 NAME=abpj
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 aaa
 abpj 0x10000168b @ 0x1000011e8
@@ -66,7 +66,7 @@ EOF
 RUN
 
 NAME=afbo
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 af
 abo~?
@@ -89,7 +89,7 @@ EOF
 RUN
 
 NAME=abpe-ls-m1
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b 64
 CMDS=<<EOF
 aeim
@@ -113,7 +113,7 @@ EOF
 RUN
 
 NAME=abpe-ls-m1 guesstypes
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b 64
 CMDS=<<EOF
 aeim

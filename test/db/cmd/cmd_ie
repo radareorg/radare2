@@ -181,7 +181,7 @@ EOF
 RUN
 
 NAME=ies
-FILE=bins/mach0/BatteryLife.arm_64.1
+FILE=bins/macho/BatteryLife.arm_64.1
 CMDS=<<EOF
 ies
 EOF

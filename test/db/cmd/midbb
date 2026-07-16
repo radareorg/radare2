@@ -697,7 +697,7 @@ RUN
 
 # r2 -q -c 's 0x100004420;pd 1' /bin/ls
 NAME=color2
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b64
 CMDS=<<EOF
 e scr.color=1

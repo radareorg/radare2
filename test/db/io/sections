@@ -1,5 +1,5 @@
 NAME=section borders
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 b 128
 s 0x1000043f6

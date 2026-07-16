@@ -173,7 +173,7 @@ EOF
 RUN
 
 NAME=pdc @ main ls-m1
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b64
 CMDS=<<EOF
 s 0x100003a54
@@ -249,7 +249,7 @@ EOF
 RUN
 
 NAME=pdco @ main ls-m1
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b64
 CMDS=<<EOF
 s 0x100003a54

@@ -1,5 +1,5 @@
 NAME=ic dot
-FILE=bins/mach0/BatteryLife.arm_64.1
+FILE=bins/macho/BatteryLife.arm_64.1
 CMDS=<<EOF
 s 0x1000fbef0
 ic.
@@ -18,7 +18,7 @@ EOF
 RUN
 
 NAME=ic swift
-FILE=bins/mach0/main-inherit
+FILE=bins/macho/main-inherit
 CMDS=<<EOF
 ic
 ?e ---
@@ -166,7 +166,7 @@ EOF
 RUN
 
 NAME=icqq swift
-FILE=bins/mach0/main-inherit
+FILE=bins/macho/main-inherit
 CMDS=<<EOF
 icqq
 EOF
@@ -182,7 +182,7 @@ EOF
 RUN
 
 NAME=icq swift
-FILE=bins/mach0/main-inherit
+FILE=bins/macho/main-inherit
 CMDS=<<EOF
 icq
 EOF

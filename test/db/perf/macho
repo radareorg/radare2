@@ -1,5 +1,5 @@
 NAME=macho loading
-FILE=bins/mach0/Mastodon
+FILE=bins/macho/Mastodon
 CMDS=<<EOF
 izq~?
 EOF
@@ -9,7 +9,7 @@ EOF
 RUN
 
 NAME=macho nostrings
-FILE=bins/mach0/Mastodon
+FILE=bins/macho/Mastodon
 ARGS=-ebin.strings=false
 CMDS=<<EOF
 izq~?
@@ -20,7 +20,7 @@ EOF
 RUN
 
 NAME=macho manysyms
-FILE=bins/mach0/gzdoom.arm_64.1
+FILE=bins/macho/gzdoom.arm_64.1
 CMDS=<<EOF
 isq~?
 EOF

@@ -57,7 +57,7 @@ mo /bin/kernel
 i~format
 EOF
 EXPECT=<<EOF
-format   mach064
+format   macho64
 EOF
 RUN
 

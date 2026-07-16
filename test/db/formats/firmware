@@ -264,7 +264,7 @@ RUN
 
 NAME=apple baseband rejects dyldcache
 FILE=bins/firmware/gns1_test.bin
-CMDS=!!rabin2 -I -F gns1 bins/mach0/dyld_shared_cache_arm64-macOS~Apple~?
+CMDS=!!rabin2 -I -F gns1 bins/macho/dyld_shared_cache_arm64-macOS~Apple~?
 EXPECT=<<EOF
 0
 EOF
@@ -272,7 +272,7 @@ RUN
 
 NAME=dyldcache dsc handler is not gns1
 FILE=bins/firmware/gns1_test.bin
-CMDS=!!rabin2 -I dsc://bins/mach0/dyld_shared_cache_arm64-macOS~class
+CMDS=!!rabin2 -I dsc://bins/macho/dyld_shared_cache_arm64-macOS~class
 EXPECT=<<EOF
 class    dyldcache
 EOF

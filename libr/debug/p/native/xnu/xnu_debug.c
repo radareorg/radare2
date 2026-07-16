@@ -1309,8 +1309,8 @@ vm_address_t get_kernel_base(task_t ___task) {
 	return (vm_address_t)0;
 }
 
-// TODO: Implement mach0 size.. maybe copypasta from rbin?
-static int mach0_size(RDebug *dbg, ut64 addr) {
+// TODO: Implement macho size.. maybe copypasta from rbin?
+static int macho_size(RDebug *dbg, ut64 addr) {
 	return 4096;
 }
 
@@ -1398,7 +1398,7 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 		memset (file_path, 0, MAXPATHLEN);
 		dbg->iob.read_at (dbg->iob.io, file_path_address,
 				(ut8*)file_path, MAXPATHLEN - 1);
-		size = mach0_size (dbg, addr);
+		size = macho_size (dbg, addr);
 		mr = r_debug_map_new (file_path, addr, addr + size, 7, 7);
 		if (!mr) {
 			R_LOG_ERROR ("Cannot create r_debug_map_new");

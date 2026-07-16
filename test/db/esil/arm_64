@@ -18,7 +18,7 @@ EOF
 RUN
 
 NAME=/re in calls
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b 64
 CMDS=<<EOF
 s 0x1000071e8
@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=/r in calls
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b 64
 CMDS=<<EOF
 s 0x1000071e8

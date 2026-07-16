@@ -30,7 +30,7 @@ EOF
 RUN
 
 NAME=Reloading a project twice fails
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e prj.abspath=false
@@ -76,7 +76,7 @@ EXPECT=<<EOF
             0x100003c20      4989f7         mov r15, rsi
             0x100003c23      4189fe         mov r14d, edi
 0x100003c0c
- 3 * r-x 0x0002daa0 bins/mach0/ls-m1
+ 3 * r-x 0x0002daa0 bins/macho/ls-m1
 0x100003c0c
             ;-- main:
             ;-- entry0:
@@ -93,7 +93,7 @@ EXPECT=<<EOF
             0x100003c23      4189fe         mov r14d, edi
  3 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x r-x fmap.__TEXT
 554889e54157415641554154534881ec
- 3 * r-x 0x0002daa0 bins/mach0/ls-m1
+ 3 * r-x 0x0002daa0 bins/macho/ls-m1
 * 3 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x r-x fmap.__TEXT
 - 2 fd: 3 +0x0000c000 0x100008000 - 0x10000bfff r-- rw- fmap.__DATA
 - 1 fd: 3 +0x00010000 0x10000c000 - 0x100013fff r-- r-- fmap.__LINKEDIT

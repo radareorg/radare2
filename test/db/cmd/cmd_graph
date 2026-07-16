@@ -355,7 +355,7 @@ EOF
 RUN
 
 NAME=agf
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 af
 agf > /dev/null

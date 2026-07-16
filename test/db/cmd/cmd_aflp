@@ -1,5 +1,5 @@
 NAME=aflp pin set list unset
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 aa
 s sym.imp.__error
@@ -41,7 +41,7 @@ EOF
 RUN
 
 NAME=aflp pin shown in aflj json
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 aa
 s sym.imp.__error
@@ -62,7 +62,7 @@ EOF
 RUN
 
 NAME=aflp shown in pdf disasm header
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 aa
 s sym.imp.__error

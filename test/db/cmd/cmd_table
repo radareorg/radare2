@@ -34,7 +34,7 @@ EOF
 RUN
 
 NAME=comma table
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 afr
 e scr.utf8=true
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=comma table2
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 afr
 e scr.utf8=false
@@ -68,7 +68,7 @@ EOF
 RUN
 
 NAME=comma table3
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 afr
 afl,:csv>$a
@@ -83,7 +83,7 @@ EOF
 RUN
 
 NAME=comma table r2 include
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 afr
 .aflt :r2
@@ -95,7 +95,7 @@ EOF
 RUN
 
 NAME=comma table r2 include twice
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 afr
 aflt :r2 > $a

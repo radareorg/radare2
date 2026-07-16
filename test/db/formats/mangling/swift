@@ -55,7 +55,7 @@ EOF
 RUN
 
 NAME=1b34 longsym
-FILE=bins/mach0/PasswordCheck-swift
+FILE=bins/macho/PasswordCheck-swift
 CMDS=<<EOF
 is~1b34
 EOF
@@ -129,7 +129,7 @@ EOF
 RUN
 
 NAME=macho swift demangle
-FILE=bins/mach0/swift/klass.orig
+FILE=bins/macho/swift/klass.orig
 CMDS=ic
 EXPECT=<<EOF
 0x00003cb0 [0x100003cff - 0x100003d90]    145 swift class 1 SomeClass

@@ -1,5 +1,5 @@
 NAME=axt creates
-FILE=bins/mach0/hello-aae
+FILE=bins/macho/hello-aae
 CMDS=<<EOF
 aae
 pdi 16

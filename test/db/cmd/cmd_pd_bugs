@@ -1,5 +1,5 @@
 NAME=pd asmdescribe on string
-FILE=bins/mach0/mac-ls4
+FILE=bins/macho/mac-ls4
 ARGS=-a arm -b64
 CMDS=<<EOF
 s 0x100003ac0
@@ -14,7 +14,7 @@ EOF
 RUN
 
 NAME=pd call sym bug
-FILE=bins/mach0/hello-objc-arm
+FILE=bins/macho/hello-objc-arm
 CMDS=<<EOF
 e asm.lines.jmp=0
 e asm.bytes=0
@@ -98,7 +98,7 @@ EOF
 RUN
 
 NAME=pd call sym bug
-FILE=bins/mach0/hello-objc-arm
+FILE=bins/macho/hello-objc-arm
 CMDS=<<EOF
 e asm.lines.jmp=0
 e asm.bytes=0
@@ -277,7 +277,7 @@ EOF
 RUN
 
 NAME=invalid pid and pdi
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 # BROKEN=1
 CMDS=<<EOF
 pdi 270~invalid
@@ -295,7 +295,7 @@ EOF
 RUN
 
 NAME=asm.tabs.once
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 e asm.tabs=8
 e asm.tabs.once=true

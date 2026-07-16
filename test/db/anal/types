@@ -1,5 +1,5 @@
 NAME=simple type propagation
-FILE=bins/mach0/simple-retype
+FILE=bins/macho/simple-retype
 CMDS=<<EOF
 af
 e asm.var.summary=0

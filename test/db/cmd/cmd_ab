@@ -1,5 +1,5 @@
 NAME=ablt
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 e anal.calls=false
 af
@@ -70,7 +70,7 @@ EOF
 RUN
 
 NAME=ablt xrefs
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 aa
 abl, addr/cols/xrefs,xrefs/str/0x
@@ -261,7 +261,7 @@ EOF
 RUN
 
 NAME=abp basic path
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 aa
 s 0x1000011e8
@@ -276,7 +276,7 @@ EOF
 RUN
 
 NAME=abp json output
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 aa
 s 0x1000011e8
@@ -288,7 +288,7 @@ EOF
 RUN
 
 NAME=abp unreachable address
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 aa
 s 0x1000011e8
@@ -299,7 +299,7 @@ EOF
 RUN
 
 NAME=abp same block
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 aa
 s 0x1000011e8

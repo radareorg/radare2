@@ -4406,7 +4406,7 @@ typedef struct {
 	bool cfg_anal_strings;
 } XrefSearchCtx;
 
-// R2R db/anal/mach0
+// R2R db/anal/macho
 static bool found_xref(const XrefSearchCtx *ctx, ut64 at, ut64 xref_to, RAnalRefType type) {
 	RCore *core = ctx->core;
 	// Validate the reference. If virtual addressing is enabled, we

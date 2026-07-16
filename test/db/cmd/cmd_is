@@ -1,5 +1,5 @@
-NAME=Mach0 - List symbols demangled
-FILE=bins/mach0/ClassCpp.out
+NAME=Macho - List symbols demangled
+FILE=bins/macho/ClassCpp.out
 ARGS=-e bin.demangle=true
 CMDS=<<EOF
 is~My
@@ -20,8 +20,8 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Mach0 - List symbols mangled
-FILE=bins/mach0/ClassCpp.out
+NAME=Macho - List symbols mangled
+FILE=bins/macho/ClassCpp.out
 ARGS=-e bin.demangle=false
 CMDS=<<EOF
 is~My
@@ -82,7 +82,7 @@ EOF
 RUN
 
 NAME=MACHO - realname c++
-FILE=bins/mach0/swift-main3
+FILE=bins/macho/swift-main3
 ARGS=-e bin.demangle=false
 CMDS=<<EOF
 s 4295000064
@@ -105,7 +105,7 @@ EOF
 RUN
 
 NAME=MACHO - realname c++ with demangle
-FILE=bins/mach0/swift-main3
+FILE=bins/macho/swift-main3
 ARGS=-e bin.demangle=true
 CMDS=<<EOF
 s 4295000064

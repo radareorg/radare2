@@ -712,7 +712,7 @@ EOF
 RUN
 
 NAME=grep $foo
-FILE=bins/mach0/mac-ls4
+FILE=bins/macho/mac-ls4
 ARGS=-a arm -b 64
 CMDS=<<EOF
 pd~78
@@ -734,7 +734,7 @@ EOF
 RUN
 
 NAME=count+uniq
-FILE=bins/mach0/mac-ls4
+FILE=bins/macho/mac-ls4
 ARGS=-a arm -b 64
 CMDS=<<EOF
 af

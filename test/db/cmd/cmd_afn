@@ -88,7 +88,7 @@ EOF
 RUN
 
 NAME=afn types
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 s main
 af

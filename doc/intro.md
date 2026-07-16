@@ -132,7 +132,7 @@ b size: Change block size
 Most of commands such as (i)nfo and (p)rint commands accept a `j` to print their output in `json`
 ```
 [0x100000d78]> ij
-{"bin":{"type":"mach0","class":"MACH064","endian":"little","machine":"x86 64 all","arch":"x86","os":"osx","lang":"c","pic":true,"canary":false,"nx":false,"crypto":false,"va":true,"bits":64,"stripped":true,"static":false,"linenums":false,"syms":false,"relocs":false},"core":{"type":"Executable file","os":"osx","arch":"x86 64 all","bits":64,"endian":"little","file":"/bin/ls","fd":6,"size":34640,"mode":"r--","block":256,"uri":"/bin/ls","format":"mach064"}}
+{"bin":{"type":"macho","class":"MACHO64","endian":"little","machine":"x86 64 all","arch":"x86","os":"osx","lang":"c","pic":true,"canary":false,"nx":false,"crypto":false,"va":true,"bits":64,"stripped":true,"static":false,"linenums":false,"syms":false,"relocs":false},"core":{"type":"Executable file","os":"osx","arch":"x86 64 all","bits":64,"endian":"little","file":"/bin/ls","fd":6,"size":34640,"mode":"r--","block":256,"uri":"/bin/ls","format":"macho64"}}
 ```
 ## Analyze
 ```

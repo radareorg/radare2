@@ -1,6 +1,6 @@
 NAME=m1slice
 ARGS=-a x86
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 CMDS=<<EOF
 pd 2
 ie
@@ -36,7 +36,7 @@ RUN
 
 NAME=m1slice.v35
 ARGS=-a arm.v35
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 REQUIRE=arm.v35
 CMDS=<<EOF
 pd 2
@@ -60,7 +60,7 @@ RUN
 NAME=m1slice.v35
 ARGS=-a arm.404
 BROKEN=1
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 CMDS=<<EOF
 pd 2
 ie
@@ -79,18 +79,18 @@ EOF
 RUN
 
 NAME=oon
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 CMDS=<<EOF
 oon
 o
 EOF
 EXPECT=<<EOF
- 5 * r-- 0x00009730 bins/mach0/mac-ls2
+ 5 * r-- 0x00009730 bins/macho/mac-ls2
 EOF
 RUN
 
 NAME=oonn
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 ARGS=-n -e bin.types=true
 CMDS=<<EOF
 pf.~?
@@ -106,7 +106,7 @@ EOF
 RUN
 
 NAME=oonn
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 ARGS=-e bin.types=true
 CMDS=<<EOF
 pf.~?
@@ -122,7 +122,7 @@ EOF
 RUN
 
 NAME=om=
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 BROKEN=1
 CMDS=om=
 EXPECT=<<EOF
@@ -135,11 +135,11 @@ EOF
 RUN
 
 NAME=obo baddrs
-FILE=bins/mach0/mac-ls2
+FILE=bins/macho/mac-ls2
 ARGS=-B0x50000
 CMDS=<<EOF
 s
-o bins/mach0/mac-ls
+o bins/macho/mac-ls
 s
 obo 3
 s
@@ -255,7 +255,7 @@ EOF
 RUN
 
 NAME=oob consider baddr
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 ARGS=-e bin.types=true
 CMDS=<<EOF
 e bin.baddr = 0xf00000
@@ -279,7 +279,7 @@ EOF
 RUN
 
 NAME=oob consider laddr 32bit
-FILE=bins/mach0/fatmach0-3true
+FILE=bins/macho/fatmacho-3true
 ARGS=-a x86 -b 32 -e bin.types=true
 CMDS=<<EOF
 e bin.laddr = 0x5000
@@ -295,7 +295,7 @@ EOF
 RUN
 
 NAME=oob consider laddr 64bit
-FILE=bins/mach0/fatmach0-3true
+FILE=bins/macho/fatmacho-3true
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e bin.laddr = 0x5000
@@ -326,7 +326,7 @@ EOF
 RUN
 
 NAME=oba loads default slice from fat macho header
-FILE=bins/mach0/libexpat.1.dylib
+FILE=bins/macho/libexpat.1.dylib
 ARGS=-n
 CMDS=<<EOF
 oba $$
@@ -335,7 +335,7 @@ i~^bintype[1]
 EOF
 EXPECT=<<EOF
 x86
-mach0
+macho
 EOF
 RUN
 
@@ -643,9 +643,9 @@ NAME=obf
 FILE=--
 CMDS=<<EOF
 # pwd
-obf ./bins/mach0/test-arm32
+obf ./bins/macho/test-arm32
 is~?
-obf ./bins/mach0/ls-m1
+obf ./bins/macho/ls-m1
 is~?
 ob 1
 is~?
@@ -662,11 +662,11 @@ EXPECT=<<EOF
 arch     arm
 baddr    0x4000
 binsz    65536
-bintype  mach0
+bintype  macho
 bits     32
 canary   false
 injprot  false
-class    MACH0
+class    MACHO
 compiler clang
 crypto   false
 endian   little
@@ -690,9 +690,9 @@ va       true
 -- o
  4 - r-- 0x00003f14 null://16148
 -- ob
-- 0 3 arm-32 ba:0x00000000 sz:65536 ./bins/mach0/test-arm32
-* 1 3 arm-32 ba:0x00004000 sz:65536 ./bins/mach0/test-arm32
-- 2 3 x86-64 ba:0x100000000 sz:72800 ./bins/mach0/ls-m1
+- 0 3 arm-32 ba:0x00000000 sz:65536 ./bins/macho/test-arm32
+* 1 3 arm-32 ba:0x00004000 sz:65536 ./bins/macho/test-arm32
+- 2 3 x86-64 ba:0x100000000 sz:72800 ./bins/macho/ls-m1
 EOF
 RUN
 

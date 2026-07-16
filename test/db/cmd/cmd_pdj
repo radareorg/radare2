@@ -1,5 +1,5 @@
 NAME=pdJ+html
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 pdJ 1~{}
 e scr.html=1

@@ -667,7 +667,7 @@ EOF
 RUN
 
 NAME=izzz*
-FILE=bins/mach0/fatmach0-3true
+FILE=bins/macho/fatmacho-3true
 ARGS=-b64 -a x86
 CMDS=izzz*~appleca
 EXPECT=<<EOF

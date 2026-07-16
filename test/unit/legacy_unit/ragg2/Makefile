@@ -5,7 +5,7 @@ all:
 	#${MAKE} foo
 
 foo:
-	rabin2 -c mach0:`rasm2 -a x86.nz -f hello.s` a.out
+	rabin2 -c macho:`rasm2 -a x86.nz -f hello.s` a.out
 
 bla:
 	${MAKE} hello

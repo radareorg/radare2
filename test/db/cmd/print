@@ -103,7 +103,7 @@ EOF
 RUN
 
 NAME=mac ls asm.sub.jmp
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 f jeje.lolo=0x10000108a
 e asm.sub.jmp = false
@@ -120,7 +120,7 @@ EOF
 RUN
 
 NAME=mac ls pdsf
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 af
 pdsf @ entry0
@@ -234,7 +234,7 @@ EOF
 RUN
 
 NAME=mac ls pfc
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 BROKEN=1
 CMDS=pfc zdq foo bar cow
 EXPECT=<<EOF
@@ -247,7 +247,7 @@ EOF
 RUN
 
 NAME=mac ls pfc.fmt
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 pf.fmt bcFiuf foo bar baz cow one two
 pfc.fmt

@@ -1,7 +1,7 @@
 #include <r_util.h>
 #include <r_bin.h>
 #include "minunit.h"
-#include "../../libr/bin/format/mach0/mach0_defines.h"
+#include "../../libr/bin/format/macho/macho_defines.h"
 
 static void write_le32(RBuffer *buf, ut64 off, ut32 value) {
 	ut8 tmp[4];
@@ -22,7 +22,7 @@ static void write_padded(RBuffer *buf, ut64 off, const char *str, size_t len) {
 	r_buf_write_at (buf, off, tmp, len);
 }
 
-static void write_mach0_header(RBuffer *buf, ut64 off, ut32 filetype, ut32 ncmds, ut32 sizeofcmds) {
+static void write_macho_header(RBuffer *buf, ut64 off, ut32 filetype, ut32 ncmds, ut32 sizeofcmds) {
 	write_le32 (buf, off + offsetof (struct mach_header_64, magic), MH_MAGIC_64);
 	write_le32 (buf, off + offsetof (struct mach_header_64, cputype), CPU_TYPE_ARM64);
 	write_le32 (buf, off + offsetof (struct mach_header_64, cpusubtype), 0);
@@ -90,7 +90,7 @@ bool test_kernelcache_cmdsize(void) {
 
 	r_buf_resize (buf, big_size);
 
-	write_mach0_header (buf, 0, MH_FILESET, 5, 0);
+	write_macho_header (buf, 0, MH_FILESET, 5, 0);
 	write_le32 (buf, cmd1_off + offsetof (struct load_command, cmd), LC_SEGMENT_64);
 	write_le32 (buf, cmd1_off + offsetof (struct load_command, cmdsize), cmd1_size);
 
@@ -104,7 +104,7 @@ bool test_kernelcache_cmdsize(void) {
 	write_segsect64 (buf, cmd4_off, "__PRELINK_TEXT", "__text", 0x4000, 0x4000);
 	write_segsect64 (buf, cmd5_off, "__PRELINK_DATA", "__data", 0x5000, 0x5000);
 
-	write_mach0_header (buf, kext_off, MH_EXECUTE, 1, seg_cmd_size);
+	write_macho_header (buf, kext_off, MH_EXECUTE, 1, seg_cmd_size);
 	write_segsect64 (buf, kext_cmd_off, "__TEXT_EXEC", "__text", 0x1000, 0x1000);
 
 	RBin *bin = r_bin_new ();

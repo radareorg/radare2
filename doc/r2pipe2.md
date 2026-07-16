@@ -71,7 +71,7 @@ The sequence id can be used when running commands in background, this way we can
 				"arch":"arm",
 				"baddr":4294967296,
 				"binsz":88816,
-				"bintype":"mach0",
+				"bintype":"macho",
 				"bits":64,"canary":true
 			}
 		}

@@ -1,5 +1,5 @@
 NAME=bytes.ascii
-FILE=bins/mach0/swift/movabs
+FILE=bins/macho/swift/movabs
 CMDS=<<EOF
 -e asm.nbytes=8
 -e asm.bytes.ascii=1

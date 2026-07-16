@@ -2250,7 +2250,7 @@ R_API int r_bin_java_load_bin(RBinJavaObj *bin, const ut8 *buf, ut64 buf_sz) {
 		return false;
 	}
 	if (bin->cf.major[0] == bin->cf.major[1] && bin->cf.major[0] == 0) {
-		R_LOG_ERROR ("Java CLASS with MACH0 header?");
+		R_LOG_ERROR ("Java CLASS with MACHO header?");
 		return false;
 	}
 	if (bin->cf.cp_count == 0) {

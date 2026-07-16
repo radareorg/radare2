@@ -25,7 +25,7 @@ EOF
 RUN
 
 NAME=noreturn errno
-FILE=bins/mach0/BatteryLife.arm_64.1
+FILE=bins/macho/BatteryLife.arm_64.1
 CMDS=<<EOF
 e emu.str=1
 s 0x100011130
@@ -36,7 +36,7 @@ EOF
 RUN
 
 NAME=adrp string
-FILE=bins/mach0/SwiftUITest
+FILE=bins/macho/SwiftUITest
 CMDS=<<EOF
 e emu.str=1
 s..886c
@@ -78,7 +78,7 @@ EOF
 RUN
 
 NAME=ao mte irg addg
-FILE=bins/mach0/hello-mte
+FILE=bins/macho/hello-mte
 CMDS=<<EOF
 ao@0x100007f10
 ?e --
@@ -210,7 +210,7 @@ EOF
 RUN
 
 NAME=siguzas arm64 search
-FILE=bins/mach0/BatteryLife.arm_64.1
+FILE=bins/macho/BatteryLife.arm_64.1
 CMDS=<<EOF
 e search.in=io.map
 s $S
@@ -249,7 +249,7 @@ EOF
 RUN
 
 NAME=siguzas arm64 six registers after purge
-FILE=bins/mach0/BatteryLife.arm_64.1
+FILE=bins/macho/BatteryLife.arm_64.1
 CMDS=<<EOF
 e search.in=io.map
 s $S
@@ -270,7 +270,7 @@ EOF
 RUN
 
 NAME=siguzas arm64 six target filters hits
-FILE=bins/mach0/BatteryLife.arm_64.1
+FILE=bins/macho/BatteryLife.arm_64.1
 CMDS=<<EOF
 e search.in=io.map
 s $S
@@ -293,7 +293,7 @@ EOF
 RUN
 
 NAME=siguzas arm64 multi /r
-FILE=bins/mach0/BatteryLife.arm_64.1
+FILE=bins/macho/BatteryLife.arm_64.1
 CMDS=<<EOF
 e search.in=io.map
 s $S
@@ -318,7 +318,7 @@ EOF
 RUN
 
 NAME=siguzas arm64 multi /rc
-FILE=bins/mach0/BatteryLife.arm_64.1
+FILE=bins/macho/BatteryLife.arm_64.1
 CMDS=<<EOF
 e search.in=io.map
 s $S
@@ -347,7 +347,7 @@ EOF
 RUN
 
 NAME=siguzas arm64 multi /re
-FILE=bins/mach0/BatteryLife.arm_64.1
+FILE=bins/macho/BatteryLife.arm_64.1
 CMDS=<<EOF
 e search.in=io.map
 s $S
@@ -380,7 +380,7 @@ EOF
 RUN
 
 NAME=siguzas arm64 all xrefs
-FILE=bins/mach0/BatteryLife.arm_64.1
+FILE=bins/macho/BatteryLife.arm_64.1
 CMDS=<<EOF
 e search.in=io.map
 s $S
@@ -56212,7 +56212,7 @@ EOF
 RUN
 
 NAME=aae honors given size
-FILE=bins/mach0/BatteryLife.arm_64.1
+FILE=bins/macho/BatteryLife.arm_64.1
 CMDS=<<EOF
 aae 0x7c @ 0x10000f5dc
 axt str.setWindow:
@@ -56223,7 +56223,7 @@ RUN
 
 NAME=axt find mem reads xrefs
 ARGS=-a arm -b 64
-FILE=bins/mach0/TestApp.ios
+FILE=bins/macho/TestApp.ios
 CMDS=<<EOF
 aae
 axt 0x100009394~[1]
@@ -56236,7 +56236,7 @@ EOF
 RUN
 
 NAME=aaex honors given size
-FILE=bins/mach0/BatteryLife.arm_64.1
+FILE=bins/macho/BatteryLife.arm_64.1
 CMDS=<<EOF
 aaex 0x7c @ 0x10000f5dc
 axt str.setWindow:
@@ -56247,7 +56247,7 @@ RUN
 
 NAME=aaex plus axt find mem reads xrefs
 ARGS=-a arm -b 64
-FILE=bins/mach0/TestApp.ios
+FILE=bins/macho/TestApp.ios
 CMDS=<<EOF
 aaex
 axt 0x100009394~[1]

@@ -3,7 +3,7 @@
 #include <r_bin.h>
 #include <sdb/ht_uu.h>
 #include "../i/private.h"
-#include "mach0/coresymbolication.h"
+#include "macho/coresymbolication.h"
 
 // enable debugging messages
 #define D if (0)

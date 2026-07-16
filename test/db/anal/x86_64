@@ -189,7 +189,7 @@ EOF
 RUN
 
 NAME=x86_64 getenv call args (normal)
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 af
 a:callargs 0x10000143e
@@ -200,7 +200,7 @@ EOF
 RUN
 
 NAME=x86_64 getenv call args (quiet)
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 af
 a:callargs-q 0x10000143e
@@ -211,7 +211,7 @@ EOF
 RUN
 
 NAME=x86_64 getenv call args (json)
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 af
 a:callargs-j 0x10000143e
@@ -222,7 +222,7 @@ EOF
 RUN
 
 NAME=x86_64 getenv call args (r2)
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 af
 a:callargs-* 0x10000143e
@@ -252,7 +252,7 @@ EOF
 RUN
 
 NAME=x86_64 jmptbl -O0
-FILE=bins/mach0/FMS.uu
+FILE=bins/macho/FMS.uu
 CMDS=<<EOF
 s sym._checkinput
 af
@@ -866,7 +866,7 @@ EOF
 RUN
 
 NAME=sym is not fcn
-FILE=bins/mach0/mach0-i386
+FILE=bins/macho/macho-i386
 CMDS=<<EOF
 aa > /dev/null
 afl~sym.__mh_execute_header[0]
@@ -890,7 +890,7 @@ EOF
 RUN
 
 NAME=function address
-FILE=bins/mach0/mach0-i386
+FILE=bins/macho/macho-i386
 CMDS=<<EOF
 e anal.hasnext=0
 aa
@@ -904,7 +904,7 @@ EOF
 RUN
 
 NAME=afr
-FILE=bins/mach0/mach0-i386
+FILE=bins/macho/macho-i386
 CMDS=<<EOF
 e anal.hasnext=0
 afr
@@ -918,7 +918,7 @@ EOF
 RUN
 
 NAME=aF
-FILE=bins/mach0/mach0-i386
+FILE=bins/macho/macho-i386
 CMDS=<<EOF
 e anal.hasnext=0
 aF
@@ -930,7 +930,7 @@ EOF
 RUN
 
 NAME=function prelude offsets
-FILE=bins/mach0/mach0-i386
+FILE=bins/macho/macho-i386
 CMDS=<<EOF
 s 0x1000
 aap
@@ -944,7 +944,7 @@ EOF
 RUN
 
 NAME=function preludes symbol names
-FILE=bins/mach0/mach0-i386
+FILE=bins/macho/macho-i386
 CMDS=<<EOF
 s 0x1000
 aap
@@ -1336,7 +1336,7 @@ EOF
 RUN
 
 NAME=address information
-FILE=bins/mach0/mach0-i386
+FILE=bins/macho/macho-i386
 CMDS=<<EOF
 s entry0
 ai
@@ -1393,7 +1393,7 @@ EOF
 RUN
 
 NAME=anal/name
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 af
 afi~name
@@ -1702,7 +1702,7 @@ EOF
 RUN
 
 NAME=stackptr
-FILE=bins/mach0/mac-ls
+FILE=bins/macho/mac-ls
 CMDS=<<EOF
 s 0x1000039b6
 af
@@ -1882,7 +1882,7 @@ EOF
 RUN
 
 NAME=2: Wrong calling convention
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 s entry0
 aaa
@@ -1935,7 +1935,7 @@ EOF
 RUN
 
 NAME=afvt
-FILE=bins/mach0/arg
+FILE=bins/macho/arg
 CMDS=<<EOF
 s sym._call
 af
@@ -1951,7 +1951,7 @@ EOF
 RUN
 
 NAME=afvt 2
-FILE=bins/mach0/macho
+FILE=bins/macho/macho
 CMDS=<<EOF
 s 0x100000b60
 af
@@ -1966,7 +1966,7 @@ EOF
 RUN
 
 NAME=afvn
-FILE=bins/mach0/macho
+FILE=bins/macho/macho
 CMDS=<<EOF
 s 0x100000b60
 af
@@ -1981,7 +1981,7 @@ EOF
 RUN
 
 NAME=afvn + afvn
-FILE=bins/mach0/macho
+FILE=bins/macho/macho
 CMDS=<<EOF
 s 0x100000b60
 af
@@ -1997,7 +1997,7 @@ EOF
 RUN
 
 NAME=afvt + afvn
-FILE=bins/mach0/macho
+FILE=bins/macho/macho
 CMDS=<<EOF
 s 0x100000b60
 af
@@ -2013,7 +2013,7 @@ EOF
 RUN
 
 NAME=afvn + afvt
-FILE=bins/mach0/macho
+FILE=bins/macho/macho
 CMDS=<<EOF
 s 0x100000b60
 af
@@ -2029,7 +2029,7 @@ EOF
 RUN
 
 NAME=afvt + afvt
-FILE=bins/mach0/macho
+FILE=bins/macho/macho
 CMDS=<<EOF
 s 0x100000b60
 af
@@ -2303,7 +2303,7 @@ EOF
 RUN
 
 NAME=anal vars count
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 af
 afvb~?
@@ -2314,7 +2314,7 @@ EOF
 RUN
 
 NAME=anal vars retype
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 af
 afvt var_30h char
@@ -2326,7 +2326,7 @@ EOF
 RUN
 
 NAME=anal vars rename
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 af
 afvn newname var_30h
@@ -3539,7 +3539,7 @@ EOF
 RUN
 
 NAME=t.anal/x86/aap
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 f-sym.func.*
 aap
@@ -3552,7 +3552,7 @@ EOF
 RUN
 
 NAME=mac-ls switch count
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 e anal.jmptbl=true
 af
@@ -3955,7 +3955,7 @@ EOF
 RUN
 
 NAME=./noncode
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 e anal.in=io.maps.x
 afr
@@ -3967,7 +3967,7 @@ EOF
 RUN
 
 NAME=./noncode 2
-FILE=bins/mach0/ls-osx-x86_64
+FILE=bins/macho/ls-osx-x86_64
 CMDS=<<EOF
 e anal.in=io.maps
 e anal.calls=true

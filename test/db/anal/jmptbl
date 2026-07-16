@@ -1,5 +1,5 @@
 NAME=jump table for swift on arm64
-FILE=bins/mach0/MASTestApp
+FILE=bins/macho/MASTestApp
 CMDS=<<EOF
 e asm.bytes=false
 e asm.lines=false
@@ -347,7 +347,7 @@ EOF
 RUN
 
 NAME=ccccrypt argument values from esil
-FILE=bins/mach0/MASTestApp
+FILE=bins/macho/MASTestApp
 CMDS=<<EOF
 e asm.bytes=false
 e asm.lines=false
@@ -373,7 +373,7 @@ EOF
 RUN
 
 NAME=jump table for swift on arm64 again
-FILE=bins/mach0/MASTestApp
+FILE=bins/macho/MASTestApp
 CMDS=<<EOF
 e asm.bytes=false
 e asm.lines=false

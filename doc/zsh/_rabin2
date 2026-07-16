@@ -14,7 +14,7 @@ _rabin2() {
   '-b+[set bits (32, 64 ...)]:bits:(8 16 32 64)'
   '-B+[override base address (pie bins)]:addr'
   '-c[list classes]'
-  '-C[create \[elf,mach0,pe\] with Code and Data hexpairs (see -a)]:fmt\:C\:D'
+  '-C[create \[elf,macho,pe\] with Code and Data hexpairs (see -a)]:fmt\:C\:D'
   '-d[show debug/dwarf information]'
   '-D+[demangle symbol name (-D all for bin.demangle=true)]:language'
   '-e[entrypoint]'

@@ -1,6 +1,6 @@
 NAME=binsym demangling
-FILE=bins/mach0/hellocxx-osx-i386
-CMDS=!rabin2 -qsD cxx all bins/mach0/hellocxx-osx-i386
+FILE=bins/macho/hellocxx-osx-i386
+CMDS=!rabin2 -qsD cxx all bins/macho/hellocxx-osx-i386
 EXPECT=<<EOF
 0x00001000 0 __mh_execute_header
 0x00001d9a 0 unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)
@@ -29,8 +29,8 @@ EOF
 RUN
 
 NAME=binsym no demangling
-FILE=bins/mach0/hellocxx-osx-i386
-CMDS=!RABIN2_DEMANGLE=0 rabin2 -qs bins/mach0/hellocxx-osx-i386
+FILE=bins/macho/hellocxx-osx-i386
+CMDS=!RABIN2_DEMANGLE=0 rabin2 -qs bins/macho/hellocxx-osx-i386
 EXPECT=<<EOF
 0x00001000 0 __mh_execute_header
 0x00001d9a 0 __ZSt3minImERKT_S2_S2_
@@ -59,7 +59,7 @@ EOF
 RUN
 
 NAME=binsym without demangling
-FILE=bins/mach0/hellocxx-osx-i386
+FILE=bins/macho/hellocxx-osx-i386
 ARGS=-M
 CMDS=isq
 EXPECT=<<EOF

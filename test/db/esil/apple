@@ -1,5 +1,5 @@
 NAME=iphone-arm-esil tests
-FILE=bins/mach0/FileDP
+FILE=bins/macho/FileDP
 CMDS=<<EOF
 s main
 aei
@@ -17,7 +17,7 @@ EOF
 RUN
 
 NAME=iphone-arm-esil pdsf scr.html=true
-FILE=bins/mach0/FileDP
+FILE=bins/macho/FileDP
 CMDS=<<EOF
 e scr.html=true
 e asm.flags=false
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=iphone-arm-esil pdsf
-FILE=bins/mach0/FileDP
+FILE=bins/macho/FileDP
 CMDS=<<EOF
 e asm.flags=false
 s main
@@ -89,7 +89,7 @@ EOF
 RUN
 
 NAME=thumb emulation arm issue
-FILE=bins/mach0/FileDP
+FILE=bins/macho/FileDP
 CMDS=<<EOF
 aes
 e asm.bits
@@ -100,7 +100,7 @@ EOF
 RUN
 
 NAME=string refs: thumb
-FILE=bins/mach0/test-thumb
+FILE=bins/macho/test-thumb
 CMDS=<<EOF
 af
 e asm.emu=true
@@ -113,7 +113,7 @@ EOF
 RUN
 
 NAME=string refs: arm32
-FILE=bins/mach0/test-arm32
+FILE=bins/macho/test-arm32
 CMDS=<<EOF
 af
 e asm.emu=true
@@ -126,7 +126,7 @@ EOF
 RUN
 
 NAME=string refs: arm64
-FILE=bins/mach0/test-arm64
+FILE=bins/macho/test-arm64
 CMDS=<<EOF
 af
 e asm.emu=true
@@ -139,7 +139,7 @@ EOF
 RUN
 
 NAME=arm32: thumb
-FILE=bins/mach0/arm32-ofp.lzh
+FILE=bins/macho/arm32-ofp.lzh
 CMDS=pd 2~?push
 EXPECT=<<EOF
 1
@@ -147,7 +147,7 @@ EOF
 RUN
 
 NAME=thumb: arm32
-FILE=bins/mach0/arm16-ofp.lzh
+FILE=bins/macho/arm16-ofp.lzh
 CMDS=pd 2~?push
 EXPECT=<<EOF
 1

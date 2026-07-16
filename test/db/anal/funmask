@@ -1,6 +1,6 @@
 NAME=function bytes
 ARGS=-a arm -b 64
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 CMDS=<<EOF
 af
 p8f
@@ -12,7 +12,7 @@ RUN
 
 NAME=function bytes + mask
 ARGS=-a arm -b 64
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 CMDS=<<EOF
 af
 p8fm
@@ -24,7 +24,7 @@ RUN
 
 NAME=function bytes in json
 ARGS=-a arm -b 64
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 CMDS=<<EOF
 af
 p8fmj~{}
@@ -43,7 +43,7 @@ RUN
 
 NAME=instruction bits and basic block bytes
 ARGS=-a arm -b 64
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 CMDS=<<EOF
 af
 aob
@@ -65,7 +65,7 @@ RUN
 
 NAME=anal.mask=true
 ARGS=-a arm -b 64
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 CMDS=<<EOF
 af
 -e anal.mask=true

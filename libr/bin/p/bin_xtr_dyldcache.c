@@ -1,8 +1,8 @@
 /* radare - LGPL - Copyright 2009-2026 nibble, pancake */
 
 #include <r_bin.h>
-#include "mach0/dyldcache.h"
-#include "mach0/mach0.h"
+#include "macho/dyldcache.h"
+#include "macho/macho.h"
 
 static RBinXtrData *extract(RBin *bin, int idx);
 static RList *extractall(RBin *bin);
@@ -63,11 +63,11 @@ static RList *extractall(RBin *bin) {
 	return result;
 }
 
-static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) * hdr) {
-	meta->arch = strdup (MACH0_(get_cputype_from_hdr) (hdr));
-	meta->bits = MACH0_(get_bits_from_hdr) (hdr);
-	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
-	meta->type = MACH0_(get_filetype_from_hdr) (hdr);
+static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACHO_(mach_header) * hdr) {
+	meta->arch = strdup (MACHO_(get_cputype_from_hdr) (hdr));
+	meta->bits = MACHO_(get_bits_from_hdr) (hdr);
+	meta->machine = MACHO_(get_cpusubtype_from_hdr) (hdr);
+	meta->type = MACHO_(get_filetype_from_hdr) (hdr);
 }
 
 static RBinXtrData *extract(RBin *bin, int idx) {
@@ -80,7 +80,7 @@ static RBinXtrData *extract(RBin *bin, int idx) {
 	}
 
 	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
-	struct MACH0_(mach_header) *hdr = MACH0_(get_hdr) (lib->b);
+	struct MACHO_(mach_header) *hdr = MACHO_(get_hdr) (lib->b);
 	if (!hdr) {
 		free (lib);
 		free (metadata);
@@ -111,7 +111,7 @@ static RBinXtrData *oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
 		return NULL;
 	}
 	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
-	struct MACH0_(mach_header) *hdr = MACH0_(get_hdr) (lib->b);
+	struct MACHO_(mach_header) *hdr = MACHO_(get_hdr) (lib->b);
 	if (!hdr) {
 		free (lib);
 		free (metadata);

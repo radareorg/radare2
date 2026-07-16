@@ -1,5 +1,5 @@
 NAME=pdsf leak
-FILE=bins/mach0/hello-osx-i386
+FILE=bins/macho/hello-osx-i386
 ARGS=-e scr.color=0
 CMDS=<<EOF
 af

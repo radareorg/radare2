@@ -117,7 +117,7 @@ static struct cEnv_t *r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 	// TODO: Missing -Os .. caused some rip-relative LEA to be MOVQ on PIE in CLANG.. so sad
 	if (isXNU (os)) {
 		cEnv->OBJCOPY = "gobjcopy";
-		cEnv->FMT = "mach0";
+		cEnv->FMT = "macho";
 		if (!strcmp (arch, "x86")) {
 			if (bits == 32) {
 				cEnv->CFLAGS = strdup ("-arch i386 -fPIC -fPIE");

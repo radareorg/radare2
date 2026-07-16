@@ -13,7 +13,7 @@ RUN
 
 NAME=dc - i386
 BROKEN=1
-FILE=bins/mach0/hello-osx-i386
+FILE=bins/macho/hello-osx-i386
 ARGS=-d
 CMDS=dc
 EXPECT=<<EOF
@@ -23,7 +23,7 @@ RUN
 
 NAME=dc - i386 forced
 BROKEN=1
-FILE=bins/mach0/hello-osx-i386
+FILE=bins/macho/hello-osx-i386
 ARGS=-b 32 -d
 CMDS=dc
 EXPECT=<<EOF
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=oo ; dc - i386
-FILE=bins/mach0/hello-osx-i386
+FILE=bins/macho/hello-osx-i386
 ARGS=-d
 BROKEN=1
 CMDS=<<EOF
@@ -46,7 +46,7 @@ RUN
 
 NAME=oo ; dc
 BROKEN=1
-FILE=bins/mach0/hello-osx-x86_64
+FILE=bins/macho/hello-osx-x86_64
 ARGS=-d
 CMDS=<<EOF
 oo
@@ -59,7 +59,7 @@ RUN
 
 NAME=ood
 BROKEN=1
-FILE=bins/mach0/hello-osx-x86_64
+FILE=bins/macho/hello-osx-x86_64
 ARGS=-d
 CMDS=<<EOF
 ds

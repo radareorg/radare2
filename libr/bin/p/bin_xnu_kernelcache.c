@@ -2,12 +2,12 @@
 
 #include <r_core.h>
 
-#define R_BIN_MACH064 1
-#include "../format/mach0/mach0.h"
+#define R_BIN_MACHO64 1
+#include "../format/macho/macho.h"
 
 #include "../format/xnu/r_cf_dict.h"
 #include "../format/xnu/mig_index.h"
-#include "../format/mach0/mach064_is_kernelcache.c"
+#include "../format/macho/macho64_is_kernelcache.c"
 
 typedef bool(*ROnRebaseFunc)(ut64 offset, ut64 decorated_addr, void *user_data);
 
@@ -17,7 +17,7 @@ typedef struct _RKernelCacheObj {
 	ut64 pa2va_exec;
 	ut64 pa2va_data;
 	struct _RKextIndex *kexts;
-	struct MACH0_(obj_t) * mach0;
+	struct MACHO_(obj_t) * macho;
 	struct _RRebaseInfo *rebase_info;
 	int (*original_io_read) (RIO *io, RIODesc *fd, ut8 *buf, int count);
 	bool rebase_info_populated;
@@ -54,7 +54,7 @@ typedef struct _RKext {
 	char *name;
 	ut64 mod_info;
 	ut64 vaddr;
-	struct MACH0_(obj_t) * mach0;
+	struct MACHO_(obj_t) * macho;
 	bool own_name;
 	ut64 pa2va_exec;
 	ut64 pa2va_data;
@@ -173,7 +173,7 @@ typedef struct {
 static ut64 p_ptr(ut64 decorated_addr, RKernelCacheObj *obj);
 static ut64 r_ptr(ut8 *buf, RKernelCacheObj *obj);
 
-static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH0_(obj_t) * mach0);
+static RRebaseInfo *r_rebase_info_new_from_macho(RBuffer *cache_buf, struct MACHO_(obj_t) * macho);
 static void r_rebase_info_free(RRebaseInfo *info);
 static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj);
 static ut64 iterate_rebase_list(RBuffer *cache_buf, ut64 multiplier, ut64 start_offset, ROnRebaseFunc func, void *user_data);
@@ -183,17 +183,17 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
 static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RIODesc *fd, ut8 *buf, int count);
 static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut8 *buf, int count);
 
-static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) * mach0);
+static RPrelinkRange *get_prelink_info_range_from_macho(struct MACHO_(obj_t) * macho);
 static RList *filter_kexts(RKernelCacheObj *obj, RBinFile *bf);
 static RList *carve_kexts(RKernelCacheObj *obj, RBinFile *bf);
 static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf);
 
-static bool sections_from_mach0(struct MACH0_(obj_t) *mach0, RBinFile *bf, ut64 paddr, char *prefix, RKernelCacheObj *obj);
+static bool sections_from_macho(struct MACHO_(obj_t) *macho, RBinFile *bf, ut64 paddr, char *prefix, RKernelCacheObj *obj);
 static void handle_data_sections(RBinSection *sect);
 static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr);
 static RList *resolve_mig_subsystem(RKernelCacheObj *obj);
 static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *kernel_syms_by_addr, RKext *kext, int ordinal);
-static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) * mach0, ut64 paddr, RKernelCacheObj *obj);
+static RStubsInfo *get_stubs_info(struct MACHO_(obj_t) * macho, ut64 paddr, RKernelCacheObj *obj);
 static RList *resolve_iokit_classes(RVecRBinSymbol *symbols, ut64 start_offset, RBinFile *bf, RKext *kext);
 static RList *find_class_registrations(RVecRBinSymbol *symbols, ut64 start_offset, RBinFile *bf, RKext *kext);
 static void r_iokit_class_free(void *_c);
@@ -223,9 +223,9 @@ static bool try_parse_mov_reg_reg(ut32 insn, int *dst_reg, int *src_reg);
 static void r_kext_free(RKext *kext);
 static void r_kext_fill_text_range(RKext *kext);
 static int kexts_sort_vaddr_func(const void *a, const void *b);
-static struct MACH0_(obj_t) *create_kext_mach0_raw(RKernelCacheObj *obj, RBinFile *bf, RBuffer *buf, struct MACH0_(opts_t) *opts);
-static struct MACH0_(obj_t) * create_kext_mach0(RKernelCacheObj *obj, RKext *kext, RBinFile *bf);
-static struct MACH0_(obj_t) * create_kext_shared_mach0(RKernelCacheObj *obj, RKext *kext, RBinFile *bf);
+static struct MACHO_(obj_t) *create_kext_macho_raw(RKernelCacheObj *obj, RBinFile *bf, RBuffer *buf, struct MACHO_(opts_t) *opts);
+static struct MACHO_(obj_t) * create_kext_macho(RKernelCacheObj *obj, RKext *kext, RBinFile *bf);
+static struct MACHO_(obj_t) * create_kext_shared_macho(RKernelCacheObj *obj, RKext *kext, RBinFile *bf);
 
 #define r_kext_index_foreach(index, i, item) \
 	if (index) \
@@ -237,8 +237,8 @@ static RKext *r_kext_index_vget(RKextIndex *index, ut64 vaddr);
 
 static void process_kmod_init_term_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKext *kext, ut64 **inits, ut64 **terms);
 static void create_initterm_syms_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKext *kext, int type, ut64 *pointers);
-static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RList *ret, ut64 paddr, bool is_first, int mode, const char *prefix);
-static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, ut64 paddr, bool is_first, int mode, const char *prefix);
+static void process_constructors(RKernelCacheObj *obj, struct MACHO_(obj_t) * macho, RList *ret, ut64 paddr, bool is_first, int mode, const char *prefix);
+static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKernelCacheObj *obj, struct MACHO_(obj_t) * macho, ut64 paddr, bool is_first, int mode, const char *prefix);
 static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type);
 static bool is_30bit_decorated(ut64 p);
 static ut64 undecorate_30bit(ut64 p, const RKernelCacheObj *obj);
@@ -249,23 +249,23 @@ static void r_kernel_cache_free(RKernelCacheObj *obj);
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	RBuffer *fbuf = r_ref (buf);
-	struct MACH0_(opts_t) opts;
-	MACH0_(opts_set_default) (&opts, bf);
-	struct MACH0_(obj_t) *main_mach0 = MACH0_(new_buf) (bf, fbuf, &opts);
-	if (!main_mach0) {
+	struct MACHO_(opts_t) opts;
+	MACHO_(opts_set_default) (&opts, bf);
+	struct MACHO_(obj_t) *main_macho = MACHO_(new_buf) (bf, fbuf, &opts);
+	if (!main_macho) {
 		return false;
 	}
 
-	RRebaseInfo *rebase_info = r_rebase_info_new_from_mach0 (fbuf, main_mach0);
+	RRebaseInfo *rebase_info = r_rebase_info_new_from_macho (fbuf, main_macho);
 
-	RPrelinkRange *prelink_range = get_prelink_info_range_from_mach0 (main_mach0);
+	RPrelinkRange *prelink_range = get_prelink_info_range_from_macho (main_macho);
 	if (!prelink_range) {
 		goto beach;
 	}
 
 	RKernelCacheObj *obj = R_NEW0 (RKernelCacheObj);
-	const bool is_modern = main_mach0->hdr.filetype == MH_FILESET ||
-		(main_mach0->hdr.cputype == CPU_TYPE_ARM64 && main_mach0->hdr.cpusubtype == 0xc0000002);
+	const bool is_modern = main_macho->hdr.filetype == MH_FILESET ||
+		(main_macho->hdr.cputype == CPU_TYPE_ARM64 && main_macho->hdr.cpusubtype == 0xc0000002);
 
 	RCFValueDict *prelink_info = NULL;
 	if (!is_modern && prelink_range->range.size) {
@@ -280,7 +280,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	obj->pending_bin_files = r_list_new (); // R_NEW0 cannot return NULL, so this cannot fail
 	obj->fileset_style = is_modern;
 
-	obj->mach0 = main_mach0;
+	obj->macho = main_macho;
 	obj->rebase_info = rebase_info;
 	obj->prelink_info = prelink_info;
 	obj->cache_buf = fbuf;
@@ -294,12 +294,12 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	if (rebase_info) {
 		obj->kernel_base = rebase_info->kernel_base;
 	} else {
-		struct MACH0_(segment_command) * seg;
-		int nsegs = R_MIN (main_mach0->nsegs, 128);
+		struct MACHO_(segment_command) * seg;
+		int nsegs = R_MIN (main_macho->nsegs, 128);
 		int i;
 		for (i = 0; i < nsegs; i++) {
 			char segname[17];
-			seg = &main_mach0->segs[i];
+			seg = &main_macho->segs[i];
 			r_str_ncpy (segname, seg->segname, 17);
 			if (!strncmp (segname, "__TEXT", 6) && segname[6] == '\0') {
 				obj->kernel_base = seg->vmaddr;
@@ -308,7 +308,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		}
 	}
 
-	if (rebase_info || main_mach0->chained_starts) {
+	if (rebase_info || main_macho->chained_starts) {
 		RIO *io = bf->rbin->iob.io;
 		swizzle_io_read (obj, io);
 	}
@@ -318,7 +318,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 beach:
 	r_unref (fbuf);
 	r_rebase_info_free (rebase_info);
-	MACH0_(mach0_free) (main_mach0);
+	MACHO_(macho_free) (main_macho);
 	return false;
 }
 
@@ -412,8 +412,8 @@ static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf) {
 	}
 }
 
-static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) * mach0) {
-	const RVecSection *sections = MACH0_(load_sections) (mach0);
+static RPrelinkRange *get_prelink_info_range_from_macho(struct MACHO_(obj_t) * macho) {
+	const RVecSection *sections = MACHO_(load_sections) (macho);
 	if (!sections) {
 		return NULL;
 	}
@@ -447,11 +447,11 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) * m
 	}
 
 	if (incomplete == 1 && !prelink_range->pa2va_data) {
-		struct MACH0_(segment_command) * seg;
-		int nsegs = R_MIN (mach0->nsegs, 128);
+		struct MACHO_(segment_command) * seg;
+		int nsegs = R_MIN (macho->nsegs, 128);
 		size_t i;
 		for (i = 0; i < nsegs; i++) {
-			seg = &mach0->segs[i];
+			seg = &macho->segs[i];
 			if (!strcmp (seg->segname, "__DATA")) {
 				prelink_range->pa2va_data = seg->vmaddr - seg->fileoff;
 				incomplete--;
@@ -549,8 +549,8 @@ static RList *filter_kexts(RKernelCacheObj *obj, RBinFile *bf) {
 		}
 		prev_kext = kext;
 
-		kext->mach0 = create_kext_mach0 (obj, kext, bf);
-		if (!kext->mach0) {
+		kext->macho = create_kext_macho (obj, kext, bf);
+		if (!kext->macho) {
 			r_kext_free (kext);
 			continue;
 		}
@@ -579,7 +579,7 @@ static ut64 r_ptr(ut8 *buf, RKernelCacheObj *obj) {
 }
 
 static RList *carve_kexts(RKernelCacheObj *obj, RBinFile *bf) {
-	const RVecSection *sections = MACH0_(load_sections) (obj->mach0);
+	const RVecSection *sections = MACHO_(load_sections) (obj->macho);
 	if (!sections) {
 		return NULL;
 	}
@@ -672,8 +672,8 @@ static RList *carve_kexts(RKernelCacheObj *obj, RBinFile *bf) {
 		kext->vaddr = K_RPTR (bytes);
 		kext->range.offset = kext->vaddr - pa2va_exec;
 
-		kext->mach0 = create_kext_mach0 (obj, kext, bf);
-		if (!kext->mach0) {
+		kext->macho = create_kext_macho (obj, kext, bf);
+		if (!kext->macho) {
 			r_kext_free (kext);
 			continue;
 		}
@@ -724,7 +724,7 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 	ut32 i, ncmds = r_buf_read_le32_at (cache_buf, 16);
 	ut64 length = r_buf_size (cache_buf);
 
-	ut64 cursor = sizeof (struct MACH0_(mach_header));
+	ut64 cursor = sizeof (struct MACHO_(mach_header));
 	for (i = 0; i < ncmds && cursor < length; i++) {
 		ut32 cmdtype = r_buf_read_le32_at (cache_buf, cursor);
 		ut32 cmdsize = r_buf_read_le32_at (cache_buf, cursor + 4);
@@ -757,8 +757,8 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 		kext->vaddr = vaddr;
 		kext->range.offset = paddr;
 
-		kext->mach0 = create_kext_shared_mach0 (obj, kext, bf);
-		if (!kext->mach0) {
+		kext->macho = create_kext_shared_macho (obj, kext, bf);
+		if (!kext->macho) {
 			free (padded_name);
 			r_kext_free (kext);
 			cursor = cmd_end;
@@ -787,7 +787,7 @@ static void r_kext_free(RKext *kext) {
 		return;
 	}
 	r_list_free (kext->classes);
-	MACH0_(mach0_free) (kext->mach0);
+	MACHO_(macho_free) (kext->macho);
 	if (kext->own_name && kext->name) {
 		free (kext->name);
 	}
@@ -795,7 +795,7 @@ static void r_kext_free(RKext *kext) {
 }
 
 static void r_kext_fill_text_range(RKext *kext) {
-	const RVecSection *sections = MACH0_(load_sections) (kext->mach0);
+	const RVecSection *sections = MACHO_(load_sections) (kext->macho);
 	if (sections) {
 		struct section_t *section;
 		R_VEC_FOREACH (sections, section) {
@@ -886,38 +886,38 @@ static RKext *r_kext_index_vget(RKextIndex *index, ut64 vaddr) {
 	return NULL;
 }
 
-static struct MACH0_(obj_t) *create_kext_mach0_raw(RKernelCacheObj *obj, RBinFile *bf, RBuffer *buf, struct MACH0_(opts_t) *opts) {
+static struct MACHO_(obj_t) *create_kext_macho_raw(RKernelCacheObj *obj, RBinFile *bf, RBuffer *buf, struct MACHO_(opts_t) *opts) {
 	bool rebasing_buffer = obj->rebasing_buffer;
 	obj->rebasing_buffer = true;
-	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (bf, buf, opts);
+	struct MACHO_(obj_t) *macho = MACHO_(new_buf) (bf, buf, opts);
 	obj->rebasing_buffer = rebasing_buffer;
-	return mach0;
+	return macho;
 }
 
-static struct MACH0_(obj_t) * create_kext_mach0(RKernelCacheObj *obj, RKext *kext, RBinFile *bf) {
-	struct MACH0_(opts_t) opts;
-	MACH0_(opts_set_default) (&opts, bf);
+static struct MACHO_(obj_t) * create_kext_macho(RKernelCacheObj *obj, RKext *kext, RBinFile *bf) {
+	struct MACHO_(opts_t) opts;
+	MACHO_(opts_set_default) (&opts, bf);
 	opts.verbose = true;
 	if (obj->fileset_style) {
 		/* Fileset entries store file offsets in the outer cache address space. */
 		opts.header_at = kext->range.offset;
-		return create_kext_mach0_raw (obj, bf, obj->cache_buf, &opts);
+		return create_kext_macho_raw (obj, bf, obj->cache_buf, &opts);
 	}
 	RBuffer *buf = r_buf_new_slice (obj->cache_buf, kext->range.offset, r_buf_size (obj->cache_buf) - kext->range.offset);
 	opts.header_at = 0;
-	struct MACH0_(obj_t) *mach0 = create_kext_mach0_raw (obj, bf, buf, &opts);
+	struct MACHO_(obj_t) *macho = create_kext_macho_raw (obj, bf, buf, &opts);
 	r_unref (buf);
-	return mach0;
+	return macho;
 }
 
-static struct MACH0_(obj_t) * create_kext_shared_mach0(RKernelCacheObj *obj, RKext *kext, RBinFile *bf) {
-	// Pass the buffer directly - MACH0_(new_buf) will call r_ref () on it
-	struct MACH0_(opts_t) opts;
-	MACH0_(opts_set_default) (&opts, bf);
+static struct MACHO_(obj_t) * create_kext_shared_macho(RKernelCacheObj *obj, RKext *kext, RBinFile *bf) {
+	// Pass the buffer directly - MACHO_(new_buf) will call r_ref () on it
+	struct MACHO_(opts_t) opts;
+	MACHO_(opts_set_default) (&opts, bf);
 	opts.verbose = false;
 	opts.header_at = kext->range.offset;
-	struct MACH0_(obj_t) *mach0 = create_kext_mach0_raw (obj, bf, obj->cache_buf, &opts);
-	return mach0;
+	struct MACHO_(obj_t) *macho = create_kext_macho_raw (obj, bf, obj->cache_buf, &opts);
+	return macho;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -929,13 +929,13 @@ static RList *entries(RBinFile *bf) {
 	}
 
 	RKernelCacheObj *kobj = (RKernelCacheObj *)obj->bin_obj;
-	ut64 entry_vaddr = kobj->mach0->entry;
+	ut64 entry_vaddr = kobj->macho->entry;
 	if (kobj->pa2va_exec <= entry_vaddr) {
 		ut64 entry_paddr = entry_vaddr - kobj->pa2va_exec;
 		r_list_append (ret, newEntry (entry_paddr, entry_vaddr, 0));
 	}
 
-	process_constructors (kobj, kobj->mach0, ret, 0, true, R_K_CONSTRUCTOR_TO_ENTRY, NULL);
+	process_constructors (kobj, kobj->macho, ret, 0, true, R_K_CONSTRUCTOR_TO_ENTRY, NULL);
 
 	return ret;
 }
@@ -943,7 +943,7 @@ static RList *entries(RBinFile *bf) {
 static void process_kmod_init_term_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKext *kext, ut64 **inits, ut64 **terms) {
 	RKernelCacheObj *obj = (RKernelCacheObj *)bf->bo->bin_obj;
 	if (!*inits || !*terms) {
-		const RVecSection *sections = MACH0_(load_sections) (obj->mach0);
+		const RVecSection *sections = MACHO_(load_sections) (obj->macho);
 		if (!sections) {
 			return;
 		}
@@ -1042,9 +1042,9 @@ static void create_initterm_syms_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKex
 	}
 }
 
-static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RList *ret, ut64 paddr, bool is_first, int mode, const char *prefix) {
+static void process_constructors(RKernelCacheObj *obj, struct MACHO_(obj_t) * macho, RList *ret, ut64 paddr, bool is_first, int mode, const char *prefix) {
 	// TODO: derpecate and use only a vector
-	const RVecSection *sections = MACH0_(load_sections) (mach0);
+	const RVecSection *sections = MACHO_(load_sections) (macho);
 	if (!sections) {
 		return;
 	}
@@ -1099,8 +1099,8 @@ static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) * ma
 	}
 }
 
-static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKernelCacheObj *obj, struct MACH0_(obj_t) * mo, ut64 paddr, bool is_first, int mode, const char *prefix) {
-	const RVecSection *sections = MACH0_(load_sections) (mo);
+static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKernelCacheObj *obj, struct MACHO_(obj_t) * mo, ut64 paddr, bool is_first, int mode, const char *prefix) {
+	const RVecSection *sections = MACHO_(load_sections) (mo);
 	if (!sections) {
 		return;
 	}
@@ -1222,7 +1222,7 @@ static bool sections_vec(RBinFile *bf) {
 		int magic = r_read_le32 (magicbytes);
 		switch (magic) {
 		case MH_MAGIC_64:
-			if (!sections_from_mach0 (kext->mach0, bf, kext->range.offset, kext->name, kobj)) {
+			if (!sections_from_macho (kext->macho, bf, kext->range.offset, kext->name, kobj)) {
 				r_unref (cache_buf);
 				return false;
 			}
@@ -1233,18 +1233,18 @@ static bool sections_vec(RBinFile *bf) {
 		}
 	}
 
-	if (!sections_from_mach0 (kobj->mach0, bf, 0, NULL, kobj)) {
+	if (!sections_from_macho (kobj->macho, bf, 0, NULL, kobj)) {
 		r_unref (cache_buf);
 		return false;
 	}
 
-	struct MACH0_(segment_command) * seg;
-	int nsegs = R_MIN (kobj->mach0->nsegs, 128);
+	struct MACHO_(segment_command) * seg;
+	int nsegs = R_MIN (kobj->macho->nsegs, 128);
 	int i;
 	for (i = 0; i < nsegs; i++) {
 		char segname[17];
 		RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		seg = &kobj->mach0->segs[i];
+		seg = &kobj->macho->segs[i];
 		r_str_ncpy (segname, seg->segname, 17);
 		r_str_filter (segname, -1);
 		ptr->name = r_str_newf ("%d.%s", i, segname);
@@ -1264,8 +1264,8 @@ static bool sections_vec(RBinFile *bf) {
 	return true;
 }
 
-static bool sections_from_mach0(struct MACH0_(obj_t) *mach0, RBinFile *bf, ut64 paddr, char *prefix, RKernelCacheObj *obj) {
-	const RVecSection *sections = MACH0_(load_sections) (mach0);
+static bool sections_from_macho(struct MACHO_(obj_t) *macho, RBinFile *bf, ut64 paddr, char *prefix, RKernelCacheObj *obj) {
+	const RVecSection *sections = MACHO_(load_sections) (macho);
 	if (!sections) {
 		return false;
 	}
@@ -1325,10 +1325,10 @@ static void handle_data_sections(RBinSection *sect) {
 static bool symbols_vec(RBinFile *bf) {
 	RKernelCacheObj *obj = (RKernelCacheObj *)bf->bo->bin_obj;
 
-	struct MACH0_(obj_t) *mo = obj->mach0;
+	struct MACHO_(obj_t) *mo = obj->macho;
 	RVecRBinSymbol symbols;
 	RVecRBinSymbol_init (&symbols);
-	if (MACH0_(load_symbols) (mo)) {
+	if (MACHO_(load_symbols) (mo)) {
 		RVecRBinSymbol_append (&symbols, mo->symbols_vec, &bin_symbol_copy);
 		RVecRBinSymbol_fini (mo->symbols_vec);
 	}
@@ -1402,20 +1402,20 @@ static bool symbols_vec(RBinFile *bf) {
 		ut32 magic = r_read_le32 (magicbytes);
 		switch (magic) {
 		case MH_MAGIC_64:
-			if (MACH0_(load_symbols) (kext->mach0)) {
-				R_LOG_DEBUG ("--> %d / %d", RVecRBinSymbol_length (kext->mach0->symbols_vec), RVecRBinSymbol_length (&symbols));
-				RVecRBinSymbol_append (&symbols, kext->mach0->symbols_vec, &bin_symbol_copy);
+			if (MACHO_(load_symbols) (kext->macho)) {
+				R_LOG_DEBUG ("--> %d / %d", RVecRBinSymbol_length (kext->macho->symbols_vec), RVecRBinSymbol_length (&symbols));
+				RVecRBinSymbol_append (&symbols, kext->macho->symbols_vec, &bin_symbol_copy);
 			}
 
 			ut64 start_offset = RVecRBinSymbol_length (&symbols);
 
 			{
-				process_constructors_vec (&symbols, bf, obj, kext->mach0, kext->range.offset, false, R_K_CONSTRUCTOR_TO_SYMBOL, kext_short_name (kext));
+				process_constructors_vec (&symbols, bf, obj, kext->macho, kext->range.offset, false, R_K_CONSTRUCTOR_TO_SYMBOL, kext_short_name (kext));
 				const ut32 last_ordinal = RVecRBinSymbol_length (&(bf->bo->symbols_vec));
 				symbols_from_stubs_vec (&symbols, bf, kernel_syms_by_addr, kext, last_ordinal);
 				process_kmod_init_term_vec (&symbols, bf, kext, &inits, &terms);
-				RVecRBinSymbol_fini (kext->mach0->symbols_vec);
-				kext->mach0->symbols_loaded = false;
+				RVecRBinSymbol_fini (kext->macho->symbols_vec);
+				kext->macho->symbols_loaded = false;
 			}
 
 			kext->classes = resolve_iokit_classes (&symbols, start_offset, bf, kext);
@@ -1437,7 +1437,7 @@ static bool symbols_vec(RBinFile *bf) {
 	R_FREE (terms);
 
 	sdb_ht_free (kernel_syms_by_addr);
-	// memcpy (kext->mach0->symbols_vec, &symbols, sizeof (symbols));
+	// memcpy (kext->macho->symbols_vec, &symbols, sizeof (symbols));
 	memcpy (&(bf->bo->symbols_vec), &symbols, sizeof (symbols));
 
 	return true;
@@ -1473,7 +1473,7 @@ typedef struct _r_sysent {
 } RSysEnt;
 
 static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
-	const RVecSection *sections = MACH0_(load_sections) (obj->mach0);
+	const RVecSection *sections = MACHO_(load_sections) (obj->macho);
 	if (!sections) {
 		return NULL;
 	}
@@ -1497,7 +1497,7 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 		int kiter;
 		r_kext_index_foreach (obj->kexts, kiter, kext) {
 			if (strcmp (kext->name, "com.apple.kernel") == 0) {
-				const RVecSection *sections = MACH0_(load_sections) (kext->mach0);
+				const RVecSection *sections = MACHO_(load_sections) (kext->macho);
 				if (sections) {
 					R_VEC_FOREACH (sections, section) {
 						if (strstr (section->name, "__DATA_CONST.__const")) {
@@ -1652,7 +1652,7 @@ static HtPP *mig_hash_new(void) {
 }
 
 static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
-	const RVecSection *sections = MACH0_(load_sections) (obj->mach0);
+	const RVecSection *sections = MACHO_(load_sections) (obj->macho);
 	if (!sections) {
 		return NULL;
 	}
@@ -1826,7 +1826,7 @@ static ut64 extract_addr_from_code(const ut8 *arm64_code, ut64 vaddr) {
 
 static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *kernel_syms_by_addr, RKext *kext, int ordinal) {
 	RKernelCacheObj *obj = (RKernelCacheObj *)bf->bo->bin_obj;
-	RStubsInfo *stubs_info = get_stubs_info (kext->mach0, kext->range.offset, obj);
+	RStubsInfo *stubs_info = get_stubs_info (kext->macho, kext->range.offset, obj);
 	if (!stubs_info) {
 		return;
 	}
@@ -1918,8 +1918,8 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 	R_FREE (stubs_info);
 }
 
-static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) * mach0, ut64 paddr, RKernelCacheObj *obj) {
-	const RVecSection *sections = MACH0_(load_sections) (mach0);
+static RStubsInfo *get_stubs_info(struct MACHO_(obj_t) * macho, ut64 paddr, RKernelCacheObj *obj) {
+	const RVecSection *sections = MACHO_(load_sections) (macho);
 	if (!sections) {
 		return NULL;
 	}
@@ -2664,7 +2664,7 @@ static ut64 baddr(RBinFile *bf) {
 		return 0; // 8LL; // w t f
 	}
 	RKernelCacheObj *obj = (RKernelCacheObj *)bf->bo->bin_obj;
-	return MACH0_(get_baddr) (obj->mach0);
+	return MACHO_(get_baddr) (obj->macho);
 }
 
 static void destroy(RBinFile *bf) {
@@ -2678,9 +2678,9 @@ static void r_kernel_cache_free(RKernelCacheObj *obj) {
 
 	ht_up_free (obj->class_by_handle);
 
-	if (obj->mach0) {
-		MACH0_(mach0_free) (obj->mach0);
-		obj->mach0 = NULL;
+	if (obj->macho) {
+		MACHO_(macho_free) (obj->macho);
+		obj->macho = NULL;
 	}
 
 	if (obj->cache_buf) {
@@ -2708,8 +2708,8 @@ static void r_kernel_cache_free(RKernelCacheObj *obj) {
 	R_FREE (obj);
 }
 
-static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH0_(obj_t) * mach0) {
-	const RVecSection *sections = MACH0_(load_sections) (mach0);
+static RRebaseInfo *r_rebase_info_new_from_macho(RBuffer *cache_buf, struct MACHO_(obj_t) * macho) {
+	const RVecSection *sections = MACHO_(load_sections) (macho);
 	if (!sections) {
 		return NULL;
 	}
@@ -2727,12 +2727,12 @@ static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH
 
 	ut64 kernel_base = 0;
 
-	struct MACH0_(segment_command) * seg;
-	int nsegs = R_MIN (mach0->nsegs, 128);
+	struct MACHO_(segment_command) * seg;
+	int nsegs = R_MIN (macho->nsegs, 128);
 	int i;
 	for (i = 0; i < nsegs; i++) {
 		char segname[17];
-		seg = &mach0->segs[i];
+		seg = &macho->segs[i];
 		r_str_ncpy (segname, seg->segname, 17);
 		if (!strncmp (segname, "__TEXT", 6) && segname[6] == '\0') {
 			kernel_base = seg->vmaddr;
@@ -2800,7 +2800,7 @@ static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj) {
 		if (info->ranges[i].size != UT64_MAX) {
 			return;
 		} else if (sections == NULL) {
-			sections = MACH0_(load_sections) (obj->mach0);
+			sections = MACHO_(load_sections) (obj->macho);
 			if (!sections) {
 				return;
 			}
@@ -2946,7 +2946,7 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	ut64 io_off = io->off;
 	int result = cache->original_io_read (io, fd, cache->internal_buffer, count);
 	if (result == count) {
-		if (cache->mach0->chained_starts) {
+		if (cache->macho->chained_starts) {
 			rebase_buffer_fixup (cache, io_off, fd, cache->internal_buffer, count);
 		} else if (cache->rebase_info) {
 			rebase_buffer (cache, io_off, fd, cache->internal_buffer, count);
@@ -3009,7 +3009,7 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 		return;
 	}
 	kobj->rebasing_buffer = true;
-	struct MACH0_(obj_t) *obj = kobj->mach0;
+	struct MACHO_(obj_t) *obj = kobj->macho;
 	const ut64 count64 = count > 0 ? (ut64)count : 0;
 	ut64 eob = off + count;
 	size_t i = 0;

@@ -2,8 +2,8 @@
 
 #include <r_io.h>
 #include <r_lib.h>
-#include "../../bin/format/mach0/mach0_specs.h"
-#include "../../bin/format/mach0/dsc.c"
+#include "../../bin/format/macho/macho_specs.h"
+#include "../../bin/format/macho/dsc.c"
 
 typedef struct {
 	ut8 version;

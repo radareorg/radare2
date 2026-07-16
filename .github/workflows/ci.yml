@@ -59,7 +59,7 @@ jobs:
         sudo make install
     - name: Running c/m with self-hosted libmagic
       run:
-        time r2 -a gb -e search.verbose=false -qc/m test/bins/mach0/ls-m1 > /tmp/m.1 2>&1 || true
+        time r2 -a gb -e search.verbose=false -qc/m test/bins/macho/ls-m1 > /tmp/m.1 2>&1 || true
         cat /tmp/m.1
     - name: Uninstall test
       run: |
@@ -76,7 +76,7 @@ jobs:
         sudo make install
     - name: Running c/m with system libmagic
       run:
-        time r2 -a gb -e search.verbose=false -qc/m test/bins/mach0/ls-m1 > /tmp/m.2 2>&1 || true
+        time r2 -a gb -e search.verbose=false -qc/m test/bins/macho/ls-m1 > /tmp/m.2 2>&1 || true
         cat /tmp/m.2
     - name: Compare magic times and results
       run: |

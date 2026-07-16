@@ -1,5 +1,5 @@
 NAME=CC-*
-FILE=bins/mach0/FileDP
+FILE=bins/macho/FileDP
 CMDS=<<EOF
 C*~?
 CC~?
@@ -81,7 +81,7 @@ EOF
 RUN
 
 NAME=CCf-*
-FILE=bins/mach0/FileDP
+FILE=bins/macho/FileDP
 CMDS=<<EOF
 af
 CCf-*~?
@@ -823,7 +823,7 @@ EOF
 RUN
 
 NAME=Cb test
-FILE=bins/mach0/ls-m1
+FILE=bins/macho/ls-m1
 ARGS=-a arm -b 64
 CMDS=<<EOF
 s main

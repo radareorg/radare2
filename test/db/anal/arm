@@ -198,7 +198,7 @@ EOF
 RUN
 
 NAME=arm-or-thumb visual bug
-FILE=bins/mach0/arm-or-thumb
+FILE=bins/macho/arm-or-thumb
 CMDS=<<EOF
 e scr.interactive=1
 e scr.null=1
@@ -212,7 +212,7 @@ EOF
 RUN
 
 NAME=arm-or-thumb visual bug
-FILE=bins/mach0/arm-or-thumb
+FILE=bins/macho/arm-or-thumb
 CMDS=<<EOF
 af
 afi~^size[1]
@@ -1111,7 +1111,7 @@ EOF
 RUN
 
 NAME=misaligned arm string xref
-FILE=bins/mach0/misaligned_data-iOS-armv7
+FILE=bins/macho/misaligned_data-iOS-armv7
 CMDS=<<EOF
 aav
 af
@@ -1125,7 +1125,7 @@ RUN
 
 NAME=misaligned arm string xref failing
 BROKEN=1
-FILE=bins/mach0/misaligned_data-iOS-armv7
+FILE=bins/macho/misaligned_data-iOS-armv7
 CMDS=<<EOF
 aav
 aae

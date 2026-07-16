@@ -1,5 +1,5 @@
 NAME=tc
-FILE=bins/mach0/objc-employee
+FILE=bins/macho/objc-employee
 CMDS=.ic*;ts
 EXPECT=<<EOF
 Employee
@@ -8,7 +8,7 @@ EOF
 RUN
 
 NAME=tc2
-FILE=bins/mach0/objc-employee
+FILE=bins/macho/objc-employee
 CMDS=icc*
 EXPECT=<<EOF
 @interface Employee : NSObject
@@ -41,7 +41,7 @@ EOF
 RUN
 
 NAME=tc3
-FILE=bins/mach0/objc-employee
+FILE=bins/macho/objc-employee
 ARGS=-e bin.types=true
 CMDS=ic*
 EXPECT=<<EOF
@@ -76,7 +76,7 @@ EOF
 RUN
 
 NAME=tc4
-FILE=bins/mach0/objc-employee
+FILE=bins/macho/objc-employee
 ARGS=-e bin.types=true
 CMDS=.ic*;tsc;tec
 EXPECT=<<EOF
@@ -118,7 +118,7 @@ enum CCOperation {
 	kCCEncrypt = 0,
 	kCCDecrypt = 1
 };
-enum mach0_build_platform {
+enum macho_build_platform {
 	MACOS = 1,
 	IOS = 2,
 	TVOS = 3,
@@ -129,12 +129,12 @@ enum mach0_build_platform {
 	TVOSSIMULATOR = 8,
 	WATCHOSSIMULATOR = 9
 };
-enum mach0_build_tool {
+enum macho_build_tool {
 	CLANG = 1,
 	SWIFT = 2,
 	LD = 3
 };
-enum mach0_header_filetype {
+enum macho_header_filetype {
 	MH_OBJECT = 1,
 	MH_EXECUTE = 2,
 	MH_FVMLIB = 3,
@@ -147,7 +147,7 @@ enum mach0_header_filetype {
 	MH_DSYM = 10,
 	MH_KEXT_BUNDLE = 11
 };
-enum mach0_header_flags {
+enum macho_header_flags {
 	MH_NOUNDEFS = 1,
 	MH_INCRLINK = 2,
 	MH_DYLDLINK = 4,
@@ -175,7 +175,7 @@ enum mach0_header_flags {
 	MH_NO_HEAP_EXECUTION = 16777216,
 	MH_APP_EXTENSION_SAFE = 33554432
 };
-enum mach0_load_command_type {
+enum macho_load_command_type {
 	LC_SEGMENT = 1,
 	LC_SYMTAB = 2,
 	LC_SYMSEG = 3,
@@ -228,7 +228,7 @@ enum mach0_load_command_type {
 	LC_NOTE = 49,
 	LC_BUILD_VERSION = 50
 };
-enum mach0_section_attrs {
+enum macho_section_attrs {
 	S_ATTR_PURE_INSTRUCTIONS = 8388608,
 	S_ATTR_NO_TOC = 4194304,
 	S_ATTR_STRIP_STATIC_SYMS = 2097152,
@@ -240,7 +240,7 @@ enum mach0_section_attrs {
 	S_ATTR_EXT_RELOC = 2,
 	S_ATTR_LOC_RELOC = 1
 };
-enum mach0_section_types {
+enum macho_section_types {
 	S_REGULAR = 0,
 	S_ZEROFILL = 1,
 	S_CSTRING_LITERALS = 2,
@@ -269,7 +269,7 @@ EOF
 RUN
 
 NAME=tc iOS14 arm64
-FILE=bins/mach0/objc-employee-ios14-arm64
+FILE=bins/macho/objc-employee-ios14-arm64
 CMDS=.ic*;ts
 EXPECT=<<EOF
 Employee
@@ -278,7 +278,7 @@ EOF
 RUN
 
 NAME=tc2 iOS14 arm64
-FILE=bins/mach0/objc-employee-ios14-arm64
+FILE=bins/macho/objc-employee-ios14-arm64
 CMDS=icc*
 EXPECT=<<EOF
 @interface Employee : NSObject
@@ -312,7 +312,7 @@ EOF
 RUN
 
 NAME=tc3 iOS14 arm64
-FILE=bins/mach0/objc-employee-ios14-arm64
+FILE=bins/macho/objc-employee-ios14-arm64
 CMDS=ic*
 EXPECT=<<EOF
 fs classes
@@ -347,7 +347,7 @@ EOF
 RUN
 
 NAME=tc4 iOS14 arm64
-FILE=bins/mach0/objc-employee-ios14-arm64
+FILE=bins/macho/objc-employee-ios14-arm64
 ARGS=-e bin.types=true
 CMDS=<<EOF
 .ic*;tsc;tec
@@ -391,7 +391,7 @@ enum CCOperation {
 	kCCEncrypt = 0,
 	kCCDecrypt = 1
 };
-enum mach0_build_platform {
+enum macho_build_platform {
 	MACOS = 1,
 	IOS = 2,
 	TVOS = 3,
@@ -402,12 +402,12 @@ enum mach0_build_platform {
 	TVOSSIMULATOR = 8,
 	WATCHOSSIMULATOR = 9
 };
-enum mach0_build_tool {
+enum macho_build_tool {
 	CLANG = 1,
 	SWIFT = 2,
 	LD = 3
 };
-enum mach0_header_filetype {
+enum macho_header_filetype {
 	MH_OBJECT = 1,
 	MH_EXECUTE = 2,
 	MH_FVMLIB = 3,
@@ -420,7 +420,7 @@ enum mach0_header_filetype {
 	MH_DSYM = 10,
 	MH_KEXT_BUNDLE = 11
 };
-enum mach0_header_flags {
+enum macho_header_flags {
 	MH_NOUNDEFS = 1,
 	MH_INCRLINK = 2,
 	MH_DYLDLINK = 4,
@@ -448,7 +448,7 @@ enum mach0_header_flags {
 	MH_NO_HEAP_EXECUTION = 16777216,
 	MH_APP_EXTENSION_SAFE = 33554432
 };
-enum mach0_load_command_type {
+enum macho_load_command_type {
 	LC_SEGMENT = 1,
 	LC_SYMTAB = 2,
 	LC_SYMSEG = 3,
@@ -501,7 +501,7 @@ enum mach0_load_command_type {
 	LC_NOTE = 49,
 	LC_BUILD_VERSION = 50
 };
-enum mach0_section_attrs {
+enum macho_section_attrs {
 	S_ATTR_PURE_INSTRUCTIONS = 8388608,
 	S_ATTR_NO_TOC = 4194304,
 	S_ATTR_STRIP_STATIC_SYMS = 2097152,
@@ -513,7 +513,7 @@ enum mach0_section_attrs {
 	S_ATTR_EXT_RELOC = 2,
 	S_ATTR_LOC_RELOC = 1
 };
-enum mach0_section_types {
+enum macho_section_types {
 	S_REGULAR = 0,
 	S_ZEROFILL = 1,
 	S_CSTRING_LITERALS = 2,
@@ -542,7 +542,7 @@ EOF
 RUN
 
 NAME=tc iOS14 arm64e
-FILE=bins/mach0/objc-employee-ios14-arm64e
+FILE=bins/macho/objc-employee-ios14-arm64e
 CMDS=.ic*;ts
 EXPECT=<<EOF
 Employee
@@ -551,7 +551,7 @@ EOF
 RUN
 
 NAME=tc2 iOS14 arm64e
-FILE=bins/mach0/objc-employee-ios14-arm64e
+FILE=bins/macho/objc-employee-ios14-arm64e
 CMDS=icc*
 EXPECT=<<EOF
 @interface Employee : NSObject
@@ -585,7 +585,7 @@ EOF
 RUN
 
 NAME=tc3 iOS14 arm64e
-FILE=bins/mach0/objc-employee-ios14-arm64e
+FILE=bins/macho/objc-employee-ios14-arm64e
 CMDS=ic*
 EXPECT=<<EOF
 fs classes
@@ -620,7 +620,7 @@ EOF
 RUN
 
 NAME=tc4 iOS14 arm64e
-FILE=bins/mach0/objc-employee-ios14-arm64e
+FILE=bins/macho/objc-employee-ios14-arm64e
 ARGS=-e bin.types=true
 CMDS=<<EOF
 .ic*;tsc;tec
@@ -664,7 +664,7 @@ enum CCOperation {
 	kCCEncrypt = 0,
 	kCCDecrypt = 1
 };
-enum mach0_build_platform {
+enum macho_build_platform {
 	MACOS = 1,
 	IOS = 2,
 	TVOS = 3,
@@ -675,12 +675,12 @@ enum mach0_build_platform {
 	TVOSSIMULATOR = 8,
 	WATCHOSSIMULATOR = 9
 };
-enum mach0_build_tool {
+enum macho_build_tool {
 	CLANG = 1,
 	SWIFT = 2,
 	LD = 3
 };
-enum mach0_header_filetype {
+enum macho_header_filetype {
 	MH_OBJECT = 1,
 	MH_EXECUTE = 2,
 	MH_FVMLIB = 3,
@@ -693,7 +693,7 @@ enum mach0_header_filetype {
 	MH_DSYM = 10,
 	MH_KEXT_BUNDLE = 11
 };
-enum mach0_header_flags {
+enum macho_header_flags {
 	MH_NOUNDEFS = 1,
 	MH_INCRLINK = 2,
 	MH_DYLDLINK = 4,
@@ -721,7 +721,7 @@ enum mach0_header_flags {
 	MH_NO_HEAP_EXECUTION = 16777216,
 	MH_APP_EXTENSION_SAFE = 33554432
 };
-enum mach0_load_command_type {
+enum macho_load_command_type {
 	LC_SEGMENT = 1,
 	LC_SYMTAB = 2,
 	LC_SYMSEG = 3,
@@ -774,7 +774,7 @@ enum mach0_load_command_type {
 	LC_NOTE = 49,
 	LC_BUILD_VERSION = 50
 };
-enum mach0_section_attrs {
+enum macho_section_attrs {
 	S_ATTR_PURE_INSTRUCTIONS = 8388608,
 	S_ATTR_NO_TOC = 4194304,
 	S_ATTR_STRIP_STATIC_SYMS = 2097152,
@@ -786,7 +786,7 @@ enum mach0_section_attrs {
 	S_ATTR_EXT_RELOC = 2,
 	S_ATTR_LOC_RELOC = 1
 };
-enum mach0_section_types {
+enum macho_section_types {
 	S_REGULAR = 0,
 	S_ZEROFILL = 1,
 	S_CSTRING_LITERALS = 2,
