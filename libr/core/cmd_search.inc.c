@@ -67,7 +67,7 @@ static RCoreHelpMessage help_msg_slash_pattern = {
 };
 
 static RCoreHelpMessage help_msg_slash_ad = {
-	"Usage: /ad[/<*jq>]", "[value]", "Backward search subcommands",
+	"Usage: /ad[/][a][j|q|*]", "[value]", "Backward search subcommands",
 	"/ad", " rax", "search in plaintext disasm for matching instructions",
 	"/ad", " rax$", "search in plaintext disasm for instruction matchin given glob expression",
 	"/adj", " rax", "json output searching in disasm with plaintext",
@@ -154,7 +154,7 @@ static RCoreHelpMessage help_msg_slash_a = {
 	"/aa", " mov eax", "linearly find aproximated assembly (case insensitive strstr)",
 	"/ab", "[f] [delta]", "search for backward jumps (usually loops)",
 	"/ac", " mov eax", "same as /aa, but case-sensitive",
-	"/ad", "[?][/*jq] push;mov", "match ins1 followed by ins2 in linear disasm",
+	"/ad", "[?][/][a][j|q|*] push;mov", "match ins1 followed by ins2 in linear disasm",
 	"/ae", " esil", "search for esil expressions matching substring",
 	"/af", "[l] family", "search for instruction of specific family (afl=list)",
 	"/aF", "[d] opstr", "find instructions matching given opstr only in analyzed code",
@@ -3096,33 +3096,81 @@ static void do_section_search(RCore *core, RSearchParameters *param, const char 
 	}
 }
 
+static bool parse_ad_modifiers(RCore *core, const char *input, bool *regexp, bool *every_byte, int *outmode, const char **arg) {
+	const char *p = input + 1;
+	bool has_outmode = false;
+	*regexp = false;
+	*every_byte = false;
+	if (*p == '/') {
+		*regexp = true;
+		p++;
+	}
+	for (; *p && *p != ' '; p++) {
+		switch (*p) {
+		case 'a':
+			if (!*regexp || *every_byte) {
+				goto invalid;
+			}
+			*every_byte = true;
+			break;
+		case 'j':
+		case 'q':
+		case '*':
+			if (has_outmode) {
+				goto invalid;
+			}
+			*outmode = *p == 'j'? R_MODE_JSON
+				: *p == 'q'? R_MODE_SIMPLE: R_MODE_RADARE;
+			has_outmode = true;
+			break;
+		default:
+			goto invalid;
+		}
+	}
+	*arg = p;
+	return true;
+
+invalid:
+	r_core_return_invalid_command (core, "/ad", *p);
+	return false;
+}
+
 static void do_asm_search(RCore *core, RSearchParameters *param, const char *input, int mode, RInterval search_itv) {
 	RCoreAsmHit *hit; // WTF LOL must use RSearchHit in here!
 	RListIter *iter, *itermap;
 	int count = 0;
 	RIOMap *map;
-	bool regexp = input[0] && input[1] == '/'; // "/ad/"
-	bool everyByte = regexp && input[0] && input[1] && input[2] == 'a';
-	char *end_cmd = strchr (input, ' ');
-	if (regexp && input[2] == '?') {
+	bool regexp = false;
+	bool everyByte = false;
+	const char *end_cmd = strchr (input, ' ');
+	if (mode == 0 && input[1] == '/' && input[2] == '?' && (!input[3] || input[3] == ' ')) {
 		r_core_cmd_help_contains (core, help_msg_slash_ad, "/ad/");
 		return;
 	}
-	switch ((end_cmd ? *(end_cmd - 1) : input[0]? input[1]: 0)) {
-	case 'j':
-		param->outmode = R_MODE_JSON;
-		break;
-	case 'q':
-		param->outmode = R_MODE_SIMPLE;
-		break;
-	case '*':
-		param->outmode = R_MODE_RADARE;
-		break;
-	case '?':
-		r_core_cmd_help (core, help_msg_slash_ad);
-		return;
-	default:
-		break;
+	if (mode == 0) {
+		int outmode = param->outmode;
+		if (!parse_ad_modifiers (core, input, &regexp, &everyByte, &outmode, &end_cmd)) {
+			param->outmode = 0;
+			return;
+		}
+		param->outmode = outmode;
+	} else {
+		switch ((end_cmd ? *(end_cmd - 1) : input[0]? input[1]: 0)) {
+		case 'j':
+			param->outmode = R_MODE_JSON;
+			break;
+		case 'q':
+			param->outmode = R_MODE_SIMPLE;
+			break;
+		case '*':
+			param->outmode = R_MODE_RADARE;
+			break;
+		case '?':
+			r_core_cmd_help (core, help_msg_slash_ad);
+			return;
+		default:
+			break;
+		}
 	}
 	if (mode == 'o') {
 		everyByte = true;
@@ -3130,12 +3178,12 @@ static void do_asm_search(RCore *core, RSearchParameters *param, const char *inp
 
 	int maxhits = (int) r_config_get_i (core->config, "search.maxhits");
 	if (param->outmode == R_MODE_JSON) {
+		if (!param->pj) {
+			param->pj = r_core_pj_new (core);
+		}
 		pj_a (param->pj);
 	}
 	r_cons_break_push (core->cons, NULL, NULL);
-	if (everyByte) {
-		input ++;
-	}
 	r_list_foreach (param->boundaries, itermap, map) {
 		if (!r_itv_overlap (search_itv, map->itv)) {
 			continue;
@@ -4459,7 +4507,7 @@ reread:
 			goto beach;
 		case 'd': // "/ad"
 			dosearch = false;
-			if (input[2] == '?') {
+			if (input[2] == '?' && (!input[3] || input[3] == ' ')) {
 				r_core_cmd_help_match (core, help_msg_slash_a, "/ad");
 			} else {
 				do_asm_search (core, &param, input + 1, 0, search_itv);

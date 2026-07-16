@@ -42,6 +42,52 @@ ERROR: Invalid regexp: (
 EOF
 RUN
 
+NAME=/ad rejects unknown modifiers
+FILE=malloc://1
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90
+"/adZ nop"
+q
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Invalid `Z` subcommand, try `/ad?`
+EOF
+RUN
+
+NAME=/ad/ modifier order is independent
+FILE=malloc://1
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90
+"/ad/aj nop"
+"/ad/ja nop"
+q
+EOF
+EXPECT=<<EOF
+[{"addr":0,"len":1,"code":"nop"}]
+[{"addr":0,"len":1,"code":"nop"}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=/ad rejects duplicate and conflicting modifiers
+FILE=malloc://1
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90
+"/ad/aa nop"
+"/ad/jq nop"
+q
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Invalid `a` subcommand, try `/ad?`
+ERROR: Invalid `q` subcommand, try `/ad?`
+EOF
+RUN
+
 NAME=/ad/ search multiple instructions
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
