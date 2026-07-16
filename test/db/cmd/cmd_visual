@@ -66,6 +66,58 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=visual arm64 string meta scroll down aligns after end
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e scr.interactive=true
+e arch.codealign=4
+Cs 5 @ 4
+Cs 6 @ 0x14
+Cs 7 @ 0x24
+s 4
+Vpjjq
+s
+s 0x14
+Vjjq
+s
+s 0x24
+Vjjq
+s
+EOF
+EXPECT=<<EOF
+0xc
+0x1c
+0x2c
+EOF
+RUN
+
+NAME=visual arm64 string meta scroll up from aligned code
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e scr.interactive=true
+e arch.codealign=4
+Cs 7 @ 4
+Cs 6 @ 0x14
+Cs 5 @ 0x24
+s 0xc
+Vpkq
+s
+s 0x1c
+Vkq
+s
+s 0x2c
+Vkq
+s
+EOF
+EXPECT=<<EOF
+0xb
+0x1a
+0x29
+EOF
+RUN
+
 NAME=visual cmd.visual disasm scroll aligns
 FILE=-
 ARGS=-a arm -b 64

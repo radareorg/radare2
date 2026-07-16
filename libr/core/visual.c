@@ -1226,6 +1226,29 @@ static int visual_meta_delta(RCore *core, ut64 addr, int size) {
 	return delta > INT_MAX? INT_MAX: (int)delta;
 }
 
+static ut64 visual_meta_end_in(RCore *core, ut64 addr, int size) {
+	if (size < 1) {
+		return UT64_MAX;
+	}
+	RVecIntervalNodePtr *metas = r_meta_get_all_intersect (core->anal, addr, size, R_META_TYPE_ANY);
+	if (!metas) {
+		return UT64_MAX;
+	}
+	ut64 res = UT64_MAX;
+	RIntervalNode **it;
+	R_VEC_FOREACH (metas, it) {
+		RIntervalNode *node = *it;
+		RAnalMetaItem *mi = node->data;
+		if (mi && (mi->type == R_META_TYPE_DATA || mi->type == R_META_TYPE_STRING)
+				&& node->end != UT64_MAX) {
+			ut64 end = node->end + 1;
+			res = res == UT64_MAX? end: R_MAX (res, end);
+		}
+	}
+	RVecIntervalNodePtr_free (metas);
+	return res;
+}
+
 static ut64 visual_meta_prev_addr(RCore *core, ut64 addr) {
 	if (addr < 1) {
 		return UT64_MAX;
@@ -1266,7 +1289,11 @@ static ut64 visual_align_code(RCore *core, ut64 addr) {
 		if (mod) {
 			ut64 aligned = addr - mod;
 			int delta = visual_meta_delta (core, aligned, codealign);
-			addr = delta > mod? aligned + delta: aligned;
+			if (delta > mod) {
+				addr = aligned + delta;
+			} else if (!delta) {
+				addr = aligned;
+			}
 		}
 	}
 	return addr;
@@ -1293,7 +1320,14 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 		if (minop == -1) {
 			return addr - 4;
 		}
-		return addr - minop;
+		ut64 prev = addr - minop;
+		if (addr >= (ut64)minop && core->anal->config->codealign == minop) {
+			ut64 meta_end = visual_meta_end_in (core, prev, minop);
+			if (meta_end > prev && meta_end < addr) {
+				return meta_end;
+			}
+		}
+		return prev;
 	}
 
 	// let's see if we can use anal info to get the previous instruction
