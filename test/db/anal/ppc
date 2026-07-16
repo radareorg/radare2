@@ -1297,3 +1297,58 @@ EXPECT=<<EOF
       arg2  0x0
 EOF
 RUN
+
+NAME=ppc conditional return alias beqlr is a return with no immediate jump
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e anal.arch=ppc -e cfg.bigendian=true
+CMDS=<<EOF
+wx 4d820020
+aoj 1~{0.type}
+aoj 1~{0.esil}
+EOF
+EXPECT=<<EOF
+cret
+cr0,!,?{,lr,pc,=,},
+EOF
+RUN
+
+NAME=ppc beqctr aliases to a conditional ctr jump
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e anal.arch=ppc -e cfg.bigendian=true
+CMDS=<<EOF
+wx 4d820420
+aoj 1~{0.type}
+aoj 1~{0.esil}
+EOF
+EXPECT=<<EOF
+ucjmp
+cr0,!,?{,ctr,pc,=,},
+EOF
+RUN
+
+NAME=ppc beqctrl is a conditional call that links lr
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e anal.arch=ppc -e cfg.bigendian=true
+CMDS=<<EOF
+wx 4d820421
+aoj 1~{0.type}
+aoj 1~{0.esil}
+EOF
+EXPECT=<<EOF
+uccall
+cr0,!,?{,pc,lr,=,ctr,pc,=,},
+EOF
+RUN
+
+NAME=ppc beqlr does not create a basic block edge to address zero
+FILE=malloc://32
+ARGS=-a ppc -b 32 -e anal.arch=ppc -e cfg.bigendian=true -m 0x100
+CMDS=<<EOF
+wx 2c0300004d82002038600001 @ 0x100
+af @ 0x100
+afb @ 0x100~j 0x00000000?
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN

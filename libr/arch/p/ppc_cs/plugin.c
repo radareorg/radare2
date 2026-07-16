@@ -1103,6 +1103,32 @@ static void ppc_fpop(RAnalOp *op, PluginData *pd, struct Getarg *gop, bool singl
 	}
 }
 
+// predicate-guarded pc write shared by bc, b<cond>lr and b<cond>ctr forms
+static void ppc_cond_branch(RAnalOp *op, int bc, const char *cr, const char *target) {
+	switch (bc) {
+	case PPC_BC_LT:
+		esilprintf (op, "0x80,%s,&,!,!,?{,%s,pc,=,},", cr, target);
+		break;
+	case PPC_BC_LE:
+		esilprintf (op, "0x80,%s,&,!,!,%s,!,|,?{,%s,pc,=,},", cr, cr, target);
+		break;
+	case PPC_BC_EQ:
+		esilprintf (op, "%s,!,?{,%s,pc,=,},", cr, target);
+		break;
+	case PPC_BC_GE:
+		esilprintf (op, "0x80,%s,&,!,%s,!,|,?{,%s,pc,=,},", cr, cr, target);
+		break;
+	case PPC_BC_GT:
+		esilprintf (op, "0x80,%s,&,!,?{,%s,pc,=,},", cr, target);
+		break;
+	case PPC_BC_NE:
+		esilprintf (op, "%s,!,!,?{,%s,pc,=,},", cr, target);
+		break;
+	default:
+		break;
+	}
+}
+
 static int decompile_vle(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	vle_t* instr = 0;
 	vle_handle handle = {0};
@@ -2115,66 +2141,34 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 #endif
 		case PPC_INS_B:
 		case PPC_INS_BC:
-		case PPC_INS_BA:
+		case PPC_INS_BA: {
+			// cs>=5 routes b<cond>lr/ctr aliases here; target is lr/ctr, never an immediate (which would fabricate jump 0)
+			const char *mn = insn->mnemonic;
+			const char *cr = ARG (1)[0] == '\0' ? "cr0" : ARG (0);
+			if (r_str_endswith (mn, "ctr") || r_str_endswith (mn, "ctrl")) {
+				const bool link = r_str_endswith (mn, "ctrl");
+				op->type = link ? R_ANAL_OP_TYPE_UCCALL : R_ANAL_OP_TYPE_UCJMP;
+				op->fail = addr + op->size;
+				ppc_cond_branch (op, BC (), ARG (0)[0] == '\0' ? "cr0" : ARG (0), link ? "pc,lr,=,ctr" : "ctr");
+				break;
+			}
+			if (r_str_endswith (mn, "lr") || r_str_endswith (mn, "lrl")) {
+				op->type = R_ANAL_OP_TYPE_CRET;
+				op->fail = addr + op->size;
+				ppc_cond_branch (op, BC (), ARG (0)[0] == '\0' ? "cr0" : ARG (0), "lr");
+				break;
+			}
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = ARG (1)[0] == '\0' ? IMM (0) : IMM (1);
 			op->fail = addr + op->size;
-			switch (BC ()) {
-			case PPC_BC_LT:
-				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "0x80,cr0,&,!,!,?{,%s,pc,=,},", ARG (0));
-				} else {
-					esilprintf (op, "0x80,%s,&,!,!,?{,%s,pc,=,},", ARG (0), ARG (1));
-				}
-				break;
-			case PPC_BC_LE:
-				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "0x80,cr0,&,!,!,cr0,!,|,?{,%s,pc,=,},", ARG (0));
-				} else {
-					esilprintf (op, "0x80,%s,&,!,!,0,%s,!,|,?{,%s,pc,=,},", ARG (0), ARG (0), ARG (1));
-				}
-				break;
-			case PPC_BC_EQ:
-				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "cr0,!,?{,%s,pc,=,},", ARG (0));
-				} else {
-					esilprintf (op, "%s,!,?{,%s,pc,=,},", ARG (0), ARG (1));
-				}
-				break;
-			case PPC_BC_GE:
-				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "0x80,cr0,&,!,cr0,!,|,?{,%s,pc,=,},", ARG (0));
-				} else {
-					esilprintf (op, "0x80,%s,&,!,%s,!,|,?{,%s,pc,=,},", ARG (0), ARG (0), ARG (1));
-				}
-				break;
-			case PPC_BC_GT:
-				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "0x80,cr0,&,!,?{,%s,pc,=,},", ARG (0));
-				} else {
-					esilprintf (op, "0x80,%s,&,!,?{,%s,pc,=,},", ARG (0), ARG (1));
-				}
-				break;
-			case PPC_BC_NE:
-				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "cr0,!,!,?{,%s,pc,=,},", ARG (0));
-				} else {
-					esilprintf (op, "%s,!,!,?{,%s,pc,=,},", ARG (0), ARG (1));
-				}
-				break;
-			case PPC_BC_INVALID:
+			if (BC () == PPC_BC_INVALID) {
 				op->type = R_ANAL_OP_TYPE_JMP;
 				esilprintf (op, "%s,pc,=", ARG (0));
-#if CS_API_MAJOR < 6
-			case PPC_BC_UN: // unordered (cs6 - same as *_SO)
-			case PPC_BC_NU: // not unordered (cs6 - same as *_NS)
-#endif
-			case PPC_BC_SO: // summary overflow
-			case PPC_BC_NS: // not summary overflow
-			default:
-				break;
+			} else {
+				ppc_cond_branch (op, BC (), cr, ARG (1)[0] == '\0' ? ARG (0) : ARG (1));
 			}
 			break;
+		}
 		case PPC_INS_BT:
 		case PPC_INS_BF:
 			switch (insn->detail->ppc.operands[0].type) {
@@ -2265,63 +2259,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_BLRL:
 		case PPC_INS_BCLR:
 		case PPC_INS_BCLRL:
-			op->type = R_ANAL_OP_TYPE_CRET;		//I'm a condret
+			op->type = R_ANAL_OP_TYPE_CRET;
 			op->fail = addr + op->size;
-			switch (BC ()) {
-			case PPC_BC_INVALID:
+			if (BC () == PPC_BC_INVALID) {
 				op->type = R_ANAL_OP_TYPE_RET;
 				esilprintf (op, "lr,pc,=");
-				break;
-			case PPC_BC_LT:
-				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "0x80,cr0,&,!,!,?{,lr,pc,=,},");
-				} else {
-					esilprintf (op, "0x80,%s,&,!,!,?{,lr,pc,=,},", ARG (0));
-				}
-				break;
-			case PPC_BC_LE:
-				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "0x80,cr0,&,!,!,cr0,!,|,?{,lr,pc,=,},");
-				} else {
-					esilprintf (op, "0x80,%s,&,!,!,0,%s,!,|,?{,lr,pc,=,},", ARG (0), ARG (0));
-				}
-				break;
-			case PPC_BC_EQ:
-				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "cr0,!,?{,lr,pc,=,},");
-				} else {
-					esilprintf (op, "%s,!,?{,lr,pc,=,},", ARG (0));
-				}
-				break;
-			case PPC_BC_GE:
-				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "0x80,cr0,&,!,cr0,!,|,?{,lr,pc,=,},");
-				} else {
-					esilprintf (op, "0x80,%s,&,!,%s,!,|,?{,lr,pc,=,},", ARG (0), ARG (0));
-				}
-				break;
-			case PPC_BC_GT:
-				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "0x80,cr0,&,!,?{,lr,pc,=,},");
-				} else {
-					esilprintf (op, "0x80,%s,&,!,?{,lr,pc,=,},", ARG (0));
-				}
-				break;
-			case PPC_BC_NE:
-				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "cr0,!,!,?{,lr,pc,=,},");
-				} else {
-					esilprintf (op, "%s,!,!,?{,lr,pc,=,},", ARG (0));
-				}
-				break;
-#if CS_API_MAJOR < 6
-			case PPC_BC_UN: // unordered (cs6 - same as *_SO)
-			case PPC_BC_NU: // not unordered (cs6 - same as *_NS)
-#endif
-			case PPC_BC_SO: // summary overflow
-			case PPC_BC_NS: // not summary overflow
-			default:
-				break;
+			} else {
+				ppc_cond_branch (op, BC (), ARG (1)[0] == '\0' ? "cr0" : ARG (0), "lr");
 			}
 			break;
 		case PPC_INS_RFI:
