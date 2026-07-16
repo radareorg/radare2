@@ -15576,7 +15576,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_aa);
 		return true;
 	}
-	r_core_seek_arch_bits (core, core->addr);
 	if (!core->anal->arch->session) {
 		return false;
 	}
