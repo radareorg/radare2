@@ -1276,6 +1276,49 @@ static ut64 visual_meta_prev_addr(RCore *core, ut64 addr) {
 	return res < addr? res: UT64_MAX;
 }
 
+static int visual_middle_delta(RCore *core, ut64 addr, int size) {
+	int delta = 0;
+	int midflags = r_config_get_i (core->config, "asm.flags.middle");
+	if (midflags >= R_MIDFLAGS_REALIGN) {
+		int flag_delta = r_core_flag_in_middle (core, addr, size, &midflags);
+		if (midflags > R_MIDFLAGS_SHOW) {
+			delta = flag_delta;
+		}
+	}
+	if (r_config_get_i (core->config, "asm.bbmiddle")) {
+		int bb_delta = r_core_bb_starts_in_middle (core, addr, size);
+		if (bb_delta > 0 && (!delta || bb_delta < delta)) {
+			delta = bb_delta;
+		}
+	}
+	return delta;
+}
+
+static ut64 visual_middle_addr(RCore *core, ut64 aligned, ut64 addr, int codealign) {
+	if (aligned > UT64_MAX - codealign) {
+		return aligned;
+	}
+	ut64 end = aligned + codealign;
+	ut64 row = aligned;
+	while (row < addr && row < end) {
+		int delta = visual_middle_delta (core, row, end - row);
+		if (delta < 1 || (ut64)delta > addr - row) {
+			break;
+		}
+		row += delta;
+	}
+	return row;
+}
+
+static ut64 visual_prev_row_addr(RCore *core, ut64 aligned, ut64 addr, int size) {
+	ut64 prev = visual_middle_addr (core, aligned, addr - 1, size);
+	ut64 meta_end = visual_meta_end_in (core, aligned, size);
+	if (meta_end > aligned && meta_end < addr) {
+		prev = R_MAX (prev, meta_end);
+	}
+	return prev;
+}
+
 static ut64 visual_align_code(RCore *core, ut64 addr) {
 	if (addr == UT64_MAX) {
 		return addr;
@@ -1288,11 +1331,15 @@ static ut64 visual_align_code(RCore *core, ut64 addr) {
 		const int mod = addr % codealign;
 		if (mod) {
 			ut64 aligned = addr - mod;
+			ut64 middle_addr = visual_middle_addr (core, aligned, addr, codealign);
+			if (middle_addr == addr) {
+				return addr;
+			}
 			int delta = visual_meta_delta (core, aligned, codealign);
 			if (delta > mod) {
 				addr = aligned + delta;
 			} else if (!delta) {
-				addr = aligned;
+				addr = middle_addr;
 			}
 		}
 	}
@@ -1312,6 +1359,16 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 
 	const int minop = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	const int maxop = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
+	const int codealign = core->anal->config->codealign;
+	if (codealign > 1) {
+		const int mod = addr % codealign;
+		if (mod) {
+			ut64 aligned_addr = addr - mod;
+			if (visual_middle_addr (core, aligned_addr, addr, codealign) == addr) {
+				return visual_prev_row_addr (core, aligned_addr, addr, mod);
+			}
+		}
+	}
 	ut64 aligned = visual_align_code (core, addr);
 	if (aligned != addr) {
 		return aligned;
@@ -1322,9 +1379,9 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 		}
 		ut64 prev = addr - minop;
 		if (addr >= (ut64)minop && core->anal->config->codealign == minop) {
-			ut64 meta_end = visual_meta_end_in (core, prev, minop);
-			if (meta_end > prev && meta_end < addr) {
-				return meta_end;
+			ut64 row_addr = visual_prev_row_addr (core, prev, addr, minop);
+			if (row_addr > prev) {
+				return row_addr;
 			}
 		}
 		return prev;
@@ -4821,8 +4878,6 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 }
 
 R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
-	int midflags = r_config_get_i (core->config, "asm.flags.middle");
-	const bool midbb = r_config_get_i (core->config, "asm.bbmiddle");
 	ut64 aligned = visual_align_code (core, core->addr);
 	if (aligned != core->addr) {
 		r_core_seek (core, aligned, true);
@@ -4857,20 +4912,9 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 		*cols = r_asm_disassemble (core->rasm, op, buf, bufsize);
 		free (buf);
 
-		if (midflags || midbb) {
-			int skip_bytes_flag = 0, skip_bytes_bb = 0;
-			if (midflags >= R_MIDFLAGS_REALIGN) {
-				skip_bytes_flag = r_core_flag_in_middle (core, core->addr, *cols, &midflags);
-			}
-			if (midbb) {
-				skip_bytes_bb = r_core_bb_starts_in_middle (core, core->addr, *cols);
-			}
-			if (skip_bytes_flag) {
-				*cols = skip_bytes_flag;
-			}
-			if (skip_bytes_bb && skip_bytes_bb < *cols) {
-				*cols = skip_bytes_bb;
-			}
+		int middle_delta = visual_middle_delta (core, core->addr, *cols);
+		if (middle_delta > 0) {
+			*cols = middle_delta;
 		}
 	}
 	int nvars = varcount (core, f);

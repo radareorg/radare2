@@ -134,6 +134,81 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=visual arm32 middle flag disasm scroll
+FILE=-
+ARGS=-a arm -b 32
+CMDS=<<EOF
+e scr.interactive=true
+e arch.codealign=4
+e asm.flags.middle=2
+f class.Class1 @ 5
+s 4
+Vpjjq
+s
+s 5
+Vpkq
+s
+s 8
+Vkq
+s
+EOF
+EXPECT=<<EOF
+0x8
+0x4
+0x5
+EOF
+RUN
+
+NAME=visual arm32 middle bb disasm scroll
+FILE=-
+ARGS=-a arm -b 32
+CMDS=<<EOF
+e scr.interactive=true
+e arch.codealign=4
+e asm.flags.middle=0
+e asm.bbmiddle=true
+af+ 0 fcn
+afb+ 0 0 5
+afb+ 0 5 3
+s 4
+Vpjjq
+s
+s 5
+Vpkq
+s
+s 8
+Vkq
+s
+EOF
+EXPECT=<<EOF
+0x8
+0x4
+0x5
+EOF
+RUN
+
+NAME=visual arm32 metadata and middle flag scroll up
+FILE=-
+ARGS=-a arm -b 32
+CMDS=<<EOF
+e scr.interactive=true
+e arch.codealign=4
+e asm.flags.middle=2
+Cs 5 @ 4
+f mid.flag @ 0xa
+s 0xa
+Vpkq
+s
+s 0xc
+Vkq
+s
+EOF
+EXPECT=<<EOF
+0x9
+0xa
+EOF
+RUN
+
 NAME=visual string meta scroll up rows
 FILE=-
 CMDS=<<EOF
