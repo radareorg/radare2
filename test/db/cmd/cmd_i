@@ -3673,14 +3673,15 @@ iU?~iUx
 iU?~overwritten
 EOF
 EXPECT=<<EOF
-| iUx [directory]  extract all resources (default: <file>.resources; alias for ixU)
-|                  output names are sanitized and existing files are never overwritten
+| iUx [directory]   extract all resources (default: <file>.resources; alias for ixU)
+|                   output names are sanitized and existing files are never overwritten
 EOF
 RUN
 
 NAME=iU subcommand help
 FILE=-
 CMDS=<<EOF
+iU,?
 iU*?
 iUj?
 iUq?
@@ -3688,11 +3689,20 @@ iUqq?
 iUx?
 EOF
 EXPECT=<<EOF
+| iU,[table-query]  list resources in table using given expression
 | iU*  emit resource flags as radare commands
 | iUj  list resources in JSON
 | iUq  list resource address, size, type and name
 | iUqq  list resource names only
 | iUx [directory]  extract all resources (default: <file>.resources; alias for ixU)
+EOF
+RUN
+
+NAME=iU invalid subcommand
+FILE=-
+CMDS=iUy
+EXPECT_ERR=<<EOF
+ERROR: Invalid `y` subcommand, try `iU?`
 EOF
 RUN
 
@@ -3751,6 +3761,20 @@ f resource.2 20 0x004027b0
 f resource.3 452 0x004027d0
 f resource.4 74 0x004029a0
 fs *
+EOF
+RUN
+
+NAME=iU table query
+FILE=bins/pe/standard.exe
+CMDS=iU,size/sort,type/cols/name
+EXPECT=<<EOF
+type       name
+---------------
+GROUP_ICON 788
+MANIFEST   1
+STRING     10
+VERSION    1
+ICON       1576
 EOF
 RUN
 

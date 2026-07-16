@@ -4986,6 +4986,11 @@ static bool bin_resources(RCore *core, PJ *pj, int mode, int va) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	RVecRBinResource *resources = bf? r_bin_file_get_resources (bf): NULL;
 	bool loaded = resources != NULL;
+	const bool table_mode = IS_MODE_NORMAL (mode) && core->table_query;
+	RTable *table = table_mode? r_core_table_new (core, "resources"): NULL;
+	if (table) {
+		r_table_set_columnsf (table, "dXXnss", "nth", "paddr", "vaddr", "size", "type", "name");
+	}
 	RVecRBinResource empty = {0};
 	if (!resources) {
 		resources = &empty;
@@ -5057,6 +5062,9 @@ static bool bin_resources(RCore *core, PJ *pj, int mode, int va) {
 				pj_ks (pj, "origin", resource->origin);
 			}
 			pj_end (pj);
+		} else if (table) {
+			r_table_add_rowf (table, "dXXnss", resource->index, resource->paddr,
+				resource->vaddr, resource->size, type, name);
 		} else {
 			char humansz[8];
 			r_num_units (humansz, sizeof (humansz), resource->size);
@@ -5095,7 +5103,14 @@ static bool bin_resources(RCore *core, PJ *pj, int mode, int va) {
 		pj_end (pj);
 	} else if (IS_MODE_RAD (mode) && has_resources) {
 		r_cons_println (core->cons, "fs *");
+	} else if (table) {
+		if (r_table_query (table, core->table_query)) {
+			char *s = r_table_tostring (table);
+			r_cons_print (core->cons, s);
+			free (s);
+		}
 	}
+	r_table_free (table);
 	return loaded;
 }
 

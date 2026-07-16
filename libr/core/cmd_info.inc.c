@@ -166,7 +166,7 @@ static RCoreHelpMessage help_msg_i = {
 	"io", " [file]", "load info from file (or last opened) use bin.baddr",
 	"iO", "[?]", "perform binary operation (dump, resize, change sections, ...)",
 	"ir", "[?][jq*]", "list the relocations (iR is an accidental alias for 'ir')",
-	"iU", "[?][jq*x]", "list or extract binary resources",
+	"iU", "[?][,jq*x]", "list or extract binary resources",
 	"ix", "[?][U|S|SS] [directory]", "extract resources, sections or segments",
 	"is", "[?]", "list the symbols",
 	"iS", "[?]", "list sections, segments and compute their hash",
@@ -179,8 +179,9 @@ static RCoreHelpMessage help_msg_i = {
 };
 
 static RCoreHelpMessage help_msg_iU = {
-	"Usage: iU", "[jq*x] [directory]", "Inspect or safely extract binary resources",
+	"Usage: iU", "[,jq*x] [directory]", "Inspect or safely extract binary resources",
 	"iU", "", "list resources with all available metadata",
+	"iU,", "[table-query]", "list resources in table using given expression",
 	"iU*", "", "emit resource flags as radare commands",
 	"iUj", "", "list resources in JSON",
 	"iUq", "", "list resource address, size, type and name",
@@ -3711,10 +3712,26 @@ static int cmd_info(void *data, const char *input) {
 			char *cmd = r_str_newf ("i%.*s", (int)(question - input), input);
 			r_core_cmd_help_match (core, help_msg_iU, cmd);
 			free (cmd);
-		} else if (input[1] == 'x') {
-			cmd_info_extract (core, r_str_trim_head_ro (input + 2), true, false);
 		} else {
-			RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
+			switch (input[1]) {
+			case 'x':
+				cmd_info_extract (core, r_str_trim_head_ro (input + 2), true, false);
+				break;
+			case ',':
+				R_FREE (core->table_query);
+				core->table_query = strdup (input + 2);
+				RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
+				break;
+			case 0:
+			case '*':
+			case 'j':
+			case 'q':
+				RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
+				break;
+			default:
+				r_core_return_invalid_command (core, "iU", input[1]);
+				break;
+			}
 		}
 		break;
 	case 'x': // "ix"
