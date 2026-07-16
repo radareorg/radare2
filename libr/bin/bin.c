@@ -1050,6 +1050,7 @@ R_API void r_bin_resource_fini(RBinResource *resource) {
 	R_RETURN_IF_FAIL (resource);
 	free (resource->name);
 	free (resource->type);
+	free (resource->encoding);
 	free (resource->language);
 	free (resource->timestamp);
 	free (resource->origin);
@@ -1075,13 +1076,137 @@ R_API RVecRBinResource *r_bin_file_get_resources(RBinFile *bf) {
 	return &bo->resources_vec;
 }
 
-R_API RBuffer *r_bin_file_get_resource_data(RBinFile *bf, const RBinResource *resource) {
+static RBuffer *resource_decode_base64(const ut8 *data, size_t size, bool uri_encoded) {
+	if (size > INT_MAX - 3) {
+		return NULL;
+	}
+	char *encoded = r_str_ndup ((const char *)data, (int)size);
+	if (!encoded) {
+		return NULL;
+	}
+	int len = uri_encoded? r_str_uri_decode (encoded): strlen (encoded);
+	if (len < 0 || len % 4 == 1) {
+		free (encoded);
+		return NULL;
+	}
+	int encoded_size = (len + 3) & ~3;
+	char *resized = realloc (encoded, encoded_size + 1);
+	if (!resized) {
+		free (encoded);
+		return NULL;
+	}
+	encoded = resized;
+	memset (encoded + len, '=', encoded_size - len);
+	int decoded_size = r_base64_decode ((ut8 *)encoded, encoded, encoded_size, true);
+	if (decoded_size < 0) {
+		free (encoded);
+		return NULL;
+	}
+	return r_buf_new_with_pointers ((ut8 *)encoded, decoded_size, true);
+}
+
+static RBuffer *resource_decode_data_uri(RBuffer *raw, const ut8 *data, size_t size) {
+	if (size < 6 || r_str_ncasecmp ((const char *)data, "data:", 5)) {
+		return NULL;
+	}
+	const ut8 *comma = memchr (data + 5, ',', size - 5);
+	if (!comma) {
+		return NULL;
+	}
+	const ut8 *payload = comma + 1;
+	size_t payload_size = size - (payload - data);
+	if (comma - data >= 7 && !r_str_ncasecmp ((const char *)comma - 7, ";base64", 7)) {
+		return resource_decode_base64 (payload, payload_size, true);
+	}
+	if (!memchr (payload, '%', payload_size)) {
+		return r_buf_new_slice (raw, payload - data, payload_size);
+	}
+	ut8 *decoded = (ut8 *)r_str_ndup ((const char *)payload, (int)payload_size);
+	int decoded_size = decoded? r_str_uri_decode ((char *)decoded): -1;
+	if (decoded_size < 0) {
+		free (decoded);
+		return NULL;
+	}
+	return r_buf_new_with_pointers (decoded, decoded_size, true);
+}
+
+static RBuffer *resource_decode_utf16(const ut8 *data, int size, RStrEnc encoding) {
+	if (size < 2 || size > (INT_MAX - 1) / 2) {
+		return NULL;
+	}
+	RStrEnc bom = r_utf_bom_encoding (data, size);
+	if (encoding == R_STRING_ENC_GUESS) {
+		encoding = bom == R_STRING_ENC_UTF16BE? bom: R_STRING_ENC_UTF16LE;
+	}
+	if (bom != R_STRING_ENC_GUESS && bom != encoding) {
+		return NULL;
+	}
+	if (bom != R_STRING_ENC_GUESS) {
+		data += 2;
+		size -= 2;
+	}
+	int capacity = size * 2 + 1;
+	ut8 *decoded = malloc (capacity);
+	if (!decoded) {
+		return NULL;
+	}
+	int decoded_size = r_str_utf16_to_utf8 (decoded, capacity, data, size, encoding == R_STRING_ENC_UTF16BE);
+	if (decoded_size < 0) {
+		free (decoded);
+		return NULL;
+	}
+	return r_buf_new_with_pointers (decoded, decoded_size, true);
+}
+
+static RBuffer *resource_decode_buffer(RBuffer *raw, const char *encoding) {
+	ut64 size64 = r_buf_size (raw);
+	if (size64 > INT_MAX) {
+		return NULL;
+	}
+	int size = 0;
+	ut8 *data = r_buf_read_all (raw, &size);
+	if (!data) {
+		return NULL;
+	}
+	RBuffer *decoded = NULL;
+	if (r_str_eqi (encoding, "base64")) {
+		decoded = resource_decode_base64 (data, size, false);
+	} else if (r_str_eqi (encoding, "data-uri")) {
+		decoded = resource_decode_data_uri (raw, data, size);
+	} else if (r_str_eqi (encoding, "gzip") || r_str_eqi (encoding, "zlib") || r_str_eqi (encoding, "lz4")) {
+		int decoded_size = 0;
+		int consumed = 0;
+		ut8 *inflated = r_str_eqi (encoding, "lz4")
+			? r_inflate_lz4 (data, size, &consumed, &decoded_size)
+			: r_inflate (data, size, NULL, &decoded_size);
+		decoded = inflated? r_buf_new_with_pointers (inflated, decoded_size, true): NULL;
+	} else if (r_str_eqi (encoding, "utf16le")) {
+		decoded = resource_decode_utf16 (data, size, R_STRING_ENC_UTF16LE);
+	} else if (r_str_eqi (encoding, "utf16be")) {
+		decoded = resource_decode_utf16 (data, size, R_STRING_ENC_UTF16BE);
+	} else if (r_str_eqi (encoding, "utf16")) {
+		decoded = resource_decode_utf16 (data, size, R_STRING_ENC_GUESS);
+	}
+	free (data);
+	return decoded;
+}
+
+R_API RBuffer *r_bin_file_get_resource_data(RBinFile *bf, const RBinResource *resource, bool decode) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->buf && resource, NULL);
 	ut64 buffer_size = r_buf_size (bf->buf);
 	if (resource->paddr > buffer_size || resource->size > buffer_size - resource->paddr) {
 		return NULL;
 	}
-	return r_buf_new_slice (bf->buf, resource->paddr, resource->size);
+	RBuffer *raw = r_buf_new_slice (bf->buf, resource->paddr, resource->size);
+	if (!raw || !decode || R_STR_ISEMPTY (resource->encoding) || r_str_eqi (resource->encoding, "raw")) {
+		return raw;
+	}
+	RBuffer *decoded = resource_decode_buffer (raw, resource->encoding);
+	r_unref (raw);
+	if (!decoded) {
+		R_LOG_ERROR ("Cannot decode resource %u with encoding '%s'", resource->index, resource->encoding);
+	}
+	return decoded;
 }
 
 static char *resource_type(const RBinResource *res) {
@@ -1145,7 +1270,7 @@ R_API bool r_bin_file_extract_resources(RBinFile *bf, const char *output) {
 	RBinResource *r;
 	R_VEC_FOREACH (res, r) {
 		char *outfile = resource_filename (dir, r);
-		RBuffer *buf = r_bin_file_get_resource_data (bf, r);
+		RBuffer *buf = r_bin_file_get_resource_data (bf, r, true);
 		if (buf && outfile && extract_buffer (buf, outfile)) {
 			R_LOG_INFO ("%s created (%"PFMT64u")", outfile, r_buf_size (buf));
 		} else {

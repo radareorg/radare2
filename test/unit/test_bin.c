@@ -1,4 +1,5 @@
 #include <r_util.h>
+#include <r_userconf.h>
 #include "minunit.h"
 #include <r_bin.h>
 
@@ -90,7 +91,7 @@ bool test_r_bin_pebble_resources(void) {
 	mu_assert_eq (resource->paddr, 4108, "Pebble resource physical address");
 	mu_assert_eq (resource->size, 4, "Pebble resource size");
 
-	RBuffer *data = r_bin_file_get_resource_data (bf, resource);
+	RBuffer *data = r_bin_file_get_resource_data (bf, resource, false);
 	mu_assert_notnull (data, "Pebble resource data");
 	ut8 bytes[4];
 	mu_assert_eq (r_buf_read_at (data, 0, bytes, sizeof (bytes)), sizeof (bytes), "Read Pebble resource data");
@@ -186,7 +187,7 @@ bool test_r_bin_le_resources(void) {
 		mu_assert_eq (resource->paddr, 0x220, "LE/LX resource physical address");
 		mu_assert_eq (resource->vaddr, 0x1020, "LE/LX resource virtual address");
 		mu_assert_eq (resource->size, 4, "LE/LX resource size");
-		RBuffer *data = r_bin_file_get_resource_data (bf, resource);
+		RBuffer *data = r_bin_file_get_resource_data (bf, resource, false);
 		mu_assert_notnull (data, "LE/LX resource data");
 		ut8 bytes[4];
 		mu_assert_eq (r_buf_read_at (data, 0, bytes, sizeof (bytes)), sizeof (bytes), "Read LE/LX resource data");
@@ -199,11 +200,80 @@ bool test_r_bin_le_resources(void) {
 	mu_end;
 }
 
+static RBuffer *decode_resource(const ut8 *data, size_t size, const char *encoding, bool decode) {
+	RBinFile bf = { .buf = r_buf_new_with_bytes (data, size) };
+	if (!bf.buf) {
+		return NULL;
+	}
+	RBinResource resource = { .encoding = (char *)encoding, .size = size };
+	RBuffer *decoded = r_bin_file_get_resource_data (&bf, &resource, decode);
+	r_unref (bf.buf);
+	return decoded;
+}
+
+bool test_r_bin_resource_decoding(void) {
+	const char base64[] = "aGVsbG8";
+	const char data_uri[] = "data:image/png;charset=utf-8;base64,iVBORw0KGgo=";
+	const char plain_uri[] = "data:text/plain,hello";
+	const char escaped_uri[] = "data:text/plain,hello%20world%00x";
+	const ut8 hello[] = "hello";
+	const ut8 png[] = { 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n' };
+	const ut8 escaped[] = { 'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', 0, 'x' };
+	const ut8 lz4[] = { 0x50, 'h', 'e', 'l', 'l', 'o' };
+#if WANT_ZIP
+	const ut8 gzip[] = {
+		0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x02, 0x03, 0xcb, 0x48, 0xcd, 0xc9, 0xc9, 0x07,
+		0x00, 0x86, 0xa6, 0x10, 0x36, 0x05, 0x00, 0x00,
+		0x00
+	};
+#endif
+	const ut8 utf16[][10] = {
+		{ 0xff, 0xfe, 'r', 0, '2', 0, 0x3c, 0xd8, 0xb8, 0xdf },
+		{ 0xfe, 0xff, 0, 'r', 0, '2', 0xd8, 0x3c, 0xdf, 0xb8 }
+	};
+	const ut8 utf8[] = "r2\xf0\x9f\x8e\xb8";
+	typedef struct {
+		const ut8 *data;
+		size_t size;
+		const char *encoding;
+		bool decode;
+		const ut8 *expected;
+		size_t expected_size;
+	} ResourceDecodeTest;
+	const ResourceDecodeTest tests[] = {
+		{ (const ut8 *)base64, sizeof (base64) - 1, "base64", false, (const ut8 *)base64, sizeof (base64) - 1 },
+		{ (const ut8 *)base64, sizeof (base64) - 1, "base64", true, hello, sizeof (hello) - 1 },
+		{ (const ut8 *)data_uri, sizeof (data_uri) - 1, "data-uri", true, png, sizeof (png) },
+		{ (const ut8 *)plain_uri, sizeof (plain_uri) - 1, "data-uri", true, hello, sizeof (hello) - 1 },
+		{ (const ut8 *)escaped_uri, sizeof (escaped_uri) - 1, "data-uri", true, escaped, sizeof (escaped) },
+		{ lz4, sizeof (lz4), "lz4", true, hello, sizeof (hello) - 1 },
+#if WANT_ZIP
+		{ gzip, sizeof (gzip), "gzip", true, hello, sizeof (hello) - 1 },
+#endif
+		{ utf16[0], sizeof (utf16[0]), "utf16le", true, utf8, sizeof (utf8) - 1 },
+		{ utf16[1], sizeof (utf16[1]), "utf16", true, utf8, sizeof (utf8) - 1 },
+	};
+	ut8 bytes[16];
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (tests); i++) {
+		const ResourceDecodeTest *test = &tests[i];
+		RBuffer *data = decode_resource (test->data, test->size, test->encoding, test->decode);
+		mu_assert_notnull (data, "Resource decoding");
+		mu_assert_eq (r_buf_size (data), test->expected_size, "Decoded resource size");
+		mu_assert_eq (r_buf_read_at (data, 0, bytes, test->expected_size), test->expected_size, "Read decoded resource");
+		mu_assert_memeq (bytes, test->expected, test->expected_size, "Decoded resource contents");
+		r_unref (data);
+	}
+	mu_end;
+}
+
 
 bool all_tests(void) {
 	mu_run_test(test_r_bin);
 	mu_run_test(test_r_bin_pebble_resources);
 	mu_run_test(test_r_bin_le_resources);
+	mu_run_test(test_r_bin_resource_decoding);
 	return tests_passed != tests_run;
 }
 

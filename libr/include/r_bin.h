@@ -406,6 +406,7 @@ R_API void r_bin_string_fini(RBinString *str);
 typedef struct r_bin_resource_t {
 	char *name;
 	char *type;
+	char *encoding; // NULL/raw, base64, data-uri, gzip, zlib, lz4, utf16, utf16le or utf16be
 	char *language;
 	char *timestamp;
 	char *origin; // source module or container, when applicable
@@ -998,7 +999,7 @@ R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf);
 R_API RVecRBinImport *r_bin_file_get_imports_vec(RBinFile *bf);
 R_API RVecRBinSection *r_bin_file_get_sections_vec(RBinFile *bf);
 R_API RVecRBinResource *r_bin_file_get_resources(RBinFile *bf);
-R_API RBuffer *r_bin_file_get_resource_data(RBinFile *bf, const RBinResource *resource);
+R_API RBuffer *r_bin_file_get_resource_data(RBinFile *bf, const RBinResource *resource, bool decode);
 R_API bool r_bin_file_extract_resources(RBinFile *bf, const char *output);
 R_API bool r_bin_file_extract_sections(RBinFile *bf, const char *output, bool segments);
 //
