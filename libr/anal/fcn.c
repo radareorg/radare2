@@ -925,7 +925,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
 
-	if (anal->opt.stateful) {
+	if (anal->opt.stateful && anal->arch->session) {
 		r_arch_session_reset (anal->arch->session);
 	}
 	bb = fcn_append_basic_block (anal, fcn, addr);
