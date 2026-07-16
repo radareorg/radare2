@@ -219,6 +219,7 @@ bool test_r_bin_resource_decoding(void) {
 	const ut8 hello[] = "hello";
 	const ut8 png[] = { 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n' };
 	const ut8 escaped[] = { 'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', 0, 'x' };
+	const ut8 lz4[] = { 0x50, 'h', 'e', 'l', 'l', 'o' };
 #if WANT_ZIP
 	const ut8 gzip[] = {
 		0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -246,6 +247,7 @@ bool test_r_bin_resource_decoding(void) {
 		{ (const ut8 *)data_uri, sizeof (data_uri) - 1, "data-uri", true, png, sizeof (png) },
 		{ (const ut8 *)plain_uri, sizeof (plain_uri) - 1, "data-uri", true, hello, sizeof (hello) - 1 },
 		{ (const ut8 *)escaped_uri, sizeof (escaped_uri) - 1, "data-uri", true, escaped, sizeof (escaped) },
+		{ lz4, sizeof (lz4), "lz4", true, hello, sizeof (hello) - 1 },
 #if WANT_ZIP
 		{ gzip, sizeof (gzip), "gzip", true, hello, sizeof (hello) - 1 },
 #endif

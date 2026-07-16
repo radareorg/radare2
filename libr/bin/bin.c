@@ -1138,10 +1138,10 @@ static RBuffer *resource_decode_utf16(const ut8 *data, int size, RStrEnc encodin
 	if (encoding == R_STRING_ENC_GUESS) {
 		encoding = bom == R_STRING_ENC_UTF16BE? bom: R_STRING_ENC_UTF16LE;
 	}
+	if (bom != R_STRING_ENC_GUESS && bom != encoding) {
+		return NULL;
+	}
 	if (bom != R_STRING_ENC_GUESS) {
-		if (bom != encoding) {
-			return NULL;
-		}
 		data += 2;
 		size -= 2;
 	}
@@ -1173,9 +1173,12 @@ static RBuffer *resource_decode_buffer(RBuffer *raw, const char *encoding) {
 		decoded = resource_decode_base64 (data, size, false);
 	} else if (r_str_eqi (encoding, "data-uri")) {
 		decoded = resource_decode_data_uri (raw, data, size);
-	} else if (r_str_eqi (encoding, "gzip") || r_str_eqi (encoding, "zlib")) {
+	} else if (r_str_eqi (encoding, "gzip") || r_str_eqi (encoding, "zlib") || r_str_eqi (encoding, "lz4")) {
 		int decoded_size = 0;
-		ut8 *inflated = r_inflate (data, size, NULL, &decoded_size);
+		int consumed = 0;
+		ut8 *inflated = r_str_eqi (encoding, "lz4")
+			? r_inflate_lz4 (data, size, &consumed, &decoded_size)
+			: r_inflate (data, size, NULL, &decoded_size);
 		decoded = inflated? r_buf_new_with_pointers (inflated, decoded_size, true): NULL;
 	} else if (r_str_eqi (encoding, "utf16le")) {
 		decoded = resource_decode_utf16 (data, size, R_STRING_ENC_UTF16LE);
@@ -1183,8 +1186,6 @@ static RBuffer *resource_decode_buffer(RBuffer *raw, const char *encoding) {
 		decoded = resource_decode_utf16 (data, size, R_STRING_ENC_UTF16BE);
 	} else if (r_str_eqi (encoding, "utf16")) {
 		decoded = resource_decode_utf16 (data, size, R_STRING_ENC_GUESS);
-	} else {
-		R_LOG_ERROR ("Unsupported resource encoding '%s'", encoding);
 	}
 	free (data);
 	return decoded;
