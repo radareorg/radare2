@@ -2172,3 +2172,75 @@ EXPECT=<<EOF
 0x00000010
 EOF
 RUN
+
+NAME=extsb sign-extends and always writes the destination ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c830774 @ 0
+aei
+ar r4=0x40
+ar r3=0xdeadbeef
+aepc 0
+aes
+ar r3
+ar r4=0x123456f8
+aepc 0
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000040
+0xfffffffffffffff8
+EOF
+RUN
+
+NAME=extsh sign-extends the halfword ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c830734 @ 0
+aei
+ar r4=0x12340078
+ar r3=0xdead
+aepc 0
+aes
+ar r3
+ar r4=0x12348765
+aepc 0
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000078
+0xffffffffffff8765
+EOF
+RUN
+
+NAME=extsw sign-extends the word and drops the high half ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c8307b4 @ 0
+aei
+ar r4=0xdeadbeef12345678
+ar r3=0
+aepc 0
+aes
+ar r3
+ar r4=0xdeadbeef87654321
+aepc 0
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0x12345678
+0xffffffff87654321
+EOF
+RUN
