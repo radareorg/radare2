@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake, nibble, Dennis Goodlett */
+/* radare - LGPL - Copyright 2009-2026 - pancake, nibble, Dennis Goodlett */
 
 #if R_INCLUDE_BEGIN
 
@@ -1480,7 +1480,16 @@ static int cmd_zign(void *data, const char *input) {
 		r_core_cmd0 (core, "k anal/zigns/*");
 		break;
 	case '-': // "z-"
-		r_sign_delete (core->anal, arg);
+		if (*arg) {
+			if (*arg == '?') {
+				r_core_cmd_help_match (core, help_msg_z, "z-");
+			} else {
+				r_sign_delete (core->anal, arg);
+			}
+		} else {
+			R_LOG_ERROR ("Missing argument usage: z-[zname]");
+			r_core_return_code (core, 1);
+		}
 		break;
 	case '.': // "z."
 		return cmd_zdot (data, arg);
