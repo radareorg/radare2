@@ -994,6 +994,17 @@ static void t9_invalidate(PluginData *pd, RAnalOp *op, cs_insn *insn) {
 	}
 }
 
+// target is the first immediate operand; reg-first forms (bgezal, bltzal, ...) keep it in op1, not op0
+static void set_jump_target(RAnalOp *op, cs_insn *insn) {
+	int i;
+	for (i = 0; i < OPCOUNT (); i++) {
+		if (OPERAND (i).type == MIPS_OP_IMM) {
+			op->jump = IMM (i);
+			return;
+		}
+	}
+}
+
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
@@ -1157,7 +1168,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case MIPS_INS_JIALC:
 	case MIPS_INS_JIC:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = IMM(0);
+		set_jump_target (op, insn);
 
 		switch (insn->id) {
 		case MIPS_INS_JIALC:
@@ -1296,13 +1307,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
 		}
 
-		if (OPERAND (0).type == MIPS_OP_IMM) {
-			op->jump = IMM (0);
-		} else if (OPERAND (1).type == MIPS_OP_IMM) {
-			op->jump = IMM (1);
-		} else if (OPERAND (2).type == MIPS_OP_IMM) {
-			op->jump = IMM (2);
-		}
+		set_jump_target (op, insn);
 
 		switch (insn->id) {
 		case MIPS_INS_BEQC:
