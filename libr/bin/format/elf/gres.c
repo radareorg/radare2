@@ -148,7 +148,7 @@ static int gres_leaf_cmp(const void *a, const void *b) {
 }
 
 static bool gres_add_resource(RVecRBinResource *resources, const char *name, const char *type,
-		const char *origin, ut64 paddr, ut64 vaddr, ut64 size) {
+		const char *encoding, const char *origin, ut64 paddr, ut64 vaddr, ut64 size) {
 	size_t index = RVecRBinResource_length (resources);
 	if (index > UT32_MAX) {
 		return false;
@@ -159,6 +159,7 @@ static bool gres_add_resource(RVecRBinResource *resources, const char *name, con
 	}
 	resource->name = strdup (name);
 	resource->type = strdup (type);
+	resource->encoding = encoding? strdup (encoding): NULL;
 	resource->origin = origin? strdup (origin): NULL;
 	resource->paddr = paddr;
 	resource->vaddr = vaddr;
@@ -168,7 +169,8 @@ static bool gres_add_resource(RVecRBinResource *resources, const char *name, con
 	resource->type_id = UT32_MAX;
 	resource->language_id = UT32_MAX;
 	resource->named = true;
-	return resource->name && resource->type && (!origin || resource->origin);
+	return resource->name && resource->type && (!encoding || resource->encoding)
+		&& (!origin || resource->origin);
 }
 
 static bool gres_add_value(const GResCtx *ctx, const GResItem *item, const char *name, RVecRBinResource *resources) {
@@ -197,7 +199,6 @@ static bool gres_add_value(const GResCtx *ctx, const GResItem *item, const char 
 	}
 	ut64 data_offset = item->value_start + GRES_VALUE_HEADER_SIZE;
 	ut64 data_size = value_size - GRES_VALUE_HEADER_SIZE - GRES_VARIANT_TRAILER_SIZE;
-	const char *type = "gresource-compressed";
 	if (!(flags & GRES_FLAG_COMPRESSED)) {
 		ut8 terminator;
 		if (!data_size || logical_size != data_size - 1
@@ -205,12 +206,12 @@ static bool gres_add_value(const GResCtx *ctx, const GResItem *item, const char 
 			return true;
 		}
 		data_size = logical_size;
-		type = "gresource";
 	}
 	if (data_offset > UT64_MAX - ctx->paddr || data_offset > UT64_MAX - ctx->vaddr) {
 		return true;
 	}
-	return gres_add_resource (resources, name, type, ctx->origin,
+	return gres_add_resource (resources, name, "gresource",
+		(flags & GRES_FLAG_COMPRESSED)? "zlib": NULL, ctx->origin,
 		ctx->paddr + data_offset, ctx->vaddr + data_offset, data_size);
 }
 
@@ -304,7 +305,7 @@ static bool gres_parse_section(RBinFile *bf, const RBinSection *section, RVecRBi
 		if (n_leaves > 1) {
 			qsort (leaves, n_leaves, sizeof (GResLeaf), gres_leaf_cmp);
 		}
-		ok = gres_add_resource (resources, section->name, "gresource-bundle", NULL,
+		ok = gres_add_resource (resources, section->name, "gresource-bundle", NULL, NULL,
 			section->paddr, section->vaddr, section->size);
 	}
 	for (i = 0; ok && i < n_leaves; i++) {

@@ -264,6 +264,7 @@ R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciid
 R_API void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool esc_bslash);
 R_API char *r_str_format_msvc_argv(size_t argc, const char **argv);
 R_API void r_str_uri_decode(char *buf);
+R_API int r_str_uri_decode_len(char *buf, int len);
 R_API char *r_str_uri_encode(const char *buf);
 R_API char *r_str_utf16_decode(const ut8 *s, int len);
 R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, bool big_endian);

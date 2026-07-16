@@ -5003,6 +5003,7 @@ static bool bin_resources(RCore *core, PJ *pj, int mode, int va) {
 		ut64 addr = va? resource->vaddr: resource->paddr;
 		const char *name = R_STR_ISNOTEMPTY (resource->name)? resource->name: "-";
 		const char *type = R_STR_ISNOTEMPTY (resource->type)? resource->type: "-";
+		const char *encoding = R_STR_ISNOTEMPTY (resource->encoding)? resource->encoding: NULL;
 		if (IS_MODE_SET (mode)) {
 			r_strf_var (flagname, 32, "resource.%u", resource->index);
 			r_flag_set (core->flags, flagname, addr, resource->size);
@@ -5022,6 +5023,9 @@ static bool bin_resources(RCore *core, PJ *pj, int mode, int va) {
 				pj_ks (pj, "type", resource->type);
 			} else {
 				pj_knull (pj, "type");
+			}
+			if (encoding) {
+				pj_ks (pj, "encoding", encoding);
 			}
 			pj_kn (pj, "vaddr", resource->vaddr);
 			pj_kn (pj, "paddr", resource->paddr);
@@ -5073,6 +5077,9 @@ static bool bin_resources(RCore *core, PJ *pj, int mode, int va) {
 			r_cons_printf (core->cons, "  paddr: 0x%08" PFMT64x "\n", resource->paddr);
 			r_cons_printf (core->cons, "  size: %s\n", humansz);
 			r_cons_printf (core->cons, "  type: %s\n", type);
+			if (encoding) {
+				r_cons_printf (core->cons, "  encoding: %s\n", encoding);
+			}
 			if (resource->type_id == UT32_MAX) {
 				r_cons_println (core->cons, "  type_id: -");
 			} else {

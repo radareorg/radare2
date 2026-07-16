@@ -2984,19 +2984,29 @@ R_API bool r_str_range_in(const char *r, ut64 addr) {
 
 // convert from html escaped sequence "foo%20bar" to "foo bar"
 // TODO: find better name.. unencode? decode
-R_API void r_str_uri_decode(char *s) {
-	int n;
-	char *d;
-	for (d = s; *s; s++, d++) {
-		if (*s == '%') {
-			sscanf (s + 1, "%02x", &n);
-			*d = n;
-			s += 2;
+R_API int r_str_uri_decode_len(char *s, int len) {
+	R_RETURN_VAL_IF_FAIL (s && len >= 0, -1);
+	int i;
+	int j;
+	for (i = j = 0; i < len; i++, j++) {
+		if (s[i] == '%') {
+			ut8 ch = 0;
+			if (i + 2 >= len || !r_hex_to_byte (&ch, s[i + 1]) || !r_hex_to_byte (&ch, s[i + 2])) {
+				return -1;
+			}
+			s[j] = ch;
+			i += 2;
 		} else {
-			*d = *s;
+			s[j] = s[i];
 		}
 	}
-	*d = 0;
+	s[j] = 0;
+	return j;
+}
+
+R_API void r_str_uri_decode(char *s) {
+	R_RETURN_IF_FAIL (s);
+	r_str_uri_decode_len (s, strlen (s));
 }
 
 R_API char *r_str_uri_encode(const char *s) {
