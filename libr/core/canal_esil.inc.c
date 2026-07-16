@@ -873,6 +873,9 @@ static ut64 pulldata(RCore *core, ut8 *buf, size_t buf_size, ut64 start, ut64 en
 }
 
 R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *target /* addr */) {
+	if (!core->anal->arch->session) {
+		return;
+	}
 	bool cfg_anal_strings = r_config_get_b (core->config, "anal.strings");
 	bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
 	const bool gp_fixed = r_config_get_b (core->config, "anal.fixed.gp");
@@ -1102,6 +1105,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		}
 		/* realign address if needed */
 		r_core_seek_arch_bits (core, cur);
+		if (!core->anal->arch->session) {
+			break;
+		}
 		int opalign = core->anal->config->codealign;
 		if (opalign > 0) {
 			cur -= (cur % opalign);

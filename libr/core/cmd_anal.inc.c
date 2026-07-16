@@ -2673,6 +2673,10 @@ static void esilmemrefs(RCore *core, const char *expr) {
 }
 
 static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int fmt) {
+	r_core_seek_arch_bits (core, core->addr);
+	if (!core->anal->arch->session) {
+		return;
+	}
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	core->rasm->parse->subrel = r_config_get_b (core->config, "asm.sub.rel");
@@ -15568,10 +15572,14 @@ static void cmd_aaef(RCore *core) {
 }
 
 static int cmd_anal_all(RCore *core, const char *input) {
-	switch (*input) {
-	case '?':
+	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_aa);
-		break;
+		return true;
+	}
+	if (!core->anal->arch->session) {
+		return false;
+	}
+	switch (*input) {
 	case 'f':
 		if (input[1] == 'e') {  // "aafe"
 			r_core_cmd0 (core, "aef@@F");

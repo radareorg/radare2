@@ -1056,9 +1056,8 @@ static RDisasmState *ds_init(RCore *core, bool for_json) {
 	if (for_json || ds->use_esil || ds->show_emu || ds->show_cmt_esil || ds->show_emu_bb || (ds->asm_hints && ds->asm_hint_cdiv)) {
 		ds->decode_mask |= R_ARCH_OP_MASK_ESIL;
 	}
-	if (core->anal->opt.stateful) {
+	if (core->anal->opt.stateful && core->anal->arch->session) {
 		ds->decode_mask |= R_ARCH_OP_MASK_STATEFUL;
-		// each render is one linear decode window
 		r_arch_session_reset (core->anal->arch->session);
 	}
 	return ds;
@@ -7584,9 +7583,6 @@ R_API int r_core_print_disasm_instructions_with_buf(RCore *core, ut64 address, u
 	r_reg_arena_push (core->anal->reg);
 
 	ds = ds_init (core, false);
-	if (!ds) {
-		return 0;
-	}
 	ds->count = nb_opcodes;
 	ds->len = nb_opcodes * 8;
 

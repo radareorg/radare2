@@ -1940,9 +1940,11 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 
 	const bool use_esil = r_config_get_b (core->config, "anal.esil");
 
-	//update bits based on the core->addr otherwise we could have the
-	//last value set and blow everything up
 	r_core_seek_arch_bits (core, at);
+	if (!core->anal->arch->session) {
+		R_LOG_DEBUG ("Cannot analyze 0x%08"PFMT64x" without an architecture session", at);
+		return false;
+	}
 
 	if (core->io->va) {
 		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
