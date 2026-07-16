@@ -206,6 +206,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->config = r_arch_config_new ();
 	anal->arch = r_arch_new ();
 	anal->esil_goto_limit = R_ESIL_GOTO_LIMIT;
+	anal->opt.stateful = true;
 	anal->opt.nopskip = true; // skip nops in code analysis
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	anal->opt.vars_maxbbsize = 16 * 1024;

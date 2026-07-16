@@ -399,6 +399,13 @@ static bool cb_analnorevisit(void *user, void *data) {
 	return true;
 }
 
+static bool cb_analstateful(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	core->anal->opt.stateful = node->i_value;
+	return true;
+}
+
 static bool cb_analnopskip(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -4210,6 +4217,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("anal.vinfun", "false", "search values in functions (aav) (false by default to only find on non-code)");
 	SETB ("anal.vinfunrange", "false", "search values outside function ranges (requires anal.vinfun=false)\n");
 	SETCB ("anal.norevisit", "false", &cb_analnorevisit, "do not visit function analysis twice (EXPERIMENTAL)");
+	SETCB ("anal.stateful", "true", &cb_analstateful, "track cross-instruction decode state inside by arch plugin");
 	SETCB ("anal.nopskip", "true", &cb_analnopskip, "skip nops at the beginning of functions");
 	SETCB ("anal.hpskip", "false", &cb_analhpskip, "skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
 	n = NODECB ("anal.arch", R_SYS_ARCH, &cb_analarch);
