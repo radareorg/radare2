@@ -168,7 +168,6 @@ typedef struct r_disasm_state_t {
 	bool show_reloff;
 	ut32 show_reloff_to;
 	bool show_comments;
-	bool show_cmt_user;
 	bool asm_hints;
 	bool asm_hint_jmp;
 	bool asm_hint_cdiv;
@@ -184,10 +183,12 @@ typedef struct r_disasm_state_t {
 	int cmtcol;
 	bool show_calls;
 	bool show_cmt_flgrefs;
+	bool show_cmt_user;
 	bool show_cmt_esil;
 	bool show_cmt_pseudo;
 	bool show_cmt_reguse;
 	bool show_cmt_strings;
+	bool show_cmt_invalid;
 	bool show_cycles;
 	bool show_refptr;
 	bool show_stackptr;
@@ -957,6 +958,7 @@ static RDisasmState *ds_init(RCore *core, bool for_json) {
 	ds->show_cmt_esil = r_config_get_b (core->config, "asm.cmt.esil");
 	ds->show_cmt_pseudo = r_config_get_b (core->config, "asm.cmt.pseudo");
 	ds->show_cmt_reguse = r_config_get_b (core->config, "asm.cmt.reguse");
+	ds->show_cmt_invalid = r_config_get_b (core->config, "asm.cmt.invalid");
 	ds->show_cmt_strings = r_config_get_b (core->config, "asm.cmt.strings");
 	ds->show_cmt_flgrefs = r_config_get_b (core->config, "asm.cmt.flgrefs");
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
@@ -6403,6 +6405,23 @@ static void ds_print_comments_right(RDisasmState *ds) {
 	ds_print_pins (ds);
 	bool is_code = (!ds->hint) || (ds->hint && ds->hint->type != 'd');
 	RAnalMetaItem *mi = r_meta_get_at (ds->core->anal, ds->at, R_META_TYPE_ANY, NULL);
+	if (ds->show_cmt_invalid) {
+		if (ds->analop.type == R_ANAL_OP_TYPE_ILL) {
+			ut8 data[8];
+			const bool be = r_config_get_b (core->config, "cfg.bigendian");
+			r_io_read_at (core->io, ds->analop.addr, data, 8);
+			ut32 dw = r_read_ble32 (data, be);
+#if 0
+			ut64 dq = r_read_ble64 (data, be);
+			char *kind = r_core_cmd_strf (core, "adk 0x%08"PFMT64x, dq);
+#endif
+			if ((st32)dw > 1024) {
+				r_cons_printf (ds->core->cons, "; 0x%x", UT32_MAX & (ut32)dw);
+			} else {
+				r_cons_printf (ds->core->cons, "; %d", dw);
+			}
+		}
+	}
 	if (mi) {
 		switch (mi->type) {
 		case 'd':

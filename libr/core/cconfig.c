@@ -4493,6 +4493,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("asm.comments", "true", "show comments in disassembly view (see 'e asm.cmt.')");
 	SETB ("asm.cmt.calls", "true", "show callee function related info as comments in disasm");
 	SETI ("asm.cmt.col", 71, "column to align comments");
+	SETB ("asm.cmt.invalid", "false", "comment details on invalid instructions");
 	SETB ("asm.cmt.esil", "false", "show ESIL expressions as comments");
 	SETB ("asm.cmt.flgrefs", "true", "show comment flags associated to branch reference");
 	SETB ("asm.cmt.fold", "false", "fold comments, toggle with Vz");
