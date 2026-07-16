@@ -31,6 +31,7 @@ static Rabin2Env env[] = {
 	{ "RABIN2_MAXSTRBUF", "e bin.str.maxbuf      # specify maximum buffer size" },
 	{ "RABIN2_PDBSERVER", "e pdb.server          # use alternative PDB server" },
 	{ "RABIN2_PREFIX", "e bin.prefix          # prefix symbols/sections/relocs with a specific string" },
+	{ "RABIN2_RESRAW", "e bin.resraw          # extract resources without decoding their contents" },
 	{ "RABIN2_STRFILTER", "e bin.str.filter      # r2 -qc 'e bin.str.filter=?"
 			"?' -" },
 	{ "RABIN2_STRPURGE", "e bin.str.purge       # try to purge false positives" },
@@ -727,6 +728,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		r_config_set (core.config, "pdb.server", tmp);
 		free (tmp);
 	}
+	r_config_set_b (core.config, "bin.resraw", r_sys_getenv_asbool ("RABIN2_RESRAW"));
 
 #define is_active(x) (action &(x))
 #define set_action(x) \

@@ -575,6 +575,7 @@ typedef struct r_bin_options_t {
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
 	bool debase64;
+	bool resraw; // extract resources without decoding their contents
 	bool skip_symbols; // skip symbol loading (e.g., for companion debug files)
 	bool setflags; // set symbol/import/class flags at load time
 	bool load_unnamed; // load unnamed/synthetic symbols/classes/methods

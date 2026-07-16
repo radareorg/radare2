@@ -268,12 +268,64 @@ bool test_r_bin_resource_decoding(void) {
 	mu_end;
 }
 
+static ut8 *extract_test_resource(bool raw, size_t *size) {
+	const char encoded[] = "aGVsbG8";
+	RBin bin = { 0 };
+	bin.options.resraw = raw;
+	RBinObject bo = { .resources_loaded = true };
+	RVecRBinResource_init (&bo.resources_vec);
+	RBinFile bf = {
+		.rbin = &bin,
+		.bo = &bo,
+		.buf = r_buf_new_with_bytes ((const ut8 *)encoded, sizeof (encoded) - 1),
+	};
+	RBinResource *resource = RVecRBinResource_emplace_back (&bo.resources_vec);
+	resource->name = strdup ("test");
+	resource->type = strdup ("DATA");
+	resource->encoding = strdup ("base64");
+	resource->size = sizeof (encoded) - 1;
+	resource->id = UT64_MAX;
+	resource->type_id = UT32_MAX;
+	resource->named = true;
+	char *dir = r_file_temp (raw? "r2-bin-resource-raw": "r2-bin-resource-decoded");
+	ut8 *result = NULL;
+	if (dir && r_bin_file_extract_resources (&bf, dir)) {
+		char *file = r_str_newf ("%s%sresource_DATA_named_0.bin", dir, R_SYS_DIR);
+		result = (ut8 *)r_file_slurp (file, size);
+		free (file);
+	}
+	if (dir) {
+		r_file_rm_rf (dir);
+	}
+	free (dir);
+	r_unref (bf.buf);
+	RVecRBinResource_fini (&bo.resources_vec);
+	return result;
+}
+
+bool test_r_bin_resource_raw_extraction(void) {
+	size_t size = 0;
+	ut8 *data = extract_test_resource (false, &size);
+	mu_assert_notnull (data, "Decoded resource extraction");
+	mu_assert_eq (size, 5, "Decoded resource extraction size");
+	mu_assert_memeq (data, (const ut8 *)"hello", size, "Decoded resource extraction contents");
+	free (data);
+
+	data = extract_test_resource (true, &size);
+	mu_assert_notnull (data, "Raw resource extraction");
+	mu_assert_eq (size, 7, "Raw resource extraction size");
+	mu_assert_memeq (data, (const ut8 *)"aGVsbG8", size, "Raw resource extraction contents");
+	free (data);
+	mu_end;
+}
+
 
 bool all_tests(void) {
 	mu_run_test(test_r_bin);
 	mu_run_test(test_r_bin_pebble_resources);
 	mu_run_test(test_r_bin_le_resources);
 	mu_run_test(test_r_bin_resource_decoding);
+	mu_run_test(test_r_bin_resource_raw_extraction);
 	return tests_passed != tests_run;
 }
 

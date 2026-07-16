@@ -1414,3 +1414,11 @@ EXPECT_ERR=<<EOF
 ERROR: Cannot open empty path
 EOF
 RUN
+
+NAME=rabin2 lists RABIN2_RESRAW
+FILE=-
+CMDS=!rabin2 -J | grep '^RABIN2_RESRAW='
+EXPECT=<<EOF
+RABIN2_RESRAW=
+EOF
+RUN

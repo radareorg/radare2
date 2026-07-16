@@ -3411,6 +3411,14 @@ static bool cb_rawstr(void *user, void *data) {
 	core->bin->options.rawstr = node->i_value;
 	return true;
 }
+
+static bool cb_resraw(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	core->bin->options.resraw = node->i_value;
+	return true;
+}
+
 static bool cb_bin_classes(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -4540,6 +4548,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "default string encoding of binary");
 	SETOPTIONS (n, "ascii", "latin1", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
 	SETCB ("bin.prefix", "", &cb_binprefix, "prefix all symbols/sections/relocs with a specific string");
+	SETCB ("bin.resraw", "false", &cb_resraw, "extract resources without decoding their contents");
 	SETCB ("bin.str.raw", "false", &cb_rawstr, "load strings from raw binaries");
 	SETCB ("bin.strings", "true", &cb_binstrings, "load strings from rbin on startup");
 	SETCB ("bin.str.debase64", "false", &cb_debase64, "try to debase64 all strings");

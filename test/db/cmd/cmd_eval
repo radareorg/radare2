@@ -289,3 +289,16 @@ scr.highlight = "e cmd.prompt =  "e scr.highlight = cmd.prompt ="e scr.rainbow =
 
 EOF
 RUN
+
+NAME=bin.resraw defaults to false and can be enabled
+FILE=-
+CMDS=<<EOF
+e bin.resraw
+e bin.resraw=true
+e bin.resraw
+EOF
+EXPECT=<<EOF
+false
+true
+EOF
+RUN

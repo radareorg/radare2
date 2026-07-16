@@ -1267,10 +1267,11 @@ R_API bool r_bin_file_extract_resources(RBinFile *bf, const char *output) {
 		return false;
 	}
 	bool ok = true;
+	const bool decode = !bf->rbin || !bf->rbin->options.resraw;
 	RBinResource *r;
 	R_VEC_FOREACH (res, r) {
 		char *outfile = resource_filename (dir, r);
-		RBuffer *buf = r_bin_file_get_resource_data (bf, r, true);
+		RBuffer *buf = r_bin_file_get_resource_data (bf, r, decode);
 		if (buf && outfile && extract_buffer (buf, outfile)) {
 			R_LOG_INFO ("%s created (%"PFMT64u")", outfile, r_buf_size (buf));
 		} else {
