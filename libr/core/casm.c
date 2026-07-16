@@ -122,6 +122,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	}
 
 	const int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
+	const int maxopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	const bool bytewise = everyByte || mode == 'i' || mode == 'e';
 	size_t bs = core->blocksize;
 	if (bs < minopsz) {
@@ -132,7 +133,11 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		bs = 0x1000;
 		R_LOG_DEBUG ("Readjusting blocksize");
 	}
-	ut8 *buf = (ut8 *)calloc (bs , 1);
+	size_t read_size;
+	if (r_add_overflow (bs, (size_t)maxopsz, &read_size) || read_size > ST32_MAX) {
+		return NULL;
+	}
+	ut8 *buf = (ut8 *)calloc (read_size, 1);
 	if (!buf) {
 		return NULL;
 	}
@@ -150,6 +155,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	tokens[tokcount] = NULL;
 	r_cons_break_push (core->cons, NULL, NULL);
 	char *opst = NULL;
+	int next_block_idx = 0;
 	for (at = from; at < to; at += bs) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
@@ -157,13 +163,15 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		if (!r_io_is_valid_offset (core->io, at, 0)) {
 			break;
 		}
-		memset (buf, 0x00, bs);
-		int res = r_io_read_at (core->io, at, buf, bs);
+		memset (buf, 0x00, read_size);
+		size_t request_size = R_MIN (read_size, to - at);
+		int res = r_io_read_at (core->io, at, buf, (int)request_size);
 		if (res < 1) {
 			R_LOG_ERROR ("Reading at 0x%08"PFMT64x, at);
 			break;
 		}
-		idx = 0;
+		idx = bytewise? 0: next_block_idx;
+		next_block_idx = 0;
 		while (addrbytes * (idx + 1) <= bs) {
 			ut64 addr = at + idx;
 			if (addr >= to) {
@@ -235,7 +243,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				if (!(len = r_asm_disassemble (
 					      core->rasm, &op,
 					      buf + addrbytes * idx,
-					      bs - addrbytes * idx))) {
+					      request_size - addrbytes * idx))) {
 					idx = matchcount
 						? asm_search_retry_idx (bytewise, first_match_addr, next_match_addr, at, bs, idx + 1)
 						: idx + 1;
@@ -244,6 +252,9 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					R_FREE (code);
 					r_anal_op_fini (&op);
 					continue;
+				}
+				if (!bytewise && idx + len > bs) {
+					next_block_idx = idx + len - bs;
 				}
 				if (op.mnemonic) {
 					//opsz = op.size;

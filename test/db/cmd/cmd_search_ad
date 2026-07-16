@@ -86,6 +86,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/ad/ decodes instructions across blocks
+FILE=malloc://4098
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx cc @ 0
+wx 6690 @ 0xfff
+"/ad/ nop"
+q
+EOF
+EXPECT=<<EOF
+0x00000fff                 6690  nop
+EOF
+RUN
+
 NAME=/ad obeys global search.maxhits across maps
 FILE=malloc://1
 ARGS=-a x86 -b 64
