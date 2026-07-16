@@ -2013,3 +2013,162 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+
+NAME=cmpd sets cr byte lt/gt/eq emulation ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c232000 @ 0
+aei
+ar r3=1
+ar r4=2
+aepc 0
+aes
+ar cr0
+ar r3=2
+ar r4=1
+aepc 0
+aes
+ar cr0
+ar r3=5
+ar r4=5
+aepc 0
+aes
+ar cr0
+EOF
+EXPECT=<<EOF
+0x00000080
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=cmpw no false equality when operands differ by 0x100 ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c032000 @ 0
+aei
+ar r3=0x100
+ar r4=0
+aepc 0
+aes
+ar cr0
+EOF
+EXPECT=<<EOF
+0x00000001
+EOF
+RUN
+
+NAME=cmpw compares only the low words ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c032000 @ 0
+aei
+ar r3=0x100000000
+ar r4=0
+aepc 0
+aes
+ar cr0
+EOF
+EXPECT=<<EOF
+0x00000000
+EOF
+RUN
+
+NAME=cmpd vs cmpld order -1 against 1 signed and unsigned ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c2320007c232040 @ 0
+aei
+ar r3=0xffffffffffffffff
+ar r4=1
+aepc 0
+aes
+ar cr0
+ar r3=0xffffffffffffffff
+ar r4=1
+aepc 4
+aes
+ar cr0
+EOF
+EXPECT=<<EOF
+0x00000080
+0x00000001
+EOF
+RUN
+
+NAME=cmplw orders the low words unsigned ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c032040 @ 0
+aei
+ar r3=0x80000000
+ar r4=1
+aepc 0
+aes
+ar cr0
+ar r3=1
+ar r4=0x80000000
+aepc 0
+aes
+ar cr0
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000080
+EOF
+RUN
+
+NAME=cmpwi sign-extends the negative immediate ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 2c03fffc @ 0
+aei
+ar r3=0xfffffffffffffff8
+aepc 0
+aes
+ar cr0
+ar r3=0
+aepc 0
+aes
+ar cr0
+EOF
+EXPECT=<<EOF
+0x00000080
+0x00000001
+EOF
+RUN
+
+NAME=bgt is not taken on equal operands ppc-64
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 38600055388000557c03200041810008 @ 0
+aei
+aeim
+4aes
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000010
+EOF
+RUN

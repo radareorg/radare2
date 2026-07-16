@@ -1119,7 +1119,7 @@ static void ppc_cond_branch(RAnalOp *op, int bc, const char *cr, const char *tar
 		esilprintf (op, "0x80,%s,&,!,%s,!,|,?{,%s,pc,=,},", cr, cr, target);
 		break;
 	case PPC_BC_GT:
-		esilprintf (op, "0x80,%s,&,!,?{,%s,pc,=,},", cr, target);
+		esilprintf (op, "0x80,%s,&,!,%s,!,!,&,?{,%s,pc,=,},", cr, cr, target);
 		break;
 	case PPC_BC_NE:
 		esilprintf (op, "%s,!,!,?{,%s,pc,=,},", cr, target);
@@ -1265,6 +1265,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		switch (insn->id) {
 #if CS_API_MAJOR >= 4
 		case PPC_INS_CMPB:
+			// per-byte equality mask into a gpr, not a cr compare; not modeled in esil
+			op->type = R_ANAL_OP_TYPE_CMP;
+			break;
 #endif
 		case PPC_INS_CMPD:
 		case PPC_INS_CMPDI:
@@ -1280,14 +1283,57 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_CMPL:
 		case PPC_INS_CMPLI:
 #endif
-			op->type = R_ANAL_OP_TYPE_CMP;
-			op->sign = true;
-			if (ARG (2)[0] == '\0') {
-				esilprintf (op, "%s,%s,-,0xff,&,cr0,=", ARG (1), ARG (0));
-			} else {
-				esilprintf (op, "%s,%s,-,0xff,&,%s,=", ARG (2), ARG (1), ARG (0));
+		{
+			bool usig = false, word = false;
+			switch (insn->id) {
+			case PPC_INS_CMPLW:
+			case PPC_INS_CMPLWI:
+				usig = true;
+				// fallthrough
+			case PPC_INS_CMPW:
+			case PPC_INS_CMPWI:
+				word = true;
+				break;
+			case PPC_INS_CMPLD:
+			case PPC_INS_CMPLDI:
+				usig = true;
+				break;
+#if CS_API_MAJOR > 4
+			case PPC_INS_CMPL:
+			case PPC_INS_CMPLI:
+				usig = true;
+				// fallthrough
+			case PPC_INS_CMP:
+			case PPC_INS_CMPI:
+				word = as->config->bits == 32;
+				break;
+#endif
 			}
+			op->type = R_ANAL_OP_TYPE_CMP;
+			op->sign = !usig;
+			const bool impcr = ARG (2)[0] == '\0';
+			const char *cr = impcr? "cr0": ARG (0);
+			const char *a = impcr? ARG (0): ARG (1);
+			const char *b = impcr? ARG (1): ARG (2);
+			char wa[96], wb[96];
+			if (word && usig) {
+				// zero-extended low words are positive in the 64-bit signed esil <, so it orders them unsigned
+				snprintf (wa, sizeof (wa), "0xffffffff,%s,&", a);
+				snprintf (wb, sizeof (wb), "0xffffffff,%s,&", b);
+			} else if (word) {
+				snprintf (wa, sizeof (wa), "32,%s,~", a);
+				snprintf (wb, sizeof (wb), "32,%s,~", b);
+			} else if (usig) {
+				snprintf (wa, sizeof (wa), "0x8000000000000000,%s,^", a);
+				snprintf (wb, sizeof (wb), "0x8000000000000000,%s,^", b);
+			} else {
+				r_str_ncpy (wa, a, sizeof (wa));
+				r_str_ncpy (wb, b, sizeof (wb));
+			}
+			// lossless flag byte like fcmpu: lt 0x80, gt 1, eq 0
+			esilprintf (op, "0x80,%s,%s,<,*,%s,%s,<,+,%s,=", wb, wa, wa, wb, cr);
 			break;
+		}
 		case PPC_INS_MFLR:
 			op->type = R_ANAL_OP_TYPE_MOV;
 			esilprintf (op, "lr,%s,=", ARG (0));
