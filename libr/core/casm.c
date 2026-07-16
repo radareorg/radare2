@@ -95,30 +95,40 @@ static int asm_search_retry_idx(bool bytewise, ut64 first, ut64 next, ut64 at, s
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
 	ut64 at, toff = core->addr;
 	const int align = core->search->align;
-	RRegex* rx = NULL;
 	char *tokens[1024] = {0};
+	RRegex *regexes[1024] = {0};
 	char *code = NULL, *ptr;
-	int idx, len = 0;
+	char *opst = NULL;
+	int i, idx, len = 0;
 	int tokcount, matchcount = 0, count = 0;
 	int matches = 0;
 	const int addrbytes = core->io->addrbytes;
 	ut64 first_match_addr = 0;
 	ut64 next_match_addr = 0;
+	ut64 usrimm = 0;
+	ut64 usrimm2 = 0;
 
 	if (R_STR_ISEMPTY (input)) {
 		return NULL;
 	}
 
-	char *inp = r_str_trim_dup (input + 1);
-	char *inp_arg = strchr (inp, ' ');
-	if (inp_arg) {
-		*inp_arg++ = 0;
-	}
-	ut64 usrimm = r_num_math (core->num, inp);
-	ut64 usrimm2 = inp_arg? r_num_math (core->num, inp_arg): usrimm;
-	if (usrimm > usrimm2) {
-		R_LOG_ERROR ("/ci : Invalid range");
-		return NULL;
+	if (mode == 'i') {
+		char *inp = r_str_trim_dup (input + 1);
+		if (!inp) {
+			return NULL;
+		}
+		char *inp_arg = strchr (inp, ' ');
+		if (inp_arg) {
+			*inp_arg++ = 0;
+		}
+		usrimm = r_num_math (core->num, inp);
+		usrimm2 = inp_arg? r_num_math (core->num, inp_arg): usrimm;
+		if (usrimm > usrimm2) {
+			R_LOG_ERROR ("/ai: Invalid range");
+			free (inp);
+			return NULL;
+		}
+		free (inp);
 	}
 
 	const int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
@@ -154,7 +164,18 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	tokcount = asm_search_split_tokens (ptr, tokens, R_ARRAY_SIZE (tokens) - 1);
 	tokens[tokcount] = NULL;
 	r_cons_break_push (core->cons, NULL, NULL);
-	char *opst = NULL;
+	if (regexp) {
+		for (i = 0; i < tokcount; i++) {
+			if (!*tokens[i]) {
+				continue;
+			}
+			regexes[i] = r_regex_new (tokens[i], "es");
+			if (!regexes[i]) {
+				R_LOG_ERROR ("Invalid regexp: %s", tokens[i]);
+				goto beach;
+			}
+		}
+	}
 	int next_block_idx = 0;
 	for (at = from; at < to; at += bs) {
 		if (r_cons_is_breaked (core->cons)) {
@@ -283,9 +304,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 						matches = !!strstr (opst, tokens[matchcount]);
 					}
 				} else {
-					rx = r_regex_new (tokens[matchcount], "es");
-					matches = r_regex_exec (rx, opst, 0, 0, 0) == 0;
-					r_regex_free (rx);
+					matches = r_regex_exec (regexes[matchcount], opst, 0, 0, 0) == 0;
 				}
 			}
 			if (!matchcount && align && align > 1) {
@@ -346,10 +365,12 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	}
 beach:
 	r_asm_set_pc (core->rasm, toff);
+	for (i = 0; i < tokcount; i++) {
+		r_regex_free (regexes[i]);
+	}
 	free (buf);
 	free (ptr);
 	free (code);
-	free (inp);
 	R_FREE (opst);
 	r_cons_break_pop (core->cons);
 	return hits;

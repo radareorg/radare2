@@ -14,6 +14,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/ad/ regex skips immediate range parsing
+FILE=malloc://1
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90
+"/ad/ 2|nop 1|nop"
+q
+EOF
+EXPECT=<<EOF
+0x00000000                   90  nop
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=/ad/ invalid regex reports an error
+FILE=malloc://1
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90
+"/ad/ ("
+q
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Invalid regexp: (
+EOF
+RUN
+
 NAME=/ad/ search multiple instructions
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
