@@ -104,7 +104,7 @@ typedef enum {
 	R_ARCH_OP_MASK_HINT  = 4, // calls r_anal_op_hint to override anal options
 	R_ARCH_OP_MASK_OPEX  = 8, // fills RAnalop->opex info
 	R_ARCH_OP_MASK_DISASM = 16, // fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
-	R_ARCH_OP_MASK_STATEFUL = 32, // linear decode window (reset at start): plugin may use cross-insn state; not in MASK_ALL, without it decode stays pure
+	R_ARCH_OP_MASK_STATEFUL = 32, // let arch plugins keep cross-insn states. useful for linear code. not included in MASK_ALL
 	R_ARCH_OP_MASK_ALL   = 1 | 2 | 4 | 8 | 16
 } RAnalOpMask;
 
@@ -152,7 +152,6 @@ typedef RList *(*RArchPluginPreludesCallback)(RArchSession *s);
 typedef bool (*RArchPluginInitCallback)(RArchSession *s);
 typedef bool (*RArchPluginFiniCallback)(RArchSession *s);
 typedef bool (*RArchPluginEsilCallback)(RArchSession *s, REsil *esil, RArchEsilAction action);
-// returns cross-instruction decode state to its post-init value; must be cheap and must not reallocate
 typedef bool (*RArchPluginResetCallback)(RArchSession *s);
 
 // TODO: use `const char *const` instead of `char*`

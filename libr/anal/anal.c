@@ -456,7 +456,6 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 		return NULL;
 	}
 
-	// stays pure: this sweep can run nested inside a caller's decode window
 	// TODO: use the bitfliping thing to guess the mask in here
 	int idx = 0;
 	while (idx < size) {
