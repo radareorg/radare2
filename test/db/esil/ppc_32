@@ -711,3 +711,47 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+
+NAME=cmpw vs cmplw sign boundary emulation ppc-32
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 7c0320007c032040 @ 0
+aei
+ar r3=0x80000000
+ar r4=1
+aepc 0
+aes
+ar cr0
+ar r3=0x80000000
+ar r4=1
+aepc 4
+aes
+ar cr0
+EOF
+EXPECT=<<EOF
+0x00000080
+0x00000001
+EOF
+RUN
+
+NAME=cmpw no false equality when operands differ by 0x100 ppc-32
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 7c032000 @ 0
+aei
+ar r3=0x100
+ar r4=0
+aepc 0
+aes
+ar cr0
+EOF
+EXPECT=<<EOF
+0x00000001
+EOF
+RUN
