@@ -755,3 +755,27 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+
+NAME=extsb sign-extends and always writes the destination ppc-32
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 7c830774 @ 0
+aei
+ar r4=0x40
+ar r3=0xdeadbeef
+aepc 0
+aes
+ar r3
+ar r4=0x123456f8
+aepc 0
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000040
+0xfffffff8
+EOF
+RUN

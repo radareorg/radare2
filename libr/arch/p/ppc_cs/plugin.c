@@ -1397,23 +1397,17 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_EXTSB:
 			op->sign = true;
 			op->type = R_ANAL_OP_TYPE_MOV;
-			if (as->config->bits == 64) {
-				esilprintf (op, "%s,0x80,&,?{,0xFFFFFFFFFFFFFF00,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
-			} else {
-				esilprintf (op, "%s,0x80,&,?{,0xFFFFFF00,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
-			}
+			esilprintf (op, "8,%s,~,%s,=", ARG (1), ARG (0));
 			break;
 		case PPC_INS_EXTSH:
 			op->sign = true;
-			if (as->config->bits == 64) {
-				esilprintf (op, "%s,0x8000,&,?{,0xFFFFFFFFFFFF0000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
-			} else {
-				esilprintf (op, "%s,0x8000,&,?{,0xFFFF0000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
-			}
+			op->type = R_ANAL_OP_TYPE_MOV;
+			esilprintf (op, "16,%s,~,%s,=", ARG (1), ARG (0));
 			break;
 		case PPC_INS_EXTSW:
 			op->sign = true;
-			esilprintf (op, "%s,0x80000000,&,?{,0xFFFFFFFF00000000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
+			op->type = R_ANAL_OP_TYPE_MOV;
+			esilprintf (op, "32,%s,~,%s,=", ARG (1), ARG (0));
 			break;
 		case PPC_INS_SYNC:
 		case PPC_INS_ISYNC:
