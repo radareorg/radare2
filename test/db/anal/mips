@@ -835,7 +835,7 @@ aac
 afl~?
 EOF
 EXPECT=<<EOF
-1268
+1274
 EOF
 RUN
 
@@ -847,7 +847,7 @@ aac
 afl~?
 EOF
 EXPECT=<<EOF
-4
+10
 EOF
 RUN
 
@@ -1174,5 +1174,43 @@ aer pc
 EOF
 EXPECT=<<EOF
 0x00000010
+EOF
+RUN
+
+NAME=mips bgezal branch-and-link target is the pc-relative offset not the register
+FILE=malloc://64
+ARGS=-a mips -e asm.bits=32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 04910010
+ao 1~jump:
+ao 1~type:
+EOF
+EXPECT=<<EOF
+jump: 0x00000044
+type: call
+EOF
+RUN
+
+NAME=mips bltzal branch-and-link target is the pc-relative offset
+FILE=malloc://64
+ARGS=-a mips -e asm.bits=32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 04900010
+ao 1~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00000044
+EOF
+RUN
+
+NAME=mips bgezall likely branch-and-link target is the pc-relative offset
+FILE=malloc://64
+ARGS=-a mips -e asm.bits=32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 04930010
+ao 1~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00000044
 EOF
 RUN
