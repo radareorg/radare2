@@ -2697,9 +2697,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		pj_a (pj);
 	}
 	const bool smart_mask = r_config_get_b (core->config, "anal.mask");
+	const bool stateful = core->anal->opt.stateful;
 	const ut32 opmask = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_OPEX | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_DISASM
-		| (core->anal->opt.stateful? R_ARCH_OP_MASK_STATEFUL: 0);
-	if (core->anal->opt.stateful) {
+		| (stateful? R_ARCH_OP_MASK_STATEFUL: 0);
+	if (stateful) {
 		r_arch_session_reset (core->anal->arch->session);
 	}
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
@@ -15571,14 +15572,15 @@ static void cmd_aaef(RCore *core) {
 }
 
 static int cmd_anal_all(RCore *core, const char *input) {
+	if (*input == '?') {
+		r_core_cmd_help (core, help_msg_aa);
+		return true;
+	}
 	r_core_seek_arch_bits (core, core->addr);
-	if (*input != '?' && !core->anal->arch->session) {
+	if (!core->anal->arch->session) {
 		return false;
 	}
 	switch (*input) {
-	case '?':
-		r_core_cmd_help (core, help_msg_aa);
-		break;
 	case 'f':
 		if (input[1] == 'e') {  // "aafe"
 			r_core_cmd0 (core, "aef@@F");
