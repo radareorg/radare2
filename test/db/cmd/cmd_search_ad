@@ -86,6 +86,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/ad obeys global search.maxhits across maps
+FILE=malloc://1
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90
+om 3 0x1000 1 0 rwx map2
+e search.in=io.maps
+e search.maxhits=1
+/adq nop
+q
+EOF
+EXPECT=<<EOF
+0x00000000   # 1: nop
+EOF
+RUN
+
 NAME=/adj match instructions with json output
 FILE=bins/mach0/iGoat-Swift.arm_64.1
 CMDS=<<EOF

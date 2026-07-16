@@ -3148,13 +3148,15 @@ static void do_asm_search(RCore *core, RSearchParameters *param, const char *inp
 		if (maxhits && count >= maxhits) {
 			break;
 		}
-		RList *hits = r_core_asm_strsearch (core, end_cmd, from, to, maxhits, regexp, everyByte, mode);
+		int remaining = maxhits? maxhits - count: 0;
+		RList *hits = r_core_asm_strsearch (core, end_cmd, from, to, remaining, regexp, everyByte, mode);
 		if (hits) {
 			r_list_foreach (hits, iter, hit) {
 				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				search_hit_at (core, param, hit, NULL);
+				count++;
 			}
 			r_list_free (hits);
 		}
