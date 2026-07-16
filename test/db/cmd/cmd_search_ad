@@ -1,0 +1,127 @@
+NAME=/ad/ search instructions extended regex
+FILE=bins/pe/standard.exe
+CMDS=<<EOF
+e asm.arch = x86
+e anal.arch = x86
+e asm.bits=32
+"/ad/ ror (bh|...), (cl|.)"
+q
+EOF
+EXPECT=<<EOF
+0x004019d2                 d3cc  ror esp, cl
+0x004019d5                 d0cf  ror bh, 1
+0x004019da               c1cde5  ror ebp, 0xe5
+EOF
+RUN
+
+NAME=/ad/ search multiple instructions
+FILE=bins/pe/standard.exe
+CMDS=<<EOF
+e asm.arch = x86
+e anal.arch = x86
+e asm.bits=32
+"/ad/ ror bh, 1; shr ebp, cl; clc"
+q
+EOF
+EXPECT=<<EOF
+0x004019d5                 d0cf  ror bh, 1
+0x004019d7                 d3ed  shr ebp, cl
+0x004019d9                   f8  clc
+EOF
+RUN
+
+NAME=/ad/ search empty next instruction regex
+FILE=malloc://2
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90c3
+'/ad/ nop;
+q
+EOF
+EXPECT=<<EOF
+0x00000000                   90  nop
+0x00000001                   c3  ret
+EOF
+RUN
+
+NAME=/ad/ search with escaped instruction separator
+FILE=malloc://2
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90c3
+/ad/ nop\;ret
+q
+EOF
+EXPECT=<<EOF
+0x00000000                   90  nop
+0x00000001                   c3  ret
+EOF
+RUN
+
+NAME=/ad/ search overlapping instruction sequence
+FILE=malloc://3
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 9090c3
+"/ad/ nop;ret"
+q
+EOF
+EXPECT=<<EOF
+0x00000001                   90  nop
+0x00000002                   c3  ret
+EOF
+RUN
+
+NAME=/ad/ search instruction sequence across blocks
+FILE=malloc://4098
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90c3 @ 0xfff
+"/ad/ nop;ret"
+q
+EOF
+EXPECT=<<EOF
+0x00000fff                   90  nop
+0x00001000                   c3  ret
+EOF
+RUN
+
+NAME=/adj match instructions with json output
+FILE=bins/mach0/iGoat-Swift.arm_64.1
+CMDS=<<EOF
+e search.in=range
+e search.from=0x100007e0c
+e search.to=0x100007eec
+"/adj add;ret"
+EOF
+EXPECT=<<EOF
+[{"addr":4294999692,"len":8,"code":"add sp, sp, 0x40; ret"},{"addr":4294999780,"len":8,"code":"add sp, sp, 0x30; ret"}]
+EOF
+RUN
+
+NAME=/adj match instructions with json hex numbers
+FILE=bins/mach0/iGoat-Swift.arm_64.1
+CMDS=<<EOF
+e search.in=range
+e search.from=0x100007e0c
+e search.to=0x100007eec
+e cfg.json.num=hex
+"/adj add;ret"
+EOF
+EXPECT=<<EOF
+[{"addr":"0x100007e8c","len":8,"code":"add sp, sp, 0x40; ret"},{"addr":"0x100007ee4","len":8,"code":"add sp, sp, 0x30; ret"}]
+EOF
+RUN
+
+NAME=/ad glob search
+ARGS=-a arm -b64
+FILE=bins/mach0/ls-m1
+CMDS=<<EOF
+/ad ret~?
+/ad ret$~?
+EOF
+EXPECT=<<EOF
+40
+18
+EOF
+RUN

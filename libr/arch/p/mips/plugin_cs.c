@@ -906,10 +906,6 @@ static bool init(RArchSession *as) {
 	}
 
 	PluginData *pd = R_NEW0 (PluginData);
-	if (!pd) {
-		return false;
-	}
-
 	pd->t9_pre = UT64_MAX;
 	pd->t9_adj = UT64_MAX;
 	pd->bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
