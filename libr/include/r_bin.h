@@ -406,7 +406,7 @@ R_API void r_bin_string_fini(RBinString *str);
 typedef struct r_bin_resource_t {
 	char *name;
 	char *type;
-	char *encoding; // NULL/"raw", or base64, data-uri, gzip, zlib, utf16le or utf16be
+	char *encoding; // NULL/raw, base64, data-uri, gzip, zlib, utf16, utf16le or utf16be
 	char *language;
 	char *timestamp;
 	char *origin; // source module or container, when applicable

@@ -200,63 +200,25 @@ bool test_r_bin_le_resources(void) {
 	mu_end;
 }
 
+static RBuffer *decode_resource(const ut8 *data, size_t size, const char *encoding, bool decode) {
+	RBinFile bf = { .buf = r_buf_new_with_bytes (data, size) };
+	if (!bf.buf) {
+		return NULL;
+	}
+	RBinResource resource = { .encoding = (char *)encoding, .size = size };
+	RBuffer *decoded = r_bin_file_get_resource_data (&bf, &resource, decode);
+	r_unref (bf.buf);
+	return decoded;
+}
+
 bool test_r_bin_resource_decoding(void) {
-	RBinFile bf = {0};
-	RBinResource resource = {0};
 	const char base64[] = "aGVsbG8";
-	bf.buf = r_buf_new_with_bytes ((const ut8 *)base64, sizeof (base64) - 1);
-	mu_assert_notnull (bf.buf, "Base64 resource buffer");
-	resource.size = sizeof (base64) - 1;
-	resource.encoding = "base64";
-	RBuffer *data = r_bin_file_get_resource_data (&bf, &resource, false);
-	mu_assert_notnull (data, "Raw base64 resource data");
-	mu_assert_eq (r_buf_size (data), sizeof (base64) - 1, "Raw base64 resource size");
-	r_unref (data);
-	data = r_bin_file_get_resource_data (&bf, &resource, true);
-	mu_assert_notnull (data, "Decoded base64 resource data");
-	ut8 bytes[16] = {0};
-	mu_assert_eq (r_buf_read_at (data, 0, bytes, sizeof (bytes)), 5, "Decoded base64 resource size");
-	mu_assert_memeq (bytes, (const ut8 *)"hello", 5, "Decoded base64 resource contents");
-	r_unref (data);
-	r_unref (bf.buf);
-
 	const char data_uri[] = "data:image/png;charset=utf-8;base64,iVBORw0KGgo=";
-	const ut8 png_magic[] = { 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n' };
-	bf.buf = r_buf_new_with_bytes ((const ut8 *)data_uri, sizeof (data_uri) - 1);
-	mu_assert_notnull (bf.buf, "Data URI resource buffer");
-	resource.size = sizeof (data_uri) - 1;
-	resource.encoding = "data-uri";
-	data = r_bin_file_get_resource_data (&bf, &resource, true);
-	mu_assert_notnull (data, "Decoded data URI resource data");
-	mu_assert_eq (r_buf_read_at (data, 0, bytes, sizeof (bytes)), sizeof (png_magic), "Decoded data URI resource size");
-	mu_assert_memeq (bytes, png_magic, sizeof (png_magic), "Decoded data URI resource contents");
-	r_unref (data);
-	r_unref (bf.buf);
-
 	const char plain_uri[] = "data:text/plain,hello";
-	bf.buf = r_buf_new_with_bytes ((const ut8 *)plain_uri, sizeof (plain_uri) - 1);
-	mu_assert_notnull (bf.buf, "Plain data URI resource buffer");
-	resource.size = sizeof (plain_uri) - 1;
-	data = r_bin_file_get_resource_data (&bf, &resource, true);
-	mu_assert_notnull (data, "Decoded plain data URI resource data");
-	mu_assert_eq (data->type, R_BUFFER_REF, "Plain data URI payload uses a buffer slice");
-	mu_assert_eq (r_buf_read_at (data, 0, bytes, sizeof (bytes)), 5, "Decoded plain data URI resource size");
-	mu_assert_memeq (bytes, (const ut8 *)"hello", 5, "Decoded plain data URI resource contents");
-	r_unref (data);
-	r_unref (bf.buf);
-
 	const char escaped_uri[] = "data:text/plain,hello%20world%00x";
-	const ut8 escaped_result[] = { 'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', 0, 'x' };
-	bf.buf = r_buf_new_with_bytes ((const ut8 *)escaped_uri, sizeof (escaped_uri) - 1);
-	mu_assert_notnull (bf.buf, "Escaped data URI resource buffer");
-	resource.size = sizeof (escaped_uri) - 1;
-	data = r_bin_file_get_resource_data (&bf, &resource, true);
-	mu_assert_notnull (data, "Decoded escaped data URI resource data");
-	mu_assert_eq (r_buf_read_at (data, 0, bytes, sizeof (bytes)), sizeof (escaped_result), "Decoded escaped data URI resource size");
-	mu_assert_memeq (bytes, escaped_result, sizeof (escaped_result), "Decoded escaped data URI resource contents");
-	r_unref (data);
-	r_unref (bf.buf);
-
+	const ut8 hello[] = "hello";
+	const ut8 png[] = { 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n' };
+	const ut8 escaped[] = { 'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', 0, 'x' };
 #if WANT_ZIP
 	const ut8 gzip[] = {
 		0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -264,34 +226,42 @@ bool test_r_bin_resource_decoding(void) {
 		0x00, 0x86, 0xa6, 0x10, 0x36, 0x05, 0x00, 0x00,
 		0x00
 	};
-	bf.buf = r_buf_new_with_bytes (gzip, sizeof (gzip));
-	mu_assert_notnull (bf.buf, "Gzip resource buffer");
-	resource.size = sizeof (gzip);
-	resource.encoding = "gzip";
-	data = r_bin_file_get_resource_data (&bf, &resource, true);
-	mu_assert_notnull (data, "Decoded gzip resource data");
-	mu_assert_eq (r_buf_read_at (data, 0, bytes, sizeof (bytes)), 5, "Decoded gzip resource size");
-	mu_assert_memeq (bytes, (const ut8 *)"hello", 5, "Decoded gzip resource contents");
-	r_unref (data);
-	r_unref (bf.buf);
 #endif
 	const ut8 utf16[][10] = {
 		{ 0xff, 0xfe, 'r', 0, '2', 0, 0x3c, 0xd8, 0xb8, 0xdf },
 		{ 0xfe, 0xff, 0, 'r', 0, '2', 0xd8, 0x3c, 0xdf, 0xb8 }
 	};
-	const char *encodings[] = { "utf16le", "utf16" };
+	const ut8 utf8[] = "r2\xf0\x9f\x8e\xb8";
+	typedef struct {
+		const ut8 *data;
+		size_t size;
+		const char *encoding;
+		bool decode;
+		const ut8 *expected;
+		size_t expected_size;
+	} ResourceDecodeTest;
+	const ResourceDecodeTest tests[] = {
+		{ (const ut8 *)base64, sizeof (base64) - 1, "base64", false, (const ut8 *)base64, sizeof (base64) - 1 },
+		{ (const ut8 *)base64, sizeof (base64) - 1, "base64", true, hello, sizeof (hello) - 1 },
+		{ (const ut8 *)data_uri, sizeof (data_uri) - 1, "data-uri", true, png, sizeof (png) },
+		{ (const ut8 *)plain_uri, sizeof (plain_uri) - 1, "data-uri", true, hello, sizeof (hello) - 1 },
+		{ (const ut8 *)escaped_uri, sizeof (escaped_uri) - 1, "data-uri", true, escaped, sizeof (escaped) },
+#if WANT_ZIP
+		{ gzip, sizeof (gzip), "gzip", true, hello, sizeof (hello) - 1 },
+#endif
+		{ utf16[0], sizeof (utf16[0]), "utf16le", true, utf8, sizeof (utf8) - 1 },
+		{ utf16[1], sizeof (utf16[1]), "utf16", true, utf8, sizeof (utf8) - 1 },
+	};
+	ut8 bytes[16];
 	int i;
-	for (i = 0; i < 2; i++) {
-		bf.buf = r_buf_new_with_bytes (utf16[i], sizeof (utf16[i]));
-		mu_assert_notnull (bf.buf, "UTF-16 resource buffer");
-		resource.size = sizeof (utf16[i]);
-		resource.encoding = (char *)encodings[i];
-		data = r_bin_file_get_resource_data (&bf, &resource, true);
-		mu_assert_notnull (data, "Decoded UTF-16 resource data");
-		mu_assert_eq (r_buf_read_at (data, 0, bytes, sizeof (bytes)), 6, "Decoded UTF-16 resource size");
-		mu_assert_memeq (bytes, (const ut8 *)"r2\xf0\x9f\x8e\xb8", 6, "Decoded UTF-16 resource contents");
+	for (i = 0; i < R_ARRAY_SIZE (tests); i++) {
+		const ResourceDecodeTest *test = &tests[i];
+		RBuffer *data = decode_resource (test->data, test->size, test->encoding, test->decode);
+		mu_assert_notnull (data, "Resource decoding");
+		mu_assert_eq (r_buf_size (data), test->expected_size, "Decoded resource size");
+		mu_assert_eq (r_buf_read_at (data, 0, bytes, test->expected_size), test->expected_size, "Read decoded resource");
+		mu_assert_memeq (bytes, test->expected, test->expected_size, "Decoded resource contents");
 		r_unref (data);
-		r_unref (bf.buf);
 	}
 	mu_end;
 }

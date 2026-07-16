@@ -2982,31 +2982,25 @@ R_API bool r_str_range_in(const char *r, ut64 addr) {
 	return false;
 }
 
-// convert from html escaped sequence "foo%20bar" to "foo bar"
-// TODO: find better name.. unencode? decode
-R_API int r_str_uri_decode_len(char *s, int len) {
-	R_RETURN_VAL_IF_FAIL (s && len >= 0, -1);
-	int i;
-	int j;
-	for (i = j = 0; i < len; i++, j++) {
-		if (s[i] == '%') {
+// Percent-decode a string in place and return its possibly binary length.
+R_API int r_str_uri_decode(char *s) {
+	R_RETURN_VAL_IF_FAIL (s, -1);
+	char *src = s;
+	char *dst = s;
+	for (; *src; src++, dst++) {
+		if (*src == '%') {
 			ut8 ch = 0;
-			if (i + 2 >= len || !r_hex_to_byte (&ch, s[i + 1]) || !r_hex_to_byte (&ch, s[i + 2])) {
+			if (!src[1] || !src[2] || !r_hex_to_byte (&ch, src[1]) || !r_hex_to_byte (&ch, src[2])) {
 				return -1;
 			}
-			s[j] = ch;
-			i += 2;
+			*dst = ch;
+			src += 2;
 		} else {
-			s[j] = s[i];
+			*dst = *src;
 		}
 	}
-	s[j] = 0;
-	return j;
-}
-
-R_API void r_str_uri_decode(char *s) {
-	R_RETURN_IF_FAIL (s);
-	r_str_uri_decode_len (s, strlen (s));
+	*dst = 0;
+	return dst - s;
 }
 
 R_API char *r_str_uri_encode(const char *s) {

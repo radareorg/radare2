@@ -1911,9 +1911,9 @@ RList *dotnet_parse_manifest_resources(RBuffer *buf, ut64 metadata_paddr, ut64 m
 	if (!streams.tilde || !streams.string) {
 		goto done;
 	}
-	ut32 tables_size = 0;
+	ut32 tables_size;
 	const ut8 *tables_data = dotnet_bounded_stream_data (pe, streams.tilde, &tables_size);
-	ut32 strings_size = 0;
+	ut32 strings_size;
 	const ut8 *strings_data = dotnet_bounded_stream_data (pe, streams.string, &strings_size);
 	if (!tables_data || !strings_data || tables_size < sizeof (TILDE_HEADER)) {
 		goto done;

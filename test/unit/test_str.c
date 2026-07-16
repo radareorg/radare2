@@ -455,15 +455,15 @@ bool test_r_str_utf16_to_utf8(void) {
 	mu_end;
 }
 
-bool test_r_str_uri_decode_len(void) {
+bool test_r_str_uri_decode(void) {
 	char uri[] = "a%20b%00c";
 	const ut8 expected[] = { 'a', ' ', 'b', 0, 'c' };
-	int len = r_str_uri_decode_len (uri, sizeof (uri) - 1);
+	int len = r_str_uri_decode (uri);
 	mu_assert_eq (len, sizeof (expected), "URI-decoded byte length");
 	mu_assert_memeq ((const ut8 *)uri, expected, sizeof (expected), "URI-decoded binary data");
 
 	char invalid[] = "%xy";
-	mu_assert_eq (r_str_uri_decode_len (invalid, sizeof (invalid) - 1), -1, "Invalid URI escape");
+	mu_assert_eq (r_str_uri_decode (invalid), -1, "Invalid URI escape");
 	mu_end;
 }
 
@@ -935,7 +935,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_len_utf8_ansi);
 	mu_run_test (test_r_str_len_utf8_ansi_truncated_utf8_tail);
 	mu_run_test (test_r_str_utf16_to_utf8);
-	mu_run_test (test_r_str_uri_decode_len);
+	mu_run_test (test_r_str_uri_decode);
 	mu_run_test (test_r_str_utf8_charsize);
 	mu_run_test (test_r_str_utf8_charsize_prev);
 	mu_run_test (test_r_str_sanitize_sdb_key);
