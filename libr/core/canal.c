@@ -4531,6 +4531,13 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		|| !(region.sperm & R_PERM_X)) {
 		goto beach;
 	}
+	const bool stateful = core->anal->opt.stateful;
+	const ut32 opmask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT
+		| (stateful? R_ARCH_OP_MASK_STATEFUL: 0);
+	if (stateful && core->anal->arch->session) {
+		// the whole sweep is one linear decode window
+		r_arch_session_reset (core->anal->arch->session);
+	}
 	bool uninit = true;
 	while (at < to && !r_cons_is_breaked (core->cons)) {
 		int i = 0, ret = bsz;
@@ -4577,7 +4584,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			}
 			uninit = false;
 		}
-		(void) r_anal_op (core->anal, &op, at, buf, bsz, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
+		(void) r_anal_op (core->anal, &op, at, buf, bsz, opmask);
 		while ((i + maxopsz) < bsz && !r_cons_is_breaked (core->cons)) {
 			r_anal_op_fini (&op);
 			// check if meta tells its code
@@ -4596,7 +4603,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 					}
 				}
 			}
-			ret = r_anal_op (core->anal, &op, at + i, buf + i, bsz - i, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
+			ret = r_anal_op (core->anal, &op, at + i, buf + i, bsz - i, opmask);
 			if (ret < 1) {
 				R_LOG_DEBUG ("aar invalid op 0x%"PFMT64x" %d", at + i, codealign);
 				i += minopsz;

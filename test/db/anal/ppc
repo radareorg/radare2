@@ -1352,3 +1352,64 @@ EXPECT=<<EOF
 0
 EOF
 RUN
+
+NAME=ppc pending toc base does not leak into a later decode window
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.gp=0x10000000
+CMDS=<<EOF
+wx 3d420001e92a0008
+ao 2 > /dev/null
+ao 1 @ 4 ~ptr:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=ppc anal.stateful=false disables toc tracking
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.gp=0x10000000 -e anal.stateful=false
+CMDS=<<EOF
+wx 3d420001e92a0008
+ao 2~ptr:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=ppc toc resolution is deterministic across repeated windows
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.gp=0x10000000
+CMDS=<<EOF
+wx 3d420001e92a0008
+ao 2~ptr:
+ao 2~ptr:
+EOF
+EXPECT=<<EOF
+ptr: 0x10010008
+ptr: 0x10010008
+EOF
+RUN
+
+NAME=ppc toc tracking survives the nested anal.mask sweep
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.gp=0x10000000 -e anal.mask=true
+CMDS=<<EOF
+wx 3d420001e92a0008
+ao 2~ptr:
+EOF
+EXPECT=<<EOF
+ptr: 0x10010008
+EOF
+RUN
+
+NAME=ppc toc tracking survives the aoj mask lookahead
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.gp=0x10000000
+CMDS=<<EOF
+wx 3d420001e92a0008
+aoj 2~{1.ptr}
+EOF
+EXPECT=<<EOF
+268501000
+EOF
+RUN
