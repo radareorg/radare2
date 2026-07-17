@@ -1860,3 +1860,54 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+
+
+NAME=mips mult signed hi vs multu unsigned hi
+FILE=malloc://32
+ARGS=-a mips -b 32
+CMDS=<<EOF
+aei
+wx 18000901
+ar t0=0xffffffff
+ar t1=2
+ar pc=0
+s 0
+aes
+ar hi
+ar lo
+wx 19000901
+ar t0=0xffffffff
+ar t1=2
+ar pc=0
+s 0
+aes
+ar hi
+ar lo
+EOF
+EXPECT=<<EOF
+0xffffffff
+0xfffffffe
+0x00000001
+0xfffffffe
+EOF
+RUN
+
+NAME=mips srav arithmetic variable shift
+FILE=malloc://32
+ARGS=-a mips -b 32
+CMDS=<<EOF
+aei
+wx 07402a01
+ar t2=0x80000000
+ar t1=4
+ar pc=0
+s 0
+aes
+ar t0
+ao 1~type[1]
+EOF
+EXPECT=<<EOF
+0xf8000000
+sar
+EOF
+RUN
