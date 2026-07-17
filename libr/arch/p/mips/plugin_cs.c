@@ -873,9 +873,7 @@ static int get_capstone_mode(RArchSession *as) {
 		} else if (!strcmp (cpu, "v3") || !strcmp (cpu, "mips3")) {
 			mode |= CS_MODE_MIPS3;
 		} else if (!strcmp (cpu, "v2") || !strcmp (cpu, "mips2")) {
-#if CS_API_MAJOR > 3
 			mode |= CS_MODE_MIPS2;
-#endif
 		}
 	}
 	mode |= (as->config->bits == 64)? CS_MODE_MIPS64: CS_MODE_MIPS32;

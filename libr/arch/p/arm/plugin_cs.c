@@ -74,15 +74,9 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define ISMEM64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type == ARM64_OP_MEM)
 #define EXT64(x) decode_sign_ext (insn->detail->arm64.operands[x].ext)
 
-#if CS_API_MAJOR > 3
 #define LSHIFT(x) insn->detail->arm.operands[x].mem.lshift
 #define LSHIFT2(x) insn->detail->arm.operands[x].shift.value // Dangerous, returns value even if isn't LSL
 #define LSHIFT2_64(x) insn->detail->arm64.operands[x].shift.value
-#else
-#define LSHIFT(x) 0
-#define LSHIFT2(x) 0
-#define LSHIFT2_64(x) 0
-#endif
 #define OPCOUNT() insn->detail->arm.op_count
 #define OPCOUNT64() insn->detail->arm64.op_count
 #define ISSHIFTED(x) (insn->detail->arm.operands[x].shift.type != ARM_SFT_INVALID && insn->detail->arm.operands[x].shift.value != 0)
@@ -2595,7 +2589,6 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		}
 		break;
 	case ARM64_INS_NEG:
-#if CS_API_MAJOR > 3
 	case ARM64_INS_NEGS:
 		if (insn->id == ARM64_INS_NEGS) {
 			ARG64_APPEND (&op->esil, 1);
@@ -2607,7 +2600,6 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 			ARG64_APPEND (&op->esil, 1);
 			r_strbuf_append (&op->esil, ",0,-,&,>>,vf,:=,");
 		}
-#endif
 		ARG64_APPEND (&op->esil, 1);
 		r_strbuf_appendf (&op->esil, ",0,-,%s,=", REG64 (0));
 		break;
@@ -3565,10 +3557,8 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_CRYPTO)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
 #endif
-#if CS_API_MAJOR >= 4
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_PRIVILEGE)) {
 		op->family = R_ANAL_OP_FAMILY_PRIV;
-#endif
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_NEON)) {
 		op->family = R_ANAL_OP_FAMILY_VEC;
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_FPARMV8)) {
@@ -3830,9 +3820,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_SAR;
 		break;
 	case ARM64_INS_NEG:
-#if CS_API_MAJOR > 3
 	case ARM64_INS_NEGS:
-#endif
 		op->type = R_ANAL_OP_TYPE_NOT;
 		break;
 	case ARM64_INS_CMP:
@@ -4112,14 +4100,12 @@ static void anop32(RArchSession *as, csh handle, RAnalOp *op, cs_insn *insn, boo
 	} else if (cs_insn_group (handle, insn, ARM_GRP_CRYPTO)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
 #endif
-#if CS_API_MAJOR >= 4
 	} else if (cs_insn_group (handle, insn, ARM_GRP_PRIVILEGE)) {
 		op->family = R_ANAL_OP_FAMILY_PRIV;
 #if CS_API_MAJOR < 6
 	// XXX - I can't find virtualization in cs6
 	} else if (cs_insn_group (handle, insn, ARM_GRP_VIRTUALIZATION)) {
 		op->family = R_ANAL_OP_FAMILY_VIRT;
-#endif
 #endif
 	} else if (cs_insn_group (handle, insn, ARM_GRP_NEON)) {
 		op->family = R_ANAL_OP_FAMILY_VEC;

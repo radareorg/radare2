@@ -3,9 +3,8 @@
 Capstone Engine is the disassembler engine used by radare2 by default for
 some architectures.
 
-R2 supports capstone 4 and 5.
+R2 supports capstone 4 and 5. Older versions are not supported.
 
-* capstone3: legacy support (only available on Debian systems probably)
 * capstone4: previous release, found in many distros, not recommended if you care about modern x86 or arm64 binaries
 * capstone5: stable release (default)
 * capstone6: (aka next) abi/api breaking, not supported yet (see the section below)

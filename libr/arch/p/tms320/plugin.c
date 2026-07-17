@@ -103,12 +103,6 @@ static int tms320_c55x_plus_op(RArchSession *as, RAnalOp *op, ut64 addr, const u
 #warning Cannot find capstone-tms320c64x support
 #endif
 
-#if CS_API_MAJOR < 2
-#undef CAPSONT_HAS_TMS320C64X
-#define CAPSTONE_HAS_TMS320C64X 0
-#endif
-
-
 #if CAPSTONE_HAS_TMS320C64X
 
 #define INSOP(n) insn->detail->tms320c64x.operands[n]

@@ -5,7 +5,7 @@
 #include <capstone/capstone.h>
 #include <capstone/sparc.h>
 
-#if CS_API_MAJOR < 2
+#if CS_API_MAJOR < 4
 #error Old Capstone not supported
 #endif
 
