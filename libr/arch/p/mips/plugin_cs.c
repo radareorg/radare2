@@ -321,6 +321,12 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 				"0xffffffff,%s,%s,>>,&,31,%s,>>,?{,%s,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
 				ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
 			break;
+		case MIPS_INS_SRAV:
+			// like SRA but the shift amount is rs & 0x1f
+			r_strbuf_appendf (&op->esil,
+				"0xffffffff,%s,0x1f,&,%s,>>,&,31,%s,>>,?{,%s,0x1f,&,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
+				ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
+			break;
 		case MIPS_INS_SHRL:
 			// suffix 'S' forces conditional flag to be updated
 		case MIPS_INS_SRLV:
@@ -704,6 +710,12 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 				ES_SIGN32_64 (ARG(0));
 				break;
 			case MIPS_INS_MULT:
+				// signed: sign-extend both operands so hi holds the signed high word
+				r_strbuf_appendf (&op->esil, ES_W("32,%s,~,32,%s,~,*")",lo,=", ARG (0), ARG (1));
+				ES_SIGN32_64 ("lo");
+				r_strbuf_appendf (&op->esil, ES_W("32,32,%s,~,32,%s,~,*,>>")",hi,=", ARG (0), ARG (1));
+				ES_SIGN32_64 ("hi");
+				break;
 			case MIPS_INS_MULTU:
 				r_strbuf_appendf (&op->esil, ES_W("%s,%s,*")",lo,=", ARG (0), ARG (1));
 				ES_SIGN32_64 ("lo");
@@ -1356,6 +1368,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case MIPS_INS_SHRA:
 	case MIPS_INS_SHRA_R:
 	case MIPS_INS_SRA:
+	case MIPS_INS_SRAV:
 		op->type = R_ANAL_OP_TYPE_SAR;
 		SET_VAL (op,2);
 		break;
