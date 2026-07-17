@@ -70,8 +70,8 @@ if [ ! -x /work ]; then
 			D=$HOME/Library/Android/sdk/ndk
 			if [ -d "${D}" ]; then
 				for a in $(cd "$D" && ls) ; do
-					if [ -x "$D/$N/$a/ndk-build" ]; then
-						NDK="$D/$N"
+					if [ -x "$D/$a/ndk-build" ]; then
+						NDK="$D/$a"
 						break
 					fi
 				done

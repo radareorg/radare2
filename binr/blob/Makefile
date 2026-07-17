@@ -3,6 +3,7 @@ DESTDIR?=/
 
 R2BINS=radare2 rabin2 rarun2 rasm2 ragg2 rahash2 rax2 ravc2 rafind2 radiff2 rafs2
 BINS=r2blob
+INSTALL_TARGET=blobinstall
 
 SOURCES= r2blob.c
 
@@ -75,10 +76,12 @@ build:
 	${CC} -o r2blob ${SOURCES} ${CFLAGS} ${LDFLAGS}
 
 
-INSTALL_TARGET=blobinstall
 blobinstall:
 	mkdir -p "${DESTDIR}${BINDIR}"
-	for FILE in ${R2BINS} ; do \
+	cp -pf r2blob "${DESTDIR}${BINDIR}/r2blob"
+	for FILE in r2 ${R2BINS} ; do \
 		rm -f "${DESTDIR}${BINDIR}/$$FILE" ; \
 		cp -PRpf "$$FILE" "${DESTDIR}${BINDIR}/$$FILE" ; \
 	done
+
+install: blobinstall
