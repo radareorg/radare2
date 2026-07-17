@@ -2462,3 +2462,157 @@ esp before :0x00178000
 esp after  :0x00178000
 EOF
 RUN
+
+NAME=x86 shl cf/of/sf from result and destination width
+FILE=malloc://64
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+aei
+aeim
+wx d1e0
+ar eax=1
+ar eip=0
+aes
+ar cf
+ar of
+ar sf
+ar eax=0x80000000
+ar eip=0
+aes
+ar cf
+ar of
+ar zf
+wx c1e005
+ar eax=0x04000000
+ar eip=0
+aes
+ar cf
+ar sf
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000000
+0x00000000
+0x00000001
+0x00000001
+0x00000001
+0x00000000
+0x00000001
+EOF
+RUN
+
+NAME=x86 neg pf from parity and of on int_min
+FILE=malloc://64
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+aei
+aeim
+wx f7d8
+ar eax=4
+ar eip=0
+aes
+ar pf
+ar of
+ar eax=0x80000000
+ar eip=0
+aes
+ar of
+ar pf
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=x86 shl variants 8/16-bit cl and memory destination
+FILE=malloc://64
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+aei
+aeim
+wx d0e0
+ar al=0x40
+ar eip=0
+s 0
+aes
+ar cf
+ar sf
+ar of
+wx 66d1e0
+ar ax=0x4000
+ar eip=0
+s 0
+aes
+ar cf
+ar sf
+wx d3e0
+ar eax=0x10000000
+ar ecx=3
+ar eip=0
+s 0
+aes
+ar cf
+ar sf
+wx d120
+ar eax=0x20
+wv4 0x80000000 @ 0x20
+ar eip=0
+s 0
+aes
+ar cf
+ar of
+ar zf
+pv4 @ 0x20
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000001
+0x00000000
+0x00000001
+0x00000000
+0x00000001
+0x00000001
+0x00000001
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=x86 neg variants 8/16-bit and memory destination
+FILE=malloc://64
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+aei
+aeim
+wx f6d8
+ar al=4
+ar eip=0
+s 0
+aes
+ar pf
+ar cf
+wx 66f7d8
+ar ax=0x8000
+ar eip=0
+s 0
+aes
+ar of
+wx f718
+ar eax=0x20
+wv4 4 @ 0x20
+ar eip=0
+s 0
+aes
+ar pf
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000001
+0x00000001
+EOF
+RUN

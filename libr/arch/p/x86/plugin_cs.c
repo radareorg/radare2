@@ -1226,49 +1226,27 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_SAL:
 		{
 		ut32 bitsize;
-		src = getarg (&gop, 1, 0, NULL, &bitsize);
-		dst = getarg (&gop, 0, 0, NULL, NULL);
-		// dst2 = getarg (&gop, 0, 1, "<<", &bitsize);
-#if 0
-	// https://c9x.me/x86/html/file_module_x86_id_285.html
-	The CF flag contains the value of the last bit shifted out of the destination operand;
-		it is undefined for SHL and SHR instructions where the count is greater than or equal to the size (in bits) of the destination operand.
-	The OF flag is affected only for 1-bit shifts (see "Description" above); otherwise, it is undefined.
-	The SF, ZF, and PF flags are set according to the result
-	If the count is 0, the flags are not affected.
-	For a non-zero count, the AF flag is undefined.
-#endif
-		ut64 val = 0;
-		switch (gop.insn->detail->x86.operands[0].size) {
-		case 1:
-			val = 0x80;
-			break;
-		case 2:
-			val = 0x8000;
-			break;
-		case 4:
-			val = 0x80000000;
-			break;
-		case 8:
-			val = (ut64)0x8000000000000000ULL;
-			break;
-		default:
-			R_LOG_ERROR ("unknown operand size: %d", gop.insn->detail->x86.operands[0].size);
-			val = 256;
-		}
-		// OLD: esilprintf (op, "0,%s,!,!,?{,1,%s,-,%s,<<,0x%"PFMT64x",&,!,!,^,},%s,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,cf,=", src, src, dst, val, src, dst2, bitsize - 1);
+		src = getarg (&gop, 1, 0, NULL, NULL);
+		dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
+		dst_w = getarg (&gop, 0, 1, NULL, NULL);
+		// CF = last bit shifted out = (dst >> (width - count)) & 1 from the
+		// pre-shift value; OF is defined only for 1-bit shifts as msb(result) ^ CF.
+		// Read via dst_r, write via dst_w so memory destinations store the result.
 		esilprintf (op,
-			"%s,0x%"PFMT64x",&,POP,$z,cf,:=,"
-			"%s,%s,<<=,"
+			"%s,%d,-,%s,>>,1,&,cf,:=,"
+			"%s,%s,<<,%s,"
 			"$z,zf,:=,"
 			"$p,pf,:=,"
-			"%d,$s,sf,:=",
-			dst, val,
-			src, dst,
-			bitsize - 1);
+			"%d,$s,sf,:=,"
+			"%d,%s,>>,1,&,cf,^,of,:=",
+			src, bitsize, dst_r,
+			src, dst_r, dst_w,
+			bitsize - 1,
+			bitsize - 1, dst_r);
 		free (src);
-		free (dst);
-	   	}
+		free (dst_r);
+		free (dst_w);
+		}
 		break;
 	case X86_INS_SALC:
 		esilprintf (op, "$z,DUP,zf,=,al,=");
@@ -2304,8 +2282,11 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			default:
 				R_LOG_ERROR ("Neg: Unhandled bitsize %d", bitsize);
 			}
-			esilprintf (op, "%s,!,!,cf,:=,%s,0x%"PFMT64x",^,1,+,%s,$z,zf,:=,0,of,:=,%d,$s,sf,:=,%d,$o,pf,:=",
-				src, src, xor, dst, bitsize - 1, bitsize - 1);
+			// OF set iff the operand is INT_MIN (the only value that overflows on
+			// negation); PF from the parity term, not the overflow term
+			ut64 intmin = 1ULL << (bitsize - 1);
+			esilprintf (op, "%s,!,!,cf,:=,%s,0x%"PFMT64x",^,1,+,%s,$z,zf,:=,%s,0x%"PFMT64x",^,!,of,:=,%d,$s,sf,:=,$p,pf,:=",
+				src, src, xor, dst, src, intmin, bitsize - 1);
 			free (src);
 			free (dst);
 		}
