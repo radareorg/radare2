@@ -1208,3 +1208,269 @@ EXPECT=<<EOF
 (nofunc) 0x8 [ICOD:r--] add x16, x16, 0x40
 EOF
 RUN
+
+NAME=subs x flags nzcv
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 200002eb
+ar x1=5
+ar x2=1
+aes
+ar cf
+ar vf
+ar zf
+ar pc=0
+ar x1=1
+ar x2=5
+aes
+ar cf
+ar nf
+ar pc=0
+ar x1=0x8000000000000000
+ar x2=1
+aes
+ar vf
+ar pc=0
+ar x1=7
+ar x2=7
+aes
+ar zf
+ar cf
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000000
+0x00000000
+0x00000001
+0x00000001
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=subs w flags
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2000026b
+ar x1=1
+ar x2=5
+aes
+ar cf
+ar nf
+ar pc=0
+ar x1=0x80000000
+ar x2=1
+aes
+ar vf
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=adds x flags nzcv
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 200002ab
+ar x1=0xffffffffffffffff
+ar x2=1
+aes
+ar cf
+ar zf
+ar x0
+ar pc=0
+ar x1=0x7fffffffffffffff
+ar x2=1
+aes
+ar vf
+ar nf
+ar cf
+ar pc=0
+ar x1=2
+ar x2=3
+aes
+ar x0
+ar cf
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000000
+0x00000001
+0x00000001
+0x00000000
+0x00000005
+0x00000000
+EOF
+RUN
+
+NAME=adds w flags
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2000022b
+ar x1=0xffffffff
+ar x2=1
+aes
+ar cf
+ar zf
+ar x0
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=cmp vf with int64 min subtrahend
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 3f0002eb
+ar x1=0xffffffffffffffff
+ar x2=0x8000000000000000
+aes
+ar vf
+ar cf
+ar nf
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=cmn flags
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 3f0002ab
+ar x1=0
+ar x2=1
+aes
+ar nf
+ar zf
+ar cf
+ar pc=0
+ar x1=0xffffffffffffffff
+ar x2=1
+aes
+ar cf
+ar zf
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000000
+0x00000000
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=ands clears cv
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 200002ea
+ar cf=1
+ar vf=1
+ar x1=0xf0
+ar x2=0x0f
+aes
+ar zf
+ar cf
+ar vf
+ar pc=0
+ar x1=0x8000000000000000
+ar x2=0x8000000000000000
+aes
+ar nf
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000000
+0x00000001
+EOF
+RUN
+
+NAME=adcs carry chain wrap
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 200002ba
+ar cf=1
+ar x1=5
+ar x2=0xffffffffffffffff
+aes
+ar x0
+ar cf
+ar pc=0
+ar cf=0
+ar x1=5
+ar x2=0xffffffffffffffff
+aes
+ar x0
+ar cf
+EOF
+EXPECT=<<EOF
+0x00000005
+0x00000001
+0x00000004
+0x00000001
+EOF
+RUN
+
+NAME=adc adds carry in
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2000029a
+ar cf=1
+ar x1=2
+ar x2=3
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+0x00000006
+EOF
+RUN
+
+NAME=negs flags
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx e00301eb
+ar x1=0
+aes
+ar cf
+ar zf
+ar pc=0
+ar x1=1
+aes
+ar x0
+ar nf
+ar cf
+ar pc=0
+ar x1=0x8000000000000000
+aes
+ar vf
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0xffffffffffffffff
+0x00000001
+0x00000000
+0x00000001
+EOF
+RUN

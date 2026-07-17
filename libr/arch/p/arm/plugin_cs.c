@@ -1003,8 +1003,6 @@ static int regsize64(cs_insn *insn, int n) {
 #define REGBITS64(x) (8 * regsize64 (insn, x))
 #define REGBITS32(x) (8 * regsize32 (insn, x))
 
-#define SET_FLAGS() r_strbuf_appendf (&op->esil, ",$z,zf,:=,%d,$s,nf,:=,%d,$c,cf,:=,%d,$o,vf,:=", REGBITS64 (0) - 1, REGBITS64 (0), REGBITS64 (0) -1);
-
 static int vector_size(cs_arm64_op *op) {
 #if CS_API_MAJOR == 4
 	if (op->vess) {
@@ -1297,11 +1295,13 @@ static void arg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i, 
 	}
 }
 
-#define OPCALL(opchar) arm64math(as, op, addr, buf, len, handle, insn, opchar, 0, 0)
-#define OPCALL_NEG(opchar) arm64math(as, op, addr, buf, len, handle, insn, opchar, 1, 0)
-#define OPCALL_SIGN(opchar, sign) arm64math(as, op, addr, buf, len, handle, insn, opchar, 0, sign)
+#define OPCALL(opchar) arm64math(as, op, addr, buf, len, handle, insn, opchar, 0, 0, 0)
+#define OPCALL_NEG(opchar) arm64math(as, op, addr, buf, len, handle, insn, opchar, 1, 0, 0)
+#define OPCALL_SIGN(opchar, sign) arm64math(as, op, addr, buf, len, handle, insn, opchar, 0, sign, 0)
+#define OPCALL_FLAGS(opchar, fl) arm64math(as, op, addr, buf, len, handle, insn, opchar, 0, 0, fl)
+#define OPCALL_NEG_FLAGS(opchar, fl) arm64math(as, op, addr, buf, len, handle, insn, opchar, 1, 0, fl)
 
-static void arm64math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate, int sign) {
+static void arm64math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate, int sign, char flags) {
 	cs_arm64_op dst = INSOP64 (0);
 	int i, c = (OPCOUNT64 () > 2) ? 1 : 0;
 
@@ -1322,6 +1322,45 @@ static void arm64math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			}
 		}
 	} else {
+		if (flags) {
+			const int bits = REGBITS64 (0);
+			if (flags == 'l') {
+				r_strbuf_append (&op->esil, "0,");
+			}
+			VECARG64_APPEND (&op->esil, c + 1, -1, sign);
+			if (negate) {
+				r_strbuf_append (&op->esil, ",-1,^");
+			}
+			if (flags == 'a') {
+				// a - (-b) drives $c/$o through esil old/cur as an addition
+				r_strbuf_append (&op->esil, ",-1,*");
+			}
+			COMMA (&op->esil);
+			VECARG64_APPEND (&op->esil, c, -1, sign);
+			switch (flags) {
+			case 'a':
+				r_strbuf_appendf (&op->esil, ",==,$z,zf,:=,%d,$s,nf,:=,%d,$c,cf,:=,%d,$o,vf,:=,", bits - 1, bits - 1, bits - 1);
+				break;
+			case 's':
+				// $o after == is unsound for subtraction, V needs ((a^b)&(a^(a-b)))>>msb
+				r_strbuf_appendf (&op->esil, ",==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,", bits - 1, bits, bits - 1);
+				VECARG64_APPEND (&op->esil, c + 1, -1, sign);
+				COMMA (&op->esil);
+				VECARG64_APPEND (&op->esil, c, -1, sign);
+				r_strbuf_append (&op->esil, ",^,");
+				VECARG64_APPEND (&op->esil, c + 1, -1, sign);
+				COMMA (&op->esil);
+				VECARG64_APPEND (&op->esil, c, -1, sign);
+				r_strbuf_append (&op->esil, ",-,");
+				VECARG64_APPEND (&op->esil, c, -1, sign);
+				r_strbuf_append (&op->esil, ",^,&,>>,vf,:=,");
+				break;
+			case 'l':
+				// A64 flag-setting logical ops set NZ from the result and clear CV
+				r_strbuf_appendf (&op->esil, ",%s,==,$z,zf,:=,%d,$s,nf,:=,0,cf,:=,0,vf,:=,", opchar, bits - 1);
+				break;
+			}
+		}
 		VECARG64_APPEND (&op->esil, c + 1, -1, sign);
 		if (negate) {
 			r_strbuf_append (&op->esil, ",-1,^");
@@ -1459,8 +1498,11 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_ADDG:
 #endif
 	case ARM64_INS_ADD:
-	case ARM64_INS_ADC: // Add with carry.
 		OPCALL ("+");
+		break;
+	case ARM64_INS_ADC:
+		r_strbuf_setf (&op->esil, "cf,%s,+,%s,+,%s,=",
+			REG64 (2), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_SUB:
 		OPCALL ("-");
@@ -1499,33 +1541,45 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		OPCALL_NEG ("&");
 		break;
 	case ARM64_INS_ADDS:
-	case ARM64_INS_ADCS:
-		OPCALL ("+");
-		SET_FLAGS();
+		OPCALL_FLAGS ("+", 'a');
 		break;
+	case ARM64_INS_ADCS: {
+		const int bits = REGBITS64 (0);
+		char sum[64];
+		if (bits == 32) {
+			snprintf (sum, sizeof (sum), "0xffffffff,cf,%s,+,%s,+,&", REG64 (2), REG64 (1));
+		} else {
+			snprintf (sum, sizeof (sum), "cf,%s,+,%s,+", REG64 (2), REG64 (1));
+		}
+		// C=(r<a)|(cf&(r==a)) and V=(~(a^b)&(a^r))>>msb; the new carry stays on the stack until the sum stored below has read the old cf
+		r_strbuf_setf (&op->esil,
+			"0,%s,==,$z,zf,:=,%d,$s,nf,:=,"
+			"%s,%s,==,%d,$b,cf,%s,%s,^,!,&,|,"
+			"%d,%s,%s,^,-1,^,%s,%s,^,&,>>,vf,:=,"
+			"cf,%s,+,%s,+,%s,=,cf,:=",
+			sum, bits - 1,
+			REG64 (1), sum, bits, REG64 (1), sum,
+			bits - 1, REG64 (2), REG64 (1), sum, REG64 (1),
+			REG64 (2), REG64 (1), REG64 (0));
+		break;
+	}
 	case ARM64_INS_SUBS:
-		OPCALL ("-");
-		SET_FLAGS();
+		OPCALL_FLAGS ("-", 's');
 		break;
 	case ARM64_INS_ANDS:
-		OPCALL ("&");
-		SET_FLAGS();
+		OPCALL_FLAGS ("&", 'l');
 		break;
 	case ARM64_INS_NANDS:
-		OPCALL_NEG ("&");
-		SET_FLAGS();
+		OPCALL_NEG_FLAGS ("&", 'l');
 		break;
 	case ARM64_INS_ORRS:
-		OPCALL ("|");
-		SET_FLAGS();
+		OPCALL_FLAGS ("|", 'l');
 		break;
 	case ARM64_INS_EORS:
-		OPCALL ("^");
-		SET_FLAGS();
+		OPCALL_FLAGS ("^", 'l');
 		break;
 	case ARM64_INS_ORNS:
-		OPCALL_NEG ("|");
-		SET_FLAGS();
+		OPCALL_NEG_FLAGS ("|", 'l');
 		break;
 #endif
 	case ARM64_INS_EOR:
@@ -2033,8 +2087,19 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		ARG64_APPEND (&op->esil, 1);
 		COMMA (&op->esil);
 		ARG64_APPEND (&op->esil, 0);
-		r_strbuf_appendf (&op->esil, ",==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=",
+		r_strbuf_appendf (&op->esil, ",==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,",
 			REGBITS64 (0) - 1, REGBITS64 (0), REGBITS64 (0) - 1);
+		// $o after == is unsound for subtraction, V needs ((a^b)&(a^(a-b)))>>msb
+		ARG64_APPEND (&op->esil, 1);
+		COMMA (&op->esil);
+		ARG64_APPEND (&op->esil, 0);
+		r_strbuf_append (&op->esil, ",^,");
+		ARG64_APPEND (&op->esil, 1);
+		COMMA (&op->esil);
+		ARG64_APPEND (&op->esil, 0);
+		r_strbuf_append (&op->esil, ",-,");
+		ARG64_APPEND (&op->esil, 0);
+		r_strbuf_append (&op->esil, ",^,&,>>,vf,:=");
 
 		if (insn->id == ARM64_INS_CCMP || insn->id == ARM64_INS_CCMN) {
 			r_strbuf_append (&op->esil, ",");
@@ -2044,11 +2109,13 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	case ARM64_INS_CMN:
 	case ARM64_INS_CCMN:
+		// negate the src operand so old/cur describe the addition
 		ARG64_APPEND (&op->esil, 1);
+		r_strbuf_append (&op->esil, ",-1,*");
 		COMMA (&op->esil);
 		ARG64_APPEND (&op->esil, 0);
-		r_strbuf_appendf (&op->esil, ",-1,*,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=",
-			REGBITS64 (0) - 1, REGBITS64 (0), REGBITS64 (0) - 1);
+		r_strbuf_appendf (&op->esil, ",==,$z,zf,:=,%d,$s,nf,:=,%d,$c,cf,:=,%d,$o,vf,:=",
+			REGBITS64 (0) - 1, REGBITS64 (0) - 1, REGBITS64 (0) - 1);
 
 		if (insn->id == ARM64_INS_CCMN) {
 			r_strbuf_append (&op->esil, ",");
@@ -2497,6 +2564,16 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_NEG:
 #if CS_API_MAJOR > 3
 	case ARM64_INS_NEGS:
+		if (insn->id == ARM64_INS_NEGS) {
+			ARG64_APPEND (&op->esil, 1);
+			r_strbuf_appendf (&op->esil, ",0,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,",
+				REGBITS64 (0) - 1, REGBITS64 (0), REGBITS64 (0) - 1);
+			// V = (b & -b) >> msb, only INT_MIN overflows on negation
+			ARG64_APPEND (&op->esil, 1);
+			COMMA (&op->esil);
+			ARG64_APPEND (&op->esil, 1);
+			r_strbuf_append (&op->esil, ",0,-,&,>>,vf,:=,");
+		}
 #endif
 		ARG64_APPEND (&op->esil, 1);
 		r_strbuf_appendf (&op->esil, ",0,-,%s,=", REG64 (0));
