@@ -166,7 +166,7 @@ static RCoreHelpMessage help_msg_i = {
 	"io", " [file]", "load info from file (or last opened) use bin.baddr",
 	"iO", "[?]", "perform binary operation (dump, resize, change sections, ...)",
 	"ir", "[?][jq*]", "list the relocations (iR is an accidental alias for 'ir')",
-	"iu", "[?][,jq*x]", "list or extract binary resources",
+	"iu", "[?][,joq*x]", "list, open or extract binary resources",
 	"ix", "[?][u|S|SS] [directory]", "extract resources, sections or segments",
 	"is", "[?]", "list the symbols",
 	"iS", "[?]", "list sections, segments and compute their hash",
@@ -179,11 +179,12 @@ static RCoreHelpMessage help_msg_i = {
 };
 
 static RCoreHelpMessage help_msg_iu = {
-	"Usage: iu", "[,jq*x] [directory]", "Inspect or safely extract binary resources",
+	"Usage: iu", "[,joq*x] [directory]", "Inspect or safely extract binary resources",
 	"iu", "", "list resources with all available metadata",
 	"iu,", "[table-query]", "list resources in table using given expression",
 	"iu*", "", "emit resource flags as radare commands",
 	"iuj", "", "list resources in JSON",
+	"iuo", " [name|id]", "open the given resource as a new file (copied into malloc://)",
 	"iuq", "", "list resource address, size, type and name",
 	"iuqq", "", "list resource names only",
 	"iux", " [directory]", "extract all resources (default: <file>.resources; alias for ixu)",
@@ -2065,6 +2066,69 @@ static void cmd_info_extract(RCore *core, const char *output, bool resources, bo
 	}
 }
 
+static RBinResource *find_resource(RVecRBinResource *resources, const char *arg) {
+	RBinResource *r;
+	R_VEC_FOREACH (resources, r) {
+		if (R_STR_ISNOTEMPTY (r->name) && !strcmp (r->name, arg)) {
+			return r;
+		}
+	}
+	if (isdigit (*arg)) {
+		const ut64 n = r_num_get (NULL, arg);
+		R_VEC_FOREACH (resources, r) {
+			if (r->index == n || r->id == n) {
+				return r;
+			}
+		}
+	}
+	return NULL;
+}
+
+static void cmd_iuo(RCore *core, const char *arg) {
+	if (R_STR_ISEMPTY (arg)) {
+		r_core_cmd_help_match (core, help_msg_iu, "iuo");
+		return;
+	}
+	RBinFile *bf = r_bin_cur (core->bin);
+	RVecRBinResource *resources = bf? r_bin_file_get_resources (bf): NULL;
+	if (!resources || RVecRBinResource_empty (resources)) {
+		R_LOG_ERROR ("No resources found in the current binary");
+		r_core_return_value (core, 1);
+		return;
+	}
+	RBinResource *resource = find_resource (resources, arg);
+	if (!resource) {
+		R_LOG_ERROR ("Cannot find any resource matching '%s'", arg);
+		r_core_return_value (core, 1);
+		return;
+	}
+	RBuffer *buf = r_bin_file_get_resource_data (bf, resource, !core->bin->options.resraw);
+	const ut64 size = buf? r_buf_size (buf): 0;
+	// copy the bytes out so the new fd holds no reference into bf->buf
+	ut8 *data = (size > 0 && size <= INT_MAX)? malloc (size): NULL;
+	if (!data || r_buf_read_at (buf, 0, data, size) != (st64)size) {
+		R_LOG_ERROR ("Cannot read resource %u", resource->index);
+		free (data);
+		r_unref (buf);
+		r_core_return_value (core, 1);
+		return;
+	}
+	r_unref (buf);
+	char *uri = r_str_newf ("malloc://%"PFMT64u, size);
+	RIODesc *fd = r_io_open (core->io, uri, R_PERM_RW, 0);
+	free (uri);
+	if (fd) {
+		r_io_desc_write (fd, data, (int)size);
+		// oba 0 loads bin info; obo raises the new binfile so
+		// config (arch/bits/baddr) and seek land on it
+		r_core_cmdf (core, "oba 0;obo %d", fd->fd);
+	} else {
+		R_LOG_ERROR ("Cannot open malloc://%"PFMT64u" to hold the resource", size);
+		r_core_return_value (core, 1);
+	}
+	free (data);
+}
+
 static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const bool va, const bool is_array) {
 	PJ *pj = *_pj;
 	if (input[1] == 'x') { // "iSx"
@@ -3716,6 +3780,9 @@ static int cmd_info(void *data, const char *input) {
 			switch (input[1]) {
 			case 'x':
 				cmd_info_extract (core, r_str_trim_head_ro (input + 2), true, false);
+				break;
+			case 'o': // "iuo"
+				cmd_iuo (core, r_str_trim_head_ro (input + 2));
 				break;
 			case ',':
 				R_FREE (core->table_query);

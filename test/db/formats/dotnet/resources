@@ -6,3 +6,27 @@ EXPECT=<<EOF
 0x004026d4 15652 MANIFESTRESOURCE AStyleWhore.Form1.resources
 EOF
 RUN
+
+NAME=iuo opens a resource as a malloc file
+FILE=bins/cil/AStyleWhore.exe
+CMDS=<<EOF
+iuo AStyleWhore.Form1.resources
+o~malloc
+p8 8 @ 0
+EOF
+EXPECT=<<EOF
+ 6 * rw- 0x00003d24 malloc://15652
+cecaefbe01000000
+EOF
+RUN
+
+NAME=iuo opens a resource by id
+FILE=bins/cil/AStyleWhore.exe
+CMDS=<<EOF
+iuo 3
+o~malloc
+EOF
+EXPECT=<<EOF
+ 6 * rw- 0x000010a8 malloc://4264
+EOF
+RUN
