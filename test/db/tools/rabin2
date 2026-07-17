@@ -1078,28 +1078,28 @@ Author: nibble
 EOF
 RUN
 
-NAME=rabin2 -U
+NAME=rabin2 -u
 FILE=bins/pe/resource.exe
-CMDS=!rabin2 -U ${R2_FILE} | grep -c Resource
+CMDS=!rabin2 -u ${R2_FILE} | grep -c Resource
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=rabin2 -Uj PE
+NAME=rabin2 -uj PE
 FILE=bins/pe/standard.exe
-CMDS=!rabin2 -j -U ${R2_FILE}
+CMDS=!rabin2 -j -u ${R2_FILE}
 EXPECT=<<EOF
 {"resources":[{"name":"1576","index":0,"type":"ICON","vaddr":4198784,"paddr":896,"size":5672,"id":1576,"type_id":3,"lang":"LANG_NEUTRAL","language_id":0,"codepage":0,"named":false,"timestamp":"Thu Jan  1 00:00:00 1970"},{"name":"10","index":1,"type":"STRING","vaddr":4205072,"paddr":7184,"size":76,"id":10,"type_id":6,"lang":"LANG_NEUTRAL","language_id":0,"codepage":0,"named":false,"timestamp":"Thu Jan  1 00:00:00 1970"},{"name":"788","index":2,"type":"GROUP_ICON","vaddr":4204464,"paddr":6576,"size":20,"id":788,"type_id":14,"lang":"LANG_NEUTRAL","language_id":0,"codepage":0,"named":false,"timestamp":"Thu Jan  1 00:00:00 1970"},{"name":"1","index":3,"type":"VERSION","vaddr":4204496,"paddr":6608,"size":452,"id":1,"type_id":16,"lang":"LANG_NEUTRAL","language_id":0,"codepage":0,"named":false,"timestamp":"Thu Jan  1 00:00:00 1970"},{"name":"1","index":4,"type":"MANIFEST","vaddr":4204960,"paddr":7072,"size":74,"id":1,"type_id":24,"lang":"LANG_NEUTRAL","language_id":0,"codepage":0,"named":false,"timestamp":"Thu Jan  1 00:00:00 1970"}]}
 EOF
 RUN
 
-NAME=rabin2 -Uj NE
+NAME=rabin2 -uj NE
 FILE=bins/ne/anim8.exe
 CMDS=<<EOF
-!rabin2 -j -U ${R2_FILE} | grep -o '"name":"ICONX","index":0,"type":"GROUP_ICON","vaddr":47104,"paddr":47104,"size":512,"id":null,"type_id":14,"lang":null,"language_id":0,"codepage":0,"named":true,"timestamp":null'
-!rabin2 -j -U ${R2_FILE} | grep -o '"name":"1","index":38,"type":"ICON","vaddr":312832,"paddr":312832,"size":1024,"id":1,"type_id":3,"lang":null,"language_id":0,"codepage":0,"named":false,"timestamp":null'
-!rabin2 -j -U ${R2_FILE} | grep -o '"index":' | wc -l | tr -d ' '
+!rabin2 -j -u ${R2_FILE} | grep -o '"name":"ICONX","index":0,"type":"GROUP_ICON","vaddr":47104,"paddr":47104,"size":512,"id":null,"type_id":14,"lang":null,"language_id":0,"codepage":0,"named":true,"timestamp":null'
+!rabin2 -j -u ${R2_FILE} | grep -o '"name":"1","index":38,"type":"ICON","vaddr":312832,"paddr":312832,"size":1024,"id":1,"type_id":3,"lang":null,"language_id":0,"codepage":0,"named":false,"timestamp":null'
+!rabin2 -j -u ${R2_FILE} | grep -o '"index":' | wc -l | tr -d ' '
 EOF
 EXPECT=<<EOF
 "name":"ICONX","index":0,"type":"GROUP_ICON","vaddr":47104,"paddr":47104,"size":512,"id":null,"type_id":14,"lang":null,"language_id":0,"codepage":0,"named":true,"timestamp":null
@@ -1111,9 +1111,9 @@ RUN
 NAME=rabin2 resource quiet and physical modes
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
-!rabin2 -q -U ${R2_FILE}
-!rabin2 -qq -U ${R2_FILE}
-!rabin2 -p -q -U ${R2_FILE}
+!rabin2 -q -u ${R2_FILE}
+!rabin2 -qq -u ${R2_FILE}
+!rabin2 -p -q -u ${R2_FILE}
 EOF
 EXPECT=<<EOF
 0x00401180 5672 ICON 1576
@@ -1138,7 +1138,7 @@ NAME=rabin2 raw resource extraction
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
 rmrf .tmp/rabin2-resource-extract
-!!rabin2 -xU -o .tmp/rabin2-resource-extract ${R2_FILE}
+!!rabin2 -xu -o .tmp/rabin2-resource-extract ${R2_FILE}
 !!rabin2 -Z .tmp/rabin2-resource-extract/resource_ICON_1576_0.bin
 !!rabin2 -Z .tmp/rabin2-resource-extract/resource_STRING_10_1.bin
 !!rabin2 -Z .tmp/rabin2-resource-extract/resource_GROUP_ICON_788_2.bin
@@ -1177,7 +1177,7 @@ NAME=rabin2 raw named resource extraction
 FILE=bins/ne/anim8.exe
 CMDS=<<EOF
 rmrf .tmp/rabin2-named-resource-extract
-!!rabin2 -xU -o .tmp/rabin2-named-resource-extract ${R2_FILE}
+!!rabin2 -xu -o .tmp/rabin2-named-resource-extract ${R2_FILE}
 !!rabin2 -Z .tmp/rabin2-named-resource-extract/resource_GROUP_ICON_named_0.bin
 !!rabin2 -Z .tmp/rabin2-named-resource-extract/resource_ICON_1_38.bin
 rmrf .tmp/rabin2-named-resource-extract

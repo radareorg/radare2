@@ -3666,43 +3666,43 @@ imp.exit
 EOF
 RUN
 
-NAME=iU help
+NAME=iu help
 FILE=-
 CMDS=<<EOF
-iU?~iUx
-iU?~overwritten
+iu?~iux
+iu?~overwritten
 EOF
 EXPECT=<<EOF
-| iUx [directory]   extract all resources (default: <file>.resources; alias for ixU)
+| iux [directory]   extract all resources (default: <file>.resources; alias for ixu)
 |                   output names are sanitized and existing files are never overwritten
 EOF
 RUN
 
-NAME=iU subcommand help
+NAME=iu subcommand help
 FILE=-
 CMDS=<<EOF
-iU,?
-iU*?
-iUj?
-iUq?
-iUqq?
-iUx?
+iu,?
+iu*?
+iuj?
+iuq?
+iuqq?
+iux?
 EOF
 EXPECT=<<EOF
-| iU,[table-query]  list resources in table using given expression
-| iU*  emit resource flags as radare commands
-| iUj  list resources in JSON
-| iUq  list resource address, size, type and name
-| iUqq  list resource names only
-| iUx [directory]  extract all resources (default: <file>.resources; alias for ixU)
+| iu,[table-query]  list resources in table using given expression
+| iu*  emit resource flags as radare commands
+| iuj  list resources in JSON
+| iuq  list resource address, size, type and name
+| iuqq  list resource names only
+| iux [directory]  extract all resources (default: <file>.resources; alias for ixu)
 EOF
 RUN
 
-NAME=iU invalid subcommand
+NAME=iu invalid subcommand
 FILE=-
-CMDS=iUy
+CMDS=iuy
 EXPECT_ERR=<<EOF
-ERROR: Invalid `y` subcommand, try `iU?`
+ERROR: Invalid `y` subcommand, try `iu?`
 EOF
 RUN
 
@@ -3713,7 +3713,7 @@ ix?~extract all
 iS?~extract all
 EOF
 EXPECT=<<EOF
-| ixU [directory]   extract all resources (alias for iUx)
+| ixu [directory]   extract all resources (alias for iux)
 | ixS [directory]   extract all sections (alias for iSx)
 | ixSS [directory]  extract all segments (alias for iSSx)
 | iSx [directory]       extract all sections (default: <file>.sections; alias for ixS)
@@ -3750,9 +3750,9 @@ fb026f99dd41eb994947dc2314fb40e7c016ebbdb7533a2efd51629f3bf234db
 EOF
 RUN
 
-NAME=iU*
+NAME=iu*
 FILE=bins/pe/standard.exe
-CMDS=iU*
+CMDS=iu*
 EXPECT=<<EOF
 fs resources
 f resource.0 5672 0x00401180
@@ -3764,9 +3764,9 @@ fs *
 EOF
 RUN
 
-NAME=iU table query
+NAME=iu table query
 FILE=bins/pe/standard.exe
-CMDS=iU,size/sort,type/cols/name
+CMDS=iu,size/sort,type/cols/name
 EXPECT=<<EOF
 type       name
 ---------------
@@ -3778,9 +3778,9 @@ ICON       1576
 EOF
 RUN
 
-NAME=iUj
+NAME=iuj
 FILE=bins/pe/standard.exe
-CMDS=iUj~{}
+CMDS=iuj~{}
 EXPECT=<<EOF
 [
   {
@@ -3862,13 +3862,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=iU quiet and physical modes
+NAME=iu quiet and physical modes
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
-iUq
-iUqq
+iuq
+iuqq
 e io.va=false
-iUq
+iuq
 EOF
 EXPECT=<<EOF
 0x00401180 5672 ICON 1576
