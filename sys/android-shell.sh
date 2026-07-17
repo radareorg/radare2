@@ -105,16 +105,20 @@ echo ROOT=$ROOT
 echo NDK="$NDK"
 echo NDK_ARCH=$NDK_ARCH
 
-if [ -x /tmp/ndk/bin/ndk-gcc ]; then
+TOOLCHAIN_ID="${NDK}:${ARCH}"
+TOOLCHAIN_ID_FILE=/tmp/ndk/.r2-toolchain
+CURRENT_TOOLCHAIN_ID=`cat "${TOOLCHAIN_ID_FILE}" 2>/dev/null`
+if [ -x /tmp/ndk/bin/ndk-gcc ] && [ "${CURRENT_TOOLCHAIN_ID}" = "${TOOLCHAIN_ID}" ]; then
 	echo "NDK toolchain already initialized."
 else
 	echo "Building the standalone NDK toolchain..."
-	${NDK}/build/tools/make_standalone_toolchain.py --arch=${ARCH} --install-dir=/tmp/ndk/ --api=28 --force
+	${NDK}/build/tools/make_standalone_toolchain.py --arch=${ARCH} --install-dir=/tmp/ndk/ --api=28 --force || exit 1
 	(
 	cd /tmp/ndk/bin/ && \
 	ln -fs clang ndk-gcc && \
 	ln -fs clang++ ndk-g++
-	)
+	) || exit 1
+	printf '%s\n' "${TOOLCHAIN_ID}" > "${TOOLCHAIN_ID_FILE}"
 fi
 if [ "${BUILD}" != 0 ]; then
 	if [ ! -d "${NDK}" ]; then
