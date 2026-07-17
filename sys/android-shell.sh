@@ -66,6 +66,18 @@ if [ ! -x /work ]; then
 			fi
 		fi
 		if [ -z "${NDK}" ]; then
+			# Checking if Android NDK comes with Android Studio
+			D=$HOME/Library/Android/sdk/ndk
+			if [ -d "${D}" ]; then
+				for a in $(cd "$D" && ls) ; do
+					if [ -x "$D/$N/$a/ndk-build" ]; then
+						NDK="$D/$N"
+						break
+					fi
+				done
+			fi
+		fi
+		if [ -z "${NDK}" ]; then
 			# Checking if Android NDK is installed with macOS's brew
 			D=/usr/local/Caskroom/android-ndk/
 			if [ -d "${D}" ]; then
