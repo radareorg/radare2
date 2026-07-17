@@ -32,6 +32,7 @@ jobs:
       uses: actions/checkout@v7
       with:
           repository: radareorg/radare2-testbins
+          ref: master
           path: test/bins
     - name: Install dependencies
       run: |
@@ -85,6 +86,7 @@ jobs:
       uses: actions/checkout@v7
       with:
           repository: radareorg/radare2-testbins
+          ref: master
           path: test/bins
     - name: Configure, build and install
       env:
@@ -167,6 +169,7 @@ jobs:
       uses: actions/checkout@v7
       with:
           repository: radareorg/radare2-testbins
+          ref: master
           path: test/bins
     - name: Configure, build and install
       env:
@@ -215,6 +218,7 @@ jobs:
       uses: actions/checkout@v7
       with:
           repository: radareorg/radare2-testbins
+          ref: master
           path: test/bins
     - name: Install dependencies
       run: |
