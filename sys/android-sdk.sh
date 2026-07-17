@@ -64,7 +64,9 @@ buildAbi() {
 	export RANLIB=llvm-ranlib
 
 	echo "Building Android SDK libraries for $android_abi (API $ANDROID_API)"
-	"$make" mrproper
+	if [ -f libr/config.mk ]; then
+		"$make" mrproper
+	fi
 	cp -f "$PLUGINS_CFG" plugins.cfg
 	./configure --with-compiler=android --with-ostype=android \
 		--target="$target" --prefix="$PREFIX" --with-libr \
