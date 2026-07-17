@@ -63,3 +63,24 @@ mov x30, 0
 mov x5, x0
 EOF
 RUN
+
+NAME=pdj negative count with invalid instruction in window
+FILE=malloc://64
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+b 64
+wow 1f2003d5
+wx ffffffff @ 0x24
+s 0x40
+pdj -9~{[0].addr}
+pdj -9~{[2].opcode}
+pdj -9~{[2].size}
+pdj -9~{[8].addr}
+EOF
+EXPECT=<<EOF
+28
+invalid
+4
+60
+EOF
+RUN
