@@ -188,6 +188,8 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		}
 		if (!rs->auth) {
 			r_socket_http_response (rs, 401, "", 0, NULL);
+			r_socket_http_close (rs);
+			continue;
 		}
 		if (!strcmp (rs->method, "GET")) {
 			if (r_str_startswith (rs->path, "/proc/kill/")) {
