@@ -899,11 +899,10 @@ static void set_ca(RAnalOp *op, const char *ra, const char *wm, bool sub, const 
 }
 
 static const char* getspr(PluginData *pd, struct Getarg *gop, int n) {
-	ut32 spr = 0;
 	if (n < 0 || n >= 8) {
 		return NULL;
 	}
-	spr = getarg (gop, 0);
+	const ut32 spr = getarg (gop, n);
 	switch (spr) {
 	case SPR_HID0:
 		return "hid0";
@@ -1436,9 +1435,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			}
 			esilprintf (op, "%s,%s,=[4],%s=", ARG (0), op1, op1);
-			if (strstr (op1, "r1")) {
+			if (INSOP (1).type == PPC_OP_MEM && INSOP (1).mem.base == PPC_REG_R1) {
 				op->stackop = R_ANAL_STACK_INC;
-				op->stackptr = -atoi (op1);
+				op->stackptr = -INSOP (1).mem.disp;
 			}
 			set_toc_ptr (op, pd, insn, stateful);
 			break;
@@ -1494,6 +1493,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			}
 			esilprintf (op, "%s,%s,=[8],%s=", ARG (0), op1, op1);
+			if (INSOP (1).type == PPC_OP_MEM && INSOP (1).mem.base == PPC_REG_R1) {
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = -INSOP (1).mem.disp;
+			}
 			set_toc_ptr (op, pd, insn, stateful);
 			break;
 		case PPC_INS_LBZU:
@@ -2515,6 +2518,22 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		} else if (m0 == 'f') {
 			op->family = R_ANAL_OP_FAMILY_FPU;
 		}
+		if (op->type == R_ANAL_OP_TYPE_NULL && m0 == 'm') {
+			// capstone v5 emits per-spr alias ids for these, never PPC_INS_MFSPR/MTSPR
+			if (!strcmp (insn->mnemonic, "mfspr")) {
+				op->type = R_ANAL_OP_TYPE_MOV;
+				esilprintf (op, "%s,%s,=", PPCSPR (1), ARG (0));
+			} else if (!strcmp (insn->mnemonic, "mtspr")) {
+				op->type = R_ANAL_OP_TYPE_MOV;
+				esilprintf (op, "%s,%s,=", ARG (1), PPCSPR (0));
+			} else if (!strcmp (insn->mnemonic, "mfxer")) {
+				op->type = R_ANAL_OP_TYPE_MOV;
+				esilprintf (op, "xer,%s,=", ARG (0));
+			} else if (!strcmp (insn->mnemonic, "mtxer")) {
+				op->type = R_ANAL_OP_TYPE_MOV;
+				esilprintf (op, "%s,xer,=", ARG (0));
+			}
+		}
 		if (mask & R_ARCH_OP_MASK_VAL) {
 			op_fillval (op, handle, insn);
 		}
@@ -2531,7 +2550,8 @@ static int archinfo(RArchSession *as, ut32 q) {
 	}
 	const char *cpu = as->config->cpu;
 	if (cpu && !strncmp (cpu, "vle", 3)) {
-		return 2;
+		// vle mixes 2-byte se_* and 4-byte e_* forms
+		return (q == R_ARCH_INFO_MAXOP_SIZE)? 4: 2;
 	}
 	return 4;
 }

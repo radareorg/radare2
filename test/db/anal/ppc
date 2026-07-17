@@ -1413,3 +1413,71 @@ EXPECT=<<EOF
 268501000
 EOF
 RUN
+
+NAME=ppc generic mfspr mtspr and xer moves decode as mov with esil
+FILE=malloc://32
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7c7042a67c7043a67c6102a67c6103a6
+aoj 4~{0.type}
+aoj 4~{0.esil}
+aoj 4~{1.type}
+aoj 4~{1.esil}
+aoj 4~{2.type}
+aoj 4~{2.esil}
+aoj 4~{3.type}
+aoj 4~{3.esil}
+EOF
+EXPECT=<<EOF
+mov
+spr_272,r3,=
+mov
+r3,spr_272,=
+mov
+xer,r3,=
+mov
+r3,xer,=
+EOF
+RUN
+
+NAME=ppc stwu stack tracking only for r1 base
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 9421fff894aafff8
+ao 2~stack
+EOF
+EXPECT=<<EOF
+stackop: inc
+stackptr: 8
+EOF
+RUN
+
+NAME=ppc stdu stack tracking only for r1 base
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx f821ff91f8aaff91
+ao 2~stack
+EOF
+EXPECT=<<EOF
+stackop: inc
+stackptr: 112
+EOF
+RUN
+
+NAME=ppc vle archinfo reports 2-byte min and 4-byte max op size
+FILE=malloc://16
+ARGS=-a ppc -b 32
+CMDS=<<EOF
+e asm.cpu=vle
+aia
+EOF
+EXPECT=<<EOF
+minopsz 2
+maxopsz 4
+invopsz 2
+dtalign 2
+codealign 2
+EOF
+RUN
