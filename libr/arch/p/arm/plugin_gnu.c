@@ -92,7 +92,7 @@ static int op_thumb(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, i
 			return op->size;
 		}
 	}
-	if (ins == 0xbf) {
+	if (ins == 0xbf00) {
 		// TODO: add support for more NOP instructions
 		op->type = R_ANAL_OP_TYPE_NOP;
 	} else if (((op_code = ((ins & B4 (B1111, B1000, 0, 0)) >> 11)) >= 12 && op_code <= 17)) {
@@ -108,18 +108,18 @@ static int op_thumb(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, i
 		} else {
 			op->type = R_ANAL_OP_TYPE_STORE;
 		}
-	} else if ((ins & B4 (B1111, 0, 0, 0)) == B4 (B1101, 0, 0, 0)) {
-		// BNE..
-		int delta = (ins & B4 (0, 0, B1111, B1111));
+	} else if ((ins & B4 (B1111, 0, 0, 0)) == B4 (B1101, 0, 0, 0) && ((ins >> 8) & 0xf) < 0xe) {
+		// B<cond> T1: signed imm8 (cond 0xe/0xf are UDF/SVC, handled below)
+		int delta = (st8) (ins & 0xff);
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + 4 + (delta << 1);
-		op->fail = addr + 4;
+		op->jump = addr + 4 + (delta * 2);
+		op->fail = addr + 2;
 	} else if ((ins & B4 (B1111, B1000, 0, 0)) == B4 (B1110, 0, 0, 0)) {
-		// B
-		int delta = (ins & B4 (0, 0, B1111, B1111));
+		// B T2: signed imm11
+		int delta = ((st16) (ins << 5)) >> 5;
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = addr + 4 + (delta << 1);
-		op->fail = addr + 4;
+		op->jump = addr + 4 + (delta * 2);
+		op->fail = UT64_MAX;
 	} else if ((ins & B4 (B1111, B1111, B1000, 0)) == B4 (B0100, B0111, B1000, 0)) {
 		// BLX
 		op->type = R_ANAL_OP_TYPE_UCALL;
@@ -141,12 +141,12 @@ static int op_thumb(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, i
 		op->jump = addr + 4 + delta;
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->fail = addr + 4;
-	} else if ((ins & B4 (B1111, B1111, 0, 0)) == B4 (B1011, B1110, 0, 0)) {
-		op->type = R_ANAL_OP_TYPE_TRAP;
-		op->val = (ut64) (ins >> 8);
-	} else if ((ins & B4 (B1111, B1111, 0, 0)) == B4 (B1101, B1111, 0, 0)) {
-		op->type = R_ANAL_OP_TYPE_SWI;
-		op->val = (ut64) (ins >> 8);
+	} else if ((ins >> 8) == 0xbe || (ins >> 8) == 0xde || (ins >> 8) == 0xdf) {
+		// BKPT and UDF trap, SVC is a swi
+		op->type = ((ins >> 8) == 0xdf)? R_ANAL_OP_TYPE_SWI: R_ANAL_OP_TYPE_TRAP;
+		op->val = ins & 0xff;
+		op->jump = UT64_MAX;
+		op->fail = UT64_MAX;
 	}
 	return op->size;
 }
@@ -392,7 +392,7 @@ static int arm_op32(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, i
 		}
 	} else if (b[3] == 0xef) {
 		op->type = R_ANAL_OP_TYPE_SWI;
-		op->val = (b[0] | (b[1] << 8) | (b[2] << 2));
+		op->val = (b[0] | (b[1] << 8) | (b[2] << 16));
 	} else if ((b[3] & 0xf) == 5) {  // [reg,0xa4]
 #if 0
 		0x00000000      a4a09fa4 ldrge sl, [pc], 0xa4

@@ -1318,3 +1318,17 @@ r0,r1,r2,r3,r12,lr
 r4,r5,r6,r7,r8,r9,r10,r11,sp
 EOF
 RUN
+
+NAME=arm.gnu svc imm24
+FILE=malloc://16
+ARGS=-a arm.gnu -b 32
+CMDS=<<EOF
+wx 000001ef
+ao~type
+ao~val
+EOF
+EXPECT=<<EOF
+type: swi
+val: 0x00010000
+EOF
+RUN
