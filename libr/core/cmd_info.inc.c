@@ -166,8 +166,8 @@ static RCoreHelpMessage help_msg_i = {
 	"io", " [file]", "load info from file (or last opened) use bin.baddr",
 	"iO", "[?]", "perform binary operation (dump, resize, change sections, ...)",
 	"ir", "[?][jq*]", "list the relocations (iR is an accidental alias for 'ir')",
-	"iU", "[?][,jq*x]", "list or extract binary resources",
-	"ix", "[?][U|S|SS] [directory]", "extract resources, sections or segments",
+	"iu", "[?][,jq*x]", "list or extract binary resources",
+	"ix", "[?][u|S|SS] [directory]", "extract resources, sections or segments",
 	"is", "[?]", "list the symbols",
 	"iS", "[?]", "list sections, segments and compute their hash",
 	"it", "", "file hashes", // hashes in it? wtf, thats a pretty bad subcommand
@@ -178,22 +178,22 @@ static RCoreHelpMessage help_msg_i = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_iU = {
-	"Usage: iU", "[,jq*x] [directory]", "Inspect or safely extract binary resources",
-	"iU", "", "list resources with all available metadata",
-	"iU,", "[table-query]", "list resources in table using given expression",
-	"iU*", "", "emit resource flags as radare commands",
-	"iUj", "", "list resources in JSON",
-	"iUq", "", "list resource address, size, type and name",
-	"iUqq", "", "list resource names only",
-	"iUx", " [directory]", "extract all resources (default: <file>.resources; alias for ixU)",
+static RCoreHelpMessage help_msg_iu = {
+	"Usage: iu", "[,jq*x] [directory]", "Inspect or safely extract binary resources",
+	"iu", "", "list resources with all available metadata",
+	"iu,", "[table-query]", "list resources in table using given expression",
+	"iu*", "", "emit resource flags as radare commands",
+	"iuj", "", "list resources in JSON",
+	"iuq", "", "list resource address, size, type and name",
+	"iuqq", "", "list resource names only",
+	"iux", " [directory]", "extract all resources (default: <file>.resources; alias for ixu)",
 	"", "", "output names are sanitized and existing files are never overwritten",
 	NULL
 };
 
 static RCoreHelpMessage help_msg_ix = {
-	"Usage: ix", "[U|S|SS] [directory]", "Extract binary data to disk",
-	"ixU", " [directory]", "extract all resources (alias for iUx)",
+	"Usage: ix", "[u|S|SS] [directory]", "Extract binary data to disk",
+	"ixu", " [directory]", "extract all resources (alias for iux)",
 	"ixS", " [directory]", "extract all sections (alias for iSx)",
 	"ixSS", " [directory]", "extract all segments (alias for iSSx)",
 	"", "", "default directories are <file>.resources, <file>.sections and <file>.segments",
@@ -2159,8 +2159,8 @@ static void cmd_ix(RCore *core, const char *input) {
 	bool resources = false;
 	bool segments = false;
 	switch (input[1]) {
-	case 'U': // "ixU"
-		command = "ixU";
+	case 'u': // "ixu"
+		command = "ixu";
 		output = input + 2;
 		resources = true;
 		break;
@@ -3427,8 +3427,8 @@ static int cmd_info(void *data, const char *input) {
 		case 'S': // "iS?"
 			r_core_cmd_help (core, help_msg_iS);
 			break;
-		case 'U': // "iU?"
-			r_core_cmd_help (core, help_msg_iU);
+		case 'u': // "iu?"
+			r_core_cmd_help (core, help_msg_iu);
 			break;
 		case 'x': // "ix?"
 			r_core_cmd_help (core, help_msg_ix);
@@ -3707,10 +3707,10 @@ static int cmd_info(void *data, const char *input) {
 	case 'Z': // "iZ"
 		RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0);
 		break;
-	case 'U': // "iU"
+	case 'u': // "iu"
 		if (question) {
 			char *cmd = r_str_newf ("i%.*s", (int)(question - input), input);
-			r_core_cmd_help_match (core, help_msg_iU, cmd);
+			r_core_cmd_help_match (core, help_msg_iu, cmd);
 			free (cmd);
 		} else {
 			switch (input[1]) {
@@ -3729,7 +3729,7 @@ static int cmd_info(void *data, const char *input) {
 				RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
 				break;
 			default:
-				r_core_return_invalid_command (core, "iU", input[1]);
+				r_core_return_invalid_command (core, "iu", input[1]);
 				break;
 			}
 		}

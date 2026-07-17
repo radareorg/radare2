@@ -10,7 +10,7 @@ NAME=LX resources
 FILE=bins/le/WSSFILL.EXE
 ARGS=-e bin.cache=true
 CMDS=<<EOF
-iU > $resources
+iu > $resources
 cat $resources~^Resource~?
 cat $resources~type: POINTER~?
 cat $resources~type: BITMAP~?

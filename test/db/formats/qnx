@@ -70,8 +70,8 @@ NAME=Open Watcom QNX LMF resource
 FILE=bins/qnx/qnx_resource.lmf
 CMDS=<<EOF
 iI~bintype
-iUq
-iUj
+iuq
+iuj
 iS~LMF_RESOURCE
 EOF
 EXPECT=<<EOF
@@ -88,8 +88,8 @@ ARGS=-e log.level=0
 CMDS=<<EOF
 rmrf .tmp/qnx-resource-extract-a
 rmrf .tmp/qnx-resource-extract-b
-iUx .tmp/qnx-resource-extract-a
-ixU .tmp/qnx-resource-extract-b
+iux .tmp/qnx-resource-extract-a
+ixu .tmp/qnx-resource-extract-b
 !!rahash2 -qq -a sha256 .tmp/qnx-resource-extract-a/resource_USAGE_named_0.bin
 !!rahash2 -qq -a sha256 .tmp/qnx-resource-extract-b/resource_USAGE_named_0.bin
 rmrf .tmp/qnx-resource-extract-a

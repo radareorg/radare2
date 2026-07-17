@@ -5,7 +5,7 @@
 .Nd Binary Information Extractor
 .Sh SYNOPSIS
 .Nm rabin2
-.Op Fl AcdeEghHiIjJlLMpqQrRsStuUVvwxZ
+.Op Fl AcdeEghHiIjJlLMpqQrRsStuVvwxZ
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl B Ar addr
@@ -133,7 +133,7 @@ Sections mapping to segments
 Display file hashes
 .It Fl T
 Display file signature, certificates and signing details
-.It Fl U
+.It Fl u
 Resources
 .It Fl v
 Display version and quit
@@ -148,14 +148,14 @@ Combine with
 .Fl S ,
 .Fl SS ,
 or
-.Fl U
+.Fl u
 to extract sections, segments, or raw resources instead.
 Thus,
 .Fl xS
 extracts sections,
 .Fl xSS
 extracts segments, and
-.Fl xU
+.Fl xu
 extracts resources.
 Resource extraction may be combined with section or segment extraction.
 Section, segment, and resource filenames include their kind, sanitized name or

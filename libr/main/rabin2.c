@@ -45,7 +45,7 @@ static Rabin2Env env[] = {
 static void rabin_show_env(bool show_desc);
 
 static int rabin_show_help(int line) {
-	printf ("Usage: rabin2 [-AcdeEghHiIjJlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
+	printf ("Usage: rabin2 [-AcdeEghHiIjJlLMqrRsSuvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 	"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
 	"              [-o str] [-O help] [-k query] [-D lang mangledsymbol] file\n");
 	if (line != 1) {
@@ -97,11 +97,11 @@ static int rabin_show_help(int line) {
 			" -SSS            sections mapping to segments\n"
 			" -t              display file hashes\n"
 			" -T              display file signature\n"
-			" -U              resoUrces\n"
+			" -u              resources\n"
 			" -v              display version and quit\n"
 			" -V              show binary version information\n"
 			" -w              display try/catch blocks\n"
-			" -x              extract sub-binaries (-xS sections, -xSS segments, -xU resources)\n"
+			" -x              extract sub-binaries (-xS sections, -xSS segments, -xu resources)\n"
 			" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
 			" -y              show types (structs, enums, function signatures)\n"
 			" -z              strings (from data section)\n"
@@ -742,7 +742,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 #define unset_action(x) action &= ~x
 	RGetopt opt;
 	int help = 0;
-	r_getopt_init (&opt, argc, argv, "DjJ:gAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhxXzZy");
+	r_getopt_init (&opt, argc, argv, "DjJ:gAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEulRwO:o:pPqQrTtvLhxXzZy");
 	if (argc == 2 && !strcmp (argv[1], "-J")) {
 		rabin_show_env (false);
 		r_core_fini (&core);
@@ -870,7 +870,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			}
 			break;
 		case 'E': set_action (R_BIN_REQ_EXPORTS); break;
-		case 'U': set_action (R_BIN_REQ_RESOURCES); break;
+		case 'u': set_action (R_BIN_REQ_RESOURCES); break;
 		case 'Q': set_action (R_BIN_REQ_DLOPEN); break;
 		case 'M': set_action (R_BIN_REQ_MAIN); break;
 		case 'l': set_action (R_BIN_REQ_LIBS); break;
