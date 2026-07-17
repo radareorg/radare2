@@ -3663,6 +3663,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_NGCS:
 #if CS_API_MAJOR > 4
 	case ARM64_INS_SBCS:
+	case ARM64_INS_SUBS:
 #endif
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
@@ -3709,11 +3710,14 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
 	case ARM64_INS_ADC:
-	//case ARM64_INS_ADCS:
 	case ARM64_INS_UMADDL:
 	case ARM64_INS_SMADDL:
 	case ARM64_INS_FMADD:
 	case ARM64_INS_MADD:
+#if CS_API_MAJOR > 4
+	case ARM64_INS_ADDS:
+	case ARM64_INS_ADCS:
+#endif
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
 	case ARM64_INS_CSEL:
@@ -3843,6 +3847,10 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_ROR;
 		break;
 	case ARM64_INS_AND:
+#if CS_API_MAJOR > 4
+	case ARM64_INS_ANDS:
+	case ARM64_INS_BICS:
+#endif
 		op->type = R_ANAL_OP_TYPE_AND;
 		break;
 	case ARM64_INS_ORR:

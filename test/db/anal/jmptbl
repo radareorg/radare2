@@ -43,7 +43,7 @@ EXPECT=<<EOF
 ;-- case 1:                                                            ; from 0x100004048
 ; CODE XREF from sym.func.100004000 @ 0x100004048(x)
 0x100004060      lsr x8, x3, 0x20                                      ; arg4
-0x100004064      subs w8, w8, w3
+0x100004064      subs w8, w8, w3                                       ; arg4
 0x100004068      b.vs 0x10000410c
 | // true: 0x10000410c  false: 0x10000406c
 0x10000406c      sxtw x25, w8
@@ -418,7 +418,7 @@ EXPECT=<<EOF
 ;-- case 1:                                                            ; from 0x100004170
 ; CODE XREF from sym.func.100004124 @ 0x100004170(x)
 0x10000418c      lsr x8, x0, 0x20                                      ; arg1
-0x100004190      subs w8, w8, w0
+0x100004190      subs w8, w8, w0                                       ; arg1
 0x100004194      b.vs 0x100004498
 | // true: 0x100004498  false: 0x100004198
 0x100004198      sxtw x26, w8
