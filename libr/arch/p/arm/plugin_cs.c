@@ -142,6 +142,8 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define ARM64_INS_SBFX ARM64_INS_ALIAS_SBFX
 #define ARM64_INS_UBFX ARM64_INS_ALIAS_UBFX
 #define ARM64_INS_NEGS ARM64_INS_ALIAS_NEGS
+#define ARM64_INS_NGC ARM64_INS_ALIAS_NGC
+#define ARM64_INS_NGCS ARM64_INS_ALIAS_NGCS
 #define ARM64_INS_PACIA1716 ARM64_INS_ALIAS_PACIA1716
 #define ARM64_INS_PACIASP ARM64_INS_ALIAS_PACIASP
 #define ARM64_INS_PACIAZ ARM64_INS_ALIAS_PACIAZ
@@ -1508,10 +1510,41 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		OPCALL ("-");
 		break;
 	case ARM64_INS_SBC:
-		// TODO have to check this more, VEX does not work
-		r_strbuf_setf (&op->esil, "%s,cf,+,%s,-,%s,=",
-			REG64 (2), REG64 (1), REG64 (0));
+	case ARM64_INS_NGC: {
+		// rd = rn + ~rm + C; ngc is the rn=xzr form
+		const bool ngc = OPCOUNT64 () == 2;
+		const char *rn = ngc? "0": REG64 (1);
+		const char *rm = ngc? REG64 (1): REG64 (2);
+		r_strbuf_setf (&op->esil, "cf,%s,-1,^,+,%s,+,%s,=", rm, rn, REG64 (0));
 		break;
+	}
+	case ARM64_INS_NGCS:
+#if CS_API_MAJOR > 4
+	case ARM64_INS_SBCS:
+#endif
+	{
+		// AddWithCarry (rn, ~rm, C) like ADCS; V reduces to ((rn^rm)&(rn^r))>>msb
+		const int bits = REGBITS64 (0);
+		const bool ngc = OPCOUNT64 () == 2;
+		const char *rn = ngc? "0": REG64 (1);
+		const char *rm = ngc? REG64 (1): REG64 (2);
+		char sum[80];
+		if (bits == 32) {
+			snprintf (sum, sizeof (sum), "0xffffffff,cf,%s,-1,^,+,%s,+,&", rm, rn);
+		} else {
+			snprintf (sum, sizeof (sum), "cf,%s,-1,^,+,%s,+", rm, rn);
+		}
+		r_strbuf_setf (&op->esil,
+			"0,%s,==,$z,zf,:=,%d,$s,nf,:=,"
+			"%s,%s,==,%d,$b,cf,%s,%s,^,!,&,|,"
+			"%d,%s,%s,^,%s,%s,^,&,>>,vf,:=,"
+			"cf,%s,-1,^,+,%s,+,%s,=,cf,:=",
+			sum, bits - 1,
+			rn, sum, bits, rn, sum,
+			bits - 1, rm, rn, sum, rn,
+			rm, rn, REG64 (0));
+		break;
+	}
 	case ARM64_INS_SMULL2:
 	case ARM64_INS_SMULL:
 		OPCALL_SIGN ("*", REGBITS64 (1));
@@ -3633,6 +3666,12 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->cycles = 1;
 		/* fallthru */
 	case ARM64_INS_MSUB:
+	case ARM64_INS_SBC:
+	case ARM64_INS_NGC:
+	case ARM64_INS_NGCS:
+#if CS_API_MAJOR > 4
+	case ARM64_INS_SBCS:
+#endif
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case ARM64_INS_FDIV:
