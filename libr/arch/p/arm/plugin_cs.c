@@ -2946,10 +2946,12 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "%s,%s,==", ARG (1), ARG (0));
 		break;
 	case ARM_INS_CMN:
-		r_strbuf_appendf (&op->esil, "%s,%s,^,!,!,zf,=", ARG (1), ARG (0));
+		// rn + op2 as rn - (-op2) so == commits old/cur for the shared $z/$c/$o block
+		r_strbuf_appendf (&op->esil, "%s,-1,*,%s,==", ARG (1), ARG (0));
 		break;
 	case ARM_INS_MOVT:
-		r_strbuf_appendf (&op->esil, "16,%s,<<,%s,|=", ARG (1), REG (0));
+		// replace rd[31:16] with imm16, preserving rd[15:0]
+		r_strbuf_appendf (&op->esil, "16,%s,<<,0xffff,%s,&,|,%s,=", ARG (1), REG (0), REG (0));
 		break;
 	case ARM_INS_ADR:
 		r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,+,0xfffffffc,&,%s,=",
