@@ -24,9 +24,9 @@ mov rdx, rsp
 and rsp, 0xfffffffffffffff0
 mov rdx, rsp
 and rsp, 0xfffffffffffffff0
-mov ecx, edx
+mov r9, rdx
 pop rsi
-mov ecx, edx
+mov r9, rdx
 pop rsi
 EOF
 RUN

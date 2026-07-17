@@ -605,7 +605,9 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		return NULL;
 	}
 
-	for (idx = addrbytes; idx < len; idx += addrbytes) {
+	bool found = false;
+	// <= so the full window is tried; len is clamped to addr near file start
+	for (idx = addrbytes; idx <= len; idx += addrbytes) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
@@ -628,8 +630,14 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		}
 		r_asm_code_free (c);
 		if (numinstr >= n || idx > 16 * n) { // assume average instruction length <= 16
+			found = true;
 			break;
 		}
+	}
+	if (!found) {
+		// no window ending at addr disassembles cleanly; an empty list beats far-away hits
+		free (buf);
+		return hits;
 	}
 
 	ut64 at = addr - (idx / addrbytes);

@@ -7776,24 +7776,26 @@ static bool handle_backwards_disasm(RCore *core, int *nb_opcodes, int *nb_bytes)
 	if (!*nb_bytes) {
 		*nb_bytes = core->blocksize;
 		if (*nb_opcodes < 0) {
-			/* Backward disassembly of nb_opcodes opcodes
-			 * - We compute the new starting offset
-			 * - Read at the new offset */
 			*nb_opcodes = -*nb_opcodes;
+			if (*nb_opcodes > 0xffff) {
+				R_LOG_ERROR ("Too many backward instructions");
+				return false;
+			}
 
 			const ut64 old_offset = core->addr;
 			int nbytes = 0;
 
-			// We have some anal_info.
-			if (r_core_prevop_addr (core, core->addr, *nb_opcodes, &core->addr)) {
+			// same backward walk as pd, so all backward disasm commands agree
+			core->addr = r_core_prevop_addr_force (core, old_offset, *nb_opcodes);
+			if (core->addr < old_offset) {
 				nbytes = old_offset - core->addr;
-			} else {
-				// core->addr is modified by r_core_prevop_addr
-				core->addr = old_offset;
-				r_core_asm_bwdis_len (core, &nbytes, &core->addr, *nb_opcodes);
 			}
 			if (nbytes > core->blocksize) {
 				r_core_block_size (core, nbytes);
+				if (nbytes > core->blocksize) {
+					R_LOG_ERROR ("Cannot read that much!");
+					return false;
+				}
 			}
 			if (nbytes < 1) {
 				return false;
@@ -7865,17 +7867,17 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 				R_LOG_ERROR ("Too many backward instructions");
 				return false;
 			}
-			int nbytes = 0;
-			if (r_core_prevop_addr (core, core->addr, nb_opcodes, &addr)) {
-				nbytes = old_offset - addr;
-			} else {
-				// r_core_prevop_addr sets addr to UT64_MAX on failure
-				addr = old_offset;
-				if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
-					pj_end (pj);
-					return false;
+			// same backward walk as pd, one op at a time so the window fits in buf
+			addr = old_offset;
+			int bw;
+			for (bw = 0; bw < nb_opcodes; bw++) {
+				const ut64 prev = r_core_prevop_addr_force (core, addr, 1);
+				if (prev >= addr || old_offset - prev > (ut64)nb_bytes) {
+					break;
 				}
+				addr = prev;
 			}
+			const int nbytes = old_offset - addr;
 			if (nbytes < 1) {
 				pj_end (pj);
 				return false;
