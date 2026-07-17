@@ -14,7 +14,8 @@ sources_arm64 = [
   'arch/arm64/disassembler/operations.c',
   'arch/arm64/disassembler/pcode.c',
   'arch/arm64/disassembler/regs.c',
-  'arch/arm64/disassembler/sysregs.c'
+  'arch/arm64/disassembler/sysregs_gen.c',
+  'arch/arm64/disassembler/sysregs_fmt_gen.c'
 ]
 
 incs_arm64 = include_directories(['arch/arm64/disassembler'])
