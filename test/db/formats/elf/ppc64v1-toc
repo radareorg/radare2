@@ -192,3 +192,17 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=PPC64 ELFv1: /r resolves TOC-mediated data refs in the forward scan
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EXPECT_END
+e search.in=io.maps.x
+e anal.stateful=false
+/r 0x2f918
+e anal.stateful=true
+/r 0x2f918
+EXPECT_END
+EXPECT=<<EXPECT_END
+(nofunc) 0x3088 [DATA] ld r12, 0x7a18(r11)
+EXPECT_END
+RUN

@@ -8786,6 +8786,13 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 	esil->cb.hook_mem_write = mymemwrite;
 	esil->cb.hook_mem_read = mymemread;
 	esil->nowrite = true;
+	const bool stateful = core->anal->opt.stateful;
+	const ut32 opmask = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT
+		| (stateful? R_ARCH_OP_MASK_STATEFUL: 0);
+	if (stateful && core->anal->arch->session) {
+		// the whole sweep is one linear decode window
+		r_arch_session_reset (core->anal->arch->session);
+	}
 	r_cons_break_push (core->cons, NULL, NULL);
 	for (ops = ptr = 0; ptr < buf_sz && hasNext (); ops++, ptr += len) {
 		if (r_cons_is_breaked (core->cons)) {
@@ -8795,7 +8802,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 			len = 100;
 			esilstr = esilexpr;
 		} else {
-			len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
+			len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, opmask);
 			esilstr = R_STRBUF_SAFEGET (&aop.esil);
 		}
 		if (len < 1) {
@@ -8968,7 +8975,13 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 	}
 	ut64 cursp = r_reg_getv (core->dbg->reg, "SP");
 	ut64 oldoff = core->addr;
-	const ut64 flags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM;
+	const bool stateful = core->anal->opt.stateful;
+	const ut64 flags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM
+		| (stateful? R_ARCH_OP_MASK_STATEFUL: 0);
+	if (stateful && core->anal->arch->session) {
+		// calls are skipped but stepping stays in address order, so this is one linear window
+		r_arch_session_reset (core->anal->arch->session);
+	}
 	for (i = 0, j = 0; j < ninstr; i++, j++) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
