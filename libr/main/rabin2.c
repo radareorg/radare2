@@ -22,6 +22,7 @@ static Rabin2Env env[] = {
 	{ "RABIN2_DEMANGLE", "e bin.demangle        # dont demangle symbols if value is 0" },
 	{ "RABIN2_DEMANGLE_CMD", "e bin.demangle.cmd    # try to purge false positives" },
 	{ "RABIN2_DEMANGLE_TRYLIB", "e bin.demangle.trylib # load Swift libs to demangle (default: false)" },
+	{ "RABIN2_FILTER", "e bin.filter          # set to false to not rename duplicated symbols/sections" },
 	//	{ "RABIN2_DEMAN_PFXLIB",		"e bin.demangle.pfxlib # prefix symbols with library name" },
 	//	{ "RABIN2_DEMAN_NAT",			"e bin.demangle.native # load Swift libs to demangle (default: true)" },
 	{ "RABIN2_LANG", "e bin.lang            # assume lang for demangling" },
@@ -96,7 +97,6 @@ static int rabin_show_help(int line) {
 			" -SSS            sections mapping to segments\n"
 			" -t              display file hashes\n"
 			" -T              display file signature\n"
-			" -u              unfiltered (no rename duplicated symbols/sections)\n"
 			" -U              resoUrces\n"
 			" -v              display version and quit\n"
 			" -V              show binary version information\n"
@@ -728,6 +728,10 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		r_config_set (core.config, "pdb.server", tmp);
 		free (tmp);
 	}
+	if ((tmp = r_sys_getenv ("RABIN2_FILTER"))) {
+		r_config_set (core.config, "bin.filter", tmp);
+		free (tmp);
+	}
 	r_config_set_b (core.config, "bin.resraw", r_sys_getenv_asbool ("RABIN2_RESRAW"));
 
 #define is_active(x) (action &(x))
@@ -738,7 +742,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 #define unset_action(x) action &= ~x
 	RGetopt opt;
 	int help = 0;
-	r_getopt_init (&opt, argc, argv, "DjJ:gAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZy");
+	r_getopt_init (&opt, argc, argv, "DjJ:gAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhxXzZy");
 	if (argc == 2 && !strcmp (argv[1], "-J")) {
 		rabin_show_env (false);
 		r_core_fini (&core);
@@ -780,7 +784,6 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			set_action (R_BIN_REQ_CREATE);
 			create = strdup (opt.arg);
 			break;
-		case 'u': bin->filter = 0; break;
 		case 'k': query = opt.arg; break;
 		case 'K': chksum = opt.arg; break;
 		case 'c':

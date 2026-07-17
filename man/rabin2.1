@@ -133,8 +133,6 @@ Sections mapping to segments
 Display file hashes
 .It Fl T
 Display file signature, certificates and signing details
-.It Fl u
-Unfiltered (no rename duplicated symbols/sections)
 .It Fl U
 Resources
 .It Fl v
@@ -204,6 +202,8 @@ Same as r2 -e bin.demangle - demangle symbols
 Same as r2 -e bin.demangle.cmd - try to purge false positives
 .It Ev RABIN2_DEMANGLE_TRYLIB
 Same as r2 -e bin.demangle.trylib=<bool> - load Swift libs to demangle (default: false)
+.It Ev RABIN2_FILTER
+Same as r2 -e bin.filter=<bool> - set to false to not rename duplicated symbols/sections (default: true)
 .It Ev RABIN2_LANG
 Same as r2 -e bin.lang - assume lang for demangling
 .It Ev RABIN2_MACHO_NOFUNCSTARTS

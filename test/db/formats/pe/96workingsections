@@ -131,7 +131,7 @@ RUN
 NAME=PE: corkami 96workingsections.exe - section list - unfiltered
 FILE=bins/pe/96workingsections.exe
 ARGS=-n
-CMDS=!rabin2 -uS bins/pe/96workingsections.exe
+CMDS=!env RABIN2_FILTER=false rabin2 -S bins/pe/96workingsections.exe
 EXPECT=<<EOF
 nth paddr        size vaddr        vsize perm flags      type name
 ------------------------------------------------------------------
