@@ -1264,12 +1264,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->size = insn->size;
 		op->id = insn->id;
 		switch (insn->id) {
-#if CS_API_MAJOR >= 4
 		case PPC_INS_CMPB:
 			// per-byte equality mask into a gpr, not a cr compare; not modeled in esil
 			op->type = R_ANAL_OP_TYPE_CMP;
 			break;
-#endif
 		case PPC_INS_CMPD:
 		case PPC_INS_CMPDI:
 		case PPC_INS_CMPLD:
@@ -1508,17 +1506,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			set_toc_ptr (op, pd, insn, stateful);
 			break;
 		case PPC_INS_LBZ:
-#if CS_API_MAJOR >= 4
 		case PPC_INS_LBZCIX:
-#endif
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			esilprintf (op, "%s,%s,=", ARG2 (1, "[1]"), ARG (0));
 			set_toc_ptr (op, pd, insn, stateful);
 			break;
 		case PPC_INS_LD:
-#if CS_API_MAJOR >= 4
 		case PPC_INS_LDCIX:
-#endif
 		case PPC_INS_LDU:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			op1 = shrink (ARG(1));
@@ -1885,9 +1879,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			set_toc_ptr (op, pd, insn, stateful);
 			break;
 		case PPC_INS_LWZ:
-#if CS_API_MAJOR >= 4
 		case PPC_INS_LWZCIX:
-#endif
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			esilprintf (op, "%s,%s,=", ARG2 (1, "[4]"), ARG (0));
 			set_toc_ptr (op, pd, insn, stateful);
