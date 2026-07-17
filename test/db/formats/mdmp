@@ -82,9 +82,9 @@ RUN
 NAME=: 32bit - resources
 FILE=bins/mdmp/hello.dmp
 CMDS=<<EOF
-iUq
-iUj~{}~origin~hello.exe
-iUj~{}~origin~ntdll.dll
+iuq
+iuj~{}~origin~hello.exe
+iuj~{}~origin~ntdll.dll
 EOF
 EXPECT=<<EOF
 0x00409058 1167 MANIFEST 1
@@ -108,7 +108,7 @@ NAME=: 32bit - resource extraction
 FILE=bins/mdmp/hello.dmp
 CMDS=<<EOF
 rmrf .tmp/rabin2-mdmp-resource-extract
-!!rabin2 -xU -o .tmp/rabin2-mdmp-resource-extract ${R2_FILE}
+!!rabin2 -xu -o .tmp/rabin2-mdmp-resource-extract ${R2_FILE}
 !!rabin2 -Z .tmp/rabin2-mdmp-resource-extract/resource_MANIFEST_1_0.bin
 !!rabin2 -Z .tmp/rabin2-mdmp-resource-extract/resource_MESSAGETABLE_1_5.bin
 rmrf .tmp/rabin2-mdmp-resource-extract
@@ -296,8 +296,8 @@ RUN
 NAME=: 64bit - resources
 FILE=bins/mdmp/hello64.dmp
 CMDS=<<EOF
-iUq
-iUj~{}~origin~hello64.exe
+iuq
+iuj~{}~origin~hello64.exe
 EOF
 EXPECT=<<EOF
 0x0040b058 1167 MANIFEST 1

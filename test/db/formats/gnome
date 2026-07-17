@@ -1,6 +1,6 @@
 NAME=GNOME GLib GResource bundle
 FILE=bins/elf/gnome-extensions
-CMDS=iUq
+CMDS=iuq
 EXPECT=<<EOF
 0x0000a340 18632 gresource-bundle .gresource.gnome_extensions_tool
 0x0000b660 2984 gresource /org/gnome/extensions-tool/templates/00-plain.desktop

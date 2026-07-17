@@ -77,7 +77,7 @@ RUN
 
 NAME=NE Resources JSON
 FILE=bins/ne/anim8.exe
-CMDS=iUj~{}~"name":
+CMDS=iuj~{}~"name":
 EXPECT=<<EOF
     "name": "ICONX",
     "name": "FRAME_1",
