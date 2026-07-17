@@ -1802,3 +1802,61 @@ EXPECT=<<EOF
 0xfa4 = write (1, "Hello, world!.", 15)
 EOF
 RUN
+
+NAME=mips.gnu slt signed vs sltu unsigned
+FILE=malloc://32
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+aei
+wx 2a402a01
+ar t1=0xffffffff
+ar t2=1
+ar pc=0
+s 0
+aes
+ar t0
+wx 2b402a01
+ar t1=0xffffffff
+ar t2=1
+ar pc=0
+s 0
+aes
+ar t0
+wx 2a402a01
+ar t1=5
+ar t2=3
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=mips.gnu slti signed vs sltiu unsigned
+FILE=malloc://32
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+aei
+wx 01002829
+ar t1=0xffffffff
+ar pc=0
+s 0
+aes
+ar t0
+wx 0500282d
+ar t1=3
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+EOF
+RUN

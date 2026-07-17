@@ -1149,14 +1149,14 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		r_strbuf_appendf (&op->esil, "%s,%s,|,0xffffffff,^,%s,=", R_REG (rs), R_REG (rt), R_REG (rd));
 		break;
 	case MIPS_INS_SLT:
-		r_strbuf_appendf (&op->esil, "%s,%s,<,t,=", R_REG (rs), R_REG (rt));
+		r_strbuf_appendf (&op->esil, "32,%s,~,32,%s,~,<,%s,=", R_REG (rt), R_REG (rs), R_REG (rd));
 		break;
 	case MIPS_INS_SLTI:
-		r_strbuf_appendf (&op->esil, "%s,%s,<,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
+		r_strbuf_appendf (&op->esil, "32,%s,~,32,%s,~,<,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
 		break;
 	case MIPS_INS_SLTU:
-		r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,t,=",
-			R_REG (rs), R_REG (rt));
+		r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,%s,=",
+			R_REG (rt), R_REG (rs), R_REG (rd));
 		break;
 	case MIPS_INS_SLTIU:
 		r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,%s,=",
