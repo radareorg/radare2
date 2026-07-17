@@ -4235,6 +4235,13 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	// ???
 	// XXX must read bytes correctly
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
+	// backwards scans decode out of address order, so only forward scans are one stateful window
+	const bool stateful = !bckwrds && core->anal->opt.stateful;
+	const ut32 opmask = R_ARCH_OP_MASK_BASIC
+		| (stateful? R_ARCH_OP_MASK_STATEFUL: 0);
+	if (stateful && core->anal->arch->session) {
+		r_arch_session_reset (core->anal->arch->session);
+	}
 	r_cons_break_push (core->cons, NULL, NULL);
 	if (core->blocksize > OPSZ) {
 		if (bckwrds) {
@@ -4278,7 +4285,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case 'w':
 				case 'x':
 					r_anal_op_fini (&op);
-					r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ARCH_OP_MASK_BASIC);
+					r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, opmask);
 					const int mask = (mode == 'r') ? 1 : mode == 'w' ? 2: mode == 'x' ? 4: 0;
 					if (op.direction == mask) {
 						i += op.size;
@@ -4288,7 +4295,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case 'a':
 				default:
 					r_anal_op_fini (&op);
-					if (!r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ARCH_OP_MASK_BASIC)) {
+					if (!r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, opmask)) {
 						r_anal_op_fini (&op);
 						continue;
 					}
@@ -4312,6 +4319,10 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 					if (op.ptr != UT64_MAX &&
 						core_anal_followptr (core, R_ANAL_REF_TYPE_JUMP, at + i, op.ptr, ref, true ,1)) {
 						count++;
+					} else if (op.jump != UT64_MAX &&
+						core_anal_followptr (core, R_ANAL_REF_TYPE_JUMP, at + i, op.jump, ref, true, 0)) {
+						// stateful decode can resolve a register jump into op.jump
+						count++;
 					}
 					break;
 				case R_ANAL_OP_TYPE_UCALL:
@@ -4322,12 +4333,16 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 					if (op.ptr != UT64_MAX &&
 						core_anal_followptr (core, R_ANAL_REF_TYPE_CALL, at + i, op.ptr, ref, true ,1)) {
 						count++;
+					} else if (op.jump != UT64_MAX &&
+						core_anal_followptr (core, R_ANAL_REF_TYPE_CALL, at + i, op.jump, ref, true, 0)) {
+						// stateful decode can resolve a register call into op.jump
+						count++;
 					}
 					break;
 				default:
 					{
 						r_anal_op_fini (&op);
-						if (!r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ARCH_OP_MASK_BASIC)) {
+						if (!r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, opmask)) {
 							r_anal_op_fini (&op);
 							continue;
 						}

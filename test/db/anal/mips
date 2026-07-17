@@ -1214,3 +1214,17 @@ EXPECT=<<EOF
 jump: 0x00000044
 EOF
 RUN
+
+NAME=mips: /r resolves a t9-mediated register call in the forward scan
+FILE=bins/elf/boa-mips
+CMDS=<<EXPECT_END
+e search.in=io.maps.x
+e anal.stateful=false
+/r 0x49a660
+e anal.stateful=true
+/r 0x49a660
+EXPECT_END
+EXPECT=<<EXPECT_END
+(nofunc) 0x407454 [CALL] jalr t9
+EXPECT_END
+RUN
