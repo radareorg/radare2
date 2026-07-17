@@ -56334,3 +56334,27 @@ EXPECT=<<EOF
 type: trap
 EOF
 RUN
+
+NAME=arm64 flag-setting ops get op type
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 200002ab
+ao 1~type[1]
+wx 200002ba
+ao 1~type[1]
+wx 200002eb
+ao 1~type[1]
+wx 200002ea
+ao 1~type[1]
+wx 200022ea
+ao 1~type[1]
+EOF
+EXPECT=<<EOF
+add
+add
+sub
+and
+and
+EOF
+RUN
