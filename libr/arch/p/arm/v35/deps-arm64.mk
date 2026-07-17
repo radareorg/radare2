@@ -15,7 +15,8 @@ V35ARM64_OBJS+=gofer.o
 V35ARM64_OBJS+=operations.o
 V35ARM64_OBJS+=pcode.o
 V35ARM64_OBJS+=regs.o
-V35ARM64_OBJS+=sysregs.o
+V35ARM64_OBJS+=sysregs_gen.o
+V35ARM64_OBJS+=sysregs_fmt_gen.o
 
 V35ARM64_LINK=$(addprefix $(V35ARM64_SRCDIR),$(V35ARM64_OBJS))
 # V35ARM64_LIBS=$(V35ARM64_HOME)/v35arm64.a
