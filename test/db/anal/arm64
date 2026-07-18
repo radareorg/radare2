@@ -56358,3 +56358,15 @@ and
 and
 EOF
 RUN
+
+NAME=arm64 bic types as and
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2000228a
+ao 1~type[1]
+EOF
+EXPECT=<<EOF
+and
+EOF
+RUN

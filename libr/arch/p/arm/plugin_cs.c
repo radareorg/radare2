@@ -1596,6 +1596,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_ANDS:
 		OPCALL_FLAGS ("&", 'l');
 		break;
+	case ARM64_INS_BICS:
 	case ARM64_INS_NANDS:
 		OPCALL_NEG_FLAGS ("&", 'l');
 		break;
@@ -2289,24 +2290,8 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	}
 	case ARM64_INS_BIC:
-	if (OPCOUNT64 () == 2) {
-		if (REGSIZE64 (0) == 4) {
-			r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&=",
-					REG64 (1), REG64 (0));
-		} else {
-			r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&=",
-					REG64 (1), REG64 (0));
-		}
-	} else {
-		if (REGSIZE64 (0) == 4) {
-			r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&,%s,=",
-					REG64 (2), REG64 (1), REG64 (0));
-		} else {
-			r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&,%s,=",
-					REG64 (2), REG64 (1), REG64 (0));
-		}
-	}
-	break;
+		OPCALL_NEG ("&");
+		break;
 	case ARM64_INS_CBZ:
 		r_strbuf_setf (&op->esil, "%s,!,?{,%"PFMT64d",pc,:=,}",
 				REG64 (0), IMM64 (1));
@@ -3751,7 +3736,6 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_BFI:
 	case ARM64_INS_SBFIZ:
 	case ARM64_INS_UBFIZ:
-	case ARM64_INS_BIC:
 	case ARM64_INS_BFXIL:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		if (ISIMM64 (1)) {
@@ -3847,6 +3831,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_ROR;
 		break;
 	case ARM64_INS_AND:
+	case ARM64_INS_BIC:
 #if CS_API_MAJOR > 4
 	case ARM64_INS_ANDS:
 	case ARM64_INS_BICS:

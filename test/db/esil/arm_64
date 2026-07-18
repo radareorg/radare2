@@ -1648,3 +1648,48 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=arm64 bics computes and-not result and nz flags with cv cleared
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aei
+wx 200022ea
+ar x1=0xff00ff00ff00ff00
+ar x2=0x0f0f0f0f0f0f0f0f
+ar cf=1
+ar vf=1
+ar pc=0
+aes
+ar x0
+ar nf
+ar zf
+ar cf
+ar vf
+wx 200022ea
+ar x1=0x0f0f
+ar x2=0xffff
+ar pc=0
+aes
+ar x0
+ar zf
+wx 2000226a
+ar x1=0xffffffff
+ar x2=0x7fffffff
+ar pc=0
+aes
+ar w0
+ar nf
+EOF
+EXPECT=<<EOF
+0xf000f000f000f000
+0x00000001
+0x00000000
+0x00000000
+0x00000000
+0x00000000
+0x00000001
+0x80000000
+0x00000001
+EOF
+RUN
