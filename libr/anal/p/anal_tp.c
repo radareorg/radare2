@@ -291,6 +291,22 @@ static void tp_pending_const_fini(TPPendingConst *pc) {
 }
 R_VEC_TYPE_WITH_FINI(RVecTPPendingConst, TPPendingConst, tp_pending_const_fini);
 
+// a var type applied during this pass, with the basic block that evidenced it
+typedef struct {
+	char *type;
+	ut64 bb_addr;
+	int rank;
+	bool met; // once facts from parallel paths met, only further meets may apply
+} TPVarFact;
+
+static void tp_var_fact_kv_free(HtUPKv *kv) {
+	TPVarFact *fact = kv->value;
+	if (fact) {
+		free (fact->type);
+		free (fact);
+	}
+}
+
 // TPState - Isolated ESIL environment for type propagation
 // Design inspired by RCoreEsil from PR #24428:
 // - Centralized ESIL state (esil, reg_if, mem_if)
@@ -315,6 +331,7 @@ typedef struct tp_state_t {
 	bool old_follow;
 	RList *clobber; // caller-saved regs to poison across skipped calls (synth only)
 	RVecTPPendingConst pending_const;
+	HtUP *var_facts; // RAnalVar * => TPVarFact *
 } TPState;
 
 /// BEGIN /////////////////// esil trace helpers ///////////////////////
@@ -442,47 +459,99 @@ static void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 	}
 }
 
-static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char *type, int ref, bool pfx) {
-	R_LOG_DEBUG ("Var retype %s %s", var->name, type);
-	R_RETURN_IF_FAIL (anal && var && type);
-	// XXX types should be passed without spaces to trim
-	type = r_str_trim_head_ro (type);
-	// default type if none is provided
-	if (!*type) {
-		type = "int";
+static bool tp_prim_scalar(const char *t);
+
+// var-fact lattice: 0 default < 1 sign hint < 2 sized scalar < 3 scalar/void pointer < 4 char *, typed pointer or named type
+static int tp_var_rank(const char *t) {
+	t = r_str_skip_prefix (r_str_trim_head_ro (t), "const ");
+	if (R_STR_ISEMPTY (t) || r_str_startswith (t, "undefined")) {
+		return 0;
 	}
+	if (!strchr (t, '*')) {
+		return strcmp (t, "void")? 2: 0;
+	}
+	if (r_str_startswith (t, "void")) {
+		return 3;
+	}
+	// char * carries string evidence, so it tops the lattice with the named types
+	if (r_str_startswith (t, "char") || !tp_prim_scalar (t)) {
+		return 4;
+	}
+	return 3;
+}
+
+// the meet of facts proven on parallel paths is the weaker side: their common knowledge
+static char *tp_type_meet(const char *a, int rank_a, const char *b, int rank_b) {
+	if (!strcmp (a, b)) {
+		return strdup (a);
+	}
+	if (rank_a != rank_b) {
+		return strdup (rank_a < rank_b? a: b);
+	}
+	if (strchr (a, '*') && strchr (b, '*')) {
+		return strdup ("void *");
+	}
+	return strdup (a);
+}
+
+typedef struct {
+	ut64 target;
+	bool found;
+} TPReachCtx;
+
+static bool tp_reach_cb(RAnalBlock *bb, void *user) {
+	TPReachCtx *ctx = user;
+	if (bb->addr == ctx->target) {
+		ctx->found = true;
+		return false;
+	}
+	return true;
+}
+
+static bool tp_block_reaches(RAnal *anal, ut64 from, ut64 to) {
+	RAnalBlock *bb = r_anal_get_block_at (anal, from);
+	if (!bb) {
+		// unknown topology counts as sequential, keeping the pre-lattice behavior
+		return true;
+	}
+	TPReachCtx ctx = { to, false };
+	r_anal_block_recurse (bb, tp_reach_cb, &ctx);
+	return ctx.found;
+}
+
+static bool tp_facts_parallel(RAnal *anal, ut64 a, ut64 b) {
+	if (a == b || a == UT64_MAX || b == UT64_MAX) {
+		return false;
+	}
+	return !tp_block_reaches (anal, a, b) && !tp_block_reaches (anal, b, a);
+}
+
+// the canonical int spelling behind the sized aliases, as the legacy default test expects it
+static const char *tp_expand_int(const char *t) {
+	if (!strcmp (t, "int32_t")) {
+		return "int";
+	}
+	if (!strcmp (t, "uint32_t")) {
+		return "unsigned int";
+	}
+	if (!strcmp (t, "uint64_t")) {
+		return "unsigned long long";
+	}
+	return t;
+}
+
+// canonical spelling as the retype applies it; NULL when a prefix form cannot attach to the var's current type
+static char *tp_built_type(RAnalVar *var, const char *vname, const char *type, int ref, bool pfx) {
 	bool is_ptr = (vname && *vname == '*');
-	// removing this return makes 64bit vars become 32bit
-	if (r_str_startswith (type, "int") || (!is_ptr && !strcmp (type, "void"))) {
-		// default or void type
-		R_LOG_DEBUG ("DEFAULT NOT DOING THIS");
-		return;
-	}
-	const char *expand = var->type;
-	if (!strcmp (var->type, "int32_t")) {
-		expand = "int";
-	} else if (!strcmp (var->type, "uint32_t")) {
-		expand = "unsigned int";
-	} else if (!strcmp (var->type, "uint64_t")) {
-		expand = "unsigned long long";
-	}
-	const char *tmp = strstr (expand, "int");
-	bool is_default = tmp;
-	if (!is_default && !r_str_startswith (var->type, "void")) {
-		// return since type is already propagated
-		// except for "void *", since "void *" => "char *" is possible
-		R_LOG_DEBUG ("not default NOT DOING A SHIT HERE");
-		return;
-	}
+	const char *tmp = strstr (tp_expand_int (var->type), "int");
 	RStrBuf sb;
 	r_strbuf_init (&sb);
 	if (pfx) {
-		if (is_default && !r_str_startswith (var->type, "signed")) {
+		if (tmp && !r_str_startswith (var->type, "signed")) {
 			r_strbuf_setf (&sb, "%s %s", type, tmp);
 		} else {
 			r_strbuf_fini (&sb);
-			R_LOG_DEBUG ("THIS IS RETURN NOT DOING A SHIT HERE");
-			return;
+			return NULL;
 		}
 	} else {
 		r_strbuf_set (&sb, type);
@@ -524,8 +593,101 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char
 	} else if (r_str_startswith (tmp1, "int")) {
 		r_strbuf_set (&sb, "int32_t");
 	}
-	r_anal_var_set_type (anal, var, r_strbuf_get (&sb));
-	r_strbuf_fini (&sb);
+	return r_strbuf_drain_nofree (&sb);
+}
+
+// applies newtype to the var and takes ownership of it as the recorded fact
+static void tp_fact_apply(RAnal *anal, TPVarFact *fact, RAnalVar *var, char *newtype, int rank, ut64 baddr) {
+	r_anal_var_set_type (anal, var, newtype);
+	free (fact->type);
+	fact->type = newtype;
+	fact->rank = rank;
+	fact->bb_addr = baddr;
+}
+
+// a fact for this var is already on record, so the lattice decides instead of the legacy default checks
+static void tp_fact_retype(RAnal *anal, ut64 baddr, TPVarFact *fact, RAnalVar *var,
+		const char *vname, const char *type, int ref, bool pfx) {
+	char *cand = tp_built_type (var, vname, type, ref, pfx);
+	if (!cand) {
+		// a prefix that cannot attach to the current spelling keeps the incumbent, like before the lattice
+		return;
+	}
+	const int rank = pfx? 1: tp_var_rank (cand);
+	if (!strcmp (cand, fact->type)) {
+		free (cand);
+		return;
+	}
+	if (fact->rank == 1 && rank == 1) {
+		// legacy sign semantics: unsigned upgrades to signed, width kept from the current spelling
+		tp_fact_apply (anal, fact, var, cand, 1, baddr);
+		return;
+	}
+	if (rank == 1) {
+		// sign hints come from weak compare heuristics and never weaken stronger facts
+		free (cand);
+		return;
+	}
+	if (fact->rank == 1) {
+		// any real fact beats a sign hint, on any path
+		tp_fact_apply (anal, fact, var, cand, rank, baddr);
+		return;
+	}
+	if (fact->met || tp_facts_parallel (anal, fact->bb_addr, baddr)) {
+		char *met = tp_type_meet (fact->type, fact->rank, cand, rank);
+		free (cand);
+		fact->met = true;
+		if (!met || !strcmp (met, fact->type)) {
+			free (met);
+			return;
+		}
+		tp_fact_apply (anal, fact, var, met, tp_var_rank (met), baddr);
+	} else if (rank > fact->rank) {
+		tp_fact_apply (anal, fact, var, cand, rank, baddr);
+	} else {
+		free (cand);
+	}
+}
+
+static void var_retype(RAnal *anal, TPState *tps, ut64 baddr, RAnalVar *var, const char *vname, const char *type, int ref, bool pfx) {
+	R_LOG_DEBUG ("Var retype %s %s", var->name, type);
+	R_RETURN_IF_FAIL (anal && var && type);
+	// XXX types should be passed without spaces to trim
+	type = r_str_trim_head_ro (type);
+	// default type if none is provided
+	if (!*type) {
+		type = "int";
+	}
+	bool is_ptr = (vname && *vname == '*');
+	// removing this return makes 64bit vars become 32bit
+	if (r_str_startswith (type, "int") || (!is_ptr && !strcmp (type, "void"))) {
+		// default or void type carries no fact
+		return;
+	}
+	TPVarFact *fact = tps? ht_up_find (tps->var_facts, (ut64)(size_t)var, NULL): NULL;
+	if (fact) {
+		tp_fact_retype (anal, baddr, fact, var, vname, type, ref, pfx);
+		return;
+	}
+	bool is_default = strstr (tp_expand_int (var->type), "int") != NULL;
+	if (!is_default && !r_str_startswith (var->type, "void")) {
+		// type is already propagated; only "void *" => "char *" stays possible
+		return;
+	}
+	char *nt = tp_built_type (var, vname, type, ref, pfx);
+	if (!nt) {
+		return;
+	}
+	r_anal_var_set_type (anal, var, nt);
+	if (tps) {
+		TPVarFact *nf = R_NEW0 (TPVarFact);
+		nf->type = nt;
+		nf->rank = pfx? 1: tp_var_rank (nt);
+		nf->bb_addr = baddr;
+		ht_up_insert (tps->var_facts, (ut64)(size_t)var, nf);
+	} else {
+		free (nt);
+	}
 }
 
 static RAnalOp *tp_anal_op(RAnal *anal, ut64 addr, int mask);
@@ -629,7 +791,6 @@ static RAnalCondType cond_invert(RAnal *anal, RAnalCondType cond) {
 typedef const char *String;
 R_VEC_TYPE(RVecString, String); // no fini, these are owned by SDB
 
-static RAnalOp *tp_anal_op(RAnal *anal, ut64 addr, int mask);
 
 static bool parse_format(TPState *tps, const char *fmt, RVecString *vec) {
 	if (R_STR_ISEMPTY (fmt)) {
@@ -674,7 +835,8 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 		if (!var) {
 			return;
 		}
-		var_retype (anal, var, NULL, type, false, false);
+		// callee vars belong to another function, so their facts stay out of this pass's lattice
+		var_retype (anal, NULL, UT64_MAX, var, NULL, type, false, false);
 	} else {
 		if (R_STR_ISEMPTY (place)) {
 			return;
@@ -689,23 +851,24 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 			return;
 		}
 		char *t = strdup (type);
-		var_retype (anal, rvar, NULL, type, false, false);
+		var_retype (anal, NULL, UT64_MAX, rvar, NULL, type, false, false);
 		RAnalVar *lvar = r_anal_var_get_dst_var (rvar);
 		if (lvar) {
-			var_retype (anal, lvar, NULL, t, false, false);
+			var_retype (anal, NULL, UT64_MAX, lvar, NULL, t, false, false);
 		}
 		free (t);
 		r_unref (item);
 	}
 }
 
-static void propagate_arg_type(RAnal *anal, RAnalVar *var, const char *name, const char *type,
+static void propagate_arg_type(TPState *tps, ut64 baddr, RAnalVar *var, const char *name, const char *type,
 		int var_memref, const char *fcn_name, bool in_stack, const char *place,
 		int size, ut64 addr, bool userfnc) {
+	RAnal *anal = tps->anal;
 	if (userfnc) {
 		retype_callee_arg (anal, fcn_name, in_stack, place, size, var->type);
 	} else {
-		var_retype (anal, var, name, type, var_memref, false);
+		var_retype (anal, tps, baddr, var, name, type, var_memref, false);
 		var_rename (anal, var, name, addr);
 	}
 }
@@ -1091,7 +1254,7 @@ static void tp_field_from_arg(TPState *tps, int idx, RAnalVar *var, RAnalOp *op,
 }
 
 // with a deref chain the var holds the base pointer, so only its member is typed
-static void tp_apply_arg_type(TPState *tps, int j, RAnalVar *var, RAnalOp *op, TPFieldChain *chain,
+static void tp_apply_arg_type(TPState *tps, ut64 baddr, int j, RAnalVar *var, RAnalOp *op, TPFieldChain *chain,
 		const char *name, const char *type, int memref, bool lea_adjust,
 		const char *fcn_name, bool in_stack, const char *place, int size, ut64 addr, bool userfnc) {
 	if (!tps->cfg_fields || !chain->len) {
@@ -1099,7 +1262,7 @@ static void tp_apply_arg_type(TPState *tps, int j, RAnalVar *var, RAnalOp *op, T
 		if (lea_adjust && op->type == R_ANAL_OP_TYPE_LEA) {
 			var_memref--;
 		}
-		propagate_arg_type (tps->anal, var, name, type, var_memref,
+		propagate_arg_type (tps, baddr, var, name, type, var_memref,
 			fcn_name, in_stack, place, size, addr, userfnc);
 	}
 	if (tps->cfg_fields) {
@@ -1366,7 +1529,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 				}
 				if (var) {
 					R_LOG_DEBUG ("retype var %s", name);
-					tp_apply_arg_type (tps, j, var, op, &chain, name, type, memref, true,
+					tp_apply_arg_type (tps, baddr, j, var, op, &chain, name, type, memref, true,
 						fcn_name, in_stack, place, size, addr, userfnc);
 					res = true;
 				} else {
@@ -1401,7 +1564,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 					}
 				}
 				if (var) {
-					tp_apply_arg_type (tps, j, var, op, &chain, name, type, memref, false,
+					tp_apply_arg_type (tps, baddr, j, var, op, &chain, name, type, memref, false,
 						fcn_name, in_stack, place, size, addr, userfnc);
 					res = true;
 				} else {
@@ -1432,7 +1595,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 				ut64 ptr = get_addr (tt, tmp, j);
 				if (ptr == xaddr) {
 					int var_memref = var->isarg? 0: memref;
-					var_retype (anal, var, name, r_str_get_fail (type, "int"), var_memref, false);
+					var_retype (anal, tps, baddr, var, name, r_str_get_fail (type, "int"), var_memref, false);
 				}
 			}
 			r_anal_op_free (op);
@@ -1518,6 +1681,7 @@ static bool bblist_from_cfg(RAnalFunction *fcn, RVecUT64 *bblist) {
 static void tps_fini(TPState *tps) {
 	R_RETURN_IF_FAIL (tps);
 	r_list_free (tps->clobber);
+	ht_up_free (tps->var_facts);
 	tp_flush_pending_const (tps);
 	RVecTPPendingConst_fini (&tps->pending_const);
 	type_trace_fini (&tps->tt, &tps->esil);
@@ -1715,6 +1879,7 @@ static TPState *tps_init(RAnal *anal) {
 	TPState *tps = R_NEW0 (TPState);
 	tps->anal = anal;
 	RVecTPPendingConst_init (&tps->pending_const);
+	tps->var_facts = ht_up_new (NULL, tp_var_fact_kv_free, NULL);
 	int align = r_arch_info (anal->arch, R_ARCH_INFO_DATA_ALIGN);
 	align = R_MAX (r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN), align);
 	align = R_MAX (align, 1);
@@ -2100,7 +2265,7 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 		get_src_regname_from_esil (anal, r_strbuf_get (&aop->esil), aop->addr, src, sizeof (src));
 		if (reg_token_contains (c->tp.ret_reg, src)) {
 			if (var && aop->direction == R_ANAL_OP_DIR_WRITE) {
-				var_retype (anal, var, NULL, c->tp.ret_type, false, false);
+				var_retype (anal, tps, bb_addr, var, NULL, c->tp.ret_type, false, false);
 				c->tp.resolved = true;
 			} else {
 				// typing the member must not consume the tracking a later var store relies on
@@ -2126,7 +2291,7 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 				char nsrc[REGNAME_SIZE] = { 0 };
 				get_src_regname_from_esil (anal, r_strbuf_get (&next_op->esil), next_op->addr, nsrc, sizeof (nsrc));
 				if (reg_token_contains (c->tp.ret_reg, nsrc) && var && aop->direction == R_ANAL_OP_DIR_READ) {
-					var_retype (anal, var, NULL, c->tp.ret_type, true, false);
+					var_retype (anal, tps, bb_addr, var, NULL, c->tp.ret_type, true, false);
 				}
 			}
 		}
@@ -2139,12 +2304,12 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 				sign = true;
 			} else {
 				// cmp [local_ch], rax ; jb
-				var_retype (anal, var, NULL, "unsigned", false, true);
+				var_retype (anal, tps, bb_addr, var, NULL, "unsigned", false, true);
 			}
 		}
 		// cmp [local_ch], rax ; jge
 		if (sign || aop->sign) {
-			var_retype (anal, var, NULL, "signed", false, true);
+			var_retype (anal, tps, bb_addr, var, NULL, "signed", false, true);
 		}
 		// lea rax , str.hello  ; mov [local_ch], rax;
 		// mov rdx , [local_4h] ; mov [local_8h], rdx;
@@ -2153,10 +2318,10 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 			get_src_regname_from_esil (anal, r_strbuf_get (&aop->esil), addr, reg, sizeof (reg));
 			bool match = reg_token_contains (c->tp.prev_dest, reg);
 			if (c->tp.str_flag && match) {
-				var_retype (anal, var, NULL, "const char *", false, false);
+				var_retype (anal, tps, bb_addr, var, NULL, "const char *", false, false);
 			}
 			if (c->tp.prop && match && c->tp.prev_var) {
-				var_retype (anal, var, NULL, c->tp.prev_type, false, false);
+				var_retype (anal, tps, bb_addr, var, NULL, c->tp.prev_type, false, false);
 			}
 		}
 		if (tps->cfg_chk_constraint && var && (type == R_ANAL_OP_TYPE_CMP && aop->disp != UT64_MAX) && next_op && next_op->type == R_ANAL_OP_TYPE_CJMP) {
@@ -2220,7 +2385,7 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 		}
 		// mov dword [local_4h], str.hello;
 		if (var && c->tp.str_flag) {
-			var_retype (anal, var, NULL, "const char *", false, false);
+			var_retype (anal, tps, bb_addr, var, NULL, "const char *", false, false);
 		}
 		c->tp.prev_dest = etrace_regwrite (etrace, cur_idx);
 		if (var) {
@@ -2272,9 +2437,9 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 			char *rvar_type = strdup (rvar->type);
 			if (rvar_type) {
 				// Propagate local var type = to => register-based var
-				var_retype (anal, rvar, NULL, lvar->type, false, false);
+				var_retype (anal, NULL, UT64_MAX, rvar, NULL, lvar->type, false, false);
 				// Propagate local var type <= from = register-based var
-				var_retype (anal, lvar, NULL, rvar_type, false, false);
+				var_retype (anal, NULL, UT64_MAX, lvar, NULL, rvar_type, false, false);
 				free (rvar_type);
 			}
 		}
