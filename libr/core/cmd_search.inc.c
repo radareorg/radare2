@@ -4403,6 +4403,10 @@ reread:
 				  addr = UT64_MAX;
 				  (void)r_core_asm_bwdis_len (core, NULL, &addr, n);
 			  }
+			  if (addr == UT64_MAX) {
+				  // no window disassembles cleanly, fall back to the same walk as pd
+				  addr = r_core_prevop_addr_force (core, core->addr, n);
+			  }
 			  if (param.outmode == R_MODE_JSON) {
 				  r_cons_printf (core->cons, "[%"PFMT64u "]", addr);
 			  } else {

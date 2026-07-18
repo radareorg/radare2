@@ -7940,6 +7940,10 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			if (j >= nb_opcodes) {
 				break;
 			}
+			if (!dis_opcodes && i >= nb_bytes) {
+				// backward mode never refills buf, stop at its end
+				break;
+			}
 		} else if (i >= nb_bytes) {
 			break;
 		}
