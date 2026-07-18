@@ -1167,6 +1167,12 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		ES_SIGN32_64 (R_REG (rd));
 		break;
 	case MIPS_INS_MULT:
+		// signed: sign-extend both operands so hi holds the signed high word
+		r_strbuf_appendf (&op->esil, ES_W ("32,%s,~,32,%s,~,*") ",lo,=", R_REG (rs), R_REG (rt));
+		ES_SIGN32_64 ("lo");
+		r_strbuf_appendf (&op->esil, ES_W ("32,32,%s,~,32,%s,~,*,>>") ",hi,=", R_REG (rs), R_REG (rt));
+		ES_SIGN32_64 ("hi");
+		break;
 	case MIPS_INS_MULTU:
 		r_strbuf_appendf (&op->esil, ES_W ("%s,%s,*") ",lo,=", R_REG (rs), R_REG (rt));
 		ES_SIGN32_64 ("lo");
@@ -1448,6 +1454,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case 24: // mult
 			insn.id = MIPS_INS_MULT;
+			op->type = R_ANAL_OP_TYPE_MUL;
+			break;
 		case 25: // multu
 			insn.id = MIPS_INS_MULTU;
 			op->type = R_ANAL_OP_TYPE_MUL;
@@ -1459,7 +1467,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case 32: // add
 			insn.id = MIPS_INS_ADD;
-		case 33: // addu	//TODO:表明位数
+			op->type = R_ANAL_OP_TYPE_ADD;
+			break;
+		case 33: // addu
 			insn.id = MIPS_INS_ADDU;
 			op->type = R_ANAL_OP_TYPE_ADD;
 			break;
@@ -2039,6 +2049,8 @@ static char *regs(RArchSession *as) {
 		"gpr	sp	.64	232	0\n"
 		"gpr	fp	.64	240	0\n"
 		"gpr	ra	.64	248	0\n"
+		"gpr	hi	.64	256	0\n"
+		"gpr	lo	.64	264	0\n"
 		/* extra */
 		"gpr	pc	.64	272	0\n";
 	return strdup (p);
