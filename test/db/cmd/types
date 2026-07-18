@@ -1878,8 +1878,9 @@ char *
 uint32_t
 size_t
 void *
-size_t *
+mbstate_t *
 wint_t
+size_t *
 =
 fcn.0000f770
 fcn.00011b90
@@ -1887,7 +1888,6 @@ fcn.00010010
 fcn.0000e780
 fcn.0000c0f0
 =
-fcn.0000bd00
 fcn.00011b90
 fcn.00014d50
 EOF
@@ -2759,4 +2759,91 @@ EXPECT=<<EOF
 12
 pf ?[4].d (pair<int, char>)p x
 EOF
+RUN
+
+NAME=aaft conflicting types from parallel branches meet to void pointer
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488b7df8e84b000000eb39 @ 0
+wx 488d0549000000488945f8eb13 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+w hello @ 0x80
+f str.hello @ 0x80
+af @ 0x60
+afn takes_file @ 0x60
+"td struct fobj {int x;}; int takes_file(struct fobj *f);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var void * f @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft parallel-branch meet is independent of the branch order
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488d056d000000488945f8eb37 @ 0
+wx 488b7df8e827000000eb15 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+w hello @ 0x80
+f str.hello @ 0x80
+af @ 0x60
+afn takes_file @ 0x60
+"td struct fobj {int x;}; int takes_file(struct fobj *f);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var void * f @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft later stronger evidence on the same path upgrades the type
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec20488b7df8e84f000000488d0568000000488945f8c9c3 @ 0
+wx c3 @ 0x60
+w hello @ 0x80
+f str.hello @ 0x80
+af @ 0x60
+afn takes_u64 @ 0x60
+"td int takes_u64(uint64_t v);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var char * v @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft matching types from parallel branches stay intact
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488d057d000000488945f8eb37 @ 0
+wx 488d0549000000488945f8eb13 @ 0x30
+wx c9c3 @ 0x50
+w hello @ 0x80
+w world @ 0x90
+f str.hello @ 0x80
+f str.world @ 0x90
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var char * var_8h @ rbp-0x8
+EOF2
 RUN
