@@ -1911,3 +1911,45 @@ EXPECT=<<EOF
 sar
 EOF
 RUN
+
+NAME=mips.gnu mult signed hi and add overflow decode with hi lo registers
+FILE=malloc://32
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+aei
+wx 18000901
+ar t0=0xffffffff
+ar t1=2
+ar pc=0
+aes
+ar hi
+ar lo
+wx 19000901
+ar t0=0xffffffff
+ar t1=2
+ar pc=0
+aes
+ar hi
+ar lo
+wx 20108500
+ao 1~mnemonic
+ar a0=5
+ar a1=3
+ar pc=0
+aes
+ar v0
+wx 12480000
+ar pc=0
+aes
+ar t1
+EOF
+EXPECT=<<EOF
+0xffffffff
+0xfffffffe
+0x00000001
+0xfffffffe
+mnemonic: add
+0x00000008
+0xfffffffe
+EOF
+RUN
