@@ -875,8 +875,15 @@ static void toc_invalidate(PluginData *pd, RAnalOp *op, cs_insn *insn) {
 static void set_sra(RAnalOp *op, const char *rd, const char *rs, const char *cnt, bool w64, const char *mask) {
 	const char *sgn = w64? "0x8000000000000000": "0x80000000";
 	const char *lo = w64? "0xffffffffffffffff": "0xffffffff";
+	char sx[48];
+	const char *v = rs;
+	if (!w64) {
+		// the word forms shift the sign-extended low word, not the raw 64-bit register
+		snprintf (sx, sizeof (sx), "32,%s,~", rs);
+		v = sx;
+	}
 	esilprintf (op, "%s,%s,&,!,!,%s,%s,&,%s,&,!,!,&,ca,=,%s,%s,ASR,%s,=",
-		sgn, rs, mask, rs, lo, cnt, rs, rd);
+		sgn, rs, mask, rs, lo, cnt, v, rd);
 }
 
 // ca = (val <unsigned a) | (cin & val==a), then store val into rd LAST so the carry stays
@@ -2533,6 +2540,19 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				op->type = R_ANAL_OP_TYPE_MOV;
 				esilprintf (op, "%s,xer,=", ARG (0));
 			}
+		}
+		if (insn->detail->ppc.update_cr0 && !r_strbuf_is_empty (&op->esil)
+				&& (op->type & R_ANAL_OP_TYPE_MASK) != R_ANAL_OP_TYPE_STORE
+				&& INSOP (0).type == PPC_OP_REG
+				&& INSOP (0).reg >= PPC_REG_R0 && INSOP (0).reg <= PPC_REG_R31) {
+			// Rc=1: cr0 from the result signed-compared to zero; SO not modelled (as in cmp)
+			char sx[48];
+			const char *rd = ARG (0);
+			if (as->config->bits == 32) {
+				snprintf (sx, sizeof (sx), "32,%s,~", rd);
+				rd = sx;
+			}
+			r_strbuf_appendf (&op->esil, ",0x80,0,%s,<,*,%s,0,<,+,cr0,=", rd, rd);
 		}
 		if (mask & R_ARCH_OP_MASK_VAL) {
 			op_fillval (op, handle, insn);
