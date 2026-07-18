@@ -1,26 +1,5 @@
 // Private helpers for /as syscall search. Included by cmd_search.inc.c.
 
-static const char *get_syscall_register(RCore *core) {
-	const char *sn = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SN);
-	RArchConfig *cfg = R_UNWRAP3 (core, anal, config);
-	const char *arch = cfg? cfg->arch: NULL;
-	if (arch && !strcmp (arch, "arm") && cfg->bits == 64) {
-		const char *os = cfg->os;
-		if (R_STR_ISEMPTY (os)) {
-			os = r_config_get (core->config, "asm.os");
-		}
-		if (R_STR_ISEMPTY (os)) {
-			return sn;
-		}
-		if (!strcmp (os, "linux") || !strcmp (os, "android")) {
-			sn = "x8";
-		} else if (!strcmp (os, "macos")) {
-			sn = "x16";
-		}
-	}
-	return sn;
-}
-
 typedef enum {
 	SYSREG_VAL_UNKNOWN,
 	SYSREG_VAL_CONST,
@@ -860,7 +839,7 @@ static void do_syscall_search(RCore *core, RSearchParameters *param) {
 	SyscallRegMap regmap;
 	SyscallRegState local_state;
 	RVecSyscallFunctionCache fcn_cache;
-	const char *screg = get_syscall_register (core);
+	const char *screg = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SN);
 	ut8 *buf = malloc (bsize);
 
 	if (!buf) {

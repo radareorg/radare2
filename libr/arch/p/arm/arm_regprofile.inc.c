@@ -27,7 +27,7 @@ static char *regs(RArchSession *as) {
 		"=SF	nf\n"
 		"=OF	vf\n"
 		"=CF	cf\n"
-		"=SN	x16\n" // x8 on linux?
+		"=SN	%s\n" // x8 on linux/android, x16 on darwin
 
 		/* 8bit sub-registers */
 		"fpu	b0	.8	0	0\n"
@@ -644,10 +644,13 @@ static char *regs(RArchSession *as) {
 		"fpu	q15	.128	308	0\n"
 		;
 	}
+	if (as->config->bits != 64) {
+		return strdup (p);
+	}
 	const char *os = as->config->os;
-	if (!os) {
+	if (R_STR_ISEMPTY (os)) {
 		os = R_SYS_OS;
 	}
-	const char *snReg = (!strcmp (os, "android") || !strcmp (os, "linux"))? "x8": "x16";
-	return r_str_newf (p, snReg);
+	const char *snreg = (!strcmp (os, "android") || !strcmp (os, "linux"))? "x8": "x16";
+	return r_str_newf (p, snreg);
 }
