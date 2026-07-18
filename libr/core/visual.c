@@ -1375,7 +1375,11 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	}
 	if (minop == maxop) {
 		if (minop == -1) {
-			return addr - 4;
+			return addr > 4 ? addr - 4 : 0;
+		}
+		if (addr < (ut64)minop) {
+			// clamp instead of wrapping around the top of the address space
+			return 0;
 		}
 		ut64 prev = addr - minop;
 		if (addr >= (ut64)minop && core->anal->config->codealign == minop) {

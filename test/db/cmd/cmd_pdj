@@ -84,3 +84,36 @@ invalid
 60
 EOF
 RUN
+
+NAME=pdj negative count near start of file
+FILE=malloc://64
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+b 64
+wow 1f2003d5
+s 8
+pdj -4~{[0].addr}
+pdj -4~{[3].addr}
+EOF
+EXPECT=<<EOF
+0
+12
+EOF
+RUN
+
+NAME=pdj negative count with window larger than blocksize
+FILE=malloc://512
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+b 512
+wow 1f2003d5
+b 64
+s 0x100
+pdj -20~{[0].addr}
+pdj -20~{[19].addr}
+EOF
+EXPECT=<<EOF
+176
+252
+EOF
+RUN

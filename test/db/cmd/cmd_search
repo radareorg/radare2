@@ -825,6 +825,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/o with invalid instruction in window
+FILE=malloc://64
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+b 64
+wow 1f2003d5
+wx ffffffff @ 0x24
+s 0x40
+/o 9
+EOF
+EXPECT=<<EOF
+0x0000001c
+EOF
+RUN
+
 NAME=/x search from/to (seek 0)
 FILE=malloc://1024
 CMDS=<<EOF

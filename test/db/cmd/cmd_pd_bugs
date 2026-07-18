@@ -378,3 +378,37 @@ EXPECT=<<EOF
 0x0000003c             1f2003d5  nop
 EOF
 RUN
+
+NAME=pdi negative count near start of file
+FILE=malloc://64
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+b 64
+wow 1f2003d5
+s 8
+pdi -4
+EOF
+EXPECT=<<EOF
+0x00000000             1f2003d5  nop
+0x00000004             1f2003d5  nop
+0x00000008             1f2003d5  nop
+0x0000000c             1f2003d5  nop
+EOF
+RUN
+
+NAME=pd negative count near start of file does not wrap around
+FILE=malloc://64
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+b 64
+wow 1f2003d5
+s 8
+pd -4
+EOF
+EXPECT=<<EOF
+            0x00000000      1f2003d5       nop
+            0x00000004      1f2003d5       nop
+            0x00000008      1f2003d5       nop
+            0x0000000c      1f2003d5       nop
+EOF
+RUN
