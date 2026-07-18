@@ -424,10 +424,16 @@ R_API bool r_anal_set_triplet(RAnal *anal, const char * R_NULLABLE os, const cha
 R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 	R_RETURN_VAL_IF_FAIL (anal && os, false);
 	const char *old_os = anal->config? anal->config->os: NULL;
-	if (!old_os || strcmp (old_os, os)) {
+	const bool changed = !old_os || strcmp (old_os, os);
+	if (changed) {
 		R_ANAL_PRIV (anal)->types_dirty = true;
 	}
-	return r_anal_set_triplet (anal, os, NULL, -1);
+	const bool res = r_anal_set_triplet (anal, os, NULL, -1);
+	if (res && changed) {
+		// os-dependent register aliases (e.g. arm64 =SN) must follow
+		r_anal_set_reg_profile (anal, NULL);
+	}
+	return res;
 }
 
 R_API bool r_anal_set_bits(RAnal *anal, int bits) {

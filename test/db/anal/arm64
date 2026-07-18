@@ -56370,3 +56370,17 @@ EXPECT=<<EOF
 and
 EOF
 RUN
+
+NAME=arm64 syscall number register follows asm.os
+FILE=malloc://64
+ARGS=-a arm -b 64 -e asm.os=linux
+CMDS=<<EOF
+arp~=SN
+e asm.os=macos
+arp~=SN
+EOF
+EXPECT=<<EOF
+=SN	x8
+=SN	x16
+EOF
+RUN
