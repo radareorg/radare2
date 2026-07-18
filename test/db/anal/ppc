@@ -1481,3 +1481,89 @@ dtalign 2
 codealign 2
 EOF
 RUN
+
+NAME=ppc record forms append cr0 esil and plain forms do not
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7c8532147c85321570a400017c80292d
+aoj 4~{0.esil}
+aoj 4~{1.esil}
+aoj 4~{2.esil}
+aoj 4~{3.esil}
+EOF
+EXPECT=<<EOF
+r6,r5,+,r4,=
+r6,r5,+,r4,=,0x80,0,r4,<,*,r4,0,<,+,cr0,=
+0x1,r5,&,r4,=,0x80,0,r4,<,*,r4,0,<,+,cr0,=
+r4,r5,=[4]
+EOF
+RUN
+
+NAME=ppc record form cr0 result drives a following branch
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 2c2500007c863a154182000839000001 @ 0
+wx 38e00007 @ 16
+aei
+aeim
+ar r5=5
+ar r6=1
+ar r7=0xffffffffffffffff
+aes
+aes
+aes
+aes
+ar cr0
+ar r7
+ar r8
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000007
+0x00000000
+EOF
+RUN
+
+NAME=ppc32 record form cr0 compares the word result
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 34850001
+aoj 1~{0.esil}
+aei
+aeim
+ar r5=0x7fffffff
+aes
+ar r4
+ar cr0
+EOF
+EXPECT=<<EOF
+0x8000000000000000,r5,^,0x8000000000000000,0x1,r5,+,0xffffffff,&,^,<,0x1,r5,+,r4,=,ca,=,0x80,0,32,r4,~,<,*,32,r4,~,0,<,+,cr0,=
+0x80000000
+0x00000080
+EOF
+RUN
+
+NAME=ppc srawi shifts the sign-extended low word
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7ca41e71
+aoj 1~{0.esil}
+aei
+aeim
+ar r5=0x8000000f
+aes
+ar r4
+ar ca
+ar cr0
+EOF
+EXPECT=<<EOF
+0x80000000,r5,&,!,!,0x7,r5,&,0xffffffff,&,!,!,&,ca,=,0x3,32,r5,~,ASR,r4,=,0x80,0,r4,<,*,r4,0,<,+,cr0,=
+0xfffffffff0000001
+0x00000001
+0x00000080
+EOF
+RUN
