@@ -4311,3 +4311,24 @@ EXPECT=<<EOF2
 |           0x00000010      c744242803..   mov dword [arr[2]], 3
 EOF2
 RUN
+
+NAME=rip-relative destination operand ptr with zero displacement
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 48ff0500000000
+ao 1~^ptr
+wx 48f71d00000000
+ao 1~^ptr
+wx 488b0500000000
+ao 1~^ptr
+wx 48ff0508000000
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x00000007
+ptr: 0x00000007
+ptr: 0x00000007
+ptr: 0x0000000f
+EOF
+RUN

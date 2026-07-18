@@ -2973,13 +2973,12 @@ static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 	switch (INSOP (0).type) {
 	case X86_OP_MEM:
 		op->cycles = CYCLE_MEM;
-		op->disp = INSOP (0).mem.disp;
-		if (!op->disp) {
-			op->disp = UT64_MAX;
-		}
+		// keep the real displacement for rip math; op->disp uses UT64_MAX as the no-disp sentinel
+		const st64 disp = INSOP (0).mem.disp;
+		op->disp = disp? (ut64)disp: UT64_MAX;
 		op->refptr = INSOP (0).size;
 		if (INSOP (0).mem.base == X86_REG_RIP) {
-			op->ptr = addr + insn->size + op->disp;
+			op->ptr = addr + insn->size + disp;
 		} else if (INSOP (0).mem.base == X86_REG_RBP || INSOP (0).mem.base == X86_REG_EBP) {
 			op->type |= R_ANAL_OP_TYPE_REG;
 			op->stackop = R_ANAL_STACK_SET;
