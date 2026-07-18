@@ -1714,14 +1714,30 @@ static void cmd_pDj(RCore *core, const char *arg) {
 
 static void cmd_pdj(RCore *core, const char *arg, ut8 *block) {
 	int nblines = r_num_math (core->num, arg);
+	ut8 *buf = block;
+	ut8 *mybuf = NULL;
+	int buflen = core->blocksize;
+	if (nblines < 0 && nblines > -0xffff) {
+		// backward window can be larger than the block, like pd/pdi grow it
+		const int maxopsz = R_MAX (1, r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE));
+		const int needed = -nblines * maxopsz;
+		if (needed > buflen) {
+			mybuf = malloc (needed);
+			if (mybuf) {
+				buf = mybuf;
+				buflen = needed;
+			}
+		}
+	}
 	PJ *pj = r_core_pj_new (core);
 	if (pj) {
 		pj_a (pj);
-		r_core_print_disasm_json_ipi (core, core->addr, block, core->blocksize, nblines, pj, NULL);
+		r_core_print_disasm_json_ipi (core, core->addr, buf, buflen, nblines, pj, NULL);
 		pj_end (pj);
 		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
+	free (mybuf);
 }
 
 static bool cmd_p_minus_entropy_count(RCore *core, ut64 from, ut64 to, ut64 *count, ut64 *total) {
@@ -7898,10 +7914,7 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 					int dislen = r_core_print_disasm (core, addr - l, block1, l, l, 0, NULL, true, formatted_json, NULL, NULL);
 					r_core_return_value (core, dislen);
 				} else { // pd
-					if (!r_core_prevop_addr (core, core->addr, l, &start)) {
-						// anal ignorance.
-						start = r_core_prevop_addr_force (core, core->addr, l);
-					}
+					start = r_core_prevop_addr_force (core, core->addr, l);
 					int instr_len = core->addr - start;
 					ut64 prevaddr = core->addr;
 					int bs = core->blocksize;
