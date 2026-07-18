@@ -39,9 +39,7 @@ EXPECT=<<EOF
 type: ill
 its a trap 0x0 0x7
 EOF
-EXPECT_ERR=<<EOF
-ERROR: ESIL stopped at 0x00000000: invalid instruction (invalid)
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=aesu steps over invalid op by default

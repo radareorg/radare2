@@ -2029,3 +2029,16 @@ EXPECT=<<EOF
 [{"start":134520588,"end":134520844,"entropy":2.877},{"start":134520844,"end":134521100,"entropy":0.550},{"start":134512640,"end":134512896,"entropy":3.073},{"start":134512896,"end":134513408,"entropy":4.166}]
 EOF
 RUN
+
+NAME=search with io.cache over 0xffffffff data
+FILE=malloc://512
+CMDS=<<EOF
+wx ffffffffffffffff @ 0x100
+w GIF8 @ 0x1f0
+e io.cache=true
+/ GIF8
+EOF
+EXPECT=<<EOF
+0x000001f0 hit0_0 "GIF8"
+EOF
+RUN
