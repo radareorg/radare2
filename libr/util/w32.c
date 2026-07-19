@@ -66,6 +66,16 @@ R_API BOOL r_w32_SleepConditionVariableCS(PCONDITION_VARIABLE a, PCRITICAL_SECTI
 	return x? x (a, b, c): FALSE;
 }
 
+R_API BOOL r_w32_SleepConditionVariableSRW(PCONDITION_VARIABLE a, PSRWLOCK b, DWORD c, ULONG d) {
+	static BOOL (WINAPI *x)(PCONDITION_VARIABLE a, PSRWLOCK b, DWORD c, ULONG d) = NULL;
+	// requires 2008 / vista
+	if (!x) {
+		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
+		x = (BOOL (WINAPI *)(PCONDITION_VARIABLE, PSRWLOCK, DWORD, ULONG)) GetProcAddress (lib, W32_TCALL ("SleepConditionVariableSRW"));
+	}
+	return x? x (a, b, c, d): FALSE;
+}
+
 R_API BOOL r_w32_ProcessIdToSessionId(DWORD a, DWORD *b) {
 	static BOOL (WINAPI *x)(DWORD, DWORD*) = NULL;
 	if (!x) {

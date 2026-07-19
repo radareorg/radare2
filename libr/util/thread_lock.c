@@ -24,8 +24,12 @@ static bool _lock_init(RThreadLock *thl, bool recursive) {
 		pthread_mutex_init (&thl->lock, &attr);
 	}
 #elif R2__WINDOWS__
-	// TODO: obey `recursive` (currently it is always recursive)
-	InitializeCriticalSection (&thl->lock);
+	thl->lock.recursive = recursive;
+	if (recursive) {
+		InitializeCriticalSection (&thl->lock.cs);
+	} else {
+		InitializeSRWLock (&thl->lock.srw);
+	}
 #else
 #warning Unsupported mutex
 	return false;
@@ -119,7 +123,11 @@ R_API bool r_th_lock_enter(RThreadLock *thl) {
 #if HAVE_PTHREAD
 	return pthread_mutex_lock (&thl->lock) == 0;
 #elif R2__WINDOWS__
-	EnterCriticalSection (&thl->lock);
+	if (thl->lock.recursive) {
+		EnterCriticalSection (&thl->lock.cs);
+	} else {
+		AcquireSRWLockExclusive (&thl->lock.srw);
+	}
 	return true;
 #else
 	return true;
@@ -131,7 +139,11 @@ R_API bool r_th_lock_tryenter(RThreadLock *thl) {
 #if HAVE_PTHREAD
 	return pthread_mutex_trylock (&thl->lock) == 0;
 #elif R2__WINDOWS__
-	return TryEnterCriticalSection (&thl->lock);
+	if (thl->lock.recursive) {
+		return TryEnterCriticalSection (&thl->lock.cs) != 0;
+	} else {
+		return TryAcquireSRWLockExclusive (&thl->lock.srw) != 0;
+	}
 #else
 	return false;
 #endif
@@ -146,7 +158,11 @@ R_API bool r_th_lock_leave(RThreadLock *thl) {
 #if HAVE_PTHREAD
 	return pthread_mutex_unlock (&thl->lock) == 0;
 #elif R2__WINDOWS__
-	LeaveCriticalSection (&thl->lock);
+	if (thl->lock.recursive) {
+		LeaveCriticalSection (&thl->lock.cs);
+	} else {
+		ReleaseSRWLockExclusive (&thl->lock.srw);
+	}
 	return true;
 #else
 	return false;
@@ -170,7 +186,9 @@ R_API void *r_th_lock_free(RThreadLock *thl) {
 #if HAVE_PTHREAD
 		pthread_mutex_destroy (&thl->lock);
 #elif R2__WINDOWS__
-		DeleteCriticalSection (&thl->lock);
+		if (thl->lock.recursive) {
+			DeleteCriticalSection (&thl->lock.cs);
+		}
 #endif
 		if (thl->type == R_TH_LOCK_TYPE_HEAP) {
 			free (thl);

@@ -40,7 +40,11 @@ R_API void r_th_cond_wait(RThreadCond *cond, RThreadLock *lock) {
 #if HAVE_PTHREAD
 	pthread_cond_wait (&cond->cond, &lock->lock);
 #elif R2__WINDOWS__
-	r_w32_SleepConditionVariableCS (&cond->cond, &lock->lock, INFINITE);
+	if (lock->lock.recursive) {
+		r_w32_SleepConditionVariableCS (&cond->cond, &lock->lock.cs, INFINITE);
+	} else {
+		r_w32_SleepConditionVariableSRW (&cond->cond, &lock->lock.srw, INFINITE, 0);
+	}
 #endif
 }
 
