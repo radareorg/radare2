@@ -687,6 +687,8 @@ NAME=ij.gron
 FILE=bins/elf/crackme
 CMDS=<<EOF
 ij~{=}
+?e '{"a.b":1}'~{=}
+?e 'not json'~{=}
 EOF
 EXPECT=<<EOF
 json = {};
@@ -736,6 +738,9 @@ json.bin.uncaps = true;
 json.bin.subsys = "linux";
 json.bin.va = true;
 json.bin.checksums = {};
+json = {};
+json["a.b"] = 1;
+not json
 EOF
 RUN
 

@@ -467,38 +467,35 @@ static int cmp(const void *a, const void *b) {
 	return res;
 }
 
-static bool gron(RStrBuf *sb, RJson *node, const char *root) {
-	R_RETURN_VAL_IF_FAIL (sb && node && root, false);
+static char *gron_object_path(const char *root, const char *key) {
+	if (r_name_check (key) && !strpbrk (key, ".:")) {
+		return r_str_newf ("%s.%s", root, key);
+	}
+	char *escaped = r_str_escape_json (key, -1);
+	char *path = r_str_newf ("%s[\"%s\"]", root, escaped);
+	free (escaped);
+	return path;
+}
+
+static void gron(RStrBuf *sb, RJson *node, const char *root) {
 	switch (node->type) {
 	case R_JSON_ARRAY:
-		{
-			RJson *cn = node->children.first;
-			int n = 0;
-			r_strbuf_appendf (sb, "%s = [];\n", root);
-			while (cn) {
-				char *newroot = r_str_newf ("%s[%d]", root, n);
-				gron (sb, cn, newroot);
-				free (newroot);
-				cn = cn->next;
-				n++;
-			}
-		}
-		break;
 	case R_JSON_OBJECT:
 		{
-			RJson *cn = node->children.first;
-			r_strbuf_appendf (sb, "%s = {};\n", root);
-			while (cn) {
-				char *newroot = r_str_newf ("%s.%s", root, cn->key);
+			bool object = node->type == R_JSON_OBJECT;
+			r_strbuf_appendf (sb, "%s = %s;\n", root, object? "{}": "[]");
+			RJson *cn;
+			int n = 0;
+			for (cn = node->children.first; cn; cn = cn->next, n++) {
+				char *newroot = object? gron_object_path (root, cn->key): r_str_newf ("%s[%d]", root, n);
 				gron (sb, cn, newroot);
-				cn = cn->next;
+				free (newroot);
 			}
 		}
 		break;
 	case R_JSON_STRING:
 		{
-			size_t l = strlen (node->str_value);
-			char *estr = r_str_encoded_json (node->str_value, l, PJ_ENCODING_STR_DEFAULT);
+			char *estr = r_str_encoded_json (node->str_value, -1, PJ_ENCODING_STR_DEFAULT);
 			r_strbuf_appendf (sb, "%s = \"%s\";\n", root, estr);
 			free (estr);
 		}
@@ -515,11 +512,7 @@ static bool gron(RStrBuf *sb, RJson *node, const char *root) {
 	case R_JSON_DOUBLE:
 		r_strbuf_appendf (sb, "%s = %lf;\n", root, node->num.dbl_value);
 		break;
-	default:
-		R_LOG_WARN ("unknown json type %s", r_json_type (node));
-		break;
 	}
-	return true;
 }
 
 static inline ut64 cmpstrings(const void *a) {
@@ -763,17 +756,17 @@ R_API void r_cons_grepbuf(RCons *cons) {
 	}
 	if (grep->gron) {
 		RJson *node = r_json_parsedup (cons->context->buffer);
+		if (!node) {
+			return;
+		}
 		RStrBuf *sb = r_strbuf_new ("");
 		gron (sb, node, "json");
-		char *s = r_strbuf_drain (sb);
+		char *out = r_strbuf_drain (sb);
 		r_json_free (node);
-		R_FREE (cons->context->buffer);
-		cons->context->buffer_len = 0;
-		cons->context->buffer_sz = 0;
-		r_cons_print (cons, s);
-		in = buf = cons->context->buffer;
-		len = cons->context->buffer_len;
-		free (s);
+		free (cons->context->buffer);
+		in = buf = cons->context->buffer = out;
+		len = cons->context->buffer_len = strlen (out);
+		cons->context->buffer_sz = len + 1;
 		goto continuation;
 	}
 	if (grep->xml) {
