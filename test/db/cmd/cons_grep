@@ -536,11 +536,13 @@ b 128
 px~?
 ?e a\nb\nb\nc~b~$$?
 ?e a\nb\nb\nc~b~$$?.
+?e a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nn~$:12?
 EOF
 EXPECT=<<EOF
 9
 1
 2
+14
 EOF
 RUN
 

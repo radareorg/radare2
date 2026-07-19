@@ -226,7 +226,7 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 				if (*ptr == ':') {
 					ptr++;
 					grep->sort_row = atoi (ptr);
-					ptr++;
+					ptr = r_str_trim_head_digits (ptr);
 				}
 				break;
 			case '&':
