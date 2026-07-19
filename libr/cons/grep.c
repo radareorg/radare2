@@ -786,6 +786,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 		free (cons->context->buffer);
 		in = buf = cons->context->buffer = xi;
 		len = cons->context->buffer_len = strlen (xi);
+		cons->context->buffer_sz = len + 1;
 		free (x);
 		return;
 	}
