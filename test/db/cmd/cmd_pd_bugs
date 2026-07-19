@@ -412,3 +412,21 @@ EXPECT=<<EOF
             0x0000000c      1f2003d5       nop
 EOF
 RUN
+
+NAME=pi negative count at the very start of the file shows the forward window like pd
+FILE=malloc://64
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+b 64
+wow 1f2003d5
+s 0
+e asm.lines=0
+pi -4
+EOF
+EXPECT=<<EOF
+nop
+nop
+nop
+nop
+EOF
+RUN
