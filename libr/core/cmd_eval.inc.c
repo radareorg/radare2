@@ -392,10 +392,15 @@ R_API void r_core_echo(RCore *core, const char *input) {
 		}
 		free (buf);
 	} else {
-		char *p = strchr (input, ' ');
+		const char *p = strchr (input, ' ');
 		if (p) {
-			r_cons_print (core->cons, p + 1);
-			r_cons_newline (core->cons);
+			char *msg = strdup (p + 1);
+			if (msg) {
+				r_str_trim_args (msg);
+				r_str_unescape (msg);
+				r_cons_println (core->cons, msg);
+				free (msg);
+			}
 		}
 	}
 }

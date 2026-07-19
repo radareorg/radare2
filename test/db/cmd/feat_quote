@@ -32,6 +32,36 @@ Hello@World
 EOF
 RUN
 
+NAME=Inline quotes follow shell argument rules
+CMDS=<<EOF
+echo "'hello world'"
+echo '"hello world"'
+echo pre"hello world"post
+echo pre'hello world'post
+echo "a""b" '' "c"
+echo "say: \"hello\""
+echo "semi;pipe|redirect>seek@grep~stay literal"
+echo 'semi;pipe|redirect>seek@grep~stay literal'
+?e pre"hello world"post
+?e pre'hello world'post
+?e "line\nbang\x21"
+EOF
+EXPECT=<<EOF
+'hello world'
+"hello world"
+prehello worldpost
+prehello worldpost
+ab  c
+say: "hello"
+semi;pipe|redirect>seek@grep~stay literal
+semi;pipe|redirect>seek@grep~stay literal
+prehello worldpost
+prehello worldpost
+line
+bang!
+EOF
+RUN
+
 NAME=Single quotes
 CMDS=<<EOF
 w 'Hello World'
@@ -43,9 +73,6 @@ w0 15
 w '\'Hello World\''
 ps
 w0 15
-w '\'Hello World''
-ps
-w0 15
 w 'Hello;World'
 ps
 w0 15
@@ -55,7 +82,6 @@ EOF
 EXPECT=<<EOF
 Hello World
 "Hello World"
-'Hello World'
 'Hello World'
 Hello;World
 Hello@World
@@ -82,5 +108,160 @@ Hello World
 Hello $(?e World)
 Hello $(?e World)
 Hello `?e World`
+EOF
+RUN
+
+NAME=Quote-aware command substitutions
+CMDS=<<EOF
+w "Hello `?e World`"
+ps
+w0 64
+w 'Hello `?e World`'
+ps
+w0 64
+w "A$(?en B$(?en C))D"
+ps
+w0 64
+w "$(?e ')')"
+ps
+w0 64
+w "safe:$(?e:Ijs/ZSBJTkpFQ1QgJCg/ZSBORVNURUQpIGA/ZSBUSUNLYA==)"
+ps
+w0 64
+w "plain:$(?e:JGZvbw==)"
+ps
+w0 64
+w 'literal:"$(?e NO)"'
+ps
+EOF
+EXPECT=<<EOF
+Hello World
+Hello `?e World`
+ABCD
+)
+safe:";?e INJECT $(?e NESTED) `?e TICK`
+plain:$foo
+literal:"$(?e NO)"
+EOF
+RUN
+
+NAME=Escaped operator parity
+CMDS=<<EOF
+echo literal\;?e NOT_RUN
+echo active\\;?e SECOND
+echo literal\|E
+echo active\\|E
+echo literal\>$a
+echo active\\>$a
+cat $a
+echo literal\$(?e NOT_RUN)
+echo active\\$(?en OK)
+echo literal\`?e NOT_RUN\`
+echo active\\`?en OK`
+echo \# \@ \~ \! \& \* \( \) \< \> \$
+echo mixed\;literal;?e SECOND_MIXED
+echo mixed\|literal|E
+echo mixed\>literal >$b
+cat $b
+EOF
+EXPECT=<<EOF
+literal;?e NOT_RUN
+active\
+SECOND
+literal|E
+YWN0aXZlXAo=
+literal>$a
+active\
+literal$(?e NOT_RUN)
+active\OK
+literal`?e NOT_RUN`
+active\OK
+# @ ~ ! & * ( ) < > $
+mixed;literal
+SECOND_MIXED
+bWl4ZWR8bGl0ZXJhbAo=
+mixed>literal
+EOF
+RUN
+
+NAME=Escaped quote parity
+CMDS=<<EOF
+echo 'pa\'tata'
+echo "pa\"tata"
+echo 'pa\\tata'
+echo "pa\\tata"
+echo 'safe\';?e NOT_RUN'
+echo "safe\";?e NOT_RUN"
+EOF
+EXPECT=<<EOF
+pa'tata
+pa"tata
+pa\tata
+pa\tata
+safe';?e NOT_RUN
+safe";?e NOT_RUN
+EOF
+RUN
+
+NAME=Even backslashes do not escape a single quote
+CMDS=<<EOF
+echo 'pa\\'tata'
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unterminated single quote
+EOF
+RUN
+
+NAME=Even backslashes do not escape a double quote
+CMDS=<<EOF
+echo "pa\\"tata"
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unterminated double quote
+EOF
+RUN
+
+NAME=Unterminated single quote
+CMDS=<<EOF
+echo 'unterminated;?e INJECT
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unterminated single quote
+EOF
+RUN
+
+NAME=Unterminated double quote
+CMDS=<<EOF
+echo "unterminated;?e INJECT
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unterminated double quote
+EOF
+RUN
+
+NAME=Unterminated double quote blocks command substitution
+CMDS=<<EOF
+echo "unterminated$(?e INJECT)
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unterminated double quote
+EOF
+RUN
+
+NAME=Unterminated double quote blocks backtick substitution
+CMDS=<<EOF
+echo "unterminated`?e INJECT`
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unterminated double quote
+EOF
+RUN
+
+NAME=Even quote escape parity blocks command injection
+CMDS=<<EOF
+echo 'safe\\';?e INJECT'
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unterminated single quote
 EOF
 RUN

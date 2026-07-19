@@ -108,23 +108,29 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=command substitutions are literal inside double-quoted spans
+NAME=command substitutions follow shell quote context
 FILE=malloc://32
 CMDS=<<EOF
-?e "backtick:`?e INJECT`"
-?e "dollar:$(?e INJECT)"
-?e "escaped:\"`?e INJECT`"
-?e "one:`?e INJECT`" "two:$(?e INJECT)"
-?e "inside:$(?e INJECT)" outside:$(?e OK)
+?e "backtick:`?e DOUBLE`"
+?e "dollar:$(?e DOUBLE)"
+?e 'backtick:`?e SINGLE`'
+?e 'dollar:$(?e SINGLE)'
+?e "escaped:\`?e LITERAL\`"
+?e "escaped:\$(?e LITERAL)"
+?e "one:`?e FIRST`" "two:$(?e SECOND)"
+?e 'inside:$(?e SINGLE)' outside:$(?e OK)
 ?e outside:`?e OK`
 ?e outside:$(?e OK)
 EOF
 EXPECT=<<EOF
-backtick:`?e INJECT`
-dollar:$(?e INJECT)
-escaped:"`?e INJECT`
-one:`?e INJECT` two:$(?e INJECT)
-inside:$(?e INJECT) outside:OK
+backtick:DOUBLE
+dollar:DOUBLE
+backtick:`?e SINGLE`
+dollar:$(?e SINGLE)
+escaped:`?e LITERAL`
+escaped:$(?e LITERAL)
+one:FIRST two:SECOND
+inside:$(?e SINGLE) outside:OK
 outside:OK
 outside:OK
 EOF

@@ -4224,8 +4224,11 @@ static bool set_tmp_bits(RCore *core, int bits, char **tmpbits, int *cmd_ignbith
 	return true;
 }
 
-static char *find_subcmd_begin(char *cmd) {
+static char *find_subcmd_begin(char *cmd, char *quote_out) {
 	R_RETURN_VAL_IF_FAIL (cmd, NULL);
+	if (quote_out) {
+		*quote_out = 0;
+	}
 	char quote = 0;
 	char *p;
 	for (p = cmd; *p; p++) {
@@ -4234,9 +4237,7 @@ static char *find_subcmd_begin(char *cmd) {
 			if (!*p) {
 				break;
 			}
-			if (*p == '\'' || *p == '"') {
-				continue;
-			}
+			continue;
 		}
 		if (*p == '\'' || *p == '"') {
 			if (!quote) {
@@ -4246,10 +4247,16 @@ static char *find_subcmd_begin(char *cmd) {
 			}
 			continue;
 		}
-		if (*p == '`' && !quote) {
+		if (*p == '`' && quote != '\'') {
+			if (quote_out) {
+				*quote_out = quote;
+			}
 			return p;
 		}
-		if (*p == '$' && p[1] == '(' && !quote) {
+		if (*p == '$' && p[1] == '(' && quote != '\'') {
+			if (quote_out) {
+				*quote_out = quote;
+			}
 			return p;
 		}
 	}
@@ -4260,24 +4267,110 @@ static char *find_subcmd_end(char *cmd, bool backquote) {
 	if (backquote) {
 		return (char *)r_str_firstbut_escape (cmd, '`', "'");
 	}
+	char *quote_stack = malloc (strlen (cmd) + 1);
+	if (!quote_stack) {
+		return NULL;
+	}
 	char *p = cmd;
-	int nest = 1;
+	size_t depth = 1;
+	char quote = 0;
+	char *result = NULL;
 	while (*p) {
-		if (r_str_startswith (p, "$(")) {
-			nest++;
+		if (*p == '\\') {
 			p++;
-		} else {
-			if (*p == ')') {
-				nest--;
-				if (nest == 0) {
-					return p;
-				}
+			if (!*p) {
+				break;
 			}
+		} else if (*p == '\'' || *p == '"') {
+			if (!quote) {
+				quote = *p;
+			} else if (quote == *p) {
+				quote = 0;
+			}
+		} else if (r_str_startswith (p, "$(") && quote != '\'') {
+			quote_stack[depth - 1] = quote;
+			depth++;
+			quote = 0;
+			p++;
+		} else if (*p == ')' && !quote) {
+			depth--;
+			if (!depth) {
+				result = p;
+				break;
+			}
+			quote = quote_stack[depth - 1];
 		}
 		p++;
 	}
-	return NULL;
-	// return (char *)r_str_firstbut_escape (cmd, backquote ? '`' : ')', "'");
+	free (quote_stack);
+	return result;
+}
+
+static char find_unterminated_quote(char *cmd) {
+	char quote = 0;
+	char *p;
+	for (p = cmd; *p; p++) {
+		if (*p == '\\') {
+			p++;
+			if (!*p) {
+				break;
+			}
+			continue;
+		}
+		if (*p == '\'' || *p == '"') {
+			if (!quote) {
+				quote = *p;
+			} else if (quote == *p) {
+				quote = 0;
+			}
+			continue;
+		}
+		if (!quote && *p == '~') {
+			break;
+		}
+		if (quote != '\'' && (*p == '`' || (*p == '$' && p[1] == '('))) {
+			bool backquote = *p == '`';
+			char *end = find_subcmd_end (p + (backquote ? 1 : 2), backquote);
+			if (!end) {
+				return 0;
+			}
+			p = end;
+		}
+	}
+	return quote;
+}
+
+static char *escape_double_quoted_subcmd(const char *str) {
+	RStrBuf *sb = r_strbuf_new (NULL);
+	if (!sb) {
+		return NULL;
+	}
+	const char *p;
+	for (p = str; *p; p++) {
+		if (*p == '\\' || *p == '"' || *p == '`' || (*p == '$' && p[1] == '(')) {
+			r_strbuf_append (sb, "\\");
+		}
+		r_strbuf_append_n (sb, p, 1);
+	}
+	return r_strbuf_drain (sb);
+}
+
+static bool is_escaped_operator(const char *cmd, const char *operator) {
+	size_t nslashes = 0;
+	while (operator > cmd && operator[-1] == '\\') {
+		nslashes++;
+		operator--;
+	}
+	return nslashes & 1;
+}
+
+static char *find_last_unescaped_operator(char *cmd, char operator, const char *quotes) {
+	char *last = NULL;
+	const char *p = cmd;
+	while ((p = r_str_firstbut_escape (p, operator, quotes))) {
+		last = (char *)p++;
+	}
+	return last;
 }
 
 static char *getarg(char *ptr) {
@@ -4372,6 +4465,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	const char quotestr[] = "`\"'";
 	const char *tick = NULL;
 	char *ptr, *ptr2, *str;
+	char subcmd_quote = 0;
+	char unterminated_quote;
 	char *arroba = NULL;
 	char *grep = NULL;
 	RIODesc *tmpdesc = NULL;
@@ -4589,12 +4684,18 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			return true;
 		}
 	}
+	unterminated_quote = find_unterminated_quote (cmd);
+	if (unterminated_quote) {
+		R_LOG_ERROR ("Unterminated %s quote", unterminated_quote == '\'' ? "single" : "double");
+		r_list_free (tmpenvs);
+		return false;
+	}
 
 	/* multiple commands */
 	if (*cmd != '#') {
 		ptr = (char *)(is_macro_command (cmd)
 			? find_ch_after_macro (cmd, ';')
-			: r_str_lastbut (cmd, ';', quotestr));
+			: find_last_unescaped_operator (cmd, ';', quotestr));
 		if (colon && ptr) {
 			int ret ;
 			*ptr = '\0';
@@ -4609,21 +4710,19 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			return ret;
 		}
 	}
-	char *backtick = find_subcmd_begin (cmd);
+	char *backtick = find_subcmd_begin (cmd, NULL);
 	if (backtick) {
 		goto escape_redir;
 	}
 
 	/* pipe console to shell process */
-	ptr = (char *)r_str_lastbut (cmd, '|', quotestr);
+	char *raw_operator = (char *)r_str_lastbut (cmd, '|', quotestr);
+	ptr = find_last_unescaped_operator (cmd, '|', quotestr);
+	if (!ptr && raw_operator && is_escaped_operator (cmd, raw_operator)) {
+		memmove (raw_operator - 1, raw_operator, strlen (raw_operator) + 1);
+		goto escape_pipe;
+	}
 	if (ptr) {
-		if (ptr > cmd) {
-			char *ch = ptr - 1;
-			if (*ch == '\\') {
-				memmove (ch, ptr, strlen (ptr) + 1);
-				goto escape_pipe;
-			}
-		}
 		char *ptr2 = strchr (cmd, '`');
 		if (!ptr2 || (ptr2 && ptr2 > ptr)) {
 			if (!tick || (tick && tick > ptr)) {
@@ -4771,7 +4870,12 @@ escape_pipe:
 	}
 
 	/* pipe console to file */
-	ptr = (char *)r_str_firstbut (cmd, '>', "\"");
+	raw_operator = (char *)r_str_firstbut (cmd, '>', "\"'");
+	ptr = (char *)r_str_firstbut_escape (cmd, '>', "\"'");
+	if (!ptr && raw_operator && is_escaped_operator (cmd, raw_operator)) {
+		memmove (raw_operator - 1, raw_operator, strlen (raw_operator) + 1);
+		goto escape_redir;
+	}
 	// TODO honor `
 	if (ptr != NULL && ptr >= cmd + 2) {
 		// Handle ~<>
@@ -4783,13 +4887,6 @@ escape_pipe:
 	int fdn = 1;
 	char *next_redirect = NULL;
 	if (ptr) {
-		if (ptr > cmd) {
-			char *ch = ptr - 1;
-			if (*ch == '\\') {
-				memmove (ch, ptr, strlen (ptr) + 1);
-				goto escape_redir;
-			}
-		}
 		if (ptr[0] && ptr[1] == '?') {
 			r_core_cmd_help (core, help_msg_greater_sign);
 			r_list_free (tmpenvs);
@@ -4927,18 +5024,12 @@ repeat:;
 escape_redir:
 next2:
 	/* sub commands */
-	ptr = find_subcmd_begin (cmd);
+	subcmd_quote = 0;
+	ptr = find_subcmd_begin (cmd, &subcmd_quote);
 	if (R_UNLIKELY (ptr)) {
 		bool backquote = false;
 		if (*ptr == '`') {
 			backquote = true;
-		}
-		if (ptr > cmd) {
-			char *ch = ptr - 1;
-			if (*ch == '\\') {
-				memmove (ch, ptr, strlen (ptr) + 1);
-				goto escape_backtick;
-			}
 		}
 		if (!backquote) {
 			memmove (ptr + 1, ptr + 2, strlen (ptr) - 1);
@@ -4973,7 +5064,19 @@ next2:
 			free (str);
 			goto fail;
 		}
+		size_t str_len = strlen (str);
+		while (str_len > 0 && (str[str_len - 1] == '\n' || str[str_len - 1] == '\r')) {
+			str[--str_len] = 0;
+		}
 		r_str_replace_ch (str, '\n', ' ', true);
+		if (subcmd_quote == '"') {
+			char *escaped = escape_double_quoted_subcmd (str);
+			free (str);
+			str = escaped;
+			if (!str) {
+				goto fail;
+			}
+		}
 		str = r_str_append (str, ptr2 + 1);
 		cmd = r_str_append (strdup (cmd), str);
 		r_core_return_value (core, value);

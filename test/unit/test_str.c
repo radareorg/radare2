@@ -930,6 +930,30 @@ bool test_r_str_but_escape(void) {
 	mu_end;
 }
 
+bool test_r_str_trim_args_quote_parity(void) {
+	char odd_single[] = "'pa\\'tata'";
+	r_str_trim_args (odd_single);
+	mu_assert_streq (odd_single, "pa'tata", "odd backslash escapes single quote");
+	char even_single[] = "'pa\\\\'tata'";
+	r_str_trim_args (even_single);
+	mu_assert_streq (even_single, "pa\\\\tata'", "even backslashes close single quote");
+	char odd_double[] = "\"pa\\\"tata\"";
+	r_str_trim_args (odd_double);
+	mu_assert_streq (odd_double, "pa\"tata", "odd backslash escapes double quote");
+	char even_double[] = "\"pa\\\\\"tata\"";
+	r_str_trim_args (even_double);
+	mu_assert_streq (even_double, "pa\\\\tata\"", "even backslashes close double quote");
+	char escaped_text[] = "'pa\\\\tata'";
+	r_str_trim_args (escaped_text);
+	mu_assert_streq (escaped_text, "pa\\\\tata", "backslash pair is preserved for unescape");
+	r_str_unescape (escaped_text);
+	mu_assert_streq (escaped_text, "pa\\tata", "backslash pair keeps the following t literal");
+	char escaped_syntax[] = "\\# \\@ \\~ \\! \\& \\* \\( \\) \\< \\> \\$";
+	r_str_trim_args (escaped_syntax);
+	mu_assert_streq (escaped_syntax, "# @ ~ ! & * ( ) < > $", "shell syntax escapes are removed");
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_file);
 	mu_run_test (test_r_str_wrap);
@@ -978,6 +1002,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_printfmt_types);
 	mu_run_test (test_r_str_printfmt_pf);
 	mu_run_test (test_r_str_but_escape);
+	mu_run_test (test_r_str_trim_args_quote_parity);
 	return tests_passed != tests_run;
 }
 

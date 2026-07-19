@@ -1393,7 +1393,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 			break;
 		}
-		if (input[1] == ' ' && (input[2] == '"' || input[2] == '\'')) {
+		if (input[1] == ' ') {
 			r_str_trim_args ((char *)input);
 		}
 		switch (input[1]) {

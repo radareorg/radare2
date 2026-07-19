@@ -755,8 +755,8 @@ s `iS~mysec1[3]`
 ?e mysec1_at_seek=`iS.~mysec1[8]`
 EOF2
 EXPECT=<<EOF2
-ob=1  om=7  iS=40
-ob=1  om=7  iS=40
+ob=1 om=7 iS=40
+ob=1 om=7 iS=40
 mysec1_at_seek=.mysec1
 EOF2
 RUN
