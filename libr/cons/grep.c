@@ -427,8 +427,6 @@ R_API char *r_cons_grep_strip(char *cmd, const char *quotestr) {
 static int cmp(const void *a, const void *b) {
 	char *da = NULL;
 	char *db = NULL;
-	const char *ca = r_str_trim_head_ro (a);
-	const char *cb = r_str_trim_head_ro (b);
 	if (!a || !b) {
 		ptrdiff_t diff = (char*)a - (char*)b;
 		if (diff > INT_MAX) {
@@ -439,6 +437,8 @@ static int cmp(const void *a, const void *b) {
 		}
 		return (int)diff;
 	}
+	const char *ca = r_str_trim_head_ro (a);
+	const char *cb = r_str_trim_head_ro (b);
 	RCons *cons = r_cons_singleton ();
 	RConsContext *ctx = cons->context;
 	if (ctx->sorted_column > 0) {
@@ -449,9 +449,9 @@ static int cmp(const void *a, const void *b) {
 		ca = (colsa > ctx->sorted_column)? r_str_word_get0 (da, ctx->sorted_column): "";
 		cb = (colsb > ctx->sorted_column)? r_str_word_get0 (db, ctx->sorted_column): "";
 	}
-	if (isdigit (*ca) && isdigit (*cb)) {
-		ut64 na = r_num_get (NULL, ca);
-		ut64 nb = r_num_get (NULL, cb);
+	if (r_str_isnumber (ca) && r_str_isnumber (cb)) {
+		st64 na = (st64)r_num_get (NULL, ca);
+		st64 nb = (st64)r_num_get (NULL, cb);
 		int ret = (na > nb) - (na < nb);
 		free (da);
 		free (db);

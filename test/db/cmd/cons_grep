@@ -616,6 +616,8 @@ CMDS=<<EOF
 ?e 3\n2\n4\n1~$!
 ?e -- invert (like tac) --
 ?e 3\n2\n4\n1~$!!
+?e 12y\n12x~$
+?e -1\n2\n-2~$
 EOF
 EXPECT=<<EOF
 -- alphabetical sort --
@@ -633,6 +635,11 @@ EXPECT=<<EOF
 4
 2
 3
+12x
+12y
+-2
+-1
+2
 EOF
 RUN
 
