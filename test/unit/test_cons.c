@@ -237,6 +237,21 @@ bool test_cons_json_path_grep_buffer(void) {
 	mu_end;
 }
 
+bool test_cons_grep_icase_does_not_mutate_word(void) {
+	RCons *cons = r_cons_new2 ();
+	mu_assert_notnull (cons, "r_cons_new2()");
+
+	r_cons_grep_expression (cons, "+FoO");
+	RConsGrepWord *gw = r_list_first (cons->context->grep.strings);
+	mu_assert_notnull (gw, "grep word");
+	char line[] = "foo";
+	mu_assert_eq (r_cons_grep_line (cons, line, 3), 3, "case-insensitive grep");
+	mu_assert_streq (gw->str, "FoO", "grep matching must not mutate words");
+
+	r_cons_free (cons);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
@@ -244,6 +259,7 @@ bool all_tests(void) {
 	mu_run_test (test_cons_timeout_keeps_earliest_deadline);
 	mu_run_test (test_cons_timeout_does_not_restart_expired_deadline);
 	mu_run_test (test_cons_json_path_grep_buffer);
+	mu_run_test (test_cons_grep_icase_does_not_mutate_word);
 	return tests_passed != tests_run;
 }
 

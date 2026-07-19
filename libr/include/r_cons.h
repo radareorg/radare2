@@ -108,6 +108,7 @@ typedef struct r_cons_grep_word_t {
 	bool end;
 	bool amp;
 	int group;
+	bool icase;
 } RConsGrepWord;
 
 typedef struct r_cons_grep_t {
@@ -135,7 +136,6 @@ typedef struct r_cons_grep_t {
 	int zoom;
 	int zoomy; // if set then its scaled unproportionally
 	bool xml;
-	bool icase;
 	bool ascart;
 	bool code;
 	bool colorcode;

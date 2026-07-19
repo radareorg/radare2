@@ -143,7 +143,6 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 	}
 
 	R_FREE (grep->str);
-	bool first = true;
 	ctx->sorted_column = 0;
 	size_t i;
 	if (!grep->strings) {
@@ -157,6 +156,7 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 		bool gw_neg = false;
 		bool gw_end = false;
 		bool gw_amp = false;
+		bool gw_icase = false;
 		ptr = ptrs[i];
 		char *end_ptr = NULL, *ptr2 = NULL, *ptr3 = NULL;
 		while (*ptr) {
@@ -261,12 +261,8 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 				}
 				break;
 			case '+':
-				if (first) {
-					ptr++;
-					grep->icase = true;
-				} else {
-					goto while_end;
-				}
+				ptr++;
+				gw_icase = true;
 				break;
 			case '^':
 				ptr++;
@@ -293,7 +289,6 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 			default:
 				goto while_end;
 			}
-			first = false;
 		}
 while_end:
 		ptr2 = strchr (ptr, '[');
@@ -353,6 +348,7 @@ while_end:
 				gw->begin = gw_begin;
 				gw->neg = gw_neg;
 				gw->end = gw_end;
+				gw->icase = gw_icase;
 				r_list_append (grep->strings, gw);
 			} while (ptr);
 		}
@@ -947,7 +943,7 @@ continuation:
 						r_list_foreach (grep->strings, iter, gw) {
 							char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, gw->str);
 							if (str && newstr) {
-								if (grep->icase) {
+								if (gw->icase) {
 									str = r_str_replace_icase (str, gw->str, newstr, 1, 1);
 								} else {
 									str = r_str_replace (str, gw->str, newstr, 1);
@@ -1072,9 +1068,6 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 	const bool have_strings = !r_list_empty (grep->strings);
 
 	if (have_strings) {
-		if (grep->icase) {
-			r_str_case (in, false);
-		}
 		RListIter *iter;
 		RConsGrepWord *gw;
 		int group = -1;
@@ -1088,16 +1081,13 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 				group = gw->group;
 				group_hit = gw->amp || gw->neg;
 			}
-			if (grep->icase) {
-				r_str_case (gw->str, false);
-			}
-			const char *p = r_strstr_ansi (in, gw->str);
+			const char *p = gw->icase? r_str_casestr (in, gw->str): r_strstr_ansi (in, gw->str);
 			bool word_hit = p != NULL;
 			if (word_hit && gw->begin) {
 				word_hit = p == in;
 			}
 			if (word_hit && gw->end) {
-				word_hit = r_str_endswith (in, gw->str);
+				word_hit = gw->icase? r_str_iendswith (in, gw->str): r_str_endswith (in, gw->str);
 			}
 			word_hit = gw->neg? !word_hit: word_hit;
 			group_hit = gw->amp || gw->neg
