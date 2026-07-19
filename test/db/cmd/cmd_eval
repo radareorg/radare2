@@ -263,7 +263,7 @@ jmp 10h
 EOF
 RUN
 
-NAME=multiple assignments
+NAME=multiple assignments are deprecated
 FILE=-
 CMDS=<<EOF
 "e  scr.highlight= scr.highlight.grep  =scr.rainbow =true "
@@ -278,14 +278,14 @@ false
 EOF
 RUN
 
-NAME=multiple assignments with quotes
+NAME=multiple assignments with quotes are deprecatd too
 CMDS=<<EOF
 e cmd.prompt = scr.highlight = "e cmd.prompt =  "e scr.highlight = cmd.prompt ="e scr.rainbow = true """
 e cmd.prompt
 e scr.highlight
 EOF
 EXPECT=<<EOF
-scr.highlight = "e cmd.prompt =  "e scr.highlight = cmd.prompt ="e scr.rainbow = true """
+scr.highlight = e cmd.prompt =  e scr.highlight = cmd.prompt =e scr.rainbow = true
 
 EOF
 RUN

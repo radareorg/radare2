@@ -124,6 +124,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=escaped quotes keep grep operators literal
+FILE=malloc://32
+CMDS=<<EOF
+?e "one:\"~x" "two:\"~y"
+?e "keep:\"~literal"~keep
+?e escaped\~tilde
+?e "drop:\"~literal"~nomatch
+EOF
+EXPECT=<<EOF
+one:"~x two:"~y
+keep:"~literal
+escaped~tilde
+EOF
+RUN
+
 NAME=grep and/or
 FILE=malloc://1024
 ARGS=-a x86 -b32

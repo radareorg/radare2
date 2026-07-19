@@ -58,7 +58,7 @@ fC sym.cool
 rm .tmp/newprj-cmt.prj
 EOF
 EXPECT=<<EOF
-"round tripped comment"
+round tripped comment
 EOF
 RUN
 

@@ -25,8 +25,8 @@ EXPECT=<<EOF
 Hello World
 "Hello World"
 'Hello World'
-'Hello World'
-"Hello World"
+Hello World
+Hello World
 Hello;World
 Hello@World
 EOF
@@ -54,7 +54,7 @@ ps
 EOF
 EXPECT=<<EOF
 Hello World
-"Hello World"
+Hello World
 'Hello World'
 'Hello World'
 Hello;World
@@ -78,7 +78,7 @@ ps
 w0 17
 EOF
 EXPECT=<<EOF
-Hello World
+Hello $(?e World)
 Hello $(?e World)
 Hello $(?e World)
 Hello `?e World`

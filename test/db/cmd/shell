@@ -150,6 +150,44 @@ escaped > redirect
 EOF
 RUN
 
+NAME=inline double quotes are transparent command shields
+FILE=malloc://32
+CMDS=<<EOF
+echo "Hello;world" ";you rock"
+'echo Hello;world ;you rock
+echo Hel"lo;wor"ld
+echo "a""b" "" "c"
+echo before "middle words" after
+echo "pipe;quoted"|cat
+echo "seek;quoted" @ 0
+echo "it's;fine"
+echo 'single quotes stay'
+EOF
+EXPECT=<<EOF
+Hello;world ;you rock
+Hello;world ;you rock
+Hello;world
+ab  c
+before middle words after
+pipe;quoted
+seek;quoted
+it's;fine
+'single quotes stay'
+EOF
+RUN
+
+NAME=raw commands preserve double quotes
+FILE=malloc://32
+CMDS=<<EOF
+'echo "Hello World"
+'echo "raw quotes;stay" "|untouched"
+EOF
+EXPECT=<<EOF
+"Hello World"
+"raw quotes;stay" "|untouched"
+EOF
+RUN
+
 NAME=pipe system
 FILE=malloc://32
 CMDS=<<EOF

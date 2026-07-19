@@ -12749,7 +12749,7 @@ static void agraph_print_node(RANode *n, void *user) {
 		len--;
 	}
 	char *encbody = r_base64_encode_dyn ((const ut8*)n->body, len);
-	char *cmd = r_str_newf ("agn \"%s\" base64:%s\n", n->title, encbody);
+	char *cmd = r_str_newf ("'agn \"%s\" base64:%s\n", n->title, encbody);
 	r_cons_print (core->cons, cmd);
 	free (cmd);
 	free (encbody);
@@ -12852,7 +12852,7 @@ static void agraph_print_edge_dot(RANode *from, RANode *to, void *user) {
 
 static void agraph_print_edge(RANode *from, RANode *to, void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_printf (core->cons, "age \"%s\" \"%s\"\n", from->title, to->title);
+	r_cons_printf (core->cons, "'age \"%s\" \"%s\"\n", from->title, to->title);
 }
 
 static void cmd_agraph_node(RCore *core, const char *input) {

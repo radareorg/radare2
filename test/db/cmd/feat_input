@@ -144,7 +144,7 @@ RUN
 NAME=hash+space in quoted string
 FILE=-
 CMDS=<<EOF
-agn "Process form A# B# in cloud"
+'agn "Process form A# B# in cloud"
 agg
 EOF
 EXPECT=<<EOF

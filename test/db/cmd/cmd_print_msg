@@ -13,7 +13,8 @@ RUN
 NAME=printf formatting
 FILE=-
 CMDS=<<EOF
-printf "%x %d %s" 10 20 hello;println
+'printf "%x %d %s" 10 20 hello
+println
 EOF
 EXPECT=<<EOF
 a 20 hello

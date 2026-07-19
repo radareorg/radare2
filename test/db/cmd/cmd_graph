@@ -18,8 +18,8 @@ RUN
 NAME=two nodes
 FILE=-
 CMDS=<<EOF
-agn "Title with super long text and space" body1
-agn title2 "SuperLongBodyWithALot Of text and spaces"
+'agn "Title with super long text and space" body1
+'agn title2 "SuperLongBodyWithALot Of text and spaces"
 aggk~nodes=
 aggk~nodes.Title with super long text and space.body=
 aggk~nodes.title2.body=
@@ -54,7 +54,7 @@ NAME=utf8 base64 body
 FILE=-
 CMDS=<<EOF
 e scr.utf8=true
-agn "Phi" base64:zqY=
+'agn "Phi" base64:zqY=
 agg~Φ
 EOF
 EXPECT=<<EOF
@@ -77,8 +77,8 @@ NAME=two nodes same title
 FILE=-
 CMDS=<<EOF
 agn title1 body1
-agn title1 "Super long body with something"
-agn title1 "Super super super long body to do tests........"
+'agn title1 "Super long body with something"
+'agn title1 "Super super super long body to do tests........"
 aggk~nodes=
 aggk~nodes.title1.body=
 aggk~nodes.title1.w=
@@ -105,8 +105,8 @@ RUN
 NAME=remove node with title that contain spaces
 FILE=-
 CMDS=<<EOF
-agn "Title with spaces" body1
-agn- "Title with spaces"
+'agn "Title with spaces" body1
+'agn- "Title with spaces"
 aggk~nodes=
 aggk~nodes.Title with spaces
 EOF
@@ -117,7 +117,7 @@ RUN
 NAME=remove non-existent node
 FILE=-
 CMDS=<<EOF
-agn "Title with spaces" body1
+'agn "Title with spaces" body1
 agn- NotValid
 aggk~nodes=
 aggk~nodes.Title with spaces.body=
@@ -131,9 +131,9 @@ RUN
 NAME=remove edge
 FILE=-
 CMDS=<<EOF
-agn "Title with spaces" body1
-agn "Title with spaces 2" body2
-age- "Title with spaces" "Title with spaces 2"
+'agn "Title with spaces" body1
+'agn "Title with spaces 2" body2
+'age- "Title with spaces" "Title with spaces 2"
 aggk~nodes=
 aggk~nodes.Title with spaces.neighbours=
 EOF
@@ -228,7 +228,7 @@ NAME=graph size with edges
 FILE=-
 CMDS=<<EOF
 agn title1 body1
-agn title2 "body2 long body with a lot of spaces and dots...."
+'agn title2 "body2 long body with a lot of spaces and dots...."
 agn title3 body3
 age title1 title2
 age title2 title3
@@ -280,11 +280,11 @@ age title3 title1
 agg*
 EOF
 EXPECT=<<EOF
-agn "title3" base64:dGhpcyBpcyBteSBib2R5CndpdGggbmV3bGluZXM=
-agn "title2" base64:Ym9keTI=
-agn "title1" base64:Ym9keTE=
-age "title3" "title1"
-age "title1" "title2"
+'agn "title3" base64:dGhpcyBpcyBteSBib2R5CndpdGggbmV3bGluZXM=
+'agn "title2" base64:Ym9keTI=
+'agn "title1" base64:Ym9keTE=
+'age "title3" "title1"
+'age "title1" "title2"
 EOF
 RUN
 
@@ -367,8 +367,8 @@ RUN
 NAME=highlight edge
 FILE=-
 CMDS=<<EOF
-agn "0x123" body1
-agn "0x456" body2
+'agn "0x123" body1
+'agn "0x456" body2
 age 0x123 0x456
 ageh 0x123 0x456
 aggd

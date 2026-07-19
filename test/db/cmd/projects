@@ -177,7 +177,7 @@ rm -rf .tmp/testexp
 EOF
 EXPECT=<<EOF
 'e bin.str.debase64 = false
-CCu base64:IlNvbWUgb3RoZXIgdGVzdCI= @ 0x00404890
+CCu base64:U29tZSBvdGhlciB0ZXN0 @ 0x00404890
 EOF
 RUN
 
@@ -198,8 +198,8 @@ rm -rf .tmp/testset
 q 0
 EOF
 EXPECT=<<EOF
-CCu base64:IlNlY29uZCBjb21tZW50Ig== @ 0x00404800
-CCu base64:IkZpcnN0IGNvbW1lbnQi @ 0x00404890
+CCu base64:U2Vjb25kIGNvbW1lbnQ= @ 0x00404800
+CCu base64:Rmlyc3QgY29tbWVudA== @ 0x00404890
 EOF
 RUN
 
@@ -691,7 +691,7 @@ e dir.projects = /tmp/r2r-project-import-notes
 Pzi /tmp/r2r-malicious.zrp > /dev/null
 P evil > /dev/null
 Pn hello
-!python3 -c "import os; print('clean' if not os.path.exists('/tmp/r2r-zrp-outside/owned.txt') else 'written')"
+'!python3 -c "import os; print('clean' if not os.path.exists('/tmp/r2r-zrp-outside/owned.txt') else 'written')"
 !rm -rf /tmp/r2r-project-import-notes /tmp/r2r-zrp-malicious /tmp/r2r-zrp-outside /tmp/r2r-malicious.zrp
 EOF
 EXPECT=<<EOF

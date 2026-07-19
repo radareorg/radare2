@@ -25,9 +25,9 @@ FILE=-
 CMDS=<<EOF
 b 12
 w hello world
-!rahash2 -qa crc16 -s "hello world"
+'!rahash2 -qa crc16 -s "hello world"
 ph crc16 11
-!rahash2 -qa crc32 -s "hello world"
+'!rahash2 -qa crc32 -s "hello world"
 ph crc32 11
 EOF
 EXPECT=<<EOF
@@ -88,7 +88,7 @@ FILE=-
 CMDS=<<EOF
 b 12
 w hello world
-!rahash2 -qa rahash2 -a crc8smbus,crc15can,crc16hdlc,crc16usb,crc16citt,crc24,crc32c,crc32ecma267 -s "hello world"
+'!rahash2 -qa rahash2 -a crc8smbus,crc15can,crc16hdlc,crc16usb,crc16citt,crc24,crc32c,crc32ecma267 -s "hello world"
 ph crc8smbus 11
 ph crc15can 11
 ph crc16hdlc 11

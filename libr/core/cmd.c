@@ -4366,6 +4366,41 @@ static bool cmd_subst_parse_dot_grep(const char *cmd) {
 	}
 }
 
+static void strip_double_quotes(char *str) {
+	bool quoted = false;
+	char *quote = NULL;
+	char *src = str;
+	char *dst = str;
+	while (*src) {
+		if (*src == '\\') {
+			*dst++ = *src++;
+			if (*src) {
+				*dst++ = *src++;
+			}
+			continue;
+		}
+		if (*src == '"') {
+			quoted = !quoted;
+			quote = quoted? dst: NULL;
+			src++;
+			continue;
+		}
+		*dst++ = *src++;
+	}
+	*dst = 0;
+	if (quote) {
+		memmove (quote + 1, quote, dst - quote + 1);
+		*quote = '"';
+	}
+}
+
+static int cmd_call_without_double_quotes(RCore *core, char *cmd) {
+	if (*cmd != '{') {
+		strip_double_quotes (cmd);
+	}
+	return r_cmd_call (core->rcmd, cmd);
+}
+
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek) {
 	R_CRITICAL_ENTER (core);
 	RList *tmpenvs = r_list_newf (tmpenvs_free);
@@ -4579,7 +4614,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	case '(':
 		if (cmd[1] != '*' && cmd[1] != 'j' && !strstr (cmd, ")()")) {
 			r_list_free (tmpenvs);
-			return r_cmd_call (core->rcmd, cmd);
+			return cmd_call_without_double_quotes (core, cmd);
 		}
 		break;
 	case '?':
@@ -4702,7 +4737,7 @@ escape_pipe:
 	//ptr = strchr (cmd, '&');
 	while (ptr && *ptr && ptr[1] == '&') {
 		*ptr = '\0';
-		ret = r_cmd_call (core->rcmd, cmd);
+		ret = cmd_call_without_double_quotes (core, cmd);
 		if (ret == -1) {
 			R_LOG_ERROR ("command error(%s)", cmd);
 			if (scr_html != -1) {
@@ -5531,7 +5566,7 @@ next_arroba:
 					r_core_block_read (core);
 				}
 			}
-			ret = r_cmd_call (core->rcmd, r_str_trim_head_ro (cmd));
+			ret = cmd_call_without_double_quotes (core, (char *)r_str_trim_head_ro (cmd));
 			if (tmpseek) {
 				// restore ranges
 				for (i = 0; fromvars[i]; i++) {
@@ -5585,7 +5620,7 @@ next_arroba:
 fuji:
 	if (cmd) {
 		r_str_trim_head (cmd);
-		rc = r_cmd_call (core->rcmd, cmd);
+		rc = cmd_call_without_double_quotes (core, cmd);
 	} else {
 		rc = 0;
 	}

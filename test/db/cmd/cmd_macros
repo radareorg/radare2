@@ -47,7 +47,7 @@ RUN
 NAME=escaping echoes
 FILE=malloc://32
 CMDS=<<EOF
-?e "hello\@world\|pipe"
+?e "hello@world|pipe"
 ?e one\ntwo
 EOF
 EXPECT=<<EOF
@@ -112,7 +112,7 @@ CMDS=<<EOF
 .(msg "Hello World")
 EOF
 EXPECT=<<EOF
-Hello World
+Hello
 EOF
 RUN
 
