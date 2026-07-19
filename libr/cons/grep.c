@@ -26,13 +26,6 @@ static char *strchr_ns(char *s, const char ch) {
 	return NULL;
 }
 
-static void r_cons_grep_word_free(RConsGrepWord *gw) {
-	if (gw) {
-		free (gw->str);
-		free (gw);
-	}
-}
-
 static RCoreHelpMessage help_detail_tilde = {
 	"Usage: [command]~[modifier][word,word][endmodifier][[column]][:line]\n"
 	"modifier:", "", "",
@@ -151,6 +144,7 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 		bool gw_begin = false;
 		bool gw_neg = false;
 		bool gw_end = false;
+		bool gw_amp = false;
 		ptr = ptrs[i];
 		char *end_ptr = NULL, *ptr2 = NULL, *ptr3 = NULL;
 		while (*ptr) {
@@ -192,6 +186,7 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 					} else if (r_str_startswith (ptr, "{:..")) {
 						grep->less = 1;
 					}
+					ptr++;
 				} else if (ptr[1] == '=' && ptr[2] == '}') {
 					grep->gron = true;
 					ptr += 2;
@@ -203,6 +198,7 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 					} else if (r_str_startswith (ptr, "{}..")) {
 						grep->less = 1;
 					}
+					ptr++;
 				} else {
 					char *jsonPath = strdup (ptr + 1);
 					char *jsonPathEnd = strchr (jsonPath, '}');
@@ -242,7 +238,7 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 				break;
 			case '&':
 				ptr++;
-				grep->amp = 1;
+				gw_amp = true;
 				break;
 			case '<':
 				ptr++;
@@ -349,10 +345,11 @@ while_end:
 				}
 				RConsGrepWord *gw = R_NEW0 (RConsGrepWord);
 				gw->str = strdup (optr);
+				gw->group = (int)i;
+				gw->amp = gw_amp;
 				gw->begin = gw_begin;
 				gw->neg = gw_neg;
 				gw->end = gw_end;
-				gw_end = false;
 				r_list_append (grep->strings, gw);
 			} while (ptr);
 		}
@@ -391,7 +388,7 @@ static char *find_next_intgrep(char *cmd, const char *quotes) {
 */
 static char *preprocess_filter_expr(char *cmd, const char *quotes) {
 	char *p2, *ns = NULL;
-	const char *strsep = "&";
+	const char *strsep = "";
 	int i;
 
 	char *p1 = find_next_intgrep (cmd, quotes);
@@ -829,11 +826,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 			in = buf = out;
 			len = cons->context->buffer_len;
 			cons->context->grep_color = true;
-			// R2R db/cmd/cmd_iz
-			R_FREE (grep->str);
 			cons->context->grep_color = false;
-			RConsGrepWord *gw = r_list_pop_head (grep->strings);
-			r_cons_grep_word_free (gw);
 			if (grep->hud) {
 				grep->hud = false;
 				r_cons_hud_string (cons, cons->context->buffer);
@@ -1096,39 +1089,40 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 	const bool have_strings = !r_list_empty (grep->strings);
 
 	if (have_strings) {
-		bool all_hits = true;
 		if (grep->icase) {
 			r_str_case (in, false);
 		}
 		RListIter *iter;
 		RConsGrepWord *gw;
+		int group = -1;
+		bool group_hit = false;
 		r_list_foreach (grep->strings, iter, gw) {
-			char *str = gw->str;
+			if (group != gw->group) {
+				if (group >= 0 && !group_hit) {
+					hit = false;
+					break;
+				}
+				group = gw->group;
+				group_hit = gw->amp || gw->neg;
+			}
 			if (grep->icase) {
-				r_str_case (str, false);
+				r_str_case (gw->str, false);
 			}
 			const char *p = r_strstr_ansi (in, gw->str);
-			if (!p) {
-				hit = gw->neg;
-				all_hits &= hit;
-				continue;
+			bool word_hit = p != NULL;
+			if (word_hit && gw->begin) {
+				word_hit = p == in;
 			}
-			hit = gw->begin
-				? gw->neg
-					? p != in
-					: p == in
-				: !gw->neg;
-
-			if (gw->end && (strlen (gw->str) != (size_t)(len - (p - in)))) {
-				hit = false;
+			if (word_hit && gw->end) {
+				word_hit = r_str_endswith (in, gw->str);
 			}
-			all_hits &= hit;
-			if (!grep->amp) {
-				break;
-			}
+			word_hit = gw->neg? !word_hit: word_hit;
+			group_hit = gw->amp || gw->neg
+				? group_hit && word_hit
+				: group_hit || word_hit;
 		}
-		if (grep->amp) {
-			hit = all_hits;
+		if (hit) {
+			hit = group_hit;
 		}
 	} else {
 		hit = true;

@@ -106,6 +106,8 @@ typedef struct r_cons_grep_word_t {
 	bool neg;
 	bool begin;
 	bool end;
+	bool amp;
+	int group;
 } RConsGrepWord;
 
 typedef struct r_cons_grep_t {
