@@ -421,6 +421,46 @@ hello world
 EOF
 RUN
 
+NAME=grep groups preserve comma alternatives
+FILE=malloc://1024
+CMDS=<<EOF
+?e foo\nbar\nfoobar\nbaz~foo,bar
+?e -- chained --
+?e foo\nbar\nfoobar\nbaz~foo,bar~bar
+?e -- amp --
+?e foo\nbar\nfoobar\nbaz~&foo,bar
+?e -- negative --
+?e foo\nbar\nfoobar\nbaz~!foo,bar
+?e -- count --
+?e foo\nbar\nfoobar\nbaz~foo,bar~?
+EOF
+EXPECT=<<EOF
+foo
+bar
+foobar
+-- chained --
+bar
+foobar
+-- amp --
+foobar
+-- negative --
+baz
+-- count --
+3
+EOF
+RUN
+
+NAME=grep end modifier applies to all alternatives
+FILE=malloc://1024
+CMDS=?e xfoo\nfoobar\nbar\nbarx\nfoo x foo~foo,bar$
+EXPECT=<<EOF
+xfoo
+foobar
+bar
+foo x foo
+EOF
+RUN
+
 NAME=colgrep
 CMDS=<<EOF
 ?e 0x3~[0]
@@ -664,6 +704,30 @@ ij~{}~fo
 EOF
 EXPECT=<<EOF
     "format": "null"
+EOF
+RUN
+
+NAME=ij.json.grep.alternatives
+FILE=bins/elf/crackme
+CMDS=<<EOF
+ij~{}~static,pic
+ij~{}~static,pic~?
+EOF
+EXPECT=<<EOF
+    "pic": false,
+    "static": false,
+2
+EOF
+RUN
+
+NAME=ij.gron.grep.alternatives
+FILE=bins/elf/crackme
+CMDS=<<EOF
+ij~{=}~static,pic
+EOF
+EXPECT=<<EOF
+json.bin.pic = false;
+json.bin.static = false;
 EOF
 RUN
 
