@@ -765,3 +765,60 @@ EXPECT_ERR=<<EOF
 ERROR: Cannot find project file: /this/does/not/exist/x.prj
 EOF
 RUN
+
+NAME=pdc structured if-else on a diamond
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 83ff01 7507 b801000000 eb05 b802000000 c3 @ 0
+af @ 0
+e pdc.structured=1
+pdc~if (,eax,else
+EOF
+EXPECT=<<EOF
+    if (!(edi - 1)) {
+        eax = 1
+    } else {
+        eax = 2
+EOF
+RUN
+
+NAME=pdc structured default off keeps gotos
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 83ff01 7507 b801000000 eb05 b802000000 c3 @ 0
+af @ 0
+pdc~goto
+EOF
+EXPECT=<<EOF
+        if (v) goto loc_0xc // likely
+        goto loc_0x00000005;
+EOF
+RUN
+
+NAME=pdc structured single-armed if on ppc64
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EOF
+s 0xd500
+af
+e pdc.structured=1
+pdc~if (
+EOF
+EXPECT=<<EOF
+    if (!(cr0 & FLG_GE)) {
+EOF
+RUN
+
+NAME=pdc structured bails to linear on loops
+FILE=bins/elf/ls
+CMDS=<<EOF
+aa
+s 0x15c80
+e pdc.structured=1
+pdc~goto loc_0x15c60
+EOF
+EXPECT=<<EOF
+        if (!v) goto loc_0x15c60 // likely
+EOF
+RUN

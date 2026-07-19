@@ -4635,6 +4635,7 @@ R_API int r_core_config_init(RCore *core) {
 	RConfigNode *cmdpdc = NODECB ("cmd.pdc", "", &cb_cmdpdc);
 	SETDESC (cmdpdc, "select pseudo-decompiler command to run after pdc");
 	update_cmdpdc_options (core, cmdpdc);
+	SETB ("pdc.structured", "false", "emit structured if/else instead of goto in pdc (experimental)");
 	SETCB ("cmd.log", "", &cb_cmdlog, "every time a new T log is added run this command");
 	SETS ("cmd.prompt", "", "prompt commands");
 	SETCB ("cmd.repeat", "false", &cb_cmdrepeat, "empty command an alias for '..' (repeat last command)");

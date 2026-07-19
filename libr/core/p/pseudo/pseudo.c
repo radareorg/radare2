@@ -12,11 +12,14 @@ typedef struct {
 	PJ *pj;
 	bool show_asm;
 	bool show_addr;
+	bool structured;
 	Sdb *goto_cache;
 	Sdb *db;
 	RBitset *marked;
 	RBitset *switch_addrs;
 	RAnalFunction *fcn;
+	ut64 bb_jump; // edges of the block being rendered, owned by its region in structured mode
+	ut64 bb_fail;
 	const char *r0;
 	char indentstr[1024];
 } PDCState;
@@ -685,6 +688,39 @@ static bool line_is_goto(const char *line) {
 	return r_str_startswith (line, "goto ") || r_str_startswith (line, "jmp ");
 }
 
+static bool line_is_cond_goto(const char *line) {
+	return r_str_startswith (line, "if ") && strstr (line, "goto ");
+}
+
+// only the block's own two edges belong to its region, so a tail call, an indirect jump
+// or a call rendered as `jmp` (riscv jal) is the sole remaining transfer and must survive
+static bool line_targets_own_edge(PDCState *state, const char *line) {
+	const char *p = strstr (line, "goto ");
+	if (p) {
+		p += 5;
+	} else {
+		p = strstr (line, "jmp ");
+		if (!p) {
+			return false;
+		}
+		p += 4;
+	}
+	// the target is printed as loc_0xADDR, 0xADDR or a plain number, but a symbolic one
+	// (an import, a register, a reloc slot) leaves the function and has no region to own it
+	if (r_str_startswith (p, "loc_")) {
+		p += 4;
+	}
+	if (!isdigit ((unsigned char)*p)) {
+		return false;
+	}
+	const ut64 dst = r_num_get (NULL, p);
+	if (dst == UT64_MAX) {
+		// an unset jump or fail edge is UT64_MAX too, so it must not match
+		return false;
+	}
+	return dst == state->bb_jump || dst == state->bb_fail;
+}
+
 static bool line_is_known_loop_goto(PDCState *state, const char *line) {
 	const char *num = line_is_goto (line)? strstr (line, "0x"): NULL;
 	ut64 dst = num? r_num_get (NULL, num): 0;
@@ -738,8 +774,12 @@ static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 			continue;
 		}
 		if (R_STR_ISNOTEMPTY (line)) {
-			// drop tail goto into a structured loop header (the while/do owns that edge)
 			const char *t = r_str_trim_head_ro (line);
+			if (state->structured && (line_is_goto (t) || line_is_cond_goto (t))
+					&& line_targets_own_edge (state, t)) {
+				continue;
+			}
+			// drop tail goto into a structured loop header (the while/do owns that edge)
 			if (line_is_goto (t) && (strstr (t, "switch table")
 					|| line_is_known_loop_goto (state, t))) {
 				continue;
@@ -863,13 +903,17 @@ static char *find_switch_expr(RCore *core, RAnalFunction *fcn, RAnalBlock *sw_bb
 	return strdup ("switch_var");
 }
 
-static void render_case_body_lines(PDCState *state, RAnalBlock *cbb, int indent) {
-	char *code = fetch_bb_pseudo (state, cbb);
-	if (!code) {
-		return;
+static void render_bb_body_lines(PDCState *state, RAnalBlock *bb, int indent) {
+	char *code = fetch_bb_pseudo (state, bb);
+	// mark only once the body is in hand, so a failed fetch leaves the block to the orphan pass
+	if (code) {
+		r_bitset_set (state->marked, bb->addr);
+		state->bb_jump = bb->jump;
+		state->bb_fail = bb->fail;
+		emit_code_lines (state, code, bb->addr, indent, false);
+		state->bb_jump = state->bb_fail = UT64_MAX;
+		free (code);
 	}
-	emit_code_lines (state, code, cbb->addr, indent, false);
-	free (code);
 }
 
 static void emit_case_label(PDCState *state, ut64 lo, ut64 hi, ut64 target, int indent) {
@@ -904,7 +948,7 @@ static void render_arm_body(PDCState *state, RList *visited, ut64 target, int in
 	}
 	RAnalBlock *cbb = r_anal_bb_from_offset (state->core->anal, target);
 	if (cbb && r_anal_function_contains (state->fcn, target) && !r_list_contains (visited, cbb)) {
-		render_case_body_lines (state, cbb, indent);
+		render_bb_body_lines (state, cbb, indent);
 		if (!bb_ends_with_terminator (state->core, cbb)) {
 			print_newline (state, target, indent, false);
 			print_str (state, "break;");
@@ -1075,9 +1119,7 @@ static char *extract_loop_cond(PDCState *state, RAnalBlock *test_bb, ut64 back_t
 
 static bool line_is_branch_to(const char *line, const char *target_hex) {
 	const char *t = r_str_trim_head_ro (line);
-	return strstr (t, target_hex)
-		&& (line_is_goto (t)
-			|| (r_str_startswith (t, "if ") && strstr (t, "goto ")));
+	return strstr (t, target_hex) && (line_is_goto (t) || line_is_cond_goto (t));
 }
 
 static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList *visited, int indent);
@@ -1343,6 +1385,193 @@ static void pdc_print_comment_cmds(RCore *core, const char *s) {
 	}
 }
 
+static bool region_has_loop_or_switch(PdcRegion *r) {
+	if (r->type == PDC_R_WHILE || r->type == PDC_R_DOWHILE || r->type == PDC_R_SWITCH) {
+		return true;
+	}
+	PdcRegion **it;
+	R_VEC_FOREACH (&r->children, it) {
+		if (region_has_loop_or_switch (*it)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static void collect_goto_targets(PdcRegion *r, RBitset *gotos) {
+	if (r->type == PDC_R_GOTO) {
+		r_bitset_set (gotos, r->addr);
+	}
+	PdcRegion **it;
+	R_VEC_FOREACH (&r->children, it) {
+		collect_goto_targets (*it, gotos);
+	}
+}
+
+// invert a condition by flipping its top-level comparison; fall back to !(cond)
+static char *invert_cond(const char *cond) {
+	static const char *const ops[][2] = {
+		{ "==", "!=" }, { "!=", "==" }, { "<=", ">" }, { ">=", "<" }, { "<", ">=" }, { ">", "<=" }
+	};
+	// an already negated condition inverts by unwrapping, not by stacking another !
+	if (r_str_startswith (cond, "!(") && r_str_endswith (cond, ")")) {
+		int depth = 0;
+		const char *p;
+		for (p = cond + 1; *p; p++) {
+			depth += (*p == '(') - (*p == ')');
+			if (!depth) {
+				break;
+			}
+		}
+		// only when the negation spans the whole condition, so `!(a) == b` is left alone
+		if (*p && !p[1]) {
+			return r_str_ndup (cond + 2, p - cond - 2);
+		}
+	}
+	// flipping one operand of a compound condition needs De Morgan, so negate it whole
+	if (strstr (cond, "&&") || strstr (cond, "||")) {
+		return r_str_newf ("!(%s)", cond);
+	}
+	int depth = 0;
+	const char *p;
+	for (p = cond; *p; p++) {
+		if (*p == '(') {
+			depth++;
+		} else if (*p == ')') {
+			depth--;
+		} else if (depth == 0 && p > cond && p[-1] == ' ') {
+			size_t i;
+			for (i = 0; i < R_ARRAY_SIZE (ops); i++) {
+				const size_t olen = strlen (ops[i][0]);
+				// flip only space-delimited operators so `<<`, `>>` or `->` never match
+				if (!strncmp (p, ops[i][0], olen) && p[olen] == ' ') {
+					char *lhs = r_str_ndup (cond, p - cond);
+					r_str_trim (lhs);
+					const char *rhs = r_str_trim_head_ro (p + olen);
+					char *res = r_str_newf ("%s %s %s", lhs, ops[i][1], rhs);
+					free (lhs);
+					return res;
+				}
+			}
+		}
+	}
+	return r_str_newf ("!(%s)", cond);
+}
+
+static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *gotos);
+
+static void render_ifelse(PDCState *state, PdcRegion *r, RAnalBlock *bb, int indent, RBitset *gotos) {
+	render_bb_body_lines (state, bb, indent);
+	char *cond = extract_loop_cond (state, bb, bb->jump);
+	if (!cond) {
+		cond = r_str_newf ("/* 0x%08" PFMT64x " */", bb->addr);
+	}
+	PdcRegion *then_arm = *RVecPdcRegionPtr_at (&r->children, 0);
+	PdcRegion *else_arm = (r->type == PDC_R_IFELSE)? *RVecPdcRegionPtr_at (&r->children, 1): NULL;
+	// pseudo says `if (cond) goto jump`, so the fall-through (fail arm) becomes the then
+	bool invert = (then_arm->addr == bb->fail);
+	if (else_arm) {
+		const bool swap = (then_arm->addr == bb->jump && else_arm->addr == bb->fail);
+		// an unexpected arm layout keeps the faithful jump-then order
+		invert = swap || (invert && else_arm->addr == bb->jump);
+		if (swap) {
+			PdcRegion *tmp = then_arm;
+			then_arm = else_arm;
+			else_arm = tmp;
+		}
+	}
+	if (invert) {
+		char *ic = invert_cond (cond);
+		free (cond);
+		cond = ic;
+	}
+	print_newline (state, bb->addr, indent, false);
+	print_str (state, "if (%s) {", cond);
+	render_region (state, then_arm, indent + 1, gotos);
+	if (else_arm) {
+		print_newline (state, bb->addr, indent, false);
+		print_str (state, "} else {");
+		render_region (state, else_arm, indent + 1, gotos);
+	}
+	print_newline (state, bb->addr, indent, false);
+	print_str (state, "}");
+	free (cond);
+}
+
+static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *gotos) {
+	if (r->type == PDC_R_SEQ) {
+		PdcRegion **it;
+		R_VEC_FOREACH (&r->children, it) {
+			render_region (state, *it, indent, gotos);
+		}
+		return;
+	}
+	if (r->type == PDC_R_GOTO) {
+		print_newline (state, r->addr, indent, false);
+		print_str (state, "goto loc_0x%08" PFMT64x ";", r->addr);
+		return;
+	}
+	RAnalBlock *bb = r_anal_get_block_at (state->core->anal, r->addr);
+	if (!bb) {
+		return;
+	}
+	if (r_bitset_test (gotos, r->addr)) {
+		print_newline (state, r->addr, indent, false);
+		print_str (state, "loc_0x%08" PFMT64x ":", r->addr);
+	}
+	if (r->type == PDC_R_IF || r->type == PDC_R_IFELSE) {
+		render_ifelse (state, r, bb, indent, gotos);
+		return;
+	}
+	// PDC_R_BB leaf
+	render_bb_body_lines (state, bb, indent);
+}
+
+// render the structured body for fully reducible (no loop/switch) functions;
+// returns false to defer to the linear renderer
+// an if with no recoverable condition would hide which way the branch went
+static bool regions_have_conds(PDCState *state, PdcRegion *r) {
+	if (r->type == PDC_R_IF || r->type == PDC_R_IFELSE) {
+		RAnalBlock *bb = r_anal_get_block_at (state->core->anal, r->addr);
+		if (!bb) {
+			return false;
+		}
+		char *cond = extract_loop_cond (state, bb, bb->jump);
+		if (!cond) {
+			return false;
+		}
+		free (cond);
+	}
+	PdcRegion **it;
+	R_VEC_FOREACH (&r->children, it) {
+		if (!regions_have_conds (state, *it)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+// renders the whole function from the region AST, or returns false to defer to the linear pass
+static bool pdc_structured_body(PDCState *state, int indent) {
+	PdcRegion *root = pdc_ast_build (state->core, state->fcn);
+	if (!root) {
+		return false;
+	}
+	const bool reducible = !region_has_loop_or_switch (root) && regions_have_conds (state, root);
+	if (reducible) {
+		// scoped to this walk: the later orphan switch pass renders blocks no region owns
+		const bool was_structured = state->structured;
+		state->structured = true;
+		RBitset *gotos = r_bitset_new ();
+		collect_goto_targets (root, gotos);
+		render_region (state, root, indent, gotos);
+		r_bitset_free (gotos);
+		state->structured = was_structured;
+	}
+	pdc_ast_free (root);
+	return reducible;
+}
+
 R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	RCons *cons = r_core_get_cons (core);
 	bool show_c_headers = *input == 'c';
@@ -1510,6 +1739,13 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	indent++;
 	RList *visited = r_list_newf (NULL);
 	ut64 addr = state.fcn->addr;
+	// structured if/else emission for fully reducible functions; the linear
+	// worklist below is skipped (finalize closes the brace) when it succeeds
+	if (r_config_get_b (core->config, "pdc.structured")) {
+		if (!state.pj && !state.show_asm && !comment_cmds && pdc_structured_body (&state, indent)) {
+			bb = NULL;
+		}
+	}
 	// pre-pass: mark loop header bbs so emit_code_lines can strip stale gotos to them
 	{
 		RListIter *piter;
