@@ -35,7 +35,6 @@ r_core_sources += [
   'xpatch.c',
   'cplugin.c',
   'project.c',
-  'pseudo.c',
   'rtr.c',
   'task.c',
   'vasm.c',
@@ -47,6 +46,8 @@ r_core_sources += [
   'vmenus_zigns.c',
   'yank.c',
   'p/core_agD.c',
+  'p/pseudo/plugin.c',
+  'p/pseudo/pseudo.c',
   'p/core_writedwarf.c',
   'p/core_prj.c',
   'p/core_java.c'

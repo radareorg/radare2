@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2015-2026 - pancake */
 
 #include <r_core.h>
+#include "pseudo.h"
 
 // R2R db/cmd/cmd_pdc
 
@@ -1352,7 +1353,7 @@ static void pdc_print_comment_cmds(RCore *core, const char *s) {
 	}
 }
 
-R_API int r_core_pseudo_code(RCore *core, const char *input) {
+int pdc_decompile(RCore *core, const char *input) {
 	bool show_c_headers = *input == 'c';
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_pdc);
