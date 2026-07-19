@@ -4226,19 +4226,24 @@ static bool set_tmp_bits(RCore *core, int bits, char **tmpbits, int *cmd_ignbith
 
 static char *find_subcmd_begin(char *cmd) {
 	R_RETURN_VAL_IF_FAIL (cmd, NULL);
-	int quote = 0;
+	char quote = 0;
 	char *p;
 	for (p = cmd; *p; p++) {
 		if (*p == '\\') {
 			p++;
-			if (*p == '\'') {
-				continue;
-			} else if (!*p) {
+			if (!*p) {
 				break;
 			}
+			if (*p == '\'' || *p == '"') {
+				continue;
+			}
 		}
-		if (*p == '\'') {
-			quote ^= 1;
+		if (*p == '\'' || *p == '"') {
+			if (!quote) {
+				quote = *p;
+			} else if (quote == *p) {
+				quote = 0;
+			}
 			continue;
 		}
 		if (*p == '`' && !quote) {

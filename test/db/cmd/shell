@@ -108,6 +108,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=command substitutions are literal inside double-quoted spans
+FILE=malloc://32
+CMDS=<<EOF
+?e "backtick:`?e INJECT`"
+?e "dollar:$(?e INJECT)"
+?e "escaped:\"`?e INJECT`"
+?e "one:`?e INJECT`" "two:$(?e INJECT)"
+?e "inside:$(?e INJECT)" outside:$(?e OK)
+?e outside:`?e OK`
+?e outside:$(?e OK)
+EOF
+EXPECT=<<EOF
+backtick:`?e INJECT`
+dollar:$(?e INJECT)
+escaped:"`?e INJECT`
+one:`?e INJECT` two:$(?e INJECT)
+inside:$(?e INJECT) outside:OK
+outside:OK
+outside:OK
+EOF
+RUN
+
 NAME=pipe system
 FILE=malloc://32
 CMDS=<<EOF
