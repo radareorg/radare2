@@ -1,0 +1,101 @@
+NAME=pdct region ast if-else diamond
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 83ff01 7507 b801000000 eb05 b802000000 c3 @ 0
+af @ 0
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000000
+  if-else 0x00000000
+    bb 0x0000000c
+    bb 0x00000005
+  bb 0x00000011
+EOF
+RUN
+
+NAME=pdct region ast while loop
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b800000000 83f80a 7d07 83c001 ebf6 0000 c3 @ 0
+af @ 0
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000000
+  bb 0x00000000
+  while 0x00000005
+    bb 0x0000000a
+  bb 0x00000011
+EOF
+RUN
+
+NAME=pdct region ast sequential fall-through blocks
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EOF
+s 0x4bf8
+af
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00004bf8
+  bb 0x00004bf8
+  bb 0x00004c08
+  bb 0x00004c18
+EOF
+RUN
+
+NAME=pdct region ast single-armed if on ppc64
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EOF
+s 0xd500
+af
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x0000d500
+  if 0x0000d500
+    bb 0x0000d588
+  bb 0x0000d598
+EOF
+RUN
+
+NAME=pdct region ast switch with case arms
+FILE=bins/jmptbl/test_gcc_5.5.0_64.out
+CMDS=<<EOF
+aa
+s main
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000580
+  if-else 0x00000580
+    bb 0x00000622
+    switch 0x0000058d
+      goto 0x00000622
+      bb 0x000005b2
+      bb 0x000005c0
+      bb 0x000005ce
+      bb 0x000005dc
+      bb 0x000005ea
+      bb 0x000005f8
+      bb 0x00000606
+      bb 0x00000614
+      bb 0x0000059f
+  bb 0x000005ab
+EOF
+RUN
+
+NAME=pdct region ast single block
+FILE=bins/elf/ls
+CMDS=<<EOF
+s sym.main
+af
+pdct
+EOF
+EXPECT=<<EOF
+bb 0x00005ae0
+EOF
+RUN

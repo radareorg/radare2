@@ -2,6 +2,7 @@
 
 #include <r_core.h>
 #include "pseudo.h"
+#include "pdc_ast.h"
 
 // R2R db/cmd/cmd_pdc
 
@@ -413,6 +414,7 @@ static RCoreHelpMessage help_msg_pdc = {
 	"pdcc", "", "pseudo-decompile with C helpers around",
 	"pdco", "", "show associated offset next to pseudecompiled output",
 	"pdcj", "", "in json format for codemeta annotations (used by frontends like iaito)",
+	"pdct", "", "dump the structuring region AST (decompiler debug)",
 	NULL
 };
 
@@ -1358,6 +1360,19 @@ int pdc_decompile(RCore *core, const char *input) {
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_pdc);
 		return false;
+	}
+	if (*input == 't') {
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
+		if (!fcn) {
+			R_LOG_ERROR ("Cannot find function at 0x%08" PFMT64x, core->addr);
+			return false;
+		}
+		char *dump = pdc_ast_dump (core, fcn);
+		if (dump) {
+			r_cons_print (core->cons, dump);
+			free (dump);
+		}
+		return true;
 	}
 
 	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
