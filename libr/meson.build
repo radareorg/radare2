@@ -23,7 +23,7 @@ if get_option('use_zip')
 endif
 bp_plugins = [ 'null' ]
 muta_plugins = [ 'null' ]
-core_plugins += [ 'prj', 'writedwarf', 'agD' ]
+core_plugins += [ 'prj', 'writedwarf', 'agD', 'pseudo' ]
 egg_plugins = [ 'xor' ]
 debug_plugins = [ 'null', 'io', 'esil', 'rap' ]
 lang_plugins = [ 'lib', 'pipe', 'qjs', 'tsc', 'spp' ]

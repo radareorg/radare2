@@ -856,7 +856,6 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name);
 
 // XXX - this is kinda hacky, maybe there should be a way to
 // refresh the bin environment without specific calls?
-R_API int r_core_pseudo_code(RCore *core, const char *input);
 
 /* gdiff.c */
 R_API bool r_core_zdiff(RCore *c, RCore *c2);
@@ -1083,6 +1082,7 @@ extern RCorePlugin r_core_plugin_java;
 extern RCorePlugin r_core_plugin_prj;
 extern RCorePlugin r_core_plugin_writedwarf;
 extern RCorePlugin r_core_plugin_agD;
+extern RCorePlugin r_core_plugin_pseudo;
 
 R_IPI void r_core_plugins_init(RCmd *cmd);
 R_IPI void r_core_plugins_load(RCmd *cmd);
