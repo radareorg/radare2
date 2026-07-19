@@ -93,29 +93,21 @@ R_API void r_cons_grep_help(RCons *cons) {
 }
 
 R_API void r_cons_grep_expression(RCons *cons, const char *str) {
-	if (R_STR_ISEMPTY(str)) {
+	if (R_STR_ISEMPTY (str)) {
 		return;
 	}
 	RConsContext *ctx = cons->context;
 	RConsGrep *grep = &ctx->grep;
-
-	size_t str_len = strlen (str);
-	size_t buf_len = str_len;
-	bool has_counter = str_len > 0 && str[str_len - 1] == '?';
-
-	if (has_counter) {
-		grep->counter = 1;
-		buf_len--;
-	}
-
-	char *buf = malloc (buf_len + 1);
+	char *buf = strdup (str);
 	if (!buf) {
 		R_LOG_ERROR ("r_cons_grep: cannot allocate buffer");
 		return;
 	}
-
-	memcpy (buf, str, buf_len);
-	buf[buf_len] = '\0';
+	size_t buf_len = strlen (buf);
+	if (buf[buf_len - 1] == '?') {
+		grep->counter = 1;
+		buf[buf_len - 1] = '\0';
+	}
 
 	char *ptrs[R_CONS_GREP_COUNT];
 	size_t ptrs_length = 1;
@@ -140,6 +132,7 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 	if (!grep->strings) {
 		grep->strings = r_list_newf ((RListFree)grep_word_free);
 	}
+	grep->range_line = 2; // there is no :
 	for (i = 0; i < ptrs_length; i++) {
 		bool gw_begin = false;
 		bool gw_neg = false;
@@ -299,7 +292,6 @@ while_end:
 		}
 
 		ptr2 = strchr_ns (ptr, ':'); // line number
-		grep->range_line = 2; // there is no :
 		if (ptr2 && ptr2[1] != ':' && ptr2[1] && (isdigit (ptr2[1]) || ptr2[1] == '-' || ptr2[1] == '.')) {
 			end_ptr = end_ptr ? R_MIN (end_ptr, ptr2) : ptr2;
 			char *p, *token = ptr2 + 1;
@@ -387,37 +379,19 @@ static char *find_next_intgrep(char *cmd, const char *quotes) {
  * with reshaped grep expression.
 */
 static char *preprocess_filter_expr(char *cmd, const char *quotes) {
-	char *p2, *ns = NULL;
-	const char *strsep = "";
-	int i;
-
 	char *p1 = find_next_intgrep (cmd, quotes);
 	if (!p1) {
 		return NULL;
 	}
-
-	int len = strlen (p1);
-	if (len > 4 && r_str_endswith (p1, "~?") && p1[len - 3] != '\\') {
-		p1[len - 2] = '\0';
-		ns = r_str_append (ns, "?");
-	}
-
 	*p1 = '\0'; // remove grep part from cmd
-
-	i = 0;
+	char *p2;
+	char *ns = NULL;
 	// parse words between '~'
 	while ((p2 = find_next_intgrep (p1 + 1, quotes))) {
-		ns = r_str_append (ns, strsep);
 		ns = r_str_appendlen (ns, p1 + 1, (int)(p2 - p1 - 1));
-		p1 = p2;
-		strsep = "~";
-		i++;
-	}
-
-	if (i > 0) {
 		ns = r_str_append (ns, "~");
+		p1 = p2;
 	}
-
 	return r_str_append (ns, p1 + 1);
 }
 
@@ -676,10 +650,22 @@ static void colorcode(RCons *cons) {
 	cons->context->buffer_sz = cons->context->buffer_len;
 }
 
+static void grep_set_count(RCons *cons, int count) {
+	RConsContext *ctx = cons->context;
+	free (ctx->buffer);
+	ctx->buffer = r_str_newf ("%d\n", count);
+	ctx->buffer_len = ctx->buffer? strlen (ctx->buffer): 0;
+	ctx->buffer_sz = ctx->buffer_len + 1;
+	if (cons->num) {
+		cons->num->value = count;
+	}
+}
+
 R_API void r_cons_grepbuf(RCons *cons) {
 	const char *buf = cons->context->buffer;
 	size_t len = cons->context->buffer_len;
 	RConsGrep *grep = &cons->context->grep;
+	bool count_range = grep->charCounter && grep->range_line == 1;
 	const char *in = buf;
 	int ret, l = 0, tl = 0;
 	bool show = false;
@@ -875,6 +861,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 	RStrBuf *ob = NULL;
 continuation:
 	ob = r_strbuf_new ("");
+	int char_count = 0;
 	// if we modify cons->lines we should update I.context->buffer too
 	cons->lines = 0;
 	// used to count lines and change negative grep.line values
@@ -940,11 +927,11 @@ continuation:
 					show = true;
 				}
 			}
-			if (grep->counter) {
-				show = false;
-			}
 			if ((!ret && is_range_line_grep_only) || ret > 0) {
-				if (show) {
+				if (grep->charCounter && show) {
+					char_count += ret + 1;
+				}
+				if (show && !grep->counter) {
 					if (cons->context->grep_highlight) {
 						char *str = r_str_ndup (tline, ret);
 						RListIter *iter;
@@ -979,6 +966,9 @@ continuation:
 				r_strbuf_free (ob);
 				return;
 			}
+			if (grep->counter && !count_range) {
+				show = false;
+			}
 			free (tline);
 			in += l + 1;
 		} else {
@@ -990,18 +980,8 @@ continuation:
 	cons->context->buffer_len = ob_len;
 
 	// count before uniq
-	// XXX dupe from the code below
 	if (grep->counter && !grep->sort_uniq) {
-		int cnt = grep->charCounter? strlen (cons->context->buffer): cons->lines;
-		free (cons->context->buffer);
-		char *cntstr = r_str_newf ("%d\n", cnt);
-		size_t cntstr_len = cntstr? strlen (cntstr): 0;
-		cons->context->buffer = cntstr;
-		cons->context->buffer_len = cntstr_len;
-		cons->context->buffer_sz = cntstr_len + 1;
-		if (cons->num) {
-			cons->num->value = cons->lines;
-		}
+		grep_set_count (cons, grep->charCounter? char_count: cons->lines);
 		r_strbuf_free (ob);
 		return;
 	}
@@ -1059,15 +1039,7 @@ continuation:
 	}
 	// count after uniq
 	if (grep->counter && grep->sort_uniq) {
-		int cnt = grep->charCounter? strlen (cons->context->buffer): cons->lines;
-		free (cons->context->buffer);
-		char *cntstr = r_str_newf ("%d\n", cnt);
-		size_t cntstr_len = cntstr? strlen (cntstr): 0;
-		cons->context->buffer = cntstr;
-		cons->context->buffer_len = cntstr_len;
-		cons->context->buffer_sz = cntstr_len + 1;
-		cons->num->value = cons->lines;
-		r_strbuf_free (ob);
+		grep_set_count (cons, grep->charCounter? cons->context->buffer_len: cons->lines);
 	}
 }
 

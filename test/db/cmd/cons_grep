@@ -540,6 +540,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=nested grep modifiers
+CMDS=<<EOF
+?e abc\ndef~abc~?.;?v
+?e aa bb\ncc dd~aa~[0]~?.
+?e aa bb\naa cc\naa cc dd\ncc dd~aa~[1]~cc~!dd
+?e aa bb\naa cc\naa cc dd\ncc dd~aa~[1]~cc~!dd~?
+?e aa bb\naa cc\naa cc dd\ncc dd~aa~[1]~cc~!dd~?.
+?e a\nbb\nccc~:0..2~?.
+?e aa\naa\nb~$$?.
+EOF
+EXPECT=<<EOF
+4
+4
+3
+cc
+1
+3
+5
+5
+EOF
+RUN
+
 NAME=escaped grep
 FILE=bins/elf/crackme
 CMDS=pd 40~0x004005fe
@@ -712,11 +734,13 @@ FILE=bins/elf/crackme
 CMDS=<<EOF
 ij~{}~static,pic
 ij~{}~static,pic~?
+ij~{}~static,pic~?.
 EOF
 EXPECT=<<EOF
     "pic": false,
     "static": false,
 2
+18
 EOF
 RUN
 
