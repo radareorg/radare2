@@ -794,6 +794,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 		if (grep->json_path) {
 			char *u = sdb_json_get_str (cons->context->buffer, grep->json_path);
 			if (u) {
+				free (cons->context->buffer);
 				cons->context->buffer = u;
 				cons->context->buffer_len = strlen (u);
 				cons->context->buffer_sz = cons->context->buffer_len + 1;
