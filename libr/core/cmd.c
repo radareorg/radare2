@@ -4614,7 +4614,6 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 		goto escape_redir;
 	}
 
-	// TODO must honor " and `
 	/* pipe console to shell process */
 	ptr = (char *)r_str_lastbut (cmd, '|', quotestr);
 	if (ptr) {

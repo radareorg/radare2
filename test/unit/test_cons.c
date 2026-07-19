@@ -212,12 +212,38 @@ bool test_cons_timeout_does_not_restart_expired_deadline(void) {
 	mu_end;
 }
 
+bool test_cons_json_path_grep_buffer(void) {
+	RCons *cons = r_cons_new2 ();
+	mu_assert_notnull (cons, "r_cons_new2()");
+
+	const char *json = "{\"name\":\"radare2\"}\n";
+	mu_assert ("write json", r_cons_write (cons, json, strlen (json)));
+	cons->context->grep.json = true;
+	cons->context->grep.json_path = strdup ("name");
+	r_cons_grepbuf (cons);
+	mu_assert_streq (cons->context->buffer, "radare2\n", "JSON path result");
+	mu_assert_null (cons->context->grep.json_path, "JSON path must be released");
+
+	r_cons_reset (cons);
+	mu_assert ("write json again", r_cons_write (cons, json, strlen (json)));
+	char *buffer = cons->context->buffer;
+	cons->context->grep.json = true;
+	cons->context->grep.json_path = strdup ("missing");
+	r_cons_grepbuf (cons);
+	mu_assert_ptreq (cons->context->buffer, buffer, "missing JSON path must preserve buffer");
+	mu_assert_streq (cons->context->buffer, json, "missing JSON path contents");
+
+	r_cons_free (cons);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
 	mu_run_test (test_cons_context_clone_null);
 	mu_run_test (test_cons_timeout_keeps_earliest_deadline);
 	mu_run_test (test_cons_timeout_does_not_restart_expired_deadline);
+	mu_run_test (test_cons_json_path_grep_buffer);
 	return tests_passed != tests_run;
 }
 

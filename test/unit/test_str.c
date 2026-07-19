@@ -906,6 +906,30 @@ bool test_r_str_printfmt_pf(void) {
 	mu_end;
 }
 
+bool test_r_str_but_escape(void) {
+	const char *s = "a | \"b|c\" d \\| e | 'f|g'";
+	mu_assert_ptreq (r_str_firstbut_escape (s, '|', "\"'"), s + 2,
+		"first delimiter outside quoted spans");
+	mu_assert_ptreq (r_str_lastbut (s, '|', "\"'"), strstr (s, "| 'f"),
+		"last delimiter outside multiple quoted spans and escapes");
+	s = "a \"b\\\"|c\" | d";
+	mu_assert_ptreq (r_str_firstbut (s, '|', "\"'"), r_str_lchr (s, '|'),
+		"first delimiter after escaped quote");
+	mu_assert_ptreq (r_str_firstbut_escape (s, '|', "\"'"), r_str_lchr (s, '|'),
+		"escaped quote keeps delimiter inside quoted span");
+	s = "a \\| b";
+	mu_assert_ptreq (r_str_firstbut (s, '|', "\"'"), s + 3, "first escaped delimiter");
+	mu_assert_null (r_str_firstbut_escape (s, '|', "\"'"), "escaped delimiter skipped");
+	mu_assert_ptreq (r_str_lastbut (s, '|', "\"'"), s + 3, "last escaped delimiter");
+	s = "a \\\\| b";
+	mu_assert_ptreq (r_str_firstbut_escape (s, '|', "\"'"), r_str_lchr (s, '|'),
+		"even backslashes do not escape delimiter");
+	s = "a \\\\\\| b";
+	mu_assert_null (r_str_firstbut_escape (s, '|', "\"'"),
+		"odd backslashes escape delimiter");
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_file);
 	mu_run_test (test_r_str_wrap);
@@ -953,6 +977,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_font);
 	mu_run_test (test_r_str_printfmt_types);
 	mu_run_test (test_r_str_printfmt_pf);
+	mu_run_test (test_r_str_but_escape);
 	return tests_passed != tests_run;
 }
 

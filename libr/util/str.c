@@ -2761,24 +2761,30 @@ R_API void r_str_argv_free(char **argv) {
 }
 
 R_API const char *r_str_firstbut(const char *s, char ch, const char *but) {
-	int idx, _b = 0;
-	const char *isbut, *p;
-	const int bsz = sizeof (_b) * 8;
 	if (!but) {
 		return strchr (s, ch);
 	}
-	if (strlen (but) >= bsz) {
-		R_LOG_ERROR ("but string too long");
-		return NULL;
-	}
+	char quote = 0;
+	const char *p;
 	for (p = s; *p; p++) {
-		isbut = strchr (but, *p);
-		if (isbut) {
-			idx = (int) (size_t) (isbut - but);
-			_b ^= 1 << idx;
+		if (*p == '\\') {
+			p++;
+			if (!*p) {
+				break;
+			}
+			if (strchr (but, *p)) {
+				continue;
+			}
+		}
+		if (strchr (but, *p)) {
+			if (!quote) {
+				quote = *p;
+			} else if (quote == *p) {
+				quote = 0;
+			}
 			continue;
 		}
-		if (*p == ch && !_b) {
+		if (*p == ch && !quote) {
 			return p;
 		}
 	}
@@ -2786,68 +2792,32 @@ R_API const char *r_str_firstbut(const char *s, char ch, const char *but) {
 }
 
 R_API const char *r_str_firstbut_escape(const char *s, char ch, const char *but) {
-	int idx, _b = 0;
-	const char *isbut, *p;
-	const int bsz = sizeof (_b) * 8;
 	if (!but) {
 		return strchr (s, ch);
 	}
-	if (strlen (but) >= bsz) {
-		R_LOG_ERROR ("r_str_firstbut: but string too long");
-		return NULL;
-	}
-	for (p = s; *p; p++) {
-		if (*p == '\\') {
-			p++;
-			if (*p == ch || strchr (but, *p)) {
-				if (!*p) {
-					break;
-				}
-				continue;
-			} else if (!*p) {
-				break;
-			}
+	const char *p = s;
+	while ((p = r_str_firstbut (p, ch, but))) {
+		const char *escape = p;
+		while (escape > s && escape[-1] == '\\') {
+			escape--;
 		}
-		isbut = strchr (but, *p);
-		if (isbut) {
-			idx = (int) (size_t) (isbut - but);
-			const int mask = 1 << idx;
-			_b ^= mask;
-			if (_b && (_b & (_b - 1))) {
-				_b ^= mask; // cancel a but char if a but is already toggle
-			}
-			continue;
-		}
-		if (*p == ch && !_b) {
+		if (!((p - escape) & 1)) {
 			return p;
 		}
+		p++;
 	}
 	return NULL;
 }
 
 R_API const char *r_str_lastbut(const char *s, char ch, const char *but) {
-	int idx, _b = 0;
-	const char *isbut, *p, *lp = NULL;
-	const int bsz = sizeof (_b) * 8;
 	if (!but) {
 		return r_str_lchr (s, ch);
 	}
-	if (strlen (but) >= bsz) {
-		R_LOG_ERROR ("r_str_lastbut: but string too long");
-		return NULL;
+	const char *last = NULL;
+	while ((s = r_str_firstbut (s, ch, but))) {
+		last = s++;
 	}
-	for (p = s; *p; p++) {
-		isbut = strchr (but, *p);
-		if (isbut) {
-			idx = (int) (size_t) (isbut - but);
-			_b ^= 1 << idx;
-			continue;
-		}
-		if (*p == ch && !_b) {
-			lp = p;
-		}
-	}
-	return lp;
+	return last;
 }
 
 // Must be merged inside strlen

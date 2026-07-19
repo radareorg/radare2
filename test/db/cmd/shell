@@ -130,6 +130,26 @@ outside:OK
 EOF
 RUN
 
+NAME=escaped quotes keep pipes and redirects literal
+FILE=malloc://32
+CMDS=<<EOF
+?e "pipe:\"|E"
+?e "redirect:\">?"
+?e "one:\"|E" "two:\">?"
+?e "one:\"|E" "two:\">?"|cat
+?e escaped \| pipe
+?e escaped \> redirect
+EOF
+EXPECT=<<EOF
+pipe:"|E
+redirect:">?
+one:"|E two:">?
+one:"|E two:">?
+escaped | pipe
+escaped > redirect
+EOF
+RUN
+
 NAME=pipe system
 FILE=malloc://32
 CMDS=<<EOF
