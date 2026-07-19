@@ -40,9 +40,9 @@ af+ 0x24 helper loc
 afb+ 0x24 0x24 4
 aac
 afij @ 0~?\"name\":\"wrapper\"
-afij @ 0~?\"size\":48
+afij @ 0~?\"size\"\:48
 afij @ 0x24~?\"name\":\"helper\"
-afij @ 0x24~?\"indegree\":1
+afij @ 0x24~?\"indegree\"\:1
 EOF
 EXPECT=<<EOF
 1
