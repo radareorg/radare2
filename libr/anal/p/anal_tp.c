@@ -307,6 +307,10 @@ static void tp_var_fact_kv_free(HtUPKv *kv) {
 	}
 }
 
+static void tp_reach_kv_free(HtUPKv *kv) {
+	set_u_free (kv->value);
+}
+
 // TPState - Isolated ESIL environment for type propagation
 // Design inspired by RCoreEsil from PR #24428:
 // - Centralized ESIL state (esil, reg_if, mem_if)
@@ -332,6 +336,7 @@ typedef struct tp_state_t {
 	RList *clobber; // caller-saved regs to poison across skipped calls (synth only)
 	RVecTPPendingConst pending_const;
 	HtUP *var_facts; // RAnalVar * => TPVarFact *
+	HtUP *reach_cache; // block addr => SetU of reachable block addrs
 } TPState;
 
 /// BEGIN /////////////////// esil trace helpers ///////////////////////
@@ -461,27 +466,38 @@ static void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 
 static bool tp_prim_scalar(const char *t);
 
-// var-fact lattice: 0 default < 1 sign hint < 2 sized scalar < 3 scalar/void pointer < 4 char *, typed pointer or named type
-static int tp_var_rank(const char *t) {
+// specificity lattice shared by var facts (var=true) and struct member types (var=false)
+// vars: 0 default < 1 sign hint < 2 non-pointer < 3 scalar/void pointer < 4 char *, typed pointer or named type
+// members: 0 default < 1 prim scalar < 2 void pointer < 3 prim pointer (char * ties) < 4 named type
+static int tp_rank(const char *t, bool var) {
+	if (R_STR_ISEMPTY (t)) {
+		return 0;
+	}
 	t = r_str_skip_prefix (r_str_trim_head_ro (t), "const ");
 	if (R_STR_ISEMPTY (t) || r_str_startswith (t, "undefined")) {
 		return 0;
 	}
 	if (!strchr (t, '*')) {
-		return strcmp (t, "void")? 2: 0;
+		if (!strcmp (t, "void")) {
+			return 0;
+		}
+		// member named types outrank prototype scalars; var facts keep a single non-pointer tier
+		return var? 2: (tp_prim_scalar (t)? 1: 4);
 	}
 	if (r_str_startswith (t, "void")) {
-		return 3;
+		return var? 3: 2;
 	}
-	// char * carries string evidence, so it tops the lattice with the named types
-	if (r_str_startswith (t, "char") || !tp_prim_scalar (t)) {
+	// char * is string evidence for a var, so it tops that lattice; for members it ties with the prim pointers
+	if (var && r_str_startswith (t, "char")) {
 		return 4;
 	}
-	return 3;
+	return tp_prim_scalar (t)? 3: 4;
 }
 
 // the meet of facts proven on parallel paths is the weaker side: their common knowledge
-static char *tp_type_meet(const char *a, int rank_a, const char *b, int rank_b) {
+static char *tp_type_meet(RAnal *anal, const char *a, int rank_a, const char *b, int rank_b) {
+	a = r_str_skip_prefix (a, "const ");
+	b = r_str_skip_prefix (b, "const ");
 	if (!strcmp (a, b)) {
 		return strdup (a);
 	}
@@ -491,39 +507,45 @@ static char *tp_type_meet(const char *a, int rank_a, const char *b, int rank_b) 
 	if (strchr (a, '*') && strchr (b, '*')) {
 		return strdup ("void *");
 	}
-	return strdup (a);
+	// equal-rank scalar conflict: the order-independent common knowledge is the wider side's default int
+	const ut64 w = R_MAX (r_type_get_bitsize (anal->sdb_types, a), r_type_get_bitsize (anal->sdb_types, b));
+	switch (w) {
+	case 64: return strdup ("int64_t");
+	case 16: return strdup ("int16_t");
+	case 8: return strdup ("int8_t");
+	default: return strdup ("int32_t");
+	}
 }
 
-typedef struct {
-	ut64 target;
-	bool found;
-} TPReachCtx;
-
-static bool tp_reach_cb(RAnalBlock *bb, void *user) {
-	TPReachCtx *ctx = user;
-	if (bb->addr == ctx->target) {
-		ctx->found = true;
-		return false;
-	}
+static bool tp_reach_fill_cb(RAnalBlock *bb, void *user) {
+	set_u_add ((SetU *)user, bb->addr);
 	return true;
 }
 
-static bool tp_block_reaches(RAnal *anal, ut64 from, ut64 to) {
-	RAnalBlock *bb = r_anal_get_block_at (anal, from);
+static bool tp_block_reaches(TPState *tps, ut64 from, ut64 to) {
+	RAnalBlock *bb = r_anal_get_block_at (tps->anal, from);
 	if (!bb) {
 		// unknown topology counts as sequential, keeping the pre-lattice behavior
 		return true;
 	}
-	TPReachCtx ctx = { to, false };
-	r_anal_block_recurse (bb, tp_reach_cb, &ctx);
-	return ctx.found;
+	bool found = false;
+	SetU *reach = ht_up_find (tps->reach_cache, from, &found);
+	if (!found) {
+		reach = set_u_new ();
+		if (!reach) {
+			return true;
+		}
+		r_anal_block_recurse (bb, tp_reach_fill_cb, reach);
+		ht_up_insert (tps->reach_cache, from, reach);
+	}
+	return set_u_contains (reach, to);
 }
 
-static bool tp_facts_parallel(RAnal *anal, ut64 a, ut64 b) {
+static bool tp_facts_parallel(TPState *tps, ut64 a, ut64 b) {
 	if (a == b || a == UT64_MAX || b == UT64_MAX) {
 		return false;
 	}
-	return !tp_block_reaches (anal, a, b) && !tp_block_reaches (anal, b, a);
+	return !tp_block_reaches (tps, a, b) && !tp_block_reaches (tps, b, a);
 }
 
 // the canonical int spelling behind the sized aliases, as the legacy default test expects it
@@ -606,14 +628,15 @@ static void tp_fact_apply(RAnal *anal, TPVarFact *fact, RAnalVar *var, char *new
 }
 
 // a fact for this var is already on record, so the lattice decides instead of the legacy default checks
-static void tp_fact_retype(RAnal *anal, ut64 baddr, TPVarFact *fact, RAnalVar *var,
+static void tp_fact_retype(TPState *tps, ut64 baddr, TPVarFact *fact, RAnalVar *var,
 		const char *vname, const char *type, int ref, bool pfx) {
+	RAnal *anal = tps->anal;
 	char *cand = tp_built_type (var, vname, type, ref, pfx);
 	if (!cand) {
 		// a prefix that cannot attach to the current spelling keeps the incumbent, like before the lattice
 		return;
 	}
-	const int rank = pfx? 1: tp_var_rank (cand);
+	const int rank = pfx? 1: tp_rank (cand, true);
 	if (!strcmp (cand, fact->type)) {
 		free (cand);
 		return;
@@ -633,15 +656,15 @@ static void tp_fact_retype(RAnal *anal, ut64 baddr, TPVarFact *fact, RAnalVar *v
 		tp_fact_apply (anal, fact, var, cand, rank, baddr);
 		return;
 	}
-	if (fact->met || tp_facts_parallel (anal, fact->bb_addr, baddr)) {
-		char *met = tp_type_meet (fact->type, fact->rank, cand, rank);
+	if (fact->met || tp_facts_parallel (tps, fact->bb_addr, baddr)) {
+		char *met = tp_type_meet (anal, fact->type, fact->rank, cand, rank);
 		free (cand);
 		fact->met = true;
 		if (!met || !strcmp (met, fact->type)) {
 			free (met);
 			return;
 		}
-		tp_fact_apply (anal, fact, var, met, tp_var_rank (met), baddr);
+		tp_fact_apply (anal, fact, var, met, tp_rank (met, true), baddr);
 	} else if (rank > fact->rank) {
 		tp_fact_apply (anal, fact, var, cand, rank, baddr);
 	} else {
@@ -649,7 +672,7 @@ static void tp_fact_retype(RAnal *anal, ut64 baddr, TPVarFact *fact, RAnalVar *v
 	}
 }
 
-static void var_retype(RAnal *anal, TPState *tps, ut64 baddr, RAnalVar *var, const char *vname, const char *type, int ref, bool pfx) {
+static void var_retype_impl(RAnal *anal, TPState *tps, ut64 baddr, RAnalVar *var, const char *vname, const char *type, int ref, bool pfx) {
 	R_LOG_DEBUG ("Var retype %s %s", var->name, type);
 	R_RETURN_IF_FAIL (anal && var && type);
 	// XXX types should be passed without spaces to trim
@@ -666,7 +689,7 @@ static void var_retype(RAnal *anal, TPState *tps, ut64 baddr, RAnalVar *var, con
 	}
 	TPVarFact *fact = tps? ht_up_find (tps->var_facts, (ut64)(size_t)var, NULL): NULL;
 	if (fact) {
-		tp_fact_retype (anal, baddr, fact, var, vname, type, ref, pfx);
+		tp_fact_retype (tps, baddr, fact, var, vname, type, ref, pfx);
 		return;
 	}
 	bool is_default = strstr (tp_expand_int (var->type), "int") != NULL;
@@ -682,12 +705,21 @@ static void var_retype(RAnal *anal, TPState *tps, ut64 baddr, RAnalVar *var, con
 	if (tps) {
 		TPVarFact *nf = R_NEW0 (TPVarFact);
 		nf->type = nt;
-		nf->rank = pfx? 1: tp_var_rank (nt);
+		nf->rank = pfx? 1: tp_rank (nt, true);
 		nf->bb_addr = baddr;
 		ht_up_insert (tps->var_facts, (ut64)(size_t)var, nf);
 	} else {
 		free (nt);
 	}
+}
+
+// lattice-exempt path for callee-side retypes that carry no per-block fact
+static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char *type, int ref, bool pfx) {
+	var_retype_impl (anal, NULL, UT64_MAX, var, vname, type, ref, pfx);
+}
+
+static void tp_var_retype(TPState *tps, ut64 baddr, RAnalVar *var, const char *vname, const char *type, int ref, bool pfx) {
+	var_retype_impl (tps->anal, tps, baddr, var, vname, type, ref, pfx);
 }
 
 static RAnalOp *tp_anal_op(RAnal *anal, ut64 addr, int mask);
@@ -791,7 +823,6 @@ static RAnalCondType cond_invert(RAnal *anal, RAnalCondType cond) {
 typedef const char *String;
 R_VEC_TYPE(RVecString, String); // no fini, these are owned by SDB
 
-
 static bool parse_format(TPState *tps, const char *fmt, RVecString *vec) {
 	if (R_STR_ISEMPTY (fmt)) {
 		return false;
@@ -836,7 +867,7 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 			return;
 		}
 		// callee vars belong to another function, so their facts stay out of this pass's lattice
-		var_retype (anal, NULL, UT64_MAX, var, NULL, type, false, false);
+		var_retype (anal, var, NULL, type, false, false);
 	} else {
 		if (R_STR_ISEMPTY (place)) {
 			return;
@@ -851,10 +882,10 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 			return;
 		}
 		char *t = strdup (type);
-		var_retype (anal, NULL, UT64_MAX, rvar, NULL, type, false, false);
+		var_retype (anal, rvar, NULL, type, false, false);
 		RAnalVar *lvar = r_anal_var_get_dst_var (rvar);
 		if (lvar) {
-			var_retype (anal, NULL, UT64_MAX, lvar, NULL, t, false, false);
+			var_retype (anal, lvar, NULL, t, false, false);
 		}
 		free (t);
 		r_unref (item);
@@ -868,7 +899,7 @@ static void propagate_arg_type(TPState *tps, ut64 baddr, RAnalVar *var, const ch
 	if (userfnc) {
 		retype_callee_arg (anal, fcn_name, in_stack, place, size, var->type);
 	} else {
-		var_retype (anal, tps, baddr, var, name, type, var_memref, false);
+		tp_var_retype (tps, baddr, var, name, type, var_memref, false);
 		var_rename (anal, var, name, addr);
 	}
 }
@@ -889,31 +920,6 @@ static bool tp_prim_scalar(const char *t) {
 		}
 	}
 	return false;
-}
-
-// higher rank = more specific; a member type is only replaced by a strictly higher-ranked one
-static int tp_type_rank(const char *t) {
-	if (R_STR_ISEMPTY (t)) {
-		return 0;
-	}
-	t = r_str_skip_prefix (r_str_trim_head_ro (t), "const ");
-	if (r_str_startswith (t, "undefined")) {
-		return 0;
-	}
-	if (!strchr (t, '*')) {
-		if (!strcmp (t, "void")) {
-			return 0;
-		}
-		return tp_prim_scalar (t)? 1: 4;
-	}
-	if (r_str_startswith (t, "void")) {
-		return 2;
-	}
-	// scalar pointers tie so a char* string member never loses to an int*/uint8_t* prototype
-	if (tp_prim_scalar (t)) {
-		return 3;
-	}
-	return 4;
 }
 
 #define TP_TYPEDEF_MAX 4
@@ -1055,7 +1061,7 @@ static bool tp_retype_field_chain(RAnal *anal, const char *ptr_type, const TPHop
 			}
 			// overlap only matters for structs; union members all start at their shared offset
 			const bool fits = is_union || tp_member_fits (anal, bt, m, type);
-			if (fits && tp_type_rank (type) > tp_type_rank (m->type)) {
+			if (fits && tp_rank (type, false) > tp_rank (m->type, false)) {
 				char *nt = strdup (type);
 				if (nt) {
 					free (m->type);
@@ -1595,7 +1601,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 				ut64 ptr = get_addr (tt, tmp, j);
 				if (ptr == xaddr) {
 					int var_memref = var->isarg? 0: memref;
-					var_retype (anal, tps, baddr, var, name, r_str_get_fail (type, "int"), var_memref, false);
+					tp_var_retype (tps, baddr, var, name, r_str_get_fail (type, "int"), var_memref, false);
 				}
 			}
 			r_anal_op_free (op);
@@ -1682,6 +1688,7 @@ static void tps_fini(TPState *tps) {
 	R_RETURN_IF_FAIL (tps);
 	r_list_free (tps->clobber);
 	ht_up_free (tps->var_facts);
+	ht_up_free (tps->reach_cache);
 	tp_flush_pending_const (tps);
 	RVecTPPendingConst_fini (&tps->pending_const);
 	type_trace_fini (&tps->tt, &tps->esil);
@@ -1880,6 +1887,7 @@ static TPState *tps_init(RAnal *anal) {
 	tps->anal = anal;
 	RVecTPPendingConst_init (&tps->pending_const);
 	tps->var_facts = ht_up_new (NULL, tp_var_fact_kv_free, NULL);
+	tps->reach_cache = ht_up_new (NULL, tp_reach_kv_free, NULL);
 	int align = r_arch_info (anal->arch, R_ARCH_INFO_DATA_ALIGN);
 	align = R_MAX (r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN), align);
 	align = R_MAX (align, 1);
@@ -2265,7 +2273,7 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 		get_src_regname_from_esil (anal, r_strbuf_get (&aop->esil), aop->addr, src, sizeof (src));
 		if (reg_token_contains (c->tp.ret_reg, src)) {
 			if (var && aop->direction == R_ANAL_OP_DIR_WRITE) {
-				var_retype (anal, tps, bb_addr, var, NULL, c->tp.ret_type, false, false);
+				tp_var_retype (tps, bb_addr, var, NULL, c->tp.ret_type, false, false);
 				c->tp.resolved = true;
 			} else {
 				// typing the member must not consume the tracking a later var store relies on
@@ -2291,7 +2299,7 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 				char nsrc[REGNAME_SIZE] = { 0 };
 				get_src_regname_from_esil (anal, r_strbuf_get (&next_op->esil), next_op->addr, nsrc, sizeof (nsrc));
 				if (reg_token_contains (c->tp.ret_reg, nsrc) && var && aop->direction == R_ANAL_OP_DIR_READ) {
-					var_retype (anal, tps, bb_addr, var, NULL, c->tp.ret_type, true, false);
+					tp_var_retype (tps, bb_addr, var, NULL, c->tp.ret_type, true, false);
 				}
 			}
 		}
@@ -2304,12 +2312,12 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 				sign = true;
 			} else {
 				// cmp [local_ch], rax ; jb
-				var_retype (anal, tps, bb_addr, var, NULL, "unsigned", false, true);
+				tp_var_retype (tps, bb_addr, var, NULL, "unsigned", false, true);
 			}
 		}
 		// cmp [local_ch], rax ; jge
 		if (sign || aop->sign) {
-			var_retype (anal, tps, bb_addr, var, NULL, "signed", false, true);
+			tp_var_retype (tps, bb_addr, var, NULL, "signed", false, true);
 		}
 		// lea rax , str.hello  ; mov [local_ch], rax;
 		// mov rdx , [local_4h] ; mov [local_8h], rdx;
@@ -2318,10 +2326,10 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 			get_src_regname_from_esil (anal, r_strbuf_get (&aop->esil), addr, reg, sizeof (reg));
 			bool match = reg_token_contains (c->tp.prev_dest, reg);
 			if (c->tp.str_flag && match) {
-				var_retype (anal, tps, bb_addr, var, NULL, "const char *", false, false);
+				tp_var_retype (tps, bb_addr, var, NULL, "const char *", false, false);
 			}
 			if (c->tp.prop && match && c->tp.prev_var) {
-				var_retype (anal, tps, bb_addr, var, NULL, c->tp.prev_type, false, false);
+				tp_var_retype (tps, bb_addr, var, NULL, c->tp.prev_type, false, false);
 			}
 		}
 		if (tps->cfg_chk_constraint && var && (type == R_ANAL_OP_TYPE_CMP && aop->disp != UT64_MAX) && next_op && next_op->type == R_ANAL_OP_TYPE_CJMP) {
@@ -2385,7 +2393,7 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 		}
 		// mov dword [local_4h], str.hello;
 		if (var && c->tp.str_flag) {
-			var_retype (anal, tps, bb_addr, var, NULL, "const char *", false, false);
+			tp_var_retype (tps, bb_addr, var, NULL, "const char *", false, false);
 		}
 		c->tp.prev_dest = etrace_regwrite (etrace, cur_idx);
 		if (var) {
@@ -2437,9 +2445,9 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 			char *rvar_type = strdup (rvar->type);
 			if (rvar_type) {
 				// Propagate local var type = to => register-based var
-				var_retype (anal, NULL, UT64_MAX, rvar, NULL, lvar->type, false, false);
+				var_retype (anal, rvar, NULL, lvar->type, false, false);
 				// Propagate local var type <= from = register-based var
-				var_retype (anal, NULL, UT64_MAX, lvar, NULL, rvar_type, false, false);
+				var_retype (anal, lvar, NULL, rvar_type, false, false);
 				free (rvar_type);
 			}
 		}
