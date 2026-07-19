@@ -7769,6 +7769,13 @@ toro:
 	return len;
 }
 
+// bb-aware start of the window of nb_opcodes instructions ending at `from`; *nbytes is the span (0 at the map start)
+static ut64 bwdisasm_window(RCore *core, ut64 from, int nb_opcodes, int *nbytes) {
+	const ut64 start = r_core_prevop_addr_force (core, from, nb_opcodes);
+	*nbytes = (start < from)? (int)(from - start): 0;
+	return start;
+}
+
 static bool handle_backwards_disasm(RCore *core, int *nb_opcodes, int *nb_bytes) {
 	if (!*nb_opcodes && !*nb_bytes) {
 		return false;
@@ -7786,9 +7793,11 @@ static bool handle_backwards_disasm(RCore *core, int *nb_opcodes, int *nb_bytes)
 			int nbytes = 0;
 
 			// same backward walk as pd, so all backward disasm commands agree
-			core->addr = r_core_prevop_addr_force (core, old_offset, *nb_opcodes);
-			if (core->addr < old_offset) {
-				nbytes = old_offset - core->addr;
+			core->addr = bwdisasm_window (core, old_offset, *nb_opcodes, &nbytes);
+			if (nbytes < 1) {
+				// nothing before the cursor (map start): show the window forward, like pd
+				core->addr = old_offset;
+				nbytes = core->blocksize;
 			}
 			if (nbytes > core->blocksize) {
 				r_core_block_size (core, nbytes);
@@ -7796,9 +7805,6 @@ static bool handle_backwards_disasm(RCore *core, int *nb_opcodes, int *nb_bytes)
 					R_LOG_ERROR ("Cannot read that much!");
 					return false;
 				}
-			}
-			if (nbytes < 1) {
-				return false;
 			}
 			r_io_read_at (core->io, core->addr, core->block, nbytes);
 		}
@@ -7867,20 +7873,12 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 				R_LOG_ERROR ("Too many backward instructions");
 				return false;
 			}
-			// same backward walk as pd, one op at a time so the window fits in buf
-			addr = old_offset;
-			int bw;
-			for (bw = 0; bw < nb_opcodes; bw++) {
-				const ut64 prev = r_core_prevop_addr_force (core, addr, 1);
-				if (prev >= addr || old_offset - prev > (ut64)nb_bytes) {
-					break;
-				}
-				addr = prev;
-			}
-			const int nbytes = old_offset - addr;
+			// same bb-aware backward walk as pd
+			int nbytes;
+			addr = bwdisasm_window (core, old_offset, nb_opcodes, &nbytes);
 			if (nbytes < 1) {
-				pj_end (pj);
-				return false;
+				// nothing before the cursor (map start): show the window forward, like pd
+				addr = old_offset;
 			}
 			const int count = R_MIN (nb_bytes, nbytes);
 			r_io_read_at (core->io, addr, buf, count);

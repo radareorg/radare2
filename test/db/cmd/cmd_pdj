@@ -101,6 +101,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pdj negative count at the very start of the file shows the forward window like pd
+FILE=malloc://64
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+b 64
+wow 1f2003d5
+s 0
+pdj -4~{[0].addr}
+pdj -4~{[3].addr}
+EOF
+EXPECT=<<EOF
+0
+12
+EOF
+RUN
+
 NAME=pdj negative count with window larger than blocksize
 FILE=malloc://512
 ARGS=-a arm -e asm.bits=64
