@@ -2847,3 +2847,76 @@ arg int64_t arg1 @ rdi
 var char * var_8h @ rbp-0x8
 EOF2
 RUN
+
+NAME=aaft equal-rank scalar conflict from parallel branches meets to the wider default int
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488b7df8e84b000000eb39 @ 0
+wx 488b7df8e837000000eb15 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+wx c3 @ 0x70
+af @ 0x60
+afn takes_size @ 0x60
+af @ 0x70
+afn takes_wint @ 0x70
+"td typedef unsigned int wint_t;"
+"td int takes_size(size_t v); int takes_wint(wint_t v);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var int64_t v @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft equal-rank scalar meet is independent of the branch order
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488b7df8e85b000000eb39 @ 0
+wx 488b7df8e827000000eb15 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+wx c3 @ 0x70
+af @ 0x60
+afn takes_size @ 0x60
+af @ 0x70
+afn takes_wint @ 0x70
+"td typedef unsigned int wint_t;"
+"td int takes_size(size_t v); int takes_wint(wint_t v);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var int64_t v @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft const and plain string pointers from parallel branches meet to char pointer
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488d056d000000488945f8eb37 @ 0
+wx 488b7df8e827000000eb15 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+w hello @ 0x80
+f str.hello @ 0x80
+af @ 0x60
+afn takes_str @ 0x60
+"td int takes_str(char *s);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var char * s @ rbp-0x8
+EOF2
+RUN
