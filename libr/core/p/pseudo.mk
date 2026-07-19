@@ -1,4 +1,4 @@
-CORE_OBJ_PSEUDO=pseudo/plugin.o pseudo/pseudo.o
+CORE_OBJ_PSEUDO=pseudo/plugin.o pseudo/pseudo.o pseudo/pdc_ast.o
 
 STATIC_OBJ+=${CORE_OBJ_PSEUDO}
 CORE_TARGET_PSEUDO=core_pseudo.${EXT_SO}
