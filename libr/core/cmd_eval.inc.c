@@ -397,8 +397,10 @@ R_API void r_core_echo(RCore *core, const char *input) {
 			char *msg = strdup (p + 1);
 			if (msg) {
 				r_str_trim_args (msg);
-				r_str_unescape (msg);
-				r_cons_println (core->cons, msg);
+				msg = r_str_replace (msg, "\\\\", "\\", true);
+				if (msg) {
+					r_cons_println (core->cons, msg);
+				}
 				free (msg);
 			}
 		}
