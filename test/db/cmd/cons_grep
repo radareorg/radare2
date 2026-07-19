@@ -534,9 +534,13 @@ CMDS=<<EOF
 wx 10203040
 b 128
 px~?
+?e a\nb\nb\nc~b~$$?
+?e a\nb\nb\nc~b~$$?.
 EOF
 EXPECT=<<EOF
 9
+1
+2
 EOF
 RUN
 

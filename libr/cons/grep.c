@@ -1004,12 +1004,14 @@ continuation:
 					memcpy (ptr, str, slen); \
 					memcpy (ptr + slen, "\n", 2); \
 					ptr += slen + 1; \
+					output_lines++; \
 				} \
 			} \
 		}
 		RListIter *iter;
 		char *ptr = cons->context->buffer;
 		char *str;
+		int output_lines = 0;
 		RConsContext *ctx = cons->context;
 		ctx->sorted_column = grep->sort;
 
@@ -1025,12 +1027,11 @@ continuation:
 				r_list_free (ctx->unsorted_lines);
 				ctx->unsorted_lines = NULL;
 			}
-			const int nl = r_list_length (ctx->sorted_lines);
 			cons->context->buffer_len = 0;
 			INSERT_LINES (ctx->unsorted_lines);
 			INSERT_LINES (ctx->sorted_lines);
 			cons->context->buffer_len = (ptr - cons->context->buffer);
-			cons->lines = nl;
+			cons->lines = output_lines;
 			r_list_free (ctx->sorted_lines);
 			ctx->sorted_lines = NULL;
 			r_list_free (ctx->unsorted_lines);
