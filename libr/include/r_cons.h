@@ -121,7 +121,7 @@ typedef struct r_cons_grep_t {
 	bool gron;
 	bool json;
 	char *json_path;
-	int range_line;
+	int range_line; // 2: none, 1: range, -1: range before columns
 	int line;
 	int sort;
 	int sort_uniq;

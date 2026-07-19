@@ -92,6 +92,23 @@ R_API void r_cons_grep_help(RCons *cons) {
 	r_cons_cmd_help (cons, help_detail_tilde, true);
 }
 
+static void grep_parse_range(RCons *cons, RConsGrep *grep, char *token) {
+	char *sep = strstr (token, "..");
+	if (sep) {
+		*sep = '\0';
+	}
+	int first = *token? r_num_get (cons->num, token): 0;
+	int last = sep? (sep[2]? r_num_get (cons->num, sep + 2): 0): first + 1;
+	int begin = grep->range_line != 2? grep->f_line: 0;
+	int end = grep->range_line != 2? grep->l_line: 0;
+	grep->f_line = first < 0? end + first: begin + first;
+	grep->l_line = last <= 0? end + last: begin + last;
+	if (end && ((end < 0) == (grep->l_line < 0))) {
+		grep->l_line = R_MIN (end, grep->l_line);
+	}
+	grep->range_line = 1;
+}
+
 R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 	if (R_STR_ISEMPTY (str)) {
 		return;
@@ -133,6 +150,8 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 		grep->strings = r_list_newf ((RListFree)grep_word_free);
 	}
 	grep->range_line = 2; // there is no :
+	int range_stage = -1;
+	int token_stage = -1;
 	for (i = 0; i < ptrs_length; i++) {
 		bool gw_begin = false;
 		bool gw_neg = false;
@@ -281,6 +300,7 @@ while_end:
 		ptr3 = strchr (ptr, ']');
 
 		if (ptr2 && ptr3 && ptr2 < ptr3) {
+			token_stage = (int)i;
 			end_ptr = ptr2;
 			ptrdiff_t cols_len = ptr3 - ptr2 - 1;
 			char *cols = cols_len > INT_MAX? NULL: r_str_ndup (ptr2 + 1, (int)cols_len);
@@ -293,18 +313,9 @@ while_end:
 
 		ptr2 = strchr_ns (ptr, ':'); // line number
 		if (ptr2 && ptr2[1] != ':' && ptr2[1] && (isdigit (ptr2[1]) || ptr2[1] == '-' || ptr2[1] == '.')) {
+			range_stage = (int)i;
 			end_ptr = end_ptr ? R_MIN (end_ptr, ptr2) : ptr2;
-			char *p, *token = ptr2 + 1;
-			p = strstr(token, "..");
-			if (!p) {
-				grep->line = r_num_get (cons->num, ptr2 + 1);
-				grep->range_line = 0;
-			} else {
-				*p = '\0';
-				grep->range_line = 1;
-				grep->f_line = *token ? r_num_get (cons->num, token) : 0;
-				grep->l_line = p[2] ? r_num_get (cons->num, p + 2) : 0;
-			}
+			grep_parse_range (cons, grep, ptr2 + 1);
 		}
 		if (end_ptr) {
 			*end_ptr = '\0';
@@ -345,6 +356,9 @@ while_end:
 				r_list_append (grep->strings, gw);
 			} while (ptr);
 		}
+	}
+	if (range_stage >= 0 && range_stage < token_stage) {
+		grep->range_line = -1;
 	}
 
 	if (!grep->str) {
@@ -665,7 +679,8 @@ R_API void r_cons_grepbuf(RCons *cons) {
 	const char *buf = cons->context->buffer;
 	size_t len = cons->context->buffer_len;
 	RConsGrep *grep = &cons->context->grep;
-	bool count_range = grep->charCounter && grep->range_line == 1;
+	bool count_range = grep->charCounter && grep->range_line != 2;
+	bool generated_range = false;
 	const char *in = buf;
 	int ret, l = 0, tl = 0;
 	bool show = false;
@@ -832,6 +847,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 		buf = cons->context->buffer;
 		len = cons->context->buffer_len;
 		grep->range_line = 1;
+		generated_range = true;
 		goto continuation;
 		// cons->lines = ?? return 3;
 	}
@@ -862,10 +878,11 @@ R_API void r_cons_grepbuf(RCons *cons) {
 continuation:
 	ob = r_strbuf_new ("");
 	int char_count = 0;
+	int selected_lines = 0;
 	// if we modify cons->lines we should update I.context->buffer too
 	cons->lines = 0;
-	// used to count lines and change negative grep.line values
-	if ((!grep->range_line && grep->line < 0) || grep->range_line) {
+	// resolve negative line ranges
+	if (grep->range_line != 2) {
 		int total_lines = 0;
 		while ((int) (size_t) (in - buf) < len) {
 			const char *p = strchr (in, '\n');
@@ -880,16 +897,11 @@ continuation:
 			}
 			total_lines++;
 		}
-		if (!grep->range_line && grep->line < 0) {
-			grep->line = total_lines + grep->line;
+		if (grep->f_line < 0) {
+			grep->f_line = total_lines + grep->f_line;
 		}
-		if (grep->range_line == 1) {
-			if (grep->f_line < 0) {
-				grep->f_line = total_lines + grep->f_line;
-			}
-			if (grep->l_line <= 0) {
-				grep->l_line = total_lines + grep->l_line;
-			}
+		if (grep->l_line <= 0) {
+			grep->l_line = total_lines + grep->l_line;
 		}
 	}
 	bool is_range_line_grep_only = grep->range_line != 2 && grep->str && *grep->str == '\0';
@@ -912,11 +924,7 @@ continuation:
 				ret = -1;
 			} else {
 				ret = r_cons_grep_line (cons, tline, tl);
-				if (!grep->range_line) {
-					if (grep->line == cons->lines) {
-						show = true;
-					}
-				} else if (grep->range_line == 1) {
+				if (grep->range_line != 2) {
 					if (grep->f_line == cons->lines) {
 						show = true;
 					}
@@ -927,7 +935,7 @@ continuation:
 					show = true;
 				}
 			}
-			if ((!ret && is_range_line_grep_only) || ret > 0) {
+			if ((!ret && is_range_line_grep_only && !grep->tokens_used) || ret > 0) {
 				if (grep->charCounter && show) {
 					char_count += ret + 1;
 				}
@@ -957,9 +965,9 @@ continuation:
 						r_strbuf_append (ob, "\n");
 					}
 				}
-				if (!grep->range_line) {
-					show = false;
-				}
+				selected_lines += generated_range || show;
+				cons->lines++;
+			} else if (!ret && is_range_line_grep_only && grep->range_line < 0) {
 				cons->lines++;
 			} else if (ret < 0) {
 				free (tline);
@@ -981,7 +989,7 @@ continuation:
 
 	// count before uniq
 	if (grep->counter && !grep->sort_uniq) {
-		grep_set_count (cons, grep->charCounter? char_count: cons->lines);
+		grep_set_count (cons, grep->charCounter? char_count: selected_lines);
 		r_strbuf_free (ob);
 		return;
 	}
@@ -1105,11 +1113,7 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 
 	RConsContext *ctx = cons->context;
 	if (hit) {
-		if (!grep->range_line) {
-			if (grep->line == cons->lines) {
-				use_tok = true;
-			}
-		} else if (grep->range_line == 1) {
+		if (grep->range_line != 2) {
 			use_tok = R_BETWEEN (grep->f_line, cons->lines, grep->l_line);
 		} else {
 			use_tok = true;
