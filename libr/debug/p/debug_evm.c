@@ -193,8 +193,13 @@ static bool r_debug_evm_breakpoint (struct r_bp_t *bp, RBreakpointItem *b, bool 
 			return true;
 		}
 		if (rios->breakpoints_length >= rios->breakpoints_capacity) {
-			rios->breakpoints = realloc (rios->breakpoints, rios->breakpoints_capacity + 64);
-			rios->breakpoints_capacity += 64;
+			size_t new_capacity = rios->breakpoints_capacity + 64;
+			ut64 *new_breakpoints = realloc (rios->breakpoints, new_capacity * sizeof (ut64));
+			if (!new_breakpoints) {
+				return false;
+			}
+			rios->breakpoints = new_breakpoints;
+			rios->breakpoints_capacity = new_capacity;
 		}
 		rios->breakpoints[rios->breakpoints_length] = b->addr;
 		rios->breakpoints_length++;
