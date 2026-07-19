@@ -66,7 +66,16 @@
 #undef HAVE_PTHREAD
 #define HAVE_PTHREAD 0
 #define R_TH_TID HANDLE
-#define R_TH_LOCK_T CRITICAL_SECTION
+
+typedef struct r_th_lock_win_t {
+	bool recursive;
+	union {
+		CRITICAL_SECTION cs;
+		SRWLOCK srw;
+	};
+} RThreadLockWin;
+
+#define R_TH_LOCK_T RThreadLockWin
 #define R_TH_COND_T CONDITION_VARIABLE
 #define R_TH_SEM_T HANDLE
 
