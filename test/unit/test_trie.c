@@ -43,7 +43,7 @@ static bool test_r_trie_longest_prefix(void) {
 	insert_string (trie, "afl", "afl");
 	insert_string (trie, "agn", "agn");
 	insert_string (trie, "pdj", "pdj");
-	size_t matched = UT64_MAX;
+	size_t matched = 0;
 	mu_assert_streq (r_trie_find_longest_prefix (trie, r_strs_from ("afl?"), &matched), "afl", "longest afl prefix");
 	mu_assert_eq (matched, 3, "afl prefix length");
 	mu_assert_streq (r_trie_find_longest_prefix (trie, r_strs_from ("afx"), &matched), "af", "longest af prefix");
@@ -99,7 +99,7 @@ static bool test_r_trie_empty_and_binary_keys(void) {
 	char *binary_value = strdup ("binary");
 	mu_assert_true (r_trie_insert (trie, r_strs_from_len (binary_key, sizeof (binary_key)), binary_value), "insert binary key");
 	mu_assert_streq (r_trie_find (trie, r_strs_from_len (binary_key, sizeof (binary_key))), "binary", "find binary key");
-	size_t matched = UT64_MAX;
+	size_t matched = 0;
 	mu_assert_streq (r_trie_find_longest_prefix (trie, r_strs_from ("none"), &matched), "root", "empty key is fallback");
 	mu_assert_eq (matched, 0, "empty key prefix length");
 	r_trie_free (trie);

@@ -39,15 +39,27 @@ static void trie_node_free_shallow(RTrieNode *node) {
 	free (node);
 }
 
+/* Iterative destruction: `segment` is repurposed as a parent link so that
+ * arbitrarily deep tries cannot exhaust the stack. */
 static void trie_node_free(RTrieNode *node, RTrieFree free_value) {
-	size_t i;
-	for (i = 0; i < node->children_count; i++) {
-		trie_node_free (node->children[i], free_value);
+	free (node->segment);
+	node->segment = NULL;
+	while (node) {
+		if (node->children_count) {
+			RTrieNode *child = node->children[--node->children_count];
+			free (child->segment);
+			child->segment = (ut8 *)node;
+			node = child;
+		} else {
+			RTrieNode *parent = (RTrieNode *)node->segment;
+			if (node->value && free_value) {
+				free_value (node->value);
+			}
+			free (node->children);
+			free (node);
+			node = parent;
+		}
 	}
-	if (node->value && free_value) {
-		free_value (node->value);
-	}
-	trie_node_free_shallow (node);
 }
 
 static bool trie_node_find_child(const RTrieNode *node, ut8 first, size_t *index) {
@@ -79,13 +91,9 @@ static RTrieNode *trie_node_find_match(const RTrieNode *node, const char *key, s
 
 static bool trie_node_insert_child(RTrieNode *node, size_t index, RTrieNode *child) {
 	if (node->children_count == node->children_capacity) {
-		size_t capacity = 4;
-		size_t alloc_size;
-		if ((node->children_capacity && r_mul_overflow (node->children_capacity, (size_t)2, &capacity)) ||
-			r_mul_overflow (capacity, sizeof (RTrieNode *), &alloc_size)) {
-			return false;
-		}
-		RTrieNode **children = realloc (node->children, alloc_size);
+		/* children have distinct first bytes, so capacity never exceeds 256 */
+		size_t capacity = node->children_capacity? node->children_capacity * 2: 4;
+		RTrieNode **children = realloc (node->children, capacity * sizeof (RTrieNode *));
 		if (!children) {
 			return false;
 		}
@@ -111,7 +119,8 @@ static size_t trie_common_prefix(const RTrieNode *node, RStrs key) {
 
 R_API RTrie *r_trie_new(RTrieFree free_value) {
 	RTrie *trie = R_NEW0 (RTrie);
-	trie->root = trie_node_new (r_strs_from_len (NULL, 0), NULL);
+	RTrieNode *root = R_NEW0 (RTrieNode);
+	trie->root = root;
 	trie->free_value = free_value;
 	return trie;
 }
@@ -147,49 +156,40 @@ R_API bool r_trie_insert(RTrie *trie, RStrs key, void *value) {
 			return true;
 		}
 		RTrieNode *child = node->children[index];
-		RStrs remaining = r_strs_sub (key, offset, key_len);
-		size_t common = trie_common_prefix (child, remaining);
+		size_t common = trie_common_prefix (child, r_strs_sub (key, offset, key_len));
 		if (common == child->segment_len) {
 			offset += common;
 			node = child;
 			continue;
 		}
-
 		RTrieNode *middle = trie_node_new (r_strs_from_len ((const char *)child->segment, common), NULL);
-		size_t child_suffix_len = child->segment_len - common;
-		ut8 *child_suffix = malloc (child_suffix_len);
-		if (!middle || !child_suffix) {
-			if (middle) {
-				trie_node_free_shallow (middle);
-			}
-			free (child_suffix);
+		if (!middle) {
 			return false;
 		}
-		memcpy (child_suffix, child->segment + common, child_suffix_len);
-		size_t key_suffix_offset = offset + common;
-		size_t key_suffix_len = key_len - key_suffix_offset;
+		size_t key_suffix_len = key_len - offset - common;
 		RTrieNode *leaf = NULL;
 		if (key_suffix_len) {
-			leaf = trie_node_new (r_strs_sub (key, key_suffix_offset, key_len), value);
-			if (!leaf) {
-				free (child_suffix);
-				trie_node_free_shallow (middle);
-				return false;
-			}
+			leaf = trie_node_new (r_strs_sub (key, offset + common, key_len), value);
 		} else {
 			middle->value = value;
 		}
-		middle->children_capacity = leaf? 2: 1;
+		middle->children_capacity = key_suffix_len? 2: 1;
 		middle->children = malloc (middle->children_capacity * sizeof (RTrieNode *));
-		if (!middle->children) {
+		if (!middle->children || (key_suffix_len && !leaf)) {
 			if (leaf) {
 				trie_node_free_shallow (leaf);
 			}
-			free (child_suffix);
 			trie_node_free_shallow (middle);
 			return false;
 		}
-		if (leaf && leaf->segment[0] < child_suffix[0]) {
+		child->segment_len -= common;
+		memmove (child->segment, child->segment + common, child->segment_len);
+		ut8 *shrunk = realloc (child->segment, child->segment_len);
+		if (shrunk) {
+			/* on failure the over-allocated buffer stays, which is still valid */
+			child->segment = shrunk;
+		}
+		if (leaf && leaf->segment[0] < child->segment[0]) {
 			middle->children[0] = leaf;
 			middle->children[1] = child;
 		} else {
@@ -199,9 +199,6 @@ R_API bool r_trie_insert(RTrie *trie, RStrs key, void *value) {
 			}
 		}
 		middle->children_count = middle->children_capacity;
-		free (child->segment);
-		child->segment = child_suffix;
-		child->segment_len = child_suffix_len;
 		node->children[index] = middle;
 		trie->size++;
 		return true;
@@ -215,28 +212,6 @@ R_API bool r_trie_insert(RTrie *trie, RStrs key, void *value) {
 	}
 	node->value = value;
 	return true;
-}
-
-static RTrieNode *trie_find_node(const RTrie *trie, RStrs key) {
-	RTrieNode *node = trie->root;
-	size_t key_len = r_strs_len (key);
-	size_t offset = 0;
-	while (offset < key_len) {
-		size_t index;
-		RTrieNode *child = trie_node_find_match (node, key.a + offset, key_len - offset, &index);
-		if (!child) {
-			return NULL;
-		}
-		offset += child->segment_len;
-		node = child;
-	}
-	return node;
-}
-
-R_API void *r_trie_find(const RTrie *trie, RStrs key) {
-	R_RETURN_VAL_IF_FAIL (trie && key.a && key.b >= key.a, NULL);
-	RTrieNode *node = trie_find_node (trie, key);
-	return node? node->value: NULL;
 }
 
 R_API void *r_trie_find_longest_prefix(const RTrie *trie, RStrs input, R_OUT size_t *matched_len) {
@@ -262,30 +237,27 @@ R_API void *r_trie_find_longest_prefix(const RTrie *trie, RStrs input, R_OUT siz
 	return best;
 }
 
-static void trie_node_remove_child(RTrieNode *node, size_t index) {
-	memmove (node->children + index, node->children + index + 1,
-		(node->children_count - index - 1) * sizeof (RTrieNode *));
-	node->children_count--;
+R_API void *r_trie_find(const RTrie *trie, RStrs key) {
+	R_RETURN_VAL_IF_FAIL (trie && key.a && key.b >= key.a, NULL);
+	size_t matched;
+	void *value = r_trie_find_longest_prefix (trie, key, &matched);
+	return (matched == r_strs_len (key))? value: NULL;
 }
 
 static void trie_node_compact_child(RTrieNode *node, size_t index) {
 	RTrieNode *child = node->children[index];
-	if (child->value) {
+	if (child->value || child->children_count > 1) {
 		return;
 	}
 	if (child->children_count == 0) {
-		trie_node_remove_child (node, index);
+		memmove (node->children + index, node->children + index + 1,
+			(--node->children_count - index) * sizeof (RTrieNode *));
 		trie_node_free_shallow (child);
 		return;
 	}
-	if (child->children_count > 1) {
-		return;
-	}
 	RTrieNode *grandchild = child->children[0];
-	size_t merged_len;
-	if (r_add_overflow (child->segment_len, grandchild->segment_len, &merged_len)) {
-		return;
-	}
+	/* both segments are live buffers, so their sum cannot overflow size_t */
+	size_t merged_len = child->segment_len + grandchild->segment_len;
 	ut8 *segment = realloc (child->segment, merged_len);
 	if (!segment) {
 		return;
@@ -302,31 +274,43 @@ static void trie_node_compact_child(RTrieNode *node, size_t index) {
 	free (grandchild);
 }
 
-static void *trie_node_take(RTrie *trie, RTrieNode *node, RStrs key, size_t offset) {
-	size_t key_len = r_strs_len (key);
-	if (offset == key_len) {
-		void *value = node->value;
-		if (value) {
-			node->value = NULL;
-			trie->size--;
-		}
-		return value;
-	}
-	size_t index;
-	RTrieNode *child = trie_node_find_match (node, key.a + offset, key_len - offset, &index);
-	if (!child) {
-		return NULL;
-	}
-	void *value = trie_node_take (trie, child, key, offset + child->segment_len);
-	if (value) {
-		trie_node_compact_child (node, index);
-	}
-	return value;
-}
-
 R_API void *r_trie_take(RTrie *trie, RStrs key) {
 	R_RETURN_VAL_IF_FAIL (trie && key.a && key.b >= key.a, NULL);
-	return trie_node_take (trie, trie->root, key, 0);
+	RTrieNode *node = trie->root;
+	RTrieNode *parent = NULL;
+	RTrieNode *grandparent = NULL;
+	size_t node_index = 0;
+	size_t parent_index = 0;
+	size_t key_len = r_strs_len (key);
+	size_t offset = 0;
+	while (offset < key_len) {
+		size_t index;
+		RTrieNode *child = trie_node_find_match (node, key.a + offset, key_len - offset, &index);
+		if (!child) {
+			return NULL;
+		}
+		grandparent = parent;
+		parent_index = node_index;
+		parent = node;
+		node_index = index;
+		offset += child->segment_len;
+		node = child;
+	}
+	void *value = node->value;
+	if (!value) {
+		return NULL;
+	}
+	node->value = NULL;
+	trie->size--;
+	/* compacting the two deepest levels is enough: removing an emptied leaf can
+	 * leave `parent` valueless with one child, but merges never cascade upward */
+	if (parent) {
+		trie_node_compact_child (parent, node_index);
+		if (grandparent) {
+			trie_node_compact_child (grandparent, parent_index);
+		}
+	}
+	return value;
 }
 
 R_API bool r_trie_delete(RTrie *trie, RStrs key) {
