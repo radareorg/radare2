@@ -99,3 +99,23 @@ EXPECT=<<EOF
 bb 0x00005ae0
 EOF
 RUN
+
+NAME=pdct region ast loop behind a fail-only fallthrough block
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+af+ 0 test
+afb+ 0 0 4 0xffffffffffffffff 0x10
+afb+ 0 0x10 4 0x20 0x30
+afb+ 0 0x20 4 0x10
+afb+ 0 0x30 4
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000000
+  bb 0x00000000
+  while 0x00000010
+    bb 0x00000020
+  bb 0x00000030
+EOF
+RUN
