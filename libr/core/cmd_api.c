@@ -417,7 +417,24 @@ R_API void r_cmd_del(RCmd *cmd, const char *command) {
 	R_FREE (cmd->cmds[idx]);
 }
 
-static int cmd_call_registered(RCmd *cmd, RStrs input, bool *handled) {
+static RCmdResult cmd_result(RCmdAction action, st64 status) {
+	return (RCmdResult) {
+		.action = action,
+		.status = status
+	};
+}
+
+static RCmdResult cmd_result_from_legacy(int status) {
+	return cmd_result (status == -2? R_CMD_ACTION_QUIT: R_CMD_ACTION_CONTINUE, status);
+}
+
+static int cmd_result_to_legacy(RCmdResult result) {
+	return result.action == R_CMD_ACTION_CONTINUE
+		? (int)R_CLAMP (result.status, (st64)ST32_MIN, (st64)ST32_MAX)
+		: result.action == R_CMD_ACTION_QUIT? -2: -1;
+}
+
+static RCmdResult cmd_call_registered(RCmd *cmd, RStrs input) {
 	RStrs lookup = input;
 	RCmdContext context = {
 		.cmd = cmd,
@@ -432,33 +449,30 @@ static int cmd_call_registered(RCmd *cmd, RStrs input, bool *handled) {
 		context.handler_user = handler->user;
 		RCmdResult result = handler->callback (&context, input);
 		if (result.action != R_CMD_ACTION_UNHANDLED) {
-			*handled = true;
-			return result.action == R_CMD_ACTION_QUIT? -2
-				: result.action == R_CMD_ACTION_ABORT? -1
-				: (int)R_CLAMP (result.status, (st64)ST32_MIN, (st64)ST32_MAX);
+			return result;
 		}
 		lookup.b = lookup.a + matched - 1;
 	}
-	return -1;
+	return cmd_result (R_CMD_ACTION_UNHANDLED, 127);
 }
 
-R_API int r_cmd_call(RCmd *cmd, const char *input) {
-	R_RETURN_VAL_IF_FAIL (cmd && input, -1);
+static RCmdResult cmd_call_result(RCmd *cmd, const char *input) {
 	RCore *core = cmd->data;
 	if (!*input) {
-		return cmd->nullcallback? cmd->nullcallback (cmd->data): -1;
+		return cmd->nullcallback
+			? cmd_result_from_legacy (cmd->nullcallback (cmd->data))
+			: cmd_result (R_CMD_ACTION_UNHANDLED, 127);
 	}
 	RCmdAliasVal *v = r_cmd_alias_get (cmd, input);
 	if (v && v->is_data) {
 		char *v_str = r_cmd_alias_val_strdup (v);
 		r_cons_print (core->cons, v_str);
 		free (v_str);
-		return true;
+		return cmd_result_from_legacy (true);
 	}
-	bool handled = false;
-	int ret = cmd_call_registered (cmd, r_strs_from (input), &handled);
-	if (handled) {
-		return ret;
+	RCmdResult result = cmd_call_registered (cmd, r_strs_from (input));
+	if (result.action != R_CMD_ACTION_UNHANDLED) {
+		return result;
 	}
 	RListIter *iter;
 	if (cmd->libstore) {
@@ -466,13 +480,13 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 		r_list_foreach (cmd->libstore->plugins, iter, cps) {
 			RCorePlugin *plugin = cps->plugin;
 			if (plugin->call && plugin->call (cps, input)) {
-				return true;
+				return cmd_result_from_legacy (true);
 			}
 		}
 	}
 	RCmdItem *item = cmd->cmds[(ut8)input[0]];
 	if (item && item->callback) {
-		return item->callback (cmd->data, input + 1);
+		return cmd_result_from_legacy (item->callback (cmd->data, input + 1));
 	}
 	if (core && core->sdb) {
 		const char *suggestion = sdb_const_get (core->sdb, input, NULL);
@@ -480,7 +494,12 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 			R_LOG_INFO ("%s", suggestion);
 		}
 	}
-	return -1;
+	return result;
+}
+
+R_API int r_cmd_call(RCmd *cmd, const char *input) {
+	R_RETURN_VAL_IF_FAIL (cmd && input, -1);
+	return cmd_result_to_legacy (cmd_call_result (cmd, input));
 }
 
 /** macro.c **/

@@ -127,6 +127,9 @@ static bool test_r_cmd_registry_dispatch(void) {
 	child.action = R_CMD_ACTION_QUIT;
 	mu_assert_eq (r_cmd_call (cmd, "afl?"), -2, "quit action maps to legacy quit code");
 	mu_assert_eq (child.legacy_calls, 1, "handled registry skips legacy callback");
+	child.action = R_CMD_ACTION_ABORT;
+	mu_assert_eq (r_cmd_call (cmd, "afl?"), -1, "abort action maps to legacy failure");
+	mu_assert_eq (child.legacy_calls, 1, "abort skips legacy callback");
 	r_cmd_free (cmd);
 	mu_end;
 }
