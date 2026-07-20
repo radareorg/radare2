@@ -14,6 +14,8 @@ typedef struct r_cons_t RCons;
 typedef struct r_libstore_t RLibStore;
 typedef struct r_cmd_t RCmd;
 
+R_VEC_TYPE (RVecRStrs, RStrs);
+
 #define MACRO_LIMIT 1024
 #define MACRO_LABELS 20
 #define R_CMD_MAXLEN 4096
@@ -42,6 +44,8 @@ typedef struct r_cmd_context_t {
 	RCons *cons;
 	void *user;
 	void *handler_user;
+	RStrs args_storage; // owned by the context and borrowed by args
+	RVecRStrs args; // decoded arguments excluding the command token
 } RCmdContext;
 
 typedef RCmdResult (*RCmdCtxCb) (RCmdContext *ctx, RStrs input);

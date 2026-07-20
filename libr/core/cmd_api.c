@@ -435,6 +435,110 @@ static int cmd_result_to_legacy(RCmdResult result) {
 		: result.action == R_CMD_ACTION_QUIT? -2: -1;
 }
 
+static const char *cmd_decode_escape(const char *src, const char *end, char **dst) {
+	if (src >= end) {
+		*(*dst)++ = '\\';
+		return src;
+	}
+	ut8 ch = *src++;
+	switch (ch) {
+	case 'a': ch = '\a'; break;
+	case 'b': ch = '\b'; break;
+	case 'e': ch = 0x1b; break;
+	case 'f': ch = '\f'; break;
+	case 'n': ch = '\n'; break;
+	case 'r': ch = '\r'; break;
+	case 's': ch = ' '; break;
+	case 't': ch = '\t'; break;
+	case 'v': ch = '\v'; break;
+	case 'x': {
+		ut8 value = 0;
+		if (end - src >= 2 && r_hex_to_byte (&value, src[0]) && r_hex_to_byte (&value, src[1])) {
+			*(*dst)++ = value;
+			return src + 2;
+		}
+		return src;
+	}
+	default:
+		if (IS_OCTAL (ch)) {
+			ut8 value = ch - '0';
+			int i;
+			for (i = 0; i < 2 && src < end && IS_OCTAL (*src); i++, src++) {
+				value = (value * 8) + (*src - '0');
+			}
+			ch = value;
+		}
+		break;
+	}
+	*(*dst)++ = ch;
+	return src;
+}
+
+static bool cmd_context_parse_args(RCmdContext *context, RStrs input) {
+	const size_t input_len = r_strs_len (input);
+	char *storage = malloc (input_len + 1);
+	if (!storage) {
+		return false;
+	}
+	context->args_storage = r_strs_new (storage, storage);
+	RVecRStrs_init (&context->args);
+	const char *src = input.a;
+	char *dst = storage;
+	bool command = true;
+	while (src < input.b) {
+		while (src < input.b && isspace ((ut8)*src)) {
+			src++;
+		}
+		if (src == input.b) {
+			break;
+		}
+		char quote = 0;
+		char *begin = dst;
+		while (src < input.b) {
+			char ch = *src;
+			if (!quote && isspace ((ut8)ch)) {
+				break;
+			}
+			src++;
+			if (ch == '\\') {
+				src = cmd_decode_escape (src, input.b, &dst);
+				continue;
+			}
+			if (ch == '\'' || ch == '"') {
+				if (!quote) {
+					quote = ch;
+					continue;
+				}
+				if (quote == ch) {
+					quote = 0;
+					continue;
+				}
+			}
+			*dst++ = ch;
+		}
+		if (command) {
+			command = false;
+		} else {
+			RStrs *arg = RVecRStrs_emplace_back (&context->args);
+			if (!arg) {
+				return false;
+			}
+			*arg = r_strs_new (begin, dst);
+		}
+	}
+	*dst = 0;
+	context->args_storage.b = dst;
+	return true;
+}
+
+static void cmd_context_free(RCmdContext *context) {
+	if (context) {
+		RVecRStrs_fini (&context->args);
+		free ((char *)context->args_storage.a);
+		free (context);
+	}
+}
+
 static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs input) {
 	RStrs lookup = input;
 	RCmdContext *context = NULL;
@@ -450,16 +554,20 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 			context->cmd = cmd;
 			context->cons = parent? parent->cons: cmd->cons;
 			context->user = cmd->data;
+			if (!cmd_context_parse_args (context, input)) {
+				cmd_context_free (context);
+				return cmd_result (R_CMD_ACTION_ABORT, 2);
+			}
 		}
 		context->handler_user = handler->user;
 		RCmdResult result = handler->callback (context, input);
 		if (result.action != R_CMD_ACTION_UNHANDLED) {
-			free (context);
+			cmd_context_free (context);
 			return result;
 		}
 		lookup.b = lookup.a + matched - 1;
 	}
-	free (context);
+	cmd_context_free (context);
 	return cmd_result (R_CMD_ACTION_UNHANDLED, 127);
 }
 
