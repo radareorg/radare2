@@ -164,7 +164,7 @@ static int exprmatchreg(RDebug *dbg, const char *regname, const char *expr) {
 			if (CURVAL <= r_num_math (dbg->num, p))
 				ret = 1;
 		} else if (exprtoken (dbg, s, "==", &p)) {
-			if (CURVAL <= r_num_math (dbg->num, p))
+			if (CURVAL == r_num_math (dbg->num, p))
 				ret = 1;
 		} else if (exprtoken (dbg, s, "<", &p)) {
 			if (CURVAL < r_num_math (dbg->num, p))
