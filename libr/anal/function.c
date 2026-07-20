@@ -707,7 +707,7 @@ R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_pt
 	}
 	EdgeCtx ctx = { g, nodes, NULL };
 	r_list_foreach (fcn->bbs, iter, bb) {
-		if (bb->jump == UT64_MAX && (!bb->switch_op || r_list_empty (bb->switch_op->cases))) {
+		if (bb->jump == UT64_MAX && bb->fail == UT64_MAX && (!bb->switch_op || r_list_empty (bb->switch_op->cases))) {
 			continue;
 		}
 		ctx.from = ht_up_find (nodes, bb->addr, NULL);
