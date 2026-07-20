@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 typedef struct r_core_t RCore;
+typedef struct r_cons_t RCons;
 typedef struct r_libstore_t RLibStore;
 typedef struct r_cmd_t RCmd;
 
@@ -36,7 +37,9 @@ typedef struct r_cmd_result_t {
 } RCmdResult;
 
 typedef struct r_cmd_context_t {
+	struct r_cmd_context_t *parent;
 	RCmd *cmd;
+	RCons *cons;
 	void *user;
 	void *handler_user;
 } RCmdContext;
@@ -88,6 +91,7 @@ typedef struct r_cmd_alias_val_t {
 
 struct r_cmd_t {
 	void *data; // maybe its user?
+	RCons *cons; // borrowed by new command contexts
 	RCmdNullCb nullcallback;
 	RCmdItem *cmds[UT8_MAX];
 	RCmdMacro macro;
