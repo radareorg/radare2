@@ -29,12 +29,11 @@ struct pdc_region_t {
 };
 
 typedef struct {
-	RCore *core;
 	RAnal *anal;
-	RAnalFunction *fcn;
 	HtUU *idom;	// block addr => immediate dominator addr (entry => UT64_MAX)
 	HtUU *ipdom;	// block addr => immediate post-dominator addr (UT64_MAX => exit)
-	HtUU *headers;	// loop-header addr => 1
+	HtUP *loops;	// natural-loop header addr => HtUU* member set
+	HtUU *cur_loop;	// member set of the innermost loop body being walked
 	HtUU *emitted;	// block addr => 1 (each block heads a region at most once)
 	int build_calls;
 	int cap;
@@ -85,16 +84,44 @@ static bool dominates(PdcCtx *ctx, ut64 a, ut64 b) {
 	return false;
 }
 
-typedef struct {
-	PdcCtx *ctx;
-} BackEdgeCtx;
-
+// grow the natural loop of a dominating header: header plus every node that
+// reaches the latch without passing through the header (needs idom filled)
 static void back_edge_cb(const RGraphEdge *e, RGraphVisitor *vis) {
-	BackEdgeCtx *bc = vis->data;
-	RAnalBlock *header = e->to? (RAnalBlock *)e->to->data: NULL;
-	if (header) {
-		ht_uu_update (bc->ctx->headers, header->addr, 1);
+	PdcCtx *ctx = vis->data;
+	RAnalBlock *hb = e->to? e->to->data: NULL;
+	RAnalBlock *tb = e->from? e->from->data: NULL;
+	if (!hb || !tb || !dominates (ctx, hb->addr, tb->addr)) {
+		return;
 	}
+	HtUU *set = ht_up_find (ctx->loops, hb->addr, NULL);
+	if (!set) {
+		set = ht_uu_new0 ();
+		ht_uu_update (set, hb->addr, 1);
+		ht_up_update (ctx->loops, hb->addr, set);
+	}
+	if (htuu_get (set, tb->addr, 0)) {
+		return;
+	}
+	ht_uu_update (set, tb->addr, 1);
+	RList *wl = r_list_new ();
+	r_list_push (wl, e->from);
+	RGraphNode *n;
+	while ((n = r_list_pop (wl))) {
+		RGraphNode **pit;
+		R_VEC_FOREACH (&n->in_nodes, pit) {
+			RAnalBlock *pb = (*pit)->data;
+			if (pb && !htuu_get (set, pb->addr, 0)) {
+				ht_uu_update (set, pb->addr, 1);
+				r_list_push (wl, *pit);
+			}
+		}
+	}
+	r_list_free (wl);
+}
+
+static bool free_loop_set_cb(void *user, const ut64 k, const void *v) {
+	ht_uu_free ((HtUU *)v);
+	return true;
 }
 
 // dom/pdom tree node data is the *CFG* graph node, whose data is the RAnalBlock
@@ -132,42 +159,42 @@ static bool block_is_exit(RAnalBlock *bb) {
 static PdcRegion *region_seq(PdcCtx *ctx, ut64 addr, ut64 stop);
 static PdcRegion *build_region(PdcCtx *ctx, ut64 cur, ut64 stop, ut64 *next);
 
-static PdcRegion *build_loop(PdcCtx *ctx, RAnalBlock *bb, ut64 *next) {
+// first post-dominator of h outside the loop: where control merges after it
+static ut64 loop_exit_addr(PdcCtx *ctx, HtUU *set, ut64 h) {
+	ut64 x = htuu_get (ctx->ipdom, h, UT64_MAX);
+	int guard = ctx->cap;
+	while (x != UT64_MAX && htuu_get (set, x, 0) && guard-- > 0) {
+		x = htuu_get (ctx->ipdom, x, UT64_MAX);
+	}
+	return x;
+}
+
+static PdcRegion *build_loop(PdcCtx *ctx, RAnalBlock *bb, HtUU *set, ut64 *next) {
 	const ut64 h = bb->addr;
 	const ut64 j = bb->jump;
 	const ut64 f = bb->fail;
-	const ut64 ipd = htuu_get (ctx->ipdom, h, UT64_MAX);
+	const bool j_in = j != UT64_MAX && htuu_get (set, j, 0);
+	const bool f_in = f != UT64_MAX && htuu_get (set, f, 0);
 	ut64 body_start = UT64_MAX;
-	ut64 exit = ipd;
-	PdcRegionType lt = PDC_R_WHILE;
-	if (j != UT64_MAX && f != UT64_MAX) {
-		// two-way header: the successor left by ipdom is the exit, the other the body
-		if (f == ipd) {
-			body_start = j;
-			exit = f;
-		} else if (j == ipd) {
-			body_start = f;
-			exit = j;
-		} else if (!dominates (ctx, h, f) && dominates (ctx, h, j)) {
-			body_start = j;
-			exit = f;
-		} else if (!dominates (ctx, h, j) && dominates (ctx, h, f)) {
-			body_start = f;
-			exit = j;
-		} else {
-			body_start = j;
-			exit = f;
-		}
-		if (j == h || f == h) {
-			lt = PDC_R_DOWHILE;
+	ut64 exit = UT64_MAX;
+	PdcRegionType lt = PDC_R_DOWHILE;
+	if (j != UT64_MAX && f != UT64_MAX && j_in != f_in) {
+		body_start = j_in? j: f;
+		exit = j_in? f: j;
+		if (body_start != h) {
+			lt = PDC_R_WHILE;
 		}
 	} else {
-		body_start = (j != UT64_MAX)? j: f;
-		lt = PDC_R_DOWHILE;
+		// header does not test the exit: one-way, or both successors stay in
+		body_start = j_in? j: (f_in? f: UT64_MAX);
+		exit = loop_exit_addr (ctx, set, h);
 	}
 	PdcRegion *loop = region_new (lt, h);
 	if (body_start != UT64_MAX && body_start != h) {
+		HtUU *prev = ctx->cur_loop;
+		ctx->cur_loop = set;
 		region_add_child (loop, region_seq (ctx, body_start, h));
+		ctx->cur_loop = prev;
 	}
 	*next = exit;
 	return loop;
@@ -210,8 +237,9 @@ static PdcRegion *build_region(PdcCtx *ctx, ut64 cur, ut64 stop, ut64 *next) {
 	}
 	ht_uu_update (ctx->emitted, cur, 1);
 
-	if (htuu_get (ctx->headers, cur, 0)) {
-		return build_loop (ctx, bb, next);
+	HtUU *loop_set = ht_up_find (ctx->loops, cur, NULL);
+	if (loop_set) {
+		return build_loop (ctx, bb, loop_set, next);
 	}
 	if (bb->switch_op && !r_list_empty (bb->switch_op->cases)) {
 		return build_switch (ctx, bb, next);
@@ -245,6 +273,10 @@ static PdcRegion *region_seq(PdcCtx *ctx, ut64 addr, ut64 stop) {
 	ut64 cur = addr;
 	int guard = ctx->cap;
 	while (cur != UT64_MAX && cur != stop && guard-- > 0) {
+		if (ctx->cur_loop && !htuu_get (ctx->cur_loop, cur, 0)) {
+			// left the enclosing loop: the loop region resumes at its exit
+			break;
+		}
 		if (htuu_get (ctx->emitted, cur, 0)) {
 			region_add_child (seq, region_new (PDC_R_GOTO, cur));
 			break;
@@ -303,12 +335,10 @@ char *pdc_ast_dump(RCore *core, RAnalFunction *fcn) {
 		return NULL;
 	}
 	PdcCtx ctx = {
-		.core = core,
 		.anal = core->anal,
-		.fcn = fcn,
 		.idom = ht_uu_new0 (),
 		.ipdom = ht_uu_new0 (),
-		.headers = ht_uu_new0 (),
+		.loops = ht_up_new0 (),
 		.emitted = ht_uu_new0 (),
 		.cap = 4 * r_list_length (fcn->bbs) + 64
 	};
@@ -317,8 +347,7 @@ char *pdc_ast_dump(RCore *core, RAnalFunction *fcn) {
 	if (dt) {
 		collect_idom (ctx.idom, dt);
 	}
-	BackEdgeCtx bc = { &ctx };
-	RGraphVisitor vis = { .back_edge = back_edge_cb, .data = &bc };
+	RGraphVisitor vis = { .back_edge = back_edge_cb, .data = &ctx };
 	r_graph_dfs_node (g, entry, &vis);
 
 	// add a virtual sink (addr UT64_MAX reads as "past function exit") so
@@ -355,7 +384,8 @@ char *pdc_ast_dump(RCore *core, RAnalFunction *fcn) {
 	r_graph_free (g);
 	ht_uu_free (ctx.idom);
 	ht_uu_free (ctx.ipdom);
-	ht_uu_free (ctx.headers);
+	ht_up_foreach (ctx.loops, free_loop_set_cb, NULL);
+	ht_up_free (ctx.loops);
 	ht_uu_free (ctx.emitted);
 	return r_strbuf_drain (sb);
 }
