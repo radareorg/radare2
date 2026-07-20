@@ -494,6 +494,10 @@ static int tp_rank(const char *t, bool var) {
 	return tp_prim_scalar (t)? 3: 4;
 }
 
+static bool tp_is_float_type(const char *t) {
+	return !strcmp (t, "float") || !strcmp (t, "double") || !strcmp (t, "long double");
+}
+
 // the meet of facts proven on parallel paths is the weaker side: their common knowledge
 static char *tp_type_meet(RAnal *anal, const char *a, int rank_a, const char *b, int rank_b) {
 	a = r_str_skip_prefix (a, "const ");
@@ -501,11 +505,16 @@ static char *tp_type_meet(RAnal *anal, const char *a, int rank_a, const char *b,
 	if (!strcmp (a, b)) {
 		return strdup (a);
 	}
+	// different pointees agree only on being a pointer; ranking one side would make the meet order-dependent
+	if (strchr (a, '*') && strchr (b, '*')) {
+		return strdup ("void *");
+	}
 	if (rank_a != rank_b) {
 		return strdup (rank_a < rank_b? a: b);
 	}
-	if (strchr (a, '*') && strchr (b, '*')) {
-		return strdup ("void *");
+	if (tp_is_float_type (a) && tp_is_float_type (b)) {
+		// unequal float spellings always include a 64-bit-or-wider side
+		return strdup ("double");
 	}
 	// equal-rank scalar conflict: the order-independent common knowledge is the wider side's default int
 	const ut64 w = R_MAX (r_type_get_bitsize (anal->sdb_types, a), r_type_get_bitsize (anal->sdb_types, b));

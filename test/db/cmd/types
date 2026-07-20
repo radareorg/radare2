@@ -2920,3 +2920,129 @@ arg int64_t arg1 @ rdi
 var char * s @ rbp-0x8
 EOF2
 RUN
+
+NAME=aaft typed and primitive pointer conflict from parallel branches meets to void pointer
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488b7df8e84b000000eb39 @ 0
+wx 488b7df8e837000000eb15 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+wx c3 @ 0x70
+af @ 0x60
+afn takes_file @ 0x60
+af @ 0x70
+afn takes_szp @ 0x70
+"td struct fobj {int x;}; int takes_file(struct fobj *f); int takes_szp(size_t *p);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var void * p @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft typed and primitive pointer meet is independent of the branch order
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488b7df8e85b000000eb39 @ 0
+wx 488b7df8e827000000eb15 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+wx c3 @ 0x70
+af @ 0x60
+afn takes_file @ 0x60
+af @ 0x70
+afn takes_szp @ 0x70
+"td struct fobj {int x;}; int takes_file(struct fobj *f); int takes_szp(size_t *p);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var void * f @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft three parallel pointer facts meet to void pointer
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff742483ff05742f488b7df8e846000000eb34 @ 0
+wx 488b7df8e837000000eb15 @ 0x30
+wx 488d0539000000488945f8eb03 @ 0x40
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+wx c3 @ 0x70
+w hello @ 0x80
+f str.hello @ 0x80
+af @ 0x60
+afn takes_file @ 0x60
+af @ 0x70
+afn takes_szp @ 0x70
+"td struct fobj {int x;}; int takes_file(struct fobj *f); int takes_szp(size_t *p);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg uint32_t arg1 @ rdi
+var void * p @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft three parallel pointer facts meet independent of the branch order
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff742483ff05742f488d0568000000488945f8eb32 @ 0
+wx 488b7df8e827000000eb15 @ 0x30
+wx 488b7df8e827000000eb05 @ 0x40
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+wx c3 @ 0x70
+w hello @ 0x80
+f str.hello @ 0x80
+af @ 0x60
+afn takes_file @ 0x60
+af @ 0x70
+afn takes_szp @ 0x70
+"td struct fobj {int x;}; int takes_file(struct fobj *f); int takes_szp(size_t *p);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg uint32_t arg1 @ rdi
+var void * f @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft float and double facts from parallel branches meet to double
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488b7df8e84b000000eb39 @ 0
+wx 488b7df8e837000000eb15 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+wx c3 @ 0x70
+af @ 0x60
+afn takes_f @ 0x60
+af @ 0x70
+afn takes_d @ 0x70
+"td int takes_f(float v); int takes_d(double v);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var double v @ rbp-0x8
+EOF2
+RUN
