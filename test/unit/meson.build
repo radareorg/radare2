@@ -22,6 +22,7 @@ if get_option('enable_tests')
     'bitset',
     'buf',
     'cmd_str',
+    'cmd_api',
     'cons',
     'debruijn',
     'debug',
