@@ -375,6 +375,31 @@ R_API bool r_cmd_unregister(RCmd *cmd, const char *name) {
 	return cmd_name_is_valid (key) && r_trie_delete (cmd->handlers, key);
 }
 
+R_API size_t r_cmd_unregister_prefix(RCmd *cmd, const char *prefix) {
+	R_RETURN_VAL_IF_FAIL (cmd && prefix, 0);
+	return r_trie_delete_prefix (cmd->handlers, r_strs_from (prefix));
+}
+
+typedef struct {
+	RCmdForeachCb callback;
+	void *user;
+} RCmdForeachContext;
+
+static bool cmd_foreach_handler(RStrs name, void *value, void *user) {
+	RCmdForeachContext *context = user;
+	(void)value;
+	return context->callback (name, context->user);
+}
+
+R_API bool r_cmd_foreach_prefix(const RCmd *cmd, const char *prefix, RCmdForeachCb callback, void *user) {
+	R_RETURN_VAL_IF_FAIL (cmd && prefix && callback, false);
+	RCmdForeachContext context = {
+		.callback = callback,
+		.user = user
+	};
+	return r_trie_foreach_prefix (cmd->handlers, r_strs_from (prefix), cmd_foreach_handler, &context);
+}
+
 R_API bool r_cmd_add(RCmd *c, const char *cmd, RCmdCb cb) {
 	int idx = (ut8)cmd[0];
 	RCmdItem *item = c->cmds[idx];
@@ -392,58 +417,70 @@ R_API void r_cmd_del(RCmd *cmd, const char *command) {
 	R_FREE (cmd->cmds[idx]);
 }
 
+static int cmd_call_registered(RCmd *cmd, RStrs input, bool *handled) {
+	RStrs lookup = input;
+	RCmdContext context = {
+		.cmd = cmd,
+		.user = cmd->data
+	};
+	while (!r_strs_empty (lookup)) {
+		size_t matched = 0;
+		RCmdHandler *handler = r_trie_find_longest_prefix (cmd->handlers, lookup, &matched);
+		if (!handler || !matched) {
+			break;
+		}
+		context.handler_user = handler->user;
+		RCmdResult result = handler->callback (&context, input);
+		if (result.action != R_CMD_ACTION_UNHANDLED) {
+			*handled = true;
+			return result.action == R_CMD_ACTION_QUIT? -2
+				: result.action == R_CMD_ACTION_ABORT? -1
+				: (int)R_CLAMP (result.status, (st64)ST32_MIN, (st64)ST32_MAX);
+		}
+		lookup.b = lookup.a + matched - 1;
+	}
+	return -1;
+}
+
 R_API int r_cmd_call(RCmd *cmd, const char *input) {
-	RCore *core = cmd->data;
-	struct r_cmd_item_t *c;
-	int ret = -1;
-	RListIter *iter;
 	R_RETURN_VAL_IF_FAIL (cmd && input, -1);
+	RCore *core = cmd->data;
 	if (!*input) {
-		if (cmd->nullcallback) {
-			ret = cmd->nullcallback (cmd->data);
-		}
-	} else {
-		char *nstr = NULL;
-		RCons *cons = core->cons;
-		RCmdAliasVal *v = r_cmd_alias_get (cmd, input);
-		if (v && v->is_data) {
-			char *v_str = r_cmd_alias_val_strdup (v);
-			r_cons_print (cons, v_str);
-			free (v_str);
-			return true;
-		}
+		return cmd->nullcallback? cmd->nullcallback (cmd->data): -1;
+	}
+	RCmdAliasVal *v = r_cmd_alias_get (cmd, input);
+	if (v && v->is_data) {
+		char *v_str = r_cmd_alias_val_strdup (v);
+		r_cons_print (core->cons, v_str);
+		free (v_str);
+		return true;
+	}
+	bool handled = false;
+	int ret = cmd_call_registered (cmd, r_strs_from (input), &handled);
+	if (handled) {
+		return ret;
+	}
+	RListIter *iter;
+	if (cmd->libstore) {
 		RCorePluginSession *cps;
 		r_list_foreach (cmd->libstore->plugins, iter, cps) {
 			RCorePlugin *plugin = cps->plugin;
 			if (plugin->call && plugin->call (cps, input)) {
-				free (nstr);
 				return true;
 			}
 		}
-		if (!*input) {
-			free (nstr);
-			return -1;
-		}
-		c = cmd->cmds[((ut8)input[0]) & 0xff];
-		if (c && c->callback) {
-			if (*input) {
-				ret = c->callback (cmd->data, input + 1);
-			} else {
-				ret = c->callback (cmd->data, "");
-			}
-		} else {
-			ret = -1;
-			// Check for command suggestion in SDB
-			if (core && core->sdb) {
-				const char *suggestion = sdb_const_get (core->sdb, input, NULL);
-				if (suggestion) {
-					R_LOG_INFO ("%s", suggestion);
-				}
-			}
-		}
-		free (nstr);
 	}
-	return ret;
+	RCmdItem *item = cmd->cmds[(ut8)input[0]];
+	if (item && item->callback) {
+		return item->callback (cmd->data, input + 1);
+	}
+	if (core && core->sdb) {
+		const char *suggestion = sdb_const_get (core->sdb, input, NULL);
+		if (suggestion) {
+			R_LOG_INFO ("%s", suggestion);
+		}
+	}
+	return -1;
 }
 
 /** macro.c **/

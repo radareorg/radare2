@@ -20,6 +20,19 @@ static bool insert_string(RTrie *trie, const char *key, const char *value) {
 	return true;
 }
 
+typedef struct {
+	size_t stop_after;
+	RStrBuf names;
+} TrieVisit;
+
+static bool visit_key(RStrs key, void *value, void *user) {
+	TrieVisit *visit = user;
+	(void)value;
+	return r_strbuf_append_n (&visit->names, key.a, r_strs_len (key))
+		&& r_strbuf_append (&visit->names, ",")
+		&& (!visit->stop_after || --visit->stop_after);
+}
+
 static bool test_r_trie_find(void) {
 	RTrie *trie = r_trie_new (free);
 	mu_assert_true (insert_string (trie, "a", "a"), "insert a");
@@ -121,6 +134,58 @@ static bool test_r_trie_compact_chain(void) {
 	mu_end;
 }
 
+static bool test_r_trie_foreach_prefix(void) {
+	RTrie *trie = r_trie_new (free);
+	insert_string (trie, "", "root");
+	insert_string (trie, "af", "af");
+	insert_string (trie, "afl", "afl");
+	insert_string (trie, "aflj", "aflj");
+	insert_string (trie, "agn", "agn");
+	insert_string (trie, "foobar", "foobar");
+	insert_string (trie, "food", "food");
+	TrieVisit visit = { 0 };
+	r_strbuf_init (&visit.names);
+	mu_assert_true (r_trie_foreach_prefix (trie, R_STRS_LIT ("af"), visit_key, &visit), "walk af prefix");
+	mu_assert_streq (r_strbuf_get (&visit.names), "af,afl,aflj,", "af names are ordered");
+	r_strbuf_set (&visit.names, "");
+	mu_assert_true (r_trie_foreach_prefix (trie, R_STRS_LIT ("fo"), visit_key, &visit), "walk inside an edge");
+	mu_assert_streq (r_strbuf_get (&visit.names), "foobar,food,", "foo names are ordered");
+	r_strbuf_set (&visit.names, "");
+	visit.stop_after = 2;
+	mu_assert_false (r_trie_foreach_prefix (trie, R_STRS_LIT (""), visit_key, &visit), "callback stops walk");
+	mu_assert_streq (r_strbuf_get (&visit.names), ",af,", "stopped names are ordered");
+	r_strbuf_set (&visit.names, "");
+	mu_assert_true (r_trie_foreach_prefix (trie, R_STRS_LIT ("missing"), visit_key, &visit), "missing prefix is empty");
+	mu_assert_true (r_strbuf_is_empty (&visit.names), "missing prefix visits nothing");
+	r_strbuf_fini (&visit.names);
+	r_trie_free (trie);
+	mu_end;
+}
+
+static bool test_r_trie_delete_prefix(void) {
+	freed_values = 0;
+	RTrie *trie = r_trie_new (count_free);
+	insert_string (trie, "", "root");
+	insert_string (trie, "af", "af");
+	insert_string (trie, "afl", "afl");
+	insert_string (trie, "aflj", "aflj");
+	insert_string (trie, "agn", "agn");
+	insert_string (trie, "foobar", "foobar");
+	insert_string (trie, "food", "food");
+	mu_assert_eq (r_trie_delete_prefix (trie, R_STRS_LIT ("afl")), 2, "delete exact prefix subtree");
+	mu_assert_eq (r_trie_size (trie), 5, "prefix deletion updates size");
+	mu_assert_streq (r_trie_find (trie, R_STRS_LIT ("af")), "af", "prefix parent remains");
+	mu_assert_streq (r_trie_find (trie, R_STRS_LIT ("agn")), "agn", "prefix sibling remains");
+	mu_assert_eq (r_trie_delete_prefix (trie, R_STRS_LIT ("fo")), 2, "delete prefix ending inside an edge");
+	mu_assert_null (r_trie_find (trie, R_STRS_LIT ("foobar")), "interior prefix descendant removed");
+	mu_assert_eq (r_trie_delete_prefix (trie, R_STRS_LIT ("")), 3, "empty prefix clears trie");
+	mu_assert_eq (r_trie_size (trie), 0, "trie empty after clear");
+	mu_assert_true (insert_string (trie, "new", "new"), "insert after clear");
+	r_trie_free (trie);
+	mu_assert_eq (freed_values, 8, "all subtree values freed once");
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test (test_r_trie_find);
 	mu_run_test (test_r_trie_longest_prefix);
@@ -128,6 +193,8 @@ static int all_tests(void) {
 	mu_run_test (test_r_trie_replace_take_delete);
 	mu_run_test (test_r_trie_empty_and_binary_keys);
 	mu_run_test (test_r_trie_compact_chain);
+	mu_run_test (test_r_trie_foreach_prefix);
+	mu_run_test (test_r_trie_delete_prefix);
 	return tests_passed != tests_run;
 }
 

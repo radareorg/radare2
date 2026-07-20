@@ -11,7 +11,7 @@ extern "C" {
 
 typedef struct r_core_t RCore;
 typedef struct r_libstore_t RLibStore;
-typedef struct r_cmd_context_t RCmdContext;
+typedef struct r_cmd_t RCmd;
 
 #define MACRO_LIMIT 1024
 #define MACRO_LABELS 20
@@ -35,7 +35,14 @@ typedef struct r_cmd_result_t {
 	ut64 value;
 } RCmdResult;
 
+typedef struct r_cmd_context_t {
+	RCmd *cmd;
+	void *user;
+	void *handler_user;
+} RCmdContext;
+
 typedef RCmdResult (*RCmdCtxCb) (RCmdContext *ctx, RStrs input);
+typedef bool (*RCmdForeachCb) (RStrs name, void *user);
 
 typedef struct r_cmd_macro_label_t {
 	char name[80];
@@ -79,7 +86,7 @@ typedef struct r_cmd_alias_val_t {
 } RCmdAliasVal;
 
 
-typedef struct r_cmd_t {
+struct r_cmd_t {
 	void *data; // maybe its user?
 	RCmdNullCb nullcallback;
 	RCmdItem *cmds[UT8_MAX];
@@ -90,7 +97,7 @@ typedef struct r_cmd_t {
 	HtUP *ts_symbols_ht;
 	// RCmdDesc *root_cmd_desc;
 	RTrie *handlers;
-} RCmd;
+};
 
 #ifdef R_API
 R_API RCmd *r_cmd_new(void *data);
@@ -103,6 +110,10 @@ R_API bool r_cmd_add(RCmd *cmd, const char *command, RCmdCb callback);
 R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user);
 /* Removes only the exact registered name, preserving descendant handlers. */
 R_API bool r_cmd_unregister(RCmd *cmd, const char *name);
+/* Removes every handler whose name starts with prefix and returns their count. */
+R_API size_t r_cmd_unregister_prefix(RCmd *cmd, const char *prefix);
+/* Visits matching names in lexical order; name is transient and false stops. */
+R_API bool r_cmd_foreach_prefix(const RCmd *cmd, const char *prefix, RCmdForeachCb callback, void *user);
 
 /* r_cmd_macro */
 R_API RCmdMacroItem *r_cmd_macro_item_new(void);

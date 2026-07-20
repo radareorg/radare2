@@ -12,6 +12,7 @@ extern "C" {
 
 typedef struct r_trie_t RTrie;
 typedef void (*RTrieFree)(void *value);
+typedef bool (*RTrieForeachCb)(RStrs key, void *value, void *user);
 
 /* Keys are copied and may contain NUL bytes. Values must be non-NULL. After a
  * successful insertion the trie owns the value; replacing a key releases its
@@ -23,9 +24,14 @@ R_API size_t r_trie_size(const RTrie *trie);
 R_API bool r_trie_insert(RTrie *trie, RStrs key, void *value);
 R_API void *r_trie_find(const RTrie *trie, RStrs key);
 R_API void *r_trie_find_longest_prefix(const RTrie *trie, RStrs input, R_OUT size_t *matched_len);
+/* Visits matching keys in lexical order; key is transient and false stops the walk.
+ * The callback must not mutate the trie. */
+R_API bool r_trie_foreach_prefix(const RTrie *trie, RStrs prefix, RTrieForeachCb callback, void *user);
 /* Removes a key and transfers ownership of its value to the caller. */
 R_API void *r_trie_take(RTrie *trie, RStrs key);
 R_API bool r_trie_delete(RTrie *trie, RStrs key);
+/* Removes prefix itself and every descendant key, returning their count. */
+R_API size_t r_trie_delete_prefix(RTrie *trie, RStrs prefix);
 
 #ifdef __cplusplus
 }
