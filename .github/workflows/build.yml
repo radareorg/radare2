@@ -487,7 +487,7 @@ jobs:
           disk-root: "C:"
     - name: Checkout
       uses: actions/checkout@v7
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@v7
       with:
         python-version: '3.10'
     - name: Install dependencies
@@ -529,7 +529,7 @@ jobs:
           disk-root: "C:"
     - name: Checkout
       uses: actions/checkout@v7
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@v7
       with:
         python-version: '3.10'
     - name: Preparing nmake
@@ -581,7 +581,7 @@ jobs:
           disk-root: "C:"
     - name: Checkout
       uses: actions/checkout@v7
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@v7
       with:
         python-version: '3.10'
     - name: Preparing nmake
@@ -690,7 +690,7 @@ jobs:
           disk-root: "C:"
     - name: Checkout
       uses: actions/checkout@v7
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@v7
       with:
         python-version: '3.12'
     - name: Preparing MSVC for ARM64
