@@ -11,14 +11,16 @@
 #include "newprj/save.inc.c"
 #include "newprj/load.inc.c"
 
-static void prjhelp(void) {
-	R_LOG_INFO ("prj save [file]   - save current state into a project file");
-	R_LOG_INFO ("prj info [file]   - show information about the project file");
-	R_LOG_INFO ("prj load [file]   - merge project information into the current session");
-	R_LOG_INFO ("prj open [file]   - close current session and open the project from scratch");
-	R_LOG_INFO ("prj diff [file]   - print commands for differences from file to current session");
-	R_LOG_INFO ("prj r2 [file]     - print an r2 script for parsing purposes");
-}
+static RCoreHelpMessage help_msg_prj = {
+	"Usage:", "prj [action] [file]", "Manage project files",
+	"prj save", " [file]", "save current state into a project file",
+	"prj info", " [file]", "show information about the project file",
+	"prj load", " [file]", "merge project information into the current session",
+	"prj open", " [file]", "close current session and open the project from scratch",
+	"prj diff", " [file]", "print commands for differences from file to current session",
+	"prj r2", " [file]", "print an r2 script for parsing purposes",
+	NULL
+};
 
 static RCmdResult prj_load(RCmdContext *ctx, const char *file, int mode) {
 	char *out = r_core_newprj_load (ctx->user, file, mode);
@@ -60,8 +62,26 @@ static RCmdResult prj_open(RCmdContext *ctx, const char *file) {
 	return prj_load (ctx, file, R_CORE_NEWPRJ_MODE_LOAD | R_CORE_NEWPRJ_MODE_CMD | R_CORE_NEWPRJ_MODE_RIO);
 }
 
-static RCmdResult prj_invalid(void) {
-	prjhelp ();
+static void prj_help(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	r_cons_cmd_help (ctx->cons, help_msg_prj, core->print->flags & R_PRINT_FLAGS_COLOR);
+}
+
+static bool prj_action_help(RCmdContext *ctx, RStrs action) {
+	const size_t len = r_strs_len (action);
+	if (!len || action.b[-1] != '?') {
+		return false;
+	}
+	char *cmd = r_str_newf ("prj %.*s", (int)(len - 1), action.a);
+	RCore *core = ctx->user;
+	int matches = cmd? r_cons_cmd_help_match (ctx->cons, help_msg_prj,
+		core->print->flags & R_PRINT_FLAGS_COLOR, cmd, 0, true): 0;
+	free (cmd);
+	return matches > 0;
+}
+
+static RCmdResult prj_invalid(RCmdContext *ctx) {
+	prj_help (ctx);
 	return (RCmdResult) { .status = 2 };
 }
 
@@ -73,11 +93,14 @@ static RCmdResult prj_callback(RCmdContext *ctx, RStrs input) {
 		|| (suffix == '?' && !r_strs_at (input, 4))))
 		|| (argc == 1 && r_strs_equals_str (args[0], "?"));
 	if (help) {
-		prjhelp ();
+		prj_help (ctx);
+		return (RCmdResult) { 0 };
+	}
+	if (argc == 1 && prj_action_help (ctx, args[0])) {
 		return (RCmdResult) { 0 };
 	}
 	if (argc != 2) {
-		return prj_invalid ();
+		return prj_invalid (ctx);
 	}
 	const char *file = args[1].a;
 	if (r_strs_equals_str (args[0], "save")) {
@@ -98,7 +121,7 @@ static RCmdResult prj_callback(RCmdContext *ctx, RStrs input) {
 	if (r_strs_equals_str (args[0], "r2")) {
 		return prj_load (ctx, file, R_CORE_NEWPRJ_MODE_SCRIPT);
 	}
-	return prj_invalid ();
+	return prj_invalid (ctx);
 }
 
 static bool plugin_init(RCorePluginSession *cps) {
