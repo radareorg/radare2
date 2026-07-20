@@ -2,6 +2,7 @@
 
 #define R_LOG_ORIGIN "cmdapi"
 #include <r_core.h>
+#include <r_core_priv.h>
 #include <sdb/ht_pp.h>
 
 #define NCMDS (sizeof (cmd->cmds) / sizeof (*cmd->cmds))
@@ -434,29 +435,35 @@ static int cmd_result_to_legacy(RCmdResult result) {
 		: result.action == R_CMD_ACTION_QUIT? -2: -1;
 }
 
-static RCmdResult cmd_call_registered(RCmd *cmd, RStrs input) {
+static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs input) {
 	RStrs lookup = input;
-	RCmdContext context = {
-		.cmd = cmd,
-		.user = cmd->data
-	};
+	RCmdContext *context = NULL;
 	while (!r_strs_empty (lookup)) {
 		size_t matched = 0;
 		RCmdHandler *handler = r_trie_find_longest_prefix (cmd->handlers, lookup, &matched);
 		if (!handler || !matched) {
 			break;
 		}
-		context.handler_user = handler->user;
-		RCmdResult result = handler->callback (&context, input);
+		if (!context) {
+			context = R_NEW0 (RCmdContext);
+			context->parent = parent;
+			context->cmd = cmd;
+			context->cons = parent? parent->cons: cmd->cons;
+			context->user = cmd->data;
+		}
+		context->handler_user = handler->user;
+		RCmdResult result = handler->callback (context, input);
 		if (result.action != R_CMD_ACTION_UNHANDLED) {
+			free (context);
 			return result;
 		}
 		lookup.b = lookup.a + matched - 1;
 	}
+	free (context);
 	return cmd_result (R_CMD_ACTION_UNHANDLED, 127);
 }
 
-static RCmdResult cmd_call_result(RCmd *cmd, const char *input) {
+R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *input) {
 	RCore *core = cmd->data;
 	if (!*input) {
 		return cmd->nullcallback
@@ -470,7 +477,7 @@ static RCmdResult cmd_call_result(RCmd *cmd, const char *input) {
 		free (v_str);
 		return cmd_result_from_legacy (true);
 	}
-	RCmdResult result = cmd_call_registered (cmd, r_strs_from (input));
+	RCmdResult result = cmd_call_registered (cmd, parent, r_strs_from (input));
 	if (result.action != R_CMD_ACTION_UNHANDLED) {
 		return result;
 	}
@@ -499,7 +506,7 @@ static RCmdResult cmd_call_result(RCmd *cmd, const char *input) {
 
 R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	R_RETURN_VAL_IF_FAIL (cmd && input, -1);
-	return cmd_result_to_legacy (cmd_call_result (cmd, input));
+	return cmd_result_to_legacy (r_cmd_call_result (cmd, NULL, input));
 }
 
 /** macro.c **/

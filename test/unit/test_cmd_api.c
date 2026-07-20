@@ -21,6 +21,8 @@ static bool visit_command(RStrs name, void *user) {
 }
 
 typedef struct {
+	RCmdContext *expected_parent;
+	RCons *expected_cons;
 	void *expected_user;
 	const char *expected_input;
 	RCmdAction action;
@@ -34,6 +36,7 @@ static RCmdResult dispatch_handler(RCmdContext *ctx, RStrs input) {
 	DispatchState *state = ctx->handler_user;
 	state->calls++;
 	state->context_ok = ctx->cmd && ctx->user == state->expected_user
+		&& ctx->parent == state->expected_parent && ctx->cons == state->expected_cons
 		&& r_strs_equals_str (input, state->expected_input);
 	RCmdResult result = {
 		.action = state->action,
@@ -113,7 +116,10 @@ static bool test_r_cmd_registry_dispatch(void) {
 		.action = R_CMD_ACTION_UNHANDLED
 	};
 	parent.expected_user = child.expected_user = &child;
+	RCons *cons = r_cons_new2 ();
+	mu_assert_notnull (cons, "create borrowed console");
 	RCmd *cmd = r_cmd_new (&child);
+	cmd->cons = parent.expected_cons = child.expected_cons = cons;
 	mu_assert_true (r_cmd_register (cmd, "a", dispatch_handler, &parent), "register parent handler");
 	mu_assert_true (r_cmd_register (cmd, "af", dispatch_handler, &child), "register child handler");
 	mu_assert_eq (r_cmd_call (cmd, "afl?"), 7, "parent handles child fallback");
@@ -131,6 +137,7 @@ static bool test_r_cmd_registry_dispatch(void) {
 	mu_assert_eq (r_cmd_call (cmd, "afl?"), -1, "abort action maps to legacy failure");
 	mu_assert_eq (child.legacy_calls, 1, "abort skips legacy callback");
 	r_cmd_free (cmd);
+	r_cons_free (cons);
 	mu_end;
 }
 

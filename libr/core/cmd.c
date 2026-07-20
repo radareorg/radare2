@@ -7272,6 +7272,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	core->rcmd = r_cmd_new (core);
 	if (core->rcmd) {
 		r_cmd_set_data (core->rcmd, core);
+		core->rcmd->cons = core->cons;
 		core->rcmd->macro.user = core;
 		core->rcmd->macro.num = core->num;
 		core->rcmd->macro.cmd = core_cmd0_wrapper;
