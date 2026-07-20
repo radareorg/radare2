@@ -11,6 +11,7 @@ extern "C" {
 
 typedef struct r_core_t RCore;
 typedef struct r_libstore_t RLibStore;
+typedef struct r_cmd_context_t RCmdContext;
 
 #define MACRO_LIMIT 1024
 #define MACRO_LABELS 20
@@ -19,6 +20,22 @@ typedef struct r_libstore_t RLibStore;
 typedef int (*RCmdCb) (void *user, const char *input);
 // typedef RCmdStatus (*RCmdArgvCb) (RCore *core, int argc, const char **argv);
 typedef int (*RCmdNullCb) (void *user);
+
+typedef enum {
+	R_CMD_ACTION_CONTINUE,
+	R_CMD_ACTION_ABORT,
+	R_CMD_ACTION_QUIT,
+	R_CMD_ACTION_UNHANDLED
+} RCmdAction;
+
+typedef struct r_cmd_result_t {
+	RCmdAction action;
+	st64 status;
+	bool has_value;
+	ut64 value;
+} RCmdResult;
+
+typedef RCmdResult (*RCmdCtxCb) (RCmdContext *ctx, RStrs input);
 
 typedef struct r_cmd_macro_label_t {
 	char name[80];
@@ -72,7 +89,7 @@ typedef struct r_cmd_t {
 	void *language; // used to store TSLanguage *
 	HtUP *ts_symbols_ht;
 	// RCmdDesc *root_cmd_desc;
-	HtPP *ht_cmds;
+	RTrie *handlers;
 } RCmd;
 
 #ifdef R_API
@@ -81,6 +98,11 @@ R_API void r_cmd_free(RCmd *cmd);
 R_API int r_cmd_call(RCmd *cmd, const char *command);
 R_API void r_cmd_set_data(RCmd *cmd, void *data);
 R_API bool r_cmd_add(RCmd *cmd, const char *command, RCmdCb callback);
+/* New handlers are keyed by their complete command prefix. The registry copies
+ * name and borrows handler_user until the command is unregistered. */
+R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user);
+/* Removes only the exact registered name, preserving descendant handlers. */
+R_API bool r_cmd_unregister(RCmd *cmd, const char *name);
 
 /* r_cmd_macro */
 R_API RCmdMacroItem *r_cmd_macro_item_new(void);

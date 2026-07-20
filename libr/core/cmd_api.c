@@ -6,6 +6,11 @@
 
 #define NCMDS (sizeof (cmd->cmds) / sizeof (*cmd->cmds))
 
+typedef struct {
+	RCmdCtxCb callback;
+	void *user;
+} RCmdHandler;
+
 static void alias_freefn(HtPPKv *kv) {
 	if (kv) {
 		char *k = kv->key;
@@ -82,7 +87,7 @@ R_API RCmd *r_cmd_new(void *data) {
 		cmd->cmds[i] = NULL;
 	}
 	cmd->nullcallback = NULL;
-	cmd->ht_cmds = ht_pp_new0 ();
+	cmd->handlers = r_trie_new (free);
 	// cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "", &root_help, true);
 	r_cmd_macro_init (&cmd->macro);
 	r_cmd_alias_init (cmd);
@@ -97,8 +102,8 @@ R_API void r_cmd_free(RCmd *cmd) {
 	ht_up_free (cmd->ts_symbols_ht);
 	r_cmd_alias_free (cmd);
 	r_cmd_macro_fini (&cmd->macro);
-	ht_pp_free (cmd->ht_cmds);
 	r_core_plugins_fini (cmd);
+	r_trie_free (cmd->handlers);
 	for (i = 0; i < NCMDS; i++) {
 		if (cmd->cmds[i]) {
 			R_FREE (cmd->cmds[i]);
@@ -341,6 +346,33 @@ R_API char *r_cmd_alias_val_strdup_b64(RCmdAliasVal *v) {
 
 R_API void r_cmd_set_data(RCmd *cmd, void *data) {
 	cmd->data = data;
+}
+
+static bool cmd_name_is_valid(RStrs name) {
+	return !r_strs_empty (name) && !r_strs_find_any (name, " \t\r\n\v\f");
+}
+
+// TODO: Synchronize registry mutation with concurrent command dispatch.
+R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user) {
+	R_RETURN_VAL_IF_FAIL (cmd && name && callback, false);
+	RStrs key = r_strs_from (name);
+	if (!cmd_name_is_valid (key) || r_trie_find (cmd->handlers, key)) {
+		return false;
+	}
+	RCmdHandler *handler = R_NEW (RCmdHandler);
+	handler->callback = callback;
+	handler->user = handler_user;
+	if (!r_trie_insert (cmd->handlers, key, handler)) {
+		free (handler);
+		return false;
+	}
+	return true;
+}
+
+R_API bool r_cmd_unregister(RCmd *cmd, const char *name) {
+	R_RETURN_VAL_IF_FAIL (cmd && name, false);
+	RStrs key = r_strs_from (name);
+	return cmd_name_is_valid (key) && r_trie_delete (cmd->handlers, key);
 }
 
 R_API bool r_cmd_add(RCmd *c, const char *cmd, RCmdCb cb) {

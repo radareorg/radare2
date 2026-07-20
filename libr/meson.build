@@ -528,6 +528,7 @@ install_headers(include_files, install_dir: r2_incdir)
 
 r_util_files = [
   'include/r_util/bplist.h',
+  'include/r_util/r_trie.h',
   'include/r_util/pj.h',
   'include/r_util/libc.h',
   'include/r_util/r_alloc.h',
