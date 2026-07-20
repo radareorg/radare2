@@ -40,6 +40,17 @@ quoted.project
 EOF
 RUN
 
+NAME=newprj action help
+FILE=malloc://1
+CMDS=<<EOF
+e scr.color=0
+prj save?
+EOF
+EXPECT=<<EOF
+| prj save [file]  save current state into a project file
+EOF
+RUN
+
 NAME=newprj flag with no space
 FILE=malloc://0x1000
 CMDS=<<EOF
