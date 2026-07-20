@@ -349,15 +349,11 @@ R_API void r_cmd_set_data(RCmd *cmd, void *data) {
 	cmd->data = data;
 }
 
-static bool cmd_name_is_valid(RStrs name) {
-	return !r_strs_empty (name) && !r_strs_find_any (name, " \t\r\n\v\f");
-}
-
 // TODO: Synchronize registry mutation with concurrent command dispatch.
 R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user) {
 	R_RETURN_VAL_IF_FAIL (cmd && name && callback, false);
 	RStrs key = r_strs_from (name);
-	if (!cmd_name_is_valid (key) || r_trie_find (cmd->handlers, key)) {
+	if (r_strs_empty (key) || r_trie_find (cmd->handlers, key)) {
 		return false;
 	}
 	RCmdHandler *handler = R_NEW (RCmdHandler);
@@ -372,8 +368,7 @@ R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void 
 
 R_API bool r_cmd_unregister(RCmd *cmd, const char *name) {
 	R_RETURN_VAL_IF_FAIL (cmd && name, false);
-	RStrs key = r_strs_from (name);
-	return cmd_name_is_valid (key) && r_trie_delete (cmd->handlers, key);
+	return r_trie_delete (cmd->handlers, r_strs_from (name));
 }
 
 R_API size_t r_cmd_unregister_prefix(RCmd *cmd, const char *prefix) {

@@ -23,6 +23,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=newprj quoted project filename
+FILE=malloc://0x1000
+CMDS=<<EOF
+mkdir .tmp
+rm -f ".tmp/newprj quoted.prj"
+f quoted.project=0x420
+prj   save ".tmp/newprj quoted.prj" > /dev/null
+f-*
+prj "load" ".tmp/newprj quoted.prj" > /dev/null
+fd 0x420
+rm ".tmp/newprj quoted.prj"
+EOF
+EXPECT=<<EOF
+quoted.project
+EOF
+RUN
+
 NAME=newprj flag with no space
 FILE=malloc://0x1000
 CMDS=<<EOF
