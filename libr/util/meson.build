@@ -100,6 +100,7 @@ r_util_sources = [
   'time.c',
   'token.c',
   'tree.c',
+  'trie.c',
   'treemap.c',
   'ubase64.c',
   'udiff.c',
