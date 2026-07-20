@@ -67,6 +67,7 @@ if get_option('enable_tests')
     'table',
     'thread',
     'tree',
+    'trie',
     'uleb128',
     'unum',
     'util',
