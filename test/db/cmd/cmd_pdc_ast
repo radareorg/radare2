@@ -119,3 +119,40 @@ seq 0x00000000
   bb 0x00000030
 EOF
 RUN
+
+NAME=pdct region ast bottom-tested loop keeps the exit outside
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 31c0eb0c83c00183f80a7504c390909089c3ebf0
+af
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000000
+  bb 0x00000000
+  do-while 0x00000010
+    if 0x00000004
+      goto 0x00000010
+  bb 0x0000000c
+EOF
+RUN
+
+NAME=pdct region ast irreducible cycle falls back to gotos
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 85c0740a83c00183f80075f8c39089c3ebf5
+af
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000000
+  if-else 0x00000000
+    bb 0x0000000e
+    bb 0x00000004
+  if 0x00000007
+    goto 0x00000004
+  bb 0x0000000c
+EOF
+RUN
