@@ -20,105 +20,103 @@ static void prjhelp(void) {
 	R_LOG_INFO ("prj r2 [file]     - print an r2 script for parsing purposes");
 }
 
-static void prj_load_emit(RCore *core, const char *file, int mode) {
-	char *out = r_core_newprj_load (core, file, mode);
-	if (out) {
-		r_cons_print (core->cons, out);
-		free (out);
+static RCmdResult prj_load(RCmdContext *ctx, const char *file, int mode) {
+	char *out = r_core_newprj_load (ctx->user, file, mode);
+	if (!out) {
+		return (RCmdResult) { .status = 1 };
 	}
+	r_cons_print (ctx->cons, out);
+	free (out);
+	return (RCmdResult) { 0 };
 }
 
-static void prj_save(RCore *core, const char *file) {
-	if (r_file_exists (file)) {
-		const bool isint = r_config_get_b (core->config, "scr.interactive");
-		if (isint && !r_cons_yesno (core->cons, 'y', "Overwrite project file (Y/n)")) {
-			R_LOG_ERROR ("File exists");
-			return;
-		}
+static RCmdResult prj_save(RCmdContext *ctx, const char *file) {
+	RCore *core = ctx->user;
+	const bool exists = r_file_exists (file);
+	if (exists && r_config_get_b (core->config, "scr.interactive")
+			&& !r_cons_yesno (ctx->cons, 'y', "Overwrite project file (Y/n)")) {
+		R_LOG_ERROR ("File exists");
+		return (RCmdResult) { .status = 1 };
+	}
+	if (exists) {
 		r_file_rm (file);
 	}
-	r_core_newprj_save (core, file);
+	return (RCmdResult) { .status = r_core_newprj_save (core, file)? 0: 1 };
 }
 
-static void prj_open(RCore *core, const char *file) {
+static RCmdResult prj_open(RCmdContext *ctx, const char *file) {
+	RCore *core = ctx->user;
 	if (!r_file_exists (file)) {
 		R_LOG_ERROR ("Cannot find project file: %s", file);
-		return;
+		return (RCmdResult) { .status = 1 };
 	}
-	const bool isint = r_config_get_b (core->config, "scr.interactive");
-	if (isint && !r_cons_yesno (core->cons, 'n',
-			"Opening a project discards the current session (files, flags, anal, config). Continue? (y/N)")) {
+	if (r_config_get_b (core->config, "scr.interactive")
+			&& !r_cons_yesno (ctx->cons, 'n', "Opening a project discards the current session (files, flags, anal, config). Continue? (y/N)")) {
 		R_LOG_INFO ("Aborted");
-		return;
+		return (RCmdResult) { .status = 1 };
 	}
 	r_core_cmd0 (core, "o--");
 	r_config_set (core->config, "prj.name", "");
-	prj_load_emit (core, file, R_CORE_NEWPRJ_MODE_LOAD | R_CORE_NEWPRJ_MODE_CMD | R_CORE_NEWPRJ_MODE_RIO);
+	return prj_load (ctx, file, R_CORE_NEWPRJ_MODE_LOAD | R_CORE_NEWPRJ_MODE_CMD | R_CORE_NEWPRJ_MODE_RIO);
 }
 
-static void prjcmd(RCore *core, const char *arg) {
-	if (!arg) {
-		prjhelp ();
-		return;
-	}
-	char *argstr = strdup (arg);
-	char *arg2 = strchr (argstr, ' ');
-	if (!arg2) {
-		prjhelp ();
-		free (argstr);
-		return;
-	}
-	*arg2 = 0;
-	arg2 = (char *)r_str_trim_head_ro (arg2 + 1);
-	if (!strcmp (argstr, "save")) {
-		prj_save (core, arg2);
-	} else if (!strcmp (argstr, "open")) {
-		prj_open (core, arg2);
-	} else if (!strcmp (argstr, "load")) {
-		prj_load_emit (core, arg2, R_CORE_NEWPRJ_MODE_LOAD | R_CORE_NEWPRJ_MODE_CMD);
-	} else if (!strcmp (argstr, "r2")) {
-		prj_load_emit (core, arg2, R_CORE_NEWPRJ_MODE_SCRIPT);
-	} else if (!strcmp (argstr, "info")) {
-		prj_load_emit (core, arg2, R_CORE_NEWPRJ_MODE_LOG);
-	} else if (!strcmp (argstr, "diff")) {
-		prj_load_emit (core, arg2, R_CORE_NEWPRJ_MODE_DIFF);
-	}
-	free (argstr);
+static RCmdResult prj_invalid(void) {
+	prjhelp ();
+	return (RCmdResult) { .status = 2 };
 }
 
-static bool callback(RCorePluginSession *cps, const char *input) {
-	if (!r_str_startswith (input, "prj")) {
-		return false;
+static RCmdResult prj_callback(RCmdContext *ctx, RStrs input) {
+	const size_t argc = RVecRStrs_length (&ctx->args);
+	const char suffix = r_strs_at (input, 3);
+	RStrs *args = R_VEC_START_ITER (&ctx->args);
+	const bool help = (!argc && (!suffix || isspace ((ut8)suffix)
+		|| (suffix == '?' && !r_strs_at (input, 4))))
+		|| (argc == 1 && r_strs_equals_str (args[0], "?"));
+	if (help) {
+		prjhelp ();
+		return (RCmdResult) { 0 };
 	}
-	const char *arg = strchr (input + 3, ' ');
-	prjcmd (cps->core, arg? r_str_trim_head_ro (arg + 1): NULL);
-	return true;
+	if (argc != 2) {
+		return prj_invalid ();
+	}
+	const char *file = args[1].a;
+	if (r_strs_equals_str (args[0], "save")) {
+		return prj_save (ctx, file);
+	}
+	if (r_strs_equals_str (args[0], "load")) {
+		return prj_load (ctx, file, R_CORE_NEWPRJ_MODE_LOAD | R_CORE_NEWPRJ_MODE_CMD);
+	}
+	if (r_strs_equals_str (args[0], "open")) {
+		return prj_open (ctx, file);
+	}
+	if (r_strs_equals_str (args[0], "info")) {
+		return prj_load (ctx, file, R_CORE_NEWPRJ_MODE_LOG);
+	}
+	if (r_strs_equals_str (args[0], "diff")) {
+		return prj_load (ctx, file, R_CORE_NEWPRJ_MODE_DIFF);
+	}
+	if (r_strs_equals_str (args[0], "r2")) {
+		return prj_load (ctx, file, R_CORE_NEWPRJ_MODE_SCRIPT);
+	}
+	return prj_invalid ();
 }
 
 static bool plugin_init(RCorePluginSession *cps) {
 	RCore *core = cps->core;
-	if (!core || !core->autocomplete) {
+	if (!core) {
 		return true;
 	}
-	if (r_core_autocomplete_find (core->autocomplete, "prj", true)) {
-		return true;
+	RCmd *cmd = core->rcmd;
+	if (!r_cmd_register (cmd, "prj", prj_callback, NULL)) {
+		return false;
 	}
-	RCoreAutocomplete *root = r_core_autocomplete_add (core->autocomplete, "prj", R_CORE_AUTOCMPLT_DFLT, true);
-	if (!root) {
-		return true;
-	}
-	const char *subs[] = { "save", "load", "open", "info", "diff", "r2", NULL };
-	int i;
-	for (i = 0; subs[i]; i++) {
-		r_core_autocomplete_add (root, subs[i], R_CORE_AUTOCMPLT_FILE, true);
-	}
+	cps->data = cmd;
 	return true;
 }
 
 static bool plugin_fini(RCorePluginSession *cps) {
-	RCore *core = cps->core;
-	if (core && core->autocomplete) {
-		r_core_autocomplete_remove (core->autocomplete, "prj");
+	if (cps->data) {
+		r_cmd_unregister (cps->data, "prj");
 	}
 	return true;
 }
@@ -132,7 +130,6 @@ RCorePlugin r_core_plugin_prj = {
 	},
 	.init = plugin_init,
 	.fini = plugin_fini,
-	.call = callback,
 };
 
 #ifndef R2_PLUGIN_INCORE

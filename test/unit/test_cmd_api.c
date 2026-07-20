@@ -82,8 +82,8 @@ static bool test_r_cmd_register(void) {
 	mu_assert_false (r_cmd_register (cmd, "af", first_handler, NULL), "reject duplicate name");
 	mu_assert_eq (r_trie_size (cmd->handlers), 2, "duplicate keeps handler count");
 	mu_assert_false (r_cmd_register (cmd, "", first_handler, NULL), "reject empty name");
-	mu_assert_false (r_cmd_register (cmd, "af l", first_handler, NULL), "reject whitespace");
-	mu_assert_false (r_cmd_register (cmd, "af\tl", first_handler, NULL), "reject tab");
+	mu_assert_true (r_cmd_register (cmd, "af l", first_handler, NULL), "accept subcommand");
+	mu_assert_true (r_cmd_register (cmd, "af\tl", first_handler, NULL), "accept tab-separated command");
 	mu_assert_true (r_cmd_register (cmd, "?", first_handler, NULL), "accept punctuation");
 	mu_assert_true (r_cmd_register (cmd, "cmd-ñ", first_handler, NULL), "accept utf8");
 	r_cmd_free (cmd);
