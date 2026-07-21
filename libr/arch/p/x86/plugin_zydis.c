@@ -11,10 +11,10 @@
 #include <Zydis.h>
 #endif
 
-/* zydis 5 replaced mem.disp.has_displacement with mem.disp.size, and zydis
- * <= 4.1.0 defines ZYDIS_VERSION with a cast that breaks preprocessor checks,
- * so building against a system zydis requires at least version 4.1.1 */
-#if ZYDIS_VERSION >= 0x0005000000000000ULL
+/* Zydis 5 replaced mem.disp.has_displacement with mem.disp.size. Prefer
+ * feature detection over `ZYDIS_VERSION`, because some 4.x headers define it
+ * with a cast that breaks preprocessor expressions. */
+#if defined(ZYDIS_DECODER_MODE_APX)
 #define HAS_MEM_DISP(op) ((op)->mem.disp.size != 0)
 #else
 #define HAS_MEM_DISP(op) ((op)->mem.disp.has_displacement)
