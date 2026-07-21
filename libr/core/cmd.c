@@ -3946,28 +3946,36 @@ static int handle_command_call(RCore *core, const char *cmd) {
 	if (isaddr || r_str_startswith (cmd, "0x")) {
 		int res = 1;
 		char *arg = strdup (cmd);
-		char *end = strstr (arg, "'");
+		char *end = arg? strchr (arg, '\''): NULL;
 		if (end) {
 			*end = 0;
-			cmd = end + 1;
-			ut64 addr = core->addr;
 			ut64 at = r_num_math (core->num, arg);
-			r_core_seek (core, at, true);
-			res = r_core_call (core, cmd);
-			r_core_seek (core, addr, true);
-			free (arg);
+			if (core->num->nc.errors) {
+				R_LOG_ERROR ("Invalid address '%s'", arg);
+				r_core_return_code (core, 1);
+			} else {
+				ut64 addr = core->addr;
+				r_core_seek (core, at, true);
+				res = r_core_call (core, end + 1);
+				r_core_seek (core, addr, true);
+			}
 		} else {
 			R_LOG_ERROR ("Invalid syntax, expected \"'@addr'command\"");
-			free (arg);
+			r_core_return_code (core, 1);
 		}
+		free (arg);
 		return res;
 	}
 	return r_core_call (core, cmd);
 }
 
 static void remove_leading_empty_quotes(char *cmd) {
-	while (r_str_startswith (cmd, "\"\"")) {
-		memmove (cmd, cmd + 2, strlen (cmd + 2) + 1);
+	char *p = cmd;
+	while (r_str_startswith (p, "\"\"")) {
+		p += 2;
+	}
+	if (p != cmd) {
+		memmove (cmd, p, strlen (p) + 1);
 	}
 }
 
