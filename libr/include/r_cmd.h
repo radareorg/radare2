@@ -44,11 +44,29 @@ typedef struct r_cmd_context_t {
 	RCons *cons;
 	void *user;
 	void *handler_user;
-	RStrs args_storage; // owned by the context and borrowed by args
-	RVecRStrs args; // decoded arguments excluding the command token
+	char *args_storage; // private: owned buffer backing args, do not use
+	RVecRStrs args; // decoded arguments after the matched name and subcmd
+	RStrs subcmd; // command-token remainder after the registered name; slices the
+	// NUL-terminated input line, so subcmd.b is the raw undecoded tail as C string
 } RCmdContext;
 
-typedef RCmdResult (*RCmdCtxCb) (RCmdContext *ctx, RStrs input);
+typedef RCmdResult (*RCmdCtxCb) (RCmdContext *ctx);
+
+/* True when the command token requests help: "agD?", "agDj?", "prjs?" */
+static inline bool r_cmd_ctx_help(RCmdContext *ctx) {
+	return r_strs_lastch (ctx->subcmd) == '?';
+}
+
+/* Trailing output-mode char from the given set, looking before any '?'.
+ * r_cmd_ctx_mode (ctx, "jq") is 'j' for "agDj" and "agDj?", 0 for "agD" */
+static inline char r_cmd_ctx_mode(RCmdContext *ctx, const char *modes) {
+	RStrs s = ctx->subcmd;
+	if (r_strs_lastch (s) == '?') {
+		s.b--;
+	}
+	const char last = r_strs_lastch (s);
+	return (last && strchr (modes, last))? last: 0;
+}
 typedef bool (*RCmdForeachCb) (RStrs name, void *user);
 
 typedef struct r_cmd_macro_label_t {

@@ -773,12 +773,11 @@ static RCmdResult writedwarf_write(RCmdContext *ctx, bool elf, const char *filen
 	return (RCmdResult) { .status = status };
 }
 
-static RCmdResult writedwarf_callback(RCmdContext *ctx, RStrs input) {
+static RCmdResult writedwarf_callback(RCmdContext *ctx) {
 	const size_t argc = RVecRStrs_length (&ctx->args);
 	RStrs *args = R_VEC_START_ITER (&ctx->args);
-	const char suffix = r_strs_at (input, sizeof ("writedwarf") - 1);
-	if (suffix && !isspace ((ut8)suffix)) {
-		if (suffix == '?' && !r_strs_at (input, sizeof ("writedwarf")) && !argc) {
+	if (!r_strs_empty (ctx->subcmd)) {
+		if (!argc && r_cmd_ctx_help (ctx)) {
 			writedwarf_help (ctx);
 			return (RCmdResult) { 0 };
 		}

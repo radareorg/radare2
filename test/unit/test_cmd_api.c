@@ -1,9 +1,8 @@
 #include <r_core.h>
 #include "minunit.h"
 
-static RCmdResult first_handler(RCmdContext *ctx, RStrs input) {
+static RCmdResult first_handler(RCmdContext *ctx) {
 	(void)ctx;
-	(void)input;
 	RCmdResult result = { 0 };
 	return result;
 }
@@ -24,7 +23,7 @@ typedef struct {
 	RCmdContext *expected_parent;
 	RCons *expected_cons;
 	void *expected_user;
-	const char *expected_input;
+	const char *expected_subcmd;
 	RCmdAction action;
 	st64 status;
 	int calls;
@@ -32,12 +31,14 @@ typedef struct {
 	bool context_ok;
 } DispatchState;
 
-static RCmdResult dispatch_handler(RCmdContext *ctx, RStrs input) {
+static RCmdResult dispatch_handler(RCmdContext *ctx) {
 	DispatchState *state = ctx->handler_user;
 	state->calls++;
 	state->context_ok = ctx->cmd && ctx->user == state->expected_user
 		&& ctx->parent == state->expected_parent && ctx->cons == state->expected_cons
-		&& r_strs_equals_str (input, state->expected_input);
+		&& r_strs_equals_str (ctx->subcmd, state->expected_subcmd)
+		&& !*ctx->subcmd.b
+		&& r_cmd_ctx_help (ctx) && r_cmd_ctx_mode (ctx, "lx") == 'l';
 	RCmdResult result = {
 		.action = state->action,
 		.status = state->status
@@ -59,16 +60,19 @@ typedef struct {
 	bool args_ok;
 } ArgsState;
 
-static RCmdResult args_handler(RCmdContext *ctx, RStrs input) {
+static RCmdResult args_handler(RCmdContext *ctx) {
 	ArgsState *state = ctx->handler_user;
 	state->calls++;
-	state->args_ok = r_strs_equals_str (input, state->expected_input)
+	const size_t input_len = strlen (state->expected_input);
+	state->args_ok = r_strs_empty (ctx->subcmd)
+		&& !r_cmd_ctx_help (ctx) && !r_cmd_ctx_mode (ctx, "jq")
+		&& !strcmp (ctx->subcmd.b, state->expected_input + strlen ("cmd"))
 		&& RVecRStrs_length (&ctx->args) == state->expected_argc;
 	size_t i;
 	for (i = 0; state->args_ok && i < state->expected_argc; i++) {
 		RStrs *arg = RVecRStrs_at (&ctx->args, i);
 		state->args_ok = arg && r_strs_equals (*arg, state->expected_args[i])
-			&& arg->a >= ctx->args_storage.a && arg->b <= ctx->args_storage.b;
+			&& arg->a >= ctx->args_storage && arg->b <= ctx->args_storage + input_len;
 	}
 	RCmdResult result = { 0 };
 	return result;
@@ -130,12 +134,12 @@ static bool test_r_cmd_prefix_registry(void) {
 
 static bool test_r_cmd_registry_dispatch(void) {
 	DispatchState parent = {
-		.expected_input = "afl?",
+		.expected_subcmd = "fl?",
 		.action = R_CMD_ACTION_CONTINUE,
 		.status = 7
 	};
 	DispatchState child = {
-		.expected_input = "afl?",
+		.expected_subcmd = "l?",
 		.action = R_CMD_ACTION_UNHANDLED
 	};
 	parent.expected_user = child.expected_user = &child;
@@ -148,7 +152,7 @@ static bool test_r_cmd_registry_dispatch(void) {
 	mu_assert_eq (r_cmd_call (cmd, "afl?"), 7, "parent handles child fallback");
 	mu_assert_eq (child.calls, 1, "longest prefix called first");
 	mu_assert_eq (parent.calls, 1, "parent prefix called after unhandled");
-	mu_assert_true (child.context_ok && parent.context_ok, "handlers receive context and full input");
+	mu_assert_true (child.context_ok && parent.context_ok, "handlers receive context and subcmd slice");
 	mu_assert_true (r_cmd_unregister (cmd, "a"), "remove registered parent");
 	mu_assert_true (r_cmd_add (cmd, "a", legacy_handler), "register legacy fallback");
 	mu_assert_eq (r_cmd_call (cmd, "afl?"), 9, "unhandled registry falls back to legacy");
@@ -161,6 +165,50 @@ static bool test_r_cmd_registry_dispatch(void) {
 	mu_assert_eq (child.legacy_calls, 1, "abort skips legacy callback");
 	r_cmd_free (cmd);
 	r_cons_free (cons);
+	mu_end;
+}
+
+typedef struct {
+	const char *expected_subcmd;
+	const char *expected_arg0;
+	size_t expected_argc;
+	RCmdAction action;
+	int calls;
+	bool ok;
+} MultiwordState;
+
+static RCmdResult multiword_handler(RCmdContext *ctx) {
+	MultiwordState *state = ctx->handler_user;
+	state->calls++;
+	const size_t argc = RVecRStrs_length (&ctx->args);
+	state->ok = r_strs_equals_str (ctx->subcmd, state->expected_subcmd)
+		&& argc == state->expected_argc
+		&& (!state->expected_arg0
+			|| (argc && r_strs_equals_str (*RVecRStrs_at (&ctx->args, 0), state->expected_arg0)));
+	return (RCmdResult) { .action = state->action };
+}
+
+static bool test_r_cmd_multiword_dispatch(void) {
+	MultiwordState spaced = {
+		.expected_subcmd = "?",
+		.expected_argc = 0,
+		.action = R_CMD_ACTION_UNHANDLED
+	};
+	MultiwordState plain = {
+		.expected_subcmd = "",
+		.expected_arg0 = "l?",
+		.expected_argc = 1,
+		.action = R_CMD_ACTION_CONTINUE
+	};
+	RCmd *cmd = r_cmd_new (NULL);
+	mu_assert_true (r_cmd_register (cmd, "af l", multiword_handler, &spaced), "register spaced name");
+	mu_assert_true (r_cmd_register (cmd, "af", multiword_handler, &plain), "register plain name");
+	mu_assert_eq (r_cmd_call (cmd, "af l?"), 0, "fallback reaches plain handler");
+	mu_assert_eq (spaced.calls, 1, "spaced handler tried first");
+	mu_assert_eq (plain.calls, 1, "plain handler called on fallback");
+	mu_assert_true (spaced.ok, "spaced registration excludes its name from args");
+	mu_assert_true (plain.ok, "fallback reparses args from the shorter match");
+	r_cmd_free (cmd);
 	mu_end;
 }
 
@@ -212,6 +260,7 @@ static int all_tests(void) {
 	mu_run_test (test_r_cmd_unregister);
 	mu_run_test (test_r_cmd_prefix_registry);
 	mu_run_test (test_r_cmd_registry_dispatch);
+	mu_run_test (test_r_cmd_multiword_dispatch);
 	mu_run_test (test_r_cmd_context_args);
 	return tests_passed != tests_run;
 }
