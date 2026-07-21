@@ -73,3 +73,107 @@ EXPECT=<<EOF
 v0src::closures::{closure#0}
 EOF
 RUN
+
+NAME=rust v0 nested closures
+FILE=-
+CMDS=!rabin2 -D rust _RNCNCNgCs6DXkGYLi8lr_2cc5spawn00B5_
+EXPECT=<<EOF
+cc::spawn::{closure#0}::{closure#0}
+EOF
+RUN
+
+NAME=rust v0 punycode identifier
+FILE=-
+CMDS=!rabin2 -D rust _RNqCs4fqI2P2rA04_11utf8_identsu30____7hkackfecea1cbdathfdh9hlq6y
+EXPECT=<<EOF
+utf8_idents::საჭმელად_გემრიელი_სადილი
+EOF
+RUN
+
+NAME=rust v0 dyn trait assoc binding
+FILE=-
+CMDS=!rabin2 -D rust _RINbNbCskIICzLVDPPb_5alloc5alloc8box_freeDINbNiB4_5boxed5FnBoxuEp6OutputuEL_ECs1iopQbuBiw2_3std
+EXPECT=<<EOF
+alloc::alloc::box_free::<dyn alloc::boxed::FnBox<(), Output = ()>>
+EOF
+RUN
+
+NAME=rust v0 higher-ranked binder
+FILE=-
+CMDS=!rabin2 -D rust _RINvNtCsgEmfK2I1SDS_4core3ptr13drop_in_placeINtNtCslNYArtu3iFV_5alloc5boxed3BoxDG0_INtNtNtB4_3ops8function2FnTRL1_INtNtCsjrHSEGnQ3l9_3std5panic13PanicHookInfoL0_EEEp6OutputuNtNtB4_6marker4SyncNtB2N_4SendEL_EEB1T_
+EXPECT=<<EOF
+core::ptr::drop_in_place::<alloc::boxed::Box<dyn for<'a, 'b> core::ops::function::Fn<(&'a std::panic::PanicHookInfo<'b>,), Output = ()> + core::marker::Sync + core::marker::Send>>
+EOF
+RUN
+
+NAME=rust v0 const generic array
+FILE=-
+CMDS=!rabin2 -D rust _RMC0INtC8arrayvec8ArrayVechKj7b_E
+EXPECT=<<EOF
+<arrayvec::ArrayVec<u8, 123>>
+EOF
+RUN
+
+NAME=rust v0 char const
+FILE=-
+CMDS=!rabin2 -D rust _RIC0Kc2202_E
+EXPECT=<<EOF
+::<'∂'>
+EOF
+RUN
+
+NAME=rust v0 bool const
+FILE=-
+CMDS=!rabin2 -D rust _RIC0Kb1_E
+EXPECT=<<EOF
+::<true>
+EOF
+RUN
+
+NAME=rust v0 signed const
+FILE=-
+CMDS=!rabin2 -D rust _RIC0Kanb_E
+EXPECT=<<EOF
+::<-11>
+EOF
+RUN
+
+NAME=rust v0 str const
+FILE=-
+CMDS=!rabin2 -D rust _RIC0Ke616263_E
+EXPECT=<<EOF
+::<{*"abc"}>
+EOF
+RUN
+
+NAME=rust v0 pattern type range
+FILE=-
+CMDS=!rabin2 -D rust _RMC0WmRm1_m9_
+EXPECT=<<EOF
+<u32 is 1..=9>
+EOF
+RUN
+
+NAME=rust v0 splat fn arg
+FILE=-
+CMDS=!rabin2 -D rust _RMNvCsiksvdpJ6Jnj_14splat_mangling4mainINtB0_4TypeFwThmEEuE
+EXPECT=<<EOF
+<splat_mangling::main::Type<fn(#[splat] (u8, u32))>>
+EOF
+RUN
+
+NAME=rust v0 vendor suffix kept
+FILE=-
+CMDS=!rabin2 -D rust _RNvNtNtCsjrHSEGnQ3l9_3std2io5stdio19OUTPUT_CAPTURE_USED.0
+EXPECT=<<EOF
+std::io::stdio::OUTPUT_CAPTURE_USED.0
+EOF
+RUN
+
+NAME=rust v0 llvm suffix stripped
+FILE=-
+CMDS=!rabin2 -D rust _RNvNtNtCsjrHSEGnQ3l9_3std2io5stdio19OUTPUT_CAPTURE_USED.llvm.1234ABCD
+EXPECT=<<EOF
+std::io::stdio::OUTPUT_CAPTURE_USED
+EOF
+RUN
