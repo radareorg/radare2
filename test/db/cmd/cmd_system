@@ -14,6 +14,21 @@ yeah
 EOF
 RUN
 
+NAME=system shell owns conditional operators
+FILE=-
+CMDS=<<EOF
+!echo LEFT && echo RIGHT
+!false || echo RECOVERED
+!printf PIPE 2>/dev/null | grep PIPE
+EOF
+EXPECT=<<EOF
+LEFT
+RIGHT
+RECOVERED
+PIPE
+EOF
+RUN
+
 NAME=!| grep
 FILE=-
 CMDS=!echo fuck|grep bob
