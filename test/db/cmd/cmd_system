@@ -29,6 +29,18 @@ PIPE
 EOF
 RUN
 
+NAME=system commands keep r2 preprocessing
+FILE=-
+CMDS=<<EOF
+!!printf 'alpha\nbeta\n'~alpha
+!printf '%s\n' $(!printf nested)
+EOF
+EXPECT=<<EOF
+alpha
+nested
+EOF
+RUN
+
 NAME=!| grep
 FILE=-
 CMDS=!echo fuck|grep bob

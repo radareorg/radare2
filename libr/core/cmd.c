@@ -4398,6 +4398,27 @@ static char *find_unescaped_conditional(char *cmd, const char *quotes) {
 	return or;
 }
 
+static bool is_internal_pipe_segment(const char *pipe, const char *next) {
+	const char *segment = pipe + 1;
+	size_t length = next - segment;
+	while (length > 0 && IS_WHITECHAR (segment[length - 1])) {
+		length--;
+	}
+	return length == 0 || (length == 1 && strchr ("DEJHT.?", *segment));
+}
+
+static char *find_unescaped_system_pipe(char *cmd, const char *quotes) {
+	char *pipe = (char *)r_str_firstbut_escape (cmd, '|', quotes);
+	while (pipe) {
+		char *next = (char *)r_str_firstbut_escape (pipe + 1, '|', quotes);
+		if (!next || !is_internal_pipe_segment (pipe, next)) {
+			return pipe;
+		}
+		pipe = next;
+	}
+	return NULL;
+}
+
 static void unescape_shell_control_operators(char *cmd) {
 	char quote = 0;
 	char *src = cmd;
@@ -4410,7 +4431,7 @@ static void unescape_shell_control_operators(char *cmd) {
 				continue;
 			}
 			if (!quote && (src[1] == '&' || src[1] == '|') &&
-					src[2] == '\\' && src[3] == src[1]) {
+					src[2] && src[3] && src[2] == '\\' && src[3] == src[1]) {
 				*dst++ = src[1];
 				*dst++ = src[1];
 				src += 4;
@@ -4769,16 +4790,12 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			return ret;
 		}
 	}
-	if (*cmd == '!') {
-		ret = r_cmd_call (core->rcmd, cmd);
-		r_list_free (tmpenvs);
-		return ret;
-	}
+	const bool system_command = *cmd == '!';
 	char *backtick = find_subcmd_begin (cmd, NULL);
 	if (backtick) {
 		goto escape_redir;
 	}
-	ptr = find_unescaped_conditional (cmd, quotestr);
+	ptr = system_command? NULL: find_unescaped_conditional (cmd, quotestr);
 	if (ptr) {
 		bool run = true;
 		for (;;) {
@@ -4806,8 +4823,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	}
 
 	/* pipe console to shell process */
-	char *raw_operator = (char *)r_str_lastbut (cmd, '|', quotestr);
-	ptr = (char *)r_str_firstbut_escape (cmd, '|', quotestr);
+	char *raw_operator = system_command? NULL: (char *)r_str_lastbut (cmd, '|', quotestr);
+	ptr = system_command? NULL: find_unescaped_system_pipe (cmd, quotestr);
 	if (!ptr && raw_operator && is_escaped_operator (cmd, raw_operator)) {
 		memmove (raw_operator - 1, raw_operator, strlen (raw_operator) + 1);
 		goto escape_pipe;
@@ -4885,6 +4902,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 		}
 	}
 escape_pipe:
+	if (system_command) {
+		goto escape_redir;
+	}
 	ptr = strstr (cmd, "?*");
 	if (ptr && ((ptr - cmd) == 0 || ((ptr - cmd) > 0 && ptr[-1] != '~'))) {
 		char *pipechar = strchr (ptr, '>');
