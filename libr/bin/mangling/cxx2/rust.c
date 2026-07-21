@@ -15,8 +15,6 @@
 // nested back-references can expand exponentially; cap the printed size like
 // the reference demangler (rustc-demangle uses MAX_SIZE = 1_000_000).
 #define V0_MAX_OUTPUT 1000000
-// upper bound of decoded punycode codepoints (rustc-demangle: SMALL_PUNYCODE_LEN)
-#define V0_PUNY_MAX 128
 
 typedef struct {
 	const char *s; // mangled bytes after the "_R" prefix (and version digits)
@@ -33,8 +31,12 @@ static void v0_type(RV0 *v);
 static void v0_path(RV0 *v, bool in_value);
 static void v0_const(RV0 *v, bool in_value);
 static void v0_generic_arg(RV0 *v);
-static void v0_ident(RV0 *v, bool *is_punycode);
+static void v0_ident(RV0 *v);
 static void v0_pat(RV0 *v);
+
+static void v0_const_value(RV0 *v) {
+	v0_const (v, true);
+}
 
 static inline char v0_peek(RV0 *v) {
 	return (v->pos < v->len) ? v->s[v->pos] : 0;
@@ -70,6 +72,42 @@ static inline void v0_emit_n(RV0 *v, const char *s, int n) {
 	if (!v0_overflow (v)) {
 		r_strbuf_append_n (v->out, s, n);
 	}
+}
+
+static void v0_emitf(RV0 *v, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+static void v0_emitf(RV0 *v, const char *fmt, ...) {
+	if (v0_overflow (v)) {
+		return;
+	}
+	va_list ap;
+	va_start (ap, fmt);
+	r_strbuf_vappendf (v->out, fmt, ap);
+	va_end (ap);
+}
+
+// parse "<item> { <item> } E" emitting sep between the items; returns the count
+static int v0_list(RV0 *v, const char *sep, void (*item)(RV0 *)) {
+	int i = 0;
+	while (!v->fail && v0_peek (v) && v0_peek (v) != 'E') {
+		if (i++) {
+			v0_emit (v, sep);
+		}
+		item (v);
+	}
+	if (!v0_eat (v, 'E')) {
+		v->fail = true;
+	}
+	return i;
+}
+
+// run fn with the output redirected to a scratch buffer and return its text
+static char *v0_capture(RV0 *v, void (*fn)(RV0 *)) {
+	RStrBuf *saved = v->out;
+	v->out = r_strbuf_new ("");
+	fn (v);
+	char *s = r_strbuf_drain (v->out);
+	v->out = saved;
+	return s;
 }
 
 static inline bool v0_is_hex(char c) {
@@ -151,31 +189,14 @@ static bool v0_backref_to(RV0 *v, int *saved) {
 
 // append a Unicode scalar as UTF-8
 static void v0_emit_utf8(RV0 *v, ut32 cp) {
-	char b[5];
-	int n = 0;
-	if (cp < 0x80) {
-		b[n++] = (char)cp;
-	} else if (cp < 0x800) {
-		b[n++] = (char)(0xc0 | (cp >> 6));
-		b[n++] = (char)(0x80 | (cp & 0x3f));
-	} else if (cp < 0x10000) {
-		b[n++] = (char)(0xe0 | (cp >> 12));
-		b[n++] = (char)(0x80 | ((cp >> 6) & 0x3f));
-		b[n++] = (char)(0x80 | (cp & 0x3f));
-	} else {
-		b[n++] = (char)(0xf0 | (cp >> 18));
-		b[n++] = (char)(0x80 | ((cp >> 12) & 0x3f));
-		b[n++] = (char)(0x80 | ((cp >> 6) & 0x3f));
-		b[n++] = (char)(0x80 | (cp & 0x3f));
-	}
-	b[n] = 0;
-	v0_emit (v, b);
+	ut8 b[8] = {0};
+	r_utf8_encode (b, cp);
+	v0_emit (v, (const char *)b);
 }
 
 // escape one char the way Rust's Debug does (approximated: printable Unicode is
 // kept verbatim, C0/C1 controls and DEL are shown as \u{..})
 static void v0_emit_escaped(RV0 *v, ut32 cp, char quote) {
-	char b[16];
 	switch (cp) {
 	case '\t': v0_emit (v, "\\t"); return;
 	case '\r': v0_emit (v, "\\r"); return;
@@ -184,146 +205,39 @@ static void v0_emit_escaped(RV0 *v, ut32 cp, char quote) {
 	case 0: v0_emit (v, "\\0"); return;
 	}
 	if (cp == (ut32)(unsigned char)quote) {
-		b[0] = '\\';
-		b[1] = quote;
-		b[2] = 0;
-		v0_emit (v, b);
-		return;
-	}
-	if (cp < 0x20 || (cp >= 0x7f && cp <= 0x9f)) {
-		snprintf (b, sizeof (b), "\\u{%x}", (unsigned)cp);
-		v0_emit (v, b);
-		return;
-	}
-	v0_emit_utf8 (v, cp);
-}
-
-// RFC 3492 punycode decode with the v0 digit map (a-z=0..25, 0-9=26..35).
-// Fills out[] with up to V0_PUNY_MAX codepoints. Returns false on any error.
-static bool v0_puny_decode(const char *ascii, int alen, const char *deltas, int dlen, ut32 *out, int *outn) {
-	if (dlen < 1 || alen > V0_PUNY_MAX) {
-		return false;
-	}
-	int len = 0, i;
-	for (i = 0; i < alen; i++) {
-		out[len++] = (unsigned char)ascii[i];
-	}
-	const ut64 base = 36, tmin = 1, tmax = 26, skew = 38;
-	ut64 damp = 700, bias = 72, n = 0x80, oh = 0;
-	int p = 0;
-	for (;;) {
-		ut64 delta = 0, w = 1, k = 0;
-		for (;;) {
-			k += base;
-			ut64 t = (k <= bias) ? tmin : (k - bias >= tmax ? tmax : k - bias);
-			if (p >= dlen) {
-				return false;
-			}
-			unsigned char c = (unsigned char)deltas[p++];
-			ut64 d;
-			if (c >= 'a' && c <= 'z') {
-				d = c - 'a';
-			} else if (c >= '0' && c <= '9') {
-				d = 26 + (c - '0');
-			} else {
-				return false;
-			}
-			if (w != 0 && d > (UT64_MAX - delta) / w) {
-				return false;
-			}
-			delta += d * w;
-			if (d < t) {
-				break;
-			}
-			ut64 bt = base - t;
-			if (bt != 0 && w > UT64_MAX / bt) {
-				return false;
-			}
-			w *= bt;
-		}
-		len++;
-		if (len > V0_PUNY_MAX) {
-			return false;
-		}
-		if (delta > UT64_MAX - oh) {
-			return false;
-		}
-		oh += delta;
-		if (oh / (ut64)len > UT64_MAX - n) {
-			return false;
-		}
-		n += oh / (ut64)len;
-		oh %= (ut64)len;
-		if (n > 0x10FFFF || (n >= 0xD800 && n <= 0xDFFF)) {
-			return false;
-		}
-		int ins = (int)oh, j;
-		for (j = len - 1; j > ins; j--) {
-			out[j] = out[j - 1];
-		}
-		out[ins] = (ut32)n;
-		oh++;
-		if (p == dlen) {
-			*outn = len;
-			return true;
-		}
-		// adapt bias
-		delta /= damp;
-		damp = 2;
-		delta += delta / (ut64)len;
-		k = 0;
-		while (delta > ((base - tmin) * tmax) / 2) {
-			delta /= (base - tmin);
-			k += base;
-		}
-		bias = k + ((base - tmin + 1) * delta) / (delta + skew);
+		v0_emitf (v, "\\%c", quote);
+	} else if (cp < 0x20 || (cp >= 0x7f && cp <= 0x9f)) {
+		v0_emitf (v, "\\u{%x}", (unsigned int)cp);
+	} else {
+		v0_emit_utf8 (v, cp);
 	}
 }
 
-static void v0_basic_type(char c, RV0 *v) {
-	const char *t = NULL;
-	switch (c) {
-	case 'b': t = "bool"; break;
-	case 'c': t = "char"; break;
-	case 'e': t = "str"; break;
-	case 'u': t = "()"; break;
-	case 'a': t = "i8"; break;
-	case 's': t = "i16"; break;
-	case 'l': t = "i32"; break;
-	case 'x': t = "i64"; break;
-	case 'n': t = "i128"; break;
-	case 'i': t = "isize"; break;
-	case 'h': t = "u8"; break;
-	case 't': t = "u16"; break;
-	case 'm': t = "u32"; break;
-	case 'y': t = "u64"; break;
-	case 'o': t = "u128"; break;
-	case 'j': t = "usize"; break;
-	case 'f': t = "f32"; break;
-	case 'd': t = "f64"; break;
-	case 'z': t = "!"; break;
-	case 'p': t = "_"; break;
-	case 'v': t = "..."; break;
-	}
-	if (t) {
-		v0_emit (v, t);
+static void v0_basic_type(RV0 *v, char c) {
+	static const char keys[] = "bceuaslxnihtmyojfdzpv";
+	static const char *names[] = {
+		"bool", "char", "str", "()", "i8", "i16", "i32", "i64", "i128", "isize",
+		"u8", "u16", "u32", "u64", "u128", "usize", "f32", "f64", "!", "_", "..."
+	};
+	const char *k = c? strchr (keys, c): NULL;
+	if (k) {
+		v0_emit (v, names[k - keys]);
 	} else {
 		v->fail = true;
 	}
 }
 
+static void v0_path_ref(RV0 *v) {
+	v0_path (v, false);
+}
+
 // parse a path to advance the cursor past it without printing; back-references
 // are validated but not followed (matching the reference's skipping mode)
 static void v0_skip_path(RV0 *v) {
-	RStrBuf *scratch = r_strbuf_new ("");
-	RStrBuf *saved = v->out;
 	bool was_skipping = v->skipping;
-	v->out = scratch;
 	v->skipping = true;
-	v0_path (v, false);
+	free (v0_capture (v, v0_path_ref));
 	v->skipping = was_skipping;
-	v->out = saved;
-	r_strbuf_free (scratch);
 }
 
 static bool v0_suffix(const char *s, int len) {
@@ -343,24 +257,20 @@ static bool v0_suffix(const char *s, int len) {
 // <lifetime> printed from a de Bruijn index relative to the bound-lifetime depth.
 // 0 => '_ (erased); otherwise 'a .. 'z, then '_<n> once the letters run out.
 static void v0_lifetime_from_index(RV0 *v, ut64 lt) {
-	v0_emit (v, "'");
 	if (lt == 0) {
-		v0_emit (v, "_");
+		v0_emit (v, "'_");
 		return;
 	}
 	if (lt > (ut64)v->binders) {
 		v->fail = true;
 		return;
 	}
-	ut64 depth = (ut64)v->binders - lt;
-	char b[24];
+	const ut64 depth = (ut64)v->binders - lt;
 	if (depth < 26) {
-		b[0] = (char)('a' + depth);
-		b[1] = 0;
+		v0_emitf (v, "'%c", (char)('a' + depth));
 	} else {
-		snprintf (b, sizeof (b), "_%" PFMT64u, depth);
+		v0_emitf (v, "'_%" PFMT64u, depth);
 	}
-	v0_emit (v, b);
 }
 
 // run `body` inside an optional "G<base62>" binder, printing "for<'a, ...> "
@@ -396,40 +306,19 @@ static void v0_fn_sig_body(RV0 *v) {
 			v0_emit (v, "C");
 		} else {
 			// abi identifier: underscores were substituted for dashes
-			RStrBuf *abi = r_strbuf_new ("");
-			RStrBuf *saved = v->out;
-			v->out = abi;
-			bool pun = false;
-			v0_ident (v, &pun);
-			v->out = saved;
-			char *s = r_strbuf_drain (abi);
-			if (s) {
-				char *c;
-				for (c = s; *c; c++) {
-					if (*c == '_') {
-						*c = '-';
-					}
-				}
-				v0_emit (v, s);
-				free (s);
+			char *abi = v0_capture (v, v0_ident);
+			if (abi) {
+				r_str_replace_ch (abi, '_', '-', true);
+				v0_emit (v, abi);
+				free (abi);
 			}
 		}
 		v0_emit (v, "\" ");
 	}
 	v0_emit (v, "fn(");
-	int i = 0;
-	while (!v->fail && v0_peek (v) && v0_peek (v) != 'E') {
-		if (i++) {
-			v0_emit (v, ", ");
-		}
-		v0_type (v);
-	}
-	(void)v0_eat (v, 'E');
+	v0_list (v, ", ", v0_type);
 	v0_emit (v, ")");
-	// return type, omitted when it is unit ("u")
-	if (v0_eat (v, 'u')) {
-		// unit return: nothing
-	} else {
+	if (!v0_eat (v, 'u')) { // a unit ("u") return type is omitted
 		v0_emit (v, " -> ");
 		v0_type (v);
 	}
@@ -452,16 +341,7 @@ static bool v0_path_open_generics(RV0 *v) {
 	if (v0_eat (v, 'I')) {
 		v0_path (v, false);
 		v0_emit (v, "<");
-		int i = 0;
-		while (!v->fail && v0_peek (v) && v0_peek (v) != 'E') {
-			if (i++) {
-				v0_emit (v, ", ");
-			}
-			v0_generic_arg (v);
-		}
-		if (!v0_eat (v, 'E')) {
-			v->fail = true;
-		}
+		v0_list (v, ", ", v0_generic_arg);
 		return true;
 	}
 	v0_path (v, false);
@@ -478,8 +358,7 @@ static void v0_dyn_trait(RV0 *v) {
 		} else {
 			v0_emit (v, ", ");
 		}
-		bool pun = false;
-		v0_ident (v, &pun);
+		v0_ident (v);
 		v0_emit (v, " = ");
 		if (v0_eat (v, 'K')) {
 			v0_const (v, false);
@@ -494,14 +373,7 @@ static void v0_dyn_trait(RV0 *v) {
 
 // dyn bounds body (inside a binder): <dyn-trait> { "+" <dyn-trait> } "E"
 static void v0_dyn_bounds_body(RV0 *v) {
-	int i = 0;
-	while (!v->fail && v0_peek (v) && v0_peek (v) != 'E') {
-		if (i++) {
-			v0_emit (v, " + ");
-		}
-		v0_dyn_trait (v);
-	}
-	(void)v0_eat (v, 'E');
+	v0_list (v, " + ", v0_dyn_trait);
 }
 
 // <generic-arg> = <lifetime> | <type> | "K" <const>
@@ -588,25 +460,14 @@ static void v0_type(RV0 *v) {
 		v0_type (v);
 		v0_emit (v, "]");
 		break;
-	case 'T': { // tuple (T, U, ...)
+	case 'T': // tuple (T, U, ...)
 		v->pos++;
 		v0_emit (v, "(");
-		int i = 0;
-		while (!v->fail && v0_peek (v) && v0_peek (v) != 'E') {
-			if (i++) {
-				v0_emit (v, ", ");
-			}
-			v0_type (v);
-		}
-		if (!v0_eat (v, 'E')) {
-			v->fail = true;
-		}
-		if (i == 1) {
+		if (v0_list (v, ", ", v0_type) == 1) {
 			v0_emit (v, ","); // 1-tuple
 		}
 		v0_emit (v, ")");
 		break;
-	}
 	case 'R': // &T or &'a T
 	case 'Q': // &mut T or &'a mut T
 		v->pos++;
@@ -663,11 +524,11 @@ static void v0_type(RV0 *v) {
 		break;
 	}
 	default:
-		if (c == 'C' || c == 'M' || c == 'X' || c == 'Y' || c == 'I' || c == 'N') {
+		if (c && strchr ("CMXYNI", c)) {
 			v0_path (v, false);
 		} else {
 			v->pos++;
-			v0_basic_type (c, v);
+			v0_basic_type (v, c);
 		}
 		break;
 	}
@@ -716,9 +577,7 @@ static void v0_const_uint(RV0 *v, bool neg) {
 	}
 	ut64 val;
 	if (v0_fold_u64 (nib, nnib, &val)) {
-		char b[24];
-		snprintf (b, sizeof (b), "%" PFMT64u, val);
-		v0_emit (v, b);
+		v0_emitf (v, "%" PFMT64u, val);
 	} else {
 		v0_emit (v, "0x");
 		v0_emit_n (v, nib, nnib);
@@ -740,46 +599,18 @@ static void v0_const_str(RV0 *v) {
 		return;
 	}
 	for (i = 0; i < nbytes; i++) {
-		char hi = nib[i * 2], lo = nib[i * 2 + 1];
-		bytes[i] = (ut8)(((hi <= '9') ? hi - '0' : hi - 'a' + 10) << 4)
-			| (ut8)((lo <= '9') ? lo - '0' : lo - 'a' + 10);
+		ut8 b = 0;
+		r_hex_to_byte (&b, nib[i * 2]);
+		r_hex_to_byte (&b, nib[i * 2 + 1]);
+		bytes[i] = b;
 	}
 	v0_emit (v, "\"");
 	i = 0;
 	while (i < nbytes && !v->fail) {
-		ut8 b0 = bytes[i];
-		ut32 cp;
-		int n;
-		if (b0 < 0x80) {
-			cp = b0;
-			n = 1;
-		} else if ((b0 & 0xe0) == 0xc0) {
-			cp = b0 & 0x1f;
-			n = 2;
-		} else if ((b0 & 0xf0) == 0xe0) {
-			cp = b0 & 0x0f;
-			n = 3;
-		} else if ((b0 & 0xf8) == 0xf0) {
-			cp = b0 & 0x07;
-			n = 4;
-		} else {
+		RRune cp;
+		const int n = r_utf8_decode (bytes + i, nbytes - i, &cp);
+		if (n < 1) {
 			v->fail = true;
-			break;
-		}
-		if (i + n > nbytes) {
-			v->fail = true;
-			break;
-		}
-		int k;
-		for (k = 1; k < n; k++) {
-			ut8 cb = bytes[i + k];
-			if ((cb & 0xc0) != 0x80) {
-				v->fail = true;
-				break;
-			}
-			cp = (cp << 6) | (cb & 0x3f);
-		}
-		if (v->fail) {
 			break;
 		}
 		v0_emit_escaped (v, cp, '"');
@@ -787,6 +618,14 @@ static void v0_const_str(RV0 *v) {
 	}
 	v0_emit (v, "\"");
 	free (bytes);
+}
+
+// a struct-variant field: ["s<b62>"] <ident> ": " <const>
+static void v0_field(RV0 *v) {
+	(void)v0_disambiguator (v);
+	v0_ident (v);
+	v0_emit (v, ": ");
+	v0_const (v, true);
 }
 
 // <const> = <backref> | "p" | <type-tag> <const-data>
@@ -883,16 +722,7 @@ static void v0_const(RV0 *v, bool in_value) {
 			v0_emit (v, "{");
 		}
 		v0_emit (v, "[");
-		int i = 0;
-		while (!v->fail && v0_peek (v) && v0_peek (v) != 'E') {
-			if (i++) {
-				v0_emit (v, ", ");
-			}
-			v0_const (v, true);
-		}
-		if (!v0_eat (v, 'E')) {
-			v->fail = true;
-		}
+		v0_list (v, ", ", v0_const_value);
 		v0_emit (v, "]");
 		if (brace) {
 			v0_emit (v, "}");
@@ -905,17 +735,7 @@ static void v0_const(RV0 *v, bool in_value) {
 			v0_emit (v, "{");
 		}
 		v0_emit (v, "(");
-		int i = 0;
-		while (!v->fail && v0_peek (v) && v0_peek (v) != 'E') {
-			if (i++) {
-				v0_emit (v, ", ");
-			}
-			v0_const (v, true);
-		}
-		if (!v0_eat (v, 'E')) {
-			v->fail = true;
-		}
-		if (i == 1) {
+		if (v0_list (v, ", ", v0_const_value) == 1) {
 			v0_emit (v, ",");
 		}
 		v0_emit (v, ")");
@@ -924,46 +744,22 @@ static void v0_const(RV0 *v, bool in_value) {
 		}
 		break;
 	}
-	case 'V': { // ADT variant
+	case 'V': { // ADT variant: unit, tuple or struct body after the path
 		bool brace = !in_value;
 		if (brace) {
 			v0_emit (v, "{");
 		}
 		v0_path (v, true);
 		char k = v0_next (v);
-		if (k == 'U') {
-			// unit variant: just the path
-		} else if (k == 'T') {
+		if (k == 'T') {
 			v0_emit (v, "(");
-			int i = 0;
-			while (!v->fail && v0_peek (v) && v0_peek (v) != 'E') {
-				if (i++) {
-					v0_emit (v, ", ");
-				}
-				v0_const (v, true);
-			}
-			if (!v0_eat (v, 'E')) {
-			v->fail = true;
-		}
+			v0_list (v, ", ", v0_const_value);
 			v0_emit (v, ")");
 		} else if (k == 'S') {
 			v0_emit (v, " { ");
-			int i = 0;
-			while (!v->fail && v0_peek (v) && v0_peek (v) != 'E') {
-				if (i++) {
-					v0_emit (v, ", ");
-				}
-				(void)v0_disambiguator (v);
-				bool pun = false;
-				v0_ident (v, &pun);
-				v0_emit (v, ": ");
-				v0_const (v, true);
-			}
-			if (!v0_eat (v, 'E')) {
-			v->fail = true;
-		}
+			v0_list (v, ", ", v0_field);
 			v0_emit (v, " }");
-		} else {
+		} else if (k != 'U') { // "U" is a unit variant: just the path
 			v->fail = true;
 		}
 		if (brace) {
@@ -981,63 +777,59 @@ static void v0_const(RV0 *v, bool in_value) {
 // <undisambiguated-identifier> = ["u"] <decimal> ["_"] <bytes>
 // Punycode-encoded identifiers are decoded to UTF-8; on failure the raw payload
 // is shown as punycode{...}.
-static void v0_ident(RV0 *v, bool *is_punycode) {
+static void v0_ident(RV0 *v) {
 	bool puny = v0_eat (v, 'u');
-	if (is_punycode) {
-		*is_punycode = puny;
-	}
 	int n = v0_decimal (v);
 	if (n < 0) {
 		v->fail = true;
 		return;
 	}
 	(void)v0_eat (v, '_'); // separator
-	// v->pos <= v->len holds, so this cannot overflow
-	if (n < 0 || n > v->len - v->pos) {
+	if (n > v->len - v->pos) { // v->pos <= v->len holds, cannot overflow
 		v->fail = true;
 		return;
 	}
 	const char *payload = v->s + v->pos;
-	int plen = n;
 	v->pos += n;
 	if (!puny) {
-		v0_emit_n (v, payload, plen);
+		v0_emit_n (v, payload, n);
 		return;
 	}
-	// punycode: split payload at the LAST '_' into ascii prefix and deltas
+	// punycode: split the payload at the LAST '_' into ascii prefix and delta
+	// digits, rejoin them with the standard "-" delimiter and let the shared
+	// RFC 3492 decoder (same digit map as v0) do the work
 	int sep = -1, k;
-	for (k = plen - 1; k >= 0; k--) {
+	for (k = n - 1; k >= 0; k--) {
 		if (payload[k] == '_') {
 			sep = k;
 			break;
 		}
 	}
-	const char *ascii = payload, *deltas = payload;
-	int alen = 0, dlen = plen;
-	if (sep >= 0) {
-		alen = sep;
-		deltas = payload + sep + 1;
-		dlen = plen - sep - 1;
-	}
-	if (dlen == 0) {
+	const int alen = (sep > 0)? sep: 0;
+	const char *deltas = (sep >= 0)? payload + sep + 1: payload;
+	const int dlen = (sep >= 0)? n - sep - 1: n;
+	if (dlen < 1) {
 		v->fail = true;
 		return;
 	}
-	ut32 buf[V0_PUNY_MAX];
-	int outn = 0;
-	if (v0_puny_decode (ascii, alen, deltas, dlen, buf, &outn)) {
-		for (k = 0; k < outn; k++) {
-			v0_emit_utf8 (v, buf[k]);
-		}
-	} else {
-		v0_emit (v, "punycode{");
-		if (alen > 0) {
-			v0_emit_n (v, ascii, alen);
-			v0_emit (v, "-");
-		}
-		v0_emit_n (v, deltas, dlen);
-		v0_emit (v, "}");
+	char *joined = (alen > 0)
+		? r_str_newf ("%.*s-%.*s", alen, payload, dlen, deltas)
+		: r_str_ndup (deltas, dlen);
+	int declen = 0;
+	char *dec = joined? r_punycode_decode (joined, (int)strlen (joined), &declen): NULL;
+	free (joined);
+	if (dec) {
+		v0_emit (v, dec);
+		free (dec);
+		return;
 	}
+	v0_emit (v, "punycode{");
+	if (alen > 0) {
+		v0_emit_n (v, payload, alen);
+		v0_emit (v, "-");
+	}
+	v0_emit_n (v, deltas, dlen);
+	v0_emit (v, "}");
 }
 
 // special (uppercase) namespace label for nested names
@@ -1058,12 +850,10 @@ static void v0_path(RV0 *v, bool in_value) {
 	v->depth++;
 	char c = v0_next (v);
 	switch (c) {
-	case 'C': { // crate root: <identifier>  (disambiguator + hash dropped)
+	case 'C': // crate root: <identifier>  (disambiguator + hash dropped)
 		(void)v0_disambiguator (v);
-		bool pun = false;
-		v0_ident (v, &pun);
+		v0_ident (v);
 		break;
-	}
 	case 'N': { // nested: <namespace> <path> <identifier>
 		char ns = v0_next (v);
 		// namespace must be a letter: A-Z special, a-z unspecified
@@ -1074,33 +864,21 @@ static void v0_path(RV0 *v, bool in_value) {
 		v0_path (v, in_value);
 		ut64 dis = v0_disambiguator (v);
 		// capture the identifier so we can decide whether to print "::"
-		RStrBuf *name = r_strbuf_new ("");
-		RStrBuf *saved = v->out;
-		v->out = name;
-		bool pun = false;
-		v0_ident (v, &pun);
-		v->out = saved;
-		char *nm = r_strbuf_drain (name);
+		char *nm = v0_capture (v, v0_ident);
 		if (ns >= 'A' && ns <= 'Z') {
 			// special namespace -> ::{label[:name]#disambiguator}
 			const char *label = v0_ns_label (ns);
-			v0_emit (v, "::{");
 			if (label) {
-				v0_emit (v, label);
+				v0_emitf (v, "::{%s", label);
 			} else {
-				char one[2] = { ns, 0 };
-				v0_emit (v, one); // unknown special namespace prints its letter
+				v0_emitf (v, "::{%c", ns); // unknown ones print their letter
 			}
-			if (nm && *nm) {
-				v0_emit (v, ":");
-				v0_emit (v, nm);
+			if (R_STR_ISNOTEMPTY (nm)) {
+				v0_emitf (v, ":%s", nm);
 			}
-			char b[24];
-			snprintf (b, sizeof (b), "#%" PFMT64u "}", dis);
-			v0_emit (v, b);
-		} else if (nm && *nm) {
-			v0_emit (v, "::");
-			v0_emit (v, nm);
+			v0_emitf (v, "#%" PFMT64u "}", dis);
+		} else if (R_STR_ISNOTEMPTY (nm)) {
+			v0_emitf (v, "::%s", nm);
 		}
 		free (nm);
 		break;
@@ -1120,22 +898,12 @@ static void v0_path(RV0 *v, bool in_value) {
 		}
 		v0_emit (v, ">");
 		break;
-	case 'I': { // generic: <path> <generic-arg>* E -> path::<args>
+	case 'I': // generic: <path> <generic-arg>* E -> path::<args>
 		v0_path (v, in_value);
-		v0_emit (v, in_value ? "::<" : "<");
-		int i = 0;
-		while (!v->fail && v0_peek (v) && v0_peek (v) != 'E') {
-			if (i++) {
-				v0_emit (v, ", ");
-			}
-			v0_generic_arg (v);
-		}
-		if (!v0_eat (v, 'E')) {
-			v->fail = true;
-		}
+		v0_emit (v, in_value? "::<": "<");
+		v0_list (v, ", ", v0_generic_arg);
 		v0_emit (v, ">");
 		break;
-	}
 	case 'B': { // backref ('B' already consumed by v0_next above)
 		int saved;
 		if (v0_backref_to (v, &saved)) {
@@ -1158,15 +926,14 @@ char *r_demangle_rust_v0(const char *mangled) {
 		return NULL;
 	}
 	const char *p = mangled;
-	if (p[0] == '_' && p[1] == '_' && p[2] == 'R') {
+	if (r_str_startswith (p, "__R")) {
 		p++;
 	}
-	if (!(p[0] == '_' && p[1] == 'R')) {
+	if (!r_str_startswith (p, "_R")) {
 		return NULL;
 	}
-	p += 2;
 	// an optional leading decimal (encoding version) precedes the path
-	p = r_str_trim_head_digits (p);
+	p = r_str_trim_head_digits (p + 2);
 	RV0 v = {0};
 	v.s = p;
 	v.len = (int)strlen (p);
@@ -1195,15 +962,13 @@ char *r_demangle_rust_v0(const char *mangled) {
 			v.fail = true;
 		}
 	}
-	char *res = NULL;
-	if (!v.fail) {
-		res = r_strbuf_drain (v.out);
-	} else {
+	if (v.fail) {
 		r_strbuf_free (v.out);
+		return NULL;
 	}
-	if (res && !*res) {
-		free (res);
-		res = NULL;
+	char *res = r_strbuf_drain (v.out);
+	if (R_STR_ISEMPTY (res)) {
+		R_FREE (res);
 	}
 	return res;
 }
