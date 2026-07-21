@@ -1,4 +1,6 @@
-/* radare - LGPL3 - Copyright 2023-2025 - condret */
+/* radare - LGPL3 - Copyright 2023-2026 - condret */
+
+#define R_LOG_ORIGIN agD
 
 #include <r_core.h>
 
@@ -25,24 +27,51 @@ static char *_get_body(void *data, void *user) {
 	return body;
 }
 
-static bool r_cmd_agD_call(RCorePluginSession *cps, const char *input) {
-	RCore *core = cps->core;
-	if (!core) {
-		return false;
+static RCoreHelpMessage help_msg_agD = {
+	"Usage:", "agD[format]", "Show the current function dominator tree",
+	"agD", "", "print the dominator tree as ASCII art",
+	"agDd", "", "print the dominator tree as Graphviz dot",
+	"agDj", "", "print the dominator tree as JSON",
+	"agDv", "", "show the dominator tree in interactive visual mode",
+	NULL
+};
+
+static void agD_help(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	r_cons_cmd_help (ctx->cons, help_msg_agD, core->print->flags & R_PRINT_FLAGS_COLOR);
+}
+
+static RCmdResult agD_invalid(RCmdContext *ctx) {
+	agD_help (ctx);
+	return (RCmdResult) { .status = 2 };
+}
+
+static RCmdResult r_cmd_agD_call(RCmdContext *ctx, RStrs input) {
+	RCore *core = ctx->user;
+	const size_t argc = RVecRStrs_length (&ctx->args);
+	char sub = r_strs_at (input, 3);
+	if (sub == '?' && !r_strs_at (input, 4) && !argc) {
+		agD_help (ctx);
+		return (RCmdResult) { 0 };
 	}
-	if (!r_str_startswith (input, "agD")) {
-		return false;
+	if (sub && isspace ((ut8)sub)) {
+		sub = 0;
+	}
+	if (argc || (sub && !strchr ("dvj", sub))
+			|| (sub && r_strs_at (input, 4) && !isspace ((ut8)r_strs_at (input, 4)))) {
+		return agD_invalid (ctx);
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_ANY);
 	if (!fcn) {
-		R_LOG_ERROR ("core_agD: no fcn here");
-		return true;
+		R_LOG_ERROR ("no fcn here");
+		return (RCmdResult) { .status = 1 };
 	}
 	RGraphNode *node = NULL;
 	RGraph *fcn_graph = r_anal_function_get_graph (fcn, &node, core->addr);
 	if (!fcn_graph || !node) {
-		R_LOG_ERROR ("core_agD: no fcn_graph/node here");
-		return true;
+		r_graph_free (fcn_graph);
+		R_LOG_ERROR ("no fcn_graph/node here");
+		return (RCmdResult) { .status = 1 };
 	}
 	RGraph *fcn_dtgraph = r_graph_dom_tree (fcn_graph, node);
 	const bool o_asm_lines = r_config_get_b (core->config, "asm.lines");
@@ -60,23 +89,10 @@ static bool r_cmd_agD_call(RCorePluginSession *cps, const char *input) {
 	if (!dtagraph) {
 		r_graph_free (fcn_dtgraph);
 		r_graph_free (fcn_graph);
-		R_LOG_ERROR ("core_agD: cannot build agraph");
-		return true;
+		R_LOG_ERROR ("cannot build agraph");
+		return (RCmdResult) { .status = 1 };
 	}
 	dtagraph->can->color = r_config_get_b (core->config, "scr.color");
-	/* Support subcommands similar to agf: v (visual), d (graphviz/dot), j (json) */
-	char sub = input[3];
-	if (sub == '?') {
-		r_cons_printf (core->cons, "agD subcommands:\n");
-		r_cons_printf (core->cons, "  agD        : print dom tree (ascii)\n");
-		r_cons_printf (core->cons, "  agDv       : open dom tree in visual interactive mode\n");
-		r_cons_printf (core->cons, "  agDd      : print graphviz/dot output\n");
-		r_cons_printf (core->cons, "  agDj      : print json output\n");
-		r_agraph_free (dtagraph);
-		r_graph_free (fcn_dtgraph);
-		r_graph_free (fcn_graph);
-		return true;
-	}
 	switch (sub) {
 	case 'v':
 		/* open interactive visual graph for dom tree (mode 3) */
@@ -86,13 +102,13 @@ static bool r_cmd_agD_call(RCorePluginSession *cps, const char *input) {
 	case 'd':
 		{
 			/* print graphviz/dot from the dominance graph */
-			r_cons_printf (core->cons, "digraph code {\n");
+			r_cons_printf (ctx->cons, "digraph code {\n");
 			RListIter *it;
 			RGraphNode *node;
 			r_list_foreach (fcn_dtgraph->nodes, it, node) {
 				char *title = _get_title (node->data, NULL);
 				char *body = _get_body (node->data, core);
-				r_cons_printf (core->cons, "  \"n%d\" [label=\"%s\\n%s\"];\n",
+				r_cons_printf (ctx->cons, "  \"n%d\" [label=\"%s\\n%s\"];\n",
 						node->idx, title? title: "", body? body: "");
 				if (title) { free (title); }
 				if (body) { free (body); }
@@ -100,10 +116,10 @@ static bool r_cmd_agD_call(RCorePluginSession *cps, const char *input) {
 			r_list_foreach (fcn_dtgraph->nodes, it, node) {
 				RGraphNode **it2;
 				R_VEC_FOREACH (&node->out_nodes, it2) {
-					r_cons_printf (core->cons, "  \"n%d\" -> \"n%d\";\n", node->idx, (*it2)->idx);
+					r_cons_printf (ctx->cons, "  \"n%d\" -> \"n%d\";\n", node->idx, (*it2)->idx);
 				}
 			}
-			r_cons_printf (core->cons, "}\n");
+			r_cons_printf (ctx->cons, "}\n");
 			break;
 		}
 	case 'j':
@@ -111,7 +127,7 @@ static bool r_cmd_agD_call(RCorePluginSession *cps, const char *input) {
 			PJ *pj = pj_new ();
 			if (pj) {
 				r_agraph_print_json (dtagraph, pj);
-				r_cons_printf (core->cons, "%s\n", pj_string (pj));
+				r_cons_printf (ctx->cons, "%s\n", pj_string (pj));
 				pj_free (pj);
 			}
 			break;
@@ -124,6 +140,26 @@ static bool r_cmd_agD_call(RCorePluginSession *cps, const char *input) {
 	r_agraph_free (dtagraph);
 	r_graph_free (fcn_dtgraph);
 	r_graph_free (fcn_graph);
+	return (RCmdResult) { 0 };
+}
+
+static bool plugin_init(RCorePluginSession *cps) {
+	RCore *core = cps->core;
+	if (!core) {
+		return true;
+	}
+	RCmd *cmd = core->rcmd;
+	if (!r_cmd_register (cmd, "agD", r_cmd_agD_call, NULL)) {
+		return false;
+	}
+	cps->data = cmd;
+	return true;
+}
+
+static bool plugin_fini(RCorePluginSession *cps) {
+	if (cps->data) {
+		r_cmd_unregister (cps->data, "agD");
+	}
 	return true;
 }
 
@@ -134,7 +170,8 @@ RCorePlugin r_core_plugin_agD = {
 		.license = "LGPL-3.0-only",
 		.author = "condret",
 	},
-	.call = r_cmd_agD_call,
+	.init = plugin_init,
+	.fini = plugin_fini,
 };
 
 #ifndef R2_PLUGIN_INCORE
