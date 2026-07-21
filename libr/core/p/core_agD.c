@@ -1,6 +1,6 @@
 /* radare - LGPL3 - Copyright 2023-2026 - condret */
 
-#define R_LOG_ORIGIN agD
+#define R_LOG_ORIGIN "agD"
 
 #include <r_core.h>
 

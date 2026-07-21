@@ -1,4 +1,6 @@
-/* radare - Copyright 2025 - pancake */
+/* radare - Copyright 2025-2026 - pancake */
+
+// R2R db/cmd/cmd_writedwarf
 
 #define R_LOG_ORIGIN "writedwarf"
 
@@ -26,7 +28,7 @@ typedef struct {
 
 
 // Create a Mach-O 64-bit object with minimal DWARF v2 debug info
-RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
+static RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	RBuffer *buf = r_buf_new ();
 	if (!buf) {
 		return NULL;
@@ -151,9 +153,6 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	ut64 debug_info_start = r_buf_size (buf);
 	// Write compilation unit header
 	ut64 cu_length_off = r_buf_size (buf);
-	if (cu_length_off == (ut64)-1) {
-		return NULL;
-	}
 	U32(0);                         // unit_length (placeholder)
 	U16(2);                         // DWARF version 2
 	U32(0);                         // debug_abbrev_offset (0 for first CU)
@@ -193,10 +192,6 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 
 	// Patch the compile unit length
 	ut64 cu_end = r_buf_size (buf);
-	if (cu_end == (ut64)-1 || cu_length_off == (ut64)-1) {
-		r_unref (buf);
-		return NULL;
-	}
 	ut32 cu_length_val = (ut32)(cu_end - (cu_length_off + 4));
 	W(cu_length_off, &cu_length_val, 4);  // write unit_length
 
@@ -428,7 +423,7 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	return buf;
 }
 
-RBuffer *create_elf_with_dwarf(RList *lines, RList *symbols) {
+static RBuffer *create_elf_with_dwarf(RList *lines, RList *symbols) {
 	RBuffer *buf = r_buf_new ();
 	if (!buf) {
 		return NULL;
@@ -447,9 +442,6 @@ RBuffer *create_elf_with_dwarf(RList *lines, RList *symbols) {
 	// .debug_info
 	ut64 debug_info_start = r_buf_size(buf);
 	ut64 cu_len_off = r_buf_size(buf);
-	if (cu_len_off == (ut64)-1) {
-		return NULL;
-	}
 	U32(0); U16(2); U32(0); U8(8);
 	U8(0x01); U8(0x0c); B("main.c",6); U8(0); B(".",1); U8(0);
 	U64(0); U64(1); U32(0);
@@ -465,10 +457,6 @@ RBuffer *create_elf_with_dwarf(RList *lines, RList *symbols) {
 	}
 	U8(0);
 	ut64 cu_end = r_buf_size (buf);
-	if (cu_end == (ut64)-1 || cu_len_off == (ut64)-1) {
-		r_unref (buf);
-		return NULL;
-	}
 	ut32 cu_len = (ut32)(cu_end - (cu_len_off + 4));
 	W(cu_len_off, &cu_len, 4);
 	// .debug_abbrev
@@ -646,7 +634,7 @@ RBuffer *create_elf_with_dwarf(RList *lines, RList *symbols) {
 	return buf;
 }
 
-// (create_macho_with_dwarf and main remain unchanged)
+// Example of how to use the writers above as a standalone program
 #if 0
 int main() {
 	RList *lines = r_list_newf (free);
@@ -722,118 +710,120 @@ static void populate_lines_from_addrline(RBin *bin, RList *lines) {
 	}
 }
 
-static void writedwarf(RCore *core, const char *format, const char *arg) {
-	const char *filename = arg;
-	R_LOG_INFO ("Writing to %s", filename);
-
-	RList *lines = r_list_newf (free);
-	RList *symbols = r_list_newf (free);
-
-	// Populate line entries from debug info
-	populate_lines_from_addrline (core->bin, lines);
-
-#if 0
-	// Populate line entries
-	{
-		LineEntry *le1 = R_NEW0 (LineEntry);
-		le1->addr = 0x1000;
-		le1->file = strdup ("main.c");
-		le1->line = 42;
-		r_list_append(lines, le1);
-		LineEntry *le2 = R_NEW0 (LineEntry);
-		le2->addr = 0x2000;
-		le2->file = strdup ("main.c");
-		le2->line = 53;
-		r_list_append(lines, le2);
-		LineEntry *le3 = R_NEW0 (LineEntry);
-		le3->addr = 0x3000;
-		le3->file = strdup ("foo.c");
-		le3->line = 63;
-		r_list_append(lines, le3);
-	}
-#endif
-	{
-		RListIter *it;
-		RAnalFunction *fcn;
-		r_list_foreach (core->anal->fcns, it, fcn) {
-			SymEntry *se = R_NEW0 (SymEntry);
-			se->addr = fcn->addr;
-			se->symbol = strdup (fcn->name);
-			r_list_append (symbols, se);
-		}
-	}
-#if 0
-	// Populate symbol entries
-	{
-		SymEntry *se1 = R_NEW0 (SymEntry);
-		se1->addr = 0x1000;
-		se1->symbol = strdup ("main");
-		r_list_append (symbols, se1);
-		SymEntry *se2 = R_NEW0 (SymEntry);
-		se2->addr = 0x2000;
-		se2->symbol = strdup ("check");
-		r_list_append(symbols, se2);
-	}
-#endif
-
-	RBuffer *b = NULL;
-	if (!strcmp (format, "elf")) {
-		b = create_elf_with_dwarf (lines, symbols);
-	} else if (!strcmp (format, "mac")) {
-		b = create_macho_with_dwarf (lines, symbols);
-	} else {
-		R_LOG_ERROR ("Only macho and elf formats are supported");
-	}
-	int sz;
-	ut8 *outbuf = r_buf_read_all (b, &sz);
-	if (!r_file_dump (filename, outbuf, sz, false)) {
-		R_LOG_ERROR ("Cannot write to %s", filename);
-	}
-	free (outbuf);
-	r_unref (b);
-	// Free the RLists
-	RListIter *it;
-	void *item;
-	r_list_foreach (symbols, it, item) {
-		SymEntry *se = (SymEntry *)item;
-		free (se->symbol);
-	}
-	r_list_free (symbols);
-	r_list_foreach (lines, it, item) {
-		LineEntry *le = (LineEntry *)item;
-		free (le->file);
-	}
-	r_list_free (lines);
+static void sym_entry_free(void *p) {
+	SymEntry *se = p;
+	free (se->symbol);
+	free (se);
 }
 
-static bool cmd_writedwarf(RCorePluginSession *cps, const char *input) {
-	RCore *core = cps->core;
-	if (r_str_startswith (input, "writedwarf")) {
-		char *arg = strchr (input, ' ');
-		const char *format = "macho";
-		if (!arg) {
-			R_LOG_INFO ("Usage: writedwarf [filename]");
-			return true;
-		}
-		if (*arg == '-') {
-			if (r_str_startswith (arg, "-elf")) {
-				format = "elf";
-			} else if (r_str_startswith (arg, "-mac")) {
-				format = "mac";
-			} else {
-				R_LOG_ERROR ("Invalid format: use -elf or -mac");
-				return true;
-			}
-			arg = strchr (arg, ' ');
-		}
-		if (arg && *arg != '?') {
-			writedwarf (core, format, r_str_trim_head_ro (arg + 1));
+static void line_entry_free(void *p) {
+	LineEntry *le = p;
+	free (le->file);
+	free (le);
+}
+
+static RCoreHelpMessage help_msg_writedwarf = {
+	"Usage:", "writedwarf [-elf|-mac] [filename]", "Write an object file with DWARF debug info for the current session",
+	"writedwarf", " [file]", "write a Mach-O object with symbols and source line info",
+	"writedwarf", " -elf [file]", "write an ELF object instead of Mach-O",
+	"writedwarf", " -mac [file]", "write a Mach-O object (default)",
+	NULL
+};
+
+static void writedwarf_help(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	r_cons_cmd_help (ctx->cons, help_msg_writedwarf, core->print->flags & R_PRINT_FLAGS_COLOR);
+}
+
+static RCmdResult writedwarf_invalid(RCmdContext *ctx) {
+	writedwarf_help (ctx);
+	return (RCmdResult) { .status = 2 };
+}
+
+static RCmdResult writedwarf_write(RCmdContext *ctx, bool elf, const char *filename) {
+	RCore *core = ctx->user;
+	RList *lines = r_list_newf (line_entry_free);
+	RList *symbols = r_list_newf (sym_entry_free);
+	populate_lines_from_addrline (core->bin, lines);
+	RListIter *it;
+	RAnalFunction *fcn;
+	r_list_foreach (core->anal->fcns, it, fcn) {
+		SymEntry *se = R_NEW0 (SymEntry);
+		se->addr = fcn->addr;
+		se->symbol = strdup (fcn->name);
+		r_list_append (symbols, se);
+	}
+	st64 status = 1;
+	RBuffer *b = elf? create_elf_with_dwarf (lines, symbols)
+		: create_macho_with_dwarf (lines, symbols);
+	if (b) {
+		int sz;
+		ut8 *outbuf = r_buf_read_all (b, &sz);
+		if (outbuf && r_file_dump (filename, outbuf, sz, false)) {
+			R_LOG_INFO ("Written to %s", filename);
+			status = 0;
 		} else {
-			R_LOG_INFO ("Usage: writedwarf [filename]");
+			R_LOG_ERROR ("Cannot write to %s", filename);
 		}
+		free (outbuf);
+		r_unref (b);
+	}
+	r_list_free (symbols);
+	r_list_free (lines);
+	return (RCmdResult) { .status = status };
+}
+
+static RCmdResult writedwarf_callback(RCmdContext *ctx, RStrs input) {
+	const size_t argc = RVecRStrs_length (&ctx->args);
+	RStrs *args = R_VEC_START_ITER (&ctx->args);
+	const char suffix = r_strs_at (input, sizeof ("writedwarf") - 1);
+	if (suffix && !isspace ((ut8)suffix)) {
+		if (suffix == '?' && !r_strs_at (input, sizeof ("writedwarf")) && !argc) {
+			writedwarf_help (ctx);
+			return (RCmdResult) { 0 };
+		}
+		return writedwarf_invalid (ctx);
+	}
+	if (!argc || (argc == 1 && r_strs_equals_str (args[0], "?"))) {
+		writedwarf_help (ctx);
+		return (RCmdResult) { 0 };
+	}
+	bool elf = false;
+	size_t i = 0;
+	if (r_strs_at (args[0], 0) == '-') {
+		if (r_strs_equals_str (args[0], "-elf")) {
+			elf = true;
+		} else if (!r_strs_equals_str (args[0], "-mac")) {
+			R_LOG_ERROR ("Invalid format: use -elf or -mac");
+			return (RCmdResult) { .status = 1 };
+		}
+		i = 1;
+	}
+	if (argc != i + 1) {
+		return writedwarf_invalid (ctx);
+	}
+	// the last argument is NUL-terminated in the context storage
+	return writedwarf_write (ctx, elf, args[i].a);
+}
+
+static bool plugin_init(RCorePluginSession *cps) {
+	RCore *core = cps->core;
+	if (!core) {
 		return true;
 	}
-	return false;
+	RCmd *cmd = core->rcmd;
+	if (!r_cmd_register (cmd, "writedwarf", writedwarf_callback, NULL)) {
+		return false;
+	}
+	cps->data = cmd;
+	return true;
+}
+
+static bool plugin_fini(RCorePluginSession *cps) {
+	if (cps->data) {
+		r_cmd_unregister (cps->data, "writedwarf");
+	}
+	return true;
 }
 
 RCorePlugin r_core_plugin_writedwarf = {
@@ -843,7 +833,8 @@ RCorePlugin r_core_plugin_writedwarf = {
 		.author = "pancake",
 		.license = "MIT",
 	},
-	.call = cmd_writedwarf,
+	.init = plugin_init,
+	.fini = plugin_fini,
 };
 
 #ifndef R2_PLUGIN_INCORE
