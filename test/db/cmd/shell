@@ -86,6 +86,30 @@ ERROR: Cannot find project file: /this/path/does/not/exist/r2-or.prj
 EOF
 RUN
 
+NAME=system pipeline and r2 control boundaries
+FILE=malloc://32
+CMDS=<<EOF
+?e foo | grep foo | grep foo && ?e R2_AND
+?e nope | grep foo || ?e R2_OR
+?e foo | grep foo \&\& echo SHELL_AND && ?e R2_AFTER_SHELL_AND
+?e nope | grep foo \|\| echo SHELL_OR && ?e R2_AFTER_SHELL_OR
+?e foo | grep foo \; echo SHELL_SEMI;?e R2_SEMI
+EOF
+EXPECT=<<EOF
+foo
+R2_AND
+R2_OR
+foo
+SHELL_AND
+R2_AFTER_SHELL_AND
+SHELL_OR
+R2_AFTER_SHELL_OR
+foo
+SHELL_SEMI
+R2_SEMI
+EOF
+RUN
+
 NAME=touch
 FILE=malloc://32-
 CMDS=<<EOF

@@ -436,6 +436,8 @@ static RCoreHelpMessage help_msg_triple_exclamation = {
 static RCoreHelpMessage help_msg_vertical_bar = {
 	"Usage:", "[cmd] | [program|H|T|.|]", "",
 	"|", " [program]", "pipe output of command to program",
+	"|", " [program] | [program]", "pipe through multiple system programs",
+	"|", " [program] \\&\\& ...", "escape ;, && and || to handle them in the system shell",
 	"|", "", "disable scr.html and scr.color",
 	"|.", "", "alias for .[cmd]",
 	"|?", "", "show this help",
@@ -4389,11 +4391,45 @@ static char *find_unescaped_conditional(char *cmd, const char *quotes) {
 		cmd += 2;
 	}
 	char *and = find_unescaped_double_operator (cmd, '&', quotes);
-	char *pipe = (char *)r_str_firstbut_escape (cmd, '|', quotes);
-	if (!pipe || (and && and < pipe)) {
+	char *or = find_unescaped_double_operator (cmd, '|', quotes);
+	if (!or || (and && and < or)) {
 		return and;
 	}
-	return pipe[1] == '|'? pipe: NULL;
+	return or;
+}
+
+static void unescape_shell_control_operators(char *cmd) {
+	char quote = 0;
+	char *src = cmd;
+	char *dst = cmd;
+	while (*src) {
+		if (*src == '\\' && src[1]) {
+			if (!quote && src[1] == ';') {
+				*dst++ = ';';
+				src += 2;
+				continue;
+			}
+			if (!quote && (src[1] == '&' || src[1] == '|') &&
+					src[2] == '\\' && src[3] == src[1]) {
+				*dst++ = src[1];
+				*dst++ = src[1];
+				src += 4;
+				continue;
+			}
+			*dst++ = *src++;
+			*dst++ = *src++;
+			continue;
+		}
+		if (*src == '\'' || *src == '"') {
+			if (!quote) {
+				quote = *src;
+			} else if (quote == *src) {
+				quote = 0;
+			}
+		}
+		*dst++ = *src++;
+	}
+	*dst = 0;
 }
 
 static char *getarg(char *ptr) {
@@ -4733,6 +4769,11 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			return ret;
 		}
 	}
+	if (*cmd == '!') {
+		ret = r_cmd_call (core->rcmd, cmd);
+		r_list_free (tmpenvs);
+		return ret;
+	}
 	char *backtick = find_subcmd_begin (cmd, NULL);
 	if (backtick) {
 		goto escape_redir;
@@ -4821,8 +4862,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					return ret;
 				} else if (ptr[1]) { // "| grep .."
 					int value = core->num->value;
+					unescape_shell_control_operators (ptr + 1);
 					if (*cmd) {
-						r_core_cmd_pipe (core, cmd, ptr + 1);
+						ret = r_core_cmd_pipe (core, cmd, ptr + 1);
 					} else {
 						char *res = r_io_system (core->io, ptr + 1);
 						if (res) {
@@ -4832,7 +4874,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					}
 					r_core_return_value (core, value);
 					r_list_free (tmpenvs);
-					return 0;
+					return ret;
 				} else { // "|"
 					scr_html = r_config_get_b (core->config, "scr.html");
 					r_config_set_b (core->config, "scr.html", false);
