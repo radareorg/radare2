@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2024 - pancake, cgvwzq, Dennis Goodlett */
+/* radare2 - LGPL - Copyright 2017-2026 - pancake, cgvwzq, Dennis Goodlett */
 
 #define R_LOG_ORIGIN "bin.wasm"
 
@@ -19,20 +19,19 @@ static ut32 consume_r(RBuffer *b, ut64 bound, size_t *n_out, ConsumeFcn consume_
 	if (bound >= r_buf_size (b) || cur > bound) {
 		return 0;
 	}
-	// 16 bytes are enough to store 128bits values
-	ut8 *buf = R_NEWS (ut8, 16);
-	if (!buf) {
+	// 16 bytes are enough to store 128-bit values.
+	ut8 buf[16] = {0};
+	size_t left = R_MIN ((ut64)sizeof (buf), bound - cur + 1);
+	st64 read = r_buf_read (b, buf, left);
+	if (read < 1) {
 		return 0;
 	}
-	r_buf_read (b, buf, 16);
-	size_t n = consume_fcn (buf, buf + bound + 1, &tmp);
+	size_t n = consume_fcn (buf, buf + read, &tmp);
 	if (!n) {
-		free (buf);
 		return 0;
 	}
 	r_buf_seek (b, cur + n, R_BUF_SET);
 	*n_out = n;
-	free (buf);
 	return tmp;
 }
 
@@ -54,22 +53,69 @@ static size_t consume_u7_r(RBuffer *b, ut64 bound, ut8 *out) {
 	return n;
 }
 
-static size_t consume_s7_r(RBuffer *b, ut64 bound, st8 *out) {
-	size_t n = 0;
-	ut32 tmp = consume_r (b, bound, &n, (ConsumeFcn)read_i32_leb128);
-	if (out) {
-		*out = (st8) (((tmp & 0x10000000) << 7) | (tmp & 0x7f));
+static bool consume_byte_r(RBuffer *b, ut64 bound, ut8 *out) {
+	if (!b || r_buf_tell (b) > bound) {
+		return false;
 	}
-	return n;
+	ut8 byte = r_buf_read8 (b);
+	if (out) {
+		*out = byte;
+	}
+	return true;
 }
 
-static size_t consume_u1_r(RBuffer *b, ut64 bound, ut8 *out) {
-	size_t n = 0;
-	ut32 tmp = consume_r (b, bound, &n, read_u32_leb128);
-	if (out) {
-		*out = (ut8) (tmp & 0x1);
+static bool consume_mut_r(RBuffer *b, ut64 bound, ut8 *out) {
+	ut8 mutability;
+	if (!consume_byte_r (b, bound, &mutability) || mutability > 1) {
+		return false;
 	}
-	return n;
+	if (out) {
+		*out = mutability;
+	}
+	return true;
+}
+
+static bool count_fits_r(RBuffer *b, ut64 bound, ut32 count) {
+	ut64 cur = r_buf_tell (b);
+	return cur <= bound && count <= bound - cur + 1;
+}
+
+static bool consume_bytes_r(RBuffer *b, ut64 bound, size_t count) {
+	ut64 cur = r_buf_tell (b);
+	if (cur > bound || count > bound - cur + 1) {
+		return false;
+	}
+	return r_buf_seek (b, count, R_BUF_CUR) == cur + count;
+}
+
+static bool consume_leb_r(RBuffer *b, ut64 bound, size_t maxlen) {
+	size_t i;
+	for (i = 0; i < maxlen; i++) {
+		ut8 byte;
+		if (!consume_byte_r (b, bound, &byte)) {
+			return false;
+		}
+		if (!(byte & 0x80)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool consume_valtype_r(RBuffer *b, ut64 bound, ut8 *out) {
+	ut8 type;
+	if (!consume_byte_r (b, bound, &type)) {
+		return false;
+	}
+	if (type == R_BIN_WASM_VALUETYPE_REF_NULL || type == R_BIN_WASM_VALUETYPE_REF) {
+		if (!consume_leb_r (b, bound, 5)) {
+			return false;
+		}
+	}
+	if (out) {
+		*out = type;
+	}
+	return true;
 }
 
 static bool consume_str_r(RBuffer *b, ut64 bound, size_t len, char *out) {
@@ -176,16 +222,85 @@ static size_t consume_init_expr_r(RBuffer *b, ut64 bound, ut8 eoc, void *out) {
 	if (!b || bound >= r_buf_size (b) || r_buf_tell (b) > bound) {
 		return 0;
 	}
-	size_t res = 0;
-	ut8 cur = r_buf_read8 (b);
-	while (r_buf_tell (b) <= bound && cur != eoc) {
-		cur = r_buf_read8 (b);
-		res++;
+	ut64 start = r_buf_tell (b);
+	while (r_buf_tell (b) <= bound) {
+		ut8 op;
+		if (!consume_byte_r (b, bound, &op)) {
+			return 0;
+		}
+		if (op == eoc) {
+			return r_buf_tell (b) - start;
+		}
+		switch (op) {
+		case 0x23: // global.get
+		case 0x41: // i32.const
+		case 0xd2: // ref.func
+			if (!consume_leb_r (b, bound, 5)) {
+				return 0;
+			}
+			break;
+		case 0x42: // i64.const
+			if (!consume_leb_r (b, bound, 10)) {
+				return 0;
+			}
+			break;
+		case 0x43: // f32.const
+			if (!consume_bytes_r (b, bound, 4)) {
+				return 0;
+			}
+			break;
+		case 0x44: // f64.const
+			if (!consume_bytes_r (b, bound, 8)) {
+				return 0;
+			}
+			break;
+		case 0xd0: // ref.null heaptype
+			if (!consume_leb_r (b, bound, 5)) {
+				return 0;
+			}
+			break;
+		case 0xfd: { // SIMD prefix; only v128.const is constant
+			ut32 subop;
+			if (!consume_u32_r (b, bound, &subop) || subop != 12 || !consume_bytes_r (b, bound, 16)) {
+				return 0;
+			}
+			break;
+		}
+		case 0xfb: { // GC prefix
+			ut32 subop;
+			if (!consume_u32_r (b, bound, &subop)) {
+				return 0;
+			}
+			int immediates;
+			if (subop <= 1 || (subop >= 6 && subop <= 7) ||
+				(subop >= 11 && subop <= 14) || subop == 16 ||
+				(subop >= 20 && subop <= 23)) {
+				immediates = 1;
+			} else if ((subop >= 2 && subop <= 5) || (subop >= 8 && subop <= 10) ||
+				(subop >= 17 && subop <= 19)) {
+				immediates = 2;
+			} else if (subop == 15 || (subop >= 26 && subop <= 30)) {
+				immediates = 0;
+			} else {
+				return 0;
+			}
+			int i;
+			for (i = 0; i < immediates; i++) {
+				if (!consume_leb_r (b, bound, 5)) {
+					return 0;
+				}
+			}
+			break;
+		}
+		default:
+			// Constant numeric and simple reference instructions have no immediates.
+			if ((op < 0x45 || op > 0xc4) && op != 0xd1 && op != 0xd3 && op != 0xd4) {
+				return 0;
+			}
+			break;
+		}
 	}
-	if (cur != eoc) {
-		return 0;
-	}
-	return res + 1;
+	return 0;
 }
 
 static size_t consume_locals_r(RBuffer *b, ut64 bound, RBinWasmCodeEntry *out) {
@@ -205,7 +320,7 @@ static size_t consume_locals_r(RBuffer *b, ut64 bound, RBinWasmCodeEntry *out) {
 		if (!consume_u32_r (b, bound, &local->count)) {
 			return 0;
 		}
-		if (!consume_s7_r (b, bound, &local->type)) {
+		if (!consume_valtype_r (b, bound, (ut8 *)&local->type)) {
 			return 0;
 		}
 	}
@@ -274,6 +389,12 @@ const char *r_bin_wasm_valuetype_tostring(r_bin_wasm_value_type_t type) {
 		return "f32";
 	case R_BIN_WASM_VALUETYPE_f64:
 		return "f64";
+	case R_BIN_WASM_VALUETYPE_v128:
+		return "v128";
+	case R_BIN_WASM_VALUETYPE_REF:
+		return "ref";
+	case R_BIN_WASM_VALUETYPE_REF_NULL:
+		return "ref null";
 	case R_BIN_WASM_VALUETYPE_REFTYPE:
 		return "ANYFUNC";
 	case R_BIN_WASM_VALUETYPE_FUNC:
@@ -473,45 +594,157 @@ static inline RVecWasmPtr *parse_vec(RBinWasmObj *bin, ut64 bound, ParseEntryFcn
 
 static inline RBinWasmTypeVec *parse_type_vector(RBuffer *b, ut64 bound) {
 	RBinWasmTypeVec *vec = R_NEW0 (RBinWasmTypeVec);
-	// types are all ut8, so leb128 shouldn't be needed, we can reuse consume_str_new
-	if (vec && !consume_str_new (b, bound, &vec->count, (char **)&vec->types)) {
+	if (!vec || !consume_u32_r (b, bound, &vec->count)) {
 		free_type_vec (vec);
 		return NULL;
+	}
+	if (!count_fits_r (b, bound, vec->count)) {
+		free_type_vec (vec);
+		return NULL;
+	}
+	if (vec->count) {
+		vec->types = R_NEWS (ut8, vec->count);
+		if (!vec->types) {
+			free_type_vec (vec);
+			return NULL;
+		}
+		ut32 i;
+		for (i = 0; i < vec->count; i++) {
+			if (!consume_valtype_r (b, bound, &vec->types[i])) {
+				free_type_vec (vec);
+				return NULL;
+			}
+		}
 	}
 	return vec;
 }
 
-static RBinWasmTypeEntry *parse_type_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
-	RBuffer *b = bin->buf;
+static bool parse_field_type(RBuffer *b, ut64 bound) {
+	ut8 type;
+	ut64 offset = r_buf_tell (b);
+	if (!consume_byte_r (b, bound, &type)) {
+		return false;
+	}
+	if (type != 0x77 && type != 0x78) {
+		r_buf_seek (b, offset, R_BUF_SET);
+		if (!consume_valtype_r (b, bound, NULL)) {
+			return false;
+		}
+	}
+	return consume_mut_r (b, bound, NULL);
+}
+
+static RBinWasmTypeEntry *parse_composite_type(RBuffer *b, ut64 bound, ut32 index, ut64 offset, ut8 form) {
 	RBinWasmTypeEntry *type = R_NEW0 (RBinWasmTypeEntry);
 	if (!type) {
 		return NULL;
 	}
 	type->sec_i = index;
-	type->file_offset = r_buf_tell (b);
-	if (!consume_u7_r (b, bound, &type->form)) {
+	type->file_offset = offset;
+	type->form = form;
+	switch (form) {
+	case R_BIN_WASM_VALUETYPE_FUNC:
+		type->args = parse_type_vector (b, bound);
+		if (!type->args) {
+			goto beach;
+		}
+		type->rets = parse_type_vector (b, bound);
+		if (!type->rets) {
+			goto beach;
+		}
+		r_bin_wasm_type_entry_tostring (type);
+		break;
+	case 0x5e: // array
+		if (!parse_field_type (b, bound)) {
+			goto beach;
+		}
+		break;
+	case 0x5f: { // struct
+		ut32 count;
+		if (!consume_u32_r (b, bound, &count) || !count_fits_r (b, bound, count)) {
+			goto beach;
+		}
+		ut32 i;
+		for (i = 0; i < count; i++) {
+			if (!parse_field_type (b, bound)) {
+				goto beach;
+			}
+		}
+		break;
+	}
+	default:
 		goto beach;
 	}
-	if (type->form != R_BIN_WASM_VALUETYPE_FUNC) {
-		R_LOG_WARN ("Halting types section parsing at invalid type 0x%02x at offset: 0x%" PFMTSZx, type->form, type->file_offset);
-		goto beach;
-	}
-
-	type->args = parse_type_vector (b, bound);
-	if (!type->args) {
-		goto beach;
-	}
-
-	type->rets = parse_type_vector (b, bound);
-	if (!type->rets) {
-		goto beach;
-	}
-	r_bin_wasm_type_entry_tostring (type);
-
 	return type;
 
 beach:
 	free_type_entry (type);
+	return NULL;
+}
+
+static RBinWasmTypeEntry *parse_subtype(RBuffer *b, ut64 bound, ut32 index, ut64 offset, ut8 first) {
+	ut8 form = first;
+	if (first == 0x4f || first == 0x50) {
+		ut32 count;
+		if (!consume_u32_r (b, bound, &count) || !count_fits_r (b, bound, count)) {
+			return NULL;
+		}
+		ut32 i;
+		for (i = 0; i < count; i++) {
+			if (!consume_u32_r (b, bound, NULL)) {
+				return NULL;
+			}
+		}
+		if (!consume_byte_r (b, bound, &form)) {
+			return NULL;
+		}
+	}
+	return parse_composite_type (b, bound, index, offset, form);
+}
+
+static RVecWasmPtr *parse_type_section(RBinWasmObj *bin, ut64 bound) {
+	RBuffer *b = bin->buf;
+	ut32 groups;
+	if (!consume_u32_r (b, bound, &groups) || !count_fits_r (b, bound, groups)) {
+		return NULL;
+	}
+	RVecWasmPtr *vec = RVecWasmPtr_new ();
+	if (!vec || !RVecWasmPtr_reserve (vec, groups)) {
+		RVecWasmPtr_free (vec);
+		return NULL;
+	}
+	ut32 group;
+	ut32 index = 0;
+	for (group = 0; group < groups; group++) {
+		ut64 offset = r_buf_tell (b);
+		ut8 first;
+		if (!consume_byte_r (b, bound, &first)) {
+			goto beach;
+		}
+		ut32 count = 1;
+		if (first == 0x4e) {
+			if (!consume_u32_r (b, bound, &count) || !count_fits_r (b, bound, count)) {
+				goto beach;
+			}
+		}
+		ut32 i;
+		for (i = 0; i < count; i++) {
+			ut64 subtype_offset = first == 0x4e? r_buf_tell (b): offset;
+			ut8 subtype = first;
+			if (first == 0x4e && !consume_byte_r (b, bound, &subtype)) {
+				goto beach;
+			}
+			RBinWasmTypeEntry *type = parse_subtype (b, bound, index++, subtype_offset, subtype);
+			if (!type) {
+				goto beach;
+			}
+			RVecWasmPtr_push_back (vec, (void **)&type);
+		}
+	}
+	return vec;
+
+beach:
+	free_vec_entries (vec, (WasmEntryFree)free_type_entry);
 	return NULL;
 }
 
@@ -535,8 +768,8 @@ static RBinWasmImportEntry *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut3
 	if (!consume_u7_r (b, bound, &ptr->kind)) {
 		goto beach;
 	}
-	st8 elem_type;
-	st8 content_type;
+	ut8 elem_type;
+	ut8 content_type;
 	switch (ptr->kind) {
 	case R_BIN_WASM_EXTERNALKIND_Function:
 		if (!consume_u32_r (b, bound, &ptr->type_f)) {
@@ -544,10 +777,10 @@ static RBinWasmImportEntry *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut3
 		}
 		break;
 	case R_BIN_WASM_EXTERNALKIND_Table:
-		if (!consume_s7_r (b, bound, &elem_type)) {
+		if (!consume_valtype_r (b, bound, &elem_type)) {
 			goto beach;
 		}
-		ptr->type_t.elem_type = (ut8)elem_type;
+		ptr->type_t.elem_type = elem_type;
 		if (!consume_limits_r (b, bound, &ptr->type_t.limits)) {
 			goto beach;
 		}
@@ -558,11 +791,11 @@ static RBinWasmImportEntry *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut3
 		}
 		break;
 	case R_BIN_WASM_EXTERNALKIND_Global:
-		if (!consume_s7_r (b, bound, &content_type)) {
+		if (!consume_valtype_r (b, bound, &content_type)) {
 			goto beach;
 		}
-		ptr->type_g.content_type = (ut8)content_type;
-		if (!consume_u1_r (b, bound, &ptr->type_g.mutability)) {
+		ptr->type_g.content_type = content_type;
+		if (!consume_mut_r (b, bound, &ptr->type_g.mutability)) {
 			goto beach;
 		}
 		break;
@@ -795,7 +1028,7 @@ static RBinWasmTableEntry *parse_table_entry(RBinWasmObj *bin, ut64 bound, ut32 
 	if (table) {
 		table->sec_i = index;
 		table->file_offset = r_buf_tell (b);
-		if (!consume_s7_r (b, bound, (st8 *)&table->element_type)) {
+		if (!consume_valtype_r (b, bound, &table->element_type)) {
 			goto beach;
 		}
 		if (!consume_limits_r (b, bound, &table->limits)) {
@@ -816,11 +1049,11 @@ static RBinWasmGlobalEntry *parse_global_entry(RBinWasmObj *bin, ut64 bound, ut3
 		ptr->sec_i = index;
 		ptr->file_offset = r_buf_tell (b);
 		ut8 content_type;
-		if (!consume_u7_r (b, bound, &content_type)) {
+		if (!consume_valtype_r (b, bound, &content_type)) {
 			goto beach;
 		}
 		ptr->content_type = content_type;
-		if (!consume_u1_r (b, bound, &ptr->mutability)) {
+		if (!consume_mut_r (b, bound, &ptr->mutability)) {
 			goto beach;
 		}
 		if (!consume_init_expr_r (b, bound, R_BIN_WASM_END_OF_CODE, NULL)) {
@@ -1190,9 +1423,9 @@ static RVecWasmPtr *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec
 	ParseEntryFcn parser;
 	switch (sec->id) {
 	case R_BIN_WASM_SECTION_TYPE:
-		parser = (ParseEntryFcn)parse_type_entry;
 		pfree = (WasmEntryFree)free_type_entry;
 		cache = &bin->g_types;
+		parser = NULL;
 		break;
 	case R_BIN_WASM_SECTION_FUNCTION:
 		parser = (ParseEntryFcn)parse_function_entry;
@@ -1247,7 +1480,9 @@ static RVecWasmPtr *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec
 		return NULL;
 	}
 
-	*cache = parse_vec (bin, bound, parser, pfree);
+	*cache = sec->id == R_BIN_WASM_SECTION_TYPE
+		? parse_type_section (bin, bound)
+		: parse_vec (bin, bound, parser, pfree);
 	if (sorter) {
 		RVecWasmPtr_sort (*cache, sorter);
 	}

@@ -20,6 +20,20 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=wasm gc recursive types and initializer immediates
+FILE=hex://0061736d010000000110024e025e770160016300005f0164010003020101060c027f00410b0b630000d0000b070501016600000a040102000b
+CMDS=<<EOF
+iI~bintype
+is~global
+EOF
+EXPECT=<<EOF
+bintype  wasm
+0   0x00000021 0x00000021 NONE   i32  4        global.0
+1   0x00000026 0x00000026 NONE   REF  0        global.1
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=wasm fuzzed leb128 virtual register profile crash
 FILE=bins/fuzzed/r2_hbo_read_u32_leb128
 CMDS=<<EOF

@@ -309,6 +309,8 @@ static void sym_set_content_type(RBinSymbol *sym, int t) {
 		sym->size = 16;
 		sym->type = "v128";
 		break;
+	case R_BIN_WASM_VALUETYPE_REF:
+	case R_BIN_WASM_VALUETYPE_REF_NULL:
 	case R_BIN_WASM_VALUETYPE_REFTYPE:
 		sym->type = "REF";
 		break;
