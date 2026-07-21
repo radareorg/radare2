@@ -4373,6 +4373,29 @@ static char *find_last_unescaped_operator(char *cmd, char operator, const char *
 	return last;
 }
 
+static char *find_unescaped_double_operator(char *cmd, char operator, const char *quotes) {
+	const char *p = cmd;
+	while ((p = r_str_firstbut_escape (p, operator, quotes))) {
+		if (p[1] == operator) {
+			return (char *)p;
+		}
+		p++;
+	}
+	return NULL;
+}
+
+static char *find_unescaped_conditional(char *cmd, const char *quotes) {
+	if (r_str_startswith (cmd, "&&")) {
+		cmd += 2;
+	}
+	char *and = find_unescaped_double_operator (cmd, '&', quotes);
+	char *pipe = (char *)r_str_firstbut_escape (cmd, '|', quotes);
+	if (!pipe || (and && and < pipe)) {
+		return and;
+	}
+	return pipe[1] == '|'? pipe: NULL;
+}
+
 static char *getarg(char *ptr) {
 	if (*ptr == '{') {
 		char *mander = strdup (ptr + 1);
@@ -4472,7 +4495,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	RIODesc *tmpdesc = NULL;
 	bool old_iova = r_config_get_b (core->config, "io.va");
 	bool pamode = (core->io? !core->io->va: false);
-	int i, ret = 0, pipefd;
+	int i, ret = 0, pipefd, rc = 0;
 	bool usemyblock = false;
 	int scr_html = -1;
 	int scr_color = -1;
@@ -4714,10 +4737,36 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	if (backtick) {
 		goto escape_redir;
 	}
+	ptr = find_unescaped_conditional (cmd, quotestr);
+	if (ptr) {
+		bool run = true;
+		for (;;) {
+			const char condition = *ptr;
+			*ptr = 0;
+			if (run) {
+				ret = r_core_cmd_subst (core, cmd);
+				if (ret < 0) {
+					r_list_free (tmpenvs);
+					return ret;
+				}
+			}
+			run = condition == '&'? ret == 0: ret != 0;
+			cmd = (char *)r_str_trim_head_ro (ptr + 2);
+			ptr = find_unescaped_conditional (cmd, quotestr);
+			if (!ptr) {
+				break;
+			}
+		}
+		if (run) {
+			ret = r_core_cmd_subst (core, cmd);
+		}
+		r_list_free (tmpenvs);
+		return ret;
+	}
 
 	/* pipe console to shell process */
 	char *raw_operator = (char *)r_str_lastbut (cmd, '|', quotestr);
-	ptr = find_last_unescaped_operator (cmd, '|', quotestr);
+	ptr = (char *)r_str_firstbut_escape (cmd, '|', quotestr);
 	if (!ptr && raw_operator && is_escaped_operator (cmd, raw_operator)) {
 		memmove (raw_operator - 1, raw_operator, strlen (raw_operator) + 1);
 		goto escape_pipe;
@@ -4794,31 +4843,6 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 		}
 	}
 escape_pipe:
-
-	// TODO must honor " and `
-	/* bool conditions */
-	ptr = (char *)r_str_lastbut (cmd, '&', quotestr);
-	//ptr = strchr (cmd, '&');
-	while (ptr && *ptr && ptr[1] == '&') {
-		*ptr = '\0';
-		ret = r_cmd_call (core->rcmd, cmd);
-		if (ret == -1) {
-			R_LOG_ERROR ("command error(%s)", cmd);
-			if (scr_html != -1) {
-				r_config_set_b (core->config, "scr.html", scr_html);
-			}
-			if (scr_color != -1) {
-				r_config_set_i (core->config, "scr.color", scr_color);
-			}
-			r_list_free (tmpenvs);
-			return ret;
-		}
-		for (cmd = ptr + 2; cmd && *cmd == ' '; cmd++) {
-			;
-		}
-		ptr = strchr (cmd, '&');
-	}
-
 	ptr = strstr (cmd, "?*");
 	if (ptr && ((ptr - cmd) == 0 || ((ptr - cmd) > 0 && ptr[-1] != '~'))) {
 		char *pipechar = strchr (ptr, '>');
@@ -5134,7 +5158,6 @@ escape_backtick:
 	}
 
 	cmd_tmpseek = core->tmpseek = ptr;
-	int rc = 0;
 	if (ptr) {
 		char *f, *ptr2 = strchr (ptr + 1, '!');
 		ut64 addr = core->addr;

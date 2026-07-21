@@ -7,6 +7,85 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=infix double ampersand short circuits
+FILE=malloc://32
+CMDS=<<EOF
+?e LEFT && ?e RIGHT
+?e A&&?e B&&?e C
+?e LEFT "&&" RIGHT
+?e LEFT '&&' RIGHT
+?e LEFT "&"'&' RIGHT
+?e LEFT \&\& RIGHT
+?e ODD\&& ?e LITERAL
+?e EVEN\\&& ?e ACTIVE
+EOF
+EXPECT=<<EOF
+LEFT
+RIGHT
+A
+B
+C
+LEFT && RIGHT
+LEFT && RIGHT
+LEFT && RIGHT
+LEFT && RIGHT
+ODD&& ?e LITERAL
+EVEN\
+ACTIVE
+EOF
+RUN
+
+NAME=infix double ampersand stops on nonzero status
+FILE=malloc://32
+CMDS=<<EOF
+prj open /this/path/does/not/exist/r2-and.prj && ?e SHOULD_NOT_RUN
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot find project file: /this/path/does/not/exist/r2-and.prj
+EOF
+RUN
+
+NAME=infix double pipe short circuits
+FILE=malloc://32
+CMDS=<<EOF
+?e LEFT || ?e SHOULD_NOT_RUN
+?e A||?e SKIPPED&&?e B
+?e PIPE | cat || printf SHOULD_NOT_RUN
+?e LEFT "||" RIGHT
+?e LEFT '||' RIGHT
+?e LEFT "|"'|' RIGHT
+?e LEFT \|\| RIGHT
+?e ODD\|| cat
+?e EVEN\\|| ?e ACTIVE
+EOF
+EXPECT=<<EOF
+LEFT
+A
+B
+PIPE
+LEFT || RIGHT
+LEFT || RIGHT
+LEFT || RIGHT
+LEFT || RIGHT
+ODD|
+EVEN\
+EOF
+RUN
+
+NAME=mixed infix conditionals recover from nonzero status
+FILE=malloc://32
+CMDS=<<EOF
+prj open /this/path/does/not/exist/r2-or.prj && ?e SHOULD_NOT_RUN || ?e RECOVERED
+EOF
+EXPECT=<<EOF
+RECOVERED
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot find project file: /this/path/does/not/exist/r2-or.prj
+EOF
+RUN
+
 NAME=touch
 FILE=malloc://32-
 CMDS=<<EOF
