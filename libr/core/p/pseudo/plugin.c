@@ -3,6 +3,19 @@
 #include <r_core.h>
 #include "pseudo.h"
 
+static RCoreHelpMessage help_msg_pdc = {
+	"Usage: pdc[acjlot*]", "", "experimental, unreliable and hacky pseudo-decompiler",
+	"pdc", "", "pseudo decompile function in current offset",
+	"pdc*", "", "emit decompiled lines as CCu comment commands",
+	"pdca", "", "side by side comparing assembly and pseudo",
+	"pdcc", "", "pseudo-decompile with C helpers around",
+	"pdcl", "", "linear pseudo-decompilation scrolling across functions",
+	"pdco", "", "show associated offset next to pseudecompiled output",
+	"pdcj", "", "in json format for codemeta annotations (used by frontends like iaito)",
+	"pdct", "", "dump the structuring region AST (decompiler debug)",
+	NULL
+};
+
 static ut64 find_nextop(RCore *core, ut64 addr) {
 	RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 	if (op && (int)op->size > 0) {
@@ -132,19 +145,52 @@ repeat:;
 	r_core_seek (core, initial_addr, true);
 }
 
+static RCmdResult pseudo_help(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	r_cons_cmd_help (ctx->cons, help_msg_pdc, core->print->flags & R_PRINT_FLAGS_COLOR);
+	return (RCmdResult) { 0 };
+}
 
-static bool r_cmd_pseudo_call(RCorePluginSession *cps, const char *input) {
+static RCmdResult pseudo_callback(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	const size_t argc = RVecRStrs_length (&ctx->args);
+	RStrs *args = R_VEC_START_ITER (&ctx->args);
+	if (r_cmd_ctx_help (ctx) || (argc == 1 && r_strs_equals_str (args[0], "?"))) {
+		const char sub = r_cmd_ctx_mode (ctx, "acjlot*");
+		if (sub && r_strs_len (ctx->subcmd) == 2) {
+			const char subhelp[] = { 'p', 'd', 'c', sub, 0 };
+			if (r_cons_cmd_help_match (ctx->cons, help_msg_pdc,
+					core->print->flags & R_PRINT_FLAGS_COLOR, subhelp, 0, true) > 0) {
+				return (RCmdResult) { 0 };
+			}
+		}
+		return pseudo_help (ctx);
+	}
+	// subcmd slices the input line, so its start is the NUL-terminated raw tail
+	const char *tail = ctx->subcmd.a;
+	if (r_strs_at (ctx->subcmd, 0) == 'l') {
+		linear_pseudo (core, tail + 1);
+		return (RCmdResult) { 0 };
+	}
+	return (RCmdResult) { .status = pdc_decompile (core, tail)? 0: 1 };
+}
+
+static bool plugin_init(RCorePluginSession *cps) {
 	RCore *core = cps->core;
 	if (!core) {
+		return true;
+	}
+	RCmd *cmd = core->rcmd;
+	if (!r_cmd_register (cmd, "pdc", pseudo_callback, NULL)) {
 		return false;
 	}
-	if (!r_str_startswith (input, "pdc") && !r_str_startswith (input, "pDc")) {
-		return false;
-	}
-	if (input[3] == 'l') { // "pdcl"
-		linear_pseudo (core, input + 4);
-	} else {
-		pdc_decompile (core, input + 3);
+	cps->data = cmd;
+	return true;
+}
+
+static bool plugin_fini(RCorePluginSession *cps) {
+	if (cps->data) {
+		r_cmd_unregister (cps->data, "pdc");
 	}
 	return true;
 }
@@ -156,7 +202,8 @@ RCorePlugin r_core_plugin_pseudo = {
 		.license = "LGPL-3.0-only",
 		.author = "pancake",
 	},
-	.call = r_cmd_pseudo_call,
+	.init = plugin_init,
+	.fini = plugin_fini,
 };
 
 #ifndef R2_PLUGIN_INCORE

@@ -5,6 +5,6 @@
 
 #include <r_core.h>
 
-int pdc_decompile(RCore *core, const char *input);
+R_IPI bool pdc_decompile(RCore *core, const char *input);
 
 #endif
