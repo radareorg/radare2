@@ -126,6 +126,9 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 		}
 	} else {
 		cs = R_NEWS0 (char *, strings_size);
+		if (!cs) {
+			return NULL;
+		}
 		dex->cal_strings = cs;
 		dex->cal_strings_size = strings_size;
 	}
@@ -139,14 +142,15 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 	}
 	ut64 len;
 	int uleblen = r_uleb128 (buf, sizeof (buf), &len, NULL) - buf;
-	if (!uleblen || uleblen >= dex->size || uleblen >= strings_size) {
-		return NULL;
-	}
-	if (len >= dex->size) {
+	if (!uleblen || len >= dex->size) {
 		return NULL;
 	}
 	char *ptr = r_buf_get_string (b, (ut64)string_index + uleblen);
 	if (ptr) {
+		if (len != r_utf8_strlen ((const ut8 *)ptr)) {
+			free (ptr);
+			return NULL;
+		}
 		cs[idx] = ptr;
 		return ptr;
 	}
@@ -872,10 +876,6 @@ static RVecRBinString *strings(RBinFile *bf) {
 	ut64 off;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *)bf->bo->bin_obj;
 	if (!bin || !bin->strings) {
-		return NULL;
-	}
-	if (bin->header.strings_size > bin->size) {
-		R_FREE (bin->strings);
 		return NULL;
 	}
 	if (!(ret = RVecRBinString_new ())) {
@@ -1636,21 +1636,7 @@ static bool dex_loadcode(RBinFile *bf) {
 		}
 	}
 
-	if (dex->header.method_size > dex->size) {
-		dex->header.method_size = 0;
-		return false;
-	}
-
-	/* WrapDown the header sizes to avoid huge allocations */
-	dex->header.method_size = R_MIN (dex->header.method_size, dex->size);
-	dex->header.class_size = R_MIN (dex->header.class_size, dex->size);
-	dex->header.strings_size = R_MIN (dex->header.strings_size, dex->size);
-
-	// TODO: is this posible after R_MIN ??
-	if (dex->header.strings_size > dex->size) {
-		R_LOG_WARN ("Invalid strings size");
-		return false;
-	}
+	// r_bin_dex_new_buf clamps every header size below dex->size at parse time
 	dex->dexSubsystem = NULL;
 
 	ut64 want = R_MIN ((ut64)dex->header.method_size, (ut64)dex->size / 8);
