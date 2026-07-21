@@ -74,6 +74,11 @@ static RCmdResult r_cmd_agD_call(RCmdContext *ctx, RStrs input) {
 		return (RCmdResult) { .status = 1 };
 	}
 	RGraph *fcn_dtgraph = r_graph_dom_tree (fcn_graph, node);
+	if (!fcn_dtgraph) {
+		r_graph_free (fcn_graph);
+		R_LOG_ERROR ("cannot compute the dominator tree");
+		return (RCmdResult) { .status = 1 };
+	}
 	const bool o_asm_lines = r_config_get_b (core->config, "asm.lines");
 	const bool o_asm_address = r_config_get_b (core->config, "asm.addr");
 	const bool o_asm_bytes = r_config_get_b (core->config, "asm.bytes");

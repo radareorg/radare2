@@ -29,6 +29,7 @@ static RCoreHelpMessage help_msg_L = {
 	"LA", "[qjf]", "list analysis plugins",
 	"Lb", "[qj]", "list bin plugins",
 	"Lc", "[j]", "list core plugins",
+	"Lcc", " [prefix]", "list commands registered with the new command API",
 	"Ld", "[j]", "list debug plugins (dL)",
 	"LD", "[j]", "list supported decompilers (e cmd.pdc=?)",
 	"Le", "[j]", "list esil plugins",
@@ -409,6 +410,12 @@ static int cmd_log(void *data, const char *input) {
 	return 0;
 }
 
+static bool list_registered_command(RStrs name, void *user) {
+	RCons *cons = user;
+	return r_cons_write (cons, name.a, r_strs_len (name))
+		&& r_cons_write (cons, "\n", 1);
+}
+
 static int cmd_plugins(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	switch (input[0]) {
@@ -725,6 +732,22 @@ static int cmd_plugins(void *data, const char *input) {
 				r_cons_printf (core->cons, "%s\n", cp->meta.name);
 			}
 			break;
+		case 'c': { // "Lcc"
+			const char *prefix = "";
+			if (input[2] == ' ') {
+				prefix = r_str_trim_head_ro (input + 3);
+			} else if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_L, "Lcc");
+				break;
+			} else if (input[2]) {
+				r_core_return_invalid_command (core, "Lcc", input[2]);
+				break;
+			}
+			if (!r_cmd_foreach_prefix (core->rcmd, prefix, list_registered_command, core->cons)) {
+				return 1;
+			}
+			break;
+		}
 		case 0:
 			r_list_foreach (core->rcmd->libstore->plugins, iter, cps) {
 				cp = cps->plugin;
