@@ -4307,7 +4307,9 @@ R_API void r_core_visual_find(RCore *core, RAGraph *g) {
 			if (c == ':') {
 				cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
 				r_core_visual_prompt_input (core);
-				g->can->flags = r_cons_canvas_flags (cons);
+				if (g) {
+					g->can->flags = r_cons_canvas_flags (cons);
+				}
 				r_cons_set_raw (cons, true);
 				cons->event_resize = (RConsEvent)agraph_refresh_queued;
 			}
