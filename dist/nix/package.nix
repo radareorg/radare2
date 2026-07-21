@@ -2,7 +2,6 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  fetchurl,
   buildPackages,
   capstone,
   file,
@@ -44,12 +43,6 @@ let
     hash = "sha256-Z6DUe/W1+3SYPRPCiL3oNL5ovXCsW3dsFuGkA9WF3W4=";
   };
 
-  zydis-tarball = fetchurl {
-    urls = [
-      "https://github.com/zyantific/zydis/releases/download/v4.1.0/zydis-amalgamated.tar.gz"
-    ];
-    hash = "sha256-qpuCvjo3opmL2OFs9YO78rbD2A6X3CBQQWncMsoc7Vk=";
-  };
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "radare2";
@@ -112,8 +105,8 @@ stdenv.mkDerivation (finalAttrs: {
     chmod -R +w qjs
     cp packagefiles/qjs/meson.build qjs
 
-    mkdir -p packagecache
-    cp ${zydis-tarball} packagecache/zydis-amalgamated.tar.gz
+    mkdir -p zydis
+    cp -r packagefiles/zydis/* zydis
 
     popd
   '';

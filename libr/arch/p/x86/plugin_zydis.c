@@ -11,6 +11,15 @@
 #include <Zydis.h>
 #endif
 
+/* zydis 5 replaced mem.disp.has_displacement with mem.disp.size, and zydis
+ * <= 4.1.0 defines ZYDIS_VERSION with a cast that breaks preprocessor checks,
+ * so building against a system zydis requires at least version 4.1.1 */
+#if ZYDIS_VERSION >= 0x0005000000000000ULL
+#define HAS_MEM_DISP(op) ((op)->mem.disp.size != 0)
+#else
+#define HAS_MEM_DISP(op) ((op)->mem.disp.has_displacement)
+#endif
+
 #define ZYDIS_MAX_INSN_SIZE 16
 
 typedef struct plugin_data_t {
@@ -146,13 +155,13 @@ static bool is_mem_abs(const ZydisDecodedOperand *op) {
 	return op && op->type == ZYDIS_OPERAND_TYPE_MEMORY
 		&& op->mem.base == ZYDIS_REGISTER_NONE
 		&& op->mem.index == ZYDIS_REGISTER_NONE
-		&& op->mem.disp.has_displacement;
+		&& HAS_MEM_DISP (op);
 }
 
 static bool is_mem_riprel(const ZydisDecodedOperand *op) {
 	return op && op->type == ZYDIS_OPERAND_TYPE_MEMORY
 		&& (op->mem.base == ZYDIS_REGISTER_RIP || op->mem.base == ZYDIS_REGISTER_EIP)
-		&& op->mem.disp.has_displacement;
+		&& HAS_MEM_DISP (op);
 }
 
 static int cond_x86_zydis(ZydisMnemonic mnemonic) {
@@ -316,7 +325,7 @@ static void set_mem_ref(RAnalOp *op, const ZydisDecodedInstruction *insn, const 
 		op->ptr = op->addr + insn->length + mop->mem.disp.value;
 	} else if (is_mem_abs (mop)) {
 		op->ptr = mop->mem.disp.value;
-	} else if (mop->mem.disp.has_displacement) {
+	} else if (HAS_MEM_DISP (mop)) {
 		op->disp = mop->mem.disp.value;
 	}
 	if (mop->mem.base != ZYDIS_REGISTER_NONE) {
@@ -497,7 +506,7 @@ static char *memaddr_esil(const ZydisDecodedInstruction *insn, const ZydisDecode
 		append_esil_mem_component (sb, &count, index, false);
 		free (index);
 	}
-	if (op->mem.disp.has_displacement && op->mem.disp.value) {
+	if (HAS_MEM_DISP (op) && op->mem.disp.value) {
 		const st64 disp = op->mem.disp.value;
 		char *d = r_str_newf ("0x%"PFMT64x, (ut64)R_ABS (disp));
 		append_esil_mem_component (sb, &count, d, disp < 0);
@@ -1128,7 +1137,7 @@ static void set_op_type(RArchSession *as, RAnalOp *op, const ZydisDecodedInstruc
 				&& is_sp_reg (op0->reg.value)
 				&& is_sp_reg (op1->mem.base)
 				&& op1->mem.index == ZYDIS_REGISTER_NONE
-				&& op1->mem.disp.has_displacement) {
+				&& HAS_MEM_DISP (op1)) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = op1->mem.disp.value;
 		}
