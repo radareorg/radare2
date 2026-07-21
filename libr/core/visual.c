@@ -3057,7 +3057,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			!r_config_get_b (core->config, "scr.wheel.hscroll")) {
 		return 1;
 	}
-	int wheelspeed = is_wheel
+	int wheelspeed = (is_wheel && !core->cons->drag_event)
 		? r_config_get_i (core->config, "scr.wheel.speed"): 1;
 	ch = visual_nkey (core, ch);
 	if (ch < 2) {

@@ -163,8 +163,53 @@ static int r_cons_sgr_mouse_event(RCons *cons) {
 	case 2: // right click
 		return ch == 'M'? INT8_MAX: -INT8_MAX;
 	}
+	int x = atoi (xpos);
+	int y = atoi (ypos);
+	if (cons->drag_enabled) {
+		if (b & 32) { // motion while a button is held
+			if (!cons->dragging) {
+				return 0;
+			}
+			int dx = x - cons->drag_x;
+			int dy = y - cons->drag_y;
+			cons->drag_x = x;
+			cons->drag_y = y;
+			cons->drag_moved = true;
+			// grab semantics: the content follows the pointer
+			int key = 0;
+			int n = 0;
+			if (dy) {
+				key = (dy > 0)? 'k': 'j';
+				n = R_ABS (dy);
+			} else if (dx) {
+				key = (dx > 0)? 'h': 'l';
+				n = R_ABS (dx);
+			}
+			if (!key) {
+				return 0;
+			}
+			while (n-- > 1) {
+				if (readpush_front (cons, key)) {
+					cons->drag_queued++;
+				}
+			}
+			cons->drag_event = true;
+			return key;
+		}
+		if (ch == 'M') { // button press
+			cons->dragging = true;
+			cons->drag_moved = false;
+			cons->drag_x = x;
+			cons->drag_y = y;
+			return 0;
+		}
+		cons->dragging = false;
+		if (cons->drag_moved) {
+			return 0; // it was a drag, not a click
+		}
+	}
 	if (ch == 'm') {
-		r_cons_set_click (cons, atoi (xpos), atoi (ypos));
+		r_cons_set_click (cons, x, y);
 	}
 	return 0;
 }
@@ -207,7 +252,17 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 		return cons->mouse_event && (ut8)ch == UT8_MAX ? 0 : ch;
 	}
 #endif
+	if (cons->drag_queued > 0) {
+		cons->drag_queued--;
+		if (ch == 'h' || ch == 'j' || ch == 'k' || ch == 'l') {
+			// key queued by a previous drag motion: keep the drag flags
+			cons->mouse_event = true;
+			return ch;
+		}
+		cons->drag_queued = 0; // queue was consumed elsewhere
+	}
 	cons->mouse_event = false;
+	cons->drag_event = false;
 	/* emacs */
 	switch ((ut8)ch) {
 	case 0xc3: r_cons_readchar (cons); ch = 'K'; break; // emacs repag (alt + v)

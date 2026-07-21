@@ -4696,19 +4696,24 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 					}
 				}
 			}
-			movspeed = r_config_get_i (core->config, "scr.wheel.speed");
-			switch (key) {
-			case 'h':
-			case 'j':
-			case 'k':
-			case 'l':
-				switch (core->visual.mousemode) {
-				case 0: break;
-				case 1: key = key == 'k'? 'h': 'l'; break;
-				case 2: key = key == 'k'? 'J': 'K'; break;
-				case 3: key = key == 'k'? 'L': 'H'; break;
+			if (core->cons->drag_event) {
+				// dragging pans the canvas 1:1 with the pointer
+				movspeed = 1;
+			} else {
+				movspeed = r_config_get_i (core->config, "scr.wheel.speed");
+				switch (key) {
+				case 'h':
+				case 'j':
+				case 'k':
+				case 'l':
+					switch (core->visual.mousemode) {
+					case 0: break;
+					case 1: key = key == 'k'? 'h': 'l'; break;
+					case 2: key = key == 'k'? 'J': 'K'; break;
+					case 3: key = key == 'k'? 'L': 'H'; break;
+					}
+					break;
 				}
-				break;
 			}
 		} else {
 			movspeed = g->movspeed;

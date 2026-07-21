@@ -3054,6 +3054,13 @@ static bool cb_scrpagesize(void *user, void *data) {
 	return true;
 }
 
+static bool cb_scrdrag(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	core->cons->drag_enabled = node->i_value;
+	return true;
+}
+
 static bool cb_scrflush(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -5044,6 +5051,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("scr.wheel.nkey", "false", "use sn/sp and scr.nkey on wheel instead of scroll");
 	// RENAME TO scr.mouse
 	SETB ("scr.wheel", "true", "mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
+	SETCB ("scr.drag", "true", &cb_scrdrag, "click and drag to scroll around in visual, hexdump and graph modes");
 	SETB ("scr.cursor", "false", "keyboard controlled cursor in visual and panels");
 	SETB ("scr.cursor.limit", "true", "limit print cursor within screen boundaries");
 	SETS ("scr.layout", "", "name of the selected panels layout to load as default");
