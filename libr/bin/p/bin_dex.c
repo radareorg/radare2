@@ -121,7 +121,7 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 	char **cs = dex->cal_strings;
 	if (cs) {
 		const char *p = cs[idx];
-		if (!R_STR_ISEMPTY (p)) {
+		if (p) {
 			return p;
 		}
 	} else {
@@ -142,15 +142,13 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 	if (!uleblen || uleblen >= dex->size || uleblen >= strings_size) {
 		return NULL;
 	}
-	if (!len || len >= dex->size) {
+	if (len >= dex->size) {
 		return NULL;
 	}
-	ut8 *ptr = malloc (len + 1);
+	char *ptr = r_buf_get_string (b, (ut64)string_index + uleblen);
 	if (ptr) {
-		r_buf_read_at (b, string_index + uleblen, ptr, len);
-		ptr[len] = 0;
-		cs[idx] = (char *)ptr;
-		return (const char *)ptr;
+		cs[idx] = ptr;
+		return ptr;
 	}
 	return NULL;
 }

@@ -7,6 +7,9 @@
 
 #define bprintf if (dex->verbose) eprintf
 
+#define DEX_ENDIAN_CONSTANT 0x12345678
+#define DEX_REVERSE_ENDIAN_CONSTANT 0x78563412
+
 R_IPI char* r_bin_dex_get_version(RBinDexObj *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	char* version = calloc (1, 8);
@@ -34,13 +37,11 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	if (!uleblen || uleblen >= bin->size) {
 		return NULL;
 	}
-	if (!len || len >= bin->size) {
+	if (len >= bin->size) {
 		return NULL;
 	}
-	ut8 *ptr = R_NEWS (ut8, len + 1);
+	ut8 *ptr = (ut8 *)r_buf_get_string (bin->b, (ut64)sidx + uleblen);
 	if (ptr) {
-		r_buf_read_at (bin->b, sidx + uleblen, ptr, len + 1);
-		ptr[len] = 0;
 		if (len != r_utf8_strlen (ptr)) {
 			free (ptr);
 			return NULL;
@@ -290,6 +291,12 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	dexhdr->class_offset = r_buf_read_le32 (dex->b);
 	dexhdr->data_size = r_buf_read_le32 (dex->b);
 	dexhdr->data_offset = r_buf_read_le32 (dex->b);
+	if (dexhdr->header_size < sizeof (DexHeader) || dexhdr->size < dexhdr->header_size) {
+		goto fail;
+	}
+	if (dexhdr->endian != DEX_ENDIAN_CONSTANT && dexhdr->endian != DEX_REVERSE_ENDIAN_CONSTANT) {
+		goto fail;
+	}
 
 	/* strings */
 	if (dexhdr->strings_size > dex->size) {
