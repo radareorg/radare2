@@ -155,12 +155,9 @@ static RCoreHelpMessage help_msg_l = {
 
 static RCoreHelpMessage help_msg_quote = {
 	"Usage:", "\"[\"..|..\"]", "quote the command to avoid evaluating special characters",
-	"\"?", "", "show this help, NOTE that a single quote is simpler and works the same",
+	"\"?", "", "show this help",
 	"\"", "?e hello \\\"world\\\"\"", "print (hello \"world\")",
 	"\"", "?e x;y\";\"?e y;x\"", "run two commands (prints x;y\ny;x)",
-	"\"\"", "[cmd]", "directly call a command ignoring all special chars (fast)",
-	"\"\"@addr\"\"", "[cmd]", "call a command with a temporal seek (EXPERIMENTAL)",
-	"\"\"?e x;y\";\"?e y;x", "", "run two commands ignoring special chars (prints x;y\";\"?e y;x) ",
 	NULL
 };
 
@@ -3933,67 +3930,45 @@ static char *find_ch_after_macro(char *ptr, char ch) {
 }
 
 static int handle_command_call(RCore *core, const char *cmd) {
-	const char cmd0 = *cmd;
-	if (cmd0 != '\'' && cmd0 != '"') {
+	if (*cmd != '\'') {
 		return -1;
 	}
-	if (R_UNLIKELY (*cmd == '\'')) {
-		bool isaddr = cmd[1] == '@';
-		if (!strcmp (cmd, "'?")) {
-			r_core_cmd_help (core, help_msg_single_quote);
-			return true;
-		}
-		if (isaddr) {
-			cmd += 2;
+	bool isaddr = cmd[1] == '@';
+	if (!strcmp (cmd, "'?")) {
+		r_core_cmd_help (core, help_msg_single_quote);
+		return true;
+	}
+	if (isaddr) {
+		cmd += 2;
+	} else {
+		cmd++;
+	}
+	if (isaddr || r_str_startswith (cmd, "0x")) {
+		int res = 1;
+		char *arg = strdup (cmd);
+		char *end = strstr (arg, "'");
+		if (end) {
+			*end = 0;
+			cmd = end + 1;
+			ut64 addr = core->addr;
+			ut64 at = r_num_math (core->num, arg);
+			r_core_seek (core, at, true);
+			res = r_core_call (core, cmd);
+			r_core_seek (core, addr, true);
+			free (arg);
 		} else {
-			cmd++;
+			R_LOG_ERROR ("Invalid syntax, expected \"'@addr'command\"");
+			free (arg);
 		}
-		if (isaddr || r_str_startswith (cmd, "0x")) {
-			int res = 1;
-			char *arg = strdup (cmd);
-			char *end = strstr (arg, "'");
-			if (end) {
-				*end = 0;
-				cmd = end + 1;
-				ut64 addr = core->addr;
-				ut64 at = r_num_math (core->num, arg);
-				r_core_seek (core, at, true);
-				res = r_core_call (core, cmd);
-				r_core_seek (core, addr, true);
-				free (arg);
-			} else {
-				R_LOG_ERROR ("Invalid syntax, expected \"'@addr'command\"");
-				free (arg);
-			}
-			return res;
-		}
-		return r_core_call (core, cmd);
+		return res;
 	}
-	if (R_UNLIKELY (r_str_startswith (cmd, "\"\""))) {
-		R_LOG_DEBUG ("The double quote syntax is now deprecated, use the single quote instead");
-		// R2_600 - deprecate "" -> use ' <---------- discuss!
-		if (cmd[2] == '@') {
-			int res = 1;
-			char *arg = strdup (cmd + 2);
-			char *end = strstr (arg, "\"\"");
-			if (!end) {
-				R_LOG_ERROR ("Invalid syntax, expected \"\"@addr\"\"command");
-				free (arg);
-			} else {
-				*end = 0;
-				cmd = end + 2;
-				ut64 addr = core->addr;
-				ut64 at = r_num_math (core->num, arg + 1);
-				r_core_seek (core, at, true);
-				res = r_core_call (core, cmd);
-				r_core_seek (core, addr, true);
-				free (arg);
-			}
-			return res;
-		}
-		return r_core_call (core, cmd + 2);
+	return r_core_call (core, cmd);
+}
+
+static void remove_leading_empty_quotes(char *cmd) {
+	while (r_str_startswith (cmd, "\"\"")) {
+		memmove (cmd, cmd + 2, strlen (cmd + 2) + 1);
 	}
-	return -1;
 }
 
 static int r_core_cmd_subst(RCore *core, char *cmd) {
@@ -4009,9 +3984,6 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		return res;
 	}
 	if (R_UNLIKELY (r_str_startswith (cmd, "?t"))) {
-		if (r_str_startswith (cmd + 2, "\"\"")) {
-			return r_core_callf (core, "?t'%s", cmd + 4);
-		}
 		if (r_str_startswith (cmd + 2, "'")) {
 			return r_core_callf (core, "?t'%s", cmd + 3);
 		}
@@ -4047,6 +4019,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	cmd = (char *)r_str_trim_head_ro (icmd);
 	r_str_trim_tail (cmd);
+	remove_leading_empty_quotes (cmd);
 	rep = isdigit ((ut8)*cmd)? strtoull (cmd, NULL, 10): 0;
 	R_CRITICAL_LEAVE (core);
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
@@ -4571,6 +4544,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 		return 0;
 	}
 	r_str_trim (cmd);
+	remove_leading_empty_quotes (cmd);
 
 	R_CRITICAL_LEAVE (core);
 	/* quoted / raw command */
