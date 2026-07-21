@@ -136,16 +136,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=quote + quoteseek
+NAME=empty leading double quotes use normal parser
 FILE=malloc://32
 CMDS=<<EOF
-woe 1
-""p8 8
-""@16""p8 8
+""?e ONE;?e TWO
+""?e $(?e THREE)
+""""?e FOUR
+3""?e REPEAT
+""?e "FIVE;SIX"
 EOF
 EXPECT=<<EOF
-0001020304050607
-1011121314151617
+ONE
+TWO
+THREE
+FOUR
+REPEAT
+REPEAT
+REPEAT
+FIVE;SIX
 EOF
 RUN
 
@@ -192,10 +200,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=nested escaped or with double quote
+NAME=nested escaped or after empty double quotes
 FILE=malloc://32
 CMDS=<<EOF
-?v 4 \| `""?v 1 | 2`
+?v 4 \| `""?v 1 \| 2`
 EOF
 EXPECT=<<EOF
 0x7
