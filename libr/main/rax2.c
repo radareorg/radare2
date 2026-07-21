@@ -56,6 +56,15 @@ static int use_stdin(RNum *num, RaxActions *flags, RaxMode *mode, PJ **pj) {
 		if (!rax (num, buf, 1, 0, flags, mode, pj)) {
 			rc = 1;
 		}
+	} else if (flags->raw2hexstr) {
+		int len = 0;
+		char *buf = r_stdin_slurp (&len);
+		if (buf) {
+			if (!rax (num, buf, len, 0, flags, mode, pj)) {
+				rc = 1;
+			}
+			free (buf);
+		}
 	} else {
 		int l = 0;
 		for (;;) {
