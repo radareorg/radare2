@@ -25,6 +25,8 @@ typedef struct {
 	RCons *expected_cons;
 	void *expected_user;
 	const char *expected_input;
+	const char *expected_matched_name;
+	const char *expected_suffix;
 	RCmdAction action;
 	st64 status;
 	int calls;
@@ -37,7 +39,11 @@ static RCmdResult dispatch_handler(RCmdContext *ctx, RStrs input) {
 	state->calls++;
 	state->context_ok = ctx->cmd && ctx->user == state->expected_user
 		&& ctx->parent == state->expected_parent && ctx->cons == state->expected_cons
-		&& r_strs_equals_str (input, state->expected_input);
+		&& r_strs_equals_str (input, state->expected_input)
+		&& r_strs_equals_str (ctx->matched_name, state->expected_matched_name)
+		&& r_strs_equals_str (ctx->suffix, state->expected_suffix)
+		&& ctx->matched_name.a == input.a && ctx->matched_name.b == ctx->suffix.a
+		&& ctx->suffix.b == input.b;
 	RCmdResult result = {
 		.action = state->action,
 		.status = state->status
@@ -131,11 +137,15 @@ static bool test_r_cmd_prefix_registry(void) {
 static bool test_r_cmd_registry_dispatch(void) {
 	DispatchState parent = {
 		.expected_input = "afl?",
+		.expected_matched_name = "a",
+		.expected_suffix = "fl?",
 		.action = R_CMD_ACTION_CONTINUE,
 		.status = 7
 	};
 	DispatchState child = {
 		.expected_input = "afl?",
+		.expected_matched_name = "af",
+		.expected_suffix = "l?",
 		.action = R_CMD_ACTION_UNHANDLED
 	};
 	parent.expected_user = child.expected_user = &child;

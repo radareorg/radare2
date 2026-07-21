@@ -46,6 +46,8 @@ typedef struct r_cmd_context_t {
 	void *handler_user;
 	RStrs args_storage; // owned by the context and borrowed by args
 	RVecRStrs args; // decoded arguments excluding the command token
+	RStrs matched_name; // matched registration prefix, borrowed from callback input
+	RStrs suffix; // input after matched_name, borrowed from callback input
 } RCmdContext;
 
 typedef RCmdResult (*RCmdCtxCb) (RCmdContext *ctx, RStrs input);

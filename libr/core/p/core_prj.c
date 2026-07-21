@@ -86,11 +86,12 @@ static RCmdResult prj_invalid(RCmdContext *ctx) {
 }
 
 static RCmdResult prj_callback(RCmdContext *ctx, RStrs input) {
+	(void)input;
 	const size_t argc = RVecRStrs_length (&ctx->args);
-	const char suffix = r_strs_at (input, 3);
+	const char suffix = r_strs_at (ctx->suffix, 0);
 	RStrs *args = R_VEC_START_ITER (&ctx->args);
 	const bool help = (!argc && (!suffix || isspace ((ut8)suffix)
-		|| (suffix == '?' && !r_strs_at (input, 4))))
+		|| (suffix == '?' && !r_strs_at (ctx->suffix, 1))))
 		|| (argc == 1 && r_strs_equals_str (args[0], "?"));
 	if (help) {
 		prj_help (ctx);

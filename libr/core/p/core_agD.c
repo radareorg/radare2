@@ -47,10 +47,11 @@ static RCmdResult agD_invalid(RCmdContext *ctx) {
 }
 
 static RCmdResult r_cmd_agD_call(RCmdContext *ctx, RStrs input) {
+	(void)input;
 	RCore *core = ctx->user;
 	const size_t argc = RVecRStrs_length (&ctx->args);
-	char sub = r_strs_at (input, 3);
-	if (sub == '?' && !r_strs_at (input, 4) && !argc) {
+	char sub = r_strs_at (ctx->suffix, 0);
+	if (sub == '?' && !r_strs_at (ctx->suffix, 1) && !argc) {
 		agD_help (ctx);
 		return (RCmdResult) { 0 };
 	}
@@ -58,7 +59,7 @@ static RCmdResult r_cmd_agD_call(RCmdContext *ctx, RStrs input) {
 		sub = 0;
 	}
 	if (argc || (sub && !strchr ("dvj", sub))
-			|| (sub && r_strs_at (input, 4) && !isspace ((ut8)r_strs_at (input, 4)))) {
+			|| (sub && r_strs_at (ctx->suffix, 1) && !isspace ((ut8)r_strs_at (ctx->suffix, 1)))) {
 		return agD_invalid (ctx);
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_ANY);

@@ -774,11 +774,12 @@ static RCmdResult writedwarf_write(RCmdContext *ctx, bool elf, const char *filen
 }
 
 static RCmdResult writedwarf_callback(RCmdContext *ctx, RStrs input) {
+	(void)input;
 	const size_t argc = RVecRStrs_length (&ctx->args);
 	RStrs *args = R_VEC_START_ITER (&ctx->args);
-	const char suffix = r_strs_at (input, sizeof ("writedwarf") - 1);
+	const char suffix = r_strs_at (ctx->suffix, 0);
 	if (suffix && !isspace ((ut8)suffix)) {
-		if (suffix == '?' && !r_strs_at (input, sizeof ("writedwarf")) && !argc) {
+		if (suffix == '?' && !r_strs_at (ctx->suffix, 1) && !argc) {
 			writedwarf_help (ctx);
 			return (RCmdResult) { 0 };
 		}

@@ -554,6 +554,8 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 				return cmd_result (R_CMD_ACTION_ABORT, 2);
 			}
 		}
+		context->matched_name = r_strs_new (input.a, input.a + matched);
+		context->suffix = r_strs_new (input.a + matched, input.b);
 		context->handler_user = handler->user;
 		RCmdResult result = handler->callback (context, input);
 		if (result.action != R_CMD_ACTION_UNHANDLED) {
