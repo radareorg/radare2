@@ -5400,259 +5400,277 @@ static const char *bar_json_key(int mode) {
 
 static void cmd_print_bars(RCore *core, const char *input) {
 	if (r_str_endswith (input, "?")) {
-		r_core_cmd_help (core, help_msg_p_equal);
-		return;
-	}
-	bool print_bars = false;
-	ut8 *ptr = NULL;
-	// p=e [nblocks] [totalsize] [skip]
-	int nblocks = -1;
-	ut64 totalsize = UT64_MAX;
-	int skipblocks = -1;
-	RIOMap *map;
-	RListIter *iter;
-	ut64 from = 0, to = 0;
-	RList *list = r_core_get_boundaries_prot (core, -1, NULL, "zoom");
-	if (!list) {
-		goto beach;
-	}
-	const bool empty_zoom_boundaries = r_list_empty (list);
+        r_core_cmd_help (core, help_msg_p_equal);
+        return;
+    }
+    bool print_bars = false;
+    ut8 *ptr = NULL;
+    // p=e [nblocks] [totalsize] [skip]
+    int nblocks = -1;
+    ut64 totalsize = UT64_MAX;
+    int skipblocks = -1;
+    RIOMap *map;
+    RListIter *iter;
+    ut64 from = 0, to = 0;
+    RList *list = r_core_get_boundaries_prot (core, -1, NULL, "zoom");
+    if (!list) {
+        goto beach;
+    }
+    const bool empty_zoom_boundaries = r_list_empty (list);
 
-	ut64 blocksize = 0;
-	int mode = 'b'; // e, p, b, ...
-	int submode = 0; // q, j, ...
+    ut64 blocksize = 0;
+    int mode = 'b'; // e, p, b, ...
+    int submode = 0; // q, j, ...
 
-	if (input[0]) {
-		char *spc = strchr (input, ' ');
-		if (spc) {
-			ut64 v = r_num_math (core->num, spc + 1);
-			if (v < 1 || v > (ut64)ST32_MAX) {
-				goto beach;
-			}
-			nblocks = (int)v;
-			spc = strchr (spc + 1, ' ');
-			if (spc) {
-				totalsize = r_num_math (core->num, spc + 1);
-				spc = strchr (spc + 1, ' ');
-				if (spc) {
-					v = r_num_math (core->num, spc + 1);
-					if (v > (ut64)ST32_MAX) {
-						goto beach;
-					}
-					skipblocks = (int)v;
-				}
-			}
-		}
-		mode = input[1];
-		if (mode && mode != ' ' && input[2]) {
-			submode = input[2];
-		}
-	}
-	if (skipblocks < 0) {
-		skipblocks = 0;
-	}
-	if (empty_zoom_boundaries && submode == 'j') {
-		r_cons_println (core->cons, "{}");
-		goto beach;
-	}
-	if (totalsize == UT64_MAX) {
-		if (r_config_get_b (core->config, "cfg.debug")) {
-			RDebugMap *map = r_debug_map_get (core->dbg, core->addr);
-			if (map) {
-				totalsize = map->addr_end - map->addr;
-				from = map->addr;
-			}
-		} else {
-			if (core->io && core->io->desc) {
-				totalsize = r_io_fd_size (core->io, core->io->desc->fd);
-				if ((st64)totalsize < 1) {
-					totalsize = UT64_MAX;
-				}
-			}
-			if (totalsize == UT64_MAX) {
-				R_LOG_ERROR ("Cannot determine file size");
-				goto beach;
-			}
-		}
-	}
-	blocksize = (blocksize > 0)? (totalsize / blocksize): core->blocksize;
-	if (blocksize < 1) {
-		R_LOG_ERROR ("Invalid block size: %d", (int)blocksize);
-		goto beach;
-	}
-	if (!r_config_get_b (core->config, "cfg.debug")) {
-		RIOMap *map1 = r_list_first (list);
-		if (map1) {
-			from = r_io_map_begin (map1);
-			to = r_io_map_end (map1);
-			r_list_foreach (list, iter, map) {
-				from = R_MIN (from, r_io_map_begin (map));
-				to = R_MAX (to, r_io_map_end (map));
-			}
-			totalsize = to - from;
-		} else {
-			from = core->addr;
-		}
-	}
-	if (nblocks < 1) {
-		ut64 blocks = totalsize / blocksize;
-		if (blocks < 1 || blocks > (ut64)ST32_MAX) {
-			R_LOG_ERROR ("Invalid block count: 0x%" PFMT64x, blocks);
-			goto beach;
-		}
-		nblocks = (int)blocks;
-	} else {
-		blocksize = totalsize / nblocks;
-		if (blocksize < 1) {
-			R_LOG_ERROR ("Invalid block size: %d", (int)blocksize);
-			goto beach;
-		}
-	}
-	switch (mode) {
-	case '?': // bars
-		r_core_cmd_help (core, help_msg_p_equal);
-		break;
-	case '=': // "p=="
-		if (submode == '?') {
-			r_core_cmd_help (core, help_msg_p_equal);
-		} else if (submode && submode != ' ') {
-			ptr = compute_bar_blocks (core, submode, submode == 'e'? list: NULL, from, nblocks, blocksize, skipblocks);
-			if (ptr) {
-				char *s = r_print_columns (core->print, ptr, nblocks, 14);
-				r_cons_print (core->cons, s);
-				free (s);
-			}
-		} else {
-			ptr = calloc (1, nblocks);
-			if (ptr) {
-				r_io_read_at (core->io, from, ptr, nblocks);
-				char *s = r_print_columns (core->print, ptr, nblocks, 14);
-				r_cons_print (core->cons, s);
-				free (s);
-			}
-		}
-		break;
-	case '2': // "p=2"
-		{
-			short *word = (short *)core->block;
-			int i, words = core->blocksize / 2;
-			int step = r_num_math (core->num, input + 2);
-			ut64 oldword = 0;
-			for (i = 0; i < words; i++) {
-				ut64 word64 = word[i] + ST16_MAX;
-				r_cons_printf (core->cons, "0x%08" PFMT64x " %8d  ", core->addr + (i * 2), word[i]);
-				r_print_progressbar (core->print, word64 * 100 / UT16_MAX, 60, NULL);
-				r_cons_printf (core->cons, " %" PFMT64d, word64 - oldword);
-				oldword = word64;
-				r_cons_newline (core->cons);
-				i += step;
-			}
-		}
-		break;
-	case 'd': // "p=d"
-		ptr = NULL;
-		if (submode == 'j' || submode == 'q') {
-			ptr = compute_bar_blocks (core, mode, NULL, from, nblocks, blocksize, skipblocks);
-			if (ptr) {
-				print_bars = true;
-			}
-			break;
-		}
-		{
-			ut64 bufsz = (input[2])
-				? r_num_math (core->num, input + 3)
-				: 0;
-			if (bufsz < 1) {
-				bufsz = core->blocksize;
-			}
-			ut8 *buf = r_core_readblock (core, bufsz);
-			if (buf) {
-				cmd_print_eq_dict (core, buf, bufsz);
-				free (buf);
-			}
-		}
-		break;
-	case '0': // "p=0" 0x00 bytes
-	case 'e': // "p=e" entropy
-	case 'F': // "p=F" 0xff bytes
-	case 'p': // "p=p" printable chars
-	case 'z': // "p=z" zero terminated strings
-	case 'm': // "p=m" marks/flags
-	case 'j': // "p=j" cjmp and jmp
-	case 'A': // "p=A" anal info
-	case 'a': // "p=a" bb info
-	case 'c': // "p=c" calls
-	case 'i': // "p=i" invalid
-	case 's': // "p=s" syscalls
-		ptr = compute_bar_blocks (core, mode, mode == 'e'? list: NULL, from, nblocks, blocksize, skipblocks);
-		if (ptr) {
-			print_bars = true;
-		}
-		break;
-	case 'b': // bytes
-	case '\0':
-		ptr = calloc (1, nblocks);
-		if (ptr) {
-			r_io_read_at (core->io, from, ptr, nblocks);
-			r_print_fill (core->print, ptr, nblocks, from, blocksize);
-		}
-		R_FREE (ptr);
-		break;
-	default:
-		r_core_return_invalid_command (core, "p=", mode);
-		break;
-	}
-	if (print_bars) {
-		bool hex_offset = r_config_get_i (core->config, "hex.addr");
-		if (hex_offset) {
-			core->print->flags |= R_PRINT_FLAGS_OFFSET;
-		} else {
-			core->print->flags &= ~R_PRINT_FLAGS_OFFSET;
-		}
-		int i;
-		switch (submode) {
-		case 'j':
-			{
-				PJ *pj = r_core_pj_new (core);
-				if (!pj) {
-					return;
-				}
-				bar_json_begin (pj, mode, blocksize, from, totalsize);
-				for (i = 0; i < nblocks; i++) {
-					ut8 ep = ptr[i];
-					ut64 off = blocksize * i;
-					off += from;
-					bar_json_value (pj, off, ep);
-				}
-				pj_end (pj);
-				pj_end (pj);
-				r_cons_println (core->cons, pj_string (pj));
-				pj_free (pj);
-			}
-			break;
-		case 'q':
-			for (i = 0; i < nblocks; i++) {
-				ut64 off = from + (blocksize * i);
-				if (core->print->cur_enabled) {
-					if (i == core->print->cur) {
-						r_cons_printf (core->cons, "> ");
-						r_core_return_value (core, off);
-					} else {
-						r_cons_printf (core->cons, "  ");
-					}
-				}
-				r_cons_printf (core->cons, "0x%08" PFMT64x " %d %d\n", off, i, ptr[i]);
-			}
-			break;
-		default:
-			core->print->num = core->num;
-			r_print_fill (core->print, ptr, nblocks, from, blocksize);
-			break;
-		}
-	}
+    if (input[0]) {
+        char *spc = strchr (input, ' ');
+        if (spc) {
+            ut64 v = r_num_math (core->num, spc + 1);
+            if (v < 1 || v > (ut64)ST32_MAX) {
+                goto beach;
+            }
+            nblocks = (int)v;
+            spc = strchr (spc + 1, ' ');
+            if (spc) {
+                totalsize = r_num_math (core->num, spc + 1);
+                spc = strchr (spc + 1, ' ');
+                if (spc) {
+                    v = r_num_math (core->num, spc + 1);
+                    if (v > (ut64)ST32_MAX) {
+                        goto beach;
+                    }
+                    skipblocks = (int)v;
+                }
+            }
+        }
+        mode = input[1];
+        if (mode && mode != ' ' && input[2]) {
+            submode = input[2];
+        }
+    }
+    if (skipblocks < 0) {
+        skipblocks = 0;
+    }
+    if (empty_zoom_boundaries && submode == 'j') {
+        r_cons_println (core->cons, "{}");
+        goto beach;
+    }
+    if (totalsize == UT64_MAX) {
+        if (r_config_get_b (core->config, "cfg.debug")) {
+            RDebugMap *map = r_debug_map_get (core->dbg, core->addr);
+            if (map) {
+                totalsize = map->addr_end - map->addr;
+                from = map->addr;
+            }
+        } else {
+            if (core->io && core->io->desc) {
+                totalsize = r_io_fd_size (core->io, core->io->desc->fd);
+                if ((st64)totalsize < 1) {
+                    totalsize = UT64_MAX;
+                }
+            }
+            if (totalsize == UT64_MAX) {
+                R_LOG_ERROR ("Cannot determine file size");
+                goto beach;
+            }
+        }
+    }
+    blocksize = (blocksize > 0)? (totalsize / blocksize): core->blocksize;
+    if (blocksize < 1) {
+        R_LOG_ERROR ("Invalid block size: %d", (int)blocksize);
+        goto beach;
+    }
+    if (!r_config_get_b (core->config, "cfg.debug")) {
+        RIOMap *map1 = r_list_first (list);
+        if (map1) {
+            from = r_io_map_begin (map1);
+            to = r_io_map_end (map1);
+            r_list_foreach (list, iter, map) {
+                from = R_MIN (from, r_io_map_begin (map));
+                to = R_MAX (to, r_io_map_end (map));
+            }
+            totalsize = to - from;
+        } else {
+            from = core->addr;
+        }
+    }
+    if (nblocks < 1) {
+        ut64 blocks = totalsize / blocksize;
+        if (blocks < 1 || blocks > (ut64)ST32_MAX) {
+            R_LOG_ERROR ("Invalid block count: 0x%" PFMT64x, blocks);
+            goto beach;
+        }
+        nblocks = (int)blocks;
+    } else {
+        blocksize = totalsize / nblocks;
+        if (blocksize < 1) {
+            R_LOG_ERROR ("Invalid block size: %d", (int)blocksize);
+            goto beach;
+        }
+    }
+    switch (mode) {
+    case '?': // bars
+        r_core_cmd_help (core, help_msg_p_equal);
+        break;
+    case '=': // "p=="
+        if (submode == '?') {
+            r_core_cmd_help (core, help_msg_p_equal);
+        } else if (submode && submode != ' ') {
+            ptr = compute_bar_blocks (core, submode, submode == 'e'? list: NULL, from, nblocks, blocksize, skipblocks);
+            if (ptr) {
+                char *s = r_print_columns (core->print, ptr, nblocks, 14);
+                r_cons_print (core->cons, s);
+                free (s);
+            }
+        } else {
+            ptr = calloc (1, nblocks);
+            if (ptr) {
+                r_io_read_at (core->io, from, ptr, nblocks);
+                char *s = r_print_columns (core->print, ptr, nblocks, 14);
+                r_cons_print (core->cons, s);
+                free (s);
+            }
+        }
+        break;
+    case '2': // "p=2"
+        {
+            short *word = (short *)core->block;
+            int i, words = core->blocksize / 2;
+            int step = r_num_math (core->num, input + 2);
+            ut64 oldword = 0;
+            for (i = 0; i < words; i++) {
+                ut64 word64 = word[i] + ST16_MAX;
+                r_cons_printf (core->cons, "0x%08" PFMT64x " %8d  ", core->addr + (i * 2), word[i]);
+                r_print_progressbar (core->print, word64 * 100 / UT16_MAX, 60, NULL);
+                r_cons_printf (core->cons, " %" PFMT64d, word64 - oldword);
+                oldword = word64;
+                r_cons_newline (core->cons);
+                i += step;
+            }
+        }
+        break;
+    case 'd': // "p=d"
+        ptr = NULL;
+        if (submode == 'j' || submode == 'q') {
+            ptr = compute_bar_blocks (core, mode, NULL, from, nblocks, blocksize, skipblocks);
+            if (ptr) {
+                print_bars = true;
+            }
+            break;
+        }
+        {
+            ut64 bufsz = (input[2])
+                ? r_num_math (core->num, input + 3)
+                : 0;
+            if (bufsz < 1) {
+                bufsz = core->blocksize;
+            }
+            ut8 *buf = r_core_readblock (core, bufsz);
+            if (buf) {
+                cmd_print_eq_dict (core, buf, bufsz);
+                free (buf);
+            }
+        }
+        break;
+    case '0': // "p=0" 0x00 bytes
+    case 'e': // "p=e" entropy
+    case 'F': // "p=F" 0xff bytes
+    case 'p': // "p=p" printable chars
+    case 'z': // "p=z" zero terminated strings
+    case 'm': // "p=m" marks/flags
+    case 'j': // "p=j" cjmp and jmp
+    case 'A': // "p=A" anal info
+    case 'a': // "p=a" bb info
+    case 'c': // "p=c" calls
+    case 'i': // "p=i" invalid
+    case 's': // "p=s" syscalls
+        ptr = compute_bar_blocks (core, mode, mode == 'e'? list: NULL, from, nblocks, blocksize, skipblocks);
+        if (ptr) {
+            print_bars = true;
+        }
+        break;
+    case 'b': // bytes
+    case '\0':
+        ptr = calloc (1, nblocks);
+        if (ptr) {
+            r_io_read_at (core->io, from, ptr, nblocks);
+            r_print_fill (core->print, ptr, nblocks, from, blocksize);
+        }
+        R_FREE (ptr);
+        break;
+    default:
+        r_core_return_invalid_command (core, "p=", mode);
+        break;
+    }
+    if (print_bars) {
+        bool hex_offset = r_config_get_i (core->config, "hex.addr");
+        if (hex_offset) {
+            core->print->flags |= R_PRINT_FLAGS_OFFSET;
+        } else {
+            core->print->flags &= ~R_PRINT_FLAGS_OFFSET;
+        }
+        int i;
+        switch (submode) {
+        case 'E':
+            {
+                r_cons_printf (core->cons, "DECIMAL       HEXADECIMAL   ENTROPY\n");
+                r_cons_printf (core->cons, "--------------------------------------------------------------------------------\n");
+                bool in_high_entropy = false;
+                for (i = 0; i < nblocks; i++) {
+                    ut64 off = from + (blocksize * i);
+                    double ent = (double)ptr[i] / 255.0; 
+                    if (!in_high_entropy && ent > 0.85) {
+                        r_cons_printf (core->cons, "%-13" PFMT64d " 0x%-11" PFMT64x " Rising entropy edge (%f)\n", off, off, ent);
+                        in_high_entropy = true;
+                    } else if (in_high_entropy && ent < 0.85) {
+                        r_cons_printf (core->cons, "%-13" PFMT64d " 0x%-11" PFMT64x " Falling entropy edge (%f)\n", off, off, ent);
+                        in_high_entropy = false;
+                    }
+                }
+            }
+            break;
+        case 'j':
+            {
+                PJ *pj = r_core_pj_new (core);
+                if (!pj) {
+                    return;
+                }
+                bar_json_begin (pj, mode, blocksize, from, totalsize);
+                for (i = 0; i < nblocks; i++) {
+                    ut8 ep = ptr[i];
+                    ut64 off = blocksize * i;
+                    off += from;
+                    bar_json_value (pj, off, ep);
+                }
+                pj_end (pj);
+                pj_end (pj);
+                r_cons_println (core->cons, pj_string (pj));
+                pj_free (pj);
+            }
+            break;
+        case 'q':
+            for (i = 0; i < nblocks; i++) {
+                ut64 off = from + (blocksize * i);
+                if (core->print->cur_enabled) {
+                    if (i == core->print->cur) {
+                        r_cons_printf (core->cons, "> ");
+                        r_core_return_value (core, off);
+                    } else {
+                        r_cons_printf (core->cons, "  ");
+                    }
+                }
+                r_cons_printf (core->cons, "0x%08" PFMT64x " %d %d\n", off, i, ptr[i]);
+            }
+            break;
+        default:
+            core->print->num = core->num;
+            r_print_fill (core->print, ptr, nblocks, from, blocksize);
+            break;
+        }
+    }
 beach:
-	r_list_free (list);
-	free (ptr);
+    r_list_free (list);
+    free (ptr);
 }
 
 static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
