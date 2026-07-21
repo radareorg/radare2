@@ -1,5 +1,7 @@
 /* radare - LGPL3 - Copyright 2023-2026 - condret */
 
+#define R_LOG_ORIGIN agD
+
 #include <r_core.h>
 
 static char *_get_title(void *data, void *user) {
@@ -61,13 +63,14 @@ static RCmdResult r_cmd_agD_call(RCmdContext *ctx, RStrs input) {
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_ANY);
 	if (!fcn) {
-		R_LOG_ERROR ("core_agD: no fcn here");
+		R_LOG_ERROR ("no fcn here");
 		return (RCmdResult) { .status = 1 };
 	}
 	RGraphNode *node = NULL;
 	RGraph *fcn_graph = r_anal_function_get_graph (fcn, &node, core->addr);
 	if (!fcn_graph || !node) {
-		R_LOG_ERROR ("core_agD: no fcn_graph/node here");
+		r_graph_free (fcn_graph);
+		R_LOG_ERROR ("no fcn_graph/node here");
 		return (RCmdResult) { .status = 1 };
 	}
 	RGraph *fcn_dtgraph = r_graph_dom_tree (fcn_graph, node);
@@ -86,7 +89,7 @@ static RCmdResult r_cmd_agD_call(RCmdContext *ctx, RStrs input) {
 	if (!dtagraph) {
 		r_graph_free (fcn_dtgraph);
 		r_graph_free (fcn_graph);
-		R_LOG_ERROR ("core_agD: cannot build agraph");
+		R_LOG_ERROR ("cannot build agraph");
 		return (RCmdResult) { .status = 1 };
 	}
 	dtagraph->can->color = r_config_get_b (core->config, "scr.color");
