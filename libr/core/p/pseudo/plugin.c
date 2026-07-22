@@ -118,11 +118,11 @@ repeat:;
 #undef ATSTR
 #define ATSTR "@e:asm.lines=0@e:asm.pseudo=true@e:asm.bytes=0@e:emu.str=true"
 		if (nextfunc == UT64_MAX) {
-			char *res = r_core_cmd_strf (core, "pd %d @0x%08" PFMT64x "" ATSTR, rows - lines, addr);
+			char *res = r_core_cmd_strf (core, "pd %d @0x%08" PFMT64x ATSTR, rows - lines, addr);
 			r_strbuf_append (sb, res);
 			free (res);
 		} else {
-			char *res = r_core_cmd_strf (core, "pD %" PFMT64d " @0x%08" PFMT64x "" ATSTR, nextfunc - addr, addr);
+			char *res = r_core_cmd_strf (core, "pD %" PFMT64d " @0x%08" PFMT64x ATSTR, nextfunc - addr, addr);
 			r_strbuf_append (sb, res);
 			lines += r_str_char_count (res, '\n');
 			free (res);
