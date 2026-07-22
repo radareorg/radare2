@@ -406,18 +406,6 @@ static char *fold_resolved_refs(RCore *core, char *code) {
 	return r_strbuf_drain (sb);
 }
 
-static RCoreHelpMessage help_msg_pdc = {
-	"Usage: pdc[oj*]", "", "experimental, unreliable and hacky pseudo-decompiler",
-	"pdc", "", "pseudo decompile function in current offset",
-	"pdc*", "", "emit decompiled lines as CCu comment commands",
-	"pdca", "", "side by side comparing assembly and pseudo",
-	"pdcc", "", "pseudo-decompile with C helpers around",
-	"pdco", "", "show associated offset next to pseudecompiled output",
-	"pdcj", "", "in json format for codemeta annotations (used by frontends like iaito)",
-	"pdct", "", "dump the structuring region AST (decompiler debug)",
-	NULL
-};
-
 static void unvisit(RList *visited, RAnalBlock *bb) {
 	RListIter *iter;
 	RAnalBlock *b;
@@ -1355,12 +1343,8 @@ static void pdc_print_comment_cmds(RCore *core, const char *s) {
 	}
 }
 
-int pdc_decompile(RCore *core, const char *input) {
+R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	bool show_c_headers = *input == 'c';
-	if (*input == '?') {
-		r_core_cmd_help (core, help_msg_pdc);
-		return false;
-	}
 	if (*input == 't') {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 		if (!fcn) {
@@ -1388,14 +1372,12 @@ int pdc_decompile(RCore *core, const char *input) {
 				input = " -r2";
 			} else if (!strcmp (input, "=")) {
 				input = " -a";
-			} else if (!strcmp (input, "?")) {
-				input = " -h";
 			}
 		}
-		int ret = r_core_cmdf (core, "%s%s", cmdPdc, input);
+		const bool ok = r_core_cmdf (core, "%s%s", cmdPdc, input) == 0;
 		r_config_hold_restore (hc);
 		r_config_hold_free (hc);
-		return ret;
+		return ok;
 	}
 
 	PDCState state = { 0 };

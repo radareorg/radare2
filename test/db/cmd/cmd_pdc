@@ -690,3 +690,78 @@ EXPECT=<<EOF2
         sym.imp.printf () // int printf("IOLI Crackme Level 0x00\n", -1)
 EOF2
 RUN
+
+NAME=pdc help lists all subcommands
+FILE=--
+CMDS=<<EOF
+pdc?
+EOF
+EXPECT=<<EOF
+Usage: pdc[acjlot*]  experimental, unreliable and hacky pseudo-decompiler
+| pdc   pseudo decompile function in current offset
+| pdc*  emit decompiled lines as CCu comment commands
+| pdca  side by side comparing assembly and pseudo
+| pdcc  pseudo-decompile with C helpers around
+| pdcl  linear pseudo-decompilation scrolling across functions
+| pdco  show associated offset next to pseudecompiled output
+| pdcj  in json format for codemeta annotations (used by frontends like iaito)
+| pdct  dump the structuring region AST (decompiler debug)
+EOF
+RUN
+
+NAME=pdc subcommand help prints only the matching row
+FILE=--
+CMDS=<<EOF
+pdcj?
+EOF
+EXPECT=<<EOF
+| pdcj  in json format for codemeta annotations (used by frontends like iaito)
+EOF
+RUN
+
+NAME=pdc without a function reports failure status
+FILE=--
+CMDS=<<EOF
+pdc && ?e SHOULD_NOT_RUN
+pdc || ?e reported-failure
+EOF
+EXPECT=<<EOF
+reported-failure
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot find function in 0x00000000
+ERROR: Cannot find function in 0x00000000
+EOF
+RUN
+
+NAME=pdc success reports zero status
+FILE=malloc://32
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3
+af
+pdc && ?e decompile-ok
+EOF
+EXPECT=<<EOF
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);
+void fcn.00000000 (void) {
+        return
+}
+
+decompile-ok
+EOF
+RUN
+
+NAME=failing external decompiler propagates through cmd.pdc
+FILE=--
+CMDS=<<EOF
+e cmd.pdc=prj open /this/does/not/exist/x.prj
+pdc || ?e external-failed
+EOF
+EXPECT=<<EOF
+external-failed
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot find project file: /this/does/not/exist/x.prj
+EOF
+RUN
