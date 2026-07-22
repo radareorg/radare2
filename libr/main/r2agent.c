@@ -189,6 +189,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		if (!rs->auth) {
 			r_socket_http_response (rs, 401, "", 0, NULL);
 			r_socket_http_close (rs);
+			r_socket_http_free (rs);
 			continue;
 		}
 		if (!strcmp (rs->method, "GET")) {
@@ -226,6 +227,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		}
 		r_socket_http_response (rs, 200, res? res: page_index, 0, NULL);
 		r_socket_http_close (rs);
+		r_socket_http_free (rs);
 		R_FREE (res);
 	}
 
