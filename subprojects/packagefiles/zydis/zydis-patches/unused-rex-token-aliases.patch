@@ -1,8 +1,6 @@
-diff --git a/amalgamated-dist/Zydis.c b/amalgamated-dist/Zydis.c
-index 66dcb1ed3d..388ef4f45b 100644
 --- a/amalgamated-dist/Zydis.c
 +++ b/amalgamated-dist/Zydis.c
-@@ -32564,7 +32564,6 @@ static const struct ZydisPredefinedTokenPREF_REX_4A_
+@@ -106648,7 +106648,6 @@
    ZyanU8 next;
    ZyanU8 data[13];
  } TOK_DATA_PREF_REX_4A = { 13, 11, { ZYDIS_TOKEN_PREFIX, 7, 'r', 'e', 'x', '.', 'w', 'x', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -10,7 +8,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_4B = ZYDIS_MAKE_SHORTSTRING("rex.wxb ");
  static const struct ZydisPredefinedTokenPREF_REX_4B_
-@@ -32573,7 +32572,6 @@ static const struct ZydisPredefinedTokenPREF_REX_4B_
+@@ -106657,7 +106656,6 @@
    ZyanU8 next;
    ZyanU8 data[14];
  } TOK_DATA_PREF_REX_4B = { 14, 12, { ZYDIS_TOKEN_PREFIX, 8, 'r', 'e', 'x', '.', 'w', 'x', 'b', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -18,7 +16,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_4C = ZYDIS_MAKE_SHORTSTRING("rex.wr ");
  static const struct ZydisPredefinedTokenPREF_REX_4C_
-@@ -32582,7 +32580,6 @@ static const struct ZydisPredefinedTokenPREF_REX_4C_
+@@ -106666,7 +106664,6 @@
    ZyanU8 next;
    ZyanU8 data[13];
  } TOK_DATA_PREF_REX_4C = { 13, 11, { ZYDIS_TOKEN_PREFIX, 7, 'r', 'e', 'x', '.', 'w', 'r', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -26,7 +24,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_4D = ZYDIS_MAKE_SHORTSTRING("rex.wrb ");
  static const struct ZydisPredefinedTokenPREF_REX_4D_
-@@ -32591,7 +32588,6 @@ static const struct ZydisPredefinedTokenPREF_REX_4D_
+@@ -106675,7 +106672,6 @@
    ZyanU8 next;
    ZyanU8 data[14];
  } TOK_DATA_PREF_REX_4D = { 14, 12, { ZYDIS_TOKEN_PREFIX, 8, 'r', 'e', 'x', '.', 'w', 'r', 'b', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -34,7 +32,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_4E = ZYDIS_MAKE_SHORTSTRING("rex.wrx ");
  static const struct ZydisPredefinedTokenPREF_REX_4E_
-@@ -32600,7 +32596,6 @@ static const struct ZydisPredefinedTokenPREF_REX_4E_
+@@ -106684,7 +106680,6 @@
    ZyanU8 next;
    ZyanU8 data[14];
  } TOK_DATA_PREF_REX_4E = { 14, 12, { ZYDIS_TOKEN_PREFIX, 8, 'r', 'e', 'x', '.', 'w', 'r', 'x', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -42,7 +40,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_4F = ZYDIS_MAKE_SHORTSTRING("rex.wrxb ");
  static const struct ZydisPredefinedTokenPREF_REX_4F_
-@@ -32609,7 +32604,6 @@ static const struct ZydisPredefinedTokenPREF_REX_4F_
+@@ -106693,7 +106688,6 @@
    ZyanU8 next;
    ZyanU8 data[15];
  } TOK_DATA_PREF_REX_4F = { 15, 13, { ZYDIS_TOKEN_PREFIX, 9, 'r', 'e', 'x', '.', 'w', 'r', 'x', 'b', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -50,7 +48,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_40 = ZYDIS_MAKE_SHORTSTRING("rex ");
  static const struct ZydisPredefinedTokenPREF_REX_40_
-@@ -32618,7 +32612,6 @@ static const struct ZydisPredefinedTokenPREF_REX_40_
+@@ -106702,7 +106696,6 @@
    ZyanU8 next;
    ZyanU8 data[10];
  } TOK_DATA_PREF_REX_40 = { 10, 8, { ZYDIS_TOKEN_PREFIX, 4, 'r', 'e', 'x', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -58,7 +56,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_41 = ZYDIS_MAKE_SHORTSTRING("rex.b ");
  static const struct ZydisPredefinedTokenPREF_REX_41_
-@@ -32627,7 +32620,6 @@ static const struct ZydisPredefinedTokenPREF_REX_41_
+@@ -106711,7 +106704,6 @@
    ZyanU8 next;
    ZyanU8 data[12];
  } TOK_DATA_PREF_REX_41 = { 12, 10, { ZYDIS_TOKEN_PREFIX, 6, 'r', 'e', 'x', '.', 'b', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -66,7 +64,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_42 = ZYDIS_MAKE_SHORTSTRING("rex.x ");
  static const struct ZydisPredefinedTokenPREF_REX_42_
-@@ -32636,7 +32628,6 @@ static const struct ZydisPredefinedTokenPREF_REX_42_
+@@ -106720,7 +106712,6 @@
    ZyanU8 next;
    ZyanU8 data[12];
  } TOK_DATA_PREF_REX_42 = { 12, 10, { ZYDIS_TOKEN_PREFIX, 6, 'r', 'e', 'x', '.', 'x', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -74,7 +72,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_43 = ZYDIS_MAKE_SHORTSTRING("rex.xb ");
  static const struct ZydisPredefinedTokenPREF_REX_43_
-@@ -32645,7 +32636,6 @@ static const struct ZydisPredefinedTokenPREF_REX_43_
+@@ -106729,7 +106720,6 @@
    ZyanU8 next;
    ZyanU8 data[13];
  } TOK_DATA_PREF_REX_43 = { 13, 11, { ZYDIS_TOKEN_PREFIX, 7, 'r', 'e', 'x', '.', 'x', 'b', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -82,7 +80,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_44 = ZYDIS_MAKE_SHORTSTRING("rex.r ");
  static const struct ZydisPredefinedTokenPREF_REX_44_
-@@ -32654,7 +32644,6 @@ static const struct ZydisPredefinedTokenPREF_REX_44_
+@@ -106738,7 +106728,6 @@
    ZyanU8 next;
    ZyanU8 data[12];
  } TOK_DATA_PREF_REX_44 = { 12, 10, { ZYDIS_TOKEN_PREFIX, 6, 'r', 'e', 'x', '.', 'r', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -90,7 +88,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_45 = ZYDIS_MAKE_SHORTSTRING("rex.rb ");
  static const struct ZydisPredefinedTokenPREF_REX_45_
-@@ -32663,7 +32652,6 @@ static const struct ZydisPredefinedTokenPREF_REX_45_
+@@ -106747,7 +106736,6 @@
    ZyanU8 next;
    ZyanU8 data[13];
  } TOK_DATA_PREF_REX_45 = { 13, 11, { ZYDIS_TOKEN_PREFIX, 7, 'r', 'e', 'x', '.', 'r', 'b', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -98,7 +96,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_46 = ZYDIS_MAKE_SHORTSTRING("rex.rx ");
  static const struct ZydisPredefinedTokenPREF_REX_46_
-@@ -32672,7 +32660,6 @@ static const struct ZydisPredefinedTokenPREF_REX_46_
+@@ -106756,7 +106744,6 @@
    ZyanU8 next;
    ZyanU8 data[13];
  } TOK_DATA_PREF_REX_46 = { 13, 11, { ZYDIS_TOKEN_PREFIX, 7, 'r', 'e', 'x', '.', 'r', 'x', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -106,7 +104,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_47 = ZYDIS_MAKE_SHORTSTRING("rex.rxb ");
  static const struct ZydisPredefinedTokenPREF_REX_47_
-@@ -32681,7 +32668,6 @@ static const struct ZydisPredefinedTokenPREF_REX_47_
+@@ -106765,7 +106752,6 @@
    ZyanU8 next;
    ZyanU8 data[14];
  } TOK_DATA_PREF_REX_47 = { 14, 12, { ZYDIS_TOKEN_PREFIX, 8, 'r', 'e', 'x', '.', 'r', 'x', 'b', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -114,7 +112,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_48 = ZYDIS_MAKE_SHORTSTRING("rex.w ");
  static const struct ZydisPredefinedTokenPREF_REX_48_
-@@ -32690,7 +32676,6 @@ static const struct ZydisPredefinedTokenPREF_REX_48_
+@@ -106774,7 +106760,6 @@
    ZyanU8 next;
    ZyanU8 data[12];
  } TOK_DATA_PREF_REX_48 = { 12, 10, { ZYDIS_TOKEN_PREFIX, 6, 'r', 'e', 'x', '.', 'w', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };
@@ -122,7 +120,7 @@ index 66dcb1ed3d..388ef4f45b 100644
  
  static const ZydisShortString STR_PREF_REX_49 = ZYDIS_MAKE_SHORTSTRING("rex.wb ");
  static const struct ZydisPredefinedTokenPREF_REX_49_
-@@ -32699,7 +32684,6 @@ static const struct ZydisPredefinedTokenPREF_REX_49_
+@@ -106783,7 +106768,6 @@
    ZyanU8 next;
    ZyanU8 data[13];
  } TOK_DATA_PREF_REX_49 = { 13, 11, { ZYDIS_TOKEN_PREFIX, 7, 'r', 'e', 'x', '.', 'w', 'b', '\0', ZYDIS_TOKEN_WHITESPACE, 0, ' ', '\0' } };

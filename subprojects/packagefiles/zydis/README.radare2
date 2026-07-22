@@ -1,8 +1,14 @@
 Zydis bundled source metadata
 ============================
 
-The files under amalgamated-dist are from the Zydis 4.1.0 amalgamated release:
+The files under amalgamated-dist are generated with `assets/amalgamate.py`
+from the Zydis git repository (5.0.0 development snapshot):
 
-https://github.com/zyantific/zydis/releases/download/v4.1.0/zydis-amalgamated.tar.gz
+https://github.com/zyantific/zydis
+commit 1167ac17698bbce0d41163e6b61b8a9d9bd67e40 (2026-07-21)
+bundled zycore: 75a36c45ae1ad382b0f4e0ede0af84c11ee69928 (v1.5.2-7)
+
+To regenerate them, clone the repository recursively at that commit and run
+`python3 assets/amalgamate.py`, then copy the amalgamated-dist files here.
 
 The upstream project is distributed under the MIT license. See LICENSE.MIT.

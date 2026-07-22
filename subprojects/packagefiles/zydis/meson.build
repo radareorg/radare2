@@ -1,4 +1,4 @@
-project('zydis', 'c', version: '4.1.0', meson_version: '>=0.55.0')
+project('zydis', 'c', version: '5.0.0', meson_version: '>=0.55.0')
 
 cc = meson.get_compiler('c')
 
