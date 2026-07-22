@@ -8,6 +8,8 @@ typedef struct {
 
 static inline bool r_arch_cs_disasm(csh handle, const uint8_t **code, size_t *size, uint64_t *addr, RArchCSInsn *ci) {
 	ci->insn.detail = &ci->detail;
+	// capstone post printers inspect the mnemonic before fill_insn writes it
+	ci->insn.mnemonic[0] = 0;
 	return cs_disasm_iter (handle, code, size, addr, &ci->insn);
 }
 
