@@ -1,9 +1,8 @@
 #include <r_core.h>
 #include "minunit.h"
 
-static RCmdResult first_handler(RCmdContext *ctx, RStrs input) {
+static RCmdResult first_handler(RCmdContext *ctx) {
 	(void)ctx;
-	(void)input;
 	RCmdResult result = { 0 };
 	return result;
 }
@@ -24,9 +23,7 @@ typedef struct {
 	RCmdContext *expected_parent;
 	RCons *expected_cons;
 	void *expected_user;
-	const char *expected_input;
-	const char *expected_matched_name;
-	const char *expected_suffix;
+	const char *expected_subcmd;
 	RCmdAction action;
 	st64 status;
 	int calls;
@@ -34,16 +31,13 @@ typedef struct {
 	bool context_ok;
 } DispatchState;
 
-static RCmdResult dispatch_handler(RCmdContext *ctx, RStrs input) {
+static RCmdResult dispatch_handler(RCmdContext *ctx) {
 	DispatchState *state = ctx->handler_user;
 	state->calls++;
 	state->context_ok = ctx->cmd && ctx->user == state->expected_user
 		&& ctx->parent == state->expected_parent && ctx->cons == state->expected_cons
-		&& r_strs_equals_str (input, state->expected_input)
-		&& r_strs_equals_str (ctx->matched_name, state->expected_matched_name)
-		&& r_strs_equals_str (ctx->suffix, state->expected_suffix)
-		&& ctx->matched_name.a == input.a && ctx->matched_name.b == ctx->suffix.a
-		&& ctx->suffix.b == input.b;
+		&& r_strs_equals_str (ctx->subcmd, state->expected_subcmd)
+		&& !*ctx->subcmd.b;
 	RCmdResult result = {
 		.action = state->action,
 		.status = state->status
@@ -65,16 +59,18 @@ typedef struct {
 	bool args_ok;
 } ArgsState;
 
-static RCmdResult args_handler(RCmdContext *ctx, RStrs input) {
+static RCmdResult args_handler(RCmdContext *ctx) {
 	ArgsState *state = ctx->handler_user;
 	state->calls++;
-	state->args_ok = r_strs_equals_str (input, state->expected_input)
+	const size_t input_len = strlen (state->expected_input);
+	state->args_ok = r_strs_empty (ctx->subcmd)
+		&& !strcmp (ctx->subcmd.b, state->expected_input + strlen ("cmd"))
 		&& RVecRStrs_length (&ctx->args) == state->expected_argc;
 	size_t i;
 	for (i = 0; state->args_ok && i < state->expected_argc; i++) {
 		RStrs *arg = RVecRStrs_at (&ctx->args, i);
 		state->args_ok = arg && r_strs_equals (*arg, state->expected_args[i])
-			&& arg->a >= ctx->args_storage.a && arg->b <= ctx->args_storage.b;
+			&& arg->a >= ctx->args_storage && arg->b <= ctx->args_storage + input_len;
 	}
 	RCmdResult result = { 0 };
 	return result;
@@ -136,16 +132,12 @@ static bool test_r_cmd_prefix_registry(void) {
 
 static bool test_r_cmd_registry_dispatch(void) {
 	DispatchState parent = {
-		.expected_input = "afl?",
-		.expected_matched_name = "a",
-		.expected_suffix = "fl?",
+		.expected_subcmd = "fl?",
 		.action = R_CMD_ACTION_CONTINUE,
 		.status = 7
 	};
 	DispatchState child = {
-		.expected_input = "afl?",
-		.expected_matched_name = "af",
-		.expected_suffix = "l?",
+		.expected_subcmd = "l?",
 		.action = R_CMD_ACTION_UNHANDLED
 	};
 	parent.expected_user = child.expected_user = &child;
@@ -158,7 +150,7 @@ static bool test_r_cmd_registry_dispatch(void) {
 	mu_assert_eq (r_cmd_call (cmd, "afl?"), 7, "parent handles child fallback");
 	mu_assert_eq (child.calls, 1, "longest prefix called first");
 	mu_assert_eq (parent.calls, 1, "parent prefix called after unhandled");
-	mu_assert_true (child.context_ok && parent.context_ok, "handlers receive context and full input");
+	mu_assert_true (child.context_ok && parent.context_ok, "handlers receive context and subcmd slice");
 	mu_assert_true (r_cmd_unregister (cmd, "a"), "remove registered parent");
 	mu_assert_true (r_cmd_add (cmd, "a", legacy_handler), "register legacy fallback");
 	mu_assert_eq (r_cmd_call (cmd, "afl?"), 9, "unhandled registry falls back to legacy");

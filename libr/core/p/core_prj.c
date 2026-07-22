@@ -85,13 +85,11 @@ static RCmdResult prj_invalid(RCmdContext *ctx) {
 	return (RCmdResult) { .status = 2 };
 }
 
-static RCmdResult prj_callback(RCmdContext *ctx, RStrs input) {
-	(void)input;
+static RCmdResult prj_callback(RCmdContext *ctx) {
 	const size_t argc = RVecRStrs_length (&ctx->args);
-	const char suffix = r_strs_at (ctx->suffix, 0);
 	RStrs *args = R_VEC_START_ITER (&ctx->args);
-	const bool help = (!argc && (!suffix || isspace ((ut8)suffix)
-		|| (suffix == '?' && !r_strs_at (ctx->suffix, 1))))
+	const bool help = (!argc && (r_strs_empty (ctx->subcmd)
+		|| r_strs_equals_str (ctx->subcmd, "?")))
 		|| (argc == 1 && r_strs_equals_str (args[0], "?"));
 	if (help) {
 		prj_help (ctx);

@@ -475,7 +475,7 @@ static bool cmd_context_parse_args(RCmdContext *context, RStrs input) {
 	if (!storage) {
 		return false;
 	}
-	context->args_storage = r_strs_new (storage, storage);
+	context->args_storage = storage;
 	RVecRStrs_init (&context->args);
 	const char *src = input.a;
 	char *dst = storage;
@@ -522,14 +522,13 @@ static bool cmd_context_parse_args(RCmdContext *context, RStrs input) {
 		}
 	}
 	*dst = 0;
-	context->args_storage.b = dst;
 	return true;
 }
 
 static void cmd_context_free(RCmdContext *context) {
 	if (context) {
 		RVecRStrs_fini (&context->args);
-		free ((char *)context->args_storage.a);
+		free (context->args_storage);
 		free (context);
 	}
 }
@@ -554,10 +553,13 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 				return cmd_result (R_CMD_ACTION_ABORT, 2);
 			}
 		}
-		context->matched_name = r_strs_new (input.a, input.a + matched);
-		context->suffix = r_strs_new (input.a + matched, input.b);
+		const char *sub_end = input.a + matched;
+		while (sub_end < input.b && !isspace ((ut8)*sub_end)) {
+			sub_end++;
+		}
+		context->subcmd = r_strs_new (input.a + matched, sub_end);
 		context->handler_user = handler->user;
-		RCmdResult result = handler->callback (context, input);
+		RCmdResult result = handler->callback (context);
 		if (result.action != R_CMD_ACTION_UNHANDLED) {
 			cmd_context_free (context);
 			return result;

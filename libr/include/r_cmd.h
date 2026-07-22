@@ -44,13 +44,13 @@ typedef struct r_cmd_context_t {
 	RCons *cons;
 	void *user;
 	void *handler_user;
-	RStrs args_storage; // owned by the context and borrowed by args
+	char *args_storage; // private: owned buffer backing args, do not use
 	RVecRStrs args; // decoded arguments excluding the command token
-	RStrs matched_name; // matched registration prefix, borrowed from callback input
-	RStrs suffix; // input after matched_name, borrowed from callback input
+	RStrs subcmd; // command-token remainder after the registered name; slices the
+	// NUL-terminated input line, so subcmd.b is the raw undecoded tail as C string
 } RCmdContext;
 
-typedef RCmdResult (*RCmdCtxCb) (RCmdContext *ctx, RStrs input);
+typedef RCmdResult (*RCmdCtxCb) (RCmdContext *ctx);
 typedef bool (*RCmdForeachCb) (RStrs name, void *user);
 
 typedef struct r_cmd_macro_label_t {
