@@ -335,6 +335,8 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 
 		if (!rs->auth) {
 			r_socket_http_response (rs, 401, "", 0, NULL);
+			rtr_http_request_free (rs);
+			continue;
 		}
 		if (r_config_get_b (core->config, "http.verbose")) {
 			char *peer = r_socket_tostring (rs->s);

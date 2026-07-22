@@ -207,13 +207,21 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 				int session_port = 3000 + r_num_rand (1024);
 				char *filename = rs->path + strlen ("/file/open/");
 				char *escaped_filename = r_str_escape_sh (filename);
-				char *cmd = r_str_newf ("r2 -q %s-e http.port=%d -c=h \"%s\"",
+				char *authargs = NULL;
+				if (so.httpauth) {
+					char *ea = r_str_escape_sh (httpauthfile);
+					authargs = r_str_newf ("-e http.auth=true -e \"http.authfile=%s\" ", ea);
+					free (ea);
+				}
+				char *cmd = r_str_newf ("r2 -q %s%s-e http.port=%d -c=h \"%s\"",
 					listenlocal? "": "-e http.bind=public ",
+					r_str_get (authargs),
 					session_port, escaped_filename);
 
 				/* TODO: use r_sys api to get pid when running in bg */
 				int pid = r_sys_cmdbg (cmd);
 				free (cmd);
+				free (authargs);
 				free (escaped_filename);
 
 				res = r_str_newf ("<html><body>"
