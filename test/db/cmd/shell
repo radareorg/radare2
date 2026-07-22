@@ -170,6 +170,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=single quote after command boundaries
+FILE=malloc://32
+CMDS=<<EOF
+   'echo one;echo two
+3'echo "x;y"
+?e before; 'echo "x;y"
+3'echo @x;#y|z>q
+EOF
+EXPECT=<<EOF
+one;echo two
+x;y
+x;y
+x;y
+before
+x;y
+@x;#y|z>q
+@x;#y|z>q
+@x;#y|z>q
+EOF
+RUN
+
 NAME=escaped or
 FILE=malloc://32
 CMDS=<<EOF
