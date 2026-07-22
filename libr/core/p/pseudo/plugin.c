@@ -28,6 +28,7 @@ static ut64 find_nextop(RCore *core, ut64 addr) {
 			opsz = minopsz;
 		}
 	}
+	r_anal_op_free (op);
 	if (UT64_MAX - (ut64)opsz < addr) {
 		return UT64_MAX;
 	}
