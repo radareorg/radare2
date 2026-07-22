@@ -37,7 +37,8 @@ static RCmdResult dispatch_handler(RCmdContext *ctx) {
 	state->context_ok = ctx->cmd && ctx->user == state->expected_user
 		&& ctx->parent == state->expected_parent && ctx->cons == state->expected_cons
 		&& r_strs_equals_str (ctx->subcmd, state->expected_subcmd)
-		&& !*ctx->subcmd.b;
+		&& !*ctx->subcmd.b
+		&& r_cmd_ctx_help (ctx) && r_cmd_ctx_mode (ctx, "lx") == 'l';
 	RCmdResult result = {
 		.action = state->action,
 		.status = state->status
@@ -64,6 +65,7 @@ static RCmdResult args_handler(RCmdContext *ctx) {
 	state->calls++;
 	const size_t input_len = strlen (state->expected_input);
 	state->args_ok = r_strs_empty (ctx->subcmd)
+		&& !r_cmd_ctx_help (ctx) && !r_cmd_ctx_mode (ctx, "jq")
 		&& !strcmp (ctx->subcmd.b, state->expected_input + strlen ("cmd"))
 		&& RVecRStrs_length (&ctx->args) == state->expected_argc;
 	size_t i;

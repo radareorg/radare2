@@ -49,12 +49,12 @@ static RCmdResult agD_invalid(RCmdContext *ctx) {
 static RCmdResult r_cmd_agD_call(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	const size_t argc = RVecRStrs_length (&ctx->args);
-	if (!argc && r_strs_equals_str (ctx->subcmd, "?")) {
+	if (!argc && r_cmd_ctx_help (ctx)) {
 		agD_help (ctx);
 		return (RCmdResult) { 0 };
 	}
-	const char sub = r_strs_at (ctx->subcmd, 0);
-	if (argc || r_strs_len (ctx->subcmd) > 1 || (sub && !strchr ("dvj", sub))) {
+	const char sub = r_cmd_ctx_mode (ctx, "dvj");
+	if (argc || r_strs_len (ctx->subcmd) > (sub? 1: 0)) {
 		return agD_invalid (ctx);
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_ANY);

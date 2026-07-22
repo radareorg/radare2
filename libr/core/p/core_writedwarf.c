@@ -777,7 +777,7 @@ static RCmdResult writedwarf_callback(RCmdContext *ctx) {
 	const size_t argc = RVecRStrs_length (&ctx->args);
 	RStrs *args = R_VEC_START_ITER (&ctx->args);
 	if (!r_strs_empty (ctx->subcmd)) {
-		if (!argc && r_strs_equals_str (ctx->subcmd, "?")) {
+		if (!argc && r_cmd_ctx_help (ctx)) {
 			writedwarf_help (ctx);
 			return (RCmdResult) { 0 };
 		}
