@@ -1,7 +1,8 @@
 /* radare - LGPL - Copyright 2015-2026 - pancake, phix33 */
 
 #include <r_core.h>
-#include "pseudo.h"
+
+R_IPI bool pdc_decompile(RCore *core, const char *input);
 
 static RCoreHelpMessage help_msg_pdc = {
 	"Usage: pdc[acjlot*]", "", "experimental, unreliable and hacky pseudo-decompiler",
