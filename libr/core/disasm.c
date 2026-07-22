@@ -5136,6 +5136,10 @@ static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
 	return false;
 }
 
+static bool flag_name_in_opstr(RFlagItem *f, const char *opstr) {
+	return f && opstr && (strstr (opstr, f->name) || (f->realname && strstr (opstr, f->realname)));
+}
+
 /* convert numeric value in opcode to ascii char or number */
 static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	R_RETURN_IF_FAIL (ds);
@@ -5246,11 +5250,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				ut64 subrel_addr = core->rasm->parse->subrel_addr;
 				if (subrel_addr && subrel_addr != p) {
 					f2 = r_core_flag_get_by_spaces (core->flags, false, subrel_addr);
-					f2_in_opstr = f2 && ds->opstr && (strstr (ds->opstr, f2->name) || strstr (ds->opstr, f2->realname)) ;
+					f2_in_opstr = flag_name_in_opstr (f2, ds->opstr);
 				}
 				refaddr = p;
 				if (!flag_printed && !is_filtered_flag (ds, f->name)
-				    && (!ds->opstr || (!strstr (ds->opstr, f->name) && !strstr (ds->opstr, f->realname)))
+				    && !flag_name_in_opstr (f, ds->opstr)
 				    && !f2_in_opstr) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "%s %s", ds->cmtoken, f->name);
@@ -5393,7 +5397,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					string_printed = true;
 				}
 			} else if (!flag_printed && (!ds->opstr ||
-						(!strstr (ds->opstr, f->name) && !strstr (ds->opstr, f->realname)))) {
+						!flag_name_in_opstr (f, ds->opstr))) {
 				ds_begin_nl_comment (ds);
 				ds_comment (ds, true, "%s %s", ds->cmtoken, f->name);
 				const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, refaddr);

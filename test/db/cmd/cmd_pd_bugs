@@ -70,6 +70,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pd flag without realname
+FILE=malloc://512
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+e scr.color=0
+e asm.bytes=0
+e asm.comments=1
+wx a100010000 @ 0
+f first @ 0x100
+f second @ 0x100
+fN second base64:
+pd 1 @ 0
+EOF
+EXPECT=<<EOF
+            0x00000000      mov eax, dword [first]                     ; second
+                                                                       ; [0x100:4]=0
+EOF
+RUN
+
 NAME=pd arm cortex 0
 FILE=-
 ARGS=-a arm -b 16
