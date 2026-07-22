@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2015-2026 - pancake */
 
 #include <r_core.h>
-#include "pseudo.h"
 #include "pdc_ast.h"
 
 // R2R db/cmd/cmd_pdc
