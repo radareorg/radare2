@@ -4005,6 +4005,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	r_str_trim_tail (cmd);
 	remove_leading_empty_quotes (cmd);
 	rep = isdigit ((ut8)*cmd)? strtoull (cmd, NULL, 10): 0;
+	const char *command = (st64)rep > 0? r_str_trim_head_digits (cmd): cmd;
+	const bool raw_call = *command == '\'';
 	R_CRITICAL_LEAVE (core);
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (R_STR_ISEMPTY (cmd)) {
@@ -4017,14 +4019,14 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (!icmd || (cmd[0] == '#' && cmd[1] != '!' && cmd[1] != '?')) {
 		goto beach;
 	}
-	if (*cmd) {
+	if (!raw_call && *cmd) {
 		char *hash = (char *) r_str_firstbut_escape (cmd, '#', "'\"");
 		if (R_UNLIKELY (hash && hash != cmd)) {
 			*hash = 0;
 			r_str_trim_tail (cmd);
 		}
 	}
-	if (*cmd != '"') {
+	if (!raw_call && *cmd != '"') {
 		if (is_macro_command (cmd)) {
 			colon = find_ch_after_macro (cmd, ';');
 		} else {
@@ -4087,7 +4089,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		R_CRITICAL_ENTER (core);
 		core->break_loop = false;
 		R_CRITICAL_LEAVE (core);
-		if (rep > 1 && strstr (cmd, "@@")) {
+		if (raw_call) {
+			ret = handle_command_call (core, cmd);
+		} else if (rep > 1 && strstr (cmd, "@@")) {
 			char *repcmd = r_str_newf ("%"PFMT64d"%s", rep + 1, cmd);
 			ret = r_core_cmd_subst_i (core, repcmd, colon, (rep == orep - 1) ? &tmpseek : NULL);
 			free (repcmd);
