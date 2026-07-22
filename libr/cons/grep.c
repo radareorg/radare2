@@ -89,7 +89,7 @@ static void grep_word_free(RConsGrepWord *gw) {
 static bool grep_token_parse_columns(RCons *cons, RConsGrep *grep, char *str);
 
 R_API void r_cons_grep_help(RCons *cons) {
-	r_cons_cmd_help (cons, help_detail_tilde, true);
+	r_cons_cmd_help (cons, help_detail_tilde);
 }
 
 static void grep_parse_range(RCons *cons, RConsGrep *grep, char *token) {

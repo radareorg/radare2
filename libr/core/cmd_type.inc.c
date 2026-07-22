@@ -369,17 +369,17 @@ static void cmd_afck(RCore *core, const char *c) {
 static void cmd_tcc(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
-		r_core_cmd_help (core, help_msg_tcc);
+		r_cons_cmd_help (core->cons, help_msg_tcc);
 		break;
 	case '-':
 		if (input[1] == '*') {
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_tcc, "tcc-*");
+				r_cons_cmd_help_match (core->cons, help_msg_tcc, "tcc-*", 0, true);
 			} else {
 				sdb_reset (core->anal->sdb_cc);
 			}
 		} else if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_tcc, "tcc-");
+			r_cons_cmd_help_match (core->cons, help_msg_tcc, "tcc-", 0, false);
 		} else {
 			r_anal_cc_del (core->anal, r_str_trim_head_ro (input + 1));
 		}
@@ -389,14 +389,14 @@ static void cmd_tcc(RCore *core, const char *input) {
 	case 'j':
 	case '*':
 		if (*input && input[1] == '?') {
-			r_core_cmd_help_match_spec (core, help_msg_tcc, "tcc", *input);
+			r_cons_cmd_help_match (core->cons, help_msg_tcc, "tcc", *input, true);
 		} else {
 			cmd_afcl (core, input);
 		}
 		break;
 	case 'k':
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_tcc, "tcck");
+			r_cons_cmd_help_match (core->cons, help_msg_tcc, "tcck", 0, true);
 		} else {
 			cmd_afck (core, NULL);
 		}
@@ -548,7 +548,7 @@ static int cmd_tac(void *data, const char *_input) { // "tac"
 	}
 	switch (*input) {
 	case '?': // "tac?"
-		r_core_cmd_help_match (core, help_msg_t, "tac");
+		r_cons_cmd_help_match (core->cons, help_msg_t, "tac", 0, true);
 		break;
 	default: // "tac"
 		if (R_STR_ISNOTEMPTY (arg)) {
@@ -566,7 +566,7 @@ static int cmd_tac(void *data, const char *_input) { // "tac"
 				R_LOG_ERROR ("File not found");
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_t, "tac");
+			r_cons_cmd_help_match (core->cons, help_msg_t, "tac", 0, true);
 		}
 		break;
 	}
@@ -596,7 +596,7 @@ static int cmd_tail(void *data, const char *_input) { // "tail"
 	}
 	switch (*input) {
 	case '?': // "tail?"
-		r_core_cmd_help_match (core, help_msg_t, "tail");
+		r_cons_cmd_help_match (core->cons, help_msg_t, "tail", 0, true);
 		break;
 	default: // "tail"
 		if (!arg) {
@@ -653,7 +653,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 			r_anal_noreturn_add (core->anal, NULL,
 					r_num_math (core->num, input + 1));
 		} else {
-			r_core_cmd_help (core, help_msg_tn);
+			r_cons_cmd_help (core->cons, help_msg_tn);
 		}
 		break;
 	case 'n': // "tnn"
@@ -661,7 +661,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 			/* do nothing? */
 			r_anal_noreturn_add (core->anal, r_str_trim_head_ro (input + 2), UT64_MAX);
 		} else {
-			r_core_cmd_help (core, help_msg_tn);
+			r_cons_cmd_help (core->cons, help_msg_tn);
 		}
 		break;
 	case '*':
@@ -673,7 +673,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 		break;
 	default:
 	case '?':
-		r_core_cmd_help (core, help_msg_tn);
+		r_cons_cmd_help (core->cons, help_msg_tn);
 		break;
 	}
 }
@@ -2296,7 +2296,7 @@ static int cmd_type(void *data, const char *input) {
 	case 'u': { // "tu"
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_tu);
+			r_cons_cmd_help (core->cons, help_msg_tu);
 			break;
 		case '-': { // "tu-"
 			const char *arg = r_str_trim_head_ro (input + 2);
@@ -2346,7 +2346,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'e': // "tue"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_tu, "tue");
+				r_cons_cmd_help_match (core->cons, help_msg_tu, "tue", 0, true);
 			} else {
 				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "tuc");
 			}
@@ -2379,7 +2379,7 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'k': // "tk"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_t, "tk");
+			r_cons_cmd_help_match (core->cons, help_msg_t, "tk", 0, true);
 		} else {
 			res = (input[1] == ' ')
 				? sdb_querys (TDB, NULL, -1, input + 2)
@@ -2396,7 +2396,7 @@ static int cmd_type(void *data, const char *input) {
 			cmd_tcc (core, input + 2);
 			break;
 		case '?': //"tc?"
-			r_core_cmd_help (core, help_msg_tc);
+			r_cons_cmd_help (core->cons, help_msg_tc);
 			break;
 		case ' ': { // "tcc "
 			const char *type = r_str_trim_head_ro (input + 1);
@@ -2427,13 +2427,13 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'd': // "tcd"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_tc, "tcd");
+				r_cons_cmd_help_match (core->cons, help_msg_tc, "tcd", 0, true);
 			} else {
 				r_core_cmd0 (core, "tud;tsd;ttc;ted");
 			}
 			break;
 		default:
-			r_core_cmd_help (core, help_msg_tc);
+			r_cons_cmd_help (core->cons, help_msg_tc);
 			break;
 		}
 		break;
@@ -2479,23 +2479,23 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'n': // "tsn"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_ts, "tsn");
+				r_cons_cmd_help_match (core->cons, help_msg_ts, "tsn", 0, true);
 			} else if (input[2] == ' ') {
 				const char *arg = r_str_trim_head_ro (input + 2);
 				if (R_STR_ISEMPTY (arg)) {
-					r_core_cmd_help_match (core, help_msg_ts, "tsn");
+					r_cons_cmd_help_match (core->cons, help_msg_ts, "tsn", 0, true);
 				} else {
 					print_structs_by_size (core, TDB, r_num_math (core->num, arg));
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_ts, "tsn");
+				r_cons_cmd_help_match (core->cons, help_msg_ts, "tsn", 0, true);
 			}
 			break;
 		case 's': // "tss"
 			if (input[2] == ' ') {
 				r_cons_printf (core->cons, "%" PFMT64u "\n", (r_type_get_bitsize (TDB, input + 3) / 8));
 			} else {
-				r_core_cmd_help (core, help_msg_ts);
+				r_cons_cmd_help (core->cons, help_msg_ts);
 			}
 			break;
 		case 'c': // "tsc"
@@ -2506,7 +2506,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'e': // "tse"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_ts, "tse");
+				r_cons_cmd_help_match (core->cons, help_msg_ts, "tse", 0, true);
 			} else {
 				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "tsc");
 			}
@@ -2523,7 +2523,7 @@ static int cmd_type(void *data, const char *input) {
 			print_struct_union_with_offsets (core, TDB, stdifstruct, r_str_trim_head_ro (input + 2), false);
 			break;
 		case '?': // "ts?"
-			r_core_cmd_help (core, help_msg_ts);
+			r_cons_cmd_help (core->cons, help_msg_ts);
 			break;
 		default:
 			r_core_return_invalid_command (core, "ts", input[1]);
@@ -2543,19 +2543,19 @@ static int cmd_type(void *data, const char *input) {
 			const char *help_cmd = "ten";
 			switch (input[2]) {
 			case '?': // "ten?"
-				r_core_cmd_help_contains (core, help_msg_te, "ten");
+				r_cons_cmd_help_match (core->cons, help_msg_te, "ten", 0, false);
 				break;
 			case 'j': // "tenj"
 			case 'q': // "tenq"
 				mode = input[2];
 				help_cmd = mode == 'j'? "tenj": "tenq";
 				if (input[3] == '?') {
-					r_core_cmd_help_match (core, help_msg_te, help_cmd);
+					r_cons_cmd_help_match (core->cons, help_msg_te, help_cmd, 0, true);
 					break;
 				}
 				arg = r_str_trim_head_ro (input + 3);
 				if (R_STR_ISEMPTY (arg)) {
-					r_core_cmd_help_match (core, help_msg_te, help_cmd);
+					r_cons_cmd_help_match (core->cons, help_msg_te, help_cmd, 0, true);
 					break;
 				}
 				print_enum_by_num (core, TDB, r_num_math (core->num, arg), mode);
@@ -2563,13 +2563,13 @@ static int cmd_type(void *data, const char *input) {
 			case ' ': // "ten "
 				arg = r_str_trim_head_ro (input + 2);
 				if (R_STR_ISEMPTY (arg)) {
-					r_core_cmd_help_match (core, help_msg_te, help_cmd);
+					r_cons_cmd_help_match (core->cons, help_msg_te, help_cmd, 0, true);
 					break;
 				}
 				print_enum_by_num (core, TDB, r_num_math (core->num, arg), mode);
 				break;
 			case '\0':
-				r_core_cmd_help_match (core, help_msg_te, help_cmd);
+				r_cons_cmd_help_match (core->cons, help_msg_te, help_cmd, 0, true);
 				break;
 			default:
 				r_core_return_invalid_command (core, "ten", input[2]);
@@ -2603,7 +2603,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'j': // "tej"
 			if (input[2] == '?') {
-				r_core_cmd_help_contains (core, help_msg_te, "tej");
+				r_cons_cmd_help_match (core->cons, help_msg_te, "tej", 0, false);
 			} else if (input[2] == '\0') {
 				print_enum_list_json (core, TDB, NULL);
 			} else {
@@ -2612,35 +2612,35 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'b': // "teb"
 			if (R_STR_ISEMPTY (name) || input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_te, "teb");
+				r_cons_cmd_help_match (core->cons, help_msg_te, "teb", 0, true);
 			} else {
 				res = r_type_enum_member (TDB, name, member_name, 0);
 			}
 			break;
 		case 'c': // "tec"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_te, "tec");
+				r_cons_cmd_help_match (core->cons, help_msg_te, "tec", 0, true);
 			} else {
 				print_enum_in_c_format (core, TDB, r_str_trim_head_ro (input + 2), true);
 			}
 			break;
 		case 'd': // "ted"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_te, "ted");
+				r_cons_cmd_help_match (core->cons, help_msg_te, "ted", 0, true);
 			} else {
 				print_enum_in_c_format (core, TDB, r_str_trim_head_ro (input + 2), false);
 			}
 			break;
 		case 'e': // "tee"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_te, "tee");
+				r_cons_cmd_help_match (core->cons, help_msg_te, "tee", 0, true);
 			} else {
 				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "tec");
 			}
 			break;
 		case 'v': // "tev"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_te, "tev");
+				r_cons_cmd_help_match (core->cons, help_msg_te, "tev", 0, true);
 			} else {
 				print_enum_with_offsets (core, TDB, r_str_trim_head_ro (input + 2));
 			}
@@ -2677,7 +2677,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		case '?':
-			r_core_cmd_help (core, help_msg_te);
+			r_cons_cmd_help (core->cons, help_msg_te);
 			break;
 		default:
 			r_core_return_invalid_command (core, "te", *input);
@@ -2710,14 +2710,14 @@ static int cmd_type(void *data, const char *input) {
 	case '*': // "t*"
 	case '\0': // "t"
 		if (input[0] && input[1] == '?') {
-			r_core_cmd_help_match_spec (core, help_msg_t, "t", input[0]);
+			r_cons_cmd_help_match (core->cons, help_msg_t, "t", input[0], true);
 		} else {
 			typesList (core, input[0]);
 		}
 		break;
 	case 'o': // "to"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_to);
+			r_cons_cmd_help (core->cons, help_msg_to);
 		} else if (r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 			if (input[1] == ' ') {
 				const char *dir = r_config_get (core->config, "dir.types");
@@ -2765,7 +2765,7 @@ static int cmd_type(void *data, const char *input) {
 				if (arg) {
 					r_file_touch (arg + 1);
 				} else {
-					r_core_cmd_help_match (core, help_msg_to, "touch");
+					r_cons_cmd_help_match (core->cons, help_msg_to, "touch", 0, true);
 				}
 			} else if (input[1] == 's') {
 				const char *dbpath = input + 3;
@@ -2780,7 +2780,7 @@ static int cmd_type(void *data, const char *input) {
 				if (R_STR_ISNOTEMPTY (dbname)) {
 					r_anal_types_load_sdb (core->anal, dbname);
 				} else {
-					r_core_cmd_help_match (core, help_msg_to, "tol");
+					r_cons_cmd_help_match (core->cons, help_msg_to, "tol", 0, true);
 				}
 			}  else if (input[1] == 'e') { // "toe"
 				char *str = r_core_cmd_strf (core , "tc %s", input + 2);
@@ -2810,7 +2810,7 @@ static int cmd_type(void *data, const char *input) {
 	case 'd': // "td"
 		if (input[1] == '?') {
 			// TODO #7967 help refactor: move to detail
-			r_core_cmd_help_contains (core, help_msg_t, "td");
+			r_cons_cmd_help_match (core->cons, help_msg_t, "td", 0, false);
 		} else if (input[1] == 'e') { // "tde"
 			for (;;) {
 				char *tmp = r_core_editor (core, "*.h", "", NULL);
@@ -2860,7 +2860,7 @@ static int cmd_type(void *data, const char *input) {
 	case 'v': // "tv"
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_tv);
+			r_cons_cmd_help (core->cons, help_msg_tv);
 			break;
 		case ' ':
 			print_type_view (core, r_str_trim_head_ro (input + 2));
@@ -2958,7 +2958,7 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		default:
-			r_core_cmd_help (core, help_msg_tx);
+			r_cons_cmd_help (core->cons, help_msg_tx);
 			break;
 		}
 		break;
@@ -2973,11 +2973,11 @@ static int cmd_type(void *data, const char *input) {
 			if (input[2] == 'l') {
 				cmd_tail (core, input);
 			} else {
-				r_core_cmd_help_match (core, help_msg_t, "tail");
+				r_cons_cmd_help_match (core->cons, help_msg_t, "tail", 0, true);
 			}
 			break;
 		default:
-			r_core_cmd_help_contains (core, help_msg_t, "ta");
+			r_cons_cmd_help_match (core->cons, help_msg_t, "ta", 0, false);
 			break;
 		}
 		break;
@@ -2985,7 +2985,7 @@ static int cmd_type(void *data, const char *input) {
 	case 'l': // "tl"
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_tl);
+			r_cons_cmd_help (core->cons, help_msg_tl);
 			break;
 		case ' ': {
 			char *type = strdup (input + 2);
@@ -3072,7 +3072,7 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'p':  // "tp"
 		if (input[1] == '?') { // "tp?"
-			r_core_cmd_help (core, help_msg_tp);
+			r_cons_cmd_help (core->cons, help_msg_tp);
 		} else if (input[1] == 'v') { // "tpv"
 			const char *type_name = r_str_trim_head_ro (input + 2);
 			char *fmt = r_type_format (TDB, type_name);
@@ -3086,7 +3086,7 @@ static int cmd_type(void *data, const char *input) {
 				}
 			}
 			} else {
-				r_core_cmd_help_match (core, help_msg_tp, "tpv");
+				r_cons_cmd_help_match (core->cons, help_msg_tp, "tpv", 0, true);
 			}
 		} else if (input[1] == ' ' || input[1] == 'x' || !input[1]) {
 			char *tmp = strdup (input);
@@ -3150,19 +3150,19 @@ static int cmd_type(void *data, const char *input) {
 				free (fmt);
 				free (type);
 			} else {
-				r_core_cmd_help (core, help_msg_tp);
+				r_cons_cmd_help (core->cons, help_msg_tp);
 			}
 			free (tmp);
 		} else { // "tp"
-			r_core_cmd_help (core, help_msg_tp);
+			r_cons_cmd_help (core->cons, help_msg_tp);
 		}
 		break;
 	case '-': // "t-"
 		if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_t, "t-");
+			r_cons_cmd_help_match (core->cons, help_msg_t, "t-", 0, false);
 		} else if (input[1] == '*') {
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_t, "t-*");
+				r_cons_cmd_help_match (core->cons, help_msg_t, "t-*", 0, true);
 			} else {
 				sdb_reset (TDB);
 			}
@@ -3188,7 +3188,7 @@ static int cmd_type(void *data, const char *input) {
 		case '-': { // "tf-"
 			const char *arg = r_str_trim_head_ro (input + 2);
 			if (R_STR_ISEMPTY (arg)) {
-				r_core_cmd_help_match (core, help_msg_tf, "tf-");
+				r_cons_cmd_help_match (core->cons, help_msg_tf, "tf-", 0, true);
 			} else if (strchr (arg, '*') || strchr (arg, ' ')) {
 				types_remove_glob (core, stdiffunc, arg);
 			} else {
@@ -3215,7 +3215,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'e': // "tfe"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_tf, "tfe");
+				r_cons_cmd_help_match (core->cons, help_msg_tf, "tfe", 0, true);
 			} else {
 				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "tfc");
 			}
@@ -3232,7 +3232,7 @@ static int cmd_type(void *data, const char *input) {
 			if (input[2] == ' ') {
 				print_func_with_offsets (core, TDB, r_str_trim_head_ro (input + 3));
 			} else if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_tf, "tfv");
+				r_cons_cmd_help_match (core->cons, help_msg_tf, "tfv", 0, true);
 			} else {
 				print_func_with_offsets (core, TDB, NULL);
 			}
@@ -3248,7 +3248,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		default:
-			r_core_cmd_help (core, help_msg_tf);
+			r_cons_cmd_help (core->cons, help_msg_tf);
 			break;
 		}
 		break;
@@ -3326,14 +3326,14 @@ static int cmd_type(void *data, const char *input) {
 		}
 		if (input[1] == 'e') { // "tte"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_tt, "tte");
+				r_cons_cmd_help_match (core->cons, help_msg_tt, "tte", 0, true);
 			} else {
 				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "ttc");
 			}
 			break;
 		}
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_tt);
+			r_cons_cmd_help (core->cons, help_msg_tt);
 			break;
 		}
 		char *s = strdup (input + 2);
@@ -3351,7 +3351,7 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	}
 	case '?':
-		r_core_cmd_help (core, help_msg_t);
+		r_cons_cmd_help (core->cons, help_msg_t);
 		break;
 	default:
 		r_core_return_invalid_command (core, "t", *input);

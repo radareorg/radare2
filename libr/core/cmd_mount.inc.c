@@ -521,7 +521,7 @@ static int cmd_mount(void *data, const char *_input) {
 	RCore *core = (RCore *)data;
 
 	if (r_str_startswith (_input, "a?")) { // "ma?"
-		r_core_cmd_help_contains (core, help_msg_m, "ma");
+		r_cons_cmd_help_match (core->cons, help_msg_m, "ma", 0, false);
 		return 0;
 	}
 	if (r_str_startswith (_input, "an")) { // "ma" "man"
@@ -602,7 +602,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case '-':
 		if (input[1] == '?') { // "m-?"
-			r_core_cmd_help_match (core, help_msg_m, "m-");
+			r_cons_cmd_help_match (core->cons, help_msg_m, "m-", 0, true);
 		} else {
 			if (!r_fs_umount (core->fs, input + 1)) {
 				R_LOG_ERROR ("Nothing to unmount");
@@ -613,7 +613,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'j':
 		if (input[1] == '?') { // "mj?"
-			r_core_cmd_help_match (core, help_msg_m, "mj");
+			r_cons_cmd_help_match (core->cons, help_msg_m, "mj", 0, true);
 		} else {
 			PJ *pj = r_core_pj_new (core);
 			pj_o (pj);
@@ -647,7 +647,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'n': // "mn"
 		if (input[1] == '?') { // "mn?"
-			r_core_cmd_help_match (core, help_msg_m, "mn");
+			r_cons_cmd_help_match (core->cons, help_msg_m, "mn", 0, true);
 		} else {
 			input = (char *)r_str_trim_head_ro (input + 1);
 			RFSRoot *target_root = NULL;
@@ -702,7 +702,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'L': // "mL" list of plugins
 		if (input[1] == '?') { // "mL?"
-			r_core_cmd_help_match (core, help_msg_m, "mL");
+			r_cons_cmd_help_match (core->cons, help_msg_m, "mL", 0, true);
 		} else if (input[1] == 'L') {
 			r_list_foreach (core->fs->libstore->plugins, iter, plug) {
 				r_cons_printf (core->cons, "%s\n", plug->meta.name);
@@ -727,9 +727,9 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'd': // "md"
 		if (input[1] == '?') { // "md?"
-			r_core_cmd_help_contains (core, help_msg_m, "md");
+			r_cons_cmd_help_match (core->cons, help_msg_m, "md", 0, false);
 		} else if (input[1] == '+' && input[2] == '?') { // "md+?"
-			r_core_cmd_help_contains (core, help_msg_m, "md+");
+			r_cons_cmd_help_match (core->cons, help_msg_m, "md+", 0, false);
 		} else if (input[1] == '+') { // "md+"
 			const char *arg = r_str_trim_head_ro (input + 2);
 			if (R_STR_ISEMPTY (arg)) {
@@ -777,7 +777,7 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'p': // "mp"
 		input = (char *)r_str_trim_head_ro (input + 1);
 		if (input[0] == '?') { // "mp?"
-			r_core_cmd_help_match (core, help_msg_m, "mp");
+			r_cons_cmd_help_match (core->cons, help_msg_m, "mp", 0, true);
 			break;
 		}
 		if (!*input) {
@@ -811,7 +811,7 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'o': // "mo"
 		input = (char *)r_str_trim_head_ro (input + 1);
 		if (*input == '?') { // "mo?"
-			r_core_cmd_help_match (core, help_msg_m, "mo");
+			r_cons_cmd_help_match (core->cons, help_msg_m, "mo", 0, true);
 		} else {
 			file = r_fs_open (core->fs, input, false);
 			if (file) {
@@ -841,7 +841,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'i':
 		if (input[1] == '?') { // "mi?"
-			r_core_cmd_help_match (core, help_msg_m, "mi");
+			r_cons_cmd_help_match (core->cons, help_msg_m, "mi", 0, true);
 		} else if (input[1] == 'x') { // "mix"
 			cmd_mix (core, input + 2);
 		} else if (input[1] == 's') { // "mis"
@@ -891,7 +891,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'c': // "mc"
 		if (input[1] == '?') { // "mc?"
-			r_core_cmd_help_match (core, help_msg_m, "mc");
+			r_cons_cmd_help_match (core->cons, help_msg_m, "mc", 0, true);
 		} else {
 			input = (char *)r_str_trim_head_ro (input + 1);
 			file = r_fs_open (core->fs, input, false);
@@ -911,7 +911,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'g': // "mg"
 		if (input[1] == '?') { // "mg?"
-			r_core_cmd_help_match (core, help_msg_m, "mg");
+			r_cons_cmd_help_match (core->cons, help_msg_m, "mg", 0, true);
 			break;
 		}
 		input = (char *)r_str_trim_head_ro (input + 1);
@@ -988,7 +988,7 @@ static int cmd_mount(void *data, const char *_input) {
 		input++;
 		switch (*input) {
 		case '?': // "mf?"
-			r_core_cmd_help (core, help_msg_mf);
+			r_cons_cmd_help (core->cons, help_msg_mf);
 			break;
 		case 'n':
 			input = (char *)r_str_trim_head_ro (input + 1);
@@ -1025,7 +1025,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 's': // "ms"
 		if (input[1] == '?') { // "ms?"
-			r_core_cmd_help_match (core, help_msg_m, "ms");
+			r_cons_cmd_help_match (core->cons, help_msg_m, "ms", 0, true);
 			break;
 		};
 		if (!r_config_get_b (core->config, "scr.interactive")) {
@@ -1060,7 +1060,7 @@ static int cmd_mount(void *data, const char *_input) {
 			if (arg1) {
 				*arg1++ = 0;
 			} else {
-				r_core_cmd_help_match (core, help_msg_m, "mwf");
+				r_cons_cmd_help_match (core->cons, help_msg_m, "mwf", 0, true);
 				free (arg0);
 				break;
 			}
@@ -1092,12 +1092,12 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 			free (args);
 		} else {
-			r_core_cmd_help_contains (core, help_msg_m, "mw");
+			r_cons_cmd_help_match (core->cons, help_msg_m, "mw", 0, false);
 		}
 		break;
 	case 'y':
 		if (input[1] == '?') { // "my?"
-			r_core_cmd_help_match (core, help_msg_m, "my");
+			r_cons_cmd_help_match (core->cons, help_msg_m, "my", 0, true);
 			break;
 		}
 		input = (char *)r_str_trim_head_ro (input + 1);
@@ -1118,7 +1118,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case ':':
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_mcolon);
+			r_cons_cmd_help (core->cons, help_msg_mcolon);
 		} else if (input[1] == 'l' || !input[1]) {
 			RListIter *iter;
 			RFSPlugin *plug;
@@ -1130,7 +1130,7 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_m);
+		r_cons_cmd_help (core->cons, help_msg_m);
 		break;
 	default:
 		r_core_return_invalid_command (core, "m", *input);

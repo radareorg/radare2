@@ -265,7 +265,7 @@ static void oba_finish_load(RCore *core) {
 
 static void cmd_oba(RCore *core, const char *input) {
 	if (input[2] == '?') {
-		r_core_cmd_help (core, help_msg_oba);
+		r_cons_cmd_help (core->cons, help_msg_oba);
 		return;
 	}
 	if (input[2] && input[3]) {
@@ -368,7 +368,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	switch (input[1]) {
 	case 'L': // "obL"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_ob, "obL");
+			r_cons_cmd_help_match (core->cons, help_msg_ob, "obL", 0, true);
 			break;
 		}
 		r_core_cmd0 (core, "iL");
@@ -378,14 +378,14 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		break;
 	case 'q': // "obq"
 		if (input[2] == '?') {
-			r_core_cmd_help (core, help_msg_ob);
+			r_cons_cmd_help (core->cons, help_msg_ob);
 			break;
 		}
 		r_core_bin_list (core, input[1]);
 		break;
 	case 'j': // "obj"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_ob, "obj");
+			r_cons_cmd_help_match (core->cons, help_msg_ob, "obj", 0, true);
 			break;
 		}
 		r_core_bin_list (core, input[1]);
@@ -393,14 +393,14 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		break;
 	case '*': // "ob*"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_ob, "ob*");
+			r_cons_cmd_help_match (core->cons, help_msg_ob, "ob*", 0, true);
 			break;
 		}
 		r_core_bin_list (core, input[1]);
 		break;
 	case '.': // "ob."
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_ob, "ob.");
+			r_cons_cmd_help_match (core->cons, help_msg_ob, "ob.", 0, true);
 			break;
 		}
 		{
@@ -426,7 +426,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		ut32 id;
 		const char *tmp;
 		if (input[2] == '?' && !input[3]) {
-			r_core_cmd_help_match (core, help_msg_o, "ob");
+			r_cons_cmd_help_match (core->cons, help_msg_o, "ob", 0, true);
 			break;
 		}
 		if (input[2] == '-' || input[2] == '*') {
@@ -442,7 +442,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		int n = r_str_word_set0 (v);
 		if (n < 1 || n > 2) {
-			r_core_cmd_help_match (core, help_msg_o, "ob");
+			r_cons_cmd_help_match (core->cons, help_msg_o, "ob", 0, true);
 			free (v);
 			break;
 		}
@@ -460,7 +460,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	}
 	case 'r': // "obr"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_ob, "obr");
+			r_cons_cmd_help_match (core->cons, help_msg_ob, "obr", 0, true);
 		} else {
 			r_core_bin_rebase (core, r_num_math (core->num, input + 3));
 			r_core_cmd0 (core, ".is*");
@@ -468,7 +468,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		break;
 	case 'f': // "obf"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_ob, "obf");
+			r_cons_cmd_help_match (core->cons, help_msg_ob, "obf", 0, true);
 		} else if (input[2] == ' ') {
 			r_core_cmdf (core, "oba 0 %s", input + 3);
 		} else {
@@ -493,10 +493,10 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		break;
 	case 'i': // "obi"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_ob, "obi");
+			r_cons_cmd_help_match (core->cons, help_msg_ob, "obi", 0, true);
 		} else if (input[2] == 'o') { // "obio"
 			if (input[3] == '?') {
-				r_core_cmd_help_match (core, help_msg_ob, "obio");
+				r_cons_cmd_help_match (core->cons, help_msg_ob, "obio", 0, true);
 				break;
 			}
 			r_bin_force_plugin (core->bin, "io");
@@ -508,11 +508,11 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case 'm': // "obm"
 		{
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_ob, "obm");
+				r_cons_cmd_help_match (core->cons, help_msg_ob, "obm", 0, true);
 				break;
 			}
 			if (input[2] == '-' && input[3] == '?') {
-				r_core_cmd_help_match (core, help_msg_ob, "obm-");
+				r_cons_cmd_help_match (core->cons, help_msg_ob, "obm-", 0, true);
 				break;
 			}
 			int dstid = atoi (input + 2);
@@ -556,21 +556,21 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				R_LOG_ERROR ("Invalid RBinFile.id number");
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_ob, "obo");
+			r_cons_cmd_help_match (core->cons, help_msg_ob, "obo", 0, true);
 		}
 		break;
 	case '-': // "ob-"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_ob, "ob-");
+			r_cons_cmd_help_match (core->cons, help_msg_ob, "ob-", 0, true);
 		} else if (input[2] == '*') {
 			if (input[3] == '?') {
-				r_core_cmd_help_match (core, help_msg_ob, "ob-");
+				r_cons_cmd_help_match (core->cons, help_msg_ob, "ob-", 0, true);
 				break;
 			}
 			r_bin_file_delete_all (core->bin);
 		} else if (input[2] == '-') {
 			if (input[3] == '?') {
-				r_core_cmd_help_match (core, help_msg_ob, "ob--");
+				r_cons_cmd_help_match (core->cons, help_msg_ob, "ob--", 0, true);
 				break;
 			}
 			RBinFile *bf = r_bin_cur (core->bin);
@@ -601,7 +601,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		break;
 	case '=': // "ob="
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_ob, "ob=");
+			r_cons_cmd_help_match (core->cons, help_msg_ob, "ob=", 0, true);
 			break;
 		}
 		{
@@ -633,7 +633,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			r_list_free (list);
 		} break;
 	case '?': // "ob?"
-		r_core_cmd_help (core, help_msg_ob);
+		r_cons_cmd_help (core->cons, help_msg_ob);
 		break;
 	}
 }
@@ -831,7 +831,7 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 		toggle = R_IO_MAP_TIE_FLG_FORTH;
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_omt);
+		r_cons_cmd_help (core->cons, help_msg_omt);
 		return;
 	}
 	int argc;
@@ -974,7 +974,7 @@ static bool cmd_om(RCore *core, const char *input, int arg) {
 
 static void cmd_omd(RCore *core, const char* input) {
 	if (*input == '?') {
-		r_core_cmd_help_match (core, help_msg_om, "omd");
+		r_cons_cmd_help_match (core->cons, help_msg_om, "omd", 0, true);
 		return;
 	}
 	int fd = r_io_fd_get_current (core->io);
@@ -996,7 +996,7 @@ static void cmd_omd(RCore *core, const char* input) {
 				R_LOG_ERROR ("Invalid map range");
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_om, "omd");
+			r_cons_cmd_help_match (core->cons, help_msg_om, "omd", 0, true);
 		}
 		r_list_free (args);
 		r_free (inp);
@@ -1008,7 +1008,7 @@ static void cmd_omd(RCore *core, const char* input) {
 static void cmd_oma(RCore *core, const char *input) {
 	switch (input[2]) {
 	case '?':
-		r_core_cmd_help_match (core, help_msg_om, "oma");
+		r_cons_cmd_help_match (core->cons, help_msg_om, "oma", 0, true);
 		r_cons_print (core->cons, "Type: ");
 		r_cons_println (core->cons, "heap, stack, mmap, mmio, dma, jit, bss, shared, kernel, guard, null, gpu, tls, buffer, cow, pagetables");
 		r_cons_print (core->cons, "Flags: ");
@@ -1087,7 +1087,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 	// the argument can be glued to the command ("ombaN") or passed apart ("omba N")
 	const char *arg = (argc > 1)? argv[1]: (cmd? argv[0] + 2: "");
 	if (arg[0] == '?') {
-		r_core_cmd_help (core, help_msg_omb);
+		r_cons_cmd_help (core->cons, help_msg_omb);
 		return;
 	}
 	switch (cmd) {
@@ -1229,7 +1229,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 		}
 		break;
 	case '?': // "omb?"
-		r_core_cmd_help (core, help_msg_omb);
+		r_cons_cmd_help (core->cons, help_msg_omb);
 		break;
 	default:
 		r_core_return_invalid_command (core, "omb", cmd);
@@ -1314,7 +1314,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case 's': // "oms"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_om, "oms");
+			r_cons_cmd_help_match (core->cons, help_msg_om, "oms", 0, true);
 		} else if (input[2] != ' ') {
 			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
@@ -1341,7 +1341,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case 'v': // "omv"
 		if (input[2] == '?') {
-			r_core_cmd_help (core, help_msg_omv);
+			r_cons_cmd_help (core->cons, help_msg_omv);
 		} else if (input[2] == '.') {
 			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
@@ -1375,7 +1375,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 				pj = r_core_pj_new (core);
 				pj_a (pj);
 			} else if (mode == '?') {
-				r_core_cmd_help_match (core, help_msg_om, "omo");
+				r_cons_cmd_help_match (core->cons, help_msg_om, "omo", 0, true);
 			} else if (mode) {
 				r_core_return_invalid_command (core, "omo", input[2]);
 				break;
@@ -1403,7 +1403,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			r_core_cmd0 (core, "omrd `omq.`");
 			break;
 		case '?': // "omr?"
-			r_core_cmd_help (core, help_msg_omr);
+			r_cons_cmd_help (core->cons, help_msg_omr);
 			break;
 		case 'd': // "omrd"
 			id = r_num_math (core->num, input + 3);		//mapid
@@ -1459,7 +1459,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case 'n': // "omn"
 		if (input[2] == '?') { // "omn?"
-			r_core_cmd_help (core, help_msg_omn);
+			r_cons_cmd_help (core->cons, help_msg_omn);
 		} else if (input[2] == '.') { // "omn."
 			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
@@ -1541,13 +1541,13 @@ static void cmd_open_map(RCore *core, const char *input) {
 					r_io_map_set_name (map, desc->name);
 				}
 			} else {
-				r_core_cmd_help_contains (core, help_msg_om, "omv");
+				r_cons_cmd_help_match (core->cons, help_msg_om, "omv", 0, false);
 			}
 		}
 		break;
 	case 'm': // "omm"
 		if (input[2] == '?') {
-			r_core_cmd_help_contains (core, help_msg_om, "omm");
+			r_cons_cmd_help_match (core->cons, help_msg_om, "omm", 0, false);
 		} else if (input[2] == 0 || input[2] == ' ') {
 			ut32 fd = input[2]? r_num_math (core->num, input + 2): r_io_fd_get_current (core->io);
 			RIODesc *desc = r_io_desc_get (core->io, fd);
@@ -1580,7 +1580,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case 'u': // "omu" -- same as "om", but checks if already exists
 		switch (input[2]) {
 		case '?':
-			r_core_cmd_help_match (core, help_msg_om, "omu");
+			r_cons_cmd_help_match (core->cons, help_msg_om, "omu", 0, true);
 			break;
 		case 0:
 		case ' ':
@@ -1598,7 +1598,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		switch (input[2]) {
 		case 'g': // "ompg"
 			if (input[3] == '?') {
-				r_core_cmd_help_contains (core, help_msg_om, "ompg");
+				r_cons_cmd_help_match (core->cons, help_msg_om, "ompg", 0, false);
 			} else {
 				cmd_ompg (core, input + 3);
 			}
@@ -1612,8 +1612,8 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 			break;
 		case '?': // "omp?"
-			r_core_cmd_help_match (core, help_msg_om, "omp");
-			r_core_cmd_help_contains (core, help_msg_om, "ompg");
+			r_cons_cmd_help_match (core->cons, help_msg_om, "omp", 0, true);
+			r_cons_cmd_help_match (core->cons, help_msg_om, "ompg", 0, false);
 			break;
 		case 0: // "omp"
 			{
@@ -1686,7 +1686,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		r_list_free (list);
 		} break;
 	case '?':
-		r_core_cmd_help (core, help_msg_om);
+		r_cons_cmd_help (core->cons, help_msg_om);
 		break;
 	default:
 		r_core_return_invalid_command (core, "om", input[1]);
@@ -2204,7 +2204,7 @@ static bool cmd_onn(RCore *core, const char* input) {
 	}
 	arg0 = r_str_trim_head_ro (arg0);
 	if (!*arg0) {
-		r_core_cmd_help_contains (core, help_msg_on, "onn");
+		r_cons_cmd_help_match (core->cons, help_msg_on, "onn", 0, false);
 		return false;
 	}
 	char *ptr = r_str_trim_dup (arg0);
@@ -2337,7 +2337,7 @@ static int cmd_open(void *data, const char *input) {
 			}
 			break;
 		case '?': // "oa?"
-			r_core_cmd_help_match (core, help_msg_o, "oa");
+			r_cons_cmd_help_match (core->cons, help_msg_o, "oa", 0, true);
 			return 1;
 		case ' ': { // "oa "
 			int i;
@@ -2383,13 +2383,13 @@ static int cmd_open(void *data, const char *input) {
 			}
 			break;
 		default:
-			r_core_cmd_help_match (core, help_msg_o, "oa");
+			r_cons_cmd_help_match (core->cons, help_msg_o, "oa", 0, true);
 			return 0;
 		}
 		break;
 	case 'n': // "on"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_on);
+			r_cons_cmd_help (core->cons, help_msg_on);
 			return 0;
 		}
 		if (input[1] == 'n') { // "onn"
@@ -2403,19 +2403,19 @@ static int cmd_open(void *data, const char *input) {
 		if (input[1] == '+') { // "on+"
 			perms |= R_PERM_W;
 			if (input[2] != ' ') {
-				r_core_cmd_help_match (core, help_msg_on, "on+");
+				r_cons_cmd_help_match (core->cons, help_msg_on, "on+", 0, true);
 				return 0;
 			}
 			ptr = r_str_trim_head_ro (input + 3);
 		} else if (input[1] == ' ') {
 			ptr = input + 2;
 		} else {
-			r_core_cmd_help (core, help_msg_on);
+			r_cons_cmd_help (core->cons, help_msg_on);
 			return 0;
 		}
 		argv = r_str_argv (ptr, &argc);
 		if (!argc) {
-			r_core_cmd_help (core, help_msg_on);
+			r_cons_cmd_help (core->cons, help_msg_on);
 			r_str_argv_free (argv);
 			return 0;
 		}
@@ -2431,7 +2431,7 @@ static int cmd_open(void *data, const char *input) {
 			const char *arg = r_str_trim_head_ro (input + 1);
 			free (r_core_editor (core, arg, NULL, NULL));
 		} else {
-			r_core_cmd_help_contains (core, help_msg_o, "oe");
+			r_cons_cmd_help_match (core->cons, help_msg_o, "oe", 0, false);
 		}
 		return 0;
 	// XXX projects use the of command, but i think we should deprecate it... keeping it for now
@@ -2440,7 +2440,7 @@ static int cmd_open(void *data, const char *input) {
 			ptr = r_str_trim_head_ro (input + 2);
 			argv = r_str_argv (ptr, &argc);
 			if (argc == 0 || input[1] == '?') {
-				r_core_cmd_help_match (core, help_msg_o, "of");
+				r_cons_cmd_help_match (core->cons, help_msg_o, "of", 0, true);
 				r_str_argv_free (argv);
 				return 0;
 			}
@@ -2455,7 +2455,7 @@ static int cmd_open(void *data, const char *input) {
 			r_core_return_value (core, fd);
 			r_str_argv_free (argv);
 		} else {
-			r_core_cmd_help_match (core, help_msg_o, "of");
+			r_cons_cmd_help_match (core->cons, help_msg_o, "of", 0, true);
 		}
 		return 0;
 	case 't': // "ot"
@@ -2487,7 +2487,7 @@ static int cmd_open(void *data, const char *input) {
 							free (epath);
 						}
 					} else {
-						r_core_cmd_help_match (core, help_msg_o, "open");
+						r_cons_cmd_help_match (core->cons, help_msg_o, "open", 0, true);
 					}
 				}
 				break;
@@ -2508,7 +2508,7 @@ static int cmd_open(void *data, const char *input) {
 				}
 				break;
 			default:
-				r_core_cmd_help (core, help_msg_op);
+				r_cons_cmd_help (core->cons, help_msg_op);
 				break;
 			}
 		} else {
@@ -2535,7 +2535,7 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '+': // "o+"
 		if (input[1] == '?' || (input[1] && input[2] == '?')) {
-			r_core_cmd_help_contains (core, help_msg_o, "o+");
+			r_cons_cmd_help_match (core->cons, help_msg_o, "o+", 0, false);
 			return 0;
 		}
 		perms |= R_PERM_W;
@@ -2549,9 +2549,9 @@ static int cmd_open(void *data, const char *input) {
 		argv = r_str_argv (ptr, &argc);
 		if (argc == 0) {
 			if (perms & R_PERM_W) {
-				r_core_cmd_help_contains (core, help_msg_o, "o+");
+				r_cons_cmd_help_match (core->cons, help_msg_o, "o+", 0, false);
 			} else {
-				r_core_cmd_help_match (core, help_msg_o, "o");
+				r_cons_cmd_help_match (core->cons, help_msg_o, "o", 0, true);
 			}
 			r_str_argv_free (argv);
 			return 0;
@@ -2658,7 +2658,7 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '*': // "o*"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_o, "o*");
+			r_cons_cmd_help_match (core->cons, help_msg_o, "o*", 0, true);
 		} else if (input[1] == '*') {
 			r_id_storage_foreach (&core->io->files, desc_list_cmds_cb2, core);
 		} else {
@@ -2667,7 +2667,7 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case 'j': // "oj"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_o, "oj");
+			r_cons_cmd_help_match (core->cons, help_msg_o, "oj", 0, true);
 			break;
 		}
 		PJ *pj = r_core_pj_new (core);
@@ -2709,21 +2709,21 @@ static int cmd_open(void *data, const char *input) {
 		switch (input[1]) {
 		case '!': // "o-!"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_o_dash, "o-!");
+				r_cons_cmd_help_match (core->cons, help_msg_o_dash, "o-!", 0, true);
 			} else {
 				r_core_file_close_all_but (core);
 			}
 			break;
 		case '$': // "o-$"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_o_dash, "o-$");
+				r_cons_cmd_help_match (core->cons, help_msg_o_dash, "o-$", 0, true);
 			} else {
 				R_LOG_TODO ("o-$: close last fd is not implemented");
 			}
 			break;
 		case '.': // "o-."
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_o_dash, "o-*");
+				r_cons_cmd_help_match (core->cons, help_msg_o_dash, "o-*", 0, true);
 			} else {
 				RBinFile *bf = r_bin_cur (core->bin);
 				if (bf && bf->fd >= 0) {
@@ -2737,7 +2737,7 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		case '*': // "o-*"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_o_dash, "o-*");
+				r_cons_cmd_help_match (core->cons, help_msg_o_dash, "o-*", 0, true);
 			} else {
 				r_io_close_all (core->io);
 				r_bin_file_delete_all (core->bin);
@@ -2745,7 +2745,7 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		case '-': // "o--"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_o_dash, "o--");
+				r_cons_cmd_help_match (core->cons, help_msg_o_dash, "o--", 0, true);
 			} else {
 				r_io_close_all (core->io);
 				r_bin_file_delete_all (core->bin);
@@ -2756,7 +2756,7 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		case '\0':
 		case '?':
-			r_core_cmd_help (core, help_msg_o_dash);
+			r_cons_cmd_help (core->cons, help_msg_o_dash);
 			break;
 		default: {
 			int fd = (int)r_num_math (core->num, input + 1);
@@ -2829,7 +2829,7 @@ static int cmd_open(void *data, const char *input) {
 			case 'f': // "oodf"
 				argv = r_str_argv (input + 3, &argc);
 				if (argc < 1 || argc > 2) {
-					r_core_cmd_help_match (core, help_msg_ood, "oodf");
+					r_cons_cmd_help_match (core->cons, help_msg_ood, "oodf", 0, true);
 					r_str_argv_free (argv);
 					return 0;
 				}
@@ -2845,20 +2845,20 @@ static int cmd_open(void *data, const char *input) {
 				break;
 			case '?': // "ood?"
 			default:
-				r_core_cmd_help (core, help_msg_ood);
+				r_cons_cmd_help (core->cons, help_msg_ood);
 				break;
 			}
 			break;
 		case 'c': // "ooc"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_oo, "ooc");
+				r_cons_cmd_help_match (core->cons, help_msg_oo, "ooc", 0, true);
 			} else {
 				r_core_cmd0 (core, "oc `o.`");
 			}
 			break;
 		case 'i': // "ooi" // reload info
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_oo, "ooi");
+				r_cons_cmd_help_match (core->cons, help_msg_oo, "ooi", 0, true);
 			} else {
 				const char *arg = strchr (input, ' ');
 				if (arg) {
@@ -2875,7 +2875,7 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		case 'b': // "oob" : reopen with bin info
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_oo, "oob");
+				r_cons_cmd_help_match (core->cons, help_msg_oo, "oob", 0, true);
 			} else {
 				r_core_file_reopen (core, input + 2, 0, 2);
 			}
@@ -2890,7 +2890,7 @@ static int cmd_open(void *data, const char *input) {
 				break;
 			case 'n': // "oonn"
 				if (input[3] == '?' || !core->io->desc) {
-					r_core_cmd_help_contains (core, help_msg_oo, "oonn");
+					r_cons_cmd_help_match (core->cons, help_msg_oo, "oonn", 0, false);
 					break;
 				}
 				RIODesc *desc = r_io_desc_get (core->io, core->io->desc->fd);
@@ -2910,13 +2910,13 @@ static int cmd_open(void *data, const char *input) {
 				break;
 			case '?':
 			default:
-				r_core_cmd_help_contains (core, help_msg_oo, "oon");
+				r_cons_cmd_help_match (core->cons, help_msg_oo, "oon", 0, false);
 				break;
 			}
 			break;
 		case '+': // "oo+"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_oo, "oo+");
+				r_cons_cmd_help_match (core->cons, help_msg_oo, "oo+", 0, true);
 			} else if (core && core->io && core->io->desc) {
 				int fd;
 				int perms = R_PERM_RW;
@@ -2980,13 +2980,13 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		case '?': // "oo?"
 		default:
-			 r_core_cmd_help (core, help_msg_oo);
+			 r_cons_cmd_help (core->cons, help_msg_oo);
 			 break;
 		}
 		break;
 	case 'c': // "oc"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_o, "oc");
+			r_cons_cmd_help_match (core->cons, help_msg_o, "oc", 0, true);
 		} else if (input[1] && input[2]) {
 			if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 				R_LOG_ERROR ("This command is disabled in sandbox mode");
@@ -3031,11 +3031,11 @@ static int cmd_open(void *data, const char *input) {
 			free (inp);
 			r_core_block_read (core);
 		} else {
-			r_core_cmd_help_match (core, help_msg_o, "oxr");
+			r_cons_cmd_help_match (core->cons, help_msg_o, "oxr", 0, true);
 		}
 		break;
 	case '?': // "o?"
-		r_core_cmd_help (core, help_msg_o);
+		r_cons_cmd_help (core->cons, help_msg_o);
 		break;
 	default:
 		r_core_return_invalid_command (core, "o", *input);

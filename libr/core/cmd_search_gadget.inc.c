@@ -1128,7 +1128,7 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 		gadget_kuery_json (pj, db_gadget);
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_slash_Gk);
+		r_cons_cmd_help (core->cons, help_msg_slash_Gk);
 		break;
 	case ' ':
 		if (gadget_kuery_print_class (core, db_gadget, input + 1)) {

@@ -494,11 +494,9 @@ R_API bool r_core_visual_hud(RCore *core) {
 	char *pfx = r_sys_prefix (NULL);
 	char *f = r_str_newf (R_JOIN_3_PATHS ("%s", R2_HUD, "main"), pfx);
 	free (pfx);
-	const int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	char *homehud = r_xdg_datadir ("hud");
 	bool ready = false;
 	char *res = NULL;
-	core->cons->context->color_mode = use_color;
 
 	r_core_visual_showcursor (core, true);
 	if (R_STR_ISNOTEMPTY (c) && r_file_exists (c)) {

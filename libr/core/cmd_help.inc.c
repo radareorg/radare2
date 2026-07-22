@@ -472,13 +472,13 @@ static ut32 vernum(const char *s) {
 }
 
 static void cmd_help_exclamation(RCore *core) {
-	r_core_cmd_help (core, help_msg_exclamation);
-	r_core_cmd_help (core, help_msg_env);
+	r_cons_cmd_help (core->cons, help_msg_exclamation);
+	r_cons_cmd_help (core->cons, help_msg_env);
 }
 
 static void cmd_help_percent(RCore *core) {
-	r_core_cmd_help (core, help_msg_percent);
-	r_core_cmd_help (core, help_msg_env);
+	r_cons_cmd_help (core->cons, help_msg_percent);
+	r_cons_cmd_help (core->cons, help_msg_env);
 }
 
 static const char* findBreakChar(const char *s) {
@@ -666,7 +666,7 @@ static int cmd_help_cond(RCore *core, const char *input) {
 		return 1;
 	}
 	if (*input == '?') {
-		r_core_cmd_help (core, help_msg_question_cond);
+		r_cons_cmd_help (core->cons, help_msg_question_cond);
 		return 0;
 	}
 	const char *par = nestch (input);
@@ -737,7 +737,7 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case ':':
 		// show help for ':' command
-		r_core_cmd_help_match (core, help_msg_at, ":");
+		r_cons_cmd_help_match (core->cons, help_msg_at, ":", 0, true);
 		break;
 	case 't': { // "?t"
 		switch (input[1]) {
@@ -786,7 +786,7 @@ static int cmd_help(void *data, const char *input) {
 				break;
 			}
 		default:
-			r_core_cmd_help (core, help_msg_question_t);
+			r_cons_cmd_help (core->cons, help_msg_question_t);
 			break;
 		}
 		break;
@@ -817,7 +817,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case '\'': // "?'"
-		r_core_cmd_help (core, help_msg_single_quote);
+		r_cons_cmd_help (core->cons, help_msg_single_quote);
 		break;
 	case 'a': // "?a"
 		if (input[1] == 'e') {
@@ -868,7 +868,7 @@ static int cmd_help(void *data, const char *input) {
 			free (buf);
 		} else if (input[1] == 't' && input[2] == 'w') { // "?btw"
 			if (r_num_between (core->num, input + 3) == -1) {
-				r_core_cmd_help_match (core, help_msg_question, "?btw");
+				r_cons_cmd_help_match (core->cons, help_msg_question, "?btw", 0, true);
 			}
 		} else {
 			n = r_num_math (core->num, input + 1);
@@ -891,7 +891,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == ' ') {
 			r_cons_printf (cons, "0x%08x\n", (ut32)r_str_hash (input + 2));
 		} else {
-			r_core_cmd_help_contains (core, help_msg_question, "?h");
+			r_cons_cmd_help_match (core->cons, help_msg_question, "?h", 0, false);
 		}
 		break;
 	case 'F': // "?F"
@@ -911,11 +911,11 @@ static int cmd_help(void *data, const char *input) {
 				r_str_bits (out, (const ut8*)&n, sizeof (n) * 8, q + 1);
 				r_cons_println (core->cons, out);
 			} else {
-				r_core_cmd_help_match (core, help_msg_question, "?f");
+				r_cons_cmd_help_match (core->cons, help_msg_question, "?f", 0, true);
 			}
 			free (p);
 		} else {
-			r_core_cmd_help_match (core, help_msg_question, "?f");
+			r_cons_cmd_help_match (core->cons, help_msg_question, "?f", 0, true);
 		}
 		break;
 	case 'o': // "?o"
@@ -1065,7 +1065,7 @@ static int cmd_help(void *data, const char *input) {
 			R_LOG_ERROR ("Division by Zero");
 		}
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_question, "?q");
+			r_cons_cmd_help_match (core->cons, help_msg_question, "?q", 0, true);
 		} else {
 			const char *space = strchr (input, ' ');
 			if (space) {
@@ -1101,7 +1101,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help_contains (core, help_msg_question, "?v");
+			r_cons_cmd_help_match (core->cons, help_msg_question, "?v", 0, false);
 			break;
 		case '\0':
 			r_cons_printf (core->cons, "%d\n", (st32)n);
@@ -1153,7 +1153,7 @@ static int cmd_help(void *data, const char *input) {
 				}
 				free (s);
 			} else {
-				r_core_cmd_help_match (core, help_msg_question, "?==");
+				r_cons_cmd_help_match (core->cons, help_msg_question, "?==", 0, true);
 			}
 		} else {
 			if (input[1]) { // ?=
@@ -1201,16 +1201,16 @@ static int cmd_help(void *data, const char *input) {
 	case '@': // "?@"
 		if (input[1] == '@') {
 			if (input[2] == '@') {
-				r_core_cmd_help (core, help_msg_at_at_at);
+				r_cons_cmd_help (core->cons, help_msg_at_at_at);
 			} else {
-				r_core_cmd_help (core, help_msg_at_at);
+				r_cons_cmd_help (core->cons, help_msg_at_at);
 			}
 		} else {
-			r_core_cmd_help (core, help_msg_at);
+			r_cons_cmd_help (core->cons, help_msg_at);
 		}
 		break;
 	case '&': // "?&"
-		r_core_cmd_help (core, help_msg_amper);
+		r_cons_cmd_help (core->cons, help_msg_amper);
 		break;
 	case '%': // "?%"
 		if (input[1] == '?') {
@@ -1219,7 +1219,7 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '$': // "?$"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_question_v);
+			r_cons_cmd_help (core->cons, help_msg_question_v);
 		} else {
 			int i = 0;
 			char padstr[128];
@@ -1270,7 +1270,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'V': // "?V"
 		switch (input[1]) {
 		case '?': // "?V?"
-			r_core_cmd_help (core, help_msg_question_V);
+			r_cons_cmd_help (core->cons, help_msg_question_V);
 			break;
 		case 0: // "?V"
 			{
@@ -1335,7 +1335,7 @@ static int cmd_help(void *data, const char *input) {
 			input = r_str_trim_head_ro (input + 2);
 			r_core_return_value (core, strlen (input));
 		} else if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_question, "?l");
+			r_cons_cmd_help_match (core->cons, help_msg_question, "?l", 0, false);
 		} else {
 			input = r_str_trim_head_ro (input + 1);
 			r_core_return_value (core, strlen (input));
@@ -1378,7 +1378,7 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'E': // "?E" clippy echo
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_clippy);
+			r_cons_cmd_help (core->cons, help_msg_clippy);
 		} else {
 			r_core_clippy (core, input + 1);
 		}
@@ -1586,7 +1586,7 @@ static int cmd_help(void *data, const char *input) {
 			r_core_return_value (core, 0);
 			break;
 		case '?': // "?e?"
-			r_core_cmd_help (core, help_msg_question_e);
+			r_cons_cmd_help (core->cons, help_msg_question_e);
 			break;
 		default:
 			r_core_return_invalid_command (core, "?e", input[1]);
@@ -1658,7 +1658,7 @@ static int cmd_help(void *data, const char *input) {
 		} else {
 			switch (input[1]) {
 			case '?': // "?i?"
-				r_core_cmd_help (core, help_msg_question_i);
+				r_cons_cmd_help (core->cons, help_msg_question_i);
 				break;
 			case 'f': // "?if"
 				r_core_return_value (core, !r_num_conditional (core->num, input + 2));
@@ -1736,7 +1736,7 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '?': // "??"
 		if (input[1] == 0) { // "??"
-			r_core_cmd_help (core, help_msg_question);
+			r_cons_cmd_help (core->cons, help_msg_question);
 			return 0;
 		} else if (input[1]) {
 			if (core->num->value) {
@@ -1752,8 +1752,8 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '\0': // "?"
 		// TODO #7967 help refactor
-		r_core_cmd_help (core, help_msg_intro);
-		r_core_cmd_help (core, help_msg_root);
+		r_cons_cmd_help (core->cons, help_msg_intro);
+		r_cons_cmd_help (core->cons, help_msg_root);
 		break;
 	default:
 		r_core_return_invalid_command (core, "?", input[0]);
@@ -1786,7 +1786,7 @@ static void cmd_head(void *data, const char *_input) { // "head"
 	}
 	switch (*input) {
 	case '?': // "head?"
-		r_core_cmd_help (core, help_msg_h);
+		r_cons_cmd_help (core->cons, help_msg_h);
 		break;
 	default: // "head"
 		if (!arg) {
@@ -1818,12 +1818,12 @@ static int cmd_h(void *data, const char *_input) { // "head"
 			return 0;
 		}
 		if (_input[1] == '?') {
-			r_core_cmd_help ((RCore*)data, help_msg_h);
+			r_cons_cmd_help (core->cons, help_msg_h);
 		} else {
 			r_core_return_invalid_command (core, "he", _input[1]);
 		}
 	} else if (_input[0] == '?') {
-		r_core_cmd_help ((RCore*)data, help_msg_h);
+		r_cons_cmd_help (core->cons, help_msg_h);
 	} else {
 		r_core_return_invalid_command (core, "h", _input[0]);
 	}

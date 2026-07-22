@@ -141,16 +141,14 @@ repeat:;
 }
 
 static RCmdResult pseudo_help(RCmdContext *ctx, char sub) {
-	RCore *core = ctx->user;
-	const bool color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	if (sub) {
 		char subhelp[5] = "pdc";
 		subhelp[3] = sub;
-		if (r_cons_cmd_help_match (ctx->cons, help_msg_pdc, color, subhelp, 0, true) > 0) {
+		if (r_cons_cmd_help_match (ctx->cons, help_msg_pdc, subhelp, 0, true) > 0) {
 			return (RCmdResult) { 0 };
 		}
 	}
-	r_cons_cmd_help (ctx->cons, help_msg_pdc, color);
+	r_cons_cmd_help (ctx->cons, help_msg_pdc);
 	return (RCmdResult) { 0 };
 }
 

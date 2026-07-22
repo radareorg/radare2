@@ -425,7 +425,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 		r_cons_pal_init (core->cons);
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_ec);
+		r_cons_cmd_help (core->cons, help_msg_ec);
 		break;
 	case 'o': // "eco"
 		switch (input[2]) {
@@ -466,7 +466,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 			r_cons_printf (core->cons, "%s\n", core->theme);
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_eco);
+			r_cons_cmd_help (core->cons, help_msg_eco);
 			break;
 		default:
 			{
@@ -547,7 +547,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 		char **argv = r_str_argv (r_str_trim_head_ro (input + delta), &argc);
 		switch (input[2]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_ecH);
+			r_cons_cmd_help (core->cons, help_msg_ecH);
 			r_str_argv_free (argv);
 			return false;
 		case '-': // ecH-
@@ -590,7 +590,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 			break;
 		case 'w': // "ecHw"
 			if (!argc) {
-				r_core_cmd_help_match (core, help_msg_ecH, "ecHw");
+				r_cons_cmd_help_match (core->cons, help_msg_ecH, "ecHw", 0, true);
 				r_str_argv_free (argv);
 				return true;
 			}
@@ -752,7 +752,7 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case '?': // "e?"
 		switch (input[1]) {
-		case '\0': r_core_cmd_help (core, help_msg_e); break;
+		case '\0': r_cons_cmd_help (core->cons, help_msg_e); break;
 		case '?': core_config_list (core, input + 2, 2); break;
 		default: core_config_list (core, input + 1, 3); break;
 		}
@@ -769,12 +769,12 @@ static int cmd_eval(void *data, const char *input) {
 				}
 			}
 		} else {
-			r_core_cmd_help_contains (core, help_msg_e, "et");
+			r_cons_cmd_help_match (core->cons, help_msg_e, "et", 0, false);
 		}
 		break;
 	case 'n': // "en" "env"
 		if (strchr (input, '?')) {
-			r_core_cmd_help_contains (core, help_msg_e, "en");
+			r_cons_cmd_help_match (core->cons, help_msg_e, "en", 0, false);
 			break;
 		}
 		if (!strcmp (input + 1, "vj")) {
@@ -845,7 +845,7 @@ static int cmd_eval(void *data, const char *input) {
 		return true;
 	case 'x': // "ex"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_ex);
+			r_cons_cmd_help (core->cons, help_msg_ex);
 			break;
 		}
 		if (r_str_startswith (input, "xit")) { // "exit"
@@ -873,7 +873,7 @@ static int cmd_eval(void *data, const char *input) {
 		return cmd_ec (core, input);
 	case 'd': // "ed"
 		if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_e, "ed");
+			r_cons_cmd_help_match (core->cons, help_msg_e, "ed", 0, false);
 		} else if (input[1] == '!') {
 			char *file = r_core_get_radare2rc ();
 			char *result = file? r_core_editor (core, file, NULL, NULL): NULL;
@@ -953,7 +953,7 @@ static int cmd_eval(void *data, const char *input) {
 				r_config_set (core->config, input2, p);
 			}
 		} else {
-			r_core_cmd_help_contains (core, help_msg_e, "ee");
+			r_cons_cmd_help_match (core->cons, help_msg_e, "ee", 0, false);
 		}
 		break;
 	case '!': // "e!"
@@ -963,7 +963,7 @@ static int cmd_eval(void *data, const char *input) {
 				R_LOG_ERROR ("'%s' is not a boolean variable", input);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_e, "e!");
+			r_cons_cmd_help_match (core->cons, help_msg_e, "e!", 0, true);
 		}
 		break;
 	case 's': // "es"
@@ -983,7 +983,7 @@ static int cmd_eval(void *data, const char *input) {
 				R_LOG_ERROR ("cannot find key '%s'", key);
 			}
 		} else {
-			r_core_cmd_help_contains (core, help_msg_e, "er");
+			r_cons_cmd_help_match (core->cons, help_msg_e, "er", 0, false);
 		}
 		break;
 	case ':': // "e:"

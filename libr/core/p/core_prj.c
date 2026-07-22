@@ -63,8 +63,7 @@ static RCmdResult prj_open(RCmdContext *ctx, const char *file) {
 }
 
 static void prj_help(RCmdContext *ctx) {
-	RCore *core = ctx->user;
-	r_cons_cmd_help (ctx->cons, help_msg_prj, core->print->flags & R_PRINT_FLAGS_COLOR);
+	r_cons_cmd_help (ctx->cons, help_msg_prj);
 }
 
 static bool prj_action_help(RCmdContext *ctx, RStrs action) {
@@ -73,9 +72,7 @@ static bool prj_action_help(RCmdContext *ctx, RStrs action) {
 		return false;
 	}
 	char *cmd = r_str_newf ("prj %.*s", (int)(len - 1), action.a);
-	RCore *core = ctx->user;
-	int matches = cmd? r_cons_cmd_help_match (ctx->cons, help_msg_prj,
-		core->print->flags & R_PRINT_FLAGS_COLOR, cmd, 0, true): 0;
+	int matches = cmd? r_cons_cmd_help_match (ctx->cons, help_msg_prj, cmd, 0, true): 0;
 	free (cmd);
 	return matches > 0;
 }

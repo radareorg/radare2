@@ -57,7 +57,9 @@ R_API void r_cons_cmd_help_json(RCons *cons, RCoreHelpMessage help) {
 }
 
 /* Print a coloured help message */
-R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color) {
+R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help) {
+	R_RETURN_IF_FAIL (cons && cons->context && help);
+	const bool use_color = cons->context->color_mode != COLOR_MODE_DISABLED;
 	const char *pal_input_color = use_color ? cons->context->pal.input : "";
 	const char *pal_args_color = use_color ? cons->context->pal.args : "";
 	const char *pal_help_color = use_color ? cons->context->pal.help : "";
@@ -129,7 +131,8 @@ R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color) {
  * If exact is false, will match any command that contains the search text.
  * For example, ("pd", 'r', false) matches both `pdr` and `pdr.`.
  */
-R_API int r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, bool use_color, const char * R_NONNULL cmd, char spec, bool exact) {
+R_API int r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, const char * R_NONNULL cmd, char spec, bool exact) {
+	R_RETURN_VAL_IF_FAIL (cons && cons->context && help && cmd, 0);
 	RVecInt *match_indices = RVecInt_new ();
 	int *current_index_ptr;
 	size_t matches_copied;
@@ -157,7 +160,7 @@ R_API int r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, bool use_col
 			}
 		}
 		matches[matches_copied] = NULL;
-		r_cons_cmd_help (cons, (const char * const *)matches, use_color);
+		r_cons_cmd_help (cons, (const char * const *)matches);
 	}
 	free (matches);
 	RVecInt_free (match_indices);

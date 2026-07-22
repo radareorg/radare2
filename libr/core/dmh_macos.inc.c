@@ -30,7 +30,7 @@ static void macos_list_heaps(RCore *core, const char format) {
 static int dmh_macos(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '?': // dmh?
-		r_core_cmd_help (core, help_dmh_macos);
+		r_cons_cmd_help (core->cons, help_dmh_macos);
 		break;
 	case 0:
 	case ' ':

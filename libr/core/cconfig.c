@@ -1774,9 +1774,10 @@ static RCoreHelpMessage help_msg_grain = {
 // clang-format on
 
 static bool cb_cfgsanbox_grain(void *user, void *data) {
+	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (strstr (node->value, "?")) {
-		r_core_cmd_help ((RCore *)user, help_msg_grain);
+		r_cons_cmd_help (core->cons, help_msg_grain);
 		return false;
 	}
 	int gt = R_SANDBOX_GRAIN_NONE;

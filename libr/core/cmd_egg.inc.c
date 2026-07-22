@@ -122,7 +122,7 @@ static int cmd_egg(void *data, const char *input) {
 			}
 			egg->lang.nsyscalls = 0;
 		} else {
-			r_core_cmd_help_contains (core, help_msg_g, "gs");
+			r_cons_cmd_help_match (core->cons, help_msg_g, "gs", 0, false);
 		}
 		break;
 	case ' ': // "g "
@@ -132,7 +132,7 @@ static int cmd_egg(void *data, const char *input) {
 				R_LOG_ERROR ("Cannot compile '%s'", input + 2);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_g, "g ");
+			r_cons_cmd_help_match (core->cons, help_msg_g, "g ", 0, true);
 		}
 		break;
 	case '\0': // "g"
@@ -146,7 +146,7 @@ static int cmd_egg(void *data, const char *input) {
 				r_egg_option_set (egg, "egg.padding", input + 2);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_g, "gp");
+			r_cons_cmd_help_match (core->cons, help_msg_g, "gp", 0, true);
 		}
 		break;
 	case 'e': // "ge"
@@ -164,11 +164,11 @@ static int cmd_egg(void *data, const char *input) {
 				r_egg_option_set (egg, "key", p + 1);
 				r_egg_option_set (egg, "egg.encoder", oa);
 			} else {
-				r_core_cmd_help_match (core, help_msg_g, "ge");
+				r_cons_cmd_help_match (core->cons, help_msg_g, "ge", 0, true);
 			}
 			free (oa);
 		} else {
-			r_core_cmd_help_match (core, help_msg_g, "ge");
+			r_cons_cmd_help_match (core->cons, help_msg_g, "ge", 0, true);
 		}
 		break;
 	case 'i': // "gi"
@@ -182,10 +182,10 @@ static int cmd_egg(void *data, const char *input) {
 			if (input[0] && input[2]) {
 				r_egg_option_set (egg, "egg.shellcode", input + 2);
 			} else {
-				r_core_cmd_help_contains (core, help_msg_g, "gi");
+				r_cons_cmd_help_match (core->cons, help_msg_g, "gi", 0, false);
 			}
 		} else {
-			r_core_cmd_help_contains (core, help_msg_g, "gi");
+			r_cons_cmd_help_match (core->cons, help_msg_g, "gi", 0, false);
 		}
 		break;
 	case 'L': // "gL"
@@ -275,12 +275,12 @@ static int cmd_egg(void *data, const char *input) {
 			R_LOG_TODO ("list options");
 			break;
 		default:
-			r_core_cmd_help_contains (core, help_msg_g, "gc");
+			r_cons_cmd_help_match (core->cons, help_msg_g, "gc", 0, false);
 			break;
 		}
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_g);
+		r_cons_cmd_help (core->cons, help_msg_g);
 		break;
 	default:
 		r_core_return_invalid_command (core, "g", *input);

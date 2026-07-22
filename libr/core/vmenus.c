@@ -229,7 +229,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		input = NULL;
 	}
 	if (input && *input == '?') {
-		r_core_cmd_help (core, help_msg_aev);
+		r_cons_cmd_help (core->cons, help_msg_aev);
 		return false;
 	}
 	if (!r_config_get_b (core->config, "scr.interactive")) {

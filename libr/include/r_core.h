@@ -1020,12 +1020,6 @@ R_API RTable *r_core_table_new(RCore *core, const char *title);
 R_API char *r_core_md2txt(RCore *core, const char *md, bool slide_titles);
 
 /* help */
-R_API void r_core_cmd_help(const RCore *core, RCoreHelpMessage help);
-R_API void r_core_cmd_help_json(const RCore *core, RCoreHelpMessage help);
-R_API int r_core_cmd_help_match(const RCore *core, RCoreHelpMessage help, const char * R_NONNULL cmd);
-R_API void r_core_cmd_help_match_spec(const RCore *core, const char * const help[], const char * R_NONNULL cmd, char spec);
-R_API void r_core_cmd_help_contains(const RCore *core, RCoreHelpMessage help, const char * R_NONNULL cmd);
-R_API void r_core_cmd_help_contains_spec(const RCore *core, const char * const help[], const char * R_NONNULL cmd, char spec);
 
 /* anal stats */
 

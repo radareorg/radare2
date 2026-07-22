@@ -252,6 +252,59 @@ bool test_cons_grep_icase_does_not_mutate_word(void) {
 	mu_end;
 }
 
+static const RCoreHelpMessage test_help_message = {
+	"Usage: h", "", "help test",
+	"ha", "", "first command",
+	"hab", "", "second command",
+	NULL
+};
+
+bool test_cons_cmd_help_uses_context_color(void) {
+	RCons *cons = r_cons_new2 ();
+	mu_assert_notnull (cons, "r_cons_new2()");
+
+	r_cons_cmd_help (cons, test_help_message);
+	mu_assert_notnull (cons->context->buffer, "plain help output");
+	mu_assert_null (strstr (cons->context->buffer, "\x1b["), "disabled color mode must not emit ANSI");
+
+	r_cons_reset (cons);
+	cons->context->color_mode = COLOR_MODE_16;
+	r_cons_pal_reload (cons);
+	r_cons_cmd_help (cons, test_help_message);
+	mu_assert_notnull (strstr (cons->context->buffer, "\x1b["), "enabled color mode must emit ANSI");
+
+	r_cons_push (cons);
+	mu_assert_eq (cons->context->color_mode, COLOR_MODE_16, "child context must inherit color mode");
+	r_cons_cmd_help (cons, test_help_message);
+	mu_assert_notnull (strstr (cons->context->buffer, "\x1b["), "child help must use inherited color mode");
+	r_cons_pop (cons);
+
+	r_cons_free (cons);
+	mu_end;
+}
+
+bool test_cons_cmd_help_match(void) {
+	RCons *cons = r_cons_new2 ();
+	mu_assert_notnull (cons, "r_cons_new2()");
+
+	mu_assert_eq (r_cons_cmd_help_match (cons, test_help_message, "ha", 0, true), 1, "exact help match");
+	mu_assert_notnull (strstr (cons->context->buffer, "first command"), "exact match output");
+	mu_assert_null (strstr (cons->context->buffer, "second command"), "exact match must exclude longer commands");
+
+	r_cons_reset (cons);
+	mu_assert_eq (r_cons_cmd_help_match (cons, test_help_message, "ha", 0, false), 2, "contains help match");
+	mu_assert_notnull (strstr (cons->context->buffer, "first command"), "contains first match");
+	mu_assert_notnull (strstr (cons->context->buffer, "second command"), "contains second match");
+
+	r_cons_reset (cons);
+	mu_assert_eq (r_cons_cmd_help_match (cons, test_help_message, "ha", 'b', true), 1, "spec help match");
+	mu_assert_null (strstr (cons->context->buffer, "first command"), "spec match must exclude base command");
+	mu_assert_notnull (strstr (cons->context->buffer, "second command"), "spec match output");
+
+	r_cons_free (cons);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
@@ -260,6 +313,8 @@ bool all_tests(void) {
 	mu_run_test (test_cons_timeout_does_not_restart_expired_deadline);
 	mu_run_test (test_cons_json_path_grep_buffer);
 	mu_run_test (test_cons_grep_icase_does_not_mutate_word);
+	mu_run_test (test_cons_cmd_help_uses_context_color);
+	mu_run_test (test_cons_cmd_help_match);
 	return tests_passed != tests_run;
 }
 

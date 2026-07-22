@@ -35,7 +35,7 @@ static int _cmd_tasks_impl(void *data, const char *input) {
 		r_core_cmd_queue_wait (core);
 		break;
 	case '?': // "&?"
-		r_core_cmd_help (core, help_msg_amper);
+		r_cons_cmd_help (core->cons, help_msg_amper);
 		break;
 	case 'b': { // "&b"
 		if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
