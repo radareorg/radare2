@@ -363,7 +363,7 @@ static bool r_cmd_java_handle_help(RCore *core, const char *input) {
 		help_msg[3 + (i * 3) + 2] = cmd->desc;
 	}
 	help_msg[3 + (i * 3)] = NULL;
-	r_core_cmd_help (core, help_msg);
+	r_cons_cmd_help (core->cons, help_msg);
 	free ((void *)help_msg);
 	return true;
 }

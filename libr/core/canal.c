@@ -3528,7 +3528,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		rad++;
 	}
 	if (rad[0] == '?' || (*rad && rad[1] == '?')) {
-		r_core_cmd_help (core, help_msg_aflm);
+		r_cons_cmd_help (core->cons, help_msg_aflm);
 		return 0;
 	}
 	R_RETURN_VAL_IF_FAIL (core && core->anal, 0);

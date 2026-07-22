@@ -2027,7 +2027,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 		}
 		break;
 	case '?':
-		r_core_cmd_help (core, GH(help_msg));
+		r_cons_cmd_help (core->cons, GH(help_msg));
 		break;
 	}
 	free (main_arena);

@@ -731,8 +731,7 @@ static RCoreHelpMessage help_msg_writedwarf = {
 };
 
 static void writedwarf_help(RCmdContext *ctx) {
-	RCore *core = ctx->user;
-	r_cons_cmd_help (ctx->cons, help_msg_writedwarf, core->print->flags & R_PRINT_FLAGS_COLOR);
+	r_cons_cmd_help (ctx->cons, help_msg_writedwarf);
 }
 
 static RCmdResult writedwarf_invalid(RCmdContext *ctx) {

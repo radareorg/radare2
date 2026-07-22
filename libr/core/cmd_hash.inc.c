@@ -38,7 +38,7 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 				if (*name) {
 					R_LOG_ERROR ("Unknown rlang plugin '%s'", name);
 				} else {
-					r_core_cmd_help_contains (core, help_msg_hash, "#!");
+					r_cons_cmd_help_match (core->cons, help_msg_hash, "#!", 0, false);
 				}
 			}
 			free (name);
@@ -130,7 +130,7 @@ static int cmd_hash(void *data, const char *input) {
 		return cmd_hash_bang (core, input);
 	}
 	if (*input == '?') {
-		r_core_cmd_help (core, help_msg_hash);
+		r_cons_cmd_help (core->cons, help_msg_hash);
 		return false;
 	}
 	/* this is a comment - captain obvious

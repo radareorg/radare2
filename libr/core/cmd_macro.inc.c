@@ -83,7 +83,7 @@ static int cmd_macro(void *data, const char *_input) {
 		break;
 	case '(':
 	case '?':
-		r_core_cmd_help (core, help_msg_lparen);
+		r_cons_cmd_help (core->cons, help_msg_lparen);
 		break;
 	default: {
 		int i, mustcall = 0;

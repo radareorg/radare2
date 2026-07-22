@@ -327,7 +327,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	FilterStruct fs = { core, UT64_MAX, 0, 0, NULL };
 
 	if (*p == '?') {
-		r_core_cmd_help (core, help_msg_CL);
+		r_cons_cmd_help (core->cons, help_msg_CL);
 		return 0;
 	}
 	if (*p == 'd') { // "CLd" - decompile current function from dwarf line info
@@ -557,7 +557,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	ut64 addr = core->addr;
 	switch (input[1]) {
 	case '?':
-		r_core_cmd_help (core, help_msg_CC);
+		r_cons_cmd_help (core->cons, help_msg_CC);
 		break;
 	case ',': // "CC,"
 		{
@@ -567,7 +567,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		break;
 	case 'F': // "CC,"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_CC, "CCF");
+			r_cons_cmd_help_match (core->cons, help_msg_CC, "CCF", 0, true);
 		} else if (input[2] == ' ') {
 			const char *fn = input + 2;
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
@@ -702,7 +702,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		if (s) {
 			s = strdup (s + 1);
 		} else {
-			r_core_cmd_help_match (core, help_msg_CC, "CCa");
+			r_cons_cmd_help_match (core->cons, help_msg_CC, "CCa", 0, true);
 			return false;
 		}
 		char *p = strchr (s, ' ');
@@ -717,7 +717,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 						R_META_TYPE_COMMENT,
 						addr, 1);
 			} else {
-				r_core_cmd_help_match (core, help_msg_CC, "CCa");
+				r_cons_cmd_help_match (core->cons, help_msg_CC, "CCa", 0, true);
 			}
 			free (s);
 			return true;
@@ -746,7 +746,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			}
 			free (newcomment);
 		} else {
-			r_core_cmd_help_match (core, help_msg_CC, "CCa");
+			r_cons_cmd_help_match (core->cons, help_msg_CC, "CCa", 0, true);
 		}
 		free (s);
 		return true;
@@ -777,7 +777,7 @@ static void meta_vartype_set(RCore *core, const char *input, bool append) {
 	const char *arg = r_str_trim_head_ro (input);
 	char *annotation = meta_vartype_decode (arg);
 	if (!annotation) {
-		r_core_cmd_help (core, help_msg_Ct);
+		r_cons_cmd_help (core->cons, help_msg_Ct);
 		return;
 	}
 	const ut64 addr = core->addr;
@@ -800,7 +800,7 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 	ut64 addr = core->addr;
 	switch (input[1]) {
 	case '?': // "Ct?"
-		r_core_cmd_help (core, help_msg_Ct);
+		r_cons_cmd_help (core->cons, help_msg_Ct);
 		break;
 	case 0: // "Ct"
 		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, 0, NULL, NULL);
@@ -826,7 +826,7 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 		} else if (input[2] == '*' && !input[3]) {
 			r_meta_del (core->anal, R_META_TYPE_VARTYPE, 0, UT64_MAX);
 		} else {
-			r_core_cmd_help (core, help_msg_Ct);
+			r_cons_cmd_help (core->cons, help_msg_Ct);
 		}
 		break;
 	case '*': // "Ct*"
@@ -841,7 +841,7 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 		}
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_Ct);
+		r_cons_cmd_help (core->cons, help_msg_Ct);
 		break;
 	}
 	return true;
@@ -1014,7 +1014,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case '?':
 		switch (input[0]) {
 		case 'f': // "Cf?"
-			r_core_cmd_help_match (core, help_msg_C, "Cf");
+			r_cons_cmd_help_match (core->cons, help_msg_C, "Cf", 0, true);
 			r_cons_println (core->cons,
 				"'sz' indicates the byte size taken up by struct.\n"
 				"'fmt' is a 'pf?' style format string. It controls only the display format.\n\n"
@@ -1024,7 +1024,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				"to match the total struct size in mem.\n");
 			break;
 		case 's': // "Cs?"
-			r_core_cmd_help (core, help_msg_Cs);
+			r_cons_cmd_help (core->cons, help_msg_Cs);
 			break;
 		default:
 			r_cons_println (core->cons, "See C?");
@@ -1267,7 +1267,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 							n  = -1;
 						}
 					} else {
-						r_core_cmd_help_match (core, help_msg_C, "Cf");
+						r_cons_cmd_help_match (core->cons, help_msg_C, "Cf", 0, true);
 						break;
 					}
 				} else if (type == 's') { // "Cs"
@@ -1330,13 +1330,13 @@ static int cmd_meta_others(RCore *core, const char *input) {
 static void comment_var_help(RCore *core, char type) {
 	switch (type) {
 	case 'b':
-		r_core_cmd_help (core, help_msg_Cvb);
+		r_cons_cmd_help (core->cons, help_msg_Cvb);
 		break;
 	case 's':
-		r_core_cmd_help (core, help_msg_Cvs);
+		r_cons_cmd_help (core->cons, help_msg_Cvs);
 		break;
 	case 'r':
-		r_core_cmd_help (core, help_msg_Cvr);
+		r_cons_cmd_help (core->cons, help_msg_Cvr);
 		break;
 	case '?':
 		r_cons_printf (core->cons, "See Cvb?, Cvs? and Cvr?\n");
@@ -1509,7 +1509,7 @@ static int cmd_meta(void *data, const char *input) {
 		}
 		break;
 	case '?': // "C?"
-		r_core_cmd_help (core, help_msg_C);
+		r_cons_cmd_help (core->cons, help_msg_C);
 		break;
 	case 'F': // "CF"
 		f = r_anal_get_fcn_in (core->anal, core->addr,
@@ -1525,7 +1525,7 @@ static int cmd_meta(void *data, const char *input) {
 		/** copypasta from `fs`.. this must be refactorized to be shared */
 		switch (input[1]) {
 		case '?': // "CS?"
-			r_core_cmd_help (core, help_msg_CS);
+			r_cons_cmd_help (core->cons, help_msg_CS);
 			break;
 		case '+': // "CS+"
 			r_spaces_push (ms, input + 2);
@@ -1534,7 +1534,7 @@ static int cmd_meta(void *data, const char *input) {
 			if (input[2] == ' ') {
 				r_spaces_rename (ms, NULL, input + 2);
 			} else {
-				r_core_cmd_help_match (core, help_msg_CS, "CSr");
+				r_cons_cmd_help_match (core->cons, help_msg_CS, "CSr", 0, true);
 			}
 			break;
 		case '-': // "CS-"

@@ -547,7 +547,7 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 	case 'd': // "cwd" /
 	case '-': // "cwd" // TODO rename to cw-
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_cw, "cwd");
+			r_cons_cmd_help_match (core->cons, help_msg_cw, "cwd", 0, true);
 			return 0;
 		}
 		if (input[1]) {
@@ -563,7 +563,7 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 		break;
 	case 'r': // "cwr"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_cw, "cwr");
+			r_cons_cmd_help_match (core->cons, help_msg_cw, "cwr", 0, true);
 			return 0;
 		}
 		if (input[1]) {
@@ -580,7 +580,7 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 		break;
 	case 'u': // "cwu"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_cw, "cwu");
+			r_cons_cmd_help_match (core->cons, help_msg_cw, "cwu", 0, true);
 			return 0;
 		}
 		if (input[1]) {
@@ -611,7 +611,7 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 	}
 	case '?': // "cw?"
 	default:
-		r_core_cmd_help (core, help_msg_cw);
+		r_cons_cmd_help (core->cons, help_msg_cw);
 		break;
 	}
 	return ret;
@@ -769,7 +769,7 @@ static int cmd_cp(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	bool use_corefile;
 	if (*input == '?' || !*input) {
-		r_core_cmd_help (core, help_msg_cp);
+		r_cons_cmd_help (core->cons, help_msg_cp);
 		return false;
 	}
 
@@ -777,7 +777,7 @@ static int cmd_cp(void *data, const char *input) {
 	input++;
 
 	if (!*input) {
-		r_core_cmd_help (core, help_msg_cp);
+		r_cons_cmd_help (core->cons, help_msg_cp);
 		return false;
 	}
 
@@ -836,7 +836,7 @@ static int cmd_cp(void *data, const char *input) {
 				}
 			}
 		} else {
-			r_core_cmd_help (core, help_msg_cp);
+			r_cons_cmd_help (core->cons, help_msg_cp);
 		}
 		r_str_argv_free (files);
 		return ret;
@@ -1108,7 +1108,7 @@ static void _core_cmp_info(RCore *core, const char *input) {
 		_core_cmp_info_exports (core, id0, id1);
 		break;
 	default:
-		r_core_cmd_help (core, help_message_ci);
+		r_cons_cmd_help (core->cons, help_message_ci);
 		break;
 	}
 }
@@ -1131,7 +1131,7 @@ static void cmd_curl(RCore *core, const char *arg) {
 				}
 			}
 			if (!postdata) {
-				r_core_cmd_help_match (core, help_msg_cu, "curl");
+				r_cons_cmd_help_match (core->cons, help_msg_cu, "curl", 0, true);
 				return;
 			}
 		}
@@ -1146,7 +1146,7 @@ static void cmd_curl(RCore *core, const char *arg) {
 				r_cons_newline (core->cons);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_cu, "curl");
+			r_cons_cmd_help_match (core->cons, help_msg_cu, "curl", 0, true);
 		}
 	}
 }
@@ -1201,7 +1201,7 @@ static void core_cmd_cg(RCore *core, const char *input) {
 		if (*file2) {
 			r_anal_diff_setup (core->anal, true, -1, -1);
 		} else {
-			r_core_cmd_help_match (core, help_msg_cg, "cgo");
+			r_cons_cmd_help_match (core->cons, help_msg_cg, "cgo", 0, true);
 			return;
 		}
 		break;
@@ -1226,7 +1226,7 @@ static void core_cmd_cg(RCore *core, const char *input) {
 		r_anal_diff_setup (core->anal, false, -1, -1);
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_cg);
+		r_cons_cmd_help (core->cons, help_msg_cg);
 		return;
 	}
 
@@ -1292,7 +1292,7 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'a': // "ca"
 		if (input[1] == 't') { // "cat"
 			if (input[2] == '?') { // "cat?"
-				r_core_cmd_help_match (core, help_msg_c, "cat");
+				r_cons_cmd_help_match (core->cons, help_msg_c, "cat", 0, true);
 				break;
 			}
 			const char *args = r_str_trim_head_ro (input + 2);
@@ -1302,7 +1302,7 @@ static int cmd_cmp(void *data, const char *input) {
 					render_md = true;
 					args = r_str_trim_head_ro (args + 2);
 				} else {
-					r_core_cmd_help_match (core, help_msg_c, "cat");
+					r_cons_cmd_help_match (core->cons, help_msg_c, "cat", 0, true);
 					break;
 				}
 			}
@@ -1334,15 +1334,15 @@ static int cmd_cmp(void *data, const char *input) {
 					}
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_c, "cat");
+				r_cons_cmd_help_match (core->cons, help_msg_c, "cat", 0, true);
 			}
 		} else { // "ca"
-			r_core_cmd_help_match (core, help_msg_c, "cat");
+			r_cons_cmd_help_match (core->cons, help_msg_c, "cat", 0, true);
 		}
 		break;
 	case '*': // "c*"
 		if (!input[2]) {
-			r_core_cmd_help_match (core, help_msg_c, "c*");
+			r_cons_cmd_help_match (core->cons, help_msg_c, "c*", 0, true);
 			goto cleanup;
 		}
 		val = radare_compare (core, block, (ut8 *) input + 2,
@@ -1362,7 +1362,7 @@ static int cmd_cmp(void *data, const char *input) {
 			val = radare_compare (core, block, (ut8 *) str, len, 'j');
 			free (str);
 		} else {
-			r_core_cmd_help_match (core, help_msg_c, "cj");
+			r_cons_cmd_help_match (core->cons, help_msg_c, "cj", 0, true);
 		}
 		break;
 	case 'x': // "cx"
@@ -1373,14 +1373,14 @@ static int cmd_cmp(void *data, const char *input) {
 			break;
 		case '*':
 			if (input[2] != ' ') {
-				r_core_cmd_help_match (core, help_msg_c, "cx*");
+				r_cons_cmd_help_match (core->cons, help_msg_c, "cx*", 0, true);
 				goto cleanup;
 			}
 			mode = '*';
 			input += 3;
 			break;
 		default:
-			r_core_cmd_help_match (core, help_msg_c, "cx");
+			r_cons_cmd_help_match (core->cons, help_msg_c, "cx", 0, true);
 			goto cleanup;
 		}
 		if (!(filled = (char *) malloc (strlen (input) + 1))) {
@@ -1498,7 +1498,7 @@ static int cmd_cmp(void *data, const char *input) {
 		arg = *input? r_str_trim_head_ro (input + 1): NULL;
 
 		if (input[0] == '?' || R_STR_ISEMPTY (arg)) {
-			r_core_cmd_help_match_spec (core, help_msg_c, "c", width);
+			r_cons_cmd_help_match (core->cons, help_msg_c, "c", width, true);
 			break;
 		}
 		const bool be = r_config_get_b (core->config, "cfg.bigendian");
@@ -1506,7 +1506,7 @@ static int cmd_cmp(void *data, const char *input) {
 		if (width == '1') {
 			if (mode == '*') {
 				R_LOG_ERROR ("c1 does not support * mode");
-				r_core_cmd_help_match (core, help_msg_c, "c1");
+				r_cons_cmd_help_match (core->cons, help_msg_c, "c1", 0, true);
 			} else {
 				val = cmp_bits (core, r_num_math (core->num, arg));
 			}
@@ -1524,10 +1524,10 @@ static int cmd_cmp(void *data, const char *input) {
 	}
 	case 'c': // "cc"
 		if (input[1] == '?') { // "cc?"
-			r_core_cmd_help_contains (core, help_msg_c, "cc");
+			r_cons_cmd_help_match (core->cons, help_msg_c, "cc", 0, false);
 		} else if (input[1] == 'd') { // "ccd"
 			if (input[2] == '?') {
-				r_core_cmd_help_contains (core, help_msg_c, "ccd");
+				r_cons_cmd_help_match (core->cons, help_msg_c, "ccd", 0, false);
 			} else if (input[2] == 'd') { // "ccdd"
 				cmd_cmp_disasm (core, input + 3, 'd');
 			} else {
@@ -1604,12 +1604,12 @@ static int cmd_cmp(void *data, const char *input) {
 			cmd_cmp_disasm (core, input + 2, 'u');
 			break;
 		default: {
-			r_core_cmd_help (core, help_msg_cu);
+			r_cons_cmd_help (core->cons, help_msg_cu);
 		}
 		}
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_c);
+		r_cons_cmd_help (core->cons, help_msg_c);
 		break;
 	case 'v': { // "cv"
 		int sz = input[1];
@@ -1666,7 +1666,7 @@ static int cmd_cmp(void *data, const char *input) {
 			r_core_return_value (core, 1);
 			// fallthrough
 		case '?':
-			r_core_cmd_help_match (core, help_msg_c, "cv");
+			r_cons_cmd_help_match (core->cons, help_msg_c, "cv", 0, true);
 			break;
 		}
 	}
@@ -1682,7 +1682,7 @@ static int cmd_cmp(void *data, const char *input) {
 			default: sz = '4'; break; // default
 			}
 		} else if (sz == '?') {
-			r_core_cmd_help_match (core, help_msg_c, "cV");
+			r_cons_cmd_help_match (core->cons, help_msg_c, "cV", 0, true);
 		}
 		sz -= '0';
 		if (sz > 0) {
@@ -1711,7 +1711,7 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	case 'm': // "cmp"
 		if (input[1] != 'p' || strchr (input, '?')) {
-			r_core_cmd_help (core, help_msg_cmp);
+			r_cons_cmd_help (core->cons, help_msg_cmp);
 		} else {
 			int argc;
 			char **argv = r_str_argv (r_str_trim_head_ro (input + 2), &argc);
@@ -1719,7 +1719,7 @@ static int cmd_cmp(void *data, const char *input) {
 				int res = cmd_cmp_posix (core, argv[0], argv[1]);
 				r_core_return_value (core, res);
 			} else {
-				r_core_cmd_help (core, help_msg_cmp);
+				r_cons_cmd_help (core->cons, help_msg_cmp);
 			}
 			free (argv);
 		}

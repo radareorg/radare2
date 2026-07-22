@@ -514,7 +514,7 @@ static void cmd_fzs(RCore *core, const char *input) {
 static void cmd_fz(RCore *core, const char *input) {
 	switch (*input) {
 	case '?': // "fz?"
-		r_core_cmd_help (core, help_msg_fz);
+		r_cons_cmd_help (core->cons, help_msg_fz);
 		break;
 	case '.': // "fz."
 		{
@@ -774,7 +774,7 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 		return;
 	}
 	if (mode == '?') {
-		r_core_cmd_help (core, help_msg_ft);
+		r_cons_cmd_help (core->cons, help_msg_ft);
 		free (inp);
 		return;
 	}
@@ -1078,7 +1078,7 @@ static void cmd_fd(RCore *core, const char *input) {
 	bool strict_offset = false;
 	switch (input[1]) {
 	case '?':
-		r_core_cmd_help (core, help_msg_fd);
+		r_cons_cmd_help (core->cons, help_msg_fd);
 		return;
 	case '\0':
 		addr = core->addr;
@@ -1275,11 +1275,11 @@ static bool cmd_flag_add(RCore * R_NONNULL core, const char *str, bool addsign) 
 static void cmd_fR(RCore *core, const char *str) {
 	switch (*str) {
 	case '\0':
-		r_core_cmd_help_match (core, help_msg_f, "fR");
+		r_cons_cmd_help_match (core->cons, help_msg_f, "fR", 0, true);
 		R_LOG_INFO ("Relocate PIE flags in debugger with f.ex: fR entry0 `dm~:1[1]`");
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_fR);
+		r_cons_cmd_help (core->cons, help_msg_fR);
 		break;
 	case ' ':
 		{
@@ -1298,7 +1298,7 @@ static void cmd_fR(RCore *core, const char *str) {
 				ret = r_flag_relocate (core->flags, from, mask, to);
 				R_LOG_INFO ("Relocated %d flags", ret);
 			} else {
-				r_core_cmd_help_match (core, help_msg_f, "fR");
+				r_cons_cmd_help_match (core->cons, help_msg_f, "fR", 0, true);
 				R_LOG_INFO ("Relocate PIE flags in debugger with f.ex: fR entry0 `dm~:1[1]`");
 			}
 		}
@@ -1311,7 +1311,7 @@ static void cmd_fR(RCore *core, const char *str) {
 
 static void cmd_fsp(RCore *core, const char *input) {
 	if (input[2] == '?') {
-		r_core_cmd_help_match (core, help_msg_fs, "fsp");
+		r_cons_cmd_help_match (core->cons, help_msg_fs, "fsp", 0, true);
 		return;
 	}
 	if (!input[2]) {
@@ -1357,14 +1357,14 @@ static void cmd_fsp(RCore *core, const char *input) {
 static void cmd_flag_spaces(RCore *core, const char *input) {
 	switch (input[1]) {
 	case '?': // "fs?"
-		r_core_cmd_help (core, help_msg_fs);
+		r_cons_cmd_help (core->cons, help_msg_fs);
 		break;
 	case '+': // "fs+"
 		r_flag_space_push (core->flags, r_str_trim_head_ro (input + 2));
 		break;
 	case 'r': // "fsr"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_fs, "fsr");
+			r_cons_cmd_help_match (core->cons, help_msg_fs, "fsr", 0, true);
 		} else if (input[2] == ' ') {
 			char *newname = r_str_trim_dup (input + 3);
 			r_flag_space_rename (core->flags, NULL, newname);
@@ -1531,7 +1531,7 @@ static int cmd_flag(void *data, const char *input) {
 	switch (*input) {
 	case 'f': // "ff"
 		if (input[1] == '?') { // "ff?"
-			r_core_cmd_help_contains (core, help_msg_f, "ff");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "ff", 0, false);
 		} else if (input[1] == 's') { // "ffs"
 			const int delta = flag_to_flag (core, input + 2);
 			if (delta > 0) {
@@ -1553,7 +1553,7 @@ static int cmd_flag(void *data, const char *input) {
 			flagenum = 0;
 			break;
 		case '?':
-			r_core_cmd_help_contains (core, help_msg_f, "fe");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "fe", 0, false);
 			break;
 		default:
 			r_core_return_invalid_command (core, "fe", input[1]);
@@ -1569,7 +1569,7 @@ static int cmd_flag(void *data, const char *input) {
 			flagbars (core, input + 2);
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_feq);
+			r_cons_cmd_help (core->cons, help_msg_feq);
 			break;
 		default:
 			r_core_return_invalid_command (core, "f=", input[1]);
@@ -1641,7 +1641,7 @@ static int cmd_flag(void *data, const char *input) {
 			}
 			break;
 		case '?':
-			r_core_cmd_help_match (core, help_msg_f, "fa");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "fa", 0, true);
 			break;
 		default:
 			r_core_return_invalid_command (core, "fa", input[1]);
@@ -1687,7 +1687,7 @@ static int cmd_flag(void *data, const char *input) {
 			}
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_fV);
+			r_cons_cmd_help (core->cons, help_msg_fV);
 			break;
 		default:
 			r_core_vmark_dump (core, 0);
@@ -1696,7 +1696,7 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 'm': // "fm"
 		if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_f, "fm");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "fm", 0, false);
 		} else if (input[1] == ' ') {
 			const char *errstr = NULL;
 			ut64 n = r_num_math_err (core->num, input + 1, &errstr);
@@ -1711,7 +1711,7 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 'R': // "fR"
 		if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_f, "fR");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "fR", 0, false);
 		} else {
 			cmd_fR (core, str);
 		}
@@ -1737,13 +1737,13 @@ static int cmd_flag(void *data, const char *input) {
 				core->flags->base, core->flags->base);
 			break;
 		default:
-			r_core_cmd_help_match (core, help_msg_f, "fb");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "fb", 0, true);
 			break;
 		}
 		break;
 	case '+': // "f+'
 		if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_f, "f+");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "f+", 0, false);
 		} else {
 			cmd_flag_add (core, str, 1);
 		}
@@ -1757,7 +1757,7 @@ static int cmd_flag(void *data, const char *input) {
 		} else if (input[1]) {
 			const char *flagname = r_str_trim_head_ro (input + 1);
 			if (*flagname == '?') {
-				r_core_cmd_help_contains (core, help_msg_f, "f-");
+				r_cons_cmd_help_match (core->cons, help_msg_f, "f-", 0, false);
 			} else if (isdigit (*flagname)) {
 				ut64 addr = r_num_math (core->num, flagname);
 				r_flag_unset_addr (core->flags, addr);
@@ -1785,7 +1785,7 @@ static int cmd_flag(void *data, const char *input) {
 		input = r_str_trim_head_ro (input + 1) - 1;
 		if (input[1]) {
 			if (input[1] == '?') {
-				r_core_cmd_help_contains (core, help_msg_f, "f.");
+				r_cons_cmd_help_match (core->cons, help_msg_f, "f.", 0, false);
 			} else if (input[1] == '*' || input[1] == 'j') {
 				if (input[2] == '*') {
 					print_function_labels (core, NULL, input[1]);
@@ -1830,10 +1830,10 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 'l': // "fl"
 		if (input[1] == '?') { // "fl?"
-			r_core_cmd_help_contains (core, help_msg_f, "fl");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "fl", 0, false);
 		} else if (input[1] == 'a') { // "fla"
 			if (input[2] == '?') { // "fla?"
-				r_core_cmd_help_match (core, help_msg_f, "fla");
+				r_cons_cmd_help_match (core->cons, help_msg_f, "fla", 0, true);
 				break;
 			}
 			char *glob = strchr (input, ' ');
@@ -1905,7 +1905,7 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 'x': // "fx"
 		if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_f, "fx");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "fx", 0, false);
 		} else if (input[1] == ' ') {
 			RFlagItem *item = r_flag_get_in (core->flags,
 				r_num_math (core->num, input + 2));
@@ -1929,7 +1929,7 @@ static int cmd_flag(void *data, const char *input) {
 	case 'g': // "fg"
 		if (input[1]) {
 			if (input[1] == '?') {
-				r_core_cmd_help_contains (core, help_msg_f, "fg");
+				r_cons_cmd_help_match (core->cons, help_msg_f, "fg", 0, false);
 			} else if (input[1] == ' ') {
 				r_core_cmdf (core, "&& %d", atoi (input + 2));
 			} else {
@@ -1942,7 +1942,7 @@ static int cmd_flag(void *data, const char *input) {
 	case 'h': // "fh"
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help_contains (core, help_msg_f, "fh");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "fh", 0, false);
 			break;
 		case '*':
 			__flag_graph (core, r_str_trim_head_ro (input + 2), '*');
@@ -1954,7 +1954,7 @@ static int cmd_flag(void *data, const char *input) {
 			__flag_graph (core, r_str_trim_head_ro (input + 1), 0);
 			break;
 		default:
-			r_core_cmd_help_contains (core, help_msg_f, "fh");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "fh", 0, false);
 			break;
 		}
 		break;
@@ -2038,7 +2038,7 @@ static int cmd_flag(void *data, const char *input) {
 			}
 			free (arg);
 		} else {
-			r_core_cmd_help (core, help_msg_fc);
+			r_cons_cmd_help (core->cons, help_msg_fc);
 		}
 		break;
 	case 'C': // "fC"
@@ -2077,26 +2077,26 @@ static int cmd_flag(void *data, const char *input) {
 			}
 			free (p);
 		} else {
-			r_core_cmd_help_match (core, help_msg_f, "fC");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "fC", 0, true);
 		}
 		break;
 	case 'o': // "fo"
 		if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_f, "fo");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "fo", 0, false);
 		} else {
 			r_core_fortune_print_random (core);
 		}
 		break;
 	case 'O': // "fO"
 		if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_f, "fO");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "fO", 0, false);
 		} else {
 			flag_ordinals (core, input + 1);
 		}
 		break;
 	case 'r': // "fr"
 		if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_f, "fr");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "fr", 0, false);
 		} else if (input[1] == ' ' && input[2]) {
 			RFlagItem *item = NULL;
 			char *old = str + 1;
@@ -2117,7 +2117,7 @@ static int cmd_flag(void *data, const char *input) {
 				}
 			} else {
 				R_LOG_ERROR ("Cannot find flag with given name");
-				// r_core_cmd_help_contains (core, help_msg_f, "fr");
+				// r_cons_cmd_help_match (core->cons, help_msg_f, "fr", 0, false);
 			}
 		} else {
 			r_core_return_invalid_command (core, "fr", input[1]);
@@ -2159,7 +2159,7 @@ static int cmd_flag(void *data, const char *input) {
 			}
 			break;
 		}
-		r_core_cmd_help_contains (core, help_msg_f, "fN");
+		r_cons_cmd_help_match (core->cons, help_msg_f, "fN", 0, false);
 		break;
 	case '\0':
 	case 'n': // "fn" "fnj"
@@ -2179,7 +2179,7 @@ static int cmd_flag(void *data, const char *input) {
 		if (input[0] && input[1] == '?') {
 			char cmd[3] = "fn";
 			cmd[1] = input[0];
-			r_core_cmd_help_contains (core, help_msg_f, cmd);
+			r_cons_cmd_help_match (core->cons, help_msg_f, cmd, 0, false);
 			break;
 		}
 		if (input[0] && input[1] == '.') {
@@ -2236,7 +2236,7 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 'i': // "fi"
 		if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_f, "fi");
+			r_cons_cmd_help_match (core->cons, help_msg_f, "fi", 0, false);
 		} else if (input[1] == ' ' || (input[1] && input[2] == ' ')) {
 			char *arg = strdup (r_str_trim_head_ro (input + 2));
 			if (*arg) {
@@ -2289,7 +2289,7 @@ static int cmd_flag(void *data, const char *input) {
 				free (nfn);
 				free (orig);
 			} else {
-				r_core_cmd_help (core, help_msg_fD);
+				r_cons_cmd_help (core->cons, help_msg_fD);
 			}
 			break;
 		case '.':
@@ -2300,7 +2300,7 @@ static int cmd_flag(void *data, const char *input) {
 				free (nfn);
 				free (orig);
 			} else {
-				r_core_cmd_help (core, help_msg_fD);
+				r_cons_cmd_help (core->cons, help_msg_fD);
 			}
 			break;
 		case 'j':
@@ -2315,11 +2315,11 @@ static int cmd_flag(void *data, const char *input) {
 				free (nfn);
 				free (orig);
 			} else {
-				r_core_cmd_help (core, help_msg_fD);
+				r_cons_cmd_help (core->cons, help_msg_fD);
 			}
 			break;
 		default:
-			r_core_cmd_help (core, help_msg_fD);
+			r_cons_cmd_help (core->cons, help_msg_fD);
 			break;
 		}
 		break;
@@ -2332,7 +2332,7 @@ static int cmd_flag(void *data, const char *input) {
 			RFlagItem *fi = r_flag_get (core->flags, arg);
 			r_core_return_value (core, fi? 1:0);
 		} else {
-			r_core_cmd_help (core, help_msg_f);
+			r_cons_cmd_help (core->cons, help_msg_f);
 		}
 		break;
 	default:

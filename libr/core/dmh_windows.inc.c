@@ -1356,7 +1356,7 @@ static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 		w32_list_heaps_blocks (core, input[0]);
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_block);
+		r_cons_cmd_help (core->cons, help_msg_block);
 	}
 }
 
@@ -1364,7 +1364,7 @@ static int dmh_windows(RCore *core, const char *input) {
 	init_func ();
 	switch (input[0]) {
 	case '?': // dmh?
-		r_core_cmd_help (core, help_msg);
+		r_cons_cmd_help (core->cons, help_msg);
 		break;
 	case 'b': // dmhb
 		cmd_debug_map_heap_block_win (core, input + 1);

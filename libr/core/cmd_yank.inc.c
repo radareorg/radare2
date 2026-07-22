@@ -76,12 +76,12 @@ static int cmd_yank(void *data, const char *input) {
 				}
 				free (out);
 			} else {
-				r_core_cmd_help_match (core, help_msg_y, "ywx");
+				r_cons_cmd_help_match (core->cons, help_msg_y, "ywx", 0, true);
 			}
 			// r_core_yank_write_hex (core, input + 2);
 			break;
 		default:
-			r_core_cmd_help_match (core, help_msg_y, "ywx");
+			r_cons_cmd_help_match (core->cons, help_msg_y, "ywx", 0, true);
 			break;
 		}
 		break;
@@ -106,7 +106,7 @@ static int cmd_yank(void *data, const char *input) {
 			if (*file == '$') {
 				r_cmd_alias_set_raw (core->rcmd, file+1, tmp, tmpsz);
 			} else if (*file == '?' || !*file) {
-				r_core_cmd_help_match (core, help_msg_y, "ytf");
+				r_cons_cmd_help_match (core->cons, help_msg_y, "ytf", 0, true);
 			} else {
 				if (!r_file_dump (file, tmp, tmpsz, false)) {
 					R_LOG_ERROR ("Cannot dump to '%s'", file);
@@ -118,7 +118,7 @@ static int cmd_yank(void *data, const char *input) {
 			r_core_yank_to (core, input + 1);
 			break;
 		case '?':
-			r_core_cmd_help_contains (core, help_msg_y, "yt");
+			r_cons_cmd_help_match (core->cons, help_msg_y, "yt", 0, false);
 			break;
 		default:
 			r_core_return_invalid_command (core, "yt", input[1]);
@@ -137,7 +137,7 @@ static int cmd_yank(void *data, const char *input) {
 			r_core_yank_file_all (core, input + 2);
 			break;
 		case '?':
-			r_core_cmd_help_contains (core, help_msg_y, "yf");
+			r_cons_cmd_help_match (core->cons, help_msg_y, "yf", 0, false);
 			break;
 		default:
 			r_core_return_invalid_command (core, "yf", input[1]);
@@ -168,7 +168,7 @@ static int cmd_yank(void *data, const char *input) {
 		r_core_yank_dump (core, 0, input[0]);
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_y);
+		r_cons_cmd_help (core->cons, help_msg_y);
 		break;
 	default:
 		r_core_return_invalid_command (core, "y", *input);

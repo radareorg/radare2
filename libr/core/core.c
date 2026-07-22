@@ -226,7 +226,7 @@ R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int pos) {
 }
 
 static void core_help(RCore *core, RCoreHelpMessage help) {
-	r_core_cmd_help (core, help);
+	r_cons_cmd_help (core->cons, help);
 }
 
 static void setab(RCore *core, const char *arch, int bits) {

@@ -37,8 +37,7 @@ static RCoreHelpMessage help_msg_agD = {
 };
 
 static void agD_help(RCmdContext *ctx) {
-	RCore *core = ctx->user;
-	r_cons_cmd_help (ctx->cons, help_msg_agD, core->print->flags & R_PRINT_FLAGS_COLOR);
+	r_cons_cmd_help (ctx->cons, help_msg_agD);
 }
 
 static RCmdResult agD_invalid(RCmdContext *ctx) {
