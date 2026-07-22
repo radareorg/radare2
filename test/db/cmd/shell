@@ -335,6 +335,60 @@ outside:OK
 EOF
 RUN
 
+NAME=command substitution output stays opaque
+FILE=malloc://32
+CMDS=<<EOF
+?e pre$(?e:YSBiOyN8PkB+JiZ8fCInYCQoP2UgSU5KRUNUKQ==)post
+?e pre`?e:YSBiOyN8PkB+JiZ8fCInYCQoP2UgSU5KRUNUKQ==`post
+?e "pre$(?e:YSBiOyN8PkB+JiZ8fCInYCQoP2UgSU5KRUNUKQ==)post"
+?e $('echo "dollar;x")
+?e pre$(?e:WA==)post;?e AFTER
+prj open $(?e:L3RoaXMvcGF0aC9kb2VzIG5vdC9leGlzdDsjfD5AfiYmfHw=)
+EOF
+EXPECT=<<EOF
+prea b;#|>@~&&||"'`$(?e INJECT)post
+prea b;#|>@~&&||"'`$(?e INJECT)post
+prea b;#|>@~&&||"'`$(?e INJECT)post
+dollar;x
+preXpost
+AFTER
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot find project file: /this/path/does not/exist;#|>@~&&||
+EOF
+RUN
+
+NAME=command substitution output cannot become a command
+FILE=malloc://32
+CMDS=<<EOF
+$(?e:P2UgR0VORVJBVEVE)
+`?e:P2UgR0VORVJBVEVE`
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Command substitution cannot be used as a command
+ERROR: Invalid command '$(?e:P2UgR0VORVJBVEVE)' (0x24)
+ERROR: Command substitution cannot be used as a command
+ERROR: Invalid command '`?e:P2UgR0VORVJBVEVE`' (0x60)
+EOF
+RUN
+
+NAME=command position substitution does not execute nested command
+FILE=malloc://32
+CMDS=<<EOF
+s 0
+$(wx 41)
+p8 1
+EOF
+EXPECT=<<EOF
+00
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Command substitution cannot be used as a command
+ERROR: Invalid command '$(wx 41)' (0x24)
+EOF
+RUN
+
 NAME=escaped quotes keep pipes and redirects literal
 FILE=malloc://32
 CMDS=<<EOF
