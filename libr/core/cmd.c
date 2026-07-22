@@ -4337,8 +4337,8 @@ static char find_unterminated_quote(char *cmd) {
 	return quote;
 }
 
-static char *escape_double_quoted_subcmd(const char *str) {
-	RStrBuf *sb = r_strbuf_new (NULL);
+static char *escape_subcmd_output(const char *str, bool wrap) {
+	RStrBuf *sb = r_strbuf_new (wrap? "\"": NULL);
 	if (!sb) {
 		return NULL;
 	}
@@ -4349,7 +4349,19 @@ static char *escape_double_quoted_subcmd(const char *str) {
 		}
 		r_strbuf_append_n (sb, p, 1);
 	}
+	if (wrap) {
+		r_strbuf_append (sb, "\"");
+	}
 	return r_strbuf_drain (sb);
+}
+
+static bool subcmd_output_needs_quotes(const char *str) {
+	for (; *str; str++) {
+		if (IS_WHITESPACE (*str) || strchr (SPECIAL_CHARS "\\&!*", *str)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 static bool is_escaped_operator(const char *cmd, const char *operator) {
@@ -5129,6 +5141,10 @@ next2:
 		int value = core->num->value;
 		*ptr = '\0';
 		*ptr2 = '\0';
+		if (R_STR_ISEMPTY (r_str_trim_head_ro (cmd))) {
+			R_LOG_ERROR ("Command substitution cannot be used as a command");
+			goto fail;
+		}
 		if (raw_subcmd) {
 			unescape_raw_subcmd_delimiter (ptr + 1, backquote? '`': ')');
 		}
@@ -5155,8 +5171,9 @@ next2:
 			str[--str_len] = 0;
 		}
 		r_str_replace_ch (str, '\n', ' ', true);
-		if (subcmd_quote == '"') {
-			char *escaped = escape_double_quoted_subcmd (str);
+		const bool wrap = subcmd_quote != '"' && subcmd_output_needs_quotes (str);
+		if (subcmd_quote == '"' || wrap) {
+			char *escaped = escape_subcmd_output (str, wrap);
 			free (str);
 			str = escaped;
 			if (!str) {
