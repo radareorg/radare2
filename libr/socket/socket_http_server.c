@@ -82,24 +82,22 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 			} else if (r_str_startswith (buf, "Content-Length: ")) {
 				content_length = atoi (buf + 16);
 			} else if (so->httpauth && r_str_startswith (buf, "Authorization: Basic ")) {
-				char *authtoken = buf + 21;
 				int declen;
-				char *decauthtoken = (char *)r_base64_decode_dyn (authtoken, -1, &declen);
-				if (!decauthtoken) {
-					R_LOG_ERROR ("Could not decode authorization token");
-				} else {
+				char *dec = (char *)r_base64_decode_dyn (buf + 21, -1, &declen);
+				/* only non-empty user:password credentials can match */
+				if (R_STR_ISNOTEMPTY (dec) && strchr (dec, ':')) {
 					RListIter *iter;
-					char *curauthtoken;
-					r_list_foreach (so->authtokens, iter, curauthtoken) {
-						if (!strcmp (decauthtoken, curauthtoken)) {
+					char *tok;
+					r_list_foreach (so->authtokens, iter, tok) {
+						if (!strcmp (dec, tok)) {
 							hr->auth = true;
 							break;
 						}
 					}
-					free (decauthtoken);
 				}
+				free (dec);
 				if (!hr->auth) {
-					R_LOG_ERROR ("Failed attempt login from '%s'", hr->host);
+					R_LOG_ERROR ("Failed login attempt from '%s'", hr->host);
 				}
 			}
 		}
