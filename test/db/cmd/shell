@@ -389,6 +389,57 @@ ERROR: Invalid command '$(wx 41)' (0x24)
 EOF
 RUN
 
+NAME=semicolons inside substitution bodies are inner syntax
+FILE=malloc://32
+CMDS=<<EOF
+?e [$(?e a;?e b)]
+?e [`?e a;?e b`]
+?e [$(?e a)];?e after
+?e [`?e a`];?e after
+EOF
+EXPECT=<<EOF
+[a b]
+[a b]
+[a]
+after
+[a]
+after
+EOF
+RUN
+
+NAME=unterminated substitution with semicolon executes nothing
+FILE=malloc://32
+CMDS=<<EOF
+?e $(?e a;?e REST
+?e `?e a;?e REST
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: parse: Missing sub-command closing in expression
+ERROR: Invalid command '?e $(?e a;?e REST' (0x3f)
+ERROR: parse: Missing sub-command closing in expression
+ERROR: Invalid command '?e `?e a;?e REST' (0x3f)
+EOF
+RUN
+
+NAME=dollar and backtick share trimming and status behavior
+FILE=malloc://32
+CMDS=<<EOF
+?v 7;?e $(?v 3);?v $?
+?v 7;?e `?v 3`;?v $?
+?e [$(?e x)][`?e x`]
+EOF
+EXPECT=<<EOF
+0x7
+0x3
+0x0
+0x7
+0x3
+0x0
+[x][x]
+EOF
+RUN
+
 NAME=escaped quotes keep pipes and redirects literal
 FILE=malloc://32
 CMDS=<<EOF

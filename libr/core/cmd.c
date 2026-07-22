@@ -3955,6 +3955,89 @@ static void remove_leading_empty_quotes(char *cmd) {
 	}
 }
 
+static bool subcmd_starts_raw_call(const char *cmd) {
+	cmd = r_str_trim_head_ro (cmd);
+	while (r_str_startswith (cmd, "\"\"")) {
+		cmd += 2;
+	}
+	return *r_str_trim_head_digits (cmd) == '\'';
+}
+
+static char *find_subcmd_end(char *cmd, bool backquote, bool raw) {
+	if (raw || backquote) {
+		return (char *)r_str_firstbut_escape (cmd, backquote? '`': ')', raw? "": "'");
+	}
+	char *quote_stack = malloc (strlen (cmd) + 1);
+	if (!quote_stack) {
+		return NULL;
+	}
+	char *p = cmd;
+	size_t depth = 1;
+	char quote = 0;
+	char *result = NULL;
+	while (*p) {
+		if (*p == '\\') {
+			p++;
+			if (!*p) {
+				break;
+			}
+		} else if (*p == '\'' || *p == '"') {
+			if (!quote) {
+				quote = *p;
+			} else if (quote == *p) {
+				quote = 0;
+			}
+		} else if (r_str_startswith (p, "$(") && quote != '\'') {
+			quote_stack[depth - 1] = quote;
+			depth++;
+			quote = 0;
+			p++;
+		} else if (*p == ')' && !quote) {
+			depth--;
+			if (!depth) {
+				result = p;
+				break;
+			}
+			quote = quote_stack[depth - 1];
+		}
+		p++;
+	}
+	free (quote_stack);
+	return result;
+}
+
+// first unescaped ';' outside quotes and substitution regions, NULL also when
+// a substitution is unterminated so the whole command reaches the subst error
+static char *find_cmd_separator(char *cmd) {
+	char quote = 0;
+	char *p;
+	for (p = cmd; *p; p++) {
+		if (*p == '\\') {
+			p++;
+			if (!*p) {
+				break;
+			}
+		} else if (*p == '\'' || *p == '"') {
+			if (!quote) {
+				quote = *p;
+			} else if (quote == *p) {
+				quote = 0;
+			}
+		} else if (quote != '\'' && (*p == '`' || (*p == '$' && p[1] == '('))) {
+			const bool bq = *p == '`';
+			char *body = p + (bq? 1: 2);
+			char *end = find_subcmd_end (body, bq, subcmd_starts_raw_call (body));
+			if (!end) {
+				return NULL;
+			}
+			p = end;
+		} else if (*p == ';' && !quote) {
+			return p;
+		}
+	}
+	return NULL;
+}
+
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	RCons *cons = core->cons;
 	ut64 rep = 0;
@@ -4030,7 +4113,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		if (is_macro_command (cmd)) {
 			colon = find_ch_after_macro (cmd, ';');
 		} else {
-			colon = (char *) r_str_firstbut_escape (cmd, ';', "'\"");
+			colon = find_cmd_separator (cmd);
 		}
 		if (colon) {
 			*colon = 0;
@@ -4226,57 +4309,6 @@ static char *find_subcmd_begin(char *cmd, char *quote_out) {
 	return NULL;
 }
 
-static bool subcmd_starts_raw_call(const char *cmd) {
-	cmd = r_str_trim_head_ro (cmd);
-	while (r_str_startswith (cmd, "\"\"")) {
-		cmd += 2;
-	}
-	return *r_str_trim_head_digits (cmd) == '\'';
-}
-
-static char *find_subcmd_end(char *cmd, bool backquote, bool raw) {
-	if (raw || backquote) {
-		return (char *)r_str_firstbut_escape (cmd, backquote? '`': ')', raw? "": "'");
-	}
-	char *quote_stack = malloc (strlen (cmd) + 1);
-	if (!quote_stack) {
-		return NULL;
-	}
-	char *p = cmd;
-	size_t depth = 1;
-	char quote = 0;
-	char *result = NULL;
-	while (*p) {
-		if (*p == '\\') {
-			p++;
-			if (!*p) {
-				break;
-			}
-		} else if (*p == '\'' || *p == '"') {
-			if (!quote) {
-				quote = *p;
-			} else if (quote == *p) {
-				quote = 0;
-			}
-		} else if (r_str_startswith (p, "$(") && quote != '\'') {
-			quote_stack[depth - 1] = quote;
-			depth++;
-			quote = 0;
-			p++;
-		} else if (*p == ')' && !quote) {
-			depth--;
-			if (!depth) {
-				result = p;
-				break;
-			}
-			quote = quote_stack[depth - 1];
-		}
-		p++;
-	}
-	free (quote_stack);
-	return result;
-}
-
 static void unescape_raw_subcmd_delimiter(char *cmd, char delimiter) {
 	char *dst = cmd;
 	for (; *cmd; cmd++) {
@@ -4338,30 +4370,29 @@ static char find_unterminated_quote(char *cmd) {
 }
 
 static char *escape_subcmd_output(const char *str, bool wrap) {
-	RStrBuf *sb = r_strbuf_new (wrap? "\"": NULL);
-	if (!sb) {
+	size_t len = strlen (str);
+	if (len > (SIZE_MAX - 3) / 2) {
 		return NULL;
 	}
-	const char *p;
-	for (p = str; *p; p++) {
-		if (*p == '\\' || *p == '"' || *p == '`' || (*p == '$' && p[1] == '(')) {
-			r_strbuf_append (sb, "\\");
+	// worst case: every char escaped, plus wrapping quotes and nul
+	char *res = malloc ((len * 2) + 3);
+	if (R_LIKELY (res)) {
+		char *d = res;
+		if (wrap) {
+			*d++ = '"';
 		}
-		r_strbuf_append_n (sb, p, 1);
-	}
-	if (wrap) {
-		r_strbuf_append (sb, "\"");
-	}
-	return r_strbuf_drain (sb);
-}
-
-static bool subcmd_output_needs_quotes(const char *str) {
-	for (; *str; str++) {
-		if (IS_WHITESPACE (*str) || strchr (SPECIAL_CHARS "\\&!*", *str)) {
-			return true;
+		for (; *str; str++) {
+			if (*str == '\\' || *str == '"' || *str == '`' || (*str == '$' && str[1] == '(')) {
+				*d++ = '\\';
+			}
+			*d++ = *str;
 		}
+		if (wrap) {
+			*d++ = '"';
+		}
+		*d = 0;
 	}
-	return false;
+	return res;
 }
 
 static bool is_escaped_operator(const char *cmd, const char *operator) {
@@ -4371,15 +4402,6 @@ static bool is_escaped_operator(const char *cmd, const char *operator) {
 		operator--;
 	}
 	return nslashes & 1;
-}
-
-static char *find_last_unescaped_operator(char *cmd, char operator, const char *quotes) {
-	char *last = NULL;
-	const char *p = cmd;
-	while ((p = r_str_firstbut_escape (p, operator, quotes))) {
-		last = (char *)p++;
-	}
-	return last;
 }
 
 static char *find_unescaped_double_operator(char *cmd, char operator, const char *quotes) {
@@ -4783,7 +4805,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	if (*cmd != '#') {
 		ptr = (char *)(is_macro_command (cmd)
 			? find_ch_after_macro (cmd, ';')
-			: find_last_unescaped_operator (cmd, ';', quotestr));
+			: find_cmd_separator (cmd));
 		if (colon && ptr) {
 			int ret ;
 			*ptr = '\0';
@@ -5171,9 +5193,10 @@ next2:
 			str[--str_len] = 0;
 		}
 		r_str_replace_ch (str, '\n', ' ', true);
-		const bool wrap = subcmd_quote != '"' && subcmd_output_needs_quotes (str);
-		if (subcmd_quote == '"' || wrap) {
-			char *escaped = escape_subcmd_output (str, wrap);
+		// wrap only when the output can alter parsing: whitespace must keep
+		// word-splitting and chars like ()* are harmless mid-argument
+		if (subcmd_quote == '"' || strpbrk (str, "@;~$#|`\"'<>\\&!")) {
+			char *escaped = escape_subcmd_output (str, subcmd_quote != '"');
 			free (str);
 			str = escaped;
 			if (!str) {
