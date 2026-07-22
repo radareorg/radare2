@@ -191,6 +191,30 @@ x;y
 EOF
 RUN
 
+NAME=single quote after conditional boundaries
+FILE=malloc://32
+CMDS=<<EOF
+?e before && 'echo "and;x"
+?e skipped-or || 'echo SHOULD_NOT_RUN
+prj open /this/path/does/not/exist/r2-raw-or.prj || 'echo "or;x"
+prj open /this/path/does/not/exist/r2-raw-and.prj && 'echo SHOULD_NOT_RUN
+?e repeated && 2'echo raw||literal
+EOF
+EXPECT=<<EOF
+before
+and;x
+skipped-or
+or;x
+repeated
+raw||literal
+raw||literal
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot find project file: /this/path/does/not/exist/r2-raw-or.prj
+ERROR: Cannot find project file: /this/path/does/not/exist/r2-raw-and.prj
+EOF
+RUN
+
 NAME=escaped or
 FILE=malloc://32
 CMDS=<<EOF

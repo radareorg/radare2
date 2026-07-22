@@ -4271,6 +4271,8 @@ static char *find_subcmd_end(char *cmd, bool backquote) {
 
 static char find_unterminated_quote(char *cmd) {
 	char quote = 0;
+	const bool system_command = *cmd == '!';
+	const char *segment = cmd;
 	char *p;
 	for (p = cmd; *p; p++) {
 		if (*p == '\\') {
@@ -4285,6 +4287,18 @@ static char find_unterminated_quote(char *cmd) {
 				quote = *p;
 			} else if (quote == *p) {
 				quote = 0;
+			}
+			continue;
+		}
+		if (!quote && !system_command && p[1] == *p && (*p == '&' || *p == '|')) {
+			const bool task_wait = p == segment && *p == '&';
+			p++;
+			if (!task_wait) {
+				segment = r_str_trim_head_ro (p + 1);
+				const char *next = r_str_trim_head_digits (segment);
+				if (*next == '\'') {
+					return 0;
+				}
 			}
 			continue;
 		}
