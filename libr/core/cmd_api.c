@@ -469,34 +469,36 @@ static const char *cmd_decode_escape(const char *src, const char *end, char **ds
 	return src;
 }
 
-static bool cmd_context_parse_args(RCmdContext *context, RStrs input) {
-	const size_t input_len = r_strs_len (input);
-	char *storage = malloc (input_len + 1);
+/* Decodes every token in rest into context->args. Safe to call again when a
+ * fallback re-dispatch moves the args boundary; previous state is released. */
+static bool cmd_context_parse_args(RCmdContext *context, RStrs rest) {
+	RVecRStrs_fini (&context->args);
+	free (context->args_storage);
+	context->args_storage = NULL;
+	char *storage = malloc (r_strs_len (rest) + 1);
 	if (!storage) {
 		return false;
 	}
 	context->args_storage = storage;
-	RVecRStrs_init (&context->args);
-	const char *src = input.a;
+	const char *src = rest.a;
 	char *dst = storage;
-	bool command = true;
-	while (src < input.b) {
-		while (src < input.b && isspace ((ut8)*src)) {
+	while (src < rest.b) {
+		while (src < rest.b && isspace ((ut8)*src)) {
 			src++;
 		}
-		if (src == input.b) {
+		if (src == rest.b) {
 			break;
 		}
 		char quote = 0;
 		char *begin = dst;
-		while (src < input.b) {
+		while (src < rest.b) {
 			char ch = *src;
 			if (!quote && isspace ((ut8)ch)) {
 				break;
 			}
 			src++;
 			if (ch == '\\') {
-				src = cmd_decode_escape (src, input.b, &dst);
+				src = cmd_decode_escape (src, rest.b, &dst);
 				continue;
 			}
 			if (ch == '\'' || ch == '"') {
@@ -511,15 +513,11 @@ static bool cmd_context_parse_args(RCmdContext *context, RStrs input) {
 			}
 			*dst++ = ch;
 		}
-		if (command) {
-			command = false;
-		} else {
-			RStrs *arg = RVecRStrs_emplace_back (&context->args);
-			if (!arg) {
-				return false;
-			}
-			*arg = r_strs_new (begin, dst);
+		RStrs *arg = RVecRStrs_emplace_back (&context->args);
+		if (!arg) {
+			return false;
 		}
+		*arg = r_strs_new (begin, dst);
 	}
 	*dst = 0;
 	return true;
@@ -536,6 +534,7 @@ static void cmd_context_free(RCmdContext *context) {
 static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs input) {
 	RStrs lookup = input;
 	RCmdContext *context = NULL;
+	const char *parsed_from = NULL;
 	while (!r_strs_empty (lookup)) {
 		size_t matched = 0;
 		RCmdHandler *handler = r_trie_find_longest_prefix (cmd->handlers, lookup, &matched);
@@ -548,14 +547,17 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 			context->cmd = cmd;
 			context->cons = parent? parent->cons: cmd->cons;
 			context->user = cmd->data;
-			if (!cmd_context_parse_args (context, input)) {
-				cmd_context_free (context);
-				return cmd_result (R_CMD_ACTION_ABORT, 2);
-			}
 		}
 		const char *sub_end = input.a + matched;
 		while (sub_end < input.b && !isspace ((ut8)*sub_end)) {
 			sub_end++;
+		}
+		if (parsed_from != sub_end) {
+			if (!cmd_context_parse_args (context, r_strs_new (sub_end, input.b))) {
+				cmd_context_free (context);
+				return cmd_result (R_CMD_ACTION_ABORT, 2);
+			}
+			parsed_from = sub_end;
 		}
 		context->subcmd = r_strs_new (input.a + matched, sub_end);
 		context->handler_user = handler->user;

@@ -168,6 +168,50 @@ static bool test_r_cmd_registry_dispatch(void) {
 	mu_end;
 }
 
+typedef struct {
+	const char *expected_subcmd;
+	const char *expected_arg0;
+	size_t expected_argc;
+	RCmdAction action;
+	int calls;
+	bool ok;
+} MultiwordState;
+
+static RCmdResult multiword_handler(RCmdContext *ctx) {
+	MultiwordState *state = ctx->handler_user;
+	state->calls++;
+	const size_t argc = RVecRStrs_length (&ctx->args);
+	state->ok = r_strs_equals_str (ctx->subcmd, state->expected_subcmd)
+		&& argc == state->expected_argc
+		&& (!state->expected_arg0
+			|| (argc && r_strs_equals_str (*RVecRStrs_at (&ctx->args, 0), state->expected_arg0)));
+	return (RCmdResult) { .action = state->action };
+}
+
+static bool test_r_cmd_multiword_dispatch(void) {
+	MultiwordState spaced = {
+		.expected_subcmd = "?",
+		.expected_argc = 0,
+		.action = R_CMD_ACTION_UNHANDLED
+	};
+	MultiwordState plain = {
+		.expected_subcmd = "",
+		.expected_arg0 = "l?",
+		.expected_argc = 1,
+		.action = R_CMD_ACTION_CONTINUE
+	};
+	RCmd *cmd = r_cmd_new (NULL);
+	mu_assert_true (r_cmd_register (cmd, "af l", multiword_handler, &spaced), "register spaced name");
+	mu_assert_true (r_cmd_register (cmd, "af", multiword_handler, &plain), "register plain name");
+	mu_assert_eq (r_cmd_call (cmd, "af l?"), 0, "fallback reaches plain handler");
+	mu_assert_eq (spaced.calls, 1, "spaced handler tried first");
+	mu_assert_eq (plain.calls, 1, "plain handler called on fallback");
+	mu_assert_true (spaced.ok, "spaced registration excludes its name from args");
+	mu_assert_true (plain.ok, "fallback reparses args from the shorter match");
+	r_cmd_free (cmd);
+	mu_end;
+}
+
 static bool test_r_cmd_context_args(void) {
 	const char binary[] = { 'A', 0, 'A' };
 	RStrs expected[] = {
@@ -216,6 +260,7 @@ static int all_tests(void) {
 	mu_run_test (test_r_cmd_unregister);
 	mu_run_test (test_r_cmd_prefix_registry);
 	mu_run_test (test_r_cmd_registry_dispatch);
+	mu_run_test (test_r_cmd_multiword_dispatch);
 	mu_run_test (test_r_cmd_context_args);
 	return tests_passed != tests_run;
 }

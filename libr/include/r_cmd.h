@@ -45,7 +45,7 @@ typedef struct r_cmd_context_t {
 	void *user;
 	void *handler_user;
 	char *args_storage; // private: owned buffer backing args, do not use
-	RVecRStrs args; // decoded arguments excluding the command token
+	RVecRStrs args; // decoded arguments after the matched name and subcmd
 	RStrs subcmd; // command-token remainder after the registered name; slices the
 	// NUL-terminated input line, so subcmd.b is the raw undecoded tail as C string
 } RCmdContext;
