@@ -4226,9 +4226,17 @@ static char *find_subcmd_begin(char *cmd, char *quote_out) {
 	return NULL;
 }
 
-static char *find_subcmd_end(char *cmd, bool backquote) {
-	if (backquote) {
-		return (char *)r_str_firstbut_escape (cmd, '`', "'");
+static bool subcmd_starts_raw_call(const char *cmd) {
+	cmd = r_str_trim_head_ro (cmd);
+	while (r_str_startswith (cmd, "\"\"")) {
+		cmd += 2;
+	}
+	return *r_str_trim_head_digits (cmd) == '\'';
+}
+
+static char *find_subcmd_end(char *cmd, bool backquote, bool raw) {
+	if (raw || backquote) {
+		return (char *)r_str_firstbut_escape (cmd, backquote? '`': ')', raw? "": "'");
 	}
 	char *quote_stack = malloc (strlen (cmd) + 1);
 	if (!quote_stack) {
@@ -4269,6 +4277,17 @@ static char *find_subcmd_end(char *cmd, bool backquote) {
 	return result;
 }
 
+static void unescape_raw_subcmd_delimiter(char *cmd, char delimiter) {
+	char *dst = cmd;
+	for (; *cmd; cmd++) {
+		if (cmd[0] == '\\' && cmd[1] == delimiter) {
+			cmd++;
+		}
+		*dst++ = *cmd;
+	}
+	*dst = 0;
+}
+
 static char find_unterminated_quote(char *cmd) {
 	char quote = 0;
 	const bool system_command = *cmd == '!';
@@ -4307,7 +4326,8 @@ static char find_unterminated_quote(char *cmd) {
 		}
 		if (quote != '\'' && (*p == '`' || (*p == '$' && p[1] == '('))) {
 			bool backquote = *p == '`';
-			char *end = find_subcmd_end (p + (backquote ? 1 : 2), backquote);
+			char *sub = p + (backquote? 1: 2);
+			char *end = find_subcmd_end (sub, backquote, subcmd_starts_raw_call (sub));
 			if (!end) {
 				return 0;
 			}
@@ -5100,7 +5120,8 @@ next2:
 			memmove (ptr, ptr + 2, strlen (ptr) - 1);
 			goto escape_backtick;
 		}
-		ptr2 = find_subcmd_end (ptr + 1, backquote);
+		const bool raw_subcmd = subcmd_starts_raw_call (ptr + 1);
+		ptr2 = find_subcmd_end (ptr + 1, backquote, raw_subcmd);
 		if (!ptr2) {
 			R_LOG_ERROR ("parse: Missing sub-command closing in expression");
 			goto fail;
@@ -5108,6 +5129,9 @@ next2:
 		int value = core->num->value;
 		*ptr = '\0';
 		*ptr2 = '\0';
+		if (raw_subcmd) {
+			unescape_raw_subcmd_delimiter (ptr + 1, backquote? '`': ')');
+		}
 		if (ptr[1] == '!') {
 			str = r_core_cmd_str_pipe (core, ptr + 1);
 		} else {

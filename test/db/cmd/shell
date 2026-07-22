@@ -255,14 +255,45 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=nested escaped or with single quote
-BROKEN=1
+NAME=raw calls in command substitutions
 FILE=malloc://32
 CMDS=<<EOF
 ?v 4 \| `'?v 1 | 2`
+?v 4 \| $('?v 1 | 2)
+?v 4 \| `   '?v 1 | 2`
+?v 4 \| $(   '?v 1 | 2)
+?e $(2'echo repeat)
+?e `2'echo repeat`
+?e $('echo left\)right)
+s 0
+?e `'w hello\`world`
+ps 11
 EOF
 EXPECT=<<EOF
 0x7
+0x7
+0x7
+0x7
+repeat repeat
+repeat repeat
+left)right
+
+hello`world
+EOF
+RUN
+
+NAME=unterminated raw calls in command substitutions
+FILE=malloc://32
+CMDS=<<EOF
+?e $('echo SHOULD_NOT_RUN
+?e `'echo SHOULD_NOT_RUN
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: parse: Missing sub-command closing in expression
+ERROR: Invalid command '?e $('echo SHOULD_NOT_RUN' (0x3f)
+ERROR: parse: Missing sub-command closing in expression
+ERROR: Invalid command '?e `'echo SHOULD_NOT_RUN' (0x3f)
 EOF
 RUN
 
