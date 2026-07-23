@@ -143,7 +143,7 @@ static bool test_r_cmd_registry_dispatch(void) {
 		.action = R_CMD_ACTION_UNHANDLED
 	};
 	parent.expected_user = child.expected_user = &child;
-	RCons *cons = r_cons_new2 ();
+	RCons *cons = r_cons_new ();
 	mu_assert_notnull (cons, "create borrowed console");
 	RCmd *cmd = r_cmd_new (&child);
 	cmd->cons = parent.expected_cons = child.expected_cons = cons;

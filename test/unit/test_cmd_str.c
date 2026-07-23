@@ -18,6 +18,25 @@ bool test_cmd_str_issue_18799(void) {
 	mu_end;
 }
 
+bool test_multiple_cores_share_terminal(void) {
+	RCore *first = r_core_new ();
+	RCore *second = r_core_new ();
+	mu_assert ("different console instances", first->cons != second->cons);
+	mu_assert_notnull (first->cons->terminal, "first core console is attached");
+	mu_assert_notnull (second->cons->terminal, "second core console is attached");
+
+	char *first_output = r_core_cmd_str (first, "?e first");
+	char *second_output = r_core_cmd_str (second, "?e second");
+	mu_assert_streq_free (first_output, "first\n", "first core output");
+	mu_assert_streq_free (second_output, "second\n", "second core output");
+
+	r_core_free (first);
+	mu_assert_ptreq (r_cons_singleton (), second->cons, "freeing first core preserves second");
+	r_core_free (second);
+	mu_assert_false (r_cons_is_initialized (), "freeing both cores clears current console");
+	mu_end;
+}
+
 bool test_prompt_utf8_ellipsis_width(void) {
 	RCore *core = r_core_new ();
 	mu_assert_notnull (core, "Couldn't create new RCore");
@@ -131,6 +150,7 @@ bool test_o_autocomplete_uses_file_completion(void) {
 
 int all_tests(void) {
 	mu_run_test (test_cmd_str_issue_18799);
+	mu_run_test (test_multiple_cores_share_terminal);
 	mu_run_test (test_prompt_utf8_ellipsis_width);
 	mu_run_test (test_prompt_format_preserves_trailing_escaped_space);
 	mu_run_test (test_prompt_format_preserves_trailing_escaped_newline);

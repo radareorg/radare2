@@ -308,7 +308,7 @@ static void task_free(RCoreTask *task) {
 	r_th_free (thread);
 	r_th_sem_free (task->running_sem);
 	r_th_cond_free (task->dispatch_cond);
-	r_cons_context_free (task->cons_context);
+	r_unref (task->cons_context);
 	if (lock) {
 		r_th_lock_leave (lock);
 	}

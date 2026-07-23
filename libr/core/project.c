@@ -476,7 +476,7 @@ R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 }
 
 static void flush(RCore *core, RStrBuf *sb) {
-	char *s = r_cons_drain (core->cons);
+	char *s = r_cons_drain (core->cons, NULL);
 	if (s) {
 		r_strbuf_append (sb, s);
 		free (s);

@@ -7377,7 +7377,7 @@ R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd) {
 	RBuffer *out = r_buf_new_with_bytes ((const ut8*)buf, bsz);
 	r_cons_pop (core->cons);
 	r_cons_echo (core->cons, NULL);
-	// buf is freed by r_cons_pop via r_cons_context_free
+	// buf is freed by r_cons_pop with its context
 	return out;
 }
 
