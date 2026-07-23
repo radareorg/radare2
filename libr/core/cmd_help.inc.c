@@ -38,6 +38,8 @@ static RCoreHelpMessage help_msg_at = {
 	"~", "word[2]", "grep 3rd column of lines matching word",
 	"~", "word:3[0]", "grep 1st column from the 4th line matching word",
 	"@", " 0x1024", "temporary seek to this address (sym.main+3)",
+	"@addr@", "cmd", "prefix form of the temporary seek (@addr@'cmd for raw calls)",
+	"@addr@", "cmd && cmd2", "the prefix seek spans the whole &&/|| chain, but not past ';'",
 	"@", " [addr]!blocksize", "temporary set a new blocksize",
 	"@..", "addr", "temporary partial address seek (see s..)",
 	"@!", "blocksize", "temporary change the block size (p8@3!3)",
@@ -104,6 +106,7 @@ static RCoreHelpMessage help_msg_single_quote = {
 	"'", "?e hello @ world", "print everything after `?e` (r2.call)",
 	"'", "0x123'?v $$", "run the '?v $$' command in the 0x123 offset (same as r2.callAt)",
 	"'", "@entry0'?v $$", "same as '0x but supports non numeric offsets",
+	"@entry0@", "'?v $$", "raw call at address with the @addr@cmd seek prefix",
 	NULL
 };
 
