@@ -7,7 +7,6 @@ R_LIB_VERSION(r_cons);
 
 static void r_cons_context_free_internal(RConsContext *ctx);
 
-static R_TH_LOCAL RCons *I = NULL;
 struct r_cons_terminal_t {
 	RList *consoles;
 	RCons *foreground;
@@ -24,6 +23,47 @@ struct r_cons_terminal_t {
 static RConsTerminal Gterminal = {
 	.lock = R_THREAD_LOCK_INIT
 };
+
+#define CONS_NATIVE_CURRENT (HAVE_TH_LOCAL || !WANT_THREADS || !HAVE_PTHREAD)
+
+#if CONS_NATIVE_CURRENT
+static R_TH_LOCAL RCons *I = NULL;
+#endif
+
+static RCons *cons_current(void) {
+#if CONS_NATIVE_CURRENT
+	return I;
+#else
+	RCons *current = NULL;
+	RListIter *iter;
+	RCons *candidate;
+	const R_TH_TID self = r_th_self ();
+	r_th_lock_enter (&Gterminal.lock);
+	r_list_foreach_prev (Gterminal.consoles, iter, candidate) {
+		if (r_th_tid_equal (candidate->main_tid, self)) {
+			current = candidate;
+			break;
+		}
+	}
+	r_th_lock_leave (&Gterminal.lock);
+	return current;
+#endif
+}
+
+static void cons_current_set(RCons *cons) {
+#if CONS_NATIVE_CURRENT
+	I = cons;
+#else
+	if (!cons || !cons->terminal) {
+		return;
+	}
+	RConsTerminal *terminal = cons->terminal;
+	r_th_lock_enter (&terminal->lock);
+	r_list_iter_to_top (terminal->consoles,
+		r_list_contains (terminal->consoles, cons));
+	r_th_lock_leave (&terminal->lock);
+#endif
+}
 
 #define MAX_PAGES 100
 #define R_CONS_CHILD_SETTINGS_SIZE \
@@ -272,25 +312,29 @@ static void cons_terminal_attach(RCons *cons) {
 
 static void cons_terminal_detach(RCons *cons) {
 	RConsTerminal *terminal = cons->terminal;
-	const bool current = cons == I;
+#if CONS_NATIVE_CURRENT
+	const bool current = cons == cons_current ();
 	if (current) {
-		I = NULL;
+		cons_current_set (NULL);
 	}
+#endif
 	if (!terminal) {
 		return;
 	}
 	r_th_lock_enter (&terminal->lock);
 	r_list_delete_data (terminal->consoles, cons);
+#if CONS_NATIVE_CURRENT
 	if (current) {
 		RListIter *iter;
 		RCons *candidate;
 		r_list_foreach_prev (terminal->consoles, iter, candidate) {
 			if (r_th_tid_equal (candidate->main_tid, r_th_self ())) {
-				I = candidate;
+				cons_current_set (candidate);
 				break;
 			}
 		}
 	}
+#endif
 	if (terminal->foreground == cons) {
 		terminal->foreground = r_list_first (terminal->consoles);
 	}
@@ -347,8 +391,9 @@ static RCons *cons_new(RConsContext *context) {
 }
 
 R_API RCons *r_cons_new(void) {
-	I = cons_new (NULL);
-	return I;
+	RCons *cons = cons_new (NULL);
+	cons_current_set (cons);
+	return cons;
 }
 
 R_API RCons *r_cons_thready(RCons *cons) {
@@ -376,7 +421,7 @@ R_API void r_cons_free(RCons *cons) {
 }
 
 R_API bool r_cons_is_initialized(void) {
-	return I != NULL;
+	return cons_current () != NULL;
 }
 
 R_API RColor r_cons_color_random(RCons *cons, ut8 alpha) {
@@ -479,7 +524,7 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 
 R_API RCons *r_cons_global(RCons *c) {
 	if (c) {
-		I = c;
+		cons_current_set (c);
 		RConsTerminal *terminal = c->terminal;
 		if (terminal) {
 			r_th_lock_enter (&terminal->lock);
@@ -487,14 +532,15 @@ R_API RCons *r_cons_global(RCons *c) {
 			r_th_lock_leave (&terminal->lock);
 		}
 	}
-	return I;
+	return cons_current ();
 }
 
 R_API RCons *r_cons_singleton(void) {
-	if (!I) {
-		r_cons_new ();
+	RCons *cons = cons_current ();
+	if (!cons) {
+		cons = r_cons_new ();
 	}
-	return I;
+	return cons;
 }
 
 R_API void r_cons_break_clear(RCons *cons) {
@@ -680,10 +726,6 @@ R_API void r_cons_break_timeout(RCons *cons, int timeout) {
 		cons->timeout_break = false;
 		cons->timeout_warned = false;
 	}
-#if 0
-	I->timeout = (timeout && !I->timeout)
-		? r_time_now_mono () + ((ut64) timeout << 20): 0;
-#endif
 }
 
 R_API void r_cons_set_click(RCons *R_NONNULL cons, int x, int y) {
@@ -1155,7 +1197,8 @@ R_API bool r_cons_set_cup(bool enable) {
 	}
 	fflush (stdout);
 #elif R2__WINDOWS__
-	if (I->vtmode) {
+	RCons *cons = cons_current ();
+	if (cons && cons->vtmode) {
 		if (enable) {
 			const char *code = enable // xterm + xterm-color
 				? "\x1b[?1049h\x1b"
@@ -1231,7 +1274,7 @@ R_API int r_cons_gprintf(const char *format, ...) {
 		return -1;
 	}
 	va_start (ap, format);
-	r_cons_printf_list (I, format, ap);
+	r_cons_printf_list (cons_current (), format, ap);
 	va_end (ap);
 	return 0;
 }
@@ -2179,10 +2222,10 @@ R_API int r_cons_printf(RCons *cons, const char *format, ...) {
 
 R_API void r_cons_break(RCons *cons) {
 	if (!cons) {
-		if (!I) {
+		cons = cons_current ();
+		if (!cons) {
 			return;
 		}
-		cons = I;
 	}
 	r_cons_context_break (cons->context);
 #if R2__UNIX__ && !__wasi__
