@@ -181,6 +181,129 @@ bool test_cons_context_clone_null(void) {
 	mu_end;
 }
 
+bool test_cons_child_isolation(void) {
+	RCons *parent = r_cons_new2 ();
+	mu_assert_notnull (parent, "parent console");
+	parent->columns = 123;
+	parent->use_utf8 = true;
+	parent->context->color_mode = COLOR_MODE_16;
+	r_cons_print (parent, "parent");
+	r_cons_context_break (parent->context);
+
+	RCons *child = r_cons_new_child (parent);
+	mu_assert_notnull (child, "child console");
+	mu_assert_true (parent->owns_terminal, "parent owns terminal");
+	mu_assert_false (child->owns_terminal, "child does not own terminal");
+	mu_assert ("different console", child != parent);
+	mu_assert ("different context", child->context != parent->context);
+	mu_assert ("different context stack", child->ctx_stack != parent->ctx_stack);
+	mu_assert ("different lock", child->lock != parent->lock);
+	mu_assert ("different line editor", child->line != parent->line);
+	mu_assert_eq (child->columns, 123, "inherit columns");
+	mu_assert_true (child->use_utf8, "inherit utf8");
+	mu_assert_eq (child->context->color_mode, COLOR_MODE_16, "inherit color mode");
+	mu_assert_eq (child->context->buffer_len, 0, "child starts empty");
+	mu_assert_false (child->context->breaked, "child starts unbroken");
+	mu_assert_true (child->context->noflush, "child captures flushes");
+
+	parent->context->breaked = false;
+	r_cons_print (child, "child");
+	mu_assert_streq (parent->context->buffer, "parent", "parent output stays isolated");
+	mu_assert_streq (child->context->buffer, "child", "child owns its output");
+	child->context->color_mode = COLOR_MODE_DISABLED;
+	r_cons_context_break (child->context);
+	mu_assert_eq (parent->context->color_mode, COLOR_MODE_16, "child settings stay isolated");
+	mu_assert_false (parent->context->breaked, "child break stays isolated");
+
+	r_cons_free (child);
+	r_cons_free (parent);
+	mu_end;
+}
+
+typedef struct {
+	RCons *cons;
+	char byte;
+	size_t count;
+} ConsWriter;
+
+static RThreadFunctionRet cons_writer(RThread *thread) {
+	ConsWriter *writer = thread->user;
+	size_t i;
+	for (i = 0; i < writer->count; i++) {
+		r_cons_write (writer->cons, &writer->byte, 1);
+	}
+	return R_TH_STOP;
+}
+
+static bool cons_buffer_is(const char *buffer, size_t size, char byte) {
+	size_t i;
+	for (i = 0; i < size; i++) {
+		if (buffer[i] != byte) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool test_cons_child_concurrent_merge(void) {
+	RCons *parent = r_cons_new2 ();
+	RCons *left = r_cons_new_child (parent);
+	RCons *right = r_cons_new_child (parent);
+	mu_assert_notnull (left, "left child");
+	mu_assert_notnull (right, "right child");
+	ConsWriter left_writer = {
+		.cons = left,
+		.byte = 'L',
+		.count = 4096
+	};
+	ConsWriter right_writer = {
+		.cons = right,
+		.byte = 'R',
+		.count = 4096
+	};
+	RThread *left_thread = r_th_new (cons_writer, &left_writer, 0);
+	RThread *right_thread = r_th_new (cons_writer, &right_writer, 0);
+	mu_assert_notnull (left_thread, "left thread");
+	mu_assert_notnull (right_thread, "right thread");
+	mu_assert_true (r_th_start (left_thread), "start left");
+	mu_assert_true (r_th_start (right_thread), "start right");
+	r_th_wait (left_thread);
+	r_th_wait (right_thread);
+
+	size_t left_size;
+	size_t right_size;
+	const char *left_output = r_cons_get_buffer (left, &left_size);
+	const char *right_output = r_cons_get_buffer (right, &right_size);
+	mu_assert_eq (left_size, left_writer.count, "left output size");
+	mu_assert_eq (right_size, right_writer.count, "right output size");
+	mu_assert_true (cons_buffer_is (left_output, left_size, 'L'), "left output contents");
+	mu_assert_true (cons_buffer_is (right_output, right_size, 'R'), "right output contents");
+
+	left->context->color_mode = COLOR_MODE_16;
+	mu_assert_true (r_cons_merge_output (parent, left), "merge left");
+	mu_assert_true (r_cons_merge_output (parent, right), "merge right");
+	mu_assert_eq (left->context->buffer_len, 0, "left drained");
+	mu_assert_eq (right->context->buffer_len, 0, "right drained");
+	mu_assert_eq (parent->context->buffer_len, left_size + right_size, "merged output size");
+	mu_assert_eq (parent->context->color_mode, COLOR_MODE_DISABLED, "settings do not merge");
+	mu_assert_true (cons_buffer_is (parent->context->buffer, left_size, 'L'), "merged left contents");
+	mu_assert_true (cons_buffer_is (parent->context->buffer + left_size, right_size, 'R'), "merged right contents");
+
+	const ut8 binary[] = { 'A', 0, 'B' };
+	r_cons_reset (parent);
+	mu_assert_true (r_cons_write (left, binary, sizeof (binary)), "write binary output");
+	mu_assert_true (r_cons_merge_output (parent, left), "merge binary output");
+	mu_assert_eq (parent->context->buffer_len, sizeof (binary), "binary output size");
+	mu_assert_memeq ((const ut8 *)parent->context->buffer, binary, sizeof (binary), "binary output contents");
+
+	r_th_free (left_thread);
+	r_th_free (right_thread);
+	r_cons_free (left);
+	r_cons_free (right);
+	r_cons_free (parent);
+	mu_end;
+}
+
 bool test_cons_timeout_keeps_earliest_deadline(void) {
 	RCons *cons = r_cons_new2 ();
 	mu_assert_notnull (cons, "r_cons_new2()");
@@ -309,6 +432,8 @@ bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
 	mu_run_test (test_cons_context_clone_null);
+	mu_run_test (test_cons_child_isolation);
+	mu_run_test (test_cons_child_concurrent_merge);
 	mu_run_test (test_cons_timeout_keeps_earliest_deadline);
 	mu_run_test (test_cons_timeout_does_not_restart_expired_deadline);
 	mu_run_test (test_cons_json_path_grep_buffer);

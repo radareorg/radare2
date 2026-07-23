@@ -429,18 +429,27 @@ typedef enum { COLOR_MODE_DISABLED = 0, COLOR_MODE_16, COLOR_MODE_256, COLOR_MOD
 
 typedef struct r_cons_context_t {
 	R_REF_TYPE;
+	// Owned capture state reset when cloning. Keep this block contiguous.
 	RConsGrep grep;
-	// RStack *cons_stack;
 	char *buffer; // TODO: maybe replace with RStrBuf to avoid duplicated logics
-	size_t buffer_len;
-	size_t buffer_sz;
-	size_t buffer_limit;
-	bool breaked;
-	bool was_breaked;
-	bool unbreakable;
 	RStack *break_stack;
 	RConsEvent event_interrupt;
 	void *event_interrupt_data;
+	char *lastOutput;
+	RList *sorted_lines; // wtf
+	RList *unsorted_lines; // wtf
+	RList *marks;
+	RStrConstPool constpool; // Pool for mark names
+	size_t buffer_len;
+	size_t buffer_sz;
+	int lastLength;
+	int sorted_column; // -1
+	bool breaked;
+	bool was_breaked;
+	bool lastMode;
+
+	size_t buffer_limit;
+	bool unbreakable;
 	// int cmd_depth;
 	int cmd_str_depth; // wtf ?
 	bool noflush;
@@ -448,9 +457,6 @@ typedef struct r_cons_context_t {
 	// Used for per-task logging redirection
 	RLogCallback log_callback; // TODO: RList of callbacks
 
-	char *lastOutput;
-	int lastLength;
-	bool lastMode;
 	bool lastEnabled;
 	bool is_interactive;
 	bool pageable;
@@ -462,9 +468,6 @@ typedef struct r_cons_context_t {
 	bool pal_dirty; // cpal was modified, needs refresh
 	bool pal_batch; // batch mode: skip auto-reload after pal_set
 
-	RList *sorted_lines; // wtf
-	RList *unsorted_lines; // wtf
-	int sorted_column; // -1
 	bool demo;
 	bool is_html;
 	bool tmp_html;
@@ -475,8 +478,6 @@ typedef struct r_cons_context_t {
 	bool use_tts;
 	bool flush;
 	int colors[256];
-	RList *marks;
-	RStrConstPool constpool; // Pool for mark names
 } RConsContext;
 
 #define HUD_BUF_SIZE 512
@@ -496,17 +497,30 @@ typedef struct input_state_t {
 typedef struct r_cons_t {
 	RConsContext *context; // TODO: Rename to ctx
 	RList *ctx_stack;
-	InputState input_state;
-	char *lastline;
-	int lines;
+	// Plain settings inherited by child consoles. Keep this block contiguous.
 	int rows;
-	int echo; // dump to stdout in realtime
-	int fps;
 	int columns;
 	int force_rows;
 	int force_columns;
 	int fix_rows;
 	int fix_columns;
+	int blankline;
+	int null; // if set, does not show anything
+	int vtmode;
+	int linesleep;
+	int pagesize;
+	int maxpage;
+	bool enable_highlight;
+	bool use_utf8; // use utf8 features
+	bool use_utf8_curvy; // use utf8 curved corners
+	bool dotted_lines;
+	bool show_vals; // show which section in Vv
+	bool is_embedded; // do not use process-wide signal handlers
+	InputState input_state;
+	char *lastline;
+	int lines;
+	int echo; // dump to stdout in realtime
+	int fps;
 	bool break_lines;
 	// move into Completion
 	bool show_autocomplete_widget;
@@ -541,22 +555,12 @@ typedef struct r_cons_t {
 	/* Pager (like more or less) to use if the output doesn't fit on the
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
-	int blankline;
 	char *highlight;
-	bool enable_highlight;
-	int null; // if set, does not show anything
 	int mouse;
 	int is_wine; // -1, 0, 1
 	struct r_line_t *line;
 	RConsEditor *editor;
 	const char **vline;
-	int vtmode;
-	bool use_utf8; // use utf8 features
-	bool use_utf8_curvy; // use utf8 curved corners
-	bool dotted_lines;
-	int linesleep;
-	int pagesize;
-	int maxpage;
 	char *break_word;
 	int break_word_len;
 	ut64 timeout;
@@ -574,7 +578,6 @@ typedef struct r_cons_t {
 	int drag_queued; // queued drag keys pending in the readbuffer
 	int drag_x;
 	int drag_y;
-	bool show_vals;		// show which section in Vv
 	// TODO: move into instance? + avoid unnecessary copies
 	RThreadLock *lock;
 	RConsCursorPos cpos;
@@ -583,7 +586,7 @@ typedef struct r_cons_t {
 	ut64 prev;
 	RStrBuf *echodata;
 	bool lasti;
-	bool is_embedded; // when true, r_cons_break won't raise(SIGINT) and break_push won't install signal handlers
+	bool owns_terminal;
 	R_TH_TID main_tid; // thread that initialized cons, for signal-safety checks
 #if R2__WINDOWS__
 	HANDLE hStdout;
@@ -1211,6 +1214,8 @@ R_API void r_cons_set_last_interactive(RCons *cons);
 R_API void r_cons_flush(RCons * R_NONNULL cons);
 R_API void r_cons_last(RCons *cons);
 R_API RCons * R_NONNULL r_cons_new2(void);
+/* Independent capture console; free with r_cons_free(). */
+R_API RCons *r_cons_new_child(RCons * R_NONNULL parent);
 R_API bool r_cons_pop(RCons * R_NONNULL cons);
 R_API void r_cons_free2(RCons * R_NULLABLE cons);
 R_API void r_cons_print_clear(RCons *cons);
@@ -1223,9 +1228,12 @@ R_API void r_cons_clear00(RCons *cons);
 R_API void r_cons_reset(RCons *cons);
 R_API const char *r_cons_get_buffer(RCons *cons, size_t *buffer_len);
 R_API void r_cons_push(RCons *cons);
+/* Clone presentation state into an empty capture context. */
 R_API RConsContext *r_cons_context_clone(RConsContext * R_NULLABLE ctx);
 R_API void r_cons_echo(RCons *cons, const char *msg);
-R_API char *r_cons_drain(RCons *cons);
+R_API char *r_cons_drain(RCons *cons, R_OUT size_t * R_NULLABLE size);
+/* Drains child output into parent without propagating child settings. */
+R_API bool r_cons_merge_output(RCons * R_NONNULL parent, RCons * R_NONNULL child);
 R_API int r_cons_get_column(RCons *cons);
 R_API int r_cons_get_cursor(RCons *cons, int *rows);
 R_API void r_cons_show_cursor(RCons *cons, int cursor);

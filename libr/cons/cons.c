@@ -10,6 +10,10 @@ static void r_cons_context_free_internal(RConsContext *ctx);
 static RCons *I = NULL;
 
 #define MAX_PAGES 100
+#define R_CONS_CHILD_SETTINGS_SIZE \
+	(r_offsetof (RCons, is_embedded) + sizeof (bool) - r_offsetof (RCons, rows))
+#define R_CONS_CAPTURE_SIZE \
+	(r_offsetof (RConsContext, lastMode) + sizeof (bool) - r_offsetof (RConsContext, grep))
 
 // Write a string literal/array to fd; returns true on full write.
 // The argument MUST be a string literal or char[] (sizeof must be the array size).
@@ -134,15 +138,22 @@ static void grep_word_free(RConsGrepWord *gw) {
 }
 
 static void cons_grep_reset(RConsGrep *grep) {
-	if (grep) {
-		R_FREE (grep->str);
-		r_list_free (grep->strings);
-		ZERO_FILL (*grep);
-		grep->strings = r_list_newf ((RListFree)grep_word_free);
-		grep->line = -1;
-		grep->sort = -1;
-		grep->sort_invert = false;
-	}
+	R_FREE (grep->str);
+	r_list_free (grep->strings);
+	ZERO_FILL (*grep);
+	grep->strings = r_list_newf ((RListFree)grep_word_free);
+	grep->line = -1;
+	grep->sort = -1;
+	grep->sort_invert = false;
+}
+
+static void init_cons_capture(RConsContext *ctx) {
+	memset (&ctx->grep, 0, R_CONS_CAPTURE_SIZE);
+	ctx->break_stack = r_stack_newf (6, break_stack_free);
+	ctx->marks = r_list_newf (free);
+	r_str_constpool_init (&ctx->constpool);
+	cons_grep_reset (&ctx->grep);
+	ctx->pageable = true;
 }
 
 /*
@@ -191,36 +202,15 @@ static void rcons_update_color_limit_from_term(RCons *cons) {
 	free (term);
 }
 
-static void init_cons_context(RCons *cons, RConsContext *R_NULLABLE parent) {
+static void init_cons_context(RCons *cons) {
 	RConsContext *ctx = cons->context;
 	r_ref_init (ctx, r_cons_context_free_internal);
-	ctx->marks = r_list_newf (free);
-	ctx->breaked = false;
-	// ctx->cmd_depth = R_CONS_CMD_DEPTH + 1;
-	ctx->buffer_sz = 0;
+	init_cons_capture (ctx);
 	ctx->lastEnabled = true;
-	ctx->buffer_len = 0;
-	ctx->is_interactive = false;
-	// ctx->cons_stack = r_stack_newf (6, cons_stack_free);
-	ctx->break_stack = r_stack_newf (6, break_stack_free);
-	ctx->event_interrupt = NULL;
-	ctx->event_interrupt_data = NULL;
-	ctx->pageable = true;
-	ctx->log_callback = NULL;
-	ctx->cmd_str_depth = 0;
-	ctx->noflush = false;
-	r_str_constpool_init (&ctx->constpool);
-	if (parent) {
-		ctx->color_mode = parent->color_mode;
-		ctx->color_limit = parent->color_limit;
-		r_cons_pal_copy (cons, parent);
-	} else {
-		ctx->color_mode = COLOR_MODE_DISABLED;
-		ctx->color_limit = COLOR_MODE_16M; // Default to no limit
-		r_cons_pal_init (cons);
-		rcons_update_color_limit_from_term (cons);
-	}
-	cons_grep_reset (&ctx->grep);
+	ctx->color_mode = COLOR_MODE_DISABLED;
+	ctx->color_limit = COLOR_MODE_16M;
+	r_cons_pal_init (cons);
+	rcons_update_color_limit_from_term (cons);
 }
 
 #if R2__UNIX__ && !__wasi__
@@ -230,81 +220,61 @@ static void resize(int sig) {
 }
 #endif
 
-static inline void init_cons_input(InputState *state) {
-	state->readbuffer = NULL;
-	state->readbuffer_length = 0;
-	state->bufactive = true;
-}
-
-R_API RCons *r_cons_new2(void) {
+static RCons *cons_new(RConsContext *context) {
 	RCons *cons = R_NEW0 (RCons);
-	cons->context = R_NEW0 (RConsContext);
+	const bool owns_terminal = !context;
+	cons->context = context? context: R_NEW0 (RConsContext);
 	cons->ctx_stack = r_list_newf (free);
-	init_cons_context (cons, NULL);
-	// eprintf ("CTX %p %p\n", cons, cons->context);
-	init_cons_input (&cons->input_state);
+	if (!context) {
+		init_cons_context (cons);
+	}
+	cons->input_state.bufactive = true;
 	cons->lock = r_th_lock_new (true);
-	cons->use_utf8 = r_cons_is_utf8 ();
 	cons->rgbstr = r_cons_rgb_str_off; // XXX maybe we can kill that
 	cons->enable_highlight = true;
-	cons->highlight = NULL;
 	cons->is_wine = -1;
-	cons->fps = 0;
 	cons->blankline = true;
-	cons->teefile = NULL;
-	cons->fix_columns = 0;
-	cons->fix_rows = 0;
 	RVecFdPairs_init (&cons->fds);
-	cons->mouse_event = false;
-	cons->force_rows = 0;
-	cons->force_columns = 0;
-	cons->event_resize = NULL;
-	cons->event_data = NULL;
-	cons->linesleep = 0;
 	cons->fdin = stdin;
 	cons->fdout = 1;
-	cons->break_lines = false;
-	cons->lines = 0;
 	cons->maxpage = 102400;
-
-	r_cons_get_size (cons, &cons->pagesize);
-	cons->num = NULL;
-	cons->null = 0;
-	cons->timeout_break = false;
-	cons->timeout_warned = false;
+	cons->owns_terminal = owns_terminal;
+	if (owns_terminal) {
+		cons->use_utf8 = r_cons_is_utf8 ();
+		r_cons_get_size (cons, &cons->pagesize);
 #if R2__WINDOWS__
-	cons->old_cp = GetConsoleOutputCP ();
-	cons->vtmode = win_is_vtcompat (cons);
+		cons->old_cp = GetConsoleOutputCP ();
+		cons->vtmode = win_is_vtcompat (cons);
 #else
-	cons->vtmode = 2;
+		cons->vtmode = 2;
 #endif
 #if EMSCRIPTEN || __wasi__
 #elif R2__UNIX__
-	tcgetattr (0, &cons->term_buf);
-	memcpy (&cons->term_raw, &cons->term_buf, sizeof (cons->term_raw));
-	cons->term_raw.c_iflag &= ~ (BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
-	cons->term_raw.c_lflag &= ~ (ECHO | ECHONL | ICANON | ISIG | IEXTEN);
-	cons->term_raw.c_cflag &= ~ (CSIZE | PARENB);
-	cons->term_raw.c_cflag |= CS8;
-	cons->term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
-	r_sys_signal (SIGWINCH, resize);
+		tcgetattr (0, &cons->term_buf);
+		memcpy (&cons->term_raw, &cons->term_buf, sizeof (cons->term_raw));
+		cons->term_raw.c_iflag &= ~ (BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
+		cons->term_raw.c_lflag &= ~ (ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+		cons->term_raw.c_cflag &= ~ (CSIZE | PARENB);
+		cons->term_raw.c_cflag |= CS8;
+		cons->term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
+		r_sys_signal (SIGWINCH, resize);
 #elif R2__WINDOWS__
-	h = GetStdHandle (STD_INPUT_HANDLE);
-	GetConsoleMode (h, &cons->term_buf);
-	cons->term_raw = 0;
-	I = cons;
-	if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE)) {
-		R_LOG_ERROR ("Cannot set control console handler");
-	}
+		h = GetStdHandle (STD_INPUT_HANDLE);
+		GetConsoleMode (h, &cons->term_buf);
+		cons->term_raw = 0;
+		I = cons;
+		if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE)) {
+			R_LOG_ERROR ("Cannot set control console handler");
+		}
 #endif
-	cons->pager = NULL; /* no pager by default */
-	cons->mouse = 0;
-	cons->show_vals = false;
-	cons->is_embedded = false;
+	}
 	cons->main_tid = r_th_self ();
-	r_cons_reset (cons);
 	cons->line = r_line_new (cons);
 	return cons;
+}
+
+R_API RCons *r_cons_new2(void) {
+	return cons_new (NULL);
 }
 
 R_API void r_cons_free2(RCons *R_NULLABLE cons) {
@@ -312,26 +282,27 @@ R_API void r_cons_free2(RCons *R_NULLABLE cons) {
 		return;
 	}
 #if R2__WINDOWS__
-	r_cons_enable_mouse (cons, false);
-	if (cons->old_cp) {
-		(void)SetConsoleOutputCP (cons->old_cp);
-		// chcp doesn't pick up the code page switch for some reason
-		(void)r_sys_cmdf ("chcp %u > NUL", cons->old_cp);
+	if (cons->owns_terminal) {
+		r_cons_enable_mouse (cons, false);
+		if (cons->old_cp) {
+			(void)SetConsoleOutputCP (cons->old_cp);
+			// chcp doesn't pick up the code page switch for some reason
+			(void)r_sys_cmdf ("chcp %u > NUL", cons->old_cp);
+		}
 	}
 #endif
 	r_line_free (cons->line);
 	while (!r_list_empty (cons->ctx_stack)) {
 		r_cons_pop (cons);
 	}
-	// Call r_cons_context_free which will handle the refcount properly.
-	// If the context has extra refcounts due to pending operations,
-	// they will be handled when the refcount reaches zero.
 	r_cons_context_free (cons->context);
 	r_list_free (cons->ctx_stack);
 	R_FREE (cons->pager);
 	R_FREE (cons->wasm_redirect_file);
 	r_th_lock_free (cons->lock);
-	r_cons_pal_fini ();
+	if (cons->owns_terminal) {
+		r_cons_pal_fini ();
+	}
 	RVecFdPairs_fini (&cons->fds);
 }
 
@@ -1560,35 +1531,24 @@ R_API RConsContext *r_cons_context_clone(RConsContext *R_NULLABLE ctx) {
 	if (!c) {
 		return NULL;
 	}
-	// Initialize independent refcount for the cloned context
 	r_ref_init (c, r_cons_context_free_internal);
-	if (ctx->buffer) {
-		c->buffer = r_mem_dup (ctx->buffer, ctx->buffer_sz);
-	}
-	if (ctx->break_stack) {
-		c->break_stack = r_stack_newf (3, break_stack_free);
-	}
-	if (ctx->lastOutput) {
-		c->lastOutput = r_mem_dup (ctx->lastOutput, ctx->lastLength);
-	}
-	r_str_constpool_init (&c->constpool);
-	// Don't clone marks to avoid double free issues
-	c->marks = r_list_newf (free);
-	if (ctx->sorted_lines) {
-		c->sorted_lines = r_list_clone (ctx->sorted_lines, (RListClone)strdup);
-	}
-	if (ctx->unsorted_lines) {
-		c->unsorted_lines = r_list_clone (ctx->unsorted_lines, (RListClone)strdup);
-	}
+	init_cons_capture (c);
+	c->noflush = true;
 	c->pal.rainbow = NULL;
 	pal_clone (c);
-	// rainbow_clone (c);
-	memset (&c->grep, 0, sizeof (c->grep));
-	c->grep.strings = r_list_newf ((RListFree)grep_word_free);
-	c->grep.line = -1;
-	c->grep.sort = -1;
-	c->grep.sort_invert = false;
 	return c;
+}
+
+R_API RCons *r_cons_new_child(RCons *parent) {
+	R_RETURN_VAL_IF_FAIL (parent && parent->context, NULL);
+	r_th_lock_enter (parent->lock);
+	RConsContext *context = r_cons_context_clone (parent->context);
+	RCons *child = context? cons_new (context): NULL;
+	if (child) {
+		memcpy (&child->rows, &parent->rows, R_CONS_CHILD_SETTINGS_SIZE);
+	}
+	r_th_lock_leave (parent->lock);
+	return child;
 }
 
 R_API bool r_cons_context_is_main(RCons *cons, RConsContext *ctx) {
@@ -1677,13 +1637,6 @@ R_API bool r_cons_drop(RCons *cons, int n) {
 R_API void r_cons_push(RCons *cons) {
 	r_th_lock_enter (cons->lock);
 	RConsContext *nc = r_cons_context_clone (cons->context);
-	// Free the buffer in the cloned context since we're going to reset it anyway
-	free (nc->buffer);
-	nc->buffer = NULL;
-	nc->buffer_sz = 0;
-	nc->buffer_len = 0;
-	// Keep pushed capture contexts unflushable until pop or explicit flush.
-	nc->noflush = true;
 	ConsCtxFrame *frame = R_NEW0 (ConsCtxFrame);
 	frame->tid = r_th_self ();
 	frame->parent = cons->context;
@@ -1695,7 +1648,8 @@ R_API void r_cons_push(RCons *cons) {
 	if (cons == Gcons) {
 		Gcons->context = nc;
 	}
-	r_cons_reset (cons);
+	cons->lines = 0;
+	cons->lastline = NULL;
 	r_th_lock_leave (cons->lock);
 }
 
@@ -1985,12 +1939,30 @@ R_API void r_cons_clear00(RCons *cons) {
 	r_cons_gotoxy (cons, 0, 0);
 }
 
-R_API char *r_cons_drain(RCons *cons) {
-	size_t buf_size;
-	const char *buf = r_cons_get_buffer (cons, &buf_size);
-	char *s = r_str_ndup (buf, buf_size);
+R_API char *r_cons_drain(RCons *cons, size_t *size) {
+	R_RETURN_VAL_IF_FAIL (cons, NULL);
+	r_th_lock_enter (cons->lock);
+	RConsContext *context = cons->context;
+	const size_t length = context->buffer_len;
+	char *output = context->buffer;
+	context->buffer = NULL;
+	context->buffer_len = 0;
+	context->buffer_sz = 0;
 	r_cons_reset (cons);
-	return s;
+	r_th_lock_leave (cons->lock);
+	if (size) {
+		*size = length;
+	}
+	return output;
+}
+
+R_API bool r_cons_merge_output(RCons *parent, RCons *child) {
+	R_RETURN_VAL_IF_FAIL (parent && child && parent != child, false);
+	size_t size;
+	char *output = r_cons_drain (child, &size);
+	const bool result = !size || r_cons_write (parent, output, size);
+	free (output);
+	return result;
 }
 
 #define ENABLE_GETCURSOR 0
