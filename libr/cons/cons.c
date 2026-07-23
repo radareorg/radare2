@@ -293,7 +293,8 @@ static void cons_terminal_detach(RCons *cons) {
 			R_LOG_ERROR ("Cannot unset control console handler");
 		}
 #endif
-		R_FREE (terminal->consoles);
+		r_list_free (terminal->consoles);
+		terminal->consoles = NULL;
 		terminal->foreground = NULL;
 	}
 	cons->terminal = NULL;
@@ -347,7 +348,7 @@ R_API void r_cons_free(RCons *cons) {
 	while (!r_list_empty (cons->ctx_stack)) {
 		r_cons_pop (cons);
 	}
-	r_cons_context_free (cons->context);
+	r_unref (cons->context);
 	r_list_free (cons->ctx_stack);
 	R_FREE (cons->pager);
 	R_FREE (cons->wasm_redirect_file);
@@ -483,7 +484,7 @@ R_API void r_cons_break_clear(RCons *cons) {
 	ctx->breaked = false;
 }
 
-R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig) {
+static void cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig) {
 	if (!context || !context->break_stack) {
 		return;
 	}
@@ -508,7 +509,7 @@ R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBr
 	context->event_interrupt_data = user;
 }
 
-R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig) {
+static void cons_context_break_pop(RCons *cons, RConsContext *context, bool sig) {
 #if WANT_DEBUGSTUFF
 	if (!context || !context->break_stack) {
 		return;
@@ -1610,7 +1611,7 @@ R_API void r_cons_break_end(RCons *cons) {
 R_API void r_cons_break_push(RCons *cons, RConsBreak cb, void *user) {
 	r_th_lock_enter (cons->lock);
 	RConsContext *ctx = cons->context;
-	r_cons_context_break_push (cons, ctx, cb, user, true);
+	cons_context_break_push (cons, ctx, cb, user, true);
 	r_th_lock_leave (cons->lock);
 }
 
@@ -1622,7 +1623,7 @@ R_API void r_cons_break_pop(RCons *cons) {
 	if (!has_outer_break) {
 		cons->timeout = 0;
 	}
-	r_cons_context_break_pop (cons, ctx, true);
+	cons_context_break_pop (cons, ctx, true);
 	r_th_lock_leave (cons->lock);
 }
 
