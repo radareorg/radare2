@@ -22,8 +22,8 @@ bool test_multiple_cores_share_terminal(void) {
 	RCore *first = r_core_new ();
 	RCore *second = r_core_new ();
 	mu_assert ("different console instances", first->cons != second->cons);
-	mu_assert_true (first->cons->terminal_attached, "first core console is attached");
-	mu_assert_true (second->cons->terminal_attached, "second core console is attached");
+	mu_assert_notnull (first->cons->terminal, "first core console is attached");
+	mu_assert_notnull (second->cons->terminal, "second core console is attached");
 
 	char *first_output = r_core_cmd_str (first, "?e first");
 	char *second_output = r_core_cmd_str (second, "?e second");

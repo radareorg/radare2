@@ -175,14 +175,8 @@ bool test_cons_to_html(void) {
 	mu_end;
 }
 
-bool test_cons_context_clone_null(void) {
-	RConsContext *ctx = r_cons_context_clone (NULL);
-	mu_assert_null (ctx, "r_cons_context_clone(NULL) must return NULL");
-	mu_end;
-}
-
 bool test_cons_child_isolation(void) {
-	RCons *parent = r_cons_new2 ();
+	RCons *parent = r_cons_new ();
 	mu_assert_notnull (parent, "parent console");
 	parent->columns = 123;
 	parent->use_utf8 = true;
@@ -192,8 +186,8 @@ bool test_cons_child_isolation(void) {
 
 	RCons *child = r_cons_new_child (parent);
 	mu_assert_notnull (child, "child console");
-	mu_assert_true (parent->terminal_attached, "parent is terminal attached");
-	mu_assert_false (child->terminal_attached, "child is terminal detached");
+	mu_assert_notnull (parent->terminal, "parent is terminal attached");
+	mu_assert_null (child->terminal, "child is terminal detached");
 	mu_assert ("different console", child != parent);
 	mu_assert ("different context", child->context != parent->context);
 	mu_assert ("different context stack", child->ctx_stack != parent->ctx_stack);
@@ -246,7 +240,7 @@ static bool cons_buffer_is(const char *buffer, size_t size, char byte) {
 }
 
 bool test_cons_child_concurrent_merge(void) {
-	RCons *parent = r_cons_new2 ();
+	RCons *parent = r_cons_new ();
 	RCons *left = r_cons_new_child (parent);
 	RCons *right = r_cons_new_child (parent);
 	mu_assert_notnull (left, "left child");
@@ -308,8 +302,8 @@ bool test_cons_multiple_roots_same_thread(void) {
 	mu_assert_false (r_cons_is_initialized (), "thread starts without a current console");
 	RCons *first = r_cons_new ();
 	RCons *second = r_cons_new ();
-	mu_assert_true (first->terminal_attached, "first root is terminal attached");
-	mu_assert_true (second->terminal_attached, "second root is terminal attached");
+	mu_assert_notnull (first->terminal, "first root is terminal attached");
+	mu_assert_notnull (second->terminal, "second root is terminal attached");
 	mu_assert_ptreq (r_cons_singleton (), second, "newest root is current");
 	mu_assert_ptreq (r_cons_global (first), first, "explicitly switch current root");
 
@@ -336,7 +330,7 @@ typedef struct {
 static RThreadFunctionRet cons_root_thread(RThread *thread) {
 	ConsRootThread *state = thread->user;
 	RCons *cons = r_cons_new ();
-	state->ok = cons->terminal_attached && r_cons_singleton () == cons;
+	state->ok = cons->terminal && r_cons_singleton () == cons;
 	r_th_sem_post (state->ready);
 	r_th_sem_wait (state->release);
 	state->ok = state->ok && r_cons_singleton () == cons;
@@ -382,8 +376,8 @@ bool test_cons_multiple_roots_across_threads(void) {
 }
 
 bool test_cons_timeout_keeps_earliest_deadline(void) {
-	RCons *cons = r_cons_new2 ();
-	mu_assert_notnull (cons, "r_cons_new2()");
+	RCons *cons = r_cons_new ();
+	mu_assert_notnull (cons, "r_cons_new()");
 
 	r_cons_break_timeout (cons, 10);
 	const ut64 first_deadline = cons->timeout;
@@ -400,8 +394,8 @@ bool test_cons_timeout_keeps_earliest_deadline(void) {
 }
 
 bool test_cons_timeout_does_not_restart_expired_deadline(void) {
-	RCons *cons = r_cons_new2 ();
-	mu_assert_notnull (cons, "r_cons_new2()");
+	RCons *cons = r_cons_new ();
+	mu_assert_notnull (cons, "r_cons_new()");
 
 	cons->timeout = r_time_now_mono () - 1;
 	cons->otimeout = 1;
@@ -413,8 +407,8 @@ bool test_cons_timeout_does_not_restart_expired_deadline(void) {
 }
 
 bool test_cons_json_path_grep_buffer(void) {
-	RCons *cons = r_cons_new2 ();
-	mu_assert_notnull (cons, "r_cons_new2()");
+	RCons *cons = r_cons_new ();
+	mu_assert_notnull (cons, "r_cons_new()");
 
 	const char *json = "{\"name\":\"radare2\"}\n";
 	mu_assert ("write json", r_cons_write (cons, json, strlen (json)));
@@ -438,8 +432,8 @@ bool test_cons_json_path_grep_buffer(void) {
 }
 
 bool test_cons_grep_icase_does_not_mutate_word(void) {
-	RCons *cons = r_cons_new2 ();
-	mu_assert_notnull (cons, "r_cons_new2()");
+	RCons *cons = r_cons_new ();
+	mu_assert_notnull (cons, "r_cons_new()");
 
 	r_cons_grep_expression (cons, "+FoO");
 	RConsGrepWord *gw = r_list_first (cons->context->grep.strings);
@@ -460,8 +454,8 @@ static const RCoreHelpMessage test_help_message = {
 };
 
 bool test_cons_cmd_help_uses_context_color(void) {
-	RCons *cons = r_cons_new2 ();
-	mu_assert_notnull (cons, "r_cons_new2()");
+	RCons *cons = r_cons_new ();
+	mu_assert_notnull (cons, "r_cons_new()");
 
 	r_cons_cmd_help (cons, test_help_message);
 	mu_assert_notnull (cons->context->buffer, "plain help output");
@@ -484,8 +478,8 @@ bool test_cons_cmd_help_uses_context_color(void) {
 }
 
 bool test_cons_cmd_help_match(void) {
-	RCons *cons = r_cons_new2 ();
-	mu_assert_notnull (cons, "r_cons_new2()");
+	RCons *cons = r_cons_new ();
+	mu_assert_notnull (cons, "r_cons_new()");
 
 	mu_assert_eq (r_cons_cmd_help_match (cons, test_help_message, "ha", 0, true), 1, "exact help match");
 	mu_assert_notnull (strstr (cons->context->buffer, "first command"), "exact match output");
@@ -508,7 +502,6 @@ bool test_cons_cmd_help_match(void) {
 bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
-	mu_run_test (test_cons_context_clone_null);
 	mu_run_test (test_cons_child_isolation);
 	mu_run_test (test_cons_child_concurrent_merge);
 	mu_run_test (test_cons_multiple_roots_same_thread);

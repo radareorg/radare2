@@ -123,7 +123,6 @@ static bool cons_palloc(RCons *cons, size_t moar) {
 	return true;
 }
 
-#include "thread.inc.c"
 #include "private.h"
 
 typedef struct {
@@ -338,6 +337,13 @@ R_API RCons *r_cons_new(void) {
 	return I;
 }
 
+R_API void r_cons_thready(RCons *cons) {
+	R_RETURN_IF_FAIL (cons);
+	cons->context->unbreakable = true;
+	cons->is_embedded = true;
+	r_sys_signable (false);
+}
+
 R_API void r_cons_free(RCons *cons) {
 	R_RETURN_IF_FAIL (cons);
 	if (cons == I) {
@@ -462,10 +468,11 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 R_API RCons *r_cons_global(RCons *c) {
 	if (c) {
 		I = c;
-		if (c->terminal) {
-			r_th_lock_enter (&Gterminal.lock);
-			Gterminal.foreground = c;
-			r_th_lock_leave (&Gterminal.lock);
+		RConsTerminal *terminal = c->terminal;
+		if (terminal) {
+			r_th_lock_enter (&terminal->lock);
+			terminal->foreground = c;
+			r_th_lock_leave (&terminal->lock);
 		}
 	}
 	return I;
@@ -1386,11 +1393,12 @@ R_API void r_cons_clear_buffer(RCons *cons) {
 }
 
 R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
-	if (!cons->terminal) {
+	RConsTerminal *terminal = cons->terminal;
+	if (!terminal) {
 		return;
 	}
-	r_th_lock_enter (&Gterminal.lock);
-	Gterminal.foreground = cons;
+	r_th_lock_enter (&terminal->lock);
+	terminal->foreground = cons;
 #if R2_WASM_BROWSER
 	/* Notify JS side about terminal mode change */
 	extern void r2_js_set_raw_mode (int raw) __attribute__((import_module ("r2"), import_name ("set_raw_mode")));
@@ -1420,12 +1428,12 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 			: "stty raw echo";
 		r_sandbox_system (cmd, 1);
 	} else {
-		SetConsoleMode (Gterminal.input, is_raw? cons->term_raw: cons->term_buf);
+		SetConsoleMode (terminal->input, is_raw? cons->term_raw: cons->term_buf);
 	}
 #else
 #warning No raw console supported for this platform
 #endif
-	r_th_lock_leave (&Gterminal.lock);
+	r_th_lock_leave (&terminal->lock);
 }
 
 R_API void r_cons_newline(RCons *cons) {
