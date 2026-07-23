@@ -3989,21 +3989,21 @@ static const char *find_seek_prefix_end(const char *cmd) {
 	return cmd;
 }
 
-static bool command_is_raw(const char *cmd) {
+static const char *raw_command_start(const char *cmd) {
 	cmd = command_start (cmd, NULL);
 	while (*cmd == '@' && cmd[1] != '@') {
 		cmd = find_seek_prefix_end (cmd);
 		if (*cmd != '@') {
-			return false;
+			return NULL;
 		}
 		cmd = command_start (cmd + 1, NULL);
 	}
-	return *cmd == '\'';
+	return *cmd == '\''? cmd: NULL;
 }
 
-static char *find_subcmd_end(char *cmd, bool backquote, bool raw) {
-	if (raw || backquote) {
-		return (char *)r_str_firstbut_escape (cmd, backquote? '`': ')', raw? "": "'");
+static char *find_subcmd_end(char *cmd, bool backquote, const char *raw_start) {
+	if (raw_start || backquote) {
+		return (char *)r_str_firstbut_escape (raw_start? raw_start: cmd, backquote? '`': ')', raw_start? "": "'");
 	}
 	char *quote_stack = malloc (strlen (cmd) + 1);
 	if (!quote_stack) {
@@ -4064,7 +4064,7 @@ static char *find_cmd_separator(char *cmd) {
 		} else if (quote != '\'' && (*p == '`' || (*p == '$' && p[1] == '('))) {
 			const bool bq = *p == '`';
 			char *body = p + (bq? 1: 2);
-			char *end = find_subcmd_end (body, bq, command_is_raw (body));
+			char *end = find_subcmd_end (body, bq, raw_command_start (body));
 			if (!end) {
 				return NULL;
 			}
@@ -4417,7 +4417,7 @@ static char find_unterminated_quote(char *cmd) {
 			p++;
 			if (!task_wait) {
 				segment = r_str_trim_head_ro (p + 1);
-				if (command_is_raw (segment)) {
+				if (raw_command_start (segment)) {
 					return 0;
 				}
 			}
@@ -4429,7 +4429,7 @@ static char find_unterminated_quote(char *cmd) {
 		if (quote != '\'' && (*p == '`' || (*p == '$' && p[1] == '('))) {
 			bool backquote = *p == '`';
 			char *sub = p + (backquote? 1: 2);
-			char *end = find_subcmd_end (sub, backquote, command_is_raw (sub));
+			char *end = find_subcmd_end (sub, backquote, raw_command_start (sub));
 			if (!end) {
 				return 0;
 			}
@@ -5222,7 +5222,7 @@ next2:
 			memmove (ptr, ptr + 2, strlen (ptr) - 1);
 			goto escape_backtick;
 		}
-		const bool raw_subcmd = command_is_raw (ptr + 1);
+		const char *raw_subcmd = raw_command_start (ptr + 1);
 		ptr2 = find_subcmd_end (ptr + 1, backquote, raw_subcmd);
 		if (!ptr2) {
 			R_LOG_ERROR ("parse: Missing sub-command closing in expression");

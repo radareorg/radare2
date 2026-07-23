@@ -301,6 +301,7 @@ CMDS=<<EOF
 ?e $(@4@'echo "seek-dollar;x")
 ?e `@4@'echo "seek-backtick;x"`
 ?e $(@4@2'echo seek-repeat)
+?e $(@(2+2)@'echo paren-seek)
 ?e $(@4@'echo seek-left\)right)
 s 0
 ?e `'w hello\`world`
@@ -318,6 +319,7 @@ left)right
 seek-dollar;x
 seek-backtick;x
 seek-repeat seek-repeat
+paren-seek
 seek-left)right
 
 hello`world
