@@ -86,11 +86,11 @@ typedef struct r_lib_handler_t {
    found in the loaded .so */
 typedef struct r_lib_struct_t {
 	int type;
-	ut32 abiversion; /* ABI version to prevent loading incompatible plugins */
 	void *data; /* pointer to data handled by plugin handler */
 	const char *version; /* r2 version */
 	void (*free)(void *data);
 	const char *pkgname; /* pkgname associated to this plugin */
+	ut32 abiversion; /* ABI version to prevent loading incompatible plugins */
 } RLibStruct;
 
 typedef RLibStruct* (*RLibStructFunc) (void);
