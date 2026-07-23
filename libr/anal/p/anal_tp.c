@@ -2760,7 +2760,8 @@ static const char *synth_type_for_size(int sz) {
 typedef struct {
 	ut64 off;
 	ut64 child; // for poison hits: offset accessed through the pointer (nested field)
-	ut64 iaddr; // address of the accessing instruction
+	ut64 iaddr; // address of the accessing instruction (or size-fn call site for size hints)
+	const char *fn; // size-fn that stated a child size, borrowed from the flag/function; NULL otherwise
 	int arg;
 	int size;
 	bool is_ptr;
@@ -2790,6 +2791,9 @@ typedef struct {
 	RAnalBaseType *bt;
 	RVecSynthSite sites;
 	RVecSynthArr arrs;
+	ut64 hint_size; // size a size-fn stated for this object, 0 when the extent came from accesses alone
+	ut64 hint_site; // call site of that size-fn
+	char *hint_fn; // that size-fn's name (owned)
 	int arg;
 	bool child;
 } SynthRec;
@@ -2820,9 +2824,26 @@ static int synth_child_cmp(const SynthField *x, const SynthField *y) {
 
 static void synth_rec_fini(SynthRec *r) {
 	free (r->var);
+	free (r->hint_fn);
 	r_anal_base_type_free (r->bt);
 	RVecSynthSite_fini (&r->sites);
 	RVecSynthArr_fini (&r->arrs);
+}
+
+// object size stated by a size-fn call, with the call that stated it
+typedef struct {
+	ut64 size;
+	ut64 site;
+	const char *fn; // borrowed from the callee function/flag, outlives the emulation
+} SynthWant;
+
+// record the stated size only when its pad extended the struct beyond the observed accesses
+static void synth_set_hint(SynthRec *rec, const SynthWant *w, bool clamped) {
+	if (clamped && w->fn) {
+		rec->hint_size = w->size;
+		rec->hint_site = w->site;
+		rec->hint_fn = strdup (w->fn);
+	}
 }
 
 R_VEC_TYPE (RVecSynthField, SynthField);
@@ -3018,20 +3039,22 @@ typedef struct {
 	TPState *tps;
 	ut64 sbase;
 	ut64 pbase;
-	ut64 want[SYNTH_MAXARGS]; // exact object size stated by a size-fn call, per arg window
+	SynthWant want[SYNTH_MAXARGS]; // stated object size + provenance, per arg window
 	RVecSynthField childwant; // same, for dereferenced-field children keyed by (arg, off)
+	const char *fn; // callee of the call being harvested
+	ut64 site;
 	int psz;
 } SynthSizeCtx;
 
-static ut64 synth_child_want(RVecSynthField *cw, int arg, ut64 off) {
-	ut64 best = 0;
+static SynthWant synth_child_want(RVecSynthField *cw, int arg, ut64 off) {
+	SynthWant w = { 0 };
 	SynthField *f;
 	R_VEC_FOREACH (cw, f) {
-		if (f->arg == arg && f->off == off && (ut64)f->size > best) {
-			best = (ut64)f->size;
+		if (f->arg == arg && f->off == off && (ut64)f->size > w.size) {
+			w = (SynthWant){ .size = (ut64)f->size, .site = f->iaddr, .fn = f->fn };
 		}
 	}
-	return best;
+	return w;
 }
 
 static void synth_size_entry(SynthSizeCtx *c, const char *cc, const TPSizeFn *sf) {
@@ -3046,7 +3069,9 @@ static void synth_size_entry(SynthSizeCtx *c, const char *cc, const TPSizeFn *sf
 			return; // stale sentinel values and oversized objects fail this bound
 		}
 		const int argi = (int)((pv - c->sbase) / SYNTH_WINDOW);
-		c->want[argi] = R_MAX (c->want[argi], off + n);
+		if (off + n > c->want[argi].size) {
+			c->want[argi] = (SynthWant){ .size = off + n, .site = c->site, .fn = c->fn };
+		}
 		return;
 	}
 	// a dereferenced pointer field carries a poison value decoding to its parent (arg, offset)
@@ -3062,6 +3087,8 @@ static void synth_size_entry(SynthSizeCtx *c, const char *cc, const TPSizeFn *sf
 				.arg = (int)(slot / SYNTH_SLOTS (c->psz)),
 				.off = (slot % SYNTH_SLOTS (c->psz)) * c->psz,
 				.size = (int)(coff + n),
+				.iaddr = c->site,
+				.fn = c->fn,
 			};
 		}
 	}
@@ -3088,6 +3115,8 @@ static void synth_size_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 addr,
 	if (!cc) {
 		return;
 	}
+	c->fn = name;
+	c->site = addr;
 	const TPSizeFn *sf;
 	R_VEC_FOREACH (&c->tps->sizefns, sf) {
 		// return-value entries carry no arg-window evidence
@@ -3273,16 +3302,18 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 			ccur = synth_add_member (cbt, "field", choff, csize, 0, strdup (synth_type_for_size (csize)));
 			ccount++;
 		}
-		const ut64 cwant = synth_child_want (&szctx.childwant, carg, coff);
-		if (ccount >= SYNTH_MIN_FIELDS || (ccount > 0 && cwant > ccur)) {
+		const SynthWant cwant = synth_child_want (&szctx.childwant, carg, coff);
+		if (ccount >= SYNTH_MIN_FIELDS || (ccount > 0 && cwant.size > ccur)) {
 			RVecSynthArr carrs;
 			RVecSynthArr_init (&carrs);
-			ccur = synth_pad_tail (cbt, &carrs, ccur, cwant);
+			const ut64 preccur = ccur;
+			ccur = synth_pad_tail (cbt, &carrs, ccur, cwant.size);
 			cbt->name = r_str_newf ("%s_arg%d_0x%" PFMT64x, fname, carg, coff);
 			cbt->size = ccur;
 			SynthRec *rec = RVecSynthRec_emplace_back (recs);
 			if (rec) {
 				*rec = (SynthRec){ .arg = carg, .child = true, .off = coff, .bt = cbt };
+				synth_set_hint (rec, &cwant, ccur > preccur);
 				RVecSynthSite_init (&rec->sites);
 				rec->arrs = carrs;
 				cbt = NULL;
@@ -3369,16 +3400,19 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 		RVecSynthField_fini (&uniq);
 		// a single big array is still a meaningful struct; a size-fn stated size upgrades even one field
 		SynthRec *rec = NULL;
+		const SynthWant *aw = &szctx.want[arg];
 		const bool emit = count >= SYNTH_MIN_FIELDS || !RVecSynthArr_empty (&arrs)
-			|| (count > 0 && szctx.want[arg] > cur);
+			|| (count > 0 && aw->size > cur);
+		const ut64 precur = cur;
 		if (emit) {
-			cur = synth_pad_tail (bt, &arrs, cur, szctx.want[arg]);
+			cur = synth_pad_tail (bt, &arrs, cur, aw->size);
 			bt->name = r_str_newf ("%s_arg%d", fname, arg);
 			bt->size = cur;
 			rec = RVecSynthRec_emplace_back (recs);
 		}
 		if (rec) {
 			*rec = (SynthRec){ .arg = arg, .bt = bt };
+			synth_set_hint (rec, aw, cur > precur);
 			RVecSynthSite_init (&rec->sites);
 			rec->arrs = arrs;
 		} else {
@@ -3469,6 +3503,14 @@ static char *synth_json(RVecSynthRec *recs) {
 			pj_ks (pj, "var", rec->var);
 		}
 		pj_kn (pj, "size", rec->bt->size);
+		if (rec->hint_fn) {
+			// the size came from a size function, so scripts can match it against a known type
+			pj_ko (pj, "sizehint");
+			pj_kn (pj, "size", rec->hint_size);
+			pj_ks (pj, "from", rec->hint_fn);
+			pj_kn (pj, "at", rec->hint_site);
+			pj_end (pj);
+		}
 		pj_ka (pj, "members");
 		RAnalTypeMember *m;
 		R_VEC_FOREACH (&rec->bt->struct_data.members, m) {
