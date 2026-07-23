@@ -3046,3 +3046,113 @@ arg int64_t arg1 @ rdi
 var double v @ rbp-0x8
 EOF2
 RUN
+
+NAME=aft types a memset stack local from the stated object size
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54881eca0000000c78578ffffff01000000488dbd78ffffffba8800000031f6e808000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn memset @ 0x30
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var uint8_t [136] var_88h @ rbp-0x88
+EOF
+RUN
+
+NAME=aft keeps a named type on a memset stack local
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54881eca0000000c78578ffffff01000000488dbd78ffffffba8800000031f6e808000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn memset @ 0x30
+'td void *memset(void *s, int c, size_t n);
+'td struct mys {int a; int b;};
+af @ 0
+'afvt var_88h struct mys
+aft
+afv
+EOF
+EXPECT=<<EOF
+var struct mys var_88h @ rbp-0x88
+EOF
+RUN
+
+NAME=aft does not shrink a local below its width on a partial clear
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e548c745f800000000488d7df831f6ba04000000e814000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn memset @ 0x30
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var int64_t var_8h @ rbp-0x8
+EOF
+RUN
+
+NAME=aft ignores a size-function call through an adjusted pointer
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54881eca0000000c78578ffffff01000000488dbd78ffffff4883c71031f6ba20000000e814000000c9c3
+wx c3 @ 0x40
+af @ 0x40
+afn memset @ 0x40
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var void  s @ rbp-0x88
+EOF
+RUN
+
+NAME=aft types a memset stack local through the x86-32 push chain
+FILE=malloc://256
+ARGS=-a x86 -b 32 -e types.sizes=true
+CMDS=<<EOF
+wx 5589e581eca0000000c78578ffffff010000008d8578ffffff68880000006a0050e81a00000083c40cc9c3
+wx c3 @ 0x40
+af @ 0x40
+afn memset @ 0x40
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var uint8_t [136] var_88h @ ebp-0x88
+EOF
+RUN
+
+NAME=aft merges branch-dependent memset sizes to the larger one
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54881eca0000000c78578ffffff0100000085ff7415488dbd78ffffff31f6ba40000000e824000000eb12488dbd78ffffff31f6ba88000000e80f000000c9c3
+wx c3 @ 0x50
+af @ 0x50
+afn memset @ 0x50
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aft
+afv~var_88h
+EOF
+EXPECT=<<EOF
+var uint8_t [136] var_88h @ rbp-0x88
+EOF
+RUN

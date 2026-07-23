@@ -590,3 +590,238 @@ EXPECT=<<EOF
 arg int64_t arg1 @ rdi
 EOF
 RUN
+
+NAME=afts pads the synthesized struct out to a memset-stated size
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx c70701000000c7470802000000ba8800000031f6e807000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+afts
+aftsj
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[124];
+};
+[{"name":"fcn_00000000_arg0","arg":0,"child":false,"var":"arg1","size":136,"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"field_0x8","type":"uint32_t","offset":8,"size":4},{"name":"pad_0xc","type":"uint8_t","offset":12,"size":1,"count":124}]}]
+EOF
+RUN
+
+NAME=afts size harvesting is disabled by default
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c70701000000c7470802000000ba8800000031f6e807000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=types.sizefns adds a custom size function without needing a signature
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=mymemset/0/2
+CMDS=<<EOF
+wx c70701000000c7470802000000ba8800000031f6e807000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn mymemset @ 0x20
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[124];
+};
+EOF
+RUN
+
+NAME=types.sizefns can drop a builtin size function
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=memset/-
+CMDS=<<EOF
+wx c70701000000c7470802000000ba8800000031f6e807000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=types.sizefns supports a two-factor size like calloc
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=nalloc/0/1*2
+CMDS=<<EOF
+wx c70701000000c7470802000000be08000000ba11000000e804000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn nalloc @ 0x20
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[124];
+};
+EOF
+RUN
+
+NAME=afts emits a single-field struct when a memset states its size
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx c70701000000ba8800000031f6e80e000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[132];
+};
+EOF
+RUN
+
+NAME=afts pads a dereferenced-field child struct to its memset-stated size
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx c70701000000488b4710c700050000004889c7ba6000000031f6e801000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x10 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[92];
+};
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[12]; // gap
+  struct fcn_00000000_arg0_0x10 *field_0x10;
+};
+EOF
+RUN
+
+NAME=afts reads size-function arguments from the stack on x86-32
+FILE=malloc://256
+ARGS=-a x86 -b 32 -e types.sizes=true
+CMDS=<<EOF
+wx 5589e58b4508c70001000000c74008020000006888000000 @ 0
+wx 6a0050e81000000083c40c5dc3 @ 0x18
+wx c3 @ 0x30
+af @ 0x30
+afn memset @ 0x30
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[124];
+};
+EOF
+RUN
+
+NAME=invalid types.sizefns entries are rejected and have no effect
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=mymemset/r/0,mymemset/0junk/2
+CMDS=<<EOF
+wx c70701000000c7470802000000ba8800000031f6e807000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn mymemset @ 0x20
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts pads the memcpy source argument to the copied size
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 8b074889fe488d7c2480ba80000000e80c000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memcpy @ 0x20
+'td void *memcpy(void *dest, const void *src, size_t n);
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[124];
+};
+EOF
+RUN
+
+NAME=afts extends the struct from an interior-pointer memset
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx c70701000000488d7f10ba8000000031f6e80a000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[140];
+};
+EOF
+RUN
