@@ -547,7 +547,6 @@ typedef struct r_cons_t {
 	struct termios term_raw, term_buf;
 #elif R2__WINDOWS__
 	DWORD term_raw, term_buf, term_xterm;
-	UINT old_cp;
 	bool bCtrl;
 	bool is_arrow;
 #endif
@@ -582,11 +581,11 @@ typedef struct r_cons_t {
 	RThreadLock *lock;
 	RConsCursorPos cpos;
 	RVecFdPairs fds;
-	int oldraw; // 0 = not initialized, 1 = false, 2 = true
 	ut64 prev;
 	RStrBuf *echodata;
 	bool lasti;
-	bool owns_terminal;
+	bool terminal_attached; // participates in the process-wide TTY lifecycle
+	struct r_cons_t *terminal_next;
 	R_TH_TID main_tid; // thread that initialized cons, for signal-safety checks
 #if R2__WINDOWS__
 	HANDLE hStdout;
@@ -981,7 +980,6 @@ R_API int r_cons_palette_init(const unsigned char *pal);
 R_API bool r_cons_pal_set(RCons *cons, const char *key, const char *val);
 R_API void r_cons_pal_reload(RCons *cons);
 R_API void r_cons_pal_init(RCons *cons);
-R_API void r_cons_pal_fini(void);
 R_API void r_cons_pal_copy(RCons *cons, RConsContext *src);
 R_API R_MUSTUSE char *r_cons_pal_parse(RCons *cons, const char *str, RColor *outcol);
 R_API void r_cons_pal_random(RCons *cons);

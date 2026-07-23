@@ -7,7 +7,21 @@ R_LIB_VERSION(r_cons);
 
 static void r_cons_context_free_internal(RConsContext *ctx);
 
-static RCons *I = NULL;
+static R_TH_LOCAL RCons *I = NULL;
+static struct {
+	RThreadLock lock;
+	RCons *consoles;
+	RCons *foreground;
+#if R2__UNIX__ && !defined(__wasi__) && !EMSCRIPTEN
+	struct termios mode;
+#elif R2__WINDOWS__
+	HANDLE input;
+	DWORD mode;
+	UINT old_cp;
+#endif
+} Gterminal = {
+	.lock = R_THREAD_LOCK_INIT
+};
 
 #define MAX_PAGES 100
 #define R_CONS_CHILD_SETTINGS_SIZE \
@@ -21,16 +35,14 @@ static RCons *I = NULL;
 
 #if R2__UNIX__ || R2__WINDOWS__
 static void __break_signal(int sig) {
-	if (I) {
-		r_cons_context_break (I->context);
-	} else {
-		R_LOG_WARN ("Global cons is null");
+	RCons *cons = Gterminal.foreground;
+	if (cons) {
+		r_cons_context_break (cons->context);
 	}
 }
 #endif
 
 #if R2__WINDOWS__
-static HANDLE h = 0;
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
 		__break_signal (2); // SIGINT
@@ -220,16 +232,86 @@ static void resize(int sig) {
 }
 #endif
 
+static void cons_terminal_attach(RCons *cons) {
+	r_th_lock_enter (&Gterminal.lock);
+	const bool first = !Gterminal.consoles;
+	cons->terminal_next = Gterminal.consoles;
+	Gterminal.consoles = cons;
+	cons->terminal_attached = true;
+	if (first) {
+		Gterminal.foreground = cons;
+	}
+#if EMSCRIPTEN || __wasi__
+#elif R2__UNIX__
+	if (first) {
+		tcgetattr (0, &Gterminal.mode);
+		r_sys_signal (SIGWINCH, resize);
+	}
+	memcpy (&cons->term_buf, &Gterminal.mode, sizeof (cons->term_buf));
+	memcpy (&cons->term_raw, &cons->term_buf, sizeof (cons->term_raw));
+	cons->term_raw.c_iflag &= ~ (BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
+	cons->term_raw.c_lflag &= ~ (ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+	cons->term_raw.c_cflag &= ~ (CSIZE | PARENB);
+	cons->term_raw.c_cflag |= CS8;
+	cons->term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
+#elif R2__WINDOWS__
+	if (first) {
+		Gterminal.old_cp = GetConsoleOutputCP ();
+		Gterminal.input = GetStdHandle (STD_INPUT_HANDLE);
+		GetConsoleMode (Gterminal.input, &Gterminal.mode);
+		if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE)) {
+			R_LOG_ERROR ("Cannot set control console handler");
+		}
+	}
+	cons->term_buf = Gterminal.mode;
+	cons->term_raw = 0;
+#endif
+	r_th_lock_leave (&Gterminal.lock);
+}
+
+static void cons_terminal_detach(RCons *cons) {
+	if (!cons->terminal_attached) {
+		return;
+	}
+	r_th_lock_enter (&Gterminal.lock);
+	RCons **next = &Gterminal.consoles;
+	while (*next && *next != cons) {
+		next = &(*next)->terminal_next;
+	}
+	if (*next) {
+		*next = cons->terminal_next;
+	}
+	if (Gterminal.foreground == cons) {
+		Gterminal.foreground = Gterminal.consoles;
+	}
+	if (!Gterminal.consoles) {
+#if R2__WINDOWS__
+		r_cons_enable_mouse (cons, false);
+		if (Gterminal.old_cp) {
+			(void)SetConsoleOutputCP (Gterminal.old_cp);
+			// chcp doesn't pick up the code page switch for some reason
+			(void)r_sys_cmdf ("chcp %u > NUL", Gterminal.old_cp);
+		}
+		if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, FALSE)) {
+			R_LOG_ERROR ("Cannot unset control console handler");
+		}
+#endif
+		Gterminal.foreground = NULL;
+	}
+	cons->terminal_attached = false;
+	cons->terminal_next = NULL;
+	r_th_lock_leave (&Gterminal.lock);
+}
+
 static RCons *cons_new(RConsContext *context) {
 	RCons *cons = R_NEW0 (RCons);
-	const bool owns_terminal = !context;
 	cons->context = context? context: R_NEW0 (RConsContext);
 	cons->ctx_stack = r_list_newf (free);
+	cons->lock = r_th_lock_new (true);
 	if (!context) {
 		init_cons_context (cons);
 	}
 	cons->input_state.bufactive = true;
-	cons->lock = r_th_lock_new (true);
 	cons->rgbstr = r_cons_rgb_str_off; // XXX maybe we can kill that
 	cons->enable_highlight = true;
 	cons->is_wine = -1;
@@ -238,35 +320,15 @@ static RCons *cons_new(RConsContext *context) {
 	cons->fdin = stdin;
 	cons->fdout = 1;
 	cons->maxpage = 102400;
-	cons->owns_terminal = owns_terminal;
-	if (owns_terminal) {
+	if (!context) {
 		cons->use_utf8 = r_cons_is_utf8 ();
 		r_cons_get_size (cons, &cons->pagesize);
 #if R2__WINDOWS__
-		cons->old_cp = GetConsoleOutputCP ();
 		cons->vtmode = win_is_vtcompat (cons);
 #else
 		cons->vtmode = 2;
 #endif
-#if EMSCRIPTEN || __wasi__
-#elif R2__UNIX__
-		tcgetattr (0, &cons->term_buf);
-		memcpy (&cons->term_raw, &cons->term_buf, sizeof (cons->term_raw));
-		cons->term_raw.c_iflag &= ~ (BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
-		cons->term_raw.c_lflag &= ~ (ECHO | ECHONL | ICANON | ISIG | IEXTEN);
-		cons->term_raw.c_cflag &= ~ (CSIZE | PARENB);
-		cons->term_raw.c_cflag |= CS8;
-		cons->term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
-		r_sys_signal (SIGWINCH, resize);
-#elif R2__WINDOWS__
-		h = GetStdHandle (STD_INPUT_HANDLE);
-		GetConsoleMode (h, &cons->term_buf);
-		cons->term_raw = 0;
-		I = cons;
-		if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE)) {
-			R_LOG_ERROR ("Cannot set control console handler");
-		}
-#endif
+		cons_terminal_attach (cons);
 	}
 	cons->main_tid = r_th_self ();
 	cons->line = r_line_new (cons);
@@ -281,16 +343,7 @@ R_API void r_cons_free2(RCons *R_NULLABLE cons) {
 	if (!cons) {
 		return;
 	}
-#if R2__WINDOWS__
-	if (cons->owns_terminal) {
-		r_cons_enable_mouse (cons, false);
-		if (cons->old_cp) {
-			(void)SetConsoleOutputCP (cons->old_cp);
-			// chcp doesn't pick up the code page switch for some reason
-			(void)r_sys_cmdf ("chcp %u > NUL", cons->old_cp);
-		}
-	}
-#endif
+	cons_terminal_detach (cons);
 	r_line_free (cons->line);
 	while (!r_list_empty (cons->ctx_stack)) {
 		r_cons_pop (cons);
@@ -300,9 +353,6 @@ R_API void r_cons_free2(RCons *R_NULLABLE cons) {
 	R_FREE (cons->pager);
 	R_FREE (cons->wasm_redirect_file);
 	r_th_lock_free (cons->lock);
-	if (cons->owns_terminal) {
-		r_cons_pal_fini ();
-	}
 	RVecFdPairs_fini (&cons->fds);
 }
 
@@ -411,6 +461,11 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 R_API RCons *r_cons_global(RCons *c) {
 	if (c) {
 		I = c;
+		if (c->terminal_attached) {
+			r_th_lock_enter (&Gterminal.lock);
+			Gterminal.foreground = c;
+			r_th_lock_leave (&Gterminal.lock);
+		}
 	}
 	return I;
 }
@@ -637,6 +692,9 @@ R_API void r_cons_enable_highlight(RCons *cons, const bool enable) {
 }
 
 R_API bool r_cons_enable_mouse(RCons *cons, const bool enable) {
+	if (!cons->terminal_attached) {
+		return false;
+	}
 	bool enabled = cons->mouse;
 #if R2__WINDOWS__
 	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
@@ -668,18 +726,15 @@ R_API bool r_cons_enable_mouse(RCons *cons, const bool enable) {
 
 R_API RCons *r_cons_new(void) {
 	RCons *cons = r_cons_new2 ();
-	if (I) {
-		R_LOG_INFO ("Second cons!");
-	}
 	I = cons;
 	return cons;
 }
 
 R_API void r_cons_free(RCons *cons) {
-	r_cons_free2 (cons);
 	if (cons == I) {
-		I = NULL; // hack for globals
+		I = NULL;
 	}
+	r_cons_free2 (cons);
 	free (cons);
 }
 
@@ -1344,11 +1399,11 @@ R_API void r_cons_clear_buffer(RCons *cons) {
 }
 
 R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
-	if (cons->oldraw != 0) {
-		if (is_raw == cons->oldraw - 1) {
-			return;
-		}
+	if (!cons->terminal_attached) {
+		return;
 	}
+	r_th_lock_enter (&Gterminal.lock);
+	Gterminal.foreground = cons;
 #if R2_WASM_BROWSER
 	/* Notify JS side about terminal mode change */
 	extern void r2_js_set_raw_mode (int raw) __attribute__((import_module ("r2"), import_name ("set_raw_mode")));
@@ -1364,7 +1419,7 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 		term_mode = &cons->term_buf;
 	}
 	if (tcsetattr (0, TCSANOW, term_mode) == -1) {
-		return;
+		goto beach;
 	}
 #elif R2__WINDOWS__
 	if (cons->term_xterm) {
@@ -1380,14 +1435,15 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 			: "stty raw echo";
 		r_sandbox_system (cmd, 1);
 	} else {
-		if (!SetConsoleMode (h, is_raw? cons->term_raw: cons->term_buf)) {
-			return;
+		if (!SetConsoleMode (Gterminal.input, is_raw? cons->term_raw: cons->term_buf)) {
+			goto beach;
 		}
 	}
 #else
 #warning No raw console supported for this platform
 #endif
-	cons->oldraw = is_raw + 1;
+beach:
+	r_th_lock_leave (&Gterminal.lock);
 }
 
 R_API void r_cons_newline(RCons *cons) {

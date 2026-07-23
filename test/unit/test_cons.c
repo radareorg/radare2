@@ -192,8 +192,8 @@ bool test_cons_child_isolation(void) {
 
 	RCons *child = r_cons_new_child (parent);
 	mu_assert_notnull (child, "child console");
-	mu_assert_true (parent->owns_terminal, "parent owns terminal");
-	mu_assert_false (child->owns_terminal, "child does not own terminal");
+	mu_assert_true (parent->terminal_attached, "parent is terminal attached");
+	mu_assert_false (child->terminal_attached, "child is terminal detached");
 	mu_assert ("different console", child != parent);
 	mu_assert ("different context", child->context != parent->context);
 	mu_assert ("different context stack", child->ctx_stack != parent->ctx_stack);
@@ -301,6 +301,83 @@ bool test_cons_child_concurrent_merge(void) {
 	r_cons_free (left);
 	r_cons_free (right);
 	r_cons_free (parent);
+	mu_end;
+}
+
+bool test_cons_multiple_roots_same_thread(void) {
+	mu_assert_false (r_cons_is_initialized (), "thread starts without a current console");
+	RCons *first = r_cons_new ();
+	RCons *second = r_cons_new ();
+	mu_assert_true (first->terminal_attached, "first root is terminal attached");
+	mu_assert_true (second->terminal_attached, "second root is terminal attached");
+	mu_assert_ptreq (r_cons_singleton (), second, "newest root is current");
+	mu_assert_ptreq (r_cons_global (first), first, "explicitly switch current root");
+
+	r_cons_free (second);
+	mu_assert_ptreq (r_cons_singleton (), first, "freeing another root preserves current");
+	r_cons_print (first, "first");
+	size_t size;
+	char *output = r_cons_drain (first, &size);
+	mu_assert_eq (size, 5, "remaining root output size");
+	mu_assert_memeq ((const ut8 *)output, (const ut8 *)"first", size, "remaining root output");
+	free (output);
+
+	r_cons_free (first);
+	mu_assert_false (r_cons_is_initialized (), "freeing current root clears thread state");
+	mu_end;
+}
+
+typedef struct {
+	RThreadSemaphore *ready;
+	RThreadSemaphore *release;
+	bool ok;
+} ConsRootThread;
+
+static RThreadFunctionRet cons_root_thread(RThread *thread) {
+	ConsRootThread *state = thread->user;
+	RCons *cons = r_cons_new ();
+	state->ok = cons->terminal_attached && r_cons_singleton () == cons;
+	r_th_sem_post (state->ready);
+	r_th_sem_wait (state->release);
+	state->ok = state->ok && r_cons_singleton () == cons;
+	r_cons_free (cons);
+	state->ok = state->ok && !r_cons_is_initialized ();
+	return R_TH_STOP;
+}
+
+bool test_cons_multiple_roots_across_threads(void) {
+	RThreadSemaphore *ready = r_th_sem_new (0);
+	RThreadSemaphore *release = r_th_sem_new (0);
+	mu_assert_notnull (ready, "ready semaphore");
+	mu_assert_notnull (release, "release semaphore");
+	ConsRootThread left_state = {
+		.ready = ready,
+		.release = release
+	};
+	ConsRootThread right_state = {
+		.ready = ready,
+		.release = release
+	};
+	RThread *left = r_th_new (cons_root_thread, &left_state, 0);
+	RThread *right = r_th_new (cons_root_thread, &right_state, 0);
+	mu_assert_notnull (left, "left root thread");
+	mu_assert_notnull (right, "right root thread");
+	mu_assert_true (r_th_start (left), "start left root thread");
+	mu_assert_true (r_th_start (right), "start right root thread");
+	r_th_sem_wait (ready);
+	r_th_sem_wait (ready);
+	r_th_sem_post (release);
+	r_th_sem_post (release);
+	r_th_wait (left);
+	r_th_wait (right);
+	mu_assert_true (left_state.ok, "left thread keeps its current console");
+	mu_assert_true (right_state.ok, "right thread keeps its current console");
+	mu_assert_false (r_cons_is_initialized (), "worker consoles do not affect main thread");
+
+	r_th_free (left);
+	r_th_free (right);
+	r_th_sem_free (ready);
+	r_th_sem_free (release);
 	mu_end;
 }
 
@@ -434,6 +511,8 @@ bool all_tests(void) {
 	mu_run_test (test_cons_context_clone_null);
 	mu_run_test (test_cons_child_isolation);
 	mu_run_test (test_cons_child_concurrent_merge);
+	mu_run_test (test_cons_multiple_roots_same_thread);
+	mu_run_test (test_cons_multiple_roots_across_threads);
 	mu_run_test (test_cons_timeout_keeps_earliest_deadline);
 	mu_run_test (test_cons_timeout_does_not_restart_expired_deadline);
 	mu_run_test (test_cons_json_path_grep_buffer);
