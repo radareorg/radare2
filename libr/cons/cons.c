@@ -1626,6 +1626,10 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	}
 	r_ref_init (c, r_cons_context_free_internal);
 	init_cons_capture (c);
+	if (ctx->lastOutput) {
+		c->lastOutput = r_mem_dup (ctx->lastOutput, ctx->lastLength);
+		c->lastLength = c->lastOutput? ctx->lastLength: 0;
+	}
 	c->noflush = true;
 	c->pal.rainbow = NULL;
 	pal_clone (c);

@@ -477,6 +477,28 @@ bool test_cons_cmd_help_uses_context_color(void) {
 	mu_end;
 }
 
+bool test_cons_push_inherits_last_output(void) {
+	RCons *cons = r_cons_new ();
+	mu_assert_notnull (cons, "r_cons_new()");
+	RConsContext *parent = cons->context;
+	parent->lastOutput = strdup ("previous");
+	parent->lastLength = 8;
+
+	r_cons_push (cons);
+	mu_assert ("child owns last output", cons->context->lastOutput != parent->lastOutput);
+	r_cons_last (cons);
+	mu_assert_eq (cons->context->buffer_len, 8, "child sees last output");
+	mu_assert_memeq ((const ut8 *)cons->context->buffer,
+		(const ut8 *)"previous", 8, "child last output");
+	r_cons_pop (cons);
+
+	mu_assert_ptreq (cons->context, parent, "pop restores parent");
+	mu_assert_memeq ((const ut8 *)parent->lastOutput,
+		(const ut8 *)"previous", 8, "parent keeps last output");
+	r_cons_free (cons);
+	mu_end;
+}
+
 bool test_cons_cmd_help_match(void) {
 	RCons *cons = r_cons_new ();
 	mu_assert_notnull (cons, "r_cons_new()");
@@ -511,6 +533,7 @@ bool all_tests(void) {
 	mu_run_test (test_cons_json_path_grep_buffer);
 	mu_run_test (test_cons_grep_icase_does_not_mutate_word);
 	mu_run_test (test_cons_cmd_help_uses_context_color);
+	mu_run_test (test_cons_push_inherits_last_output);
 	mu_run_test (test_cons_cmd_help_match);
 	return tests_passed != tests_run;
 }
