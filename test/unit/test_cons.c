@@ -181,6 +181,7 @@ bool test_cons_child_isolation(void) {
 	parent->columns = 123;
 	parent->use_utf8 = true;
 	parent->context->color_mode = COLOR_MODE_16;
+	r_cons_rainbow_new (parent, 2);
 	r_cons_print (parent, "parent");
 	r_cons_context_break (parent->context);
 
@@ -195,7 +196,10 @@ bool test_cons_child_isolation(void) {
 	mu_assert ("different line editor", child->line != parent->line);
 	mu_assert_eq (child->columns, 123, "inherit columns");
 	mu_assert_true (child->use_utf8, "inherit utf8");
+	mu_assert_true (child->is_embedded, "capture child does not use process-wide signals");
 	mu_assert_eq (child->context->color_mode, COLOR_MODE_16, "inherit color mode");
+	mu_assert_null (child->context->pal.rainbow, "child starts without a rainbow");
+	mu_assert_eq (child->context->pal.rainbow_sz, 0, "child rainbow size is consistent");
 	mu_assert_eq (child->context->buffer_len, 0, "child starts empty");
 	mu_assert_false (child->context->breaked, "child starts unbroken");
 	mu_assert_true (child->context->noflush, "child captures flushes");
@@ -305,6 +309,13 @@ bool test_cons_multiple_roots_same_thread(void) {
 	mu_assert_notnull (first->terminal, "first root is terminal attached");
 	mu_assert_notnull (second->terminal, "second root is terminal attached");
 	mu_assert_ptreq (r_cons_singleton (), second, "newest root is current");
+#if R2__UNIX__ && !__wasi__
+	r_cons_break_push (second, NULL, NULL);
+	raise (SIGINT);
+	mu_assert_false (first->context->breaked, "SIGINT leaves the previous root untouched");
+	mu_assert_true (second->context->breaked, "SIGINT breaks the current root");
+	r_cons_break_end (second);
+#endif
 	mu_assert_ptreq (r_cons_global (first), first, "explicitly switch current root");
 
 	r_cons_free (first);
@@ -318,6 +329,26 @@ bool test_cons_multiple_roots_same_thread(void) {
 
 	r_cons_free (second);
 	mu_assert_false (r_cons_is_initialized (), "freeing current root clears thread state");
+	mu_end;
+}
+
+bool test_cons_empty_drain_reuses_buffer(void) {
+	RCons *cons = r_cons_new ();
+	mu_assert_true (r_cons_write (cons, "x", 1), "allocate console buffer");
+	char *buffer = cons->context->buffer;
+	const size_t capacity = cons->context->buffer_sz;
+	r_cons_reset (cons);
+
+	size_t size = SIZE_MAX;
+	char *output = r_cons_drain (cons, &size);
+	mu_assert_null (output, "empty drain returns NULL");
+	mu_assert_eq (size, 0, "empty drain reports zero bytes");
+	mu_assert_ptreq (cons->context->buffer, buffer, "empty drain retains the buffer");
+	mu_assert_eq (cons->context->buffer_sz, capacity, "empty drain retains buffer capacity");
+
+	mu_assert_true (r_cons_write (cons, "y", 1), "retained buffer remains writable");
+	mu_assert_ptreq (cons->context->buffer, buffer, "next write reuses the buffer");
+	r_cons_free (cons);
 	mu_end;
 }
 
@@ -527,6 +558,7 @@ bool all_tests(void) {
 	mu_run_test (test_cons_child_isolation);
 	mu_run_test (test_cons_child_concurrent_merge);
 	mu_run_test (test_cons_multiple_roots_same_thread);
+	mu_run_test (test_cons_empty_drain_reuses_buffer);
 	mu_run_test (test_cons_multiple_roots_across_threads);
 	mu_run_test (test_cons_timeout_keeps_earliest_deadline);
 	mu_run_test (test_cons_timeout_does_not_restart_expired_deadline);

@@ -274,10 +274,13 @@ static void resize(int sig) {
 #endif
 
 static void cons_terminal_attach(RCons *cons) {
+	RCons *current = cons_current ();
 	r_th_lock_enter (&Gterminal.lock);
 	const bool first = !Gterminal.consoles;
 	if (first) {
 		Gterminal.consoles = r_list_new ();
+		Gterminal.foreground = cons;
+	} else if (current && Gterminal.foreground == current) {
 		Gterminal.foreground = cons;
 	}
 	r_list_append (Gterminal.consoles, cons);
@@ -1453,7 +1456,6 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 		return;
 	}
 	r_th_lock_enter (&terminal->lock);
-	terminal->foreground = cons;
 #if R2_WASM_BROWSER
 	/* Notify JS side about terminal mode change */
 	extern void r2_js_set_raw_mode (int raw) __attribute__((import_module ("r2"), import_name ("set_raw_mode")));
@@ -1468,7 +1470,10 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 	} else {
 		term_mode = &cons->term_buf;
 	}
-	tcsetattr (0, TCSANOW, term_mode);
+	if (tcsetattr (0, TCSANOW, term_mode) == -1) {
+		r_th_lock_leave (&terminal->lock);
+		return;
+	}
 #elif R2__WINDOWS__
 	if (cons->term_xterm) {
 		char *stty = r_file_path ("stty");
@@ -1483,11 +1488,15 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 			: "stty raw echo";
 		r_sandbox_system (cmd, 1);
 	} else {
-		SetConsoleMode (terminal->input, is_raw? cons->term_raw: cons->term_buf);
+		if (!SetConsoleMode (terminal->input, is_raw? cons->term_raw: cons->term_buf)) {
+			r_th_lock_leave (&terminal->lock);
+			return;
+		}
 	}
 #else
 #warning No raw console supported for this platform
 #endif
+	terminal->foreground = cons;
 	r_th_lock_leave (&terminal->lock);
 }
 
@@ -1632,6 +1641,7 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	}
 	c->noflush = true;
 	c->pal.rainbow = NULL;
+	c->pal.rainbow_sz = 0;
 	pal_clone (c);
 	return c;
 }
@@ -1643,6 +1653,7 @@ R_API RCons *r_cons_new_child(RCons *parent) {
 	RCons *child = context? cons_new (context): NULL;
 	if (child) {
 		memcpy (&child->rows, &parent->rows, R_CONS_CHILD_SETTINGS_SIZE);
+		child->is_embedded = true;
 	}
 	r_th_lock_leave (parent->lock);
 	return child;
@@ -2041,10 +2052,13 @@ R_API char *r_cons_drain(RCons *cons, size_t *size) {
 	r_th_lock_enter (cons->lock);
 	RConsContext *context = cons->context;
 	const size_t length = context->buffer_len;
-	char *output = context->buffer;
-	context->buffer = NULL;
-	context->buffer_len = 0;
-	context->buffer_sz = 0;
+	char *output = NULL;
+	if (length) {
+		output = context->buffer;
+		context->buffer = NULL;
+		context->buffer_len = 0;
+		context->buffer_sz = 0;
+	}
 	r_cons_reset (cons);
 	r_th_lock_leave (cons->lock);
 	if (size) {
