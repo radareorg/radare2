@@ -325,20 +325,115 @@ static void tp_sizefn_fini(TPSizeFn *f) {
 R_VEC_TYPE_WITH_FINI (RVecTPSizeFn, TPSizeFn, tp_sizefn_fini);
 
 // return-value allocators (malloc, calloc, operator new) join once the ret-side harvest lands
-static const struct {
-	const char *name;
-	int p, s, m;
-} sizefn_builtins[] = {
-	{ "memset", 0, 2, -1 },
-	{ "bzero", 0, 1, -1 },
-	{ "memcpy", 0, 2, -1 },
-	{ "memcpy", 1, 2, -1 },
-	{ "memmove", 0, 2, -1 },
-	{ "memmove", 1, 2, -1 },
-};
+#define TP_SIZEFN_BUILTINS "memset/0/2,bzero/0/1,memcpy/0/2,memcpy/1/2,memmove/0/2,memmove/1/2"
 
-static bool tp_sizefn_name_match(const TPSizeFn *f, const char *name);
-static const TPSizeFn *tp_sizefn_for_arg(const RVecTPSizeFn *v, const char *name, int arg_num);
+// one function may constrain several pointer operands (memcpy dst and src), so entries key on name + ptr_arg
+static void tp_sizefn_set(RVecTPSizeFn *v, const char *name, int ptr_arg, int size_arg, int mul_arg) {
+	TPSizeFn *f;
+	R_VEC_FOREACH (v, f) {
+		if (f->ptr_arg == ptr_arg && !strcmp (f->name, name)) {
+			f->size_arg = size_arg;
+			f->mul_arg = mul_arg;
+			return;
+		}
+	}
+	f = RVecTPSizeFn_emplace_back (v);
+	if (f) {
+		f->name = strdup (name);
+		f->ptr_arg = ptr_arg;
+		f->size_arg = size_arg;
+		f->mul_arg = mul_arg;
+	}
+}
+
+static void tp_sizefn_remove(RVecTPSizeFn *v, const char *name) {
+	size_t i = RVecTPSizeFn_length (v);
+	while (i > 0) {
+		i--;
+		if (!strcmp (RVecTPSizeFn_at (v, i)->name, name)) {
+			RVecTPSizeFn_remove (v, i);
+		}
+	}
+}
+
+static bool tp_sizefn_num(const char *s, int *out) {
+	if (!isdigit ((ut8)*s)) {
+		return false;
+	}
+	char *end = NULL;
+	const long v = strtol (s, &end, 10);
+	if (!end || *end || v < 0 || v > 15) {
+		return false;
+	}
+	*out = (int)v;
+	return true;
+}
+
+// entries look like name/ptrarg/sizearg[*mularg]; name/- drops a builtin
+static void tp_sizefns_init(RVecTPSizeFn *v, const char *extra) {
+	char *s = R_STR_ISEMPTY (extra)? strdup (TP_SIZEFN_BUILTINS)
+		: r_str_newf (TP_SIZEFN_BUILTINS ",%s", extra);
+	RList *entries = r_str_split_list (s, ",", 0);
+	RListIter *it;
+	char *tok;
+	r_list_foreach (entries, it, tok) {
+		r_str_trim (tok);
+		if (R_STR_ISEMPTY (tok)) {
+			continue;
+		}
+		char *p1 = strchr (tok, '/');
+		if (!p1 || tok == p1) {
+			R_LOG_WARN ("Ignoring invalid types.sizefns entry for '%s'", tok);
+			continue;
+		}
+		*p1++ = 0;
+		if (!strcmp (p1, "-")) {
+			tp_sizefn_remove (v, tok);
+			continue;
+		}
+		char *p2 = strchr (p1, '/');
+		if (p2) {
+			*p2++ = 0;
+		}
+		int ptr_arg = 0, size_arg = 0, mul_arg = -1;
+		char *mul = p2? strchr (p2, '*'): NULL;
+		if (mul) {
+			*mul++ = 0;
+		}
+		// return-value entries are rejected until the ret-side harvest exists
+		if (!p2 || !tp_sizefn_num (p1, &ptr_arg) || !tp_sizefn_num (p2, &size_arg)
+				|| (mul && !tp_sizefn_num (mul, &mul_arg))) {
+			R_LOG_WARN ("Ignoring invalid types.sizefns entry for '%s'", tok);
+			continue;
+		}
+		tp_sizefn_set (v, tok, ptr_arg, size_arg, mul_arg);
+	}
+	r_list_free (entries);
+	free (s);
+}
+
+static bool tp_sizefn_name_match(const TPSizeFn *f, const char *name) {
+	if (R_STR_ISEMPTY (name)) {
+		return false;
+	}
+	const char *dot = r_str_rchr (name, NULL, '.');
+	const char *base = dot? dot + 1: name;
+	if (!strcmp (f->name, base) || !strcmp (f->name, name)) {
+		return true;
+	}
+	// darwin-style leading underscore
+	return *base == '_' && !strcmp (f->name, base + 1);
+}
+
+static const TPSizeFn *tp_sizefn_for_arg(const RVecTPSizeFn *v, const char *name, int arg_num) {
+	const TPSizeFn *f;
+	R_VEC_FOREACH (v, f) {
+		if (f->ptr_arg == arg_num && tp_sizefn_name_match (f, name)) {
+			return f;
+		}
+	}
+	return NULL;
+}
 
 // TPState - Isolated ESIL environment for type propagation
 // Design inspired by RCoreEsil from PR #24428:
@@ -363,7 +458,6 @@ typedef struct tp_state_t {
 	bool cfg_fields;
 	bool cfg_rollback;
 	bool old_follow;
-	bool cfg_sizes;
 	RVecTPSizeFn sizefns; // empty unless types.sizes is set
 	RList *clobber; // caller-saved regs to poison across skipped calls (synth only)
 	RVecTPPendingConst pending_const;
@@ -440,19 +534,6 @@ static ut64 etrace_memwrite_addr(TypeTrace *etrace, ut32 idx) {
 
 static bool etrace_have_memread(TypeTrace *etrace, ut32 idx) {
 	return etrace_find_access (etrace, idx, etrace_is_memread, NULL) != NULL;
-}
-
-// value the op at idx wrote into rname, false when that op did not write it
-static bool etrace_regwrite_value(TypeTrace *etrace, ut32 idx, const char *rname, ut64 *val) {
-	if (!etrace || R_STR_ISEMPTY (rname)) {
-		return false;
-	}
-	const TypeTraceAccess *a = etrace_find_access (etrace, idx, etrace_is_regwrite_name, (void *)rname);
-	if (!a) {
-		return false;
-	}
-	*val = a->reg.value;
-	return true;
 }
 
 static ut64 etrace_regread_value(TypeTrace *etrace, ut32 idx, const char *rname) {
@@ -726,7 +807,44 @@ static void tp_fact_retype(TPState *tps, ut64 baddr, TPVarFact *fact, RAnalVar *
 	}
 }
 
-static bool tp_argloc_val(TPState *tps, const char *cc, int argno, int wordsz, ut64 *val);
+// concrete argloc value at the current emulated call site; stack slots read from the ESIL map
+static bool tp_argloc_val(TPState *tps, const char *cc, int argno, int wordsz, ut64 *val) {
+	RAnal *anal = tps->anal;
+	const char *place = r_anal_cc_argloc (anal, cc, argno, 0, -1);
+	if (R_STR_ISEMPTY (place)) {
+		return false;
+	}
+	if (*place != '^') {
+		*val = r_reg_getv (tps->tt.reg, place);
+		return true;
+	}
+	if (place[1] == '-') {
+		return false; // reversed stack conventions are not resolved here
+	}
+	ut64 off;
+	if (isdigit ((ut8)place[1])) {
+		off = (ut64)atoi (place + 1);
+	} else {
+		// bare ^ slots count from the convention's first stack argument
+		int first = argno, i;
+		for (i = 0; i < argno; i++) {
+			const char *p = r_anal_cc_argloc (anal, cc, i, 0, -1);
+			if (p && *p == '^') {
+				first = i;
+				break;
+			}
+		}
+		off = (ut64)(argno - first) * wordsz;
+	}
+	ut8 buf[8] = {0};
+	const ut64 addr = r_reg_getv (tps->tt.reg, "SP") + off;
+	if (wordsz > (int)sizeof (buf) || !anal->iob.read_at
+			|| !anal->iob.read_at (anal->iob.io, addr, buf, wordsz)) {
+		return false;
+	}
+	*val = r_read_ble (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config), wordsz * 8);
+	return true;
+}
 
 #define TP_SIZEFN_MAXSZ 0x100000 // sizes past 1 MiB are dynamic or stale register values
 
@@ -763,15 +881,14 @@ static ut64 tp_sizefn_arg_stacksize(TPState *tps, const char *cc, const char *fc
 
 // the op at idx must have materialized exactly the pointer value the size-fn call received
 static bool tp_selfsize_hit(TPState *tps, ut32 idx, RAnalVar *var, const char *rname, ut64 pv) {
-	if (!var || var->isarg) {
+	if (!var || var->isarg || (var->kind != R_ANAL_VAR_KIND_BPV && var->kind != R_ANAL_VAR_KIND_SPV)) {
 		return false;
 	}
-	if (var->kind != R_ANAL_VAR_KIND_BPV && var->kind != R_ANAL_VAR_KIND_SPV) {
+	if (R_STR_ISEMPTY (rname) || etrace_have_memread (&tps->tt, idx)) {
 		return false;
 	}
-	ut64 wv = 0;
-	return !etrace_have_memread (&tps->tt, idx)
-		&& etrace_regwrite_value (&tps->tt, idx, rname, &wv) && wv == pv;
+	const TypeTraceAccess *a = etrace_find_access (&tps->tt, idx, etrace_is_regwrite_name, (void *)rname);
+	return a && a->reg.value == pv;
 }
 
 // a memset-style call on a stack var's address states the object's exact size
@@ -810,45 +927,6 @@ static void tp_selfsize_var(TPState *tps, ut64 baddr, RAnalVar *var, ut64 n) {
 	nf->rank = 3;
 	nf->bb_addr = baddr;
 	ht_up_insert (tps->var_facts, (ut64)(size_t)var, nf);
-}
-
-// concrete argloc value at the current emulated call site; stack slots read from the ESIL map
-static bool tp_argloc_val(TPState *tps, const char *cc, int argno, int wordsz, ut64 *val) {
-	RAnal *anal = tps->anal;
-	const char *place = r_anal_cc_argloc (anal, cc, argno, 0, -1);
-	if (R_STR_ISEMPTY (place)) {
-		return false;
-	}
-	if (*place != '^') {
-		*val = r_reg_getv (tps->tt.reg, place);
-		return true;
-	}
-	if (place[1] == '-') {
-		return false; // reversed stack conventions are not resolved here
-	}
-	ut64 off;
-	if (isdigit ((ut8)place[1])) {
-		off = (ut64)atoi (place + 1);
-	} else {
-		// bare ^ slots count from the convention's first stack argument
-		int first = argno, i;
-		for (i = 0; i < argno; i++) {
-			const char *p = r_anal_cc_argloc (anal, cc, i, 0, -1);
-			if (p && *p == '^') {
-				first = i;
-				break;
-			}
-		}
-		off = (ut64)(argno - first) * wordsz;
-	}
-	ut8 buf[8] = {0};
-	const ut64 addr = r_reg_getv (tps->tt.reg, "SP") + off;
-	if (wordsz > (int)sizeof (buf) || !anal->iob.read_at
-			|| !anal->iob.read_at (anal->iob.io, addr, buf, wordsz)) {
-		return false;
-	}
-	*val = r_read_ble (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config), wordsz * 8);
-	return true;
 }
 
 static void var_retype_impl(RAnal *anal, TPState *tps, ut64 baddr, RAnalVar *var, const char *vname, const char *type, int ref, bool pfx) {
@@ -1619,7 +1697,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev? (max - 1 - i): i;
 		ut64 selfptr = 0;
-		const ut64 selfsize = tps->cfg_sizes? tp_sizefn_arg_stacksize (tps, cc, fcn_name, arg_num, bytes, &selfptr): 0;
+		const ut64 selfsize = tp_sizefn_arg_stacksize (tps, cc, fcn_name, arg_num, bytes, &selfptr);
 		char *owned_type = NULL;
 		const char *type = NULL;
 		const char *name = NULL;
@@ -2072,123 +2150,6 @@ static int tp_map_anon(RAnal *anal, ut64 size, int align, ut64 *base, ut32 *map_
 	return fd;
 }
 
-// one function may constrain several pointer operands (memcpy dst and src), so entries key on name + ptr_arg
-static void tp_sizefn_set(RVecTPSizeFn *v, const char *name, int ptr_arg, int size_arg, int mul_arg) {
-	TPSizeFn *f;
-	R_VEC_FOREACH (v, f) {
-		if (f->ptr_arg == ptr_arg && !strcmp (f->name, name)) {
-			f->size_arg = size_arg;
-			f->mul_arg = mul_arg;
-			return;
-		}
-	}
-	f = RVecTPSizeFn_emplace_back (v);
-	if (f) {
-		f->name = strdup (name);
-		f->ptr_arg = ptr_arg;
-		f->size_arg = size_arg;
-		f->mul_arg = mul_arg;
-	}
-}
-
-static void tp_sizefn_remove(RVecTPSizeFn *v, const char *name) {
-	size_t i = RVecTPSizeFn_length (v);
-	while (i > 0) {
-		i--;
-		TPSizeFn *f = RVecTPSizeFn_at (v, i);
-		if (!strcmp (f->name, name)) {
-			RVecTPSizeFn_remove (v, i);
-		}
-	}
-}
-
-static bool tp_sizefn_num(const char *s, int *out) {
-	if (!isdigit ((ut8)*s)) {
-		return false;
-	}
-	char *end = NULL;
-	const long v = strtol (s, &end, 10);
-	if (!end || *end || v < 0 || v > 15) {
-		return false;
-	}
-	*out = (int)v;
-	return true;
-}
-
-// entries look like name/ptrarg/sizearg[*mularg]; name/- drops a builtin
-static void tp_sizefns_init(RVecTPSizeFn *v, const char *extra) {
-	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (sizefn_builtins); i++) {
-		tp_sizefn_set (v, sizefn_builtins[i].name, sizefn_builtins[i].p, sizefn_builtins[i].s, sizefn_builtins[i].m);
-	}
-	if (R_STR_ISEMPTY (extra)) {
-		return;
-	}
-	char *s = strdup (extra);
-	RList *entries = r_str_split_list (s, ",", 0);
-	RListIter *it;
-	char *tok;
-	r_list_foreach (entries, it, tok) {
-		r_str_trim (tok);
-		if (R_STR_ISEMPTY (tok)) {
-			continue;
-		}
-		char *p1 = strchr (tok, '/');
-		if (!p1 || tok == p1) {
-			R_LOG_WARN ("Ignoring invalid types.sizefns entry for '%s'", tok);
-			continue;
-		}
-		*p1++ = 0;
-		if (!strcmp (p1, "-")) {
-			tp_sizefn_remove (v, tok);
-			continue;
-		}
-		char *p2 = strchr (p1, '/');
-		if (!p2) {
-			R_LOG_WARN ("Ignoring invalid types.sizefns entry for '%s'", tok);
-			continue;
-		}
-		*p2++ = 0;
-		int ptr_arg = 0, size_arg = 0, mul_arg = -1;
-		char *mul = strchr (p2, '*');
-		if (mul) {
-			*mul++ = 0;
-		}
-		// return-value entries are rejected until the ret-side harvest exists
-		if (!tp_sizefn_num (p1, &ptr_arg) || !tp_sizefn_num (p2, &size_arg)
-				|| (mul && !tp_sizefn_num (mul, &mul_arg))) {
-			R_LOG_WARN ("Ignoring invalid types.sizefns entry for '%s'", tok);
-			continue;
-		}
-		tp_sizefn_set (v, tok, ptr_arg, size_arg, mul_arg);
-	}
-	r_list_free (entries);
-	free (s);
-}
-
-static bool tp_sizefn_name_match(const TPSizeFn *f, const char *name) {
-	if (R_STR_ISEMPTY (name)) {
-		return false;
-	}
-	const char *dot = r_str_rchr (name, NULL, '.');
-	const char *base = dot? dot + 1: name;
-	if (!strcmp (f->name, base) || !strcmp (f->name, name)) {
-		return true;
-	}
-	// darwin-style leading underscore
-	return *base == '_' && !strcmp (f->name, base + 1);
-}
-
-static const TPSizeFn *tp_sizefn_for_arg(const RVecTPSizeFn *v, const char *name, int arg_num) {
-	const TPSizeFn *f;
-	R_VEC_FOREACH (v, f) {
-		if (f->ptr_arg == arg_num && tp_sizefn_name_match (f, name)) {
-			return f;
-		}
-	}
-	return NULL;
-}
-
 static TPState *tps_init(RAnal *anal) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->iob.io && anal->esil, NULL);
 	RIO *io = anal->iob.io;
@@ -2281,8 +2242,7 @@ static TPState *tps_init(RAnal *anal) {
 		tps->cfg_chk_constraint = anal->coreb.cfgGetB (core, "types.constraint");
 		tps->cfg_fields = anal->coreb.cfgGetB (core, "types.fields");
 		tps->cfg_rollback = anal->coreb.cfgGetB (core, "types.rollback");
-		tps->cfg_sizes = anal->coreb.cfgGetB (core, "types.sizes");
-		if (tps->cfg_sizes) {
+		if (anal->coreb.cfgGetB (core, "types.sizes")) {
 			tp_sizefns_init (&tps->sizefns, anal->coreb.cfgGet (core, "types.sizefns"));
 		}
 		if (anal->coreb.cfgGetI && anal->coreb.cmd) {
@@ -2295,7 +2255,6 @@ static TPState *tps_init(RAnal *anal) {
 		tps->cfg_chk_constraint = false;
 		tps->cfg_fields = false;
 		tps->cfg_rollback = false;
-		tps->cfg_sizes = false;
 	}
 	tps->tt.enable_rollback = tps->cfg_rollback;
 	return tps;
@@ -2456,7 +2415,7 @@ static TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_o
 				}
 				op_cb (user, &aop, lookahead? next_op: NULL, addr, bb_addr);
 			}
-			if (tps->clobber && r_anal_op_nonlinear (aop.type)) {
+			if (tps->clobber) {
 				// UCALL is the base value 4, not a flag, so match on the base type
 				const int base = aop.type & 0xff;
 				if (base == R_ANAL_OP_TYPE_CALL || base == R_ANAL_OP_TYPE_UCALL) {
@@ -2514,6 +2473,12 @@ static const char *tp_call_target_name(RAnal *anal, RAnalOp *aop, ut32 type, RAn
 	return NULL;
 }
 
+// the callee's calling convention: its own when known, else derived from the name
+static const char *tp_call_cc(RAnal *anal, RAnalFunction *fcn_call, const char *name) {
+	const char *cc = fcn_call? r_anal_function_cc (fcn_call): NULL;
+	return cc? cc: r_anal_cc_func (anal, name);
+}
+
 // per-op type propagation body run by tp_emulate_linear for r_anal_type_match
 static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 addr, ut64 bb_addr) {
 	TypeMatchCtx *c = user;
@@ -2544,13 +2509,7 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 				fcn_name = strdup (full_name);
 				c->tp.userfnc = true;
 			}
-			const char *Cc = NULL;
-			if (fcn_call) {
-				Cc = r_anal_function_cc (fcn_call);
-			}
-			if (!Cc) {
-				Cc = r_anal_cc_func (anal, fcn_name);
-			}
+			const char *Cc = tp_call_cc (anal, fcn_call, fcn_name);
 			R_LOG_DEBUG ("CC can %s %s", Cc, fcn_name);
 			if (Cc && r_anal_cc_exist (anal, Cc)) {
 				type_match (tps, fcn_name, addr, bb_addr, Cc, c->prev_idx, c->tp.userfnc);
@@ -2941,6 +2900,20 @@ static ut64 synth_add_member(RAnalBaseType *bt, const char *pfx, ut64 off, int s
 	return off + (ut64)size;
 }
 
+// a size-fn call stated the exact object size: pad the unobserved tail out to it
+static ut64 synth_pad_tail(RAnalBaseType *bt, RVecSynthArr *arrs, ut64 cur, ut64 want) {
+	if (want <= cur) {
+		return cur;
+	}
+	const int padlen = (int)(want - cur);
+	SynthArr *pa = RVecSynthArr_emplace_back (arrs);
+	if (pa) {
+		*pa = (SynthArr){ .off = cur, .elsize = 1, .count = padlen };
+	}
+	synth_add_member (bt, "pad", cur, 1, padlen, strdup ("uint8_t"));
+	return want;
+}
+
 static const char *synth_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 	const char *cc = r_anal_function_cc (fcn);
 	return cc? cc: r_anal_cc_default (anal);
@@ -3066,14 +3039,11 @@ static void synth_size_entry(SynthSizeCtx *c, const char *cc, const TPSizeFn *sf
 	if (!tp_sizefn_read (c->tps, cc, sf, c->psz, &pv, &n)) {
 		return;
 	}
-	if (n >= SYNTH_WINDOW / 2) {
-		return; // stale sentinel values and oversized objects fail this bound
-	}
 	if (pv >= c->sbase && pv < c->sbase + SYNTH_REGION) {
 		// interior pointers still bound the object: off + n bytes from the window base
 		const ut64 off = (pv - c->sbase) % SYNTH_WINDOW;
 		if (off + n >= SYNTH_WINDOW / 2) {
-			return;
+			return; // stale sentinel values and oversized objects fail this bound
 		}
 		const int argi = (int)((pv - c->sbase) / SYNTH_WINDOW);
 		c->want[argi] = R_MAX (c->want[argi], off + n);
@@ -3101,22 +3071,17 @@ static void synth_size_entry(SynthSizeCtx *c, const char *cc, const TPSizeFn *sf
 static void synth_size_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 addr, ut64 bb_addr) {
 	SynthSizeCtx *c = user;
 	RAnal *anal = c->tps->anal;
-	ut32 type = aop->type & R_ANAL_OP_TYPE_MASK;
-	if (type == R_ANAL_OP_TYPE_CCALL) {
-		type = R_ANAL_OP_TYPE_CALL; // conditional direct calls resolve like plain calls
-	}
-	if (type != R_ANAL_OP_TYPE_CALL && type != R_ANAL_OP_TYPE_UCALL && type != R_ANAL_OP_TYPE_UCCALL) {
+	// UCALL is the base value 4, not a flag, so match on the base type (conditional calls resolve alike)
+	const int base = aop->type & 0xff;
+	if (base != R_ANAL_OP_TYPE_CALL && base != R_ANAL_OP_TYPE_UCALL) {
 		return;
 	}
 	RAnalFunction *fcn_call = NULL;
-	const char *name = tp_call_target_name (anal, aop, type, &fcn_call);
+	const char *name = tp_call_target_name (anal, aop, base, &fcn_call);
 	if (R_STR_ISEMPTY (name)) {
 		return;
 	}
-	const char *cc = fcn_call? r_anal_function_cc (fcn_call): NULL;
-	if (!cc) {
-		cc = r_anal_cc_func (anal, name);
-	}
+	const char *cc = tp_call_cc (anal, fcn_call, name);
 	if (!cc) {
 		cc = r_anal_cc_default (anal);
 	}
@@ -3204,7 +3169,7 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 	// emulate the function linearly, letting the mem voyeurs record base+offset accesses
 	SynthSizeCtx szctx = { .tps = tps, .sbase = sbase, .pbase = pfd >= 0? pbase: 0, .psz = psz };
 	RVecSynthField_init (&szctx.childwant);
-	const bool harvest = tps->cfg_sizes && !RVecTPSizeFn_empty (&tps->sizefns);
+	const bool harvest = !RVecTPSizeFn_empty (&tps->sizefns);
 	r_reg_setv (tps->tt.reg, "PC", fcn->addr);
 	if (tp_emulate_linear (tps, fcn, SYNTH_MAXOPS, harvest? synth_size_cb: NULL, harvest? &szctx: NULL, false) == TP_EMU_BUDGET) {
 		R_LOG_WARN ("Struct synthesis hit the %d-op budget at 0x%08" PFMT64x "; result is partial", SYNTH_MAXOPS, fcn->addr);
@@ -3310,26 +3275,19 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 		}
 		const ut64 cwant = synth_child_want (&szctx.childwant, carg, coff);
 		if (ccount >= SYNTH_MIN_FIELDS || (ccount > 0 && cwant > ccur)) {
-			ut64 cpad = 0;
-			if (cwant > ccur) {
-				cpad = cwant - ccur;
-				synth_add_member (cbt, "pad", ccur, 1, (int)cpad, strdup ("uint8_t"));
-				ccur = cwant;
-			}
+			RVecSynthArr carrs;
+			RVecSynthArr_init (&carrs);
+			ccur = synth_pad_tail (cbt, &carrs, ccur, cwant);
 			cbt->name = r_str_newf ("%s_arg%d_0x%" PFMT64x, fname, carg, coff);
 			cbt->size = ccur;
 			SynthRec *rec = RVecSynthRec_emplace_back (recs);
 			if (rec) {
 				*rec = (SynthRec){ .arg = carg, .child = true, .off = coff, .bt = cbt };
 				RVecSynthSite_init (&rec->sites);
-				RVecSynthArr_init (&rec->arrs);
-				if (cpad) {
-					SynthArr *pa = RVecSynthArr_emplace_back (&rec->arrs);
-					if (pa) {
-						*pa = (SynthArr){ .off = ccur - cpad, .elsize = 1, .count = (int)cpad };
-					}
-				}
+				rec->arrs = carrs;
 				cbt = NULL;
+			} else {
+				RVecSynthArr_fini (&carrs);
 			}
 		}
 		if (cbt) {
@@ -3414,16 +3372,7 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 		const bool emit = count >= SYNTH_MIN_FIELDS || !RVecSynthArr_empty (&arrs)
 			|| (count > 0 && szctx.want[arg] > cur);
 		if (emit) {
-			// a size-fn call stated the exact object size: pad the unobserved tail out to it
-			if (szctx.want[arg] > cur) {
-				const ut64 padlen = szctx.want[arg] - cur;
-				SynthArr *pa = RVecSynthArr_emplace_back (&arrs);
-				if (pa) {
-					*pa = (SynthArr){ .off = cur, .elsize = 1, .count = (int)padlen };
-				}
-				synth_add_member (bt, "pad", cur, 1, (int)padlen, strdup ("uint8_t"));
-				cur = szctx.want[arg];
-			}
+			cur = synth_pad_tail (bt, &arrs, cur, szctx.want[arg]);
 			bt->name = r_str_newf ("%s_arg%d", fname, arg);
 			bt->size = cur;
 			rec = RVecSynthRec_emplace_back (recs);
