@@ -228,6 +228,7 @@ CMDS=<<EOF
 prj open /this/path/does/not/exist/r2-raw-or.prj || 'echo "or;x"
 prj open /this/path/does/not/exist/r2-raw-and.prj && 'echo SHOULD_NOT_RUN
 ?e repeated && 2'echo raw||literal
+?e seek-prefixed && @4@'echo "seek-and;x"
 EOF
 EXPECT=<<EOF
 before
@@ -237,6 +238,8 @@ or;x
 repeated
 raw||literal
 raw||literal
+seek-prefixed
+seek-and;x
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Cannot find project file: /this/path/does/not/exist/r2-raw-or.prj
@@ -295,6 +298,10 @@ CMDS=<<EOF
 ?e `2'echo repeat`
 ?e $("3"'echo quoted-repeat)
 ?e $('echo left\)right)
+?e $(@4@'echo "seek-dollar;x")
+?e `@4@'echo "seek-backtick;x"`
+?e $(@4@2'echo seek-repeat)
+?e $(@4@'echo seek-left\)right)
 s 0
 ?e `'w hello\`world`
 ps 11
@@ -308,6 +315,10 @@ repeat repeat
 repeat repeat
 quoted-repeat quoted-repeat quoted-repeat
 left)right
+seek-dollar;x
+seek-backtick;x
+seek-repeat seek-repeat
+seek-left)right
 
 hello`world
 EOF
@@ -510,5 +521,179 @@ hello
 ===
 hello
 hello
+EOF
+RUN
+
+NAME=temporary seek prefix
+FILE=malloc://32
+CMDS=<<EOF
+@4@?v $$
+?v $$
+@4@?v $$;?v $$
+@4@?v $$ && ?v $$
+?v $$ @ 4 && ?v $$
+@4@?v $$ @ 8
+f foo @ 16
+@foo@?v $$
+@4@@8@?v $$
+s 8; @4@?v $$; ?v $$; s 0
+@4@s 8
+?v $$
+s 0
+EOF
+EXPECT=<<EOF
+0x4
+0x0
+0x4
+0x0
+0x4
+0x4
+0x4
+0x0
+0x8
+0x10
+0x8
+0x4
+0x8
+0x8
+EOF
+RUN
+
+NAME=temporary seek prefix restarts command position
+FILE=malloc://32
+CMDS=<<EOF
+@4@'?v $$
+?e -- 1
+@4@'?e one;?e two
+?e -- 2
+@4@2'?e raw;x
+?e -- 3
+""@4@?v $$
+?e -- 4
+"  "@4@?v $$
+?e -- 5
+   @ 4 @ ?v $$
+?e -- 6
+@4@""'?e sub;x
+?e -- 7
+2@4@?e hi
+?e -- 8
+@4@2?e hi
+?e -- 9
+2@4@3?v $$
+?e -- 10
+3@0@?e hello
+?e -- 11
+"   "3@0@"   "?e hello
+?e -- 12
+?e $(@4@?v $$)
+?e -- 13
+?e before && @4@?v $$
+EOF
+EXPECT=<<EOF
+0x4
+-- 1
+one;?e two
+-- 2
+raw;x
+raw;x
+-- 3
+0x4
+-- 4
+0x4
+-- 5
+0x4
+-- 6
+sub;x
+-- 7
+hi
+hi
+-- 8
+hi
+hi
+-- 9
+0x4
+0x4
+0x4
+-- 10
+hello
+hello
+hello
+-- 11
+hello
+hello
+hello
+-- 12
+0x4
+-- 13
+before
+0x4
+EOF
+RUN
+
+NAME=temporary seek prefix errors
+FILE=malloc://32
+CMDS=<<EOF
+@4'?v $$
+@4
+@4@
+@notanaddress@?e nope
+@@
+?e end
+EOF
+EXPECT=<<EOF
+end
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid seek prefix, use "'@addr'cmd" or "@addr@'cmd" for raw calls
+ERROR: Invalid syntax, expected "@addr@command"
+ERROR: Invalid syntax, expected "@addr@command"
+ERROR: Invalid address 'notanaddress' in seek prefix
+ERROR: Iterators need a command, expected "cmd@@..."
+EOF
+RUN
+
+NAME=temporary seek prefix sets tmpseek like the suffix form
+FILE=malloc://32
+CMDS=<<EOF
+Cd 4 @ 0
+Cd 4 @ 8
+?e -- suffix
+Cd @ 8
+?e -- prefix
+@8@Cd
+?e -- raw
+@8@'Cd
+?e -- list
+Cd
+EOF
+EXPECT=<<EOF
+-- suffix
+-- prefix
+-- raw
+-- list
+0x00000000 data Cd 4
+0x00000008 data Cd 4
+EOF
+RUN
+
+NAME=temporary seek prefix never leaks on aborted lines
+FILE=malloc://32
+CMDS=<<EOF
+@4@@notanaddress@?e nope
+?v $$
+@4@#comment
+?v $$
+@4@
+?v $$
+EOF
+EXPECT=<<EOF
+0x0
+0x0
+0x0
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid address 'notanaddress' in seek prefix
+ERROR: Invalid syntax, expected "@addr@command"
 EOF
 RUN

@@ -3931,13 +3931,16 @@ static int handle_command_call(RCore *core, const char *cmd) {
 				r_core_return_code (core, 1);
 			} else {
 				ut64 addr = core->addr;
+				const bool otmpseek = core->tmpseek;
+				core->tmpseek = true;
 				r_core_seek (core, at, true);
 				res = r_core_call (core, end + 1);
 				r_core_seek (core, addr, true);
+				core->tmpseek = otmpseek;
 			}
 		} else {
 			R_LOG_ERROR ("Invalid syntax, expected \"'@addr'command\"");
-			r_core_return_code (core, 1);
+			r_core_return_code (core, 2);
 		}
 		free (arg);
 		return res;
@@ -3966,10 +3969,36 @@ static const char *command_start(const char *cmd, ut64 *repeat) {
 		end += quoted;
 		end = (char *)trim_command_head (end);
 	}
-	if (repeat) {
+	// only overwrite on an explicit repeat prefix, so nested "@addr@" prefixes
+	// compose ("2@4@cmd" keeps the outer repeat, "2@4@3cmd" takes the inner one)
+	if (repeat && rep) {
 		*repeat = rep;
 	}
 	return end;
+}
+
+static const char *find_seek_prefix_end(const char *cmd) {
+	int parens = 0;
+	for (cmd++; *cmd && (parens || *cmd != ')') && !strchr ("@'`;\"", *cmd); cmd++) {
+		if (*cmd == '(') {
+			parens++;
+		} else if (*cmd == ')') {
+			parens--;
+		}
+	}
+	return cmd;
+}
+
+static bool command_is_raw(const char *cmd) {
+	cmd = command_start (cmd, NULL);
+	while (*cmd == '@' && cmd[1] != '@') {
+		cmd = find_seek_prefix_end (cmd);
+		if (*cmd != '@') {
+			return false;
+		}
+		cmd = command_start (cmd + 1, NULL);
+	}
+	return *cmd == '\'';
 }
 
 static char *find_subcmd_end(char *cmd, bool backquote, bool raw) {
@@ -4035,7 +4064,7 @@ static char *find_cmd_separator(char *cmd) {
 		} else if (quote != '\'' && (*p == '`' || (*p == '$' && p[1] == '('))) {
 			const bool bq = *p == '`';
 			char *body = p + (bq? 1: 2);
-			char *end = find_subcmd_end (body, bq, *command_start (body, NULL) == '\'');
+			char *end = find_subcmd_end (body, bq, command_is_raw (body));
 			if (!end) {
 				return NULL;
 			}
@@ -4049,10 +4078,10 @@ static char *find_cmd_separator(char *cmd) {
 
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	RCons *cons = core->cons;
-	ut64 rep = 0;
+	ut64 rep = 0, ataddr = 0;
 	int ret = 0, orep;
 	char *colon = NULL, *icmd = NULL;
-	bool tmpseek = false;
+	bool atseek = false, tmpseek = false;
 	bool original_tmpseek = core->tmpseek;
 
 	int res = handle_command_call (core, cmd);
@@ -4096,10 +4125,43 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	cmd = (char *)r_str_trim_head_ro (icmd);
 	r_str_trim_tail (cmd);
 	cmd = (char *)command_start (cmd, &rep);
-	const bool raw_call = *cmd == '\'';
 	R_CRITICAL_LEAVE (core);
+	while (*cmd == '@') { // "@addr@cmd" temporary seek prefix
+		if (cmd[strspn (cmd, "@")] == '?') {
+			break; // @? @@? @@@? show help through the legacy path
+		}
+		if (cmd[1] == '@') {
+			R_LOG_ERROR ("Iterators need a command, expected \"cmd@@...\"");
+			r_core_return_code (core, 2);
+			goto beach;
+		}
+		char *end = (char *)find_seek_prefix_end (cmd);
+		if (*end != '@') {
+			R_LOG_ERROR (*end == '\''
+				? "Invalid seek prefix, use \"'@addr'cmd\" or \"@addr@'cmd\" for raw calls"
+				: "Invalid syntax, expected \"@addr@command\"");
+			r_core_return_code (core, 2);
+			goto beach;
+		}
+		*end = 0;
+		ataddr = r_num_math (core->num, cmd + 1);
+		if (core->num->nc.errors) {
+			R_LOG_ERROR ("Invalid address '%s' in seek prefix", cmd + 1);
+			r_core_return_code (core, 1);
+			goto beach;
+		}
+		atseek = true;
+		cmd = (char *)command_start (end + 1, &rep);
+	}
+	const bool raw_call = *cmd == '\'';
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (R_STR_ISEMPTY (cmd)) {
+		if (atseek) {
+			// "@addr@" without a command would silently drop the seek otherwise
+			R_LOG_ERROR ("Invalid syntax, expected \"@addr@command\"");
+			r_core_return_code (core, 2);
+			goto beach;
+		}
 		if (core->cmdrepeat > 0) {
 			lastcmd_repeat (core, true);
 			ret = r_core_cmd_nullcallback (core);
@@ -4145,6 +4207,13 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 				goto beach;
 			}
 		}
+	}
+	if (atseek) {
+		// deferred until after the early-outs above so aborted lines do not leak the seek
+		r_core_seek (core, ataddr, true);
+		// commands checking core->tmpseek (CC, search bounds) must behave like "cmd @ addr"
+		core->tmpseek = true;
+		tmpseek = true;
 	}
 	// TODO: store in core->cmdtimes to speedup ?
 	const char *cmdrep = r_str_get (core->cmdtimes);
@@ -4348,7 +4417,7 @@ static char find_unterminated_quote(char *cmd) {
 			p++;
 			if (!task_wait) {
 				segment = r_str_trim_head_ro (p + 1);
-				if (*command_start (segment, NULL) == '\'') {
+				if (command_is_raw (segment)) {
 					return 0;
 				}
 			}
@@ -4360,7 +4429,7 @@ static char find_unterminated_quote(char *cmd) {
 		if (quote != '\'' && (*p == '`' || (*p == '$' && p[1] == '('))) {
 			bool backquote = *p == '`';
 			char *sub = p + (backquote? 1: 2);
-			char *end = find_subcmd_end (sub, backquote, *command_start (sub, NULL) == '\'');
+			char *end = find_subcmd_end (sub, backquote, command_is_raw (sub));
 			if (!end) {
 				return 0;
 			}
@@ -5153,7 +5222,7 @@ next2:
 			memmove (ptr, ptr + 2, strlen (ptr) - 1);
 			goto escape_backtick;
 		}
-		const bool raw_subcmd = *command_start (ptr + 1, NULL) == '\'';
+		const bool raw_subcmd = command_is_raw (ptr + 1);
 		ptr2 = find_subcmd_end (ptr + 1, backquote, raw_subcmd);
 		if (!ptr2) {
 			R_LOG_ERROR ("parse: Missing sub-command closing in expression");
@@ -5256,7 +5325,9 @@ escape_backtick:
 		ptr = NULL;
 	}
 
-	cmd_tmpseek = core->tmpseek = ptr;
+	cmd_tmpseek = ptr != NULL;
+	// keep core->tmpseek set when the caller applied a "@addr@cmd" prefix seek
+	core->tmpseek = cmd_tmpseek || (tmpseek && *tmpseek);
 	if (ptr) {
 		char *f, *ptr2 = strchr (ptr + 1, '!');
 		ut64 addr = core->addr;
@@ -5845,7 +5916,8 @@ beach:
 		tmpdesc = NULL;
 	}
 	if (tmpseek) {
-		*tmpseek = cmd_tmpseek;
+		// OR to preserve a seek applied by the @addr@cmd prefix in the caller
+		*tmpseek |= cmd_tmpseek;
 	}
 	if (cmd_ignbithints != -1) {
 		r_config_set_i (core->config, "anal.ignbithints", cmd_ignbithints);
