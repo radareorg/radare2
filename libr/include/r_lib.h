@@ -23,7 +23,7 @@ R_LIB_VERSION_HEADER (r_lib);
 // double-indirection required because cpp is crap
 #define STRINGIFY2(x) #x
 #define STRINGIFY(x) STRINGIFY2(x)
-#define R2_ABIVERSION 126
+#define R2_ABIVERSION 127
 #define R2_ABIVERSION_STRING STRINGIFY(R2_ABIVERSION)
 
 #define R_LIB_ENV "R2_LIBR_PLUGINS"
@@ -86,11 +86,11 @@ typedef struct r_lib_handler_t {
    found in the loaded .so */
 typedef struct r_lib_struct_t {
 	int type;
+	ut32 abiversion; /* ABI version to prevent loading incompatible plugins */
 	void *data; /* pointer to data handled by plugin handler */
 	const char *version; /* r2 version */
 	void (*free)(void *data);
 	const char *pkgname; /* pkgname associated to this plugin */
-	ut32 abiversion; /* ABI version to prevent loading incompatible plugins */
 } RLibStruct;
 
 typedef RLibStruct* (*RLibStructFunc) (void);
@@ -136,9 +136,9 @@ typedef struct r_lib_t {
 	bool ignore_version;
 	bool ignore_abiversion;
 	bool safe_loading; /* true to enable 2-step loading process */
+	ut32 abiversion; /* Current ABI version */
 	// hashtable plugname = &plugin
 	HtPP *plugins_ht[R_LIB_TYPE_LAST];
-	ut32 abiversion; /* Current ABI version */
 	RLibInternalLoadCallback cb_internal; /* callback to load internal plugins for 'i' in R2_PLUGINS_ORDER */
 	void *cb_internal_user; /* user data for cb_internal */
 } RLib;

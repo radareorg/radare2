@@ -33,8 +33,8 @@ typedef enum {
 
 typedef struct r_cmd_result_t {
 	RCmdAction action;
-	st64 status;
 	bool has_value;
+	st64 status;
 	ut64 value;
 } RCmdResult;
 

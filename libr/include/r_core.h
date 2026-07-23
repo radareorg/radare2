@@ -794,8 +794,8 @@ R_API RVecAnalRef *r_core_anal_fcn_get_calls(RCore *core, RAnalFunction *fcn); /
 typedef struct r_core_asm_hit {
 	char *code;
 	int len;
-	ut64 addr;
 	ut8 valid;
+	ut64 addr;
 } RCoreAsmHit;
 
 R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args);

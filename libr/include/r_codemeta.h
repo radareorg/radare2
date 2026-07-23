@@ -68,10 +68,10 @@ R_VEC_TYPE (RVecCodeMetaOffset, ut64);
 
 typedef struct r_codemeta_t {
 	char *code; /**< Decompiled code. RCodeMeta owns this string and it must free it. */
+	bool tree_dirty;
 	RVecCodeMetaItem annotations; /**< @ref RVecCodeMetaItem contains the list of annotations for the decompiled code. */
 #if R_CODEMETA_USE_RBTREE
 	RRBTree *tree;
-	bool tree_dirty;
 #endif
 } RCodeMeta;
 

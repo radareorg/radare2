@@ -34,13 +34,13 @@ typedef struct r_syscall_t {
 	char *arch;
 	char *os;
 	int bits;
+	int refs;
 	char *cpu;
 	// database
 	RSyscallItem *sysptr;
 	RSyscallPort *sysport;
 	Sdb *db;
 	Sdb *srdb;
-	int refs;
 } RSyscall;
 
 #if 0

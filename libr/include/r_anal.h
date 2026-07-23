@@ -313,10 +313,10 @@ typedef struct r_anal_fcn_context_t {
 
 typedef struct r_anal_diff_t {
 	int type;
+	ut32 size;
 	ut64 addr;
 	double dist;
 	char *name;
-	ut32 size;
 } RAnalDiff;
 typedef struct r_anal_attr_t RAnalAttr;
 struct r_anal_attr_t {
@@ -871,8 +871,8 @@ typedef struct r_anal_esil_dfg_t {
 typedef struct r_anal_esil_dfg_node_t {
 	// add more info here
 	ut32 idx;
-	RStrBuf *content;
 	ut32 /*RAnalEsilDFGTagType*/ type;
+	RStrBuf *content;
 } RAnalEsilDFGNode;
 
 typedef char *(*RAnalCmdCallback)(/* Rcore */RAnal *anal, const char* input);
@@ -1461,9 +1461,9 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr);
 typedef struct r_anal_data_t {
 	ut64 addr;
 	int type;
+	int len;
 	ut64 ptr;
 	char *str;
-	int len;
 	ut8 *buf;
 	ut8 sbuf[8];
 } RAnalData;
