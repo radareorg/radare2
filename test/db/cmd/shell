@@ -389,22 +389,24 @@ ERROR: Cannot find project file: /this/path/does not/exist;#|>@~&&||
 EOF
 RUN
 
-NAME=command substitution output cannot become a command
+NAME=command position substitution evaluates output as a command
 FILE=malloc://32
 CMDS=<<EOF
 $(?e:P2UgR0VORVJBVEVE)
 `?e:P2UgR0VORVJBVEVE`
+`p6ds P2UgaGVsbG87P2Ugd29ybGQ=`
+`?e ?e` chained
 EOF
-EXPECT=
-EXPECT_ERR=<<EOF
-ERROR: Command substitution cannot be used as a command
-ERROR: Invalid command '$(?e:P2UgR0VORVJBVEVE)' (0x24)
-ERROR: Command substitution cannot be used as a command
-ERROR: Invalid command '`?e:P2UgR0VORVJBVEVE`' (0x60)
+EXPECT=<<EOF
+GENERATED
+GENERATED
+hello
+world
+chained
 EOF
 RUN
 
-NAME=command position substitution does not execute nested command
+NAME=command position substitution executes nested command
 FILE=malloc://32
 CMDS=<<EOF
 s 0
@@ -412,11 +414,7 @@ $(wx 41)
 p8 1
 EOF
 EXPECT=<<EOF
-00
-EOF
-EXPECT_ERR=<<EOF
-ERROR: Command substitution cannot be used as a command
-ERROR: Invalid command '$(wx 41)' (0x24)
+41
 EOF
 RUN
 

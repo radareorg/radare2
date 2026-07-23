@@ -34,9 +34,7 @@ EXPECT=<<EOF
 P2UgaGVsbG87P2Ugd29ybGQ=
 hello;?e world
 ?e hello;?e world
-EOF
-EXPECT_ERR=<<EOF
-ERROR: Command substitution cannot be used as a command
-ERROR: Invalid command '`p6ds P2UgaGVsbG87P2Ugd29ybGQ=`' (0x60)
+hello
+world
 EOF
 RUN
