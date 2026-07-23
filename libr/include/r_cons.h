@@ -506,8 +506,8 @@ typedef struct r_cons_t {
 	int force_columns;
 	int fix_rows;
 	int fix_columns;
-	int blankline;
-	int null; // if set, does not show anything
+	bool blankline;
+	bool null; // if set, does not show anything
 	int vtmode;
 	int linesleep;
 	int pagesize;
@@ -521,7 +521,7 @@ typedef struct r_cons_t {
 	InputState input_state;
 	char *lastline;
 	int lines;
-	int echo; // dump to stdout in realtime
+	bool echo; // dump to stdout in realtime
 	int fps;
 	bool break_lines;
 	// move into Completion

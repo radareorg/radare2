@@ -99,7 +99,7 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, bool *
 	RLine *line = cons->line;
 	RLineState old_state = line->state;
 	line->state.prompt = NULL;
-	int old_echo = cons->echo;
+	bool old_echo = cons->echo;
 	char *result = NULL;
 
 	editor.lines = r_list_newf (free);
