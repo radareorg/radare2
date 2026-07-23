@@ -56,14 +56,14 @@ typedef struct r_bin_elf_symbol_t {
 	ut64 offset;
 	ut64 size;
 	ut32 ordinal;
-	const char *bind;
-	const char *type;
-	char name[ELF_STRING_LENGTH];
-	char libname[ELF_STRING_LENGTH];
 	bool in_shdr;
 	bool is_sht_null;
 	bool is_vaddr; /* when true, offset is virtual address, otherwise it's physical */
 	bool is_imported;
+	const char *bind;
+	const char *type;
+	char name[ELF_STRING_LENGTH];
+	char libname[ELF_STRING_LENGTH];
 } RBinElfSymbol;
 
 typedef struct r_bin_elf_reloc_t {

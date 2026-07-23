@@ -330,6 +330,12 @@ typedef struct r_bin_symbol_t {
 	const char *type;
 	char *rtype;
 	bool is_imported;
+	// Per-method arg-slot metadata for stack-VM archs (JVM, Dalvik, ...).
+	// Anal uses these to synthesize register-kind argument variables.
+	// arg_count == 0 means no metadata is available for this symbol.
+	ut16 arg_first;          // first arg register index in the bytecode reg space
+	ut16 arg_count;          // VM locals/arg slots for variable recovery (0 = no metadata)
+	ut16 cc_arg_count;       // descriptor/callconv arg slots; can be zero for no-arg funcs
 	/* only used by java */
 	ut64 vaddr;
 	ut64 paddr;
@@ -339,12 +345,6 @@ typedef struct r_bin_symbol_t {
 	int bits;
 	RBinAttribute attr; // previously known as method_flags + visibility
 	int dup_count;
-	// Per-method arg-slot metadata for stack-VM archs (JVM, Dalvik, ...).
-	// Anal uses these to synthesize register-kind argument variables.
-	// arg_count == 0 means no metadata is available for this symbol.
-	ut16 arg_first;          // first arg register index in the bytecode reg space
-	ut16 arg_count;          // VM locals/arg slots for variable recovery (0 = no metadata)
-	ut16 cc_arg_count;       // descriptor/callconv arg slots; can be zero for no-arg funcs
 	ut16 ret_count;          // number of return slots (0 = void)
 	const char *arg_prefix;  // interned register name prefix, e.g. "v" or "l"
 } RBinSymbol;
@@ -761,9 +761,9 @@ typedef struct r_bin_field_t {
 	RBinName *name;
 	RBinName *type;
 	RBinFieldKind kind;
+	bool format_named; // whether format is the name of a format or a raw pf format string
 	char *comment;
 	char *format;
-	bool format_named; // whether format is the name of a format or a raw pf format string
 	RBinAttribute attr;
 } RBinField;
 
@@ -775,15 +775,15 @@ typedef struct r_bin_class_t {
 	RList *super; // list of RBinName
 	char *visibility_str; // XXX R2_600 - only used by dex+java should be ut32 or bitfield.. should be usable for swift too
 	int index; // should be unsigned?
+	RBinClassOrigin origin;
 	ut64 addr;
 	size_t instance_size;
 	char *ns; // namespace // maybe RBinName?
+	ut64 lang;
 	RVecRBinSymbol methods;
 	RVecRBinField fields;
 	// RList *interfaces; // <char *>
 	RBinAttribute attr;
-	ut64 lang;
-	RBinClassOrigin origin;
 } RBinClass;
 
 #define RBinSectionName r_offsetof(RBinSection, name)
@@ -801,6 +801,8 @@ typedef struct r_bin_class_t {
 typedef struct r_bin_reloc_t {
 	ut8 type; // type have implicit size.. but its anoying
 	ut8 additive;
+	bool is_ifunc;
+	ut32 visibility;
 	ut64 ntype; // type number coming from the bin file
 	RBinSymbol *symbol;
 	RBinImport *import;
@@ -809,13 +811,11 @@ typedef struct r_bin_reloc_t {
 	st64 addend;
 	ut64 vaddr;
 	ut64 paddr;
-	ut32 visibility;
 	/* is_ifunc: indirect function, `addend` points to a resolver function
 	 * that returns the actual relocation value, e.g. chooses
 	 * an optimized version depending on the CPU.
 	 * cf. https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
 	 */
-	bool is_ifunc;
 } RBinReloc;
 
 R_VEC_TYPE (RVecRBinReloc, RBinReloc);
