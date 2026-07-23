@@ -494,6 +494,8 @@ typedef struct input_state_t {
 	bool bufactive;
 } InputState;
 
+typedef struct r_cons_terminal_t RConsTerminal;
+
 typedef struct r_cons_t {
 	RConsContext *context; // TODO: Rename to ctx
 	RList *ctx_stack;
@@ -583,9 +585,8 @@ typedef struct r_cons_t {
 	RVecFdPairs fds;
 	ut64 prev;
 	RStrBuf *echodata;
+	RConsTerminal *terminal; // NULL for capture-only consoles
 	bool lasti;
-	bool terminal_attached; // participates in the process-wide TTY lifecycle
-	struct r_cons_t *terminal_next;
 	R_TH_TID main_tid; // thread that initialized cons, for signal-safety checks
 #if R2__WINDOWS__
 	HANDLE hStdout;
@@ -974,7 +975,7 @@ R_API void r_cons_readflush(RCons *cons);
 R_API void r_cons_switchbuf(RCons *cons, bool active);
 R_API int r_cons_readchar_timeout(RCons *cons, ut32 usec);
 R_API int r_cons_any_key(RCons *cons, const char *msg);
-R_API void r_cons_thready(void);
+R_API void r_cons_thready(RCons *cons);
 
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API bool r_cons_pal_set(RCons *cons, const char *key, const char *val);
@@ -1211,11 +1212,9 @@ R_API void r_cons_set_interactive(RCons *cons, bool x);
 R_API void r_cons_set_last_interactive(RCons *cons);
 R_API void r_cons_flush(RCons * R_NONNULL cons);
 R_API void r_cons_last(RCons *cons);
-R_API RCons * R_NONNULL r_cons_new2(void);
 /* Independent capture console; free with r_cons_free(). */
 R_API RCons *r_cons_new_child(RCons * R_NONNULL parent);
 R_API bool r_cons_pop(RCons * R_NONNULL cons);
-R_API void r_cons_free2(RCons * R_NULLABLE cons);
 R_API void r_cons_print_clear(RCons *cons);
 R_API void r_cons_fill_line(RCons *cons);
 R_API void r_cons_clear_line(RCons *cons, bool std_err, bool flush);
@@ -1226,8 +1225,6 @@ R_API void r_cons_clear00(RCons *cons);
 R_API void r_cons_reset(RCons *cons);
 R_API const char *r_cons_get_buffer(RCons *cons, size_t *buffer_len);
 R_API void r_cons_push(RCons *cons);
-/* Clone presentation state into an empty capture context. */
-R_API RConsContext *r_cons_context_clone(RConsContext * R_NULLABLE ctx);
 R_API void r_cons_echo(RCons *cons, const char *msg);
 R_API char *r_cons_drain(RCons *cons, R_OUT size_t * R_NULLABLE size);
 /* Drains child output into parent without propagating child settings. */

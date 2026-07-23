@@ -8,10 +8,10 @@ R_LIB_VERSION(r_cons);
 static void r_cons_context_free_internal(RConsContext *ctx);
 
 static R_TH_LOCAL RCons *I = NULL;
-static struct {
-	RThreadLock lock;
-	RCons *consoles;
+struct r_cons_terminal_t {
+	RList *consoles;
 	RCons *foreground;
+	RThreadLock lock;
 #if R2__UNIX__ && !defined(__wasi__) && !EMSCRIPTEN
 	struct termios mode;
 #elif R2__WINDOWS__
@@ -19,7 +19,9 @@ static struct {
 	DWORD mode;
 	UINT old_cp;
 #endif
-} Gterminal = {
+};
+
+static RConsTerminal Gterminal = {
 	.lock = R_THREAD_LOCK_INIT
 };
 
@@ -235,12 +237,12 @@ static void resize(int sig) {
 static void cons_terminal_attach(RCons *cons) {
 	r_th_lock_enter (&Gterminal.lock);
 	const bool first = !Gterminal.consoles;
-	cons->terminal_next = Gterminal.consoles;
-	Gterminal.consoles = cons;
-	cons->terminal_attached = true;
 	if (first) {
+		Gterminal.consoles = r_list_new ();
 		Gterminal.foreground = cons;
 	}
+	r_list_append (Gterminal.consoles, cons);
+	cons->terminal = &Gterminal;
 #if EMSCRIPTEN || __wasi__
 #elif R2__UNIX__
 	if (first) {
@@ -270,37 +272,32 @@ static void cons_terminal_attach(RCons *cons) {
 }
 
 static void cons_terminal_detach(RCons *cons) {
-	if (!cons->terminal_attached) {
+	RConsTerminal *terminal = cons->terminal;
+	if (!terminal) {
 		return;
 	}
-	r_th_lock_enter (&Gterminal.lock);
-	RCons **next = &Gterminal.consoles;
-	while (*next && *next != cons) {
-		next = &(*next)->terminal_next;
+	r_th_lock_enter (&terminal->lock);
+	r_list_delete_data (terminal->consoles, cons);
+	if (terminal->foreground == cons) {
+		terminal->foreground = r_list_first (terminal->consoles);
 	}
-	if (*next) {
-		*next = cons->terminal_next;
-	}
-	if (Gterminal.foreground == cons) {
-		Gterminal.foreground = Gterminal.consoles;
-	}
-	if (!Gterminal.consoles) {
+	if (r_list_empty (terminal->consoles)) {
 #if R2__WINDOWS__
 		r_cons_enable_mouse (cons, false);
-		if (Gterminal.old_cp) {
-			(void)SetConsoleOutputCP (Gterminal.old_cp);
+		if (terminal->old_cp) {
+			(void)SetConsoleOutputCP (terminal->old_cp);
 			// chcp doesn't pick up the code page switch for some reason
-			(void)r_sys_cmdf ("chcp %u > NUL", Gterminal.old_cp);
+			(void)r_sys_cmdf ("chcp %u > NUL", terminal->old_cp);
 		}
 		if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, FALSE)) {
 			R_LOG_ERROR ("Cannot unset control console handler");
 		}
 #endif
-		Gterminal.foreground = NULL;
+		R_FREE (terminal->consoles);
+		terminal->foreground = NULL;
 	}
-	cons->terminal_attached = false;
-	cons->terminal_next = NULL;
-	r_th_lock_leave (&Gterminal.lock);
+	cons->terminal = NULL;
+	r_th_lock_leave (&terminal->lock);
 }
 
 static RCons *cons_new(RConsContext *context) {
@@ -335,13 +332,15 @@ static RCons *cons_new(RConsContext *context) {
 	return cons;
 }
 
-R_API RCons *r_cons_new2(void) {
-	return cons_new (NULL);
+R_API RCons *r_cons_new(void) {
+	I = cons_new (NULL);
+	return I;
 }
 
-R_API void r_cons_free2(RCons *R_NULLABLE cons) {
-	if (!cons) {
-		return;
+R_API void r_cons_free(RCons *cons) {
+	R_RETURN_IF_FAIL (cons);
+	if (cons == I) {
+		I = NULL;
 	}
 	cons_terminal_detach (cons);
 	r_line_free (cons->line);
@@ -354,6 +353,7 @@ R_API void r_cons_free2(RCons *R_NULLABLE cons) {
 	R_FREE (cons->wasm_redirect_file);
 	r_th_lock_free (cons->lock);
 	RVecFdPairs_fini (&cons->fds);
+	free (cons);
 }
 
 R_API bool r_cons_is_initialized(void) {
@@ -461,7 +461,7 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 R_API RCons *r_cons_global(RCons *c) {
 	if (c) {
 		I = c;
-		if (c->terminal_attached) {
+		if (c->terminal) {
 			r_th_lock_enter (&Gterminal.lock);
 			Gterminal.foreground = c;
 			r_th_lock_leave (&Gterminal.lock);
@@ -692,7 +692,7 @@ R_API void r_cons_enable_highlight(RCons *cons, const bool enable) {
 }
 
 R_API bool r_cons_enable_mouse(RCons *cons, const bool enable) {
-	if (!cons->terminal_attached) {
+	if (!cons->terminal) {
 		return false;
 	}
 	bool enabled = cons->mouse;
@@ -722,20 +722,6 @@ R_API bool r_cons_enable_mouse(RCons *cons, const bool enable) {
 	}
 #endif
 	return enabled;
-}
-
-R_API RCons *r_cons_new(void) {
-	RCons *cons = r_cons_new2 ();
-	I = cons;
-	return cons;
-}
-
-R_API void r_cons_free(RCons *cons) {
-	if (cons == I) {
-		I = NULL;
-	}
-	r_cons_free2 (cons);
-	free (cons);
 }
 
 R_API void r_cons_fill_line(RCons *cons) {
@@ -1399,7 +1385,7 @@ R_API void r_cons_clear_buffer(RCons *cons) {
 }
 
 R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
-	if (!cons->terminal_attached) {
+	if (!cons->terminal) {
 		return;
 	}
 	r_th_lock_enter (&Gterminal.lock);
@@ -1418,9 +1404,7 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 	} else {
 		term_mode = &cons->term_buf;
 	}
-	if (tcsetattr (0, TCSANOW, term_mode) == -1) {
-		goto beach;
-	}
+	tcsetattr (0, TCSANOW, term_mode);
 #elif R2__WINDOWS__
 	if (cons->term_xterm) {
 		char *stty = r_file_path ("stty");
@@ -1435,14 +1419,11 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 			: "stty raw echo";
 		r_sandbox_system (cmd, 1);
 	} else {
-		if (!SetConsoleMode (Gterminal.input, is_raw? cons->term_raw: cons->term_buf)) {
-			goto beach;
-		}
+		SetConsoleMode (Gterminal.input, is_raw? cons->term_raw: cons->term_buf);
 	}
 #else
 #warning No raw console supported for this platform
 #endif
-beach:
 	r_th_lock_leave (&Gterminal.lock);
 }
 
@@ -1573,16 +1554,7 @@ static void r_cons_context_free_internal(RConsContext *ctx) {
 	free (ctx);
 }
 
-R_API void r_cons_context_free(RConsContext *R_NULLABLE ctx) {
-	if (ctx) {
-		r_unref (ctx);
-	}
-}
-
-R_API RConsContext *r_cons_context_clone(RConsContext *R_NULLABLE ctx) {
-	if (!ctx) {
-		return NULL;
-	}
+static RConsContext *cons_context_clone(RConsContext *ctx) {
 	RConsContext *c = r_mem_dup (ctx, sizeof (RConsContext));
 	if (!c) {
 		return NULL;
@@ -1598,7 +1570,7 @@ R_API RConsContext *r_cons_context_clone(RConsContext *R_NULLABLE ctx) {
 R_API RCons *r_cons_new_child(RCons *parent) {
 	R_RETURN_VAL_IF_FAIL (parent && parent->context, NULL);
 	r_th_lock_enter (parent->lock);
-	RConsContext *context = r_cons_context_clone (parent->context);
+	RConsContext *context = cons_context_clone (parent->context);
 	RCons *child = context? cons_new (context): NULL;
 	if (child) {
 		memcpy (&child->rows, &parent->rows, R_CONS_CHILD_SETTINGS_SIZE);
@@ -1692,7 +1664,7 @@ R_API bool r_cons_drop(RCons *cons, int n) {
 
 R_API void r_cons_push(RCons *cons) {
 	r_th_lock_enter (cons->lock);
-	RConsContext *nc = r_cons_context_clone (cons->context);
+	RConsContext *nc = cons_context_clone (cons->context);
 	ConsCtxFrame *frame = R_NEW0 (ConsCtxFrame);
 	frame->tid = r_th_self ();
 	frame->parent = cons->context;
