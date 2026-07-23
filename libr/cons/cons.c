@@ -272,11 +272,25 @@ static void cons_terminal_attach(RCons *cons) {
 
 static void cons_terminal_detach(RCons *cons) {
 	RConsTerminal *terminal = cons->terminal;
+	const bool current = cons == I;
+	if (current) {
+		I = NULL;
+	}
 	if (!terminal) {
 		return;
 	}
 	r_th_lock_enter (&terminal->lock);
 	r_list_delete_data (terminal->consoles, cons);
+	if (current) {
+		RListIter *iter;
+		RCons *candidate;
+		r_list_foreach_prev (terminal->consoles, iter, candidate) {
+			if (r_th_tid_equal (candidate->main_tid, r_th_self ())) {
+				I = candidate;
+				break;
+			}
+		}
+	}
 	if (terminal->foreground == cons) {
 		terminal->foreground = r_list_first (terminal->consoles);
 	}
@@ -305,6 +319,7 @@ static RCons *cons_new(RConsContext *context) {
 	cons->context = context? context: R_NEW0 (RConsContext);
 	cons->ctx_stack = r_list_newf (free);
 	cons->lock = r_th_lock_new (true);
+	cons->main_tid = r_th_self ();
 	if (!context) {
 		init_cons_context (cons);
 	}
@@ -327,7 +342,6 @@ static RCons *cons_new(RConsContext *context) {
 #endif
 		cons_terminal_attach (cons);
 	}
-	cons->main_tid = r_th_self ();
 	cons->line = r_line_new (cons);
 	return cons;
 }
@@ -337,18 +351,16 @@ R_API RCons *r_cons_new(void) {
 	return I;
 }
 
-R_API void r_cons_thready(RCons *cons) {
-	R_RETURN_IF_FAIL (cons);
+R_API RCons *r_cons_thready(RCons *cons) {
+	R_RETURN_VAL_IF_FAIL (cons, NULL);
 	cons->context->unbreakable = true;
 	cons->is_embedded = true;
 	r_sys_signable (false);
+	return cons;
 }
 
 R_API void r_cons_free(RCons *cons) {
 	R_RETURN_IF_FAIL (cons);
-	if (cons == I) {
-		I = NULL;
-	}
 	cons_terminal_detach (cons);
 	r_line_free (cons->line);
 	while (!r_list_empty (cons->ctx_stack)) {
@@ -491,7 +503,7 @@ R_API void r_cons_break_clear(RCons *cons) {
 	ctx->breaked = false;
 }
 
-static void cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig) {
+R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig) {
 	if (!context || !context->break_stack) {
 		return;
 	}
@@ -516,7 +528,7 @@ static void cons_context_break_push(RCons *cons, RConsContext *context, RConsBre
 	context->event_interrupt_data = user;
 }
 
-static void cons_context_break_pop(RCons *cons, RConsContext *context, bool sig) {
+R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig) {
 #if WANT_DEBUGSTUFF
 	if (!context || !context->break_stack) {
 		return;
@@ -1563,7 +1575,8 @@ static void r_cons_context_free_internal(RConsContext *ctx) {
 	free (ctx);
 }
 
-static RConsContext *cons_context_clone(RConsContext *ctx) {
+R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
+	R_RETURN_VAL_IF_FAIL (ctx, NULL);
 	RConsContext *c = r_mem_dup (ctx, sizeof (RConsContext));
 	if (!c) {
 		return NULL;
@@ -1579,7 +1592,7 @@ static RConsContext *cons_context_clone(RConsContext *ctx) {
 R_API RCons *r_cons_new_child(RCons *parent) {
 	R_RETURN_VAL_IF_FAIL (parent && parent->context, NULL);
 	r_th_lock_enter (parent->lock);
-	RConsContext *context = cons_context_clone (parent->context);
+	RConsContext *context = r_cons_context_clone (parent->context);
 	RCons *child = context? cons_new (context): NULL;
 	if (child) {
 		memcpy (&child->rows, &parent->rows, R_CONS_CHILD_SETTINGS_SIZE);
@@ -1619,7 +1632,7 @@ R_API void r_cons_break_end(RCons *cons) {
 R_API void r_cons_break_push(RCons *cons, RConsBreak cb, void *user) {
 	r_th_lock_enter (cons->lock);
 	RConsContext *ctx = cons->context;
-	cons_context_break_push (cons, ctx, cb, user, true);
+	r_cons_context_break_push (cons, ctx, cb, user, true);
 	r_th_lock_leave (cons->lock);
 }
 
@@ -1631,7 +1644,7 @@ R_API void r_cons_break_pop(RCons *cons) {
 	if (!has_outer_break) {
 		cons->timeout = 0;
 	}
-	cons_context_break_pop (cons, ctx, true);
+	r_cons_context_break_pop (cons, ctx, true);
 	r_th_lock_leave (cons->lock);
 }
 
@@ -1673,7 +1686,7 @@ R_API bool r_cons_drop(RCons *cons, int n) {
 
 R_API void r_cons_push(RCons *cons) {
 	r_th_lock_enter (cons->lock);
-	RConsContext *nc = cons_context_clone (cons->context);
+	RConsContext *nc = r_cons_context_clone (cons->context);
 	ConsCtxFrame *frame = R_NEW0 (ConsCtxFrame);
 	frame->tid = r_th_self ();
 	frame->parent = cons->context;

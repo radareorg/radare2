@@ -307,16 +307,16 @@ bool test_cons_multiple_roots_same_thread(void) {
 	mu_assert_ptreq (r_cons_singleton (), second, "newest root is current");
 	mu_assert_ptreq (r_cons_global (first), first, "explicitly switch current root");
 
-	r_cons_free (second);
-	mu_assert_ptreq (r_cons_singleton (), first, "freeing another root preserves current");
-	r_cons_print (first, "first");
+	r_cons_free (first);
+	mu_assert_ptreq (r_cons_singleton (), second, "freeing current root restores previous root");
+	r_cons_print (second, "second");
 	size_t size;
-	char *output = r_cons_drain (first, &size);
-	mu_assert_eq (size, 5, "remaining root output size");
-	mu_assert_memeq ((const ut8 *)output, (const ut8 *)"first", size, "remaining root output");
+	char *output = r_cons_drain (second, &size);
+	mu_assert_eq (size, 6, "remaining root output size");
+	mu_assert_memeq ((const ut8 *)output, (const ut8 *)"second", size, "remaining root output");
 	free (output);
 
-	r_cons_free (first);
+	r_cons_free (second);
 	mu_assert_false (r_cons_is_initialized (), "freeing current root clears thread state");
 	mu_end;
 }

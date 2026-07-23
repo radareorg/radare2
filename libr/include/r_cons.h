@@ -857,6 +857,7 @@ R_API void r_cons_canvas_line_square_defined(RConsCanvas *c, int x, int y, int x
 R_API void r_cons_canvas_line_back_edge(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert);
 
 R_API RCons *r_cons_new(void);
+R_API RCons *r_cons_thready(RCons *cons);
 R_API RCons *r_cons_singleton(void); // DEPRECATE
 R_API RCons *r_cons_global(RCons * R_NULLABLE c); // same as singleton? but taking nullable arg?
 R_API void r_cons_perm(RCons *cons, int perm, bool color_enabled, bool with_dash, char *buf, size_t buf_sz);
@@ -928,8 +929,11 @@ enum {
 R_API RConsCodeColors r_cons_codecolors(RCons *cons);
 
 R_API void r_cons_context_pal_free(RConsContext *ctx);
+R_API RConsContext *r_cons_context_clone(RConsContext * R_NONNULL ctx);
 R_API bool r_cons_context_is_main(RCons *cons, RConsContext *context);
 R_API void r_cons_context_break(RConsContext *context);
+R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig);
+R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig);
 
 /* control */
 R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, R_OUT bool * R_NULLABLE canceled);
@@ -971,7 +975,6 @@ R_API void r_cons_readflush(RCons *cons);
 R_API void r_cons_switchbuf(RCons *cons, bool active);
 R_API int r_cons_readchar_timeout(RCons *cons, ut32 usec);
 R_API int r_cons_any_key(RCons *cons, const char *msg);
-R_API void r_cons_thready(RCons *cons);
 
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API bool r_cons_pal_set(RCons *cons, const char *key, const char *val);

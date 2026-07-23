@@ -2422,7 +2422,6 @@ static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 
 static RThreadFunctionRet thchan_handler(RThread *th) {
 	RCore *core = (RCore *)th->user;
-	// r_cons_thready ();
 	while (r_th_is_running (th) && !th->breaked) {
 		r_th_sem_wait (core->chan->sem); // busy because stack is empty
 		if (!r_th_is_running (th) || th->breaked) {

@@ -620,8 +620,9 @@ static RThreadFunctionRet th_analysis(RThread *th) {
 	}
 	R_LOG_INFO ("Loading binary information in background");
 	// XXX R2_600 - cons
-	r_cons_thready (r_cons_new ());
+	RCons *cons = r_cons_thready (r_cons_new ());
 	perform_analysis (td->core, td->do_analysis);
+	r_cons_free (cons);
 	R_FREE (th->user);
 	R_LOG_INFO ("bin.load done");
 	return false;
@@ -629,7 +630,7 @@ static RThreadFunctionRet th_analysis(RThread *th) {
 
 static RThreadFunctionRet th_binload(RThread *th) {
 	R_LOG_INFO ("Loading binary information in background");
-	r_cons_thready (r_cons_new ());
+	RCons *cons = r_cons_thready (r_cons_new ());
 	ThreadData *td = (ThreadData *)th->user;
 	RCore *r = td->core;
 	const char *filepath = td->filepath;
@@ -642,6 +643,7 @@ static RThreadFunctionRet th_binload(RThread *th) {
 		R_LOG_WARN ("Don't use -B on unknown files. Consider using -m");
 	}
 	free (td->filepath);
+	r_cons_free (cons);
 	R_FREE (th->user);
 	R_LOG_INFO ("bin.load done");
 	return false;
