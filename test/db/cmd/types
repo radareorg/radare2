@@ -2085,7 +2085,7 @@ EOF
 EXPECT=<<EOF
 Usage: a:tp  propagate types for current function
 | a:tpall     propagate types for every function (aaft)
-| a:tpsynth   synthesize struct types from pointer-argument accesses (afts)
+| a:tpsynth   synthesize struct types from pointer-argument and allocator-return accesses (afts)
 | a:tpsynth*  show the synthesis as r2 commands without applying (afts*)
 | a:tpsynthj  apply the synthesis and report it in json (aftsj)
 | a:tp?       show this help

@@ -868,7 +868,7 @@ static RCoreHelpMessage help_msg_afs = {
 static RCoreHelpMessage help_msg_aft = {
 	"Usage:", "aft", "",
 	"aft", "", "type matching analysis for current function",
-	"afts", "", "synthesize struct types from pointer-argument access patterns and apply them to the args",
+	"afts", "", "synthesize struct types from pointer-argument and allocator-return access patterns",
 	"afts*", "", "show the synthesis as r2 commands without applying anything",
 	"aftsj", "", "apply the synthesis and report it in json",
 	NULL

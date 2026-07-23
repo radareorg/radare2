@@ -315,6 +315,7 @@ static void tp_reach_kv_free(HtUPKv *kv) {
 typedef struct {
 	char *name;
 	int ptr_arg; // arg index whose pointee is constrained, -1 = return value
+	int alias_arg; // return-value entries only: arg the return aliases (realloc), -1 = fresh object
 	int size_arg; // arg index carrying the byte count
 	int mul_arg; // second factor (calloc), -1 = none
 } TPSizeFn;
@@ -324,14 +325,15 @@ static void tp_sizefn_fini(TPSizeFn *f) {
 }
 R_VEC_TYPE_WITH_FINI (RVecTPSizeFn, TPSizeFn, tp_sizefn_fini);
 
-// return-value allocators (malloc, calloc, operator new) join once the ret-side harvest lands
-#define TP_SIZEFN_BUILTINS "memset/0/2,bzero/0/1,memcpy/0/2,memcpy/1/2,memmove/0/2,memmove/1/2"
+#define TP_SIZEFN_BUILTINS "memset/0/2,bzero/0/1,memcpy/0/2,memcpy/1/2,memmove/0/2,memmove/1/2," \
+	"malloc/r/0,calloc/r/1*0,realloc/r0/1,_Znwm/r/0,_Znam/r/0,_Znwj/r/0,_Znaj/r/0"
 
 // one function may constrain several pointer operands (memcpy dst and src), so entries key on name + ptr_arg
-static void tp_sizefn_set(RVecTPSizeFn *v, const char *name, int ptr_arg, int size_arg, int mul_arg) {
+static void tp_sizefn_set(RVecTPSizeFn *v, const char *name, int ptr_arg, int alias_arg, int size_arg, int mul_arg) {
 	TPSizeFn *f;
 	R_VEC_FOREACH (v, f) {
 		if (f->ptr_arg == ptr_arg && !strcmp (f->name, name)) {
+			f->alias_arg = alias_arg;
 			f->size_arg = size_arg;
 			f->mul_arg = mul_arg;
 			return;
@@ -341,6 +343,7 @@ static void tp_sizefn_set(RVecTPSizeFn *v, const char *name, int ptr_arg, int si
 	if (f) {
 		f->name = strdup (name);
 		f->ptr_arg = ptr_arg;
+		f->alias_arg = alias_arg;
 		f->size_arg = size_arg;
 		f->mul_arg = mul_arg;
 	}
@@ -369,10 +372,9 @@ static bool tp_sizefn_num(const char *s, int *out) {
 	return true;
 }
 
-// entries look like name/ptrarg/sizearg[*mularg]; name/- drops a builtin
-static void tp_sizefns_init(RVecTPSizeFn *v, const char *extra) {
-	char *s = R_STR_ISEMPTY (extra)? strdup (TP_SIZEFN_BUILTINS)
-		: r_str_newf (TP_SIZEFN_BUILTINS ",%s", extra);
+// name/ptrarg/sizearg[*mularg], ptrarg r for an allocator return or rN for one aliasing arg N; shadow mode drops what a valid entry replaces
+static void tp_sizefns_parse(RVecTPSizeFn *v, const char *list, bool shadow) {
+	char *s = strdup (list);
 	RList *entries = r_str_split_list (s, ",", 0);
 	RListIter *it;
 	char *tok;
@@ -383,7 +385,9 @@ static void tp_sizefns_init(RVecTPSizeFn *v, const char *extra) {
 		}
 		char *p1 = strchr (tok, '/');
 		if (!p1 || tok == p1) {
-			R_LOG_WARN ("Ignoring invalid types.sizefns entry for '%s'", tok);
+			if (!shadow) {
+				R_LOG_WARN ("Ignoring invalid types.sizefns entry for '%s'", tok);
+			}
 			continue;
 		}
 		*p1++ = 0;
@@ -395,21 +399,36 @@ static void tp_sizefns_init(RVecTPSizeFn *v, const char *extra) {
 		if (p2) {
 			*p2++ = 0;
 		}
-		int ptr_arg = 0, size_arg = 0, mul_arg = -1;
+		int ptr_arg = -1, alias_arg = -1, size_arg = 0, mul_arg = -1;
 		char *mul = p2? strchr (p2, '*'): NULL;
 		if (mul) {
 			*mul++ = 0;
 		}
-		// return-value entries are rejected until the ret-side harvest exists
-		if (!p2 || !tp_sizefn_num (p1, &ptr_arg) || !tp_sizefn_num (p2, &size_arg)
+		const bool is_ret = *p1 == 'r' && (!p1[1] || tp_sizefn_num (p1 + 1, &alias_arg));
+		if (!p2 || (!is_ret && !tp_sizefn_num (p1, &ptr_arg)) || !tp_sizefn_num (p2, &size_arg)
 				|| (mul && !tp_sizefn_num (mul, &mul_arg))) {
-			R_LOG_WARN ("Ignoring invalid types.sizefns entry for '%s'", tok);
-			continue;
+			if (!shadow) {
+				R_LOG_WARN ("Ignoring invalid types.sizefns entry for '%s'", tok);
+			}
+			continue; // a rejected entry must not shadow the builtin it names
 		}
-		tp_sizefn_set (v, tok, ptr_arg, size_arg, mul_arg);
+		if (shadow) {
+			tp_sizefn_remove (v, tok);
+		} else {
+			tp_sizefn_set (v, tok, ptr_arg, alias_arg, size_arg, mul_arg);
+		}
 	}
 	r_list_free (entries);
 	free (s);
+}
+
+static void tp_sizefns_init(RVecTPSizeFn *v, const char *extra) {
+	tp_sizefns_parse (v, TP_SIZEFN_BUILTINS, false);
+	if (R_STR_ISNOTEMPTY (extra)) {
+		// a user entry replaces the builtins for that function, so overriding one kind cannot leave the other live
+		tp_sizefns_parse (v, extra, true);
+		tp_sizefns_parse (v, extra, false);
+	}
 }
 
 static bool tp_sizefn_name_match(const TPSizeFn *f, const char *name) {
@@ -433,6 +452,16 @@ static const TPSizeFn *tp_sizefn_for_arg(const RVecTPSizeFn *v, const char *name
 		}
 	}
 	return NULL;
+}
+
+static bool tp_sizefns_have_rets(const RVecTPSizeFn *v) {
+	const TPSizeFn *f;
+	R_VEC_FOREACH (v, f) {
+		if (f->ptr_arg < 0) {
+			return true;
+		}
+	}
+	return false;
 }
 
 // TPState - Isolated ESIL environment for type propagation
@@ -460,6 +489,8 @@ typedef struct tp_state_t {
 	bool old_follow;
 	RVecTPSizeFn sizefns; // empty unless types.sizes is set
 	RList *clobber; // caller-saved regs to poison across skipped calls (synth only)
+	char *seed_reg; // ret reg to seed after the current call's clobber (allocator harvest)
+	ut64 seed_val;
 	RVecTPPendingConst pending_const;
 	HtUP *var_facts; // RAnalVar * => TPVarFact *
 	HtUP *reach_cache; // block addr => SetU of reachable block addrs
@@ -850,7 +881,8 @@ static bool tp_argloc_val(TPState *tps, const char *cc, int argno, int wordsz, u
 
 // pointer and computed size operands of a size-fn call, false when unresolvable or zero
 static bool tp_sizefn_read(TPState *tps, const char *cc, const TPSizeFn *sf, int wordsz, ut64 *pv, ut64 *n) {
-	if (!tp_argloc_val (tps, cc, sf->ptr_arg, wordsz, pv)
+	*pv = 0;
+	if ((sf->ptr_arg >= 0 && !tp_argloc_val (tps, cc, sf->ptr_arg, wordsz, pv))
 			|| !tp_argloc_val (tps, cc, sf->size_arg, wordsz, n)) {
 		return false;
 	}
@@ -1956,6 +1988,7 @@ static bool bblist_from_cfg(RAnalFunction *fcn, RVecUT64 *bblist) {
 static void tps_fini(TPState *tps) {
 	R_RETURN_IF_FAIL (tps);
 	r_list_free (tps->clobber);
+	free (tps->seed_reg);
 	RVecTPSizeFn_fini (&tps->sizefns);
 	ht_up_free (tps->var_facts);
 	ht_up_free (tps->reach_cache);
@@ -2284,6 +2317,12 @@ static inline void tp_state_fini(TypePropState *state) {
 	R_FREE (state->prev_type);
 }
 
+// UCALL is the base value 4, not a flag, so match on the base type (conditional calls resolve alike)
+static inline ut32 tp_op_call_base(ut32 optype) {
+	const ut32 base = optype & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND;
+	return (base == R_ANAL_OP_TYPE_CALL || base == R_ANAL_OP_TYPE_UCALL)? base: 0;
+}
+
 typedef enum {
 	TP_EMU_DONE = 0,
 	TP_EMU_BREAK, // interrupted by the user
@@ -2415,16 +2454,18 @@ static TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_o
 				}
 				op_cb (user, &aop, lookahead? next_op: NULL, addr, bb_addr);
 			}
-			if (tps->clobber) {
-				// UCALL is the base value 4, not a flag, so match on the base type
-				const int base = aop.type & 0xff;
-				if (base == R_ANAL_OP_TYPE_CALL || base == R_ANAL_OP_TYPE_UCALL) {
+			if (tp_op_call_base (aop.type)) {
+				if (tps->clobber) {
 					// drop caller-saved sentinels after op_cb so a size-fn harvest still sees the live arg regs
 					RListIter *cit;
 					const char *rn;
 					r_list_foreach (tps->clobber, cit, rn) {
 						r_reg_setv (etrace->reg, rn, 0);
 					}
+				}
+				if (tps->seed_reg) {
+					r_reg_setv (etrace->reg, tps->seed_reg, tps->seed_val);
+					R_FREE (tps->seed_reg);
 				}
 			}
 			i += ret;
@@ -2742,20 +2783,27 @@ static const char *synth_type_for_size(int sz) {
 	return "uint64_t";
 }
 
-// malloc:// maps are demand-zero, so resident cost tracks the written SYNTH_DETW*MAXARGS, not the full region
-#define SYNTH_WINDOW 0x40000ULL // per-arg sentinel window (field offsets capped at WINDOW/2)
+// malloc:// maps are demand-zero, so resident cost tracks the written SYNTH_DETW*nwin, not the full region
+#define SYNTH_WINDOW 0x40000ULL // per-object sentinel window (field offsets capped at WINDOW/2)
 #define SYNTH_MAXARGS 8 // args past this are not seeded (not recovered)
-#define SYNTH_REGION (SYNTH_WINDOW * SYNTH_MAXARGS) // whole sentinel region
-// per-arg span scanned for pointer fields; a pointer field past this is not nested
+#define SYNTH_MAXRETS 8 // allocator call sites tracked per function, one window each
+// allocator returns ride the window index space above the real args, so one region serves both
+#define SYNTH_NWIN (SYNTH_MAXARGS + SYNTH_MAXRETS)
+#define SYNTH_IS_RET(a) ((a) >= SYNTH_MAXARGS)
+#define SYNTH_RET_SLOT(a) ((a) - SYNTH_MAXARGS)
+#define SYNTH_REGION(nwin) (SYNTH_WINDOW * (nwin)) // sentinel region for the live windows
+// per-object span scanned for pointer fields; a pointer field past this is not nested
 #define SYNTH_DETW 0x1000ULL
 // child-window size per pointer slot; a deref offset past this aliases the next slot and is lost
 #define SYNTH_PSTRIDE 0x400ULL
-#define SYNTH_SLOTS(psz) (SYNTH_DETW / (psz)) // detectable pointer slots per arg
-#define SYNTH_PSIZE(psz) (SYNTH_SLOTS (psz) * SYNTH_MAXARGS * SYNTH_PSTRIDE) // whole poison region
+#define SYNTH_SLOTS(psz) (SYNTH_DETW / (psz)) // detectable pointer slots per window
+#define SYNTH_PSIZE(psz, nwin) (SYNTH_SLOTS (psz) * (nwin) * SYNTH_PSTRIDE) // whole poison region
 #define SYNTH_MIN_FIELDS 2 // smallest field count worth emitting as a struct
 #define SYNTH_ARR_MIN 4 // shortest constant-stride run collapsed into an array member
 #define SYNTH_SPROOM 0x80ULL // stack-map room above SP for stack-arg sentinels (SYNTH_MAXARGS * 8 + slack)
 #define SYNTH_MAXOPS 200000 // emulation budget, the recorded trace is partial beyond it
+// a stated size past this is a buffer or a stale register, not a struct layout worth padding out to
+#define SYNTH_MAXHINT 0x1000ULL
 
 typedef struct {
 	ut64 off;
@@ -2820,6 +2868,11 @@ static int synth_child_cmp(const SynthField *x, const SynthField *y) {
 		d = (x->child < y->child)? -1: 1;
 	}
 	return d? d: y->size - x->size;
+}
+
+static char *synth_root_name(const char *fname, int arg) {
+	return SYNTH_IS_RET (arg)? r_str_newf ("%s_ret%d", fname, SYNTH_RET_SLOT (arg))
+		: r_str_newf ("%s_arg%d", fname, arg);
 }
 
 static void synth_rec_fini(SynthRec *r) {
@@ -2957,6 +3010,9 @@ static RList *synth_clobber_regs(RAnal *anal, const char *cc) {
 }
 
 static RAnalVar *synth_arg_var(RAnal *anal, RAnalFunction *fcn, const char *cc, int argi) {
+	if (SYNTH_IS_RET (argi)) {
+		return NULL; // a returned object binds to no argument, and stack-arg ccs answer for arg 8+
+	}
 	const char *place = cc? r_anal_cc_argloc (anal, cc, argi, 0, -1): NULL;
 	if (R_STR_ISEMPTY (place)) {
 		return NULL;
@@ -3007,10 +3063,10 @@ static RAnalVar *synth_arg_var(RAnal *anal, RAnalFunction *fcn, const char *cc, 
 }
 
 // each pointer slot holds a strided poison pointer into its own child window (a deref decodes back to the parent offset); one level deep, child windows hold no further poison
-static int synth_poison_map(RAnal *anal, ut64 sbase, int align, int psz, ut64 *pbase) {
+static int synth_poison_map(RAnal *anal, ut64 sbase, int align, int psz, int nwin, ut64 *pbase) {
 	RIOBind *iob = &anal->iob;
 	RIO *io = iob->io;
-	const int fd = tp_map_anon (anal, SYNTH_PSIZE (psz), align, pbase, NULL);
+	const int fd = tp_map_anon (anal, SYNTH_PSIZE (psz, nwin), align, pbase, NULL);
 	if (fd < 0) {
 		return -1;
 	}
@@ -3021,7 +3077,7 @@ static int synth_poison_map(RAnal *anal, ut64 sbase, int align, int psz, ut64 *p
 	}
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
 	int ai;
-	for (ai = 0; ai < SYNTH_MAXARGS; ai++) {
+	for (ai = 0; ai < nwin; ai++) {
 		ut64 o;
 		for (o = 0; o < SYNTH_DETW; o += psz) {
 			const ut64 slot = ((ut64)ai * SYNTH_SLOTS (psz)) + (o / psz);
@@ -3038,13 +3094,34 @@ static int synth_poison_map(RAnal *anal, ut64 sbase, int align, int psz, ut64 *p
 typedef struct {
 	TPState *tps;
 	ut64 sbase;
+	ut64 send; // end of the sentinel region, covering only the windows in play
 	ut64 pbase;
-	SynthWant want[SYNTH_MAXARGS]; // stated object size + provenance, per arg window
+	ut64 pend; // end of the poison region, equal to pbase when there is none
+	SynthWant want[SYNTH_NWIN]; // stated object size + provenance, per window
 	RVecSynthField childwant; // same, for dereferenced-field children keyed by (arg, off)
 	const char *fn; // callee of the call being harvested
 	ut64 site;
+	ut64 ret_site[SYNTH_MAXRETS]; // allocator call site per ret slot
+	int nrets;
 	int psz;
+	bool rets; // allocator entries exist, so every call resolves a return register
+	bool retwarn;
 } SynthSizeCtx;
+
+// window index for a sentinel pointer, -1 when it lands outside the region
+static int synth_window_arg(const SynthSizeCtx *c, ut64 pv, ut64 *woff) {
+	if (pv < c->sbase || pv >= c->send) {
+		return -1;
+	}
+	*woff = (pv - c->sbase) % SYNTH_WINDOW;
+	return (int)((pv - c->sbase) / SYNTH_WINDOW);
+}
+
+static void synth_want_grow(SynthSizeCtx *c, int argi, ut64 size) {
+	if (size > c->want[argi].size) {
+		c->want[argi] = (SynthWant){ .size = size, .site = c->site, .fn = c->fn };
+	}
+}
 
 static SynthWant synth_child_want(RVecSynthField *cw, int arg, ut64 off) {
 	SynthWant w = { 0 };
@@ -3062,24 +3139,21 @@ static void synth_size_entry(SynthSizeCtx *c, const char *cc, const TPSizeFn *sf
 	if (!tp_sizefn_read (c->tps, cc, sf, c->psz, &pv, &n)) {
 		return;
 	}
-	if (pv >= c->sbase && pv < c->sbase + SYNTH_REGION) {
+	ut64 off = 0;
+	const int argi = synth_window_arg (c, pv, &off);
+	if (argi >= 0) {
 		// interior pointers still bound the object: off + n bytes from the window base
-		const ut64 off = (pv - c->sbase) % SYNTH_WINDOW;
-		if (off + n >= SYNTH_WINDOW / 2) {
-			return; // stale sentinel values and oversized objects fail this bound
-		}
-		const int argi = (int)((pv - c->sbase) / SYNTH_WINDOW);
-		if (off + n > c->want[argi].size) {
-			c->want[argi] = (SynthWant){ .size = off + n, .site = c->site, .fn = c->fn };
+		if (n < SYNTH_WINDOW / 2 && off + n < SYNTH_WINDOW / 2) { // n first, so a stale value cannot wrap the sum
+			synth_want_grow (c, argi, off + n);
 		}
 		return;
 	}
 	// a dereferenced pointer field carries a poison value decoding to its parent (arg, offset)
-	if (c->pbase && pv >= c->pbase && pv < c->pbase + SYNTH_PSIZE (c->psz)) {
+	if (pv >= c->pbase && pv < c->pend) {
 		const ut64 slot = (pv - c->pbase) / SYNTH_PSTRIDE;
 		const ut64 coff = (pv - c->pbase) % SYNTH_PSTRIDE;
-		if (coff + n >= SYNTH_PSTRIDE) {
-			return; // beyond the child stride these are stale values
+		if (n >= SYNTH_PSTRIDE / 2 || coff + n >= SYNTH_PSTRIDE / 2) {
+			return; // the stride tail only ever holds negative offsets off the next slot
 		}
 		SynthField *cw = RVecSynthField_emplace_back (&c->childwant);
 		if (cw) {
@@ -3094,13 +3168,56 @@ static void synth_size_entry(SynthSizeCtx *c, const char *cc, const TPSizeFn *sf
 	}
 }
 
+// stash a ret-window seed for an allocator call; the emulation loop applies it after the clobber
+static void synth_ret_entry(SynthSizeCtx *c, const char *cc, const TPSizeFn *sf) {
+	if (!c->tps->seed_reg) {
+		return; // this convention returns no value in a register, so there is nothing to seed
+	}
+	ut64 pv = 0, n = 0;
+	if (!tp_sizefn_read (c->tps, cc, sf, c->psz, &pv, &n) || n >= SYNTH_MAXHINT) {
+		n = 0;
+	}
+	if (sf->alias_arg >= 0) {
+		ut64 av = 0, woff = 0;
+		const int argi = tp_argloc_val (c->tps, cc, sf->alias_arg, c->psz, &av)
+			? synth_window_arg (c, av, &woff): -1;
+		if (argi >= 0) {
+			// realloc returns the object it was given, so keep growing the window it points into
+			c->tps->seed_val = av;
+			if (n && woff + n < SYNTH_WINDOW / 2) {
+				synth_want_grow (c, argi, woff + n);
+			}
+			return;
+		}
+	}
+	int slot = 0;
+	while (slot < c->nrets && c->ret_site[slot] != c->site) {
+		slot++;
+	}
+	if (slot >= SYNTH_MAXRETS) {
+		if (!c->retwarn) {
+			R_LOG_WARN ("Struct synthesis tracks %d allocator sites per function; 0x%08" PFMT64x
+				" and later are partial", SYNTH_MAXRETS, c->site);
+			c->retwarn = true;
+		}
+		return; // the ret reg was already zeroed, so nothing folds into the last window
+	}
+	if (slot == c->nrets) {
+		c->ret_site[c->nrets++] = c->site;
+	}
+	const int argi = SYNTH_MAXARGS + slot;
+	if (n) {
+		synth_want_grow (c, argi, n);
+	}
+	c->tps->seed_val = c->sbase + (ut64)argi * SYNTH_WINDOW;
+}
+
 // harvest object sizes at calls to size functions while the sentinel emulation runs
 static void synth_size_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 addr, ut64 bb_addr) {
 	SynthSizeCtx *c = user;
 	RAnal *anal = c->tps->anal;
-	// UCALL is the base value 4, not a flag, so match on the base type (conditional calls resolve alike)
-	const int base = aop->type & 0xff;
-	if (base != R_ANAL_OP_TYPE_CALL && base != R_ANAL_OP_TYPE_UCALL) {
+	const ut32 base = tp_op_call_base (aop->type);
+	if (!base) {
 		return;
 	}
 	RAnalFunction *fcn_call = NULL;
@@ -3117,10 +3234,21 @@ static void synth_size_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 addr,
 	}
 	c->fn = name;
 	c->site = addr;
+	R_FREE (c->tps->seed_reg);
+	if (c->rets) {
+		// every call leaves its return register defined, so no sentinel survives into an unrelated result
+		const char *rr = r_anal_cc_ret (anal, cc, 0);
+		c->tps->seed_reg = (R_STR_ISNOTEMPTY (rr) && *rr != '^')? strdup (rr): NULL;
+		c->tps->seed_val = 0;
+	}
 	const TPSizeFn *sf;
 	R_VEC_FOREACH (&c->tps->sizefns, sf) {
-		// return-value entries carry no arg-window evidence
-		if (sf->ptr_arg >= 0 && tp_sizefn_name_match (sf, name)) {
+		if (!tp_sizefn_name_match (sf, name)) {
+			continue;
+		}
+		if (sf->ptr_arg < 0) {
+			synth_ret_entry (c, cc, sf);
+		} else {
 			synth_size_entry (c, cc, sf);
 		}
 	}
@@ -3144,8 +3272,11 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 	RIOBind *iob = &anal->iob;
 	RIO *io = iob->io;
 	const int align = R_MAX (1, r_arch_info (anal->arch, R_ARCH_INFO_DATA_ALIGN));
+	// unseeded ret windows would still accept a stray pointer, so only map the ones in play
+	const bool rets = tp_sizefns_have_rets (&tps->sizefns);
+	const int nwin = rets? SYNTH_NWIN: SYNTH_MAXARGS;
 	ut64 sbase = 0;
-	const int sfd = tp_map_anon (anal, SYNTH_REGION, align, &sbase, NULL);
+	const int sfd = tp_map_anon (anal, SYNTH_REGION (nwin), align, &sbase, NULL);
 	if (sfd < 0) {
 		tps_fini (tps);
 		return;
@@ -3170,7 +3301,11 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 	}
 	psz = R_MIN (psz, 8); // the poison slots and the sbuf[8] stack write assume <= 8 bytes
 	ut64 pbase = 0;
-	const int pfd = synth_poison_map (anal, sbase, align, psz, &pbase);
+	const int pfd = synth_poison_map (anal, sbase, align, psz, nwin, &pbase);
+	if (pfd < 0) {
+		pbase = 0; // the locate step may have picked a base before the mapping failed
+	}
+	const ut64 pend = pbase? pbase + SYNTH_PSIZE (psz, nwin): 0;
 	// on link-register archs the first stack arg is [SP]; on x86 it follows the return address slot
 	const bool ra_reg = r_reg_alias_getname (tps->tt.reg, R_REG_ALIAS_LR)
 		|| r_reg_alias_getname (tps->tt.reg, R_REG_ALIAS_RA);
@@ -3196,7 +3331,8 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 		}
 	}
 	// emulate the function linearly, letting the mem voyeurs record base+offset accesses
-	SynthSizeCtx szctx = { .tps = tps, .sbase = sbase, .pbase = pfd >= 0? pbase: 0, .psz = psz };
+	SynthSizeCtx szctx = { .tps = tps, .sbase = sbase, .send = sbase + SYNTH_REGION (nwin),
+		.pbase = pbase, .pend = pend, .psz = psz, .rets = rets };
 	RVecSynthField_init (&szctx.childwant);
 	const bool harvest = !RVecTPSizeFn_empty (&tps->sizefns);
 	r_reg_setv (tps->tt.reg, "PC", fcn->addr);
@@ -3224,7 +3360,11 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 			}
 			const ut64 ma = a->mem.addr;
 			const int asz = a->mem.size > 0? a->mem.size: 1;
-			if (pfd >= 0 && ma >= pbase && ma < pbase + SYNTH_PSIZE (psz)) {
+			if (ma >= pbase && ma < pend) {
+				const ut64 choff = (ma - pbase) % SYNTH_PSTRIDE;
+				if (choff >= SYNTH_PSTRIDE / 2) {
+					continue; // as in the windows, the stride tail only holds negative offsets
+				}
 				// decode the poison slot back to the exact (arg, parent field offset)
 				const ut64 slot = (ma - pbase) / SYNTH_PSTRIDE;
 				SynthField *sf = RVecSynthField_emplace_back (&vporig);
@@ -3235,18 +3375,16 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 				*sf = (SynthField){
 					.arg = (int)(slot / SYNTH_SLOTS (psz)),
 					.off = (slot % SYNTH_SLOTS (psz)) * psz,
-					.child = (ma - pbase) % SYNTH_PSTRIDE,
+					.child = choff,
 					.size = asz,
 					.iaddr = top->addr,
 				};
 				continue;
 			}
-			if (ma < sbase || ma >= sbase + SYNTH_REGION) {
-				continue;
-			}
-			const ut64 woff = (ma - sbase) % SYNTH_WINDOW;
-			if (woff >= SYNTH_WINDOW / 2) {
-				continue; // negative offsets off a neighboring arg land in the window tail
+			ut64 woff = 0;
+			const int argi = synth_window_arg (&szctx, ma, &woff);
+			if (argi < 0 || woff >= SYNTH_WINDOW / 2) {
+				continue; // negative offsets off a neighboring window land in the window tail
 			}
 			SynthField *sf = RVecSynthField_emplace_back (&vfields);
 			if (!sf) {
@@ -3254,7 +3392,7 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 				break;
 			}
 			*sf = (SynthField){
-				.arg = (int)((ma - sbase) / SYNTH_WINDOW),
+				.arg = argi,
 				.off = woff,
 				.size = asz,
 				.iaddr = top->addr,
@@ -3308,7 +3446,9 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 			RVecSynthArr_init (&carrs);
 			const ut64 preccur = ccur;
 			ccur = synth_pad_tail (cbt, &carrs, ccur, cwant.size);
-			cbt->name = r_str_newf ("%s_arg%d_0x%" PFMT64x, fname, carg, coff);
+			char *croot = synth_root_name (fname, carg);
+			cbt->name = r_str_newf ("%s_0x%" PFMT64x, croot, coff);
+			free (croot);
 			cbt->size = ccur;
 			SynthRec *rec = RVecSynthRec_emplace_back (recs);
 			if (rec) {
@@ -3406,7 +3546,7 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 		const ut64 precur = cur;
 		if (emit) {
 			cur = synth_pad_tail (bt, &arrs, cur, aw->size);
-			bt->name = r_str_newf ("%s_arg%d", fname, arg);
+			bt->name = synth_root_name (fname, arg);
 			bt->size = cur;
 			rec = RVecSynthRec_emplace_back (recs);
 		}
@@ -3494,7 +3634,11 @@ static char *synth_json(RVecSynthRec *recs) {
 	R_VEC_FOREACH (recs, rec) {
 		pj_o (pj);
 		pj_ks (pj, "name", rec->bt->name);
-		pj_ki (pj, "arg", rec->arg);
+		const bool isret = SYNTH_IS_RET (rec->arg);
+		pj_ki (pj, "arg", isret? -1: rec->arg);
+		if (isret) {
+			pj_ki (pj, "ret", SYNTH_RET_SLOT (rec->arg));
+		}
 		pj_kb (pj, "child", rec->child);
 		if (rec->child) {
 			pj_kn (pj, "offset", rec->off);
@@ -3674,7 +3818,7 @@ beach:
 static RCoreHelpMessage help_msg_tp = {
 	"Usage:", "a:tp", "propagate types for current function",
 	"a:tp", "all", "propagate types for every function (aaft)",
-	"a:tp", "synth", "synthesize struct types from pointer-argument accesses (afts)",
+	"a:tp", "synth", "synthesize struct types from pointer-argument and allocator-return accesses (afts)",
 	"a:tp", "synth*", "show the synthesis as r2 commands without applying (afts*)",
 	"a:tp", "synthj", "apply the synthesis and report it in json (aftsj)",
 	"a:tp", "?", "show this help",
@@ -3712,7 +3856,7 @@ static char *tp_synth_cmd(RAnal *anal, void *core, const char *suffix) {
 			}
 		}
 		if (RVecSynthRec_empty (&recs)) {
-			R_LOG_INFO ("no pointer-argument struct recovered here");
+			R_LOG_INFO ("no struct recovered here");
 		}
 	}
 	RVecSynthRec_fini (&recs);
