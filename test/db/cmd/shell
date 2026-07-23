@@ -144,6 +144,12 @@ CMDS=<<EOF
 """"?e FOUR
 3""?e REPEAT
 ""?e "FIVE;SIX"
+"  "2echo HEADING
+""2echo EMPTY-HEADING
+"  " 2 echo SPACED-HEADING
+   2 echo LEADING-SPACES
+""'echo SIX;?e SEVEN
+?e [$(""'echo EIGHT)]
 EOF
 EXPECT=<<EOF
 ONE
@@ -154,6 +160,16 @@ REPEAT
 REPEAT
 REPEAT
 FIVE;SIX
+HEADING
+HEADING
+EMPTY-HEADING
+EMPTY-HEADING
+SPACED-HEADING
+SPACED-HEADING
+LEADING-SPACES
+LEADING-SPACES
+SIX;?e SEVEN
+[EIGHT]
 EOF
 RUN
 
@@ -177,6 +193,10 @@ CMDS=<<EOF
 3'echo "x;y"
 ?e before; 'echo "x;y"
 3'echo @x;#y|z>q
+"3"'echo quoted-repeat
+2""'echo digits-empty
+""2'echo empty-digits
+""2""'echo empty-digits-empty
 EOF
 EXPECT=<<EOF
 one;echo two
@@ -188,6 +208,15 @@ x;y
 @x;#y|z>q
 @x;#y|z>q
 @x;#y|z>q
+quoted-repeat
+quoted-repeat
+quoted-repeat
+digits-empty
+digits-empty
+empty-digits
+empty-digits
+empty-digits-empty
+empty-digits-empty
 EOF
 RUN
 
@@ -264,6 +293,7 @@ CMDS=<<EOF
 ?v 4 \| $(   '?v 1 | 2)
 ?e $(2'echo repeat)
 ?e `2'echo repeat`
+?e $("3"'echo quoted-repeat)
 ?e $('echo left\)right)
 s 0
 ?e `'w hello\`world`
@@ -276,6 +306,7 @@ EXPECT=<<EOF
 0x7
 repeat repeat
 repeat repeat
+quoted-repeat quoted-repeat quoted-repeat
 left)right
 
 hello`world
