@@ -3945,22 +3945,31 @@ static int handle_command_call(RCore *core, const char *cmd) {
 	return r_core_call (core, cmd);
 }
 
-static void remove_leading_empty_quotes(char *cmd) {
-	char *p = cmd;
-	while (r_str_startswith (p, "\"\"")) {
-		p += 2;
+static const char *trim_command_head(const char *cmd) {
+	cmd = r_str_trim_head_ro (cmd);
+	while (*cmd == '"' && *r_str_trim_head_ro (cmd + 1) == '"') {
+		cmd = r_str_trim_head_ro (r_str_trim_head_ro (cmd + 1) + 1);
 	}
-	if (p != cmd) {
-		memmove (cmd, p, strlen (p) + 1);
-	}
+	return cmd;
 }
 
-static bool subcmd_starts_raw_call(const char *cmd) {
-	cmd = r_str_trim_head_ro (cmd);
-	while (r_str_startswith (cmd, "\"\"")) {
-		cmd += 2;
+static const char *command_start(const char *cmd, ut64 *repeat) {
+	cmd = trim_command_head (cmd);
+	const bool quoted = *cmd == '"';
+	const char *digits = cmd + quoted;
+	char *end;
+	ut64 rep = strtoull (digits, &end, 10);
+	if (!isdigit ((ut8)*digits) || (quoted && *end != '"') || (st64)rep < 1) {
+		rep = 0;
+		end = (char *)cmd;
+	} else {
+		end += quoted;
+		end = (char *)trim_command_head (end);
 	}
-	return *r_str_trim_head_digits (cmd) == '\'';
+	if (repeat) {
+		*repeat = rep;
+	}
+	return end;
 }
 
 static char *find_subcmd_end(char *cmd, bool backquote, bool raw) {
@@ -4026,7 +4035,7 @@ static char *find_cmd_separator(char *cmd) {
 		} else if (quote != '\'' && (*p == '`' || (*p == '$' && p[1] == '('))) {
 			const bool bq = *p == '`';
 			char *body = p + (bq? 1: 2);
-			char *end = find_subcmd_end (body, bq, subcmd_starts_raw_call (body));
+			char *end = find_subcmd_end (body, bq, *command_start (body, NULL) == '\'');
 			if (!end) {
 				return NULL;
 			}
@@ -4086,10 +4095,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	cmd = (char *)r_str_trim_head_ro (icmd);
 	r_str_trim_tail (cmd);
-	remove_leading_empty_quotes (cmd);
-	rep = isdigit ((ut8)*cmd)? strtoull (cmd, NULL, 10): 0;
-	const char *command = (st64)rep > 0? r_str_trim_head_digits (cmd): cmd;
-	const bool raw_call = *command == '\'';
+	cmd = (char *)command_start (cmd, &rep);
+	const bool raw_call = *cmd == '\'';
 	R_CRITICAL_LEAVE (core);
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (R_STR_ISEMPTY (cmd)) {
@@ -4121,13 +4128,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	} else {
 		colon = NULL;
 	}
-	// repeat command N times
-	if ((st64)rep > 0) {
-		cmd = r_str_trim_head_digits (cmd);
-		// do not repeat null cmd
-		if (!*cmd) {
-			goto beach;
-		}
+	if ((st64)rep > 0 && !*cmd) {
+		goto beach;
 	}
 	if ((st64)rep < 1) {
 		rep = 1;
@@ -4346,8 +4348,7 @@ static char find_unterminated_quote(char *cmd) {
 			p++;
 			if (!task_wait) {
 				segment = r_str_trim_head_ro (p + 1);
-				const char *next = r_str_trim_head_digits (segment);
-				if (*next == '\'') {
+				if (*command_start (segment, NULL) == '\'') {
 					return 0;
 				}
 			}
@@ -4359,7 +4360,7 @@ static char find_unterminated_quote(char *cmd) {
 		if (quote != '\'' && (*p == '`' || (*p == '$' && p[1] == '('))) {
 			bool backquote = *p == '`';
 			char *sub = p + (backquote? 1: 2);
-			char *end = find_subcmd_end (sub, backquote, subcmd_starts_raw_call (sub));
+			char *end = find_subcmd_end (sub, backquote, *command_start (sub, NULL) == '\'');
 			if (!end) {
 				return 0;
 			}
@@ -4600,10 +4601,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 		return 0;
 	}
 	r_str_trim (cmd);
-	remove_leading_empty_quotes (cmd);
 
 	R_CRITICAL_LEAVE (core);
-	/* quoted / raw command */
 	switch (*cmd) {
 	case '.':
 		if (cmd[1] == '"') { /* interpret */
@@ -5154,7 +5153,7 @@ next2:
 			memmove (ptr, ptr + 2, strlen (ptr) - 1);
 			goto escape_backtick;
 		}
-		const bool raw_subcmd = subcmd_starts_raw_call (ptr + 1);
+		const bool raw_subcmd = *command_start (ptr + 1, NULL) == '\'';
 		ptr2 = find_subcmd_end (ptr + 1, backquote, raw_subcmd);
 		if (!ptr2) {
 			R_LOG_ERROR ("parse: Missing sub-command closing in expression");
