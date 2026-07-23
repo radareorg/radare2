@@ -5162,10 +5162,8 @@ next2:
 		int value = core->num->value;
 		*ptr = '\0';
 		*ptr2 = '\0';
-		if (R_STR_ISEMPTY (r_str_trim_head_ro (cmd))) {
-			R_LOG_ERROR ("Command substitution cannot be used as a command");
-			goto fail;
-		}
+		// substitution at command position evaluates its output as a command
+		const bool cmdpos = R_STR_ISEMPTY (r_str_trim_head_ro (cmd));
 		if (raw_subcmd) {
 			unescape_raw_subcmd_delimiter (ptr + 1, backquote? '`': ')');
 		}
@@ -5194,7 +5192,7 @@ next2:
 		r_str_replace_ch (str, '\n', ' ', true);
 		// wrap only when the output can alter parsing: whitespace must keep
 		// word-splitting and chars like ()* are harmless mid-argument
-		if (subcmd_quote == '"' || strpbrk (str, "@;~$#|`\"'<>\\&!")) {
+		if (!cmdpos && (subcmd_quote == '"' || strpbrk (str, "@;~$#|`\"'<>\\&!"))) {
 			char *escaped = escape_subcmd_output (str, subcmd_quote != '"');
 			free (str);
 			str = escaped;
