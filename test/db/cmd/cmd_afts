@@ -649,6 +649,174 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=afts synthesizes the object behind a malloc return
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx bf88000000e816000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+af @ 0
+afts
+aftsj
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_ret0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[124];
+};
+[{"name":"fcn_00000000_ret0","ret":0,"child":false,"size":136,"sizehint":{"size":136,"from":"malloc","at":5},"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"field_0x8","type":"uint32_t","offset":8,"size":4},{"name":"pad_0xc","type":"uint8_t","offset":12,"size":1,"count":124}]}]
+EOF
+RUN
+
+NAME=afts multiplies both calloc factors for the returned object size
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx be08000000bf04000000e811000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn calloc @ 0x20
+af @ 0
+aftsj
+EOF
+EXPECT=<<EOF
+[{"name":"fcn_00000000_ret0","ret":0,"child":false,"size":32,"sizehint":{"size":32,"from":"calloc","at":10},"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"field_0x8","type":"uint32_t","offset":8,"size":4},{"name":"pad_0xc","type":"uint8_t","offset":12,"size":1,"count":20}]}]
+EOF
+RUN
+
+NAME=aftsj reports the returned object from accesses alone when the allocation size is dynamic
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx e81b000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+af @ 0
+aftsj
+EOF
+EXPECT=<<EOF
+[{"name":"fcn_00000000_ret0","ret":0,"child":false,"size":12,"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"field_0x8","type":"uint32_t","offset":8,"size":4}]}]
+EOF
+RUN
+
+NAME=afts tracks separate return objects per allocator call site
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx bf10000000e816000000c70001000000bf18000000e806000000c70002000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+af @ 0
+aftsj
+EOF
+EXPECT=<<EOF
+[{"name":"fcn_00000000_ret0","ret":0,"child":false,"size":16,"sizehint":{"size":16,"from":"malloc","at":5},"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"pad_0x4","type":"uint8_t","offset":4,"size":1,"count":12}]},{"name":"fcn_00000000_ret1","ret":1,"child":false,"size":24,"sizehint":{"size":24,"from":"malloc","at":21},"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"pad_0x4","type":"uint8_t","offset":4,"size":1,"count":20}]}]
+EOF
+RUN
+
+NAME=afts synthesizes objects behind 32-bit operator new and new array returns
+FILE=malloc://256
+ARGS=-a x86 -b 32 -e types.sizes=true
+CMDS=<<EOF
+wx 6a48e81900000083c404c700010000006a30e81900000083c404c7400402000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn _Znwj @ 0x20
+wx c3 @ 0x30
+af @ 0x30
+afn _Znaj @ 0x30
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_ret0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[68];
+};
+struct fcn_00000000_ret1 {
+  uint8_t pad_0x0[4]; // gap
+  uint32_t field_0x4;
+  uint8_t pad_0x8[40];
+};
+EOF
+RUN
+
+NAME=memset on a returned pointer states the object size
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx e81b000000c700010000004889c7ba6000000031f6e816000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+wx c3 @ 0x30
+af @ 0x30
+afn memset @ 0x30
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aftsj
+EOF
+EXPECT=<<EOF
+[{"name":"fcn_00000000_ret0","ret":0,"child":false,"size":96,"sizehint":{"size":96,"from":"memset","at":21},"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"pad_0x4","type":"uint8_t","offset":4,"size":1,"count":92}]}]
+EOF
+RUN
+
+NAME=types.sizefns accepts return-value allocator entries
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=myalloc/r/0
+CMDS=<<EOF
+wx bf88000000e816000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn myalloc @ 0x20
+af @ 0
+aftsj~?sizehint
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=afts* emits no variable command for a returned object
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx bf88000000e816000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+af @ 0
+afts*~?afvr
+afts*~?td
+EOF
+EXPECT=<<EOF
+0
+1
+EOF
+RUN
+
+NAME=allocator returns stay invisible without types.sizes
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx bf88000000e816000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+af @ 0
+aftsj
+EOF
+EXPECT=<<EOF
+[]
+EOF
+RUN
+
 NAME=afts size harvesting is disabled by default
 FILE=malloc://256
 ARGS=-a x86 -b 64
@@ -802,7 +970,7 @@ RUN
 
 NAME=invalid types.sizefns entries are rejected and have no effect
 FILE=malloc://256
-ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=mymemset/r/0,mymemset/0junk/2
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=mymemset/x/2,mymemset/0/r,mymemset/0junk/2
 CMDS=<<EOF
 wx c70701000000c7470802000000ba8800000031f6e807000000c3
 wx c3 @ 0x20
