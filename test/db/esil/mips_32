@@ -1953,3 +1953,19 @@ mnemonic: add
 0xfffffffe
 EOF
 RUN
+
+NAME=mips.gnu jal writes the link register and branches to the target
+FILE=malloc://0x200
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0400000c
+aes
+ar pc
+ar ra
+EOF
+EXPECT=<<EOF
+0x00000010
+0x00000008
+EOF
+RUN

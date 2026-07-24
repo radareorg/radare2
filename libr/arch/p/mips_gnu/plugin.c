@@ -877,8 +877,11 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "" ES_CALL_ND ("%s"), addr, I_REG (jump));
 		break;
 	case MIPS_INS_BAL:
-	case MIPS_INS_JAL:
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "" ES_CALL_D ("%s"), addr, I_REG (jump));
+		break;
+	case MIPS_INS_JAL:
+		// jal is J-type: the target lives in j_reg, not the i_reg union member bal uses
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "" ES_CALL_D ("%s"), addr, J_REG (jump));
 		break;
 	case MIPS_INS_JALR:
 	case MIPS_INS_JALRS:
