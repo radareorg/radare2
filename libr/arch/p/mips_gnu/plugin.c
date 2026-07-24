@@ -48,6 +48,9 @@ DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS ()
 #define ES_CALL_DR(ra, addr) "pc,4,+,"ra",=,"ES_J_D(addr)
 #define ES_CALL_D(addr) ES_CALL_DR("ra", addr)
 
+// Unconditional link (ra = pc + 8).
+#define ES_LINK "pc,4,+,ra,=,"
+
 // Call without delay slot.
 #define ES_CALL_NDR(ra, addr) "pc,"ra",=,"ES_J_ND(addr)
 #define ES_CALL_ND(addr) ES_CALL_NDR("ra", addr)
@@ -990,7 +993,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 			addr, I_REG (rs), I_REG (jump));
 		break;
 	case MIPS_INS_BGEZAL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",!,?{," ES_CALL_D ("%s") ",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_LINK ES_IS_NEGATIVE ("%s") ",!,?{," ES_J_D ("%s") ",}",
 			addr, I_REG (rs), I_REG (jump));
 		break;
 	case MIPS_INS_BGEZALC:
@@ -1002,7 +1005,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		        addr, I_REG (rs), I_REG (jump));
 		break;
 	case MIPS_INS_BLTZAL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",?{," ES_CALL_D ("%s") ",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_LINK ES_IS_NEGATIVE ("%s") ",?{," ES_J_D ("%s") ",}",
 		        addr, I_REG (rs), I_REG (jump));
 		break;
 	case MIPS_INS_BLTZC:
@@ -1641,29 +1644,32 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		RAnalValue *dst;
 		switch (optype) {
 		case 1:
+			// all REGIMM branches share the delay slot and target math
+			op->delay = 1;
+			op->fail = addr + 8;
 			switch (rt) {
 			case 0: // bltz
 				insn.id = MIPS_INS_BLTZ;
+				op->type = R_ANAL_OP_TYPE_CJMP;
 				break;
 			case 1: // bgez
 				insn.id = MIPS_INS_BGEZ;
+				op->type = R_ANAL_OP_TYPE_CJMP;
 				break;
-			case 17: // bal  bgezal
-				if (rs == 0) {
-					op->jump = addr + ((ut64)imm << 2) + 4;
-					snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%" PFMT64x, op->jump);
-					insn.id = MIPS_INS_BAL;
-				} else {
-					op->fail = addr + 8;
-					insn.id = MIPS_INS_BGEZAL;
-				}
-				op->delay = 1;
+			case 16: // bltzal
+				insn.id = MIPS_INS_BLTZAL;
+				op->type = R_ANAL_OP_TYPE_CALL;
+				break;
+			case 17: // bgezal, or bal when rs==0
+				insn.id = rs == 0 ? MIPS_INS_BAL : MIPS_INS_BGEZAL;
 				op->type = R_ANAL_OP_TYPE_CALL;
 				break;
 			default:
-				op->delay = 1;
-				op->fail = addr + 8;
 				break;
+			}
+			if (insn.id) {
+				op->jump = addr + ((ut64)imm << 2) + 4;
+				snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%" PFMT64x, op->jump);
 			}
 			break;
 		case 4: // beq
