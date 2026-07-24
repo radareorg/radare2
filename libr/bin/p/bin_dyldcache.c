@@ -455,35 +455,38 @@ static void carve_deps_at_address(RDyldCache *cache, cache_img_t *img, HtSU *pat
 	cmds[mh.sizeofcmds] = 0;
 	ut8 *cursor = cmds;
 	ut8 *end = cmds + mh.sizeofcmds;
-	while (cursor < end) {
+	while (end - cursor >= 8) {
 		ut32 cmd = r_read_le32 (cursor);
-		ut32 cmdsize = r_read_le32 (cursor + sizeof (ut32));
-		if (cmdsize < 8 || cursor + cmdsize > end) {
+		ut32 cmdsize = r_read_le32 (cursor + 4);
+		if (cmdsize < 8 || cmdsize > (size_t)(end - cursor)) {
 			break;
 		}
-		ut8 *cmd_end = cursor + cmdsize;
-		if (cmd == LC_LOAD_DYLIB ||
-				cmd == LC_LOAD_WEAK_DYLIB ||
-				cmd == LC_REEXPORT_DYLIB ||
-				cmd == LC_LOAD_UPWARD_DYLIB) {
-			ut32 path_offset = r_read_le32 (cursor + 2 * sizeof (ut32));
-			bool found;
-			if (cursor + path_offset >= cmd_end) {
-				R_LOG_ERROR ("Malformed load command");
-				goto nextcmd;
+		switch (cmd) {
+		case LC_LOAD_DYLIB:
+		case LC_LOAD_WEAK_DYLIB:
+		case LC_REEXPORT_DYLIB:
+		case LC_LOAD_UPWARD_DYLIB:
+			{
+				// path_offset lives at +8, so cmdsize must cover it; short commands read cmdsize (>= cmdsize) and are rejected
+				ut32 path_offset = cmdsize >= 12 ? r_read_le32 (cursor + 8) : cmdsize;
+				if (path_offset >= cmdsize) {
+					R_LOG_ERROR ("Malformed load command");
+					break;
+				}
+				bool found;
+				const char *key = (const char *) cursor + path_offset;
+				size_t dep_index = (size_t)ht_su_find (path_to_idx, key, &found);
+				if (!found || dep_index >= cache->hdr->imagesCount) {
+					R_LOG_WARN ("alien dep '%s'", key);
+					break;
+				}
+				deps[dep_index]++;
+				if (printing) {
+					R_LOG_INFO ("-> %s", key);
+				}
 			}
-			const char *key = (const char *) cursor + path_offset;
-			size_t dep_index = (size_t)ht_su_find (path_to_idx, key, &found);
-			if (!found || dep_index >= cache->hdr->imagesCount) {
-				R_LOG_WARN ("alien dep '%s'", key);
-				goto nextcmd;
-			}
-			deps[dep_index]++;
-			if (printing) {
-				R_LOG_INFO ("-> %s", key);
-			}
+			break;
 		}
-nextcmd:
 		cursor += cmdsize;
 	}
 beach:
