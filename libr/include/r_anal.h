@@ -1440,6 +1440,13 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr);
 R_API char *r_anal_cc_get(RAnal *anal, const char *name);
 R_API bool r_anal_cc_once(RAnal *anal);
 R_API const char *r_anal_cc_argloc(RAnal *anal, const char *convention, int n, int home, int argc);
+typedef struct r_anal_cc_argslot_t {
+	const char *reg; // register holding the arg, NULL when stack-located
+	st64 off; // byte offset of the stack slot from SP, 0 for reg args
+	int size; // slot width in bytes, 0 for reg args
+} RAnalCCArgSlot;
+R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int argc, bool incall, RAnalCCArgSlot *out);
+R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int argno, int argc, bool incall, ut64 *out);
 R_API const char *r_anal_cc_location_first(RAnal *anal, const char *loc);
 R_API const char *r_anal_cc_roleloc(RAnal *anal, const char *convention, const char *role);
 R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self);
