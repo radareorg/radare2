@@ -29,6 +29,23 @@ static int usage(bool v) {
 	return !v;
 }
 
+static RList *auth_tokens_split(char *str) {
+	RList *tokens = r_str_split_list (str, "\n", 0);
+	RListIter *iter;
+	RListIter *tmp;
+	char *tok;
+	r_list_foreach_safe (tokens, iter, tmp, tok) {
+		if (R_STR_ISEMPTY (tok)) {
+			r_list_delete (tokens, iter);
+		}
+	}
+	if (r_list_empty (tokens)) {
+		r_list_free (tokens);
+		return NULL;
+	}
+	return tokens;
+}
+
 R_API int r_main_r2agent(int argc, const char **argv) {
 	RSocket *s;
 	RCons *cons = NULL;
@@ -118,7 +135,12 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		size_t sz;
 		pfile = r_file_slurp (httpauthfile, &sz);
 		if (pfile) {
-			so.authtokens = r_str_split_list (pfile, "\n", 0);
+			so.authtokens = auth_tokens_split (pfile);
+			if (!so.authtokens) {
+				R_LOG_ERROR ("Empty list of HTTP users");
+				free (pfile);
+				return usage (false);
+			}
 		} else {
 			R_LOG_ERROR ("Empty list of HTTP users");
 			return usage (false);

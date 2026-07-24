@@ -3524,6 +3524,7 @@ R_API RList *r_str_split_list_dup(char *str, const char *c, int n) {
 
 // Splits the string <str> by string <c> and returns the result in a list.
 // R2_600 - char *arg must be const!!
+// R2_600 - maybe add a bool about not accepting empty strings and return null
 R_API RList *r_str_split_list(char *str, const char *c, int n) {
 	R_RETURN_VAL_IF_FAIL (str && c, NULL);
 	RList *lst = r_list_newf (NULL);
