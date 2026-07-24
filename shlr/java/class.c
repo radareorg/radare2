@@ -7843,12 +7843,9 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 			free (string_str);
 		}
 	} else if (!strcmp (cp_name, "Utf8")) {
-		ut64 sz = item->info.cp_utf8.length? item->info.cp_utf8.length + 10: 10;
-		str = malloc (sz);
-		memset (str, 0, sz);
-		if (sz > 10) {
-			r_base64_encode (str, item->info.cp_utf8.bytes, item->info.cp_utf8.length);
-		}
+		str = item->info.cp_utf8.length
+			? r_base64_encode_dyn (item->info.cp_utf8.bytes, item->info.cp_utf8.length)
+			: strdup ("");
 	} else if (!strcmp (cp_name, "Long")) {
 		str = r_str_newf ("0x%" PFMT64x, r_bin_java_raw_to_long (item->info.cp_long.bytes.raw, 0));
 		if (str) {
