@@ -161,8 +161,9 @@ static int emit_signature(RAnal *a, const char *fcn_name, bool quiet, PJ *pj, RS
 		free (key);
 		return -1;
 	}
-	int s_width = (a->config->bits == 64) ? 8 : 4;
-	ut64 spv = r_reg_getv (a->reg, "SP") + s_width;
+	const char *tail = r_anal_cc_argloc (a, cc, ST32_MAX, 0, -1);
+	const bool rev = tail && r_str_startswith (tail, "^-");
+	st64 stackoff = -1;
 	int i;
 	for (i = 0; i < nargs; i++) {
 		const char *name = r_type_func_args_name (a->sdb_types, key, i);
@@ -173,15 +174,24 @@ static int emit_signature(RAnal *a, const char *fcn_name, bool quiet, PJ *pj, RS
 		}
 		const char *fmt = ctype? sdb_const_getf (a->sdb_types, NULL, "type.%s", ctype): NULL;
 		int size = ctype? (int)(sdb_num_getf (a->sdb_types, NULL, "type.%s.size", ctype) / 8): 0;
-		const char *src = r_anal_cc_argloc (a, cc, i, 0, -1);
+		const char *src = r_anal_cc_argloc (a, cc, i, 0, nargs);
 		ut64 raw = SENT;
 		bool on_stack = false;
-		if (src && *src == '^') {
-			on_stack = true;
-			raw = spv;
-			spv += size ? size : s_width;
-		} else if (src) {
-			raw = r_reg_getv (a->reg, src);
+		RAnalCCArgSlot slot;
+		// emulation stops at the call, so the first stack arg sits at SP with no return address slot
+		if (r_anal_cc_argslot (a, cc, i, nargs, false, &slot)) {
+			if (slot.reg) {
+				raw = r_reg_getv (a->reg, slot.reg);
+			} else {
+				on_stack = true;
+				// wide types consume more than one word slot, so forward tails advance by type size
+				st64 off = slot.off;
+				if (!rev && stackoff > off) {
+					off = stackoff;
+				}
+				raw = r_reg_getv (a->reg, "SP") + off;
+				stackoff = off + (size? size: slot.size);
+			}
 		}
 		emit_arg (a, i, name, type, src, fmt, size, raw, on_stack, quiet, pj, sb);
 		free (type);
@@ -250,13 +260,9 @@ static char *analyze_call(RAnal *a, ut64 pcv, OutMode mode) {
 		}
 	}
 	free (key);
-	int s_width = (a->config->bits == 64) ? 8 : 4;
-	ut64 spv = r_reg_getv (a->reg, "SP");
-	r_reg_setv (a->reg, "SP", spv + s_width);
 	if (emit_signature (a, fcn_name, quiet, pj, sb) < 0) {
 		emit_raw (a, op->jump, quiet, pj, sb);
 	}
-	r_reg_setv (a->reg, "SP", spv);
 	r_anal_op_free (op);
 	if (mode == OUT_JSON) {
 		pj_end (pj);

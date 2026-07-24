@@ -3775,3 +3775,66 @@ EXPECT=<<EOF
 0x0804805b    2      9 fcn.0804805b
 EOF
 RUN
+
+NAME=callargs reads stack arguments from the call-site stack pointer
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 68580000006850000000e81100000083c408c3
+wx c3 @ 0x20
+w AA @ 0x50
+w BB @ 0x58
+af @ 0x20
+afn twostr @ 0x20
+'td int twostr(const char *first, const char *second);
+af @ 0
+a:callargs-q 0xa
+EOF
+EXPECT=<<EOF
+int twostr("AA", "BB")
+EOF
+RUN
+
+NAME=callargs advances past a wide stack argument
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 685800000068000000006844332211e80c00000083c40cc3
+wx c3 @ 0x20
+w BB @ 0x58
+af @ 0x20
+afn f @ 0x20
+'td int f(uint64_t a, char *s);
+af @ 0
+a:callargs-q 0xf
+EOF
+EXPECT=<<EOF
+int f(0x0000000000000000, "BB")
+EOF
+RUN
+
+NAME=callargs reports the source location it actually read under revarg
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx bf58000000be50000000e81100000083c404c3
+wx c3 @ 0x20
+w AA @ 0x50
+w BB @ 0x58
+af @ 0x20
+afn two @ 0x20
+'td int two(char *a, char *b);
+tk func.two.cc=dlang
+af @ 0
+a:callargs-j 0xa~{args[0].source}
+a:callargs-j 0xa~{args[0].value}
+a:callargs-j 0xa~{args[1].source}
+a:callargs-j 0xa~{args[1].value}
+EOF
+EXPECT=<<EOF
+esi
+\"AA\"
+edi
+\"BB\"
+EOF
+RUN
