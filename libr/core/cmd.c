@@ -197,7 +197,7 @@ static RCoreHelpMessage help_msg_dash = {
 	"-H", " key", "same as r2 -H",
 	"-k", " kernel", "same as r2 -k or e asm.os",
 	"-f", "", "block size = file size (b $s)",
-	"-j", "", "enter the js: repl",
+	"-j", "[-:!]", "same as js: (see js?)",
 	"-i", " [file]", "same as . [file], to run a script",
 	"-s", " [addr]", "same as r2 -e asm.cpu=",
 	"-L", "", "same as Lo (or r2 -L)",
@@ -1937,7 +1937,11 @@ static int cmd_stdin(void *data, const char *input) {
 			}
 			break;
 		case 'j': // "-j"
-			r_core_call (core, "js:");
+			if (input[1]) {
+				r_core_callf (core, "js%s", input + 1);
+			} else {
+				r_core_call (core, "js:");
+			}
 			break;
 		case 'c': // "-c"
 			r_core_cmdf (core, "e asm.cpu=%s", arg);
