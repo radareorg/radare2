@@ -6004,7 +6004,7 @@ static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
 	const int step = (bits == 64)? 8: 4;
 	RStrBuf *sb = r_strbuf_new ("");
 	int p;
-	for (p = 0; p + 4 < core->blocksize; p += step) {
+	for (p = 0; p + step <= core->blocksize; p += step) {
 		ut64 n = (bits == 64)? r_read_ble64 (buf + p, be): r_read_ble32 (buf + p, be);
 		r_strbuf_appendf (sb, "[0x%08" PFMT64x "] 0x%08" PFMT64x "\n", addr + p, n);
 		disasm_until_optype (core, n, type_print, R_ANAL_OP_TYPE_RET, 1024);
@@ -6139,13 +6139,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 	r_core_seek (core, oseek, SEEK_SET);
 }
 
-static inline char cmd_pxb_p(char input) {
-	return IS_PRINTABLE (input)? input: '.';
-}
-
-static inline ut64 cmd_pxb_k(const ut8 *buffer, int x) {
-	return (ut64) (buffer[3 - x]) << (8 * x);
-}
+#define P(x) (IS_PRINTABLE (x)? (x): '.')
 
 // normalize hex.cols value to valid column count (1, 2, 4, or 8)
 static int get_columns_for(int cols) {
@@ -6826,31 +6820,32 @@ static void cmd_print_pxb(RCore *core, const ut8 *data, int len, const char *inp
 		r_strbuf_appendf (sb, "%s_%s  ", buf, buf + 5);
 		r_print_cursor_strbuf (core->print, sb, i, 1, 0);
 		if (c == lastc) {
-			const ut8 *b = data + i - 3;
-			ut64 (*k) (const ut8 *, int) = cmd_pxb_k;
-			char (*p) (char) = cmd_pxb_p;
+			const ut8 *b = data + i - lastc;
 			switch (columns) {
 			case 1:
-				n = k (b, 0);
-				r_strbuf_appendf (sb, "0x%02x  %c\n", n, p (b[0]));
+				n = b[0];
+				r_strbuf_appendf (sb, "0x%02x  %c\n", n, P (b[0]));
 				break;
 			case 2:
-				n = k (b, 0) | k (b, 1);
-				r_strbuf_appendf (sb, "0x%04x  %c%c\n", n, p (b[0]), p (b[1]));
+				n = r_read_be16 (b);
+				r_strbuf_appendf (sb, "0x%04x  %c%c\n", n, P (b[0]), P (b[1]));
 				break;
 			case 4:
-				n = k (b, 0) | k (b, 1) | k (b, 2) | k (b, 3);
+				n = r_read_be32 (b);
 				if (be) {
 					n = r_read_be32 (&n);
 				}
-				r_strbuf_appendf (sb, "0x%08x  %c%c%c%c\n", n, p (b[0]), p (b[1]), p (b[2]), p (b[3]));
+				r_strbuf_appendf (sb, "0x%08x  %c%c%c%c\n", n,
+					P (b[0]), P (b[1]), P (b[2]), P (b[3]));
 				break;
 			case 8:
-				n64 = k (b, 0) | k (b, 1) | k (b, 2) | k (b, 3) | k (b, 4) | k (b, 5) | k (b, 6) | k (b, 7);
+				n64 = r_read_be64 (b);
 				if (be) {
 					n64 = r_read_be64 (&n64);
 				}
-				r_strbuf_appendf (sb, "0x%016" PFMT64x "  %c%c%c%c%c%c%c%c\n", n64, p (b[0]), p (b[1]), p (b[2]), p (b[3]), p (b[4]), p (b[5]), p (b[6]), p (b[7]));
+				r_strbuf_appendf (sb, "0x%016" PFMT64x "  %c%c%c%c%c%c%c%c\n", n64,
+					P (b[0]), P (b[1]), P (b[2]), P (b[3]),
+					P (b[4]), P (b[5]), P (b[6]), P (b[7]));
 				break;
 			}
 			c = -1;
@@ -6860,6 +6855,7 @@ static void cmd_print_pxb(RCore *core, const ut8 *data, int len, const char *inp
 	r_cons_print (core->cons, s);
 	free (s);
 }
+#undef P
 
 static void bitimage(RCore *core, const ut8 *data, const int data_size) {
 	if (!data || data_size < 1) {
@@ -9638,11 +9634,11 @@ static int cmd_print(void *data, const char *input) {
 #endif
 			break;
 		case 'b': // "ptb"
-			if (len < sizeof (ut32)) {
-				R_LOG_WARN ("Change the block size: b %d", (int)sizeof (ut32));
+			if (len < sizeof (ut64)) {
+				R_LOG_WARN ("Change the block size: b %d", (int)sizeof (ut64));
 			}
-			if (len % sizeof (ut32)) {
-				len = len - (len % sizeof (ut32));
+			if (len % sizeof (ut64)) {
+				len = len - (len % sizeof (ut64));
 			}
 			for (l = 0; l < len; l += sizeof (ut64)) {
 				ut64 ts = r_read_le64 (block + l);

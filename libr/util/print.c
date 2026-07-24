@@ -1370,9 +1370,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					int left = len - i;
 					// TODO: check step. it should be 2/4 for base(32) and 8 for base64
 					ut64 n = 0;
-					size_t sz_n = (base == 64)
-						? (base == 24) ? 3 : sizeof (ut64) : (step == 2)
-						? sizeof (ut16) : sizeof (ut32);
+					size_t sz_n = (base == 64)? sizeof (ut64): (step == 2)? sizeof (ut16): sizeof (ut32);
 					sz_n = R_MIN (left, sz_n);
 					if (j + sz_n > len) {
 						// oob
@@ -1506,13 +1504,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					j += 1;
 				} else if (base == 48) { // px3
-					if (j + 1 < len) {
+					if (j + 2 < len) {
 						ut32 w = r_read_ble24 (buf + j, be);
 						r_print_cursor (p, j, 3, 1);
 						r_print_printf (p, "0x%06x ", (w & 0xFFFFff));
 						r_print_cursor (p, j, 3, 0);
 					}
-					j += 1;
+					j += 2;
 				} else if (base == -11) { // pxu2
 					if (j + 1 < len) {
 						ut16 w = r_read_ble16 (buf + j, be);

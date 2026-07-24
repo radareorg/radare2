@@ -474,3 +474,18 @@ EXPECT=<<EOF
 0x00000010  10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f  ................
 EOF
 RUN
+
+NAME=px3 consumes complete RGB triples
+FILE=malloc://16
+CMDS=<<EOF
+wx 414243444546
+px3 2
+px3 3
+px3 6
+EOF
+EXPECT=<<EOF
+0x00000000                                    AB
+0x00000000  0x434241                                   ABC
+0x00000000  0x434241 0x464544                           ABCDEF
+EOF
+RUN

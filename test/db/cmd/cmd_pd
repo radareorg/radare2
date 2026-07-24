@@ -2378,3 +2378,31 @@ EXPECT=<<EOF2
 |                                                                      ; int printf("Results : a : %u , b: %ld\n", 0xffffffff, -1)
 EOF2
 RUN
+
+NAME=pdp respects pointer width
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx c3 @ 0x20
+wv8 0x20 @ 0
+b 5
+echo short64
+pdp~0x00000000
+b 8
+echo full64
+pdp~0x00000000
+e asm.bits=32
+b 4
+wv4 0x20 @ 0
+echo full32
+pdp~0x00000000
+EOF
+EXPECT=<<EOF
+short64
+full64
+[0x00000000] 0x00000020
+full32
+[0x00000000] 0x00000020
+EOF
+RUN
