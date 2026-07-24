@@ -330,7 +330,8 @@ static RCoreHelpMessage help_msg_b = {
 	"b", "+3", "increase blocksize by 3",
 	"b", "-16", "decrease blocksize by 16",
 	"b*", "", "display current block size in r2 command",
-	"b64:", "AA=", "receive a base64 string that is executed without evaluating special chars",
+	"b64:", "AA=", "execute a base64-encoded r2 script",
+	"b64:'", "AA=", "execute a base64-encoded command without evaluating special chars",
 	"bf", " foo", "set block size to flag size",
 	"bj", "", "display block size information in JSON",
 	"bm", " 1M", "set max block size",
@@ -2725,11 +2726,17 @@ static int cmd_bsize(void *data, const char *input) {
 	switch (input[0]) {
 	case '6': // "b6"
 		if (r_str_startswith (input, "64:")) {
+			const bool raw = input[3] == '\'';
+			const char *encoded = input + (raw? 4: 3);
 			int len = 0;
-			char *cmd = (char *)sdb_decode (input + 3, &len);
+			char *cmd = (char *)sdb_decode (encoded, &len);
 			if (cmd) {
 				cmd[len] = 0;
-				r_core_call (core, cmd);
+				if (raw) {
+					r_core_call (core, cmd);
+				} else {
+					r_core_cmd_lines (core, cmd);
+				}
 				free (cmd);
 			} else {
 				R_LOG_ERROR ("Missing base64 string after b64:");
@@ -3910,6 +3917,9 @@ static char *find_ch_after_macro(char *ptr, char ch) {
 }
 
 static int handle_command_call(RCore *core, const char *cmd) {
+	if (r_str_startswith (cmd, "b64:'")) {
+		return r_core_call (core, cmd);
+	}
 	if (*cmd != '\'') {
 		return -1;
 	}
