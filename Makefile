@@ -82,6 +82,7 @@ libr/include/r_version.h:
 	@echo '#define R_VERSION_H 1' >> $@.tmp
 	@echo '#define R2_VERSION_COMMIT $(R2VC)' >> $@.tmp
 	@echo '#define R2_VERSION "$(R2_VERSION)"' >> $@.tmp
+	@echo '#define R2_VERSION_ABI "$(R2_VERSION_MAJOR).$(R2_VERSION_MINOR).x"' >> $@.tmp
 	@echo '#define R2_VERSION_MAJOR $(R2_VERSION_MAJOR)' >> $@.tmp
 	@echo '#define R2_VERSION_MINOR $(R2_VERSION_MINOR)' >> $@.tmp
 	@echo '#define R2_VERSION_PATCH $(R2_VERSION_PATCH)' >> $@.tmp
