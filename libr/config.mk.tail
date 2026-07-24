@@ -14,14 +14,6 @@ MSVC=$(R2DIR)/msvc
 endif
 endif
 
-ifeq ($(USE_CSNEXT),1)
-CS_ROOT:=$(LIBR)/../subprojects/capstone-next
-else ifeq ($(USE_CS4),1)
-CS_ROOT:=$(LIBR)/../subprojects/capstone-v4
-else
-CS_ROOT:=$(LIBR)/../subprojects/capstone-v5
-endif
-
 ZYDIS_ROOT:=$(LIBR)/../subprojects/zydis
 WANT_ZYDIS?=1
 USE_ZYDIS?=0
@@ -33,6 +25,15 @@ SHLR:=$(LIBR)/../shlr
 
 include $(LIBR)/../global.mk
 include $(LIBR)/../mk/${COMPILER}.mk
+
+# USE_CSNEXT/USE_CS4 come from config-user.mk, included via global.mk
+ifeq ($(USE_CSNEXT),1)
+CS_ROOT:=$(LIBR)/../subprojects/capstone-next
+else ifeq ($(USE_CS4),1)
+CS_ROOT:=$(LIBR)/../subprojects/capstone-v4
+else
+CS_ROOT:=$(LIBR)/../subprojects/capstone-v5
+endif
 
 ifeq ($(WANT_CAPSTONE),1)
 ifeq ($(USE_CAPSTONE),1)
