@@ -678,6 +678,47 @@ R_API RIODesc *r_core_file_open(RCore *core, const char *file, int flags, ut64 l
 R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr);
 R_API bool r_core_file_close_all_but(RCore *core);
 
+// Subbinary/slice discovery. When a URI refers to a multi-content file
+// (fatmach0, dyldcache, pemixed, sep64, apk/zip/ipa, ...) the caller can
+// probe the options without opening the file for analysis.
+typedef enum {
+	R_CORE_SUB_ARCH  = 0, // byte-level arch slice (fatmach0, pemixed)
+	R_CORE_SUB_IMAGE = 1, // dyldcache image
+	R_CORE_SUB_FILE  = 2, // archive entry (apk/zip/ipa/jar)
+	R_CORE_SUB_WHOLE = 3, // load as plain file without extraction
+	R_CORE_SUB_ALL   = 4, // load every sub (apkall://, extractall)
+} RCoreSubKind;
+
+typedef struct r_core_sub_option_t {
+	RCoreSubKind kind;
+	int   index;     // for byte-level slices: bin.xtr.idx / r_bin_select_idx
+	char *name;      // short identifier ("arm64", "classes.dex", ...)
+	char *uri;       // fully-qualified URI to re-open with (nullable)
+	char *arch;      // asm.arch hint (nullable)
+	char *cpu;       // asm.cpu hint (nullable)
+	int   bits;      // 0 if unset
+	char *machine;   // human-readable machine string (nullable)
+	ut64  offset;    // offset in container (informational)
+	ut64  size;      // size of slice/entry (informational)
+	char *hint;      // one-line description
+	char *envs;      // optional "KEY=VAL\nKEY2=VAL2" overrides for the caller
+} RCoreSubOption;
+
+typedef struct r_core_subs_t {
+	char *uri;       // probed URI
+	char *format;    // "fatmach0" | "apk" | "dyldcache" | "pemixed" | ...
+	RList *options;  // RList<RCoreSubOption*>
+} RCoreSubs;
+
+R_API RCoreSubs *r_core_file_subs(RCore *core, const char *uri);
+R_API void r_core_subs_free(RCoreSubs *s);               // NULL-safe
+R_API void r_core_sub_option_free(RCoreSubOption *o);    // NULL-safe
+R_API void r_core_subs_print(RCore *core, RCoreSubs *subs);
+// Gated by cfg.choice. Returns a chosen URI to open instead of `uri`,
+// or NULL to keep the original. May set config (asm.arch, bin.xtr.idx, ...)
+// as a side-effect when the user picks an option.
+R_API char *r_core_file_subs_prompt(RCore *core, const char *uri);
+
 R_API char *r_core_slurp(RCore *core, const char *path, size_t *len);
 
 R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach);
