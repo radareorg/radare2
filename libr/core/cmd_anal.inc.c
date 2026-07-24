@@ -14279,7 +14279,11 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 		} else {
 			const char *v = r_config_get (core->config, "anal.in");
 			if (!strcmp (v, "bin.ormaps.x")) {
-				r_config_set (core->config, "anal.in", "io.maps.x");
+				if (r_config_get_b (core->config, "cfg.debug")) {
+					r_config_set (core->config, "anal.in", "io.maps.x");
+				} else {
+					r_config_set (core->config, "anal.in", "io.sections.x");
+				}
 			}
 			RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
 			RListIter *iter;
