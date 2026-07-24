@@ -644,6 +644,11 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	}
 	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.self", name), 0);
 	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.error", name), 0);
+	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.pop", name), 0);
+	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.clobber", name), 0);
+	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.preserve", name), 0);
+	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.revarg", name), 0);
+	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.shadow", name), 0);
 	r_strbuf_fini (&sb);
 }
 
@@ -869,6 +874,128 @@ R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home,
 		ret = sdb_const_getf (db, NULL, "cc.%s.argn", cc);
 	}
 	return ret? dyncc_from_static_loc (anal, ret): NULL;
+}
+
+// caller-reserved home space below the stack args (win64 shadow area)
+R_IPI int r_anal_cc_shadow(RAnal *anal, const char *convention) {
+	const char *s = sdb_const_getf (DB, NULL, "cc.%s.shadow", convention);
+	return s? atoi (s): 0;
+}
+
+// bytes the call pushes before the stack args: one word unless the arch keeps the return address in a register
+R_IPI int r_anal_cc_raslot(RAnal *anal, int word) {
+	const bool ra_reg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_LR)
+		|| r_reg_alias_getname (anal->reg, R_REG_ALIAS_RA);
+	return ra_reg? 0: word;
+}
+
+// stack slot width: pointer-sized, refined by the first register argloc's width (thumb still passes 4-byte slots)
+R_IPI int r_anal_cc_wordsize(RAnal *anal, const char *cc) {
+	const int bits = anal->config->bits;
+	int word = bits <= 16? 2: bits > 32? 8: 4;
+	int i;
+	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
+		const char *place = r_anal_cc_argloc (anal, cc, i, 0, -1);
+		if (R_STR_ISEMPTY (place) || *place == '^') {
+			continue;
+		}
+		RRegItem *ri = r_reg_get (anal->reg, r_anal_cc_location_first (anal, place), -1);
+		if (ri) {
+			if (ri->size >= 32) {
+				word = ri->size / 8;
+			}
+			r_unref (ri);
+		}
+		break;
+	}
+	return R_MIN (word, 8);
+}
+
+// where argument argno lives: a register, or a stack slot off bytes above SP
+// incall shifts stack slots past the return address pushed by the call; argc is required for reverse-stack ccs
+R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int argc, bool incall, RAnalCCArgSlot *out) {
+	R_RETURN_VAL_IF_FAIL (anal && out && argno >= 0, false);
+	*out = (RAnalCCArgSlot){ 0 };
+	const char *place = r_anal_cc_argloc (anal, convention, argno, 0, argc);
+	if (R_STR_ISEMPTY (place)) {
+		return false;
+	}
+	if (*place != '^') {
+		out->reg = r_anal_cc_location_first (anal, place);
+		return out->reg != NULL;
+	}
+	const int word = r_anal_cc_wordsize (anal, convention);
+	const bool rev = place[1] == '-';
+	const char *digits = rev? place + 2: place + 1;
+	st64 off;
+	if (isdigit ((ut8)*digits)) {
+		off = (st64)atoi (digits) * word; // explicit call-frame slot index (doc/dyncc.md)
+	} else if (rev) {
+		if (argc < 0) {
+			return false; // reverse layouts need the arg count
+		}
+		// only stack-located args occupy slots; the last one pushed sits at SP
+		int after = 0, i;
+		for (i = argno + 1; i < argc; i++) {
+			const char *p = r_anal_cc_argloc (anal, convention, i, 0, argc);
+			if (p && *p == '^') {
+				after++;
+			}
+		}
+		off = ((st64)after * word) + r_anal_cc_shadow (anal, convention);
+	} else {
+		// the tail starts past explicit ^N homes (mips o32 secondary homes) and earlier tail args
+		int slots = 0, ntail = 0, i;
+		for (i = 0; i < argno; i++) {
+			int home;
+			for (home = 0; ; home++) {
+				const char *p = r_anal_cc_argloc (anal, convention, i, home, argc);
+				if (!p) {
+					break;
+				}
+				if (*p != '^') {
+					continue;
+				}
+				const char *d = p[1] == '-'? p + 2: p + 1;
+				if (isdigit ((ut8)*d)) {
+					slots = R_MAX (slots, atoi (d) + 1);
+				} else if (home == 0) {
+					ntail++;
+				}
+			}
+		}
+		off = (((st64)slots + ntail) * word) + r_anal_cc_shadow (anal, convention);
+	}
+	if (incall) {
+		off += r_anal_cc_raslot (anal, word);
+	}
+	out->off = off;
+	out->size = word;
+	return true;
+}
+
+// concrete value of argument argno read from the given reg arena and, for stack slots, through anal->iob
+R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int argno, int argc, bool incall, ut64 *out) {
+	R_RETURN_VAL_IF_FAIL (anal && reg && out, false);
+	RAnalCCArgSlot slot;
+	if (!r_anal_cc_argslot (anal, convention, argno, argc, incall, &slot)) {
+		return false;
+	}
+	if (slot.reg) {
+		*out = r_reg_getv (reg, slot.reg);
+		return true;
+	}
+	if (!anal->iob.read_at) {
+		return false;
+	}
+	ut8 buf[8] = { 0 };
+	const int sz = R_MIN (slot.size, 8);
+	const ut64 addr = r_reg_getv (reg, "SP") + slot.off;
+	if (!anal->iob.read_at (anal->iob.io, addr, buf, sz)) {
+		return false;
+	}
+	*out = r_read_ble (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config), sz * 8);
+	return true;
 }
 
 R_API const char *r_anal_cc_roleloc(RAnal *anal, const char *convention, const char *role) {

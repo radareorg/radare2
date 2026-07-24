@@ -1550,7 +1550,7 @@ EOF
 EXPECT=<<EOF
 arg int argc @ r0
 arg char ** argv @ r1
-var int32_t var_1460h @ sp+0x0
+var uint32_t v5 @ sp+0x0
 var char * option @ fp-0xc
 var int32_t var_14h @ fp-0x10
 var int32_t var_18h @ fp-0x14
@@ -1570,6 +1570,27 @@ var int32_t var_4ch @ fp-0x48
 var int32_t wstatus @ fp-0x4c
 var char * s1 @ fp-0x1040
 var void * var_1444h @ fp-0x1440
+EOF
+RUN
+
+NAME=aft propagates a callee stack argument past the register args on arm32
+FILE=malloc://256
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 0730a0e300308de50c0000eb1eff2fe1
+wx 1eff2fe1 @ 0x40
+af @ 0x40
+afn five @ 0x40
+'td int five(int a, int b, int c, int d, int myarg5);
+af @ 0
+aaft
+afv
+EOF
+EXPECT=<<EOF
+arg int a @ r0
+arg int b @ r1
+arg int c @ r2
+arg int32_t myarg5 @ sp+0x0
 EOF
 RUN
 

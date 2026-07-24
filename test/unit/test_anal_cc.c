@@ -337,6 +337,170 @@ bool test_r_anal_cc_del(void) {
 	mu_end;
 }
 
+bool test_r_anal_cc_argslot(void) {
+	RAnal *anal = r_anal_new ();
+	anal->config->bits = 32;
+	r_anal_cc_set (anal, "eax flat(stack)");
+	RAnalCCArgSlot s;
+	// x86-like: no LR alias, so incall skips one return-address word
+	mu_assert_true (r_anal_cc_argslot (anal, "flat", 0, -1, false, &s), "flat arg0");
+	mu_assert_null (s.reg, "flat arg0 is stack");
+	mu_assert_eq (s.off, 0, "flat arg0 at SP");
+	mu_assert_eq (s.size, 4, "word slot");
+	mu_assert_true (r_anal_cc_argslot (anal, "flat", 2, -1, false, &s), "flat arg2");
+	mu_assert_eq (s.off, 8, "flat arg2 at SP+8");
+	mu_assert_true (r_anal_cc_argslot (anal, "flat", 2, -1, true, &s), "flat arg2 incall");
+	mu_assert_eq (s.off, 12, "incall skips the return address slot");
+
+	r_anal_cc_set (anal, "eax mixed(ecx, edx, stack)");
+	mu_assert_true (r_anal_cc_argslot (anal, "mixed", 1, -1, false, &s), "mixed reg arg");
+	mu_assert_streq (s.reg, "edx", "mixed arg1 in edx");
+	mu_assert_true (r_anal_cc_argslot (anal, "mixed", 3, -1, false, &s), "mixed stack arg");
+	mu_assert_eq (s.off, 4, "offsets count from the first stack arg");
+
+	r_anal_cc_set (anal, "eax rt(stack)");
+	sdb_set (anal->sdb_cc, "cc.rt.argn", "stack_rev", 0);
+	mu_assert_false (r_anal_cc_argslot (anal, "rt", 0, -1, false, &s), "reverse stack needs argc");
+	mu_assert_true (r_anal_cc_argslot (anal, "rt", 0, 3, false, &s), "reverse stack with argc");
+	mu_assert_eq (s.off, 8, "reverse arg0 sits highest");
+	mu_assert_true (r_anal_cc_argslot (anal, "rt", 2, 3, false, &s), "reverse last arg");
+	mu_assert_eq (s.off, 0, "reverse last arg at SP");
+
+	// revarg homes the last declared args in registers; they occupy no stack slot
+	r_anal_cc_set (anal, "eax dl(eax, stack)");
+	sdb_set (anal->sdb_cc, "cc.dl.revarg", "1", 0);
+	sdb_set (anal->sdb_cc, "cc.dl.argn", "stack_rev", 0);
+	mu_assert_true (r_anal_cc_argslot (anal, "dl", 2, 3, false, &s), "revarg last arg");
+	mu_assert_streq (s.reg, "eax", "revarg last arg is register-homed");
+	mu_assert_true (r_anal_cc_argslot (anal, "dl", 0, 3, false, &s), "revarg first stack arg");
+	mu_assert_eq (s.off, 4, "register-homed args occupy no reverse slot");
+	mu_assert_true (r_anal_cc_argslot (anal, "dl", 1, 3, false, &s), "revarg second stack arg");
+	mu_assert_eq (s.off, 0, "last pushed stack arg at SP");
+
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_cc_argslot_16bit(void) {
+	RAnal *anal = r_anal_new ();
+	anal->config->bits = 16;
+	r_anal_cc_set (anal, "ax c16(stack)");
+	RAnalCCArgSlot s;
+	mu_assert_true (r_anal_cc_argslot (anal, "c16", 1, -1, false, &s), "16-bit stack arg");
+	mu_assert_eq (s.off, 2, "16-bit pushes make 2-byte slots");
+	mu_assert_eq (s.size, 2, "16-bit slot width");
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_cc_argslot_shadow(void) {
+	RAnal *anal = r_anal_new ();
+	anal->config->bits = 64;
+	r_anal_cc_set (anal, "rax winish(rcx, rdx, r8, r9, stack)");
+	sdb_set (anal->sdb_cc, "cc.winish.shadow", "32", 0);
+	RAnalCCArgSlot s;
+	mu_assert_true (r_anal_cc_argslot (anal, "winish", 4, -1, false, &s), "first stack arg");
+	mu_assert_eq (s.off, 32, "stack args start above the shadow space");
+	mu_assert_eq (s.size, 8, "64-bit word slot");
+	mu_assert_true (r_anal_cc_argslot (anal, "winish", 4, -1, true, &s), "first stack arg incall");
+	mu_assert_eq (s.off, 40, "shadow plus return address slot");
+	r_anal_cc_del (anal, "winish");
+	mu_assert_null (sdb_const_get (anal->sdb_cc, "cc.winish.shadow", 0), "cc_del removes the shadow key");
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_cc_argslot_lr(void) {
+	RAnal *anal = r_anal_new ();
+	anal->config->bits = 32;
+	r_reg_set_profile_string (anal->reg,
+		"=PC	pc\n=SP	sp\n=LR	lr\n"
+		"gpr	r0	.32	0	0\ngpr	sp	.32	4	0\ngpr	lr	.32	8	0\ngpr	pc	.32	12	0\n");
+	r_anal_cc_set (anal, "r0 lrcc(r0, stack)");
+	RAnalCCArgSlot s;
+	mu_assert_true (r_anal_cc_argslot (anal, "lrcc", 1, -1, true, &s), "lr arch stack arg incall");
+	mu_assert_eq (s.off, 0, "no return address slot on link-register archs");
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_cc_argslot_homes(void) {
+	RAnal *anal = r_anal_new ();
+	anal->config->bits = 32;
+	RAnalCCArgSlot s;
+	// mips o32 dyncc form: a0-a3 primary homes, ^0-^3 secondary stack homes, then the open tail
+	const char *cc = "dyncc:a0+4'^0+4,^:v0";
+	mu_assert_true (r_anal_cc_argslot (anal, cc, 4, 5, false, &s), "tail after secondary homes");
+	mu_assert_eq (s.off, 16, "tail starts past the four home slots");
+	mu_assert_true (r_anal_cc_argslot (anal, cc, 0, 5, false, &s), "primary home wins");
+	mu_assert_streq (s.reg, "a0", "arg0 resolves to its register home");
+
+	// static o32 models the same home area with the shadow key
+	r_anal_cc_set (anal, "v0 so32(a0, a1, a2, a3, stack)");
+	sdb_set (anal->sdb_cc, "cc.so32.shadow", "16", 0);
+	mu_assert_true (r_anal_cc_argslot (anal, "so32", 4, -1, false, &s), "static o32 first stack arg");
+	mu_assert_eq (s.off, 16, "static o32 tail starts past the home area");
+	mu_assert_true (r_anal_cc_argslot (anal, "so32", 5, -1, false, &s), "static o32 second stack arg");
+	mu_assert_eq (s.off, 20, "later tail args advance by one word");
+	r_anal_free (anal);
+	mu_end;
+}
+
+static bool fake_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
+	int i;
+	for (i = 0; i < len; i++) {
+		buf[i] = 0x10 + i;
+	}
+	return true;
+}
+
+bool test_r_anal_cc_argval_stack(void) {
+	RAnal *anal = r_anal_new ();
+	anal->config->bits = 32;
+	r_anal_cc_set (anal, "eax scc(stack)");
+	r_reg_set_profile_string (anal->reg,
+		"=PC	eip\n=SP	esp\n"
+		"gpr	esp	.32	0	0\ngpr	eip	.32	4	0\n");
+	r_reg_setv (anal->reg, "esp", 0x1000);
+	ut64 v = 0;
+	mu_assert_false (r_anal_cc_argval (anal, anal->reg, "scc", 0, -1, false, &v), "no io binding fails");
+	anal->iob.read_at = fake_read_at;
+	mu_assert_true (r_anal_cc_argval (anal, anal->reg, "scc", 0, -1, false, &v), "stack argval reads");
+	mu_assert_eq (v, 0x13121110, "little-endian slot decode");
+	anal->config->endian = R_SYS_ENDIAN_BIG;
+	mu_assert_true (r_anal_cc_argval (anal, anal->reg, "scc", 0, -1, false, &v), "big-endian read");
+	mu_assert_eq (v, 0x10111213, "big-endian slot decode");
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_cc_argslot_fixed(void) {
+	RAnal *anal = r_anal_new ();
+	anal->config->bits = 32;
+	RAnalCCArgSlot s;
+	mu_assert_true (r_anal_cc_argslot (anal, "dyncc:eax,ecx,^0,^2:eax", 2, -1, false, &s), "fixed slot 0");
+	mu_assert_eq (s.off, 0, "^0 is call-frame slot zero");
+	mu_assert_true (r_anal_cc_argslot (anal, "dyncc:eax,ecx,^0,^2:eax", 3, -1, false, &s), "fixed slot 2");
+	mu_assert_eq (s.off, 8, "^2 is two word slots up");
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_cc_argval(void) {
+	RAnal *anal = r_anal_new ();
+	anal->config->bits = 32;
+	r_anal_cc_set (anal, "eax vcc(ecx, stack)");
+	r_reg_set_profile_string (anal->reg,
+		"=PC	eip\n=SP	esp\n=A0	ecx\n"
+		"gpr	ecx	.32	0	0\ngpr	esp	.32	4	0\ngpr	eip	.32	8	0\n");
+	r_reg_setv (anal->reg, "ecx", 0x1234);
+	ut64 v = 0;
+	mu_assert_true (r_anal_cc_argval (anal, anal->reg, "vcc", 0, -1, false, &v), "reg argval");
+	mu_assert_eq (v, 0x1234, "reg value read");
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_anal_cc_set);
 	mu_run_test (test_r_anal_cc_set_self_err);
@@ -346,6 +510,14 @@ bool all_tests(void) {
 	mu_run_test (test_r_anal_cc_static_fixes);
 	mu_run_test (test_r_anal_cc_dyncc);
 	mu_run_test (test_r_anal_cc_del);
+	mu_run_test (test_r_anal_cc_argslot);
+	mu_run_test (test_r_anal_cc_argslot_16bit);
+	mu_run_test (test_r_anal_cc_argslot_shadow);
+	mu_run_test (test_r_anal_cc_argslot_lr);
+	mu_run_test (test_r_anal_cc_argslot_fixed);
+	mu_run_test (test_r_anal_cc_argslot_homes);
+	mu_run_test (test_r_anal_cc_argval);
+	mu_run_test (test_r_anal_cc_argval_stack);
 	return tests_passed != tests_run;
 }
 
