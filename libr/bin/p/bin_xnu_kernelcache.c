@@ -1534,21 +1534,20 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 		offset += 40;
 		array_offset += 24;
 	}
-	while (cursor < end) {
-		ut64 test = r_read_le64 (cursor);
-		if (test == pattern) {
+	while (cursor + sizeof (ut64) <= end) {
+		if (r_read_le64 (cursor) == pattern) {
 			break;
 		}
 		cursor += 8;
 	}
 
-	if (cursor >= end) {
+	if (cursor + sizeof (ut64) > end || cursor < data_const + offset) {
 		goto beach;
 	}
 
 	cursor -= offset;
 	if (enosys_addr) {
-		while (cursor >= data_const) {
+		while (cursor + sizeof (RSysEnt) <= end) {
 			ut64 addr = r_read_le64 (cursor);
 			ut64 x = r_read_le64 (cursor + 8);
 			ut64 y = r_read_le64 (cursor + 16);
@@ -1556,17 +1555,16 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 			if (IS_KERNEL_ADDR (K_PPTR (addr)) &&
 				(x == 0 || IS_KERNEL_ADDR (K_PPTR (x))) &&
 				(y != 0 && !IS_KERNEL_ADDR (K_PPTR (y)))) {
-				cursor -= 24;
+				if (cursor < data_const + sizeof (RSysEnt)) {
+					goto beach;
+				}
+				cursor -= sizeof (RSysEnt);
 				continue;
 			}
 
-			cursor += 24;
+			cursor += sizeof (RSysEnt);
 			break;
 		}
-	}
-
-	if (cursor < data_const) {
-		goto beach;
 	}
 
 	syscalls = r_list_newf (r_bin_symbol_free);
@@ -1597,9 +1595,12 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 	r_list_append (syscalls, sym);
 
 	int i = 1;
+	if (cursor + array_offset > end) {
+		goto beach;
+	}
 	cursor += array_offset;
 	int num_syscalls = sdb_count (syscall->db);
-	while (cursor < end && i < num_syscalls) {
+	while (cursor + sizeof (RSysEnt) <= end && i < num_syscalls) {
 		ut64 addr = K_PPTR (r_read_le64 (cursor));
 		RSyscallItem *item = r_syscall_get (syscall, i, 0x80);
 		if (item && item->name) {
@@ -1614,7 +1615,7 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 			r_list_append (syscalls, sym);
 		}
 		r_syscall_item_free (item);
-		cursor += 24;
+		cursor += sizeof (RSysEnt);
 		i++;
 	}
 
