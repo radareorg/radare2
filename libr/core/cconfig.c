@@ -4223,8 +4223,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("types.fields", "false", "propagate callee types into struct and union members during type analysis");
 	SETB ("types.rollback", "false", "enable state rollback for type propagation recovery");
 	SETB ("types.synth", "false", "synthesize struct types for untyped pointer args after type matching (see afts)");
-	SETB ("types.sizes", "false", "harvest object sizes from memset-style call sites during type analysis");
-	SETS ("types.sizefns", "", "extra name/ptrarg/sizearg[*mularg] size functions for types.sizes (name/- drops a builtin)");
+	SETB ("types.sizes", "false", "harvest object sizes from memset-style and allocator call sites during type analysis");
+	SETS ("types.sizefns", "", "extra name/ptrarg/sizearg[*mularg] size functions for types.sizes (r as ptrarg for allocators, name/- drops a builtin)");
 	SETB ("types.xrefs", "true", "show xrefs in type view commands (tv, tfv, tsv, ...)");
 	SETCB ("anal.vars", "true", &cb_analvars, "analyze local variables and arguments");
 	SETB ("anal.vars.clobber", "true", "honor calling convention clobber sets during ESIL analysis");
