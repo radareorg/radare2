@@ -587,13 +587,9 @@ static RCFValueData *r_cf_value_data_new(char *string) {
 	}
 
 	const int len = strlen (string);
-	const int out_len = len / 4 * 3 + 1;
-	ut8 *out = calloc (sizeof (ut8), out_len);
-	if (!out) {
-		R_FREE (data);
-		return NULL;
-	}
-	if (r_base64_decode (out, string, len, false) < 1) {
+	int out_len;
+	ut8 *out = r_base64_decode_dyn (string, len, &out_len);
+	if (!out || out_len < 1) {
 		free (out);
 		R_FREE (data);
 		return NULL;
