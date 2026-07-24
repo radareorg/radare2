@@ -854,20 +854,16 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'b': // "?b"
 		if (input[1] == '6' && input[2] == '4') {
-			//b64 decoding takes at most strlen(str) * 4
-			const int buflen = (strlen (input + 3) * 4) + 1;
-			char* buf = calloc (buflen, sizeof (char));
-			if (!buf) {
+			char *buf = NULL;
+			if (input[3] == '-') {
+				buf = (char *)r_base64_decode_dyn (input + 4, -1, NULL);
+			} else if (input[3] == ' ') {
+				buf = r_base64_encode_dyn ((const ut8 *)input + 4, -1);
+			}
+			if ((input[3] == '-' || input[3] == ' ') && !buf) {
 				return false;
 			}
-			if (input[3] == '-') {
-				if (r_base64_decode ((ut8*)buf, input + 4, -1, true) < 1) {
-					*buf = 0;
-				}
-			} else if (input[3] == ' ') {
-				r_base64_encode (buf, (const ut8*)input + 4, -1);
-			}
-			r_cons_println (core->cons, buf);
+			r_cons_println (core->cons, buf? buf: "");
 			free (buf);
 		} else if (input[1] == 't' && input[2] == 'w') { // "?btw"
 			if (r_num_between (core->num, input + 3) == -1) {

@@ -72,21 +72,18 @@ R_API int r_base64_decode(ut8 *bout, const char *bin, int len, bool strict) {
 
 R_API ut8 *r_base64_decode_dyn(const char *in, int len, int *olen) {
 	R_RETURN_VAL_IF_FAIL (in, NULL);
-	if (len < 0) {
-		len = strlen (in);
-	}
 	if (olen) {
 		*olen = 0;
 	}
-	ut8 *bout = malloc ((len / 4) * 3 + 1);
+	const size_t slen = len < 0? strlen (in): (size_t)len;
+	if (slen > ST32_MAX) {
+		return NULL;
+	}
+	ut8 *bout = malloc (((slen / 4) * 3) + 1);
 	if (!bout) {
 		return NULL;
 	}
-	int res = r_base64_decode (bout, in, len, false);
-	if (res == -1) {
-		free (bout);
-		return NULL;
-	}
+	int res = r_base64_decode (bout, in, (int)slen, false);
 	if (olen) {
 		*olen = res;
 	}
@@ -108,21 +105,22 @@ R_API int r_base64_encode(char *bout, const ut8 *bin, int len) {
 
 R_API char *r_base64_encode_dyn(const ut8 *str, int len) {
 	R_RETURN_VAL_IF_FAIL (str, NULL);
-	int in, out;
-	if (len < 0) {
-		len = strlen ((const char*)str);
-	}
-	const int olen = ((len + 2) / 3) * 4 + 1;
-	if (olen < 1) {
+	const size_t slen = len < 0? strlen ((const char *)str): (size_t)len;
+	size_t olen;
+	if (r_add_overflow (slen, (size_t)2, &olen)
+			|| r_mul_overflow (olen / 3, (size_t)4, &olen)
+			|| r_add_overflow (olen, (size_t)1, &olen)) {
 		return NULL;
 	}
 	char *bout = (char *)malloc (olen);
-	if (bout) {
-		for (in = out = 0; in < len; in += 3, out += 4) {
-			local_b64_encode ((const ut8 *)str + in, (char *)bout + out,
-				(len - in) > 3 ? 3 : len - in);
-		}
-		bout[out] = 0;
+	if (!bout) {
+		return NULL;
 	}
+	size_t in, out;
+	for (in = out = 0; in < slen; in += 3, out += 4) {
+		local_b64_encode (str + in, bout + out,
+			(int)R_MIN (slen - in, 3));
+	}
+	bout[out] = 0;
 	return bout;
 }
