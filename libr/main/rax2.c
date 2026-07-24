@@ -533,12 +533,9 @@ dotherax:
 		r_list_free (split);
 		return true;
 	} else if (flags->b64encode) { // -E
-		// TODO: use the dynamic b64 encoder so we dont have to manually calloc here
-		/* https://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
-		char *out = calloc (1, (len + 2) / 3 * 4 + 1); // ceil (n/3)*4 plus 1 for NUL
+		char *out = r_base64_encode_dyn ((const ut8 *)str, len);
 		if (out) {
-			int olen = r_base64_encode (out, (const ut8 *)str, len);
-			if (olen > 0) {
+			if (*out) {
 				printf ("%s", out);
 				rax2_newline (*flags);
 			}

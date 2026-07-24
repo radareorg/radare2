@@ -9325,95 +9325,101 @@ static int cmd_print(void *data, const char *input) {
 		r_cons_break_pop (core->cons);
 		break;
 	case '6': // "p6"
-		if (1) {
-			int malen = (core->blocksize * 4) + 1;
-			ut8 *buf = malloc (malen);
-			if (!buf) {
+		switch (input[1]) {
+		case 'd': // "p6d"
+			switch (input[2]) {
+			case '?':
+				r_cons_cmd_help_match (core->cons, help_msg_p6, "p6d", 0, true);
 				break;
-			}
-			memset (buf, 0, malen);
-			switch (input[1]) {
-			case 'd': // "p6d"
-				switch (input[2]) {
-				case '?':
-					r_cons_cmd_help_match (core->cons, help_msg_p6, "p6d", 0, true);
-					break;
-				case 's': // "p6ds"
-					if (input[3] == '?') {
-						r_cons_cmd_help_match (core->cons, help_msg_p6, "p6ds", 0, true);
-					} else {
-						char *a = r_str_trim_dup (input + 3);
-						char *out = malloc ((4 + strlen (a)) * 4);
-						if (out && r_base64_decode ((ut8 *)out, (const char *)a, strlen (a), true) > 0) {
-							r_cons_println (core->cons, (const char *)out);
-						} else {
-							R_LOG_ERROR ("r_base64_decode: invalid stream");
-						}
-						free (a);
-						free (out);
-					}
-					break;
-				case 'z': // "p6dz"
-					if (input[3] == '?') {
-						r_cons_cmd_help_match (core->cons, help_msg_p6, "p6dz", 0, true);
-					} else {
-						len = r_str_nlen ((const char *)block, len);
-						if (r_base64_decode (buf, (const char *)block, len, false) > 0) {
-							r_cons_println (core->cons, (const char *)buf);
-						} else {
-							R_LOG_ERROR ("r_base64_decode: invalid stream");
-						}
-					}
-					break;
-				default:
-					len = len > core->blocksize? core->blocksize: len;
-					if (r_base64_decode (buf, (const char *)block, len, false) > 0) {
-						r_cons_println (core->cons, (const char *)buf);
+			case 's': // "p6ds"
+				if (input[3] == '?') {
+					r_cons_cmd_help_match (core->cons, help_msg_p6, "p6ds", 0, true);
+				} else {
+					char *a = r_str_trim_dup (input + 3);
+					char *out = malloc ((4 + strlen (a)) * 4);
+					if (out && r_base64_decode ((ut8 *)out, (const char *)a, strlen (a), true) > 0) {
+						r_cons_println (core->cons, (const char *)out);
 					} else {
 						R_LOG_ERROR ("r_base64_decode: invalid stream");
 					}
-					break;
+					free (a);
+					free (out);
 				}
 				break;
-			case 'e': // "p6e"
-				switch (input[2]) {
-				case '?':
-					r_cons_cmd_help_match (core->cons, help_msg_p6, "p6e", 0, true);
-					break;
-				case 's': // "p6es"
-					if (input[3] == '?') {
-						r_cons_cmd_help_match (core->cons, help_msg_p6, "p6es", 0, true);
-					} else {
-						char *a = r_str_trim_dup (input + 3);
-						char *out = calloc ((4 + strlen (a)), 4);
-						r_base64_encode ((char *)out, (const ut8 *)a, strlen (a));
+			case 'z': // "p6dz"
+				if (input[3] == '?') {
+					r_cons_cmd_help_match (core->cons, help_msg_p6, "p6dz", 0, true);
+				} else {
+					len = r_str_nlen ((const char *)block, len);
+					int olen;
+					ut8 *out = r_base64_decode_dyn ((const char *)block, len, &olen);
+					if (out && olen > 0) {
 						r_cons_println (core->cons, (const char *)out);
-						free (a);
-						free (out);
-					}
-					break;
-				case 'z': // "p6ez"
-					if (input[3] == '?') {
-						r_cons_cmd_help_match (core->cons, help_msg_p6, "p6ez", 0, true);
 					} else {
-						len = r_str_nlen ((const char *)block, len);
-						r_base64_encode ((char *)buf, block, len);
-						r_cons_println (core->cons, (const char *)buf);
+						R_LOG_ERROR ("r_base64_decode: invalid stream");
 					}
-					break;
-				default:
-					len = len > core->blocksize? core->blocksize: len;
-					r_base64_encode ((char *)buf, block, len);
-					r_cons_println (core->cons, (const char *)buf);
-					break;
+					free (out);
 				}
 				break;
-			case '?':
-			default:
-				r_cons_cmd_help (core->cons, help_msg_p6);
+			default: {
+				len = len > core->blocksize? core->blocksize: len;
+				int olen;
+				ut8 *out = r_base64_decode_dyn ((const char *)block, len, &olen);
+				if (out && olen > 0) {
+					r_cons_println (core->cons, (const char *)out);
+				} else {
+					R_LOG_ERROR ("r_base64_decode: invalid stream");
+				}
+				free (out);
 				break;
 			}
-			free (buf);
+			}
+			break;
+		case 'e': // "p6e"
+			switch (input[2]) {
+			case '?':
+				r_cons_cmd_help_match (core->cons, help_msg_p6, "p6e", 0, true);
+				break;
+			case 's': // "p6es"
+				if (input[3] == '?') {
+					r_cons_cmd_help_match (core->cons, help_msg_p6, "p6es", 0, true);
+				} else {
+					char *a = r_str_trim_dup (input + 3);
+					char *out = r_base64_encode_dyn ((const ut8 *)a, strlen (a));
+					if (out) {
+						r_cons_println (core->cons, out);
+					}
+					free (a);
+					free (out);
+				}
+				break;
+			case 'z': // "p6ez"
+				if (input[3] == '?') {
+					r_cons_cmd_help_match (core->cons, help_msg_p6, "p6ez", 0, true);
+				} else {
+					len = r_str_nlen ((const char *)block, len);
+					char *out = r_base64_encode_dyn (block, len);
+					if (out) {
+						r_cons_println (core->cons, out);
+					}
+					free (out);
+				}
+				break;
+			default: {
+				len = len > core->blocksize? core->blocksize: len;
+				char *out = r_base64_encode_dyn (block, len);
+				if (out) {
+					r_cons_println (core->cons, out);
+				}
+				free (out);
+				break;
+			}
+			}
+			break;
+		case '?':
+		default:
+			r_cons_cmd_help (core->cons, help_msg_p6);
+			break;
 		}
 		break;
 	case '8': // "p8"

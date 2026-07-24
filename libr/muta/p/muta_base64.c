@@ -14,16 +14,23 @@ static int base64_get_key_size(RMutaSession *ms) {
 }
 
 static bool update(RMutaSession *ms, const ut8 *buf, int len) {
+	if (len < 1) {
+		return len == 0;
+	}
 	int olen = 0;
 	ut8 *obuf = NULL;
 	switch (ms->dir) {
 	case R_MUTA_OP_ENCRYPT:
-		olen = ((len + 2) / 3) * 4;
-		obuf = malloc (olen + 1);
+		obuf = (ut8 *)r_base64_encode_dyn (buf, len);
 		if (!obuf) {
 			return false;
 		}
-		r_base64_encode ((char *)obuf, (const ut8 *)buf, len);
+		size_t encoded_len = strlen ((const char *)obuf);
+		if (encoded_len > ST32_MAX) {
+			free (obuf);
+			return false;
+		}
+		olen = (int)encoded_len;
 		break;
 	case R_MUTA_OP_DECRYPT:
 		olen = 4 + ((len / 4) * 3);

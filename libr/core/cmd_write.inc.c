@@ -1065,31 +1065,29 @@ static int cmd_w6(void *data, const char *input) {
 			if (bin_len <= 0) {
 				fail = true;
 			} else {
-				buf = calloc (str_len + 1, 4);
-				len = r_base64_encode ((char *)buf, bin_buf, bin_len);
-				if (len == 0) {
+				buf = (ut8 *)r_base64_encode_dyn (bin_buf, bin_len);
+				size_t encoded_len = buf? strlen ((const char *)buf): 0;
+				if (!buf || encoded_len > ST32_MAX) {
 					R_FREE (buf);
 					fail = true;
+				} else {
+					len = (int)encoded_len;
 				}
 			}
 			free (bin_buf);
-			}
 			break;
+		}
 		case 'e': { // "w6e"
-			ut8 *bin_buf = malloc (str_len);
-			if (!bin_buf) {
-				break;
-			}
 			char *s = r_str_trim_dup (input + 1);
 			int slen = strlen (s);
-			free (buf);
-			buf = malloc ((4+slen) * 4);
-			len = r_base64_encode ((char *)buf, (const ut8*)s, slen);
-			if (len == 0) {
+			buf = (ut8 *)r_base64_encode_dyn ((const ut8 *)s, slen);
+			size_t encoded_len = buf? strlen ((const char *)buf): 0;
+			if (!buf || !encoded_len || encoded_len > ST32_MAX) {
 				R_FREE (buf);
 				fail = true;
+			} else {
+				len = (int)encoded_len;
 			}
-			free (bin_buf);
 			free (s);
 			break;
 		}
