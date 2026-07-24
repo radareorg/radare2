@@ -1228,3 +1228,26 @@ EXPECT=<<EXPECT_END
 (nofunc) 0x407454 [CALL] jalr t9
 EXPECT_END
 RUN
+
+NAME=callargs reads a mips o32 stack argument above the home area
+FILE=malloc://256
+ARGS=-a mips -b 32 -e cfg.bigendian=true -e anal.cc=o32
+CMDS=<<EOF
+wx 2404005024050054240600582407005c24080060afa800100c0000100000000003e0000800000000
+wx 03e0000800000000 @ 0x40
+w AA @ 0x50
+w BB @ 0x54
+w CC @ 0x58
+w DD @ 0x5c
+w EE @ 0x60
+af @ 0x40
+afn five @ 0x40
+'td int five(const char *a, const char *b, const char *c, const char *d, const char *e);
+tk func.five.cc=o32
+af @ 0
+a:callargs-q 0x18
+EOF
+EXPECT=<<EOF
+int five("AA", "BB", "CC", "DD", "EE")
+EOF
+RUN
