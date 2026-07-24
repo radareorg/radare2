@@ -190,6 +190,7 @@ struct Getarg {
 typedef struct plugin_data_t PluginData;
 static const char* getspr(PluginData *pd, struct Getarg *gop, int n);
 static char *getarg2(PluginData *pd, struct Getarg *gop, int n, const char *setstr);
+static char *ppc_idx_ea(PluginData *pd, struct Getarg *gop, char *buf, size_t sz);
 
 static ut64 mask64(ut64 mb, ut64 me) {
 	ut64 maskmb = UT64_MAX >> mb;
@@ -778,6 +779,12 @@ typedef struct plugin_data_t {
 /* Map a capstone PPC register ID to a GPR index 0..31, or -1 for non-GPRs. */
 static inline int toc_reg_idx(unsigned int cs_reg) {
 	int idx = (int)cs_reg - (int)PPC_REG_R0;
+#if CS_API_MAJOR >= 6
+	if (idx < 0 || idx >= 32) {
+		// cs6 reports 64-bit instruction patterns via the X view of the same GPRs
+		idx = (int)cs_reg - (int)PPC_REG_X0;
+	}
+#endif
 	return (idx >= 0 && idx < 32) ? idx : -1;
 }
 
@@ -976,7 +983,21 @@ static int ppc_isel_crbit(struct Getarg *gop, int n, char *regbuf, size_t sz) {
 		return -1;
 	}
 	const char *name = cs_reg_name (gop->handle, op.reg);
-	if (!name || strncmp (name, "cr", 2) || name[2] < '0' || name[2] > '7') {
+	if (!name) {
+		return -1;
+	}
+#if CS_API_MAJOR >= 6
+	if (*name >= '0' && *name <= '9') {
+		// cs6 names CR bits by number: 4*field+bit, bit 0=lt 1=gt 2=eq 3=so
+		const int bit = atoi (name);
+		if (bit < 0 || bit > 31) {
+			return -1;
+		}
+		snprintf (regbuf, sz, "cr%d", bit / 4);
+		return (bit & 3) < 3? (bit & 3): -1;
+	}
+#endif
+	if (strncmp (name, "cr", 2) || name[2] < '0' || name[2] > '7') {
 		return -1;
 	}
 	const char *suf = name + 3;
@@ -989,16 +1010,9 @@ static int ppc_isel_crbit(struct Getarg *gop, int n, char *regbuf, size_t sz) {
 // Byte-reverse load/store ESIL for `nbytes` (2/4/8) at the indexed (rA|0)+rB
 // address, built per-byte so it is endianness-independent (ESIL has no bswap).
 static void ppc_esil_brx(RAnalOp *op, PluginData *pd, struct Getarg *gop, int nbytes, bool store) {
-	cs_insn *insn = gop->insn;
 	const char *reg = getarg2 (pd, gop, 0, "");
-	const char *rb = getarg2 (pd, gop, 2, "");
-	char ea[32];
-	// rA==0 in indexed forms (e.g. lwbrx r0, 0, rB) is an invalid reg
-	if (INSOP (1).type == PPC_OP_REG && INSOP (1).reg != PPC_REG_INVALID) {
-		snprintf (ea, sizeof (ea), "%s,%s,+", getarg2 (pd, gop, 1, ""), rb);
-	} else {
-		snprintf (ea, sizeof (ea), "%s", rb);
-	}
+	char ea[64];
+	ppc_idx_ea (pd, gop, ea, sizeof (ea));
 	RStrBuf *sb = r_strbuf_new ("");
 	int i;
 	if (store) {
@@ -1019,6 +1033,21 @@ static void ppc_esil_brx(RAnalOp *op, PluginData *pd, struct Getarg *gop, int nb
 
 static char *ppc_idx_ea(PluginData *pd, struct Getarg *gop, char *buf, size_t sz) {
 	cs_insn *insn = gop->insn;
+#if CS_API_MAJOR >= 6
+	// cs6 folds X-form addressing into one mem operand: base = rA (ZERO/ZERO8 when rA is 0), offset = rB
+	if (INSOP (1).type == PPC_OP_MEM) {
+		csh handle = gop->handle;
+		const ppc_reg breg = INSOP (1).mem.base;
+		const char *base = (breg == PPC_REG_INVALID || breg == PPC_REG_ZERO || breg == PPC_REG_ZERO8)? NULL: cs_reg_name (handle, breg);
+		const char *offset = (INSOP (1).mem.offset == PPC_REG_INVALID)? NULL: cs_reg_name (handle, INSOP (1).mem.offset);
+		if (base && offset) {
+			snprintf (buf, sz, "%s,%s,+", base, offset);
+		} else {
+			snprintf (buf, sz, "%s", offset? offset: (base? base: "0"));
+		}
+		return buf;
+	}
+#endif
 	const char *rb = getarg2 (pd, gop, 2, "");
 	if (INSOP (1).type == PPC_OP_REG && INSOP (1).reg != PPC_REG_INVALID) {
 		snprintf (buf, sz, "%s,%s,+", getarg2 (pd, gop, 1, ""), rb);
@@ -1037,13 +1066,24 @@ static void ppc_ldbody(char *load, size_t sz, const char *ea, int width, int sig
 	}
 }
 
+// rA for the update-form writeback; cs6 keeps it as the mem base instead of a reg operand
+static const char *ppc_idx_ra(PluginData *pd, struct Getarg *gop) {
+#if CS_API_MAJOR >= 6
+	cs_insn *insn = gop->insn;
+	if (INSOP (1).type == PPC_OP_MEM && INSOP (1).mem.base != PPC_REG_INVALID) {
+		return cs_reg_name (gop->handle, INSOP (1).mem.base);
+	}
+#endif
+	return getarg2 (pd, gop, 1, "");
+}
+
 static void ppc_esil_ldx(RAnalOp *op, PluginData *pd, struct Getarg *gop, int width, bool update, int signbits) {
 	char ea[64], load[96];
 	ppc_idx_ea (pd, gop, ea, sizeof (ea));
 	const char *rd = getarg2 (pd, gop, 0, "");
 	ppc_ldbody (load, sizeof (load), ea, width, signbits);
 	if (update) {
-		esilprintf (op, "%s,%s,=,%s,%s,=", load, rd, ea, getarg2 (pd, gop, 1, ""));
+		esilprintf (op, "%s,%s,=,%s,%s,=", load, rd, ea, ppc_idx_ra (pd, gop));
 	} else {
 		esilprintf (op, "%s,%s,=", load, rd);
 	}
@@ -1065,7 +1105,7 @@ static void ppc_esil_stx(RAnalOp *op, PluginData *pd, struct Getarg *gop, int wi
 	ppc_idx_ea (pd, gop, ea, sizeof (ea));
 	const char *rs = getarg2 (pd, gop, 0, "");
 	if (update) {
-		esilprintf (op, "%s,%s,=[%d],%s,%s,=", rs, ea, width, ea, getarg2 (pd, gop, 1, ""));
+		esilprintf (op, "%s,%s,=[%d],%s,%s,=", rs, ea, width, ea, ppc_idx_ra (pd, gop));
 	} else {
 		esilprintf (op, "%s,%s,=[%d]", rs, ea, width);
 	}
@@ -1109,31 +1149,115 @@ static void ppc_fpop(RAnalOp *op, PluginData *pd, struct Getarg *gop, bool singl
 	}
 }
 
-// predicate-guarded pc write shared by bc, b<cond>lr and b<cond>ctr forms
-static void ppc_cond_branch(RAnalOp *op, int bc, const char *cr, const char *target) {
+// CR-field boolean test expression for one predicate; false if unhandled
+static bool ppc_cr_cond(int bc, const char *cr, char *buf, size_t sz) {
 	switch (bc) {
 	case PPC_BC_LT:
-		esilprintf (op, "0x80,%s,&,!,!,?{,%s,pc,=,},", cr, target);
-		break;
+		snprintf (buf, sz, "0x80,%s,&,!,!", cr);
+		return true;
 	case PPC_BC_LE:
-		esilprintf (op, "0x80,%s,&,!,!,%s,!,|,?{,%s,pc,=,},", cr, cr, target);
-		break;
+		snprintf (buf, sz, "0x80,%s,&,!,!,%s,!,|", cr, cr);
+		return true;
 	case PPC_BC_EQ:
-		esilprintf (op, "%s,!,?{,%s,pc,=,},", cr, target);
-		break;
+		snprintf (buf, sz, "%s,!", cr);
+		return true;
 	case PPC_BC_GE:
-		esilprintf (op, "0x80,%s,&,!,%s,!,|,?{,%s,pc,=,},", cr, cr, target);
-		break;
+		snprintf (buf, sz, "0x80,%s,&,!,%s,!,|", cr, cr);
+		return true;
 	case PPC_BC_GT:
-		esilprintf (op, "0x80,%s,&,!,%s,!,!,&,?{,%s,pc,=,},", cr, cr, target);
-		break;
+		snprintf (buf, sz, "0x80,%s,&,!,%s,!,!,&", cr, cr);
+		return true;
 	case PPC_BC_NE:
-		esilprintf (op, "%s,!,!,?{,%s,pc,=,},", cr, target);
-		break;
-	default:
-		break;
+		snprintf (buf, sz, "%s,!,!", cr);
+		return true;
+	}
+	return false;
+}
+
+// predicate-guarded pc write shared by bc, b<cond>lr and b<cond>ctr forms
+static void ppc_cond_branch(RAnalOp *op, int bc, const char *cr, const char *target) {
+	char cond[128];
+	if (ppc_cr_cond (bc, cr, cond, sizeof (cond))) {
+		esilprintf (op, "%s,?{,%s,pc,=,},", cond, target);
 	}
 }
+
+#if CS_API_MAJOR >= 6
+// cs6 folds every conditional-branch alias onto the generic bc/bcctr/bclr ids; the predicate and CR field live in detail->ppc.bc
+static int ppc6_pred(cs_insn *insn) {
+	int p = insn->detail->ppc.bc.pred_cr;
+	if (p == PPC_PRED_INVALID) {
+		return p;
+	}
+	// fold the branch-hint bits back into the plain BO forms so ppc_cond_branch matches
+	int bo = p & 0x1f;
+	if (bo == 14 || bo == 15) {
+		bo = 12;
+	} else if (bo == 6 || bo == 7) {
+		bo = 4;
+	}
+	return (p & ~0x1f) | bo;
+}
+
+static const char *ppc6_crx_name(csh handle, cs_insn *insn) {
+	const char *name = cs_reg_name (handle, insn->detail->ppc.bc.crX);
+	return name? name: "cr0";
+}
+
+// alias details may drop the leading BO/BI operands, so the branch target is the last immediate
+static bool ppc6_bc_target(cs_insn *insn, ut64 *jump) {
+	int i;
+	for (i = insn->detail->ppc.op_count - 1; i >= 0; i--) {
+		if (insn->detail->ppc.operands[i].type == PPC_OP_IMM) {
+			*jump = (ut64)insn->detail->ppc.operands[i].imm;
+			return true;
+		}
+	}
+	return false;
+}
+
+// cs6 reports the parent id (li -> addi, mr -> or, ...) with alias-shaped operands;
+// reroute onto the alias ids that have dedicated cases so their v5 semantics apply.
+// Branch aliases stay on the generic ids: those cases read detail->ppc.bc instead.
+static unsigned int ppc6_case_id(cs_insn *insn) {
+	if (!insn->is_alias || !insn->usesAliasDetails) {
+		return insn->id;
+	}
+	switch (insn->alias_id) {
+	case PPC_INS_ALIAS_LI:
+	case PPC_INS_ALIAS_LIS:
+	case PPC_INS_ALIAS_MR:
+	case PPC_INS_ALIAS_CLRLWI:
+	case PPC_INS_ALIAS_CLRLDI:
+	case PPC_INS_ALIAS_ROTLW:
+	case PPC_INS_ALIAS_ROTLWI:
+	case PPC_INS_ALIAS_ROTLD:
+	case PPC_INS_ALIAS_ROTLDI:
+	case PPC_INS_ALIAS_CRCLR:
+	case PPC_INS_ALIAS_CRSET:
+	case PPC_INS_ALIAS_CRMOVE:
+	case PPC_INS_ALIAS_CRNOT:
+	case PPC_INS_ALIAS_LWSYNC:
+	case PPC_INS_ALIAS_PTESYNC:
+	case PPC_INS_ALIAS_MFPVR:
+	case PPC_INS_ALIAS_MFDCCR:
+	case PPC_INS_ALIAS_MFICCR:
+	case PPC_INS_ALIAS_MFDEAR:
+	case PPC_INS_ALIAS_MTDCCR:
+	case PPC_INS_ALIAS_MTICCR:
+	case PPC_INS_ALIAS_MTDEAR:
+		return (unsigned int)insn->alias_id;
+	// shift aliases whose case labels are real enum entries, not the alias ids
+	case PPC_INS_ALIAS_SLWI:
+		return PPC_INS_SLWI;
+	case PPC_INS_ALIAS_SRWI:
+		return PPC_INS_SRWI;
+	case PPC_INS_ALIAS_SLDI:
+		return PPC_INS_SLDI;
+	}
+	return insn->id;
+}
+#endif
 
 static int decompile_vle(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	vle_t* instr = 0;
@@ -1269,7 +1393,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		};
 		op->size = insn->size;
 		op->id = insn->id;
+#if CS_API_MAJOR >= 6
+		switch (ppc6_case_id (insn)) {
+#else
 		switch (insn->id) {
+#endif
 		case PPC_INS_CMPB:
 			// per-byte equality mask into a gpr, not a cr compare; not modeled in esil
 			op->type = R_ANAL_OP_TYPE_CMP;
@@ -1442,7 +1570,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			}
 			esilprintf (op, "%s,%s,=[4],%s=", ARG (0), op1, op1);
-			if (INSOP (1).type == PPC_OP_MEM && INSOP (1).mem.base == PPC_REG_R1) {
+			if (INSOP (1).type == PPC_OP_MEM && toc_reg_idx (INSOP (1).mem.base) == 1) {
 				op->stackop = R_ANAL_STACK_INC;
 				op->stackptr = -INSOP (1).mem.disp;
 			}
@@ -1500,7 +1628,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			}
 			esilprintf (op, "%s,%s,=[8],%s=", ARG (0), op1, op1);
-			if (INSOP (1).type == PPC_OP_MEM && INSOP (1).mem.base == PPC_REG_R1) {
+			if (INSOP (1).type == PPC_OP_MEM && toc_reg_idx (INSOP (1).mem.base) == 1) {
 				op->stackop = R_ANAL_STACK_INC;
 				op->stackptr = -INSOP (1).mem.disp;
 			}
@@ -1975,11 +2103,25 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_SUBC:
 		case PPC_INS_SUBF:
 			op->type = R_ANAL_OP_TYPE_SUB;
+#if CS_API_MAJOR >= 6
+			if (insn->is_alias && insn->usesAliasDetails) {
+				// the "sub rD, rB, rA" alias details reorder the sources
+				esilprintf (op, "%s,%s,-,%s,=", ARG (2), ARG (1), ARG (0));
+				break;
+			}
+#endif
 			esilprintf (op, "%s,%s,-,%s,=", ARG (1), ARG (2), ARG (0));
 			break;
 		case PPC_INS_SUBFIC:
 		case PPC_INS_SUBFC:
 			op->type = R_ANAL_OP_TYPE_SUB;
+#if CS_API_MAJOR >= 6
+			if (insn->id == PPC_INS_SUBFC && insn->is_alias && insn->usesAliasDetails) {
+				snprintf (vbuf, sizeof (vbuf), "%s,%s,-", ARG (2), ARG (1));
+				set_ca (op, ARG (2), cm, true, ARG (0), "1", vbuf);
+				break;
+			}
+#endif
 			snprintf (vbuf, sizeof (vbuf), "%s,%s,-", ARG (1), ARG (2));
 			set_ca (op, ARG (1), cm, true, ARG (0), "1", vbuf);
 			break;
@@ -2033,7 +2175,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				if (ridx >= 0) {
 					if (as->config->gp
 							&& INSOP(1).type == PPC_OP_REG
-							&& INSOP(1).reg  == PPC_REG_R2
+							&& toc_reg_idx (INSOP(1).reg) == 2
 							&& INSOP(2).type == PPC_OP_IMM) {
 						pd->toc_map[ridx] = as->config->gp
 							+ (ut64)((st64)INSOP(2).imm << 16);
@@ -2060,6 +2202,15 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case PPC_INS_MTSPR:
 			op->type = R_ANAL_OP_TYPE_MOV;
+#if CS_API_MAJOR >= 6
+			if (insn->detail->ppc.op_count < 2) {
+				// alias details drop the spr number; only the xer alias is modelled as a register
+				if (!strcmp (insn->mnemonic, "mtxer")) {
+					esilprintf (op, "%s,xer,=", ARG (0));
+				}
+				break;
+			}
+#endif
 			esilprintf (op, "%s,%s,=", ARG (1), PPCSPR (0));
 			break;
 		case PPC_INS_MFCR:
@@ -2071,11 +2222,31 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case PPC_INS_BCTR: // switch table here
 		case PPC_INS_BCCTR:
+#if CS_API_MAJOR >= 6
+			if (ppc6_pred (insn) != PPC_PRED_INVALID) {
+				op->type = R_ANAL_OP_TYPE_UCJMP;
+				op->fail = addr + op->size;
+				ppc_cond_branch (op, ppc6_pred (insn), ppc6_crx_name (handle, insn), "ctr");
+				break;
+			}
+#endif
 			op->type = R_ANAL_OP_TYPE_UJMP;
 			esilprintf (op, "ctr,pc,=");
 			break;
 		case PPC_INS_BCTRL: // switch table here
 		case PPC_INS_BCCTRL:
+#if CS_API_MAJOR >= 6
+			if (ppc6_pred (insn) != PPC_PRED_INVALID) {
+				char crc[128];
+				op->type = R_ANAL_OP_TYPE_UCCALL;
+				op->fail = addr + op->size;
+				// LK writes LR whether or not the branch is taken, so it stays out of the conditional
+				if (ppc_cr_cond (ppc6_pred (insn), ppc6_crx_name (handle, insn), crc, sizeof (crc))) {
+					esilprintf (op, "pc,lr,=,%s,?{,ctr,pc,=,},", crc);
+				}
+				break;
+			}
+#endif
 			op->type = R_ANAL_OP_TYPE_CALL;
 			esilprintf (op, "pc,lr,=,ctr,pc,=");
 			break;
@@ -2180,14 +2351,58 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_B:
 		case PPC_INS_BC:
 		case PPC_INS_BA: {
+#if CS_API_MAJOR >= 6
+			// cs6 keeps the target as the last immediate; CR and CTR predicates come from detail->ppc.bc
+			ut64 dst = 0;
+			if (ppc6_bc_target (insn, &dst)) {
+				char dstbuf[32];
+				snprintf (dstbuf, sizeof (dstbuf), "0x%"PFMT64x, dst);
+				const int pcr = ppc6_pred (insn);
+				const int pctr = insn->detail->ppc.bc.pred_ctr;
+				const bool ctrdec = (pctr == PPC_PRED_NZ || pctr == PPC_PRED_Z);
+				char crc[128];
+				if (pcr != PPC_PRED_INVALID && ctrdec
+						&& ppc_cr_cond (pcr, ppc6_crx_name (handle, insn), crc, sizeof (crc))) {
+					// bdnzt/bdnzf/bdzt/bdzf: decrement CTR and AND its test with the CR test
+					op->type = R_ANAL_OP_TYPE_CJMP;
+					op->jump = dst;
+					op->fail = addr + op->size;
+					esilprintf (op, "1,ctr,-=,$z,%s%s,&,?{,%s,pc,=,}", pctr == PPC_PRED_NZ? "!,": "", crc, dstbuf);
+				} else if (pcr != PPC_PRED_INVALID) {
+					op->type = R_ANAL_OP_TYPE_CJMP;
+					op->jump = dst;
+					op->fail = addr + op->size;
+					ppc_cond_branch (op, pcr, ppc6_crx_name (handle, insn), dstbuf);
+				} else if (ctrdec) {
+					op->type = R_ANAL_OP_TYPE_CJMP;
+					op->jump = dst;
+					op->fail = addr + op->size;
+					esilprintf (op, "1,ctr,-=,$z,%s?{,%s,pc,=,}", pctr == PPC_PRED_NZ? "!,": "", dstbuf);
+				} else {
+					op->type = R_ANAL_OP_TYPE_JMP;
+					op->jump = dst;
+					esilprintf (op, "%s,pc,=", dstbuf);
+				}
+				break;
+			}
+#endif
 			// cs>=5 routes b<cond>lr/ctr aliases here; target is lr/ctr, never an immediate (which would fabricate jump 0)
 			const char *mn = insn->mnemonic;
 			const char *cr = ARG (1)[0] == '\0' ? "cr0" : ARG (0);
 			if (r_str_endswith (mn, "ctr") || r_str_endswith (mn, "ctrl")) {
 				const bool link = r_str_endswith (mn, "ctrl");
+				const char *ccr = ARG (0)[0] == '\0' ? "cr0" : ARG (0);
 				op->type = link ? R_ANAL_OP_TYPE_UCCALL : R_ANAL_OP_TYPE_UCJMP;
 				op->fail = addr + op->size;
-				ppc_cond_branch (op, BC (), ARG (0)[0] == '\0' ? "cr0" : ARG (0), link ? "pc,lr,=,ctr" : "ctr");
+				if (link) {
+					// LK writes LR whether or not the branch is taken
+					char crc[128];
+					if (ppc_cr_cond (BC (), ccr, crc, sizeof (crc))) {
+						esilprintf (op, "pc,lr,=,%s,?{,ctr,pc,=,},", crc);
+					}
+				} else {
+					ppc_cond_branch (op, BC (), ccr, "ctr");
+				}
 				break;
 			}
 			if (r_str_endswith (mn, "lr") || r_str_endswith (mn, "lrl")) {
@@ -2299,6 +2514,30 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_BCLRL:
 			op->type = R_ANAL_OP_TYPE_CRET;
 			op->fail = addr + op->size;
+#if CS_API_MAJOR >= 6
+			const int lrpred = ppc6_pred (insn);
+			const int lrctr = insn->detail->ppc.bc.pred_ctr;
+			const bool lrctrdec = (lrctr == PPC_PRED_NZ || lrctr == PPC_PRED_Z);
+			char lrc[128];
+			if (lrpred != PPC_PRED_INVALID && lrctrdec
+					&& ppc_cr_cond (lrpred, ppc6_crx_name (handle, insn), lrc, sizeof (lrc))) {
+				// bdnztlr/bdnzflr/bdztlr/bdzflr: decrement CTR and AND its test with the CR test
+				op->type = R_ANAL_OP_TYPE_CJMP;
+				esilprintf (op, "1,ctr,-=,$z,%s%s,&,?{,lr,pc,=,}", lrctr == PPC_PRED_NZ? "!,": "", lrc);
+			} else if (lrpred != PPC_PRED_INVALID) {
+				ppc_cond_branch (op, lrpred, ppc6_crx_name (handle, insn), "lr");
+			} else if (lrctr == PPC_PRED_NZ) {
+				op->type = R_ANAL_OP_TYPE_CJMP;
+				esilprintf (op, "1,ctr,-=,$z,!,?{,lr,pc,=,},");
+			} else if (lrctr == PPC_PRED_Z) {
+				op->type = R_ANAL_OP_TYPE_CJMP;
+				esilprintf (op, "1,ctr,-=,$z,?{,lr,pc,=,}");
+			} else {
+				op->type = R_ANAL_OP_TYPE_RET;
+				esilprintf (op, "lr,pc,=");
+			}
+			break;
+#else
 			if (BC () == PPC_BC_INVALID) {
 				op->type = R_ANAL_OP_TYPE_RET;
 				esilprintf (op, "lr,pc,=");
@@ -2306,6 +2545,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				ppc_cond_branch (op, BC (), ARG (1)[0] == '\0' ? "cr0" : ARG (0), "lr");
 			}
 			break;
+#endif
 		case PPC_INS_RFI:
 		case PPC_INS_RFID:
 			op->type = R_ANAL_OP_TYPE_RET;
@@ -2424,6 +2664,15 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case PPC_INS_MFSPR:
 			op->type = R_ANAL_OP_TYPE_MOV;
+#if CS_API_MAJOR >= 6
+			if (insn->detail->ppc.op_count < 2) {
+				// alias details drop the spr number; only the xer alias is modelled as a register
+				if (!strcmp (insn->mnemonic, "mfxer")) {
+					esilprintf (op, "xer,%s,=", ARG (0));
+				}
+				break;
+			}
+#endif
 			esilprintf (op, "%s,%s,=", PPCSPR (1), ARG (0));
 			break;
 		case PPC_INS_MFCTR:
@@ -2544,7 +2793,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		if (insn->detail->ppc.update_cr0 && !r_strbuf_is_empty (&op->esil)
 				&& (op->type & R_ANAL_OP_TYPE_MASK) != R_ANAL_OP_TYPE_STORE
 				&& INSOP (0).type == PPC_OP_REG
-				&& INSOP (0).reg >= PPC_REG_R0 && INSOP (0).reg <= PPC_REG_R31) {
+				&& toc_reg_idx (INSOP (0).reg) >= 0) {
 			// Rc=1: cr0 from the result signed-compared to zero; SO not modelled (as in cmp)
 			char sx[48];
 			const char *rd = ARG (0);
