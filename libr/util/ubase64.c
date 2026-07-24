@@ -33,6 +33,8 @@ static int local_b64_decode(const char in[4], ut8 out[3]) {
 		}
 		v[i] = cd64[in[i] - 43];
 		if (v[i] == '$') {
+			// Invalid characters intentionally act like padding so damaged data
+			// can be partially recovered, even in strict mode.
 			len = i? i - 1: -1;
 			break;
 		}
