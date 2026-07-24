@@ -2029,3 +2029,77 @@ EXPECT=<<EOF
 0x00000008
 EOF
 RUN
+
+NAME=mips.gnu bgez branches to the decoded target
+FILE=malloc://0x200
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0f000105
+ar t0=1
+ar pc=0
+s 0
+aes
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000040
+EOF
+RUN
+
+NAME=mips.gnu bltz branches to the decoded target
+FILE=malloc://0x200
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0f000005
+ar t0=0xffffffffffffffff
+ar pc=0
+s 0
+aes
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000040
+EOF
+RUN
+
+NAME=mips.gnu bltzal emits esil, links ra and branches
+FILE=malloc://0x200
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0f001005
+ar t0=0xffffffffffffffff
+ar ra=0
+ar pc=0
+s 0
+aes
+ar pc
+ar ra
+EOF
+EXPECT=<<EOF
+0x00000040
+0x00000008
+EOF
+RUN
+
+NAME=mips.gnu bgezal links ra even when the branch is not taken
+FILE=malloc://0x200
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0f001105
+ar t0=0xffffffffffffffff
+ar ra=0
+ar pc=0
+s 0
+2aes
+ar pc
+ar ra
+EOF
+EXPECT=<<EOF
+0x00000008
+0x00000008
+EOF
+RUN
