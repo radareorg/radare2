@@ -395,6 +395,57 @@ struct fcn_00000000_arg0 {
 EOF
 RUN
 
+NAME=afts synthesizes struct from a win64 stack argument above the shadow space
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e anal.cc=ms
+CMDS=<<EOF
+wx 488b4424288b088b500801d1c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg4 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts seeds stack windows for a reverse-stack convention
+FILE=malloc://256
+ARGS=-a x86 -b 32 -e anal.cc=pascal
+CMDS=<<EOF
+wx 8b4424048b088b500801d1c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg7 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts seeds stack windows past borland register args
+FILE=malloc://256
+ARGS=-a x86 -b 32 -e anal.cc=borland
+CMDS=<<EOF
+wx 8b4424048b088b500801d1c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg7 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
 NAME=afts synthesizes struct from a stack argument on arm32
 FILE=malloc://256
 ARGS=-a arm -b 32
@@ -796,6 +847,25 @@ struct fcn_00000000_arg0 {
   uint8_t pad_0x4[4]; // gap
   uint32_t field_0x8;
   uint8_t pad_0xc[124];
+};
+EOF
+RUN
+
+NAME=afts reads a size-function argument from a win64 stack slot above the shadow space
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e anal.cc=ms -e types.sizes=true -e types.sizefns=myset/0/4
+CMDS=<<EOF
+wx c701010000004883ec3848c744242088000000e8280000004883c438c3
+wx c3 @ 0x40
+af @ 0x40
+afn myset @ 0x40
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[132];
 };
 EOF
 RUN
