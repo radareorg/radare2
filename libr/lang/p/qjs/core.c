@@ -116,6 +116,13 @@ static bool r_cmd_qjs_call(RCorePluginSession *cps, const char *input) {
 		// An erroring plugin must not claim the command as handled.
 		JSValue e = JS_GetException (ctx);
 		JS_FreeValue (ctx, e);
+	} else if (JS_IsPromise (res)) {
+		JSPromiseStateEnum state = qjs_await_promise (ctx, res);
+		if (state == JS_PROMISE_FULFILLED) {
+			JSValue e = JS_PromiseResult (ctx, res);
+			ret = JS_ToBool (ctx, e) == 1;
+			JS_FreeValue (ctx, e);
+		}
 	} else {
 		ret = JS_ToBool (ctx, res) == 1;
 	}

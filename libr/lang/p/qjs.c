@@ -138,15 +138,21 @@ typedef struct qjs_plugin_manager_t {
 	R_UNOWNED RCore *core;
 	R_UNOWNED JSRuntime *rt;
 	QjsContext default_ctx; // context for running normal JS code
+	RList *timers;
+	int next_timer_id;
 	RVecCorePlugin core_plugins;
 	RVecArchPlugin arch_plugins;
 	RVecIoPlugin io_plugins;
 	RVecAsmPlugin asm_plugins;
 } QjsPluginManager;
 
+static void qjs_timer_free(void *ptr);
+
 static bool plugin_manager_init(QjsPluginManager *pm, RCore *core, JSRuntime *rt) {
 	pm->core = core;
 	pm->rt = rt;
+	pm->timers = r_list_newf (qjs_timer_free);
+	pm->next_timer_id = 1;
 	RVecCorePlugin_init (&pm->core_plugins);
 	RVecArchPlugin_init (&pm->arch_plugins);
 	RVecIoPlugin_init (&pm->io_plugins);
@@ -308,13 +314,18 @@ static bool plugin_manager_remove_plugin(QjsPluginManager *pm, const char *type,
 }
 
 static void plugin_manager_fini(QjsPluginManager *pm) {
+	r_list_free (pm->timers);
+	pm->timers = NULL;
 	RVecCorePlugin_fini (&pm->core_plugins);
 	RVecArchPlugin_fini (&pm->arch_plugins);
 	RVecIoPlugin_fini (&pm->io_plugins);
 	RVecAsmPlugin_fini (&pm->asm_plugins);
 }
 
+static void js_std_dump_error(JSContext *ctx);
+
 #include "qjs/loader.c"
+#include "qjs/async.c"
 #include "qjs/arch.c"
 #include "qjs/core.c"
 #include "qjs/parse.c"
@@ -323,17 +334,6 @@ static void plugin_manager_fini(QjsPluginManager *pm) {
 ///////////////////////////////////////////////////////////
 
 static bool eval(JSContext *ctx, const char *code);
-
-static void eval_jobs(JSContext *ctx) {
-	JSRuntime *rt = JS_GetRuntime (ctx);
-	JSContext *pctx = NULL;
-	do {
-		int res = JS_ExecutePendingJob (rt, &pctx);
-		if (res == -1) {
-			R_LOG_ERROR ("Exception in pending job");
-		}
-	} while (pctx);
-}
 
 static void r2qjs_dump_obj(JSContext *ctx, JSValueConst val) {
 	const char *str = JS_ToCString (ctx, val);
@@ -663,11 +663,10 @@ static const JSCFunctionListEntry js_os_funcs[] = {
 	JS_CFUNC_MAGIC_DEF ("read", 4, js_os_read_write, 0),
 	JS_CFUNC_MAGIC_DEF ("write", 4, js_os_read_write, 1),
 	JS_CFUNC_MAGIC_DEF ("pending", 4, js_os_pending, 0),
-#if 0
-	JS_CFUNC_MAGIC_DEF ("setReadHandler", 2, js_os_setReadHandler, 0 ),
-	JS_CFUNC_DEF ("setTimeout", 2, js_os_setTimeout ),
-	JS_CFUNC_DEF ("clearTimeout", 1, js_os_clearTimeout ),
-#endif
+	JS_CFUNC_DEF ("setTimeout", 2, js_os_setTimeout),
+	JS_CFUNC_DEF ("setInterval", 2, js_os_setInterval),
+	JS_CFUNC_DEF ("clearTimeout", 1, js_os_clear_timer),
+	JS_CFUNC_DEF ("clearInterval", 1, js_os_clear_timer),
 	// JS_CFUNC_DEF ("open", 2, js_os_open ),
 	// OS_FLAG (O_RDONLY),
 };
@@ -871,8 +870,11 @@ static void register_helpers(JSContext *ctx) {
 	JS_SetPropertyStr (ctx, global_obj, "write", JS_NewCFunction (ctx, js_write, "write", 1));
 	JS_SetPropertyStr (ctx, global_obj, "flush", JS_NewCFunction (ctx, js_flush, "flush", 1));
 	JS_SetPropertyStr (ctx, global_obj, "print", JS_NewCFunction (ctx, js_print, "print", 1));
+	JS_SetPropertyStr (ctx, global_obj, "setTimeout", JS_NewCFunction (ctx, js_os_setTimeout, "setTimeout", 2));
+	JS_SetPropertyStr (ctx, global_obj, "setInterval", JS_NewCFunction (ctx, js_os_setInterval, "setInterval", 2));
+	JS_SetPropertyStr (ctx, global_obj, "clearTimeout", JS_NewCFunction (ctx, js_os_clear_timer, "clearTimeout", 1));
+	JS_SetPropertyStr (ctx, global_obj, "clearInterval", JS_NewCFunction (ctx, js_os_clear_timer, "clearInterval", 1));
 	JS_FreeValue (ctx, global_obj);
-	eval (ctx, "setTimeout = (x,y) => x ();");
 	eval (ctx, "function dump (x) {"
 		"if (typeof x==='object' && Object.keys (x)[0] != '0') { for (let k of Object.keys (x)) { console.log (k);}} else "
 		"if (typeof x==='number'&& x > 0x1000){console.log (R.hex (x));}else"
@@ -971,6 +973,13 @@ static bool eval(JSContext *ctx, const char *code) {
 		JSValue e = JS_GetException (ctx);
 		r2qjs_dump_obj (ctx, e);
 		JS_FreeValue (ctx, e);
+	} else if (JS_IsPromise (v)) {
+		JSPromiseStateEnum state = qjs_await_promise (ctx, v);
+		if (state == JS_PROMISE_REJECTED) {
+			JSValue e = JS_PromiseResult (ctx, v);
+			js_std_dump_error1 (ctx, e);
+			JS_FreeValue (ctx, e);
+		}
 	}
 	eval_jobs (ctx);
 	if (wantRaw) {

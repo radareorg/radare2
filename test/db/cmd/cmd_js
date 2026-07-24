@@ -29,6 +29,18 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=qjs setTimeout order
+FILE=-
+CMDS=<<EOF
+""js let done = new Promise((resolve) => setTimeout(() => { console.log("timer"); resolve(); }, 0)); console.log("sync"); done;
+EOF
+EXPECT=<<EOF
+sync
+timer
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=qjs loading, running and unloading of core plugins
 FILE=-
 CMDS=<<EOF
@@ -88,6 +100,21 @@ EOF
 EXPECT_ERR=<<EOF
 WARN: r2.plugin with name qjs-example is already registered
 EOF
+RUN
+
+NAME=qjs async core plugin call
+FILE=-
+CMDS=<<EOF
+""js (function() { function asyncPlugin() { function coreCall(input) { if (!input.startsWith("ta")) { return false; } return new Promise((resolve) => setTimeout(() => { console.log("async core"); resolve(true); }, 0)); } return { name: "qjs-async", desc: "Async QJS plugin", call: coreCall }; }; console.log("load qjs-async", r2.plugin("core", asyncPlugin)); })();
+ta
+""js console.log("unload qjs-async", r2.unload("core", "qjs-async"))
+EOF
+EXPECT=<<EOF
+load qjs-async true
+async core
+unload qjs-async true
+EOF
+EXPECT_ERR=
 RUN
 
 NAME=qjs loading and unloading of arch plugins
