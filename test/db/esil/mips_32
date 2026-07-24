@@ -1969,3 +1969,63 @@ EXPECT=<<EOF
 0x00000008
 EOF
 RUN
+
+NAME=mips bgezal links ra unconditionally (not taken still links)
+FILE=malloc://0x200
+ARGS=-a mips -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0f001105
+ar t0=0xffffffff
+ar ra=0
+ar pc=0
+s 0
+2aes
+ar pc
+ar ra
+EOF
+EXPECT=<<EOF
+0x00000008
+0x00000008
+EOF
+RUN
+
+NAME=mips bltzal links ra unconditionally (not taken still links)
+FILE=malloc://0x200
+ARGS=-a mips -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0f001005
+ar t0=1
+ar ra=0
+ar pc=0
+s 0
+2aes
+ar pc
+ar ra
+EOF
+EXPECT=<<EOF
+0x00000008
+0x00000008
+EOF
+RUN
+
+NAME=mips bgezal branches and links when taken
+FILE=malloc://0x200
+ARGS=-a mips -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0f001105
+ar t0=1
+ar ra=0
+ar pc=0
+s 0
+aes
+ar pc
+ar ra
+EOF
+EXPECT=<<EOF
+0x00000040
+0x00000008
+EOF
+RUN

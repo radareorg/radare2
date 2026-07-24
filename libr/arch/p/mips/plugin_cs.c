@@ -476,7 +476,8 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 					addr, ARG (0), ARG (1));
 				break;
 		case MIPS_INS_BGEZAL:
-				r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",!,?{," ES_CALL_D ("%s") ",}",
+				// the link (ra=pc+8) is unconditional; only the jump is conditional
+				r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "pc,4,+,ra,=," ES_IS_NEGATIVE ("%s") ",!,?{," ES_J_D ("%s") ",}",
 					addr, ARG (0), ARG (1));
 				break;
 		case MIPS_INS_BGEZALC:
@@ -488,7 +489,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 					addr, ARG (0), ARG (1));
 			break;
 		case MIPS_INS_BLTZAL:
-				r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",?{," ES_CALL_D ("%s") ",}",
+				r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "pc,4,+,ra,=," ES_IS_NEGATIVE ("%s") ",?{," ES_J_D ("%s") ",}",
 						addr, ARG (0), ARG (1));
 				break;
 		case MIPS_INS_BLTZC:
