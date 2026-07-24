@@ -2890,27 +2890,29 @@ R_API void r_core_visual_config(RCore *core) {
 	}
 }
 
+static char *strset(char *s, const char *n) {
+	free (s);
+	return strdup (n);
+}
+
 R_API void r_core_visual_mounts(RCore *core) {
 	RList *list = NULL;
 	RFSRoot *fsroot = NULL;
 	RListIter *iter;
 	RFSFile *file;
 	RFSPartition *part;
-	int i, ch, option, mode, partition, dir, delta = 7;
-	char *str, path[4096], *root = NULL;
+	int i, ch, option = 0, mode = 0, partition = 0, dir = 0, delta = 7;
+	char *path = strdup (""), *root = NULL;
 	const char *n, *p;
-
-	dir = partition = option = mode = 0;
-	for (;;) {
+	bool done = false;
+	while (!done) {
 		/* Clear */
 		r_cons_clear00 (core->cons);
 
 		/* Show */
 		if (mode == 0) {
-			if (list) {
-				r_list_free (list);
-				list = NULL;
-			}
+			r_list_free (list);
+			list = NULL;
 			r_cons_printf (core->cons, "Press '/' to navigate the root filesystem.\nPartitions:\n\n");
 			n = r_fs_partition_type_get (partition);
 			list = r_fs_partitions (core->fs, n, 0);
@@ -2918,13 +2920,8 @@ R_API void r_core_visual_mounts(RCore *core) {
 			if (list) {
 				r_list_foreach (list, iter, part) {
 					if ((option-delta <= i) && (i <= option+delta)) {
-						if (option == i) {
-							r_cons_printf (core->cons, " > ");
-						} else {
-							r_cons_printf (core->cons, "   ");
-						}
-						r_cons_printf (core->cons, "%d %02x 0x%010"PFMT64x" 0x%010"PFMT64x"\n",
-								part->number, part->type,
+						r_cons_printf (core->cons, "%s%d %02x 0x%010"PFMT64x" 0x%010"PFMT64x"\n",
+								(option == i)? " > ": "   ", part->number, part->type,
 								part->start, part->start+part->length);
 					}
 					i++;
@@ -2936,12 +2933,8 @@ R_API void r_core_visual_mounts(RCore *core) {
 			}
 		} else if (mode == 1) {
 			r_cons_printf (core->cons, "Types:\n\n");
-			for (i = 0; ; i++) {
-				n = r_fs_partition_type_get (i);
-				if (!n) {
-					break;
-				}
-				r_cons_printf (core->cons, "%s%s\n", (i==partition)?" > ":"   ", n);
+			for (i = 0; (n = r_fs_partition_type_get (i)); i++) {
+				r_cons_printf (core->cons, "%s%s\n", (i == partition)? " > ": "   ", n);
 			}
 		} else if (mode == 3) {
 			i = 0;
@@ -2976,11 +2969,8 @@ R_API void r_core_visual_mounts(RCore *core) {
 				r_cons_printf (core->cons, "Root undefined\n");
 			}
 		}
-		if (mode==2) {
+		if (mode == 2) {
 			r_str_trim_path (path);
-			size_t n = strlen (path);
-			str = path + n;
-			snprintf (str, sizeof (path) - n, "/");
 			list = r_fs_dir (core->fs, path);
 			file = r_list_get_n (list, dir);
 			if (file && file->type != 'd') {
@@ -2988,22 +2978,19 @@ R_API void r_core_visual_mounts(RCore *core) {
 			}
 			r_list_free (list);
 			list = NULL;
-			*str='\0';
 		}
 		r_cons_flush (core->cons);
 
 		/* Ask for option */
 		ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
-			free (root);
-			return;
+			break;
 		}
 		ch = r_cons_arrow_to_hjkl (core->cons, ch);
 		switch (ch) {
 			case '/':
-				R_FREE (root);
-				root = strdup ("/");
-				strncpy (path, root, sizeof (path)-1);
+				root = strset (root, "/");
+				path = strset (path, "/");
 				mode = 2;
 				break;
 			case 'l':
@@ -3028,9 +3015,8 @@ R_API void r_core_visual_mounts(RCore *core) {
 					p = r_fs_partition_type (n, part->type);
 					if (p) {
 						if (r_fs_mount (core->fs, p, "/root", part->start)) {
-							free (root);
-							root = strdup ("/root");
-							strncpy (path, root, sizeof (path)-1);
+							root = strset (root, "/root");
+							path = strset (path, "/root");
 							mode = 2;
 						} else {
 							r_cons_printf (core->cons, "Cannot mount partition\n");
@@ -3046,35 +3032,32 @@ R_API void r_core_visual_mounts(RCore *core) {
 					list = NULL;
 				} else if (mode == 2) {
 					r_str_trim_path (path);
-					size_t n = strlen (path);
-					snprintf (path + n, sizeof (path) - n, "/");
 					list = r_fs_dir (core->fs, path);
 					file = r_list_get_n (list, dir);
 					if (file) {
 						if (file->type == 'd') {
-							n = strlen (path);
-							snprintf (path + n, sizeof (path) - n, "%s", file->name);
+							path = r_str_appendf (path, "/%s", file->name);
 							r_str_trim_path (path);
-							if (root && strncmp (root, path, strlen (root) - 1)) {
-								strncpy (path, root, sizeof (path) - 1);
+							if (root && !r_str_startswith (path, root)) {
+								path = strset (path, root);
 							}
 						} else {
 							r_core_cmdf (core, "s 0x%"PFMT64x, file->off);
 							r_fs_umount (core->fs, root);
-							free (root);
-							return;
+							done = true;
 						}
 					} else {
 						r_cons_printf (core->cons, "Unknown file\n");
 						r_cons_flush (core->cons);
 						r_cons_any_key (core->cons, NULL);
 					}
-
+					r_list_free (list);
+					list = NULL;
 				} else if (mode == 3) {
 					fsroot = r_list_get_n (core->fs->roots, option);
 					if (fsroot) {
-						root = strdup (fsroot->path);
-						strncpy (path, root, sizeof (path)-1);
+						root = strset (root, fsroot->path);
+						path = strset (path, root);
 					}
 					mode = 2;
 				}
@@ -3108,6 +3091,8 @@ R_API void r_core_visual_mounts(RCore *core) {
 					if (option < r_list_length (list) - 1) {
 						option++;
 					}
+					r_list_free (list);
+					list = NULL;
 				} else if (mode == 1) {
 					partition++;
 				} else if (mode == 3) {
@@ -3119,6 +3104,8 @@ R_API void r_core_visual_mounts(RCore *core) {
 					if (dir < r_list_length (list) - 1) {
 						dir++;
 					}
+					r_list_free (list);
+					list = NULL;
 				}
 				break;
 			case 't':
@@ -3129,7 +3116,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 					if (!root) {
 						mode = 0;
 					} else if (strcmp (path, root)) {
-						strcat (path, "/..");
+						path = r_str_append (path, "/..");
 						r_str_trim_path (path);
 					} else {
 						r_fs_umount (core->fs, root);
@@ -3138,7 +3125,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 				} else if (mode == 1) {
 					mode = 0;
 				} else {
-					return;
+					done = true;
 				}
 				break;
 			case 'Q':
@@ -3147,44 +3134,40 @@ R_API void r_core_visual_mounts(RCore *core) {
 					r_fs_umount (core->fs, root);
 					mode = 0;
 				} else {
-					return;
+					done = true;
 				}
 				break;
 			case 'g':
 				if (mode == 2) {
 					r_str_trim_path (path);
-					size_t n = strlen (path);
-					str = path + n;
-					snprintf (str, sizeof (path) - n, "/");
 					list = r_fs_dir (core->fs, path);
 					file = r_list_get_n (list, dir);
 					if (file && root) {
-						n = strlen (path);
-						snprintf (path + n, sizeof (path) - n, "%s", file->name);
-						r_str_trim_path (path);
-						if (strncmp (root, path, strlen (root) - 1)) {
-							strncpy (path, root, sizeof (path) - 1);
+						char *fname = r_str_newf ("%s/%s", path, file->name);
+						r_str_trim_path (fname);
+						if (!r_str_startswith (fname, root)) {
+							fname = strset (fname, root);
 						}
-						file = r_fs_open (core->fs, path, false);
+						file = r_fs_open (core->fs, fname, false);
+						free (fname);
 						if (file) {
 							const char *dump_path = r_cons_visual_readln (core->cons, "Dump path (ej: /tmp/file): ", NULL);
 							if (dump_path && *dump_path) {
 								r_fs_read (core->fs, file, 0, file->size);
 								r_file_dump (dump_path, file->data, file->size, 0);
-								r_fs_close (core->fs, file);
 								r_cons_printf (core->cons, "Done\n");
-							} else {
-								r_fs_close (core->fs, file);
 							}
+							r_fs_close (core->fs, file);
 						} else {
 							r_cons_printf (core->cons, "Cannot dump file\n");
 						}
 					} else {
 						r_cons_printf (core->cons, "Cannot dump file\n");
 					}
+					r_list_free (list);
+					list = NULL;
 					r_cons_flush (core->cons);
 					r_cons_any_key (core->cons, NULL);
-					*str='\0';
 				}
 				break;
 			case 'm':
@@ -3214,6 +3197,9 @@ R_API void r_core_visual_mounts(RCore *core) {
 				break;
 		}
 	}
+	r_list_free (list);
+	free (path);
+	free (root);
 }
 
 // helper
