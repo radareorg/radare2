@@ -46,6 +46,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pxd8 pxu8 skip incomplete values
+FILE=-
+CMDS=<<EOF
+wx 4142434445464748494a4b4c
+pxd8 4
+pxu8 4
+pxd8 12
+pxu8 12
+EOF
+EXPECT=<<EOF
+- offset -   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F  0123456789ABCDEF
+0x00000000                       ABCD
+- offset -   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F  0123456789ABCDEF
+0x00000000                       ABCD
+- offset -   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F  0123456789ABCDEF
+0x00000000      5208208757389214273                      ABCDEFGH
+- offset -   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F  0123456789ABCDEF
+0x00000000      5208208757389214273                      ABCDEFGH
+EOF
+RUN
+
 NAME=pxd arg
 FILE=-
 CMDS=<<EOF

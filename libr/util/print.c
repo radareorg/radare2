@@ -1472,16 +1472,20 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					oPrintValue = printValue;
 					j += step - 1;
 				} else if (base == -8) {
-					long long w = r_read_ble64 (buf + j, be);
-					r_print_cursor (p, j, 8, 1);
-					r_print_printf (p, "%23" PFMT64d " ", (st64)w);
-					r_print_cursor (p, j, 8, 0);
+					if (j + 7 < len) {
+						long long w = r_read_ble64 (buf + j, be);
+						r_print_cursor (p, j, 8, 1);
+						r_print_printf (p, "%23" PFMT64d " ", (st64)w);
+						r_print_cursor (p, j, 8, 0);
+					}
 					j += 7;
 				} else if (base == -9) {
-					st64 w = r_read_ble64 (buf + j, be);
-					r_print_cursor (p, j, 8, 1);
-					r_print_printf (p, "%23" PFMT64u " ", (st64)w);
-					r_print_cursor (p, j, 8, 0);
+					if (j + 7 < len) {
+						st64 w = r_read_ble64 (buf + j, be);
+						r_print_cursor (p, j, 8, 1);
+						r_print_printf (p, "%23" PFMT64u " ", (st64)w);
+						r_print_cursor (p, j, 8, 0);
+					}
 					j += 7;
 				} else if (base == -2) { // pxu1
 					ut8 w = buf[j];

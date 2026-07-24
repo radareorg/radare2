@@ -9058,7 +9058,7 @@ static int cmd_print(void *data, const char *input) {
 						r_print_jsondump (core->print, core->block, len, 64);
 					} else {
 						const int nfmt = (input[1] == 'u')? -9: -8;
-						r_print_hexdump (core->print, core->addr, core->block, len, nfmt, 4, 1);
+						r_print_hexdump (core->print, core->addr, core->block, len, nfmt, 8, 1);
 					}
 					break;
 				case '4':
