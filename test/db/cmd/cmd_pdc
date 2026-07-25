@@ -293,7 +293,7 @@ af
 pdc
 EOF
 EXPECT=<<EOF
-// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (int64_t arg1) {
         cr0 = (r3 == 0) // arg1
         if (cr0 & FLG_EQ) goto 0x10 // likely
@@ -320,7 +320,7 @@ af
 pdc
 EOF
 EXPECT=<<EOF
-// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
         // ICOD XREF from fcn.00000000 @ 0x4(x)
         r3 = [obj.myglobal]
@@ -346,7 +346,7 @@ af
 pdc
 EOF
 EXPECT=<<EOF
-// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
         r3 = "hello"
         return
@@ -368,7 +368,7 @@ af
 pdc
 EOF
 EXPECT=<<EOF
-// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (int64_t arg1) {
         [obj.myglobal] = r5
         return
@@ -390,7 +390,7 @@ af
 pdc
 EOF
 EXPECT=<<EOF
-// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
         // ICOD XREF from fcn.00000000 @ 0x4(x)
         r9 = r2 + (0 << 16)
@@ -414,7 +414,7 @@ af
 pdc
 EOF
 EXPECT=<<EOF
-// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
         // ICOD XREF from fcn.00000000 @ 0x4(x)
         r9 = r2 + (0 << 16)
@@ -438,7 +438,7 @@ af
 pdc
 EOF
 EXPECT=<<EOF
-// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
         // ICOD XREF from fcn.00000000 @ 0x4(x)
         r3 = [obj.myglobal]
@@ -463,7 +463,7 @@ af
 pdc
 EOF
 EXPECT=<<EOF
-// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
         // ICOD XREFS from fcn.00000000 @ 0x4(x), 0x8(x)
         r3 = [obj.first]
@@ -487,7 +487,7 @@ af
 pdc
 EOF
 EXPECT=<<EOF
-// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
         // ICOD XREF from fcn.00000000 @ 0x4(x)
         r9 = [obj.myglobal]
@@ -510,7 +510,7 @@ af
 pdc
 EOF
 EXPECT=<<EOF
-// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
         // ICOD XREF from fcn.00000000 @ 0x4(x)
         r3 = [obj.myglobal]
@@ -534,7 +534,7 @@ af
 pdco
 EOF
 EXPECT=<<EOF
- 0x00000000 |                                | // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+ 0x00000000 |                                | // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
  0x00000000 |                                | void fcn.00000000 (void) {
  0x00000000 |         // ICOD XREF from fcn.00000000 @ 0x4(x)
  0x00000004 |         r3 = [obj.myglobal]
@@ -555,7 +555,7 @@ af
 pdc
 EOF
 EXPECT=<<EOF
-// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack_rev);
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (int64_t arg1) {
         cr0 = (r3 == 0) // arg1
         if (cr0 & FLG_EQ) goto 0x10 // likely
