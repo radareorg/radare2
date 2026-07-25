@@ -1343,6 +1343,20 @@ static void comment_var_help(RCore *core, char type) {
 	}
 }
 
+static RAnalVar *comment_var_find(RCore *core, RAnalFunction *fcn, int kind, const char *name) {
+	RAnalVar *var = r_anal_function_get_var_byname (fcn, name);
+	if (!var && R_STR_ISNOTEMPTY (name)) {
+		const char *err = NULL;
+		const st64 idx = (st64)r_num_get_err (core->num, name, &err);
+		// a name that is not a number must not resolve as offset 0, which is a real slot
+		if (!err) {
+			var = r_anal_function_get_var (fcn, kind,
+				(int)r_anal_var_raw_delta (core->anal, fcn, kind, idx));
+		}
+	}
+	return var;
+}
+
 static void cmd_Cv(RCore *core, const char *input) {
 	// TODO enable base64 and make it the default for C*
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
@@ -1392,11 +1406,7 @@ static void cmd_Cv(RCore *core, const char *input) {
 				comment = heap_comment;
 			}
 		}
-		RAnalVar *var = r_anal_function_get_var_byname (fcn, name);
-		if (!var) {
-			const int idx = (int)strtol (name, NULL, 0);
-			var = r_anal_function_get_var (fcn, input[0], idx);
-		}
+		RAnalVar *var = comment_var_find (core, fcn, input[0], name);
 		if (var) {
 			if (var->comment) {
 				if (R_STR_ISNOTEMPTY (comment)) {
@@ -1418,11 +1428,7 @@ static void cmd_Cv(RCore *core, const char *input) {
 	case '-': { // "Cv-"
 		name++;
 		r_str_trim (name);
-		RAnalVar *var = r_anal_function_get_var_byname (fcn, name);
-		if (!var) {
-			int idx = (int)strtol (name, NULL, 0);
-			var = r_anal_function_get_var (fcn, input[0], idx);
-		}
+		RAnalVar *var = comment_var_find (core, fcn, input[0], name);
 		if (!var) {
 			R_LOG_ERROR ("can't find variable at given offset");
 			break;

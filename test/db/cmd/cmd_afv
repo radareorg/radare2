@@ -10,3 +10,48 @@ EXPECT=<<EOF
 not segfaulted
 EOF
 RUN
+
+NAME=afvs takes and reports the stack offset the listing shows
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e anal.cc=ms
+CMDS=<<EOF
+wx 488b4424288b08c3
+af
+afvs 0x30 zzz int
+afvs
+afvs*
+afvsj~{}~offset
+afvss 0x30
+?e access set
+EOF
+EXPECT=<<EOF
+arg int64_t arg_28h @ rsp+0x28
+arg int zzz @ rsp+0x30
+s 0x0
+'afvs 40 arg_28h int64_t
+'afvs 48 zzz int
+s-
+      "offset": 40
+      "offset": 48
+access set
+EOF
+RUN
+
+NAME=afvs delete and comment take the offset the listing shows
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e anal.cc=ms
+CMDS=<<EOF
+wx 488b4424288b08c3
+af
+afvs 0x30 zzz int
+Cvs 0x30 hello
+Cvs 0x30
+afvs-0x30
+afvs 40 redef int64_t
+afvs
+EOF
+EXPECT=<<EOF
+hello
+arg int64_t redef @ rsp+0x28
+EOF
+RUN

@@ -289,6 +289,7 @@ afb+ 0x100000da0 0x100000e90 9 0x100000eba 0xffffffffffffffff
 s 0x100000da0
 'afc amd64
 s-
+'0x100000da0'afS 8
 s 0x100000da0
 'afvb -1 var_1h int64_t
 'afvb -16 var_10h int64_t
@@ -318,7 +319,6 @@ s-
 'axc 0x100000e99 0x100000e8b
 'axc 0x100000eba 0x100000e94
 'axc 0x100000e9e 0x100000e99
-'0x100000da0'afS 8
 
 EOF
 RUN

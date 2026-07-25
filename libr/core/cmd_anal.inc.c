@@ -907,7 +907,7 @@ static RCoreHelpMessage help_msg_afvb = {
 	"afvb*", "", "same as afvb but in r2 commands",
 	"afvb", " [idx] [name] ([type])", "define base pointer based arguments, locals",
 	"afvbj", "", "return list of base pointer based arguments, locals in JSON format",
-	"afvb-", " [name]", "delete argument/locals at the given name",
+	"afvb-", " [name|idx]", "delete the argument/local with that name or frame offset (--N for negative)",
 	"afvbg", " [idx] [addr]", "define var get reference",
 	"afvbs", " [idx] [addr]", "define var set reference",
 	NULL
@@ -919,7 +919,7 @@ static RCoreHelpMessage help_msg_afvr = {
 	"afvr*", "", "same as afvr but in r2 commands",
 	"afvr", " [reg] [name] ([type])", "define register arguments",
 	"afvrj", "", "return list of register arguments in JSON format",
-	"afvr-", " [name]", "delete register arguments at the given index",
+	"afvr-", " [name|idx]", "delete the register argument with that name or index",
 	"afvrg", " [reg] [addr]", "define argument get reference",
 	"afvrs", " [reg] [addr]", "define argument set reference",
 	NULL
@@ -931,7 +931,7 @@ static RCoreHelpMessage help_msg_afvs = {
 	"afvs*", "", "same as afvs but in r2 commands",
 	"afvs", " [idx] [name] [type]", "define stack based arguments,locals",
 	"afvsj", "", "return list of stack based arguments and locals in JSON format",
-	"afvs-", " [name]", "delete stack based argument or locals with the given name",
+	"afvs-", " [name|idx]", "delete the stack argument/local with that name or frame offset (--N for negative)",
 	"afvsg", " [idx] [addr]", "define var get reference",
 	"afvss", " [idx] [addr]", "define var set reference",
 	NULL
@@ -1690,11 +1690,9 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 								ri->name, sname, stype);
 					}
 				} else {
-					int delta = (var->kind == R_ANAL_VAR_KIND_BPV)
-						? var->delta + fcn->bp_off
-						: var->delta;
-					r_cons_printf (core->cons, "'afv%c %d %s %s\n",
-							var->kind, delta, sname, stype);
+					r_cons_printf (core->cons, "'afv%c %"PFMT64d" %s %s\n", var->kind,
+							r_anal_var_frame_delta (core->anal, fcn, var->kind, var->delta),
+							sname, stype);
 				}
 			}
 			free (sname);
@@ -2276,8 +2274,10 @@ static int cmd_afv(RCore *core, const char *str) {
 			r_anal_function_delete_vars_by_kind (fcn, type);
 		} else {
 			RAnalVar *var = NULL;
-			if (isdigit (str[2] & 0xff)) {
-				var = r_anal_function_get_var (fcn, type, (int)r_num_math (core->num, str + 1));
+			if (isdigit (str[2] & 0xff) || (str[2] == '-' && isdigit (str[3] & 0xff))) {
+				const st64 idx = r_num_math (core->num, str + 2);
+				var = r_anal_function_get_var (fcn, type,
+					(int)r_anal_var_raw_delta (core->anal, fcn, type, idx));
 			} else {
 				char *name = r_str_trim_dup (str + 2);
 				if (name) {
@@ -2305,17 +2305,17 @@ static int cmd_afv(RCore *core, const char *str) {
 			if ((vaddr = strchr (p, ' '))) {
 				addr = r_num_math (core->num, vaddr);
 			}
-			RAnalVar *var = r_anal_function_get_var (fcn, str[0], idx);
+			const st64 delta = r_anal_var_raw_delta (core->anal, fcn, str[0], idx);
+			RAnalVar *var = r_anal_function_get_var (fcn, str[0], (int)delta);
 			if (!var) {
 				R_LOG_ERROR ("Cannot find variable with delta %d", idx);
 				res = false;
 				break;
 			}
 			int rw = (str[1] == 'g') ? R_PERM_R : R_PERM_W;
-			int ptr = *var->type == 's' ? idx - fcn->maxstack : idx;
 			RAnalOp *op = r_core_anal_op (core, addr, 0);
 			const char *ireg = op ? op->ireg : NULL;
-			r_anal_var_set_access (core->anal, var, ireg, addr, rw, ptr);
+			r_anal_var_set_access (core->anal, var, ireg, addr, rw, idx);
 			r_anal_op_free (op);
 		} else {
 			R_LOG_ERROR ("Missing argument");
@@ -2363,13 +2363,9 @@ static int cmd_afv(RCore *core, const char *str) {
 				  *vartype++ = 0;
 				  r_str_trim (vartype);
 			  }
-			  if (type == 'b') {
-				  delta -= fcn->bp_off;
-			  }
-			  if ((type == 'b') && delta > 0) {
-				  isarg = true;
-			  } else if (type == 's' && delta > fcn->maxstack) {
-				  isarg = true;
+			  delta = (int)r_anal_var_raw_delta (core->anal, fcn, type, delta);
+			  if (delta >= 0) {
+				  isarg = true; // frame delta 0 is the first argument slot
 			  }
 			  r_anal_function_set_var (fcn, delta, type, vartype, size, isarg, name);
 		  }

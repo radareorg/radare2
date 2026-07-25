@@ -1339,6 +1339,9 @@ R_API bool r_anal_var_rename(RAnal *anal, RAnalVar *var, const char *new_name);
 R_API void r_anal_var_set_type(RAnal *anal, RAnalVar *var, const char *type);
 R_API bool r_anal_var_delete(RAnal *anal, RAnalVar *var);
 R_API ut64 r_anal_var_addr(RAnalVar *var);
+// convert between a raw variable delta and the frame relative offset afv[bs] shows and takes
+R_API st64 r_anal_var_frame_delta(RAnal *anal, RAnalFunction *fcn, int kind, st64 delta);
+R_API st64 r_anal_var_raw_delta(RAnal *anal, RAnalFunction *fcn, int kind, st64 delta);
 R_API bool r_anal_var_set_access(RAnal *anal, RAnalVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
 R_API void r_anal_var_remove_access_at(RAnalVar *var, ut64 address);
 R_API void r_anal_var_clear_accesses(RAnalVar *var);

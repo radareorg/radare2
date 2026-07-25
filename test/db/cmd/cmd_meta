@@ -153,6 +153,25 @@ EOF
 RUN
 
 
+NAME=Cv only takes the argument as an offset when it is a number
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488b4424288b08c3
+af
+afvs 0 zero int
+Cvs zero mycomment
+Cvs nosuchvar clobbered
+Cvs zero
+EOF
+EXPECT=<<EOF
+mycomment
+EOF
+EXPECT_ERR=<<EOF
+ERROR: can't find variable at given offset
+EOF
+RUN
+
 NAME=Cvb variable null pointer deref
 FILE=bins/elf/analysis/x64-simple
 CMDS=<<EOF

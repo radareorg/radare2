@@ -613,6 +613,26 @@ R_API RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta
 	return NULL;
 }
 
+static st64 var_frame_base(RAnal *anal, RAnalFunction *fcn, int kind) {
+	if (kind == R_ANAL_VAR_KIND_BPV) {
+		return fcn->bp_off;
+	}
+	if (kind == R_ANAL_VAR_KIND_SPV && !anal->opt.var_newstack) {
+		return fcn->maxstack;
+	}
+	return 0;
+}
+
+R_API st64 r_anal_var_frame_delta(RAnal *anal, RAnalFunction *fcn, int kind, st64 delta) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, delta);
+	return delta + var_frame_base (anal, fcn, kind);
+}
+
+R_API st64 r_anal_var_raw_delta(RAnal *anal, RAnalFunction *fcn, int kind, st64 delta) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, delta);
+	return delta - var_frame_base (anal, fcn, kind);
+}
+
 R_API ut64 r_anal_var_addr(RAnalVar *var) {
 	R_RETURN_VAL_IF_FAIL (var, UT64_MAX);
 	RAnal *anal = var->fcn->anal;
@@ -1934,7 +1954,6 @@ static int var_ptr_comparator(RAnalVar * const *a, RAnalVar * const *b) {
 
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ *pj) {
 	R_RETURN_IF_FAIL (anal && fcn);
-	bool newstack = anal->opt.var_newstack;
 	if (!pj && mode == 'j') {
 		return;
 	}
@@ -1971,17 +1990,15 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				anal->cb_printf ("'afv%c %s %s %s\n",
 					kind, i->name, var->name, var->type);
 			} else {
-				int delta = kind == R_ANAL_VAR_KIND_BPV
-					? var->delta + fcn->bp_off
-					: var->delta;
-				anal->cb_printf ("'afv%c %d %s %s\n",
-					kind, delta, var->name, var->type);
+				anal->cb_printf ("'afv%c %"PFMT64d" %s %s\n", kind,
+					r_anal_var_frame_delta (anal, fcn, kind, var->delta),
+					var->name, var->type);
 			}
 			break;
 		case 'j':
 			switch (var->kind) {
 			case R_ANAL_VAR_KIND_BPV: {
-				st64 delta = (st64)var->delta + fcn->bp_off;
+				st64 delta = r_anal_var_frame_delta (anal, fcn, var->kind, var->delta);
 				pj_o (pj);
 				pj_ks (pj, "name", var->name);
 				if (var->isarg) {
@@ -2016,7 +2033,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			}
 				break;
 			case R_ANAL_VAR_KIND_SPV: {
-				st64 delta = (st64)var->delta + fcn->maxstack;
+				st64 delta = r_anal_var_frame_delta (anal, fcn, var->kind, var->delta);
 				pj_o (pj);
 				pj_ks (pj, "name", var->name);
 				if (var->isarg) {
@@ -2067,7 +2084,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				break;
 			case R_ANAL_VAR_KIND_SPV:
 			{
-				int delta = newstack? var->delta: fcn->maxstack + var->delta;
+				int delta = (int)r_anal_var_frame_delta (anal, fcn, var->kind, var->delta);
 				const char *spreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
 				if (!var->isarg) {
 					char sign = (-var->delta <= fcn->maxstack) ? '+' : '-';

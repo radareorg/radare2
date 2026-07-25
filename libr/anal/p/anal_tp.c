@@ -3894,8 +3894,8 @@ static char *synth_commands(RAnal *anal, RAnalFunction *fcn, RVecSynthRec *recs)
 				r_strbuf_appendf (sb, "'afvr %s %s struct %s *\n", ri->name, av->name, rec->bt->name);
 			}
 		} else {
-			const int delta = av->kind == R_ANAL_VAR_KIND_BPV? av->delta + fcn->bp_off: av->delta;
-			r_strbuf_appendf (sb, "'afv%c %d %s struct %s *\n", av->kind, delta, av->name, rec->bt->name);
+			const st64 delta = r_anal_var_frame_delta (anal, fcn, av->kind, av->delta);
+			r_strbuf_appendf (sb, "'afv%c %"PFMT64d" %s struct %s *\n", av->kind, delta, av->name, rec->bt->name);
 		}
 	}
 	R_VEC_FOREACH (recs, rec) {
