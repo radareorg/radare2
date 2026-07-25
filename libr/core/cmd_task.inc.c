@@ -58,7 +58,7 @@ static int _cmd_tasks_impl(void *data, const char *input) {
 			return 0;
 		}
 		int tid = r_num_math (core->num, input + 1);
-		r_core_task_join (&core->tasks, core->tasks.current_task, tid ? tid : -1);
+		r_core_task_join (&core->tasks, r_core_task_self (&core->tasks), tid ? tid : -1);
 		break;
 	}
 	case '=': { // "&="

@@ -53,6 +53,9 @@ typedef struct r_core_tasks_t {
 	struct r_core_task_t *current_task;
 	struct r_core_task_t *main_task;
 	RThreadLock *lock;
+#if !HAVE_TH_LOCAL
+	RList *task_threads;
+#endif
 	struct r_core_task_t *foreground_task; // Current ^C target
 	RCoreTaskMode default_mode; // Default execution mode
 	int tasks_running;
