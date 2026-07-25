@@ -2890,7 +2890,8 @@ R_API void r_core_visual_config(RCore *core) {
 	}
 }
 
-static char *strset(char *s, const char *n) {
+// mingw and msvc declare strset() in string.h, avoid that name
+static char *setstr(char *s, const char *n) {
 	free (s);
 	return strdup (n);
 }
@@ -2989,8 +2990,8 @@ R_API void r_core_visual_mounts(RCore *core) {
 		ch = r_cons_arrow_to_hjkl (core->cons, ch);
 		switch (ch) {
 			case '/':
-				root = strset (root, "/");
-				path = strset (path, "/");
+				root = setstr (root, "/");
+				path = setstr (path, "/");
 				mode = 2;
 				break;
 			case 'l':
@@ -3015,8 +3016,8 @@ R_API void r_core_visual_mounts(RCore *core) {
 					p = r_fs_partition_type (n, part->type);
 					if (p) {
 						if (r_fs_mount (core->fs, p, "/root", part->start)) {
-							root = strset (root, "/root");
-							path = strset (path, "/root");
+							root = setstr (root, "/root");
+							path = setstr (path, "/root");
 							mode = 2;
 						} else {
 							r_cons_printf (core->cons, "Cannot mount partition\n");
@@ -3039,7 +3040,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 							path = r_str_appendf (path, "/%s", file->name);
 							r_str_trim_path (path);
 							if (root && !r_str_startswith (path, root)) {
-								path = strset (path, root);
+								path = setstr (path, root);
 							}
 						} else {
 							r_core_cmdf (core, "s 0x%"PFMT64x, file->off);
@@ -3056,8 +3057,8 @@ R_API void r_core_visual_mounts(RCore *core) {
 				} else if (mode == 3) {
 					fsroot = r_list_get_n (core->fs->roots, option);
 					if (fsroot) {
-						root = strset (root, fsroot->path);
-						path = strset (path, root);
+						root = setstr (root, fsroot->path);
+						path = setstr (path, root);
 					}
 					mode = 2;
 				}
@@ -3146,7 +3147,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 						char *fname = r_str_newf ("%s/%s", path, file->name);
 						r_str_trim_path (fname);
 						if (!r_str_startswith (fname, root)) {
-							fname = strset (fname, root);
+							fname = setstr (fname, root);
 						}
 						file = r_fs_open (core->fs, fname, false);
 						free (fname);
