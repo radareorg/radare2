@@ -91,6 +91,17 @@ bool test_r_hex_from_c(void) {
 	r = r_hex_from_c (s);
 	mu_assert_streq (r, "41424344", s);
 	free (r);
+	s = "char *s = \"\\xAF\";";
+	r = r_hex_from_c (s);
+	mu_assert_streq (r, "af", s);
+	free (r);
+	const char high_bit[] = { '"', (char)0xff, '"', '\0' };
+	r = r_hex_from_c (high_bit);
+	mu_assert_streq (r, "ff", "raw high-bit byte");
+	free (r);
+	s = "char *s = \"\\x";
+	r = r_hex_from_c (s);
+	mu_assert_null (r, "truncated hex escape");
 
 	mu_end;
 }
@@ -121,6 +132,10 @@ bool test_r_hex_from_py(void) {
 	s = "buffer = [ 0x41 , \n 0x42, \n 0x43 , \n 0x44 ]";
 	r = r_hex_from_py (s);
 	mu_assert_streq (r, "41424344", s);
+	free (r);
+	s = "s = \"\\xAF\"";
+	r = r_hex_from_py (s);
+	mu_assert_streq (r, "af", s);
 	free (r);
 
 	mu_end;

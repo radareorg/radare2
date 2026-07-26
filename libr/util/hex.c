@@ -1,14 +1,14 @@
-/* radare - LGPL - Copyright 2007-2025 - pancake */
+/* radare - LGPL - Copyright 2007-2026 - pancake */
 
 #include <r_util.h>
 
 static const char abc[] = "0123456789abcdef";
 
-static int hex_digit_value(char c) {
+static int hex_digit_value(ut8 c) {
 	if (isdigit (c)) {
 		return c - '0';
 	}
-	const char lc = tolower (c);
+	const int lc = tolower (c);
 	if (lc >= 'a' && lc <= 'f') {
 		return lc - 'a' + 10;
 	}
@@ -76,7 +76,7 @@ static char *hex_from_array(char *out, const char *code, char open, char close, 
 				word = skip_comment (word);
 			}
 		}
-		if (isdigit (*word)) {
+		if (isdigit ((ut8)*word)) {
 			ut8 n = (ut8)r_num_math (NULL, word);
 			*out++ = abc[(n >> 4) & 0xf];
 			*out++ = abc[n & 0xf];
@@ -132,7 +132,8 @@ R_API char *r_hex_from_c_str(char *out, const char **code) {
 	const char end_char = *iter;
 	iter++;
 	for (; *iter && *iter != end_char; iter++) {
-		if (*iter == '\\') {
+		const ut8 it0 = (ut8)*iter;
+		if (it0 == '\\') {
 			iter++;
 			switch (iter[0]) {
 			case 'e': *out++ = '1'; *out++ = 'b'; break;
@@ -140,29 +141,34 @@ R_API char *r_hex_from_c_str(char *out, const char **code) {
 			case 'n': *out++ = '0'; *out++ = 'a'; break;
 			case 'x': {
 				ut8 c1 = iter[1];
+				if (!c1) {
+					return NULL;
+				}
 				ut8 c2 = iter[2];
+				if (!c2) {
+					return NULL;
+				}
+				int n1 = hex_digit_value (c1);
+				int n2 = hex_digit_value (c2);
+				if (n1 < 0 || n2 < 0) {
+					return NULL;
+				}
+				*out++ = abc[n1];
+				*out++ = abc[n2];
 				iter += 2;
-				if (c1 == '\0' || c2 == '\0') {
-					return NULL;
-				}
-				if (strchr (abc, c1) && strchr (abc, c2)) {
-					*out++ = tolower (c1);
-					*out++ = tolower (c2);
-				} else {
-					return NULL;
-				}
 				break;
 			  }
 			default:
 				if (iter[0] == end_char) {
-					*out++ = abc[*iter >> 4];
-					*out++ = abc[*iter & 0xf];
+					const ut8 escaped = (ut8)*iter;
+					*out++ = abc[escaped >> 4];
+					*out++ = abc[escaped & 0xf];
 				}
 				return NULL;
 			}
 		} else {
-			*out++ = abc[*iter >> 4];
-			*out++ = abc[*iter & 0xf];
+			*out++ = abc[it0 >> 4];
+			*out++ = abc[it0 & 0xf];
 		}
 	}
 	*code = iter;
