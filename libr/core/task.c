@@ -2,17 +2,14 @@
 
 #include <r_core.h>
 
+// Binds a running task to its executing thread (entries live on the stack
+// of the task runner and are registered in scheduler->task_threads), so
+// r_core_task_self() resolves the caller's task from its own thread id
+// instead of relying on shared scheduler state.
 typedef struct {
-	RCoreTaskScheduler *scheduler;
-	RCoreTask *task;
-#if !HAVE_TH_LOCAL
 	R_TH_TID tid;
-#endif
+	RCoreTask *task;
 } RCoreTaskCurrent;
-
-#if HAVE_TH_LOCAL
-static R_TH_LOCAL RCoreTaskCurrent task_tls_current;
-#endif
 
 // Internal helpers (not exposed in headers)
 static RCore *r_core_clone_for_task(RCore *core);
@@ -96,24 +93,7 @@ static void tasks_lock_leave(RCoreTaskScheduler *scheduler, TASK_SIGSET_T *old_s
 	tasks_lock_block_signals_reset (old_sigset);
 }
 
-#if HAVE_TH_LOCAL
-static void task_current_push(RCoreTaskScheduler *scheduler, RCoreTask *task, RCoreTaskCurrent *previous) {
-	*previous = task_tls_current;
-	task_tls_current.scheduler = scheduler;
-	task_tls_current.task = task;
-}
-
-static void task_current_pop(RCoreTaskScheduler *scheduler, RCoreTaskCurrent *previous) {
-	(void)scheduler;
-	task_tls_current = *previous;
-}
-
-static RCoreTask *task_current_get(RCoreTaskScheduler *scheduler) {
-	return task_tls_current.scheduler == scheduler? task_tls_current.task: NULL;
-}
-#else
 static void task_current_push(RCoreTaskScheduler *scheduler, RCoreTask *task, RCoreTaskCurrent *current) {
-	current->scheduler = scheduler;
 	current->tid = r_th_self ();
 	current->task = task;
 	TASK_SIGSET_T old_sigset;
@@ -136,6 +116,7 @@ static RCoreTask *task_current_get(RCoreTaskScheduler *scheduler) {
 	R_TH_TID tid = r_th_self ();
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
+	// reverse iteration so nested tasks on the same thread resolve to the innermost one
 	r_list_foreach_prev (scheduler->task_threads, iter, current) {
 		if (r_th_tid_equal (current->tid, tid)) {
 			task = current->task;
@@ -145,7 +126,6 @@ static RCoreTask *task_current_get(RCoreTaskScheduler *scheduler) {
 	tasks_lock_leave (scheduler, &old_sigset);
 	return task;
 }
-#endif
 
 /* OneShot support removed */
 
@@ -698,6 +678,11 @@ R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler) {
 	R_RETURN_VAL_IF_FAIL (scheduler, NULL);
 	RCoreTask *task = task_current_get (scheduler);
 	return task? task: scheduler->main_task;
+}
+
+R_API bool r_core_task_ismain(RCoreTaskScheduler *scheduler) {
+	R_RETURN_VAL_IF_FAIL (scheduler, false);
+	return r_core_task_self (scheduler) == scheduler->main_task;
 }
 
 R_API RCoreTask *r_core_task_get(RCoreTaskScheduler *scheduler, int id) {
