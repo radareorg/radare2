@@ -78,11 +78,8 @@ bool test_task_join_uses_thread_identity(void) {
 	}
 	r_th_lock_leave (state.lock);
 
-	// simulate a background task having claimed the shared scheduler slot,
-	// which is how the old current_task-based identity used to be raced
-	r_th_lock_enter (core->tasks.lock);
-	core->tasks.current_task = state.task;
-	r_th_lock_leave (core->tasks.lock);
+	// the background task is running at this point, so the main thread must
+	// still resolve to the main task instead of picking up the worker's identity
 	bool main_identity = r_core_task_ismain (&core->tasks);
 
 	RThread *releaser = r_th_new (release_waiting_task, &state, 0);
@@ -102,9 +99,6 @@ bool test_task_join_uses_thread_identity(void) {
 	r_th_free (releaser);
 	r_core_task_join (&core->tasks, core->tasks.main_task, state.task->id);
 	r_event_unhook (core->ev, R_EVENT_CORE_TASK_STARTED, task_started);
-	r_th_lock_enter (core->tasks.lock);
-	core->tasks.current_task = NULL;
-	r_th_lock_leave (core->tasks.lock);
 
 	bool task_identity = state.task_identity;
 	bool output_ready = state.task->res && !strcmp (state.task->res, "ready\n");

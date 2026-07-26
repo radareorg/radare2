@@ -49,7 +49,6 @@ R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->foreground_task = tasks->main_task;
 	tasks->default_mode = R_CORE_TASK_MODE_COOP;
 	tasks->main_core = core;
-	tasks->current_task = NULL;
 }
 
 R_API void r_core_task_scheduler_fini(RCoreTaskScheduler *tasks) {
@@ -424,8 +423,6 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 		return;
 	}
 
-	scheduler->current_task = NULL;
-
 	current->state = next_state;
 
 	if (stop) {
@@ -459,10 +456,6 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 		}
 	}
 
-	if (!stop) {
-		scheduler->current_task = current;
-		// else: no context to load/reset; keep current
-	}
 	R_CRITICAL_LEAVE (core);
 }
 

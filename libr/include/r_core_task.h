@@ -50,7 +50,6 @@ typedef struct r_core_tasks_t {
 	int task_id_next;
 	RList *tasks;
 	RList *tasks_queue;
-	struct r_core_task_t *current_task;
 	struct r_core_task_t *main_task;
 	RThreadLock *lock;
 	RList *task_threads; // (thread, task) bindings resolved by r_core_task_self
