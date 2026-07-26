@@ -1444,6 +1444,7 @@ typedef struct r_anal_cc_argslot_t {
 	const char *reg; // register holding the arg, NULL when stack-located
 	st64 off; // byte offset of the stack slot from SP, 0 for reg args
 	int size; // slot width in bytes, 0 for reg args
+	bool fixed; // the convention pins this slot, so it does not follow the previous arg
 } RAnalCCArgSlot;
 R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int argc, bool incall, RAnalCCArgSlot *out);
 R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int argno, int argc, bool incall, ut64 *out);

@@ -411,8 +411,16 @@ bool test_r_anal_cc_argslot_shadow(void) {
 	sdb_set (anal->sdb_cc, "cc.winish.arg4", "stack1", 0);
 	mu_assert_true (r_anal_cc_argslot (anal, "winish", 4, -1, false, &s), "fixed slot arg");
 	mu_assert_eq (s.off, 8, "^N ignores the shadow area");
+	// sdb is writable, so a bogus home area must not push slot offsets off the stack
+	sdb_set (anal->sdb_cc, "cc.winish.shadow", "-16", 0);
+	sdb_unset (anal->sdb_cc, "cc.winish.arg4", 0);
+	mu_assert_true (r_anal_cc_argslot (anal, "winish", 4, -1, false, &s), "negative shadow arg");
+	mu_assert_eq (s.off, 0, "a negative home area is rejected");
+	sdb_set (anal->sdb_cc, "cc.winish.shadow", "32", 0);
+	sdb_set (anal->sdb_cc, "cc.winish.arg4", "stack1", 0);
 	r_anal_cc_set (anal, "rax winish(rcx, stack)");
 	mu_assert_null (sdb_const_get (anal->sdb_cc, "cc.winish.shadow", 0), "redefining a cc drops its shadow");
+	mu_assert_null (sdb_const_get (anal->sdb_cc, "cc.winish.arg4", 0), "redefining a cc drops stale arg slots");
 	r_anal_cc_del (anal, "winish");
 	mu_assert_null (sdb_const_get (anal->sdb_cc, "cc.winish.shadow", 0), "cc_del removes the shadow key");
 	r_anal_free (anal);
@@ -522,6 +530,44 @@ bool test_r_anal_cc_argval(void) {
 	mu_end;
 }
 
+bool test_r_anal_cc_argslot_manyargs(void) {
+	RAnal *anal = ref_anal_bits (32);
+	r_anal_cc_set (anal, "eax manyish(ecx, stack)");
+	RAnalCCArgSlot s;
+	mu_assert_true (r_anal_cc_argslot (anal, "manyish", 1, -1, false, &s), "first stack arg");
+	mu_assert_eq (s.off, 0, "the tail starts at SP");
+	// args past the modeled range all share the tail, so the scan stays bounded and stays exact
+	mu_assert_true (r_anal_cc_argslot (anal, "manyish", 100, -1, false, &s), "far tail arg");
+	mu_assert_eq (s.off, 99 * 4, "one word per preceding stack arg");
+	mu_assert_true (r_anal_cc_argslot (anal, "manyish", ST32_MAX, -1, false, &s), "extreme tail arg");
+	mu_assert_eq (s.off, (st64)(ST32_MAX - 1) * 4, "the far tail resolves without scanning");
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_cc_argslot_ref_shadow(void) {
+	RAnal *anal = ref_anal_bits (64);
+	r_anal_cc_set (anal, "rax winish(rcx, rdx, r8, r9, stack)");
+	sdb_set (anal->sdb_cc, "cc.winish.shadow", "32", 0);
+	RAnalCCArgSlot s;
+	// a dyncc delegating its args to a static profile inherits that profile's home area with them
+	mu_assert_true (r_anal_cc_argslot (anal, "dyncc:&winish:rax", 4, -1, false, &s), "delegated stack arg");
+	mu_assert_eq (s.off, 32, "the referenced profile's shadow area comes along");
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_cc_argslot_home_hole(void) {
+	RAnal *anal = ref_anal_bits (32);
+	RAnalCCArgSlot s;
+	// a '_' hole in one arg's homes must not hide the stack home listed after it
+	const char *cc = "dyncc:_'^0,^:v0";
+	mu_assert_true (r_anal_cc_argslot (anal, cc, 1, 2, false, &s), "tail after a holed home");
+	mu_assert_eq (s.off, 4, "the ^0 home still reserves its slot");
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_anal_cc_set);
 	mu_run_test (test_r_anal_cc_set_self_err);
@@ -538,6 +584,9 @@ bool all_tests(void) {
 	mu_run_test (test_r_anal_cc_argslot_regwidth);
 	mu_run_test (test_r_anal_cc_argslot_fixed);
 	mu_run_test (test_r_anal_cc_argslot_homes);
+	mu_run_test (test_r_anal_cc_argslot_manyargs);
+	mu_run_test (test_r_anal_cc_argslot_ref_shadow);
+	mu_run_test (test_r_anal_cc_argslot_home_hole);
 	mu_run_test (test_r_anal_cc_argval);
 	mu_run_test (test_r_anal_cc_argval_stack);
 	return tests_passed != tests_run;

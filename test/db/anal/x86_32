@@ -3838,3 +3838,42 @@ edi
 \"BB\"
 EOF
 RUN
+
+NAME=callargs shifts a reverse-stack argument past a wide one pushed after it
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 685000000068000000006822222222e80c00000083c40cc3
+wx c3 @ 0x20
+w AA @ 0x50
+af @ 0x20
+afn revwide @ 0x20
+'td int revwide(char *a, uint64_t b);
+tk func.revwide.cc=pascal
+af @ 0
+a:callargs-j 0xf~{args[0].value}
+EOF
+EXPECT=<<EOF
+\"AA\"
+EOF
+RUN
+
+NAME=callargs keeps fixed stack slots that are not in ascending order
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 68111111116822222222685000000068333333336858000000e80200000083c414c3
+wx c3 @ 0x20
+w AA @ 0x50
+w BB @ 0x58
+af @ 0x20
+afn fixedslots @ 0x20
+'td int fixedslots(char *a, char *b);
+tk func.fixedslots.cc=dyncc:^2,^0:eax
+af @ 0
+a:callargs-q 0x19
+EOF
+EXPECT=<<EOF
+int fixedslots("AA", "BB")
+EOF
+RUN

@@ -2280,12 +2280,10 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 		fcn->addr = addr;
 	}
 	fcn->maxstack = 0;
-	if (fcn->callconv) {
-		const int shadow = r_anal_cc_shadow (anal, fcn->callconv);
-		if (shadow > 0) {
-			const int word = anal->config->bits > 32? 8: 4;
-			fcn->stack = fcn->maxstack = fcn->reg_save_area = shadow + r_anal_cc_raslot (anal, word);
-		}
+	const int shadow = r_anal_cc_shadow (anal, fcn->callconv);
+	if (shadow > 0) {
+		const int word = r_anal_cc_wordsize (anal, fcn->callconv);
+		fcn->stack = fcn->maxstack = fcn->reg_save_area = shadow + r_anal_cc_raslot (anal, word);
 	}
 	// XXX -1 here results in lots of errors
 	int ret = r_anal_function_bb (anal, fcn, addr, anal->opt.depth);

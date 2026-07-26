@@ -626,30 +626,34 @@ static bool dyncc_refs_exist(RAnal *anal, const RAnalDynCC *d) {
 	return true;
 }
 
+// the keys spelling a cc's argument and return layout, all invalidated by a redefinition
+static const char *cc_layout_keys[] = { "ret", "retn", "argn", "revarg", "pop", "shadow", NULL };
+
+static void cc_unset_keys(Sdb *db, const char *name, const char **keys) {
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	const char **k;
+	for (k = keys; *k; k++) {
+		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.%s", name, *k), 0);
+	}
+	int i;
+	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
+		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.arg%d", name, i), 0);
+		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.ret%d", name, i), 0);
+	}
+	r_strbuf_fini (&sb);
+}
+
 R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	R_RETURN_IF_FAIL (anal && name);
 	RAnalDynCC d;
 	if (dyncc_parse (name, &d)) {
 		return;
 	}
-	size_t i;
-	RStrBuf sb;
-	sdb_unset (DB, r_strbuf_initf (&sb, "%s", name), 0);
-	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.ret", name), 0);
-	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.retn", name), 0);
-	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.argn", name), 0);
-	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-		sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.arg%u", name, (unsigned int)i), 0);
-		sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.ret%u", name, (unsigned int)i), 0);
-	}
-	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.self", name), 0);
-	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.error", name), 0);
-	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.pop", name), 0);
-	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.clobber", name), 0);
-	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.preserve", name), 0);
-	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.revarg", name), 0);
-	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.shadow", name), 0);
-	r_strbuf_fini (&sb);
+	static const char *keys[] = { "self", "error", "clobber", "preserve", NULL };
+	sdb_unset (DB, name, 0);
+	cc_unset_keys (DB, name, cc_layout_keys);
+	cc_unset_keys (DB, name, keys);
 }
 
 R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
@@ -681,13 +685,8 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 		goto beach;
 	}
 	sdb_set (DB, ccname, "cc", 0);
-	r_strf_buffer (64);
-	sdb_unset (DB, r_strf ("cc.%s.ret", ccname), 0);
-	sdb_unset (DB, r_strf ("cc.%s.shadow", ccname), 0); // a redefined cc keeps no home area
-	int i;
-	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-		sdb_unset (DB, r_strf ("cc.%s.ret%d", ccname, i), 0);
-	}
+	// a redefined cc keeps nothing of the old layout: argn and revarg steer arg lookups as much as arg0
+	cc_unset_keys (DB, ccname, cc_layout_keys);
 	if (strchr (e, ',')) {
 		RList *ccRets = r_str_split_list (e, ",", 0);
 		RListIter *iter;
@@ -698,11 +697,10 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 			sdb_setf (DB, ret, 0, "cc.%s.ret%d", ccname, n);
 			n++;
 		}
-			sdb_num_setf (DB, n, 0, "cc.%s.retn", ccname);
+		sdb_num_setf (DB, n, 0, "cc.%s.retn", ccname);
 		r_list_free (ccRets);
 	} else {
 		sdb_setf (DB, e, 0, "cc.%s.ret0", ccname);
-		sdb_unset (DB, r_strf ("cc.%s.retn", ccname), 0);
 	}
 
 	RList *ccArgs = r_str_split_list (args, ",", 0);
@@ -879,8 +877,18 @@ R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home,
 
 // caller-reserved home space below the stack args (win64 shadow area)
 R_IPI int r_anal_cc_shadow(RAnal *anal, const char *convention) {
-	const char *s = sdb_const_getf (DB, NULL, "cc.%s.shadow", convention);
-	return s? atoi (s): 0;
+	if (!convention) {
+		return 0;
+	}
+	RAnalDynCC d;
+	if (dyncc_parse (convention, &d) && !dyncc_slice_empty (&d.arg_ref)) {
+		// the args come from another profile, so its home area comes with them
+		const char *refcc = dyncc_intern (anal, d.arg_ref.p, d.arg_ref.len);
+		return refcc? r_anal_cc_shadow (anal, refcc): 0;
+	}
+	const int shadow = (int)sdb_num_getf (DB, NULL, "cc.%s.shadow", convention);
+	// sdb is writable, and a bogus home area would push slot offsets outside the stack map
+	return (shadow > 0 && shadow <= R_ANAL_CC_MAXARG * 8)? shadow: 0;
 }
 
 // bytes the call pushes before the stack args: one word unless the arch keeps the return address in a register
@@ -909,6 +917,17 @@ R_IPI int r_anal_cc_wordsize(RAnal *anal, const char *cc) {
 	return R_MIN (word, 8);
 }
 
+// true when the convention pushes its stack args in reverse declaration order (pascal, stack_rev)
+R_IPI bool r_anal_cc_stack_rev(RAnal *anal, const char *cc) {
+	const char *tail = r_anal_cc_argloc (anal, cc, ST32_MAX, 0, -1);
+	return tail && r_str_startswith (tail, "^-");
+}
+
+// the slot index digits of a '^N' or '^-N' place; a non-digit means one of the open tails
+static const char *cc_slot_digits(const char *place) {
+	return place[1] == '-'? place + 2: place + 1;
+}
+
 // where argument argno lives: a register, or a stack slot off bytes above SP
 // incall shifts stack slots past the return address pushed by the call; argc is required for reverse-stack ccs
 R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int argc, bool incall, RAnalCCArgSlot *out) {
@@ -924,37 +943,47 @@ R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int
 	}
 	const int word = r_anal_cc_wordsize (anal, convention);
 	const bool rev = place[1] == '-';
-	const char *digits = rev? place + 2: place + 1;
+	const char *digits = cc_slot_digits (place);
 	st64 off;
 	if (isdigit ((ut8)*digits)) {
 		off = (st64)atoi (digits) * word; // explicit call-frame slot index (doc/dyncc.md)
+		out->fixed = true;
 	} else if (rev) {
 		if (argc < 0) {
 			return false; // reverse layouts need the arg count
 		}
 		// only stack-located args occupy slots; the last one pushed sits at SP
-		int after = 0, i;
-		for (i = argno + 1; i < argc; i++) {
+		// a reverse cc maps high indices to low slots, so only the top of the range has explicit homes
+		st64 after = 0;
+		const int first = R_MAX (argno + 1, argc - R_ANAL_CC_MAXARG);
+		int i;
+		for (i = first; i < argc; i++) {
 			const char *p = r_anal_cc_argloc (anal, convention, i, 0, argc);
 			if (p && *p == '^') {
 				after++;
 			}
 		}
-		off = ((st64)after * word) + r_anal_cc_shadow (anal, convention);
+		if (first > argno + 1) {
+			// the rest share one tail loc, so a single probe settles them all
+			const char *p = r_anal_cc_argloc (anal, convention, argno + 1, 0, argc);
+			if (p && *p == '^') {
+				after += first - (argno + 1);
+			}
+		}
+		off = (after * word) + r_anal_cc_shadow (anal, convention);
 	} else {
 		// the tail starts past explicit ^N homes (mips o32 secondary homes) and earlier tail args
-		int slots = 0, ntail = 0, i;
-		for (i = 0; i < argno; i++) {
+		int slots = 0, i;
+		st64 ntail = 0;
+		const int scan = R_MIN (argno, R_ANAL_CC_MAXARG);
+		for (i = 0; i < scan; i++) {
 			int home;
-			for (home = 0; ; home++) {
+			for (home = 0; home < R_ANAL_DYNCC_MAX_HOMES; home++) {
 				const char *p = r_anal_cc_argloc (anal, convention, i, home, argc);
-				if (!p) {
-					break;
+				if (!p || *p != '^') {
+					continue; // a '_' hole must not hide this arg's later homes
 				}
-				if (*p != '^') {
-					continue;
-				}
-				const char *d = p[1] == '-'? p + 2: p + 1;
+				const char *d = cc_slot_digits (p);
 				if (isdigit ((ut8)*d)) {
 					slots = R_MAX (slots, atoi (d) + 1);
 				} else if (home == 0) {
@@ -962,6 +991,7 @@ R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int
 				}
 			}
 		}
+		ntail += argno - scan; // args past the explicit range share argno's tail, so they need no lookup
 		off = (((st64)slots + ntail) * word) + r_anal_cc_shadow (anal, convention);
 	}
 	if (incall) {

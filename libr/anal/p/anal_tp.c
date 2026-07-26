@@ -1111,7 +1111,7 @@ static bool parse_format(TPState *tps, const char *fmt, RVecString *vec) {
 	return true;
 }
 
-static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stack, const char *place, int size, const char *type) {
+static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stack, const char *place, int soff, const char *type) {
 	R_LOG_DEBUG (">>> CALLE ARG");
 	if (!type) {
 		return;
@@ -1121,7 +1121,10 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 		return;
 	}
 	if (in_stack) {
-		RAnalVar *var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_BPV, size - fcn->bp_off + 8);
+		if (soff < 0) {
+			return; // a register-homed arg has no stack slot, whatever the earlier args used
+		}
+		RAnalVar *var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_BPV, soff - fcn->bp_off + 8);
 		if (!var) {
 			return;
 		}
@@ -1153,10 +1156,10 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 
 static void propagate_arg_type(TPState *tps, ut64 baddr, RAnalVar *var, const char *name, const char *type,
 		int var_memref, const char *fcn_name, bool in_stack, const char *place,
-		int size, ut64 addr, bool userfnc) {
+		int soff, ut64 addr, bool userfnc) {
 	RAnal *anal = tps->anal;
 	if (userfnc) {
-		retype_callee_arg (anal, fcn_name, in_stack, place, size, var->type);
+		retype_callee_arg (anal, fcn_name, in_stack, place, soff, var->type);
 	} else {
 		tp_var_retype (tps, baddr, var, name, type, var_memref, false);
 		var_rename (anal, var, name, addr);
@@ -1521,14 +1524,14 @@ static void tp_field_from_arg(TPState *tps, int idx, RAnalVar *var, RAnalOp *op,
 // with a deref chain the var holds the base pointer, so only its member is typed
 static void tp_apply_arg_type(TPState *tps, ut64 baddr, int j, RAnalVar *var, RAnalOp *op, TPFieldChain *chain,
 		const char *name, const char *type, int memref, bool lea_adjust,
-		const char *fcn_name, bool in_stack, const char *place, int size, ut64 addr, bool userfnc) {
+		const char *fcn_name, bool in_stack, const char *place, int soff, ut64 addr, bool userfnc) {
 	if (!tps->cfg_fields || !chain->len) {
 		int var_memref = var->isarg? 0: memref;
 		if (lea_adjust && op->type == R_ANAL_OP_TYPE_LEA) {
 			var_memref--;
 		}
 		propagate_arg_type (tps, baddr, var, name, type, var_memref,
-			fcn_name, in_stack, place, size, addr, userfnc);
+			fcn_name, in_stack, place, soff, addr, userfnc);
 	}
 	if (tps->cfg_fields) {
 		tp_field_from_arg (tps, j, var, op, chain, type, userfnc);
@@ -1663,21 +1666,17 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	Sdb *TDB = anal->sdb_types;
 	const int idx = etrace_index (tt) - 1;
 	const bool verbose = anal->coreb.cfgGetB? anal->coreb.cfgGetB (anal->coreb.core, "types.verbose"): false;
-	bool stack_rev = false, in_stack = false, format = false;
+	bool in_stack = false, format = false;
 	R_LOG_DEBUG ("type_match %s %" PFMT64x " %" PFMT64x " %s %d", fcn_name, addr, baddr, cc, prev_idx);
 
 	if (!fcn_name || !cc) {
 		return;
 	}
 	int i, j, pos = 0, max = r_type_func_args_count (TDB, fcn_name);
-	int lastarg = ST32_MAX;
-	const char *place = r_anal_cc_argloc (anal, cc, lastarg, 0, -1);
+	const bool stack_rev = r_anal_cc_stack_rev (anal, cc);
 	r_cons_break_push (r_cons_singleton (), NULL, NULL);
 
-	if (place && !strcmp (place, "^-")) {
-		stack_rev = true;
-	}
-	place = r_anal_cc_argloc (anal, cc, 0, 0, -1);
+	const char *place = r_anal_cc_argloc (anal, cc, 0, 0, -1);
 	if (place && *place == '^') {
 		in_stack = true;
 	}
@@ -1697,11 +1696,11 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	const ut32 opmask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL;
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev? (max - 1 - i): i;
-		// the arg's own slot offset, not a loop-order accumulator: reg args occupy no stack slot
-		st64 size = -1;
+		// a register-homed arg occupies no stack slot, so it keeps the -1
+		st64 soff = -1;
 		RAnalCCArgSlot slot;
 		if (r_anal_cc_argslot (anal, cc, arg_num, max, false, &slot) && !slot.reg) {
-			size = slot.off;
+			soff = slot.off;
 		}
 		ut64 selfptr = 0;
 		const ut64 selfsize = tp_sizefn_arg_stacksize (tps, cc, fcn_name, arg_num, &selfptr);
@@ -1769,7 +1768,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 			}
 			RAnalVar *var = r_anal_get_used_function_var (anal, op->addr);
 
-			bool pos_hit = type_pos_hit (tt, in_stack, sp, j, size, place);
+			bool pos_hit = type_pos_hit (tt, in_stack, sp, j, soff, place);
 			// once the arg is traced through a deref, earlier dead writes to the arg location are stale
 			if (pos_hit && tps->cfg_fields && chain.len > 0 && !etrace_regwrite_contains (tt, j, regname)) {
 				pos_hit = false;
@@ -1806,7 +1805,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 					} else {
 						R_LOG_DEBUG ("retype var %s", name);
 						tp_apply_arg_type (tps, baddr, j, var, op, &chain, name, type, memref, true,
-							fcn_name, in_stack, place, size, addr, userfnc);
+							fcn_name, in_stack, place, soff, addr, userfnc);
 					}
 					res = true;
 				} else {
@@ -1846,7 +1845,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 						tp_selfsize_var (tps, baddr, var, selfsize);
 					} else {
 						tp_apply_arg_type (tps, baddr, j, var, op, &chain, name, type, memref, false,
-							fcn_name, in_stack, place, size, addr, userfnc);
+							fcn_name, in_stack, place, soff, addr, userfnc);
 					}
 					res = true;
 				} else {
@@ -2984,33 +2983,42 @@ static RList *synth_clobber_regs(RAnal *anal, const char *cc) {
 	return list;
 }
 
-// the arg number to report for a window: the modeled count is a guess, so name registers by the
-// index they hold without one, and stack slots by their rank upward from SP after those registers
-static int synth_arg_label(RAnal *anal, const char *cc, int win) {
-	RAnalCCArgSlot slot;
-	if (SYNTH_IS_RET (win) || !cc
-			|| !r_anal_cc_argslot (anal, cc, win, SYNTH_MAXARGS, true, &slot)) {
-		return win; // ret windows are not args, and stack-arg ccs answer for arg 8+
-	}
-	int i, nregs = 0, rank = 0;
+// how many of the convention's stack args sit below this slot; nregs, when given, counts the register-homed ones
+static int synth_stack_rank(RAnal *anal, const char *cc, int argi, st64 off, int *nregs) {
+	int i, rank = 0;
 	for (i = 0; i < SYNTH_MAXARGS; i++) {
 		RAnalCCArgSlot other;
 		if (!r_anal_cc_argslot (anal, cc, i, SYNTH_MAXARGS, true, &other)) {
 			continue;
 		}
 		if (other.reg) {
-			nregs++;
-		} else if (!slot.reg && i != win && other.off < slot.off) {
+			if (nregs) {
+				(*nregs)++;
+			}
+		} else if (i != argi && other.off < off) {
 			rank++;
 		}
 	}
+	return rank;
+}
+
+// the arg number to report for a window: the modeled count is a guess, so name registers by the
+// index they hold without one, and stack slots by their rank upward from SP after those registers
+static int synth_arg_label(RAnal *anal, const char *cc, int win) {
+	RAnalCCArgSlot slot;
+	if (SYNTH_IS_RET (win) || !r_anal_cc_argslot (anal, cc, win, SYNTH_MAXARGS, true, &slot)) {
+		return win; // ret windows are not args, and stack-arg ccs answer for arg 8+
+	}
 	if (!slot.reg) {
+		int nregs = 0;
+		const int rank = synth_stack_rank (anal, cc, win, slot.off, &nregs);
 		return nregs + rank;
 	}
+	int i;
 	for (i = 0; i < SYNTH_MAXARGS; i++) {
-		const char *p = r_anal_cc_argloc (anal, cc, i, 0, -1);
-		const char *rn = (p && *p != '^')? r_anal_cc_location_first (anal, p): NULL;
-		if (rn && !strcmp (rn, slot.reg)) {
+		RAnalCCArgSlot other;
+		if (r_anal_cc_argslot (anal, cc, i, -1, true, &other)
+				&& other.reg && !strcmp (other.reg, slot.reg)) {
 			return i;
 		}
 	}
@@ -3023,7 +3031,7 @@ static RAnalVar *synth_arg_var(RAnal *anal, RAnalFunction *fcn, const char *cc, 
 		return NULL; // a returned object binds to no argument, and stack-arg ccs answer for arg 8+
 	}
 	RAnalCCArgSlot slot;
-	if (!cc || !r_anal_cc_argslot (anal, cc, argi, SYNTH_MAXARGS, true, &slot)) {
+	if (!r_anal_cc_argslot (anal, cc, argi, SYNTH_MAXARGS, true, &slot)) {
 		return NULL;
 	}
 	if (slot.reg) {
@@ -3036,15 +3044,7 @@ static RAnalVar *synth_arg_var(RAnal *anal, RAnalFunction *fcn, const char *cc, 
 		return r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, index);
 	}
 	// rank this slot among the stack args, so the n-th lowest maps to the n-th stack var in delta order
-	int nth = 0;
-	int i;
-	for (i = 0; i < SYNTH_MAXARGS; i++) {
-		RAnalCCArgSlot other;
-		if (i != argi && r_anal_cc_argslot (anal, cc, i, SYNTH_MAXARGS, true, &other)
-				&& !other.reg && other.off < slot.off) {
-			nth++;
-		}
-	}
+	const int nth = synth_stack_rank (anal, cc, argi, slot.off, NULL);
 	RAnalVar *pick = NULL;
 	int lastd = INT_MIN;
 	int n;
@@ -3293,7 +3293,6 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 	}
 	const char *cc = synth_fcn_cc (anal, fcn);
 	tps->clobber = synth_clobber_regs (anal, cc);
-	// pointer width comes from the arg registers, not config->bits (16 on arm thumb)
 	// the poison slots and the sbuf[8] stack write assume <= 8 bytes
 	const int psz = r_anal_cc_wordsize (anal, cc);
 	int i;
@@ -3311,7 +3310,7 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 	for (i = 0; i < SYNTH_MAXARGS; i++) {
 		RAnalCCArgSlot slot;
 		// the modeled arg count keeps reverse-stack conventions (pascal, borland) resolvable
-		if (!cc || !r_anal_cc_argslot (anal, cc, i, SYNTH_MAXARGS, true, &slot)) {
+		if (!r_anal_cc_argslot (anal, cc, i, SYNTH_MAXARGS, true, &slot)) {
 			continue;
 		}
 		const ut64 sval = sbase + (ut64)i * SYNTH_WINDOW;
