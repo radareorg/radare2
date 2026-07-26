@@ -528,6 +528,10 @@ static bool cmd_context_parse_args(RCmdContext *context, RStrs rest, bool raw) {
 	return true;
 }
 
+R_IPI const char *r_cmd_decode_escape(const char *src, const char *end, char **dst) {
+	return cmd_decode_escape (src, end, dst);
+}
+
 static void cmd_context_free(RCmdContext *context) {
 	if (context) {
 		RVecRStrs_fini (&context->args);

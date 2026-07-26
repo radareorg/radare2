@@ -17,6 +17,19 @@ ERROR: [uninitialized]
 EOF
 RUN
 
+NAME=qjs echo binding output paths
+FILE=-
+CMDS=<<EOF
+'js r2.log(r2.cmd("echo \"bound value\"").trim())
+'js console.log(r2.cmd("?e adapter value").trim())
+EOF
+EXPECT=<<EOF
+bound value
+adapter value
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=qjs async test
 BROKEN=1
 FILE=-

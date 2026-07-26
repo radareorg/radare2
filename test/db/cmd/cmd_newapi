@@ -1,0 +1,47 @@
+NAME=Lcc lists new command registrations by prefix
+CMDS=<<EOF
+Lcc prj
+Lcc echo
+Lcc ?e
+EOF
+EXPECT=<<EOF
+prj
+echo
+?e
+EOF
+RUN
+
+NAME=Lcc help
+CMDS=<<EOF
+Lcc?
+EOF
+EXPECT=<<EOF
+| Lcc [prefix]  list commands registered with the new command API
+EOF
+RUN
+
+NAME=echo context command
+FILE=-
+CMDS=<<EOF
+echo "Hello;world" ";you rock"
+echo -n no-newline
+?e " through adapter"
+?e '${literal}'
+echo "A\x00B" ignored
+echo64 QQBC
+'echo "raw quotes"
+echo?
+EOF
+EXPECT=<<EOF
+Hello;world ;you rock
+no-newline through adapter
+${literal}
+A
+A
+"raw quotes"
+Usage: echo [-n] [arg ...]
+| echo [arg ...]     print decoded arguments followed by a newline
+| echo -n [arg ...]  print decoded arguments without a newline
+| echo?              show this help
+EOF
+RUN
