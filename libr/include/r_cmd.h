@@ -13,6 +13,7 @@ typedef struct r_core_t RCore;
 typedef struct r_cons_t RCons;
 typedef struct r_libstore_t RLibStore;
 typedef struct r_cmd_t RCmd;
+typedef struct r_core_task_t RCoreTask;
 
 R_VEC_TYPE (RVecRStrs, RStrs);
 
@@ -42,10 +43,17 @@ typedef struct r_cmd_context_t {
 	struct r_cmd_context_t *parent;
 	RCmd *cmd;
 	RCons *cons;
+	RCoreTask *task;
 	void *user;
 	void *handler_user;
+	int remaining_depth; // budget for nested core commands; only meaningful on
+	// contexts created by the core shell, which is the sole consumer
+	bool raw; // input skipped the shell parser ('cmd, "cmd", r_core_call), so
+	// no escapes or quotes were consumed before dispatch; args are split on
+	// whitespace but otherwise verbatim, and r_cmd_ctx_body() is untouched
 	char *args_storage; // private: owned buffer backing args, do not use
-	RVecRStrs args; // decoded arguments after the matched name and subcmd
+	RVecRStrs args; // arguments after the matched name and subcmd: dequoted and
+	// escape-decoded when parsed, verbatim whitespace-split tokens when raw
 	RStrs subcmd; // command-token remainder after the registered name; slices the
 	// NUL-terminated input line, so subcmd.b is the raw undecoded tail as C string
 } RCmdContext;
@@ -67,6 +75,14 @@ static inline char r_cmd_ctx_mode(RCmdContext *ctx, const char *modes) {
 	const char last = r_strs_lastch (s);
 	return (last && strchr (modes, last))? last: 0;
 }
+
+/* Everything after the command token, exactly as the user typed it: spacing,
+ * quotes and escapes preserved. This is what raw-first handlers such as echo
+ * print, instead of reassembling it from the decoded args */
+static inline const char *r_cmd_ctx_body(RCmdContext *ctx) {
+	return r_str_trim_head_ro (ctx->subcmd.b);
+}
+
 typedef bool (*RCmdForeachCb) (RStrs name, void *user);
 
 typedef struct r_cmd_macro_label_t {

@@ -127,7 +127,7 @@ static RCmdResult r_cmd_agD_call(RCmdContext *ctx) {
 			PJ *pj = pj_new ();
 			if (pj) {
 				r_agraph_print_json (dtagraph, pj);
-				r_cons_printf (ctx->cons, "%s\n", pj_string (pj));
+				r_cons_println (ctx->cons, pj_string (pj));
 				pj_free (pj);
 			}
 			break;

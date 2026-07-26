@@ -2999,7 +2999,13 @@ static int cmd_open(void *data, const char *input) {
 			// memleak? lose all settings wtf
 			// if load fails does not fallbacks to previous file
 			r_core_task_sync_end (&core->tasks);
+			// Detach the console so it survives the reinit: the command
+			// dispatch stack executing this "oc" holds pointers into it
+			RCons *cons = core->cons;
+			cons->teefile = NULL; // borrowed from the config, freed by fini
+			core->cons = NULL;
 			r_core_fini (core);
+			core->cons = cons;
 			r_core_init (core);
 			r_core_task_sync_begin (&core->tasks);
 			if (r_core_file_open (core, input + 2, R_PERM_RX, 0)) {

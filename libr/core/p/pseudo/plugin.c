@@ -62,9 +62,10 @@ static ut64 find_nextfunc(RCore *core, ut64 addr, int range) {
 }
 
 static void linear_pseudo(RCore *core, const char *arg) {
+	RCons *cons = r_core_get_cons (core);
 	int rows = (int)r_num_math (core->num, arg);
 	int h;
-	r_cons_get_size (core->cons, &h);
+	r_cons_get_size (cons, &h);
 	if (rows < 1) {
 		rows = h;
 	}
@@ -135,7 +136,7 @@ repeat:;
 #undef ATSTR
 	}
 	char *s = r_strbuf_drain (sb);
-	r_cons_print (core->cons, s);
+	r_cons_print (cons, s);
 	free (s);
 	r_core_seek (core, initial_addr, true);
 }

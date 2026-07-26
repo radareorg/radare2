@@ -67,6 +67,8 @@ static RCmdResult args_handler(RCmdContext *ctx) {
 	state->args_ok = r_strs_empty (ctx->subcmd)
 		&& !r_cmd_ctx_help (ctx) && !r_cmd_ctx_mode (ctx, "jq")
 		&& !strcmp (ctx->subcmd.b, state->expected_input + strlen ("cmd"))
+		&& !strcmp (r_cmd_ctx_body (ctx),
+			r_str_trim_head_ro (state->expected_input + strlen ("cmd")))
 		&& RVecRStrs_length (&ctx->args) == state->expected_argc;
 	size_t i;
 	for (i = 0; state->args_ok && i < state->expected_argc; i++) {
@@ -255,6 +257,28 @@ static bool test_r_cmd_context_args(void) {
 	mu_end;
 }
 
+static bool test_r_cmd_raw_context_args(void) {
+	RStrs expected[] = {
+		R_STRS_LIT ("say\\\"hi"),
+		R_STRS_LIT ("'single"),
+		R_STRS_LIT ("value'"),
+		R_STRS_LIT ("a\\nb")
+	};
+	const char *input = "cmd say\\\"hi 'single value' a\\nb";
+	ArgsState state = {
+		.expected_input = input,
+		.expected_args = expected,
+		.expected_argc = R_ARRAY_SIZE (expected)
+	};
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "create core");
+	mu_assert_true (r_cmd_register (core->rcmd, "cmd", args_handler, &state), "register argument handler");
+	mu_assert_eq (r_core_call (core, input), 0, "raw call dispatch");
+	mu_assert_true (state.args_ok, "raw args keep quotes and escapes verbatim");
+	r_core_free (core);
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test (test_r_cmd_register);
 	mu_run_test (test_r_cmd_unregister);
@@ -262,6 +286,7 @@ static int all_tests(void) {
 	mu_run_test (test_r_cmd_registry_dispatch);
 	mu_run_test (test_r_cmd_multiword_dispatch);
 	mu_run_test (test_r_cmd_context_args);
+	mu_run_test (test_r_cmd_raw_context_args);
 	return tests_passed != tests_run;
 }
 

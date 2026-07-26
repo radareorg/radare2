@@ -3628,7 +3628,8 @@ static bool check_changes(RAGraph *g, bool is_interactive, RCore *core, RAnalFun
 }
 
 static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunction *fcn) {
-	int h, w = r_cons_get_size (core->cons, &h);
+	RCons *cons = g->can->cons;
+	int h, w = r_cons_get_size (cons, &h);
 	if (w < 1 || h < 1) {
 		// we cannot determine terminal size, lets use some default values
 		w = 80;
@@ -3640,7 +3641,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 	}
 
 	if (is_interactive) {
-		r_cons_clear00 (core->cons);
+		r_cons_clear00 (cons);
 	} else {
 		/* TODO: limit to screen size when the output is not redirected to file */
 		update_graph_sizes (g);
@@ -3680,7 +3681,6 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 	if (R_STR_ISNOTEMPTY (g->title)) {
 		g->can->sy--;
 	}
-	RCons *cons = core->cons;
 	/* print the graph title */
 	(void)G (-g->can->sx, -g->can->sy);
 	if (g->title) {
@@ -3708,14 +3708,14 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 		free (rendered_title);
 	}
 
-	g->can->flags = r_cons_canvas_flags (core->cons);
+	g->can->flags = r_cons_canvas_flags (cons);
 	r_cons_canvas_print_region (g->can);
 
 	if (is_interactive) {
-		r_cons_newline (core->cons);
+		r_cons_newline (cons);
 		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
 		bool mustFlush = false;
-		r_cons_visual_flush (core->cons);
+		r_cons_visual_flush (cons);
 		if (!strcmp (cmdv, ".dr*")) {
 			cmdv = ".dr*;dr=@e:hex.cols=`?v $w*3`";
 		}
@@ -3729,14 +3729,14 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 			r_core_call (core, "pg");
 		}
 		if (mustFlush) {
-			r_cons_flush (core->cons);
+			r_cons_flush (cons);
 		}
 		if (r_config_get_b (core->config, "graph.mini")) { // minigraph
-			int h, w = r_cons_get_size (core->cons, &h);
-			r_cons_push (core->cons);
+			int h, w = r_cons_get_size (cons, &h);
+			r_cons_push (cons);
 			g->can->h *= 4;
 			RConsCanvas *ocan = g->can;
-			g->can = r_cons_canvas_new (core->cons, w * 2, h * 4, -2);
+			g->can = r_cons_canvas_new (cons, w * 2, h * 4, -2);
 			g->can->sx = ocan->sx;
 			g->can->sy = ocan->sy;
 			g->can->color = 0;
@@ -3745,12 +3745,12 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 			agraph_print_nodes (g);
 			r_cons_canvas_print_region (g->can);
 			g->can = ocan;
-			char *s = strdup (core->cons->context->buffer);
-			r_cons_pop (core->cons);
+			char *s = strdup (cons->context->buffer);
+			r_cons_pop (cons);
 			cmd_agfb3 (core, s, w - 40, 2);
 			free (s);
 			g->can->h /= 4;
-			r_cons_flush (core->cons);
+			r_cons_flush (cons);
 		}
 	}
 
@@ -3933,7 +3933,7 @@ R_API void r_agraph_print(RAGraph *g, void *_core) {
 	g->can->flags = 0;
 	agraph_print (core, g, false, NULL);
 	if (g->graph->n_nodes > 0) {
-		r_cons_newline (core->cons);
+		r_cons_newline (g->can->cons);
 	}
 }
 
@@ -5451,7 +5451,7 @@ R_API RAGraph *r_agraph_new_from_graph(void *_core, const RGraph *graph, RAGraph
 	R_RETURN_VAL_IF_FAIL (graph && cbs && cbs->get_title && cbs->get_body, NULL);
 
 	RCore *core = (RCore *)_core;
-	RConsCanvas *canvas = r_cons_canvas_new (core->cons, 1, 1, -2);
+	RConsCanvas *canvas = r_cons_canvas_new (r_core_get_cons (core), 1, 1, -2);
 	RAGraph *result_agraph = r_agraph_new (canvas);
 	if (!result_agraph) {
 		return NULL;
