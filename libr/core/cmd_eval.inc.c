@@ -384,29 +384,6 @@ done:
 	}
 }
 
-R_API void r_core_echo(RCore *core, const char *input) {
-	if (r_str_startswith (input, "64 ")) {
-		char *buf = strdup (input);
-		if (r_base64_decode ((ut8 *)buf, input + 3, -1, true) > 0) {
-			r_cons_echo (core->cons, buf);
-		}
-		free (buf);
-	} else {
-		const char *p = strchr (input, ' ');
-		if (p) {
-			char *msg = strdup (p + 1);
-			if (msg) {
-				r_str_trim_args (msg);
-				msg = r_str_replace (msg, "\\\\", "\\", true);
-				if (msg) {
-					r_cons_println (core->cons, msg);
-				}
-				free (msg);
-			}
-		}
-	}
-}
-
 static bool is_static_theme(const char *th) {
 	const RConsTheme *theme = r_cons_themes ();
 	while (theme && theme->name) {
@@ -509,12 +486,8 @@ static bool cmd_ec(RCore *core, const char *input) {
 	case '*': // "ec*"
 		r_cons_pal_list (core->cons, 1, NULL);
 		break;
-	case 'h': // echo
-		if (input[2] == 'o') {
-			r_core_echo (core, input + 3);
-		} else {
-			r_cons_pal_list (core->cons, 'h', NULL);
-		}
+	case 'h':
+		r_cons_pal_list (core->cons, 'h', NULL);
 		break;
 	case 'j': // "ecj"
 		r_cons_pal_list (core->cons, 'j', NULL);

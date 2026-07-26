@@ -428,7 +428,6 @@ struct r_core_t {
 	RList *scriptstack;
 	RCoreTaskScheduler tasks;
 	int max_cmd_depth;
-	int cur_cmd_depth;
 	ut8 switch_file_view;
 	Sdb *sdb;
 	int incomment;
@@ -1058,7 +1057,6 @@ R_API void cmd_agfb2(RCore *core, const char *s);
 R_API void cmd_agfb3(RCore *core, const char *s, int x, int y);
 
 R_API void r_print_list(RCore *core, const char *input);
-R_API void r_core_echo(RCore *core, const char *msg);
 R_API RTable *r_core_table(RCore *core, const char *name);
 
 typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize, void *cb_user);

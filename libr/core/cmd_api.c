@@ -531,7 +531,7 @@ static void cmd_context_free(RCmdContext *context) {
 	}
 }
 
-static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs input) {
+static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs input, bool raw) {
 	RStrs lookup = input;
 	RCmdContext *context = NULL;
 	const char *parsed_from = NULL;
@@ -548,7 +548,10 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 			context->cons = parent
 				? parent->cons
 				: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
+			context->task = parent? parent->task: NULL;
 			context->user = cmd->data;
+			context->remaining_depth = parent? parent->remaining_depth: 0;
+			context->raw = raw;
 		}
 		const char *sub_end = input.a + matched;
 		while (sub_end < input.b && !isspace ((ut8)*sub_end)) {
@@ -574,7 +577,7 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 	return cmd_result (R_CMD_ACTION_UNHANDLED, 127);
 }
 
-R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *input) {
+R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *input, bool raw) {
 	RCore *core = cmd->data;
 	if (!*input) {
 		return cmd->nullcallback
@@ -584,11 +587,14 @@ R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *i
 	RCmdAliasVal *v = r_cmd_alias_get (cmd, input);
 	if (v && v->is_data) {
 		char *v_str = r_cmd_alias_val_strdup (v);
-		r_cons_print (core->cons, v_str);
+		RCons *cons = parent
+			? parent->cons
+			: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
+		r_cons_print (cons, v_str);
 		free (v_str);
 		return cmd_result_from_legacy (true);
 	}
-	RCmdResult result = cmd_call_registered (cmd, parent, r_strs_from (input));
+	RCmdResult result = cmd_call_registered (cmd, parent, r_strs_from (input), raw);
 	if (result.action != R_CMD_ACTION_UNHANDLED) {
 		return result;
 	}
@@ -617,7 +623,11 @@ R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *i
 
 R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	R_RETURN_VAL_IF_FAIL (cmd && input, -1);
-	return cmd_result_to_legacy (r_cmd_call_result (cmd, NULL, input));
+	return cmd_result_to_legacy (r_cmd_call_result (cmd, NULL, input, false));
+}
+
+R_IPI int r_cmd_call_context(RCmd *cmd, RCmdContext *parent, const char *input, bool raw) {
+	return cmd_result_to_legacy (r_cmd_call_result (cmd, parent, input, raw));
 }
 
 /** macro.c **/

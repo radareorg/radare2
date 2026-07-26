@@ -26,6 +26,7 @@ typedef struct r_core_task_t {
 	bool transient; // delete when finished
 	bool dispatched;
 	bool cmd_log;
+	bool context_mode;
 	RCoreTaskMode mode;
 	RThreadSemaphore *running_sem;
 	void *user;

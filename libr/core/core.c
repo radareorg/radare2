@@ -3702,7 +3702,8 @@ beach:
 
 /* weak getters */
 R_API RCons *r_core_get_cons(RCore *core) {
-	return core->cons;
+	RCoreTask *task = r_core_task_self (&core->tasks);
+	return task && task->context_mode? task->cons: core->cons;
 }
 
 R_API RConfig *r_core_get_config(RCore *core) {

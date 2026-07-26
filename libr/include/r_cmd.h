@@ -13,6 +13,7 @@ typedef struct r_core_t RCore;
 typedef struct r_cons_t RCons;
 typedef struct r_libstore_t RLibStore;
 typedef struct r_cmd_t RCmd;
+typedef struct r_core_task_t RCoreTask;
 
 R_VEC_TYPE (RVecRStrs, RStrs);
 
@@ -42,8 +43,11 @@ typedef struct r_cmd_context_t {
 	struct r_cmd_context_t *parent;
 	RCmd *cmd;
 	RCons *cons;
+	RCoreTask *task;
 	void *user;
 	void *handler_user;
+	int remaining_depth;
+	bool raw;
 	char *args_storage; // private: owned buffer backing args, do not use
 	RVecRStrs args; // decoded arguments after the matched name and subcmd
 	RStrs subcmd; // command-token remainder after the registered name; slices the
