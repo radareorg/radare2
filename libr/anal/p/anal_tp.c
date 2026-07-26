@@ -842,23 +842,30 @@ static void tp_fact_retype(TPState *tps, ut64 baddr, TPVarFact *fact, RAnalVar *
 	}
 }
 
+// declared arg count of a callee, or -1 when undeclared so reverse-stack layouts stay unresolved
+static int tp_callee_argc(RAnal *anal, const char *name) {
+	const int n = name? r_type_func_args_count (anal->sdb_types, name): 0;
+	return n > 0? n: -1;
+}
+
 // concrete argloc value at the current emulated call site; stack slots read from the ESIL map
-static bool tp_argloc_val(TPState *tps, const char *cc, int argno, ut64 *val) {
-	return r_anal_cc_argval (tps->anal, tps->tt.reg, cc, argno, -1, false, val);
+// argc is the callee's arg count, which reverse-stack layouts need to place their slots
+static bool tp_argloc_val(TPState *tps, const char *cc, int argno, int argc, ut64 *val) {
+	return r_anal_cc_argval (tps->anal, tps->tt.reg, cc, argno, argc, false, val);
 }
 
 #define TP_SIZEFN_MAXSZ 0x100000 // sizes past 1 MiB are dynamic or stale register values
 
 // pointer and computed size operands of a size-fn call, false when unresolvable or zero
-static bool tp_sizefn_read(TPState *tps, const char *cc, const TPSizeFn *sf, ut64 *pv, ut64 *n) {
+static bool tp_sizefn_read(TPState *tps, const char *cc, const TPSizeFn *sf, int argc, ut64 *pv, ut64 *n) {
 	*pv = 0;
-	if ((sf->ptr_arg >= 0 && !tp_argloc_val (tps, cc, sf->ptr_arg, pv))
-			|| !tp_argloc_val (tps, cc, sf->size_arg, n)) {
+	if ((sf->ptr_arg >= 0 && !tp_argloc_val (tps, cc, sf->ptr_arg, argc, pv))
+			|| !tp_argloc_val (tps, cc, sf->size_arg, argc, n)) {
 		return false;
 	}
 	if (sf->mul_arg >= 0) {
 		ut64 m = 0;
-		if (!tp_argloc_val (tps, cc, sf->mul_arg, &m) || !m || *n > UT64_MAX / m) {
+		if (!tp_argloc_val (tps, cc, sf->mul_arg, argc, &m) || !m || *n > UT64_MAX / m) {
 			return false;
 		}
 		*n *= m;
@@ -867,10 +874,10 @@ static bool tp_sizefn_read(TPState *tps, const char *cc, const TPSizeFn *sf, ut6
 }
 
 // exact stack-object size stated for this argument by a size-fn entry, 0 when absent
-static ut64 tp_sizefn_arg_stacksize(TPState *tps, const char *cc, const char *fcn_name, int arg_num, ut64 *pv_out) {
+static ut64 tp_sizefn_arg_stacksize(TPState *tps, const char *cc, const char *fcn_name, int arg_num, int argc, ut64 *pv_out) {
 	const TPSizeFn *sf = tp_sizefn_for_arg (&tps->sizefns, fcn_name, arg_num);
 	ut64 pv = 0, n = 0;
-	if (!sf || !tp_sizefn_read (tps, cc, sf, &pv, &n) || n >= TP_SIZEFN_MAXSZ) {
+	if (!sf || !tp_sizefn_read (tps, cc, sf, argc, &pv, &n) || n >= TP_SIZEFN_MAXSZ) {
 		return 0;
 	}
 	// only a pointer into the emulated stack maps back to a stack variable
@@ -1666,7 +1673,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	Sdb *TDB = anal->sdb_types;
 	const int idx = etrace_index (tt) - 1;
 	const bool verbose = anal->coreb.cfgGetB? anal->coreb.cfgGetB (anal->coreb.core, "types.verbose"): false;
-	bool in_stack = false, format = false;
+	bool format = false;
 	R_LOG_DEBUG ("type_match %s %" PFMT64x " %" PFMT64x " %s %d", fcn_name, addr, baddr, cc, prev_idx);
 
 	if (!fcn_name || !cc) {
@@ -1676,15 +1683,14 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	const bool stack_rev = r_anal_cc_stack_rev (anal, cc);
 	r_cons_break_push (r_cons_singleton (), NULL, NULL);
 
-	const char *place = r_anal_cc_argloc (anal, cc, 0, 0, -1);
-	if (place && *place == '^') {
-		in_stack = true;
-	}
+	// asked of the convention, not of an argument, so the arg count is not known yet
+	const char *first = r_anal_cc_argloc (anal, cc, 0, 0, -1);
+	const bool stack_cc = first && *first == '^';
 	if (verbose && r_str_startswith (fcn_name, "sym.imp.")) {
 		R_LOG_WARN ("Missing function definition for '%s'", fcn_name + 8);
 	}
 	if (!max) {
-		max = in_stack? DEFAULT_MAX: r_anal_cc_max_arg (anal, cc);
+		max = stack_cc? DEFAULT_MAX: r_anal_cc_max_arg (anal, cc);
 	}
 	// TODO: if function takes more than 7 args is usually bad analysis
 	if (max > 7) {
@@ -1696,14 +1702,14 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	const ut32 opmask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL;
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev? (max - 1 - i): i;
-		// a register-homed arg occupies no stack slot, so it keeps the -1
-		st64 soff = -1;
+		// one lookup answers both where the arg lives and its slot offset, so the two cannot disagree
 		RAnalCCArgSlot slot;
-		if (r_anal_cc_argslot (anal, cc, arg_num, max, false, &slot) && !slot.reg) {
-			soff = slot.off;
-		}
+		const bool resolved = r_anal_cc_argslot (anal, cc, arg_num, max, false, &slot);
+		const bool in_stack = resolved && !slot.reg;
+		const st64 soff = in_stack? slot.off: -1; // a register-homed arg occupies no stack slot
+		const char *place = resolved? slot.reg: NULL;
 		ut64 selfptr = 0;
-		const ut64 selfsize = tp_sizefn_arg_stacksize (tps, cc, fcn_name, arg_num, &selfptr);
+		const ut64 selfsize = tp_sizefn_arg_stacksize (tps, cc, fcn_name, arg_num, max, &selfptr);
 		char *owned_type = NULL;
 		const char *type = NULL;
 		const char *name = NULL;
@@ -1723,17 +1729,6 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 		if (!type && !userfnc) {
 			R_LOG_DEBUG ("NO TYPE AND NO USER FUNK");
 			continue;
-		}
-		if (!in_stack) {
-			// XXX: param arg_num must be fixed to support floating point register
-			// before this change place could be null
-			R_LOG_DEBUG ("not in stack");
-			const char *p = r_anal_cc_argloc (anal, cc, arg_num, 0, -1);
-			if (p && *p == '^') {
-				in_stack = true;
-				place = p;
-			}
-			place = p;
 		}
 		const ut64 sp = in_stack? r_reg_getv (tt->reg, "SP"): 0;
 		char regname[REGNAME_SIZE] = { 0 };
@@ -3146,7 +3141,7 @@ static SynthWant synth_child_want(RVecSynthField *cw, int arg, ut64 off) {
 
 static void synth_size_entry(SynthSizeCtx *c, const char *cc, const TPSizeFn *sf) {
 	ut64 pv = 0, n = 0;
-	if (!tp_sizefn_read (c->tps, cc, sf, &pv, &n)) {
+	if (!tp_sizefn_read (c->tps, cc, sf, tp_callee_argc (c->tps->anal, c->fn), &pv, &n)) {
 		return;
 	}
 	ut64 off = 0;
@@ -3184,12 +3179,13 @@ static void synth_ret_entry(SynthSizeCtx *c, const char *cc, const TPSizeFn *sf)
 		return; // this convention returns no value in a register, so there is nothing to seed
 	}
 	ut64 pv = 0, n = 0;
-	if (!tp_sizefn_read (c->tps, cc, sf, &pv, &n) || n >= SYNTH_MAXHINT) {
+	const int argc = tp_callee_argc (c->tps->anal, c->fn);
+	if (!tp_sizefn_read (c->tps, cc, sf, argc, &pv, &n) || n >= SYNTH_MAXHINT) {
 		n = 0;
 	}
 	if (sf->alias_arg >= 0) {
 		ut64 av = 0, woff = 0;
-		const int argi = tp_argloc_val (c->tps, cc, sf->alias_arg, &av)
+		const int argi = tp_argloc_val (c->tps, cc, sf->alias_arg, argc, &av)
 			? synth_window_arg (c, av, &woff): -1;
 		if (argi >= 0) {
 			// realloc returns the object it was given, so keep growing the window it points into

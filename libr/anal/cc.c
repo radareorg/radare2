@@ -636,6 +636,13 @@ static void cc_unset_keys(Sdb *db, const char *name, const char **keys) {
 	for (k = keys; *k; k++) {
 		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.%s", name, *k), 0);
 	}
+	r_strbuf_fini (&sb);
+}
+
+// the arg and ret slots, swept by index rather than listed
+static void cc_unset_slots(Sdb *db, const char *name) {
+	RStrBuf sb;
+	r_strbuf_init (&sb);
 	int i;
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.arg%d", name, i), 0);
@@ -654,6 +661,7 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	sdb_unset (DB, name, 0);
 	cc_unset_keys (DB, name, cc_layout_keys);
 	cc_unset_keys (DB, name, keys);
+	cc_unset_slots (DB, name);
 }
 
 R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
@@ -687,6 +695,7 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 	sdb_set (DB, ccname, "cc", 0);
 	// a redefined cc keeps nothing of the old layout: argn and revarg steer arg lookups as much as arg0
 	cc_unset_keys (DB, ccname, cc_layout_keys);
+	cc_unset_slots (DB, ccname);
 	if (strchr (e, ',')) {
 		RList *ccRets = r_str_split_list (e, ",", 0);
 		RListIter *iter;
@@ -976,9 +985,12 @@ R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int
 		int slots = 0, i;
 		st64 ntail = 0;
 		const int scan = R_MIN (argno, R_ANAL_CC_MAXARG);
+		// a static cc has one home per arg, so only dyncc needs the extra home lookups
+		RAnalDynCC d;
+		const int nhomes = dyncc_parse (convention, &d)? R_ANAL_DYNCC_MAX_HOMES: 1;
 		for (i = 0; i < scan; i++) {
 			int home;
-			for (home = 0; home < R_ANAL_DYNCC_MAX_HOMES; home++) {
+			for (home = 0; home < nhomes; home++) {
 				const char *p = r_anal_cc_argloc (anal, convention, i, home, argc);
 				if (!p || *p != '^') {
 					continue; // a '_' hole must not hide this arg's later homes
