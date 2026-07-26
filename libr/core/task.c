@@ -2,14 +2,17 @@
 
 #include <r_core.h>
 
-// Binds a running task to its executing thread (entries live on the stack
-// of the task runner and are registered in scheduler->task_threads), so
-// r_core_task_self() resolves the caller's task from its own thread id
-// instead of relying on shared scheduler state.
 typedef struct {
-	R_TH_TID tid;
+	RCoreTaskScheduler *scheduler;
 	RCoreTask *task;
+#if !HAVE_TH_LOCAL
+	R_TH_TID tid;
+#endif
 } RCoreTaskCurrent;
+
+#if HAVE_TH_LOCAL
+static R_TH_LOCAL RCoreTaskCurrent task_current;
+#endif
 
 // Internal helpers (not exposed in headers)
 static RCore *r_core_clone_for_task(RCore *core);
@@ -42,7 +45,9 @@ R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->tasks = r_list_newf ((RListFree)r_core_task_free);
 	tasks->tasks_queue = r_list_new ();
 	tasks->lock = r_th_lock_new (true);
+#if !HAVE_TH_LOCAL
 	tasks->task_threads = r_list_new ();
+#endif
 	tasks->tasks_running = 0;
 	tasks->main_task = r_core_task_new (core, R_CORE_TASK_MODE_COOP, false, NULL, NULL, NULL);
 	r_list_append (tasks->tasks, tasks->main_task);
@@ -55,7 +60,9 @@ R_API void r_core_task_scheduler_fini(RCoreTaskScheduler *tasks) {
 	// r_core_task_free() (tasks list free callback) performs the thread join.
 	// Avoid joining here to prevent double-join on the same pthread.
 	r_list_free (tasks->tasks);
+#if !HAVE_TH_LOCAL
 	r_list_free (tasks->task_threads);
+#endif
 	r_list_free (tasks->tasks_queue);
 	r_th_lock_free (tasks->lock);
 }
@@ -92,7 +99,24 @@ static void tasks_lock_leave(RCoreTaskScheduler *scheduler, TASK_SIGSET_T *old_s
 	tasks_lock_block_signals_reset (old_sigset);
 }
 
+#if HAVE_TH_LOCAL
+static void task_current_push(RCoreTaskScheduler *scheduler, RCoreTask *task, RCoreTaskCurrent *previous) {
+	*previous = task_current;
+	task_current.scheduler = scheduler;
+	task_current.task = task;
+}
+
+static void task_current_pop(RCoreTaskScheduler *scheduler, RCoreTaskCurrent *previous) {
+	(void)scheduler;
+	task_current = *previous;
+}
+
+static RCoreTask *task_current_get(RCoreTaskScheduler *scheduler) {
+	return task_current.scheduler == scheduler? task_current.task: NULL;
+}
+#else
 static void task_current_push(RCoreTaskScheduler *scheduler, RCoreTask *task, RCoreTaskCurrent *current) {
+	current->scheduler = scheduler;
 	current->tid = r_th_self ();
 	current->task = task;
 	TASK_SIGSET_T old_sigset;
@@ -125,6 +149,7 @@ static RCoreTask *task_current_get(RCoreTaskScheduler *scheduler) {
 	tasks_lock_leave (scheduler, &old_sigset);
 	return task;
 }
+#endif
 
 /* OneShot support removed */
 
