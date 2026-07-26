@@ -1,6 +1,7 @@
 // radare - LGPL - Copyright 2026 - pancake
 
 #include <r_anal.h>
+#include <r_anal_priv.h>
 
 #define SENT ((ut64)0xdeadbeefcafebabeULL)
 #define MAX_REGS 8
@@ -144,6 +145,56 @@ static void emit_arg(RAnal *a, int idx, const char *name, const char *type,
 	free (typed);
 }
 
+// the declared type with any const qualifier stripped, as the type.* sdb keys spell it
+static const char *callargs_ctype(const char *type) {
+	return (type && r_str_startswith (type, "const "))? type + 6: type;
+}
+
+typedef struct {
+	const char *reg; // register home, NULL when the arg is on the stack or unresolved
+	st64 off; // offset from SP, -1 when the arg is not on the stack
+	int size; // declared type size in bytes, 0 when unknown
+} CallArgPlace;
+
+// where each arg sits: a type wider than a word shifts the tail slots after it, explicit ^N slots state their own
+static CallArgPlace *callargs_places(RAnal *a, const char *cc, const char *key, int nargs, bool rev) {
+	CallArgPlace *places = R_NEWS0 (CallArgPlace, nargs);
+	if (!places) {
+		return NULL;
+	}
+	int i;
+	for (i = 0; i < nargs; i++) {
+		char *type = r_type_func_args_type (a->sdb_types, key, i);
+		const char *ctype = callargs_ctype (type);
+		places[i].size = ctype? (int)(sdb_num_getf (a->sdb_types, NULL, "type.%s.size", ctype) / 8): 0;
+		places[i].off = -1;
+		free (type);
+	}
+	st64 acc = -1;
+	for (i = 0; i < nargs; i++) {
+		// walk in stack address order, as a reverse convention pushes the last arg at SP
+		const int n = rev? nargs - 1 - i: i;
+		RAnalCCArgSlot slot;
+		// emulation stops at the call, so the first stack arg sits at SP with no return address slot
+		if (!r_anal_cc_argslot (a, cc, n, nargs, false, &slot)) {
+			continue;
+		}
+		if (slot.reg) {
+			places[n].reg = slot.reg;
+			continue;
+		}
+		const int span = R_MAX (places[n].size, slot.size);
+		if (slot.fixed) {
+			places[n].off = slot.off;
+			acc = R_MAX (acc, slot.off + span);
+			continue;
+		}
+		places[n].off = R_MAX (acc, slot.off);
+		acc = places[n].off + span;
+	}
+	return places;
+}
+
 static int emit_signature(RAnal *a, const char *fcn_name, bool quiet, PJ *pj, RStrBuf *sb) {
 	if (!fcn_name) {
 		return -1;
@@ -161,41 +212,29 @@ static int emit_signature(RAnal *a, const char *fcn_name, bool quiet, PJ *pj, RS
 		free (key);
 		return -1;
 	}
-	const char *tail = r_anal_cc_argloc (a, cc, ST32_MAX, 0, -1);
-	const bool rev = tail && r_str_startswith (tail, "^-");
-	st64 stackoff = -1;
+	CallArgPlace *places = callargs_places (a, cc, key, nargs, r_anal_cc_stack_rev (a, cc));
+	if (!places) {
+		free (key);
+		return -1;
+	}
 	int i;
 	for (i = 0; i < nargs; i++) {
 		const char *name = r_type_func_args_name (a->sdb_types, key, i);
 		char *type = r_type_func_args_type (a->sdb_types, key, i);
-		const char *ctype = type;
-		if (ctype && r_str_startswith (ctype, "const ")) {
-			ctype += 6;
-		}
+		const char *ctype = callargs_ctype (type);
 		const char *fmt = ctype? sdb_const_getf (a->sdb_types, NULL, "type.%s", ctype): NULL;
-		int size = ctype? (int)(sdb_num_getf (a->sdb_types, NULL, "type.%s.size", ctype) / 8): 0;
 		const char *src = r_anal_cc_argloc (a, cc, i, 0, nargs);
+		const bool on_stack = places[i].off >= 0;
 		ut64 raw = SENT;
-		bool on_stack = false;
-		RAnalCCArgSlot slot;
-		// emulation stops at the call, so the first stack arg sits at SP with no return address slot
-		if (r_anal_cc_argslot (a, cc, i, nargs, false, &slot)) {
-			if (slot.reg) {
-				raw = r_reg_getv (a->reg, slot.reg);
-			} else {
-				on_stack = true;
-				// wide types consume more than one word slot, so forward tails advance by type size
-				st64 off = slot.off;
-				if (!rev && stackoff > off) {
-					off = stackoff;
-				}
-				raw = r_reg_getv (a->reg, "SP") + off;
-				stackoff = off + (size? size: slot.size);
-			}
+		if (places[i].reg) {
+			raw = r_reg_getv (a->reg, places[i].reg);
+		} else if (on_stack) {
+			raw = r_reg_getv (a->reg, "SP") + places[i].off;
 		}
-		emit_arg (a, i, name, type, src, fmt, size, raw, on_stack, quiet, pj, sb);
+		emit_arg (a, i, name, type, src, fmt, places[i].size, raw, on_stack, quiet, pj, sb);
 		free (type);
 	}
+	free (places);
 	free (key);
 	return nargs;
 }
