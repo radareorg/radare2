@@ -45,9 +45,7 @@ R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->tasks = r_list_newf ((RListFree)r_core_task_free);
 	tasks->tasks_queue = r_list_new ();
 	tasks->lock = r_th_lock_new (true);
-#if !HAVE_TH_LOCAL
 	tasks->task_threads = r_list_new ();
-#endif
 	tasks->tasks_running = 0;
 	tasks->main_task = r_core_task_new (core, R_CORE_TASK_MODE_COOP, false, NULL, NULL, NULL);
 	r_list_append (tasks->tasks, tasks->main_task);
@@ -61,9 +59,7 @@ R_API void r_core_task_scheduler_fini(RCoreTaskScheduler *tasks) {
 	// r_core_task_free() (tasks list free callback) performs the thread join.
 	// Avoid joining here to prevent double-join on the same pthread.
 	r_list_free (tasks->tasks);
-#if !HAVE_TH_LOCAL
 	r_list_free (tasks->task_threads);
-#endif
 	r_list_free (tasks->tasks_queue);
 	r_th_lock_free (tasks->lock);
 }
