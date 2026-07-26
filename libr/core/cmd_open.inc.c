@@ -2992,7 +2992,7 @@ static int cmd_open(void *data, const char *input) {
 				R_LOG_ERROR ("This command is disabled in sandbox mode");
 				return 0;
 			}
-			if (core->tasks.current_task != core->tasks.main_task) {
+			if (!r_core_task_ismain (&core->tasks)) {
 				R_LOG_ERROR ("This command can only be executed on the main task!");
 				return 0;
 			}

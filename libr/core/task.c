@@ -2,8 +2,14 @@
 
 #include <r_core.h>
 
-// Per-thread current task pointer (TLS)
-static R_TH_LOCAL RCoreTask *task_tls_current = NULL;
+// Binds a running task to its executing thread (entries live on the stack
+// of the task runner and are registered in scheduler->task_threads), so
+// r_core_task_self() resolves the caller's task from its own thread id
+// instead of relying on shared scheduler state.
+typedef struct {
+	R_TH_TID tid;
+	RCoreTask *task;
+} RCoreTaskCurrent;
 
 // Internal helpers (not exposed in headers)
 static RCore *r_core_clone_for_task(RCore *core);
@@ -36,19 +42,20 @@ R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->tasks = r_list_newf ((RListFree)r_core_task_free);
 	tasks->tasks_queue = r_list_new ();
 	tasks->lock = r_th_lock_new (true);
+	tasks->task_threads = r_list_new ();
 	tasks->tasks_running = 0;
 	tasks->main_task = r_core_task_new (core, R_CORE_TASK_MODE_COOP, false, NULL, NULL, NULL);
 	r_list_append (tasks->tasks, tasks->main_task);
 	tasks->foreground_task = tasks->main_task;
 	tasks->default_mode = R_CORE_TASK_MODE_COOP;
 	tasks->main_core = core;
-	tasks->current_task = NULL;
 }
 
 R_API void r_core_task_scheduler_fini(RCoreTaskScheduler *tasks) {
 	// r_core_task_free() (tasks list free callback) performs the thread join.
 	// Avoid joining here to prevent double-join on the same pthread.
 	r_list_free (tasks->tasks);
+	r_list_free (tasks->task_threads);
 	r_list_free (tasks->tasks_queue);
 	r_th_lock_free (tasks->lock);
 }
@@ -83,6 +90,40 @@ static void tasks_lock_enter(RCoreTaskScheduler *scheduler, TASK_SIGSET_T *old_s
 static void tasks_lock_leave(RCoreTaskScheduler *scheduler, TASK_SIGSET_T *old_sigset) {
 	r_th_lock_leave (scheduler->lock);
 	tasks_lock_block_signals_reset (old_sigset);
+}
+
+static void task_current_push(RCoreTaskScheduler *scheduler, RCoreTask *task, RCoreTaskCurrent *current) {
+	current->tid = r_th_self ();
+	current->task = task;
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_enter (scheduler, &old_sigset);
+	r_list_append (scheduler->task_threads, current);
+	tasks_lock_leave (scheduler, &old_sigset);
+}
+
+static void task_current_pop(RCoreTaskScheduler *scheduler, RCoreTaskCurrent *current) {
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_enter (scheduler, &old_sigset);
+	r_list_delete_data (scheduler->task_threads, current);
+	tasks_lock_leave (scheduler, &old_sigset);
+}
+
+static RCoreTask *task_current_get(RCoreTaskScheduler *scheduler) {
+	RCoreTaskCurrent *current;
+	RCoreTask *task = NULL;
+	RListIter *iter;
+	R_TH_TID tid = r_th_self ();
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_enter (scheduler, &old_sigset);
+	// reverse iteration so nested tasks on the same thread resolve to the innermost one
+	r_list_foreach_prev (scheduler->task_threads, iter, current) {
+		if (r_th_tid_equal (current->tid, tid)) {
+			task = current->task;
+			break;
+		}
+	}
+	tasks_lock_leave (scheduler, &old_sigset);
+	return task;
 }
 
 /* OneShot support removed */
@@ -382,8 +423,6 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 		return;
 	}
 
-	scheduler->current_task = NULL;
-
 	current->state = next_state;
 
 	if (stop) {
@@ -417,10 +456,6 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 		}
 	}
 
-	if (!stop) {
-		scheduler->current_task = current;
-		// else: no context to load/reset; keep current
-	}
 	R_CRITICAL_LEAVE (core);
 }
 
@@ -534,11 +569,11 @@ static RThreadFunctionRet task_run_thread(RThread *th) {
 		return 0;
 	}
 	RCoreTask *task = (RCoreTask *)th->user;
-	// Set TLS current task for this thread during execution
-	task_tls_current = task;
+	RCoreTaskScheduler *scheduler = &task->core->tasks;
+	RCoreTaskCurrent current;
+	task_current_push (scheduler, task, &current);
 	RThreadFunctionRet ret = task_run (task);
-	// Clear TLS on exit
-	task_tls_current = NULL;
+	task_current_pop (scheduler, &current);
 	return ret;
 }
 
@@ -567,11 +602,10 @@ R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 R_API int r_core_task_run_sync(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	R_RETURN_VAL_IF_FAIL (scheduler && task, -1);
 	task->thread = NULL;
-	// Set TLS for synchronous execution within the current thread
-	task_tls_current = task;
+	RCoreTaskCurrent current;
+	task_current_push (scheduler, task, &current);
 	RThreadFunctionRet ret = task_run (task);
-	// Clear TLS after execution
-	task_tls_current = NULL;
+	task_current_pop (scheduler, &current);
 	return ret;
 }
 
@@ -634,15 +668,14 @@ R_API const char *r_core_task_status(RCoreTask *task) {
 }
 
 R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler) {
-	if (!scheduler) {
-		return NULL;
-	}
-	// Prefer TLS current task if set; fall back to scheduler state
-	if (task_tls_current) {
-		return task_tls_current;
-	}
-	RCoreTask *res = scheduler->current_task? scheduler->current_task: scheduler->main_task;
-	return res;
+	R_RETURN_VAL_IF_FAIL (scheduler, NULL);
+	RCoreTask *task = task_current_get (scheduler);
+	return task? task: scheduler->main_task;
+}
+
+R_API bool r_core_task_ismain(RCoreTaskScheduler *scheduler) {
+	R_RETURN_VAL_IF_FAIL (scheduler, false);
+	return r_core_task_self (scheduler) == scheduler->main_task;
 }
 
 R_API RCoreTask *r_core_task_get(RCoreTaskScheduler *scheduler, int id) {

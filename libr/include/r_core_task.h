@@ -50,9 +50,9 @@ typedef struct r_core_tasks_t {
 	int task_id_next;
 	RList *tasks;
 	RList *tasks_queue;
-	struct r_core_task_t *current_task;
 	struct r_core_task_t *main_task;
 	RThreadLock *lock;
+	RList *task_threads; // (thread, task) bindings resolved by r_core_task_self
 	struct r_core_task_t *foreground_task; // Current ^C target
 	RCoreTaskMode default_mode; // Default execution mode
 	int tasks_running;
@@ -75,6 +75,7 @@ R_API void r_core_task_sleep_end(RCoreTask *task);
 R_API int r_core_task_del(RCoreTaskScheduler *scheduler, int id);
 R_API void r_core_task_del_all_done(RCoreTaskScheduler *scheduler);
 R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler);
+R_API bool r_core_task_ismain(RCoreTaskScheduler *scheduler);
 R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, int id);
 R_API void r_core_task_set_foreground(RCoreTaskScheduler *scheduler, int task_id);
 R_API RCoreTask *r_core_task_get_foreground(RCoreTaskScheduler *scheduler);
