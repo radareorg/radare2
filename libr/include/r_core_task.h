@@ -26,11 +26,13 @@ typedef struct r_core_task_t {
 	bool transient; // delete when finished
 	bool dispatched;
 	bool cmd_log;
+	bool context_mode;
 	RCoreTaskMode mode;
 	RThreadSemaphore *running_sem;
 	void *user;
 	RCore *core;
 	RCons *cons; // owned child console for new RCmdContext handlers
+	struct r_cmd_context_t *cur_context; // innermost command context running on this task
 	// Thread/fork specific
 	RThread *thread; // Thread handle (for thread mode)
 	int pid; // Process ID (for fork mode)

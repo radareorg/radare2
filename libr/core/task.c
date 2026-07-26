@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2014-2025 - pancake */
 
 #include <r_core.h>
+#include <r_core_priv.h>
 
 #if !HAVE_TH_LOCAL
 #if R2__WINDOWS__
@@ -490,6 +491,7 @@ static void task_end(RCoreTask *t) {
 }
 
 static char *task_drain_output(RCoreTask *task) {
+	r_cons_filter (task->cons);
 	size_t size;
 	char *output = r_cons_drain (task->cons, &size);
 	return size? output: strdup ("");
@@ -499,10 +501,7 @@ static bool task_uses_context_handler(RCoreTask *task) {
 	if (!task->cons || !task->cmd) {
 		return false;
 	}
-	const char *cmd = r_str_trim_head_ro (task->cmd);
-	size_t matched = 0;
-	return r_trie_find_longest_prefix (task->core->rcmd->handlers, r_strs_from (cmd), &matched)
-		&& matched;
+	return r_core_cmd_uses_context (task->core, task->cmd);
 }
 
 static RThreadFunctionRet task_run(RCoreTask *task) {
@@ -529,10 +528,11 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	}
 
 	char *res_str;
+	task->context_mode = task != scheduler->main_task && task_uses_context_handler (task);
 	if (task == scheduler->main_task) {
 		r_core_cmd (core, task->cmd, task->cmd_log);
 		res_str = NULL;
-	} else if (task_uses_context_handler (task)) {
+	} else if (task->context_mode) {
 		r_core_cmd (core, task->cmd, task->cmd_log);
 		res_str = task_drain_output (task);
 	} else {
@@ -542,6 +542,7 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 
 	free (task->res);
 	task->res = res_str;
+	task->context_mode = false;
 
 #if 0
 	if (task != scheduler->main_task && r_cons_default_context_is_interactive ()) {
