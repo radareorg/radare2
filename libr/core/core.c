@@ -2589,7 +2589,11 @@ R_API bool r_core_init(RCore *core) {
 
 	core->theme = strdup ("default");
 	/* initialize libraries */
-	core->cons = r_cons_new ();
+	if (!core->cons) {
+		// "oc" reinitializes the core but keeps the console alive, because
+		// the active command dispatch stack holds pointers into it
+		core->cons = r_cons_new ();
+	}
 	core->cons->line->user = core;
 	r_cons_bind (core->cons, &core->print->consb);
 	if (core->cons->use_utf8) {
@@ -2849,8 +2853,10 @@ R_API void r_core_fini(RCore *c) {
 	/* after r_config_free, the value of I.teefile is trashed */
 	/* rconfig doesnt knows how to deinitialize vars, so we
 	should probably need to add a r_config_free_payload callback */
-	r_cons_free (c->cons);
-	c->cons = NULL;
+	if (c->cons) {
+		r_cons_free (c->cons);
+		c->cons = NULL;
+	}
 	free (c->theme);
 	free (c->themepath);
 	r_search_free (c->search);

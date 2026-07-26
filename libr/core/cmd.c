@@ -189,26 +189,88 @@ static RCmdResult echo_callback(RCmdContext *ctx) {
 	return (RCmdResult) { 0 };
 }
 
+// Legacy "?e" behavior: expand $name and ${name} tokens to their numeric
+// value. Single-quoted spans stay literal, "$(" is not a variable
+static char *expand_num_vars(RCore *core, const char *msg) {
+	RStrBuf *sb = r_strbuf_new ("");
+	char quote = 0;
+	while (*msg) {
+		const char ch = *msg;
+		if (ch == '\\' && msg[1]) {
+			r_strbuf_append_n (sb, msg, 2);
+			msg += 2;
+			continue;
+		}
+		if (ch == '\'' || ch == '"') {
+			if (!quote) {
+				quote = ch;
+			} else if (quote == ch) {
+				quote = 0;
+			}
+			r_strbuf_append_n (sb, msg++, 1);
+			continue;
+		}
+		if (ch != '$' || quote == '\'' || msg[1] == '(') {
+			r_strbuf_append_n (sb, msg++, 1);
+			continue;
+		}
+		const char *end;
+		char *word;
+		if (msg[1] == '{') {
+			end = strchr (msg + 2, '}');
+			if (!end) {
+				r_strbuf_append_n (sb, msg++, 1);
+				continue;
+			}
+			word = r_str_ndup (msg + 2, end - (msg + 2));
+			end++;
+		} else {
+			end = msg + 1;
+			while (*end && r_name_validate_char (*end)) {
+				end++;
+			}
+			word = r_str_ndup (msg + 1, end - (msg + 1));
+		}
+		if (!word) {
+			break;
+		}
+		r_strbuf_appendf (sb, "0x%"PFMT64x, r_num_math (core->num, word));
+		free (word);
+		msg = end;
+	}
+	return r_strbuf_drain (sb);
+}
+
 static RCmdResult question_echo_callback(RCmdContext *ctx) {
-	const char *option;
+	bool newline;
 	if (r_strs_empty (ctx->subcmd)) {
-		option = "";
+		newline = true;
 	} else if (r_strs_equals_str (ctx->subcmd, "n")) {
-		option = " -n";
+		newline = false;
 	} else {
 		return (RCmdResult) {
 			.action = R_CMD_ACTION_UNHANDLED,
 			.status = 127
 		};
 	}
-	char *command = r_str_newf ("echo%s%s", option, ctx->subcmd.b);
+	RCore *core = ctx->user;
+	if (ctx->raw) {
+		r_cons_print (ctx->cons, r_str_trim_head_ro (ctx->subcmd.b));
+		if (newline) {
+			r_cons_newline (ctx->cons);
+		}
+		r_core_return_value (core, 0);
+		return (RCmdResult) { 0 };
+	}
+	char *rest = expand_num_vars (core, ctx->subcmd.b);
+	char *command = r_str_newf ("echo%s%s", newline? "": " -n", r_str_get (rest));
+	free (rest);
 	if (!command) {
 		return (RCmdResult) { .status = 1 };
 	}
 	RCmdResult result = r_cmd_call_result (ctx->cmd, ctx, command, false);
 	free (command);
 	if (result.action == R_CMD_ACTION_CONTINUE) {
-		RCore *core = ctx->user;
 		r_core_return_value (core, result.status);
 	}
 	return result;
@@ -5008,7 +5070,9 @@ static int r_core_cmd_subst_i(RCore *core, RCmdContext *context, char *cmd, char
 					free (out);
 				}
 			} else {
-				r_cmd_call_context (core->rcmd, context, line, false);
+				// Quoted commands are dispatched raw: their body is
+				// taken verbatim, preserving spacing and quoting
+				r_cmd_call_context (core->rcmd, context, line, true);
 			}
 			if (quoted_grep) {
 				r_cons_filter (cons);
@@ -7098,6 +7162,13 @@ static int run_cmd_context(RCore *core, RCmdContext *context, char *cmd) {
 }
 
 static bool core_context_init(RCore *core, RCmdContext *parent, RCmdContext *context, const char *cmd) {
+	RCoreTask *task = parent? parent->task: r_core_task_self (&core->tasks);
+	if (!parent && task) {
+		// Root invocations chain to the innermost context active on this
+		// task so nested r_core_cmd() calls share one depth budget instead
+		// of resetting it, which would allow unbounded recursion (eg "Cr")
+		parent = task->cur_context;
+	}
 	const int available_depth = parent? parent->remaining_depth: core->max_cmd_depth;
 	if (available_depth < 1) {
 		R_LOG_ERROR ("That '%s' was too deep", cmd);
@@ -7107,11 +7178,32 @@ static bool core_context_init(RCore *core, RCmdContext *parent, RCmdContext *con
 		.parent = parent,
 		.cmd = core->rcmd,
 		.cons = parent? parent->cons: core_cmd_cons (core),
-		.task = parent? parent->task: r_core_task_self (&core->tasks),
+		.task = parent? parent->task: task,
 		.user = core,
 		.remaining_depth = available_depth - 1
 	};
 	return true;
+}
+
+// Mark context as the innermost one active on its task. Returns the previous
+// innermost context, to be restored with context_deactivate() when done.
+static RCmdContext *context_activate(RCmdContext *context) {
+	RCoreTask *task = context->task;
+	if (!task) {
+		return NULL;
+	}
+	RCmdContext *prev = task->cur_context;
+	task->cur_context = context;
+	return prev;
+}
+
+static void context_deactivate(RCore *core, RCmdContext *context, RCmdContext *prev) {
+	RCoreTask *task = context->task;
+	// A command may tear down and recreate the whole core (eg "oc"); only
+	// restore if the task this context was activated on is still current
+	if (task && r_core_task_self (&core->tasks) == task) {
+		task->cur_context = prev;
+	}
 }
 
 static int core_cmd_context(RCore *core, RCmdContext *parent, const char *cstr, bool log) {
@@ -7120,6 +7212,7 @@ static int core_cmd_context(RCore *core, RCmdContext *parent, const char *cstr, 
 	if (!core_context_init (core, parent, &context, cstr)) {
 		return false;
 	}
+	RCmdContext *prev_context = context_activate (&context);
 	RCons *cons = context.cons;
 	R_LOG_DEBUG ("RCoreCmd: %s", cstr);
 	int ret = 0;
@@ -7138,7 +7231,7 @@ static int core_cmd_context(RCore *core, RCmdContext *parent, const char *cstr, 
 		if (log) {
 			r_line_hist_add (cons->line, cstr);
 		}
-		return ret;
+		goto beach;
 	}
 	if (R_STR_ISNOTEMPTY (core->cmdfilter)) {
 		const char invalid_chars[] = ";|>`@";
@@ -7149,7 +7242,7 @@ static int core_cmd_context(RCore *core, RCmdContext *parent, const char *cstr, 
 				goto beach;
 			}
 		}
-			if (!r_str_startswith (cstr, core->cmdfilter)) {
+		if (!r_str_startswith (cstr, core->cmdfilter)) {
 			ret = true;
 			goto beach;
 		}
@@ -7212,6 +7305,7 @@ static int core_cmd_context(RCore *core, RCmdContext *parent, const char *cstr, 
 	}
 	free (cmd);
 beach:
+	context_deactivate (core, &context, prev_context);
 	return ret;
 }
 
@@ -7488,9 +7582,13 @@ R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
 
 static int core_call_context(RCore *core, RCmdContext *parent, const char *cmd) {
 	RCmdContext context;
-	return core_context_init (core, parent, &context, cmd)
-		? r_cmd_call_context (core->rcmd, &context, cmd, true)
-		: false;
+	if (!core_context_init (core, parent, &context, cmd)) {
+		return false;
+	}
+	RCmdContext *prev_context = context_activate (&context);
+	int res = r_cmd_call_context (core->rcmd, &context, cmd, true);
+	context_deactivate (core, &context, prev_context);
+	return res;
 }
 
 R_API int r_core_call_at(RCore *core, ut64 addr, const char *cmd) {
