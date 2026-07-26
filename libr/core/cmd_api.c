@@ -545,7 +545,9 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 			context = R_NEW0 (RCmdContext);
 			context->parent = parent;
 			context->cmd = cmd;
-			context->cons = parent? parent->cons: cmd->cons;
+			context->cons = parent
+				? parent->cons
+				: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
 			context->user = cmd->data;
 		}
 		const char *sub_end = input.a + matched;

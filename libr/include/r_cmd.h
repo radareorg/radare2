@@ -114,6 +114,7 @@ typedef struct r_cmd_alias_val_t {
 struct r_cmd_t {
 	void *data; // maybe its user?
 	RCons *cons; // borrowed by new command contexts
+	RCons *(*get_cons)(void *data); // optional execution-console resolver
 	RCmdNullCb nullcallback;
 	RCmdItem *cmds[UT8_MAX];
 	RCmdMacro macro;

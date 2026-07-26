@@ -7419,6 +7419,12 @@ static int core_cmd0_wrapper(void *core, const char *cmd) {
 	return r_core_cmd0 ((RCore *)core, cmd);
 }
 
+static RCons *core_cmd_cons(void *data) {
+	RCore *core = data;
+	RCoreTask *task = r_core_task_self (&core->tasks);
+	return task && task->cons? task->cons: core->cons;
+}
+
 R_API void r_core_cmd_init(RCore *core) {
 	struct {
 		const char *cmd;
@@ -7481,6 +7487,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	if (core->rcmd) {
 		r_cmd_set_data (core->rcmd, core);
 		core->rcmd->cons = core->cons;
+		core->rcmd->get_cons = core_cmd_cons;
 		core->rcmd->macro.user = core;
 		core->rcmd->macro.num = core->num;
 		core->rcmd->macro.cmd = core_cmd0_wrapper;

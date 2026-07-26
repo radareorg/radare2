@@ -30,8 +30,7 @@ typedef struct r_core_task_t {
 	RThreadSemaphore *running_sem;
 	void *user;
 	RCore *core;
-	// Execution mode and isolation
-	RCore *task_core; // Isolated core (NULL for cooperative)
+	RCons *cons; // owned child console for new RCmdContext handlers
 	// Thread/fork specific
 	RThread *thread; // Thread handle (for thread mode)
 	int pid; // Process ID (for fork mode)
@@ -41,7 +40,6 @@ typedef struct r_core_task_t {
 	// Command and results
 	char *cmd;
 	char *res;
-	RConsContext *cons_context;
 	RCoreTaskCallback cb;
 } RCoreTask;
 
