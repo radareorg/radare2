@@ -146,15 +146,12 @@ static bool op_needs_cr0(const char *op) {
 	return !op[3] || ((op[3] == '-' || op[3] == '+') && !op[4]);
 }
 
-// only the raw t[dw] forms carry a TO code operand, the extended ones (tweq, tdlgt..) encode it in the mnemonic
+// only td/tdi/tw/twi carry a TO code operand, every named form (tweq, tdlgt, tdu..) encodes it in the mnemonic
 static bool op_is_trap(const char *op) {
 	if (*op != 't' || (op[1] != 'd' && op[1] != 'w')) {
 		return false;
 	}
 	const char *s = op + 2;
-	if (*s == 'u') {
-		s++;
-	}
 	if (*s == 'i') {
 		s++;
 	}
@@ -380,12 +377,12 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "rlwnm.", "A = rol32(B, C) & D", 5},
 		{ "td", "if (B A C) trap", 3},
 		{ "tdi", "if (B A C) trap", 3},
-		{ "tdu", "if (B A C) trap", 3},
-		{ "tdui", "if (B A C) trap", 3},
+		{ "tdu", "trap", 0},
+		{ "tdui", "trap", 0},
 		{ "tw", "if ((word) B A (word) C) trap", 3},
 		{ "twi", "if ((word) B A (word) C) trap", 3},
-		{ "twu", "if ((word) B A (word) C) trap", 3},
-		{ "twui", "if ((word) B A (word) C) trap", 3},
+		{ "twu", "trap", 0},
+		{ "twui", "trap", 0},
 		{ "mfspr", "A = B", 2},
 		{ "mtspr", "A = B", 2},
 		{ "add", "A = B + C", 3},
@@ -1588,7 +1585,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut32 ME = PPC_UT32(argv[5]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, mask32 (MB, ME));
 						} else if (letter == 1 && op_is_trap (argv[0])) {
-							int to = atoi (w);
+							int to = PPC_UT64 (w);
 							switch(to) {
 								case 4:
 									w = "==";

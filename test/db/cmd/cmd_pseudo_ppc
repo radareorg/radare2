@@ -129,12 +129,16 @@ NAME=PPC64 pseudo trap translates the TO code and keeps its operands
 FILE=malloc://32
 ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
 CMDS=<<EOF
-wx 0ca300007c832008
-pi 2
+wx 0ca300007d8320080e8300077c8320087fe320880fe30007
+pi 6
 EOF
 EXPECT=<<EOF
 if ((word) r3 >= (word) 0) trap
+if ((word) r3 >= (word) r4) trap
+if ((word) r3 <= (word) 7) trap
 if ((word) r3 == (word) r4) trap
+trap
+trap
 EOF
 RUN
 
