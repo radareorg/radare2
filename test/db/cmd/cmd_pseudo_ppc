@@ -99,3 +99,15 @@ r3 = select(cr2eq, r4, r5)
 r3 = select(cr0lt, 0, r5)
 EOF
 RUN
+
+NAME=PPC64 pseudo keeps every operand when no rule matches
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 1022192b
+pi 1
+EOF
+EXPECT=<<EOF
+vperm v1, v2, v3, v4
+EOF
+RUN
