@@ -116,46 +116,21 @@ static int can_replace(const char *str, int idx, int max_operands) {
 	return true;
 }
 
+// cmp* and the cr0 conditional branches: b{eq,ge,gt,le,lt,ne} with an optional +/- hint
 static bool op_needs_cr0(const char *op) {
 	if (r_str_startswith (op, "cmp")) {
 		return true;
 	}
-	if (*op != 'b') {
+	if (op[0] != 'b' || !op[1] || !op[2] || (op[3] && (op[4] || !strchr ("+-", op[3])))) {
 		return false;
 	}
-	switch (op[1]) {
-	case 'e':
-		if (op[2] != 'q') {
-			return false;
-		}
-		break;
-	case 'g':
-	case 'l':
-		if (op[2] != 'e' && op[2] != 't') {
-			return false;
-		}
-		break;
-	case 'n':
-		if (op[2] != 'e') {
-			return false;
-		}
-		break;
-	default:
-		return false;
-	}
-	return !op[3] || ((op[3] == '-' || op[3] == '+') && !op[4]);
+	const char cond[] = { op[1], op[2], 0 };
+	return strstr ("eq ge gt le lt ne", cond) != NULL;
 }
 
 // only td/tdi/tw/twi carry a TO code operand, every named form (tweq, tdlgt, tdu..) encodes it in the mnemonic
 static bool op_is_trap(const char *op) {
-	if (*op != 't' || (op[1] != 'd' && op[1] != 'w')) {
-		return false;
-	}
-	const char *s = op + 2;
-	if (*s == 'i') {
-		s++;
-	}
-	return !*s;
+	return !strcmp (op, "td") || !strcmp (op, "tdi") || !strcmp (op, "tw") || !strcmp (op, "twi");
 }
 
 static const char* getspr(const char *reg) {
@@ -1517,14 +1492,14 @@ static int replace(int argc, const char *argv[], char *newstr) {
 						int letter = ops[i].str[j] - '@';
 						const char *w = argv[letter];
 						// eprintf("%s:%d %s\n", ops[i].op, letter, w);
-						if (letter == 4 && !strncmp (argv[0], "rlwinm", 6)) {
+						if (letter == 4 && r_str_startswith (argv[0], "rlwinm")) {
 							// { "rlwinm", "A = rol32(B, C) & D", 5},
 							w = ppc_mask;
 							//MASK(MB+32, ME+32)
 							ut64 MB = PPC_UT64(argv[4]) + 32;
 							ut64 ME = PPC_UT64(argv[5]) + 32;
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
-						} else if (letter == 4 && (!strncmp (argv[0], "rldcl", 5) || !strncmp (argv[0], "rldicl", 6))) {
+						} else if (letter == 4 && (r_str_startswith (argv[0], "rldcl") || r_str_startswith (argv[0], "rldicl"))) {
 							// { "rld[i]cl", "A = rol64(B, C) & D", 4},
 							w = ppc_mask;
 							//MASK(MB, 63)
@@ -1537,13 +1512,13 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut64 MB = PPC_UT64(argv[4]);
 							ut64 ME = 63 - PPC_UT64(argv[3]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
-						} else if (letter == 4 && (!strncmp (argv[0], "rldcr", 5) || !strncmp (argv[0], "rldicr", 6))) {
+						} else if (letter == 4 && (r_str_startswith (argv[0], "rldcr") || r_str_startswith (argv[0], "rldicr"))) {
 							// { "rld[i]cr", "A = rol64(B, C) & D", 4},
 							w = ppc_mask;
 							//MASK(0, ME)
 							ut64 ME = PPC_UT64(argv[4]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (0, ME));
-						} else if (letter == 4 && !strncmp (argv[0], "rldimi", 6)) {
+						} else if (letter == 4 && r_str_startswith (argv[0], "rldimi")) {
 							// { "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}
 							// first mask (normal)
 							w = ppc_mask;
@@ -1551,7 +1526,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut64 MB = PPC_UT64(argv[4]);
 							ut64 ME = 63 - PPC_UT64(argv[3]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
-						} else if (letter == 5 && !strncmp (argv[0], "rldimi", 6)) {
+						} else if (letter == 5 && r_str_startswith (argv[0], "rldimi")) {
 							// { "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}
 							// second mask (inverted)
 							w = ppc_mask;
@@ -1560,7 +1535,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut64 ME = 63 - PPC_UT64(argv[3]);
 							ut64 inverted = ~ (mask64 (MB, ME));
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, inverted);
-						} else if (letter == 4 && !strncmp (argv[0], "rlwimi", 6)) {
+						} else if (letter == 4 && r_str_startswith (argv[0], "rlwimi")) {
 							// { "rlwimi", "A = (rol64(B, C) & D) | (A & E)", 5}
 							// first mask (normal)
 							w = ppc_mask;
@@ -1568,7 +1543,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut32 MB = PPC_UT32(argv[4]);
 							ut32 ME = PPC_UT32(argv[5]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, mask32 (MB, ME));
-						} else if (letter == 5 && !strncmp (argv[0], "rlwimi", 6)) {
+						} else if (letter == 5 && r_str_startswith (argv[0], "rlwimi")) {
 							// { "rlwimi", "A = (rol32(B, C) & D) | (A & E)", 5}
 							// second mask (inverted)
 							w = ppc_mask;
@@ -1577,7 +1552,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut32 ME = PPC_UT32(argv[5]);
 							ut32 inverted = ~mask32 (MB, ME);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, inverted);
-						} else if (letter == 4 && !strncmp (argv[0], "rlwnm", 5)) {
+						} else if (letter == 4 && r_str_startswith (argv[0], "rlwnm")) {
 							// { "rlwnm", "A = rol32(B, C) & D", 5}
 							w = ppc_mask;
 							//MASK(MB, ME)
