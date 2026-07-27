@@ -52,7 +52,7 @@ bool test_echo_context_binding_and_depth(void) {
 	output = r_core_cmd_str (core, "e cmd.depth=1; echo $(echo nested)");
 	mu_assert_streq_free (output, "nested\n", "active root keeps its own depth budget");
 	output = r_core_cmd_str (core, "echo $(echo hidden)");
-	mu_assert_streq_free (output, "\n", "next root observes the reduced limit");
+	mu_assert_streq_free (output, "", "next root observes the reduced limit");
 	output = r_core_cmd_str (core, "echo after");
 	mu_assert_streq_free (output, "after\n", "depth failure does not poison later roots");
 

@@ -200,11 +200,11 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 one;echo two
-"x;y"
-"x;y"
-"x;y"
+x;y
+x;y
+x;y
 before
-"x;y"
+x;y
 @x;#y|z>q
 @x;#y|z>q
 @x;#y|z>q
@@ -232,14 +232,14 @@ prj open /this/path/does/not/exist/r2-raw-and.prj && 'echo SHOULD_NOT_RUN
 EOF
 EXPECT=<<EOF
 before
-"and;x"
+and;x
 skipped-or
-"or;x"
+or;x
 repeated
 raw||literal
 raw||literal
 seek-prefixed
-"seek-and;x"
+seek-and;x
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Cannot find project file: /this/path/does/not/exist/r2-raw-or.prj
@@ -316,8 +316,8 @@ repeat repeat
 repeat repeat
 quoted-repeat quoted-repeat quoted-repeat
 left)right
-"seek-dollar;x"
-"seek-backtick;x"
+seek-dollar;x
+seek-backtick;x
 seek-repeat seek-repeat
 paren-seek
 seek-left)right
@@ -393,7 +393,7 @@ EXPECT=<<EOF
 prea b;#|>@~&&||"'`$(?e INJECT)post
 prea b;#|>@~&&||"'`$(?e INJECT)post
 prea b;#|>@~&&||"'`$(?e INJECT)post
-"dollar;x"
+dollar;x
 preXpost
 AFTER
 EOF

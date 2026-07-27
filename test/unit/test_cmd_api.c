@@ -132,6 +132,37 @@ static bool test_r_cmd_prefix_registry(void) {
 	mu_end;
 }
 
+typedef struct {
+	RCmd *cmd;
+	size_t removed;
+} ForeachMutation;
+
+static bool unregister_visited_command(RStrs name, void *user) {
+	ForeachMutation *mutation = user;
+	char *command = r_strs_tostring (name);
+	const bool removed = command && r_cmd_unregister (mutation->cmd, command);
+	free (command);
+	if (removed) {
+		mutation->removed++;
+	}
+	return removed;
+}
+
+static bool test_r_cmd_foreach_mutation(void) {
+	RCmd *cmd = r_cmd_new (NULL);
+	mu_assert_true (r_cmd_register (cmd, "af", first_handler, NULL), "register af");
+	mu_assert_true (r_cmd_register (cmd, "afl", first_handler, NULL), "register afl");
+	mu_assert_true (r_cmd_register (cmd, "aflj", first_handler, NULL), "register aflj");
+	ForeachMutation mutation = {
+		.cmd = cmd
+	};
+	mu_assert_true (r_cmd_foreach_prefix (cmd, "af", unregister_visited_command, &mutation), "mutate registry from snapshot visitor");
+	mu_assert_eq (mutation.removed, 3, "visitor sees the entry snapshot");
+	mu_assert_eq (r_trie_size (cmd->handlers), 0, "visitor removes every snapshotted handler");
+	r_cmd_free (cmd);
+	mu_end;
+}
+
 static bool test_r_cmd_registry_dispatch(void) {
 	DispatchState parent = {
 		.expected_subcmd = "fl?",
@@ -277,14 +308,208 @@ static bool test_r_cmd_raw_context_args(void) {
 	mu_end;
 }
 
+typedef struct {
+	RCmd *cmd;
+	RThreadLock *lock;
+	RThreadCond *cond;
+	size_t calls;
+	int workers;
+	bool stop;
+	bool failed;
+} ConcurrentRegistryState;
+
+static RCmdResult concurrent_registry_handler(RCmdContext *ctx) {
+	ConcurrentRegistryState *state = ctx->handler_user;
+	r_th_lock_enter (state->lock);
+	state->calls++;
+	r_th_cond_signal_all (state->cond);
+	r_th_lock_leave (state->lock);
+	return (RCmdResult) { 0 };
+}
+
+static RThreadFunctionRet concurrent_registry_dispatch(RThread *thread) {
+	ConcurrentRegistryState *state = thread->user;
+	r_th_lock_enter (state->lock);
+	state->workers++;
+	r_th_cond_signal_all (state->cond);
+	r_th_lock_leave (state->lock);
+	while (true) {
+		r_th_lock_enter (state->lock);
+		const bool stop = state->stop;
+		r_th_lock_leave (state->lock);
+		if (stop) {
+			break;
+		}
+		const int result = r_cmd_call (state->cmd, "race");
+		if (result != 0 && result != -1) {
+			r_th_lock_enter (state->lock);
+			state->failed = true;
+			r_th_lock_leave (state->lock);
+		}
+	}
+	return R_TH_STOP;
+}
+
+static bool test_r_cmd_concurrent_registry(void) {
+	ConcurrentRegistryState state = {
+		.cmd = r_cmd_new (NULL),
+		.lock = r_th_lock_new (false),
+		.cond = r_th_cond_new ()
+	};
+	mu_assert_true (r_cmd_register (state.cmd, "race", concurrent_registry_handler, &state), "register concurrent handler");
+	RThread *workers[2] = {
+		r_th_new (concurrent_registry_dispatch, &state, 0),
+		r_th_new (concurrent_registry_dispatch, &state, 0)
+	};
+	mu_assert_notnull (workers[0], "create first dispatch thread");
+	mu_assert_notnull (workers[1], "create second dispatch thread");
+	mu_assert_true (r_th_start (workers[0]), "start first dispatch thread");
+	mu_assert_true (r_th_start (workers[1]), "start second dispatch thread");
+	r_th_lock_enter (state.lock);
+	while (state.workers < 2 || !state.calls) {
+		r_th_cond_wait (state.cond, state.lock);
+	}
+	r_th_lock_leave (state.lock);
+	bool mutations_ok = true;
+	size_t i;
+	for (i = 0; i < 2000; i++) {
+		if (!r_cmd_unregister (state.cmd, "race")
+			|| !r_cmd_register (state.cmd, "race", concurrent_registry_handler, &state)) {
+			mutations_ok = false;
+			break;
+		}
+		if (!(i % 64)) {
+			r_sys_usleep (10);
+		}
+	}
+	r_th_lock_enter (state.lock);
+	state.stop = true;
+	r_th_lock_leave (state.lock);
+	r_th_wait (workers[0]);
+	r_th_wait (workers[1]);
+	r_th_free (workers[0]);
+	r_th_free (workers[1]);
+	r_th_lock_enter (state.lock);
+	const bool dispatched = state.calls > 0 && !state.failed;
+	r_th_lock_leave (state.lock);
+	r_cmd_unregister (state.cmd, "race");
+	r_cmd_free (state.cmd);
+	r_th_cond_free (state.cond);
+	r_th_lock_free (state.lock);
+	mu_assert_true (mutations_ok, "concurrent registry mutations succeed");
+	mu_assert_true (dispatched, "concurrent dispatch results stay valid");
+	mu_end;
+}
+
+typedef struct {
+	RCmd *cmd;
+	RThreadLock *lock;
+	RThreadCond *cond;
+	bool entered;
+	bool release;
+	bool exited;
+	bool unregistered;
+	int dispatch_result;
+	int replacement_calls;
+} RegistryBarrierState;
+
+static RCmdResult registry_barrier_handler(RCmdContext *ctx) {
+	RegistryBarrierState *state = ctx->handler_user;
+	r_th_lock_enter (state->lock);
+	state->entered = true;
+	r_th_cond_signal_all (state->cond);
+	while (!state->release) {
+		r_th_cond_wait (state->cond, state->lock);
+	}
+	state->exited = true;
+	r_th_cond_signal_all (state->cond);
+	r_th_lock_leave (state->lock);
+	return (RCmdResult) { 0 };
+}
+
+static RCmdResult registry_replacement_handler(RCmdContext *ctx) {
+	RegistryBarrierState *state = ctx->handler_user;
+	state->replacement_calls++;
+	return (RCmdResult) { 0 };
+}
+
+static RThreadFunctionRet registry_barrier_dispatch(RThread *thread) {
+	RegistryBarrierState *state = thread->user;
+	state->dispatch_result = r_cmd_call (state->cmd, "barrier");
+	return R_TH_STOP;
+}
+
+static RThreadFunctionRet registry_barrier_unregister(RThread *thread) {
+	RegistryBarrierState *state = thread->user;
+	const bool unregistered = r_cmd_unregister (state->cmd, "barrier");
+	r_th_lock_enter (state->lock);
+	state->unregistered = unregistered;
+	r_th_cond_signal_all (state->cond);
+	r_th_lock_leave (state->lock);
+	return R_TH_STOP;
+}
+
+static bool test_r_cmd_unregister_barrier(void) {
+	RegistryBarrierState state = {
+		.cmd = r_cmd_new (NULL),
+		.lock = r_th_lock_new (false),
+		.cond = r_th_cond_new (),
+		.dispatch_result = -1
+	};
+	mu_assert_true (r_cmd_register (state.cmd, "barrier", registry_barrier_handler, &state), "register blocking handler");
+	RThread *dispatch = r_th_new (registry_barrier_dispatch, &state, 0);
+	RThread *unregister = r_th_new (registry_barrier_unregister, &state, 0);
+	mu_assert_notnull (dispatch, "create dispatch thread");
+	mu_assert_notnull (unregister, "create unregister thread");
+	mu_assert_true (r_th_start (dispatch), "start dispatch thread");
+	r_th_lock_enter (state.lock);
+	while (!state.entered) {
+		r_th_cond_wait (state.cond, state.lock);
+	}
+	r_th_lock_leave (state.lock);
+	mu_assert_true (r_th_start (unregister), "start unregister thread");
+	bool replacement_registered = false;
+	size_t i;
+	for (i = 0; i < 10000 && !replacement_registered; i++) {
+		replacement_registered = r_cmd_register (state.cmd, "barrier", registry_replacement_handler, &state);
+		if (!replacement_registered) {
+			r_sys_usleep (10);
+		}
+	}
+	const int replacement_result = replacement_registered? r_cmd_call (state.cmd, "barrier"): -1;
+	r_th_lock_enter (state.lock);
+	const bool unregister_waited = !state.unregistered;
+	state.release = true;
+	r_th_cond_signal_all (state.cond);
+	r_th_lock_leave (state.lock);
+	r_th_wait (dispatch);
+	r_th_wait (unregister);
+	r_th_free (dispatch);
+	r_th_free (unregister);
+	const bool old_call_finished = state.exited && state.unregistered && state.dispatch_result == 0;
+	r_cmd_unregister (state.cmd, "barrier");
+	r_cmd_free (state.cmd);
+	r_th_cond_free (state.cond);
+	r_th_lock_free (state.lock);
+	mu_assert_true (replacement_registered, "replacement registers while old callback is pinned");
+	mu_assert_eq (replacement_result, 0, "replacement dispatches while unregister waits");
+	mu_assert_eq (state.replacement_calls, 1, "replacement handler runs once");
+	mu_assert_true (unregister_waited, "unregister waits for the old callback");
+	mu_assert_true (old_call_finished, "unregister returns after the old callback exits");
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test (test_r_cmd_register);
 	mu_run_test (test_r_cmd_unregister);
 	mu_run_test (test_r_cmd_prefix_registry);
+	mu_run_test (test_r_cmd_foreach_mutation);
 	mu_run_test (test_r_cmd_registry_dispatch);
 	mu_run_test (test_r_cmd_multiword_dispatch);
 	mu_run_test (test_r_cmd_context_args);
 	mu_run_test (test_r_cmd_raw_context_args);
+	mu_run_test (test_r_cmd_concurrent_registry);
+	mu_run_test (test_r_cmd_unregister_barrier);
 	return tests_passed != tests_run;
 }
 

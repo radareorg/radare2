@@ -47,8 +47,7 @@ typedef struct r_cmd_context_t {
 	int remaining_depth; // nested core command budget
 	char *args_storage; // private: owned buffer backing args, do not use
 	RVecRStrs args; // arguments after the matched name and subcmd
-	RStrs subcmd; // command-token remainder after the registered name; slices the
-	// NUL-terminated input line, so subcmd.b is the raw undecoded tail as C string
+	RStrs subcmd; // registered-name remainder ending at the command token; subcmd.b starts the raw NUL-terminated tail
 } RCmdContext;
 
 typedef RCmdResult (*RCmdCtxCb) (RCmdContext *ctx);
@@ -58,8 +57,7 @@ static inline bool r_cmd_ctx_help(RCmdContext *ctx) {
 	return r_strs_lastch (ctx->subcmd) == '?';
 }
 
-/* Trailing output-mode char from the given set, looking before any '?'.
- * r_cmd_ctx_mode (ctx, "jq") is 'j' for "agDj" and "agDj?", 0 for "agD" */
+/* Returns a trailing output mode before any '?', such as 'j' for "agDj?". */
 static inline char r_cmd_ctx_mode(RCmdContext *ctx, const char *modes) {
 	RStrs s = ctx->subcmd;
 	if (r_strs_lastch (s) == '?') {
@@ -126,6 +124,7 @@ struct r_cmd_t {
 	HtUP *ts_symbols_ht;
 	// RCmdDesc *root_cmd_desc;
 	RTrie *handlers;
+	void *priv;
 };
 
 #ifdef R_API
@@ -134,12 +133,11 @@ R_API void r_cmd_free(RCmd *cmd);
 R_API int r_cmd_call(RCmd *cmd, const char *command);
 R_API void r_cmd_set_data(RCmd *cmd, void *data);
 R_API bool r_cmd_add(RCmd *cmd, const char *command, RCmdCb callback);
-/* New handlers are keyed by their complete command prefix. The registry copies
- * name and borrows handler_user until the command is unregistered. */
+/* New handlers are keyed by their complete command prefix; name is copied and handler_user is borrowed until unregistration completes. */
 R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user);
-/* Removes only the exact registered name, preserving descendant handlers. */
+/* Removes the exact name after active callbacks finish; registered callbacks cannot unregister commands. */
 R_API bool r_cmd_unregister(RCmd *cmd, const char *name);
-/* Removes every handler whose name starts with prefix and returns their count. */
+/* Removes a prefix after active callbacks finish; registered callbacks cannot unregister commands. */
 R_API size_t r_cmd_unregister_prefix(RCmd *cmd, const char *prefix);
 /* Visits matching names in lexical order; name is transient and false stops. */
 R_API bool r_cmd_foreach_prefix(const RCmd *cmd, const char *prefix, RCmdForeachCb callback, void *user);

@@ -1403,6 +1403,11 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_gotoxy (core->cons, x, y);
 			}
 			break;
+		case 'n': // "?en"
+		case ' ': // "?e "
+		case '\0': // "?e"
+			question_echo_legacy (core, input);
+			break;
 		case 'f': // "?ef"
 			{
 				const char *text = r_str_trim_head_ro (input + 2);

@@ -484,13 +484,10 @@ static bool cmd_ec(RCore *core, const char *input) {
 		r_cons_pal_show (core->cons);
 		break;
 	case '*': // "ec*"
-		r_cons_pal_list (core->cons, 1, NULL);
-		break;
-	case 'h':
-		r_cons_pal_list (core->cons, 'h', NULL);
-		break;
+	case 'h': // "ech"
 	case 'j': // "ecj"
-		r_cons_pal_list (core->cons, 'j', NULL);
+	case '\0': // "ec"
+		r_cons_pal_list (core->cons, input[1], NULL);
 		break;
 	case 'c': // "ecc"
 		if (input[2]) {
@@ -498,9 +495,6 @@ static bool cmd_ec(RCore *core, const char *input) {
 		} else {
 			r_cons_pal_list (core->cons, 'c', r_config_get (core->config, "scr.css.prefix"));
 		}
-		break;
-	case '\0': // "ec"
-		r_cons_pal_list (core->cons, 0, NULL);
 		break;
 	case 'r': // "ecr"
 		r_cons_pal_random (core->cons);

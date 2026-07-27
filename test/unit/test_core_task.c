@@ -206,6 +206,7 @@ bool test_task_context_console_isolation(void) {
 	bool suffix_context = state.cons == empty_task->cons;
 	state.output = "context-";
 	state.unhandled = true;
+	r_cmd_unregister (core->rcmd, "?e");
 	mu_assert_true (r_cmd_register (core->rcmd, "?e", task_context_handler, &state), "register fallback command");
 	RCoreTask *fallback_task = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true, "?e legacy", NULL, NULL);
 	mu_assert_notnull (fallback_task, "create fallback task");
@@ -266,7 +267,7 @@ bool test_registered_echo_nested_task(void) {
 	RCore *core = r_core_new ();
 	mu_assert_notnull (core, "create core");
 	RCoreTask *nested = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true,
-		"echo $(echo nested); echo second", NULL, NULL);
+		"echo $(echo nested); echo loose; echo second", NULL, NULL);
 	RCoreTask *other = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true,
 		"echo other", NULL, NULL);
 	RCoreTask *mixed = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true,
@@ -281,7 +282,7 @@ bool test_registered_echo_nested_task(void) {
 	mu_assert_eq (r_core_task_run_threaded (&core->tasks, mixed), mixed->id, "run mixed task");
 	r_core_task_join (&core->tasks, core->tasks.main_task, mixed->id);
 
-	bool nested_ok = nested->res && !strcmp (nested->res, "nested\nsecond\n");
+	bool nested_ok = nested->res && !strcmp (nested->res, "nested\nloose\nsecond\n");
 	bool other_ok = other->res && !strcmp (other->res, "other\n");
 	bool mixed_ok = mixed->res && !strcmp (mixed->res, "mixed\n0x2a\n");
 	bool children_drained = !r_cons_get_buffer (nested->cons, NULL)
