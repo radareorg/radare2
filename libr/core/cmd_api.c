@@ -469,9 +469,12 @@ static const char *cmd_decode_escape(const char *src, const char *end, char **ds
 	return src;
 }
 
-/* Decodes every token in rest into context->args. Safe to call again when a
- * fallback re-dispatch moves the args boundary; previous state is released. */
-static bool cmd_context_parse_args(RCmdContext *context, RStrs rest) {
+/* Decodes every token in rest into context->args. In raw mode tokens are
+ * split on whitespace but copied verbatim: no quote grouping and no escape
+ * decoding, honoring the shell's promise that raw bodies are untouched.
+ * Safe to call again when a fallback re-dispatch moves the args boundary;
+ * previous state is released. */
+static bool cmd_context_parse_args(RCmdContext *context, RStrs rest, bool raw) {
 	RVecRStrs_fini (&context->args);
 	free (context->args_storage);
 	context->args_storage = NULL;
@@ -497,18 +500,20 @@ static bool cmd_context_parse_args(RCmdContext *context, RStrs rest) {
 				break;
 			}
 			src++;
-			if (ch == '\\') {
-				src = cmd_decode_escape (src, rest.b, &dst);
-				continue;
-			}
-			if (ch == '\'' || ch == '"') {
-				if (!quote) {
-					quote = ch;
+			if (!raw) {
+				if (ch == '\\') {
+					src = cmd_decode_escape (src, rest.b, &dst);
 					continue;
 				}
-				if (quote == ch) {
-					quote = 0;
-					continue;
+				if (ch == '\'' || ch == '"') {
+					if (!quote) {
+						quote = ch;
+						continue;
+					}
+					if (quote == ch) {
+						quote = 0;
+						continue;
+					}
 				}
 			}
 			*dst++ = ch;
@@ -531,7 +536,33 @@ static void cmd_context_free(RCmdContext *context) {
 	}
 }
 
-static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs input) {
+static RCons *cmd_legacy_capture_begin(RCmd *cmd, RCmdContext *parent) {
+	RCons *cons = parent
+		? parent->cons
+		: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
+	if (!cmd->cons || !cons || cons == cmd->cons) {
+		return NULL;
+	}
+	r_cons_push (cmd->cons);
+	cmd->cons->context->cmd_str_depth++;
+	if (parent) {
+		parent->cons = cmd->cons;
+	}
+	return cons;
+}
+
+static void cmd_legacy_capture_end(RCmd *cmd, RCmdContext *parent, RCons *cons) {
+	if (parent) {
+		parent->cons = cons;
+	}
+	cmd->cons->context->cmd_str_depth--;
+	r_cons_filter (cmd->cons);
+	r_cons_merge_output (cons, cmd->cons);
+	r_cons_pop (cmd->cons);
+	r_cons_echo (cmd->cons, NULL);
+}
+
+static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs input, bool raw) {
 	RStrs lookup = input;
 	RCmdContext *context = NULL;
 	const char *parsed_from = NULL;
@@ -549,13 +580,14 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 				? parent->cons
 				: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
 			context->user = cmd->data;
+			context->remaining_depth = parent? parent->remaining_depth: 0;
 		}
 		const char *sub_end = input.a + matched;
 		while (sub_end < input.b && !isspace ((ut8)*sub_end)) {
 			sub_end++;
 		}
 		if (parsed_from != sub_end) {
-			if (!cmd_context_parse_args (context, r_strs_new (sub_end, input.b))) {
+			if (!cmd_context_parse_args (context, r_strs_new (sub_end, input.b), raw)) {
 				cmd_context_free (context);
 				return cmd_result (R_CMD_ACTION_ABORT, 2);
 			}
@@ -574,37 +606,48 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 	return cmd_result (R_CMD_ACTION_UNHANDLED, 127);
 }
 
-R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *input) {
+R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *input, bool raw) {
 	RCore *core = cmd->data;
+	RCons *capture = NULL;
+	RCmdResult result;
 	if (!*input) {
-		return cmd->nullcallback
-			? cmd_result_from_legacy (cmd->nullcallback (cmd->data))
-			: cmd_result (R_CMD_ACTION_UNHANDLED, 127);
+		if (!cmd->nullcallback) {
+			return cmd_result (R_CMD_ACTION_UNHANDLED, 127);
+		}
+		capture = cmd_legacy_capture_begin (cmd, parent);
+		result = cmd_result_from_legacy (cmd->nullcallback (cmd->data));
+		goto beach;
 	}
 	RCmdAliasVal *v = r_cmd_alias_get (cmd, input);
 	if (v && v->is_data) {
 		char *v_str = r_cmd_alias_val_strdup (v);
-		r_cons_print (core->cons, v_str);
+		RCons *cons = parent
+			? parent->cons
+			: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
+		r_cons_print (cons, v_str);
 		free (v_str);
 		return cmd_result_from_legacy (true);
 	}
-	RCmdResult result = cmd_call_registered (cmd, parent, r_strs_from (input));
+	result = cmd_call_registered (cmd, parent, r_strs_from (input), raw);
 	if (result.action != R_CMD_ACTION_UNHANDLED) {
 		return result;
 	}
+	capture = cmd_legacy_capture_begin (cmd, parent);
 	RListIter *iter;
 	if (cmd->libstore) {
 		RCorePluginSession *cps;
 		r_list_foreach (cmd->libstore->plugins, iter, cps) {
 			RCorePlugin *plugin = cps->plugin;
 			if (plugin->call && plugin->call (cps, input)) {
-				return cmd_result_from_legacy (true);
+				result = cmd_result_from_legacy (true);
+				goto beach;
 			}
 		}
 	}
 	RCmdItem *item = cmd->cmds[(ut8)input[0]];
 	if (item && item->callback) {
-		return cmd_result_from_legacy (item->callback (cmd->data, input + 1));
+		result = cmd_result_from_legacy (item->callback (cmd->data, input + 1));
+		goto beach;
 	}
 	if (core && core->sdb) {
 		const char *suggestion = sdb_const_get (core->sdb, input, NULL);
@@ -612,12 +655,20 @@ R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *i
 			R_LOG_INFO ("%s", suggestion);
 		}
 	}
+beach:
+	if (capture) {
+		cmd_legacy_capture_end (cmd, parent, capture);
+	}
 	return result;
 }
 
 R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	R_RETURN_VAL_IF_FAIL (cmd && input, -1);
-	return cmd_result_to_legacy (r_cmd_call_result (cmd, NULL, input));
+	return cmd_result_to_legacy (r_cmd_call_result (cmd, NULL, input, false));
+}
+
+R_IPI int r_cmd_call_context(RCmd *cmd, RCmdContext *parent, const char *input, bool raw) {
+	return cmd_result_to_legacy (r_cmd_call_result (cmd, parent, input, raw));
 }
 
 /** macro.c **/
@@ -835,21 +886,6 @@ R_API char *r_cmd_macro_list(RCmdMacro *mac, int mode) {
 	}
 	return r_strbuf_drain (sb);
 }
-
-
-#if 0
-(define name value
-  f $0 @ $1)
-
-(define loop cmd
-  loop:
-  ? $0 == 0
-  ?? .loop:
-  )
-
-.(define patata 3)
-#endif
-
 R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args, int nargs) {
 	int i, j;
 	char *pcmd, cmd[R_CMD_MAXLEN];

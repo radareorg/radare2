@@ -1996,20 +1996,6 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	r_print_progressbar (p, percent, r_cons_get_size (core->cons, NULL) - 40, NULL);
 	p->flags = flags;
 	r_cons_printf (core->cons, " %s\n", desc->uri);
-#if 0
-	RIOMap *map;
-	SdbListIter *iter;
-	if (desc->io && desc->io->va && desc->io->maps) {
-		ls_foreach_prev (desc->io->maps, iter, map) {
-			if (map->fd == desc->fd) {
-				r_print_printf (p, "  +0x%"PFMT64x" 0x%"PFMT64x
-					" - 0x%"PFMT64x" : %s : %s : %s\n", map->delta,
-					map->from, map->to, r_str_rwx_i (map->flags), "",
-					r_str_get (map));
-			}
-		}
-	}
-#endif
 	return true;
 }
 
@@ -2999,7 +2985,13 @@ static int cmd_open(void *data, const char *input) {
 			// memleak? lose all settings wtf
 			// if load fails does not fallbacks to previous file
 			r_core_task_sync_end (&core->tasks);
+			// Detach the console so it survives the reinit: the command
+			// dispatch stack executing this "oc" holds pointers into it
+			RCons *cons = core->cons;
+			cons->teefile = NULL; // borrowed from the config, freed by fini
+			core->cons = NULL;
 			r_core_fini (core);
+			core->cons = cons;
 			r_core_init (core);
 			r_core_task_sync_begin (&core->tasks);
 			if (r_core_file_open (core, input + 2, R_PERM_RX, 0)) {

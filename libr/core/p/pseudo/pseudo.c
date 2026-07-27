@@ -653,11 +653,12 @@ static bool bb_ends_with_terminator(RCore *core, RAnalBlock *bb) {
 }
 
 static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
-	r_cons_push (state->core->cons);
+	RCons *cons = r_core_get_cons (state->core);
+	r_cons_push (cons);
 	bool html = r_config_get_b (state->core->config, "scr.html");
 	r_config_set_b (state->core->config, "scr.html", false);
 	char *code = r_core_cmd_strf (state->core, "pD %" PFMT64d " @ 0x%08" PFMT64x, bb->size, bb->addr);
-	r_cons_pop (state->core->cons);
+	r_cons_pop (cons);
 	r_config_set_b (state->core->config, "scr.html", html);
 	if (R_STR_ISEMPTY (code)) {
 		free (code);
@@ -1325,7 +1326,7 @@ static void pdc_print_comment_cmds(RCore *core, const char *s) {
 						if (pdc_comment_line_is_meaningful (comment)) {
 							char *b64 = r_base64_encode_dyn ((const ut8 *)comment, -1);
 							if (b64) {
-								r_cons_printf (core->cons, "CCu base64:%s @ 0x%08" PFMT64x "\n", b64, addr);
+								r_cons_printf (r_core_get_cons (core), "CCu base64:%s @ 0x%08" PFMT64x "\n", b64, addr);
 								free (b64);
 							}
 						}
@@ -1343,6 +1344,7 @@ static void pdc_print_comment_cmds(RCore *core, const char *s) {
 }
 
 R_IPI bool pdc_decompile(RCore *core, const char *input) {
+	RCons *cons = r_core_get_cons (core);
 	bool show_c_headers = *input == 'c';
 	if (*input == 't') {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
@@ -1352,7 +1354,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		}
 		char *dump = pdc_ast_dump (core, fcn);
 		if (dump) {
-			r_cons_print (core->cons, dump);
+			r_cons_print (cons, dump);
 			free (dump);
 		}
 		return true;
@@ -1878,7 +1880,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		pj_ks (state.pj, "code", kode);
 		pj_end (state.pj);
 		char *j = pj_drain (state.pj);
-		r_cons_printf (state.core->cons, "%s\n", j);
+		r_cons_println (cons, j);
 		free (kode);
 		free (j);
 		r_strbuf_free (state.out);
@@ -1887,13 +1889,13 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		if (comment_cmds) {
 			pdc_print_comment_cmds (core, s);
 		} else if (r_config_get_i (state.core->config, "scr.color") > 0) {
-			RConsCodeColors codecolors = r_cons_codecolors (core->cons);
+			RConsCodeColors codecolors = r_cons_codecolors (cons);
 			char *ss = r_print_code_tocolor (s, &codecolors);
 			free (s);
 			s = ss;
 		}
 		if (!comment_cmds) {
-			r_cons_printf (state.core->cons, "%s\n", s);
+			r_cons_println (cons, s);
 		}
 		free (s);
 		r_strbuf_free (state.codestr);

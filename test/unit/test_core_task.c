@@ -126,6 +126,7 @@ typedef struct {
 	bool entered;
 	bool release;
 	bool broken;
+	bool unhandled;
 } TaskContextState;
 
 static RCmdResult task_context_handler(RCmdContext *ctx) {
@@ -143,7 +144,9 @@ static RCmdResult task_context_handler(RCmdContext *ctx) {
 	if (!state->broken && state->output) {
 		r_cons_print (ctx->cons, state->output);
 	}
-	return (RCmdResult) { 0 };
+	return (RCmdResult) {
+		.action = state->unhandled? R_CMD_ACTION_UNHANDLED: R_CMD_ACTION_CONTINUE
+	};
 }
 
 static void task_context_wait(TaskContextState *state) {
@@ -172,7 +175,7 @@ bool test_task_context_console_isolation(void) {
 		.output = "task-only"
 	};
 	mu_assert_true (r_cmd_register (core->rcmd, "taskctx", task_context_handler, &state), "register context command");
-	RCoreTask *task = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true, "taskctx", NULL, NULL);
+	RCoreTask *task = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true, "taskctx;?e legacy", NULL, NULL);
 	mu_assert_notnull (task, "create context task");
 	mu_assert_notnull (task->cons, "task child console");
 	mu_assert_eq (r_core_task_run_threaded (&core->tasks, task), task->id, "run context task");
@@ -189,17 +192,27 @@ bool test_task_context_console_isolation(void) {
 		&& core->cons->context->color_mode == parent_color;
 	bool main_output = parent_size == strlen ("main-only")
 		&& !memcmp (parent_output, "main-only", parent_size);
-	bool task_output = task->res && !strcmp (task->res, "task-only");
+	bool task_output = task->res && !strcmp (task->res, "task-onlylegacy\n");
 	bool child_drained = !r_cons_get_buffer (task->cons, NULL);
 	state.cons = NULL;
 	state.output = NULL;
 	state.entered = false;
 	state.release = true;
-	RCoreTask *empty_task = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true, "taskctx", NULL, NULL);
+	RCoreTask *empty_task = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true, "taskctx?", NULL, NULL);
 	mu_assert_notnull (empty_task, "create empty-output task");
 	mu_assert_eq (r_core_task_run_threaded (&core->tasks, empty_task), empty_task->id, "run empty-output task");
 	r_core_task_join (&core->tasks, core->tasks.main_task, empty_task->id);
 	bool empty_output = empty_task->res && !*empty_task->res;
+	bool suffix_context = state.cons == empty_task->cons;
+	state.output = "context-";
+	state.unhandled = true;
+	mu_assert_true (r_cmd_register (core->rcmd, "?e", task_context_handler, &state), "register fallback command");
+	RCoreTask *fallback_task = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true, "?e legacy", NULL, NULL);
+	mu_assert_notnull (fallback_task, "create fallback task");
+	mu_assert_eq (r_core_task_run_threaded (&core->tasks, fallback_task), fallback_task->id, "run fallback task");
+	r_core_task_join (&core->tasks, core->tasks.main_task, fallback_task->id);
+	bool fallback_output = fallback_task->res && !strcmp (fallback_task->res, "context-legacy\n");
+	r_cmd_unregister (core->rcmd, "?e");
 	r_cmd_unregister (core->rcmd, "taskctx");
 	r_core_free (core);
 	r_th_cond_free (state.cond);
@@ -211,6 +224,8 @@ bool test_task_context_console_isolation(void) {
 	mu_assert_true (task_output, "task result drains child output");
 	mu_assert_true (child_drained, "task console is empty after draining");
 	mu_assert_true (empty_output, "empty task output remains valid");
+	mu_assert_true (suffix_context, "registered suffix uses the task console");
+	mu_assert_true (fallback_output, "legacy fallback preserves parsed output order");
 	mu_end;
 }
 

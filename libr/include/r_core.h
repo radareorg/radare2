@@ -428,7 +428,6 @@ struct r_core_t {
 	RList *scriptstack;
 	RCoreTaskScheduler tasks;
 	int max_cmd_depth;
-	int cur_cmd_depth;
 	ut8 switch_file_view;
 	Sdb *sdb;
 	int incomment;

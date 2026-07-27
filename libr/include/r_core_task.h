@@ -30,7 +30,8 @@ typedef struct r_core_task_t {
 	RThreadSemaphore *running_sem;
 	void *user;
 	RCore *core;
-	RCons *cons; // owned child console for new RCmdContext handlers
+	RCons *cons; // owned child console for captured command output
+	struct r_cmd_context_t *cur_context; // innermost command context running on this task
 	// Thread/fork specific
 	RThread *thread; // Thread handle (for thread mode)
 	int pid; // Process ID (for fork mode)

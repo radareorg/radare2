@@ -44,8 +44,9 @@ typedef struct r_cmd_context_t {
 	RCons *cons;
 	void *user;
 	void *handler_user;
+	int remaining_depth; // nested core command budget
 	char *args_storage; // private: owned buffer backing args, do not use
-	RVecRStrs args; // decoded arguments after the matched name and subcmd
+	RVecRStrs args; // arguments after the matched name and subcmd
 	RStrs subcmd; // command-token remainder after the registered name; slices the
 	// NUL-terminated input line, so subcmd.b is the raw undecoded tail as C string
 } RCmdContext;
@@ -67,6 +68,7 @@ static inline char r_cmd_ctx_mode(RCmdContext *ctx, const char *modes) {
 	const char last = r_strs_lastch (s);
 	return (last && strchr (modes, last))? last: 0;
 }
+
 typedef bool (*RCmdForeachCb) (RStrs name, void *user);
 
 typedef struct r_cmd_macro_label_t {
