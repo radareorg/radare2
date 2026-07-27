@@ -67,8 +67,6 @@ static RCmdResult args_handler(RCmdContext *ctx) {
 	state->args_ok = r_strs_empty (ctx->subcmd)
 		&& !r_cmd_ctx_help (ctx) && !r_cmd_ctx_mode (ctx, "jq")
 		&& !strcmp (ctx->subcmd.b, state->expected_input + strlen ("cmd"))
-		&& !strcmp (r_cmd_ctx_body (ctx),
-			r_str_trim_head_ro (state->expected_input + strlen ("cmd")))
 		&& RVecRStrs_length (&ctx->args) == state->expected_argc;
 	size_t i;
 	for (i = 0; state->args_ok && i < state->expected_argc; i++) {

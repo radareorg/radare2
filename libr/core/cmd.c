@@ -4242,7 +4242,7 @@ static int r_core_cmd_subst(RCore *core, RCmdContext *context, char *cmd) {
 	const char *cmdrep = r_str_get (core->cmdtimes);
 	orep = rep;
 
-	bool clear_break = !context->parent && context->task == core->tasks.main_task;
+	bool clear_break = !context->parent && r_core_task_ismain (&core->tasks);
 	if (clear_break) {
 		r_cons_break_clear (cons);
 	}
@@ -6931,7 +6931,7 @@ static int run_cmd_context(RCore *core, RCmdContext *context, char *cmd) {
 }
 
 static bool core_context_init(RCore *core, RCmdContext *parent, RCmdContext *context, const char *cmd) {
-	RCoreTask *task = parent? parent->task: r_core_task_self (&core->tasks);
+	RCoreTask *task = r_core_task_self (&core->tasks);
 	if (!parent && task) {
 		// Root invocations chain to the innermost context active on this
 		// task so nested r_core_cmd() calls share one depth budget instead
@@ -6947,7 +6947,6 @@ static bool core_context_init(RCore *core, RCmdContext *parent, RCmdContext *con
 		.parent = parent,
 		.cmd = core->rcmd,
 		.cons = parent? parent->cons: core_cmd_cons (core),
-		.task = parent? parent->task: task,
 		.user = core,
 		.remaining_depth = available_depth - 1
 	};
@@ -6956,8 +6955,8 @@ static bool core_context_init(RCore *core, RCmdContext *parent, RCmdContext *con
 
 // Mark context as the innermost one active on its task. Returns the previous
 // innermost context, to be restored with context_deactivate() when done.
-static RCmdContext *context_activate(RCmdContext *context) {
-	RCoreTask *task = context->task;
+static RCmdContext *context_activate(RCore *core, RCmdContext *context) {
+	RCoreTask *task = r_core_task_self (&core->tasks);
 	if (!task) {
 		return NULL;
 	}
@@ -6967,10 +6966,8 @@ static RCmdContext *context_activate(RCmdContext *context) {
 }
 
 static void context_deactivate(RCore *core, RCmdContext *context, RCmdContext *prev) {
-	RCoreTask *task = context->task;
-	// A command may tear down and recreate the whole core (eg "oc"); only
-	// restore if the task this context was activated on is still current
-	if (task && r_core_task_self (&core->tasks) == task) {
+	RCoreTask *task = r_core_task_self (&core->tasks);
+	if (task && task->cur_context == context) {
 		task->cur_context = prev;
 	}
 }
@@ -6981,7 +6978,7 @@ static int core_cmd_context(RCore *core, RCmdContext *parent, const char *cstr, 
 	if (!core_context_init (core, parent, &context, cstr)) {
 		return false;
 	}
-	RCmdContext *prev_context = context_activate (&context);
+	RCmdContext *prev_context = context_activate (core, &context);
 	RCons *cons = context.cons;
 	R_LOG_DEBUG ("RCoreCmd: %s", cstr);
 	int ret = 0;
@@ -7355,7 +7352,7 @@ static int core_call_context(RCore *core, RCmdContext *parent, const char *cmd) 
 	if (!core_context_init (core, parent, &context, cmd)) {
 		return false;
 	}
-	RCmdContext *prev_context = context_activate (&context);
+	RCmdContext *prev_context = context_activate (core, &context);
 	int res = r_cmd_call_context (core->rcmd, &context, cmd, true);
 	context_deactivate (core, &context, prev_context);
 	return res;

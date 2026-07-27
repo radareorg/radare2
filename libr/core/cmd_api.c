@@ -536,12 +536,6 @@ static void cmd_context_free(RCmdContext *context) {
 	}
 }
 
-static void cmd_context_set_cons(RCmdContext *context, RCons *cons) {
-	for (; context; context = context->parent) {
-		context->cons = cons;
-	}
-}
-
 static RCons *cmd_legacy_capture_begin(RCmd *cmd, RCmdContext *parent) {
 	RCons *cons = parent
 		? parent->cons
@@ -551,12 +545,16 @@ static RCons *cmd_legacy_capture_begin(RCmd *cmd, RCmdContext *parent) {
 	}
 	r_cons_push (cmd->cons);
 	cmd->cons->context->cmd_str_depth++;
-	cmd_context_set_cons (parent, cmd->cons);
+	if (parent) {
+		parent->cons = cmd->cons;
+	}
 	return cons;
 }
 
 static void cmd_legacy_capture_end(RCmd *cmd, RCmdContext *parent, RCons *cons) {
-	cmd_context_set_cons (parent, cons);
+	if (parent) {
+		parent->cons = cons;
+	}
 	cmd->cons->context->cmd_str_depth--;
 	r_cons_filter (cmd->cons);
 	r_cons_merge_output (cons, cmd->cons);
@@ -581,10 +579,8 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 			context->cons = parent
 				? parent->cons
 				: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
-			context->task = parent? parent->task: NULL;
 			context->user = cmd->data;
 			context->remaining_depth = parent? parent->remaining_depth: 0;
-			context->raw = raw;
 		}
 		const char *sub_end = input.a + matched;
 		while (sub_end < input.b && !isspace ((ut8)*sub_end)) {
@@ -612,16 +608,15 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 
 R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *input, bool raw) {
 	RCore *core = cmd->data;
+	RCons *capture = NULL;
+	RCmdResult result;
 	if (!*input) {
 		if (!cmd->nullcallback) {
 			return cmd_result (R_CMD_ACTION_UNHANDLED, 127);
 		}
-		RCons *capture = cmd_legacy_capture_begin (cmd, parent);
-		RCmdResult result = cmd_result_from_legacy (cmd->nullcallback (cmd->data));
-		if (capture) {
-			cmd_legacy_capture_end (cmd, parent, capture);
-		}
-		return result;
+		capture = cmd_legacy_capture_begin (cmd, parent);
+		result = cmd_result_from_legacy (cmd->nullcallback (cmd->data));
+		goto beach;
 	}
 	RCmdAliasVal *v = r_cmd_alias_get (cmd, input);
 	if (v && v->is_data) {
@@ -633,11 +628,11 @@ R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *i
 		free (v_str);
 		return cmd_result_from_legacy (true);
 	}
-	RCmdResult result = cmd_call_registered (cmd, parent, r_strs_from (input), raw);
+	result = cmd_call_registered (cmd, parent, r_strs_from (input), raw);
 	if (result.action != R_CMD_ACTION_UNHANDLED) {
 		return result;
 	}
-	RCons *capture = cmd_legacy_capture_begin (cmd, parent);
+	capture = cmd_legacy_capture_begin (cmd, parent);
 	RListIter *iter;
 	if (cmd->libstore) {
 		RCorePluginSession *cps;
@@ -645,22 +640,22 @@ R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *i
 			RCorePlugin *plugin = cps->plugin;
 			if (plugin->call && plugin->call (cps, input)) {
 				result = cmd_result_from_legacy (true);
-				break;
+				goto beach;
 			}
 		}
 	}
-	if (result.action == R_CMD_ACTION_UNHANDLED) {
-		RCmdItem *item = cmd->cmds[(ut8)input[0]];
-		if (item && item->callback) {
-			result = cmd_result_from_legacy (item->callback (cmd->data, input + 1));
-		}
+	RCmdItem *item = cmd->cmds[(ut8)input[0]];
+	if (item && item->callback) {
+		result = cmd_result_from_legacy (item->callback (cmd->data, input + 1));
+		goto beach;
 	}
-	if (result.action == R_CMD_ACTION_UNHANDLED && core && core->sdb) {
+	if (core && core->sdb) {
 		const char *suggestion = sdb_const_get (core->sdb, input, NULL);
 		if (suggestion) {
 			R_LOG_INFO ("%s", suggestion);
 		}
 	}
+beach:
 	if (capture) {
 		cmd_legacy_capture_end (cmd, parent, capture);
 	}
