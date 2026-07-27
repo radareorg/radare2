@@ -2828,6 +2828,7 @@ R_API void r_core_fini(RCore *c) {
 	r_libstore_free (c->libstore);
 	c->libstore = NULL;
 	r_lib_free (c->lib);
+	c->lib = NULL;
 	r_event_free (c->ev);
 	r_core_esil_fini (&c->esil);
 	if (c->anal->esil) {

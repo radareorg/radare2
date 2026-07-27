@@ -737,10 +737,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "icbi", "inst_cache_block_inval", 0},
 		{ "icbt", "inst_cache_block_touch", 3},
 		{ "iccci", "inst_cache_inval(A,B)", 2},
-		// isel lt   Rx,Ry,Rz (equivalent to: isel Rx,Ry,Rz,0)
-		// isel gt  Rx,Ry,Rz (equivalent to: isel Rx,Ry,Rz,1)
-		// isel eq Rx,Ry,Rz (equivalent to: isel Rx,Ry,Rz,2)
-		//  { "isel", "", 4},
+		{ "isel", "A = select(D, B, C)", 4},
 		{ "isync", "sync_instr_cache", 0},
 		{ "la", "A = C + B", 3},
 		{ "lbz", "A = byte[C + B]", 3},
@@ -1659,7 +1656,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	} while (0)
 
 static char *parse(RAsmPluginSession *aps, const char *data) {
-	int i, len = strlen (data);
+	int len = strlen (data);
 	char w0[WSZ];
 	char w1[WSZ];
 	char w2[WSZ];
@@ -1689,6 +1686,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		w2[0] = '\0';
 		w3[0] = '\0';
 		w4[0] = '\0';
+		w5[0] = '\0';
 		ptr = strchr (buf, ' ');
 		if (!ptr) {
 			ptr = strchr (buf, '\t');
@@ -1748,8 +1746,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		}
 		{
 			const char *wa[] = { w0, w1, w2, w3, w4, w5 };
-			int nw = 0;
-			for (i = 0; i < 4; i++) {
+			size_t i, nw = 0;
+			for (i = 0; i < R_ARRAY_SIZE (wa); i++) {
 				if (wa[i][0] != '\0') {
 					nw++;
 				}

@@ -142,3 +142,30 @@ r3 = rol64(r4, 5) & 0x1ffffffffffffe0
 r3 = (rol64(r4, 5) & 0x1ffffffffffffe0) | (r3 & 0xfe0000000000001f)
 EOF
 RUN
+
+NAME=PPC64 pseudo isel keeps the condition register bit
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 7c64281e7c64289e7c642a9e7c60281e
+pi 4
+EOF
+EXPECT=<<EOF
+r3 = select(cr0lt, r4, r5)
+r3 = select(cr0eq, r4, r5)
+r3 = select(cr2eq, r4, r5)
+r3 = select(cr0lt, 0, r5)
+EOF
+RUN
+
+NAME=PPC64 pseudo keeps every operand when no rule matches
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 1022192b
+pi 1
+EOF
+EXPECT=<<EOF
+vperm v1, v2, v3, v4
+EOF
+RUN
