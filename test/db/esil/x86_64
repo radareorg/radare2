@@ -581,7 +581,7 @@ ar rip=0 ; "wa push rsp ; pop rsp" @ 0 ; ?en rsp before : ; ?v rsp ; 2aes  ; ?en
 EOF
 EXPECT=<<EOF
 rsp before :0x178000
-rsp after  :0x178000
+rsp after :0x178000
 EOF
 RUN
 
