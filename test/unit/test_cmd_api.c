@@ -112,6 +112,33 @@ static bool test_r_cmd_unregister(void) {
 	mu_end;
 }
 
+static RCmdResult counted_handler(RCmdContext *ctx) {
+	int *calls = ctx->handler_user;
+	(*calls)++;
+	return (RCmdResult) { 0 };
+}
+
+static bool test_r_cmd_alias_after_dispatch(void) {
+	int calls = 0;
+	RCons *cons = r_cons_new ();
+	mu_assert_notnull (cons, "create alias console");
+	RCmd *cmd = r_cmd_new (NULL);
+	cmd->cons = cons;
+	mu_assert_true (r_cmd_register (cmd, "alias", counted_handler, &calls), "register alias handler");
+	mu_assert_eq (r_cmd_call (cmd, "alias"), 0, "dispatch before aliases exist");
+	mu_assert_eq (calls, 1, "handler runs before alias creation");
+	mu_assert_eq (r_cmd_alias_set_str (cmd, "alias", "value"), 1, "create data alias");
+	mu_assert_eq (r_cmd_call (cmd, "alias"), 1, "data alias takes precedence");
+	mu_assert_eq (calls, 1, "alias skips pinned handler");
+	mu_assert_streq (r_cons_get_buffer (cons, NULL), "value", "alias output is captured");
+	mu_assert_true (r_cmd_alias_del (cmd, "alias"), "remove data alias");
+	mu_assert_eq (r_cmd_call (cmd, "alias"), 0, "dispatch after alias removal");
+	mu_assert_eq (calls, 2, "handler resumes after alias removal");
+	r_cmd_free (cmd);
+	r_cons_free (cons);
+	mu_end;
+}
+
 static RCmdResult unregister_self_handler(RCmdContext *ctx) {
 	bool *unregistered = ctx->handler_user;
 	*unregistered = r_cmd_unregister (ctx->cmd, "self");
@@ -624,6 +651,7 @@ static bool test_r_cmd_free_barrier(void) {
 static int all_tests(void) {
 	mu_run_test (test_r_cmd_register);
 	mu_run_test (test_r_cmd_unregister);
+	mu_run_test (test_r_cmd_alias_after_dispatch);
 	mu_run_test (test_r_cmd_unregister_self);
 	mu_run_test (test_r_cmd_prefix_registry);
 	mu_run_test (test_r_cmd_foreach_mutation);
