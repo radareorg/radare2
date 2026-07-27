@@ -111,3 +111,42 @@ EXPECT=<<EOF
 vperm v1, v2, v3, v4
 EOF
 RUN
+
+NAME=PPC64 pseudo rotate instructions keep their destination register
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 5c83298e5483298f
+pi 2
+EOF
+EXPECT=<<EOF
+r3 = rol32(r4, r5) & 0x3000000
+r3 = rol32(r4, 5) & 0x3000000
+EOF
+RUN
+
+NAME=PPC64 pseudo trap translates the TO code and keeps its operands
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 0ca300007c832008
+pi 2
+EOF
+EXPECT=<<EOF
+if ((word) r3 >= (word) 0) trap
+if ((word) r3 == (word) r4) trap
+EOF
+RUN
+
+NAME=PPC64 pseudo resolves special purpose register names
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 7c7042a67c7043a6
+pi 2
+EOF
+EXPECT=<<EOF
+r3 = sprg0
+sprg0 = r3
+EOF
+RUN
