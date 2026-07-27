@@ -137,7 +137,9 @@ R_API void r_cmd_set_data(RCmd *cmd, void *data);
 R_API bool r_cmd_add(RCmd *cmd, const char *command, RCmdCb callback);
 /* New handlers are keyed by their complete command prefix; name is copied and handler_user is borrowed until unregistration completes. */
 R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user);
-/* Removes the exact name after active callbacks finish; registered callbacks cannot unregister commands. */
+/* Removes the exact name after active callbacks finish; registered callbacks cannot unregister commands.
+ * Unregister blocks until the target's callbacks return, so two callbacks that each wait on a thread
+ * unregistering the other's name (e.g. plugins mutually unloading) will deadlock. */
 R_API bool r_cmd_unregister(RCmd *cmd, const char *name);
 /* Removes a prefix after active callbacks finish; registered callbacks cannot unregister commands. */
 R_API size_t r_cmd_unregister_prefix(RCmd *cmd, const char *prefix);

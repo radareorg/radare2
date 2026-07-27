@@ -167,19 +167,22 @@ R_API void r_cmd_alias_init(RCmd *cmd) {
 }
 
 R_API RCmd *r_cmd_new(void *data) {
-	int i;
 	RCmd *cmd = R_NEW0 (RCmd);
 	RCmdPrivate *priv = R_NEW0 (RCmdPrivate);
 	priv->handlers_lock = r_th_lock_new (false);
 	priv->handlers_idle = r_th_cond_new ();
 	priv->aliases_lock = r_th_lock_new (false);
+	if (!priv->handlers_lock || !priv->handlers_idle || !priv->aliases_lock) {
+		r_th_lock_free (priv->handlers_lock);
+		r_th_cond_free (priv->handlers_idle);
+		r_th_lock_free (priv->aliases_lock);
+		free (priv);
+		free (cmd);
+		return NULL;
+	}
 	priv->handlers = r_list_newf (cmd_handler_free);
 	cmd->priv = priv;
 	cmd->data = data;
-	for (i = 0; i < NCMDS; i++) {
-		cmd->cmds[i] = NULL;
-	}
-	cmd->nullcallback = NULL;
 	cmd->handlers = r_trie_new (NULL);
 	// cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "", &root_help, true);
 	r_cmd_macro_init (&cmd->macro);
@@ -605,9 +608,10 @@ R_API bool r_cmd_unregister(RCmd *cmd, const char *name) {
 	}
 	RCmdPrivate *priv = cmd->priv;
 	r_th_lock_enter (priv->handlers_lock);
-	if (priv->finalizing || cmd_is_dispatch_thread (priv)) {
+	const bool finalizing = priv->finalizing;
+	if (finalizing || cmd_is_dispatch_thread (priv)) {
 		r_th_lock_leave (priv->handlers_lock);
-		if (!priv->finalizing) {
+		if (!finalizing) {
 			R_LOG_ERROR ("Cannot unregister commands from a registered command handler");
 		}
 		return false;
@@ -631,9 +635,10 @@ R_API size_t r_cmd_unregister_prefix(RCmd *cmd, const char *prefix) {
 	R_RETURN_VAL_IF_FAIL (cmd && prefix, 0);
 	RCmdPrivate *priv = cmd->priv;
 	r_th_lock_enter (priv->handlers_lock);
-	if (priv->finalizing || cmd_is_dispatch_thread (priv)) {
+	const bool finalizing = priv->finalizing;
+	if (finalizing || cmd_is_dispatch_thread (priv)) {
 		r_th_lock_leave (priv->handlers_lock);
-		if (!priv->finalizing) {
+		if (!finalizing) {
 			R_LOG_ERROR ("Cannot unregister commands from a registered command handler");
 		}
 		return 0;
@@ -856,6 +861,11 @@ static RCmdHandler *cmd_handler_pin(RCmd *cmd, RStrs lookup, size_t *matched, RC
 	RCmdPrivate *priv = cmd->priv;
 	r_th_lock_enter (priv->handlers_lock);
 	RCmdHandler *handler = priv->closing? NULL: r_trie_find_longest_prefix (cmd->handlers, lookup, matched);
+	if (handler && !*matched) {
+		// empty names are rejected at register, never pin a zero-length match
+		R_WARN_IF_REACHED ();
+		handler = NULL;
+	}
 	if (handler) {
 		handler->active++;
 		call->handler = handler;
@@ -897,7 +907,7 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 		size_t matched = 0;
 		RCmdHandlerCall call = { 0 };
 		RCmdHandler *handler = cmd_handler_pin (cmd, lookup, &matched, &call);
-		if (!handler || !matched) {
+		if (!handler) {
 			break;
 		}
 		if (!context) {

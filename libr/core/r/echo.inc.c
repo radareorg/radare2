@@ -134,6 +134,7 @@ static char *expand_num_vars(RCore *core, const char *msg) {
 			word = r_str_ndup (msg + 1, end - (msg + 1));
 		}
 		if (!word) {
+			r_strbuf_append (sb, msg);
 			break;
 		}
 		r_strbuf_appendf (sb, "0x%"PFMT64x, r_num_math (core->num, word));
