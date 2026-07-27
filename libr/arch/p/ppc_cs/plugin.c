@@ -1178,12 +1178,16 @@ static const char *ppc_cond_expr(int bc) {
 }
 
 // predicate-guarded pc write shared by bc, b<cond>lr and b<cond>ctr forms; pre/post wrap the CR test with the LR link and the CTR test
-static void ppc_cond_branch(RAnalOp *op, int bc, const char *cr, const char *pre, const char *post, const char *target) {
+static void ppc_cond_branch(RAnalOp *op, int bc, const char *cr, const char *pre, const char *post, const char *target, bool linklr) {
 	const char *fmt = ppc_cond_expr (bc);
 	if (fmt) {
 		char cond[64];
 		snprintf (cond, sizeof (cond), fmt, cr, cr);
-		esilprintf (op, "%s%s%s,?{,%s,pc,=,},", pre, cond, post, target);
+		if (linklr) {
+			esilprintf (op, "%s%s%s,DUP,?{,lr,NUM,pc,lr,=,pc,=,},!,?{,pc,lr,=,},", pre, cond, post);
+		} else {
+			esilprintf (op, "%s%s%s,?{,%s,pc,=,},", pre, cond, post, target);
+		}
 	}
 }
 
@@ -1245,14 +1249,19 @@ static bool ppc6_branch(RAnalOp *op, csh handle, cs_insn *insn, const char *targ
 		return false;
 	}
 	// LK writes LR whether or not the branch is taken, and a CTR test can accompany it
+	const bool linklr = link && !strcmp (target, "lr");
 	const char *ctrtest = pctr == PPC_PRED_NZ? "1,ctr,-=,$z,!,": pctr == PPC_PRED_Z? "1,ctr,-=,$z,": "";
-	char pre[40];
-	snprintf (pre, sizeof (pre), "%s%s", link? "pc,lr,=,": "", ctrtest);
+	char pre[48];
+	snprintf (pre, sizeof (pre), "%s%s", link && !linklr? "pc,lr,=,": "", ctrtest);
 	const int pcr = ppc6_cr_pred (insn);
 	if (pcr != PPC_PRED_INVALID) {
-		ppc_cond_branch (op, pcr, ppc6_crx_name (handle, insn), pre, *ctrtest? ",&": "", target);
+		ppc_cond_branch (op, pcr, ppc6_crx_name (handle, insn), pre, *ctrtest? ",&": "", target, linklr);
 	} else if (!testcr) {
-		esilprintf (op, "%s?{,%s,pc,=,}", pre, target);
+		if (linklr) {
+			esilprintf (op, "%sDUP,?{,lr,NUM,pc,lr,=,pc,=,},!,?{,pc,lr,=,},", pre);
+		} else {
+			esilprintf (op, "%s?{,%s,pc,=,}", pre, target);
+		}
 	}
 	// a summary-overflow test keeps the conditional type but has no expression, as on v5
 	return true;
@@ -2418,13 +2427,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				op->type = link ? R_ANAL_OP_TYPE_UCCALL : R_ANAL_OP_TYPE_UCJMP;
 				op->fail = addr + op->size;
 				// LK writes LR whether or not the branch is taken
-				ppc_cond_branch (op, BC (), ARG (0)[0] == '\0' ? "cr0" : ARG (0), link? "pc,lr,=,": "", "", "ctr");
+				ppc_cond_branch (op, BC (), ARG (0)[0] == '\0' ? "cr0" : ARG (0), link? "pc,lr,=,": "", "", "ctr", false);
 				break;
 			}
 			if (r_str_endswith (mn, "lr") || r_str_endswith (mn, "lrl")) {
-				op->type = R_ANAL_OP_TYPE_CRET;
+				const bool link = r_str_endswith (mn, "lrl");
+				op->type = link? R_ANAL_OP_TYPE_UCCALL: R_ANAL_OP_TYPE_CRET;
 				op->fail = addr + op->size;
-				ppc_cond_branch (op, BC (), ARG (0)[0] == '\0' ? "cr0" : ARG (0), "", "", "lr");
+				ppc_cond_branch (op, BC (), ARG (0)[0] == '\0' ? "cr0" : ARG (0), "", "", "lr", link);
 				break;
 			}
 			op->type = R_ANAL_OP_TYPE_CJMP;
@@ -2434,7 +2444,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				op->type = R_ANAL_OP_TYPE_JMP;
 				esilprintf (op, "%s,pc,=", ARG (0));
 			} else {
-				ppc_cond_branch (op, BC (), cr, "", "", ARG (1)[0] == '\0' ? ARG (0) : ARG (1));
+				ppc_cond_branch (op, BC (), cr, "", "", ARG (1)[0] == '\0' ? ARG (0) : ARG (1), false);
 			}
 			break;
 		}
@@ -2461,91 +2471,63 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			}
 			break;
 		case PPC_INS_BDNZ:
+		case PPC_INS_BDZ: {
+			const bool zero = insn->id == PPC_INS_BDZ;
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = IMM (0);
 			op->fail = addr + op->size;
-			esilprintf (op, "1,ctr,-=,$z,!,?{,%s,pc,=,}", ARG (0));
+			esilprintf (op, "1,ctr,-=,$z,%s?{,%s,pc,=,}", zero? "": "!,", ARG (0));
 			break;
+		}
 #if CS_API_MAJOR < 6
 		case PPC_INS_BDNZA:
-			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM (0);
-			op->fail = addr + op->size;
-			break;
+		case PPC_INS_BDZA:
 #endif
 		case PPC_INS_BDNZL:
-			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM (0);
-			op->fail = addr + op->size;
-			break;
 		case PPC_INS_BDNZLA:
-			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM (0);
-			op->fail = addr + op->size;
-			break;
-		case PPC_INS_BDNZLR:
-			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->fail = addr + op->size;
-			esilprintf (op, "1,ctr,-=,$z,!,?{,lr,pc,=,},");
-			break;
-		case PPC_INS_BDNZLRL:
-			op->fail = addr + op->size;
-			op->type = R_ANAL_OP_TYPE_CJMP;
-			break;
-		case PPC_INS_BDZ:
-			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM (0);
-			op->fail = addr + op->size;
-			esilprintf (op, "1,ctr,-=,$z,?{,%s,pc,=,}", ARG (0));
-			break;
-#if CS_API_MAJOR < 6
-		case PPC_INS_BDZA:
-			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM (0);
-			op->fail = addr + op->size;
-			break;
-#endif
 		case PPC_INS_BDZL:
-			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM (0);
-			op->fail = addr + op->size;
-			break;
 		case PPC_INS_BDZLA:
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = IMM (0);
 			op->fail = addr + op->size;
 			break;
+		case PPC_INS_BDNZLR:
+		case PPC_INS_BDNZLRL:
 		case PPC_INS_BDZLR:
-			op->type = R_ANAL_OP_TYPE_CJMP;
+		case PPC_INS_BDZLRL: {
+			const bool link = insn->id == PPC_INS_BDNZLRL || insn->id == PPC_INS_BDZLRL;
+			const bool zero = insn->id == PPC_INS_BDZLR || insn->id == PPC_INS_BDZLRL;
+			op->type = link? R_ANAL_OP_TYPE_UCCALL: R_ANAL_OP_TYPE_CJMP;
 			op->fail = addr + op->size;
-			esilprintf (op, "1,ctr,-=,$z,?{,lr,pc,=,}");
+			esilprintf (op, link
+				? "1,ctr,-=,$z,%sDUP,?{,lr,NUM,pc,lr,=,pc,=,},!,?{,pc,lr,=,},"
+				: "1,ctr,-=,$z,%s?{,lr,pc,=,},", zero? "": "!,");
 			break;
-		case PPC_INS_BDZLRL:
-			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->fail = addr + op->size;
-			break;
+		}
 		case PPC_INS_BLR:
 		case PPC_INS_BLRL:
 		case PPC_INS_BCLR:
-		case PPC_INS_BCLRL:
-			op->type = R_ANAL_OP_TYPE_CRET;
+		case PPC_INS_BCLRL: {
+			const bool link = insn->id == PPC_INS_BLRL || insn->id == PPC_INS_BCLRL;
+			op->type = link? R_ANAL_OP_TYPE_UCCALL: R_ANAL_OP_TYPE_CRET;
 			op->fail = addr + op->size;
 #if CS_API_MAJOR >= 6
-			if (ppc6_branch (op, handle, insn, "lr", false)) {
+			if (ppc6_branch (op, handle, insn, "lr", link)) {
 				// the CTR-decrement forms are loop branches, like their dedicated v5 bdnzlr/bdzlr ids
-				if (ppc6_ctr_pred (insn) != PPC_PRED_INVALID) {
+				if (!link && ppc6_ctr_pred (insn) != PPC_PRED_INVALID) {
 					op->type = R_ANAL_OP_TYPE_CJMP;
 				}
 				break;
 			}
 #endif
 			if (BC () == PPC_BC_INVALID) {
-				op->type = R_ANAL_OP_TYPE_RET;
-				esilprintf (op, "lr,pc,=");
+				op->type = link? R_ANAL_OP_TYPE_UCALL: R_ANAL_OP_TYPE_RET;
+				esilprintf (op, link? "lr,NUM,pc,lr,=,pc,=": "lr,pc,=");
 			} else {
-				ppc_cond_branch (op, BC (), ARG (1)[0] == '\0' ? "cr0" : ARG (0), "", "", "lr");
+				ppc_cond_branch (op, BC (), ARG (1)[0] == '\0' ? "cr0" : ARG (0), "", "", "lr", link);
 			}
 			break;
+		}
 		case PPC_INS_RFI:
 		case PPC_INS_RFID:
 			op->type = R_ANAL_OP_TYPE_RET;

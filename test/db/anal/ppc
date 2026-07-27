@@ -1340,11 +1340,11 @@ pc,lr,=,cr0,!,?{,ctr,pc,=,},
 EOF
 RUN
 
-NAME=ppc bcctrl links lr even when the branch is not taken
+NAME=ppc bcctrl and bclrl link lr when not taken
 FILE=malloc://16
 ARGS=-a ppc -b 32 -e anal.arch=ppc -e cfg.bigendian=true
 CMDS=<<EOF
-wx 4d820421
+wx 4d8204214d820021
 aei
 aeim
 ar cr0=0x80
@@ -1355,33 +1355,47 @@ aes
 ar lr
 ar pc
 ar ctr
+s 4
+ar lr=0x100
+aes
+ar lr
+ar pc
 EOF
 EXPECT=<<EOF
 0x00000004
 0x00000004
 0x00000100
+0x00000008
+0x00000008
 EOF
 RUN
 
-NAME=ppc bcctrl branches to ctr and links lr when taken
+NAME=ppc bcctrl and bclrl branch through old targets when taken
 FILE=malloc://16
 ARGS=-a ppc -b 32 -e anal.arch=ppc -e cfg.bigendian=true
 CMDS=<<EOF
-wx 4d820421
+wx 4d8204214d820021
 aei
 aeim
 ar cr0=0
-ar ctr=0x100
+ar ctr=4
 ar lr=0
 ar pc=0
 aes
 ar lr
 ar pc
 ar ctr
+s 4
+ar lr=0x100
+aes
+ar lr
+ar pc
 EOF
 EXPECT=<<EOF
 0x00000004
-0x00000100
+0x00000004
+0x00000004
+0x00000008
 0x00000100
 EOF
 RUN

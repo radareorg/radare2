@@ -95,7 +95,7 @@ static ut64 esil_read_ble(const ut8 *buf, int bits, bool be) {
 }
 
 static ut8 esil_internal_sizeof_reg(REsil *esil, const char *r) {
-	if (!esil || !esil->reg_if.reg_size || !r) {
+	if (!esil->reg_if.reg_size || !r) {
 		return 0;
 	}
 	ut32 reg_size = esil->reg_if.reg_size (esil->reg_if.reg, r);
@@ -106,7 +106,7 @@ static ut8 esil_internal_sizeof_reg(REsil *esil, const char *r) {
 }
 
 static ut32 esil_internal_packed_size_reg(REsil *esil, const char *r) {
-	if (!esil || !r || !esil->reg_if.reg_packed_size) {
+	if (!r || !esil->reg_if.reg_packed_size) {
 		return 0;
 	}
 	return esil->reg_if.reg_packed_size (esil->reg_if.reg, r);
@@ -1952,10 +1952,8 @@ static bool esil_mem_lsreq8(REsil *esil) {
 
 /* get value of register or memory reference and push the value */
 static bool esil_num(REsil *esil) {
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	ut64 dup;
-	if (!esil) {
-		return false;
-	}
 	const RStrs dup_me = r_esil_pop (esil);
 	if (r_strs_empty (dup_me)) {
 		return false;

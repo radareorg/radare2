@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2025 - pancake */
+/* radare2 - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_core.h>
 #include "config.h"
