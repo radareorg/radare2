@@ -1,0 +1,13 @@
+NAME=MIPS pseudo keeps every operand when no rule matches
+FILE=malloc://32
+ARGS=-a mips -b 32 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 7ca449407ca449044ef8aa38
+pi 3
+EOF
+EXPECT=<<EOF
+ext a0, a1, 5, 0xa
+ins a0, a1, 4, 6
+nmsub.s f8, f23, f21, f24
+EOF
+RUN
