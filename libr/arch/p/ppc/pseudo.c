@@ -116,6 +116,51 @@ static int can_replace(const char *str, int idx, int max_operands) {
 	return true;
 }
 
+static bool op_needs_cr0(const char *op) {
+	if (r_str_startswith (op, "cmp")) {
+		return true;
+	}
+	if (*op != 'b') {
+		return false;
+	}
+	switch (op[1]) {
+	case 'e':
+		if (op[2] != 'q') {
+			return false;
+		}
+		break;
+	case 'g':
+	case 'l':
+		if (op[2] != 'e' && op[2] != 't') {
+			return false;
+		}
+		break;
+	case 'n':
+		if (op[2] != 'e') {
+			return false;
+		}
+		break;
+	default:
+		return false;
+	}
+	return !op[3] || ((op[3] == '-' || op[3] == '+') && !op[4]);
+}
+
+// only the raw t[dw] forms carry a TO code operand, the extended ones (tweq, tdlgt..) encode it in the mnemonic
+static bool op_is_trap(const char *op) {
+	if (*op != 't' || (op[1] != 'd' && op[1] != 'w')) {
+		return false;
+	}
+	const char *s = op + 2;
+	if (*s == 'u') {
+		s++;
+	}
+	if (*s == 'i') {
+		s++;
+	}
+	return !*s;
+}
+
 static const char* getspr(const char *reg) {
 	static R_TH_LOCAL char cspr[16];
 	ut32 spr = 0;
@@ -294,7 +339,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		const char *str;
 		int max_operands;
 	} ops[] = {
-		{ "cmpb", "A = ((byte) B == (byte) C)", 3}, //0
+		{ "cmpb", "A = ((byte) B == (byte) C)", 3},
 		{ "cmpd", "A = (B == C)", 3},
 		{ "cmpdi", "A = (B == C)", 3},
 		{ "cmpld", "A = ((unsigned) B == (unsigned) C)", 3},
@@ -320,29 +365,29 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "blt+", "if (A & FLG_LT) goto B", 2},
 		{ "bne", "if (A & FLG_NE) goto B", 2},
 		{ "bne-", "if (A & FLG_NE) goto B", 2},
-		{ "bne+", "if (A & FLG_NE) goto B", 2}, //26
-		{ "rldic", "A = rol64(B, C) & D", 4}, //27
-		{ "rldcl", "A = rol64(B, C) & D", 4}, //28
-		{ "rldicl", "A = rol64(B, C) & D", 4}, //29
-		{ "rldcr", "A = rol64(B, C) & D", 4}, //30
-		{ "rldicr", "A = rol64(B, C) & D", 4}, //31
-		{ "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}, //32
-		{ "rlwimi", "A = (rol32(B, C) & D) | (A & E)", 5}, //33
-		{ "rlwimi.", "A = (rol32(B, C) & D) | (A & E)", 5}, //33
-		{ "rlwinm", "A = rol32(B, C) & D", 5}, //34
-		{ "rlwinm.", "A = rol32(B, C) & D", 5}, //34
-		{ "rlwnm", "A = rol32(B, C) & D", 5}, //35
-		{ "rlwnm.", "A = rol32(B, C) & D", 5}, //35
-		{ "td", "if (B A C) trap", 3}, //36
+		{ "bne+", "if (A & FLG_NE) goto B", 2},
+		{ "rldic", "A = rol64(B, C) & D", 4},
+		{ "rldcl", "A = rol64(B, C) & D", 4},
+		{ "rldicl", "A = rol64(B, C) & D", 4},
+		{ "rldcr", "A = rol64(B, C) & D", 4},
+		{ "rldicr", "A = rol64(B, C) & D", 4},
+		{ "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5},
+		{ "rlwimi", "A = (rol32(B, C) & D) | (A & E)", 5},
+		{ "rlwimi.", "A = (rol32(B, C) & D) | (A & E)", 5},
+		{ "rlwinm", "A = rol32(B, C) & D", 5},
+		{ "rlwinm.", "A = rol32(B, C) & D", 5},
+		{ "rlwnm", "A = rol32(B, C) & D", 5},
+		{ "rlwnm.", "A = rol32(B, C) & D", 5},
+		{ "td", "if (B A C) trap", 3},
 		{ "tdi", "if (B A C) trap", 3},
 		{ "tdu", "if (B A C) trap", 3},
 		{ "tdui", "if (B A C) trap", 3},
 		{ "tw", "if ((word) B A (word) C) trap", 3},
 		{ "twi", "if ((word) B A (word) C) trap", 3},
 		{ "twu", "if ((word) B A (word) C) trap", 3},
-		{ "twui", "if ((word) B A (word) C) trap", 3}, //43
-		{ "mfspr", "A = B", 2}, //44
-		{ "mtspr", "A = B", 2}, //45
+		{ "twui", "if ((word) B A (word) C) trap", 3},
+		{ "mfspr", "A = B", 2},
+		{ "mtspr", "A = B", 2},
 		{ "add", "A = B + C", 3},
 		{ "addc", "A = B + C", 3},
 		{ "adde", "A = B + C", 3},
@@ -1463,7 +1508,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			if (newstr) {
 				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
 					if (can_replace(ops[i].str, j, ops[i].max_operands)) {
-						if (i >= 0 && i <= 26 && argv[ops[i].max_operands][0] == 0) {
+						if (op_needs_cr0 (argv[0]) && argv[ops[i].max_operands][0] == 0) {
 							char* tmp = (char*) argv[ops[i].max_operands];
 							argv[ops[i].max_operands] = argv[ops[i].max_operands - 1];
 							if (ops[i].max_operands == 3) {
@@ -1505,7 +1550,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut64 ME = PPC_UT64(argv[4]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (0, ME));
 						} else if (letter == 4 && !strncmp (argv[0], "rldimi", 6)) {
-							// { "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}, //32
+							// { "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}
 							// first mask (normal)
 							w = ppc_mask;
 							//MASK(MB, 63 - SH)
@@ -1513,7 +1558,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut64 ME = 63 - PPC_UT64(argv[3]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
 						} else if (letter == 5 && !strncmp (argv[0], "rldimi", 6)) {
-							// { "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}, //32
+							// { "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}
 							// second mask (inverted)
 							w = ppc_mask;
 							//MASK(MB, 63 - SH)
@@ -1522,7 +1567,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut64 inverted = ~ (mask64 (MB, ME));
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, inverted);
 						} else if (letter == 4 && !strncmp (argv[0], "rlwimi", 6)) {
-							// { "rlwimi", "A = (rol64(B, C) & D) | (A & E)", 5}, //32
+							// { "rlwimi", "A = (rol64(B, C) & D) | (A & E)", 5}
 							// first mask (normal)
 							w = ppc_mask;
 							//MASK(MB, ME)
@@ -1530,7 +1575,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut32 ME = PPC_UT32(argv[5]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, mask32 (MB, ME));
 						} else if (letter == 5 && !strncmp (argv[0], "rlwimi", 6)) {
-							// { "rlwimi", "A = (rol32(B, C) & D) | (A & E)", 5}, //32
+							// { "rlwimi", "A = (rol32(B, C) & D) | (A & E)", 5}
 							// second mask (inverted)
 							w = ppc_mask;
 							//MASK(MB, ME)
@@ -1539,13 +1584,13 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut32 inverted = ~mask32 (MB, ME);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, inverted);
 						} else if (letter == 4 && !strncmp (argv[0], "rlwnm", 5)) {
-							// { "rlwnm", "A = rol32(B, C) & D", 5}, //32
+							// { "rlwnm", "A = rol32(B, C) & D", 5}
 							w = ppc_mask;
 							//MASK(MB, ME)
 							ut32 MB = PPC_UT32(argv[4]);
 							ut32 ME = PPC_UT32(argv[5]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, mask32 (MB, ME));
-						} else if (letter == 1 && i >= 36 && i <= 43) {
+						} else if (letter == 1 && op_is_trap (argv[0])) {
 							int to = atoi (w);
 							switch(to) {
 								case 4:
@@ -1578,7 +1623,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 									w = "?";
 									break;
 							}
-						} else if ((i == 44 && letter == 2) || (i == 45 && letter == 1)) { //spr
+						} else if ((letter == 2 && !strcmp (argv[0], "mfspr")) || (letter == 1 && !strcmp (argv[0], "mtspr"))) {
 							w = getspr (w);
 						}
 						if (w) {
