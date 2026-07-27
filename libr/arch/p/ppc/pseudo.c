@@ -695,10 +695,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "icbi", "inst_cache_block_inval", 0},
 		{ "icbt", "inst_cache_block_touch", 3},
 		{ "iccci", "inst_cache_inval(A,B)", 2},
-		// isel lt   Rx,Ry,Rz (equivalent to: isel Rx,Ry,Rz,0)
-		// isel gt  Rx,Ry,Rz (equivalent to: isel Rx,Ry,Rz,1)
-		// isel eq Rx,Ry,Rz (equivalent to: isel Rx,Ry,Rz,2)
-		//  { "isel", "", 4},
+		{ "isel", "A = select(D, B, C)", 4},
 		{ "isync", "sync_instr_cache", 0},
 		{ "la", "A = C + B", 3},
 		{ "lbz", "A = byte[C + B]", 3},

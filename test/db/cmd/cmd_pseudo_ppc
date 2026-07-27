@@ -84,3 +84,18 @@ cmpdi r9, 0
 beq 0x20c
 EOF
 RUN
+
+NAME=PPC64 pseudo isel keeps the condition register bit
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 7c64281e7c64289e7c642a9e7c60281e
+pi 4
+EOF
+EXPECT=<<EOF
+r3 = select(cr0lt, r4, r5)
+r3 = select(cr0eq, r4, r5)
+r3 = select(cr2eq, r4, r5)
+r3 = select(cr0lt, 0, r5)
+EOF
+RUN
