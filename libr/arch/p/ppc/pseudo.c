@@ -1533,7 +1533,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							//MASK(MB, 63)
 							ut64 MB = PPC_UT64(argv[4]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, 63));
-						} else if (letter == 4 && !strncmp (argv[0], "rldic", 5)) {
+						} else if (letter == 4 && !strcmp (argv[0], "rldic")) {
 							// { "rldic", "A = rol64(B, C) & D", 4},
 							w = ppc_mask;
 							//MASK(MB, 63 - SH)
