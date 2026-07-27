@@ -131,7 +131,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 #define WSZ 64
 
 static char *parse(RAsmPluginSession *aps, const char *data) {
-	int i, len = strlen (data);
+	int len = strlen (data);
 	char w0[WSZ];
 	char w1[WSZ];
 	char w2[WSZ];
@@ -207,8 +207,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		}
 		{
 			const char *wa[] = { w0, w1, w2, w3, w4 };
-			int nw = 0;
-			for (i = 0; i < 4; i++) {
+			size_t i, nw = 0;
+			for (i = 0; i < R_ARRAY_SIZE (wa); i++) {
 				if (wa[i][0] != '\0') {
 					nw++;
 				}
