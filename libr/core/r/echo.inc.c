@@ -203,6 +203,12 @@ static RCmdResult question_echo_callback(RCmdContext *ctx) {
 			.status = 127
 		};
 	}
+	RCore *core = ctx->user;
+	if (ctx->verbatim) {
+		return (RCmdResult) {
+			.status = question_echo_print_legacy (core, ctx->cons, ctx->subcmd.b, newline)? 0: 1
+		};
+	}
 	if (!question_echo_print (ctx, newline)) {
 		return (RCmdResult) { .status = 1 };
 	}

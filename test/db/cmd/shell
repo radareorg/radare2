@@ -192,6 +192,7 @@ CMDS=<<EOF
    'echo one;echo two
 3'echo "x;y"
 ?e before; 'echo "x;y"
+3'echo x\;y
 3'echo @x;#y|z>q
 "3"'echo quoted-repeat
 2""'echo digits-empty
@@ -204,6 +205,9 @@ x;y
 x;y
 x;y
 before
+x;y
+x;y
+x;y
 x;y
 @x;#y|z>q
 @x;#y|z>q

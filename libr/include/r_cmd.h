@@ -48,6 +48,7 @@ typedef struct r_cmd_context_t {
 	char *args_storage; // private: owned buffer backing args, do not use
 	RVecRStrs args; // arguments after the matched name and subcmd
 	RStrs subcmd; // registered-name remainder ending at the command token; subcmd.b starts the raw NUL-terminated tail
+	bool verbatim; // whole-command quoting requests the exact tail in subcmd.b
 } RCmdContext;
 
 typedef RCmdResult (*RCmdCtxCb) (RCmdContext *ctx);

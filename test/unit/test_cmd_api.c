@@ -56,6 +56,7 @@ typedef struct {
 	const char *expected_input;
 	RStrs *expected_args;
 	size_t expected_argc;
+	bool expected_verbatim;
 	int calls;
 	bool args_ok;
 } ArgsState;
@@ -66,6 +67,7 @@ static RCmdResult args_handler(RCmdContext *ctx) {
 	const size_t input_len = strlen (state->expected_input);
 	state->args_ok = r_strs_empty (ctx->subcmd)
 		&& !r_cmd_ctx_help (ctx) && !r_cmd_ctx_mode (ctx, "jq")
+		&& ctx->verbatim == state->expected_verbatim
 		&& !strcmp (ctx->subcmd.b, state->expected_input + strlen ("cmd"))
 		&& RVecRStrs_length (&ctx->args) == state->expected_argc;
 	size_t i;
@@ -308,12 +310,11 @@ static bool test_r_cmd_context_args(void) {
 	mu_end;
 }
 
-static bool test_r_cmd_raw_context_args(void) {
+static bool test_r_core_call_context_args(void) {
 	RStrs expected[] = {
-		R_STRS_LIT ("say\\\"hi"),
-		R_STRS_LIT ("'single"),
-		R_STRS_LIT ("value'"),
-		R_STRS_LIT ("a\\nb")
+		R_STRS_LIT ("say\"hi"),
+		R_STRS_LIT ("single value"),
+		R_STRS_LIT ("a\nb")
 	};
 	const char *input = "cmd say\\\"hi 'single value' a\\nb";
 	ArgsState state = {
@@ -324,8 +325,8 @@ static bool test_r_cmd_raw_context_args(void) {
 	RCore *core = r_core_new ();
 	mu_assert_notnull (core, "create core");
 	mu_assert_true (r_cmd_register (core->rcmd, "cmd", args_handler, &state), "register argument handler");
-	mu_assert_eq (r_core_call (core, input), 0, "raw call dispatch");
-	mu_assert_true (state.args_ok, "raw args keep quotes and escapes verbatim");
+	mu_assert_eq (r_core_call (core, input), 0, "direct call dispatch");
+	mu_assert_true (state.args_ok, "direct call uses shared argument decoding");
 	r_core_free (core);
 	mu_end;
 }
@@ -629,7 +630,7 @@ static int all_tests(void) {
 	mu_run_test (test_r_cmd_registry_dispatch);
 	mu_run_test (test_r_cmd_multiword_dispatch);
 	mu_run_test (test_r_cmd_context_args);
-	mu_run_test (test_r_cmd_raw_context_args);
+	mu_run_test (test_r_core_call_context_args);
 	mu_run_test (test_r_cmd_concurrent_registry);
 	mu_run_test (test_r_cmd_unregister_barrier);
 	mu_run_test (test_r_cmd_free_barrier);

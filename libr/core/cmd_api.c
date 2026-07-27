@@ -765,8 +765,8 @@ static const char *cmd_decode_escape(const char *src, const char *end, char **ds
 	return src;
 }
 
-/* Rebuilds context arguments; raw mode splits on whitespace without decoding quotes or escapes. */
-static bool cmd_context_parse_args(RCmdContext *context, RStrs rest, bool raw) {
+/* Rebuilds context arguments with shared quote and escape decoding. */
+static bool cmd_context_parse_args(RCmdContext *context, RStrs rest) {
 	RVecRStrs_fini (&context->args);
 	free (context->args_storage);
 	context->args_storage = NULL;
@@ -792,20 +792,18 @@ static bool cmd_context_parse_args(RCmdContext *context, RStrs rest, bool raw) {
 				break;
 			}
 			src++;
-			if (!raw) {
-				if (ch == '\\') {
-					src = cmd_decode_escape (src, rest.b, &dst);
+			if (ch == '\\') {
+				src = cmd_decode_escape (src, rest.b, &dst);
+				continue;
+			}
+			if (ch == '\'' || ch == '"') {
+				if (!quote) {
+					quote = ch;
 					continue;
 				}
-				if (ch == '\'' || ch == '"') {
-					if (!quote) {
-						quote = ch;
-						continue;
-					}
-					if (quote == ch) {
-						quote = 0;
-						continue;
-					}
+				if (quote == ch) {
+					quote = 0;
+					continue;
 				}
 			}
 			*dst++ = ch;
@@ -890,7 +888,7 @@ static void cmd_handler_unpin(RCmd *cmd, RCmdHandlerCall *call) {
 	r_th_lock_leave (priv->handlers_lock);
 }
 
-static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs input, bool raw) {
+static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs input, bool verbatim) {
 	RStrs lookup = input;
 	RCmdContext *context = NULL;
 	const char *parsed_from = NULL;
@@ -911,13 +909,14 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 				: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
 			context->user = cmd->data;
 			context->remaining_depth = parent? parent->remaining_depth: 0;
+			context->verbatim = verbatim;
 		}
 		const char *sub_end = input.a + matched;
 		while (sub_end < input.b && !isspace ((ut8)*sub_end)) {
 			sub_end++;
 		}
 		if (parsed_from != sub_end) {
-			if (!cmd_context_parse_args (context, r_strs_new (sub_end, input.b), raw)) {
+			if (!cmd_context_parse_args (context, r_strs_new (sub_end, input.b))) {
 				cmd_handler_unpin (cmd, &call);
 				result = cmd_result (R_CMD_ACTION_ABORT, 2);
 				break;
@@ -986,7 +985,7 @@ static void cmd_execution_end(RCmd *cmd, RCmdExecution *execution) {
 	r_th_lock_leave (priv->handlers_lock);
 }
 
-R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *input, bool raw) {
+R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *input, bool verbatim) {
 	RCmdResult result = cmd_result (R_CMD_ACTION_UNHANDLED, 127);
 	RCmdExecution execution = { 0 };
 	if (!cmd_execution_begin (cmd, &execution)) {
@@ -1017,7 +1016,7 @@ R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *i
 		result = cmd_result_from_legacy (true);
 		goto beach;
 	}
-	result = cmd_call_registered (cmd, parent, r_strs_from (input), raw);
+	result = cmd_call_registered (cmd, parent, r_strs_from (input), verbatim);
 	if (result.action != R_CMD_ACTION_UNHANDLED) {
 		goto beach;
 	}
@@ -1057,8 +1056,8 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	return cmd_result_to_legacy (r_cmd_call_result (cmd, NULL, input, false));
 }
 
-R_IPI int r_cmd_call_context(RCmd *cmd, RCmdContext *parent, const char *input, bool raw) {
-	return cmd_result_to_legacy (r_cmd_call_result (cmd, parent, input, raw));
+R_IPI int r_cmd_call_context(RCmd *cmd, RCmdContext *parent, const char *input, bool verbatim) {
+	return cmd_result_to_legacy (r_cmd_call_result (cmd, parent, input, verbatim));
 }
 
 /** macro.c **/

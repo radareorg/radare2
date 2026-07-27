@@ -3920,7 +3920,7 @@ static char *find_ch_after_macro(char *ptr, char ch) {
 
 static int handle_command_call(RCore *core, RCmdContext *context, const char *cmd) {
 	if (r_str_startswith (cmd, "b64:'")) {
-		return r_cmd_call_context (core->rcmd, context, cmd, true);
+		return r_cmd_call_context (core->rcmd, context, cmd, false);
 	}
 	if (*cmd != '\'') {
 		return -1;
@@ -3950,7 +3950,7 @@ static int handle_command_call(RCore *core, RCmdContext *context, const char *cm
 				const bool otmpseek = core->tmpseek;
 				core->tmpseek = true;
 				r_core_seek (core, at, true);
-				res = r_cmd_call_context (core->rcmd, context, end + 1, true);
+				res = r_cmd_call_context (core->rcmd, context, end + 1, false);
 				r_core_seek (core, addr, true);
 				core->tmpseek = otmpseek;
 			}
@@ -3961,7 +3961,7 @@ static int handle_command_call(RCore *core, RCmdContext *context, const char *cm
 		free (arg);
 		return res;
 	}
-	return r_cmd_call_context (core->rcmd, context, cmd, true);
+	return r_cmd_call_context (core->rcmd, context, cmd, false);
 }
 
 static const char *trim_command_head(const char *cmd) {
@@ -4107,7 +4107,7 @@ static int r_core_cmd_subst(RCore *core, RCmdContext *context, char *cmd) {
 	if (R_UNLIKELY (r_str_startswith (cmd, "?t"))) {
 		if (r_str_startswith (cmd + 2, "'")) {
 			char *call = r_str_newf ("?t'%s", cmd + 3);
-			int ret = call? r_cmd_call_context (core->rcmd, context, call, true): -1;
+			int ret = call? r_cmd_call_context (core->rcmd, context, call, false): -1;
 			free (call);
 			return ret;
 		}
@@ -7331,7 +7331,7 @@ static int core_call_context(RCore *core, RCmdContext *parent, const char *cmd) 
 		return false;
 	}
 	RCmdContext *prev_context = context_activate (core, &context);
-	int res = r_cmd_call_context (core->rcmd, &context, cmd, true);
+	int res = r_cmd_call_context (core->rcmd, &context, cmd, false);
 	context_deactivate (core, &context, prev_context);
 	return res;
 }
