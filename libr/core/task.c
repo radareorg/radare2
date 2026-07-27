@@ -489,6 +489,13 @@ static void task_end(RCoreTask *t) {
 	r_core_task_schedule (t, R_CORE_TASK_STATE_DONE);
 }
 
+static char *task_drain_output(RCoreTask *task) {
+	r_cons_filter (task->cons);
+	size_t size;
+	char *output = r_cons_drain (task->cons, &size);
+	return size? output: strdup ("");
+}
+
 static RThreadFunctionRet task_run(RCoreTask *task) {
 	if (!task) {
 		return 0;
@@ -516,7 +523,11 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	if (task == scheduler->main_task) {
 		r_core_cmd (core, task->cmd, task->cmd_log);
 		res_str = NULL;
+	} else if (task->cons) {
+		r_core_cmd (core, task->cmd, task->cmd_log);
+		res_str = task_drain_output (task);
 	} else {
+		// Legacy callbacks still require capture through the shared core console.
 		res_str = r_core_cmd_str (core, task->cmd);
 	}
 
