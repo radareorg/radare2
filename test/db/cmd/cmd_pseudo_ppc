@@ -150,3 +150,18 @@ r3 = sprg0
 sprg0 = r3
 EOF
 RUN
+
+NAME=PPC64 pseudo doubleword rotate masks are per mnemonic
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 788329c0788329c4788329c8788329cc
+pi 4
+EOF
+EXPECT=<<EOF
+r3 = rol64(r4, 5) & 0x1ffffffffffffff
+r3 = rol64(r4, 5) & 0xff00000000000000
+r3 = rol64(r4, 5) & 0x1ffffffffffffe0
+r3 = (rol64(r4, 5) & 0x1ffffffffffffe0) | (r3 & 0xfe0000000000001f)
+EOF
+RUN
