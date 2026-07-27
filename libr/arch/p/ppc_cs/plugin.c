@@ -1109,26 +1109,27 @@ static void ppc_fpop(RAnalOp *op, PluginData *pd, struct Getarg *gop, bool singl
 	}
 }
 
-// predicate-guarded pc write shared by bc, b<cond>lr and b<cond>ctr forms
-static void ppc_cond_branch(RAnalOp *op, int bc, const char *cr, const char *target) {
+// predicate-guarded pc write shared by bc, b<cond>lr and b<cond>ctr forms;
+// pre precedes the CR test, for the unconditional LR link of the linking forms
+static void ppc_cond_branch(RAnalOp *op, int bc, const char *cr, const char *pre, const char *target) {
 	switch (bc) {
 	case PPC_BC_LT:
-		esilprintf (op, "0x80,%s,&,!,!,?{,%s,pc,=,},", cr, target);
+		esilprintf (op, "%s0x80,%s,&,!,!,?{,%s,pc,=,},", pre, cr, target);
 		break;
 	case PPC_BC_LE:
-		esilprintf (op, "0x80,%s,&,!,!,%s,!,|,?{,%s,pc,=,},", cr, cr, target);
+		esilprintf (op, "%s0x80,%s,&,!,!,%s,!,|,?{,%s,pc,=,},", pre, cr, cr, target);
 		break;
 	case PPC_BC_EQ:
-		esilprintf (op, "%s,!,?{,%s,pc,=,},", cr, target);
+		esilprintf (op, "%s%s,!,?{,%s,pc,=,},", pre, cr, target);
 		break;
 	case PPC_BC_GE:
-		esilprintf (op, "0x80,%s,&,!,%s,!,|,?{,%s,pc,=,},", cr, cr, target);
+		esilprintf (op, "%s0x80,%s,&,!,%s,!,|,?{,%s,pc,=,},", pre, cr, cr, target);
 		break;
 	case PPC_BC_GT:
-		esilprintf (op, "0x80,%s,&,!,%s,!,!,&,?{,%s,pc,=,},", cr, cr, target);
+		esilprintf (op, "%s0x80,%s,&,!,%s,!,!,&,?{,%s,pc,=,},", pre, cr, cr, target);
 		break;
 	case PPC_BC_NE:
-		esilprintf (op, "%s,!,!,?{,%s,pc,=,},", cr, target);
+		esilprintf (op, "%s%s,!,!,?{,%s,pc,=,},", pre, cr, target);
 		break;
 	default:
 		break;
@@ -2187,13 +2188,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				const bool link = r_str_endswith (mn, "ctrl");
 				op->type = link ? R_ANAL_OP_TYPE_UCCALL : R_ANAL_OP_TYPE_UCJMP;
 				op->fail = addr + op->size;
-				ppc_cond_branch (op, BC (), ARG (0)[0] == '\0' ? "cr0" : ARG (0), link ? "pc,lr,=,ctr" : "ctr");
+				// LK writes LR whether or not the branch is taken
+				ppc_cond_branch (op, BC (), ARG (0)[0] == '\0' ? "cr0" : ARG (0), link? "pc,lr,=,": "", "ctr");
 				break;
 			}
 			if (r_str_endswith (mn, "lr") || r_str_endswith (mn, "lrl")) {
 				op->type = R_ANAL_OP_TYPE_CRET;
 				op->fail = addr + op->size;
-				ppc_cond_branch (op, BC (), ARG (0)[0] == '\0' ? "cr0" : ARG (0), "lr");
+				ppc_cond_branch (op, BC (), ARG (0)[0] == '\0' ? "cr0" : ARG (0), "", "lr");
 				break;
 			}
 			op->type = R_ANAL_OP_TYPE_CJMP;
@@ -2203,7 +2205,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				op->type = R_ANAL_OP_TYPE_JMP;
 				esilprintf (op, "%s,pc,=", ARG (0));
 			} else {
-				ppc_cond_branch (op, BC (), cr, ARG (1)[0] == '\0' ? ARG (0) : ARG (1));
+				ppc_cond_branch (op, BC (), cr, "", ARG (1)[0] == '\0' ? ARG (0) : ARG (1));
 			}
 			break;
 		}
@@ -2303,7 +2305,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				op->type = R_ANAL_OP_TYPE_RET;
 				esilprintf (op, "lr,pc,=");
 			} else {
-				ppc_cond_branch (op, BC (), ARG (1)[0] == '\0' ? "cr0" : ARG (0), "lr");
+				ppc_cond_branch (op, BC (), ARG (1)[0] == '\0' ? "cr0" : ARG (0), "", "lr");
 			}
 			break;
 		case PPC_INS_RFI:

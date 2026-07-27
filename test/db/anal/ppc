@@ -1336,7 +1336,53 @@ aoj 1~{0.esil}
 EOF
 EXPECT=<<EOF
 uccall
-cr0,!,?{,pc,lr,=,ctr,pc,=,},
+pc,lr,=,cr0,!,?{,ctr,pc,=,},
+EOF
+RUN
+
+NAME=ppc bcctrl links lr even when the branch is not taken
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e anal.arch=ppc -e cfg.bigendian=true
+CMDS=<<EOF
+wx 4d820421
+aei
+aeim
+ar cr0=0x80
+ar ctr=0x100
+ar lr=0
+ar pc=0
+aes
+ar lr
+ar pc
+ar ctr
+EOF
+EXPECT=<<EOF
+0x00000004
+0x00000004
+0x00000100
+EOF
+RUN
+
+NAME=ppc bcctrl branches to ctr and links lr when taken
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e anal.arch=ppc -e cfg.bigendian=true
+CMDS=<<EOF
+wx 4d820421
+aei
+aeim
+ar cr0=0
+ar ctr=0x100
+ar lr=0
+ar pc=0
+aes
+ar lr
+ar pc
+ar ctr
+EOF
+EXPECT=<<EOF
+0x00000004
+0x00000100
+0x00000100
 EOF
 RUN
 
