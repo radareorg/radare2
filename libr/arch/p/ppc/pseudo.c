@@ -116,46 +116,21 @@ static int can_replace(const char *str, int idx, int max_operands) {
 	return true;
 }
 
+// cmp* and the cr0 conditional branches: b{eq,ge,gt,le,lt,ne} with an optional +/- hint
 static bool op_needs_cr0(const char *op) {
 	if (r_str_startswith (op, "cmp")) {
 		return true;
 	}
-	if (*op != 'b') {
+	if (op[0] != 'b' || !op[1] || !op[2] || (op[3] && (op[4] || !strchr ("+-", op[3])))) {
 		return false;
 	}
-	switch (op[1]) {
-	case 'e':
-		if (op[2] != 'q') {
-			return false;
-		}
-		break;
-	case 'g':
-	case 'l':
-		if (op[2] != 'e' && op[2] != 't') {
-			return false;
-		}
-		break;
-	case 'n':
-		if (op[2] != 'e') {
-			return false;
-		}
-		break;
-	default:
-		return false;
-	}
-	return !op[3] || ((op[3] == '-' || op[3] == '+') && !op[4]);
+	const char cond[] = { op[1], op[2], 0 };
+	return strstr ("eq ge gt le lt ne", cond) != NULL;
 }
 
 // only td/tdi/tw/twi carry a TO code operand, every named form (tweq, tdlgt, tdu..) encodes it in the mnemonic
 static bool op_is_trap(const char *op) {
-	if (*op != 't' || (op[1] != 'd' && op[1] != 'w')) {
-		return false;
-	}
-	const char *s = op + 2;
-	if (*s == 'i') {
-		s++;
-	}
-	return !*s;
+	return !strcmp (op, "td") || !strcmp (op, "tdi") || !strcmp (op, "tw") || !strcmp (op, "twi");
 }
 
 static const char* getspr(const char *reg) {
