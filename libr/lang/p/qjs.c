@@ -368,7 +368,10 @@ static JSValue r2log(JSContext *ctx, JSValueConst this_val, int argc, JSValueCon
 	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
 	size_t plen;
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
-	r_cons_printf (r_core_get_cons (pm->core), "%s\n", n);
+	RCons *cons = pm->core->rcmd->get_cons
+		? pm->core->rcmd->get_cons (pm->core->rcmd->data)
+		: pm->core->cons;
+	r_cons_printf (cons, "%s\n", n);
 	JS_FreeCString (ctx, n);
 	return JS_NewBool (ctx, true);
 }
@@ -420,10 +423,6 @@ static JSValue r2plugin(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 			ret = r2plugin_parse_load (ctx, this_val, argc, argv);
 		} else if (!strcmp (n, "io")) {
 			ret = r2plugin_io (ctx, this_val, argc, argv);
-#if 0
-		} else if (!strcmp (n, "bin")) {
-			ret = r2plugin_bin (ctx, this_val, argc, argv);
-#endif
 		} else {
 			// invalid throw exception here
 			ret = JS_ThrowRangeError (ctx, "invalid r2plugin type");
@@ -663,11 +662,6 @@ static const JSCFunctionListEntry js_os_funcs[] = {
 	JS_CFUNC_MAGIC_DEF ("read", 4, js_os_read_write, 0),
 	JS_CFUNC_MAGIC_DEF ("write", 4, js_os_read_write, 1),
 	JS_CFUNC_MAGIC_DEF ("pending", 4, js_os_pending, 0),
-#if 0
-	JS_CFUNC_MAGIC_DEF ("setReadHandler", 2, js_os_setReadHandler, 0 ),
-	JS_CFUNC_DEF ("setTimeout", 2, js_os_setTimeout ),
-	JS_CFUNC_DEF ("clearTimeout", 1, js_os_clearTimeout ),
-#endif
 	// JS_CFUNC_DEF ("open", 2, js_os_open ),
 	// OS_FLAG (O_RDONLY),
 };
@@ -851,12 +845,6 @@ static JSModuleDef *js_init_module_r2pipe(JSContext *ctx) {
 }
 
 static void register_helpers(JSContext *ctx) {
-#if 0
-	JSRuntime *rt = JS_GetRuntime (ctx);
-	js_std_set_worker_new_context_func (JS_NewCustomContext);
-	js_std_init_handlers (rt);
-	JS_SetModuleLoaderFunc (rt, NULL, js_module_loader, NULL);
-#endif
 	js_init_module_os (ctx);
 	js_init_module_r2 (ctx);
 	js_init_module_r2pipe (ctx);

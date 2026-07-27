@@ -3167,11 +3167,6 @@ static int cmd_visual(void *data, const char *input) {
 		r_cons_cmd_help_match (core->cons, help_msg_root, "V", 0, true);
 		return true;
 	}
-#if 0
-	if (core->http_up) {
-		return false;
-	}
-#endif
 	if (!r_cons_is_interactive (core->cons)) {
 		R_LOG_ERROR ("Visual mode requires scr.interactive=true");
 		return false;
@@ -5837,11 +5832,6 @@ next_arroba:
 					r_config_set_i (core->config, tovars[i], to);
 				}
 				tmpseek = true;
-#if 0
-				// TODO may not work well for search commands XXX
-				r_core_seek (core, from, true);
-				r_core_block_size (core, to - from);
-#endif
 			}
 			if (usemyblock) {
 				if (addr_is_set) {
@@ -6645,22 +6635,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				RStrBuf *sb = r_strbuf_new ("");
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					r_core_seek (core, fcn->addr, true);
-#if 0
-					r_cons_push ();
-					r_core_cmd (core, cmd, 0);
-					char *buf = (char *)r_cons_get_buffer ();
-					if (buf) {
-						buf = strdup (buf);
-					}
-					r_cons_pop ();
-					// r_cons_print (core->cons, buf);
-					r_strbuf_append (sb, buf);
-					free (buf);
-#else
 					char *buf = r_core_cmd_str (core, cmd);
 					r_strbuf_appendf (sb, "%s", buf);
 					free (buf);
-#endif
 					if (!foreach_newline (core)) {
 						break;
 					}

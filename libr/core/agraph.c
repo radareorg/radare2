@@ -65,16 +65,6 @@ static RCoreHelpMessage help_msg_visual_graph = {
 	NULL
 };
 
-#if 0
-static const char * const mousemodes[] = {
-	"canvas-y",
-	"canvas-x",
-	"node-y",
-	"node-x",
-	NULL
-};
-#endif
-
 #define BORDER 3
 #define BORDER_WIDTH 4
 #define BORDER_HEIGHT 3
@@ -593,12 +583,6 @@ static int **get_crossing_matrix(RCons *cons, const RGraph *g, const struct laye
 						if (ak->layer != i || at->layer != i) {
 							// this should never happen
 							// but it happens if we do graph.dummy = false, so better hide it for now
-#if 0
-							R_LOG_WARN ("%s (%d) or \"%s\" (%d) are not on the right layer (%d)",
-								ak->title, ak->layer,
-								at->title, at->layer,
-								i);
-#endif
 							continue;
 						}
 						m[ak->pos_in_layer][at->pos_in_layer]++;
@@ -5008,16 +4992,8 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			r_core_panels_root (core, core->panels_root);
 			break;
 		case 'y':
-#if 0
-			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-			if (fcn) {
-				r_config_toggle (core->config, "graph.comments");
-				g->need_reload_nodes = true;
-			}
-#else
 			r_config_toggle (core->config, "graph.comments");
 			g->need_reload_nodes = true;
-#endif
 			break;
 		case '[':
 			if (core->print->cur_enabled) {
@@ -5093,18 +5069,10 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			}
 			break;
 		case 'M':
-#if 0
-			mousemode++;
-			if (!mousemodes[mousemode]) {
-				mousemode = 0;
-			}
-			break;
-#else
 			core->visual.mousemode--;
 			if (core->visual.mousemode < 0) {
 				core->visual.mousemode = 3;
 			}
-#endif
 			break;
 		case '(':
 			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);

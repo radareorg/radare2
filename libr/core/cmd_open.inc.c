@@ -1996,20 +1996,6 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	r_print_progressbar (p, percent, r_cons_get_size (core->cons, NULL) - 40, NULL);
 	p->flags = flags;
 	r_cons_printf (core->cons, " %s\n", desc->uri);
-#if 0
-	RIOMap *map;
-	SdbListIter *iter;
-	if (desc->io && desc->io->va && desc->io->maps) {
-		ls_foreach_prev (desc->io->maps, iter, map) {
-			if (map->fd == desc->fd) {
-				r_print_printf (p, "  +0x%"PFMT64x" 0x%"PFMT64x
-					" - 0x%"PFMT64x" : %s : %s : %s\n", map->delta,
-					map->from, map->to, r_str_rwx_i (map->flags), "",
-					r_str_get (map));
-			}
-		}
-	}
-#endif
 	return true;
 }
 

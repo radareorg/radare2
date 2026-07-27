@@ -2854,10 +2854,8 @@ R_API void r_core_fini(RCore *c) {
 	/* after r_config_free, the value of I.teefile is trashed */
 	/* rconfig doesnt knows how to deinitialize vars, so we
 	should probably need to add a r_config_free_payload callback */
-	if (c->cons) {
-		r_cons_free (c->cons);
-		c->cons = NULL;
-	}
+	r_cons_free (c->cons);
+	c->cons = NULL;
 	free (c->theme);
 	free (c->themepath);
 	r_search_free (c->search);

@@ -886,21 +886,6 @@ R_API char *r_cmd_macro_list(RCmdMacro *mac, int mode) {
 	}
 	return r_strbuf_drain (sb);
 }
-
-
-#if 0
-(define name value
-  f $0 @ $1)
-
-(define loop cmd
-  loop:
-  ? $0 == 0
-  ?? .loop:
-  )
-
-.(define patata 3)
-#endif
-
 R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args, int nargs) {
 	int i, j;
 	char *pcmd, cmd[R_CMD_MAXLEN];
