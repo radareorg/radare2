@@ -10,21 +10,93 @@
 typedef struct {
 	RCmdCtxCb callback;
 	void *user;
+	char *name;
+	ut64 id;
 	size_t active;
+	bool registered;
 } RCmdHandler;
+
+typedef struct r_cmd_private_t RCmdPrivate;
 
 typedef struct r_cmd_handler_call_t {
 	struct r_cmd_handler_call_t *next;
 	RCmdHandler *handler;
+	RCmdPrivate *owner;
 	R_TH_TID tid;
+#if HAVE_TH_LOCAL
+	struct r_cmd_handler_call_t *previous;
+#endif
 } RCmdHandlerCall;
 
-typedef struct {
+typedef struct r_cmd_execution_t {
+	struct r_cmd_execution_t *next;
+	RCmdPrivate *owner;
+	R_TH_TID tid;
+#if HAVE_TH_LOCAL
+	struct r_cmd_execution_t *previous;
+#endif
+} RCmdExecution;
+
+struct r_cmd_private_t {
 	RThreadLock *handlers_lock;
 	RThreadCond *handlers_idle;
-	RCmdHandlerCall *calls;
+	RThreadLock *aliases_lock;
+	RList *handlers;
+	RCmdHandlerCall *handler_calls;
+	RCmdExecution *executions;
+	ut64 handler_id;
+	size_t active_calls;
+	size_t registry_ops;
 	bool closing;
-} RCmdPrivate;
+	bool finalizing;
+};
+
+#if HAVE_TH_LOCAL
+static R_TH_LOCAL RCmdHandlerCall *current_handler_call;
+static R_TH_LOCAL RCmdExecution *current_execution;
+#endif
+
+static void cmd_handler_free(void *value);
+
+static bool cmd_is_dispatch_thread(const RCmdPrivate *priv) {
+#if HAVE_TH_LOCAL
+	RCmdHandlerCall *call;
+	for (call = current_handler_call; call; call = call->previous) {
+		if (call->owner == priv) {
+			return true;
+		}
+	}
+#else
+	const R_TH_TID self = r_th_self ();
+	RCmdHandlerCall *call;
+	for (call = priv->handler_calls; call; call = call->next) {
+		if (r_th_tid_equal (call->tid, self)) {
+			return true;
+		}
+	}
+#endif
+	return false;
+}
+
+static bool cmd_is_execution_thread(const RCmdPrivate *priv) {
+#if HAVE_TH_LOCAL
+	RCmdExecution *execution;
+	for (execution = current_execution; execution; execution = execution->previous) {
+		if (execution->owner == priv) {
+			return true;
+		}
+	}
+#else
+	const R_TH_TID self = r_th_self ();
+	RCmdExecution *execution;
+	for (execution = priv->executions; execution; execution = execution->next) {
+		if (r_th_tid_equal (execution->tid, self)) {
+			return true;
+		}
+	}
+#endif
+	return false;
+}
 
 static void alias_freefn(HtPPKv *kv) {
 	if (kv) {
@@ -100,6 +172,8 @@ R_API RCmd *r_cmd_new(void *data) {
 	RCmdPrivate *priv = R_NEW0 (RCmdPrivate);
 	priv->handlers_lock = r_th_lock_new (false);
 	priv->handlers_idle = r_th_cond_new ();
+	priv->aliases_lock = r_th_lock_new (false);
+	priv->handlers = r_list_newf (cmd_handler_free);
 	cmd->priv = priv;
 	cmd->data = data;
 	for (i = 0; i < NCMDS; i++) {
@@ -113,15 +187,10 @@ R_API RCmd *r_cmd_new(void *data) {
 	return cmd;
 }
 
-static bool cmd_handler_free(RStrs name, void *value, void *user) {
-	(void)name;
-	RCmdPrivate *priv = user;
+static void cmd_handler_free(void *value) {
 	RCmdHandler *handler = value;
-	while (handler->active) {
-		r_th_cond_wait (priv->handlers_idle, priv->handlers_lock);
-	}
+	free (handler->name);
 	free (handler);
-	return true;
 }
 
 R_API void r_cmd_free(RCmd *cmd) {
@@ -131,16 +200,30 @@ R_API void r_cmd_free(RCmd *cmd) {
 	}
 	RCmdPrivate *priv = cmd->priv;
 	r_th_lock_enter (priv->handlers_lock);
+	if (cmd_is_execution_thread (priv)) {
+		r_th_lock_leave (priv->handlers_lock);
+		R_LOG_ERROR ("Cannot free a command registry from one of its command callbacks");
+		return;
+	}
+	if (priv->closing) {
+		r_th_lock_leave (priv->handlers_lock);
+		R_LOG_ERROR ("Command registry is already being freed");
+		return;
+	}
 	priv->closing = true;
+	while (priv->active_calls || priv->registry_ops) {
+		r_th_cond_wait (priv->handlers_idle, priv->handlers_lock);
+	}
 	r_th_lock_leave (priv->handlers_lock);
 	r_core_plugins_fini (cmd);
 	r_th_lock_enter (priv->handlers_lock);
-	r_trie_foreach_prefix (cmd->handlers, R_STRS_LIT (""), cmd_handler_free, priv);
+	priv->finalizing = true;
+	while (priv->registry_ops) {
+		r_th_cond_wait (priv->handlers_idle, priv->handlers_lock);
+	}
 	r_trie_free (cmd->handlers);
+	r_list_free (priv->handlers);
 	r_th_lock_leave (priv->handlers_lock);
-	r_th_cond_free (priv->handlers_idle);
-	r_th_lock_free (priv->handlers_lock);
-	free (priv);
 	ht_up_free (cmd->ts_symbols_ht);
 	r_cmd_alias_free (cmd);
 	r_cmd_macro_fini (&cmd->macro);
@@ -150,6 +233,10 @@ R_API void r_cmd_free(RCmd *cmd) {
 		}
 	}
 	// cmd_desc_free (cmd->root_cmd_desc);
+	r_th_cond_free (priv->handlers_idle);
+	r_th_lock_free (priv->handlers_lock);
+	r_th_lock_free (priv->aliases_lock);
+	free (priv);
 	free (cmd);
 }
 
@@ -166,27 +253,38 @@ static bool get_keys(void *keylist_in, const void *k, const void *v) {
 }
 
 R_API const char **r_cmd_alias_keys(RCmd *cmd) {
+	R_RETURN_VAL_IF_FAIL (cmd, NULL);
+	RCmdPrivate *priv = cmd->priv;
+	r_th_lock_enter (priv->aliases_lock);
 	AliasKeylist keylist = {
 		.current_key = 0,
 		.keys = R_NEWS (const char *, cmd->aliases->count)
 	};
 	if (!keylist.keys) {
+		r_th_lock_leave (priv->aliases_lock);
 		return NULL;
 	}
 	ht_pp_foreach (cmd->aliases, get_keys, &keylist);
-	// We don't need to return a count - it's already in cmd->aliases.
+	r_th_lock_leave (priv->aliases_lock);
 	return keylist.keys;
 }
 
 R_API void r_cmd_alias_free(RCmd *cmd) {
 	R_RETURN_IF_FAIL (cmd);
+	RCmdPrivate *priv = cmd->priv;
+	r_th_lock_enter (priv->aliases_lock);
 	ht_pp_free (cmd->aliases);
 	cmd->aliases = NULL;
+	r_th_lock_leave (priv->aliases_lock);
 }
 
 R_API bool r_cmd_alias_del(RCmd *cmd, const char *k) {
 	R_RETURN_VAL_IF_FAIL (cmd && k, false);
-	return ht_pp_delete (cmd->aliases, k);
+	RCmdPrivate *priv = cmd->priv;
+	r_th_lock_enter (priv->aliases_lock);
+	const bool deleted = ht_pp_delete (cmd->aliases, k);
+	r_th_lock_leave (priv->aliases_lock);
+	return deleted;
 }
 
 R_API bool r_cmd_alias_set_cmd(RCmd *cmd, const char *k, const char *v) {
@@ -199,11 +297,14 @@ R_API bool r_cmd_alias_set_cmd(RCmd *cmd, const char *k, const char *v) {
 	val.sz = strlen (v) + 1;
 	val.is_str = true;
 	val.is_data = false;
-
-	return ht_pp_update (cmd->aliases, k, &val);
+	RCmdPrivate *priv = cmd->priv;
+	r_th_lock_enter (priv->aliases_lock);
+	const bool updated = ht_pp_update (cmd->aliases, k, &val);
+	r_th_lock_leave (priv->aliases_lock);
+	return updated;
 }
 
-R_API int r_cmd_alias_set_str(RCmd *cmd, const char *k, const char *v) {
+static int cmd_alias_set_str_unlocked(RCmd *cmd, const char *k, const char *v) {
 	RCmdAliasVal val;
 	val.data = (ut8 *)strdup (v);
 	if (!val.data) {
@@ -229,7 +330,16 @@ R_API int r_cmd_alias_set_str(RCmd *cmd, const char *k, const char *v) {
 	return ret;
 }
 
-R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
+R_API int r_cmd_alias_set_str(RCmd *cmd, const char *k, const char *v) {
+	R_RETURN_VAL_IF_FAIL (cmd && k && v, 1);
+	RCmdPrivate *priv = cmd->priv;
+	r_th_lock_enter (priv->aliases_lock);
+	const int ret = cmd_alias_set_str_unlocked (cmd, k, v);
+	r_th_lock_leave (priv->aliases_lock);
+	return ret;
+}
+
+static int cmd_alias_set_raw_unlocked(RCmd *cmd, const char *k, const ut8 *v, int sz) {
 	int i;
 
 	if (sz < 1) {
@@ -302,9 +412,22 @@ R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
 	return ret;
 }
 
+R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
+	R_RETURN_VAL_IF_FAIL (cmd && k && v, 1);
+	RCmdPrivate *priv = cmd->priv;
+	r_th_lock_enter (priv->aliases_lock);
+	const int ret = cmd_alias_set_raw_unlocked (cmd, k, v, sz);
+	r_th_lock_leave (priv->aliases_lock);
+	return ret;
+}
+
 R_API RCmdAliasVal *r_cmd_alias_get(RCmd *cmd, const char *k) {
 	R_RETURN_VAL_IF_FAIL (cmd && cmd->aliases && k, NULL);
-	return ht_pp_find (cmd->aliases, k, NULL);
+	RCmdPrivate *priv = cmd->priv;
+	r_th_lock_enter (priv->aliases_lock);
+	RCmdAliasVal *value = ht_pp_find (cmd->aliases, k, NULL);
+	r_th_lock_leave (priv->aliases_lock);
+	return value;
 }
 
 static ut8 *alias_append_internal(int *out_szp, const RCmdAliasVal *first, const ut8 *second, int second_sz) {
@@ -332,39 +455,49 @@ static ut8 *alias_append_internal(int *out_szp, const RCmdAliasVal *first, const
 
 R_API bool r_cmd_alias_append_str(RCmd *cmd, const char *k, const char *a) {
 	R_RETURN_VAL_IF_FAIL (cmd && k && a, 1);
-	RCmdAliasVal *v_old = r_cmd_alias_get (cmd, k);
+	RCmdPrivate *priv = cmd->priv;
+	r_th_lock_enter (priv->aliases_lock);
+	RCmdAliasVal *v_old = ht_pp_find (cmd->aliases, k, NULL);
 	if (v_old) {
 		if (!v_old->is_data) {
+			r_th_lock_leave (priv->aliases_lock);
 			return true;
 		}
 		int new_len = 0;
-		ut8* new = alias_append_internal (&new_len, v_old, (ut8 *)a, strlen (a) + 1);
+		ut8 *new = alias_append_internal (&new_len, v_old, (ut8 *)a, strlen (a) + 1);
 		if (!new) {
+			r_th_lock_leave (priv->aliases_lock);
 			return true;
 		}
-		r_cmd_alias_set_raw (cmd, k, new, new_len);
+		cmd_alias_set_raw_unlocked (cmd, k, new, new_len);
 		free (new);
 	} else {
-		r_cmd_alias_set_str (cmd, k, a);
+		cmd_alias_set_str_unlocked (cmd, k, a);
 	}
+	r_th_lock_leave (priv->aliases_lock);
 	return false;
 }
 
 R_API bool r_cmd_alias_append_raw(RCmd *cmd, const char *k, const ut8 *a, int sz) {
-	RCmdAliasVal *v_old = r_cmd_alias_get (cmd, k);
+	R_RETURN_VAL_IF_FAIL (cmd && k && a, false);
+	RCmdPrivate *priv = cmd->priv;
+	r_th_lock_enter (priv->aliases_lock);
+	RCmdAliasVal *v_old = ht_pp_find (cmd->aliases, k, NULL);
 	if (v_old) {
 		if (!v_old->is_data) {
+			r_th_lock_leave (priv->aliases_lock);
 			return false;
 		}
 		int new_len = 0;
 		ut8 *new = alias_append_internal (&new_len, v_old, a, sz);
 		if (new) {
-			r_cmd_alias_set_raw (cmd, k, new, new_len);
+			cmd_alias_set_raw_unlocked (cmd, k, new, new_len);
 			free (new);
 		}
 	} else {
-		r_cmd_alias_set_raw (cmd, k, a, sz);
+		cmd_alias_set_raw_unlocked (cmd, k, a, sz);
 	}
+	r_th_lock_leave (priv->aliases_lock);
 	return true;
 }
 
@@ -384,6 +517,16 @@ R_API char *r_cmd_alias_val_strdup_b64(RCmdAliasVal *v) {
 	return r_base64_encode_dyn ((const ut8*)v->data, v->sz);
 }
 
+static char *cmd_alias_data_strdup(RCmd *cmd, const char *key, bool *found) {
+	RCmdPrivate *priv = cmd->priv;
+	r_th_lock_enter (priv->aliases_lock);
+	RCmdAliasVal *value = cmd->aliases? ht_pp_find (cmd->aliases, key, NULL): NULL;
+	*found = value && value->is_data;
+	char *copy = *found? r_cmd_alias_val_strdup (value): NULL;
+	r_th_lock_leave (priv->aliases_lock);
+	return copy;
+}
+
 R_API void r_cmd_set_data(RCmd *cmd, void *data) {
 	cmd->data = data;
 }
@@ -394,30 +537,64 @@ R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void 
 	if (r_strs_empty (key)) {
 		return false;
 	}
-	RCmdHandler *handler = R_NEW (RCmdHandler);
+	RCmdHandler *handler = R_NEW0 (RCmdHandler);
 	handler->callback = callback;
 	handler->user = handler_user;
-	handler->active = 0;
+	handler->name = strdup (name);
+	if (!handler->name) {
+		free (handler);
+		return false;
+	}
 	RCmdPrivate *priv = cmd->priv;
 	r_th_lock_enter (priv->handlers_lock);
 	const bool inserted = !priv->closing && !r_trie_find (cmd->handlers, key)
-		&& r_trie_insert (cmd->handlers, key, handler);
+		&& r_trie_insert (cmd->handlers, key, handler)
+		&& r_list_append (priv->handlers, handler);
+	if (inserted) {
+		handler->id = ++priv->handler_id;
+		handler->registered = true;
+	} else if (r_trie_find (cmd->handlers, key) == handler) {
+		r_trie_take (cmd->handlers, key);
+	}
 	r_th_lock_leave (priv->handlers_lock);
 	if (!inserted) {
-		free (handler);
+		cmd_handler_free (handler);
 	}
 	return inserted;
 }
 
-static bool cmd_is_dispatch_thread(const RCmdPrivate *priv) {
-	const R_TH_TID self = r_th_self ();
-	RCmdHandlerCall *call;
-	for (call = priv->calls; call; call = call->next) {
-		if (r_th_tid_equal (call->tid, self)) {
+static bool cmd_handler_matches(const RCmdHandler *handler, const char *name, bool prefix, ut64 cutoff) {
+	return handler->id <= cutoff && (prefix
+		? r_str_startswith (handler->name, name)
+		: !strcmp (handler->name, name));
+}
+
+static bool cmd_handlers_active(RCmdPrivate *priv, const char *name, bool prefix, ut64 cutoff) {
+	RListIter *iter;
+	RCmdHandler *handler;
+	r_list_foreach (priv->handlers, iter, handler) {
+		if (handler->active && cmd_handler_matches (handler, name, prefix, cutoff)) {
 			return true;
 		}
 	}
 	return false;
+}
+
+static void cmd_handlers_sweep(RCmdPrivate *priv) {
+	RListIter *iter;
+	RListIter *next;
+	RCmdHandler *handler;
+	r_list_foreach_safe (priv->handlers, iter, next, handler) {
+		if (!handler->registered && !handler->active) {
+			r_list_delete (priv->handlers, iter);
+		}
+	}
+}
+
+static void cmd_registry_op_end(RCmdPrivate *priv) {
+	cmd_handlers_sweep (priv);
+	priv->registry_ops--;
+	r_th_cond_signal_all (priv->handlers_idle);
 }
 
 R_API bool r_cmd_unregister(RCmd *cmd, const char *name) {
@@ -428,55 +605,54 @@ R_API bool r_cmd_unregister(RCmd *cmd, const char *name) {
 	}
 	RCmdPrivate *priv = cmd->priv;
 	r_th_lock_enter (priv->handlers_lock);
-	if (cmd_is_dispatch_thread (priv)) {
+	if (priv->finalizing || cmd_is_dispatch_thread (priv)) {
 		r_th_lock_leave (priv->handlers_lock);
-		R_LOG_ERROR ("Cannot unregister commands from a registered command handler");
+		if (!priv->finalizing) {
+			R_LOG_ERROR ("Cannot unregister commands from a registered command handler");
+		}
 		return false;
 	}
+	priv->registry_ops++;
+	const ut64 cutoff = priv->handler_id;
 	RCmdHandler *handler = r_trie_take (cmd->handlers, key);
 	const bool removed = handler != NULL;
-	while (handler && handler->active) {
+	if (handler) {
+		handler->registered = false;
+	}
+	while (cmd_handlers_active (priv, name, false, cutoff)) {
 		r_th_cond_wait (priv->handlers_idle, priv->handlers_lock);
 	}
+	cmd_registry_op_end (priv);
 	r_th_lock_leave (priv->handlers_lock);
-	free (handler);
 	return removed;
-}
-
-static bool cmd_collect_handler(RStrs name, void *value, void *user) {
-	(void)name;
-	return r_list_append (user, value);
 }
 
 R_API size_t r_cmd_unregister_prefix(RCmd *cmd, const char *prefix) {
 	R_RETURN_VAL_IF_FAIL (cmd && prefix, 0);
-	RList *handlers = r_list_new ();
 	RCmdPrivate *priv = cmd->priv;
 	r_th_lock_enter (priv->handlers_lock);
-	if (cmd_is_dispatch_thread (priv)) {
+	if (priv->finalizing || cmd_is_dispatch_thread (priv)) {
 		r_th_lock_leave (priv->handlers_lock);
-		r_list_free (handlers);
-		R_LOG_ERROR ("Cannot unregister commands from a registered command handler");
+		if (!priv->finalizing) {
+			R_LOG_ERROR ("Cannot unregister commands from a registered command handler");
+		}
 		return 0;
 	}
-	if (!r_trie_foreach_prefix (cmd->handlers, r_strs_from (prefix), cmd_collect_handler, handlers)) {
-		r_th_lock_leave (priv->handlers_lock);
-		r_list_free (handlers);
-		return 0;
-	}
+	priv->registry_ops++;
+	const ut64 cutoff = priv->handler_id;
 	const size_t removed = r_trie_delete_prefix (cmd->handlers, r_strs_from (prefix));
 	RListIter *iter;
 	RCmdHandler *handler;
-	r_list_foreach (handlers, iter, handler) {
-		while (handler->active) {
-			r_th_cond_wait (priv->handlers_idle, priv->handlers_lock);
+	r_list_foreach (priv->handlers, iter, handler) {
+		if (handler->registered && cmd_handler_matches (handler, prefix, true, cutoff)) {
+			handler->registered = false;
 		}
 	}
-	r_th_lock_leave (priv->handlers_lock);
-	r_list_foreach (handlers, iter, handler) {
-		free (handler);
+	while (cmd_handlers_active (priv, prefix, true, cutoff)) {
+		r_th_cond_wait (priv->handlers_idle, priv->handlers_lock);
 	}
-	r_list_free (handlers);
+	cmd_registry_op_end (priv);
+	r_th_lock_leave (priv->handlers_lock);
 	return removed;
 }
 
@@ -685,9 +861,10 @@ static RCmdHandler *cmd_handler_pin(RCmd *cmd, RStrs lookup, size_t *matched, RC
 	if (handler) {
 		handler->active++;
 		call->handler = handler;
+		call->owner = priv;
 		call->tid = r_th_self ();
-		call->next = priv->calls;
-		priv->calls = call;
+		call->next = priv->handler_calls;
+		priv->handler_calls = call;
 	}
 	r_th_lock_leave (priv->handlers_lock);
 	return handler;
@@ -696,7 +873,7 @@ static RCmdHandler *cmd_handler_pin(RCmd *cmd, RStrs lookup, size_t *matched, RC
 static void cmd_handler_unpin(RCmd *cmd, RCmdHandlerCall *call) {
 	RCmdPrivate *priv = cmd->priv;
 	r_th_lock_enter (priv->handlers_lock);
-	RCmdHandlerCall **link = &priv->calls;
+	RCmdHandlerCall **link = &priv->handler_calls;
 	while (*link && *link != call) {
 		link = &(*link)->next;
 	}
@@ -749,7 +926,14 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 		}
 		context->subcmd = r_strs_new (input.a + matched, sub_end);
 		context->handler_user = handler->user;
+#if HAVE_TH_LOCAL
+		call.previous = current_handler_call;
+		current_handler_call = &call;
+#endif
 		RCmdResult handler_result = handler->callback (context);
+#if HAVE_TH_LOCAL
+		current_handler_call = call.previous;
+#endif
 		cmd_handler_unpin (cmd, &call);
 		if (handler_result.action != R_CMD_ACTION_UNHANDLED) {
 			result = handler_result;
@@ -761,31 +945,81 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 	return result;
 }
 
+static bool cmd_execution_begin(RCmd *cmd, RCmdExecution *execution) {
+	RCmdPrivate *priv = cmd->priv;
+	r_th_lock_enter (priv->handlers_lock);
+	if (priv->closing) {
+		r_th_lock_leave (priv->handlers_lock);
+		return false;
+	}
+	execution->owner = priv;
+	execution->tid = r_th_self ();
+	execution->next = priv->executions;
+	priv->executions = execution;
+	priv->active_calls++;
+#if HAVE_TH_LOCAL
+	execution->previous = current_execution;
+	current_execution = execution;
+#endif
+	r_th_lock_leave (priv->handlers_lock);
+	return true;
+}
+
+static void cmd_execution_end(RCmd *cmd, RCmdExecution *execution) {
+	RCmdPrivate *priv = cmd->priv;
+#if HAVE_TH_LOCAL
+	current_execution = execution->previous;
+#endif
+	r_th_lock_enter (priv->handlers_lock);
+	RCmdExecution **link = &priv->executions;
+	while (*link && *link != execution) {
+		link = &(*link)->next;
+	}
+	if (!*link || !priv->active_calls) {
+		R_WARN_IF_REACHED ();
+		r_th_lock_leave (priv->handlers_lock);
+		return;
+	}
+	*link = execution->next;
+	priv->active_calls--;
+	r_th_cond_signal_all (priv->handlers_idle);
+	r_th_lock_leave (priv->handlers_lock);
+}
+
 R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *input, bool raw) {
+	RCmdResult result = cmd_result (R_CMD_ACTION_UNHANDLED, 127);
+	RCmdExecution execution = { 0 };
+	if (!cmd_execution_begin (cmd, &execution)) {
+		return result;
+	}
 	RCore *core = cmd->data;
 	RCons *capture = NULL;
-	RCmdResult result;
 	if (!*input) {
 		if (!cmd->nullcallback) {
-			return cmd_result (R_CMD_ACTION_UNHANDLED, 127);
+			goto beach;
 		}
 		capture = cmd_legacy_capture_begin (cmd, parent);
 		result = cmd_result_from_legacy (cmd->nullcallback (cmd->data));
 		goto beach;
 	}
-	RCmdAliasVal *v = r_cmd_alias_get (cmd, input);
-	if (v && v->is_data) {
-		char *v_str = r_cmd_alias_val_strdup (v);
+	bool alias_found = false;
+	char *alias = cmd_alias_data_strdup (cmd, input, &alias_found);
+	if (alias_found) {
+		if (!alias) {
+			result = cmd_result (R_CMD_ACTION_ABORT, 1);
+			goto beach;
+		}
 		RCons *cons = parent
 			? parent->cons
 			: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
-		r_cons_print (cons, v_str);
-		free (v_str);
-		return cmd_result_from_legacy (true);
+		r_cons_print (cons, alias);
+		free (alias);
+		result = cmd_result_from_legacy (true);
+		goto beach;
 	}
 	result = cmd_call_registered (cmd, parent, r_strs_from (input), raw);
 	if (result.action != R_CMD_ACTION_UNHANDLED) {
-		return result;
+		goto beach;
 	}
 	capture = cmd_legacy_capture_begin (cmd, parent);
 	RListIter *iter;
@@ -814,6 +1048,7 @@ beach:
 	if (capture) {
 		cmd_legacy_capture_end (cmd, parent, capture);
 	}
+	cmd_execution_end (cmd, &execution);
 	return result;
 }
 

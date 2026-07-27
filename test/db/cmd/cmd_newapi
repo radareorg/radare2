@@ -61,12 +61,12 @@ Hello;world ;you rock
 no-newline through adapter
 0x7
 0x7after-no-newline
-A\x00B ignored
 A
-raw quotes
-one   two
- leading
-unknown\q
+A
+"raw quotes"
+one two
+leading
+unknownq
 value
 0x2a
 value=0x2a
@@ -87,6 +87,42 @@ Usage: echo [-n] [arg ...]
 | echo -h            show this help (same as echo?)
 | echo64 base64      decode base64 text up to the first NUL
 | echo?              show this help
+EOF
+RUN
+
+NAME=echo and ?e parsed escaping
+FILE=-
+CMDS=<<EOF
+echo one\ two
+echo "line\nnext"
+echo \x41\101
+echo slash\\tail
+echo unknown\q
+echo ""
+echo -n ""
+echo "" x
+echo say\"hi it\'s
+echo \xZZ
+?e one\ two
+?e "line\nnext"
+?en slash\\tail
+?e !
+EOF
+EXPECT=<<EOF
+one two
+line
+next
+AA
+slash\tail
+unknownq
+
+ x
+say"hi it's
+ZZ
+one two
+line
+next
+slash\tail!
 EOF
 RUN
 

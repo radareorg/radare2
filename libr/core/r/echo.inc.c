@@ -16,6 +16,24 @@ static RCoreHelpMessage help_msg_echo = {
 
 // clang-format on
 
+static bool echo_append_args(RStrBuf *output, RVecRStrs *args, size_t first) {
+	const size_t argc = RVecRStrs_length (args);
+	size_t i;
+	for (i = first; i < argc; i++) {
+		RStrs *arg = RVecRStrs_at (args, i);
+		const char *nul = memchr (arg->a, 0, r_strs_len (*arg));
+		const size_t length = nul? nul - arg->a: r_strs_len (*arg);
+		if ((i > first && !r_strbuf_append_n (output, " ", 1))
+				|| !r_strbuf_append_n (output, arg->a, length)) {
+			return false;
+		}
+		if (nul) {
+			break;
+		}
+	}
+	return true;
+}
+
 static ut8 *echo_base64_decode(const char *input, int *size) {
 	ut8 *decoded = (ut8 *)strdup (input);
 	if (decoded) {
@@ -41,22 +59,23 @@ static RCmdResult echo_base64(RCmdContext *ctx) {
 	}
 	const ut8 *nul = memchr (decoded, 0, size);
 	const size_t length = nul? nul - decoded: size;
-	if (length) {
-		r_cons_write (ctx->cons, (const char *)decoded, length);
-	}
-	r_cons_newline (ctx->cons);
+	RStrBuf output;
+	r_strbuf_init (&output);
+	const bool success = r_strbuf_append_n (&output, (const char *)decoded, length)
+		&& r_strbuf_append_n (&output, "\n", 1)
+		&& r_cons_write (ctx->cons, r_strbuf_get (&output), output.len);
+	r_strbuf_fini (&output);
 	free (decoded);
-	return (RCmdResult) { 0 };
+	return (RCmdResult) { .status = success? 0: 1 };
 }
 
 static RCmdResult echo_callback(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	const bool exact = r_strs_empty (ctx->subcmd);
-	const char *input = ctx->subcmd.b;
-	if (isspace ((ut8)*input)) {
-		input++;
-	}
-	if (r_strs_equals_str (ctx->subcmd, "?") || (exact && !strcmp (input, "-h"))) {
+	const size_t argc = RVecRStrs_length (&ctx->args);
+	RStrs *arg = argc? RVecRStrs_at (&ctx->args, 0): NULL;
+	if (r_strs_equals_str (ctx->subcmd, "?")
+			|| (exact && argc == 1 && r_strs_equals_str (*arg, "-h"))) {
 		r_cons_cmd_help (ctx->cons, help_msg_echo);
 		return (RCmdResult) { 0 };
 	}
@@ -67,29 +86,26 @@ static RCmdResult echo_callback(RCmdContext *ctx) {
 		r_core_return_invalid_command (core, "echo", *ctx->subcmd.a);
 		return (RCmdResult) { .status = 1 };
 	}
-	if (!*input) {
+	if (!argc) {
 		return (RCmdResult) { 0 };
 	}
+	size_t i = 0;
 	bool newline = true;
-	if (r_str_startswith (input, "-n") && (!input[2] || isspace ((ut8)input[2]))) {
+	if (r_strs_equals_str (*arg, "-n")) {
 		newline = false;
-		input = r_str_trim_head_ro (input + 2);
+		i++;
 	}
-	char *message = strdup (input);
-	if (!message) {
-		return (RCmdResult) { .status = 1 };
+	RStrBuf output;
+	r_strbuf_init (&output);
+	bool success = echo_append_args (&output, &ctx->args, i);
+	if (success && newline) {
+		success = r_strbuf_append_n (&output, "\n", 1);
 	}
-	r_str_trim_args (message);
-	message = r_str_replace (message, "\\\\", "\\", true);
-	if (!message) {
-		return (RCmdResult) { .status = 1 };
+	if (success && output.len) {
+		success = r_cons_write (ctx->cons, r_strbuf_get (&output), output.len);
 	}
-	r_cons_print (ctx->cons, message);
-	if (newline) {
-		r_cons_newline (ctx->cons);
-	}
-	free (message);
-	return (RCmdResult) { 0 };
+	r_strbuf_fini (&output);
+	return (RCmdResult) { .status = success? 0: 1 };
 }
 
 // Expand numeric variables for ?e.
@@ -127,15 +143,12 @@ static char *expand_num_vars(RCore *core, const char *msg) {
 	return r_strbuf_drain (sb);
 }
 
-static bool question_echo_print(RCore *core, RCons *cons, const char *input, bool newline, bool trim) {
+static bool question_echo_print_legacy(RCore *core, RCons *cons, const char *input, bool newline) {
 	char *copy = strdup (input);
 	if (!copy) {
 		return false;
 	}
 	char *body = (char *)r_str_trim_head_ro (copy);
-	if (trim) {
-		r_str_trim_args (body);
-	}
 	char *message = expand_num_vars (core, body);
 	free (copy);
 	if (!message) {
@@ -151,14 +164,38 @@ static bool question_echo_print(RCore *core, RCons *cons, const char *input, boo
 	return true;
 }
 
+static bool question_echo_print(RCmdContext *ctx, bool newline) {
+	RStrBuf input;
+	r_strbuf_init (&input);
+	bool success = echo_append_args (&input, &ctx->args, 0);
+	RCore *core = ctx->user;
+	char *message = success? expand_num_vars (core, r_strbuf_get (&input)): NULL;
+	r_strbuf_fini (&input);
+	if (!message) {
+		return false;
+	}
+	RStrBuf output;
+	r_strbuf_init (&output);
+	success = r_strbuf_append (&output, message)
+		&& (!newline || r_strbuf_append_n (&output, "\n", 1));
+	if (success && output.len) {
+		success = r_cons_write (ctx->cons, r_strbuf_get (&output), output.len);
+	}
+	r_strbuf_fini (&output);
+	free (message);
+	if (success && newline) {
+		r_core_return_value (core, 0);
+	}
+	return success;
+}
+
 static void question_echo_legacy(RCore *core, const char *input) {
 	const bool newline = input[1] != 'n';
 	const char *message = input + (newline? 1: 2);
-	question_echo_print (core, core->cons, message, newline, false);
+	question_echo_print_legacy (core, core->cons, message, newline);
 }
 
 static RCmdResult question_echo_callback(RCmdContext *ctx) {
-	RCore *core = ctx->user;
 	const bool newline = r_strs_empty (ctx->subcmd);
 	if (!newline && !r_strs_equals_str (ctx->subcmd, "n")) {
 		return (RCmdResult) {
@@ -166,7 +203,7 @@ static RCmdResult question_echo_callback(RCmdContext *ctx) {
 			.status = 127
 		};
 	}
-	if (!question_echo_print (core, ctx->cons, ctx->subcmd.b, newline, true)) {
+	if (!question_echo_print (ctx, newline)) {
 		return (RCmdResult) { .status = 1 };
 	}
 	return (RCmdResult) { 0 };

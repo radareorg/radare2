@@ -110,6 +110,28 @@ static bool test_r_cmd_unregister(void) {
 	mu_end;
 }
 
+static RCmdResult unregister_self_handler(RCmdContext *ctx) {
+	bool *unregistered = ctx->handler_user;
+	*unregistered = r_cmd_unregister (ctx->cmd, "self");
+	return (RCmdResult) { 0 };
+}
+
+static bool test_r_cmd_unregister_self(void) {
+	bool unregistered = true;
+	RCmd *cmd = r_cmd_new (NULL);
+	mu_assert_true (r_cmd_register (cmd, "self", unregister_self_handler, &unregistered), "register self handler");
+	r_log_init ();
+	const RLogLevel level = r_log_get_level ();
+	r_log_set_level (R_LOG_LEVEL_FATAL);
+	const int result = r_cmd_call (cmd, "self");
+	r_log_set_level (level);
+	mu_assert_eq (result, 0, "self-unregistering callback returns");
+	mu_assert_false (unregistered, "self-unregistration is rejected");
+	mu_assert_true (r_cmd_unregister (cmd, "self"), "external unregistration still succeeds");
+	r_cmd_free (cmd);
+	mu_end;
+}
+
 static bool test_r_cmd_prefix_registry(void) {
 	RCmd *cmd = r_cmd_new (NULL);
 	mu_assert_true (r_cmd_register (cmd, "af", first_handler, NULL), "register af");
@@ -374,7 +396,9 @@ static bool test_r_cmd_concurrent_registry(void) {
 	size_t i;
 	for (i = 0; i < 2000; i++) {
 		if (!r_cmd_unregister (state.cmd, "race")
-			|| !r_cmd_register (state.cmd, "race", concurrent_registry_handler, &state)) {
+			|| !r_cmd_register (state.cmd, "race", concurrent_registry_handler, &state)
+			|| !r_cmd_alias_set_cmd (state.cmd, "race", "noop")
+			|| !r_cmd_alias_del (state.cmd, "race")) {
 			mutations_ok = false;
 			break;
 		}
@@ -457,6 +481,7 @@ static bool test_r_cmd_unregister_barrier(void) {
 		.dispatch_result = -1
 	};
 	mu_assert_true (r_cmd_register (state.cmd, "barrier", registry_barrier_handler, &state), "register blocking handler");
+	mu_assert_true (r_cmd_register (state.cmd, "unrelated", first_handler, NULL), "register unrelated handler");
 	RThread *dispatch = r_th_new (registry_barrier_dispatch, &state, 0);
 	RThread *unregister = r_th_new (registry_barrier_unregister, &state, 0);
 	mu_assert_notnull (dispatch, "create dispatch thread");
@@ -467,6 +492,7 @@ static bool test_r_cmd_unregister_barrier(void) {
 		r_th_cond_wait (state.cond, state.lock);
 	}
 	r_th_lock_leave (state.lock);
+	const bool unrelated_removed = r_cmd_unregister (state.cmd, "unrelated");
 	mu_assert_true (r_th_start (unregister), "start unregister thread");
 	bool replacement_registered = false;
 	size_t i;
@@ -494,14 +520,110 @@ static bool test_r_cmd_unregister_barrier(void) {
 	mu_assert_true (replacement_registered, "replacement registers while old callback is pinned");
 	mu_assert_eq (replacement_result, 0, "replacement dispatches while unregister waits");
 	mu_assert_eq (state.replacement_calls, 1, "replacement handler runs once");
+	mu_assert_true (unrelated_removed, "another thread unregisters an unrelated handler");
 	mu_assert_true (unregister_waited, "unregister waits for the old callback");
 	mu_assert_true (old_call_finished, "unregister returns after the old callback exits");
+	mu_end;
+}
+
+typedef struct {
+	RCmd *cmd;
+	RThreadLock *lock;
+	RThreadCond *cond;
+	bool entered;
+	bool release;
+	bool free_started;
+	bool free_finished;
+	int dispatch_result;
+} RegistryFreeState;
+
+static RCmdResult registry_free_handler(RCmdContext *ctx) {
+	(void)ctx;
+	return (RCmdResult) { .action = R_CMD_ACTION_UNHANDLED };
+}
+
+static int registry_free_legacy(void *user, const char *input) {
+	RegistryFreeState *state = user;
+	r_th_lock_enter (state->lock);
+	state->entered = true;
+	r_th_cond_signal_all (state->cond);
+	while (!state->release) {
+		r_th_cond_wait (state->cond, state->lock);
+	}
+	r_th_lock_leave (state->lock);
+	return !strcmp (input, "reebarrier")? 0: -1;
+}
+
+static RThreadFunctionRet registry_free_dispatch(RThread *thread) {
+	RegistryFreeState *state = thread->user;
+	state->dispatch_result = r_cmd_call (state->cmd, "freebarrier");
+	return R_TH_STOP;
+}
+
+static RThreadFunctionRet registry_free_registry(RThread *thread) {
+	RegistryFreeState *state = thread->user;
+	r_th_lock_enter (state->lock);
+	state->free_started = true;
+	r_th_cond_signal_all (state->cond);
+	r_th_lock_leave (state->lock);
+	r_cmd_free (state->cmd);
+	r_th_lock_enter (state->lock);
+	state->free_finished = true;
+	r_th_cond_signal_all (state->cond);
+	r_th_lock_leave (state->lock);
+	return R_TH_STOP;
+}
+
+static bool test_r_cmd_free_barrier(void) {
+	RegistryFreeState state = {
+		.cmd = r_cmd_new (NULL),
+		.lock = r_th_lock_new (false),
+		.cond = r_th_cond_new (),
+		.dispatch_result = -1
+	};
+	r_cmd_set_data (state.cmd, &state);
+	mu_assert_true (r_cmd_register (state.cmd, "freebarrier", registry_free_handler, &state), "register free barrier");
+	mu_assert_true (r_cmd_add (state.cmd, "f", registry_free_legacy), "register legacy free barrier");
+	RThread *dispatch = r_th_new (registry_free_dispatch, &state, 0);
+	RThread *free_thread = r_th_new (registry_free_registry, &state, 0);
+	mu_assert_notnull (dispatch, "create free barrier dispatch thread");
+	mu_assert_notnull (free_thread, "create registry free thread");
+	mu_assert_true (r_th_start (dispatch), "start free barrier dispatch");
+	r_th_lock_enter (state.lock);
+	while (!state.entered) {
+		r_th_cond_wait (state.cond, state.lock);
+	}
+	r_th_lock_leave (state.lock);
+	mu_assert_true (r_th_start (free_thread), "start registry free");
+	r_th_lock_enter (state.lock);
+	while (!state.free_started) {
+		r_th_cond_wait (state.cond, state.lock);
+	}
+	r_th_lock_leave (state.lock);
+	while (r_cmd_register (state.cmd, "late", first_handler, NULL)) {
+		r_cmd_unregister (state.cmd, "late");
+	}
+	r_th_lock_enter (state.lock);
+	const bool free_waited = !state.free_finished;
+	state.release = true;
+	r_th_cond_signal_all (state.cond);
+	r_th_lock_leave (state.lock);
+	r_th_wait (dispatch);
+	r_th_wait (free_thread);
+	r_th_free (dispatch);
+	r_th_free (free_thread);
+	r_th_cond_free (state.cond);
+	r_th_lock_free (state.lock);
+	mu_assert_true (free_waited, "free waits for active dispatch");
+	mu_assert_eq (state.dispatch_result, 0, "dispatch finishes before registry free");
+	mu_assert_true (state.free_finished, "registry free finishes after dispatch");
 	mu_end;
 }
 
 static int all_tests(void) {
 	mu_run_test (test_r_cmd_register);
 	mu_run_test (test_r_cmd_unregister);
+	mu_run_test (test_r_cmd_unregister_self);
 	mu_run_test (test_r_cmd_prefix_registry);
 	mu_run_test (test_r_cmd_foreach_mutation);
 	mu_run_test (test_r_cmd_registry_dispatch);
@@ -510,6 +632,7 @@ static int all_tests(void) {
 	mu_run_test (test_r_cmd_raw_context_args);
 	mu_run_test (test_r_cmd_concurrent_registry);
 	mu_run_test (test_r_cmd_unregister_barrier);
+	mu_run_test (test_r_cmd_free_barrier);
 	return tests_passed != tests_run;
 }
 

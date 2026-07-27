@@ -129,6 +129,7 @@ struct r_cmd_t {
 
 #ifdef R_API
 R_API RCmd *r_cmd_new(void *data);
+/* The owner must stop new API entries before free; active dispatch and unregister operations are drained. */
 R_API void r_cmd_free(RCmd *cmd);
 R_API int r_cmd_call(RCmd *cmd, const char *command);
 R_API void r_cmd_set_data(RCmd *cmd, void *data);
@@ -153,10 +154,12 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name);
 R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value);
 
 R_API bool r_cmd_alias_del(RCmd *cmd, const char *k);
+/* Returns borrowed keys; callers must prevent concurrent alias mutation while using them. */
 R_API const char **r_cmd_alias_keys(RCmd *cmd);
 R_API bool r_cmd_alias_set_cmd(RCmd *cmd, const char *k, const char *v);
 R_API int r_cmd_alias_set_str(RCmd *cmd, const char *k, const char *v);
 R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz);
+/* Returns a borrowed value; callers must prevent concurrent alias mutation while using it. */
 R_API RCmdAliasVal *r_cmd_alias_get(RCmd *cmd, const char *k);
 R_API bool r_cmd_alias_append_str(RCmd *cmd, const char *k, const char *a);
 R_API bool r_cmd_alias_append_raw(RCmd *cmd, const char *k, const ut8 *a, int sz);
