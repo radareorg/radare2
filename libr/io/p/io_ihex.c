@@ -257,7 +257,7 @@ static bool ihex_parse(Rihex *rih, char *str) {
 		goto fail;
 	}
 	const char *ostr = str;
-	const bool ignore_cksum = r_sys_getenv_asbool ("R2_IHEX_IGNORE_CKSUM");
+	const bool ignore_cksum = r_sys_getenv_asbool ("R2_IHEX_IGNCSUM");
 	do {
 		l = sscanf (str, ":%02x%04x%02x", &bc, &addr_tmp, &type);
 		if (l != 3) {
@@ -536,7 +536,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 RIOPlugin r_io_plugin_ihex = {
 	.meta = {
 		.name = "ihex",
-		.desc = "Open intel HEX file (R2_IHEX_IGNORE_CKSUM=1)",
+		.desc = "Open intel HEX file (R2_IHEX_IGNCSUM=1)",
 		.author = "pancake,fenugrec",
 		.license = "LGPL-3.0-only",
 	},
