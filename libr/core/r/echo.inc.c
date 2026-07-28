@@ -34,17 +34,6 @@ static bool echo_append_args(RStrBuf *output, RVecRStrs *args, size_t first) {
 	return true;
 }
 
-static ut8 *echo_base64_decode(const char *input, int *size) {
-	ut8 *decoded = (ut8 *)strdup (input);
-	if (decoded) {
-		*size = r_base64_decode (decoded, input, -1, true);
-		if (*size < 1) {
-			R_FREE (decoded);
-		}
-	}
-	return decoded;
-}
-
 static RCmdResult echo_base64(RCmdContext *ctx) {
 	RStrs *arg = RVecRStrs_at (&ctx->args, 0);
 	if (!arg || RVecRStrs_length (&ctx->args) != 1) {
@@ -52,9 +41,11 @@ static RCmdResult echo_base64(RCmdContext *ctx) {
 	}
 	char *input = r_strs_tostring (*arg);
 	int size = 0;
-	ut8 *decoded = input? echo_base64_decode (input, &size): NULL;
+	// non-strict decoding: trailing garbage after valid quads is ignored
+	ut8 *decoded = input? r_base64_decode_dyn (input, -1, &size): NULL;
 	free (input);
-	if (!decoded) {
+	if (!decoded || size < 1) {
+		free (decoded);
 		return (RCmdResult) { .status = 1 };
 	}
 	const ut8 *nul = memchr (decoded, 0, size);
@@ -109,6 +100,10 @@ static RCmdResult echo_callback(RCmdContext *ctx) {
 }
 
 // Expand numeric variables for ?e.
+// TODO: discuss moving this ${name} expansion into the core command-line
+// parser (r_core_cmd_subst) so every command gets it, instead of
+// special-casing echo; needs care to not clash with $aliases, $(..)
+// subshells and the r_num special vars already handled by the shell.
 static char *expand_num_vars(RCore *core, const char *msg) {
 	RStrBuf *sb = r_strbuf_new ("");
 	while (*msg) {
@@ -144,6 +139,11 @@ static char *expand_num_vars(RCore *core, const char *msg) {
 	return r_strbuf_drain (sb);
 }
 
+/* Raw-tail printer, still reachable on two paths: whole-line double quoting
+ * ("?e a  b") dispatches verbatim contexts whose tail must be printed without
+ * argument tokenization to preserve spacing, and cmd_help falls back to it via
+ * question_echo_legacy when the registered ?e handler is unavailable. Both
+ * uses go away once verbatim dispatch adopts parsed arguments. */
 static bool question_echo_print_legacy(RCore *core, RCons *cons, const char *input, bool newline) {
 	char *copy = strdup (input);
 	if (!copy) {
@@ -216,6 +216,11 @@ static RCmdResult question_echo_callback(RCmdContext *ctx) {
 	return (RCmdResult) { 0 };
 }
 
+// TODO: this per-command init boilerplate should not be repeated for every
+// ported command: keep a table (RVec) of pending registrations in RCore
+// ({name, callback, user}) and walk it once from a single init function.
+// That batched form is also the right place to attach help messages and
+// autocompletion registration when the cmdctx api grows support for them.
 static bool r_core_cmd_echo_init(RCmd *cmd) {
 	if (!r_cmd_register (cmd, "echo", echo_callback, NULL)) {
 		return false;

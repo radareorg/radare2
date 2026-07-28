@@ -52,7 +52,8 @@ echo64 QQ==
 echo ok && ?e AND
 echo ok || ?e BAD
 echo64 QQ== && ?e DECODED
-echo64 QQ==! || ?e REJECTED
+echo64 QQ==! && ?e LENIENT
+echo64 .... || ?e REJECTED
 echo64 || ?e ARITY
 echo?
 EOF
@@ -79,6 +80,8 @@ AND
 ok
 A
 DECODED
+A
+LENIENT
 REJECTED
 ARITY
 Usage: echo [-n] [arg ...]
