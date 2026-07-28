@@ -48,11 +48,21 @@ static inline void tt_fini_access(TypeTraceAccess *access) {
 
 R_VEC_TYPE(VecTraceOp, TypeTraceOp);
 R_VEC_TYPE_WITH_FINI(VecAccess, TypeTraceAccess, tt_fini_access);
+R_VEC_TYPE(VecWriteIdx, ut32);
+
+static void tt_regwrite_kv_free(HtPPKv *kv) {
+	if (kv) {
+		free (kv->key);
+		VecWriteIdx_free (kv->value);
+	}
+}
 
 typedef struct {
 	VecTraceOp ops;
 	VecAccess accesses;
 	HtUU *loop_counts;
+	HtPP *regwrites; // register name => ascending trace indexes of the ops writing it
+	ut32 indexed_ops; // ops already folded into regwrites
 } TypeTraceDB;
 
 typedef struct type_trace_t {
@@ -138,10 +148,18 @@ static void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, c
 	update_trace_db_op (&trace->db);
 }
 
+static void trace_db_reset_index(TypeTraceDB *db) {
+	ht_pp_free (db->regwrites);
+	db->regwrites = ht_pp_new (NULL, tt_regwrite_kv_free, NULL);
+	db->indexed_ops = 0;
+}
+
 static void trace_db_init(TypeTraceDB *db) {
 	VecTraceOp_init (&db->ops);
 	VecAccess_init (&db->accesses);
 	db->loop_counts = ht_uu_new0 ();
+	db->regwrites = NULL;
+	trace_db_reset_index (db);
 }
 
 static void trace_db_fini(TypeTraceDB *db) {
@@ -150,6 +168,9 @@ static void trace_db_fini(TypeTraceDB *db) {
 		VecAccess_fini (&db->accesses);
 		ht_uu_free (db->loop_counts);
 		db->loop_counts = NULL;
+		ht_pp_free (db->regwrites);
+		db->regwrites = NULL;
+		db->indexed_ops = 0;
 	}
 }
 
@@ -207,6 +228,8 @@ static void type_trace_loopcount_increment(TypeTrace *trace, ut64 addr) {
 static void type_trace_rollback(TypeTrace *trace, REsil *esil) {
 	R_RETURN_IF_FAIL (trace && esil);
 	if (r_strbuf_length (&trace->rollback) > 0) {
+		// replaying appends restore writes to an op the index may already hold, so drop it
+		trace_db_reset_index (&trace->db);
 		const char *expr = r_strbuf_get (&trace->rollback);
 		if (expr && *expr) {
 			// Disable rollback recording during rollback execution
@@ -529,6 +552,52 @@ static const TypeTraceAccess *etrace_find_access(TypeTrace *etrace, ut32 idx, Ac
 		start++;
 	}
 	return NULL;
+}
+
+// folds the trace ops appended since the last call into the per-register write index
+static void trace_db_index_regwrites(TypeTraceDB *db) {
+	const ut32 nops = VecTraceOp_length (&db->ops);
+	ut32 i;
+	for (i = db->indexed_ops; i < nops; i++) {
+		const TypeTraceOp *op = VecTraceOp_at (&db->ops, i);
+		ut32 a;
+		for (a = op->start; a < op->end; a++) {
+			const TypeTraceAccess *access = VecAccess_at (&db->accesses, a);
+			if (!access || !access->is_reg || !access->is_write || !access->reg.name) {
+				continue;
+			}
+			VecWriteIdx *idxs = ht_pp_find (db->regwrites, access->reg.name, NULL);
+			if (!idxs) {
+				idxs = VecWriteIdx_new ();
+				ht_pp_insert (db->regwrites, access->reg.name, idxs);
+			}
+			const ut32 *last = VecWriteIdx_last (idxs);
+			// one op can write the same register twice, keep the list strictly ascending
+			if (!last || *last != i) {
+				VecWriteIdx_push_back (idxs, &i);
+			}
+		}
+	}
+	db->indexed_ops = nops;
+}
+
+static int writeidx_cmp(ut32 const *a, ut32 const *b) {
+	return (*a > *b) - (*a < *b);
+}
+
+// most recent trace index at or before j whose op wrote rname, or -1
+static int etrace_last_regwrite(TypeTrace *etrace, const char *rname, int j) {
+	if (!rname || j < 0) {
+		return -1;
+	}
+	trace_db_index_regwrites (&etrace->db);
+	VecWriteIdx *idxs = ht_pp_find (etrace->db.regwrites, rname, NULL);
+	if (!idxs) {
+		return -1;
+	}
+	ut32 needle = j;
+	const size_t pos = VecWriteIdx_upper_bound (idxs, &needle, writeidx_cmp);
+	return pos? (int)*VecWriteIdx_at (idxs, pos - 1): -1;
 }
 
 static bool etrace_is_memwrite(const TypeTraceAccess *access, void *user) {
@@ -1571,18 +1640,16 @@ static char *tp_reg_var_type(TPState *tps, RAnalFunction *fcn, const char *reg, 
 	int steps = 0;
 	int depth;
 	for (depth = 0; depth < TP_REGCOPY_MAX; depth++) {
-		bool found = false;
-		for (; j >= 0 && steps < TYPE_MATCH_MAX_BACKTRACE; j--, steps++) {
-			if (etrace_regwrite_contains (tt, j, cur)) {
-				found = true;
-				break;
-			}
+		const int w = etrace_last_regwrite (tt, cur, j);
+		// w is -1 when nothing wrote cur; charge a step per entry skipped, as the old scan did
+		const int walked = j - w;
+		if (steps + ((w < 0)? j: walked) >= TYPE_MATCH_MAX_BACKTRACE) {
+			// budget exhausted before reaching the write, or before proving there is none
+			return NULL;
 		}
-		if (!found) {
-			if (j >= 0) {
-				// budget exhausted before proving the register untouched
-				return NULL;
-			}
+		steps += walked;
+		j = w;
+		if (j < 0) {
 			// no write since entry, so the reg arg's declared type still holds
 			RRegItem *item = r_reg_get (anal->reg, cur, -1);
 			if (item) {
@@ -2489,6 +2556,138 @@ static const char *tp_call_cc(RAnal *anal, RAnalFunction *fcn_call, const char *
 }
 
 // per-op type propagation body run by tp_emulate_linear for r_anal_type_match
+#define TP_CANARY_MAX_INSN 64
+#define TP_CANARY_MAX_HOPS 16
+
+// one operand of a guard compare: a register to chase, or a slot the compare reads itself
+typedef struct {
+	char reg[REGNAME_SIZE];
+	int memref; // access width when the operand is a memory reference
+} TPCanaryOp;
+
+static void tp_canary_op(TPCanaryOp *co, RVecRArchValue *vals) {
+	const RArchValue *v = RVecRArchValue_at (vals, 0);
+	*co = (const TPCanaryOp){ 0 };
+	if (v && v->memref) {
+		co->memref = v->memref;
+	} else if (v && v->reg) {
+		r_str_ncpy (co->reg, v->reg, REGNAME_SIZE);
+	}
+}
+
+// the last compare style op of the guard block, and the operands it tests
+static ut64 tp_canary_cmp(RAnal *anal, RAnalBlock *bb, TPCanaryOp ops[2]) {
+	const ut64 end = bb->addr + bb->size;
+	ut64 at = bb->addr;
+	ut64 found = UT64_MAX;
+	int n;
+	// the compare sits at the end of the guard block, so bound the scan from the tail
+	if (bb->ninstr > TP_CANARY_MAX_INSN) {
+		const ut64 tail = r_anal_bb_opaddr_i (bb, bb->ninstr - TP_CANARY_MAX_INSN);
+		if (tail != UT64_MAX && tail >= at && tail < end) {
+			at = tail;
+		}
+	}
+	for (n = 0; n < TP_CANARY_MAX_INSN && at < end; n++) {
+		RAnalOp *op = tp_anal_op (anal, at, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL);
+		if (!op) {
+			break;
+		}
+		const ut32 t = op->type & R_ANAL_OP_TYPE_MASK;
+		if (t == R_ANAL_OP_TYPE_CMP || t == R_ANAL_OP_TYPE_ACMP
+				|| t == R_ANAL_OP_TYPE_XOR || t == R_ANAL_OP_TYPE_SUB) {
+			found = op->addr;
+			tp_canary_op (&ops[0], &op->dsts);
+			tp_canary_op (&ops[1], &op->srcs);
+		}
+		at += R_MAX (op->size, 1);
+		r_anal_op_free (op);
+	}
+	return found;
+}
+
+static bool tp_canary_name_var(RAnal *anal, ut64 at, ut64 addr) {
+	RAnalVar *var = r_anal_get_used_function_var (anal, at);
+	// a register argument occupies no stack slot, so it can never hold the canary
+	if (!var || var->kind == R_ANAL_VAR_KIND_REG) {
+		return false;
+	}
+	var_rename (anal, var, "canary", addr);
+	return true;
+}
+
+// names the slot the compare loaded, found through the register's last writer, at any distance
+static bool tp_canary_rename_reg(TPState *tps, RAnalBlock *guard, const char *rname, ut64 cmp_addr, ut64 addr) {
+	RAnal *anal = tps->anal;
+	TypeTrace *tt = &tps->tt;
+	if (R_STR_ISEMPTY (rname)) {
+		return false;
+	}
+	const ut64 end = guard->addr + guard->size;
+	int w = etrace_last_regwrite (tt, rname, tt->cur_idx - 1);
+	int hops;
+	// blocks emulated between the guard and the failure call clobber the register, and the
+	// compare writes it too on xor and sub forms, so walk back to the load that fed it
+	for (hops = 0; w >= 0 && hops < TP_CANARY_MAX_HOPS; hops++) {
+		const ut64 wa = etrace_addrof (tt, w);
+		if (wa >= guard->addr && wa < end && wa != cmp_addr) {
+			break;
+		}
+		w = etrace_last_regwrite (tt, rname, w - 1);
+	}
+	if (w < 0 || hops >= TP_CANARY_MAX_HOPS) {
+		return false;
+	}
+	const ut64 load_addr = etrace_addrof (tt, w);
+	const TypeTraceAccess *rd = etrace_find_access (tt, w, etrace_is_memread, NULL);
+	const int word = anal->config->bits / 8;
+	// a canary fills one aligned pointer sized slot, a narrower or skewed load is something else
+	if (!rd || word < 1 || rd->mem.size != word || (rd->mem.addr % word)) {
+		return false;
+	}
+	RAnalOp *op = tp_anal_op (anal, load_addr, R_ARCH_OP_MASK_BASIC);
+	if (!op) {
+		return false;
+	}
+	const bool mov = (op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_MOV;
+	r_anal_op_free (op);
+	return mov? tp_canary_name_var (anal, load_addr, addr): false;
+}
+
+static bool tp_canary_from_guard(TPState *tps, RAnalBlock *guard, ut64 addr) {
+	RAnal *anal = tps->anal;
+	TPCanaryOp ops[2] = {{{ 0 }}};
+	const ut64 cmp_addr = tp_canary_cmp (anal, guard, ops);
+	if (cmp_addr == UT64_MAX) {
+		return false;
+	}
+	const int word = anal->config->bits / 8;
+	int i;
+	for (i = 0; i < 2; i++) {
+		// a compare reading the slot in place never loads it into a register first
+		if (ops[i].memref == word && tp_canary_name_var (anal, cmp_addr, addr)) {
+			return true;
+		}
+		if (tp_canary_rename_reg (tps, guard, ops[i].reg, cmp_addr, addr)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+// every conditional predecessor is a candidate: one failure block can guard several checks
+static void tp_canary_rename(TPState *tps, RAnalFunction *fcn, ut64 bb_addr, ut64 addr) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->addr != bb_addr && (bb->jump == bb_addr || bb->fail == bb_addr)) {
+			if (tp_canary_from_guard (tps, bb, addr)) {
+				return;
+			}
+		}
+	}
+}
+
 static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 addr, ut64 bb_addr) {
 	TypeMatchCtx *c = user;
 	RAnal *anal = c->anal;
@@ -2536,17 +2735,7 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 				c->tp.resolved = false;
 			}
 			if (r_str_endswith (fcn_name, "stack_chk_fail")) {
-				cur_idx = etrace->cur_idx - 2;
-				ut64 mov_addr = etrace_addrof (etrace, cur_idx);
-				RAnalOp *mop = tp_anal_op (anal, mov_addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_BASIC);
-				if (mop) {
-					RAnalVar *mopvar = r_anal_get_used_function_var (anal, mop->addr);
-					ut32 vt = mop->type & R_ANAL_OP_TYPE_MASK;
-					if (vt == R_ANAL_OP_TYPE_MOV) {
-						var_rename (anal, mopvar, "canary", addr);
-					}
-				}
-				r_anal_op_free (mop);
+				tp_canary_rename (tps, c->fcn, bb_addr, addr);
 			}
 			free (fcn_name);
 		}

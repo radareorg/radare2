@@ -1665,13 +1665,13 @@ EXPECT=<<EOF
 |           0x0001274b      or qword [rsp], 0
 |           0x00012750      add rsp, 0x1020
 |           0x00012757      mov rax, qword fs:[0x28]
-|           0x00012760      mov qword [var_8h], rax
+|           0x00012760      mov qword [canary], rax
 |           0x00012764      xor eax, eax
 |           0x00012766      lea rax, [rip + 0xf033]
 |           0x0001276d      test rdi, rdi
 |           0x00012770      cmovne rax, rdi
 |           0x00012774      mov dword [rax], esi
-|           0x00012776      mov rax, qword [var_8h]
+|           0x00012776      mov rax, qword [canary]
 |           0x0001277a      xor rax, qword fs:[0x28]
 |      ,==< 0x00012783      jne 0x12787
 |      |    0x00012785      leave
