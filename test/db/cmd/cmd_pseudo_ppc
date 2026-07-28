@@ -116,12 +116,13 @@ NAME=PPC64 pseudo rotate instructions keep their destination register
 FILE=malloc://32
 ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
 CMDS=<<EOF
-wx 5c83298e5483298f
-pi 2
+wx 5c83298e5483298f5083298e
+pi 3
 EOF
 EXPECT=<<EOF
 r3 = rol32(r4, r5) & 0x3000000
 r3 = rol32(r4, 5) & 0x3000000
+r3 = (rol32(r4, 5) & 0x3000000) | (r3 & 0xfffffffffcffffff)
 EOF
 RUN
 
@@ -167,5 +168,19 @@ r3 = rol64(r4, 5) & 0x1ffffffffffffff
 r3 = rol64(r4, 5) & 0xff00000000000000
 r3 = rol64(r4, 5) & 0x1ffffffffffffe0
 r3 = (rol64(r4, 5) & 0x1ffffffffffffe0) | (r3 & 0xfe0000000000001f)
+EOF
+RUN
+
+NAME=PPC64 pseudo word rotate wrapping mask keeps the high half
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 54ef7f9550ef7f945cef2f94
+pi 3
+EOF
+EXPECT=<<EOF
+r15 = rol32(r7, 0xf) & 0xffffffffffe00003
+r15 = (rol32(r7, 0xf) & 0xffffffffffe00003) | (r15 & 0x1ffffc)
+r15 = rol32(r7, r5) & 0xffffffffffe00003
 EOF
 RUN

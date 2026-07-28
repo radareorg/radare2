@@ -7,10 +7,6 @@
 #include <r_anal.h>
 #include <r_asm.h>
 
-#ifndef PFMT32x
-#define PFMT32x "lx"
-#endif
-
 #define SPR_MQ          0x0
 #define SPR_XER         0x1
 #define SPR_RTCU        0x4
@@ -89,17 +85,10 @@
 #define SPR_PIR         0x3ff
 
 #define PPC_UT64(x) (strtol(x, NULL, 16))
-#define PPC_UT32(x) ((ut32)PPC_UT64(x))
 
 static ut64 mask64(ut64 mb, ut64 me) {
 	ut64 maskmb = UT64_MAX >> mb;
 	ut64 maskme = UT64_MAX << (63 - me);
-	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
-}
-
-static ut32 mask32(ut32 mb, ut32 me) {
-	ut32 maskmb = UT32_MAX >> mb;
-	ut32 maskme = UT32_MAX << (31 - me);
 	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
 }
 
@@ -1492,34 +1481,32 @@ static int replace(int argc, const char *argv[], char *newstr) {
 						int letter = ops[i].str[j] - '@';
 						const char *w = argv[letter];
 						// eprintf("%s:%d %s\n", ops[i].op, letter, w);
-						if (letter == 4 && r_str_startswith (argv[0], "rlwinm")) {
-							// { "rlwinm", "A = rol32(B, C) & D", 5},
+						// word rotates duplicate the word into both halves, so a wrapping mask keeps high bits
+						if (letter == 4 && (r_str_startswith (argv[0], "rlwinm")
+								|| r_str_startswith (argv[0], "rlwimi")
+								|| r_str_startswith (argv[0], "rlwnm"))) {
 							w = ppc_mask;
 							//MASK(MB+32, ME+32)
 							ut64 MB = PPC_UT64(argv[4]) + 32;
 							ut64 ME = PPC_UT64(argv[5]) + 32;
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
 						} else if (letter == 4 && (r_str_startswith (argv[0], "rldcl") || r_str_startswith (argv[0], "rldicl"))) {
-							// { "rld[i]cl", "A = rol64(B, C) & D", 4},
 							w = ppc_mask;
 							//MASK(MB, 63)
 							ut64 MB = PPC_UT64(argv[4]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, 63));
 						} else if (letter == 4 && !strcmp (argv[0], "rldic")) {
-							// { "rldic", "A = rol64(B, C) & D", 4},
 							w = ppc_mask;
 							//MASK(MB, 63 - SH)
 							ut64 MB = PPC_UT64(argv[4]);
 							ut64 ME = 63 - PPC_UT64(argv[3]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
 						} else if (letter == 4 && (r_str_startswith (argv[0], "rldcr") || r_str_startswith (argv[0], "rldicr"))) {
-							// { "rld[i]cr", "A = rol64(B, C) & D", 4},
 							w = ppc_mask;
 							//MASK(0, ME)
 							ut64 ME = PPC_UT64(argv[4]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (0, ME));
 						} else if (letter == 4 && r_str_startswith (argv[0], "rldimi")) {
-							// { "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}
 							// first mask (normal)
 							w = ppc_mask;
 							//MASK(MB, 63 - SH)
@@ -1527,7 +1514,6 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut64 ME = 63 - PPC_UT64(argv[3]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
 						} else if (letter == 5 && r_str_startswith (argv[0], "rldimi")) {
-							// { "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}
 							// second mask (inverted)
 							w = ppc_mask;
 							//MASK(MB, 63 - SH)
@@ -1535,30 +1521,12 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut64 ME = 63 - PPC_UT64(argv[3]);
 							ut64 inverted = ~ (mask64 (MB, ME));
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, inverted);
-						} else if (letter == 4 && r_str_startswith (argv[0], "rlwimi")) {
-							// { "rlwimi", "A = (rol64(B, C) & D) | (A & E)", 5}
-							// first mask (normal)
-							w = ppc_mask;
-							//MASK(MB, ME)
-							ut32 MB = PPC_UT32(argv[4]);
-							ut32 ME = PPC_UT32(argv[5]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, mask32 (MB, ME));
 						} else if (letter == 5 && r_str_startswith (argv[0], "rlwimi")) {
-							// { "rlwimi", "A = (rol32(B, C) & D) | (A & E)", 5}
-							// second mask (inverted)
 							w = ppc_mask;
-							//MASK(MB, ME)
-							ut32 MB = PPC_UT32(argv[4]);
-							ut32 ME = PPC_UT32(argv[5]);
-							ut32 inverted = ~mask32 (MB, ME);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, inverted);
-						} else if (letter == 4 && r_str_startswith (argv[0], "rlwnm")) {
-							// { "rlwnm", "A = rol32(B, C) & D", 5}
-							w = ppc_mask;
-							//MASK(MB, ME)
-							ut32 MB = PPC_UT32(argv[4]);
-							ut32 ME = PPC_UT32(argv[5]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, mask32 (MB, ME));
+							//MASK(MB+32, ME+32) inverted
+							ut64 MB = PPC_UT64(argv[4]) + 32;
+							ut64 ME = PPC_UT64(argv[5]) + 32;
+							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, ~mask64 (MB, ME));
 						} else if (letter == 1 && op_is_trap (argv[0])) {
 							int to = PPC_UT64 (w);
 							switch(to) {
