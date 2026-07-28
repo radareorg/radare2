@@ -300,28 +300,38 @@ static int main_help(int line) {
 		r_strbuf_append (sb, " file            ${filename}.r2\n");
 		r_strbuf_append (sb, "Plugins:\n");
 		r_strbuf_appendf (sb, " R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
-										" R2_USER_PLUGINS ${XDG_DATA_DIR:=~/.local/share/radare2}/plugins\n"
-										" R2_USER_ZIGNS   ${XDG_DATA_DIR:=~/.local/share/radare2}/zigns\n"
+										" R2_USER_PLUGINS ${XDG_DATA_HOME:=~/.local/share}/radare2/plugins\n"
+										" R2_USER_ZIGNS   ${XDG_DATA_HOME:=~/.local/share}/radare2/zigns\n"
 										"Environment:\n"
 										" R2_COLOR        sets the initial value for 'scr.color'. set to 0 for no color\n"
 										" R2_ARGS         ignore cli arguments and use these ones instead\n"
 										" R2_DEBUG        if defined, show error messages and crash signal\n"
+										" R2_DEBUG_TOOL   debugger command used by the crash handler\n"
 										" R2_CFLAGS       compiler flags to build against libr\n"
 										" R2_LDFLAGS      linker search path flags to build against libr\n"
 										" R2_LIBS         library flags to link against libr\n"
-										" R2_PAPI_SCRIPT  path to the custom r2papi csript\n"
+										" R2_PAPI_SCRIPT  path to the custom r2papi script\n"
 										" R2_DEBUG_NOPAPI do not load r2papi in the -j qjs shell\n"
 										" R2_DEBUG_NOLANG do not load rlang plugins (except qjs)\n"
 										" R2_DEBUG_ASSERT set a breakpoint when hitting an assert\n"
+										" R2_DEBUG_FUZZ   crash when hitting an assert (requires R2_DEBUG_ASSERT)\n"
 										" R2_IGNVER       load plugins ignoring the specified version (be careful)\n"
 										" R2_IGNABI       ignore abiversion field from the radare (be even more careful)\n"
+										" R2_SAFE_PLUGINS load plugins with the safe two-step loader\n"
+										" R2_PLUGINS_ORDER plugin load order (i=internal,e=env,h=home,s=system,c=config)\n"
 										" R2_MAGICPATH    %s/" R2_SDB_MAGIC "\n"
 										" R2_NOPLUGINS    do not load r2 shared plugins\n",
 			dirPrefix,
 			dirPrefix);
-		r_strbuf_append (sb, " R2_HISTORY      ${XDG_CACHE_DIR:=~/.cache/radare2}/history\n");
+		r_strbuf_append (sb, " R2_HISTORY      ${XDG_CACHE_HOME:=~/.cache}/radare2/history\n");
 		r_strbuf_append (sb, " R2_RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
-				" R2_CURL         set to '1' to use system curl program instead of r2 apis\n");
+				" R2_CURL         set to '1' to use system curl program instead of r2 apis\n"
+				" R2_HTTP_AUTHFILE HTTP server authentication file\n"
+				" R2_IHEX_IGNORE_CKSUM ignore Intel HEX checksum errors\n"
+				" R2_SREC_IGNORE_CKSUM ignore Motorola S-record checksum errors\n"
+				" R2_TSR2JS       use the internal TypeScript to JavaScript converter\n"
+				" R2_UTF8         force UTF-8 detection on or off\n"
+				" R2_WWWROOT      path to the HTTP server web root\n");
 		r_strbuf_appendf (sb, " R2_DATA_HOME    %s\n"
 				" R2_VERSION      contains the current version of r2\n"
 				" R2_ABIVERSION   contains the ABI version of r2\n"
@@ -348,6 +358,59 @@ static int main_help(int line) {
 		}
 	}
 	return 0;
+}
+
+static const char *r2_env_vars[] = {
+	"R2_ARGS",
+	"R2_COLOR",
+	"R2_CURL",
+	"R2_DEBUG",
+	"R2_DEBUG_ASSERT",
+	"R2_DEBUG_FUZZ",
+	"R2_DEBUG_NOLANG",
+	"R2_DEBUG_NOPAPI",
+	"R2_DEBUG_TOOL",
+	"R2_HTTP_AUTHFILE",
+	"R2_IGNABI",
+	"R2_IGNVER",
+	"R2_IHEX_IGNORE_CKSUM",
+	"R2_LIBR_PLUGINS",
+	"R2_LOG_FILE",
+	"R2_LOG_LEVEL",
+	"R2_MAGICPATH",
+	"R2_NOPLUGINS",
+	"R2_PAPI_SCRIPT",
+	"R2_PLUGINS_ORDER",
+	"R2_PREFIX",
+	"R2_RCFILE",
+	"R2_SAFE_PLUGINS",
+	"R2_SREC_IGNORE_CKSUM",
+	"R2_TSR2JS",
+	"R2_UTF8",
+	"R2_WWWROOT",
+	NULL
+};
+
+static bool main_is_env_var(const char *name) {
+	int i;
+	for (i = 0; r2_env_vars[i]; i++) {
+		if (!strcmp (r2_env_vars[i], name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool main_var_matches(const char *name, const char *query) {
+	return !strcmp (name, query)
+		|| (r_str_startswith (name, "R2_") && !strcmp (name + 3, query));
+}
+
+static void main_print_var_value(const char *name, const char *fallback, bool print_name) {
+	char *env_value = main_is_env_var (name)? r_sys_getenv (name): NULL;
+	const char *value = R_STR_ISNOTEMPTY (env_value)? env_value: fallback;
+	printf ("%s%s%s\n", print_name? name: "", print_name? "=": "", r_str_get (value));
+	free (env_value);
 }
 
 static int main_print_var(const char *var_name) {
@@ -389,7 +452,7 @@ static int main_print_var(const char *var_name) {
 		{ "R2_VERSION_ABI", R2_ABIVERSION_STRING },
 		{ "R2_VERSION_MAJOR", STRINGIFY (R2_VERSION_MAJOR) },
 		{ "R2_VERSION_MINOR", STRINGIFY (R2_VERSION_MINOR) },
-		{ "R2_VERSION_PATCH", STRINGIFY (R2_VERSION_PATH) },
+		{ "R2_VERSION_PATCH", STRINGIFY (R2_VERSION_PATCH) },
 		{ "R2_ABIVERSION", R2_ABIVERSION_STRING },
 		{ "R2_PREFIX", r2prefix },
 		{ "R2_MAGICPATH", magicpath },
@@ -400,6 +463,7 @@ static int main_print_var(const char *var_name) {
 		{ "R2_RCFILE", rcfile },
 		{ "R2_LIBDIR", libdir },
 		{ "R2_LIBEXT", R_LIB_EXT },
+		{ "R2_DATA_HOME", datahome },
 		{ "R2_RDATAHOME", datahome },
 		{ "R2_HISTORY", historyhome },
 		{ "R2_CONFIG_HOME", confighome }, // from xdg
@@ -407,26 +471,42 @@ static int main_print_var(const char *var_name) {
 		{ "R2_LIBR_PLUGINS", plugins },
 		{ "R2_USER_PLUGINS", homeplugins },
 		{ "R2_USER_DOCDIR", homedoc },
+		{ "R2_USER_ZIGNS", homezigns },
 		{ "R2_ZIGNS_HOME", homezigns },
 		{ "R2_CFLAGS", r2_cflags },
 		{ "R2_LDFLAGS", r2_ldflags },
 		{ "R2_LIBS", r2_libs },
 		{ NULL, NULL }
 	};
-	int delta = 0;
-	if (var_name && !r_str_startswith (var_name, "R2_")) {
-		delta = 3;
-	}
+	bool found = false;
 	while (r2_vars[i].name) {
 		if (var_name) {
-			if (!strcmp (r2_vars[i].name + delta, var_name)) {
-				printf ("%s\n", r2_vars[i].value);
+			if (main_var_matches (r2_vars[i].name, var_name)) {
+				main_print_var_value (r2_vars[i].name, r2_vars[i].value, false);
+				found = true;
 				break;
 			}
 		} else {
-			printf ("%s=%s\n", r2_vars[i].name, r2_vars[i].value);
+			main_print_var_value (r2_vars[i].name, r2_vars[i].value, true);
 		}
 		i++;
+	}
+	for (i = 0; r2_env_vars[i]; i++) {
+		int j = 0;
+		while (r2_vars[j].name && strcmp (r2_env_vars[i], r2_vars[j].name)) {
+			j++;
+		}
+		if (r2_vars[j].name) {
+			continue;
+		}
+		if (var_name) {
+			if (!found && main_var_matches (r2_env_vars[i], var_name)) {
+				main_print_var_value (r2_env_vars[i], NULL, false);
+				break;
+			}
+		} else {
+			main_print_var_value (r2_env_vars[i], NULL, true);
+		}
 	}
 	free (rcfile);
 	free (incdir);

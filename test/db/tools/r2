@@ -16,6 +16,47 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=r2 -H lists runtime environment variables
+FILE=-
+CMDS=<<EOF
+!!r2 -H~R2_NOPLUGINS=?
+!!r2 -H~R2_SAFE_PLUGINS=?
+!!r2 -H~R2_WWWROOT=?
+!!r2 -H~R2_DATA_HOME=?
+!!r2 -H~R2_USER_ZIGNS=?
+EOF
+EXPECT=<<EOF
+1
+1
+1
+1
+1
+EOF
+RUN
+
+NAME=r2 -H reads runtime environment variables
+FILE=-
+CMDS=<<EOF
+!!env R2_NOPLUGINS=1 r2 -H R2_NOPLUGINS
+!!env R2_NOPLUGINS=0 r2 -H NOPLUGINS
+!!env R2_MAGICPATH=/tmp/r2-magic r2 -H R2_MAGICPATH
+EOF
+EXPECT=<<EOF
+1
+0
+/tmp/r2-magic
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=r2 -H version patch
+FILE=-
+CMDS=r2 -H R2_VERSION_PATCH
+EXPECT=<<EOF
+9
+EOF
+RUN
+
 NAME=r2 minushache (dos)
 FILE=-
 CMDS=<<EOF
