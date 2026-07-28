@@ -1449,6 +1449,79 @@ var uint32_t var_28h @ rbp-0x28
 EOF
 RUN
 
+NAME=canary named from the guard compare and not from the trace position
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec2064488b042528000000488945f8488b45f88b55ef6448330425280000007405e814000000c9c3
+wx c3 @ 0x40
+af+ 0x40 sym.imp.__stack_chk_fail
+afb+ 0x40 0x40 1
+af @ 0
+s 0
+aaft
+afv
+EOF
+EXPECT=<<EOF
+var int64_t canary @ rbp-0x8
+var int64_t var_11h @ rbp-0x11
+EOF
+RUN
+
+NAME=canary named when the success path overwrites the compared register
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec2064488b042528000000488945f8488b45f864482b0425280000007507c9b801000000c3e810000000
+wx c3 @ 0x40
+af+ 0x40 sym.imp.__stack_chk_fail
+afb+ 0x40 0x40 1
+af @ 0
+s 0
+aaft
+afv
+EOF
+EXPECT=<<EOF
+var int64_t canary @ rbp-0x8
+EOF
+RUN
+
+NAME=canary named when the guard compares the slot in memory
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec2064488b0c252800000048894df864488b0c2528000000483b4df87405e817000000c9c3
+wx c3 @ 0x40
+af+ 0x40 sym.imp.__stack_chk_fail
+afb+ 0x40 0x40 1
+af @ 0
+s 0
+aaft
+afv
+EOF
+EXPECT=<<EOF
+var uint32_t canary @ rbp-0x8
+EOF
+RUN
+
+NAME=canary named when stack_chk_fail sits in an out of line block
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec2064488b042528000000488945f8488b45f86448330425280000007502c9c3e815000000
+wx c3 @ 0x40
+af+ 0x40 sym.imp.__stack_chk_fail
+afb+ 0x40 0x40 1
+af @ 0
+s 0
+aaft
+afv
+EOF
+EXPECT=<<EOF
+var int64_t canary @ rbp-0x8
+EOF
+RUN
+
 NAME=flagspace analysis
 FILE=bins/elf/flagspace
 CMDS=<<EOF
