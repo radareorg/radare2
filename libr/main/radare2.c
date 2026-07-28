@@ -326,10 +326,6 @@ static int main_help(int line) {
 		r_strbuf_append (sb, " R2_HISTORY      ${XDG_CACHE_HOME:=~/.cache}/radare2/history\n");
 		r_strbuf_append (sb, " R2_RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
 				" R2_CURL         set to '1' to use system curl program instead of r2 apis\n"
-				" R2_HTTP_AUTHFILE HTTP server authentication file\n"
-				" R2_IHEX_IGNORE_CKSUM ignore Intel HEX checksum errors\n"
-				" R2_SREC_IGNORE_CKSUM ignore Motorola S-record checksum errors\n"
-				" R2_TSR2JS       use the internal TypeScript to JavaScript converter\n"
 				" R2_UTF8         force UTF-8 detection on or off\n"
 				" R2_WWWROOT      path to the HTTP server web root\n");
 		r_strbuf_appendf (sb, " R2_DATA_HOME    %s\n"
@@ -358,59 +354,6 @@ static int main_help(int line) {
 		}
 	}
 	return 0;
-}
-
-static const char *r2_env_vars[] = {
-	"R2_ARGS",
-	"R2_COLOR",
-	"R2_CURL",
-	"R2_DEBUG",
-	"R2_DEBUG_ASSERT",
-	"R2_DEBUG_FUZZ",
-	"R2_DEBUG_NOLANG",
-	"R2_DEBUG_NOPAPI",
-	"R2_DEBUG_TOOL",
-	"R2_HTTP_AUTHFILE",
-	"R2_IGNABI",
-	"R2_IGNVER",
-	"R2_IHEX_IGNORE_CKSUM",
-	"R2_LIBR_PLUGINS",
-	"R2_LOG_FILE",
-	"R2_LOG_LEVEL",
-	"R2_MAGICPATH",
-	"R2_NOPLUGINS",
-	"R2_PAPI_SCRIPT",
-	"R2_PLUGINS_ORDER",
-	"R2_PREFIX",
-	"R2_RCFILE",
-	"R2_SAFE_PLUGINS",
-	"R2_SREC_IGNORE_CKSUM",
-	"R2_TSR2JS",
-	"R2_UTF8",
-	"R2_WWWROOT",
-	NULL
-};
-
-static bool main_is_env_var(const char *name) {
-	int i;
-	for (i = 0; r2_env_vars[i]; i++) {
-		if (!strcmp (r2_env_vars[i], name)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool main_var_matches(const char *name, const char *query) {
-	return !strcmp (name, query)
-		|| (r_str_startswith (name, "R2_") && !strcmp (name + 3, query));
-}
-
-static void main_print_var_value(const char *name, const char *fallback, bool print_name) {
-	char *env_value = main_is_env_var (name)? r_sys_getenv (name): NULL;
-	const char *value = R_STR_ISNOTEMPTY (env_value)? env_value: fallback;
-	printf ("%s%s%s\n", print_name? name: "", print_name? "=": "", r_str_get (value));
-	free (env_value);
 }
 
 static int main_print_var(const char *var_name) {
@@ -447,6 +390,7 @@ static int main_print_var(const char *var_name) {
 	struct {
 		const char *name;
 		const char *value;
+		bool env;
 	} r2_vars[] = {
 		{ "R2_VERSION", R2_VERSION },
 		{ "R2_VERSION_ABI", R2_ABIVERSION_STRING },
@@ -454,13 +398,13 @@ static int main_print_var(const char *var_name) {
 		{ "R2_VERSION_MINOR", STRINGIFY (R2_VERSION_MINOR) },
 		{ "R2_VERSION_PATCH", STRINGIFY (R2_VERSION_PATCH) },
 		{ "R2_ABIVERSION", R2_ABIVERSION_STRING },
-		{ "R2_PREFIX", r2prefix },
-		{ "R2_MAGICPATH", magicpath },
+		{ "R2_PREFIX", r2prefix, true },
+		{ "R2_MAGICPATH", magicpath, true },
 		{ "R2_INCDIR", incdir },
 		{ "R2_BINDIR", bindir },
 		{ "R2_MANDIR", mandir },
 		{ "R2_DOCDIR", docdir },
-		{ "R2_RCFILE", rcfile },
+		{ "R2_RCFILE", rcfile, true },
 		{ "R2_LIBDIR", libdir },
 		{ "R2_LIBEXT", R_LIB_EXT },
 		{ "R2_DATA_HOME", datahome },
@@ -468,7 +412,7 @@ static int main_print_var(const char *var_name) {
 		{ "R2_HISTORY", historyhome },
 		{ "R2_CONFIG_HOME", confighome }, // from xdg
 		{ "R2_CACHE_HOME", cachehome }, //  from xdg
-		{ "R2_LIBR_PLUGINS", plugins },
+		{ "R2_LIBR_PLUGINS", plugins, true },
 		{ "R2_USER_PLUGINS", homeplugins },
 		{ "R2_USER_DOCDIR", homedoc },
 		{ "R2_USER_ZIGNS", homezigns },
@@ -476,37 +420,47 @@ static int main_print_var(const char *var_name) {
 		{ "R2_CFLAGS", r2_cflags },
 		{ "R2_LDFLAGS", r2_ldflags },
 		{ "R2_LIBS", r2_libs },
+		{ "R2_ARGS", NULL, true },
+		{ "R2_COLOR", NULL, true },
+		{ "R2_CURL", NULL, true },
+		{ "R2_DEBUG", NULL, true },
+		{ "R2_DEBUG_ASSERT", NULL, true },
+		{ "R2_DEBUG_FUZZ", NULL, true },
+		{ "R2_DEBUG_NOLANG", NULL, true },
+		{ "R2_DEBUG_NOPAPI", NULL, true },
+		{ "R2_DEBUG_TOOL", NULL, true },
+		{ "R2_IGNABI", NULL, true },
+		{ "R2_IGNVER", NULL, true },
+		{ "R2_IHEX_IGNCSUM", NULL, true },
+		{ "R2_LOG_FILE", NULL, true },
+		{ "R2_LOG_LEVEL", NULL, true },
+		{ "R2_NOPLUGINS", NULL, true },
+		{ "R2_PAPI_SCRIPT", NULL, true },
+		{ "R2_PLUGINS_ORDER", NULL, true },
+		{ "R2_SAFE_PLUGINS", NULL, true },
+		{ "R2_SREC_IGNCSUM", NULL, true },
+		{ "R2_UTF8", NULL, true },
+		{ "R2_WWWROOT", NULL, true },
 		{ NULL, NULL }
 	};
-	bool found = false;
-	while (r2_vars[i].name) {
-		if (var_name) {
-			if (main_var_matches (r2_vars[i].name, var_name)) {
-				main_print_var_value (r2_vars[i].name, r2_vars[i].value, false);
-				found = true;
-				break;
-			}
-		} else {
-			main_print_var_value (r2_vars[i].name, r2_vars[i].value, true);
-		}
-		i++;
+	int delta = 0;
+	if (var_name && !r_str_startswith (var_name, "R2_")) {
+		delta = 3;
 	}
-	for (i = 0; r2_env_vars[i]; i++) {
-		int j = 0;
-		while (r2_vars[j].name && strcmp (r2_env_vars[i], r2_vars[j].name)) {
-			j++;
-		}
-		if (r2_vars[j].name) {
-			continue;
-		}
+	while (r2_vars[i].name) {
+		char *env_value = r2_vars[i].env? r_sys_getenv (r2_vars[i].name): NULL;
+		const char *value = R_STR_ISNOTEMPTY (env_value)? env_value: r_str_get (r2_vars[i].value);
 		if (var_name) {
-			if (!found && main_var_matches (r2_env_vars[i], var_name)) {
-				main_print_var_value (r2_env_vars[i], NULL, false);
+			if (!strcmp (r2_vars[i].name + delta, var_name)) {
+				printf ("%s\n", value);
+				free (env_value);
 				break;
 			}
 		} else {
-			main_print_var_value (r2_env_vars[i], NULL, true);
+			printf ("%s=%s\n", r2_vars[i].name, value);
 		}
+		free (env_value);
+		i++;
 	}
 	free (rcfile);
 	free (incdir);

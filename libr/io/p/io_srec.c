@@ -76,7 +76,7 @@ static int srec_addr_len(char type) {
 
 static bool srec_parse(Rsrec *rs, char *str) {
 	RBuffer *rbuf = rs->rbuf;
-	const bool ignore_cksum = r_sys_getenv_asbool ("R2_SREC_IGNORE_CKSUM");
+	const bool ignore_cksum = r_sys_getenv_asbool ("R2_SREC_IGNCSUM");
 	char *line = str;
 	while (line && *line) {
 		char *eol = strchr (line, '\n');
@@ -291,7 +291,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 RIOPlugin r_io_plugin_srec = {
 	.meta = {
 		.name = "srec",
-		.desc = "Open Motorola SREC file (R2_SREC_IGNORE_CKSUM=1)",
+		.desc = "Open Motorola SREC file (R2_SREC_IGNCSUM=1)",
 		.author = "seifreed",
 		.license = "LGPL-3.0-only",
 	},
