@@ -1449,6 +1449,143 @@ var uint32_t var_28h @ rbp-0x28
 EOF
 RUN
 
+NAME=callee argument loaded through a pointer argument gets the pointee type
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488b3ee808000000c3909090909090904889f8c3
+af @ 0x10
+af @ 0
+afvt arg1 char **
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg char * arg1 @ rdi
+EOF
+RUN
+
+NAME=callee argument loaded through a copy chain strips one level only
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488b064889c7e805000000c39090904889f8c3
+af @ 0x10
+af @ 0
+afvt arg1 char **
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg char * arg1 @ rdi
+EOF
+RUN
+
+NAME=lea on a register pointer argument keeps the callee type flat
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488d7e08e807000000c39090909090904889f8c3
+af @ 0x10
+af @ 0
+afvt arg1 char *
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg char * arg1 @ rdi
+EOF
+RUN
+
+NAME=dereferencing a void pointer argument leaves the callee type alone
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488b3ee808000000c3909090909090904889f8c3
+af @ 0x10
+af @ 0
+afvt arg1 void *
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+EOF
+RUN
+
+NAME=callee argument loaded through an arm64 load and register copy
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 080040f9e00308aa02000094c0035fd600040091c0035fd6
+af @ 0x10
+af @ 0
+afvt arg1 char **
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg char * arg1 @ x0
+EOF
+RUN
+
+NAME=a taken conditional move from memory counts as a dereference
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 480f453ee807000000c39090909090904889f8c3
+af @ 0x10
+af @ 0
+afvt arg1 char **
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg char * arg1 @ rdi
+EOF
+RUN
+
+NAME=a void pointer callee arg does not overwrite an existing type fact
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec20837df80577029090488d7df831f6ba04000000e810000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn memset @ 0x30
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var uint32_t s @ rbp-0x8
+EOF
+RUN
+
+NAME=callee argument dereferenced through an arm64 load gets the pointee type
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 200040f903000094c0035fd61f2003d500040091c0035fd6
+af @ 0x10
+af @ 0
+afvt arg1 char **
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg char * arg1 @ x0
+EOF
+RUN
+
 NAME=canary named from the guard compare and not from the trace position
 FILE=malloc://512
 ARGS=-a x86 -b 64
@@ -3234,7 +3371,7 @@ aft
 afv
 EOF
 EXPECT=<<EOF
-var void  s @ rbp-0x88
+var int64_t s @ rbp-0x88
 EOF
 RUN
 

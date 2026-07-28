@@ -854,6 +854,12 @@ static char *tp_built_type(RAnalVar *var, const char *vname, const char *type, i
 	} else if (r_str_startswith (tmp1, "int")) {
 		r_strbuf_set (&sb, "int32_t");
 	}
+	r_strbuf_trim (&sb);
+	// a dereferenced void pointer carries no fact, and a void variable is unusable
+	if (!strcmp (r_strbuf_get (&sb), "void")) {
+		r_strbuf_fini (&sb);
+		return NULL;
+	}
 	return r_strbuf_drain_nofree (&sb);
 }
 
@@ -1187,7 +1193,7 @@ static bool parse_format(TPState *tps, const char *fmt, RVecString *vec) {
 	return true;
 }
 
-static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stack, const char *place, int soff, const char *type) {
+static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stack, const char *place, int soff, const char *type, int ref) {
 	R_LOG_DEBUG (">>> CALLE ARG");
 	if (!type) {
 		return;
@@ -1205,7 +1211,7 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 			return;
 		}
 		// callee vars belong to another function, so their facts stay out of this pass's lattice
-		var_retype (anal, var, NULL, type, false, false);
+		var_retype (anal, var, NULL, type, ref, false);
 	} else {
 		if (R_STR_ISEMPTY (place)) {
 			return;
@@ -1220,10 +1226,10 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 			return;
 		}
 		char *t = strdup (type);
-		var_retype (anal, rvar, NULL, type, false, false);
+		var_retype (anal, rvar, NULL, type, ref, false);
 		RAnalVar *lvar = r_anal_var_get_dst_var (rvar);
 		if (lvar) {
-			var_retype (anal, lvar, NULL, t, false, false);
+			var_retype (anal, lvar, NULL, t, ref, false);
 		}
 		free (t);
 		r_unref (item);
@@ -1231,11 +1237,11 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 }
 
 static void propagate_arg_type(TPState *tps, ut64 baddr, RAnalVar *var, const char *name, const char *type,
-		int var_memref, const char *fcn_name, bool in_stack, const char *place,
+		int var_memref, int callee_ref, const char *fcn_name, bool in_stack, const char *place,
 		int soff, ut64 addr, bool userfnc) {
 	RAnal *anal = tps->anal;
 	if (userfnc) {
-		retype_callee_arg (anal, fcn_name, in_stack, place, soff, var->type);
+		retype_callee_arg (anal, fcn_name, in_stack, place, soff, var->type, -callee_ref);
 	} else {
 		tp_var_retype (tps, baddr, var, name, type, var_memref, false);
 		var_rename (anal, var, name, addr);
@@ -1597,16 +1603,41 @@ static void tp_field_from_arg(TPState *tps, int idx, RAnalVar *var, RAnalOp *op,
 	tp_retype_field_chain (anal, var->type, &seq, type, width, false);
 }
 
+// a value that arrived from memory: mov, cmov, load, or a memory-operand push, counted
+// only when the trace confirms the read happened, so an untaken cmov never counts
+static bool tp_op_loads_value(TypeTrace *tt, RAnalOp *op, ut32 j) {
+	switch ((op->type & R_ANAL_OP_TYPE_MASK) & ~R_ANAL_OP_TYPE_COND) {
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_LOAD:
+	case R_ANAL_OP_TYPE_PUSH:
+	case R_ANAL_OP_TYPE_UPUSH:
+		return etrace_have_memread (tt, j);
+	}
+	return false;
+}
+
 // with a deref chain the var holds the base pointer, so only its member is typed
 static void tp_apply_arg_type(TPState *tps, ut64 baddr, int j, RAnalVar *var, RAnalOp *op, TPFieldChain *chain,
 		const char *name, const char *type, int memref, bool lea_adjust,
 		const char *fcn_name, bool in_stack, const char *place, int soff, ut64 addr, bool userfnc) {
 	if (!tps->cfg_fields || !chain->len) {
 		int var_memref = var->isarg? 0: memref;
-		if (lea_adjust && op->type == R_ANAL_OP_TYPE_LEA) {
-			var_memref--;
+		int callee_ref = memref;
+		if (lea_adjust) {
+			const bool regvar = var->kind == R_ANAL_VAR_KIND_REG;
+			// the copy chain counted its loads into memref, the hit op's own load is not in it yet
+			if (regvar && tp_op_loads_value (&tps->tt, op, j)) {
+				callee_ref++;
+			}
+			if ((op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_LEA) {
+				var_memref--;
+				// address-of holds for a stack var; on a register var lea is pointer arithmetic
+				if (!regvar && !strchr (var->type, '[')) {
+					callee_ref--;
+				}
+			}
 		}
-		propagate_arg_type (tps, baddr, var, name, type, var_memref,
+		propagate_arg_type (tps, baddr, var, name, type, var_memref, callee_ref,
 			fcn_name, in_stack, place, soff, addr, userfnc);
 	}
 	if (tps->cfg_fields) {
@@ -1888,7 +1919,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 
 			// Type propagate by following source reg
 			if (!res && *regname && etrace_regwrite_contains (tt, j, regname)) {
-				if (op->type == R_ANAL_OP_TYPE_MOV && etrace_have_memread (tt, j)) {
+				if (tp_op_loads_value (tt, op, j)) {
 					if (!var || var->kind == R_ANAL_VAR_KIND_REG) {
 						ut64 addr_read = UT64_MAX;
 						bool has_addr = etrace_memread_first_addr (tt, j, &addr_read);
