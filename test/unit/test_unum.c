@@ -66,6 +66,27 @@ bool test_r_num_between(void) {
 	mu_end;
 }
 
+bool test_r_num_math_shifts(void) {
+	mu_assert_eq (r_num_math (num, "1<<63"), 0x8000000000000000ULL, "left shift by 63");
+	mu_assert_eq (r_num_math (num, "1<<64"), 0, "left shift by 64");
+	mu_assert_eq (r_num_math (num, "1<<200"), 0, "left shift by 200");
+	mu_assert_eq (r_num_math (num, "255<<255"), 0, "left shift by 255");
+	mu_assert_eq (r_num_math (num, "0x8000000000000000>>63"), 1, "right shift by 63");
+	mu_assert_eq (r_num_math (num, "0x8000000000000000>>64"), 0, "right shift by 64");
+	mu_assert_eq (r_num_math (num, "0x8000000000000000>>200"), 0, "right shift by 200");
+	mu_end;
+}
+
+bool test_r_num_math_rotates(void) {
+	mu_assert_eq (r_num_math (num, "0x0123456789abcdef<<<0"), 0x0123456789abcdefULL, "left rotate by 0");
+	mu_assert_eq (r_num_math (num, "0x0123456789abcdef<<<64"), 0x0123456789abcdefULL, "left rotate by 64");
+	mu_assert_eq (r_num_math (num, "0x0123456789abcdef<<<65"), 0x02468acf13579bdeULL, "left rotate by 65");
+	mu_assert_eq (r_num_math (num, "0x0123456789abcdef>>>0"), 0x0123456789abcdefULL, "right rotate by 0");
+	mu_assert_eq (r_num_math (num, "0x0123456789abcdef>>>64"), 0x0123456789abcdefULL, "right rotate by 64");
+	mu_assert_eq (r_num_math (num, "0x0123456789abcdef>>>65"), 0x8091a2b3c4d5e6f7ULL, "right rotate by 65");
+	mu_end;
+}
+
 bool test_r_num_str_len(void) {
 	mu_assert_eq (r_num_str_len ("1"), 1, "\"1\"");
 	mu_assert_eq (r_num_str_len ("1+1"), 3, "\"1+1\"");
@@ -120,6 +141,8 @@ bool all_tests(void) {
 	mu_run_test (test_r_num_units);
 	mu_run_test (test_r_num_minmax_swap);
 	mu_run_test (test_r_num_between);
+	mu_run_test (test_r_num_math_shifts);
+	mu_run_test (test_r_num_math_rotates);
 	mu_run_test (test_r_num_str_len);
 	mu_run_test (test_r_num_str_split);
 	mu_run_test (test_r_num_str_split_list);

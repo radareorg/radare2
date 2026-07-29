@@ -23,16 +23,30 @@ static inline RNumCalcValue Nmul(RNumCalcValue n, RNumCalcValue v) {
 	return n;
 }
 
-static inline RNumCalcValue Nshl(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n <<= v.n; return n; }
-static inline RNumCalcValue Nshr(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n >>= v.n; return n; }
+static inline RNumCalcValue Nshl(RNumCalcValue n, RNumCalcValue v) {
+	n.d += v.d;
+	n.n = v.n < 64? n.n << v.n: 0;
+	return n;
+}
+static inline RNumCalcValue Nshr(RNumCalcValue n, RNumCalcValue v) {
+	n.d += v.d;
+	n.n = v.n < 64? n.n >> v.n: 0;
+	return n;
+}
 static inline RNumCalcValue Nrol(RNumCalcValue n, RNumCalcValue v) {
 	n.d += v.d;
-	n.n = (n.n << v.n) | (n.n >> (sizeof (n.n) * 8 - v.n));
+	const ut64 shift = v.n & 63;
+	if (shift) {
+		n.n = (n.n << shift) | (n.n >> (64 - shift));
+	}
 	return n;
 }
 static inline RNumCalcValue Nror(RNumCalcValue n, RNumCalcValue v) {
 	n.d += v.d;
-	n.n = (n.n >> v.n) | (n.n << (sizeof (n.n) * 8 - v.n));
+	const ut64 shift = v.n & 63;
+	if (shift) {
+		n.n = (n.n >> shift) | (n.n << (64 - shift));
+	}
 	return n;
 }
 static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
