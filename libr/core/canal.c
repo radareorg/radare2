@@ -3169,12 +3169,11 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	if (fcn->folded) {
 		r_cons_printf (cons, "afF @ 0x%08"PFMT64x"\n", fcn->addr);
 	}
-	if (fcn) {
-		/* show variables  and arguments */
-		r_core_cmdf (core, "afvb* @ 0x%"PFMT64x, fcn->addr);
-		r_core_cmdf (core, "afvr* @ 0x%"PFMT64x, fcn->addr);
-		r_core_cmdf (core, "afvs* @ 0x%"PFMT64x, fcn->addr);
-	}
+	// afS goes first, the afv[bs] offsets that follow are relative to the frame size
+	r_cons_printf (cons, "'0x%"PFMT64x"'afS %d\n", fcn->addr, fcn->maxstack);
+	r_core_cmdf (core, "afvb* @ 0x%"PFMT64x, fcn->addr);
+	r_core_cmdf (core, "afvr* @ 0x%"PFMT64x, fcn->addr);
+	r_core_cmdf (core, "afvs* @ 0x%"PFMT64x, fcn->addr);
 	/* Show references */
 	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 	if (refs) {
@@ -3197,8 +3196,6 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 		}
 	}
 	RVecAnalRef_free (refs);
-	/* Saving Function stack frame */
-	r_cons_printf (cons, "'0x%"PFMT64x"'afS %d\n", fcn->addr, fcn->maxstack);
 	if (fcn->pin) {
 		r_cons_printf (cons, "'0x%"PFMT64x"'aflp %s\n", fcn->addr, fcn->pin);
 	}

@@ -686,16 +686,16 @@ EOF
 EXPECT=<<EOF
 'afvr rdi argc int
 'afvr rsi argv char **
-'afvs -64 var_48h int64_t
-'afvs -88 var_30h int64_t
-'afvs -113 var_17h int64_t
-'afvs -128 var_8h int64_t
-'afvs -96 var_28h int64_t
-'afvs -80 var_38h int64_t
-'afvs -67 var_45h int64_t
-'afvs -65 var_47h int64_t
-'afvs -66 var_46h int64_t
-'afvs -112 var_18h int64_t
-'afvs -86 var_32h int64_t
+'afvs 88 var_48h int64_t
+'afvs 64 var_30h int64_t
+'afvs 39 var_17h int64_t
+'afvs 24 var_8h int64_t
+'afvs 56 var_28h int64_t
+'afvs 72 var_38h int64_t
+'afvs 85 var_45h int64_t
+'afvs 87 var_47h int64_t
+'afvs 86 var_46h int64_t
+'afvs 40 var_18h int64_t
+'afvs 66 var_32h int64_t
 EOF
 RUN

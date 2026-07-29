@@ -564,7 +564,7 @@ prj r2 .tmp/newprj-regscript.prj~afvr
 rm .tmp/newprj-regscript.prj
 EOF
 EXPECT=<<EOF
-'afvr x0 reg_arg int @ 0x00000010
+'0x00000010'afvr x0 reg_arg int
 EOF
 RUN
 
@@ -722,7 +722,7 @@ EXPECT=<<EOF
 'afn live.fcn 0x00000040
 'afbc rgb:0000ff 0x00000040
 'afb+ 0x00000040 0x00000044 4 0xffffffffffffffff 0xffffffffffffffff
-'afvb -4 live_var int @ 0x00000040
+'0x00000040'afvb -4 live_var int
 EOF
 RUN
 
@@ -746,5 +746,46 @@ EOF
 EXPECT=<<EOF
 open.flag
 41
+EOF
+RUN
+
+NAME=newprj stack vars round-trip across a session with a different frame size
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e anal.cc=ms
+wx 488b4424288b08c3
+af
+afvs 0x30 zzz int
+prj save .tmp/newprj-spv.prj > /dev/null
+af-*
+e anal.cc=amd64
+af
+prj load .tmp/newprj-spv.prj > /dev/null
+afvs
+EOF
+EXPECT=<<EOF
+arg int64_t arg_28h @ rsp+0x28
+arg int zzz @ rsp+0x30
+EOF
+RUN
+
+NAME=newprj bp vars keep their raw delta in the diff and r2 scripts
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+mkdir .tmp
+rm -f .tmp/newprj-bpvframe.prj
+wx 554889e54883ec20897dfc90c9c3
+af
+prj save .tmp/newprj-bpvframe.prj > /dev/null
+afvb -4 renamed int
+prj diff .tmp/newprj-bpvframe.prj~afvb
+prj r2 .tmp/newprj-bpvframe.prj~afvb
+rm .tmp/newprj-bpvframe.prj
+EOF
+EXPECT=<<EOF
+'0x00000000'afvb -12 renamed int
+'0x00000000'afvb -12 var_4h int64_t
 EOF
 RUN
