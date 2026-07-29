@@ -2890,6 +2890,13 @@ char* Elf_(get_abi)(ELFOBJ *eo) {
 			}
 		}
 		break;
+	case EM_PPC64:
+		switch (eflags & EF_PPC64_ABI) {
+		case 1: return strdup ("elfv1");
+		case 2: return strdup ("elfv2");
+		}
+		// e_flags doesnt tell, so guess from the endian: BE is ELFv1, LE is ELFv2
+		return strdup (eo->endian? "elfv1": "elfv2");
 	case EM_V800:
 	case EM_V850:
 		break;

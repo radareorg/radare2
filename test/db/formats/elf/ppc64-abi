@@ -1,0 +1,37 @@
+NAME=ELF PPC64: ELFv1 e_flags selects the elfv1 abi and the default cc
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EOF
+e asm.abi
+e anal.cc
+EOF
+EXPECT=<<EOF
+elfv1
+ppc-64
+EOF
+RUN
+
+NAME=ELF PPC64: big-endian ELFv2 e_flags selects the elfv2 cc
+FILE=bins/elf/ppc64_sudoku_dwarf
+CMDS=<<EOF
+e asm.abi
+e anal.cc
+k anal/cc/cc.elfv2.shadow
+EOF
+EXPECT=<<EOF
+elfv2
+elfv2
+96
+EOF
+RUN
+
+NAME=ELF PPC64: little-endian ELFv2 selects the elfv2 cc
+FILE=bins/elf/mosquito-ppc64le
+CMDS=<<EOF
+e asm.abi
+e anal.cc
+EOF
+EXPECT=<<EOF
+elfv2
+elfv2
+EOF
+RUN
