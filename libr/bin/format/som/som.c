@@ -253,6 +253,9 @@ R_IPI void *r_bin_som_load_buffer(RBinFile *bf, RBuffer *b, ut64 laddr, Sdb *s) 
 					const ut32 str_len = (ut32)R_MIN (wanted, max_len);
 					if (str_len > 0) {
 						read_string_table (b, str_off, str_len, &obj->dl_strings);
+						if (obj->dl_strings) {
+							obj->dl_strings_size = str_len;
+						}
 					}
 				}
 				if (obj->dl_hdr->shlib_list_count > 0 && obj->dl_hdr->shlib_list_count < 1024 && obj->dl_hdr->shlib_list_loc < dl_subspace->initialization_length) {
@@ -307,9 +310,9 @@ R_IPI void *r_bin_som_load_buffer(RBinFile *bf, RBuffer *b, ut64 laddr, Sdb *s) 
 				}
 			}
 			if (obj->dl_strings) {
-				if (obj->dl_hdr->embedded_path < obj->dl_hdr->string_table_size) {
+				if (obj->dl_hdr->embedded_path < obj->dl_strings_size) {
 					const ut32 off = obj->dl_hdr->embedded_path;
-					const size_t max_len = obj->dl_hdr->string_table_size - off;
+					const size_t max_len = obj->dl_strings_size - off;
 					const char *embedded = obj->dl_strings + off;
 					size_t len = r_str_nlen (embedded, max_len);
 					char *en = r_str_ndup (embedded, len);
@@ -523,9 +526,9 @@ R_IPI void r_bin_som_load_imports(void *o, RVecRBinImport *vec) {
 		}
 		RBinImport *imp = RVecRBinImport_emplace_back (vec);
 		char *name;
-		if (obj->dl_strings && import_entry->import_name < obj->dl_hdr->string_table_size) {
+		if (obj->dl_strings && import_entry->import_name < obj->dl_strings_size) {
 			const char *name_str = obj->dl_strings + import_entry->import_name;
-			size_t len = strnlen (name_str, obj->dl_hdr->string_table_size - import_entry->import_name);
+			size_t len = strnlen (name_str, obj->dl_strings_size - import_entry->import_name);
 			name = r_str_ndup (name_str, len);
 		} else {
 			name = r_str_newf ("import_%d", import_entry->import_name);
@@ -557,9 +560,9 @@ R_IPI RList *r_bin_som_get_libs(void *o) {
 	RSomShlibListEntry *shlib;
 	r_list_foreach (obj->shlibs, iter, shlib) {
 		char *name = NULL;
-		if (obj->dl_strings && shlib->shlib_name < obj->dl_hdr->string_table_size) {
+		if (obj->dl_strings && shlib->shlib_name < obj->dl_strings_size) {
 			const char *name_str = obj->dl_strings + shlib->shlib_name;
-			size_t len = strnlen (name_str, obj->dl_hdr->string_table_size - shlib->shlib_name);
+			size_t len = strnlen (name_str, obj->dl_strings_size - shlib->shlib_name);
 			name = r_str_ndup (name_str, len);
 		} else {
 			name = r_str_newf ("sl_%d", shlib->shlib_name);
