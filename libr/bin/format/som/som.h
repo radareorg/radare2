@@ -204,6 +204,7 @@ typedef struct r_bin_som_file_t {
 	RList *shlibs;
 	RList *imports;
 	char *dl_strings;
+	ut32 dl_strings_size;
 	char *interp;
 } RSomFile;
 
