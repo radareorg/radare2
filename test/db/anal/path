@@ -202,7 +202,7 @@ pdb @@= 0x000067d0 0x00004df0 0x000132d0 0x000132de 0x00004960
 |           0x00004eab      83f802         cmp eax, 2
 |       ,=< 0x00004eae      0f842e0e0000   je 0x5ce2
             ; CALL XREF from main @ 0x4e1b(x)
-/ 176: fcn.000132d0 (char **arg1);
+/ 176: fcn.000132d0 (char *arg1);
 | `- args(rdi)
 |           0x000132d0      f30f1efa       endbr64
 |           0x000132d4      53             push rbx
