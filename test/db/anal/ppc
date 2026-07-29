@@ -1156,7 +1156,7 @@ afvs 0x20 grid int[9][9]
 afvs
 EOF
 EXPECT=<<EOF
-arg int[9][9] grid @ r1+0x20
+var int[9][9] grid @ r1+0x20
 EOF
 RUN
 
@@ -1221,7 +1221,7 @@ aa
 afs @ fcn.10000c54
 EOF2
 EXPECT=<<EOF2
-void fcn.10000c54 (int64_t arg1, int64_t arg_10h);
+void fcn.10000c54 (int64_t arg1);
 EOF2
 RUN
 
@@ -1254,29 +1254,37 @@ ldu
 EOF2
 RUN
 
-NAME=ppc-64 cc clobber and preserve register sets
+NAME=ppc-64 cc register sets and stack parameter save area
 FILE=malloc://16
 ARGS=-a ppc -b 64 -e anal.arch=ppc
 CMDS=<<EOF
 k anal/cc/cc.ppc-64.clobber
 k anal/cc/cc.ppc-64.preserve
+k anal/cc/cc.ppc-64.argn
+k anal/cc/cc.ppc-64.shadow
 EOF
 EXPECT=<<EOF
 r0,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,lr,ctr,xer,cr0,cr1,cr5,cr6,cr7,f0,f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13
 r1,r2,r13,r14,r15,r16,r17,r18,r19,r20,r21,r22,r23,r24,r25,r26,r27,r28,r29,r30,r31,cr2,cr3,cr4,f14,f15,f16,f17,f18,f19,f20,f21,f22,f23,f24,f25,f26,f27,f28,f29,f30,f31
+stack
+112
 EOF
 RUN
 
-NAME=ppc-32 cc clobber and preserve register sets
+NAME=ppc-32 cc register sets and stack parameter save area
 FILE=malloc://16
 ARGS=-a ppc -b 32 -e anal.arch=ppc
 CMDS=<<EOF
 k anal/cc/cc.ppc-32.clobber
 k anal/cc/cc.ppc-32.preserve
+k anal/cc/cc.ppc-32.argn
+k anal/cc/cc.ppc-32.shadow
 EOF
 EXPECT=<<EOF
 r0,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,lr,ctr,xer,cr0,cr1,cr5,cr6,cr7,f0,f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13
 r1,r2,r13,r14,r15,r16,r17,r18,r19,r20,r21,r22,r23,r24,r25,r26,r27,r28,r29,r30,r31,cr2,cr3,cr4,f14,f15,f16,f17,f18,f19,f20,f21,f22,f23,f24,f25,f26,f27,f28,f29,f30,f31
+stack
+8
 EOF
 RUN
 
@@ -1625,5 +1633,59 @@ EXPECT=<<EOF
 0xfffffffff0000001
 0x00000001
 0x00000080
+EOF
+RUN
+
+NAME=callargs reads a ppc64 stack argument above the parameter save area
+FILE=malloc://256
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 386000503880005438a0005838c0005c38e0006039000064392000683940006c39600070f9610070480000594e800020
+wx 4e800020 @ 0x80
+w AA @ 0x50
+w BB @ 0x54
+w CC @ 0x58
+w DD @ 0x5c
+w EE @ 0x60
+w FF @ 0x64
+w GG @ 0x68
+w HH @ 0x6c
+w II @ 0x70
+af @ 0x80
+afn nine @ 0x80
+'td int nine(const char *a, const char *b, const char *c, const char *d, const char *e, const char *f, const char *g, const char *h, const char *i);
+tk func.nine.cc=ppc-64
+af @ 0
+a:callargs-q 0x28
+EOF
+EXPECT=<<EOF
+int nine("AA", "BB", "CC", "DD", "EE", "FF", "GG", "HH", "II")
+EOF
+RUN
+
+NAME=callargs reads a ppc32 stack argument above the parameter save area
+FILE=malloc://256
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 386000503880005438a0005838c0005c38e0006039000064392000683940006c3960007091610008480000594e800020
+wx 4e800020 @ 0x80
+w AA @ 0x50
+w BB @ 0x54
+w CC @ 0x58
+w DD @ 0x5c
+w EE @ 0x60
+w FF @ 0x64
+w GG @ 0x68
+w HH @ 0x6c
+w II @ 0x70
+af @ 0x80
+afn nine @ 0x80
+'td int nine(const char *a, const char *b, const char *c, const char *d, const char *e, const char *f, const char *g, const char *h, const char *i);
+tk func.nine.cc=ppc-32
+af @ 0
+a:callargs-q 0x28
+EOF
+EXPECT=<<EOF
+int nine("AA", "BB", "CC", "DD", "EE", "FF", "GG", "HH", "II")
 EOF
 RUN
