@@ -94,7 +94,7 @@ unset LINK
 
 if command -v termux-setup-storage; then
     echo "Termux environment detected. Installing necessary packages"  
-    pkg update -y && pkg install git build-essential binutils pkg-config -y
+    pkg update -y && pkg install git build-essential binutils pkg-config libandroid-spawn -y
     ${PWD}/sys/termux.sh
     exit $?
 fi
