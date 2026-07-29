@@ -2,31 +2,11 @@
 
 // Region-AST structuring pass for the native pdc decompiler.
 // Builds an if/else/loop/switch region tree over the function CFG using the
-// dominator/post-dominator trees and DFS back edges, and dumps it (pdct).
-// It changes no pdc output: consumers land in later milestones.
+// dominator/post-dominator trees and DFS back edges. The `pdct` command dumps
+// it; the structured pdc renderer (pdc.structured) consumes the tree.
 
 #include <r_core.h>
 #include "pdc_ast.h"
-
-typedef enum {
-	PDC_R_BB,	// leaf basic block
-	PDC_R_SEQ,	// ordered run of sub-regions
-	PDC_R_IF,	// single-armed conditional
-	PDC_R_IFELSE,	// two-armed conditional (children: then, else)
-	PDC_R_WHILE,	// top-test loop
-	PDC_R_DOWHILE,	// tail/self test loop
-	PDC_R_SWITCH,	// jump table (children: one per unique case target)
-	PDC_R_GOTO	// irreducible / already-emitted fallback, never fails
-} PdcRegionType;
-
-typedef struct pdc_region_t PdcRegion;
-R_VEC_TYPE (RVecPdcRegionPtr, PdcRegion *);
-
-struct pdc_region_t {
-	PdcRegionType type;
-	ut64 addr;
-	RVecPdcRegionPtr children;
-};
 
 typedef struct {
 	RAnal *anal;
@@ -326,7 +306,11 @@ static void dump_region(PdcRegion *r, int indent, RStrBuf *sb) {
 	}
 }
 
-char *pdc_ast_dump(RCore *core, RAnalFunction *fcn) {
+void pdc_ast_free(PdcRegion *root) {
+	region_free (root);
+}
+
+PdcRegion *pdc_ast_build(RCore *core, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (core && fcn, NULL);
 	RGraphNode *entry = NULL;
 	RGraph *g = r_anal_function_get_graph (fcn, &entry, fcn->addr);
@@ -374,11 +358,6 @@ char *pdc_ast_dump(RCore *core, RAnalFunction *fcn) {
 	}
 
 	PdcRegion *root = region_seq (&ctx, fcn->addr, UT64_MAX);
-	RStrBuf *sb = r_strbuf_new ("");
-	if (root) {
-		dump_region (root, 0, sb);
-		region_free (root);
-	}
 
 	r_graph_free (dt);
 	r_graph_free (g);
@@ -387,5 +366,15 @@ char *pdc_ast_dump(RCore *core, RAnalFunction *fcn) {
 	ht_up_foreach (ctx.loops, free_loop_set_cb, NULL);
 	ht_up_free (ctx.loops);
 	ht_uu_free (ctx.emitted);
+	return root;
+}
+
+char *pdc_ast_dump(RCore *core, RAnalFunction *fcn) {
+	PdcRegion *root = pdc_ast_build (core, fcn);
+	RStrBuf *sb = r_strbuf_new ("");
+	if (root) {
+		dump_region (root, 0, sb);
+		pdc_ast_free (root);
+	}
 	return r_strbuf_drain (sb);
 }
