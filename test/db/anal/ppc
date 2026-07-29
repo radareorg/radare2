@@ -1689,3 +1689,43 @@ EXPECT=<<EOF
 int nine("AA", "BB", "CC", "DD", "EE", "FF", "GG", "HH", "II")
 EOF
 RUN
+
+NAME=ppc-64 elfv2 cc parameter save area
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc
+CMDS=<<EOF
+k anal/cc/cc.elfv2.argn
+k anal/cc/cc.elfv2.shadow
+EOF
+EXPECT=<<EOF
+stack
+96
+EOF
+RUN
+
+NAME=callargs reads an elfv2 stack argument above the parameter save area
+FILE=malloc://256
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 386000503880005438a0005838c0005c38e0006039000064392000683940006c39600070f9610060480000594e800020
+wx 4e800020 @ 0x80
+w AA @ 0x50
+w BB @ 0x54
+w CC @ 0x58
+w DD @ 0x5c
+w EE @ 0x60
+w FF @ 0x64
+w GG @ 0x68
+w HH @ 0x6c
+w II @ 0x70
+af @ 0x80
+afn nine @ 0x80
+'td int nine(const char *a, const char *b, const char *c, const char *d, const char *e, const char *f, const char *g, const char *h, const char *i);
+tk func.nine.cc=elfv2
+af @ 0
+a:callargs-q 0x28
+EOF
+EXPECT=<<EOF
+int nine("AA", "BB", "CC", "DD", "EE", "FF", "GG", "HH", "II")
+EOF
+RUN

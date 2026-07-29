@@ -1728,6 +1728,9 @@ static RBinInfo* info(RBinFile *bf) {
 		ret->flags = r_str_newf ("0x%x", elf_flags);
 	}
 	ret->abi = Elf_(get_abi) (obj);
+	if (ret->abi && !strcmp (ret->abi, "elfv2")) {
+		ret->default_cc = strdup ("elfv2");
+	}
 	ret->rclass = strdup ("elf");
 	ret->bits = Elf_(get_bits) (obj);
 	if (!strcmp (ret->arch, "avr")) {
