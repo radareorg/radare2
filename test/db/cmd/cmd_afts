@@ -855,7 +855,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=afts* emits no variable command for a returned object
+NAME=afts* emits no variable command when nothing stores the returned pointer
 FILE=malloc://256
 ARGS=-a x86 -b 64 -e types.sizes=true
 CMDS=<<EOF
@@ -870,6 +870,93 @@ EOF
 EXPECT=<<EOF
 0
 1
+EOF
+RUN
+
+NAME=afts types the local receiving a malloc return
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf88000000e81e000000488985f8ffffff488b45f8c70001000000488b45f8c7400802000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afts > /dev/null
+afv
+aftsj~{0.var}
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret0 * var_8h @ rbp-0x8
+var_8h
+EOF
+RUN
+
+NAME=afts types the sp-relative local receiving a malloc return
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 4883ec18bf88000000e8220000004889442408488b442408c70001000000c74008020000004883c418c3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afts > /dev/null
+afv
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret0 * var_8h @ rsp+0x8
+EOF
+RUN
+
+NAME=afts binds each returned object to its own local
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf18000000e84e000000488985f8ffffffbf28000000e83d000000488985f0ffffff488b45f8c70001000000c7400802000000488b45f0c70003000000c7401004000000c9c3
+wx c3 @ 0x60
+af @ 0x60
+afn malloc @ 0x60
+af @ 0
+afts > /dev/null
+afv
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret0 * var_8h @ rbp-0x8
+var struct fcn_00000000_ret1 * var_10h @ rbp-0x10
+EOF
+RUN
+
+NAME=afts leaves the local untyped when the stored pointer is overwritten
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf88000000e82e000000488985f8ffffffc70001000000c740080200000048c745f800000000c9c3
+wx c3 @ 0x40
+af @ 0x40
+afn malloc @ 0x40
+af @ 0
+afts > /dev/null
+afv
+EOF
+EXPECT=<<EOF
+var int64_t var_8h @ rbp-0x8
+EOF
+RUN
+
+NAME=afts* emits the variable command for a bound returned object
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf88000000e81e000000488985f8ffffff488b45f8c70001000000488b45f8c7400802000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afts*~afv
+EOF
+EXPECT=<<EOF
+'afvb -8 var_8h struct fcn_00000000_ret0 *
 EOF
 RUN
 

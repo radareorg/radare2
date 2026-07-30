@@ -3287,6 +3287,44 @@ static RAnalVar *synth_arg_var(RAnal *anal, RAnalFunction *fcn, const char *cc, 
 	return pick;
 }
 
+// the store of a ret-window sentinel into a stack slot marks the variable receiving the allocation
+static RAnalVar *synth_ret_var(TPState *tps, RAnalFunction *fcn, ut64 want, ut64 spv, int psz) {
+	RIOBind *iob = &tps->anal->iob;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (tps->anal->config);
+	TypeTraceAccess *a;
+	R_VEC_FOREACH (&tps->tt.db.accesses, a) {
+		if (a->is_reg || !a->is_write || a->mem.size != psz) {
+			continue;
+		}
+		const ut64 ma = a->mem.addr;
+		if (ma < tps->stack_base || ma >= tps->stack_base + tps->stack_size) {
+			continue;
+		}
+		ut8 buf[8] = {0};
+		// the slot's final content decides: an overwritten pointer no longer names its var
+		if (!iob->read_at (iob->io, ma, buf, psz) || r_read_ble (buf, be, psz * 8) != want) {
+			continue;
+		}
+		const st64 delta = (st64)(ma - spv);
+		RAnalVar **vp;
+		R_VEC_FOREACH (&fcn->vars, vp) {
+			RAnalVar *v = *vp;
+			if (v->kind != R_ANAL_VAR_KIND_REG && !v->isarg && v->delta == delta) {
+				return v;
+			}
+		}
+	}
+	return NULL;
+}
+
+// the var a root rec binds to: the named ret receiver, or the cc-mapped argument
+static RAnalVar *synth_rec_var(RAnal *anal, RAnalFunction *fcn, const char *cc, const SynthRec *rec) {
+	if (SYNTH_IS_RET (rec->arg)) {
+		return rec->var? r_anal_function_get_var_byname (fcn, rec->var): NULL;
+	}
+	return synth_arg_var (anal, fcn, cc, rec->arg);
+}
+
 // each pointer slot holds a strided poison pointer into its own child window (a deref decodes back to the parent offset); one level deep, child windows hold no further poison
 static int synth_poison_map(RAnal *anal, ut64 sbase, int align, int psz, int nwin, ut64 *pbase) {
 	RIOBind *iob = &anal->iob;
@@ -3774,6 +3812,17 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 	// remember the access sites per struct, for hints and command emission
 	synth_collect_sites (recs, &vfields, false);
 	synth_collect_sites (recs, &vporig, true);
+	// returned objects bind to no argument; the sentinel store names the receiving var instead
+	SynthRec *rrec;
+	R_VEC_FOREACH (recs, rrec) {
+		if (rrec->child || !SYNTH_IS_RET (rrec->arg)) {
+			continue;
+		}
+		RAnalVar *rv = synth_ret_var (tps, fcn, sbase + (ut64)rrec->arg * SYNTH_WINDOW, spv, psz);
+		if (rv) {
+			rrec->var = strdup (rv->name);
+		}
+	}
 	if (apply) {
 		// bookkeeping lives in the root sdb to keep it out of the type namespace
 		Sdb *bookdb = anal->sdb;
@@ -3797,14 +3846,16 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 				r_anal_save_base_type (anal, rec->bt);
 				r_strbuf_appendf (&sb, "%s%s", r_strbuf_length (&sb)? ",": "", rec->bt->name);
 				if (!rec->child) {
-					RAnalVar *av = synth_arg_var (anal, fcn, cc, rec->arg);
+					RAnalVar *av = synth_rec_var (anal, fcn, cc, rec);
 					if (av) {
 						char *ty = r_str_newf ("struct %s *", rec->bt->name);
 						if (ty) {
 							r_anal_var_set_type (anal, av, ty);
 							free (ty);
 						}
-						rec->var = strdup (av->name);
+						if (!rec->var) {
+							rec->var = strdup (av->name);
+						}
 					}
 				}
 			}
@@ -3915,7 +3966,7 @@ static char *synth_commands(RAnal *anal, RAnalFunction *fcn, RVecSynthRec *recs)
 		if (rec->child) {
 			continue;
 		}
-		RAnalVar *av = synth_arg_var (anal, fcn, cc, rec->arg);
+		RAnalVar *av = synth_rec_var (anal, fcn, cc, rec);
 		if (!av) {
 			continue;
 		}
