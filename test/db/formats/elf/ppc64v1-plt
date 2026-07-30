@@ -105,7 +105,7 @@ NAME=ELF v2: imports still work with GLINK path (system)
 FILE=bins/elf/ppc64_sudoku_dwarf
 CMDS=ii~system[1]
 EXPECT=<<EOF
-0x10001d28
+0x10001d1c
 EOF
 RUN
 
