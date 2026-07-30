@@ -2379,6 +2379,35 @@ EXPECT=<<EOF2
 EOF2
 RUN
 
+NAME=pdf emu expands varargs when the format string pointer is on the stack
+FILE=bins/elf/ioli/crackme0x01
+CMDS=<<EOF2
+aaa
+e asm.emu=1
+e emu.write=1
+aei
+aeim
+pdf @ main~int scanf(
+pdf @ main~int printf("IOLI
+EOF2
+EXPECT=<<EOF2
+|                                                                      ; int scanf("%d", 0x177ff8)
+|                                                                      ; int printf("IOLI Crackme Level 0x01\n")
+EOF2
+RUN
+
+NAME=pdf emu keeps unresolved stack args conservative without an emu stack
+FILE=bins/elf/ioli/crackme0x01
+CMDS=<<EOF2
+aaa
+e asm.emu=1
+pdf @ main~int scanf("
+EOF2
+EXPECT=<<EOF2
+|                                                                      ; int scanf("", -1)
+EOF2
+RUN
+
 NAME=pdp respects pointer width
 FILE=malloc://64
 CMDS=<<EOF
