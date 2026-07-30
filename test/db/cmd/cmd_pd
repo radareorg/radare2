@@ -2379,7 +2379,7 @@ EXPECT=<<EOF2
 EOF2
 RUN
 
-NAME=pdf emu expands varargs when the format string pointer is on the stack
+NAME=pdf emu resolves stack-located format strings and stack scalar args
 FILE=bins/elf/ioli/crackme0x01
 CMDS=<<EOF2
 aaa
@@ -2405,6 +2405,109 @@ pdf @ main~int scanf("
 EOF2
 EXPECT=<<EOF2
 |                                                                      ; int scanf("", -1)
+EOF2
+RUN
+
+NAME=pd emu skips ms x64 shadow space and uses value width for stack varargs
+FILE=malloc://0x1000
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+e asm.emu=true
+wx b900010000 @ 0
+wx e8f6020000 @ 5
+w %d %d %d %d %d @ 0x100
+f printf @ 0x300
+tk func.printf.cc=ms
+aei
+aeim
+aer rsp=0x177f00
+wx deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef @ 0x177f00
+wx 0500000044434241 @ 0x177f20
+wx 7700000048474645 @ 0x177f28
+pd 2 @ 0~printf("
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int printf("%d %d %d %d %d", 0, 0, 0, 5, 0x77)
+EOF2
+RUN
+
+NAME=pd emu right-justifies sub-word stack varargs on big-endian
+FILE=malloc://0x1000
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF2
+e asm.emu=true
+wx 38600100 @ 0
+wx 480002fd @ 4
+w %d %d %d %d %d %d %d %d @ 0x100
+f printf @ 0x300
+aei
+aeim
+aer r1=0x177f00
+wx 4142434400000009 @ 0x177f70
+pd 2 @ 0~printf("
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int printf("%d %d %d %d %d %d %d %d", 0, 0, 0, 0, 0, 0, 0, 9)
+EOF2
+RUN
+
+NAME=pd emu keeps stack args conservative when the slot is not fully readable
+FILE=malloc://0x1000
+ARGS=-a x86 -b 32
+CMDS=<<EOF2
+e asm.emu=true
+wx bcfa0f0000 @ 0
+wx e8f6020000 @ 5
+w %d @ 0x100
+wx 00010000 @ 0xffa
+f printf @ 0x300
+aei
+pd 2 @ 0~printf("
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int printf("%d", -1)
+EOF2
+RUN
+
+NAME=pd emu maps reverse-stack cc args to their pushed slots
+FILE=malloc://0x1000
+ARGS=-a x86 -b 32
+CMDS=<<EOF2
+e asm.emu=true
+wx bc00080000 @ 0
+wx e8f6020000 @ 5
+f padd @ 0x300
+"td int padd(int a, int b);"
+tk func.padd.cc=pascal
+aei
+wx 00090000 @ 0x800
+wx 10090000 @ 0x804
+wx 22222222 @ 0x900
+wx 11111111 @ 0x910
+pd 2 @ 0~padd(
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int padd(0x11111111, 0x22222222)
+EOF2
+RUN
+
+NAME=pd emu reads wide varargs across two 32-bit stack slots
+FILE=malloc://0x1000
+ARGS=-a x86 -b 32
+CMDS=<<EOF2
+e asm.emu=true
+wx bc00080000 @ 0
+wx e8f6020000 @ 5
+w %lld %d @ 0x100
+wx 00010000 @ 0x800
+wx 8877665544332211 @ 0x804
+wx 2a000000 @ 0x80c
+f printf @ 0x300
+aei
+pd 2 @ 0~printf("
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int printf("%lld %d", 0x1122334455667788, 42)
 EOF2
 RUN
 

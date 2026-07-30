@@ -114,7 +114,7 @@ void entry0 (void) {
         dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x4542414c, NULL)
         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
         dword [puts] () // 0x4030dc // reloc.crtdll.dll_puts // int puts("LABEL")
-        esp += 4
+        esp += 4      // (pstr 0x0040100e) "LABEL"
         si--
         v = si - 0
     } while (si > 0);
@@ -122,10 +122,10 @@ void entry0 (void) {
         eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
         eax ()        // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_puts // int puts("Hello, World!")
-        dword [GetProcessHeap] () // 0x403088 // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
+        dword [GetProcessHeap] () // 0x403088 // (pstr 0x00401000) "Hello, World!" // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
         push (eax)
         push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
-        dword [printf] () // 0x4030e0 // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_printf // int printf(">%p\n", -1)
+        dword [printf] () // 0x4030e0 // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_printf // int printf(">%p\n", 0x30e8)
         push (0)
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
@@ -145,10 +145,10 @@ void entry0 (void) {
  0x0040201a |         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
  0x0040201f |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x00402024 |         push (0)
- 0x00402026 |         dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x4542414c, NULL)
+ 0x00402026 |         dword [MessageBoxA] () // 0x4030b8 // (pstr 0x00401014) ">%p\n" // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x4542414c, NULL)
  0x0040202c |         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
- 0x00402031 |         dword [puts] () // 0x4030dc // (pstr 0x00401000) "Hello, World!" // reloc.crtdll.dll_puts // int puts("LABEL")
- 0x00402037 |         esp += 4
+ 0x00402031 |         dword [puts] () // 0x4030dc // reloc.crtdll.dll_puts // int puts("LABEL")
+ 0x00402037 |         esp += 4      // (pstr 0x0040100e) "LABEL"
  0x0040203a |         si--
  0x0040203c |         v = si - 0
  0x00402018 |     } while (si > 0);
@@ -156,15 +156,15 @@ void entry0 (void) {
  0x00402042 |         eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
  0x00402047 |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x0040204c |         eax ()        // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_puts // int puts("Hello, World!")
- 0x0040204e |         dword [GetProcessHeap] () // 0x403088 // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
+ 0x0040204e |         dword [GetProcessHeap] () // 0x403088 // (pstr 0x00401000) "Hello, World!" // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
  0x00402054 |         push (eax)
  0x00402055 |         push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
- 0x0040205a |         dword [printf] () // 0x4030e0 // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_printf // int printf(">%p\n", -1)
+ 0x0040205a |         dword [printf] () // 0x4030e0 // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_printf // int printf(">%p\n", 0x30e8)
  0x00402060 |         push (0)
  0x00402062 |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x00402067 |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x0040206c |         push (0)
- 0x0040206e |         dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x6c6c6548, NULL)
+ 0x0040206e |         dword [MessageBoxA] () // 0x4030b8 // (pstr 0x00402074) "j" // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x6c6c6548, NULL)
  0x00402074 |         push (0)
  0x00402076 |         dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(NULL)
  0x00402076 | }
@@ -679,7 +679,7 @@ EXPECT=<<EOF2
 EOF2
 RUN
 
-NAME=pdc leaves x86-32 cdecl stack varargs unexpanded (register-ABI only)
+NAME=pdc expands varargs when the format string is on the stack
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF2
 aa
@@ -687,7 +687,7 @@ s main
 pdc~printf("IOLI
 EOF2
 EXPECT=<<EOF2
-        sym.imp.printf () // int printf("IOLI Crackme Level 0x00\n", -1)
+        sym.imp.printf () // int printf("IOLI Crackme Level 0x00\n")
 EOF2
 RUN
 

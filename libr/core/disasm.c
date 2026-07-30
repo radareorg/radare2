@@ -5981,6 +5981,20 @@ static bool unresolved_arg_addr(ut64 addr) {
 	return !addr || addr == UT32_MAX || addr == UT64_MAX;
 }
 
+// calls keep the return address in a register: check the alias, then the name (ppc has lr but no =LR)
+static bool arch_links_ra(RAnal *anal) {
+	if (r_reg_alias_getname (anal->reg, R_REG_ALIAS_LR) || r_reg_alias_getname (anal->reg, R_REG_ALIAS_RA)) {
+		return true;
+	}
+	RRegItem *ri = r_reg_get (anal->reg, "lr", -1);
+	if (!ri) {
+		ri = r_reg_get (anal->reg, "ra", -1);
+	}
+	const bool found = ri != NULL;
+	r_unref (ri);
+	return found;
+}
+
 // print function arguments when emu.str=true
 static void print_arg_val(RCore *core, ut64 rv) {
 	if (rv >> 63) {
@@ -5992,10 +6006,20 @@ static void print_arg_val(RCore *core, ut64 rv) {
 	}
 }
 
-static void print_fcn_arg(RCore *core, int nth, const char *type, const char *name,
-			   const char *fmt, ut64 addr, const int on_stack, int asm_types) {
-	if (on_stack == 1 && asm_types > 1) {
-		r_cons_printf (core->cons, "%s", type);
+// signed C scalar whose stack value must be sign-extended before printing
+static bool is_signed_ctype(const char *t) {
+	if (strchr (t, '*')) {
+		return false;
+	}
+	return r_str_startswith (t, "int") || r_str_startswith (t, "long")
+		|| r_str_startswith (t, "short") || r_str_startswith (t, "char");
+}
+
+static void print_fcn_arg(RCore *core, int nth, RAnalFuncArg *arg, bool on_stack, int asm_types) {
+	const char *fmt = arg->fmt;
+	ut64 addr = arg->src;
+	if (on_stack && asm_types > 1) {
+		r_cons_printf (core->cons, "%s", arg->orig_c_type);
 	}
 	if (unresolved_arg_addr (addr)) {
 		// if argument address cannot be resolved, fallback to use the calling convention
@@ -6016,7 +6040,7 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 	}
 	if (fmt) {
 		char *res = NULL;
-		char *safe_name = r_str_sanitize_r2 (name);
+		char *safe_name = r_str_sanitize_r2 (arg->name);
 		const bool is_z = !strcmp (fmt, "z");
 		const char *strconv = is_z ? r_config_get (core->config, "scr.strconv") : NULL;
 		if (is_z && strconv && strstr (strconv, "raw")) { // TODO. raw or none?
@@ -6027,7 +6051,7 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 			free (s);
 		} else {
 			char *cmd = r_str_newf ("pf%s %s%s %s",
-				(asm_types == 2)? "": "q", (on_stack == 1) ? "*" : "", fmt, safe_name);
+				(asm_types == 2)? "": "q", on_stack? "*": "", fmt, safe_name);
 			res = r_core_call_str_at (core, addr, cmd);
 			free (cmd);
 		}
@@ -6050,16 +6074,27 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 		free (res);
 	} else {
 		const int wsz = (core->anal->config->bits == 64)? 8: 4;
-		const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
+		int vsz = arg->size;
+		if (vsz != 1 && vsz != 2 && vsz != 4 && vsz != 8) {
+			vsz = wsz;
+		}
+		ut64 va = addr;
+		if (vsz < wsz && R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config)) {
+			va += wsz - vsz; // BE ABIs right-justify sub-word values in their slot
+		}
 		ut64 sv = 0;
-		// unmapped reads succeed with fill bytes, which would fabricate a value
-		if (on_stack == 1 && !unresolved_arg_addr (addr)
-			&& r_io_map_get_at (core->io, addr)
-			&& r_io_read_i (core->io, addr, &sv, wsz, be)) {
+		if (on_stack && !unresolved_arg_addr (addr)
+			&& core_slot_read (core, va, vsz, &sv)) {
+			if (vsz < 8 && (sv & (1ULL << (vsz * 8 - 1))) && is_signed_ctype (arg->c_type)) {
+				sv |= UT64_MAX << (vsz * 8);
+			}
 			print_arg_val (core, sv);
 		} else {
-			const char *cc = r_config_get (core->config, "anal.cc"); // XXX
-			const char *reg = get_cc_arg_reg (core, cc, nth);
+			const char *reg = cc_arg_reg (core->anal, arg->cc_source);
+			if (!reg) {
+				const char *cc = r_config_get (core->config, "anal.cc"); // XXX
+				reg = get_cc_arg_reg (core, cc, nth);
+			}
 			print_arg_val (core, reg? r_reg_getv (core->anal->reg, reg): UT64_MAX);
 		}
 	}
@@ -6169,42 +6204,18 @@ static void ds_comment_call(RDisasmState *ds) {
 	}
 	ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
 	ut64 spv = r_reg_getv (core->anal->reg, "SP");
-	r_reg_setv (core->anal->reg, "SP", spv + s_width); // temporarily set stack ptr to sync with carg.c
+	// carg.c expects SP at the call-frame arg base: skip the return address the emulated call pushed
+	r_reg_setv (core->anal->reg, "SP", arch_links_ra (core->anal)? spv: spv + s_width);
 	RList *list = r_core_get_func_args (core, fcn_name);
+	r_reg_setv (core->anal->reg, "SP", spv); // restore on every path or later calls drift
 	// show function arguments
 	if (!r_list_empty (list)) {
 		int nth = 0;
-		// bool warning = false;
 		r_list_foreach (list, iter, arg) {
 			bool on_stack = cc_arg_on_stack (core->anal, arg->cc_source);
 			nextele = r_list_iter_get_next (iter);
-#if 0
-			if (!arg->size) {
-				if (ds->asm_types == 2) {
-					ds_comment_middle (ds, "%s: unk_size", arg->c_type);
-				}
-				warning = true;
-			}
-			if (arg->fmt) {
-				if (ds->asm_types > 1) {
-					if (warning) {
-						ds_comment_middle (ds, "_format");
-					} else {
-						ds_comment_middle (ds, "%s : unk_format", arg->c_type);
-					}
-				} else {
-					ds_comment_middle (ds, "?");
-				}
-				ds_comment_middle (ds, nextele?", ":")");
-			} else {
-				// TODO: may need ds_comment_esil
-				print_fcn_arg (core, nth, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, ds->asm_types);
-				ds_comment_middle (ds, nextele?", ":")");
-			}
-#else
-			print_fcn_arg (core, nth, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, ds->asm_types);
+			print_fcn_arg (core, nth, arg, on_stack, ds->asm_types);
 			ds_comment_middle (ds, nextele?", ":")");
-#endif
 			nth++;
 		}
 		ds_comment_end (ds, "");
@@ -6247,7 +6258,6 @@ static void ds_comment_call(RDisasmState *ds) {
 		}
 		ds_comment_end (ds, ")");
 	}
-	r_reg_setv (core->anal->reg, "SP", spv); // reset stack ptr
 }
 
 // modifies anal register state
