@@ -1110,10 +1110,8 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			word = 4;
 			V = S + A - P;
 			break;
-		case R_PPC64_JMP_SLOT: { // 21 — write PLT stub vaddr to GOT slot (big-endian)
-			// For PPC64 ELFv1 the PLT stubs live in .text; look up the
-			// stub that loads from this GOT slot.  Falls back to S when not found.
-			ut64 stub = Elf_(ppc64v1_get_plt_stub_for_slot) (bo, rel->rva);
+		case R_PPC64_JMP_SLOT: { // 21 — write the PLT stub vaddr to the GOT slot, S when no stub is known
+			ut64 stub = Elf_(ppc64_get_plt_stub_for_slot) (bo, rel->rva);
 			word = 8;
 			V = (stub != UT64_MAX) ? stub : S;
 			break;
@@ -1728,8 +1726,13 @@ static RBinInfo* info(RBinFile *bf) {
 		ret->flags = r_str_newf ("0x%x", elf_flags);
 	}
 	ret->abi = Elf_(get_abi) (obj);
-	if (ret->abi && !strcmp (ret->abi, "elfv2")) {
-		ret->default_cc = strdup ("elfv2");
+	if (ret->abi) {
+		// both abis pick a cc so switching binaries in one session updates anal.cc
+		if (!strcmp (ret->abi, "elfv2")) {
+			ret->default_cc = strdup ("elfv2");
+		} else if (!strcmp (ret->abi, "elfv1")) {
+			ret->default_cc = strdup ("ppc-64");
+		}
 	}
 	ret->rclass = strdup ("elf");
 	ret->bits = Elf_(get_bits) (obj);
