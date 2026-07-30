@@ -594,6 +594,106 @@ struct Inner {
 EOF
 RUN
 
+NAME=struct field typed from return value stored through a nested pointer on arm64
+FILE=malloc://64
+ARGS=-a arm -b 64 -e types.fields=true
+CMDS=<<EOF
+wa ldr x2, [x0, 8]
+wa bl 0x20 @ 4
+wa str x0, [x2, 0x10] @ 8
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Inner { char pad2[16]; int field_16; };"
+"td struct Outer { char pad[8]; struct Inner *inner; };"
+"td char *helper();"
+afvt arg1 "struct Outer *" @ 0
+aei
+aeim
+aaft
+tsc Outer
+tsc Inner
+EOF
+EXPECT=<<EOF
+struct Outer {
+  char pad[8];
+  struct Inner *inner;
+};
+struct Inner {
+  char pad2[16];
+  char *field_16;
+};
+EOF
+RUN
+
+NAME=struct field typed from return value through a copied deref base on arm64
+FILE=malloc://64
+ARGS=-a arm -b 64 -e types.fields=true
+CMDS=<<EOF
+wa ldr x2, [x0, 8]
+wa mov x3, x2 @ 4
+wa bl 0x20 @ 8
+wa str x0, [x3, 0x10] @ 0xc
+wa ret @ 0x10
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Inner { char pad2[16]; int field_16; };"
+"td struct Outer { char pad[8]; struct Inner *inner; };"
+"td char *helper();"
+afvt arg1 "struct Outer *" @ 0
+aei
+aeim
+aaft
+tsc Inner
+EOF
+EXPECT=<<EOF
+struct Inner {
+  char pad2[16];
+  char *field_16;
+};
+EOF
+RUN
+
+NAME=struct field not retyped when the arm64 store base was modified by arithmetic
+FILE=malloc://64
+ARGS=-a arm -b 64 -e types.fields=true
+CMDS=<<EOF
+wa ldr x2, [x0, 8]
+wa mov x4, x2 @ 4
+wa add x2, x2, 8 @ 8
+wa bl 0x20 @ 0xc
+wa str x0, [x2, 0x10] @ 0x10
+wa str x0, [x4, 0x14] @ 0x14
+wa ret @ 0x18
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Inner { char pad2[16]; int field_16; int field_20; };"
+"td struct Outer { char pad[8]; struct Inner *inner; };"
+"td char *helper();"
+afvt arg1 "struct Outer *" @ 0
+aei
+aeim
+aaft
+tsc Inner
+EOF
+EXPECT=<<EOF
+struct Inner {
+  char pad2[16];
+  int field_16;
+  char *field_20;
+};
+EOF
+RUN
+
 NAME=struct field typed from address passed as out parameter
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e types.fields=true
