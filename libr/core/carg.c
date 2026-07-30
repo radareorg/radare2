@@ -13,11 +13,6 @@ static bool cc_source_on_stack(RAnal *anal, const char *loc) {
 	return first && *first == '^';
 }
 
-static const char *cc_source_reg(RAnal *anal, const char *loc) {
-	const char *first = cc_source_first (anal, loc);
-	return first && *first != '^'? first: NULL;
-}
-
 static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_name, const char *cc, int arg_num) {
 	if (!fcn_name || !arg || !anal) {
 		return;
@@ -232,39 +227,66 @@ static char *read_format_string(RCore *core, ut64 ptr) {
 	return strdup ((const char *)buf);
 }
 
-static RAnalFuncArg *make_vararg(RCore *core, const char *cc, int slot, const char *ctype, ut64 *spv, ut64 s_width) {
+// exact-width read: rejects unreadable maps and slots whose tail would be io fill bytes
+R_IPI bool core_slot_read(RCore *core, ut64 addr, int width, ut64 *out) {
+	ut8 buf[8] = {0};
+	if (!addr || addr == UT64_MAX || width < 1 || width > 8) {
+		return false;
+	}
+	if (r_io_nread_at (core->io, addr, buf, width) != width) {
+		return false;
+	}
+	*out = r_read_ble (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config), width * 8);
+	return true;
+}
+
+// argument address from the cc layout (shadow space, slot width, reverse order); 0 when unresolvable
+static void arg_set_src(RCore *core, RAnalFuncArg *arg, const char *cc, int argno, int argc, ut64 spbase) {
+	RAnalCCArgSlot slot;
+	if (!r_anal_cc_argslot (core->anal, cc, argno, argc, false, &slot)) {
+		return;
+	}
+	if (slot.reg) {
+		arg->src = r_reg_getv (core->anal->reg, slot.reg);
+	} else {
+		arg->src = spbase + slot.off;
+	}
+}
+
+// value width of a promoted printf vararg; the C type set r_str_printfmt emits is closed
+static int vararg_size(const char *ctype, int word) {
+	if (strchr (ctype, '*')) {
+		return word;
+	}
+	if (strstr (ctype, "long long") || strstr (ctype, "double")) {
+		return 8;
+	}
+	return strstr (ctype, "long")? word: 4;
+}
+
+static RAnalFuncArg *make_vararg(RCore *core, const char *cc, int slot, const char *ctype, ut64 spbase, int word) {
 	RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
 	arg->orig_c_type = strdup (ctype);
 	arg->c_type = arg->orig_c_type;
 	arg->name = "";
-	arg->size = s_width;
+	arg->size = vararg_size (ctype, word);
 	// "z" makes print_fcn_arg/print_format_values render the string; scalars print their raw value
 	arg->fmt = !strcmp (ctype, "char *")? "z": NULL;
 	arg->cc_source = r_anal_cc_argloc (core->anal, cc, slot, 0, -1);
-	if (cc_source_on_stack (core->anal, arg->cc_source)) {
-		arg->src = *spv;
-		*spv += s_width;
-	} else {
-		const char *reg = cc_source_reg (core->anal, arg->cc_source);
-		if (reg) {
-			arg->src = r_reg_getv (core->anal->reg, reg);
-		}
-	}
+	arg_set_src (core, arg, cc, slot, -1, spbase);
 	return arg;
 }
 
 // false leaves the "..." placeholder in place: the format arg isn't a resolvable literal
-static bool append_format_varargs(RCore *core, RList *list, const char *cc, int nargs, ut64 *spv, ut64 s_width) {
+static bool append_format_varargs(RCore *core, RList *list, const char *cc, int nargs, ut64 spbase, int word) {
 	const RAnalFuncArg *fmtarg = r_list_last (list); // the fixed arg right before "..."
 	if (!fmtarg) {
 		return false;
 	}
 	ut64 fptr = fmtarg->src;
-	if (cc_source_on_stack (core->anal, fmtarg->cc_source)) {
-		const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
-		if (!fptr || fptr == UT64_MAX || !r_io_read_i (core->io, fptr, &fptr, (int)s_width, be)) {
-			return false;
-		}
+	if (cc_source_on_stack (core->anal, fmtarg->cc_source)
+		&& !core_slot_read (core, fptr, word, &fptr)) {
+		return false;
 	}
 	char *fmt = read_format_string (core, fptr);
 	if (!fmt) {
@@ -275,18 +297,13 @@ static bool append_format_varargs(RCore *core, RList *list, const char *cc, int 
 	if (!types) {
 		return false;
 	}
-	int k = 0;
-	char *vt = types;
-	while (*vt) {
-		char *comma = strchr (vt, ',');
-		char *t = comma? r_str_ndup (vt, comma - vt): strdup (vt);
-		r_list_append (list, make_vararg (core, cc, nargs - 1 + k, t, spv, s_width));
-		free (t);
-		k++;
-		if (!comma) {
-			break;
-		}
-		vt = comma + 1;
+	int slotidx = nargs - 1; // the first vararg takes the "..." slot
+	int i, ntypes = r_str_split (types, ',');
+	const char *t = types;
+	for (i = 0; i < ntypes; i++, t += strlen (t) + 1) {
+		RAnalFuncArg *arg = make_vararg (core, cc, slotidx, t, spbase, word);
+		r_list_append (list, arg);
+		slotidx += R_MAX (1, (arg->size + word - 1) / word); // wide values span slots (%lld on 32-bit)
 	}
 	free (types);
 	return true;
@@ -308,43 +325,24 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 		free (key);
 		return NULL;
 	}
-	const char *src = r_anal_cc_argloc (core->anal, cc, 0, 0, -1); // src of first argument
 	RList *list = r_list_newf ((RListFree)r_anal_function_arg_free);
 	int i;
-	ut64 spv = r_reg_getv (core->anal->reg, "SP");
-	ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
-	if (src && !strcmp (src, "^-")) {
-		for (i = nargs - 1; i >= 0; i--) {
-			RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
-			set_fcn_args_info (arg, core->anal, key, cc, i);
-			arg->src = spv;
-			spv += arg->size? arg->size : s_width;
-			r_list_append (list, arg);
+	const ut64 spbase = r_reg_getv (core->anal->reg, "SP");
+	const int word = (core->anal->config->bits == 64)? 8: 4;
+	bool variadic = nargs > 1 && is_format_function (key)
+		&& !strcmp (r_str_get (r_type_func_args_name (TDB, key, nargs - 1)), "...");
+	for (i = 0; i < nargs; i++) {
+		if (variadic && i == nargs - 1
+			&& append_format_varargs (core, list, cc, nargs, spbase, word)) {
+			continue;
 		}
-	} else {
-		bool variadic = nargs > 1 && is_format_function (key)
-			&& !strcmp (r_type_func_args_name (TDB, key, nargs - 1), "...");
-		for (i = 0; i < nargs; i++) {
-			if (variadic && i == nargs - 1
-				&& append_format_varargs (core, list, cc, nargs, &spv, s_width)) {
-				continue;
-			}
-			RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
-			set_fcn_args_info (arg, core->anal, key, cc, i);
-			if (cc_source_on_stack (core->anal, arg->cc_source)) {
-				arg->src = spv;
-				if (!arg->size) {
-					arg->size = s_width;
-				}
-				spv += arg->size;
-			} else {
-				const char *reg = cc_source_reg (core->anal, arg->cc_source);
-				if (reg) {
-					arg->src = r_reg_getv (core->anal->reg, reg);
-				}
-			}
-			r_list_append (list, arg);
+		RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
+		set_fcn_args_info (arg, core->anal, key, cc, i);
+		if (!arg->size) {
+			arg->size = word;
 		}
+		arg_set_src (core, arg, cc, i, nargs, spbase);
+		r_list_append (list, arg);
 	}
 	free (key);
 	return list;
