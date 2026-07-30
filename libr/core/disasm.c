@@ -5977,13 +5977,27 @@ static const char *getarg(RCore *core, const char *cc, int nth) {
 	return NULL;
 }
 
+static bool unresolved_arg_addr(ut64 addr) {
+	return !addr || addr == UT32_MAX || addr == UT64_MAX;
+}
+
 // print function arguments when emu.str=true
+static void print_arg_val(RCore *core, ut64 rv) {
+	if (rv >> 63) {
+		r_cons_printf (core->cons, "-1");
+	} else if (rv < 64) {
+		r_cons_printf (core->cons, "%"PFMT64d, rv);
+	} else {
+		r_cons_printf (core->cons, "0x%"PFMT64x, rv);
+	}
+}
+
 static void print_fcn_arg(RCore *core, int nth, const char *type, const char *name,
 			   const char *fmt, ut64 addr, const int on_stack, int asm_types) {
 	if (on_stack == 1 && asm_types > 1) {
 		r_cons_printf (core->cons, "%s", type);
 	}
-	if (addr == UT32_MAX || addr == UT64_MAX || addr == 0) {
+	if (unresolved_arg_addr (addr)) {
 		// if argument address cannot be resolved, fallback to use the calling convention
 		const char *cc = r_config_get (core->config, "anal.cc"); // XXX
 		const char *reg = getarg (core, cc, nth);
@@ -6035,19 +6049,18 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 		}
 		free (res);
 	} else {
-		const char *cc = r_config_get (core->config, "anal.cc"); // XXX
-		const char *reg = get_cc_arg_reg (core, cc, nth);
-		if (reg) {
-			ut64 rv = r_reg_getv (core->anal->reg, reg);
-			if (rv >> 63) {
-				r_cons_printf (core->cons, "-1");
-			} else if (rv < 64) {
-				r_cons_printf (core->cons, "%"PFMT64d, rv);
-			} else {
-				r_cons_printf (core->cons, "0x%"PFMT64x, rv);
-			}
+		const int wsz = (core->anal->config->bits == 64)? 8: 4;
+		const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
+		ut64 sv = 0;
+		// unmapped reads succeed with fill bytes, which would fabricate a value
+		if (on_stack == 1 && !unresolved_arg_addr (addr)
+			&& r_io_map_get_at (core->io, addr)
+			&& r_io_read_i (core->io, addr, &sv, wsz, be)) {
+			print_arg_val (core, sv);
 		} else {
-			r_cons_printf (core->cons, "-1");
+			const char *cc = r_config_get (core->config, "anal.cc"); // XXX
+			const char *reg = get_cc_arg_reg (core, cc, nth);
+			print_arg_val (core, reg? r_reg_getv (core->anal->reg, reg): UT64_MAX);
 		}
 	}
 	r_cons_trim (core->cons);

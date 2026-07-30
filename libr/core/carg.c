@@ -255,12 +255,18 @@ static RAnalFuncArg *make_vararg(RCore *core, const char *cc, int slot, const ch
 
 // false leaves the "..." placeholder in place: the format arg isn't a resolvable literal
 static bool append_format_varargs(RCore *core, RList *list, const char *cc, int nargs, ut64 *spv, ut64 s_width) {
-	const char *floc = r_anal_cc_argloc (core->anal, cc, nargs - 2, 0, -1);
-	const char *freg = cc_source_reg (core->anal, floc);
-	if (!freg) {
+	const RAnalFuncArg *fmtarg = r_list_last (list); // the fixed arg right before "..."
+	if (!fmtarg) {
 		return false;
 	}
-	char *fmt = read_format_string (core, r_reg_getv (core->anal->reg, freg));
+	ut64 fptr = fmtarg->src;
+	if (cc_source_on_stack (core->anal, fmtarg->cc_source)) {
+		const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
+		if (!fptr || fptr == UT64_MAX || !r_io_read_i (core->io, fptr, &fptr, (int)s_width, be)) {
+			return false;
+		}
+	}
+	char *fmt = read_format_string (core, fptr);
 	if (!fmt) {
 		return false;
 	}
