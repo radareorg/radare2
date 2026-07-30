@@ -340,16 +340,17 @@ NAME=wci should commit the changes to the file
 FILE=malloc://1024
 BROKEN=1
 CMDS=<<EOF
-!rm -rf .tmp
 mkdir .tmp
-cp -f bins/pe/b.exe .tmp/.b.exe.orig
-cp -f bins/pe/b.exe .tmp/.b.exe.new
+cp bins/pe/b.exe .tmp/.b.exe.orig
+cp bins/pe/b.exe .tmp/.b.exe.new
 e io.cache=true
 o+ .tmp/.b.exe.new
 wx ff
 wci
 e.src.null=true
 !!radiff2 .tmp/.b.exe.orig .tmp/.b.exe.new
+rm .tmp/.b.exe.orig
+rm .tmp/.b.exe.new
 EOF
 EXPECT=<<EOF
 File size
