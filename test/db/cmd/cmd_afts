@@ -927,7 +927,7 @@ var struct fcn_00000000_ret1 * var_10h @ rbp-0x10
 EOF
 RUN
 
-NAME=afts leaves the local untyped when the stored pointer is overwritten
+NAME=afts keeps the binding when the pointer is later cleared
 FILE=malloc://256
 ARGS=-a x86 -b 64 -e types.sizes=true
 CMDS=<<EOF
@@ -940,7 +940,80 @@ afts > /dev/null
 afv
 EOF
 EXPECT=<<EOF
+var struct fcn_00000000_ret0 * var_8h @ rbp-0x8
+EOF
+RUN
+
+NAME=afts keeps the binding when one branch clears the pointer
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf88000000e83e000000488985f8ffffffc70001000000c740080200000085c0750848c745f800000000488b45f8c9c3
+wx c3 @ 0x50
+af @ 0x50
+afn malloc @ 0x50
+af @ 0
+afts > /dev/null
+afv~var_8h
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret0 * var_8h @ rbp-0x8
+EOF
+RUN
+
+NAME=afts rerun restores the receiving var when the binding disappears
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf88000000e81e000000488985f8ffffff488b45f8c70001000000488b45f8c7400802000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afts > /dev/null
+afv
+e types.sizefns=malloc/-
+afts
+afv
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret0 * var_8h @ rbp-0x8
 var int64_t var_8h @ rbp-0x8
+EOF
+RUN
+
+NAME=afts types a stack argument slot reused for the returned object
+FILE=malloc://256
+ARGS=-a x86 -b 32 -e types.sizes=true
+CMDS=<<EOF
+wx 5589e56888000000e82300000083c4048985080000008b4508c70001000000c74008020000005dc3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afts > /dev/null
+afv
+EOF
+EXPECT=<<EOF
+arg struct fcn_00000000_ret0 * arg_8h @ ebp+0x8
+EOF
+RUN
+
+NAME=afts does not rebind an argument register holding the returned pointer
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e5bf88000000e8220000004889c3c70301000000c74308020000005dc3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afvr rbx obj int64_t
+afts > /dev/null
+afv~obj
+EOF
+EXPECT=<<EOF
+arg int64_t obj @ rbx
 EOF
 RUN
 
