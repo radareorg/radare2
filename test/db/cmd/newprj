@@ -2,6 +2,7 @@ NAME=newprj flagspace round-trip
 FILE=malloc://0x1000
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-spc.prj
 fs+alpha
 f sym.one=0x100
 fs+beta
@@ -26,12 +27,13 @@ NAME=newprj quoted project filename
 FILE=malloc://0x1000
 CMDS=<<EOF
 mkdir .tmp
+"rm .tmp/newprj quoted.prj"
 f quoted.project=0x420
 prj   save ".tmp/newprj quoted.prj" > /dev/null
 f-*
 prj "load" ".tmp/newprj quoted.prj" > /dev/null
 fd 0x420
-rm ".tmp/newprj quoted.prj"
+"rm .tmp/newprj quoted.prj"
 EOF
 EXPECT=<<EOF
 quoted.project
@@ -53,6 +55,7 @@ NAME=newprj flag with no space
 FILE=malloc://0x1000
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-ns.prj
 fs *
 f nospaceflag=0x300
 prj save .tmp/newprj-ns.prj > /dev/null
@@ -71,6 +74,7 @@ NAME=newprj flag comment round-trip
 FILE=malloc://0x1000
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-cmt.prj
 fs+alpha
 f sym.cool=0x100
 fC sym.cool "round tripped comment"
@@ -90,6 +94,7 @@ NAME=newprj flag color round-trip
 FILE=malloc://0x1000
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-col.prj
 fs+alpha
 f sym.cool=0x100
 fc sym.cool=red
@@ -110,6 +115,7 @@ NAME=newprj realname + rawname round-trip
 FILE=malloc://0x1000
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-rn.prj
 fs+alpha
 f sym.cool=0x100
 s 0x100
@@ -134,6 +140,7 @@ NAME=newprj multiple flags and spaces
 FILE=malloc://0x1000
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-multi.prj
 fs+alpha
 f a.one=0x100
 f a.two=0x110
@@ -165,6 +172,7 @@ NAME=newprj eval round-trip
 FILE=malloc://0x1000
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-eval.prj
 e asm.bits=16
 e asm.syntax=att
 e anal.depth=42
@@ -193,6 +201,7 @@ NAME=newprj eval skipped prefixes are not replayed
 FILE=malloc://0x1000
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-evskip.prj
 e scr.color=3
 prj save .tmp/newprj-evskip.prj > /dev/null
 e scr.color=0
@@ -209,6 +218,7 @@ NAME=newprj xrefs round-trip
 FILE=malloc://0x1000
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-xrefs.prj
 axd 0x200 0x100
 axC 0x300 0x120
 prj save .tmp/newprj-xrefs.prj > /dev/null
@@ -227,6 +237,7 @@ NAME=newprj rebase flags comments and xrefs
 FILE=malloc://0x100
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-rebase.prj
 f src.flag=0x10
 CC src comment @ 0x10
 axd 0x20 0x10
@@ -253,6 +264,7 @@ NAME=newprj rebase flag at module end
 FILE=malloc://0x10
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-endbyte.prj
 !printf AAAAAAAAAAAAAAAA > .tmp/newprj-end.bin
 o .tmp/newprj-end.bin 0x1000
 f end.byte=0x100f
@@ -274,6 +286,7 @@ NAME=newprj rebase multiple file-backed modules
 FILE=malloc://0x10
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-files.prj
 !printf AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA > .tmp/newprj-a.bin
 !printf BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB > .tmp/newprj-b.bin
 o .tmp/newprj-a.bin 0x1000
@@ -306,6 +319,7 @@ NAME=newprj xref types round-trip
 FILE=malloc://0x1000
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-xreftypes.prj
 axc 0x80 0x10
 axd 0x90 0x20
 axC 0xa0 0x30
@@ -326,6 +340,7 @@ NAME=newprj rebased xrefs keep source and target modules
 FILE=malloc://0x10
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-xrefmods.prj
 !printf AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA > .tmp/newprj-xma.bin
 !printf BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB > .tmp/newprj-xmb.bin
 o .tmp/newprj-xma.bin 0x1000
@@ -353,6 +368,7 @@ NAME=newprj duplicate identical maps rebase one to one
 FILE=malloc://0x10
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-dupmap.prj
 !printf AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA > .tmp/newprj-dupmap.bin
 o--
 o .tmp/newprj-dupmap.bin 0x1000
@@ -384,6 +400,7 @@ NAME=newprj ambiguous same-content maps keep sorted identity
 FILE=malloc://0x10
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-ambmap.prj
 !printf ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ > .tmp/newprj-amb-a.bin
 !printf AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA > .tmp/newprj-amb-b.bin
 !printf ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ > .tmp/newprj-amb-c.bin
@@ -420,6 +437,7 @@ NAME=newprj function name updates existing function
 FILE=malloc://0x100
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-fcnname.prj
 af+ 0x10 fcn.saved
 prj save .tmp/newprj-fcnname.prj > /dev/null
 afn fcn.old 0x10
@@ -436,6 +454,7 @@ NAME=newprj rebased functions blocks colors and xrefs
 FILE=malloc://0x10
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-fcnmods.prj
 !printf AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA > .tmp/newprj-fma.bin
 !printf BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB > .tmp/newprj-fmb.bin
 o .tmp/newprj-fma.bin 0x1000
@@ -477,6 +496,7 @@ NAME=newprj function metadata round-trip
 FILE=malloc://0x100
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-fcnmeta.prj
 e asm.arch=arm
 e asm.bits=64
 af+ 0x10 fcn.meta
@@ -503,6 +523,7 @@ NAME=newprj function vars and args round-trip
 FILE=malloc://0x100
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-fcnvars.prj
 e asm.arch=arm
 e asm.bits=64
 af+ 0x10 fcn.vars
@@ -530,6 +551,7 @@ NAME=newprj script register variables
 FILE=malloc://0x100
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-regscript.prj
 e asm.arch=arm
 e asm.bits=64
 af+ 0x10 fcn.regscript
@@ -550,6 +572,7 @@ NAME=newprj rebased function metadata and vars
 FILE=malloc://0x10
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-rfcnmeta.prj
 !printf AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA > .tmp/newprj-rfma.bin
 o .tmp/newprj-rfma.bin 0x1000
 e asm.arch=arm
@@ -584,6 +607,7 @@ NAME=newprj shared function attrs round-trip
 FILE=malloc://0x100
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-fcnshared.prj
 e asm.arch=arm
 e asm.bits=64
 af+ 0x10 fcn.a
@@ -623,6 +647,7 @@ NAME=newprj diff covers non-function project data
 FILE=malloc://0x100
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-diffall.prj
 e asm.syntax=att
 f saved.flag=0x10
 CC saved @ 0x20
@@ -655,6 +680,7 @@ NAME=newprj Ct metadata round-trip
 FILE=malloc://0x100
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-ctmeta.prj
 Ct= base64:c3RkOjp2ZWN0b3I8aW50PiAqZm9vLT5iYXIgQCBzbG90OyAicXVvdGVkIiBcXHBhdGg= @ 0x10
 prj save .tmp/newprj-ctmeta.prj > /dev/null
 Ct= changed @ 0x10
@@ -676,6 +702,7 @@ NAME=newprj diff covers function blocks colors and vars
 FILE=malloc://0x100
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-difffcn.prj
 e asm.arch=arm
 af+ 0x40 saved.fcn
 afb+ 0x40 0x40 4
@@ -703,6 +730,7 @@ NAME=newprj open restores file maps
 FILE=malloc://0x10
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-open.prj
 !printf AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA > .tmp/newprj-open.bin
 o--
 o .tmp/newprj-open.bin 0x1000
@@ -726,6 +754,7 @@ FILE=malloc://256
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-spv.prj
 e anal.cc=ms
 wx 488b4424288b08c3
 af
@@ -749,6 +778,7 @@ FILE=malloc://256
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 mkdir .tmp
+rm .tmp/newprj-bpvframe.prj
 wx 554889e54883ec20897dfc90c9c3
 af
 prj save .tmp/newprj-bpvframe.prj > /dev/null
