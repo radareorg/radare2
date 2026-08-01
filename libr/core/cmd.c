@@ -2952,11 +2952,14 @@ static int cmd_resize(void *data, const char *input) {
 		}
 		if (input[1] == ' ') {
 			int index = 2;
-			if (input[2] == '-') {
 				if (input[3] == 'r') {
 					const char *file = r_str_trim_head_ro (input + 4);
 					if (input[4] == 'f') {
 						file = r_str_trim_head_ro (input + 5);
+					}
+					if (*file == '\0') {
+						r_cons_cmd_help_match (core->cons, help_msg_r, "rm", 0, false);
+						return false;
 					}
 					return r_file_rm_rf (file);
 				}
