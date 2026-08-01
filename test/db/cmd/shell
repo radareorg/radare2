@@ -220,6 +220,52 @@ empty-digits-empty
 EOF
 RUN
 
+NAME=Remove files valid commands
+FILE=malloc://512
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/rm-flag-file
+rmrf .tmp/rm-r-directory
+rmrf .tmp/rm-rf-directory
+touch .tmp/rm-flag-file
+mkdir .tmp/rm-r-directory
+touch .tmp/rm-r-directory/file
+mkdir .tmp/rm-rf-directory
+touch .tmp/rm-rf-directory/file
+rm .tmp/rm-flag-file
+rm -r .tmp/rm-r-directory
+rm -rf .tmp/rm-rf-directory
+ls .tmp~rm-flag-file
+ls .tmp~rm-r-directory
+ls .tmp~rm-rf-directory
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Remove files invalid commands
+FILE=malloc://512
+CMDS=<<EOF
+rm -r
+rm -rf
+rm -rfoo
+rm -random target
+rm -fr directory
+EOF
+EXPECT=<<EOF
+| rm [file]        remove file
+| rmrf [file|dir]  recursive remove
+| rm [file]        remove file
+| rmrf [file|dir]  recursive remove
+| rm [file]        remove file
+| rmrf [file|dir]  recursive remove
+| rm [file]        remove file
+| rmrf [file|dir]  recursive remove
+| rm [file]        remove file
+| rmrf [file|dir]  recursive remove
+EOF
+RUN
+
 NAME=single quote after conditional boundaries
 FILE=malloc://32
 CMDS=<<EOF

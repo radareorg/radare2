@@ -2917,6 +2917,44 @@ static int cmd_rebase(RCore *core, const char *input) {
 	return 0;
 }
 
+static bool cmd_rm(RCore *core, const char *input) {
+	const bool legacy_recursive = r_str_startswith (input, "mrf");
+	const char *file = NULL;
+	bool recursive = legacy_recursive;
+	if (legacy_recursive) {
+		if (IS_WHITESPACE (input[3])) {
+			file = r_str_trim_head_ro (input + 3);
+		}
+	} else if (IS_WHITESPACE (input[1])) {
+		file = r_str_trim_head_ro (input + 1);
+		if (*file == '-') {
+			const int flag_len = r_str_startswith (file, "-rf")? 3: 2;
+			if (r_str_startswith (file, "-r") && IS_WHITESPACE (file[flag_len])) {
+				file = r_str_trim_head_ro (file + flag_len);
+				recursive = true;
+			} else {
+				file = NULL;
+			}
+		}
+	}
+	if (R_STR_ISEMPTY (file)) {
+		const char *command = legacy_recursive? "rmrf": "rm";
+		r_cons_cmd_help_match (core->cons, help_msg_r, command, 0, legacy_recursive);
+		return false;
+	}
+	if (recursive) {
+		return r_file_rm_rf (file);
+	}
+	if (*file == '$') {
+		if (!r_cmd_alias_del (core->rcmd, file + 1)) {
+			R_LOG_ERROR ("Cannot find alias file %s", file);
+		}
+	} else {
+		r_file_rm (file);
+	}
+	return true;
+}
+
 static int cmd_resize(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut64 newsize = 0;
@@ -2942,27 +2980,7 @@ static int cmd_resize(void *data, const char *input) {
 		r_sys_cmdf ("radare%s", input);
 		return true;
 	case 'm': // "rm"
-		if (r_str_startswith (input, "mrf")) {
-			if (input[3] == ' ')  {
-				const char *file = r_str_trim_head_ro (input + 3);
-				return r_file_rm_rf (file);
-			}
-			r_cons_cmd_help_match (core->cons, help_msg_r, "rmrf", 0, true);
-			return false;
-		}
-		if (input[1] == ' ') {
-			const char *file = r_str_trim_head_ro (input + 2);
-			if (*file == '$') {
-				if (!r_cmd_alias_del (core->rcmd, file + 1)) {
-					R_LOG_ERROR ("Cannot find alias file %s", file);
-				}
-			} else {
-				r_file_rm (file);
-			}
-		} else {
-			r_cons_cmd_help_match (core->cons, help_msg_r, "rm", 0, false);
-		}
-		return true;
+		return cmd_rm (core, input);
 	case 'x':
 		if (core->io->desc) {
 			if (oldsize != -1) {
