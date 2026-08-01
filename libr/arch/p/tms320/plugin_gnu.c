@@ -37,7 +37,7 @@ static int disassemble(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		return -1;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
-	memcpy (bytes, buf, R_MIN (sizeof(bytes), len)); // TODO handle thumb
+	memcpy (bytes, buf, R_MIN (sizeof (bytes), len)); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
