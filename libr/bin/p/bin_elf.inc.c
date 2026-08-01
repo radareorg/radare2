@@ -216,7 +216,7 @@ static bool is_library_without_entrypoint(ELFOBJ *eo) {
 		return false;
 	}
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+	for (i = 0; i < eo->phnum; i++) {
 		if (eo->phdr[i].p_type == PT_INTERP) {
 			return false;
 		}
