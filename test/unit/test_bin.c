@@ -354,6 +354,85 @@ bool test_r_bin_resource_raw_extraction(void) {
 	mu_end;
 }
 
+// ELF32 ET_DYN using PN_XNUM: e_phnum is 0xffff and the real program header
+// count is taken from shdr[0].sh_info, so phdr[] holds a single entry
+static RBuffer *elf_pn_xnum_shared_object(void) {
+	const ut32 phoff = 0x34;
+	const ut32 stroff = phoff + 32;
+	const ut32 shoff = 0x68;
+	const ut32 textoff = 0x1000;
+	const ut32 textsize = 0x10;
+	const char shstrtab[] = "\0.text\0.shstrtab";
+	const size_t size = textoff + textsize;
+	ut8 *bytes = calloc (1, size);
+	if (!bytes) {
+		return NULL;
+	}
+	memcpy (bytes, "\x7f" "ELF\x01\x01\x01", 7);
+	r_write_le16 (bytes + 16, 3); // ET_DYN
+	r_write_le16 (bytes + 18, 40); // EM_ARM
+	r_write_le32 (bytes + 20, 1);
+	r_write_le32 (bytes + 28, phoff);
+	r_write_le32 (bytes + 32, shoff);
+	r_write_le16 (bytes + 40, 52);
+	r_write_le16 (bytes + 42, 32);
+	r_write_le16 (bytes + 44, 0xffff); // PN_XNUM
+	r_write_le16 (bytes + 46, 40);
+	r_write_le16 (bytes + 48, 3);
+	r_write_le16 (bytes + 50, 2);
+
+	r_write_le32 (bytes + phoff, 1); // PT_LOAD
+	r_write_le32 (bytes + phoff + 4, textoff);
+	r_write_le32 (bytes + phoff + 8, textoff);
+	r_write_le32 (bytes + phoff + 12, textoff);
+	r_write_le32 (bytes + phoff + 16, textsize);
+	r_write_le32 (bytes + phoff + 20, textsize);
+	r_write_le32 (bytes + phoff + 24, 5);
+	r_write_le32 (bytes + phoff + 28, 0x1000);
+
+	memcpy (bytes + stroff, shstrtab, sizeof (shstrtab));
+
+	r_write_le32 (bytes + shoff + 28, 1); // shdr[0].sh_info holds the phdr count
+	r_write_le32 (bytes + shoff + 40, 1); // .text, resolves the entrypoint
+	r_write_le32 (bytes + shoff + 44, 1);
+	r_write_le32 (bytes + shoff + 48, 6);
+	r_write_le32 (bytes + shoff + 52, textoff);
+	r_write_le32 (bytes + shoff + 56, textoff);
+	r_write_le32 (bytes + shoff + 60, textsize);
+	r_write_le32 (bytes + shoff + 80, 7); // .shstrtab
+	r_write_le32 (bytes + shoff + 84, 3);
+	r_write_le32 (bytes + shoff + 96, stroff);
+	r_write_le32 (bytes + shoff + 100, sizeof (shstrtab));
+
+	RBuffer *buf = r_buf_new_with_bytes (bytes, size);
+	free (bytes);
+	return buf;
+}
+
+bool test_r_bin_elf_pn_xnum_phdr(void) {
+	RBuffer *buf = elf_pn_xnum_shared_object ();
+	mu_assert_notnull (buf, "PN_XNUM ELF allocation");
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+
+	RBinFileOptions opt = {0};
+	r_bin_file_options_init (&opt, -1, 0, 0, 0);
+	opt.filename = "pn_xnum.so";
+	mu_assert_true (r_bin_open_buf (bin, buf, &opt), "PN_XNUM ELF could not be opened");
+
+	// looking up the entrypoint scans the program headers for PT_INTERP, which
+	// must stay inside the array sized from shdr[0].sh_info and not e_phnum
+	const RList *entries = r_bin_get_entries (bin);
+	mu_assert_notnull (entries, "PN_XNUM ELF entries");
+	mu_assert_eq (r_list_length (entries), 1, "PN_XNUM ELF entry count");
+
+	r_bin_free (bin);
+	r_io_free (io);
+	r_unref (buf);
+	mu_end;
+}
+
 
 bool all_tests(void) {
 	mu_run_test(test_r_bin);
@@ -362,6 +441,7 @@ bool all_tests(void) {
 	mu_run_test(test_r_bin_external_resource_data);
 	mu_run_test(test_r_bin_resource_decoding);
 	mu_run_test(test_r_bin_resource_raw_extraction);
+	mu_run_test(test_r_bin_elf_pn_xnum_phdr);
 	return tests_passed != tests_run;
 }
 
