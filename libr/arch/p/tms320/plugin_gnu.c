@@ -31,13 +31,13 @@ DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static int disassemble(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	char options[64];
-	ut8 bytes[8] = { 0 };
+	ut8 bytes[32] = { 0 };
 	struct disassemble_info disasm_obj = {0};
 	if (len < 4) {
 		return -1;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
-	memcpy (bytes, buf, 4); // TODO handle thumb
+	memcpy (bytes, buf, R_MIN (sizeof (bytes), len)); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
@@ -58,7 +58,7 @@ static int disassemble(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	disasm_obj.disassembler_options = options;
 	disasm_obj.buffer = bytes;
 	disasm_obj.buffer_vma = addr;
-	disasm_obj.buffer_length = len;
+	disasm_obj.buffer_length = R_MIN (sizeof(bytes), len);
 	disasm_obj.read_memory_func = &tms320_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
