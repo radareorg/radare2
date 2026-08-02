@@ -70,18 +70,21 @@ static int bsd_syscall_stop_type(int pid) {
 
 static void bsd_syscall_trace_set(R_UNUSED int pid, R_UNUSED bool enable) {
 #if defined(PT_GET_EVENT_MASK) && defined(PT_SET_EVENT_MASK) && defined(PTRACE_SCE) && defined(PTRACE_SCX)
-	ptrace_event_t pe = {0};
-	if (ptrace (PT_GET_EVENT_MASK, pid, (caddr_t)&pe, sizeof (pe)) == -1) {
+	// ptrace(2) on FreeBSD reads the event mask "into the integer pointed to
+	// by addr", so this is a plain int here. NetBSD spells the same request
+	// with a ptrace_event_t struct, which does not exist on FreeBSD.
+	int events = 0;
+	if (ptrace (PT_GET_EVENT_MASK, pid, (caddr_t)&events, sizeof (events)) == -1) {
 		return;
 	}
-	const int old = pe.pe_set_event;
+	const int old = events;
 	if (enable) {
-		pe.pe_set_event |= PTRACE_SCE | PTRACE_SCX;
+		events |= PTRACE_SCE | PTRACE_SCX;
 	} else {
-		pe.pe_set_event &= ~(PTRACE_SCE | PTRACE_SCX);
+		events &= ~(PTRACE_SCE | PTRACE_SCX);
 	}
-	if (pe.pe_set_event != old) {
-		(void)ptrace (PT_SET_EVENT_MASK, pid, (caddr_t)&pe, sizeof (pe));
+	if (events != old) {
+		(void)ptrace (PT_SET_EVENT_MASK, pid, (caddr_t)&events, sizeof (events));
 	}
 #endif
 }
