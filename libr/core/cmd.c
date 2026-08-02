@@ -2951,28 +2951,34 @@ static int cmd_resize(void *data, const char *input) {
 			return false;
 		}
 		if (input[1] == ' ') {
-			int index = 2;
 			if (input[2] == '-') {
 				if (input[3] == 'r') {
 					const char *file = r_str_trim_head_ro (input + 4);
 					if (input[4] == 'f') {
+						if (input[5] != ' ')
+						{
+							r_cons_cmd_help_match (core->cons, help_msg_r, "rm", 0, false);
+							return false;
+						}
 						file = r_str_trim_head_ro (input + 5);
+					} else if (input[4] == ' ') {
+						const char *file = r_str_trim_head_ro (input + 5);
+						return r_file_rm_rf (file);
+					} else {
+						r_cons_cmd_help_match (core->cons, help_msg_r, "rm", 0, false);
+						return false;
 					}
 					if (*file == '\0') {
 						r_cons_cmd_help_match (core->cons, help_msg_r, "rm", 0, false);
 						return false;
 					}
 					return r_file_rm_rf (file);
-				}
-				while (input[index] != ' ' && input[index] != '\0') {
-					index++;
-				}
-				if (input[index] == '\0') {
+				} else {
 					r_cons_cmd_help_match (core->cons, help_msg_r, "rm", 0, false);
 					return false;
 				}
 			}
-			const char *file = r_str_trim_head_ro (input + index);
+			const char *file = r_str_trim_head_ro (input + 2);
 			if (*file == '$') {
 				if (!r_cmd_alias_del (core->rcmd, file + 1)) {
 					R_LOG_ERROR ("Cannot find alias file %s", file);
