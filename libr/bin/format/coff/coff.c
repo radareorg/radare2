@@ -55,7 +55,7 @@ R_IPI bool r_coff_supported_arch(const ut8 *buf) {
 R_IPI bool r_coff_check(RBuffer *b) {
 	ut8 tmp[20];
 	int r = r_buf_read_at (b, 0, tmp, sizeof (tmp));
-	if (r < 20 || !r_coff_supported_arch (tmp)) {
+	if (r < sizeof (tmp) || !r_coff_supported_arch (tmp)) {
 		return false;
 	}
 	// the two byte magic is too weak, so validate the header fields
