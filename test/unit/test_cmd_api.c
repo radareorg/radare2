@@ -245,12 +245,12 @@ static bool test_r_cmd_context_args(void) {
 	state.expected_argc = 0;
 	mu_assert_eq (r_cmd_call (cmd, "cmd"), 0, "dispatch empty argument vector");
 	mu_assert_true (state.args_ok, "empty argument vector is available");
-	RStrs raw_expected[] = { R_STRS_LIT ("unterminated") };
+	RStrs unmatched_expected[] = { R_STRS_LIT ("unterminated") };
 	state.expected_input = "cmd 'unterminated";
-	state.expected_args = raw_expected;
-	state.expected_argc = R_ARRAY_SIZE (raw_expected);
-	mu_assert_eq (r_cmd_call (cmd, state.expected_input), 0, "raw dispatch accepts unmatched quote");
-	mu_assert_true (state.args_ok, "raw dispatch receives best-effort metadata");
+	state.expected_args = unmatched_expected;
+	state.expected_argc = R_ARRAY_SIZE (unmatched_expected);
+	mu_assert_eq (r_cmd_call (cmd, state.expected_input), 0, "dispatch accepts unmatched quote");
+	mu_assert_true (state.args_ok, "dispatch receives best-effort arguments");
 	r_cmd_free (cmd);
 	mu_end;
 }
