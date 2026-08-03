@@ -215,7 +215,7 @@ static void cmd_Pn(RCore *core, const char *input, const char *fileproject) {
 			}
 		} else if (input[2] == ' ') {
 			/* set base64 string */
-			ut8 *data = r_base64_decode_dyn (input + 3, -1, NULL);
+			ut8 *data = r_base64_decode_dyn (input + 3, -1, NULL, false);
 			if (data) {
 				char *notes_file = r_core_project_notes_file (core, fileproject);
 				if (notes_file) {

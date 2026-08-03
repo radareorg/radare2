@@ -181,7 +181,7 @@ static inline bool za_add(RCore *core, const char *input) {
 		{
 			RSignItem *it = item_new_named (core->anal, name);
 			if (it) {
-				char *dec = (char *)r_base64_decode_dyn (sig, -1, NULL);
+				char *dec = (char *)r_base64_decode_dyn (sig, -1, NULL, false);
 				if (dec) {
 					if (t == R_SIGN_RAWNAME) {
 						it->rawname = dec;

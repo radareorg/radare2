@@ -794,7 +794,7 @@ static char *dp_read(RCore *core) {
 	if (R_STR_ISNOTEMPTY (dbg_profile)) {
 		if (r_str_startswith (dbg_profile, "base64:")) {
 			int len;
-			char *s = (char *)r_base64_decode_dyn (dbg_profile + 7, -1, &len);
+			char *s = (char *)r_base64_decode_dyn (dbg_profile + 7, -1, &len, false);
 			char *res = r_str_ndup (s, len);
 			free (s);
 			return res;

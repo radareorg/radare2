@@ -588,7 +588,7 @@ static RCFValueData *r_cf_value_data_new(char *string) {
 
 	const int len = strlen (string);
 	int out_len;
-	ut8 *out = r_base64_decode_dyn (string, len, &out_len);
+	ut8 *out = r_base64_decode_dyn (string, len, &out_len, false);
 	if (!out || out_len < 1) {
 		free (out);
 		R_FREE (data);

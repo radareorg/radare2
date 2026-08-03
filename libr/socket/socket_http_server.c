@@ -83,7 +83,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 				content_length = atoi (buf + 16);
 			} else if (so->httpauth && r_str_startswith (buf, "Authorization: Basic ")) {
 				int declen;
-				char *dec = (char *)r_base64_decode_dyn (buf + 21, -1, &declen);
+				char *dec = (char *)r_base64_decode_dyn (buf + 21, -1, &declen, false);
 				/* only non-empty user:password credentials can match */
 				if (R_STR_ISNOTEMPTY (dec) && strchr (dec, ':')) {
 					RListIter *iter;

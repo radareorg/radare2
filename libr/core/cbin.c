@@ -408,7 +408,7 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 		section_name = section? section->name: "";
 		type_string = r_bin_string_type (string->type);
 		if (b64str) {
-			ut8 *s = r_base64_decode_dyn (string->string, -1, NULL);
+			ut8 *s = r_base64_decode_dyn (string->string, -1, NULL, true);
 			if (R_STR_ISNOTEMPTY (s) && IS_PRINTABLE (*s)) {
 				// TODO: add more checks
 				free (b64.string);
@@ -416,6 +416,8 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 				b64.string = (char *)s;
 				b64.size = strlen (b64.string);
 				string = &b64;
+			} else {
+				free (s);
 			}
 		}
 		// Apply pagination for non-table output modes

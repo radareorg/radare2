@@ -256,7 +256,7 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 		binkey = (ut8*)strdup (key + 2);
 		keylen = strlen (key + 2);
 	} else if (r_str_startswith (key, "base64:")) {
-		binkey = r_base64_decode_dyn (key + 7, -1, (int *)&keylen);
+		binkey = r_base64_decode_dyn (key + 7, -1, (int *)&keylen, false);
 	} else {
 		binkey = (ut8 *)strdup (key);
 		keylen = r_hex_str2bin (key, binkey);
@@ -310,7 +310,7 @@ static void write_block_signature(RCore *core, const char *algo, const char *key
 		binkey = (ut8 *)strdup (key + 2);
 		keylen = strlen (key + 2);
 	} else if (r_str_startswith (key, "base64:")) {
-		binkey = r_base64_decode_dyn (key + 7, -1, (int *)&keylen);
+		binkey = r_base64_decode_dyn (key + 7, -1, (int *)&keylen, false);
 	} else {
 		binkey = (ut8 *)strdup (key);
 		keylen = r_hex_str2bin (key, binkey);
@@ -1049,8 +1049,8 @@ static int cmd_w6(void *data, const char *input) {
 			buf = malloc (str_len);
 			if (buf) {
 				len = r_base64_decode (buf, str, -1, false);
-				if (len < 0) {
-					R_LOG_WARN ("Invalid hexpair string");
+				if (len < 1) {
+					R_LOG_WARN ("Invalid base64 string");
 					R_FREE (buf);
 					fail = true;
 				}
@@ -1888,7 +1888,7 @@ static int cmd_wt(RCore *core, const char *input) {
 
 			if (r_str_startswith (filename, "base64:")) {
 				const char *b64str = filename + strlen ("base64:");
-				ut8 *decoded = r_base64_decode_dyn (b64str , strlen (b64str), NULL);
+				ut8 *decoded = r_base64_decode_dyn (b64str, strlen (b64str), NULL, true);
 				if (!decoded) {
 					R_LOG_ERROR ("Couldn't decode b64 filename");
 					ret = 1;

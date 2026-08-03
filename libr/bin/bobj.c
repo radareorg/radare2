@@ -778,12 +778,19 @@ R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
 
 	RBinString *ptr;
 	R_VEC_FOREACH (&bo->strings, ptr) {
-		char *dec = (char *)r_base64_decode_dyn ((const char *)ptr->string, -1, NULL);
+		// strict decoding: a string is only treated as base64 if it fully is,
+		// and every nested decode must shrink, otherwise this loops forever
+		char *dec = (char *)r_base64_decode_dyn ((const char *)ptr->string, -1, NULL, true);
+		if (R_STR_ISEMPTY (dec)) {
+			free (dec);
+			dec = NULL;
+		}
 		if (dec) {
 			char *s = ptr->string;
 			for (;;) {
-				char *dec2 = (char *)r_base64_decode_dyn ((const char *)s, -1, NULL);
-				if (!dec2) {
+				char *dec2 = (char *)r_base64_decode_dyn ((const char *)s, -1, NULL, true);
+				if (R_STR_ISEMPTY (dec2)) {
+					free (dec2);
 					break;
 				}
 				if (!r_str_is_printable (dec2)) {

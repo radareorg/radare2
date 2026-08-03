@@ -544,7 +544,7 @@ dotherax:
 		return true;
 	} else if (flags->b64decode) { // -D
 		int n = strlen (str);
-		ut8 *out = calloc (1, (n / 4 * 3) + 1);
+		ut8 *out = calloc (1, ((n / 4) + 1) * 3 + 1);
 		if (out) {
 			n = r_base64_decode (out, str, n, false);
 			if (n > 0) {
