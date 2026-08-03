@@ -3343,43 +3343,139 @@ static RAnalVar *synth_rec_var(RAnal *anal, RAnalFunction *fcn, const char *cc, 
 	return synth_arg_var (anal, fcn, cc, rec->arg);
 }
 
-// true when the var still carries a pointer to one of the synthesized structs being replaced
-static bool synth_type_is_stale(Sdb *db, const char *key, const char *vtype) {
-	if (!vtype || !r_str_startswith (vtype, "struct ")) {
+// the first allocation storing into a reused local keeps it, so the name is not handed out twice
+static bool synth_var_claimed(RVecSynthRec *recs, const SynthRec *rec, const char *name) {
+	SynthRec *r;
+	R_VEC_FOREACH (recs, r) {
+		if (r == rec) {
+			break;
+		}
+		if (!r->child && r->var && !strcmp (r->var, name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+// NULL when an earlier rec already resolved to this var, so arg and ret recs cannot both claim a slot
+static RAnalVar *synth_bound_var(RAnal *anal, RAnalFunction *fcn, const char *cc, RVecSynthRec *recs, const SynthRec *rec) {
+	RAnalVar *av = synth_rec_var (anal, fcn, cc, rec);
+	if (!av) {
+		return NULL;
+	}
+	SynthRec *r;
+	R_VEC_FOREACH (recs, r) {
+		if (r == rec) {
+			break;
+		}
+		if (!r->child && synth_rec_var (anal, fcn, cc, r) == av) {
+			return NULL;
+		}
+	}
+	return av;
+}
+
+// the type may carry qualifiers and any pointer depth around the struct name
+static bool synth_type_names(const char *vtype, const char *name) {
+	const char *p = strstr (r_str_get (vtype), "struct ");
+	if (!p) {
 		return false;
 	}
-	const char *base = vtype + strlen ("struct ");
-	const char *sp = strchr (base, ' ');
-	char *name = sp? r_str_ndup (base, sp - base): strdup (base);
-	const bool stale = name && sdb_array_contains (db, key, name, NULL);
-	free (name);
-	return stale;
+	p += strlen ("struct ");
+	const size_t len = strlen (name);
+	return strcspn (p, " *") == len && !strncmp (p, name, len);
+}
+
+// a member of a kept parent, so dropping it would dangle the parent rather than a var
+static bool synth_member_names(RAnal *anal, const char *parent, const char *name) {
+	RAnalBaseType *bt = r_anal_get_base_type (anal, parent);
+	if (!bt) {
+		return false;
+	}
+	bool hit = false;
+	if (bt->kind == R_ANAL_BASE_TYPE_KIND_STRUCT) {
+		RAnalTypeMember *m;
+		R_VEC_FOREACH (&bt->struct_data.members, m) {
+			if (synth_type_names (m->type, name)) {
+				hit = true;
+				break;
+			}
+		}
+	}
+	r_anal_base_type_free (bt);
+	return hit;
+}
+
+// dropping a generated type a user-edited var still reaches would leave that var unresolvable
+static bool synth_type_referenced(RAnal *anal, RAnalFunction *fcn, const char *name) {
+	RAnalVar **vp;
+	R_VEC_FOREACH (&fcn->vars, vp) {
+		const char *vt = r_str_get ((*vp)->type);
+		if (synth_type_names (vt, name)) {
+			return true;
+		}
+		const char *p = strstr (vt, "struct ");
+		if (!p) {
+			continue;
+		}
+		p += strlen ("struct ");
+		char *parent = r_str_ndup (p, strcspn (p, " *"));
+		const bool hit = parent && synth_member_names (anal, parent, name);
+		free (parent);
+		if (hit) {
+			return true;
+		}
+	}
+	return false;
 }
 
 // a rerun may bind elsewhere or not at all, so put back the type each var had before we touched it
-static void synth_restore_vars(RAnal *anal, RAnalFunction *fcn, Sdb *bookdb, const char *key, const char *vkey) {
+static void synth_restore_vars(RAnal *anal, RAnalFunction *fcn, Sdb *bookdb, const char *vkey) {
 	char *vrec = sdb_get (bookdb, vkey, 0);
 	if (!vrec) {
 		return;
 	}
 	char *vp;
 	sdb_aforeach (vp, vrec) {
-		char *colon = strchr (vp, ':');
-		if (colon) {
-			*colon = 0;
-			char *vname = (char *)sdb_decode (vp, NULL);
-			char *prev = (char *)sdb_decode (colon + 1, NULL);
-			RAnalVar *v = vname? r_anal_function_get_var_byname (fcn, vname): NULL;
-			// a type the user changed since the last run is not ours to replace
-			if (v && prev && synth_type_is_stale (bookdb, key, v->type)) {
+		if (r_str_split (vp, ':') == 4) {
+			RAnalVar *v = r_anal_function_get_var (fcn, *vp, atoi (r_str_word_get0 (vp, 1)));
+			char *applied = (char *)sdb_decode (r_str_word_get0 (vp, 2), NULL);
+			char *prev = (char *)sdb_decode (r_str_word_get0 (vp, 3), NULL);
+			// only the exact type the last run applied is ours to replace
+			if (v && applied && prev && !strcmp (r_str_get (v->type), applied)) {
 				r_anal_var_set_type (anal, v, prev);
 			}
-			free (vname);
+			free (applied);
 			free (prev);
 		}
 		sdb_aforeach_next (vp);
 	}
 	free (vrec);
+}
+
+// point the bound var at the synthesized struct, booking the replaced type so a rerun can undo it
+static void synth_bind_var(RAnal *anal, RAnalFunction *fcn, const char *cc, RVecSynthRec *recs, SynthRec *rec, RStrBuf *vsb) {
+	RAnalVar *av = synth_bound_var (anal, fcn, cc, recs, rec);
+	if (!av) {
+		return;
+	}
+	char *ty = r_str_newf ("struct %s *", rec->bt->name);
+	if (ty) {
+		char *ap64 = sdb_encode ((const ut8 *)ty, -1);
+		char *pt64 = sdb_encode ((const ut8 *)r_str_get (av->type), -1);
+		if (ap64 && pt64) {
+			// keyed by location, so a later rename cannot orphan the record
+			r_strbuf_appendf (vsb, "%s%c:%d:%s:%s",
+				r_strbuf_length (vsb)? ",": "", av->kind, av->delta, ap64, pt64);
+		}
+		free (ap64);
+		free (pt64);
+		r_anal_var_set_type (anal, av, ty);
+		free (ty);
+	}
+	if (!rec->var) {
+		rec->var = strdup (av->name);
+	}
 }
 
 // each pointer slot holds a strided poison pointer into its own child window (a deref decodes back to the parent offset); one level deep, child windows hold no further poison
@@ -3876,7 +3972,7 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 			continue;
 		}
 		RAnalVar *rv = synth_ret_var (tps, fcn, sbase + (ut64)rrec->arg * SYNTH_WINDOW, spv, psz);
-		if (rv) {
+		if (rv && !synth_var_claimed (recs, rrec, rv->name)) {
 			rrec->var = strdup (rv->name);
 		}
 	}
@@ -3885,13 +3981,15 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 		Sdb *bookdb = anal->sdb;
 		char *key = r_str_newf ("synth.%08" PFMT64x, fcn->addr);
 		char *vkey = r_str_newf ("synth.vars.%08" PFMT64x, fcn->addr);
+		synth_restore_vars (anal, fcn, bookdb, vkey);
 		// re-runs and function renames would leave stale types behind otherwise
 		char *stale = sdb_get (bookdb, key, 0);
 		if (stale) {
-			synth_restore_vars (anal, fcn, bookdb, key, vkey);
 			char *sp;
 			sdb_aforeach (sp, stale) {
-				r_anal_remove_parsed_type (anal, sp);
+				if (!synth_type_referenced (anal, fcn, sp)) {
+					r_anal_remove_parsed_type (anal, sp);
+				}
 				sdb_aforeach_next (sp);
 			}
 			free (stale);
@@ -3908,25 +4006,7 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 				r_anal_save_base_type (anal, rec->bt);
 				r_strbuf_appendf (&sb, "%s%s", r_strbuf_length (&sb)? ",": "", rec->bt->name);
 				if (!rec->child) {
-					RAnalVar *av = synth_rec_var (anal, fcn, cc, rec);
-					if (av) {
-						char *ty = r_str_newf ("struct %s *", rec->bt->name);
-						if (ty) {
-							char *vn64 = sdb_encode ((const ut8 *)av->name, -1);
-							char *pt64 = sdb_encode ((const ut8 *)r_str_get (av->type), -1);
-							if (vn64 && pt64) {
-								r_strbuf_appendf (&vsb, "%s%s:%s",
-									r_strbuf_length (&vsb)? ",": "", vn64, pt64);
-							}
-							free (vn64);
-							free (pt64);
-							r_anal_var_set_type (anal, av, ty);
-							free (ty);
-						}
-						if (!rec->var) {
-							rec->var = strdup (av->name);
-						}
-					}
+					synth_bind_var (anal, fcn, cc, recs, rec, &vsb);
 				}
 			}
 			sdb_set (bookdb, key, r_strbuf_get (&sb), 0);
@@ -4041,7 +4121,7 @@ static char *synth_commands(RAnal *anal, RAnalFunction *fcn, RVecSynthRec *recs)
 		if (rec->child) {
 			continue;
 		}
-		RAnalVar *av = synth_rec_var (anal, fcn, cc, rec);
+		RAnalVar *av = synth_bound_var (anal, fcn, cc, recs, rec);
 		if (!av) {
 			continue;
 		}

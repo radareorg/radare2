@@ -1033,6 +1033,137 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=afts binds a local reused across allocations to the first allocation
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf18000000e86e000000488985f8ffffff488b45f8c70001000000c7400802000000bf28000000e84c000000488985f8ffffff488b45f8c70003000000c7401004000000c9c3
+wx c3 @ 0x80
+af @ 0x80
+afn malloc @ 0x80
+af @ 0
+afts > /dev/null
+afv
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret0 * var_8h @ rbp-0x8
+EOF
+RUN
+
+NAME=afts* emits one variable command for a local reused across allocations
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf18000000e86e000000488985f8ffffff488b45f8c70001000000c7400802000000bf28000000e84c000000488985f8ffffff488b45f8c70003000000c7401004000000c9c3
+wx c3 @ 0x80
+af @ 0x80
+afn malloc @ 0x80
+af @ 0
+afts*~afv
+EOF
+EXPECT=<<EOF
+'afvb -8 var_8h struct fcn_00000000_ret0 *
+EOF
+RUN
+
+NAME=afts rerun restores a renamed receiving var when the binding disappears
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf88000000e81e000000488985f8ffffff488b45f8c70001000000488b45f8c7400802000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afts > /dev/null
+afvn p var_8h
+e types.sizefns=malloc/-
+afts
+afv
+EOF
+EXPECT=<<EOF
+var int64_t p @ rbp-0x8
+EOF
+RUN
+
+NAME=afts rerun keeps a user-selected type naming another synthesized struct
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf18000000e84e000000488985f8ffffffbf28000000e83d000000488985f0ffffff488b45f8c70001000000c7400802000000488b45f0c70003000000c7401004000000c9c3
+wx c3 @ 0x60
+af @ 0x60
+afn malloc @ 0x60
+af @ 0
+afts > /dev/null
+afvt var_8h "struct fcn_00000000_ret1 *"
+e types.sizefns=malloc/-
+afts
+afv~var_8h
+ts~fcn_
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret1 * var_8h @ rbp-0x8
+fcn_00000000_ret1
+EOF
+RUN
+
+NAME=afts keeps a synthesized type a qualified user edit still points at
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf88000000e81e000000488985f8ffffff488b45f8c70001000000488b45f8c7400802000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afts > /dev/null
+afvt var_8h "const struct fcn_00000000_ret0 *"
+e types.sizefns=malloc/-
+afts
+afv
+ts~fcn_
+EOF
+EXPECT=<<EOF
+var const struct fcn_00000000_ret0 * var_8h @ rbp-0x8
+fcn_00000000_ret0
+EOF
+RUN
+
+NAME=aftsj reports the bound variable once for a local reused across allocations
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf18000000e86e000000488985f8ffffff488b45f8c70001000000c7400802000000bf28000000e84c000000488985f8ffffff488b45f8c70003000000c7401004000000c9c3
+wx c3 @ 0x80
+af @ 0x80
+afn malloc @ 0x80
+af @ 0
+aftsj~{}~var
+EOF
+EXPECT=<<EOF
+    "var": "var_8h",
+EOF
+RUN
+
+NAME=afts keeps a nested child of a synthesized type a user edit still points at
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b07488b4f088b118b711001d001f0c3
+af @ 0
+afts > /dev/null
+afvt arg1 "const struct fcn_00000000_arg0 *"
+afn other
+afts > /dev/null
+ts~fcn_00000000
+EOF
+EXPECT=<<EOF
+fcn_00000000_arg0
+fcn_00000000_arg0_0x8
+EOF
+RUN
+
 NAME=allocator returns stay invisible without types.sizes
 FILE=malloc://256
 ARGS=-a x86 -b 64
