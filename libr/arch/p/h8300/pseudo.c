@@ -25,7 +25,7 @@ static const char *pseudo_rules[] = {
 	"subx/2/$2 -= $1 + C",
 	"inc/1/$1++",
 	"dec/1/$1--",
-	"mulxu/2/$2 *= $1",
+	"mulxu/2/$2 = $2l * $1",
 	"divxu/2/$2 /= $1",
 	"neg/1/$1 = -$1",
 	"daa/1/$1 = daa ($1)",
@@ -121,10 +121,21 @@ static char *h8300_normalize(const char *text, H8300Ctx ctx) {
 			continue;
 		}
 		if (ch == ':' && isdigit ((ut8)p[1])) {
-			p++;
-			while (isdigit ((ut8)*p)) {
-				p++;
+			const char *q = p + 1;
+			while (isdigit ((ut8)*q)) {
+				q++;
 			}
+			/* strip only the :8/:16/:3 size annotations, which always end
+			 * an operand token, and not colons inside substituted flag names */
+			if (!*q || *q == ',' || *q == ')' || *q == ' ') {
+				p = q;
+				continue;
+			}
+		}
+		if (ch == '.' && ctx == H8300_CTX_BRANCH && isdigit ((ut8)p[1])) {
+			/* make the sign of the bsr displacement explicit */
+			r_strbuf_append (sb, ".+");
+			p++;
 			continue;
 		}
 		if (ch != '@') {
@@ -135,7 +146,14 @@ static char *h8300_normalize(const char *text, H8300Ctx ctx) {
 		if (p[1] == '@') {
 			p += 2;
 			if (ctx == H8300_CTX_BRANCH) {
-				/* relative displacement, keep the plain target */
+				/* the branches print the raw pc-relative displacement
+				 * byte, render it with the same .d notation as bsr */
+				char *end = NULL;
+				long disp = strtol (p, &end, 16);
+				if (end && end != p) {
+					r_strbuf_appendf (sb, ".%+d", (int)(st8)disp);
+					p = end;
+				}
 				continue;
 			}
 			r_strbuf_append (sb, "[");
@@ -199,16 +217,17 @@ static H8300Ctx opcode_ctx(const char *data) {
 	if (!sp || sp - data != 3) {
 		return H8300_CTX_DATA;
 	}
-	if (!strncmp (data, "jmp", 3) || !strncmp (data, "jsr", 3)) {
+	if (!r_str_ncasecmp (data, "jmp", 3) || !r_str_ncasecmp (data, "jsr", 3)) {
 		return H8300_CTX_JUMP;
 	}
 	const char *branches[] = {
 		"bra", "brn", "bhi", "bls", "bcc", "bcs", "bne", "beq",
-		"bvc", "bvs", "bpl", "bmi", "bge", "blt", "bgt", "ble", NULL
+		"bvc", "bvs", "bpl", "bmi", "bge", "blt", "bgt", "ble",
+		"bsr", NULL
 	};
 	int i;
 	for (i = 0; branches[i]; i++) {
-		if (!strncmp (data, branches[i], 3)) {
+		if (!r_str_ncasecmp (data, branches[i], 3)) {
 			return H8300_CTX_BRANCH;
 		}
 	}
