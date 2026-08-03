@@ -329,8 +329,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	int i;
 	const ut64 spbase = r_reg_getv (core->anal->reg, "SP");
 	const int word = (core->anal->config->bits == 64)? 8: 4;
-	bool variadic = nargs > 1 && is_format_function (key)
-		&& !strcmp (r_str_get (r_type_func_args_name (TDB, key, nargs - 1)), "...");
+	bool variadic = nargs > 1 && is_format_function (key) && r_type_func_is_variadic (TDB, key);
 	for (i = 0; i < nargs; i++) {
 		if (variadic && i == nargs - 1
 			&& append_format_varargs (core, list, cc, nargs, spbase, word)) {
