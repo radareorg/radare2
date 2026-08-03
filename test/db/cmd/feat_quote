@@ -45,6 +45,10 @@ echo 'semi;pipe|redirect>seek@grep~stay literal'
 ?e pre"hello world"post
 ?e pre'hello world'post
 ?e "line\nbang\x21"
+?en "hello"
+?e
+?en pre'hello world'post
+?e
 EOF
 EXPECT=<<EOF
 'hello world'
@@ -59,6 +63,8 @@ prehello worldpost
 prehello worldpost
 line
 bang!
+hello
+prehello worldpost
 EOF
 RUN
 

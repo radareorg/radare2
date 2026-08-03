@@ -1,0 +1,181 @@
+NAME=Lcc lists new command registrations by prefix
+CMDS=<<EOF
+Lcc prj
+Lcc echo
+Lcc ?e
+EOF
+EXPECT=<<EOF
+prj
+echo
+?e
+EOF
+RUN
+
+NAME=Lcc help
+CMDS=<<EOF
+Lcc?
+EOF
+EXPECT=<<EOF
+| Lcc [prefix]  list commands registered with the new command API
+EOF
+RUN
+
+NAME=echo context command
+FILE=-
+CMDS=<<EOF
+echo "Hello;world" ";you rock"
+echo -n no-newline
+?e " through adapter"
+?e '${literal}'
+?en '${literal}'
+?e after-no-newline
+echo "A\x00B" ignored
+echo64 QQBC
+'echo "raw quotes"
+echo one   two
+echo  leading
+echo unknown\q
+?=42
+echo value
+?v $?
+?=42
+echo -n value=
+?v $?
+?=42
+echo
+?v $?
+?e after-bare
+?=42
+echo64 QQ==
+?v $?
+echo ok && ?e AND
+echo ok || ?e BAD
+echo64 QQ== && ?e DECODED
+echo64 "" || ?e REJECTED
+echo64 || ?e ARITY
+echo64?
+EOF
+EXPECT=<<EOF
+Hello;world ;you rock
+no-newline through adapter
+${literal}
+${literal}after-no-newline
+A
+A
+raw quotes
+one two
+leading
+unknownq
+value
+0x2a
+value=0x2a
+0x2a
+after-bare
+A
+0x2a
+ok
+AND
+ok
+A
+DECODED
+REJECTED
+ARITY
+Usage: echo [-n] [arg ...]
+| echo [arg ...]     print arguments followed by a newline
+| echo -n [arg ...]  print arguments without a newline
+| echo -h            show this help (same as echo?)
+| echo64 base64      decode base64 text up to the first NUL
+| echo?              show this help
+EOF
+RUN
+
+NAME=echo and ?e parsed escaping
+FILE=-
+CMDS=<<EOF
+echo one\ two
+echo "line\nnext"
+echo \x41\101
+echo slash\\tail
+echo unknown\q
+echo ""
+echo -n ""
+echo "" x
+echo say\"hi it\'s
+echo \xZZ
+?e one\ two
+?e "line\nnext"
+?en slash\\tail
+?e !
+EOF
+EXPECT=<<EOF
+one two
+line
+next
+AA
+slash\tail
+unknownq
+
+ x
+say"hi it's
+ZZ
+one two
+line
+next
+slash\tail!
+EOF
+RUN
+
+NAME=echo help alias
+FILE=-
+CMDS=<<EOF
+echo -h
+EOF
+EXPECT=<<EOF
+Usage: echo [-n] [arg ...]
+| echo [arg ...]     print arguments followed by a newline
+| echo -n [arg ...]  print arguments without a newline
+| echo -h            show this help (same as echo?)
+| echo64 base64      decode base64 text up to the first NUL
+| echo?              show this help
+EOF
+RUN
+
+NAME=echo rejects invalid suffix
+FILE=-
+CMDS=<<EOF
+echoz invalid command i should have an error || ?e REJECTED
+EOF
+EXPECT=<<EOF
+REJECTED
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid `z` subcommand, try `echo?`
+EOF
+RUN
+
+NAME=?e fallback commands and status
+FILE=-
+CMDS=<<EOF
+?e:QQ==
+?e
+?ef ok
+?=0
+?eq ?e ran
+?r 5 6
+?en status=
+?v $?
+?eq ?e SHOULD_NOT_RUN
+?=0
+?eq ?e condition
+EOF
+EXPECT=<<EOF
+A
+.----.
+| ok |
+'----'
+ran
+0x5
+status=0x5
+condition
+EOF
+RUN

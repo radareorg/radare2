@@ -469,11 +469,8 @@ static const char *cmd_decode_escape(const char *src, const char *end, char **ds
 	return src;
 }
 
-/* Decodes every token in rest into context->args. In raw mode tokens are
- * split on whitespace but copied verbatim: no quote grouping and no escape
- * decoding, honoring the shell's promise that raw bodies are untouched.
- * Safe to call again when a fallback re-dispatch moves the args boundary;
- * previous state is released. */
+/* Rebuilds context arguments. Raw calls only split on whitespace, leaving
+ * quoting, escapes and the untouched command tail available to the handler. */
 static bool cmd_context_parse_args(RCmdContext *context, RStrs rest, bool raw) {
 	RVecRStrs_fini (&context->args);
 	free (context->args_storage);
@@ -581,6 +578,7 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 				: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
 			context->user = cmd->data;
 			context->remaining_depth = parent? parent->remaining_depth: 0;
+			context->raw = raw;
 		}
 		const char *sub_end = input.a + matched;
 		while (sub_end < input.b && !isspace ((ut8)*sub_end)) {

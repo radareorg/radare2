@@ -106,6 +106,7 @@ R_API ut8 *r_core_readblock(RCore *core, ut64 size) {
 #include "cmd_search.inc.c" // defines incDigitBuffer... used by cmd_print
 
 #include "cmd_print.inc.c"
+#include "r/echo.inc.c"
 #include "cmd_help.inc.c"
 
 #undef R_INCLUDE_BEGIN
@@ -3937,7 +3938,7 @@ static char *find_ch_after_macro(char *ptr, char ch) {
 
 static int handle_command_call(RCore *core, RCmdContext *context, const char *cmd) {
 	if (r_str_startswith (cmd, "b64:'")) {
-		return r_cmd_call_context (core->rcmd, context, cmd, true);
+		return r_cmd_call_context (core->rcmd, context, cmd, false);
 	}
 	if (*cmd != '\'') {
 		return -1;
@@ -3967,7 +3968,7 @@ static int handle_command_call(RCore *core, RCmdContext *context, const char *cm
 				const bool otmpseek = core->tmpseek;
 				core->tmpseek = true;
 				r_core_seek (core, at, true);
-				res = r_cmd_call_context (core->rcmd, context, end + 1, true);
+				res = r_cmd_call_context (core->rcmd, context, end + 1, false);
 				r_core_seek (core, addr, true);
 				core->tmpseek = otmpseek;
 			}
@@ -3978,7 +3979,7 @@ static int handle_command_call(RCore *core, RCmdContext *context, const char *cm
 		free (arg);
 		return res;
 	}
-	return r_cmd_call_context (core->rcmd, context, cmd, true);
+	return r_cmd_call_context (core->rcmd, context, cmd, false);
 }
 
 static const char *trim_command_head(const char *cmd) {
@@ -4124,7 +4125,7 @@ static int r_core_cmd_subst(RCore *core, RCmdContext *context, char *cmd) {
 	if (R_UNLIKELY (r_str_startswith (cmd, "?t"))) {
 		if (r_str_startswith (cmd + 2, "'")) {
 			char *call = r_str_newf ("?t'%s", cmd + 3);
-			int ret = call? r_cmd_call_context (core->rcmd, context, call, true): -1;
+			int ret = call? r_cmd_call_context (core->rcmd, context, call, false): -1;
 			free (call);
 			return ret;
 		}
@@ -4848,8 +4849,7 @@ static int r_core_cmd_subst_i(RCore *core, RCmdContext *context, char *cmd, char
 					free (out);
 				}
 			} else {
-				// Quoted commands are dispatched raw: their body is
-				// taken verbatim, preserving spacing and quoting
+				// Preserve the quoted body for raw-aware handlers.
 				r_cmd_call_context (core->rcmd, context, line, true);
 			}
 			if (quoted_grep) {
@@ -7348,7 +7348,7 @@ static int core_call_context(RCore *core, RCmdContext *parent, const char *cmd) 
 		return false;
 	}
 	RCmdContext *prev_context = context_activate (core, &context);
-	int res = r_cmd_call_context (core->rcmd, &context, cmd, true);
+	int res = r_cmd_call_context (core->rcmd, &context, cmd, false);
 	context_deactivate (core, &context, prev_context);
 	return res;
 }
@@ -7368,7 +7368,7 @@ R_API int r_core_call_at(RCore *core, ut64 addr, const char *cmd) {
 	return res;
 }
 
-// run an r2 command without evaluating any special character
+// Run an r2 command with standard quote and escape decoding.
 R_API int r_core_call(RCore *core, const char *cmd) {
 	return core_call_context (core, NULL, cmd);
 }
@@ -7556,6 +7556,9 @@ R_API void r_core_cmd_init(RCore *core) {
 		core->rcmd->macro.num = core->num;
 		core->rcmd->macro.cmd = core_cmd0_wrapper;
 		core->rcmd->nullcallback = r_core_cmd_nullcallback;
+		if (!r_core_cmd_echo_init (core->rcmd)) {
+			R_LOG_ERROR ("Cannot register echo commands");
+		}
 		size_t i;
 		for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
 			r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);

@@ -84,6 +84,29 @@ task-analysis
 EOF
 RUN
 
+NAME=& nested context echo
+FILE=-
+CMDS=<<EOF
+'& echo $(echo nested); echo second
+'& 'echo "raw task"
+?e foreground
+&& 1
+&= 1
+&& 2
+&= 2
+EOF
+EXPECT=<<EOF
+[1] echo $(echo nested); echo second
+[2] 'echo "raw task"
+foreground
+nested
+second
+
+raw task
+
+EOF
+RUN
+
 NAME=& analysis capture with main output
 FILE=hex://554889e5b82a0000005dc3
 ARGS=-a x86 -b 64
