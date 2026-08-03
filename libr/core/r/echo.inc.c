@@ -46,6 +46,13 @@ static void echo_print_args(RCmdContext *ctx, size_t first, bool newline) {
 	r_strbuf_fini (&output);
 }
 
+static void echo_print_raw(RCmdContext *ctx, const char *input, bool newline) {
+	r_cons_print (ctx->cons, input);
+	if (newline) {
+		r_cons_newline (ctx->cons);
+	}
+}
+
 static RCmdResult echo_base64(RCmdContext *ctx) {
 	RStrs *arg = RVecRStrs_at (&ctx->args, 0);
 	if (!arg || RVecRStrs_length (&ctx->args) != 1) {
@@ -92,6 +99,14 @@ static RCmdResult echo_callback(RCmdContext *ctx) {
 		newline = false;
 		i++;
 	}
+	if (ctx->raw) {
+		const char *input = r_str_trim_head_ro (ctx->subcmd.b);
+		if (!newline) {
+			input = r_str_trim_head_ro (input + 2);
+		}
+		echo_print_raw (ctx, input, newline);
+		return (RCmdResult) { 0 };
+	}
 	echo_print_args (ctx, i, newline);
 	return (RCmdResult) { 0 };
 }
@@ -104,7 +119,11 @@ static RCmdResult question_echo_callback(RCmdContext *ctx) {
 			.status = 127
 		};
 	}
-	echo_print_args (ctx, 0, newline);
+	if (ctx->raw) {
+		echo_print_raw (ctx, r_str_trim_head_ro (ctx->subcmd.b), newline);
+	} else {
+		echo_print_args (ctx, 0, newline);
+	}
 	if (newline) {
 		RCore *core = ctx->user;
 		r_core_return_value (core, 0);

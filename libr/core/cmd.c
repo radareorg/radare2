@@ -4849,8 +4849,7 @@ static int r_core_cmd_subst_i(RCore *core, RCmdContext *context, char *cmd, char
 					free (out);
 				}
 			} else {
-				// Quoted commands are dispatched raw: their body is
-				// taken verbatim, preserving spacing and quoting
+				// Preserve the quoted body for raw-aware handlers.
 				r_cmd_call_context (core->rcmd, context, line, true);
 			}
 			if (quoted_grep) {
@@ -7369,7 +7368,7 @@ R_API int r_core_call_at(RCore *core, ut64 addr, const char *cmd) {
 	return res;
 }
 
-// run an r2 command without evaluating any special character
+// Run an r2 command with standard quote and escape decoding.
 R_API int r_core_call(RCore *core, const char *cmd) {
 	return core_call_context (core, NULL, cmd);
 }

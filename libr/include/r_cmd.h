@@ -45,6 +45,7 @@ typedef struct r_cmd_context_t {
 	void *user;
 	void *handler_user;
 	int remaining_depth; // nested core command budget
+	bool raw; // command requested verbatim argument handling
 	char *args_storage; // private: owned buffer backing args, do not use
 	RVecRStrs args; // arguments after the matched name and subcmd
 	RStrs subcmd; // command-token remainder after the registered name; slices the

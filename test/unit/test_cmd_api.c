@@ -255,12 +255,11 @@ static bool test_r_cmd_context_args(void) {
 	mu_end;
 }
 
-static bool test_r_cmd_raw_context_args(void) {
+static bool test_r_core_call_context_args(void) {
 	RStrs expected[] = {
-		R_STRS_LIT ("say\\\"hi"),
-		R_STRS_LIT ("'single"),
-		R_STRS_LIT ("value'"),
-		R_STRS_LIT ("a\\nb")
+		R_STRS_LIT ("say\"hi"),
+		R_STRS_LIT ("single value"),
+		R_STRS_LIT ("a\nb")
 	};
 	const char *input = "cmd say\\\"hi 'single value' a\\nb";
 	ArgsState state = {
@@ -271,8 +270,8 @@ static bool test_r_cmd_raw_context_args(void) {
 	RCore *core = r_core_new ();
 	mu_assert_notnull (core, "create core");
 	mu_assert_true (r_cmd_register (core->rcmd, "cmd", args_handler, &state), "register argument handler");
-	mu_assert_eq (r_core_call (core, input), 0, "raw call dispatch");
-	mu_assert_true (state.args_ok, "raw args keep quotes and escapes verbatim");
+	mu_assert_eq (r_core_call (core, input), 0, "direct call dispatch");
+	mu_assert_true (state.args_ok, "direct call decodes quotes and escapes");
 	r_core_free (core);
 	mu_end;
 }
@@ -284,7 +283,7 @@ static int all_tests(void) {
 	mu_run_test (test_r_cmd_registry_dispatch);
 	mu_run_test (test_r_cmd_multiword_dispatch);
 	mu_run_test (test_r_cmd_context_args);
-	mu_run_test (test_r_cmd_raw_context_args);
+	mu_run_test (test_r_core_call_context_args);
 	return tests_passed != tests_run;
 }
 
