@@ -16,36 +16,34 @@ static RCoreHelpMessage help_msg_echo = {
 
 // clang-format on
 
-static bool echo_append_args(RStrBuf *output, RVecRStrs *args, size_t first) {
+static void echo_append_args(RStrBuf *output, RVecRStrs *args, size_t first) {
 	const size_t argc = RVecRStrs_length (args);
 	size_t i;
 	for (i = first; i < argc; i++) {
 		RStrs *arg = RVecRStrs_at (args, i);
 		const char *nul = memchr (arg->a, 0, r_strs_len (*arg));
 		const size_t length = nul? nul - arg->a: r_strs_len (*arg);
-		if ((i > first && !r_strbuf_append_n (output, " ", 1))
-				|| !r_strbuf_append_n (output, arg->a, length)) {
-			return false;
+		if (i > first) {
+			r_strbuf_append_n (output, " ", 1);
 		}
+		r_strbuf_append_n (output, arg->a, length);
 		if (nul) {
 			break;
 		}
 	}
-	return true;
 }
 
-static RCmdResult echo_print_args(RCmdContext *ctx, size_t first, bool newline) {
+static void echo_print_args(RCmdContext *ctx, size_t first, bool newline) {
 	RStrBuf output;
 	r_strbuf_init (&output);
-	bool success = echo_append_args (&output, &ctx->args, first);
-	if (success && newline) {
-		success = r_strbuf_append_n (&output, "\n", 1);
+	echo_append_args (&output, &ctx->args, first);
+	if (newline) {
+		r_strbuf_append_n (&output, "\n", 1);
 	}
-	if (success && output.len) {
-		success = r_cons_write (ctx->cons, r_strbuf_get (&output), output.len);
+	if (output.len) {
+		r_cons_write (ctx->cons, r_strbuf_get (&output), output.len);
 	}
 	r_strbuf_fini (&output);
-	return (RCmdResult) { .status = success? 0: 1 };
 }
 
 static RCmdResult echo_base64(RCmdContext *ctx) {
@@ -63,9 +61,9 @@ static RCmdResult echo_base64(RCmdContext *ctx) {
 	}
 	char *output = r_str_newf ("%s\n", (const char *)decoded);
 	free (decoded);
-	const bool success = output && r_cons_write (ctx->cons, output, strlen (output));
+	r_cons_print (ctx->cons, output);
 	free (output);
-	return (RCmdResult) { .status = success? 0: 1 };
+	return (RCmdResult) { 0 };
 }
 
 static RCmdResult echo_callback(RCmdContext *ctx) {
@@ -94,7 +92,8 @@ static RCmdResult echo_callback(RCmdContext *ctx) {
 		newline = false;
 		i++;
 	}
-	return echo_print_args (ctx, i, newline);
+	echo_print_args (ctx, i, newline);
+	return (RCmdResult) { 0 };
 }
 
 static RCmdResult question_echo_callback(RCmdContext *ctx) {
@@ -105,12 +104,12 @@ static RCmdResult question_echo_callback(RCmdContext *ctx) {
 			.status = 127
 		};
 	}
-	RCmdResult result = echo_print_args (ctx, 0, newline);
-	if (!result.status && newline) {
+	echo_print_args (ctx, 0, newline);
+	if (newline) {
 		RCore *core = ctx->user;
 		r_core_return_value (core, 0);
 	}
-	return result;
+	return (RCmdResult) { 0 };
 }
 
 static bool r_core_cmd_echo_init(RCmd *cmd) {
