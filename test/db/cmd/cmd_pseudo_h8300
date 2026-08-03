@@ -96,12 +96,12 @@ e asm.arch=h8300
 e asm.pseudo=true
 e asm.ucase=true
 wx 59205e00123447105510
-pi 4
+pd 4
 EOF
 EXPECT=<<EOF
-goto R2
-0x1234 ()
-if (Z) goto .+16
-.+16 ()
+            0x00000000      5920           goto R2
+            0x00000002      5e001234       0x1234 ()
+        ,=< 0x00000006      4710           if (Z) goto .+16
+        |   0x00000008      5510           .+16 ()
 EOF
 RUN
