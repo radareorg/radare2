@@ -194,6 +194,18 @@ typedef struct {
 	bool listener;
 } RIORap;
 
+typedef struct r_io_desc_info_t {
+	bool blkdev;
+	bool chrdev;
+	bool isdbg;
+#if 0
+	int pid;
+	int tid;
+	ut64 base;
+	ut64 size;
+#endif
+} RIODescInfo;
+
 typedef struct r_io_plugin_t {
 	const RPluginMeta meta;
 	void *data; // kind of globals, used by rlang-io in this case
@@ -208,10 +220,11 @@ typedef struct r_io_plugin_t {
 	ut64 (*seek)(RIO *io, RIODesc *fd, ut64 offset, int whence);
 	int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);
 	bool (*close)(RIODesc *desc);
-	// maybe just have a getinfo() that returns this struct
-	// RIOInfo * = struct { isblock, ischar, pid, tid, base, size }
+
+	RIODescInfo (*getinfo)(RIODesc *desc);
+	// TODO all the callbacks below can be replaced by getinfo()
 	bool (*is_blockdevice)(RIODesc *desc);
-	bool (*is_chardevice)(RIODesc *desc);
+	// TODO: those are not yet implemented
 	int (*getpid)(RIODesc *desc);
 	int (*gettid)(RIODesc *desc);
 	bool (*getbase)(RIODesc *desc, ut64 *base);
@@ -563,8 +576,6 @@ R_API ut64 r_io_desc_seek(RIODesc *desc, ut64 offset, int whence);
 R_API ut64 r_io_desc_size(RIODesc *desc);
 R_API bool r_io_desc_resize(RIODesc *desc, ut64 newsize);
 R_API char *r_io_desc_system(RIODesc *desc, const char *cmd);
-R_API bool r_io_desc_is_blockdevice(RIODesc *desc);
-R_API bool r_io_desc_is_chardevice(RIODesc *desc);
 R_API bool r_io_desc_exchange(RIO *io, int fd, int fdx);
 R_API bool r_io_desc_is_dbg(RIODesc *desc);
 R_API int r_io_desc_get_pid(RIODesc *desc);
@@ -572,6 +583,7 @@ R_API int r_io_desc_get_tid(RIODesc *desc);
 R_API bool r_io_desc_get_base(RIODesc *desc, ut64 *base);
 R_API int r_io_desc_read_at(RIODesc *desc, ut64 addr, ut8 *buf, int len);
 R_API int r_io_desc_write_at(RIODesc *desc, ut64 addr, const ut8 *buf, int len);
+R_API RIODescInfo r_io_desc_info(RIODesc *desc);
 
 /* lifecycle */
 R_IPI bool r_io_desc_init(RIO *io);
@@ -617,8 +629,6 @@ R_API ut64 r_io_fd_seek(RIO *io, int fd, ut64 addr, int whence);
 R_API ut64 r_io_fd_size(RIO *io, int fd);
 R_API bool r_io_fd_resize(RIO *io, int fd, ut64 newsize);
 R_API char *r_io_fd_system(RIO *io, int fd, const char *cmd);
-R_API bool r_io_fd_is_blockdevice(RIO *io, int fd);
-R_API bool r_io_fd_is_chardevice(RIO *io, int fd);
 R_API int r_io_fd_read_at(RIO *io, int fd, ut64 addr, ut8 *buf, int len);
 R_API int r_io_fd_write_at(RIO *io, int fd, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_fd_is_dbg(RIO *io, int fd);

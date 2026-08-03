@@ -59,15 +59,7 @@ R_API char *r_io_fd_system(RIO *io, int fd, const char *cmd) {
 	return r_io_desc_system (r_io_desc_get (io, fd), cmd);
 }
 
-R_API bool r_io_fd_is_blockdevice(RIO *io, int fd) {
-	return r_io_desc_is_blockdevice (r_io_desc_get (io, fd));
-}
-
-R_API bool r_io_fd_is_chardevice(RIO *io, int fd) {
-	return r_io_desc_is_chardevice (r_io_desc_get (io, fd));
-}
-
-//returns length of read bytes
+// returns length of read bytes
 R_API int r_io_fd_read_at(RIO *io, int fd, ut64 addr, ut8 *buf, int len) {
 	RIODesc *desc;
 	if (!io || !buf || (len < 1) || !(desc = r_io_desc_get (io, fd))) {
@@ -76,7 +68,7 @@ R_API int r_io_fd_read_at(RIO *io, int fd, ut64 addr, ut8 *buf, int len) {
 	return r_io_desc_read_at (desc, addr, buf, len);
 }
 
-//returns length of written bytes
+// returns length of written bytes
 R_API int r_io_fd_write_at(RIO *io, int fd, ut64 addr, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (io && buf, -1);
 	RIODesc *desc = r_io_desc_get (io, fd);
