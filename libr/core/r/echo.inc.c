@@ -58,10 +58,8 @@ static RCmdResult echo_base64(RCmdContext *ctx) {
 		free (decoded);
 		return (RCmdResult) { .status = 1 };
 	}
-	char *output = r_str_newf ("%s\n", (const char *)decoded);
+	r_cons_println (ctx->cons, (const char *)decoded);
 	free (decoded);
-	r_cons_print (ctx->cons, output);
-	free (output);
 	return (RCmdResult) { 0 };
 }
 
@@ -70,7 +68,7 @@ static RCmdResult echo_callback(RCmdContext *ctx) {
 	const bool exact = r_strs_empty (ctx->subcmd);
 	const size_t argc = RVecRStrs_length (&ctx->args);
 	RStrs *arg = argc? RVecRStrs_at (&ctx->args, 0): NULL;
-	if (r_strs_equals_str (ctx->subcmd, "?")
+	if (r_cmd_ctx_help (ctx)
 			|| (exact && argc == 1 && r_strs_equals_str (*arg, "-h"))) {
 		r_cons_cmd_help (ctx->cons, help_msg_echo);
 		return (RCmdResult) { 0 };

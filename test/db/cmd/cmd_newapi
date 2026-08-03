@@ -53,7 +53,7 @@ echo ok || ?e BAD
 echo64 QQ== && ?e DECODED
 echo64 "" || ?e REJECTED
 echo64 || ?e ARITY
-echo?
+echo64?
 EOF
 EXPECT=<<EOF
 Hello;world ;you rock
