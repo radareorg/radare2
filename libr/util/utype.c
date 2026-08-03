@@ -183,6 +183,79 @@ static const char *type_skip_qualifiers(const char *R_NONNULL type) {
 	return type;
 }
 
+static bool type_ident_char(char c) {
+	return c == '_' || isalnum ((ut8)c);
+}
+
+// word-boundary match, so "long unsigned int" is unsigned but a "myunsigned_t" typedef is not
+static bool type_has_word(const char *R_NONNULL type, const char *R_NONNULL word) {
+	const size_t wlen = strlen (word);
+	const char *p = type;
+	while ((p = strstr (p, word))) {
+		if ((p == type || !type_ident_char (p[-1])) && !type_ident_char (p[wlen])) {
+			return true;
+		}
+		p += wlen;
+	}
+	return false;
+}
+
+static bool type_has_any_word(const char *R_NONNULL type, const char *const *R_NONNULL words) {
+	int i;
+	for (i = 0; words[i]; i++) {
+		if (type_has_word (type, words[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+#define TYPEDEF_MAX_DEPTH 8
+
+// the depth bound keeps a cyclic typedef from hanging
+static R_OWNED char *type_resolve_typedef(Sdb *TDB, const char *R_NONNULL type) {
+	char *ret = NULL;
+	int depth;
+	for (depth = 0; depth < TYPEDEF_MAX_DEPTH; depth++) {
+		const char *next = sdb_const_getf (TDB, NULL, "typedef.%s", ret? ret: type);
+		if (!next) {
+			break;
+		}
+		free (ret);
+		ret = strdup (next);
+	}
+	return ret;
+}
+
+// floats are listed here because this answers "may i sign-extend a raw slot", not "may it be negative"
+static const char *const unsigned_type_words[] = {
+	"unsigned", "float", "double", NULL
+};
+
+static const char *const signed_type_words[] = {
+	"signed", "char", "short", "int", "long",
+	"ssize_t", "ptrdiff_t", "off_t", "pid_t", "time_t", NULL
+};
+
+static bool type_name_is_signed(const char *R_NONNULL t) {
+	if (type_has_any_word (t, unsigned_type_words)) {
+		return false;
+	}
+	// intN_t and friends; their unsigned twins start with "u", so no word matches them
+	return type_has_any_word (t, signed_type_words)
+		|| (r_str_startswith (t, "int") && r_str_endswith (t, "_t"));
+}
+
+R_API bool r_type_is_signed(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
+	R_RETURN_VAL_IF_FAIL (TDB && type, false);
+	const char *base = type_skip_qualifiers (type);
+	char *resolved = type_resolve_typedef (TDB, base);
+	const char *t = type_skip_qualifiers (resolved? resolved: base);
+	const bool ret = !strchr (t, '*') && type_name_is_signed (t);
+	free (resolved);
+	return ret;
+}
+
 static bool type_kind_is_aggregate(const char *R_NONNULL kind) {
 	return !strcmp (kind, "struct") || !strcmp (kind, "union");
 }
@@ -858,6 +931,12 @@ R_API const char *r_type_func_args_name(Sdb *TDB, const char *R_NONNULL func_nam
 		}
 	}
 	return (i >= 0 && i < 10)? argnames[i]: "arg";
+}
+
+R_API bool r_type_func_is_variadic(Sdb *TDB, const char *R_NONNULL func_name) {
+	R_RETURN_VAL_IF_FAIL (TDB && func_name, false);
+	const int argc = r_type_func_args_count (TDB, func_name);
+	return argc > 0 && !strcmp (r_type_func_args_name (TDB, func_name, argc - 1), "...");
 }
 
 #define MIN_MATCH_LEN 4

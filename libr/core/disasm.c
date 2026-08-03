@@ -6006,15 +6006,6 @@ static void print_arg_val(RCore *core, ut64 rv) {
 	}
 }
 
-// signed C scalar whose stack value must be sign-extended before printing
-static bool is_signed_ctype(const char *t) {
-	if (strchr (t, '*')) {
-		return false;
-	}
-	return r_str_startswith (t, "int") || r_str_startswith (t, "long")
-		|| r_str_startswith (t, "short") || r_str_startswith (t, "char");
-}
-
 static void print_fcn_arg(RCore *core, int nth, RAnalFuncArg *arg, bool on_stack, int asm_types) {
 	const char *fmt = arg->fmt;
 	ut64 addr = arg->src;
@@ -6085,7 +6076,8 @@ static void print_fcn_arg(RCore *core, int nth, RAnalFuncArg *arg, bool on_stack
 		ut64 sv = 0;
 		if (on_stack && !unresolved_arg_addr (addr)
 			&& core_slot_read (core, va, vsz, &sv)) {
-			if (vsz < 8 && (sv & (1ULL << (vsz * 8 - 1))) && is_signed_ctype (arg->c_type)) {
+			if (vsz < 8 && (sv & (1ULL << (vsz * 8 - 1)))
+				&& r_type_is_signed (core->anal->sdb_types, arg->c_type)) {
 				sv |= UT64_MAX << (vsz * 8);
 			}
 			print_arg_val (core, sv);

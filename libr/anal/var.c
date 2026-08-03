@@ -1591,11 +1591,8 @@ static bool is_vararg_arg(const char *name) {
 
 // arg count excluding the trailing "..." slot, which is no real caller arg register
 static int func_fixed_args(Sdb *TDB, const char *name) {
-	int argc = r_type_func_args_count (TDB, name);
-	if (argc > 0 && is_vararg_arg (r_type_func_args_name (TDB, name, argc - 1))) {
-		argc--;
-	}
-	return argc;
+	const int argc = r_type_func_args_count (TDB, name);
+	return r_type_func_is_variadic (TDB, name)? argc - 1: argc;
 }
 
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
