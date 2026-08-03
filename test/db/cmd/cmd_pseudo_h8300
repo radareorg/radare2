@@ -67,8 +67,41 @@ pd 4
 EOF
 EXPECT=<<EOF
             0x00000000      a580           if (r5h == 0x80)
-        ,=< 0x00000002      4710           if (Z) goto 0x10
+        ,=< 0x00000002      4710           if (Z) goto .+16
         |   0x00000004      0e23           r3h += r2h + C
         |   0x00000006      1082           r2h <<= 1
+EOF
+RUN
+
+NAME=h8300 pseudo relative branches and bsr
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.pseudo=true
+wx 47f0551055f05023
+pi 4
+EOF
+EXPECT=<<EOF
+if (Z) goto .-16
+.+16 ()
+.-16 ()
+r3 = r2h * r3l
+EOF
+RUN
+
+NAME=h8300 pseudo with asm.ucase
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.pseudo=true
+e asm.ucase=true
+wx 59205e00123447105510
+pi 4
+EOF
+EXPECT=<<EOF
+goto R2
+0x1234 ()
+if (Z) goto .+16
+.+16 ()
 EOF
 RUN

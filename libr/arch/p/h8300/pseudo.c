@@ -25,7 +25,7 @@ static const char *pseudo_rules[] = {
 	"subx/2/$2 -= $1 + C",
 	"inc/1/$1++",
 	"dec/1/$1--",
-	"mulxu/2/$2 = $2l * $1",
+	"mulxu/2/$2 = $1 * $2l",
 	"divxu/2/$2 /= $1",
 	"neg/1/$1 = -$1",
 	"daa/1/$1 = daa ($1)",
@@ -94,7 +94,8 @@ static const char *pseudo_rules[] = {
 };
 
 /* jmp/jsr targets are direct (@rn, @aa:16) or vectored (@@aa:8), while the
- * conditional branches reuse the @@aa:8 notation for a relative displacement */
+ * conditional branches reuse the @@aa:8 notation for a raw pc-relative
+ * displacement and bsr prints it as .d, so both render as .+d/.-d */
 typedef enum {
 	H8300_CTX_DATA,
 	H8300_CTX_JUMP,
