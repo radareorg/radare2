@@ -1182,12 +1182,17 @@ static bool op_dst_is_stack_reg(RAnal *anal, RAnalOp *op) {
 	return (bp && !strcmp (bp, val->reg)) || (sp && !strcmp (sp, val->reg));
 }
 
-static bool extract_arg_from_immop(RAnal *anal, RAnalOp *op, const char *reg, const char *sign, R_OUT st64 *ptr) {
-	const ut32 ot = op->type & R_ANAL_OP_TYPE_MASK;
+static bool extract_arg_from_immop(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, R_OUT st64 *ptr) {
 	if (!ra_in_reg (anal)) {
 		return false;
 	}
+	const ut32 ot = op->type & R_ANAL_OP_TYPE_MASK;
 	if (ot != R_ANAL_OP_TYPE_ADD && ot != R_ANAL_OP_TYPE_SUB && ot != R_ANAL_OP_TYPE_LEA) {
+		return false;
+	}
+	// =BP is a guess on ABIs with no architectural frame pointer (ppc r31), so it only homes locals once proven
+	const char *sp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
+	if ((!sp || strcmp (reg, sp)) && !fcn->bp_from_sp) {
 		return false;
 	}
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
@@ -1210,13 +1215,18 @@ static bool extract_arg_from_immop(RAnal *anal, RAnalOp *op, const char *reg, co
 }
 
 static bool op_is_stack_frame_setup(RAnal *anal, RAnalOp *op, const char *reg) {
+	const ut32 ot = op->type & R_ANAL_OP_TYPE_MASK;
+	if (ot != R_ANAL_OP_TYPE_MOV && ot != R_ANAL_OP_TYPE_ADD
+		&& ot != R_ANAL_OP_TYPE_SUB && ot != R_ANAL_OP_TYPE_LEA) {
+		return false; // restoring BP from a stack slot (lwz r31,N(r1)) is not a frame setup
+	}
 	if (!op_dst_is_stack_reg (anal, op)) {
 		return false;
 	}
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	RAnalValue *base = RVecRArchValue_at (&op->srcs, 0);
 	return dst && dst->reg && strcmp (dst->reg, reg)
-		&& base && base->reg && !strcmp (base->reg, reg);
+		&& base && base->reg && !base->memref && !strcmp (base->reg, reg);
 }
 
 static bool extract_arm_stack_restore_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, char type, R_OUT st64 *ptr) {
@@ -1274,6 +1284,14 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 
 	R_RETURN_IF_FAIL (anal && fcn && op && reg);
 
+	if (!fcn->bp_from_sp) {
+		// the prologue copies SP into BP before any use of it, so seeing it here settles the question
+		const char *spreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
+		if (spreg && op_is_stack_frame_setup (anal, op, spreg)) {
+			fcn->bp_from_sp = true;
+		}
+	}
+
 	r_anal_function_cc (fcn); // resolve a lazy dyncc marker before reading fcn->callconv
 
 	if (op_is_ppc_toc_save (anal, op)) {
@@ -1295,10 +1313,9 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 	}
 
-	if (!have_ptr && extract_arg_from_immop (anal, op, reg, sign, &ptr)) {
+	if (!have_ptr && extract_arg_from_immop (anal, fcn, op, reg, sign, &ptr)) {
 		have_ptr = true;
-		// `add fp, sp, #N` is a frame pointer setup, not a data access:
-		// don't synthesize a phantom var for the saved-LR/FP slot.
+		// `add fp, sp, #N` is a frame pointer setup, so it gets no var for the saved-LR/FP slot
 		if (op_is_stack_frame_setup (anal, op, reg)) {
 			return;
 		}

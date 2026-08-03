@@ -902,13 +902,22 @@ R_IPI int r_anal_cc_shadow(RAnal *anal, const char *convention) {
 
 // bytes the call pushes before the stack args: one word unless the arch keeps the return address in a register
 R_IPI int r_anal_cc_raslot(RAnal *anal, int word) {
-	const bool ra_reg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_LR)
-		|| r_reg_alias_getname (anal->reg, R_REG_ALIAS_RA);
-	return ra_reg? 0: word;
+	if (r_reg_alias_getname (anal->reg, R_REG_ALIAS_LR) || r_reg_alias_getname (anal->reg, R_REG_ALIAS_RA)) {
+		return 0;
+	}
+	// debug and gdb profiles define lr/ra without declaring the alias, so fall back to the name;
+	// a link register is at least pointer-sized, which keeps cosmac's 16-bit gpr "ra" out
+	RRegItem *ri = r_reg_get (anal->reg, "lr", -1);
+	if (!ri) {
+		ri = r_reg_get (anal->reg, "ra", -1);
+	}
+	const bool linked = ri && ri->size >= 32;
+	r_unref (ri);
+	return linked? 0: word;
 }
 
 // stack slot width: pointer-sized, refined by the first register argloc's width (thumb still passes 4-byte slots)
-R_IPI int r_anal_cc_wordsize(RAnal *anal, const char *cc) {
+R_API int r_anal_cc_wordsize(RAnal *anal, const char *cc) {
 	const int bits = anal->config->bits;
 	int word = bits <= 16? 2: bits > 32? 8: 4;
 	const char *place = NULL;
@@ -1014,27 +1023,87 @@ R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int
 	return true;
 }
 
+// address of a stack slot; it wraps at the target pointer width, which config->bits overstates in thumb
+R_API ut64 r_anal_cc_argaddr(RAnal *anal, RReg *reg, const RAnalCCArgSlot *slot) {
+	R_RETURN_VAL_IF_FAIL (anal && reg && slot, 0);
+	const ut64 addr = r_reg_getv (reg, "SP") + slot->off;
+	return addr & r_num_bitmask (R_MIN (R_MAX (anal->config->bits, 32), 64));
+}
+
+static bool cc_readable_width(int sz) {
+	return sz == 1 || sz == 2 || sz == 4 || sz == 8;
+}
+
+// a slot with unmapped bytes reads back as io fill, which is not an argument value
+static bool cc_slot_mapped(RAnal *anal, ut64 addr, int size) {
+	RIOBind *iob = &anal->iob;
+	if (!iob->is_valid_offset) {
+		return true; // a binding without the predicate cannot answer, so trust the read
+	}
+	return iob->is_valid_offset (iob->io, addr, 0) && iob->is_valid_offset (iob->io, addr + size - 1, 0);
+}
+
 // concrete value of argument argno read from the given reg arena and, for stack slots, through anal->iob
-R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int argno, int argc, bool incall, ut64 *out) {
+// width is the value size in bytes, 0 for the whole slot; a wider value spans the slots that follow
+R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int argno, int argc, bool incall, int width, ut64 *out) {
 	R_RETURN_VAL_IF_FAIL (anal && reg && out, false);
 	RAnalCCArgSlot slot;
 	if (!r_anal_cc_argslot (anal, convention, argno, argc, incall, &slot)) {
 		return false;
 	}
 	if (slot.reg) {
-		*out = r_reg_getv (reg, slot.reg);
+		// a convention naming a register this arch lacks resolves to nothing, not to UT64_MAX
+		RRegItem *ri = r_reg_get (reg, slot.reg, -1);
+		if (!ri) {
+			return false;
+		}
+		*out = r_reg_get_value (reg, ri);
+		const int regsz = ri->size / 8;
+		r_unref (ri);
+		if (width > regsz && regsz >= 2 && regsz < 8) {
+			// a doubleword spans a register pair; BE pairs keep the high half in the first register
+			RAnalCCArgSlot hi;
+			if (!r_anal_cc_argslot (anal, convention, argno + 1, argc, incall, &hi) || !hi.reg) {
+				return false;
+			}
+			RRegItem *rh = r_reg_get (reg, hi.reg, -1);
+			if (!rh) {
+				return false;
+			}
+			const ut64 mate = r_reg_get_value (reg, rh);
+			r_unref (rh);
+			const int rbits = regsz * 8;
+			const ut64 mask = r_num_bitmask (rbits);
+			*out = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config)
+				? ((*out & mask) << rbits) | (mate & mask)
+				: ((mate & mask) << rbits) | (*out & mask);
+		}
 		return true;
 	}
 	if (!anal->iob.read_at) {
 		return false;
 	}
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
+	const int slotsz = R_MIN (slot.size, 8);
+	int sz = (width > 0)? R_MIN (width, 8): slotsz;
+	if (!cc_readable_width (sz)) {
+		sz = slotsz; // r_read_ble only decodes power-of-two widths
+		if (!cc_readable_width (sz)) {
+			return false; // an odd slot width (a 40-bit register profile) has no value to read
+		}
+	}
+	ut64 addr = r_anal_cc_argaddr (anal, reg, &slot);
+	if (sz < slotsz && be) {
+		addr += slotsz - sz; // BE ABIs right-justify sub-word values in their slot
+	}
+	if (sz > slotsz && r_anal_cc_stack_rev (anal, convention)) {
+		addr -= sz - slotsz; // a reverse layout homes a wide value's first slot at its highest address
+	}
 	ut8 buf[8] = { 0 };
-	const int sz = R_MIN (slot.size, 8);
-	const ut64 addr = r_reg_getv (reg, "SP") + slot.off;
-	if (!anal->iob.read_at (anal->iob.io, addr, buf, sz)) {
+	if (!cc_slot_mapped (anal, addr, sz) || !anal->iob.read_at (anal->iob.io, addr, buf, sz)) {
 		return false;
 	}
-	*out = r_read_ble (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config), sz * 8);
+	*out = r_read_ble (buf, be, sz * 8);
 	return true;
 }
 

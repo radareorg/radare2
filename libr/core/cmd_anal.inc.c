@@ -4507,7 +4507,7 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 				pj_k (j, "args");
 				pj_a (j);
 				if (nargs) {
-					RList *list = r_core_get_func_args (core, fcn_name);
+					RList *list = r_core_get_func_args (core, fcn_name, false);
 					r_list_foreach (list, iter, arg) {
 						char *type = arg->orig_c_type;
 						pj_o (j);
@@ -5641,33 +5641,28 @@ static void cmd_afix(RCore *core, const char *input) {
 }
 
 #define DEFAULT_NARGS 4
-static char *print_fcn_arg(RCore *core, const char *type, const char *name, const char *fmt, const ut64 addr, const int on_stack, int asm_types) {
-	if (*type && on_stack == 1 && asm_types > 1) {
+static char *print_fcn_arg(RCore *core, const RAnalFuncArg *arg, ut64 addr, int asm_types) {
+	const char *type = r_str_get (arg->orig_c_type);
+	if (*type && arg->on_stack && asm_types > 1) {
 		return strdup (type);
 	}
-	char *argstr = NULL;
-	if (addr != UT32_MAX && addr != UT64_MAX  && addr != 0) {
-		char *safe_name = r_str_sanitize_r2 (name);
-		char *cmd = r_str_newf ("pfq %s%s %s",
-			(on_stack == 1) ? "*" : "", fmt, safe_name);
-		char *res = r_core_call_str_at (core, addr, cmd);
-		free (cmd);
-		free (safe_name);
-		r_str_trim (res);
-		if (r_str_startswith (res, "\"\\xff\\xff")) {
-			argstr = strdup ("\"\"");
-			free (res);
-		} else {
-			argstr = res;
-		}
-	} else {
-		if (strchr (type, '*')) {
-			argstr = strdup ("(void*)-1");
-		} else {
-			argstr = strdup ("-1");
-		}
+	if (addr == UT32_MAX || addr == UT64_MAX || addr == 0) {
+		return strdup (strchr (type, '*')? "(void*)-1": "-1");
 	}
-	return argstr;
+	if (!arg->fmt) {
+		return NULL; // no format directive to render it with, and pf has nothing to print
+	}
+	char *safe_name = r_str_sanitize_r2 (arg->name);
+	char *cmd = r_str_newf ("pfq %s%s %s", arg->on_stack? "*": "", arg->fmt, safe_name);
+	char *res = r_core_call_str_at (core, addr, cmd);
+	free (cmd);
+	free (safe_name);
+	r_str_trim (res);
+	if (r_str_startswith (res, "\"\\xff\\xff")) {
+		free (res);
+		return strdup ("\"\"");
+	}
+	return res;
 }
 
 static void cmd_afbs(RCore *core, const char *input) {
@@ -5766,6 +5761,17 @@ static void cmd_afls(RCore *core, const char *input) {
 	}
 }
 
+static void afsv_flush(RCore *core, RStrBuf *sb, PJ *pj) {
+	char *s = r_strbuf_drain (sb);
+	if (pj) {
+		free (s);
+		pj_end (pj);
+		s = pj_drain (pj);
+	}
+	r_cons_printf (core->cons, "%s\n", s);
+	free (s);
+}
+
 static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 	PJ *pj = NULL;
 	if (mode == 'j') {
@@ -5827,31 +5833,25 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 #endif
 		}
 	}
-	int s_width = (core->anal->config->bits == 64)? 8: 4;
-	ut64 spv = r_reg_getv (core->anal->reg, "SP");
-	r_reg_setv (core->anal->reg, "SP", spv + s_width); // temporarily set stack ptr to sync with carg.c
-	RList *list = r_core_get_func_args (core, fcn_name);
+	free (key);
+	RList *list = r_core_get_func_args (core, fcn_name, true);
 	if (!r_list_empty (list)) {
-		bool on_stack = false;
 		if (pj) {
-			pj_kn (pj, "argc", nargs);
+			pj_kn (pj, "argc", r_list_length (list)); // expanded varargs outnumber the declared args
 			pj_ka (pj, "argv");
 		}
 		r_list_foreach (list, iter, arg) {
-			if (arg->cc_source && *arg->cc_source == '^') {
-				on_stack = true;
-			}
+			// an unreadable slot still reports its home; only the rendered value goes unresolved
+			const ut64 src = arg->value_set? arg->src: UT64_MAX;
 			nextele = r_list_iter_get_next (iter);
 			if (pj) {
 				pj_o (pj);
-				ut64 v = arg->src;
-				pj_kn (pj, "num", v);
-				const RList *list = r_flag_get_list (core->flags, v);
-				RFlagItem *item = r_list_last (list);
+				pj_kn (pj, "num", arg->src);
+				RFlagItem *item = r_flag_get_in (core->flags, arg->src);
 				if (item) {
 					pj_ks (pj, "name", item->name);
 				}
-				char *s = print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, asmtypes);
+				char *s = print_fcn_arg (core, arg, src, asmtypes);
 				// char *s = r_core_cmd_strf (core, "ps0 @ 0x%08"PFMT64x, v); r_str_trim (s);
 				if (R_STR_ISNOTEMPTY (s)) {
 					pj_ks (pj, "str", s);
@@ -5874,7 +5874,7 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 					}
 				} else {
 					// TODO: may need ds_comment_esil
-					char *argstr = print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, asmtypes);
+					char *argstr = print_fcn_arg (core, arg, src, asmtypes);
 					if (R_STR_ISNOTEMPTY (argstr)) {
 						r_strbuf_append (sb, argstr);
 					} else {
@@ -5889,8 +5889,8 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 			pj_end (pj);
 		}
 		r_list_free (list);
-		free (key);
-		goto fin;
+		afsv_flush (core, sb, pj);
+		return;
 	}
 	r_list_free (list);
 	if (fcn) {
@@ -5915,12 +5915,9 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 				// TODO: show value (string, flag if any in that address)
 				pj_o (pj);
 				pj_kn (pj, "num", v);
-				const RList *list = r_flag_get_list (core->flags, v);
-				if (list) {
-					RFlagItem *item = r_list_last (list);
-					if (item) {
-						pj_ks (pj, "name", item->name);
-					}
+				RFlagItem *item = r_flag_get_in (core->flags, v);
+				if (item) {
+					pj_ks (pj, "name", item->name);
 				}
 				char *s = r_core_cmd_strf (core, "ps0 @ 0x%08"PFMT64x, v);
 				r_str_trim (s);
@@ -5947,16 +5944,7 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 			pj_end (pj);
 		}
 	}
-fin:
-	r_reg_setv (core->anal->reg, "SP", spv); // reset stack ptr
-	char *s = r_strbuf_drain (sb);
-	if (pj) {
-		free (s);
-		pj_end (pj);
-		s = pj_drain (pj);
-	}
-	r_cons_printf (core->cons, "%s\n", s);
-	free (s);
+	afsv_flush (core, sb, pj);
 }
 
 static bool afla_leafs(void *user, const ut64 addr, const void *data) {
