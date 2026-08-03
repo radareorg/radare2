@@ -365,6 +365,7 @@ typedef struct r_anal_function_t {
 	bool is_variadic;
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
 	bool bp_frame;
+	bool bp_from_sp; // a prologue copied SP into BP, so BP really is the frame base
 	bool is_noreturn; // true if function does not return
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	size_t fingerprint_size;
@@ -379,11 +380,14 @@ typedef struct r_anal_function_t {
 typedef struct r_anal_func_arg_t {
 	const char *name;
 	const char *fmt;
-	const char *cc_source;
 	char *orig_c_type;
 	char *c_type;
 	ut64 size;
-	ut64 src; //Function-call argument value or pointer to it
+	ut64 src; // where a format directive points: the slot address, or the register value for reg args
+	ut64 value; // concrete argument value
+	bool value_set; // value came from a real read, so it is not the unresolved marker
+	bool value_signed; // the declared type is signed, so a negative value is meant to read as one
+	bool on_stack; // the convention homes this argument in a stack slot
 } RAnalFuncArg;
 
 struct r_anal_type_t {
@@ -1450,7 +1454,9 @@ typedef struct r_anal_cc_argslot_t {
 	bool fixed; // the convention pins this slot, so it does not follow the previous arg
 } RAnalCCArgSlot;
 R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int argc, bool incall, RAnalCCArgSlot *out);
-R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int argno, int argc, bool incall, ut64 *out);
+R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int argno, int argc, bool incall, int width, ut64 *out);
+R_API ut64 r_anal_cc_argaddr(RAnal *anal, RReg *reg, const RAnalCCArgSlot *slot);
+R_API int r_anal_cc_wordsize(RAnal *anal, const char *convention);
 R_API const char *r_anal_cc_location_first(RAnal *anal, const char *loc);
 R_API const char *r_anal_cc_roleloc(RAnal *anal, const char *convention, const char *role);
 R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self);

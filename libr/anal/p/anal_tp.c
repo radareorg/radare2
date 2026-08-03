@@ -930,7 +930,7 @@ static int tp_callee_argc(RAnal *anal, const char *name) {
 // concrete argloc value at the current emulated call site; stack slots read from the ESIL map
 // argc is the callee's arg count, which reverse-stack layouts need to place their slots
 static bool tp_argloc_val(TPState *tps, const char *cc, int argno, int argc, ut64 *val) {
-	return r_anal_cc_argval (tps->anal, tps->tt.reg, cc, argno, argc, false, val);
+	return r_anal_cc_argval (tps->anal, tps->tt.reg, cc, argno, argc, false, 0, val);
 }
 
 #define TP_SIZEFN_MAXSZ 0x100000 // sizes past 1 MiB are dynamic or stale register values

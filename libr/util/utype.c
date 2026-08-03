@@ -233,7 +233,7 @@ static const char *const unsigned_type_words[] = {
 };
 
 static const char *const signed_type_words[] = {
-	"signed", "char", "short", "int", "long",
+	"signed", "short", "int", "long", // bare char signedness is per-ABI, so it stays unsigned here
 	"ssize_t", "ptrdiff_t", "off_t", "pid_t", "time_t", NULL
 };
 

@@ -2387,7 +2387,7 @@ e asm.emu=1
 e emu.write=1
 aei
 aeim
-pdf @ main~int scanf(
+pdf @ main~int scanf("
 pdf @ main~int printf("IOLI
 EOF2
 EXPECT=<<EOF2
@@ -2401,10 +2401,10 @@ FILE=bins/elf/ioli/crackme0x01
 CMDS=<<EOF2
 aaa
 e asm.emu=1
-pdf @ main~int scanf("
+pdf @ main~int scanf(-
 EOF2
 EXPECT=<<EOF2
-|                                                                      ; int scanf("", -1)
+|                                                                      ; int scanf(-1, -1)
 EOF2
 RUN
 
@@ -2421,7 +2421,7 @@ tk func.printf.cc=ms
 aei
 aeim
 aer rsp=0x177f00
-wx deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef @ 0x177f00
+wX deadbeef @ 0x177f00!32
 wx 0500000044434241 @ 0x177f20
 wx 7700000048474645 @ 0x177f28
 pd 2 @ 0~printf("
@@ -2477,17 +2477,17 @@ e asm.emu=true
 wx bc00080000 @ 0
 wx e8f6020000 @ 5
 f padd @ 0x300
-"td int padd(int a, int b);"
+"td int padd(char *a, char *b);"
 tk func.padd.cc=pascal
 aei
 wx 00090000 @ 0x800
 wx 10090000 @ 0x804
-wx 22222222 @ 0x900
-wx 11111111 @ 0x910
+w second @ 0x900
+w first @ 0x910
 pd 2 @ 0~padd(
 EOF2
 EXPECT=<<EOF2
-                                                                       ; int padd(0x11111111, 0x22222222)
+                                                                       ; int padd("first", "second")
 EOF2
 RUN
 
@@ -2522,13 +2522,112 @@ f myfn @ 0x300
 "td typedef int myint_t;"
 "td int myfn(long unsigned int a, ssize_t b, volatile myint_t c);"
 aei
-wx ffffffff @ 0x800
-wx ffffffff @ 0x804
-wx ffffffff @ 0x808
+wX ff @ 0x800!12
 pd 2 @ 0~myfn(
 EOF2
 EXPECT=<<EOF2
                                                                        ; int myfn(0xffffffff, -1, -1)
+EOF2
+RUN
+
+NAME=pd emu sizes thumb pointers and vararg slots at 32 bits
+FILE=malloc://0x20000
+ARGS=-a arm -b 16
+CMDS=<<EOF2
+e asm.emu=true
+wx 00f07ef9 @ 0
+w %d %d @ 0x10000
+f printf @ 0x300
+aei
+aer r0=0x10000
+aer r1=7
+aer r2=9
+pd 1 @ 0~printf("
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int printf("%d %d", 7, 9)
+EOF2
+RUN
+
+NAME=pd emu assembles arm32 doubleword varargs from an aligned register pair
+FILE=malloc://0x20000
+ARGS=-a arm -b 32
+CMDS=<<EOF2
+e asm.emu=true
+wx be0000eb @ 0
+w %lld %d @ 0x10000
+f printf @ 0x300
+aei
+aeim
+aer r0=0x10000
+aer r1=0x55555555
+aer r2=0x44332211
+aer r3=0x88776655
+aer sp=0x177f00
+wx 2a000000 @ 0x177f00
+pd 1 @ 0~printf("
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int printf("%lld %d", -8613303245920329199, 42)
+EOF2
+RUN
+
+NAME=pd emu resolves fixed args after a wide stack parameter
+FILE=malloc://0x1000
+ARGS=-a x86 -b 32
+CMDS=<<EOF2
+e asm.emu=true
+wx bc00080000 @ 0
+wx e8f6020000 @ 5
+f wfn @ 0x300
+"td int wfn(long long x, int y);"
+aei
+wx 8877665544332211 @ 0x800
+wx 2a000000 @ 0x808
+pd 2 @ 0~wfn(
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int wfn(0x1122334455667788, 42)
+EOF2
+RUN
+
+NAME=pd emu reads a wide reverse-stack parameter from its lowest slot
+FILE=malloc://0x1000
+ARGS=-a x86 -b 32
+CMDS=<<EOF2
+e asm.emu=true
+wx bc00080000 @ 0
+wx e8f6020000 @ 5
+f wfn @ 0x300
+"td int wfn(long long x, int y);"
+tk func.wfn.cc=pascal
+aei
+wx 2a000000 @ 0x800
+wx 8877665544332211 @ 0x804
+pd 2 @ 0~wfn(
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int wfn(0x1122334455667788, 42)
+EOF2
+RUN
+
+NAME=pd emu sizes msvc long double varargs as one slot
+FILE=malloc://0x1000
+ARGS=-a x86 -b 64 -e asm.os=windows
+CMDS=<<EOF2
+e asm.emu=true
+wx b900010000 @ 0
+wx e8f6020000 @ 5
+w %Lf %d @ 0x100
+f printf @ 0x300
+tk func.printf.cc=ms
+aei
+aer rdx=0x3ff0000000000000
+aer r8=0x2a
+pd 2 @ 0~printf("
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int printf("%Lf %d", 0x3ff0000000000000, 42)
 EOF2
 RUN
 

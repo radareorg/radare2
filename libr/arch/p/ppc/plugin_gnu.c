@@ -161,6 +161,7 @@ static char *regs(RArchSession *as) {
 	"=PC	srr0\n"
 	"=SR	srr1\n" // status register
 	"=BP	r31\n"
+	"=LR	lr\n"
 	"=A0	r0\n"
 	"=A1	r1\n"
 	"=A2	r2\n"

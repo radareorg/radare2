@@ -5950,16 +5950,6 @@ static const char *cc_arg_reg(RAnal *anal, const char *loc) {
 	return first && *first != '^'? first: NULL;
 }
 
-static bool cc_arg_on_stack(RAnal *anal, const char *loc) {
-	const char *first = loc? r_anal_cc_location_first (anal, loc): NULL;
-	return first && *first == '^';
-}
-
-static const char *get_cc_arg_reg(RCore *core, const char *cc, int nth) {
-	const char *loc = r_anal_cc_argloc (core->anal, cc, nth, 0, 0);
-	return cc_arg_reg (core->anal, loc);
-}
-
 static const char *getarg(RCore *core, const char *cc, int nth) {
 	const char *loc = r_anal_cc_argloc (core->anal, cc, nth, 0, 0);
 	const char *reg = cc_arg_reg (core->anal, loc);
@@ -5981,53 +5971,38 @@ static bool unresolved_arg_addr(ut64 addr) {
 	return !addr || addr == UT32_MAX || addr == UT64_MAX;
 }
 
-// calls keep the return address in a register: check the alias, then the name (ppc has lr but no =LR)
-static bool arch_links_ra(RAnal *anal) {
-	if (r_reg_alias_getname (anal->reg, R_REG_ALIAS_LR) || r_reg_alias_getname (anal->reg, R_REG_ALIAS_RA)) {
-		return true;
-	}
-	RRegItem *ri = r_reg_get (anal->reg, "lr", -1);
-	if (!ri) {
-		ri = r_reg_get (anal->reg, "ra", -1);
-	}
-	const bool found = ri != NULL;
-	r_unref (ri);
-	return found;
-}
-
-// print function arguments when emu.str=true
-static void print_arg_val(RCore *core, ut64 rv) {
-	if (rv >> 63) {
+// print function arguments when emu.str=true; -1 is the unresolved marker, so a real value never prints as one
+static void print_arg_val(RCore *core, ut64 rv, bool resolved, bool is_signed) {
+	if (!resolved) {
 		r_cons_printf (core->cons, "-1");
-	} else if (rv < 64) {
-		r_cons_printf (core->cons, "%"PFMT64d, rv);
+	} else if (rv < 64 || (is_signed && (st64)rv < 0)) {
+		r_cons_printf (core->cons, "%"PFMT64d, (st64)rv);
 	} else {
 		r_cons_printf (core->cons, "0x%"PFMT64x, rv);
 	}
 }
 
-static void print_fcn_arg(RCore *core, int nth, RAnalFuncArg *arg, bool on_stack, int asm_types) {
+static void print_fcn_arg(RCore *core, int nth, const RAnalFuncArg *arg, int asm_types) {
 	const char *fmt = arg->fmt;
 	ut64 addr = arg->src;
-	if (on_stack && asm_types > 1) {
-		r_cons_printf (core->cons, "%s", arg->orig_c_type);
+	if (arg->on_stack && asm_types > 1) {
+		r_cons_printf (core->cons, "%s", r_str_get (arg->orig_c_type));
 	}
 	if (unresolved_arg_addr (addr)) {
 		// if argument address cannot be resolved, fallback to use the calling convention
-		const char *cc = r_config_get (core->config, "anal.cc"); // XXX
-		const char *reg = getarg (core, cc, nth);
-		if (reg) {
-			ut64 rv = r_reg_getv (core->anal->reg, reg);
-			if (rv >> 63) {
-				fmt = NULL;
-			} else if (rv < 64) {
-				fmt = NULL;
-			} else {
-				addr = rv;
-			}
-		} else {
+		const char *reg = getarg (core, r_config_get (core->config, "anal.cc"), nth); // XXX
+		const ut64 rv = reg? r_reg_getv (core->anal->reg, reg): UT64_MAX;
+		// a tiny or negative value is not an address worth formatting
+		if (rv >> 63 || rv < 64) {
 			fmt = NULL;
+		} else {
+			addr = rv;
 		}
+	}
+	if (arg->on_stack && !arg->value_set) {
+		fmt = NULL; // the slot is unmapped, so pf would format io fill bytes into a fabricated value
+	} else if (arg->on_stack && fmt && strcmp (fmt, "z")) {
+		fmt = NULL; // a stack slot holds the scalar itself; pf-dereferencing it formats unrelated memory
 	}
 	if (fmt) {
 		char *res = NULL;
@@ -6042,7 +6017,7 @@ static void print_fcn_arg(RCore *core, int nth, RAnalFuncArg *arg, bool on_stack
 			free (s);
 		} else {
 			char *cmd = r_str_newf ("pf%s %s%s %s",
-				(asm_types == 2)? "": "q", on_stack? "*": "", fmt, safe_name);
+				(asm_types == 2)? "": "q", arg->on_stack? "*": "", fmt, safe_name);
 			res = r_core_call_str_at (core, addr, cmd);
 			free (cmd);
 		}
@@ -6064,31 +6039,18 @@ static void print_fcn_arg(RCore *core, int nth, RAnalFuncArg *arg, bool on_stack
 		}
 		free (res);
 	} else {
-		const int wsz = (core->anal->config->bits == 64)? 8: 4;
-		int vsz = arg->size;
-		if (vsz != 1 && vsz != 2 && vsz != 4 && vsz != 8) {
-			vsz = wsz;
-		}
-		ut64 va = addr;
-		if (vsz < wsz && R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config)) {
-			va += wsz - vsz; // BE ABIs right-justify sub-word values in their slot
-		}
-		ut64 sv = 0;
-		if (on_stack && !unresolved_arg_addr (addr)
-			&& core_slot_read (core, va, vsz, &sv)) {
-			if (vsz < 8 && (sv & (1ULL << (vsz * 8 - 1)))
-				&& r_type_is_signed (core->anal->sdb_types, arg->c_type)) {
-				sv |= UT64_MAX << (vsz * 8);
+		ut64 v = arg->value;
+		// a mapped stack slot is evidence; an all-ones register is just one the emulation never wrote
+		bool resolved = arg->value_set && (arg->on_stack || v != UT64_MAX);
+		if (!arg->value_set) {
+			// the callee has no usable convention, so fall back to the configured one
+			const char *reg = getarg (core, r_config_get (core->config, "anal.cc"), nth); // XXX
+			if (reg) {
+				v = r_reg_getv (core->anal->reg, reg);
+				resolved = v != UT64_MAX;
 			}
-			print_arg_val (core, sv);
-		} else {
-			const char *reg = cc_arg_reg (core->anal, arg->cc_source);
-			if (!reg) {
-				const char *cc = r_config_get (core->config, "anal.cc"); // XXX
-				reg = get_cc_arg_reg (core, cc, nth);
-			}
-			print_arg_val (core, reg? r_reg_getv (core->anal->reg, reg): UT64_MAX);
 		}
+		print_arg_val (core, v, resolved, arg->value_signed);
 	}
 	r_cons_trim (core->cons);
 }
@@ -6194,19 +6156,13 @@ static void ds_comment_call(RDisasmState *ds) {
 			}
 		}
 	}
-	ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
-	ut64 spv = r_reg_getv (core->anal->reg, "SP");
-	// carg.c expects SP at the call-frame arg base: skip the return address the emulated call pushed
-	r_reg_setv (core->anal->reg, "SP", arch_links_ra (core->anal)? spv: spv + s_width);
-	RList *list = r_core_get_func_args (core, fcn_name);
-	r_reg_setv (core->anal->reg, "SP", spv); // restore on every path or later calls drift
+	RList *list = r_core_get_func_args (core, fcn_name, true);
 	// show function arguments
 	if (!r_list_empty (list)) {
 		int nth = 0;
 		r_list_foreach (list, iter, arg) {
-			bool on_stack = cc_arg_on_stack (core->anal, arg->cc_source);
 			nextele = r_list_iter_get_next (iter);
-			print_fcn_arg (core, nth, arg, on_stack, ds->asm_types);
+			print_fcn_arg (core, nth, arg, ds->asm_types);
 			ds_comment_middle (ds, nextele?", ":")");
 			nth++;
 		}
