@@ -1,0 +1,74 @@
+NAME=h8300 pseudo basic ops
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.pseudo=true
+wx f3e12ec03e9408231c2359205470
+pi 7
+EOF
+EXPECT=<<EOF
+r3h = 0xe1
+r6l = [0xc0]
+[0x94] = r6l
+r3h += r2h
+if (r3h == r2h)
+goto r2
+return
+EOF
+RUN
+
+NAME=h8300 pseudo memory addressing modes
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.pseudo=true
+wx 6b0212346f5212346fd212346d526dd26df26d72
+pi 7
+EOF
+EXPECT=<<EOF
+r2 = [0x1234]
+r2 = [r5 + 0x1234]
+[r5 + 0x1234] = r2
+r2 = [r5++]
+[--r5] = r2
+[--r7] = r2
+r2 = [r7++]
+EOF
+RUN
+
+NAME=h8300 pseudo bit ops and calls
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.pseudo=true
+wx 7042733277b267325d205e0012345f187b5c598f5670
+pi 9
+EOF
+EXPECT=<<EOF
+r2h |= 1 << 0x4
+Z = !bit (r2h, 0x3)
+C = !bit (r2h, 0x3)
+bit (r2h, 0x3) = C
+r2 ()
+0x1234 ()
+[0x18] ()
+memcpy (r6, r5, r4l)
+return
+EOF
+RUN
+
+NAME=h8300 pseudo compare and conditional branch
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.pseudo=true
+wx a58047100e231082
+pd 4
+EOF
+EXPECT=<<EOF
+            0x00000000      a580           if (r5h == 0x80)
+        ,=< 0x00000002      4710           if (Z) goto 0x10
+        |   0x00000004      0e23           r3h += r2h + C
+        |   0x00000006      1082           r2h <<= 1
+EOF
+RUN

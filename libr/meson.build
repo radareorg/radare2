@@ -446,6 +446,7 @@ io_plugins += [
     'chip8',
     'dalvik',
     'gb',
+    'h8300',
     'java',
     'm68k',
     'mips',
