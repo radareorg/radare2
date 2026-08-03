@@ -37,6 +37,32 @@ bool test_multiple_cores_share_terminal(void) {
 	mu_end;
 }
 
+bool test_echo_context_binding_and_depth(void) {
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "create core");
+
+	RCoreBind bind = { 0 };
+	r_core_bind (core, &bind);
+	char *output = bind.cmdStr (bind.core, "echo \"bound value\"");
+	mu_assert_streq_free (output, "bound value\n", "binding reaches registered echo");
+	output = r_core_cmd_str (core, "?e \"adapter value\"");
+	mu_assert_streq_free (output, "adapter value\n", "?e uses context echo");
+
+	r_config_set_i (core->config, "cmd.depth", 2);
+	output = r_core_cmd_str (core, "e cmd.depth=1; echo $(echo nested)");
+	mu_assert_streq_free (output, "nested\n", "active root keeps its own depth budget");
+	output = r_core_cmd_str (core, "echo $(echo hidden)");
+	mu_assert_streq_free (output, "", "next root observes the reduced limit");
+	output = r_core_cmd_str (core, "echo after");
+	mu_assert_streq_free (output, "after\n", "depth failure does not poison later roots");
+
+	r_config_set_i (core->config, "cmd.depth", 2);
+	output = r_core_cmd_str (core, "echo $(echo visible)");
+	mu_assert_streq_free (output, "visible\n", "one nested context fits depth two");
+	r_core_free (core);
+	mu_end;
+}
+
 bool test_prompt_utf8_ellipsis_width(void) {
 	RCore *core = r_core_new ();
 	mu_assert_notnull (core, "Couldn't create new RCore");
@@ -151,6 +177,7 @@ bool test_o_autocomplete_uses_file_completion(void) {
 int all_tests(void) {
 	mu_run_test (test_cmd_str_issue_18799);
 	mu_run_test (test_multiple_cores_share_terminal);
+	mu_run_test (test_echo_context_binding_and_depth);
 	mu_run_test (test_prompt_utf8_ellipsis_width);
 	mu_run_test (test_prompt_format_preserves_trailing_escaped_space);
 	mu_run_test (test_prompt_format_preserves_trailing_escaped_newline);

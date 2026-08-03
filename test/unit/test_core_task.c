@@ -204,14 +204,15 @@ bool test_task_context_console_isolation(void) {
 	r_core_task_join (&core->tasks, core->tasks.main_task, empty_task->id);
 	bool empty_output = empty_task->res && !*empty_task->res;
 	bool suffix_context = state.cons == empty_task->cons;
-	state.output = "context-";
-	state.unhandled = true;
-	mu_assert_true (r_cmd_register (core->rcmd, "?e", task_context_handler, &state), "register fallback command");
-	RCoreTask *fallback_task = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true, "?e legacy", NULL, NULL);
-	mu_assert_notnull (fallback_task, "create fallback task");
-	mu_assert_eq (r_core_task_run_threaded (&core->tasks, fallback_task), fallback_task->id, "run fallback task");
-	r_core_task_join (&core->tasks, core->tasks.main_task, fallback_task->id);
-	bool fallback_output = fallback_task->res && !strcmp (fallback_task->res, "context-legacy\n");
+	state.output = "context-only";
+	state.unhandled = false;
+	r_cmd_unregister (core->rcmd, "?e");
+	mu_assert_true (r_cmd_register (core->rcmd, "?e", task_context_handler, &state), "register replacement command");
+	RCoreTask *replacement_task = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true, "?e ignored", NULL, NULL);
+	mu_assert_notnull (replacement_task, "create replacement task");
+	mu_assert_eq (r_core_task_run_threaded (&core->tasks, replacement_task), replacement_task->id, "run replacement task");
+	r_core_task_join (&core->tasks, core->tasks.main_task, replacement_task->id);
+	bool replacement_output = replacement_task->res && !strcmp (replacement_task->res, "context-only");
 	r_cmd_unregister (core->rcmd, "?e");
 	r_cmd_unregister (core->rcmd, "taskctx");
 	r_core_free (core);
@@ -225,7 +226,7 @@ bool test_task_context_console_isolation(void) {
 	mu_assert_true (child_drained, "task console is empty after draining");
 	mu_assert_true (empty_output, "empty task output remains valid");
 	mu_assert_true (suffix_context, "registered suffix uses the task console");
-	mu_assert_true (fallback_output, "legacy fallback preserves parsed output order");
+	mu_assert_true (replacement_output, "registered replacement handles output without legacy fallback");
 	mu_end;
 }
 
@@ -262,10 +263,43 @@ bool test_task_cancel_breaks_child_console(void) {
 	mu_end;
 }
 
+bool test_registered_echo_nested_task(void) {
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "create core");
+	RCoreTask *nested = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true,
+		"echo $(echo nested); echo loose; echo second", NULL, NULL);
+	RCoreTask *other = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true,
+		"echo other", NULL, NULL);
+	RCoreTask *mixed = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true,
+		"echo mixed; ?v 42", NULL, NULL);
+	mu_assert_notnull (nested, "create nested echo task");
+	mu_assert_notnull (other, "create other echo task");
+	mu_assert_notnull (mixed, "create mixed task");
+	mu_assert_eq (r_core_task_run_threaded (&core->tasks, nested), nested->id, "run nested echo task");
+	mu_assert_eq (r_core_task_run_threaded (&core->tasks, other), other->id, "run other echo task");
+	r_core_task_join (&core->tasks, core->tasks.main_task, nested->id);
+	r_core_task_join (&core->tasks, core->tasks.main_task, other->id);
+	mu_assert_eq (r_core_task_run_threaded (&core->tasks, mixed), mixed->id, "run mixed task");
+	r_core_task_join (&core->tasks, core->tasks.main_task, mixed->id);
+
+	bool nested_ok = nested->res && !strcmp (nested->res, "nested\nloose\nsecond\n");
+	bool other_ok = other->res && !strcmp (other->res, "other\n");
+	bool mixed_ok = mixed->res && !strcmp (mixed->res, "mixed\n0x2a\n");
+	bool children_drained = !r_cons_get_buffer (nested->cons, NULL)
+		&& !r_cons_get_buffer (other->cons, NULL);
+	r_core_free (core);
+	mu_assert_true (nested_ok, "nested echo output stays in its task context");
+	mu_assert_true (other_ok, "parallel echo output stays in its task context");
+	mu_assert_true (mixed_ok, "mixed commands stay on the legacy capture path");
+	mu_assert_true (children_drained, "task consoles are drained");
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_task_join_uses_thread_identity);
 	mu_run_test (test_task_context_console_isolation);
 	mu_run_test (test_task_cancel_breaks_child_console);
+	mu_run_test (test_registered_echo_nested_task);
 	return tests_passed != tests_run;
 }
 

@@ -484,16 +484,6 @@ static void cmd_help_percent(RCore *core) {
 	r_cons_cmd_help (core->cons, help_msg_env);
 }
 
-static const char* findBreakChar(const char *s) {
-	while (*s) {
-		if (!r_name_validate_char (*s)) {
-			break;
-		}
-		s++;
-	}
-	return s;
-}
-
 static void cmd_help_em(RCore *core, const char *input) {
 	char *word, *str = strdup (r_str_trim_head_ro (input + 2));
 	char *legend = strchr (str, ',');
@@ -562,52 +552,6 @@ static void colormessage(RCore *core, const char *msg) {
 	r_cons_gotoxy (cons, 0, 0);
 	r_cons_printf (cons, Color_RESET);
 }
-
-static char *filterFlags(RCore *core, const char *msg) {
-	const char *dollar, *end;
-	char *word, *buf = NULL;
-	for (;;) {
-		dollar = strchr (msg, '$');
-		if (!dollar) {
-			break;
-		}
-		buf = r_str_appendlen (buf, msg, dollar-msg);
-		if (dollar[1] == '{') {
-			// find }
-			end = strchr (dollar + 2, '}');
-			if (end) {
-				word = r_str_ndup (dollar + 2, end - dollar - 2);
-				end++;
-			} else {
-				msg = dollar + 1;
-				buf = r_str_append (buf, "$");
-				continue;
-			}
-		} else if (dollar[1] == '(') {
-			msg = dollar + 1;
-			buf = r_str_append (buf, "$");
-			continue;
-		} else {
-			end = findBreakChar (dollar + 1);
-			if (!end) {
-				end = dollar + strlen (dollar);
-			}
-			word = r_str_ndup (dollar + 1, end - dollar - 1);
-		}
-		if (end && word) {
-			ut64 val = r_num_math (core->num, word);
-			r_strf_var (num, 32, "0x%"PFMT64x, val);
-			buf = r_str_append (buf, num);
-			msg = end;
-		} else {
-			break;
-		}
-		free (word);
-	}
-	buf = r_str_append (buf, msg);
-	return buf;
-}
-
 
 #include "clippy.inc.c"
 #include "visual_riu.inc.c"
@@ -1459,15 +1403,6 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_gotoxy (core->cons, x, y);
 			}
 			break;
-		case 'n': { // "?en" echo -n
-			const char *msg = r_str_trim_head_ro (input + 2);
-			// TODO: replace all ${flagname} by its value in hexa
-			char *newmsg = filterFlags (core, msg);
-			r_str_unescape (newmsg);
-			r_cons_print (core->cons, newmsg);
-			free (newmsg);
-			break;
-		}
 		case 'f': // "?ef"
 			{
 				const char *text = r_str_trim_head_ro (input + 2);
@@ -1568,21 +1503,6 @@ static int cmd_help(void *data, const char *input) {
 				  r_list_free (list);
 				  r_list_free (llist);
 			  }
-			break;
-		case ' ':
-			{
-				const char *msg = r_str_trim_head_ro (input + 1);
-				// TODO: replace all ${flagname} by its value in hexa
-				char *newmsg = filterFlags (core, msg);
-				r_str_unescape (newmsg);
-				r_cons_println (core->cons, newmsg);
-				free (newmsg);
-				r_core_return_value (core, 0);
-			}
-			break;
-		case 0: // "?e"
-			r_cons_newline (core->cons);
-			r_core_return_value (core, 0);
 			break;
 		case '?': // "?e?"
 			r_cons_cmd_help (core->cons, help_msg_question_e);

@@ -2459,7 +2459,7 @@ ar eip=0 ; wa push esp,,pop esp @ 0 ; ?en esp before : ; dr?esp ; 2aes  ; ?en es
 EOF
 EXPECT=<<EOF
 esp before :0x00178000
-esp after  :0x00178000
+esp after :0x00178000
 EOF
 RUN
 
