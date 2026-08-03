@@ -52,6 +52,34 @@ R_IPI bool r_coff_supported_arch(const ut8 *buf) {
 	return r_coff_supported_arch_le (buf) || r_coff_supported_arch_be (buf);
 }
 
+R_IPI bool r_coff_check(RBuffer *b) {
+	ut8 tmp[20];
+	int r = r_buf_read_at (b, 0, tmp, sizeof (tmp));
+	if (r < 20 || !r_coff_supported_arch (tmp)) {
+		return false;
+	}
+	// the two byte magic is too weak, so validate the header fields
+	// against the file size to reject false positives
+	const bool be = r_coff_supported_arch_be (tmp);
+	const ut64 size = r_buf_size (b);
+	const ut16 magic = r_read_ble16 (tmp, be);
+	const ut16 nscns = r_read_ble16 (tmp + 2, be);
+	const ut32 symptr = r_read_ble32 (tmp + 8, be);
+	const ut32 nsyms = r_read_ble32 (tmp + 12, be);
+	const ut16 opthdr = r_read_ble16 (tmp + 16, be);
+	ut64 scn_off = sizeof (struct coff_hdr) + opthdr;
+	if (magic == COFF_FILE_TI_COFF) {
+		scn_off += 2; // target id
+	}
+	if (scn_off + (ut64)nscns * sizeof (struct coff_scn_hdr) > size) {
+		return false;
+	}
+	if (nsyms > 0 && (ut64)symptr + (ut64)nsyms * sizeof (struct coff_symbol) > size) {
+		return false;
+	}
+	return true;
+}
+
 // copied from bfd
 static bool r_coff_decode_base64(const char *str, ut32 len, ut32 *res) {
 	ut32 i;
