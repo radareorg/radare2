@@ -48,17 +48,6 @@ static RCmdResult echo_print_args(RCmdContext *ctx, size_t first, bool newline) 
 	return (RCmdResult) { .status = success? 0: 1 };
 }
 
-static ut8 *echo_base64_decode(const char *input, int *size) {
-	ut8 *decoded = (ut8 *)strdup (input);
-	if (decoded) {
-		*size = r_base64_decode (decoded, input, -1, true);
-		if (*size < 1) {
-			R_FREE (decoded);
-		}
-	}
-	return decoded;
-}
-
 static RCmdResult echo_base64(RCmdContext *ctx) {
 	RStrs *arg = RVecRStrs_at (&ctx->args, 0);
 	if (!arg || RVecRStrs_length (&ctx->args) != 1) {
@@ -66,20 +55,16 @@ static RCmdResult echo_base64(RCmdContext *ctx) {
 	}
 	char *input = r_strs_tostring (*arg);
 	int size = 0;
-	ut8 *decoded = input? echo_base64_decode (input, &size): NULL;
+	ut8 *decoded = input? r_base64_decode_dyn (input, -1, &size): NULL;
 	free (input);
-	if (!decoded) {
+	if (!decoded || size < 1) {
+		free (decoded);
 		return (RCmdResult) { .status = 1 };
 	}
-	const ut8 *nul = memchr (decoded, 0, size);
-	const size_t length = nul? nul - decoded: size;
-	RStrBuf output;
-	r_strbuf_init (&output);
-	const bool success = r_strbuf_append_n (&output, (const char *)decoded, length)
-		&& r_strbuf_append_n (&output, "\n", 1)
-		&& r_cons_write (ctx->cons, r_strbuf_get (&output), output.len);
-	r_strbuf_fini (&output);
+	char *output = r_str_newf ("%s\n", (const char *)decoded);
 	free (decoded);
+	const bool success = output && r_cons_write (ctx->cons, output, strlen (output));
+	free (output);
 	return (RCmdResult) { .status = success? 0: 1 };
 }
 
