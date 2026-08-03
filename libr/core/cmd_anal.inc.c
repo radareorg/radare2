@@ -12870,7 +12870,7 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 			if (strncmp (body, "base64:", B_LEN) == 0) {
 				if (body[B_LEN]) {
 					body = r_str_replace (body, "\\n", "", true);
-					char *newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1, NULL, false);
+					char *newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1, NULL, true);
 					if (!newbody) {
 						R_LOG_ERROR ("Invalid base64 string in agn (%s)", body+B_LEN);
 						r_str_argv_free (args);

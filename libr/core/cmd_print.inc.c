@@ -9363,8 +9363,20 @@ static int cmd_print(void *data, const char *input) {
 				break;
 			default: {
 				len = len > core->blocksize? core->blocksize: len;
+				// only decode the leading base64 run, otherwise the tolerant
+				// decoder harvests alphabet bytes from trailing binary garbage
+				int blen = 0;
+				while (blen < len) {
+					const ut8 c = block[blen];
+					if (!(IS_UPPER (c) || IS_LOWER (c) || (c >= '0' && c <= '9')
+							|| c == '+' || c == '/' || c == '-' || c == '_'
+							|| c == '=' || IS_WHITECHAR (c))) {
+						break;
+					}
+					blen++;
+				}
 				int olen;
-				ut8 *out = r_base64_decode_dyn ((const char *)block, len, &olen, false);
+				ut8 *out = r_base64_decode_dyn ((const char *)block, blen, &olen, false);
 				if (out && olen > 0) {
 					r_cons_println (core->cons, (const char *)out);
 				} else {

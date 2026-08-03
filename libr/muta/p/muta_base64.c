@@ -34,7 +34,7 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 		break;
 	case R_MUTA_OP_DECRYPT:
 		olen = 4 + ((len / 4) * 3);
-		if (len > 0) {
+		if (len > 1) {
 			olen -= (buf[len - 1] == '=')? ((buf[len - 2] == '=')? 2: 1): 0;
 		}
 		obuf = malloc (olen + 4);

@@ -8,7 +8,6 @@
 #include <string.h>
 #include <r_util.h>
 
-#define SZ 1024
 static const char cb64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 // This table will handle standard base64 decoding and also url safe decoding with characteres "-" and "_"
