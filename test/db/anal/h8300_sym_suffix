@@ -14,11 +14,12 @@ wx 5a001234
 ao
 pd 1
 EOC
-EXPECT=<<EOC
+EXPECT=<<EOF
 address: 0x0
 opcode: jmp @0x1234:16
 esilcost: 0
 disasm: jmp sym.target :16
+pseudo: goto sym.target
 mnemonic: jmp
 mask: ff000000
 id: 0
@@ -30,5 +31,5 @@ cycles: 0
 jump: 0x00001234
 family: cpu
     + 0          ,=< 0x00000000      5a001234       jmp sym.target :16
-EOC
+EOF
 RUN
