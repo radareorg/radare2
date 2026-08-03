@@ -778,11 +778,11 @@ R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
 
 	RBinString *ptr;
 	R_VEC_FOREACH (&bo->strings, ptr) {
-		char *dec = (char *)r_base64_decode_dyn ((const char *)ptr->string, -1, NULL);
+		char *dec = (char *)r_base64_decode_dyn ((const char *)ptr->string, -1, NULL, false);
 		if (dec) {
 			char *s = ptr->string;
 			for (;;) {
-				char *dec2 = (char *)r_base64_decode_dyn ((const char *)s, -1, NULL);
+				char *dec2 = (char *)r_base64_decode_dyn ((const char *)s, -1, NULL, false);
 				if (!dec2) {
 					break;
 				}

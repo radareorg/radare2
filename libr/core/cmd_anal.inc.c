@@ -4431,7 +4431,7 @@ static void cmd_afn(RCore *core, const char *input, bool quiet) {
 				addr = r_num_math (core->num, p);
 			}
 			if (r_str_startswith (name, "base64:")) {
-				char *res = (char *)r_base64_decode_dyn (name + 7, -1, NULL);
+				char *res = (char *)r_base64_decode_dyn (name + 7, -1, NULL, false);
 				if (res) {
 					free (name);
 					name = res;
@@ -12870,7 +12870,7 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 			if (strncmp (body, "base64:", B_LEN) == 0) {
 				if (body[B_LEN]) {
 					body = r_str_replace (body, "\\n", "", true);
-					char *newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1, NULL);
+					char *newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1, NULL, false);
 					if (!newbody) {
 						R_LOG_ERROR ("Invalid base64 string in agn (%s)", body+B_LEN);
 						r_str_argv_free (args);

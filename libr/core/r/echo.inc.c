@@ -52,9 +52,10 @@ static RCmdResult echo_base64(RCmdContext *ctx) {
 	}
 	char *input = r_strs_tostring (*arg);
 	int size = 0;
-	ut8 *decoded = input? r_base64_decode_dyn (input, -1, &size): NULL;
+	ut8 *decoded = input? r_base64_decode_dyn (input, -1, &size, true): NULL;
 	free (input);
 	if (!decoded || size < 1) {
+		R_LOG_ERROR ("Invalid base64 string");
 		free (decoded);
 		return (RCmdResult) { .status = 1 };
 	}

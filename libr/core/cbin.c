@@ -408,7 +408,7 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 		section_name = section? section->name: "";
 		type_string = r_bin_string_type (string->type);
 		if (b64str) {
-			ut8 *s = r_base64_decode_dyn (string->string, -1, NULL);
+			ut8 *s = r_base64_decode_dyn (string->string, -1, NULL, false);
 			if (R_STR_ISNOTEMPTY (s) && IS_PRINTABLE (*s)) {
 				// TODO: add more checks
 				free (b64.string);

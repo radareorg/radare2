@@ -9352,7 +9352,7 @@ static int cmd_print(void *data, const char *input) {
 				} else {
 					len = r_str_nlen ((const char *)block, len);
 					int olen;
-					ut8 *out = r_base64_decode_dyn ((const char *)block, len, &olen);
+					ut8 *out = r_base64_decode_dyn ((const char *)block, len, &olen, false);
 					if (out && olen > 0) {
 						r_cons_println (core->cons, (const char *)out);
 					} else {
@@ -9364,7 +9364,7 @@ static int cmd_print(void *data, const char *input) {
 			default: {
 				len = len > core->blocksize? core->blocksize: len;
 				int olen;
-				ut8 *out = r_base64_decode_dyn ((const char *)block, len, &olen);
+				ut8 *out = r_base64_decode_dyn ((const char *)block, len, &olen, false);
 				if (out && olen > 0) {
 					r_cons_println (core->cons, (const char *)out);
 				} else {

@@ -800,7 +800,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == '6' && input[2] == '4') {
 			char *buf = NULL;
 			if (input[3] == '-') {
-				buf = (char *)r_base64_decode_dyn (input + 4, -1, NULL);
+				buf = (char *)r_base64_decode_dyn (input + 4, -1, NULL, false);
 			} else if (input[3] == ' ') {
 				buf = r_base64_encode_dyn ((const ut8 *)input + 4, -1);
 			}
@@ -1353,7 +1353,7 @@ static int cmd_help(void *data, const char *input) {
 		case ':': { // "?e:"
 				const char *arg = r_str_trim_head_ro (input + 2);
 				int res_len = 0;
-				ut8 *res = r_base64_decode_dyn (arg, -1, &res_len);
+				ut8 *res = r_base64_decode_dyn (arg, -1, &res_len, false);
 				if (res && res_len > 0) {
 					r_cons_write (core->cons, (const char *)res, res_len);
 				}

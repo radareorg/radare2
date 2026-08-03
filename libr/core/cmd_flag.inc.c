@@ -1232,7 +1232,7 @@ static bool cmd_flag_add(RCore * R_NONNULL core, const char *str, bool addsign) 
 			if (s3) {
 				*s3 = '\0';
 				if (r_str_startswith (s3 + 1, "base64:")) {
-					comment = (char *) r_base64_decode_dyn (s3 + 8, -1, NULL);
+					comment = (char *) r_base64_decode_dyn (s3 + 8, -1, NULL, false);
 					comment_needs_free = true;
 				} else if (s3[1]) {
 					comment = s3 + 1;
@@ -1461,12 +1461,12 @@ static void cmd_fu(RCore *core, const char *input) {
 			}
 		}
 		if (rawb64 && *rawb64) {
-			char *rawdec = (char *)r_base64_decode_dyn (rawb64, -1, NULL);
+			char *rawdec = (char *)r_base64_decode_dyn (rawb64, -1, NULL, false);
 			r_flag_item_set_rawname (core->flags, item, rawdec);
 			free (rawdec);
 		}
 		if (realb64 && *realb64) {
-			char *realdec = (char *)r_base64_decode_dyn (realb64, -1, NULL);
+			char *realdec = (char *)r_base64_decode_dyn (realb64, -1, NULL, false);
 			if (realdec) {
 				(void)r_flag_item_set_realname (core->flags, item, realdec);
 				free (realdec);
@@ -2051,7 +2051,7 @@ static int cmd_flag(void *data, const char *input) {
 				item = r_flag_get (core->flags, p);
 				if (item) {
 					if (!strncmp (q + 1, "base64:", 7)) {
-						dec = (char *) r_base64_decode_dyn (q + 8, -1, NULL);
+						dec = (char *) r_base64_decode_dyn (q + 8, -1, NULL, false);
 						if (dec) {
 							r_flag_item_set_comment (core->flags, item, dec);
 							free (dec);
@@ -2146,7 +2146,7 @@ static int cmd_flag(void *data, const char *input) {
 			}
 			if (item) {
 				if (r_str_startswith (realname, "base64:")) {
-					char *dec = (char *)r_base64_decode_dyn (realname + 7, -1, NULL);
+					char *dec = (char *)r_base64_decode_dyn (realname + 7, -1, NULL, false);
 					if (dec) {
 						r_flag_item_set_realname (core->flags, item, dec);
 						free (dec);
