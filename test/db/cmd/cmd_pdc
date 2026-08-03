@@ -111,7 +111,7 @@ void entry0 (void) {
         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
         push (0)
-        dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x4542414c, NULL)
+        dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x40100e, 0)
         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
         dword [puts] () // 0x4030dc // reloc.crtdll.dll_puts // int puts("LABEL")
         esp += 4      // (pstr 0x0040100e) "LABEL"
@@ -130,9 +130,9 @@ void entry0 (void) {
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
         push (0)
-        dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x6c6c6548, NULL)
+        dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x401000, 0)
         push (0)
-        dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(NULL)
+        dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(0)
 }
 
  0x0040200f |                                | // callconv: eax cdecl (stack);
@@ -145,7 +145,7 @@ void entry0 (void) {
  0x0040201a |         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
  0x0040201f |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x00402024 |         push (0)
- 0x00402026 |         dword [MessageBoxA] () // 0x4030b8 // (pstr 0x00401014) ">%p\n" // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x4542414c, NULL)
+ 0x00402026 |         dword [MessageBoxA] () // 0x4030b8 // (pstr 0x00401014) ">%p\n" // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x40100e, 0)
  0x0040202c |         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
  0x00402031 |         dword [puts] () // 0x4030dc // reloc.crtdll.dll_puts // int puts("LABEL")
  0x00402037 |         esp += 4      // (pstr 0x0040100e) "LABEL"
@@ -164,9 +164,9 @@ void entry0 (void) {
  0x00402062 |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x00402067 |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x0040206c |         push (0)
- 0x0040206e |         dword [MessageBoxA] () // 0x4030b8 // (pstr 0x00402074) "j" // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x6c6c6548, NULL)
+ 0x0040206e |         dword [MessageBoxA] () // 0x4030b8 // (pstr 0x00402074) "j" // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x401000, 0)
  0x00402074 |         push (0)
- 0x00402076 |         dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(NULL)
+ 0x00402076 |         dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(0)
  0x00402076 | }
 
 EOF

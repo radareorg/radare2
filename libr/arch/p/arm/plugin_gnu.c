@@ -584,6 +584,7 @@ static char *set_reg_profile(RArchSession *as) {
 		"=PC	r15\n"
 		"=SP	r13\n"
 		"=BP	r14\n" // XXX
+		"=LR	lr\n"
 		"=A0	r0\n"
 		"=A1	r1\n"
 		"=A2	r2\n"

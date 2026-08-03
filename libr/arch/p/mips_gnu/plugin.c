@@ -2018,6 +2018,7 @@ static char *regs(RArchSession *as) {
 		"=SN    v0\n"
 		"=SP	sp\n"
 		"=BP	fp\n"
+		"=RA	ra\n"
 		"=A0	a0\n"
 		"=A1	a1\n"
 		"=A2	a2\n"

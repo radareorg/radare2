@@ -494,12 +494,12 @@ bool test_r_anal_cc_argval_stack(void) {
 		"gpr	esp	.32	0	0\ngpr	eip	.32	4	0\n");
 	r_reg_setv (anal->reg, "esp", 0x1000);
 	ut64 v = 0;
-	mu_assert_false (r_anal_cc_argval (anal, anal->reg, "scc", 0, -1, false, &v), "no io binding fails");
+	mu_assert_false (r_anal_cc_argval (anal, anal->reg, "scc", 0, -1, false, 0, &v), "no io binding fails");
 	anal->iob.read_at = fake_read_at;
-	mu_assert_true (r_anal_cc_argval (anal, anal->reg, "scc", 0, -1, false, &v), "stack argval reads");
+	mu_assert_true (r_anal_cc_argval (anal, anal->reg, "scc", 0, -1, false, 0, &v), "stack argval reads");
 	mu_assert_eq (v, 0x13121110, "little-endian slot decode");
 	anal->config->endian = R_SYS_ENDIAN_BIG;
-	mu_assert_true (r_anal_cc_argval (anal, anal->reg, "scc", 0, -1, false, &v), "big-endian read");
+	mu_assert_true (r_anal_cc_argval (anal, anal->reg, "scc", 0, -1, false, 0, &v), "big-endian read");
 	mu_assert_eq (v, 0x10111213, "big-endian slot decode");
 	r_anal_free (anal);
 	mu_end;
@@ -524,7 +524,7 @@ bool test_r_anal_cc_argval(void) {
 		"gpr	ecx	.32	0	0\ngpr	esp	.32	4	0\ngpr	eip	.32	8	0\n");
 	r_reg_setv (anal->reg, "ecx", 0x1234);
 	ut64 v = 0;
-	mu_assert_true (r_anal_cc_argval (anal, anal->reg, "vcc", 0, -1, false, &v), "reg argval");
+	mu_assert_true (r_anal_cc_argval (anal, anal->reg, "vcc", 0, -1, false, 0, &v), "reg argval");
 	mu_assert_eq (v, 0x1234, "reg value read");
 	r_anal_free (anal);
 	mu_end;

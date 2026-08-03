@@ -316,6 +316,7 @@ static char *regs(RArchSession *as) {
 			"=PC	pc\n"
 			"=SP	r1\n"
 			"=BP	r31\n"
+			"=LR	lr\n"
 			"=SR	srr1\n" // status register ??
 			"=SN	r3\n" // also for ret
 			"=R0	r3\n" // ret
@@ -453,6 +454,7 @@ static char *regs(RArchSession *as) {
 		"=PC	pc\n"
 		"=SP	r1\n"
 		"=BP	r31\n"
+		"=LR	lr\n"
 		"=SR	srr1\n" // status register ??
 		"=SN	r0\n" // also for ret
 		"=R0	r3\n" // ret
