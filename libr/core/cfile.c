@@ -1078,6 +1078,12 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 	if (!flags) {
 		flags = R_PERM_R;
 	}
+	// cfg.choice: when enabled, list sub-options and (if scr.interactive) let the user
+	// pick a slice/entry. If the user picks one that yields a different URI, use it.
+	char *chosen_uri = r_core_file_subs_prompt (r, file);
+	if (chosen_uri) {
+		file = chosen_uri;
+	}
 	r->io->bits = r->rasm->config->bits; // TODO: we need an api for this
 	RIODesc *fd = r_io_open_nomap (r->io, file, flags, 0644);
 	if (r_cons_is_breaked (r->cons)) {
@@ -1136,6 +1142,7 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 	}
 	r_core_cmd0 (r, "=!");
 beach:
+	free (chosen_uri);
 	r->times->file_open_time = r_time_now_mono () - prev;
 	return fd;
 }

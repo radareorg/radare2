@@ -587,6 +587,68 @@ static int r_io_zip_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return ret;
 }
 
+// Extract "archive.zip" from "zip://archive.zip" or "zip://archive.zip//entry".
+// Caller frees.
+static char *r_io_zip_archive_name(const char *uri) {
+	const char *scheme = strstr (uri, "://");
+	if (!scheme) {
+		return NULL;
+	}
+	const char *p = scheme + 3;
+	const char *dslash = strstr (p, "//");
+	if (dslash) {
+		return r_str_ndup (p, (int)(dslash - p));
+	}
+	return strdup (p);
+}
+
+static RList *r_io_zip_list_subs(RIO *io, const char *uri) {
+	if (!r_io_zip_plugin_open (io, uri, true) && !r_io_zip_plugin_open (io, uri, false)) {
+		return NULL;
+	}
+	char *archive = r_io_zip_archive_name (uri);
+	if (R_STR_ISEMPTY (archive)) {
+		free (archive);
+		return NULL;
+	}
+	struct zip *za = r_io_zip_open_archive (archive, 0, 0, R_PERM_R);
+	if (!za) {
+		free (archive);
+		return NULL;
+	}
+	// pick a URI prefix that round-trips through r_io_open:
+	// "apk://foo.apk" -> "apk://foo.apk//<entry>" is opened by r_io_zip_open.
+	// All *all:// schemes are batch loaders; prefer a single-entry prefix.
+	const char *prefix = "zip://";
+	if (r_str_startswith (uri, "apk")) {
+		prefix = "apk://";
+	} else if (r_str_startswith (uri, "ipa")) {
+		prefix = "ipa://";
+	} else if (r_str_startswith (uri, "jar")) {
+		prefix = "jar://";
+	}
+	RList *list = r_list_newf ((RListFree)r_io_sub_entry_free);
+	ut64 i, n = zip_get_num_files (za);
+	for (i = 0; i < n; i++) {
+		struct zip_stat sb;
+		zip_stat_init (&sb);
+		if (zip_stat_index (za, i, 0, &sb) != 0 || !sb.name) {
+			continue;
+		}
+		RIOSubEntry *e = R_NEW0 (RIOSubEntry);
+		e->name = strdup (sb.name);
+		e->uri = r_str_newf ("%s%s//%s", prefix, archive, sb.name);
+		e->offset = 0;
+		e->size = sb.size;
+		e->hint = r_str_newf ("zip entry (compressed %"PFMT64u" / uncompressed %"PFMT64u")",
+			(ut64)sb.comp_size, (ut64)sb.size);
+		r_list_append (list, e);
+	}
+	zip_close (za);
+	free (archive);
+	return list;
+}
+
 static bool r_io_zip_close(RIODesc *fd) {
 	if (!fd || !fd->data) {
 		return false;
@@ -612,6 +674,7 @@ RIOPlugin r_io_plugin_zip = {
 	.close = r_io_zip_close,
 	.seek = r_io_zip_lseek,
 	.check = r_io_zip_plugin_open,
+	.list_subs = r_io_zip_list_subs,
 	.resize = r_io_zip_resize,
 };
 

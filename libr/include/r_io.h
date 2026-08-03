@@ -194,6 +194,17 @@ typedef struct {
 	bool listener;
 } RIORap;
 
+// Entries reported by RIOPlugin.list_subs: URI-level sub-content (zip entries, dyldcache images..)
+typedef struct r_io_sub_entry_t {
+	char *name;    // short identifier (entry filename, image name)
+	char *uri;     // fully-qualified sub-URI ready to feed to r_io_open
+	ut64 offset;   // informational: offset in container (0 if N/A)
+	ut64 size;     // informational: size of the entry (0 if unknown)
+	char *hint;    // one-line human-readable description (nullable)
+} RIOSubEntry;
+
+R_API void r_io_sub_entry_free(RIOSubEntry *e); // NULL-safe
+
 typedef struct r_io_plugin_t {
 	const RPluginMeta meta;
 	void *data; // kind of globals, used by rlang-io in this case
@@ -221,6 +232,9 @@ typedef struct r_io_plugin_t {
 	bool (*accept)(RIO *io, RIODesc *desc, int fd);
 	int (*create)(RIO *io, const char *file, int mode, int type);
 	bool (*check)(RIO *io, const char *, bool many);
+	// Optional: enumerate sub-entries of a container URI without opening them all.
+	// Returns RList<RIOSubEntry*>, or NULL if the URI has none / plugin doesn't implement it.
+	RList* (*list_subs)(RIO *io, const char *uri);
 } RIOPlugin;
 
 #define	R_IO_MAP_TIE_FLG_BACK	1		//ties a map so that it resizes when the desc resizes

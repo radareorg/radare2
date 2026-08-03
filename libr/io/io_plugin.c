@@ -15,6 +15,16 @@ R_IPI bool r_io_plugins_reset(RIO *io) {
 	return true;
 }
 
+R_API void r_io_sub_entry_free(RIOSubEntry *e) {
+	if (!e) {
+		return;
+	}
+	free (e->name);
+	free (e->uri);
+	free (e->hint);
+	free (e);
+}
+
 R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
 	// TODO: optimization
 	if (strstr (filename, "://")) {
