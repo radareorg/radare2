@@ -59,7 +59,7 @@ typedef void * r_ptrace_data_t;
 #elif __APPLE__
 typedef int r_ptrace_request_t;
 typedef int r_ptrace_data_t;
-#elif __OpenBSD__ || __FreeBSD__
+#elif __OpenBSD__ || __FreeBSD__ || __NetBSD__
 typedef int r_ptrace_request_t;
 typedef int r_ptrace_data_t;
 #define R_PTRACE_NODATA 0
