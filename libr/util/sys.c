@@ -1266,10 +1266,10 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 	const DWORD maxlength = MAX_PATH;
 	char *filename = calloc ((MAX_PATH * 2) + 2, 1);
 	char *result = NULL;
-	DWORD length = r_w32_GetModuleFileNameEx (processHandle, NULL, (LPSTR)filename, maxlength);
+	DWORD length = r_w32_GetModuleFileNameEx (processHandle, NULL, (LPTSTR)filename, maxlength);
 	if (length == 0) {
 		// Upon failure fallback to GetProcessImageFileName
-		length = r_w32_GetProcessImageFileName (processHandle, filename, maxlength);
+		length = r_w32_GetProcessImageFileName (processHandle, (LPTSTR)filename, maxlength);
 		if (length == 0) {
 			R_LOG_ERROR ("calling GetProcessImageFileName failed");
 			return NULL;

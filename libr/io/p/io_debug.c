@@ -72,11 +72,19 @@ static int setup_tokens(void) {
 	}
 	err = 0;
 err_enable:
+	if (err) {
+		// read before CloseHandle, which clobbers the thread error code
+		// systems without SeDebugPrivilege (reactos, some wine setups) cannot
+		// grant it and debugging own child processes works anyway, so this is
+		// only worth reporting when it is an unexpected failure
+		if (GetLastError () == ERROR_NO_SUCH_PRIVILEGE) {
+			R_LOG_DEBUG ("SeDebugPrivilege is not available on this system");
+		} else {
+			r_sys_perror ("setup_tokens");
+		}
+	}
 	if (tok) {
 		CloseHandle (tok);
-	}
-	if (err) {
-		r_sys_perror ("setup_tokens");
 	}
 	return err;
 }
