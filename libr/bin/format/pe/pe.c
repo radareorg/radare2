@@ -4459,6 +4459,11 @@ static bool PE_(r_bin_pe_load_sections)(RBinPEObj *pe) {
 			r_str_ncpy ((char *)section.name, new_name, sizeof (section.name));
 			free (new_name);
 		} else if (shdr[i].Name[0] == '/') {
+			// "/NN" indexes the coff string table, which lives past the end of
+			// the mapped image: the lookup always fails when the binary comes
+			// from memory (dbg://). keep the literal short name in that case
+			// instead of leaving it empty or filling it with unmapped garbage
+			bool resolved = false;
 			// section header is not null terminated, so use ndup
 			char *n = r_str_ndup ((const char *)shdr[i].Name + 1, sizeof (shdr[i].Name) - 1);
 			int idx = atoi (n);
@@ -4478,9 +4483,18 @@ static bool PE_(r_bin_pe_load_sections)(RBinPEObj *pe) {
 				if (r_buf_read_at (pe->b,
 					sym_tbl_off + off + idx,
 					(ut8 *)buf, 64)) {
-					memcpy (section.name, buf, sz);
-					section.name[sz - 1] = '\0';
+					buf[sz - 1] = '\0';
+					// an unmapped read yields zeroes or binary junk
+					if (*buf && r_str_is_printable (buf)) {
+						memcpy (section.name, buf, sz);
+						section.name[sz - 1] = '\0';
+						resolved = true;
+					}
 				}
+			}
+			if (!resolved) {
+				memcpy (section.name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
+				section.name[PE_IMAGE_SIZEOF_SHORT_NAME] = '\0';
 			}
 		} else {
 			memcpy (section.name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
