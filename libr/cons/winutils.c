@@ -270,8 +270,11 @@ static int win_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmo
 			}
 			if (state == -2) {
 				r_cons_win_gotoxy (cons, fd, x, y);
-				ptr += i;
-				str = ptr; // + i-2;
+				// land on the final 'H' so the loop increment moves just
+				// past the sequence, and leave escape-parsing state
+				ptr += i - 1;
+				str = ptr + 1;
+				esc = 0;
 				continue;
 			}
 			bool bright = false;
@@ -354,11 +357,12 @@ static int win_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmo
 					fg |= 8;
 				}
 				SetConsoleTextAttribute (hConsole, bg|fg|inv);
-				esc = 0;
+				// on ';' keep parsing the rest of the sequence (\x1b[32;1m)
+				esc = (ptr[2] == ';')? 2: 0;
 				ptr = ptr + 2;
 				str = ptr + 1;
 				continue;
-			} else if ((ptr[0] == '4' && ptr[2] == 'm')
+			} else if ((ptr[0] == '4' && (ptr[2] == 'm' || ptr[2] == ';'))
 					|| (bright = ptr[0] == '1' && ptr[1] == '0' && ptr[3] == 'm')) {
 				/* background color */
 				ut8 col = bright ? ptr[2] : ptr[1];
@@ -395,8 +399,27 @@ static int win_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmo
 					bg |= 0x80;
 				}
 				SetConsoleTextAttribute (hConsole, bg|fg|inv);
-				esc = 0;
+				esc = (!bright && ptr[2] == ';')? 2: 0;
 				ptr = ptr + (bright ? 3 : 2);
+				str = ptr + 1;
+				continue;
+			} else if (ptr[0] == '1' && (ptr[1] == 'm' || ptr[1] == ';')) {
+				// bold: map to the intensity bit
+				fg |= 8;
+				SetConsoleTextAttribute (hConsole, bg|fg|inv);
+				esc = (ptr[1] == ';')? 2: 0;
+				ptr = ptr + 1;
+				str = ptr + 1;
+				continue;
+			} else {
+				// unsupported csi sequence (?25l, 38;5;..m, ...): swallow
+				// it up to its final byte instead of leaking it as text
+				int j = 0;
+				while (ptr + j < ptr_end && ptr[j] && !(ptr[j] >= '@' && ptr[j] <= '~')) {
+					j++;
+				}
+				esc = 0;
+				ptr += j;
 				str = ptr + 1;
 				continue;
 			}
