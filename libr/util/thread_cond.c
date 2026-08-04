@@ -4,10 +4,12 @@
 #include <r_util/r_time.h>
 
 #if R2__WINDOWS__
-// Use legacy primitives to support every Windows version with one code path.
+// Use legacy primitives when native condition variables are unavailable.
 typedef struct {
+	CONDITION_VARIABLE cond;
 	CRITICAL_SECTION waiters_lock;
 	RList *waiters;
+	bool native;
 } W32Cond;
 
 typedef struct w32_cond_waiter_t {
@@ -19,6 +21,9 @@ static W32Cond *cond_data(RThreadCond *cond) {
 }
 
 static bool cond_wait(W32Cond *cond, RThreadLock *lock, DWORD timeout) {
+	if (cond->native) {
+		return r_w32_SleepConditionVariableCS (&cond->cond, &lock->lock, timeout);
+	}
 	W32CondWaiter *waiter = R_NEW0 (W32CondWaiter);
 	waiter->event = CreateEvent (NULL, FALSE, FALSE, NULL);
 	if (!waiter->event) {
@@ -42,6 +47,14 @@ static bool cond_wait(W32Cond *cond, RThreadLock *lock, DWORD timeout) {
 }
 
 static void cond_signal(W32Cond *cond, bool all) {
+	if (cond->native) {
+		if (all) {
+			r_w32_WakeAllConditionVariable (&cond->cond);
+		} else {
+			r_w32_WakeConditionVariable (&cond->cond);
+		}
+		return;
+	}
 	EnterCriticalSection (&cond->waiters_lock);
 	W32CondWaiter *waiter = NULL;
 	while ((waiter = r_list_pop_head (cond->waiters))) {
@@ -66,8 +79,13 @@ R_API RThreadCond *r_th_cond_new(void) {
 	}
 #elif R2__WINDOWS__
 	W32Cond *wcond = R_NEW0 (W32Cond);
-	wcond->waiters = r_list_new ();
-	InitializeCriticalSection (&wcond->waiters_lock);
+	wcond->native = r_w32_has_condition_variables ();
+	if (wcond->native) {
+		r_w32_InitializeConditionVariable (&wcond->cond);
+	} else {
+		wcond->waiters = r_list_new ();
+		InitializeCriticalSection (&wcond->waiters_lock);
+	}
 	cond->cond.Ptr = wcond;
 #endif
 	return cond;
@@ -123,8 +141,10 @@ R_API void r_th_cond_free(RThreadCond *cond) {
 	pthread_cond_destroy (&cond->cond);
 #elif R2__WINDOWS__
 	W32Cond *wcond = cond_data (cond);
-	DeleteCriticalSection (&wcond->waiters_lock);
-	r_list_free (wcond->waiters);
+	if (!wcond->native) {
+		DeleteCriticalSection (&wcond->waiters_lock);
+		r_list_free (wcond->waiters);
+	}
 	free (wcond);
 #endif
 	free (cond);

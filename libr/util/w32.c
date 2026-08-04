@@ -12,6 +12,18 @@ static DWORD(*w32_GetProcessId)(HANDLE) = NULL; // XP
 // fpu access API
 static BOOL(*w32_InitializeContext)(PVOID, DWORD, PCONTEXT*, PDWORD) = NULL;
 // static BOOL (*w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64) = NULL;
+
+typedef void (WINAPI *W32CondInit)(PCONDITION_VARIABLE);
+typedef void (WINAPI *W32CondSignal)(PCONDITION_VARIABLE);
+typedef BOOL (WINAPI *W32CondWait)(PCONDITION_VARIABLE, PCRITICAL_SECTION, DWORD);
+static struct {
+	bool initialized;
+	bool available;
+	W32CondInit init;
+	W32CondSignal signal;
+	W32CondSignal signal_all;
+	W32CondWait wait;
+} w32_cond;
 #endif
 
 static inline HANDLE w32_loadlib(const char *name, const char *libname) {
@@ -26,44 +38,52 @@ static inline HANDLE w32_loadlib(const char *name, const char *libname) {
 	return lib;
 }
 
-R_API FARPROC r_w32_InitializeConditionVariable(PCONDITION_VARIABLE a) {
-	// requires 2008 / vista
-	static FARPROC (WINAPI *x)(PCONDITION_VARIABLE a) = NULL;
-	if (!x) {
+static bool w32_cond_init(void) {
+	if (!w32_cond.initialized) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (FARPROC (WINAPI *)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("InitializeConditionVariable"));
+		if (lib) {
+			w32_cond.init = (W32CondInit) GetProcAddress (lib, W32_TCALL ("InitializeConditionVariable"));
+			w32_cond.signal = (W32CondSignal) GetProcAddress (lib, W32_TCALL ("WakeConditionVariable"));
+			w32_cond.signal_all = (W32CondSignal) GetProcAddress (lib, W32_TCALL ("WakeAllConditionVariable"));
+			w32_cond.wait = (W32CondWait) GetProcAddress (lib, W32_TCALL ("SleepConditionVariableCS"));
+		}
+		w32_cond.available = w32_cond.init && w32_cond.signal
+			&& w32_cond.signal_all && w32_cond.wait;
+		w32_cond.initialized = true;
 	}
-	return x? x (a): NULL;
+	return w32_cond.available;
+}
+
+R_API bool r_w32_has_condition_variables(void) {
+	return w32_cond_init ();
+}
+
+R_API FARPROC r_w32_InitializeConditionVariable(PCONDITION_VARIABLE a) {
+	if (!w32_cond_init ()) {
+		return NULL;
+	}
+	w32_cond.init (a);
+	return (FARPROC)w32_cond.init;
 }
 
 R_API FARPROC r_w32_WakeConditionVariable(PCONDITION_VARIABLE a) {
-	// requires 2008 / vista
-	static FARPROC (WINAPI *x)(PCONDITION_VARIABLE a) = NULL;
-	if (!x) {
-		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (FARPROC (WINAPI *)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("WakeConditionVariable"));
+	if (!w32_cond_init ()) {
+		return NULL;
 	}
-	return x? x (a): NULL;
+	w32_cond.signal (a);
+	return (FARPROC)w32_cond.signal;
 }
 
 R_API FARPROC r_w32_WakeAllConditionVariable(PCONDITION_VARIABLE a) {
-	// requires 2008 / vista
-	static FARPROC (WINAPI *x)(PCONDITION_VARIABLE a) = NULL;
-	if (!x) {
-		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (FARPROC (WINAPI *)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("WakeAllConditionVariable"));
+	if (!w32_cond_init ()) {
+		return NULL;
 	}
-	return x? x (a): NULL;
+	w32_cond.signal_all (a);
+	return (FARPROC)w32_cond.signal_all;
 }
 
 R_API BOOL r_w32_SleepConditionVariableCS(PCONDITION_VARIABLE a, PCRITICAL_SECTION b, DWORD c) {
-	static BOOL (WINAPI *x)(PCONDITION_VARIABLE a, PCRITICAL_SECTION b, DWORD c) = NULL;
-	// requires 2008 / vista
-	if (!x) {
-		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (BOOL (WINAPI *)(PCONDITION_VARIABLE, PCRITICAL_SECTION, DWORD)) GetProcAddress (lib, W32_TCALL ("SleepConditionVariableCS"));
-	}
-	return x? x (a, b, c): FALSE;
+	return w32_cond_init () ? w32_cond.wait (a, b, c) : FALSE;
 }
 
 R_API BOOL r_w32_ProcessIdToSessionId(DWORD a, DWORD *b) {
@@ -314,6 +334,7 @@ R_API bool r_w32_init(void) {
 	// escalate privs (required for win7/vista)
 	setup_debug_privilege_noarg ();
 	HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
+	w32_cond_init ();
 	// lookup function pointers for portability
 	// w32_OpenProcess = (HANDLE (*)(DWORD, BOOL, DWORD))GetProcAddress (lib, "OpenProcess");
 
