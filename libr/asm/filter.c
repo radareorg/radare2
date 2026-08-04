@@ -352,6 +352,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 					char *flagname = label
 						? r_str_newf (".%s", label)
 						: strdup (f->realnames? flag->realname: flag->name);
+					int flag_len = strlen (flagname);
 					int maxflagname = p->maxflagnamelen;
 					if (maxflagname > 0 && strlen (flagname) > maxflagname) {
 						char *doublelower = (char *)r_str_rstr (flagname, "__");
@@ -395,7 +396,6 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 						}
 					}
 					if (p->subrel_addr && !banned && lea) { // TODO: use remove_brackets
-						int flag_len = strlen (flag->name);
 						char *ptr_end = str + strlen (hdata) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
 						bool ansi_found = false;
