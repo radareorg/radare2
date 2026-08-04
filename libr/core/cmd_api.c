@@ -267,26 +267,27 @@ static ut8 *alias_append_internal(int *out_szp, const RCmdAliasVal *first, const
 }
 
 R_API bool r_cmd_alias_append_str(RCmd *cmd, const char *k, const char *a) {
-	R_RETURN_VAL_IF_FAIL (cmd && k && a, 1);
+	R_RETURN_VAL_IF_FAIL (cmd && k && a, false);
 	RCmdAliasVal *v_old = r_cmd_alias_get (cmd, k);
 	if (v_old) {
 		if (!v_old->is_data) {
-			return true;
+			return false;
 		}
 		int new_len = 0;
-		ut8* new = alias_append_internal (&new_len, v_old, (ut8 *)a, strlen (a) + 1);
+		ut8 *new = alias_append_internal (&new_len, v_old, (ut8 *)a, strlen (a) + 1);
 		if (!new) {
-			return true;
+			return false;
 		}
 		r_cmd_alias_set_raw (cmd, k, new, new_len);
 		free (new);
 	} else {
 		r_cmd_alias_set_str (cmd, k, a);
 	}
-	return false;
+	return true;
 }
 
 R_API bool r_cmd_alias_append_raw(RCmd *cmd, const char *k, const ut8 *a, int sz) {
+	R_RETURN_VAL_IF_FAIL (cmd && k && a, false);
 	RCmdAliasVal *v_old = r_cmd_alias_get (cmd, k);
 	if (v_old) {
 		if (!v_old->is_data) {
