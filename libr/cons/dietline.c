@@ -1171,7 +1171,7 @@ R_API void r_line_autocomplete(RCons *cons) {
 		const int sep = 3;
 		int slen, col = 10;
 #ifdef R2__WINDOWS__
-		r_cons_win_printf (false, "%s%s\n", line->state.prompt, line->state.buffer.data);
+		r_cons_win_printf (cons, false, "%s%s\n", line->state.prompt, line->state.buffer.data);
 #else
 		printf ("\r%s%s\n", line->state.prompt, line->state.buffer.data);
 #endif
@@ -1307,6 +1307,24 @@ static void __print_prompt(RCons *cons) {
 			D.count = 0;
 		}
 	} else {
+#if R2__WINDOWS__
+		if (!cons->vtmode && line->state.buffer.index <= cols) {
+			// legacy console: the line was already blanked by clear_line, so
+			// just place the caret instead of repainting prompt and buffer a
+			// second time; avoids blinking on slow consoles (reactos, xp)
+			fflush (stdout);
+			if (!cons->hStdout) {
+				cons->hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+			}
+			CONSOLE_SCREEN_BUFFER_INFO csbi;
+			if (GetConsoleScreenBufferInfo (cons->hStdout, &csbi)) {
+				int cx = r_str_ansi_len (line->state.prompt) + line->state.buffer.index;
+				COORD cpos = { (SHORT)R_MIN (cx, csbi.dwSize.X - 1), csbi.dwCursorPosition.Y };
+				SetConsoleCursorPosition (cons->hStdout, cpos);
+				return;
+			}
+		}
+#endif
 		printf ("\r%s%s%s", promptcolor (cons), line->state.prompt, promptcolor (cons));
 	}
 	if (line->state.buffer.index > cols) {

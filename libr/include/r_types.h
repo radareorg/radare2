@@ -459,6 +459,9 @@ static inline void *r_new_copy(int size, void *data) {
 #define PFMTSZu "Iu"
 #define PFMTSZo "Io"
 #define LDBLFMT "f"
+// must always match LDBLFMT, passing a long double to a "%f" vararg reads the
+// wrong number of bytes off the stack and corrupts every following argument
+#define R_LDBL double
 #define HHXFMT  "x"
 #else
 #define PFMT64x PRIx64
@@ -471,8 +474,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define PFMTSZo "zo"
 #if R2_NO_LONG_DOUBLE
 #define LDBLFMT "f"
+#define R_LDBL double
 #else
 #define LDBLFMT "Lf"
+#define R_LDBL long double
 #endif
 #define HHXFMT  "hhx"
 #endif
