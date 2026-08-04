@@ -16,6 +16,12 @@ extern "C" {
 #define TEXT(x) (TCHAR*)(x)
 #endif
 
+// PROCESS/THREAD_ALL_ACCESS in the sdk headers is the vista+ value (0xFFFF),
+// which pre-vista kernels (xp, reactos) reject with ERROR_ACCESS_DENIED even
+// for our own child processes. 0xFFF is the value those kernels accept.
+#define R_W32_PROCESS_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF)
+#define R_W32_THREAD_ALL_ACCESS R_W32_PROCESS_ALL_ACCESS
+
 R_API BOOL r_w32_ProcessIdToSessionId(DWORD a, DWORD *b);
 R_API BOOL r_w32_CancelSynchronousIo(HANDLE a);
 R_API DWORD r_w32_GetProcessImageFileName(HANDLE,LPSTR,DWORD);

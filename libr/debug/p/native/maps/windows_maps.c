@@ -87,14 +87,21 @@ R_API RList *r_w32_dbg_modules(RDebug *dbg) {
 	}
 	MODULEENTRY32 me;
 	RList *list = r_list_newf ((RListFree)r_debug_map_free);
-	DWORD flags = TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32;
+	// TH32CS_SNAPMODULE32 only means something for wow64 processes; pre-vista
+	// kernels (xp, reactos) hand back a useless snapshot when it is requested
+	DWORD flags = TH32CS_SNAPMODULE;
+#ifdef _WIN64
+	flags |= TH32CS_SNAPMODULE32;
+#endif
 	HANDLE h_mod_snap = CreateToolhelp32Snapshot (flags, dbg->pid);
 
-	if (h_mod_snap == INVALID_HANDLE_VALUE) {
+	// some implementations return NULL instead of INVALID_HANDLE_VALUE
+	if (!h_mod_snap || h_mod_snap == INVALID_HANDLE_VALUE) {
 		// Suppress if process is still initializing
 		if (GetLastError () != ERROR_PARTIAL_COPY || r_list_length (dbg->threads) > 1) {
 			r_sys_perror ("r_w32_dbg_modules/CreateToolhelp32Snapshot");
 		}
+		h_mod_snap = NULL;
 		goto err_w32_dbg_modules;
 	}
 	me.dwSize = sizeof (MODULEENTRY32);

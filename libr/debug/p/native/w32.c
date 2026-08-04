@@ -54,7 +54,7 @@ int w32_first_thread(int pid) {
 	do {
 		/* get all threads of process */
 		if (te32.th32OwnerProcessID == pid) {
-			thid = OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
+			thid = OpenThread (R_W32_THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
 			if (!thid) {
 				r_sys_perror ("w32_first_thread/OpenThread");
 				goto err_load_th;
@@ -441,7 +441,7 @@ bool is_pe_hdr(unsigned char *pe_hdr) {
 }
 
 static HANDLE w32_open_thread(int pid, int tid) {
-	HANDLE thread = OpenThread (THREAD_ALL_ACCESS, 0, tid);
+	HANDLE thread = OpenThread (R_W32_THREAD_ALL_ACCESS, 0, tid);
 	if (thread == INVALID_HANDLE_VALUE) {
 		r_sys_perror ("w32_open_thread/OpenThread");
 	}
@@ -474,7 +474,7 @@ RList *w32_thread_list(int pid, RList *list) {
 				82         DWORD dwFlags;
 				83 };
 #endif
-			thid = OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
+			thid = OpenThread (R_W32_THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
 			if (!thid) {
 				r_sys_perror ("w32_thread_list/OpenThread");
 				goto err_load_th;
@@ -570,7 +570,7 @@ err_w32_terminate_process:
 
 void w32_break_process(void *d) {
 	RDebug *dbg = (RDebug *)d;
-	HANDLE h_proc = OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
+	HANDLE h_proc = OpenProcess (R_W32_PROCESS_ALL_ACCESS, FALSE, dbg->pid);
 	if (!h_proc) {
 		r_sys_perror ("w32_break_process/OpenProcess");
 		goto err_w32_break_process;
