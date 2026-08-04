@@ -6173,7 +6173,7 @@ static void cmd_af_assumptions(RCore *core, const char *input) {
 		return;
 	}
 	if (input[2] == '?') {
-		r_core_cmd_help_match (core, help_msg_af, "afA");
+		r_cons_cmd_help_match (core->cons, help_msg_af, "afA", 0, true);
 		return;
 	}
 	if (input[2] == '-') {
@@ -6183,7 +6183,7 @@ static void cmd_af_assumptions(RCore *core, const char *input) {
 		return;
 	}
 	if (input[2] != 'j') {
-		r_core_cmd_help_match (core, help_msg_af, "afA");
+		r_cons_cmd_help_match (core->cons, help_msg_af, "afA", 0, true);
 		return;
 	}
 	const char *arg = r_str_trim_head_ro (input + 3);

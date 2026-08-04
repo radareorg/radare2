@@ -631,7 +631,13 @@ static char *fcn_context_callee_symbol_name(RAnal *anal, ut64 addr) {
 	if (!sym || !sym->name) {
 		return NULL;
 	}
-	name = r_bin_name_tostring (sym->name);
+	name = sym->name->name;
+	if (!name) {
+		name = sym->name->oname;
+	}
+	if (!name) {
+		name = sym->name->fname;
+	}
 	return R_STR_ISNOTEMPTY (name)? strdup (name): NULL;
 }
 
