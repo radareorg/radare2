@@ -184,3 +184,15 @@ r15 = (rol32(r7, 0xf) & 0xffffffffffe00003) | (r15 & 0x1ffffc)
 r15 = rol32(r7, r5) & 0xffffffffffe00003
 EOF
 RUN
+
+NAME=PPC64 pseudo lfiwax renders its operands
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 7c6436ae
+pi 1
+EOF
+EXPECT=<<EOF
+f3 = float[r6 + r4]
+EOF
+RUN
