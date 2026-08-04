@@ -721,7 +721,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "lfdu", "A = double[C + B]", 3},
 		{ "lfdux", "A = double[C + B]", 3},
 		{ "lfdx", "A = double[C + B]", 3},
-		{ "lfiwax", "A = float[C + B]", },
+		{ "lfiwax", "A = float[C + B]", 3},
 		{ "lfiwzx", "A = float[C + B]", 3},
 		{ "lfs", "A = float[C + B]", 3},
 		{ "lfsu", "A = float[C + B]", 3},
