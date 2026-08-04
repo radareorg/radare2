@@ -305,6 +305,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=wta alias
+FILE=malloc://4
+CMDS=b 2;wx 4142;wt $a;s 2;wx 4344;wta $a;cat $a
+EXPECT=<<EOF
+ABCD
+EOF
+RUN
+
 NAME=wtf base64
 CMDS=<<EOF
 wx 01020304
