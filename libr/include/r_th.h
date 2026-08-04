@@ -254,7 +254,8 @@ R_API void *r_th_lock_free(RThreadLock *thl);
 R_API RThreadCond *r_th_cond_new(void);
 R_API void r_th_cond_signal(RThreadCond *cond);
 R_API void r_th_cond_signal_all(RThreadCond *cond);
-R_API void r_th_cond_wait(RThreadCond *cond, RThreadLock *lock);
+/* timeout_ms of 0 or UT64_MAX waits forever; returns false on timeout */
+R_API bool r_th_cond_wait(RThreadCond *cond, RThreadLock *lock, ut64 timeout_ms);
 R_API void r_th_cond_free(RThreadCond *cond);
 
 R_API void r_atomic_store(volatile R_ATOMIC_BOOL *data, bool v);
