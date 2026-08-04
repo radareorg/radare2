@@ -176,7 +176,8 @@ R_API bool r_lang_setup(RLang *lang) {
 }
 
 R_API bool r_lang_plugin_add(RLang *lang, RLangPlugin *foo) {
-	if (foo && !r_lang_get_by_name (lang, foo->meta.name)) {
+	R_RETURN_VAL_IF_FAIL (lang && foo, false);
+	if (foo->meta.name && !r_lang_get_by_name (lang, foo->meta.name)) {
 		bool supported = true;
 		if (foo->init) {
 			// when init takes null, we just check if

@@ -27,6 +27,9 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 		char *ex = strchr (input, '!');
 		if (ex) {
 			char *name = r_str_ndup (ex + 1, strlen (ex) - 2);
+			if (!name) {
+				return false;
+			}
 			RLangPlugin *lp = r_lang_get_by_name (core->lang, name);
 			if (lp) {
 				if (lp->example) {
@@ -45,9 +48,16 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 		}
 		return false;
 	}
-	int ac;
+	int ac = 0;
 	char **av = r_str_argv (input + 1, &ac);
+	if (!av) {
+		return false;
+	}
 	if (ac > 0) {
+		if (!av[0]) {
+			r_str_argv_free (av);
+			return false;
+		}
 		RLangPlugin *p = r_lang_get_by_name (core->lang, av[0]);
 		if (p) {
 			// I see no point in using r_lang_use here, as we already haz a ptr to the pluging in our handz
