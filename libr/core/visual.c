@@ -767,7 +767,10 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	r_cons_show_cursor (core->cons, true);
 	core->vmode = false;
 	const int ovtmode = r_config_get_i (core->config, "scr.vtmode");
-	r_config_set_i (core->config, "scr.vtmode", 1);
+	if (ovtmode > 0) {
+		// do not force vt sequences on consoles without vt support
+		r_config_set_i (core->config, "scr.vtmode", 1);
+	}
 
 	int curbs = core->blocksize;
 	if (core->visual.autoblocksize) {
@@ -4974,7 +4977,11 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	}
 
 	int ovtmode = r_config_get_i (core->config, "scr.vtmode");
-	r_config_set_i (core->config, "scr.vtmode", 2);
+	if (ovtmode > 0) {
+		// do not force vt sequences on consoles without vt support, the
+		// w32 legacy console path translates the ansi escapes instead
+		r_config_set_i (core->config, "scr.vtmode", 2);
+	}
 	core->visual.obs = core->blocksize;
 	//r_cons_set_cup (true);
 	if (strchr (input, '?')) {
