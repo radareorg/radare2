@@ -447,8 +447,10 @@ static char *__get_file_name_from_handle(HANDLE handle_file) {
 				if (_tcsnicmp (filename, name, name_length) == 0
 					&& *(filename + name_length) == '\\') {
 					TCHAR temp_filename[MAX_PATH + 1];
-					_sntprintf_s (temp_filename, MAX_PATH, _TRUNCATE, TEXT ("%s%s"),
+					// _sntprintf_s is missing in pre-vista msvcrt (reactos, xp)
+					_sntprintf (temp_filename, MAX_PATH, TEXT ("%s%s"),
 						drive, filename + name_length);
+					temp_filename[MAX_PATH] = (TCHAR)'\0';
 					_tcsncpy (filename, temp_filename,
 						_tcslen (temp_filename) + 1);
 					filename[MAX_PATH] = (TCHAR)'\0';

@@ -458,11 +458,9 @@ R_IPI int win_is_vtcompat(RCons *cons) {
 	DWORD major;
 	DWORD minor;
 	DWORD release = 0;
-	char *cmd_session = r_sys_getenv ("SESSIONNAME");
-	if (cmd_session) {
-		free (cmd_session);
-		return 2;
-	}
+	// note: SESSIONNAME is set on every interactive NT session (also on
+	// xp/reactos consoles without vt support), so it must not be used to
+	// assume ansi escape compatibility
 	// Windows Terminal
 	char *wt_session = r_sys_getenv ("WT_SESSION");
 	if (wt_session) {
