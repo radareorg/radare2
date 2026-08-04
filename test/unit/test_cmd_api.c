@@ -125,7 +125,7 @@ static bool test_r_cmd_alias_after_dispatch(void) {
 	mu_assert_true (r_cmd_register (cmd, "alias", counted_handler, &calls), "register alias handler");
 	mu_assert_eq (r_cmd_call (cmd, "alias"), 0, "dispatch before aliases exist");
 	mu_assert_eq (calls, 1, "handler runs before alias creation");
-	mu_assert_eq (r_cmd_alias_set_str (cmd, "alias", "value"), 1, "create data alias");
+	mu_assert_eq (r_cmd_alias_set_raw (cmd, "alias", (const ut8 *)"value", 6), 1, "create data alias");
 	mu_assert_eq (r_cmd_call (cmd, "alias"), 1, "data alias takes precedence");
 	mu_assert_eq (calls, 1, "alias skips registered handler");
 	mu_assert_streq (r_cons_get_buffer (cons, NULL), "value", "alias output is captured");
