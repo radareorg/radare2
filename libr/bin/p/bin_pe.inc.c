@@ -235,7 +235,7 @@ static bool sections_vec(RBinFile *bf) {
 		if (R_STR_ISNOTEMPTY (section->name)) {
 			sec->name = strdup ((const char*)section->name);
 		} else {
-			R_LOG_WARN ("Missing name for section");
+			R_LOG_DEBUG ("Missing name for section %d at 0x%08"PFMT64x, i, (ut64)section->vaddr);
 			sec->name = r_str_newf ("noname%d", i);
 		}
 		sec->size = section->size;
@@ -911,7 +911,9 @@ static RBinInfo* info(RBinFile *bf) {
 		ut32 actual_checksum = PE_(bin_pe_get_actual_checksum) (pe);
 		ret->actual_checksum = r_str_newf ("0x%08x", actual_checksum);
 	} else {
-		R_LOG_WARN("Skipping calculating actual checksum because too large file (1+ GiB)");
+		// when the pe is read from memory (dbg://) the buffer spans the whole
+		// address space, so this is expected rather than a malformed binary
+		R_LOG_DEBUG ("Skipping actual checksum of a %"PFMT64d" byte image", (st64)pe->size);
 	}
 
 	ut32 pe_overlay = sdb_num_get (bf->sdb, "pe_overlay.size", 0);
