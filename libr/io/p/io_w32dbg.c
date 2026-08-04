@@ -110,7 +110,7 @@ static int __w32_first_thread(int pid) {
 	do {
 		/* get all threads of process */
 		if (te32.th32OwnerProcessID == pid) {
-			HANDLE thid = OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
+			HANDLE thid = OpenThread (R_W32_THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
 			if (!thid) {
 				r_sys_perror ("__w32_first_thread/OpenThread");
 				goto err_first_th;
@@ -132,7 +132,7 @@ static int __open_proc(RIO *io, int pid, bool attach) {
 		io->dbgwrap = r_w32dw_new ();
 	}
 
-	HANDLE h_proc = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
+	HANDLE h_proc = OpenProcess (R_W32_PROCESS_ALL_ACCESS, FALSE, pid);
 
 	if (!h_proc) {
 		r_sys_perror ("__open_proc/OpenProcess");
@@ -191,7 +191,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			wrap->pi.dwThreadId = __w32_first_thread (wrap->pi.dwProcessId);
 		}
 		if (!wrap->pi.hThread) {
-			wrap->pi.hThread = OpenThread (THREAD_ALL_ACCESS, FALSE, wrap->pi.dwThreadId);
+			wrap->pi.hThread = OpenThread (R_W32_THREAD_ALL_ACCESS, FALSE, wrap->pi.dwThreadId);
 		}
 		ret = r_io_desc_new (io, &r_io_plugin_w32dbg,
 				file, rw | R_PERM_X, mode, wrap);
@@ -256,7 +256,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		if (cmd[3] == ' ') {
 			int pid = atoi (cmd + 3);
 			if (pid > 0 && pid != wrap->pi.dwThreadId && pid != wrap->pi.dwProcessId) {
-				HANDLE ht = OpenThread (PROCESS_ALL_ACCESS, FALSE, pid);
+				HANDLE ht = OpenThread (R_W32_THREAD_ALL_ACCESS, FALSE, pid);
 				if (ht) {
 					wrap->pi.hThread = ht;
 				} else {

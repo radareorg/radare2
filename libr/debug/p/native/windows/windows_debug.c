@@ -10,8 +10,8 @@ static RList *lib_list = NULL;
 static PLIB_ITEM last_lib = NULL;
 
 // XXX bad names for those defines
-#define w32_PROCESS_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF)
-#define w32_THREAD_ALL_ACCESS w32_PROCESS_ALL_ACCESS
+#define w32_PROCESS_ALL_ACCESS R_W32_PROCESS_ALL_ACCESS
+#define w32_THREAD_ALL_ACCESS R_W32_THREAD_ALL_ACCESS
 
 static int __w32_findthread_cmp(int *tid, PTHREAD_ITEM th) {
 	return (int)!(*tid == th->tid);
@@ -124,18 +124,27 @@ static int __set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
 static int __get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
 	int ret = 0;
 	CONTEXT ctx = {0};
-	// TODO: support various types?
-	ctx.ContextFlags = CONTEXT_ALL;
-	if (GetThreadContext (th, &ctx)) {
-		if (size > sizeof (ctx)) {
-			size = sizeof (ctx);
+	// CONTEXT_ALL pulls in CONTEXT_EXTENDED_REGISTERS, which pre-vista kernels
+	// (xp, reactos) reject; fall back to progressively smaller register sets
+	const DWORD flagsets[] = {
+		CONTEXT_ALL,
+		CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS | CONTEXT_FLOATING_POINT,
+		CONTEXT_FULL
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (flagsets); i++) {
+		memset (&ctx, 0, sizeof (ctx));
+		ctx.ContextFlags = flagsets[i];
+		if (GetThreadContext (th, &ctx)) {
+			if (size > sizeof (ctx)) {
+				size = sizeof (ctx);
+			}
+			memcpy (buf, &ctx, size);
+			return size;
 		}
-		memcpy (buf, &ctx, size);
-		ret = size;
-	} else {
-		if (__is_proc_alive (th)) {
-			r_sys_perror ("__get_thread_context/GetThreadContext");
-		}
+	}
+	if (__is_proc_alive (th)) {
+		r_sys_perror ("__get_thread_context/GetThreadContext");
 	}
 	return ret;
 }
