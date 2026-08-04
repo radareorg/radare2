@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - thestr4ng3r */
+/* radare - LGPL - Copyright 2009-2026 - pancake, thestr4ng3r */
 
 #include <r_th.h>
 #include <r_util/r_time.h>
