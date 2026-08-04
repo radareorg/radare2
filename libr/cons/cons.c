@@ -2015,20 +2015,7 @@ R_API void r_cons_last(RCons *cons) {
 
 R_API void r_cons_clear_line(RCons *cons, bool err, bool flush) {
 #if R2__WINDOWS__
-	if (cons->vtmode) {
-		fprintf (err? stderr: stdout, "%s", R_CONS_CLEAR_LINE);
-	} else {
-		int len = cons->columns;
-		if (len > 0) {
-			char *white = malloc (len + 1);
-			if (white) {
-				memset (white, ' ', len);
-				white[len] = 0;
-				fprintf (err? stderr: stdout, "\r%s\r", white);
-				free (white);
-			}
-		}
-	}
+	r_cons_win_clear_line (cons, err? 2: 1);
 #else
 	fprintf (err? stderr: stdout, "%s", R_CONS_CLEAR_LINE);
 #endif

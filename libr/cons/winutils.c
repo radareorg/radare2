@@ -50,6 +50,35 @@ R_IPI void r_cons_win_clear(RCons *cons) {
 		nLength, startCoords, &dummy);
 }
 
+R_IPI void r_cons_win_clear_line(RCons *cons, int fd) {
+	FILE *stream = (fd == 1)? stdout: stderr;
+	if (cons->vtmode) {
+		fprintf (stream, "%s", R_CONS_CLEAR_LINE);
+		return;
+	}
+	fflush (stream);
+	if (cons->is_wine == 1) {
+		write (fd, R_CONS_CLEAR_LINE, 5);
+	}
+	HANDLE *hConsole = (fd == 1)? &cons->hStdout: &cons->hStderr;
+	if (!*hConsole) {
+		*hConsole = GetStdHandle ((fd == 1)? STD_OUTPUT_HANDLE: STD_ERROR_HANDLE);
+	}
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	DWORD dummy;
+	if (GetConsoleScreenBufferInfo (*hConsole, &csbi)) {
+		// blank the line and home the caret with console calls instead of
+		// streaming a row of spaces; avoids flicker on slow legacy consoles
+		COORD home = { 0, csbi.dwCursorPosition.Y };
+		FillConsoleOutputCharacterA (*hConsole, ' ', csbi.dwSize.X, home, &dummy);
+		FillConsoleOutputAttribute (*hConsole, csbi.wAttributes, csbi.dwSize.X, home, &dummy);
+		SetConsoleCursorPosition (*hConsole, home);
+	} else if (cons->columns > 0) {
+		// not a console (redirected output)
+		fprintf (stream, "\r%*s\r", cons->columns, "");
+	}
+}
+
 R_IPI void r_cons_win_gotoxy(RCons *cons, int fd, int x, int y) {
 	HANDLE *hConsole = (fd == 1)? &cons->hStdout : &cons->hStderr;
 	COORD coord = { .X = x, .Y = y };
@@ -135,18 +164,12 @@ static int win_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmo
 			if (vmode && lines < 1) {
 				break;
 			}
-			if (raw_ll < 1) {
-				continue;
-			}
-			if (vmode) {
-				/* only chop columns if necessary */
-				if (ll + linelen >= cols) {
-					// chop line if too long
-					ll = (cols - linelen) - 1;
-					if (ll < 0) {
-						continue;
-					}
-				}
+			// even when the pending segment is empty (line ending right
+			// after an escape sequence) the newline bookkeeping below must
+			// run, or linelen desyncs and the next lines get chopped
+			if (vmode && ll + linelen >= cols) {
+				// chop line if too long
+				ll = (cols - linelen) - 1;
 			}
 			if (ll > 0) {
 				raw_ll = bytes_utf8len (str, ll);
