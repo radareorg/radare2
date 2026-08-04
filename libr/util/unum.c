@@ -107,9 +107,11 @@ R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 	} else {
 		unit = '\0';
 	}
-	// fnum is always scaled below 1024 here, so an exact integer check needs
-	// no libm and works the same for double and long double
-	fmt_str = (fnum == (R_LDBL)(ut64)fnum)
+	// compare at double precision: an 80-bit x87 long double can hold a value
+	// infinitesimally below an integer (UT64_MAX / EB == 16 - 2^-60) that
+	// must still print as "16E" and not "16.0E"
+	const double dnum = (double)fnum;
+	fmt_str = (dnum == (double)(ut64)dnum)
 		? "%.0" LDBLFMT "%c"
 		: "%.1" LDBLFMT "%c";
 	snprintf (buf, len, fmt_str, fnum, unit);
