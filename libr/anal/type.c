@@ -441,13 +441,13 @@ static int base_type_name_cmp(const void *a, const void *b) {
 static RAnalBaseType *get_base_type_for_kind(RAnal *anal, const char *kind, const char *sname) {
 	R_RETURN_VAL_IF_FAIL (anal && R_STR_ISNOTEMPTY (kind) && R_STR_ISNOTEMPTY (sname), NULL);
 	if (!strcmp (kind, "struct")) {
-		return get_struct_type (anal, sname);
+		return get_composite_type (anal, sname, R_ANAL_BASE_TYPE_KIND_STRUCT);
 	}
 	if (!strcmp (kind, "enum")) {
 		return get_enum_type (anal, sname);
 	}
 	if (!strcmp (kind, "union")) {
-		return get_union_type (anal, sname);
+		return get_composite_type (anal, sname, R_ANAL_BASE_TYPE_KIND_UNION);
 	}
 	if (!strcmp (kind, "typedef")) {
 		return get_typedef_type (anal, sname);
