@@ -518,6 +518,10 @@ static int grub_hfsplus_cmp_catkey(struct grub_hfsplus_key *keya,
 		return namelen;
 	}
 
+	if (namelen > sizeof (catkey_a->name)){
+		namelen = sizeof (catkey_a->name);
+	}
+
 	char *filename = grub_hfsplus_catkey_to_utf8 (catkey_a, namelen);
 	if (!filename) {
 		return -1;
@@ -703,6 +707,10 @@ list_nodes(void *record, void *closure) {
 
 	catkey = (struct grub_hfsplus_catkey *)record;
 	namelen = grub_be_to_cpu16 (catkey->namelen);
+
+	if (namelen > sizeof (catkey->name)){
+		namelen = sizeof (catkey->name);
+	}
 
 	fileinfo =
 		(struct grub_hfsplus_catfile *) ((char *)record + grub_be_to_cpu16 (catkey->keylen) + 2 + (grub_be_to_cpu16 (catkey->keylen) % 2));
