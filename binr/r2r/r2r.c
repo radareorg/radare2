@@ -1208,6 +1208,7 @@ int main(int argc, char **argv) {
 		GetConsoleMode (streams[i], &mode);
 		SetConsoleMode (streams[i], mode | mode_flags);
 	}
+	r_w32_init ();
 #endif
 	R2ROptions opt = r2r_options_init ();
 	R2RState state = { 0 };

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_userconf.h>
 #include <r_util.h>
@@ -7,11 +7,23 @@
 #include <windows.h>
 
 #if 1
-static DWORD(*w32_GetThreadId)(HANDLE) = NULL; // Vista
-static DWORD(*w32_GetProcessId)(HANDLE) = NULL; // XP
+typedef DWORD (WINAPI *W32GetThreadId)(HANDLE);
+typedef DWORD (WINAPI *W32GetProcessId)(HANDLE);
+typedef BOOL (WINAPI *W32InitializeContext)(PVOID, DWORD, PCONTEXT *, PDWORD);
+
+static W32GetThreadId w32_GetThreadId = NULL; // Vista
+static W32GetProcessId w32_GetProcessId = NULL; // XP
 // fpu access API
-static BOOL(*w32_InitializeContext)(PVOID, DWORD, PCONTEXT*, PDWORD) = NULL;
+static W32InitializeContext w32_InitializeContext = NULL;
 // static BOOL (*w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64) = NULL;
+
+typedef void (WINAPI *W32CondInit)(PCONDITION_VARIABLE);
+typedef void (WINAPI *W32CondSignal)(PCONDITION_VARIABLE);
+typedef BOOL (WINAPI *W32CondWait)(PCONDITION_VARIABLE, PCRITICAL_SECTION, DWORD);
+static W32CondInit w32_InitializeConditionVariable = NULL;
+static W32CondSignal w32_WakeConditionVariable = NULL;
+static W32CondSignal w32_WakeAllConditionVariable = NULL;
+static W32CondWait w32_SleepConditionVariableCS = NULL;
 #endif
 
 static inline HANDLE w32_loadlib(const char *name, const char *libname) {
@@ -27,43 +39,31 @@ static inline HANDLE w32_loadlib(const char *name, const char *libname) {
 }
 
 R_API FARPROC r_w32_InitializeConditionVariable(PCONDITION_VARIABLE a) {
-	// requires 2008 / vista
-	static FARPROC (WINAPI *x)(PCONDITION_VARIABLE a) = NULL;
-	if (!x) {
-		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (FARPROC (WINAPI *)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("InitializeConditionVariable"));
+	if (!w32_InitializeConditionVariable) {
+		return NULL;
 	}
-	return x? x (a): NULL;
+	w32_InitializeConditionVariable (a);
+	return (FARPROC)w32_InitializeConditionVariable;
 }
 
 R_API FARPROC r_w32_WakeConditionVariable(PCONDITION_VARIABLE a) {
-	// requires 2008 / vista
-	static FARPROC (WINAPI *x)(PCONDITION_VARIABLE a) = NULL;
-	if (!x) {
-		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (FARPROC (WINAPI *)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("WakeConditionVariable"));
+	if (!w32_WakeConditionVariable) {
+		return NULL;
 	}
-	return x? x (a): NULL;
+	w32_WakeConditionVariable (a);
+	return (FARPROC)w32_WakeConditionVariable;
 }
 
 R_API FARPROC r_w32_WakeAllConditionVariable(PCONDITION_VARIABLE a) {
-	// requires 2008 / vista
-	static FARPROC (WINAPI *x)(PCONDITION_VARIABLE a) = NULL;
-	if (!x) {
-		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (FARPROC (WINAPI *)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("WakeAllConditionVariable"));
+	if (!w32_WakeAllConditionVariable) {
+		return NULL;
 	}
-	return x? x (a): NULL;
+	w32_WakeAllConditionVariable (a);
+	return (FARPROC)w32_WakeAllConditionVariable;
 }
 
 R_API BOOL r_w32_SleepConditionVariableCS(PCONDITION_VARIABLE a, PCRITICAL_SECTION b, DWORD c) {
-	static BOOL (WINAPI *x)(PCONDITION_VARIABLE a, PCRITICAL_SECTION b, DWORD c) = NULL;
-	// requires 2008 / vista
-	if (!x) {
-		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (BOOL (WINAPI *)(PCONDITION_VARIABLE, PCRITICAL_SECTION, DWORD)) GetProcAddress (lib, W32_TCALL ("SleepConditionVariableCS"));
-	}
-	return x? x (a, b, c): FALSE;
+	return w32_SleepConditionVariableCS ? w32_SleepConditionVariableCS (a, b, c) : FALSE;
 }
 
 R_API BOOL r_w32_ProcessIdToSessionId(DWORD a, DWORD *b) {
@@ -297,7 +297,7 @@ static bool setup_debug_privilege_noarg(void) {
 	tokenPriv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 	if (AdjustTokenPrivileges (hToken, FALSE, &tokenPriv, 0, NULL, NULL) != FALSE) {
 		if (tokenPriv.Privileges[0].Attributes == SE_PRIVILEGE_ENABLED) {
-		//	eprintf ("PRIV ENABLED\n");
+			R_LOG_DEBUG ("PrivTokenEnabled");
 		}
 		// Always successful, even in the cases which lead to OpenProcess failure
 		//	eprintf ("Successfully changed token privileges.\n");
@@ -314,6 +314,10 @@ R_API bool r_w32_init(void) {
 	// escalate privs (required for win7/vista)
 	setup_debug_privilege_noarg ();
 	HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
+	w32_InitializeConditionVariable = (W32CondInit) GetProcAddress (lib, W32_TCALL ("InitializeConditionVariable"));
+	w32_WakeConditionVariable = (W32CondSignal) GetProcAddress (lib, W32_TCALL ("WakeConditionVariable"));
+	w32_WakeAllConditionVariable = (W32CondSignal) GetProcAddress (lib, W32_TCALL ("WakeAllConditionVariable"));
+	w32_SleepConditionVariableCS = (W32CondWait) GetProcAddress (lib, W32_TCALL ("SleepConditionVariableCS"));
 	// lookup function pointers for portability
 	// w32_OpenProcess = (HANDLE (*)(DWORD, BOOL, DWORD))GetProcAddress (lib, "OpenProcess");
 
@@ -321,17 +325,14 @@ R_API bool r_w32_init(void) {
 	// Windows XP
 	// w32_CreateToolhelp32Snapshot = (HANDLE (*)(DWORD, DWORD)) GetProcAddress (lib, "CreateToolhelp32Snapshot");
 	// only windows vista :(
-	w32_GetThreadId = (DWORD (*)(HANDLE))
-		GetProcAddress (lib, "GetThreadId");
+	w32_GetThreadId = (W32GetThreadId) GetProcAddress (lib, "GetThreadId");
 	// from xp1
-	w32_GetProcessId = (DWORD (*)(HANDLE))
-		GetProcAddress (lib, "GetProcessId");
-	w32_InitializeContext = (BOOL (*) (PVOID, DWORD, PCONTEXT*, PDWORD))
-		GetProcAddress(lib, "InitializeContext");
+	w32_GetProcessId = (W32GetProcessId) GetProcAddress (lib, "GetProcessId");
+	w32_InitializeContext = (W32InitializeContext) GetProcAddress (lib, "InitializeContext");
 	// w32_GetXStateFeaturesMask = (BOOL (*) (PCONTEXT Context, PDWORD64)) GetProcAddress(lib, "GetXStateFeaturesMask");
 	// w32_LocateXStateFeature = (PVOID (*) (PCONTEXT Context, DWORD ,PDWORD)) GetProcAddress(lib, "LocateXStateFeature");
 
-	lib = w32_loadlib ("ntdll", "ntdll.dll");
+	// lib = w32_loadlib ("ntdll", "ntdll.dll");
 	// w32_NtQuerySystemInformation = (NTSTATUS  (*)(ULONG, PVOID, ULONG, PULONG)) GetProcAddress (lib, "NtQuerySystemInformation");
 	//w32_NtDuplicateObject = (NTSTATUS  (*)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG)) GetProcAddress (lib, "NtDuplicateObject");
 	// w32_NtQueryInformationThread = (NTSTATUS  (*)(HANDLE, ULONG, PVOID, ULONG, PULONG))
