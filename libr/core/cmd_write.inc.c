@@ -1950,13 +1950,9 @@ static int cmd_wt(RCore *core, const char *input) {
 			free_buf = true;
 		}
 
-		if (append) {
-			if (r_cmd_alias_append_raw (core->rcmd, filename, buf, sz)) {
-				R_LOG_ERROR ("Will not append to command alias \"$%s\"", filename);
-				ret = 1;
-			}
-		} else {
-			r_cmd_alias_set_raw (core->rcmd, filename, buf, sz);
+		if (!r_cmd_alias_set_raw (core->rcmd, filename, buf, sz, append)) {
+			R_LOG_ERROR ("Cannot write to alias \"$%s\"", filename);
+			ret = 1;
 		}
 
 		if (free_buf) {

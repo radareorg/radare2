@@ -157,7 +157,7 @@ R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value);
 
 R_API bool r_cmd_alias_del(RCmd *cmd, const char *k);
 R_API bool r_cmd_alias_set_cmd(RCmd *cmd, const char *k, const char *v);
-R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz);
+R_API bool r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz, bool append);
 R_API RCmdAliasVal *r_cmd_alias_get(RCmd *cmd, const char *k);
 R_API char *r_cmd_alias_val_strdup(RCmdAliasVal *v);
 R_API char *r_cmd_alias_val_strdup_b64(RCmdAliasVal *v);

@@ -104,7 +104,7 @@ static int cmd_yank(void *data, const char *input) {
 			}
 
 			if (*file == '$') {
-				r_cmd_alias_set_raw (core->rcmd, file+1, tmp, tmpsz);
+				r_cmd_alias_set_raw (core->rcmd, file+1, tmp, tmpsz, false);
 			} else if (*file == '?' || !*file) {
 				r_cons_cmd_help_match (core->cons, help_msg_y, "ytf", 0, true);
 			} else {

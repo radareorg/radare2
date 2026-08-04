@@ -902,13 +902,13 @@ static int cmd_alias(void *data, const char *input) {
 
 					if (n) {
 						int l = r_str_unescape (n);
-						r_cmd_alias_set_raw (core->rcmd, buf, (ut8 *)n, l);
+						r_cmd_alias_set_raw (core->rcmd, buf, (ut8 *)n, l, false);
 						free (n);
 					}
 				} else if (*def == '$') {
 					char *s = strdup (def + 1);
 					int l = r_str_unescape (s);
-					r_cmd_alias_set_raw (core->rcmd, buf, (ut8 *)s, l);
+					r_cmd_alias_set_raw (core->rcmd, buf, (ut8 *)s, l, false);
 					free (s);
 				} else if (!strncmp (def, "base64:", 7)) {
 					int b64_len = strlen (def + 7);
@@ -919,7 +919,7 @@ static int cmd_alias(void *data, const char *input) {
 						if (decoded) {
 							int decoded_sz = r_base64_decode (decoded, def+7, b64_len, true);
 							if (decoded_sz > 0) {
-								r_cmd_alias_set_raw (core->rcmd, buf, decoded, decoded_sz);
+								r_cmd_alias_set_raw (core->rcmd, buf, decoded, decoded_sz, false);
 							} else {
 								R_LOG_ERROR ("Invalid base64 string");
 							}
@@ -5183,12 +5183,8 @@ repeat:;
 				int alias_len;
 				ut8 *alias_data = r_buf_read_all (cmd_out, &alias_len);
 				const char *arg = r_str_trim_head_ro (str + 1);
-				if (appendResult) {
-					if (!r_cmd_alias_append_raw (core->rcmd, arg, alias_data, alias_len)) {
-						R_LOG_INFO ("Alias '$%s' is a command - will not attempt to append", arg);
-					}
-				} else {
-					r_cmd_alias_set_raw (core->rcmd, arg, alias_data, alias_len);
+				if (!r_cmd_alias_set_raw (core->rcmd, arg, alias_data, alias_len, appendResult)) {
+					R_LOG_INFO ("Cannot write to alias '$%s'", arg);
 				}
 				ret = 0;
 				r_unref (cmd_out);

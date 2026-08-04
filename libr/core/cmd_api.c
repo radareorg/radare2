@@ -129,9 +129,6 @@ R_API bool r_cmd_alias_set_cmd(RCmd *cmd, const char *k, const char *v) {
 	R_RETURN_VAL_IF_FAIL (cmd && k && v, false);
 	RCmdAliasVal val;
 	val.data = (ut8 *)v;
-	if (!val.data) {
-		return true;
-	}
 	val.sz = strlen (v) + 1;
 	val.is_str = true;
 	val.is_data = false;
@@ -139,76 +136,70 @@ R_API bool r_cmd_alias_set_cmd(RCmd *cmd, const char *k, const char *v) {
 	return ht_pp_update (cmd->aliases, k, &val);
 }
 
-R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
+R_API bool r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz, bool append) {
+	R_RETURN_VAL_IF_FAIL (cmd && k && sz >= 0 && (v || !sz), false);
+	v = v? v: (const ut8 *)"";
+	ut8 *owned = NULL;
+	RCmdAliasVal *old = append? r_cmd_alias_get (cmd, k): NULL;
+	if (old) {
+		if (!old->is_data) {
+			return false;
+		}
+		const int old_sz = old->sz - old->is_str;
+		if (old_sz < 0 || sz > ST32_MAX - old_sz) {
+			return false;
+		}
+		const int new_sz = old_sz + sz;
+		owned = malloc ((size_t)new_sz + 1);
+		if (!owned) {
+			return false;
+		}
+		memcpy (owned, old->data, old_sz);
+		memcpy (owned + old_sz, v, sz);
+		v = owned;
+		sz = new_sz;
+	}
+
 	int i;
-
-	if (sz < 1) {
-		return 1;
-	}
-
-	RCmdAliasVal val;
-	val.data = malloc (sz);
-	if (!val.data) {
-		return 1;
-	}
-
-	memcpy (val.data, v, sz);
-	val.sz = sz;
-
-	/* If it's a string already, we speed things up later by checking now */
-	const ut8 *firstnull = NULL;
-	bool is_binary = false;
+	bool is_str = true;
+	int len = sz;
 	for (i = 0; i < sz; i++) {
-		/* \0 before expected -> not string */
-		if (v[i] == '\0') {
-			firstnull = &v[i];
+		if (!v[i]) {
+			is_str = i == sz - 1;
+			len = i;
 			break;
 		}
-
-		/* Non-ascii character -> not string */
 		if (!IS_PRINTABLE (v[i]) && !IS_WHITECHAR (v[i])) {
-			is_binary = true;
+			is_str = false;
 			break;
 		}
 	}
 
-	if (firstnull == &v[sz-1] && !is_binary) {
-		/* Data is already a string */
-		val.is_str = true;
-	} else if (!firstnull && !is_binary) {
-		/* Data is an unterminated string */
-		val.sz++;
-		ut8 *data = realloc (val.data, val.sz);
-		if (!data) {
-			free (val.data);
-			return 1;
+	if (is_str) {
+		while (len > 0 && (v[len - 1] == '\r' || v[len - 1] == '\n')) {
+			len--;
 		}
-		val.data = data;
-		val.data[val.sz - 1] = '\0';
-		val.is_str = true;
-	} else {
-		/* Data has nulls or non-ascii, not a string */
-		val.is_str = false;
+		if (len == ST32_MAX) {
+			free (owned);
+			return false;
+		}
+		if (!owned) {
+			owned = (ut8 *)(len? r_str_newlen ((const char *)v, len): strdup (""));
+		}
+		if (!owned) {
+			return false;
+		}
+		owned[len] = 0;
 	}
 
-	val.is_data = true;
-
-	if (val.is_str) {
-		/* No trailing newline */
-		int len = val.sz - 1;
-		while (len-- > 0) {
-			if (v[len] == '\r' || v[len] == '\n') {
-				val.data[len] = '\0';
-			} else {
-				break;
-			}
-		}
-		// len is strlen()-1 now
-		val.sz = len + 2;
-	}
-
-	int ret = ht_pp_update (cmd->aliases, k, &val);
-	free (val.data);
+	RCmdAliasVal val = {
+		.data = owned? owned: (ut8 *)v,
+		.sz = is_str? len + 1: sz,
+		.is_str = is_str,
+		.is_data = true
+	};
+	bool ret = ht_pp_update (cmd->aliases, k, &val);
+	free (owned);
 	return ret;
 }
 
