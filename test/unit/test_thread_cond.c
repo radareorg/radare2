@@ -1,4 +1,5 @@
 #include <r_th.h>
+#include <r_util/r_time.h>
 #include "minunit.h"
 
 // Shared data for testing
@@ -14,7 +15,7 @@ static RThreadFunctionRet wait_for_condition(RThread *th) {
 
 	// Wait until condition is met
 	while (!condition_met) {
-		r_th_cond_wait(test_cond, test_lock);
+		r_th_cond_wait (test_cond, test_lock, 0);
 	}
 
 	// Condition is met, increment counter
@@ -185,10 +186,36 @@ bool test_condition_individual_signal(void) {
 	mu_end;
 }
 
+bool test_condition_timeout(void) {
+	condition_met = false;
+
+	test_lock = r_th_lock_new(false);
+	mu_assert_notnull(test_lock, "Lock creation failed");
+
+	test_cond = r_th_cond_new();
+	mu_assert_notnull(test_cond, "Condition variable creation failed");
+
+	// Nobody signals, so the timed wait must expire and return false
+	const ut64 before = r_time_now_mono();
+	r_th_lock_enter(test_lock);
+	const bool signaled = r_th_cond_wait(test_cond, test_lock, 50);
+	r_th_lock_leave(test_lock);
+	const ut64 elapsed_us = r_time_now_mono() - before;
+
+	mu_assert_false(signaled, "Unsignaled timed wait should time out");
+	mu_assert("Timed wait should not return before the timeout", elapsed_us >= 40000);
+
+	r_th_lock_free(test_lock);
+	r_th_cond_free(test_cond);
+
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test(test_condition_basic);
 	mu_run_test(test_condition_multiple_threads);
 	mu_run_test(test_condition_individual_signal);
+	mu_run_test(test_condition_timeout);
 	return tests_passed != tests_run;
 }
 
