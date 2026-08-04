@@ -518,7 +518,7 @@ static int grub_hfsplus_cmp_catkey(struct grub_hfsplus_key *keya,
 		return namelen;
 	}
 
-	if (namelen > sizeof (catkey_a->name)){
+	if (namelen > sizeof (catkey_a->name)) {
 		namelen = sizeof (catkey_a->name);
 	}
 
@@ -708,7 +708,7 @@ list_nodes(void *record, void *closure) {
 	catkey = (struct grub_hfsplus_catkey *)record;
 	namelen = grub_be_to_cpu16 (catkey->namelen);
 
-	if (namelen > sizeof (catkey->name)){
+	if (namelen > sizeof (catkey->name)) {
 		namelen = sizeof (catkey->name);
 	}
 
