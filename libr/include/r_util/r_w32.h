@@ -41,7 +41,6 @@ R_API FARPROC r_w32_InitializeConditionVariable(PCONDITION_VARIABLE a);
 R_API FARPROC r_w32_WakeConditionVariable(PCONDITION_VARIABLE a);
 R_API FARPROC r_w32_WakeAllConditionVariable(PCONDITION_VARIABLE a);
 R_API BOOL r_w32_SleepConditionVariableCS(PCONDITION_VARIABLE a, PCRITICAL_SECTION b, DWORD c);
-R_API bool r_w32_has_condition_variables(void);
 
 // R_API BOOL r_w32_DebugActiveProcessStop(DWORD);
 // R_API HANDLE r_w32_OpenProcess(DWORD, BOOL, DWORD);

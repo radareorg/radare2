@@ -79,10 +79,8 @@ R_API RThreadCond *r_th_cond_new(void) {
 	}
 #elif R2__WINDOWS__
 	W32Cond *wcond = R_NEW0 (W32Cond);
-	wcond->native = r_w32_has_condition_variables ();
-	if (wcond->native) {
-		r_w32_InitializeConditionVariable (&wcond->cond);
-	} else {
+	wcond->native = r_w32_InitializeConditionVariable (&wcond->cond) != NULL;
+	if (!wcond->native) {
 		wcond->waiters = r_list_new ();
 		InitializeCriticalSection (&wcond->waiters_lock);
 	}
