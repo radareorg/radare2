@@ -81,11 +81,7 @@ R_API void r_num_free(RNum *num) {
  * insufficient memory was available.
  */
 R_API char *r_num_units(char *buf, size_t len, ut64 num) {
-#if R2_NO_LONG_DOUBLE
-	double fnum;
-#else
-	long double fnum;
-#endif
+	R_LDBL fnum;
 	char unit;
 	const char *fmt_str;
 	if (!buf) {
@@ -95,11 +91,7 @@ R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 			return NULL;
 		}
 	}
-#if R2_NO_LONG_DOUBLE
-	fnum = (double)num;
-#else
-	fnum = (long double)num;
-#endif
+	fnum = (R_LDBL)num;
 	if (num >= EB) {
 		unit = 'E'; fnum /= EB;
 	} else if (num >= PB) {
@@ -115,15 +107,11 @@ R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 	} else {
 		unit = '\0';
 	}
-#if R2_NO_LONG_DOUBLE
-	fmt_str = (ceil (fnum) == fnum)
+	// fnum is always scaled below 1024 here, so an exact integer check needs
+	// no libm and works the same for double and long double
+	fmt_str = (fnum == (R_LDBL)(ut64)fnum)
 		? "%.0" LDBLFMT "%c"
 		: "%.1" LDBLFMT "%c";
-#else
-	fmt_str = ((double)ceill (fnum) == (double)fnum)
-		? "%.0" LDBLFMT "%c"
-		: "%.1" LDBLFMT "%c";
-#endif
 	snprintf (buf, len, fmt_str, fnum, unit);
 	return buf;
 }
