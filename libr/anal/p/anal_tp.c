@@ -2420,7 +2420,7 @@ static bool tp_bb_leads_to(RAnal *anal, ut64 from, ut64 to) {
 	return bb && !r_anal_block_successor_addrs_foreach (bb, tp_bb_edge_cb, &to);
 }
 
-// restore the GPR arena from the nearest direct-edge predecessor (memory is not rewound); transitive reachers do not count
+// restore the GPR arena from the nearest direct-edge predecessor with a snapshot (memory is not rewound); transitive reachers do not count
 static bool tp_restore_pred_state(TPState *tps, RVecUT64 *bblist, int j, ut64 bbat, HtUP *bbstate, int arena_size) {
 	if (j < 1) {
 		return false;
@@ -2442,7 +2442,7 @@ static bool tp_restore_pred_state(TPState *tps, RVecUT64 *bblist, int j, ut64 bb
 			r_reg_arena_poke (tps->tt.reg, snap, arena_size);
 			return true;
 		}
-		return false;
+		// a predecessor without a snapshot (arena peek failed) is no reason to stop: an older one may have state
 	}
 	return false;
 }

@@ -3487,3 +3487,40 @@ var uint8_t [256] var_20h @ rbp-0x20
 EOF
 RUN
 
+NAME=a loop body value the header never touches is also lost after the loop
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF2
+wx 554889e54883ec20ba0400000085ff7407ba00010000ebf5488d7de031f6e81d000000c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF2
+EXPECT=<<EOF2
+var int64_t var_20h @ rbp-0x20
+EOF2
+RUN
+
+NAME=disabling bbstate keeps the loop body value after the loop
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.bbstate=false
+CMDS=<<EOF2
+wx 554889e54883ec20ba0400000085ff7407ba00010000ebf5488d7de031f6e81d000000c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF2
+EXPECT=<<EOF2
+var uint8_t [256] var_20h @ rbp-0x20
+EOF2
+RUN
