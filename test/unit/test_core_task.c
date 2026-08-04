@@ -25,7 +25,7 @@ static void task_started(REvent *ev, int type, void *user, void *data) {
 	state->started = true;
 	r_th_cond_signal_all (state->cond);
 	while (!state->release) {
-		r_th_cond_wait (state->cond, state->lock);
+		r_th_cond_wait (state->cond, state->lock, 0);
 	}
 	r_th_lock_leave (state->lock);
 }
@@ -74,7 +74,7 @@ bool test_task_join_uses_thread_identity(void) {
 
 	r_th_lock_enter (state.lock);
 	while (!state.started) {
-		r_th_cond_wait (state.cond, state.lock);
+		r_th_cond_wait (state.cond, state.lock, 0);
 	}
 	r_th_lock_leave (state.lock);
 
@@ -137,7 +137,7 @@ static RCmdResult task_context_handler(RCmdContext *ctx) {
 	state->entered = true;
 	r_th_cond_signal_all (state->cond);
 	while (!state->release) {
-		r_th_cond_wait (state->cond, state->lock);
+		r_th_cond_wait (state->cond, state->lock, 0);
 	}
 	state->broken = state->cons->context->breaked;
 	r_th_lock_leave (state->lock);
@@ -152,7 +152,7 @@ static RCmdResult task_context_handler(RCmdContext *ctx) {
 static void task_context_wait(TaskContextState *state) {
 	r_th_lock_enter (state->lock);
 	while (!state->entered) {
-		r_th_cond_wait (state->cond, state->lock);
+		r_th_cond_wait (state->cond, state->lock, 0);
 	}
 	r_th_lock_leave (state->lock);
 }

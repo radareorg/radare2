@@ -463,7 +463,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 		r_th_cond_signal (next->dispatch_cond);
 		if (!stop) {
 			while (!current->dispatched) {
-				r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
+				r_th_cond_wait (current->dispatch_cond, current->dispatch_lock, 0);
 			}
 			current->dispatched = false;
 			r_th_lock_leave (current->dispatch_lock);
