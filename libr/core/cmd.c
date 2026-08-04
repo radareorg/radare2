@@ -3704,7 +3704,11 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		r_sys_perror ("r_w32_cmd_pipe/systemdir");
 		goto err_r_w32_cmd_pipe;
 	}
-	_tcscat_s (systemdir, MAX_PATH, TEXT("\\cmd.exe"));
+	// _tcscat_s is missing in pre-vista msvcrt (reactos, xp)
+	if (ret + 9 > MAX_PATH) {
+		goto err_r_w32_cmd_pipe;
+	}
+	_tcscat (systemdir, TEXT("\\cmd.exe"));
 	// exec windows process
 	if (!CreateProcess (systemdir, _shell_cmd_, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
 		r_sys_perror ("r_w32_cmd_pipe/CreateProcess");

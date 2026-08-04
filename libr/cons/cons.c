@@ -384,6 +384,11 @@ static RCons *cons_new(RConsContext *context) {
 		r_cons_get_size (cons, &cons->pagesize);
 #if R2__WINDOWS__
 		cons->vtmode = win_is_vtcompat (cons);
+		if (!cons->vtmode && cons->context->color_limit > COLOR_MODE_16) {
+			// the legacy console translation only understands 16 color
+			// ansi sequences, 256/truecolor ones would print as garbage
+			cons->context->color_limit = COLOR_MODE_16;
+		}
 #else
 		cons->vtmode = 2;
 #endif

@@ -1139,7 +1139,8 @@ R_API char *r_file_tmpdir(void) {
 		}
 	} else {
 		tmpdir[len] = 0;
-		DWORD (WINAPI *glpn)(LPCTSTR, LPCTSTR, DWORD) = r_lib_dl_sym (GetModuleHandle (TEXT ("kernel32.dll")), W32_TCALL("GetLongPathName"));
+		// GetModuleHandleA because TEXT() casts instead of converting
+		DWORD (WINAPI *glpn)(LPCTSTR, LPCTSTR, DWORD) = r_lib_dl_sym (GetModuleHandleA ("kernel32.dll"), W32_TCALL("GetLongPathName"));
 		if (glpn) {
 			// Windows XP sometimes returns short path name
 			glpn (tmpdir, tmpdir, MAX_PATH + 1);
