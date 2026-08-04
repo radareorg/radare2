@@ -437,6 +437,15 @@ static void fcn_context_slot_free(RAnalFcnSlot *slot) {
 	free (slot);
 }
 
+static void fcn_context_callee_free(RAnalFcnCallee *callee) {
+	if (!callee) {
+		return;
+	}
+	free (callee->name);
+	r_anal_function_signature_free (callee->signature);
+	free (callee);
+}
+
 static char *fcn_context_dup_var_regname(RAnal *anal, const RAnalVar *var) {
 	if (R_STR_ISNOTEMPTY (var->regname)) {
 		return strdup (var->regname);
@@ -601,6 +610,191 @@ static RAnalFunctionSignature *fcn_context_collect_signature(RAnalFunction *fcn)
 	}
 	signature->noreturn = fcn->is_noreturn;
 	return signature;
+}
+
+static bool fcn_context_callee_symbol_is_imported(RAnal *anal, ut64 addr) {
+	RBinSymbol *sym;
+	if (!anal || !anal->binb.bin || !anal->binb.get_symbol_at) {
+		return false;
+	}
+	sym = anal->binb.get_symbol_at (anal->binb.bin, addr);
+	return sym && sym->is_imported;
+}
+
+static char *fcn_context_callee_symbol_name(RAnal *anal, ut64 addr) {
+	RBinSymbol *sym;
+	const char *name;
+	if (!anal || !anal->binb.bin || !anal->binb.get_symbol_at) {
+		return NULL;
+	}
+	sym = anal->binb.get_symbol_at (anal->binb.bin, addr);
+	if (!sym || !sym->name) {
+		return NULL;
+	}
+	name = r_bin_name_tostring (sym->name);
+	return R_STR_ISNOTEMPTY (name)? strdup (name): NULL;
+}
+
+static RAnalFcnCalleeLinkage fcn_context_resolve_callee_linkage(RAnal *anal, ut64 addr) {
+	RAnalFunction *callee_fcn;
+	R_RETURN_VAL_IF_FAIL (anal, R_ANAL_FCN_CALLEE_UNKNOWN);
+	if (fcn_context_callee_symbol_is_imported (anal, addr)) {
+		return R_ANAL_FCN_CALLEE_IMPORTED;
+	}
+	callee_fcn = r_anal_get_fcn_in (anal, addr, R_ANAL_FCN_TYPE_ANY);
+	if (!callee_fcn) {
+		return R_ANAL_FCN_CALLEE_UNKNOWN;
+	}
+	if (callee_fcn->type & R_ANAL_FCN_TYPE_IMP) {
+		return R_ANAL_FCN_CALLEE_IMPORTED;
+	}
+	return R_ANAL_FCN_CALLEE_INTERNAL;
+}
+
+static char *fcn_context_resolve_callee_name(RAnal *anal, ut64 addr) {
+	RAnalFunction *callee_fcn;
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
+	callee_fcn = r_anal_get_fcn_in (anal, addr, R_ANAL_FCN_TYPE_ANY);
+	if (callee_fcn && R_STR_ISNOTEMPTY (callee_fcn->name)) {
+		return strdup (callee_fcn->name);
+	}
+	return fcn_context_callee_symbol_name (anal, addr);
+}
+
+static RAnalFunctionSignature *fcn_context_resolve_callee_signature(RAnal *anal, ut64 addr) {
+	RAnalFunction *callee_fcn;
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
+	callee_fcn = r_anal_get_fcn_in (anal, addr, R_ANAL_FCN_TYPE_ANY);
+	return callee_fcn? r_anal_function_get_signature (callee_fcn): NULL;
+}
+
+static bool fcn_context_has_callee(RList *callees, ut64 call_addr, ut64 addr) {
+	RListIter *iter;
+	RAnalFcnCallee *callee;
+	r_list_foreach (callees, iter, callee) {
+		if (callee && callee->call_addr == call_addr && callee->addr == addr) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool fcn_context_append_callee(RAnal *anal, RList *callees, ut64 call_addr, ut64 addr) {
+	RAnalFcnCallee *callee;
+	R_RETURN_VAL_IF_FAIL (anal && callees, false);
+	if (addr == UT64_MAX || fcn_context_has_callee (callees, call_addr, addr)) {
+		return true;
+	}
+	callee = R_NEW0 (RAnalFcnCallee);
+	if (!callee) {
+		return false;
+	}
+	callee->call_addr = call_addr;
+	callee->addr = addr;
+	callee->name = fcn_context_resolve_callee_name (anal, addr);
+	callee->linkage = fcn_context_resolve_callee_linkage (anal, addr);
+	callee->signature = fcn_context_resolve_callee_signature (anal, addr);
+	r_list_append (callees, callee);
+	return true;
+}
+
+static ut64 fcn_context_direct_call_target_from_op(const RAnalOp *op) {
+	if (!op) {
+		return UT64_MAX;
+	}
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_CCALL:
+		return op->jump != UT64_MAX? op->jump: op->ptr;
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_RCALL:
+	case R_ANAL_OP_TYPE_ICALL:
+	case R_ANAL_OP_TYPE_IRCALL:
+		return op->ptr != UT64_MAX? op->ptr: op->jump;
+	default:
+		return UT64_MAX;
+	}
+}
+
+static bool fcn_context_collect_op_callees(RAnal *anal, RAnalFunction *fcn, RList *callees) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	R_RETURN_VAL_IF_FAIL (anal && fcn && callees, false);
+	if (!fcn->bbs || !anal->iob.read_at) {
+		return true;
+	}
+	r_list_foreach (fcn->bbs, iter, bb) {
+		int i;
+		if (!bb) {
+			continue;
+		}
+		for (i = 0; i < bb->ninstr; i++) {
+			ut8 buf[32] = {0};
+			RAnalOp op = {0};
+			ut64 op_size;
+			ut64 addr = r_anal_bb_opaddr_i (bb, i);
+			int read_len = (int)sizeof (buf);
+			int oplen;
+			ut64 target;
+			if (addr == UT64_MAX) {
+				continue;
+			}
+			op_size = r_anal_bb_size_i (bb, i);
+			if (op_size != UT64_MAX && op_size > 0 && op_size < sizeof (buf)) {
+				read_len = (int)op_size;
+			}
+			if (!anal->iob.read_at (anal->iob.io, addr, buf, read_len)) {
+				continue;
+			}
+			oplen = r_anal_op (anal, &op, addr, buf, read_len, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL);
+			if (oplen < 1) {
+				r_anal_op_fini (&op);
+				continue;
+			}
+			target = fcn_context_direct_call_target_from_op (&op);
+			r_anal_op_fini (&op);
+			if (target == UT64_MAX) {
+				continue;
+			}
+			if (!fcn_context_append_callee (anal, callees, addr, target)) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+static RList *fcn_context_collect_callees(RAnal *anal, RAnalFunction *fcn) {
+	RVecAnalRef *refs;
+	RList *callees;
+	size_t i, len;
+
+	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
+	callees = r_list_newf ((RListFree)fcn_context_callee_free);
+	if (!callees) {
+		return NULL;
+	}
+	refs = r_anal_function_get_refs (fcn);
+	if (refs) {
+		len = RVecAnalRef_length (refs);
+		for (i = 0; i < len; i++) {
+			RAnalRef *ref = RVecAnalRef_at (refs, i);
+			if (!ref || R_ANAL_REF_TYPE_MASK (ref->type) != R_ANAL_REF_TYPE_CALL) {
+				continue;
+			}
+			if (!fcn_context_append_callee (anal, callees, ref->at, ref->addr)) {
+				RVecAnalRef_free (refs);
+				r_list_free (callees);
+				return NULL;
+			}
+		}
+		RVecAnalRef_free (refs);
+	}
+	if (!fcn_context_collect_op_callees (anal, fcn, callees)) {
+		r_list_free (callees);
+		return NULL;
+	}
+	return callees;
 }
 
 static bool assumption_json_emit(PJ *pj, const RJson *json) {
@@ -862,6 +1056,7 @@ R_API void r_anal_function_context_free(RAnalFcnContext *ctx) {
 	r_anal_function_signature_free (ctx->signature);
 	r_list_free (ctx->reg_args);
 	r_list_free (ctx->fcn_slots);
+	r_list_free (ctx->callees);
 	r_list_free (ctx->assumptions);
 	free (ctx->assumptions_json);
 	free (ctx);
@@ -915,6 +1110,33 @@ R_API ut64 r_anal_function_context_hash(RAnal *anal, RAnalFunction *fcn) {
 		hash = function_context_hash_mix (hash, (ut64)(ut8)var->kind);
 		hash = function_context_hash_mix (hash, (ut64)(st64)var->delta);
 		hash = function_context_hash_mix (hash, var->isarg? 1: 0);
+	}
+	RList *callees = fcn_context_collect_callees (anal, fcn);
+	if (callees) {
+		RListIter *iter;
+		RAnalFcnCallee *callee;
+		r_list_foreach (callees, iter, callee) {
+			if (!callee) {
+				continue;
+			}
+			hash = function_context_hash_mix (hash, callee->call_addr);
+			hash = function_context_hash_mix (hash, callee->addr);
+			hash = function_context_hash_mix (hash, callee->linkage);
+			hash = function_context_hash_string (hash, callee->name);
+			if (callee->signature) {
+				RAnalFunctionParam *param;
+				RListIter *param_iter;
+				hash = function_context_hash_string (hash, callee->signature->signature);
+				hash = function_context_hash_string (hash, callee->signature->ret_type);
+				hash = function_context_hash_string (hash, callee->signature->callconv);
+				hash = function_context_hash_mix (hash, callee->signature->noreturn? 1: 0);
+				r_list_foreach (callee->signature->params, param_iter, param) {
+					hash = function_context_hash_string (hash, param? param->name: NULL);
+					hash = function_context_hash_string (hash, param? param->type: NULL);
+				}
+			}
+		}
+		r_list_free (callees);
 	}
 	return hash;
 }
@@ -1212,12 +1434,13 @@ R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunctio
 	ctx->signature = fcn_context_collect_signature (fcn);
 	ctx->reg_args = r_list_newf ((RListFree)fcn_context_reg_arg_free);
 	ctx->fcn_slots = r_list_newf ((RListFree)fcn_context_slot_free);
+	ctx->callees = fcn_context_collect_callees (anal, fcn);
 	ctx->assumptions = r_anal_function_list_assumptions (anal, fcn);
 	ctx->assumptions_json = strdup (R_STR_ISNOTEMPTY (fcn->assumptions_json)? fcn->assumptions_json: "[]");
 	ctx->function_dirty_epoch = r_anal_function_dirty_epoch (fcn);
 	ctx->type_dirty_epoch = r_anal_types_dirty_epoch (anal);
 	ctx->context_hash = r_anal_function_context_hash (anal, fcn);
-	if (!ctx->reg_args || !ctx->fcn_slots || !ctx->assumptions || !ctx->assumptions_json) {
+	if (!ctx->reg_args || !ctx->fcn_slots || !ctx->callees || !ctx->assumptions || !ctx->assumptions_json) {
 		r_anal_function_context_free (ctx);
 		return NULL;
 	}

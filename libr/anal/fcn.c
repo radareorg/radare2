@@ -2543,6 +2543,14 @@ static char *function_signature_try_type_name(Sdb *types, const char *candidate)
 		}
 		free (name);
 	}
+	name = r_type_func_guess (types, candidate);
+	if (name) {
+		const char *kind = sdb_const_get (types, name, 0);
+		if (kind && !strcmp (kind, "func")) {
+			return name;
+		}
+		free (name);
+	}
 	const char *kind = sdb_const_get (types, candidate, 0);
 	if (kind && !strcmp (kind, "func")) {
 		return strdup (candidate);

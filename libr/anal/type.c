@@ -438,6 +438,72 @@ static int base_type_name_cmp(const void *a, const void *b) {
 	return strcmp (ta && ta->name? ta->name: "", tb && tb->name? tb->name: "");
 }
 
+static RAnalBaseType *get_base_type_for_kind(RAnal *anal, const char *kind, const char *sname) {
+	R_RETURN_VAL_IF_FAIL (anal && R_STR_ISNOTEMPTY (kind) && R_STR_ISNOTEMPTY (sname), NULL);
+	if (!strcmp (kind, "struct")) {
+		return get_struct_type (anal, sname);
+	}
+	if (!strcmp (kind, "enum")) {
+		return get_enum_type (anal, sname);
+	}
+	if (!strcmp (kind, "union")) {
+		return get_union_type (anal, sname);
+	}
+	if (!strcmp (kind, "typedef")) {
+		return get_typedef_type (anal, sname);
+	}
+	if (!strcmp (kind, "type")) {
+		return get_atomic_type (anal, sname);
+	}
+	return NULL;
+}
+
+static bool append_base_type_if_unseen(RAnal *anal, RList *types, Sdb *seen, const char *kind, const char *sname) {
+	R_RETURN_VAL_IF_FAIL (anal && types && seen && R_STR_ISNOTEMPTY (kind) && R_STR_ISNOTEMPTY (sname), false);
+	char *seen_key = r_str_newf ("%s.%s", kind, sname);
+	if (!seen_key) {
+		return false;
+	}
+	if (sdb_exists (seen, seen_key)) {
+		free (seen_key);
+		return false;
+	}
+	RAnalBaseType *base_type = get_base_type_for_kind (anal, kind, sname);
+	if (!base_type) {
+		free (seen_key);
+		return false;
+	}
+	base_type->name = strdup (sname);
+	if (!base_type->name || !r_list_append (types, base_type)) {
+		r_anal_base_type_free (base_type);
+		free (seen_key);
+		return false;
+	}
+	sdb_set (seen, seen_key, "1", 0);
+	free (seen_key);
+	return true;
+}
+
+static bool split_base_type_namespace_key(const char *key, const char **kind, const char **sname) {
+	static const char *kinds[] = { "struct", "union", "enum", "typedef", "type", NULL };
+	R_RETURN_VAL_IF_FAIL (key && kind && sname, false);
+	for (size_t i = 0; kinds[i]; i++) {
+		const char *candidate = kinds[i];
+		const size_t len = strlen (candidate);
+		if (strncmp (key, candidate, len) || key[len] != '.') {
+			continue;
+		}
+		const char *name = key + len + 1;
+		if (R_STR_ISEMPTY (name) || strchr (name, '.')) {
+			return false;
+		}
+		*kind = candidate;
+		*sname = name;
+		return true;
+	}
+	return false;
+}
+
 R_API RList *r_anal_types_baselist(RAnal *anal) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RList *types = r_list_newf ((RListFree)r_anal_base_type_free);
@@ -450,12 +516,24 @@ R_API RList *r_anal_types_baselist(RAnal *anal) {
 		return types;
 	}
 
+	Sdb *seen = sdb_new0 ();
+	if (!seen) {
+		ls_free (keys);
+		return types;
+	}
+
 	SdbKv *kv;
 	SdbListIter *iter;
 	ls_foreach (keys, iter, kv) {
 		const char *name = sdbkv_key (kv);
 		const char *kind = sdbkv_value (kv);
 		if (R_STR_ISEMPTY (name) || R_STR_ISEMPTY (kind)) {
+			continue;
+		}
+		const char *namespace_kind = NULL;
+		const char *namespace_name = NULL;
+		if (split_base_type_namespace_key (name, &namespace_kind, &namespace_name)) {
+			append_base_type_if_unseen (anal, types, seen, namespace_kind, namespace_name);
 			continue;
 		}
 		if (strchr (name, '.')) {
@@ -466,11 +544,9 @@ R_API RList *r_anal_types_baselist(RAnal *anal) {
 			&& strcmp (kind, "type")) {
 			continue;
 		}
-		RAnalBaseType *base_type = r_anal_get_base_type (anal, name);
-		if (base_type) {
-			r_list_append (types, base_type);
-		}
+		append_base_type_if_unseen (anal, types, seen, kind, name);
 	}
+	sdb_free (seen);
 	ls_free (keys);
 	r_list_sort (types, base_type_name_cmp);
 	return types;

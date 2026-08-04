@@ -305,6 +305,20 @@ typedef struct r_anal_fcn_slot_t {
 	char *home_reg;
 } RAnalFcnSlot;
 
+typedef enum {
+	R_ANAL_FCN_CALLEE_UNKNOWN = 0,
+	R_ANAL_FCN_CALLEE_INTERNAL = 1,
+	R_ANAL_FCN_CALLEE_IMPORTED = 2,
+} RAnalFcnCalleeLinkage;
+
+typedef struct r_anal_fcn_callee_t {
+	ut64 call_addr;
+	ut64 addr;
+	char *name;
+	RAnalFcnCalleeLinkage linkage;
+	RAnalFunctionSignature *signature;
+} RAnalFcnCallee;
+
 typedef struct r_anal_function_assumption_t {
 	char *kind;
 	char *target;
@@ -319,6 +333,7 @@ typedef struct r_anal_fcn_context_t {
 	RAnalFunctionSignature *signature;
 	RList *reg_args; // RList<RAnalFcnRegArg *>
 	RList *fcn_slots; // RList<RAnalFcnSlot *>
+	RList *callees; // RList<RAnalFcnCallee *>
 	RList *assumptions; // RList<RAnalFunctionAssumption *>
 	char *assumptions_json;
 	ut64 function_dirty_epoch;
