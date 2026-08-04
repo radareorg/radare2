@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_userconf.h>
 #include <r_util.h>
@@ -7,10 +7,14 @@
 #include <windows.h>
 
 #if 1
-static DWORD(*w32_GetThreadId)(HANDLE) = NULL; // Vista
-static DWORD(*w32_GetProcessId)(HANDLE) = NULL; // XP
+typedef DWORD (WINAPI *W32GetThreadId)(HANDLE);
+typedef DWORD (WINAPI *W32GetProcessId)(HANDLE);
+typedef BOOL (WINAPI *W32InitializeContext)(PVOID, DWORD, PCONTEXT *, PDWORD);
+
+static W32GetThreadId w32_GetThreadId = NULL; // Vista
+static W32GetProcessId w32_GetProcessId = NULL; // XP
 // fpu access API
-static BOOL(*w32_InitializeContext)(PVOID, DWORD, PCONTEXT*, PDWORD) = NULL;
+static W32InitializeContext w32_InitializeContext = NULL;
 // static BOOL (*w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64) = NULL;
 
 typedef void (WINAPI *W32CondInit)(PCONDITION_VARIABLE);
@@ -293,7 +297,7 @@ static bool setup_debug_privilege_noarg(void) {
 	tokenPriv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 	if (AdjustTokenPrivileges (hToken, FALSE, &tokenPriv, 0, NULL, NULL) != FALSE) {
 		if (tokenPriv.Privileges[0].Attributes == SE_PRIVILEGE_ENABLED) {
-		//	eprintf ("PRIV ENABLED\n");
+			R_LOG_DEBUG ("PrivTokenEnabled");
 		}
 		// Always successful, even in the cases which lead to OpenProcess failure
 		//	eprintf ("Successfully changed token privileges.\n");
@@ -321,17 +325,14 @@ R_API bool r_w32_init(void) {
 	// Windows XP
 	// w32_CreateToolhelp32Snapshot = (HANDLE (*)(DWORD, DWORD)) GetProcAddress (lib, "CreateToolhelp32Snapshot");
 	// only windows vista :(
-	w32_GetThreadId = (DWORD (*)(HANDLE))
-		GetProcAddress (lib, "GetThreadId");
+	w32_GetThreadId = (W32GetThreadId) GetProcAddress (lib, "GetThreadId");
 	// from xp1
-	w32_GetProcessId = (DWORD (*)(HANDLE))
-		GetProcAddress (lib, "GetProcessId");
-	w32_InitializeContext = (BOOL (*) (PVOID, DWORD, PCONTEXT*, PDWORD))
-		GetProcAddress(lib, "InitializeContext");
+	w32_GetProcessId = (W32GetProcessId) GetProcAddress (lib, "GetProcessId");
+	w32_InitializeContext = (W32InitializeContext) GetProcAddress (lib, "InitializeContext");
 	// w32_GetXStateFeaturesMask = (BOOL (*) (PCONTEXT Context, PDWORD64)) GetProcAddress(lib, "GetXStateFeaturesMask");
 	// w32_LocateXStateFeature = (PVOID (*) (PCONTEXT Context, DWORD ,PDWORD)) GetProcAddress(lib, "LocateXStateFeature");
 
-	lib = w32_loadlib ("ntdll", "ntdll.dll");
+	// lib = w32_loadlib ("ntdll", "ntdll.dll");
 	// w32_NtQuerySystemInformation = (NTSTATUS  (*)(ULONG, PVOID, ULONG, PULONG)) GetProcAddress (lib, "NtQuerySystemInformation");
 	//w32_NtDuplicateObject = (NTSTATUS  (*)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG)) GetProcAddress (lib, "NtDuplicateObject");
 	// w32_NtQueryInformationThread = (NTSTATUS  (*)(HANDLE, ULONG, PVOID, ULONG, PULONG))
