@@ -642,6 +642,12 @@ static bool print_aliases(void *user, const void *key, const void *val) {
 	return true;
 }
 
+static bool print_alias_key(void *user, const void *key, const void *val) {
+	RCons *cons = user;
+	r_cons_printf (cons, "$%s\n", (const char *)key);
+	return true;
+}
+
 static int cmd_uname(void *data, const char *input) { // "uniq"
 	RCore *core = (RCore *)(data);
 	if (strstr (input, "-h") || strstr (input, "?")) {
@@ -951,15 +957,7 @@ static int cmd_alias(void *data, const char *input) {
 		};
 		ht_pp_foreach (core->rcmd->aliases, print_aliases, &pa);
 	} else if (!*buf) {
-		char **keys = (char **)r_cmd_alias_keys (core->rcmd);
-		if (keys) {
-			int i;
-			const int count = core->rcmd->aliases->count;
-			for (i = 0; i < count; i++) {
-				r_cons_printf (core->cons, "$%s\n", keys[i]);
-			}
-			free (keys);
-		}
+		ht_pp_foreach (core->rcmd->aliases, print_alias_key, core->cons);
 	} else {
 		/* Execute or evaluate alias */
 		if (q) {

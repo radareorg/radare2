@@ -490,12 +490,17 @@ out:
 }
 
 typedef struct {
+	const char *key;
+	const RCmdAliasVal *value;
+} AliasAutocompletion;
+
+R_VEC_TYPE (RVecAliasAutocompletion, AliasAutocompletion);
+
+typedef struct {
 	const char *needle;
 	int needle_len;
 	bool must_be_data;
-	const char **valid_completions;
-	const RCmdAliasVal **valid_completion_vals;
-	int num_completions;
+	RVecAliasAutocompletion completions;
 } AliasAutocompletions;
 
 static bool check_alias_completion(void *in, const void *k, const void *v) {
@@ -510,9 +515,11 @@ static bool check_alias_completion(void *in, const void *k, const void *v) {
 	}
 
 	if (!needle_len || !strncmp (k, needle, needle_len)) {
-		c->valid_completions[c->num_completions] = k;
-		c->valid_completion_vals[c->num_completions] = v;
-		c->num_completions++;
+		AliasAutocompletion completion = {
+			.key = k,
+			.value = val
+		};
+		RVecAliasAutocompletion_push_back (&c->completions, &completion);
 	}
 
 	return true;
@@ -527,20 +534,18 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 	c.needle_len = needle_len;
 	// Filter out command aliases?
 	c.must_be_data = must_be_data;
-	// Single block, borrowed pointers
-	c.valid_completions = R_NEWS (const char *, cmd->aliases->count);
-	c.valid_completion_vals = R_NEWS (const RCmdAliasVal *, cmd->aliases->count);
-	c.num_completions = 0;
+	RVecAliasAutocompletion_init (&c.completions);
 
 	ht_pp_foreach (cmd->aliases, check_alias_completion, &c);
 	RCore *core = cmd->data;
 	RCons *cons = core->cons;
 
-	const int match_count = c.num_completions;
+	const size_t match_count = RVecAliasAutocompletion_length (&c.completions);
 	if (match_count == 1) {
 		/* If only 1 possible completion, use it */
-		const char *k = c.valid_completions[0];
-		const RCmdAliasVal *val = c.valid_completion_vals[0];
+		AliasAutocompletion *item = RVecAliasAutocompletion_at (&c.completions, 0);
+		const char *k = item->key;
+		const RCmdAliasVal *val = item->value;
 
 		char *v = r_cmd_alias_val_strdup ((RCmdAliasVal *)val);
 		r_cons_printf (cons, "$%s=%s%s\n", k, val->is_data? "$": "", v);
@@ -553,9 +558,10 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 		free (v);
 	} else if (match_count > 1) {
 		/* If multiple possible completions, show them */
-		for (i = 0; i < c.num_completions; i++) {
-			const char *k = c.valid_completions[i];
-			const RCmdAliasVal *val = c.valid_completion_vals[i];
+		for (i = 0; i < match_count; i++) {
+			AliasAutocompletion *item = RVecAliasAutocompletion_at (&c.completions, i);
+			const char *k = item->key;
+			const RCmdAliasVal *val = item->value;
 
 			char *v = r_cmd_alias_val_strdup ((RCmdAliasVal *)val);
 			char *line = r_str_newf ("$%s=%s%s", k, val->is_data? "$": "", v);
@@ -566,8 +572,21 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 		}
 	}
 	/* If 0 possible completions, do nothing */
-	free ((void *)c.valid_completions);
-	free ((void *)c.valid_completion_vals);
+	RVecAliasAutocompletion_fini (&c.completions);
+}
+
+typedef struct {
+	RLineCompletion *completion;
+	const char *needle;
+	int needle_len;
+} AliasMinusAutocompletion;
+
+static bool autocomplete_minus_alias(void *user, const void *key, const void *value) {
+	AliasMinusAutocompletion *c = user;
+	if (!strncmp ((const char *)key, c->needle, c->needle_len)) {
+		r_line_completion_push (c->completion, key);
+	}
+	return true;
 }
 
 static void autocomplete_process_path(RLineCompletion *completion, const char *str, const char *path) {
@@ -782,17 +801,12 @@ static void autocomplete_project(RCore *core, RLineCompletion *completion, const
 
 static void autocomplete_minus(RCore *core, RLineCompletion *completion, const char *str) {
 	R_RETURN_IF_FAIL (str);
-	int length = strlen (str);
-	int i;
-
-	char **keys = (char **)r_cmd_alias_keys (core->rcmd);
-	for (i = 0; i < core->rcmd->aliases->count; i++) {
-		if (!strncmp (keys[i], str, length)) {
-			r_line_completion_push (completion, keys[i]);
-		}
-	}
-
-	free (keys);
+	AliasMinusAutocompletion c = {
+		.completion = completion,
+		.needle = str,
+		.needle_len = strlen (str)
+	};
+	ht_pp_foreach (core->rcmd->aliases, autocomplete_minus_alias, &c);
 }
 
 static void autocomplete_breakpoints(RCore *core, RLineCompletion *completion, const char *str) {
