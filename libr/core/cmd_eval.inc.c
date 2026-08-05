@@ -120,45 +120,6 @@ static void cmd_eval_table(RCore *core, const char *input) {
 	r_table_free (t);
 }
 
-static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
-	const char *fn = r_str_lchr (file, '/');
-	if (!fn) {
-		fn = file;
-	}
-	switch (mode) {
-	case 'j': // json
-		pj_s (pj, fn);
-		break;
-	case 'l': // list
-		r_cons_println (core->cons, fn);
-		break;
-	case 'p': // previous
-		// TODO: move logic here
-		break;
-	case 'n': // next
-		if (core->theme && !strcmp (core->theme, "default")) {
-			free (core->theme);
-			core->theme = strdup (fn);
-			core->get_next = false;
-		}
-		if (core->get_next) {
-			free (core->theme);
-			core->theme = strdup (fn);
-			core->get_next = false;
-			return false;
-		}
-		if (!core->theme) {
-			core->theme = strdup (fn);
-			return false;
-		}
-		if (!strcmp (core->theme, fn)) {
-			core->get_next = true;
-		}
-		break;
-	}
-	return true;
-}
-
 static char *get_theme_path(RCore *core, const char *theme_name) {
 	char *name = strdup (theme_name);
 	if (!name || r_str_filter_file (name)) {
@@ -239,13 +200,24 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 	return ret;
 }
 
-static void list_themes_in_path(RList *list, const char *path) {
+R_VEC_TYPE (RVecThemeName, char *);
+
+static int theme_name_cmp(char *const *a, char *const *b) {
+	return strcmp (*a, *b);
+}
+
+static void add_theme(RVecThemeName *themes, const char *name) {
+	char *s = strdup (name);
+	RVecThemeName_push_back (themes, &s);
+}
+
+static void add_themes_in_path(RVecThemeName *themes, const char *path) {
 	RListIter *iter;
 	const char *fn;
 	RList *files = r_sys_dir (path);
 	r_list_foreach (files, iter, fn) {
 		if (*fn && *fn != '.') {
-			r_list_append (list, strdup (fn));
+			add_theme (themes, fn);
 		}
 	}
 	r_list_free (files);
@@ -256,32 +228,45 @@ R_API char *r_core_get_theme(RCore *core) {
 }
 
 R_API RList *r_core_list_themes(RCore *core) {
-	RList *list = r_list_newf (free);
-	core->get_next = false;
-	char *tmp = strdup ("default");
-	r_list_append (list, tmp);
+	// names can come from both the compiled-in fallback themes and the
+	// disk directories: gather them all, sort once and dedup on transfer
+	RVecThemeName themes;
+	RVecThemeName_init (&themes);
+	add_theme (&themes, "default");
+	const RConsTheme *theme = r_cons_themes ();
+	for (; theme && theme->name; theme++) {
+		add_theme (&themes, theme->name);
+	}
 	char *path = r_xdg_datadir ("cons");
 	if (path) {
-		list_themes_in_path (list, path);
+		add_themes_in_path (&themes, path);
 		R_FREE (path);
 	}
 
 	path = r_str_r2_prefix (R2_THEMES R_SYS_DIR);
 	if (path) {
-		list_themes_in_path (list, path);
+		add_themes_in_path (&themes, path);
 		R_FREE (path);
 	}
 
-	r_list_sort (list, (RListComparator)strcmp);
+	RVecThemeName_sort (&themes, theme_name_cmp);
+	RList *list = r_list_newf (free);
+	const char *prev = NULL;
+	char **it;
+	R_VEC_FOREACH (&themes, it) {
+		if (prev && !strcmp (prev, *it)) {
+			free (*it);
+		} else {
+			r_list_append (list, *it);
+			prev = *it;
+		}
+	}
+	// string ownership moved to the list, fini only frees the vec buffer
+	RVecThemeName_fini (&themes);
 	return list;
 }
 
 static void nextpal(RCore *core, int mode) {
-	// TODO: use r_core_list_themes () here instead of rewalking all the time
-	RList *files = NULL;
-	RListIter *iter;
-	const char *fn;
-	char *path = NULL;
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
@@ -290,93 +275,33 @@ static void nextpal(RCore *core, int mode) {
 		}
 		pj_a (pj);
 	}
-	char *home = r_xdg_datadir ("cons");
-
-	core->get_next = false;
-	// spaguetti!
-	if (home) {
-		files = r_sys_dir (home);
-		if (files) {
-			r_list_sort (files, (RListComparator)strcmp);
-			r_list_foreach (files, iter, fn) {
-				if (*fn && *fn != '.') {
-					if (mode == 'p') {
-						const char *nfn = iter->n? iter->n->data: NULL;
-						if (!core->theme) {
-							free (home);
-							r_list_free (files);
-							return;
-						}
-						if (nfn && !strcmp (nfn, core->theme)) {
-							r_list_free (files);
-							files = NULL;
-							free (core->theme);
-							core->theme = strdup (fn);
-							R_FREE (home);
-							goto done;
-						}
-					} else {
-						if (!nextpal_item (core, pj, mode, fn)) {
-							r_list_free (files);
-							files = NULL;
-							R_FREE (home);
-							goto done;
-						}
-					}
-				}
-			}
+	RList *themes = r_core_list_themes (core);
+	if (mode == 'n' || mode == 'p') {
+		// walk the sorted list relative to the current theme, wrapping around
+		RListIter *cur = core->theme? r_list_find (themes, core->theme, (RListComparator)strcmp): NULL;
+		const char *next;
+		if (mode == 'n') {
+			next = (cur && cur->n)? cur->n->data: r_list_first (themes);
+		} else {
+			next = (cur && cur->p)? cur->p->data: r_list_last (themes);
 		}
-		r_list_free (files);
-		files = NULL;
-		R_FREE (home);
-	}
-
-	path = r_str_r2_prefix (R2_THEMES R_SYS_DIR);
-	if (path) {
-		files = r_sys_dir (path);
-		if (files) {
-			r_list_sort (files, (RListComparator)strcmp);
-			r_list_foreach (files, iter, fn) {
-				if (*fn && *fn != '.') {
-					if (mode == 'p') {
-						const char *nfn = iter->n? iter->n->data: NULL;
-						if (!core->theme) {
-							free (home);
-							r_list_free (files);
-							return;
-						}
-						if (nfn && !strcmp (nfn, core->theme)) {
-							free (core->theme);
-							core->theme = strdup (fn);
-							goto done;
-						}
-					} else { // next
-						if (!nextpal_item (core, pj, mode, fn)) {
-							goto done;
-						}
-					}
-				}
-			}
-		}
-	}
-
-done:
-	free (path);
-	if (core->get_next) {
-		R_FREE (core->theme);
-		nextpal (core, mode);
-		r_list_free (files);
-		return;
-	}
-	if (mode == 'l' && !core->theme && !r_list_empty (files)) {
-		// nextpal (core, mode);
-	} else if (mode == 'n' || mode == 'p') {
-		if (R_STR_ISNOTEMPTY (core->theme)) {
+		if (next) {
+			free (core->theme);
+			core->theme = strdup (next);
 			r_core_callf (core, "eco %s", core->theme);
 		}
+	} else {
+		RListIter *iter;
+		const char *fn;
+		r_list_foreach (themes, iter, fn) {
+			if (mode == 'j') {
+				pj_s (pj, fn);
+			} else {
+				r_cons_println (core->cons, fn);
+			}
+		}
 	}
-	r_list_free (files);
-	files = NULL;
+	r_list_free (themes);
 	if (mode == 'j') {
 		pj_end (pj);
 		r_cons_println (core->cons, pj_string (pj));
@@ -405,18 +330,6 @@ R_API void r_core_echo(RCore *core, const char *input) {
 			}
 		}
 	}
-}
-
-static bool is_static_theme(const char *th) {
-	const RConsTheme *theme = r_cons_themes ();
-	while (theme && theme->name) {
-		const char *tn = theme->name;
-		if (!strcmp (th, tn)) {
-			return true;
-		}
-		theme++;
-	}
-	return false;
 }
 
 static bool cmd_ec(RCore *core, const char *input) {
@@ -473,26 +386,10 @@ static bool cmd_ec(RCore *core, const char *input) {
 				RList *themes_list = r_core_list_themes (core);
 				RListIter *th_iter;
 				const char *th;
-				const RConsTheme *themes = r_cons_themes ();
-				const RConsTheme *theme = themes;
-			while (theme && theme->name) {
-					const char *th = theme->name;
-					if (input[2] == 'q') {
-						r_cons_printf (core->cons, "%s\n", th);
-				} else if (core->theme && !strcmp (core->theme, th)) {
-						r_cons_printf (core->cons, "- %s\n", th);
-					} else {
-						r_cons_printf (core->cons, "  %s\n", th);
-					}
-					theme++;
-				}
 				r_list_foreach (themes_list, th_iter, th) {
-					if (is_static_theme (th)) {
-						continue;
-					}
 					if (input[2] == 'q') {
 						r_cons_printf (core->cons, "%s\n", th);
-				} else if (core->theme && !strcmp (core->theme, th)) {
+					} else if (core->theme && !strcmp (core->theme, th)) {
 						r_cons_printf (core->cons, "- %s\n", th);
 					} else {
 						r_cons_printf (core->cons, "  %s\n", th);
