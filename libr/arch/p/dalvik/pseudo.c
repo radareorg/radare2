@@ -283,10 +283,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		if (ptr) {
 			*ptr = '\0';
 			ptr = (char *)r_str_trim_head_ro (ptr + 1);
-			strncpy (w0, buf, sizeof (w0) - 1);
-			w0[sizeof (w0)-1] = '\0';
-			strncpy (w1, ptr, sizeof (w1) - 1);
-			w1[sizeof (w1)-1] = '\0';
+			r_str_ncpy (w0, buf, sizeof (w0));
+			r_str_ncpy (w1, ptr, sizeof (w1));
 
 			optr=ptr;
 			ptr2 = strchr (ptr, '}');
@@ -299,10 +297,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 				for (ptr++; *ptr == ' '; ptr++) {
 					;
 				}
-				strncpy (w1, optr, sizeof (w1) - 1);
-				w1[sizeof (w1)-1] = '\0';
-				strncpy (w2, ptr, sizeof (w2) - 1);
-				w2[sizeof (w2)-1] = '\0';
+				r_str_ncpy (w1, optr, sizeof (w1));
+				r_str_ncpy (w2, ptr, sizeof (w2));
 				optr=ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
@@ -310,10 +306,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					for (ptr++; *ptr == ' '; ptr++) {
 						;
 					}
-					strncpy (w2, optr, sizeof (w2) - 1);
-					w2[sizeof (w2)-1] = '\0';
-					strncpy (w3, ptr, sizeof (w3) - 1);
-					w3[sizeof (w3)-1] = '\0';
+					r_str_ncpy (w2, optr, sizeof (w2));
+					r_str_ncpy (w3, ptr, sizeof (w3));
 					optr=ptr;
 // bonus
 					ptr = strchr (ptr, ',');
@@ -322,10 +316,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 						for (ptr++; *ptr == ' '; ptr++) {
 							;
 						}
-						strncpy (w3, optr, sizeof (w3) - 1);
-						w3[sizeof (w3) - 1] = '\0';
-						strncpy (w4, ptr, sizeof (w4) - 1);
-						w4[sizeof (w4) - 1] = '\0';
+						r_str_ncpy (w3, optr, sizeof (w3));
+						r_str_ncpy (w4, ptr, sizeof (w4));
 					}
 				}
 			}

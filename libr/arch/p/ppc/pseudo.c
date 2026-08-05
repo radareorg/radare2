@@ -1640,8 +1640,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 			for (ptr++; *ptr == ' '; ptr++) {
 				//nothing to see here
 			}
-			strncpy (w0, buf, WSZ - 1);
-			strncpy (w1, ptr, WSZ - 1);
+			r_str_ncpy (w0, buf, WSZ);
+			r_str_ncpy (w1, ptr, WSZ);
 
 			optr = ptr;
 			ptr = strchr (ptr, ',');
@@ -1650,8 +1650,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 				for (ptr++; *ptr == ' '; ptr++) {
 					//nothing to see here
 				}
-				strncpy (w1, optr, WSZ - 1);
-				strncpy (w2, ptr, WSZ - 1);
+				r_str_ncpy (w1, optr, WSZ);
+				r_str_ncpy (w2, ptr, WSZ);
 				optr = ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
@@ -1659,8 +1659,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					for (ptr++; *ptr == ' '; ptr++) {
 						//nothing to see here
 					}
-					strncpy (w2, optr, WSZ - 1);
-					strncpy (w3, ptr, WSZ - 1);
+					r_str_ncpy (w2, optr, WSZ);
+					r_str_ncpy (w3, ptr, WSZ);
 					optr = ptr;
 					// bonus
 					ptr = strchr (ptr, ',');
@@ -1669,8 +1669,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 						for (ptr++; *ptr == ' '; ptr++) {
 							//nothing to see here
 						}
-						strncpy (w3, optr, WSZ - 1);
-						strncpy (w4, ptr, WSZ - 1);
+						r_str_ncpy (w3, optr, WSZ);
+						r_str_ncpy (w4, ptr, WSZ);
 						optr = ptr;
 						// bonus
 						ptr = strchr (ptr, ',');
@@ -1679,14 +1679,14 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 							for (ptr++; *ptr == ' '; ptr++) {
 								//nothing to see here
 							}
-							strncpy (w4, optr, WSZ - 1);
-							strncpy (w5, ptr, WSZ - 1);
+							r_str_ncpy (w4, optr, WSZ);
+							r_str_ncpy (w5, ptr, WSZ);
 						}
 					}
 				}
 			}
 		} else {
-			strncpy (w0, buf, WSZ - 1);
+			r_str_ncpy (w0, buf, WSZ);
 		}
 		{
 			const char *wa[] = { w0, w1, w2, w3, w4, w5 };
