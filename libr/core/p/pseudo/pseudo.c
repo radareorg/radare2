@@ -785,17 +785,18 @@ static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 				continue;
 			}
 		}
+		const size_t start = r_strbuf_length (state->codestr);
+		if (R_STR_ISNOTEMPTY (line)) {
+			print_newline (state, addr, indent, false);
+			print_str (state, "%s", line);
+		}
 		if (emit_pj && state->pj) {
 			pj_o (state->pj);
-			pj_kn (state->pj, "start", r_strbuf_length (state->codestr));
+			pj_kn (state->pj, "start", start);
 			pj_kn (state->pj, "end", r_strbuf_length (state->codestr));
 			pj_kn (state->pj, "offset", addr);
 			pj_ks (state->pj, "type", "offset");
 			pj_end (state->pj);
-		}
-		if (R_STR_ISNOTEMPTY (line)) {
-			print_newline (state, addr, indent, false);
-			print_str (state, "%s", line);
 		}
 	}
 	r_list_free (lines);
@@ -2051,16 +2052,14 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 			s = os;
 		}
 		size_t codelen = r_strbuf_length (state.codestr);
+		r_strbuf_append (state.codestr, s);
 		if (state.pj) {
 			pj_o (state.pj);
 			pj_kn (state.pj, "start", codelen);
-			r_strbuf_append (state.codestr, s);
-			pj_kn (state.pj, "end", codelen);
+			pj_kn (state.pj, "end", r_strbuf_length (state.codestr));
 			pj_kn (state.pj, "offset", addr);
 			pj_ks (state.pj, "type", "offset");
 			pj_end (state.pj);
-		} else {
-			r_strbuf_append (state.codestr, s);
 		}
 		if (codelen > 0) {
 			if (state.show_addr && !state.show_asm) {

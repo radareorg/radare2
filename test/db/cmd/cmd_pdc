@@ -822,3 +822,16 @@ EXPECT=<<EOF
         if (!v) goto loc_0x15c60 // likely
 EOF
 RUN
+
+NAME=pdcj annotation ranges cover the emitted code
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF
+af
+pdcj~{annotations[0]}
+pdcj~{annotations[1]}
+EOF
+EXPECT=<<EOF
+{"start":52,"end":116,"offset":134513504,"type":"offset"}
+{"start":116,"end":137,"offset":134513506,"type":"offset"}
+EOF
+RUN
