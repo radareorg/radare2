@@ -20,15 +20,31 @@ static bool is_kernelcache_buffer(RBuffer *b) {
 		return false;
 	}
 
-	int i, ncmds = r_buf_read_le32_at (b, 16);
+	ut32 ncmds = r_buf_read_le32_at (b, 16);
+	ut32 sizeofcmds = r_buf_read_le32_at (b, 20);
+	ut64 header_size = sizeof (struct MACH0_(mach_header));
+	if (sizeofcmds > length - header_size) {
+		return false;
+	}
+	if (ncmds > sizeofcmds / sizeof (struct load_command)) {
+		return false;
+	}
 	bool has_unixthread = false;
 	bool has_negative_vaddr = false;
 	bool has_kext = false;
 
-	ut32 cursor = sizeof (struct MACH0_(mach_header));
-	for (i = 0; i < ncmds && cursor + 8 < length; i++) {
+	ut64 cursor = header_size;
+	ut64 end = cursor + sizeofcmds;
+	ut32 i;
+	for (i = 0; i < ncmds; i++) {
+		if (end - cursor < sizeof (struct load_command)) {
+			return false;
+		}
 		ut32 cmdtype = r_buf_read_le32_at (b, cursor);
 		ut32 cmdsize = r_buf_read_le32_at (b, cursor + 4);
+		if (cmdsize < sizeof (struct load_command) || cmdsize > end - cursor) {
+			return false;
+		}
 
 		switch (cmdtype) {
 		case LC_KEXT:
@@ -45,6 +61,9 @@ static bool is_kernelcache_buffer(RBuffer *b) {
 			{
 				if (has_negative_vaddr) {
 					break;
+				}
+				if (cmdsize < sizeof (struct MACH0_(segment_command))) {
+					return false;
 				}
 				st64 vmaddr = r_buf_read_le64_at (b, cursor + 24);
 				if (vmaddr < 0) {

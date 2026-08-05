@@ -339,6 +339,20 @@ mach0
 EOF
 RUN
 
+NAME=oba rejects malformed macho kernelcache load command
+FILE=malloc://41
+ARGS=-n -w
+CMDS=<<EOF
+e log.quiet=true
+wx cffaedfe0c0000010000000002000000ffffff7f00000000000020000000000000000000000000000000
+oba 0
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN
+
 NAME=ob select files
 FILE=malloc://1024
 CMDS=<<EOF
