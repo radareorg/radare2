@@ -143,6 +143,10 @@ static const char * const int_type(int size) {
 	}
 }
 
+static int inferred_var_size(RAnal *anal, int access_size) {
+	return int_type (access_size) ? access_size : anal->config->bits / 8;
+}
+
 R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (a && fcn, false);
 	RAnalVar **it;
@@ -1229,38 +1233,6 @@ static bool op_is_stack_frame_setup(RAnal *anal, RAnalOp *op, const char *reg) {
 		&& base && base->reg && !base->memref && !strcmp (base->reg, reg);
 }
 
-static bool extract_arm_stack_restore_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, char type, R_OUT st64 *ptr) {
-	const ut32 ot = op->type & R_ANAL_OP_TYPE_MASK;
-	if (type != R_ANAL_VAR_KIND_SPV || ot != R_ANAL_OP_TYPE_ADD || op->stackop != R_ANAL_STACK_INC) {
-		return false;
-	}
-	if (strcmp (anal->config->arch, "arm")) {
-		return false;
-	}
-	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
-	RAnalValue *src0 = RVecRArchValue_at (&op->srcs, 0);
-	RAnalValue *src1 = RVecRArchValue_at (&op->srcs, 1);
-	if (!dst || !src0 || !src1 || !dst->reg || !src0->reg || src1->reg) {
-		return false;
-	}
-	if (strcmp (dst->reg, reg) || strcmp (src0->reg, reg)) {
-		return false;
-	}
-	const st64 imm = src1->imm;
-	if (imm <= 0 || imm != fcn->maxstack || imm > 0x200) {
-		return false;
-	}
-	// For functions whose signature is known via sdb_types, place the synthetic
-	// arg above the local frame (delta = framesize) so it aligns with where a
-	// real stack arg would land. Anonymous functions get a degenerate slot at
-	// the frame boundary (delta = 0), which downstream consumers treat as a
-	// no-op marker.
-	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
-	*ptr = (fname && imm <= 0x40) ? imm * 2 : imm;
-	free (fname);
-	return true;
-}
-
 // the ppc PLT/call stubs save the TOC pointer (std/ld r2, N(r1)) into the caller linkage area, which is not an incoming stack arg
 static bool op_is_ppc_toc_save(RAnal *anal, RAnalOp *op) {
 	const ut32 ot = op->type & R_ANAL_OP_TYPE_MASK;
@@ -1280,7 +1252,6 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	RAnalValue *val;
 	int access_size = 0;
 	bool have_ptr = false;
-	bool stack_restore_arg = false;
 
 	R_RETURN_IF_FAIL (anal && fcn && op && reg);
 
@@ -1320,11 +1291,6 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			return;
 		}
 	}
-	if (!have_ptr && *sign == '+' && extract_arm_stack_restore_arg (anal, fcn, op, reg, type, &ptr)) {
-		have_ptr = true;
-		stack_restore_arg = true;
-	}
-
 	if (!have_ptr) {
 		val = RVecRArchValue_at (&op->dsts, 0);
 		if (op_dst_is_stack_reg (anal, op)) {
@@ -1349,7 +1315,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	if (!RVecRArchValue_at (&op->srcs, 0) || !RVecRArchValue_at (&op->dsts, 0)) {
 		R_LOG_DEBUG ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
 	}
-	if (op->stackop == R_ANAL_STACK_INC && !stack_restore_arg && !strcmp (anal->config->arch, "arm")) {
+	if (op->stackop == R_ANAL_STACK_INC && !strcmp (anal->config->arch, "arm")) {
 		return;
 	}
 
@@ -1429,7 +1395,8 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			}
 		}
 		if (varname) {
-			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, vartype, anal->config->bits / 8, isarg, varname);
+			const int size = inferred_var_size (anal, access_size);
+			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, vartype, size, isarg, varname);
 			if (var) {
 				r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
 			}
@@ -1452,7 +1419,8 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			? r_str_newf ("%s_%" PFMT64x "h", VARPREFIX, R_ABS (frame_off))
 			: r_anal_function_autoname_var (fcn, type, VARPREFIX, -ptr);
 		if (varname) {
-			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, NULL, anal->config->bits / 8, false, varname);
+			const int size = inferred_var_size (anal, access_size);
+			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, NULL, size, false, varname);
 			if (var) {
 				r_anal_var_set_access (anal, var, reg, op->addr, rw, -ptr);
 			}
