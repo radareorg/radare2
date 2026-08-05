@@ -352,9 +352,9 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 					char *flagname = label
 						? r_str_newf (".%s", label)
 						: strdup (f->realnames? flag->realname: flag->name);
-					int flag_len = strlen (flagname);
+					size_t flag_len = strlen (flagname);
 					int maxflagname = p->maxflagnamelen;
-					if (maxflagname > 0 && strlen (flagname) > maxflagname) {
+					if (maxflagname > 0 && flag_len > maxflagname) {
 						char *doublelower = (char *)r_str_rstr (flagname, "__");
 						char *doublecolon = (char *)r_str_rstr (flagname, "::");
 						char *token = NULL;
@@ -372,7 +372,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 							const char *lower = r_str_rstr (flagname, "_");
 							char *newstr = lower
 								? r_str_newf ("..%s", lower + 1)
-								: r_str_newf ("..%s", flagname + (strlen (flagname) - maxflagname));
+								: r_str_newf ("..%s", flagname + (flag_len - maxflagname));
 							free (flagname);
 							flagname = newstr;
 						}
