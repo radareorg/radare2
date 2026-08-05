@@ -71,11 +71,17 @@ afterwards.
   otherwise).
 - `guest/sbin/init` replaces `/sbin/init` so the console shell is a
   login shell, and `guest/etc/profile` prints `/etc/motd` (no login(1)
-  runs, so nothing else would), sets
-  `TERM=xterm-16color` (term.js only renders the 16 ANSI colors, so r2
-  defaults to `scr.color=1`), defines a busybox-compatible `resize`
-  helper (cursor-position-report trick) to sync the tty size with the
+  runs, so nothing else would), sets `TERM=xterm-256color`,
+  `COLORTERM=truecolor` and `LANG=C.UTF-8` (the stock term.js only
+  renders 16 colors, but `web/term-colors.patch` teaches it the
+  256-color and truecolor SGR sequences and brightens the base ANSI
+  palette, so r2 defaults to `scr.color=3` and `scr.utf8=true`),
+  defines a busybox-compatible `resize` helper
+  (cursor-position-report trick) to sync the tty size with the
   browser terminal, and mounts the upload filesystem.
+- The color themes are compiled into the r2 binary
+  (`--with-static-themes`) since no r2 share directory is installed in
+  the guest image, so `eco` and friends work as usual.
 - Uploads: the page ships an empty in-memory 9p filesystem
   (`www/netfs`, generated with TinyEMU's `build_filelist`); files
   uploaded from the browser appear in **/mnt/tmp** inside the guest.

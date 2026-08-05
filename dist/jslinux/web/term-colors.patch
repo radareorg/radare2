@@ -1,0 +1,280 @@
+--- a/term.js
++++ b/term.js
+@@ -46,32 +46,53 @@
+     this.state = 0;
+     this.output_queue = "";
+     this.colors = [
+-        /* normal */
++        /* normal (brighter than the VGA defaults for readability on
++           a black background) */
+         "#000000",
+-        "#aa0000",
+-        "#00aa00",
+-        "#aa5500",
+-        "#0000aa",
+-        "#aa00aa",
+-        "#00aaaa",
+-        "#aaaaaa",
++        "#e05561",
++        "#1fce6d",
++        "#e5cd52",
++        "#4a88e0",
++        "#cf68d8",
++        "#27c3dd",
++        "#e8e8e8",
+         /* bright */
+-        "#555555",
+-        "#ff5555",
+-        "#55ff55",
+-        "#ffff55",
+-        "#5555ff",
+-        "#ff55ff",
+-        "#55ffff",
+-        "#ffffff" 
++        "#7a7a7a",
++        "#ff6e6e",
++        "#4fe08d",
++        "#f5f543",
++        "#74aef5",
++        "#e88ce8",
++        "#55dcf0",
++        "#ffffff"
+     ];
+-    /* attributes bits:
+-       0-3: bg
+-       4-7: fg
+-       8: bold
+-       9: inverse
+-    */
+-    this.def_attr = (7 << 4) | 0;
++    /* extend to the standard xterm-256color palette: 6x6x6 color cube
++       (16-231) followed by the 24 step grayscale ramp (232-255) */
++    {
++        var i, r, lv;
++        lv = [0, 95, 135, 175, 215, 255];
++        for(i = 0; i < 216; i++) {
++            this.colors[16 + i] = "#" +
++                (0x1000000 |
++                 (lv[Math.floor(i / 36) % 6] << 16) |
++                 (lv[Math.floor(i / 6) % 6] << 8) |
++                 lv[i % 6]).toString(16).substr(1);
++        }
++        for(i = 0; i < 24; i++) {
++            r = 8 + i * 10;
++            this.colors[232 + i] = "#" +
++                (0x1000000 | (r << 16) | (r << 8) | r).toString(16).substr(1);
++        }
++    }
++    /* cell attributes are 15 bit handles into the attr_defs table (see
++       intern_attr); each entry is [fg, bg, flags] where fg/bg hold a
++       palette index (0-255) or 0x1000000|rgb for truecolor, and flags
++       is bit0=bold, bit1=inverse. Handle 0 is the default attribute
++       (fg=7, bg=0, no flags) so cells still pack in an int as
++       (attr << 16) | charcode */
++    this.attr_defs = [[7, 0, 0]];
++    this.attr_hash = { "7,0,0": 0 };
++    this.def_attr = 0;
+     this.cur_attr = this.def_attr;
+     this.is_mac = (navigator.userAgent.indexOf("Mac") >=0 ) ? true : false;
+     this.key_rep_state = 0;
+@@ -87,6 +108,36 @@
+     this.linux_console = true;
+ }
+ 
++/* get the attribute handle for a fg/bg/flags combination, allocating a
++   new one when first seen; handles are limited to 15 bits so the packed
++   cell integers stay positive */
++Term.prototype.intern_attr = function(fg, bg, flags)
++{
++    var key, id;
++    if (fg == 7 && bg == 0 && flags == 0)
++        return 0;
++    key = fg + "," + bg + "," + flags;
++    id = this.attr_hash[key];
++    if (id === undefined) {
++        id = this.attr_defs.length;
++        if (id > 0x7fff) {
++            /* table full (unlikely): degrade to the default attribute */
++            return 0;
++        }
++        this.attr_defs[id] = [fg, bg, flags];
++        this.attr_hash[key] = id;
++    }
++    return id;
++};
++
++/* CSS color for a fg/bg value stored in an attr_defs entry */
++Term.prototype.attr_color = function(c)
++{
++    if (c >= 0x1000000)
++        return "#" + (0x1000000 | (c & 0xffffff)).toString(16).substr(1);
++    return this.colors[c];
++};
++
+ Term.prototype.open = function(parent_el, textarea_el)
+ {
+     var y, line, i, term, c, row_el;
+@@ -277,11 +328,12 @@
+                         /* cursor */
+                         outline += '<span class="term_cursor">';
+                     } else {
++                        var ad = this.attr_defs[attr];
+                         outline += '<span style="';
+-                        fg = (attr >> 4) & 0xf;
+-                        bg = attr & 0xf;
+-                        bold = (attr >> 8) & 1;
+-                        inverse = (attr >> 9) & 1;
++                        fg = ad[0];
++                        bg = ad[1];
++                        bold = ad[2] & 1;
++                        inverse = ad[2] & 2;
+                         if (inverse) {
+                             tmp = fg;
+                             fg = bg;
+@@ -295,11 +347,11 @@
+                                 fg += 8;
+                         }
+                         if (fg != 7) {
+-                            outline += 'color:' + this.colors[fg] + ';';
++                            outline += 'color:' + this.attr_color(fg) + ';';
+                         }
+                         if (bg != 0) {
+-                            outline += 'background-color:' + 
+-                                this.colors[bg] + ';';
++                            outline += 'background-color:' +
++                                this.attr_color(bg) + ';';
+                         }
+                         outline += '">';
+                     }
+@@ -406,9 +458,8 @@
+ 
+     function get_erase_char()
+     {
+-        var bg_mask, attr;
+-        bg_mask = 0xf;
+-        attr = (s.def_attr & ~bg_mask) | (s.cur_attr & bg_mask);
++        /* erased cells keep the current background, default the rest */
++        var attr = s.intern_attr(7, s.attr_defs[s.cur_attr][1], 0);
+         return 32 | (attr << 16);
+     }
+     
+@@ -508,52 +559,78 @@
+     
+     function csi_colors(esc_params)
+     {
+-        var j, n, fg, bg, mask;
++        var j, n, col, fg, bg, flags, cur;
+ 
+         if (esc_params.length == 0) {
+-            s.cur_attr= s.def_attr;
+-        } else {
+-            for(j = 0; j < esc_params.length; j++) {
+-                n = esc_params[j];
+-                if (n >= 30 && n <= 37) {
+-                    /* foreground */
+-                    fg = n - 30;
+-                    s.cur_attr = (s.cur_attr & ~(0xf << 4)) | (fg << 4);
+-                } else if (n >= 40 && n <= 47) {
+-                    /* background */
+-                    bg = n - 40;
+-                    s.cur_attr = (s.cur_attr & ~0xf) | bg;
+-                } else if (n >= 90 && n <= 97) {
+-                    /* bright foreground */
+-                    fg = n - 90 + 8;
+-                    s.cur_attr = (s.cur_attr & ~(0xf << 4)) | (fg << 4);
+-                } else if (n >= 100 && n <= 107) {
+-                    /* bright background */
+-                    bg = n - 100 + 8;
+-                    s.cur_attr = (s.cur_attr & ~0xf) | bg;
+-                } else if (n == 1) {
+-                    /* bold + bright */
+-                    s.cur_attr |= (1 << 8);
+-                } else if (n == 0) {
+-                    /* default attr */
+-                    s.cur_attr = s.def_attr;
+-                } else if (n == 7) {
+-                    /* inverse */
+-                    s.cur_attr |= (1 << 9);
+-                } else if (n == 27) {
+-                    /* not inverse */
+-                    s.cur_attr &= ~(1 << 9);
+-                } else if (n == 39) {
+-                    /* reset fg */
+-                    mask = 0x0f << 4;
+-                    s.cur_attr = (s.cur_attr & ~mask) | (s.def_attr & mask);
+-                } else if (n == 49) {
+-                    /* reset bg */
+-                    mask = 0x0f;
+-                    s.cur_attr = (s.cur_attr & ~mask) | (s.def_attr & mask);
++            s.cur_attr = s.def_attr;
++            return;
++        }
++        cur = s.attr_defs[s.cur_attr];
++        fg = cur[0];
++        bg = cur[1];
++        flags = cur[2];
++        for(j = 0; j < esc_params.length; j++) {
++            n = esc_params[j];
++            if (n >= 30 && n <= 37) {
++                /* foreground */
++                fg = n - 30;
++            } else if (n >= 40 && n <= 47) {
++                /* background */
++                bg = n - 40;
++            } else if (n >= 90 && n <= 97) {
++                /* bright foreground */
++                fg = n - 90 + 8;
++            } else if (n >= 100 && n <= 107) {
++                /* bright background */
++                bg = n - 100 + 8;
++            } else if (n == 38 || n == 48 || n == 58) {
++                /* extended color: 38;5;idx or 38;2;r;g;b; also consume
++                   the arguments of 58 (underline color, unsupported) so
++                   they are not misread as standalone attributes */
++                col = -1;
++                if (esc_params[j + 1] == 5 && j + 2 < esc_params.length) {
++                    col = esc_params[j + 2] & 0xff;
++                    j += 2;
++                } else if (esc_params[j + 1] == 2 &&
++                           j + 4 < esc_params.length) {
++                    col = 0x1000000 |
++                        ((esc_params[j + 2] & 0xff) << 16) |
++                        ((esc_params[j + 3] & 0xff) << 8) |
++                        (esc_params[j + 4] & 0xff);
++                    j += 4;
++                }
++                if (col >= 0) {
++                    if (n == 38)
++                        fg = col;
++                    else if (n == 48)
++                        bg = col;
+                 }
++            } else if (n == 1) {
++                /* bold + bright */
++                flags |= 1;
++            } else if (n == 22) {
++                /* not bold */
++                flags &= ~1;
++            } else if (n == 0) {
++                /* default attr */
++                fg = 7;
++                bg = 0;
++                flags = 0;
++            } else if (n == 7) {
++                /* inverse */
++                flags |= 2;
++            } else if (n == 27) {
++                /* not inverse */
++                flags &= ~2;
++            } else if (n == 39) {
++                /* reset fg */
++                fg = 7;
++            } else if (n == 49) {
++                /* reset bg */
++                bg = 0;
+             }
+         }
++        s.cur_attr = s.intern_attr(fg, bg, flags);
+     }
+ 
+     function empty_line(y, use_erase_char) {
