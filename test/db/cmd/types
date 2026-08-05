@@ -3410,3 +3410,117 @@ EXPECT=<<EOF
 var uint8_t [136] var_88h @ rbp-0x88
 EOF
 RUN
+
+NAME=single block function with the state restore enabled
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.bbstate=true
+CMDS=<<EOF
+wx 488b3ee808000000c3909090909090904889f8c3
+af @ 0x10
+af @ 0
+afvt arg1 char **
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg char * arg1 @ rdi
+EOF
+RUN
+
+NAME=a loop body value does not survive the header that overwrites it
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec20ba0400000085ff740aba00010000ebf0909090488d7de031f6e81a000000c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF
+EXPECT=<<EOF
+var int64_t var_20h @ rbp-0x20
+EOF
+RUN
+
+NAME=a sibling branch size does not leak into a call on another path
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec2085ff740cba00010000eb149090909090488d7de031f6e81d000000eb029090c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+arg size_t n @ rdx
+var int64_t s @ rbp-0x20
+EOF
+RUN
+
+NAME=disabling the per-block state restore keeps the inherited sibling branch state
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.bbstate=false
+CMDS=<<EOF
+wx 554889e54883ec2085ff740cba00010000eb149090909090488d7de031f6e81d000000eb029090c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF
+EXPECT=<<EOF
+var uint8_t [256] var_20h @ rbp-0x20
+EOF
+RUN
+
+NAME=a loop body value the header never touches is also lost after the loop
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF2
+wx 554889e54883ec20ba0400000085ff7407ba00010000ebf5488d7de031f6e81d000000c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF2
+EXPECT=<<EOF2
+var int64_t var_20h @ rbp-0x20
+EOF2
+RUN
+
+NAME=disabling bbstate keeps the loop body value after the loop
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.bbstate=false
+CMDS=<<EOF2
+wx 554889e54883ec20ba0400000085ff7407ba00010000ebf5488d7de031f6e81d000000c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF2
+EXPECT=<<EOF2
+var uint8_t [256] var_20h @ rbp-0x20
+EOF2
+RUN

@@ -4114,6 +4114,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("types.constraint", "false", "enable constraint types analysis for variables");
 	SETB ("types.fields", "false", "propagate callee types into struct and union members during type analysis");
 	SETB ("types.rollback", "false", "enable state rollback for type propagation recovery");
+	SETB ("types.bbstate", "true", "restore register state from a real predecessor block during type analysis (memory is not rewound)");
 	SETB ("types.synth", "false", "synthesize struct types for untyped pointer args and allocator returns (see afts)");
 	SETB ("types.sizes", "false", "harvest object sizes from memset-style and allocator call sites during type analysis");
 	SETS ("types.sizefns", "", "name/ptrarg/sizearg[*mularg] fns; ptrarg r/rN = allocator ret; name/- drops; an entry replaces its builtins");

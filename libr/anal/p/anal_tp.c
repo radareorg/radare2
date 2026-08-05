@@ -514,7 +514,9 @@ typedef struct tp_state_t {
 	bool cfg_chk_constraint;
 	bool cfg_fields;
 	bool cfg_rollback;
+	bool cfg_bbstate;
 	bool old_follow;
+	bool lineage_reset; // set when a block's machine state was restored from a real predecessor
 	RVecTPSizeFn sizefns; // empty unless types.sizes is set
 	RList *clobber; // caller-saved regs to poison across skipped calls (synth only)
 	char *seed_reg; // ret reg to seed after the current call's clobber (allocator harvest)
@@ -2345,6 +2347,7 @@ static TPState *tps_init(RAnal *anal) {
 		tps->cfg_chk_constraint = anal->coreb.cfgGetB (core, "types.constraint");
 		tps->cfg_fields = anal->coreb.cfgGetB (core, "types.fields");
 		tps->cfg_rollback = anal->coreb.cfgGetB (core, "types.rollback");
+		tps->cfg_bbstate = anal->coreb.cfgGetB (core, "types.bbstate");
 		if (anal->coreb.cfgGetB (core, "types.sizes")) {
 			tp_sizefns_init (&tps->sizefns, anal->coreb.cfgGet (core, "types.sizefns"));
 		}
@@ -2358,6 +2361,7 @@ static TPState *tps_init(RAnal *anal) {
 		tps->cfg_chk_constraint = false;
 		tps->cfg_fields = false;
 		tps->cfg_rollback = false;
+		tps->cfg_bbstate = true;
 	}
 	tps->tt.enable_rollback = tps->cfg_rollback;
 	tps->tt.be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
@@ -2405,8 +2409,51 @@ typedef enum {
 // next_op is zeroed when no lookahead op was decoded
 typedef void (*TPEmulateOpCb)(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 addr, ut64 bb_addr);
 
+// how far back in emulation order a real predecessor is looked for before giving up
+#define TP_PRED_SCAN_MAX 64
+
+static void tp_bbstate_kv_free(HtUPKv *kv) {
+	free (kv->value);
+}
+
+static bool tp_bb_edge_cb(ut64 addr, void *user) {
+	return addr != *(ut64 *)user;
+}
+
+static bool tp_bb_leads_to(RAnal *anal, ut64 from, ut64 to) {
+	RAnalBlock *bb = r_anal_get_block_at (anal, from);
+	return bb && !r_anal_block_successor_addrs_foreach (bb, tp_bb_edge_cb, &to);
+}
+
+// restore the GPR arena from the nearest direct-edge predecessor with a snapshot (memory is not rewound); transitive reachers do not count
+static bool tp_restore_pred_state(TPState *tps, RVecUT64 *bblist, int j, ut64 bbat, HtUP *bbstate, int arena_size) {
+	if (j < 1) {
+		return false;
+	}
+	RAnal *anal = tps->anal;
+	// straight line: the live state is already this block's lineage
+	if (tp_bb_leads_to (anal, *RVecUT64_at (bblist, j - 1), bbat)) {
+		return false;
+	}
+	const int oldest = R_MAX (0, j - TP_PRED_SCAN_MAX);
+	int k;
+	for (k = j - 2; k >= oldest; k--) {
+		const ut64 pa = *RVecUT64_at (bblist, k);
+		if (!tp_bb_leads_to (anal, pa, bbat)) {
+			continue;
+		}
+		ut8 *snap = ht_up_find (bbstate, pa, NULL);
+		if (snap) {
+			r_reg_arena_poke (tps->tt.reg, snap, arena_size);
+			return true;
+		}
+		// a predecessor without a snapshot (arena peek failed) is no reason to stop: an older one may have state
+	}
+	return false;
+}
+
 // step the type-trace esil over the linear ops of every block; op_cb also enables the one-op lookahead
-static TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPEmulateOpCb op_cb, void *user, bool lookahead) {
+static TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPEmulateOpCb op_cb, void *user, bool lookahead, bool restore_state) {
 	RAnal *anal = tps->anal;
 	const int op_tions = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_ESIL;
 	const int minopcode = R_MAX (1, r_arch_info (anal->arch, R_ARCH_INFO_MINOP_SIZE));
@@ -2434,9 +2481,11 @@ static TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_o
 	int i, j;
 	TypeTrace *etrace = &tps->tt;
 	RIO *io = anal->iob.io;
-	// blocks swept in CFG order still inherit register state across non-adjacent boundaries: a coverage/accuracy tradeoff
+	HtUP *bbstate = (restore_state && tps->cfg_bbstate)? ht_up_new (NULL, tp_bbstate_kv_free, NULL): NULL;
+	int arena_size = 0;
 	for (j = 0; j < bblist_size; j++) {
 		const ut64 bbat = *RVecUT64_at (&bblist, j);
+		tps->lineage_reset = bbstate && tp_restore_pred_state (tps, &bblist, j, bbat, bbstate, arena_size);
 		bb = r_anal_get_block_at (anal, bbat);
 		if (!bb) {
 			R_LOG_WARN ("basic block at 0x%08" PFMT64x " was removed during analysis", bbat);
@@ -2550,8 +2599,17 @@ static TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_o
 		if (tps->cfg_rollback) {
 			type_trace_rollback_clear (etrace);
 		}
+		if (bbstate) {
+			ut8 *snap = r_reg_arena_peek (etrace->reg, &arena_size);
+			if (snap) {
+				if (!ht_up_update (bbstate, bb_addr, snap)) {
+					free (snap);
+				}
+			}
+		}
 	}
 beach:
+	ht_up_free (bbstate);
 	r_anal_op_fini (&aop);
 	r_anal_op_free (next_op); // a cached lookahead op may still be live on a break/budget exit
 	r_cons_break_pop (cons);
@@ -2732,6 +2790,14 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 	Sdb *TDB = anal->sdb_types;
 	char *fcn_name = NULL;
 	c->tp.userfnc = false;
+	if (tps->lineage_reset) {
+		// state came from another predecessor: call-return and one-op adjacency tracking are stale
+		tp_state_fini (&c->tp);
+		tp_state_reset (&c->tp);
+		c->tp.resolved = false;
+		c->tp.prev_var = NULL;
+		tps->lineage_reset = false;
+	}
 	tps->tt.cur_idx = etrace_index (etrace);
 	int cur_idx = tps->tt.cur_idx - 1;
 	if (cur_idx < 0) {
@@ -2929,7 +2995,7 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 	};
 	int retries = 2;
 	for (;;) {
-		const TPEmuResult res = tp_emulate_linear (tps, fcn, 0, type_match_op_cb, &ctx, true);
+		const TPEmuResult res = tp_emulate_linear (tps, fcn, 0, type_match_op_cb, &ctx, true, true);
 		if (res == TP_EMU_DONE || res == TP_EMU_BUDGET) {
 			break;
 		}
@@ -3735,7 +3801,7 @@ static void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec
 	RVecSynthField_init (&szctx.childwant);
 	const bool harvest = !RVecTPSizeFn_empty (&tps->sizefns);
 	r_reg_setv (tps->tt.reg, "PC", fcn->addr);
-	if (tp_emulate_linear (tps, fcn, SYNTH_MAXOPS, harvest? synth_size_cb: NULL, harvest? &szctx: NULL, false) == TP_EMU_BUDGET) {
+	if (tp_emulate_linear (tps, fcn, SYNTH_MAXOPS, harvest? synth_size_cb: NULL, harvest? &szctx: NULL, false, false) == TP_EMU_BUDGET) {
 		R_LOG_WARN ("Struct synthesis hit the %d-op budget at 0x%08" PFMT64x "; result is partial", SYNTH_MAXOPS, fcn->addr);
 	}
 
