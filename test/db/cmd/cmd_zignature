@@ -500,7 +500,7 @@ main:
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
+  vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 (zigs) main:
   bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
@@ -511,7 +511,7 @@ main:
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
+  vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -537,7 +537,7 @@ main:
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
+  vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 (zigs) main:
   bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
@@ -548,7 +548,7 @@ main:
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
+  vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -571,7 +571,7 @@ main:
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
+  vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -596,7 +596,7 @@ foobar:
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
+  vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -620,7 +620,7 @@ foobar:
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
+  vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -1005,7 +1005,7 @@ za sym.__write b f30f1efa488d05256d0d008b0085c07517b8010000000f05483d00f0ffff775
 za sym.__write g cc=6 nbbs=7 edges=7 ebbs=3 bbsum=148
 za sym.__write o 0x000ec800
 za sym.__write R X193cml0ZQ==
-za sym.__write t void sym.__write (int fd, const char *ptr, size_t nbytes)
+za sym.__write t ssize_t write (int fd, const char *ptr, size_t nbytes)
 za sym.__write r sym.__libc_enable_asynccancel sym.__libc_disable_asynccancel
 za sym.__write v fs-32:var_8h:int64_t, tr73:nbytes:size_t, tr79:ptr:const char *, tr83:fd:int
 za sym.__write h 4f2d194bae72345352b26e0a36531e7d6ff6cb5d6b50b92487246507b8dafdc5

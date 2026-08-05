@@ -63,7 +63,7 @@ EXPECT=<<EOF
 |           ; arg char **argv @ x1
 |           ; var int64_t var_0h @ sp+0x0
 |           ; var int64_t var_8h @ sp+0x8
-|           ; var int64_t var_14h @ sp+0x14
+|           ; var int32_t var_14h @ sp+0x14
 |           ; var int64_t var_18h @ sp+0x18
 |           ; var int64_t var_20h_2 @ sp+0x20
 |           ; var int64_t var_220h @ sp+0x220

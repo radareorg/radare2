@@ -1210,7 +1210,7 @@ aa
 afs @ loc.00000018.plt_call.__libc_start_main
 EOF2
 EXPECT=<<EOF2
-void loc.00000018.plt_call.__libc_start_main ();
+int libc_start_main (func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end);
 EOF2
 RUN
 
