@@ -21,7 +21,6 @@ typedef struct {
 	ut64 bb_jump; // edges of the block being rendered, owned by its region in structured mode
 	ut64 bb_fail;
 	const char *r0;
-	char indentstr[1024];
 } PDCState;
 
 static const char *pseudo_arg_name(RAnal *anal, const char *arg) {
@@ -523,15 +522,7 @@ static void print_pipe_header(PDCState *state, ut64 addr) {
 	print_str (state, " | ");
 }
 
-static void prepare_indentstr(PDCState *state, int indent) {
-	const size_t isz = sizeof (state->indentstr);
-	size_t pos = R_MIN (isz - 1, (size_t) R_MAX (indent, 0) * 4);
-	memset (state->indentstr, ' ', isz);
-	state->indentstr[pos] = '\0';
-}
-
 static void print_newline(PDCState *state, ut64 addr, int indent, bool synthetic) {
-	prepare_indentstr (state, indent);
 	RStrBuf *sb = state_sb (state);
 	r_strbuf_append (sb, "\n");
 	if (state->show_asm) {
@@ -541,13 +532,11 @@ static void print_newline(PDCState *state, ut64 addr, int indent, bool synthetic
 			asm_append (sb, state->core, addr, " ");
 			r_strbuf_append (sb, " | ");
 		}
-		r_strbuf_append (sb, state->indentstr);
 	} else if (state->show_addr) {
 		const char *lead = state->pj? "": " ";
-		r_strbuf_appendf (sb, "%s0x%08" PFMT64x " | %s", lead, addr, state->indentstr);
-	} else {
-		r_strbuf_append (sb, state->indentstr);
+		r_strbuf_appendf (sb, "%s0x%08" PFMT64x " | ", lead, addr);
 	}
+	r_strbuf_pad (sb, ' ', indent * 4);
 }
 
 static bool bb_addr_is_goto_target(RAnalFunction *fcn, ut64 addr) {
@@ -2044,9 +2033,9 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 			free (s);
 			s = os;
 		} else {
-			memset (state.indentstr, ' ', sizeof (state.indentstr));
-			state.indentstr[indent * 2] = 0;
-			char *os = pdc_prefix_lines (s, state.indentstr, false);
+			char *ind = r_str_pad (NULL, 0, ' ', indent * 2);
+			char *os = pdc_prefix_lines (s, r_str_get (ind), false);
+			free (ind);
 			free (s);
 			s = os;
 		}
