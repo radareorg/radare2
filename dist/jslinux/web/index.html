@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>temu/r2 — radare2 on riscv64</title>
+  <title>temu/jslinux/rv64/r2</title>
   <link href="style.css" type="text/css" rel="stylesheet"/>
 <style>
 html, body {
@@ -50,11 +50,14 @@ html, body {
 /* no scrollbars anywhere: term.js paints its own — hide it (the mouse
    wheel still scrolls the terminal history) */
 .term_scrollbar { display: none; }
-/* keep term.js input textarea reachable but out of the layout */
+/* keep term.js input textarea reachable but out of the layout; it sits
+   at the TOP on purpose: iOS scrolls the page to bring the focused
+   element above the virtual keyboard, and a bottom-anchored textarea
+   makes it scroll the whole terminal away */
 #term_paste {
   position: absolute;
   left: 0;
-  bottom: 0;
+  top: 0;
   width: 1px;
   height: 19px;
   opacity: 0.01;
@@ -62,6 +65,40 @@ html, body {
   background: #000;
   color: #000;
 }
+/* extra keys: docked below the titlebar in normal flow — a fixed
+   bottom bar is unusable on iOS, where the virtual keyboard covers
+   the bottom of the layout viewport instead of shrinking it */
+#keybar {
+  box-sizing: border-box;
+  height: 38px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 6px;
+  background: #101828;
+  border-bottom: 1px solid #3a6ec0;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+body.kbd #keybar { display: flex; }
+body.kbd #term_wrap { height: calc(100% - 68px); }
+#keybar button {
+  flex: 1 1 0;
+  max-width: 64px;
+  height: 30px;
+  background: #123a75;
+  color: #fff;
+  border: 1px solid #3a6ec0;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 13px;
+  padding: 0;
+  cursor: pointer;
+}
+#keybar button:active { background: #3a6ec0; }
+#keybar button.on { background: #3a6ec0; color: #ffd24a; }
 #net_progress {
   position: fixed;
   right: 8px;
@@ -92,13 +129,22 @@ html, body {
 </head>
 <body>
 <div id="titlebar">
-  <span><b>temu/r2</b> radare2 on riscv64</span>
+  <span><b>temu/rv64</b>/r2</span>
   <span class="btns">
     <button id="btn-upload" title="Upload files into the VM (appear in /mnt/tmp)">Upload</button>
-    <button id="btn-kbd" title="Open the on-screen keyboard">Keyboard</button>
-    <button id="btn-cache" title="Delete locally cached files and reload">Clear cache</button>
+    <button id="btn-kbd" title="Toggle the on-screen keyboard and the Esc/Ctrl/Tab/arrows bar">Keyboard</button>
+    <button id="btn-cache" title="Delete locally cached files and reload">ClrCache</button>
     <button id="btn-about" title="What is this?">About</button>
   </span>
+</div>
+<div id="keybar">
+  <button data-key="esc">Esc</button>
+  <button id="key-ctrl">Ctrl</button>
+  <button data-key="tab">Tab</button>
+  <button data-key="left">&#8592;</button>
+  <button data-key="down">&#8595;</button>
+  <button data-key="up">&#8593;</button>
+  <button data-key="right">&#8594;</button>
 </div>
 <div id="about" hidden>
   <span class="close" id="btn-about-close">[x]</span>
@@ -143,8 +189,11 @@ function r2_calc_geometry(fs) {
   var usable_w = vw - 18;
   var usable_h = vh - 30 - Math.ceil(ch / 2) - 8;
   if (r2_touch) {
-    /* on phones keep room for the on-screen keyboard */
-    usable_h = Math.floor(usable_h * 0.55);
+    /* on phones keep room for the on-screen keyboard and the key bar */
+    usable_h = Math.floor(usable_h * 0.55) - 38;
+  } else if (document.body.classList.contains("kbd")) {
+    /* the key bar takes a strip below the titlebar */
+    usable_h -= 38;
   }
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   return {
@@ -246,8 +295,115 @@ Term.prototype.resize = function (w, h) {
 document.getElementById("btn-upload").onclick = function () {
   document.getElementById("files").click();
 };
+/* extra keys bar (Esc/Ctrl/Tab/arrows): needed on phones where the
+   on-screen keyboard has none of them; Ctrl is sticky and applies to
+   the next typed character */
+var r2_ctrl = false;
+
+function r2_set_ctrl(on) {
+  r2_ctrl = on;
+  document.getElementById("key-ctrl").classList.toggle("on", on);
+}
+
+/* wrap term.handler once so a pending sticky Ctrl turns the next
+   typed character into its control code (a..z -> 1..26, space -> NUL) */
+function r2_hook_ctrl() {
+  if (!window.term || term.r2_ctrl_hook) {
+    return;
+  }
+  term.r2_ctrl_hook = true;
+  var old_handler = term.handler;
+  term.handler = function (str) {
+    if (r2_ctrl && str.length === 1) {
+      var c = str.charCodeAt(0);
+      if (c >= 97 && c <= 122) {
+        c -= 96;
+      } else if (c >= 64 && c <= 95) { /* @ A-Z [ \ ] ^ _ */
+        c -= 64;
+      } else if (c === 32) {
+        c = 0;
+      } else {
+        c = -1;
+      }
+      if (c >= 0) {
+        str = String.fromCharCode(c);
+        r2_set_ctrl(false);
+      }
+    }
+    return old_handler.call(this, str);
+  };
+}
+
+function r2_send_key(name) {
+  if (!window.term || !term.handler) {
+    return;
+  }
+  r2_hook_ctrl();
+  var seqs = {
+    left: ["\x1b[D", "\x1bOD", "\x1b[1;5D"],
+    right: ["\x1b[C", "\x1bOC", "\x1b[1;5C"],
+    up: ["\x1b[A", "\x1bOA", "\x1b[1;5A"],
+    down: ["\x1b[B", "\x1bOB", "\x1b[1;5B"]
+  };
+  var str;
+  if (name === "esc") {
+    str = "\x1b";
+  } else if (name === "tab") {
+    str = "\x09";
+  } else {
+    var s = seqs[name];
+    if (r2_ctrl) {
+      str = s[2];
+      r2_set_ctrl(false);
+    } else {
+      str = term.application_cursor ? s[1] : s[0];
+    }
+  }
+  term.show_cursor();
+  term.handler(str);
+}
+
+/* pointerdown + preventDefault keeps the focus (and thus the phone's
+   on-screen keyboard) on the terminal textarea */
+Array.prototype.forEach.call(
+    document.querySelectorAll("#keybar button"), function (btn) {
+  btn.addEventListener("pointerdown", function (ev) {
+    ev.preventDefault();
+    if (btn.id === "key-ctrl") {
+      r2_hook_ctrl();
+      r2_set_ctrl(!r2_ctrl);
+    } else {
+      r2_send_key(btn.getAttribute("data-key"));
+    }
+  });
+});
+
+/* iOS scrolls the layout viewport when the virtual keyboard opens even
+   with overflow:hidden; snap it back so nothing drifts off-screen */
+if (r2_touch) {
+  var r2_unscroll = function () {
+    if (window.scrollX || window.scrollY) {
+      window.scrollTo(0, 0);
+    }
+  };
+  window.addEventListener("scroll", r2_unscroll);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", r2_unscroll);
+    window.visualViewport.addEventListener("scroll", r2_unscroll);
+  }
+}
+
 document.getElementById("btn-kbd").onclick = function () {
-  document.getElementById("term_paste").focus();
+  var on = document.body.classList.toggle("kbd");
+  if (on) {
+    document.getElementById("term_paste").focus();
+  }
+  /* the key bar changes the usable height: refit the grid on desktop
+     (phones keep the load-time geometry which already reserves it) */
+  if (!r2_touch && window.term && term.resize) {
+    var g = r2_calc_geometry(window.R2_FONT);
+    term.resize(g.cols, g.rows);
+  }
 };
 document.getElementById("btn-about").onclick = function () {
   var el = document.getElementById("about");

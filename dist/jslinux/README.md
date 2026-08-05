@@ -66,8 +66,12 @@ afterwards.
 
 ## Guest integration
 
-- `guest/init` replaces `/sbin/init` so the console shell is a login
-  shell, and `guest/profile` (as `/etc/profile`) sets
+- `guest/` is a rootfs overlay: every file in it is injected at the
+  same path inside the image (0755 when executable on the host, 0644
+  otherwise).
+- `guest/sbin/init` replaces `/sbin/init` so the console shell is a
+  login shell, and `guest/etc/profile` prints `/etc/motd` (no login(1)
+  runs, so nothing else would), sets
   `TERM=xterm-16color` (term.js only renders the 16 ANSI colors, so r2
   defaults to `scr.color=1`), defines a busybox-compatible `resize`
   helper (cursor-position-report trick) to sync the tty size with the

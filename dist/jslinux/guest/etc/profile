@@ -31,3 +31,7 @@ fi
 # start with a clean screen: prompt on the top-left instead of sitting
 # under the kernel boot messages at the bottom
 clear 2> /dev/null || printf '\033[H\033[2J'
+
+# the console shell is spawned directly by init, not by login(1), so
+# nothing prints /etc/motd for us
+[ -f /etc/motd ] && cat /etc/motd

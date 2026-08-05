@@ -166,31 +166,12 @@ $(JSL)/.stamp:
 	tar -xzf $(WORK)/dl/jslinux.tar.gz -C $(WORK)
 	touch $@
 
-# debugfs works on the image file directly, so no root is needed; e2fsck
-# exit codes 1/2 just mean "fixed", only >= 4 is a real error
-$(WORK)/root-r2.bin: $(WORK)/r2blob $(JSL)/.stamp guest/profile guest/init
-	cp -f $(JSL)/root-riscv64.bin $@.tmp
-	truncate -s $(ROOT_MB)M $@.tmp
-	e2fsck -fy $@.tmp; RET=$$?; [ $$RET -lt 4 ] || exit $$RET
-	resize2fs $@.tmp
-	{ echo "cd /bin"; \
-	  echo "rm r2blob"; \
-	  echo "write $(WORK)/r2blob r2blob"; \
-	  echo "sif r2blob mode 0100755"; \
-	  for L in $(R2_LINKS); do \
-		echo "rm $$L"; echo "symlink $$L r2blob"; \
-	  done; \
-	  echo "cd /etc"; \
-	  echo "rm profile"; \
-	  echo "write guest/profile profile"; \
-	  echo "sif profile mode 0100644"; \
-	  echo "cd /sbin"; \
-	  echo "rm init"; \
-	  echo "write guest/init init"; \
-	  echo "sif init mode 0100755"; } > $(WORK)/inject.dbg
-	debugfs -w -f $(WORK)/inject.dbg $@.tmp
-	e2fsck -fy $@.tmp; RET=$$?; [ $$RET -lt 4 ] || exit $$RET
-	mv $@.tmp $@
+# guest/ is a rootfs overlay: every file in it lands at the same path in
+# the image; setuprootfs.sh does the whole grow+inject dance with debugfs
+GUEST_FILES = $(shell find guest -type f | sort)
+
+$(WORK)/root-r2.bin: $(WORK)/r2blob $(JSL)/.stamp $(GUEST_FILES) setuprootfs.sh
+	./setuprootfs.sh $(JSL)/root-riscv64.bin $@ $(WORK)/r2blob $(ROOT_MB) "$(R2_LINKS)"
 
 # split into fixed-size chunks so the browser only downloads the blocks
 # it actually reads (same format as TinyEMU's splitimg tool)
@@ -219,7 +200,7 @@ $(WWW)/.runtime.stamp: $(JSL)/.stamp
 	touch $@
 
 # empty in-memory 9p filesystem manifest: mounting it in the guest (see
-# guest/profile) is what makes browser file uploads work — TinyEMU's
+# guest/etc/profile) is what makes browser file uploads work — TinyEMU's
 # fs_import_file drops uploads into this fs under /tmp
 $(WWW)/netfs/head: $(WORK)/tinyemu/build_filelist
 	rm -rf $(WORK)/netfsroot $(WWW)/netfs
@@ -260,7 +241,7 @@ $(WORK)/tinyemu/build_filelist: $(WORK)/tinyemu/.src.stamp
 	$(MAKE) -C $(WORK)/tinyemu CONFIG_X86EMU= CONFIG_SDL= CONFIG_FS_NET= build_filelist
 
 # fs0 shares work/netfsroot with the native guest so the same 9p mount
-# from guest/profile works here too (uploads equivalent: drop files there)
+# from guest/etc/profile works here too (uploads equivalent: drop files there)
 $(WORK)/temu.cfg: $(WORK)/root-r2.bin $(JSL)/.stamp
 	mkdir -p $(WORK)/netfsroot/tmp
 	{ printf '{\n  version: 1,\n  machine: "riscv64",\n  memory_size: 256,\n'; \
