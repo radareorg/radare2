@@ -17,10 +17,18 @@ file plus a dozen symlinks.
 ## Usage
 
 ```sh
-make check-tools   # verify host dependencies
+make check-tools   # verify Docker on macOS, native tools on Linux
 make               # toolchain + r2blob + rootfs + website in www/
 make serve         # http://localhost:8080
 ```
+
+On macOS, `make` automatically builds in a `linux/amd64` Docker
+container because Bootlin's prebuilt cross compiler is an x86-64 Linux
+executable. The source tree is bind-mounted into the container, so build
+artifacts still appear in `work/` and `www/` and remain incremental.
+Linux builds are native by default; use `make USE_DOCKER=1` or `make
+docker` to use the same container there. Set `USE_DOCKER=0` to force a
+native build.
 
 Other targets and knobs:
 
@@ -30,6 +38,7 @@ make run                       # boot the image in a natively-built temu
 make ROOT_MB=96                # bigger guest disk (default 64MB)
 make R2BLOB=/path/to/r2blob    # reuse a prebuilt riscv64 static blob
 make TC_VER=2024.05-1          # pick another bootlin toolchain release
+make docker DOCKER_TARGET=r2   # build only r2blob in Docker
 ```
 
 Note: `make` reconfigures the radare2 source tree for the riscv64 cross

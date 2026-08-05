@@ -60,8 +60,22 @@ RUNTIME_FILES = jslinux.js term.js style.css riscvemu64.js \
 
 CURL ?= curl -fL --retry 3
 
-.PHONY: all www r2 image serve run clean mrproper check-tools
+HOST_OS := $(shell uname -s)
+USE_DOCKER ?= $(if $(filter Darwin,$(HOST_OS)),1,0)
+DOCKER ?= docker
+DOCKER_IMAGE ?= radare2-jslinux-builder
+# Bootlin's prebuilt cross toolchain is an x86-64 Linux binary.
+DOCKER_PLATFORM ?= linux/amd64
+DOCKER_TARGET ?= all
 
+.PHONY: all www r2 image docker docker-build serve run clean mrproper check-tools
+
+ifeq ($(USE_DOCKER),1)
+all: docker
+
+r2 image www:
+	$(MAKE) docker DOCKER_TARGET=$@
+else
 all: www
 
 r2: $(WORK)/r2blob
@@ -70,6 +84,30 @@ image: $(WORK)/root-r2.bin
 
 www: $(WWW)/.runtime.stamp $(WWW)/index.html $(WWW)/root-riscv64.cfg \
 	$(WWW)/serve.py $(WWW)/root-r2/blk.txt $(WWW)/netfs/head
+endif
+
+# -- container build ------------------------------------------------------
+
+docker: docker-build
+	$(DOCKER) run --rm \
+		--platform "$(DOCKER_PLATFORM)" \
+		--user "$$(id -u):$$(id -g)" \
+		--volume "$(R2_ROOT):$(R2_ROOT)" \
+		--workdir "$(CURDIR)" \
+		"$(DOCKER_IMAGE)" \
+		make USE_DOCKER=0 \
+			R2_ROOT="$(R2_ROOT)" WORK="$(WORK)" WWW="$(WWW)" \
+			JSLINUX_VER="$(JSLINUX_VER)" JSLINUX_URL="$(JSLINUX_URL)" \
+			TINYEMU_URL="$(TINYEMU_URL)" TC_VER="$(TC_VER)" \
+			TC_NAME="$(TC_NAME)" TC_URL="$(TC_URL)" \
+			ROOT_MB="$(ROOT_MB)" BLK_KB="$(BLK_KB)" JOBS="$(JOBS)" \
+			R2_CFLAGS="$(R2_CFLAGS)" \
+			R2_CONFIGURE_FLAGS="$(R2_CONFIGURE_FLAGS)" \
+			R2BLOB="$(R2BLOB)" CURL="$(CURL)" "$(DOCKER_TARGET)"
+
+docker-build:
+	$(DOCKER) build --platform "$(DOCKER_PLATFORM)" \
+		-t "$(DOCKER_IMAGE)" .
 
 # -- cross toolchain -------------------------------------------------------
 
@@ -159,8 +197,8 @@ $(WORK)/root-r2.bin: $(WORK)/r2blob $(JSL)/.stamp guest/profile guest/init
 $(WWW)/root-r2/blk.txt: $(WORK)/root-r2.bin
 	rm -rf $(WWW)/root-r2
 	mkdir -p $(WWW)/root-r2
-	split -b $(BLK_KB)k -a 9 -d --additional-suffix=.bin \
-		$< $(WWW)/root-r2/blk
+	split -b $(BLK_KB)k -a 9 -d $< $(WWW)/root-r2/blk
+	for B in $(WWW)/root-r2/blk*; do mv "$$B" "$$B.bin"; done
 	N="$$(ls $(WWW)/root-r2/blk*.bin | wc -l)"; \
 	printf '{\n  block_size: %s,\n  n_block: %s,\n}\n' "$(BLK_KB)" "$$N" > $@
 
@@ -171,11 +209,12 @@ $(WWW)/root-r2/blk.txt: $(WORK)/root-r2.bin
 $(WWW)/.runtime.stamp: $(JSL)/.stamp
 	mkdir -p $(WWW)/images
 	cd $(JSL) && cp -f $(RUNTIME_FILES) $(abspath $(WWW))/
-	sed -i \
+	sed \
 		-e 's/(params\["cols"\] | 0) || 80/(params["cols"] | 0) || window.R2_COLS || 80/' \
 		-e 's/(params\["rows"\] | 0) || 30/(params["rows"] | 0) || window.R2_ROWS || 30/' \
 		-e 's/(params\["font_size"\] | 0) || 15/(params["font_size"] | 0) || window.R2_FONT || 15/' \
-		$(WWW)/jslinux.js
+		$(WWW)/jslinux.js > $(WWW)/jslinux.js.tmp
+	mv $(WWW)/jslinux.js.tmp $(WWW)/jslinux.js
 	cp -f $(JSL)/images/*.png $(WWW)/images/
 	touch $@
 
@@ -236,11 +275,17 @@ run: $(WORK)/tinyemu/temu $(WORK)/temu.cfg
 	$(WORK)/tinyemu/temu $(WORK)/temu.cfg
 
 check-tools:
-	@ok=1; for t in curl tar xz split truncate e2fsck resize2fs debugfs \
-			python3 cc gperf; do \
+ifeq ($(USE_DOCKER),1)
+	@command -v $(DOCKER) > /dev/null 2>&1 || { echo "missing: $(DOCKER)"; exit 1; }
+	@$(DOCKER) version > /dev/null
+	@echo "docker is available"
+else
+	@ok=1; for t in curl file tar wget xz split truncate e2fsck resize2fs \
+			debugfs python3 cc gperf; do \
 		command -v $$t > /dev/null 2>&1 || { echo "missing: $$t"; ok=0; }; \
 	done; \
 	[ "$$ok" = 1 ] && echo "all tools found" || exit 1
+endif
 
 clean:
 	rm -rf $(WORK)
