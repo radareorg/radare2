@@ -33,7 +33,7 @@
   }
   #screen_container > div {
     white-space: pre; font: 14px monospace; line-height: 14px;
-    color: #ddd; overflow: auto;
+    color: #ddd; overflow: auto; overflow: hidden;
   }
   #screen_container canvas {
     display: none; image-rendering: auto;
@@ -66,7 +66,7 @@
 </div>
 <input id="kbd" type="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
 <input id="file-upload" type="file" multiple hidden>
-<footer>
+<footer id="hint">
   Open <b>cmd</b> from the Start menu and type <b>r2 C:\ReactOS\system32\cmd.exe</b> —
   radare2 lives in <b>C:\radare2</b>. Disk data is streamed on demand; the first
   boot downloads a few tens of MB. On phones: drag on the screen to move the
@@ -79,7 +79,10 @@
 var emulator = null;
 var emulatorReady = false;
 var statusEl = document.getElementById("status");
-var bust = localStorage.getItem("r2ros_bust") || (window.VM_CONFIG && VM_CONFIG.version) || "0";
+/* scope the cache-busting token by path so sibling pages (e.g. the netbsd
+ * build) hosted on the same origin do not clobber each other */
+var bustKey = "r2vm_bust:" + location.pathname;
+var bust = localStorage.getItem(bustKey) || (window.VM_CONFIG && VM_CONFIG.version) || "0";
 function u (p) { return p + "?v=" + encodeURIComponent(bust); }
 function setStatus (s) { statusEl.textContent = s; }
 
@@ -106,7 +109,7 @@ async function clearCachesAndReload () {
       }
     }
   } catch (e) {}
-  localStorage.setItem("r2ros_bust", Date.now().toString(36));
+  localStorage.setItem(bustKey, Date.now().toString(36));
   location.reload();
 }
 
@@ -161,19 +164,21 @@ function setupKeyboard () {
   });
 }
 
-/* Fit the guest framebuffer to the available area and let the browser smoothly
- * resample it. Set the presentation size directly: v86's screen_set_scale also
- * applies internal VGA and device-pixel-ratio multipliers. */
+/* Fit the guest screen to the available area and let the browser smoothly
+ * resample it. In graphics mode v86 draws into the canvas and the presentation
+ * size is set directly (its screen_set_scale also applies internal VGA and
+ * device-pixel-ratio multipliers). In text mode v86 writes styled spans into a
+ * div instead, which has no intrinsic pixel size to stretch, so that one is
+ * scaled with a css transform -- without this a text-mode guest (a unix
+ * console) keeps its small fixed size, fullscreen included. */
 function setupScreenScaling (container) {
   var canvas = container.getElementsByTagName("canvas")[0];
+  var textDiv = container.getElementsByTagName("div")[0];
   var guestWidth = 0, guestHeight = 0, lastScale = 0;
+  var graphical = true;
   var pendingFrame = 0;
 
-  function fitScreen () {
-    pendingFrame = 0;
-    if (!guestWidth || !guestHeight || !container.clientWidth || !container.clientHeight) {
-      return;
-    }
+  function fitCanvas () {
     var scale = Math.min(container.clientWidth / guestWidth, container.clientHeight / guestHeight);
     if (!Number.isFinite(scale) || scale <= 0 || Math.abs(scale - lastScale) < .001) {
       return;
@@ -184,6 +189,37 @@ function setupScreenScaling (container) {
     canvas.style.imageRendering = "auto";
   }
 
+  function fitText () {
+    /* measure unscaled, then scale: the div's natural size follows the font
+     * and the guest's rows/columns, both of which can change at any time */
+    textDiv.style.transform = "none";
+    var w = textDiv.offsetWidth, h = textDiv.offsetHeight;
+    if (!w || !h) {
+      return;
+    }
+    var scale = Math.min(container.clientWidth / w, container.clientHeight / h);
+    if (!Number.isFinite(scale) || scale <= 0) {
+      return;
+    }
+    lastScale = scale;
+    textDiv.style.transformOrigin = "center center";
+    textDiv.style.transform = "scale(" + scale + ")";
+  }
+
+  function fitScreen () {
+    pendingFrame = 0;
+    if (!container.clientWidth || !container.clientHeight) {
+      return;
+    }
+    if (graphical) {
+      if (guestWidth && guestHeight) {
+        fitCanvas();
+      }
+    } else {
+      fitText();
+    }
+  }
+
   function scheduleFit () {
     if (!pendingFrame) {
       pendingFrame = requestAnimationFrame(fitScreen);
@@ -191,13 +227,19 @@ function setupScreenScaling (container) {
   }
 
   emulator.add_listener("screen-set-size", function (size) {
-    if (!size[2]) {
-      return;
+    graphical = !!size[2];
+    if (graphical) {
+      guestWidth = size[0];
+      guestHeight = size[1];
+      textDiv.style.transform = "none";
     }
-    guestWidth = size[0];
-    guestHeight = size[1];
     lastScale = 0;
     scheduleFit();
+    /* a text mode is announced before the guest has painted anything, and an
+     * empty div measures 0x0, so try again while it fills in */
+    if (!graphical) {
+      [100, 400, 1200].forEach(function (ms) { setTimeout(scheduleFit, ms); });
+    }
   });
   if (window.ResizeObserver) {
     new ResizeObserver(scheduleFit).observe(container);
@@ -314,8 +356,9 @@ function setupFileTransfer (container) {
       var renamed = image.names.filter(function (name) {
         return name.source.toUpperCase() !== name.target;
       }).length;
-      setStatus("mounted " + image.names.length + " file" + (image.names.length === 1 ? "" : "s") +
-        " (" + formatSize(image.bytes) + ") in the CD drive" + (renamed ? "; " + renamed + " renamed" : ""));
+      setStatus("inserted " + image.names.length + " file" + (image.names.length === 1 ? "" : "s") +
+        " (" + formatSize(image.bytes) + ") in the CD drive" + (renamed ? "; " + renamed + " renamed" : "") +
+        (VM_CONFIG.cd_note ? " - " + VM_CONFIG.cd_note : ""));
       ejectBtn.disabled = false;
     } catch (e) {
       setStatus("file upload failed: " + (e && e.message ? e.message : e));
@@ -375,6 +418,14 @@ async function main () {
     setStatus("config.js missing - run make www");
     return;
   }
+  /* optional branding overrides so other guests (dist/netbsd) reuse this page */
+  if (VM_CONFIG.title) {
+    document.title = VM_CONFIG.title;
+    document.querySelector("header h1").textContent = VM_CONFIG.title;
+  }
+  if (VM_CONFIG.hint) {
+    document.getElementById("hint").innerHTML = VM_CONFIG.hint;
+  }
   if (navigator.serviceWorker && location.protocol !== "file:") {
     try { navigator.serviceWorker.register("sw.js"); } catch (e) {}
   }
@@ -395,8 +446,9 @@ async function main () {
     bios: { url: u("seabios.bin") },
     vga_bios: { url: u("vgabios.bin") },
     hda: { url: u(VM_CONFIG.hda.url), async: true, size: VM_CONFIG.hda.size },
-    // the image is installed with the ACPI HAL, without this it hangs on boot
-    acpi: true,
+    // ReactOS is installed with the ACPI HAL and hangs on boot without this;
+    // other guests can opt out with acpi: false in config.js
+    acpi: VM_CONFIG.acpi !== false,
     autostart: true
   });
   var fileTransferReady = setupFileTransfer(container);
