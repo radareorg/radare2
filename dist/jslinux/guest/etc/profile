@@ -1,6 +1,10 @@
 # /etc/profile - injected by radare2's dist/jslinux pipeline
-# The browser console (term.js) is a 16-color vt100-like terminal.
-export TERM=xterm-16color
+# The browser console (term.js) is patched by web/term-colors.patch to
+# support 256 colors and truecolor SGR sequences, advertise both; the
+# UTF-8 locale makes r2 default to scr.utf8=true (term.js decodes UTF-8)
+export TERM=xterm-256color
+export COLORTERM=truecolor
+export LANG=C.UTF-8
 
 # Query the terminal for its real geometry (cursor position report after
 # jumping to the bottom-right corner) and sync the tty size; busybox has

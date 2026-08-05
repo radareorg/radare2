@@ -47,10 +47,12 @@ ROOT_MB ?= 64
 BLK_KB ?= 256
 
 R2_CFLAGS ?= -Oz -ffunction-sections -fdata-sections
-# --with-libr builds the static libr_*.a archives the blob links against
+# --with-libr builds the static libr_*.a archives the blob links against;
+# --with-static-themes compiles the color themes into the binary since the
+# guest image ships no r2 share directory
 R2_CONFIGURE_FLAGS ?= --disable-debugger --without-ptrace-wrap --without-qjs \
 	--without-capstone --without-zydis --without-gpl --without-dylink \
-	--disable-loadlibs --with-checks-level=0 --with-libr
+	--disable-loadlibs --with-checks-level=0 --with-libr --with-static-themes
 R2_LINKS = r2 radare2 rabin2 rasm2 rax2 rahash2 rafind2 radiff2 ragg2 rarun2 ravc2 rafs2
 JOBS ?= $(shell nproc 2> /dev/null || echo 4)
 
@@ -187,9 +189,12 @@ $(WWW)/root-r2/blk.txt: $(WORK)/root-r2.bin
 
 # the cols/rows/font_size defaults become overridable from index.html so
 # the terminal geometry can adapt to the viewport (phones)
-$(WWW)/.runtime.stamp: $(JSL)/.stamp
+$(WWW)/.runtime.stamp: $(JSL)/.stamp web/term-colors.patch
 	mkdir -p $(WWW)/images
 	cd $(JSL) && cp -f $(RUNTIME_FILES) $(abspath $(WWW))/
+	# upstream term.js only knows 16 colors: teach it 256/truecolor SGR
+	# sequences and brighten the base palette (see web/term-colors.patch)
+	patch --batch --no-backup-if-mismatch $(WWW)/term.js web/term-colors.patch
 	sed \
 		-e 's/(params\["cols"\] | 0) || 80/(params["cols"] | 0) || window.R2_COLS || 80/' \
 		-e 's/(params\["rows"\] | 0) || 30/(params["rows"] | 0) || window.R2_ROWS || 30/' \
@@ -262,7 +267,7 @@ ifeq ($(USE_DOCKER),1)
 	@echo "docker is available"
 else
 	@ok=1; for t in curl file tar wget xz split truncate e2fsck resize2fs \
-			debugfs python3 cc gperf; do \
+			debugfs python3 cc gperf patch; do \
 		command -v $$t > /dev/null 2>&1 || { echo "missing: $$t"; ok=0; }; \
 	done; \
 	[ "$$ok" = 1 ] && echo "all tools found" || exit 1
