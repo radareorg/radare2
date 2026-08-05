@@ -9,7 +9,6 @@ afv
 pdf
 EOF
 EXPECT=<<EOF
-arg int64_t argc @ sp+0x40
 var char * ptr @ sp+0x8
 var int64_t var_10h @ sp+0x10
 ---
@@ -17,8 +16,7 @@ var int64_t var_10h @ sp+0x10
             ;-- entry0:
             ;-- func.100003f68:
             ;-- pc:
-/ 56: int main (int64_t argc);
-|           ; arg int64_t argc @ sp+0x40
+/ 56: int main (int argc, char **argv, char **envp);
 |           ; var char *ptr @ sp+0x8
 |           ; var int64_t var_10h @ sp+0x10
 |           0x100003f68      ff8300d1       sub sp, sp, 0x20           ; [00] -r-x section size 56 named 0.__TEXT.__text

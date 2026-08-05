@@ -789,6 +789,6 @@ rm .tmp/newprj-bpvframe.prj
 EOF
 EXPECT=<<EOF
 '0x00000000'afvb -12 renamed int
-'0x00000000'afvb -12 var_4h int64_t
+'0x00000000'afvb -12 var_4h int32_t
 EOF
 RUN
