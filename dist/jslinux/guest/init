@@ -1,0 +1,19 @@
+#!/bin/sh
+# /sbin/init - injected by radare2's dist/jslinux pipeline
+# same as the original jslinux one, but the console runs a login shell
+# (sh -l) so /etc/profile is sourced, and TERM is left for it to set
+
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin
+export HOME=/root
+
+mount -a
+
+ifconfig lo 127.0.0.1
+
+cd $HOME
+
+while /bin/true; do
+
+  setsid sh -c 'exec sh -l < /dev/hvc0 > /dev/hvc0 2>&1'
+
+done

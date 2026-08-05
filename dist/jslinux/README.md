@@ -1,0 +1,79 @@
+# radare2 on RISC-V JSLinux
+
+Boots a riscv64 Linux in the browser using Fabrice Bellard's
+[JSLinux](https://bellard.org/jslinux/) (the MIT-licensed
+[TinyEMU](https://bellard.org/tinyemu/) compiled to WebAssembly) with a
+static, size-optimized radare2 injected into the busybox rootfs.
+
+radare2 is cross-compiled from this source tree as **one static binary**
+(`r2blob`, all the r2 tools multiplexed busybox-style through argv[0])
+with a musl riscv64 toolchain from
+[toolchains.bootlin.com](https://toolchains.bootlin.com). The plugin set
+comes from `dist/plugins-cfg/plugins.jslinux.cfg` and is the smallest
+useful one: **ELF only, riscv arch only, no debugger, no QuickJS, no
+capstone**. Deploying it into the guest is literally copying that one
+file plus a dozen symlinks.
+
+## Usage
+
+```sh
+make check-tools   # verify host dependencies
+make               # toolchain + r2blob + rootfs + website in www/
+make serve         # http://localhost:8080
+```
+
+Other targets and knobs:
+
+```sh
+make r2                        # only build work/r2blob
+make run                       # boot the image in a natively-built temu
+make ROOT_MB=96                # bigger guest disk (default 64MB)
+make R2BLOB=/path/to/r2blob    # reuse a prebuilt riscv64 static blob
+make TC_VER=2024.05-1          # pick another bootlin toolchain release
+```
+
+Note: `make` reconfigures the radare2 source tree for the riscv64 cross
+build (like the other `dist/` cross pipelines); rebuild your native r2
+afterwards.
+
+## How it works
+
+1. The bootlin `riscv64-lp64d--musl` toolchain is downloaded; musl makes
+   `-static` produce a fully self-contained binary that runs on the 4.15
+   guest kernel.
+2. radare2 is configured with `plugins.jslinux.cfg` and
+   `--disable-debugger --without-qjs --without-capstone --without-zydis
+   --without-gpl --without-dylink --disable-loadlibs`, compiled with
+   `-Oz -ffunction-sections -fdata-sections`, and `binr/blob/r2blob` is
+   linked with `-static -Wl,--gc-sections` and stripped.
+3. The pristine 4MB `root-riscv64.bin` ext2 image from the jslinux demo
+   tarball is grown with `resize2fs` and `r2blob` is injected with
+   `debugfs` (no root privileges needed anywhere).
+4. The image is split into 256KB blocks (TinyEMU `splitimg` format) so
+   the browser streams only the disk blocks the guest actually reads.
+5. `www/` ends up fully self-contained: the JSLinux runtime
+   (riscvemu64-wasm), bbl + kernel, the split disk and a small
+   `index.html`; host it on any static web server.
+
+## Guest integration
+
+- `guest/init` replaces `/sbin/init` so the console shell is a login
+  shell, and `guest/profile` (as `/etc/profile`) sets
+  `TERM=xterm-16color` (term.js only renders the 16 ANSI colors, so r2
+  defaults to `scr.color=1`), defines a busybox-compatible `resize`
+  helper (cursor-position-report trick) to sync the tty size with the
+  browser terminal, and mounts the upload filesystem.
+- Uploads: the page ships an empty in-memory 9p filesystem
+  (`www/netfs`, generated with TinyEMU's `build_filelist`); files
+  uploaded from the browser appear in **/mnt/tmp** inside the guest.
+- The page is phone-friendly: dark, a single title bar with Upload /
+  Keyboard / Clear cache / About buttons, and the terminal geometry is
+  computed from the viewport (`?cols=`, `?rows=`, `?font_size=` URL
+  params still override it). Re-run `resize` in the guest after
+  rotating the screen.
+
+## Licensing
+
+TinyEMU is MIT-licensed; the JSLinux demo files (`jslinux.js`,
+`term.js`, precompiled emulator, kernel and rootfs) are downloaded from
+bellard.org at build time and are not stored in this repository.

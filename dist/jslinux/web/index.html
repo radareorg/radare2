@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>temu/r2 — radare2 on riscv64</title>
+  <link href="style.css" type="text/css" rel="stylesheet"/>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  color: #ddd;
+  height: 100%;
+  overflow: hidden;
+  font-family: monospace;
+}
+#titlebar {
+  box-sizing: border-box;
+  height: 30px;
+  background: #1b4f9c;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+#titlebar b { color: #ffd24a; }
+#titlebar .btns { display: flex; gap: 4px; }
+#titlebar button {
+  background: #123a75;
+  color: #fff;
+  border: 1px solid #3a6ec0;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 2px 7px;
+  cursor: pointer;
+}
+#titlebar button:active { background: #3a6ec0; }
+#term_wrap {
+  position: relative;
+  height: calc(100% - 30px);
+  overflow: hidden;
+  text-align: center;
+}
+#term_container { display: inline-block; text-align: left; }
+/* no scrollbars anywhere: term.js paints its own — hide it (the mouse
+   wheel still scrolls the terminal history) */
+.term_scrollbar { display: none; }
+/* keep term.js input textarea reachable but out of the layout */
+#term_paste {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 19px;
+  opacity: 0.01;
+  border: none;
+  background: #000;
+  color: #000;
+}
+#net_progress {
+  position: fixed;
+  right: 8px;
+  bottom: 4px;
+  width: 90px;
+  visibility: hidden;
+}
+#about {
+  position: fixed;
+  top: 34px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 560px;
+  width: calc(100% - 40px);
+  background: #101828;
+  color: #cfe0ff;
+  border: 1px solid #3a6ec0;
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  z-index: 10;
+}
+#about b { color: #ffd24a; }
+#about a { color: #7fb2ff; }
+#about .close { float: right; cursor: pointer; color: #7fb2ff; }
+</style>
+</head>
+<body>
+<div id="titlebar">
+  <span><b>temu/r2</b> radare2 on riscv64</span>
+  <span class="btns">
+    <button id="btn-upload" title="Upload files into the VM (appear in /mnt/tmp)">Upload</button>
+    <button id="btn-kbd" title="Open the on-screen keyboard">Keyboard</button>
+    <button id="btn-cache" title="Delete locally cached files and reload">Clear cache</button>
+    <button id="btn-about" title="What is this?">About</button>
+  </span>
+</div>
+<div id="about" hidden>
+  <span class="close" id="btn-about-close">[x]</span>
+  <p>A riscv64 Linux booting in your browser with
+  <a href="https://bellard.org/tinyemu/">TinyEMU/JSLinux</a> (&copy;
+  2017-2019 Fabrice Bellard) and a static
+  <a href="https://radare.org">radare2</a> (&copy; pancake) preinstalled.</p>
+  <p>Try <b>r2 /bin/busybox</b>, then <b>aaa</b> and <b>pdf @ main</b>.
+  All r2 tools are available: rasm2, rabin2, rax2, ragg2, ...</p>
+  <p>Uploaded files appear in <b>/mnt/tmp</b>. The disk is streamed on
+  demand, nothing is executed outside this page. Run <b>resize</b> in the
+  shell after resizing the window, rotating the screen or toggling the
+  keyboard. Add <b>?mem=256</b> to the URL for more guest RAM.</p>
+</div>
+<div id="term_wrap">
+  <div id="term_container"></div>
+  <textarea id="term_paste" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+  <input type="file" id="files" multiple style="display: none" onchange="on_update_files(this.files)">
+  <progress id="net_progress"></progress>
+</div>
+<script>
+/* pick a terminal geometry that fits the viewport; jslinux.js reads
+   these as its cols/rows/font_size defaults (URL params still win) */
+var r2_touch = ("ontouchstart" in window) && window.innerWidth < 900;
+
+function r2_calc_geometry(fs) {
+  var vw = window.innerWidth;
+  var vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+  var probe = document.createElement("div");
+  probe.className = "term";
+  /* term.js uses line-height 1.2em: measure with the same value or the
+     row height is wrong and the terminal overflows by one line */
+  probe.style.cssText = "position:absolute;visibility:hidden;line-height:1.2em;font-size:" + fs + "px";
+  probe.textContent = "XXXXXXXXXX";
+  document.body.appendChild(probe);
+  var r = probe.getBoundingClientRect();
+  var cw = r.width / 10, ch = r.height;
+  document.body.removeChild(probe);
+  /* term.js makes the terminal "w ch + 16px" wide; keep a generous
+     bottom reserve — a black border is better than a half-clipped
+     last line */
+  var usable_w = vw - 18;
+  var usable_h = vh - 30 - Math.ceil(ch / 2) - 8;
+  if (r2_touch) {
+    /* on phones keep room for the on-screen keyboard */
+    usable_h = Math.floor(usable_h * 0.55);
+  }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  return {
+    cols: clamp(Math.floor(usable_w / cw), 40, 200),
+    rows: clamp(Math.floor(usable_h / ch), 16, 60)
+  };
+}
+
+(function () {
+  var fs = window.innerWidth < 600 ? 12 : 15;
+  var g = r2_calc_geometry(fs);
+  window.R2_FONT = fs;
+  window.R2_COLS = g.cols;
+  window.R2_ROWS = g.rows;
+})();
+</script>
+<script type="text/javascript" src="term.js"></script>
+<script>
+/* live resize support for term.js: pad/trim the scrollback lines, move
+   the visible window inside the circular buffer and rebuild the DOM */
+Term.prototype.resize = function (w, h) {
+  var i, y, row_el;
+  if (w < 1 || h < 1 || (w === this.w && h === this.h)) {
+    return;
+  }
+  var blank = 32 | (this.def_attr << 16);
+  /* linearize the circular scrollback, oldest first, screen at the end */
+  var total = this.cur_h;
+  var start = (this.y_base + this.h) % total;
+  var lines = [];
+  for (i = 0; i < total; i++) {
+    lines.push(this.lines[(start + i) % total]);
+  }
+  /* width: pad or truncate every line */
+  for (y = 0; y < lines.length; y++) {
+    var line = lines[y];
+    if (line.length > w) {
+      line.length = w;
+    } else {
+      while (line.length < w) {
+        line.push(blank);
+      }
+    }
+  }
+  /* height: reveal scrollback lines if there are any, else add blank
+     lines at the bottom; when shrinking, drop rows below the cursor
+     first and push the rest into the scrollback */
+  var dh = h - this.h;
+  if (dh > 0) {
+    var avail = total - this.h;
+    var reveal = Math.min(dh, avail);
+    for (i = 0; i < dh - reveal; i++) {
+      var l = [];
+      for (var x = 0; x < w; x++) {
+        l.push(blank);
+      }
+      lines.push(l);
+    }
+    this.y += reveal;
+  } else if (dh < 0) {
+    var cut = Math.min(-dh, this.h - 1 - this.y);
+    lines.length -= cut;
+    this.y -= (-dh - cut);
+    if (this.y < 0) {
+      this.y = 0;
+    }
+  }
+  this.lines = lines;
+  this.cur_h = lines.length;
+  this.y_base = this.cur_h - h;
+  this.y_disp = this.y_base;
+  if (this.y >= h) {
+    this.y = h - 1;
+  }
+  if (this.x >= w) {
+    this.x = w - 1;
+  }
+  this.scroll_top = 0;
+  this.scroll_bottom = h;
+  this.w = w;
+  this.h = h;
+  /* resize the DOM */
+  this.term_el.style.width = "calc(" + w + "ch + 16px)";
+  this.term_el.style.height = (h * 1.2) + "em";
+  this.content_el.style.width = w + "ch";
+  while (this.rows_el.length > h) {
+    this.content_el.removeChild(this.rows_el.pop());
+  }
+  while (this.rows_el.length < h) {
+    row_el = document.createElement("div");
+    this.rows_el.push(row_el);
+    this.content_el.appendChild(row_el);
+  }
+  this.refresh(0, h - 1);
+};
+</script>
+<script type="text/javascript" src="jslinux.js"></script>
+<script>
+document.getElementById("btn-upload").onclick = function () {
+  document.getElementById("files").click();
+};
+document.getElementById("btn-kbd").onclick = function () {
+  document.getElementById("term_paste").focus();
+};
+document.getElementById("btn-about").onclick = function () {
+  var el = document.getElementById("about");
+  el.hidden = !el.hidden;
+};
+document.getElementById("btn-about-close").onclick = function () {
+  document.getElementById("about").hidden = true;
+};
+document.getElementById("btn-cache").onclick = async function () {
+  try {
+    if (window.caches) {
+      var keys = await caches.keys();
+      for (var i = 0; i < keys.length; i++) {
+        await caches.delete(keys[i]);
+      }
+    }
+    if (navigator.serviceWorker) {
+      var regs = await navigator.serviceWorker.getRegistrations();
+      for (var j = 0; j < regs.length; j++) {
+        await regs[j].unregister();
+      }
+    }
+  } catch (e) {
+  }
+  location.reload();
+};
+/* adapt the terminal grid when the desktop window is resized (phones
+   keep the geometry chosen at load); run `resize` in the guest shell
+   afterwards so the tty size matches */
+if (!r2_touch) {
+  var r2_rsz_timer = null;
+  window.addEventListener("resize", function () {
+    clearTimeout(r2_rsz_timer);
+    r2_rsz_timer = setTimeout(function () {
+      if (window.term && term.resize) {
+        var g = r2_calc_geometry(window.R2_FONT);
+        term.resize(g.cols, g.rows);
+      }
+    }, 200);
+  });
+}
+</script>
+</body>
+</html>

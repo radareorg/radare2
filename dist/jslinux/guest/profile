@@ -1,0 +1,33 @@
+# /etc/profile - injected by radare2's dist/jslinux pipeline
+# The browser console (term.js) is a 16-color vt100-like terminal.
+export TERM=xterm-16color
+
+# Query the terminal for its real geometry (cursor position report after
+# jumping to the bottom-right corner) and sync the tty size; busybox has
+# no resize(1), so do it with stty+dd. Re-run `resize` after rotating the
+# screen or toggling the phone keyboard.
+resize() {
+	_old="$(stty -g)"
+	stty raw -echo min 0 time 5
+	printf '\0337\033[r\033[999;999H\033[6n\0338' > /dev/tty
+	_pos="$(dd bs=1 count=16 2> /dev/null < /dev/tty)"
+	stty "$_old"
+	_pos="${_pos##*\[}"
+	_rows="${_pos%%;*}"
+	_cols="${_pos##*;}"
+	_cols="${_cols%%R*}"
+	if [ -n "$_rows" ] && [ -n "$_cols" ]; then
+		stty rows "$_rows" cols "$_cols"
+	fi
+	unset _old _pos _rows _cols
+}
+resize
+
+# Files uploaded from the browser page appear in /mnt/tmp
+if ! grep -q " /mnt " /proc/mounts; then
+	mount -t 9p -o trans=virtio r2fs /mnt 2> /dev/null
+fi
+
+# start with a clean screen: prompt on the top-left instead of sitting
+# under the kernel boot messages at the bottom
+clear 2> /dev/null || printf '\033[H\033[2J'
