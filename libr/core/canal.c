@@ -3620,7 +3620,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		if (rad[1] == 'j') {
 			fcn_list_verbose_json (core, fcns);
 		} else {
-			char *sp = strchr (rad, ' ');
+			const char *sp = strchr (rad, ' ');
 			fcn_list_verbose (core, fcns, sp? sp + 1: NULL);
 		}
 		break;
