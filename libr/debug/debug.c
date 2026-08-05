@@ -996,7 +996,6 @@ R_API bool r_debug_step_hard(RDebug *dbg, RBreakpointItem **pb) {
 #if __linux__
 	dbg->options.continue_all_threads = prev_continue;
 #endif
-
 	if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
 		return false;
 	}
