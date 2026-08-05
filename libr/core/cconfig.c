@@ -4372,7 +4372,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* we need to have both asm.arch and asm.cpu defined before updating options */
 	update_asmarch_options (core, asmarch);
 	update_asmcpu_options (core, asmcpu);
-	n = NODECB ("asm.parser", "x86.pseudo", &cb_asmparser);
+	n = NODECB ("asm.parser", R_SYS_ARCH ".pseudo", &cb_asmparser);
 	SETDESC (n, "set the asm parser to use");
 	update_asmparser_options (core, n);
 	n = NODECB ("asm.syntax", "intel", &cb_asmsyntax);
