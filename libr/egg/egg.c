@@ -15,6 +15,10 @@ extern REggEmit emit_ppc64;
 extern REggEmit emit_esil;
 extern REggEmit emit_trace;
 
+#if !defined(R_EGG_STATIC_PLUGINS)
+#define R_EGG_STATIC_PLUGINS 0
+#endif
+
 static REggPlugin *egg_static_plugins[] = { R_EGG_STATIC_PLUGINS };
 
 struct egg_patch_t {

@@ -79,8 +79,7 @@ static void load_plugins(RCore *core, int where, const char *path) {
 	r_lib_load_paths (core->lib, (RLibLoadMask)where, dir_plugins);
 }
 #else
-static void load_plugins(RCore *core, int where, const char *path){
-	(void)
+static void load_plugins(RCore *core, int where, const char *path) {
 #warning built without the ability to load plugins dynamically
 }
 #endif

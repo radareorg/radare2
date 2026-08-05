@@ -190,8 +190,8 @@ clean:
 	rm -rf libr/.libr
 	-rm -f `find * | grep arm | grep dis.a$$`
 	for DIR in shlr libr binr ; do $(MAKE) -C "$$DIR" clean ; done
-	rm -f `find . -type f -name '*.d'` || for a in `find . -type f -name '*.d'` ; do rm -f "$$a" ; done
-	rm -f `find . -type f -name '*.o'` || for a in `find . -type f -name '*.o'` ; do rm -f "$$a" ; done
+	rm -f `find . -path ./dist -prune -o -type f -name '*.d' -print` || for a in `find . -path ./dist -prune -o -type f -name '*.d' -print` ; do rm -f "$$a" ; done
+	rm -f `find . -path ./dist -prune -o -type f -name '*.o' -print` || for a in `find . -path ./dist -prune -o -type f -name '*.o' -print` ; do rm -f "$$a" ; done
 	rm -f config-user.mk plugins.cfg libr/config.h
 	rm -f libr/include/r_userconf.h libr/config.mk
 	rm -f pkgcfg/*.pc

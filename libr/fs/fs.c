@@ -18,6 +18,10 @@
 
 R_LIB_VERSION(r_fs);
 
+#if !defined(R_FS_STATIC_PLUGINS)
+#define R_FS_STATIC_PLUGINS 0
+#endif
+
 static const RFSPlugin *fs_static_plugins[] = {
 	R_FS_STATIC_PLUGINS
 };
