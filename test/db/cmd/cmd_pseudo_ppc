@@ -196,3 +196,42 @@ EXPECT=<<EOF
 f3 = float[r6 + r4]
 EOF
 RUN
+
+NAME=PPC64 pseudo ctr-conditional branches render the branch target
+FILE=malloc://64
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 4000000840060008400000094140000941400008410000084100000940400008404000094140000a
+pi 10
+EOF
+EXPECT=<<EOF
+if (ctr != 0 && !lt) goto 8
+if (ctr != 0 && !4*cr1+eq) goto 0xc
+if (ctr != 0 && !lt) call 0x10
+if (ctr == 0 && lt) call 0x14
+if (ctr == 0 && lt) goto 0x18
+if (ctr != 0 && lt) goto 0x1c
+if (ctr != 0 && lt) call 0x20
+if (ctr == 0 && !lt) goto 0x24
+if (ctr == 0 && !lt) call 0x28
+if (ctr == 0 && lt) goto 8
+EOF
+RUN
+
+NAME=PPC64 pseudo ctr-conditional lr branches render as conditional returns
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 4c0000204c0000214d4000204c4000204d0000204e0000204e400021
+pi 7
+EOF
+EXPECT=<<EOF
+if (ctr != 0 && !lt) return
+if (ctr != 0 && !lt) return
+if (ctr == 0 && lt) return
+if (ctr == 0 && !lt) return
+if (ctr != 0 && lt) return
+if (ctr != 0) return
+if (ctr == 0) return
+EOF
+RUN
