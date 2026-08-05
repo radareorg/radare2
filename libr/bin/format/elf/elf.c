@@ -1944,10 +1944,8 @@ static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 	}
 
 	if (rel->rva < plt_addr) {
-		ut64 orva = rel->rva;
-		int delta = plt_addr - rel->rva;
-		orva += (2* delta);
-		// orva += 0xef0;
+		ut64 delta = plt_addr - rel->rva;
+		ut64 orva = rel->rva + (2 * delta);
 		R_LOG_DEBUG ("Massaged pointer below plt from 0x%"PFMT64x" to 0x%"PFMT64x, rel->rva, orva);
 		return orva;
 	}
