@@ -4206,6 +4206,10 @@ R_API char *r_str_version(const char *program) {
 	// gcc
 	optistr[3] = '0' + __OPTIMIZE__;
 #endif
+#ifdef __OPTIMIZE_SIZE__
+	// -Os and -Oz builds
+	optistr[3] = 's';
+#endif
 #if WITH_GPL
 	gplstr = " gpl";
 #endif
