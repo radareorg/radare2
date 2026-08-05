@@ -66,7 +66,14 @@
 #undef HAVE_PTHREAD
 #define HAVE_PTHREAD 0
 #define R_TH_TID HANDLE
-#define R_TH_LOCK_T CRITICAL_SECTION
+typedef union {
+	CRITICAL_SECTION cs;
+	struct {
+		PVOID lock;
+		FARPROC api[3];
+	} srw;
+} RThreadLockWin;
+#define R_TH_LOCK_T RThreadLockWin
 #define R_TH_COND_T CONDITION_VARIABLE
 #define R_TH_SEM_T HANDLE
 
@@ -138,7 +145,8 @@ typedef struct r_th_sem_t {
 
 typedef enum r_th_lock_type_t {
 	R_TH_LOCK_TYPE_STATIC = 0,
-	R_TH_LOCK_TYPE_HEAP,
+	R_TH_LOCK_TYPE_HEAP = 1,
+	R_TH_LOCK_TYPE_SRW = 2,
 } RThreadLockType;
 
 typedef struct r_th_lock_t {

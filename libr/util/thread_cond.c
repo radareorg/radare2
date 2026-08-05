@@ -9,6 +9,7 @@ typedef struct {
 	CONDITION_VARIABLE cond;
 	CRITICAL_SECTION waiters_lock;
 	RList *waiters;
+	FARPROC wait_srw;
 	bool native;
 } W32Cond;
 
@@ -22,7 +23,11 @@ static W32Cond *cond_data(RThreadCond *cond) {
 
 static bool cond_wait(W32Cond *cond, RThreadLock *lock, DWORD timeout) {
 	if (cond->native) {
-		return r_w32_SleepConditionVariableCS (&cond->cond, &lock->lock, timeout);
+		if (lock->type & R_TH_LOCK_TYPE_SRW) {
+			return ((BOOL (WINAPI *)(PCONDITION_VARIABLE, PVOID, DWORD, ULONG))
+				cond->wait_srw) (&cond->cond, &lock->lock.srw.lock, timeout, 0);
+		}
+		return r_w32_SleepConditionVariableCS (&cond->cond, &lock->lock.cs, timeout);
 	}
 	W32CondWaiter *waiter = R_NEW0 (W32CondWaiter);
 	waiter->event = CreateEvent (NULL, FALSE, FALSE, NULL);
@@ -34,13 +39,13 @@ static bool cond_wait(W32Cond *cond, RThreadLock *lock, DWORD timeout) {
 	r_list_append (cond->waiters, waiter);
 	LeaveCriticalSection (&cond->waiters_lock);
 
-	LeaveCriticalSection (&lock->lock);
+	r_th_lock_leave (lock);
 	const DWORD result = WaitForSingleObject (waiter->event, timeout);
 
 	EnterCriticalSection (&cond->waiters_lock);
 	r_list_delete_data (cond->waiters, waiter);
 	LeaveCriticalSection (&cond->waiters_lock);
-	EnterCriticalSection (&lock->lock);
+	r_th_lock_enter (lock);
 	CloseHandle (waiter->event);
 	free (waiter);
 	return result == WAIT_OBJECT_0;
@@ -69,9 +74,6 @@ static void cond_signal(W32Cond *cond, bool all) {
 
 R_API RThreadCond *r_th_cond_new(void) {
 	RThreadCond *cond = R_NEW0 (RThreadCond);
-	if (!cond) {
-		return NULL;
-	}
 #if HAVE_PTHREAD
 	if (pthread_cond_init (&cond->cond, NULL) != 0) {
 		free (cond);
@@ -79,7 +81,8 @@ R_API RThreadCond *r_th_cond_new(void) {
 	}
 #elif R2__WINDOWS__
 	W32Cond *wcond = R_NEW0 (W32Cond);
-	wcond->native = r_w32_InitializeConditionVariable (&wcond->cond) != NULL;
+	wcond->wait_srw = GetProcAddress (GetModuleHandleA ("kernel32.dll"), "SleepConditionVariableSRW");
+	wcond->native = wcond->wait_srw && r_w32_InitializeConditionVariable (&wcond->cond);
 	if (!wcond->native) {
 		wcond->waiters = r_list_new ();
 		InitializeCriticalSection (&wcond->waiters_lock);
