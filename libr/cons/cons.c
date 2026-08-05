@@ -217,7 +217,6 @@ static void init_cons_capture(RConsContext *ctx) {
  * full terminfo/capability detection.
  *
  * LIMITATIONS NOT YET IMPLEMENTED:
- * - No detection of truecolor/RGB support via COLORTERM environment variable
  * - No terminfo/termcap-based capability detection
  * - No runtime probing of terminal capabilities
  * - No support for other terminal attributes (bold, italics, underline, etc.)
@@ -228,8 +227,16 @@ static void init_cons_capture(RConsContext *ctx) {
  * - No handling of terminal emulation compatibility layers
  */
 static void rcons_update_color_limit_from_term(RCons *cons) {
-	char *term = r_sys_getenv ("TERM");
 	int limit = COLOR_MODE_16M; // Default to no limit
+	// standard truecolor advertisement wins over any TERM heuristic
+	char *colorterm = r_sys_getenv ("COLORTERM");
+	if (R_STR_ISNOTEMPTY (colorterm) && (!strcmp (colorterm, "truecolor") || !strcmp (colorterm, "24bit"))) {
+		free (colorterm);
+		cons->context->color_limit = limit;
+		return;
+	}
+	free (colorterm);
+	char *term = r_sys_getenv ("TERM");
 	// alacritty, kitty, ghostty, wezterm, foot, konsole-256color, iterm2, ..
 	if (R_STR_ISNOTEMPTY (term)) {
 		if (!strcmp (term, "dumb")) {
