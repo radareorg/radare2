@@ -82,6 +82,15 @@ all: www
 
 r2: $(WORK)/r2blob
 
+.PHONY: dist
+
+include ../../config-user.mk
+D=r2-$(VERSION)-jslinux-www
+dist:
+	cp -rf $(WWW) $(D)
+	rm -f $(D).zip
+	zip -r $(D).zip $(D)
+
 image: $(WORK)/root-r2.bin
 
 www: $(WWW)/.runtime.stamp $(WWW)/index.html $(WWW)/root-riscv64.cfg \
