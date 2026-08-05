@@ -4,6 +4,10 @@
 #include "../include/r_core.h"
 #include "../xps/r2plugins.h"
 
+#if !defined(R_CORE_STATIC_PLUGINS)
+#define R_CORE_STATIC_PLUGINS 0
+#endif
+
 static RCorePlugin *cmd_static_plugins[] = {
 	R_CORE_STATIC_PLUGINS
 };

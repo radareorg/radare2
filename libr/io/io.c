@@ -682,7 +682,7 @@ R_API void r_io_fini(RIO* io) {
 	r_list_free (io->undo.w_list);
 	R_FREE (io->runprofile);
 	r_event_free (io->event);
-#if USE_PTRACE_WRAP
+#if HAVE_PTRACE && USE_PTRACE_WRAP
 	if (io->ptrace_wrap) {
 		ptrace_wrap_instance_stop (io->ptrace_wrap);
 		R_FREE (io->ptrace_wrap);
