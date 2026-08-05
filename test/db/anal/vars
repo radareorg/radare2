@@ -42,16 +42,16 @@ EOF
 EXPECT=<<EOF
 arg int argc @ rdi
 arg char ** argv @ rsi
-var int64_t var_8h @ rsp+0x18
-var int64_t var_17h @ rsp+0x27
+var int8_t var_8h @ rsp+0x18
+var int8_t var_17h @ rsp+0x27
 var int64_t var_18h @ rsp+0x28
 var int64_t var_28h @ rsp+0x38
 var int64_t var_30h @ rsp+0x40
-var int64_t var_32h @ rsp+0x42
+var int16_t var_32h @ rsp+0x42
 var int64_t var_38h @ rsp+0x48
-var int64_t var_45h @ rsp+0x55
-var int64_t var_46h @ rsp+0x56
-var int64_t var_47h @ rsp+0x57
+var int16_t var_45h @ rsp+0x55
+var int8_t var_46h @ rsp+0x56
+var int8_t var_47h @ rsp+0x57
 var int64_t var_48h @ rsp+0x58
 {
   "reg": [
@@ -72,7 +72,7 @@ var int64_t var_48h @ rsp+0x58
     {
       "name": "var_8h",
       "kind": "var",
-      "type": "int64_t",
+      "type": "int8_t",
       "ref": {
         "base": "rsp",
         "offset": 24
@@ -81,7 +81,7 @@ var int64_t var_48h @ rsp+0x58
     {
       "name": "var_17h",
       "kind": "var",
-      "type": "int64_t",
+      "type": "int8_t",
       "ref": {
         "base": "rsp",
         "offset": 39
@@ -117,7 +117,7 @@ var int64_t var_48h @ rsp+0x58
     {
       "name": "var_32h",
       "kind": "var",
-      "type": "int64_t",
+      "type": "int16_t",
       "ref": {
         "base": "rsp",
         "offset": 66
@@ -135,7 +135,7 @@ var int64_t var_48h @ rsp+0x58
     {
       "name": "var_45h",
       "kind": "var",
-      "type": "int64_t",
+      "type": "int16_t",
       "ref": {
         "base": "rsp",
         "offset": 85
@@ -144,7 +144,7 @@ var int64_t var_48h @ rsp+0x58
     {
       "name": "var_46h",
       "kind": "var",
-      "type": "int64_t",
+      "type": "int8_t",
       "ref": {
         "base": "rsp",
         "offset": 86
@@ -153,7 +153,7 @@ var int64_t var_48h @ rsp+0x58
     {
       "name": "var_47h",
       "kind": "var",
-      "type": "int64_t",
+      "type": "int8_t",
       "ref": {
         "base": "rsp",
         "offset": 87
@@ -190,8 +190,8 @@ EXPECT=<<EOF
 / 22: sym.sub (int64_t arg1, int64_t arg2);
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
-|           ; var int64_t var_4h @ rbp-0x4
-|           ; var int64_t var_8h @ rbp-0x8
+|           ; var int32_t var_4h @ rbp-0x4
+|           ; var int32_t var_8h @ rbp-0x8
 |           0x08000040      f30f1efa       endbr64                     ; [01] -r-x section size 22 named .text
 |           0x08000044      55             push rbp
 |           0x08000045      4889e5         mov rbp, rsp
@@ -203,8 +203,8 @@ EXPECT=<<EOF
 \           0x08000055      c3             ret
 arg int64_t arg1 @ rdi
 arg int64_t arg2 @ rsi
-var int64_t var_4h @ rbp-0x4
-var int64_t var_8h @ rbp-0x8
+var int32_t var_4h @ rbp-0x4
+var int32_t var_8h @ rbp-0x8
 {
   "reg": [
     {
@@ -227,7 +227,7 @@ var int64_t var_8h @ rbp-0x8
     {
       "name": "var_4h",
       "kind": "var",
-      "type": "int64_t",
+      "type": "int32_t",
       "ref": {
         "base": "rbp",
         "offset": -4
@@ -236,7 +236,7 @@ var int64_t var_8h @ rbp-0x8
     {
       "name": "var_8h",
       "kind": "var",
-      "type": "int64_t",
+      "type": "int32_t",
       "ref": {
         "base": "rbp",
         "offset": -8
@@ -618,13 +618,12 @@ EXPECT=<<EOF
             ;-- section.0.__TEXT.__text:
             ;-- entry0:
             ;-- func.100003f64:
-/ 68: int main (int argc, char **argv, char **envp);
+/ 68: int main (int argc, char **argv);
 |           ; arg int argc @ x0
 |           ; arg char **argv @ x1
-|           ; arg int64_t envp @ sp+0x20
 |           ; var int64_t var_0h @ sp+0x0
-|           ; var int64_t var_8h @ sp+0x8
-|           ; var int64_t var_ch @ sp+0xc
+|           ; var int32_t var_8h @ sp+0x8
+|           ; var int32_t var_ch @ sp+0xc
 |           0x100003f64      ff4300d1       sub sp, sp, 0x10           ; [00] -r-x section size 68 named 0.__TEXT.__text
 |           0x100003f68      ff0f00b9       str wzr, [var_ch]          ; argc
 |           0x100003f6c      e00b00b9       str w0, [var_8h]           ; argc
@@ -647,13 +646,12 @@ EXPECT=<<EOF
             ;-- section.0.__TEXT.__text:
             ;-- entry0:
             ;-- func.100003f64:
-/ 68: int main (int argc, char **argv, char **envp);
+/ 68: int main (int argc, char **argv);
 |           ; arg int argc @ x0
 |           ; arg char **argv @ x1
-|           ; arg int64_t envp @ sp+0x20
 |           ; var int64_t var_0h @ sp+0x0
-|           ; var int64_t var_8h @ sp+0x8
-|           ; var int64_t var_ch @ sp+0xc
+|           ; var int32_t var_8h @ sp+0x8
+|           ; var int32_t var_ch @ sp+0xc
 |           0x100003f64      ff4300d1       sub sp, sp, 0x10           ; [00] -r-x section size 68 named 0.__TEXT.__text
 |           0x100003f68      ff0f00b9       str wzr, [sp, 0xc]         ; argc
 |           0x100003f6c      e00b00b9       str w0, [sp, 8]            ; argc
@@ -688,14 +686,14 @@ EXPECT=<<EOF
 'afvr rsi argv char **
 'afvs 88 var_48h int64_t
 'afvs 64 var_30h int64_t
-'afvs 39 var_17h int64_t
-'afvs 24 var_8h int64_t
+'afvs 39 var_17h int8_t
+'afvs 24 var_8h int8_t
 'afvs 56 var_28h int64_t
 'afvs 72 var_38h int64_t
-'afvs 85 var_45h int64_t
-'afvs 87 var_47h int64_t
-'afvs 86 var_46h int64_t
+'afvs 85 var_45h int16_t
+'afvs 87 var_47h int8_t
+'afvs 86 var_46h int8_t
 'afvs 40 var_18h int64_t
-'afvs 66 var_32h int64_t
+'afvs 66 var_32h int16_t
 EOF
 RUN

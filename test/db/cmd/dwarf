@@ -429,7 +429,7 @@ EXPECT=<<EOF
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
 |           ; arg &mut [i32] values @ rsp+0x90
-|           ; var int64_t var_fh @ rsp+0xf
+|           ; var int8_t var_fh @ rsp+0xf
 |           ; var int64_t var_10h @ rsp+0x10
 |           ; var int64_t var_18h @ rsp+0x18
 |           ; var int64_t var_20h @ rsp+0x20
@@ -565,7 +565,7 @@ EXPECT=<<EOF
 |           ; arg char **envp @ rdx
 |           ; var ada_main__main__seh___PAD seh @ rbp-0x8
 |           ; var system__address volatile ensure_reference @ rbp-0x10
-|           ; var int64_t var_14h @ rbp-0x14
+|           ; var int32_t var_14h @ rbp-0x14
 |           ; var char **var_20h @ rbp-0x20
 |           ; var char **var_28h @ rbp-0x28
 ; integer main(integer const argc,void * const argv,void * const envp)
@@ -614,7 +614,7 @@ EXPECT=<<EOF
 |           ; arg char **envp @ rdx
 |           ; var ada_main__main__seh___PAD seh @ rbp-0x8
 |           ; var system__address volatile ensure_reference @ rbp-0x10
-|           ; var int64_t var_14h @ rbp-0x14
+|           ; var int32_t var_14h @ rbp-0x14
 |           ; var char **var_20h @ rbp-0x20
 |           ; var char **var_28h @ rbp-0x28
 |           0x00002742      55             push rbp                    ; integer main(integer const argc,void * const argv,void * const envp);
