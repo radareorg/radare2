@@ -447,7 +447,7 @@ static void rprj_diff_seen_addr(RList *seen, ut64 addr) {
 static void rprj_print_meta_script(RPrjCursor *cur, RAnalMetaType type, ut64 addr, const char *text) {
 	const bool vartype = type == R_META_TYPE_VARTYPE;
 	if (R_STR_ISEMPTY (text)) {
-		r_strbuf_appendf (cur->out, "'%s- @ 0x%08"PFMT64x"\n", vartype? "Ct": "CC", addr);
+		r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'%s-\n", addr, vartype? "Ct": "CC");
 		return;
 	}
 	char *b64 = sdb_encode ((const ut8 *)text, strlen (text));
@@ -527,6 +527,11 @@ static void rprj_print_xref_script(RPrjCursor *cur, RAnalRef *ref) {
 		(char)R_ANAL_REF_TYPE_MASK (ref->type), ref->addr, ref->at);
 }
 
+static void rprj_print_hint_script(RPrjCursor *cur, ut64 addr, RAnalAddrHintType ht, int value) {
+	const char *cmd = (ht == R_ANAL_ADDR_HINT_TYPE_IMMBASE)? "ahi": "ahb";
+	r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'%s %d\n", addr, cmd, value);
+}
+
 static bool rprj_diff_flag_foreach_cb(RFlagItem *fi, void *user) {
 	R2ProjectDiffCtx *ctx = (R2ProjectDiffCtx *)user;
 	if (fi && !rprj_diff_has_addr (ctx->seen, fi->id)) {
@@ -545,10 +550,10 @@ static bool rprj_diff_hints_cb(ut64 addr, const RVecAnalAddrHintRecord *records,
 		}
 		switch (record->type) {
 		case R_ANAL_ADDR_HINT_TYPE_IMMBASE:
-			r_strbuf_appendf (ctx->cur->out, "'ahi %d @ 0x%08"PFMT64x"\n", record->immbase, addr);
+			rprj_print_hint_script (ctx->cur, addr, record->type, record->immbase);
 			break;
 		case R_ANAL_ADDR_HINT_TYPE_NEW_BITS:
-			r_strbuf_appendf (ctx->cur->out, "'ahb %d @ 0x%08"PFMT64x"\n", record->newbits, addr);
+			rprj_print_hint_script (ctx->cur, addr, record->type, record->newbits);
 			break;
 		default:
 			break;
@@ -703,7 +708,7 @@ static void rprj_diff_function_vars(RPrjCursor *cur, RAnalFunction *fcn, RList *
 	R2ProjectDiffVar *pvar;
 	r_list_foreach (pvars, iter, pvar) {
 		if (!pvar->seen && R_STR_ISNOTEMPTY (pvar->name)) {
-			r_strbuf_appendf (cur->out, "'afv- %s @ 0x%08"PFMT64x"\n", pvar->name, fcn->addr);
+			r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afv- %s\n", fcn->addr, pvar->name);
 		}
 	}
 }
@@ -1111,24 +1116,25 @@ static void rprj_xref_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 
 static void rprj_hint_apply(RPrjCursor *cur, int mode, ut64 va, ut32 hint_kind, int value, RList *seen) {
 	RCore *core = cur->core;
-	const char *fmt = (hint_kind == 1)? "'ahi %d @ 0x%08"PFMT64x"\n": "'ahb %d @ 0x%08"PFMT64x"\n";
-	const RAnalAddrHintType ht = (hint_kind == 1)? R_ANAL_ADDR_HINT_TYPE_IMMBASE: R_ANAL_ADDR_HINT_TYPE_NEW_BITS;
+	const bool immbase = hint_kind == 1;
+	const RAnalAddrHintType ht = immbase? R_ANAL_ADDR_HINT_TYPE_IMMBASE: R_ANAL_ADDR_HINT_TYPE_NEW_BITS;
 	if (mode & R_CORE_NEWPRJ_MODE_SCRIPT) {
-		r_strbuf_appendf (cur->out, fmt, value, va);
+		rprj_print_hint_script (cur, va, ht, value);
 	}
 	if (mode & R_CORE_NEWPRJ_MODE_DIFF) {
 		rprj_diff_seen_addr (seen, (va << 8) | (ut64)ht);
 		int curval = 0;
 		if (!rprj_current_hint_value (core->anal, va, ht, &curval) || curval != value) {
 			if (curval) {
-				r_strbuf_appendf (cur->out, fmt, curval, va);
+				rprj_print_hint_script (cur, va, ht, curval);
 			} else {
-				r_strbuf_appendf (cur->out, "'ah- @ 0x%08"PFMT64x"\n", va);
+				// bare ah- clears every hint, so the address must be an argument
+				r_strbuf_appendf (cur->out, "'ah- 0x%08"PFMT64x"\n", va);
 			}
 		}
 	}
 	if (mode & R_CORE_NEWPRJ_MODE_LOAD) {
-		if (hint_kind == 1) {
+		if (immbase) {
 			r_anal_hint_set_immbase (core->anal, va, value);
 		} else {
 			r_anal_hint_set_newbits (core->anal, va, value);
