@@ -359,7 +359,7 @@ R_API char *r_stdin_readline(int *sz) {
 	char buf[4096];
 	for (;;) {
 		int n = read (0, buf, sizeof (buf));
-		if (n == 0 && l > 0) {
+		if (n < 1 && l > 0) {
 			break;
 		}
 		if (n < 1) {
@@ -368,11 +368,6 @@ R_API char *r_stdin_readline(int *sz) {
 		}
 		r_strbuf_append_n (sb, buf, n);
 		l += n;
-		if (0 && buf[n - 1] == '\n') {
-			l--;
-			buf[n - 1] = 0;
-			break;
-		}
 		if (n < sizeof (buf)) {
 			break;
 		}
