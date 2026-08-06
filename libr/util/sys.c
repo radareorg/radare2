@@ -1541,6 +1541,45 @@ R_API int r_sys_getpid(void) {
 #endif
 }
 
+R_API bool r_sys_open(const char * R_NONNULL target, const char * R_NULLABLE opener, bool bg) {
+	R_RETURN_VAL_IF_FAIL (R_STR_ISNOTEMPTY (target), false);
+	char *escaped_path = r_str_escape_sh (target);
+	if (!escaped_path) {
+		return false;
+	}
+	char *opener_cmd = NULL;
+#if R2__WINDOWS__
+	if (R_STR_ISEMPTY (opener) || !strcmp (opener, "start")) {
+		opener = "start \"\"";
+	}
+#else
+	if (R_STR_ISEMPTY (opener)) {
+		const char *openers[] = { "xdg-open", "open", NULL };
+		int i;
+		for (i = 0; openers[i]; i++) {
+			char *opener_path = r_file_path (openers[i]);
+			if (opener_path) {
+				char *escaped_opener = r_str_escape_sh (opener_path);
+				if (escaped_opener) {
+					opener_cmd = r_str_newf ("\"%s\"", escaped_opener);
+				}
+				free (escaped_opener);
+				free (opener_path);
+				break;
+			}
+		}
+		opener = opener_cmd;
+	}
+#endif
+	bool res = false;
+	if (R_STR_ISNOTEMPTY (opener)) {
+		res = r_sys_cmdf ("%s \"%s\"%s", opener, escaped_path, bg? " &": "") == 0;
+	}
+	free (opener_cmd);
+	free (escaped_path);
+	return res;
+}
+
 R_API bool r_sys_tts(const char *txt, bool bg) {
 	int i;
 	R_RETURN_VAL_IF_FAIL (txt, false);

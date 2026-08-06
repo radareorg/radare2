@@ -34,7 +34,7 @@ static RCoreHelpMessage help_msg_o = {
 	"ot", " [file]", "same as `touch [file]`",
 	"oq", "[q]", "list all open files or show current fd 'oqq'",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
-	"open", " [file]", "use system xdg-open/open on 'file'",
+	"open", " [file]", "open a file or URL with the system handler",
 	NULL
 };
 
@@ -2455,22 +2455,8 @@ static int cmd_open(void *data, const char *input) {
 				{
 					const char *sp = strchr (input, ' ');
 					if (sp) {
-						char *epath = r_str_escape_sh (sp + 1);
-						if (epath) {
-#if R2__WINDOWS__
-							r_sys_cmdf ("start \"%s\"", epath);
-#else
-							if (r_file_exists ("/usr/bin/xdg-open")) {
-								r_sys_cmdf ("xdg-open \"%s\"", epath);
-							} else if (r_file_exists ("/usr/local/bin/xdg-open")) {
-								r_sys_cmdf ("xdg-open \"%s\"", epath);
-							} else if (r_file_exists ("/usr/bin/open")) {
-								r_sys_cmdf ("open \"%s\"", epath);
-							} else {
-								R_LOG_ERROR ("Unknown open tool. Cannot find xdg-open");
-							}
-#endif
-							free (epath);
+						if (!r_sys_open (sp + 1, NULL, false)) {
+							R_LOG_ERROR ("Cannot open '%s' with a system handler", sp + 1);
 						}
 					} else {
 						r_cons_cmd_help_match (core->cons, help_msg_o, "open", 0, true);
