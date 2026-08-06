@@ -660,17 +660,22 @@ static void gprobe_frame_sp(RBuffer *frame) {
 
 static int gprobe_get_reply_sp(struct gport *port, RBuffer *reply) {
 	ut8 buf[256];
+	size_t reply_count;
 	int count = sp_blocking_read (port, buf, 2, 50);
 
 	if (count < 2) {
 		return -1;
 	}
 
-	if (!(buf[0] - 2)) {
+	if (r_sub_overflow (buf[0], 2, &reply_count)) {
 		return 0;
 	}
 
-	count = sp_blocking_read (port, buf + 2, buf[0] - 2, 50) + 2;
+	if (reply_count == 0 || reply_count > (sizeof (buf) - 2)) {
+		return 0;
+	}
+
+	count = sp_blocking_read (port, buf + 2, reply_count, 50) + 2;
 
 	if (count != buf[0]) {
 		return -1;
@@ -742,6 +747,7 @@ static int gprobe_read(struct gport *port, ut32 addr, ut8 *buf, ut32 count) {
 	RBuffer *request = r_buf_new ();
 	RBuffer *reply = NULL;
 	const ut8 cmd = GPROBE_RAM_READ_2;
+	uint64_t reply_size = 0;
 	ut8 addr_be[4];
 	ut8 count_be[4];
 	int res;
@@ -771,7 +777,12 @@ static int gprobe_read(struct gport *port, ut32 addr, ut8 *buf, ut32 count) {
 		goto fail;
 	}
 
-	res = r_buf_read_at (reply, 0, buf, r_buf_size (reply));
+	reply_size = r_buf_size (reply);
+	if (reply_size > count) {
+		goto fail;
+	}
+
+	res = r_buf_read_at (reply, 0, buf, reply_size);
 
 	r_unref (request);
 	r_unref (reply);
