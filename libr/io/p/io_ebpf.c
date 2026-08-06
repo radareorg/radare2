@@ -102,9 +102,6 @@ static bool reap_spawned(RIOEbpf *e);
 
 // /proc/pid/mem descriptors go stale when a spawned target calls execve.
 static void reopen_mem(RIOEbpf *e) {
-	if (e->spawned && reap_spawned (e)) {
-		return;
-	}
 	char mempath[64];
 	snprintf (mempath, sizeof (mempath), "/proc/%d/mem", e->pid);
 	int fd = r_sandbox_open (mempath, e->writable? O_RDWR: O_RDONLY, 0);
@@ -415,7 +412,7 @@ static void print_regs(RIO *io, RIOEbpf *e) {
 
 // Before execve, a spawned target's procfs state still belongs to the r2 stub.
 static bool spawn_preexec(RIOEbpf *e) {
-	if (!e->spawned || !e->spawn_path || reap_spawned (e)) {
+	if (!e->spawned || !e->spawn_path) {
 		return false;
 	}
 	char *path = r_sys_pidpath (e->pid);
@@ -539,32 +536,22 @@ static bool wait_stopped(RIOEbpf *e) {
 	return false;
 }
 
-static void terminate_spawned(RIOEbpf *e) {
-	if (reap_spawned (e)) {
-		return;
-	}
-	if (kill (e->pid, SIGKILL) < 0 && errno != ESRCH) {
-		R_LOG_WARN ("Cannot kill spawned pid %d: %s", e->pid, strerror (errno));
-		return;
-	}
-	wait_child (e, 0);
-	if (!e->child_reaped) {
-		R_LOG_WARN ("Cannot reap spawned pid %d", e->pid);
-	}
-}
-
 static bool signal_target(RIOEbpf *e, int sig) {
 	if (e->spawned && reap_spawned (e)) {
-		R_LOG_WARN ("Spawned target %d has exited", e->pid);
-		return false;
+		return sig == SIGKILL;
 	}
 	if (kill (e->pid, sig) < 0) {
 		int error = errno;
 		if (e->spawned && error == ESRCH) {
-			reap_spawned (e);
+			wait_child (e, 0);
+			return e->child_reaped;
 		}
 		R_LOG_WARN ("Cannot signal pid %d: %s", e->pid, strerror (error));
 		return false;
+	}
+	if (e->spawned && sig == SIGKILL) {
+		wait_child (e, 0);
+		return e->child_reaped;
 	}
 	return true;
 }
@@ -604,7 +591,7 @@ static int ebpf_spawn(const char *cmdline, char **path_out) {
 	if (!wait_stopped (&child)) {
 		R_LOG_ERROR ("Spawned pid %d did not stop", pid);
 		if (!child.child_reaped) {
-			terminate_spawned (&child);
+			signal_target (&child, SIGKILL);
 		}
 		return -1;
 	}
@@ -636,7 +623,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		R_LOG_ERROR ("Cannot open %s (permission or no such pid)", mempath);
 		if (spawned) {
 			RIOEbpf child = { .pid = pid, .spawned = true };
-			terminate_spawned (&child);
+			signal_target (&child, SIGKILL);
 		}
 		free (spawn_path);
 		return NULL;
@@ -674,7 +661,7 @@ static bool __close(RIODesc *desc) {
 #endif
 	close (e->mem_fd);
 	if (e->spawned) {
-		terminate_spawned (e);
+		signal_target (e, SIGKILL);
 	}
 	free (e->spawn_path);
 	R_FREE (desc->data);
@@ -725,11 +712,7 @@ static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
 	} else if (r_str_startswith (cmd, "stop")) {
 		stop_target (e);
 	} else if (r_str_startswith (cmd, "kill")) {
-		if (e->spawned) {
-			terminate_spawned (e);
-		} else {
-			signal_target (e, SIGKILL);
-		}
+		signal_target (e, SIGKILL);
 	} else if (r_str_startswith (cmd, "regs") || !strcmp (cmd, "r")) {
 		if (!preexec_guard (e)) {
 			print_regs (io, e);
