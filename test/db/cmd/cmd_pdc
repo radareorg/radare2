@@ -198,6 +198,9 @@ void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
         x1 = x0 + 0x68 // arg1
         x0 = x8
         goto sym.imp.strcoll // int strcoll("", "")
+    loc_0x100003a78: // orphan
+         w0 = -1
+
     loc_0x100003a6c: // orphan
          w0 = 1
 
@@ -274,6 +277,9 @@ EXPECT=<<EOF
  0x100003a84 |         x1 = x0 + 0x68 // arg1
  0x100003a88 |         x0 = x8
  0x100003a8c |         goto sym.imp.strcoll // int strcoll("", "")
+ 0x100003a78 | loc_0x100003a78: // orphan
+ 0x100003a78 |      w0 = -1
+
  0x100003a6c | loc_0x100003a6c: // orphan
  0x100003a6c |      w0 = 1
 
@@ -301,6 +307,10 @@ void fcn.00000000 (int64_t arg1) {
     loc_0x00000010:
         r3 = 0
         return
+    loc_0x00000008: // orphan
+         r3 = 1                   // "#"
+         return
+
 }
 
 EOF
@@ -833,5 +843,66 @@ EOF
 EXPECT=<<EOF
 {"start":52,"end":116,"offset":134513504,"type":"offset"}
 {"start":116,"end":137,"offset":134513506,"type":"offset"}
+EOF
+RUN
+
+NAME=pdcj orphan annotations use the block address
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64
+CMDS=<<EOF
+s 0x100003a54
+af
+pdcj~{annotations[10]}
+pdcj~{annotations[11]}
+pdcj~{annotations[12]}
+EOF
+EXPECT=<<EOF
+{"start":519,"end":571,"offset":4294982284,"type":"offset"}
+{"start":571,"end":620,"offset":4294982264,"type":"offset"}
+{"start":620,"end":668,"offset":4294982252,"type":"offset"}
+EOF
+RUN
+
+NAME=pdc keeps a function's only orphan block
+FILE=malloc://32
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx 31c0c390b801000000c3
+af
+afb+ 0 4 6
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);
+void fcn.00000000 (void) {
+        eax = 0
+        return eax
+             eax = 1
+         return 1
+
+}
+
+EOF
+RUN
+
+NAME=pdca renders an orphan block in the asm column layout
+FILE=malloc://32
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx 31c0c390b801000000c3
+af
+afb+ 0 4 6
+pdca
+EOF
+EXPECT=<<EOF
+ 0x00000000 |                                | // callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);
+ 0x00000000 |                                | void fcn.00000000 (void) {
+ 0x00000000 | xor eax, eax                   |         eax = 0
+ 0x00000002 | ret                            |         return eax
+ 0x00000004 | mov eax, 1                     | eax = 1
+ 0x00000009 | ret                            | return 1
+
+ 0x00000004 |                                | }
+
 EOF
 RUN
