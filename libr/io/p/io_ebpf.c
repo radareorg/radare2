@@ -1,14 +1,8 @@
 /* radare - LGPL - Copyright 2026 - pancake */
 
-// Alternative, ptrace-invisible process IO backend for Linux using eBPF.
-//
-// Memory read/write goes through /proc/[pid]/mem (no PTRACE_ATTACH, so the
-// target's /proc/self/status TracerPid stays 0). The ':' system commands use a
-// tiny hand-assembled eBPF KPROBE program attached as a uprobe to snapshot the
-// CPU registers (struct pt_regs) into a BPF map when the probe is hit. This is a
-// tracing facility, not a debugger: eBPF cannot single-step, cannot pause and
-// hand control to userspace, and kernel uprobes cannot rewrite pt_regs to
-// redirect execution. See ':?' for the available commands.
+// Ptrace-invisible Linux process IO using /proc/[pid]/mem and eBPF uprobes.
+// A small KPROBE program snapshots pt_regs into a BPF map when its uprobe hits.
+// This is a tracing facility: it cannot single-step, pause, or redirect execution.
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -37,12 +31,8 @@
 #include <linux/bpf.h>
 #include <linux/perf_event.h>
 
-// The uprobe context is a struct pt_regs; we copy its leading GP fields into a
-// map. The register names/order are arch-specific and match that layout, so a
-// snapshot index maps directly to reg_names[]. REG_PC indexes the program
-// counter, used to tell whether a snapshot has actually been captured.
+// Register names follow the leading GP fields in each architecture's pt_regs.
 #if defined(__x86_64__)
-// x86_64 pt_regs: 21 u64 fields (168 bytes).
 static const char *const reg_names[] = {
 	"r15", "r14", "r13", "r12", "rbp", "rbx", "r11", "r10", "r9", "r8",
 	"rax", "rcx", "rdx", "rsi", "rdi", "orig_rax", "rip", "cs", "eflags",
@@ -50,7 +40,6 @@ static const char *const reg_names[] = {
 };
 #define REG_PC 16
 #elif defined(__aarch64__)
-// aarch64 pt_regs starts with user_pt_regs: regs[31], sp, pc, pstate (34 u64).
 static const char *const reg_names[] = {
 	"x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10",
 	"x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20",
@@ -59,8 +48,6 @@ static const char *const reg_names[] = {
 };
 #define REG_PC 32
 #elif defined(R2_EBPF_RISCV64)
-// riscv64 pt_regs matches user_regs_struct: epc(pc), ra, sp, gp, tp, t0-t2,
-// s0-s1, a0-a7, s2-s11, t3-t6 (32 u64).
 static const char *const reg_names[] = {
 	"pc", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1",
 	"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
@@ -69,13 +56,13 @@ static const char *const reg_names[] = {
 };
 #define REG_PC 0
 #endif
-#define REG_COUNT ((int)(sizeof (reg_names) / sizeof (reg_names[0])))
+#define REG_COUNT ((int)R_ARRAY_SIZE (reg_names))
 #define REGBUF (REG_COUNT * sizeof (ut64))
 
-static void print_snapshot(RIO *io, ut64 *r) {
+static void print_snapshot(RIO *io, const ut64 *regs) {
 	int i;
 	for (i = 0; i < REG_COUNT; i++) {
-		io->cb_printf ("%-8s 0x%016"PFMT64x"%s", reg_names[i], r[i],
+		io->cb_printf ("%-8s 0x%016"PFMT64x"%s", reg_names[i], regs[i],
 			(i % 3 == 2)? "\n": "  ");
 	}
 	if (i % 3 != 0) {
@@ -83,47 +70,41 @@ static void print_snapshot(RIO *io, ut64 *r) {
 	}
 }
 
-// Emit the snapshot as r2 flag commands (flagspace 'registers').
-static void emit_reg_flags(RIO *io, ut64 *r) {
+static void emit_reg_flags(RIO *io, const ut64 *regs) {
 	int i;
 	io->cb_printf ("fs registers\n");
 	for (i = 0; i < REG_COUNT; i++) {
-		io->cb_printf ("f reg.%s 1 0x%"PFMT64x"\n", reg_names[i], r[i]);
+		io->cb_printf ("f reg.%s 1 0x%"PFMT64x"\n", reg_names[i], regs[i]);
 	}
 	io->cb_printf ("fs *\n");
 }
 #endif
 
 typedef struct {
-	int mem_fd; // /proc/pid/mem
+	char *spawn_path;
+	ut64 off;
+	int mem_fd;
 	int pid;
-	ut64 off; // current seek position (set via __lseek)
-	bool spawned; // we fork+exec'd it, so we own its lifetime
-	bool writable; // /proc/pid/mem was opened O_RDWR
-	char *spawn_path; // argv[0] of a spawned target (for offset-based probing)
 #if HAVE_EBPF
-	int map_fd; // BPF_MAP_TYPE_ARRAY holding one pt_regs snapshot
-	int prog_fd; // loaded KPROBE program
-	int perf_fd; // uprobe perf_event the program is attached to
-	char *probe_path; // binary the uprobe is planted in
-	ut64 probe_addr; // runtime address requested by the user
+	int map_fd;
+	int prog_fd;
+	int perf_fd;
 #endif
+	bool spawned;
+	bool writable;
 } RIOEbpf;
 
 #define RIOEBPF(x) ((RIOEbpf *)(x)->data)
 
 static bool spawn_preexec(RIOEbpf *e);
 
-// A /proc/pid/mem fd is bound to the mm, so it goes stale after the target
-// execve's (relevant for spawned processes). Reopen it against the current mm.
+// /proc/pid/mem descriptors go stale when a spawned target calls execve.
 static void reopen_mem(RIOEbpf *e) {
 	char mempath[64];
 	snprintf (mempath, sizeof (mempath), "/proc/%d/mem", e->pid);
 	int fd = r_sandbox_open (mempath, e->writable? O_RDWR: O_RDONLY, 0);
 	if (fd >= 0) {
-		if (e->mem_fd >= 0) {
-			close (e->mem_fd);
-		}
+		close (e->mem_fd);
 		e->mem_fd = fd;
 	}
 }
@@ -175,35 +156,28 @@ static int bpf_(int cmd, union bpf_attr *attr) {
 	return syscall (__NR_bpf, cmd, attr, sizeof (*attr));
 }
 
-// Returns true if the bpf() syscall exists on this kernel (not whether we are
-// privileged enough to use it -- that is reported later, when a probe is set).
-static bool ebpf_available(void) {
-	union bpf_attr attr = {0};
-	attr.map_type = BPF_MAP_TYPE_ARRAY;
-	attr.key_size = 4;
-	attr.value_size = 4;
-	attr.max_entries = 1;
-	int fd = bpf_ (BPF_MAP_CREATE, &attr);
-	if (fd >= 0) {
-		close (fd);
-		return true;
-	}
-	return errno != ENOSYS;
-}
-
-static int ebpf_regs_map(void) {
+static int ebpf_map(ut32 value_size) {
 	union bpf_attr attr = {0};
 	attr.map_type = BPF_MAP_TYPE_ARRAY;
 	attr.key_size = sizeof (ut32);
-	attr.value_size = REGBUF;
+	attr.value_size = value_size;
 	attr.max_entries = 1;
 	return bpf_ (BPF_MAP_CREATE, &attr);
 }
 
-// Hand-assembled KPROBE program (used for uprobes). On hit it copies the
-// pt_regs pointed to by the context into map slot 0 via bpf_probe_read.
+// Test syscall availability; probe setup reports permission failures later.
+static bool ebpf_available(void) {
+	int fd = ebpf_map (sizeof (ut32));
+	bool available = fd >= 0 || errno != ENOSYS;
+	if (fd >= 0) {
+		close (fd);
+	}
+	return available;
+}
+
+// Copy the uprobe's pt_regs context into map slot 0 via bpf_probe_read.
 static int ebpf_load_snapshot_prog(int map_fd) {
-	struct bpf_insn prog[] = {
+	const struct bpf_insn prog[] = {
 		// r6 = ctx (pt_regs pointer)
 		{ .code = BPF_ALU64 | BPF_MOV | BPF_X, .dst_reg = BPF_REG_6, .src_reg = BPF_REG_1 },
 		// key 0 on the stack: *(u32 *)(r10 - 4) = 0
@@ -233,13 +207,12 @@ static int ebpf_load_snapshot_prog(int map_fd) {
 	union bpf_attr attr = {0};
 	attr.prog_type = BPF_PROG_TYPE_KPROBE;
 	attr.insns = (ut64)(size_t)prog;
-	attr.insn_cnt = sizeof (prog) / sizeof (prog[0]);
+	attr.insn_cnt = R_ARRAY_SIZE (prog);
 	attr.license = (ut64)(size_t)"GPL"; // probe_read is a GPL-only helper
-	// Load with no verifier log first: passing log_level>0 with an undersized
-	// log_buf makes the kernel fail a valid program with ENOSPC.
+	// An undersized verifier log makes a valid program fail with ENOSPC.
 	int fd = bpf_ (BPF_PROG_LOAD, &attr);
 	if (fd < 0) {
-		// genuine failure: retry with a large log buffer for diagnostics
+		// Retry genuine failures with a large diagnostic buffer.
 		const size_t logsz = 1 << 16;
 		char *log = calloc (1, logsz);
 		if (log) {
@@ -263,13 +236,12 @@ static int uprobe_pmu_type(void) {
 		return -1;
 	}
 	char buf[32] = {0};
-	int n = read (fd, buf, sizeof (buf) - 1);
+	ssize_t n = read (fd, buf, sizeof (buf) - 1);
 	close (fd);
 	return (n > 0)? atoi (buf): -1;
 }
 
-// Translate a runtime address in the target into (binary path, file offset),
-// which is what the uprobe PMU wants. Reads /proc/pid/maps.
+// Translate a runtime address into the binary path and offset uprobes require.
 static char *addr_to_file_offset(int pid, ut64 addr, ut64 *foff) {
 	char path[64];
 	snprintf (path, sizeof (path), "/proc/%d/maps", pid);
@@ -278,28 +250,26 @@ static char *addr_to_file_offset(int pid, ut64 addr, ut64 *foff) {
 		return NULL;
 	}
 	char *ret = NULL;
-	RList *lines = r_str_split_list (maps, "\n", 0);
-	RListIter *it;
+	char *next = NULL;
 	char *line;
-	r_list_foreach (lines, it, line) {
+	for (line = r_str_tok_r (maps, "\n", &next); line;
+			line = r_str_tok_r (NULL, "\n", &next)) {
 		ut64 start = 0, end = 0, off = 0;
-		char perms[8] = {0};
-		// 0055.. -0055.. r-xp 00001000 fd:01 1234 /path/to/bin
-		if (sscanf (line, "%"PFMT64x"-%"PFMT64x" %7s %"PFMT64x, &start, &end, perms, &off) != 4) {
+		char perms[5] = {0};
+		if (sscanf (line, "%"PFMT64x"-%"PFMT64x" %4s %"PFMT64x, &start, &end, perms, &off) != 4) {
 			continue;
 		}
 		if (addr < start || addr >= end || perms[2] != 'x') {
 			continue;
 		}
-		char *sp = strchr (line, '/');
+		const char *sp = r_str_lchr (line, '/');
 		if (!sp) {
 			continue;
 		}
-		*foff = addr - start + off;
-		ret = strdup (r_str_trim_head_ro (sp));
+		*foff = (addr - start) + off;
+		ret = strdup (sp);
 		break;
 	}
-	r_list_free (lines);
 	free (maps);
 	return ret;
 }
@@ -314,8 +284,6 @@ static void ebpf_detach(RIOEbpf *e) {
 		close (e->prog_fd);
 		e->prog_fd = -1;
 	}
-	R_FREE (e->probe_path);
-	e->probe_addr = 0;
 }
 
 static bool ebpf_probe(RIOEbpf *e, ut64 addr) {
@@ -324,14 +292,11 @@ static bool ebpf_probe(RIOEbpf *e, ut64 addr) {
 		R_LOG_ERROR ("Kernel has no uprobe PMU (need CONFIG_UPROBE_EVENTS)");
 		return false;
 	}
-	// Resolve the probe address to (binary, file offset). Prefer /proc/pid/maps
-	// so a runtime address works for both attached and already-exec'd spawned
-	// targets. Only when the binary is not mapped yet (a spawned target still
-	// stopped pre-execve) do we treat the argument as a raw file offset.
+	// Pre-exec spawned targets use a raw file offset because they have no map yet.
 	ut64 foff = 0;
 	char *bin = addr_to_file_offset (e->pid, addr, &foff);
 	if (!bin) {
-		if (e->spawn_path && spawn_preexec (e)) {
+		if (spawn_preexec (e)) {
 			bin = strdup (e->spawn_path);
 			foff = addr;
 		} else {
@@ -340,7 +305,7 @@ static bool ebpf_probe(RIOEbpf *e, ut64 addr) {
 		}
 	}
 	if (e->map_fd < 0) {
-		e->map_fd = ebpf_regs_map ();
+		e->map_fd = ebpf_map (REGBUF);
 		if (e->map_fd < 0) {
 			R_LOG_ERROR ("bpf map create failed (need root or CAP_BPF): %s", strerror (errno));
 			free (bin);
@@ -378,10 +343,9 @@ static bool ebpf_probe(RIOEbpf *e, ut64 addr) {
 	ebpf_detach (e); // drop any previous probe, keep the map
 	e->prog_fd = prog;
 	e->perf_fd = perf;
-	e->probe_path = bin;
-	e->probe_addr = addr;
 	R_LOG_INFO ("uprobe armed at %s+0x%"PFMT64x" (run the target so it hits 0x%"PFMT64x")",
 		bin, foff, addr);
+	free (bin);
 	return true;
 }
 
@@ -397,8 +361,7 @@ static bool ebpf_read_regs(RIOEbpf *e, ut64 *regs) {
 	return bpf_ (BPF_MAP_LOOKUP_ELEM, &attr) == 0;
 }
 
-// Print the full GP set from an eBPF uprobe snapshot. Returns false if no probe
-// has fired yet (pc == 0), so the caller can fall back to /proc/pid/syscall.
+// Return false before the first snapshot so callers can use the procfs fallback.
 static bool ebpf_snapshot_regs(RIO *io, RIOEbpf *e) {
 	ut64 r[REG_COUNT] = {0};
 	if (!ebpf_read_regs (e, r) || r[REG_PC] == 0) {
@@ -409,9 +372,7 @@ static bool ebpf_snapshot_regs(RIO *io, RIOEbpf *e) {
 }
 #endif
 
-// Fallback register read that needs no eBPF and no ptrace: /proc/pid/syscall
-// ends with the task's stack pointer and program counter (from task_pt_regs)
-// whenever the task is not currently on-CPU. Returns false if it is "running".
+// /proc/pid/syscall ends in the stopped task's stack and program counters.
 static bool proc_pc_sp(int pid, ut64 *pc, ut64 *sp) {
 	char path[64];
 	snprintf (path, sizeof (path), "/proc/%d/syscall", pid);
@@ -420,23 +381,18 @@ static bool proc_pc_sp(int pid, ut64 *pc, ut64 *sp) {
 		return false;
 	}
 	r_str_trim (s);
-	bool ok = false;
-	if (!r_str_startswith (s, "running")) {
-		RList *toks = r_str_split_list (s, " ", 0);
-		int n = r_list_length (toks);
-		if (n >= 2) {
-			*pc = r_num_get (NULL, (char *)r_list_get_n (toks, n - 1));
-			*sp = r_num_get (NULL, (char *)r_list_get_n (toks, n - 2));
-			ok = true;
-		}
-		r_list_free (toks);
+	const char *pcstr = r_str_rchr (s, NULL, ' ');
+	const char *spstr = pcstr? r_str_rchr (s, pcstr - 1, ' '): NULL;
+	bool ok = spstr && !r_str_startswith (s, "running");
+	if (ok) {
+		*pc = r_num_get (NULL, pcstr + 1);
+		*sp = r_num_get (NULL, spstr + 1);
 	}
 	free (s);
 	return ok;
 }
 
-// Print registers: prefer a full eBPF uprobe snapshot, else fall back to the
-// pc/sp exposed by /proc/pid/syscall (works anytime the target is stopped).
+// Prefer a full eBPF snapshot, then fall back to procfs pc/sp.
 static void print_regs(RIO *io, RIOEbpf *e) {
 #if HAVE_EBPF
 	if (ebpf_snapshot_regs (io, e)) {
@@ -452,26 +408,20 @@ static void print_regs(RIO *io, RIOEbpf *e) {
 	}
 }
 
-// A spawned target is stopped *before* execve, so /proc/pid/{mem,maps,syscall}
-// still reflect our forked r2 stub until it is resumed. Detect that so :maps
-// and :regs can warn instead of silently showing r2's own state.
+// Before execve, a spawned target's procfs state still belongs to the r2 stub.
 static bool spawn_preexec(RIOEbpf *e) {
 	if (!e->spawned || !e->spawn_path) {
 		return false;
 	}
-	char link[64], buf[512];
-	snprintf (link, sizeof (link), "/proc/%d/exe", e->pid);
-	ssize_t n = readlink (link, buf, sizeof (buf) - 1);
-	if (n <= 0) {
+	char *path = r_sys_pidpath (e->pid);
+	if (!path) {
 		return false;
 	}
-	buf[n] = 0;
-	// pre-exec: /proc/pid/exe still points at our own r2 binary, not the target
-	return strcmp (r_file_basename (buf), r_file_basename (e->spawn_path)) != 0;
+	bool preexec = strcmp (r_file_basename (path), r_file_basename (e->spawn_path)) != 0;
+	free (path);
+	return preexec;
 }
 
-// Warn and return true when the target is a spawned stub that hasn't exec'd yet,
-// so callers can skip showing r2's own (meaningless) maps/regs/state.
 static bool preexec_guard(RIOEbpf *e) {
 	if (spawn_preexec (e)) {
 		R_LOG_WARN ("target has not exec'd yet (pre-exec stub); run ':cont' or ':contstop' first");
@@ -480,7 +430,6 @@ static bool preexec_guard(RIOEbpf *e) {
 	return false;
 }
 
-// Dump /proc/pid/maps, optionally as r2 flag commands (flagspace 'maps').
 static void emit_maps(RIO *io, RIOEbpf *e, bool as_flags) {
 	char path[64];
 	snprintf (path, sizeof (path), "/proc/%d/maps", e->pid);
@@ -492,32 +441,30 @@ static void emit_maps(RIO *io, RIOEbpf *e, bool as_flags) {
 	if (as_flags) {
 		io->cb_printf ("fs maps\n");
 	}
-	RList *lines = r_str_split_list (m, "\n", 0);
-	RListIter *it;
+	char *next = NULL;
 	char *line;
 	int idx = 0;
-	r_list_foreach (lines, it, line) {
+	for (line = r_str_tok_r (m, "\n", &next); line;
+			line = r_str_tok_r (NULL, "\n", &next)) {
 		ut64 start = 0, end = 0;
-		char perms[8] = {0};
-		if (sscanf (line, "%"PFMT64x"-%"PFMT64x" %7s", &start, &end, perms) != 3) {
+		if (sscanf (line, "%"PFMT64x"-%"PFMT64x" %*7s", &start, &end) != 2) {
 			continue;
 		}
 		if (!as_flags) {
-			// reformat the range as "0x.. - 0x.." for easy copy-paste
-			const char *rest = strchr (line, ' ');
+			const char *rest = r_str_lchr (line, ' ');
 			io->cb_printf ("0x%"PFMT64x" - 0x%"PFMT64x"%s\n", start, end, rest? rest: "");
 			continue;
 		}
-		const char *sp = strchr (line, '/');
-		char *name = sp? r_str_newf ("%s", r_file_basename (r_str_trim_head_ro (sp))): strdup ("anon");
-		r_name_filter (name, -1);
-		io->cb_printf ("f map.%d.%s 0x%"PFMT64x" 0x%"PFMT64x"\n", idx++, name, end - start, start);
-		free (name);
+		const char *sp = r_str_lchr (line, '/');
+		char *name = sp? (char *)r_file_basename (sp): NULL;
+		if (name) {
+			r_name_filter (name, -1);
+		}
+		io->cb_printf ("f map.%d.%s 0x%"PFMT64x" 0x%"PFMT64x"\n", idx++, name? name: "anon", end - start, start);
 	}
 	if (as_flags) {
 		io->cb_printf ("fs *\n");
 	}
-	r_list_free (lines);
 	free (m);
 }
 
@@ -537,8 +484,7 @@ static void emit_r2(RIO *io, RIOEbpf *e) {
 	}
 }
 
-// Poll /proc/pid/stat until the process is in the stopped (T) state, without
-// ptrace. Returns false if it dies or never stops.
+// Poll procfs until the process stops, dies, or times out.
 static bool wait_stopped(int pid) {
 	char path[64];
 	snprintf (path, sizeof (path), "/proc/%d/stat", pid);
@@ -546,10 +492,9 @@ static bool wait_stopped(int pid) {
 	for (i = 0; i < 1000; i++) {
 		char *s = r_file_slurp (path, NULL);
 		if (!s) {
-			return false; // gone
+			return false;
 		}
-		// "pid (comm) STATE ..." -- comm may hold spaces/parens, skip to last ')'
-		char *p = strrchr (s, ')');
+		const char *p = r_str_rchr (s, NULL, ')');
 		bool stopped = p && p[1] == ' ' && (p[2] == 'T' || p[2] == 't');
 		free (s);
 		if (stopped) {
@@ -560,9 +505,20 @@ static bool wait_stopped(int pid) {
 	return false;
 }
 
-// Spawn the target ourselves. The child self-stops with SIGSTOP *before* execve
-// (no PTRACE_TRACEME, so TracerPid stays 0), letting us open it and arm probes
-// while frozen. ':cont' resumes it into execve.
+static void kill_wait(int pid) {
+	kill (pid, SIGKILL);
+	waitpid (pid, NULL, 0);
+}
+
+static void stop_target(RIOEbpf *e) {
+	kill (e->pid, SIGSTOP);
+	if (!wait_stopped (e->pid)) {
+		R_LOG_WARN ("Target did not stop (may have exited)");
+	}
+	reopen_mem (e);
+}
+
+// Spawn stopped before execve so probes can be armed without ptrace.
 static int ebpf_spawn(const char *cmdline, char **path_out) {
 	int argc = 0;
 	char **argv = r_str_argv (cmdline, &argc);
@@ -570,7 +526,7 @@ static int ebpf_spawn(const char *cmdline, char **path_out) {
 		r_str_argv_free (argv);
 		return -1;
 	}
-	int pid = fork ();
+	pid_t pid = fork ();
 	if (pid < 0) {
 		r_str_argv_free (argv);
 		return -1;
@@ -580,14 +536,11 @@ static int ebpf_spawn(const char *cmdline, char **path_out) {
 		execv (argv[0], argv);
 		_exit (127);
 	}
-	if (path_out) {
-		*path_out = strdup (argv[0]);
-	}
+	*path_out = strdup (argv[0]);
 	r_str_argv_free (argv);
 	if (!wait_stopped (pid)) {
 		R_LOG_ERROR ("Spawned pid %d did not stop", pid);
-		kill (pid, SIGKILL);
-		waitpid (pid, NULL, 0);
+		kill_wait (pid);
 		return -1;
 	}
 	return pid;
@@ -598,16 +551,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	const char *arg = file + strlen ("ebpf://");
-	bool spawned = false;
 	char *spawn_path = NULL;
-	int pid;
-	if (strchr (arg, '/')) {
-		// ebpf:///bin/ls -> spawn (stopped pre-exec)
-		pid = ebpf_spawn (arg, &spawn_path);
-		spawned = true;
-	} else {
-		pid = atoi (arg);
-	}
+	bool spawned = r_str_lchr (arg, '/') != NULL;
+	int pid = spawned? ebpf_spawn (arg, &spawn_path): atoi (arg);
 	if (pid < 1) {
 		R_LOG_ERROR ("Usage: r2 ebpf://[pid] or ebpf://[/path/to/bin args]");
 		free (spawn_path);
@@ -623,6 +569,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 	if (mem_fd < 0) {
 		R_LOG_ERROR ("Cannot open %s (permission or no such pid)", mempath);
+		if (spawned) {
+			kill_wait (pid);
+		}
+		free (spawn_path);
 		return NULL;
 	}
 	RIOEbpf *e = R_NEW0 (RIOEbpf);
@@ -642,7 +592,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 #else
 	R_LOG_WARN ("eBPF uprobe support not built for this arch: memory io and :regs (pc/sp) still work");
 #endif
-	int perm = R_PERM_R | R_PERM_X | (writable? R_PERM_W: 0);
+	int perm = R_PERM_RX | (writable? R_PERM_W: 0);
 	RIODesc *d = r_io_desc_new (io, &r_io_plugin_ebpf, file, perm, mode, e);
 	d->name = r_sys_pidpath (pid);
 	return d;
@@ -656,12 +606,9 @@ static bool __close(RIODesc *desc) {
 		close (e->map_fd);
 	}
 #endif
-	if (e->mem_fd >= 0) {
-		close (e->mem_fd);
-	}
-	if (e->spawned && e->pid > 0) {
-		kill (e->pid, SIGKILL);
-		waitpid (e->pid, NULL, 0);
+	close (e->mem_fd);
+	if (e->spawned) {
+		kill_wait (e->pid);
 	}
 	free (e->spawn_path);
 	R_FREE (desc->data);
@@ -670,98 +617,70 @@ static bool __close(RIODesc *desc) {
 
 static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
 	RIOEbpf *e = RIOEBPF (desc);
+	if (R_STR_ISEMPTY (cmd)) {
+		return NULL;
+	}
 	if (r_str_startswith (cmd, "pid")) {
 		// pid stays the first token so scripts can still parse it
 		char *exe = r_sys_pidpath (e->pid);
 		io->cb_printf ("%d %s%s%s\n", e->pid, e->spawned? "spawned": "attached",
 			exe? " ": "", exe? exe: "");
 		free (exe);
-		return NULL;
-	}
-	if (r_str_startswith (cmd, "maps")) {
+	} else if (r_str_startswith (cmd, "maps")) {
 		if (!preexec_guard (e)) {
 			emit_maps (io, e, false);
 		}
-		return NULL;
-	}
-	if (r_str_startswith (cmd, "r2")) {
+	} else if (r_str_startswith (cmd, "r2")) {
 		if (!preexec_guard (e)) {
 			emit_r2 (io, e);
 		}
-		return NULL;
-	}
-	if (r_str_startswith (cmd, "contstop")) {
-		// unreliable "step": resume, let it run briefly, then freeze again.
-		// optional arg is the run window in milliseconds (0 = as fast as possible)
+	} else if (r_str_startswith (cmd, "contstop")) {
 		const char *arg = r_str_trim_head_ro (cmd + strlen ("contstop"));
 		ut64 ms = *arg? r_num_get (NULL, arg): 0;
 		kill (e->pid, SIGCONT);
-		if (ms > 0) {
+		if (ms) {
 			r_sys_usleep (ms * 1000);
 		}
-		kill (e->pid, SIGSTOP);
-		if (!wait_stopped (e->pid)) {
-			R_LOG_WARN ("Target did not re-stop (may have exited)");
-		}
-		reopen_mem (e); // mm may have changed (execve) while it ran
-		return NULL;
-	}
-	if (r_str_startswith (cmd, "cont")) {
+		stop_target (e);
+	} else if (r_str_startswith (cmd, "cont")) {
 		kill (e->pid, SIGCONT);
-		return NULL;
-	}
-	if (r_str_startswith (cmd, "stop")) {
-		kill (e->pid, SIGSTOP);
-		if (!wait_stopped (e->pid)) {
-			R_LOG_WARN ("Target did not stop (may have exited)");
-		}
-		reopen_mem (e);
-		return NULL;
-	}
-	if (r_str_startswith (cmd, "kill")) {
+	} else if (r_str_startswith (cmd, "stop")) {
+		stop_target (e);
+	} else if (r_str_startswith (cmd, "kill")) {
 		kill (e->pid, SIGKILL);
-		return NULL;
-	}
-	if (r_str_startswith (cmd, "regs") || !strcmp (cmd, "r")) {
+	} else if (r_str_startswith (cmd, "regs") || !strcmp (cmd, "r")) {
 		if (!preexec_guard (e)) {
 			print_regs (io, e);
 		}
-		return NULL;
-	}
 #if HAVE_EBPF
-	if (r_str_startswith (cmd, "probe-")) {
+	} else if (r_str_startswith (cmd, "probe-")) {
 		ebpf_detach (e);
-		return NULL;
-	}
-	if (r_str_startswith (cmd, "probe")) {
+	} else if (r_str_startswith (cmd, "probe")) {
 		const char *arg = r_str_trim_head_ro (cmd + strlen ("probe"));
-		if (!*arg) {
+		if (R_STR_ISEMPTY (arg)) {
 			R_LOG_ERROR ("Usage: :probe <addr>");
-			return NULL;
+		} else {
+			ebpf_probe (e, r_num_get (NULL, arg));
 		}
-		ebpf_probe (e, r_num_get (NULL, arg));
-		return NULL;
-	}
 #endif
-	if (!*cmd) {
-		return NULL; // r2 probes plugins with an empty system command
+	} else {
+		if (cmd[0] != '?' && !r_str_startswith (cmd, "help")) {
+			R_LOG_ERROR ("Unknown ebpf command '%s'", cmd);
+		}
+		io->cb_printf (
+			":pid            show target pid\n"
+			":maps           dump /proc/pid/maps of the target\n"
+			":r2             emit r2 flag commands for the maps and registers\n"
+			":cont           SIGCONT the target (resume a spawned/stopped process)\n"
+			":stop           SIGSTOP the target and wait until it is frozen\n"
+			":contstop [ms]  resume then re-freeze after [ms] ms (unreliable 'step')\n"
+			":kill           SIGKILL the target\n"
+			":regs           print registers (eBPF snapshot, else pc/sp from /proc)\n"
+			":probe <addr>   arm an eBPF uprobe that snapshots full registers at addr\n"
+			":probe-         remove the current uprobe\n"
+			"note: memory read/write uses /proc/pid/mem (no ptrace, TracerPid stays 0)\n"
+			"note: eBPF traces, it cannot step/pause the process nor rewrite its regs\n");
 	}
-	if (cmd[0] != '?' && !r_str_startswith (cmd, "help")) {
-		R_LOG_ERROR ("Unknown ebpf command '%s'", cmd);
-	}
-	io->cb_printf (
-		":pid            show target pid\n"
-		":maps           dump /proc/pid/maps of the target\n"
-		":r2             emit r2 flag commands for the maps and registers\n"
-		":cont           SIGCONT the target (resume a spawned/stopped process)\n"
-		":stop           SIGSTOP the target and wait until it is frozen\n"
-		":contstop [ms]  resume then re-freeze after [ms] ms (unreliable 'step')\n"
-		":kill           SIGKILL the target\n"
-		":regs           print registers (eBPF snapshot, else pc/sp from /proc)\n"
-		":probe <addr>   arm an eBPF uprobe that snapshots full registers at addr\n"
-		":probe-         remove the current uprobe\n"
-		"note: memory read/write uses /proc/pid/mem (no ptrace, TracerPid stays 0)\n"
-		"note: eBPF traces, it cannot step/pause the process nor rewrite its regs\n");
 	return NULL;
 }
 

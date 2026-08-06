@@ -375,6 +375,7 @@ io_plugins += [
     'bfdbg',
     'bochs',
     'debug',
+    'ebpf',
     'gdb',
     'gprobe',
     'gzip',
