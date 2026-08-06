@@ -146,7 +146,7 @@ static int gprobe_get_reply_i2c(struct gport *port, RBuffer *reply) {
 		R_LOG_ERROR ("gprobe rx checksum error");
 	}
 
-	if (buf[5] < 3 || buf[5] - 3 > sizeof(buf)) {
+	if (buf[5] < 3 || buf[5] - 3 > sizeof (buf)) {
 		return -1;
 	}
 
