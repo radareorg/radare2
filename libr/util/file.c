@@ -833,19 +833,17 @@ R_API char *r_file_slurp_lines(const char *file, int line, int count) {
 
 R_API char *r_file_root(const char *root, const char *path) {
 	R_RETURN_VAL_IF_FAIL (root && path, NULL);
-	char *ret, *s = r_str_replace (strdup (path), "..", "", 1);
+	char *s = r_str_replace (strdup (path), "..", "", 1);
 	// XXX ugly hack
-	while (strstr (s, "..")) {
-		s = r_str_replace (s, "..", "", 1);
+	s = r_str_replace (s, "./", "", 1);
+	s = r_str_replace (s, "//", "", 1);
+	RStrs sp = r_strs_from (s);
+	r_strs_skip_chars (&sp, "/");
+	size_t rlen = strlen (root);
+	while (rlen > 0 && root[rlen - 1] == R_SYS_DIR[0]) {
+		rlen--;
 	}
-	while (strstr (s, "./")) {
-		s = r_str_replace (s, "./", "", 1);
-	}
-	while (strstr (s, "//")) {
-		s = r_str_replace (s, "//", "", 1);
-	}
-	ret = r_str_append (strdup (root), R_SYS_DIR);
-	ret = r_str_append (ret, s);
+	char *ret = r_str_newf ("%.*s%s%s", (int)rlen, root, R_SYS_DIR, sp.a);
 	free (s);
 	return ret;
 }

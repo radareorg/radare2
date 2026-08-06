@@ -18,6 +18,13 @@ bool test_r_file(void) {
 	s = r_file_new ("/foo/", "bar", NULL);
 	mu_assert_streq (s, "/foo/bar", "error, invalid path");
 	free (s);
+	char *root = r_str_newf ("foo%s%s", R_SYS_DIR, R_SYS_DIR);
+	char *expected = r_str_newf ("foo%sbar", R_SYS_DIR);
+	s = r_file_root (root, "///bar");
+	mu_assert_streq (s, expected, "error, invalid rooted path");
+	free (s);
+	free (expected);
+	free (root);
 	mu_end;
 }
 
