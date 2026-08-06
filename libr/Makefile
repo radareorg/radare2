@@ -16,7 +16,20 @@ include libs.mk
 
 .PHONY: $(LIBS)
 
-all:
+all: sublibs
+ifeq ($(WITH_LIBR),1)
+	$(MAKE) libr.${EXT_AR}
+	$(MAKE) libr.${EXT_SO}
+endif
+
+# same as all, but without the merged libr.${EXT_SO}
+static: sublibs
+ifeq ($(WITH_LIBR),1)
+	$(MAKE) libr.${EXT_AR}
+endif
+
+# only the per-directory libr_*.a / libr_*.so, no merged libr.a or libr.so
+sublibs:
 	$(MAKE) -C xps
 	$(MAKE) $(LIBS0)
 	$(MAKE) $(LIBS1)
@@ -28,10 +41,6 @@ all:
 	$(MAKE) $(LIBS7)
 ifneq ($(LIBS8),)
 	$(MAKE) $(LIBS8)
-endif
-ifeq ($(WITH_LIBR),1)
-	$(MAKE) libr.${EXT_AR}
-	$(MAKE) libr.${EXT_SO}
 endif
 
 include ${SHLR}/zip/deps.mk
@@ -250,4 +259,4 @@ mrproper:
 	for LIB in ${LIBS}; do ( cd $${LIB} && $(MAKE) mrproper ); done
 
 .PHONY: sloc mrproper clean pkgcfg install deinstall uninstall libr
-.PHONY: install-includes install-pkgconfig install-symlink all
+.PHONY: install-includes install-pkgconfig install-symlink all static sublibs

@@ -49,7 +49,12 @@ BLK_KB ?= 256
 R2_CFLAGS ?= -Oz -ffunction-sections -fdata-sections
 # --with-libr builds the static libr_*.a archives the blob links against;
 # --with-static-themes compiles the color themes into the binary since the
-# guest image ships no r2 share directory
+# guest image ships no r2 share directory.
+#
+# only `make libs LIBS_TARGET=sublibs WITH_LIBS=0` is run in the r2 tree:
+# the 16 binr/ programs, the merged libr.a/libr.so and every shared library
+# are pure waste here, since the blob is one static binary symlinked to all
+# the tool names inside the image (busybox-style).
 R2_CONFIGURE_FLAGS ?= --disable-debugger --without-ptrace-wrap --without-qjs \
 	--without-capstone --without-zydis --without-gpl --without-dylink \
 	--disable-loadlibs --with-checks-level=0 --with-libr --with-static-themes
@@ -161,7 +166,8 @@ $(WORK)/r2blob: | $(CC_WRAP)
 	cd $(R2_ROOT) && CC=$(CC_WRAP) HOST_CC=cc CFLAGS="$(R2_CFLAGS)" ./configure \
 		--host=riscv64-unknown-linux-musl --with-ostype=gnulinux \
 		--prefix=/usr $(R2_CONFIGURE_FLAGS)
-	$(MAKE) -C $(R2_ROOT) -j$(JOBS) CC=$(CC_WRAP) HOST_CC=cc
+	$(MAKE) -C $(R2_ROOT) libs -j$(JOBS) CC=$(CC_WRAP) HOST_CC=cc \
+		LIBS_TARGET=sublibs WITH_LIBS=0 WITH_LIBR=1
 	cd $(R2_ROOT)/binr/blob && rm -f r2blob && \
 		LDFLAGS="-static -Wl,--gc-sections" $(MAKE) CC=$(CC_WRAP) build
 	@STRIP="$$(ls $(TCDIR)/bin/riscv64-linux-strip 2> /dev/null || \
