@@ -37,6 +37,8 @@ endif
 ifeq ($(shell gcc -v > /dev/null 2>&1 && echo works),works)
 HOST_CC?=gcc
 endif
+HOST_CFLAGS?=$(CFLAGS)
+HOST_LDFLAGS?=$(LDFLAGS)
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
