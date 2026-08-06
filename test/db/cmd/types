@@ -3528,3 +3528,50 @@ EXPECT=<<EOF2
 var uint8_t [256] var_20h @ rbp-0x20
 EOF2
 RUN
+
+NAME=td keeps the pointer with the type in function pointer members
+FILE=-
+CMDS=<<EOF
+'td struct S { int (*cb)(int *n, char *s); };
+tk~func.S
+EOF
+EXPECT=<<EOF
+func.S.cb=n,s
+func.S.cb.arg.0=int *,n
+func.S.cb.arg.1=char *,s
+func.S.cb.args=2
+func.S.cb.cc=cdecl
+func.S.cb.ret=int
+EOF
+RUN
+
+NAME=td stores an empty parameter list as zero arguments
+FILE=-
+CMDS=<<EOF
+'td int voidfn(void);
+'td int spacedfn( );
+tk~func.voidfn
+tk~func.spacedfn
+EOF
+EXPECT=<<EOF
+func.voidfn.args=0
+func.voidfn.cc=cdecl
+func.voidfn.ret=int
+func.spacedfn.args=0
+func.spacedfn.cc=cdecl
+func.spacedfn.ret=int
+EOF
+RUN
+
+NAME=td stores a void parameter list on a member as zero arguments
+FILE=-
+CMDS=<<EOF
+'td struct A2 { float (*m)(void); void *x; };
+tk~func.A2
+EOF
+EXPECT=<<EOF
+func.A2.m.args=0
+func.A2.m.cc=cdecl
+func.A2.m.ret=float
+EOF
+RUN

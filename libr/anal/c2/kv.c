@@ -550,44 +550,10 @@ static const char *kvc_lookup_typedef(KVCParser *kvc, const char *name) {
 	return NULL;
 }
 
-static int emit_func_args(KVCParser *kvc, const char *fname, const char *args) {
-	int arg_idx = 0;
-	RStrBuf *fnames = r_strbuf_new ("");
-	if (R_STR_ISNOTEMPTY (args)) {
-		char *args_copy = strdup (args);
-		char *p = args_copy;
-		while (p) {
-			char *comma = strchr (p, ',');
-			char *tok = comma? r_str_ndup (p, comma - p): strdup (p);
-			p = comma? comma + 1: NULL;
-			r_str_trim (tok);
-			char *last_space = strrchr (tok, ' ');
-			char *arg_type, *arg_name;
-			if (last_space) {
-				arg_type = r_str_ndup (tok, last_space - tok);
-				r_str_trim (arg_type);
-				arg_name = strdup (last_space + 1);
-				r_str_trim (arg_name);
-			} else {
-				arg_type = strdup (tok);
-				r_str_trim (arg_type);
-				arg_name = strdup ("");
-			}
-			r_strbuf_appendf (fnames, "%s%s", arg_idx? ",": "", arg_name);
-			r_strbuf_appendf (kvc->sb, "func.%s.arg.%d=%s,%s\n", fname, arg_idx, arg_type, arg_name);
-			free (arg_type);
-			free (arg_name);
-			free (tok);
-			arg_idx++;
-		}
-		free (args_copy);
-	}
-	char *fnames_s = r_strbuf_drain (fnames);
-	r_strbuf_appendf (kvc->sb, "func.%s=%s\n", fname, fnames_s);
-	r_strbuf_appendf (kvc->sb, "func.%s.cc=cdecl\n", fname);
-	r_strbuf_appendf (kvc->sb, "func.%s.args=%d\n", fname, arg_idx);
-	free (fnames_s);
-	return arg_idx;
+static void emit_func_signature(KVCParser *kvc, const char *fn, RStrs fun_parm, bool is_static);
+
+static void emit_func_args(KVCParser *kvc, const char *fname, const char *args) {
+	emit_func_signature (kvc, fname, r_strs_from (args), false);
 }
 
 static void emit_func_typedef(KVCParser *kvc, const char *name, const char *rtype, const char *args) {
@@ -1352,8 +1318,6 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				r_strbuf_appendf (kvc->sb, "type.%s.%s=func\n", sn, mname);
 				r_strbuf_appendf (kvc->sb, "%s.%s=func\n", sn, mname);
 				r_strbuf_appendf (kvc->sb, "func.%s.%s.ret=%s\n", sn, mname, rtype? rtype: "void");
-				// store the canonical signature too
-				r_strbuf_appendf (kvc->sb, "func.%s.%s=%s\n", sn, mname, args? args: "");
 				off += kvc_typesize (kvc, fulltype, 1);
 				{
 					r_strf_var (full_scope, 512, "%s.%s", sn, mname);
@@ -1565,10 +1529,13 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 	return true;
 }
 
-static int emit_func_signature(KVCParser *kvc, const char *fn, RStrs fun_parm, bool is_static) {
+static void emit_func_signature(KVCParser *kvc, const char *fn, RStrs fun_parm, bool is_static) {
 	RStrBuf *func_args_sb = r_strbuf_new ("");
 	int arg_idx = 0;
-	if (fun_parm.a < fun_parm.b) {
+	RStrs parms = fun_parm;
+	r_strs_trim (&parms);
+	// C spells the empty parameter list as (void); () and ( ) trim down to nothing
+	if (!r_strs_empty (parms) && !r_strs_equals_str (parms, "void")) {
 		const char *pa = fun_parm.a;
 		const char *pb = fun_parm.b;
 		const char *argp = pa;
@@ -1606,12 +1573,8 @@ static int emit_func_signature(KVCParser *kvc, const char *fn, RStrs fun_parm, b
 				an = r_str_newf ("arg%d", arg_idx);
 			}
 			if (an) {
-				if (R_STR_ISEMPTY (at) && !strcmp (an, "void") && arg_idx == 0) {
-					arg_idx--;
-				} else {
-					r_strbuf_appendf (kvc->sb, "func.%s.arg.%d=%s,%s\n", fn, arg_idx, at, an);
-					r_strbuf_appendf (func_args_sb, "%s%s", arg_idx? ",": "", an);
-				}
+				r_strbuf_appendf (kvc->sb, "func.%s.arg.%d=%s,%s\n", fn, arg_idx, at, an);
+				r_strbuf_appendf (func_args_sb, "%s%s", arg_idx? ",": "", an);
 				free (an);
 			}
 			free (at);
@@ -1623,19 +1586,18 @@ static int emit_func_signature(KVCParser *kvc, const char *fn, RStrs fun_parm, b
 	char *func_args = r_strbuf_drain (func_args_sb);
 	r_strbuf_appendf (kvc->sb, "func.%s.cc=cdecl\n", fn);
 	r_strbuf_appendf (kvc->sb, "func.%s=%s\n", fn, func_args);
+	r_strbuf_appendf (kvc->sb, "func.%s.args=%d\n", fn, arg_idx);
 	if (is_static) {
 		r_strbuf_appendf (kvc->sb, "func.%s.@.static=true\n", fn);
 	}
 	free (func_args);
-	return arg_idx;
 }
 
 static void emit_func_decl(KVCParser *kvc, const char *fn, const char *fr, RStrs fun_parm, bool is_static) {
 	r_strbuf_appendf (kvc->sb, "%s=func\n", fn);
 	apply_attributes (kvc, "func", fn);
-	int arg_idx = emit_func_signature (kvc, fn, fun_parm, is_static);
+	emit_func_signature (kvc, fn, fun_parm, is_static);
 	r_strbuf_appendf (kvc->sb, "func.%s.ret=%s\n", fn, fr);
-	r_strbuf_appendf (kvc->sb, "func.%s.args=%d\n", fn, arg_idx);
 }
 
 static bool parse_function(KVCParser *kvc) {
