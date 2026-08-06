@@ -145,6 +145,11 @@ static int gprobe_get_reply_i2c(struct gport *port, RBuffer *reply) {
 	if (gprobe_checksum_i2c (buf, ddc2bi3_len + 2, checksum) != buf[ddc2bi3_len + 2]) {
 		R_LOG_ERROR ("gprobe rx checksum error");
 	}
+
+	if (buf[5] < 3 || buf[5] - 3 > sizeof(buf)) {
+		return -1;
+	}
+
 	r_buf_append_bytes (reply, buf + 7, buf[5] - 3);
 
 	return buf[6]; // cmd
@@ -660,22 +665,17 @@ static void gprobe_frame_sp(RBuffer *frame) {
 
 static int gprobe_get_reply_sp(struct gport *port, RBuffer *reply) {
 	ut8 buf[256];
-	size_t reply_count;
 	int count = sp_blocking_read (port, buf, 2, 50);
 
 	if (count < 2) {
 		return -1;
 	}
 
-	if (r_sub_overflow (buf[0], 2, &reply_count)) {
-		return 0;
+	if (buf[0] < 3) {
+		return -1;
 	}
 
-	if (reply_count == 0 || reply_count > (sizeof (buf) - 2)) {
-		return 0;
-	}
-
-	count = sp_blocking_read (port, buf + 2, reply_count, 50) + 2;
+	count = sp_blocking_read (port, buf + 2, buf[0] - 2, 50) + 2;
 
 	if (count != buf[0]) {
 		return -1;
@@ -747,7 +747,7 @@ static int gprobe_read(struct gport *port, ut32 addr, ut8 *buf, ut32 count) {
 	RBuffer *request = r_buf_new ();
 	RBuffer *reply = NULL;
 	const ut8 cmd = GPROBE_RAM_READ_2;
-	uint64_t reply_size = 0;
+	ut64 reply_size = 0;
 	ut8 addr_be[4];
 	ut8 count_be[4];
 	int res;
