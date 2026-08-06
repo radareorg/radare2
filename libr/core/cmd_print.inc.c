@@ -4396,7 +4396,7 @@ static char *cmd_print_hash_incremental(RCore *core, const char *algo, ut64 addr
 	}
 	// Check if the algorithm is a hash type that supports incremental processing
 	if (!r_muta_algo_supports (core->muta, algo, R_MUTA_TYPE_HASH)) {
-		R_LOG_ERROR ("Unknown hash '%s', use Lh to list the hash plugins");
+		R_LOG_ERROR ("Unknown hash '%s', use Lh to list the hash plugins", algo);
 		return NULL;
 	}
 	RMutaSession *ms = r_muta_use (core->muta, algo);
