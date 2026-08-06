@@ -193,7 +193,6 @@ jobs:
       uses: actions/checkout@v7
     - name: Install dependencies
       run: |
-        python3 -m pip install --upgrade pip --break-system-packages
         python3 -m pip install r2pipe --break-system-packages
         brew install pkg-config
     - name: Building Radare2
