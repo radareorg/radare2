@@ -47,6 +47,20 @@ html, body {
   text-align: center;
 }
 #term_container { display: inline-block; text-align: left; }
+/* Upstream prefers Courier, whose browser-specific metrics can disagree
+   with the CSS ch unit used to size the terminal. Keep one fixed-width
+   font stack for both the geometry probe and the rendered rows. */
+.term {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+}
+/* term.js performs terminal wrapping itself. Browser soft-wrapping here
+   makes a full terminal row occupy two DOM lines on some macOS fonts. */
+.term_content > div {
+  height: 1.2em;
+  overflow: hidden;
+  white-space: nowrap;
+}
 /* no scrollbars anywhere: term.js paints its own — hide it (the mouse
    wheel still scrolls the terminal history) */
 .term_scrollbar { display: none; }
@@ -173,15 +187,16 @@ var r2_touch = ("ontouchstart" in window) && window.innerWidth < 900;
 function r2_calc_geometry(fs) {
   var vw = window.innerWidth;
   var vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-  var probe = document.createElement("div");
+  var probe = document.createElement("span");
   probe.className = "term";
-  /* term.js uses line-height 1.2em: measure with the same value or the
-     row height is wrong and the terminal overflows by one line */
-  probe.style.cssText = "position:absolute;visibility:hidden;line-height:1.2em;font-size:" + fs + "px";
-  probe.textContent = "XXXXXXXXXX";
+  /* term.js sizes rows in ch units and uses line-height 1.2em. Measure
+     those exact CSS units instead of relying on a glyph's advance width. */
+  probe.style.cssText = "position:absolute;visibility:hidden;display:inline-block;" +
+    "white-space:nowrap;width:100ch;line-height:1.2em;font-size:" + fs + "px";
+  probe.textContent = "0";
   document.body.appendChild(probe);
   var r = probe.getBoundingClientRect();
-  var cw = r.width / 10, ch = r.height;
+  var cw = r.width / 100, ch = r.height;
   document.body.removeChild(probe);
   /* term.js makes the terminal "w ch + 16px" wide; keep a generous
      bottom reserve — a black border is better than a half-clipped
