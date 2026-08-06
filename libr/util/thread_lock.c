@@ -6,26 +6,60 @@
 #include <r_util/r_assert.h>
 #include <r_util/r_log.h>
 
+#if R2__WINDOWS__
+enum {
+	W32_SRW_ENTER,
+	W32_SRW_TRYENTER,
+	W32_SRW_LEAVE,
+};
+
+static bool w32_srw_init(RThreadLock *lock) {
+	R_STATIC_ASSERT (sizeof (lock->lock.srw) <= sizeof (CRITICAL_SECTION));
+	HANDLE lib = GetModuleHandleA ("kernel32.dll");
+	FARPROC init = GetProcAddress (lib, "InitializeSRWLock");
+	FARPROC *api = lock->lock.srw.api;
+	api[W32_SRW_ENTER] = GetProcAddress (lib, "AcquireSRWLockExclusive");
+	api[W32_SRW_TRYENTER] = GetProcAddress (lib, "TryAcquireSRWLockExclusive");
+	api[W32_SRW_LEAVE] = GetProcAddress (lib, "ReleaseSRWLockExclusive");
+	if (!init || !api[W32_SRW_ENTER] || !api[W32_SRW_TRYENTER] || !api[W32_SRW_LEAVE]) {
+		return false;
+	}
+	((void (WINAPI *)(PVOID))init) (&lock->lock.srw.lock);
+	return true;
+}
+#endif
+
 /* locks/mutex/sems */
 static bool _lock_init(RThreadLock *thl, bool recursive) {
 #if HAVE_PTHREAD
+	pthread_mutexattr_t attr;
+	if (pthread_mutexattr_init (&attr) != 0) {
+		return false;
+	}
 	if (recursive) {
-		pthread_mutexattr_t attr;
-		pthread_mutexattr_init (&attr);
 #if !defined(__GLIBC__) || __USE_UNIX98__
-		pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE);
+		if (pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE) != 0) {
+			pthread_mutexattr_destroy (&attr);
+			return false;
+		}
 #else
-		pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+		if (pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE_NP) != 0) {
+			pthread_mutexattr_destroy (&attr);
+			return false;
+		}
 #endif
-		pthread_mutex_init (&thl->lock, &attr);
-	} else {
-		pthread_mutexattr_t attr;
-		pthread_mutexattr_init (&attr);
-		pthread_mutex_init (&thl->lock, &attr);
+	}
+	int rc = pthread_mutex_init (&thl->lock, &attr);
+	pthread_mutexattr_destroy (&attr);
+	if (rc != 0) {
+		return false;
 	}
 #elif R2__WINDOWS__
-	// TODO: obey `recursive` (currently it is always recursive)
-	InitializeCriticalSection (&thl->lock);
+	if (!recursive && w32_srw_init (thl)) {
+		thl->type = (RThreadLockType)(thl->type | R_TH_LOCK_TYPE_SRW);
+	} else {
+		InitializeCriticalSection (&thl->lock.cs);
+	}
 #else
 #warning Unsupported mutex
 	return false;
@@ -76,14 +110,11 @@ R_API void r_atomic_store(volatile R_ATOMIC_BOOL *data, bool v) {
 R_API RThreadLock *r_th_lock_new(bool recursive) {
 	R_LOG_DEBUG ("r_th_lock_new");
 	RThreadLock *thl = R_NEW0 (RThreadLock);
-	if (thl) {
-		if (_lock_init (thl, recursive)) {
-			thl->type = R_TH_LOCK_TYPE_HEAP;
-			thl->active = true;
-			thl->activating = false;
-		} else {
-			R_FREE (thl);
-		}
+	if (_lock_init (thl, recursive)) {
+		thl->type = (RThreadLockType)(thl->type | R_TH_LOCK_TYPE_HEAP);
+		thl->active = true;
+	} else {
+		R_FREE (thl);
 	}
 	return thl;
 }
@@ -105,7 +136,7 @@ R_API bool r_th_lock_enter(RThreadLock *thl) {
 	R_LOG_DEBUG ("r_th_lock_enter");
 
 	// initialize static locks on acquisition
-	if (thl->type == R_TH_LOCK_TYPE_STATIC) {
+	if (!(thl->type & R_TH_LOCK_TYPE_HEAP)) {
 		while (r_atomic_exchange (&thl->activating, true)) {
 			// spinning
 		}
@@ -119,7 +150,11 @@ R_API bool r_th_lock_enter(RThreadLock *thl) {
 #if HAVE_PTHREAD
 	return pthread_mutex_lock (&thl->lock) == 0;
 #elif R2__WINDOWS__
-	EnterCriticalSection (&thl->lock);
+	if (thl->type & R_TH_LOCK_TYPE_SRW) {
+		((void (WINAPI *)(PVOID))thl->lock.srw.api[W32_SRW_ENTER]) (&thl->lock.srw.lock);
+	} else {
+		EnterCriticalSection (&thl->lock.cs);
+	}
 	return true;
 #else
 	return true;
@@ -131,7 +166,10 @@ R_API bool r_th_lock_tryenter(RThreadLock *thl) {
 #if HAVE_PTHREAD
 	return pthread_mutex_trylock (&thl->lock) == 0;
 #elif R2__WINDOWS__
-	return TryEnterCriticalSection (&thl->lock);
+	if (thl->type & R_TH_LOCK_TYPE_SRW) {
+		return ((BYTE (WINAPI *)(PVOID))thl->lock.srw.api[W32_SRW_TRYENTER]) (&thl->lock.srw.lock) != 0;
+	}
+	return TryEnterCriticalSection (&thl->lock.cs);
 #else
 	return false;
 #endif
@@ -146,7 +184,11 @@ R_API bool r_th_lock_leave(RThreadLock *thl) {
 #if HAVE_PTHREAD
 	return pthread_mutex_unlock (&thl->lock) == 0;
 #elif R2__WINDOWS__
-	LeaveCriticalSection (&thl->lock);
+	if (thl->type & R_TH_LOCK_TYPE_SRW) {
+		((void (WINAPI *)(PVOID))thl->lock.srw.api[W32_SRW_LEAVE]) (&thl->lock.srw.lock);
+	} else {
+		LeaveCriticalSection (&thl->lock.cs);
+	}
 	return true;
 #else
 	return false;
@@ -170,9 +212,11 @@ R_API void *r_th_lock_free(RThreadLock *thl) {
 #if HAVE_PTHREAD
 		pthread_mutex_destroy (&thl->lock);
 #elif R2__WINDOWS__
-		DeleteCriticalSection (&thl->lock);
+		if (!(thl->type & R_TH_LOCK_TYPE_SRW)) {
+			DeleteCriticalSection (&thl->lock.cs);
+		}
 #endif
-		if (thl->type == R_TH_LOCK_TYPE_HEAP) {
+		if (thl->type & R_TH_LOCK_TYPE_HEAP) {
 			free (thl);
 		}
 	}
