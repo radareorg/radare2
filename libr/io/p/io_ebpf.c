@@ -91,15 +91,20 @@ typedef struct {
 	int perf_fd;
 #endif
 	bool spawned;
+	bool child_reaped;
 	bool writable;
 } RIOEbpf;
 
 #define RIOEBPF(x) ((RIOEbpf *)(x)->data)
 
 static bool spawn_preexec(RIOEbpf *e);
+static bool reap_spawned(RIOEbpf *e);
 
 // /proc/pid/mem descriptors go stale when a spawned target calls execve.
 static void reopen_mem(RIOEbpf *e) {
+	if (e->spawned && reap_spawned (e)) {
+		return;
+	}
 	char mempath[64];
 	snprintf (mempath, sizeof (mempath), "/proc/%d/mem", e->pid);
 	int fd = r_sandbox_open (mempath, e->writable? O_RDWR: O_RDONLY, 0);
@@ -112,11 +117,11 @@ static void reopen_mem(RIOEbpf *e) {
 static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	RIOEbpf *e = RIOEBPF (desc);
 	memset (buf, io->Oxff, len);
-	if (e->mem_fd < 0) {
+	if (e->mem_fd < 0 || (e->spawned && reap_spawned (e))) {
 		return -1;
 	}
 	int r = pread (e->mem_fd, buf, len, (off_t)e->off);
-	if (r < 0 && e->spawned) {
+	if (r < 0 && e->spawned && !reap_spawned (e)) {
 		// stale fd after execve: reopen once and retry
 		reopen_mem (e);
 		r = pread (e->mem_fd, buf, len, (off_t)e->off);
@@ -126,11 +131,11 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 
 static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int len) {
 	RIOEbpf *e = RIOEBPF (desc);
-	if (e->mem_fd < 0) {
+	if (e->mem_fd < 0 || (e->spawned && reap_spawned (e))) {
 		return -1;
 	}
 	int r = pwrite (e->mem_fd, buf, len, (off_t)e->off);
-	if (r < 0 && e->spawned) {
+	if (r < 0 && e->spawned && !reap_spawned (e)) {
 		reopen_mem (e);
 		r = pwrite (e->mem_fd, buf, len, (off_t)e->off);
 	}
@@ -262,12 +267,12 @@ static char *addr_to_file_offset(int pid, ut64 addr, ut64 *foff) {
 		if (addr < start || addr >= end || perms[2] != 'x') {
 			continue;
 		}
-		const char *sp = r_str_lchr (line, '/');
-		if (!sp) {
+		const char *map_path = strchr (line, '/');
+		if (!map_path) {
 			continue;
 		}
 		*foff = (addr - start) + off;
-		ret = strdup (sp);
+		ret = strdup (map_path);
 		break;
 	}
 	free (maps);
@@ -410,7 +415,7 @@ static void print_regs(RIO *io, RIOEbpf *e) {
 
 // Before execve, a spawned target's procfs state still belongs to the r2 stub.
 static bool spawn_preexec(RIOEbpf *e) {
-	if (!e->spawned || !e->spawn_path) {
+	if (!e->spawned || !e->spawn_path || reap_spawned (e)) {
 		return false;
 	}
 	char *path = r_sys_pidpath (e->pid);
@@ -451,12 +456,12 @@ static void emit_maps(RIO *io, RIOEbpf *e, bool as_flags) {
 			continue;
 		}
 		if (!as_flags) {
-			const char *rest = r_str_lchr (line, ' ');
+			const char *rest = strchr (line, ' ');
 			io->cb_printf ("0x%"PFMT64x" - 0x%"PFMT64x"%s\n", start, end, rest? rest: "");
 			continue;
 		}
-		const char *sp = r_str_lchr (line, '/');
-		char *name = sp? (char *)r_file_basename (sp): NULL;
+		const char *map_path = strchr (line, '/');
+		char *name = map_path? (char *)r_file_basename (map_path): NULL;
 		if (name) {
 			r_name_filter (name, -1);
 		}
@@ -484,10 +489,39 @@ static void emit_r2(RIO *io, RIOEbpf *e) {
 	}
 }
 
-// Poll procfs until the process stops, dies, or times out.
-static bool wait_stopped(int pid) {
+// Only spawned targets are waitable children; retry interrupted waits.
+static pid_t wait_child(RIOEbpf *e, int options) {
+	int status = 0;
+	pid_t ret;
+	do {
+		ret = waitpid (e->pid, &status, options);
+	} while (ret < 0 && errno == EINTR);
+	if (ret == e->pid && !WIFSTOPPED (status)) {
+		e->child_reaped = true;
+	} else if (ret < 0) {
+		if (errno == ECHILD) {
+			e->child_reaped = true;
+		} else {
+			R_LOG_WARN ("waitpid(%d) failed: %s", e->pid, strerror (errno));
+		}
+	}
+	return ret;
+}
+
+static bool reap_spawned(RIOEbpf *e) {
+	if (e->spawned && !e->child_reaped) {
+		wait_child (e, WNOHANG);
+	}
+	return e->child_reaped;
+}
+
+// Spawned children report stops through waitpid; attached PIDs require procfs.
+static bool wait_stopped(RIOEbpf *e) {
+	if (e->spawned) {
+		return wait_child (e, WUNTRACED) == e->pid && !e->child_reaped;
+	}
 	char path[64];
-	snprintf (path, sizeof (path), "/proc/%d/stat", pid);
+	snprintf (path, sizeof (path), "/proc/%d/stat", e->pid);
 	int i;
 	for (i = 0; i < 1000; i++) {
 		char *s = r_file_slurp (path, NULL);
@@ -505,15 +539,43 @@ static bool wait_stopped(int pid) {
 	return false;
 }
 
-static void kill_wait(int pid) {
-	kill (pid, SIGKILL);
-	waitpid (pid, NULL, 0);
+static void terminate_spawned(RIOEbpf *e) {
+	if (reap_spawned (e)) {
+		return;
+	}
+	if (kill (e->pid, SIGKILL) < 0 && errno != ESRCH) {
+		R_LOG_WARN ("Cannot kill spawned pid %d: %s", e->pid, strerror (errno));
+		return;
+	}
+	wait_child (e, 0);
+	if (!e->child_reaped) {
+		R_LOG_WARN ("Cannot reap spawned pid %d", e->pid);
+	}
+}
+
+static bool signal_target(RIOEbpf *e, int sig) {
+	if (e->spawned && reap_spawned (e)) {
+		R_LOG_WARN ("Spawned target %d has exited", e->pid);
+		return false;
+	}
+	if (kill (e->pid, sig) < 0) {
+		int error = errno;
+		if (e->spawned && error == ESRCH) {
+			reap_spawned (e);
+		}
+		R_LOG_WARN ("Cannot signal pid %d: %s", e->pid, strerror (error));
+		return false;
+	}
+	return true;
 }
 
 static void stop_target(RIOEbpf *e) {
-	kill (e->pid, SIGSTOP);
-	if (!wait_stopped (e->pid)) {
+	if (!signal_target (e, SIGSTOP)) {
+		return;
+	}
+	if (!wait_stopped (e)) {
 		R_LOG_WARN ("Target did not stop (may have exited)");
+		return;
 	}
 	reopen_mem (e);
 }
@@ -538,9 +600,12 @@ static int ebpf_spawn(const char *cmdline, char **path_out) {
 	}
 	*path_out = strdup (argv[0]);
 	r_str_argv_free (argv);
-	if (!wait_stopped (pid)) {
+	RIOEbpf child = { .pid = pid, .spawned = true };
+	if (!wait_stopped (&child)) {
 		R_LOG_ERROR ("Spawned pid %d did not stop", pid);
-		kill_wait (pid);
+		if (!child.child_reaped) {
+			terminate_spawned (&child);
+		}
 		return -1;
 	}
 	return pid;
@@ -552,7 +617,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 	const char *arg = file + strlen ("ebpf://");
 	char *spawn_path = NULL;
-	bool spawned = r_str_lchr (arg, '/') != NULL;
+	bool spawned = strchr (arg, '/') != NULL;
 	int pid = spawned? ebpf_spawn (arg, &spawn_path): atoi (arg);
 	if (pid < 1) {
 		R_LOG_ERROR ("Usage: r2 ebpf://[pid] or ebpf://[/path/to/bin args]");
@@ -570,7 +635,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (mem_fd < 0) {
 		R_LOG_ERROR ("Cannot open %s (permission or no such pid)", mempath);
 		if (spawned) {
-			kill_wait (pid);
+			RIOEbpf child = { .pid = pid, .spawned = true };
+			terminate_spawned (&child);
 		}
 		free (spawn_path);
 		return NULL;
@@ -608,7 +674,7 @@ static bool __close(RIODesc *desc) {
 #endif
 	close (e->mem_fd);
 	if (e->spawned) {
-		kill_wait (e->pid);
+		terminate_spawned (e);
 	}
 	free (e->spawn_path);
 	R_FREE (desc->data);
@@ -620,10 +686,19 @@ static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
 	if (R_STR_ISEMPTY (cmd)) {
 		return NULL;
 	}
+	bool child_exited = e->spawned && reap_spawned (e);
+	if (child_exited && !r_str_startswith (cmd, "pid") &&
+			!r_str_startswith (cmd, "kill") &&
+			!r_str_startswith (cmd, "probe-") && cmd[0] != '?' &&
+			!r_str_startswith (cmd, "help")) {
+		R_LOG_WARN ("Spawned target %d has exited", e->pid);
+		return NULL;
+	}
 	if (r_str_startswith (cmd, "pid")) {
 		// pid stays the first token so scripts can still parse it
-		char *exe = r_sys_pidpath (e->pid);
-		io->cb_printf ("%d %s%s%s\n", e->pid, e->spawned? "spawned": "attached",
+		char *exe = child_exited? NULL: r_sys_pidpath (e->pid);
+		const char *state = child_exited? "exited": e->spawned? "spawned": "attached";
+		io->cb_printf ("%d %s%s%s\n", e->pid, state,
 			exe? " ": "", exe? exe: "");
 		free (exe);
 	} else if (r_str_startswith (cmd, "maps")) {
@@ -637,17 +712,24 @@ static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
 	} else if (r_str_startswith (cmd, "contstop")) {
 		const char *arg = r_str_trim_head_ro (cmd + strlen ("contstop"));
 		ut64 ms = *arg? r_num_get (NULL, arg): 0;
-		kill (e->pid, SIGCONT);
-		if (ms) {
-			r_sys_usleep (ms * 1000);
+		if (signal_target (e, SIGCONT)) {
+			if (ms) {
+				r_sys_usleep (ms * 1000);
+			}
+			if (!e->spawned || !reap_spawned (e)) {
+				stop_target (e);
+			}
 		}
-		stop_target (e);
 	} else if (r_str_startswith (cmd, "cont")) {
-		kill (e->pid, SIGCONT);
+		signal_target (e, SIGCONT);
 	} else if (r_str_startswith (cmd, "stop")) {
 		stop_target (e);
 	} else if (r_str_startswith (cmd, "kill")) {
-		kill (e->pid, SIGKILL);
+		if (e->spawned) {
+			terminate_spawned (e);
+		} else {
+			signal_target (e, SIGKILL);
+		}
 	} else if (r_str_startswith (cmd, "regs") || !strcmp (cmd, "r")) {
 		if (!preexec_guard (e)) {
 			print_regs (io, e);
@@ -674,7 +756,7 @@ static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
 			":cont           SIGCONT the target (resume a spawned/stopped process)\n"
 			":stop           SIGSTOP the target and wait until it is frozen\n"
 			":contstop [ms]  resume then re-freeze after [ms] ms (unreliable 'step')\n"
-			":kill           SIGKILL the target\n"
+			":kill           SIGKILL the target (and reap spawned children)\n"
 			":regs           print registers (eBPF snapshot, else pc/sp from /proc)\n"
 			":probe <addr>   arm an eBPF uprobe that snapshots full registers at addr\n"
 			":probe-         remove the current uprobe\n"
