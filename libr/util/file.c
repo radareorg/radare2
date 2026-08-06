@@ -359,6 +359,9 @@ R_API char *r_stdin_readline(int *sz) {
 	char buf[4096];
 	for (;;) {
 		int n = read (0, buf, sizeof (buf));
+		if (n == 0 && l > 0) {
+			break;
+		}
 		if (n < 1) {
 			r_strbuf_free (sb);
 			return NULL;
