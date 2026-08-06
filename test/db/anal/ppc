@@ -1729,3 +1729,110 @@ EXPECT=<<EOF
 int nine("AA", "BB", "CC", "DD", "EE", "FF", "GG", "HH", "II")
 EOF
 RUN
+
+NAME=ppc.gnu decodes the full 6-bit primary opcode
+FILE=malloc://128
+ARGS=-a ppc.gnu -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 980100004400000248000010480000112c030000280300014082001060000000
+wx 4e8000204e8004204e800421 @ 32
+wx 4e8000214d8200204c820420 @ 44
+wx 429f0005408200114280001142800010 @ 56
+ao 1 @ 0~type
+ao 1 @ 4~type
+pi 1 @ 8
+ao 1 @ 8~type,jump
+ao 1 @ 12~type,jump,fail
+ao 1 @ 16~type
+ao 1 @ 20~type
+ao 1 @ 24~type,jump,fail
+ao 1 @ 32~type
+ao 1 @ 36~type
+ao 1 @ 40~type,fail
+ao 1 @ 44~type,fail
+ao 1 @ 48~type,fail
+ao 1 @ 52~type,fail
+ao 1 @ 56~type,jump,fail
+ao 1 @ 60~type,jump,fail
+ao 1 @ 64~type,jump,fail
+ao 1 @ 68~type,jump,fail
+wx 44000000 @ 72
+ao 1 @ 72~type
+wx 4c000064 @ 76
+ao 1 @ 76~type
+wx 4e0000204e40002042a00004 @ 80
+ao 1 @ 80~type,fail
+ao 1 @ 84~type,fail
+ao 1 @ 88~type
+EOF
+EXPECT=<<EOF
+type: null
+type: swi
+b 0x00000018
+type: jmp
+jump: 0x00000018
+type: call
+jump: 0x0000001c
+fail: 0x00000010
+type: cmp
+type: cmp
+type: cjmp
+jump: 0x00000028
+fail: 0x0000001c
+type: ret
+type: ujmp
+type: ucall
+fail: 0x0000002c
+type: ucall
+fail: 0x00000030
+type: cret
+fail: 0x00000034
+type: ucjmp
+fail: 0x00000038
+type: jmp
+jump: 0x0000003c
+type: ccall
+jump: 0x0000004c
+fail: 0x00000040
+type: call
+jump: 0x00000050
+fail: 0x00000044
+type: jmp
+jump: 0x00000054
+type: ill
+type: ret
+type: cjmp
+fail: 0x00000054
+type: cjmp
+fail: 0x00000058
+type: ill
+EOF
+RUN
+
+NAME=ppc.gnu function detection does not stop at byte stores
+FILE=malloc://16
+ARGS=-a ppc.gnu -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 380000009801000060000000 4e800020
+af
+afi~size
+EOF
+EXPECT=<<EOF
+size: 16
+EOF
+RUN
+
+NAME=ppc.gnu little-endian disassembly
+FILE=malloc://16
+ARGS=-a ppc.gnu -b 32 -e cfg.bigendian=false
+CMDS=<<EOF
+wx 10000048
+pi 1
+ao 1~type,jump
+EOF
+EXPECT=<<EOF
+b 0x00000010
+type: jmp
+jump: 0x00000010
+EOF
+RUN

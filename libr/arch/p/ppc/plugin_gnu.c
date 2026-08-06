@@ -4,6 +4,7 @@
 
 #include <r_arch.h>
 #include "../../include/disas-asm.h"
+#include "../../include/opcode/ppc.h"
 
 static int ppc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - info->buffer_vma);
@@ -37,10 +38,7 @@ static int disassemble(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		return -1;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
-	memcpy (bytes, buf, 4); // TODO handle thumb
-
-	/* prepare disassembler */
-	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
+	memcpy (bytes, buf, 4);
 	*options = 0;
 	const int bits = a->config->bits;
 	if (!R_STR_ISEMPTY (a->config->cpu)) {
@@ -56,10 +54,10 @@ static int disassemble(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+	disasm_obj.endian = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)? BFD_ENDIAN_BIG: BFD_ENDIAN_LITTLE;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
-	if (disasm_obj.endian) {
+	if (disasm_obj.endian == BFD_ENDIAN_BIG) {
 		op->size = print_insn_big_powerpc ((bfd_vma)addr, &disasm_obj);
 	} else {
 		op->size = print_insn_little_powerpc ((bfd_vma)addr, &disasm_obj);
@@ -81,79 +79,81 @@ static int disassemble(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 static bool ppc_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const int len = op->size;
-	const ut8 *bytes = op->bytes;
-	// XXX hack
-	int opcode = (bytes[0] & 0xf8) >> 3; // bytes 0-5
-	short baddr = (((ut32) bytes[2] << 8) | (bytes[3] & 0xfc));// 16-29
-	int aa = bytes[3]&0x2;
-	int lk = bytes[3]&0x1;
-	//if (baddr>0x7fff)
-	//      baddr = -baddr;
-
-	op->addr = addr;
-	op->type = 0;
-	op->size = 4;
-	if (mask & R_ARCH_OP_MASK_DISASM) {
-		int res = disassemble (as, op, addr, bytes, len);
-		if (res == -1) {
-			op->type = R_ANAL_OP_TYPE_ILL;
-		}
+	if (len < 4) {
+		return false;
 	}
-//	R_LOG_DEBUG ("OPCODE IS %08x : %02x (opcode=%d) baddr = %d", addr, bytes[0], opcode, baddr);
+	const ut32 insn = r_read_ble32 (op->bytes, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
+	const ut32 opcode = PPC_OP (insn);
+	const st16 bd = (st16) (insn & 0xfffc);
+	const bool aa = insn & 2;
+	const bool lk = insn & 1;
+	const ut32 bo = (insn >> 21) & 0x1f;
+	// BO 20 is the only valid branch-always encoding; anything else keeps the fall-through edge
+	const bool cond = bo != 20;
 
-	switch (opcode) {
-//	case 0: // bl op->type = R_ANAL_OP_TYPE_NOP; break;
+	op->type = R_ANAL_OP_TYPE_NULL;
+	if ((mask & R_ARCH_OP_MASK_DISASM) && disassemble (as, op, addr, op->bytes, len) == -1) {
+		// don't let the switch type reserved-field garbage as a real op
+		op->type = R_ANAL_OP_TYPE_ILL;
+	} else switch (opcode) {
+	case 10: // cmpli
 	case 11: // cmpi
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
-	case 9: // pure branch
-		if (bytes[0] == 0x4e) {
-			// bctr
+	case 16: // bc
+		op->jump = aa? bd: addr + bd;
+		if (cond) {
+			op->type = lk? R_ANAL_OP_TYPE_CCALL: R_ANAL_OP_TYPE_CJMP;
+			op->fail = addr + 4;
+		} else if (lk && (aa || op->jump != addr + 4)) {
+			op->type = R_ANAL_OP_TYPE_CALL;
+			op->fail = addr + 4;
 		} else {
-			op->jump = aa? baddr: addr + baddr;
-			if (lk) {
-				op->fail = addr + 4;
-			}
+			// branch-always; bcl 20,31,$+4 only exists for the LR write (ppc32 pic idiom), not a call
+			op->type = R_ANAL_OP_TYPE_JMP;
 		}
-		op->eob = 1;
+		op->eob = !lk;
 		break;
-	case 6: // bc // conditional jump
-		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = aa? baddr: addr + baddr + 4;
-		op->eob = 1;
-		break;
-#if 0
-	case 7: // sc/svc
+	case 17: // sc
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-#endif
-#if 0
-	case 15: // bl
-		// OK
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = (aa)?(baddr):(addr+baddr);
-		op->fail = addr+4;
-		op->eob = 1;
-		break;
-#endif
-	case 8: // bne i tal
-		// OK
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = (aa)?(baddr):(addr+baddr+4);
-		op->fail = addr+4;
-		op->eob = 1;
-		break;
-	case 19: // bclr/bcr/bcctr/bcc
-		op->type = R_ANAL_OP_TYPE_RET; // jump to LR
-		if (lk) {
-			op->jump = UT32_MAX; // LR ?!?
-			op->fail = addr+4;
+	case 18: { // b/ba/bl/bla
+		st32 li = insn & 0x03fffffc;
+		if (li & 0x02000000) {
+			li -= 0x04000000;
 		}
-		op->eob = 1;
+		op->type = lk? R_ANAL_OP_TYPE_CALL: R_ANAL_OP_TYPE_JMP;
+		op->jump = aa? li: addr + li;
+		if (lk) {
+			op->fail = addr + 4;
+		}
+		op->eob = !lk;
 		break;
 	}
+	case 19: { // bclr/bcctr/rfi/cr ops
+		const ut32 xo = (insn >> 1) & 0x3ff;
+		if (xo == 16 || xo == 528) { // bclr/bcctr
+			if (lk) {
+				op->type = cond? R_ANAL_OP_TYPE_UCCALL: R_ANAL_OP_TYPE_UCALL;
+			} else if (xo == 16) {
+				// CTR-decrement forms (bdnzlr/bdzlr) are loop branches, not returns
+				op->type = (bo & 4)? (cond? R_ANAL_OP_TYPE_CRET: R_ANAL_OP_TYPE_RET): R_ANAL_OP_TYPE_CJMP;
+			} else {
+				op->type = cond? R_ANAL_OP_TYPE_UCJMP: R_ANAL_OP_TYPE_UJMP;
+			}
+			if (cond || lk) {
+				op->fail = addr + 4;
+			}
+			op->eob = true;
+		} else if (xo == 18 || xo == 50 || xo == 51) { // rfid/rfi/rfci
+			op->type = R_ANAL_OP_TYPE_RET;
+			op->eob = true;
+		}
+		break;
+	}
+	}
 	op->size = 4;
-	return op->size;
+	return true;
 }
 
 static char *regs(RArchSession *as) {
@@ -244,47 +244,4 @@ R_API RLibStruct radare_plugin = {
 	.data = &r_arch_plugin_ppc_gnu,
 	.version = R2_VERSION
 };
-#endif
-
-#if 0
-NOTES:
-======
-	 10000
-	 AA = absolute address
-	 LK = link bit
-	 BD = bits 16-19
-	   address
-	 if (AA) {
-	   address = (int32) BD << 2
-	 } else {
-	   address += (int32) BD << 2
-	 }
-	AA LK
-	30 31
-	 0  0  bc
-	 1  0  bca
-	 0  1  bcl
-	 1  1  bcla
-
-	 10011
-	 BCCTR
-	 LK = 31
-
-	 bclr or bcr (Branch Conditional Link Register) Instruction
-	 10011
-
-	 6-29 -> LL (addr) ?
-	 B  10010 -> branch
-	 30 31
-	 0  0   b
-	 1  0   ba
-	 0  1   bl
-	 1  1   bla
-	 SC SYSCALL 5 first bytes 10001
-	 SVC SUPERVISORCALL
-	 30 31
-	 0  0  svc
-	 0  1  svcl
-	 1  0  svca
-	 1  1  svcla
 #endif
