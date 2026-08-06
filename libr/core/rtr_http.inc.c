@@ -16,7 +16,7 @@ typedef struct {
 
 static const ExtAndType eat[] = {
 	{ ".js", "application/javascript" },
-	{ ".png", "application/png" },
+	{ ".png", "image/png" },
 	{ ".jpg", "image/jpg" },
 	{ ".jpeg", "image/jpeg" },
 	{ ".gif", "image/gif" },
