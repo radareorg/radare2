@@ -13,6 +13,7 @@
 
 static RCoreHelpMessage help_msg_prj = {
 	"Usage:", "prj [action] [file]", "Manage project files",
+	"prj list", "", "list all projects",
 	"prj save", " [file]", "save current state into a project file",
 	"prj info", " [file]", "show information about the project file",
 	"prj load", " [file]", "merge project information into the current session",
@@ -93,6 +94,9 @@ static RCmdResult prj_callback(RCmdContext *ctx) {
 	}
 	if (argc == 1 && prj_action_help (ctx, args[0])) {
 		return (RCmdResult) { 0 };
+	}
+	if (argc == 1 && r_strs_equals_str (args[0], "list")) {
+		return (RCmdResult) { .status = r_core_project_list (ctx->user, 0) };
 	}
 	if (argc != 2) {
 		return prj_invalid (ctx);

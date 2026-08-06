@@ -51,6 +51,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=newprj list projects
+FILE=malloc://1
+CMDS=<<EOF
+e dir.projects=bins/other/projects
+prj list~test
+EOF
+EXPECT=<<EOF
+test
+EOF
+RUN
+
 NAME=newprj flag with no space
 FILE=malloc://0x1000
 CMDS=<<EOF
