@@ -2279,11 +2279,11 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 	if (fcn->addr == UT64_MAX) {
 		fcn->addr = addr;
 	}
-	fcn->maxstack = 0;
-	const int shadow = r_anal_cc_shadow (anal, fcn->callconv);
-	if (shadow > 0) {
-		const int word = r_anal_cc_wordsize (anal, fcn->callconv);
-		fcn->stack = fcn->maxstack = fcn->reg_save_area = shadow + r_anal_cc_raslot (anal, word);
+	// re-entry continues an in-progress frame, so only preset a function with no blocks yet
+	if (r_list_empty (fcn->bbs)) {
+		const int shadow = r_anal_cc_shadow (anal, fcn->callconv);
+		const int frame = (shadow > 0)? shadow + r_anal_cc_raslot (anal, r_anal_cc_wordsize (anal, fcn->callconv)): 0;
+		fcn->stack = fcn->maxstack = fcn->reg_save_area = frame;
 	}
 	// XXX -1 here results in lots of errors
 	int ret = r_anal_function_bb (anal, fcn, addr, anal->opt.depth);
