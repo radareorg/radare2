@@ -1122,9 +1122,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 				}
 				free (alias_str);
 				free (rtype);
-				if (args_str) {
-					free (args_str);
-				}
+				free (args_str);
 				free (fulltype);
 				return true;
 			}
@@ -1364,11 +1362,8 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				free (type_name);
 				free (fulltype);
 				free (rtype);
-				if (args) {
-					free (args);
-				}
+				free (args);
 				free (mname);
-				/* mt_check is not defined in this scope */
 				continue;
 			}
 		}
@@ -1412,9 +1407,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 						r_strbuf_appendf (kvc->sb, "func.%s.ret=%s\n", mt_check, rtype);
 						free (mname);
 						free (rtype);
-						if (args_str) {
-							free (args_str);
-						}
+						free (args_str);
 						free (mt_check);
 						continue;
 					}
