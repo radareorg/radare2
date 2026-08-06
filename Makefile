@@ -14,6 +14,8 @@ else
 BUILDSEC=$(shell date "+__%H:%M:%S")
 endif
 DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d libr/arch/d
+WWW_UI_DIRS=m p t
+WWW_UI_INDEXES=$(addsuffix /index.html,$(addprefix shlr/www/,$(WWW_UI_DIRS)))
 ZIPWINDIST=YES
 ZIP=zip
 
@@ -290,13 +292,13 @@ symstall-panels:
 		FILE2=$$(echo $$FILE | cut -d . -f 1); \
 		ln -fs "$(PWD)/shlr/panels/$$FILE" "$(DESTDIR)$(PANELS)/$$FILE2" ; done
 
-install-www:
+install-www: $(WWW_UI_INDEXES)
 	rm -rf "${DESTDIR}${WWWROOT}"
 	rm -rf "${DESTDIR}${LIBDIR}/radare2/${VERSION}/www" # old dir
 	mkdir -p "${DESTDIR}${WWWROOT}"
 	cp -rf shlr/www/* "${DESTDIR}${WWWROOT}"
 
-symstall-www:
+symstall-www: $(WWW_UI_INDEXES)
 	rm -rf "${DESTDIR}${WWWROOT}"
 	rm -rf "${DESTDIR}${LIBDIR}/radare2/${VERSION}/www" # old dir
 	mkdir -p "${DESTDIR}${WWWROOT}"

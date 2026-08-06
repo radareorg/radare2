@@ -1,237 +1,285 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=false" />
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<meta name="language" content="en" />
-
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title>radare2 webui</title>
-
-	<script type="text/javascript" src="m/vendors/jquery.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="index.css" />
 	<script type="text/javascript" src="m/r2.js"></script>
-
-	<style>
-	.circular, .circular {
-		background: white;
-		width: 100%;
-	}
-	#title, #button {
-		margin-top: 20px;
-		color: white;
-	}
-	.layout_value{
-		padding-left: 5px;
-		cursor:pointer;
-	}
-	.highlight {
-		background: #80f080 ;
-		color:black;
-		font-weight:bold;
-	}
-	li {
-		margin-left:-20px;
-	}
-	input, ul, select {
-		border:3px solid black;
-		background-color: #606060;
-		color: #f0f0f0;
-	}
-	hr {
-		visibility:hidden;
-		size: 0 solid black;
-		width:100%;
-		color:#707070;
-	}
-	img {
-		cursor:pointer;
-	}
-	</style>
 </head>
-<body style="background: rgb(30,30,30); margin:0px;color: white; font-family: monospace;">
-	<div id="content" align="center">
-		<div class="circular" id="logo"><img style="" width="100px" src="r2.svg" onerror="this.onerror=null; this.src='rlogo.png'"></div>
-		<!-- <div id="title"><h1>radare2</h1></div> -->
-		<br />
-		<div style="cursor:pointer" id="fortune"></div></a>
-<hr size=1 />
-<h2>Current Project</h2>
-		<table>
-			<tr>
-				<td>CurrentProject: </td>
-				<td><div class="layout_value" id="openproject"></div></td>
-			</tr>
-			<tr>
-				<td>CurrentFile: </td>
-				<td><div class="layout_value" id="openfile"></div></td>
-			</tr>
-			<tr>
-				<td>OtherProjects: </td>
-				<td><div id="recent"></div></td>
-			</tr>
-			<tr>
-				<td>Layout: </td>
-				<td>
-					<div id="layout">
-						<select id="dropdown">
-						  <option value="m">material (responsive)</option>
-						  <option value="t">tiles (legacy)</option>
-						</select>
-					</div>
-				</td>
-			</tr>
-		</table>
-		<div id="button">
-			<input id="delete" type="submit" value="Delete" />
-			<input id="saveas" type="submit" value="Save As" />
-			<input id="save" type="submit" value="Save" />
-			<input id="submit" type="submit" value="Open" />
+<body>
+	<div id="content">
+		<button id="logo" type="button" title="Open the selected web UI">
+			<img src="r2.svg" alt="radare2" onerror="this.onerror=null; this.src='rlogo.png';" />
+		</button>
+		<button id="fortune" type="button" title="Show another fortune"></button>
+
+		<div class="section">
+			<h2>Projects</h2>
+			<div class="details">
+				<label>Current project</label><span id="openproject">Loading...</span>
+				<label>Current file</label><span id="openfile">Loading...</span>
+				<label for="dropdown">Web UI</label>
+				<select id="dropdown">
+					<option value="m">material (responsive)</option>
+					<option value="p">panels</option>
+					<option value="t">tiles (legacy)</option>
+				</select>
+			</div>
+
+			<h3>Saved projects</h3>
+			<ul id="recent" aria-busy="true"><li class="empty">Loading projects...</li></ul>
+			<p class="hint">Select a project, or double-click it to open.</p>
+			<div class="actions">
+				<button id="delete" type="button" disabled>Delete</button>
+				<button id="saveas" type="button">Save as...</button>
+				<button id="save" type="button">Save</button>
+				<button id="submit" type="button" disabled>Open</button>
+			</div>
+			<p id="project-status" class="status" aria-live="polite"></p>
 		</div>
-<br />
-<hr size=1 />
-<h2>Files</h2>
-		<div id="button">
-			<input id="newfile_path" type="input" value=""/>
-			<input id="newfile" type="submit" value="Open File ..." />
+
+		<div class="section">
+			<h2>Files</h2>
+			<form id="open-file-form" class="file-form" action="#">
+				<input id="newfile_path" type="text" placeholder="Path to a file"
+					aria-label="File path" autocomplete="off" spellcheck="false" />
+				<button type="submit">Open file</button>
+			</form>
+			<form class="file-form upload" action="/up/test.bin" enctype="multipart/form-data" method="post">
+				<input type="file" name="file" aria-label="File to upload" required />
+				<input type="submit" value="Upload" />
+			</form>
 		</div>
-		<div id="button">
-<form action="/up/test.bin" enctype="multipart/form-data" method="post">
-<input type="file" name="file" />
-<input type="submit" value="Upload" />
-</form>
-		</div>
-<br /><br />
 	</div>
-	<script>
-		var filename = "";
-		var layout = "";
-		var project = "";
-		var fortune = "";
 
-		$("#fortune").on ('click', function() {
-			r2.cmd("fortune", function(x) {
-				$("#fortune").html("<q><i>" + x + "</i></q>");
-			});
-		});
-		$(document).ready( function() {
-			function encodeHtmlEntity(str) {
-			  return str.replace(/[\u00A0-\u9999\<\>\(\)\{\}\[\]\%\#\&\'\"\\\/]/gim, function(c){
-			    return '&#' + c.charCodeAt(0) + ';' ;
-			  });
+	<script type="text/javascript">
+		(function() {
+			"use strict";
+			var currentProject = "";
+			var filename = "";
+			var layout = "m";
+			var project = "";
+
+			function byId(id) {
+				return document.getElementById(id);
 			}
-			function updateProjectList() {
-				window.location.assign("/");
+
+			function setStatus(message, error) {
+				var status = byId("project-status");
+				status.textContent = message || "";
+				status.className = error ? "status error" : "status";
 			}
-				r2.cmdj("Pj", function(x) {
-					var html = "<ul>";
-					for (var i in x) {
-						var filename = x[i].trim();
-						html += "<li class='layout_value' id='" + filename + "'>" + filename + "</li>";
+
+			function openUi() {
+				window.location.assign("./" + layout + "/");
+			}
+
+			function selectProject(name) {
+				project = name || "";
+				var buttons = document.querySelectorAll(".project");
+				for (var i = 0; i < buttons.length; i++) {
+					buttons[i].classList.toggle("selected", buttons[i].dataset.project === project);
+				}
+				byId("delete").disabled = !project;
+				byId("submit").disabled = !project && !filename;
+			}
+
+			function showProjectMessage(message) {
+				var item = document.createElement("li");
+				item.className = "empty";
+				item.textContent = message;
+				byId("recent").appendChild(item);
+			}
+
+			function renderProjects(projects) {
+				var list = byId("recent");
+				list.textContent = "";
+				if (!Array.isArray(projects)) {
+					showProjectMessage("Could not list projects.");
+					selectProject("");
+					return;
+				}
+				projects.sort(function(a, b) {
+					return a.localeCompare(b);
+				});
+				if (!projects.length) {
+					showProjectMessage("No saved projects.");
+				}
+				for (var i = 0; i < projects.length; i++) {
+					var name = projects[i];
+					var button = document.createElement("button");
+					button.type = "button";
+					button.className = "project";
+					button.dataset.project = name;
+					button.textContent = name;
+					if (name === currentProject) {
+						button.appendChild(document.createTextNode(" (current)"));
 					}
-					html += "</ul>";
-					$("#recent").html(html);
+					var item = document.createElement("li");
+					item.appendChild(button);
+					list.appendChild(item);
+				}
+				selectProject(projects.indexOf(currentProject) === -1 ? "" : currentProject);
+			}
+
+			function refreshCurrentProject() {
+				r2.cmd("P.", function(value) {
+					currentProject = value.trim();
+					byId("openproject").textContent = currentProject || "None";
+					var buttons = document.querySelectorAll(".project");
+					for (var i = 0; i < buttons.length; i++) {
+						var name = buttons[i].dataset.project;
+						buttons[i].textContent = name + (name === currentProject ? " (current)" : "");
+					}
 				});
+			}
 
-			r2.cmd("e http.ui", function(x) {
-			  layout = x.trim();
-			  $("select#dropdown").val(layout);
-			});
+			function refreshProjects(callback) {
+				var list = byId("recent");
+				list.textContent = "";
+				list.setAttribute("aria-busy", "true");
+				showProjectMessage("Loading projects...");
+				r2.cmd("Pj", function(value) {
+					var projects = null;
+					try {
+						projects = JSON.parse(value);
+					} catch (error) {
+						setStatus("Pj returned invalid JSON.", true);
+					}
+					renderProjects(projects);
+					list.setAttribute("aria-busy", "false");
+					refreshCurrentProject();
+					if (callback) {
+						callback();
+					}
+				}, function() {
+					renderProjects(null);
+					list.setAttribute("aria-busy", "false");
+					setStatus("Could not run Pj.", true);
+				});
+			}
 
-			r2.cmdj("oj", function(x) {
-				if(x) {
-				  if(encodeHtmlEntity(x[0].uri).indexOf("malloc://") !== -1) {
-					$("#openfile").html('<input type="file" id="filename" name="filename">');
-				  } else {
-
-				  	$("#openfile").html(encodeHtmlEntity(x[0].uri));
-				  	filename = encodeHtmlEntity(x[0].uri);
-				  }
+			function loadProject(name) {
+				if (!name || name === currentProject) {
+					openUi();
+					return;
 				}
-			});
-			r2.cmd ("Pl", function(x) {
-				$("#openproject").html (x);
-			});
-
-			r2.cmd("fortune", function(x) {
-				$("#fortune").html("<q><i>" + x + "</i></q>");
-			});
-
-			$('#filename').on('change', function(){
-				filename = $('#filename').val();
-			});
-
-			$('.layout_value').on('click', function(){
-				$('.highlight').removeClass('highlight');
-				project = this.id;
-				$("#" + project).addClass('highlight');
-				switch (project) {
-				case "openfile":
-				case "openproject":
-					project = "";
-					break;
-				}
-			});
-
-			$('#dropdown').on('change', function(){
-				layout = $(this).val();
-				r2.cmd(":e http.ui=" + layout, function(x) {});
-			});
-
-			$('#logo').on('click', function() {
-				window.location.assign("./" + layout);
-			})
-			$('#saveas').on('click', function() {
-				var prjname = prompt ("Project Name", project);
-				if (prjname) {
-					r2.cmd ("Ps "+prjname, function() {
-						updateProjectList ();
-					})
-				}
-			});
-			$('#save').on('click', function(){
-				var prjname = prompt ("Project Name");
-				if (prjname) {
-					r2.cmd ("Pl", function (x) {
-						if (!x) {
-							x = prompt ("Project Name");
-						}
-						if (x) {
-							r2.cmd ("Ps "+x, function() {
-								updateProjectList ();
-							});
-
+				setStatus("Loading " + name + "...");
+				r2.cmd("P " + name, function() {
+					r2.cmd("P.", function(value) {
+						if (value.trim() === name) {
+							openUi();
+						} else {
+							setStatus("Could not load " + name + ".", true);
+							refreshProjects();
 						}
 					});
-				}});
-			$('#delete').on('click', function() {
-				if (project != "") {
-					r2.cmd ("P-"+project, function () {
-						updateProjectList ();
-						alert ("Project "+project+" deleted");
-						project = "";
+				});
+			}
+
+			function projectName(defaultName) {
+				var name = prompt("Project name", defaultName || "");
+				if (name === null) {
+					return "";
+				}
+				name = name.trim();
+				if (!/^[a-z0-9_]{1,63}$/.test(name)) {
+					setStatus("Use lowercase letters, numbers, or underscores.", true);
+					return "";
+				}
+				return name;
+			}
+
+			function saveProject(name) {
+				if (name) {
+					r2.cmd("Ps " + name, function() {
+						refreshProjects(function() {
+							setStatus("Saved " + name + ".");
+						});
 					});
+				}
+			}
+
+			function deleteProject() {
+				if (!project || !confirm("Delete project " + project + "?")) {
+					return;
+				}
+				var name = project;
+				function remove() {
+					r2.cmd("P-" + name, function() {
+						refreshProjects(function() {
+							setStatus("Deleted " + name + ".");
+						});
+					});
+				}
+				if (name === currentProject) {
+					r2.cmd("Pc", remove);
 				} else {
-					alert ("First select a project");
+					remove();
+				}
+			}
+
+			byId("recent").addEventListener("click", function(event) {
+				var button = event.target.closest(".project");
+				if (button) {
+					selectProject(button.dataset.project);
+					setStatus("");
 				}
 			});
-			$('#newfile').on('click', function(){
-				var path =  $('#newfile_path').val();
-				r2.cmd(":e file.project=;o--;o "+path,function() {
-					window.location.assign("./" + layout);
+			byId("recent").addEventListener("dblclick", function(event) {
+				var button = event.target.closest(".project");
+				if (button) {
+					loadProject(button.dataset.project);
+				}
+			});
+			byId("fortune").addEventListener("click", function() {
+				r2.cmd("fortune", function(value) {
+					byId("fortune").textContent = value.trim();
 				});
 			});
-			$('#submit').on('click', function(){
-				if (project == "openfile" || project == "openproject") { // if curfile selected
-					window.location.assign("./" + layout);
-				} else if (project !== "" && layout !== "") {
-					r2.cmd("P " + project, function(x) {});
-					window.location.assign("./" + layout);
-				} else if (filename !== "" && layout !== "") {
-					window.location.assign("./" + layout);
-				} else {
-					alert("Choose file and layout");
+			byId("logo").addEventListener("click", openUi);
+			byId("dropdown").addEventListener("change", function() {
+				layout = this.value;
+				r2.cmd("e http.ui=" + layout, function() {});
+			});
+			byId("submit").addEventListener("click", function() {
+				project ? loadProject(project) : openUi();
+			});
+			byId("save").addEventListener("click", function() {
+				saveProject(currentProject || projectName(project));
+			});
+			byId("saveas").addEventListener("click", function() {
+				saveProject(projectName(currentProject || project));
+			});
+			byId("delete").addEventListener("click", deleteProject);
+			byId("open-file-form").addEventListener("submit", function(event) {
+				event.preventDefault();
+				var path = byId("newfile_path").value.trim();
+				if (path && !/[\r\n]/.test(path)) {
+					r2.cmd("e file.project=;o--;o " + JSON.stringify(path), openUi);
 				}
 			});
-		});
+
+			r2.err = function(message) {
+				setStatus(message, true);
+			};
+			r2.cmd("e http.ui", function(value) {
+				var configured = value.trim();
+				if (/^[mpt]$/.test(configured)) {
+					layout = configured;
+					byId("dropdown").value = layout;
+				}
+			});
+			r2.cmdj("oj", function(files) {
+				var uri = Array.isArray(files) && files.length ? String(files[0].uri || "") : "";
+				filename = uri.indexOf("malloc://") === 0 ? "" : uri;
+				byId("openfile").textContent = filename || "None";
+				selectProject(project);
+			});
+			byId("fortune").click();
+			refreshProjects();
+		}());
 	</script>
 </body>
 </html>

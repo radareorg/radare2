@@ -720,8 +720,15 @@ endif
 if get_option('use_webui')
   install_subdir('shlr/www',
     install_dir: r2_wwwroot,
-    strip_directory: true
+    strip_directory: true,
+    exclude_directories: ['m', 'p', 't']
   )
+  foreach webui : ['m', 'p', 't']
+    install_subdir(join_paths('shlr/www', webui),
+      install_dir: join_paths(r2_wwwroot, webui),
+      strip_directory: true
+    )
+  endforeach
 endif
 
 subdir('test/unit')
