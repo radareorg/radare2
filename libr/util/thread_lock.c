@@ -33,15 +33,27 @@ static bool w32_srw_init(RThreadLock *lock) {
 static bool _lock_init(RThreadLock *thl, bool recursive) {
 #if HAVE_PTHREAD
 	pthread_mutexattr_t attr;
-	pthread_mutexattr_init (&attr);
+	if (pthread_mutexattr_init (&attr) != 0) {
+		return false;
+	}
 	if (recursive) {
 #if !defined(__GLIBC__) || __USE_UNIX98__
-		pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE);
+		if (pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE) != 0) {
+			pthread_mutexattr_destroy (&attr);
+			return false;
+		}
 #else
-		pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+		if (pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE_NP) != 0) {
+			pthread_mutexattr_destroy (&attr);
+			return false;
+		}
 #endif
 	}
-	pthread_mutex_init (&thl->lock, &attr);
+	int rc = pthread_mutex_init (&thl->lock, &attr);
+	pthread_mutexattr_destroy (&attr);
+	if (rc != 0) {
+		return false;
+	}
 #elif R2__WINDOWS__
 	if (!recursive && w32_srw_init (thl)) {
 		thl->type = (RThreadLockType)(thl->type | R_TH_LOCK_TYPE_SRW);
