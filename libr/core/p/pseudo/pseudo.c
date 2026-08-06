@@ -508,6 +508,17 @@ static void print_str(PDCState *state, const char *fmt, ...) {
 	va_end (ap);
 }
 
+static void annotate_offset(PDCState *state, size_t start, ut64 addr) {
+	if (state->pj) {
+		pj_o (state->pj);
+		pj_kn (state->pj, "start", start);
+		pj_kn (state->pj, "end", r_strbuf_length (state->codestr));
+		pj_kn (state->pj, "offset", addr);
+		pj_ks (state->pj, "type", "offset");
+		pj_end (state->pj);
+	}
+}
+
 static void asm_append(RStrBuf *sb, RCore *core, ut64 addr, const char *prefix) {
 	int pad;
 	char *s = disat (core, addr, &pad);
@@ -779,13 +790,8 @@ static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 			print_newline (state, addr, indent, false);
 			print_str (state, "%s", line);
 		}
-		if (emit_pj && state->pj) {
-			pj_o (state->pj);
-			pj_kn (state->pj, "start", start);
-			pj_kn (state->pj, "end", r_strbuf_length (state->codestr));
-			pj_kn (state->pj, "offset", addr);
-			pj_ks (state->pj, "type", "offset");
-			pj_end (state->pj);
+		if (emit_pj) {
+			annotate_offset (state, start, addr);
 		}
 	}
 	r_list_free (lines);
@@ -2040,24 +2046,21 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 			free (s);
 			s = os;
 		}
-		size_t codelen = r_strbuf_length (state.codestr);
-		r_strbuf_append (state.codestr, s);
-		if (state.pj) {
-			pj_o (state.pj);
-			pj_kn (state.pj, "start", codelen);
-			pj_kn (state.pj, "end", r_strbuf_length (state.codestr));
-			pj_kn (state.pj, "offset", addr);
-			pj_ks (state.pj, "type", "offset");
-			pj_end (state.pj);
-		}
-		if (codelen > 0) {
-			if (state.show_addr && !state.show_asm) {
-				r_strbuf_appendf (state.out, "\n 0x%08" PFMT64x " | ", bb->addr);
-			} else if (!state.show_asm) {
+		if (R_STR_ISNOTEMPTY (r_str_trim_head_ro (s))) {
+			const size_t start = r_strbuf_length (state.codestr);
+			const bool labeled = bb_addr_is_goto_target (state.fcn, bb->addr);
+			if (!labeled && (state.show_asm || state.show_addr)) {
+				// without a label the block starts on its body lines, which carry their own columns
+				PRINTF ("\n");
+			} else if (state.show_asm) {
+				print_newline (&state, bb->addr, 0, true);
+			} else if (state.show_addr) {
+				NEWLINE (bb->addr, 0);
+			} else {
 				NEWLINE (bb->addr, 1);
 			}
-			RFlagItem *fi = r_flag_get_in (core->flags, bb->addr);
-			if (bb_addr_is_goto_target (state.fcn, bb->addr)) {
+			if (labeled) {
+				RFlagItem *fi = r_flag_get_in (core->flags, bb->addr);
 				char tagbuf[32];
 				const char *tag = "orphan";
 				if (fi && r_str_startswith (fi->name, "case.")) {
@@ -2085,6 +2088,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 			} else {
 				PRINTGOTO (nextbbaddr, bb->jump);
 			}
+			annotate_offset (&state, start, bb->addr);
 		}
 		free (s);
 	}
