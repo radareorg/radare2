@@ -4800,8 +4800,11 @@ R_API int r_core_config_init(RCore *core) {
 			}
 
 			if (path) {
-				r_config_set (cfg, "http.browser", r_str_get_fail (browser_override, path));
+				const char *browser = R_STR_ISNOTEMPTY (browser_override)? browser_override: path;
+				r_config_set (cfg, "http.browser", browser);
 				fallback = false;
+				free (bin_path);
+				break;
 			}
 
 			free (bin_path);
