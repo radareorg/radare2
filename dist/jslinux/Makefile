@@ -86,15 +86,19 @@ r2: $(WORK)/r2blob
 
 include ../../config-user.mk
 D=r2-$(VERSION)-jslinux-www
-dist:
-	cp -rf $(WWW) $(D)
-	rm -f $(D).zip
+dist: www
+	rm -rf $(D) $(D).zip
+	mkdir -p $(D)
+	cp -rf $(WWW)/. $(D)
+	rm -f $(D)/.*.stamp
 	zip -r $(D).zip $(D)
+	rm -rf $(D)
 
 image: $(WORK)/root-r2.bin
 
-www: $(WWW)/.runtime.stamp $(WWW)/index.html $(WWW)/root-riscv64.cfg \
-	$(WWW)/serve.py $(WWW)/root-r2/blk.txt $(WWW)/netfs/head
+www: $(WWW)/.runtime.stamp $(WWW)/index.html $(WWW)/favicon.ico \
+	$(WWW)/root-riscv64.cfg $(WWW)/serve.py $(WWW)/root-r2/blk.txt \
+	$(WWW)/netfs/head
 endif
 
 # -- container build ------------------------------------------------------
@@ -222,6 +226,10 @@ $(WWW)/netfs/head: $(WORK)/tinyemu/build_filelist
 	$(WORK)/tinyemu/build_filelist $(WORK)/netfsroot $(WWW)/netfs
 
 $(WWW)/index.html: web/index.html
+	mkdir -p $(WWW)
+	cp -f $< $@
+
+$(WWW)/favicon.ico: web/favicon.ico
 	mkdir -p $(WWW)
 	cp -f $< $@
 
