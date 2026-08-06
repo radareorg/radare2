@@ -150,6 +150,7 @@ static RCoreHelpMessage help_msg_dc = {
 	"dcs", "[?] <num>", "continue until syscall",
 	"dct", " <len>", "traptrace from curseek to len, no argument to list",
 	"dcu", "[?] [..end|addr] ([end])", "continue until address (or range)",
+	"dcut", " ([ms])", "continue and interrupt the child after 100ms (or the given ms)",
 	/*"TODO: dcu/dcr needs dbg.untilover=true??",*/
 	/*"TODO: same for only user/libs side, to avoid steping into libs",*/
 	/*"TODO: support for threads?",*/
@@ -170,6 +171,7 @@ static RCoreHelpMessage help_msg_dcu = {
 	"dcu", " address", "continue until address",
 	"dcu", " [..tail]", "continue until the range",
 	"dcu", " [from] [to]", "continue until the range",
+	"dcut", " ([ms])", "continue and interrupt the child after 100ms (or the given ms)",
 	NULL
 };
 
@@ -5328,6 +5330,106 @@ static bool cmd_dcu(RCore *core, const char *input) {
 	return true;
 }
 
+typedef struct {
+	RDebug *dbg;
+	int pid;
+	int tid;
+	int ms;
+	bool cancel;
+	bool fired;
+	RThreadLock *lock;
+} DcutCtx;
+
+static RThreadFunctionRet dcut_thread(RThread *th) {
+	DcutCtx *ctx = (DcutCtx *)th->user;
+	int ms = ctx->ms;
+	while (ms > 0) {
+		const int chunk = R_MIN (ms, 5);
+		r_sys_usleep (chunk * 1000);
+		ms -= chunk;
+		r_th_lock_enter (ctx->lock);
+		const bool cancel = ctx->cancel;
+		r_th_lock_leave (ctx->lock);
+		if (cancel) {
+			return R_TH_STOP;
+		}
+	}
+	r_th_lock_enter (ctx->lock);
+	if (!ctx->cancel) {
+		// the debuggee is still running, ask it to stop
+		ctx->fired = r_debug_kill (ctx->dbg, ctx->pid, ctx->tid, SIGINT);
+	}
+	r_th_lock_leave (ctx->lock);
+	return R_TH_STOP;
+}
+
+// "dcut" continue the child and interrupt it after the given amount of milliseconds
+static bool cmd_dcut(RCore *core, const char *input) {
+	if (*input == '?') {
+		r_cons_cmd_help_match (core->cons, help_msg_dcu, "dcut", 0, true);
+		return false;
+	}
+	if (!r_config_get_b (core->config, "cfg.debug")) {
+		R_LOG_ERROR ("dcut requires a native debug session");
+		return false;
+	}
+	if (r_debug_is_dead (core->dbg)) {
+		R_LOG_ERROR ("Cannot continue, run ood?");
+		return false;
+	}
+	const char *arg = r_str_trim_head_ro (input);
+	int ms = 100;
+	if (R_STR_ISNOTEMPTY (arg)) {
+		ms = (int)r_num_math (core->num, arg);
+		if (ms < 1) {
+			R_LOG_ERROR ("Invalid amount of milliseconds");
+			return false;
+		}
+	}
+	DcutCtx ctx = {
+		.dbg = core->dbg,
+		.pid = core->dbg->pid,
+		.tid = core->dbg->tid,
+		.ms = ms,
+		.cancel = false,
+		.fired = false,
+		.lock = r_th_lock_new (false)
+	};
+	if (!ctx.lock) {
+		return false;
+	}
+	RThread *th = r_th_new (dcut_thread, &ctx, 0);
+	if (!th) {
+		R_LOG_ERROR ("Cannot spawn the dcut thread");
+		r_th_lock_free (ctx.lock);
+		return false;
+	}
+	// r_th_new() only spawns the launcher, the timer wont run until started
+	if (!r_th_start (th)) {
+		R_LOG_ERROR ("Cannot start the dcut thread");
+		r_th_break (th);
+		r_th_wait (th);
+		r_th_free (th);
+		r_th_lock_free (ctx.lock);
+		return false;
+	}
+	r_th_setname (th, "dcut");
+	r_reg_arena_swap (core->dbg->reg, true);
+	r_debug_continue (core->dbg);
+	// the child stopped (or died) on its own, disarm the timer
+	r_th_lock_enter (ctx.lock);
+	ctx.cancel = true;
+	const bool fired = ctx.fired;
+	r_th_lock_leave (ctx.lock);
+	r_th_wait (th);
+	r_th_free (th);
+	r_th_lock_free (ctx.lock);
+	if (!fired) {
+		R_LOG_INFO ("The child stopped before the %dms timeout", ms);
+	}
+	return true;
+}
+
 static int cmd_debug_continue(RCore *core, const char *input) {
 	int pid, old_pid, signum;
 	char *ptr;
@@ -5475,6 +5577,8 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 	case 'u': // "dcu"
 		if (input[2] == '?') {
 			r_cons_cmd_help (core->cons, help_msg_dcu);
+		} else if (input[2] == 't') { // "dcut"
+			cmd_dcut (core, input + 3);
 		} else {
 			cmd_dcu (core, input);
 		}
