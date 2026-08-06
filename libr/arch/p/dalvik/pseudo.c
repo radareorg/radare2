@@ -246,8 +246,8 @@ static char *patch(RAsmPluginSession *aps, RAnalOp *aop, const char *op) {
 	} while (0)
 
 static char *parse(RAsmPluginSession *aps, const char *data) {
-	int i, len = strlen (data);
-	char *buf, *ptr, *optr, *ptr2;
+	int i;
+	char *ptr, *optr, *ptr2;
 	char w0[64];
 	char w1[64];
 	char w2[64];
@@ -261,11 +261,10 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		return strdup ("");
 	}
 
-	// malloc can be slow here :?
-	if (!(buf = malloc (len + 1))) {
-		return false;
+	char *buf = strdup (data);
+	if (!buf) {
+		return NULL;
 	}
-	memcpy (buf, data, len + 1);
 
 	r_str_trim (buf);
 
