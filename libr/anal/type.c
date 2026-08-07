@@ -157,7 +157,7 @@ R_API void r_anal_types_load_sdb(RAnal *anal, const char *name) {
 	load_types_from (anal, "%s", name);
 }
 
-// a pointer is one target word wide, which r_type_get_bitsize cannot know from the sdb alone
+// for pointers prefer the live target width over the one baked into the type sdb
 R_API ut64 r_anal_type_bitsize(RAnal *anal, const char *type) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->config && type, 0);
 	return strchr (type, '*')? anal->config->bits: r_type_get_bitsize (anal->sdb_types, type);
