@@ -1302,7 +1302,6 @@ afvR @ 0
 EOF
 EXPECT=<<EOF
       arg1  0x0
-      arg2  0x0
 EOF
 RUN
 
@@ -1834,5 +1833,19 @@ EXPECT=<<EOF
 b 0x00000010
 type: jmp
 jump: 0x00000010
+EOF
+RUN
+
+NAME=ppc register move does not make its destination an argument
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.cc=ppc-64
+CMDS=<<EOF
+wx 7c681b787d2942144e800020
+af
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ r3
+arg int64_t arg2 @ r9
 EOF
 RUN
