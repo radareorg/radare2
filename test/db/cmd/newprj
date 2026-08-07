@@ -681,7 +681,7 @@ EXPECT=<<EOF
 'f- saved.flag
 'f live.flag 1 0x00000011
 '@0x00000020'CCu base64:bGl2ZQ==
-'ahi 16 @ 0x00000020
+'0x00000020'ahi 16
 'ax- 0x00000030 0x00000020
 'axc 0x00000031 0x00000020
 EOF
@@ -801,5 +801,49 @@ EOF
 EXPECT=<<EOF
 '0x00000000'afvb -12 renamed int
 '0x00000000'afvb -12 var_4h int32_t
+EOF
+RUN
+
+NAME=newprj script applies hints at the recorded address
+FILE=malloc://0x100
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/newprj-hintat.prj
+rm .tmp/newprj-hintat.r2
+ahi 10 @ 0x20
+prj save .tmp/newprj-hintat.prj > /dev/null
+prj r2 .tmp/newprj-hintat.prj~ahi > .tmp/newprj-hintat.r2
+ah-*
+s 0x40
+. .tmp/newprj-hintat.r2
+ah*
+rm .tmp/newprj-hintat.prj
+rm .tmp/newprj-hintat.r2
+EOF
+EXPECT=<<EOF
+'@0x20'ahi 10
+EOF
+RUN
+
+NAME=newprj diff removes only the hint at the recorded address
+FILE=malloc://0x100
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/newprj-ahdel.prj
+rm .tmp/newprj-ahdel.r2
+ahi 2 @ 0x10
+ahi 10 @ 0x20
+ahi 16 @ 0x40
+prj save .tmp/newprj-ahdel.prj > /dev/null
+ah- 0x40
+prj diff .tmp/newprj-ahdel.prj~ah- > .tmp/newprj-ahdel.r2
+. .tmp/newprj-ahdel.r2
+ah*
+rm .tmp/newprj-ahdel.prj
+rm .tmp/newprj-ahdel.r2
+EOF
+EXPECT=<<EOF
+'@0x10'ahi 2
+'@0x20'ahi 10
 EOF
 RUN
