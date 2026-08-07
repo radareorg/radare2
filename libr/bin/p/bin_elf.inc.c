@@ -1726,12 +1726,13 @@ static RBinInfo* info(RBinFile *bf) {
 		ret->flags = r_str_newf ("0x%x", elf_flags);
 	}
 	ret->abi = Elf_(get_abi) (obj);
-	if (ret->abi) {
-		// both abis pick a cc so switching binaries in one session updates anal.cc
-		if (!strcmp (ret->abi, "elfv2")) {
-			ret->default_cc = strdup ("elfv2");
-		} else if (!strcmp (ret->abi, "elfv1")) {
+	const char *abi = ret->abi;
+	if (abi) {
+		// the abi picks a cc so switching binaries in one session updates anal.cc
+		if (!strcmp (abi, "elfv1")) {
 			ret->default_cc = strdup ("ppc-64");
+		} else if (!strcmp (abi, "elfv2") || !strcmp (abi, "o32") || !strcmp (abi, "n32")) {
+			ret->default_cc = strdup (abi);
 		}
 	}
 	ret->rclass = strdup ("elf");
