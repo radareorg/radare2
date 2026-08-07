@@ -936,7 +936,13 @@ R_API const char *r_type_func_args_name(Sdb *TDB, const char *R_NONNULL func_nam
 R_API bool r_type_func_is_variadic(Sdb *TDB, const char *R_NONNULL func_name) {
 	R_RETURN_VAL_IF_FAIL (TDB && func_name, false);
 	const int argc = r_type_func_args_count (TDB, func_name);
-	return argc > 0 && !strcmp (r_type_func_args_name (TDB, func_name, argc - 1), "...");
+	if (argc < 1) {
+		return false;
+	}
+	char *type = r_type_func_args_type (TDB, func_name, argc - 1);
+	const bool res = r_type_arg_is_vararg (type, r_type_func_args_name (TDB, func_name, argc - 1));
+	free (type);
+	return res;
 }
 
 #define MIN_MATCH_LEN 4

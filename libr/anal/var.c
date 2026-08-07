@@ -1569,11 +1569,6 @@ static bool op_is_call(RAnalOp *op) {
 	return type == R_ANAL_OP_TYPE_CALL || type == R_ANAL_OP_TYPE_UCALL;
 }
 
-// the "..." arg name is the variadic slot (its type is empty or whitespace)
-static bool is_vararg_arg(const char *name) {
-	return name && !strcmp (name, "...");
-}
-
 // arg count excluding the trailing "..." slot, which is no real caller arg register
 static int func_fixed_args(Sdb *TDB, const char *name) {
 	const int argc = r_type_func_args_count (TDB, name);
@@ -1599,7 +1594,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	const int max_count = r_anal_cc_max_arg (anal, fcn->callconv);
 	const bool scan_args = max_count > 0 && *count < max_count;
 	if (fname) {
-		argc = r_type_func_args_count (TDB, fname);
+		argc = func_fixed_args (TDB, fname);
 	}
 
 	if (op_is_call (op) && scan_args) {
@@ -2198,7 +2193,7 @@ R_API char *r_anal_function_format_sig(RAnal * R_NONNULL anal, RAnalFunction * R
 		for (i = 0; i < argc; i++) {
 			char *type = r_type_func_args_type (TDB, type_fcn_name, i);
 			const char *name = r_type_func_args_name (TDB, type_fcn_name, i);
-			if (is_vararg_arg (name)) {
+			if (r_type_arg_is_vararg (type, name)) {
 				R_LOG_DEBUG ("Detected, but unhandled vararg type"); // TODO implement vararg support
 				// this is vararg type!
 				free (type);

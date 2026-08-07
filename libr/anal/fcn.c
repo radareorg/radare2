@@ -2638,7 +2638,7 @@ static void function_param_free(RAnalFunctionParam *param) {
 
 static char *function_param_string(const RAnalFunctionParam *param) {
 	R_RETURN_VAL_IF_FAIL (param && param->type, NULL);
-	if (!strcmp (param->type, "...")) {
+	if (r_type_arg_is_vararg (param->type, param->name)) {
 		return strdup ("...");
 	}
 	if (R_STR_ISEMPTY (param->name)) {

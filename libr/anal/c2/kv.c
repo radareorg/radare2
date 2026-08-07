@@ -1555,10 +1555,11 @@ static void emit_func_signature(KVCParser *kvc, const char *fn, RStrs fun_parm, 
 			r_strs_trim (&full_tok);
 			char *full = r_strs_tostring (full_tok);
 			if (!strcmp (full, "...")) {
+				// canonical types.sdb.txt form: empty type, "..." as the name
 				free (at);
-				at = full;
+				at = strdup ("");
 				free (an);
-				an = strdup ("varg");
+				an = full;
 			} else if (!r_strs_len (arg_type)) {
 				free (at);
 				at = full;
@@ -1568,7 +1569,7 @@ static void emit_func_signature(KVCParser *kvc, const char *fn, RStrs fun_parm, 
 				free (full);
 			}
 			massage_type (&at);
-			if (R_STR_ISEMPTY (an) && strcmp (at, "...") != 0) {
+			if (R_STR_ISEMPTY (an)) {
 				free (an);
 				an = r_str_newf ("arg%d", arg_idx);
 			}
