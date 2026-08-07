@@ -28,7 +28,7 @@ static int ctype_size(RAnal *anal, const char *cc, const char *ctype) {
 		const char *arch = anal->config->arch;
 		return (arch && r_str_startswith (arch, "x86"))? 12: 8;
 	}
-	return r_type_get_bitsize (anal->sdb_types, t) / 8;
+	return r_anal_type_bitsize (anal, t) / 8;
 }
 
 static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *cc, const char *fcn_name, int arg_num) {

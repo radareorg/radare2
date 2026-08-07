@@ -753,7 +753,7 @@ static char *tp_type_meet(RAnal *anal, const char *a, int rank_a, const char *b,
 		return strdup ("double");
 	}
 	// equal-rank scalar conflict: the order-independent common knowledge is the wider side's default int
-	const ut64 w = R_MAX (r_type_get_bitsize (anal->sdb_types, a), r_type_get_bitsize (anal->sdb_types, b));
+	const ut64 w = R_MAX (r_anal_type_bitsize (anal, a), r_anal_type_bitsize (anal, b));
 	switch (w) {
 	case 64: return strdup ("int64_t");
 	case 16: return strdup ("int16_t");
@@ -998,7 +998,7 @@ static void tp_selfsize_var(TPState *tps, ut64 baddr, RAnalVar *var, ut64 n) {
 		if (!tp_prim_scalar (cur)) {
 			return; // named and debug-provided types stay
 		}
-		if (n * 8 < r_type_get_bitsize (anal->sdb_types, cur)) {
+		if (n * 8 < r_anal_type_bitsize (anal, cur)) {
 			return; // a partial copy or clear cannot shrink the var below its own width
 		}
 	}
@@ -1295,7 +1295,7 @@ static char *tp_unwrap_typedef(RAnal *anal, const char *name) {
 	return cur;
 }
 
-// r_type_get_bitsize returns 32 for any non-char* pointer and 0 for typedefs, so handle both here
+// r_anal_type_bitsize handles the pointer width, this adds the typedef unwrap
 static ut64 tp_type_bits(RAnal *anal, const char *t) {
 	if (R_STR_ISEMPTY (t)) {
 		return 0;
@@ -1304,8 +1304,7 @@ static ut64 tp_type_bits(RAnal *anal, const char *t) {
 	if (!name) {
 		return 0;
 	}
-	const ut64 bits = strchr (name, '*')
-		? anal->config->bits: r_type_get_bitsize (anal->sdb_types, name);
+	const ut64 bits = r_anal_type_bitsize (anal, name);
 	free (name);
 	return bits;
 }

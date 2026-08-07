@@ -418,6 +418,12 @@ static void cmd_tcc(RCore *core, const char *input) {
 	}
 }
 
+// byte width of a type, falling back for the sizeless ones the sdb cannot resolve
+static ut32 type_bytesize(RAnal *anal, const char *type, ut32 fallback) {
+	const ut32 size = r_anal_type_bitsize (anal, type) / 8;
+	return size? size: fallback;
+}
+
 static void add_type_fields_to_json(RCore *core, PJ *pj, const char *struct_name, const char *type_name) {
 	const bool is_union = !strcmp (type_name, "union");
 	// Get struct members list
@@ -448,17 +454,7 @@ static void add_type_fields_to_json(RCore *core, PJ *pj, const char *struct_name
 			const char *arr_size_str = r_str_word_get0 (member_details, 2);
 			ut32 arr_size = r_num_get (NULL, arr_size_str);
 			arr_size = arr_size ? arr_size : 1;
-			ut32 type_size;
-			if (strchr (type, '*')) {
-				type_size = core->anal->config->bits / 8;
-			} else {
-				ut64 type_bits = r_type_get_bitsize (core->anal->sdb_types, type);
-				type_size = type_bits / 8;
-				if (type_size == 0) {
-					type_size = 1;
-				}
-			}
-			ut32 size = type_size * arr_size;
+			ut32 size = type_bytesize (core->anal, type, 1) * arr_size;
 			pj_o (pj);
 			pj_ks (pj, "name", member_name);
 			pj_ks (pj, "type", type);
@@ -816,14 +812,14 @@ static int print_struct_union_list_json(RCore *core, Sdb *TDB, SdbForeachCallbac
 	return 1;
 }
 
-static ut64 struct_type_size(Sdb *TDB, const char *name, const char *kind) {
+static ut64 struct_type_size(RAnal *anal, const char *name, const char *kind) {
 	if (!strcmp (kind, "typedef")) {
-		const char *type = sdb_const_getf (TDB, NULL, "typedef.%s", name);
+		const char *type = sdb_const_getf (anal->sdb_types, NULL, "typedef.%s", name);
 		if (R_STR_ISNOTEMPTY (type)) {
-			return r_type_get_bitsize (TDB, type) / 8;
+			return r_anal_type_bitsize (anal, type) / 8;
 		}
 	}
-	return r_type_get_bitsize (TDB, name) / 8;
+	return r_anal_type_bitsize (anal, name) / 8;
 }
 
 static void print_structs_by_size(RCore *core, Sdb *TDB, ut64 size) {
@@ -839,7 +835,7 @@ static void print_structs_by_size(RCore *core, Sdb *TDB, ut64 size) {
 		if (R_STR_ISEMPTY (name) || !kind) {
 			continue;
 		}
-		if (struct_type_size (TDB, name, kind) == size) {
+		if (struct_type_size (core->anal, name, kind) == size) {
 			r_cons_println (core->cons, name);
 		}
 	}
@@ -1167,18 +1163,8 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 				int arrnum = 0;
 				char *val = r_type_get_member (TDB, var2, &moff, &arrnum);
 				if (val) {
-					ut32 type_size;
-					if (strchr (val, '*')) {
-						type_size = core->anal->config->bits / 8;
-					} else {
-						ut64 type_bits = r_type_get_bitsize (TDB, val);
-						type_size = type_bits / 8;
-						if (type_size == 0) {
-							type_size = 1;
-						}
-					}
 					ut32 arr_size = arrnum ? arrnum : 1;
-					ut32 size = type_size * arr_size;
+					ut32 size = type_bytesize (core->anal, val, 1) * arr_size;
 					r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s", color_addr, current_offset, color_reset, color_type, val, color_reset);
 					if (p && p[0] != '\0') {
 						r_strbuf_appendf (sb, "%s%s%s%s", strstr (val, " *")? "": " ", color_name, p, color_reset);
@@ -1473,15 +1459,7 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 					color_comment, "varargs", color_reset);
 				type_size = 0;
 			} else {
-				if (strchr (type, '*')) {
-					type_size = core->anal->config->bits / 8;
-				} else {
-					ut64 type_bits = r_type_get_bitsize (TDB, type);
-					type_size = type_bits / 8;
-					if (type_size == 0) {
-						type_size = core->anal->config->bits / 8;
-					}
-				}
+				type_size = type_bytesize (core->anal, type, core->anal->config->bits / 8);
 				r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s %s%s%s%s // %s%s\n",
 					color_addr, current_offset, color_reset,
 					color_type, type, color_reset,
@@ -1783,15 +1761,7 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 			}
 			ut32 type_size = 0;
 			if (strcmp (type, "...")) {
-				if (strchr (type, '*')) {
-					type_size = core->anal->config->bits / 8;
-				} else {
-					ut64 type_bits = r_type_get_bitsize (tdb, type);
-					type_size = type_bits / 8;
-					if (type_size == 0) {
-						type_size = core->anal->config->bits / 8;
-					}
-				}
+				type_size = type_bytesize (core->anal, type, core->anal->config->bits / 8);
 			}
 			pj_o (pj);
 			pj_ks (pj, "type", type);
@@ -2493,7 +2463,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 's': // "tss"
 			if (input[2] == ' ') {
-				r_cons_printf (core->cons, "%" PFMT64u "\n", (r_type_get_bitsize (TDB, input + 3) / 8));
+				r_cons_printf (core->cons, "%" PFMT64u "\n", (r_anal_type_bitsize (core->anal, input + 3) / 8));
 			} else {
 				r_cons_cmd_help (core->cons, help_msg_ts);
 			}
@@ -3133,7 +3103,7 @@ static int cmd_type(void *data, const char *input) {
 							}
 						}
 					}
-					int type_size = r_type_get_bitsize (core->anal->sdb_types, type) / 8;
+					int type_size = r_anal_type_bitsize (core->anal, type) / 8;
 					int obs = core->blocksize;
 					if (type_size > obs) {
 						r_core_block_size (core, type_size);
