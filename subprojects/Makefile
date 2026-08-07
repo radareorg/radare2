@@ -47,9 +47,11 @@ ifeq ($(WANT_BUNDLED_CAPSTONE),1)
   endif
 endif
 
-DISTDEPS=binaryninja capstone-v5 otezip qjs sdb zydis
+DISTDEPS=binaryninja capstone-v5 otezip qjs sdb
 EXTRADEPS=capstone-next capstone-v4
-ALLDEPS=$(DISTDEPS) $(EXTRADEPS)
+# vendored in the repo: nothing to download and the directory must survive clean
+VENDOREDDEPS=zydis
+ALLDEPS=$(DISTDEPS) $(EXTRADEPS) $(VENDOREDDEPS)
 
 ifeq ($(PREDOWNLOADED),1)
 	FINALDEPS=$(filter-out $(DISTDEPS), $(DEPS))
@@ -64,6 +66,7 @@ distdeps: $(DISTDEPS)
 all: $(ALLDEPS)
 
 clean:
-	rm -rf $(ALLDEPS)
+	rm -rf $(DISTDEPS) $(EXTRADEPS)
+	$(MAKE) $(addsuffix _clean, $(VENDOREDDEPS))
 
 include $(addsuffix .mk, $(ALLDEPS))
