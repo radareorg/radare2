@@ -204,11 +204,16 @@ static void interrupt_process(RDebug *dbg) {
 #endif
 
 static bool r_debug_native_stop(RDebug *dbg) {
-#if __linux__
-	// Stop all running threads except the thread reported by waitpid
-	return linux_stop_threads (dbg, dbg->reason.tid);
+#if R2__WINDOWS__
+	w32_break_process (dbg);
+	return true;
 #else
-	return 0;
+	// ptrace cant stop a running tracee, only a signal can, and SIGSTOP is the
+	// one the child cant block or handle. r2 drops it on the next continue.
+	// do NOT reap it here: this may run in a helper thread ("dcut") while the
+	// main one waits in waitpid(), and only that one may consume the status
+	// TODO: use PTRACE_INTERRUPT (per-tid, signal-less) once we PTRACE_SEIZE
+	return r_sandbox_kill (dbg->pid, SIGSTOP) != -1;
 #endif
 }
 

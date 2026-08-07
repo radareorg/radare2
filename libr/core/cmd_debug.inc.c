@@ -5357,7 +5357,7 @@ static RThreadFunctionRet dcut_thread(RThread *th) {
 	r_th_lock_enter (ctx->lock);
 	if (!ctx->cancel) {
 		// the debuggee is still running, ask it to stop
-		ctx->fired = r_debug_kill (ctx->dbg, ctx->pid, ctx->tid, SIGINT);
+		ctx->fired = r_debug_stop (ctx->dbg);
 	}
 	r_th_lock_leave (ctx->lock);
 	return R_TH_STOP;
