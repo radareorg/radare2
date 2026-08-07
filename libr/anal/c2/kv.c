@@ -197,6 +197,41 @@ static bool skip_until(KVCParser *kvc, char ch) {
 	return false;
 }
 
+// find ch at paren depth 0; a nested ')' only closes its own group
+static const char *scan_toplevel(const char *p, const char *end, char ch) {
+	int depth = 0;
+	for (; p < end; p++) {
+		if (*p == ch && depth == 0) {
+			return p;
+		}
+		if (*p == '(') {
+			depth++;
+		} else if (*p == ')' && depth > 0) {
+			depth--;
+		}
+	}
+	return NULL;
+}
+
+// stop at the ')' matching an already-consumed '(', skipping nested pairs
+static bool skip_until_closing_paren(KVCParser *kvc) {
+	const char *p = scan_toplevel (kvc->s.a, kvc->s.b, ')');
+	kvc_skipn (kvc, (p? p: kvc->s.b) - kvc->s.a);
+	return p != NULL;
+}
+
+// at '(': consume it, capture the top-level group body into parm, consume ')'
+static bool capture_paren_group(KVCParser *kvc, RStrs *parm) {
+	kvc_skipn (kvc, 1);
+	const char *start = kvc->s.a;
+	if (!skip_until_closing_paren (kvc)) {
+		return false;
+	}
+	*parm = r_strs_new (start, kvc->s.a);
+	kvc_skipn (kvc, 1);
+	return true;
+}
+
 static inline void skip_only_spaces(KVCParser *kvc) {
 	while (true) {
 		char ch = kvc_peek (kvc, 0);
@@ -1529,6 +1564,62 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 	return true;
 }
 
+// split a function-pointer parameter like "int (*cb)(int)" into
+// its type "int (*)(int)" and name "cb"; name is NULL when unnamed
+static bool split_fnptr_param(const char *full, char **type, char **name) {
+	const char *open = strchr (full, '(');
+	if (!open) {
+		return false;
+	}
+	const char *p = open + 1;
+	while (isspace ((unsigned char)*p)) {
+		p++;
+	}
+	if (*p != '*') {
+		return false;
+	}
+	while (*p == '*' || isspace ((unsigned char)*p)) {
+		p++;
+	}
+	// the type keeps everything up to the last '*'; quals and name are dropped
+	const char *pfx_end = p;
+	while (pfx_end > open && isspace ((unsigned char)pfx_end[-1])) {
+		pfx_end--;
+	}
+	const char *ns;
+	const char *ne;
+	for (;;) {
+		ns = p;
+		while (isalnum ((unsigned char)*p) || *p == '_') {
+			p++;
+		}
+		ne = p;
+		// "(* const cb)" qualifies the pointer, not the name
+		const size_t n = ne - ns;
+		if ((n != 5 || strncmp (ns, "const", 5)) && (n != 8 || strncmp (ns, "volatile", 8))) {
+			break;
+		}
+		while (isspace ((unsigned char)*p)) {
+			p++;
+		}
+	}
+	while (isspace ((unsigned char)*p)) {
+		p++;
+	}
+	if (*p != ')') {
+		return false;
+	}
+	*name = (ne > ns)? r_str_ndup (ns, ne - ns): NULL;
+	if (strchr (p, ',')) {
+		// the "type,name" row cannot hold a comma inside the type,
+		// so a multi-argument nested list degrades to an empty one
+		*type = r_str_newf ("%.*s)()", (int)(pfx_end - full), full);
+	} else {
+		*type = r_str_newf ("%.*s%s", (int)(pfx_end - full), full, p);
+	}
+	return true;
+}
+
 static void emit_func_signature(KVCParser *kvc, const char *fn, RStrs fun_parm, bool is_static) {
 	RStrBuf *func_args_sb = r_strbuf_new ("");
 	int arg_idx = 0;
@@ -1536,15 +1627,15 @@ static void emit_func_signature(KVCParser *kvc, const char *fn, RStrs fun_parm, 
 	r_strs_trim (&parms);
 	// C spells the empty parameter list as (void); () and ( ) trim down to nothing
 	if (!r_strs_empty (parms) && !r_strs_equals_str (parms, "void")) {
-		const char *pa = fun_parm.a;
-		const char *pb = fun_parm.b;
+		const char *pa = parms.a;
+		const char *pb = parms.b;
 		const char *argp = pa;
 		const char *comma = NULL;
 		do {
 			while (pa < pb && isspace ((unsigned char)*pa)) {
 				pa++;
 			}
-			comma = r_str_nchr (pa, ',', pb - pa);
+			comma = scan_toplevel (pa, pb, ',');
 			pa = comma? comma: pb;
 			RStrs arg_type = { argp, pa };
 			RStrs arg_name = { argp, pa };
@@ -1560,15 +1651,27 @@ static void emit_func_signature(KVCParser *kvc, const char *fn, RStrs fun_parm, 
 				at = strdup ("");
 				free (an);
 				an = full;
+			} else if (strchr (full, '(')) {
+				char *ft = NULL;
+				char *fnm = NULL;
+				if (split_fnptr_param (full, &ft, &fnm)) {
+					free (at);
+					at = ft;
+					free (an);
+					an = fnm; // NULL when unnamed, renamed to argN below
+				}
+				free (full);
 			} else if (!r_strs_len (arg_type)) {
 				free (at);
 				at = full;
 				free (an);
-				an = r_str_newf ("arg%d", arg_idx);
+				an = NULL; // named argN by the fallback below
 			} else {
 				free (full);
 			}
-			massage_type (&at);
+			if (at && !strchr (at, '(')) {
+				massage_type (&at);
+			}
 			if (R_STR_ISEMPTY (an)) {
 				free (an);
 				an = r_str_newf ("arg%d", arg_idx);
@@ -1641,14 +1744,10 @@ static bool parse_function(KVCParser *kvc) {
 			kvc->s.a = saved_pos;
 			return false;
 		}
-		kvc_getch (kvc);
-		const char *parm_start = kvc->s.a;
-		if (!skip_until (kvc, ')')) {
+		if (!capture_paren_group (kvc, &fun_parm)) {
 			kvc->s.a = saved_pos;
 			return false;
 		}
-		fun_parm = r_strs_new (parm_start, kvc->s.a);
-		kvc_getch (kvc);
 		skip_ws (kvc);
 		char *fn = r_strs_tostring (fp_name);
 		char *fr = r_strs_tostring (fun_rtyp);
@@ -1662,14 +1761,11 @@ static bool parse_function(KVCParser *kvc) {
 		return false;
 	}
 	fun_name.b = kvc->s.a;
-	const char *parm_start = kvc->s.a + 1;
-	if (!skip_until (kvc, ')')) {
+	if (!capture_paren_group (kvc, &fun_parm)) {
 		kvc_error (kvc, "Cannot find ) in function definition");
 		return false;
 	}
 	token_typename (&fun_rtyp, &fun_name);
-	fun_parm = r_strs_new (parm_start, kvc->s.a);
-	kvc_skipn (kvc, 1);
 	skip_ws (kvc);
 	char *fn = r_strs_tostring (fun_name);
 	char *fr = r_strs_tostring (fun_rtyp);

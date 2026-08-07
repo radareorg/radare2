@@ -3623,3 +3623,49 @@ func.myvarfn.cc=cdecl
 func.myvarfn.ret=int
 EOF
 RUN
+
+NAME=td parses function pointer parameters in prototypes
+FILE=-
+CMDS=<<EOF
+'td void once(void (*cb)(int));
+'td int apply(int (*fn)(int, int), int seed);
+'td void qual(void (* const q)(int));
+tk~func.once
+tk~func.apply
+tk~func.qual
+EOF
+EXPECT=<<EOF
+func.once=cb
+func.once.arg.0=void (*)(int),cb
+func.once.args=1
+func.once.cc=cdecl
+func.once.ret=void
+func.apply=fn,seed
+func.apply.arg.0=int (*)(),fn
+func.apply.arg.1=int,seed
+func.apply.args=2
+func.apply.cc=cdecl
+func.apply.ret=int
+func.qual=q
+func.qual.arg.0=void (*)(int),q
+func.qual.args=1
+func.qual.cc=cdecl
+func.qual.ret=void
+EOF
+RUN
+
+NAME=td keeps a nested function pointer argument in one slot
+FILE=-
+CMDS=<<EOF
+'td struct N { int (*cb)(int (*inner)(int, int), char c); };
+tk~func.N
+EOF
+EXPECT=<<EOF
+func.N.cb=inner,c
+func.N.cb.arg.0=int (*)(),inner
+func.N.cb.arg.1=char,c
+func.N.cb.args=2
+func.N.cb.cc=cdecl
+func.N.cb.ret=int
+EOF
+RUN
