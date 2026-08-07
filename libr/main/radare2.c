@@ -761,7 +761,7 @@ static void mainr2_init(RMainRadare2 *mr) {
 	mr->load_bin = LOAD_BIN_ALL;
 	mr->baddr = UT64_MAX;
 	mr->seek = UT64_MAX;
-	mr->perms = R_PERM_RX;
+	mr->perms = R_PERM_R; // the exec permission is added to the descriptor by io.exec (see -x)
 	mr->cmds = r_list_newf (free);
 	mr->evals = r_list_newf (free);
 	mr->files = r_list_newf (free);
@@ -1684,7 +1684,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 								}
 							}
 						} else {
-							r_io_map_add (r->io, mr.iod->fd, mr.perms, 0LL, mr.mapaddr, r_io_desc_size (mr.iod));
+							// use the desc perms instead of the requested ones to inherit the io.exec permission
+							r_io_map_add (r->io, mr.iod->fd, mr.iod->perm, 0LL, mr.mapaddr, r_io_desc_size (mr.iod));
 							if (mr.load_bin == LOAD_BIN_STRUCTURES_ONLY) {
 								r_core_bin_load_structs (r, mr.iod->name);
 							}
