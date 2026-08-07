@@ -57,14 +57,6 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=r2 -H version patch
-FILE=-
-CMDS=r2 -H R2_VERSION_PATCH
-EXPECT=<<EOF
-9
-EOF
-RUN
-
 NAME=r2 minushache (dos)
 FILE=-
 CMDS=<<EOF
