@@ -144,11 +144,17 @@ static void swap_strings(RFindCTX *ctx) {
 	free (copy);
 }
 
+// r2 renders comments as "<whitespace>; text", arch pseudo templates emit ';' with no space before it
+static bool is_comment_semicolon(const char *begin, const char *p) {
+	return *p == ';' && (p == begin || IS_WHITECHAR (p[-1]));
+}
+
 static void find_and_change(char *in, int len) {
 	if (len < 1) {
 		return;
 	}
 	RFindCTX ctx = { 0 };
+	char *start = in;
 	char *end = in + len;
 	for (ctx.linebegin = in; in < end; in++) {
 		if (*in == '\n' || !*in) {
@@ -162,7 +168,7 @@ static void find_and_change(char *in, int len) {
 			}
 			memset (&ctx, 0, sizeof (ctx));
 			ctx.linebegin = in + 1;
-		} else if (!ctx.comment && *in == ';' && in[1] == ' ') {
+		} else if (!ctx.comment && in > start && in[1] == ' ' && is_comment_semicolon (start, in)) {
 			ctx.comment = in - 1;
 			ctx.comment[1] = '/';
 			ctx.comment[2] = '/';
@@ -452,6 +458,25 @@ static void remove_double_spaces(char *s) {
 	}
 }
 
+static char *comments_to_c(char *s) {
+	if (!strchr (s, ';')) {
+		return s;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	const char *chunk = s;
+	const char *p;
+	for (p = s; *p; p++) {
+		if (is_comment_semicolon (s, p)) {
+			r_strbuf_append_n (sb, chunk, p - chunk);
+			r_strbuf_append (sb, "//");
+			chunk = p + 1;
+		}
+	}
+	r_strbuf_append_n (sb, chunk, p - chunk);
+	free (s);
+	return r_strbuf_drain (sb);
+}
+
 static char *cleancomments(char *s) {
 	char *p = s;
 	char *nl = NULL;
@@ -668,7 +693,7 @@ static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
 		return NULL;
 	}
 	code = r_str_replace (code, "\n\n", "\n", true);
-	code = r_str_replace (code, ";", "//", true);
+	code = comments_to_c (code);
 	code = cleancomments (code);
 	size_t len = strlen (code);
 	if (len < 1) {
@@ -2006,7 +2031,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		if (use_html) {
 			r_config_set_b (core->config, "scr.html", true);
 		}
-		s = r_str_replace (s, ";", "//", true);
+		s = comments_to_c (s);
 		s = r_str_replace (s, "goto ", "// goto loc_", true);
 		s = cleancomments (s);
 		s = fold_resolved_refs (core, s);

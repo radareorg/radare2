@@ -906,3 +906,21 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=pdc keeps a semicolon that comes from the arch pseudo template
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx fc20102e4e800020
+af
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
+void fcn.00000000 (void) {
+        if (f0 >= 0.0) f1 = f0; else f1 = f2
+        return
+}
+
+EOF
+RUN
