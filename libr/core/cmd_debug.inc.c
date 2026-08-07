@@ -5357,7 +5357,12 @@ static RThreadFunctionRet dcut_thread(RThread *th) {
 	r_th_lock_enter (ctx->lock);
 	if (!ctx->cancel) {
 		// the debuggee is still running, ask it to stop
+#if R2__WINDOWS__
+		// w32_kill turns any signal into TerminateProcess, so use the stop hook
+		ctx->fired = r_debug_stop (ctx->dbg);
+#else
 		ctx->fired = r_debug_kill (ctx->dbg, ctx->pid, ctx->tid, SIGINT);
+#endif
 	}
 	r_th_lock_leave (ctx->lock);
 	return R_TH_STOP;
