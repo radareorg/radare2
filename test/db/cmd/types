@@ -3959,3 +3959,35 @@ struct Bird {
 };
 EOF
 RUN
+
+NAME=struct and union members are sized with the target pointer width
+FILE=-
+ARGS=-b 64
+CMDS=<<EOF
+'td struct VB { void *a; void *b; };
+'td struct AR { char *p[4]; int n; };
+'td union U { void *p; int n; };
+tss struct VB
+tss struct AR
+tss union U
+EOF
+EXPECT=<<EOF
+16
+36
+8
+EOF
+RUN
+
+NAME=struct size follows the target word size
+FILE=-
+ARGS=-b 16
+CMDS=<<EOF
+'td struct VB { void *a; void *b; };
+tss char *
+tss struct VB
+EOF
+EXPECT=<<EOF
+2
+4
+EOF
+RUN

@@ -272,18 +272,21 @@ static const char *type_aggregate_prefixed(const char *R_NONNULL type, const cha
 	return NULL;
 }
 
+// the per-target type dbs carry the pointer width as the size of "char *"
+static ut64 type_ptr_bitsize(Sdb *R_NONNULL TDB) {
+	const ut64 bits = sdb_num_get (TDB, "type.char *.size", NULL);
+	return bits? bits: 32;
+}
+
 R_API ut64 r_type_get_bitsize(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
 	R_RETURN_VAL_IF_FAIL (TDB && type, 0);
-	/* Filter out qualifiers and the structure keyword if type looks like "struct mystruc" */
 	const char *type_view = type_skip_qualifiers (type);
-	const char *tmptype = type_view;
+	if (strchr (type_view, '*')) {
+		return type_ptr_bitsize (TDB);
+	}
+	// a type may be spelled with its aggregate keyword, as in "struct mystruct"
 	const char *name = NULL;
-	if (type_aggregate_prefixed (tmptype, &name)) {
-		tmptype = name;
-	}
-	if ((strstr (type_view, "*(") || strstr (type_view, " *")) && strcmp (type_view, "char *")) {
-		return 32;
-	}
+	const char *tmptype = type_aggregate_prefixed (type_view, &name)? name: type_view;
 	const char *t = sdb_const_get (TDB, tmptype, 0);
 	if (!t) {
 		if (r_str_startswith (tmptype, "enum ")) {
