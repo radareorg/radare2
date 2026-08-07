@@ -52,6 +52,11 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char * R_NONNULL func_name
 R_API R_OWNED char *r_type_func_name(Sdb *types, const char *fname);
 R_API bool r_type_func_is_variadic(Sdb *TDB, const char * R_NONNULL func_name);
 
+// the variadic slot is named "..." (r2 <= 6.1.8 stored it in the type half instead)
+static inline bool r_type_arg_is_vararg(const char *type, const char *name) {
+	return (type && !strcmp (type, "...")) || (name && !strcmp (name, "..."));
+}
+
 #ifdef __cplusplus
 }
 #endif

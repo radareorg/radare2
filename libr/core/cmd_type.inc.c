@@ -1452,10 +1452,10 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 			}
 
 			ut32 type_size;
-			if (!strcmp (type, "...")) {
-				r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s%s // %s%s\n",
+			if (r_type_arg_is_vararg (type, argname)) {
+				r_strbuf_appendf (sb, "%s0x%08x%s   %s...%s%s // %s%s\n",
 					color_addr, current_offset, color_reset,
-					color_type, type, color_reset,
+					color_type, color_reset,
 					color_comment, "varargs", color_reset);
 				type_size = 0;
 			} else {
@@ -1695,8 +1695,8 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 		if (argname) {
 			*argname++ = 0;
 		}
-		if (!strcmp (type, "...")) {
-			r_cons_printf (core->cons, "%s%s", (i == 0)? "": ", ", type);
+		if (r_type_arg_is_vararg (type, argname)) {
+			r_cons_printf (core->cons, "%s...", (i == 0)? "": ", ");
 		} else {
 			r_cons_printf (core->cons, "%s%s %s", (i == 0)? "": ", ", type, argname);
 		}
@@ -1760,12 +1760,13 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 				arg_loc = "stack";
 			}
 			ut32 type_size = 0;
-			if (strcmp (type, "...")) {
+			const bool vararg = r_type_arg_is_vararg (type, argname);
+			if (!vararg) {
 				type_size = type_bytesize (core->anal, type, core->anal->config->bits / 8);
 			}
 			pj_o (pj);
-			pj_ks (pj, "type", type);
-			if (strcmp (type, "...")) {
+			pj_ks (pj, "type", vararg? "...": type);
+			if (!vararg) {
 				pj_ks (pj, "name", argname ? argname : "(null)");
 				pj_kn (pj, "size", type_size);
 			}

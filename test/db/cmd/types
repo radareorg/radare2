@@ -3607,3 +3607,19 @@ EXPECT=<<EOF
 |           0x0000000e      4889442418     mov qword [arg_8h[2]], rax
 EOF
 RUN
+
+NAME=td stores the variadic slot in the canonical ,... form
+FILE=-
+CMDS=<<EOF
+'td int myvarfn(const char *fmt, ...);
+tk~func.myvarfn
+EOF
+EXPECT=<<EOF
+func.myvarfn=fmt,...
+func.myvarfn.arg.0=const char *,fmt
+func.myvarfn.arg.1=,...
+func.myvarfn.args=2
+func.myvarfn.cc=cdecl
+func.myvarfn.ret=int
+EOF
+RUN

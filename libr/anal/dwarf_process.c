@@ -1622,7 +1622,9 @@ static bool import_dwarf_function_fallback(RAnal *anal, const char *typed_name, 
 		arg_index++;
 	}
 	if (has_unspecified_parameters) {
-		sdb_setf (types, "...,varg", 0, "func.%s.arg.%d", typed_name, arg_index);
+		// canonical types.sdb.txt form: empty type, "..." as the name
+		sdb_setf (types, ",...", 0, "func.%s.arg.%d", typed_name, arg_index);
+		r_strbuf_appendf (&argnames, "%s...", arg_index? ",": "");
 		arg_index++;
 	}
 	r_strf_buffer (16);
