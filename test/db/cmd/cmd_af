@@ -518,3 +518,47 @@ name: fcn.00000000
 stackframe: 72
 EOF
 RUN
+
+NAME=af warns on non-executable map
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e scr.null=true
+o malloc://512 0x10000
+e scr.null=false
+s 0x10000
+wx 554889e5c3
+af
+afl~?
+ompg +x
+af
+afl~?
+EOF
+EXPECT=<<EOF
+0
+1
+EOF
+EXPECT_ERR=<<EOF
+WARN: Map at 0x00010000 is not executable, skipping the analysis. Fix the permissions with 'ompg +x' or ignore them with 'e anal.in=io.maps'
+EOF
+RUN
+
+NAME=af analyzes non-executable map with anal.in=io.maps
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e scr.null=true
+o malloc://512 0x10000
+e scr.null=false
+s 0x10000
+wx 554889e5c3
+e anal.in=io.maps
+af
+afl~?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN

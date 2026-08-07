@@ -663,6 +663,14 @@ static bool is_entry_flag(RFlagItem *f) {
 	return f->space && !strcmp (f->space->name, R_FLAGS_FS_SYMBOLS) && r_str_startswith (f->name, "entry.");
 }
 
+static void warn_nonexec_map(RCore *core, ut64 at) {
+	RIORegion region;
+	if (r_io_get_region_at (core->io, &region, at) && !(region.sperm & R_PERM_X)) {
+		R_LOG_WARN ("Analysis skipped on executable map at 0x%08"PFMT64x, at);
+		R_LOG_INFO ("Fix perms with 'ompg +x' or ignore them with 'e anal.in=io.maps'");
+	}
+}
+
 static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	const bool verbose = r_config_get_b (core->config, "scr.interactive") && r_config_get_b (core->config, "scr.prompt");
 	if (depth < 0) {
@@ -723,6 +731,9 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		}
 		if (!core->anal->opt.noncode
 			&& (region.sperm & R_PERM_RX) != R_PERM_RX) {
+			if (from == UT64_MAX && delta == 0) {
+				warn_nonexec_map (core, at);
+			}
 			goto error;
 		}
 		if (r_cons_is_breaked (core->cons)) {
@@ -1946,11 +1957,11 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		return false;
 	}
 
-	if (core->io->va) {
-		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
-			R_LOG_DEBUG ("Address not mapped or not executable at 0x%08"PFMT64x, at);
-			return false;
+	if (core->io->va && !r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
+		if (from == UT64_MAX) {
+			warn_nonexec_map (core, at);
 		}
+		return false;
 	}
 	if (use_esil) {
 		return r_core_anal_esil_fcn (core, at, from, reftype, depth);
