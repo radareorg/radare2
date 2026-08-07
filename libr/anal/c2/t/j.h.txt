@@ -4,6 +4,6 @@ func.foo.arg.0=double,age
 func.foo.arg.1=char *,name
 func.foo.cc=cdecl
 func.foo=age,name
-func.foo.ret=int
 func.foo.args=2
+func.foo.ret=int
 
