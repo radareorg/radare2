@@ -1,17 +1,17 @@
-bar=struct
-struct.bar.a=int,0,0
 struct.bar.a.meta=0
-struct.bar.b=int,4,0
 struct.bar.b.meta=0
 typedef.bar=struct bar
+bar=struct
+struct.bar.a=int,0,0
+struct.bar.b=int,4,0
 struct.bar=a,b
 bar=struct
-bar=struct
-struct.bar.a=int,0,0
 struct.bar.a.meta=0
-struct.bar.b=int,4,0
 struct.bar.b.meta=0
 typedef.bar=struct bar
+bar=struct
+struct.bar.a=int,0,0
+struct.bar.b=int,4,0
 struct.bar=a,b
 bar=struct
 

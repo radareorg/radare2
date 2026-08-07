@@ -5,7 +5,7 @@ enum.Foo.BAR=0x2
 enum.Foo.0x2=BAR
 enum.Foo.LOW=0x3
 enum.Foo.0x3=LOW
-enum.Foo.COW=0xffffffffffffffff
-enum.Foo.0xffffffffffffffff=COW
+enum.Foo.COW=0x0
+enum.Foo.0x0=COW
 enum.Foo=FOO,BAR,LOW,COW
 
