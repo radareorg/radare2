@@ -3575,3 +3575,35 @@ func.A2.m.cc=cdecl
 func.A2.m.ret=float
 EOF
 RUN
+
+NAME=tss reports the target word size for pointers
+FILE=-
+ARGS=-b 64
+CMDS=<<EOF
+tss int *
+tss void *
+tss int
+EOF
+EXPECT=<<EOF
+8
+8
+4
+EOF
+RUN
+
+NAME=an array of pointers uses the target word size as its stride
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e asm.sub.var=true
+CMDS=<<EOF
+wx 48890424488944240848894424104889442418c3
+af
+"afvt arg_8h int *[4]"
+pdf~mov
+EOF
+EXPECT=<<EOF
+|           0x00000000      48890424       mov qword [rsp], rax
+|           0x00000004      4889442408     mov qword [arg_8h], rax
+|           0x00000009      4889442410     mov qword [arg_8h[1]], rax
+|           0x0000000e      4889442418     mov qword [arg_8h[2]], rax
+EOF
+RUN

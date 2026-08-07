@@ -142,7 +142,7 @@ static int fcn_type_stack_pop(RAnal *anal, const char *cc, const char *callee, i
 			continue;
 		}
 		char *type = r_type_func_args_type (anal->sdb_types, callee, i);
-		ut64 bitsize = type? r_type_get_bitsize (anal->sdb_types, type): 0;
+		ut64 bitsize = type? r_anal_type_bitsize (anal, type): 0;
 		free (type);
 		ut64 slot = bitsize? R_ROUND (R_MAX (bitsize, 8), 8) / 8: word;
 		slot = R_ROUND (slot, word);

@@ -169,7 +169,7 @@ R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
 
 // Element size (bytes) and count of an array type like "char[4]"/"int[9][9]".
 // False if it is not a sized array (unknown element type or missing [N]).
-static bool array_type_info(Sdb *TDB, const char *type, int *esize, int *count) {
+static bool array_type_info(RAnal *anal, const char *type, int *esize, int *count) {
 	const char *br = strchr (type, '[');
 	if (!br) {
 		return false;
@@ -179,7 +179,7 @@ static bool array_type_info(Sdb *TDB, const char *type, int *esize, int *count) 
 		return false;
 	}
 	r_str_trim (base);
-	const ut64 bits = r_type_get_bitsize (TDB, base);
+	const ut64 bits = r_anal_type_bitsize (anal, base);
 	free (base);
 	if (bits < 8) {
 		return false;
@@ -205,7 +205,7 @@ static void shadow_var_struct_members(RAnal *anal, RAnalVar *var) {
 	// drop emulation slots synthesised inside an array var's extent (e.g. ucTemp[4] byte stores that became arg_81h..83h)
 	int esize, count;
 	if ((var->kind == R_ANAL_VAR_KIND_SPV || var->kind == R_ANAL_VAR_KIND_BPV)
-			&& var->type && array_type_info (TDB, var->type, &esize, &count)) {
+			&& var->type && array_type_info (anal, var->type, &esize, &count)) {
 		const int extent = esize * count;
 		int off;
 		for (off = 1; off < extent; off++) {
@@ -1073,7 +1073,7 @@ static bool var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, RList *list
 		return true;
 	}
 	int esize, count;
-	if (av->type && array_type_info (TDB, av->type, &esize, &count) && count >= 2 && count <= 256) {
+	if (av->type && array_type_info (a, av->type, &esize, &count) && count >= 2 && count <= 256) {
 		int i;
 		for (i = 0; i < count; i++) {
 			RAnalVarField *field = R_NEW0 (RAnalVarField);
@@ -1377,7 +1377,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 						varname = strdup (r_type_func_args_name (anal->sdb_types, fname, i));
 						break;
 					}
-					ut64 bit_sz = r_type_get_bitsize (anal->sdb_types, tp);
+					ut64 bit_sz = r_anal_type_bitsize (anal, tp);
 					sum_sz += bit_sz ? bit_sz / 8 : bytes;
 					sum_sz = R_ROUND (sum_sz, bytes);
 					free (tp);
