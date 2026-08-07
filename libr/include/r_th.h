@@ -31,6 +31,12 @@
 # define HAVE_STDATOMIC_H 0
 # define R_ATOMIC_BOOL int
 
+#elif defined(__miknix__)
+# define HAVE_TH_LOCAL 1
+# define R_TH_LOCAL __thread
+# define HAVE_STDATOMIC_H 0
+# define R_ATOMIC_BOOL int
+
 #elif defined (__GNUC__) && !__TINYC__
 # define HAVE_TH_LOCAL 1
 # define R_TH_LOCAL __thread
