@@ -1566,14 +1566,26 @@ static bool split_fnptr_param(RStrs full, char **type, char **name) {
 	if (r_strs_at (inner, 0) != ')') {
 		return false;
 	}
-	*name = r_strs_empty (ident)? NULL: r_strs_tostring (ident);
 	RStrs suffix = r_strs_new (inner.a, full.b);
 	// Commas delimit SDB argument rows, so collapse nested multi-argument types.
+	char *raw_type;
 	if (r_strs_findc (suffix, ',')) {
-		*type = r_str_newf ("%.*s)()", (int)r_strs_len (prefix), prefix.a);
+		raw_type = r_str_newf ("%.*s)()", (int)r_strs_len (prefix), prefix.a);
 	} else {
-		*type = r_str_newf ("%.*s%.*s", (int)r_strs_len (prefix), prefix.a,
+		raw_type = r_str_newf ("%.*s%.*s", (int)r_strs_len (prefix), prefix.a,
 			(int)r_strs_len (suffix), suffix.a);
+	}
+	if (!raw_type) {
+		return false;
+	}
+	*type = collapse_whitespace (r_strs_from (raw_type));
+	free (raw_type);
+	*name = r_strs_empty (ident)? NULL: r_strs_tostring (ident);
+	if (!*type || (!r_strs_empty (ident) && !*name)) {
+		free (*type);
+		free (*name);
+		*type = *name = NULL;
+		return false;
 	}
 	return true;
 }

@@ -617,6 +617,19 @@ static bool test_anal_base_type_to_kv(void) {
 	mu_end;
 }
 
+static bool test_anal_cparse_multiline_fnptr(void) {
+	RAnal *anal = r_anal_new ();
+	char *error = NULL;
+	char *kv = r_anal_cparse (anal, "void once(void (*cb)(\n\tint\n));", &error);
+	mu_assert_null (error, "parse multiline function pointer parameter");
+	mu_assert_notnull (kv, "serialize multiline function pointer parameter");
+	mu_assert_notnull (strstr (kv, "func.once.arg.0=void (*)( int ),cb\n"),
+		"function pointer type stays within one SDB row");
+	free (kv);
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_anal_get_base_type_struct);
 	mu_run_test (test_anal_save_base_type_struct);
@@ -627,6 +640,7 @@ int all_tests(void) {
 	mu_run_test (test_anal_base_type_union_array_roundtrip);
 	mu_run_test (test_anal_save_base_type_union_redefine);
 	mu_run_test (test_anal_base_type_to_kv);
+	mu_run_test (test_anal_cparse_multiline_fnptr);
 	mu_run_test (test_anal_get_base_type_union);
 	mu_run_test (test_anal_save_base_type_union);
 	mu_run_test (test_anal_get_base_type_enum);
