@@ -1,0 +1,41 @@
+NAME=ELF MIPS: o32 e_flags selects the o32 abi and the default cc
+FILE=bins/elf/mipsloop
+CMDS=<<EOF
+e asm.abi
+e anal.cc
+k anal/cc/cc.o32.shadow
+EOF
+EXPECT=<<EOF
+o32
+o32
+16
+EOF
+RUN
+
+NAME=ELF MIPS: n64 reports the abi but has no matching cc
+FILE=bins/elf/analysis/mips64r2-busybox
+CMDS=<<EOF
+e asm.abi
+e anal.cc
+EOF
+EXPECT=<<EOF
+n64
+n32
+EOF
+RUN
+
+NAME=ELF MIPS: anal.cc tracks the abi when switching binaries in one session
+FILE=bins/elf/mipsloop
+CMDS=<<EOF
+e anal.cc
+o bins/elf/ppc64v1-more
+e anal.cc
+o bins/elf/mipsloop
+e anal.cc
+EOF
+EXPECT=<<EOF
+o32
+ppc-64
+o32
+EOF
+RUN

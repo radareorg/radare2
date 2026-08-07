@@ -1115,7 +1115,7 @@ za sym.fpathconf o 0x00051490
 za sym.fpathconf R ZnBhdGhjb25m
 za sym.fpathconf t void sym.fpathconf (int32_t arg1, int32_t arg2)
 za sym.fpathconf r sym.__errno_location sym.__errno_location
-za sym.fpathconf v fs-8:var_100h:int32_t, fs-12:var_fch:int32_t, fs-16:var_f8h:int32_t, fs-248:var_10h:int32_t, tr4:arg1:int32_t, tr5:arg2:int32_t
+za sym.fpathconf v fs-24:var_100h:int32_t, fs-28:var_fch:int32_t, fs-32:var_f8h:int32_t, fs-264:var_10h:int32_t, tr4:arg1:int32_t, tr5:arg2:int32_t
 za sym.fpathconf h 52f232c2d8158ce806cadf84ed77273fb11711dfa6cb5feb997ce03c1459be43
 EOF
 RUN
@@ -1136,7 +1136,7 @@ za sym._dl_malloc o 0x00002a1c
 za sym._dl_malloc R X2RsX21hbGxvYw==
 za sym._dl_malloc t void sym._dl_malloc (int32_t arg1)
 za sym._dl_malloc r sym._dl_dprintf sym._dl_dprintf
-za sym._dl_malloc v fs-4:var_4h:int32_t, fs-12:var_24h:int32_t, fs-16:var_20h:int32_t, fs-20:var_1ch:int32_t, fs-8:var_28h:int32_t, fs-24:var_18h:int32_t, fs-32:var_10h:int32_t, fs-80:var_10h_2:int32_t, fs-76:var_14h:int32_t, fs-28:var_24h_2:int32_t, fs-36:var_1ch_2:int32_t, fs-40:var_18h_2:int32_t, tr4:arg1:int32_t
+za sym._dl_malloc v fs-20:var_4h:int32_t, fs-28:var_24h:int32_t, fs-32:var_20h:int32_t, fs-36:var_1ch:int32_t, fs-24:var_28h:int32_t, fs-40:var_18h:int32_t, fs-48:var_10h:int32_t, fs-96:var_10h_2:int32_t, fs-92:var_14h:int32_t, fs-44:var_24h_2:int32_t, fs-52:var_1ch_2:int32_t, fs-56:var_18h_2:int32_t, tr4:arg1:int32_t
 za sym._dl_malloc h ec986971438cf486e01f14e9bc442d9f4c457854207d30fe4aa9f1ffdf892911
 EOF
 RUN
