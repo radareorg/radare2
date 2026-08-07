@@ -1455,7 +1455,7 @@ static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
 #endif
 
 static inline bool op_affect_dst(RAnalOp *op) {
-	switch (op->type) {
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_ADD:
 	case R_ANAL_OP_TYPE_SUB:
 	case R_ANAL_OP_TYPE_MUL:
@@ -1483,7 +1483,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
 	const bool in_src = is_reg_in_src (regname, anal, op);
 	const bool in_dst = opdreg && r_anal_cc_location_uses (anal, regname, opdreg);
-	switch (op->type) {
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_POP:
 		return false;
 	case R_ANAL_OP_TYPE_MOV:
