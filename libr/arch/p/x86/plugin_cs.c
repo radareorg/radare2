@@ -3031,6 +3031,9 @@ static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 			} else if (INSOP (1).mem.segment == X86_REG_INVALID && INSOP (1).mem.base == X86_REG_INVALID
 					&& INSOP (1).mem.index == X86_REG_INVALID && INSOP (1).mem.scale == 1) { // [<addr>]
 				op->ptr = op->disp;
+			} else if (op->disp > 1000) {
+				op->ptr = op->disp;
+				op->disp = UT64_MAX;
 			}
 			break;
 		case X86_OP_IMM:
@@ -3631,7 +3634,10 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 				}
 				break;
 			default:
-				/* unhandled */
+				if (op->disp > 1000) {
+					op->ptr = op->disp;
+					op->disp = UT64_MAX;
+				}
 				break;
 			}
 			break;
