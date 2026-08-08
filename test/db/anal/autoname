@@ -10,6 +10,18 @@ sym.plt.add2
 EOF
 RUN
 
+NAME=autonaming elf
+FILE=bins/elf/pltrel/add.so
+CMDS=<<EOF
+s..1040
+af
+afna
+EOF
+EXPECT=<<EOF
+'0x00001040'afnq sub.__cxa_finalize_1040
+EOF
+RUN
+
 NAME=autonaming add elf
 FILE=bins/elf/pltrel/add.so
 CMDS=<<EOF

@@ -112,6 +112,7 @@ typedef struct Elf_(dynamic_info) {
 	Elf_(Addr) dt_ppc64_glink; /* PPC64 ELFv1: DT_PPC64_GLINK lazy PLT resolver anchor */
 	Elf_(Addr) dt_crel;    // Address of Crel relocs
 	bool dt_bind_now;
+	bool dt_aarch64_pac_plt; /* AArch64: -z pac-plt, grows the PLT entries to 24 bytes */
 	Elf_(Xword) dt_flags;
 	Elf_(Xword) dt_flags_1;
 	Elf_(Xword) dt_rpath;
@@ -122,6 +123,11 @@ typedef struct Elf_(dynamic_info) {
 typedef struct r_bin_elf_lib_t {
 	char name[ELF_STRING_LENGTH];
 } RBinElfLib;
+
+typedef struct r_bin_elf_plt_thunk_t {
+	ut64 vaddr;
+	ut32 size;
+} RBinElfPltThunk;
 
 #include <r_vec.h>
 R_VEC_TYPE (RVecRBinElfSection, RBinElfSection);
@@ -183,6 +189,15 @@ struct Elf_(obj_t) {
 	RList *inits;
 	HtUU *rel_cache;
 	HtUU *ppc64_plt_stubs; // ppc64: slot_vaddr -> stub_vaddr (lazy, NULL until first use)
+	RBinElfPltThunk *ppc32_thunks; // ppc32: plt slot index -> call thunk, lazy
+	ut64 ppc32_nthunks;
+	ut64 arm64_plt_esize; // aarch64: measured plt entry stride
+	ut64 arm64_plt_probed; // the plt address it was measured from, 0 when unmeasured
+	bool arm64_plt_vouched; // false when the stride is an unmeasured guess
+	ut64 x86_plt_base; // x86: first retpoline plt entry
+	ut64 x86_plt_esize; // 0 when the plt is not retpoline
+	bool ppc32_thunks_done;
+	bool x86_plt_probed;
 	ut32 g_reloc_num;
 	bool relocs_loaded;
 	RVecRBinElfReloc g_relocs;
