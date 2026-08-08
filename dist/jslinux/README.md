@@ -103,8 +103,11 @@ afterwards.
   radare2 touch icon. Page rubber-banding is disabled on touch devices; a
   two-finger terminal pinch changes only its font size, while a one-finger drag
   becomes vertical or horizontal terminal mouse-wheel input for r2 visual
-  modes. Re-run `resize` in the guest after changing the font size or rotating
-  the screen.
+  modes. The Keyboard button is the only page control that focuses the hidden
+  text input; focus loss and visual-viewport changes hide the extra keys and
+  refit the terminal when iOS dismisses its keyboard. Re-run `resize` in the
+  guest after changing the font size, toggling the keyboard or rotating the
+  screen.
 
 ## Licensing
 

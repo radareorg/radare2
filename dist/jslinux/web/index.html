@@ -183,7 +183,7 @@ body.kbd #term_wrap { height: calc(100% - 68px); }
   <span><b>temu/rv64</b>/r2</span>
   <span class="btns">
     <button id="btn-upload" title="Upload files into the VM (appear in /mnt/tmp)">Upload</button>
-    <button id="btn-kbd" title="Toggle the on-screen keyboard and the Esc/Ctrl/Tab/arrows bar">Keyboard</button>
+    <button id="btn-kbd" aria-pressed="false" title="Toggle the on-screen keyboard and the Esc/Ctrl/Tab/arrows bar">Keyboard</button>
     <button id="btn-cache" title="Manage offline storage">Cache</button>
     <button id="btn-about" title="What is this?">About</button>
   </span>
@@ -229,7 +229,7 @@ body.kbd #term_wrap { height: calc(100% - 68px); }
 </div>
 <div id="term_wrap">
   <div id="term_container"></div>
-  <textarea id="term_paste" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+  <textarea id="term_paste" autocorrect="off" autocapitalize="off" spellcheck="false" readonly></textarea>
   <input type="file" id="files" multiple style="display: none" onchange="on_update_files(this.files)">
   <progress id="net_progress"></progress>
 </div>
@@ -266,11 +266,9 @@ function r2_calc_geometry(fs) {
      last line */
   var usable_w = vw - 18;
   var usable_h = vh - 30 - Math.ceil(ch / 2) - 8;
-  if (r2_touch) {
-    /* on phones keep room for the on-screen keyboard and the key bar */
-    usable_h = Math.floor(usable_h * 0.55) - 38;
-  } else if (document.body.classList.contains("kbd")) {
-    /* the key bar takes a strip below the titlebar */
+  if (document.body.classList.contains("kbd")) {
+    /* visualViewport already excludes the software keyboard; only our
+       extra-key row consumes space inside the page */
     usable_h -= 38;
   }
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -656,6 +654,20 @@ function r2_send_key(name) {
   term.handler(str);
 }
 
+var r2_rsz_timer = null;
+
+function r2_fit_terminal() {
+  if (window.term && term.resize) {
+    var g = r2_calc_geometry(window.R2_FONT);
+    term.resize(g.cols, g.rows);
+  }
+}
+
+function r2_queue_terminal_fit() {
+  clearTimeout(r2_rsz_timer);
+  r2_rsz_timer = setTimeout(r2_fit_terminal, 120);
+}
+
 /* pointerdown + preventDefault keeps the focus (and thus the phone's
    on-screen keyboard) on the terminal textarea */
 Array.prototype.forEach.call(
@@ -729,9 +741,8 @@ if (r2_touch) {
     }
     var changed = r2_pinch.changed;
     r2_pinch = null;
-    if (changed && window.term && term.term_el && term.resize) {
-      var g = r2_calc_geometry(window.R2_FONT);
-      term.resize(g.cols, g.rows);
+    if (changed) {
+      r2_fit_terminal();
     }
   };
 
@@ -860,18 +871,56 @@ if (r2_touch) {
   }, { passive: false });
 }
 
-document.getElementById("btn-kbd").onclick = function () {
-  var on = document.body.classList.toggle("kbd");
+var r2_kbd_input = document.getElementById("term_paste");
+var r2_kbd_button = document.getElementById("btn-kbd");
+var r2_kbd_button_down = false;
+var r2_kbd_closed_height = 0;
+var r2_kbd_requested_at = 0;
+
+function r2_set_keyboard(on) {
   if (on) {
-    document.getElementById("term_paste").focus();
+    document.body.classList.add("kbd");
+    r2_kbd_input.readOnly = false;
+    r2_kbd_closed_height = window.visualViewport
+      ? window.visualViewport.height : window.innerHeight;
+    r2_kbd_requested_at = Date.now();
+    r2_kbd_input.focus();
+  } else {
+    document.body.classList.remove("kbd");
+    r2_set_ctrl(false);
+    r2_kbd_input.blur();
+    r2_kbd_input.readOnly = true;
   }
-  /* the key bar changes the usable height: refit the grid on desktop
-     (phones keep the load-time geometry which already reserves it) */
-  if (!r2_touch && window.term && term.resize) {
-    var g = r2_calc_geometry(window.R2_FONT);
-    term.resize(g.cols, g.rows);
-  }
+  r2_kbd_button.setAttribute("aria-pressed", on ? "true" : "false");
+  r2_queue_terminal_fit();
+}
+
+/* Keep a tap on our toggle from being mistaken for a native keyboard
+   dismissal before its click handler runs. */
+r2_kbd_button.addEventListener("pointerdown", function () {
+  r2_kbd_button_down = true;
+});
+var r2_kbd_button_up = function () {
+  setTimeout(function () {
+    r2_kbd_button_down = false;
+  }, 0);
 };
+r2_kbd_button.addEventListener("pointerup", r2_kbd_button_up);
+r2_kbd_button.addEventListener("pointercancel", r2_kbd_button_up);
+
+r2_kbd_button.onclick = function () {
+  r2_set_keyboard(!document.body.classList.contains("kbd"));
+};
+
+/* Safari can dismiss its keyboard without changing our page state. If the
+   hidden textarea loses focus, collapse the extra keys and restore the grid. */
+r2_kbd_input.addEventListener("blur", function () {
+  setTimeout(function () {
+    if (!r2_kbd_button_down && document.body.classList.contains("kbd")) {
+      r2_set_keyboard(false);
+    }
+  }, 0);
+});
 document.getElementById("btn-about").onclick = function () {
   var el = document.getElementById("about");
   document.getElementById("cache-panel").hidden = true;
@@ -901,20 +950,22 @@ document.getElementById("btn-cache-all").onclick = function () {
 document.getElementById("btn-cache-clear").onclick = function () {
   r2_cache_clear();
 };
-/* adapt the terminal grid when the desktop window is resized (phones
-   keep the geometry chosen at load); run `resize` in the guest shell
-   afterwards so the tty size matches */
-if (!r2_touch) {
-  var r2_rsz_timer = null;
-  window.addEventListener("resize", function () {
-    clearTimeout(r2_rsz_timer);
-    r2_rsz_timer = setTimeout(function () {
-      if (window.term && term.resize) {
-        var g = r2_calc_geometry(window.R2_FONT);
-        term.resize(g.cols, g.rows);
-      }
-    }, 200);
+/* Keep the grid fitted to the actually visible area. On iOS the layout
+   viewport stays large while visualViewport shrinks above the keyboard. */
+window.addEventListener("resize", r2_queue_terminal_fit);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", function () {
+    var closed_height = Math.min(r2_kbd_closed_height || window.innerHeight,
+      window.innerHeight);
+    var keyboard_hidden = window.visualViewport.height >= closed_height - 80;
+    if (document.body.classList.contains("kbd") && keyboard_hidden &&
+        Date.now() - r2_kbd_requested_at > 500) {
+      r2_set_keyboard(false);
+    } else {
+      r2_queue_terminal_fit();
+    }
   });
+  window.visualViewport.addEventListener("scroll", r2_queue_terminal_fit);
 }
 </script>
 </body>

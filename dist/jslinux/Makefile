@@ -42,7 +42,7 @@ CC_WRAP = $(abspath $(WORK)/bin/rv64-musl-gcc)
 
 # guest ext2 image size; the pristine jslinux rootfs is 4MB with ~1.4MB
 # free, so it must grow to fit r2blob
-ROOT_MB ?= 64
+ROOT_MB ?= 32
 # jslinux streams the disk on demand in chunks of this size (KB)
 BLK_KB ?= 256
 
