@@ -742,6 +742,8 @@ typedef struct r_bin_plugin_t {
 	bool (*load_resources)(RBinFile *bf);
 	/* Optional raw-data resolver. The returned buffer is owned by the caller. */
 	RBuffer *(*get_resource_data)(RBinFile *bf, const RBinResource *resource);
+	// Optional: address a plt stub forwards to, UT64_MAX when vaddr is not a stub
+	ut64 (*stub_target)(RBinFile *bf, ut64 vaddr);
 } RBinPlugin;
 
 typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);
@@ -864,6 +866,7 @@ typedef ut64 (*RBinBaddr)(RBinFile *bf, ut64 addr);
 typedef RVecRBinSymbol *(*RBinGetSymbolsVec)(RBin *bin);
 typedef RBinSymbol *(*RBinGetSymbolAt)(RBin *bin, ut64 addr);
 typedef const char *(*RBinGetCC)(RBin *bin, ut64 vaddr);
+typedef ut64 (*RBinGetStubTarget)(RBin *bin, ut64 vaddr);
 
 typedef struct r_bin_bind_t {
 	RBin *bin;
@@ -879,6 +882,7 @@ typedef struct r_bin_bind_t {
 	RBinAddrLineGet addrline_get;
 	RBinBaddr baddr;
 	ut32 visibility;
+	RBinGetStubTarget get_stub_target;
 } RBinBind;
 
 R_API RBinSection *r_bin_section_clone(RBinSection *s);
