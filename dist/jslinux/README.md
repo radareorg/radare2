@@ -3,7 +3,8 @@
 Boots a riscv64 Linux in the browser using Fabrice Bellard's
 [JSLinux](https://bellard.org/jslinux/) (the MIT-licensed
 [TinyEMU](https://bellard.org/tinyemu/) compiled to WebAssembly) with a
-static, size-optimized radare2 injected into the busybox rootfs.
+static, size-optimized radare2 and a compact TinyCC toolchain injected
+into the busybox rootfs.
 
 radare2 is cross-compiled from this source tree as **one static binary**
 (`r2blob`, all the r2 tools multiplexed busybox-style through argv[0])
@@ -34,8 +35,10 @@ Other targets and knobs:
 
 ```sh
 make r2                        # only build work/r2blob
+make tcc                       # only build and stage TinyCC
 make run                       # boot the image in a natively-built temu
-make ROOT_MB=96                # bigger guest disk (default 64MB)
+make ROOT_MB=96                # bigger guest disk (default 32MB)
+make SHIP_TCC=0                # omit TinyCC from the guest image
 make R2BLOB=/path/to/r2blob    # reuse a prebuilt riscv64 static blob
 make TC_VER=2024.05-1          # pick another bootlin toolchain release
 make docker DOCKER_TARGET=r2   # build only r2blob in Docker
@@ -55,16 +58,21 @@ afterwards.
    --without-gpl --without-dylink --disable-loadlibs`, compiled with
    `-Oz -ffunction-sections -fdata-sections`, and `binr/blob/r2blob` is
    linked with `-static -Wl,--gc-sections` and stripped.
-3. The pristine 4MB `root-riscv64.bin` ext2 image from the jslinux demo
+3. TinyCC is downloaded at the exact commit pinned by `TCC_COMMIT`, built
+   as a stripped static riscv64 compiler with `-Oz`, then staged with its
+   runtime, a compact musl userspace header set and the shared musl loader.
+   Its compile-and-run smoke test executes under QEMU before packaging.
+   Set `SHIP_TCC=0` to skip this download, build and rootfs overlay.
+4. The pristine 4MB `root-riscv64.bin` ext2 image from the jslinux demo
    tarball is grown with `resize2fs` and `r2blob` is injected with
    `debugfs` (no root privileges needed anywhere).
-4. The image is split into 256KB blocks (TinyEMU `splitimg` format). A
+5. The image is split into 256KB blocks (TinyEMU `splitimg` format). A
    generated service worker precaches only the bootable app shell when offline
    storage is requested. Without it, disk blocks simply stream on demand. The
    Cache popup's `Cache all` action downloads every block sequentially,
    skipping blocks from an interrupted earlier pass. This keeps normal startup
    fast and does not starve TinyEMU's interactive disk reads.
-5. `www/` ends up fully self-contained: the JSLinux runtime
+6. `www/` ends up fully self-contained: the JSLinux runtime
    (riscvemu64-wasm), bbl + kernel, the split disk and a small
    installable web app; host it on any static web server. Once the first
    cache pass finishes, a Home Screen installation works completely offline.
@@ -114,3 +122,5 @@ afterwards.
 TinyEMU is MIT-licensed; the JSLinux demo files (`jslinux.js`,
 `term.js`, precompiled emulator, kernel and rootfs) are downloaded from
 bellard.org at build time and are not stored in this repository.
+TinyCC is LGPL-licensed, downloaded from its upstream GitHub repository
+at the pinned commit, and its `COPYING` file is installed in the guest.

@@ -2,7 +2,8 @@
 #
 # Builds a self-contained static website (www/) that boots a riscv64
 # Linux (Fabrice Bellard's JSLinux, MIT-licensed TinyEMU compiled to
-# WASM) with a size-optimized static radare2 injected into the rootfs.
+# WASM) with size-optimized static radare2 and TinyCC injected into the
+# rootfs. TinyCC can be omitted with SHIP_TCC=0.
 #
 # radare2 is cross-compiled as a single static binary (r2blob, all the
 # r2 tools in one executable, busybox-style) using a musl riscv64
@@ -15,6 +16,7 @@
 #   make check-tools     # verify host dependencies
 #   make                 # build r2blob + rootfs + website
 #   make r2              # only cross-compile r2blob (work/r2blob)
+#   make tcc             # only cross-compile/stage TinyCC
 #   make serve           # serve www/ on http://localhost:8080
 #   make run             # boot the image in a natively built temu
 #
@@ -22,6 +24,7 @@
 #   make ROOT_MB=96                        # bigger guest disk
 #   make R2BLOB=/path/to/r2blob            # reuse a prebuilt rv64 blob
 #   make TC_VER=2024.05-1                  # other bootlin toolchain
+#   make SHIP_TCC=0                         # omit TinyCC from the rootfs
 
 R2_ROOT ?= $(abspath ../..)
 WORK ?= work
@@ -39,6 +42,38 @@ TC_NAME ?= riscv64-lp64d--musl--stable-$(TC_VER)
 TC_URL ?= https://toolchains.bootlin.com/downloads/releases/toolchains/riscv64-lp64d/tarballs/$(TC_NAME).tar.xz
 TCDIR = $(abspath $(WORK)/$(TC_NAME))
 CC_WRAP = $(abspath $(WORK)/bin/rv64-musl-gcc)
+
+# TinyCC's default branch is "mob". This pins its HEAD as of 2026-08-08;
+# changing the commit changes both the download and build directories.
+SHIP_TCC ?= 1
+TCC_COMMIT ?= 64552b3faa39ee7948a9ea21bfcc11045b90c70d
+TCC_URL ?= https://github.com/TinyCC/tinycc/archive/$(TCC_COMMIT).tar.gz
+TCC_SRC = $(WORK)/tinycc-$(TCC_COMMIT)
+TCC_BUILD = $(WORK)/tinycc-build-$(TCC_COMMIT)
+TCC_ROOT = $(WORK)/tcc-root-$(TCC_COMMIT)
+TCC_STAMP = $(WORK)/.tcc-root-$(TCC_COMMIT).stamp
+TCC_RUNNER ?= qemu-riscv64
+TCC_CFLAGS ?= -Oz -ffunction-sections -fdata-sections \
+	-fno-asynchronous-unwind-tables -fno-unwind-tables
+TCC_LDFLAGS ?= -static -Wl,--gc-sections
+# Keep the complete libc/POSIX headers, but leave out the large Linux device
+# UAPI trees. TinyCC's own headers remain under /usr/lib/tcc/include.
+TCC_MUSL_HEADER_DIRS = arpa bits net netinet netpacket sys
+TCC_MUSL_STUB_LIBS = libcrypt.a libdl.a libm.a libpthread.a libresolv.a \
+	librt.a libutil.a libxnet.a
+
+ifeq ($(filter $(SHIP_TCC),0 1),)
+$(error SHIP_TCC must be 0 or 1)
+endif
+
+TCC_ROOTFS_DEPS =
+TCC_ROOTFS_ARGS =
+TCC_HOST_TOOLS =
+ifeq ($(SHIP_TCC),1)
+TCC_ROOTFS_DEPS += $(TCC_STAMP)
+TCC_ROOTFS_ARGS += "$(abspath $(TCC_ROOT))"
+TCC_HOST_TOOLS += $(firstword $(TCC_RUNNER))
+endif
 
 # guest ext2 image size; the pristine jslinux rootfs is 4MB with ~1.4MB
 # free, so it must grow to fit r2blob
@@ -81,17 +116,19 @@ DOCKER_IMAGE ?= radare2-jslinux-builder
 DOCKER_PLATFORM ?= linux/amd64
 DOCKER_TARGET ?= all
 
-.PHONY: all www r2 image docker docker-build serve run clean mrproper check-tools
+.PHONY: all www r2 tcc image docker docker-build serve run clean mrproper check-tools
 
 ifeq ($(USE_DOCKER),1)
 all: docker
 
-r2 image www:
+r2 tcc image www:
 	$(MAKE) docker DOCKER_TARGET=$@
 else
 all: www
 
 r2: $(WORK)/r2blob
+
+tcc: $(TCC_STAMP)
 
 image: $(WORK)/root-r2.bin
 
@@ -126,6 +163,10 @@ docker: docker-build
 			JSLINUX_VER="$(JSLINUX_VER)" JSLINUX_URL="$(JSLINUX_URL)" \
 			TINYEMU_URL="$(TINYEMU_URL)" TC_VER="$(TC_VER)" \
 			TC_NAME="$(TC_NAME)" TC_URL="$(TC_URL)" \
+			SHIP_TCC="$(SHIP_TCC)" TCC_COMMIT="$(TCC_COMMIT)" \
+			TCC_URL="$(TCC_URL)" TCC_RUNNER="$(TCC_RUNNER)" \
+			TCC_CFLAGS="$(TCC_CFLAGS)" \
+			TCC_LDFLAGS="$(TCC_LDFLAGS)" \
 			ROOT_MB="$(ROOT_MB)" BLK_KB="$(BLK_KB)" JOBS="$(JOBS)" \
 			R2_CFLAGS="$(R2_CFLAGS)" \
 			R2_CONFIGURE_FLAGS="$(R2_CONFIGURE_FLAGS)" \
@@ -155,6 +196,89 @@ $(CC_WRAP): $(TCDIR)/.stamp
 	[ -n "$$CCBIN" ] || { echo "no riscv64 gcc in $(TCDIR)/bin"; exit 1; }; \
 	printf '#!/bin/sh\nexec %s "$$@"\n' "$$CCBIN" > $@
 	chmod +x $@
+
+# -- TinyCC cross build ---------------------------------------------------
+
+$(WORK)/dl/tinycc-$(TCC_COMMIT).tar.gz:
+	mkdir -p $(WORK)/dl
+	$(CURL) -o $@.tmp $(TCC_URL)
+	mv $@.tmp $@
+
+$(TCC_SRC)/.stamp: $(WORK)/dl/tinycc-$(TCC_COMMIT).tar.gz
+	rm -rf $(TCC_SRC)
+	tar -xzf $< -C $(WORK)
+	touch $@
+
+# Build a static compiler so it does not depend on the old glibc in the
+# guest. Programs produced by tcc use the much smaller shared musl runtime.
+# libtcc1 is built by the new riscv64 tcc under user-mode emulation. This is
+# necessary because its cache-flush runtime uses a TinyCC RISC-V intrinsic
+# which GCC does not implement. CONFIG_predefs=no avoids needing a generated
+# target c2str helper before tcc itself exists.
+$(TCC_STAMP): $(TCC_SRC)/.stamp $(CC_WRAP) Makefile
+	rm -rf $(TCC_BUILD) $(TCC_ROOT)
+	mkdir -p $(TCC_BUILD)
+	@AR="$$(ls $(TCDIR)/bin/riscv64-linux-ar 2> /dev/null || \
+		ls $(TCDIR)/bin/riscv64-*-ar 2> /dev/null | head -n1)"; \
+	[ -n "$$AR" ] || { echo "no riscv64 ar in $(TCDIR)/bin"; exit 1; }; \
+	cd $(TCC_BUILD) && $(abspath $(TCC_SRC))/configure \
+		--prefix=/usr --tccdir=/usr/lib/tcc --cpu=riscv64 \
+		--targetos=Linux --triplet=riscv64-buildroot-linux-musl \
+		--cc=$(CC_WRAP) --ar="$$AR" --config-musl \
+		--config-backtrace=no --config-bcheck=no --config-predefs=no \
+		--sysincludepaths='{B}/include:/usr/include' \
+		--libpaths='{B}:/lib:/usr/lib' --crtprefix='{B}' \
+		--elfinterp=/lib/ld-musl-riscv64.so.1 \
+		--extra-cflags='$(TCC_CFLAGS)' \
+		--extra-ldflags='$(TCC_LDFLAGS)'
+	$(MAKE) -C $(TCC_BUILD) -j$(JOBS) GITHASH=no ONE_SOURCE=yes tcc
+	$(TCC_RUNNER) $(TCC_BUILD)/tcc -v
+	@SYSROOT="$$($(CC_WRAP) -print-sysroot)"; \
+	$(MAKE) -C $(TCC_BUILD) -j$(JOBS) GITHASH=no ONE_SOURCE=yes \
+		XCC="$(TCC_RUNNER) $(abspath $(TCC_BUILD))/tcc -nostdinc \
+		-I$(abspath $(TCC_SRC))/include -I$$SYSROOT/usr/include" \
+		XAR="$(TCC_RUNNER) $(abspath $(TCC_BUILD))/tcc -ar" libtcc1.a
+	@SYSROOT="$$($(CC_WRAP) -print-sysroot)"; \
+	STRIP="$$(ls $(TCDIR)/bin/riscv64-linux-strip 2> /dev/null || \
+		ls $(TCDIR)/bin/riscv64-*-strip 2> /dev/null | head -n1)"; \
+	[ -d "$$SYSROOT/usr/include" ] || { echo "bad musl sysroot: $$SYSROOT"; exit 1; }; \
+	[ -n "$$STRIP" ] || { echo "no riscv64 strip in $(TCDIR)/bin"; exit 1; }; \
+	mkdir -p $(TCC_ROOT)/usr/bin $(TCC_ROOT)/usr/include \
+		$(TCC_ROOT)/usr/lib/tcc/include $(TCC_ROOT)/lib \
+		$(TCC_ROOT)/usr/share/licenses/tinycc; \
+	install -m 755 $(TCC_BUILD)/tcc $(TCC_ROOT)/usr/bin/tcc; \
+	install -m 644 $(TCC_BUILD)/libtcc1.a $(TCC_ROOT)/usr/lib/tcc/libtcc1.a; \
+	install -m 644 $(TCC_BUILD)/runmain.o $(TCC_ROOT)/usr/lib/tcc/runmain.o; \
+	install -m 644 $(TCC_SRC)/include/*.h $(TCC_SRC)/tcclib.h \
+		$(TCC_ROOT)/usr/lib/tcc/include; \
+	install -m 644 "$$SYSROOT"/usr/include/*.h $(TCC_ROOT)/usr/include; \
+	for D in $(TCC_MUSL_HEADER_DIRS); do \
+		cp -a "$$SYSROOT/usr/include/$$D" $(TCC_ROOT)/usr/include/; \
+	done; \
+	install -m 644 "$$SYSROOT"/lib/crt1.o "$$SYSROOT"/lib/crti.o \
+		"$$SYSROOT"/lib/crtn.o $(TCC_ROOT)/usr/lib/tcc; \
+	for L in $(TCC_MUSL_STUB_LIBS); do \
+		install -m 644 "$$SYSROOT/lib/$$L" $(TCC_ROOT)/usr/lib/tcc; \
+	done; \
+	install -m 755 "$$SYSROOT"/lib/libc.so $(TCC_ROOT)/lib/libc.so; \
+	ln -s libc.so $(TCC_ROOT)/lib/ld-musl-riscv64.so.1; \
+	install -m 644 $(TCC_SRC)/COPYING \
+		$(TCC_ROOT)/usr/share/licenses/tinycc/COPYING; \
+	"$$STRIP" --strip-all $(TCC_ROOT)/usr/bin/tcc; \
+	"$$STRIP" --strip-unneeded $(TCC_ROOT)/lib/libc.so; \
+	"$$STRIP" --strip-debug $(TCC_ROOT)/usr/lib/tcc/libtcc1.a \
+		$(TCC_ROOT)/usr/lib/tcc/runmain.o $(TCC_ROOT)/usr/lib/tcc/crt1.o \
+		$(TCC_ROOT)/usr/lib/tcc/crti.o $(TCC_ROOT)/usr/lib/tcc/crtn.o; \
+	$(TCC_RUNNER) $(TCC_ROOT)/usr/bin/tcc -nostdinc \
+		-B$(abspath $(TCC_ROOT))/usr/lib/tcc \
+		-I$(abspath $(TCC_ROOT))/usr/lib/tcc/include \
+		-I$(abspath $(TCC_ROOT))/usr/include \
+		-L$(abspath $(TCC_ROOT))/lib $(TCC_SRC)/examples/ex1.c \
+		-lm -ldl -lpthread \
+		-o $(TCC_BUILD)/tcc-smoke; \
+	$(TCC_RUNNER) -L $(abspath $(TCC_ROOT)) $(TCC_BUILD)/tcc-smoke; \
+	touch $@
+	@du -sh $(TCC_ROOT)
 
 # -- radare2 cross build ---------------------------------------------------
 
@@ -197,8 +321,17 @@ $(JSL)/.stamp:
 # the image; setuprootfs.sh does the whole grow+inject dance with debugfs
 GUEST_FILES = $(shell find guest -type f | sort)
 
-$(WORK)/root-r2.bin: $(WORK)/r2blob $(JSL)/.stamp $(GUEST_FILES) setuprootfs.sh
-	./setuprootfs.sh $(JSL)/root-riscv64.bin $@ $(WORK)/r2blob $(ROOT_MB) "$(R2_LINKS)"
+.PHONY: rootfs-config-force
+ROOTFS_CONFIG = $(WORK)/.rootfs-config
+$(ROOTFS_CONFIG): rootfs-config-force
+	@mkdir -p $(WORK)
+	@printf 'SHIP_TCC=%s\nROOT_MB=%s\n' "$(SHIP_TCC)" "$(ROOT_MB)" > $@.tmp; \
+	if cmp -s $@.tmp $@; then rm -f $@.tmp; else mv -f $@.tmp $@; fi
+
+$(WORK)/root-r2.bin: $(WORK)/r2blob $(JSL)/.stamp $(GUEST_FILES) \
+		setuprootfs.sh $(ROOTFS_CONFIG) $(TCC_ROOTFS_DEPS)
+	./setuprootfs.sh $(JSL)/root-riscv64.bin $@ $(WORK)/r2blob \
+		$(ROOT_MB) "$(R2_LINKS)" $(TCC_ROOTFS_ARGS)
 
 # split into fixed-size chunks so the browser only downloads the blocks
 # it actually reads (same format as TinyEMU's splitimg tool)
@@ -345,7 +478,7 @@ ifeq ($(USE_DOCKER),1)
 	@echo "docker is available"
 else
 	@ok=1; for t in curl file tar wget xz split truncate e2fsck resize2fs \
-			debugfs python3 cc gperf patch; do \
+			debugfs python3 cc gperf patch $(TCC_HOST_TOOLS); do \
 		command -v $$t > /dev/null 2>&1 || { echo "missing: $$t"; ok=0; }; \
 	done; \
 	[ "$$ok" = 1 ] && echo "all tools found" || exit 1
