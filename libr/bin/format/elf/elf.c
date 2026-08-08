@@ -2085,6 +2085,17 @@ static ut64 ppc32_get_plt_thunk(ELFOBJ *eo, ut64 slot_vaddr) {
 	return UT64_MAX;
 }
 
+// ELFv1 function addresses point at a .opd descriptor, map them onto the real code address
+static ut64 opd_code_addr(ELFOBJ *eo, ut64 vaddr) {
+#if R_BIN_ELF64
+	const ut64 code_addr = ppc64v1_opd_deref (eo, vaddr);
+	if (code_addr != UT64_MAX) {
+		return code_addr;
+	}
+#endif
+	return vaddr;
+}
+
 static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 #if R_BIN_ELF64
 	if (ppc64_abi (eo)) {
@@ -2559,13 +2570,7 @@ ut64 Elf_(get_entry_offset)(ELFOBJ *eo) {
 
 	ut64 entry = eo->ehdr.e_entry;
 	if (entry) {
-#if R_BIN_ELF64
-		ut64 code_addr = ppc64v1_opd_deref (eo, entry);
-		if (code_addr != UT64_MAX) {
-			entry = code_addr;
-		}
-#endif
-		return Elf_(v2p) (eo, entry);
+		return Elf_(v2p) (eo, opd_code_addr (eo, entry));
 	}
 
 	return get_entry_offset_from_shdr (eo);
@@ -5247,14 +5252,9 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 			tsize = new_symbol.st_size;
 			toffset = (ut64) new_symbol.st_value;
 			is_sht_null = new_symbol.st_shndx == SHT_NULL;
-#if R_BIN_ELF64
-			if (ELF64_ST_TYPE (new_symbol.st_info) == STT_FUNC) {
-				ut64 code_addr = ppc64v1_opd_deref (eo, toffset);
-				if (code_addr != UT64_MAX) {
-					toffset = code_addr;
-				}
+			if (ELF_ST_TYPE (new_symbol.st_info) == STT_FUNC) {
+				toffset = opd_code_addr (eo, toffset);
 			}
-#endif
 		} else {
 			// why continue here?
 			continue;
@@ -5872,14 +5872,9 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 			tsize = sym.st_size;
 			toffset = (ut64)sym.st_value;
 			is_sht_null = sym.st_shndx == SHT_NULL;
-#if R_BIN_ELF64
-			if (ELF64_ST_TYPE (sym.st_info) == STT_FUNC) {
-				ut64 code_addr = ppc64v1_opd_deref (eo, toffset);
-				if (code_addr != UT64_MAX) {
-					toffset = code_addr;
-				}
+			if (ELF_ST_TYPE (sym.st_info) == STT_FUNC) {
+				toffset = opd_code_addr (eo, toffset);
 			}
-#endif
 		}
 
 		if (is_bin_etrel (eo)) {
@@ -6174,13 +6169,18 @@ static bool is_code_addr(ELFOBJ *eo, ut64 vaddr) {
 
 // a -fPIC object calls its own globals through the PLT, and those stubs never reach the import path
 static void load_local_plt_symbols(ELFOBJ *eo) {
+	eo->local_plt_loaded = true;
 	// section-less objects only get symbols_by_ord filled once load_symbols_vec has run
 	RBinSymbol **sbo = eo->symbols_by_ord;
 	if (!sbo) {
 		return;
 	}
 	HtUU *seen = ht_uu_new0 ();
-	if (!seen) {
+	if (!eo->local_plt_targets) {
+		eo->local_plt_targets = ht_uu_new0 ();
+	}
+	if (!seen || !eo->local_plt_targets) {
+		ht_uu_free (seen);
 		return;
 	}
 	const size_t sbo_size = eo->symbols_by_ord_size;
@@ -6209,8 +6209,10 @@ static void load_local_plt_symbols(ELFOBJ *eo) {
 		if (R_STR_ISEMPTY (tname)) {
 			continue;
 		}
+		// symbols_by_ord is filled by the import path, which skips the ELFv1 .opd deref
+		const ut64 target_vaddr = opd_code_addr (eo, target->vaddr);
 		const ut64 stub = get_plt_stub_addr (eo, rel);
-		if (!stub || stub == UT64_MAX || stub == target->vaddr || !is_code_addr (eo, stub)) {
+		if (!stub || stub == UT64_MAX || stub == target_vaddr || !is_code_addr (eo, stub)) {
 			continue;
 		}
 		// x86 derives the entry from the got contents, lld retpoline plts break that by
@@ -6236,9 +6238,29 @@ static void load_local_plt_symbols(ELFOBJ *eo) {
 		snprintf (es.name, sizeof (es.name), "plt.%s", tname);
 		RBinSymbol sym;
 		fill_symbol (eo, &es, &sym);
+		ht_uu_insert (eo->local_plt_targets, sym.vaddr, target_vaddr);
 		RVecRBinSymbol_push_back (&eo->plt_symbols_cache, &sym);
 	}
 	ht_uu_free (seen);
+}
+
+ut64 Elf_(get_plt_target)(ELFOBJ *eo, ut64 stub_vaddr) {
+	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
+	if (!eo->local_plt_loaded) {
+		// section-less objects only get symbols_by_ord filled here, and the map is
+		// built once, so reaching the plt loader first would latch it empty
+		Elf_(load_symbols_vec) (eo);
+		// the map outlives plt_symbols_cache, which symbols_vec steals and uncaches
+		Elf_(load_plt_symbols_vec) (eo);
+	}
+	if (eo->local_plt_targets) {
+		bool found = false;
+		const ut64 target = ht_uu_find (eo->local_plt_targets, stub_vaddr, &found);
+		if (found) {
+			return target;
+		}
+	}
+	return UT64_MAX;
 }
 
 RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo) {
@@ -6369,6 +6391,7 @@ void Elf_(free)(ELFOBJ* eo) {
 	ht_uu_free (eo->rel_cache);
 	ht_uu_free (eo->ppc64_plt_stubs);
 	ht_uu_free (eo->ppc32_plt_thunks);
+	ht_uu_free (eo->local_plt_targets);
 	sdb_free (eo->kv);
 	r_list_free (eo->inits);
 	free (eo);

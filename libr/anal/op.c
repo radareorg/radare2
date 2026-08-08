@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2010-2024 - pancake, nibble */
 
 #include <r_anal.h>
+#include <r_anal_priv.h>
 
 // R2R db/asm/arm.v35_64 db/asm/arm.gnu_32 db/anal/arm db/asm/arm.gnu_wd_32
 // XXX deprecate!! or at least call r_arch_bath tradition
@@ -260,6 +261,12 @@ R_API bool r_anal_op_ismemref(int t) {
 	default:
 		return false;
 	}
+}
+
+R_IPI bool r_anal_op_is_call(RAnalOp *op) {
+	// keep the full base opcode, a low-nibble check aliases MUL (0x14) with UCALL
+	const int type = op->type & 0xffff;
+	return type == R_ANAL_OP_TYPE_CALL || type == R_ANAL_OP_TYPE_UCALL;
 }
 
 static struct optype {

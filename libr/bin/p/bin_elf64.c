@@ -137,6 +137,7 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.load = &load,
 	.destroy = &destroy,
 	.baddr = &baddr,
+	.stub_target = &stub_target,
 	.binsym = &binsym,
 	.entries = &entries,
 	.load_resources = &load_resources,

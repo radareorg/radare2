@@ -59,6 +59,10 @@ static ut64 baddr(RBinFile *bf) {
 	return Elf_(get_baddr) (bf->bo->bin_obj);
 }
 
+static ut64 stub_target(RBinFile *bf, ut64 vaddr) {
+	return Elf_(get_plt_target) (bf->bo->bin_obj, vaddr);
+}
+
 static RBinAddr* binsym(RBinFile *bf, int sym) {
 	ELFOBJ* eo = bf->bo->bin_obj;
 	RBinAddr *ret = NULL;
