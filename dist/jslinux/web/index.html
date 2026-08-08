@@ -210,10 +210,12 @@ body.kbd #term_wrap { height: calc(100% - 68px); }
   demand. To use it in airplane mode, open <b>Cache</b>, choose <b>Cache all</b>
   and keep the app open until it reports that all files are local. Interrupted
   downloads resume where they stopped. Nothing is executed outside this page.
-  On a phone, drag inside the terminal to send vertical or horizontal mouse
-  wheel events to r2 visual modes without scrolling the page.
-  Run <b>resize</b> in the shell after resizing the window, rotating the screen
-  or toggling the keyboard. Add <b>?mem=256</b> to the URL for more guest RAM.</p>
+  On a phone, pinch inside the terminal to change its font size, or drag with
+  one finger to send vertical or horizontal mouse wheel events to r2 visual
+  modes without scrolling the page.
+  Run <b>resize</b> in the shell after changing the font size, resizing the
+  window, rotating the screen or toggling the keyboard. Add <b>?mem=256</b> to
+  the URL for more guest RAM.</p>
 </div>
 <div id="cache-panel" hidden>
   <span class="close" id="btn-cache-close">[x]</span>
@@ -272,9 +274,11 @@ function r2_calc_geometry(fs) {
     usable_h -= 38;
   }
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  var min_cols = r2_touch ? 20 : 40;
+  var min_rows = r2_touch ? 8 : 16;
   return {
-    cols: clamp(Math.floor(usable_w / cw), 40, 200),
-    rows: clamp(Math.floor(usable_h / ch), 16, 60)
+    cols: clamp(Math.floor(usable_w / cw), min_cols, 200),
+    rows: clamp(Math.floor(usable_h / ch), min_rows, 60)
   };
 }
 
@@ -687,11 +691,69 @@ if (r2_touch) {
   var r2_swipe = null;
   var r2_swipe_step = 24;
   var r2_term_wrap = document.getElementById("term_wrap");
-  r2_term_wrap.addEventListener("touchstart", function (ev) {
-    if (ev.touches.length !== 1) {
-      r2_swipe = null;
+  var r2_pinch = null;
+
+  var r2_touch_distance = function (touches) {
+    var dx = touches[0].clientX - touches[1].clientX;
+    var dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  var r2_current_font = function () {
+    if (window.term && term.term_el) {
+      var fs = parseFloat(term.term_el.style.fontSize);
+      if (fs > 0) {
+        return fs;
+      }
+    }
+    return window.R2_FONT;
+  };
+
+  var r2_set_terminal_font = function (fs) {
+    fs = Math.max(8, Math.min(24, Math.round(fs * 2) / 2));
+    if (fs === r2_current_font()) {
       return;
     }
+    window.R2_FONT = fs;
+    if (window.term && term.term_el) {
+      term.term_el.style.fontSize = fs + "px";
+    }
+    if (r2_pinch) {
+      r2_pinch.changed = true;
+    }
+  };
+
+  var r2_finish_pinch = function () {
+    if (!r2_pinch) {
+      return;
+    }
+    var changed = r2_pinch.changed;
+    r2_pinch = null;
+    if (changed && window.term && term.term_el && term.resize) {
+      var g = r2_calc_geometry(window.R2_FONT);
+      term.resize(g.cols, g.rows);
+    }
+  };
+
+  r2_term_wrap.addEventListener("touchstart", function (ev) {
+    if (ev.touches.length === 2) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      r2_swipe = null;
+      var distance = r2_touch_distance(ev.touches);
+      r2_pinch = distance > 0 ? {
+        distance: distance,
+        font: r2_current_font(),
+        changed: false
+      } : null;
+      return;
+    }
+    if (ev.touches.length !== 1) {
+      r2_swipe = null;
+      r2_finish_pinch();
+      return;
+    }
+    r2_pinch = null;
     var touch = ev.touches[0];
     r2_swipe = {
       x: touch.clientX,
@@ -702,10 +764,26 @@ if (r2_touch) {
       distance: 0,
       moved: false
     };
-  }, { passive: true });
+  }, { passive: false });
   r2_term_wrap.addEventListener("touchmove", function (ev) {
     ev.preventDefault();
     ev.stopPropagation();
+    if (ev.touches.length === 2) {
+      var distance = r2_touch_distance(ev.touches);
+      if (!r2_pinch && distance > 0) {
+        r2_pinch = {
+          distance: distance,
+          font: r2_current_font(),
+          changed: false
+        };
+      } else if (r2_pinch && r2_pinch.distance > 0) {
+        r2_set_terminal_font(r2_pinch.font * distance / r2_pinch.distance);
+      }
+      return;
+    }
+    if (r2_pinch) {
+      return;
+    }
     if (!r2_swipe || ev.touches.length !== 1) {
       return;
     }
@@ -741,14 +819,45 @@ if (r2_touch) {
     }
   }, { passive: false });
   r2_term_wrap.addEventListener("touchend", function (ev) {
-    if (r2_swipe && r2_swipe.moved) {
+    if (r2_pinch) {
+      ev.preventDefault();
+      r2_finish_pinch();
+    } else if (r2_swipe && r2_swipe.moved) {
       ev.preventDefault();
     }
     r2_swipe = null;
   }, { passive: false });
   r2_term_wrap.addEventListener("touchcancel", function () {
     r2_swipe = null;
+    r2_finish_pinch();
   }, { passive: true });
+
+  /* Safari also exposes proprietary gesture events. Keep these listeners as
+     a fallback and, most importantly, prevent a page-level browser zoom. */
+  r2_term_wrap.addEventListener("gesturestart", function (ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    r2_swipe = null;
+    if (!r2_pinch) {
+      r2_pinch = {
+        distance: 0,
+        font: r2_current_font(),
+        changed: false
+      };
+    }
+  }, { passive: false });
+  r2_term_wrap.addEventListener("gesturechange", function (ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (r2_pinch && ev.scale > 0) {
+      r2_set_terminal_font(r2_pinch.font * ev.scale);
+    }
+  }, { passive: false });
+  r2_term_wrap.addEventListener("gestureend", function (ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    r2_finish_pinch();
+  }, { passive: false });
 }
 
 document.getElementById("btn-kbd").onclick = function () {

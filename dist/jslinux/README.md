@@ -101,9 +101,10 @@ afterwards.
   computed from the viewport (`?cols=`, `?rows=`, `?font_size=` URL
   params still override it). It also includes iOS Home Screen metadata and a
   radare2 touch icon. Page rubber-banding is disabled on touch devices; a
-  one-finger terminal drag becomes vertical or horizontal terminal mouse-wheel
-  input for r2 visual modes. Re-run `resize` in the guest after rotating the
-  screen.
+  two-finger terminal pinch changes only its font size, while a one-finger drag
+  becomes vertical or horizontal terminal mouse-wheel input for r2 visual
+  modes. Re-run `resize` in the guest after changing the font size or rotating
+  the screen.
 
 ## Licensing
 
