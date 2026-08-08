@@ -5611,6 +5611,24 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		int i;
 		switch (submode) {
+		case 'E':
+			{
+				r_cons_printf (core->cons, "DECIMAL       HEXADECIMAL   ENTROPY\n");
+				r_cons_printf (core->cons, "--------------------------------------------------------------------------------\n");
+				bool in_high_entropy = false;
+				for (i = 0; i < nblocks; i++) {
+					ut64 off = from + (blocksize * i);
+					double ent = (double)ptr[i] / 255.0;
+					if (!in_high_entropy && ent > 0.85) {
+						r_cons_printf (core->cons, "%-13" PFMT64d " 0x%-11" PFMT64x " Rising entropy edge (%f)\n", off, off, ent);
+						in_high_entropy = true;
+					} else if (in_high_entropy && ent < 0.85) {
+						r_cons_printf (core->cons, "%-13" PFMT64d " 0x%-11" PFMT64x " Falling entropy edge (%f)\n", off, off, ent);
+						in_high_entropy = false;
+					}
+				}
+			}
+			break;
 		case 'j':
 			{
 				PJ *pj = r_core_pj_new (core);
