@@ -347,9 +347,13 @@ $(WWW)/root-r2/blk.txt: $(WORK)/root-r2.bin
 
 # the cols/rows/font_size defaults become overridable from index.html so
 # the terminal geometry can adapt to the viewport (phones)
-$(WWW)/.runtime.stamp: $(JSL)/.stamp web/term-colors.patch
+$(WWW)/.runtime.stamp: $(JSL)/.stamp Makefile web/term-colors.patch web/term-wheel.patch
 	mkdir -p $(WWW)/images
 	cd $(JSL) && cp -f $(RUNTIME_FILES) $(abspath $(WWW))/
+	rm -f $(WWW)/term.js.rej
+	# Keep the wheel hunk separate: GNU patch cannot apply it after the
+	# line-number shifts introduced by the color patch, while BSD patch can.
+	patch --batch --no-backup-if-mismatch $(WWW)/term.js web/term-wheel.patch
 	# upstream term.js only knows 16 colors: teach it 256/truecolor SGR
 	# sequences and brighten the base palette (see web/term-colors.patch)
 	patch --batch --no-backup-if-mismatch $(WWW)/term.js web/term-colors.patch
