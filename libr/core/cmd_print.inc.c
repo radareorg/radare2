@@ -5613,16 +5613,23 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		switch (submode) {
 		case 'E':
 			{
+				// The Shannon estimate over n bytes is biased low by
+				// ~255/(2*n*ln2) bits (~23/n normalized), so ideal random
+				// data scores ~1-23/n at blocksize n; blocks under 256
+				// bytes are mostly-unique and score near 1.0. Flag blocks
+				// above 93% of that random-data expectation.
+				double erand = (blocksize < 256)? 0.97: 1.0 - (23.0 / (double)blocksize);
+				double threshold = 0.93 * erand;
 				r_cons_printf (core->cons, "DECIMAL       HEXADECIMAL   ENTROPY\n");
 				r_cons_printf (core->cons, "--------------------------------------------------------------------------------\n");
 				bool in_high_entropy = false;
 				for (i = 0; i < nblocks; i++) {
 					ut64 off = from + (blocksize * i);
 					double ent = (double)ptr[i] / 255.0;
-					if (!in_high_entropy && ent > 0.85) {
+					if (!in_high_entropy && ent > threshold) {
 						r_cons_printf (core->cons, "%-13" PFMT64d " 0x%-11" PFMT64x " Rising entropy edge (%f)\n", off, off, ent);
 						in_high_entropy = true;
-					} else if (in_high_entropy && ent < 0.85) {
+					} else if (in_high_entropy && ent < threshold) {
 						r_cons_printf (core->cons, "%-13" PFMT64d " 0x%-11" PFMT64x " Falling entropy edge (%f)\n", off, off, ent);
 						in_high_entropy = false;
 					}
