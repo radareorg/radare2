@@ -258,7 +258,7 @@ static RCoreHelpMessage help_msg_prc = {
 };
 
 static RCoreHelpMessage help_msg_p_equal = {
-	"Usage:", "p=[=bep?][qj] [N] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
+	"Usage:", "p=[=bep?][qjE] [N] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
 	"e ", "zoom.in", "specify range for zoom",
 	"p=", "", "print bytes of current block in bars",
 	"p==", "[..]", "same subcommands as p=, using column bars instead of rows",
@@ -270,6 +270,7 @@ static RCoreHelpMessage help_msg_p_equal = {
 	"p=", "c", "number of calls per block",
 	"p=", "d", "min/max/number of unique bytes in block",
 	"p=", "e", "entropy for each filesize/blocksize",
+	"p=e", "E", "show rising/falling entropy edges instead of bars (like binwalk -E)",
 	"p=", "F", "number of 0xFF bytes for each filesize/blocksize",
 	"p=", "i", "number of invalid instructions per block",
 	"p=", "j", "number of jumps and conditional jumps in block",
