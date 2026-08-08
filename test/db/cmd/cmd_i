@@ -3930,7 +3930,7 @@ WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e 
 INFO: File has been modified
 EOF
 EXPECT=<<EOF
-* 3 fd: 3 +0x00001000 0x100000000 - 0x100000fff r-- r-x fmap.__TEXT
+* 3 fd: 3 +0x00001000 0x100000000 - 0x100000fff r-x r-x fmap.__TEXT
 - 2 fd: 3 +0x00002000 0x100001000 - 0x100001fff r-- rw- fmap.__DATA
 - 1 fd: 3 +0x00003000 0x100002000 - 0x100003fff r-- r-- fmap.__LINKEDIT
 * 3 fd: 3 +0x00001000 0x100000000 - 0x100000fff rwx rwx fmap.__TEXT
