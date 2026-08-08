@@ -19,6 +19,7 @@
 #define RISCV_PLT_ENTRY_SIZE 0x10
 #define LOONGARCH_PLT_ENTRY_SIZE 0x10
 #define X86_PLT_ENTRY_SIZE 0x10
+#define PLT_STUB_SIZE 0x10
 
 #define SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
 #define X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
@@ -2052,25 +2053,7 @@ static ut64 get_import_addr_x86(ELFOBJ *eo, RBinElfReloc *rel) {
 	return tmp + X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR;
 }
 
-static ut64 get_import_addr(ELFOBJ *eo, int sym) {
-	if ((!eo->shdr || !eo->strtab) && !eo->phdr) {
-		return UT64_MAX;
-	}
-
-	if (!eo->rel_cache) {
-		return UT64_MAX;
-	}
-
-	int index = ht_uu_find (eo->rel_cache, sym + 1, NULL);
-	if (index < 1) {
-		return UT64_MAX;
-	}
-	// lookup the right rel/rela entry
-	RBinElfReloc *rel = RVecRBinElfReloc_at (&eo->g_relocs, index - 1);
-	if (!rel) {
-		return UT64_MAX;
-	}
-
+static ut64 get_plt_stub_addr(ELFOBJ *eo, RBinElfReloc *rel) {
 	switch (eo->ehdr.e_machine) {
 	case EM_S390:
 		return get_import_addr_s390x (eo, rel);
@@ -2115,6 +2098,25 @@ static ut64 get_import_addr(ELFOBJ *eo, int sym) {
 				(ut64) rel->type, eo->ehdr.e_machine);
 		return UT64_MAX;
 	}
+}
+
+static ut64 get_import_addr(ELFOBJ *eo, int sym) {
+	if ((!eo->shdr || !eo->strtab) && !eo->phdr) {
+		return UT64_MAX;
+	}
+	if (!eo->rel_cache) {
+		return UT64_MAX;
+	}
+	int index = ht_uu_find (eo->rel_cache, sym + 1, NULL);
+	if (index < 1) {
+		return UT64_MAX;
+	}
+	// lookup the right rel/rela entry
+	RBinElfReloc *rel = RVecRBinElfReloc_at (&eo->g_relocs, index - 1);
+	if (!rel) {
+		return UT64_MAX;
+	}
+	return get_plt_stub_addr (eo, rel);
 }
 
 bool Elf_(has_nobtcfi)(ELFOBJ *eo) {
@@ -5882,6 +5884,116 @@ RVecRBinImport *Elf_(load_imports_vec)(ELFOBJ *eo) {
 	return &eo->imports_cache;
 }
 
+// only arches whose stub math is exact outside the import path, arm32 lands mid-entry
+static bool is_local_plt_reloc(ELFOBJ *eo, RBinElfReloc *rel) {
+	switch (eo->ehdr.e_machine) {
+	case EM_386:
+	case EM_IAMCU:
+		return rel->type == R_386_JMP_SLOT;
+	case EM_X86_64:
+		return rel->type == R_X86_64_JUMP_SLOT;
+	case EM_AARCH64:
+		return rel->type == R_AARCH64_JUMP_SLOT;
+	case EM_PPC:
+	case EM_PPC64:
+		return rel->type == R_PPC_JMP_SLOT;
+	}
+	return false;
+}
+
+// ppc64 glink stubs are a single branch in ELFv2 and a pair in ELFv1, see ppc64_build_glink_map
+static ut64 local_plt_stub_size(ELFOBJ *eo) {
+	const int abi = ppc64_abi (eo);
+	if (abi) {
+		return (abi == 2)? 4: 8;
+	}
+	return PLT_STUB_SIZE;
+}
+
+// some per-arch stub math is an import-only heuristic, sparc yields a sethi word
+static bool is_code_addr(ELFOBJ *eo, ut64 vaddr) {
+	_load_elf_sections (eo);
+	RBinElfSection *sec;
+	bool has_code = false;
+	R_VEC_FOREACH (&eo->g_sections, sec) {
+		if (R_BIN_ELF_SCN_IS_EXECUTABLE (sec->flags)) {
+			if (vaddr >= sec->rva && vaddr < sec->rva + sec->size) {
+				return true;
+			}
+			has_code = true;
+		}
+	}
+	if (has_code || !eo->phdr) {
+		return false;
+	}
+	// section-less objects still carry the segment permissions
+	size_t i;
+	for (i = 0; i < eo->phnum; i++) {
+		Elf_(Phdr) *p = &eo->phdr[i];
+		if (p->p_type == PT_LOAD && (p->p_flags & PF_X)
+			&& vaddr >= p->p_vaddr && vaddr < p->p_vaddr + p->p_memsz) {
+			return true;
+		}
+	}
+	return false;
+}
+
+// a -fPIC object calls its own globals through the PLT, and those stubs never reach the import path
+static void load_local_plt_symbols(ELFOBJ *eo) {
+	// section-less objects only get symbols_by_ord filled once load_symbols_vec has run
+	RBinSymbol **sbo = eo->symbols_by_ord;
+	if (!sbo) {
+		return;
+	}
+	HtUU *seen = ht_uu_new0 ();
+	if (!seen) {
+		return;
+	}
+	const size_t sbo_size = eo->symbols_by_ord_size;
+	const ut64 stub_size = local_plt_stub_size (eo);
+	RBinSymbol *ps;
+	R_VEC_FOREACH (&eo->plt_symbols_cache, ps) {
+		ht_uu_insert (seen, ps->vaddr, 1);
+	}
+	RBinElfReloc *rel;
+	R_VEC_FOREACH (&eo->g_relocs, rel) {
+		// laddr is set for the arm/arm64 types that already get an rsym flag at the stub
+		if (rel->sym < 1 || rel->laddr || (size_t)rel->sym >= sbo_size || !is_local_plt_reloc (eo, rel)) {
+			continue;
+		}
+		RBinSymbol *target = sbo[rel->sym];
+		if (!target || target->is_imported || !target->vaddr || target->vaddr == UT64_MAX) {
+			continue;
+		}
+		if (!target->type || strcmp (target->type, R_BIN_TYPE_FUNC_STR)) {
+			continue;
+		}
+		const char *tname = r_bin_name_tostring2 (target->name, 'o');
+		if (R_STR_ISEMPTY (tname)) {
+			continue;
+		}
+		const ut64 stub = get_plt_stub_addr (eo, rel);
+		if (!stub || stub == UT64_MAX || stub == target->vaddr || !is_code_addr (eo, stub)) {
+			continue;
+		}
+		if (ht_uu_find (seen, stub, NULL)) {
+			continue;
+		}
+		ht_uu_insert (seen, stub, 1);
+		RBinSymbol sym = {0};
+		sym.name = r_bin_name_new_from (r_str_newf ("plt.%s", tname));
+		sym.forwarder = "NONE";
+		sym.bind = target->bind;
+		sym.type = target->type;
+		sym.size = stub_size;
+		sym.ordinal = rel->sym;
+		sym.vaddr = stub;
+		sym.paddr = Elf_(v2p) (eo, stub);
+		RVecRBinSymbol_push_back (&eo->plt_symbols_cache, &sym);
+	}
+	ht_uu_free (seen);
+}
+
 RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
 	if (eo->plt_symbols_cached) {
@@ -5913,6 +6025,7 @@ RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo) {
 		}
 		RVecRBinSymbol_push_back (&eo->plt_symbols_cache, &sym);
 	}
+	load_local_plt_symbols (eo);
 	eo->plt_symbols_cached = true;
 	return &eo->plt_symbols_cache;
 }
