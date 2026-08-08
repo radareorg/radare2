@@ -65,7 +65,8 @@ JSL = $(WORK)/jslinux-$(JSLINUX_VER)
 RUNTIME_FILES = jslinux.js term.js style.css riscvemu64.js \
 	riscvemu64-wasm.js riscvemu64-wasm.wasm bbl64.bin kernel-riscv64.bin
 OFFLINE_STATIC_FILES = $(RUNTIME_FILES) index.html favicon.ico \
-	apple-touch-icon.png manifest.webmanifest root-riscv64.cfg
+	apple-touch-icon.png manifest.webmanifest offline-files.js \
+	root-riscv64.cfg service-worker.js
 OFFLINE_DYNAMIC_DIRS = images root-r2 netfs
 SERVICE_WORKER_TEMPLATE = $(abspath web/service-worker.js)
 APP_ICON = $(R2_ROOT)/dist/macos/pkg/Resources/r2logo.png
@@ -97,7 +98,7 @@ image: $(WORK)/root-r2.bin
 www: $(WWW)/.runtime.stamp $(WWW)/index.html $(WWW)/favicon.ico \
 	$(WWW)/apple-touch-icon.png $(WWW)/manifest.webmanifest \
 	$(WWW)/root-riscv64.cfg $(WWW)/serve.py $(WWW)/root-r2/blk.txt \
-	$(WWW)/netfs/head $(WWW)/service-worker.js
+	$(WWW)/netfs/head $(WWW)/offline-files.js $(WWW)/service-worker.js
 endif
 
 .PHONY: dist
@@ -260,10 +261,10 @@ $(WWW)/serve.py: web/serve.py
 	mkdir -p $(WWW)
 	cp -f $< $@
 
-# Embed the exact website contents in the service worker. Its cache key is a
-# checksum of every resource and the worker template, so browsers install a
-# fresh, isolated cache whenever either the runtime or disk image changes.
-$(WWW)/service-worker.js: Makefile web/service-worker.js $(WWW)/.runtime.stamp \
+# Generate one versioned file list for both the page's foreground downloader
+# and the service worker. The two generated filenames cannot hash themselves,
+# so include the Makefile and worker template in their cache version instead.
+$(WWW)/offline-files.js: Makefile web/service-worker.js $(WWW)/.runtime.stamp \
 		$(WWW)/index.html $(WWW)/favicon.ico $(WWW)/apple-touch-icon.png \
 		$(WWW)/manifest.webmanifest $(WWW)/root-riscv64.cfg \
 		$(WWW)/root-r2/blk.txt $(WWW)/netfs/head
@@ -273,8 +274,14 @@ $(WWW)/service-worker.js: Makefile web/service-worker.js $(WWW)/.runtime.stamp \
 		find $(OFFLINE_DYNAMIC_DIRS) -type f -print; \
 	} | LC_ALL=C sort -u > .offline-files.tmp; \
 	VERSION="$$( \
-		{ while IFS= read -r F; do printf '%s ' "$$F"; cksum < "$$F"; done \
+		{ while IFS= read -r F; do \
+			if [ "$$F" = offline-files.js ] || [ "$$F" = service-worker.js ]; then \
+				continue; \
+			fi; \
+			printf '%s ' "$$F"; cksum < "$$F"; \
+		  done \
 			< .offline-files.tmp; \
+			cksum < "$(abspath Makefile)"; \
 			cksum < "$(SERVICE_WORKER_TEMPLATE)"; \
 		} | cksum | awk '{print $$1}' \
 	)"; \
@@ -284,11 +291,16 @@ $(WWW)/service-worker.js: Makefile web/service-worker.js $(WWW)/.runtime.stamp \
 		printf 'const R2_OFFLINE_FILES = [\n\t"./",\n'; \
 		while IFS= read -r F; do printf '\t"%s",\n' "$$F"; done \
 			< .offline-files.tmp; \
-		printf '];\n\n'; \
-		cat "$(SERVICE_WORKER_TEMPLATE)"; \
-	} > service-worker.js.tmp; \
-	mv service-worker.js.tmp service-worker.js; \
+		printf '];\n'; \
+	} > offline-files.js.tmp; \
+	mv offline-files.js.tmp offline-files.js; \
 	rm -f .offline-files.tmp
+
+# Embedding the same generated metadata changes the worker bytes whenever the
+# bundle changes, which reliably triggers the service worker update algorithm.
+$(WWW)/service-worker.js: web/service-worker.js $(WWW)/offline-files.js
+	@{ cat $(WWW)/offline-files.js; printf '\n'; cat $<; } > $@.tmp
+	@mv $@.tmp $@
 
 # -- convenience -----------------------------------------------------------
 

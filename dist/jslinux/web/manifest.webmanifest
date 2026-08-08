@@ -3,7 +3,7 @@
   "short_name": "radare2",
   "description": "A complete riscv64 Linux with radare2 running in the browser",
   "id": "./",
-  "start_url": "./",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

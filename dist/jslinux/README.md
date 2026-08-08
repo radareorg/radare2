@@ -59,14 +59,19 @@ afterwards.
    tarball is grown with `resize2fs` and `r2blob` is injected with
    `debugfs` (no root privileges needed anywhere).
 4. The image is split into 256KB blocks (TinyEMU `splitimg` format). A
-   generated service worker precaches every block along with the complete
-   runtime and refreshes the cache whenever any generated resource changes.
+   generated service worker precaches only the bootable app shell when offline
+   storage is requested. Without it, disk blocks simply stream on demand. The
+   Cache popup's `Cache all` action downloads every block sequentially,
+   skipping blocks from an interrupted earlier pass. This keeps normal startup
+   fast and does not starve TinyEMU's interactive disk reads.
 5. `www/` ends up fully self-contained: the JSLinux runtime
    (riscvemu64-wasm), bbl + kernel, the split disk and a small
    installable web app; host it on any static web server. Once the first
    cache pass finishes, a Home Screen installation works completely offline.
-   On iOS, launch the Home Screen copy once while online and wait for its cache
-   progress to finish before disconnecting.
+   On iOS, launch the Home Screen copy once while online, open `Cache`, choose
+   `Cache all`, and keep it open until all files are reported local before
+   disconnecting. Its explicit `index.html` launch URL avoids relying on a
+   directory redirect while offline.
 
 ## Guest integration
 

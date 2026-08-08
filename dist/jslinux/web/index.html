@@ -128,7 +128,7 @@ body.kbd #term_wrap { height: calc(100% - 68px); }
   width: 90px;
   visibility: hidden;
 }
-#about {
+#about, #cache-panel {
   position: fixed;
   top: 34px;
   left: 50%;
@@ -144,9 +144,30 @@ body.kbd #term_wrap { height: calc(100% - 68px); }
   line-height: 1.5;
   z-index: 10;
 }
-#about b { color: #ffd24a; }
-#about a { color: #7fb2ff; }
-#about .close { float: right; cursor: pointer; color: #7fb2ff; }
+#about b, #cache-panel b { color: #ffd24a; }
+#about a, #cache-panel a { color: #7fb2ff; }
+#about .close, #cache-panel .close {
+  float: right;
+  cursor: pointer;
+  color: #7fb2ff;
+}
+#cache-panel progress { width: 100%; }
+#cache-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+#cache-actions button {
+  background: #123a75;
+  color: #fff;
+  border: 1px solid #3a6ec0;
+  border-radius: 3px;
+  font-family: monospace;
+  padding: 5px 9px;
+  cursor: pointer;
+}
+#cache-actions button:disabled { opacity: 0.55; cursor: default; }
 </style>
 </head>
 <body>
@@ -155,7 +176,7 @@ body.kbd #term_wrap { height: calc(100% - 68px); }
   <span class="btns">
     <button id="btn-upload" title="Upload files into the VM (appear in /mnt/tmp)">Upload</button>
     <button id="btn-kbd" title="Toggle the on-screen keyboard and the Esc/Ctrl/Tab/arrows bar">Keyboard</button>
-    <button id="btn-cache" title="Delete locally cached files and reload">ClrCache</button>
+    <button id="btn-cache" title="Manage offline storage">Cache</button>
     <button id="btn-about" title="What is this?">About</button>
   </span>
 </div>
@@ -177,11 +198,22 @@ body.kbd #term_wrap { height: calc(100% - 68px); }
   <p>Try <b>r2 /bin/busybox</b>, then <b>aaa</b> and <b>pdf @ main</b>.
   All r2 tools are available: rasm2, rabin2, rax2, ragg2, ...</p>
   <p>Uploaded files appear in <b>/mnt/tmp</b>. After adding this page to the
-  Home Screen, open it once while online: the complete disk and runtime are
-  cached locally. Wait for the Cache progress button to return to
-  <b>ClrCache</b> before going offline. Nothing is executed outside this page.
+  Home Screen, open that copy once while online. Disk blocks normally stream on
+  demand. To use it in airplane mode, open <b>Cache</b>, choose <b>Cache all</b>
+  and keep the app open until it reports that all files are local. Interrupted
+  downloads resume where they stopped. Nothing is executed outside this page.
   Run <b>resize</b> in the shell after resizing the window, rotating the screen
   or toggling the keyboard. Add <b>?mem=256</b> to the URL for more guest RAM.</p>
+</div>
+<div id="cache-panel" hidden>
+  <span class="close" id="btn-cache-close">[x]</span>
+  <p><b>Offline storage</b></p>
+  <p id="cache-status">Preparing the offline app shell...</p>
+  <progress id="cache-progress" value="0" max="1"></progress>
+  <div id="cache-actions">
+    <button id="btn-cache-all" disabled>Cache all</button>
+    <button id="btn-cache-clear" disabled>Clear cache</button>
+  </div>
 </div>
 <div id="term_wrap">
   <div id="term_container"></div>
@@ -190,6 +222,15 @@ body.kbd #term_wrap { height: calc(100% - 68px); }
   <progress id="net_progress"></progress>
 </div>
 <script>
+/* Make iOS save a launch URL inside the service worker scope instead of a
+   directory URL which may need an unavailable server redirect offline. */
+if (location.pathname.charAt(location.pathname.length - 1) === "/") {
+  try {
+    history.replaceState(null, "", "index.html" + location.search + location.hash);
+  } catch (e) {
+  }
+}
+
 /* pick a terminal geometry that fits the viewport; jslinux.js reads
    these as its cols/rows/font_size defaults (URL params still win) */
 var r2_touch = ("ontouchstart" in window) && window.innerWidth < 900;
@@ -315,56 +356,217 @@ Term.prototype.resize = function (w, h) {
   this.refresh(0, h - 1);
 };
 </script>
+<script type="text/javascript" src="offline-files.js"></script>
 <script>
-/* Install the complete VM locally. The generated worker contains the exact
-   list of runtime files and disk blocks produced by this build. */
+/* The worker installs only the bootable app shell so iOS can activate it
+   promptly. When requested, download the large disk sequentially from this
+   foreground page; interrupted runs skip entries already in Cache Storage. */
 var r2_cache_prefix = "jslr2-offline-";
-var r2_cache_error = false;
+var r2_cache_promise = null;
+var r2_cache_worker_promise = null;
+var r2_cache_worker_ready = false;
+var r2_cache_busy = false;
+var r2_cache_done = 0;
 
-function r2_cache_state(label, title, busy) {
-  var btn = document.getElementById("btn-cache");
-  btn.textContent = label;
-  btn.title = title;
-  btn.disabled = busy;
+function r2_cache_state(message, done, busy) {
+  var total = R2_OFFLINE_FILES.length;
+  r2_cache_done = done;
+  r2_cache_busy = busy;
+  document.getElementById("cache-status").textContent = message;
+  var progress = document.getElementById("cache-progress");
+  progress.max = total;
+  progress.value = done;
+  document.getElementById("btn-cache-all").disabled =
+    busy || !r2_cache_worker_ready || done === total;
+  document.getElementById("btn-cache-clear").disabled =
+    busy || !r2_cache_worker_ready;
+}
+
+function r2_cache_failure(error) {
+  var help = r2_cache_worker_ready ? " Cache all will resume it." :
+    " Reload while online to install the app shell.";
+  r2_cache_state("Stopped: " + error + "." + help, r2_cache_done, false);
+}
+
+function r2_cache_delay() {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, 20);
+  });
+}
+
+function r2_cache_request(file) {
+  var url = new URL(file, document.baseURI);
+  return new Request(url.href, {
+    cache: "reload",
+    credentials: "same-origin",
+    headers: { "X-JSLinux-Precache": "1" }
+  });
+}
+
+async function r2_cache_refresh() {
+  if (r2_cache_busy) {
+    return;
+  }
+  r2_cache_state("Checking local files...", r2_cache_done, true);
+  try {
+    var cache = await caches.open(R2_CACHE_NAME);
+    var done = 0;
+    for (var i = 0; i < R2_OFFLINE_FILES.length; i++) {
+      var request = r2_cache_request(R2_OFFLINE_FILES[i]);
+      if (await cache.match(request, { ignoreSearch: true })) {
+        done++;
+      }
+    }
+    if (done === R2_OFFLINE_FILES.length) {
+      r2_cache_state(done + "/" + done +
+        " files are local. Ready for airplane mode.", done, false);
+    } else {
+      r2_cache_state(done + "/" + R2_OFFLINE_FILES.length +
+        " files are local. Missing disk blocks stream on demand.", done, false);
+    }
+  } catch (e) {
+    r2_cache_failure(e.message || String(e));
+  }
+}
+
+async function r2_cache_download() {
+  var cache = await caches.open(R2_CACHE_NAME);
+  var total = R2_OFFLINE_FILES.length;
+  var done = 0;
+  for (var i = 0; i < total; i++) {
+    var request = r2_cache_request(R2_OFFLINE_FILES[i]);
+    var cached = await cache.match(request, { ignoreSearch: true });
+    if (!cached) {
+      var response = await fetch(request);
+      if (!response.ok) {
+        throw new Error(new URL(request.url).pathname +
+          " returned HTTP " + response.status);
+      }
+      await cache.put(request, response);
+      /* Let TinyEMU's interactive disk reads run between background blocks. */
+      await r2_cache_delay();
+    }
+    done++;
+    r2_cache_state("Caching " + done + "/" + total +
+      " files. Keep this app open...", done, true);
+  }
+}
+
+async function r2_cache_all() {
+  if (r2_cache_promise) {
+    return r2_cache_promise;
+  }
+  r2_cache_state("Starting the resumable download...", 0, true);
+  r2_cache_promise = r2_cache_download();
+  try {
+    await r2_cache_promise;
+    r2_cache_state(R2_OFFLINE_FILES.length + "/" + R2_OFFLINE_FILES.length +
+      " files are local. Ready for airplane mode.",
+      R2_OFFLINE_FILES.length, false);
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().catch(function () {});
+    }
+  } catch (e) {
+    r2_cache_failure(e.message || String(e));
+  } finally {
+    r2_cache_promise = null;
+  }
+}
+
+async function r2_cache_clear() {
+  if (navigator.onLine === false) {
+    r2_cache_state("Reconnect before clearing the offline app shell.",
+      r2_cache_done, false);
+    return;
+  }
+  r2_cache_state("Clearing local files...", r2_cache_done, true);
+  try {
+    var registration = await navigator.serviceWorker.getRegistration("./");
+    if (registration) {
+      await registration.unregister();
+    }
+    var names = await caches.keys();
+    for (var i = 0; i < names.length; i++) {
+      if (names[i].indexOf(r2_cache_prefix) === 0) {
+        await caches.delete(names[i]);
+      }
+    }
+    r2_cache_worker_ready = false;
+    location.reload();
+  } catch (e) {
+    r2_cache_failure(e.message || String(e));
+  }
+}
+
+function r2_wait_for_worker(registration) {
+  var worker = registration.installing || registration.waiting || registration.active;
+  if (!worker || worker.state === "activated") {
+    return navigator.serviceWorker.ready;
+  }
+  return new Promise(function (resolve, reject) {
+    worker.addEventListener("statechange", function () {
+      if (worker.state === "activated") {
+        resolve(registration);
+      } else if (worker.state === "redundant") {
+        reject(new Error("service worker installation failed"));
+      }
+    });
+  });
+}
+
+async function r2_install_worker() {
+  var was_ready = r2_cache_worker_ready;
+  var registration = await navigator.serviceWorker.register("service-worker.js", {
+    scope: "./",
+    updateViaCache: "none"
+  });
+  await r2_wait_for_worker(registration);
+  r2_cache_worker_ready = true;
+  if (!was_ready) {
+    r2_cache_state("Streaming mode is ready. Choose Cache all for airplane mode.",
+      r2_cache_done, false);
+  }
+}
+
+async function r2_prepare_worker() {
+  if (r2_cache_worker_ready) {
+    return;
+  }
+  if (r2_cache_worker_promise) {
+    await r2_cache_worker_promise;
+    return;
+  }
+  r2_cache_state("Installing the offline app shell...", r2_cache_done, true);
+  r2_cache_worker_promise = r2_install_worker();
+  try {
+    await r2_cache_worker_promise;
+  } catch (e) {
+    r2_cache_failure(e.message || String(e));
+  } finally {
+    r2_cache_worker_promise = null;
+  }
 }
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("message", function (ev) {
     var msg = ev.data || {};
-    if (msg.type === "r2-cache-progress") {
-      r2_cache_error = false;
-      var percent = Math.floor(msg.done * 100 / msg.total);
-      r2_cache_state("Cache " + percent + "%",
-        "Saving the complete VM for offline use", true);
-    } else if (msg.type === "r2-cache-ready") {
-      r2_cache_error = false;
-      r2_cache_state("ClrCache",
-        "The complete VM is available offline; tap to delete it", false);
-    } else if (msg.type === "r2-cache-error") {
-      r2_cache_error = true;
-      r2_cache_state("Retry", "Offline cache failed: " + msg.message, false);
+    if (msg.type === "r2-cache-error") {
+      r2_cache_failure(msg.message);
     }
   });
-  r2_cache_state("Cache...", "Saving the complete VM for offline use", true);
-  navigator.serviceWorker.register("service-worker.js", {
-    scope: "./",
-    updateViaCache: "none"
-  }).then(function (registration) {
-    if (registration.active && !registration.installing) {
-      r2_cache_state("ClrCache",
-        "The complete VM is available offline; tap to delete it", false);
-    }
-    return navigator.serviceWorker.ready;
-  }).then(function () {
-    r2_cache_state("ClrCache",
-      "The complete VM is available offline; tap to delete it", false);
-    if (navigator.storage && navigator.storage.persist) {
-      navigator.storage.persist().catch(function () {});
-    }
-  }).catch(function (e) {
-    r2_cache_error = true;
-    r2_cache_state("Retry", "Offline cache failed: " + e, false);
-  });
+  if (navigator.serviceWorker.controller) {
+    r2_cache_worker_ready = true;
+    r2_cache_state("Streaming mode is ready. Choose Cache all for airplane mode.",
+      0, false);
+    /* Existing offline users still get normal worker updates after startup. */
+    setTimeout(function () {
+      r2_install_worker().catch(function () {});
+    }, 1500);
+  } else {
+    r2_cache_state("Open Cache while online to prepare airplane mode.", 0, false);
+  }
+} else {
+  r2_cache_state("Offline mode is unavailable in this browser.", 0, true);
 }
 </script>
 <script type="text/javascript" src="jslinux.js"></script>
@@ -484,35 +686,32 @@ document.getElementById("btn-kbd").onclick = function () {
 };
 document.getElementById("btn-about").onclick = function () {
   var el = document.getElementById("about");
+  document.getElementById("cache-panel").hidden = true;
   el.hidden = !el.hidden;
 };
 document.getElementById("btn-about-close").onclick = function () {
   document.getElementById("about").hidden = true;
 };
-document.getElementById("btn-cache").onclick = async function () {
-  if (r2_cache_error) {
-    location.reload();
-    return;
-  }
-  r2_cache_state("Clearing", "Deleting the offline VM cache", true);
-  try {
-    if (window.caches) {
-      var keys = await caches.keys();
-      for (var i = 0; i < keys.length; i++) {
-        if (keys[i].indexOf(r2_cache_prefix) === 0) {
-          await caches.delete(keys[i]);
-        }
-      }
+document.getElementById("btn-cache").onclick = function () {
+  var panel = document.getElementById("cache-panel");
+  document.getElementById("about").hidden = true;
+  panel.hidden = !panel.hidden;
+  if (!panel.hidden && !r2_cache_busy) {
+    if (r2_cache_worker_ready) {
+      r2_cache_refresh();
+    } else {
+      r2_prepare_worker();
     }
-    if (navigator.serviceWorker) {
-      var reg = await navigator.serviceWorker.getRegistration("./");
-      if (reg) {
-        await reg.unregister();
-      }
-    }
-  } catch (e) {
   }
-  location.reload();
+};
+document.getElementById("btn-cache-close").onclick = function () {
+  document.getElementById("cache-panel").hidden = true;
+};
+document.getElementById("btn-cache-all").onclick = function () {
+  r2_cache_all();
+};
+document.getElementById("btn-cache-clear").onclick = function () {
+  r2_cache_clear();
 };
 /* adapt the terminal grid when the desktop window is resized (phones
    keep the geometry chosen at load); run `resize` in the guest shell

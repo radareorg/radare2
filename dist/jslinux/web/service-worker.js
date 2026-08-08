@@ -1,6 +1,5 @@
 /* R2_CACHE_NAME and R2_OFFLINE_FILES are generated above this template. */
 const R2_CACHE_PREFIX = "jslr2-offline-";
-const R2_CACHE_WORKERS = 4;
 
 async function r2_broadcast(message) {
 	try {
@@ -15,66 +14,42 @@ async function r2_broadcast(message) {
 	}
 }
 
-async function r2_precache() {
+function r2_is_disk_block(file) {
+	return /^root-r2\/blk[0-9]+\.bin$/.test(file);
+}
+
+async function r2_precache_shell() {
 	const cache = await caches.open(R2_CACHE_NAME);
-	const total = R2_OFFLINE_FILES.length;
-	let cursor = 0;
-	let done = 0;
-	let failure = null;
-
-	await r2_broadcast({ type: "r2-cache-progress", done: 0, total: total });
-
-	async function cache_next() {
-		while (!failure) {
-			const index = cursor++;
-			if (index >= total) {
-				return;
-			}
-			const url = new URL(R2_OFFLINE_FILES[index], self.registration.scope);
+	const files = R2_OFFLINE_FILES.filter(function (file) {
+		return !r2_is_disk_block(file);
+	});
+	try {
+		for (const file of files) {
+			const url = new URL(file, self.registration.scope);
 			const request = new Request(url.href, {
-				cache: "reload",
+				cache: "no-cache",
 				credentials: "same-origin"
 			});
-			try {
-				const cached = await cache.match(request);
-				if (!cached) {
-					const response = await fetch(request);
-					if (!response.ok) {
-						throw new Error(url.pathname + " returned HTTP " + response.status);
-					}
-					await cache.put(request, response);
+			const cached = await cache.match(request);
+			if (!cached) {
+				const response = await fetch(request);
+				if (!response.ok) {
+					throw new Error(url.pathname + " returned HTTP " + response.status);
 				}
-				done++;
-				if (!(done % R2_CACHE_WORKERS) || done === total) {
-					await r2_broadcast({
-						type: "r2-cache-progress",
-						done: done,
-						total: total
-					});
-				}
-			} catch (e) {
-				failure = e;
+				await cache.put(request, response);
 			}
 		}
-	}
-
-	const workers = [];
-	for (let i = 0; i < R2_CACHE_WORKERS; i++) {
-		workers.push(cache_next());
-	}
-	await Promise.all(workers);
-	if (failure) {
+	} catch (e) {
 		await r2_broadcast({
 			type: "r2-cache-error",
-			message: failure.message || String(failure)
+			message: e.message || String(e)
 		});
-		throw failure;
+		throw e;
 	}
-	await r2_broadcast({ type: "r2-cache-ready" });
 }
 
 self.addEventListener("install", function (event) {
-	event.waitUntil(r2_precache().then(function () {
+	event.waitUntil(r2_precache_shell().then(function () {
 		return self.skipWaiting();
 	}));
 });
@@ -96,6 +71,11 @@ self.addEventListener("fetch", function (event) {
 	if (event.request.method !== "GET") {
 		return;
 	}
+	/* The foreground downloader owns these sequential writes. Avoid a second
+	 * cache.put() here and let the request use the normal network path. */
+	if (event.request.headers.get("X-JSLinux-Precache") === "1") {
+		return;
+	}
 	const url = new URL(event.request.url);
 	const scope = new URL(self.registration.scope);
 	if (url.origin !== scope.origin || url.pathname.indexOf(scope.pathname) !== 0) {
@@ -111,7 +91,11 @@ self.addEventListener("fetch", function (event) {
 		try {
 			const response = await fetch(event.request);
 			if (response.ok) {
-				await cache.put(event.request, response.clone());
+				const storing = cache.put(event.request, response.clone()).catch(function () {});
+				try {
+					event.waitUntil(storing);
+				} catch (e) {
+				}
 			}
 			return response;
 		} catch (e) {
