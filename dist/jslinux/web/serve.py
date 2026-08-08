@@ -9,6 +9,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     extensions_map = {
         **http.server.SimpleHTTPRequestHandler.extensions_map,
         ".wasm": "application/wasm",
+        ".webmanifest": "application/manifest+json",
         ".cfg": "text/plain",
     }
 

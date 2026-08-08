@@ -58,11 +58,15 @@ afterwards.
 3. The pristine 4MB `root-riscv64.bin` ext2 image from the jslinux demo
    tarball is grown with `resize2fs` and `r2blob` is injected with
    `debugfs` (no root privileges needed anywhere).
-4. The image is split into 256KB blocks (TinyEMU `splitimg` format) so
-   the browser streams only the disk blocks the guest actually reads.
+4. The image is split into 256KB blocks (TinyEMU `splitimg` format). A
+   generated service worker precaches every block along with the complete
+   runtime and refreshes the cache whenever any generated resource changes.
 5. `www/` ends up fully self-contained: the JSLinux runtime
    (riscvemu64-wasm), bbl + kernel, the split disk and a small
-   `index.html`; host it on any static web server.
+   installable web app; host it on any static web server. Once the first
+   cache pass finishes, a Home Screen installation works completely offline.
+   On iOS, launch the Home Screen copy once while online and wait for its cache
+   progress to finish before disconnecting.
 
 ## Guest integration
 
@@ -88,8 +92,8 @@ afterwards.
 - The page is phone-friendly: dark, a single title bar with Upload /
   Keyboard / Clear cache / About buttons, and the terminal geometry is
   computed from the viewport (`?cols=`, `?rows=`, `?font_size=` URL
-  params still override it). Re-run `resize` in the guest after
-  rotating the screen.
+  params still override it). It also includes iOS Home Screen metadata and a
+  radare2 touch icon. Re-run `resize` in the guest after rotating the screen.
 
 ## Licensing
 

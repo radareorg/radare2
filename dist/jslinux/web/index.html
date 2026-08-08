@@ -3,9 +3,16 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#1b4f9c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="radare2">
   <title>temu/jslinux/rv64/r2</title>
   <link href="style.css" type="text/css" rel="stylesheet"/>
   <link href="favicon.ico" rel="icon" type="image/x-icon"/>
+  <link href="apple-touch-icon.png" rel="apple-touch-icon" sizes="400x400"/>
+  <link href="manifest.webmanifest" rel="manifest"/>
 <style>
 html, body {
   margin: 0;
@@ -169,10 +176,12 @@ body.kbd #term_wrap { height: calc(100% - 68px); }
   <a href="https://radare.org">radare2</a> (&copy; pancake) preinstalled.</p>
   <p>Try <b>r2 /bin/busybox</b>, then <b>aaa</b> and <b>pdf @ main</b>.
   All r2 tools are available: rasm2, rabin2, rax2, ragg2, ...</p>
-  <p>Uploaded files appear in <b>/mnt/tmp</b>. The disk is streamed on
-  demand, nothing is executed outside this page. Run <b>resize</b> in the
-  shell after resizing the window, rotating the screen or toggling the
-  keyboard. Add <b>?mem=256</b> to the URL for more guest RAM.</p>
+  <p>Uploaded files appear in <b>/mnt/tmp</b>. After adding this page to the
+  Home Screen, open it once while online: the complete disk and runtime are
+  cached locally. Wait for the Cache progress button to return to
+  <b>ClrCache</b> before going offline. Nothing is executed outside this page.
+  Run <b>resize</b> in the shell after resizing the window, rotating the screen
+  or toggling the keyboard. Add <b>?mem=256</b> to the URL for more guest RAM.</p>
 </div>
 <div id="term_wrap">
   <div id="term_container"></div>
@@ -306,6 +315,58 @@ Term.prototype.resize = function (w, h) {
   this.refresh(0, h - 1);
 };
 </script>
+<script>
+/* Install the complete VM locally. The generated worker contains the exact
+   list of runtime files and disk blocks produced by this build. */
+var r2_cache_prefix = "jslr2-offline-";
+var r2_cache_error = false;
+
+function r2_cache_state(label, title, busy) {
+  var btn = document.getElementById("btn-cache");
+  btn.textContent = label;
+  btn.title = title;
+  btn.disabled = busy;
+}
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("message", function (ev) {
+    var msg = ev.data || {};
+    if (msg.type === "r2-cache-progress") {
+      r2_cache_error = false;
+      var percent = Math.floor(msg.done * 100 / msg.total);
+      r2_cache_state("Cache " + percent + "%",
+        "Saving the complete VM for offline use", true);
+    } else if (msg.type === "r2-cache-ready") {
+      r2_cache_error = false;
+      r2_cache_state("ClrCache",
+        "The complete VM is available offline; tap to delete it", false);
+    } else if (msg.type === "r2-cache-error") {
+      r2_cache_error = true;
+      r2_cache_state("Retry", "Offline cache failed: " + msg.message, false);
+    }
+  });
+  r2_cache_state("Cache...", "Saving the complete VM for offline use", true);
+  navigator.serviceWorker.register("service-worker.js", {
+    scope: "./",
+    updateViaCache: "none"
+  }).then(function (registration) {
+    if (registration.active && !registration.installing) {
+      r2_cache_state("ClrCache",
+        "The complete VM is available offline; tap to delete it", false);
+    }
+    return navigator.serviceWorker.ready;
+  }).then(function () {
+    r2_cache_state("ClrCache",
+      "The complete VM is available offline; tap to delete it", false);
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().catch(function () {});
+    }
+  }).catch(function (e) {
+    r2_cache_error = true;
+    r2_cache_state("Retry", "Offline cache failed: " + e, false);
+  });
+}
+</script>
 <script type="text/javascript" src="jslinux.js"></script>
 <script>
 document.getElementById("btn-upload").onclick = function () {
@@ -429,17 +490,24 @@ document.getElementById("btn-about-close").onclick = function () {
   document.getElementById("about").hidden = true;
 };
 document.getElementById("btn-cache").onclick = async function () {
+  if (r2_cache_error) {
+    location.reload();
+    return;
+  }
+  r2_cache_state("Clearing", "Deleting the offline VM cache", true);
   try {
     if (window.caches) {
       var keys = await caches.keys();
       for (var i = 0; i < keys.length; i++) {
-        await caches.delete(keys[i]);
+        if (keys[i].indexOf(r2_cache_prefix) === 0) {
+          await caches.delete(keys[i]);
+        }
       }
     }
     if (navigator.serviceWorker) {
-      var regs = await navigator.serviceWorker.getRegistrations();
-      for (var j = 0; j < regs.length; j++) {
-        await regs[j].unregister();
+      var reg = await navigator.serviceWorker.getRegistration("./");
+      if (reg) {
+        await reg.unregister();
       }
     }
   } catch (e) {
