@@ -5620,7 +5620,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				bool in_high_entropy = false;
 				for (i = 0; i < nblocks; i++) {
 					ut64 off = from + (blocksize * i);
-					double ent = (double)ptr[i] / 255.0; 
+					double ent = (double)ptr[i] / 255.0;
 					if (!in_high_entropy && ent > 0.85) {
 						r_cons_printf (core->cons, "%-13" PFMT64d " 0x%-11" PFMT64x " Rising entropy edge (%f)\n", off, off, ent);
 						in_high_entropy = true;
