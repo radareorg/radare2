@@ -92,6 +92,14 @@ all: www
 
 r2: $(WORK)/r2blob
 
+image: $(WORK)/root-r2.bin
+
+www: $(WWW)/.runtime.stamp $(WWW)/index.html $(WWW)/favicon.ico \
+	$(WWW)/apple-touch-icon.png $(WWW)/manifest.webmanifest \
+	$(WWW)/root-riscv64.cfg $(WWW)/serve.py $(WWW)/root-r2/blk.txt \
+	$(WWW)/netfs/head $(WWW)/service-worker.js
+endif
+
 .PHONY: dist
 
 include ../../config-user.mk
@@ -103,15 +111,6 @@ dist: www
 	rm -f $(D)/.*.stamp
 	zip -r $(D).zip $(D)
 	rm -rf $(D)
-
-image: $(WORK)/root-r2.bin
-
-www: $(WWW)/.runtime.stamp $(WWW)/index.html $(WWW)/favicon.ico \
-	$(WWW)/apple-touch-icon.png $(WWW)/manifest.webmanifest \
-	$(WWW)/root-riscv64.cfg $(WWW)/serve.py $(WWW)/root-r2/blk.txt \
-	$(WWW)/netfs/head $(WWW)/service-worker.js
-endif
-
 # -- container build ------------------------------------------------------
 
 docker: docker-build
