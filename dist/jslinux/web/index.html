@@ -212,10 +212,10 @@ body.kbd #term_wrap { height: calc(100% - 68px); }
   downloads resume where they stopped. Nothing is executed outside this page.
   On a phone, pinch inside the terminal to change its font size, or drag with
   one finger to send vertical or horizontal mouse wheel events to r2 visual
-  modes without scrolling the page.
-  Run <b>resize</b> in the shell after changing the font size, resizing the
-  window, rotating the screen or toggling the keyboard. Add <b>?mem=256</b> to
-  the URL for more guest RAM.</p>
+  modes without scrolling the page. Font, viewport, rotation and keyboard
+  changes resize both the browser terminal and the guest tty automatically.
+  The shell's <b>resize</b> helper remains available as a fallback. Add
+  <b>?mem=256</b> to the URL for more guest RAM.</p>
 </div>
 <div id="cache-panel" hidden>
   <span class="close" id="btn-cache-close">[x]</span>
@@ -659,7 +659,24 @@ var r2_rsz_timer = null;
 function r2_fit_terminal() {
   if (window.term && term.resize) {
     var g = r2_calc_geometry(window.R2_FONT);
+    var changed = term.w !== g.cols || term.h !== g.rows;
+    window.R2_COLS = g.cols;
+    window.R2_ROWS = g.rows;
     term.resize(g.cols, g.rows);
+    if (changed) {
+      r2_notify_guest_resize();
+    }
+  }
+}
+
+function r2_notify_guest_resize() {
+  /* TinyEMU 2019-12-21 does not export a console-resize function. Its
+     pinned riscv64 WASM keeps console_resize_pending at byte 35220; setting
+     it makes the existing VM loop read term.getSize() and send the normal
+     virtio-console resize event to Linux. Do not touch the asm.js fallback,
+     whose memory layout is different. */
+  if (window.Module && Module.usingWasm && typeof HEAP32 !== "undefined") {
+    HEAP32[35220 >> 2] = 1;
   }
 }
 
@@ -733,6 +750,7 @@ if (r2_touch) {
     if (r2_pinch) {
       r2_pinch.changed = true;
     }
+    r2_fit_terminal();
   };
 
   var r2_finish_pinch = function () {

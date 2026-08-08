@@ -4004,6 +4004,7 @@ R_API int r_core_config_init(RCore *core) {
 	int i;
 	char *p, *tmpdir;
 	RConfigNode *n;
+	const int sysbits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 	RConfig *cfg = core->config = r_config_new (core);
 	if (!cfg) {
 		return 0;
@@ -4141,7 +4142,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "select the instruction decoder to use");
 	update_archdecoder_options (core, n);
 	r_config_set_getter (cfg, "arch.decoder", (RConfigCallback)cb_archdecoder_getter);
-	SETICB ("arch.bits", R_SYS_BITS, &cb_archbits, "word size in bits at arch decoder");
+	SETICB ("arch.bits", sysbits, &cb_archbits, "word size in bits at arch decoder");
 	r_config_set_getter (cfg, "arch.bits", (RConfigCallback)cb_archbits_getter);
 	SETCB ("arch.platform", "", &cb_arch_platform, "define arch platform to use");
 	n = NODECB ("arch.endian", R_SYS_ENDIAN? "big": "little", &cb_archendian);
@@ -4380,7 +4381,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "att", "intel", "masm", "jz", "regnum", NULL);
 	SETI ("asm.nbytes", 6, "number of bytes for each opcode at disassembly");
 	SETB ("asm.bytes.space", "false", "separate hexadecimal bytes with a whitespace");
-	SETICB ("asm.bits", R_SYS_BITS, &cb_asmbits, "word size in bits at assembler");
+	SETICB ("asm.bits", sysbits, &cb_asmbits, "word size in bits at assembler");
 	n = r_config_node_get (cfg, "asm.bits");
 	update_asmbits_options (core, n);
 	SETB ("asm.functions", "true", "show functions in disassembly");

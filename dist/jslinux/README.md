@@ -94,8 +94,8 @@ afterwards.
   256-color and truecolor SGR sequences and brightens the base ANSI
   palette, so r2 defaults to `scr.color=3` and `scr.utf8=true`),
   defines a busybox-compatible `resize` helper
-  (cursor-position-report trick) to sync the tty size with the
-  browser terminal, selects `/etc/radare2rc` through r2's `R2_RCFILE`
+  (cursor-position-report trick) for initial sync and as a fallback, selects
+  `/etc/radare2rc` through r2's `R2_RCFILE`
   override, and mounts the upload filesystem. That image-wide rc selects the
   `bluy` theme, responsive layouts and horizontal wheel navigation.
 - The color themes are compiled into the r2 binary
@@ -109,13 +109,13 @@ afterwards.
   computed from the viewport (`?cols=`, `?rows=`, `?font_size=` URL
   params still override it). It also includes iOS Home Screen metadata and a
   radare2 touch icon. Page rubber-banding is disabled on touch devices; a
-  two-finger terminal pinch changes only its font size, while a one-finger drag
-  becomes vertical or horizontal terminal mouse-wheel input for r2 visual
-  modes. The Keyboard button is the only page control that focuses the hidden
-  text input; focus loss and visual-viewport changes hide the extra keys and
-  refit the terminal when iOS dismisses its keyboard. Re-run `resize` in the
-  guest after changing the font size, toggling the keyboard or rotating the
-  screen.
+  two-finger terminal pinch changes only its font size and refits its character
+  grid, while a one-finger drag becomes vertical or horizontal terminal
+  mouse-wheel input for r2 visual modes. Real grid changes notify TinyEMU's
+  virtio console, keeping the guest tty and responsive applications in sync.
+  The Keyboard button is the only page control that focuses the hidden text
+  input; focus loss and visual-viewport changes hide the extra keys and refit
+  the terminal when iOS dismisses its keyboard.
 
 ## Licensing
 

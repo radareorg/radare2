@@ -378,7 +378,7 @@ R_API RDebug *r_debug_new(int hard) {
 	}
 	// R_SYS_ARCH
 	dbg->arch = strdup (R_SYS_ARCH);
-	dbg->bits = R_SYS_BITS;
+	dbg->bits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 	r_debug_options_init (&dbg->options);
 	dbg->forked_pid = -1;
 	dbg->main_pid = -1;

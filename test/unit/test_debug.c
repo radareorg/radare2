@@ -29,6 +29,8 @@ bool test_r_debug_use(void) {
 
 	dbg = r_debug_new (true);
 	mu_assert_notnull (dbg, "r_debug_new () failed");
+	mu_assert_eq (dbg->bits, R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32,
+		"r_debug_new () must select one active bit width");
 
 	res = r_debug_use (dbg, "null");
 	mu_assert_eq (res, true, "r_debug_use () failed");

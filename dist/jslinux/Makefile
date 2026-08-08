@@ -90,9 +90,9 @@ R2_CFLAGS ?= -Oz -ffunction-sections -fdata-sections
 # the 16 binr/ programs, the merged libr.a/libr.so and every shared library
 # are pure waste here, since the blob is one static binary symlinked to all
 # the tool names inside the image (busybox-style).
-R2_CONFIGURE_FLAGS ?= --disable-debugger --without-ptrace-wrap --without-qjs \
-	--without-capstone --without-zydis --without-gpl --without-dylink \
-	--disable-loadlibs --with-checks-level=0 --with-libr --with-static-themes
+R2_CONFIGURE_FLAGS ?= --without-qjs \
+	--without-capstone --without-zydis --without-gpl \
+	--with-checks-level=0 --with-libr --with-static-themes
 R2_LINKS = r2 radare2 rabin2 rasm2 rax2 rahash2 rafind2 radiff2 ragg2 rarun2 ravc2 rafs2
 JOBS ?= $(shell nproc 2> /dev/null || echo 4)
 
