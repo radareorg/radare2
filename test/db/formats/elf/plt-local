@@ -1,0 +1,139 @@
+NAME=x86_64 shared lib: PLT stub for a locally defined function gets a symbol
+FILE=bins/elf/pltrel/add.so
+CMDS=is~plt.add2
+EXPECT=<<EOF
+6   0x00001050 0x00001050 GLOBAL FUNC   16       plt.add2
+EOF
+RUN
+
+NAME=x86_64 shared lib: local PLT stub is flagged in the symbols space
+FILE=bins/elf/pltrel/add.so
+CMDS=<<EOF
+fs symbols
+f~plt
+EOF
+EXPECT=<<EOF
+0x00001050 16 sym.plt.add2
+EOF
+RUN
+
+NAME=x86_64 shared lib: call through a local PLT stub names its target
+FILE=bins/elf/pltrel/add.so
+CMDS=<<EOF
+aa
+pd 1 @ 0x1135
+EOF
+EXPECT=<<EOF
+|           0x00001135      e816ffffff     call sym.plt.add2
+EOF
+RUN
+
+NAME=x86_64 shared lib: a locally defined stub target is not an import
+FILE=bins/elf/pltrel/add.so
+CMDS=ii~add2
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=ELF v1 shared lib: local GLINK stubs get symbols
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=is~plt.inflateReset[2]
+EXPECT=<<EOF
+0x00019544
+0x00019614
+0x0001962c
+EOF
+RUN
+
+NAME=ELF v1 exec: no local PLT stubs without locally defined stub targets
+FILE=bins/elf/ppc64v1-more
+CMDS=is~plt.
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=aarch64 pac-plt: stub entries are 24 bytes after a 32 byte header
+FILE=bins/elf/pltrel/aarch64-pac.so
+CMDS=<<EOF
+fs symbols
+f~plt.
+EOF
+EXPECT=<<EOF
+0x00000330 24 sym.plt.mul2
+0x00000348 24 sym.plt.sub2
+0x00000360 24 sym.plt.add2
+EOF
+RUN
+
+NAME=aarch64 pac-plt: stubs are found with the section headers zeroed
+FILE=bins/elf/pltrel/aarch64-pac-noshdr.so
+CMDS=<<EOF
+fs symbols
+f~plt.
+EOF
+EXPECT=<<EOF
+0x00000330 24 sym.plt.mul2
+0x00000348 24 sym.plt.sub2
+0x00000360 24 sym.plt.add2
+EOF
+RUN
+
+NAME=x86_64 retpoline plt: lazy binding uses 32 byte stub entries
+FILE=bins/elf/pltrel/x86_64-retpoline.so
+CMDS=<<EOF
+fs symbols
+f~plt.
+EOF
+EXPECT=<<EOF
+0x000014b0 32 sym.plt.add2
+0x000014d0 32 sym.plt.mul2
+0x000014f0 32 sym.plt.sub2
+EOF
+RUN
+
+NAME=x86_64 retpoline plt: bind now uses 16 byte stub entries
+FILE=bins/elf/pltrel/x86_64-retpoline-now.so
+CMDS=<<EOF
+fs symbols
+f~plt.
+EOF
+EXPECT=<<EOF
+0x00001460 16 sym.plt.add2
+0x00001470 16 sym.plt.mul2
+0x00001480 16 sym.plt.sub2
+EOF
+RUN
+
+NAME=ppc32 be: plt_pic32 stubs of local functions get symbols
+FILE=bins/elf/pltrel/ppc32be.so
+CMDS=<<EOF
+fs symbols
+f~plt.
+EOF
+EXPECT=<<EOF
+0x00000260 16 sym.plt.mul2
+0x00000270 16 sym.plt.sub2
+0x00000280 16 sym.plt.add2
+EOF
+RUN
+
+NAME=ppc32 le: plt_pic32 stubs of local functions get symbols
+FILE=bins/elf/pltrel/ppc32le.so
+CMDS=<<EOF
+fs symbols
+f~plt.
+EOF
+EXPECT=<<EOF
+0x00000260 16 sym.plt.mul2
+0x00000270 16 sym.plt.sub2
+0x00000280 16 sym.plt.add2
+EOF
+RUN
+
+NAME=aarch64: a local ifunc plt stub gets a symbol despite its LOOS type
+FILE=bins/elf/pltrel/aarch64-ifunc.so
+CMDS=is~plt.
+EXPECT=<<EOF
+2   0x00000250 0x00000250 GLOBAL LOOS   16       plt.foo
+EOF
+RUN

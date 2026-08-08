@@ -4,7 +4,7 @@ CMDS=<<EOF
 isq~?
 EOF
 EXPECT=<<EOF
-10921
+10925
 EOF
 RUN
 
