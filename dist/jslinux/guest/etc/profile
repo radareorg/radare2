@@ -5,6 +5,9 @@
 export TERM=xterm-256color
 export COLORTERM=truecolor
 export LANG=C.UTF-8
+# This image deliberately ships no /usr/share/radare2 tree. Point r2's
+# supported user-rc override at the image-wide defaults in /etc instead.
+export R2_RCFILE=/etc/radare2rc
 
 # Query the terminal for its real geometry (cursor position report after
 # jumping to the bottom-right corner) and sync the tty size; busybox has

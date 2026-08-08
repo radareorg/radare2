@@ -21,7 +21,13 @@ html, body {
   color: #ddd;
   height: 100%;
   overflow: hidden;
+  overscroll-behavior: none;
   font-family: monospace;
+}
+body {
+  position: fixed;
+  inset: 0;
+  width: 100%;
 }
 #titlebar {
   box-sizing: border-box;
@@ -52,6 +58,8 @@ html, body {
   position: relative;
   height: calc(100% - 30px);
   overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
   text-align: center;
 }
 #term_container { display: inline-block; text-align: left; }
@@ -69,8 +77,8 @@ html, body {
   overflow: hidden;
   white-space: nowrap;
 }
-/* no scrollbars anywhere: term.js paints its own — hide it (the mouse
-   wheel still scrolls the terminal history) */
+/* no scrollbars anywhere: term.js paints its own; wheel input is handled by
+   the terminal itself */
 .term_scrollbar { display: none; }
 /* keep term.js input textarea reachable but out of the layout; it sits
    at the TOP on purpose: iOS scrolls the page to bring the focused
@@ -202,6 +210,8 @@ body.kbd #term_wrap { height: calc(100% - 68px); }
   demand. To use it in airplane mode, open <b>Cache</b>, choose <b>Cache all</b>
   and keep the app open until it reports that all files are local. Interrupted
   downloads resume where they stopped. Nothing is executed outside this page.
+  On a phone, drag inside the terminal to send vertical or horizontal mouse
+  wheel events to r2 visual modes without scrolling the page.
   Run <b>resize</b> in the shell after resizing the window, rotating the screen
   or toggling the keyboard. Add <b>?mem=256</b> to the URL for more guest RAM.</p>
 </div>
@@ -670,6 +680,75 @@ if (r2_touch) {
     window.visualViewport.addEventListener("resize", r2_unscroll);
     window.visualViewport.addEventListener("scroll", r2_unscroll);
   }
+
+  /* Turn one-finger terminal drags into wheel ticks. Axis locking avoids
+     diagonal jitter; non-passive touchmove cancellation also stops iOS from
+     rubber-banding the page. A tap still reaches the terminal normally. */
+  var r2_swipe = null;
+  var r2_swipe_step = 24;
+  var r2_term_wrap = document.getElementById("term_wrap");
+  r2_term_wrap.addEventListener("touchstart", function (ev) {
+    if (ev.touches.length !== 1) {
+      r2_swipe = null;
+      return;
+    }
+    var touch = ev.touches[0];
+    r2_swipe = {
+      x: touch.clientX,
+      y: touch.clientY,
+      last_x: touch.clientX,
+      last_y: touch.clientY,
+      axis: "",
+      distance: 0,
+      moved: false
+    };
+  }, { passive: true });
+  r2_term_wrap.addEventListener("touchmove", function (ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (!r2_swipe || ev.touches.length !== 1) {
+      return;
+    }
+    var touch = ev.touches[0];
+    var dx = r2_swipe.last_x - touch.clientX;
+    var dy = r2_swipe.last_y - touch.clientY;
+    if (!r2_swipe.axis) {
+      var total_x = r2_swipe.x - touch.clientX;
+      var total_y = r2_swipe.y - touch.clientY;
+      if (Math.max(Math.abs(total_x), Math.abs(total_y)) < 8) {
+        return;
+      }
+      r2_swipe.axis = Math.abs(total_x) > Math.abs(total_y) ? "x" : "y";
+      r2_swipe.distance = r2_swipe.axis === "x" ? total_x : total_y;
+      r2_swipe.moved = true;
+    } else {
+      r2_swipe.distance += r2_swipe.axis === "x" ? dx : dy;
+    }
+    r2_swipe.last_x = touch.clientX;
+    r2_swipe.last_y = touch.clientY;
+    var ticks = 0;
+    while (Math.abs(r2_swipe.distance) >= r2_swipe_step && ticks < 6) {
+      var direction = r2_swipe.distance < 0 ? -1 : 1;
+      if (window.term && term.sendWheel) {
+        if (r2_swipe.axis === "x") {
+          term.sendWheel(direction, 0, touch.clientX, touch.clientY);
+        } else {
+          term.sendWheel(0, direction, touch.clientX, touch.clientY);
+        }
+      }
+      r2_swipe.distance -= direction * r2_swipe_step;
+      ticks++;
+    }
+  }, { passive: false });
+  r2_term_wrap.addEventListener("touchend", function (ev) {
+    if (r2_swipe && r2_swipe.moved) {
+      ev.preventDefault();
+    }
+    r2_swipe = null;
+  }, { passive: false });
+  r2_term_wrap.addEventListener("touchcancel", function () {
+    r2_swipe = null;
+  }, { passive: true });
 }
 
 document.getElementById("btn-kbd").onclick = function () {

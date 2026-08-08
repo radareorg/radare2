@@ -87,7 +87,9 @@ afterwards.
   palette, so r2 defaults to `scr.color=3` and `scr.utf8=true`),
   defines a busybox-compatible `resize` helper
   (cursor-position-report trick) to sync the tty size with the
-  browser terminal, and mounts the upload filesystem.
+  browser terminal, selects `/etc/radare2rc` through r2's `R2_RCFILE`
+  override, and mounts the upload filesystem. That image-wide rc selects the
+  `bluy` theme, responsive layouts and horizontal wheel navigation.
 - The color themes are compiled into the r2 binary
   (`--with-static-themes`) since no r2 share directory is installed in
   the guest image, so `eco` and friends work as usual.
@@ -95,10 +97,13 @@ afterwards.
   (`www/netfs`, generated with TinyEMU's `build_filelist`); files
   uploaded from the browser appear in **/mnt/tmp** inside the guest.
 - The page is phone-friendly: dark, a single title bar with Upload /
-  Keyboard / Clear cache / About buttons, and the terminal geometry is
+  Keyboard / Cache / About buttons, and the terminal geometry is
   computed from the viewport (`?cols=`, `?rows=`, `?font_size=` URL
   params still override it). It also includes iOS Home Screen metadata and a
-  radare2 touch icon. Re-run `resize` in the guest after rotating the screen.
+  radare2 touch icon. Page rubber-banding is disabled on touch devices; a
+  one-finger terminal drag becomes vertical or horizontal terminal mouse-wheel
+  input for r2 visual modes. Re-run `resize` in the guest after rotating the
+  screen.
 
 ## Licensing
 
