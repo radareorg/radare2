@@ -2968,6 +2968,22 @@ static int find_immop(cs_insn *insn) {
 	return -1;
 }
 
+// A memory operand displacement is either an absolute data address that
+// zignatures must mask, or a structure/stack offset whose bytes stay stable
+// across builds and must be kept. mem.disp is signed, so negative
+// displacements like [esi - 8] never qualify. Without a base register
+// (scaled-index or segment forms like [eax*4 + 0x51F80738]) anything past
+// the first page is an address; with a base register require a larger value
+// so big structure offsets are not eaten.
+static void disp2ptr(RAnalOp *op, cs_insn *insn, int opidx) {
+	const st64 disp = INSOP (opidx).mem.disp;
+	const st64 threshold = (INSOP (opidx).mem.base == X86_REG_INVALID)? 0x1000: 0x10000;
+	if (disp >= threshold) {
+		op->ptr = (ut64)disp;
+		op->disp = UT64_MAX;
+	}
+}
+
 static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 	op->ptr = UT64_MAX;
 	switch (INSOP (0).type) {
@@ -2989,9 +3005,8 @@ static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 			if (op->ptr < 0x1000) {
 				op->ptr = UT64_MAX;
 			}
-		} else if (op->disp > 1000) {
-			op->ptr = op->disp;
-			op->disp = UT64_MAX;
+		} else {
+			disp2ptr (op, insn, 0);
 		}
 		break;
 	case X86_OP_REG:
@@ -3031,9 +3046,8 @@ static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 			} else if (INSOP (1).mem.segment == X86_REG_INVALID && INSOP (1).mem.base == X86_REG_INVALID
 					&& INSOP (1).mem.index == X86_REG_INVALID && INSOP (1).mem.scale == 1) { // [<addr>]
 				op->ptr = op->disp;
-			} else if (op->disp > 1000) {
-				op->ptr = op->disp;
-				op->disp = UT64_MAX;
+			} else {
+				disp2ptr (op, insn, 1);
 			}
 			break;
 		case X86_OP_IMM:
@@ -3634,10 +3648,7 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 				}
 				break;
 			default:
-				if (op->disp > 1000) {
-					op->ptr = op->disp;
-					op->disp = UT64_MAX;
-				}
+				disp2ptr (op, insn, 1);
 				break;
 			}
 			break;

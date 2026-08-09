@@ -193,7 +193,7 @@ ptr: 0x004945b8
 EOF
 RUN
 
-NAME=ROL dword [0x4945b8],cl - op0_memimmhandle ptr set
+NAME=ROL dword [0x4945b8],1 - op0_memimmhandle ptr set
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
@@ -206,7 +206,7 @@ ptr: 0x004945b8
 EOF
 RUN
 
-NAME=SHR dword [0x4945b8],cl - op0_memimmhandle ptr set
+NAME=SHR dword [0x4945b8],1 - op0_memimmhandle ptr set
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
@@ -216,5 +216,127 @@ ao 1~^ptr
 EOF
 EXPECT=<<EOF
 ptr: 0x004945b8
+EOF
+RUN
+
+NAME=MOV ecx,[eax*4+0x51f80738] - scaled index abs addr masked
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 8b0c853807f851
+ao 1~^ptr
+ao 1~^mask
+EOF
+EXPECT=<<EOF
+ptr: 0x51f80738
+mask: ff000000000000
+EOF
+RUN
+
+NAME=MOV [eax*4+0x51f80738],ecx - scaled index abs addr masked (op0)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 890c853807f851
+ao 1~^ptr
+ao 1~^mask
+EOF
+EXPECT=<<EOF
+ptr: 0x51f80738
+mask: ff000000000000
+EOF
+RUN
+
+NAME=LEA ebx,[eax*8+0x51f7c07c] - scaled index abs addr masked
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 8d1cc57cc0f751
+ao 1~^ptr
+ao 1~^mask
+EOF
+EXPECT=<<EOF
+ptr: 0x51f7c07c
+mask: ff000000000000
+EOF
+RUN
+
+NAME=MOV ecx,[ebx+0x51f80738] - base plus huge disp masked
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 8b8b3807f851
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x51f80738
+EOF
+RUN
+
+NAME=MOV eax,[esi-8] - negative disp is not a pointer
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 8b46f8
+ao 1~^opcode
+ao 1~^ptr
+ao 1~^mask
+EOF
+EXPECT=<<EOF
+opcode: mov eax, dword [esi - 8]
+mask: ffffff
+EOF
+RUN
+
+NAME=LEA eax,[ebx-8] - negative disp is not a pointer
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 8d43f8
+ao 1~^opcode
+ao 1~^ptr
+ao 1~^mask
+EOF
+EXPECT=<<EOF
+opcode: lea eax, [ebx - 8]
+mask: ffffff
+EOF
+RUN
+
+NAME=LEA rax,[rbx-8] - 64bit negative disp is not a pointer
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 488d43f8
+ao 1~^opcode
+ao 1~^ptr
+ao 1~^mask
+EOF
+EXPECT=<<EOF
+opcode: lea rax, [rbx - 8]
+mask: ffffffff
+EOF
+RUN
+
+NAME=MOV eax,[esi+0x2000] - struct offset is not a pointer
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 8b8600200000
+ao 1~^opcode
+ao 1~^ptr
+ao 1~^mask
+EOF
+EXPECT=<<EOF
+opcode: mov eax, dword [esi + 0x2000]
+mask: ffffffffffff
 EOF
 RUN
