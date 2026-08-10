@@ -577,7 +577,7 @@ static void emit_func_typedef(KVCParser *kvc, const char *name, const char *rtyp
 		return;
 	}
 	emit_func_args (kvc, name, args);
-	r_strbuf_appendf (kvc->sb, "func.%s.ret=%s\n", name, rtype? rtype: "void");
+	r_strbuf_appendf (kvc->sb, "func.%s.ret=%s\n", name, r_str_get_fail (rtype, "void"));
 }
 
 static int parse_ptr_depth(KVCParser *kvc) {
@@ -1090,7 +1090,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 						args_str = collapse_whitespace (r_strs_new (args_open + 1, args_end));
 					}
 				}
-				char *fulltype = r_str_newf ("%s * (%s)", rtype, args_str? args_str: "");
+				char *fulltype = r_str_newf ("%s * (%s)", rtype, r_str_get (args_str));
 				// Map typedef alias to a canonical func.<alias> handle and emit func entries so the typedef
 				// can be resolved even if it is never referenced by a struct field.
 				r_strbuf_appendf (kvc->sb, "typedef.%s=func.%s\n", alias_str, alias_str);
@@ -1319,7 +1319,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 					args = collapse_whitespace (r_strs_new (args_start + 1, args_end));
 				}
 				// build full type string
-				char *fulltype = r_str_newf ("%s * (%s)", rtype, args? args: "");
+				char *fulltype = r_str_newf ("%s * (%s)", rtype, r_str_get (args));
 				// We'll reference the function-pointer's type by a struct-prefixed name: <struct>.<member>
 				char *type_name = r_str_newf ("%s.%s", sn, mname);
 				if (!strcmp (type, "struct")) {
@@ -1333,7 +1333,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				// return type
 				r_strbuf_appendf (kvc->sb, "type.%s.%s=func\n", sn, mname);
 				r_strbuf_appendf (kvc->sb, "%s.%s=func\n", sn, mname);
-				r_strbuf_appendf (kvc->sb, "func.%s.%s.ret=%s\n", sn, mname, rtype? rtype: "void");
+				r_strbuf_appendf (kvc->sb, "func.%s.%s.ret=%s\n", sn, mname, r_str_get_fail (rtype, "void"));
 				off += kvc_typesize (kvc, fulltype, 1);
 				{
 					r_strf_var (full_scope, 512, "%s.%s", sn, mname);
@@ -1810,7 +1810,7 @@ R_IPI char *kvc_parse(const char *header_content, int ptr_size, char **errmsg) {
 	}
 	char *res = NULL;
 	if (kvc->error && errmsg) {
-		*errmsg = kvc->error_msg? strdup (kvc->error_msg): strdup (kvc->error);
+		*errmsg = strdup (r_str_get_fail (kvc->error_msg, kvc->error));
 	}
 	if (!kvc->error) {
 		res = r_strbuf_drain (kvc->sb);
