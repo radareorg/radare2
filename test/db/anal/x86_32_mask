@@ -1,0 +1,220 @@
+NAME=INC dword [0x4945b8] - op->ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx ff05b8454900
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=DEC dword [0x4945b8] - op->ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx ff0db8454900
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=NEG dword [0x4945b8] - op->ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx f71db8454900
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=NOT dword [0x4945b8] - op->ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx f715b8454900
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=MOV ecx,[0x4945b8] - op1_memimmhandle ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 8b0db8454900
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=MOV [0x4945b8],ecx - op0_memimmhandle ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 890db8454900
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=TEST [0x4945b8],ecx - op0_memimmhandle ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 850db8454900
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=DIV dword [0x4945b8] - op0_memimmhandle ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx f735b8454900
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=IMUL dword [0x4945b8] - op0_memimmhandle ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx f72db8454900
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=CMP dword [0x4945b8],1 - op0_memimmhandle ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 833db845490001
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=ADD dword [0x4945b8],eax - op0_memimmhandle ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 0105b8454900
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=SUB dword [0x4945b8],eax - op0_memimmhandle ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 2905b8454900
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=AND dword [0x4945b8],eax - op0_memimmhandle ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 2105b8454900
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=OR dword [0x4945b8],eax - op0_memimmhandle ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 0905b8454900
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=XOR dword [0x4945b8],eax - op0_memimmhandle ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 3105b8454900
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=ROL dword [0x4945b8],cl - op0_memimmhandle ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx c105b845490001
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
+
+NAME=SHR dword [0x4945b8],cl - op0_memimmhandle ptr set
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx c12db845490001
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x004945b8
+EOF
+RUN
