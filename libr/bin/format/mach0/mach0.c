@@ -4136,6 +4136,20 @@ static bool stop_bind_parsing(RBindOpState *state) {
 	return true;
 }
 
+static bool threaded_bind_fits(RVecRelocRef *threaded_binds, RBindOpState *state, ut64 count) {
+	if (!threaded_binds) {
+		return true;
+	}
+	if (state->sym_ord < 0) {
+		return false;
+	}
+	ut64 n_threaded_binds = RVecRelocRef_length (threaded_binds);
+	if ((ut64)state->sym_ord > n_threaded_binds) {
+		return false;
+	}
+	return count <= n_threaded_binds - state->sym_ord;
+}
+
 static void insert_bind_reloc(struct MACH0_(obj_t) * mo, RVecRelocRef *threaded_binds, RBindOpState *state, ut8 op, ut8 rel_type) {
 	if (state->sym_ord < 0 && !state->sym_name) {
 		return;
@@ -4312,7 +4326,7 @@ static bool parse_bind_op_do_bind(struct MACH0_(obj_t) * mo, RVecRelocRef **thre
 				R_LOG_DEBUG ("Malformed ULEB TIMES bind opcode");
 				return stop_bind_parsing (state);
 			}
-			if (!UT64_ADD (&increment, skip, wordsize) || !bind_fits_section (mo, state->seg_idx, state->addr, count, increment) || !bind_fits (count, state->addr, state->segment_end_addr, increment)) {
+			if (!threaded_bind_fits (*threaded_binds, state, count) || !UT64_ADD (&increment, skip, wordsize) || (!*threaded_binds && (!bind_fits_section (mo, state->seg_idx, state->addr, count, increment) || !bind_fits (count, state->addr, state->segment_end_addr, increment)))) {
 				R_LOG_DEBUG ("Count exceeds segment bounds");
 				return stop_bind_parsing (state);
 			}
