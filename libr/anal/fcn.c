@@ -2550,50 +2550,12 @@ static char *function_signature_try_type_name(Sdb *types, const char *candidate)
 	return NULL;
 }
 
-R_IPI const char *r_anal_function_type_link_at(RAnal *anal, ut64 addr) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types, NULL);
-	return sdb_const_getf (anal->sdb_types, NULL, "fcnlink.%08" PFMT64x, addr);
-}
-
-R_IPI bool r_anal_function_type_link_set(RAnal *anal, const char *type_name, ut64 addr) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && type_name, false);
-	const char *kind = sdb_const_get (anal->sdb_types, type_name, 0);
-	if (!kind || strcmp (kind, "func")) {
-		return false;
-	}
-	const char *linked = r_anal_function_type_link_at (anal, addr);
-	if (linked) {
-		return !strcmp (linked, type_name);
-	}
-	return sdb_setf (anal->sdb_types, type_name, 0,
-		"fcnlink.%08" PFMT64x, addr);
-}
-
-static char *function_signature_address_type_name(RAnal *anal, RAnalFunction *fcn) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn, NULL);
-	const char *linked = r_anal_function_type_link_at (anal, fcn->addr);
-	if (R_STR_ISNOTEMPTY (linked)) {
-		const char *kind = sdb_const_get (anal->sdb_types, linked, 0);
-		if (kind && !strcmp (kind, "func")) {
-			return strdup (linked);
-		}
-	}
-	return NULL;
-}
-
 static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
 	const char *basename;
 
-	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn, NULL);
-	char *name = function_signature_address_type_name (anal, fcn);
-	if (name) {
-		return name;
-	}
-	if (!fcn->name) {
-		return NULL;
-	}
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn && fcn->name, NULL);
 	const char *lookup_name = function_signature_lookup_name (anal, fcn);
-	name = function_signature_try_type_name (anal->sdb_types, lookup_name);
+	char *name = function_signature_try_type_name (anal->sdb_types, lookup_name);
 	if (name) {
 		return name;
 	}

@@ -1322,6 +1322,7 @@ static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) 
 				}
 			} else {
 				if (mode == R_MODE_SET) {
+					// The full info walk records compilation directories as it parses each CU.
 					bin_dwarf_process_info (core, bf, da);
 				} else {
 					r_bin_dwarf_parse_comp_dirs (bf, da);

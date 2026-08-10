@@ -401,8 +401,6 @@ enum {
 	DWARF_SN_ARANGES,
 	DWARF_SN_PUBNAMES,
 	DWARF_SN_PUBTYPES,
-	DWARF_SN_CU_INDEX,
-	DWARF_SN_TU_INDEX,
 
 	DWARF_SN_MAX
 };
@@ -421,8 +419,6 @@ static const char *dwarf_sn_elf[DWARF_SN_MAX] = {
 	[DWARF_SN_ARANGES] = "debug_aranges",
 	[DWARF_SN_PUBNAMES] = "debug_pubnames",
 	[DWARF_SN_PUBTYPES] = "debug_pubtypes",
-	[DWARF_SN_CU_INDEX] = "debug_cu_index",
-	[DWARF_SN_TU_INDEX] = "debug_tu_index",
 };
 
 /* XXX: xcoff64 discovers DWARF sections by SSUBTYP_DW{...}, not by name */
@@ -853,20 +849,22 @@ static const ut8 *dwarf_read_sleb(const ut8 *buf, const ut8 *buf_end, st64 *valu
 
 static bool dwarf_relocate_address(RBinFile *bf, ut64 address, ut64 *relocated) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && relocated, false);
-	st64 shift = bf->bo->baddr_shift;
-	/* A zero-initialized RBinFileOptions historically means no requested
-	 * DWARF rebase, even for executables whose native base is nonzero. */
-	if (shift < 0 && !bf->user_baddr) {
-		shift = 0;
+	*relocated = address;
+	if (!address) {
+		return true;
 	}
+	const st64 shift = bf->bo->baddr_shift;
 	if (shift >= 0) {
-		return !r_add_overflow (address, (ut64)shift, relocated);
+		ut64 value;
+		if (!r_add_overflow (address, (ut64)shift, &value)) {
+			*relocated = value;
+		}
+		return true;
 	}
-	ut64 magnitude = 0 - (ut64)shift;
-	if (address < magnitude) {
-		return false;
+	const ut64 magnitude = 0 - (ut64)shift;
+	if (address >= magnitude) {
+		*relocated = address - magnitude;
 	}
-	*relocated = address - magnitude;
 	return true;
 }
 
@@ -2422,9 +2420,6 @@ static const ut8 *parse_attr_value(RBinFile *bf, const ut8 *obuf, int obuf_len, 
 			? get_section (bf, DWARF_SN_STR)
 			: get_section (bf, DWARF_SN_LINE_STR);
 		const char *str = section? get_section_string (bf, section, (size_t)value->string.offset): NULL;
-		if (!str) {
-			return NULL;
-		}
 		value->string.content = str;
 		break;
 	// offset in .debug_info
@@ -2657,193 +2652,6 @@ static bool dwarf_index_contribution_end(const ut8 *data, size_t size, bool be, 
 	return true;
 }
 
-enum {
-	DWARF_PACKAGE_SECT_INFO = 1,
-	DWARF_PACKAGE_SECT_ABBREV = 3,
-	DWARF_PACKAGE_SECT_STR_OFFSETS = 6,
-};
-
-typedef enum {
-	DWARF_PACKAGE_NO_INDEX,
-	DWARF_PACKAGE_FOUND,
-	DWARF_PACKAGE_NOT_FOUND,
-	DWARF_PACKAGE_MALFORMED,
-} DwarfPackageLookup;
-
-static DwarfPackageLookup dwarf_package_index_lookup(RBinFile *bf, int section_name, const RBinDwarfCompUnit *unit, ut32 target_section, ut64 *target_offset, ut64 *target_size) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && unit && target_offset && target_size,
-		DWARF_PACKAGE_MALFORMED);
-	RBinSection *section = get_section (bf, section_name);
-	if (!section) {
-		return DWARF_PACKAGE_NO_INDEX;
-	}
-	const ut8 *data = get_section_bytes (bf, section);
-	const size_t size = section->bytes.len;
-	if (!data || size < 16) {
-		return DWARF_PACKAGE_MALFORMED;
-	}
-	const bool be = r_bin_is_big_endian (bf->rbin);
-	const ut32 legacy_version = r_read_ble32 (data, be);
-	const ut16 version = r_read_ble16 (data, be);
-	const ut16 padding = r_read_ble16 (data + 2, be);
-	if (legacy_version != 2 && (version != 5 || padding)) {
-		return DWARF_PACKAGE_MALFORMED;
-	}
-	const ut32 section_count = r_read_ble32 (data + 4, be);
-	const ut32 unit_count = r_read_ble32 (data + 8, be);
-	const ut32 slot_count = r_read_ble32 (data + 12, be);
-	if (!section_count || !unit_count || !slot_count
-		|| (slot_count & (slot_count - 1))) {
-		return DWARF_PACKAGE_MALFORMED;
-	}
-	size_t hash_bytes;
-	size_t parallel_bytes;
-	size_t offset_rows;
-	size_t offset_cells;
-	size_t offset_bytes;
-	size_t size_cells;
-	size_t size_bytes;
-	if (r_mul_overflow ((size_t)slot_count, (size_t)8, &hash_bytes)
-		|| r_mul_overflow ((size_t)slot_count, (size_t)4, &parallel_bytes)
-		|| r_add_overflow ((size_t)unit_count, (size_t)1, &offset_rows)
-		|| r_mul_overflow (offset_rows, (size_t)section_count, &offset_cells)
-		|| r_mul_overflow (offset_cells, (size_t)4, &offset_bytes)
-		|| r_mul_overflow ((size_t)unit_count, (size_t)section_count, &size_cells)
-		|| r_mul_overflow (size_cells, (size_t)4, &size_bytes)) {
-		return DWARF_PACKAGE_MALFORMED;
-	}
-	size_t parallel_offset;
-	size_t offsets_offset;
-	size_t sizes_offset;
-	size_t index_end;
-	if (r_add_overflow ((size_t)16, hash_bytes, &parallel_offset)
-		|| r_add_overflow (parallel_offset, parallel_bytes, &offsets_offset)
-		|| r_add_overflow (offsets_offset, offset_bytes, &sizes_offset)
-		|| r_add_overflow (sizes_offset, size_bytes, &index_end)
-		|| index_end > size) {
-		return DWARF_PACKAGE_MALFORMED;
-	}
-	size_t info_column = SIZE_MAX;
-	size_t target_column = SIZE_MAX;
-	size_t column;
-	for (column = 0; column < section_count; column++) {
-		ut32 id = r_read_ble32 (data + offsets_offset + column * 4, be);
-		if (id == DWARF_PACKAGE_SECT_INFO) {
-			if (info_column != SIZE_MAX) {
-				return DWARF_PACKAGE_MALFORMED;
-			}
-			info_column = column;
-		}
-		if (id == target_section) {
-			if (target_column != SIZE_MAX) {
-				return DWARF_PACKAGE_MALFORMED;
-			}
-			target_column = column;
-		}
-	}
-	if (info_column == SIZE_MAX || target_column == SIZE_MAX) {
-		return DWARF_PACKAGE_NOT_FOUND;
-	}
-	ut64 signature = 0;
-	bool has_signature = false;
-	if (unit->hdr.unit_type == DW_UT_split_compile) {
-		signature = unit->hdr.dwo_id;
-		has_signature = true;
-	} else if (unit->hdr.unit_type == DW_UT_split_type) {
-		signature = unit->hdr.type_sig;
-		has_signature = true;
-	}
-	ut32 row = 0;
-	if (has_signature) {
-		const ut64 mask = slot_count - 1;
-		ut64 slot = signature & mask;
-		const ut64 step = ((signature >> 32) & mask) | 1;
-		ut32 probe;
-		for (probe = 0; probe < slot_count; probe++) {
-			ut64 slot_signature = r_read_ble64 (data + 16 + slot * 8, be);
-			ut32 slot_row = r_read_ble32 (data + parallel_offset + slot * 4, be);
-			if (!slot_row && !slot_signature) {
-				break;
-			}
-			if (!slot_row || slot_row > unit_count) {
-				return DWARF_PACKAGE_MALFORMED;
-			}
-			if (slot_signature == signature) {
-				row = slot_row;
-				break;
-			}
-			slot = (slot + step) & mask;
-		}
-	}
-	if (!row && !has_signature) {
-		ut32 candidate;
-		for (candidate = 1; candidate <= unit_count; candidate++) {
-			size_t cell = (size_t)candidate * section_count + info_column;
-			ut64 info_offset = r_read_ble32 (data + offsets_offset + cell * 4, be);
-			if (info_offset == unit->offset) {
-				if (row) {
-					return DWARF_PACKAGE_MALFORMED;
-				}
-				row = candidate;
-			}
-		}
-	}
-	if (!row) {
-		return DWARF_PACKAGE_NOT_FOUND;
-	}
-	size_t info_cell = (size_t)row * section_count + info_column;
-	ut64 info_offset = r_read_ble32 (data + offsets_offset + info_cell * 4, be);
-	size_t info_size_cell = ((size_t)row - 1) * section_count + info_column;
-	ut64 info_size = r_read_ble32 (data + sizes_offset + info_size_cell * 4, be);
-	ut64 unit_size;
-	if (r_add_overflow ((ut64)(unit->hdr.is_64bit? 12: 4),
-			unit->hdr.length, &unit_size)
-		|| info_offset != unit->offset || unit_size > info_size) {
-		return DWARF_PACKAGE_MALFORMED;
-	}
-	size_t target_cell = (size_t)row * section_count + target_column;
-	size_t target_size_cell = ((size_t)row - 1) * section_count + target_column;
-	*target_offset = r_read_ble32 (data + offsets_offset + target_cell * 4, be);
-	*target_size = r_read_ble32 (data + sizes_offset + target_size_cell * 4, be);
-	return *target_size? DWARF_PACKAGE_FOUND: DWARF_PACKAGE_NOT_FOUND;
-}
-
-static DwarfPackageLookup dwarf_package_find_contribution(RBinFile *bf, const RBinDwarfCompUnit *unit, ut32 target_section, ut64 *target_offset, ut64 *target_size) {
-	R_RETURN_VAL_IF_FAIL (unit, DWARF_PACKAGE_MALFORMED);
-	if (unit->hdr.unit_type == DW_UT_split_compile) {
-		return dwarf_package_index_lookup (bf, DWARF_SN_CU_INDEX, unit,
-			target_section, target_offset, target_size);
-	}
-	if (unit->hdr.unit_type == DW_UT_split_type) {
-		return dwarf_package_index_lookup (bf, DWARF_SN_TU_INDEX, unit,
-			target_section, target_offset, target_size);
-	}
-	return DWARF_PACKAGE_NO_INDEX;
-}
-
-static bool dwarf_package_apply_abbrev_base(RBinFile *bf, RBinDwarfCompUnit *unit) {
-	ut64 contribution_offset = 0;
-	ut64 contribution_size = 0;
-	DwarfPackageLookup lookup = dwarf_package_find_contribution (bf, unit,
-		DWARF_PACKAGE_SECT_ABBREV, &contribution_offset, &contribution_size);
-	if (lookup == DWARF_PACKAGE_NO_INDEX) {
-		return true;
-	}
-	if (lookup != DWARF_PACKAGE_FOUND
-		|| unit->hdr.abbrev_offset >= contribution_size) {
-		return false;
-	}
-	RBinSection *section = get_section (bf, DWARF_SN_ABBREV);
-	if (!section || !get_section_bytes (bf, section)
-		|| contribution_offset > section->bytes.len
-		|| contribution_size > section->bytes.len - contribution_offset
-		|| r_add_overflow (contribution_offset, unit->hdr.abbrev_offset,
-			&unit->hdr.abbrev_offset)) {
-		return false;
-	}
-	return true;
-}
-
 static bool dwarf_string_offsets_contribution(const ut8 *data, size_t section_size, bool be, ut64 contribution_offset, ut64 contribution_size, ut64 *base, size_t *end, ut8 *entry_size) {
 	R_RETURN_VAL_IF_FAIL (data && base && end && entry_size, false);
 	if (contribution_offset > SIZE_MAX || contribution_size > SIZE_MAX
@@ -2881,6 +2689,21 @@ static bool dwarf_string_offsets_base(const ut8 *data, size_t section_size, bool
 		return true;
 	}
 	return false;
+}
+
+static bool dwarf_address_base(const ut8 *data, size_t section_size, bool be,
+		ut64 base, ut8 address_size, size_t *end) {
+	R_RETURN_VAL_IF_FAIL (data && end, false);
+	if (base > SIZE_MAX || base > section_size) {
+		return false;
+	}
+	if (base >= 16 && r_read_ble32 (data + (size_t)base - 16, be) == DWARF_INIT_LEN_64
+		&& dwarf_index_contribution_end (data, section_size, be, base,
+			true, true, address_size, end)) {
+		return true;
+	}
+	return dwarf_index_contribution_end (data, section_size, be, base,
+		false, true, address_size, end);
 }
 
 static bool dwarf_comp_unit_index_bases(const RBinDwarfCompUnit *unit, bool need_str, bool need_addr, ut64 *str_base, bool *has_str_base, ut64 *addr_base, bool *has_addr_base) {
@@ -2933,44 +2756,24 @@ typedef struct {
 	RBinFile *bf;
 	RBinDwarfCompUnit *unit;
 	bool be;
-	bool bases_loaded;
 	bool has_str_base;
 	bool has_addr_base;
 	ut64 str_base;
 	ut64 addr_base;
-	bool str_initialized;
 	DwarfIndexResolution str_status;
 	RBinSection *str_offsets_section;
 	RBinSection *str_section;
 	const ut8 *str_offsets;
 	ut8 str_offset_size;
 	size_t str_offsets_end;
-	bool addr_initialized;
 	DwarfIndexResolution addr_status;
 	RBinSection *addr_section;
 	const ut8 *addr;
 	size_t addr_end;
 } DwarfIndexResolver;
 
-static bool dwarf_index_resolver_load_bases(DwarfIndexResolver *resolver) {
-	if (resolver->bases_loaded) {
-		return true;
-	}
-	resolver->bases_loaded = true;
-	return dwarf_comp_unit_index_bases (resolver->unit, true, true,
-		&resolver->str_base, &resolver->has_str_base,
-		&resolver->addr_base, &resolver->has_addr_base);
-}
-
 static DwarfIndexResolution dwarf_index_resolver_init_str(DwarfIndexResolver *resolver) {
-	if (resolver->str_initialized) {
-		return resolver->str_status;
-	}
-	resolver->str_initialized = true;
 	resolver->str_status = DWARF_INDEX_RESOLUTION_MALFORMED;
-	if (!dwarf_index_resolver_load_bases (resolver)) {
-		return resolver->str_status;
-	}
 	resolver->str_offsets_section = get_section (resolver->bf, DWARF_SN_STR_OFFSETS);
 	resolver->str_section = get_section (resolver->bf, DWARF_SN_STR);
 	resolver->str_offsets = resolver->str_offsets_section
@@ -2980,49 +2783,16 @@ static DwarfIndexResolution dwarf_index_resolver_init_str(DwarfIndexResolver *re
 		resolver->str_status = DWARF_INDEX_RESOLUTION_UNAVAILABLE;
 		return resolver->str_status;
 	}
-	ut64 contribution_offset = 0;
-	ut64 contribution_size = 0;
-	DwarfPackageLookup lookup = dwarf_package_find_contribution (resolver->bf,
-		resolver->unit, DWARF_PACKAGE_SECT_STR_OFFSETS,
-		&contribution_offset, &contribution_size);
-	if (lookup == DWARF_PACKAGE_MALFORMED) {
-		return resolver->str_status;
-	}
 	if (resolver->has_str_base) {
-		if (lookup == DWARF_PACKAGE_FOUND
-			&& r_add_overflow (resolver->str_base, contribution_offset,
-				&resolver->str_base)) {
-			return resolver->str_status;
-		}
-		if (lookup == DWARF_PACKAGE_NOT_FOUND) {
-			resolver->str_status = DWARF_INDEX_RESOLUTION_UNAVAILABLE;
-			return resolver->str_status;
-		}
 		if (!dwarf_string_offsets_base (resolver->str_offsets,
 				resolver->str_offsets_section->bytes.len, resolver->be,
 				resolver->str_base, &resolver->str_offsets_end,
 				&resolver->str_offset_size)) {
 			return resolver->str_status;
 		}
-		if (lookup == DWARF_PACKAGE_FOUND) {
-			ut64 contribution_end;
-			if (r_add_overflow (contribution_offset, contribution_size,
-					&contribution_end)
-				|| resolver->str_base < contribution_offset
-				|| resolver->str_offsets_end > contribution_end) {
-				return resolver->str_status;
-			}
-		}
 	} else if (!dwarf_is_split_unit (resolver->unit)) {
 		return resolver->str_status;
-	} else if (lookup == DWARF_PACKAGE_FOUND) {
-		if (!dwarf_string_offsets_contribution (resolver->str_offsets,
-				resolver->str_offsets_section->bytes.len, resolver->be,
-				contribution_offset, contribution_size, &resolver->str_base,
-				&resolver->str_offsets_end, &resolver->str_offset_size)) {
-			return resolver->str_status;
-		}
-	} else if (lookup == DWARF_PACKAGE_NO_INDEX) {
+	} else {
 		if (!dwarf_string_offsets_contribution (resolver->str_offsets,
 				resolver->str_offsets_section->bytes.len, resolver->be, 0,
 				resolver->str_offsets_section->bytes.len, &resolver->str_base,
@@ -3030,23 +2800,13 @@ static DwarfIndexResolution dwarf_index_resolver_init_str(DwarfIndexResolver *re
 			resolver->str_status = DWARF_INDEX_RESOLUTION_UNAVAILABLE;
 			return resolver->str_status;
 		}
-	} else {
-		resolver->str_status = DWARF_INDEX_RESOLUTION_UNAVAILABLE;
-		return resolver->str_status;
 	}
 	resolver->str_status = DWARF_INDEX_RESOLUTION_OK;
 	return resolver->str_status;
 }
 
 static DwarfIndexResolution dwarf_index_resolver_init_addr(DwarfIndexResolver *resolver) {
-	if (resolver->addr_initialized) {
-		return resolver->addr_status;
-	}
-	resolver->addr_initialized = true;
 	resolver->addr_status = DWARF_INDEX_RESOLUTION_MALFORMED;
-	if (!dwarf_index_resolver_load_bases (resolver)) {
-		return resolver->addr_status;
-	}
 	resolver->addr_section = get_section (resolver->bf, DWARF_SN_ADDR);
 	resolver->addr = resolver->addr_section
 		? get_section_bytes (resolver->bf, resolver->addr_section): NULL;
@@ -3061,10 +2821,10 @@ static DwarfIndexResolution dwarf_index_resolver_init_addr(DwarfIndexResolver *r
 		resolver->addr_status = DWARF_INDEX_RESOLUTION_UNAVAILABLE;
 		return resolver->addr_status;
 	}
-	if (!dwarf_index_contribution_end (resolver->addr,
+	if (!dwarf_address_base (resolver->addr,
 			resolver->addr_section->bytes.len, resolver->be,
-			resolver->addr_base, resolver->unit->hdr.is_64bit, true,
-			resolver->unit->hdr.address_size, &resolver->addr_end)) {
+			resolver->addr_base, resolver->unit->hdr.address_size,
+			&resolver->addr_end)) {
 		return resolver->addr_status;
 	}
 	resolver->addr_status = DWARF_INDEX_RESOLUTION_OK;
@@ -3083,7 +2843,7 @@ static DwarfIndexResolution dwarf_index_resolver_resolve_die(DwarfIndexResolver 
 		size_t entry_offset;
 		if (dwarf_form_is_strx (value->attr_form)
 			&& value->kind == DW_AT_KIND_STRING_INDEX) {
-			DwarfIndexResolution status = dwarf_index_resolver_init_str (resolver);
+			DwarfIndexResolution status = resolver->str_status;
 			if (status == DWARF_INDEX_RESOLUTION_MALFORMED) {
 				return status;
 			}
@@ -3112,7 +2872,7 @@ static DwarfIndexResolution dwarf_index_resolver_resolve_die(DwarfIndexResolver 
 			value->kind = DW_AT_KIND_STRING;
 		} else if (dwarf_form_is_addrx (value->attr_form)
 			&& value->kind == DW_AT_KIND_ADDRESS_INDEX) {
-			DwarfIndexResolution status = dwarf_index_resolver_init_addr (resolver);
+			DwarfIndexResolution status = resolver->addr_status;
 			if (status == DWARF_INDEX_RESOLUTION_MALFORMED) {
 				return status;
 			}
@@ -3146,9 +2906,41 @@ static DwarfIndexResolution dwarf_resolve_comp_unit_indexes(RBinFile *bf, RBinDw
 		.bf = bf,
 		.unit = unit,
 		.be = r_bin_is_big_endian (bf->rbin),
+		.str_status = DWARF_INDEX_RESOLUTION_OK,
+		.addr_status = DWARF_INDEX_RESOLUTION_OK,
 	};
-	DwarfIndexResolution result = DWARF_INDEX_RESOLUTION_OK;
+	bool need_str = false;
+	bool need_addr = false;
 	RBinDwarfDie *die;
+	R_VEC_FOREACH (unit->dies, die) {
+		if (!die->attr_values) {
+			continue;
+		}
+		RBinDwarfAttrValue *value;
+		R_VEC_FOREACH (die->attr_values, value) {
+			need_str |= dwarf_form_is_strx (value->attr_form)
+				&& value->kind == DW_AT_KIND_STRING_INDEX;
+			need_addr |= dwarf_form_is_addrx (value->attr_form)
+				&& value->kind == DW_AT_KIND_ADDRESS_INDEX;
+		}
+	}
+	if (!need_str && !need_addr) {
+		return DWARF_INDEX_RESOLUTION_OK;
+	}
+	if (!dwarf_comp_unit_index_bases (unit, need_str, need_addr,
+			&resolver.str_base, &resolver.has_str_base,
+			&resolver.addr_base, &resolver.has_addr_base)) {
+		return DWARF_INDEX_RESOLUTION_MALFORMED;
+	}
+	if (need_str && dwarf_index_resolver_init_str (&resolver)
+			== DWARF_INDEX_RESOLUTION_MALFORMED) {
+		return DWARF_INDEX_RESOLUTION_MALFORMED;
+	}
+	if (need_addr && dwarf_index_resolver_init_addr (&resolver)
+			== DWARF_INDEX_RESOLUTION_MALFORMED) {
+		return DWARF_INDEX_RESOLUTION_MALFORMED;
+	}
+	DwarfIndexResolution result = DWARF_INDEX_RESOLUTION_OK;
 	R_VEC_FOREACH (unit->dies, die) {
 		DwarfIndexResolution status = dwarf_index_resolver_resolve_die (&resolver, die);
 		if (status == DWARF_INDEX_RESOLUTION_MALFORMED) {
@@ -3245,14 +3037,6 @@ static const ut8 *parse_comp_unit_mode(RBinFile *bf, const ut8 *buf_start, const
 	size_t abbrevs_count = RVecDwarfAbbrevDecl_length (abbrevs);
 	int child_depth = 0;
 	bool has_root = false;
-	DwarfIndexResolver resolver = {
-		.bf = bf,
-		.unit = unit,
-		.be = r_bin_is_big_endian (bf->rbin),
-	};
-	if (print) {
-		print_comp_unit_header (unit, print);
-	}
 	while (buf && buf < buf_end && buf >= buf_start) {
 		if (dwarf_is_breaked (bf->rbin)) {
 			return NULL;
@@ -3278,11 +3062,7 @@ static const ut8 *parse_comp_unit_mode(RBinFile *bf, const ut8 *buf_start, const
 			if (!has_root || child_depth <= 0) {
 				return NULL;
 			}
-			if (print) {
-				print_die (&die, print);
-			} else {
-				RVecDwarfDie_push_back (unit->dies, &die);
-			}
+			RVecDwarfDie_push_back (unit->dies, &die);
 			child_depth--;
 			continue;
 		}
@@ -3321,25 +3101,7 @@ static const ut8 *parse_comp_unit_mode(RBinFile *bf, const ut8 *buf_start, const
 			return NULL;
 		}
 		bool has_children = die.has_children;
-		if (!has_root || !print) {
-			RVecDwarfDie_push_back (unit->dies, &die);
-			if (print) {
-				RBinDwarfDie *root = RVecDwarfDie_at (unit->dies, 0);
-				if (!root || dwarf_index_resolver_resolve_die (&resolver, root)
-						== DWARF_INDEX_RESOLUTION_MALFORMED) {
-					return NULL;
-				}
-				print_die (root, print);
-			}
-		} else {
-			if (dwarf_index_resolver_resolve_die (&resolver, &die)
-					== DWARF_INDEX_RESOLUTION_MALFORMED) {
-				dwarf_die_fini (&die);
-				return NULL;
-			}
-			print_die (&die, print);
-			dwarf_die_fini (&die);
-		}
+		RVecDwarfDie_push_back (unit->dies, &die);
 		has_root = true;
 		if (has_children) {
 			child_depth++;
@@ -3348,11 +3110,18 @@ static const ut8 *parse_comp_unit_mode(RBinFile *bf, const ut8 *buf_start, const
 	if (buf != buf_end || !has_root || child_depth != 0) {
 		return NULL;
 	}
-	if (!print && dwarf_resolve_comp_unit_indexes (bf, unit)
+	if (dwarf_resolve_comp_unit_indexes (bf, unit)
 			== DWARF_INDEX_RESOLUTION_MALFORMED) {
 		return NULL;
 	}
 	dwarf_comp_unit_save_comp_dir (bf, unit);
+	if (print) {
+		print_comp_unit_header (unit, print);
+		RBinDwarfDie *die;
+		R_VEC_FOREACH (unit->dies, die) {
+			print_die (die, print);
+		}
+	}
 	return buf;
 }
 
@@ -3547,8 +3316,7 @@ static bool dwarf_foreach_root(RBinFile *bf, RVecDwarfAbbrevDecl *decls, DwarfRo
 		size_t len_size = unit.hdr.is_64bit? 12: 4;
 		size_t remaining = end - unit_start;
 		if (!buf || remaining < len_size || unit.hdr.length < unit.hdr.header_size
-			|| unit.hdr.length > remaining - len_size
-			|| !dwarf_package_apply_abbrev_base (bf, &unit)) {
+			|| unit.hdr.length > remaining - len_size) {
 			dwarf_comp_unit_fini (&unit);
 			return false;
 		}
@@ -3557,8 +3325,12 @@ static bool dwarf_foreach_root(RBinFile *bf, RVecDwarfAbbrevDecl *decls, DwarfRo
 		RBinDwarfAbbrevDecl *abbrev_start = bsearch (&key, decls->_start,
 			abbrevs_count, sizeof (key), abbrev_cmp);
 		if (!abbrev_start || !dwarf_parse_root_die (bf, buf, unit_end, &unit,
-				decls, abbrev_start - decls->_start)
-			|| (callback && !callback (bf, &unit, user))) {
+				decls, abbrev_start - decls->_start)) {
+			dwarf_comp_unit_fini (&unit);
+			buf = unit_end;
+			continue;
+		}
+		if (callback && !callback (bf, &unit, user)) {
 			dwarf_comp_unit_fini (&unit);
 			return false;
 		}
@@ -3684,8 +3456,7 @@ R_API bool r_bin_dwarf_print_info(RBinFile *bf, RVecDwarfAbbrevDecl *decls) {
 		size_t len_size = unit.hdr.is_64bit? 12: 4;
 		size_t remaining = buf_end - unit_start;
 		if (remaining < len_size || unit.hdr.length < unit.hdr.header_size
-			|| unit.hdr.length > remaining - len_size
-			|| !dwarf_package_apply_abbrev_base (bf, &unit)) {
+			|| unit.hdr.length > remaining - len_size) {
 			dwarf_comp_unit_fini (&unit);
 			goto cleanup;
 		}
@@ -3694,13 +3465,15 @@ R_API bool r_bin_dwarf_print_info(RBinFile *bf, RVecDwarfAbbrevDecl *decls) {
 		RBinDwarfAbbrevDecl *abbrev_start = bsearch (&key, decls->_start, abbrevs_count, sizeof (key), abbrev_cmp);
 		if (!abbrev_start) {
 			dwarf_comp_unit_fini (&unit);
-			goto cleanup;
+			buf = unit_end;
+			continue;
 		}
 		size_t first_abbr_idx = abbrev_start - decls->_start;
 		if (!print_comp_unit_stream (bf, buf, unit_end, &unit, decls,
 				first_abbr_idx, print)) {
 			dwarf_comp_unit_fini (&unit);
-			goto cleanup;
+			buf = unit_end;
+			continue;
 		}
 		dwarf_comp_unit_fini (&unit);
 		buf = unit_end;
@@ -3751,8 +3524,7 @@ static RBinDwarfDebugInfo *parse_info_raw(RBinFile *bf, RVecDwarfAbbrevDecl *dec
 		size_t len_size = unit.hdr.is_64bit? 12: 4;
 		size_t remaining = buf_end - unit_start;
 		if (remaining < len_size || unit.hdr.length < unit.hdr.header_size
-			|| unit.hdr.length > remaining - len_size
-			|| !dwarf_package_apply_abbrev_base (bf, &unit)) {
+			|| unit.hdr.length > remaining - len_size) {
 			dwarf_comp_unit_fini (&unit);
 			goto cleanup;
 		}
@@ -3765,7 +3537,8 @@ static RBinDwarfDebugInfo *parse_info_raw(RBinFile *bf, RVecDwarfAbbrevDecl *dec
 		RBinDwarfAbbrevDecl *abbrev_start = bsearch (&key, decls->_start, RVecDwarfAbbrevDecl_length (decls), sizeof (key), abbrev_cmp);
 		if (!abbrev_start) {
 			dwarf_comp_unit_fini (&unit);
-			goto cleanup;
+			buf = unit_end;
+			continue;
 		}
 		// They point to the same array object, so should be def. behaviour
 		size_t first_abbr_idx = abbrev_start - decls->_start;
@@ -3773,7 +3546,8 @@ static RBinDwarfDebugInfo *parse_info_raw(RBinFile *bf, RVecDwarfAbbrevDecl *dec
 		buf = parse_comp_unit (bf, buf, unit_end, &unit, decls, first_abbr_idx);
 		if (!buf) {
 			dwarf_comp_unit_fini (&unit);
-			goto cleanup;
+			buf = unit_end;
+			continue;
 		}
 		buf = unit_end;
 
