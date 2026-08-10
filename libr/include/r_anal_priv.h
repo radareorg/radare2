@@ -30,6 +30,16 @@ typedef struct r_leaddr_pair_t {
 R_IPI void r_anal_types_ensure_loaded(RAnal *anal);
 R_IPI bool r_anal_var_is_default_argname(const char *name);
 R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth);
+// R_ANAL_OP_TYPE_MASK keeps the COND bit, which no base opcode comparison wants
+#define R_ANAL_OP_BASETYPE(op) ((op)->type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND)
+
+static inline bool op_is_call(RAnalOp *op) {
+	const int type = R_ANAL_OP_BASETYPE (op);
+	return type == R_ANAL_OP_TYPE_CALL || type == R_ANAL_OP_TYPE_UCALL;
+}
+
+R_IPI RFlagItem *r_anal_import_at(RAnal *anal, ut64 addr);
+R_IPI ut64 r_anal_thunk_target(RAnal *anal, ut64 addr, const char *cc);
 R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention);
 R_IPI int r_anal_cc_shadow(RAnal *anal, const char *convention);
 R_IPI bool r_anal_cc_stack_rev(RAnal *anal, const char *cc);

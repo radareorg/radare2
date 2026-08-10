@@ -154,6 +154,188 @@ static int fcn_type_stack_pop(RAnal *anal, const char *cc, const char *callee, i
 	return pop;
 }
 
+#define STUB_MAX_DEPTH 3
+#define STUB_MIN_SIZE 4
+#define STUB_MAX_SIZE 64
+#define STUB_MAX_ARGS 16
+
+typedef struct {
+	char *loc;
+	RRegItem *item;
+} StubArgReg;
+
+// resolved once: decoding can switch bits and reset the cc sdb, so own the strings
+static int stub_arg_regs(RAnal *anal, const char *cc, StubArgReg *args) {
+	const int max_arg = R_MIN (r_anal_cc_max_arg (anal, cc), STUB_MAX_ARGS);
+	int i, n = 0;
+	for (i = 0; i < max_arg; i++) {
+		const char *loc = r_anal_cc_argloc (anal, cc, i, 0, 0);
+		char *copy = loc? strdup (loc): NULL;
+		if (copy) {
+			args[n].loc = copy;
+			args[n].item = r_reg_get (anal->reg, loc, -1);
+			n++;
+		}
+	}
+	return n;
+}
+
+static bool writes_arg_reg(RAnal *anal, RAnalOp *op, const StubArgReg *args, int nargs) {
+	RAnalValue *dst;
+	R_VEC_FOREACH (&op->dsts, dst) {
+		if (!dst->reg || dst->memref) {
+			continue;
+		}
+		RRegItem *wr = r_reg_get (anal->reg, dst->reg, -1);
+		bool found = false;
+		int i;
+		for (i = 0; i < nargs && !found; i++) {
+			const RRegItem *ar = args[i].item;
+			// compare storage too, so writing dil or si still clobbers rdi and rsi
+			found = r_anal_cc_location_uses (anal, args[i].loc, dst->reg)
+				|| (wr && ar && ar->type == wr->type
+					&& ar->offset < wr->offset + wr->size
+					&& wr->offset < ar->offset + ar->size);
+		}
+		r_unref (wr);
+		if (found) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool op_leaves_block(RAnalOp *op) {
+	switch (R_ANAL_OP_BASETYPE (op)) {
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_RET:
+	case R_ANAL_OP_TYPE_SWITCH:
+	case R_ANAL_OP_TYPE_TRAP:
+	case R_ANAL_OP_TYPE_SWI:
+	case R_ANAL_OP_TYPE_ILL:
+	case R_ANAL_OP_TYPE_UNK:
+		return true;
+	}
+	return false;
+}
+
+// ld rX, disp(r2); mtctr rX; ld r2, disp+8(r2); cmpldi r2, 0; bnectr, ending at the bnectr
+static bool ppc64_plt_call_suffix(const ut8 *buf, int at, int size, bool be) {
+	if (at < 16 || at + 4 > size) {
+		return false;
+	}
+	const ut32 tgt = r_read_ble32 (buf + at - 16, be);
+	const ut32 ctr = r_read_ble32 (buf + at - 12, be);
+	const ut32 toc = r_read_ble32 (buf + at - 8, be);
+	const int reg = (tgt >> 21) & 0x1f;
+	// bnectr with its hint bits masked off, and cr0 set by the compare right before it
+	return (r_read_ble32 (buf + at, be) & 0xff9fffff) == 0x4c820420
+		&& r_read_ble32 (buf + at - 4, be) == 0x28220000
+		&& (tgt & 0xfc1f0003) == 0xe8020000 && reg != 2
+		&& (ctr & 0xfc1fffff) == 0x7c0903a6 && ((ctr >> 21) & 0x1f) == reg
+		// the callee address and the toc it runs with come from one descriptor
+		&& (toc & 0xfc1f0003) == 0xe8020000 && ((toc >> 21) & 0x1f) == 2
+		&& (st32)(st16)(toc & 0xfffc) == (st32)(st16)(tgt & 0xfffc) + 8;
+}
+
+static bool is_thunk(RAnal *anal, RAnalFunction *f, const char *cc, ut64 *target) {
+	*target = 0;
+	// linear_size measures from the lowest block, and blocks must tile it or the decoder sees junk
+	const ut64 fsize = r_anal_function_linear_size (f);
+	if (fsize < STUB_MIN_SIZE || fsize > STUB_MAX_SIZE || !anal->iob.read_at
+		|| r_anal_function_min_addr (f) != f->addr || r_anal_function_realsize (f) != fsize) {
+		return false;
+	}
+	if (!cc && !(cc = r_anal_function_cc (f))) {
+		return false;
+	}
+	const int size = (int)fsize;
+	ut8 buf[STUB_MAX_SIZE];
+	if (!anal->iob.read_at (anal->iob.io, f->addr, buf, size)) {
+		return false;
+	}
+	const bool is_ppc64 = anal->config->bits == 64 && !strcmp (anal->config->arch, "ppc");
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
+	StubArgReg args[STUB_MAX_ARGS];
+	const int nargs = stub_arg_regs (anal, cc, args);
+	bool ok = false;
+	int at = 0;
+	while (at < size) {
+		RAnalOp op;
+		r_anal_op_init (&op);
+		// never STATEFUL, the ppc toc tracker keys off that mask and this decode is out of band
+		const int len = r_anal_op (anal, &op, f->addr + at, buf + at, size - at, R_ARCH_OP_MASK_VAL);
+		// exact compare, an indirect or conditional branch cannot stand in for the tail call
+		const bool tail = op.type == R_ANAL_OP_TYPE_JMP && op.jump && op.jump != UT64_MAX;
+		const ut64 jump = op.jump;
+		const bool leaves = op_leaves_block (&op);
+		// a decoder that fills no dsts proves nothing, so only exits and nops pass without them
+		const bool blind = !leaves && R_ANAL_OP_BASETYPE (&op) != R_ANAL_OP_TYPE_NOP
+			&& RVecRArchValue_empty (&op.dsts);
+		const bool opaque = blind || writes_arg_reg (anal, &op, args, nargs);
+		r_anal_op_fini (&op);
+		if (len < 1 || opaque) {
+			break;
+		}
+		// an ELFv1 plt_call leaves through ctr once resolved, and falls through to its tail before that
+		if (leaves && !tail && !(is_ppc64 && ppc64_plt_call_suffix (buf, at, size, be))) {
+			break;
+		}
+		at += len;
+		if (tail) {
+			ok = at == size;
+			*target = jump;
+			break;
+		}
+	}
+	int i;
+	for (i = 0; i < nargs; i++) {
+		free (args[i].loc);
+		r_unref (args[i].item);
+	}
+	return ok;
+}
+
+// only the bin layer may terminate the walk, so a thunk chain alone proves nothing
+R_IPI ut64 r_anal_thunk_target(RAnal *anal, ut64 addr, const char *cc) {
+	R_RETURN_VAL_IF_FAIL (anal, 0);
+	if (!anal->binb.bin || !anal->binb.get_stub_target) {
+		return 0;
+	}
+	ut64 at = addr;
+	int depth;
+	for (depth = 0; depth < STUB_MAX_DEPTH; depth++) {
+		const ut64 target = anal->binb.get_stub_target (anal->binb.bin, at);
+		if (target && target != UT64_MAX && target != at) {
+			return target;
+		}
+		RAnalFunction *f = r_anal_get_function_at (anal, at);
+		if (!f) {
+			return 0;
+		}
+		ut64 next;
+		if (!is_thunk (anal, f, cc, &next) || next == at || r_anal_function_contains (f, next)) {
+			return 0;
+		}
+		at = next;
+	}
+	return 0;
+}
+
+R_IPI RFlagItem *r_anal_import_at(RAnal *anal, ut64 addr) {
+	RCore *core = anal->coreb.core;
+	RFlag *flags = anal->flb.f? anal->flb.f: (core? core->flags: NULL);
+	RFlagItem *flag = flags? r_flag_get_by_spaces (flags, false, addr, R_FLAGS_FS_IMPORTS, NULL): NULL;
+	// get_by_spaces falls back to any flag at addr, so check the space it came from
+	if (flag && flag->space && !strcmp (flag->space->name, R_FLAGS_FS_IMPORTS)) {
+		return flag;
+	}
+	return NULL;
+}
+
 static char *fcn_call_type(RAnal *anal, RAnalOp *op, RAnalFunction **callee) {
 	ut64 offset = op->jump != UT64_MAX? op->jump: op->ptr;
 	if (offset == UT64_MAX) {
@@ -163,14 +345,7 @@ static char *fcn_call_type(RAnal *anal, RAnalOp *op, RAnalFunction **callee) {
 	if (*callee) {
 		return r_type_func_guess (anal->sdb_types, (*callee)->name);
 	}
-	RFlagItem *flag = NULL;
-	RCore *core = anal->coreb.core;
-	if (core && core->flags) {
-		flag = r_flag_get_by_spaces (core->flags, false, offset, R_FLAGS_FS_IMPORTS, NULL);
-	}
-	if (!flag && anal->flb.f) {
-		flag = r_flag_get_by_spaces (anal->flb.f, false, offset, R_FLAGS_FS_IMPORTS, NULL);
-	}
+	RFlagItem *flag = r_anal_import_at (anal, offset);
 	return flag? r_type_func_guess (anal->sdb_types, flag->name): NULL;
 }
 
@@ -2519,16 +2694,10 @@ static const char *function_signature_lookup_name(RAnal *anal, RAnalFunction *fc
 	const char *name = fcn->name;
 
 	R_RETURN_VAL_IF_FAIL (anal && fcn && fcn->name, NULL);
-	if (anal->flb.f) {
-		// Only override with the flag name when it's actually an import
-		// stub. r_flag_get_by_spaces falls back to the first flag at addr
-		// when no IMPORTS flag exists, which would pick generic entry%i
-		// markers over real symbols.
-		RFlagItem *flag = r_flag_get_by_spaces (anal->flb.f, false, fcn->addr, R_FLAGS_FS_IMPORTS, NULL);
-		if (flag && R_STR_ISNOTEMPTY (flag->name) && flag->space
-				&& !strcmp (flag->space->name, R_FLAGS_FS_IMPORTS)) {
-			name = flag->name;
-		}
+	// only override with the flag name when it is actually an import stub
+	RFlagItem *flag = r_anal_import_at (anal, fcn->addr);
+	if (flag && R_STR_ISNOTEMPTY (flag->name)) {
+		name = flag->name;
 	}
 	return name;
 }

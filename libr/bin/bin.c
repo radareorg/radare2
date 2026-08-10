@@ -71,6 +71,18 @@ static const char *__getname(RBin *bin, int type, int idx, bool sd) {
 	return NULL;
 }
 
+// takes and returns rebased addresses, plugins only know the on-disk ones
+static ut64 __get_stub_target(RBin *bin, ut64 vaddr) {
+	RBinFile *a = r_bin_cur (bin);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
+	if (!plugin || !plugin->stub_target) {
+		return UT64_MAX;
+	}
+	const st64 shift = a->bo->baddr_shift;
+	const ut64 target = plugin->stub_target (a, vaddr - shift);
+	return (target == UT64_MAX)? UT64_MAX: target + shift;
+}
+
 static const char *__getcc(RBin *bin, ut64 vaddr) {
 	RBinFile *a = r_bin_cur (bin);
 	if (a) {
@@ -1788,6 +1800,7 @@ R_API void r_bin_bind(RBin *bin, RBinBind *b) {
 		b->get_offset = __getoffset;
 		b->get_name = __getname;
 		b->get_cc = __getcc;
+		b->get_stub_target = __get_stub_target;
 		b->get_sections_vec = r_bin_get_sections_vec;
 		b->get_vsect_at = __get_vsection_at;
 		b->get_symbols_vec = r_bin_get_symbols_vec;

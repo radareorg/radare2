@@ -1563,16 +1563,53 @@ static void extract_dyncc_reguse(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, i
 	}
 }
 
-static bool op_is_call(RAnalOp *op) {
-	// Keep the full base opcode. A low-nibble check aliases MUL (0x14) with UCALL.
-	const int type = op->type & 0xffff;
-	return type == R_ANAL_OP_TYPE_CALL || type == R_ANAL_OP_TYPE_UCALL;
-}
-
 // arg count excluding the trailing "..." slot, which is no real caller arg register
 static int func_fixed_args(Sdb *TDB, const char *name) {
 	const int argc = r_type_func_args_count (TDB, name);
 	return r_type_func_is_variadic (TDB, name)? argc - 1: argc;
+}
+
+typedef struct {
+	char *proto; // R_OWN
+	RVecAnalVarPtr *vars; // R_OWN vec of borrowed RAnalVar*
+	int rargs;
+} CalleeInfo;
+
+static void callee_info_fini(CalleeInfo *ci) {
+	free (ci->proto);
+	RVecAnalVarPtr_free (ci->vars);
+}
+
+// register args a call landing at addr implies for fcn, false leaves ci empty: the callee did not answer
+static bool callee_info_at(RAnal *anal, RAnalFunction *fcn, ut64 addr, int max_count, CalleeInfo *ci) {
+	Sdb *TDB = anal->sdb_types;
+	RAnalFunction *f = r_anal_get_function_at (anal, addr);
+	if (!f) {
+		// an import has no function to inspect, so its prototype is all we know about it
+		RFlagItem *flag = r_anal_import_at (anal, addr);
+		if (!flag || !(ci->proto = r_type_func_guess (TDB, flag->name))) {
+			return false;
+		}
+		const char *cc = r_anal_cc_func (anal, ci->proto);
+		if (cc && !strcmp (fcn->callconv, cc)) {
+			ci->rargs = R_MIN (max_count, func_fixed_args (TDB, ci->proto));
+		}
+		return true;
+	}
+	// a convention mismatch is an answer: this callee's registers are not the caller's
+	if (f->is_variadic || !f->callconv || strcmp (fcn->callconv, f->callconv)) {
+		return true;
+	}
+	ci->proto = r_type_func_guess (TDB, f->name);
+	ci->rargs = ci->proto? R_MIN (max_count, func_fixed_args (TDB, ci->proto)): 0;
+	if (!ci->rargs) {
+		ci->rargs = r_anal_var_count (anal, f, R_ANAL_VAR_KIND_REG, 1);
+	}
+	if (!ci->proto && ci->rargs < 1) {
+		return false;
+	}
+	ci->vars = r_anal_var_vec (anal, f, R_ANAL_VAR_KIND_REG);
+	return true;
 }
 
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
@@ -1598,40 +1635,20 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	}
 
 	if (op_is_call (op) && scan_args) {
-		RVecAnalVarPtr *callee_rargs_vec = NULL;
-		int callee_rargs = 0;
-		char *callee = NULL;
-		ut64 offset = op->jump == UT64_MAX ? op->ptr : op->jump;
-		RAnalFunction *f = r_anal_get_function_at (anal, offset);
-		if (!f) {
-			RCore *core = (RCore *)anal->coreb.core;
-			RFlagItem *flag = r_flag_get_by_spaces (core->flags, false, offset, R_FLAGS_FS_IMPORTS, NULL);
-			if (flag) {
-				callee = r_type_func_guess (TDB, flag->name);
-				if (callee) {
-					const char *cc = r_anal_cc_func (anal, callee);
-					if (cc && !strcmp (fcn->callconv, cc)) {
-						callee_rargs = R_MIN (max_count, func_fixed_args (TDB, callee));
-					}
-				}
+		CalleeInfo ci = {0};
+		const ut64 offset = (op->jump == UT64_MAX)? op->ptr: op->jump;
+		if (offset != UT64_MAX && !callee_info_at (anal, fcn, offset, max_count, &ci)) {
+			// a plt stub has no args of its own, so ask again at what it forwards to
+			const ut64 target = r_anal_thunk_target (anal, offset, fcn->callconv);
+			if (target && target != offset) {
+				callee_info_at (anal, fcn, target, max_count, &ci);
 			}
-		} else if (!f->is_variadic && fcn->callconv && f->callconv && !strcmp (fcn->callconv, f->callconv)) {
-			callee = r_type_func_guess (TDB, f->name);
-			if (callee) {
-				callee_rargs = R_MIN (max_count, func_fixed_args (TDB, callee));
-			}
-			callee_rargs = callee_rargs
-				? callee_rargs
-				: r_anal_var_count (anal, f, R_ANAL_VAR_KIND_REG, 1);
-			callee_rargs_vec = r_anal_var_vec (anal, f, R_ANAL_VAR_KIND_REG);
 		}
-		int i;
-		const int total = callee_rargs;
-		for (i = 0; i < callee_rargs; i++) {
+		for (i = 0; i < ci.rargs; i++) {
 			const char *vname = NULL;
 			char *type = NULL;
 			char *name = NULL;
-			const char *regname = r_anal_cc_argloc (anal, fcn->callconv, i, 0, total);
+			const char *regname = r_anal_cc_argloc (anal, fcn->callconv, i, 0, ci.rargs);
 			int delta = cc_loc_delta (anal, regname);
 			RAnalVar *old_var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
 			if (old_var && !r_anal_var_is_default_argname (old_var->name)) {
@@ -1645,17 +1662,17 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				type = r_type_func_args_type (TDB, fname, i);
 				vname = r_type_func_args_name (TDB, fname, i);
 			}
-			if (!vname && callee) {
-				type = r_type_func_args_type (TDB, callee, i);
-				vname = r_type_func_args_name (TDB, callee, i);
+			if (!vname && ci.proto) {
+				type = r_type_func_args_type (TDB, ci.proto, i);
+				vname = r_type_func_args_name (TDB, ci.proto, i);
 			}
 			if (vname) {
 				reg_set[i] = 1;
 			} else {
 				RAnalVar *found_arg = NULL;
 				RAnalVar **it;
-				if (callee_rargs_vec) {
-					R_VEC_FOREACH (callee_rargs_vec, it) {
+				if (ci.vars) {
+					R_VEC_FOREACH (ci.vars, it) {
 						RAnalVar *arg = *it;
 						if (r_anal_var_get_argnum (arg) == i) {
 							found_arg = arg;
@@ -1682,8 +1699,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			free (name);
 			free (type);
 		}
-		free (callee);
-		RVecAnalVarPtr_free (callee_rargs_vec);
+		callee_info_fini (&ci);
 		free (fname);
 		return;
 	}

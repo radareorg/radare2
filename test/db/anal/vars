@@ -697,3 +697,112 @@ EXPECT=<<EOF
 'afvs 66 var_32h int16_t
 EOF
 RUN
+
+NAME=ppc64 ELFv1 caller inherits args through a plt call stub
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=<<EOF
+aa
+afs @ sym.crc32
+afs @ sym.compress
+afs @ sym.gzgetc_
+afs @ sym.crc32_z
+EOF
+EXPECT=<<EOF
+void sym.crc32 (int64_t arg1, int64_t arg2, int64_t arg3);
+void sym.compress (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
+void sym.gzgetc_ (int64_t arg1);
+void sym.crc32_z (int64_t arg1, int64_t arg2, int64_t arg3);
+EOF
+RUN
+
+NAME=x86_64 caller that sets up its own arg registers is unaffected by stubs
+FILE=bins/elf/pltrel/add.so
+CMDS=<<EOF
+aa
+afs @ sym.add
+EOF
+EXPECT=<<EOF
+void sym.add (int64_t arg1, int64_t arg2);
+EOF
+RUN
+
+NAME=plt stub args survive a non default base address
+FILE=bins/elf/ppc64v1-libz.so
+ARGS=-B 0x400000
+CMDS=<<EOF
+aa
+afs @ sym.crc32
+afs @ sym.compress
+EOF
+EXPECT=<<EOF
+void sym.crc32 (int64_t arg1, int64_t arg2, int64_t arg3);
+void sym.compress (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
+EOF
+RUN
+
+NAME=x86_64 wrappers that are not argument transparent stay void
+FILE=bins/elf/pltrel/x86_64-thunks.so
+CMDS=<<EOF
+aa
+afs @ sym.top_set
+afs @ sym.top_fork
+afs @ sym.top_byte
+EOF
+EXPECT=<<EOF
+void sym.top_set ();
+void sym.top_fork ();
+void sym.top_byte ();
+EOF
+RUN
+
+NAME=ppc64 ELFv1 stub taking the ctr exit on the wrong condition is not transparent
+FILE=bins/elf/ppc64v1-libz.so
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx 4d820420 @ 0x3ad4
+aa
+afs @ sym.crc32
+EOF
+EXPECT=<<EOF
+void sym.crc32 ();
+EOF
+RUN
+
+NAME=ppc64 ELFv1 stub reloading ctr after the toc load is not transparent
+FILE=bins/elf/ppc64v1-libz.so
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx 7c0903a6 @ 0x3acc
+aa
+afs @ sym.crc32
+EOF
+EXPECT=<<EOF
+void sym.crc32 ();
+EOF
+RUN
+
+NAME=ppc64 ELFv1 stub that never reloads the toc is not transparent
+FILE=bins/elf/ppc64v1-libz.so
+ARGS=-e io.cache=true
+CMDS=<<EOF2
+wx 60000000 @ 0x3acc
+aa
+afs @ sym.crc32
+EOF2
+EXPECT=<<EOF2
+void sym.crc32 ();
+EOF2
+RUN
+
+NAME=ppc64 ELFv1 stub whose ctr target is clobbered before the branch is not transparent
+FILE=bins/elf/ppc64v1-libz.so
+ARGS=-e io.cache=true
+CMDS=<<EOF2
+wx e9828118398000007d8903a6282200004ce20420480159f8 @ 0x3ac0
+aa
+afs @ sym.crc32
+EOF2
+EXPECT=<<EOF2
+void sym.crc32 ();
+EOF2
+RUN

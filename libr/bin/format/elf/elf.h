@@ -189,6 +189,7 @@ struct Elf_(obj_t) {
 	RList *inits;
 	HtUU *rel_cache;
 	HtUU *ppc64_plt_stubs; // ppc64: slot_vaddr -> stub_vaddr (lazy, NULL until first use)
+	HtUU *local_plt_targets; // plt stub vaddr -> the local function it forwards to
 	RBinElfPltThunk *ppc32_thunks; // ppc32: plt slot index -> call thunk, lazy
 	ut64 ppc32_nthunks;
 	ut64 arm64_plt_esize; // aarch64: measured plt entry stride
@@ -272,5 +273,6 @@ bool Elf_(has_nobtcfi)(ELFOBJ *eo);
 ut8 *Elf_(grab_regstate)(struct Elf_(obj_t) *bin, int *len);
 RList *Elf_(get_maps)(ELFOBJ *bin);
 ut64 Elf_(ppc64_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr);
+ut64 Elf_(get_plt_target)(ELFOBJ *eo, ut64 stub_vaddr);
 R_API RBinSection *r_bin_section_clone(RBinSection *s);
 #endif
