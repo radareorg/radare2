@@ -139,6 +139,20 @@ static bool bind_fits_section(struct MACH0_(obj_t) * mo, int seg_idx, ut64 addr,
 	return seg->nsects < 1;
 }
 
+static bool bind_repeat_span(struct MACH0_(obj_t) * mo, int seg_idx, ut64 addr, ut64 end_addr, ut64 count, ut64 skip, size_t wordsize, bool check_sections, R_OUT ut64 *span) {
+	ut64 stride = 0;
+	if (!UT64_ADD (&stride, skip, wordsize)) {
+		return false;
+	}
+	if (check_sections && !bind_fits_section (mo, seg_idx, addr, count, stride)) {
+		return false;
+	}
+	if (!bind_fits (count, addr, end_addr, stride)) {
+		return false;
+	}
+	return UT64_MUL (span, count, stride);
+}
+
 static bool segment_filebacked_size(struct MACH0_(obj_t) * mo, int seg_idx, R_OUT ut64 *size) {
 	R_RETURN_VAL_IF_FAIL (mo && size, false);
 	if (seg_idx < 0 || seg_idx >= mo->nsegs) {
@@ -1984,14 +1998,13 @@ static bool parse_threaded_rebase(struct MACH0_(obj_t) * mo) {
 			count = read_uleb128 (&p, end);
 			skip = read_uleb128 (&p, end);
 			{
-				ut64 stride = 0;
 				ut64 span = 0;
-				if (!UT64_ADD (&stride, skip, wordsize) || !bind_fits (count, seg_off, segment_size, stride)) {
+				if (!bind_repeat_span (mo, seg_idx, seg_off, segment_size, count, skip, wordsize, false, &span)) {
 					R_LOG_ERROR ("Malformed bind opcode stream");
 					R_FREE (opcodes);
 					return false;
 				}
-				if (!UT64_MUL (&span, count, stride) || !safe_advance (&seg_off, span)) {
+				if (!safe_advance (&seg_off, span)) {
 					R_FREE (opcodes);
 					return false;
 				}
@@ -4321,12 +4334,12 @@ static bool parse_bind_op_do_bind(struct MACH0_(obj_t) * mo, RVecRelocRef **thre
 		{
 			ut64 count = read_uleb128 (p, end);
 			ut64 skip = read_uleb128 (p, end);
-			ut64 increment;
+			ut64 span = 0;
 			if (!*threaded_binds && state->seg_idx < 0) {
 				R_LOG_DEBUG ("Malformed ULEB TIMES bind opcode");
 				return stop_bind_parsing (state);
 			}
-			if (!threaded_bind_fits (*threaded_binds, state, count) || !UT64_ADD (&increment, skip, wordsize) || (!*threaded_binds && (!bind_fits_section (mo, state->seg_idx, state->addr, count, increment) || !bind_fits (count, state->addr, state->segment_end_addr, increment)))) {
+			if (!threaded_bind_fits (*threaded_binds, state, count) || (!*threaded_binds && !bind_repeat_span (mo, state->seg_idx, state->addr, state->segment_end_addr, count, skip, wordsize, true, &span))) {
 				R_LOG_DEBUG ("Count exceeds segment bounds");
 				return stop_bind_parsing (state);
 			}
