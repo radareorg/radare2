@@ -2591,8 +2591,9 @@ static bool dwarf_form_is_addrx(ut64 form) {
 }
 
 static bool dwarf_index_entry_offset(ut64 base, ut64 index, ut8 entry_size, size_t section_size, size_t *entry_offset) {
-	R_RETURN_VAL_IF_FAIL (entry_size && entry_offset, false);
-	if (index > (UT64_MAX - base) / entry_size) {
+	R_RETURN_VAL_IF_FAIL (entry_offset, false);
+	// entry_size derives from file data, so reject it at runtime
+	if (!entry_size || index > (UT64_MAX - base) / entry_size) {
 		return false;
 	}
 	ut64 offset = base + index * entry_size;
@@ -3136,6 +3137,17 @@ static const ut8 *print_comp_unit_stream(RBinFile *bf, const ut8 *buf_start, con
 		first_abbr_idx, print);
 }
 
+static bool dwarf_valid_address_size(ut8 address_size) {
+	switch (address_size) {
+	case 1:
+	case 2:
+	case 4:
+	case 8:
+		return true;
+	}
+	return false;
+}
+
 #if 0
 * @brief Reads all information about compilation unit header
 *
@@ -3323,6 +3335,11 @@ static bool dwarf_foreach_root(RBinFile *bf, RVecDwarfAbbrevDecl *decls, DwarfRo
 			return true;
 		}
 		const ut8 *unit_end = unit_start + len_size + unit.hdr.length;
+		if (!dwarf_valid_address_size (unit.hdr.address_size)) {
+			dwarf_comp_unit_fini (&unit);
+			buf = unit_end;
+			continue;
+		}
 		RBinDwarfAbbrevDecl key = { .offset = unit.hdr.abbrev_offset };
 		RBinDwarfAbbrevDecl *abbrev_start = bsearch (&key, decls->_start,
 			abbrevs_count, sizeof (key), abbrev_cmp);
@@ -3530,6 +3547,13 @@ static RBinDwarfDebugInfo *parse_info_raw(RBinFile *bf, RVecDwarfAbbrevDecl *dec
 			break;
 		}
 		const ut8 *unit_end = unit_start + len_size + unit.hdr.length;
+		if (!dwarf_valid_address_size (unit.hdr.address_size)) {
+			R_LOG_WARN ("Invalid DWARF address size %u in compilation unit at 0x%" PFMT64x,
+				(unsigned)unit.hdr.address_size, unit.offset);
+			dwarf_comp_unit_fini (&unit);
+			buf = unit_end;
+			continue;
+		}
 
 		// find abbrev start for current comp unit
 		// we could also do naive, ((char *)da->decls) + abbrev_offset,
