@@ -42,7 +42,8 @@ static bool teardown(void) {
 	} while (0)
 
 static bool test_parse_dwarf_types(void) {
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, -1, UT64_MAX, 0, 0);
 	bool res = r_bin_open (bin, "bins/pe/vista-glass.exe", &opt);
 	// TODO fix, how to correctly promote binary info to the RAnal in unit tests?
 	r_str_ncpy (anal->config->arch, "x86", sizeof (anal->config->arch));
@@ -111,7 +112,8 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	r_str_ncpy (anal->config->arch, "x86", sizeof (anal->config->arch));
 	anal->config->bits = 64;
 
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, -1, UT64_MAX, 0, 0);
 	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert ("elf/dwarf4_many_comp_units.elf binary could not be opened", res);
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
@@ -188,7 +190,8 @@ static bool test_dwarf_function_parsing_go(void) {
 	r_str_ncpy (anal->config->arch, "x86", sizeof (anal->config->arch));
 	anal->config->bits = 64;
 
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, -1, UT64_MAX, 0, 0);
 	bool res = r_bin_open (bin, "bins/elf/dwarf_go_tree", &opt);
 	mu_assert ("bins/elf/dwarf_go_tree", res);
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
@@ -245,7 +248,8 @@ static bool test_dwarf_function_parsing_rust(void) {
 	r_str_ncpy (anal->config->arch, "x86", sizeof (anal->config->arch));
 	anal->config->bits = 64;
 
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, -1, UT64_MAX, 0, 0);
 	bool res = r_bin_open (bin, "bins/elf/dwarf_rust_bubble", &opt);
 	// TODO fix, how to correctly promote binary info to the RAnal in unit tests?
 	free (anal->config->cpu);

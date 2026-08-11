@@ -125,8 +125,16 @@ extern "C" {
 #define DW_TAG_type_unit                0x41  /* DWARF4 */
 #define DW_TAG_rvalue_reference_type    0x42  /* DWARF4 */
 #define DW_TAG_template_alias           0x43  /* DWARF4 */
+#define DW_TAG_coarray_type             0x44  /* DWARF5 */
+#define DW_TAG_generic_subrange         0x45  /* DWARF5 */
+#define DW_TAG_dynamic_type             0x46  /* DWARF5 */
+#define DW_TAG_atomic_type              0x47  /* DWARF5 */
+#define DW_TAG_call_site                0x48  /* DWARF5 */
+#define DW_TAG_call_site_parameter      0x49  /* DWARF5 */
+#define DW_TAG_skeleton_unit            0x4a  /* DWARF5 */
+#define DW_TAG_immutable_type           0x4b  /* DWARF5 */
 
-#define DW_TAG_LAST                     0x44  // correct ?
+#define DW_TAG_LAST                     0x4c
 /* <_lo_user ; _hi_user> Interval is reserved for vendor extensions */
 #define DW_TAG_lo_user                  0x4080
 #define DW_TAG_hi_user                  0xffff
@@ -750,6 +758,9 @@ typedef enum {
 	DW_AT_KIND_RANGELISTPTR,
 	DW_AT_KIND_REFERENCE,
 	DW_AT_KIND_STRING,
+	// Raw DWARF 5 indexes that could not be resolved in this object.
+	DW_AT_KIND_ADDRESS_INDEX,
+	DW_AT_KIND_STRING_INDEX,
 } RBinDwarfAttrKind;
 
 typedef struct dwarf_attr_kind {

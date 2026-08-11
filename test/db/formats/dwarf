@@ -845,13 +845,13 @@ EXPECT=<<EOF
    Unit Type:     DW_UT_compile
 
 <0xc>: Abbrev Number: 1    (DW_TAG_compile_unit)
-     DW_AT_producer            : (indirect string, offset: 0x0): (null)
+     DW_AT_producer            : (indirect string, offset: 0x0): clang version 18.1.8
      DW_AT_language            : 29   (C11)
-     DW_AT_name                : (indirect string, offset: 0x1): (null)
+     DW_AT_name                : (indirect string, offset: 0x15): dwarf-line.c
      DW_AT_str_offsets_base    : <0x8>
      DW_AT_stmt_list           : <0x0>
-     DW_AT_comp_dir            : (indirect string, offset: 0x2): (null)
-     DW_AT_low_pc              : 0x2
+     DW_AT_comp_dir            : (indirect string, offset: 0x22): /usr/w/g/radare2/test/bins/src
+     DW_AT_low_pc              : 0x1140
      DW_AT_high_pc             : 210
      DW_AT_addr_base           : <0x8>
 <0x23>: Abbrev Number: 2    (DW_TAG_variable)
@@ -866,11 +866,11 @@ EXPECT=<<EOF
      DW_AT_count               : 4
 <0x38>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x39>: Abbrev Number: 5    (DW_TAG_base_type)
-     DW_AT_name                : (indirect string, offset: 0x3): (null)
+     DW_AT_name                : (indirect string, offset: 0x41): char
      DW_AT_encoding            : 6
      DW_AT_byte_size           : 1
 <0x3d>: Abbrev Number: 6    (DW_TAG_base_type)
-     DW_AT_name                : (indirect string, offset: 0x4): (null)
+     DW_AT_name                : (indirect string, offset: 0x46): __ARRAY_SIZE_TYPE__
      DW_AT_byte_size           : 8
      DW_AT_encoding            : 7
 <0x41>: Abbrev Number: 2    (DW_TAG_variable)
@@ -885,60 +885,60 @@ EXPECT=<<EOF
      DW_AT_count               : 10
 <0x56>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x57>: Abbrev Number: 7    (DW_TAG_subprogram)
-     DW_AT_low_pc              : 0x2
+     DW_AT_low_pc              : 0x1140
      DW_AT_high_pc             : 41
      DW_AT_frame_base          : 1 byte block: 0x56
-     DW_AT_name                : (indirect string, offset: 0x5): (null)
+     DW_AT_name                : (indirect string, offset: 0x5e): foo
      DW_AT_decl_file           : 1
      DW_AT_decl_line           : 5
      DW_AT_external            : 1
 <0x62>: Abbrev Number: 8    (DW_TAG_variable)
      DW_AT_location            : 2 byte block: 0x91 0x78
-     DW_AT_name                : (indirect string, offset: 0xd): (null)
+     DW_AT_name                : (indirect string, offset: 0x7b): f
      DW_AT_decl_file           : 1
      DW_AT_decl_line           : 8
      DW_AT_type                : <0xc9>
 <0x6d>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x6e>: Abbrev Number: 9    (DW_TAG_subprogram)
-     DW_AT_low_pc              : 0x3
+     DW_AT_low_pc              : 0x1170
      DW_AT_high_pc             : 8
      DW_AT_frame_base          : 1 byte block: 0x56
-     DW_AT_name                : (indirect string, offset: 0x6): (null)
+     DW_AT_name                : (indirect string, offset: 0x5a): new_foo
      DW_AT_decl_file           : 0
      DW_AT_decl_line           : 8
      DW_AT_prototyped          : 1
      DW_AT_type                : <0xc9>
      DW_AT_external            : 1
 <0x7d>: Abbrev Number: 7    (DW_TAG_subprogram)
-     DW_AT_low_pc              : 0x4
+     DW_AT_low_pc              : 0x1180
      DW_AT_high_pc             : 41
      DW_AT_frame_base          : 1 byte block: 0x56
-     DW_AT_name                : (indirect string, offset: 0x8): (null)
+     DW_AT_name                : (indirect string, offset: 0x6a): bar
      DW_AT_decl_file           : 2
      DW_AT_decl_line           : 5
      DW_AT_external            : 1
 <0x88>: Abbrev Number: 8    (DW_TAG_variable)
      DW_AT_location            : 2 byte block: 0x91 0x78
-     DW_AT_name                : (indirect string, offset: 0xd): (null)
+     DW_AT_name                : (indirect string, offset: 0x7b): f
      DW_AT_decl_file           : 2
      DW_AT_decl_line           : 8
      DW_AT_type                : <0xd3>
 <0x93>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x94>: Abbrev Number: 9    (DW_TAG_subprogram)
-     DW_AT_low_pc              : 0x5
+     DW_AT_low_pc              : 0x11b0
      DW_AT_high_pc             : 8
      DW_AT_frame_base          : 1 byte block: 0x56
-     DW_AT_name                : (indirect string, offset: 0x9): (null)
+     DW_AT_name                : (indirect string, offset: 0x66): new_bar
      DW_AT_decl_file           : 0
      DW_AT_decl_line           : 15
      DW_AT_prototyped          : 1
      DW_AT_type                : <0xd3>
      DW_AT_external            : 1
 <0xa3>: Abbrev Number: 10   (DW_TAG_subprogram)
-     DW_AT_low_pc              : 0x6
+     DW_AT_low_pc              : 0x11c0
      DW_AT_high_pc             : 82
      DW_AT_frame_base          : 1 byte block: 0x56
-     DW_AT_name                : (indirect string, offset: 0xb): (null)
+     DW_AT_name                : (indirect string, offset: 0x72): main
      DW_AT_decl_file           : 0
      DW_AT_decl_line           : 20
      DW_AT_prototyped          : 1
@@ -946,13 +946,13 @@ EXPECT=<<EOF
      DW_AT_external            : 1
 <0xb2>: Abbrev Number: 11   (DW_TAG_formal_parameter)
      DW_AT_location            : 2 byte block: 0x91 0x78
-     DW_AT_name                : (indirect string, offset: 0xe): (null)
+     DW_AT_name                : (indirect string, offset: 0x7d): a
      DW_AT_decl_file           : 0
      DW_AT_decl_line           : 20
      DW_AT_type                : <0xdd>
 <0xbd>: Abbrev Number: 11   (DW_TAG_formal_parameter)
      DW_AT_location            : 2 byte block: 0x91 0x70
-     DW_AT_name                : (indirect string, offset: 0xf): (null)
+     DW_AT_name                : (indirect string, offset: 0x7f): v
      DW_AT_decl_file           : 0
      DW_AT_decl_line           : 20
      DW_AT_type                : <0xe1>
@@ -960,19 +960,19 @@ EXPECT=<<EOF
 <0xc9>: Abbrev Number: 12   (DW_TAG_pointer_type)
      DW_AT_type                : <0xce>
 <0xce>: Abbrev Number: 13   (DW_TAG_structure_type)
-     DW_AT_name                : (indirect string, offset: 0x7): (null)
+     DW_AT_name                : (indirect string, offset: 0x62): Foo
      DW_AT_byte_size           : 0
      DW_AT_decl_file           : 0
      DW_AT_decl_line           : 6
 <0xd3>: Abbrev Number: 12   (DW_TAG_pointer_type)
      DW_AT_type                : <0xd8>
 <0xd8>: Abbrev Number: 13   (DW_TAG_structure_type)
-     DW_AT_name                : (indirect string, offset: 0xa): (null)
+     DW_AT_name                : (indirect string, offset: 0x6e): Bar
      DW_AT_byte_size           : 0
      DW_AT_decl_file           : 0
      DW_AT_decl_line           : 13
 <0xdd>: Abbrev Number: 5    (DW_TAG_base_type)
-     DW_AT_name                : (indirect string, offset: 0xc): (null)
+     DW_AT_name                : (indirect string, offset: 0x77): int
      DW_AT_encoding            : 5
      DW_AT_byte_size           : 4
 <0xe1>: Abbrev Number: 12   (DW_TAG_pointer_type)

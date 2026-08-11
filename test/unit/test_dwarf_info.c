@@ -339,6 +339,7 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 bool test_dwarf2_big_endian(void) {
 
 	RBinFileOptions opt = {0};
+	r_bin_file_options_init (&opt, -1, UT64_MAX, 0, 0);
 	bool res = r_bin_open (bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert ("dwarf4_many_comp_units.elf binary could not be opened", res);
 
@@ -423,6 +424,267 @@ bool test_dwarf2_big_endian(void) {
 	mu_end;
 }
 
+static RBinSection *dwarf_test_find_section(RBinFile *bf, const char *name) {
+	RVecRBinSection *sections = r_bin_file_get_sections_vec (bf);
+	RBinSection *section;
+	R_VEC_FOREACH (sections, section) {
+		if (section->name && !strcmp (section->name, name)) {
+			return section;
+		}
+	}
+	return NULL;
+}
+
+static RBuffer *dwarf_test_clone_info_patch(const char *path, ut64 info_offset, const ut8 *patch, size_t patch_size) {
+	RBinFileOptions opt = { 0 };
+	if (!r_bin_open (bin, path, &opt)) {
+		return NULL;
+	}
+	RBinFile *bf = r_bin_cur (bin);
+	RBinSection *section = dwarf_test_find_section (bf, ".debug_info");
+	ut64 file_size = r_buf_size (bf->buf);
+	if (!section || info_offset > section->size
+		|| patch_size > section->size - info_offset
+		|| section->paddr > file_size
+		|| section->size > file_size - section->paddr
+		|| file_size > SIZE_MAX) {
+		return NULL;
+	}
+	ut8 *bytes = malloc ((size_t)file_size);
+	if (!bytes || r_buf_read_at (bf->buf, 0, bytes, file_size) != file_size) {
+		free (bytes);
+		return NULL;
+	}
+	memcpy (bytes + section->paddr + info_offset, patch, patch_size);
+	RBuffer *result = r_buf_new_with_bytes (bytes, (size_t)file_size);
+	free (bytes);
+	return result;
+}
+
+bool test_dwarf_bad_strp_is_local(void) {
+	const ut8 bad_offset[] = { 0xff, 0xff, 0xff, 0xff };
+	RBuffer *buf = dwarf_test_clone_info_patch (
+		"bins/elf/dwarf4_many_comp_units.elf", 0xc,
+		bad_offset, sizeof (bad_offset));
+	mu_assert_notnull (buf, "Couldn't clone multi-CU DWARF fixture");
+	RBinFileOptions opt = { 0 };
+	r_bin_file_options_init (&opt, -1, UT64_MAX, 0, 0);
+	opt.filename = "bad-strp.elf";
+	mu_assert_true (r_bin_open_buf (bin, buf, &opt),
+		"Couldn't open bad-strp fixture");
+	RBinFile *bf = r_bin_cur (bin);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	mu_assert_notnull (abbrevs, "Couldn't parse bad-strp abbreviations");
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	mu_assert_notnull (info, "A bad string offset must not reject debug_info");
+	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 2,
+		"A bad string offset must not discard either CU");
+	RBinDwarfCompUnit *first = RVecDwarfCompUnit_at (info->comp_units, 0);
+	RBinDwarfAttrValue *producer = first && first->dies
+		? RVecDwarfAttrValue_at (RVecDwarfDie_at (first->dies, 0)->attr_values, 0)
+		: NULL;
+	mu_assert_notnull (producer, "Missing bad-strp producer attribute");
+	mu_assert_eq (producer->string.offset, UT32_MAX,
+		"Bad string offset was not consumed");
+	mu_assert_null (producer->string.content,
+		"Out-of-range string offset unexpectedly resolved");
+	r_bin_dwarf_free_debug_info (info);
+	RVecDwarfAbbrevDecl_free (abbrevs);
+	r_unref (buf);
+	mu_end;
+}
+
+bool test_dwarf_bad_cu_is_skipped(void) {
+	const ut8 bad_abbrev = 0x7f;
+	RBuffer *buf = dwarf_test_clone_info_patch (
+		"bins/elf/dwarf4_many_comp_units.elf", 0xb,
+		&bad_abbrev, sizeof (bad_abbrev));
+	mu_assert_notnull (buf, "Couldn't clone multi-CU DWARF fixture");
+	RBinFileOptions opt = { 0 };
+	r_bin_file_options_init (&opt, -1, UT64_MAX, 0, 0);
+	opt.filename = "bad-first-cu.elf";
+	mu_assert_true (r_bin_open_buf (bin, buf, &opt),
+		"Couldn't open malformed-CU fixture");
+	RBinFile *bf = r_bin_cur (bin);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	mu_assert_notnull (abbrevs, "Couldn't parse malformed-CU abbreviations");
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	mu_assert_notnull (info, "A malformed CU must not reject debug_info");
+	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 1,
+		"Only the malformed CU should be skipped");
+	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
+	mu_assert_notnull (unit, "Surviving CU is NULL");
+	mu_assert_eq (unit->offset, 0x2c4,
+		"Parser did not resume at the next CU boundary");
+	RList *files = r_bin_dwarf_parse_comp_unit_files (bf, abbrevs);
+	mu_assert_notnull (files, "Root-only CU walk failed after malformed CU");
+	mu_assert ("Surviving CU source files were lost", r_list_length (files) > 0);
+	r_list_free (files);
+	r_bin_dwarf_free_debug_info (info);
+	RVecDwarfAbbrevDecl_free (abbrevs);
+	r_unref (buf);
+	mu_end;
+}
+
+bool test_dwarf_bad_header_preserves_prior_cus(void) {
+	const ut8 bad_length[] = { 0xfe, 0xff, 0xff, 0xff };
+	RBuffer *buf = dwarf_test_clone_info_patch (
+		"bins/elf/dwarf4_many_comp_units.elf", 0x2c4,
+		bad_length, sizeof (bad_length));
+	mu_assert_notnull (buf, "Couldn't clone malformed-header fixture");
+	RBinFileOptions opt = { 0 };
+	r_bin_file_options_init (&opt, -1, UT64_MAX, 0, 0);
+	opt.filename = "bad-second-header.elf";
+	mu_assert_true (r_bin_open_buf (bin, buf, &opt),
+		"Couldn't open malformed-header fixture");
+	RBinFile *bf = r_bin_cur (bin);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	mu_assert_notnull (abbrevs, "Couldn't parse malformed-header abbreviations");
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	mu_assert_notnull (info, "A malformed later header discarded prior CUs");
+	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 1,
+		"The malformed later header was not isolated");
+	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
+	mu_assert_notnull (unit, "Preserved CU is NULL");
+	mu_assert_eq (unit->offset, 0, "The wrong CU survived the malformed header");
+	RList *files = r_bin_dwarf_parse_comp_unit_files (bf, abbrevs);
+	mu_assert_notnull (files, "Root walk discarded files from the prior CU");
+	mu_assert ("Prior CU source files were lost", r_list_length (files) > 0);
+	r_list_free (files);
+	r_bin_dwarf_free_debug_info (info);
+	RVecDwarfAbbrevDecl_free (abbrevs);
+	r_unref (buf);
+	mu_end;
+}
+
+bool test_dwarf_bad_address_size_is_local(void) {
+	const ut8 bad_address_size = 0;
+	RBuffer *buf = dwarf_test_clone_info_patch (
+		"bins/elf/dwarf4_many_comp_units.elf", 0xa,
+		&bad_address_size, sizeof (bad_address_size));
+	mu_assert_notnull (buf, "Couldn't clone bad-address-size fixture");
+	RBinFileOptions opt = { 0 };
+	r_bin_file_options_init (&opt, -1, UT64_MAX, 0, 0);
+	opt.filename = "bad-address-size.elf";
+	mu_assert_true (r_bin_open_buf (bin, buf, &opt),
+		"Couldn't open bad-address-size fixture");
+	RBinFile *bf = r_bin_cur (bin);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	mu_assert_notnull (abbrevs, "Couldn't parse bad-address-size abbreviations");
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	mu_assert_notnull (info, "An invalid address size rejected all debug_info");
+	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 1,
+		"The invalid address size was not isolated to its CU");
+	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
+	mu_assert_notnull (unit, "Surviving CU is NULL");
+	mu_assert_eq (unit->offset, 0x2c4,
+		"Parser did not resume after the invalid address size");
+	RList *files = r_bin_dwarf_parse_comp_unit_files (bf, abbrevs);
+	mu_assert_notnull (files, "Root walk failed after an invalid address size");
+	mu_assert ("Surviving CU source files were lost", r_list_length (files) > 0);
+	r_list_free (files);
+	r_bin_dwarf_free_debug_info (info);
+	RVecDwarfAbbrevDecl_free (abbrevs);
+	r_unref (buf);
+	mu_end;
+}
+
+bool test_dwarf_explicit_zero_rebase(void) {
+	ut8 low_pc[8] = { 0 };
+	low_pc[0] = 1;
+	RBuffer *buf = dwarf_test_clone_info_patch (
+		"bins/elf/dwarf4_many_comp_units.elf", 0x2b,
+		low_pc, sizeof (low_pc));
+	mu_assert_notnull (buf, "Couldn't clone rebase fixture");
+	RBinFileOptions opt = { 0 };
+	r_bin_file_options_init (&opt, -1, 0, 0, 0);
+	opt.filename = "zero-rebase.elf";
+	mu_assert_true (r_bin_open_buf (bin, buf, &opt),
+		"Couldn't open explicit-zero-rebase fixture");
+	RBinFile *bf = r_bin_cur (bin);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	mu_assert_notnull (abbrevs, "Couldn't parse rebase abbreviations");
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	mu_assert_notnull (info, "An underflowing address must not reject its CU");
+	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
+	mu_assert_notnull (unit, "Rebased CU is NULL");
+	RBinDwarfDie *root = RVecDwarfDie_at (unit->dies, 0);
+	RBinDwarfDie *function = RVecDwarfDie_at (unit->dies, 1);
+	mu_assert_notnull (root, "Rebased CU root is NULL");
+	mu_assert_notnull (function, "Rebased function DIE is NULL");
+	check_attr_address ((*root), 5, 0);
+	check_attr_address ((*function), 0, 1);
+	r_bin_dwarf_free_debug_info (info);
+	RVecDwarfAbbrevDecl_free (abbrevs);
+	r_unref (buf);
+	mu_end;
+}
+
+bool test_dwarf5_mixed_address_table_format(void) {
+	RBinFileOptions opt = { 0 };
+	mu_assert_true (r_bin_open (bin, "bins/elf/dwarf5_line_cl", &opt),
+		"dwarf5_line_cl binary could not be opened");
+	RBinFile *bf = r_bin_cur (bin);
+	RBinSection *info_section = dwarf_test_find_section (bf, ".debug_info");
+	RBinSection *addr_section = dwarf_test_find_section (bf, ".debug_addr");
+	mu_assert_notnull (info_section, "Missing .debug_info section");
+	mu_assert_notnull (addr_section, "Missing .debug_addr section");
+	mu_assert_eq (info_section->size, 0xf1, "Unexpected debug_info fixture size");
+	mu_assert_eq (addr_section->size, 0x40, "Unexpected debug_addr fixture size");
+	RSlice info_bytes = r_arena_scalloc (bf->arena, info_section->size);
+	RSlice addr_bytes = r_arena_scalloc (bf->arena, addr_section->size + 8);
+	mu_assert_notnull (info_bytes.ptr, "Couldn't clone .debug_info");
+	mu_assert_notnull (addr_bytes.ptr, "Couldn't create DWARF64 .debug_addr");
+	mu_assert_eq (r_buf_read_at (bf->buf, info_section->paddr,
+		(void *)info_bytes.ptr, info_section->size), info_section->size,
+		"Couldn't read .debug_info");
+	mu_assert_eq (r_read_le32 (info_bytes.ptr + 0x1f), 8,
+		"Unexpected DW_AT_addr_base location");
+	r_write_le32 ((ut8 *)info_bytes.ptr + 0x1f, 16);
+	info_section->bytes = info_bytes;
+	r_write_le32 ((ut8 *)addr_bytes.ptr, DWARF_INIT_LEN_64);
+	r_write_le64 ((ut8 *)addr_bytes.ptr + 4, 0x3c);
+	r_write_le16 ((ut8 *)addr_bytes.ptr + 12, 5);
+	((ut8 *)addr_bytes.ptr)[14] = 8;
+	mu_assert_eq (r_buf_read_at (bf->buf, addr_section->paddr + 8,
+		(ut8 *)addr_bytes.ptr + 16, addr_section->size - 8),
+		addr_section->size - 8, "Couldn't copy .debug_addr entries");
+	addr_section->bytes = addr_bytes;
+	addr_section->size += 8;
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	mu_assert_notnull (abbrevs, "Couldn't parse DWARF5 abbreviations");
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	mu_assert_notnull (info, "DWARF64 address table failed in a DWARF32 CU");
+	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
+	RBinDwarfDie *root = unit? RVecDwarfDie_at (unit->dies, 0): NULL;
+	mu_assert_notnull (root, "DWARF5 root DIE is NULL");
+	check_attr_address ((*root), 6, 0x1140);
+	r_bin_dwarf_free_debug_info (info);
+	RVecDwarfAbbrevDecl_free (abbrevs);
+	mu_end;
+}
+
+bool test_dwarf5_indexed_strings_and_addresses(void) {
+	RBinFileOptions opt = { 0 };
+	mu_assert_true (r_bin_open (bin, "bins/elf/dwarf5_line_cl", &opt),
+		"dwarf5_line_cl binary could not be opened");
+	RBinFile *bf = r_bin_cur (bin);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	mu_assert_notnull (abbrevs, "Failed parsing DWARF5 abbreviations");
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	mu_assert_notnull (info, "Failed parsing DWARF5 indexed forms");
+	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
+	RBinDwarfDie *root = unit? RVecDwarfDie_at (unit->dies, 0): NULL;
+	mu_assert_notnull (root, "DWARF5 root DIE is NULL");
+	check_attr_string ((*root), 0, "clang version 18.1.8");
+	check_attr_string ((*root), 2, "dwarf-line.c");
+	check_attr_string ((*root), 5, "/usr/w/g/radare2/test/bins/src");
+	check_attr_address ((*root), 6, 0x1140);
+	r_bin_dwarf_free_debug_info (info);
+	RVecDwarfAbbrevDecl_free (abbrevs);
+	mu_end;
+}
+
 #define run_test_with_setup(test_func) do { \
 	if (!setup()) { \
 		printf("Setup failed for " #test_func "\n"); \
@@ -436,6 +698,13 @@ bool all_tests(void) {
 	run_test_with_setup(test_dwarf3_c);
 	run_test_with_setup(test_dwarf4_cpp_multiple_modules);
 	run_test_with_setup(test_dwarf2_big_endian);
+	run_test_with_setup(test_dwarf_bad_strp_is_local);
+	run_test_with_setup(test_dwarf_bad_cu_is_skipped);
+	run_test_with_setup(test_dwarf_bad_header_preserves_prior_cus);
+	run_test_with_setup(test_dwarf_bad_address_size_is_local);
+	run_test_with_setup(test_dwarf_explicit_zero_rebase);
+	run_test_with_setup(test_dwarf5_mixed_address_table_format);
+	run_test_with_setup(test_dwarf5_indexed_strings_and_addresses);
 	return tests_passed != tests_run;
 }
 
