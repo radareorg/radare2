@@ -943,7 +943,9 @@ FILE=malloc://512
 CMDS=ic?~List
 EXPECT=<<EOF
 | ic                        List classes, methods and fields (icj for json)
-| icc [lang]                List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx,dart,cil)
+| icc [lang]                List classes, methods and fields in Header Format
+| iccj                      List classes, methods and fields in JSON format
+| iccl[j]                   List supported icc languages
 | icg [str]                 List classes hirearchy graph with agn/age (match str if provided)
 | icq                       List classes, in quiet mode (just the classname)
 | icqq                      List classes, in quieter mode (only show non-system classnames)
@@ -954,7 +956,41 @@ NAME=ic?~ (match one)
 FILE=malloc://512
 CMDS=ic?~Header
 EXPECT=<<EOF
-| icc [lang]                List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx,dart,cil)
+| icc [lang]                List classes, methods and fields in Header Format
+EOF
+RUN
+
+NAME=ic?~ iccj
+FILE=malloc://512
+CMDS=ic?~iccj
+EXPECT=<<EOF
+| iccj                      List classes, methods and fields in JSON format
+EOF
+RUN
+
+NAME=iccl
+FILE=malloc://512
+CMDS=iccl
+EXPECT=<<EOF
+c
+objc
+java
+kotlin
+swift
+cxx
+c++
+dart
+cil
+dotnet
+csharp
+EOF
+RUN
+
+NAME=icclj
+FILE=malloc://512
+CMDS=icclj
+EXPECT=<<EOF
+["c","objc","java","kotlin","swift","cxx","c++","dart","cil","dotnet","csharp"]
 EOF
 RUN
 

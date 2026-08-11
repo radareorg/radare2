@@ -50,7 +50,9 @@ static RCoreHelpMessage help_msg_ic = {
 	"ic+", "[klass.method]", "add new method at current seek",
 	"ic+", "[klass..field] [type]", "add new field at current seek",
 	"ic+", "[klass:base]", "add inheritance relation",
-	"icc", " [lang]", "List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx,dart,cil)",
+	"icc", " [lang]", "List classes, methods and fields in Header Format",
+	"iccj", "", "List classes, methods and fields in JSON format",
+	"iccl", "[j]", "List supported icc languages",
 	"icg", " [str]", "List classes hirearchy graph with agn/age (match str if provided)",
 	"icq", "", "List classes, in quiet mode (just the classname)",
 	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
@@ -58,6 +60,43 @@ static RCoreHelpMessage help_msg_ic = {
 	"ics", "", "Show class symbols in an easy to parse format",
 	NULL
 };
+
+static const char *classdump_langs[] = {
+	"c",
+	"objc",
+	"java",
+	"kotlin",
+	"swift",
+	"cxx",
+	"c++",
+	"dart",
+	"cil",
+	"dotnet",
+	"csharp",
+	NULL
+};
+
+static void icc_langs(RCore *core, bool json) {
+	const char **lang = classdump_langs;
+	if (json) {
+		PJ *pj = pj_new ();
+		if (!pj) {
+			return;
+		}
+		pj_a (pj);
+		for (; *lang; lang++) {
+			pj_s (pj, *lang);
+		}
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_print (core->cons, s);
+		free (s);
+	} else {
+		for (; *lang; lang++) {
+			r_cons_println (core->cons, *lang);
+		}
+	}
+}
 
 static RCoreHelpMessage help_msg_ii = {
 	"Usage: ii", "[+-?cj*,]", "List/edit imports (volatile, does not modify the binary)",
@@ -1562,6 +1601,10 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 				}
 				break;
 			}
+			if (cmd == 'c' && input[1] == 'l') { // "iccl"
+				icc_langs (core, input[2] == 'j');
+				break;
+			}
 			const bool is_jvm = isjvm (core);
 			const bool iova = r_config_get_b (core->config, "io.va");
 			RListIter *objs_iter;
@@ -1689,6 +1732,11 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					}
 					break;
 				case 'c': // "icc"
+					if (input[1] == 'j') { // "iccj"
+						mode = R_MODE_JSON;
+						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (bo->classes));
+						break;
+					}
 					mode = R_MODE_CLASSDUMP;
 					if (mode == '*') {
 						mode |= R_MODE_RADARE;
