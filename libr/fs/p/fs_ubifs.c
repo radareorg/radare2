@@ -339,6 +339,21 @@ static bool ubifs_read_ch(ubifs_ctx_t *ctx, ut64 offset, ubifs_ch_t *ch) {
 	return true;
 }
 
+static ut32 ubifs_min_node_len(ut8 node_type) {
+	switch (node_type) {
+	case UBIFS_INO_NODE:
+		return sizeof (ubifs_ino_node_t);
+	case UBIFS_DENT_NODE:
+		return sizeof (ubifs_dent_node_t);
+	case UBIFS_DATA_NODE:
+		return sizeof (ubifs_data_node_t);
+	case UBIFS_IDX_NODE:
+		return sizeof (ubifs_idx_node_t);
+	default:
+		return UBIFS_COMMON_HDR_SZ;
+	}
+}
+
 static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs) {
 	ut64 offset = (ut64)lnum * ctx->leb_size + offs;
 
@@ -352,6 +367,11 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs) {
 
 	if (node_len == 0 || node_len > ctx->leb_size) {
 		return false;
+	}
+	// the node buffer is cast to the type-specific struct below, so it must
+	// hold at least that struct before any field past the common header is read
+	if (node_len < ubifs_min_node_len (node_type)) {
+		return true;
 	}
 
 	ut8 *buf = calloc (1, node_len);
@@ -478,8 +498,9 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 	}
 
 	ut32 sb_len = r_read_le32 ((ut8 *)&ch.len);
-	// UBIFS spec sets superblock structure is ~4KB, use 64KB as reasonable maximum
-	if (sb_len == 0 || sb_len > 65536) {
+	// the fields below are read at fixed offsets inside sb_buf, so it must hold
+	// a full superblock node; 64KB stays as a reasonable upper bound
+	if (sb_len < sizeof (ubifs_sb_node_t) || sb_len > 65536) {
 		R_LOG_ERROR ("Invalid superblock length: %u", sb_len);
 		goto fail;
 	}
@@ -516,6 +537,10 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 	}
 
 	ut32 mst_len = r_read_le32 ((ut8 *)&ch.len);
+	if (mst_len < sizeof (ubifs_mst_node_t)) {
+		R_LOG_ERROR ("Truncated UBIFS master node");
+		goto fail;
+	}
 	ut8 *mst_buf = calloc (1, mst_len);
 	if (!mst_buf) {
 		goto fail;
