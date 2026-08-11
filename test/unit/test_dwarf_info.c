@@ -584,7 +584,7 @@ bool test_dwarf5_mixed_address_table_format(void) {
 	r_write_le16 ((ut8 *)addr_bytes.ptr + 12, 5);
 	((ut8 *)addr_bytes.ptr)[14] = 8;
 	mu_assert_eq (r_buf_read_at (bf->buf, addr_section->paddr + 8,
-		(void *)addr_bytes.ptr + 16, addr_section->size - 8),
+		(ut8 *)addr_bytes.ptr + 16, addr_section->size - 8),
 		addr_section->size - 8, "Couldn't copy .debug_addr entries");
 	addr_section->bytes = addr_bytes;
 	addr_section->size += 8;
