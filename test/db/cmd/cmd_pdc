@@ -199,10 +199,10 @@ void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
         x0 = x8
         goto sym.imp.strcoll // int strcoll("", "")
     loc_0x100003a78: // orphan
-         w0 = -1
+        w0 = -1
 
     loc_0x100003a6c: // orphan
-         w0 = 1
+        w0 = 1
 
 }
 
@@ -308,8 +308,8 @@ void fcn.00000000 (int64_t arg1) {
         r3 = 0
         return
     loc_0x00000008: // orphan
-         r3 = 1                   // "#"
-         return
+        r3 = 1                   // "#"
+        return
 
 }
 
@@ -684,8 +684,8 @@ pdc~printf("Results
 pdc~printf("msg
 EOF2
 EXPECT=<<EOF2
-         sym.imp.printf () // int printf("Results : a : %u , b: %ld\n", 21, 21)
-         sym.imp.printf () // int printf("msg : %s\n", "")
+        sym.imp.printf () // int printf("Results : a : %u , b: %ld\n", 21, 21)
+        sym.imp.printf () // int printf("msg : %s\n", "")
 EOF2
 RUN
 
@@ -858,8 +858,8 @@ pdcj~{annotations[12]}
 EOF
 EXPECT=<<EOF
 {"start":519,"end":571,"offset":4294982284,"type":"offset"}
-{"start":571,"end":620,"offset":4294982264,"type":"offset"}
-{"start":620,"end":668,"offset":4294982252,"type":"offset"}
+{"start":571,"end":619,"offset":4294982264,"type":"offset"}
+{"start":619,"end":666,"offset":4294982252,"type":"offset"}
 EOF
 RUN
 
@@ -877,8 +877,8 @@ EXPECT=<<EOF
 void fcn.00000000 (void) {
         eax = 0
         return eax
-             eax = 1
-         return 1
+        eax = 1
+        return 1
 
 }
 
