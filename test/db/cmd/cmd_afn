@@ -107,7 +107,6 @@ main
 --
 func.main.arg.0=int,argc
 func.main.arg.1=char **,argv
-func.main.arg.2=char **,envp
 func.main.args=2
 func.main.ret=int
 --

@@ -1420,10 +1420,22 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 		free (k);
 		arg_count++;
 	}
-	//	sdb_num_set (core->anal->sdb_types, args, (int)arg_count, 0);
 	if (arg_count > 0) {
+		Sdb *TDB = core->anal->sdb_types;
 		r_strf_buffer (16);
-		sdb_setf (core->anal->sdb_types, r_strf ("%d", (int)arg_count), 0, "func.%s.args", fcn->name);
+		const int oargs = (int)sdb_num_getf (TDB, NULL, "func.%s.args", fcn->name);
+		sdb_setf (TDB, r_strf ("%d", (int)arg_count), 0, "func.%s.args", fcn->name);
+		// a previous wider recovery leaves stale higher keys behind
+		int i;
+		for (i = (int)arg_count; i < oargs; i++) {
+			char *k = r_str_newf ("func.%s.arg.%d", fcn->name, i);
+			const int ok = sdb_unset (TDB, k, 0);
+			free (k);
+			if (!ok) {
+				// an unset only fails when sdb cannot take writes, so the rest would too
+				break;
+			}
+		}
 	}
 	r_anal_function_vars_cache_fini (&cache);
 }
