@@ -3317,8 +3317,10 @@ static bool dwarf_foreach_root(RBinFile *bf, RVecDwarfAbbrevDecl *decls, DwarfRo
 		size_t remaining = end - unit_start;
 		if (!buf || remaining < len_size || unit.hdr.length < unit.hdr.header_size
 			|| unit.hdr.length > remaining - len_size) {
+			// an invalid header leaves the next unit boundary unknown,
+			// so stop the walk but report the units visited so far
 			dwarf_comp_unit_fini (&unit);
-			return false;
+			return true;
 		}
 		const ut8 *unit_end = unit_start + len_size + unit.hdr.length;
 		RBinDwarfAbbrevDecl key = { .offset = unit.hdr.abbrev_offset };
@@ -3517,16 +3519,15 @@ static RBinDwarfDebugInfo *parse_info_raw(RBinFile *bf, RVecDwarfAbbrevDecl *dec
 		unit.hdr.unit_offset = buf - obuf;
 
 		buf = info_comp_unit_read_hdr (bin, buf, buf_end, &unit.hdr);
-		if (!buf) {
-			dwarf_comp_unit_fini (&unit);
-			goto cleanup;
-		}
 		size_t len_size = unit.hdr.is_64bit? 12: 4;
 		size_t remaining = buf_end - unit_start;
-		if (remaining < len_size || unit.hdr.length < unit.hdr.header_size
+		if (!buf || remaining < len_size || unit.hdr.length < unit.hdr.header_size
 			|| unit.hdr.length > remaining - len_size) {
+			// an invalid header leaves the next unit boundary unknown,
+			// so stop the walk but keep the units parsed so far
+			R_LOG_WARN ("Invalid DWARF compilation unit header at 0x%" PFMT64x, unit.offset);
 			dwarf_comp_unit_fini (&unit);
-			goto cleanup;
+			break;
 		}
 		const ut8 *unit_end = unit_start + len_size + unit.hdr.length;
 
