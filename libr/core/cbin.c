@@ -4087,6 +4087,98 @@ static void classdump_swift(RCore *core, RBinClass *c) {
 	r_cons_printf (core->cons, "}\n");
 }
 
+static const char *classdump_dart_method_name(const char *name) {
+	const char *mn = strstr (name, "method.");
+	if (mn) {
+		return mn + strlen ("method.");
+	}
+	mn = strstr (name, "dart.method.");
+	if (mn) {
+		return mn + strlen ("dart.method.");
+	}
+	mn = strstr (name, "getter.");
+	if (mn) {
+		return mn + strlen ("getter.");
+	}
+	mn = strstr (name, "dart.getter.");
+	if (mn) {
+		return mn + strlen ("dart.getter.");
+	}
+	mn = strstr (name, "setter.");
+	if (mn) {
+		return mn + strlen ("setter.");
+	}
+	mn = strstr (name, "dart.setter.");
+	if (mn) {
+		return mn + strlen ("dart.setter.");
+	}
+	return name;
+}
+
+static void classdump_dart(RCore *core, RBinClass *c) {
+	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
+	const char *cname = r_bin_name_tostring2 (c->name, pref);
+	char *pn = strdup (cname);
+	char *cn = (char *)r_str_rchr (pn, NULL, '/');
+	if (cn) {
+		*cn++ = 0;
+		r_str_replace_char (pn, '/', '.');
+		r_cons_printf (core->cons, "// library %s\n\n", pn);
+	}
+	char *klassname = cn? cn: pn;
+	r_cons_printf (core->cons, "class %s", klassname);
+	if (!r_list_empty (c->super)) {
+		RBinName *bn;
+		RListIter *iter;
+		bool is_first = true;
+		bool has_interface = false;
+		r_list_foreach (c->super, iter, bn) {
+			const char *super = r_bin_name_tostring2 (bn, pref);
+			if (is_first) {
+				r_cons_printf (core->cons, " extends %s", super);
+				is_first = false;
+			} else {
+				r_cons_printf (core->cons, "%s %s", has_interface? ",": " implements", super);
+				has_interface = true;
+			}
+		}
+	}
+	r_cons_printf (core->cons, " {\n");
+	free (pn);
+	RBinField *f;
+	R_VEC_FOREACH (&c->fields, f) {
+		if (!f->name) {
+			continue;
+		}
+		const char *fname = r_bin_name_tostring2 (f->name, pref);
+		const char *ftype = f->type? r_bin_name_tostring2 (f->type, pref): NULL;
+		if (R_STR_ISEMPTY (fname)) {
+			continue;
+		}
+		r_cons_printf (core->cons, "  %s %s;\n", R_STR_ISNOTEMPTY (ftype)? ftype: "dynamic", fname);
+	}
+	RBinSymbol *sym;
+	R_VEC_FOREACH (&c->methods, sym) {
+		const char *mn = r_bin_name_tostring2 (sym->name, pref);
+		if (R_STR_ISEMPTY (mn)) {
+			mn = "method";
+		}
+		mn = classdump_dart_method_name (mn);
+		if (sym->attr & R_BIN_ATTR_GETTER) {
+			r_cons_printf (core->cons, "  dynamic get %s; // 0x%08" PFMT64x "\n", mn, sym->vaddr);
+		} else if (sym->attr & R_BIN_ATTR_SETTER) {
+			r_cons_printf (core->cons, "  set %s(dynamic value); // 0x%08" PFMT64x "\n", mn, sym->vaddr);
+		} else {
+			r_cons_printf (core->cons, "  dynamic %s", mn);
+			if (!strchr (mn, '(')) {
+				r_cons_printf (core->cons, "()");
+			}
+			r_cons_printf (core->cons, " {} // 0x%08" PFMT64x "\n", sym->vaddr);
+		}
+	}
+	r_cons_printf (core->cons, "}\n");
+}
+
 static void classdump_java(RCore *core, RBinClass *c) {
 	RBinField *f;
 	RBinSymbol *sym;
@@ -4125,6 +4217,16 @@ static void classdump_java(RCore *core, RBinClass *c) {
 
 static bool is_swift(RBinFile *bf) {
 	return (bf->bo->lang == R_BIN_LANG_SWIFT);
+}
+
+static bool is_dart(RBinFile *bf) {
+	if (bf->bo->lang == R_BIN_LANG_DART) {
+		return true;
+	}
+	if (bf->bo->info && bf->bo->info->lang && !strcmp (bf->bo->info->lang, "dart")) {
+		return true;
+	}
+	return false;
 }
 
 static bool is_javaish(RBinFile *bf) {
@@ -4258,6 +4360,8 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 					if (*lang) {
 						if (!strcmp (lang, "java") || !strcmp (lang, "kotlin")) {
 							classdump_java (core, c);
+						} else if (!strcmp (lang, "dart")) {
+							classdump_dart (core, c);
 						} else if (!strcmp (lang, "swift")) {
 							classdump_swift (core, c);
 						} else if (!strcmp (lang, "cxx") || !strcmp (lang, "c++")) {
@@ -4278,6 +4382,8 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 								classdump_objc (core, c);
 							} else if (is_javaish (bf) || mode == 'J') {
 								classdump_java (core, c);
+							} else if (is_dart (bf)) {
+								classdump_dart (core, c);
 							} else if (is_swift (bf) || mode == 'S') {
 								classdump_swift (core, c);
 							} else {

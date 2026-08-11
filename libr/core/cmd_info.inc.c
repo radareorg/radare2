@@ -50,7 +50,7 @@ static RCoreHelpMessage help_msg_ic = {
 	"ic+", "[klass.method]", "add new method at current seek",
 	"ic+", "[klass..field] [type]", "add new field at current seek",
 	"ic+", "[klass:base]", "add inheritance relation",
-	"icc", " [lang]", "List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)",
+	"icc", " [lang]", "List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx,dart)",
 	"icg", " [str]", "List classes hirearchy graph with agn/age (match str if provided)",
 	"icq", "", "List classes, in quiet mode (just the classname)",
 	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",

@@ -943,7 +943,7 @@ FILE=malloc://512
 CMDS=ic?~List
 EXPECT=<<EOF
 | ic                        List classes, methods and fields (icj for json)
-| icc [lang]                List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)
+| icc [lang]                List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx,dart)
 | icg [str]                 List classes hirearchy graph with agn/age (match str if provided)
 | icq                       List classes, in quiet mode (just the classname)
 | icqq                      List classes, in quieter mode (only show non-system classnames)
@@ -954,7 +954,7 @@ NAME=ic?~ (match one)
 FILE=malloc://512
 CMDS=ic?~Header
 EXPECT=<<EOF
-| icc [lang]                List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)
+| icc [lang]                List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx,dart)
 EOF
 RUN
 
@@ -1002,6 +1002,26 @@ EXPECT=<<EOF
 'agn UserKlass
 'agn UserBase
 'age UserBase UserKlass
+EOF
+RUN
+
+NAME=icc dart
+FILE=bins/elf/libmagic.so
+CMDS=<<EOF
+s 0x456
+ic+UserKlass
+ic+UserKlass:UserBase
+ic+UserKlass.doThing
+s 0x20
+ic+UserKlass..count int
+icc dart~UserKlass
+icc dart~count
+icc dart~doThing
+EOF
+EXPECT=<<EOF
+class UserKlass extends UserBase {
+  int count;
+  dynamic doThing() {} // 0x00000456
 EOF
 RUN
 
