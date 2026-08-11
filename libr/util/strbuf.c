@@ -447,7 +447,10 @@ R_API bool r_strbuf_pad(RStrBuf *sb, char ch, int sz) {
 	if (sz < 1) {
 		return true;
 	}
-	if (!r_strbuf_reserve (sb, sb->len + sz)) {
+	const size_t cap = sb->ptr? sb->ptrlen: sizeof (sb->buf);
+	size_t required;
+	// grow with the same slack as the append paths instead of an exact fit
+	if (r_add_overflow (sb->len, (size_t)sz + 1, &required) || !r_strbuf_reserve (sb, growlog (cap, required) - 1)) {
 		return false;
 	}
 	char *buf = sb->ptr? sb->ptr: sb->buf;
