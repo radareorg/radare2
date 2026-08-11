@@ -48,7 +48,6 @@ if get_option('enable_tests')
     'pdb',
     'pj',
     'print',
-    'projects',
     'queue',
     'r2pipe',
     'r2r',

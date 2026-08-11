@@ -64,34 +64,6 @@ static bool project_path_is_within_projects_dir(RCore *core, const char *path) {
 	return inside;
 }
 
-static bool project_path_resolves_within_projects_dir(RCore *core, const char *path) {
-	char *pdir = r_file_abspath (r_config_get (core->config, "dir.projects"));
-	char *pdir_resolved = pdir ? realpath (pdir, NULL) : NULL;
-	char *ppath_resolved = path ? realpath (path, NULL) : NULL;
-	char *parent = NULL;
-	char *parent_resolved = NULL;
-	char *prefix = NULL;
-	const char *base = pdir_resolved ? pdir_resolved : pdir;
-	const char *candidate = ppath_resolved;
-	bool inside = false;
-	if (!candidate && path) {
-		parent = r_file_dirname (path);
-		parent_resolved = parent ? realpath (parent, NULL) : NULL;
-		candidate = parent_resolved;
-	}
-	if (base && candidate) {
-		prefix = r_str_newf ("%s%s", base, R_SYS_DIR);
-		inside = !strcmp (base, candidate) || (prefix && r_str_startswith (candidate, prefix));
-	}
-	free (prefix);
-	free (parent_resolved);
-	free (parent);
-	free (ppath_resolved);
-	free (pdir_resolved);
-	free (pdir);
-	return inside;
-}
-
 static bool make_projects_directory(RCore *core) {
 	char *prjdir = r_file_abspath (r_config_get (core->config, "dir.projects"));
 	bool ret = r_sys_mkdirp (prjdir);
@@ -782,14 +754,11 @@ R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
 	const char *prjdir = r_config_get (core->config, "dir.projects");
 	char *prjpath = r_file_abspath (prjdir);
 	char *notes_txt = r_file_new (prjpath, prj_name, "notes.txt", NULL);
-	if (notes_txt && !project_path_resolves_within_projects_dir (core, notes_txt)) {
+	char *ndir = r_file_dirname (notes_txt);
+	if (!ndir || !project_path_is_within_projects_dir (core, ndir)) {
 		R_FREE (notes_txt);
 	}
-	char *link = notes_txt? r_file_readlink (notes_txt): NULL;
-	if (link && strcmp (link, notes_txt)) {
-		R_FREE (notes_txt);
-	}
-	free (link);
+	free (ndir);
 	free (prjpath);
 	return notes_txt;
 }
