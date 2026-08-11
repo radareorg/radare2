@@ -924,3 +924,18 @@ void fcn.00000000 (void) {
 
 EOF
 RUN
+
+NAME=pdc keeps a renamed case tag on an orphan block untruncated
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64
+CMDS=<<EOF
+s 0x100003a54
+af
+f case.strcoll.result_when_greater_than_other @ 0x100003a78
+pdc~loc_0x100003a78,loc_0x100003a6c
+EOF
+EXPECT=<<EOF
+    loc_0x100003a78: // case result_when_greater_than_other
+    loc_0x100003a6c: // orphan
+EOF
+RUN

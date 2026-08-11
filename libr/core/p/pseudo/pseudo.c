@@ -601,6 +601,22 @@ static bool bb_addr_is_goto_target(RAnalFunction *fcn, ut64 addr) {
 
 static int bb_last_op_type(RCore *core, RAnalBlock *bb);
 
+// a case flag names the orphan it labels, renames included, so never truncate it
+static char *orphan_tag(RCore *core, ut64 addr) {
+	RFlagItem *fi = r_flag_get_in (core->flags, addr);
+	if (!fi || !r_str_startswith (fi->name, "case.")) {
+		return strdup ("orphan");
+	}
+	const char *val = r_str_lchr (fi->name, '.') + 1;
+	char *hex = r_str_newf ("0x%s", val);
+	const int nval = r_num_get (NULL, hex);
+	free (hex);
+	if (IS_PRINTABLE (nval)) {
+		return r_str_newf ("case '%c'", nval);
+	}
+	return r_str_newf ("case %s", val);
+}
+
 static bool pdc_is_ret_only_bb(RCore *core, ut64 addr) {
 	RAnalBlock *bb = addr != UT64_MAX? r_anal_bb_from_offset (core->anal, addr): NULL;
 	if (!bb || bb->jump != UT64_MAX || bb->fail != UT64_MAX) {
@@ -2085,22 +2101,9 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 				NEWLINE (bb->addr, 1);
 			}
 			if (labeled) {
-				RFlagItem *fi = r_flag_get_in (core->flags, bb->addr);
-				char tagbuf[32];
-				const char *tag = "orphan";
-				if (fi && r_str_startswith (fi->name, "case.")) {
-					const char *val = r_str_lchr (fi->name, '.') + 1;
-					char *hex = r_str_newf ("0x%s", val);
-					int nval = r_num_get (NULL, hex);
-					free (hex);
-					if (IS_PRINTABLE (nval)) {
-						snprintf (tagbuf, sizeof (tagbuf), "case '%c'", nval);
-					} else {
-						snprintf (tagbuf, sizeof (tagbuf), "case %s", val);
-					}
-					tag = tagbuf;
-				}
+				char *tag = orphan_tag (core, bb->addr);
 				PRINTF ("loc_0x%08" PFMT64x ": // %s\n%s", bb->addr, tag, s);
+				free (tag);
 			} else {
 				PRINTF ("%s", s);
 			}
