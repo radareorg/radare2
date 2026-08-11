@@ -4179,6 +4179,110 @@ static void classdump_dart(RCore *core, RBinClass *c) {
 	r_cons_printf (core->cons, "}\n");
 }
 
+static const char *classdump_cil_method_name(const char *name) {
+	const char *mn = strstr (name, "method.");
+	if (mn) {
+		return mn + strlen ("method.");
+	}
+	mn = strstr (name, "cil.method.");
+	if (mn) {
+		return mn + strlen ("cil.method.");
+	}
+	return name;
+}
+
+static const char *classdump_cil_visibility(ut64 attr) {
+	if (attr & R_BIN_ATTR_PRIVATE) {
+		return "private ";
+	}
+	if (attr & R_BIN_ATTR_PROTECTED) {
+		return "protected ";
+	}
+	if (attr & R_BIN_ATTR_INTERNAL) {
+		return "internal ";
+	}
+	return "public ";
+}
+
+static char *classdump_cil_name(const char *name) {
+	char *out = strdup (name);
+	r_str_replace_char (out, '/', '.');
+	size_t len = strlen (out);
+	while (len > 0 && out[len - 1] == '.') {
+		out[--len] = 0;
+	}
+	return out;
+}
+
+static void classdump_cil(RCore *core, RBinClass *c) {
+	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
+	const char *cname = r_bin_name_tostring2 (c->name, pref);
+	char *fullname = classdump_cil_name (cname);
+	char *klassname = fullname;
+	char *ns = (char *)r_str_rchr (fullname, NULL, '.');
+	if (ns && ns[1]) {
+		*ns++ = 0;
+		r_cons_printf (core->cons, "namespace %s {\n", fullname);
+		klassname = ns;
+	}
+	r_cons_printf (core->cons, "%sclass %s", classdump_cil_visibility (c->attr), klassname);
+	if (!r_list_empty (c->super)) {
+		RBinName *bn;
+		RListIter *iter;
+		bool is_first = true;
+		r_list_foreach (c->super, iter, bn) {
+			const char *super = r_bin_name_tostring2 (bn, pref);
+			r_cons_printf (core->cons, "%s %s", is_first? " :": ",", super);
+			is_first = false;
+		}
+	}
+	r_cons_printf (core->cons, " {\n");
+	RBinField *f;
+	R_VEC_FOREACH (&c->fields, f) {
+		if (!f->name) {
+			continue;
+		}
+		const char *fname = r_bin_name_tostring2 (f->name, pref);
+		const char *ftype = f->type? r_bin_name_tostring2 (f->type, pref): NULL;
+		if (R_STR_ISEMPTY (fname)) {
+			continue;
+		}
+		r_cons_printf (core->cons, "\t%s%s %s;\n",
+			classdump_cil_visibility (f->attr), R_STR_ISNOTEMPTY (ftype)? ftype: "dynamic", fname);
+	}
+	RBinSymbol *sym;
+	R_VEC_FOREACH (&c->methods, sym) {
+		const char *mn = r_bin_name_tostring2 (sym->name, pref);
+		if (R_STR_ISEMPTY (mn)) {
+			mn = "method";
+		}
+		mn = classdump_cil_method_name (mn);
+		const char *visibility = classdump_cil_visibility (sym->attr);
+		const char *modifier = (sym->attr & (R_BIN_ATTR_STATIC | R_BIN_ATTR_CLASS))? "static ": "";
+		if (sym->attr & R_BIN_ATTR_GETTER) {
+			r_cons_printf (core->cons, "\t%s%s dynamic %s { get; } // 0x%08" PFMT64x "\n",
+				visibility, modifier, mn, sym->vaddr);
+		} else if (sym->attr & R_BIN_ATTR_SETTER) {
+			r_cons_printf (core->cons, "\t%s%s dynamic %s { set; } // 0x%08" PFMT64x "\n",
+				visibility, modifier, mn, sym->vaddr);
+		} else if (!strcmp (mn, "ctor") || !strcmp (mn, ".ctor")) {
+			r_cons_printf (core->cons, "\t%s%s%s(); // 0x%08" PFMT64x "\n",
+				visibility, modifier, klassname, sym->vaddr);
+		} else {
+			r_cons_printf (core->cons, "\t%s%sdynamic %s", visibility, modifier, mn);
+			if (!strchr (mn, '(')) {
+				r_cons_printf (core->cons, "()");
+			}
+			r_cons_printf (core->cons, " {} // 0x%08" PFMT64x "\n", sym->vaddr);
+		}
+	}
+	r_cons_printf (core->cons, "}\n");
+	if (ns) {
+		r_cons_printf (core->cons, "}\n");
+	}
+	free (fullname);
+}
+
 static void classdump_java(RCore *core, RBinClass *c) {
 	RBinField *f;
 	RBinSymbol *sym;
@@ -4224,6 +4328,16 @@ static bool is_dart(RBinFile *bf) {
 		return true;
 	}
 	if (bf->bo->info && bf->bo->info->lang && !strcmp (bf->bo->info->lang, "dart")) {
+		return true;
+	}
+	return false;
+}
+
+static bool is_cil(RBinFile *bf) {
+	if (bf->bo->lang == R_BIN_LANG_CIL) {
+		return true;
+	}
+	if (bf->bo->info && bf->bo->info->lang && !strcmp (bf->bo->info->lang, "cil")) {
 		return true;
 	}
 	return false;
@@ -4362,6 +4476,9 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 							classdump_java (core, c);
 						} else if (!strcmp (lang, "dart")) {
 							classdump_dart (core, c);
+						} else if (!strcmp (lang, "cil") || !strcmp (lang, "dotnet")
+								|| !strcmp (lang, "csharp") || !strcmp (lang, "c#")) {
+							classdump_cil (core, c);
 						} else if (!strcmp (lang, "swift")) {
 							classdump_swift (core, c);
 						} else if (!strcmp (lang, "cxx") || !strcmp (lang, "c++")) {
@@ -4384,6 +4501,8 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 								classdump_java (core, c);
 							} else if (is_dart (bf)) {
 								classdump_dart (core, c);
+							} else if (is_cil (bf)) {
+								classdump_cil (core, c);
 							} else if (is_swift (bf) || mode == 'S') {
 								classdump_swift (core, c);
 							} else {

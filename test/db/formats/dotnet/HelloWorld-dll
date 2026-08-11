@@ -138,6 +138,26 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=.NET HelloWorld.dll csharp classdump
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+icc csharp~BinaryParser
+icc csharp~filePath
+icc csharp~LoadData
+icc csharp~BinaryParser();
+EOF
+EXPECT=<<EOF
+namespace BinaryParserLibrary {
+public class BinaryParser {
+namespace BinaryParserLibrary {
+public class BinaryParser {
+	public BinaryParser(); // 0x10002050
+	public dynamic filePath;
+	public dynamic LoadData() {} // 0x10002073
+	public BinaryParser(); // 0x10002050
+EOF
+RUN
+
 NAME=.NET HelloWorld.dll types
 FILE=bins/dotnet/HelloWorld.dll
 CMDS=<<EOF
