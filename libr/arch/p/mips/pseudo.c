@@ -237,7 +237,6 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					REPLACE ("%s = %s >>", "%s >>=");
 					REPLACE ("%s = %s <<", "%s <<=");
 				}
-				p = r_str_replace (p, ":", "0000", 0);
 				strcpy (str, p);
 				free (p);
 			}
