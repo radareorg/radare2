@@ -1156,7 +1156,7 @@ afvs 0x20 grid int[9][9]
 afvs
 EOF
 EXPECT=<<EOF
-arg int[9][9] grid @ r1+0x20
+var int[9][9] grid @ r1+0x20
 EOF
 RUN
 
@@ -1201,4 +1201,651 @@ EOF2
 EXPECT=<<EOF2
 "sh -c clear"
 EOF2
+RUN
+
+NAME=ppc plt-call stub toc save is not recovered as an argument
+FILE=bins/elf/ppc64_sudoku_dwarf
+CMDS=<<EOF2
+aa
+afs @ loc.00000018.plt_call.__libc_start_main
+EOF2
+EXPECT=<<EOF2
+void loc.00000018.plt_call.__libc_start_main ();
+EOF2
+RUN
+
+NAME=ppc toc restore load is not recovered as an argument
+FILE=bins/elf/ppc64_sudoku_dwarf
+CMDS=<<EOF2
+aa
+afs @ fcn.10000c54
+EOF2
+EXPECT=<<EOF2
+void fcn.10000c54 (int64_t arg1);
+EOF2
+RUN
+
+NAME=ppc64 esil emulation: ld does not update the base register
+FILE=-
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF2
+aei
+aeim
+ar r3=0x178000
+s 0
+wx e8830008
+ar PC=0
+aes
+?e ld
+ar r3
+ar r3=0x178000
+s 0
+wx e8830009
+ar PC=0
+aes
+?e ldu
+ar r3
+EOF2
+EXPECT=<<EOF2
+ld
+0x00178000
+ldu
+0x00178008
+EOF2
+RUN
+
+NAME=ppc-64 cc register sets and stack parameter save area
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc
+CMDS=<<EOF
+k anal/cc/cc.ppc-64.clobber
+k anal/cc/cc.ppc-64.preserve
+k anal/cc/cc.ppc-64.argn
+k anal/cc/cc.ppc-64.shadow
+EOF
+EXPECT=<<EOF
+r0,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,lr,ctr,xer,cr0,cr1,cr5,cr6,cr7,f0,f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13
+r1,r2,r13,r14,r15,r16,r17,r18,r19,r20,r21,r22,r23,r24,r25,r26,r27,r28,r29,r30,r31,cr2,cr3,cr4,f14,f15,f16,f17,f18,f19,f20,f21,f22,f23,f24,f25,f26,f27,f28,f29,f30,f31
+stack
+112
+EOF
+RUN
+
+NAME=ppc-32 cc register sets and stack parameter save area
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e anal.arch=ppc
+CMDS=<<EOF
+k anal/cc/cc.ppc-32.clobber
+k anal/cc/cc.ppc-32.preserve
+k anal/cc/cc.ppc-32.argn
+k anal/cc/cc.ppc-32.shadow
+EOF
+EXPECT=<<EOF
+r0,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,lr,ctr,xer,cr0,cr1,cr5,cr6,cr7,f0,f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13
+r1,r2,r13,r14,r15,r16,r17,r18,r19,r20,r21,r22,r23,r24,r25,r26,r27,r28,r29,r30,r31,cr2,cr3,cr4,f14,f15,f16,f17,f18,f19,f20,f21,f22,f23,f24,f25,f26,f27,f28,f29,f30,f31
+stack
+8
+EOF
+RUN
+
+NAME=ppc-64 clobber kills r3 arg after call
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.cc=ppc-64
+CMDS=<<EOF
+wx 7c641b784800000d7c641b784e8000204e800020
+af @ 0
+afc ppc-64 @ 0
+af @ 0x10
+afc ppc-64 @ 0x10
+afva @ 0
+afvR @ 0
+EOF
+EXPECT=<<EOF
+      arg1  0x0
+EOF
+RUN
+
+NAME=ppc conditional return alias beqlr is a return with no immediate jump
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e anal.arch=ppc -e cfg.bigendian=true
+CMDS=<<EOF
+wx 4d820020
+aoj 1~{0.type}
+aoj 1~{0.esil}
+EOF
+EXPECT=<<EOF
+cret
+cr0,!,?{,lr,pc,=,},
+EOF
+RUN
+
+NAME=ppc beqctr aliases to a conditional ctr jump
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e anal.arch=ppc -e cfg.bigendian=true
+CMDS=<<EOF
+wx 4d820420
+aoj 1~{0.type}
+aoj 1~{0.esil}
+EOF
+EXPECT=<<EOF
+ucjmp
+cr0,!,?{,ctr,pc,=,},
+EOF
+RUN
+
+NAME=ppc beqctrl is a conditional call that links lr
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e anal.arch=ppc -e cfg.bigendian=true
+CMDS=<<EOF
+wx 4d820421
+aoj 1~{0.type}
+aoj 1~{0.esil}
+EOF
+EXPECT=<<EOF
+uccall
+pc,lr,=,cr0,!,?{,ctr,pc,=,},
+EOF
+RUN
+
+NAME=ppc bcctrl and bclrl link lr when not taken
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e anal.arch=ppc -e cfg.bigendian=true
+CMDS=<<EOF
+wx 4d8204214d820021
+aei
+aeim
+ar cr0=0x80
+ar ctr=0x100
+ar lr=0
+ar pc=0
+aes
+ar lr
+ar pc
+ar ctr
+s 4
+ar lr=0x100
+aes
+ar lr
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000004
+0x00000004
+0x00000100
+0x00000008
+0x00000008
+EOF
+RUN
+
+NAME=ppc bcctrl and bclrl branch through old targets when taken
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e anal.arch=ppc -e cfg.bigendian=true
+CMDS=<<EOF
+wx 4d8204214d820021
+aei
+aeim
+ar cr0=0
+ar ctr=4
+ar lr=0
+ar pc=0
+aes
+ar lr
+ar pc
+ar ctr
+s 4
+ar lr=0x100
+aes
+ar lr
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000004
+0x00000004
+0x00000004
+0x00000008
+0x00000100
+EOF
+RUN
+
+NAME=ppc beqlr does not create a basic block edge to address zero
+FILE=malloc://32
+ARGS=-a ppc -b 32 -e anal.arch=ppc -e cfg.bigendian=true -m 0x100
+CMDS=<<EOF
+wx 2c0300004d82002038600001 @ 0x100
+af @ 0x100
+afb @ 0x100~j 0x00000000?
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+NAME=ppc pending toc base does not leak into a later decode window
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.gp=0x10000000
+CMDS=<<EOF
+wx 3d420001e92a0008
+ao 2 > /dev/null
+ao 1 @ 4 ~ptr:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=ppc anal.stateful=false disables toc tracking
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.gp=0x10000000 -e anal.stateful=false
+CMDS=<<EOF
+wx 3d420001e92a0008
+ao 2~ptr:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=ppc toc resolution is deterministic across repeated windows
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.gp=0x10000000
+CMDS=<<EOF
+wx 3d420001e92a0008
+ao 2~ptr:
+ao 2~ptr:
+EOF
+EXPECT=<<EOF
+ptr: 0x10010008
+ptr: 0x10010008
+EOF
+RUN
+
+NAME=ppc toc tracking survives the nested anal.mask sweep
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.gp=0x10000000 -e anal.mask=true
+CMDS=<<EOF
+wx 3d420001e92a0008
+ao 2~ptr:
+EOF
+EXPECT=<<EOF
+ptr: 0x10010008
+EOF
+RUN
+
+NAME=ppc toc tracking survives the aoj mask lookahead
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.gp=0x10000000
+CMDS=<<EOF
+wx 3d420001e92a0008
+aoj 2~{1.ptr}
+EOF
+EXPECT=<<EOF
+268501000
+EOF
+RUN
+
+NAME=ppc generic mfspr mtspr and xer moves decode as mov with esil
+FILE=malloc://32
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7c7042a67c7043a67c6102a67c6103a6
+aoj 4~{0.type}
+aoj 4~{0.esil}
+aoj 4~{1.type}
+aoj 4~{1.esil}
+aoj 4~{2.type}
+aoj 4~{2.esil}
+aoj 4~{3.type}
+aoj 4~{3.esil}
+EOF
+EXPECT=<<EOF
+mov
+spr_272,r3,=
+mov
+r3,spr_272,=
+mov
+xer,r3,=
+mov
+r3,xer,=
+EOF
+RUN
+
+NAME=ppc stwu stack tracking only for r1 base
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 9421fff894aafff8
+ao 2~stack
+EOF
+EXPECT=<<EOF
+stackop: inc
+stackptr: 8
+EOF
+RUN
+
+NAME=ppc stdu stack tracking only for r1 base
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx f821ff91f8aaff91
+ao 2~stack
+EOF
+EXPECT=<<EOF
+stackop: inc
+stackptr: 112
+EOF
+RUN
+
+NAME=ppc vle archinfo reports 2-byte min and 4-byte max op size
+FILE=malloc://16
+ARGS=-a ppc -b 32
+CMDS=<<EOF
+e asm.cpu=vle
+aia
+EOF
+EXPECT=<<EOF
+minopsz 2
+maxopsz 4
+invopsz 2
+dtalign 2
+codealign 2
+EOF
+RUN
+
+NAME=ppc record forms append cr0 esil and plain forms do not
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7c8532147c85321570a400017c80292d
+aoj 4~{0.esil}
+aoj 4~{1.esil}
+aoj 4~{2.esil}
+aoj 4~{3.esil}
+EOF
+EXPECT=<<EOF
+r6,r5,+,r4,=
+r6,r5,+,r4,=,0x80,0,r4,<,*,r4,0,<,+,cr0,=
+0x1,r5,&,r4,=,0x80,0,r4,<,*,r4,0,<,+,cr0,=
+r4,r5,=[4]
+EOF
+RUN
+
+NAME=ppc record form cr0 result drives a following branch
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 2c2500007c863a154182000839000001 @ 0
+wx 38e00007 @ 16
+aei
+aeim
+ar r5=5
+ar r6=1
+ar r7=0xffffffffffffffff
+aes
+aes
+aes
+aes
+ar cr0
+ar r7
+ar r8
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000007
+0x00000000
+EOF
+RUN
+
+NAME=ppc32 record form cr0 compares the word result
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 34850001
+aoj 1~{0.esil}
+aei
+aeim
+ar r5=0x7fffffff
+aes
+ar r4
+ar cr0
+EOF
+EXPECT=<<EOF
+0x8000000000000000,r5,^,0x8000000000000000,0x1,r5,+,0xffffffff,&,^,<,0x1,r5,+,r4,=,ca,=,0x80,0,32,r4,~,<,*,32,r4,~,0,<,+,cr0,=
+0x80000000
+0x00000080
+EOF
+RUN
+
+NAME=ppc srawi shifts the sign-extended low word
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7ca41e71
+aoj 1~{0.esil}
+aei
+aeim
+ar r5=0x8000000f
+aes
+ar r4
+ar ca
+ar cr0
+EOF
+EXPECT=<<EOF
+0x80000000,r5,&,!,!,0x7,r5,&,0xffffffff,&,!,!,&,ca,=,0x3,32,r5,~,ASR,r4,=,0x80,0,r4,<,*,r4,0,<,+,cr0,=
+0xfffffffff0000001
+0x00000001
+0x00000080
+EOF
+RUN
+
+NAME=callargs reads a ppc64 stack argument above the parameter save area
+FILE=malloc://256
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 386000503880005438a0005838c0005c38e0006039000064392000683940006c39600070f9610070480000594e800020
+wx 4e800020 @ 0x80
+w AA @ 0x50
+w BB @ 0x54
+w CC @ 0x58
+w DD @ 0x5c
+w EE @ 0x60
+w FF @ 0x64
+w GG @ 0x68
+w HH @ 0x6c
+w II @ 0x70
+af @ 0x80
+afn nine @ 0x80
+'td int nine(const char *a, const char *b, const char *c, const char *d, const char *e, const char *f, const char *g, const char *h, const char *i);
+tk func.nine.cc=ppc-64
+af @ 0
+a:callargs-q 0x28
+EOF
+EXPECT=<<EOF
+int nine("AA", "BB", "CC", "DD", "EE", "FF", "GG", "HH", "II")
+EOF
+RUN
+
+NAME=callargs reads a ppc32 stack argument above the parameter save area
+FILE=malloc://256
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 386000503880005438a0005838c0005c38e0006039000064392000683940006c3960007091610008480000594e800020
+wx 4e800020 @ 0x80
+w AA @ 0x50
+w BB @ 0x54
+w CC @ 0x58
+w DD @ 0x5c
+w EE @ 0x60
+w FF @ 0x64
+w GG @ 0x68
+w HH @ 0x6c
+w II @ 0x70
+af @ 0x80
+afn nine @ 0x80
+'td int nine(const char *a, const char *b, const char *c, const char *d, const char *e, const char *f, const char *g, const char *h, const char *i);
+tk func.nine.cc=ppc-32
+af @ 0
+a:callargs-q 0x28
+EOF
+EXPECT=<<EOF
+int nine("AA", "BB", "CC", "DD", "EE", "FF", "GG", "HH", "II")
+EOF
+RUN
+
+NAME=ppc-64 elfv2 cc parameter save area
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc
+CMDS=<<EOF
+k anal/cc/cc.elfv2.argn
+k anal/cc/cc.elfv2.shadow
+EOF
+EXPECT=<<EOF
+stack
+96
+EOF
+RUN
+
+NAME=callargs reads an elfv2 stack argument above the parameter save area
+FILE=malloc://256
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 386000503880005438a0005838c0005c38e0006039000064392000683940006c39600070f9610060480000594e800020
+wx 4e800020 @ 0x80
+w AA @ 0x50
+w BB @ 0x54
+w CC @ 0x58
+w DD @ 0x5c
+w EE @ 0x60
+w FF @ 0x64
+w GG @ 0x68
+w HH @ 0x6c
+w II @ 0x70
+af @ 0x80
+afn nine @ 0x80
+'td int nine(const char *a, const char *b, const char *c, const char *d, const char *e, const char *f, const char *g, const char *h, const char *i);
+tk func.nine.cc=elfv2
+af @ 0
+a:callargs-q 0x28
+EOF
+EXPECT=<<EOF
+int nine("AA", "BB", "CC", "DD", "EE", "FF", "GG", "HH", "II")
+EOF
+RUN
+
+NAME=ppc.gnu decodes the full 6-bit primary opcode
+FILE=malloc://128
+ARGS=-a ppc.gnu -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 980100004400000248000010480000112c030000280300014082001060000000
+wx 4e8000204e8004204e800421 @ 32
+wx 4e8000214d8200204c820420 @ 44
+wx 429f0005408200114280001142800010 @ 56
+ao 1 @ 0~type
+ao 1 @ 4~type
+pi 1 @ 8
+ao 1 @ 8~type,jump
+ao 1 @ 12~type,jump,fail
+ao 1 @ 16~type
+ao 1 @ 20~type
+ao 1 @ 24~type,jump,fail
+ao 1 @ 32~type
+ao 1 @ 36~type
+ao 1 @ 40~type,fail
+ao 1 @ 44~type,fail
+ao 1 @ 48~type,fail
+ao 1 @ 52~type,fail
+ao 1 @ 56~type,jump,fail
+ao 1 @ 60~type,jump,fail
+ao 1 @ 64~type,jump,fail
+ao 1 @ 68~type,jump,fail
+wx 44000000 @ 72
+ao 1 @ 72~type
+wx 4c000064 @ 76
+ao 1 @ 76~type
+wx 4e0000204e40002042a00004 @ 80
+ao 1 @ 80~type,fail
+ao 1 @ 84~type,fail
+ao 1 @ 88~type
+EOF
+EXPECT=<<EOF
+type: null
+type: swi
+b 0x00000018
+type: jmp
+jump: 0x00000018
+type: call
+jump: 0x0000001c
+fail: 0x00000010
+type: cmp
+type: cmp
+type: cjmp
+jump: 0x00000028
+fail: 0x0000001c
+type: ret
+type: ujmp
+type: ucall
+fail: 0x0000002c
+type: ucall
+fail: 0x00000030
+type: cret
+fail: 0x00000034
+type: ucjmp
+fail: 0x00000038
+type: jmp
+jump: 0x0000003c
+type: ccall
+jump: 0x0000004c
+fail: 0x00000040
+type: call
+jump: 0x00000050
+fail: 0x00000044
+type: jmp
+jump: 0x00000054
+type: ill
+type: ret
+type: cjmp
+fail: 0x00000054
+type: cjmp
+fail: 0x00000058
+type: ill
+EOF
+RUN
+
+NAME=ppc.gnu function detection does not stop at byte stores
+FILE=malloc://16
+ARGS=-a ppc.gnu -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 380000009801000060000000 4e800020
+af
+afi~size
+EOF
+EXPECT=<<EOF
+size: 16
+EOF
+RUN
+
+NAME=ppc.gnu little-endian disassembly
+FILE=malloc://16
+ARGS=-a ppc.gnu -b 32 -e cfg.bigendian=false
+CMDS=<<EOF
+wx 10000048
+pi 1
+ao 1~type,jump
+EOF
+EXPECT=<<EOF
+b 0x00000010
+type: jmp
+jump: 0x00000010
+EOF
+RUN
+
+NAME=ppc register move does not make its destination an argument
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.cc=ppc-64
+CMDS=<<EOF
+wx 7c681b787d2942144e800020
+af
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ r3
+arg int64_t arg2 @ r9
+EOF
 RUN

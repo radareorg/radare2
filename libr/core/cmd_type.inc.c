@@ -369,17 +369,17 @@ static void cmd_afck(RCore *core, const char *c) {
 static void cmd_tcc(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
-		r_core_cmd_help (core, help_msg_tcc);
+		r_cons_cmd_help (core->cons, help_msg_tcc);
 		break;
 	case '-':
 		if (input[1] == '*') {
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_tcc, "tcc-*");
+				r_cons_cmd_help_match (core->cons, help_msg_tcc, "tcc-*", 0, true);
 			} else {
 				sdb_reset (core->anal->sdb_cc);
 			}
 		} else if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_tcc, "tcc-");
+			r_cons_cmd_help_match (core->cons, help_msg_tcc, "tcc-", 0, false);
 		} else {
 			r_anal_cc_del (core->anal, r_str_trim_head_ro (input + 1));
 		}
@@ -389,14 +389,14 @@ static void cmd_tcc(RCore *core, const char *input) {
 	case 'j':
 	case '*':
 		if (*input && input[1] == '?') {
-			r_core_cmd_help_match_spec (core, help_msg_tcc, "tcc", *input);
+			r_cons_cmd_help_match (core->cons, help_msg_tcc, "tcc", *input, true);
 		} else {
 			cmd_afcl (core, input);
 		}
 		break;
 	case 'k':
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_tcc, "tcck");
+			r_cons_cmd_help_match (core->cons, help_msg_tcc, "tcck", 0, true);
 		} else {
 			cmd_afck (core, NULL);
 		}
@@ -418,12 +418,17 @@ static void cmd_tcc(RCore *core, const char *input) {
 	}
 }
 
+// byte width of a type, falling back for the sizeless ones the sdb cannot resolve
+static ut32 type_bytesize(RAnal *anal, const char *type, ut32 fallback) {
+	const ut32 size = r_anal_type_bitsize (anal, type) / 8;
+	return size? size: fallback;
+}
+
 static void add_type_fields_to_json(RCore *core, PJ *pj, const char *struct_name, const char *type_name) {
 	const bool is_union = !strcmp (type_name, "union");
 	// Get struct members list
-	char *members_query = r_str_newf ("%s.%s", type_name, struct_name);
-	char *members = sdb_get (core->anal->sdb_types, members_query, 0);
-	free (members_query);
+	const char *value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s", type_name, struct_name);
+	char *members = value? strdup (value): NULL;
 	if (!members) {
 		return;
 	}
@@ -438,9 +443,8 @@ static void add_type_fields_to_json(RCore *core, PJ *pj, const char *struct_name
 		if (!member_name || R_STR_ISEMPTY (member_name)) {
 			continue;
 		}
-		char *member_query = r_str_newf ("%s.%s.%s", type_name, struct_name, member_name);
-		char *member_details = sdb_get (core->anal->sdb_types, member_query, 0);
-		free (member_query);
+		value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s.%s", type_name, struct_name, member_name);
+		char *member_details = value? strdup (value): NULL;
 		if (!member_details) {
 			continue;
 		}
@@ -450,17 +454,7 @@ static void add_type_fields_to_json(RCore *core, PJ *pj, const char *struct_name
 			const char *arr_size_str = r_str_word_get0 (member_details, 2);
 			ut32 arr_size = r_num_get (NULL, arr_size_str);
 			arr_size = arr_size ? arr_size : 1;
-			ut32 type_size;
-			if (strchr (type, '*')) {
-				type_size = core->anal->config->bits / 8;
-			} else {
-				ut64 type_bits = r_type_get_bitsize (core->anal->sdb_types, type);
-				type_size = type_bits / 8;
-				if (type_size == 0) {
-					type_size = 1;
-				}
-			}
-			ut32 size = type_size * arr_size;
+			ut32 size = type_bytesize (core->anal, type, 1) * arr_size;
 			pj_o (pj);
 			pj_ks (pj, "name", member_name);
 			pj_ks (pj, "type", type);
@@ -550,7 +544,7 @@ static int cmd_tac(void *data, const char *_input) { // "tac"
 	}
 	switch (*input) {
 	case '?': // "tac?"
-		r_core_cmd_help_match (core, help_msg_t, "tac");
+		r_cons_cmd_help_match (core->cons, help_msg_t, "tac", 0, true);
 		break;
 	default: // "tac"
 		if (R_STR_ISNOTEMPTY (arg)) {
@@ -568,7 +562,7 @@ static int cmd_tac(void *data, const char *_input) { // "tac"
 				R_LOG_ERROR ("File not found");
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_t, "tac");
+			r_cons_cmd_help_match (core->cons, help_msg_t, "tac", 0, true);
 		}
 		break;
 	}
@@ -598,7 +592,7 @@ static int cmd_tail(void *data, const char *_input) { // "tail"
 	}
 	switch (*input) {
 	case '?': // "tail?"
-		r_core_cmd_help_match (core, help_msg_t, "tail");
+		r_cons_cmd_help_match (core->cons, help_msg_t, "tail", 0, true);
 		break;
 	default: // "tail"
 		if (!arg) {
@@ -655,7 +649,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 			r_anal_noreturn_add (core->anal, NULL,
 					r_num_math (core->num, input + 1));
 		} else {
-			r_core_cmd_help (core, help_msg_tn);
+			r_cons_cmd_help (core->cons, help_msg_tn);
 		}
 		break;
 	case 'n': // "tnn"
@@ -663,7 +657,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 			/* do nothing? */
 			r_anal_noreturn_add (core->anal, r_str_trim_head_ro (input + 2), UT64_MAX);
 		} else {
-			r_core_cmd_help (core, help_msg_tn);
+			r_cons_cmd_help (core->cons, help_msg_tn);
 		}
 		break;
 	case '*':
@@ -675,7 +669,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 		break;
 	default:
 	case '?':
-		r_core_cmd_help (core, help_msg_tn);
+		r_cons_cmd_help (core->cons, help_msg_tn);
 		break;
 	}
 }
@@ -691,7 +685,7 @@ static void cmd_type_edit(RCore *core, const char *typename, const char *c_cmd) 
 		free (str);
 		return;
 	}
-	char *tmp = r_core_editor (core, "*.h", str);
+	char *tmp = r_core_editor (core, "*.h", str, NULL);
 	if (tmp) {
 		r_str_trim (tmp);
 		char *str_trimmed = strdup (str);
@@ -721,9 +715,7 @@ static bool stdifstruct(void *user, const char *k, const char *v) {
 		return true;
 	}
 	if (!strcmp (v, "typedef")) {
-		char *typedef_key = r_str_newf ("typedef.%s", k);
-		const char *type = sdb_const_get (TDB, typedef_key, NULL);
-		free (typedef_key);
+		const char *type = sdb_const_getf (TDB, NULL, "typedef.%s", k);
 		if (type && r_str_startswith (type, "struct")) {
 			return true;
 		}
@@ -820,16 +812,14 @@ static int print_struct_union_list_json(RCore *core, Sdb *TDB, SdbForeachCallbac
 	return 1;
 }
 
-static ut64 struct_type_size(Sdb *TDB, const char *name, const char *kind) {
+static ut64 struct_type_size(RAnal *anal, const char *name, const char *kind) {
 	if (!strcmp (kind, "typedef")) {
-		char *typedef_key = r_str_newf ("typedef.%s", name);
-		const char *type = sdb_const_get (TDB, typedef_key, NULL);
-		free (typedef_key);
+		const char *type = sdb_const_getf (anal->sdb_types, NULL, "typedef.%s", name);
 		if (R_STR_ISNOTEMPTY (type)) {
-			return r_type_get_bitsize (TDB, type) / 8;
+			return r_anal_type_bitsize (anal, type) / 8;
 		}
 	}
-	return r_type_get_bitsize (TDB, name) / 8;
+	return r_anal_type_bitsize (anal, name) / 8;
 }
 
 static void print_structs_by_size(RCore *core, Sdb *TDB, ut64 size) {
@@ -845,7 +835,7 @@ static void print_structs_by_size(RCore *core, Sdb *TDB, ut64 size) {
 		if (R_STR_ISEMPTY (name) || !kind) {
 			continue;
 		}
-		if (struct_type_size (TDB, name, kind) == size) {
+		if (struct_type_size (core->anal, name, kind) == size) {
 			r_cons_println (core->cons, name);
 		}
 	}
@@ -878,15 +868,38 @@ static void print_struct_union_in_c_format(RCore *core, Sdb *TDB, SdbForeachCall
 			}
 		}
 		r_strbuf_appendf (sb, "%s %s {%s", sdbkv_value (kv), name, multiline? "\n": "");
+		const bool is_struct = !strcmp (sdbkv_value (kv), "struct");
+		const int ptr_size = R_MAX (1, (int)core->anal->config->bits / 8);
+		ut64 run = 0;
 		char *p, *var = r_str_newf ("%s.%s", sdbkv_value (kv), name);
 		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 			char *var2 = r_str_newf ("%s.%s", var, p);
 			if (var2) {
-				char *val = sdb_array_get (TDB, var2, 0, NULL);
+				ut64 moff = 0;
+				int arrnum = 0;
+				char *val = r_type_get_member (TDB, var2, &moff, &arrnum);
 				if (val) {
-					char *arr = sdb_array_get (TDB, var2, 2, NULL);
-					int arrnum = arr? atoi (arr): 0;
-					free (arr);
+					if (is_struct) {
+						// function-pointer members store a func alias as their type; the parser lays them out as pointers
+						const char *tv = sdb_const_get (TDB, val, 0);
+						const bool is_fptr = tv && !strcmp (tv, "func");
+						const int av = is_fptr? ptr_size: r_anal_cparse_typealign (val, ptr_size);
+						ut64 natural = run;
+						if (av > 1 && (natural % av)) {
+							natural += av - (natural % av);
+						}
+						// pad only gaps that natural alignment cannot reproduce on re-parse
+						if (moff > run && moff != natural && !(moff % av)) {
+							if (multiline) {
+								r_strbuf_appendf (sb, "  uint8_t pad_0x%" PFMT64x "[%" PFMT64u "]; // gap\n", run, moff - run);
+							} else {
+								r_strbuf_appendf (sb, "%suint8_t pad_0x%" PFMT64x "[%" PFMT64u "];", space, run, moff - run);
+								space = " ";
+							}
+						}
+						const ut64 mb = is_fptr? ptr_size: r_anal_cparse_typesize (val, arrnum > 0? arrnum: 1, ptr_size);
+						run = R_MAX (run, moff + mb); // monotonic: overlapping members never force a pad
+					}
 					// Check for metadata attributes for this field
 					RStrBuf *attrs_sb = r_strbuf_new ("");
 					SdbList *all_keys = sdb_foreach_list (TDB, true);
@@ -1146,23 +1159,12 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 			char *var2 = r_str_newf ("%s.%s", var, p);
 			if (var2) {
-				char *val = sdb_array_get (TDB, var2, 0, NULL);
+				ut64 moff = 0;
+				int arrnum = 0;
+				char *val = r_type_get_member (TDB, var2, &moff, &arrnum);
 				if (val) {
-					char *arr = sdb_array_get (TDB, var2, 2, NULL);
-					int arrnum = arr? atoi (arr): 0;
-					free (arr);
-					ut32 type_size;
-					if (strchr (val, '*')) {
-						type_size = core->anal->config->bits / 8;
-					} else {
-						ut64 type_bits = r_type_get_bitsize (TDB, val);
-						type_size = type_bits / 8;
-						if (type_size == 0) {
-							type_size = 1;
-						}
-					}
 					ut32 arr_size = arrnum ? arrnum : 1;
-					ut32 size = type_size * arr_size;
+					ut32 size = type_bytesize (core->anal, val, 1) * arr_size;
 					r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s", color_addr, current_offset, color_reset, color_type, val, color_reset);
 					if (p && p[0] != '\0') {
 						r_strbuf_appendf (sb, "%s%s%s%s", strstr (val, " *")? "": " ", color_name, p, color_reset);
@@ -1299,9 +1301,7 @@ static void print_basic_type_with_offsets(RCore *core, Sdb *TDB, const char *arg
 				continue;
 			}
 		}
-		char *size_key = r_str_newf ("type.%s.size", name);
-		const char *size_str = sdb_const_get (TDB, size_key, NULL);
-		free (size_key);
+		const char *size_str = sdb_const_getf (TDB, NULL, "type.%s.size", name);
 		ut32 size = size_str ? (ut32)(atoi (size_str) / 8) : 0;
 		if (show_xrefs) {
 			RList *type_xrefs = collect_type_xrefs (core, name);
@@ -1384,7 +1384,6 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 	}
 
 	RStrBuf *sb = r_strbuf_new ("");
-	r_strf_buffer (256);
 
 	ls_foreach (l, iter, kv) {
 		const char *name = sdbkv_key (kv);
@@ -1396,12 +1395,12 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 			}
 		}
 
-		int args = sdb_num_get (TDB, r_strf ("func.%s.args", name), 0);
-		const char *ret = sdb_const_get (TDB, r_strf ("func.%s.ret", name), 0);
+		int args = sdb_num_getf (TDB, NULL, "func.%s.args", name);
+		const char *ret = sdb_const_getf (TDB, NULL, "func.%s.ret", name);
 		if (!ret) {
 			ret = "void";
 		}
-		const char *cc = sdb_const_get (TDB, r_strf ("func.%s.cc", name), 0);
+		const char *cc = sdb_const_getf (TDB, NULL, "func.%s.cc", name);
 		if (!cc) {
 			cc = r_anal_cc_default (core->anal);
 			if (!cc) {
@@ -1434,7 +1433,8 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 		int max_cc_args = cc ? r_anal_cc_max_arg (core->anal, cc) : 0;
 		ut32 current_offset = 0;
 		for (i = 0; i < args; i++) {
-			char *type = sdb_get (TDB, r_strf ("func.%s.arg.%d", name, i), 0);
+			const char *value = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", name, i);
+			char *type = value? strdup (value): NULL;
 			if (!type) {
 				continue;
 			}
@@ -1452,22 +1452,14 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 			}
 
 			ut32 type_size;
-			if (!strcmp (type, "...")) {
-				r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s%s // %s%s\n",
+			if (r_type_arg_is_vararg (type, argname)) {
+				r_strbuf_appendf (sb, "%s0x%08x%s   %s...%s%s // %s%s\n",
 					color_addr, current_offset, color_reset,
-					color_type, type, color_reset,
+					color_type, color_reset,
 					color_comment, "varargs", color_reset);
 				type_size = 0;
 			} else {
-				if (strchr (type, '*')) {
-					type_size = core->anal->config->bits / 8;
-				} else {
-					ut64 type_bits = r_type_get_bitsize (TDB, type);
-					type_size = type_bits / 8;
-					if (type_size == 0) {
-						type_size = core->anal->config->bits / 8;
-					}
-				}
+				type_size = type_bytesize (core->anal, type, core->anal->config->bits / 8);
 				r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s %s%s%s%s // %s%s\n",
 					color_addr, current_offset, color_reset,
 					color_type, type, color_reset,
@@ -1514,9 +1506,7 @@ static void print_type_view(RCore *core, const char *arg) {
 			} else if (!strcmp (type_kind, "func")) {
 				print_func_with_offsets (core, TDB, arg);
 			} else if (!strcmp (type_kind, "typedef")) {
-				char *typedef_key = r_str_newf ("typedef.%s", arg);
-				const char *real_type = sdb_const_get (TDB, typedef_key, NULL);
-				free (typedef_key);
+				const char *real_type = sdb_const_getf (TDB, NULL, "typedef.%s", arg);
 				if (real_type) {
 					print_type_view (core, real_type);
 				}
@@ -1684,8 +1674,8 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 	r_strf_buffer (256);
 	char *res = sdb_querys (TDB, NULL, -1, r_strf ("func.%s.args", input));
 	const char *name = r_str_trim_head_ro (input);
-	int i, args = sdb_num_get (TDB, r_strf ("func.%s.args", name), 0);
-	const char *ret = sdb_const_get (TDB, r_strf ("func.%s.ret", name), 0);
+	int i, args = sdb_num_getf (TDB, NULL, "func.%s.args", name);
+	const char *ret = sdb_const_getf (TDB, NULL, "func.%s.ret", name);
 	if (!ret) {
 		ret = "void";
 	}
@@ -1696,7 +1686,8 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 
 	r_cons_printf (core->cons, "%s %s (", ret, name);
 	for (i = 0; i < args; i++) {
-		char *type = sdb_get (TDB, r_strf ("func.%s.arg.%d", name, i), 0);
+		const char *value = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", name, i);
+		char *type = value? strdup (value): NULL;
 		if (!type) {
 			continue;
 		}
@@ -1704,8 +1695,8 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 		if (argname) {
 			*argname++ = 0;
 		}
-		if (!strcmp (type, "...")) {
-			r_cons_printf (core->cons, "%s%s", (i == 0)? "": ", ", type);
+		if (r_type_arg_is_vararg (type, argname)) {
+			r_cons_printf (core->cons, "%s...", (i == 0)? "": ", ");
 		} else {
 			r_cons_printf (core->cons, "%s%s %s", (i == 0)? "": ", ", type, argname);
 		}
@@ -1724,11 +1715,10 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 	RCore *core = ctx->core;
 	Sdb *tdb = core->anal->sdb_types;
 	PJ *pj = ctx->pj;
-	r_strf_buffer (256);
 	const char *name = r_str_trim_head_ro (input);
-	int i, args = sdb_num_get (tdb, r_strf ("func.%s.args", name), 0);
-	const char *ret = sdb_const_get (tdb, r_strf ("func.%s.ret", name), 0);
-	const char *cc = sdb_const_get (tdb, r_strf ("func.%s.cc", name), 0);
+	int i, args = sdb_num_getf (tdb, NULL, "func.%s.args", name);
+	const char *ret = sdb_const_getf (tdb, NULL, "func.%s.ret", name);
+	const char *cc = sdb_const_getf (tdb, NULL, "func.%s.cc", name);
 	if (!ret) {
 		ret = "void";
 	}
@@ -1755,7 +1745,8 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 	pj_ka (pj, "args");
 	ut32 current_offset = 0;
 	for (i = 0; i < args; i++) {
-		char *type = sdb_get (tdb, r_strf ("func.%s.arg.%d", name, i), 0);
+		const char *value = sdb_const_getf (tdb, NULL, "func.%s.arg.%d", name, i);
+		char *type = value? strdup (value): NULL;
 		if (type) {
 			char *argname = strchr (type, ',');
 			if (argname) {
@@ -1769,20 +1760,13 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 				arg_loc = "stack";
 			}
 			ut32 type_size = 0;
-			if (strcmp (type, "...")) {
-				if (strchr (type, '*')) {
-					type_size = core->anal->config->bits / 8;
-				} else {
-					ut64 type_bits = r_type_get_bitsize (tdb, type);
-					type_size = type_bits / 8;
-					if (type_size == 0) {
-						type_size = core->anal->config->bits / 8;
-					}
-				}
+			const bool vararg = r_type_arg_is_vararg (type, argname);
+			if (!vararg) {
+				type_size = type_bytesize (core->anal, type, core->anal->config->bits / 8);
 			}
 			pj_o (pj);
-			pj_ks (pj, "type", type);
-			if (strcmp (type, "...")) {
+			pj_ks (pj, "type", vararg? "...": type);
+			if (!vararg) {
 				pj_ks (pj, "name", argname ? argname : "(null)");
 				pj_kn (pj, "size", type_size);
 			}
@@ -1895,21 +1879,17 @@ static bool print_typelist_json_cb(void *p, const char *k, const char *v) {
 	}
 	pj_o (pj);
 	Sdb *sdb = core->anal->sdb_types;
-	char *sizecmd = r_str_newf ("type.%s.size", k);
-	char *size_s = sdb_get (sdb, sizecmd, NULL);
-	char *formatcmd = r_str_newf ("type.%s", k);
+	const char *size_s = sdb_const_getf (sdb, NULL, "type.%s.size", k);
 	pj_ks (pj, "type", k);
 	pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
-	char *format_s = sdb_get (sdb, formatcmd, NULL);
+	const char *value = sdb_const_getf (sdb, NULL, "type.%s", k);
+	char *format_s = value? strdup (value): NULL;
 	if (format_s) {
 		r_str_trim (format_s);
 		pj_ks (pj, "format", format_s);
 		free (format_s);
 	}
 	pj_end (pj);
-	free (size_s);
-	free (sizecmd);
-	free (formatcmd);
 	return true;
 }
 
@@ -1971,11 +1951,9 @@ static void set_offset_hint(RCore *core, RAnalOp *op, const char *type, ut64 lad
 	const char *cmt = ((offimm == 0) && res)? res: type;
 	if (offimm > 0) {
 		// set hint only if link is present
-		char* query = r_str_newf ("link.%08"PFMT64x, laddr);
-		if (res && sdb_const_get (core->anal->sdb_types, query, 0)) {
+		if (res && sdb_const_getf (core->anal->sdb_types, NULL, "link.%08" PFMT64x, laddr)) {
 			r_anal_hint_set_offset (core->anal, at, res);
 		}
-		free (query);
 	} else if (cmt && r_anal_op_ismemref (op->type)) {
 		r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, at, cmt);
 	}
@@ -2289,7 +2267,7 @@ static int cmd_type(void *data, const char *input) {
 	case 'u': { // "tu"
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_tu);
+			r_cons_cmd_help (core->cons, help_msg_tu);
 			break;
 		case '-': { // "tu-"
 			const char *arg = r_str_trim_head_ro (input + 2);
@@ -2339,7 +2317,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'e': // "tue"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_tu, "tue");
+				r_cons_cmd_help_match (core->cons, help_msg_tu, "tue", 0, true);
 			} else {
 				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "tuc");
 			}
@@ -2372,7 +2350,7 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'k': // "tk"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_t, "tk");
+			r_cons_cmd_help_match (core->cons, help_msg_t, "tk", 0, true);
 		} else {
 			res = (input[1] == ' ')
 				? sdb_querys (TDB, NULL, -1, input + 2)
@@ -2389,7 +2367,7 @@ static int cmd_type(void *data, const char *input) {
 			cmd_tcc (core, input + 2);
 			break;
 		case '?': //"tc?"
-			r_core_cmd_help (core, help_msg_tc);
+			r_cons_cmd_help (core->cons, help_msg_tc);
 			break;
 		case ' ': { // "tcc "
 			const char *type = r_str_trim_head_ro (input + 1);
@@ -2420,13 +2398,13 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'd': // "tcd"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_tc, "tcd");
+				r_cons_cmd_help_match (core->cons, help_msg_tc, "tcd", 0, true);
 			} else {
 				r_core_cmd0 (core, "tud;tsd;ttc;ted");
 			}
 			break;
 		default:
-			r_core_cmd_help (core, help_msg_tc);
+			r_cons_cmd_help (core->cons, help_msg_tc);
 			break;
 		}
 		break;
@@ -2472,23 +2450,23 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'n': // "tsn"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_ts, "tsn");
+				r_cons_cmd_help_match (core->cons, help_msg_ts, "tsn", 0, true);
 			} else if (input[2] == ' ') {
 				const char *arg = r_str_trim_head_ro (input + 2);
 				if (R_STR_ISEMPTY (arg)) {
-					r_core_cmd_help_match (core, help_msg_ts, "tsn");
+					r_cons_cmd_help_match (core->cons, help_msg_ts, "tsn", 0, true);
 				} else {
 					print_structs_by_size (core, TDB, r_num_math (core->num, arg));
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_ts, "tsn");
+				r_cons_cmd_help_match (core->cons, help_msg_ts, "tsn", 0, true);
 			}
 			break;
 		case 's': // "tss"
 			if (input[2] == ' ') {
-				r_cons_printf (core->cons, "%" PFMT64u "\n", (r_type_get_bitsize (TDB, input + 3) / 8));
+				r_cons_printf (core->cons, "%" PFMT64u "\n", (r_anal_type_bitsize (core->anal, input + 3) / 8));
 			} else {
-				r_core_cmd_help (core, help_msg_ts);
+				r_cons_cmd_help (core->cons, help_msg_ts);
 			}
 			break;
 		case 'c': // "tsc"
@@ -2499,7 +2477,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'e': // "tse"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_ts, "tse");
+				r_cons_cmd_help_match (core->cons, help_msg_ts, "tse", 0, true);
 			} else {
 				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "tsc");
 			}
@@ -2516,7 +2494,7 @@ static int cmd_type(void *data, const char *input) {
 			print_struct_union_with_offsets (core, TDB, stdifstruct, r_str_trim_head_ro (input + 2), false);
 			break;
 		case '?': // "ts?"
-			r_core_cmd_help (core, help_msg_ts);
+			r_cons_cmd_help (core->cons, help_msg_ts);
 			break;
 		default:
 			r_core_return_invalid_command (core, "ts", input[1]);
@@ -2536,19 +2514,19 @@ static int cmd_type(void *data, const char *input) {
 			const char *help_cmd = "ten";
 			switch (input[2]) {
 			case '?': // "ten?"
-				r_core_cmd_help_contains (core, help_msg_te, "ten");
+				r_cons_cmd_help_match (core->cons, help_msg_te, "ten", 0, false);
 				break;
 			case 'j': // "tenj"
 			case 'q': // "tenq"
 				mode = input[2];
 				help_cmd = mode == 'j'? "tenj": "tenq";
 				if (input[3] == '?') {
-					r_core_cmd_help_match (core, help_msg_te, help_cmd);
+					r_cons_cmd_help_match (core->cons, help_msg_te, help_cmd, 0, true);
 					break;
 				}
 				arg = r_str_trim_head_ro (input + 3);
 				if (R_STR_ISEMPTY (arg)) {
-					r_core_cmd_help_match (core, help_msg_te, help_cmd);
+					r_cons_cmd_help_match (core->cons, help_msg_te, help_cmd, 0, true);
 					break;
 				}
 				print_enum_by_num (core, TDB, r_num_math (core->num, arg), mode);
@@ -2556,13 +2534,13 @@ static int cmd_type(void *data, const char *input) {
 			case ' ': // "ten "
 				arg = r_str_trim_head_ro (input + 2);
 				if (R_STR_ISEMPTY (arg)) {
-					r_core_cmd_help_match (core, help_msg_te, help_cmd);
+					r_cons_cmd_help_match (core->cons, help_msg_te, help_cmd, 0, true);
 					break;
 				}
 				print_enum_by_num (core, TDB, r_num_math (core->num, arg), mode);
 				break;
 			case '\0':
-				r_core_cmd_help_match (core, help_msg_te, help_cmd);
+				r_cons_cmd_help_match (core->cons, help_msg_te, help_cmd, 0, true);
 				break;
 			default:
 				r_core_return_invalid_command (core, "ten", input[2]);
@@ -2596,7 +2574,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'j': // "tej"
 			if (input[2] == '?') {
-				r_core_cmd_help_contains (core, help_msg_te, "tej");
+				r_cons_cmd_help_match (core->cons, help_msg_te, "tej", 0, false);
 			} else if (input[2] == '\0') {
 				print_enum_list_json (core, TDB, NULL);
 			} else {
@@ -2605,35 +2583,35 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'b': // "teb"
 			if (R_STR_ISEMPTY (name) || input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_te, "teb");
+				r_cons_cmd_help_match (core->cons, help_msg_te, "teb", 0, true);
 			} else {
 				res = r_type_enum_member (TDB, name, member_name, 0);
 			}
 			break;
 		case 'c': // "tec"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_te, "tec");
+				r_cons_cmd_help_match (core->cons, help_msg_te, "tec", 0, true);
 			} else {
 				print_enum_in_c_format (core, TDB, r_str_trim_head_ro (input + 2), true);
 			}
 			break;
 		case 'd': // "ted"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_te, "ted");
+				r_cons_cmd_help_match (core->cons, help_msg_te, "ted", 0, true);
 			} else {
 				print_enum_in_c_format (core, TDB, r_str_trim_head_ro (input + 2), false);
 			}
 			break;
 		case 'e': // "tee"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_te, "tee");
+				r_cons_cmd_help_match (core->cons, help_msg_te, "tee", 0, true);
 			} else {
 				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "tec");
 			}
 			break;
 		case 'v': // "tev"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_te, "tev");
+				r_cons_cmd_help_match (core->cons, help_msg_te, "tev", 0, true);
 			} else {
 				print_enum_with_offsets (core, TDB, r_str_trim_head_ro (input + 2));
 			}
@@ -2670,7 +2648,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		case '?':
-			r_core_cmd_help (core, help_msg_te);
+			r_cons_cmd_help (core->cons, help_msg_te);
 			break;
 		default:
 			r_core_return_invalid_command (core, "te", *input);
@@ -2690,8 +2668,7 @@ static int cmd_type(void *data, const char *input) {
 			  const char *typdef = sdb_const_get (core->anal->sdb_types, token, 0);
 			  // Resolve typedef if any
 			  if (typdef && !strcmp (typdef, "typedef")) {
-				  r_strf_var (a, 128, "typedef.%s", token);
-				  const char *tokendef = sdb_const_get (core->anal->sdb_types, a, 0);
+				  const char *tokendef = sdb_const_getf (core->anal->sdb_types, NULL, "typedef.%s", token);
 				  if (tokendef) {
 					  token = tokendef;
 				  }
@@ -2704,14 +2681,14 @@ static int cmd_type(void *data, const char *input) {
 	case '*': // "t*"
 	case '\0': // "t"
 		if (input[0] && input[1] == '?') {
-			r_core_cmd_help_match_spec (core, help_msg_t, "t", input[0]);
+			r_cons_cmd_help_match (core->cons, help_msg_t, "t", input[0], true);
 		} else {
 			typesList (core, input[0]);
 		}
 		break;
 	case 'o': // "to"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_to);
+			r_cons_cmd_help (core->cons, help_msg_to);
 		} else if (r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 			if (input[1] == ' ') {
 				const char *dir = r_config_get (core->config, "dir.types");
@@ -2724,7 +2701,7 @@ static int cmd_type(void *data, const char *input) {
 					}
 				}
 				if (!strcmp (filename, "-")) {
-					char *tmp = r_core_editor (core, "*.h", "");
+					char *tmp = r_core_editor (core, "*.h", "", NULL);
 					if (tmp) {
 						char *errmsg = NULL;
 						char *out = r_anal_cparse (core->anal, tmp, &errmsg);
@@ -2759,7 +2736,7 @@ static int cmd_type(void *data, const char *input) {
 				if (arg) {
 					r_file_touch (arg + 1);
 				} else {
-					r_core_cmd_help_match (core, help_msg_to, "touch");
+					r_cons_cmd_help_match (core->cons, help_msg_to, "touch", 0, true);
 				}
 			} else if (input[1] == 's') {
 				const char *dbpath = input + 3;
@@ -2774,11 +2751,11 @@ static int cmd_type(void *data, const char *input) {
 				if (R_STR_ISNOTEMPTY (dbname)) {
 					r_anal_types_load_sdb (core->anal, dbname);
 				} else {
-					r_core_cmd_help_match (core, help_msg_to, "tol");
+					r_cons_cmd_help_match (core->cons, help_msg_to, "tol", 0, true);
 				}
 			}  else if (input[1] == 'e') { // "toe"
 				char *str = r_core_cmd_strf (core , "tc %s", input + 2);
-				char *tmp = r_core_editor (core, "*.h", str);
+				char *tmp = r_core_editor (core, "*.h", str, NULL);
 				if (tmp) {
 					char *errmsg = NULL;
 					char *out = r_anal_cparse (core->anal, tmp, &errmsg);
@@ -2804,10 +2781,10 @@ static int cmd_type(void *data, const char *input) {
 	case 'd': // "td"
 		if (input[1] == '?') {
 			// TODO #7967 help refactor: move to detail
-			r_core_cmd_help_contains (core, help_msg_t, "td");
+			r_cons_cmd_help_match (core->cons, help_msg_t, "td", 0, false);
 		} else if (input[1] == 'e') { // "tde"
 			for (;;) {
-				char *tmp = r_core_editor (core, "*.h", "");
+				char *tmp = r_core_editor (core, "*.h", "", NULL);
 				if (!tmp) {
 					break;
 				}
@@ -2854,7 +2831,7 @@ static int cmd_type(void *data, const char *input) {
 	case 'v': // "tv"
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_tv);
+			r_cons_cmd_help (core->cons, help_msg_tv);
 			break;
 		case ' ':
 			print_type_view (core, r_str_trim_head_ro (input + 2));
@@ -2952,7 +2929,7 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		default:
-			r_core_cmd_help (core, help_msg_tx);
+			r_cons_cmd_help (core->cons, help_msg_tx);
 			break;
 		}
 		break;
@@ -2967,11 +2944,11 @@ static int cmd_type(void *data, const char *input) {
 			if (input[2] == 'l') {
 				cmd_tail (core, input);
 			} else {
-				r_core_cmd_help_match (core, help_msg_t, "tail");
+				r_cons_cmd_help_match (core->cons, help_msg_t, "tail", 0, true);
 			}
 			break;
 		default:
-			r_core_cmd_help_contains (core, help_msg_t, "ta");
+			r_cons_cmd_help_match (core->cons, help_msg_t, "ta", 0, false);
 			break;
 		}
 		break;
@@ -2979,7 +2956,7 @@ static int cmd_type(void *data, const char *input) {
 	case 'l': // "tl"
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_tl);
+			r_cons_cmd_help (core->cons, help_msg_tl);
 			break;
 		case ' ': {
 			char *type = strdup (input + 2);
@@ -3066,7 +3043,7 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'p':  // "tp"
 		if (input[1] == '?') { // "tp?"
-			r_core_cmd_help (core, help_msg_tp);
+			r_cons_cmd_help (core->cons, help_msg_tp);
 		} else if (input[1] == 'v') { // "tpv"
 			const char *type_name = r_str_trim_head_ro (input + 2);
 			char *fmt = r_type_format (TDB, type_name);
@@ -3080,7 +3057,7 @@ static int cmd_type(void *data, const char *input) {
 				}
 			}
 			} else {
-				r_core_cmd_help_match (core, help_msg_tp, "tpv");
+				r_cons_cmd_help_match (core->cons, help_msg_tp, "tpv", 0, true);
 			}
 		} else if (input[1] == ' ' || input[1] == 'x' || !input[1]) {
 			char *tmp = strdup (input);
@@ -3127,7 +3104,7 @@ static int cmd_type(void *data, const char *input) {
 							}
 						}
 					}
-					int type_size = r_type_get_bitsize (core->anal->sdb_types, type) / 8;
+					int type_size = r_anal_type_bitsize (core->anal, type) / 8;
 					int obs = core->blocksize;
 					if (type_size > obs) {
 						r_core_block_size (core, type_size);
@@ -3144,19 +3121,19 @@ static int cmd_type(void *data, const char *input) {
 				free (fmt);
 				free (type);
 			} else {
-				r_core_cmd_help (core, help_msg_tp);
+				r_cons_cmd_help (core->cons, help_msg_tp);
 			}
 			free (tmp);
 		} else { // "tp"
-			r_core_cmd_help (core, help_msg_tp);
+			r_cons_cmd_help (core->cons, help_msg_tp);
 		}
 		break;
 	case '-': // "t-"
 		if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_t, "t-");
+			r_cons_cmd_help_match (core->cons, help_msg_t, "t-", 0, false);
 		} else if (input[1] == '*') {
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_t, "t-*");
+				r_cons_cmd_help_match (core->cons, help_msg_t, "t-*", 0, true);
 			} else {
 				sdb_reset (TDB);
 			}
@@ -3182,7 +3159,7 @@ static int cmd_type(void *data, const char *input) {
 		case '-': { // "tf-"
 			const char *arg = r_str_trim_head_ro (input + 2);
 			if (R_STR_ISEMPTY (arg)) {
-				r_core_cmd_help_match (core, help_msg_tf, "tf-");
+				r_cons_cmd_help_match (core->cons, help_msg_tf, "tf-", 0, true);
 			} else if (strchr (arg, '*') || strchr (arg, ' ')) {
 				types_remove_glob (core, stdiffunc, arg);
 			} else {
@@ -3209,7 +3186,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'e': // "tfe"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_tf, "tfe");
+				r_cons_cmd_help_match (core->cons, help_msg_tf, "tfe", 0, true);
 			} else {
 				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "tfc");
 			}
@@ -3226,7 +3203,7 @@ static int cmd_type(void *data, const char *input) {
 			if (input[2] == ' ') {
 				print_func_with_offsets (core, TDB, r_str_trim_head_ro (input + 3));
 			} else if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_tf, "tfv");
+				r_cons_cmd_help_match (core->cons, help_msg_tf, "tfv", 0, true);
 			} else {
 				print_func_with_offsets (core, TDB, NULL);
 			}
@@ -3242,7 +3219,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		default:
-			r_core_cmd_help (core, help_msg_tf);
+			r_cons_cmd_help (core->cons, help_msg_tf);
 			break;
 		}
 		break;
@@ -3265,13 +3242,11 @@ static int cmd_type(void *data, const char *input) {
 						if (!input[1]) {
 							r_cons_println (core->cons, name);
 						} else {
-							char *q = r_str_newf ("typedef.%s", name);
-							const char *res = sdb_const_get (TDB, q, 0);
+							const char *res = sdb_const_getf (TDB, NULL, "typedef.%s", name);
 							if (!res) {
 								res = "";
 							}
 							pj_ks (pj, name, res);
-							free (q);
 						}
 					}
 				}
@@ -3306,9 +3281,7 @@ static int cmd_type(void *data, const char *input) {
 								continue;
 							}
 						}
-						char *q = r_str_newf ("typedef.%s", name);
-						const char *res = sdb_const_get (TDB, q, 0);
-						free (q);
+						const char *res = sdb_const_getf (TDB, NULL, "typedef.%s", name);
 						if (res) {
 							r_cons_printf (core->cons, "%s %s %s;\n", sdbkv_value (kv), res, name);
 						}
@@ -3324,26 +3297,24 @@ static int cmd_type(void *data, const char *input) {
 		}
 		if (input[1] == 'e') { // "tte"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_tt, "tte");
+				r_cons_cmd_help_match (core->cons, help_msg_tt, "tte", 0, true);
 			} else {
 				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "ttc");
 			}
 			break;
 		}
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_tt);
+			r_cons_cmd_help (core->cons, help_msg_tt);
 			break;
 		}
 		char *s = strdup (input + 2);
 		const char *istypedef;
 		istypedef = sdb_const_get (TDB, s, 0);
 		if (istypedef && !strncmp (istypedef, "typedef", 7)) {
-			char *q = r_str_newf ("typedef.%s", s);
-			const char *res = sdb_const_get (TDB, q, 0);
+			const char *res = sdb_const_getf (TDB, NULL, "typedef.%s", s);
 			if (res) {
 				r_cons_println (core->cons, res);
 			}
-			free (q);
 		} else {
 			R_LOG_ERROR ("This is not a typedef");
 		}
@@ -3351,7 +3322,7 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	}
 	case '?':
-		r_core_cmd_help (core, help_msg_t);
+		r_cons_cmd_help (core->cons, help_msg_t);
 		break;
 	default:
 		r_core_return_invalid_command (core, "t", *input);

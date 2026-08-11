@@ -378,7 +378,7 @@ R_API RDebug *r_debug_new(int hard) {
 	}
 	// R_SYS_ARCH
 	dbg->arch = strdup (R_SYS_ARCH);
-	dbg->bits = R_SYS_BITS;
+	dbg->bits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 	r_debug_options_init (&dbg->options);
 	dbg->forked_pid = -1;
 	dbg->main_pid = -1;
@@ -996,7 +996,6 @@ R_API bool r_debug_step_hard(RDebug *dbg, RBreakpointItem **pb) {
 #if __linux__
 	dbg->options.continue_all_threads = prev_continue;
 #endif
-
 	if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
 		return false;
 	}
@@ -1845,7 +1844,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	RDebugMap *map;
 	r_debug_select (dbg, pid, tid);
 	r_debug_map_sync (dbg);
-	char *abspath = r_sys_pid_to_path (pid);
+	char *abspath = r_sys_pidpath (pid);
 	if (file) {
 #if !R2__WINDOWS__
 		if (!abspath) {

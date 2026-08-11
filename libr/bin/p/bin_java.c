@@ -92,13 +92,13 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static bool check(RBinFile *bf, RBuffer *b) {
-	if (r_buf_size (b) > 32) {
+	if (r_buf_size (b) >= 10) {
 		ut8 buf[4];
 		r_buf_read_at (b, 0, buf, sizeof (buf));
 		if (!memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
-			int off = r_buf_read_be32_at (b, 4 * sizeof (int));
-			int version = r_buf_read_be16_at (b, 6);
-			if (off > 0 && version < 1024) {
+			ut16 constant_pool_count = r_buf_read_be16_at (b, 8);
+			ut16 version = r_buf_read_be16_at (b, 6);
+			if (constant_pool_count > 0 && version > 0 && version < 1024) {
 				return true;
 			}
 		}

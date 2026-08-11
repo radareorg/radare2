@@ -8,7 +8,7 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	if (length < 2) {
 		return false;
 	}
-	ut16 idx = r_buf_read_le16_at (b, 0x3c);
+	ut32 idx = r_buf_read_le32_at (b, 0x3c);
 	if ((ut64)idx + 26 < length) {
 		ut8 buf[2];
 		r_buf_read_at (b, 0, buf, sizeof (buf));
@@ -126,7 +126,7 @@ static RList *relocs(RBinFile *bf) {
 }
 
 static RList* patch_relocs(RBinFile * bf) {
-	RList *ret = r_list_newf ((RListFree)free);
+	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
 	RBin *b = bf->rbin;
 	RBinLEObj *bin = bf->bo->bin_obj;
 	LE_image_header *h = bin->header;
@@ -145,10 +145,6 @@ static RList* patch_relocs(RBinFile * bf) {
 		}
 
 		RBinReloc * r = R_NEW0 (RBinReloc);
-		if (!r) {
-			break;
-		}
-
 		r->import = NULL;
 		r->symbol = NULL;
 		r->is_ifunc = false;
@@ -224,6 +220,23 @@ static bool sections_vec(RBinFile *bf) {
 	return r_bin_le_load_sections (bf->bo->bin_obj, &bf->bo->sections_vec);
 }
 
+static bool load_resources(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
+	RBinLEObj *bin = bf->bo->bin_obj;
+	if (!bin || !r_bin_le_load_resources (bin, &bf->bo->resources_vec)) {
+		return false;
+	}
+	RBinResource *resource;
+	R_VEC_FOREACH (&bf->bo->resources_vec, resource) {
+		ut64 paddr;
+		if (r_add_overflow (resource->paddr, bf->bo->loadaddr, &paddr)) {
+			return false;
+		}
+		resource->paddr = paddr;
+	}
+	return true;
+}
+
 RBinPlugin r_bin_plugin_le = {
 	.meta = {
 		.name = "le",
@@ -238,6 +251,7 @@ RBinPlugin r_bin_plugin_le = {
 	.info = &info,
 	.header = &header,
 	.sections_vec = &sections_vec,
+	.load_resources = &load_resources,
 	.entries = &entries,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,

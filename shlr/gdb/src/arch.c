@@ -15,118 +15,113 @@ static ut64 parse_size(char *s, char **end) {
 	return strtoul (s, end, 0) << 3;
 }
 
-gdb_reg_t *parse_def(char **tok) {
+static gdb_reg_t *parse_def(char **tok) {
 	char *end = NULL;
 	gdb_reg_t *r = R_NEW0 (gdb_reg_t);
 	r_str_ncpy (r->name, tok[1], sizeof (r->name));
 	r->size = parse_size (tok[2], &end);
-	if (*end != '\0' || !r->size) {
-		free (r);
-		return NULL;
+	if (!*end && r->size && !R_STR_ISEMPTY (tok[3]) && strcmp (tok[3], "?")) {
+		r->offset = parse_size (tok[3], &end);
+		if (!*end) {
+			return r;
+		}
 	}
-	if (R_STR_ISEMPTY (tok[3]) || !strcmp (tok[3], "?")) {
-		free (r);
-		return NULL;
-	}
-	r->offset = parse_size (tok[3], &end);
-	return r;
+	free (r);
+	return NULL;
 }
 
 #define PARSER_MAX_TOKENS 8
+
+static void free_tokens(char **tok, int count) {
+	int i;
+	for (i = 0; i < count; i++) {
+		free (tok[i]);
+		tok[i] = NULL;
+	}
+}
+
 gdb_reg_t *arch_parse_reg_profile(const char *reg_profile) {
 	char *tok[PARSER_MAX_TOKENS] = { 0 };
 	char tmp[128];
-	int i, j, l;
+	int i, j = 0, l;
+	if (!reg_profile) {
+		return NULL;
+	}
 	const char *p = reg_profile;
 	RList *gdb_regs_list = r_list_newf (free);
+	if (!gdb_regs_list) {
+		return NULL;
+	}
 	RListIter *iter;
 	gdb_reg_t *reg;
 
-	// Line number
-	l = 0;
-	// For every line
-	do {
-		// Increment line number
-		l++;
-		// Skip comment lines
-		if (*p == '#') {
-			const char *q = p;
-			while (*q != '\n') {
-				q++;
-			}
-			p = q;
-			continue;
-		}
+	for (l = 1; *p; l++) {
 		j = 0;
-		// For every word
-		while (*p) {
+		while (*p && *p != '\n') {
 			// Skip the whitespace
 			while (*p == ' ' || *p == '\t') {
 				p++;
 			}
-			// EOL?
-			if (*p == '\n') {
+			if (!*p || *p == '\n') {
 				break;
 			}
 			if (*p == '#') {
-				// Place the rest of the line in the token if a comment is encountered
-				for (i = 0; *p != '\n'; p++) {
-					if (i < sizeof (tmp) - 1) {
-						tmp[i++] = *p;
-					}
+				while (*p && *p != '\n') {
+					p++;
 				}
-			} else {
-				// Save all characters up to a space/tab
-				// Use isgraph instead of isprint because the latter considers ' ' printable
-				for (i = 0; isgraph ((const unsigned char)*p) && i < sizeof (tmp) - 1;) {
-					tmp[i++] = *p++;
-				}
-			}
-			tmp[i] = '\0';
-			// Limit the number of tokens
-			if (j > PARSER_MAX_TOKENS - 1) {
 				break;
 			}
-			// Save the token
-			tok[j++] = strdup (tmp);
+			if (j >= PARSER_MAX_TOKENS) {
+				while (*p && *p != '\n') {
+					p++;
+				}
+				break;
+			}
+			// Use isgraph instead of isprint because the latter considers ' ' printable
+			for (i = 0; *p && isgraph ((ut8)*p) && i < sizeof (tmp) - 1; i++) {
+				tmp[i] = *p++;
+			}
+			if (!i) {
+				p++;
+				continue;
+			}
+			tmp[i] = '\0';
+			while (*p && isgraph ((ut8)*p)) {
+				p++;
+			}
+			if (!(tok[j++] = strdup (tmp))) {
+				goto fail;
+			}
 		}
-		// Empty line, eww
 		if (j) {
-			// Do the actual parsing
-			char *first = tok[0];
-			// Check whether it's defining an alias or a register
-			if (*first != '=') {
-				reg = parse_def (tok);
-				// Warn the user if something went wrong
+			if (*tok[0] != '=') {
+				reg = j < 4 ? NULL : parse_def (tok);
 				if (!reg) {
 					R_LOG_ERROR ("%s: gdb_regs: Parse error @ line %d", __func__, l);
-					for (i = 0; i < j; i++) {
-						free (tok[i]);
-					}
-					// Clean up
-					r_list_free (gdb_regs_list);
-					return NULL;
+					goto fail;
 				}
 				r_list_append (gdb_regs_list, reg);
 			}
-			// Clean up
-			for (i = 0; i < j; i++) {
-				free (tok[i]);
-			}
+			free_tokens (tok, j);
 		}
-	} while (*p++);
+		if (*p == '\n') {
+			p++;
+		}
+	}
 
-	gdb_reg_t *gdb_regs = malloc ((r_list_length (gdb_regs_list) + 1) * sizeof (gdb_reg_t));
+	gdb_reg_t *gdb_regs = R_NEWS0 (gdb_reg_t, r_list_length (gdb_regs_list) + 1);
 	if (!gdb_regs) {
-		return NULL;
+		goto fail;
 	}
 	i = 0;
 	r_list_foreach (gdb_regs_list, iter, reg) {
 		memcpy (gdb_regs + i, reg, sizeof (gdb_reg_t));
 		i++;
 	}
-	memset (gdb_regs + i, 0, sizeof (gdb_reg_t));
-
 	r_list_free (gdb_regs_list);
 	return gdb_regs;
+fail:
+	free_tokens (tok, j);
+	r_list_free (gdb_regs_list);
+	return NULL;
 }

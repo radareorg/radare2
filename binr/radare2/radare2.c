@@ -99,7 +99,7 @@ static int r_main_r2pipe(int argc, const char **argv) {
 }
 
 int main(int argc, const char **argv) {
-	if (argc > 0 && strstr (argv[0], "r2p")) {
+	if (argc > 0 && strstr (r_file_basename (argv[0]), "r2p")) {
 		return r_main_r2pipe (argc, argv);
 	}
 	char *ea = r_sys_getenv ("R2_ARGS");

@@ -675,6 +675,7 @@ static char *get_reg_profile(RArchSession *s) {
 	static const char *p =
 		"=PC    pc\n"
 		"=SP    sp\n"
+		"=RA    ra\n"
 		"=A0    a0\n"
 		"=A1    a1\n"
 		"=A2    a2\n"

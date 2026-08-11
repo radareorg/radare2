@@ -1110,7 +1110,6 @@ static void rcc_next(REgg *egg) {
 	}
 	if (egg->lang.includefile) {
 		char *p, *q, *path;
-		egg->lang.elem[egg->lang.elem_n - 1] = 0;
 		path = find_include (egg->lang.includedir, egg->lang.includefile);
 		if (!path) {
 			R_LOG_ERROR ("Cannot find include file '%s'", egg->lang.elem);

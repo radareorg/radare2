@@ -194,17 +194,24 @@ ut64 Elf_(get_phnum)(ELFOBJ *eo) {
 	if (eo->ehdr.e_phnum == UT16_MAX) {
 		// sh_info member of the initial entry in section header table.
 		if (eo->ehdr.e_shnum > 0) {
-			Elf_(Shdr) shdr = {0};
-			int r = r_buf_read_at (eo->b, eo->ehdr.e_shoff, (ut8 *)&shdr, sizeof (shdr));
+			if (eo->ehdr.e_shoff > eo->size || sizeof (Elf_(Shdr)) > eo->size - eo->ehdr.e_shoff) {
+				return 0;
+			}
+			ut8 shdr[sizeof (Elf_(Shdr))] = {0};
+			int r = r_buf_read_at (eo->b, eo->ehdr.e_shoff, shdr, sizeof (shdr));
 			if (r != sizeof (shdr)) {
 				return 0;
 			}
-#if R_BIN_ELF64
-			ut64 num = r_read_ble64 (&shdr.sh_info, eo->endian);
-#else
-			ut64 num = (ut64)r_read_ble32 (&shdr.sh_info, eo->endian);
-#endif
-			if ((int) num < 1) {
+			int i = 0;
+			(void)READ32 (shdr, i);
+			(void)READ32 (shdr, i);
+			(void)R_BIN_ELF_READWORD (shdr, i);
+			(void)R_BIN_ELF_READWORD (shdr, i);
+			(void)R_BIN_ELF_READWORD (shdr, i);
+			(void)R_BIN_ELF_READWORD (shdr, i);
+			(void)READ32 (shdr, i);
+			ut64 num = READ32 (shdr, i);
+			if (!num) {
 				return UT16_MAX;
 			}
 			return num;
@@ -307,22 +314,18 @@ static int init_phdr(ELFOBJ *eo) {
 		return false;
 	}
 
-	ut32 phdr_size;
-	if (!UT32_MUL (&phdr_size, (ut32)eo->ehdr.e_phnum, sizeof (Elf_(Phdr)))) {
-		return false;
-	}
-	if (!phdr_size || phdr_size > (ut32) eo->size) {
-		return false;
-	}
-	if (eo->ehdr.e_phoff > eo->size || eo->ehdr.e_phoff + phdr_size > eo->size) {
-		return false;
-	}
 	eo->phnum = Elf_(get_phnum) (eo);
+	ut64 phdr_size;
+	if (!UT64_MUL (&phdr_size, eo->phnum, sizeof (Elf_(Phdr)))) {
+		return false;
+	}
+	if (!phdr_size || phdr_size > eo->size) {
+		return false;
+	}
 	if (eo->phnum > SIZE_MAX / sizeof (Elf_(Phdr))) {
 		return false;
 	}
-	// Ensure phnum-based allocation doesn't exceed file size
-	if (eo->phnum * sizeof (Elf_(Phdr)) > eo->size) {
+	if (eo->ehdr.e_phoff > eo->size || phdr_size > eo->size - eo->ehdr.e_phoff) {
 		return false;
 	}
 	if (!(eo->phdr = R_NEWS0 (Elf_(Phdr), eo->phnum))) {
@@ -398,6 +401,9 @@ static int init_shdr(ELFOBJ *eo) {
 		sh->sh_addr = R_BIN_ELF_READWORD (shdr, j);
 		sh->sh_offset = R_BIN_ELF_READWORD (shdr, j);
 		sh->sh_size = R_BIN_ELF_READWORD (shdr, j);
+		if (sh->sh_size > ST32_MAX) {
+			sh->sh_size = 0;
+		}
 		sh->sh_link = READ32 (shdr, j);
 		sh->sh_info = READ32 (shdr, j);
 		sh->sh_addralign = R_BIN_ELF_READWORD (shdr, j);
@@ -481,8 +487,8 @@ static bool init_strtab(ELFOBJ *eo) {
 }
 
 static Elf_(Phdr) *get_dynamic_segment(ELFOBJ *eo) {
-	int i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+	size_t i;
+	for (i = 0; i < eo->phnum; i++) {
 		Elf_(Phdr) *p = &eo->phdr[i];
 		if (p->p_type != PT_DYNAMIC) {
 			continue;
@@ -517,6 +523,9 @@ static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	di->dt_jmprel = R_BIN_ELF_ADDR_MAX;
 	di->dt_pltgot = R_BIN_ELF_ADDR_MAX;
 	di->dt_mips_pltgot = R_BIN_ELF_ADDR_MAX;
+	di->dt_mips_local_gotno = 0;
+	di->dt_mips_gotsym = R_BIN_ELF_XWORD_MAX;
+	di->dt_mips_symtabno = 0;
 	di->dt_ppc64_glink = R_BIN_ELF_ADDR_MAX;
 	di->dt_crel = R_BIN_ELF_ADDR_MAX;
 	di->dt_bind_now = false;
@@ -615,6 +624,15 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 		case DT_MIPS_PLTGOT:
 			di->dt_mips_pltgot = d.d_un.d_ptr;
 			break;
+		case DT_MIPS_LOCAL_GOTNO:
+			di->dt_mips_local_gotno = d.d_un.d_val;
+			break;
+		case DT_MIPS_GOTSYM:
+			di->dt_mips_gotsym = d.d_un.d_val;
+			break;
+		case DT_MIPS_SYMTABNO:
+			di->dt_mips_symtabno = d.d_un.d_val;
+			break;
 		case DT_PPC64_GLINK:
 			di->dt_ppc64_glink = d.d_un.d_ptr;
 			break;
@@ -668,10 +686,10 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 }
 
 static int init_dynamic_section(ELFOBJ *eo) {
-	set_default_value_dynamic_info(eo);
-
 	R_RETURN_VAL_IF_FAIL (eo, false);
-	if (!eo->phdr || !eo->ehdr.e_phnum) {
+
+	set_default_value_dynamic_info (eo);
+	if (!eo->phdr || !eo->phnum) {
 		return false;
 	}
 
@@ -680,10 +698,10 @@ static int init_dynamic_section(ELFOBJ *eo) {
 		return false;
 	}
 
-  ut64 loaded_offset = Elf_(v2p) (eo, dyn_phdr->p_vaddr);
-  if (loaded_offset == UT64_MAX) {
-	  return false;
-  }
+	ut64 loaded_offset = Elf_(v2p) (eo, dyn_phdr->p_vaddr);
+	if (loaded_offset == UT64_MAX) {
+		return false;
+	}
 
 	ut64 dyn_size = dyn_phdr->p_filesz;
 
@@ -1254,14 +1272,6 @@ typedef struct process_verneed_state_t {
 	Elf_(Shdr) *shdr;
 } ProcessVerneedState;
 
-#define USE_SINGLE_SDB 0
-#if USE_SINGLE_SDB
-static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state) {
-	// R2_590
-	// TODO: rewrite the function to use only one SDB instead of 65000 with mutated.
-}
-#else
-
 static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state) {
 	Elf_(Shdr) *shdr = state->shdr;
 	ut8* need = state->need;
@@ -1370,7 +1380,6 @@ static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state
 
 	return true;
 }
-#endif
 
 static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
 	if (!eo->dynstr) {
@@ -1380,7 +1389,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) 
 		return NULL;
 	}
 #ifdef R_BIN_ELF64
-	// R2_590 delete the else block , this chk must be generic
+	// R2_600 delete the else block , this chk must be generic
 	if ((int)shdr->sh_size < 1 || shdr->sh_size > SIZE_MAX) {
 		return NULL;
 	}
@@ -1830,15 +1839,23 @@ static ut64 get_import_addr_s390x(ELFOBJ *eo, RBinElfReloc *rel) {
 	return a - 14;
 }
 
+// EF_PPC64_ABI: 1 = ELFv1, 2 = ELFv2, 3 = undefined; unflagged objects predate the field, so guess from the endian
+static int ppc64_abi(ELFOBJ *eo) {
+	if (eo->ehdr.e_machine != EM_PPC64) {
+		return 0;
+	}
+	switch (eo->ehdr.e_flags & EF_PPC64_ABI) {
+	case 1: return 1;
+	case 2: return 2;
+	case 3: return 0;
+	}
+	return eo->endian? 1: 2;
+}
+
 #if R_BIN_ELF64
-// PowerPC 64-bit ELF v1 uses an Official Procedure Descriptor (.opd) section.
-// Every function symbol's st_value — including e_entry — points to a 24-byte
-// descriptor [code_addr(8), toc(8), env(8)] rather than directly to code.
-// Dereference the first 8 bytes of the descriptor to get the real code address.
-// Returns UT64_MAX when the address does not fall inside .opd or the arch/endian
-// does not match.
+// ELFv1 function st_value points at a .opd descriptor [code, toc, env]; deref the code address
 static ut64 ppc64v1_opd_deref(ELFOBJ *eo, ut64 vaddr) {
-	if (eo->ehdr.e_machine != EM_PPC64 || !eo->endian) {
+	if (ppc64_abi (eo) != 1) {
 		return UT64_MAX;
 	}
 	if (!eo->sections_loaded) {
@@ -1849,77 +1866,62 @@ static ut64 ppc64v1_opd_deref(ELFOBJ *eo, ut64 vaddr) {
 		return UT64_MAX;
 	}
 	ut64 foff = opd->offset + (vaddr - opd->rva);
-	ut64 code_addr = r_buf_read_ble64_at (eo->b, foff, eo->endian);
-	return (code_addr == UT64_MAX) ? UT64_MAX : code_addr;
+	return r_buf_read_ble64_at (eo->b, foff, eo->endian);
 }
-#endif
 
-#if R_BIN_ELF64
-// Build a map of PLT slot vaddr -> lazy stub vaddr for PPC64 ELFv1 big-endian
-// binaries using the DT_PPC64_GLINK anchor.  Mirrors the algorithm in
-// ppc64_elf_get_synthetic_symtab () in binutils bfd/elf64-ppc.c.
-//
-// DT_PPC64_GLINK = glink_section_vma + GLINK_PLTRESOLVE_SIZE - 32, so:
-//   first_stub_vma = DT_PPC64_GLINK + 32
-//
-// Stubs 0-32767: 8 bytes each; stubs 32768+: 12 bytes each.
-// Stub N corresponds to the N-th DT_JMPREL entry (same order); that
-// entry's r_offset is the PLT slot vaddr.
-static HtUU *ppc64v1_build_glink_map(ELFOBJ *eo) {
+// PLT slot vaddr -> lazy glink stub vaddr; the N-th DT_JMPREL entry owns the N-th
+// stub after DT_PPC64_GLINK + 32 (binutils ppc64_elf_get_synthetic_symtab)
+static HtUU *ppc64_build_glink_map(ELFOBJ *eo, int abi) {
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
-	size_t relsize;
-	ut64 stub_vma, num_plts, rela_off, slot_vaddr, n;
-	HtUU *map;
 	if (di->dt_ppc64_glink == R_BIN_ELF_ADDR_MAX) {
 		return NULL;
 	}
 	if (di->dt_jmprel == R_BIN_ELF_ADDR_MAX || !di->dt_pltrelsz) {
 		return NULL;
 	}
-	relsize = get_size_rel_mode (di->dt_pltrel);
+	size_t relsize = get_size_rel_mode (di->dt_pltrel);
 	if (!relsize) {
 		return NULL;
 	}
-	map = ht_uu_new0 ();
+	HtUU *map = ht_uu_new0 ();
 	if (!map) {
 		return NULL;
 	}
-	stub_vma = di->dt_ppc64_glink + 8 * 4;
-	num_plts = di->dt_pltrelsz / relsize;
+	ut64 stub_vma = di->dt_ppc64_glink + 32;
+	ut64 num_plts = di->dt_pltrelsz / relsize;
+	ut64 n;
 	for (n = 0; n < num_plts; n++) {
-		rela_off = Elf_(v2p) (eo, di->dt_jmprel + n * relsize);
+		ut64 rela_off = Elf_(v2p) (eo, di->dt_jmprel + n * relsize);
 		if (rela_off == UT64_MAX) {
 			break;
 		}
-		slot_vaddr = r_buf_read_ble64_at (eo->b, rela_off, eo->endian);
+		ut64 slot_vaddr = r_buf_read_ble64_at (eo->b, rela_off, eo->endian);
 		if (slot_vaddr == UT64_MAX) {
 			break;
 		}
 		ht_uu_insert (map, slot_vaddr, stub_vma);
-		stub_vma += 8;
-		if (n >= 0x8000) {
-			stub_vma += 4;
-		}
+		// an ELFv2 stub is a single branch; ELFv1 stubs grow to 12 bytes past slot 0x8000
+		stub_vma += (abi == 2)? 4: (n >= 0x8000)? 12: 8;
 	}
 	return map;
 }
 #endif
 
-// Public API: return the PLT stub vaddr for the given GOT slot address in a
-// PPC64 ELFv1 big-endian binary, building the stub cache if necessary.
-// Returns UT64_MAX when the slot has no known stub (wrong arch, or no match).
-ut64 Elf_(ppc64v1_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr) {
+// PLT stub vaddr for the given GOT slot in a ppc64 binary, building the stub cache on demand
+ut64 Elf_(ppc64_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr) {
 #if R_BIN_ELF64
-	if (eo->ehdr.e_machine == EM_PPC64 && eo->endian) {
-		if (!eo->ppc64_plt_stubs) {
-			eo->ppc64_plt_stubs = ppc64v1_build_glink_map (eo);
-		}
-		if (eo->ppc64_plt_stubs) {
-			bool found = false;
-			ut64 stub = ht_uu_find (eo->ppc64_plt_stubs, slot_vaddr, &found);
-			if (found) {
-				return stub;
-			}
+	const int abi = ppc64_abi (eo);
+	if (!abi) {
+		return UT64_MAX;
+	}
+	if (!eo->ppc64_plt_stubs) {
+		eo->ppc64_plt_stubs = ppc64_build_glink_map (eo, abi);
+	}
+	if (eo->ppc64_plt_stubs) {
+		bool found = false;
+		ut64 stub = ht_uu_find (eo->ppc64_plt_stubs, slot_vaddr, &found);
+		if (found) {
+			return stub;
 		}
 	}
 #endif
@@ -1928,15 +1930,12 @@ ut64 Elf_(ppc64v1_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr) {
 
 static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 #if R_BIN_ELF64
-	if (eo->ehdr.e_machine == EM_PPC64 && eo->endian) {
-		// PPC64 ELFv1: PLT stubs live in .text; look up via stub cache
-		ut64 stub = Elf_(ppc64v1_get_plt_stub_for_slot) (eo, rel->rva);
+	if (ppc64_abi (eo)) {
+		ut64 stub = Elf_(ppc64_get_plt_stub_for_slot) (eo, rel->rva);
 		if (stub != UT64_MAX) {
 			return stub;
 		}
-		// Fallback: return the PLT slot address (when DT_PPC64_GLINK is
-		// absent or the GLINK map lookup fails)
-		return rel->rva;
+		return rel->rva; // no DT_PPC64_GLINK or no map entry
 	}
 #endif
 	ut64 plt_addr = eo->dyn_info.dt_pltgot;
@@ -1945,10 +1944,8 @@ static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 	}
 
 	if (rel->rva < plt_addr) {
-		ut64 orva = rel->rva;
-		int delta = plt_addr - rel->rva;
-		orva += (2* delta);
-		// orva += 0xef0;
+		ut64 delta = plt_addr - rel->rva;
+		ut64 orva = rel->rva + (2 * delta);
 		R_LOG_DEBUG ("Massaged pointer below plt from 0x%"PFMT64x" to 0x%"PFMT64x, rel->rva, orva);
 		return orva;
 	}
@@ -2182,7 +2179,7 @@ static bool qnx_has_nx(ELFOBJ *eo) {
 static bool compute_has_nx(ELFOBJ *eo) {
 	if (eo->phdr) {
 		size_t i;
-		for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		for (i = 0; i < eo->phnum; i++) {
 			Elf_(Phdr) *p = &eo->phdr[i];
 			if (p->p_type == PT_GNU_STACK) {
 				return !(p->p_flags & 1);
@@ -2208,7 +2205,7 @@ int Elf_(has_relro)(ELFOBJ *bin) {
 			have_bind_now = di->dt_flags_1 & DF_1_NOW;
 		}
 		size_t i;
-		for (i = 0; i < bin->ehdr.e_phnum; i++) {
+		for (i = 0; i < bin->phnum; i++) {
 			if (bin->phdr[i].p_type == PT_GNU_RELRO) {
 				return have_bind_now? R_ELF_FULL_RELRO: R_ELF_PART_RELRO;
 			}
@@ -2231,7 +2228,7 @@ ut64 Elf_(get_baddr)(ELFOBJ *eo) {
 	ut64 base = UT64_MAX;
 	if (eo->phdr) {
 		size_t i;
-		for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		for (i = 0; i < eo->phnum; i++) {
 			Elf_(Phdr) *p = &eo->phdr[i];
 			if (p->p_type == PT_LOAD) {
 				ut64 tmp = (ut64)p->p_vaddr & ELF_PAGE_MASK;
@@ -2261,7 +2258,7 @@ ut64 Elf_(get_boffset)(ELFOBJ *eo) {
 
 	ut64 base = UT64_MAX;
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+	for (i = 0; i < eo->phnum; i++) {
 		Elf_(Phdr) *p = &eo->phdr[i];
 		if (p->p_type == PT_LOAD) {
 			ut64 tmp = (ut64)p->p_offset & ELF_PAGE_MASK;
@@ -2553,7 +2550,7 @@ static bool has_interp_program_header(ELFOBJ *eo) {
 		return false;
 	}
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+	for (i = 0; i < eo->phnum; i++) {
 		if (eo->phdr[i].p_type == PT_INTERP) {
 			return true;
 		}
@@ -2642,8 +2639,8 @@ char *Elf_(intrp)(ELFOBJ *eo) {
 		return NULL;
 	}
 
-	int i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+	size_t i;
+	for (i = 0; i < eo->phnum; i++) {
 		Elf_(Phdr) *p = &eo->phdr[i];
 		if (p->p_type != PT_INTERP) {
 			continue;
@@ -2680,7 +2677,7 @@ bool Elf_(is_static)(ELFOBJ *eo) {
 		return false;
 	}
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+	for (i = 0; i < eo->phnum; i++) {
 		const Elf_(Word) pt = eo->phdr[i].p_type;
 		if (pt == PT_INTERP || pt == PT_DYNAMIC) {
 			return false;
@@ -2879,6 +2876,12 @@ char* Elf_(get_abi)(ELFOBJ *eo) {
 			if (is_mips_micro (ehdr)) {
 				return strdup ("micro");
 			}
+		}
+		break;
+	case EM_PPC64:
+		switch (ppc64_abi (eo)) {
+		case 1: return strdup ("elfv1");
+		case 2: return strdup ("elfv2");
 		}
 		break;
 	case EM_V800:
@@ -3225,8 +3228,8 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 		const ut32 mips_type = eo->ehdr.e_flags & EF_MIPS_ARCH;
 		if (eo->ehdr.e_type == ET_EXEC) {
 			bool have_interp = false;
-			int i;
-			for (i = 0; i < eo->ehdr.e_phnum; i++) {
+			size_t i;
+			for (i = 0; i < eo->phnum; i++) {
 				if (eo->phdr[i].p_type == PT_INTERP) {
 					have_interp = true;
 					break;
@@ -3450,7 +3453,7 @@ ut8 *Elf_(grab_regstate)(ELFOBJ *eo, int *len) {
 	}
 
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+	for (i = 0; i < eo->phnum; i++) {
 		Elf_(Phdr) *p = &eo->phdr[i];
 		if (p->p_type != PT_NOTE) {
 			continue;
@@ -3858,6 +3861,14 @@ static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 v
 	return true;
 }
 
+static size_t get_num_relocs_mips_got(ELFOBJ *eo) {
+	const RBinElfDynamicInfo *di = &eo->dyn_info;
+	if (eo->ehdr.e_machine != EM_MIPS || di->dt_pltgot == R_BIN_ELF_ADDR_MAX || di->dt_mips_gotsym == R_BIN_ELF_XWORD_MAX || di->dt_mips_symtabno <= di->dt_mips_gotsym) {
+		return 0;
+	}
+	return di->dt_mips_symtabno - di->dt_mips_gotsym;
+}
+
 static size_t get_num_relocs_dynamic(ELFOBJ *eo) {
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
 	size_t res = 0;
@@ -3878,7 +3889,7 @@ static size_t get_num_relocs_dynamic(ELFOBJ *eo) {
 		// If relrent is not set, assume it's the size of an address
 		res += di->dt_relrsz / sizeof (Elf_(Addr));
 	}
-	return res + get_num_relocs_dynamic_plt (eo);
+	return res + get_num_relocs_dynamic_plt (eo) + get_num_relocs_mips_got (eo);
 }
 
 static bool section_is_valid(ELFOBJ *eo, RBinElfSection *sect) {
@@ -4027,6 +4038,39 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 			fix_rva_and_offset_exec_file (eo, reloc);
 			pos++;
 		}
+	}
+	return pos;
+}
+
+// MIPS has no explicit relocs for its global GOT (dynsym [gotsym, symtabno)); synthesize them so cbin names the slots
+static size_t populate_relocs_record_from_mips_got(ELFOBJ *eo, size_t pos, size_t num_relocs) {
+	const RBinElfDynamicInfo *di = &eo->dyn_info;
+	if (!get_num_relocs_mips_got (eo)) {
+		return pos;
+	}
+	const ut64 wordsize = sizeof (Elf_(Addr));
+	const ut64 gotsym = di->dt_mips_gotsym;
+	const ut64 symtabno = di->dt_mips_symtabno;
+	const ut64 global_got = di->dt_pltgot + di->dt_mips_local_gotno * wordsize;
+	ut64 i;
+	for (i = gotsym; i < symtabno && pos < num_relocs; i++) {
+		// skip entries already covered by an explicit reloc to avoid a duplicate flag
+		if (ht_uu_find (eo->rel_cache, i + 1, NULL) > 0) {
+			continue;
+		}
+		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
+		if (!reloc) {
+			break;
+		}
+		memset (reloc, 0, sizeof (*reloc));
+		reloc->sym = (int)i;
+		reloc->type = R_MIPS_REL32;
+		reloc->mode = DT_REL;
+		reloc->offset = global_got + (i - gotsym) * wordsize;
+		fix_rva_and_offset_exec_file (eo, reloc);
+		int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
+		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
+		pos++;
 	}
 	return pos;
 }
@@ -4187,6 +4231,7 @@ static bool populate_relocs_record(ELFOBJ *eo) {
 
 	size_t i = 0;
 	i = populate_relocs_record_from_dynamic (eo, i, num_relocs);
+	i = populate_relocs_record_from_mips_got (eo, i, num_relocs);
 	i = populate_relocs_record_from_section (eo, i, num_relocs);
 	eo->g_reloc_num = i;
 	return true;
@@ -4253,7 +4298,7 @@ static void create_section_from_phdr(ELFOBJ *eo, const char *name, ut64 addr, ut
 static const RVecRBinElfSection *load_sections_from_phdr(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo && eo->phdr, NULL);
 
-	if (!eo->ehdr.e_phnum) {
+	if (!eo->phnum) {
 		return NULL;
 	}
 
@@ -5082,7 +5127,7 @@ static ut64 get_phdr_symtab_upper_bound(ELFOBJ *eo, ut64 addr_sym_table) {
 static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
-	if (!eo->phdr || !eo->ehdr.e_phnum) {
+	if (!eo->phdr || !eo->phnum) {
 		return NULL;
 	}
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
@@ -5782,6 +5827,9 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo) {
 		return NULL;
 	}
 	RBinElfSymbol *symbol;
+	// section-less ELFs skip the section path that fills symbols_by_ord; their dynsym ordinals equal reloc->sym, so name defined slots here
+	RBinSymbol **sbo = eo->ehdr.e_shnum? NULL: eo->symbols_by_ord;
+	const size_t sbo_size = eo->symbols_by_ord_size;
 	R_VEC_FOREACH (elf_symbols, symbol) {
 		if (symbol->is_sht_null) {
 			continue;
@@ -5791,6 +5839,9 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo) {
 		}
 		RBinSymbol sym;
 		fill_symbol (eo, symbol, &sym);
+		if (sbo && !symbol->is_imported && symbol->ordinal < sbo_size && !sbo[symbol->ordinal]) {
+			sbo[symbol->ordinal] = r_bin_symbol_clone (&sym);
+		}
 		RVecRBinSymbol_push_back (&eo->symbols_cache, &sym);
 	}
 	eo->symbols_cached = true;
@@ -5876,7 +5927,7 @@ const RVecRBinElfField* Elf_(load_fields)(ELFOBJ *eo) {
 	eo->fields_loaded = true;
 	RVecRBinElfField_init (&eo->g_fields);
 
-	ut64 num_fields = eo->ehdr.e_phnum + 3;
+	ut64 num_fields = eo->phnum + 3;
 	if (!(RVecRBinElfField_reserve (&eo->g_fields, num_fields))) {
 		return NULL;
 	}
@@ -5893,10 +5944,10 @@ const RVecRBinElfField* Elf_(load_fields)(ELFOBJ *eo) {
 	r_str_ncpy (new_field->name, "phoff", ELF_STRING_LENGTH);
 	new_field->offset = eo->ehdr.e_phoff;
 
-	int i;
-	for (i = 0; eo->phdr && i < eo->ehdr.e_phnum; i++) {
+	size_t i;
+	for (i = 0; eo->phdr && i < eo->phnum; i++) {
 		new_field = RVecRBinElfField_emplace_back (&eo->g_fields);
-		snprintf (new_field->name, ELF_STRING_LENGTH, "phdr_%i", i);
+		snprintf (new_field->name, ELF_STRING_LENGTH, "phdr_%zu", i);
 		new_field->offset = eo->phdr[i].p_offset;
 	}
 	return &eo->g_fields;
@@ -5991,7 +6042,7 @@ ut64 Elf_(p2v)(ELFOBJ *eo, ut64 paddr) {
 		// p_vaddr match so p2v/v2p round-trip at the real code region.
 		Elf_(Phdr) *best = NULL;
 		size_t i;
-		for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		for (i = 0; i < eo->phnum; i++) {
 			Elf_(Phdr) *p = &eo->phdr[i];
 			if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
 				if (!best || p->p_vaddr > best->p_vaddr) {
@@ -6025,7 +6076,7 @@ ut64 Elf_(v2p)(ELFOBJ *eo, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
 	if (eo->phdr) {
 		size_t i;
-		for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		for (i = 0; i < eo->phnum; i++) {
 			Elf_(Phdr) *p = &eo->phdr[i];
 			if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
 				return p->p_offset + vaddr - p->p_vaddr;
@@ -6051,8 +6102,8 @@ ut64 Elf_(v2p)(ELFOBJ *eo, ut64 vaddr) {
 }
 
 static bool get_nt_file_maps(ELFOBJ *eo, RList *core_maps) {
-	ut16 ph;
-	for (ph = 0; ph < eo->ehdr.e_phnum; ph++) {
+	size_t ph;
+	for (ph = 0; ph < eo->phnum; ph++) {
 		Elf_(Phdr) *p = &eo->phdr[ph];
 		if (p->p_type != PT_NOTE) {
 			continue;
@@ -6144,12 +6195,8 @@ RList *Elf_(get_maps)(ELFOBJ *eo) {
 	}
 
 	RList *maps = r_list_newf ((RListFree)r_bin_elf_map_free);
-	if (!maps) {
-		return NULL;
-	}
-
-	ut16 ph_num = eo->ehdr.e_phnum; //Skip PT_NOTE
-	ut16 ph;
+	size_t ph_num = eo->phnum; //Skip PT_NOTE
+	size_t ph;
 	for (ph = 0; ph < ph_num; ph++) {
 		Elf_(Phdr) *p = &eo->phdr[ph];
 		if (p->p_type != PT_LOAD) {
@@ -6181,7 +6228,7 @@ char *Elf_(compiler)(ELFOBJ *eo) {
 	}
 
 	ut32 sz = R_MIN (section->size, 128);
-	if (sz < 1) {
+	if (sz < 1 || sz >= ST32_MAX) {
 		return NULL;
 	}
 
@@ -6573,3 +6620,5 @@ static void sdb_init_const(ELFOBJ *eo) {
 	sdb_init_dtypes (eo);
 	sdb_init_fmt (eo);
 }
+
+#include "gres.c"

@@ -450,8 +450,7 @@ static bool serialize_register_cb(void *db, const ut64 k, const void *v) {
 	}
 
 	pj_end (j);
-	r_strf_var (key, 32, "0x%"PFMT64x, k);
-	sdb_set (db, key, pj_string (j), 0);
+	sdb_setf (db, pj_string (j), 0, "0x%"PFMT64x, k);
 	pj_free (j);
 	return true;
 }
@@ -475,8 +474,7 @@ static bool serialize_memory_cb(void *db, const ut64 k, const void *v) {
 	}
 
 	pj_end (j);
-	r_strf_var (key, 32, "0x%"PFMT64x, k);
-	sdb_set (db, key, pj_string (j), 0);
+	sdb_setf (db, pj_string (j), 0, "0x%"PFMT64x, k);
 	pj_free (j);
 	return true;
 }
@@ -550,8 +548,7 @@ static void serialize_checkpoints(Sdb *db, RVecDebugCheckpoint *checkpoints) {
 		pj_end (j);
 
 		pj_end (j);
-		r_strf_var (key, 32, "0x%"PFMT64x, chkpt->id);
-		sdb_set (db, key, pj_string (j), 0);
+		sdb_setf (db, pj_string (j), 0, "0x%"PFMT64x, chkpt->id);
 		pj_free (j);
 	}
 }

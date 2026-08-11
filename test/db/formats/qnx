@@ -64,3 +64,39 @@ image_base : 0xa000H
 spare3[2] : 0x0H
 EOF
 RUN
+
+# Linked with Open Watcom v2 using the QNX OPTION RESOURCE directive.
+NAME=Open Watcom QNX LMF resource
+FILE=bins/qnx/qnx_resource.lmf
+CMDS=<<EOF
+iI~bintype
+iuq
+iuj
+iS~LMF_RESOURCE
+EOF
+EXPECT=<<EOF
+bintype  QNX
+0x00000048 25 USAGE -
+[{"name":"","index":0,"type":"USAGE","vaddr":72,"paddr":72,"size":25,"id":null,"type_id":0,"lang":null,"language_id":0,"codepage":0,"named":false,"timestamp":null}]
+0   0x00000048  0x19 0x00000048   0x19 ---- 0x0   ---- LMF_RESOURCE
+EOF
+RUN
+
+NAME=Open Watcom QNX LMF resource extraction
+FILE=bins/qnx/qnx_resource.lmf
+ARGS=-e log.level=0
+CMDS=<<EOF
+rmrf .tmp/qnx-resource-extract-a
+rmrf .tmp/qnx-resource-extract-b
+iux .tmp/qnx-resource-extract-a
+ixu .tmp/qnx-resource-extract-b
+!!rahash2 -qq -a sha256 .tmp/qnx-resource-extract-a/resource_USAGE_named_0.bin
+!!rahash2 -qq -a sha256 .tmp/qnx-resource-extract-b/resource_USAGE_named_0.bin
+rmrf .tmp/qnx-resource-extract-a
+rmrf .tmp/qnx-resource-extract-b
+EOF
+EXPECT=<<EOF
+ecbb18d099d8b23e1a9e1eba38bce7bec52841952eb383fec02416c1186a934a
+ecbb18d099d8b23e1a9e1eba38bce7bec52841952eb383fec02416c1186a934a
+EOF
+RUN

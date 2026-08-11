@@ -22,6 +22,7 @@ static Rabin2Env env[] = {
 	{ "RABIN2_DEMANGLE", "e bin.demangle        # dont demangle symbols if value is 0" },
 	{ "RABIN2_DEMANGLE_CMD", "e bin.demangle.cmd    # try to purge false positives" },
 	{ "RABIN2_DEMANGLE_TRYLIB", "e bin.demangle.trylib # load Swift libs to demangle (default: false)" },
+	{ "RABIN2_FILTER", "e bin.filter          # set to false to not rename duplicated symbols/sections" },
 	//	{ "RABIN2_DEMAN_PFXLIB",		"e bin.demangle.pfxlib # prefix symbols with library name" },
 	//	{ "RABIN2_DEMAN_NAT",			"e bin.demangle.native # load Swift libs to demangle (default: true)" },
 	{ "RABIN2_LANG", "e bin.lang            # assume lang for demangling" },
@@ -31,6 +32,7 @@ static Rabin2Env env[] = {
 	{ "RABIN2_MAXSTRBUF", "e bin.str.maxbuf      # specify maximum buffer size" },
 	{ "RABIN2_PDBSERVER", "e pdb.server          # use alternative PDB server" },
 	{ "RABIN2_PREFIX", "e bin.prefix          # prefix symbols/sections/relocs with a specific string" },
+	{ "RABIN2_RESRAW", "e bin.resraw          # extract resources without decoding their contents" },
 	{ "RABIN2_STRFILTER", "e bin.str.filter      # r2 -qc 'e bin.str.filter=?"
 			"?' -" },
 	{ "RABIN2_STRPURGE", "e bin.str.purge       # try to purge false positives" },
@@ -43,7 +45,7 @@ static Rabin2Env env[] = {
 static void rabin_show_env(bool show_desc);
 
 static int rabin_show_help(int line) {
-	printf ("Usage: rabin2 [-AcdeEghHiIjJlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
+	printf ("Usage: rabin2 [-AcdeEghHiIjJlLMqrRsSuvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 	"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
 	"              [-o str] [-O help] [-k query] [-D lang mangledsymbol] file\n");
 	if (line != 1) {
@@ -79,7 +81,7 @@ static int rabin_show_help(int line) {
 			" -M              main (show address of main symbol)\n"
 			" -n [str]        show section, symbol or import named str\n"
 			" -N [min:max]    force min:max number of chars per string (see -z and -zz)\n"
-			" -o [str]        output file/folder for write operations (out by default)\n"
+			" -o [str]        output file or extraction directory for write operations\n"
 			" -O [str]        write/extract operations (-O help)\n"
 			" -p              show always physical addresses\n"
 			" -P              show debug/pdb information\n"
@@ -95,12 +97,11 @@ static int rabin_show_help(int line) {
 			" -SSS            sections mapping to segments\n"
 			" -t              display file hashes\n"
 			" -T              display file signature\n"
-			" -u              unfiltered (no rename duplicated symbols/sections)\n"
-			" -U              resoUrces\n"
+			" -u              resources\n"
 			" -v              display version and quit\n"
 			" -V              show binary version information\n"
 			" -w              display try/catch blocks\n"
-			" -x              extract bins contained in file\n"
+			" -x              extract sub-binaries (-xS sections, -xSS segments, -xu resources)\n"
 			" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
 			" -y              show types (structs, enums, function signatures)\n"
 			" -z              strings (from data section)\n"
@@ -245,6 +246,11 @@ static int rabin_extract(RBin *bin, int all) {
 		res = extract_binobj (bf, data, 0);
 	}
 	return res;
+}
+
+static bool rabin_extract_resources(RBin *bin, const char *output) {
+	RBinFile *bf = r_bin_cur (bin);
+	return bf && r_bin_file_extract_resources (bf, output);
 }
 
 static int rabin_dump_symbols(RBin *bin, int len) {
@@ -552,23 +558,31 @@ static bool __lib_bin_ldr_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
+static bool __lib_bin_demangle_cb(RLibPlugin *pl, void *user, void *data) {
+	RBinDemanglePlugin *plugin = data;
+	return r_bin_demangle_plugin_add (user, plugin);
+}
+
+static bool __lib_bin_demangle_dt(RLibPlugin *pl, void *user, void *data) {
+	return true;
+}
+
 static char *__demangleAs(RBin *bin, int type, const char *file) {
-	bool syscmd = bin->options.demangle_usecmd;
-	char *res = NULL;
+	const char *name = NULL;
 	switch (type) {
-	case R_BIN_LANG_CXX: res = r_bin_demangle_cxx (NULL, file, 0); break;
-	case R_BIN_LANG_IBMXL: res = r_bin_demangle_ibmxl (file); break;
-	case R_BIN_LANG_JAVA: res = r_bin_demangle_java (file); break;
-	case R_BIN_LANG_OBJC: res = r_bin_demangle_objc (NULL, file); break;
-	case R_BIN_LANG_SWIFT: res = r_bin_demangle_swift (file, syscmd, bin->options.demangle_trylib); break;
-	case R_BIN_LANG_MSVC: res = r_bin_demangle_msvc (file); break;
-	case R_BIN_LANG_RUST: res = r_bin_demangle_rust (NULL, file, 0); break;
-	case R_BIN_LANG_DLANG: res = r_bin_demangle_dlang (file); break;
+	case R_BIN_LANG_CXX: name = "cxx"; break;
+	case R_BIN_LANG_IBMXL: name = "ibmxl"; break;
+	case R_BIN_LANG_JAVA: name = "java"; break;
+	case R_BIN_LANG_OBJC: name = "objc"; break;
+	case R_BIN_LANG_SWIFT: name = "swift"; break;
+	case R_BIN_LANG_MSVC: name = "msvc"; break;
+	case R_BIN_LANG_RUST: name = "rust"; break;
+	case R_BIN_LANG_DLANG: name = "dlang"; break;
 	default:
 		R_LOG_ERROR ("Unsupported demangler");
-		break;
+		return NULL;
 	}
-	return res;
+	return r_bin_demangle_plugin (bin, name, file);
 }
 
 static void list_plugins(RBin *bin, const char *plugin_name, PJ *pj, int rad) {
@@ -623,6 +637,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	int xtr_idx = 0; // load all files if extraction is necessary.
 	int rawstr = 0;
 	int fd = -1;
+	int retval = 0;
 	RCore core = { 0 };
 	ut64 at = UT64_MAX;
 
@@ -652,6 +667,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			&__lib_bin_xtr_cb, &__lib_bin_xtr_dt, bin);
 		r_lib_add_handler (l, R_LIB_TYPE_BIN_LDR, "bin ldr plugins",
 			&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, bin);
+		r_lib_add_handler (l, R_LIB_TYPE_BIN_DEMANGLE, "bin demangler plugins",
+			&__lib_bin_demangle_cb, &__lib_bin_demangle_dt, bin);
 		r_lib_load_default_paths (l, R_LIB_LOAD_DEFAULT);
 		r_lib_free (l);
 	} else {
@@ -711,6 +728,11 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		r_config_set (core.config, "pdb.server", tmp);
 		free (tmp);
 	}
+	if ((tmp = r_sys_getenv ("RABIN2_FILTER"))) {
+		r_config_set (core.config, "bin.filter", tmp);
+		free (tmp);
+	}
+	r_config_set_b (core.config, "bin.resraw", r_sys_getenv_asbool ("RABIN2_RESRAW"));
 
 #define is_active(x) (action &(x))
 #define set_action(x) \
@@ -720,7 +742,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 #define unset_action(x) action &= ~x
 	RGetopt opt;
 	int help = 0;
-	r_getopt_init (&opt, argc, argv, "DjJ:gAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZy");
+	r_getopt_init (&opt, argc, argv, "DjJ:gAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEulRwO:o:pPqQrTtvLhxXzZy");
 	if (argc == 2 && !strcmp (argv[1], "-J")) {
 		rabin_show_env (false);
 		r_core_fini (&core);
@@ -762,7 +784,6 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			set_action (R_BIN_REQ_CREATE);
 			create = strdup (opt.arg);
 			break;
-		case 'u': bin->filter = 0; break;
 		case 'k': query = opt.arg; break;
 		case 'K': chksum = opt.arg; break;
 		case 'c':
@@ -849,7 +870,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			}
 			break;
 		case 'E': set_action (R_BIN_REQ_EXPORTS); break;
-		case 'U': set_action (R_BIN_REQ_RESOURCES); break;
+		case 'u': set_action (R_BIN_REQ_RESOURCES); break;
 		case 'Q': set_action (R_BIN_REQ_DLOPEN); break;
 		case 'M': set_action (R_BIN_REQ_MAIN); break;
 		case 'l': set_action (R_BIN_REQ_LIBS); break;
@@ -1294,8 +1315,10 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		free (tmp);
 	}
 
-	run_action ("sections", R_BIN_REQ_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
-	run_action ("segments", R_BIN_REQ_SEGMENTS, R_CORE_BIN_ACC_SEGMENTS);
+	if (!(action & R_BIN_REQ_EXTRACT)) {
+		run_action ("sections", R_BIN_REQ_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
+		run_action ("segments", R_BIN_REQ_SEGMENTS, R_CORE_BIN_ACC_SEGMENTS);
+	}
 	run_action ("entries", R_BIN_REQ_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
 	run_action ("initfini", R_BIN_REQ_INITFINI, R_CORE_BIN_ACC_INITFINI);
 	run_action ("main", R_BIN_REQ_MAIN, R_CORE_BIN_ACC_MAIN);
@@ -1303,7 +1326,9 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	run_action ("classes", R_BIN_REQ_CLASSES, R_CORE_BIN_ACC_CLASSES);
 	run_action ("symbols", R_BIN_REQ_SYMBOLS, R_CORE_BIN_ACC_SYMBOLS);
 	run_action ("exports", R_BIN_REQ_EXPORTS, R_CORE_BIN_ACC_EXPORTS);
-	run_action ("resources", R_BIN_REQ_RESOURCES, R_CORE_BIN_ACC_RESOURCES);
+	if (!(action & R_BIN_REQ_EXTRACT)) {
+		run_action ("resources", R_BIN_REQ_RESOURCES, R_CORE_BIN_ACC_RESOURCES);
+	}
 	run_action ("strings", R_BIN_REQ_STRINGS, R_CORE_BIN_ACC_STRINGS);
 	run_action ("info", R_BIN_REQ_INFO, R_CORE_BIN_ACC_INFO);
 	run_action ("fields", R_BIN_REQ_FIELDS, R_CORE_BIN_ACC_FIELDS);
@@ -1323,11 +1348,28 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		rabin_show_srcline (bin, at);
 	}
 	if (action & R_BIN_REQ_EXTRACT) {
+		const bool extract_sections = action & R_BIN_REQ_SECTIONS;
+		const bool extract_segments = action & R_BIN_REQ_SEGMENTS;
+		const bool extract_resources = action & R_BIN_REQ_RESOURCES;
 		RBinFile *bf = r_bin_cur (bin);
-		if (bf && bf->xtr_data) {
-			rabin_extract (bin, (!arch && !arch_name && !bits));
-		} else {
-			R_LOG_ERROR ("Cannot extract bins from '%s'. No supported plugins found!", bin->file);
+		if (extract_sections && (!bf || !r_bin_file_extract_sections (bf, output, false))) {
+			retval = 1;
+		}
+		if (extract_segments && (!bf || !r_bin_file_extract_sections (bf, output, true))) {
+			retval = 1;
+		}
+		if (extract_resources && !rabin_extract_resources (bin, output)) {
+			retval = 1;
+		}
+		if (!extract_sections && !extract_segments && !extract_resources) {
+			if (bf && bf->xtr_data) {
+				if (!rabin_extract (bin, (!arch && !arch_name && !bits))) {
+					retval = 1;
+				}
+			} else {
+				R_LOG_ERROR ("Cannot extract bins from '%s'. No supported plugins found!", bin->file);
+				retval = 1;
+			}
 		}
 	}
 	if (op && action & R_BIN_REQ_OPERATION) {
@@ -1344,5 +1386,5 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	r_syscmd_popalld ();
 	free (state.stdin_buf);
 
-	return 0;
+	return retval;
 }

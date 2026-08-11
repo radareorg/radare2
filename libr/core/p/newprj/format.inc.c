@@ -19,6 +19,7 @@ static const char *rprj_entry_type_tostring(int a) {
 	case RPRJ_EVAL: return "Evals";
 	case RPRJ_XREF: return "Xrefs";
 	case RPRJ_FUNC: return "Functions";
+	case RPRJ_VART: return "VarTypes";
 	}
 	return "UNKNOWN";
 }

@@ -121,14 +121,14 @@ static void cmd_Pz(RCore *core, const char *cmd) {
 		r_core_project_zip_export (core, NULL, arg);
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_Pz);
+		r_cons_cmd_help (core->cons, help_msg_Pz);
 		break;
 	}
 }
 
 static void cmd_Pn(RCore *core, const char *input, const char *fileproject) {
 	if (input[1] == '?') {
-		r_core_cmd_help (core, help_msg_Pn);
+		r_cons_cmd_help (core->cons, help_msg_Pn);
 		return;
 	}
 	if (R_STR_ISEMPTY (fileproject)) {
@@ -138,40 +138,24 @@ static void cmd_Pn(RCore *core, const char *input, const char *fileproject) {
 	switch (input[1]) {
 	case '-': // "Pn-"
 		/* remove lines containing specific words */
-	{
-		char *notes_file = r_core_project_notes_file (core, fileproject);
-		if (!notes_file) {
-			break;
-		}
-		FILE *fd = r_sandbox_fopen (notes_file, "w");
-		if (!fd) {
-			R_LOG_ERROR ("Cannot open %s", notes_file);
-		} else {
-			char *data = r_file_slurp (notes_file, NULL);
-			int count = 0;
-			if (data) {
-				char *ptr, *nl;
-				for (ptr = data; ptr; ptr = nl) {
-					nl = strchr (ptr, '\n');
-					if (nl) {
-						*nl++ = 0;
-						if (strstr (ptr, input + 2)) {
-							count++;
-						} else {
-							fprintf (fd, "%s\n", ptr);
-						}
-					}
+		{
+			char *notes_file = r_core_project_notes_file (core, fileproject);
+			if (!notes_file) {
+				break;
+			}
+			if (input[2]) {
+				char *data = r_file_slurp (notes_file, NULL);
+				if (data) {
+					r_str_stripline (data, input + 2);
+					r_file_dump (notes_file, (const ut8 *)data, -1, false);
+					free (data);
 				}
-				free (data);
+			} else {
+				r_file_dump (notes_file, NULL, 0, false);
 			}
-			if (count > 0) {
-				R_LOG_ERROR ("Deleted %d lines", count);
-			}
-			fclose (fd);
+			free (notes_file);
 		}
-		free (notes_file);
-	}
-	break;
+		break;
 	case ' ': // "Pn "
 	{
 		char *notes_file = r_core_project_notes_file (core, fileproject);
@@ -231,7 +215,7 @@ static void cmd_Pn(RCore *core, const char *input, const char *fileproject) {
 			}
 		} else if (input[2] == ' ') {
 			/* set base64 string */
-			ut8 *data = r_base64_decode_dyn (input + 3, -1, NULL);
+			ut8 *data = r_base64_decode_dyn (input + 3, -1, NULL, false);
 			if (data) {
 				char *notes_file = r_core_project_notes_file (core, fileproject);
 				if (notes_file) {
@@ -241,7 +225,7 @@ static void cmd_Pn(RCore *core, const char *input, const char *fileproject) {
 				free (data);
 			}
 		} else {
-			r_core_cmd_help_contains (core, help_msg_P, "Pn");
+			r_cons_cmd_help_match (core->cons, help_msg_P, "Pn", 0, false);
 		}
 		break;
 	case 'x': // "Pnx"
@@ -464,7 +448,7 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case '!': // "P!"
 		if (input [1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_P, "P!");
+			r_cons_cmd_help_match (core->cons, help_msg_P, "P!", 0, false);
 		} else if (r_config_get_b (core->config, "scr.interactive")) {
 			char *pdir = r_file_new (
 				r_config_get (core->config, "dir.projects"),
@@ -508,7 +492,7 @@ static int cmd_project(void *data, const char *input) {
 				}
 			}
 		} else {
-			r_core_cmd_help_contains (core, help_msg_P, "PS");
+			r_cons_cmd_help_match (core->cons, help_msg_P, "PS", 0, false);
 		}
 		break;
 	case 'n': // "Pn"
@@ -529,7 +513,7 @@ static int cmd_project(void *data, const char *input) {
 		r_core_project_list (core, input[0]);
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_P);
+		r_cons_cmd_help (core->cons, help_msg_P);
 		break;
 	default:
 		r_core_return_invalid_command (core, "P", *input);

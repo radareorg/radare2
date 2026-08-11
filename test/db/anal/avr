@@ -810,3 +810,16 @@ EXPECT=<<EOF
 EOF
 BROKEN=1
 RUN
+
+NAME=avr cc clobber and preserve register sets
+FILE=malloc://16
+ARGS=-e anal.arch=avr -e asm.bits=8
+CMDS=<<EOF
+k anal/cc/cc.avr.clobber
+k anal/cc/cc.avr.preserve
+EOF
+EXPECT=<<EOF
+r0,r18,r19,r20,r21,r22,r23,r24,r25,r26,r27,r30,r31
+r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14,r15,r16,r17,r28,r29
+EOF
+RUN

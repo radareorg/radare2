@@ -289,11 +289,12 @@ afb+ 0x100000da0 0x100000e90 9 0x100000eba 0xffffffffffffffff
 s 0x100000da0
 'afc amd64
 s-
+'0x100000da0'afS 8
 s 0x100000da0
-'afvb -1 var_1h int64_t
+'afvb -1 var_1h int8_t
 'afvb -16 var_10h int64_t
-'afvb -20 var_14h int64_t
-'afvb -24 var_18h int64_t
+'afvb -20 var_14h int32_t
+'afvb -24 var_18h int32_t
 'afvb -32 var_20h int64_t
 'afvb -40 var_28h int64_t
 s-
@@ -318,7 +319,6 @@ s-
 'axc 0x100000e99 0x100000e8b
 'axc 0x100000eba 0x100000e94
 'axc 0x100000e9e 0x100000e99
-'0x100000da0'afS 8
 
 EOF
 RUN
@@ -727,7 +727,7 @@ var_bp_20h
 var var_bp_38h = 0x00177fc0 = (qword)0x1111111111111111
 var var_28h = 0x00177fd0 = (qword)0x0000000000000000
 var var_bp_30h = 0x00177fc8 = (qword)0x0000000000000000
-var var_3ch = 0x00177fbc = (qword)0x1111111100000000
+var var_3ch = 0x00177fbc = 0x00000000
 var var_bp_20h = 0x00177fd8 = (qword)0x0000000000000000
 var var_fh = 0x00177fc7 = (qword)0x0000000000000011
 EOF
@@ -1665,13 +1665,13 @@ EXPECT=<<EOF
 |           0x0001274b      or qword [rsp], 0
 |           0x00012750      add rsp, 0x1020
 |           0x00012757      mov rax, qword fs:[0x28]
-|           0x00012760      mov qword [var_8h], rax
+|           0x00012760      mov qword [canary], rax
 |           0x00012764      xor eax, eax
 |           0x00012766      lea rax, [rip + 0xf033]
 |           0x0001276d      test rdi, rdi
 |           0x00012770      cmovne rax, rdi
 |           0x00012774      mov dword [rax], esi
-|           0x00012776      mov rax, qword [var_8h]
+|           0x00012776      mov rax, qword [canary]
 |           0x0001277a      xor rax, qword fs:[0x28]
 |      ,==< 0x00012783      jne 0x12787
 |      |    0x00012785      leave
@@ -1946,7 +1946,7 @@ arg int64_t arg1 @ rdi
 arg int64_t arg2 @ rsi
 var int64_t var_8h @ rbp-0x8
 var int64_t var_10h @ rbp-0x10
-var int64_t var_14h @ rbp-0x14
+var int32_t var_14h @ rbp-0x14
 EOF
 RUN
 
@@ -1960,7 +1960,7 @@ afvt var_30h char
 afv~var_30h
 EOF
 EXPECT=<<EOF
-var int64_t var_30h @ rbp-0x30
+var int32_t var_30h @ rbp-0x30
 var char var_30h @ rbp-0x30
 EOF
 RUN
@@ -1975,8 +1975,8 @@ afvn mylocal var_30h
 afv~mylocal
 EOF
 EXPECT=<<EOF
-var int64_t var_30h @ rbp-0x30
-var int64_t mylocal @ rbp-0x30
+var int32_t var_30h @ rbp-0x30
+var int32_t mylocal @ rbp-0x30
 EOF
 RUN
 
@@ -1991,8 +1991,8 @@ afvn var_30h mylocal
 afv~var_30h
 EOF
 EXPECT=<<EOF
-var int64_t var_30h @ rbp-0x30
-var int64_t var_30h @ rbp-0x30
+var int32_t var_30h @ rbp-0x30
+var int32_t var_30h @ rbp-0x30
 EOF
 RUN
 
@@ -2007,7 +2007,7 @@ afvt mylocal char
 afv~mylocal
 EOF
 EXPECT=<<EOF
-var int64_t var_30h @ rbp-0x30
+var int32_t var_30h @ rbp-0x30
 var char mylocal @ rbp-0x30
 EOF
 RUN
@@ -2023,7 +2023,7 @@ afvn mylocal var_30h
 afv~mylocal
 EOF
 EXPECT=<<EOF
-var int64_t var_30h @ rbp-0x30
+var int32_t var_30h @ rbp-0x30
 var char mylocal @ rbp-0x30
 EOF
 RUN
@@ -2039,7 +2039,7 @@ afvt var_30h int
 afv~var_30h
 EOF
 EXPECT=<<EOF
-var int64_t var_30h @ rbp-0x30
+var int32_t var_30h @ rbp-0x30
 var int var_30h @ rbp-0x30
 EOF
 RUN
@@ -2086,7 +2086,7 @@ fastcall
 |           0x0804843e      ff75f0         push dword [var_10h]
 |           0x08048441      ff75f4         push dword [var_ch]
 |           0x08048444      6874850408     push str._i__i__i_n         ; 0x8048574 ; "%i %i %i\n"
-|           0x08048449      e8a2feffff     call sym.imp.printf         ; int printf(const char *format)
+|           0x08048449      e8a2feffff     call sym.imp.printf         ; int printf(const char *format, ...)
 |           0x0804844e      83c410         add esp, 0x10
 |           0x08048451      90             nop
 |           0x08048452      c9             leave
@@ -3605,6 +3605,10 @@ EXPECT=<<EOF
 0x00000870 data Cd 4
 0x00000874 data Cd 4
 0x00000878 data Cd 4
+ 0x00000642 => reguse='rdx is arg2'
+ 0x00000774 => reguse='rdi is arg0'
+ 0x0000078b => reguse='rsi is arg1'
+ 0x0000078e => reguse='rdx is arg2'
  0x00000844 => immbase=10
  0x00000848 => immbase=10
  0x0000084c => immbase=10
@@ -4306,4 +4310,25 @@ EXPECT=<<EOF2
 |           0x00000008      c744242402..   mov dword [arr[1]], 2
 |           0x00000010      c744242803..   mov dword [arr[2]], 3
 EOF2
+RUN
+
+NAME=rip-relative destination operand ptr with zero displacement
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 48ff0500000000
+ao 1~^ptr
+wx 48f71d00000000
+ao 1~^ptr
+wx 488b0500000000
+ao 1~^ptr
+wx 48ff0508000000
+ao 1~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x00000007
+ptr: 0x00000007
+ptr: 0x00000007
+ptr: 0x0000000f
+EOF
 RUN

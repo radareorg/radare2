@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
 	case 'b':
 	case '?':
 	default:
-		r_core_cmd_help (core, help_msg_aft);
+		r_cons_cmd_help (core->cons, help_msg_aft);
 		break;
 	}
 	return 0;

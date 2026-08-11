@@ -8,7 +8,6 @@
 #include <string.h>
 #include <r_util.h>
 
-#define SZ 1024
 static const char cb64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 // This table will handle standard base64 decoding and also url safe decoding with characteres "-" and "_"
@@ -24,66 +23,120 @@ static void local_b64_encode(const ut8 in[3], char out[4], int len) {
 	out[3] = (len > 2? cb64[in[2] & 0x3f]: '=');
 }
 
-static int local_b64_decode(const char in[4], ut8 out[3]) {
-	int len = 3;
-	ut8 i, v[4] = {0};
-	for (i = 0; i < 4; i++) {
-		if (in[i] < 43 || in[i] > 122) {
-			return -1;
-		}
-		v[i] = cd64[in[i] - 43];
-		if (v[i] == '$') {
-			len = i? i - 1: -1;
-			break;
-		}
-		v[i] -= 62;
+static int local_b64_value(const char c) {
+	if (c < 43 || c > 122) {
+		return -1;
 	}
-	out[0] = v[0] << 2 | v[1] >> 4;
-	out[1] = v[1] << 4 | v[2] >> 2;
-	out[2] = ((v[2] << 6) & 0xc0) | v[3];
-	return len;
+	const char v = cd64[c - 43];
+	return (v == '$')? -1: v - 62;
 }
 
-R_API int r_base64_decode(ut8 *bout, const char *bin, int len, bool strict) {
-	int in, out;
-	if (len < 0) {
-		len = strlen (bin);
-	}
-	if (len == 0) {
-		bout[0] = 0;
+// emit the bytes encoded by an incomplete group of nchars sextets
+static int local_b64_flush(const ut8 v[4], int nchars, ut8 *out) {
+	switch (nchars) {
+	case 4:
+		out[2] = (v[2] << 6) | v[3];
+		// fallthrough
+	case 3:
+		out[1] = (v[1] << 4) | (v[2] >> 2);
+		// fallthrough
+	case 2:
+		out[0] = (v[0] << 2) | (v[1] >> 4);
+		break;
+	default:
 		return 0;
 	}
-	for (in = out = 0; in + 3 < len; in += 4) {
-		int ret = local_b64_decode (bin + in, bout + out);
-		if (ret < 1) {
-			if (strict) {
+	return nchars - 1;
+}
+
+static int local_b64_decode_strict(ut8 *bout, const char *bin, int len) {
+	if (len % 4) {
+		return -1;
+	}
+	int in, out = 0;
+	for (in = 0; in < len; in += 4) {
+		ut8 v[4] = {0};
+		int nchars = 0;
+		int i;
+		for (i = 0; i < 4; i++) {
+			const char c = bin[in + i];
+			if (c == '=') {
+				break;
+			}
+			const int val = local_b64_value (c);
+			if (val < 0) {
 				return -1;
 			}
-			break;
+			v[i] = (ut8)val;
+			nchars++;
 		}
-		out += ret;
-	}
-	if (strict && in != len) {
-		return -1;
+		if (nchars < 4) {
+			// padding is only valid at the tail of the last group
+			if (in + 4 != len || nchars < 2) {
+				return -1;
+			}
+			for (i = nchars; i < 4; i++) {
+				if (bin[in + i] != '=') {
+					return -1;
+				}
+			}
+		}
+		out += local_b64_flush (v, nchars, bout + out);
 	}
 	bout[out] = 0;
 	return out;
 }
 
-R_API ut8 *r_base64_decode_dyn(const char *in, int len, int *olen) {
-	R_RETURN_VAL_IF_FAIL (in, NULL);
+R_API int r_base64_decode(ut8 *bout, const char *bin, int len, bool strict) {
+	R_RETURN_VAL_IF_FAIL (bout && bin, -1);
 	if (len < 0) {
-		len = strlen (in);
+		len = strlen (bin);
 	}
+	if (strict) {
+		return local_b64_decode_strict (bout, bin, len);
+	}
+	// tolerant mode: skip invalid bytes (newlines, spaces, junk) instead of
+	// truncating, let '=' close the current group and recover trailing
+	// groups of unpadded input
+	ut8 v[4] = {0};
+	int in, out = 0, nchars = 0;
+	for (in = 0; in < len; in++) {
+		const char c = bin[in];
+		if (c == '=') {
+			out += local_b64_flush (v, nchars, bout + out);
+			nchars = 0;
+			continue;
+		}
+		const int val = local_b64_value (c);
+		if (val < 0) {
+			continue;
+		}
+		v[nchars++] = (ut8)val;
+		if (nchars == 4) {
+			out += local_b64_flush (v, 4, bout + out);
+			nchars = 0;
+		}
+	}
+	out += local_b64_flush (v, nchars, bout + out);
+	bout[out] = 0;
+	return out;
+}
+
+R_API ut8 *r_base64_decode_dyn(const char *in, int len, int *olen, bool strict) {
+	R_RETURN_VAL_IF_FAIL (in, NULL);
 	if (olen) {
 		*olen = 0;
 	}
-	ut8 *bout = malloc ((len / 4) * 3 + 1);
+	const size_t slen = len < 0? strlen (in): (size_t)len;
+	if (slen > ST32_MAX) {
+		return NULL;
+	}
+	ut8 *bout = malloc ((((slen / 4) + 1) * 3) + 1);
 	if (!bout) {
 		return NULL;
 	}
-	int res = r_base64_decode (bout, in, len, false);
-	if (res == -1) {
+	int res = r_base64_decode (bout, in, (int)slen, strict);
+	if (res < 0) {
 		free (bout);
 		return NULL;
 	}
@@ -108,21 +161,22 @@ R_API int r_base64_encode(char *bout, const ut8 *bin, int len) {
 
 R_API char *r_base64_encode_dyn(const ut8 *str, int len) {
 	R_RETURN_VAL_IF_FAIL (str, NULL);
-	int in, out;
-	if (len < 0) {
-		len = strlen ((const char*)str);
-	}
-	const int olen = ((len + 2) / 3) * 4 + 1;
-	if (olen < 1) {
+	const size_t slen = len < 0? strlen ((const char *)str): (size_t)len;
+	size_t olen;
+	if (r_add_overflow (slen, (size_t)2, &olen)
+			|| r_mul_overflow (olen / 3, (size_t)4, &olen)
+			|| r_add_overflow (olen, (size_t)1, &olen)) {
 		return NULL;
 	}
 	char *bout = (char *)malloc (olen);
-	if (bout) {
-		for (in = out = 0; in < len; in += 3, out += 4) {
-			local_b64_encode ((const ut8 *)str + in, (char *)bout + out,
-				(len - in) > 3 ? 3 : len - in);
-		}
-		bout[out] = 0;
+	if (!bout) {
+		return NULL;
 	}
+	size_t in, out;
+	for (in = out = 0; in < slen; in += 3, out += 4) {
+		local_b64_encode (str + in, bout + out,
+			(int)R_MIN (slen - in, 3));
+	}
+	bout[out] = 0;
 	return bout;
 }

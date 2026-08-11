@@ -76,7 +76,7 @@ void r_magic_setflags(RMagic *ms, int flags);
 .Pp
 Common flags include MIME-only output or enabling debug diagnostics; many
 others tune which checks are performed (compressed files, ELF details, etc.).
-.Bl -tag -width "R_MAGIC_MIME_ENCODING"
+.Bl -tag -width "R_MAGIC_CHECK_TEXT"
 .It Dv R_MAGIC_NONE
 No special flags
 .It Dv R_MAGIC_DEBUG
@@ -89,6 +89,8 @@ Return only MIME encoding
 Return all matches, not just first
 .It Dv R_MAGIC_RAW
 Do not translate unprintable characters
+.It Dv R_MAGIC_CHECK_TEXT
+Check text magic entries after binary magic entries miss
 .El
 .Sh ERROR HANDLING
 The magic API reports human-readable error messages and an errno-like value

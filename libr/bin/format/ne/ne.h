@@ -8,18 +8,23 @@
 
 typedef struct {
 	char *name;
-	ut32 offset;
-	ut32 size;
+	ut64 offset;
+	ut64 size;
+	ut16 id;
+	ut16 flags;
+	bool named;
 } r_ne_resource_entry;
 
 typedef struct {
 	char *name;
 	RList /*<r_ne_resource_entry>*/ *entry;
+	ut16 type_id;
+	bool named;
 } r_ne_resource;
 
 typedef struct {
 	NE_image_header *ne_header;
-	ut16 header_offset;
+	ut32 header_offset;
 	ut16 alignment;
 	NE_image_segment_entry *segment_entries;
 	ut8 *entry_table;
@@ -29,6 +34,7 @@ typedef struct {
 	char *os;
 } r_bin_ne_obj_t;
 
+bool r_bin_ne_get_header_offset(RBuffer *buf, R_OUT ut32 *offset);
 void r_bin_ne_free(r_bin_ne_obj_t *bin);
 r_bin_ne_obj_t *r_bin_ne_new_buf(RBuffer *buf, bool verbose);
 RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBinSection *sections);

@@ -8,6 +8,7 @@ option('debugstuff', type: 'boolean', value: true, description: 'Permit and hand
 
 # Plugins
 option('plugins', type: 'string', value: '', description: 'Comma separated list of plugin names')
+option('demanglers', type: 'array', choices: ['cxx', 'dlang', 'ibmxl', 'java', 'msvc', 'objc', 'pascal', 'rust', 'swift'], value: ['cxx', 'dlang', 'ibmxl', 'java', 'msvc', 'objc', 'pascal', 'rust', 'swift'], description: 'Demangler plugins to include')
 
 # For Windows
 option('r2_libdir', type: 'string', value: '')

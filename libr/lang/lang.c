@@ -176,7 +176,8 @@ R_API bool r_lang_setup(RLang *lang) {
 }
 
 R_API bool r_lang_plugin_add(RLang *lang, RLangPlugin *foo) {
-	if (foo && !r_lang_get_by_name (lang, foo->meta.name)) {
+	R_RETURN_VAL_IF_FAIL (lang && foo, false);
+	if (foo->meta.name && !r_lang_get_by_name (lang, foo->meta.name)) {
 		bool supported = true;
 		if (foo->init) {
 			// when init takes null, we just check if
@@ -341,7 +342,8 @@ R_API bool r_lang_prompt(RLang *lang) {
 	RLineHistory histnull = {0};
 	RLineCompletion oc = line->completion;
 	RLineCompletion ocnull = {0};
-	char *prompt = strdup (line->prompt);
+	RLineState state = line->state;
+	line->state.prompt = NULL;
 	line->completion = ocnull;
 	line->history = histnull;
 
@@ -369,7 +371,11 @@ R_API bool r_lang_prompt(RLang *lang) {
 			} else {
 				char *foo, *code = NULL;
 				do {
-					foo = r_cons_editor (lang->cons, NULL, code);
+					foo = r_cons_editor (lang->cons, NULL, code, NULL);
+					if (!foo) {
+						free (code);
+						break;
+					}
 					r_lang_run (lang, foo, 0);
 					free (code);
 					code = foo;
@@ -387,8 +393,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 			continue;
 		}
 		if (!strcmp (buf, "q")) {
-			free (prompt);
-			return true;
+			break;
 		}
 		if (!strcmp (buf, "?")) {
 			RLangDef *def;
@@ -413,11 +418,11 @@ R_API bool r_lang_prompt(RLang *lang) {
 		}
 	}
 	// XXX: leaking history
-	r_line_set_prompt (line->cons->line, prompt);
+	free (line->state.prompt);
+	line->state = state;
 	line->completion = oc;
 	line->history = hist;
 	clearerr (stdin);
 	printf ("\n");
-	free (prompt);
 	return true;
 }

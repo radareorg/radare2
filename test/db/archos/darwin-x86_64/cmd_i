@@ -12,9 +12,9 @@
 # EOF
 # EXPECT=<<EOF
 # file     A\x1b¢€𝄞󠁁\.bin
-# {"core":{"type":"","file":"A\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":4,"size":256,"humansz":"256","iorw":true,"mode":"r-x","minopsz":1,"maxopsz":16,"block":256,"format":"any"}}
+# {"core":{"type":"","file":"A\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":4,"size":256,"humansz":"256","iorw":true,"mode":"r-x","minopsz":1,"maxopsz":16,"block":256,"format":"null"}}
 # file     B\x1b¢€𝄞󠁁\.bin
-# {"core":{"type":"","file":"B\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":5,"size":256,"humansz":"256","iorw":true,"mode":"r-x","minopsz":1,"maxopsz":16,"block":256,"format":"any"}}
+# {"core":{"type":"","file":"B\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":5,"size":256,"humansz":"256","iorw":true,"mode":"r-x","minopsz":1,"maxopsz":16,"block":256,"format":"null"}}
 # EOF
 # RUN
 
@@ -31,8 +31,8 @@ e io.cache=true
 EOF
 EXPECT=<<EOF
 file     A\x1b¢\u0080€𝄞\U000e0041\.bin
-{"core":{"type":"","file":"A\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":3,"size":256,"humansz":"256","iorw":true,"mode":"r-x","block":256,"format":"any"}}
+{"core":{"type":"","file":"A\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":3,"size":256,"humansz":"256","iorw":true,"mode":"r-x","block":256,"format":"null"}}
 file     B\x1b¢\u0080€𝄞\U000e0041\.bin
-{"core":{"type":"","file":"B\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":4,"size":256,"humansz":"256","iorw":true,"mode":"r-x","block":256,"format":"any"}}
+{"core":{"type":"","file":"B\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":4,"size":256,"humansz":"256","iorw":true,"mode":"r-x","block":256,"format":"null"}}
 EOF
 RUN

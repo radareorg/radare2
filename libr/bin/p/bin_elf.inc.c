@@ -115,6 +115,13 @@ static bool sections_vec(RBinFile *bf) {
 	return true;
 }
 
+#ifndef R_BIN_CGC
+static bool load_resources(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
+	return Elf_(load_gresources) (bf, bf->bo->bin_obj, &bf->bo->resources_vec);
+}
+#endif
+
 static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, int type, int bits) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
@@ -209,7 +216,7 @@ static bool is_library_without_entrypoint(ELFOBJ *eo) {
 		return false;
 	}
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+	for (i = 0; i < eo->phnum; i++) {
 		if (eo->phdr[i].p_type == PT_INTERP) {
 			return false;
 		}
@@ -776,7 +783,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	}
 #undef SET
 #undef ADD
-	free (r);
+	r_bin_reloc_free (r);
 	return NULL;
 }
 
@@ -860,7 +867,8 @@ static RList* relocs(RBinFile *bf) {
 
 	RBinElfReloc *reloc;
 	R_VEC_FOREACH (relocs, reloc) {
-		RBinReloc *already_inserted = ht_up_find (reloc_ht, reloc->rva, NULL);
+		bool already_inserted = false;
+		ht_up_find (reloc_ht, reloc->rva, &already_inserted);
 		if (already_inserted) {
 			continue;
 		}
@@ -871,7 +879,8 @@ static RList* relocs(RBinFile *bf) {
 			ht_up_insert (reloc_ht, reloc->rva, ptr);
 		} else {
 			if (ptr) {
-				ht_up_insert (reloc_ht, reloc->rva, ptr);
+				ht_up_insert (reloc_ht, reloc->rva, NULL);
+				r_bin_reloc_free (ptr);
 			} else {
 				if (reloc->rva != reloc->offset) {
 					ht_up_insert (reloc_ht, reloc->rva, ptr);
@@ -1054,6 +1063,18 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			iob->overlay_write_at (iob->io, rel->rva, buf, 4);
 			break;
 		}
+		case R_AARCH64_RELATIVE:
+			V = B + A;
+			r_write_ble64 (buf, V, bo->endian);
+			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
+			break;
+		case R_AARCH64_GLOB_DAT:
+		case R_AARCH64_JUMP_SLOT:
+		case R_AARCH64_ABS64:
+			V = S + A;
+			r_write_ble64 (buf, V, bo->endian);
+			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
+			break;
 		default:
 			V = S + A;
 			iob->read_at (iob->io, rel->rva, buf, 8);
@@ -1089,10 +1110,8 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			word = 4;
 			V = S + A - P;
 			break;
-		case R_PPC64_JMP_SLOT: { // 21 — write PLT stub vaddr to GOT slot (big-endian)
-			// For PPC64 ELFv1 the PLT stubs live in .text; look up the
-			// stub that loads from this GOT slot.  Falls back to S when not found.
-			ut64 stub = Elf_(ppc64v1_get_plt_stub_for_slot) (bo, rel->rva);
+		case R_PPC64_JMP_SLOT: { // 21 — write the PLT stub vaddr to the GOT slot, S when no stub is known
+			ut64 stub = Elf_(ppc64_get_plt_stub_for_slot) (bo, rel->rva);
 			word = 8;
 			V = (stub != UT64_MAX) ? stub : S;
 			break;
@@ -1707,6 +1726,15 @@ static RBinInfo* info(RBinFile *bf) {
 		ret->flags = r_str_newf ("0x%x", elf_flags);
 	}
 	ret->abi = Elf_(get_abi) (obj);
+	const char *abi = ret->abi;
+	if (abi) {
+		// the abi picks a cc so switching binaries in one session updates anal.cc
+		if (!strcmp (abi, "elfv1")) {
+			ret->default_cc = strdup ("ppc-64");
+		} else if (!strcmp (abi, "elfv2") || !strcmp (abi, "o32") || !strcmp (abi, "n32")) {
+			ret->default_cc = strdup (abi);
+		}
+	}
 	ret->rclass = strdup ("elf");
 	ret->bits = Elf_(get_bits) (obj);
 	if (!strcmp (ret->arch, "avr")) {

@@ -1,0 +1,10 @@
+OBJ_DEMANGLE_OBJC=bin_demangle_objc.o ../mangling/objc.o
+
+CFLAGS+=-DR_BIN_DEMANGLE_OBJC=1
+STATIC_OBJ+=${OBJ_DEMANGLE_OBJC}
+TARGET_DEMANGLE_OBJC=bin_demangle_objc.${EXT_SO}
+ALL_TARGETS+=${TARGET_DEMANGLE_OBJC}
+
+${TARGET_DEMANGLE_OBJC}: ${OBJ_DEMANGLE_OBJC}
+	${CC} $(call libname,bin_demangle_objc) ${CFLAGS} -o $@ \
+		${OBJ_DEMANGLE_OBJC} $(LINK) $(LDFLAGS)

@@ -114,6 +114,15 @@ R_API const char *r_str_trim_head_ro(const char *str) {
 	return str;
 }
 
+R_API char *r_str_trim_head_digits(const char *str) {
+	R_RETURN_VAL_IF_FAIL (str, NULL);
+	const char *p = str;
+	for (; isdigit ((ut8)*p); p++) {
+		;
+	}
+	return (char *)p;
+}
+
 // TODO: find better name
 R_API const char *r_str_trim_head_wp(const char *str) {
 	R_RETURN_VAL_IF_FAIL (str, NULL);
@@ -137,9 +146,19 @@ static bool is_escapable(char ch) {
 	case '@':
 	case '"':
 	case '\'':
+	case '!':
+	case '#':
+	case '$':
+	case '&':
+	case '*':
+	case '(':
+	case ')':
+	case '<':
+	case '>':
 	case '|':
 	case ';':
 	case '`':
+	case '~':
 		return true;
 	}
 	return false;
@@ -148,53 +167,48 @@ static bool is_escapable(char ch) {
 R_API void r_str_trim_args(char *str) {
 	R_RETURN_IF_FAIL (str);
 	char q = 0;
-	bool e = false;
 	char *s = str;
 	char *d = str;
 	char *quote = NULL;
 	while (*s) {
+		if (*s == '\\') {
+			char *slashes = s;
+			size_t i;
+			while (*s == '\\') {
+				s++;
+			}
+			size_t nslashes = s - slashes;
+			if (*s && (nslashes & 1) && is_escapable (*s)) {
+				for (i = 1; i < nslashes; i++) {
+					*d++ = '\\';
+				}
+				*d++ = *s++;
+				continue;
+			}
+			for (i = 0; i < nslashes; i++) {
+				*d++ = '\\';
+			}
+			continue;
+		}
 		switch (*s) {
 		case '\'':
 		case '"':
-			if (e) {
-				e = false;
-			} else {
-				if (q) {
-					// needs to be escaped
-					if (q == *s) {
-						q = 0;
-						quote = NULL;
-						e = false;
-						s++;
-						continue;
-					}
-				} else {
-					q = *s;
-					quote = d;
-					s++;
-					e = false;
-					continue;
-				}
-			}
-			break;
-		case '\\':
-			if (e) {
-				e = false;
-			} else {
-				if (is_escapable (s[1])) {
-					e = true;
+			if (q) {
+				if (q == *s) {
+					q = 0;
+					quote = NULL;
 					s++;
 					continue;
 				}
+			} else {
+				q = *s;
+				quote = d;
+				s++;
+				continue;
 			}
-			break;
-		default:
-			e = false;
 			break;
 		}
-		*d = *s;
-		s++;
-		d++;
+		*d++ = *s++;
 	}
 	*d = 0;
 	if (quote) {

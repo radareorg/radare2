@@ -179,8 +179,8 @@ struct r_hash_t {
 
 typedef struct r_hash_seed_t {
 	int prefix;
-	ut8 *buf;
 	int len;
+	ut8 *buf;
 } RHashSeed;
 
 #define R_HASH_SIZE_ELF 4

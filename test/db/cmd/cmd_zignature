@@ -500,7 +500,7 @@ main:
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
+  vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 (zigs) main:
   bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
@@ -511,7 +511,7 @@ main:
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
+  vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -537,7 +537,7 @@ main:
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
+  vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 (zigs) main:
   bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
@@ -548,7 +548,7 @@ main:
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
+  vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -571,7 +571,7 @@ main:
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
+  vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -596,7 +596,7 @@ foobar:
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
+  vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -620,7 +620,7 @@ foobar:
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
+  vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -1109,13 +1109,13 @@ z*
 EOF
 EXPECT=<<EOF
 zs *
-za sym.fpathconf b 3c1c0005279c11200399e02127bdfef8afbf0100afb100fcafb000f8afbc001004810008008088218f9980180320f809000000008fbc00102404ffff100000142403000910a000412404007f24a5ffff2ca20013104000088f83805c0005108024638d00004310218c420000005c102100400008000000008f9980180320f809000000008fbc00102404ffff240300161000002eac4300001000002c240400ff8f9980180320f809000000008fbc00100220202127a500188f998224004080210320f8098c510000044100088fbc00108e030000240200591462001c2404ffff240400ff10000019ae110000100000178fa40040100000152404100010000013000020218f9980f0022020210320f80927a500600440000c8fbc00108fa200743043f0003402800010620003240260001462000500000000100000042404000110000002240400202404ffff8fbf01008fb100fc8fb000f80080102103e0000827bd0108:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ffffffffff000000ff000000ffffffffffffffffffffffffff000000ffffffffff000000ffffffffffffffffffffffffff000000ff000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ff000000ffffffffffffffffffffffffffffffffff000000ffffffff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff
+za sym.fpathconf b 3c1c0005279c11200399e02127bdfef8afbf0100afb100fcafb000f8afbc001004810008008088218f9980180320f809000000008fbc00102404ffff100000142403000910a000412404007f24a5ffff2ca20013104000088f83805c0005108024638d00004310218c420000005c102100400008000000008f9980180320f809000000008fbc00102404ffff240300161000002eac4300001000002c240400ff8f9980180320f809000000008fbc00100220202127a500188f998224004080210320f8098c510000044100088fbc00108e030000240200591462001c2404ffff240400ff10000019ae110000100000178fa40040100000152404100010000013000020218f9980f0022020210320f80927a500600440000c8fbc00108fa200743043f0003402800010620003240260001462000500000000100000042404000110000002240400202404ffff8fbf01008fb100fc8fb000f80080102103e0000827bd0108:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ffffffffff000000ffffffffffffffffffffffffffffffffff000000ffffffffff000000ffffffffffffffffffffffffff000000ff000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ffffffffffffffffffffffffffffffffffffffffff000000ffffffff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff
 za sym.fpathconf g cc=5 nbbs=8 edges=9 ebbs=2 bbsum=176
 za sym.fpathconf o 0x00051490
 za sym.fpathconf R ZnBhdGhjb25m
 za sym.fpathconf t void sym.fpathconf (int32_t arg1, int32_t arg2)
 za sym.fpathconf r sym.__errno_location sym.__errno_location
-za sym.fpathconf v fs-8:var_100h:int32_t, fs-12:var_fch:int32_t, fs-16:var_f8h:int32_t, fs-248:var_10h:int32_t, tr4:arg1:int32_t, tr5:arg2:int32_t
+za sym.fpathconf v fs-24:var_100h:int32_t, fs-28:var_fch:int32_t, fs-32:var_f8h:int32_t, fs-264:var_10h:int32_t, tr4:arg1:int32_t, tr5:arg2:int32_t
 za sym.fpathconf h 52f232c2d8158ce806cadf84ed77273fb11711dfa6cb5feb997ce03c1459be43
 EOF
 RUN
@@ -1136,7 +1136,7 @@ za sym._dl_malloc o 0x00002a1c
 za sym._dl_malloc R X2RsX21hbGxvYw==
 za sym._dl_malloc t void sym._dl_malloc (int32_t arg1)
 za sym._dl_malloc r sym._dl_dprintf sym._dl_dprintf
-za sym._dl_malloc v fs-4:var_4h:int32_t, fs-12:var_24h:int32_t, fs-16:var_20h:int32_t, fs-20:var_1ch:int32_t, fs-8:var_28h:int32_t, fs-24:var_18h:int32_t, fs-32:var_10h:int32_t, fs-80:var_10h_2:int32_t, fs-76:var_14h:int32_t, fs-28:var_24h_2:int32_t, fs-36:var_1ch_2:int32_t, fs-40:var_18h_2:int32_t, tr4:arg1:int32_t
+za sym._dl_malloc v fs-20:var_4h:int32_t, fs-28:var_24h:int32_t, fs-32:var_20h:int32_t, fs-36:var_1ch:int32_t, fs-24:var_28h:int32_t, fs-40:var_18h:int32_t, fs-48:var_10h:int32_t, fs-96:var_10h_2:int32_t, fs-92:var_14h:int32_t, fs-44:var_24h_2:int32_t, fs-52:var_1ch_2:int32_t, fs-56:var_18h_2:int32_t, tr4:arg1:int32_t
 za sym._dl_malloc h ec986971438cf486e01f14e9bc442d9f4c457854207d30fe4aa9f1ffdf892911
 EOF
 RUN
@@ -1169,8 +1169,8 @@ za fcn.100e2b0c b 38c000014800000c38c00000480000049421ffd07c0802a63d401013bf2100
 za fcn.100e2b0c g cc=19 nbbs=35 edges=52 ebbs=1 bbsum=448
 za fcn.100e2b0c o 0x100e2b0c
 za fcn.100e2b0c R ZmNuLjEwMGUyYjBj
-za fcn.100e2b0c t void fcn.100e2b0c (int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg_1h, int32_t arg_34h)
-za fcn.100e2b0c v fs-28:var_14h:int32_t, ts4:arg_34h:int32_t, tb1:arg_1h:int32_t, tr6:arg2:int32_t, tr7:arg3:int32_t, tr5:arg1:int32_t
+za fcn.100e2b0c t void fcn.100e2b0c (int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg_1h)
+za fcn.100e2b0c v fs-36:var_14h:int32_t, fs-4:var_34h:int32_t, tb1:arg_1h:int32_t, tr6:arg2:int32_t, tr7:arg3:int32_t, tr5:arg1:int32_t
 za fcn.100e2b0c h 3b28d8f368cb414615bda7313fc4cdc24096498e7183cc05165607770be26928
 EOF
 RUN

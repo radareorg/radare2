@@ -71,12 +71,12 @@ static bool test_anal_get_base_type_struct(void) {
 
 	RAnalStructMember *member;
 
-	member = RVecAnalStructMember_at (&base->struct_data.members, 0);
+	member = RVecAnalTypeMember_at (&base->struct_data.members, 0);
 	mu_assert_eq (member->offset, 0, "Incorrect offset for struct member");
 	mu_assert_streq (member->type, "int32_t", "Incorrect type for struct member");
 	mu_assert_streq (member->name, "bar", "Incorrect name for struct member");
 
-	member = RVecAnalStructMember_at (&base->struct_data.members, 1);
+	member = RVecAnalTypeMember_at (&base->struct_data.members, 1);
 	mu_assert_eq (member->offset, 4, "Incorrect offset for struct member");
 	mu_assert_streq (member->type, "int32_t", "Incorrect type for struct member");
 	mu_assert_streq (member->name, "cow", "Incorrect name for struct member");
@@ -99,12 +99,12 @@ static bool test_anal_save_base_type_struct(void) {
 		.type = strdup ("int32_t"),
 		.name = strdup ("bar")
 	};
-	RVecAnalStructMember_push_back (&base->struct_data.members, &member);
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
 
 	member.offset = 4;
 	member.type = strdup ("int32_t");
 	member.name = strdup ("cow");
-	RVecAnalStructMember_push_back (&base->struct_data.members, &member);
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
 
 	r_anal_save_base_type (anal, base);
 	r_anal_base_type_free (base);
@@ -133,11 +133,11 @@ static bool test_anal_get_base_type_union(void) {
 
 	RAnalUnionMember *member;
 
-	member = RVecAnalUnionMember_at (&base->union_data.members, 0);
+	member = RVecAnalTypeMember_at (&base->union_data.members, 0);
 	mu_assert_streq (member->type, "int32_t", "Incorrect type for union member");
 	mu_assert_streq (member->name, "bar", "Incorrect name for union member");
 
-	member = RVecAnalUnionMember_at (&base->union_data.members, 1);
+	member = RVecAnalTypeMember_at (&base->union_data.members, 1);
 	mu_assert_streq (member->type, "int32_t", "Incorrect type for union member");
 	mu_assert_streq (member->name, "cow", "Incorrect name for union member");
 
@@ -159,12 +159,12 @@ static bool test_anal_save_base_type_union(void) {
 		.type = strdup ("int32_t"),
 		.name = strdup ("bar")
 	};
-	RVecAnalUnionMember_push_back (&base->union_data.members, &member);
+	RVecAnalTypeMember_push_back (&base->union_data.members, &member);
 
 	member.offset = 0;
 	member.type = strdup ("int32_t");
 	member.name = strdup ("cow");
-	RVecAnalUnionMember_push_back (&base->union_data.members, &member);
+	RVecAnalTypeMember_push_back (&base->union_data.members, &member);
 
 	r_anal_save_base_type (anal, base);
 	r_anal_base_type_free (base);
@@ -338,9 +338,309 @@ static bool test_anal_get_base_type_not_found(void) {
 	mu_end;
 }
 
+static bool test_anal_base_type_struct_array_roundtrip(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("arr");
+
+	RAnalStructMember member = {
+		.offset = 0,
+		.type = strdup ("int32_t"),
+		.name = strdup ("scalar"),
+		.count = 0
+	};
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
+
+	member.offset = 4;
+	member.type = strdup ("char");
+	member.name = strdup ("buf");
+	member.count = 16;
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
+
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	RAnalBaseType *got = r_anal_get_base_type (anal, "arr");
+	mu_assert_notnull (got, "reload struct with array member");
+
+	RAnalStructMember *m = RVecAnalTypeMember_at (&got->struct_data.members, 0);
+	mu_assert_eq (m->count, 0, "scalar member count survives as 0");
+	m = RVecAnalTypeMember_at (&got->struct_data.members, 1);
+	mu_assert_eq (m->offset, 4, "array member offset survives");
+	mu_assert_eq (m->count, 16, "array member count survives the roundtrip");
+
+	r_anal_base_type_free (got);
+	r_anal_free (anal);
+	mu_end;
+}
+
+static bool test_anal_save_base_type_struct_redefine(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("kappa");
+	RAnalStructMember member = {
+		.offset = 0,
+		.type = strdup ("int32_t"),
+		.name = strdup ("bar")
+	};
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
+	member.offset = 4;
+	member.type = strdup ("int32_t");
+	member.name = strdup ("cow");
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	// a redefinition replaces the member list and drops the stale member keys
+	base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("kappa");
+	member.offset = 0;
+	member.type = strdup ("int64_t");
+	member.name = strdup ("cow");
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	Sdb *reg = sdb_new0 ();
+	sdb_set (reg, "kappa", "struct", 0);
+	sdb_set (reg, "struct.kappa", "cow", 0);
+	sdb_set (reg, "struct.kappa.cow", "int64_t,0,0", 0);
+	assert_sdb_eq (anal->sdb_types, reg, "redefined struct type");
+
+	// an empty declaration must not clobber the full definition
+	base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("kappa");
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	assert_sdb_eq (anal->sdb_types, reg, "empty declaration kept the definition");
+	sdb_free (reg);
+	r_anal_free (anal);
+	mu_end;
+}
+
+static bool test_anal_base_type_struct_comma_type_roundtrip(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("tpl");
+
+	RAnalStructMember member = {
+		.offset = 8,
+		.type = strdup ("pair<int, char>"),
+		.name = strdup ("p"),
+		.count = 0
+	};
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
+
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	RAnalBaseType *got = r_anal_get_base_type (anal, "tpl");
+	mu_assert_notnull (got, "reload struct with comma in member type");
+
+	RAnalStructMember *m = RVecAnalTypeMember_at (&got->struct_data.members, 0);
+	mu_assert_streq (m->type, "pair<int, char>", "member type with comma survives the roundtrip");
+	mu_assert_eq (m->offset, 8, "offset not shifted by the comma in the type");
+	mu_assert_eq (m->count, 0, "no count fabricated from comma-shifted fields");
+
+	r_anal_base_type_free (got);
+	r_anal_free (anal);
+	mu_end;
+}
+
+static bool test_anal_base_type_union_comma_type_roundtrip(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
+	base->name = strdup ("utpl");
+
+	RAnalUnionMember member = {
+		.offset = 0,
+		.type = strdup ("pair<int, char>"),
+		.name = strdup ("p"),
+		.count = 4
+	};
+	RVecAnalTypeMember_push_back (&base->union_data.members, &member);
+
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	RAnalBaseType *got = r_anal_get_base_type (anal, "utpl");
+	mu_assert_notnull (got, "reload union with comma in member type");
+
+	RAnalUnionMember *m = RVecAnalTypeMember_at (&got->union_data.members, 0);
+	mu_assert_streq (m->type, "pair<int, char>", "member type with comma survives the roundtrip");
+	mu_assert_eq (m->count, 4, "count not shifted by the comma in the type");
+
+	r_anal_base_type_free (got);
+	r_anal_free (anal);
+	mu_end;
+}
+
+static bool test_anal_base_type_union_array_roundtrip(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
+	base->name = strdup ("uarr");
+
+	RAnalUnionMember member = {
+		.offset = 0,
+		.type = strdup ("int32_t"),
+		.name = strdup ("scalar"),
+		.count = 0
+	};
+	RVecAnalTypeMember_push_back (&base->union_data.members, &member);
+
+	member.offset = 0;
+	member.type = strdup ("char");
+	member.name = strdup ("buf");
+	member.count = 16;
+	RVecAnalTypeMember_push_back (&base->union_data.members, &member);
+
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	RAnalBaseType *got = r_anal_get_base_type (anal, "uarr");
+	mu_assert_notnull (got, "reload union with array member");
+
+	RAnalUnionMember *m = RVecAnalTypeMember_at (&got->union_data.members, 0);
+	mu_assert_eq (m->count, 0, "scalar member count survives as 0");
+	m = RVecAnalTypeMember_at (&got->union_data.members, 1);
+	mu_assert_eq (m->count, 16, "array member count survives the roundtrip");
+
+	r_anal_base_type_free (got);
+	r_anal_free (anal);
+	mu_end;
+}
+
+static bool test_anal_save_base_type_union_redefine(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
+	base->name = strdup ("omega");
+	RAnalUnionMember member = {
+		.offset = 0,
+		.type = strdup ("int32_t"),
+		.name = strdup ("bar")
+	};
+	RVecAnalTypeMember_push_back (&base->union_data.members, &member);
+	member.offset = 0;
+	member.type = strdup ("int32_t");
+	member.name = strdup ("cow");
+	RVecAnalTypeMember_push_back (&base->union_data.members, &member);
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	// a redefinition replaces the member list and drops the stale member keys
+	base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
+	base->name = strdup ("omega");
+	member.offset = 0;
+	member.type = strdup ("int64_t");
+	member.name = strdup ("cow");
+	RVecAnalTypeMember_push_back (&base->union_data.members, &member);
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	Sdb *reg = sdb_new0 ();
+	sdb_set (reg, "omega", "union", 0);
+	sdb_set (reg, "union.omega", "cow", 0);
+	sdb_set (reg, "union.omega.cow", "int64_t,0,0", 0);
+	assert_sdb_eq (anal->sdb_types, reg, "redefined union type");
+
+	// an empty declaration must not clobber the full definition
+	base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
+	base->name = strdup ("omega");
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	assert_sdb_eq (anal->sdb_types, reg, "empty declaration kept the definition");
+	sdb_free (reg);
+	r_anal_free (anal);
+	mu_end;
+}
+
+static bool test_anal_base_type_to_kv(void) {
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("kv");
+
+	RAnalStructMember member = {
+		.offset = 0,
+		.type = strdup ("int32_t"),
+		.name = strdup ("scalar"),
+		.count = 0
+	};
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
+
+	member.offset = 4;
+	member.type = strdup ("char");
+	member.name = strdup ("buf");
+	member.count = 16;
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
+
+	char *kv = r_anal_base_type_to_kv (base);
+	mu_assert_streq (kv,
+		"kv=struct\n"
+		"struct.kv.scalar=int32_t,0,0\n"
+		"struct.kv.buf=char,4,16\n"
+		"struct.kv=scalar,buf\n",
+		"canonical struct kv serialization");
+	free (kv);
+	r_anal_base_type_free (base);
+
+	base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
+	base->name = strdup ("ukv");
+	RAnalUnionMember umember = {
+		.offset = 0,
+		.type = strdup ("char"),
+		.name = strdup ("buf"),
+		.count = 8
+	};
+	RVecAnalTypeMember_push_back (&base->union_data.members, &umember);
+
+	kv = r_anal_base_type_to_kv (base);
+	mu_assert_streq (kv,
+		"ukv=union\n"
+		"union.ukv.buf=char,0,8\n"
+		"union.ukv=buf\n",
+		"canonical union kv serialization");
+	free (kv);
+	r_anal_base_type_free (base);
+	mu_end;
+}
+
+static bool test_anal_cparse_multiline_fnptr(void) {
+	RAnal *anal = r_anal_new ();
+	char *error = NULL;
+	char *kv = r_anal_cparse (anal, "void once(void (*cb)(\n\tint\n));", &error);
+	mu_assert_null (error, "parse multiline function pointer parameter");
+	mu_assert_notnull (kv, "serialize multiline function pointer parameter");
+	mu_assert_notnull (strstr (kv, "func.once.arg.0=void (*)( int ),cb\n"),
+		"function pointer type stays within one SDB row");
+	free (kv);
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_anal_get_base_type_struct);
 	mu_run_test (test_anal_save_base_type_struct);
+	mu_run_test (test_anal_base_type_struct_array_roundtrip);
+	mu_run_test (test_anal_save_base_type_struct_redefine);
+	mu_run_test (test_anal_base_type_struct_comma_type_roundtrip);
+	mu_run_test (test_anal_base_type_union_comma_type_roundtrip);
+	mu_run_test (test_anal_base_type_union_array_roundtrip);
+	mu_run_test (test_anal_save_base_type_union_redefine);
+	mu_run_test (test_anal_base_type_to_kv);
+	mu_run_test (test_anal_cparse_multiline_fnptr);
 	mu_run_test (test_anal_get_base_type_union);
 	mu_run_test (test_anal_save_base_type_union);
 	mu_run_test (test_anal_get_base_type_enum);

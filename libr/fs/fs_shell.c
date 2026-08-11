@@ -42,7 +42,7 @@ static bool shell_mount_arg_is_offset(const char *s) {
 	if (*arg == '-' || *arg == '+') {
 		arg++;
 	}
-	bool ret = IS_DIGIT (*arg) || *arg == '$';
+	bool ret = isdigit ((ut8)*arg) || *arg == '$';
 	r_str_argv_free (argv);
 	return ret;
 }

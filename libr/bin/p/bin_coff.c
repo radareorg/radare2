@@ -949,21 +949,7 @@ static bool check_coff_bigobj(RBinFile *bf, RBuffer *buf) {
 }
 
 static bool check_coff(RBinFile *bf, RBuffer *buf) {
-#if 0
-TODO: do more checks here to avoid false positives
-
-ut16 MACHINE
-ut16 NSECTIONS
-ut32 DATE
-ut32 PTRTOSYMTABLE
-ut32 NUMOFSYMS
-ut16 OPTHDRSIZE
-ut16 CHARACTERISTICS
-#endif
-
-	ut8 tmp[20];
-	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
-	return r >= 20 && r_coff_supported_arch (tmp);
+	return r_coff_check (buf);
 }
 
 static bool check(RBinFile *bf, RBuffer *buf) {

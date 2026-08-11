@@ -56,14 +56,14 @@ typedef struct r_bin_elf_symbol_t {
 	ut64 offset;
 	ut64 size;
 	ut32 ordinal;
-	const char *bind;
-	const char *type;
-	char name[ELF_STRING_LENGTH];
-	char libname[ELF_STRING_LENGTH];
 	bool in_shdr;
 	bool is_sht_null;
 	bool is_vaddr; /* when true, offset is virtual address, otherwise it's physical */
 	bool is_imported;
+	const char *bind;
+	const char *type;
+	char name[ELF_STRING_LENGTH];
+	char libname[ELF_STRING_LENGTH];
 } RBinElfSymbol;
 
 typedef struct r_bin_elf_reloc_t {
@@ -106,6 +106,9 @@ typedef struct Elf_(dynamic_info) {
 	Elf_(Xword) dt_pltrel;
 	Elf_(Addr) dt_jmprel;
 	Elf_(Addr) dt_mips_pltgot;
+	Elf_(Xword) dt_mips_local_gotno;
+	Elf_(Xword) dt_mips_gotsym;
+	Elf_(Xword) dt_mips_symtabno;
 	Elf_(Addr) dt_ppc64_glink; /* PPC64 ELFv1: DT_PPC64_GLINK lazy PLT resolver anchor */
 	Elf_(Addr) dt_crel;    // Address of Crel relocs
 	bool dt_bind_now;
@@ -179,7 +182,7 @@ struct Elf_(obj_t) {
 	bool plt_symbols_cached;
 	RList *inits;
 	HtUU *rel_cache;
-	HtUU *ppc64_plt_stubs; // ppc64 ELFv1: slot_vaddr -> stub_vaddr (lazy, NULL until first use)
+	HtUU *ppc64_plt_stubs; // ppc64: slot_vaddr -> stub_vaddr (lazy, NULL until first use)
 	ut32 g_reloc_num;
 	bool relocs_loaded;
 	RVecRBinElfReloc g_relocs;
@@ -227,6 +230,7 @@ int Elf_(is_big_endian)(struct Elf_(obj_t) *bin);
 const RVecRBinElfReloc *Elf_(load_relocs)(struct Elf_(obj_t) *bin);
 const RVecRBinElfLib *Elf_(load_libs)(struct Elf_(obj_t) *bin);
 const RVecRBinSection *Elf_(load_sections)(RBinFile *bf, ELFOBJ *eo);
+bool Elf_(load_gresources)(RBinFile *bf, ELFOBJ *eo, RVecRBinResource *resources);
 bool Elf_(load_symbols)(ELFOBJ *eo);
 bool Elf_(load_imports)(ELFOBJ *eo);
 RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo);
@@ -252,6 +256,6 @@ bool Elf_(has_nx)(struct Elf_(obj_t) *bin);
 bool Elf_(has_nobtcfi)(ELFOBJ *eo);
 ut8 *Elf_(grab_regstate)(struct Elf_(obj_t) *bin, int *len);
 RList *Elf_(get_maps)(ELFOBJ *bin);
-ut64 Elf_(ppc64v1_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr);
+ut64 Elf_(ppc64_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr);
 R_API RBinSection *r_bin_section_clone(RBinSection *s);
 #endif

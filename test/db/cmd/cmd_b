@@ -26,13 +26,23 @@ CMDS=<<EOF
 b64?
 "p6es ?e hello;?e world"
 b64:`_`
+b64:'P2UgaGVsbG87P2Ugd29ybGQ=
+b64:P2UgZmlyc3QKP2Ugc2Vjb25k
+b64:ZWNobyBoZWxsbwojIGNvbW1lbnQKZWNobyB3b3JsZAo=
 p6ds P2UgaGVsbG87P2Ugd29ybGQ=
 `p6ds P2UgaGVsbG87P2Ugd29ybGQ=`
 EOF
 EXPECT=<<EOF
-| b64:AA=  receive a base64 string that is executed without evaluating special chars
+| b64:AA=   execute a base64-encoded r2 script
+| b64:'AA=  execute a base64-encoded command without evaluating special chars
 P2UgaGVsbG87P2Ugd29ybGQ=
+hello
+world
 hello;?e world
+first
+second
+hello
+world
 ?e hello;?e world
 hello
 world

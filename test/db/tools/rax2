@@ -420,7 +420,7 @@ RUN
 
 NAME=Python string "\x33\x44\x88"
 FILE=-
-CMDS=echo foo = "\x33\x44\x88" | rax2 -F
+CMDS=echo 'foo = "\x33\x44\x88"' | rax2 -F
 EXPECT=<<EOF
 334488
 EOF

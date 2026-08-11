@@ -10,8 +10,13 @@
 #include <r_debug.h>
 
 #define MAX_PID_CHARS (5)
+#define MAX_FEATURE_DEPTH (16)
 
-static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
+static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len, int depth) {
+	if (depth >= MAX_FEATURE_DEPTH) {
+		*tot_len = 0;
+		return NULL;
+	}
 	ut64 retlen = 0, off = 0, len = g->stub_features.pkt_sz - 2,
 		subret_space = 0, subret_len = 0;
 	char *tmp, *tmp2, *tmp3, *ret = NULL, *subret = NULL, msg[128] = {0},
@@ -70,36 +75,37 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 		}
 		tmpchar = *tmp3;
 		*tmp3 = '\0';
-		subret = gdbr_read_feature (g, tmp2, &subret_len);
+		subret = gdbr_read_feature (g, tmp2, &subret_len, depth + 1);
 		*tmp3 = tmpchar;
-		if (subret) {
-			if (subret_len <= subret_space) {
-				memcpy (tmp, subret, subret_len);
-				memcpy (tmp + subret_len, tmp + subret_space,
-					retlen - (tmp + subret_space - ret));
-				retlen -= subret_space - subret_len;
-				ret[retlen] = '\0';
-				tmp = strstr (tmp3, "<xi:include");
-				free (subret);
-				continue;
-			}
-			if (subret_len > subret_space) {
-				int ptrdiff = tmp - ret;
-				tmp3 = realloc (ret, retlen + subret_len + 1);
-				if (!tmp3) {
-					free (subret);
-					goto exit_err;
-				}
-				tmp = tmp3 + ptrdiff;
-				ret = tmp3;
-			}
-			memmove (tmp + subret_len, tmp + subret_space,
-				retlen - (tmp + subret_space - ret));
-			memcpy (tmp, subret, subret_len);
-			retlen += subret_len - subret_space;
-			ret[retlen] = '\0';
-			free (subret);
+		if (!subret) {
+			goto exit_err;
 		}
+		if (subret_len <= subret_space) {
+			memcpy (tmp, subret, subret_len);
+			memcpy (tmp + subret_len, tmp + subret_space,
+				retlen - (tmp + subret_space - ret));
+			retlen -= subret_space - subret_len;
+			ret[retlen] = '\0';
+			tmp = strstr (tmp3, "<xi:include");
+			free (subret);
+			continue;
+		}
+		if (subret_len > subret_space) {
+			int ptrdiff = tmp - ret;
+			tmp3 = realloc (ret, retlen + subret_len + 1);
+			if (!tmp3) {
+				free (subret);
+				goto exit_err;
+			}
+			tmp = tmp3 + ptrdiff;
+			ret = tmp3;
+		}
+		memmove (tmp + subret_len, tmp + subret_space,
+			retlen - (tmp + subret_space - ret));
+		memcpy (tmp, subret, subret_len);
+		retlen += subret_len - subret_space;
+		ret[retlen] = '\0';
+		free (subret);
 		tmp = strstr (tmp3, "<xi:include");
 	}
 	*tot_len = retlen;
@@ -460,7 +466,7 @@ int gdbr_read_target_xml(libgdbr_t *g) {
 	}
 	char *data;
 	ut64 len;
-	if (!(data = gdbr_read_feature (g, "target.xml", &len))) {
+	if (!(data = gdbr_read_feature (g, "target.xml", &len, 0))) {
 		return -1;
 	}
 	gdbr_parse_target_xml (g, data, len);
@@ -590,9 +596,7 @@ static RList *_extract_flags(char *flagstr) {
 			goto exit_err;
 		}
 		*flagsend = '\0';
-		if (!(tmpflag = calloc (1, sizeof (gdbr_xml_flags_t)))) {
-			goto exit_err;
-		}
+		tmpflag = R_NEW0 (gdbr_xml_flags_t);
 		// Get id
 		if (!(tmp1 = strstr (flagstr, "id="))) {
 			goto exit_err;
@@ -739,7 +743,7 @@ static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
 	RListIter *iter;
 	gdbr_xml_reg_t *tmpreg;
 	gdbr_xml_flags_t *tmpflag;
-	if (!(regs = r_list_new ())) {
+	if (!(regs = r_list_newf (free))) {
 		return NULL;
 	}
 	// Set gpr as the default register type for all of the following registers until `feature` is found
@@ -813,10 +817,15 @@ static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
 		regnum = UINT32_MAX;
 		if ((tmp1 = strstr (regstr, "regnum="))) {
 			tmp1 += 8;
-			if (!isdigit ((unsigned char)*tmp1)) {
+			if (!isdigit ((ut8)*tmp1)) {
 				goto exit_err;
 			}
-			regnum = strtoul (tmp1, NULL, 10);
+			char *end;
+			unsigned long parsed_regnum = strtoul (tmp1, &end, 10);
+			if (*end != '"' || parsed_regnum >= R_REG_VBANK_MAX_REGS) {
+				goto exit_err;
+			}
+			regnum = (ut32)parsed_regnum;
 		}
 		flagnum = r_list_length (flags);
 		if ((tmp1 = strstr (regstr, "group="))) {
@@ -868,9 +877,10 @@ static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
 		if (regsize == 128 && !strcmp (regtype, "fpu")) {
 			regtype = "vec128";
 		}
-		if (!(tmpreg = calloc (1, sizeof (gdbr_xml_reg_t)))) {
+		if (regnum == UINT32_MAX && r_list_length (regs) >= R_REG_VBANK_MAX_REGS) {
 			goto exit_err;
 		}
+		tmpreg = R_NEW0 (gdbr_xml_reg_t);
 		regname[regname_len] = '\0';
 		if (regname_len > sizeof (tmpreg->name) - 1) {
 			R_LOG_WARN ("Register name too long: %s", regname);
@@ -890,9 +900,7 @@ static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
 		} else if (regnum >= r_list_length (regs)) {
 			int i;
 			for (i = regnum - r_list_length (regs); i > 0; i--) {
-				// temporary placeholder reg. we trust the xml is correct and this will be replaced.
-				r_list_push (regs, tmpreg);
-				r_list_tail (regs)->data = NULL;
+				r_list_push (regs, NULL);
 			}
 			r_list_push (regs, tmpreg);
 		} else {
@@ -900,19 +908,15 @@ static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
 			r_list_set_n (regs, regnum, tmpreg);
 		}
 		*regstr_end = '/';
-		regstr = regstr_end + 3;
+		regstr = regstr_end + 2;
 		if (r_str_startswith (regstr, "</feature>")) {
-			regstr += sizeof ("</feature>");
+			regstr += sizeof ("</feature>") - 1;
 			// Revert to default
 			typegroup = "gpr";
 		}
 	}
-	regs->free = free;
 	return regs;
 exit_err:
-	if (regs) {
-		regs->free = free;
-		r_list_free (regs);
-	}
+	r_list_free (regs);
 	return NULL;
 }

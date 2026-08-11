@@ -612,9 +612,9 @@ R_API char *r_print_code_tocolor(const char *o, RConsCodeColors *cc) {
 		}
 
 		// Highlight numbers
-		if (IS_DIGIT (*p)) {
+		if (isdigit ((ut8)*p)) {
 			r_strbuf_append (out, color_number);
-			while (IS_DIGIT (*p) || *p == 'x' || IS_HEXCHAR (*p)) {
+			while (isdigit ((ut8)*p) || *p == 'x' || IS_HEXCHAR (*p)) {
 				r_strbuf_append_n (out, p++, 1);
 			}
 			r_strbuf_append (out, Color_RESET);

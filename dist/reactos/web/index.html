@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<title>radare2 on ReactOS</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #0d1117; color: #c9d1d9;
+    font: 14px/1.4 system-ui, sans-serif;
+    display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
+  }
+  header, .toolbar, footer { flex: 0 0 auto; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: .6em; padding: .5em .8em .2em; }
+  header h1 { font-size: 1.05em; font-weight: 600; }
+  #status { color: #8b949e; font-size: .85em; flex: 1; text-align: right; min-width: 12em; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: .4em; padding: .4em .8em; }
+  .toolbar button {
+    background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
+    border-radius: 6px; padding: .45em .8em; font-size: .9em;
+    min-height: 2.6em; cursor: pointer; touch-action: manipulation;
+  }
+  .toolbar button:active { background: #30363d; }
+  .toolbar button:disabled { opacity: .5; cursor: default; }
+  #screen_container {
+    position: relative; background: #000; touch-action: none;
+    overflow: hidden; flex: 1 1 auto; min-width: 0; min-height: 0;
+    display: grid; place-items: center;
+  }
+  #screen_container > div {
+    white-space: pre; font: 14px monospace; line-height: 14px;
+    color: #ddd; overflow: auto; overflow: hidden;
+  }
+  #screen_container canvas {
+    display: none; image-rendering: auto;
+  }
+  #screen_container:fullscreen { display: grid; place-items: center; }
+  #screen_container.drop-active { outline: 3px dashed #58a6ff; outline-offset: -6px; }
+  footer { padding: .4em .8em .6em; color: #8b949e; font-size: .8em; }
+  footer a { color: #58a6ff; text-decoration: none; }
+  #kbd { position: fixed; top: 0; left: -1000px; width: 1px; height: 1px; opacity: 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>radare2 on ReactOS</h1>
+  <span id="status">loading...</span>
+</header>
+<div class="toolbar">
+  <button id="btn-kbd" title="Open the on-screen keyboard">Keyboard</button>
+  <button id="btn-upload" title="Mount host files in the ReactOS CD drive" disabled>Upload files</button>
+  <button id="btn-eject" title="Eject the uploaded-files CD" disabled>Eject files</button>
+  <button id="btn-cad" title="Send Ctrl+Alt+Del">Ctrl+Alt+Del</button>
+  <button id="btn-full" title="Fullscreen">Fullscreen</button>
+  <button id="btn-pause" title="Pause or resume the VM">Pause</button>
+  <button id="btn-reset" title="Reboot the VM">Reset VM</button>
+  <button id="btn-cache" title="Delete all locally cached files and reload">Clear cache</button>
+</div>
+<div id="screen_container">
+  <div style="white-space: pre; font: 14px monospace; line-height: 14px"></div>
+  <canvas style="display: none"></canvas>
+</div>
+<input id="kbd" type="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+<input id="file-upload" type="file" multiple hidden>
+<footer id="hint">
+  Open <b>cmd</b> from the Start menu and type <b>r2 C:\ReactOS\system32\cmd.exe</b> —
+  radare2 lives in <b>C:\radare2</b>. Disk data is streamed on demand; the first
+  boot downloads a few tens of MB. On phones: drag on the screen to move the
+  mouse, tap to click, long-press to right-click, and use the Keyboard button to type.
+  Upload or drop files to mount them in the ReactOS CD drive (normally <b>D:</b>).
+</footer>
+<script src="config.js"></script>
+<script>
+"use strict";
+var emulator = null;
+var emulatorReady = false;
+var statusEl = document.getElementById("status");
+/* scope the cache-busting token by path so sibling pages (e.g. the netbsd
+ * build) hosted on the same origin do not clobber each other */
+var bustKey = "r2vm_bust:" + location.pathname;
+var bust = localStorage.getItem(bustKey) || (window.VM_CONFIG && VM_CONFIG.version) || "0";
+function u (p) { return p + "?v=" + encodeURIComponent(bust); }
+function setStatus (s) { statusEl.textContent = s; }
+
+function loadScript (src) {
+  return new Promise(function (res, rej) {
+    var s = document.createElement("script");
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+async function clearCachesAndReload () {
+  try {
+    if (window.caches) {
+      var keys = await caches.keys();
+      for (var i = 0; i < keys.length; i++) {
+        await caches.delete(keys[i]);
+      }
+    }
+    if (navigator.serviceWorker) {
+      var regs = await navigator.serviceWorker.getRegistrations();
+      for (var j = 0; j < regs.length; j++) {
+        await regs[j].unregister();
+      }
+    }
+  } catch (e) {}
+  localStorage.setItem(bustKey, Date.now().toString(36));
+  location.reload();
+}
+
+/* drop cache entries from older builds (urls carry ?v=<version>) */
+async function trimStaleCache () {
+  if (!window.caches) {
+    return;
+  }
+  try {
+    var cache = await caches.open("r2ros-v1");
+    var reqs = await cache.keys();
+    for (var i = 0; i < reqs.length; i++) {
+      var v = new URL(reqs[i].url).searchParams.get("v");
+      if (v && v !== bust) {
+        cache.delete(reqs[i]);
+      }
+    }
+  } catch (e) {}
+}
+
+var SCANCODES = {
+  Enter: [0x1c], Backspace: [0x0e], Tab: [0x0f], Escape: [0x01], Delete: [0xe0, 0x53],
+  ArrowUp: [0xe0, 0x48], ArrowDown: [0xe0, 0x50], ArrowLeft: [0xe0, 0x4b], ArrowRight: [0xe0, 0x4d],
+  Home: [0xe0, 0x47], End: [0xe0, 0x4f], PageUp: [0xe0, 0x49], PageDown: [0xe0, 0x51]
+};
+
+function sendKey (codes) {
+  var seq = codes.slice();
+  if (codes.length === 2) {
+    seq.push(codes[0], codes[1] | 0x80);
+  } else {
+    seq.push(codes[0] | 0x80);
+  }
+  emulator.keyboard_send_scancodes(seq);
+}
+
+function setupKeyboard () {
+  var kbd = document.getElementById("kbd");
+  document.getElementById("btn-kbd").onclick = function () { kbd.focus(); };
+  kbd.addEventListener("input", function () {
+    if (kbd.value) {
+      emulator.keyboard_send_text(kbd.value);
+      kbd.value = "";
+    }
+  });
+  kbd.addEventListener("keydown", function (e) {
+    var sc = SCANCODES[e.key];
+    if (sc) {
+      e.preventDefault();
+      sendKey(sc);
+    }
+  });
+}
+
+/* Fit the guest screen to the available area and let the browser smoothly
+ * resample it. In graphics mode v86 draws into the canvas and the presentation
+ * size is set directly (its screen_set_scale also applies internal VGA and
+ * device-pixel-ratio multipliers). In text mode v86 writes styled spans into a
+ * div instead, which has no intrinsic pixel size to stretch, so that one is
+ * scaled with a css transform -- without this a text-mode guest (a unix
+ * console) keeps its small fixed size, fullscreen included. */
+function setupScreenScaling (container) {
+  var canvas = container.getElementsByTagName("canvas")[0];
+  var textDiv = container.getElementsByTagName("div")[0];
+  var guestWidth = 0, guestHeight = 0, lastScale = 0;
+  var graphical = true;
+  var pendingFrame = 0;
+
+  function fitCanvas () {
+    var scale = Math.min(container.clientWidth / guestWidth, container.clientHeight / guestHeight);
+    if (!Number.isFinite(scale) || scale <= 0 || Math.abs(scale - lastScale) < .001) {
+      return;
+    }
+    lastScale = scale;
+    canvas.style.width = guestWidth * scale + "px";
+    canvas.style.height = guestHeight * scale + "px";
+    canvas.style.imageRendering = "auto";
+  }
+
+  function fitText () {
+    /* measure unscaled, then scale: the div's natural size follows the font
+     * and the guest's rows/columns, both of which can change at any time */
+    textDiv.style.transform = "none";
+    var w = textDiv.offsetWidth, h = textDiv.offsetHeight;
+    if (!w || !h) {
+      return;
+    }
+    var scale = Math.min(container.clientWidth / w, container.clientHeight / h);
+    if (!Number.isFinite(scale) || scale <= 0) {
+      return;
+    }
+    lastScale = scale;
+    textDiv.style.transformOrigin = "center center";
+    textDiv.style.transform = "scale(" + scale + ")";
+  }
+
+  function fitScreen () {
+    pendingFrame = 0;
+    if (!container.clientWidth || !container.clientHeight) {
+      return;
+    }
+    if (graphical) {
+      if (guestWidth && guestHeight) {
+        fitCanvas();
+      }
+    } else {
+      fitText();
+    }
+  }
+
+  function scheduleFit () {
+    if (!pendingFrame) {
+      pendingFrame = requestAnimationFrame(fitScreen);
+    }
+  }
+
+  emulator.add_listener("screen-set-size", function (size) {
+    graphical = !!size[2];
+    if (graphical) {
+      guestWidth = size[0];
+      guestHeight = size[1];
+      textDiv.style.transform = "none";
+    }
+    lastScale = 0;
+    scheduleFit();
+    /* a text mode is announced before the guest has painted anything, and an
+     * empty div measures 0x0, so try again while it fills in */
+    if (!graphical) {
+      [100, 400, 1200].forEach(function (ms) { setTimeout(scheduleFit, ms); });
+    }
+  });
+  if (window.ResizeObserver) {
+    new ResizeObserver(scheduleFit).observe(container);
+  } else {
+    window.addEventListener("resize", scheduleFit);
+  }
+  document.addEventListener("fullscreenchange", scheduleFit);
+}
+
+/* touch: drag moves the pointer, quick tap = left click, long press = right click */
+function setupTouchMouse (container) {
+  var canvas = container.getElementsByTagName("canvas")[0];
+  var lastX = 0, lastY = 0, downT = 0, moved = false, pressTimer = 0;
+  function scale () {
+    return canvas.clientWidth ? canvas.width / canvas.clientWidth : 1;
+  }
+  function click (l, m, r) {
+    emulator.bus.send("mouse-click", [l, m, r]);
+    setTimeout(function () { emulator.bus.send("mouse-click", [false, false, false]); }, 60);
+  }
+  container.addEventListener("pointerdown", function (e) {
+    if (e.pointerType === "mouse") {
+      if (document.pointerLockElement !== canvas) {
+        emulator.lock_mouse();
+      }
+      return;
+    }
+    e.preventDefault();
+    container.setPointerCapture(e.pointerId);
+    lastX = e.clientX; lastY = e.clientY; downT = Date.now(); moved = false;
+    pressTimer = setTimeout(function () {
+      if (!moved) {
+        click(false, false, true);
+        downT = 0;
+      }
+    }, 600);
+  });
+  container.addEventListener("pointermove", function (e) {
+    if (e.pointerType === "mouse" || !downT && !pressTimer) {
+      return;
+    }
+    var dx = e.clientX - lastX, dy = e.clientY - lastY;
+    if (Math.abs(dx) + Math.abs(dy) > 2) {
+      moved = true;
+    }
+    lastX = e.clientX; lastY = e.clientY;
+    var k = scale();
+    emulator.bus.send("mouse-delta", [dx * k, -dy * k]);
+  });
+  container.addEventListener("pointerup", function (e) {
+    if (e.pointerType === "mouse") {
+      return;
+    }
+    e.preventDefault();
+    clearTimeout(pressTimer);
+    pressTimer = 0;
+    if (downT && !moved && Date.now() - downT < 300) {
+      click(true, false, false);
+    }
+    downT = 0;
+  });
+  container.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+}
+
+function setupButtons (container) {
+  document.getElementById("btn-cad").onclick = function () {
+    emulator.keyboard_send_scancodes([0x1d, 0x38, 0xe0, 0x53, 0xe0, 0xd3, 0xb8, 0x9d]);
+  };
+  document.getElementById("btn-full").onclick = function () {
+    if (container.requestFullscreen) {
+      container.requestFullscreen();
+    }
+  };
+  var pauseBtn = document.getElementById("btn-pause");
+  pauseBtn.onclick = function () {
+    if (emulator.is_running()) {
+      emulator.stop();
+      pauseBtn.textContent = "Resume";
+    } else {
+      emulator.run();
+      pauseBtn.textContent = "Pause";
+    }
+  };
+  document.getElementById("btn-reset").onclick = function () { emulator.restart(); };
+}
+
+function setupFileTransfer (container) {
+  var input = document.getElementById("file-upload");
+  var uploadBtn = document.getElementById("btn-upload");
+  var ejectBtn = document.getElementById("btn-eject");
+  var busy = false;
+
+  function formatSize (bytes) {
+    if (bytes < 1024 * 1024) {
+      return Math.ceil(bytes / 1024) + " KB";
+    }
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
+  async function mountFiles (files) {
+    if (!emulatorReady || busy || !files || !files.length) {
+      return;
+    }
+    busy = true;
+    uploadBtn.disabled = true;
+    try {
+      var image = await R2ISO.build(files, function (index, total, name) {
+        setStatus("packing " + (index + 1) + "/" + total + ": " + name);
+      });
+      setStatus("mounting transfer CD...");
+      emulator.eject_cdrom();
+      await new Promise(function (resolve) { setTimeout(resolve, 100); });
+      await emulator.set_cdrom({ buffer: image.buffer });
+      var renamed = image.names.filter(function (name) {
+        return name.source.toUpperCase() !== name.target;
+      }).length;
+      setStatus("inserted " + image.names.length + " file" + (image.names.length === 1 ? "" : "s") +
+        " (" + formatSize(image.bytes) + ") in the CD drive" + (renamed ? "; " + renamed + " renamed" : "") +
+        (VM_CONFIG.cd_note ? " - " + VM_CONFIG.cd_note : ""));
+      ejectBtn.disabled = false;
+    } catch (e) {
+      setStatus("file upload failed: " + (e && e.message ? e.message : e));
+    } finally {
+      busy = false;
+      uploadBtn.disabled = !emulatorReady;
+      input.value = "";
+    }
+  }
+
+  uploadBtn.onclick = function () {
+    input.value = "";
+    input.click();
+  };
+  input.onchange = function () { mountFiles(input.files); };
+  ejectBtn.onclick = function () {
+    emulator.eject_cdrom();
+    ejectBtn.disabled = true;
+    setStatus("transfer CD ejected");
+  };
+
+  function hasFiles (e) {
+    return e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], "Files") !== -1;
+  }
+  document.addEventListener("dragover", function (e) {
+    if (hasFiles(e)) {
+      e.preventDefault();
+      if (emulatorReady && !busy) {
+        e.dataTransfer.dropEffect = "copy";
+        container.classList.add("drop-active");
+      }
+    }
+  });
+  document.addEventListener("dragleave", function (e) {
+    if (!e.relatedTarget) {
+      container.classList.remove("drop-active");
+    }
+  });
+  document.addEventListener("drop", function (e) {
+    if (!hasFiles(e)) {
+      return;
+    }
+    e.preventDefault();
+    container.classList.remove("drop-active");
+    mountFiles(e.dataTransfer.files);
+  });
+
+  return function ready () {
+    emulatorReady = true;
+    uploadBtn.disabled = false;
+  };
+}
+
+async function main () {
+  document.getElementById("btn-cache").onclick = clearCachesAndReload;
+  if (!window.VM_CONFIG) {
+    setStatus("config.js missing - run make www");
+    return;
+  }
+  /* optional branding overrides so other guests (dist/netbsd) reuse this page */
+  if (VM_CONFIG.title) {
+    document.title = VM_CONFIG.title;
+    document.querySelector("header h1").textContent = VM_CONFIG.title;
+  }
+  if (VM_CONFIG.hint) {
+    document.getElementById("hint").innerHTML = VM_CONFIG.hint;
+  }
+  if (navigator.serviceWorker && location.protocol !== "file:") {
+    try { navigator.serviceWorker.register("sw.js"); } catch (e) {}
+  }
+  setStatus("loading emulator...");
+  try {
+    await Promise.all([loadScript(u("libv86.js")), loadScript(u("iso.js"))]);
+  } catch (e) {
+    setStatus("failed to load emulator assets");
+    return;
+  }
+  var V86C = window.V86 || window.V86Starter;
+  var container = document.getElementById("screen_container");
+  emulator = new V86C({
+    wasm_path: u("v86.wasm"),
+    memory_size: (VM_CONFIG.memory_mb || 256) * 1024 * 1024,
+    vga_memory_size: 8 * 1024 * 1024,
+    screen_container: container,
+    bios: { url: u("seabios.bin") },
+    vga_bios: { url: u("vgabios.bin") },
+    hda: { url: u(VM_CONFIG.hda.url), async: true, size: VM_CONFIG.hda.size },
+    // ReactOS is installed with the ACPI HAL and hangs on boot without this;
+    // other guests can opt out with acpi: false in config.js
+    acpi: VM_CONFIG.acpi !== false,
+    autostart: true
+  });
+  var fileTransferReady = setupFileTransfer(container);
+  setupScreenScaling(container);
+  emulator.add_listener("download-progress", function (e) {
+    if (e.file_name && e.file_name.indexOf(".wasm") !== -1) {
+      setStatus("downloading emulator...");
+    } else if (e.lengthComputable && e.total) {
+      setStatus("downloading " + (e.file_name || "disk") + " " + Math.round(100 * e.loaded / e.total) + "%");
+    }
+  });
+  emulator.add_listener("download-error", function (e) {
+    setStatus("download failed: " + (e.file_name || "disk") + " (server must support Range requests)");
+  });
+  emulator.add_listener("emulator-started", function () {
+    setStatus("running");
+    trimStaleCache();
+  });
+  emulator.add_listener("emulator-loaded", fileTransferReady);
+  emulator.add_listener("emulator-stopped", function () { setStatus("paused"); });
+  setupButtons(container);
+  setupKeyboard();
+  setupTouchMouse(container);
+}
+main();
+</script>
+</body>
+</html>

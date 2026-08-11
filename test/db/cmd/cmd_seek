@@ -133,6 +133,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=seek invalid symbol keeps offset
+FILE=-
+CMDS=<<EOF
+s 0x42
+s noSuchSymbolEndingT
+?v $$
+EOF
+EXPECT=<<EOF
+0x42
+EOF
+RUN
+
 NAME=seek opcodes
 FILE=-
 CMDS=<<EOF

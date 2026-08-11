@@ -612,17 +612,13 @@ static int check_format_type(const char *ptr, int type) {
 	if (*ptr == '*') {
 		return -1;
 	}
-	while (isdigit ((ut8)*ptr)) {
-		ptr++;
-	}
+	ptr = r_str_trim_head_digits (ptr);
 	if (*ptr == '.') {
 		ptr++;
 		if (*ptr == '*') {
 			return -1;
 		}
-		while (isdigit ((ut8)*ptr)) {
-			ptr++;
-		}
+		ptr = r_str_trim_head_digits (ptr);
 	}
 
 	switch (type) {

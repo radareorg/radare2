@@ -351,142 +351,79 @@ R_API void r_graph_dfs(RGraph *g, RGraphVisitor *vis) {
 	}
 }
 
-typedef struct _dfs_inserter {
-	RGraph *g;
-	HtUP *reverse;	//reverse lookup of nodes
-//	RList *mo;	//multiple out nodes
-	RVecGraphNodePtr mi; // multiple in nodes
-	size_t mi_index;
-	ut32 idx;
-	bool fail;
-} DfsInserter;
-
-static void _dfs_ins_node(RGraphNode *n, RGraphVisitor *vi) {
-	DfsInserter *di = (DfsInserter *)vi->data;
-	if (di->fail) {
-		return;
-	}
-	RGraphDomNode *dn = R_NEW0 (RGraphDomNode);
-	if (!dn) {
-		di->fail = true;
-		return;
-	}
-	RGraphNode *node = r_graph_add_nodef (di->g, dn, free);
-	if (!node) {
-		free (dn);
-		di->fail = true;
-		return;
-	}
-	dn->node = n;
-	ht_up_insert (di->reverse, (ut64)(size_t)n, node);
-	if (RVecGraphNodePtr_length (&n->in_nodes) > 1 && di->idx) {
-		RGraphNode **slot = RVecGraphNodePtr_emplace_back (&di->mi);
-		*slot = node;
-	}
-	dn->idx = di->idx++;
+static void _postorder_collect(RGraphNode *n, RGraphVisitor *vis) {
+	RVecGraphNodePtr_push_back ((RVecGraphNodePtr *)vis->data, &n);
 }
 
-static void _dfs_ins_edge(const RGraphEdge *e, RGraphVisitor *vi) {
-	DfsInserter *di = (DfsInserter *)vi->data;
-	if (di->fail) {
-		return;
-	}
-	bool found;
-	RGraphNode *from = (RGraphNode *)ht_up_find (di->reverse, (ut64)(size_t)e->from, &found);
-	if (!found) {
-		_dfs_ins_node (e->from, vi);
-		if (di->fail) {
-			return;
+static size_t dom_intersect(const size_t *idom, size_t f1, size_t f2) {
+	while (f1 != f2) {
+		while (f1 < f2) {
+			f1 = idom[f1];
 		}
-		from = (RGraphNode *)ht_up_find (di->reverse, (ut64)(size_t)e->from, &found);
-		if (!found) {
-			return;
+		while (f2 < f1) {
+			f2 = idom[f2];
 		}
 	}
-	RGraphNode *to = (RGraphNode *)ht_up_find (di->reverse, (ut64)(size_t)e->to, &found);
-	if (!found) {
-		_dfs_ins_node (e->to, vi);
-		if (di->fail) {
-			return;
-		}
-		to = (RGraphNode *)ht_up_find (di->reverse, (ut64)(size_t)e->to, &found);
-		if (!found) {
-			return;
-		}
-	}
-	r_graph_add_edge (di->g, from, to);
+	return f1;
 }
 
+// Cooper-Harvey-Kennedy iterative dominators; tree node data points at the input graph nodes
 R_API RGraph *r_graph_dom_tree(RGraph *graph, RGraphNode *root) {
 	R_RETURN_VAL_IF_FAIL (graph && root, NULL);
+	RVecGraphNodePtr order;
+	RVecGraphNodePtr_init (&order);
+	RGraphVisitor vis = { .finish_node = _postorder_collect, .data = &order };
+	r_graph_dfs_node (graph, root, &vis);
+	const size_t n = RVecGraphNodePtr_length (&order);
+	// pon[node->idx] is the postorder number plus one; 0 marks unreachable nodes
+	size_t *pon = R_NEWS0 (size_t, graph->last_index);
+	size_t *idom = R_NEWS (size_t, n);
+	RGraphNode **tnodes = R_NEWS0 (RGraphNode *, n);
 	RGraph *g = r_graph_new ();
-	if (!g) {
-		return NULL;
-	}
-	DfsInserter di = { .g = g, .reverse = ht_up_new0 () };
-	RVecGraphNodePtr_init (&di.mi);
-	if (!di.reverse) {
-		RVecGraphNodePtr_fini (&di.mi);
+	if (!n || !pon || !idom || !tnodes) {
 		r_graph_free (g);
-		return NULL;
+		g = NULL;
+		goto beach;
 	}
-	RGraphVisitor vi = { NULL, NULL, _dfs_ins_edge, NULL, NULL, &di};
-	//create a spanning tree
-	r_graph_dfs_node (graph, root, &vi);
-	if (di.fail) {
-		RVecGraphNodePtr_fini (&di.mi);
-		ht_up_free (di.reverse);
-		r_graph_free (g);
-		return NULL;
+	size_t i;
+	for (i = 0; i < n; i++) {
+		pon[(*RVecGraphNodePtr_at (&order, i))->idx] = i + 1;
+		idom[i] = SZT_MAX;
 	}
-	while (di.mi_index < RVecGraphNodePtr_length (&di.mi)) {
-		RGraphNode *n = *RVecGraphNodePtr_at (&di.mi, di.mi_index++);
-		RGraphNode *p = *RVecGraphNodePtr_at (&n->in_nodes, 0);
-		if (p && ((RGraphDomNode *)(p->data))->idx == 0) {
-			//parent is root node
-			continue;
-		}
-		RGraphDomNode *dn = (RGraphDomNode *)n->data;
-		RGraphNode *max_n = NULL, *min_n = NULL;
-		RGraphNode **it;
-		R_VEC_FOREACH (&dn->node->in_nodes, it) {
-			RGraphNode *nn = *it;
-			RGraphNode *in = (RGraphNode *)ht_up_find (di.reverse, (ut64)(size_t)nn, NULL);
-			if (nn == root) {
-				r_graph_del_edge (g, *RVecGraphNodePtr_at (&n->in_nodes, 0), n);
-				r_graph_add_edge (g, in, n);
-				goto cont;
+	// the root finishes last, so it takes the highest postorder number
+	idom[n - 1] = n - 1;
+	bool changed = true;
+	while (changed) {
+		changed = false;
+		for (i = n - 1; i-- > 0;) {
+			RGraphNode *b = *RVecGraphNodePtr_at (&order, i);
+			size_t nid = SZT_MAX;
+			RGraphNode **it;
+			R_VEC_FOREACH (&b->in_nodes, it) {
+				size_t p = pon[(*it)->idx];
+				if (!p || idom[p - 1] == SZT_MAX) {
+					continue;
+				}
+				p--;
+				nid = (nid == SZT_MAX)? p: dom_intersect (idom, p, nid);
 			}
-			if (!max_n || (((RGraphDomNode *)(max_n->data))->idx < ((RGraphDomNode *)(in->data))->idx)) {
-				max_n = in;
-			}
-			if (!min_n || (((RGraphDomNode *)(min_n->data))->idx > ((RGraphDomNode *)(in->data))->idx)) {
-				min_n = in;
+			if (nid != SZT_MAX && idom[i] != nid) {
+				idom[i] = nid;
+				changed = true;
 			}
 		}
-		while (max_n && ((RGraphDomNode *)max_n->data)->idx > dn->idx) {
-			max_n = *RVecGraphNodePtr_at (&max_n->in_nodes, 0);
-		}
-// at this point max_n refers to the semi dominator (i hope this is correct)
-		RGraphNode *dom = min_n;
-		while (max_n && ((RGraphDomNode *)max_n->data)->idx < ((RGraphDomNode *)dom->data)->idx) {
-			dom = *RVecGraphNodePtr_at (&dom->in_nodes, 0);
-		}
-// dom <= sdom
-		r_graph_del_edge (g, p, n);
-		r_graph_add_edge (g, dom, n);
-cont:;
 	}
-	RVecGraphNodePtr_fini (&di.mi);
-	ht_up_free (di.reverse);
-	RListIter *iter;
-	RGraphNode *n;
-	r_list_foreach (g->nodes, iter, n) {
-		RGraphDomNode *dn = (RGraphDomNode *)n->data;
-		n->free = NULL;
-		n->data = dn->node;
-		free (dn);
+	for (i = n; i-- > 0;) {
+		tnodes[i] = r_graph_add_node (g, *RVecGraphNodePtr_at (&order, i));
 	}
+	for (i = n - 1; i-- > 0;) {
+		r_graph_add_edge (g, tnodes[idom[i]], tnodes[i]);
+	}
+beach:
+	free (pon);
+	free (idom);
+	free (tnodes);
+	RVecGraphNodePtr_fini (&order);
 	return g;
 }
 
@@ -505,8 +442,5 @@ R_API RGraph *r_graph_pdom_tree(RGraph *graph, RGraphNode *root) {
 	_invert_edges (graph);
 	RGraph *g = r_graph_dom_tree (graph, root);
 	_invert_edges (graph);
-	if (g) {
-		_invert_edges (graph);
-	}
 	return g;
 }

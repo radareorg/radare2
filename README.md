@@ -5,7 +5,7 @@
 [![Latest packaged version](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions) [![Tests Status](https://github.com/radareorg/radare2/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/ci.yml?query=branch%3Amaster) [![build](https://github.com/radareorg/radare2/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/build.yml?query=branch%3Amaster) [![tcc](https://github.com/radareorg/radare2/actions/workflows/tcc.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/tcc.yml)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Discord](https://badgen.net/discord/members/YBey7CR9jf)](https://discord.gg/YBey7CR9jf)
 
-Current git `master` branch is `6.1.7`, next release will be `6.1.8`.
+Current git `master` branch is `6.2.0`, next release will be `6.2.1`.
 
 ### Description
 
@@ -39,6 +39,10 @@ radare2/sys/install.sh
 * Run `sys/install.sh` for the default acr+make+symlink installation
 * meson/ninja (muon/samu also works) and make builds are supported.
 
+### Nix
+
+radare2 provides Nix packaging under [`dist/nix`](dist/nix/README.md).
+
 ### Source Build
 
 * r2 can be installed from `git` or via `pip` using `r2env`.
@@ -65,6 +69,7 @@ Using the `r2pm` tool you can browse and install many plugins and tools that use
 * [r2ai](https://github.com/radareorg/r2ai) Run a Language Model in localhost with Llama inside r2!
 * [r2dec](https://github.com/wargio/r2dec-js): A decompiler based on r2 written in JS, accessed with the `pdd` command
 * [r2diaphora](https://github.com/FernandoDoming/r2diaphora): [Diaphora](https://github.com/joxeankoret/diaphora)'s binary diffing engine on top of radare2
+* [r2flutter](https://github.com/trufae/r2flutter): Dart/Flutter AOT snapshot analysis for Android and iOS apps
 * [r2frida](https://github.com/nowsecure/r2frida): The frida io plugin. Start r2 with `r2 frida://0` to use it
 * [r2ghidra](https://github.com/radareorg/r2ghidra): The standalone native ghidra decompiler accessible with `pdg`
 * [r4ghidra](https://github.com/radareorg/r4ghidra): Feel the radare joy inside your Ghidra
@@ -77,6 +82,7 @@ Using the `r2pm` tool you can browse and install many plugins and tools that use
 * [r2sarif](https://github.com/radareorg/r2sarif) import/extend/export SARIF documents
 * [r2hermes](https://github.com/radareorg/r2hermes) Disassembler and analyzer for React Native Hermes bytecode
 * [r2renef](https://github.com/Ahmeth4n/r2renef) Renef IO Plugin for Radare2 - Dynamic Android Instrumentation
+* [r2unity](https://github.com/radareorg/r2unity): Inspect Unity IL2CPP metadata and native binaries from radare2
 * [warrp](https://github.com/radareorg/warrp) Native radare2 plugin for the binary ninja's WARP format
 
 ## Usage

@@ -1,11 +1,11 @@
-.Dd Jul 10, 2025
+.Dd July 14, 2026
 .Dt RABIN2 1
 .Sh NAME
 .Nm rabin2
 .Nd Binary Information Extractor
 .Sh SYNOPSIS
 .Nm rabin2
-.Op Fl AcdeEghHiIjJlLMpqQrRsStuUVvwxZ
+.Op Fl AcdeEghHiIjJlLMpqQrRsStuVvwxZ
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl B Ar addr
@@ -91,7 +91,7 @@ Show section, symbol or import named str
 .It Fl N Ar minlen:maxlen
 Force min:max number of chars per string (see -z and -zz)
 .It Fl o Ar str
-Output file/folder for write operations (out by default)
+Output file or extraction directory for write operations
 .It Fl O Ar binop
 Perform binary operation on target binary (dump, resize, change sections, ...). Use -O help for more information:
 .Bd -literal -offset indent
@@ -134,8 +134,6 @@ Display file hashes
 .It Fl T
 Display file signature, certificates and signing details
 .It Fl u
-Unfiltered (no rename duplicated symbols/sections)
-.It Fl U
 Resources
 .It Fl v
 Display version and quit
@@ -144,7 +142,36 @@ Show binary version information
 .It Fl w
 Display try/catch blocks
 .It Fl x
-Extract sub-binaries contained in file (for example inside FAT mach-o binaries)
+Extract sub-binaries contained in the file (for example, architectures inside a
+FAT Mach-O binary).
+Combine with
+.Fl S ,
+.Fl SS ,
+or
+.Fl u
+to extract sections, segments, or raw resources instead.
+Thus,
+.Fl xS
+extracts sections,
+.Fl xSS
+extracts segments, and
+.Fl xu
+extracts resources.
+Resource extraction may be combined with section or segment extraction.
+Section, segment, and resource filenames include their kind, sanitized name or
+type, and index; existing files are never overwritten.
+Use
+.Fl o Ar dir
+to select the output directory.
+Without it, sections, segments, and resources are written below
+.Pa <file>.sections ,
+.Pa <file>.segments ,
+and
+.Pa <file>.resources ,
+respectively.
+Sub-binaries retain the traditional
+.Pa <file>.fat
+directory.
 .It Fl X Ar format file ...
 Package in fat or zip the given files
 .It Fl z
@@ -175,6 +202,8 @@ Same as r2 -e bin.demangle - demangle symbols
 Same as r2 -e bin.demangle.cmd - try to purge false positives
 .It Ev RABIN2_DEMANGLE_TRYLIB
 Same as r2 -e bin.demangle.trylib=<bool> - load Swift libs to demangle (default: false)
+.It Ev RABIN2_FILTER
+Same as r2 -e bin.filter=<bool> - set to false to not rename duplicated symbols/sections (default: true)
 .It Ev RABIN2_LANG
 Same as r2 -e bin.lang - assume lang for demangling
 .It Ev RABIN2_MACHO_NOFUNCSTARTS
@@ -189,6 +218,8 @@ Same as r2 -e bin.str.maxbuf - specify maximum buffer size
 Same as r2 -e pdb.server - use alternative PDB server
 .It Ev RABIN2_PREFIX
 Same as r2 -e bin.prefix - prefix symbols/sections/relocs with a specific string
+.It Ev RABIN2_RESRAW
+Same as r2 -e bin.resraw=true - extract resources without decoding their contents
 .It Ev RABIN2_STRFILTER
 Same as r2 -e bin.str.filter
 .It Ev RABIN2_STRPURGE

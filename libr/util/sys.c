@@ -35,11 +35,6 @@ extern int backtrace_symbols_fd(void**, size_t, int);
 static R_TH_LOCAL char** Genv = NULL;
 static R_TH_LOCAL bool Gunsignable = false; // OK
 
-#if R2_USE_BUNDLE_PREFIX
-static char *macho_detect_bundle_location(void);
-static char *macho_path_for_address_or_main(const void *addr);
-#endif
-
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE) || \
   defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__ || __sun
 # include <execinfo.h>
@@ -780,7 +775,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 	ut8 buffer[1024];
 	char *outputptr = NULL;
 	char *inputptr = (char *)input;
-	int pid, bytes = 0, status;
+	int pid, bytes = 0, status = 0;
 	int sh_in[2], sh_out[2], sh_err[2];
 
 	if (len) {
@@ -846,6 +841,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 		close (sh_in[0]);
 		if (R_STR_ISEMPTY (inputptr)) {
 			close (sh_in[1]);
+			sh_in[1] = -1;
 		}
 		// we should handle broken pipes somehow better
 		r_sys_signal (SIGPIPE, SIG_IGN);
@@ -866,7 +862,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 			if (sterr) {
 				FD_SET (sh_err[0], &rfds);
 			}
-			if (inputptr && *inputptr) {
+			if (inputptr && *inputptr && written < ilen) {
 				FD_SET (sh_in[1], &wfds);
 				if (sh_in[1] > maxfd) {
 					maxfd = sh_in[1];
@@ -875,8 +871,12 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 			memset (buffer, 0, sizeof (buffer));
 
 			nfd = select (maxfd + 1, &rfds, &wfds, NULL, NULL);
-			if (nfd < 0 && errno == EINTR) {
-				continue;
+			if (nfd < 0) {
+				if (errno == EINTR) {
+					continue;
+				}
+				R_LOG_ERROR ("select failed: %s", strerror (errno));
+				break;
 			}
 
 			if (output && FD_ISSET (sh_out[0], &rfds)) {
@@ -910,6 +910,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 				written += bytes;
 				if (written >= ilen) {
 					close (sh_in[1]);
+					sh_in[1] = -1;
 					// break;
 				}
 			}
@@ -918,16 +919,23 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 			close (sh_out[0]);
 		}
 		close (sh_err[0]);
-		close (sh_in[1]);
-		waitpid (pid, &status, 0);
-		bool ret = true;
-		if (status) {
+		if (sh_in[1] >= 0) {
+			close (sh_in[1]);
+		}
+		int waitret;
+		do {
+			waitret = waitpid (pid, &status, 0);
+		} while (waitret == -1 && errno == EINTR);
+		bool ret = waitret == pid;
+		if (ret && status) {
 			// char *escmd = r_str_escape (cmd);
 			// R_LOG_ERROR ("error code %d (%s): %s", WEXITSTATUS (status), escmd, *sterr);
 			// eprintf ("(%s)\n", output);
 			R_LOG_DEBUG ("command failed: %s", cmd);
 			// free (escmd);
 			ret = false;
+		} else if (!ret) {
+			R_LOG_ERROR ("waitpid failed: %s", strerror (errno));
 		}
 		if (len) {
 			*len = out_len;
@@ -1258,10 +1266,10 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 	const DWORD maxlength = MAX_PATH;
 	char *filename = calloc ((MAX_PATH * 2) + 2, 1);
 	char *result = NULL;
-	DWORD length = r_w32_GetModuleFileNameEx (processHandle, NULL, (LPSTR)filename, maxlength);
+	DWORD length = r_w32_GetModuleFileNameEx (processHandle, NULL, (LPTSTR)filename, maxlength);
 	if (length == 0) {
 		// Upon failure fallback to GetProcessImageFileName
-		length = r_w32_GetProcessImageFileName (processHandle, filename, maxlength);
+		length = r_w32_GetProcessImageFileName (processHandle, (LPTSTR)filename, maxlength);
 		if (length == 0) {
 			R_LOG_ERROR ("calling GetProcessImageFileName failed");
 			return NULL;
@@ -1334,11 +1342,11 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 }
 #endif
 
-R_API char *r_sys_pid_to_path(int pid) {
+R_API char *r_sys_pidpath(int pid) {
 #if R2__WINDOWS__
 	HANDLE processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (!processHandle) {
-		// R_LOG_ERROR ("r_sys_pid_to_path: Cannot open process");
+		// R_LOG_ERROR ("r_sys_pidpath: Cannot open process");
 		return NULL;
 	}
 	char *filename = r_w32_handle_to_path (processHandle);
@@ -1366,6 +1374,14 @@ R_API char *r_sys_pid_to_path(int pid) {
 	if (ret != 0) {
 		return NULL;
 	}
+#elif __NetBSD__
+	char pathbuf[PATH_MAX];
+	size_t pathbufl = sizeof (pathbuf);
+	int mib[4] = {CTL_KERN, KERN_PROC_ARGS, pid, KERN_PROC_PATHNAME};
+	int ret = sysctl (mib, 4, pathbuf, &pathbufl, NULL, 0);
+	if (ret != 0) {
+		return NULL;
+	}
 #elif __HAIKU__
 	char pathbuf[MAXPATHLEN];
 	int32 group = 0;
@@ -1384,17 +1400,55 @@ R_API char *r_sys_pid_to_path(int pid) {
 	}
 #else
 	char buf[128], pathbuf[1024];
+#if __OpenBSD__
+	snprintf (buf, sizeof (buf), "/proc/%d/file", pid);
+#else
 	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
-	int ret = readlink (buf, pathbuf, sizeof (pathbuf)-1);
+#endif
+	int ret = readlink (buf, pathbuf, sizeof (pathbuf) - 1);
 	if (ret < 1) {
 		return NULL;
-	}
-	if ((size_t)ret >= sizeof (pathbuf)) {
-		ret = sizeof (pathbuf) - 1;
 	}
 	pathbuf[ret] = 0;
 #endif
 	return strdup (pathbuf);
+#endif
+}
+
+R_API char *r_sys_exepath(void) {
+#if R2__WINDOWS__
+	TCHAR path[MAX_PATH + 1];
+	DWORD length = GetModuleFileName (NULL, path, R_ARRAY_SIZE (path));
+	if (!length || length >= R_ARRAY_SIZE (path)) {
+		return NULL;
+	}
+	return r_sys_conv_win_to_utf8 (path);
+#elif __APPLE__
+	ut32 size = 1024;
+	char *path = malloc (size);
+	if (!path) {
+		return NULL;
+	}
+	if (_NSGetExecutablePath (path, &size) < 0) {
+		char *new_path = realloc (path, size);
+		if (!new_path) {
+			free (path);
+			return NULL;
+		}
+		path = new_path;
+		if (_NSGetExecutablePath (path, &size) < 0) {
+			free (path);
+			return NULL;
+		}
+	}
+	char *absolute_path = r_file_abspath (path);
+	free (path);
+	return absolute_path;
+#elif __sun
+	const char *path = getexecname ();
+	return R_STR_ISNOTEMPTY (path)? r_file_abspath (path): NULL;
+#else
+	return r_sys_pidpath (r_sys_getpid ());
 #endif
 }
 
@@ -1487,6 +1541,45 @@ R_API int r_sys_getpid(void) {
 #endif
 }
 
+R_API bool r_sys_open(const char * R_NONNULL target, const char * R_NULLABLE opener, bool bg) {
+	R_RETURN_VAL_IF_FAIL (R_STR_ISNOTEMPTY (target), false);
+	char *escaped_path = r_str_escape_sh (target);
+	if (!escaped_path) {
+		return false;
+	}
+	char *opener_cmd = NULL;
+#if R2__WINDOWS__
+	if (R_STR_ISEMPTY (opener) || !strcmp (opener, "start")) {
+		opener = "start \"\"";
+	}
+#else
+	if (R_STR_ISEMPTY (opener)) {
+		const char *openers[] = { "xdg-open", "open", NULL };
+		int i;
+		for (i = 0; openers[i]; i++) {
+			char *opener_path = r_file_path (openers[i]);
+			if (opener_path) {
+				char *escaped_opener = r_str_escape_sh (opener_path);
+				if (escaped_opener) {
+					opener_cmd = r_str_newf ("\"%s\"", escaped_opener);
+				}
+				free (escaped_opener);
+				free (opener_path);
+				break;
+			}
+		}
+		opener = opener_cmd;
+	}
+#endif
+	bool res = false;
+	if (R_STR_ISNOTEMPTY (opener)) {
+		res = r_sys_cmdf ("%s \"%s\"%s", opener, escaped_path, bg? " &": "") == 0;
+	}
+	free (opener_cmd);
+	free (escaped_path);
+	return res;
+}
+
 R_API bool r_sys_tts(const char *txt, bool bg) {
 	int i;
 	R_RETURN_VAL_IF_FAIL (txt, false);
@@ -1506,68 +1599,47 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 	return false;
 }
 
-R_API char *r_sys_prefix(const char *pfx) {
-	char *Gprefix = NULL;
-	char *Gr2prefix = NULL;
-#if R2_USE_BUNDLE_PREFIX
-	if (!Gprefix) {
-		Gprefix = macho_detect_bundle_location ();
+static char *r_sys_prefix_from_executable(void) {
+	char *path = r_sys_exepath ();
+	if (R_STR_ISEMPTY (path)) {
+		free (path);
+		return NULL;
 	}
-#else
-	if (!Gr2prefix) {
-		Gr2prefix = r_sys_getenv ("R2_PREFIX");
-		if (R_STR_ISEMPTY (Gr2prefix)) {
-			free (Gr2prefix);
-			Gr2prefix = strdup (R2_PREFIX);
-		}
+	char *dir = r_file_dirname (path);
+	free (path);
+	if (!r_sys_getenv_asbool ("R_ALT_SRC_DIR") && !r_str_casecmp (r_file_basename (dir), "bin")) {
+		char *root = r_file_dirname (dir);
+		free (dir);
+		return root;
 	}
-	if (!Gprefix) {
+	return dir;
+}
+
 #if R2__WINDOWS__
-		Gprefix = r_sys_get_src_dir_w32 ();
-		if (!Gprefix) {
-			Gprefix = strdup (Gr2prefix);
+R_API char *r_sys_get_src_dir_w32(void) {
+	return r_sys_prefix_from_executable ();
+}
+#endif
+
+R_API char *r_sys_prefix(const char *pfx) {
+	char *r2prefix = r_sys_getenv ("R2_PREFIX");
+	if (R_STR_ISEMPTY (r2prefix)) {
+		free (r2prefix);
+#if R2__WINDOWS__
+		r2prefix = r_sys_get_src_dir_w32 ();
+#else
+		r2prefix = R_STR_ISEMPTY (R2_PREFIX)? r_sys_prefix_from_executable (): strdup (R2_PREFIX);
+#endif
+		if (R_STR_ISEMPTY (r2prefix)) {
+			free (r2prefix);
+			r2prefix = strdup (R2_PREFIX);
 		}
-#else
-		Gprefix = strdup (Gr2prefix);
-#endif
 	}
-	if (pfx) {
-		free (Gprefix);
-		Gprefix = strdup (pfx);
+	if (pfx && (!r2prefix || strcmp (pfx, r2prefix))) {
+		r_sys_setenv ("R2_PREFIX", pfx);
 	}
-#endif
-	free (Gr2prefix);
-	return Gprefix;
+	return r2prefix;
 }
-
-#if R2_USE_BUNDLE_PREFIX
-static char *macho_detect_bundle_location(void) {
-	char *macho_path = macho_path_for_address_or_main (macho_detect_bundle_location);
-	char *macho_dir = r_file_dirname (macho_path);
-	free (macho_path);
-
-#if TARGET_OS_OSX
-	char *resources = r_file_new (macho_dir, "Resources", NULL);
-	free (macho_dir);
-	return resources;
-#else
-	return macho_dir;
-#endif
-}
-
-static char *macho_path_for_address_or_main(const void *addr) {
-	Dl_info info;
-	if (dladdr (addr, &info) && info.dli_fname) {
-		return strdup (info.dli_fname);
-	}
-
-	ut32 size = 0;
-	_NSGetExecutablePath (NULL, &size);
-	char *buf = malloc (size);
-	_NSGetExecutablePath (buf, &size);
-	return buf;
-}
-#endif
 
 R_API RSysInfo *r_sys_info(void) {
 #if R2__UNIX__

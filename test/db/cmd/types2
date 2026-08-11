@@ -122,13 +122,13 @@ EXPECT=<<EOF
 0x00000004
 0x00000000 type int16_t; // size=2
 0x00000002
+             ; XREF[w] 0x0040114e main
 0x00000000 type int32_t; // size=4
 0x00000004
              ; XREF[r] 0x00401066 entry0
              ; XREF[r] 0x0040123f sym.__libc_csu_init
              ; XREF[r] 0x00401244 sym.__libc_csu_init
              ; XREF[r] 0x00401249 sym.__libc_csu_init
-             ; XREF[w] 0x0040114e main
              ; XREF[w] 0x0040115e main
              ; XREF[r] 0x00401213 main
 0x00000000 type int64_t; // size=8
@@ -279,4 +279,3 @@ ufoo
 ---
 EOF
 RUN
-

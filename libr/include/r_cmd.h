@@ -10,7 +10,11 @@ extern "C" {
 #endif
 
 typedef struct r_core_t RCore;
+typedef struct r_cons_t RCons;
 typedef struct r_libstore_t RLibStore;
+typedef struct r_cmd_t RCmd;
+
+R_VEC_TYPE (RVecRStrs, RStrs);
 
 #define MACRO_LIMIT 1024
 #define MACRO_LABELS 20
@@ -19,6 +23,54 @@ typedef struct r_libstore_t RLibStore;
 typedef int (*RCmdCb) (void *user, const char *input);
 // typedef RCmdStatus (*RCmdArgvCb) (RCore *core, int argc, const char **argv);
 typedef int (*RCmdNullCb) (void *user);
+
+typedef enum {
+	R_CMD_ACTION_CONTINUE,
+	R_CMD_ACTION_ABORT,
+	R_CMD_ACTION_QUIT,
+	R_CMD_ACTION_UNHANDLED
+} RCmdAction;
+
+typedef struct r_cmd_result_t {
+	RCmdAction action;
+	bool has_value;
+	st64 status;
+	ut64 value;
+} RCmdResult;
+
+typedef struct r_cmd_context_t {
+	struct r_cmd_context_t *parent;
+	RCmd *cmd;
+	RCons *cons;
+	void *user;
+	void *handler_user;
+	int remaining_depth; // nested core command budget
+	bool raw; // command requested verbatim argument handling
+	char *args_storage; // private: owned buffer backing args, do not use
+	RVecRStrs args; // arguments after the matched name and subcmd
+	RStrs subcmd; // command-token remainder after the registered name; slices the
+	// NUL-terminated input line, so subcmd.b is the raw undecoded tail as C string
+} RCmdContext;
+
+typedef RCmdResult (*RCmdCtxCb) (RCmdContext *ctx);
+
+/* True when the command token requests help: "agD?", "agDj?", "prjs?" */
+static inline bool r_cmd_ctx_help(RCmdContext *ctx) {
+	return r_strs_lastch (ctx->subcmd) == '?';
+}
+
+/* Trailing output-mode char from the given set, looking before any '?'.
+ * r_cmd_ctx_mode (ctx, "jq") is 'j' for "agDj" and "agDj?", 0 for "agD" */
+static inline char r_cmd_ctx_mode(RCmdContext *ctx, const char *modes) {
+	RStrs s = ctx->subcmd;
+	if (r_strs_lastch (s) == '?') {
+		s.b--;
+	}
+	const char last = r_strs_lastch (s);
+	return (last && strchr (modes, last))? last: 0;
+}
+
+typedef bool (*RCmdForeachCb) (RStrs name, void *user);
 
 typedef struct r_cmd_macro_label_t {
 	char name[80];
@@ -62,8 +114,10 @@ typedef struct r_cmd_alias_val_t {
 } RCmdAliasVal;
 
 
-typedef struct r_cmd_t {
+struct r_cmd_t {
 	void *data; // maybe its user?
+	RCons *cons; // borrowed by new command contexts
+	RCons *(*get_cons)(void *data); // optional execution-console resolver
 	RCmdNullCb nullcallback;
 	RCmdItem *cmds[UT8_MAX];
 	RCmdMacro macro;
@@ -72,8 +126,8 @@ typedef struct r_cmd_t {
 	void *language; // used to store TSLanguage *
 	HtUP *ts_symbols_ht;
 	// RCmdDesc *root_cmd_desc;
-	HtPP *ht_cmds;
-} RCmd;
+	RTrie *handlers;
+};
 
 #ifdef R_API
 R_API RCmd *r_cmd_new(void *data);
@@ -81,6 +135,15 @@ R_API void r_cmd_free(RCmd *cmd);
 R_API int r_cmd_call(RCmd *cmd, const char *command);
 R_API void r_cmd_set_data(RCmd *cmd, void *data);
 R_API bool r_cmd_add(RCmd *cmd, const char *command, RCmdCb callback);
+/* New handlers are keyed by their complete command prefix. The registry copies
+ * name and borrows handler_user until the command is unregistered. */
+R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user);
+/* Removes only the exact registered name, preserving descendant handlers. */
+R_API bool r_cmd_unregister(RCmd *cmd, const char *name);
+/* Removes every handler whose name starts with prefix and returns their count. */
+R_API size_t r_cmd_unregister_prefix(RCmd *cmd, const char *prefix);
+/* Visits matching names in lexical order; name is transient and false stops. */
+R_API bool r_cmd_foreach_prefix(const RCmd *cmd, const char *prefix, RCmdForeachCb callback, void *user);
 
 /* r_cmd_macro */
 R_API RCmdMacroItem *r_cmd_macro_item_new(void);
@@ -93,13 +156,9 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name);
 R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value);
 
 R_API bool r_cmd_alias_del(RCmd *cmd, const char *k);
-R_API const char **r_cmd_alias_keys(RCmd *cmd);
 R_API bool r_cmd_alias_set_cmd(RCmd *cmd, const char *k, const char *v);
-R_API int r_cmd_alias_set_str(RCmd *cmd, const char *k, const char *v);
-R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz);
+R_API bool r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz, bool append);
 R_API RCmdAliasVal *r_cmd_alias_get(RCmd *cmd, const char *k);
-R_API bool r_cmd_alias_append_str(RCmd *cmd, const char *k, const char *a);
-R_API bool r_cmd_alias_append_raw(RCmd *cmd, const char *k, const ut8 *a, int sz);
 R_API char *r_cmd_alias_val_strdup(RCmdAliasVal *v);
 R_API char *r_cmd_alias_val_strdup_b64(RCmdAliasVal *v);
 R_API void r_cmd_alias_free(RCmd *cmd);

@@ -140,6 +140,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.load_resources = &load_resources,
 	.sections_vec = &sections_vec,
 	.symbols_vec = symbols_vec,
 	.minstrlen = 4,

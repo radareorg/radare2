@@ -122,19 +122,12 @@ static inline ut64 make_64bits_address(ut64 address) {
 }
 
 static inline void handle_branch_instruction(RAnalOp *op, ut64 addr, cs_m68k *m68k, ut32 type, int index) {
-#if CS_API_MAJOR >= 4
 	if (m68k->operands[index].type == M68K_OP_BR_DISP) {
 		op->type = type;
 		// TODO: disp_size is ignored
 		op->jump = make_64bits_address (addr + m68k->operands[index].br_disp.disp + 2);
 		op->fail = make_64bits_address (addr + op->size);
 	}
-#else
-	op->type = type;
-	// TODO: disp_size is ignored
-	op->jump = make_64bits_address (addr + m68k->operands[index].br_disp.disp + 2);
-	op->fail = make_64bits_address (addr + op->size);
-#endif
 }
 
 static inline void handle_jump_instruction(RAnalOp *op, ut64 addr, cs_m68k *m68k, ut32 type) {

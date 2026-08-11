@@ -135,8 +135,8 @@ R_API void r_cons_visual_flush(RCons *cons) {
 
 R_API const char *r_cons_visual_readln(RCons *cons, const char *prompt, const char *prefill) {
 	if (R_STR_ISNOTEMPTY (prefill)) {
-		R_FREE (cons->line->contents);
-		cons->line->contents = strdup (prefill);
+		R_FREE (cons->line->state.contents);
+		cons->line->state.contents = strdup (prefill);
 	}
 	r_cons_show_cursor (cons, true);
 	r_cons_set_raw (cons, false);

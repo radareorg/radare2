@@ -233,7 +233,17 @@ cc.name.pop=callee
 cc.name.pop=pop=16
 cc.name.clobber=(eax,ecx,edx)
 cc.name.preserve=(ebx,esi,edi,ebp)
+cc.name.shadow=32
 ```
+
+`cc.name.shadow` is the caller-reserved area below the stack arguments, in bytes:
+the win64 shadow space (`cc.ms.shadow=32`) or the MIPS o32 home area
+(`cc.o32.shadow=16`). Only the open tails `^` and `^-` start above it — a fixed
+slot `^N` or `^-N` counts call-frame words from the frame base, so it can name a
+slot inside that area, which is what lets the o32 profile below place the `a0`-`a3`
+home slots at `^0`-`^3` and still put the first stack argument above them. Fixed
+slots are also independent of the argument count, unlike the tails. There is no
+`dyncc:` spelling for a shadow area; it is static metadata only.
 
 For `cc.name.pop=callee`, analysis can use a known function prototype to compute
 the byte count for stack arguments. This keeps normal Win32 `stdcall` and

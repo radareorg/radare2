@@ -81,7 +81,7 @@ file     malloc://1025
 size     0x401
 humansz  1.0K
 mode     rwx
-format   any
+format   null
 iorw     true
 block    0x100
 nth vaddr bind type lib name
@@ -124,7 +124,7 @@ file     malloc://1024
 size     0x400
 humansz  1K
 mode     rwx
-format   any
+format   null
 iorw     true
 block    0x100
 e cfg.bigendian=false
@@ -2604,6 +2604,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=iR aliases ir relocations
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+ir~?
+iR~?
+EOF
+EXPECT=<<EOF
+6
+6
+EOF
+RUN
+
 NAME=is (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=is
@@ -3654,9 +3666,93 @@ imp.exit
 EOF
 RUN
 
-NAME=iR*
+NAME=iu help
+FILE=-
+CMDS=<<EOF
+iu?~iux
+iu?~overwritten
+EOF
+EXPECT=<<EOF
+| iux [directory]   extract all resources (default: <file>.resources; alias for ixu)
+|                   output names are sanitized and existing files are never overwritten
+EOF
+RUN
+
+NAME=iu subcommand help
+FILE=-
+CMDS=<<EOF
+iu,?
+iu*?
+iuj?
+iuq?
+iuqq?
+iux?
+EOF
+EXPECT=<<EOF
+| iu,[table-query]  list resources in table using given expression
+| iu*  emit resource flags as radare commands
+| iuj  list resources in JSON
+| iuq  list resource address, size, type and name
+| iuqq  list resource names only
+| iux [directory]  extract all resources (default: <file>.resources; alias for ixu)
+EOF
+RUN
+
+NAME=iu invalid subcommand
+FILE=-
+CMDS=iuy
+EXPECT_ERR=<<EOF
+ERROR: Invalid `y` subcommand, try `iu?`
+EOF
+RUN
+
+NAME=ix help
+FILE=-
+CMDS=<<EOF
+ix?~extract all
+iS?~extract all
+EOF
+EXPECT=<<EOF
+| ixu [directory]   extract all resources (alias for iux)
+| ixS [directory]   extract all sections (alias for iSx)
+| ixSS [directory]  extract all segments (alias for iSSx)
+| iSx [directory]       extract all sections (default: <file>.sections; alias for ixS)
+| iSSx [directory]      extract all segments (default: <file>.segments; alias for ixSS)
+EOF
+RUN
+
+NAME=ix section and segment aliases
+FILE=bins/elf/analysis/hello-linux-x86_64
+ARGS=-e log.level=0
+CMDS=<<EOF
+rmrf .tmp/ix-sections-a
+rmrf .tmp/ix-sections-b
+rmrf .tmp/ix-segments-a
+rmrf .tmp/ix-segments-b
+iSx .tmp/ix-sections-a
+ixS .tmp/ix-sections-b
+iSSx .tmp/ix-segments-a
+ixSS .tmp/ix-segments-b
+!!rahash2 -qq -a sha256 .tmp/ix-sections-a/section_.text_13.bin
+!!rahash2 -qq -a sha256 .tmp/ix-sections-b/section_.text_13.bin
+!!rahash2 -qq -a sha256 .tmp/ix-segments-a/segment_LOAD0_2.bin
+!!rahash2 -qq -a sha256 .tmp/ix-segments-b/segment_LOAD0_2.bin
+rmrf .tmp/ix-sections-a
+rmrf .tmp/ix-sections-b
+rmrf .tmp/ix-segments-a
+rmrf .tmp/ix-segments-b
+EOF
+EXPECT=<<EOF
+dcb90dd685b3db105be06c136ec2d1d5416e00906e28cc71eebb131cd7b6c206
+dcb90dd685b3db105be06c136ec2d1d5416e00906e28cc71eebb131cd7b6c206
+fb026f99dd41eb994947dc2314fb40e7c016ebbdb7533a2efd51629f3bf234db
+fb026f99dd41eb994947dc2314fb40e7c016ebbdb7533a2efd51629f3bf234db
+EOF
+RUN
+
+NAME=iu*
 FILE=bins/pe/standard.exe
-CMDS=iR*
+CMDS=iu*
 EXPECT=<<EOF
 fs resources
 f resource.0 5672 0x00401180
@@ -3668,9 +3764,23 @@ fs *
 EOF
 RUN
 
-NAME=iRj
+NAME=iu table query
 FILE=bins/pe/standard.exe
-CMDS=iRj~{}
+CMDS=iu,size/sort,type/cols/name
+EXPECT=<<EOF
+type       name
+---------------
+GROUP_ICON 788
+MANIFEST   1
+STRING     10
+VERSION    1
+ICON       1576
+EOF
+RUN
+
+NAME=iuj
+FILE=bins/pe/standard.exe
+CMDS=iuj~{}
 EXPECT=<<EOF
 [
   {
@@ -3678,8 +3788,14 @@ EXPECT=<<EOF
     "index": 0,
     "type": "ICON",
     "vaddr": 4198784,
+    "paddr": 896,
     "size": 5672,
+    "id": 1576,
+    "type_id": 3,
     "lang": "LANG_NEUTRAL",
+    "language_id": 0,
+    "codepage": 0,
+    "named": false,
     "timestamp": "Thu Jan  1 00:00:00 1970"
   },
   {
@@ -3687,8 +3803,14 @@ EXPECT=<<EOF
     "index": 1,
     "type": "STRING",
     "vaddr": 4205072,
+    "paddr": 7184,
     "size": 76,
+    "id": 10,
+    "type_id": 6,
     "lang": "LANG_NEUTRAL",
+    "language_id": 0,
+    "codepage": 0,
+    "named": false,
     "timestamp": "Thu Jan  1 00:00:00 1970"
   },
   {
@@ -3696,8 +3818,14 @@ EXPECT=<<EOF
     "index": 2,
     "type": "GROUP_ICON",
     "vaddr": 4204464,
+    "paddr": 6576,
     "size": 20,
+    "id": 788,
+    "type_id": 14,
     "lang": "LANG_NEUTRAL",
+    "language_id": 0,
+    "codepage": 0,
+    "named": false,
     "timestamp": "Thu Jan  1 00:00:00 1970"
   },
   {
@@ -3705,8 +3833,14 @@ EXPECT=<<EOF
     "index": 3,
     "type": "VERSION",
     "vaddr": 4204496,
+    "paddr": 6608,
     "size": 452,
+    "id": 1,
+    "type_id": 16,
     "lang": "LANG_NEUTRAL",
+    "language_id": 0,
+    "codepage": 0,
+    "named": false,
     "timestamp": "Thu Jan  1 00:00:00 1970"
   },
   {
@@ -3714,11 +3848,44 @@ EXPECT=<<EOF
     "index": 4,
     "type": "MANIFEST",
     "vaddr": 4204960,
+    "paddr": 7072,
     "size": 74,
+    "id": 1,
+    "type_id": 24,
     "lang": "LANG_NEUTRAL",
+    "language_id": 0,
+    "codepage": 0,
+    "named": false,
     "timestamp": "Thu Jan  1 00:00:00 1970"
   }
 ]
+EOF
+RUN
+
+NAME=iu quiet and physical modes
+FILE=bins/pe/standard.exe
+CMDS=<<EOF
+iuq
+iuqq
+e io.va=false
+iuq
+EOF
+EXPECT=<<EOF
+0x00401180 5672 ICON 1576
+0x00402a10 76 STRING 10
+0x004027b0 20 GROUP_ICON 788
+0x004027d0 452 VERSION 1
+0x004029a0 74 MANIFEST 1
+1576
+10
+788
+1
+1
+0x00000380 5672 ICON 1576
+0x00001c10 76 STRING 10
+0x000019b0 20 GROUP_ICON 788
+0x000019d0 452 VERSION 1
+0x00001ba0 74 MANIFEST 1
 EOF
 RUN
 

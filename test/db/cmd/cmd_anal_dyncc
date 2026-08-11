@@ -357,6 +357,27 @@ ic: x8
 EOF
 RUN
 
+NAME=asm.cmt.reguse annotates dyncc register roles
+FILE=malloc://64
+ARGS=-w -a x86 -b 64
+CMDS=<<EOF
+wx 4d89cc4989c94889d34889c34d89d0c3
+af+ 0 fcn;afb+ 0 0 0x10 0 0
+afc dyncc:rcx,rdx:r8!Trcx!drax!tr9!cr10!qrdx @ 0
+afva @ 0
+ah*~ahR
+e asm.cmt.reguse=true;pd 6 @ 0~reguse?
+EOF
+EXPECT=<<EOF
+'@0x0'ahR r9 is thread
+'@0x3'ahR rcx is arg0, T
+'@0x6'ahR rdx is q
+'@0x9'ahR rax is descriptor
+'@0xc'ahR r10 is code
+5
+EOF
+RUN
+
 NAME=afch reports non-dyncc functions
 FILE=bins/elf/ls
 CMDS=<<EOF

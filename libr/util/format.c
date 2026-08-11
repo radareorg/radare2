@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2025 - pancake & Skia */
+/* radare - LGPL - Copyright 2007-2026 - pancake & Skia */
 
 #include <r_cons.h>
 #include <r_util.h>
@@ -241,7 +241,8 @@ static void r_print_format_byte(RPrintFormat *pf, const char *setval, ut64 seeki
 	int elem;
 	PF_EXTRACT_ELEM (elem, size);
 	if (MUSTSET) {
-		r_print_printf (p, "'0x%08" PFMT64x "'w %s\n", setval, seeki + ((elem >= 0)? elem: 0));
+		ut64 addr = seeki + ((elem >= 0)? elem: 0);
+		r_print_printf (p, "'0x%08" PFMT64x "'w %s\n", addr, setval);
 	} else if (MUSTSEEJSON) {
 		if (size == -1) {
 			pj_kn (pf->pj, "value", buf[i]);
@@ -2071,9 +2072,7 @@ R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const 
 	/* get times */
 	otimes = times = atoi (arg);
 	if (times > 0) {
-		while (isdigit (*arg)) {
-			arg++;
-		}
+		arg = r_str_trim_head_digits (arg);
 	}
 
 	char *bracket = strchr (arg, '{');

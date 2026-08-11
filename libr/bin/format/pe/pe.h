@@ -12,11 +12,11 @@
 #define R_BIN_PE_SCN_IS_READABLE(x)        x & PE_IMAGE_SCN_MEM_READ
 #define R_BIN_PE_SCN_IS_WRITABLE(x)        x & PE_IMAGE_SCN_MEM_WRITE
 
-struct r_bin_pe_addr_t {
+typedef struct r_bin_pe_addr_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut64 haddr;
-};
+} RBinPEAddr;
 
 struct r_bin_pe_section_t {
 	ut8 name[PE_IMAGE_SIZEOF_SHORT_NAME * 3];
@@ -26,8 +26,9 @@ struct r_bin_pe_section_t {
 	ut64 paddr;
 	ut64 perm;
 	ut32 flags;
-	int last;
 };
+
+R_VEC_TYPE (RVecPESection, struct r_bin_pe_section_t);
 
 #define IMAGE_REL_BASED_ABSOLUTE       0  //The base relocation is skipped. This type can be used to pad a block.
 #define IMAGE_REL_BASED_HIGH           1  //The base relocation adds the high 16 bits of the difference to the 16-bit field at offset. The 16-bit field represents the high value of a 32-bit word.
@@ -52,8 +53,9 @@ struct r_bin_pe_import_t {
 	ut64 hint;
 	ut64 ordinal;
 	int ntype;
-	int last;
 };
+
+R_VEC_TYPE (RVecPEImport, struct r_bin_pe_import_t);
 
 struct r_bin_pe_export_t {
 	ut8 name[PE_NAME_LENGTH + 1];
@@ -62,8 +64,9 @@ struct r_bin_pe_export_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut64 ordinal;
-	int last;
 };
+
+R_VEC_TYPE (RVecPEExport, struct r_bin_pe_export_t);
 
 struct r_bin_pe_string_t {
 	char string[PE_STRING_LENGTH];
@@ -76,8 +79,9 @@ struct r_bin_pe_string_t {
 
 struct r_bin_pe_lib_t {
 	char name[PE_STRING_LENGTH];
-	int last;
 };
+
+R_VEC_TYPE (RVecPELib, struct r_bin_pe_lib_t);
 
 typedef struct _PE_RESOURCE {
 	char *timestr;
@@ -85,6 +89,10 @@ typedef struct _PE_RESOURCE {
 	char *language;
 	char *name;
 	Pe_image_resource_data_entry *data;
+	ut32 id;
+	ut32 type_id;
+	ut32 language_id;
+	bool named;
 } r_pe_resource;
 
 #define GUIDSTR_LEN 41
@@ -119,7 +127,7 @@ struct PE_(r_bin_pe_obj_t) {
 	RList *dotnet_symbols;
 
 	/* store the section information for future use */
-	struct r_bin_pe_section_t *sections;
+	RVecPESection sections;
 
 	// these values define the real offset into the untouched binary
 	ut64 rich_header_offset;
@@ -141,6 +149,7 @@ struct PE_(r_bin_pe_obj_t) {
 	RList* relocs;
 	RList* resources; //RList of r_pe_resources
 	const char* file;
+	char *sdbdir;
 	RBuffer* b;
 	Sdb *kv;
 	RCMS* cms;
@@ -162,11 +171,11 @@ R_API const char* PE_(r_bin_pe_get_arch)(RBinPEObj* bin);
 R_API char *PE_(r_bin_pe_get_cc)(RBinPEObj* bin);
 R_API struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* bin);
 R_API struct r_bin_pe_addr_t* PE_(r_bin_pe_get_main_vaddr)(RBinPEObj* bin);
-R_API struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(RBinPEObj* bin); // TODO
+R_API RVecPEExport *PE_(r_bin_pe_get_exports)(RBinPEObj* bin);
 R_API int PE_(r_bin_pe_get_file_alignment)(RBinPEObj* bin);
 R_API ut64 PE_(r_bin_pe_get_image_base)(RBinPEObj* bin);
-R_API struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(RBinPEObj* bin); // TODO
-R_API struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(RBinPEObj* bin);
+R_API RVecPEImport *PE_(r_bin_pe_get_imports)(RBinPEObj* bin); // TODO
+R_API RVecPELib *PE_(r_bin_pe_get_libs)(RBinPEObj* bin);
 R_API int PE_(r_bin_pe_get_image_size)(RBinPEObj* bin);
 R_API char* PE_(r_bin_pe_get_machine)(RBinPEObj* bin);
 R_API char* PE_(r_bin_pe_get_os)(RBinPEObj* bin);
@@ -174,12 +183,12 @@ R_API char* PE_(r_bin_pe_get_class)(RBinPEObj* bin);
 R_API int PE_(r_bin_pe_get_bits)(RBinPEObj* bin);
 R_API int PE_(r_bin_pe_get_section_alignment)(RBinPEObj* bin);
 R_API char* PE_(r_bin_pe_get_subsystem)(RBinPEObj* bin);
-R_API int PE_(r_bin_pe_is_dll)(RBinPEObj* bin);
-R_API int PE_(r_bin_pe_is_big_endian)(RBinPEObj* bin);
-R_API int PE_(r_bin_pe_is_stripped_relocs)(RBinPEObj* bin);
-R_API int PE_(r_bin_pe_is_stripped_line_nums)(RBinPEObj* bin);
-R_API int PE_(r_bin_pe_is_stripped_local_syms)(RBinPEObj* bin);
-R_API int PE_(r_bin_pe_is_stripped_debug)(RBinPEObj* bin);
+R_API bool PE_(r_bin_pe_is_dll)(RBinPEObj* bin);
+R_API bool PE_(r_bin_pe_is_big_endian)(RBinPEObj* bin);
+R_API bool PE_(r_bin_pe_is_stripped_relocs)(RBinPEObj* bin);
+R_API bool PE_(r_bin_pe_is_stripped_line_nums)(RBinPEObj* bin);
+R_API bool PE_(r_bin_pe_is_stripped_local_syms)(RBinPEObj* bin);
+R_API bool PE_(r_bin_pe_is_stripped_debug)(RBinPEObj* bin);
 R_API void* PE_(r_bin_pe_free)(RBinPEObj* bin);
 R_API RBinPEObj* PE_(r_bin_pe_new)(const char* file, bool verbose);
 R_API RBinPEObj* PE_(r_bin_pe_new_buf)(RBuffer* buf, bool verbose);
@@ -189,10 +198,11 @@ R_API int PE_(bin_pe_get_actual_checksum)(RBinPEObj* bin);
 R_API const char* PE_(bin_pe_compute_authentihash)(RBinPEObj* bin);
 R_API int PE_(bin_pe_is_authhash_valid)(RBinPEObj* bin);
 R_API int PE_(bin_pe_get_overlay)(RBinPEObj* bin, ut64* size);
-R_API void PE_(r_bin_pe_check_sections)(RBinPEObj* bin, struct r_bin_pe_section_t** sects);
+R_API void PE_(r_bin_pe_check_sections)(RBinPEObj* bin);
 R_API struct r_bin_pe_addr_t *PE_(check_unknow)(RBinPEObj *bin);
 R_API struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *bin);
 R_API struct r_bin_pe_addr_t *PE_(check_mingw)(RBinPEObj *bin);
 R_API bool PE_(r_bin_pe_section_perms)(RBinFile *bf, const char *name, int perms);
 R_API void PE_(bin_pe_parse_resource)(RBinPEObj *bin);
+R_API bool PE_(r_bin_pe_load_resources)(RBinPEObj *bin, RVecRBinResource *resources);
 R_API RBinPEObj* PE_(get)(RBinFile *bf);

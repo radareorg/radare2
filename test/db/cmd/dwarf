@@ -79,6 +79,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME="fuzzed compressed dwarf section header"
+FILE=bins/fuzzed/id:000019,sig:11,src:002311,time:33421657,op:havoc,rep:8
+ARGS=-e log.level=0
+CMDS=<<EOF
+e scr.null=true
+iH
+aaa
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME="ansi injection via dwarf"
 FILE=bins/elf/dwarf_test_func_patched
 ARGS=-AA
@@ -417,7 +429,7 @@ EXPECT=<<EOF
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
 |           ; arg &mut [i32] values @ rsp+0x90
-|           ; var int64_t var_fh @ rsp+0xf
+|           ; var int8_t var_fh @ rsp+0xf
 |           ; var int64_t var_10h @ rsp+0x10
 |           ; var int64_t var_18h @ rsp+0x18
 |           ; var int64_t var_20h @ rsp+0x20
@@ -553,7 +565,7 @@ EXPECT=<<EOF
 |           ; arg char **envp @ rdx
 |           ; var ada_main__main__seh___PAD seh @ rbp-0x8
 |           ; var system__address volatile ensure_reference @ rbp-0x10
-|           ; var int64_t var_14h @ rbp-0x14
+|           ; var int32_t var_14h @ rbp-0x14
 |           ; var char **var_20h @ rbp-0x20
 |           ; var char **var_28h @ rbp-0x28
 ; integer main(integer const argc,void * const argv,void * const envp)
@@ -602,7 +614,7 @@ EXPECT=<<EOF
 |           ; arg char **envp @ rdx
 |           ; var ada_main__main__seh___PAD seh @ rbp-0x8
 |           ; var system__address volatile ensure_reference @ rbp-0x10
-|           ; var int64_t var_14h @ rbp-0x14
+|           ; var int32_t var_14h @ rbp-0x14
 |           ; var char **var_20h @ rbp-0x20
 |           ; var char **var_28h @ rbp-0x28
 |           0x00002742      55             push rbp                    ; integer main(integer const argc,void * const argv,void * const envp);

@@ -14,6 +14,8 @@ else
 BUILDSEC=$(shell date "+__%H:%M:%S")
 endif
 DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d libr/arch/d
+WWW_UI_DIRS=m p t
+WWW_UI_INDEXES=$(addsuffix /index.html,$(addprefix shlr/www/,$(WWW_UI_DIRS)))
 ZIPWINDIST=YES
 ZIP=zip
 
@@ -47,15 +49,28 @@ endif
 endif
 endif
 
-all: plugins.cfg libr/include/r_version.h
+# which target to run inside libr/ (all, static, sublibs). see libr/Makefile
+LIBS_TARGET?=all
+
+all: libs
+	${MAKE} -C binr
+
+# everything but the binr/ programs
+libs: plugins.cfg libr/include/r_version.h
 	@libr/count.sh reset
 	${MAKE} -C shlr sdbs
 	${MAKE} -C shlr/zip
 	${MAKE} -C libr/util
 	${MAKE} -C libr/socket
 	${MAKE} -C shlr
-	${MAKE} -C libr
-	${MAKE} -C binr
+	${MAKE} -C libr $(LIBS_TARGET)
+
+# just the busybox-style single-binary build: skips the 16 binr/ programs,
+# libr.a/libr.so and every shared library, because r2blob links the static
+# per-directory libr_*.a archives and nothing else
+blob:
+	${MAKE} libs LIBS_TARGET=sublibs WITH_LIBS=0 WITH_LIBR=1
+	${MAKE} -C binr/blob symlinks WITH_LIBS=0 WITH_LIBR=1
 
 GIT_TAP=$(shell git describe --tags --match '[0-9]*' 2>/dev/null)
 GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo $(R2_VERSION))
@@ -190,8 +205,8 @@ clean:
 	rm -rf libr/.libr
 	-rm -f `find * | grep arm | grep dis.a$$`
 	for DIR in shlr libr binr ; do $(MAKE) -C "$$DIR" clean ; done
-	rm -f `find . -type f -name '*.d'` || for a in `find . -type f -name '*.d'` ; do rm -f "$$a" ; done
-	rm -f `find . -type f -name '*.o'` || for a in `find . -type f -name '*.o'` ; do rm -f "$$a" ; done
+	rm -f `find . -path ./dist -prune -o -type f -name '*.d' -print` || for a in `find . -path ./dist -prune -o -type f -name '*.d' -print` ; do rm -f "$$a" ; done
+	rm -f `find . -path ./dist -prune -o -type f -name '*.o' -print` || for a in `find . -path ./dist -prune -o -type f -name '*.o' -print` ; do rm -f "$$a" ; done
 	rm -f config-user.mk plugins.cfg libr/config.h
 	rm -f libr/include/r_userconf.h libr/config.mk
 	rm -f pkgcfg/*.pc
@@ -277,13 +292,13 @@ symstall-panels:
 		FILE2=$$(echo $$FILE | cut -d . -f 1); \
 		ln -fs "$(PWD)/shlr/panels/$$FILE" "$(DESTDIR)$(PANELS)/$$FILE2" ; done
 
-install-www:
+install-www: $(WWW_UI_INDEXES)
 	rm -rf "${DESTDIR}${WWWROOT}"
 	rm -rf "${DESTDIR}${LIBDIR}/radare2/${VERSION}/www" # old dir
 	mkdir -p "${DESTDIR}${WWWROOT}"
 	cp -rf shlr/www/* "${DESTDIR}${WWWROOT}"
 
-symstall-www:
+symstall-www: $(WWW_UI_INDEXES)
 	rm -rf "${DESTDIR}${WWWROOT}"
 	rm -rf "${DESTDIR}${LIBDIR}/radare2/${VERSION}/www" # old dir
 	mkdir -p "${DESTDIR}${WWWROOT}"
@@ -420,6 +435,6 @@ menu nconfig:
 include mk/meson.mk
 include ${MKPLUGINS}
 
-.PHONY: all clean install symstall uninstall deinstall strip
+.PHONY: all libs blob clean install symstall uninstall deinstall strip
 .PHONY: libr binr install-man w32dist tests dist shot pkgcfg depgraph.png love
 .PHONY: purge system-purge

@@ -15,6 +15,10 @@ extern REggEmit emit_ppc64;
 extern REggEmit emit_esil;
 extern REggEmit emit_trace;
 
+#if !defined(R_EGG_STATIC_PLUGINS)
+#define R_EGG_STATIC_PLUGINS 0
+#endif
+
 static REggPlugin *egg_static_plugins[] = { R_EGG_STATIC_PLUGINS };
 
 struct egg_patch_t {
@@ -32,9 +36,6 @@ void egg_patch_free(void *p) {
 
 R_API REgg *r_egg_new(void) {
 	REgg *egg = R_NEW0 (REgg);
-	if (!egg) {
-		return NULL;
-	}
 	egg->src = r_buf_new ();
 	if (!egg->src) {
 		goto beach;
@@ -469,10 +470,7 @@ R_API int r_egg_run_rop(REgg *egg) {
 #define R_EGG_FILL_TYPE_SEQ
 
 static inline char *eon(char *n) {
-	while (*n && (*n >= '0' && *n <= '9')) {
-		n++;
-	}
-	return n;
+	return r_str_trim_head_digits (n);
 }
 
 /* padding looks like:

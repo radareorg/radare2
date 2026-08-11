@@ -18,6 +18,20 @@ hello
 EOF
 RUN
 
+NAME=leak unsupported ELF relocation import
+FILE=malloc://2412
+ARGS=-wn
+CMDS=<<EOF
+wff bins/elf/analysis/hello-linux-i386nold
+wx 7f @ 0x1f8
+obf
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN
+
 NAME=leak opening macho
 FILE=bins/mach0/hello-osx-i386
 CMDS=<<EOF

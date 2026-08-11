@@ -103,11 +103,9 @@ static ut64 get_method_attr(ut64 MA) {
 	return flags;
 }
 
-static ut64 offset_of_method_idx(RBinFile *bf, int idx) {
+static ut64 method_addr(RBinFile *bf, int idx) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	// ut64 off = dex->header.method_offset + idx;
-	r_strf_var (key, 64, "method.%d", idx);
-	return sdb_num_get (dex->mdb, key, 0);
+	return sdb_num_getf (dex->mdb, NULL, "method.%d", idx);
 }
 
 static ut64 dex_field_offset(RBinDexObj *bin, int fid) {
@@ -123,11 +121,14 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 	char **cs = dex->cal_strings;
 	if (cs) {
 		const char *p = cs[idx];
-		if (!R_STR_ISEMPTY (p)) {
+		if (p) {
 			return p;
 		}
 	} else {
 		cs = R_NEWS0 (char *, strings_size);
+		if (!cs) {
+			return NULL;
+		}
 		dex->cal_strings = cs;
 		dex->cal_strings_size = strings_size;
 	}
@@ -141,18 +142,17 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 	}
 	ut64 len;
 	int uleblen = r_uleb128 (buf, sizeof (buf), &len, NULL) - buf;
-	if (!uleblen || uleblen >= dex->size || uleblen >= strings_size) {
+	if (!uleblen || len >= dex->size) {
 		return NULL;
 	}
-	if (!len || len >= dex->size) {
-		return NULL;
-	}
-	ut8 *ptr = malloc (len + 1);
+	char *ptr = r_buf_get_string (b, (ut64)string_index + uleblen);
 	if (ptr) {
-		r_buf_read_at (b, string_index + uleblen, ptr, len);
-		ptr[len] = 0;
-		cs[idx] = (char *)ptr;
-		return (const char *)ptr;
+		if (len != r_utf8_strlen ((const ut8 *)ptr)) {
+			free (ptr);
+			return NULL;
+		}
+		cs[idx] = ptr;
+		return ptr;
 	}
 	return NULL;
 }
@@ -463,11 +463,14 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 	// The state machine consists of five registers
 	ut32 address = 0;
 	ut32 line = line_start;
+	struct dex_debug_local_t *debug_locals = R_NEWS0 (struct dex_debug_local_t, regsz + 1);
+	if (!debug_locals) {
+		return;
+	}
 	RList *debug_positions = r_list_newf ((RListFree)free);
 	RList *emitted_debug_locals = r_list_newf ((RListFree)free);
 
-	struct dex_debug_local_t *debug_locals = calloc (sizeof (struct dex_debug_local_t), regsz + 1);
-	if (!(MA & 0x0008)) {
+	if (!(MA & R_DEX_METH_STATIC)) {
 		debug_locals[argReg].name = "this";
 		debug_locals[argReg].descriptor = r_str_newf ("%s;", class_name);
 		debug_locals[argReg].startAddress = 0;
@@ -539,9 +542,15 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		case DBG_START_LOCAL:
 			{
 			ut64 register_num, name_idx, type_idx;
-			r_buf_uleb128 (b, &register_num);
-			r_buf_uleb128 (b, &name_idx);
-			r_buf_uleb128 (b, &type_idx);
+			if (r_buf_uleb128 (b, &register_num) < 1) {
+				goto beach;
+			}
+			if (r_buf_uleb128 (b, &name_idx) < 1) {
+				goto beach;
+			}
+			if (r_buf_uleb128 (b, &type_idx) < 1) {
+				goto beach;
+			}
 			name_idx--;
 			type_idx--;
 			if (register_num >= regsz) {
@@ -577,10 +586,18 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		case DBG_START_LOCAL_EXTENDED:
 			{
 			ut64 register_num, name_idx, type_idx, sig_idx;
-			r_buf_uleb128 (b, &register_num);
-			r_buf_uleb128 (b, &name_idx);
-			r_buf_uleb128 (b, &type_idx);
-			r_buf_uleb128 (b, &sig_idx);
+			if (r_buf_uleb128 (b, &register_num) < 1) {
+				goto beach;
+			}
+			if (r_buf_uleb128 (b, &name_idx) < 1) {
+				goto beach;
+			}
+			if (r_buf_uleb128 (b, &type_idx) < 1) {
+				goto beach;
+			}
+			if (r_buf_uleb128 (b, &sig_idx) < 1) {
+				goto beach;
+			}
 			sig_idx--;
 			type_idx--;
 			name_idx--;
@@ -859,10 +876,6 @@ static RVecRBinString *strings(RBinFile *bf) {
 	ut64 off;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *)bf->bo->bin_obj;
 	if (!bin || !bin->strings) {
-		return NULL;
-	}
-	if (bin->header.strings_size > bin->size) {
-		R_FREE (bin->strings);
 		return NULL;
 	}
 	if (!(ret = RVecRBinString_new ())) {
@@ -1419,8 +1432,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				if (!dex->mdb) {
 					dex->mdb = sdb_new0 ();
 				}
-				r_strf_var (methvar, 64, "method.%"PFMT64u, MI);
-				sdb_num_set (dex->mdb, methvar, sym->paddr, 0);
+				sdb_num_setf (dex->mdb, sym->paddr, 0, "method.%"PFMT64u, MI);
 				// -----------------
 				// WORK IN PROGRESS
 				// -----------------
@@ -1430,7 +1442,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 						if (!cdb) {
 							cdb = sdb_new0 ();
 						}
-						sdb_num_set (cdb, r_strf ("%d", c->class_id), sym->paddr, 0);
+						sdb_num_setf (cdb, sym->paddr, 0, "%d", c->class_id);
 					}
 				}
 #endif
@@ -1624,21 +1636,7 @@ static bool dex_loadcode(RBinFile *bf) {
 		}
 	}
 
-	if (dex->header.method_size > dex->size) {
-		dex->header.method_size = 0;
-		return false;
-	}
-
-	/* WrapDown the header sizes to avoid huge allocations */
-	dex->header.method_size = R_MIN (dex->header.method_size, dex->size);
-	dex->header.class_size = R_MIN (dex->header.class_size, dex->size);
-	dex->header.strings_size = R_MIN (dex->header.strings_size, dex->size);
-
-	// TODO: is this posible after R_MIN ??
-	if (dex->header.strings_size > dex->size) {
-		R_LOG_WARN ("Invalid strings size");
-		return false;
-	}
+	// r_bin_dex_new_buf clamps every header size below dex->size at parse time
 	dex->dexSubsystem = NULL;
 
 	ut64 want = R_MIN ((ut64)dex->header.method_size, (ut64)dex->size / 8);
@@ -1734,8 +1732,7 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym.ordinal = sym_count++;
 				sym.lang = R_BIN_LANG_JAVA;
 				RVecRBinSymbol_push_back (&dex->symbols_vec, &sym);
-				r_strf_var (mname, 64, "method.%"PFMT64u, (ut64)i);
-				sdb_num_set (dex->mdb, mname, sym.paddr, 0);
+				sdb_num_setf (dex->mdb, sym.paddr, 0, "method.%"PFMT64u, (ut64)i);
 			}
 			free (class_name);
 		}
@@ -2036,7 +2033,7 @@ static ut64 getoffset(RBinFile *bf, int type, int idx) {
 	switch (type) {
 	case 'm': // methods
 		// TODO: ADD CHECK
-		off = offset_of_method_idx (bf, idx);
+		off = method_addr (bf, idx);
 		break;
 	case 'f':
 		off = dex_field_offset (dex, idx);

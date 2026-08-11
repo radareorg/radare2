@@ -66,6 +66,18 @@ if [ ! -x /work ]; then
 			fi
 		fi
 		if [ -z "${NDK}" ]; then
+			# Checking if Android NDK comes with Android Studio
+			D=$HOME/Library/Android/sdk/ndk
+			if [ -d "${D}" ]; then
+				for a in $(cd "$D" && ls) ; do
+					if [ -x "$D/$a/ndk-build" ]; then
+						NDK="$D/$a"
+						break
+					fi
+				done
+			fi
+		fi
+		if [ -z "${NDK}" ]; then
 			# Checking if Android NDK is installed with macOS's brew
 			D=/usr/local/Caskroom/android-ndk/
 			if [ -d "${D}" ]; then
@@ -92,17 +104,23 @@ fi
 echo ROOT=$ROOT
 echo NDK="$NDK"
 echo NDK_ARCH=$NDK_ARCH
+[ -z "${ANDROID_API}" ] && ANDROID_API=28
+echo ANDROID_API=$ANDROID_API
 
-if [ -x /tmp/ndk/bin/ndk-gcc ]; then
+TOOLCHAIN_ID="${NDK}:${ARCH}:${ANDROID_API}"
+TOOLCHAIN_ID_FILE=/tmp/ndk/.r2-toolchain
+CURRENT_TOOLCHAIN_ID=`cat "${TOOLCHAIN_ID_FILE}" 2>/dev/null`
+if [ -x /tmp/ndk/bin/ndk-gcc ] && [ "${CURRENT_TOOLCHAIN_ID}" = "${TOOLCHAIN_ID}" ]; then
 	echo "NDK toolchain already initialized."
 else
 	echo "Building the standalone NDK toolchain..."
-	${NDK}/build/tools/make_standalone_toolchain.py --arch=${ARCH} --install-dir=/tmp/ndk/ --api=28 --force
+	${NDK}/build/tools/make_standalone_toolchain.py --arch=${ARCH} --install-dir=/tmp/ndk/ --api=${ANDROID_API} --force || exit 1
 	(
 	cd /tmp/ndk/bin/ && \
 	ln -fs clang ndk-gcc && \
 	ln -fs clang++ ndk-g++
-	)
+	) || exit 1
+	printf '%s\n' "${TOOLCHAIN_ID}" > "${TOOLCHAIN_ID_FILE}"
 fi
 if [ "${BUILD}" != 0 ]; then
 	if [ ! -d "${NDK}" ]; then

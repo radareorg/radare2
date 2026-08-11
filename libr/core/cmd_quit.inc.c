@@ -48,7 +48,7 @@ static int cmd_quit(void *data, const char *input) {
 	if (input)
 	switch (*input) {
 	case '?':
-		r_core_cmd_help (core, help_msg_q);
+		r_cons_cmd_help (core->cons, help_msg_q);
 		break;
 	case '!': // "q!"
 		return cmd_Quit (core, input);

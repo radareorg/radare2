@@ -1,0 +1,158 @@
+NAME=pdct region ast if-else diamond
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 83ff01 7507 b801000000 eb05 b802000000 c3 @ 0
+af @ 0
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000000
+  if-else 0x00000000
+    bb 0x0000000c
+    bb 0x00000005
+  bb 0x00000011
+EOF
+RUN
+
+NAME=pdct region ast while loop
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b800000000 83f80a 7d07 83c001 ebf6 0000 c3 @ 0
+af @ 0
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000000
+  bb 0x00000000
+  while 0x00000005
+    bb 0x0000000a
+  bb 0x00000011
+EOF
+RUN
+
+NAME=pdct region ast sequential fall-through blocks
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EOF
+s 0x4bf8
+af
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00004bf8
+  bb 0x00004bf8
+  bb 0x00004c08
+  bb 0x00004c18
+EOF
+RUN
+
+NAME=pdct region ast single-armed if on ppc64
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EOF
+s 0xd500
+af
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x0000d500
+  if 0x0000d500
+    bb 0x0000d588
+  bb 0x0000d598
+EOF
+RUN
+
+NAME=pdct region ast switch with case arms
+FILE=bins/jmptbl/test_gcc_5.5.0_64.out
+CMDS=<<EOF
+aa
+s main
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000580
+  if-else 0x00000580
+    bb 0x00000622
+    switch 0x0000058d
+      goto 0x00000622
+      bb 0x000005b2
+      bb 0x000005c0
+      bb 0x000005ce
+      bb 0x000005dc
+      bb 0x000005ea
+      bb 0x000005f8
+      bb 0x00000606
+      bb 0x00000614
+      bb 0x0000059f
+  bb 0x000005ab
+EOF
+RUN
+
+NAME=pdct region ast single block
+FILE=bins/elf/ls
+CMDS=<<EOF
+s sym.main
+af
+pdct
+EOF
+EXPECT=<<EOF
+bb 0x00005ae0
+EOF
+RUN
+
+NAME=pdct region ast loop behind a fail-only fallthrough block
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+af+ 0 test
+afb+ 0 0 4 0xffffffffffffffff 0x10
+afb+ 0 0x10 4 0x20 0x30
+afb+ 0 0x20 4 0x10
+afb+ 0 0x30 4
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000000
+  bb 0x00000000
+  while 0x00000010
+    bb 0x00000020
+  bb 0x00000030
+EOF
+RUN
+
+NAME=pdct region ast bottom-tested loop keeps the exit outside
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 31c0eb0c83c00183f80a7504c390909089c3ebf0
+af
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000000
+  bb 0x00000000
+  do-while 0x00000010
+    if 0x00000004
+      goto 0x00000010
+  bb 0x0000000c
+EOF
+RUN
+
+NAME=pdct region ast irreducible cycle falls back to gotos
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 85c0740a83c00183f80075f8c39089c3ebf5
+af
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000000
+  if-else 0x00000000
+    bb 0x0000000e
+    bb 0x00000004
+  if 0x00000007
+    goto 0x00000004
+  bb 0x0000000c
+EOF
+RUN

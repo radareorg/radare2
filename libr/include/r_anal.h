@@ -176,6 +176,7 @@ enum {
 };
 
 #define R_ANAL_CC_MAXARG 16
+#define R_ANAL_CC_DYNSLOT_COUNT (26 + 5)
 
 enum {
 	R_ANAL_FCN_TYPE_NULL = 0,
@@ -201,19 +202,16 @@ typedef struct r_anal_enum_case_t {
 	int val;
 } RAnalEnumCase;
 
-typedef struct r_anal_struct_member_t {
+typedef struct r_anal_type_member_t {
 	char *name;
 	char *type;
 	size_t offset; // in bytes
-	size_t size; // in bits? rename to 'bitsize'
-} RAnalStructMember;
+	size_t bitsize;
+	size_t count; // array element count, 0 when not an array
+} RAnalTypeMember;
 
-typedef struct r_anal_union_member_t {
-	char *name;
-	char *type;
-	size_t offset; // in bytes
-	size_t size; // in bits? TODO rename to 'bitsize'
-} RAnalUnionMember;
+typedef RAnalTypeMember RAnalStructMember;
+typedef RAnalTypeMember RAnalUnionMember;
 
 typedef enum {
 	R_ANAL_BASE_TYPE_KIND_STRUCT,
@@ -223,12 +221,7 @@ typedef enum {
 	R_ANAL_BASE_TYPE_KIND_ATOMIC, // For real atomic base types
 } RAnalBaseTypeKind;
 
-static inline void anal_struct_member_fini(RAnalStructMember *member) {
-	free (member->name);
-	free (member->type);
-}
-
-static inline void anal_union_member_fini(RAnalUnionMember *member) {
+static inline void anal_type_member_fini(RAnalTypeMember *member) {
 	free (member->name);
 	free (member->type);
 }
@@ -237,17 +230,12 @@ static inline void anal_enum_case_fini(RAnalEnumCase *cas) {
 	free (cas->name);
 }
 
-R_VEC_TYPE_WITH_FINI (RVecAnalStructMember, RAnalStructMember, anal_struct_member_fini);
-R_VEC_TYPE_WITH_FINI (RVecAnalUnionMember, RAnalUnionMember, anal_union_member_fini);
+R_VEC_TYPE_WITH_FINI (RVecAnalTypeMember, RAnalTypeMember, anal_type_member_fini);
 R_VEC_TYPE_WITH_FINI (RVecAnalEnumCase, RAnalEnumCase, anal_enum_case_fini);
 
-typedef struct r_anal_base_type_struct_t {
-	RVecAnalStructMember members;
-} RAnalBaseTypeStruct;
-
-typedef struct r_anal_base_type_union_t {
-	RVecAnalUnionMember members;
-} RAnalBaseTypeUnion;
+typedef struct r_anal_base_type_composite_t {
+	RVecAnalTypeMember members;
+} RAnalBaseTypeStruct, RAnalBaseTypeUnion;
 
 typedef struct r_anal_base_type_enum_t {
 	RVecAnalEnumCase cases; // list of all the enum casessssss
@@ -264,6 +252,11 @@ typedef struct r_anal_base_type_t {
 		RAnalBaseTypeUnion union_data;
 	};
 } RAnalBaseType;
+
+// valid only for struct and union kinds; both share the composite layout
+static inline RVecAnalTypeMember *r_anal_base_type_members(const RAnalBaseType *bt) {
+	return (RVecAnalTypeMember *)&bt->struct_data.members;
+}
 
 typedef struct r_anal_function_param_t {
 	char *name;
@@ -320,10 +313,10 @@ typedef struct r_anal_fcn_context_t {
 
 typedef struct r_anal_diff_t {
 	int type;
+	ut32 size;
 	ut64 addr;
 	double dist;
 	char *name;
-	ut32 size;
 } RAnalDiff;
 typedef struct r_anal_attr_t RAnalAttr;
 struct r_anal_attr_t {
@@ -372,6 +365,7 @@ typedef struct r_anal_function_t {
 	bool is_variadic;
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
 	bool bp_frame;
+	bool bp_from_sp; // a prologue copied SP into BP, so BP really is the frame base
 	bool is_noreturn; // true if function does not return
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	size_t fingerprint_size;
@@ -386,11 +380,14 @@ typedef struct r_anal_function_t {
 typedef struct r_anal_func_arg_t {
 	const char *name;
 	const char *fmt;
-	const char *cc_source;
 	char *orig_c_type;
 	char *c_type;
 	ut64 size;
-	ut64 src; //Function-call argument value or pointer to it
+	ut64 src; // where a format directive points: the slot address, or the register value for reg args
+	ut64 value; // concrete argument value
+	bool value_set; // value came from a real read, so it is not the unresolved marker
+	bool value_signed; // the declared type is signed, so a negative value is meant to read as one
+	bool on_stack; // the convention homes this argument in a stack slot
 } RAnalFuncArg;
 
 struct r_anal_type_t {
@@ -458,6 +455,7 @@ typedef struct r_anal_options_t {
 	bool norevisit;
 	int recont; // continue on recurse analysis mode
 	int noncode;
+	bool stateful; // permit the use of R_ARCH_OP_MASK_STATEFUL
 	bool nopskip; // skip nops at the beginning of functions
 	int hpskip; // skip `mov reg,reg` and `lea reg,[reg]`
 	int jmptbl; // analyze jump tables
@@ -877,8 +875,8 @@ typedef struct r_anal_esil_dfg_t {
 typedef struct r_anal_esil_dfg_node_t {
 	// add more info here
 	ut32 idx;
-	RStrBuf *content;
 	ut32 /*RAnalEsilDFGTagType*/ type;
+	RStrBuf *content;
 } RAnalEsilDFGNode;
 
 typedef char *(*RAnalCmdCallback)(/* Rcore */RAnal *anal, const char* input);
@@ -1345,6 +1343,9 @@ R_API bool r_anal_var_rename(RAnal *anal, RAnalVar *var, const char *new_name);
 R_API void r_anal_var_set_type(RAnal *anal, RAnalVar *var, const char *type);
 R_API bool r_anal_var_delete(RAnal *anal, RAnalVar *var);
 R_API ut64 r_anal_var_addr(RAnalVar *var);
+// convert between a raw variable delta and the frame relative offset afv[bs] shows and takes
+R_API st64 r_anal_var_frame_delta(RAnal *anal, RAnalFunction *fcn, int kind, st64 delta);
+R_API st64 r_anal_var_raw_delta(RAnal *anal, RAnalFunction *fcn, int kind, st64 delta);
 R_API bool r_anal_var_set_access(RAnal *anal, RAnalVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
 R_API void r_anal_var_remove_access_at(RAnalVar *var, ut64 address);
 R_API void r_anal_var_clear_accesses(RAnalVar *var);
@@ -1446,6 +1447,16 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr);
 R_API char *r_anal_cc_get(RAnal *anal, const char *name);
 R_API bool r_anal_cc_once(RAnal *anal);
 R_API const char *r_anal_cc_argloc(RAnal *anal, const char *convention, int n, int home, int argc);
+typedef struct r_anal_cc_argslot_t {
+	const char *reg; // register holding the arg, NULL when stack-located
+	st64 off; // byte offset of the stack slot from SP, 0 for reg args
+	int size; // slot width in bytes, 0 for reg args
+	bool fixed; // the convention pins this slot, so it does not follow the previous arg
+} RAnalCCArgSlot;
+R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int argc, bool incall, RAnalCCArgSlot *out);
+R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int argno, int argc, bool incall, int width, ut64 *out);
+R_API ut64 r_anal_cc_argaddr(RAnal *anal, RReg *reg, const RAnalCCArgSlot *slot);
+R_API int r_anal_cc_wordsize(RAnal *anal, const char *convention);
 R_API const char *r_anal_cc_location_first(RAnal *anal, const char *loc);
 R_API const char *r_anal_cc_roleloc(RAnal *anal, const char *convention, const char *role);
 R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self);
@@ -1453,6 +1464,7 @@ R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc);
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n);
 R_API bool r_anal_cc_argclob(RAnal *anal, const char *caller_cc, int n, const char *callee_cc);
+R_API bool r_anal_cc_isclobber(RAnal *anal, const char *cc, const char *reg);
 R_API const char *r_anal_cc_default(RAnal *anal);
 R_API const char *r_anal_function_cc(RAnalFunction *fcn);
 R_API const char *r_anal_call_convention(RAnal *anal, RAnalOp *op);
@@ -1466,9 +1478,9 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr);
 typedef struct r_anal_data_t {
 	ut64 addr;
 	int type;
+	int len;
 	ut64 ptr;
 	char *str;
-	int len;
 	ut8 *buf;
 	ut8 sbuf[8];
 } RAnalData;
@@ -1576,6 +1588,8 @@ R_API void r_anal_hint_set_ret(RAnal *a, ut64 addr, ut64 val);
 R_API void r_anal_hint_set_high(RAnal *a, ut64 addr);
 R_API void r_anal_hint_set_stackframe(RAnal *a, ut64 addr, ut64 size);
 R_API void r_anal_hint_set_val(RAnal *a, ut64 addr, ut64 v);
+R_API void r_anal_hint_set_reguse(RAnal *a, ut64 addr, const char *reguse);
+R_API void r_anal_hint_append_reguse(RAnal *a, ut64 addr, const char *reguse);
 R_API void r_anal_hint_set_arch(RAnal *a, ut64 addr, const char * R_NULLABLE arch); // arch == NULL => use global default
 R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, int bits); // bits == NULL => use global default
 R_API void r_anal_hint_unset_val(RAnal *a, ut64 addr);
@@ -1740,6 +1754,8 @@ R_VEC_TYPE_WITH_FINI (RVecAnalVTable, RAnalVTable, r_anal_class_vtable_fini);
 /* c */
 R_API char *r_anal_cparse(RAnal *anal, const char *code, char **error_msg);
 R_API char *r_anal_cparse_file(RAnal *anal, const char *path, const char *dir, char **error_msg);
+R_API int r_anal_cparse_typesize(const char *type, int dimension, int ptr_size);
+R_API int r_anal_cparse_typealign(const char *type, int ptr_size);
 
 R_API void r_anal_class_create(RAnal *anal, const char *name);
 R_API void r_anal_class_delete(RAnal *anal, const char *name);
@@ -1781,6 +1797,7 @@ R_API SdbGperf *r_anal_get_gperf_cc(const char *k);
 R_API SdbGperf *r_anal_get_gperf_types(const char *k);
 R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *os, const char *subsystem);
 R_API void r_anal_types_load_sdb(RAnal *anal, const char *name);
+R_API ut64 r_anal_type_bitsize(RAnal *anal, const char *type);
 
 R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, const char *c);
 R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal *anal, bool use_map_info, bool use_maps);
@@ -1796,6 +1813,7 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
 R_API RList *r_anal_types_baselist(RAnal *anal);
 R_API void r_parse_pdb_types(const RAnal *anal, const RBinPdb *pdb);
 R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);
+R_API char *r_anal_base_type_to_kv(const RAnalBaseType *type);
 R_API void r_anal_base_type_free(RAnalBaseType *type);
 R_API RAnalBaseType *r_anal_base_type_new(RAnalBaseTypeKind kind);
 R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx);

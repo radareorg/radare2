@@ -74,9 +74,7 @@ static bool siglistcb(void *p, const char *k, const char *v) {
 	RDebug *dbg = ctx->dbg;
 	if (atoi (k) > 0) {
 		int mode = dbg->_mode;
-		char *key = r_str_newf ("cfg.%s", k);
-		int opt = sdb_num_get (DB, key, 0);
-		free (key);
+		int opt = sdb_num_getf (DB, NULL, "cfg.%s", k);
 		if (opt) {
 			r_strbuf_appendf (ctx->sb, "%s %s", k, v);
 			if (opt & R_DBG_SIGNAL_CONT) {
@@ -97,12 +95,10 @@ static bool siglistcb(void *p, const char *k, const char *v) {
 
 static bool siglistjsoncb(void *p, const char *k, const char *v) {
 	SignalContext *ctx = (SignalContext *)p;
-	static char key[32] = "cfg.";
 	PJ *pj = ctx->dbg->pj;
 	int opt;
 	if (atoi (k) > 0) {
-		strncpy (key + 4, k, 20);
-		opt = (int)sdb_num_get (ctx->dbg->sgnls, key, 0);
+		opt = (int)sdb_num_getf (ctx->dbg->sgnls, 0, "cfg.%s", k);
 		pj_o (pj);
 		pj_ks (pj, "signum", k);
 		pj_ks (pj, "name", v);
@@ -150,9 +146,7 @@ R_API void r_debug_signal_setup(RDebug *dbg, int num, int opt) {
 }
 
 R_API int r_debug_signal_what(RDebug *dbg, int num) {
-	char k[32];
-	snprintf (k, sizeof (k), "cfg.%d", num);
-	return sdb_num_get (DB, k, 0);
+	return sdb_num_getf (DB, 0, "cfg.%d", num);
 }
 
 R_API int r_debug_signal_set(RDebug *dbg, int num, ut64 addr) {

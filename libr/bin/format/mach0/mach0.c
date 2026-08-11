@@ -117,6 +117,42 @@ static bool bind_fits(ut64 count, ut64 addr, ut64 segment_end_addr, ut64 stride)
 	return count <= (remaining / stride);
 }
 
+static bool bind_fits_section(struct MACH0_(obj_t) * mo, int seg_idx, ut64 addr, ut64 count, ut64 stride) {
+	if (!mo->sects || mo->nsects < 1 || seg_idx < 0 || seg_idx >= mo->nsegs) {
+		return true;
+	}
+	struct MACH0_(segment_command) *seg = &mo->segs[seg_idx];
+	size_t i;
+	for (i = 0; i < mo->nsects; i++) {
+		struct MACH0_(section) *sect = &mo->sects[i];
+		if (strncmp (sect->segname, seg->segname, sizeof (sect->segname))) {
+			continue;
+		}
+		ut64 section_end = 0;
+		if (!UT64_ADD (&section_end, sect->addr, sect->size)) {
+			return false;
+		}
+		if (addr >= sect->addr && addr < section_end) {
+			return bind_fits (count, addr, section_end, stride);
+		}
+	}
+	return seg->nsects < 1;
+}
+
+static bool bind_repeat_span(struct MACH0_(obj_t) * mo, int seg_idx, ut64 addr, ut64 end_addr, ut64 count, ut64 skip, size_t wordsize, bool check_sections, R_OUT ut64 *span) {
+	ut64 stride = 0;
+	if (!UT64_ADD (&stride, skip, wordsize)) {
+		return false;
+	}
+	if (check_sections && !bind_fits_section (mo, seg_idx, addr, count, stride)) {
+		return false;
+	}
+	if (!bind_fits (count, addr, end_addr, stride)) {
+		return false;
+	}
+	return UT64_MUL (span, count, stride);
+}
+
 static bool segment_filebacked_size(struct MACH0_(obj_t) * mo, int seg_idx, R_OUT ut64 *size) {
 	R_RETURN_VAL_IF_FAIL (mo && size, false);
 	if (seg_idx < 0 || seg_idx >= mo->nsegs) {
@@ -356,7 +392,6 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 	ut32 size_sects;
 	ut8 segcom[sizeof (struct MACH0_(segment_command))] = { 0 };
 	ut8 sec[sizeof (struct MACH0_(section))] = { 0 };
-	char section_flagname[128];
 
 	if (!UT32_MUL (&size_sects, mo->nsegs, sizeof (struct MACH0_(segment_command)))) {
 		return false;
@@ -413,14 +448,11 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 	scp += sizeof (ut32);
 	seg->flags = r_read_ble32 (scp, be);
 
-	char *segment_flagname = NULL;
 #if R_BIN_MACH064
-	segment_flagname = r_str_newf ("mach0_segment64_%u.offset", (ut32)j);
+	sdb_num_setf (mo->kv, off, 0, "mach0_segment64_%u.offset", (ut32)j);
 #else
-	segment_flagname = r_str_newf ("mach0_segment_%u.offset", (ut32)j);
+	sdb_num_setf (mo->kv, off, 0, "mach0_segment_%u.offset", (ut32)j);
 #endif
-	sdb_num_set (mo->kv, segment_flagname, off, 0);
-	free (segment_flagname);
 	sdb_num_set (mo->kv, "mach0_segments.count", 0, 0);
 
 	if (seg->nsects > 0) {
@@ -478,14 +510,14 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 			i += 16;
 			memcpy (&sk->segname, &sec[i], 16); // INFO: Remember: it's not null terminated!
 			i += 16;
-			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.offset", sk->segname, sk->sectname);
-			sdb_num_set (mo->kv, section_flagname, offset, 0);
+			sdb_num_setf (mo->kv, offset, 0,
+				"mach0_section_%.16s_%.16s.offset", sk->segname, sk->sectname);
 #if R_BIN_MACH064
-			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.format", sk->segname, sk->sectname);
-			sdb_set (mo->kv, section_flagname, "mach0_section64", 0);
+			sdb_setf (mo->kv, "mach0_section64", 0,
+				"mach0_section_%.16s_%.16s.format", sk->segname, sk->sectname);
 #else
-			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.format", sk->segname, sk->sectname);
-			sdb_set (mo->kv, section_flagname, "mach0_section", 0);
+			sdb_setf (mo->kv, "mach0_section", 0,
+				"mach0_section_%.16s_%.16s.format", sk->segname, sk->sectname);
 #endif
 
 			const ut8 *scp = &sec[i];
@@ -993,6 +1025,8 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 	link.cmdsize = r_read_ble32 (&lit[4], mo->big_endian);
 	link.dataoff = r_read_ble32 (&lit[8], mo->big_endian);
 	link.datasize = r_read_ble32 (&lit[12], mo->big_endian);
+	mo->cs_paddr = link.dataoff;
+	mo->cs_size = link.datasize;
 
 	data = link.dataoff;
 	if (link.datasize < sizeof (struct super_blob_t) || !fits_in (mo->size, data, link.datasize)) {
@@ -1106,6 +1140,8 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 					&& sig_length <= super.blob.length
 					&& idx.offset <= super.blob.length - sig_length) {
 					mo->cs_has_cms = true;
+					mo->cert_paddr = slot_off;
+					mo->cert_size = sig_length;
 				}
 			}
 			if (show_codesign) {
@@ -1807,8 +1843,11 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * mo, ut32 offset, ut32 si
 	return true;
 }
 
-static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
-	R_LOG_DEBUG ("reconstructing chained fixups");
+// Build mo->chained_starts out of the BIND_OPCODE_THREADED opcodes found in
+// LC_DYLD_INFO. This is how arm64e binaries encoded pointer chains before
+// LC_DYLD_CHAINED_FIXUPS existed, so it only applies when dyld_info is set.
+static bool parse_threaded_rebase(struct MACH0_(obj_t) * mo) {
+	R_LOG_DEBUG ("parsing threaded rebase opcodes");
 	if (!mo->dyld_info) {
 		return false;
 	}
@@ -1959,14 +1998,13 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 			count = read_uleb128 (&p, end);
 			skip = read_uleb128 (&p, end);
 			{
-				ut64 stride = 0;
 				ut64 span = 0;
-				if (!UT64_ADD (&stride, skip, wordsize) || !bind_fits (count, seg_off, segment_size, stride)) {
+				if (!bind_repeat_span (mo, seg_idx, seg_off, segment_size, count, skip, wordsize, false, &span)) {
 					R_LOG_ERROR ("Malformed bind opcode stream");
 					R_FREE (opcodes);
 					return false;
 				}
-				if (!UT64_MUL (&span, count, stride) || !safe_advance (&seg_off, span)) {
+				if (!safe_advance (&seg_off, span)) {
 					R_FREE (opcodes);
 					return false;
 				}
@@ -2029,14 +2067,12 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 			R_LOG_WARN ("mach0_header %d = cmdsize<1. (0x%" PFMT64x " vs 0x%" PFMT64x ")", i, off + lc.cmdsize, mo->size);
 			break;
 		}
-		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.offset", i);
-		sdb_num_set (mo->kv, cmd_flagname, off, 0);
+		sdb_num_setf (mo->kv, off, 0, "mach0_cmd_%d.offset", i);
 		const char *format_name = cmd_to_pf_definition (lc.cmd);
-		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.format", i);
 		if (format_name) {
-			sdb_set (mo->kv, cmd_flagname, format_name, 0);
+			sdb_setf (mo->kv, format_name, 0, "mach0_cmd_%d.format", i);
 		} else {
-			sdb_set (mo->kv, cmd_flagname, "[4]Ed (mach_load_command_type)cmd size", 0);
+			sdb_setf (mo->kv, "[4]Ed (mach_load_command_type)cmd size", 0, "mach0_cmd_%d.format", i);
 		}
 
 		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.cmd", i);
@@ -2110,11 +2146,9 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 					return false;
 				}
 				if (r_buf_fread_at (mo->b, off, (ut8 *)&uc, "24c", 1) != -1) {
-					char key[128];
 					char val[128];
-					snprintf (key, sizeof (key) - 1, "uuid.%d", mo->uuidn++);
 					r_hex_bin2str ((ut8 *)&uc.uuid, 16, val);
-					sdb_set (mo->kv, key, val, 0);
+					sdb_setf (mo->kv, val, 0, "uuid.%d", mo->uuidn++);
 					// for (i=0;i<16; i++) bprintf ("%02x%c", uc.uuid[i], (i==15)? '\n': '-');
 				}
 			}
@@ -2166,8 +2200,7 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 						if (buf) {
 							r_buf_read_at (mo->b, off + name_off, (ut8 *)buf, str_len);
 							buf[str_len] = 0;
-							r_strf_var (key, 64, "mach0.dyld_environment.%d", i);
-							sdb_set (mo->kv, key, buf, 0);
+							sdb_setf (mo->kv, buf, 0, "mach0.dyld_environment.%d", i);
 							free (buf);
 						}
 					}
@@ -2376,7 +2409,7 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 			break;
 		}
 	}
-	bool has_chained_fixups = false;
+	bool have_chained_starts = false;
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + mo->header_at;
 		i < mo->hdr.ncmds;
 		i++, off += lc.cmdsize) {
@@ -2392,14 +2425,12 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 			R_LOG_DEBUG ("mach0_header %d = cmdsize<1. (0x%" PFMT64x " vs 0x%" PFMT64x ")", i, (ut64) (off + lc.cmdsize), (ut64) (mo->size));
 			break;
 		}
-		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.offset", i);
-		sdb_num_set (mo->kv, cmd_flagname, off, 0);
+		sdb_num_setf (mo->kv, off, 0, "mach0_cmd_%d.offset", i);
 		const char *format_name = cmd_to_pf_definition (lc.cmd);
-		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.format", i);
 		if (format_name) {
-			sdb_set (mo->kv, cmd_flagname, format_name, 0);
+			sdb_setf (mo->kv, format_name, 0, "mach0_cmd_%d.format", i);
 		} else {
-			sdb_set (mo->kv, cmd_flagname, "[4]Ed (mach_load_command_type)cmd size", 0);
+			sdb_setf (mo->kv, "[4]Ed (mach_load_command_type)cmd size", 0, "mach0_cmd_%d.format", i);
 		}
 
 		switch (lc.cmd) {
@@ -2408,24 +2439,33 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 			sdb_set (mo->kv, cmd_flagname, "data_in_code", 0);
 			if (mo->verbose) {
 				ut8 buf[8];
-				r_buf_read_at (mo->b, off + 8, buf, sizeof (buf));
+				if (r_buf_read_at (mo->b, off + 8, buf, sizeof (buf)) != sizeof (buf)) {
+					break;
+				}
 				ut32 dataoff = r_read_ble32 (buf, mo->big_endian);
 				ut32 datasize = r_read_ble32 (buf + 4, mo->big_endian);
 				R_LOG_INFO ("data-in-code at 0x%x size %d", dataoff, datasize);
+				if (datasize > ST32_MAX || !fits_in (mo->size, dataoff, datasize)) {
+					R_LOG_WARN ("Invalid LC_DATA_IN_CODE range");
+					break;
+				}
 				ut8 *db = (ut8 *)malloc (datasize);
 				if (db) {
-					r_buf_read_at (mo->b, dataoff, db, datasize);
-					// TODO table of non-instructions regions in __text
-					int j;
-					for (j = 0; j < datasize; j += 8) {
-						ut32 dw = r_read_ble32 (db + j, mo->big_endian);
-						// int kind = r_read_ble16 (db + i + 4 + 2, mo->big_endian);
-						int len = r_read_ble16 (db + j + 4, mo->big_endian);
-						ut64 va = offset_to_vaddr (mo, dw);
-						//	eprintf ("# 0x%x -> 0x%x\n", dw, va);
-						//	eprintf ("0x%x kind %d len %d\n", dw, kind, len);
-						eprintf ("Cd 8 %d @ 0x%" PFMT64x "\n", len / 8, va);
+					if (r_buf_read_at (mo->b, dataoff, db, (int)datasize) == (int)datasize) {
+						// TODO table of non-instructions regions in __text
+						const ut64 entry_size = sizeof (struct data_in_code_entry);
+						ut64 j;
+						for (j = 0; j + entry_size <= datasize; j += entry_size) {
+							ut32 dw = r_read_ble32 (db + j, mo->big_endian);
+							// int kind = r_read_ble16 (db + i + 4 + 2, mo->big_endian);
+							int len = r_read_ble16 (db + j + 4, mo->big_endian);
+							ut64 va = offset_to_vaddr (mo, dw);
+							//	eprintf ("# 0x%x -> 0x%x\n", dw, va);
+							//	eprintf ("0x%x kind %d len %d\n", dw, kind, len);
+							eprintf ("Cd 8 %d @ 0x%" PFMT64x "\n", len / 8, va);
+						}
 					}
+					free (db);
 				}
 			}
 			break;
@@ -2447,15 +2487,21 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 					ut32 dataoff = r_read_ble32 (buf, mo->big_endian);
 					ut32 datasize = r_read_ble32 (buf + 4, mo->big_endian);
 					R_LOG_DEBUG ("chained fixups at 0x%08x with size %d", (ut64)dataoff, (int)datasize);
-					has_chained_fixups = parse_chained_fixups (mo, dataoff, datasize);
+					have_chained_starts = parse_chained_fixups (mo, dataoff, datasize);
 				}
 			}
 			break;
 		}
 	}
 
-	if (!has_chained_fixups && mo->hdr.cputype == CPU_TYPE_ARM64 && (mo->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
-		reconstruct_chained_fixup (mo);
+	// old arm64e binaries have no LC_DYLD_CHAINED_FIXUPS, they encode the
+	// chains as threaded rebase opcodes inside LC_DYLD_INFO instead
+	if (!have_chained_starts && !skip_chained_fixups) {
+		bool isarm64e = mo->hdr.cputype == CPU_TYPE_ARM64 \
+			&& (mo->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E;
+		if (isarm64e) {
+			parse_threaded_rebase (mo);
+		}
 	}
 	return true;
 }
@@ -4103,6 +4149,20 @@ static bool stop_bind_parsing(RBindOpState *state) {
 	return true;
 }
 
+static bool threaded_bind_fits(RVecRelocRef *threaded_binds, RBindOpState *state, ut64 count) {
+	if (!threaded_binds) {
+		return true;
+	}
+	if (state->sym_ord < 0) {
+		return false;
+	}
+	ut64 n_threaded_binds = RVecRelocRef_length (threaded_binds);
+	if ((ut64)state->sym_ord > n_threaded_binds) {
+		return false;
+	}
+	return count <= n_threaded_binds - state->sym_ord;
+}
+
 static void insert_bind_reloc(struct MACH0_(obj_t) * mo, RVecRelocRef *threaded_binds, RBindOpState *state, ut8 op, ut8 rel_type) {
 	if (state->sym_ord < 0 && !state->sym_name) {
 		return;
@@ -4159,6 +4219,7 @@ static void apply_threaded_bind(struct MACH0_(obj_t) * mo, RVecRelocRef *threade
 		ut64 paddr = state->addr - cur_seg->vmaddr + cur_seg->fileoff;
 		mo->rebasing_buffer = true;
 		if (r_buf_read_at (mo->b, paddr, tmp, 8) != 8) {
+			mo->rebasing_buffer = false;
 			break;
 		}
 		mo->rebasing_buffer = false;
@@ -4273,8 +4334,12 @@ static bool parse_bind_op_do_bind(struct MACH0_(obj_t) * mo, RVecRelocRef **thre
 		{
 			ut64 count = read_uleb128 (p, end);
 			ut64 skip = read_uleb128 (p, end);
-			ut64 increment;
-			if (!UT64_ADD (&increment, skip, wordsize) || !bind_fits (count, state->addr, state->segment_end_addr, increment)) {
+			ut64 span = 0;
+			if (!*threaded_binds && state->seg_idx < 0) {
+				R_LOG_DEBUG ("Malformed ULEB TIMES bind opcode");
+				return stop_bind_parsing (state);
+			}
+			if (!threaded_bind_fits (*threaded_binds, state, count) || (!*threaded_binds && !bind_repeat_span (mo, state->seg_idx, state->addr, state->segment_end_addr, count, skip, wordsize, true, &span))) {
 				R_LOG_DEBUG ("Count exceeds segment bounds");
 				return stop_bind_parsing (state);
 			}
@@ -4532,11 +4597,9 @@ struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * mo) {
 
 void MACH0_(kv_loadlibs)(struct MACH0_(obj_t) * mo) {
 	int i;
-	char lib_flagname[128];
 	for (i = 0; i < mo->nlibs; i++) {
-		snprintf (lib_flagname, sizeof (lib_flagname), "libs.%d.name", i);
 		char **lib = RVecMach0Lib_at (&mo->libs_cache, i);
-		sdb_set (mo->kv, lib_flagname, lib? *lib: NULL, 0);
+		sdb_setf (mo->kv, lib? *lib: NULL, 0, "libs.%d.name", i);
 	}
 }
 

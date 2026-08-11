@@ -478,7 +478,7 @@ static int GH(dmh_jemalloc)(RCore *core, const char *input) {
 
 	switch (input[0]) {
 	case '?':
-		r_core_cmd_help (core, help_msg_jemalloc);
+		r_cons_cmd_help (core->cons, help_msg_jemalloc);
 		break;
 	case 'a': //dmha
 		GH(jemalloc_print_narenas) (core, input + 1);

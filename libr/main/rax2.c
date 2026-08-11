@@ -56,6 +56,15 @@ static int use_stdin(RNum *num, RaxActions *flags, RaxMode *mode, PJ **pj) {
 		if (!rax (num, buf, 1, 0, flags, mode, pj)) {
 			rc = 1;
 		}
+	} else if (flags->raw2hexstr) {
+		int len = 0;
+		char *buf = r_stdin_slurp (&len);
+		if (buf) {
+			if (!rax (num, buf, len, 0, flags, mode, pj)) {
+				rc = 1;
+			}
+			free (buf);
+		}
 	} else {
 		int l = 0;
 		for (;;) {
@@ -524,12 +533,9 @@ dotherax:
 		r_list_free (split);
 		return true;
 	} else if (flags->b64encode) { // -E
-		// TODO: use the dynamic b64 encoder so we dont have to manually calloc here
-		/* https://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
-		char *out = calloc (1, (len + 2) / 3 * 4 + 1); // ceil (n/3)*4 plus 1 for NUL
+		char *out = r_base64_encode_dyn ((const ut8 *)str, len);
 		if (out) {
-			int olen = r_base64_encode (out, (const ut8 *)str, len);
-			if (olen > 0) {
+			if (*out) {
 				printf ("%s", out);
 				rax2_newline (*flags);
 			}
@@ -538,7 +544,7 @@ dotherax:
 		return true;
 	} else if (flags->b64decode) { // -D
 		int n = strlen (str);
-		ut8 *out = calloc (1, (n / 4 * 3) + 1);
+		ut8 *out = calloc (1, ((n / 4) + 1) * 3 + 1);
 		if (out) {
 			n = r_base64_decode (out, str, n, false);
 			if (n > 0) {

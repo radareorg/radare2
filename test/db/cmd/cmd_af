@@ -489,3 +489,77 @@ EXPECT=<<EOF
 |           0x1000047ac      fc6fbaa9       stp x28, x27, [sp, -0x60]!
 EOF
 RUN
+
+NAME=af keeps the frame size when analysis continues in a second pass
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e anal.bb.maxsize=8
+CMDS=<<EOF
+wx 554889e54883ec404883ec104889ec5dc3
+af
+afi~stackframe
+EOF
+EXPECT=<<EOF
+stackframe: 88
+EOF
+RUN
+
+NAME=af keeps the frame size when a tail call continues the function
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec40eb00554889e55dc3
+af @ 0xa
+f- fcn.0000000a
+af @ 0
+afi @ 0~name,stackframe
+EOF
+EXPECT=<<EOF
+name: fcn.00000000
+stackframe: 72
+EOF
+RUN
+
+NAME=af warns on non-executable map
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e scr.null=true
+o malloc://512 0x10000
+e scr.null=false
+s 0x10000
+wx 554889e5c3
+af
+afl~?
+ompg +x
+af
+afl~?
+EOF
+EXPECT=<<EOF
+0
+1
+EOF
+EXPECT_ERR=<<EOF
+WARN: Analysis skipped on non-executable map at 0x00010000
+INFO: Fix perms with 'ompg +x' or ignore them with 'e anal.in=io.maps'
+EOF
+RUN
+
+NAME=af analyzes non-executable map with anal.in=io.maps
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e scr.null=true
+o malloc://512 0x10000
+e scr.null=false
+s 0x10000
+wx 554889e5c3
+e anal.in=io.maps
+af
+afl~?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN

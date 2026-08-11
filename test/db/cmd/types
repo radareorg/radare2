@@ -972,16 +972,16 @@ NAME=ts function pointer test
 FILE=-
 CMDS=<<EOF
 e asm.bits=64
-ws hello @ 0xc
+ws hello @ 0x10
 'td struct foo {int x; int (*fp)(int a , int b ); char *b;};
 ts foo
 .ts foo
 EOF
 EXPECT=<<EOF
-pf dpz x fp b
+pf d[4].pz x fp b
   x : 0x00000000 = 0x00000000
- fp : 0x00000004 = (qword)0x0000000000000000
-  b : 0x0000000c = "\x05hello"
+ fp : 0x00000008 = (qword)0x0000000000000000
+  b : 0x00000010 = "\x05hello"
 EOF
 RUN
 
@@ -1023,6 +1023,89 @@ struct with_array {
   int x;
   char y[50];
   float z;
+};
+EOF
+RUN
+
+NAME=tsc pads only non-natural struct gaps
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+tk G=struct
+tk struct.G=a,b,c
+tk struct.G.a=int32_t,0,0
+tk struct.G.b=char *,8,0
+tk struct.G.c=int32_t,24,0
+tsc G
+EOF
+EXPECT=<<EOF
+struct G {
+  int32_t a;
+  char *b;
+  uint8_t pad_0x10[8]; // gap
+  int32_t c;
+};
+EOF
+RUN
+
+NAME=td sizes pointer members by asm.bits
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+'td struct P {char *p; int c;};
+tk struct.P.c
+EOF
+EXPECT=<<EOF
+int,8,0
+EOF
+RUN
+
+NAME=td sizes pointer members by asm.bits on 32bit
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+'td struct P {char *p; int c;};
+tk struct.P.c
+EOF
+EXPECT=<<EOF
+int,4,0
+EOF
+RUN
+
+NAME=pad members keep their offsets across td and tsc
+FILE=malloc://1024
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+'td struct H {int32_t a; uint8_t pad[8]; char *b; int32_t c;};
+tk struct.H.b
+tk struct.H.c
+tsc H
+EOF
+EXPECT=<<EOF
+char *,16,0
+int32_t,24,0
+struct H {
+  int32_t a;
+  uint8_t pad[8];
+  char *b;
+  int32_t c;
+};
+EOF
+RUN
+
+NAME=tsc does not pad unions
+FILE=-
+CMDS=<<EOF
+tk U=union
+tk union.U=a,b
+tk union.U.a=int32_t,0,0
+tk union.U.b=int64_t,0,0
+tuc U
+EOF
+EXPECT=<<EOF
+union U {
+  int32_t a;
+  int64_t b;
 };
 EOF
 RUN
@@ -1360,9 +1443,219 @@ afv~sign
 afv~uint
 EOF
 EXPECT=<<EOF
-var signed int64_t var_30h @ rbp-0x30
-var signed int64_t var_34h @ rbp-0x34
+var signed int var_30h @ rbp-0x30
+var signed int var_34h @ rbp-0x34
 var uint32_t var_28h @ rbp-0x28
+EOF
+RUN
+
+NAME=callee argument loaded through a pointer argument gets the pointee type
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488b3ee808000000c3909090909090904889f8c3
+af @ 0x10
+af @ 0
+afvt arg1 char **
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg char * arg1 @ rdi
+EOF
+RUN
+
+NAME=callee argument loaded through a copy chain strips one level only
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488b064889c7e805000000c39090904889f8c3
+af @ 0x10
+af @ 0
+afvt arg1 char **
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg char * arg1 @ rdi
+EOF
+RUN
+
+NAME=lea on a register pointer argument keeps the callee type flat
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488d7e08e807000000c39090909090904889f8c3
+af @ 0x10
+af @ 0
+afvt arg1 char *
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg char * arg1 @ rdi
+EOF
+RUN
+
+NAME=dereferencing a void pointer argument leaves the callee type alone
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488b3ee808000000c3909090909090904889f8c3
+af @ 0x10
+af @ 0
+afvt arg1 void *
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+EOF
+RUN
+
+NAME=callee argument loaded through an arm64 load and register copy
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 080040f9e00308aa02000094c0035fd600040091c0035fd6
+af @ 0x10
+af @ 0
+afvt arg1 char **
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg char * arg1 @ x0
+EOF
+RUN
+
+NAME=a taken conditional move from memory counts as a dereference
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 480f453ee807000000c39090909090904889f8c3
+af @ 0x10
+af @ 0
+afvt arg1 char **
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg char * arg1 @ rdi
+EOF
+RUN
+
+NAME=a void pointer callee arg does not overwrite an existing type fact
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec20837df80577029090488d7df831f6ba04000000e810000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn memset @ 0x30
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var uint32_t s @ rbp-0x8
+EOF
+RUN
+
+NAME=callee argument dereferenced through an arm64 load gets the pointee type
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 200040f903000094c0035fd61f2003d500040091c0035fd6
+af @ 0x10
+af @ 0
+afvt arg1 char **
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg char * arg1 @ x0
+EOF
+RUN
+
+NAME=canary named from the guard compare and not from the trace position
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec2064488b042528000000488945f8488b45f88b55ef6448330425280000007405e814000000c9c3
+wx c3 @ 0x40
+af+ 0x40 sym.imp.__stack_chk_fail
+afb+ 0x40 0x40 1
+af @ 0
+s 0
+aaft
+afv
+EOF
+EXPECT=<<EOF
+var int64_t canary @ rbp-0x8
+var int32_t var_11h @ rbp-0x11
+EOF
+RUN
+
+NAME=canary named when the success path overwrites the compared register
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec2064488b042528000000488945f8488b45f864482b0425280000007507c9b801000000c3e810000000
+wx c3 @ 0x40
+af+ 0x40 sym.imp.__stack_chk_fail
+afb+ 0x40 0x40 1
+af @ 0
+s 0
+aaft
+afv
+EOF
+EXPECT=<<EOF
+var int64_t canary @ rbp-0x8
+EOF
+RUN
+
+NAME=canary named when the guard compares the slot in memory
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec2064488b0c252800000048894df864488b0c2528000000483b4df87405e817000000c9c3
+wx c3 @ 0x40
+af+ 0x40 sym.imp.__stack_chk_fail
+afb+ 0x40 0x40 1
+af @ 0
+s 0
+aaft
+afv
+EOF
+EXPECT=<<EOF
+var uint32_t canary @ rbp-0x8
+EOF
+RUN
+
+NAME=canary named when stack_chk_fail sits in an out of line block
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec2064488b042528000000488945f8488b45f86448330425280000007502c9c3e815000000
+wx c3 @ 0x40
+af+ 0x40 sym.imp.__stack_chk_fail
+afb+ 0x40 0x40 1
+af @ 0
+s 0
+aaft
+afv
+EOF
+EXPECT=<<EOF
+var int64_t canary @ rbp-0x8
 EOF
 RUN
 
@@ -1381,8 +1674,8 @@ var char * var_18h @ rbp-0x18
 var char * s @ rbp-0x20
 var FILE * stream @ rbp-0x28
 var uint32_t var_2ch @ rbp-0x2c
-var signed int64_t var_30h @ rbp-0x30
-var int64_t var_34h @ rbp-0x34
+var signed int var_30h @ rbp-0x30
+var int32_t var_34h @ rbp-0x34
 EOF
 RUN
 
@@ -1410,16 +1703,16 @@ var char * src @ rbp-0x1490
 var char * var_1498h @ rbp-0x1498
 var char * s @ rbp-0x14a0
 var char * var_14a8h @ rbp-0x14a8
-var int64_t var_14ach @ rbp-0x14ac
+var int32_t var_14ach @ rbp-0x14ac
 var uint32_t var_14b0h @ rbp-0x14b0
 var uint32_t var_14b4h @ rbp-0x14b4
 var pid_t pid @ rbp-0x14b8
-var int64_t var_14bch @ rbp-0x14bc
-var signed int64_t var_14c0h @ rbp-0x14c0
-var int64_t var_14c4h @ rbp-0x14c4
-var int64_t options @ rbp-0x14c8
+var int32_t var_14bch @ rbp-0x14bc
+var signed int var_14c0h @ rbp-0x14c0
+var int32_t var_14c4h @ rbp-0x14c4
+var int32_t options @ rbp-0x14c8
 var int64_t wstatus @ rbp-0x14cc
-var int64_t var_14d4h @ rbp-0x14d4
+var int32_t var_14d4h @ rbp-0x14d4
 var char ** var_14e0h @ rbp-0x14e0
 arg signed int arg1 @ rdi
 arg char * arg2 @ rsi
@@ -1434,22 +1727,22 @@ var char * var_48h @ rbp-0x48
 var char * var_50h @ rbp-0x50
 var char * var_58h @ rbp-0x58
 var char * var_60h @ rbp-0x60
-var int64_t var_64h @ rbp-0x64
-var int64_t var_68h @ rbp-0x68
-var int64_t var_6ch @ rbp-0x6c
-var int64_t var_70h @ rbp-0x70
-var int64_t var_74h @ rbp-0x74
-var int64_t var_78h @ rbp-0x78
-var int64_t var_7ch @ rbp-0x7c
-var int64_t var_80h @ rbp-0x80
-var int64_t var_84h @ rbp-0x84
-var int64_t var_88h @ rbp-0x88
-var int64_t var_8ch @ rbp-0x8c
-var int64_t var_90h @ rbp-0x90
-var int64_t var_94h @ rbp-0x94
-var int64_t var_98h @ rbp-0x98
+var int32_t var_64h @ rbp-0x64
+var int32_t var_68h @ rbp-0x68
+var int32_t var_6ch @ rbp-0x6c
+var int32_t var_70h @ rbp-0x70
+var int32_t var_74h @ rbp-0x74
+var int32_t var_78h @ rbp-0x78
+var int32_t var_7ch @ rbp-0x7c
+var int32_t var_80h @ rbp-0x80
+var int32_t var_84h @ rbp-0x84
+var int32_t var_88h @ rbp-0x88
+var int32_t var_8ch @ rbp-0x8c
+var int32_t var_90h @ rbp-0x90
+var int32_t var_94h @ rbp-0x94
+var int32_t var_98h @ rbp-0x98
 var uint32_t var_9ch @ rbp-0x9c
-var signed int64_t var_a0h @ rbp-0xa0
+var signed int var_a0h @ rbp-0xa0
 var signed int var_a4h @ rbp-0xa4
 var char * str @ rbp-0xb0
 EOF
@@ -1467,26 +1760,70 @@ EOF
 EXPECT=<<EOF
 arg int argc @ r0
 arg char ** argv @ r1
-var int32_t var_1460h @ sp+0x0
+var uint32_t v5 @ sp+0x0
 var char * option @ fp-0xc
 var int32_t var_14h @ fp-0x10
 var int32_t var_18h @ fp-0x14
-var char * var_1ch @ fp-0x18
+var char * options @ fp-0x18
 var char * s @ fp-0x1c
 var char * var_24h @ fp-0x20
 var int32_t var_28h @ fp-0x24
 var char * src @ fp-0x28
 var int32_t var_30h @ fp-0x2c
-var char * v2 @ fp-0x30
+var char * v4 @ fp-0x30
 var pid_t pid @ fp-0x34
 var int32_t var_3ch @ fp-0x38
 var int32_t var_40h @ fp-0x3c
-var int32_t var_44h @ fp-0x40
+var void * var_44h @ fp-0x40
 var char * var_48h @ fp-0x44
 var int32_t var_4ch @ fp-0x48
 var int32_t wstatus @ fp-0x4c
 var char * s1 @ fp-0x1040
 var void * var_1444h @ fp-0x1440
+EOF
+RUN
+
+NAME=aft propagates a callee stack argument past the register args on arm32
+FILE=malloc://256
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 0730a0e300308de50c0000eb1eff2fe1
+wx 1eff2fe1 @ 0x40
+af @ 0x40
+afn five @ 0x40
+'td int five(int a, int b, int c, int d, int myarg5);
+af @ 0
+aaft
+afv
+EOF
+EXPECT=<<EOF
+arg int a @ r0
+arg int b @ r1
+arg int c @ r2
+arg int32_t myarg5 @ sp+0x0
+EOF
+RUN
+
+NAME=aft propagates a callee stack argument above the mips o32 home area
+FILE=malloc://256
+ARGS=-a mips -b 32 -e cfg.bigendian=true -e anal.cc=o32
+CMDS=<<EOF
+wx 24080007afa800100c0000100000000003e0000800000000
+wx 03e0000800000000 @ 0x40
+af @ 0x40
+afn five @ 0x40
+'td int five(int a, int b, int c, int d, int myarg5);
+tk func.five.cc=o32
+af @ 0
+aaft
+afv
+EOF
+EXPECT=<<EOF
+arg int a @ a0
+arg int b @ a1
+arg int c @ a2
+arg int d @ a3
+arg int32_t myarg5 @ sp+0x10
 EOF
 RUN
 
@@ -1502,10 +1839,10 @@ EXPECT=<<EOF
 var char * var_8h @ rbp-0x8
 var long int var_10h @ rbp-0x10
 var char * var_18h @ rbp-0x18
-var int64_t var_1ch @ rbp-0x1c
+var int32_t var_1ch @ rbp-0x1c
 var uint32_t var_20h @ rbp-0x20
-var signed int64_t var_24h @ rbp-0x24
-var int64_t var_25h @ rbp-0x25
+var signed int var_24h @ rbp-0x24
+var int8_t var_25h @ rbp-0x25
 EOF
 RUN
 
@@ -1521,9 +1858,9 @@ EXPECT=<<EOF
 arg int argc @ rdi
 arg char ** argv @ rsi
 arg char ** envp @ rdx
-var int64_t var_4h @ rbp-0x4
+var int32_t var_4h @ rbp-0x4
 var void * var_10h @ rbp-0x10
-var int64_t var_14h @ rbp-0x14
+var int32_t var_14h @ rbp-0x14
 var char ** var_20h @ rbp-0x20
 var char ** var_28h @ rbp-0x28
 EOF
@@ -1545,10 +1882,10 @@ s sym.range_or
 pd 1~4h
 EOF
 EXPECT=<<EOF
-|           ; var signed int64_t var_4h  { > 0xa } @ rbp-0x4
-|           ; var signed int64_t var_14h  { > 0x0 && <= 0x9 } @ rbp-0x14
-|           ; var signed int64_t var_4h  { > 0x64 && <= 0xc7 } @ rbp-0x4
-|           ; var signed int64_t var_4h  { > 0xff && <= 0x12b || > 0x14 && <= 0x31 || > 0x6f && <= 0xdd } @ rbp-0x4
+|           ; var signed int var_4h  { > 0xa } @ rbp-0x4
+|           ; var signed int var_14h  { > 0x0 && <= 0x9 } @ rbp-0x14
+|           ; var signed int var_4h  { > 0x64 && <= 0xc7 } @ rbp-0x4
+|           ; var signed int var_4h  { > 0xff && <= 0x12b || > 0x14 && <= 0x31 || > 0x6f && <= 0xdd } @ rbp-0x4
 EOF
 RUN
 
@@ -1787,16 +2124,21 @@ EXPECT=<<EOF
 int64_t
 uint32_t
 char *
+int16_t
+int8_t
 int
 char **
 =
 int64_t
 char *
 uint32_t
+int32_t
 size_t
 void *
-size_t *
+mbstate_t *
 wint_t
+int8_t
+size_t *
 =
 fcn.0000f770
 fcn.00011b90
@@ -2000,8 +2342,11 @@ a:tp?
 EOF
 EXPECT=<<EOF
 Usage: a:tp  propagate types for current function
-| a:tpall  propagate types for every function (aaft)
-| a:tp?    show this help
+| a:tpall     propagate types for every function (aaft)
+| a:tpsynth   synthesize struct types from pointer-argument and allocator-return accesses (afts)
+| a:tpsynth*  show the synthesis as r2 commands without applying (afts*)
+| a:tpsynthj  apply the synthesis and report it in json (aftsj)
+| a:tp?       show this help
 EOF
 RUN
 
@@ -2444,5 +2789,883 @@ EOF
 EXPECT=<<EOF
 0x00000000 type int; // size=4
 0x00000004
+EOF
+RUN
+
+NAME=tfv xref resolves afs prototype on prefixed function name
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.xrefs=true
+CMDS=<<EOF
+wa mov edi, 5
+wa call 0x20 @ 0x5
+wa ret @ 0x20
+af @ 0x20
+afn sym.foo @ 0x20
+s 0x20
+'afs int sym.foo(int myarg)
+af @ 0x0
+afn caller @ 0x0
+tfv sym.foo
+EOF
+EXPECT=<<EOF
+             ; XREF[x] 0x00000005 caller
+0x00000000 int sym.foo ( // cc:cdecl ret:?
+0x00000000   int myarg // stack
+0x00000004 );
+EOF
+RUN
+
+NAME=tfv xref resolves afs prototype on import-prefixed function name
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.xrefs=true
+CMDS=<<EOF
+wa mov edi, 5
+wa call 0x20 @ 0x5
+wa ret @ 0x20
+af @ 0x20
+afn sym.imp.bar @ 0x20
+s 0x20
+'afs int sym.imp.bar(int myarg)
+af @ 0x0
+afn caller @ 0x0
+tfv sym.imp.bar
+EOF
+EXPECT=<<EOF
+             ; XREF[x] 0x00000005 caller
+0x00000000 int sym.imp.bar ( // cc:cdecl ret:?
+0x00000000   int myarg // stack
+0x00000004 );
+EOF
+RUN
+
+NAME=aaft function with switch table
+FILE=bins/jmptbl/test_gcc_5.5.0_64.out
+CMDS=<<EOF
+aa
+aaft
+s main
+afv
+?e =
+afb
+EOF
+EXPECT=<<EOF
+arg uint32_t argc @ rdi
+=
+0x00000580 0x0000058d 00:0000 13 j 0x00000622 f 0x0000058d
+0x0000058d 0x0000059f 00:0000 18 s 0x00000622 s 0x000005b2 s 0x000005c0 s 0x000005ce s 0x000005dc s 0x000005ea s 0x000005f8 s 0x00000606 s 0x00000614 s 0x0000059f
+0x0000059f 0x000005ab 00:0000 12 j 0x000005ab
+0x000005ab 0x000005b2 00:0000 7
+0x000005b2 0x000005c0 00:0000 14 j 0x000005ab
+0x000005c0 0x000005ce 00:0000 14 j 0x000005ab
+0x000005ce 0x000005dc 00:0000 14 j 0x000005ab
+0x000005dc 0x000005ea 00:0000 14 j 0x000005ab
+0x000005ea 0x000005f8 00:0000 14 j 0x000005ab
+0x000005f8 0x00000606 00:0000 14 j 0x000005ab
+0x00000606 0x00000614 00:0000 14 j 0x000005ab
+0x00000614 0x00000622 00:0000 14 j 0x000005ab
+0x00000622 0x00000633 00:0000 17 j 0x000005ab
+EOF
+RUN
+
+NAME=aaft function with unreachable block
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4889f8c3
+wx 48c7c303000000c3 @ 0x10
+af+ 0 fcn.unreach
+afb+ 0 0 4
+afb+ 0 0x10 8
+aaft
+afb
+?e ok
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000004 00:0000 4
+0x00000010 0x00000018 00:0000 8
+ok
+EOF
+RUN
+
+NAME=aaft function without basic blocks
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+af+ 0 fcn.empty
+aaft
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN
+
+NAME=td struct and union array counts reach sdb via base type serializer
+FILE=-
+CMDS=<<EOF
+'td struct KS {int a; char buf[16];}
+'td union KU {char buf[8]; int x;}
+tk KS
+tk struct.KS
+tk struct.KS.buf
+tk KU
+tk union.KU
+tk union.KU.buf
+tsc KS
+tuc KU
+EOF
+EXPECT=<<EOF
+struct
+a,buf
+char,4,16
+union
+buf,x
+char,0,8
+struct KS {
+  int a;
+  char buf[16];
+};
+union KU {
+  char buf[8];
+  int x;
+};
+EOF
+RUN
+
+NAME=td array dimensions in hex
+FILE=malloc://32
+CMDS=<<EOF
+"td struct Hex { char pad[0x8]; int x; char tail[0x10]; };"
+tk struct.Hex.x
+tk struct.Hex.tail
+"td typedef struct Tg { char b[0x10]; } TgT;"
+tk struct.Tg.b
+"td typedef union Ug { char c[0x18]; int v; } UgT;"
+tk union.Ug.c
+tsc Hex
+EOF
+EXPECT=<<EOF
+int,8,0
+char,12,16
+char,0,16
+char,0,24
+struct Hex {
+  char pad[8];
+  int x;
+  char tail[16];
+};
+EOF
+RUN
+
+NAME=tsc struct member type with comma survives
+FILE=-
+CMDS=<<EOF
+tk tpl=struct
+tk struct.tpl=p
+'tk struct.tpl.p=pair<int, char>,8,0
+tsc tpl
+tsv tpl
+EOF
+EXPECT=<<EOF
+struct tpl {
+  uint8_t pad_0x0[8]; // gap
+  pair<int, char> p;
+};
+0x00000000 struct tpl {
+0x00000000   pair<int, char> p;
+0x00000001 };
+EOF
+RUN
+
+NAME=tuc union member type with comma survives
+FILE=-
+CMDS=<<EOF
+tk utpl=union
+tk union.utpl=p,q
+'tk union.utpl.p=pair<int, char>,0,4
+tk union.utpl.q=int32_t,0,0
+tuc utpl
+tuv utpl
+EOF
+EXPECT=<<EOF
+union utpl {
+  pair<int, char> p[4];
+  int32_t q;
+};
+0x00000000 union utpl {
+0x00000000   pair<int, char> p[4];
+0x00000000   int32_t q;
+0x00000000 };
+EOF
+RUN
+
+NAME=comma member type resolves for sizeof and pf format
+FILE=-
+CMDS=<<EOF
+'tk pair<int, char>=struct
+'tk struct.pair<int, char>=a,b
+'tk struct.pair<int, char>.a=int32_t,0,0
+'tk struct.pair<int, char>.b=int32_t,4,0
+tk outer=struct
+tk struct.outer=p,x
+'tk struct.outer.p=pair<int, char>,0,0
+tk struct.outer.x=int32_t,8,0
+tss outer
+ts outer
+EOF
+EXPECT=<<EOF
+12
+pf ?[4].d (pair<int, char>)p x
+EOF
+RUN
+
+NAME=aaft conflicting types from parallel branches meet to void pointer
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488b7df8e84b000000eb39 @ 0
+wx 488d0549000000488945f8eb13 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+w hello @ 0x80
+f str.hello @ 0x80
+af @ 0x60
+afn takes_file @ 0x60
+"td struct fobj {int x;}; int takes_file(struct fobj *f);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var void * f @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft parallel-branch meet is independent of the branch order
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488d056d000000488945f8eb37 @ 0
+wx 488b7df8e827000000eb15 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+w hello @ 0x80
+f str.hello @ 0x80
+af @ 0x60
+afn takes_file @ 0x60
+"td struct fobj {int x;}; int takes_file(struct fobj *f);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var void * f @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft later stronger evidence on the same path upgrades the type
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec20488b7df8e84f000000488d0568000000488945f8c9c3 @ 0
+wx c3 @ 0x60
+w hello @ 0x80
+f str.hello @ 0x80
+af @ 0x60
+afn takes_u64 @ 0x60
+"td int takes_u64(uint64_t v);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var char * v @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft matching types from parallel branches stay intact
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488d057d000000488945f8eb37 @ 0
+wx 488d0549000000488945f8eb13 @ 0x30
+wx c9c3 @ 0x50
+w hello @ 0x80
+w world @ 0x90
+f str.hello @ 0x80
+f str.world @ 0x90
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var char * var_8h @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft equal-rank scalar conflict from parallel branches meets to the wider default int
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488b7df8e84b000000eb39 @ 0
+wx 488b7df8e837000000eb15 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+wx c3 @ 0x70
+af @ 0x60
+afn takes_size @ 0x60
+af @ 0x70
+afn takes_wint @ 0x70
+"td typedef unsigned int wint_t;"
+"td int takes_size(size_t v); int takes_wint(wint_t v);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var int64_t v @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft equal-rank scalar meet is independent of the branch order
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488b7df8e85b000000eb39 @ 0
+wx 488b7df8e827000000eb15 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+wx c3 @ 0x70
+af @ 0x60
+afn takes_size @ 0x60
+af @ 0x70
+afn takes_wint @ 0x70
+"td typedef unsigned int wint_t;"
+"td int takes_size(size_t v); int takes_wint(wint_t v);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var int64_t v @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft const and plain string pointers from parallel branches meet to char pointer
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488d056d000000488945f8eb37 @ 0
+wx 488b7df8e827000000eb15 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+w hello @ 0x80
+f str.hello @ 0x80
+af @ 0x60
+afn takes_str @ 0x60
+"td int takes_str(char *s);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var char * s @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft typed and primitive pointer conflict from parallel branches meets to void pointer
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488b7df8e84b000000eb39 @ 0
+wx 488b7df8e837000000eb15 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+wx c3 @ 0x70
+af @ 0x60
+afn takes_file @ 0x60
+af @ 0x70
+afn takes_szp @ 0x70
+"td struct fobj {int x;}; int takes_file(struct fobj *f); int takes_szp(size_t *p);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var void * p @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft typed and primitive pointer meet is independent of the branch order
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488b7df8e85b000000eb39 @ 0
+wx 488b7df8e827000000eb15 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+wx c3 @ 0x70
+af @ 0x60
+afn takes_file @ 0x60
+af @ 0x70
+afn takes_szp @ 0x70
+"td struct fobj {int x;}; int takes_file(struct fobj *f); int takes_szp(size_t *p);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var void * f @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft three parallel pointer facts meet to void pointer
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff742483ff05742f488b7df8e846000000eb34 @ 0
+wx 488b7df8e837000000eb15 @ 0x30
+wx 488d0539000000488945f8eb03 @ 0x40
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+wx c3 @ 0x70
+w hello @ 0x80
+f str.hello @ 0x80
+af @ 0x60
+afn takes_file @ 0x60
+af @ 0x70
+afn takes_szp @ 0x70
+"td struct fobj {int x;}; int takes_file(struct fobj *f); int takes_szp(size_t *p);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg uint32_t arg1 @ rdi
+var void * p @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft three parallel pointer facts meet independent of the branch order
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff742483ff05742f488d0568000000488945f8eb32 @ 0
+wx 488b7df8e827000000eb15 @ 0x30
+wx 488b7df8e827000000eb05 @ 0x40
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+wx c3 @ 0x70
+w hello @ 0x80
+f str.hello @ 0x80
+af @ 0x60
+afn takes_file @ 0x60
+af @ 0x70
+afn takes_szp @ 0x70
+"td struct fobj {int x;}; int takes_file(struct fobj *f); int takes_szp(size_t *p);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg uint32_t arg1 @ rdi
+var void * f @ rbp-0x8
+EOF2
+RUN
+
+NAME=aaft float and double facts from parallel branches meet to double
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7424488b7df8e84b000000eb39 @ 0
+wx 488b7df8e837000000eb15 @ 0x30
+wx c9c3 @ 0x50
+wx c3 @ 0x60
+wx c3 @ 0x70
+af @ 0x60
+afn takes_f @ 0x60
+af @ 0x70
+afn takes_d @ 0x70
+"td int takes_f(float v); int takes_d(double v);"
+af @ 0
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+var double v @ rbp-0x8
+EOF2
+RUN
+
+NAME=aft types a memset stack local from the stated object size
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54881eca0000000c78578ffffff01000000488dbd78ffffffba8800000031f6e808000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn memset @ 0x30
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var uint8_t [136] var_88h @ rbp-0x88
+EOF
+RUN
+
+NAME=aft keeps a named type on a memset stack local
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54881eca0000000c78578ffffff01000000488dbd78ffffffba8800000031f6e808000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn memset @ 0x30
+'td void *memset(void *s, int c, size_t n);
+'td struct mys {int a; int b;};
+af @ 0
+'afvt var_88h struct mys
+aft
+afv
+EOF
+EXPECT=<<EOF
+var struct mys var_88h @ rbp-0x88
+EOF
+RUN
+
+NAME=aft does not shrink a local below its width on a partial clear
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e548c745f800000000488d7df831f6ba04000000e814000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn memset @ 0x30
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var int64_t var_8h @ rbp-0x8
+EOF
+RUN
+
+NAME=aft ignores a size-function call through an adjusted pointer
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54881eca0000000c78578ffffff01000000488dbd78ffffff4883c71031f6ba20000000e814000000c9c3
+wx c3 @ 0x40
+af @ 0x40
+afn memset @ 0x40
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var int32_t s @ rbp-0x88
+EOF
+RUN
+
+NAME=aft types a memset stack local through the x86-32 push chain
+FILE=malloc://256
+ARGS=-a x86 -b 32 -e types.sizes=true
+CMDS=<<EOF
+wx 5589e581eca0000000c78578ffffff010000008d8578ffffff68880000006a0050e81a00000083c40cc9c3
+wx c3 @ 0x40
+af @ 0x40
+afn memset @ 0x40
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var uint8_t [136] var_88h @ ebp-0x88
+EOF
+RUN
+
+NAME=aft merges branch-dependent memset sizes to the larger one
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54881eca0000000c78578ffffff0100000085ff7415488dbd78ffffff31f6ba40000000e824000000eb12488dbd78ffffff31f6ba88000000e80f000000c9c3
+wx c3 @ 0x50
+af @ 0x50
+afn memset @ 0x50
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aft
+afv~var_88h
+EOF
+EXPECT=<<EOF
+var uint8_t [136] var_88h @ rbp-0x88
+EOF
+RUN
+
+NAME=single block function with the state restore enabled
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e types.bbstate=true
+CMDS=<<EOF
+wx 488b3ee808000000c3909090909090904889f8c3
+af @ 0x10
+af @ 0
+afvt arg1 char **
+s 0
+aaft
+afv @ 0x10
+EOF
+EXPECT=<<EOF
+arg char * arg1 @ rdi
+EOF
+RUN
+
+NAME=a loop body value does not survive the header that overwrites it
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec20ba0400000085ff740aba00010000ebf0909090488d7de031f6e81a000000c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF
+EXPECT=<<EOF
+var int64_t var_20h @ rbp-0x20
+EOF
+RUN
+
+NAME=a sibling branch size does not leak into a call on another path
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec2085ff740cba00010000eb149090909090488d7de031f6e81d000000eb029090c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+arg size_t n @ rdx
+var int64_t s @ rbp-0x20
+EOF
+RUN
+
+NAME=disabling the per-block state restore keeps the inherited sibling branch state
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.bbstate=false
+CMDS=<<EOF
+wx 554889e54883ec2085ff740cba00010000eb149090909090488d7de031f6e81d000000eb029090c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF
+EXPECT=<<EOF
+var uint8_t [256] var_20h @ rbp-0x20
+EOF
+RUN
+
+NAME=a loop body value the header never touches is also lost after the loop
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF2
+wx 554889e54883ec20ba0400000085ff7407ba00010000ebf5488d7de031f6e81d000000c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF2
+EXPECT=<<EOF2
+var int64_t var_20h @ rbp-0x20
+EOF2
+RUN
+
+NAME=disabling bbstate keeps the loop body value after the loop
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.bbstate=false
+CMDS=<<EOF2
+wx 554889e54883ec20ba0400000085ff7407ba00010000ebf5488d7de031f6e81d000000c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF2
+EXPECT=<<EOF2
+var uint8_t [256] var_20h @ rbp-0x20
+EOF2
+RUN
+
+NAME=td keeps the pointer with the type in function pointer members
+FILE=-
+CMDS=<<EOF
+'td struct S { int (*cb)(int *n, char *s); };
+tk~func.S
+EOF
+EXPECT=<<EOF
+func.S.cb=n,s
+func.S.cb.arg.0=int *,n
+func.S.cb.arg.1=char *,s
+func.S.cb.args=2
+func.S.cb.cc=cdecl
+func.S.cb.ret=int
+EOF
+RUN
+
+NAME=td stores an empty parameter list as zero arguments
+FILE=-
+CMDS=<<EOF
+'td int voidfn(void);
+'td int spacedfn( );
+tk~func.voidfn
+tk~func.spacedfn
+EOF
+EXPECT=<<EOF
+func.voidfn.args=0
+func.voidfn.cc=cdecl
+func.voidfn.ret=int
+func.spacedfn.args=0
+func.spacedfn.cc=cdecl
+func.spacedfn.ret=int
+EOF
+RUN
+
+NAME=td stores a void parameter list on a member as zero arguments
+FILE=-
+CMDS=<<EOF
+'td struct A2 { float (*m)(void); void *x; };
+tk~func.A2
+EOF
+EXPECT=<<EOF
+func.A2.m.args=0
+func.A2.m.cc=cdecl
+func.A2.m.ret=float
+EOF
+RUN
+
+NAME=tss reports the target word size for pointers
+FILE=-
+ARGS=-b 64
+CMDS=<<EOF
+tss int *
+tss void *
+tss int
+EOF
+EXPECT=<<EOF
+8
+8
+4
+EOF
+RUN
+
+NAME=an array of pointers uses the target word size as its stride
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e asm.sub.var=true
+CMDS=<<EOF
+wx 48890424488944240848894424104889442418c3
+af
+"afvt arg_8h int *[4]"
+pdf~mov
+EOF
+EXPECT=<<EOF
+|           0x00000000      48890424       mov qword [rsp], rax
+|           0x00000004      4889442408     mov qword [arg_8h], rax
+|           0x00000009      4889442410     mov qword [arg_8h[1]], rax
+|           0x0000000e      4889442418     mov qword [arg_8h[2]], rax
+EOF
+RUN
+
+NAME=td stores the variadic slot in the canonical ,... form
+FILE=-
+CMDS=<<EOF
+'td int myvarfn(const char *fmt, ...);
+tk~func.myvarfn
+EOF
+EXPECT=<<EOF
+func.myvarfn=fmt,...
+func.myvarfn.arg.0=const char *,fmt
+func.myvarfn.arg.1=,...
+func.myvarfn.args=2
+func.myvarfn.cc=cdecl
+func.myvarfn.ret=int
+EOF
+RUN
+
+NAME=td parses function pointer parameters in prototypes
+FILE=-
+CMDS=<<EOF
+'td void once(void (*cb)(int));
+'td int apply(int (*fn)(int, int), int seed);
+'td void qual(void (* const q)(int));
+tk~func.once
+tk~func.apply
+tk~func.qual
+EOF
+EXPECT=<<EOF
+func.once=cb
+func.once.arg.0=void (*)(int),cb
+func.once.args=1
+func.once.cc=cdecl
+func.once.ret=void
+func.apply=fn,seed
+func.apply.arg.0=int (*)(),fn
+func.apply.arg.1=int,seed
+func.apply.args=2
+func.apply.cc=cdecl
+func.apply.ret=int
+func.qual=q
+func.qual.arg.0=void (*)(int),q
+func.qual.args=1
+func.qual.cc=cdecl
+func.qual.ret=void
+EOF
+RUN
+
+NAME=td keeps a nested function pointer argument in one slot
+FILE=-
+CMDS=<<EOF
+'td struct N { int (*cb)(int (*inner)(int, int), char c); };
+tk~func.N
+EOF
+EXPECT=<<EOF
+func.N.cb=inner,c
+func.N.cb.arg.0=int (*)(),inner
+func.N.cb.arg.1=char,c
+func.N.cb.args=2
+func.N.cb.cc=cdecl
+func.N.cb.ret=int
 EOF
 RUN

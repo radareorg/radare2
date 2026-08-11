@@ -30,7 +30,7 @@ call = 4
 #define HAVE_CSGRP_PRIVILEGE 0
 #endif
 
-#if CS_API_MAJOR < 2
+#if CS_API_MAJOR < 4
 #error Old Capstone not supported
 #endif
 
@@ -144,13 +144,11 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 		op->type = X86_OP_REG;
 		op->reg = X86_REG_EFLAGS;
 		op->size = regsz;
-#if CS_API_MAJOR >= 4
 		if (id == X86_INS_PUSHF || id == X86_INS_PUSHFD || id == X86_INS_PUSHFQ) {
 			op->access = 1;
 		} else {
 			op->access = 2;
 		}
-#endif
 		break;
 	case X86_INS_PUSHAW:
 	case X86_INS_PUSHAL:
@@ -179,9 +177,7 @@ static void opex(RArchSession *as, RStrBuf *buf, cs_insn *insn, int mode) {
 		cs_x86_op *op = x->operands + i;
 		pj_o (pj);
 		pj_ki (pj, "size", op->size);
-#if CS_API_MAJOR >= 4
 		pj_ki (pj, "rw", op->access); // read, write, read|write
-#endif
 		switch (op->type) {
 		case X86_OP_REG:
 			pj_ks (pj, "type", "reg");
@@ -325,10 +321,6 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsi
 		*bitsize = bs? bs: 8;
 	}
 	switch (op.type) {
-#if CS_API_MAJOR == 3
-	case X86_OP_FP:
-		return strdup ("invalid");
-#endif
 	case X86_OP_INVALID:
 		return strdup ("invalid");
 	case X86_OP_REG:
@@ -541,9 +533,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_FPREM:
 	case X86_INS_FPREM1:
 	case X86_INS_FPTAN:
-#if CS_API_MAJOR >=4
 	case X86_INS_FFREEP:
-#endif
 	case X86_INS_FRNDINT:
 	case X86_INS_FRSTOR:
 	case X86_INS_FNSAVE:
@@ -817,9 +807,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_CLAC:
 	case X86_INS_CLGI:
 	case X86_INS_CLTS:
-#if CS_API_MAJOR >= 4
 	case X86_INS_CLWB:
-#endif
 	case X86_INS_STAC:
 	case X86_INS_STGI:
 		break;
@@ -1226,49 +1214,27 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_SAL:
 		{
 		ut32 bitsize;
-		src = getarg (&gop, 1, 0, NULL, &bitsize);
-		dst = getarg (&gop, 0, 0, NULL, NULL);
-		// dst2 = getarg (&gop, 0, 1, "<<", &bitsize);
-#if 0
-	// https://c9x.me/x86/html/file_module_x86_id_285.html
-	The CF flag contains the value of the last bit shifted out of the destination operand;
-		it is undefined for SHL and SHR instructions where the count is greater than or equal to the size (in bits) of the destination operand.
-	The OF flag is affected only for 1-bit shifts (see "Description" above); otherwise, it is undefined.
-	The SF, ZF, and PF flags are set according to the result
-	If the count is 0, the flags are not affected.
-	For a non-zero count, the AF flag is undefined.
-#endif
-		ut64 val = 0;
-		switch (gop.insn->detail->x86.operands[0].size) {
-		case 1:
-			val = 0x80;
-			break;
-		case 2:
-			val = 0x8000;
-			break;
-		case 4:
-			val = 0x80000000;
-			break;
-		case 8:
-			val = (ut64)0x8000000000000000ULL;
-			break;
-		default:
-			R_LOG_ERROR ("unknown operand size: %d", gop.insn->detail->x86.operands[0].size);
-			val = 256;
-		}
-		// OLD: esilprintf (op, "0,%s,!,!,?{,1,%s,-,%s,<<,0x%"PFMT64x",&,!,!,^,},%s,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,cf,=", src, src, dst, val, src, dst2, bitsize - 1);
+		src = getarg (&gop, 1, 0, NULL, NULL);
+		dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
+		dst_w = getarg (&gop, 0, 1, NULL, NULL);
+		// CF = last bit shifted out = (dst >> (width - count)) & 1 from the
+		// pre-shift value; OF is defined only for 1-bit shifts as msb(result) ^ CF.
+		// Read via dst_r, write via dst_w so memory destinations store the result.
 		esilprintf (op,
-			"%s,0x%"PFMT64x",&,POP,$z,cf,:=,"
-			"%s,%s,<<=,"
+			"%s,%d,-,%s,>>,1,&,cf,:=,"
+			"%s,%s,<<,%s,"
 			"$z,zf,:=,"
 			"$p,pf,:=,"
-			"%d,$s,sf,:=",
-			dst, val,
-			src, dst,
-			bitsize - 1);
+			"%d,$s,sf,:=,"
+			"%d,%s,>>,1,&,cf,^,of,:=",
+			src, bitsize, dst_r,
+			src, dst_r, dst_w,
+			bitsize - 1,
+			bitsize - 1, dst_r);
 		free (src);
-		free (dst);
-	   	}
+		free (dst_r);
+		free (dst_w);
+		}
 		break;
 	case X86_INS_SALC:
 		esilprintf (op, "$z,DUP,zf,=,al,=");
@@ -2304,8 +2270,11 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			default:
 				R_LOG_ERROR ("Neg: Unhandled bitsize %d", bitsize);
 			}
-			esilprintf (op, "%s,!,!,cf,:=,%s,0x%"PFMT64x",^,1,+,%s,$z,zf,:=,0,of,:=,%d,$s,sf,:=,%d,$o,pf,:=",
-				src, src, xor, dst, bitsize - 1, bitsize - 1);
+			// OF set iff the operand is INT_MIN (the only value that overflows on
+			// negation); PF from the parity term, not the overflow term
+			ut64 intmin = 1ULL << (bitsize - 1);
+			esilprintf (op, "%s,!,!,cf,:=,%s,0x%"PFMT64x",^,1,+,%s,$z,zf,:=,%s,0x%"PFMT64x",^,!,of,:=,%d,$s,sf,:=,$p,pf,:=",
+				src, src, xor, dst, src, intmin, bitsize - 1);
 			free (src);
 			free (dst);
 		}
@@ -2791,7 +2760,6 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 		r_list_append (ret, val);
 	}
 
-#if CS_API_MAJOR >= 4
 	// Register access info
 	cs_regs regs_read, regs_write;
 	ut8 read_count, write_count;
@@ -2815,7 +2783,6 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 			}
 		}
 	}
-#endif
 
 	switch (insn->id) {
 	case X86_INS_PUSH:
@@ -2860,7 +2827,6 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 			val = r_anal_value_new ();
 			if (val) {
 				val->type = R_ANAL_VAL_MEM;
-#if CS_API_MAJOR >= 4
 				switch (INSOP (i).access) {
 				case CS_AC_READ:
 					val->access = R_PERM_R;
@@ -2880,9 +2846,6 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 					// ignored
 					break;
 				}
-#else
-				val->access = 0;
-#endif
 				val->mul = INSOP (i).mem.scale;
 				val->delta = INSOP (i).mem.disp;
 				if (INSOP(0).mem.base == X86_REG_RIP ||
@@ -3005,18 +2968,26 @@ static int find_immop(cs_insn *insn) {
 	return -1;
 }
 
+static void disp2ptr(RAnalOp *op, cs_insn *insn, int opidx) {
+	const st64 disp = INSOP (opidx).mem.disp;
+	const st64 threshold = (INSOP (opidx).mem.base == X86_REG_INVALID)? 0x1000: 0x10000;
+	if (disp >= threshold) {
+		op->ptr = (ut64)disp;
+		op->disp = UT64_MAX;
+	}
+}
+
 static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 	op->ptr = UT64_MAX;
 	switch (INSOP (0).type) {
 	case X86_OP_MEM:
 		op->cycles = CYCLE_MEM;
-		op->disp = INSOP (0).mem.disp;
-		if (!op->disp) {
-			op->disp = UT64_MAX;
-		}
+		// keep the real displacement for rip math; op->disp uses UT64_MAX as the no-disp sentinel
+		const st64 disp = INSOP (0).mem.disp;
+		op->disp = disp? (ut64)disp: UT64_MAX;
 		op->refptr = INSOP (0).size;
 		if (INSOP (0).mem.base == X86_REG_RIP) {
-			op->ptr = addr + insn->size + op->disp;
+			op->ptr = addr + insn->size + disp;
 		} else if (INSOP (0).mem.base == X86_REG_RBP || INSOP (0).mem.base == X86_REG_EBP) {
 			op->type |= R_ANAL_OP_TYPE_REG;
 			op->stackop = R_ANAL_STACK_SET;
@@ -3027,9 +2998,8 @@ static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 			if (op->ptr < 0x1000) {
 				op->ptr = UT64_MAX;
 			}
-		} else if (op->disp > 1000) {
-			op->ptr = op->disp;
-			op->disp = UT64_MAX;
+		} else {
+			disp2ptr (op, insn, 0);
 		}
 		break;
 	case X86_OP_REG:
@@ -3069,6 +3039,8 @@ static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 			} else if (INSOP (1).mem.segment == X86_REG_INVALID && INSOP (1).mem.base == X86_REG_INVALID
 					&& INSOP (1).mem.index == X86_REG_INVALID && INSOP (1).mem.scale == 1) { // [<addr>]
 				op->ptr = op->disp;
+			} else {
+				disp2ptr (op, insn, 1);
 			}
 			break;
 		case X86_OP_IMM:
@@ -3249,9 +3221,7 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_FPREM:
 	case X86_INS_FPREM1:
 	case X86_INS_FPTAN:
-#if CS_API_MAJOR >= 4
 	case X86_INS_FFREEP:
-#endif
 	case X86_INS_FRNDINT:
 	case X86_INS_FSCALE:
 	case X86_INS_FSETPM:
@@ -3351,9 +3321,7 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_CLAC:
 	case X86_INS_CLGI:
 	case X86_INS_CLTS:
-#if CS_API_MAJOR >= 4
 	case X86_INS_CLWB:
-#endif
 	case X86_INS_STAC:
 	case X86_INS_STGI:
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -3503,9 +3471,7 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_PCMPGTQ:
 	case X86_INS_PCMPISTRI:
 	case X86_INS_PCMPISTRM:
-#if CS_API_MAJOR >= 4
 	case X86_INS_VPCMPB:
-#endif
 	case X86_INS_VPCMPD:
 	case X86_INS_VPCMPEQB:
 	case X86_INS_VPCMPEQD:
@@ -3520,15 +3486,11 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_VPCMPISTRI:
 	case X86_INS_VPCMPISTRM:
 	case X86_INS_VPCMPQ:
-#if CS_API_MAJOR >= 4
 	case X86_INS_VPCMPUB:
-#endif
 	case X86_INS_VPCMPUD:
 	case X86_INS_VPCMPUQ:
-#if CS_API_MAJOR >= 4
 	case X86_INS_VPCMPUW:
 	case X86_INS_VPCMPW:
-#endif
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->family = R_ANAL_OP_FAMILY_VEC;
 		break;
@@ -3679,7 +3641,7 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 				}
 				break;
 			default:
-				/* unhandled */
+				disp2ptr (op, insn, 1);
 				break;
 			}
 			break;
@@ -3765,9 +3727,7 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->stackptr = -regsz;
 		op->cycles = CYCLE_MEM + CYCLE_JMP;
 		break;
-#if CS_API_MAJOR >= 4
 	case X86_INS_UD0:
-#endif
 	case X86_INS_UD2:
 #if CS_API_MAJOR == 4
 	case X86_INS_UD2B:

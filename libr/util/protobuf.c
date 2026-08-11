@@ -41,14 +41,11 @@ static void pad(RStrBuf *sb, int count) {
 }
 
 static bool is_string(const ut8* start, const ut8* end) {
-	while (start < end) {
-		// TODO UTF-8 Support.
-		if (!IS_PRINTABLE (*start)) {
-			return false;
-		}
-		start++;
+	if (end < start) {
+		return false;
 	}
-	return true;
+	size_t len = end - start;
+	return len <= ST32_MAX && r_str_pnlen ((const char *)start, (int)len) == len;
 }
 
 static char *decode_array(const ut8* start, const ut8* end) {

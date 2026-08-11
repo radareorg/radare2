@@ -20,18 +20,19 @@ jobs:
           git clone https://github.com/TinyCC/tinycc
           cd tinycc
           git checkout mob
-          git reset --hard 4fccaf61241a5eb72b0777b3a44bd7abbea48604
+          git reset --hard d9d02c56401e43be43760b63f7d82f771a7ed1f6
     - name: Compiling and installing TinyCC
       working-directory: tinycc
       run: |
           sh ./configure --prefix=/usr
           make -j
           sudo make install
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
           repository: radareorg/radare2-testbins
+          ref: master
           path: test/bins
     - name: Install dependencies
       run: |
@@ -80,11 +81,12 @@ jobs:
       run: |
           sh ./configure --prefix=/usr --without-debugger
           make -j && sudo make install
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
           repository: radareorg/radare2-testbins
+          ref: master
           path: test/bins
     - name: Configure, build and install
       env:
@@ -119,7 +121,7 @@ jobs:
           sh ./configure --prefix=/usr
           make -j
           sudo make install
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Configure, build and install
       env:
           CC: tcc
@@ -162,11 +164,12 @@ jobs:
       run: |
           sh ./configure --prefix=/usr --without-debugger
           make -j && sudo make install
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
           repository: radareorg/radare2-testbins
+          ref: master
           path: test/bins
     - name: Configure, build and install
       env:
@@ -210,11 +213,12 @@ jobs:
           sh ./configure --prefix=/usr
           make -j
           sudo make install
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
           repository: radareorg/radare2-testbins
+          ref: master
           path: test/bins
     - name: Install dependencies
       run: |

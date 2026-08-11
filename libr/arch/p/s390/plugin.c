@@ -7,7 +7,7 @@
 #include <capstone/systemz.h>
 // instruction set: https://www.tachyonsoft.com/inst390m.htm
 
-#if CS_API_MAJOR < 2
+#if CS_API_MAJOR < 4
 #error Old Capstone not supported
 #endif
 

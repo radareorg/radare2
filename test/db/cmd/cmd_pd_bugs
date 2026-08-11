@@ -70,6 +70,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pd flag without realname
+FILE=malloc://512
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+e scr.color=0
+e asm.bytes=0
+e asm.comments=1
+wx a100010000 @ 0
+f first @ 0x100
+f second @ 0x100
+fN second base64:
+pd 1 @ 0
+EOF
+EXPECT=<<EOF
+            0x00000000      mov eax, dword [first]                     ; second
+                                                                       ; [0x100:4]=0
+EOF
+RUN
+
 NAME=pd arm cortex 0
 FILE=-
 ARGS=-a arm -b 16
@@ -103,7 +122,7 @@ CMDS=<<EOF
 e asm.lines.jmp=0
 e asm.bytes=0
 e asm.comments=0
-s sym.static_int_Test::callMeNot
+s method.class.Test.callMeNot
 # s+2
 pi 2
 EOF
@@ -339,5 +358,94 @@ EXPECT=<<EOF
     "text": "0x1000013dc      push     r15"
   }
 ]
+EOF
+RUN
+
+NAME=pdi negative count without analysis
+FILE=malloc://32
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+wx 1e0080d2e50300aa1f2003d5c0035fd6
+s 8
+pdi -2
+EOF
+EXPECT=<<EOF
+0x00000000             1e0080d2  mov x30, 0
+0x00000004             e50300aa  mov x5, x0
+EOF
+RUN
+
+NAME=pdi negative count with invalid instruction in window
+FILE=malloc://64
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+b 64
+wow 1f2003d5
+wx ffffffff @ 0x24
+s 0x40
+pdi -9
+EOF
+EXPECT=<<EOF
+0x0000001c             1f2003d5  nop
+0x00000020             1f2003d5  nop
+0x00000024             ffffffff  invalid
+0x00000028             1f2003d5  nop
+0x0000002c             1f2003d5  nop
+0x00000030             1f2003d5  nop
+0x00000034             1f2003d5  nop
+0x00000038             1f2003d5  nop
+0x0000003c             1f2003d5  nop
+EOF
+RUN
+
+NAME=pdi negative count near start of file
+FILE=malloc://64
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+b 64
+wow 1f2003d5
+s 8
+pdi -4
+EOF
+EXPECT=<<EOF
+0x00000000             1f2003d5  nop
+0x00000004             1f2003d5  nop
+0x00000008             1f2003d5  nop
+0x0000000c             1f2003d5  nop
+EOF
+RUN
+
+NAME=pd negative count near start of file does not wrap around
+FILE=malloc://64
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+b 64
+wow 1f2003d5
+s 8
+pd -4
+EOF
+EXPECT=<<EOF
+            0x00000000      1f2003d5       nop
+            0x00000004      1f2003d5       nop
+            0x00000008      1f2003d5       nop
+            0x0000000c      1f2003d5       nop
+EOF
+RUN
+
+NAME=pi negative count at the very start of the file shows the forward window like pd
+FILE=malloc://64
+ARGS=-a arm -e asm.bits=64
+CMDS=<<EOF
+b 64
+wow 1f2003d5
+s 0
+e asm.lines=0
+pi -4
+EOF
+EXPECT=<<EOF
+nop
+nop
+nop
+nop
 EOF
 RUN

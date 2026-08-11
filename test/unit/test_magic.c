@@ -95,6 +95,26 @@ static bool test_r_magic_buffer_formats_string_precision_descriptions(void) {
 	return check_magic_output (magic_source, probe, sizeof (probe) - 1, "ABC");
 }
 
+static bool test_r_magic_load_buffer_accepts_long_regex(void) {
+	const char magic_source[] =
+		"0\tregex\t=^[\\ \\t]{0,10}(call|CALL)[\\ \\t]{1,10}(rxfunc|RXFUNC)\tOS/2 REXX batch file text\n";
+	const ut8 probe[] = "call rxfunc";
+	RMagic *ms = r_magic_new (0);
+	const char *type;
+
+	mu_assert_notnull (ms, "r_magic_new () failed");
+	mu_assert_true (r_magic_load_buffer (ms, (const ut8 *)magic_source, sizeof (magic_source) - 1), "text buffer load failed");
+	type = r_magic_buffer (ms, probe, sizeof (probe) - 1);
+	mu_assert_null (type, "text magic should be disabled by default");
+	r_magic_setflags (ms, R_MAGIC_CHECK_TEXT);
+	type = r_magic_buffer (ms, probe, sizeof (probe) - 1);
+	mu_assert_notnull (type, "text magic probe failed");
+	mu_assert_streq (type, "OS/2 REXX batch file text", "text magic match");
+
+	r_magic_free (ms);
+	mu_end;
+}
+
 static bool test_r_magic_file_uses_slurp_and_buffer(void) {
 	const char magic_source[] = "0\tstring\tABCD\tfile magic\n";
 	char *filename = NULL;
@@ -142,8 +162,8 @@ static bool test_r_magic_getflags_returns_current_flags(void) {
 	RMagic *ms = r_magic_new (0);
 
 	mu_assert_notnull (ms, "r_magic_new () failed");
-	r_magic_setflags (ms, R_MAGIC_MIME_TYPE | R_MAGIC_RAW);
-	mu_assert_eq (r_magic_getflags (ms), R_MAGIC_MIME_TYPE | R_MAGIC_RAW, "flag roundtrip");
+	r_magic_setflags (ms, R_MAGIC_MIME_TYPE | R_MAGIC_RAW | R_MAGIC_CHECK_TEXT);
+	mu_assert_eq (r_magic_getflags (ms), R_MAGIC_MIME_TYPE | R_MAGIC_RAW | R_MAGIC_CHECK_TEXT, "flag roundtrip");
 
 	r_magic_free (ms);
 	mu_end;
@@ -192,6 +212,7 @@ int all_tests(void) {
 	mu_run_test (test_r_magic_load_buffer_accepts_printf_suffixes);
 	mu_run_test (test_r_magic_buffer_formats_byte_char_descriptions);
 	mu_run_test (test_r_magic_buffer_formats_string_precision_descriptions);
+	mu_run_test (test_r_magic_load_buffer_accepts_long_regex);
 	mu_run_test (test_r_magic_file_uses_slurp_and_buffer);
 	mu_run_test (test_r_magic_load_buffers_merges_multiple_databases);
 	mu_run_test (test_r_magic_getflags_returns_current_flags);

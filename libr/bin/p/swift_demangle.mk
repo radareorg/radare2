@@ -1,0 +1,10 @@
+OBJ_DEMANGLE_SWIFT=bin_demangle_swift.o ../mangling/swift-sd.o
+
+CFLAGS+=-DR_BIN_DEMANGLE_SWIFT=1
+STATIC_OBJ+=${OBJ_DEMANGLE_SWIFT}
+TARGET_DEMANGLE_SWIFT=bin_demangle_swift.${EXT_SO}
+ALL_TARGETS+=${TARGET_DEMANGLE_SWIFT}
+
+${TARGET_DEMANGLE_SWIFT}: ${OBJ_DEMANGLE_SWIFT}
+	${CC} $(call libname,bin_demangle_swift) ${CFLAGS} -o $@ \
+		${OBJ_DEMANGLE_SWIFT} $(LINK) $(LDFLAGS)

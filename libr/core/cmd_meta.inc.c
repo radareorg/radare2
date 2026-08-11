@@ -40,8 +40,8 @@ static RCoreHelpMessage help_msg_C = {
 	"Ch", "[-] [size] [@addr]", "hide data",
 	"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (see pm?)",
 	"Cs", "[?] [-] [size] [@addr]", "add string",
-	"Ct", "[?] [-] [comment-text] [@addr]", "add/remove type analysis comment",
-	"Ct.", "[@addr]", "show comment at current or specified address",
+	"Ct", "[?*j,=.-] [annotation] [@addr]", "manage type analysis annotations",
+	"Ct.", "[@addr]", "show type analysis annotation at current or specified address",
 	"Cv", "[?][bsr]", "add comments to args",
 	NULL
 };
@@ -86,11 +86,17 @@ static RCoreHelpMessage help_msg_CL = {
 };
 
 static RCoreHelpMessage help_msg_Ct = {
-	"Usage: Ct", "[.|-] [@ addr]", " # Manage comments for variable types",
-	"Ct", "", "list all variable type comments",
-	"Ct", " comment-text [@ addr]", "place comment at current or specified address",
-	"Ct.", " [@ addr]", "show comment at current or specified address",
-	"Ct-", " [@ addr]", "remove comment at current or specified address",
+	"Usage: Ct", "[?*j,=.-] [annotation] [@ addr]", " # Manage address-based type analysis annotations",
+	"Ct", "", "list all type analysis annotations",
+	"Ct", " [base64:..|annotation] [@ addr]", "append an annotation at the current or specified address",
+	"Ct=", " [base64:..|annotation] [@ addr]", "set the annotation at the current or specified address",
+	"Ct.", " [@ addr]", "show the annotation at the current or specified address",
+	"Ct-", " [@ addr]", "remove the annotation at the current or specified address",
+	"Ct-*", "", "remove all type analysis annotations in the current metaspace",
+	"Ct*", "", "list all type analysis annotations as r2 commands",
+	"Ctj", "", "list all type analysis annotations as JSON",
+	"Ct,", " [table-query]", "list all type analysis annotations as a table",
+	"NOTE:", "", "Ct annotations are display metadata and do not change analyzed types",
 	NULL
 };
 
@@ -321,7 +327,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	FilterStruct fs = { core, UT64_MAX, 0, 0, NULL };
 
 	if (*p == '?') {
-		r_core_cmd_help (core, help_msg_CL);
+		r_cons_cmd_help (core->cons, help_msg_CL);
 		return 0;
 	}
 	if (*p == 'd') { // "CLd" - decompile current function from dwarf line info
@@ -551,7 +557,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	ut64 addr = core->addr;
 	switch (input[1]) {
 	case '?':
-		r_core_cmd_help (core, help_msg_CC);
+		r_cons_cmd_help (core->cons, help_msg_CC);
 		break;
 	case ',': // "CC,"
 		{
@@ -561,7 +567,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		break;
 	case 'F': // "CC,"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_CC, "CCF");
+			r_cons_cmd_help_match (core->cons, help_msg_CC, "CCF", 0, true);
 		} else if (input[2] == ' ') {
 			const char *fn = input + 2;
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
@@ -613,7 +619,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case '!': // "CC!"
 		{
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-			char *out = r_core_editor (core, NULL, comment);
+			char *out = r_core_editor (core, NULL, comment, NULL);
 			if (out) {
 				r_str_ansi_strip (out);
 				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
@@ -696,7 +702,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		if (s) {
 			s = strdup (s + 1);
 		} else {
-			r_core_cmd_help_match (core, help_msg_CC, "CCa");
+			r_cons_cmd_help_match (core->cons, help_msg_CC, "CCa", 0, true);
 			return false;
 		}
 		char *p = strchr (s, ' ');
@@ -711,7 +717,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 						R_META_TYPE_COMMENT,
 						addr, 1);
 			} else {
-				r_core_cmd_help_match (core, help_msg_CC, "CCa");
+				r_cons_cmd_help_match (core->cons, help_msg_CC, "CCa", 0, true);
 			}
 			free (s);
 			return true;
@@ -740,7 +746,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			}
 			free (newcomment);
 		} else {
-			r_core_cmd_help_match (core, help_msg_CC, "CCa");
+			r_cons_cmd_help_match (core->cons, help_msg_CC, "CCa", 0, true);
 		}
 		free (s);
 		return true;
@@ -749,32 +755,61 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	return true;
 }
 
+static char *meta_vartype_decode(const char *text) {
+	if (R_STR_ISEMPTY (text)) {
+		return NULL;
+	}
+	if (r_str_startswith (text, "base64:")) {
+		char *decoded = (char *)sdb_decode (text + 7, NULL);
+		if (!decoded) {
+			R_LOG_ERROR ("Invalid base64 string");
+		}
+		return decoded;
+	}
+	char *decoded = strdup (text);
+	if (decoded) {
+		r_str_unescape (decoded);
+	}
+	return decoded;
+}
+
+static void meta_vartype_set(RCore *core, const char *input, bool append) {
+	const char *arg = r_str_trim_head_ro (input);
+	char *annotation = meta_vartype_decode (arg);
+	if (!annotation) {
+		r_cons_cmd_help (core->cons, help_msg_Ct);
+		return;
+	}
+	const ut64 addr = core->addr;
+	const char *current = append
+		? r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr)
+		: NULL;
+	if (current) {
+		char *text = r_str_newf ("%s %s", current, annotation);
+		if (text) {
+			r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, text);
+			free (text);
+		}
+	} else {
+		r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, annotation);
+	}
+	free (annotation);
+}
+
 static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 	ut64 addr = core->addr;
 	switch (input[1]) {
 	case '?': // "Ct?"
-		r_core_cmd_help (core, help_msg_Ct);
+		r_cons_cmd_help (core->cons, help_msg_Ct);
 		break;
 	case 0: // "Ct"
 		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, 0, NULL, NULL);
 		break;
 	case ' ': // "Ct <vartype comment> @ addr"
-		{
-		const char* newcomment = r_str_trim_head_ro (input + 2);
-		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
-		char *nc = strdup (newcomment);
-		r_str_unescape (nc);
-		if (comment) {
-			char *text = r_str_newf ("%s %s", comment, nc);
-			if (R_LIKELY (text)) {
-				r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, text);
-				free (text);
-			}
-		} else {
-			r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, nc);
-		}
-		free (nc);
-		}
+		meta_vartype_set (core, input + 2, true);
+		break;
+	case '=': // "Ct="
+		meta_vartype_set (core, input + 2, false);
 		break;
 	case '.': // "Ct. @ addr"
 		{
@@ -786,10 +821,27 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 		}
 		break;
 	case '-': // "Ct-"
-		r_meta_del (core->anal, R_META_TYPE_VARTYPE, core->addr, 1);
+		if (!input[2]) {
+			r_meta_del (core->anal, R_META_TYPE_VARTYPE, core->addr, 1);
+		} else if (input[2] == '*' && !input[3]) {
+			r_meta_del (core->anal, R_META_TYPE_VARTYPE, 0, UT64_MAX);
+		} else {
+			r_cons_cmd_help (core->cons, help_msg_Ct);
+		}
+		break;
+	case '*': // "Ct*"
+		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, 1, NULL, NULL);
+		break;
+	case 'j': // "Ctj"
+		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, 'j', NULL, NULL);
+		break;
+	case ',': { // "Ct,"
+		RTable *t = r_core_table_new (core, "meta");
+		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, ',', input + 2, t);
+		}
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_Ct);
+		r_cons_cmd_help (core->cons, help_msg_Ct);
 		break;
 	}
 	return true;
@@ -962,7 +1014,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case '?':
 		switch (input[0]) {
 		case 'f': // "Cf?"
-			r_core_cmd_help_match (core, help_msg_C, "Cf");
+			r_cons_cmd_help_match (core->cons, help_msg_C, "Cf", 0, true);
 			r_cons_println (core->cons,
 				"'sz' indicates the byte size taken up by struct.\n"
 				"'fmt' is a 'pf?' style format string. It controls only the display format.\n\n"
@@ -972,7 +1024,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				"to match the total struct size in mem.\n");
 			break;
 		case 's': // "Cs?"
-			r_core_cmd_help (core, help_msg_Cs);
+			r_cons_cmd_help (core->cons, help_msg_Cs);
 			break;
 		default:
 			r_cons_println (core->cons, "See C?");
@@ -1016,7 +1068,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case '!': // "Cf!", "Cd!", ...
 		{
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-			char *out = r_core_editor (core, NULL, comment);
+			char *out = r_core_editor (core, NULL, comment, NULL);
 			if (out) {
 				r_str_ansi_strip (out);
 				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
@@ -1215,7 +1267,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 							n  = -1;
 						}
 					} else {
-						r_core_cmd_help_match (core, help_msg_C, "Cf");
+						r_cons_cmd_help_match (core->cons, help_msg_C, "Cf", 0, true);
 						break;
 					}
 				} else if (type == 's') { // "Cs"
@@ -1278,17 +1330,31 @@ static int cmd_meta_others(RCore *core, const char *input) {
 static void comment_var_help(RCore *core, char type) {
 	switch (type) {
 	case 'b':
-		r_core_cmd_help (core, help_msg_Cvb);
+		r_cons_cmd_help (core->cons, help_msg_Cvb);
 		break;
 	case 's':
-		r_core_cmd_help (core, help_msg_Cvs);
+		r_cons_cmd_help (core->cons, help_msg_Cvs);
 		break;
 	case 'r':
-		r_core_cmd_help (core, help_msg_Cvr);
+		r_cons_cmd_help (core->cons, help_msg_Cvr);
 		break;
 	case '?':
 		r_cons_printf (core->cons, "See Cvb?, Cvs? and Cvr?\n");
 	}
+}
+
+static RAnalVar *comment_var_find(RCore *core, RAnalFunction *fcn, int kind, const char *name) {
+	RAnalVar *var = r_anal_function_get_var_byname (fcn, name);
+	if (!var && R_STR_ISNOTEMPTY (name)) {
+		const char *err = NULL;
+		const st64 idx = (st64)r_num_get_err (core->num, name, &err);
+		// a name that is not a number must not resolve as offset 0, which is a real slot
+		if (!err) {
+			var = r_anal_function_get_var (fcn, kind,
+				(int)r_anal_var_raw_delta (core->anal, fcn, kind, idx));
+		}
+	}
+	return var;
 }
 
 static void cmd_Cv(RCore *core, const char *input) {
@@ -1340,11 +1406,7 @@ static void cmd_Cv(RCore *core, const char *input) {
 				comment = heap_comment;
 			}
 		}
-		RAnalVar *var = r_anal_function_get_var_byname (fcn, name);
-		if (!var) {
-			const int idx = (int)strtol (name, NULL, 0);
-			var = r_anal_function_get_var (fcn, input[0], idx);
-		}
+		RAnalVar *var = comment_var_find (core, fcn, input[0], name);
 		if (var) {
 			if (var->comment) {
 				if (R_STR_ISNOTEMPTY (comment)) {
@@ -1366,11 +1428,7 @@ static void cmd_Cv(RCore *core, const char *input) {
 	case '-': { // "Cv-"
 		name++;
 		r_str_trim (name);
-		RAnalVar *var = r_anal_function_get_var_byname (fcn, name);
-		if (!var) {
-			int idx = (int)strtol (name, NULL, 0);
-			var = r_anal_function_get_var (fcn, input[0], idx);
-		}
+		RAnalVar *var = comment_var_find (core, fcn, input[0], name);
 		if (!var) {
 			R_LOG_ERROR ("can't find variable at given offset");
 			break;
@@ -1388,7 +1446,7 @@ static void cmd_Cv(RCore *core, const char *input) {
 			R_LOG_ERROR ("can't find variable named `%s`", name);
 			break;
 		}
-		comment = r_core_editor (core, NULL, var->comment);
+		comment = r_core_editor (core, NULL, var->comment, NULL);
 		if (comment) {
 			free (var->comment);
 			var->comment = comment;
@@ -1457,7 +1515,7 @@ static int cmd_meta(void *data, const char *input) {
 		}
 		break;
 	case '?': // "C?"
-		r_core_cmd_help (core, help_msg_C);
+		r_cons_cmd_help (core->cons, help_msg_C);
 		break;
 	case 'F': // "CF"
 		f = r_anal_get_fcn_in (core->anal, core->addr,
@@ -1473,7 +1531,7 @@ static int cmd_meta(void *data, const char *input) {
 		/** copypasta from `fs`.. this must be refactorized to be shared */
 		switch (input[1]) {
 		case '?': // "CS?"
-			r_core_cmd_help (core, help_msg_CS);
+			r_cons_cmd_help (core->cons, help_msg_CS);
 			break;
 		case '+': // "CS+"
 			r_spaces_push (ms, input + 2);
@@ -1482,7 +1540,7 @@ static int cmd_meta(void *data, const char *input) {
 			if (input[2] == ' ') {
 				r_spaces_rename (ms, NULL, input + 2);
 			} else {
-				r_core_cmd_help_match (core, help_msg_CS, "CSr");
+				r_cons_cmd_help_match (core->cons, help_msg_CS, "CSr", 0, true);
 			}
 			break;
 		case '-': // "CS-"

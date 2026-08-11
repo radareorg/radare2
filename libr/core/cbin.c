@@ -5,6 +5,7 @@
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "core.bin"
 #include <r_core.h>
+#include "../bin/i/private.h"
 
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
@@ -203,15 +204,12 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 			}
 			flagname = dup;
 			int fmtsize = r_print_format_struct_size (core->print, v, 0, 0);
-			char *offset_key = r_str_newf ("%s.offset", flagname);
-			const char *off = sdb_const_get (db, offset_key, 0);
+			const char *off = sdb_const_getf (db, NULL, "%s.offset", flagname);
 			if (fmtsize < 1) {
-				free (offset_key);
 				free (dup);
 				continue;
 			}
 			fmtsize += 4;
-			free (offset_key);
 			if (off) {
 				if (IS_MODE_RAD (mode)) {
 					r_cons_printf (core->cons, "'@%s'Cf %d %s\n", off, fmtsize, v);
@@ -410,7 +408,7 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 		section_name = section? section->name: "";
 		type_string = r_bin_string_type (string->type);
 		if (b64str) {
-			ut8 *s = r_base64_decode_dyn (string->string, -1, NULL);
+			ut8 *s = r_base64_decode_dyn (string->string, -1, NULL, true);
 			if (R_STR_ISNOTEMPTY (s) && IS_PRINTABLE (*s)) {
 				// TODO: add more checks
 				free (b64.string);
@@ -418,6 +416,8 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 				b64.string = (char *)s;
 				b64.size = strlen (b64.string);
 				string = &b64;
+			} else {
+				free (s);
 			}
 		}
 		// Apply pagination for non-table output modes
@@ -665,7 +665,7 @@ R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 co
 		return false;
 	}
 	if (plugin->info && plugin->meta.name) {
-		if (!strcmp (plugin->meta.name, "any") && !rawstr) {
+		if (!strcmp (plugin->meta.name, "null") && !rawstr) {
 			if (IS_MODE_JSON (mode)) {
 				pj_a (pj);
 				pj_end (pj);
@@ -1833,18 +1833,6 @@ static ut8 bin_reloc_size(RBinReloc *reloc) {
 #undef CASE
 }
 
-static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
-	r_strf_buffer (64);
-	Sdb *db = sdb;
-	char *foo = sdb_get (db, r_strf ("%d", ordinal), 0);
-	if (foo) {
-		if (!*foo) {
-			R_FREE (foo);
-		}
-	}
-	return foo;
-}
-
 // name can be optionally used to explicitly set the used base name (for example for demangling), otherwise the import name will be used.
 static char *construct_reloc_name(RBinReloc *R_NONNULL reloc, const char *R_NULLABLE name) {
 	RStrBuf *buf = r_strbuf_new ("");
@@ -1898,7 +1886,6 @@ static void ri_init(RCore *core, RelocInfo *ri) {
 
 static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
 	RCore *core = ri->core;
-	r_strf_buffer (64);
 
 	const char *name = reloc->import? r_bin_name_tostring (reloc->import->name): NULL;
 	if (ri->is_pe && name && reloc->import->libname && r_str_startswith (name, "Ordinal_")) {
@@ -1913,38 +1900,21 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 
 		const char *import = name + strlen ("Ordinal_");
 		if (import) {
-			char *filename = NULL;
 			int ordinal = atoi (import);
 			if (!*sdb_module || strcmp (module, *sdb_module)) {
 				sdb_free (*db);
 				*db = NULL;
 				free (*sdb_module);
 				*sdb_module = strdup (module);
-				/* always lowercase */
-				filename = r_strf ("%s.sdb", module);
-				r_str_case (filename, false);
-				if (r_file_exists (filename)) {
-					*db = sdb_new (NULL, filename, 0);
-				} else {
-					char *dirPrefix = r_sys_prefix (NULL);
-					filename = r_strf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"), dirPrefix, module);
-					free (dirPrefix);
-					if (r_file_exists (filename)) {
-						*db = sdb_new (NULL, filename, 0);
-					}
-				}
+				*db = open_ordinalsdb (core->bin->sdbdir, module);
 			}
 			if (*db) {
 				// ordinal-1 because we enumerate starting at 0
-				char *symname = resolveModuleOrdinal (*db, module, ordinal - 1); // uses sdb_get
+				const char *symname = sdb_const_getf (*db, NULL, "%d", ordinal - 1);
 				if (symname) {
-					char *s = symname;
-					if (core->bin->prefix) {
-						s = r_str_newf ("%s.%s", core->bin->prefix, symname);
-						R_FREE (symname);
-					}
-					r_bin_name_demangled (reloc->import->name, s);
-					free (s);
+					char *prefixed = core->bin->prefix? r_str_newf ("%s.%s", core->bin->prefix, symname): NULL;
+					r_bin_name_demangled (reloc->import->name, prefixed? prefixed: symname);
+					free (prefixed);
 				}
 			}
 		}
@@ -4818,7 +4788,7 @@ static void bin_pe_versioninfo(RCore *core, PJ *pj, int mode) {
 					ut8 *val_utf16 = sdb_decode (sdb_const_get (sdb, "value", 0), &lenval);
 					ut8 *key_utf8 = calloc (lenkey * 2, 1);
 					ut8 *val_utf8 = calloc (lenval * 2, 1);
-					if (r_str_utf16_to_utf8 (key_utf8, lenkey * 2, key_utf16, lenkey, true) < 0 || r_str_utf16_to_utf8 (val_utf8, lenval * 2, val_utf16, lenval, true) < 0) {
+					if (r_str_utf16_to_utf8 (key_utf8, lenkey * 2, key_utf16, lenkey, false) < 0 || r_str_utf16_to_utf8 (val_utf8, lenval * 2, val_utf16, lenval, false) < 0) {
 						R_LOG_WARN ("Cannot decode utf16 to utf8");
 					} else if (IS_MODE_JSON (mode)) {
 						pj_ks (pj, (char *)key_utf8, (char *)val_utf8);
@@ -4883,8 +4853,7 @@ static void bin_elf_versioninfo(RCore *core, PJ *pj, int mode) {
 		}
 		int i;
 		for (i = 0; i < num_entries; i++) {
-			r_strf_var (key, 32, "entry%d", i);
-			const char *const value = sdb_const_get (sdb, key, 0);
+			const char *const value = sdb_const_getf (sdb, NULL, "entry%d", i);
 			if (value) {
 				if (oValue && !strcmp (value, oValue)) {
 					continue;
@@ -5015,104 +4984,136 @@ static void bin_mach0_versioninfo(RCore *core) {
 	/* TODO */
 }
 
-static void bin_pe_resources(RCore *core, PJ *pj, int mode) {
-	Sdb *sdb = NULL;
-	int index = 0;
-	const char *pe_path = "bin/cur/info/pe_resource";
-	if (! (sdb = sdb_ns_path (core->sdb, pe_path, 0))) {
-		return;
+static bool bin_resources(RCore *core, PJ *pj, int mode, int va) {
+	RBinFile *bf = r_bin_cur (core->bin);
+	RVecRBinResource *resources = bf? r_bin_file_get_resources (bf): NULL;
+	bool loaded = resources != NULL;
+	const bool table_mode = IS_MODE_NORMAL (mode) && core->table_query;
+	RTable *table = table_mode? r_core_table_new (core, "resources"): NULL;
+	if (table) {
+		r_table_set_columnsf (table, "dXXnss", "nth", "paddr", "vaddr", "size", "type", "name");
 	}
-	if (IS_MODE_SET (mode)) {
+	RVecRBinResource empty = {0};
+	if (!resources) {
+		resources = &empty;
+	}
+	bool has_resources = !RVecRBinResource_empty (resources);
+	if (IS_MODE_SET (mode) && has_resources) {
 		r_flag_space_set (core->flags, R_FLAGS_FS_RESOURCES);
-	} else if (IS_MODE_RAD (mode)) {
+	} else if (IS_MODE_RAD (mode) && has_resources) {
 		r_cons_printf (core->cons, "fs resources\n");
 	} else if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	}
-	while (true) {
-		r_strf_var (timestrKey, 32, "resource.%d.timestr", index);
-		r_strf_var (vaddrKey, 32, "resource.%d.vaddr", index);
-		r_strf_var (sizeKey, 32, "resource.%d.size", index);
-		r_strf_var (typeKey, 32, "resource.%d.type", index);
-		r_strf_var (languageKey, 32, "resource.%d.language", index);
-		r_strf_var (nameKey, 32, "resource.%d.name", index);
-		char *timestr = sdb_get (sdb, timestrKey, 0);
-		if (!timestr) {
-			break;
-		}
-		ut64 vaddr = sdb_num_get (sdb, vaddrKey, 0);
-		int size = (int)sdb_num_get (sdb, sizeKey, 0);
-		char *name = sdb_get (sdb, nameKey, 0);
-		char *type = sdb_get (sdb, typeKey, 0);
-		char *lang = sdb_get (sdb, languageKey, 0);
-
+	RBinResource *resource;
+	R_VEC_FOREACH (resources, resource) {
+		ut64 addr = va? resource->vaddr: resource->paddr;
+		const char *name = R_STR_ISNOTEMPTY (resource->name)? resource->name: "-";
+		const char *type = R_STR_ISNOTEMPTY (resource->type)? resource->type: "-";
+		const char *encoding = R_STR_ISNOTEMPTY (resource->encoding)? resource->encoding: NULL;
 		if (IS_MODE_SET (mode)) {
-			r_strf_var (name, 32, "resource.%d", index);
-			r_flag_set (core->flags, name, vaddr, size);
+			r_strf_var (flagname, 32, "resource.%u", resource->index);
+			r_flag_set (core->flags, flagname, addr, resource->size);
 		} else if (IS_MODE_RAD (mode)) {
-			r_cons_printf (core->cons, "f resource.%d %d 0x%08" PFMT64x "\n", index, size, vaddr);
+			r_cons_printf (core->cons, "f resource.%u %" PFMT64u " 0x%08" PFMT64x "\n",
+				resource->index, resource->size, addr);
+		} else if (IS_MODE_SIMPLEST (mode)) {
+			r_cons_println (core->cons, name);
+		} else if (IS_MODE_SIMPLE (mode)) {
+			r_cons_printf (core->cons, "0x%08" PFMT64x " %" PFMT64u " %s %s\n",
+				addr, resource->size, type, name);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
-			pj_ks (pj, "name", name);
-			pj_ki (pj, "index", index);
-			if (R_STR_ISNOTEMPTY (type)) {
-				pj_ks (pj, "type", type);
+			pj_ks (pj, "name", r_str_get (resource->name));
+			pj_ki (pj, "index", resource->index);
+			if (R_STR_ISNOTEMPTY (resource->type)) {
+				pj_ks (pj, "type", resource->type);
+			} else {
+				pj_knull (pj, "type");
 			}
-			pj_kn (pj, "vaddr", vaddr);
-			pj_ki (pj, "size", size);
-			if (lang && *lang != '?') {
-				pj_ks (pj, "lang", lang);
+			if (encoding) {
+				pj_ks (pj, "encoding", encoding);
 			}
-			pj_ks (pj, "timestamp", timestr);
+			pj_kn (pj, "vaddr", resource->vaddr);
+			pj_kn (pj, "paddr", resource->paddr);
+			pj_kn (pj, "size", resource->size);
+			if (resource->id == UT64_MAX) {
+				pj_knull (pj, "id");
+			} else {
+				pj_kn (pj, "id", resource->id);
+			}
+			if (resource->type_id == UT32_MAX) {
+				pj_knull (pj, "type_id");
+			} else {
+				pj_kn (pj, "type_id", resource->type_id);
+			}
+			if (resource->language && *resource->language != '?') {
+				pj_ks (pj, "lang", resource->language);
+			} else {
+				pj_knull (pj, "lang");
+			}
+			pj_kn (pj, "language_id", resource->language_id);
+			pj_kn (pj, "codepage", resource->codepage);
+			pj_kb (pj, "named", resource->named);
+			if (R_STR_ISNOTEMPTY (resource->timestamp)) {
+				pj_ks (pj, "timestamp", resource->timestamp);
+			} else {
+				pj_knull (pj, "timestamp");
+			}
+			if (R_STR_ISNOTEMPTY (resource->origin)) {
+				pj_ks (pj, "origin", resource->origin);
+			}
 			pj_end (pj);
+		} else if (table) {
+			r_table_add_rowf (table, "dXXnss", resource->index, resource->paddr,
+				resource->vaddr, resource->size, type, name);
 		} else {
 			char humansz[8];
-			r_num_units (humansz, sizeof (humansz), size);
-			r_cons_printf (core->cons, "Resource %d\n", index);
+			r_num_units (humansz, sizeof (humansz), resource->size);
+			r_cons_printf (core->cons, "Resource %u\n", resource->index);
 			r_cons_printf (core->cons, "  name: %s\n", name);
-			r_cons_printf (core->cons, "  timestamp: %s\n", timestr);
-			r_cons_printf (core->cons, "  vaddr: 0x%08" PFMT64x "\n", vaddr);
+			if (resource->id == UT64_MAX) {
+				r_cons_println (core->cons, "  id: -");
+			} else {
+				r_cons_printf (core->cons, "  id: %" PFMT64u "\n", resource->id);
+			}
+			r_cons_printf (core->cons, "  named: %s\n", r_str_bool (resource->named));
+			r_cons_printf (core->cons, "  timestamp: %s\n",
+				R_STR_ISNOTEMPTY (resource->timestamp)? resource->timestamp: "-");
+			if (R_STR_ISNOTEMPTY (resource->origin)) {
+				r_cons_printf (core->cons, "  origin: %s\n", resource->origin);
+			}
+			r_cons_printf (core->cons, "  vaddr: 0x%08" PFMT64x "\n", resource->vaddr);
+			r_cons_printf (core->cons, "  paddr: 0x%08" PFMT64x "\n", resource->paddr);
 			r_cons_printf (core->cons, "  size: %s\n", humansz);
 			r_cons_printf (core->cons, "  type: %s\n", type);
-			r_cons_printf (core->cons, "  language: %s\n", lang);
+			if (encoding) {
+				r_cons_printf (core->cons, "  encoding: %s\n", encoding);
+			}
+			if (resource->type_id == UT32_MAX) {
+				r_cons_println (core->cons, "  type_id: -");
+			} else {
+				r_cons_printf (core->cons, "  type_id: %" PFMT32u "\n", resource->type_id);
+			}
+			r_cons_printf (core->cons, "  language: %s\n",
+				R_STR_ISNOTEMPTY (resource->language)? resource->language: "-");
+			r_cons_printf (core->cons, "  language_id: %" PFMT32u "\n", resource->language_id);
+			r_cons_printf (core->cons, "  codepage: %" PFMT32u "\n", resource->codepage);
 		}
-
-		R_FREE (timestr);
-		R_FREE (name);
-		R_FREE (type);
-		R_FREE (lang)
-
-		index++;
 	}
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
-	} else if (IS_MODE_RAD (mode)) {
+	} else if (IS_MODE_RAD (mode) && has_resources) {
 		r_cons_println (core->cons, "fs *");
-	}
-}
-
-static void bin_no_resources(RCore *core, PJ *pj, int mode) {
-	if (IS_MODE_JSON (mode)) {
-		pj_a (pj);
-		pj_end (pj);
-	}
-}
-
-static bool bin_resources(RCore *core, PJ *pj, int mode) {
-	const RBinInfo *info = r_bin_get_info (core->bin);
-	if (!info || !info->rclass) {
-		if (IS_MODE_JSON (mode)) {
-			pj_o (pj);
-			pj_end (pj);
+	} else if (table) {
+		if (r_table_query (table, core->table_query)) {
+			char *s = r_table_tostring (table);
+			r_cons_print (core->cons, s);
+			free (s);
 		}
-		return false;
 	}
-	if (!strncmp ("pe", info->rclass, 2)) {
-		bin_pe_resources (core, pj, mode);
-	} else {
-		bin_no_resources (core, pj, mode);
-	}
-	return true;
+	r_table_free (table);
+	return loaded;
 }
 
 static void bin_mdmp_versioninfo(RCore *core, PJ *pj, int mode) {
@@ -5341,7 +5342,7 @@ R_API bool r_core_bin_info(RCore *core, ut64 action, PJ *pj, int mode, int va, R
 		ret &= bin_versioninfo (core, pj, mode);
 	}
 	if ((action & R_CORE_BIN_ACC_RESOURCES)) {
-		ret &= bin_resources (core, pj, mode);
+		ret &= bin_resources (core, pj, mode, va);
 	}
 	if ((action & R_CORE_BIN_ACC_SIGNATURE)) {
 		ret &= bin_signature (core, pj, mode);

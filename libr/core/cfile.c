@@ -56,31 +56,62 @@ static void load_gp_mips(RCore *core) {
 	r_config_set_i (core->config, "anal.gp", gp);
 }
 
-static void load_gp_ppc(RCore *core) {
-	// PPC64: set anal.gp to the TOC base (.opd[0]+8, else .toc/.got+0x8000) for ppc_cs
-	ut64 gp = UT64_MAX;
+static ut64 sda_base_sym(RCore *core) {
+	// flag prefix depends on symbol type: NOTYPE -> loc, OBJECT -> obj
+	ut64 v;
+	if (num_get (core, "loc._SDA_BASE_", &v) && v != UT64_MAX) {
+		return v;
+	}
+	if (num_get (core, "obj._SDA_BASE_", &v) && v != UT64_MAX) {
+		return v;
+	}
+	return UT64_MAX;
+}
+
+static ut64 ppc32_sda_base(RCore *core) {
+	RBinInfo *info = r_bin_get_info (core->bin);
+	if (!info || !info->type || !strstr (info->type, "EXEC")) {
+		return UT64_MAX;
+	}
+	ut64 sdata = UT64_MAX;
+	if (!num_get (core, "section..sdata", &sdata) || sdata == UT64_MAX) {
+		return UT64_MAX;
+	}
+	ut64 base = sdata + 0x8000;
+	ut64 sym = sda_base_sym (core);
+	if (sym != UT64_MAX && sym != base) {
+		// r2 isn't the SDA base (eg. ppc32 TLS pointer)
+		return UT64_MAX;
+	}
+	return base;
+}
+
+static ut64 ppc64_toc_base(RCore *core) {
 	ut64 opd = UT64_MAX;
 	if (num_get (core, "section..opd", &opd) && opd != UT64_MAX) {
 		ut8 buf[8];
 		if (r_io_read_at (core->io, opd + 8, buf, 8)) {
 			ut64 v = r_read_be64 (buf);
 			if (v && v != UT64_MAX) {
-				gp = v;
+				return v;
 			}
 		}
 	}
-	if (gp == UT64_MAX) {
-		ut64 t = UT64_MAX;
-		bool has_t = num_get (core, "section..toc", &t);
-		if (!has_t || t == UT64_MAX) {
-			has_t = num_get (core, "section..got", &t);
-		}
-		if (has_t && t != UT64_MAX) {
-			gp = t + 0x8000;
-		}
+	ut64 t = UT64_MAX;
+	bool has_t = num_get (core, "section..toc", &t);
+	if (!has_t || t == UT64_MAX) {
+		has_t = num_get (core, "section..got", &t);
 	}
+	if (has_t && t != UT64_MAX) {
+		return t + 0x8000;
+	}
+	return UT64_MAX;
+}
+
+static void load_gp_ppc(RCore *core) {
+	ut64 gp = (core->rasm->config->bits == 64)? ppc64_toc_base (core): ppc32_sda_base (core);
 	if (gp != UT64_MAX) {
-		R_LOG_DEBUG ("[ppc64] toc: 0x%"PFMT64x, gp);
+		R_LOG_DEBUG ("[ppc] gp: 0x%"PFMT64x, gp);
 		r_config_set_i (core->config, "anal.gp", gp);
 		r_reg_setv (core->anal->reg, "r2", gp);
 	}
@@ -89,19 +120,15 @@ static void load_gp_ppc(RCore *core) {
 // R2R db/cmd/cmd_eval
 static void load_gp(RCore *core) {
 	RArchConfig *cfg = core->rasm->config;
-	if (cfg) {
-		bool isppc = false;
-		bool ismips = r_str_startswith (cfg->arch, "mips");
-		if (!ismips) {
-			isppc = r_str_startswith (cfg->arch, "ppc")
-				&& cfg->bits == 64
-				&& R_ARCH_CONFIG_IS_BIG_ENDIAN (cfg);
-		}
-		if (isppc) {
-			load_gp_ppc (core);
-		} else if (ismips) {
-			load_gp_mips (core);
-		}
+	if (!cfg) {
+		return;
+	}
+	if (r_str_startswith (cfg->arch, "mips")) {
+		load_gp_mips (core);
+	} else if (r_str_startswith (cfg->arch, "ppc")
+			&& (cfg->bits == 64 || cfg->bits == 32)
+			&& R_ARCH_CONFIG_IS_BIG_ENDIAN (cfg)) {
+		load_gp_ppc (core);
 	}
 }
 
@@ -490,7 +517,7 @@ static int r_core_file_load_for_debug(RCore *r, ut64 baseaddr, const char * R_NU
 	r_core_bin_set_env (r, bf);
 	plugin = r_bin_file_cur_plugin (bf);
 	const char *plugin_name = plugin? plugin->meta.name: "";
-	if (!strcmp (plugin_name, "any")) {
+	if (!strcmp (plugin_name, "null")) {
 		// set use of raw strings
 		// r_config_set_i (r->config, "io.va", false);
 		// r_config_set_b (r->config, "bin.str.raw", true);
@@ -570,7 +597,7 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 		}
 	}
 	plugin = r_bin_file_cur_plugin (bf);
-	if (plugin && !strcmp (plugin->meta.name, "any")) {
+	if (plugin && !strcmp (plugin->meta.name, "null")) {
 		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
@@ -809,7 +836,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 
 	if (desc && plugin && plugin->meta.name) {
-		if (!strcmp (plugin->meta.name, "any")) {
+		if (!strcmp (plugin->meta.name, "null")) {
 			ut64 size = (desc->name && (r_str_startswith (desc->name, "rap") && strstr (desc->name, "://")))
 				? UT64_MAX : r_io_desc_size (desc);
 			r_io_map_add (r->io, desc->fd, desc->perm, 0, laddr, size);

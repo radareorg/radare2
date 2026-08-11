@@ -50,6 +50,35 @@ R_IPI void r_cons_win_clear(RCons *cons) {
 		nLength, startCoords, &dummy);
 }
 
+R_IPI void r_cons_win_clear_line(RCons *cons, int fd) {
+	FILE *stream = (fd == 1)? stdout: stderr;
+	if (cons->vtmode) {
+		fprintf (stream, "%s", R_CONS_CLEAR_LINE);
+		return;
+	}
+	fflush (stream);
+	if (cons->is_wine == 1) {
+		write (fd, R_CONS_CLEAR_LINE, 5);
+	}
+	HANDLE *hConsole = (fd == 1)? &cons->hStdout: &cons->hStderr;
+	if (!*hConsole) {
+		*hConsole = GetStdHandle ((fd == 1)? STD_OUTPUT_HANDLE: STD_ERROR_HANDLE);
+	}
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	DWORD dummy;
+	if (GetConsoleScreenBufferInfo (*hConsole, &csbi)) {
+		// blank the line and home the caret with console calls instead of
+		// streaming a row of spaces; avoids flicker on slow legacy consoles
+		COORD home = { 0, csbi.dwCursorPosition.Y };
+		FillConsoleOutputCharacterA (*hConsole, ' ', csbi.dwSize.X, home, &dummy);
+		FillConsoleOutputAttribute (*hConsole, csbi.wAttributes, csbi.dwSize.X, home, &dummy);
+		SetConsoleCursorPosition (*hConsole, home);
+	} else if (cons->columns > 0) {
+		// not a console (redirected output)
+		fprintf (stream, "\r%*s\r", cons->columns, "");
+	}
+}
+
 R_IPI void r_cons_win_gotoxy(RCons *cons, int fd, int x, int y) {
 	HANDLE *hConsole = (fd == 1)? &cons->hStdout : &cons->hStderr;
 	COORD coord = { .X = x, .Y = y };
@@ -135,18 +164,12 @@ static int win_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmo
 			if (vmode && lines < 1) {
 				break;
 			}
-			if (raw_ll < 1) {
-				continue;
-			}
-			if (vmode) {
-				/* only chop columns if necessary */
-				if (ll + linelen >= cols) {
-					// chop line if too long
-					ll = (cols - linelen) - 1;
-					if (ll < 0) {
-						continue;
-					}
-				}
+			// even when the pending segment is empty (line ending right
+			// after an escape sequence) the newline bookkeeping below must
+			// run, or linelen desyncs and the next lines get chopped
+			if (vmode && ll + linelen >= cols) {
+				// chop line if too long
+				ll = (cols - linelen) - 1;
 			}
 			if (ll > 0) {
 				raw_ll = bytes_utf8len (str, ll);
@@ -247,8 +270,11 @@ static int win_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmo
 			}
 			if (state == -2) {
 				r_cons_win_gotoxy (cons, fd, x, y);
-				ptr += i;
-				str = ptr; // + i-2;
+				// land on the final 'H' so the loop increment moves just
+				// past the sequence, and leave escape-parsing state
+				ptr += i - 1;
+				str = ptr + 1;
+				esc = 0;
 				continue;
 			}
 			bool bright = false;
@@ -331,11 +357,12 @@ static int win_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmo
 					fg |= 8;
 				}
 				SetConsoleTextAttribute (hConsole, bg|fg|inv);
-				esc = 0;
+				// on ';' keep parsing the rest of the sequence (\x1b[32;1m)
+				esc = (ptr[2] == ';')? 2: 0;
 				ptr = ptr + 2;
 				str = ptr + 1;
 				continue;
-			} else if ((ptr[0] == '4' && ptr[2] == 'm')
+			} else if ((ptr[0] == '4' && (ptr[2] == 'm' || ptr[2] == ';'))
 					|| (bright = ptr[0] == '1' && ptr[1] == '0' && ptr[3] == 'm')) {
 				/* background color */
 				ut8 col = bright ? ptr[2] : ptr[1];
@@ -372,8 +399,27 @@ static int win_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmo
 					bg |= 0x80;
 				}
 				SetConsoleTextAttribute (hConsole, bg|fg|inv);
-				esc = 0;
+				esc = (!bright && ptr[2] == ';')? 2: 0;
 				ptr = ptr + (bright ? 3 : 2);
+				str = ptr + 1;
+				continue;
+			} else if (ptr[0] == '1' && (ptr[1] == 'm' || ptr[1] == ';')) {
+				// bold: map to the intensity bit
+				fg |= 8;
+				SetConsoleTextAttribute (hConsole, bg|fg|inv);
+				esc = (ptr[1] == ';')? 2: 0;
+				ptr = ptr + 1;
+				str = ptr + 1;
+				continue;
+			} else {
+				// unsupported csi sequence (?25l, 38;5;..m, ...): swallow
+				// it up to its final byte instead of leaking it as text
+				int j = 0;
+				while (ptr + j < ptr_end && ptr[j] && !(ptr[j] >= '@' && ptr[j] <= '~')) {
+					j++;
+				}
+				esc = 0;
+				ptr += j;
 				str = ptr + 1;
 				continue;
 			}
@@ -458,11 +504,9 @@ R_IPI int win_is_vtcompat(RCons *cons) {
 	DWORD major;
 	DWORD minor;
 	DWORD release = 0;
-	char *cmd_session = r_sys_getenv ("SESSIONNAME");
-	if (cmd_session) {
-		free (cmd_session);
-		return 2;
-	}
+	// note: SESSIONNAME is set on every interactive NT session (also on
+	// xp/reactos consoles without vt support), so it must not be used to
+	// assume ansi escape compatibility
 	// Windows Terminal
 	char *wt_session = r_sys_getenv ("WT_SESSION");
 	if (wt_session) {

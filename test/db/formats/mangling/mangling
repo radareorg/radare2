@@ -13,9 +13,7 @@ iD list
 EOF
 EXPECT=<<EOF
 c++
-dart
 dlang
-groovy
 ibmxl
 java
 msvc

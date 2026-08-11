@@ -25,8 +25,7 @@ ao~fail
 EOF
 EXPECT=<<EOF
 type: jmp
-jump: 0x0000014c
-fail: 0x00000044
+jump: 0x0000054c
 EOF
 RUN
 
@@ -207,9 +206,11 @@ e asm.bits=16
 s 0x40
 wx 6fbe
 ao~type
+ao~val
 EOF
 EXPECT=<<EOF
 type: trap
+val: 0x0000006f
 EOF
 RUN
 
@@ -269,6 +270,20 @@ wx bf00
 ao~type
 EOF
 EXPECT=<<EOF
+type: unk
+EOF
+RUN
+
+NAME=nop
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=arm.gnu
+e asm.bits=16
+s 0x40
+wx 00bf
+ao~type
+EOF
+EXPECT=<<EOF
 type: nop
 EOF
 RUN
@@ -281,8 +296,62 @@ e asm.bits=16
 s 0x40
 wx 05df
 ao~type
+ao~val
+ao~jump
+EOF
+EXPECT=<<EOF
+type: swi
+val: 0x00000005
+EOF
+RUN
+
+NAME=udf
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=arm.gnu
+e asm.bits=16
+s 0x40
+wx 01de
+ao~type
+ao~val
+ao~jump
+EOF
+EXPECT=<<EOF
+type: trap
+val: 0x00000001
+EOF
+RUN
+
+NAME=bne.n backward
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=arm.gnu
+e asm.bits=16
+s 0x40
+wx fbd1
+ao~type
+ao~jump
+ao~fail
 EOF
 EXPECT=<<EOF
 type: cjmp
+jump: 0x0000003a
+fail: 0x00000042
+EOF
+RUN
+
+NAME=b.n backward
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=arm.gnu
+e asm.bits=16
+s 0x40
+wx fee7
+ao~type
+ao~jump
+EOF
+EXPECT=<<EOF
+type: jmp
+jump: 0x00000040
 EOF
 RUN

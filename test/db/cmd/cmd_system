@@ -14,6 +14,33 @@ yeah
 EOF
 RUN
 
+NAME=system shell owns conditional operators
+FILE=-
+CMDS=<<EOF
+!echo LEFT && echo RIGHT
+!false || echo RECOVERED
+!printf PIPE 2>/dev/null | grep PIPE
+EOF
+EXPECT=<<EOF
+LEFT
+RIGHT
+RECOVERED
+PIPE
+EOF
+RUN
+
+NAME=system commands keep r2 preprocessing
+FILE=-
+CMDS=<<EOF
+!!printf 'alpha\nbeta\n'~alpha
+!printf '%s\n' $(!printf nested)
+EOF
+EXPECT=<<EOF
+alpha
+nested
+EOF
+RUN
+
 NAME=!| grep
 FILE=-
 CMDS=!echo fuck|grep bob

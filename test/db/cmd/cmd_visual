@@ -66,6 +66,58 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=visual arm64 string meta scroll down aligns after end
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e scr.interactive=true
+e arch.codealign=4
+Cs 5 @ 4
+Cs 6 @ 0x14
+Cs 7 @ 0x24
+s 4
+Vpjjq
+s
+s 0x14
+Vjjq
+s
+s 0x24
+Vjjq
+s
+EOF
+EXPECT=<<EOF
+0xc
+0x1c
+0x2c
+EOF
+RUN
+
+NAME=visual arm64 string meta scroll up from aligned code
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e scr.interactive=true
+e arch.codealign=4
+Cs 7 @ 4
+Cs 6 @ 0x14
+Cs 5 @ 0x24
+s 0xc
+Vpkq
+s
+s 0x1c
+Vkq
+s
+s 0x2c
+Vkq
+s
+EOF
+EXPECT=<<EOF
+0xb
+0x1a
+0x29
+EOF
+RUN
+
 NAME=visual cmd.visual disasm scroll aligns
 FILE=-
 ARGS=-a arm -b 64
@@ -79,6 +131,104 @@ s
 EOF
 EXPECT=<<EOF
 0x4
+EOF
+RUN
+
+NAME=visual arm32 middle flag disasm scroll
+FILE=-
+ARGS=-a arm -b 32
+CMDS=<<EOF
+e scr.interactive=true
+e arch.codealign=4
+e asm.flags.middle=2
+f class.Class1 @ 5
+s 4
+Vpjjq
+s
+s 5
+Vpkq
+s
+s 8
+Vkq
+s
+EOF
+EXPECT=<<EOF
+0x8
+0x4
+0x5
+EOF
+RUN
+
+NAME=visual arm32 middle bb disasm scroll
+FILE=-
+ARGS=-a arm -b 32
+CMDS=<<EOF
+e scr.interactive=true
+e arch.codealign=4
+e asm.flags.middle=0
+e asm.bbmiddle=true
+af+ 0 fcn
+afb+ 0 0 5
+afb+ 0 5 3
+s 4
+Vpjjq
+s
+s 5
+Vpkq
+s
+s 8
+Vkq
+s
+EOF
+EXPECT=<<EOF
+0x8
+0x4
+0x5
+EOF
+RUN
+
+NAME=visual arm32 metadata and middle flag scroll up
+FILE=-
+ARGS=-a arm -b 32
+CMDS=<<EOF
+e scr.interactive=true
+e arch.codealign=4
+e asm.flags.middle=2
+Cs 5 @ 4
+f mid.flag @ 0xa
+s 0xa
+Vpkq
+s
+s 0xc
+Vkq
+s
+EOF
+EXPECT=<<EOF
+0x9
+0xa
+EOF
+RUN
+
+NAME=visual string meta scroll up rows
+FILE=-
+CMDS=<<EOF
+e scr.interactive=true
+e asm.arch=x86
+e asm.bits=64
+e asm.hints=false
+e hex.cols=16
+wx 909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090
+Cs 32 @ 0x10
+s 0x20
+Vpkq
+s
+s 0x30
+Vpkq
+s
+EOF
+EXPECT=<<EOF
+0x10
+0x20
 EOF
 RUN
 

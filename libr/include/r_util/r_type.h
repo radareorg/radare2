@@ -31,6 +31,7 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val);
 R_API RList *r_type_get_enum(Sdb *TDB, const char *name);
 R_API void r_type_enum_free(RTypeEnum *member);
 R_API ut64 r_type_get_bitsize(Sdb * R_NONNULL TDB, const char * R_NONNULL type);
+R_API R_OWNED char *r_type_get_member(Sdb * R_NONNULL TDB, const char * R_NONNULL key, ut64 * R_NULLABLE offset, int * R_NULLABLE count);
 R_API RList *r_type_get_by_offset(Sdb * R_NONNULL TDB, ut64 offset);
 R_API char *r_type_get_struct_memb(Sdb * R_NONNULL TDB, const char * R_NONNULL type, int offset);
 R_API char *r_type_link_at(Sdb *TDB, ut64 addr);
@@ -38,6 +39,7 @@ R_API int r_type_set_link(Sdb *TDB, const char *val, ut64 addr);
 R_API int r_type_unlink(Sdb *TDB, ut64 addr);
 R_API int r_type_link_offset(Sdb *TDB, const char *val, ut64 addr);
 R_API char *r_type_format(Sdb *TDB, const char *t);
+R_API bool r_type_is_signed(Sdb * R_NONNULL TDB, const char * R_NONNULL type);
 
 // Function prototypes api
 R_API int r_type_func_exist(Sdb *TDB, const char *func_name);
@@ -48,6 +50,12 @@ R_API R_OWNED char *r_type_func_args_type(Sdb *TDB, const char * R_NONNULL func_
 R_API const char *r_type_func_args_name(Sdb *TDB, const char * R_NONNULL func_name, int i);
 R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char * R_NONNULL func_name);
 R_API R_OWNED char *r_type_func_name(Sdb *types, const char *fname);
+R_API bool r_type_func_is_variadic(Sdb *TDB, const char * R_NONNULL func_name);
+
+// the variadic slot is named "..." (r2 <= 6.1.8 stored it in the type half instead)
+static inline bool r_type_arg_is_vararg(const char *type, const char *name) {
+	return (type && !strcmp (type, "...")) || (name && !strcmp (name, "..."));
+}
 
 #ifdef __cplusplus
 }

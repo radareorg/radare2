@@ -1,6 +1,8 @@
-/* radare - LGPL - Copyright 2013-2025 - pancake */
+/* radare - LGPL - Copyright 2013-2026 - pancake */
 
 #include <r_util.h>
+
+#define SBSZ 512
 
 // Base growth: +12.5%, with adaptive slack to avoid size-class boundaries
 static inline size_t growlog(size_t cap, size_t required) {
@@ -14,6 +16,40 @@ static inline size_t growlog(size_t cap, size_t required) {
 	}
 	// avoids sharp size-class boundaries
 	return grown + (grown < 1024? 64: (grown >> 4));
+}
+
+static bool strbuf_vprintf(RStrBuf *sb, const char *fmt, va_list ap, size_t len, bool prepend) {
+	size_t required;
+	if (r_add_overflow (sb->len, len + 1, &required) || !r_strbuf_reserve (sb, required - 1)) {
+		return false;
+	}
+	char *buf = r_strbuf_get (sb);
+	const size_t oldlen = sb->len;
+	if (prepend && oldlen > 0) {
+		memmove (buf + len, buf, oldlen);
+	}
+	char first = prepend && oldlen > 0? buf[len]: 0;
+	int ret = vsnprintf (buf + (prepend? 0: oldlen), len + 1, fmt, ap);
+	if (ret < 0 || (size_t)ret != len) {
+		if (prepend && oldlen > 0) {
+			buf[len] = first;
+			memmove (buf, buf + len, oldlen);
+		}
+		buf[oldlen] = 0;
+		return false;
+	}
+	if (prepend && oldlen > 0) {
+		buf[len] = first;
+	}
+	sb->len += len;
+	buf[sb->len] = 0;
+	return true;
+}
+
+static bool strbuf_setbin_free(RStrBuf *sb, char *s) {
+	const bool ret = s && r_strbuf_setbin (sb, (const ut8 *)s, strlen (s));
+	free (s);
+	return ret;
 }
 
 R_API RStrBuf *R_NONNULL r_strbuf_new(const char *str) {
@@ -96,21 +132,26 @@ R_API bool r_strbuf_copy(RStrBuf *dst, RStrBuf *src) {
 R_API bool r_strbuf_reserve(RStrBuf *sb, size_t len) {
 	R_RETURN_VAL_IF_FAIL (sb, false);
 
-	if ((sb->ptr && len < sb->ptrlen) || (!sb->ptr && len < sizeof (sb->buf))) {
+	len = R_MAX (len, sb->len);
+	if (!sb->weakref && ((sb->ptr && len < sb->ptrlen) || (!sb->ptr && len < sizeof (sb->buf)))) {
 		return true;
 	}
-	char *old_ptr = sb->ptr;
-	char *newptr = realloc (sb->ptr, len + 1);
+	size_t newlen;
+	if (r_add_overflow (len, (size_t)1, &newlen)) {
+		return false;
+	}
+	char *old_ptr = sb->weakref? NULL: sb->ptr;
+	char *newptr = realloc (old_ptr, newlen);
 	if (!newptr) {
-		sb->ptr = old_ptr;
 		return false;
 	}
 	if (!old_ptr) {
-		memcpy (newptr, sb->buf, sizeof (sb->buf));
+		memcpy (newptr, sb->ptr? sb->ptr: sb->buf, sb->len);
 	}
+	newptr[sb->len] = 0;
 	sb->weakref = false;
 	sb->ptr = newptr;
-	sb->ptrlen = len + 1;
+	sb->ptrlen = newlen;
 	return true;
 }
 
@@ -120,20 +161,17 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t l) {
 		return false;
 	}
 	if (l >= sizeof (sb->buf)) {
-		char *ptr = sb->ptr;
-		if (!ptr || l + 1 > sb->ptrlen) {
-			ptr = malloc (l + 1);
-			if (!ptr) {
-				return false;
-			}
-			R_FREE (sb->ptr);
-			sb->ptrlen = l + 1;
-			sb->ptr = ptr;
+		if (!r_strbuf_reserve (sb, l)) {
+			return false;
 		}
-		memcpy (ptr, s, l);
-		ptr[l] = 0;
+		memcpy (sb->ptr, s, l);
+		sb->ptr[l] = 0;
 	} else {
-		R_FREE (sb->ptr);
+		if (!sb->weakref) {
+			R_FREE (sb->ptr);
+		} else {
+			sb->ptr = NULL;
+		}
 		memcpy (sb->buf, s, l);
 		sb->buf[l] = 0;
 	}
@@ -219,7 +257,7 @@ R_API const char *r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) {
 	const char *ret = NULL;
 	va_list ap2;
 	va_copy (ap2, ap);
-	char string[1024];
+	char string[SBSZ];
 	int rc = vsnprintf (string, sizeof (string), fmt, ap);
 	if (rc >= sizeof (string)) {
 		char *p = malloc (rc + 1);
@@ -239,23 +277,7 @@ done:
 
 R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s) {
 	R_RETURN_VAL_IF_FAIL (sb && s, false);
-	int l = strlen (s);
-	// fast path if no chars to append
-	if (l == 0) {
-		return true;
-	}
-	int newlen = l + sb->len;
-	char *ns = malloc (newlen + 1);
-	bool ret = false;
-	if (ns) {
-		memcpy (ns, s, l);
-		char *s = sb->ptr? sb->ptr: sb->buf;
-		memcpy (ns + l, s, sb->len);
-		ns[newlen] = 0;
-		ret = r_strbuf_set (sb, ns);
-		free (ns);
-	}
-	return ret;
+	return r_strbuf_prepend_n (sb, s, strlen (s));
 }
 
 R_API bool r_strbuf_append(RStrBuf *sb, const char *s) {
@@ -332,7 +354,7 @@ R_API bool r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 
 R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_list ap2;
-	char string[1024];
+	char string[SBSZ];
 
 	R_RETURN_VAL_IF_FAIL (sb && fmt, false);
 
@@ -342,15 +364,7 @@ R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_copy (ap2, ap);
 	int ret = vsnprintf (string, sizeof (string), fmt, ap);
 	if (ret >= sizeof (string)) {
-		char *p = malloc (ret + 1);
-		if (!p) {
-			va_end (ap2);
-			return false;
-		}
-		*p = 0;
-		vsnprintf (p, ret + 1, fmt, ap2);
-		ret = r_strbuf_append_n (sb, p, ret);
-		free (p);
+		ret = strbuf_vprintf (sb, fmt, ap2, ret, false);
 	} else if (ret >= 0) {
 		ret = r_strbuf_append_n (sb, string, ret);
 	} else {
@@ -445,7 +459,7 @@ R_API bool r_strbuf_pad(RStrBuf *sb, char ch, int sz) {
 
 R_API bool r_strbuf_vprependf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_list ap2;
-	char string[1024];
+	char string[SBSZ];
 
 	R_RETURN_VAL_IF_FAIL (sb && fmt, false);
 
@@ -455,15 +469,7 @@ R_API bool r_strbuf_vprependf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_copy (ap2, ap);
 	int ret = vsnprintf (string, sizeof (string), fmt, ap);
 	if (ret >= sizeof (string)) {
-		char *p = malloc (ret + 1);
-		if (!p) {
-			va_end (ap2);
-			return false;
-		}
-		*p = 0;
-		vsnprintf (p, ret + 1, fmt, ap2);
-		ret = r_strbuf_prepend_n (sb, p, ret);
-		free (p);
+		ret = strbuf_vprintf (sb, fmt, ap2, ret, true);
 	} else if (ret >= 0) {
 		ret = r_strbuf_prepend_n (sb, string, ret);
 	} else {
@@ -525,41 +531,19 @@ R_API char *r_strbuf_drain_nofree(RStrBuf *sb) {
 
 R_API bool r_strbuf_replace(RStrBuf *sb, const char *key, const char *val) {
 	R_RETURN_VAL_IF_FAIL (sb && key && val, false);
-	char *tmp = r_str_replace (strdup (r_strbuf_get (sb)), key, val, 0);
-	if (!tmp) {
-		return false;
-	}
-	free (r_strbuf_drain_nofree (sb));
-	return r_strbuf_setptr (sb, tmp, -1);
+	return strbuf_setbin_free (sb, r_str_replace (strdup (r_strbuf_get (sb)), key, val, 0));
 }
 
 R_API bool r_strbuf_replacef(RStrBuf *sb, const char *key, const char *fmt, ...) {
 	R_RETURN_VAL_IF_FAIL (sb && key && fmt, false);
-	RStrBuf *sb_tmp = r_strbuf_new (NULL);
-	if (!sb_tmp) {
-		return false;
-	}
-	char *tmp = strdup (r_strbuf_get (sb));
-	if (!tmp) {
-		r_strbuf_free (sb_tmp);
-		return false;
-	}
+	RStrBuf sb_tmp = { 0 };
 	va_list ap;
 	va_start (ap, fmt);
-	const bool vsret = r_strbuf_vsetf (sb_tmp, fmt, ap);
+	const char *val = r_strbuf_vsetf (&sb_tmp, fmt, ap);
 	va_end (ap);
-	if (!vsret) {
-		r_strbuf_free (sb_tmp);
-		free (tmp);
-		return false;
-	}
-	tmp = r_str_replace (tmp, key, r_strbuf_get (sb_tmp), 0);
-	r_strbuf_free (sb_tmp);
-	if (!tmp) {
-		return false;
-	}
-	free (r_strbuf_drain_nofree (sb));
-	return r_strbuf_setptr (sb, tmp, -1);
+	char *tmp = val? r_str_replace (strdup (r_strbuf_get (sb)), key, val, 0): NULL;
+	r_strbuf_fini (&sb_tmp);
+	return strbuf_setbin_free (sb, tmp);
 }
 
 R_API void r_strbuf_free(RStrBuf *sb) {
@@ -579,7 +563,16 @@ R_API void r_strbuf_fini(RStrBuf *sb) {
 }
 
 R_API void r_strbuf_trim(RStrBuf *sb) {
-	char *s = strdup (r_strbuf_get (sb));
-	r_str_trim (s);
-	r_strbuf_set (sb, s);
+	R_RETURN_IF_FAIL (sb);
+	char *s = sb->weakref? strdup (r_strbuf_get (sb)): r_strbuf_get (sb);
+	if (!s) {
+		return;
+	}
+	int len = r_str_ntrim (s, (int)sb->len);
+	if (sb->weakref) {
+		r_strbuf_setbin (sb, (const ut8 *)s, len);
+		free (s);
+	} else {
+		sb->len = len;
+	}
 }

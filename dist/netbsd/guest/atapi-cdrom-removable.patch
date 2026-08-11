@@ -1,0 +1,40 @@
+v86 describes its emulated ATAPI CD-ROM as non-removable in the IDENTIFY
+PACKET DEVICE data (ATAPI_CFG_REMOV clear).  The cd(4) driver only matches
+removable devices, so the drive attaches as uk0 ("unknown") instead of cd0:
+
+    uk0 at atapibus0 drive 0: <v86 ATAPI CD-ROM, 8086-8610, 1.00> cdrom fixed
+
+and the files the browser page hands to the guest as a CD cannot be mounted
+at all.  Every ATAPI CD-ROM is removable by definition, so trust the device
+type over the (missing) removable bit.
+
+--- a/sys/dev/scsipi/atapi_wdc.c
++++ b/sys/dev/scsipi/atapi_wdc.c
+@@ -306,7 +306,14 @@
+ 			periph->periph_dbflags |= SCSIPI_DEBUG_FLAGS;
+ #endif
+ 		periph->periph_type = ATAPI_CFG_TYPE(id->atap_config);
+-		if (id->atap_config & ATAPI_CFG_REMOV)
++		/*
++		 * Some emulated drives (notably v86) leave the removable bit
++		 * clear; an ATAPI CD-ROM is always removable, and cd(4) only
++		 * matches removable devices, so without this the drive
++		 * attaches as uk(4) and cannot be mounted.
++		 */
++		if ((id->atap_config & ATAPI_CFG_REMOV) ||
++		    periph->periph_type == T_CDROM)
+ 			periph->periph_flags |= PERIPH_REMOVABLE;
+ 		if (periph->periph_type == T_SEQUENTIAL) {
+ 			s = splbio();
+@@ -316,8 +323,9 @@
+ 
+ 		sa.sa_periph = periph;
+ 		sa.sa_inqbuf.type =  ATAPI_CFG_TYPE(id->atap_config);
+-		sa.sa_inqbuf.removable = id->atap_config & ATAPI_CFG_REMOV ?
+-		    T_REMOV : T_FIXED;
++		sa.sa_inqbuf.removable =
++		    ((id->atap_config & ATAPI_CFG_REMOV) ||
++		    sa.sa_inqbuf.type == T_CDROM) ? T_REMOV : T_FIXED;
+ 		strnvisx(model, sizeof(model), id->atap_model,
+ 		    sizeof(id->atap_model), VIS_TRIM|VIS_SAFE|VIS_OCTAL);
+ 		strnvisx(serial_number, sizeof(serial_number),

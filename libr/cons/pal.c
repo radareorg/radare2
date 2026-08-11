@@ -10,8 +10,6 @@
 #define COLOR_AT(i) (char **) (((ut8 *) &(cons->context->pal)) + keys[i].off)
 #define COLOR_KEY(name, field) { name, r_offsetof (RConsPrintablePalette, field), r_offsetof (RConsPalette, field) }
 
-static R_TH_LOCAL RThreadLock *Glock = NULL;
-
 static struct {
 	const char *name;
 	int off; // RConsPrintablePalette offset
@@ -174,8 +172,7 @@ static void pal_refresh(RCons *cons, bool rain) {
 		R_FREE (*color);
 		*color = r_cons_rgb_str_mode (cons, NULL, 0, rcolor);
 		if (db && is_valid_color (*rcolor)) {
-			r_strf_var (rgbstr, 16, "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
-			sdb_set (db, rgbstr, "1", 0);
+			sdb_setf (db, "1", 0, "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
 		}
 	}
 	if (rain && db) {
@@ -225,10 +222,7 @@ R_API void r_cons_permstr(RCons *cons, int perm, bool color_enabled, char *buf, 
 R_API void r_cons_pal_init(RCons *cons) {
 	RConsContext *ctx = cons->context;
 	size_t i;
-	if (!Glock) {
-		Glock = r_th_lock_new (false);
-	}
-	r_th_lock_enter (Glock);
+	r_th_lock_enter (cons->lock);
 	memset (&ctx->cpal, 0, sizeof (ctx->cpal));
 	for (i = 0; keys[i].name; i++) {
 		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
@@ -325,7 +319,7 @@ R_API void r_cons_pal_init(RCons *cons) {
 	ctx->cpal.diff_unmatch  = (RColor) RColor_YELLOW;
 	ctx->pal.reset          = Color_RESET; // reset is not user accessible, const char* is ok
 	pal_refresh (cons, false);
-	r_th_lock_leave (Glock);
+	r_th_lock_leave (cons->lock);
 }
 
 R_API void r_cons_context_pal_free(RConsContext *ctx) {
@@ -341,11 +335,6 @@ R_API void r_cons_context_pal_free(RConsContext *ctx) {
 
 R_API void r_cons_pal_free(RCons *cons) {
 	r_cons_context_pal_free (cons->context);
-}
-
-R_API void r_cons_pal_fini(void) {
-	r_th_lock_free (Glock);
-	Glock = NULL;
 }
 
 // rename to copy_from for clarity?

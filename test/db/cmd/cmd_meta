@@ -7,6 +7,61 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Ct preserves serialized annotation text
+FILE=malloc://0x100
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/ct-meta.r2
+Ct base64:c3RkOjp2ZWN0b3I8aW50PiAqZm9vLT5iYXIgQCBzbG90OyAicXVvdGVkIiBcXHBhdGg= @ 0x10
+Ct
+Cj
+.C*
+Ct. @ 0x10
+C* > .tmp/ct-meta.r2
+Ct- @ 0x10
+. .tmp/ct-meta.r2
+Ct. @ 0x10
+rm .tmp/ct-meta.r2
+EOF
+EXPECT=<<EOF
+0x00000010 std::vector<int> *foo->bar @ slot; \"quoted\" \\\\path
+[{"offset":16,"type":"Ct","name":"std::vector<int> *foo->bar @ slot; \"quoted\" \\\\path"}]
+std::vector<int> *foo->bar @ slot; "quoted" \\path
+std::vector<int> *foo->bar @ slot; "quoted" \\path
+EOF
+RUN
+
+NAME=Ct output modes and strict deletion
+FILE=malloc://0x100
+CMDS=<<EOF
+Ct= first @ 0x10
+Ct second @ 0x10
+Ct. @ 0x10
+Ct= replaced @ 0x10
+Ct. @ 0x10
+Ct*
+Ctj
+Ct,~replaced~?
+Ct-foo~^Usage
+Ct. @ 0x10
+CC keep @ 0x10
+Ct-*
+Ctj
+CC. @ 0x10
+EOF
+EXPECT=<<EOF
+first second
+replaced
+'@0x00000010'Ct= base64:cmVwbGFjZWQ=
+[{"offset":16,"type":"Ct","name":"replaced"}]
+1
+Usage: Ct [?*j,=.-] [annotation] [@ addr]   # Manage address-based type analysis annotations
+replaced
+[]
+keep
+EOF
+RUN
+
 NAME=Csp
 FILE=-
 CMDS=<<EOF
@@ -97,6 +152,25 @@ var_sp_8h : comment for var_sp_8h
 EOF
 RUN
 
+
+NAME=Cv only takes the argument as an offset when it is a number
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488b4424288b08c3
+af
+afvs 0 zero int
+Cvs zero mycomment
+Cvs nosuchvar clobbered
+Cvs zero
+EOF
+EXPECT=<<EOF
+mycomment
+EOF
+EXPECT_ERR=<<EOF
+ERROR: can't find variable at given offset
+EOF
+RUN
 
 NAME=Cvb variable null pointer deref
 FILE=bins/elf/analysis/x64-simple

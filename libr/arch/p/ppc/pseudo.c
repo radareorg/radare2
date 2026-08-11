@@ -7,10 +7,6 @@
 #include <r_anal.h>
 #include <r_asm.h>
 
-#ifndef PFMT32x
-#define PFMT32x "lx"
-#endif
-
 #define SPR_MQ          0x0
 #define SPR_XER         0x1
 #define SPR_RTCU        0x4
@@ -89,17 +85,10 @@
 #define SPR_PIR         0x3ff
 
 #define PPC_UT64(x) (strtol(x, NULL, 16))
-#define PPC_UT32(x) ((ut32)PPC_UT64(x))
 
 static ut64 mask64(ut64 mb, ut64 me) {
 	ut64 maskmb = UT64_MAX >> mb;
 	ut64 maskme = UT64_MAX << (63 - me);
-	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
-}
-
-static ut32 mask32(ut32 mb, ut32 me) {
-	ut32 maskmb = UT32_MAX >> mb;
-	ut32 maskme = UT32_MAX << (31 - me);
 	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
 }
 
@@ -114,6 +103,23 @@ static int can_replace(const char *str, int idx, int max_operands) {
 		return false;
 	}
 	return true;
+}
+
+// cmp* and the cr0 conditional branches: b{eq,ge,gt,le,lt,ne} with an optional +/- hint
+static bool op_needs_cr0(const char *op) {
+	if (r_str_startswith (op, "cmp")) {
+		return true;
+	}
+	if (op[0] != 'b' || !op[1] || !op[2] || (op[3] && (op[4] || !strchr ("+-", op[3])))) {
+		return false;
+	}
+	const char cond[] = { op[1], op[2], 0 };
+	return strstr ("eq ge gt le lt ne", cond) != NULL;
+}
+
+// only td/tdi/tw/twi carry a TO code operand, every named form (tweq, tdlgt, tdu..) encodes it in the mnemonic
+static bool op_is_trap(const char *op) {
+	return !strcmp (op, "td") || !strcmp (op, "tdi") || !strcmp (op, "tw") || !strcmp (op, "twi");
 }
 
 static const char* getspr(const char *reg) {
@@ -294,7 +300,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		const char *str;
 		int max_operands;
 	} ops[] = {
-		{ "cmpb", "A = ((byte) B == (byte) C)", 3}, //0
+		{ "cmpb", "A = ((byte) B == (byte) C)", 3},
 		{ "cmpd", "A = (B == C)", 3},
 		{ "cmpdi", "A = (B == C)", 3},
 		{ "cmpld", "A = ((unsigned) B == (unsigned) C)", 3},
@@ -320,29 +326,29 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "blt+", "if (A & FLG_LT) goto B", 2},
 		{ "bne", "if (A & FLG_NE) goto B", 2},
 		{ "bne-", "if (A & FLG_NE) goto B", 2},
-		{ "bne+", "if (A & FLG_NE) goto B", 2}, //26
-		{ "rldic", "A = rol64(B, C) & D", 4}, //27
-		{ "rldcl", "A = rol64(B, C) & D", 4}, //28
-		{ "rldicl", "A = rol64(B, C) & D", 4}, //29
-		{ "rldcr", "A = rol64(B, C) & D", 4}, //30
-		{ "rldicr", "A = rol64(B, C) & D", 4}, //31
-		{ "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}, //32
-		{ "rlwimi", "A = (rol32(B, C) & D) | (A & E)", 5}, //33
-		{ "rlwimi.", "A = (rol32(B, C) & D) | (A & E)", 5}, //33
-		{ "rlwinm", "A = rol32(B, C) & D", 5}, //34
-		{ "rlwinm.", "A = rol32(B, C) & D", 5}, //34
-		{ "rlwnm", "A = rol32(B, C) & D", 5}, //35
-		{ "rlwnm.", "A = rol32(B, C) & D", 5}, //35
-		{ "td", "if (B A C) trap", 3}, //36
+		{ "bne+", "if (A & FLG_NE) goto B", 2},
+		{ "rldic", "A = rol64(B, C) & D", 4},
+		{ "rldcl", "A = rol64(B, C) & D", 4},
+		{ "rldicl", "A = rol64(B, C) & D", 4},
+		{ "rldcr", "A = rol64(B, C) & D", 4},
+		{ "rldicr", "A = rol64(B, C) & D", 4},
+		{ "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5},
+		{ "rlwimi", "A = (rol32(B, C) & D) | (A & E)", 5},
+		{ "rlwimi.", "A = (rol32(B, C) & D) | (A & E)", 5},
+		{ "rlwinm", "A = rol32(B, C) & D", 5},
+		{ "rlwinm.", "A = rol32(B, C) & D", 5},
+		{ "rlwnm", "A = rol32(B, C) & D", 5},
+		{ "rlwnm.", "A = rol32(B, C) & D", 5},
+		{ "td", "if (B A C) trap", 3},
 		{ "tdi", "if (B A C) trap", 3},
-		{ "tdu", "if (B A C) trap", 3},
-		{ "tdui", "if (B A C) trap", 3},
+		{ "tdu", "trap", 0},
+		{ "tdui", "trap", 0},
 		{ "tw", "if ((word) B A (word) C) trap", 3},
 		{ "twi", "if ((word) B A (word) C) trap", 3},
-		{ "twu", "if ((word) B A (word) C) trap", 3},
-		{ "twui", "if ((word) B A (word) C) trap", 3}, //43
-		{ "mfspr", "A = B", 2}, //44
-		{ "mtspr", "A = B", 2}, //45
+		{ "twu", "trap", 0},
+		{ "twui", "trap", 0},
+		{ "mfspr", "A = B", 2},
+		{ "mtspr", "A = B", 2},
 		{ "add", "A = B + C", 3},
 		{ "addc", "A = B + C", 3},
 		{ "adde", "A = B + C", 3},
@@ -371,39 +377,40 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "bctrl", "call ctr", 3},
 		{ "bdnz", "if (ctr != 0) goto A", 1},
 		{ "bdnza", "if (ctr != 0) goto A", 1},
-		{ "bdnzf", "if (ctr != 0 && !cond) goto A", 1},
-		{ "bdnzfa", "if (ctr != 0 && !cond) goto A", 1},
-		{ "bdnzfl", "if (ctr != 0 && !cond) call A", 1},
-		{ "bdnzfla", "if (ctr != 0 && !cond) call A", 1},
-		{ "bdnzflrl", "if (ctr != 0 && !cond) call A", 1},
+		{ "bdnzf", "if (ctr != 0 && !A) goto B", 2},
+		{ "bdnzfa", "if (ctr != 0 && !A) goto B", 2},
+		{ "bdnzfl", "if (ctr != 0 && !A) call B", 2},
+		{ "bdnzfla", "if (ctr != 0 && !A) call B", 2},
+		{ "bdnzflr", "if (ctr != 0 && !A) return", 1},
+		{ "bdnzflrl", "if (ctr != 0 && !A) return", 1},
 		{ "bdnzl", "if (ctr != 0) call A", 1},
 		{ "bdnzla", "if (ctr != 0) call A", 1},
-		{ "bdnzlr", "if (ctr != 0) call A", 1},
-		{ "bdnzlrl", "if (ctr != 0) call A", 1},
-		{ "bdnzt", "if (ctr != 0 && cond) goto A", 1},
-		{ "bdnzta", "if (ctr != 0 && cond) goto A", 1},
-		{ "bdnztl", "if (ctr != 0 && cond) call A", 1},
-		{ "bdnztla", "if (ctr != 0 && cond) call A", 1},
-		{ "bdnztlr", "if (ctr != 0 && cond) call A", 1},
-		{ "bdnztlrl", "if (ctr != 0 && cond) call A", 1},
+		{ "bdnzlr", "if (ctr != 0) return", 0},
+		{ "bdnzlrl", "if (ctr != 0) return", 0},
+		{ "bdnzt", "if (ctr != 0 && A) goto B", 2},
+		{ "bdnzta", "if (ctr != 0 && A) goto B", 2},
+		{ "bdnztl", "if (ctr != 0 && A) call B", 2},
+		{ "bdnztla", "if (ctr != 0 && A) call B", 2},
+		{ "bdnztlr", "if (ctr != 0 && A) return", 1},
+		{ "bdnztlrl", "if (ctr != 0 && A) return", 1},
 		{ "bdz", "if (ctr == 0) goto A", 1},
 		{ "bdza", "if (ctr == 0) goto A", 1},
-		{ "bdzf", "if (ctr == 0 && !cond) goto A", 1},
-		{ "bdzfa", "if (ctr == 0 && !cond) goto A", 1},
-		{ "bdzfl", "if (ctr == 0 && !cond) call A", 1},
-		{ "bdzfla", "if (ctr == 0 && !cond) call A", 1},
-		{ "bdzflr", "if (ctr == 0 && !cond) call A", 1},
-		{ "bdzflrl", "if (ctr == 0 && !cond) call A", 1},
+		{ "bdzf", "if (ctr == 0 && !A) goto B", 2},
+		{ "bdzfa", "if (ctr == 0 && !A) goto B", 2},
+		{ "bdzfl", "if (ctr == 0 && !A) call B", 2},
+		{ "bdzfla", "if (ctr == 0 && !A) call B", 2},
+		{ "bdzflr", "if (ctr == 0 && !A) return", 1},
+		{ "bdzflrl", "if (ctr == 0 && !A) return", 1},
 		{ "bdzl", "if (ctr == 0) call A", 1},
 		{ "bdzla", "if (ctr == 0) call A", 1},
-		{ "bdzlr", "if (ctr == 0) call A", 1},
-		{ "bdzlrl", "if (ctr == 0) call A", 1},
-		{ "bdzt", "if (ctr == 0 && cond) goto A", 1},
-		{ "bdzta", "if (ctr == 0 && cond) goto A", 1},
-		{ "bdztl", "if (ctr == 0 && cond) call A", 1},
-		{ "bdztla", "if (ctr == 0 && cond) call A", 1},
-		{ "bdztlr", "if (ctr == 0 && cond) call A", 1},
-		{ "bdztlrl", "if (ctr == 0 && cond) call A", 1},
+		{ "bdzlr", "if (ctr == 0) return", 0},
+		{ "bdzlrl", "if (ctr == 0) return", 0},
+		{ "bdzt", "if (ctr == 0 && A) goto B", 2},
+		{ "bdzta", "if (ctr == 0 && A) goto B", 2},
+		{ "bdztl", "if (ctr == 0 && A) call B", 2},
+		{ "bdztla", "if (ctr == 0 && A) call B", 2},
+		{ "bdztlr", "if (ctr == 0 && A) return", 1},
+		{ "bdztlrl", "if (ctr == 0 && A) return", 1},
 		{ "bf", "if (!cond) goto A", 1},
 		{ "bfa", "if (!cond) goto A", 1},
 		{ "bfctr", "if (!cond) goto ctr", 0},
@@ -695,10 +702,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "icbi", "inst_cache_block_inval", 0},
 		{ "icbt", "inst_cache_block_touch", 3},
 		{ "iccci", "inst_cache_inval(A,B)", 2},
-		// isel lt   Rx,Ry,Rz (equivalent to: isel Rx,Ry,Rz,0)
-		// isel gt  Rx,Ry,Rz (equivalent to: isel Rx,Ry,Rz,1)
-		// isel eq Rx,Ry,Rz (equivalent to: isel Rx,Ry,Rz,2)
-		//  { "isel", "", 4},
+		{ "isel", "A = select(D, B, C)", 4},
 		{ "isync", "sync_instr_cache", 0},
 		{ "la", "A = C + B", 3},
 		{ "lbz", "A = byte[C + B]", 3},
@@ -718,7 +722,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "lfdu", "A = double[C + B]", 3},
 		{ "lfdux", "A = double[C + B]", 3},
 		{ "lfdx", "A = double[C + B]", 3},
-		{ "lfiwax", "A = float[C + B]", },
+		{ "lfiwax", "A = float[C + B]", 3},
 		{ "lfiwzx", "A = float[C + B]", 3},
 		{ "lfs", "A = float[C + B]", 3},
 		{ "lfsu", "A = float[C + B]", 3},
@@ -1463,7 +1467,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			if (newstr) {
 				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
 					if (can_replace(ops[i].str, j, ops[i].max_operands)) {
-						if (i >= 0 && i <= 26 && argv[ops[i].max_operands][0] == 0) {
+						if (op_needs_cr0 (argv[0]) && argv[ops[i].max_operands][0] == 0) {
 							char* tmp = (char*) argv[ops[i].max_operands];
 							argv[ops[i].max_operands] = argv[ops[i].max_operands - 1];
 							if (ops[i].max_operands == 3) {
@@ -1478,42 +1482,39 @@ static int replace(int argc, const char *argv[], char *newstr) {
 						int letter = ops[i].str[j] - '@';
 						const char *w = argv[letter];
 						// eprintf("%s:%d %s\n", ops[i].op, letter, w);
-						if (letter == 4 && !strncmp (argv[0], "rlwinm", 6)) {
-							// { "rlwinm", "A = rol32(B, C) & D", 5},
+						// word rotates duplicate the word into both halves, so a wrapping mask keeps high bits
+						if (letter == 4 && (r_str_startswith (argv[0], "rlwinm")
+								|| r_str_startswith (argv[0], "rlwimi")
+								|| r_str_startswith (argv[0], "rlwnm"))) {
 							w = ppc_mask;
 							//MASK(MB+32, ME+32)
 							ut64 MB = PPC_UT64(argv[4]) + 32;
 							ut64 ME = PPC_UT64(argv[5]) + 32;
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
-						} else if (letter == 4 && (!strncmp (argv[0], "rldcl", 5) || !strncmp (argv[0], "rldicl", 6))) {
-							// { "rld[i]cl", "A = rol64(B, C) & D", 4},
+						} else if (letter == 4 && (r_str_startswith (argv[0], "rldcl") || r_str_startswith (argv[0], "rldicl"))) {
 							w = ppc_mask;
 							//MASK(MB, 63)
 							ut64 MB = PPC_UT64(argv[4]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, 63));
-						} else if (letter == 4 && !strncmp (argv[0], "rldic", 5)) {
-							// { "rldic", "A = rol64(B, C) & D", 4},
+						} else if (letter == 4 && !strcmp (argv[0], "rldic")) {
 							w = ppc_mask;
 							//MASK(MB, 63 - SH)
 							ut64 MB = PPC_UT64(argv[4]);
 							ut64 ME = 63 - PPC_UT64(argv[3]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
-						} else if (letter == 4 && (!strncmp (argv[0], "rldcr", 5) || !strncmp (argv[0], "rldicr", 6))) {
-							// { "rld[i]cr", "A = rol64(B, C) & D", 4},
+						} else if (letter == 4 && (r_str_startswith (argv[0], "rldcr") || r_str_startswith (argv[0], "rldicr"))) {
 							w = ppc_mask;
 							//MASK(0, ME)
 							ut64 ME = PPC_UT64(argv[4]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (0, ME));
-						} else if (letter == 4 && !strncmp (argv[0], "rldimi", 6)) {
-							// { "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}, //32
+						} else if (letter == 4 && r_str_startswith (argv[0], "rldimi")) {
 							// first mask (normal)
 							w = ppc_mask;
 							//MASK(MB, 63 - SH)
 							ut64 MB = PPC_UT64(argv[4]);
 							ut64 ME = 63 - PPC_UT64(argv[3]);
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
-						} else if (letter == 5 && !strncmp (argv[0], "rldimi", 6)) {
-							// { "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}, //32
+						} else if (letter == 5 && r_str_startswith (argv[0], "rldimi")) {
 							// second mask (inverted)
 							w = ppc_mask;
 							//MASK(MB, 63 - SH)
@@ -1521,32 +1522,14 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut64 ME = 63 - PPC_UT64(argv[3]);
 							ut64 inverted = ~ (mask64 (MB, ME));
 							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, inverted);
-						} else if (letter == 4 && !strncmp (argv[0], "rlwimi", 6)) {
-							// { "rlwimi", "A = (rol64(B, C) & D) | (A & E)", 5}, //32
-							// first mask (normal)
+						} else if (letter == 5 && r_str_startswith (argv[0], "rlwimi")) {
 							w = ppc_mask;
-							//MASK(MB, ME)
-							ut32 MB = PPC_UT32(argv[4]);
-							ut32 ME = PPC_UT32(argv[5]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, mask32 (MB, ME));
-						} else if (letter == 5 && !strncmp (argv[0], "rlwimi", 6)) {
-							// { "rlwimi", "A = (rol32(B, C) & D) | (A & E)", 5}, //32
-							// second mask (inverted)
-							w = ppc_mask;
-							//MASK(MB, ME)
-							ut32 MB = PPC_UT32(argv[4]);
-							ut32 ME = PPC_UT32(argv[5]);
-							ut32 inverted = ~mask32 (MB, ME);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, inverted);
-						} else if (letter == 4 && !strncmp (argv[0], "rlwnm", 5)) {
-							// { "rlwnm", "A = rol32(B, C) & D", 5}, //32
-							w = ppc_mask;
-							//MASK(MB, ME)
-							ut32 MB = PPC_UT32(argv[4]);
-							ut32 ME = PPC_UT32(argv[5]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, mask32 (MB, ME));
-						} else if (letter == 1 && i >= 36 && i <= 43) {
-							int to = atoi (w);
+							//MASK(MB+32, ME+32) inverted
+							ut64 MB = PPC_UT64(argv[4]) + 32;
+							ut64 ME = PPC_UT64(argv[5]) + 32;
+							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, ~mask64 (MB, ME));
+						} else if (letter == 1 && op_is_trap (argv[0])) {
+							int to = PPC_UT64 (w);
 							switch(to) {
 								case 4:
 									w = "==";
@@ -1578,7 +1561,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 									w = "?";
 									break;
 							}
-						} else if ((i == 44 && letter == 2) || (i == 45 && letter == 1)) { //spr
+						} else if ((letter == 2 && !strcmp (argv[0], "mfspr")) || (letter == 1 && !strcmp (argv[0], "mtspr"))) {
 							w = getspr (w);
 						}
 						if (w) {
@@ -1617,7 +1600,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	} while (0)
 
 static char *parse(RAsmPluginSession *aps, const char *data) {
-	int i, len = strlen (data);
+	int len = strlen (data);
 	char w0[WSZ];
 	char w1[WSZ];
 	char w2[WSZ];
@@ -1647,6 +1630,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		w2[0] = '\0';
 		w3[0] = '\0';
 		w4[0] = '\0';
+		w5[0] = '\0';
 		ptr = strchr (buf, ' ');
 		if (!ptr) {
 			ptr = strchr (buf, '\t');
@@ -1656,8 +1640,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 			for (ptr++; *ptr == ' '; ptr++) {
 				//nothing to see here
 			}
-			strncpy (w0, buf, WSZ - 1);
-			strncpy (w1, ptr, WSZ - 1);
+			r_str_ncpy (w0, buf, WSZ);
+			r_str_ncpy (w1, ptr, WSZ);
 
 			optr = ptr;
 			ptr = strchr (ptr, ',');
@@ -1666,8 +1650,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 				for (ptr++; *ptr == ' '; ptr++) {
 					//nothing to see here
 				}
-				strncpy (w1, optr, WSZ - 1);
-				strncpy (w2, ptr, WSZ - 1);
+				r_str_ncpy (w1, optr, WSZ);
+				r_str_ncpy (w2, ptr, WSZ);
 				optr = ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
@@ -1675,8 +1659,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					for (ptr++; *ptr == ' '; ptr++) {
 						//nothing to see here
 					}
-					strncpy (w2, optr, WSZ - 1);
-					strncpy (w3, ptr, WSZ - 1);
+					r_str_ncpy (w2, optr, WSZ);
+					r_str_ncpy (w3, ptr, WSZ);
 					optr = ptr;
 					// bonus
 					ptr = strchr (ptr, ',');
@@ -1685,8 +1669,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 						for (ptr++; *ptr == ' '; ptr++) {
 							//nothing to see here
 						}
-						strncpy (w3, optr, WSZ - 1);
-						strncpy (w4, ptr, WSZ - 1);
+						r_str_ncpy (w3, optr, WSZ);
+						r_str_ncpy (w4, ptr, WSZ);
 						optr = ptr;
 						// bonus
 						ptr = strchr (ptr, ',');
@@ -1695,19 +1679,19 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 							for (ptr++; *ptr == ' '; ptr++) {
 								//nothing to see here
 							}
-							strncpy (w4, optr, WSZ - 1);
-							strncpy (w5, ptr, WSZ - 1);
+							r_str_ncpy (w4, optr, WSZ);
+							r_str_ncpy (w5, ptr, WSZ);
 						}
 					}
 				}
 			}
 		} else {
-			strncpy (w0, buf, WSZ - 1);
+			r_str_ncpy (w0, buf, WSZ);
 		}
 		{
 			const char *wa[] = { w0, w1, w2, w3, w4, w5 };
-			int nw = 0;
-			for (i = 0; i < 4; i++) {
+			size_t i, nw = 0;
+			for (i = 0; i < R_ARRAY_SIZE (wa); i++) {
 				if (wa[i][0] != '\0') {
 					nw++;
 				}

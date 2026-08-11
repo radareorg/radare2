@@ -17,7 +17,7 @@ aae
 aflc
 EOF
 EXPECT=<<EOF
-429
+428
 EOF
 RUN
 
@@ -815,14 +815,14 @@ s 0x00402088
 pd 10
 EOF
 EXPECT=<<EOF
-            0x00402088      8f84814c       lw a0, -main(gp)            ; [0x43522c:4]=0x402558 sym.main
+            0x00402088      8f84814c       lw a0, -main(gp)            ; [reloc.main:4]=0x402558 sym.main
             0x0040208c      8fa50000       lw a1, (sp)
             0x00402090      27a60004       addiu a2, sp, 4
             0x00402094      2401fff8       addiu at, zero, -8
             0x00402098      03a1e824       and sp, sp, at
             0x0040209c      27bdffe0       addiu sp, sp, -0x20
-            0x004020a0      8f878230       lw a3, -sym._init(gp)       ; [0x435310:4]=0x401ff4 sym._init
-            0x004020a4      8f888114       lw t0, -sym._fini(gp)       ; [0x4351f4:4]=0x41eca0 sym._fini
+            0x004020a0      8f878230       lw a3, -sym._init(gp)       ; [reloc._init:4]=0x401ff4 sym._init
+            0x004020a4      8f888114       lw t0, -sym._fini(gp)       ; [reloc._fini:4]=0x41eca0 sym._fini
             0x004020a8      afa80010       sw t0, 0x10(sp)
             0x004020ac      afa20014       sw v0, 0x14(sp)
 EOF
@@ -835,7 +835,7 @@ aac
 afl~?
 EOF
 EXPECT=<<EOF
-1268
+1274
 EOF
 RUN
 
@@ -847,7 +847,7 @@ aac
 afl~?
 EOF
 EXPECT=<<EOF
-4
+10
 EOF
 RUN
 
@@ -889,5 +889,365 @@ EOF
 EXPECT=<<EOF
 0x004ee230 switch table (5 cases) at 0x5a74b4
 [{"addr":5169860,"jump":5169860,"value":0},{"addr":5169720,"jump":5169720,"value":1},{"addr":5169860,"jump":5169860,"value":2},{"addr":5170872,"jump":5170872,"value":3},{"addr":5170928,"jump":5170928,"value":4},{"addr":5169720,"jump":5169720,"value":18446744073709551615}]
+EOF
+RUN
+
+NAME=mips o32 cc clobber and preserve register sets
+FILE=malloc://16
+ARGS=-e anal.arch=mips -e asm.bits=32
+CMDS=<<EOF
+k anal/cc/cc.o32.clobber
+k anal/cc/cc.o32.preserve
+EOF
+EXPECT=<<EOF
+at,v0,v1,a0,a1,a2,a3,t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,gp,ra,f0,f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13,f14,f15,f16,f17,f18,f19
+s0,s1,s2,s3,s4,s5,s6,s7,sp,fp,f20,f21,f22,f23,f24,f25,f26,f27,f28,f29,f30,f31
+EOF
+RUN
+
+NAME=mips n32 cc clobber and preserve register sets
+FILE=malloc://16
+ARGS=-e anal.arch=mips -e asm.bits=32
+CMDS=<<EOF
+k anal/cc/cc.n32.clobber
+k anal/cc/cc.n32.preserve
+EOF
+EXPECT=<<EOF
+at,v0,v1,a0,a1,a2,a3,a4,a5,a6,a7,t4,t5,t6,t7,t8,t9,ra,f0,f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13,f14,f15,f16,f17,f18,f19,f20,f21,f22,f23
+s0,s1,s2,s3,s4,s5,s6,s7,gp,sp,fp,f24,f25,f26,f27,f28,f29,f30,f31
+EOF
+RUN
+
+NAME=mips jalr t9 resolves through the gp-relative got load
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010000000000320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00401000
+EOF
+RUN
+
+NAME=mips write into t9 after the gp load drops the pending jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f9900103c1900050320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips three-register addu into t9 does not fabricate a jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f9900100322c8210320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips addiu with a non-t9 source drops the pending jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010261900200320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips addiu lo-adjust applies exactly once to the pending jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010273900200320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00401020
+EOF
+RUN
+
+NAME=mips addiu on an unknown t9 does not fabricate a jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 273900200320f809
+ao 2~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips conditional move into t9 drops the pending jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f9900100085c80b0320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips rotate into t9 drops the pending jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f9900100039c9020320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips.gnu jalr t9 keeps no cross-instruction decoder state
+FILE=malloc://64
+ARGS=-e anal.arch=mips.gnu -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010000000000320f809
+ao 3~type,jump
+EOF
+EXPECT=<<EOF
+type: load
+type: nop
+type: rcall
+EOF
+RUN
+
+NAME=mips untyped sltu write into t9 drops the pending jalr target
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f9900100085c82b0320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips pending t9 target does not leak into a later decode window
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010000000000320f809
+ao 2 > /dev/null
+ao 1 @ 8 ~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips anal.stateful=false disables t9 tracking
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20 -e anal.stateful=false
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010000000000320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=mips jalr t9 resolution is deterministic across repeated windows
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010000000000320f809
+ao 3~jump:
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00401000
+jump: 0x00401000
+EOF
+RUN
+
+NAME=mips t9 tracking survives the nested anal.mask sweep
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20 -e anal.mask=true
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010000000000320f809
+ao 3~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00401000
+EOF
+RUN
+
+NAME=mips t9 tracking survives the aoj mask lookahead
+FILE=malloc://64
+ARGS=-e anal.arch=mips -e asm.bits=32 -e cfg.bigendian=true -e anal.gp=0x20
+CMDS=<<EOF
+wx 00401000 @ 0x30
+wx 8f990010000000000320f809
+aoj 3~{2.jump}
+EOF
+EXPECT=<<EOF
+4198400
+EOF
+RUN
+
+NAME=mips.gnu esil step applies delayed jump over nop delay slot
+FILE=malloc://32
+ARGS=-a mips.gnu -e asm.bits=32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 0320000800000000
+aei
+aeim
+aer t9=0x2000
+aes
+aer pc
+aoj 1 @ 4~{[0].esil}
+EOF
+EXPECT=<<EOF
+0x00002000
+,
+EOF
+RUN
+
+NAME=mips.gnu esil step applies delayed jump over esil-less delay slot op
+FILE=malloc://32
+ARGS=-a mips.gnu -e asm.bits=32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 0320000800a6200b
+aei
+aeim
+aer t9=0x2000
+aes
+aer pc
+EOF
+EXPECT=<<EOF
+0x00002000
+EOF
+RUN
+
+NAME=mips.gnu esil step falls through not-taken branch with nop delay slot
+FILE=malloc://32
+ARGS=-a mips.gnu -e asm.bits=32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 1085000300000000
+aei
+aeim
+aer a0=1
+aer a1=2
+aes
+aes
+aer pc
+EOF
+EXPECT=<<EOF
+0x00000008
+EOF
+RUN
+
+NAME=mips.gnu esil step takes conditional branch over nop delay slot
+FILE=malloc://32
+ARGS=-a mips.gnu -e asm.bits=32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 1085000300000000
+aei
+aeim
+aer a0=1
+aer a1=1
+aes
+aer pc
+EOF
+EXPECT=<<EOF
+0x00000010
+EOF
+RUN
+
+NAME=mips bgezal branch-and-link target is the pc-relative offset not the register
+FILE=malloc://64
+ARGS=-a mips -e asm.bits=32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 04910010
+ao 1~jump:
+ao 1~type:
+EOF
+EXPECT=<<EOF
+jump: 0x00000044
+type: call
+EOF
+RUN
+
+NAME=mips bltzal branch-and-link target is the pc-relative offset
+FILE=malloc://64
+ARGS=-a mips -e asm.bits=32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 04900010
+ao 1~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00000044
+EOF
+RUN
+
+NAME=mips bgezall likely branch-and-link target is the pc-relative offset
+FILE=malloc://64
+ARGS=-a mips -e asm.bits=32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 04930010
+ao 1~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00000044
+EOF
+RUN
+
+NAME=mips: /r resolves a t9-mediated register call in the forward scan
+FILE=bins/elf/boa-mips
+CMDS=<<EXPECT_END
+e search.in=io.maps.x
+e anal.stateful=false
+/r 0x49a660
+e anal.stateful=true
+/r 0x49a660
+EXPECT_END
+EXPECT=<<EXPECT_END
+(nofunc) 0x407454 [CALL] jalr t9
+EXPECT_END
+RUN
+
+NAME=callargs reads a mips o32 stack argument above the home area
+FILE=malloc://256
+ARGS=-a mips -b 32 -e cfg.bigendian=true -e anal.cc=o32
+CMDS=<<EOF
+wx 2404005024050054240600582407005c24080060afa800100c0000100000000003e0000800000000
+wx 03e0000800000000 @ 0x40
+w AA @ 0x50
+w BB @ 0x54
+w CC @ 0x58
+w DD @ 0x5c
+w EE @ 0x60
+af @ 0x40
+afn five @ 0x40
+'td int five(const char *a, const char *b, const char *c, const char *d, const char *e);
+tk func.five.cc=o32
+af @ 0
+a:callargs-q 0x18
+EOF
+EXPECT=<<EOF
+int five("AA", "BB", "CC", "DD", "EE")
 EOF
 RUN

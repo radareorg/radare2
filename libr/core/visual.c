@@ -494,11 +494,9 @@ R_API bool r_core_visual_hud(RCore *core) {
 	char *pfx = r_sys_prefix (NULL);
 	char *f = r_str_newf (R_JOIN_3_PATHS ("%s", R2_HUD, "main"), pfx);
 	free (pfx);
-	const int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	char *homehud = r_xdg_datadir ("hud");
 	bool ready = false;
 	char *res = NULL;
-	core->cons->context->color_mode = use_color;
 
 	r_core_visual_showcursor (core, true);
 	if (R_STR_ISNOTEMPTY (c) && r_file_exists (c)) {
@@ -769,7 +767,10 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	r_cons_show_cursor (core->cons, true);
 	core->vmode = false;
 	const int ovtmode = r_config_get_i (core->config, "scr.vtmode");
-	r_config_set_i (core->config, "scr.vtmode", 1);
+	if (ovtmode > 0) {
+		// do not force vt sequences on consoles without vt support
+		r_config_set_i (core->config, "scr.vtmode", 1);
+	}
 
 	int curbs = core->blocksize;
 	if (core->visual.autoblocksize) {
@@ -1178,15 +1179,169 @@ static void setprintmode(RCore *core, int n) {
 	}
 }
 
+static int visual_meta_delta(RCore *core, ut64 addr, int size) {
+	if (size < 1) {
+		return 0;
+	}
+	RIntervalNode *in = r_meta_get_in (core->anal, addr, R_META_TYPE_DATA);
+	if (!in) {
+		in = r_meta_get_in (core->anal, addr, R_META_TYPE_STRING);
+	}
+	if (in) {
+		ut64 delta = r_meta_node_size (in) - (addr - in->start);
+		const int hexcols = r_config_get_i (core->config, "hex.cols");
+		if (hexcols > 0 && delta > hexcols) {
+			delta = hexcols - (addr % hexcols);
+			if (delta < 1) {
+				delta = hexcols;
+			}
+		}
+		if (delta > INT_MAX) {
+			return INT_MAX;
+		}
+		return R_MAX (1, (int)delta);
+	}
+	if (size < 2) {
+		return 0;
+	}
+	ut64 next = addr + 1;
+	if (next <= addr) {
+		return 0;
+	}
+	RVecIntervalNodePtr *metas = r_meta_get_all_intersect (core->anal, next, size - 1, R_META_TYPE_ANY);
+	if (!metas) {
+		return 0;
+	}
+	ut64 delta = 0;
+	RIntervalNode **it;
+	R_VEC_FOREACH (metas, it) {
+		RIntervalNode *node = *it;
+		RAnalMetaItem *mi = node->data;
+		if (mi && (mi->type == R_META_TYPE_DATA || mi->type == R_META_TYPE_STRING)
+				&& node->start > addr) {
+			ut64 d = node->start - addr;
+			delta = delta? R_MIN (delta, d): d;
+		}
+	}
+	RVecIntervalNodePtr_free (metas);
+	return delta > INT_MAX? INT_MAX: (int)delta;
+}
+
+static ut64 visual_meta_end_in(RCore *core, ut64 addr, int size) {
+	if (size < 1) {
+		return UT64_MAX;
+	}
+	RVecIntervalNodePtr *metas = r_meta_get_all_intersect (core->anal, addr, size, R_META_TYPE_ANY);
+	if (!metas) {
+		return UT64_MAX;
+	}
+	ut64 res = UT64_MAX;
+	RIntervalNode **it;
+	R_VEC_FOREACH (metas, it) {
+		RIntervalNode *node = *it;
+		RAnalMetaItem *mi = node->data;
+		if (mi && (mi->type == R_META_TYPE_DATA || mi->type == R_META_TYPE_STRING)
+				&& node->end != UT64_MAX) {
+			ut64 end = node->end + 1;
+			res = res == UT64_MAX? end: R_MAX (res, end);
+		}
+	}
+	RVecIntervalNodePtr_free (metas);
+	return res;
+}
+
+static ut64 visual_meta_prev_addr(RCore *core, ut64 addr) {
+	if (addr < 1) {
+		return UT64_MAX;
+	}
+	ut64 prev = addr - 1;
+	RIntervalNode *in = r_meta_get_in (core->anal, prev, R_META_TYPE_DATA);
+	if (!in) {
+		in = r_meta_get_in (core->anal, prev, R_META_TYPE_STRING);
+	}
+	if (!in) {
+		return UT64_MAX;
+	}
+	ut64 res = in->start;
+	const int hexcols = r_config_get_i (core->config, "hex.cols");
+	if (hexcols > 0 && r_meta_node_size (in) > hexcols) {
+		ut64 delta = addr % hexcols;
+		if (delta < 1) {
+			delta = hexcols;
+		}
+		res = addr - delta;
+		if (res < in->start) {
+			res = in->start;
+		}
+	}
+	return res < addr? res: UT64_MAX;
+}
+
+static int visual_middle_delta(RCore *core, ut64 addr, int size) {
+	int delta = 0;
+	int midflags = r_config_get_i (core->config, "asm.flags.middle");
+	if (midflags >= R_MIDFLAGS_REALIGN) {
+		int flag_delta = r_core_flag_in_middle (core, addr, size, &midflags);
+		if (midflags > R_MIDFLAGS_SHOW) {
+			delta = flag_delta;
+		}
+	}
+	if (r_config_get_i (core->config, "asm.bbmiddle")) {
+		int bb_delta = r_core_bb_starts_in_middle (core, addr, size);
+		if (bb_delta > 0 && (!delta || bb_delta < delta)) {
+			delta = bb_delta;
+		}
+	}
+	return delta;
+}
+
+static ut64 visual_middle_addr(RCore *core, ut64 aligned, ut64 addr, int codealign) {
+	if (aligned > UT64_MAX - codealign) {
+		return aligned;
+	}
+	ut64 end = aligned + codealign;
+	ut64 row = aligned;
+	while (row < addr && row < end) {
+		int delta = visual_middle_delta (core, row, end - row);
+		if (delta < 1 || (ut64)delta > addr - row) {
+			break;
+		}
+		row += delta;
+	}
+	return row;
+}
+
+static ut64 visual_prev_row_addr(RCore *core, ut64 aligned, ut64 addr, int size) {
+	ut64 prev = visual_middle_addr (core, aligned, addr - 1, size);
+	ut64 meta_end = visual_meta_end_in (core, aligned, size);
+	if (meta_end > aligned && meta_end < addr) {
+		prev = R_MAX (prev, meta_end);
+	}
+	return prev;
+}
+
 static ut64 visual_align_code(RCore *core, ut64 addr) {
 	if (addr == UT64_MAX) {
+		return addr;
+	}
+	if (visual_meta_delta (core, addr, 1) > 0) {
 		return addr;
 	}
 	const int codealign = core->anal->config->codealign;
 	if (codealign > 1) {
 		const int mod = addr % codealign;
 		if (mod) {
-			addr -= mod;
+			ut64 aligned = addr - mod;
+			ut64 middle_addr = visual_middle_addr (core, aligned, addr, codealign);
+			if (middle_addr == addr) {
+				return addr;
+			}
+			int delta = visual_meta_delta (core, aligned, codealign);
+			if (delta > mod) {
+				addr = aligned + delta;
+			} else if (!delta) {
+				addr = middle_addr;
+			}
 		}
 	}
 	return addr;
@@ -1198,27 +1353,43 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	ut64 target, base;
 	RAnalOp op;
 	int len, ret, i;
-	RIntervalNode *in = r_meta_get_in (core->anal, addr, R_META_TYPE_DATA);
-	if (in) {
-		const int hexcols = r_config_get_i (core->config, "hex.cols");
-		int amisize = r_meta_item_size (in->start, in->end);
-		if (amisize > hexcols) {
-			return addr - hexcols;
-		}
-		return addr - amisize;
+	ut64 meta_prev = visual_meta_prev_addr (core, addr);
+	if (meta_prev != UT64_MAX) {
+		return meta_prev;
 	}
 
 	const int minop = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	const int maxop = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
+	const int codealign = core->anal->config->codealign;
+	if (codealign > 1) {
+		const int mod = addr % codealign;
+		if (mod) {
+			ut64 aligned_addr = addr - mod;
+			if (visual_middle_addr (core, aligned_addr, addr, codealign) == addr) {
+				return visual_prev_row_addr (core, aligned_addr, addr, mod);
+			}
+		}
+	}
 	ut64 aligned = visual_align_code (core, addr);
 	if (aligned != addr) {
 		return aligned;
 	}
 	if (minop == maxop) {
 		if (minop == -1) {
-			return addr - 4;
+			return addr > 4 ? addr - 4 : 0;
 		}
-		return addr - minop;
+		if (addr < (ut64)minop) {
+			// clamp instead of wrapping around the top of the address space
+			return 0;
+		}
+		ut64 prev = addr - minop;
+		if (addr >= (ut64)minop && core->anal->config->codealign == minop) {
+			ut64 row_addr = visual_prev_row_addr (core, prev, addr, minop);
+			if (row_addr > prev) {
+				return row_addr;
+			}
+		}
+		return prev;
 	}
 
 	// let's see if we can use anal info to get the previous instruction
@@ -1309,8 +1480,8 @@ R_API int r_line_hist_offset_up(RLine *line) {
 	char *command = (f && f->addr == off && f->addr > 0)
 		? r_str_newf ("%s", f->name)
 		: r_str_newf ("0x%"PFMT64x, off);
-	r_str_ncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
-	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	r_str_ncpy (line->state.buffer.data, command, R_LINE_BUFSIZE - 1);
+	line->state.buffer.index = line->state.buffer.length = strlen (line->state.buffer.data);
 	free (command);
 	return true;
 }
@@ -1323,8 +1494,8 @@ R_API int r_line_hist_offset_down(RLine *line) {
 	}
 	line->offset_hist_index++;
 	if (line->offset_hist_index == undo->redos) {
-		line->buffer.data[0] = '\0';
-		line->buffer.index = line->buffer.length = 0;
+		line->state.buffer.data[0] = '\0';
+		line->state.buffer.index = line->state.buffer.length = 0;
 		return false;
 	}
 	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
@@ -1332,8 +1503,8 @@ R_API int r_line_hist_offset_down(RLine *line) {
 	char *command = (f && f->addr == off && f->addr > 0)
 		? r_str_newf ("%s", f->name)
 		: r_str_newf ("0x%"PFMT64x, off);
-	r_str_ncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
-	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	r_str_ncpy (line->state.buffer.data, command, R_LINE_BUFSIZE - 1);
+	line->state.buffer.index = line->state.buffer.length = strlen (line->state.buffer.data);
 	free (command);
 	return true;
 }
@@ -1922,9 +2093,9 @@ static void visual_textlogs(RCore *core) {
 				#define I core->cons
 				const char *cmd = r_config_get (core->config, "cmd.vprompt");
 				r_line_set_prompt (cons->line, "cmd.vprompt> ");
-				I->line->contents = strdup (cmd);
+				I->line->state.contents = strdup (cmd);
 				buf = r_line_readline (core->cons);
-				I->line->contents = NULL;
+				I->line->state.contents = NULL;
 				(void)r_config_set (core->config, "cmd.vprompt", buf);
 				r_core_visual_showcursor (core, false);
 			}
@@ -2017,8 +2188,10 @@ static void visual_comma(RCore *core) {
 			free (cwf);
 			goto beach;
 		}
-		char *data = r_core_editor (core, NULL, odata);
-		r_file_dump (cwf, (const ut8 *) data, -1, 0);
+		char *data = r_core_editor (core, NULL, odata, NULL);
+		if (data) {
+			r_file_dump (cwf, (const ut8 *)data, -1, false);
+		}
 		free (data);
 		free (odata);
 		free (cwf);
@@ -2880,7 +3053,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		ch = 'q';
 	}
 	ch = r_cons_arrow_to_hjkl (core->cons, ch);
-	int wheelspeed = (core->cons->mouse_event)
+	const bool is_wheel = core->cons->mouse_event;
+	if (is_wheel && (ch == 'h' || ch == 'l') &&
+			!r_config_get_b (core->config, "scr.wheel.hscroll")) {
+		return 1;
+	}
+	int wheelspeed = (is_wheel && !core->cons->drag_event)
 		? r_config_get_i (core->config, "scr.wheel.speed"): 1;
 	ch = visual_nkey (core, ch);
 	if (ch < 2) {
@@ -3080,9 +3258,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_showcursor (core, true);
 			const char *cmd = r_config_get (core->config, "cmd.vprompt");
 			r_line_set_prompt (core->cons->line, "cmd.vprompt> ");
-			core->cons->line->contents = strdup (cmd);
+			core->cons->line->state.contents = strdup (cmd);
 			const char *buf = r_line_readline (core->cons);
-			core->cons->line->contents = NULL;
+			core->cons->line->state.contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
 			r_core_visual_showcursor (core, false);
 		}
@@ -3093,15 +3271,15 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			RCons *cons = core->cons;
 			const char *cmd = r_config_get (core->config, "cmd.cprompt");
 			r_line_set_prompt (cons->line, "cmd.cprompt> ");
-			I->line->contents = strdup (cmd);
+			I->line->state.contents = strdup (cmd);
 			const char *buf = r_line_readline (cons);
 			if (buf && !strcmp (buf, "|")) {
-				R_FREE (I->line->contents);
+				R_FREE (I->line->state.contents);
 				core->print->cur_enabled = true;
 				core->print->cur = 0;
 				(void)r_config_set (core->config, "cmd.cprompt", "p=e $r-2");
 			} else {
-				R_FREE (cons->line->contents);
+				R_FREE (cons->line->state.contents);
 				(void)r_config_set (core->config, "cmd.cprompt", r_str_get (buf));
 			}
 			r_core_visual_showcursor (core, false);
@@ -3536,38 +3714,19 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 				} else {
 					int times = R_MAX (1, wheelspeed);
-					ut64 amisize = 0;
-					RIntervalNode *in = r_meta_get_in (core->anal, core->addr, R_META_TYPE_DATA);
-					RAnalMetaItem *ami = NULL; // r_meta_get_in (core->anal, core->addr, R_META_TYPE_DATA); // , &amisize);
-					if (in) {
-						ami = in->data;
-						amisize = r_meta_item_size (in->start, in->end);
+					int distance = numbuf_pull (core);
+					if (distance > 1) {
+						times = distance;
 					}
-					if (!ami) {
-						ami = r_meta_get_at (core->anal, core->addr, R_META_TYPE_STRING, &amisize);
-					}
-					if (ami) {
-						const int hexcols = r_config_get_i (core->config, "hex.cols");
-						if (amisize > hexcols) {
-							int pad = core->addr % hexcols;
-							amisize = hexcols - pad;
+					while (times--) {
+						RAnalOp op;
+						if (isVisualDisasm (core)) {
+							r_core_visual_disasm_down (core, &op, &cols);
+							r_anal_op_fini (&op);
+						} else if (!strcmp (vprintcmd (core), "prc")) {
+							cols = r_config_get_i (core->config, "hex.cols");
 						}
-						r_core_seek_delta (core, amisize);
-					} else {
-						int distance = numbuf_pull (core);
-						if (distance > 1) {
-							times = distance;
-						}
-						while (times--) {
-							RAnalOp op;
-							if (isVisualDisasm (core)) {
-								r_core_visual_disasm_down (core, &op, &cols);
-								r_anal_op_fini (&op);
-							} else if (!strcmp (vprintcmd (core), "prc")) {
-								cols = r_config_get_i (core->config, "hex.cols");
-							}
-							r_core_seek (core, core->addr + cols, true);
-						}
+						r_core_seek (core, core->addr + cols, true);
 					}
 				}
 			}
@@ -4724,8 +4883,6 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 }
 
 R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
-	int midflags = r_config_get_i (core->config, "asm.flags.middle");
-	const bool midbb = r_config_get_i (core->config, "asm.bbmiddle");
 	ut64 aligned = visual_align_code (core, core->addr);
 	if (aligned != core->addr) {
 		r_core_seek (core, aligned, true);
@@ -4760,23 +4917,16 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 		*cols = r_asm_disassemble (core->rasm, op, buf, bufsize);
 		free (buf);
 
-		if (midflags || midbb) {
-			int skip_bytes_flag = 0, skip_bytes_bb = 0;
-			if (midflags >= R_MIDFLAGS_REALIGN) {
-				skip_bytes_flag = r_core_flag_in_middle (core, core->addr, *cols, &midflags);
-			}
-			if (midbb) {
-				skip_bytes_bb = r_core_bb_starts_in_middle (core, core->addr, *cols);
-			}
-			if (skip_bytes_flag) {
-				*cols = skip_bytes_flag;
-			}
-			if (skip_bytes_bb && skip_bytes_bb < *cols) {
-				*cols = skip_bytes_bb;
-			}
+		int middle_delta = visual_middle_delta (core, core->addr, *cols);
+		if (middle_delta > 0) {
+			*cols = middle_delta;
 		}
 	}
 	int nvars = varcount (core, f);
+	int delta = visual_meta_delta (core, orig, *cols);
+	if (delta > 0) {
+		*cols = delta;
+	}
 	if (f && f->addr == orig && nvars < 20) {
 		// skip line by line here
 		if (nvars <= core->skiplines) {
@@ -4827,7 +4977,11 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	}
 
 	int ovtmode = r_config_get_i (core->config, "scr.vtmode");
-	r_config_set_i (core->config, "scr.vtmode", 2);
+	if (ovtmode > 0) {
+		// do not force vt sequences on consoles without vt support, the
+		// w32 legacy console path translates the ansi escapes instead
+		r_config_set_i (core->config, "scr.vtmode", 2);
+	}
 	core->visual.obs = core->blocksize;
 	//r_cons_set_cup (true);
 	if (strchr (input, '?')) {

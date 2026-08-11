@@ -291,7 +291,7 @@ static RCodeMeta *cld_build(RCore *core, RAnalFunction *fcn) {
 static int cmd_meta_lineinfo_decompile(RCore *core, const char *input) {
 	const char mode = *input;
 	if (mode == '?') {
-		r_core_cmd_help (core, help_msg_CLd);
+		r_cons_cmd_help (core->cons, help_msg_CLd);
 		return 0;
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);

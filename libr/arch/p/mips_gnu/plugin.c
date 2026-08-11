@@ -8,7 +8,6 @@
 
 typedef struct plugin_data_t {
 	char *pre_cpu;
-	ut64 t9_pre;
 } PluginData;
 
 static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
@@ -48,6 +47,9 @@ DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS ()
 // Call with delay slot.
 #define ES_CALL_DR(ra, addr) "pc,4,+,"ra",=,"ES_J_D(addr)
 #define ES_CALL_D(addr) ES_CALL_DR("ra", addr)
+
+// Unconditional link (ra = pc + 8).
+#define ES_LINK "pc,4,+,ra,=,"
 
 // Call without delay slot.
 #define ES_CALL_NDR(ra, addr) "pc,"ra",=,"ES_J_ND(addr)
@@ -878,8 +880,11 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "" ES_CALL_ND ("%s"), addr, I_REG (jump));
 		break;
 	case MIPS_INS_BAL:
-	case MIPS_INS_JAL:
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "" ES_CALL_D ("%s"), addr, I_REG (jump));
+		break;
+	case MIPS_INS_JAL:
+		// jal is J-type: the target lives in j_reg, not the i_reg union member bal uses
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "" ES_CALL_D ("%s"), addr, J_REG (jump));
 		break;
 	case MIPS_INS_JALR:
 	case MIPS_INS_JALRS:
@@ -988,7 +993,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 			addr, I_REG (rs), I_REG (jump));
 		break;
 	case MIPS_INS_BGEZAL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",!,?{," ES_CALL_D ("%s") ",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_LINK ES_IS_NEGATIVE ("%s") ",!,?{," ES_J_D ("%s") ",}",
 			addr, I_REG (rs), I_REG (jump));
 		break;
 	case MIPS_INS_BGEZALC:
@@ -1000,7 +1005,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		        addr, I_REG (rs), I_REG (jump));
 		break;
 	case MIPS_INS_BLTZAL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",?{," ES_CALL_D ("%s") ",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_LINK ES_IS_NEGATIVE ("%s") ",?{," ES_J_D ("%s") ",}",
 		        addr, I_REG (rs), I_REG (jump));
 		break;
 	case MIPS_INS_BLTZC:
@@ -1150,14 +1155,14 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		r_strbuf_appendf (&op->esil, "%s,%s,|,0xffffffff,^,%s,=", R_REG (rs), R_REG (rt), R_REG (rd));
 		break;
 	case MIPS_INS_SLT:
-		r_strbuf_appendf (&op->esil, "%s,%s,<,t,=", R_REG (rs), R_REG (rt));
+		r_strbuf_appendf (&op->esil, "32,%s,~,32,%s,~,<,%s,=", R_REG (rt), R_REG (rs), R_REG (rd));
 		break;
 	case MIPS_INS_SLTI:
-		r_strbuf_appendf (&op->esil, "%s,%s,<,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
+		r_strbuf_appendf (&op->esil, "32,%s,~,32,%s,~,<,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
 		break;
 	case MIPS_INS_SLTU:
-		r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,t,=",
-			R_REG (rs), R_REG (rt));
+		r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,%s,=",
+			R_REG (rt), R_REG (rs), R_REG (rd));
 		break;
 	case MIPS_INS_SLTIU:
 		r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,%s,=",
@@ -1168,6 +1173,12 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		ES_SIGN32_64 (R_REG (rd));
 		break;
 	case MIPS_INS_MULT:
+		// signed: sign-extend both operands so hi holds the signed high word
+		r_strbuf_appendf (&op->esil, ES_W ("32,%s,~,32,%s,~,*") ",lo,=", R_REG (rs), R_REG (rt));
+		ES_SIGN32_64 ("lo");
+		r_strbuf_appendf (&op->esil, ES_W ("32,32,%s,~,32,%s,~,*,>>") ",hi,=", R_REG (rs), R_REG (rt));
+		ES_SIGN32_64 ("hi");
+		break;
 	case MIPS_INS_MULTU:
 		r_strbuf_appendf (&op->esil, ES_W ("%s,%s,*") ",lo,=", R_REG (rs), R_REG (rt));
 		ES_SIGN32_64 ("lo");
@@ -1211,8 +1222,19 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 
 	/* prepare disassembler */
 	PluginData *pd = as->data;
-	if (cpu && (!pd->pre_cpu || !strcmp (cpu, pd->pre_cpu))) {
-		if (!r_str_casecmp (cpu, "mips64r2")) {
+	disasm_obj.mach = bfd_mach_mips_loongson_2f;
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		if (!r_str_casecmp (cpu, "mips1")) {
+			disasm_obj.mach = bfd_mach_mips3000;
+		} else if (!r_str_casecmp (cpu, "mips2")) {
+			disasm_obj.mach = bfd_mach_mips6000;
+		} else if (!r_str_casecmp (cpu, "mips3")) {
+			disasm_obj.mach = bfd_mach_mips4000;
+		} else if (!r_str_casecmp (cpu, "mips4")) {
+			disasm_obj.mach = bfd_mach_mips5000;
+		} else if (!r_str_casecmp (cpu, "mips5")) {
+			disasm_obj.mach = bfd_mach_mips5;
+		} else if (!r_str_casecmp (cpu, "mips64r2")) {
 			disasm_obj.mach = bfd_mach_mipsisa64r2;
 		} else if (!r_str_casecmp (cpu, "micro")) {
 			disasm_obj.mach = bfd_mach_mips_micromips;
@@ -1239,10 +1261,10 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 			// Fallback for default config
 			disasm_obj.mach = bfd_mach_mips_loongson_2f;
 		}
-		free (pd->pre_cpu);
-		pd->pre_cpu = strdup (cpu);
-	} else {
-		disasm_obj.mach = bfd_mach_mips_loongson_2f;
+		if (!pd->pre_cpu || strcmp (cpu, pd->pre_cpu)) {
+			free (pd->pre_cpu);
+			pd->pre_cpu = strdup (cpu);
+		}
 	}
 
 	const char *abi = as->config->abi;
@@ -1317,9 +1339,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		opcode = r_read_ble16 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
 	}
 
-	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", buf[0], buf[1], buf[2], buf[3], as->big_endian);
 	if (opcode == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			r_strbuf_set (&op->esil, ",");
+		}
 		return oplen;
 	}
 
@@ -1329,7 +1353,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	int optype = buf[0] >> 2;
 	insn.optype = optype;
 	insn.id = 0;
-	PluginData *pd = as->data;
 	if (optype == 0) {
 		/*
 			R-TYPE
@@ -1399,9 +1422,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			insn.id = MIPS_INS_JR;
 			if (rs == 31) {
 				op->type = R_ANAL_OP_TYPE_RET;
-			} else if (rs == 25) {
-				op->type = R_ANAL_OP_TYPE_RJMP;
-				op->jump = pd->t9_pre;
 			} else {
 				op->type = R_ANAL_OP_TYPE_RJMP;
 			}
@@ -1412,7 +1432,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			insn.id = MIPS_INS_JALR;
 			if (rs == 25) {
 				op->type = R_ANAL_OP_TYPE_RCALL;
-				op->jump = pd->t9_pre;
 				break;
 			}
 			op->type = R_ANAL_OP_TYPE_UCALL;
@@ -1441,6 +1460,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case 24: // mult
 			insn.id = MIPS_INS_MULT;
+			op->type = R_ANAL_OP_TYPE_MUL;
+			break;
 		case 25: // multu
 			insn.id = MIPS_INS_MULTU;
 			op->type = R_ANAL_OP_TYPE_MUL;
@@ -1452,7 +1473,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case 32: // add
 			insn.id = MIPS_INS_ADD;
-		case 33: // addu	//TODO:表明位数
+			op->type = R_ANAL_OP_TYPE_ADD;
+			break;
+		case 33: // addu
 			insn.id = MIPS_INS_ADDU;
 			op->type = R_ANAL_OP_TYPE_ADD;
 			break;
@@ -1621,29 +1644,32 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		RAnalValue *dst;
 		switch (optype) {
 		case 1:
+			// all REGIMM branches share the delay slot and target math
+			op->delay = 1;
+			op->fail = addr + 8;
 			switch (rt) {
 			case 0: // bltz
 				insn.id = MIPS_INS_BLTZ;
+				op->type = R_ANAL_OP_TYPE_CJMP;
 				break;
 			case 1: // bgez
 				insn.id = MIPS_INS_BGEZ;
+				op->type = R_ANAL_OP_TYPE_CJMP;
 				break;
-			case 17: // bal  bgezal
-				if (rs == 0) {
-					op->jump = addr + ((ut64)imm << 2) + 4;
-					snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%" PFMT64x, op->jump);
-					insn.id = MIPS_INS_BAL;
-				} else {
-					op->fail = addr + 8;
-					insn.id = MIPS_INS_BGEZAL;
-				}
-				op->delay = 1;
+			case 16: // bltzal
+				insn.id = MIPS_INS_BLTZAL;
+				op->type = R_ANAL_OP_TYPE_CALL;
+				break;
+			case 17: // bgezal, or bal when rs==0
+				insn.id = rs == 0 ? MIPS_INS_BAL : MIPS_INS_BGEZAL;
 				op->type = R_ANAL_OP_TYPE_CALL;
 				break;
 			default:
-				op->delay = 1;
-				op->fail = addr + 8;
 				break;
+			}
+			if (insn.id) {
+				op->jump = addr + ((ut64)imm << 2) + 4;
+				snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%" PFMT64x, op->jump);
 			}
 			break;
 		case 4: // beq
@@ -1788,13 +1814,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				op->ptr = as->config->gp + imm;
 			} else {
 				op->ptr = imm;
-			}
-			if (rt == 25) {
-				pd->t9_pre = op->ptr;
-				const ut64 ptrv = mips_read_ptr_at (as->arch->binb.bin, op->ptr, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config), as->config->bits);
-				if (ptrv != UT64_MAX) {
-					pd->t9_pre = ptrv;
-				}
 			}
 			if (mask & R_ARCH_OP_MASK_VAL) {
 				if (mips_reg_is_stack_base (rs)) {
@@ -1999,6 +2018,7 @@ static char *regs(RArchSession *as) {
 		"=SN    v0\n"
 		"=SP	sp\n"
 		"=BP	fp\n"
+		"=RA	ra\n"
 		"=A0	a0\n"
 		"=A1	a1\n"
 		"=A2	a2\n"
@@ -2039,6 +2059,8 @@ static char *regs(RArchSession *as) {
 		"gpr	sp	.64	232	0\n"
 		"gpr	fp	.64	240	0\n"
 		"gpr	ra	.64	248	0\n"
+		"gpr	hi	.64	256	0\n"
+		"gpr	lo	.64	264	0\n"
 		/* extra */
 		"gpr	pc	.64	272	0\n";
 	return strdup (p);
@@ -2075,7 +2097,6 @@ static bool init(RArchSession *as) {
 		return false;
 	}
 
-	pd->t9_pre = UT64_MAX;
 	return true;
 }
 
@@ -2094,7 +2115,7 @@ const RArchPlugin r_arch_plugin_mips_gnu = {
 		.desc = "MIPS RISC architecture",
 		.license = "LGPL-3.0-only",
 	},
-	.cpus = "micro,mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
+	.cpus = "micro,mips1,mips2,mips3,mips4,mips5,mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
 	.arch = "mips",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.info = archinfo,

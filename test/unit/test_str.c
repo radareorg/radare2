@@ -18,6 +18,13 @@ bool test_r_file(void) {
 	s = r_file_new ("/foo/", "bar", NULL);
 	mu_assert_streq (s, "/foo/bar", "error, invalid path");
 	free (s);
+	char *root = r_str_newf ("foo%s%s", R_SYS_DIR, R_SYS_DIR);
+	char *expected = r_str_newf ("foo%sbar", R_SYS_DIR);
+	s = r_file_root (root, "///bar");
+	mu_assert_streq (s, expected, "error, invalid rooted path");
+	free (s);
+	free (expected);
+	free (root);
 	mu_end;
 }
 
@@ -118,6 +125,22 @@ bool test_r_str_replace_char(void) {
 	(void) r_str_replace_char (str, 'l', 'x');
 	mu_assert_streq (str, "hexxo worxd", "error, replace char multi failed");
 	free (str);
+	mu_end;
+}
+
+bool test_r_str_filter_file(void) {
+	char file[32] = "theme.zip";
+	mu_assert ("single dot is valid", !r_str_filter_file (file));
+	mu_assert_streq (file, "theme.zip", "single dot changed");
+	r_str_ncpy (file, "..", sizeof (file));
+	mu_assert ("parent directory was not filtered", r_str_filter_file (file));
+	mu_assert_streq (file, "._", "parent directory filter");
+	r_str_ncpy (file, "theme..zip", sizeof (file));
+	mu_assert ("double dot was not filtered", r_str_filter_file (file));
+	mu_assert_streq (file, "theme._zip", "double dot filter");
+	r_str_ncpy (file, "dir/theme\\file", sizeof (file));
+	mu_assert ("path separators were not filtered", r_str_filter_file (file));
+	mu_assert_streq (file, "dir_theme_file", "path separator filter");
 	mu_end;
 }
 
@@ -416,6 +439,38 @@ bool test_r_str_len_utf8_ansi_truncated_utf8_tail(void) {
 	mu_assert_eq (len, 1, "len(truncated 4-byte utf8 tail)");
 	mu_assert_eq (r_utf8_decode ((const ut8 *)s1 + 3, -1, NULL), 0, "decode rejects truncated utf8 tail");
 	mu_assert_eq (r_utf8_decode ((const ut8 *)s2, -1, NULL), 0, "decode rejects truncated 4-byte utf8 tail");
+	mu_end;
+}
+
+bool test_r_str_utf16_to_utf8(void) {
+	ut8 le[] = { 'r', 0, '2', 0 };
+	ut8 be[] = { 0, 'r', 0, '2' };
+	char out[8];
+
+	memset (out, 0xff, sizeof (out));
+	int len = r_str_utf16_to_utf8 ((ut8 *)out, sizeof (out), le, sizeof (le), false);
+	mu_assert_eq (len, 2, "utf16le byte length");
+	mu_assert_streq (out, "r2", "utf16le string");
+	mu_assert_eq ((ut8)out[2], 0, "utf16le string terminator");
+
+	memset (out, 0xff, sizeof (out));
+	len = r_str_utf16_to_utf8 ((ut8 *)out, sizeof (out), be, sizeof (be), true);
+	mu_assert_eq (len, 2, "utf16be byte length");
+	mu_assert_streq (out, "r2", "utf16be string");
+	mu_assert_eq ((ut8)out[2], 0, "utf16be string terminator");
+
+	mu_end;
+}
+
+bool test_r_str_uri_decode(void) {
+	char uri[] = "a%20b%00c";
+	const ut8 expected[] = { 'a', ' ', 'b', 0, 'c' };
+	int len = r_str_uri_decode (uri);
+	mu_assert_eq (len, sizeof (expected), "URI-decoded byte length");
+	mu_assert_memeq ((const ut8 *)uri, expected, sizeof (expected), "URI-decoded binary data");
+
+	char invalid[] = "%xy";
+	mu_assert_eq (r_str_uri_decode (invalid), -1, "Invalid URI escape");
 	mu_end;
 }
 
@@ -831,6 +886,81 @@ bool test_r_str_font(void) {
 	mu_end;
 }
 
+bool test_r_str_printfmt_types(void) {
+	mu_assert_streq_free (r_str_printfmt ("%s %d %f %x\n", 0, 0),
+		"char *,int,double,unsigned int", "printf conversions to C types");
+	mu_assert_streq_free (r_str_printfmt ("%ld %lld %zu", 0, 0),
+		"long,long long,unsigned long", "length modifiers");
+	mu_assert_streq_free (r_str_printfmt ("%c %p %Lf", 0, 0),
+		"int,void *,long double", "char/pointer/long double");
+	mu_assert_streq_free (r_str_printfmt ("%*d", 0, 0),
+		"int,int", "star width consumes an int arg");
+	mu_assert_streq_free (r_str_printfmt ("100%% done", 0, 0),
+		"", "literal percent takes no arg");
+	mu_assert_null (r_str_printfmt ("%1$s", 0, 0), "positional args unsupported");
+	mu_assert_null (r_str_printfmt ("%y", 0, 0), "unknown conversion rejected");
+	mu_end;
+}
+
+bool test_r_str_printfmt_pf(void) {
+	mu_assert_streq_free (r_str_printfmt ("%s %d %f %x\n", 64, '*'),
+		"SiFx", "printf conversions to pf (64-bit)");
+	mu_assert_streq_free (r_str_printfmt ("%ld %p", 64, '*'),
+		"qp", "long is qword on 64-bit");
+	mu_assert_streq_free (r_str_printfmt ("%ld %s", 32, '*'),
+		"is", "long is dword-signed and string ptr is 32-bit on 32-bit");
+	mu_assert_null (r_str_printfmt ("%y", 64, '*'), "unknown conversion rejected");
+	mu_end;
+}
+
+bool test_r_str_but_escape(void) {
+	const char *s = "a | \"b|c\" d \\| e | 'f|g'";
+	mu_assert_ptreq (r_str_firstbut_escape (s, '|', "\"'"), s + 2,
+		"first delimiter outside quoted spans");
+	mu_assert_ptreq (r_str_lastbut (s, '|', "\"'"), strstr (s, "| 'f"),
+		"last delimiter outside multiple quoted spans and escapes");
+	s = "a \"b\\\"|c\" | d";
+	mu_assert_ptreq (r_str_firstbut (s, '|', "\"'"), r_str_lchr (s, '|'),
+		"first delimiter after escaped quote");
+	mu_assert_ptreq (r_str_firstbut_escape (s, '|', "\"'"), r_str_lchr (s, '|'),
+		"escaped quote keeps delimiter inside quoted span");
+	s = "a \\| b";
+	mu_assert_ptreq (r_str_firstbut (s, '|', "\"'"), s + 3, "first escaped delimiter");
+	mu_assert_null (r_str_firstbut_escape (s, '|', "\"'"), "escaped delimiter skipped");
+	mu_assert_ptreq (r_str_lastbut (s, '|', "\"'"), s + 3, "last escaped delimiter");
+	s = "a \\\\| b";
+	mu_assert_ptreq (r_str_firstbut_escape (s, '|', "\"'"), r_str_lchr (s, '|'),
+		"even backslashes do not escape delimiter");
+	s = "a \\\\\\| b";
+	mu_assert_null (r_str_firstbut_escape (s, '|', "\"'"),
+		"odd backslashes escape delimiter");
+	mu_end;
+}
+
+bool test_r_str_trim_args_quote_parity(void) {
+	char odd_single[] = "'pa\\'tata'";
+	r_str_trim_args (odd_single);
+	mu_assert_streq (odd_single, "pa'tata", "odd backslash escapes single quote");
+	char even_single[] = "'pa\\\\'tata'";
+	r_str_trim_args (even_single);
+	mu_assert_streq (even_single, "pa\\\\tata'", "even backslashes close single quote");
+	char odd_double[] = "\"pa\\\"tata\"";
+	r_str_trim_args (odd_double);
+	mu_assert_streq (odd_double, "pa\"tata", "odd backslash escapes double quote");
+	char even_double[] = "\"pa\\\\\"tata\"";
+	r_str_trim_args (even_double);
+	mu_assert_streq (even_double, "pa\\\\tata\"", "even backslashes close double quote");
+	char escaped_text[] = "'pa\\\\tata'";
+	r_str_trim_args (escaped_text);
+	mu_assert_streq (escaped_text, "pa\\\\tata", "backslash pair is preserved for unescape");
+	r_str_unescape (escaped_text);
+	mu_assert_streq (escaped_text, "pa\\tata", "backslash pair keeps the following t literal");
+	char escaped_syntax[] = "\\# \\@ \\~ \\! \\& \\* \\( \\) \\< \\> \\$";
+	r_str_trim_args (escaped_syntax);
+	mu_assert_streq (escaped_syntax, "# @ ~ ! & * ( ) < > $", "shell syntax escapes are removed");
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_file);
 	mu_run_test (test_r_str_wrap);
@@ -838,6 +968,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_newf);
 	mu_run_test (test_r_str_replace_char_once);
 	mu_run_test (test_r_str_replace_char);
+	mu_run_test (test_r_str_filter_file);
 	mu_run_test (test_r_str_replace);
 	mu_run_test (test_r_str_bits64);
 	mu_run_test (test_r_str_rwx);
@@ -858,6 +989,8 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_ansi_len);
 	mu_run_test (test_r_str_len_utf8_ansi);
 	mu_run_test (test_r_str_len_utf8_ansi_truncated_utf8_tail);
+	mu_run_test (test_r_str_utf16_to_utf8);
+	mu_run_test (test_r_str_uri_decode);
 	mu_run_test (test_r_str_utf8_charsize);
 	mu_run_test (test_r_str_utf8_charsize_prev);
 	mu_run_test (test_r_str_sanitize_sdb_key);
@@ -873,6 +1006,10 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_ndup_zero_len);
 	mu_run_test (test_r_str_word_get0set);
 	mu_run_test (test_r_str_font);
+	mu_run_test (test_r_str_printfmt_types);
+	mu_run_test (test_r_str_printfmt_pf);
+	mu_run_test (test_r_str_but_escape);
+	mu_run_test (test_r_str_trim_args_quote_parity);
 	return tests_passed != tests_run;
 }
 

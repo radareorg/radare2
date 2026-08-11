@@ -18,6 +18,7 @@ R_LIB_VERSION(r_magic);
 #define R_API
 
 R_API RMagic *r_magic_new(int flags) {
+	flags &= ~R_MAGIC_CHECK_TEXT;
 	return magic_open (flags);
 }
 R_API void r_magic_free(RMagic *m) {
@@ -46,6 +47,7 @@ R_API int r_magic_getflags(RMagic *m) {
 }
 R_API void r_magic_setflags(RMagic *m, int f) {
 	R_RETURN_IF_FAIL (m);
+	f &= ~R_MAGIC_CHECK_TEXT;
 	magic_setflags (m, f);
 }
 R_API char *r_magic_getpath(const char *magicfile, int action) {

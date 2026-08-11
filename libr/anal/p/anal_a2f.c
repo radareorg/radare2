@@ -12,7 +12,6 @@
 #define FbbTo(x) r_strf("bb.%"PFMT64x".to",x)
 
 static ut64 getCrossingBlock(Sdb *db, const char *key, ut64 start, ut64 end) {
-	r_strf_buffer (64);
 	ut64 block_start, block_end;
 	ut64 nearest_start = UT64_MAX;
 	const char *s = sdb_const_get (db, key, NULL);
@@ -30,7 +29,7 @@ static ut64 getCrossingBlock(Sdb *db, const char *key, ut64 start, ut64 end) {
 			return start;
 		}
 
-		block_end = sdb_num_get (db, Fbb (block_start), NULL);
+		block_end = sdb_num_getf (db, NULL, "bb.%" PFMT64x, block_start);
 		if (block_end) {
 			if (start > block_start && start < block_end) { // case 2
 				// start is inside the block
@@ -76,9 +75,8 @@ static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 		if (from > block_start) {
 			// from inside
 			// RESIZE this
-			r_strf_var (bbst, 64, "bb.%"PFMT64x, block_start);
 			r_strf_var (bben, 64, "bb.%"PFMT64x".to", block_start);
-			sdb_num_set (db, bbst, from, 0);
+			sdb_num_setf (db, from, 0, "bb.%"PFMT64x, block_start);
 			sdb_num_set (db, bben, from, 0);
 			sdb_array_set_num (db, bben, 0, from, 0);
 			sdb_array_set_num (db, bben, 1, UT64_MAX, 0);
@@ -285,7 +283,6 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, RBitset *handled, ut64 addr,
 }
 
 static ut64 getFunctionSize(Sdb *db) {
-	r_strf_buffer (64);
 	ut64 min = UT64_MAX, max = 0;
 	char *c, *bbs = sdb_get (db, "bbs", NULL);
 	bool first = true;
@@ -294,7 +291,7 @@ static ut64 getFunctionSize(Sdb *db) {
 			char *next = NULL;
 			c = sdb_anext (c, &next);
 			ut64 addr = sdb_atoi (c);
-			ut64 addr_end = sdb_num_get (db, Fbb (addr), NULL);
+			ut64 addr_end = sdb_num_getf (db, NULL, "bb.%" PFMT64x, addr);
 			if (first) {
 				min = addr;
 				max = addr_end;
@@ -395,7 +392,7 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 				char *next = NULL;
 				c = sdb_anext (c, &next);
 				ut64 addr = sdb_atoi (c);
-				ut64 addr_end = sdb_num_get (db, Fbb (addr), NULL);
+				ut64 addr_end = sdb_num_getf (db, NULL, "bb.%" PFMT64x, addr);
 				// check if call destination is inside the function boundaries
 				ut64 jump = sdb_array_get_num (db, FbbTo (addr), 0, NULL);
 				ut64 fail = sdb_array_get_num (db, FbbTo (addr), 1, NULL);

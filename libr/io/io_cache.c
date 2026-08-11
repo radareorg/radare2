@@ -278,10 +278,9 @@ R_API bool r_io_cache_readable(RIO *io) {
 	return (io->cache.mode & mode) == mode;
 }
 
-// used only by the testsuite
 R_API bool r_io_cache_at(RIO *io, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (io, false);
-	RInterval itv = (RInterval){addr, 0};
+	RInterval itv = (RInterval){addr, 1};
 	RIOCacheLayer *layer;
 	RListIter *liter;
 	r_list_foreach (io->cache.layers, liter, layer) {

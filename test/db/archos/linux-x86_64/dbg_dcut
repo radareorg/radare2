@@ -1,0 +1,12 @@
+NAME=dcut doesnt hang when the child dies before the timeout
+FILE=bins/elf/analysis/calls_x64
+ARGS=-d
+CMDS=<<EOF
+dcut 10000
+?e alive
+EOF
+EXPECT=<<EOF
+Hello world
+alive
+EOF
+RUN

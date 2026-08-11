@@ -453,12 +453,15 @@ static const ut8 *get_section_bytes(RBinFile *bf, RBinSection *section) {
 		return section->bytes.ptr;
 	}
 
-	if (!bf->buf || section->size > bf->size) {
+	if (!bf->buf || section->paddr > bf->size || section->size > bf->size - section->paddr) {
 		return NULL;
 	}
 	/* Handle compressed DWARF sections (.zdebug_* or SHF_COMPRESSED) */
 	if (R_BIN_ELF_SCN_IS_COMPRESSED (section->flags) || (section->name && strstr (section->name, "zdebug"))) {
-		ut64 raw_size = section->bytes.len;
+		ut64 raw_size = section->size;
+		if (raw_size < 12 || raw_size > ST32_MAX) {
+			return NULL;
+		}
 		ut8 *rawbuf = calloc (1, raw_size);
 		if (!rawbuf) {
 			return NULL;
@@ -473,6 +476,10 @@ static const ut8 *get_section_bytes(RBinFile *bf, RBinSection *section) {
 		bool is64 = eo && eo->ehdr.e_ident[EI_CLASS] == ELFCLASS64;
 		bool be = r_bin_is_big_endian (bf->rbin);
 		/* Parse compression header */
+		if (is64 && raw_size < 24) {
+			free (rawbuf);
+			return NULL;
+		}
 		ut32 ch_type = r_read_ble32 (rawbuf, be);
 		ut64 ch_size = 0;
 		size_t header_size = 0;
@@ -3141,7 +3148,7 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinFile *bf, RVecDwarfAbbrevDe
 	ls_foreach (ls, iter, kv) {
 		const char *k = sdbkv_key (kv);
 		const char *v = sdbkv_value (kv);
-		if (r_str_startswith (k, "DW_AT_comp_dir") && IS_DIGIT (k[14])) {
+		if (r_str_startswith (k, "DW_AT_comp_dir") && isdigit ((ut8)k[14])) {
 			ut64 offset = r_num_get (NULL, k + 14);
 			dwarf_metadata_set_comp_dir (bf, offset, true, v);
 		}

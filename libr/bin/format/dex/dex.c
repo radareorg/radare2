@@ -7,6 +7,9 @@
 
 #define bprintf if (dex->verbose) eprintf
 
+#define DEX_ENDIAN_CONSTANT 0x12345678
+#define DEX_REVERSE_ENDIAN_CONSTANT 0x78563412
+
 R_IPI char* r_bin_dex_get_version(RBinDexObj *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	char* version = calloc (1, 8);
@@ -31,16 +34,11 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	}
 	ut64 len;
 	int uleblen = r_uleb128 (buf, sizeof (buf), &len, NULL) - buf;
-	if (!uleblen || uleblen >= bin->size) {
+	if (!uleblen || len >= bin->size) {
 		return NULL;
 	}
-	if (!len || len >= bin->size) {
-		return NULL;
-	}
-	ut8 *ptr = R_NEWS (ut8, len + 1);
+	ut8 *ptr = (ut8 *)r_buf_get_string (bin->b, (ut64)sidx + uleblen);
 	if (ptr) {
-		r_buf_read_at (bin->b, sidx + uleblen, ptr, len + 1);
-		ptr[len] = 0;
 		if (len != r_utf8_strlen (ptr)) {
 			free (ptr);
 			return NULL;
@@ -254,7 +252,7 @@ R_IPI void r_bin_dex_free(RBinDexObj *dex) {
 
 R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	R_RETURN_VAL_IF_FAIL (buf, NULL);
-	int i;
+	ut32 i;
 	RBinDexObj *dex = R_NEW0 (RBinDexObj);
 	dex->size = r_buf_size (buf);
 	dex->b = r_ref (buf);
@@ -290,9 +288,19 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	dexhdr->class_offset = r_buf_read_le32 (dex->b);
 	dexhdr->data_size = r_buf_read_le32 (dex->b);
 	dexhdr->data_offset = r_buf_read_le32 (dex->b);
+	if (dexhdr->header_size < sizeof (DexHeader) || dexhdr->size < dexhdr->header_size) {
+		goto fail;
+	}
+	if (dexhdr->endian != DEX_ENDIAN_CONSTANT) {
+		if (dexhdr->endian == DEX_REVERSE_ENDIAN_CONSTANT) {
+			// rejected by ART and never emitted by any toolchain
+			R_LOG_WARN ("Unsupported big-endian DEX");
+		}
+		goto fail;
+	}
 
 	/* strings */
-	if (dexhdr->strings_size > dex->size) {
+	if (dexhdr->strings_offset + ((ut64)dexhdr->strings_size * sizeof (ut32)) > dex->size) {
 		goto fail;
 	}
 	dex->strings = (ut32 *) calloc (dexhdr->strings_size + 1, sizeof (ut32));
@@ -300,12 +308,8 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		goto fail;
 	}
 	r_buf_read_at (dex->b, dexhdr->strings_offset, (ut8*)dex->strings, dexhdr->strings_size * sizeof (ut32));
-	// TODO: this is unnecessary on Big endian machines
 	for (i = 0; i < dexhdr->strings_size; i++) {
-		ut64 offset = dexhdr->strings_offset + i * sizeof (ut32);
-		if (offset + 4 > dex->size) {
-			goto fail;
-		}
+		// swap on big endian hosts, no-op on little endian ones
 		dex->strings[i] = r_read_le32 (&dex->strings[i]);
 	}
 	/* classes */

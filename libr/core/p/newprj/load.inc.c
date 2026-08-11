@@ -324,10 +324,7 @@ static void rprj_function_attr_load(RPrjCursor *cur, RAnalFunction *fcn, R2Proje
 	const char *cc = attr->cc != UT32_MAX? rprj_st_get (cur->st, attr->cc): NULL;
 	if (mode & R_CORE_NEWPRJ_MODE_SCRIPT) {
 		if (R_STR_ISNOTEMPTY (cc)) {
-			r_strbuf_appendf (cur->out, "'afc %s @ 0x%08"PFMT64x"\n", cc, va);
-		}
-		if ((st64)attr->stack) {
-			r_strbuf_appendf (cur->out, "'afS %"PFMT64d" @ 0x%08"PFMT64x"\n", (st64)attr->stack, va);
+			r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afc %s\n", va, cc);
 		}
 		if (attr->flags & RPRJ_FUNC_ATTR_NORETURN) {
 			r_strbuf_appendf (cur->out, "'tn 0x%08"PFMT64x"\n", va);
@@ -347,7 +344,7 @@ static void rprj_function_attr_load(RPrjCursor *cur, RAnalFunction *fcn, R2Proje
 	}
 }
 
-static void rprj_var_load(RPrjCursor *cur, RAnalFunction *fcn, R2ProjectVar *pvar, int mode, ut64 fcn_addr) {
+static void rprj_var_load(RPrjCursor *cur, RAnalFunction *fcn, R2ProjectVar *pvar, int mode, ut64 fcn_addr, st64 stack) {
 	const char *name = rprj_st_get (cur->st, pvar->name);
 	const char *type = rprj_st_get (cur->st, pvar->type);
 	if (!name) {
@@ -363,18 +360,21 @@ static void rprj_var_load(RPrjCursor *cur, RAnalFunction *fcn, R2ProjectVar *pva
 					? r_reg_index_get (cur->core->anal->reg, R_ABS (pvar->delta))
 					: NULL;
 				if (reg) {
-					r_strbuf_appendf (cur->out, "'afvr %s %s %s @ 0x%08"PFMT64x"\n",
-						reg->name, name, typ, fcn_addr);
+					r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afvr %s %s %s\n",
+						fcn_addr, reg->name, name, typ);
 				}
 			}
 			break;
 		case R_ANAL_VAR_KIND_BPV:
-			r_strbuf_appendf (cur->out, "'afvb %d %s %s @ 0x%08"PFMT64x"\n",
-				pvar->delta, name, typ, fcn_addr);
+			r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afvb %d %s %s\n",
+				fcn_addr, pvar->delta, name, typ);
 			break;
 		case R_ANAL_VAR_KIND_SPV:
-			r_strbuf_appendf (cur->out, "'afvs %d %s %s @ 0x%08"PFMT64x"\n",
-				pvar->delta, name, typ, fcn_addr);
+			{
+				const st64 delta = cur->core->anal->opt.var_newstack? pvar->delta: stack + pvar->delta;
+				r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afvs %"PFMT64d" %s %s\n",
+					fcn_addr, delta, name, typ);
+			}
 			break;
 		default:
 			break;
@@ -444,14 +444,16 @@ static void rprj_diff_seen_addr(RList *seen, ut64 addr) {
 	r_list_append (seen, a);
 }
 
-static void rprj_print_comment_script(RPrjCursor *cur, ut64 addr, const char *comment) {
-	if (R_STR_ISEMPTY (comment)) {
-		r_strbuf_appendf (cur->out, "'CC- @ 0x%08"PFMT64x"\n", addr);
+static void rprj_print_meta_script(RPrjCursor *cur, RAnalMetaType type, ut64 addr, const char *text) {
+	const bool vartype = type == R_META_TYPE_VARTYPE;
+	if (R_STR_ISEMPTY (text)) {
+		r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'%s-\n", addr, vartype? "Ct": "CC");
 		return;
 	}
-	char *b64 = sdb_encode ((const ut8 *)comment, strlen (comment));
+	char *b64 = sdb_encode ((const ut8 *)text, strlen (text));
 	if (b64) {
-		r_strbuf_appendf (cur->out, "'@0x%08"PFMT64x"'CCu base64:%s\n", addr, b64);
+		r_strbuf_appendf (cur->out, "'@0x%08"PFMT64x"'%s base64:%s\n",
+			addr, vartype? "Ct=": "CCu", b64);
 		free (b64);
 	}
 }
@@ -525,6 +527,11 @@ static void rprj_print_xref_script(RPrjCursor *cur, RAnalRef *ref) {
 		(char)R_ANAL_REF_TYPE_MASK (ref->type), ref->addr, ref->at);
 }
 
+static void rprj_print_hint_script(RPrjCursor *cur, ut64 addr, RAnalAddrHintType ht, int value) {
+	const char *cmd = (ht == R_ANAL_ADDR_HINT_TYPE_IMMBASE)? "ahi": "ahb";
+	r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'%s %d\n", addr, cmd, value);
+}
+
 static bool rprj_diff_flag_foreach_cb(RFlagItem *fi, void *user) {
 	R2ProjectDiffCtx *ctx = (R2ProjectDiffCtx *)user;
 	if (fi && !rprj_diff_has_addr (ctx->seen, fi->id)) {
@@ -543,10 +550,10 @@ static bool rprj_diff_hints_cb(ut64 addr, const RVecAnalAddrHintRecord *records,
 		}
 		switch (record->type) {
 		case R_ANAL_ADDR_HINT_TYPE_IMMBASE:
-			r_strbuf_appendf (ctx->cur->out, "'ahi %d @ 0x%08"PFMT64x"\n", record->immbase, addr);
+			rprj_print_hint_script (ctx->cur, addr, record->type, record->immbase);
 			break;
 		case R_ANAL_ADDR_HINT_TYPE_NEW_BITS:
-			r_strbuf_appendf (ctx->cur->out, "'ahb %d @ 0x%08"PFMT64x"\n", record->newbits, addr);
+			rprj_print_hint_script (ctx->cur, addr, record->type, record->newbits);
 			break;
 		default:
 			break;
@@ -570,7 +577,7 @@ static bool rprj_current_hint_value(RAnal *anal, ut64 addr, RAnalAddrHintType ty
 	return false;
 }
 
-static void rprj_print_var_script(RPrjCursor *cur, RAnalVar *var, ut64 fcn_addr) {
+static void rprj_print_var_script(RPrjCursor *cur, RAnalFunction *fcn, RAnalVar *var) {
 	if (!var || R_STR_ISEMPTY (var->name)) {
 		return;
 	}
@@ -578,17 +585,21 @@ static void rprj_print_var_script(RPrjCursor *cur, RAnalVar *var, ut64 fcn_addr)
 	switch (var->kind) {
 	case R_ANAL_VAR_KIND_REG:
 		if (R_STR_ISNOTEMPTY (var->regname)) {
-			r_strbuf_appendf (cur->out, "'afvr %s %s %s @ 0x%08"PFMT64x"\n",
-				var->regname, var->name, type, fcn_addr);
+			r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afvr %s %s %s\n",
+				fcn->addr, var->regname, var->name, type);
 		}
 		break;
 	case R_ANAL_VAR_KIND_BPV:
-		r_strbuf_appendf (cur->out, "'afvb %d %s %s @ 0x%08"PFMT64x"\n",
-			var->delta, var->name, type, fcn_addr);
+		// nothing restores bp_off on replay (af+ and the loader both leave it 0), so bp deltas stay raw
+		r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afvb %d %s %s\n",
+			fcn->addr, var->delta, var->name, type);
 		break;
 	case R_ANAL_VAR_KIND_SPV:
-		r_strbuf_appendf (cur->out, "'afvs %d %s %s @ 0x%08"PFMT64x"\n",
-			var->delta, var->name, type, fcn_addr);
+		// the afS emitted above restores the frame these offsets are relative to
+		r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afvs %"PFMT64d" %s %s\n",
+			fcn->addr,
+			r_anal_var_frame_delta (cur->core->anal, fcn, var->kind, var->delta),
+			var->name, type);
 		break;
 	default:
 		break;
@@ -597,11 +608,10 @@ static void rprj_print_var_script(RPrjCursor *cur, RAnalVar *var, ut64 fcn_addr)
 
 static void rprj_print_function_attrs(RPrjCursor *cur, RAnalFunction *fcn) {
 	if (R_STR_ISNOTEMPTY (fcn->callconv)) {
-		r_strbuf_appendf (cur->out, "'afc %s @ 0x%08"PFMT64x"\n", fcn->callconv, fcn->addr);
+		r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afc %s\n", fcn->addr, fcn->callconv);
 	}
-	if (fcn->maxstack) {
-		r_strbuf_appendf (cur->out, "'afS %d @ 0x%08"PFMT64x"\n", fcn->maxstack, fcn->addr);
-	}
+	// always emitted, even for an empty frame, because the afv[bs] offsets are relative to it
+	r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afS %d\n", fcn->addr, fcn->maxstack);
 	if (fcn->is_noreturn) {
 		r_strbuf_appendf (cur->out, "'tn 0x%08"PFMT64x"\n", fcn->addr);
 	}
@@ -612,7 +622,6 @@ static void rprj_print_function_script(RPrjCursor *cur, RAnalFunction *fcn) {
 		return;
 	}
 	r_strbuf_appendf (cur->out, "'af+ 0x%08"PFMT64x" %s\n", fcn->addr, fcn->name);
-	rprj_print_function_attrs (cur, fcn);
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -623,9 +632,11 @@ static void rprj_print_function_script(RPrjCursor *cur, RAnalFunction *fcn) {
 				bb->color.r, bb->color.g, bb->color.b, bb->addr);
 		}
 	}
+	// after the blocks, before the vars: afS needs a resolvable function and sets the frame the afv[bs] offsets use
+	rprj_print_function_attrs (cur, fcn);
 	RAnalVar **var;
 	R_VEC_FOREACH (&fcn->vars, var) {
-		rprj_print_var_script (cur, *var, fcn->addr);
+		rprj_print_var_script (cur, fcn, *var);
 	}
 }
 
@@ -666,11 +677,11 @@ static void rprj_diff_function_attrs(RPrjCursor *cur, RAnalFunction *fcn, R2Proj
 	const st64 stack = attr? (st64)attr->stack: 0;
 	if (strcmp (r_str_get (cc), r_str_get (fcn->callconv))) {
 		if (R_STR_ISNOTEMPTY (fcn->callconv)) {
-			r_strbuf_appendf (cur->out, "'afc %s @ 0x%08"PFMT64x"\n", fcn->callconv, fcn->addr);
+			r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afc %s\n", fcn->addr, fcn->callconv);
 		}
 	}
 	if (stack != fcn->maxstack) {
-		r_strbuf_appendf (cur->out, "'afS %d @ 0x%08"PFMT64x"\n", fcn->maxstack, fcn->addr);
+		r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afS %d\n", fcn->addr, fcn->maxstack);
 	}
 	if (noret != fcn->is_noreturn) {
 		r_strbuf_appendf (cur->out, fcn->is_noreturn
@@ -690,14 +701,14 @@ static void rprj_diff_function_vars(RPrjCursor *cur, RAnalFunction *fcn, RList *
 		if (!pvar || pvar->isarg != (var->isarg? 1: 0)
 				|| strcmp (r_str_get (pvar->name), r_str_get (var->name))
 				|| strcmp (r_str_get (pvar->type), r_str_get (var->type))) {
-			rprj_print_var_script (cur, var, fcn->addr);
+			rprj_print_var_script (cur, fcn, var);
 		}
 	}
 	RListIter *iter;
 	R2ProjectDiffVar *pvar;
 	r_list_foreach (pvars, iter, pvar) {
 		if (!pvar->seen && R_STR_ISNOTEMPTY (pvar->name)) {
-			r_strbuf_appendf (cur->out, "'afv- %s @ 0x%08"PFMT64x"\n", pvar->name, fcn->addr);
+			r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afv- %s\n", fcn->addr, pvar->name);
 		}
 	}
 }
@@ -868,6 +879,11 @@ static void rprj_function_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 				rprj_block_load (cur, fcn, &pbb, mode, va, colors, ncolors);
 			}
 		}
+		const st64 fstack = pfcn.attr < nattrs? (st64)attrs[pfcn.attr].stack: 0;
+		if (resolved && (mode & R_CORE_NEWPRJ_MODE_SCRIPT)) {
+			// always emitted, even for an empty frame, because the afvs offsets below are relative to it
+			r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afS %"PFMT64d"\n", va, fstack);
+		}
 		const ut64 vbmax = rprj_entry_remaining (b, next_entry) / RPRJ_VAR_SIZE;
 		if (pfcn.nvars > vbmax) {
 			R_LOG_WARN ("Invalid variable count %u in function %u/%u", pfcn.nvars, i, count);
@@ -883,7 +899,7 @@ static void rprj_function_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 				if (diff) {
 					rprj_function_diff_var (cur, &pvar, pvars);
 				}
-				rprj_var_load (cur, fcn, &pvar, mode, va);
+				rprj_var_load (cur, fcn, &pvar, mode, va, fstack);
 			}
 		}
 		if (diff && resolved) {
@@ -958,32 +974,34 @@ static void rprj_info_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	}
 }
 
-static void rprj_cmnt_load(RPrjCursor *cur, int mode, ut64 next_entry) {
+static void rprj_meta_load(RPrjCursor *cur, int mode, ut64 next_entry, RAnalMetaType type) {
 	RCore *core = cur->core;
 	RBuffer *b = cur->b;
+	const bool vartype = type == R_META_TYPE_VARTYPE;
+	const char *kind = vartype? "type annotation": "comment";
 	const bool diff = (mode & R_CORE_NEWPRJ_MODE_DIFF) != 0;
 	RList *seen = diff? r_list_newf (free): NULL;
 	while (rprj_entry_remaining (b, next_entry) >= RPRJ_CMNT_SIZE) {
 		const ut64 at = r_buf_at (b);
 		R2ProjectComment cmnt;
 		if (!rprj_cmnt_read (b, &cmnt)) {
-			R_LOG_WARN ("Truncated comment record at 0x%08"PFMT64x, at);
+			R_LOG_WARN ("Truncated %s record at 0x%08"PFMT64x, kind, at);
 			break;
 		}
 		const char *cmnt_text = rprj_st_get (cur->st, cmnt.text);
 		if (!cmnt_text) {
-			R_LOG_WARN ("Invalid comment string index %u", cmnt.text);
+			R_LOG_WARN ("Invalid %s string index %u", kind, cmnt.text);
 			continue;
 		}
 		R2ProjectAddr addr = { .mod = cmnt.mod, .delta = cmnt.delta };
 		ut64 va = UT64_MAX;
 		if (!rprj_mod_va (cur, &addr, &va)) {
-			R_LOG_WARN ("Cannot resolve address for comment %s", cmnt_text);
+			R_LOG_WARN ("Cannot resolve address for %s %s", kind, cmnt_text);
 			continue;
 		}
 		char *b64 = sdb_encode ((const ut8 *)cmnt_text, strlen (cmnt_text));
 		if (b64) {
-			char *cmd = r_str_newf ("CCu base64:%s", b64);
+			char *cmd = r_str_newf (vartype? "Ct= base64:%s": "CCu base64:%s", b64);
 			if (mode & R_CORE_NEWPRJ_MODE_SCRIPT) {
 				r_strbuf_appendf (cur->out, "'@0x%08"PFMT64x"'%s\n", va, cmd);
 			}
@@ -995,9 +1013,9 @@ static void rprj_cmnt_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 		}
 		if (diff) {
 			rprj_diff_seen_addr (seen, va);
-			const char *current = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, va);
+			const char *current = r_meta_get_string (core->anal, type, va);
 			if (strcmp (r_str_get (current), cmnt_text)) {
-				rprj_print_comment_script (cur, va, current);
+				rprj_print_meta_script (cur, type, va, current);
 			}
 		}
 	}
@@ -1006,12 +1024,20 @@ static void rprj_cmnt_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 		RAnalMetaItem *item;
 		r_interval_tree_foreach (&core->anal->meta, it, item) {
 			RIntervalNode *node = r_interval_tree_iter_get (&it);
-			if (item->type == R_META_TYPE_COMMENT && !rprj_diff_has_addr (seen, node->start)) {
-				rprj_print_comment_script (cur, node->start, item->str);
+			if (item->type == type && !rprj_diff_has_addr (seen, node->start)) {
+				rprj_print_meta_script (cur, type, node->start, item->str);
 			}
 		}
 	}
 	r_list_free (seen);
+}
+
+static void rprj_cmnt_load(RPrjCursor *cur, int mode, ut64 next_entry) {
+	rprj_meta_load (cur, mode, next_entry, R_META_TYPE_COMMENT);
+}
+
+static void rprj_vart_load(RPrjCursor *cur, int mode, ut64 next_entry) {
+	rprj_meta_load (cur, mode, next_entry, R_META_TYPE_VARTYPE);
 }
 
 static void rprj_xref_load(RPrjCursor *cur, int mode, ut64 next_entry) {
@@ -1090,24 +1116,25 @@ static void rprj_xref_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 
 static void rprj_hint_apply(RPrjCursor *cur, int mode, ut64 va, ut32 hint_kind, int value, RList *seen) {
 	RCore *core = cur->core;
-	const char *fmt = (hint_kind == 1)? "'ahi %d @ 0x%08"PFMT64x"\n": "'ahb %d @ 0x%08"PFMT64x"\n";
-	const RAnalAddrHintType ht = (hint_kind == 1)? R_ANAL_ADDR_HINT_TYPE_IMMBASE: R_ANAL_ADDR_HINT_TYPE_NEW_BITS;
+	const bool immbase = hint_kind == 1;
+	const RAnalAddrHintType ht = immbase? R_ANAL_ADDR_HINT_TYPE_IMMBASE: R_ANAL_ADDR_HINT_TYPE_NEW_BITS;
 	if (mode & R_CORE_NEWPRJ_MODE_SCRIPT) {
-		r_strbuf_appendf (cur->out, fmt, value, va);
+		rprj_print_hint_script (cur, va, ht, value);
 	}
 	if (mode & R_CORE_NEWPRJ_MODE_DIFF) {
 		rprj_diff_seen_addr (seen, (va << 8) | (ut64)ht);
 		int curval = 0;
 		if (!rprj_current_hint_value (core->anal, va, ht, &curval) || curval != value) {
 			if (curval) {
-				r_strbuf_appendf (cur->out, fmt, curval, va);
+				rprj_print_hint_script (cur, va, ht, curval);
 			} else {
-				r_strbuf_appendf (cur->out, "'ah- @ 0x%08"PFMT64x"\n", va);
+				// bare ah- clears every hint, so the address must be an argument
+				r_strbuf_appendf (cur->out, "'ah- 0x%08"PFMT64x"\n", va);
 			}
 		}
 	}
 	if (mode & R_CORE_NEWPRJ_MODE_LOAD) {
-		if (hint_kind == 1) {
+		if (immbase) {
 			r_anal_hint_set_immbase (core->anal, va, value);
 		} else {
 			r_anal_hint_set_newbits (core->anal, va, value);
@@ -1318,6 +1345,9 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 			break;
 		case RPRJ_CMNT:
 			rprj_cmnt_load (&cur, mode, next_entry);
+			break;
+		case RPRJ_VART:
+			rprj_vart_load (&cur, mode, next_entry);
 			break;
 		case RPRJ_FLAG:
 			rprj_flag_load (&cur, mode, next_entry);

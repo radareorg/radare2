@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#1b4f9c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="radare2">
+  <title>temu/jslinux/rv64/r2</title>
+  <link href="style.css" type="text/css" rel="stylesheet"/>
+  <link href="favicon.ico" rel="icon" type="image/x-icon"/>
+  <link href="apple-touch-icon.png" rel="apple-touch-icon" sizes="400x400"/>
+  <link href="manifest.webmanifest" rel="manifest"/>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  color: #ddd;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  font-family: monospace;
+}
+body {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+}
+#titlebar {
+  box-sizing: border-box;
+  height: 30px;
+  background: #1b4f9c;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+#titlebar b { color: #ffd24a; }
+#titlebar .btns { display: flex; gap: 4px; }
+#titlebar button {
+  background: #123a75;
+  color: #fff;
+  border: 1px solid #3a6ec0;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 2px 7px;
+  cursor: pointer;
+}
+#titlebar button:active { background: #3a6ec0; }
+#term_wrap {
+  position: relative;
+  height: calc(100% - 30px);
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  text-align: center;
+}
+#term_container { display: inline-block; text-align: left; }
+/* Upstream prefers Courier, whose browser-specific metrics can disagree
+   with the CSS ch unit used to size the terminal. Keep one fixed-width
+   font stack for both the geometry probe and the rendered rows. */
+.term {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+}
+/* term.js performs terminal wrapping itself. Browser soft-wrapping here
+   makes a full terminal row occupy two DOM lines on some macOS fonts. */
+.term_content > div {
+  height: 1.2em;
+  overflow: hidden;
+  white-space: nowrap;
+}
+/* no scrollbars anywhere: term.js paints its own; wheel input is handled by
+   the terminal itself */
+.term_scrollbar { display: none; }
+/* keep term.js input textarea reachable but out of the layout; it sits
+   at the TOP on purpose: iOS scrolls the page to bring the focused
+   element above the virtual keyboard, and a bottom-anchored textarea
+   makes it scroll the whole terminal away */
+#term_paste {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 19px;
+  opacity: 0.01;
+  border: none;
+  background: #000;
+  color: #000;
+}
+/* extra keys: docked below the titlebar in normal flow — a fixed
+   bottom bar is unusable on iOS, where the virtual keyboard covers
+   the bottom of the layout viewport instead of shrinking it */
+#keybar {
+  box-sizing: border-box;
+  height: 38px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 6px;
+  background: #101828;
+  border-bottom: 1px solid #3a6ec0;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+body.kbd #keybar { display: flex; }
+body.kbd #term_wrap { height: calc(100% - 68px); }
+#keybar button {
+  flex: 1 1 0;
+  max-width: 64px;
+  height: 30px;
+  background: #123a75;
+  color: #fff;
+  border: 1px solid #3a6ec0;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 13px;
+  padding: 0;
+  cursor: pointer;
+}
+#keybar button:active { background: #3a6ec0; }
+#keybar button.on { background: #3a6ec0; color: #ffd24a; }
+#net_progress {
+  position: fixed;
+  right: 8px;
+  bottom: 4px;
+  width: 90px;
+  visibility: hidden;
+}
+#about, #cache-panel {
+  position: fixed;
+  top: 34px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 560px;
+  width: calc(100% - 40px);
+  background: #101828;
+  color: #cfe0ff;
+  border: 1px solid #3a6ec0;
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  z-index: 10;
+}
+#about b, #cache-panel b { color: #ffd24a; }
+#about a, #cache-panel a { color: #7fb2ff; }
+#about .close, #cache-panel .close {
+  float: right;
+  cursor: pointer;
+  color: #7fb2ff;
+}
+#cache-panel progress { width: 100%; }
+#cache-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+#cache-actions button {
+  background: #123a75;
+  color: #fff;
+  border: 1px solid #3a6ec0;
+  border-radius: 3px;
+  font-family: monospace;
+  padding: 5px 9px;
+  cursor: pointer;
+}
+#cache-actions button:disabled { opacity: 0.55; cursor: default; }
+</style>
+</head>
+<body>
+<div id="titlebar">
+  <span><b>temu/rv64</b>/r2</span>
+  <span class="btns">
+    <button id="btn-upload" title="Upload files into the VM (appear in /mnt/tmp)">Upload</button>
+    <button id="btn-kbd" aria-pressed="false" title="Toggle the on-screen keyboard and the Esc/Ctrl/Tab/arrows bar">Keyboard</button>
+    <button id="btn-cache" title="Manage offline storage">Cache</button>
+    <button id="btn-about" title="What is this?">About</button>
+  </span>
+</div>
+<div id="keybar">
+  <button data-key="esc">Esc</button>
+  <button id="key-ctrl">Ctrl</button>
+  <button data-key="tab">Tab</button>
+  <button data-key="left">&#8592;</button>
+  <button data-key="down">&#8595;</button>
+  <button data-key="up">&#8593;</button>
+  <button data-key="right">&#8594;</button>
+</div>
+<div id="about" hidden>
+  <span class="close" id="btn-about-close">[x]</span>
+  <p>A riscv64 Linux booting in your browser with
+  <a href="https://bellard.org/tinyemu/">TinyEMU/JSLinux</a> (&copy;
+  2017-2019 Fabrice Bellard) and a static
+  <a href="https://radare.org">radare2</a> (&copy; pancake) preinstalled.</p>
+  <p>Try <b>r2 /bin/busybox</b>, then <b>aaa</b> and <b>pdf @ main</b>.
+  All r2 tools are available: rasm2, rabin2, rax2, ragg2, ...</p>
+  <p>Uploaded files appear in <b>/mnt/tmp</b>. After adding this page to the
+  Home Screen, open that copy once while online. Disk blocks normally stream on
+  demand. To use it in airplane mode, open <b>Cache</b>, choose <b>Cache all</b>
+  and keep the app open until it reports that all files are local. Interrupted
+  downloads resume where they stopped. Nothing is executed outside this page.
+  On a phone, pinch inside the terminal to change its font size, or drag with
+  one finger to send vertical or horizontal mouse wheel events to r2 visual
+  modes without scrolling the page. Font, viewport, rotation and keyboard
+  changes resize both the browser terminal and the guest tty automatically.
+  The shell's <b>resize</b> helper remains available as a fallback. Add
+  <b>?mem=256</b> to the URL for more guest RAM.</p>
+</div>
+<div id="cache-panel" hidden>
+  <span class="close" id="btn-cache-close">[x]</span>
+  <p><b>Offline storage</b></p>
+  <p id="cache-status">Preparing the offline app shell...</p>
+  <progress id="cache-progress" value="0" max="1"></progress>
+  <div id="cache-actions">
+    <button id="btn-cache-all" disabled>Cache all</button>
+    <button id="btn-cache-clear" disabled>Clear cache</button>
+  </div>
+</div>
+<div id="term_wrap">
+  <div id="term_container"></div>
+  <textarea id="term_paste" autocorrect="off" autocapitalize="off" spellcheck="false" readonly></textarea>
+  <input type="file" id="files" multiple style="display: none" onchange="on_update_files(this.files)">
+  <progress id="net_progress"></progress>
+</div>
+<script>
+/* Make iOS save a launch URL inside the service worker scope instead of a
+   directory URL which may need an unavailable server redirect offline. */
+if (location.pathname.charAt(location.pathname.length - 1) === "/") {
+  try {
+    history.replaceState(null, "", "index.html" + location.search + location.hash);
+  } catch (e) {
+  }
+}
+
+/* pick a terminal geometry that fits the viewport; jslinux.js reads
+   these as its cols/rows/font_size defaults (URL params still win) */
+var r2_touch = ("ontouchstart" in window) && window.innerWidth < 900;
+
+function r2_calc_geometry(fs) {
+  var vw = window.innerWidth;
+  var vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+  var probe = document.createElement("span");
+  probe.className = "term";
+  /* term.js sizes rows in ch units and uses line-height 1.2em. Measure
+     those exact CSS units instead of relying on a glyph's advance width. */
+  probe.style.cssText = "position:absolute;visibility:hidden;display:inline-block;" +
+    "white-space:nowrap;width:100ch;line-height:1.2em;font-size:" + fs + "px";
+  probe.textContent = "0";
+  document.body.appendChild(probe);
+  var r = probe.getBoundingClientRect();
+  var cw = r.width / 100, ch = r.height;
+  document.body.removeChild(probe);
+  /* term.js makes the terminal "w ch + 16px" wide; keep a generous
+     bottom reserve — a black border is better than a half-clipped
+     last line */
+  var usable_w = vw - 18;
+  var usable_h = vh - 30 - Math.ceil(ch / 2) - 8;
+  if (document.body.classList.contains("kbd")) {
+    /* visualViewport already excludes the software keyboard; only our
+       extra-key row consumes space inside the page */
+    usable_h -= 38;
+  }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  var min_cols = r2_touch ? 20 : 40;
+  var min_rows = r2_touch ? 8 : 16;
+  return {
+    cols: clamp(Math.floor(usable_w / cw), min_cols, 200),
+    rows: clamp(Math.floor(usable_h / ch), min_rows, 60)
+  };
+}
+
+(function () {
+  var fs = window.innerWidth < 600 ? 12 : 15;
+  var g = r2_calc_geometry(fs);
+  window.R2_FONT = fs;
+  window.R2_COLS = g.cols;
+  window.R2_ROWS = g.rows;
+})();
+</script>
+<script type="text/javascript" src="term.js"></script>
+<script>
+/* live resize support for term.js: pad/trim the scrollback lines, move
+   the visible window inside the circular buffer and rebuild the DOM */
+Term.prototype.resize = function (w, h) {
+  var i, y, row_el;
+  if (w < 1 || h < 1 || (w === this.w && h === this.h)) {
+    return;
+  }
+  var blank = 32 | (this.def_attr << 16);
+  /* linearize the circular scrollback, oldest first, screen at the end */
+  var total = this.cur_h;
+  var start = (this.y_base + this.h) % total;
+  var lines = [];
+  for (i = 0; i < total; i++) {
+    lines.push(this.lines[(start + i) % total]);
+  }
+  /* width: pad or truncate every line */
+  for (y = 0; y < lines.length; y++) {
+    var line = lines[y];
+    if (line.length > w) {
+      line.length = w;
+    } else {
+      while (line.length < w) {
+        line.push(blank);
+      }
+    }
+  }
+  /* height: reveal scrollback lines if there are any, else add blank
+     lines at the bottom; when shrinking, drop rows below the cursor
+     first and push the rest into the scrollback */
+  var dh = h - this.h;
+  if (dh > 0) {
+    var avail = total - this.h;
+    var reveal = Math.min(dh, avail);
+    for (i = 0; i < dh - reveal; i++) {
+      var l = [];
+      for (var x = 0; x < w; x++) {
+        l.push(blank);
+      }
+      lines.push(l);
+    }
+    this.y += reveal;
+  } else if (dh < 0) {
+    var cut = Math.min(-dh, this.h - 1 - this.y);
+    lines.length -= cut;
+    this.y -= (-dh - cut);
+    if (this.y < 0) {
+      this.y = 0;
+    }
+  }
+  this.lines = lines;
+  this.cur_h = lines.length;
+  this.y_base = this.cur_h - h;
+  this.y_disp = this.y_base;
+  if (this.y >= h) {
+    this.y = h - 1;
+  }
+  if (this.x >= w) {
+    this.x = w - 1;
+  }
+  this.scroll_top = 0;
+  this.scroll_bottom = h;
+  this.w = w;
+  this.h = h;
+  /* resize the DOM */
+  this.term_el.style.width = "calc(" + w + "ch + 16px)";
+  this.term_el.style.height = (h * 1.2) + "em";
+  this.content_el.style.width = w + "ch";
+  while (this.rows_el.length > h) {
+    this.content_el.removeChild(this.rows_el.pop());
+  }
+  while (this.rows_el.length < h) {
+    row_el = document.createElement("div");
+    this.rows_el.push(row_el);
+    this.content_el.appendChild(row_el);
+  }
+  this.refresh(0, h - 1);
+};
+</script>
+<script type="text/javascript" src="offline-files.js"></script>
+<script>
+/* The worker installs only the bootable app shell so iOS can activate it
+   promptly. When requested, download the large disk sequentially from this
+   foreground page; interrupted runs skip entries already in Cache Storage. */
+var r2_cache_prefix = "jslr2-offline-";
+var r2_cache_promise = null;
+var r2_cache_worker_promise = null;
+var r2_cache_worker_ready = false;
+var r2_cache_busy = false;
+var r2_cache_done = 0;
+
+function r2_cache_state(message, done, busy) {
+  var total = R2_OFFLINE_FILES.length;
+  r2_cache_done = done;
+  r2_cache_busy = busy;
+  document.getElementById("cache-status").textContent = message;
+  var progress = document.getElementById("cache-progress");
+  progress.max = total;
+  progress.value = done;
+  document.getElementById("btn-cache-all").disabled =
+    busy || !r2_cache_worker_ready || done === total;
+  document.getElementById("btn-cache-clear").disabled =
+    busy || !r2_cache_worker_ready;
+}
+
+function r2_cache_failure(error) {
+  var help = r2_cache_worker_ready ? " Cache all will resume it." :
+    " Reload while online to install the app shell.";
+  r2_cache_state("Stopped: " + error + "." + help, r2_cache_done, false);
+}
+
+function r2_cache_delay() {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, 20);
+  });
+}
+
+function r2_cache_request(file) {
+  var url = new URL(file, document.baseURI);
+  return new Request(url.href, {
+    cache: "reload",
+    credentials: "same-origin",
+    headers: { "X-JSLinux-Precache": "1" }
+  });
+}
+
+async function r2_cache_refresh() {
+  if (r2_cache_busy) {
+    return;
+  }
+  r2_cache_state("Checking local files...", r2_cache_done, true);
+  try {
+    var cache = await caches.open(R2_CACHE_NAME);
+    var done = 0;
+    for (var i = 0; i < R2_OFFLINE_FILES.length; i++) {
+      var request = r2_cache_request(R2_OFFLINE_FILES[i]);
+      if (await cache.match(request, { ignoreSearch: true })) {
+        done++;
+      }
+    }
+    if (done === R2_OFFLINE_FILES.length) {
+      r2_cache_state(done + "/" + done +
+        " files are local. Ready for airplane mode.", done, false);
+    } else {
+      r2_cache_state(done + "/" + R2_OFFLINE_FILES.length +
+        " files are local. Missing disk blocks stream on demand.", done, false);
+    }
+  } catch (e) {
+    r2_cache_failure(e.message || String(e));
+  }
+}
+
+async function r2_cache_download() {
+  var cache = await caches.open(R2_CACHE_NAME);
+  var total = R2_OFFLINE_FILES.length;
+  var done = 0;
+  for (var i = 0; i < total; i++) {
+    var request = r2_cache_request(R2_OFFLINE_FILES[i]);
+    var cached = await cache.match(request, { ignoreSearch: true });
+    if (!cached) {
+      var response = await fetch(request);
+      if (!response.ok) {
+        throw new Error(new URL(request.url).pathname +
+          " returned HTTP " + response.status);
+      }
+      await cache.put(request, response);
+      /* Let TinyEMU's interactive disk reads run between background blocks. */
+      await r2_cache_delay();
+    }
+    done++;
+    r2_cache_state("Caching " + done + "/" + total +
+      " files. Keep this app open...", done, true);
+  }
+}
+
+async function r2_cache_all() {
+  if (r2_cache_promise) {
+    return r2_cache_promise;
+  }
+  r2_cache_state("Starting the resumable download...", 0, true);
+  r2_cache_promise = r2_cache_download();
+  try {
+    await r2_cache_promise;
+    r2_cache_state(R2_OFFLINE_FILES.length + "/" + R2_OFFLINE_FILES.length +
+      " files are local. Ready for airplane mode.",
+      R2_OFFLINE_FILES.length, false);
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().catch(function () {});
+    }
+  } catch (e) {
+    r2_cache_failure(e.message || String(e));
+  } finally {
+    r2_cache_promise = null;
+  }
+}
+
+async function r2_cache_clear() {
+  if (navigator.onLine === false) {
+    r2_cache_state("Reconnect before clearing the offline app shell.",
+      r2_cache_done, false);
+    return;
+  }
+  r2_cache_state("Clearing local files...", r2_cache_done, true);
+  try {
+    var registration = await navigator.serviceWorker.getRegistration("./");
+    if (registration) {
+      await registration.unregister();
+    }
+    var names = await caches.keys();
+    for (var i = 0; i < names.length; i++) {
+      if (names[i].indexOf(r2_cache_prefix) === 0) {
+        await caches.delete(names[i]);
+      }
+    }
+    r2_cache_worker_ready = false;
+    location.reload();
+  } catch (e) {
+    r2_cache_failure(e.message || String(e));
+  }
+}
+
+function r2_wait_for_worker(registration) {
+  var worker = registration.installing || registration.waiting || registration.active;
+  if (!worker || worker.state === "activated") {
+    return navigator.serviceWorker.ready;
+  }
+  return new Promise(function (resolve, reject) {
+    worker.addEventListener("statechange", function () {
+      if (worker.state === "activated") {
+        resolve(registration);
+      } else if (worker.state === "redundant") {
+        reject(new Error("service worker installation failed"));
+      }
+    });
+  });
+}
+
+async function r2_install_worker() {
+  var was_ready = r2_cache_worker_ready;
+  var registration = await navigator.serviceWorker.register("service-worker.js", {
+    scope: "./",
+    updateViaCache: "none"
+  });
+  await r2_wait_for_worker(registration);
+  r2_cache_worker_ready = true;
+  if (!was_ready) {
+    r2_cache_state("Streaming mode is ready. Choose Cache all for airplane mode.",
+      r2_cache_done, false);
+  }
+}
+
+async function r2_prepare_worker() {
+  if (r2_cache_worker_ready) {
+    return;
+  }
+  if (r2_cache_worker_promise) {
+    await r2_cache_worker_promise;
+    return;
+  }
+  r2_cache_state("Installing the offline app shell...", r2_cache_done, true);
+  r2_cache_worker_promise = r2_install_worker();
+  try {
+    await r2_cache_worker_promise;
+  } catch (e) {
+    r2_cache_failure(e.message || String(e));
+  } finally {
+    r2_cache_worker_promise = null;
+  }
+}
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("message", function (ev) {
+    var msg = ev.data || {};
+    if (msg.type === "r2-cache-error") {
+      r2_cache_failure(msg.message);
+    }
+  });
+  if (navigator.serviceWorker.controller) {
+    r2_cache_worker_ready = true;
+    r2_cache_state("Streaming mode is ready. Choose Cache all for airplane mode.",
+      0, false);
+    /* Existing offline users still get normal worker updates after startup. */
+    setTimeout(function () {
+      r2_install_worker().catch(function () {});
+    }, 1500);
+  } else {
+    r2_cache_state("Open Cache while online to prepare airplane mode.", 0, false);
+  }
+} else {
+  r2_cache_state("Offline mode is unavailable in this browser.", 0, true);
+}
+</script>
+<script type="text/javascript" src="jslinux.js"></script>
+<script>
+document.getElementById("btn-upload").onclick = function () {
+  document.getElementById("files").click();
+};
+/* extra keys bar (Esc/Ctrl/Tab/arrows): needed on phones where the
+   on-screen keyboard has none of them; Ctrl is sticky and applies to
+   the next typed character */
+var r2_ctrl = false;
+
+function r2_set_ctrl(on) {
+  r2_ctrl = on;
+  document.getElementById("key-ctrl").classList.toggle("on", on);
+}
+
+/* wrap term.handler once so a pending sticky Ctrl turns the next
+   typed character into its control code (a..z -> 1..26, space -> NUL) */
+function r2_hook_ctrl() {
+  if (!window.term || term.r2_ctrl_hook) {
+    return;
+  }
+  term.r2_ctrl_hook = true;
+  var old_handler = term.handler;
+  term.handler = function (str) {
+    if (r2_ctrl && str.length === 1) {
+      var c = str.charCodeAt(0);
+      if (c >= 97 && c <= 122) {
+        c -= 96;
+      } else if (c >= 64 && c <= 95) { /* @ A-Z [ \ ] ^ _ */
+        c -= 64;
+      } else if (c === 32) {
+        c = 0;
+      } else {
+        c = -1;
+      }
+      if (c >= 0) {
+        str = String.fromCharCode(c);
+        r2_set_ctrl(false);
+      }
+    }
+    return old_handler.call(this, str);
+  };
+}
+
+function r2_send_key(name) {
+  if (!window.term || !term.handler) {
+    return;
+  }
+  r2_hook_ctrl();
+  var seqs = {
+    left: ["\x1b[D", "\x1bOD", "\x1b[1;5D"],
+    right: ["\x1b[C", "\x1bOC", "\x1b[1;5C"],
+    up: ["\x1b[A", "\x1bOA", "\x1b[1;5A"],
+    down: ["\x1b[B", "\x1bOB", "\x1b[1;5B"]
+  };
+  var str;
+  if (name === "esc") {
+    str = "\x1b";
+  } else if (name === "tab") {
+    str = "\x09";
+  } else {
+    var s = seqs[name];
+    if (r2_ctrl) {
+      str = s[2];
+      r2_set_ctrl(false);
+    } else {
+      str = term.application_cursor ? s[1] : s[0];
+    }
+  }
+  term.show_cursor();
+  term.handler(str);
+}
+
+var r2_rsz_timer = null;
+
+function r2_fit_terminal() {
+  if (window.term && term.resize) {
+    var g = r2_calc_geometry(window.R2_FONT);
+    var changed = term.w !== g.cols || term.h !== g.rows;
+    window.R2_COLS = g.cols;
+    window.R2_ROWS = g.rows;
+    term.resize(g.cols, g.rows);
+    if (changed) {
+      r2_notify_guest_resize();
+    }
+  }
+}
+
+function r2_notify_guest_resize() {
+  /* TinyEMU 2019-12-21 does not export a console-resize function. Its
+     pinned riscv64 WASM keeps console_resize_pending at byte 35220; setting
+     it makes the existing VM loop read term.getSize() and send the normal
+     virtio-console resize event to Linux. Do not touch the asm.js fallback,
+     whose memory layout is different. */
+  if (window.Module && Module.usingWasm && typeof HEAP32 !== "undefined") {
+    HEAP32[35220 >> 2] = 1;
+  }
+}
+
+function r2_queue_terminal_fit() {
+  clearTimeout(r2_rsz_timer);
+  r2_rsz_timer = setTimeout(r2_fit_terminal, 120);
+}
+
+/* pointerdown + preventDefault keeps the focus (and thus the phone's
+   on-screen keyboard) on the terminal textarea */
+Array.prototype.forEach.call(
+    document.querySelectorAll("#keybar button"), function (btn) {
+  btn.addEventListener("pointerdown", function (ev) {
+    ev.preventDefault();
+    if (btn.id === "key-ctrl") {
+      r2_hook_ctrl();
+      r2_set_ctrl(!r2_ctrl);
+    } else {
+      r2_send_key(btn.getAttribute("data-key"));
+    }
+  });
+});
+
+/* iOS scrolls the layout viewport when the virtual keyboard opens even
+   with overflow:hidden; snap it back so nothing drifts off-screen */
+if (r2_touch) {
+  var r2_unscroll = function () {
+    if (window.scrollX || window.scrollY) {
+      window.scrollTo(0, 0);
+    }
+  };
+  window.addEventListener("scroll", r2_unscroll);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", r2_unscroll);
+    window.visualViewport.addEventListener("scroll", r2_unscroll);
+  }
+
+  /* Turn one-finger terminal drags into wheel ticks. Axis locking avoids
+     diagonal jitter; non-passive touchmove cancellation also stops iOS from
+     rubber-banding the page. A tap still reaches the terminal normally. */
+  var r2_swipe = null;
+  var r2_swipe_step = 24;
+  var r2_term_wrap = document.getElementById("term_wrap");
+  var r2_pinch = null;
+
+  var r2_touch_distance = function (touches) {
+    var dx = touches[0].clientX - touches[1].clientX;
+    var dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  var r2_current_font = function () {
+    if (window.term && term.term_el) {
+      var fs = parseFloat(term.term_el.style.fontSize);
+      if (fs > 0) {
+        return fs;
+      }
+    }
+    return window.R2_FONT;
+  };
+
+  var r2_set_terminal_font = function (fs) {
+    fs = Math.max(8, Math.min(24, Math.round(fs * 2) / 2));
+    if (fs === r2_current_font()) {
+      return;
+    }
+    window.R2_FONT = fs;
+    if (window.term && term.term_el) {
+      term.term_el.style.fontSize = fs + "px";
+    }
+    if (r2_pinch) {
+      r2_pinch.changed = true;
+    }
+    r2_fit_terminal();
+  };
+
+  var r2_finish_pinch = function () {
+    if (!r2_pinch) {
+      return;
+    }
+    var changed = r2_pinch.changed;
+    r2_pinch = null;
+    if (changed) {
+      r2_fit_terminal();
+    }
+  };
+
+  r2_term_wrap.addEventListener("touchstart", function (ev) {
+    if (ev.touches.length === 2) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      r2_swipe = null;
+      var distance = r2_touch_distance(ev.touches);
+      r2_pinch = distance > 0 ? {
+        distance: distance,
+        font: r2_current_font(),
+        changed: false
+      } : null;
+      return;
+    }
+    if (ev.touches.length !== 1) {
+      r2_swipe = null;
+      r2_finish_pinch();
+      return;
+    }
+    r2_pinch = null;
+    var touch = ev.touches[0];
+    r2_swipe = {
+      x: touch.clientX,
+      y: touch.clientY,
+      last_x: touch.clientX,
+      last_y: touch.clientY,
+      axis: "",
+      distance: 0,
+      moved: false
+    };
+  }, { passive: false });
+  r2_term_wrap.addEventListener("touchmove", function (ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (ev.touches.length === 2) {
+      var distance = r2_touch_distance(ev.touches);
+      if (!r2_pinch && distance > 0) {
+        r2_pinch = {
+          distance: distance,
+          font: r2_current_font(),
+          changed: false
+        };
+      } else if (r2_pinch && r2_pinch.distance > 0) {
+        r2_set_terminal_font(r2_pinch.font * distance / r2_pinch.distance);
+      }
+      return;
+    }
+    if (r2_pinch) {
+      return;
+    }
+    if (!r2_swipe || ev.touches.length !== 1) {
+      return;
+    }
+    var touch = ev.touches[0];
+    var dx = r2_swipe.last_x - touch.clientX;
+    var dy = r2_swipe.last_y - touch.clientY;
+    if (!r2_swipe.axis) {
+      var total_x = r2_swipe.x - touch.clientX;
+      var total_y = r2_swipe.y - touch.clientY;
+      if (Math.max(Math.abs(total_x), Math.abs(total_y)) < 8) {
+        return;
+      }
+      r2_swipe.axis = Math.abs(total_x) > Math.abs(total_y) ? "x" : "y";
+      r2_swipe.distance = r2_swipe.axis === "x" ? total_x : total_y;
+      r2_swipe.moved = true;
+    } else {
+      r2_swipe.distance += r2_swipe.axis === "x" ? dx : dy;
+    }
+    r2_swipe.last_x = touch.clientX;
+    r2_swipe.last_y = touch.clientY;
+    var ticks = 0;
+    while (Math.abs(r2_swipe.distance) >= r2_swipe_step && ticks < 6) {
+      var direction = r2_swipe.distance < 0 ? -1 : 1;
+      if (window.term && term.sendWheel) {
+        if (r2_swipe.axis === "x") {
+          term.sendWheel(direction, 0, touch.clientX, touch.clientY);
+        } else {
+          term.sendWheel(0, direction, touch.clientX, touch.clientY);
+        }
+      }
+      r2_swipe.distance -= direction * r2_swipe_step;
+      ticks++;
+    }
+  }, { passive: false });
+  r2_term_wrap.addEventListener("touchend", function (ev) {
+    if (r2_pinch) {
+      ev.preventDefault();
+      r2_finish_pinch();
+    } else if (r2_swipe && r2_swipe.moved) {
+      ev.preventDefault();
+    }
+    r2_swipe = null;
+  }, { passive: false });
+  r2_term_wrap.addEventListener("touchcancel", function () {
+    r2_swipe = null;
+    r2_finish_pinch();
+  }, { passive: true });
+
+  /* Safari also exposes proprietary gesture events. Keep these listeners as
+     a fallback and, most importantly, prevent a page-level browser zoom. */
+  r2_term_wrap.addEventListener("gesturestart", function (ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    r2_swipe = null;
+    if (!r2_pinch) {
+      r2_pinch = {
+        distance: 0,
+        font: r2_current_font(),
+        changed: false
+      };
+    }
+  }, { passive: false });
+  r2_term_wrap.addEventListener("gesturechange", function (ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (r2_pinch && ev.scale > 0) {
+      r2_set_terminal_font(r2_pinch.font * ev.scale);
+    }
+  }, { passive: false });
+  r2_term_wrap.addEventListener("gestureend", function (ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    r2_finish_pinch();
+  }, { passive: false });
+}
+
+var r2_kbd_input = document.getElementById("term_paste");
+var r2_kbd_button = document.getElementById("btn-kbd");
+var r2_kbd_button_down = false;
+var r2_kbd_closed_height = 0;
+var r2_kbd_requested_at = 0;
+
+function r2_set_keyboard(on) {
+  if (on) {
+    document.body.classList.add("kbd");
+    r2_kbd_input.readOnly = false;
+    r2_kbd_closed_height = window.visualViewport
+      ? window.visualViewport.height : window.innerHeight;
+    r2_kbd_requested_at = Date.now();
+    r2_kbd_input.focus();
+  } else {
+    document.body.classList.remove("kbd");
+    r2_set_ctrl(false);
+    r2_kbd_input.blur();
+    r2_kbd_input.readOnly = true;
+  }
+  r2_kbd_button.setAttribute("aria-pressed", on ? "true" : "false");
+  r2_queue_terminal_fit();
+}
+
+/* Keep a tap on our toggle from being mistaken for a native keyboard
+   dismissal before its click handler runs. */
+r2_kbd_button.addEventListener("pointerdown", function () {
+  r2_kbd_button_down = true;
+});
+var r2_kbd_button_up = function () {
+  setTimeout(function () {
+    r2_kbd_button_down = false;
+  }, 0);
+};
+r2_kbd_button.addEventListener("pointerup", r2_kbd_button_up);
+r2_kbd_button.addEventListener("pointercancel", r2_kbd_button_up);
+
+r2_kbd_button.onclick = function () {
+  r2_set_keyboard(!document.body.classList.contains("kbd"));
+};
+
+/* Safari can dismiss its keyboard without changing our page state. If the
+   hidden textarea loses focus, collapse the extra keys and restore the grid. */
+r2_kbd_input.addEventListener("blur", function () {
+  setTimeout(function () {
+    if (!r2_kbd_button_down && document.body.classList.contains("kbd")) {
+      r2_set_keyboard(false);
+    }
+  }, 0);
+});
+document.getElementById("btn-about").onclick = function () {
+  var el = document.getElementById("about");
+  document.getElementById("cache-panel").hidden = true;
+  el.hidden = !el.hidden;
+};
+document.getElementById("btn-about-close").onclick = function () {
+  document.getElementById("about").hidden = true;
+};
+document.getElementById("btn-cache").onclick = function () {
+  var panel = document.getElementById("cache-panel");
+  document.getElementById("about").hidden = true;
+  panel.hidden = !panel.hidden;
+  if (!panel.hidden && !r2_cache_busy) {
+    if (r2_cache_worker_ready) {
+      r2_cache_refresh();
+    } else {
+      r2_prepare_worker();
+    }
+  }
+};
+document.getElementById("btn-cache-close").onclick = function () {
+  document.getElementById("cache-panel").hidden = true;
+};
+document.getElementById("btn-cache-all").onclick = function () {
+  r2_cache_all();
+};
+document.getElementById("btn-cache-clear").onclick = function () {
+  r2_cache_clear();
+};
+/* Keep the grid fitted to the actually visible area. On iOS the layout
+   viewport stays large while visualViewport shrinks above the keyboard. */
+window.addEventListener("resize", r2_queue_terminal_fit);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", function () {
+    var closed_height = Math.min(r2_kbd_closed_height || window.innerHeight,
+      window.innerHeight);
+    var keyboard_hidden = window.visualViewport.height >= closed_height - 80;
+    if (document.body.classList.contains("kbd") && keyboard_hidden &&
+        Date.now() - r2_kbd_requested_at > 500) {
+      r2_set_keyboard(false);
+    } else {
+      r2_queue_terminal_fit();
+    }
+  });
+  window.visualViewport.addEventListener("scroll", r2_queue_terminal_fit);
+}
+</script>
+</body>
+</html>

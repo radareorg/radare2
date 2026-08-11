@@ -3,7 +3,6 @@
 #include <ctype.h>
 #include <r_anal.h>
 #include <r_bin_dwarf.h>
-#include "base_types.h"
 
 typedef struct dwarf_parse_context_t {
 	const RAnal *anal;
@@ -485,7 +484,7 @@ static RAnalStructMember *parse_struct_member(Context *ctx, ut64 idx, RAnalStruc
 	free (type);
 	r_strbuf_fini (&strbuf);
 	result->offset = offset;
-	result->size = size;
+	result->bitsize = size;
 	return result;
 cleanup:
 	free (type);
@@ -606,10 +605,13 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 				RAnalStructMember *result = parse_struct_member (ctx, j, &member);
 				if (!result) {
 					goto cleanup;
-				} else {
-					RAnalStructMember *slot = RVecAnalStructMember_emplace_back (&base_type->struct_data.members);
-					*slot = member;
 				}
+				RAnalTypeMember *slot = RVecAnalTypeMember_emplace_back (r_anal_base_type_members (base_type));
+				if (!slot) {
+					anal_type_member_fini (&member);
+					goto cleanup;
+				}
+				*slot = member;
 			}
 			if (child_die->has_children) {
 				child_depth++;
@@ -1597,14 +1599,10 @@ static bool import_dwarf_function_fallback(RAnal *anal, const char *typed_name, 
 	}
 	sdb_set (types, typed_name, "func", 0);
 
-	char *ret_key = r_str_newf ("func.%s.ret", typed_name);
-	sdb_set (types, ret_key, ret_type, 0);
-	free (ret_key);
+	sdb_setf (types, ret_type, 0, "func.%s.ret", typed_name);
 
-	char *cc_key = r_str_newf ("func.%s.cc", typed_name);
 	const char *default_cc = r_anal_cc_default (anal);
-	sdb_set (types, cc_key, default_cc? default_cc: "cdecl", 0);
-	free (cc_key);
+	sdb_setf (types, default_cc? default_cc: "cdecl", 0, "func.%s.cc", typed_name);
 
 	RStrBuf argnames;
 	r_strbuf_init (&argnames);
@@ -1616,30 +1614,23 @@ static bool import_dwarf_function_fallback(RAnal *anal, const char *typed_name, 
 			continue;
 		}
 		char *arg_name = var->name? strdup (var->name): r_str_newf ("arg%d", arg_index);
-		char *arg_key = r_str_newf ("func.%s.arg.%d", typed_name, arg_index);
 		char *arg_val = r_str_newf ("%s,%s", var->type, arg_name);
-		sdb_set (types, arg_key, arg_val, 0);
+		sdb_setf (types, arg_val, 0, "func.%s.arg.%d", typed_name, arg_index);
 		r_strbuf_appendf (&argnames, "%s%s", arg_index? ",": "", arg_name);
 		free (arg_name);
-		free (arg_key);
 		free (arg_val);
 		arg_index++;
 	}
 	if (has_unspecified_parameters) {
-		char *arg_key = r_str_newf ("func.%s.arg.%d", typed_name, arg_index);
-		sdb_set (types, arg_key, "...,varg", 0);
-		free (arg_key);
+		// canonical types.sdb.txt form: empty type, "..." as the name
+		sdb_setf (types, ",...", 0, "func.%s.arg.%d", typed_name, arg_index);
+		r_strbuf_appendf (&argnames, "%s...", arg_index? ",": "");
 		arg_index++;
 	}
-	char *argc_key = r_str_newf ("func.%s.args", typed_name);
-	char *argc_val = r_str_newf ("%d", arg_index);
-	sdb_set (types, argc_key, argc_val, 0);
-	free (argc_key);
-	free (argc_val);
+	r_strf_buffer (16);
+	sdb_setf (types, r_strf ("%d", arg_index), 0, "func.%s.args", typed_name);
 
-	char *func_key = r_str_newf ("func.%s", typed_name);
-	sdb_set (types, func_key, r_strbuf_get (&argnames), 0);
-	free (func_key);
+	sdb_setf (types, r_strbuf_get (&argnames), 0, "func.%s", typed_name);
 	r_strbuf_fini (&argnames);
 	return true;
 }
@@ -1651,9 +1642,7 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, Function
 	if (!typed_name) {
 		return;
 	}
-	char *typed_name_key = r_str_newf ("fcn.%s.typed_name", sname);
-	sdb_set (ctx->sdb, typed_name_key, typed_name, 0);
-	free (typed_name_key);
+	sdb_setf (ctx->sdb, typed_name, 0, "fcn.%s.typed_name", sname);
 
 	RStrBuf args_buf;
 	r_strbuf_init (&args_buf);
@@ -1673,9 +1662,7 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, Function
 		r_strbuf_slice (&args_buf, 0, args_buf.len - 1);
 	}
 	char *csig = r_str_newf ("%s %s(%s);", ret_type, typed_name, r_strbuf_get (&args_buf));
-	char *csig_key = r_str_newf ("fcn.%s.csig", sname);
-	sdb_set (ctx->sdb, csig_key, csig, 0);
-	free (csig_key);
+	sdb_setf (ctx->sdb, csig, 0, "fcn.%s.csig", sname);
 	r_strbuf_fini (&args_buf);
 
 	if (!r_type_func_exist (anal->sdb_types, typed_name)) {
@@ -1713,26 +1700,18 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 	}
 	sdb_set (sdb, sname, "fcn", 0);
 
-	char *addr_key = r_str_newf ("fcn.%s.addr", sname);
 	char *addr_val = r_str_newf ("0x%" PFMT64x, dwarf_fcn->addr);
 
-	sdb_set (sdb, addr_key, addr_val, 0);
-	free (addr_key);
+	sdb_setf (sdb, addr_val, 0, "fcn.%s.addr", sname);
 	free (addr_val);
 
 	/* so we can have name without sanitization */
-	char *name_key = r_str_newf ("fcn.%s.name", sname);
-	char *name_val = r_str_newf ("%s", real_name);
-	sdb_set (sdb, name_key, name_val, 0);
-	free (name_key);
-	free (name_val);
+	sdb_setf (sdb, real_name, 0, "fcn.%s.name", sname);
 
-	char *signature_key = r_str_newf ("fcn.%s.sig", sname);
 	char *signature = strdup (dwarf_fcn->signature);
 	r_str_ansi_strip (signature);
-	sdb_set (sdb, signature_key, signature, 0);
+	sdb_setf (sdb, signature, 0, "fcn.%s.sig", sname);
 	free (signature);
-	free (signature_key);
 
 	RStrBuf vars_buf;
 	RStrBuf args_buf;
@@ -1748,18 +1727,14 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 			continue;
 		}
 		if (var->kind == VARIABLE_KIND_FORMAL_PARAMETER) {
-			char *arg_key = r_str_newf ("fcn.%s.arg.%d", sname, arg_index);
 			char *arg_val = r_str_newf ("%s,%s", var->name, meta);
-			sdb_set (sdb, arg_key, arg_val, 0);
+			sdb_setf (sdb, arg_val, 0, "fcn.%s.arg.%d", sname, arg_index);
 			r_strbuf_appendf (&args_buf, "%s,", var->name);
-			free (arg_key);
 			free (arg_val);
 			arg_index++;
 		} else if (var->kind == VARIABLE_KIND_LOCAL) {
-			char *var_key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
-			sdb_set (sdb, var_key, meta, 0);
+			sdb_setf (sdb, meta, 0, "fcn.%s.var.%s", sname, var->name);
 			r_strbuf_appendf (&vars_buf, "%s,", var->name);
-			free (var_key);
 		}
 		free (meta);
 	}
@@ -1769,16 +1744,8 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 	if (args_buf.len > 0) {
 		r_strbuf_slice (&args_buf, 0, args_buf.len - 1);
 	}
-	char *vars_key = r_str_newf ("fcn.%s.vars", sname);
-	char *vars_val = r_str_newf ("%s", r_strbuf_get (&vars_buf));
-	char *args_key = r_str_newf ("fcn.%s.args", sname);
-	char *args_val = r_str_newf ("%s", r_strbuf_get (&args_buf));
-	sdb_set (sdb, vars_key, vars_val, 0);
-	sdb_set (sdb, args_key, args_val, 0);
-	free (vars_key);
-	free (vars_val);
-	free (args_key);
-	free (args_val);
+	sdb_setf (sdb, r_strbuf_get (&vars_buf), 0, "fcn.%s.vars", sname);
+	sdb_setf (sdb, r_strbuf_get (&args_buf), 0, "fcn.%s.args", sname);
 	r_strbuf_fini (&vars_buf);
 	r_strbuf_fini (&args_buf);
 	import_dwarf_function_type (ctx, sname, dwarf_fcn, ret_type, variables, has_unspecified_parameters);
@@ -2100,17 +2067,14 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 	ls_foreach (sdb_list, it, kv) {
 		char *func_sname = kv->base.key;
 
-		char *addr_key = r_str_newf ("fcn.%s.addr", func_sname);
-		ut64 faddr = sdb_num_get (dwarf_sdb, addr_key, 0);
-		free (addr_key);
+		ut64 faddr = sdb_num_getf (dwarf_sdb, NULL, "fcn.%s.addr", func_sname);
 
 		/* if the function is analyzed so we can edit */
 		RAnalFunction *fcn = r_anal_get_function_at (anal, faddr);
 		if (fcn) {
 			/* prepend dwarf debug info stuff with dbg. */
-			char *real_name_key = r_str_newf ("fcn.%s.name", func_sname);
-			char *real_name = sdb_get (dwarf_sdb, real_name_key, 0);
-			free (real_name_key);
+			const char *value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.name", func_sname);
+			char *real_name = value? strdup (value): NULL;
 			if (real_name) {
 				r_str_ansi_strip (real_name);
 				char *dwf_name = r_str_newf ("dbg.%s", real_name);
@@ -2119,9 +2083,8 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 			}
 			free (real_name);
 
-			char *tmp = r_str_newf ("fcn.%s.sig", func_sname);
-			char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
-			free (tmp);
+			value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.sig", func_sname);
+			char *fcnstr = value? strdup (value): NULL;
 			if (fcnstr) {
 				r_str_ansi_strip (fcnstr);
 				/* Apply signature as a comment at a function address */
@@ -2131,9 +2094,8 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 		}
 		int arg_index;
 		for (arg_index = 0; ; arg_index++) {
-			char *arg_key = r_str_newf ("fcn.%s.arg.%d", func_sname, arg_index);
-			char *arg_data = sdb_get (dwarf_sdb, arg_key, NULL);
-			free (arg_key);
+			const char *value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.arg.%d", func_sname, arg_index);
+			char *arg_data = value? strdup (value): NULL;
 			if (!arg_data) {
 				break;
 			}
@@ -2144,23 +2106,21 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 			}
 			free (arg_data);
 		}
-		char *var_names_key = r_str_newf ("fcn.%s.vars", func_sname);
-		char *vars = sdb_get (dwarf_sdb, var_names_key, NULL);
+		const char *value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.vars", func_sname);
+		char *vars = value? strdup (value): NULL;
 		if (vars) {
 			r_str_ansi_strip (vars);
 		}
 		char *var_name;
 		sdb_aforeach (var_name, vars) {
-			char *var_key = r_str_newf ("fcn.%s.var.%s", func_sname, var_name);
-			char *var_data = sdb_get (dwarf_sdb, var_key, NULL);
+			value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.var.%s", func_sname, var_name);
+			char *var_data = value? strdup (value): NULL;
 			if (var_data) {
 				(void)integrate_dwarf_var (anal, flags, fcn, var_name, var_data, false);
 			}
-			free (var_key);
 			free (var_data);
 			sdb_aforeach_next (var_name);
 		}
-		free (var_names_key);
 		free (vars);
 	}
 	ls_free (sdb_list);

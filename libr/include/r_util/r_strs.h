@@ -45,6 +45,10 @@ static inline char r_strs_at(RStrs s, size_t i) {
 	return (i < r_strs_len (s))? s.a[i]: 0;
 }
 
+static inline char r_strs_lastch(RStrs s) {
+	return r_strs_empty (s)? 0: s.b[-1];
+}
+
 /* Subslicing */
 static inline RStrs r_strs_sub(RStrs s, size_t from, size_t to) {
 	const size_t l = r_strs_len (s);

@@ -113,6 +113,31 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=izzq rebased strings (file x86_64)
+ARGS=-B 0x1000
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=izzq~puts
+EXPECT=<<EOF
+0x12fa 5 4 puts
+0x1953 18 17 puts@@GLIBC_2.2.5
+EOF
+RUN
+
+NAME=izzq high base strings (file x86_64)
+ARGS=-B 0xfffffffffffffffe
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+izzq~puts
+izzzq~puts
+EOF
+EXPECT=<<EOF
+0x2fa 5 4 puts
+0x1953 18 17 puts@@GLIBC_2.2.5
+0x000002fa puts
+0x00001953 puts@@GLIBC_2.2.5
+EOF
+RUN
+
 NAME=izzqq (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=izzqq~puts
@@ -136,6 +161,23 @@ echo "" > /etc/shadow ; echo "" > /etc/passwd ; rm -Rf /
 EOF
 RUN
 
+NAME=izzq high base raw strings
+ARGS=-w -B 0xfffffffffffffffe
+FILE=malloc://32
+CMDS=<<EOF
+wx 0000000068656c6c6f206869676820626173650a00
+izzq
+izzzq
+EOF
+EXPECT=<<EOF
+0x4 17 16 hello high base\n
+0x00000004 hello high base\n
+EOF
+EXPECT_ERR=<<EOF
+WARN: Don't use -B on unknown files. Consider using -m
+EOF
+RUN
+
 NAME=izzz (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=izzz~?
@@ -150,6 +192,19 @@ CMDS=izzzq~puts
 EXPECT=<<EOF
 0x004002fa puts
 0x0000015b puts@@GLIBC_2.2.5
+EOF
+RUN
+
+NAME=izzzq physical rebased strings (file x86_64)
+ARGS=-B 0x1000
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+e io.va=0
+izzzq~puts
+EOF
+EXPECT=<<EOF
+0x000002fa puts
+0x00001953 puts@@GLIBC_2.2.5
 EOF
 RUN
 
@@ -655,10 +710,12 @@ ARGS=-m 0x1000
 FILE=bins/other/hello.txt
 CMDS=<<EOF
 izzq
+izzj~{[0].vaddr}
 x 32 @ 0x1000
 EOF
 EXPECT=<<EOF
-0x0 24 24 hello world\nSecond Line\n
+0x1000 24 24 hello world\nSecond Line\n
+4096
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00001000  6865 6c6c 6f20 776f 726c 640a 5365 636f  hello world.Seco
 0x00001010  6e64 204c 696e 650a ffff ffff ffff ffff  nd Line.........

@@ -1,0 +1,20 @@
+{
+  "name": "radare2 JSLinux",
+  "short_name": "radare2",
+  "description": "A complete riscv64 Linux with radare2 running in the browser",
+  "id": "./",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#1b4f9c",
+  "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "400x400",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

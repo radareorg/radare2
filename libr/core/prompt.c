@@ -371,7 +371,7 @@ R_API void r_core_prompt_format_help(RCore *core) {
 // 		"Example:", "scr.prompt.format = \"${GREEN}${filename}${RESET} [${addr}]> \"",
 		NULL
 	};
-	r_core_cmd_help (core, help_msg);
+	r_cons_cmd_help (core->cons, help_msg);
 }
 
 R_API char *r_core_prompt_format(RCore *core, const char *fmt) {

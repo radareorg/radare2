@@ -1,6 +1,30 @@
 NAME=PE: corkami mscoree.exe - open
 FILE=bins/pe/mscoree.exe
+ARGS=-e bin.cache=true
 CMDS=q!
 EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=PE: corkami mscoree.exe - imports
+FILE=bins/pe/mscoree.exe
+ARGS=-e bin.cache=true
+CMDS=<<EOF
+ii
+is~imp
+EOF
+EXPECT=<<EOF
+nth vaddr      bind type lib          name
+------------------------------------------
+1   0x004010e0 NONE FUNC mscoree.dll  _CorExeMain
+1   0x004010e8 NONE FUNC kernel32.dll ExitProcess
+1   0x004010f0 NONE FUNC msvcrt.dll   printf
+1   0x000002e0 0x004010e0 NONE FUNC 0    mscoree.dll  imp._CorExeMain
+1   0x000002e8 0x004010e8 NONE FUNC 0    kernel32.dll imp.ExitProcess
+1   0x000002f0 0x004010f0 NONE FUNC 0    msvcrt.dll   imp.printf
+EOF
+EXPECT_ERR=<<EOF
 EOF
 RUN

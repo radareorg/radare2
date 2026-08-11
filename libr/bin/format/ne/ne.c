@@ -2,6 +2,33 @@
 
 #include "ne.h"
 
+static bool ne_header_at(RBuffer *buf, ut64 offset) {
+	ut64 bufsz = r_buf_size (buf);
+	if (offset > bufsz || bufsz - offset <= 26) {
+		return false;
+	}
+	ut8 magic[2];
+	return r_buf_read_at (buf, offset, magic, sizeof (magic)) == sizeof (magic)
+		&& !memcmp (magic, "NE", sizeof (magic));
+}
+
+bool r_bin_ne_get_header_offset(RBuffer *buf, R_OUT ut32 *offset) {
+	if (!buf || !offset || r_buf_size (buf) < 0x40) {
+		return false;
+	}
+	ut32 candidate = r_buf_read_le32_at (buf, 0x3c);
+	if (ne_header_at (buf, candidate)) {
+		*offset = candidate;
+		return true;
+	}
+	ut16 legacy = candidate;
+	if (legacy != candidate && ne_header_at (buf, legacy)) {
+		*offset = legacy;
+		return true;
+	}
+	return false;
+}
+
 static char *__get_target_os(r_bin_ne_obj_t *bin) {
 	const int targetOS = (bin->ne_header) ? bin->ne_header->targOS: 0;
 	switch (targetOS) {
@@ -35,17 +62,26 @@ static int __translate_perms(int flags) {
 	return perms;
 }
 
-static char *__read_nonnull_str_at(RBuffer *buf, ut64 offset) {
-	ut8 sz = r_buf_read8_at (buf, offset);
-	if (!sz) {
+static char *pascalstr_at(RBuffer *buf, ut64 offset, ut64 end, R_OUT ut8 * R_NULLABLE size_out) {
+	if (offset >= end) {
 		return NULL;
 	}
-	char *str = malloc ((ut64)sz + 1);
+	ut8 size = r_buf_read8_at (buf, offset);
+	if (!size || size > end - offset - 1) {
+		return NULL;
+	}
+	char *str = malloc ((ut64)size + 1);
 	if (!str) {
 		return NULL;
 	}
-	r_buf_read_at (buf, offset + 1, (ut8 *)str, sz);
-	str[sz] = '\0';
+	if (r_buf_read_at (buf, offset + 1, (ut8 *)str, size) != size) {
+		free (str);
+		return NULL;
+	}
+	str[size] = 0;
+	if (size_out) {
+		*size_out = size;
+	}
 	return str;
 }
 
@@ -59,20 +95,16 @@ static char *__func_name_from_ord(const char *module, ut16 ordinal) {
 	char *path = r_str_newf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"), pfx, lower_module);
 	free (pfx);
 	free (lower_module);
-	char *ord = r_str_newf ("%d", ordinal);
-	char *name;
+	char *name = NULL;
 	if (r_file_exists (path)) {
 		Sdb *sdb = sdb_new (NULL, path, 0);
-		name = sdb_get (sdb, ord, NULL);
-		if (!name) {
-			name = ord;
-		} else {
-			free (ord);
-		}
+		const char *value = sdb_const_getf (sdb, NULL, "%d", ordinal);
+		name = value? strdup (value): NULL;
 		sdb_close (sdb);
 		free (sdb);
-	} else {
-		name = ord;
+	}
+	if (!name) {
+		name = r_str_newf ("%d", ordinal);
 	}
 	free (path);
 	return name;
@@ -113,39 +145,43 @@ void r_bin_ne_load_symbols(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols) {
 	if (!bin->ne_header) {
 		return;
 	}
-	ut16 off = bin->ne_header->ResidNamTable + bin->header_offset;
+	ut64 bufsz = r_buf_size (bin->buf);
+	ut64 off = (ut64)bin->ne_header->ResidNamTable + bin->header_offset;
 	RList *entries = r_bin_ne_get_entrypoints (bin);
 	bool resident = true, first = true;
 	while (entries) {
+		if (off >= bufsz) {
+			break;
+		}
 		ut8 sz = r_buf_read8_at (bin->buf, off);
 		if (!sz) {
 			first = true;
 			if (resident) {
 				resident = false;
 				off = bin->ne_header->OffStartNonResTab;
-				sz = r_buf_read8_at (bin->buf, off);
-				if (!sz) {
+				if (off >= bufsz || !r_buf_read8_at (bin->buf, off)) {
 					break;
 				}
 			} else {
 				break;
 			}
 		}
-		char *name = malloc ((ut64)sz + 1);
+		char *name = pascalstr_at (bin->buf, off, bufsz, &sz);
 		if (!name) {
 			break;
 		}
-		off++;
-		r_buf_read_at (bin->buf, off, (ut8 *)name, sz);
-		name[sz] = '\0';
-		off += sz;
+		off += (ut64)sz + 1;
+		if (bufsz - off < sizeof (ut16)) {
+			free (name);
+			break;
+		}
+		ut16 entry_off = r_buf_read_le16_at (bin->buf, off);
+		off += sizeof (ut16);
 		RBinSymbol *sym = RVecRBinSymbol_emplace_back (symbols);
 		sym->name = r_bin_name_new_from (name);
 		if (!first) {
 			sym->bind = R_BIN_BIND_GLOBAL_STR;
 		}
-		ut16 entry_off = r_buf_read_le16_at (bin->buf, off);
-		off += 2;
 		RBinAddr *entry = r_list_get_n (entries, entry_off);
 		sym->paddr = entry? entry->paddr: -1;
 		sym->ordinal = entry_off;
@@ -224,48 +260,89 @@ static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 			return false;
 		}
 	}
-	ut16 resoff = bin->ne_header->ResTableOffset + bin->header_offset;
+	ut64 bufsz = r_buf_size (bin->buf);
+	ut64 resoff = (ut64)bin->ne_header->ResTableOffset + bin->header_offset;
+	ut64 resend = (ut64)bin->ne_header->ResidNamTable + bin->header_offset;
+	if (!bin->ne_header->ResTableOffset || !bin->ne_header->ResidNamTable
+		|| resoff >= resend || resend > bufsz || resend - resoff < sizeof (ut16)) {
+		return true;
+	}
 	ut16 alignment = r_buf_read_le16_at (bin->buf, resoff);
-	ut32 off = resoff + 2;
-	while (true) {
+	if (alignment >= sizeof (ut64) * 8) {
+		return false;
+	}
+	ut64 shift_limit = bufsz >> alignment;
+	ut64 off = resoff + 2;
+	while (off <= resend && resend - off >= sizeof (NE_image_typeinfo_entry)) {
 		NE_image_typeinfo_entry ti = {0};
+		if (r_buf_fread_at (bin->buf, off, (ut8 *)&ti, "2si", 1) != sizeof (ti)) {
+			return false;
+		}
+		if (!ti.rtTypeID) {
+			return true;
+		}
+		off += sizeof (NE_image_typeinfo_entry);
+		if (ti.rtResourceCount > (resend - off) / sizeof (NE_image_nameinfo_entry)) {
+			return false;
+		}
 		r_ne_resource *res = R_NEW0 (r_ne_resource);
 		res->entry = r_list_newf (__free_resource_entry);
 		if (!res->entry) {
-			break;
+			free (res);
+			return false;
 		}
-		r_buf_fread_at (bin->buf, off, (ut8 *)&ti, "2si", 1);
-		if (!ti.rtTypeID) {
-			break;
-		} else if (ti.rtTypeID & 0x8000) {
-			res->name = __resource_type_str (ti.rtTypeID & ~0x8000);
+		if (ti.rtTypeID & 0x8000) {
+			res->type_id = ti.rtTypeID & ~0x8000;
+			res->name = __resource_type_str (res->type_id);
+		} else if (ti.rtTypeID < resend - resoff) {
+			res->named = true;
+			res->name = pascalstr_at (bin->buf, resoff + ti.rtTypeID, resend, NULL);
 		} else {
-			// Offset to resident name table
-			res->name = __read_nonnull_str_at (bin->buf, (ut64)resoff + ti.rtTypeID);
+			__free_resource (res);
+			return false;
 		}
-		off += sizeof (NE_image_typeinfo_entry);
-		const ut32 max_shift = (sizeof (ut32) * 8U) - 1;
+		if (!res->name) {
+			__free_resource (res);
+			return false;
+		}
 		int i;
 		for (i = 0; i < ti.rtResourceCount; i++) {
-			NE_image_nameinfo_entry ni;
-			r_ne_resource_entry *ren = R_NEW0 (r_ne_resource_entry);
-			r_buf_fread_at (bin->buf, off, (ut8 *)&ni, "6s", 1);
-			ut32 shift = alignment;
-			if (shift > max_shift) {
-				shift = max_shift;
+			NE_image_nameinfo_entry ni = {0};
+			if (r_buf_fread_at (bin->buf, off, (ut8 *)&ni, "6s", 1) != sizeof (ni)) {
+				__free_resource (res);
+				return false;
 			}
-			ren->offset = (ut32)((ut64)ni.rnOffset << shift);
-			ren->size = ni.rnLength;
+			off += sizeof (NE_image_nameinfo_entry);
+			if (ni.rnOffset > shift_limit || ni.rnLength > shift_limit) {
+				continue;
+			}
+			r_ne_resource_entry *ren = R_NEW0 (r_ne_resource_entry);
+			ren->offset = (ut64)ni.rnOffset << alignment;
+			ren->size = (ut64)ni.rnLength << alignment;
+			ren->flags = ni.rnFlags;
 			if (ni.rnID & 0x8000) {
-				ren->name = r_str_newf ("%d", ni.rnID & ~0x8000);
+				ren->id = ni.rnID & ~0x8000;
+				ren->name = r_str_newf ("%d", ren->id);
 			} else {
 				// Offset to resident name table
-				ren->name = __read_nonnull_str_at (bin->buf, (ut64)resoff + ni.rnID);
+				ren->named = true;
+				if (ni.rnID >= resend - resoff) {
+					free (ren);
+					continue;
+				}
+				ren->name = pascalstr_at (bin->buf, resoff + ni.rnID, resend, NULL);
+			}
+			if (ren->offset > bufsz || ren->size > bufsz - ren->offset || !ren->name) {
+				__free_resource_entry (ren);
+				continue;
 			}
 			r_list_append (res->entry, ren);
-			off += sizeof (NE_image_nameinfo_entry);
 		}
-		r_list_append (bin->resources, res);
+		if (r_list_empty (res->entry)) {
+			__free_resource (res);
+		} else {
+			r_list_append (bin->resources, res);
+		}
 	}
 	return true;
 }
@@ -274,25 +351,20 @@ void r_bin_ne_load_imports(r_bin_ne_obj_t *bin, RVecRBinImport *vec) {
 	if (!bin->ne_header) {
 		return;
 	}
-	ut16 off = bin->ne_header->ImportNameTable + bin->header_offset + 1;
+	ut64 bufsz = r_buf_size (bin->buf);
+	ut64 off = (ut64)bin->ne_header->ImportNameTable + bin->header_offset + 1;
 	RVecRBinImport_reserve (vec, bin->ne_header->ModRefs);
 	int i;
 	for (i = 0; i < bin->ne_header->ModRefs; i++) {
-		ut8 sz = r_buf_read8_at (bin->buf, off);
-		if (!sz) {
-			break;
-		}
-		off++;
-		char *name = malloc ((ut64)sz + 1);
+		ut8 sz;
+		char *name = pascalstr_at (bin->buf, off, bufsz, &sz);
 		if (!name) {
 			break;
 		}
-		r_buf_read_at (bin->buf, off, (ut8 *)name, sz);
-		name[sz] = '\0';
 		RBinImport *imp = RVecRBinImport_emplace_back (vec);
 		imp->name = r_bin_name_new_from (name);
 		imp->ordinal = i + 1;
-		off += sz;
+		off += (ut64)sz + 1;
 	}
 }
 
@@ -319,7 +391,7 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 		r_list_append (entries, entry);
 	}
 	int off = 0;
-	size_t tableat = bin->header_offset + bin->ne_header->EntryTableOffset;
+	ut64 tableat = (ut64)bin->header_offset + bin->ne_header->EntryTableOffset;
 	while (off < bin->ne_header->EntryTableLength) {
 		if (tableat + off >= r_buf_size (bin->buf)) {
 			break;
@@ -383,6 +455,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 	if (!symbols) {
 		return NULL;
 	}
+	ut64 bufsz = r_buf_size (bin->buf);
 	RList *entries = r_bin_ne_get_entrypoints (bin);
 	if (!entries) {
 		return NULL;
@@ -446,7 +519,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 				break;
 			}
 
-			ut32 offset;
+			ut64 offset;
 			if (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {
 				RBinImport *imp = R_NEW0 (RBinImport);
 				if (!imp) {
@@ -457,18 +530,18 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 				if (rel.index > bin->ne_header->ModRefs) {
 					name = r_str_newf ("UnknownModule%d_%x", rel.index, off); // ????
 				} else if (rel.index > 0) {
-					offset = modref[rel.index - 1] + bin->header_offset + bin->ne_header->ImportNameTable;
-					name = __read_nonnull_str_at (bin->buf, offset);
+					offset = (ut64)bin->header_offset + bin->ne_header->ImportNameTable + modref[rel.index - 1];
+					name = pascalstr_at (bin->buf, offset, bufsz, NULL);
 				}
 				if (rel.flags & IMPORTED_ORD) {
 					imp->ordinal = rel.func_ord;
 					char *fname = __func_name_from_ord (name, rel.func_ord);
-					imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", name, fname));
+					imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", r_str_get (name), r_str_get (fname)));
 					free (fname);
 				} else {
-					offset = bin->header_offset + bin->ne_header->ImportNameTable + rel.name_off;
-					char *func = __read_nonnull_str_at (bin->buf, offset);
-					imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", name, func));
+					offset = (ut64)bin->header_offset + bin->ne_header->ImportNameTable + rel.name_off;
+					char *func = pascalstr_at (bin->buf, offset, bufsz, NULL);
+					imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", r_str_get (name), r_str_get (func)));
 					free (func);
 				}
 				free (name);
@@ -505,26 +578,32 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 				reloc->additive = 1;
 				r_list_append (relocs, reloc);
 			} else {
-				do {
-#define NE_BUG 0
-#if NE_BUG
-					if (reloc->paddr + 4 < r_buf_size (bin->buf)) {
-						break;
+				RBitset *visited = r_bitset_new ();
+				r_list_append (relocs, reloc);
+				if (r_bitset_set (visited, rel.offset)) {
+					while (reloc->paddr <= bufsz && bufsz - reloc->paddr >= sizeof (ut16)) {
+						offset = r_buf_read_le16_at (bin->buf, reloc->paddr);
+						if (offset == UT16_MAX || !r_bitset_set (visited, offset)) {
+							break;
+						}
+						if (seg->paddr > bufsz || offset > bufsz - seg->paddr) {
+							break;
+						}
+						ut64 next_paddr = seg->paddr + offset;
+						if (bufsz - next_paddr < sizeof (ut16)) {
+							break;
+						}
+						RBinReloc *next = R_NEW0 (RBinReloc);
+						*next = *reloc;
+						if (next->import) {
+							next->import = r_bin_import_clone (next->import);
+						}
+						next->paddr = next_paddr;
+						r_list_append (relocs, next);
+						reloc = next;
 					}
-#endif
-					r_list_append (relocs, reloc);
-					offset = r_buf_read_le16_at (bin->buf, reloc->paddr);
-					RBinReloc *tmp = reloc;
-					reloc = R_NEW0 (RBinReloc);
-					if (!reloc) {
-						break;
-					}
-					*reloc = *tmp;
-					if (reloc->import)
-						reloc->import = r_bin_import_clone (reloc->import);
-					reloc->paddr = seg->paddr + offset;
-				} while (offset != 0xFFFF);
-				free (reloc);
+				}
+				r_bitset_free (visited);
 			}
 
 			off += sizeof (NE_image_reloc_item);
@@ -536,9 +615,11 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 }
 
 void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
-	bin->header_offset = r_buf_read_le16_at (buf, 0x3c);
-	bin->ne_header = R_NEW0 (NE_image_header);
 	bin->buf = buf;
+	if (!r_bin_ne_get_header_offset (buf, &bin->header_offset)) {
+		return;
+	}
+	bin->ne_header = R_NEW0 (NE_image_header);
 	if (r_buf_fread_at (buf, bin->header_offset, (ut8 *)bin->ne_header, "4c2si4c4si8si3s2c3s2c", 1) < 1) {
 		R_FREE (bin->ne_header);
 		return;
@@ -546,7 +627,7 @@ void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
 	if (bin->ne_header->FileAlnSzShftCnt > 15) {
 		bin->ne_header->FileAlnSzShftCnt = 15;
 	}
-	ut64 from = bin->ne_header->ModRefTable + bin->header_offset;
+	ut64 from = (ut64)bin->ne_header->ModRefTable + bin->header_offset;
 	ut64 bufsz = r_buf_size (bin->buf);
 	if (from >= bufsz) {
 		bin->ne_header->ModRefs = 0;
@@ -562,12 +643,12 @@ void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
 	}
 	bin->os = __get_target_os (bin);
 
-	ut16 offset = bin->ne_header->SegTableOffset + bin->header_offset;
+	ut64 offset = (ut64)bin->ne_header->SegTableOffset + bin->header_offset;
 	size_t size = bin->ne_header->SegCount * sizeof (NE_image_segment_entry);
 	if (offset >= r_buf_size (bin->buf)) {
 		return;
 	}
-	size_t remaining = r_buf_size (bin->buf) - offset;
+	ut64 remaining = r_buf_size (bin->buf) - offset;
 	size = R_MIN (remaining, size);
 	bin->ne_header->SegCount = size / sizeof (NE_image_segment_entry); // * sizeof (NE_image_segment_entry);
 	bin->segment_entries = calloc (1, size);

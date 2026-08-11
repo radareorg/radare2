@@ -114,6 +114,8 @@ static RCoreHelpMessage help_msg_iS = {
 	"iS,", "[table-query]", "list sections in table using given expression",
 	"iS=", "", "show ascii-art color bars with the section ranges",
 	"iSS", "[,tablequery]", "list memory segments (maps with om)",
+	"iSx", " [directory]", "extract all sections (default: <file>.sections; alias for ixS)",
+	"iSSx", " [directory]", "extract all segments (default: <file>.segments; alias for ixSS)",
 	"iSm", "[cj]", "list sections with the symbols contained (iSmc for count only, iSmj for json)",
 	NULL
 };
@@ -163,8 +165,9 @@ static RCoreHelpMessage help_msg_i = {
 	"iM", "", "show main address",
 	"io", " [file]", "load info from file (or last opened) use bin.baddr",
 	"iO", "[?]", "perform binary operation (dump, resize, change sections, ...)",
-	"ir", "", "list the relocations",
-	"iR", "", "list the resources",
+	"ir", "[?][jq*]", "list the relocations (iR is an accidental alias for 'ir')",
+	"iu", "[?][,joq*x]", "list, open or extract binary resources",
+	"ix", "[?][u|S|SS] [directory]", "extract resources, sections or segments",
 	"is", "[?]", "list the symbols",
 	"iS", "[?]", "list sections, segments and compute their hash",
 	"it", "", "file hashes", // hashes in it? wtf, thats a pretty bad subcommand
@@ -172,6 +175,30 @@ static RCoreHelpMessage help_msg_i = {
 	"iv", "", "display file version info", // wtf why not iv
 	"iw", "", "show try/catch blocks", // bad naming..
 	"iz", "[?]", "strings in data sections (in JSON/Base64)",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_iu = {
+	"Usage: iu", "[,joq*x] [directory]", "Inspect or safely extract binary resources",
+	"iu", "", "list resources with all available metadata",
+	"iu,", "[table-query]", "list resources in table using given expression",
+	"iu*", "", "emit resource flags as radare commands",
+	"iuj", "", "list resources in JSON",
+	"iuo", " [name|id]", "open the given resource as a new file (copied into malloc://)",
+	"iuq", "", "list resource address, size, type and name",
+	"iuqq", "", "list resource names only",
+	"iux", " [directory]", "extract all resources (default: <file>.resources; alias for ixu)",
+	"", "", "output names are sanitized and existing files are never overwritten",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_ix = {
+	"Usage: ix", "[u|S|SS] [directory]", "Extract binary data to disk",
+	"ixu", " [directory]", "extract all resources (alias for iux)",
+	"ixS", " [directory]", "extract all sections (alias for iSx)",
+	"ixSS", " [directory]", "extract all segments (alias for iSSx)",
+	"", "", "default directories are <file>.resources, <file>.sections and <file>.segments",
+	"", "", "output names are sanitized and existing files are never overwritten",
 	NULL
 };
 
@@ -253,7 +280,7 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 	} else {
 		// iD receives no arguments
 		if (!pj) {
-			r_core_cmd_help_match (core, help_msg_i, "iD");
+			r_cons_cmd_help_match (core->cons, help_msg_i, "iD", 0, true);
 		} else {
 			r_cons_print (core->cons, "{}");
 		}
@@ -629,13 +656,13 @@ static int cmd_iic(RCore *core, const char *input) {
 		} else if (input[3] == ' ') { // "iicc"
 			cmd_iic2 (core, 'c', r_str_trim_head_ro (input + 3));
 		} else if (input[3] == '?') { // "iicc?"
-			r_core_cmd_help_contains (core, help_msg_iic, "iicc");
+			r_cons_cmd_help_match (core->cons, help_msg_iic, "iicc", 0, false);
 		} else {
 			r_core_return_invalid_command (core, "iicc", input[3]);
 		}
 		break;
 	case '?': // "iic?"
-		r_core_cmd_help (core, help_msg_iic);
+		r_cons_cmd_help (core->cons, help_msg_iic);
 		break;
 	default:
 		r_core_return_invalid_command (core, "iic", input[2]);
@@ -1054,7 +1081,7 @@ static void cmd_ic_sub(RCore *core, const char *input) {
 		return;
 	}
 	if (ch0 == 0 || ch0 == '?') {
-		r_core_cmd_help_match (core, help_msg_ic, "ic-");
+		r_cons_cmd_help_match (core->cons, help_msg_ic, "ic-", 0, true);
 		return;
 	}
 	char *klass_name = strdup (arg);
@@ -1122,7 +1149,7 @@ static void cmd_ic_sub(RCore *core, const char *input) {
 void cmd_ic_add(RCore *core, const char *input) {
 	const char ch0 = *input;
 	if (ch0 == 0 || ch0 == '?') {
-		r_core_cmd_help_match (core, help_msg_ic, "ic+");
+		r_cons_cmd_help_match (core->cons, help_msg_ic, "ic+", 0, true);
 		return;
 	}
 	RList *klasses = r_bin_get_classes (core->bin);
@@ -1224,7 +1251,7 @@ void cmd_ic_add(RCore *core, const char *input) {
 
 static void cmd_ii_add(RCore *core, const char *input) {
 	if (R_STR_ISEMPTY (input) || *input == '?') {
-		r_core_cmd_help_match (core, help_msg_ii, "ii+");
+		r_cons_cmd_help_match (core->cons, help_msg_ii, "ii+", 0, true);
 		return;
 	}
 	RBinFile *bf = r_bin_cur (core->bin);
@@ -1277,7 +1304,7 @@ static void cmd_ii_add(RCore *core, const char *input) {
 
 static void cmd_ii_sub(RCore *core, const char *input) {
 	if (R_STR_ISEMPTY (input) || *input == '?') {
-		r_core_cmd_help_match (core, help_msg_ii, "ii-");
+		r_cons_cmd_help_match (core->cons, help_msg_ii, "ii-", 0, true);
 		return;
 	}
 	RBinFile *bf = r_bin_cur (core->bin);
@@ -1500,7 +1527,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 	switch (cmd) {
 	// help message
 	case '?': // "ic?"
-		r_core_cmd_help (core, help_msg_ic);
+		r_cons_cmd_help (core->cons, help_msg_ic);
 		break;
 	case '-': // "ic-"
 		cmd_ic_sub (core, input);
@@ -1528,10 +1555,10 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 		} else {
 			if (show_help) {
 				if (cmd == 'Q') {
-					r_core_cmd_help_contains (core, help_msg_ic, "icqq");
+					r_cons_cmd_help_match (core->cons, help_msg_ic, "icqq", 0, false);
 				} else {
 					char kcmd[] = { 'i', 'c', cmd, 0};
-					r_core_cmd_help_contains (core, help_msg_ic, kcmd);
+					r_cons_cmd_help_match (core->cons, help_msg_ic, kcmd, 0, false);
 				}
 				break;
 			}
@@ -1754,7 +1781,7 @@ static void parse_iz_args(RCore *core, const char *input, int skip, IzArgs *args
 static void cmd_izplus(RCore *core, const char *input) {
 	const char *arg = r_str_trim_head_ro (input + 2);
 	if (R_STR_ISEMPTY (arg) || *arg == '?') {
-		r_core_cmd_help_match (core, help_msg_iz, "iz+");
+		r_cons_cmd_help_match (core->cons, help_msg_iz, "iz+", 0, true);
 		return;
 	}
 	if (input[2] != ' ') {
@@ -2024,8 +2051,102 @@ static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bo
 	}
 }
 
+static void cmd_info_extract(RCore *core, const char *output, bool resources, bool segments) {
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (!bf) {
+		R_LOG_ERROR ("No binary file loaded");
+		r_core_return_value (core, 1);
+		return;
+	}
+	bool ok = resources
+		? r_bin_file_extract_resources (bf, output)
+		: r_bin_file_extract_sections (bf, output, segments);
+	if (!ok) {
+		r_core_return_value (core, 1);
+	}
+}
+
+static RBinResource *find_resource(RVecRBinResource *resources, const char *arg) {
+	RBinResource *r;
+	R_VEC_FOREACH (resources, r) {
+		if (R_STR_ISNOTEMPTY (r->name) && !strcmp (r->name, arg)) {
+			return r;
+		}
+	}
+	if (isdigit (*arg)) {
+		const ut64 n = r_num_get (NULL, arg);
+		R_VEC_FOREACH (resources, r) {
+			if (r->index == n || r->id == n) {
+				return r;
+			}
+		}
+	}
+	return NULL;
+}
+
+static void cmd_iuo(RCore *core, const char *arg) {
+	if (R_STR_ISEMPTY (arg)) {
+		r_cons_cmd_help_match (core->cons, help_msg_iu, "iuo", 0, true);
+		return;
+	}
+	RBinFile *bf = r_bin_cur (core->bin);
+	RVecRBinResource *resources = bf? r_bin_file_get_resources (bf): NULL;
+	if (!resources || RVecRBinResource_empty (resources)) {
+		R_LOG_ERROR ("No resources found in the current binary");
+		r_core_return_value (core, 1);
+		return;
+	}
+	RBinResource *resource = find_resource (resources, arg);
+	if (!resource) {
+		R_LOG_ERROR ("Cannot find any resource matching '%s'", arg);
+		r_core_return_value (core, 1);
+		return;
+	}
+	RBuffer *buf = r_bin_file_get_resource_data (bf, resource, !core->bin->options.resraw);
+	const ut64 size = buf? r_buf_size (buf): 0;
+	// copy the bytes out so the new fd holds no reference into bf->buf
+	ut8 *data = (size > 0 && size <= INT_MAX)? malloc (size): NULL;
+	if (!data || r_buf_read_at (buf, 0, data, size) != (st64)size) {
+		R_LOG_ERROR ("Cannot read resource %u", resource->index);
+		free (data);
+		r_unref (buf);
+		r_core_return_value (core, 1);
+		return;
+	}
+	r_unref (buf);
+	char *uri = r_str_newf ("malloc://%"PFMT64u, size);
+	RIODesc *fd = r_io_open (core->io, uri, R_PERM_RW, 0);
+	free (uri);
+	if (fd) {
+		r_io_desc_write (fd, data, (int)size);
+		// oba 0 loads bin info; obo raises the new binfile so
+		// config (arch/bits/baddr) and seek land on it
+		r_core_cmdf (core, "oba 0;obo %d", fd->fd);
+	} else {
+		R_LOG_ERROR ("Cannot open malloc://%"PFMT64u" to hold the resource", size);
+		r_core_return_value (core, 1);
+	}
+	free (data);
+}
+
 static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const bool va, const bool is_array) {
 	PJ *pj = *_pj;
+	if (input[1] == 'x') { // "iSx"
+		if (input[2] == '?') {
+			r_cons_cmd_help_match (core->cons, help_msg_iS, "iSx", 0, true);
+		} else {
+			cmd_info_extract (core, r_str_trim_head_ro (input + 2), false, false);
+		}
+		return;
+	}
+	if (input[1] == 'S' && input[2] == 'x') { // "iSSx"
+		if (input[3] == '?') {
+			r_cons_cmd_help_match (core->cons, help_msg_iS, "iSSx", 0, true);
+		} else {
+			cmd_info_extract (core, r_str_trim_head_ro (input + 3), false, true);
+		}
+		return;
+	}
 	RBinInfo *info = r_bin_get_info (core->bin);
 	if (!info && pj) {
 		r_cons_print (core->cons, "[]");
@@ -2094,6 +2215,43 @@ static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const boo
 		core->bin->cur = cur;
 		r_list_free (objs);
 	}
+}
+
+static void cmd_ix(RCore *core, const char *input) {
+	const char *command = NULL;
+	const char *output = NULL;
+	bool resources = false;
+	bool segments = false;
+	switch (input[1]) {
+	case 'u': // "ixu"
+		command = "ixu";
+		output = input + 2;
+		resources = true;
+		break;
+	case 'S': // "ixS", "ixSS"
+		if (input[2] == 'S') {
+			command = "ixSS";
+			output = input + 3;
+			segments = true;
+		} else {
+			command = "ixS";
+			output = input + 2;
+		}
+		break;
+	case '?':
+	case '\0':
+	case ' ':
+		r_cons_cmd_help (core->cons, help_msg_ix);
+		return;
+	default:
+		r_core_return_invalid_command (core, "ix", input[1]);
+		return;
+	}
+	if (*output == '?') {
+		r_cons_cmd_help_match (core->cons, help_msg_ix, command, 0, true);
+		return;
+	}
+	cmd_info_extract (core, r_str_trim_head_ro (output), resources, segments);
 }
 
 static bool bin_header(RCore *r, int mode, PJ *pj) {
@@ -2208,7 +2366,7 @@ static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int m
 		break;
 	case 'd': // "idpd"
 		if (input[3] == '?') {
-			r_core_cmd_help_contains (core, help_msg_id, "idpd");
+			r_cons_cmd_help_match (core->cons, help_msg_id, "idpd", 0, false);
 			break;
 		}
 		pdbopts.user_agent = (char *)r_config_get (core->config, "pdb.useragent");
@@ -2235,7 +2393,7 @@ static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int m
 		break;
 	case 'i': // "idpi"
 		if (input[3] == '?') {
-			r_core_cmd_help_contains (core, help_msg_id, "idpi");
+			r_cons_cmd_help_match (core->cons, help_msg_id, "idpi", 0, false);
 			break;
 		}
 		info = r_bin_get_info (core->bin);
@@ -2306,7 +2464,7 @@ static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int m
 		free (filename);
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_id);
+		r_cons_cmd_help (core->cons, help_msg_id);
 		break;
 	default:
 		r_core_return_invalid_command (core, "id", input[1]);
@@ -2348,7 +2506,7 @@ static void cmd_idl(RCore *core, const char *input) {
 	}
 	switch (input[2]) {
 	case '?':
-		r_core_cmd_help (core, help_msg_idl);
+		r_cons_cmd_help (core->cons, help_msg_idl);
 		break;
 	case 0:
 		if (linkname) {
@@ -2492,9 +2650,8 @@ static char *idd_type_display(RCore *core, const char *type) {
 static int idd_type_size(RCore *core, const char *type);
 
 static int idd_struct_size(RCore *core, const char *kind, const char *name) {
-	char *members_key = r_str_newf ("%s.%s", kind, name);
-	char *members = sdb_get (core->anal->sdb_types, members_key, 0);
-	free (members_key);
+	const char *value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s", kind, name);
+	char *members = value? strdup (value): NULL;
 	if (!members) {
 		return 0;
 	}
@@ -2503,20 +2660,19 @@ static int idd_struct_size(RCore *core, const char *kind, const char *name) {
 	int i;
 	for (i = 0; i < nargs; i++) {
 		const char *member = r_str_word_get0 (members, i);
-		char *member_key = r_str_newf ("%s.%s.%s", kind, name, member);
-		char *value = sdb_get (core->anal->sdb_types, member_key, 0);
-		free (member_key);
-		if (value) {
-			int vlen = r_str_split (value, ',');
+		const char *member_value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s.%s", kind, name, member);
+		char *member_data = member_value? strdup (member_value): NULL;
+		if (member_data) {
+			int vlen = r_str_split (member_data, ',');
 			if (vlen >= 2) {
-				const char *member_type = r_str_word_get0 (value, 0);
-				int offset = atoi (r_str_word_get0 (value, 1));
+				const char *member_type = r_str_word_get0 (member_data, 0);
+				int offset = atoi (r_str_word_get0 (member_data, 1));
 				int end = offset + idd_type_size (core, member_type);
 				if (end > size) {
 					size = end;
 				}
 			}
-			free (value);
+			free (member_data);
 		}
 	}
 	free (members);
@@ -2536,23 +2692,17 @@ static int idd_type_size(RCore *core, const char *type) {
 	} else {
 		const char *kind = idd_type_kind (core, base);
 		if (kind && !strcmp (kind, "typedef")) {
-			char *key = r_str_newf ("typedef.%s", base);
-			const char *real_type = sdb_const_get (core->anal->sdb_types, key, NULL);
+			const char *real_type = sdb_const_getf (core->anal->sdb_types, NULL, "typedef.%s", base);
 			size = real_type? idd_type_size (core, real_type): 0;
-			free (key);
 		} else if (kind && (!strcmp (kind, "struct") || !strcmp (kind, "union"))) {
 			size = idd_struct_size (core, kind, base);
 		} else {
-			char *key = r_str_newf ("type.%s.size", base);
-			size = (int)(sdb_num_get (core->anal->sdb_types, key, 0) / 8);
-			free (key);
+			size = (int)(sdb_num_getf (core->anal->sdb_types, NULL, "type.%s.size", base) / 8);
 			if (!size) {
 				char *sbase = strdup (base);
 				if (sbase) {
 					r_str_replace_char (sbase, ' ', '_');
-					key = r_str_newf ("type.%s.size", sbase);
-					size = (int)(sdb_num_get (core->anal->sdb_types, key, 0) / 8);
-					free (key);
+					size = (int)(sdb_num_getf (core->anal->sdb_types, NULL, "type.%s.size", sbase) / 8);
 					free (sbase);
 				}
 			}
@@ -2581,23 +2731,20 @@ static bool idd_member_info(RCore *core, const char *type, const char *member, c
 	}
 	const char *kind = idd_type_kind (core, base);
 	if (kind && !strcmp (kind, "typedef")) {
-		char *key = r_str_newf ("typedef.%s", base);
-		const char *real_type = sdb_const_get (core->anal->sdb_types, key, NULL);
+		const char *real_type = sdb_const_getf (core->anal->sdb_types, NULL, "typedef.%s", base);
 		if (real_type) {
 			free (base);
 			base = idd_type_base (real_type, NULL, NULL);
 			kind = base? idd_type_kind (core, base): NULL;
 		}
-		free (key);
 	}
 	if (!kind || (strcmp (kind, "struct") && strcmp (kind, "union"))) {
 		free (base);
 		return false;
 	}
-	char *key = r_str_newf ("%s.%s.%s", kind, base, member);
+	const char *member_value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s.%s", kind, base, member);
 	free (base);
-	char *value = sdb_get (core->anal->sdb_types, key, 0);
-	free (key);
+	char *value = member_value? strdup (member_value): NULL;
 	if (!value) {
 		return false;
 	}
@@ -2674,9 +2821,8 @@ static void cmd_iddd(RCore *core, const char *input, bool json) {
 	if (!kind || (strcmp (kind, "struct") && strcmp (kind, "union"))) {
 		return;
 	}
-	char *members_key = r_str_newf ("%s.%s", kind, name);
-	char *members = sdb_get (core->anal->sdb_types, members_key, 0);
-	free (members_key);
+	const char *value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s", kind, name);
+	char *members = value? strdup (value): NULL;
 	if (!members) {
 		return;
 	}
@@ -2793,15 +2939,11 @@ static void cmd_iddlf(RCore *core) {
 	SdbKv *kv;
 	ls_foreach (l, iter, kv) {
 		const char *key = sdbkv_key (kv);
-		char *name_key = r_str_newf ("fcn.%s.name", key);
-		const char *name = sdb_const_get (dwarf_sdb, name_key, NULL);
-		free (name_key);
+		const char *name = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.name", key);
 		if (R_STR_ISEMPTY (name)) {
 			name = key;
 		}
-		char *addr_key = r_str_newf ("fcn.%s.addr", key);
-		ut64 addr = sdb_num_get (dwarf_sdb, addr_key, 0);
-		free (addr_key);
+		ut64 addr = sdb_num_getf (dwarf_sdb, NULL, "fcn.%s.addr", key);
 		int size = idd_symbol_size (core, name);
 		r_cons_printf (core->cons, "f sym.%s %d @ 0x%" PFMT64x "\n", name, size, addr);
 	}
@@ -2899,9 +3041,8 @@ static void cmd_idd(RCore *core, const char *input) {
 		if (!kind || (strcmp (kind, "struct") && strcmp (kind, "union"))) {
 			break;
 		}
-		char *members_key = r_str_newf ("%s.%s", kind, arg);
-		char *members = sdb_get (core->anal->sdb_types, members_key, 0);
-		free (members_key);
+		const char *value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s", kind, arg);
+		char *members = value? strdup (value): NULL;
 		if (members) {
 			int nargs = r_str_split (members, ',');
 			int i;
@@ -2929,7 +3070,7 @@ static void cmd_id(RCore *core, PJ *pj, const char *input, bool is_array, int mo
 	const bool va = r_config_get_b (core->config, "io.va");
 	switch (input[1]) {
 	case '?': // "id?"
-		r_core_cmd_help (core, help_msg_id);
+		r_cons_cmd_help (core->cons, help_msg_id);
 		break;
 	case 'd': // "idd"
 		cmd_idd (core, input);
@@ -3046,7 +3187,7 @@ static void cmd_ik(RCore *core, const char *input) {
 		break;
 	case '?':
 	default:
-		r_core_cmd_help_contains (core, help_msg_i, "ik");
+		r_cons_cmd_help_match (core->cons, help_msg_i, "ik", 0, false);
 		break;
 	}
 }
@@ -3222,16 +3363,16 @@ static void cmd_ie(RCore *core, const char *input, PJ *pj, int mode, bool is_arr
 		core->table_query = strdup (input + 2);
 	}
 	if (i1 == '?') {
-		r_core_cmd_help (core, help_msg_ie);
+		r_cons_cmd_help (core->cons, help_msg_ie);
 	} else if (i1 == 's') {
 		if (i2 == '?') {
-			r_core_cmd_help_contains (core, help_msg_ie, "ies");
+			r_cons_cmd_help_match (core->cons, help_msg_ie, "ies", 0, false);
 		} else {
 			cmd_ies (core, input, pj, mode, va);
 		}
 	} else if (i1 == ' ' || i1 == '*' || i1 == 'e' || i1 == 'j' || i1 == '=' || i1 == 'q' || !i1) {
 		if (i1 && i2 == '?') {
-			r_core_cmd_help (core, help_msg_ie);
+			r_cons_cmd_help (core->cons, help_msg_ie);
 			return;
 		}
 		RList *objs = r_core_bin_files (core);
@@ -3339,37 +3480,43 @@ static int cmd_info(void *data, const char *input) {
 		cmd[1] = input[0];
 		switch (input[0]) {
 		case 'h': // "ih?"
-			r_core_cmd_help (core, help_msg_ih);
+			r_cons_cmd_help (core->cons, help_msg_ih);
 			break;
 		case 'E': // "iE?"
-			r_core_cmd_help (core, help_msg_iE);
+			r_cons_cmd_help (core->cons, help_msg_iE);
 			break;
 		case 's': // "is?"
-			r_core_cmd_help (core, help_msg_is);
+			r_cons_cmd_help (core->cons, help_msg_is);
 			break;
 		case 'S': // "iS?"
-			r_core_cmd_help (core, help_msg_iS);
+			r_cons_cmd_help (core->cons, help_msg_iS);
+			break;
+		case 'u': // "iu?"
+			r_cons_cmd_help (core->cons, help_msg_iu);
+			break;
+		case 'x': // "ix?"
+			r_cons_cmd_help (core->cons, help_msg_ix);
 			break;
 		case 'z': // "iz?"
-			r_core_cmd_help (core, help_msg_iz);
+			r_cons_cmd_help (core->cons, help_msg_iz);
 			break;
 		case 'c': // "ic?"
-			r_core_cmd_help (core, help_msg_ic);
+			r_cons_cmd_help (core->cons, help_msg_ic);
 			break;
 		case 'i': // "ii?"
-			r_core_cmd_help (core, help_msg_ii);
+			r_cons_cmd_help (core->cons, help_msg_ii);
 			break;
 		case 'y': // "iy?"
-			r_core_cmd_help (core, help_msg_iy);
+			r_cons_cmd_help (core->cons, help_msg_iy);
 			break;
 		case 'd': // "id?"
-			r_core_cmd_help (core, help_msg_id);
+			r_cons_cmd_help (core->cons, help_msg_id);
 			break;
 		case 'e': // "ie?"
-			r_core_cmd_help (core, help_msg_ie);
+			r_cons_cmd_help (core->cons, help_msg_ie);
 			break;
 		default:
-			r_core_cmd_help_contains (core, help_msg_i, cmd);
+			r_cons_cmd_help_match (core->cons, help_msg_i, cmd, 0, false);
 			break;
 		}
 		return 0;
@@ -3585,14 +3732,14 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	case 'h': // "ih"
 		if (question) {
-			r_core_cmd_help (core, help_msg_ih);
+			r_cons_cmd_help (core->cons, help_msg_ih);
 		} else {
 			RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0);
 		}
 		break;
 	case 'H': // "iH"
 		if (question) {
-			r_core_cmd_help (core, help_msg_iH);
+			r_cons_cmd_help (core->cons, help_msg_iH);
 		} else if (!bin_header (core, mode, pj)) {
 			/// XXX header vs fields wtf
 			if (!r_core_bin_info (core, R_CORE_BIN_ACC_HEADER, pj, mode, va, NULL, NULL)) {
@@ -3624,12 +3771,42 @@ static int cmd_info(void *data, const char *input) {
 	case 'Z': // "iZ"
 		RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0);
 		break;
-	case 'R': // "iR"
-		RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
+	case 'u': // "iu"
+		if (question) {
+			char *cmd = r_str_newf ("i%.*s", (int)(question - input), input);
+			r_cons_cmd_help_match (core->cons, help_msg_iu, cmd, 0, true);
+			free (cmd);
+		} else {
+			switch (input[1]) {
+			case 'x':
+				cmd_info_extract (core, r_str_trim_head_ro (input + 2), true, false);
+				break;
+			case 'o': // "iuo"
+				cmd_iuo (core, r_str_trim_head_ro (input + 2));
+				break;
+			case ',':
+				R_FREE (core->table_query);
+				core->table_query = strdup (input + 2);
+				RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
+				break;
+			case 0:
+			case '*':
+			case 'j':
+			case 'q':
+				RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
+				break;
+			default:
+				r_core_return_invalid_command (core, "iu", input[1]);
+				break;
+			}
+		}
+		break;
+	case 'x': // "ix"
+		cmd_ix (core, input);
 		break;
 	case 'g': // "ig"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_i, "ig");
+			r_cons_cmd_help_match (core->cons, help_msg_i, "ig", 0, true);
 		} else if (input[1] == 'h') {
 			char ss[64];
 			ut64 bs = r_bin_get_size (core->bin);
@@ -3758,23 +3935,24 @@ static int cmd_info(void *data, const char *input) {
 			r_list_free (objs);
 		}
 		break;
+	case 'R': // "iR", accidental alias for "ir"
 	case 'r': // "ir"
-	{
-		RList *objs = r_core_bin_files (core);
-		RListIter *iter;
-		RBinFile *bf;
-		RBinFile *cur = core->bin->cur;
-		if (!cur && pj) {
-			r_cons_print (core->cons, "[]");
+		{
+			RList *objs = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
+			RBinFile *cur = core->bin->cur;
+			if (!cur && pj) {
+				r_cons_print (core->cons, "[]");
+			}
+			r_list_foreach (objs, iter, bf) {
+				core->bin->cur = bf;
+				RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0);
+			}
+			core->bin->cur = cur;
+			r_list_free (objs);
 		}
-		r_list_foreach (objs, iter, bf) {
-			core->bin->cur = bf;
-			RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0);
-		}
-		core->bin->cur = cur;
-		r_list_free (objs);
-	}
-	break;
+		break;
 	case 'S': // "iS"
 		cmd_iS (core, input, &pj, mode, va, is_array);
 		break;
@@ -3785,7 +3963,7 @@ static int cmd_info(void *data, const char *input) {
 		cmd_iz (core, pj, mode, is_array, va, input);
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_i);
+		r_cons_cmd_help (core->cons, help_msg_i);
 		break;
 	case 0:
 		// do nothing

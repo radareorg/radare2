@@ -1802,3 +1802,304 @@ EXPECT=<<EOF
 0xfa4 = write (1, "Hello, world!.", 15)
 EOF
 RUN
+
+NAME=mips.gnu slt signed vs sltu unsigned
+FILE=malloc://32
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+aei
+wx 2a402a01
+ar t1=0xffffffff
+ar t2=1
+ar pc=0
+s 0
+aes
+ar t0
+wx 2b402a01
+ar t1=0xffffffff
+ar t2=1
+ar pc=0
+s 0
+aes
+ar t0
+wx 2a402a01
+ar t1=5
+ar t2=3
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=mips.gnu slti signed vs sltiu unsigned
+FILE=malloc://32
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+aei
+wx 01002829
+ar t1=0xffffffff
+ar pc=0
+s 0
+aes
+ar t0
+wx 0500282d
+ar t1=3
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+EOF
+RUN
+
+
+NAME=mips mult signed hi vs multu unsigned hi
+FILE=malloc://32
+ARGS=-a mips -b 32
+CMDS=<<EOF
+aei
+wx 18000901
+ar t0=0xffffffff
+ar t1=2
+ar pc=0
+s 0
+aes
+ar hi
+ar lo
+wx 19000901
+ar t0=0xffffffff
+ar t1=2
+ar pc=0
+s 0
+aes
+ar hi
+ar lo
+EOF
+EXPECT=<<EOF
+0xffffffff
+0xfffffffe
+0x00000001
+0xfffffffe
+EOF
+RUN
+
+NAME=mips srav arithmetic variable shift
+FILE=malloc://32
+ARGS=-a mips -b 32
+CMDS=<<EOF
+aei
+wx 07402a01
+ar t2=0x80000000
+ar t1=4
+ar pc=0
+s 0
+aes
+ar t0
+ao 1~type[1]
+EOF
+EXPECT=<<EOF
+0xf8000000
+sar
+EOF
+RUN
+
+NAME=mips.gnu mult signed hi and add overflow decode with hi lo registers
+FILE=malloc://32
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+aei
+wx 18000901
+ar t0=0xffffffff
+ar t1=2
+ar pc=0
+aes
+ar hi
+ar lo
+wx 19000901
+ar t0=0xffffffff
+ar t1=2
+ar pc=0
+aes
+ar hi
+ar lo
+wx 20108500
+ao 1~mnemonic
+ar a0=5
+ar a1=3
+ar pc=0
+aes
+ar v0
+wx 12480000
+ar pc=0
+aes
+ar t1
+EOF
+EXPECT=<<EOF
+0xffffffff
+0xfffffffe
+0x00000001
+0xfffffffe
+mnemonic: add
+0x00000008
+0xfffffffe
+EOF
+RUN
+
+NAME=mips.gnu jal writes the link register and branches to the target
+FILE=malloc://0x200
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0400000c
+aes
+ar pc
+ar ra
+EOF
+EXPECT=<<EOF
+0x00000010
+0x00000008
+EOF
+RUN
+
+NAME=mips bgezal links ra unconditionally (not taken still links)
+FILE=malloc://0x200
+ARGS=-a mips -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0f001105
+ar t0=0xffffffff
+ar ra=0
+ar pc=0
+s 0
+2aes
+ar pc
+ar ra
+EOF
+EXPECT=<<EOF
+0x00000008
+0x00000008
+EOF
+RUN
+
+NAME=mips bltzal links ra unconditionally (not taken still links)
+FILE=malloc://0x200
+ARGS=-a mips -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0f001005
+ar t0=1
+ar ra=0
+ar pc=0
+s 0
+2aes
+ar pc
+ar ra
+EOF
+EXPECT=<<EOF
+0x00000008
+0x00000008
+EOF
+RUN
+
+NAME=mips bgezal branches and links when taken
+FILE=malloc://0x200
+ARGS=-a mips -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0f001105
+ar t0=1
+ar ra=0
+ar pc=0
+s 0
+aes
+ar pc
+ar ra
+EOF
+EXPECT=<<EOF
+0x00000040
+0x00000008
+EOF
+RUN
+
+NAME=mips.gnu bgez branches to the decoded target
+FILE=malloc://0x200
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0f000105
+ar t0=1
+ar pc=0
+s 0
+aes
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000040
+EOF
+RUN
+
+NAME=mips.gnu bltz branches to the decoded target
+FILE=malloc://0x200
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0f000005
+ar t0=0xffffffffffffffff
+ar pc=0
+s 0
+aes
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000040
+EOF
+RUN
+
+NAME=mips.gnu bltzal emits esil, links ra and branches
+FILE=malloc://0x200
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0f001005
+ar t0=0xffffffffffffffff
+ar ra=0
+ar pc=0
+s 0
+aes
+ar pc
+ar ra
+EOF
+EXPECT=<<EOF
+0x00000040
+0x00000008
+EOF
+RUN
+
+NAME=mips.gnu bgezal links ra even when the branch is not taken
+FILE=malloc://0x200
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 0f001105
+ar t0=0xffffffffffffffff
+ar ra=0
+ar pc=0
+s 0
+2aes
+ar pc
+ar ra
+EOF
+EXPECT=<<EOF
+0x00000008
+0x00000008
+EOF
+RUN

@@ -17,7 +17,7 @@ ifeq ($(WITHPIC),1)
 all: ${ALL_TARGETS}
 
 ALL_TARGETS=
-FORMATS=any.mk elf.mk elf64.mk pe.mk pe64.mk te.mk mach0.mk
+FORMATS=null.mk elf.mk elf64.mk pe.mk pe64.mk te.mk mach0.mk
 FORMATS+=bios.mk ftab.mk gns1.mk mach064.mk dyldcache.mk xnu_kernelcache.mk java.mk
 FORMATS+=dex.mk fs.mk ningb.mk coff.mk xcoff64.mk ningba.mk xbe.mk zimg.mk
 FORMATS+=omf.mk cgc.mk dol.mk rel.mk nes.mk mbn.mk psxexe.mk
@@ -26,7 +26,11 @@ FORMATS+=mdmp.mk z64.mk qnx.mk prg.mk dmp64.mk xtac.mk pef.mk mdt.mk som.mk
 
 FORMATS+=xtr_dyldcache.mk xtr_ftab.mk
 
-include $(FORMATS)
+DEMANGLERS=cxx_demangle.mk dlang_demangle.mk ibmxl_demangle.mk
+DEMANGLERS+=java_demangle.mk msvc_demangle.mk objc_demangle.mk
+DEMANGLERS+=pascal_demangle.mk rust_demangle.mk swift_demangle.mk
+
+include $(FORMATS) $(DEMANGLERS)
 
 clean:
 	-rm -f *.so *.o ${STATIC_OBJ}

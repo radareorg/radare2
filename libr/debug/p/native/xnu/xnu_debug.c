@@ -1502,8 +1502,8 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 #ifndef __POWERPC__
 		{
 			int ret = proc_regionfilename (tid, address, module_name,
-							 sizeof (module_name));
-			module_name[ret] = 0;
+							 sizeof (module_name) - 1);
+			module_name[R_MAX (ret, 0)] = 0;
 		}
 #endif
 		if (true) {

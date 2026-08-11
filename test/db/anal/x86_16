@@ -323,3 +323,29 @@ EXPECT=<<EOF
 \           0000:0030     cd20           int 0x20
 EOF
 RUN
+
+NAME=x86-16 cdecl cc clobber and preserve register sets
+FILE=malloc://16
+ARGS=-e anal.arch=x86 -e asm.bits=16
+CMDS=<<EOF
+k anal/cc/cc.cdecl.clobber
+k anal/cc/cc.cdecl.preserve
+EOF
+EXPECT=<<EOF
+ax,bx,cx,dx
+si,di,bp,sp
+EOF
+RUN
+
+NAME=x86-16 fastcall cc clobber and preserve register sets
+FILE=malloc://16
+ARGS=-e anal.arch=x86 -e asm.bits=16
+CMDS=<<EOF
+k anal/cc/cc.fastcall.clobber
+k anal/cc/cc.fastcall.preserve
+EOF
+EXPECT=<<EOF
+ax,bx,cx,dx
+si,di,bp,sp
+EOF
+RUN

@@ -916,13 +916,14 @@ R_API int r_socket_read_block(RSocket *s, ut8 *buf, int len) {
 }
 
 R_API int r_socket_gets(RSocket *s, char *buf, int size) {
+	R_RETURN_VAL_IF_FAIL (s && buf && size > 0, -1);
 	int i = 0;
 	int ret = 0;
 
 	if (s->fd == R_INVALID_SOCKET) {
 		return -1;
 	}
-	while (i < size) {
+	while (i + 1 < size) {
 		ret = r_socket_read (s, (ut8 *)buf + i, 1);
 		if (ret == 0) {
 			if (i > 0) {

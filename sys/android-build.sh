@@ -3,6 +3,9 @@
 BUILD=1
 FLAGS=""
 PREFIX="/data/data/org.radare.radare2installer/radare2"
+BINDIR="${PREFIX}/bin"
+LIBDIR="${PREFIX}/lib"
+DATADIR="${PREFIX}/share"
 export PAGER=cat
 MAKE=make
 gmake --help >/dev/null 2>&1
@@ -111,7 +114,7 @@ echo NDK_ARCH: ${NDK_ARCH}
 echo "Using NDK_ARCH: ${NDK_ARCH}"
 echo "Using STATIC_BUILD: ${STATIC_BUILD}"
 
-export CFLAGS="-fPIC -fPIE ${FLAGS}"
+export CFLAGS="-fPIC ${FLAGS}"
 
 if [ "${BUILD}" = 1 ]; then
 	if [ -z "${NDK}" ]; then
@@ -162,8 +165,12 @@ rm -rf "${HERE}/${D}/${PREFIX}/bin/r2pm"
 
 # use busybox style symlinkz
 cd binr/blob
-#CFLAGS=-static LDFLAGS=-static ${MAKE} -j4 || exit 1
-${MAKE} -j4 || exit 1
+if [ "${STATIC_BUILD}" = 1 ]; then
+	rm -f "${HERE}/${D}/${BINDIR}/"*
+	LDFLAGS="-static ${LDFLAGS}" ${MAKE} -j4 || exit 1
+else
+	${MAKE} -j4 || exit 1
+fi
 ${MAKE} install PREFIX="${PREFIX}" DESTDIR="${HERE}/${D}" || exit 1
 mkdir -p ${HERE}/${D}/${PREFIX}/projects
 :> ${HERE}/${D}/${PREFIX}/projects/.empty
@@ -176,6 +183,9 @@ find ${D}/${DATADIR}/radare2/*/www
 # Remove development files
 rm -f ${HERE}/${D}/${LIBDIR}/radare2/*/*.so
 rm -f ${HERE}/${D}/${LIBDIR}/*.a
+if [ "${STATIC_BUILD}" = 1 ]; then
+	rm -f ${HERE}/${D}/${LIBDIR}/libr*.so*
+fi
 rm -rf ${HERE}/${D}/${DATADIR}/radare2/*/www/*/node_modules
 rm -rf ${HERE}/${D}/${PREFIX}/include
 eval `grep ^VERSION= ${HERE}/config-user.mk`

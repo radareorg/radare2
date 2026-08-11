@@ -111,9 +111,7 @@ R_IPI bool r_bin_name_is_unnamed(const char *name) {
 	}
 	if (r_str_startswith (name, "UnknownModule")) {
 		const char *p = name + strlen ("UnknownModule");
-		while (isdigit (*p)) {
-			p++;
-		}
+		p = r_str_trim_head_digits (p);
 		return *p == '_' && is_hex_number (p + 1);
 	}
 	return false;
@@ -590,7 +588,6 @@ R_API RBinString *r_bin_file_string_add(RBinFile *bf, ut64 paddr, ut64 vaddr, ut
 	}
 	RBinString bs = { 0 };
 	ut32 actual_len = 0, actual_size = 0;
-	int i;
 	switch (type) {
 	case R_STRING_TYPE_WIDE:
 		bs.string = extract_wide_string (buf, len, 2, &actual_len, &actual_size);
@@ -599,9 +596,7 @@ R_API RBinString *r_bin_file_string_add(RBinFile *bf, ut64 paddr, ut64 vaddr, ut
 		bs.string = extract_wide_string (buf, len, 4, &actual_len, &actual_size);
 		break;
 	default:
-		for (i = 0; i < len && buf[i] && IS_PRINTABLE (buf[i]); i++) {
-			actual_len++;
-		}
+		actual_len = (ut32)r_str_pnlen ((const char *)buf, (int)len);
 		actual_size = actual_len + 1;
 		bs.string = r_str_ndup ((char *)buf, actual_len);
 		break;

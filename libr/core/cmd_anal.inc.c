@@ -868,6 +868,9 @@ static RCoreHelpMessage help_msg_afs = {
 static RCoreHelpMessage help_msg_aft = {
 	"Usage:", "aft", "",
 	"aft", "", "type matching analysis for current function",
+	"afts", "", "synthesize struct types from pointer-argument and allocator-return access patterns",
+	"afts*", "", "show the synthesis as r2 commands without applying anything",
+	"aftsj", "", "apply the synthesis and report it in json",
 	NULL
 };
 
@@ -904,7 +907,7 @@ static RCoreHelpMessage help_msg_afvb = {
 	"afvb*", "", "same as afvb but in r2 commands",
 	"afvb", " [idx] [name] ([type])", "define base pointer based arguments, locals",
 	"afvbj", "", "return list of base pointer based arguments, locals in JSON format",
-	"afvb-", " [name]", "delete argument/locals at the given name",
+	"afvb-", " [name|idx]", "delete the argument/local with that name or frame offset (--N for negative)",
 	"afvbg", " [idx] [addr]", "define var get reference",
 	"afvbs", " [idx] [addr]", "define var set reference",
 	NULL
@@ -916,7 +919,7 @@ static RCoreHelpMessage help_msg_afvr = {
 	"afvr*", "", "same as afvr but in r2 commands",
 	"afvr", " [reg] [name] ([type])", "define register arguments",
 	"afvrj", "", "return list of register arguments in JSON format",
-	"afvr-", " [name]", "delete register arguments at the given index",
+	"afvr-", " [name|idx]", "delete the register argument with that name or index",
 	"afvrg", " [reg] [addr]", "define argument get reference",
 	"afvrs", " [reg] [addr]", "define argument set reference",
 	NULL
@@ -928,7 +931,7 @@ static RCoreHelpMessage help_msg_afvs = {
 	"afvs*", "", "same as afvs but in r2 commands",
 	"afvs", " [idx] [name] [type]", "define stack based arguments,locals",
 	"afvsj", "", "return list of stack based arguments and locals in JSON format",
-	"afvs-", " [name]", "delete stack based argument or locals with the given name",
+	"afvs-", " [name|idx]", "delete the stack argument/local with that name or frame offset (--N for negative)",
 	"afvsg", " [idx] [addr]", "define var get reference",
 	"afvss", " [idx] [addr]", "define var set reference",
 	NULL
@@ -1018,6 +1021,7 @@ static RCoreHelpMessage help_msg_ah = {
 	"aho", " call", "change opcode type (see aho?)",
 	"ahp", " addr", "set pointer hint",
 	"ahr", " val", "set hint for return value of a function",
+	"ahR", " text", "set register-use comment hint",
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
 	"aht", "[?][s] <type>", "mark immediate as a type offset (deprecated, moved to \"aho\")",
@@ -1162,6 +1166,7 @@ static RCoreHelpMessage help_msg_ar = {
 	"ars", "", "stack register state",
 	"arS", "", "show the size of the register profile",
 	"art", "", "list all register types",
+	"arv", "[?]", "show vector registers (also known as sve / packed / vector)",
 	"arw", " <hexnum>", "set contents of the register arena",
 	NULL
 };
@@ -1417,12 +1422,8 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	}
 	//	sdb_num_set (core->anal->sdb_types, args, (int)arg_count, 0);
 	if (arg_count > 0) {
-		char *k = r_str_newf ("func.%s.args", fcn->name);
-		char *v = r_str_newf ("%d", (int)arg_count);
-		sdb_set (core->anal->sdb_types, k, v, 0);
-		// sdb_num_set (core->anal->sdb_types, k, (ut64)arg_count, 0);
-		free (k);
-		free (v);
+		r_strf_buffer (16);
+		sdb_setf (core->anal->sdb_types, r_strf ("%d", (int)arg_count), 0, "func.%s.args", fcn->name);
 	}
 	r_anal_function_vars_cache_fini (&cache);
 }
@@ -1489,8 +1490,20 @@ static void cmd_aft(RCore *core, const char *input) {
 		r_core_cmd0 (core, "a:tp");
 		r_core_seek (core, seek, true);
 		break;
+	case 's': // "afts"
+		if (input[1] && input[1] != '*' && input[1] != 'j') {
+			r_core_return_invalid_command (core, "afts", input[1]);
+			break;
+		}
+		seek = core->addr;
+		r_core_cmdf (core, "a:tp synth%s", input + 1);
+		r_core_seek (core, seek, true);
+		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_aft);
+		r_cons_cmd_help (core->cons, help_msg_aft);
+		break;
+	default:
+		r_core_return_invalid_command (core, "aft", *input);
 		break;
 	}
 	r_cons_break_pop (core->cons);
@@ -1503,7 +1516,7 @@ static void find_refs(RCore *core, const char *glob) {
 		glob = "str.";
 	}
 	if (*glob == '?') {
-		r_core_cmd_help_match (core, help_msg_ax, "axF");
+		r_cons_cmd_help_match (core->cons, help_msg_ax, "axF", 0, true);
 		return;
 	}
 	char *cmd = r_str_newf (".(findstref) @@=`f~%s[0]`", glob);
@@ -1586,16 +1599,16 @@ static void flag_every_function(RCore *core) {
 static void var_help(RCore *core, char ch) {
 	switch (ch) {
 	case 'b':
-		r_core_cmd_help (core, help_msg_afvb);
+		r_cons_cmd_help (core->cons, help_msg_afvb);
 		break;
 	case 's':
-		r_core_cmd_help (core, help_msg_afvs);
+		r_cons_cmd_help (core->cons, help_msg_afvs);
 		break;
 	case 'r':
-		r_core_cmd_help (core, help_msg_afvr);
+		r_cons_cmd_help (core->cons, help_msg_afvr);
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_afv);
+		r_cons_cmd_help (core->cons, help_msg_afv);
 		break;
 	}
 }
@@ -1677,11 +1690,9 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 								ri->name, sname, stype);
 					}
 				} else {
-					int delta = (var->kind == R_ANAL_VAR_KIND_BPV)
-						? var->delta + fcn->bp_off
-						: var->delta;
-					r_cons_printf (core->cons, "'afv%c %d %s %s\n",
-							var->kind, delta, sname, stype);
+					r_cons_printf (core->cons, "'afv%c %"PFMT64d" %s %s\n", var->kind,
+							r_anal_var_frame_delta (core->anal, fcn, var->kind, var->delta),
+							sname, stype);
 				}
 			}
 			free (sname);
@@ -1967,7 +1978,7 @@ static int cmd_afv(RCore *core, const char *str) {
 	if (!fcn) {
 		switch (str[0]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_afv);
+			r_cons_cmd_help (core->cons, help_msg_afv);
 			break;
 		case 'j':
 			r_cons_println (core->cons, "{}");
@@ -1979,19 +1990,19 @@ static int cmd_afv(RCore *core, const char *str) {
 			if (str[1] == '?') {
 				switch (str[0]) {
 				case 'b':
-					r_core_cmd_help (core, help_msg_afvb);
+					r_cons_cmd_help (core->cons, help_msg_afvb);
 					break;
 				case 's':
-					r_core_cmd_help (core, help_msg_afvs);
+					r_cons_cmd_help (core->cons, help_msg_afvs);
 					break;
 				case 'r':
-					r_core_cmd_help (core, help_msg_afvr);
+					r_cons_cmd_help (core->cons, help_msg_afvr);
 					break;
 				default:
 					{
 						char cmd[] = "afvr";
 						cmd[3] = str[0];
-						r_core_cmd_help_contains (core, help_msg_afv, cmd);
+						r_cons_cmd_help_match (core->cons, help_msg_afv, cmd, 0, false);
 					}
 					break;
 				}
@@ -2187,10 +2198,11 @@ static int cmd_afv(RCore *core, const char *str) {
 	case 't': // "afvt"
 		if (fcn) {
 			p = strchr (ostr, ' ');
-			if (!p++) {
+			if (!p) {
 				free (ostr);
 				return false;
 			}
+			p++;
 
 			char *type = strchr (p, ' ');
 			if (type) {
@@ -2203,6 +2215,9 @@ static int cmd_afv(RCore *core, const char *str) {
 				return false;
 			}
 			if (type) {
+				r_str_trim (type);
+				// mid-line quotes reach the handler verbatim, keep them out of the type
+				r_str_trim_args (type);
 				r_anal_var_set_type (core->anal, v1, type);
 			} else {
 				r_cons_printf (core->cons, "%s\n", v1->type);
@@ -2219,7 +2234,7 @@ static int cmd_afv(RCore *core, const char *str) {
 		break;
 	default:
 		if (str[0]) {
-			r_core_cmd_help (core, help_msg_afv);
+			r_core_return_invalid_command (core, "afv", str[0]);
 			return false;
 		}
 	}
@@ -2259,8 +2274,10 @@ static int cmd_afv(RCore *core, const char *str) {
 			r_anal_function_delete_vars_by_kind (fcn, type);
 		} else {
 			RAnalVar *var = NULL;
-			if (isdigit (str[2] & 0xff)) {
-				var = r_anal_function_get_var (fcn, type, (int)r_num_math (core->num, str + 1));
+			if (isdigit (str[2] & 0xff) || (str[2] == '-' && isdigit (str[3] & 0xff))) {
+				const st64 idx = r_num_math (core->num, str + 2);
+				var = r_anal_function_get_var (fcn, type,
+					(int)r_anal_var_raw_delta (core->anal, fcn, type, idx));
 			} else {
 				char *name = r_str_trim_dup (str + 2);
 				if (name) {
@@ -2288,17 +2305,17 @@ static int cmd_afv(RCore *core, const char *str) {
 			if ((vaddr = strchr (p, ' '))) {
 				addr = r_num_math (core->num, vaddr);
 			}
-			RAnalVar *var = r_anal_function_get_var (fcn, str[0], idx);
+			const st64 delta = r_anal_var_raw_delta (core->anal, fcn, str[0], idx);
+			RAnalVar *var = r_anal_function_get_var (fcn, str[0], (int)delta);
 			if (!var) {
 				R_LOG_ERROR ("Cannot find variable with delta %d", idx);
 				res = false;
 				break;
 			}
 			int rw = (str[1] == 'g') ? R_PERM_R : R_PERM_W;
-			int ptr = *var->type == 's' ? idx - fcn->maxstack : idx;
 			RAnalOp *op = r_core_anal_op (core, addr, 0);
 			const char *ireg = op ? op->ireg : NULL;
-			r_anal_var_set_access (core->anal, var, ireg, addr, rw, ptr);
+			r_anal_var_set_access (core->anal, var, ireg, addr, rw, idx);
 			r_anal_op_free (op);
 		} else {
 			R_LOG_ERROR ("Missing argument");
@@ -2346,19 +2363,18 @@ static int cmd_afv(RCore *core, const char *str) {
 				  *vartype++ = 0;
 				  r_str_trim (vartype);
 			  }
-			  if (type == 'b') {
-				  delta -= fcn->bp_off;
-			  }
-			  if ((type == 'b') && delta > 0) {
-				  isarg = true;
-			  } else if (type == 's' && delta > fcn->maxstack) {
-				  isarg = true;
+			  delta = (int)r_anal_var_raw_delta (core->anal, fcn, type, delta);
+			  if (delta >= 0) {
+				  isarg = true; // frame delta 0 is the first argument slot
 			  }
 			  r_anal_function_set_var (fcn, delta, type, vartype, size, isarg, name);
 		  }
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_afv);
+		{
+			const char *base = type == 'b'? "afvb": type == 'r'? "afvr": "afvs";
+			r_core_return_invalid_command (core, base, str[1]);
+		}
 		break;
 	}
 	free (ostr);
@@ -2653,6 +2669,10 @@ static void esilmemrefs(RCore *core, const char *expr) {
 }
 
 static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int fmt) {
+	r_core_seek_arch_bits (core, core->addr);
+	if (!core->anal->arch->session) {
+		return;
+	}
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	core->rasm->parse->subrel = r_config_get_b (core->config, "asm.sub.rel");
@@ -2673,13 +2693,18 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		pj_a (pj);
 	}
 	const bool smart_mask = r_config_get_b (core->config, "anal.mask");
+	const bool stateful = core->anal->opt.stateful;
+	const ut32 opmask = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_OPEX | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_DISASM
+		| (stateful? R_ARCH_OP_MASK_STATEFUL: 0);
+	if (stateful) {
+		r_arch_session_reset (core->anal->arch->session);
+	}
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		RAnalOp asmop = {0};
 		addr = core->addr + idx;
 		r_asm_set_pc (core->rasm, addr);
 		hint = r_anal_hint_get (core->anal, addr);
-		ret = r_anal_op (core->anal, &op, addr, buf + idx, len - idx,
-			R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_OPEX | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_DISASM);
+		ret = r_anal_op (core->anal, &op, addr, buf + idx, len - idx, opmask);
 		(void)r_asm_disassemble (core->rasm, &asmop, buf + idx, len - idx);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
@@ -3554,13 +3579,13 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	PJ *pj = NULL;
 
 	if (r_str_startswith (input, "r?")) {
-		r_core_cmd_help (core, help_msg_afbr);
+		r_cons_cmd_help (core->cons, help_msg_afbr);
 		return true;
 	}
 	if (*input && input[1] == '?') {
 		char c[5] = "afbr";
 		c[3] = *input;
-		r_core_cmd_help_contains (core, help_msg_afb, c);
+		r_cons_cmd_help_match (core->cons, help_msg_afb, c, 0, false);
 		return true;
 	}
 
@@ -3673,7 +3698,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 				} else if (!strcmp (input, "b")) {
 					r_cons_printf (core->cons, "0x%08"PFMT64x"\n", b->addr);
 				} else if (*input == '?') {
-					r_core_cmd_help (core, help_msg_afbr);
+					r_cons_cmd_help (core->cons, help_msg_afbr);
 					return true;
 				} else {
 					r_cons_printf (core->cons, "0x%08"PFMT64x"\n", retaddr);
@@ -3712,7 +3737,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 				RListIter *iter;
 				r_list_uniq_inplace (b->switch_op->cases, caseval);
 				r_list_foreach (b->switch_op->cases, iter, cop) {
-					r_cons_printf (core->cons, " s 0x%08" PFMT64x, cop->addr);
+					r_cons_printf (core->cons, " s 0x%08" PFMT64x, cop->jump);
 				}
 			}
 			r_cons_newline (core->cons);
@@ -4059,7 +4084,7 @@ static void afbt_show_swop(RCore *core, RAnalBlock *block, int mode) {
 static void cmd_afbt(RCore *core, const char *input) {
 	const char first = input[0];
 	if (first == '?') {
-		r_core_cmd_help (core, help_msg_afbt);
+		r_cons_cmd_help (core->cons, help_msg_afbt);
 		return;
 	}
 	if (first == '-') {
@@ -4271,6 +4296,7 @@ static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
 	}
 	// rename args
 	char *k = r_str_newf ("func.%s.args", oname);
+	char *v;
 	const char *argstr = sdb_const_get (DB, k, 0);
 	if (R_STR_ISEMPTY (argstr)) {
 		free (k);
@@ -4279,12 +4305,9 @@ static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
 	int i, args = r_num_get (NULL, argstr);
 	sdb_unset (DB, k, 0);
 	free (k);
-	k = r_str_newf ("func.%s.args", nname);
-	char *v = r_str_newf ("%d", (int)args);
-	sdb_set (DB, k, v, 0);
-	free (v);
+	r_strf_buffer (16);
+	sdb_setf (DB, r_strf ("%d", (int)args), 0, "func.%s.args", nname);
 	// rename arg#
-	free (k);
 	for (i = 0; i < args; i++) {
 		k = r_str_newf ("func.%s.arg.%d", oname, i);
 		v = r_str_newf ("func.%s.arg.%d", nname, i);
@@ -4374,7 +4397,7 @@ static void cmd_afn(RCore *core, const char *input, bool quiet) {
 		break;
 	case 'a': // "afna"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_afna);
+			r_cons_cmd_help (core->cons, help_msg_afna);
 		} else {
 			char *res = r_anal_cmd (core->anal, "autoname");
 			if (R_STR_ISNOTEMPTY (res)) {
@@ -4391,7 +4414,7 @@ static void cmd_afn(RCore *core, const char *input, bool quiet) {
 		}
 		break;
 	case '?':
-		r_core_cmd_help_match (core, help_msg_afn, "afn");
+		r_cons_cmd_help_match (core->cons, help_msg_afn, "afn", 0, true);
 		break;
 	case 'q':
 		if (input[1] == ' ') {
@@ -4408,7 +4431,7 @@ static void cmd_afn(RCore *core, const char *input, bool quiet) {
 				addr = r_num_math (core->num, p);
 			}
 			if (r_str_startswith (name, "base64:")) {
-				char *res = (char *)r_base64_decode_dyn (name + 7, -1, NULL);
+				char *res = (char *)r_base64_decode_dyn (name + 7, -1, NULL, false);
 				if (res) {
 					free (name);
 					name = res;
@@ -4482,7 +4505,7 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 				pj_k (j, "args");
 				pj_a (j);
 				if (nargs) {
-					RList *list = r_core_get_func_args (core, fcn_name);
+					RList *list = r_core_get_func_args (core, fcn_name, false);
 					r_list_foreach (list, iter, arg) {
 						char *type = arg->orig_c_type;
 						pj_o (j);
@@ -4593,7 +4616,7 @@ static Sdb *__core_cmd_anal_fcn_stats(RCore *core, const char *input) {
 	}
 	switch (*input) {
 	case '?':
-		r_core_cmd_help (core, help_msg_afis);
+		r_cons_cmd_help (core->cons, help_msg_afis);
 		return NULL;
 	case 'f':
 	case 'o':
@@ -4765,7 +4788,7 @@ static void _abo(RCore *core, RAnalBlock *bb) {
 
 static void abm(RCore *core, int mode) {
 	if (mode == '?') {
-		r_core_cmd_help_contains (core, help_msg_ab, "abm");
+		r_cons_cmd_help_match (core->cons, help_msg_ab, "abm", 0, false);
 		return;
 	}
 	RAnalBlock *bb = r_anal_get_block_at (core->anal, core->addr);
@@ -4943,7 +4966,7 @@ static void cmd_afba(RCore *core, const char *input) {
 
 static void cmd_afbo(RCore *core, const char *input) {
 	if (input[3] == '?') {
-		r_core_cmd_help_match (core, help_msg_afb, "afbo");
+		r_cons_cmd_help_match (core->cons, help_msg_afb, "afbo", 0, true);
 		return;
 	}
 	if (input[3]) {
@@ -4978,12 +5001,7 @@ R_API char *fcnshowr(RAnalFunction *function) {
 		realname = function->name;
 	}
 
-	char *args = strdup ("");
-	char *sdb_ret = r_str_newf ("func.%s.ret", realname);
-	char *sdb_args = r_str_newf ("func.%s.args", realname);
-	// RList *args_list = r_list_newf ((RListFree) free);
-	// const char *ret_type = sdb_const_get (a->sdb_types, sdb_ret, 0);
-	const char *argc_str = sdb_const_get (a->sdb_types, sdb_args, 0);
+	const char *argc_str = sdb_const_getf (a->sdb_types, NULL, "func.%s.args", realname);
 	const int argc = argc_str? atoi (argc_str): 0;
 
 	const bool no_return = r_anal_noreturn_at_addr (a, function->addr);
@@ -4995,8 +5013,8 @@ R_API char *fcnshowr(RAnalFunction *function) {
 	}
 	int i;
 	for (i = 0; i < argc; i++) {
-		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", realname, i);
-		char *type = sdb_get (a->sdb_types, sdb_arg_i, 0);
+		const char *value = sdb_const_getf (a->sdb_types, NULL, "func.%s.arg.%d", realname, i);
+		char *type = value? strdup (value): NULL;
 		if (!type) {
 			continue;
 		}
@@ -5007,11 +5025,7 @@ R_API char *fcnshowr(RAnalFunction *function) {
 			r_strbuf_appendf (sb, "afvr %s %s %s\n", cc_arg, comma + 1, type);
 		}
 		free (type);
-		free (sdb_arg_i);
 	}
-	free (sdb_args);
-	free (sdb_ret);
-	free (args);
 	return r_strbuf_drain (sb);
 }
 
@@ -5046,13 +5060,9 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 		realname = fcn->name;
 	}
 
-	char *args = strdup ("");
-	char *sdb_ret = r_str_newf ("func.%s.ret", realname);
-	char *sdb_args = r_str_newf ("func.%s.args", realname);
-	// RList *args_list = r_list_newf ((RListFree) free);
 	unsigned int i;
-	const char *ret_type = sdb_const_get (a->sdb_types, sdb_ret, 0);
-	const char *argc_str = sdb_const_get (a->sdb_types, sdb_args, 0);
+	const char *ret_type = sdb_const_getf (a->sdb_types, NULL, "func.%s.ret", realname);
+	const char *argc_str = sdb_const_getf (a->sdb_types, NULL, "func.%s.args", realname);
 
 	int argc = argc_str? atoi (argc_str): 0;
 
@@ -5071,8 +5081,8 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 	pj_k (pj, "args");
 	pj_a (pj);
 	for (i = 0; i < argc; i++) {
-		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", realname, i);
-		char *arg_i = sdb_get (a->sdb_types, sdb_arg_i, 0);
+		const char *value = sdb_const_getf (a->sdb_types, NULL, "func.%s.arg.%d", realname, i);
+		char *arg_i = value? strdup (value): NULL;
 		if (!arg_i) {
 			continue;
 		}
@@ -5088,13 +5098,9 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 			}
 		}
 		free (arg_i);
-		free (sdb_arg_i);
 		pj_end (pj);
 	}
 	pj_end (pj);
-	free (sdb_args);
-	free (sdb_ret);
-	free (args);
 	pj_end (pj);
 	char *s = pj_drain (pj);
 	r_cons_println (core->cons, s);
@@ -5229,7 +5235,7 @@ static void cmd_afbc(RCore *core, const char *input) {
 		return;
 	}
 	if (*ptr == '?') {
-		r_core_cmd_help_match (core, help_msg_afb, "afbc");
+		r_cons_cmd_help_match (core->cons, help_msg_afb, "afbc", 0, true);
 	} else if (!*ptr) {
 		RAnalBlock *bb = r_anal_get_block_at (core->anal, core->addr);
 		if (bb && (bb->color.r || bb->color.g || bb->color.b)) {
@@ -5587,7 +5593,7 @@ static char *afch_tostring(RCore *core, RAnalFunction *fcn, bool json) {
 // "afch" - dyncc syntax help and per-function dyncc inspector
 static void cmd_afch(RCore *core, RAnalFunction *fcn, bool json) {
 	if (!json) {
-		r_core_cmd_help (core, help_msg_dyncc);
+		r_cons_cmd_help (core->cons, help_msg_dyncc);
 		if (!fcn) {
 			return;
 		}
@@ -5607,7 +5613,7 @@ static void cmd_afch(RCore *core, RAnalFunction *fcn, bool json) {
 static void cmd_afix(RCore *core, const char *input) {
 	switch (input[3]) {
 	case '?': // "afix?"
-		r_core_cmd_help_contains (core, help_msg_afi, "afix");
+		r_cons_cmd_help_match (core->cons, help_msg_afi, "afix", 0, false);
 		break;
 	case 'q': // "afixq"
 	case 'j': // "afixj"
@@ -5623,39 +5629,34 @@ static void cmd_afix(RCore *core, const char *input) {
 }
 
 #define DEFAULT_NARGS 4
-static char *print_fcn_arg(RCore *core, const char *type, const char *name, const char *fmt, const ut64 addr, const int on_stack, int asm_types) {
-	if (*type && on_stack == 1 && asm_types > 1) {
+static char *print_fcn_arg(RCore *core, const RAnalFuncArg *arg, ut64 addr, int asm_types) {
+	const char *type = r_str_get (arg->orig_c_type);
+	if (*type && arg->on_stack && asm_types > 1) {
 		return strdup (type);
 	}
-	char *argstr = NULL;
-	if (addr != UT32_MAX && addr != UT64_MAX  && addr != 0) {
-		char *safe_name = r_str_sanitize_r2 (name);
-		char *cmd = r_str_newf ("pfq %s%s %s",
-			(on_stack == 1) ? "*" : "", fmt, safe_name);
-		char *res = r_core_call_str_at (core, addr, cmd);
-		free (cmd);
-		free (safe_name);
-		r_str_trim (res);
-		if (r_str_startswith (res, "\"\\xff\\xff")) {
-			argstr = strdup ("\"\"");
-			free (res);
-		} else {
-			argstr = res;
-		}
-	} else {
-		if (strchr (type, '*')) {
-			argstr = strdup ("(void*)-1");
-		} else {
-			argstr = strdup ("-1");
-		}
+	if (addr == UT32_MAX || addr == UT64_MAX || addr == 0) {
+		return strdup (strchr (type, '*')? "(void*)-1": "-1");
 	}
-	return argstr;
+	if (!arg->fmt) {
+		return NULL; // no format directive to render it with, and pf has nothing to print
+	}
+	char *safe_name = r_str_sanitize_r2 (arg->name);
+	char *cmd = r_str_newf ("pfq %s%s %s", arg->on_stack? "*": "", arg->fmt, safe_name);
+	char *res = r_core_call_str_at (core, addr, cmd);
+	free (cmd);
+	free (safe_name);
+	r_str_trim (res);
+	if (r_str_startswith (res, "\"\\xff\\xff")) {
+		free (res);
+		return strdup ("\"\"");
+	}
+	return res;
 }
 
 static void cmd_afbs(RCore *core, const char *input) {
 	switch (input[3]) {
 	case '?':
-		r_core_cmd_help (core, help_msg_afbs);
+		r_cons_cmd_help (core->cons, help_msg_afbs);
 		break;
 	case 'a':
 	case 's':
@@ -5708,7 +5709,7 @@ static void cmd_afls(RCore *core, const char *input) {
 		r_core_return_invalid_command (core, "afls", input[3]);
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_afls);
+		r_cons_cmd_help (core->cons, help_msg_afls);
 		break;
 	case 'a': // "aflsa"
 		core->anal->fcns->sorted = false;
@@ -5746,6 +5747,17 @@ static void cmd_afls(RCore *core, const char *input) {
 		r_core_return_invalid_command (core, "afbl", input[3]);
 		break;
 	}
+}
+
+static void afsv_flush(RCore *core, RStrBuf *sb, PJ *pj) {
+	char *s = r_strbuf_drain (sb);
+	if (pj) {
+		free (s);
+		pj_end (pj);
+		s = pj_drain (pj);
+	}
+	r_cons_printf (core->cons, "%s\n", s);
+	free (s);
 }
 
 static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
@@ -5809,31 +5821,25 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 #endif
 		}
 	}
-	int s_width = (core->anal->config->bits == 64)? 8: 4;
-	ut64 spv = r_reg_getv (core->anal->reg, "SP");
-	r_reg_setv (core->anal->reg, "SP", spv + s_width); // temporarily set stack ptr to sync with carg.c
-	RList *list = r_core_get_func_args (core, fcn_name);
+	free (key);
+	RList *list = r_core_get_func_args (core, fcn_name, true);
 	if (!r_list_empty (list)) {
-		bool on_stack = false;
 		if (pj) {
-			pj_kn (pj, "argc", nargs);
+			pj_kn (pj, "argc", r_list_length (list)); // expanded varargs outnumber the declared args
 			pj_ka (pj, "argv");
 		}
 		r_list_foreach (list, iter, arg) {
-			if (arg->cc_source && *arg->cc_source == '^') {
-				on_stack = true;
-			}
+			// an unreadable slot still reports its home; only the rendered value goes unresolved
+			const ut64 src = arg->value_set? arg->src: UT64_MAX;
 			nextele = r_list_iter_get_next (iter);
 			if (pj) {
 				pj_o (pj);
-				ut64 v = arg->src;
-				pj_kn (pj, "num", v);
-				const RList *list = r_flag_get_list (core->flags, v);
-				RFlagItem *item = r_list_last (list);
+				pj_kn (pj, "num", arg->src);
+				RFlagItem *item = r_flag_get_in (core->flags, arg->src);
 				if (item) {
 					pj_ks (pj, "name", item->name);
 				}
-				char *s = print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, asmtypes);
+				char *s = print_fcn_arg (core, arg, src, asmtypes);
 				// char *s = r_core_cmd_strf (core, "ps0 @ 0x%08"PFMT64x, v); r_str_trim (s);
 				if (R_STR_ISNOTEMPTY (s)) {
 					pj_ks (pj, "str", s);
@@ -5856,7 +5862,7 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 					}
 				} else {
 					// TODO: may need ds_comment_esil
-					char *argstr = print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, asmtypes);
+					char *argstr = print_fcn_arg (core, arg, src, asmtypes);
 					if (R_STR_ISNOTEMPTY (argstr)) {
 						r_strbuf_append (sb, argstr);
 					} else {
@@ -5871,8 +5877,8 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 			pj_end (pj);
 		}
 		r_list_free (list);
-		free (key);
-		goto fin;
+		afsv_flush (core, sb, pj);
+		return;
 	}
 	r_list_free (list);
 	if (fcn) {
@@ -5897,12 +5903,9 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 				// TODO: show value (string, flag if any in that address)
 				pj_o (pj);
 				pj_kn (pj, "num", v);
-				const RList *list = r_flag_get_list (core->flags, v);
-				if (list) {
-					RFlagItem *item = r_list_last (list);
-					if (item) {
-						pj_ks (pj, "name", item->name);
-					}
+				RFlagItem *item = r_flag_get_in (core->flags, v);
+				if (item) {
+					pj_ks (pj, "name", item->name);
 				}
 				char *s = r_core_cmd_strf (core, "ps0 @ 0x%08"PFMT64x, v);
 				r_str_trim (s);
@@ -5929,16 +5932,7 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 			pj_end (pj);
 		}
 	}
-fin:
-	r_reg_setv (core->anal->reg, "SP", spv); // reset stack ptr
-	char *s = r_strbuf_drain (sb);
-	if (pj) {
-		free (s);
-		pj_end (pj);
-		s = pj_drain (pj);
-	}
-	r_cons_printf (core->cons, "%s\n", s);
-	free (s);
+	afsv_flush (core, sb, pj);
 }
 
 static bool afla_leafs(void *user, const ut64 addr, const void *data) {
@@ -5988,7 +5982,7 @@ static void cmd_aflp(RCore *core, const char *input) {
 	RListIter *iter;
 	switch (*input) {
 	case '?':
-		r_core_cmd_help (core, help_msg_aflp);
+		r_cons_cmd_help (core->cons, help_msg_aflp);
 		break;
 	case '-':
 		if (input[1] == '*') {
@@ -6198,7 +6192,7 @@ static int cmd_af(RCore *core, const char *input) {
 		{
 		ut64 addr = 0;
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_af, "afd");
+			r_cons_cmd_help_match (core->cons, help_msg_af, "afd", 0, true);
 		} else if (input[2] == ' ') {
 			addr = r_num_math (core->num, input + 2);
 		} else {
@@ -6234,7 +6228,7 @@ static int cmd_af(RCore *core, const char *input) {
 		break;
 	case 'u': // "afu"
 		if (input[2] == '?') {
-			r_core_cmd_help (core, help_msg_afu);
+			r_cons_cmd_help (core->cons, help_msg_afu);
 			break;
 		}
 
@@ -6273,7 +6267,7 @@ static int cmd_af(RCore *core, const char *input) {
 		break;
 	case '+': { // "af+"
 		if (input[2] == '?' || !input[2]) {
-			r_core_cmd_help (core, help_msg_af_plus);
+			r_cons_cmd_help (core->cons, help_msg_af_plus);
 			break;
 		}
 		char *ptr = input[2]? r_str_trim_dup (input + 2): r_str_newf ("0x%"PFMT64x, core->addr);
@@ -6337,7 +6331,7 @@ static int cmd_af(RCore *core, const char *input) {
 	case 'o': // "afo"
 		switch (input[2]) {
 		case '?':
-			r_core_cmd_help_match (core, help_msg_af, "afo");
+			r_cons_cmd_help_match (core->cons, help_msg_af, "afo", 0, true);
 			break;
 		case 'j':
 			{
@@ -6403,9 +6397,9 @@ static int cmd_af(RCore *core, const char *input) {
 		switch (input[2]) {
 		case '?':
 			if (input[3] == '?') {
-				r_core_cmd_help (core, help_msg_afi_fields);
+				r_cons_cmd_help (core->cons, help_msg_afi_fields);
 			} else {
-				r_core_cmd_help (core, help_msg_afi);
+				r_cons_cmd_help (core->cons, help_msg_afi);
 			}
 			break;
 		case 'x': // "afix"
@@ -6425,13 +6419,13 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case 'l': // "afil"
 			if (input[3] == '?') {
-				r_core_cmd_help (core, help_msg_afll);
+				r_cons_cmd_help (core->cons, help_msg_afll);
 				break;
 			}
 			/* fallthrough */
 		case 'i': // "afii"
 			if (input[3] == '?') {
-				r_core_cmd_help (core, help_msg_afii);
+				r_cons_cmd_help (core->cons, help_msg_afii);
 			} if (input[3] == '-') {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
@@ -6528,20 +6522,19 @@ static int cmd_af(RCore *core, const char *input) {
 			}
 			break;
 		default:
-			r_core_cmd_help (core, help_msg_afi);
+			r_core_return_invalid_command (core, "afi", input[2]);
 			break;
 		}
 		break;
 	case 'l': // "afl"
 		switch (input[2]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_afl);
+			r_cons_cmd_help (core->cons, help_msg_afl);
 			break;
 		case 'x': // "aflx"
 			switch (input[3]) {
-			default:
 			case '?':
-				r_core_cmd_help (core, help_msg_aflx);
+				r_cons_cmd_help (core->cons, help_msg_aflx);
 				return true;
 			case 'v': // "aflxv"
 			case '*': // "aflx*"
@@ -6592,6 +6585,9 @@ static int cmd_af(RCore *core, const char *input) {
 			case 'j': // "aflxj"
 				cmd_aflxj (core);
 				break;
+			default:
+				r_core_return_invalid_command (core, "aflx", input[3]);
+				break;
 			}
 			break;
 		case 's': // "afls"
@@ -6602,14 +6598,14 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case 'l': // "afll"
 			if (input[3] == '?') {
-				r_core_cmd_help (core, help_msg_afll);
+				r_cons_cmd_help (core->cons, help_msg_afll);
 			} else {
 				r_core_anal_fcn_list (core, NULL, input + 2);
 			}
 			break;
 		case ',': // "afl,"
 			if (input[3] == '?') {
-				r_core_cmd_help (core, help_msg_aflt);
+				r_cons_cmd_help (core->cons, help_msg_aflt);
 				r_core_cmd0 (core, "is,:help");
 			} else {
 				r_core_anal_fcn_list (core, NULL, input + 2);
@@ -6638,7 +6634,7 @@ static int cmd_af(RCore *core, const char *input) {
 			r_core_anal_fcn_list (core, NULL, "o");
 			break;
 		default: // "afl "
-			r_core_cmd_help (core, help_msg_afl);
+			r_core_return_invalid_command (core, "afl", input[2]);
 			break;
 		}
 		break;
@@ -6667,7 +6663,7 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case '!': { // "afs!"
 			char *sig = r_core_cmd_str (core, "afs");
-			char *data = r_core_editor (core, NULL, sig);
+			char *data = r_core_editor (core, NULL, sig, NULL);
 			if (sig && data) {
 				r_core_callf (core, "afs %s", data);
 			}
@@ -6744,7 +6740,7 @@ static int cmd_af(RCore *core, const char *input) {
 		}
 		case 'v': // "afsv"
 			if (strchr (input, '?')) {
-				r_core_cmd_help_match (core, help_msg_af, "afsv");
+				r_cons_cmd_help_match (core->cons, help_msg_af, "afsv", 0, true);
 			} else if (input[3] == 'j') { // "afsvj"
 				ut64 pc = core->addr;
 				if (input[4] == ' ') {
@@ -6759,14 +6755,17 @@ static int cmd_af(RCore *core, const char *input) {
 				cmd_afsv (core, pc, 0);
 			}
 			break;
+		case '?':
+			r_cons_cmd_help (core->cons, help_msg_afs);
+			break;
 		default:
-			r_core_cmd_help (core, help_msg_afs);
+			r_core_return_invalid_command (core, "afs", input[2]);
 			break;
 		}
 		break;
 	case 'm': // "afm" - merge two functions
 		if (input[2] == '?') {
-			r_core_cmd_help (core, help_msg_afm);
+			r_cons_cmd_help (core->cons, help_msg_afm);
 			break;
 		}
 		r_core_anal_fcn_merge (core, core->addr, r_num_math (core->num, input + 2));
@@ -6796,7 +6795,7 @@ static int cmd_af(RCore *core, const char *input) {
 				R_LOG_ERROR ("Cannot find function at 0x08%" PFMT64x, core->addr);
 			}
 		} else if (input[2] == '?') {
-			r_core_cmd_help (core, help_msg_afC);
+			r_cons_cmd_help (core->cons, help_msg_afC);
 		} else {
 			afCc (core, r_str_trim_head_ro (input + 2));
 		}
@@ -6838,7 +6837,7 @@ static int cmd_af(RCore *core, const char *input) {
 			if (input[3] == 'j') {
 				r_core_call (core, "afcfj");
 			} else if (input[3] == '?') {
-				r_core_cmd_help_match (core, help_msg_afc, "afci");
+				r_cons_cmd_help_match (core->cons, help_msg_afc, "afci", 0, true);
 			} else if (input[3] == ' ') {
 				cmd_afci (core, fcn, r_str_trim_head_ro (input + 4));
 			} else {
@@ -6850,7 +6849,7 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case 'h': // "afch" "afchj"
 			if (input[3] == '?') {
-				r_core_cmd_help (core, help_msg_afch);
+				r_cons_cmd_help (core->cons, help_msg_afch);
 			} else {
 				RAnalFunction *hfcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 				cmd_afch (core, hfcn, input[3] == 'j');
@@ -6858,14 +6857,14 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case 'k': // "afck"
 			if (input[3] == '?') {
-				r_core_cmd_help_match (core, help_msg_afc, "afck");
+				r_cons_cmd_help_match (core->cons, help_msg_afc, "afck", 0, true);
 			} else {
 				cmd_afck (core, NULL);
 			}
 			break;
 		case 'l': // "afcl" list all function Calling conventions.
 			if (input[3] == '?') {
-				r_core_cmd_help (core, help_msg_afc);
+				r_cons_cmd_help (core->cons, help_msg_afc);
 			} else {
 				cmd_tcc (core, input + 3);
 			}
@@ -6880,7 +6879,7 @@ static int cmd_af(RCore *core, const char *input) {
 						  sdb_free (db);
 					  }
 				  } else {
-					  r_core_cmd_help_match (core, help_msg_afc, "afco");
+					  r_cons_cmd_help_match (core->cons, help_msg_afc, "afco", 0, true);
 				  }
 				  free (dbpath);
 			  }
@@ -6900,54 +6899,46 @@ static int cmd_af(RCore *core, const char *input) {
 				}
 				pj_o (pj);
 			}
-			char *cmd = r_str_newf ("cc.%s.ret0", fcn->callconv);
-			const char *regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+			const char *regname = sdb_const_getf (core->anal->sdb_cc, NULL, "cc.%s.ret0", fcn->callconv);
 			if (regname) {
 				if (json) {
 					pj_ks (pj, "ret", regname);
 				} else {
-					r_cons_printf (core->cons, "%s: %s\n", cmd, regname);
+					r_cons_printf (core->cons, "cc.%s.ret0: %s\n", fcn->callconv, regname);
 				}
 			}
-			free (cmd);
 			if (json) {
 				pj_ka (pj, "args");
 			}
 			for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-				cmd = r_str_newf ("cc.%s.arg%d", fcn->callconv, i);
-				regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+				regname = sdb_const_getf (core->anal->sdb_cc, NULL, "cc.%s.arg%d", fcn->callconv, i);
 				if (regname) {
 					if (json) {
 						pj_s (pj, regname);
 					} else {
-						r_cons_printf (core->cons, "%s: %s\n", cmd, regname);
+						r_cons_printf (core->cons, "cc.%s.arg%d: %s\n", fcn->callconv, i, regname);
 					}
 				}
-				free (cmd);
 			}
 			if (json) {
 				pj_end (pj);
 			}
-			cmd = r_str_newf ("cc.%s.self", fcn->callconv);
-			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+			regname = sdb_const_getf (core->anal->sdb_cc, NULL, "cc.%s.self", fcn->callconv);
 			if (regname) {
 				if (json) {
 					pj_ks (pj, "self", regname);
 				} else {
-					r_cons_printf (core->cons, "%s: %s\n", cmd, regname);
+					r_cons_printf (core->cons, "cc.%s.self: %s\n", fcn->callconv, regname);
 				}
 			}
-			free (cmd);
-			cmd = r_str_newf ("cc.%s.error", fcn->callconv);
-			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+			regname = sdb_const_getf (core->anal->sdb_cc, NULL, "cc.%s.error", fcn->callconv);
 			if (regname) {
 				if (json) {
 					pj_ks (pj, "error", regname);
 				} else {
-					r_cons_printf (core->cons, "%s: %s\n", cmd, regname);
+					r_cons_printf (core->cons, "cc.%s.error: %s\n", fcn->callconv, regname);
 				}
 			}
-			free (cmd);
 			if (json) {
 				pj_end (pj);
 				r_cons_println (core->cons, pj_string (pj));
@@ -6975,7 +6966,7 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		}
 		case '?': // "afc?"
-			r_core_cmd_help (core, help_msg_afc);
+			r_cons_cmd_help (core->cons, help_msg_afc);
 			break;
 		default:
 			r_core_return_invalid_command (core, "afc", input[2]);
@@ -7001,7 +6992,7 @@ static int cmd_af(RCore *core, const char *input) {
 				R_LOG_ERROR ("afB: Cannot find function to set bits at 0x%08"PFMT64x, core->addr);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_af, "afB");
+			r_cons_cmd_help_match (core->cons, help_msg_af, "afB", 0, true);
 		}
 		break;
 	case 'b': // "afb"
@@ -7062,7 +7053,7 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case 't': // "afbt"
 			if (input[3] == '?') {
-				r_core_cmd_help_contains (core, help_msg_afb, "afbt");
+				r_cons_cmd_help_match (core->cons, help_msg_afb, "afbt", 0, false);
 				break;
 			}
 			if (input[3] && input[3] != ' ' && input[3] != '*' && input[3] != 'j' && input[3] != '-') {
@@ -7078,7 +7069,7 @@ static int cmd_af(RCore *core, const char *input) {
 			cmd_afbd (core, r_str_trim_head_ro (input + 3));
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_afb);
+			r_cons_cmd_help (core->cons, help_msg_afb);
 			break;
 		default:
 			r_core_return_invalid_command (core, "afb", input[3]);
@@ -7175,7 +7166,7 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 			}
 		default:
-			R_LOG_ERROR ("Invalid command. Look at af?");
+			r_core_return_invalid_command (core, "afx", input[2]);
 			break;
 		}
 		break;
@@ -7189,7 +7180,7 @@ static int cmd_af(RCore *core, const char *input) {
 		}
 		break;
 	case '?': // "af?"
-		r_core_cmd_help (core, help_msg_af);
+		r_cons_cmd_help (core->cons, help_msg_af);
 		break;
 	case 'r': // "afr" // analyze function recursively
 	case ' ': // "af "
@@ -7441,7 +7432,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 //				r_core_cmd0 (core, "ar A0,A1,A2,A3");
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_af, "afA");
+			r_cons_cmd_help_match (core->cons, help_msg_af, "afA", 0, true);
 		}
 		break;
 	case 'C': // "arC"
@@ -7452,20 +7443,20 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	case 'w': // "arw"
 		switch (str[1]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_arw);
+			r_cons_cmd_help (core->cons, help_msg_arw);
 			break;
 		case ' ':
 			r_reg_arena_set_bytes (core->anal->reg, str + 1);
 			break;
 		default:
-			r_core_cmd_help (core, help_msg_arw);
+			r_core_return_invalid_command (core, "arw", str[1]);
 			break;
 		}
 		break;
 	case 'a': // "ara"
 		switch (str[1]) {
 		case '?': // "ara?"
-			r_core_cmd_help (core, help_msg_ara);
+			r_cons_cmd_help (core->cons, help_msg_ara);
 			break;
 		case 's': // "aras"
 			r_reg_arena_swap (core->anal->reg, false);
@@ -7498,13 +7489,13 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			ut64 off = r_reg_getv (core->anal->reg, str + 1);
 			r_cons_printf (core->cons, "0x%08" PFMT64x "\n", off);
 		} else {
-			r_core_cmd_help (core, help_msg_ar);
+			r_cons_cmd_help (core->cons, help_msg_ar);
 		}
 		break;
 	case 'r': // "arr"
 		switch (str[1]) {
 		case '?':
-			r_core_cmd_help_contains (core, help_msg_dr, "drr");
+			r_cons_cmd_help_match (core->cons, help_msg_dr, "drr", 0, false);
 			break;
 		case 'j': // "arrj"
 			r_core_debug_rr (core, core->anal->reg, 'j');
@@ -7522,7 +7513,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		} break;
 	case 'b':
 		if (str[1] == '?') { // "arb" WORK IN PROGRESS // DEBUG COMMAND
-			r_core_cmd_help_contains (core, help_msg_ar, "arb");
+			r_cons_cmd_help_match (core->cons, help_msg_ar, "arb", 0, false);
 		} else {
 			int len, type = R_REG_TYPE_GPR;
 			arg = strchr (str, ' ');
@@ -7622,7 +7613,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				"drs+", "", "push register state",
 				"drs-", "", "pop register state",
 				NULL };
-			r_core_cmd_help (core, help_msg);
+			r_cons_cmd_help (core->cons, help_msg);
 		} break;
 		default:
 			{
@@ -7639,7 +7630,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		break;
 	case 't': // "art"
 		if (str[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_dr, "drt");
+			r_cons_cmd_help_match (core->cons, help_msg_dr, "drt", 0, false);
 		} else {
 			for (i = 0; (name = r_reg_type_tostring (i)); i++) {
 				r_cons_println (core->cons, name);
@@ -7648,6 +7639,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		break;
 	case 'n': // "arn"
 		cmd_drn (core, str);
+		break;
+	case 'v': // "arv"
+		cmd_reg_vector (core, core->anal->reg, str, false, help_msg_arv);
 		break;
 	case 'd': // "ard"
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, core->anal->config->bits,
@@ -7674,7 +7668,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 							size = sz;
 						}
 					} else {
-						r_core_cmd_help (core, help_msg_ar);
+						r_cons_cmd_help (core->cons, help_msg_ar);
 						break;
 					}
 				}
@@ -7905,6 +7899,123 @@ static const char *core_esil_step_status_name(RCoreEsilStepStatus status) {
 	return "completed";
 }
 
+static int core_esil_stop_trap_type(RCore *core) {
+	const int trap = core->esil.esil.trap;
+	const ut32 trap_code = core->esil.esil.trap_code;
+	if (trap > R_ANAL_TRAP_NONE && trap <= R_ANAL_TRAP_HALT) {
+		return trap;
+	}
+	if (trap_code > R_ANAL_TRAP_NONE && trap_code <= R_ANAL_TRAP_HALT) {
+		return trap_code;
+	}
+	return R_ANAL_TRAP_NONE;
+}
+
+static RDebugReasonType core_esil_debug_reason_from_stop(RCoreEsilStepStatus status, int trap_type) {
+	switch (status) {
+	case R_CORE_ESIL_STEP_STATUS_INTERRUPTED:
+		return R_DEBUG_REASON_USERSUSP;
+	case R_CORE_ESIL_STEP_STATUS_TIMEOUT:
+	case R_CORE_ESIL_STEP_STATUS_MAXSTEPS:
+		return R_DEBUG_REASON_STOPPED;
+	case R_CORE_ESIL_STEP_STATUS_BREAKPOINT:
+		return R_DEBUG_REASON_BREAKPOINT;
+	case R_CORE_ESIL_STEP_STATUS_IOTRAP:
+		if (trap_type == R_ANAL_TRAP_WRITE_ERR) {
+			return R_DEBUG_REASON_WRITERR;
+		}
+		return R_DEBUG_REASON_READERR;
+	case R_CORE_ESIL_STEP_STATUS_INVALID:
+		if (trap_type == R_ANAL_TRAP_EXEC_ERR) {
+			return R_DEBUG_REASON_SEGFAULT;
+		}
+		return R_DEBUG_REASON_ILLEGAL;
+	case R_CORE_ESIL_STEP_STATUS_TRAP:
+		if (trap_type == R_ANAL_TRAP_DIVBYZERO) {
+			return R_DEBUG_REASON_DIVBYZERO;
+		}
+		if (trap_type == R_ANAL_TRAP_BREAKPOINT) {
+			return R_DEBUG_REASON_BREAKPOINT;
+		}
+		return R_DEBUG_REASON_TRAP;
+	case R_CORE_ESIL_STEP_STATUS_ERROR:
+		return R_DEBUG_REASON_ERROR;
+	case R_CORE_ESIL_STEP_STATUS_DONE:
+		break;
+	}
+	return R_DEBUG_REASON_NONE;
+}
+
+static const char *core_esil_fault_stop_name(RCoreEsilStepStatus status, int trap_type) {
+	switch (status) {
+	case R_CORE_ESIL_STEP_STATUS_IOTRAP:
+		if (trap_type == R_ANAL_TRAP_WRITE_ERR) {
+			return "write error";
+		}
+		return "read error";
+	case R_CORE_ESIL_STEP_STATUS_INVALID:
+		if (trap_type == R_ANAL_TRAP_EXEC_ERR) {
+			return "execute error";
+		}
+		if (trap_type == R_ANAL_TRAP_UNALIGNED) {
+			return "unaligned instruction";
+		}
+		return "invalid instruction";
+	case R_CORE_ESIL_STEP_STATUS_TRAP:
+		return r_esil_trapstr (trap_type);
+	case R_CORE_ESIL_STEP_STATUS_ERROR:
+		return "step error";
+	default:
+		break;
+	}
+	return core_esil_step_status_name (status);
+}
+
+static void core_esil_update_debug_reason(RCore *core, RCoreEsilStepStatus status, ut64 stop_addr) {
+	if (!core->dbg || status == R_CORE_ESIL_STEP_STATUS_DONE) {
+		return;
+	}
+	const int trap_type = core_esil_stop_trap_type (core);
+	const ut64 trap_code = core->esil.esil.trap_code;
+	core->dbg->reason.type = core_esil_debug_reason_from_stop (status, trap_type);
+	core->dbg->reason.signum = -1;
+	core->dbg->reason.tid = core->dbg->tid;
+	core->dbg->reason.bp_addr = status == R_CORE_ESIL_STEP_STATUS_BREAKPOINT? stop_addr: 0;
+	core->dbg->reason.timestamp = r_time_now ();
+	core->dbg->reason.ptr = trap_code;
+	if (trap_type == R_ANAL_TRAP_READ_ERR || trap_type == R_ANAL_TRAP_WRITE_ERR) {
+		core->dbg->reason.addr = trap_code;
+	} else {
+		core->dbg->reason.addr = stop_addr;
+	}
+	core->dbg->stopaddr = stop_addr;
+}
+
+static void core_esil_log_stop_reason(RCore *core, RCoreEsilStepStatus status, ut64 stop_addr) {
+	switch (status) {
+	case R_CORE_ESIL_STEP_STATUS_INVALID:
+	case R_CORE_ESIL_STEP_STATUS_IOTRAP:
+	case R_CORE_ESIL_STEP_STATUS_TRAP:
+	case R_CORE_ESIL_STEP_STATUS_ERROR:
+		break;
+	default:
+		return;
+	}
+	const int trap_type = core_esil_stop_trap_type (core);
+	const ut64 trap_code = core->esil.esil.trap_code;
+	const char *reason = core_esil_fault_stop_name (status, trap_type);
+	if ((trap_type == R_ANAL_TRAP_READ_ERR || trap_type == R_ANAL_TRAP_WRITE_ERR)
+			&& trap_code != UT64_MAX) {
+		R_LOG_ERROR ("ESIL stopped at 0x%08" PFMT64x ": %s (%s at 0x%08" PFMT64x ")",
+			stop_addr, reason, r_esil_trapstr (trap_type), trap_code);
+	} else if (trap_type != R_ANAL_TRAP_NONE) {
+		R_LOG_ERROR ("ESIL stopped at 0x%08" PFMT64x ": %s (%s)",
+			stop_addr, reason, r_esil_trapstr (trap_type));
+	} else {
+		R_LOG_ERROR ("ESIL stopped at 0x%08" PFMT64x ": %s", stop_addr, reason);
+	}
+}
+
 // Steps the core ESIL VM until a stop condition is reached.
 static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver, bool stop_on_fault, ut64 *stop_addr) {
 	const int esiltimeout = r_config_get_i (core->config, "esil.timeout");
@@ -7916,6 +8027,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 	const bool single_step = until_addr == UT64_MAX && !until_expr;
 	const ut64 start = esiltimeout > 0? r_time_now_mono (): 0;
 	ut64 addr = r_reg_getv (core->anal->reg, "PC");
+	ut64 stop_reason_addr = addr;
 	ut64 steps = 0;
 	RCoreEsilStepStatus status = R_CORE_ESIL_STEP_STATUS_DONE;
 	r_cons_break_push (core->cons, NULL, NULL);
@@ -7928,6 +8040,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 				R_LOG_INFO ("[ESIL] Maximum steps exceeded at 0x%08" PFMT64x, addr);
 			}
 			status = R_CORE_ESIL_STEP_STATUS_MAXSTEPS;
+			stop_reason_addr = addr;
 			break;
 		}
 		if (r_cons_is_breaked (core->cons)) {
@@ -7935,6 +8048,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 				R_LOG_INFO ("[+] ESIL emulation interrupted at 0x%08" PFMT64x, addr);
 			}
 			status = R_CORE_ESIL_STEP_STATUS_INTERRUPTED;
+			stop_reason_addr = addr;
 			break;
 		}
 		if (esiltimeout > 0 && ((r_time_now_mono () - start) >> 20) >= esiltimeout) {
@@ -7942,6 +8056,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 				R_LOG_INFO ("[ESIL] Timeout exceeded at 0x%08" PFMT64x, addr);
 			}
 			status = R_CORE_ESIL_STEP_STATUS_TIMEOUT;
+			stop_reason_addr = addr;
 			break;
 		}
 		if (prev_addr) {
@@ -7970,13 +8085,16 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 			if (stop_addr) {
 				stop_addr[0] = prev_pc;
 			}
+			stop_reason_addr = prev_pc;
 			if (stop_on_fault) {
 				break;
 			}
 			const bool invalid = core->esil.esil.trap_code == R_ANAL_TRAP_INVALID;
 			if (invalid) {
+				if (!r_io_is_valid_offset (core->io, prev_pc, 0)) {
+					break;
+				}
 				if (breakoninvalid) {
-					R_LOG_INFO ("Stopped execution in an invalid instruction at 0x%08" PFMT64x " (see e??esil.breakoninvalid)", prev_pc);
 					break;
 				}
 				// step over the invalid instruction and keep going;
@@ -8021,6 +8139,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 				stop_addr[0] = addr;
 			}
 			status = R_CORE_ESIL_STEP_STATUS_BREAKPOINT;
+			stop_reason_addr = addr;
 			break;
 		}
 		if (until_expr) {
@@ -8039,6 +8158,10 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 		}
 	}
 	r_cons_break_pop (core->cons);
+	core_esil_update_debug_reason (core, status, stop_reason_addr);
+	if (!stop_on_fault) {
+		core_esil_log_stop_reason (core, status, stop_reason_addr);
+	}
 	return status;
 }
 
@@ -8146,7 +8269,7 @@ static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 static void cmd_anal_info(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '?':
-		r_core_cmd_help (core, help_msg_ai);
+		r_cons_cmd_help (core->cons, help_msg_ai);
 		break;
 	case ' ':
 		cmd_address_info (core, input, 0);
@@ -8194,7 +8317,7 @@ static void cmd_anal_info(RCore *core, const char *input) {
 			} else if (input[1] == '-') {
 				r_anal_purge_imports (core->anal);
 			} else {
-				r_core_cmd_help_match (core, help_msg_ai, "aii");
+				r_cons_cmd_help_match (core->cons, help_msg_ai, "aii", 0, true);
 			}
 		} else {
 			if (core->anal->imports) {
@@ -8288,7 +8411,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	char uri[32];
 	char nomalloc[256];
 	if (*input == '?') {
-		r_core_cmd_help (core, help_msg_aeim);
+		r_cons_cmd_help (core->cons, help_msg_aeim);
 		return;
 	}
 	if (r_config_get_b (core->config, "cfg.debug")) {
@@ -8647,6 +8770,13 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 	esil->cb.hook_mem_write = mymemwrite;
 	esil->cb.hook_mem_read = mymemread;
 	esil->nowrite = true;
+	const bool stateful = core->anal->opt.stateful;
+	const ut32 opmask = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT
+		| (stateful? R_ARCH_OP_MASK_STATEFUL: 0);
+	if (stateful && core->anal->arch->session) {
+		// the whole sweep is one linear decode window
+		r_arch_session_reset (core->anal->arch->session);
+	}
 	r_cons_break_push (core->cons, NULL, NULL);
 	for (ops = ptr = 0; ptr < buf_sz && hasNext (); ops++, ptr += len) {
 		if (r_cons_is_breaked (core->cons)) {
@@ -8656,7 +8786,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 			len = 100;
 			esilstr = esilexpr;
 		} else {
-			len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
+			len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, opmask);
 			esilstr = R_STRBUF_SAFEGET (&aop.esil);
 		}
 		if (len < 1) {
@@ -8829,7 +8959,13 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 	}
 	ut64 cursp = r_reg_getv (core->dbg->reg, "SP");
 	ut64 oldoff = core->addr;
-	const ut64 flags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM;
+	const bool stateful = core->anal->opt.stateful;
+	const ut64 flags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM
+		| (stateful? R_ARCH_OP_MASK_STATEFUL: 0);
+	if (stateful && core->anal->arch->session) {
+		// calls are skipped but stepping stays in address order, so this is one linear window
+		r_arch_session_reset (core->anal->arch->session);
+	}
 	for (i = 0, j = 0; j < ninstr; i++, j++) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
@@ -9098,6 +9234,11 @@ R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
 	const ut64 old_pc = r_reg_getv (core->anal->reg, "PC");
 	if (fcn) {
 		bool anal_verbose = r_config_get_b (core->config, "anal.verbose");
+		// PIC base register (e.g. PPC32 r30): seed at function entry so its SDA base derivation resolves
+		const char *gpseed = r_config_get (core->config, "anal.gpseed");
+		if (R_STR_ISNOTEMPTY (gpseed)) {
+			r_reg_setv (core->anal->reg, gpseed, r_config_get_i (core->config, "anal.gp"));
+		}
 		// emulate every instruction in the function recursively across all the basic blocks
 		r_list_foreach (fcn->bbs, iter, bb) {
 			ut64 pc = bb->addr;
@@ -9324,7 +9465,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		break;
 #endif
 	case '?': // "aeg?"
-		r_core_cmd_help (core, help_msg_aeg);
+		r_cons_cmd_help (core->cons, help_msg_aeg);
 		break;
 	default:
 		r_core_return_invalid_command (core, "aeg", argv[0][1]);
@@ -9358,7 +9499,7 @@ static void cmd_aep(RCore *core, const char *input) {
 	switch (input[1]) {
 	case 'a': // "aepa"
 		if (input[2] == '?') {
-			r_core_cmd_help_contains (core, help_msg_aep, "aepa");
+			r_cons_cmd_help_match (core->cons, help_msg_aep, "aepa", 0, false);
 		} else if (input[2] == ' ') {
 			addr = r_num_math (core->num, input + 2);
 		}
@@ -9391,7 +9532,7 @@ static void cmd_aep(RCore *core, const char *input) {
 			reg_name_role_set (core, "PC", r_num_math (core->num, input + 3));
 			r_core_cmd0 (core, ".ar*");
 		} else {
-			r_core_cmd_help_match (core, help_msg_aep, "aepc");
+			r_cons_cmd_help_match (core->cons, help_msg_aep, "aepc", 0, true);
 		}
 		break;
 	case 'k':
@@ -9421,7 +9562,7 @@ static void cmd_aep(RCore *core, const char *input) {
 		r_anal_pin (core->anal, addr, input + 2);
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_aep);
+		r_cons_cmd_help (core->cons, help_msg_aep);
 		break;
 	default:
 		r_core_return_invalid_command (core, "aep", input[1]);
@@ -9493,7 +9634,7 @@ static void cmd_aes(RCore *core, const char *input) {
 	// aesue -> until esil expression
 	switch (input[1]) {
 	case '?':
-		r_core_cmd_help (core, help_msg_aes);
+		r_cons_cmd_help (core->cons, help_msg_aes);
 		break;
 	case 'l': // "aesl"
 		{
@@ -9511,7 +9652,7 @@ static void cmd_aes(RCore *core, const char *input) {
 		break;
 	case 'b': // "aesb"
 		if (input[2] == '?') {
-			r_core_cmd_help_contains (core, help_msg_aes, "aesb");
+			r_cons_cmd_help_match (core->cons, help_msg_aes, "aesb", 0, false);
 		} else {
 			if (!r_core_esil_stepback (core)) {
 				R_LOG_ERROR ("Cannot step back");
@@ -9533,14 +9674,14 @@ static void cmd_aes(RCore *core, const char *input) {
 			ut64 nth = n2? r_num_math (core->num, n2): 1;
 			cmd_aespc (core, core->addr, off, (int)nth);
 		} else {
-			r_core_cmd_help_match (core, help_msg_aes, "aesB");
+			r_cons_cmd_help_match (core->cons, help_msg_aes, "aesB", 0, true);
 		}
 		break;
 	case 'u': // "aesu"
 		until_expr = NULL;
 		until_addr = UT64_MAX;
 		if (r_str_endswith (input, "?")) {
-			r_core_cmd_help_match (core, help_msg_aes, "aesu");
+			r_cons_cmd_help_match (core->cons, help_msg_aes, "aesu", 0, true);
 		} else switch (input[2]) {
 		case 'e': // "aesue"
 			until_expr = r_str_trim_head_ro (input + 3);
@@ -9586,14 +9727,14 @@ static void cmd_aes(RCore *core, const char *input) {
 			r_anal_op_free (op);
 			r_core_cmd0 (core, ".ar*");
 		} else {
-			r_core_cmd_help_match (core, help_msg_aes, "aesou");
+			r_cons_cmd_help_match (core->cons, help_msg_aes, "aesou", 0, true);
 		}
 		break;
 	case 'p': //"aesp"
 		n = strchr (input, ' ');
 		n1 = R_STR_ISNOTEMPTY (n) ? strchr (n + 1, ' ') : NULL;
 		if ((!n || !n1) || (!*n || !*n1)) {
-			r_core_cmd_help_match (core, help_msg_aes, "aesp");
+			r_cons_cmd_help_match (core->cons, help_msg_aes, "aesp", 0, true);
 			break;
 		}
 		adr = R_STR_ISNOTEMPTY (n)? r_num_math (core->num, n + 1): 0;
@@ -9621,7 +9762,7 @@ static void cmd_aet(RCore *core, const char *input) {
 	REsil *esil = core->anal->esil;
 	switch (input[1]) {
 	case '?':
-		r_core_cmd_help_contains (core, help_msg_ae, "aet");
+		r_cons_cmd_help_match (core->cons, help_msg_ae, "aet", 0, false);
 		break;
 	case 's': // "aets"
 		switch (input[2]) {
@@ -9656,7 +9797,7 @@ static void cmd_aet(RCore *core, const char *input) {
 			r_config_set_b (core->config, "dbg.trace", false);
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_aets);
+			r_cons_cmd_help (core->cons, help_msg_aets);
 			break;
 		default:
 			r_core_return_invalid_command (core, "aets", input[2]);
@@ -9684,7 +9825,7 @@ static void cmd_aea(RCore *core, const char *input, bool maxbytes) {
 	r_reg_setv (reg, "PC", newPC);
 	switch (input[1]) {
 	case '?': // "aea?"
-		r_core_cmd_help (core, help_msg_aea);
+		r_cons_cmd_help (core->cons, help_msg_aea);
 		break;
 	case 'e': // "aeae"
 		cmd_aea_stuff (core, 0, core->addr, -1, r_str_trim_head_ro (input + 2), maxbytes);
@@ -9803,14 +9944,14 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		break;
 	case 'C': // "aeC"
 		if (input[1] == '?') { // "aec?"
-			r_core_cmd_help (core, help_msg_aeC);
+			r_cons_cmd_help (core->cons, help_msg_aeC);
 		} else {
 			cmd_aeC (core, r_str_trim_head_ro (input + 1));
 		}
 		break;
 	case 'c': // "aec"
 		if (input[1] == '?') { // "aec?"
-			r_core_cmd_help (core, help_msg_aec);
+			r_cons_cmd_help (core->cons, help_msg_aec);
 		} else if (input[1] == 's') { // "aecs"
 			st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
 			ut64 countsteps = 0;
@@ -9897,7 +10038,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				RList *args = r_str_split_list (arg, " ", 0);
 				int i, argc = atoi (r_list_pop_head (args));
 				if (argc < 1) {
-					r_core_cmd_help (core, help_msg_aei);
+					r_cons_cmd_help (core->cons, help_msg_aei);
 					break;
 				}
 				char **argv = calloc (argc + 1, sizeof (void *));
@@ -9942,7 +10083,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			reg_name_role_set (core, "PC", core->addr);
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_aei);
+			r_cons_cmd_help (core->cons, help_msg_aei);
 			break;
 		case '-':
 			r_esil_reset (esil);
@@ -9951,7 +10092,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			cmd_aei (core);
 			break;
 		default:
-			r_core_cmd_help (core, help_msg_aei);
+			r_core_return_invalid_command (core, "aei", input[1]);
 			break;
 		}
 		break;
@@ -9974,8 +10115,11 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				sdb_reset (esil->stats);
 			}
 			break;
+		case '?':
+			r_cons_cmd_help (core->cons, help_msg_aek);
+			break;
 		default:
-			r_core_cmd_help (core, help_msg_aek);
+			r_core_return_invalid_command (core, "aek", input[1]);
 			break;
 		}
 		break;
@@ -10080,7 +10224,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			}
 			free (bytes);
 		} else { // "aex?"
-			r_core_cmd_help (core, help_msg_aex);
+			r_cons_cmd_help (core->cons, help_msg_aex);
 		}
 		break;
 	case '?': // "ae?"
@@ -10092,10 +10236,10 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				free (s);
 				break;
 			}
-			r_core_cmd_help (core, help_detail_ae);
+			r_cons_cmd_help (core->cons, help_detail_ae);
 			break;
 		}
-		r_core_cmd_help (core, help_msg_ae);
+		r_cons_cmd_help (core->cons, help_msg_ae);
 		break;
 	default:
 		r_core_return_invalid_command (core, "ae", input[0]);
@@ -10466,7 +10610,7 @@ static void cmd_aoc(RCore *core, const char *input) {
 	RAnalCycleHook *hook;
 	char ch = input[1];
 	if (ch== '?') {
-		r_core_cmd_help_contains (core, help_msg_ao, "aoc");
+		r_cons_cmd_help_match (core->cons, help_msg_ao, "aoc", 0, false);
 		return;
 	}
 	if (ch && ch != ' ') {
@@ -10523,7 +10667,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				input++;
 				break;
 			case '?': // "aoe?"
-				r_core_cmd_help_contains (core, help_msg_ao, "aoe");
+				r_cons_cmd_help_match (core->cons, help_msg_ao, "aoe", 0, false);
 				return;
 			}
 		}
@@ -10555,13 +10699,15 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			r_core_call (core, "/atl");
 		} else if (input[1] == '\0') {
 			r_core_cmd0 (core, "ao~^type[1]");
+		} else if (input[1] == '?') {
+			r_cons_cmd_help (core->cons, help_msg_aot);
 		} else {
-			r_core_cmd_help (core, help_msg_aot);
+			r_core_return_invalid_command (core, "aot", input[1]);
 		}
 		break;
 	case 'm': // "aom"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_aom);
+			r_cons_cmd_help (core->cons, help_msg_aom);
 		} else if (input[1] == 'd') {
 			const int id = (input[2] == ' ')
 				?(int)r_num_math (core->num, input + 2): -1;
@@ -10605,7 +10751,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		break;
 	case 'b': // "aob"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_aob);
+			r_cons_cmd_help (core->cons, help_msg_aob);
 		} else if (input[1] == 'j') { // "aobj"
 			const char *arg = r_str_trim_head_ro (input + 2);
 			cmd_anal_opcode_bits (core, arg, 'j');
@@ -10641,8 +10787,10 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			} else {
 				R_LOG_ERROR ("Unknown mnemonic");
 			}
+		} else if (input[1] == '?') {
+			r_cons_cmd_help_match (core->cons, help_msg_ao, "aod", 0, false);
 		} else {
-			r_core_cmd_help_contains (core, help_msg_ao, "aod");
+			r_core_return_invalid_command (core, "aod", input[1]);
 		}
 		break;
 	case '*':
@@ -10689,9 +10837,11 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			}
 		}
 		break;
-	default:
 	case '?':
-		r_core_cmd_help (core, help_msg_ao);
+		r_cons_cmd_help (core->cons, help_msg_ao);
+		break;
+	default:
+		r_core_return_invalid_command (core, "ao", input[0]);
 		break;
 	}
 }
@@ -10991,6 +11141,19 @@ static void cmd_sdbk(RCore *core, Sdb *db, const char *input) {
 	}
 }
 
+static void cmd_as(RCore *core, const char *sn) {
+	st64 num = r_syscall_get_num (core->anal->syscall, sn);
+	if (num == -1) {
+		const char *err = NULL;
+		num = (st64)r_num_math_err (core->num, sn, &err);
+		if (err || r_num_failed (core->num)) {
+			R_LOG_ERROR ("Unknown syscall");
+			return;
+		}
+	}
+	cmd_syscall_do (core, num, -1);
+}
+
 static void cmd_anal_syscall(RCore *core, const char *input) {
 	char snstr[32];
 	PJ *pj = NULL;
@@ -11112,23 +11275,13 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		cmd_syscall_do (core, -1, core->addr);
 		break;
 	case ' ':
-		{
-		const char *sn = r_str_trim_head_ro (input + 1);
-		st64 num = r_syscall_get_num (core->anal->syscall, sn);
-		if (num == -1) {
-			const char *err = NULL;
-			num = (st64)r_num_math_err (core->num, sn, &err);
-			if (err || r_num_failed (core->num)) {
-				R_LOG_ERROR ("Unknown syscall");
-				break;
-			}
-		}
-		cmd_syscall_do (core, num, -1);
-		}
+		cmd_as (core, r_str_trim_head_ro (input + 1));
+		break;
+	case '?':
+		r_cons_cmd_help (core->cons, help_msg_as);
 		break;
 	default:
-	case '?':
-		r_core_cmd_help (core, help_msg_as);
+		r_core_return_invalid_command (core, "as", input[0]);
 		break;
 	}
 }
@@ -11142,7 +11295,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 	if (is_json && !pj) {
 		return;
 	}
-	if (input && *input) {
+	if (R_STR_ISNOTEMPTY (input)) {
 		addr = r_num_math (core->num, input);
 	}
 	// eprintf ("Path between 0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", core->addr, addr);
@@ -11562,7 +11715,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	} break;
 	case 'v': // "axv"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_axv);
+			r_cons_cmd_help (core->cons, help_msg_axv);
 		} else {
 			cmd_afvx (core, NULL, input[1] == 'j');
 		}
@@ -11570,7 +11723,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'l': // "axl"
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_axl);
+			r_cons_cmd_help (core->cons, help_msg_axl);
 			break;
 		case 'j': // "axlj"
 			// XXX axj != axlj r_core_call (core, "axj");
@@ -11585,14 +11738,17 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		case 'q': // "axlq"
 			r_core_call (core, "axq");
 			break;
-		default:
+		case '\0': // "axl"
 			r_core_call (core, "ax");
+			break;
+		default:
+			r_core_return_invalid_command (core, "axl", input[1]);
 			break;
 		}
 		break;
 	case 't': { // "axt"
 		if (input[1] == '?') { // "axt?"
-			r_core_cmd_help (core, help_msg_axt);
+			r_cons_cmd_help (core->cons, help_msg_axt);
 			break;
 		}
 		if (input[1] == 'm') { // "axtm"
@@ -11801,12 +11957,26 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					free (buf_fcn);
 				}
 			} else {
-				r_core_cmd_help (core, help_msg_axt);
+				r_core_return_invalid_command (core, "axt", input[1]);
 				break;
 			}
 		} else {
-			if (input[1] == 'j') { // "axtj"
+			switch (input[1]) {
+			case 'j': // "axtj"
 				r_cons_println (core->cons, "[]");
+				break;
+			case '\0':
+			case ' ':
+			case '.':
+			case ',':
+			case 'f':
+			case 'g':
+			case 'q':
+			case '*':
+				break;
+			default:
+				r_core_return_invalid_command (core, "axt", input[1]);
+				break;
 			}
 		}
 		RVecAnalRef_free (list);
@@ -11873,7 +12043,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			pj_free (pj);
 		} else { // "axf"
 			if (input[1] == '?') { // "axf?"
-				r_core_cmd_help (core, help_msg_axf);
+				r_cons_cmd_help (core->cons, help_msg_axf);
 				break;
 			}
 			if (input[1] == 'm') { // "axfm"
@@ -12010,7 +12180,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case ' ': // "ax "
 		if (input[1] == '?') {
 			char *s = r_str_newf ("ax%c", input[0]);
-			r_core_cmd_help_match (core, help_msg_ax, s);
+			r_cons_cmd_help_match (core->cons, help_msg_ax, s, 0, true);
 			free (s);
 		} else {
 			char *ptr = strdup (r_str_trim_head_ro ((char *)input + 1));
@@ -12033,9 +12203,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			free (ptr);
 		}
 		break;
-	default:
 	case '?':
-		r_core_cmd_help (core, help_msg_ax);
+		r_cons_cmd_help (core->cons, help_msg_ax);
+		break;
+	default:
+		r_core_return_invalid_command (core, "ax", input[0]);
 		break;
 	}
 
@@ -12045,7 +12217,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 static void cmd_aheq(RCore *core, const char *input) {
 	const char ch0 = input[1];
 	if (ch0 == '?') {
-		r_core_cmd_help_match (core, help_msg_ah, "ah=");
+		r_cons_cmd_help_match (core->cons, help_msg_ah, "ah=", 0, true);
 		return;
 	} else if (!ch0) {
 		R_LOG_ERROR ("This command requires an address as argument");
@@ -12079,7 +12251,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			ut64 addr = r_num_math (core->num, input + 1);
 			r_core_anal_hint_print (core, addr, 0);
 		} else {
-			r_core_cmd_help (core, help_msg_ah);
+			r_cons_cmd_help (core->cons, help_msg_ah);
 		}
 		break;
 	case '.': // "ah."
@@ -12131,12 +12303,12 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				R_LOG_ERROR ("Unknown opcode type. Try: io, acmp, add, sync, call, cjmp, cmp, nop,,,");
 			}
 		} else {
-			r_core_cmd_help (core, help_msg_aho);
+			r_cons_cmd_help (core->cons, help_msg_aho);
 		}
 		break;
 	case 'b': // "ahb" set bits
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_ahb);
+			r_cons_cmd_help (core->cons, help_msg_ahb);
 		} else if (input[1] == '*') { // "ahb*"
 			char *s = r_core_cmd_str (core, "ah*~ahb");
 			r_cons_print (core->cons, s);
@@ -12168,7 +12340,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		break;
 	case 'i': // "ahi"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_ahi);
+			r_cons_cmd_help (core->cons, help_msg_ahi);
 			break;
 		}
 		if (input[1] == '-') { // "ahi-"
@@ -12205,7 +12377,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				}
 				r_anal_hint_free (hint);
 			} else {
-				r_core_cmd_help (core, help_msg_ahi);
+				r_cons_cmd_help (core->cons, help_msg_ahi);
 			}
 			break;
 		}
@@ -12235,7 +12407,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			}
 			r_anal_hint_free (hint);
 		} else {
-			r_core_cmd_help (core, help_msg_ahi);
+			r_cons_cmd_help (core->cons, help_msg_ahi);
 		}
 		break;
 	case 'h': // "ahh"
@@ -12296,7 +12468,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_cons_print (core->cons, s);
 			free (s);
 		} else {
-			r_core_cmd_help (core, help_msg_ahs);
+			r_cons_cmd_help (core->cons, help_msg_ahs);
 		}
 		break;
 	case 'S': // "ahS" set asm.syntax
@@ -12305,7 +12477,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_syntax (a, core->addr);
 		} else {
-			r_core_cmd_help_match (core, help_msg_ah, "ahS");
+			r_cons_cmd_help_match (core->cons, help_msg_ah, "ahS", 0, true);
 		}
 		break;
 	case 'd': // "ahd" set opcode string
@@ -12314,7 +12486,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_opcode (a, core->addr);
 		} else {
-			r_core_cmd_help_match (core, help_msg_ah, "ahd");
+			r_cons_cmd_help_match (core->cons, help_msg_ah, "ahd", 0, true);
 		}
 		break;
 	case 'e': // "ahe" set ESIL string
@@ -12323,7 +12495,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_esil (a, core->addr);
 		} else {
-			r_core_cmd_help_match (core, help_msg_ah, "ahe");
+			r_cons_cmd_help_match (core->cons, help_msg_ah, "ahe", 0, true);
 		}
 		break;
 #if 0
@@ -12342,6 +12514,19 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_unset_pointer (a, core->addr);
 		}
 		break;
+	case 'R': // "ahR"
+		if (input[1] == ' ') {
+			r_anal_hint_set_reguse (a, core->addr, input + 2);
+		} else if (input[1] == '-') {
+			r_anal_hint_set_reguse (a, core->addr, NULL);
+		} else {
+			RAnalHint *hint = r_anal_hint_get (a, core->addr);
+			if (hint && hint->reguse) {
+				r_cons_println (core->cons, hint->reguse);
+			}
+			r_anal_hint_free (hint);
+		}
+		break;
 	case 'r': // "ahr"
 		// XXX isnt this the same as 'aho ret' ?
 		if (input[1] == ' ') {
@@ -12349,7 +12534,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') { // "ahr-"
 			r_anal_hint_unset_ret (a, core->addr);
 		} else {
-			r_core_cmd_help (core, help_msg_ahr);
+			r_cons_cmd_help (core->cons, help_msg_ahr);
 		}
 		break;
 	case '*': // "ah*"
@@ -12498,8 +12683,12 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_op_fini (&op);
 			free (type);
 		} break;
+		case '?':
+		case '\0':
+			r_cons_cmd_help (core->cons, help_msg_aht);
+			break;
 		default:
-			r_core_cmd_help (core, help_msg_aht);
+			r_core_return_invalid_command (core, "aht", input[1]);
 			break;
 		}
 	}
@@ -12669,7 +12858,7 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 			if (strncmp (body, "base64:", B_LEN) == 0) {
 				if (body[B_LEN]) {
 					body = r_str_replace (body, "\\n", "", true);
-					char *newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1, NULL);
+					char *newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1, NULL, true);
 					if (!newbody) {
 						R_LOG_ERROR ("Invalid base64 string in agn (%s)", body+B_LEN);
 						r_str_argv_free (args);
@@ -12716,8 +12905,11 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 		break;
 	}
 	case '?':
+	case '\0':
+		r_cons_cmd_help (core->cons, help_msg_agn);
+		break;
 	default:
-		r_core_cmd_help (core, help_msg_agn);
+		r_core_return_invalid_command (core, "agn", *input);
 		break;
 	}
 }
@@ -12742,8 +12934,8 @@ static bool cmd_ageh(RCore *core, const char *input) {
 	ut64 a = r_num_math (core->num, arg);
 	ut64 b = r_num_math (core->num, sp);
 
-	r_strf_var (k, 64, "agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
-	sdb_set (core->sdb, k, add? "true": "", 0);
+	sdb_setf (core->sdb, add? "true": "", 0,
+		"agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
 	free (arg);
 	return true;
 }
@@ -12783,8 +12975,11 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 		cmd_ageh (core, input + 1);
 		break;
 	case '?':
+	case '\0':
+		r_cons_cmd_help (core->cons, help_msg_age);
+		break;
 	default:
-		r_core_cmd_help (core, help_msg_age);
+		r_core_return_invalid_command (core, "age", *input);
 		break;
 	}
 }
@@ -13219,7 +13414,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		}
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_ag);
+		r_cons_cmd_help (core->cons, help_msg_ag);
 		break;
 	default:
 		r_core_return_invalid_command (core, "ag", input[0]);
@@ -13276,7 +13471,29 @@ static char *_graph_node_info_get_body(void *data, void *user) {
 	return (info && info->body)? strdup (info->body): NULL;
 }
 
-static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, int use_utf, bool use_offset, const char *input) {
+static bool r_core_graph_print_is_valid_format(char ch) {
+	switch (ch) {
+	case 0:
+	case '*':
+	case '?':
+	case 'J':
+	case 'M':
+	case 'd':
+	case 'g':
+	case 'i':
+	case 'j':
+	case 'k':
+	case 'm':
+	case 't':
+	case 'v':
+	case 'w':
+		return true;
+	default:
+		return false;
+	}
+}
+
+static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, int use_utf, bool use_offset, const char *input, const char *basecmd) {
 	RAGraph *agraph = NULL;
 	RListIter *it;
 	RGraphNode *graphNode, *target;
@@ -13413,8 +13630,11 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 	case 'M':
 		mermaid_graph (core, graph, mermaid_nodeinfo_disasm);
 		break;
+	case '?':
+		r_cons_cmd_help (core->cons, help_msg_ag);
+		break;
 	default:
-		r_core_cmd_help (core, help_msg_ag);
+		r_core_return_invalid_command (core, basecmd, *input);
 		break;
 	}
 }
@@ -13480,7 +13700,7 @@ static bool r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 				bool found;
 				int i = ht_uu_find (ht, bb->addr, &found);
 				if (found) {
-					int i2 = ht_uu_find (ht, cop->addr, &found);
+					int i2 = ht_uu_find (ht, cop->jump, &found);
 					if (found) {
 						r_cons_printf (core->cons, "  edge [\n"
 								"    source  %d\n"
@@ -13622,7 +13842,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	core->graph->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
 	r_cons_enable_highlight (core->cons, false);
 	if (*input == '?') {
-		r_core_cmd_help (core, help_msg_ag);
+		r_cons_cmd_help (core->cons, help_msg_ag);
 		return;
 	}
 	switch (input[0]) {
@@ -13715,8 +13935,11 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 				free (cmdargs);
 			}
 			break;
+		case '?':
+			r_cons_cmd_help (core->cons, help_msg_ag);
+			break;
 		default:
-			r_core_cmd_help (core, help_msg_ag);
+			r_core_return_invalid_command (core, "agf", input[1]);
 			break;
 		}
 		break;
@@ -13765,8 +13988,11 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case '*':
 			r_core_anal_callgraph (core, UT64_MAX, R_GRAPH_FORMAT_CMD);
 			break;
+		case '?':
+			r_cons_cmd_help (core->cons, help_msg_ag);
+			break;
 		default:
-			r_core_cmd_help (core, help_msg_ag);
+			r_core_return_invalid_command (core, "agC", input[1]);
 			break;
 		}
 		break;
@@ -13809,22 +14035,38 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		}
 		break;
 	case 'x': {// "agx" cross refs
+		if (!r_core_graph_print_is_valid_format (input[1])) {
+			r_core_return_invalid_command (core, "agx", input[1]);
+			break;
+		}
+		if (input[1] == '?') {
+			r_cons_cmd_help (core->cons, help_msg_ag);
+			break;
+		}
 		RGraph *graph = r_core_anal_codexrefs (core, core->addr);
 		if (!graph) {
 			R_LOG_ERROR ("Cannot create graph");
 			break;
 		}
-		r_core_graph_print (core, graph, -1, true, input + 1);
+		r_core_graph_print (core, graph, -1, true, input + 1, "agx");
 		r_graph_free (graph);
 		break;
 	}
 	case 'i': { // "agi" import graph
+		if (!r_core_graph_print_is_valid_format (input[1])) {
+			r_core_return_invalid_command (core, "agi", input[1]);
+			break;
+		}
+		if (input[1] == '?') {
+			r_cons_cmd_help (core->cons, help_msg_ag);
+			break;
+		}
 		RGraph *graph = r_core_anal_importxrefs (core);
 		if (!graph) {
 			R_LOG_ERROR ("Cannot create graph");
 			break;
 		}
-		r_core_graph_print (core, graph, -1, true, input + 1);
+		r_core_graph_print (core, graph, -1, true, input + 1, "agi");
 		r_graph_free (graph);
 		break;
 	}
@@ -13863,8 +14105,11 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_core_anal_callgraph (core, core->addr, R_GRAPH_FORMAT_CMD);
 			break;
 		}
+		case '?':
+			r_cons_cmd_help (core->cons, help_msg_ag);
+			break;
 		default:
-			r_core_cmd_help (core, help_msg_ag);
+			r_core_return_invalid_command (core, "agc", input[1]);
 			break;
 		}
 		break;
@@ -13956,6 +14201,12 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 				  free (cmdargs);
 				  break;
 			  }
+		case '?':
+				  r_cons_cmd_help (core->cons, help_msg_ag);
+				  break;
+		default:
+				  r_core_return_invalid_command (core, "agd", input[1]);
+				  break;
 		}
 		break;
 	}
@@ -13970,7 +14221,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		}
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_ag);
+		r_core_return_invalid_command (core, "ag", input[0]);
 		break;
 	}
 }
@@ -13981,7 +14232,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	int rad;
 	PJ *pj = NULL;
 	if (*input == '?') {
-		r_core_cmd_help (core, help_msg_aar);
+		r_cons_cmd_help (core->cons, help_msg_aar);
 		return 0;
 	}
 
@@ -14437,7 +14688,7 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 		}
 		break;
 	case '?': // "abt?"
-		r_core_cmd_help (core, help_msg_abt);
+		r_cons_cmd_help (core->cons, help_msg_abt);
 		break;
 	default:
 		r_core_return_invalid_command (core, "abt", input[0]);
@@ -14448,7 +14699,7 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 static void cmd_anal_abp(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
-		r_core_cmd_help (core, help_msg_abp);
+		r_cons_cmd_help (core->cons, help_msg_abp);
 		break;
 	case 'f': // "abpf"
 		r_core_cmdf (core, "/agg %s", input + 1);
@@ -14460,7 +14711,7 @@ static void cmd_anal_abp(RCore *core, const char *input) {
 		char *p = strchr (input + 1, ' ');
 		if (!p) {
 			// TODO use r_cons_cmd_help_match () instead
-			r_core_cmd_help (core, help_msg_abp);
+			r_cons_cmd_help (core->cons, help_msg_abp);
 			return;
 		}
 		*p = 0;
@@ -14675,13 +14926,7 @@ static bool check_string_at(RCore *core, ut64 addr, bool and_print_it) {
 		nullbyte--;
 	}
 	if (nullbyte < len && nullbyte > 3) {
-		is_ascii = true;
-		// it's a null terminated string!
-		for (i = 0; i < nullbyte; i++) {
-			if (!IS_PRINTABLE (buf[i])) {
-				is_ascii = false;
-			}
-		}
+		is_ascii = r_str_pnlen ((const char *)buf, nullbyte) == (size_t)nullbyte;
 		if (!is_ascii) {
 			is_utf8 = true;
 			if ((buf[0] & 0xf0) == 0xf0 && (buf[1] & 0xf0) == 0xf0) {
@@ -14701,14 +14946,14 @@ static bool check_string_at(RCore *core, ut64 addr, bool and_print_it) {
 	// utf16le check
 	if (strnullpad_check (buf, R_MIN (len, 10), 10, 2, false)) {
 		out = malloc (len + 1);
-		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, true) < 1) {
+		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, false) < 1) {
 			R_FREE (out);
 		}
 	}
 	// utf16be check
 	if (strnullpad_check (buf, R_MIN (len, 10), 10, 2, true)) {
 		out = malloc (len + 1);
-		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, false) < 1) {
+		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, true) < 1) {
 			R_FREE (out);
 		}
 	}
@@ -14717,16 +14962,9 @@ static bool check_string_at(RCore *core, ut64 addr, bool and_print_it) {
 	{
 		ut8 plen = buf[0];
 		if (plen > 1 && plen < len) {
-			is_pascal1 = true;
-			int i;
-			for (i = 1; i < plen; i++) {
-				if (!IS_PRINTABLE (buf[i])) {
-					is_pascal1 = false;
-					break;
-				}
-			}
+			is_pascal1 = r_str_pnlen ((const char *)buf + 1, plen - 1) == (size_t)(plen - 1);
 			if (is_pascal1) {
-				char *oout = r_str_ndup ((const char *)buf + 1, i);
+				char *oout = r_str_ndup ((const char *)buf + 1, plen);
 				free (out);
 				out = oout;
 			}
@@ -14735,15 +14973,9 @@ static bool check_string_at(RCore *core, ut64 addr, bool and_print_it) {
 	if (!is_pascal1) {
 		ut8 plen = r_read_le16 (buf);
 		if (plen > 2 && plen < len) {
-			is_pascal2 = true;
-			for (i = 2; i < plen; i++) {
-				if (!IS_PRINTABLE (buf[i])) {
-					is_pascal2 = false;
-					break;
-				}
-			}
+			is_pascal2 = r_str_pnlen ((const char *)buf + 2, plen - 2) == (size_t)(plen - 2);
 			if (is_pascal2) {
-				char *oout = r_str_ndup ((const char *)buf + 2, i);
+				char *oout = r_str_ndup ((const char *)buf + 2, plen);
 				free (out);
 				out = oout;
 			}
@@ -15015,7 +15247,7 @@ static bool is_swift(RCore *core) {
 
 static void cmd_aaa(RCore *core, const char *input) {
 	if (strchr (input, '?')) {
-		r_core_cmd_help (core, help_msg_aaa);
+		r_cons_cmd_help (core->cons, help_msg_aaa);
 		return;
 	}
 	char *s = r_core_cmd_str (core, "dpe");
@@ -15337,15 +15569,19 @@ static void cmd_aaef(RCore *core) {
 }
 
 static int cmd_anal_all(RCore *core, const char *input) {
+	if (*input == '?') {
+		r_cons_cmd_help (core->cons, help_msg_aa);
+		return true;
+	}
+	if (!core->anal->arch->session) {
+		return false;
+	}
 	switch (*input) {
-	case '?':
-		r_core_cmd_help (core, help_msg_aa);
-		break;
 	case 'f':
 		if (input[1] == 'e') {  // "aafe"
 			r_core_cmd0 (core, "aef@@F");
 		} else if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aaf");
+			r_cons_cmd_help_match (core->cons, help_msg_aa, "aaf", 0, true);
 		} else if (input[1] == 'r') {
 			ut64 cur = core->addr;
 			RListIter *iter;
@@ -15374,7 +15610,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_cmd0 (core, "afr@@c:isq");
 			r_config_set_b (core->config, "anal.hasnext", analHasnext);
 		} else {
-			r_core_cmd_help (core, help_msg_aaf);
+			r_core_return_invalid_command (core, "aaf", input[1]);
 		}
 		break;
 	case 'c': // "aac"
@@ -15386,7 +15622,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			cmd_anal_calls (core, input + 1, input[2] == '*', true);
 			break;
 		case '?': // "aac?"
-			r_core_cmd_help_contains (core, help_msg_aa, "aac");
+			r_cons_cmd_help_match (core->cons, help_msg_aa, "aac", 0, false);
 			break;
 		default: // "aac"
 			cmd_anal_calls (core, input + 1, false, false);
@@ -15395,56 +15631,56 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'j': // "aaj"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aaj");
+			r_cons_cmd_help_match (core->cons, help_msg_aa, "aaj", 0, true);
 		} else {
 			cmd_anal_jumps (core, input + 1);
 		}
 		break;
 	case 'd': // "aad"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aad");
+			r_cons_cmd_help_match (core->cons, help_msg_aa, "aad", 0, true);
 		} else {
 			cmd_anal_aad (core, input);
 		}
 		break;
 	case 'v': // "aav"
 		if (strchr (input + 1, '?')) {
-			r_core_cmd_help (core, help_msg_aav);
+			r_cons_cmd_help (core->cons, help_msg_aav);
 		} else {
 			cmd_anal_aav (core, input);
 		}
 		break;
 	case 'x': // "aax"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aax");
+			r_cons_cmd_help_match (core->cons, help_msg_aa, "aax", 0, true);
 		} else {
 			r_core_cmd0 (core, "af@@=`axlq~CALL[2]`");
 		}
 		break;
 	case 'w': // "aaw"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aaw");
+			r_cons_cmd_help_match (core->cons, help_msg_aa, "aaw", 0, true);
 		} else {
 			cmd_anal_aaw (core, input);
 		}
 		break;
 	case 'u': // "aau" - print areas not covered by functions
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aau");
+			r_cons_cmd_help_match (core->cons, help_msg_aa, "aau", 0, true);
 		} else {
 			r_core_anal_nofunclist (core, input + 1);
 		}
 		break;
 	case 'i': // "aai"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aai");
+			r_cons_cmd_help_match (core->cons, help_msg_aa, "aai", 0, true);
 		} else {
 			r_core_anal_info (core, input + 1);
 		}
 		break;
 	case 's': // "aas"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aas");
+			r_cons_cmd_help_match (core->cons, help_msg_aa, "aas", 0, true);
 		} else {
 			r_core_cmd0 (core, "af @@= `isq~[0]`");
 			r_core_cmd0 (core, "af @@f:entry*");
@@ -15452,7 +15688,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'S': // "aaS"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aaS");
+			r_cons_cmd_help_match (core->cons, help_msg_aa, "aaS", 0, true);
 		} else {
 			r_core_cmd0 (core, "af @@f:sym.*");
 			r_core_cmd0 (core, "af @@f:entry*");
@@ -15460,12 +15696,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'F': // "aaF" "aaFa"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aaF");
+			r_cons_cmd_help_match (core->cons, help_msg_aa, "aaF", 0, true);
 		} else {
 			if (!input[1] || input[1] == ' ' || input[1] == 'a') {
 				r_core_anal_inflags (core, input + 1);
 			} else {
-				r_core_cmd_help_contains (core, help_msg_aa, "aaF");
+				r_core_return_invalid_command (core, "aaF", input[1]);
 			}
 		}
 		break;
@@ -15478,7 +15714,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			free (r_anal_cmd (core->anal, "autoname golang"));
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_aan);
+			r_cons_cmd_help (core->cons, help_msg_aan);
 			break;
 		case 'f': // "aanf" same as "aan" but more friendly
 		case 0: // "aan"
@@ -15491,7 +15727,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'p': // "aap"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aap");
+			r_cons_cmd_help_match (core->cons, help_msg_aa, "aap", 0, true);
 		} else if (input[1]) {
 			r_core_return_invalid_command (core, "aap", input[1]);
 		} else {
@@ -15504,7 +15740,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 't': // "aat"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aat");
+			r_cons_cmd_help_match (core->cons, help_msg_aa, "aat", 0, true);
 		} else {
 			char *off = input[1]? r_str_trim_dup (input + 2): NULL;
 			RAnalFunction *fcn;
@@ -15537,7 +15773,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'o': // "aao"
 		if (input[1] == '?') { // "aao?"
-			r_core_cmd_help_match (core, help_msg_aa, "aao");
+			r_cons_cmd_help_match (core->cons, help_msg_aa, "aao", 0, true);
 		} else {
 			cmd_anal_objc (core, input + 1, false);
 		}
@@ -15545,15 +15781,15 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'e': // "aae"
 		if (input[1] == 'f') { // "aaef"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_aae, "aaef");
+				r_cons_cmd_help_match (core->cons, help_msg_aae, "aaef", 0, true);
 			} else {
 				cmd_aaef (core);
 			}
 		} else if (input[1] == '?') { // "aae?"
-			r_core_cmd_help (core, help_msg_aae);
+			r_cons_cmd_help (core->cons, help_msg_aae);
 		} else if (input[1] == 'p') { // "aaep" // auto define all esil pins
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_aae, "aaef");
+				r_cons_cmd_help_match (core->cons, help_msg_aae, "aaef", 0, true);
 			} else {
 				r_core_cmd0 (core, "aep ret0@@@i");
 				r_core_cmd0 (core, "aepa@@@i");
@@ -15631,7 +15867,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			anal_aarr (core);
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_aar);
+			r_cons_cmd_help (core->cons, help_msg_aar);
 			break;
 		default:
 			r_core_return_invalid_command (core, "aar", input[1]);
@@ -15739,7 +15975,7 @@ static void cmd_anal_rtti(RCore *core, const char *input) {
 		}
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_av);
+		r_cons_cmd_help (core->cons, help_msg_av);
 		break;
 	default:
 		r_core_return_invalid_command (core, "avr", input[0]);
@@ -15775,7 +16011,7 @@ static void cmd_avg(RCore *core, const char* input) {
 		r_core_cmd0 (core, "fs+globals;f;fs-");
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_avg);
+		r_cons_cmd_help (core->cons, help_msg_avg);
 		break;
 	default:
 		r_core_return_invalid_command (core, "avg", input[0]);
@@ -15805,7 +16041,7 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 		cmd_anal_rtti (core, input + 1);
 		break;
 	case '?': // "av?"
-		r_core_cmd_help (core, help_msg_av);
+		r_cons_cmd_help (core->cons, help_msg_av);
 		break;
 	default:
 		r_core_return_invalid_command (core, "av", input[0]);
@@ -15883,7 +16119,7 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 		break;
 	}
 	case '?':
-		r_core_cmd_help (core, help_msg_ac);
+		r_cons_cmd_help (core->cons, help_msg_ac);
 		break;
 	default:
 		r_core_return_invalid_command (core, "acm", input[0]);
@@ -15956,7 +16192,7 @@ static void cmd_acb(RCore *core, const char *input) {
 		break;
 	}
 	case '?':
-		r_core_cmd_help_match (core, help_msg_ac, "acb");
+		r_cons_cmd_help_match (core->cons, help_msg_ac, "acb", 0, true);
 		break;
 	default:
 		r_core_return_invalid_command (core, "acb", c);
@@ -16062,8 +16298,12 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		free (cstr);
 		break;
 	}
+	case '?':
+	case '\0':
+		r_cons_cmd_help (core->cons, help_msg_ac);
+		break;
 	default:
-		r_core_cmd_help (core, help_msg_ac);
+		r_core_return_invalid_command (core, "acv", input[0]);
 		break;
 	}
 	if (err == R_ANAL_CLASS_ERR_NONEXISTENT_CLASS) {
@@ -16154,16 +16394,24 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		cmd_anal_class_method (core, input + 1);
 		break;
 	case 'g': { // "acg"
+		if (!r_core_graph_print_is_valid_format (input[1])) {
+			r_core_return_invalid_command (core, "acg", input[1]);
+			break;
+		}
+		if (input[1] == '?') {
+			r_cons_cmd_help_match (core->cons, help_msg_ac, "acg", 0, true);
+			break;
+		}
 		RGraph *graph = r_anal_class_get_inheritance_graph (core->anal);
 		if (!graph) {
 			R_LOG_ERROR ("Couldn't create graph");
 			break;
 		}
-		r_core_graph_print (core, graph, -1, false, input + 1);
+		r_core_graph_print (core, graph, -1, false, input + 1, "acg");
 		r_graph_free (graph);
 	} break;
 	case '?': // "ac?"
-		r_core_cmd_help (core, help_msg_ac);
+		r_cons_cmd_help (core->cons, help_msg_ac);
 		break;
 	default:
 		r_core_return_invalid_command (core, "ac", input[0]);
@@ -16174,7 +16422,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 
 static bool core_anal_abf(RCore *core, const char* input) {
 	if (strchr (input, '?')) {
-		r_core_cmd_help_match (core, help_msg_ab, "abf");
+		r_cons_cmd_help_match (core->cons, help_msg_ab, "abf", 0, true);
 		return false;
 	}
 	ut64 addr = r_num_math (core->num, input);
@@ -16288,7 +16536,7 @@ static void match_prelude(RCore *core, const char *input) {
 static int cmd_apt(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
-		r_core_cmd_help_contains (core, help_msg_ap, "apt");
+		r_cons_cmd_help_match (core->cons, help_msg_ap, "apt", 0, false);
 		break;
 	case '=':
 	case ' ':
@@ -16327,7 +16575,7 @@ static int cmd_apt(RCore *core, const char *input) {
 static void cmd_abe(RCore *core, const char *input) {
 	const char *arg = r_str_trim_head_ro (input + 1);
 	if (*arg == '?') {
-		r_core_cmd_help_match (core, help_msg_ab, "abe");
+		r_cons_cmd_help_match (core->cons, help_msg_ab, "abe", 0, true);
 		return;
 	}
 	RListIter *iter;
@@ -16350,7 +16598,7 @@ static void cmd_ab(RCore *core, const char *input) {
 	if (input[0] && input[0] != 'p' && input[0] != 't' && input[1] == '?') {
 		char cmd[5] = "ab#";
 		cmd[2] = input[0];
-		r_core_cmd_help_match (core, help_msg_ab, cmd);
+		r_cons_cmd_help_match (core->cons, help_msg_ab, cmd, 0, true);
 		return;
 	}
 	switch (*input) {
@@ -16388,7 +16636,7 @@ static void cmd_ab(RCore *core, const char *input) {
 		break;
 	case 'l': // "abl"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_abl);
+			r_cons_cmd_help (core->cons, help_msg_abl);
 		} else {
 			anal_bb_list (core, input + 1);
 		}
@@ -16418,7 +16666,7 @@ static void cmd_ab(RCore *core, const char *input) {
 		r_core_call_at (core, addr, "afbi");
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_ab);
+		r_cons_cmd_help (core->cons, help_msg_ab);
 		break;
 	default:
 		r_core_return_invalid_command (core, "ab", input[0]);
@@ -16482,7 +16730,7 @@ static void cmd_ano(RCore *core, const char *input) {
 		if (fcn) {
 			char *f = anopath (core, fcn);
 			if (f) {
-				free (r_cons_editor (core->cons, f, NULL));
+				free (r_cons_editor (core->cons, f, NULL, NULL));
 				free (f);
 			}
 		} else {
@@ -16550,13 +16798,13 @@ static void cmd_ano(RCore *core, const char *input) {
 					r_str_trim (s);
 					if (R_STR_ISEMPTY (s)) {
 						r_file_rm (f);
-						free (r_cons_editor (core->cons, f, NULL));
+						free (r_cons_editor (core->cons, f, NULL, NULL));
 					} else {
 						r_cons_printf (core->cons, "%s\n", s);
 					}
 					free (s);
 				} else {
-					free (r_cons_editor (core->cons, f, NULL));
+					free (r_cons_editor (core->cons, f, NULL, NULL));
 				}
 				free (f);
 			}
@@ -16609,7 +16857,7 @@ static void cmd_ano(RCore *core, const char *input) {
 		}
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_ano);
+		r_cons_cmd_help (core->cons, help_msg_ano);
 		break;
 	default:
 		r_core_return_invalid_command (core, "ano", input[2]);
@@ -16646,7 +16894,7 @@ static void cmd_ap(RCore *core, const char *input) {
 		match_prelude (core, r_str_trim_head_ro (input));
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_ap);
+		r_cons_cmd_help (core->cons, help_msg_ap);
 		break;
 	default:
 		r_core_return_invalid_command (core, "ap", input[1]);
@@ -16683,7 +16931,7 @@ static void cmd_an(RCore *core, const char *input) {
 		int mode = 0;
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_an);
+			r_cons_cmd_help (core->cons, help_msg_an);
 			mode = -1;
 			break;
 		case 'j':
@@ -16725,7 +16973,7 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case '8': // "a8"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_a8);
+			r_cons_cmd_help (core->cons, help_msg_a8);
 			break;
 		}
 		ut8 *buf = malloc (strlen (input) + 1);
@@ -16762,7 +17010,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case '?':
 			// help
-			r_core_cmd_help (core, help_msg_La);
+			r_cons_cmd_help (core->cons, help_msg_La);
 			break;
 		default:
 			r_core_return_invalid_command (core, "aL", input[1]);
@@ -16777,7 +17025,7 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'F': // "aF"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_aF);
+			r_cons_cmd_help (core->cons, help_msg_aF);
 		} else if (input[1] == 0) {
 			r_core_anal_fcn (core, core->addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		} else {
@@ -16877,7 +17125,7 @@ static int cmd_anal(void *data, const char *input) {
 			r_core_anal_data (core, core->addr, 2 + (tbs / 4), 1, 8);
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_ad);
+			r_cons_cmd_help (core->cons, help_msg_ad);
 			break;
 		default:
 			r_core_return_invalid_command (core, "ad", input[1]);
@@ -16891,7 +17139,7 @@ static int cmd_anal(void *data, const char *input) {
 		if (input[1] == '?') {
 			RListIter *iter;
 			RAnalPlugin *ap;
-			r_core_cmd_help (core, help_msg_acolon);
+			r_cons_cmd_help (core->cons, help_msg_acolon);
 			r_list_foreach (core->anal->libstore->plugins, iter, ap) {
 				if (ap->cmd) {
 					char *res = r_core_cmd_strf (core, "a:%s?", ap->meta.name);
@@ -16933,9 +17181,9 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case '?':
 		if (input[1] == 'j') {
-			r_core_cmd_help_json (core, help_msg_a);
+			r_cons_cmd_help_json (core->cons, help_msg_a);
 		} else {
-			r_core_cmd_help (core, help_msg_a);
+			r_cons_cmd_help (core->cons, help_msg_a);
 		}
 		break;
 	default:

@@ -226,7 +226,7 @@ R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int pos) {
 }
 
 static void core_help(RCore *core, RCoreHelpMessage help) {
-	r_core_cmd_help (core, help);
+	r_cons_cmd_help (core->cons, help);
 }
 
 static void setab(RCore *core, const char *arch, int bits) {
@@ -387,7 +387,10 @@ static const char *str_callback(RNum *user, ut64 off, bool *ok) {
 
 R_API RCore *r_core_new(void) {
 	RCore *c = R_NEW0 (RCore);
-	r_core_init (c);
+	if (!r_core_init (c)) {
+		free (c);
+		return NULL;
+	}
 	return c;
 }
 
@@ -399,7 +402,7 @@ static const char *ms_argv[] = {
 
 static const char *radare_argv[] = {
 	"tsn",
-	"whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "sort", "uniq", "join", "less", "exit", "quit", "#?", "#!", "#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5", "#!python", "#!vala", "#!pipe", "#!qjs", "#!tiny", "*?", "*", "$", "(", "(*", "(-", "()", ".?", ".", "..", "...", ".:", ".--", ".-", ".!", ".(", "./", ".*", "_?", "_", "=?", "=", "=<", "=!", "=+", "=-", "==", "=!=", "!=!", "=:", "=&:", "=g?", "=g", "=h?", "=h", "=h-", "=h--", "=h*", "=h&", "=H?", "=H", "=H&", "<", "/?", "/", "/j", "/j!", "/j!x", "/+", "//", "/a", "/a1", "/ab", "/ad", "/aa", "/as", "/asl", "/at", "/atl", "/af", "/afl", "/ae", "/aej", "/ai", "/aij", "/c", "/ca", "/car", "/d", "/e", "/E", "/Ej", "/f", "/F", "/ag", "/agg", "/g", "/h", "/ht", "/i", "/m", "/mb", "/mm", "/o", "/O", "/p", "/P", "/s", "/s*", "/r?", "/r", "/ra", "/rc", "/re", "/rr", "/rw", "/rc", "/v?", "/v", "/v1", "/v2", "/v4", "/v8", "/V?", "/V", "/V1", "/V2", "/V4", "/V8", "/w", "/wi", "/x", "/z", "!?", "!", "!!", "!!!", "!!!-", "!-", "!-*", "!=!", "a?", "a", "aa", "aa*", "aaa", "aab", "aac", "aac*", "aad", "aae", "aaf", "aaF", "aaFa", "aai", "aaij", "aan", "aang", "aao", "aap", "aar?", "aar", "aar*", "aarj", "aas", "aat", "aaT", "aau", "aav", "a8", "ab", "abb", "acl", "acll", "aclj", "acl*", "ac?", "ac", "ac-", "acn", "acv", "acvf", "acv-", "acb", "acb-", "acm", "acm-", "acmn", "aC?", "aC", "aCe", "ad", "ad4", "ad8", "adf", "adfg", "adt", "adk", "ae?", "ae??", "ae", "aea", "aeA", "aeaf", "aeAf", "aeC", "aec?", "aec", "aecs", "aecc", "aecu", "aecue", "aef", "aefa", "aei", "aeim", "aeip", "aek", "aek-", "aeli", "aelir", "aep?", "aep", "aep-", "aepc", "aer", "aets?", "aets+", "aets-", "aes", "aesp", "aesb", "aeso", "aesou", "aess", "aesu", "aesue", "aetr", "aex", "af?", "af", "afr", "af+", "af-", "afa", "afan", "afb?", "afb", "afb.", "afb+", "afbb", "afbr", "afbi", "afbj", "afbe", "afbt", "afB", "afbc", "afb=", "afB", "afC", "afCl", "afCc", "afc?", "afc", "afcr", "afcrj", "afca", "afcf", "afcfj", "afck", "afcl", "afco", "afcR", "afd", "aff", "afF", "afi", "afl?", "afl", "afl+", "aflc", "aflj", "afll", "afllj", "aflm", "aflq", "aflqj", "afls", "afm", "afM", "afn?", "afna", "afns", "afnsj", "afl=", "afo", "afs", "afS", "aft?", "aft", "afu", "afv?", "afv", "afvr?", "afvr", "afvr*", "afvrj", "afvr-", "afvrg", "afvrs", "afvb?", "afvb", "afvbj", "afvb-", "afvbg", "afvbs", "afvs?", "afvs", "afvs*", "afvsj", "afvs-", "afvsg", "afvss", "afv*", "afvR", "afvW", "afva", "afvd", "afvn", "afvt", "afv-", "af*", "afx", "aF", "ag?", "ag", "aga", "agA", "agc", "agC", "agd", "agf", "agi", "agr", "agR", "agx", "agg", "ag-", "agn?", "agn", "agn-", "age?", "age", "age-", "agl", "agfl", "ah?", "ah", "ah.", "ah-", "ah*", "aha", "ahb", "ahc", "ahe", "ahf", "ahh", "ahi?", "ahi", "ahj", "aho", "ahp", "ahr", "ahs", "ahS", "aht", "ai", "aL", "an", "ao?", "ao", "aoj", "aoe", "aor", "aos", "aom", "aod", "aoda", "aoc", "ao*", "aO", "ap", "ar?", "ar", "ar0", "ara?", "ara", "ara+", "ara-", "aras", "arA", "arC", "arr", "arrj", "ar=", "arb", "arc", "ard", "arn", "aro", "arp?", "arp", "arpi", "arpg", "arp.", "arpj", "arps", "ars", "art", "arw", "as?", "as", "asc", "asca", "asf", "asj", "asl", "ask", "av?", "av", "avj", "av*", "avr", "avra", "avraj", "avrr", "avrD", "at", "ax?", "ax", "ax*", "ax-", "ax-*", "axc", "axC", "axg", "axg*", "axgj", "axd", "axw", "axj", "axF", "axt", "axf", "ax.", "axff", "axffj", "axs", "b?", "b", "b+", "b-", "bf", "bm", "c?", "c", "c1", "c2", "c4", "c8", "cc", "ccd", "cf", "cg?", "cg", "cgf", "cgff", "cgfc", "cgfn", "cgo", "cu?", "cu", "cu1", "cu2", "cu4", "cu8", "cud", "cv", "cv1", "cv2", "cv4", "cv8", "cV", "cV1", "cV2", "cV4", "cV8", "cw?", "cw", "cw*", "cwr", "cwu", "cx", "cx*", "cX", "cl", "cls", "clear", "d?", "db ", "db-", "db-*", "db.", "dbj", "dbc", "dbC", "dbd", "dbe", "dbs", "dbf", "dbm", "dbn", "db?", "dbi", "dbi.", "dbix", "dbic", "dbie", "dbid", "dbis", "dbite", "dbitd", "dbits", "dbh", "dbh-", "dbt", "dbt*", "dbt=", "dbtv", "dbtj", "dbta", "dbte", "dbtd", "dbts", "dbx", "dbw", "dc?", "dc", "dca", "dcb", "dcc", "dccu", "dcf", "dck", "dcp", "dcr", "dcs", "dcs*", "dct", "dcu", "dcu.", "dd?", "dd", "dd-", "dd+", "dd*", "dds", "ddd", "ddr", "ddw", "de", "dg", "dH", "di?", "di", "di*", "diq", "dij", "dk?", "dk", "dko", "dkj", "dL?", "dL", "dLq", "dLj", "dm?", "dm", "dm=", "dm.", "dm*", "dm-", "dmd", "dmh?", "dmh", "dmha", "dmhb", "dmhbg", "dmhc", "dmhf", "dmhg", "dmhi", "dmhm", "dmht", "dmi?", "dmi", "dmi*", "dmi.", "dmiv", "dmj", "dml?", "dml", "dmm?", "dmm", "dmm*", "dmm.", "dmmj", "dmp?", "dmp", "dms?", "dms", "dmsj", "dms*", "dms-", "dmsA", "dmsC", "dmsd", "dmsw", "dmsa", "dmsf", "dmst", "dmS", "dmS*", "do?", "do", "dor", "doo", "dp?", "dp", "dpj", "dpl", "dplj", "dp-", "dp=", "dpa", "dpc", "dpc*", "dpe", "dpf", "dpk", "dpn", "dptn", "dpt", "dr?", "dr", "drps", "drpj", "drr", "drrj", "drs", "drs+", "drs-", "drt", "drt*", "drtj", "drw", "drx", "drx-", ".dr*", ".dr-", "ds?", "ds", "dsb", "dsf", "dsi", "dsl", "dso", "dsp", "dss", "dsu", "dsui", "dsuo", "dsue", "dsuf", "dt?", "dt", "dt%", "dt*", "dt+", "dt-", "dt=", "dtD", "dta", "dtc", "dtd", "dte", "dte-*", "dtei", "dtek", "dtg", "dtg*", "dtgi", "dtr", "dts?", "dts", "dts+", "dts-", "dtsf", "dtst", "dtsC", "dtt", "dw", "dx?", "dx", "dxa", "dxe", "dxr", "dxs", "e?", "e", "e+", "-e", "-i", "e-", "e*", "e!", "ec", "ee?", "ee", "?ed", "ed", "ej", "env", "er", "es", "et", "ev", "evj", "ec?", "ec", "ec*", "ecd", "ecr", "ecs", "ecj", "ecc", "eco", "ecp", "ecn", "ecH?", "ecH", "ecHi", "ecHw", "ecH-", "f?", "f", "f.", "f*", "f-", "f--", "f+", "f=", "fa", "fb", "fc?", "fc", "fC", "fd", "fe-", "fe", "ff", "fi", "fg", "fj", "fl", "fla", "fm", "fn", "fnj", "fo", "fO", "fr", "fR", "fR?", "fs?", "fs", "fs*", "fsj", "fs-", "fs+", "fs-.", "fsq", "fsm", "fss", "fss*", "fssj", "fsr", "ft?", "ft", "ftn", "fV", "fx", "fq", "fz?", "fz", "fz-", "fz.", "fz:", "fz*", "g?", "g", "gw", "gc", "gl?", "gl", "gs", "gi", "gp", "ge", "gr", "gS", "help", "i?", "i", "ij", "iA", "ia", "ib", "ic", "icc", "iC", "id?", "id", "idp", "idpi", "idpi*", "idpd", "iD", "ie", "iee", "iE", "iE.", "ih", "iHH", "ii", "iI", "ik", "il", "iL", "im", "iM", "io", "iO?", "iO", "ir", "iR", "is", "is.", "iS", "iS.", "iS=", "iSS", "it", "iV", "iX", "iz", "izj", "izz", "izzz", "iz-", "iZ", "k?", "k", "ko", "kd", "ks", "kj", "l", "L?", "L", "L-", "Ll", "LL", "La", "Lc", "Ld", "Lh", "Li", "Lo", "m?", "m", "m*", "ml", "m-", "md", "mf?", "mf", "mg", "mo", "mi", "mp", "ms", "my", "o?", "o", "o-", "o--", "o+", "oe", "oa", "oa-", "oq", "oqq", "open", "o*", "o**", "o.", "o=", "ob?", "ob", "ob*", "obo", "oba", "obf", "obj", "obr", "ob-", "ob-*", "obi", "oc", "of", "oi", "oj", "oL", "om", "on", "oo?", "oo", "oo+", "oob", "ood", "oom", "oon", "oon+", "oonn", "oonn+", "op", "opn", "opp", "opr", "ox", "p?", "p-", "p=", "p2", "p3", "p6?", "p6", "p6d", "p6e", "p8?", "p8", "p8f", "p8j", "pa?", "paD", "pad", "pade", "pae", "pA", "pb?", "pb", "pB", "pxb", "pB?", "pc?", "pc", "pc*", "pca", "pcA", "pcd", "pch", "pcj", "pcp", "pcs", "pcS", "pcw", "pC?", "pC", "pCa", "pCA", "pCc", "pCd", "pCD", "pCx", "pCw", "pd?", "pd", "pd--", "pD", "pda", "pdb", "pdc", "pdC", "pdf", "pdi", "pdj", "pdJ", "pdk", "pdl", "pdp", "pdr", "pdr.", "pdR", "pds?", "pds", "pdsb", "pdsf", "pdt", "pD", "pf?", "pf", "pf??", "pf???", "pf.", "pfj", "pfj.", "pf*", "pf*.", "pfc", "pfc.", "pfd", "pfd.", "pfo", "pfq", "pfv", "pfv.", "pfs", "pfs.", "pF?", "pF", "pFa", "pFaq", "pFo", "pFp", "pFx", "pg?", "pg", "pg*", "pg-*", "ph?", "ph", "ph=", "pi?", "pi", "pia", "pib", "pid", "pie", "pif?", "pif", "pifc", "pifcj", "pifj", "pij", "pir", "pI?", "pI", "pIa", "pIb", "pId", "pIe", "pIf?", "pIf", "pIfc", "pIfcj", "pIfj", "pIj", "pIr", "pj?", "pj", "pj.", "pj..", "pk?", "pk", "pK?", "pK", "pm?", "pm", "pq?", "pq", "pqi", "pqz", "pr?", "pr", "prc", "prl", "prx", "prg?", "prg", "prgi", "prgo", "prz", "ps?", "ps", "psb", "psi", "psj", "psp", "pss", "psu", "psw", "psW", "psx", "psz", "ps+", "pt?", "pt", "pt.", "ptd", "pth", "ptn", "pu?", "pu", "puw", "pU", "pv?", "pv", "pv1", "pv2", "pv4", "pv8", "pvz", "pvj", "pvh", "pv1j", "pv2j", "pv4j", "pv8j", "pv1h", "pv2h", "pv4h", "pv8h", "px?", "px", "px/", "px0", "pxa", "pxA?", "pxA", "pxb", "pxc", "pxd?", "pxd", "pxd2", "pxd4", "pxd8", "pxe", "pxf", "pxh", "pxH", "pxi", "pxl", "pxo", "pxq", "pxq", "pxQ", "pxQq", "pxr", "pxrj", "pxs", "pxt", "pxt*", "pxt.", "pxw", "pxW", "pxWq", "pxx", "pxX", "pz?", "pz", "pzp", "pzf", "pzs", "pz0", "pzF", "pze", "pzh", "P?", "P", "Pc", "Pd", "Pi", "Pn", "Pnj", "Po", "Ps", "PS", "P-", "q?", "q", "q!", "q!!", "q!!!", "qy", "qn", "qyy", "qyn", "qny", "qnn", "r?", "r", "r-", "r+", "rh", "s?", "s", "s:", "s-", "s-*", "s--", "s+", "s++", "sj", "s*", "s=", "s!", "s/", "s/x", "s.", "sa", "sb", "sC?", "sC", "sC*", "sf", "sf.", "sg", "sG", "sl?", "sl", "sl+", "sl-", "slc", "sll", "sn", "sp", "so", "sr", "ss", "t?", "t", "tj", "t*", "t-", "t-*", "ta", "tb", "tc", "te?", "te", "tej", "teb", "tec", "ten", "tenj", "tenq", "td?", "td", "td-", "tf", "tk", "tl", "tn", "to", "tos", "tp", "tpx", "ts?", "ts", "tsj", "ts*", "tsc", "tss", "tu?", "tu", "tuj", "tu*", "tuc", "tt?", "tt", "ttj", "ttc", "T?", "T", "T*", "T-", "Tl", "Tj", "Tm", "Ts", "TT", "T=", "T=.", "T=&", "u?", "u", "uw", "us", "uc", "v", "v.", "V", "v!", "vv", "vV", "vVV", "VV", "w?", "w", "w1+", "w1-", "w2+", "w2-", "w4+", "w4-", "w8+", "w8-", "w0", "w", "w6", "w6d", "w6e", "wa", "wa*", "waf", "wao?", "wao", "wA?", "wA", "wB", "wB-", "wc", "wcj", "wc-", "wc+", "wc*", "wcr", "wci", "wcp", "wcp*", "wcpi", "wd", "we?", "we", "wen", "weN", "wes", "wex", "weX", "wf?", "wf", "wff", "wfs", "wF", "wh", "wm", "wo?", "wo", "wo2", "wo4", "woa", "woA", "wod", "woD", "woe", "woE", "wol", "wom", "woo", "wop?", "wop", "wopD", "wopD*", "wopO", "wp?", "wp", "wr", "ws", "wt?", "wt", "wta", "wtf", "wtf!", "wtff", "wts", "wu", "wv?", "wv", "wv1", "wv2", "wv4", "wv8", "ww", "wx?", "wx", "wxf", "wxs", "wz", "x?", "x", "x/", "x0", "xa", "xA?", "xA", "xb", "xc", "xd?", "xd", "xd2", "xd4", "xd8", "xe", "xf", "xh", "xH", "xi", "xl", "xo", "xq", "xq", "xQ", "xQq", "xr", "xrj", "xs", "xt", "xt*", "xt.", "xw", "xW", "xWq", "xx", "xX", "y?", "y", "yz", "yp", "yx", "ys", "yt", "ytf", "yf", "yfa", "yfx", "yw", "ywx", "yy", "yr", "z?", "z", "z*", "zj", "z-", "z-*", "za?", "za??", "za", "zaf", "zaF", "zg", "zo?", "zo", "zoz", "zos", "zf?", "zfd", "zfs", "zfz", "z/?", "z/", "z/*", "zc", "zs?", "zs", "zs-", "zs-*", "zs+", "zsr", "zi", "?", "?v", "?$?", "?@?", "?>?", NULL
+	"whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "sort", "uniq", "join", "less", "exit", "quit", "#?", "#!", "#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5", "#!python", "#!vala", "#!pipe", "#!qjs", "#!tiny", "*?", "*", "$", "(", "(*", "(-", "()", ".?", ".", "..", "...", ".:", ".--", ".-", ".!", ".(", "./", ".*", "_?", "_", "=?", "=", "=<", "=!", "=+", "=-", "==", "=!=", "!=!", "=:", "=&:", "=g?", "=g", "=h?", "=h", "=h-", "=h--", "=h*", "=h&", "=H?", "=H", "=H&", "<", "/?", "/", "/j", "/j!", "/j!x", "/+", "//", "/a", "/a1", "/ab", "/ad", "/aa", "/as", "/asl", "/at", "/atl", "/af", "/afl", "/ae", "/aej", "/ai", "/aij", "/c", "/ca", "/car", "/d", "/e", "/E", "/Ej", "/f", "/F", "/ag", "/agg", "/g", "/h", "/ht", "/i", "/m", "/mb", "/mm", "/o", "/O", "/p", "/P", "/s", "/s*", "/r?", "/r", "/ra", "/rc", "/re", "/rr", "/rw", "/rc", "/v?", "/v", "/v1", "/v2", "/v4", "/v8", "/V?", "/V", "/V1", "/V2", "/V4", "/V8", "/w", "/wi", "/x", "/z", "!?", "!", "!!", "!!!", "!!!-", "!-", "!-*", "!=!", "a?", "a", "aa", "aa*", "aaa", "aab", "aac", "aac*", "aad", "aae", "aaf", "aaF", "aaFa", "aai", "aaij", "aan", "aang", "aao", "aap", "aar?", "aar", "aar*", "aarj", "aas", "aat", "aaT", "aau", "aav", "a8", "ab", "abb", "acl", "acll", "aclj", "acl*", "ac?", "ac", "ac-", "acn", "acv", "acvf", "acv-", "acb", "acb-", "acm", "acm-", "acmn", "aC?", "aC", "aCe", "ad", "ad4", "ad8", "adf", "adfg", "adt", "adk", "ae?", "ae??", "ae", "aea", "aeA", "aeaf", "aeAf", "aeC", "aec?", "aec", "aecs", "aecc", "aecu", "aecue", "aef", "aefa", "aei", "aeim", "aeip", "aek", "aek-", "aeli", "aelir", "aep?", "aep", "aep-", "aepc", "aer", "aets?", "aets+", "aets-", "aes", "aesp", "aesb", "aeso", "aesou", "aess", "aesu", "aesue", "aetr", "aex", "af?", "af", "afr", "af+", "af-", "afa", "afan", "afb?", "afb", "afb.", "afb+", "afbb", "afbr", "afbi", "afbj", "afbe", "afbt", "afB", "afbc", "afb=", "afB", "afC", "afCl", "afCc", "afc?", "afc", "afcr", "afcrj", "afca", "afcf", "afcfj", "afck", "afcl", "afco", "afcR", "afd", "aff", "afF", "afi", "afl?", "afl", "afl+", "aflc", "aflj", "afll", "afllj", "aflm", "aflq", "aflqj", "afls", "afm", "afM", "afn?", "afna", "afns", "afnsj", "afl=", "afo", "afs", "afS", "aft?", "aft", "afu", "afv?", "afv", "afvr?", "afvr", "afvr*", "afvrj", "afvr-", "afvrg", "afvrs", "afvb?", "afvb", "afvbj", "afvb-", "afvbg", "afvbs", "afvs?", "afvs", "afvs*", "afvsj", "afvs-", "afvsg", "afvss", "afv*", "afvR", "afvW", "afva", "afvd", "afvn", "afvt", "afv-", "af*", "afx", "aF", "ag?", "ag", "aga", "agA", "agc", "agC", "agd", "agf", "agi", "agr", "agR", "agx", "agg", "ag-", "agn?", "agn", "agn-", "age?", "age", "age-", "agl", "agfl", "ah?", "ah", "ah.", "ah-", "ah*", "aha", "ahb", "ahc", "ahe", "ahf", "ahh", "ahi?", "ahi", "ahj", "aho", "ahp", "ahr", "ahs", "ahS", "aht", "ai", "aL", "an", "ao?", "ao", "aoj", "aoe", "aor", "aos", "aom", "aod", "aoda", "aoc", "ao*", "aO", "ap", "ar?", "ar", "ar0", "ara?", "ara", "ara+", "ara-", "aras", "arA", "arC", "arr", "arrj", "ar=", "arb", "arc", "ard", "arn", "aro", "arp?", "arp", "arpi", "arpg", "arp.", "arpj", "arps", "ars", "art", "arw", "as?", "as", "asc", "asca", "asf", "asj", "asl", "ask", "av?", "av", "avj", "av*", "avr", "avra", "avraj", "avrr", "avrD", "at", "ax?", "ax", "ax*", "ax-", "ax-*", "axc", "axC", "axg", "axg*", "axgj", "axd", "axw", "axj", "axF", "axt", "axf", "ax.", "axff", "axffj", "axs", "b?", "b", "b+", "b-", "bf", "bm", "c?", "c", "c1", "c2", "c4", "c8", "cc", "ccd", "cf", "cg?", "cg", "cgf", "cgff", "cgfc", "cgfn", "cgo", "cu?", "cu", "cu1", "cu2", "cu4", "cu8", "cud", "cv", "cv1", "cv2", "cv4", "cv8", "cV", "cV1", "cV2", "cV4", "cV8", "cw?", "cw", "cw*", "cwr", "cwu", "cx", "cx*", "cX", "cl", "cls", "clear", "d?", "db ", "db-", "db-*", "db.", "dbj", "dbc", "dbC", "dbd", "dbe", "dbs", "dbf", "dbm", "dbn", "db?", "dbi", "dbi.", "dbix", "dbic", "dbie", "dbid", "dbis", "dbite", "dbitd", "dbits", "dbh", "dbh-", "dbt", "dbt*", "dbt=", "dbtv", "dbtj", "dbta", "dbte", "dbtd", "dbts", "dbx", "dbw", "dc?", "dc", "dca", "dcb", "dcc", "dccu", "dcf", "dck", "dcp", "dcr", "dcs", "dcs*", "dct", "dcu", "dcu.", "dd?", "dd", "dd-", "dd+", "dd*", "dds", "ddd", "ddr", "ddw", "de", "dg", "dH", "di?", "di", "di*", "diq", "dij", "dk?", "dk", "dko", "dkj", "dL?", "dL", "dLq", "dLj", "dm?", "dm", "dm=", "dm.", "dm*", "dm-", "dmd", "dmh?", "dmh", "dmha", "dmhb", "dmhbg", "dmhc", "dmhf", "dmhg", "dmhi", "dmhm", "dmht", "dmi?", "dmi", "dmi*", "dmi.", "dmiv", "dmj", "dml?", "dml", "dmm?", "dmm", "dmm*", "dmm.", "dmmj", "dmp?", "dmp", "dms?", "dms", "dmsj", "dms*", "dms-", "dmsA", "dmsC", "dmsd", "dmsw", "dmsa", "dmsf", "dmst", "dmS", "dmS*", "do?", "do", "dor", "doo", "dp?", "dp", "dpj", "dpl", "dplj", "dp-", "dp=", "dpa", "dpc", "dpc*", "dpe", "dpf", "dpk", "dpn", "dptn", "dpt", "dr?", "dr", "drps", "drpj", "drr", "drrj", "drs", "drs+", "drs-", "drt", "drt*", "drtj", "drw", "drx", "drx-", ".dr*", ".dr-", "ds?", "ds", "dsb", "dsf", "dsi", "dsl", "dso", "dsp", "dss", "dsu", "dsui", "dsuo", "dsue", "dsuf", "dt?", "dt", "dt%", "dt*", "dt+", "dt-", "dt=", "dtD", "dta", "dtc", "dtd", "dte", "dte-*", "dtei", "dtek", "dtg", "dtg*", "dtgi", "dtr", "dts?", "dts", "dts+", "dts-", "dtsf", "dtst", "dtsC", "dtt", "dw", "dx?", "dx", "dxa", "dxe", "dxr", "dxs", "e?", "e", "e+", "-e", "-i", "e-", "e*", "e!", "ec", "ee?", "ee", "?ed", "ed", "ej", "env", "er", "es", "et", "ev", "evj", "ec?", "ec", "ec*", "ecd", "ecr", "ecs", "ecj", "ecc", "eco", "ecp", "ecn", "ecH?", "ecH", "ecHi", "ecHw", "ecH-", "f?", "f", "f.", "f*", "f-", "f--", "f+", "f=", "fa", "fb", "fc?", "fc", "fC", "fd", "fe-", "fe", "ff", "fi", "fg", "fj", "fl", "fla", "fm", "fn", "fnj", "fo", "fO", "fr", "fR", "fR?", "fs?", "fs", "fs*", "fsj", "fs-", "fs+", "fs-.", "fsq", "fsm", "fss", "fss*", "fssj", "fsr", "ft?", "ft", "ftn", "fV", "fx", "fq", "fz?", "fz", "fz-", "fz.", "fz:", "fz*", "g?", "g", "gw", "gc", "gl?", "gl", "gs", "gi", "gp", "ge", "gr", "gS", "help", "i?", "i", "ij", "iA", "ia", "ib", "ic", "icc", "iC", "id?", "id", "idp", "idpi", "idpi*", "idpd", "iD", "ie", "iee", "iE", "iE.", "ih", "iHH", "ii", "iI", "ik", "il", "iL", "im", "iM", "io", "iO?", "iO", "ir", "iR", "iu", "iux", "ix", "ixu", "ixS", "ixSS", "is", "is.", "iS", "iS.", "iS=", "iSx", "iSS", "iSSx", "it", "iV", "iX", "iz", "izj", "izz", "izzz", "iz-", "iZ", "k?", "k", "ko", "kd", "ks", "kj", "l", "L?", "L", "L-", "Ll", "LL", "La", "Lc", "Ld", "Lh", "Li", "Lo", "m?", "m", "m*", "ml", "m-", "md", "mf?", "mf", "mg", "mo", "mi", "mp", "ms", "my", "o?", "o", "o-", "o--", "o+", "oe", "oa", "oa-", "oq", "oqq", "open", "o*", "o**", "o.", "o=", "ob?", "ob", "ob*", "obo", "oba", "obf", "obj", "obr", "ob-", "ob-*", "obi", "oc", "of", "oi", "oj", "oL", "om", "on", "oo?", "oo", "oo+", "oob", "ood", "oom", "oon", "oon+", "oonn", "oonn+", "op", "opn", "opp", "opr", "ox", "p?", "p-", "p=", "p2", "p3", "p6?", "p6", "p6d", "p6e", "p8?", "p8", "p8f", "p8j", "pa?", "paD", "pad", "pade", "pae", "pA", "pb?", "pb", "pB", "pxb", "pB?", "pc?", "pc", "pc*", "pca", "pcA", "pcd", "pch", "pcj", "pcp", "pcs", "pcS", "pcw", "pC?", "pC", "pCa", "pCA", "pCc", "pCd", "pCD", "pCx", "pCw", "pd?", "pd", "pd--", "pD", "pda", "pdb", "pdc", "pdC", "pdf", "pdi", "pdj", "pdJ", "pdk", "pdl", "pdp", "pdr", "pdr.", "pdR", "pds?", "pds", "pdsb", "pdsf", "pdt", "pD", "pf?", "pf", "pf??", "pf???", "pf.", "pfj", "pfj.", "pf*", "pf*.", "pfc", "pfc.", "pfd", "pfd.", "pfo", "pfq", "pfv", "pfv.", "pfs", "pfs.", "pF?", "pF", "pFa", "pFaq", "pFo", "pFp", "pFx", "pg?", "pg", "pg*", "pg-*", "ph?", "ph", "ph=", "pi?", "pi", "pia", "pib", "pid", "pie", "pif?", "pif", "pifc", "pifcj", "pifj", "pij", "pir", "pI?", "pI", "pIa", "pIb", "pId", "pIe", "pIf?", "pIf", "pIfc", "pIfcj", "pIfj", "pIj", "pIr", "pj?", "pj", "pj.", "pj..", "pk?", "pk", "pK?", "pK", "pm?", "pm", "pq?", "pq", "pqi", "pqz", "pr?", "pr", "prc", "prl", "prx", "prg?", "prg", "prgi", "prgo", "prz", "ps?", "ps", "psb", "psi", "psj", "psp", "pss", "psu", "psw", "psW", "psx", "psz", "ps+", "pt?", "pt", "pt.", "ptd", "pth", "ptn", "pu?", "pu", "puw", "pU", "pv?", "pv", "pv1", "pv2", "pv4", "pv8", "pvz", "pvj", "pvh", "pv1j", "pv2j", "pv4j", "pv8j", "pv1h", "pv2h", "pv4h", "pv8h", "px?", "px", "px/", "px0", "pxa", "pxA?", "pxA", "pxb", "pxc", "pxd?", "pxd", "pxd2", "pxd4", "pxd8", "pxe", "pxf", "pxh", "pxH", "pxi", "pxl", "pxo", "pxq", "pxq", "pxQ", "pxQq", "pxr", "pxrj", "pxs", "pxt", "pxt*", "pxt.", "pxw", "pxW", "pxWq", "pxx", "pxX", "pz?", "pz", "pzp", "pzf", "pzs", "pz0", "pzF", "pze", "pzh", "P?", "P", "Pc", "Pd", "Pi", "Pn", "Pnj", "Po", "Ps", "PS", "P-", "q?", "q", "q!", "q!!", "q!!!", "qy", "qn", "qyy", "qyn", "qny", "qnn", "r?", "r", "r-", "r+", "rh", "s?", "s", "s:", "s-", "s-*", "s--", "s+", "s++", "sj", "s*", "s=", "s!", "s/", "s/x", "s.", "sa", "sb", "sC?", "sC", "sC*", "sf", "sf.", "sg", "sG", "sl?", "sl", "sl+", "sl-", "slc", "sll", "sn", "sp", "so", "sr", "ss", "t?", "t", "tj", "t*", "t-", "t-*", "ta", "tb", "tc", "te?", "te", "tej", "teb", "tec", "ten", "tenj", "tenq", "td?", "td", "td-", "tf", "tk", "tl", "tn", "to", "tos", "tp", "tpx", "ts?", "ts", "tsj", "ts*", "tsc", "tss", "tu?", "tu", "tuj", "tu*", "tuc", "tt?", "tt", "ttj", "ttc", "T?", "T", "T*", "T-", "Tl", "Tj", "Tm", "Ts", "TT", "T=", "T=.", "T=&", "u?", "u", "uw", "us", "uc", "v", "v.", "V", "v!", "vv", "vV", "vVV", "VV", "w?", "w", "w1+", "w1-", "w2+", "w2-", "w4+", "w4-", "w8+", "w8-", "w0", "w", "w6", "w6d", "w6e", "wa", "wa*", "waf", "wao?", "wao", "wA?", "wA", "wB", "wB-", "wc", "wcj", "wc-", "wc+", "wc*", "wcr", "wci", "wcp", "wcp*", "wcpi", "wd", "we?", "we", "wen", "weN", "wes", "wex", "weX", "wf?", "wf", "wff", "wfs", "wF", "wh", "wm", "wo?", "wo", "wo2", "wo4", "woa", "woA", "wod", "woD", "woe", "woE", "wol", "wom", "woo", "wop?", "wop", "wopD", "wopD*", "wopO", "wp?", "wp", "wr", "ws", "wt?", "wt", "wta", "wtf", "wtf!", "wtff", "wts", "wu", "wv?", "wv", "wv1", "wv2", "wv4", "wv8", "ww", "wx?", "wx", "wxf", "wxs", "wz", "x?", "x", "x/", "x0", "xa", "xA?", "xA", "xb", "xc", "xd?", "xd", "xd2", "xd4", "xd8", "xe", "xf", "xh", "xH", "xi", "xl", "xo", "xq", "xq", "xQ", "xQq", "xr", "xrj", "xs", "xt", "xt*", "xt.", "xw", "xW", "xWq", "xx", "xX", "y?", "y", "yz", "yp", "yx", "ys", "yt", "ytf", "yf", "yfa", "yfx", "yw", "ywx", "yy", "yr", "z?", "z", "z*", "zj", "z-", "z-*", "za?", "za??", "za", "zaf", "zaF", "zg", "zo?", "zo", "zoz", "zos", "zf?", "zfd", "zfs", "zfz", "z/?", "z/", "z/*", "zc", "zs?", "zs", "zs-", "zs-*", "zs+", "zsr", "zi", "?", "?v", "?$?", "?@?", "?>?", NULL
 };
 
 static void autocomplete_mount_point(RLineCompletion *completion, RCore *core, const char *path) {
@@ -487,12 +490,17 @@ out:
 }
 
 typedef struct {
+	const char *key;
+	const RCmdAliasVal *value;
+} AliasAutocompletion;
+
+R_VEC_TYPE (RVecAliasAutocompletion, AliasAutocompletion);
+
+typedef struct {
 	const char *needle;
 	int needle_len;
 	bool must_be_data;
-	const char **valid_completions;
-	const RCmdAliasVal **valid_completion_vals;
-	int num_completions;
+	RVecAliasAutocompletion completions;
 } AliasAutocompletions;
 
 static bool check_alias_completion(void *in, const void *k, const void *v) {
@@ -507,9 +515,11 @@ static bool check_alias_completion(void *in, const void *k, const void *v) {
 	}
 
 	if (!needle_len || !strncmp (k, needle, needle_len)) {
-		c->valid_completions[c->num_completions] = k;
-		c->valid_completion_vals[c->num_completions] = v;
-		c->num_completions++;
+		AliasAutocompletion completion = {
+			.key = k,
+			.value = val
+		};
+		RVecAliasAutocompletion_push_back (&c->completions, &completion);
 	}
 
 	return true;
@@ -524,20 +534,18 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 	c.needle_len = needle_len;
 	// Filter out command aliases?
 	c.must_be_data = must_be_data;
-	// Single block, borrowed pointers
-	c.valid_completions = R_NEWS (const char *, cmd->aliases->count);
-	c.valid_completion_vals = R_NEWS (const RCmdAliasVal *, cmd->aliases->count);
-	c.num_completions = 0;
+	RVecAliasAutocompletion_init (&c.completions);
 
 	ht_pp_foreach (cmd->aliases, check_alias_completion, &c);
 	RCore *core = cmd->data;
 	RCons *cons = core->cons;
 
-	const int match_count = c.num_completions;
+	const size_t match_count = RVecAliasAutocompletion_length (&c.completions);
 	if (match_count == 1) {
 		/* If only 1 possible completion, use it */
-		const char *k = c.valid_completions[0];
-		const RCmdAliasVal *val = c.valid_completion_vals[0];
+		AliasAutocompletion *item = RVecAliasAutocompletion_at (&c.completions, 0);
+		const char *k = item->key;
+		const RCmdAliasVal *val = item->value;
 
 		char *v = r_cmd_alias_val_strdup ((RCmdAliasVal *)val);
 		r_cons_printf (cons, "$%s=%s%s\n", k, val->is_data? "$": "", v);
@@ -550,9 +558,10 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 		free (v);
 	} else if (match_count > 1) {
 		/* If multiple possible completions, show them */
-		for (i = 0; i < c.num_completions; i++) {
-			const char *k = c.valid_completions[i];
-			const RCmdAliasVal *val = c.valid_completion_vals[i];
+		for (i = 0; i < match_count; i++) {
+			AliasAutocompletion *item = RVecAliasAutocompletion_at (&c.completions, i);
+			const char *k = item->key;
+			const RCmdAliasVal *val = item->value;
 
 			char *v = r_cmd_alias_val_strdup ((RCmdAliasVal *)val);
 			char *line = r_str_newf ("$%s=%s%s", k, val->is_data? "$": "", v);
@@ -563,8 +572,21 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 		}
 	}
 	/* If 0 possible completions, do nothing */
-	free ((void *)c.valid_completions);
-	free ((void *)c.valid_completion_vals);
+	RVecAliasAutocompletion_fini (&c.completions);
+}
+
+typedef struct {
+	RLineCompletion *completion;
+	const char *needle;
+	int needle_len;
+} AliasMinusAutocompletion;
+
+static bool autocomplete_minus_alias(void *user, const void *key, const void *value) {
+	AliasMinusAutocompletion *c = user;
+	if (!strncmp ((const char *)key, c->needle, c->needle_len)) {
+		r_line_completion_push (c->completion, key);
+	}
+	return true;
 }
 
 static void autocomplete_process_path(RLineCompletion *completion, const char *str, const char *path) {
@@ -779,17 +801,12 @@ static void autocomplete_project(RCore *core, RLineCompletion *completion, const
 
 static void autocomplete_minus(RCore *core, RLineCompletion *completion, const char *str) {
 	R_RETURN_IF_FAIL (str);
-	int length = strlen (str);
-	int i;
-
-	char **keys = (char **)r_cmd_alias_keys (core->rcmd);
-	for (i = 0; i < core->rcmd->aliases->count; i++) {
-		if (!strncmp (keys[i], str, length)) {
-			r_line_completion_push (completion, keys[i]);
-		}
-	}
-
-	free (keys);
+	AliasMinusAutocompletion c = {
+		.completion = completion,
+		.needle = str,
+		.needle_len = strlen (str)
+	};
+	ht_pp_foreach (core->rcmd->aliases, autocomplete_minus_alias, &c);
 }
 
 static void autocomplete_breakpoints(RCore *core, RLineCompletion *completion, const char *str) {
@@ -981,6 +998,12 @@ static void autocomplete_vars(RCore *core, RLineCompletion *completion, const ch
 	if (!fcn) {
 		return;
 	}
+	// Autocomplete for last argument
+	const char *sp = r_str_rchr (str, NULL, ' ');
+	if (!sp) {
+		return;
+	}
+	str = sp + 1;
 	size_t len = strlen (str);
 	RAnalVar **it;
 	R_VEC_FOREACH (&fcn->vars, it) {
@@ -1202,8 +1225,13 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 	R_RETURN_VAL_IF_FAIL (core && completion && buf, false);
 	RCoreAutocomplete *child = NULL;
 	RCoreAutocomplete *parent = core->autocomplete;
+	// Only look at text up to cursor
+	size_t len = R_MIN (buf->index, buf->length);
+	char saved = buf->data[len];
+	buf->data[len] = 0;
 	const char *p = buf->data;
 	if (!*p) {
+		buf->data[len] = saved;
 		return false;
 	}
 	char arg[256];
@@ -1211,12 +1239,13 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 	while (*p) {
 		const char *e = r_str_trim_head_wp (p);
 		if (!e || (e - p) >= 256 || e == p) {
+			buf->data[len] = saved;
 			return false;
 		}
 		memcpy (arg, p, e - p);
 		arg[e - p] = 0;
 		child = r_core_autocomplete_find (parent, arg, false);
-		if (child && child->length < buf->length && p[child->length] == ' ') {
+		if (child && child->length < len && p[child->length] == ' ') {
 			// if is spaced then i can provide the
 			// next subtree as suggestion..
 			p = r_str_trim_head_ro (p + child->length);
@@ -1293,6 +1322,7 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 		}
 		break;
 	}
+	buf->data[len] = saved;
 	return true;
 }
 
@@ -1333,37 +1363,41 @@ R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBu
 				free (s);
 				return;
 			}
-			eprintf ("%s%s\n%s", core->cons->line->prompt, buf->data, s);
-			RList *list = r_str_split_list (s, "\n", 0);
-			RListIter *iter;
-			char *line;
-			r_list_foreach (list, iter, line) {
-				char *bracket_start = strstr (line, " [");
-				if (bracket_start) {
-					if (r_str_startswith (bracket_start, " [addr]") || r_str_startswith (bracket_start, " [file]")) {
-						const char *registered_option = strstr (bracket_start, "addr")? "'!!!%s $flag": "'!!!%s $file";
-						char *cur = strchr (line, '[');
-						if (cur) {
-							*cur = 0;
+			if (R_STR_ISNOTEMPTY (s)) {
+				eprintf ("\r%s%s\r\n", core->cons->line->state.prompt, buf->data);
+				RList *list = r_str_split_list (s, "\n", 0);
+				RListIter *iter;
+				char *line;
+				r_list_foreach (list, iter, line) {
+					eprintf ("%s\r\n", line);
+					char *bracket_start = strstr (line, " [");
+					if (bracket_start) {
+						if (r_str_startswith (bracket_start, " [addr]") || r_str_startswith (bracket_start, " [file]")) {
+							const char *registered_option = strstr (bracket_start, "addr")? "'!!!%s $flag": "'!!!%s $file";
+							char *cur = strchr (line, '[');
+							if (cur) {
+								*cur = 0;
+							}
+							cur = strchr (line, '|');
+							if (cur) {
+								*cur = 0;
+							}
+							cur = strchr (line, '>');
+							if (cur) {
+								*cur = 0;
+							}
+							*bracket_start = 0;
+							const char *cmd = line;
+							r_core_cmdf (core, "'!!!-%s", cmd);
+							r_core_cmdf (core, registered_option, cmd);
 						}
-						cur = strchr (line, '|');
-						if (cur) {
-							*cur = 0;
-						}
-						cur = strchr (line, '>');
-						if (cur) {
-							*cur = 0;
-						}
-						*bracket_start = 0;
-						const char *cmd = line;
-						r_core_cmdf (core, "'!!!-%s", cmd);
-						r_core_cmdf (core, registered_option, cmd);
 					}
 				}
+				r_list_free (list);
+				free (s);
+				return;
 			}
-			r_list_free (list);
 			free (s);
-			return;
 		}
 	}
 	r_line_completion_clear (completion);
@@ -1620,7 +1654,7 @@ R_API int r_core_fgets(RCons *cons, char *buf, int len) {
 	if (!ptr) {
 		return -1;
 	}
-	if (cons->line->buffer.length >= len - 2) {
+	if (cons->line->state.buffer.length >= len - 2) {
 		R_LOG_ERROR ("input is too large");
 		*buf = 0;
 		return 0;
@@ -1691,6 +1725,7 @@ static void init_cmd_suggestions(RCore *core) {
 	}
 	// Fallback commands with? e (safe echo) for missing plugin commands
 	// Using fallbackcmd.* prefix to distinguish from regular SDB entries
+	sdb_set (core->sdb, "fallbackcmd.r2vsql", "?e You need to install the plugin with r2pm -ci r2vsql", 0);
 	sdb_set (core->sdb, "fallbackcmd.pdd", "?e You need to install the plugin with r2pm -ci r2dec", 0);
 	sdb_set (core->sdb, "fallbackcmd.pdg", "?e You need to install the plugin with r2pm -ci r2ghidra", 0);
 	sdb_set (core->sdb, "fallbackcmd.pd:g", "?e You need to install the plugin with r2pm -ci r2ghidra", 0);
@@ -2381,11 +2416,14 @@ R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 off)
 
 static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 	RCore *core = user;
+	RCorePriv *priv = core->priv;
 	REventIOWrite *iow = data;
 	if (r_config_get_i (core->config, "anal.onchange")) {
 		// works, but loses varnames and such, but at least is not crashing
 		char *cmd = r_str_newf ("af-0x%08" PFMT64x ";af 0x%08" PFMT64x, iow->addr, iow->addr);
-		r_list_append (core->cmdqueue, cmd);
+		r_th_lock_enter (priv->cmdqueue_lock);
+		r_list_append (priv->cmdqueue, cmd);
+		r_th_lock_leave (priv->cmdqueue_lock);
 #if 0
 		r_anal_update_analysis_range (core->anal, iow->addr, iow->len);
 		if (core->cons->event_resize && core->cons->event_data) {
@@ -2398,7 +2436,6 @@ static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 
 static RThreadFunctionRet thchan_handler(RThread *th) {
 	RCore *core = (RCore *)th->user;
-	// r_cons_thready ();
 	while (r_th_is_running (th) && !th->breaked) {
 		r_th_sem_wait (core->chan->sem); // busy because stack is empty
 		if (!r_th_is_running (th) || th->breaked) {
@@ -2486,7 +2523,8 @@ R_API bool r_core_init(RCore *core) {
 	r_w32_init ();
 	core->muta = r_muta_new ();
 	core->priv = R_NEW0 (RCorePriv);
-	((RCorePriv *)core->priv)->old_bits = -1;
+	RCorePriv *priv = core->priv;
+	priv->old_bits = -1;
 	core->log = r_core_log_new ();
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -2545,7 +2583,8 @@ R_API bool r_core_init(RCore *core) {
 	// ideally sdb_ns_set should be used here, but it doesnt seems to work well. must fix
 	// sdb_ns_set (core->sdb, "charset", core->print->charset->db);
 	core->stkcmd = NULL;
-	core->cmdqueue = r_list_newf (free);
+	priv->cmdqueue_lock = r_th_lock_new (false);
+	priv->cmdqueue = r_list_newf (free);
 	core->cmdrepeat = true;
 	core->yank_buf = r_buf_new ();
 	// Initialize RMuta and wire print charset callbacks
@@ -2554,13 +2593,21 @@ R_API bool r_core_init(RCore *core) {
 	core->print->charset_decode = r_core_charset_decode_cb;
 	core->print->charset_encode = r_core_charset_encode_cb;
 	core->egg = r_egg_new ();
+	if (!core->egg) {
+		R_LOG_ERROR ("Cannot initialize REgg");
+		return false;
+	}
 	// 	core->egg->rasm = core->rasm;
 
 	core->undos = r_list_newf ((RListFree)r_core_undo_free);
 
 	core->theme = strdup ("default");
 	/* initialize libraries */
-	core->cons = r_cons_new ();
+	if (!core->cons) {
+		// "oc" reinitializes the core but keeps the console alive, because
+		// the active command dispatch stack holds pointers into it
+		core->cons = r_cons_new ();
+	}
 	core->cons->line->user = core;
 	r_cons_bind (core->cons, &core->print->consb);
 	if (core->cons->use_utf8) {
@@ -2732,11 +2779,15 @@ R_API void __cons_cb_fkey(RCore *core, int fkey) {
 	}
 }
 
+static char *r_core_editor_cb(void *core, const char *file, const char *str, bool *canceled) {
+	return r_core_editor (core, file, str, canceled);
+}
+
 R_API void r_core_bind_cons(RCore *core) {
 	R_RETURN_IF_FAIL (core);
 	core->cons->num = core->num;
 	core->cons->cb_fkey = (RConsFunctionKey)__cons_cb_fkey;
-	core->cons->cb_editor = (RConsEditorCallback)r_core_editor;
+	core->cons->cb_editor = r_core_editor_cb;
 	core->cons->cb_break = NULL; // (RConsBreakCallback)r_core_break;
 	core->cons->cb_sleep_begin = (RConsSleepBeginCallback)r_core_sleep_begin;
 	core->cons->cb_sleep_end = (RConsSleepEndCallback)r_core_sleep_end;
@@ -2745,6 +2796,7 @@ R_API void r_core_bind_cons(RCore *core) {
 
 R_API void r_core_fini(RCore *c) {
 	R_RETURN_IF_FAIL (c);
+	RCorePriv *priv = c->priv;
 	if (c->chan) {
 		r_th_channel_free (c->chan);
 	}
@@ -2765,7 +2817,10 @@ R_API void r_core_fini(RCore *c) {
 	r_table_free (c->table);
 	R_FREE (c->cmdlog);
 	free (c->lastsearch);
-	r_list_free (c->cmdqueue);
+	r_th_lock_enter (priv->cmdqueue_lock);
+	r_list_free (priv->cmdqueue);
+	r_th_lock_leave (priv->cmdqueue_lock);
+	r_th_lock_free (priv->cmdqueue_lock);
 	free (c->lastcmd);
 	free (c->stkcmd);
 	r_project_free (c->prj);
@@ -2791,6 +2846,7 @@ R_API void r_core_fini(RCore *c) {
 	r_libstore_free (c->libstore);
 	c->libstore = NULL;
 	r_lib_free (c->lib);
+	c->lib = NULL;
 	r_event_free (c->ev);
 	r_core_esil_fini (&c->esil);
 	if (c->anal->esil) {
@@ -2812,8 +2868,10 @@ R_API void r_core_fini(RCore *c) {
 	/* after r_config_free, the value of I.teefile is trashed */
 	/* rconfig doesnt knows how to deinitialize vars, so we
 	should probably need to add a r_config_free_payload callback */
-	r_cons_free (c->cons);
-	c->cons = NULL;
+	if (c->cons) {
+		r_cons_free (c->cons);
+		c->cons = NULL;
+	}
 	free (c->theme);
 	free (c->themepath);
 	r_search_free (c->search);
@@ -2827,12 +2885,13 @@ R_API void r_core_fini(RCore *c) {
 	r_core_log_free (c->log);
 	r_fs_shell_free (c->rfs);
 	free (c->times);
-	free (((RCorePriv *)c->priv)->old_arch);
-	ht_up_free (((RCorePriv *)c->priv)->debug_replay);
+	free (priv->old_arch);
+	ht_up_free (priv->debug_replay);
 	// Free cmd and its plugins before freeing event system
 	r_cmd_free (c->rcmd);
 	c->rcmd = NULL;
-	free (c->priv);
+	free (priv);
+	c->priv = NULL;
 }
 
 R_API void r_core_free(RCore *R_NULLABLE c) {
@@ -3012,10 +3071,13 @@ R_API void r_core_cmd_queue_wait(RCore *core) {
 	if (!interactive) {
 		return;
 	}
+	RCorePriv *priv = core->priv;
 	r_cons_push (core->cons);
 	r_cons_break_push (core->cons, NULL, NULL);
 	while (!r_cons_is_breaked (core->cons)) {
-		char *cmd = r_list_pop (core->cmdqueue);
+		r_th_lock_enter (priv->cmdqueue_lock);
+		char *cmd = r_list_pop (priv->cmdqueue);
+		r_th_lock_leave (priv->cmdqueue_lock);
 		if (cmd) {
 			r_core_cmd0 (core, cmd);
 			r_cons_flush (core->cons);
@@ -3028,12 +3090,15 @@ R_API void r_core_cmd_queue_wait(RCore *core) {
 }
 
 R_API void r_core_cmd_queue(RCore *core, const char *line) {
+	RCorePriv *priv = core->priv;
+	r_th_lock_enter (priv->cmdqueue_lock);
 	if (line) {
-		r_list_append (core->cmdqueue, strdup (line));
+		r_list_append (priv->cmdqueue, strdup (line));
 	} else {
-		r_list_free (core->cmdqueue);
-		core->cmdqueue = r_list_newf (free);
+		r_list_free (priv->cmdqueue);
+		priv->cmdqueue = r_list_newf (free);
 	}
+	r_th_lock_leave (priv->cmdqueue_lock);
 }
 
 R_API int r_core_prompt(RCore *r, int sync) {
@@ -3066,8 +3131,11 @@ R_API int r_core_prompt(RCore *r, int sync) {
 
 R_API int r_core_prompt_exec(RCore *r) {
 	int ret = -1;
-	while (!r_list_empty (r->cmdqueue)) {
-		char *cmd = r_list_pop (r->cmdqueue);
+	RCorePriv *priv = r->priv;
+	while (true) {
+		r_th_lock_enter (priv->cmdqueue_lock);
+		char *cmd = r_list_pop (priv->cmdqueue);
+		r_th_lock_leave (priv->cmdqueue_lock);
 		if (!cmd) {
 			break;
 		}
@@ -3546,19 +3614,28 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 }
 #endif
 
-R_API char *r_core_editor(const RCore *core, const char *file, const char *str) {
+R_API char *r_core_editor(const RCore *core, const char *file, const char *str, bool *canceled) {
+	if (canceled) {
+		*canceled = false;
+	}
+	R_RETURN_VAL_IF_FAIL (core && core->cons && core->config, NULL);
 	const bool interactive = r_cons_is_interactive (core->cons);
 	const char *editor = r_config_get (core->config, "cfg.editor");
 	char *name = NULL, *ret = NULL;
-	int fd;
+	int fd = -1;
+	bool tempfile = false;
+	bool was_canceled = false;
 
 	if (!interactive) {
-		return NULL;
+		R_LOG_ERROR ("Editor requires an interactive terminal");
+		goto beach;
 	}
 	bool readonly = false;
-	bool tempfile = false;
 	if (file && *file != '*') {
 		name = strdup (file);
+		if (!name) {
+			goto beach;
+		}
 		fd = r_sandbox_open (file, O_RDWR, 0644);
 		if (fd == -1) {
 			fd = r_sandbox_open (file, O_RDWR | O_CREAT, 0644);
@@ -3572,45 +3649,73 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		fd = r_file_mkstemp (file, &name);
 	}
 	if (fd == -1) {
-		free (name);
-		return NULL;
+		if (tempfile) {
+			R_LOG_ERROR ("Cannot create temporary editor file");
+		} else {
+			R_LOG_ERROR ("Cannot open '%s' for editing", file);
+		}
+		goto beach;
 	}
 	if (readonly) {
 		R_LOG_INFO ("Opening in read-only");
-	} else {
-		if (str) {
-			const size_t str_len = strlen (str);
-			if (write (fd, str, str_len) != str_len) {
-				close (fd);
-				free (name);
-				return NULL;
-			}
+	} else if (str) {
+		const size_t str_len = strlen (str);
+		if (write (fd, str, str_len) != str_len) {
+			R_LOG_ERROR ("Cannot write editor contents to '%s'", name);
+			goto beach;
 		}
 	}
 	close (fd);
+	fd = -1;
 
 	if (name && (R_STR_ISEMPTY (editor) || !strcmp (editor, "-"))) {
 		RCons *cons = core->cons;
-		void *tmp = cons->cb_editor;
+		RConsEditorCallback cb_editor = cons->cb_editor;
 		cons->cb_editor = NULL;
-		free (r_cons_editor (cons, name, NULL));
-		cons->cb_editor = tmp;
+		char *result = r_cons_editor (cons, name, NULL, &was_canceled);
+		cons->cb_editor = cb_editor;
+		if (!result && !was_canceled) {
+			goto beach;
+		}
+		free (result);
 	} else {
-		if (editor && name) {
-			char *escaped_name = r_str_escape_sh (name);
-			r_sys_cmdf ("%s \"%s\"", editor, escaped_name);
-			free (escaped_name);
+		if (!editor || !name) {
+			goto beach;
+		}
+		if (r_sandbox_enable (0)) {
+			R_LOG_ERROR ("Cannot run editor in sandbox mode");
+			goto beach;
+		}
+		char *escaped_name = r_str_escape_sh (name);
+		if (!escaped_name) {
+			goto beach;
+		}
+		const int rc = r_sys_cmdf ("%s \"%s\"", editor, escaped_name);
+		free (escaped_name);
+		if (rc) {
+			R_LOG_ERROR ("Editor command failed");
+			goto beach;
 		}
 	}
 	size_t len = 0;
-	ret = name? r_file_slurp (name, &len): 0;
-	if (ret) {
-		if (len && ret[len - 1] == '\n') {
-			ret[len - 1] = 0; // chop
-		}
-		if (tempfile) {
-			r_file_rm (name);
-		}
+	ret = name? r_file_slurp (name, &len): NULL;
+	if (!ret) {
+		R_LOG_ERROR ("Cannot read edited file '%s'", name);
+		goto beach;
+	}
+	if (len && ret[len - 1] == '\n') {
+		ret[len - 1] = 0; // chop
+	}
+	if (canceled) {
+		*canceled = was_canceled;
+	}
+
+beach:
+	if (fd != -1) {
+		close (fd);
+	}
+	if (tempfile && name) {
+		r_file_rm (name);
 	}
 	free (name);
 	return ret;
@@ -3618,7 +3723,11 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 
 /* weak getters */
 R_API RCons *r_core_get_cons(RCore *core) {
-	return core->cons;
+	RCoreTask *task = r_core_task_self (&core->tasks);
+	if (task && task->cur_context) {
+		return task->cur_context->cons;
+	}
+	return task && task->cons? task->cons: core->cons;
 }
 
 R_API RConfig *r_core_get_config(RCore *core) {
@@ -3736,16 +3845,19 @@ R_API void r_core_autocomplete_free(RCoreAutocomplete *obj) {
 R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char *cmd, bool exact) {
 	R_RETURN_VAL_IF_FAIL (parent && cmd, NULL);
 	size_t len = strlen (cmd);
+	RCoreAutocomplete *prefix = NULL;
 	RCoreAutocomplete *iter;
 	R_VEC_FOREACH (&parent->subcmds, iter) {
-		if (exact && len != iter->length) {
-			continue;
-		}
 		if (!strncmp (cmd, iter->cmd, len)) {
-			return iter;
+			if (len == iter->length) {
+				return iter;
+			}
+			if (!exact && !prefix) {
+				prefix = iter;
+			}
 		}
 	}
-	return NULL;
+	return exact? NULL: prefix;
 }
 
 R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char *cmd) {

@@ -84,3 +84,154 @@ cmpdi r9, 0
 beq 0x20c
 EOF
 RUN
+
+NAME=PPC64 pseudo isel keeps the condition register bit
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 7c64281e7c64289e7c642a9e7c60281e
+pi 4
+EOF
+EXPECT=<<EOF
+r3 = select(cr0lt, r4, r5)
+r3 = select(cr0eq, r4, r5)
+r3 = select(cr2eq, r4, r5)
+r3 = select(cr0lt, 0, r5)
+EOF
+RUN
+
+NAME=PPC64 pseudo keeps every operand when no rule matches
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 1022192b
+pi 1
+EOF
+EXPECT=<<EOF
+vperm v1, v2, v3, v4
+EOF
+RUN
+
+NAME=PPC64 pseudo rotate instructions keep their destination register
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 5c83298e5483298f5083298e
+pi 3
+EOF
+EXPECT=<<EOF
+r3 = rol32(r4, r5) & 0x3000000
+r3 = rol32(r4, 5) & 0x3000000
+r3 = (rol32(r4, 5) & 0x3000000) | (r3 & 0xfffffffffcffffff)
+EOF
+RUN
+
+NAME=PPC64 pseudo trap translates the TO code and keeps its operands
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 0ca300007d8320080e8300077c8320087fe320880fe30007
+pi 6
+EOF
+EXPECT=<<EOF
+if ((word) r3 >= (word) 0) trap
+if ((word) r3 >= (word) r4) trap
+if ((word) r3 <= (word) 7) trap
+if ((word) r3 == (word) r4) trap
+trap
+trap
+EOF
+RUN
+
+NAME=PPC64 pseudo resolves special purpose register names
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 7c7042a67c7043a6
+pi 2
+EOF
+EXPECT=<<EOF
+r3 = sprg0
+sprg0 = r3
+EOF
+RUN
+
+NAME=PPC64 pseudo doubleword rotate masks are per mnemonic
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 788329c0788329c4788329c8788329cc
+pi 4
+EOF
+EXPECT=<<EOF
+r3 = rol64(r4, 5) & 0x1ffffffffffffff
+r3 = rol64(r4, 5) & 0xff00000000000000
+r3 = rol64(r4, 5) & 0x1ffffffffffffe0
+r3 = (rol64(r4, 5) & 0x1ffffffffffffe0) | (r3 & 0xfe0000000000001f)
+EOF
+RUN
+
+NAME=PPC64 pseudo word rotate wrapping mask keeps the high half
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 54ef7f9550ef7f945cef2f94
+pi 3
+EOF
+EXPECT=<<EOF
+r15 = rol32(r7, 0xf) & 0xffffffffffe00003
+r15 = (rol32(r7, 0xf) & 0xffffffffffe00003) | (r15 & 0x1ffffc)
+r15 = rol32(r7, r5) & 0xffffffffffe00003
+EOF
+RUN
+
+NAME=PPC64 pseudo lfiwax renders its operands
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 7c6436ae
+pi 1
+EOF
+EXPECT=<<EOF
+f3 = float[r6 + r4]
+EOF
+RUN
+
+NAME=PPC64 pseudo ctr-conditional branches render the branch target
+FILE=malloc://64
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 4000000840060008400000094140000941400008410000084100000940400008404000094140000a
+pi 10
+EOF
+EXPECT=<<EOF
+if (ctr != 0 && !lt) goto 8
+if (ctr != 0 && !4*cr1+eq) goto 0xc
+if (ctr != 0 && !lt) call 0x10
+if (ctr == 0 && lt) call 0x14
+if (ctr == 0 && lt) goto 0x18
+if (ctr != 0 && lt) goto 0x1c
+if (ctr != 0 && lt) call 0x20
+if (ctr == 0 && !lt) goto 0x24
+if (ctr == 0 && !lt) call 0x28
+if (ctr == 0 && lt) goto 8
+EOF
+RUN
+
+NAME=PPC64 pseudo ctr-conditional lr branches render as conditional returns
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 4c0000204c0000214d4000204c4000204d0000204e0000204e400021
+pi 7
+EOF
+EXPECT=<<EOF
+if (ctr != 0 && !lt) return
+if (ctr != 0 && !lt) return
+if (ctr == 0 && lt) return
+if (ctr == 0 && !lt) return
+if (ctr != 0 && lt) return
+if (ctr != 0) return
+if (ctr == 0) return
+EOF
+RUN

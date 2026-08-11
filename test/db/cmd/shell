@@ -7,6 +7,121 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=infix double ampersand short circuits
+FILE=malloc://32
+CMDS=<<EOF
+?e LEFT && ?e RIGHT
+?e A&&?e B&&?e C
+?e LEFT "&&" RIGHT
+?e LEFT '&&' RIGHT
+?e LEFT "&"'&' RIGHT
+?e LEFT \&\& RIGHT
+?e ODD\&& ?e LITERAL
+?e EVEN\\&& ?e ACTIVE
+EOF
+EXPECT=<<EOF
+LEFT
+RIGHT
+A
+B
+C
+LEFT && RIGHT
+LEFT && RIGHT
+LEFT && RIGHT
+LEFT && RIGHT
+ODD&& ?e LITERAL
+EVEN\
+ACTIVE
+EOF
+RUN
+
+NAME=infix double ampersand stops on nonzero status
+FILE=malloc://32
+CMDS=<<EOF
+prj open /this/path/does/not/exist/r2-and.prj && ?e SHOULD_NOT_RUN
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot find project file: /this/path/does/not/exist/r2-and.prj
+EOF
+RUN
+
+NAME=infix double pipe short circuits
+FILE=malloc://32
+CMDS=<<EOF
+?e LEFT || ?e SHOULD_NOT_RUN
+?e A||?e SKIPPED&&?e B
+?e PIPE | cat || printf SHOULD_NOT_RUN
+?e LEFT "||" RIGHT
+?e LEFT '||' RIGHT
+?e LEFT "|"'|' RIGHT
+?e LEFT \|\| RIGHT
+?e ODD\|| cat
+?e EVEN\\|| ?e ACTIVE
+EOF
+EXPECT=<<EOF
+LEFT
+A
+B
+PIPE
+LEFT || RIGHT
+LEFT || RIGHT
+LEFT || RIGHT
+LEFT || RIGHT
+ODD|
+EVEN\
+EOF
+RUN
+
+NAME=mixed infix conditionals recover from nonzero status
+FILE=malloc://32
+CMDS=<<EOF
+prj open /this/path/does/not/exist/r2-or.prj && ?e SHOULD_NOT_RUN || ?e RECOVERED
+EOF
+EXPECT=<<EOF
+RECOVERED
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot find project file: /this/path/does/not/exist/r2-or.prj
+EOF
+RUN
+
+NAME=system pipeline and r2 control boundaries
+FILE=malloc://32
+CMDS=<<EOF
+?e foo | grep foo | grep foo && ?e R2_AND
+?e nope | grep foo || ?e R2_OR
+?e foo | grep foo \&\& echo SHELL_AND && ?e R2_AFTER_SHELL_AND
+?e nope | grep foo \|\| echo SHELL_OR && ?e R2_AFTER_SHELL_OR
+?e foo | grep foo \; echo SHELL_SEMI;?e R2_SEMI
+EOF
+EXPECT=<<EOF
+foo
+R2_AND
+R2_OR
+foo
+SHELL_AND
+R2_AFTER_SHELL_AND
+SHELL_OR
+R2_AFTER_SHELL_OR
+foo
+SHELL_SEMI
+R2_SEMI
+EOF
+RUN
+
+NAME=internal pipe transforms feed system pipelines
+FILE=malloc://32
+CMDS=<<EOF
+?e Zm9vCg== |D | grep foo
+?e foo |J | grep '"output":"foo\\n"'
+EOF
+EXPECT=<<EOF
+foo
+{"command":"?e foo","output":"foo\n","offset":0,"blocksize":256,"log":"","rc":0,"value":0}
+EOF
+RUN
+
 NAME=touch
 FILE=malloc://32-
 CMDS=<<EOF
@@ -21,16 +136,40 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=quote + quoteseek
+NAME=empty leading double quotes use normal parser
 FILE=malloc://32
 CMDS=<<EOF
-woe 1
-""p8 8
-""@16""p8 8
+""?e ONE;?e TWO
+""?e $(?e THREE)
+""""?e FOUR
+3""?e REPEAT
+""?e "FIVE;SIX"
+"  "2echo HEADING
+""2echo EMPTY-HEADING
+"  " 2 echo SPACED-HEADING
+   2 echo LEADING-SPACES
+""'echo SIX;?e SEVEN
+?e [$(""'echo EIGHT)]
 EOF
 EXPECT=<<EOF
-0001020304050607
-1011121314151617
+ONE
+TWO
+THREE
+FOUR
+REPEAT
+REPEAT
+REPEAT
+FIVE;SIX
+HEADING
+HEADING
+EMPTY-HEADING
+EMPTY-HEADING
+SPACED-HEADING
+SPACED-HEADING
+LEADING-SPACES
+LEADING-SPACES
+SIX;?e SEVEN
+[EIGHT]
 EOF
 RUN
 
@@ -44,6 +183,117 @@ EOF
 EXPECT=<<EOF
 0001020304050607
 1011121314151617
+EOF
+RUN
+
+NAME=single quote after command boundaries
+FILE=malloc://32
+CMDS=<<EOF
+   'echo one;echo two
+3'echo "x;y"
+?e before; 'echo "x;y"
+3'echo x\;y
+3'echo @x;#y|z>q
+"3"'echo quoted-repeat
+2""'echo digits-empty
+""2'echo empty-digits
+""2""'echo empty-digits-empty
+EOF
+EXPECT=<<EOF
+one;echo two
+x;y
+x;y
+x;y
+before
+x;y
+x;y
+x;y
+x;y
+@x;#y|z>q
+@x;#y|z>q
+@x;#y|z>q
+quoted-repeat
+quoted-repeat
+quoted-repeat
+digits-empty
+digits-empty
+empty-digits
+empty-digits
+empty-digits-empty
+empty-digits-empty
+EOF
+RUN
+
+NAME=Remove files valid commands
+FILE=malloc://512
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/rm-flag-file
+rmrf .tmp/rm-r-directory
+rmrf .tmp/rm-rf-directory
+touch .tmp/rm-flag-file
+mkdir .tmp/rm-r-directory
+touch .tmp/rm-r-directory/file
+mkdir .tmp/rm-rf-directory
+touch .tmp/rm-rf-directory/file
+rm .tmp/rm-flag-file
+rm -r .tmp/rm-r-directory
+rm -rf .tmp/rm-rf-directory
+ls .tmp~rm-flag-file
+ls .tmp~rm-r-directory
+ls .tmp~rm-rf-directory
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Remove files invalid commands
+FILE=malloc://512
+CMDS=<<EOF
+rm -r
+rm -rf
+rm -rfoo
+rm -random target
+rm -fr directory
+EOF
+EXPECT=<<EOF
+| rm [file]        remove file
+| rmrf [file|dir]  recursive remove
+| rm [file]        remove file
+| rmrf [file|dir]  recursive remove
+| rm [file]        remove file
+| rmrf [file|dir]  recursive remove
+| rm [file]        remove file
+| rmrf [file|dir]  recursive remove
+| rm [file]        remove file
+| rmrf [file|dir]  recursive remove
+EOF
+RUN
+
+NAME=single quote after conditional boundaries
+FILE=malloc://32
+CMDS=<<EOF
+?e before && 'echo "and;x"
+?e skipped-or || 'echo SHOULD_NOT_RUN
+prj open /this/path/does/not/exist/r2-raw-or.prj || 'echo "or;x"
+prj open /this/path/does/not/exist/r2-raw-and.prj && 'echo SHOULD_NOT_RUN
+?e repeated && 2'echo raw||literal
+?e seek-prefixed && @4@'echo "seek-and;x"
+EOF
+EXPECT=<<EOF
+before
+and;x
+skipped-or
+or;x
+repeated
+raw||literal
+raw||literal
+seek-prefixed
+seek-and;x
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot find project file: /this/path/does/not/exist/r2-raw-or.prj
+ERROR: Cannot find project file: /this/path/does/not/exist/r2-raw-and.prj
 EOF
 RUN
 
@@ -77,24 +327,67 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=nested escaped or with double quote
+NAME=nested escaped or after empty double quotes
 FILE=malloc://32
 CMDS=<<EOF
-?v 4 \| `""?v 1 | 2`
+?v 4 \| `""?v 1 \| 2`
 EOF
 EXPECT=<<EOF
 0x7
 EOF
 RUN
 
-NAME=nested escaped or with single quote
-BROKEN=1
+NAME=raw calls in command substitutions
 FILE=malloc://32
 CMDS=<<EOF
 ?v 4 \| `'?v 1 | 2`
+?v 4 \| $('?v 1 | 2)
+?v 4 \| `   '?v 1 | 2`
+?v 4 \| $(   '?v 1 | 2)
+?e $(2'echo repeat)
+?e `2'echo repeat`
+?e $("3"'echo quoted-repeat)
+?e $('echo left\)right)
+?e $(@4@'echo "seek-dollar;x")
+?e `@4@'echo "seek-backtick;x"`
+?e $(@4@2'echo seek-repeat)
+?e $(@(2+2)@'echo paren-seek)
+?e $(@4@'echo seek-left\)right)
+s 0
+?e `'w hello\`world`
+ps 11
 EOF
 EXPECT=<<EOF
 0x7
+0x7
+0x7
+0x7
+repeat repeat
+repeat repeat
+quoted-repeat quoted-repeat quoted-repeat
+left)right
+seek-dollar;x
+seek-backtick;x
+seek-repeat seek-repeat
+paren-seek
+seek-left)right
+
+hello`world
+EOF
+RUN
+
+NAME=unterminated raw calls in command substitutions
+FILE=malloc://32
+CMDS=<<EOF
+?e $('echo SHOULD_NOT_RUN
+?e `'echo SHOULD_NOT_RUN
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: parse: Missing sub-command closing in expression
+ERROR: Invalid command '?e $('echo SHOULD_NOT_RUN' (0x3f)
+ERROR: parse: Missing sub-command closing in expression
+ERROR: Invalid command '?e `'echo SHOULD_NOT_RUN' (0x3f)
 EOF
 RUN
 
@@ -105,6 +398,157 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 0x7
+EOF
+RUN
+
+NAME=command substitutions follow shell quote context
+FILE=malloc://32
+CMDS=<<EOF
+?e "backtick:`?e DOUBLE`"
+?e "dollar:$(?e DOUBLE)"
+?e 'backtick:`?e SINGLE`'
+?e 'dollar:$(?e SINGLE)'
+?e "escaped:\`?e LITERAL\`"
+?e "escaped:\$(?e LITERAL)"
+?e "one:`?e FIRST`" "two:$(?e SECOND)"
+?e 'inside:$(?e SINGLE)' outside:$(?e OK)
+?e outside:`?e OK`
+?e outside:$(?e OK)
+EOF
+EXPECT=<<EOF
+backtick:DOUBLE
+dollar:DOUBLE
+backtick:`?e SINGLE`
+dollar:$(?e SINGLE)
+escaped:`?e LITERAL`
+escaped:$(?e LITERAL)
+one:FIRST two:SECOND
+inside:$(?e SINGLE) outside:OK
+outside:OK
+outside:OK
+EOF
+RUN
+
+NAME=command substitution output stays opaque
+FILE=malloc://32
+CMDS=<<EOF
+?e pre$(?e:YSBiOyN8PkB+JiZ8fCInYCQoP2UgSU5KRUNUKQ==)post
+?e pre`?e:YSBiOyN8PkB+JiZ8fCInYCQoP2UgSU5KRUNUKQ==`post
+?e "pre$(?e:YSBiOyN8PkB+JiZ8fCInYCQoP2UgSU5KRUNUKQ==)post"
+?e $('echo "dollar;x")
+?e pre$(?e:WA==)post;?e AFTER
+prj open $(?e:L3RoaXMvcGF0aC9kb2VzIG5vdC9leGlzdDsjfD5AfiYmfHw=)
+EOF
+EXPECT=<<EOF
+prea b;#|>@~&&||"'`$(?e INJECT)post
+prea b;#|>@~&&||"'`$(?e INJECT)post
+prea b;#|>@~&&||"'`$(?e INJECT)post
+dollar;x
+preXpost
+AFTER
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot find project file: /this/path/does not/exist;#|>@~&&||
+EOF
+RUN
+
+NAME=command position substitution evaluates output as a command
+FILE=malloc://32
+CMDS=<<EOF
+$(?e:P2UgR0VORVJBVEVE)
+`?e:P2UgR0VORVJBVEVE`
+`p6ds P2UgaGVsbG87P2Ugd29ybGQ=`
+`?e ?e` chained
+EOF
+EXPECT=<<EOF
+GENERATED
+GENERATED
+hello
+world
+chained
+EOF
+RUN
+
+NAME=command position substitution executes nested command
+FILE=malloc://32
+CMDS=<<EOF
+s 0
+$(wx 41)
+p8 1
+EOF
+EXPECT=<<EOF
+41
+EOF
+RUN
+
+NAME=semicolons inside substitution bodies are inner syntax
+FILE=malloc://32
+CMDS=<<EOF
+?e [$(?e a;?e b)]
+?e [`?e a;?e b`]
+?e [$(?e a)];?e after
+?e [`?e a`];?e after
+EOF
+EXPECT=<<EOF
+[a b]
+[a b]
+[a]
+after
+[a]
+after
+EOF
+RUN
+
+NAME=unterminated substitution with semicolon executes nothing
+FILE=malloc://32
+CMDS=<<EOF
+?e $(?e a;?e REST
+?e `?e a;?e REST
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: parse: Missing sub-command closing in expression
+ERROR: Invalid command '?e $(?e a;?e REST' (0x3f)
+ERROR: parse: Missing sub-command closing in expression
+ERROR: Invalid command '?e `?e a;?e REST' (0x3f)
+EOF
+RUN
+
+NAME=dollar and backtick share trimming and status behavior
+FILE=malloc://32
+CMDS=<<EOF
+?v 7;?e $(?v 3);?v $?
+?v 7;?e `?v 3`;?v $?
+?e [$(?e x)][`?e x`]
+EOF
+EXPECT=<<EOF
+0x7
+0x3
+0x0
+0x7
+0x3
+0x0
+[x][x]
+EOF
+RUN
+
+NAME=escaped quotes keep pipes and redirects literal
+FILE=malloc://32
+CMDS=<<EOF
+?e "pipe:\"|E"
+?e "redirect:\">?"
+?e "one:\"|E" "two:\">?"
+?e "one:\"|E" "two:\">?"|cat
+?e escaped \| pipe
+?e escaped \> redirect
+EOF
+EXPECT=<<EOF
+pipe:"|E
+redirect:">?
+one:"|E two:">?
+one:"|E two:">?
+escaped | pipe
+escaped > redirect
 EOF
 RUN
 
@@ -119,6 +563,7 @@ CMDS=<<EOF
 _
 ?e hello|!grep hell
 _
+?e hello|!sh -c 'cat >/dev/null; dd if=/dev/zero bs=1M count=1 1>&2'
 EOF
 EXPECT=<<EOF
 hello
@@ -128,5 +573,179 @@ hello
 ===
 hello
 hello
+EOF
+RUN
+
+NAME=temporary seek prefix
+FILE=malloc://32
+CMDS=<<EOF
+@4@?v $$
+?v $$
+@4@?v $$;?v $$
+@4@?v $$ && ?v $$
+?v $$ @ 4 && ?v $$
+@4@?v $$ @ 8
+f foo @ 16
+@foo@?v $$
+@4@@8@?v $$
+s 8; @4@?v $$; ?v $$; s 0
+@4@s 8
+?v $$
+s 0
+EOF
+EXPECT=<<EOF
+0x4
+0x0
+0x4
+0x0
+0x4
+0x4
+0x4
+0x0
+0x8
+0x10
+0x8
+0x4
+0x8
+0x8
+EOF
+RUN
+
+NAME=temporary seek prefix restarts command position
+FILE=malloc://32
+CMDS=<<EOF
+@4@'?v $$
+?e -- 1
+@4@'?e one;?e two
+?e -- 2
+@4@2'?e raw;x
+?e -- 3
+""@4@?v $$
+?e -- 4
+"  "@4@?v $$
+?e -- 5
+   @ 4 @ ?v $$
+?e -- 6
+@4@""'?e sub;x
+?e -- 7
+2@4@?e hi
+?e -- 8
+@4@2?e hi
+?e -- 9
+2@4@3?v $$
+?e -- 10
+3@0@?e hello
+?e -- 11
+"   "3@0@"   "?e hello
+?e -- 12
+?e $(@4@?v $$)
+?e -- 13
+?e before && @4@?v $$
+EOF
+EXPECT=<<EOF
+0x4
+-- 1
+one;?e two
+-- 2
+raw;x
+raw;x
+-- 3
+0x4
+-- 4
+0x4
+-- 5
+0x4
+-- 6
+sub;x
+-- 7
+hi
+hi
+-- 8
+hi
+hi
+-- 9
+0x4
+0x4
+0x4
+-- 10
+hello
+hello
+hello
+-- 11
+hello
+hello
+hello
+-- 12
+0x4
+-- 13
+before
+0x4
+EOF
+RUN
+
+NAME=temporary seek prefix errors
+FILE=malloc://32
+CMDS=<<EOF
+@4'?v $$
+@4
+@4@
+@notanaddress@?e nope
+@@
+?e end
+EOF
+EXPECT=<<EOF
+end
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid seek prefix, use "'@addr'cmd" or "@addr@'cmd" for raw calls
+ERROR: Invalid syntax, expected "@addr@command"
+ERROR: Invalid syntax, expected "@addr@command"
+ERROR: Invalid address 'notanaddress' in seek prefix
+ERROR: Iterators need a command, expected "cmd@@..."
+EOF
+RUN
+
+NAME=temporary seek prefix sets tmpseek like the suffix form
+FILE=malloc://32
+CMDS=<<EOF
+Cd 4 @ 0
+Cd 4 @ 8
+?e -- suffix
+Cd @ 8
+?e -- prefix
+@8@Cd
+?e -- raw
+@8@'Cd
+?e -- list
+Cd
+EOF
+EXPECT=<<EOF
+-- suffix
+-- prefix
+-- raw
+-- list
+0x00000000 data Cd 4
+0x00000008 data Cd 4
+EOF
+RUN
+
+NAME=temporary seek prefix never leaks on aborted lines
+FILE=malloc://32
+CMDS=<<EOF
+@4@@notanaddress@?e nope
+?v $$
+@4@#comment
+?v $$
+@4@
+?v $$
+EOF
+EXPECT=<<EOF
+0x0
+0x0
+0x0
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid address 'notanaddress' in seek prefix
+ERROR: Invalid syntax, expected "@addr@command"
 EOF
 RUN

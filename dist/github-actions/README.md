@@ -135,7 +135,7 @@ When `from-git` is `true`, the action clones the radare2 repository and builds f
 
 ## Notes
 
-- Windows git builds use meson/ninja and require a Visual C++ environment. Add `ilammy/msvc-dev-cmd@v1` before this action if building from source on Windows.
+- Windows git builds use meson/ninja and require a Visual C++ environment. Add `TheMrMilchmann/setup-msvc-dev@v4` before this action if building from source on Windows.
 - Both `radare2` and `radare2-dev` packages are installed on Linux so headers and pkg-config files are available for building plugins.
 - The action verifies the installation by running `radare2 -v` at the end.
 - Use `concurrency` with `cancel-in-progress: true` to avoid wasting CI minutes on superseded pushes.

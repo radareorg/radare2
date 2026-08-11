@@ -1,0 +1,1585 @@
+NAME=afts synthesizes struct from pointer-argument accesses
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[4]; // gap
+  uint32_t field_0x10;
+};
+EOF
+RUN
+
+NAME=afts ignores accesses through a caller-clobbered register after a call
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 448b07448b4f084889f8e800000000448b7010c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts types a dereferenced field as a pointer
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b07488b4f088b1101d0c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  void *field_0x8;
+};
+EOF
+RUN
+
+NAME=afts emits a nested child struct for a dereferenced pointer field
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b07488b4f088b118b711001d001f0c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x8 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[12]; // gap
+  uint32_t field_0x10;
+};
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  struct fcn_00000000_arg0_0x8 *field_0x8;
+};
+EOF
+RUN
+
+NAME=afts ignores negative-offset accesses from a neighboring argument
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b46f88b0e8b560801c801d0c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg1 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts types fields by access width
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 0fb6070fb74f02488b5708c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint8_t field_0x0;
+  uint16_t field_0x2;
+  uint64_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts records store accesses as fields
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8907894f08c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts collapses a constant-stride run into an array member
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b47048b47088b470c8b47108b47148b47188b471cc3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0[8];
+};
+EOF
+RUN
+
+NAME=afts annotates an interior element of a collapsed array member
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b47048b47088b470c8b47108b47148b47188b471cc3
+af
+afts > /dev/null
+pd 1 @ 0x5
+EOF
+EXPECT=<<EOF
+|           0x00000005      8b4708         mov eax, dword [rdi + fcn_00000000_arg0.field_0x0] ; arg1
+EOF
+RUN
+
+NAME=afts array member reports its count in json
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b47048b47088b470c8b47108b47148b47188b471cc3
+af
+aftsj~{[0].members[0].count}
+EOF
+EXPECT=<<EOF
+8
+EOF
+RUN
+
+NAME=afts array preview interpreted with . reproduces the type
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b47048b47088b470c8b47108b47148b47188b471cc3
+af
+.afts*
+ts fcn_00000000_arg0
+afv
+EOF
+EXPECT=<<EOF
+pf [8]d field_0x0
+arg struct fcn_00000000_arg0 * arg1 @ rdi
+EOF
+RUN
+
+NAME=afts synthesizes a struct per pointer argument
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b168b5e04c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+struct fcn_00000000_arg1 {
+  uint32_t field_0x0;
+  uint32_t field_0x4;
+};
+EOF
+RUN
+
+NAME=afts emits nothing below the two-field threshold
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b07c3
+af
+afts
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=afts synthesizes struct fields on arm64
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 010040b9020840b92000020bc0035fd6
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts synthesizes struct fields on ppc64 big-endian
+FILE=malloc://256
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 8083000080a300087c642a144e800020
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts emits a nested child struct on ppc64 big-endian
+FILE=malloc://256
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx e883000880a4000080c4001080e300004e800020
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x8 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[12]; // gap
+  uint32_t field_0x10;
+};
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  struct fcn_00000000_arg0_0x8 *field_0x8;
+};
+EOF
+RUN
+
+NAME=afts recovers the z_stream state pointer in ppc64be inflateReset
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=<<EOF
+aa
+s sym.inflateReset
+afts
+EOF
+EXPECT=<<EOF
+struct sym_inflateReset_arg0_0x38 {
+  uint64_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[48]; // gap
+  uint32_t field_0x3c;
+  uint64_t field_0x40;
+};
+struct sym_inflateReset_arg0 {
+  uint8_t pad_0x0[56]; // gap
+  struct sym_inflateReset_arg0_0x38 *field_0x38;
+  uint64_t field_0x40;
+  uint8_t pad_0x44[4]; // gap
+  uint64_t field_0x48;
+};
+EOF
+RUN
+
+NAME=afts types fields with load width on arm32
+FILE=malloc://256
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 003090e5b820d0e10c10d0e51eff2fe1
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint16_t field_0x8;
+  uint8_t field_0xc;
+};
+EOF
+RUN
+
+NAME=afts detects a pointer field at a 4-byte-aligned offset on arm32
+FILE=malloc://256
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 043090e5002093e5041093e5102090e51eff2fe1
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x4 {
+  uint32_t field_0x0;
+  uint32_t field_0x4;
+};
+struct fcn_00000000_arg0 {
+  uint8_t pad_0x0[4]; // gap
+  struct fcn_00000000_arg0_0x4 *field_0x4;
+  uint8_t pad_0x8[8]; // gap
+  uint32_t field_0x10;
+};
+EOF
+RUN
+
+NAME=afts emits a nested child struct on arm32 big-endian
+FILE=malloc://256
+ARGS=-a arm -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx e5903000e5932004e5931008e5902008e12fff1e
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x0 {
+  uint8_t pad_0x0[4]; // gap
+  uint32_t field_0x4;
+  uint32_t field_0x8;
+};
+struct fcn_00000000_arg0 {
+  struct fcn_00000000_arg0_0x0 *field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts emits a nested child struct on arm thumb
+FILE=malloc://256
+ARGS=-a arm -b 16
+CMDS=<<EOF
+wx 03685a68996882687047
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x0 {
+  uint8_t pad_0x0[4]; // gap
+  uint32_t field_0x4;
+  uint32_t field_0x8;
+};
+struct fcn_00000000_arg0 {
+  struct fcn_00000000_arg0_0x0 *field_0x0;
+  uint8_t pad_0x2[6]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts synthesizes struct from a stack argument on x86-32
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 8b4424048b088b500801d1c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts synthesizes struct from a win64 stack argument above the shadow space
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e anal.cc=ms
+CMDS=<<EOF
+wx 488b4424288b088b500801d1c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg4 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts seeds stack windows for a reverse-stack convention
+FILE=malloc://256
+ARGS=-a x86 -b 32 -e anal.cc=pascal
+CMDS=<<EOF
+wx 8b4424048b088b500801d1c3
+af
+afts
+afv
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+arg struct fcn_00000000_arg0 * arg_4h @ esp+0x4
+EOF
+RUN
+
+NAME=afts seeds stack windows past borland register args
+FILE=malloc://256
+ARGS=-a x86 -b 32 -e anal.cc=borland
+CMDS=<<EOF
+wx 8b4424048b088b500801d1c3
+af
+afts
+afv
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg3 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+arg struct fcn_00000000_arg3 * arg_4h @ esp+0x4
+EOF
+RUN
+
+NAME=afts synthesizes struct from a stack argument on arm32
+FILE=malloc://256
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 00309de5000093e5081093e5010080e01eff2fe1
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg4 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts synthesizes struct from a mips o32 stack argument above the home area
+FILE=malloc://256
+ARGS=-a mips -b 32 -e cfg.bigendian=true -e anal.cc=o32
+CMDS=<<EOF
+wx 8fa800108d0900008d0a0008012a482103e0000800000000
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg4 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts stack-arg sentinel survives an ebp prologue on x86-32
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e58b45088b088b500801d15dc3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts applies the synthesized type to a register argument
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+afts
+afv
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[4]; // gap
+  uint32_t field_0x10;
+};
+arg struct fcn_00000000_arg0 * arg1 @ rdi
+EOF
+RUN
+
+NAME=afts applies the synthesized type to a stack argument
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 8b4424048b088b500801d1c3
+af
+afts
+afv
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+arg struct fcn_00000000_arg0 * arg_4h @ esp+0x4
+EOF
+RUN
+
+NAME=aft synthesizes struct types for untyped pointer args when types.synth is set
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.synth=true
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+aft
+afv
+EOF
+EXPECT=<<EOF
+arg struct fcn_00000000_arg0 * arg1 @ rdi
+EOF
+RUN
+
+NAME=aft leaves args alone when types.synth is unset
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+aft
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+EOF
+RUN
+
+NAME=afts annotates the accessing instructions with member offsets
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+afts > /dev/null
+pdf~field_0x
+EOF
+EXPECT=<<EOF
+|           0x00000000      8b07           mov eax, dword [rdi]        ; fcn_00000000_arg0.field_0x0
+|           0x00000002      8b4f08         mov ecx, dword [rdi + fcn_00000000_arg0.field_0x8] ; arg1
+|           0x00000005      8b5710         mov edx, dword [rdi + fcn_00000000_arg0.field_0x10] ; arg1
+EOF
+RUN
+
+NAME=afts drops its stale types when the function is renamed
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+afts > /dev/null
+afn renamed
+afts > /dev/null
+ts~_arg0
+EOF
+EXPECT=<<EOF
+renamed_arg0
+EOF
+RUN
+
+NAME=afts* previews the synthesis as commands without applying
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+afts*
+afv
+EOF
+EXPECT=<<EOF
+'td struct fcn_00000000_arg0 {uint32_t field_0x0;uint8_t pad_0x4[4];uint32_t field_0x8;uint8_t pad_0xc[4];uint32_t field_0x10;};
+'afvr rdi arg1 struct fcn_00000000_arg0 *
+'@0x00000000'Ct fcn_00000000_arg0.field_0x0
+'@0x00000002'aht fcn_00000000_arg0.field_0x8
+'@0x00000005'aht fcn_00000000_arg0.field_0x10
+arg int64_t arg1 @ rdi
+EOF
+RUN
+
+NAME=afts* output interpreted with . reproduces the applied type
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+.afts*
+afv
+EOF
+EXPECT=<<EOF
+arg struct fcn_00000000_arg0 * arg1 @ rdi
+EOF
+RUN
+
+NAME=aftsj reports the synthesis in json
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b07488b4f088b1101d0c3
+af
+aftsj
+EOF
+EXPECT=<<EOF
+[{"name":"fcn_00000000_arg0","arg":0,"child":false,"var":"arg1","size":16,"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"field_0x8","type":"void *","offset":8,"size":8}]}]
+EOF
+RUN
+
+NAME=afts rejects trailing garbage instead of applying a type
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f088b571001c801d0c3
+af
+aftsjunk~NADA
+afts*junk~NADA
+afv
+ts~fcn_00000000
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+EOF
+RUN
+
+NAME=afts pads the synthesized struct out to a memset-stated size
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx c70701000000c7470802000000ba8800000031f6e807000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+afts
+aftsj
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[124];
+};
+[{"name":"fcn_00000000_arg0","arg":0,"child":false,"var":"arg1","size":136,"sizehint":{"size":136,"from":"memset","at":20},"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"field_0x8","type":"uint32_t","offset":8,"size":4},{"name":"pad_0xc","type":"uint8_t","offset":12,"size":1,"count":124}]}]
+EOF
+RUN
+
+NAME=aftsj omits the sizehint when the stated size does not extend the struct
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx c70701000000c7470802000000ba0800000031f6e807000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aftsj~?sizehint
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+NAME=aftsj attaches the sizehint to the clamped child struct
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx c70701000000488b4710c700050000004889c7ba6000000031f6e801000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aftsj
+EOF
+EXPECT=<<EOF
+[{"name":"fcn_00000000_arg0_0x10","arg":0,"child":true,"offset":16,"size":96,"sizehint":{"size":96,"from":"memset","at":26},"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"pad_0x4","type":"uint8_t","offset":4,"size":1,"count":92}]},{"name":"fcn_00000000_arg0","arg":0,"child":false,"var":"arg1","size":24,"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"field_0x10","type":"struct fcn_00000000_arg0_0x10 *","offset":16,"size":8}]}]
+EOF
+RUN
+
+NAME=afts synthesizes the object behind a malloc return
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx bf88000000e816000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+af @ 0
+afts
+aftsj
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_ret0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[124];
+};
+[{"name":"fcn_00000000_ret0","arg":-1,"ret":0,"child":false,"size":136,"sizehint":{"size":136,"from":"malloc","at":5},"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"field_0x8","type":"uint32_t","offset":8,"size":4},{"name":"pad_0xc","type":"uint8_t","offset":12,"size":1,"count":124}]}]
+EOF
+RUN
+
+NAME=afts multiplies both calloc factors for the returned object size
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx be08000000bf04000000e811000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn calloc @ 0x20
+af @ 0
+aftsj
+EOF
+EXPECT=<<EOF
+[{"name":"fcn_00000000_ret0","arg":-1,"ret":0,"child":false,"size":32,"sizehint":{"size":32,"from":"calloc","at":10},"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"field_0x8","type":"uint32_t","offset":8,"size":4},{"name":"pad_0xc","type":"uint8_t","offset":12,"size":1,"count":20}]}]
+EOF
+RUN
+
+NAME=aftsj reports the returned object from accesses alone when the allocation size is dynamic
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx e81b000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+af @ 0
+aftsj
+EOF
+EXPECT=<<EOF
+[{"name":"fcn_00000000_ret0","arg":-1,"ret":0,"child":false,"size":12,"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"field_0x8","type":"uint32_t","offset":8,"size":4}]}]
+EOF
+RUN
+
+NAME=afts tracks separate return objects per allocator call site
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx bf10000000e816000000c70001000000bf18000000e806000000c70002000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+af @ 0
+aftsj
+EOF
+EXPECT=<<EOF
+[{"name":"fcn_00000000_ret0","arg":-1,"ret":0,"child":false,"size":16,"sizehint":{"size":16,"from":"malloc","at":5},"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"pad_0x4","type":"uint8_t","offset":4,"size":1,"count":12}]},{"name":"fcn_00000000_ret1","arg":-1,"ret":1,"child":false,"size":24,"sizehint":{"size":24,"from":"malloc","at":21},"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"pad_0x4","type":"uint8_t","offset":4,"size":1,"count":20}]}]
+EOF
+RUN
+
+NAME=afts synthesizes objects behind 32-bit operator new and new array returns
+FILE=malloc://256
+ARGS=-a x86 -b 32 -e types.sizes=true
+CMDS=<<EOF
+wx 6a48e81900000083c404c700010000006a30e81900000083c404c7400402000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn _Znwj @ 0x20
+wx c3 @ 0x30
+af @ 0x30
+afn _Znaj @ 0x30
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_ret0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[68];
+};
+struct fcn_00000000_ret1 {
+  uint8_t pad_0x0[4]; // gap
+  uint32_t field_0x4;
+  uint8_t pad_0x8[40];
+};
+EOF
+RUN
+
+NAME=memset on a returned pointer states the object size
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx e81b000000c700010000004889c7ba6000000031f6e816000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+wx c3 @ 0x30
+af @ 0x30
+afn memset @ 0x30
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+aftsj
+EOF
+EXPECT=<<EOF
+[{"name":"fcn_00000000_ret0","arg":-1,"ret":0,"child":false,"size":96,"sizehint":{"size":96,"from":"memset","at":21},"members":[{"name":"field_0x0","type":"uint32_t","offset":0,"size":4},{"name":"pad_0x4","type":"uint8_t","offset":4,"size":1,"count":92}]}]
+EOF
+RUN
+
+NAME=types.sizefns accepts return-value allocator entries
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=myalloc/r/0
+CMDS=<<EOF
+wx bf88000000e816000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn myalloc @ 0x20
+af @ 0
+aftsj~?sizehint
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=afts* emits no variable command when nothing stores the returned pointer
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx bf88000000e816000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+af @ 0
+afts*~?afvr
+afts*~?td
+EOF
+EXPECT=<<EOF
+0
+1
+EOF
+RUN
+
+NAME=afts types the local receiving a malloc return
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf88000000e81e000000488985f8ffffff488b45f8c70001000000488b45f8c7400802000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afts > /dev/null
+afv
+aftsj~{0.var}
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret0 * var_8h @ rbp-0x8
+var_8h
+EOF
+RUN
+
+NAME=afts types the sp-relative local receiving a malloc return
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 4883ec18bf88000000e8220000004889442408488b442408c70001000000c74008020000004883c418c3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afts > /dev/null
+afv
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret0 * var_8h @ rsp+0x8
+EOF
+RUN
+
+NAME=afts binds each returned object to its own local
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf18000000e84e000000488985f8ffffffbf28000000e83d000000488985f0ffffff488b45f8c70001000000c7400802000000488b45f0c70003000000c7401004000000c9c3
+wx c3 @ 0x60
+af @ 0x60
+afn malloc @ 0x60
+af @ 0
+afts > /dev/null
+afv
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret0 * var_8h @ rbp-0x8
+var struct fcn_00000000_ret1 * var_10h @ rbp-0x10
+EOF
+RUN
+
+NAME=afts keeps the binding when the pointer is later cleared
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf88000000e82e000000488985f8ffffffc70001000000c740080200000048c745f800000000c9c3
+wx c3 @ 0x40
+af @ 0x40
+afn malloc @ 0x40
+af @ 0
+afts > /dev/null
+afv
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret0 * var_8h @ rbp-0x8
+EOF
+RUN
+
+NAME=afts keeps the binding when one branch clears the pointer
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf88000000e83e000000488985f8ffffffc70001000000c740080200000085c0750848c745f800000000488b45f8c9c3
+wx c3 @ 0x50
+af @ 0x50
+afn malloc @ 0x50
+af @ 0
+afts > /dev/null
+afv~var_8h
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret0 * var_8h @ rbp-0x8
+EOF
+RUN
+
+NAME=afts rerun restores the receiving var when the binding disappears
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf88000000e81e000000488985f8ffffff488b45f8c70001000000488b45f8c7400802000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afts > /dev/null
+afv
+e types.sizefns=malloc/-
+afts
+afv
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret0 * var_8h @ rbp-0x8
+var int64_t var_8h @ rbp-0x8
+EOF
+RUN
+
+NAME=afts types a stack argument slot reused for the returned object
+FILE=malloc://256
+ARGS=-a x86 -b 32 -e types.sizes=true
+CMDS=<<EOF
+wx 5589e56888000000e82300000083c4048985080000008b4508c70001000000c74008020000005dc3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afts > /dev/null
+afv
+EOF
+EXPECT=<<EOF
+arg struct fcn_00000000_ret0 * arg_8h @ ebp+0x8
+EOF
+RUN
+
+NAME=afts does not rebind an argument register holding the returned pointer
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e5bf88000000e8220000004889c3c70301000000c74308020000005dc3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afvr rbx obj int64_t
+afts > /dev/null
+afv~obj
+EOF
+EXPECT=<<EOF
+arg int64_t obj @ rbx
+EOF
+RUN
+
+NAME=afts* emits the variable command for a bound returned object
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf88000000e81e000000488985f8ffffff488b45f8c70001000000488b45f8c7400802000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afts*~afv
+EOF
+EXPECT=<<EOF
+'afvb -8 var_8h struct fcn_00000000_ret0 *
+EOF
+RUN
+
+NAME=afts binds a local reused across allocations to the first allocation
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf18000000e86e000000488985f8ffffff488b45f8c70001000000c7400802000000bf28000000e84c000000488985f8ffffff488b45f8c70003000000c7401004000000c9c3
+wx c3 @ 0x80
+af @ 0x80
+afn malloc @ 0x80
+af @ 0
+afts > /dev/null
+afv
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret0 * var_8h @ rbp-0x8
+EOF
+RUN
+
+NAME=afts* emits one variable command for a local reused across allocations
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf18000000e86e000000488985f8ffffff488b45f8c70001000000c7400802000000bf28000000e84c000000488985f8ffffff488b45f8c70003000000c7401004000000c9c3
+wx c3 @ 0x80
+af @ 0x80
+afn malloc @ 0x80
+af @ 0
+afts*~afv
+EOF
+EXPECT=<<EOF
+'afvb -8 var_8h struct fcn_00000000_ret0 *
+EOF
+RUN
+
+NAME=afts rerun restores a renamed receiving var when the binding disappears
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf88000000e81e000000488985f8ffffff488b45f8c70001000000488b45f8c7400802000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afts > /dev/null
+afvn p var_8h
+e types.sizefns=malloc/-
+afts
+afv
+EOF
+EXPECT=<<EOF
+var int64_t p @ rbp-0x8
+EOF
+RUN
+
+NAME=afts rerun keeps a user-selected type naming another synthesized struct
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf18000000e84e000000488985f8ffffffbf28000000e83d000000488985f0ffffff488b45f8c70001000000c7400802000000488b45f0c70003000000c7401004000000c9c3
+wx c3 @ 0x60
+af @ 0x60
+afn malloc @ 0x60
+af @ 0
+afts > /dev/null
+afvt var_8h "struct fcn_00000000_ret1 *"
+e types.sizefns=malloc/-
+afts
+afv~var_8h
+ts~fcn_
+EOF
+EXPECT=<<EOF
+var struct fcn_00000000_ret1 * var_8h @ rbp-0x8
+fcn_00000000_ret1
+EOF
+RUN
+
+NAME=afts keeps a synthesized type a qualified user edit still points at
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf88000000e81e000000488985f8ffffff488b45f8c70001000000488b45f8c7400802000000c9c3
+wx c3 @ 0x30
+af @ 0x30
+afn malloc @ 0x30
+af @ 0
+afts > /dev/null
+afvt var_8h "const struct fcn_00000000_ret0 *"
+e types.sizefns=malloc/-
+afts
+afv
+ts~fcn_
+EOF
+EXPECT=<<EOF
+var const struct fcn_00000000_ret0 * var_8h @ rbp-0x8
+fcn_00000000_ret0
+EOF
+RUN
+
+NAME=aftsj reports the bound variable once for a local reused across allocations
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 554889e54883ec10bf18000000e86e000000488985f8ffffff488b45f8c70001000000c7400802000000bf28000000e84c000000488985f8ffffff488b45f8c70003000000c7401004000000c9c3
+wx c3 @ 0x80
+af @ 0x80
+afn malloc @ 0x80
+af @ 0
+aftsj~{}~var
+EOF
+EXPECT=<<EOF
+    "var": "var_8h",
+EOF
+RUN
+
+NAME=afts keeps a nested child of a synthesized type a user edit still points at
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b07488b4f088b118b711001d001f0c3
+af @ 0
+afts > /dev/null
+afvt arg1 "const struct fcn_00000000_arg0 *"
+afn other
+afts > /dev/null
+ts~fcn_00000000
+EOF
+EXPECT=<<EOF
+fcn_00000000_arg0
+fcn_00000000_arg0_0x8
+EOF
+RUN
+
+NAME=allocator returns stay invisible without types.sizes
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx bf88000000e816000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+af @ 0
+aftsj
+EOF
+EXPECT=<<EOF
+[]
+EOF
+RUN
+
+NAME=afts keeps one object across an in-place realloc
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 8b078b4708be00010000e8110000004889c78b4710c3
+wx c3 @ 0x20
+af @ 0x20
+afn realloc @ 0x20
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[4]; // gap
+  uint32_t field_0x10;
+  uint8_t pad_0x14[236];
+};
+EOF
+RUN
+
+NAME=afts treats a realloc of a null pointer as a fresh object
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 31ffbe00010000e814000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn realloc @ 0x20
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_ret0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[244];
+};
+EOF
+RUN
+
+NAME=afts emits a nested child struct behind a returned object pointer field
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx bf20000000e816000000488b48088b118b7110c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_ret0_0x8 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[12]; // gap
+  uint32_t field_0x10;
+};
+struct fcn_00000000_ret0 {
+  uint8_t pad_0x0[8]; // gap
+  struct fcn_00000000_ret0_0x8 *field_0x8;
+  uint8_t pad_0x10[16];
+};
+EOF
+RUN
+
+NAME=afts ignores an allocation size too large to describe a struct
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx bf00000100e816000000c70001000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+af @ 0
+aftsj
+EOF
+EXPECT=<<EOF
+[]
+EOF
+RUN
+
+NAME=types.sizefns entry replaces the builtin of the same name
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=malloc/0/1
+CMDS=<<EOF
+wx bf88000000e816000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+af @ 0
+aftsj
+EOF
+EXPECT=<<EOF
+[]
+EOF
+RUN
+
+NAME=types.sizefns can drop a builtin allocator
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=malloc/-
+CMDS=<<EOF
+wx bf88000000e816000000c70001000000c7400802000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn malloc @ 0x20
+af @ 0
+aftsj
+EOF
+EXPECT=<<EOF
+[]
+EOF
+RUN
+
+NAME=afts does not fold allocations past the tracked limit into the last object
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx bf10000000e8f6000000c70001000000bf20000000e8e6000000c70002000000bf30000000e8d6000000c70003000000bf40000000e8c6000000c70004000000bf50000000e8b6000000c70005000000bf60000000e8a6000000c70006000000bf70000000e896000000c70007000000bf80000000e886000000c70008000000bf90000000e876000000c7404009000000
+wx c3 @ 0x91
+wx c3 @ 0x100
+af @ 0x100
+afn malloc @ 0x100
+af @ 0
+afts~?struct
+afts~?field_0x40
+EOF
+EXPECT=<<EOF
+8
+0
+EOF
+RUN
+
+NAME=afts size harvesting is disabled by default
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c70701000000c7470802000000ba8800000031f6e807000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=types.sizefns adds a custom size function without needing a signature
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=mymemset/0/2
+CMDS=<<EOF
+wx c70701000000c7470802000000ba8800000031f6e807000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn mymemset @ 0x20
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[124];
+};
+EOF
+RUN
+
+NAME=types.sizefns can drop a builtin size function
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=memset/-
+CMDS=<<EOF
+wx c70701000000c7470802000000ba8800000031f6e807000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=types.sizefns supports a two-factor size like calloc
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=nalloc/0/1*2
+CMDS=<<EOF
+wx c70701000000c7470802000000be08000000ba11000000e804000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn nalloc @ 0x20
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[124];
+};
+EOF
+RUN
+
+NAME=afts emits a single-field struct when a memset states its size
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx c70701000000ba8800000031f6e80e000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[132];
+};
+EOF
+RUN
+
+NAME=afts pads a dereferenced-field child struct to its memset-stated size
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx c70701000000488b4710c700050000004889c7ba6000000031f6e801000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0_0x10 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[92];
+};
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[12]; // gap
+  struct fcn_00000000_arg0_0x10 *field_0x10;
+};
+EOF
+RUN
+
+NAME=afts reads size-function arguments from the stack on x86-32
+FILE=malloc://256
+ARGS=-a x86 -b 32 -e types.sizes=true
+CMDS=<<EOF
+wx 5589e58b4508c70001000000c74008020000006888000000 @ 0
+wx 6a0050e81000000083c40c5dc3 @ 0x18
+wx c3 @ 0x30
+af @ 0x30
+afn memset @ 0x30
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+  uint8_t pad_0xc[124];
+};
+EOF
+RUN
+
+NAME=afts reads a size-function argument from a win64 stack slot above the shadow space
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e anal.cc=ms -e types.sizes=true -e types.sizefns=myset/0/4
+CMDS=<<EOF
+wx c701010000004883ec3848c744242088000000e8280000004883c438c3
+wx c3 @ 0x40
+af @ 0x40
+afn myset @ 0x40
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[132];
+};
+EOF
+RUN
+
+NAME=invalid types.sizefns entries are rejected and have no effect
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=mymemset/x/2,mymemset/0/r,mymemset/0junk/2
+CMDS=<<EOF
+wx c70701000000c7470802000000ba8800000031f6e807000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn mymemset @ 0x20
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint32_t field_0x8;
+};
+EOF
+RUN
+
+NAME=afts pads the memcpy source argument to the copied size
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx 8b074889fe488d7c2480ba80000000e80c000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memcpy @ 0x20
+'td void *memcpy(void *dest, const void *src, size_t n);
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[124];
+};
+EOF
+RUN
+
+NAME=afts extends the struct from an interior-pointer memset
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx c70701000000488d7f10ba8000000031f6e80a000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[140];
+};
+EOF
+RUN
+
+NAME=a rejected types.sizefns entry leaves the builtin it names in place
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.sizefns=memset/junk
+CMDS=<<EOF
+wx c70701000000ba8800000031f6e80e000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[132];
+};
+EOF
+RUN
+
+NAME=afts states an argument object size past the allocation hint cap
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF
+wx c70701000000ba0020000031f6e80e000000c3
+wx c3 @ 0x20
+af @ 0x20
+afn memset @ 0x20
+af @ 0
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[8188];
+};
+EOF
+RUN

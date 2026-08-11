@@ -206,6 +206,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->config = r_arch_config_new ();
 	anal->arch = r_arch_new ();
 	anal->esil_goto_limit = R_ESIL_GOTO_LIMIT;
+	anal->opt.stateful = true;
 	anal->opt.nopskip = true; // skip nops in code analysis
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	anal->opt.vars_maxbbsize = 16 * 1024;
@@ -423,10 +424,16 @@ R_API bool r_anal_set_triplet(RAnal *anal, const char * R_NULLABLE os, const cha
 R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 	R_RETURN_VAL_IF_FAIL (anal && os, false);
 	const char *old_os = anal->config? anal->config->os: NULL;
-	if (!old_os || strcmp (old_os, os)) {
+	const bool changed = !old_os || strcmp (old_os, os);
+	if (changed) {
 		R_ANAL_PRIV (anal)->types_dirty = true;
 	}
-	return r_anal_set_triplet (anal, os, NULL, -1);
+	const bool res = r_anal_set_triplet (anal, os, NULL, -1);
+	if (res && changed) {
+		// os-dependent register aliases (e.g. arm64 =SN) must follow
+		r_anal_set_reg_profile (anal, NULL);
+	}
+	return res;
 }
 
 R_API bool r_anal_set_bits(RAnal *anal, int bits) {

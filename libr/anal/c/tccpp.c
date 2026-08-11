@@ -1395,7 +1395,6 @@ include_trynext:
 		/* load include file from the same directory as the parent */
 		{
 			char filepath[1024];
-			int filepath_len;
 			char *e = s1->file->filename + strlen (s1->file->filename);
 			while (e > s1->file->filename) {
 				if (*e == R_SYS_DIR[0]) {
@@ -1403,19 +1402,19 @@ include_trynext:
 				}
 				e--;
 			}
-			filepath_len = R_MIN ((size_t) (e - s1->file->filename) + 1, sizeof (filepath) - 1);
-			memcpy (filepath, s1->file->filename, filepath_len);
-			strcpy (filepath + filepath_len, buf);
+			size_t dirname_len = (size_t) (e - s1->file->filename) + 1;
+			int filepath_len = snprintf (filepath, sizeof (filepath), "%.*s%s",
+				(int)dirname_len, s1->file->filename, buf);
 			bool skip = false;
 			if (strstr (s1->file->filename, "_overflow.h")) {
 				skip = true;
 			}
-			if (!skip && tcc_open (s1, filepath) < 0) {
+			if (!skip && (filepath_len < 0 || (size_t)filepath_len >= sizeof (filepath) || tcc_open (s1, filepath) < 0)) {
 				if (!s1->dir_name) {
 					s1->dir_name = ".";
 				}
 				int len = snprintf (filepath, sizeof (filepath), "%s/%s", s1->dir_name, buf);
-				if (len >= sizeof (filepath) || tcc_open (s1, filepath) < 0) {
+				if (len < 0 || (size_t)len >= sizeof (filepath) || tcc_open (s1, filepath) < 0) {
 					eprintf ("include file '%s' not found\n", filepath);
 					goto the_end;
 				} else {

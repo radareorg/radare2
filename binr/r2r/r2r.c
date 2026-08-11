@@ -1179,7 +1179,7 @@ static bool r2r_run_workers(R2RState *state, R2ROptions *opt) {
 		if (completed == RVecR2RTestPtr_length (&state->db->tests)) {
 			break;
 		}
-		r_th_cond_wait (state->cond, state->lock);
+		r_th_cond_wait (state->cond, state->lock, 0);
 	}
 
 	r_th_lock_leave (state->lock);
@@ -1208,6 +1208,7 @@ int main(int argc, char **argv) {
 		GetConsoleMode (streams[i], &mode);
 		SetConsoleMode (streams[i], mode | mode_flags);
 	}
+	r_w32_init ();
 #endif
 	R2ROptions opt = r2r_options_init ();
 	R2RState state = { 0 };

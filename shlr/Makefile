@@ -278,7 +278,10 @@ spp: spp-sync
 
 SHLRS+=ar/libr_ar.a
 SHLRS+=bochs/lib/libbochs.a
+# a stale libcapstone.a from a previous build must not be merged in
+ifneq ($(WANT_CAPSTONE),0)
 SHLRS+=$(CS_ROOT)/libcapstone.a
+endif
 SHLRS+=$(ZYDIS_SHLR_LIB)
 SHLRS+=gdb/lib/libgdbr.a
 SHLRS+=java/libr_java.a

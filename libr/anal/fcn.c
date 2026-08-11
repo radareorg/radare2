@@ -142,7 +142,7 @@ static int fcn_type_stack_pop(RAnal *anal, const char *cc, const char *callee, i
 			continue;
 		}
 		char *type = r_type_func_args_type (anal->sdb_types, callee, i);
-		ut64 bitsize = type? r_type_get_bitsize (anal->sdb_types, type): 0;
+		ut64 bitsize = type? r_anal_type_bitsize (anal, type): 0;
 		free (type);
 		ut64 slot = bitsize? R_ROUND (R_MAX (bitsize, 8), 8) / 8: word;
 		slot = R_ROUND (slot, word);
@@ -925,6 +925,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
 
+	if (anal->opt.stateful && anal->arch->session) {
+		r_arch_session_reset (anal->arch->session);
+	}
 	bb = fcn_append_basic_block (anal, fcn, addr);
 	if (!bb) {
 		// we checked before whether there is a bb at addr, so the create should have succeeded
@@ -1006,7 +1009,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	RAnalOp op_storage;
 	r_anal_op_init (&op_storage);
 	op = &op_storage;
-	const ut32 opflags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT;
+	const ut32 opflags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT
+		| (anal->opt.stateful? R_ARCH_OP_MASK_STATEFUL: 0);
 	while (addrbytes * idx < maxlen) {
 		if (!last_is_reg_mov_lea) {
 			last_reg_mov_lea_name = NULL;
@@ -1833,6 +1837,7 @@ noskip:
 						RAnalOp prev_op_storage;
 						r_anal_op_init (&prev_op_storage);
 						anal->iob.read_at (anal->iob.io, op->addr - op->size, buf, sizeof (buf));
+						// out-of-order prev-op probe: must stay non-STATEFUL
 						if (r_anal_op (anal, &prev_op_storage, op->addr - op->size, buf, sizeof (buf), R_ARCH_OP_MASK_VAL) > 0) {
 							RAnalValue *prev_dst = RVecRArchValue_at (&prev_op_storage.dsts, 0);
 							bool prev_op_has_dst_name = prev_dst && prev_dst->reg;
@@ -2274,11 +2279,11 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 	if (fcn->addr == UT64_MAX) {
 		fcn->addr = addr;
 	}
-	fcn->maxstack = 0;
-	if (fcn->callconv && !strcmp (fcn->callconv, "ms")) {
-		// Probably should put this on the cc sdb
-		const int shadow_store = 0x28; // First 4 args + retaddr
-		fcn->stack = fcn->maxstack = fcn->reg_save_area = shadow_store;
+	// re-entry continues an in-progress frame, so only preset a function with no blocks yet
+	if (r_list_empty (fcn->bbs)) {
+		const int shadow = r_anal_cc_shadow (anal, fcn->callconv);
+		const int frame = (shadow > 0)? shadow + r_anal_cc_raslot (anal, r_anal_cc_wordsize (anal, fcn->callconv)): 0;
+		fcn->stack = fcn->maxstack = fcn->reg_save_area = frame;
 	}
 	// XXX -1 here results in lots of errors
 	int ret = r_anal_function_bb (anal, fcn, addr, anal->opt.depth);
@@ -2595,15 +2600,10 @@ static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
 
 static const char *function_signature_callconv(RAnal *anal, RAnalFunction *fcn, const char *type_name) {
 	const char *callconv = NULL;
-	char *key;
 
 	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
 	if (R_STR_ISNOTEMPTY (type_name)) {
-		key = r_str_newf ("func.%s.cc", type_name);
-		if (key) {
-			callconv = sdb_const_get (anal->sdb_types, key, 0);
-			free (key);
-		}
+		callconv = sdb_const_getf (anal->sdb_types, NULL, "func.%s.cc", type_name);
 	}
 	if (R_STR_ISNOTEMPTY (callconv) && r_anal_cc_exist (anal, callconv)) {
 		return callconv;
@@ -2623,12 +2623,7 @@ static bool function_signature_is_noreturn(Sdb *types, const char *type_name, bo
 	if (R_STR_ISEMPTY (type_name)) {
 		return fallback;
 	}
-	char *key = r_str_newf ("func.%s.noreturn", type_name);
-	if (!key) {
-		return fallback;
-	}
-	const char *value = sdb_const_get (types, key, 0);
-	free (key);
+	const char *value = sdb_const_getf (types, NULL, "func.%s.noreturn", type_name);
 	return value? r_str_is_true (value): fallback;
 }
 
@@ -2643,7 +2638,7 @@ static void function_param_free(RAnalFunctionParam *param) {
 
 static char *function_param_string(const RAnalFunctionParam *param) {
 	R_RETURN_VAL_IF_FAIL (param && param->type, NULL);
-	if (!strcmp (param->type, "...")) {
+	if (r_type_arg_is_vararg (param->type, param->name)) {
 		return strdup ("...");
 	}
 	if (R_STR_ISEMPTY (param->name)) {

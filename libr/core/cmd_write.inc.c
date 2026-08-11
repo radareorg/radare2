@@ -256,7 +256,7 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 		binkey = (ut8*)strdup (key + 2);
 		keylen = strlen (key + 2);
 	} else if (r_str_startswith (key, "base64:")) {
-		binkey = r_base64_decode_dyn (key + 7, -1, (int *)&keylen);
+		binkey = r_base64_decode_dyn (key + 7, -1, (int *)&keylen, false);
 	} else {
 		binkey = (ut8 *)strdup (key);
 		keylen = r_hex_str2bin (key, binkey);
@@ -310,7 +310,7 @@ static void write_block_signature(RCore *core, const char *algo, const char *key
 		binkey = (ut8 *)strdup (key + 2);
 		keylen = strlen (key + 2);
 	} else if (r_str_startswith (key, "base64:")) {
-		binkey = r_base64_decode_dyn (key + 7, -1, (int *)&keylen);
+		binkey = r_base64_decode_dyn (key + 7, -1, (int *)&keylen, false);
 	} else {
 		binkey = (ut8 *)strdup (key);
 		keylen = r_hex_str2bin (key, binkey);
@@ -391,7 +391,7 @@ static int cmd_wo(void *data, const char *input) {
 	switch (input[0]) {
 	case 'e': // "woe"
 		if (input[1]!=' ') {
-			r_core_cmd_help_match (core, help_msg_wo, "woe");
+			r_cons_cmd_help_match (core->cons, help_msg_wo, "woe", 0, true);
 			return -1;
 		}
 		/* fallthrough */
@@ -410,7 +410,7 @@ static int cmd_wo(void *data, const char *input) {
 	case '4': // "wo4"
 	case '8': // "wo8"
 		if (input[1] == '?') {  // parse val from arg
-			r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
+			r_cons_cmd_help_match (core->cons, help_msg_wo, "wo", input[0], true);
 		} else if (input[1]) {  // parse val from arg
 			r_core_write_op (core, r_str_trim_head_ro (input + 1), input[0]);
 		} else {  // use clipboard instead of val
@@ -450,7 +450,7 @@ static int cmd_wo(void *data, const char *input) {
 				char *s = r_muta_list (core->muta, R_MUTA_TYPE_CRYPTO, 0);
 				r_cons_print (core->cons, s);
 				free (s);
-				r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
+				r_cons_cmd_help_match (core->cons, help_msg_wo, "wo", input[0], true);
 			}
 			free (args);
 		}
@@ -473,7 +473,7 @@ static int cmd_wo(void *data, const char *input) {
 				char *s = r_muta_list (core->muta, R_MUTA_TYPE_SIGN, 0);
 				r_cons_print (core->cons, s);
 				free (s);
-				r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
+				r_cons_cmd_help_match (core->cons, help_msg_wo, "wo", input[0], true);
 			}
 			free (args);
 		} break;
@@ -521,14 +521,14 @@ static int cmd_wo(void *data, const char *input) {
 		case '\0':
 		case '?':
 		default:
-			r_core_cmd_help (core, help_msg_wop);
+			r_cons_cmd_help (core->cons, help_msg_wop);
 			break;
 		}
 		break;
 	case '\0':
 	case '?':
 	default:
-		r_core_cmd_help (core, help_msg_wo);
+		r_cons_cmd_help (core->cons, help_msg_wo);
 		break;
 	}
 	return 0;
@@ -585,7 +585,7 @@ static void cmd_write_value(RCore *core, const char *input) {
 
 	switch (op) {
 	case '?': // "wv?"
-		r_core_cmd_help (core, help_msg_wv);
+		r_cons_cmd_help (core->cons, help_msg_wv);
 		return;
 	case 'f': // "wvf"
 		cmd_write_value_float (core, r_str_trim_head_ro (input + 1), be);
@@ -696,9 +696,9 @@ static bool cmd_wff(RCore *core, const char *input) {
 	}
 
 	if (*arg == '?' || !*arg) {
-		r_core_cmd_help_contains (core, help_msg_w, "wf");
+		r_cons_cmd_help_match (core->cons, help_msg_w, "wf", 0, false);
 	} else if (!strcmp (arg, "-")) {
-		char *out = r_core_editor (core, NULL, NULL);
+		char *out = r_core_editor (core, NULL, NULL, NULL);
 		if (out) {
 			if (!r_io_write_at (core->io, core->addr, (ut8*)out, strlen (out))) {
 				R_LOG_ERROR ("write fail at 0x%08"PFMT64x, core->addr);
@@ -811,7 +811,7 @@ static bool cmd_wfx(RCore *core, const char *input) {
 static bool cmd_wfs(RCore *core, const char *input) {
 	char *str = strdup (input);
 	if (str[0] != ' ') {
-		r_core_cmd_help_contains (core, help_msg_wf, "wfs");
+		r_cons_cmd_help_match (core->cons, help_msg_wf, "wfs", 0, false);
 		free (str);
 		return false;
 	}
@@ -819,7 +819,7 @@ static bool cmd_wfs(RCore *core, const char *input) {
 	char *host = str + 1;
 	char *port = strchr (host, ':');
 	if (!port) {
-		r_core_cmd_help_match (core, help_msg_wf, "wfs");
+		r_cons_cmd_help_match (core->cons, help_msg_wf, "wfs", 0, true);
 		free (str);
 		return false;
 	}
@@ -879,7 +879,7 @@ static int cmd_wf(void *data, const char *input) {
 		return -1;
 	}
 	if (input[0] == '?') {
-		r_core_cmd_help (core, help_msg_wf);
+		r_cons_cmd_help (core->cons, help_msg_wf);
 		return -1;
 	}
 	if (input[0] == 's') { // "wfs"
@@ -982,7 +982,7 @@ static int cmd_wB(void *data, const char *input) {
 		cmd_write_bits (core, 0, r_num_math (core->num, input + 1));
 		break;
 	default:
-		r_core_cmd_help_match (core, help_msg_w, "wB");
+		r_cons_cmd_help_match (core->cons, help_msg_w, "wB", 0, true);
 		break;
 	}
 	return 0;
@@ -1024,7 +1024,7 @@ static int w_incdec_handler(void *data, const char *input, int inc) {
 		cmd_write_inc (core, inc, -num);
 		break;
 	default:
-		r_core_cmd_help_match (core, help_msg_w, "w");
+		r_cons_cmd_help_match (core->cons, help_msg_w, "w", 0, true);
 		break;
 	}
 	return 0;
@@ -1049,8 +1049,8 @@ static int cmd_w6(void *data, const char *input) {
 			buf = malloc (str_len);
 			if (buf) {
 				len = r_base64_decode (buf, str, -1, false);
-				if (len < 0) {
-					R_LOG_WARN ("Invalid hexpair string");
+				if (len < 1) {
+					R_LOG_WARN ("Invalid base64 string");
 					R_FREE (buf);
 					fail = true;
 				}
@@ -1065,31 +1065,29 @@ static int cmd_w6(void *data, const char *input) {
 			if (bin_len <= 0) {
 				fail = true;
 			} else {
-				buf = calloc (str_len + 1, 4);
-				len = r_base64_encode ((char *)buf, bin_buf, bin_len);
-				if (len == 0) {
+				buf = (ut8 *)r_base64_encode_dyn (bin_buf, bin_len);
+				size_t encoded_len = buf? strlen ((const char *)buf): 0;
+				if (!buf || encoded_len > ST32_MAX) {
 					R_FREE (buf);
 					fail = true;
+				} else {
+					len = (int)encoded_len;
 				}
 			}
 			free (bin_buf);
-			}
 			break;
+		}
 		case 'e': { // "w6e"
-			ut8 *bin_buf = malloc (str_len);
-			if (!bin_buf) {
-				break;
-			}
 			char *s = r_str_trim_dup (input + 1);
 			int slen = strlen (s);
-			free (buf);
-			buf = malloc ((4+slen) * 4);
-			len = r_base64_encode ((char *)buf, (const ut8*)s, slen);
-			if (len == 0) {
+			buf = (ut8 *)r_base64_encode_dyn ((const ut8 *)s, slen);
+			size_t encoded_len = buf? strlen ((const char *)buf): 0;
+			if (!buf || !encoded_len || encoded_len > ST32_MAX) {
 				R_FREE (buf);
 				fail = true;
+			} else {
+				len = (int)encoded_len;
 			}
-			free (bin_buf);
 			free (s);
 			break;
 		}
@@ -1106,7 +1104,7 @@ static int cmd_w6(void *data, const char *input) {
 		r_core_block_read (core);
 		free (buf);
 	} else {
-		r_core_cmd_help_match (core, help_msg_w, "w6");
+		r_cons_cmd_help_match (core->cons, help_msg_w, "w6", 0, true);
 	}
 	return 0;
 }
@@ -1151,7 +1149,7 @@ static int cmd_we(void *data, const char *input) {
 				}
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_we, "wen");
+			r_cons_cmd_help_match (core->cons, help_msg_we, "wen", 0, true);
 			cmd_suc = true;
 		}
 		break;
@@ -1263,7 +1261,7 @@ static int cmd_we(void *data, const char *input) {
 		break;
 	}
 	if (cmd_suc == false) {
-		r_core_cmd_help (core, help_msg_we);
+		r_cons_cmd_help (core->cons, help_msg_we);
 	}
 	return 0;
 }
@@ -1271,7 +1269,7 @@ static int cmd_we(void *data, const char *input) {
 static int cmd_wp(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (input[0] == '-' || (input[0] == ' ' && input[1] == '-')) {
-		char *out = r_core_editor (core, NULL, NULL);
+		char *out = r_core_editor (core, NULL, NULL, NULL);
 		if (out) {
 			r_core_patch (core, out);
 			free (out);
@@ -1284,7 +1282,7 @@ static int cmd_wp(void *data, const char *input) {
 				free (data);
 			}
 		} else {
-			r_core_cmd_help (core, help_msg_wp);
+			r_cons_cmd_help (core->cons, help_msg_wp);
 		}
 	}
 	return 0;
@@ -1348,7 +1346,7 @@ static int cmd_wu(RCore *core, const char *input) {
 			free (data);
 		}
 	} else {
-		r_core_cmd_help_match (core, help_msg_we, "wu");
+		r_cons_cmd_help_match (core->cons, help_msg_we, "wu", 0, true);
 	}
 	return 0;
 }
@@ -1410,12 +1408,12 @@ static int cmd_wA(void *data, const char *input) {
 				eprintf ("r_asm_modify = %d\n", len);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_w, "wA");
+			r_cons_cmd_help_match (core->cons, help_msg_w, "wA", 0, true);
 		}
 		break;
 	case '?':
 	default:
-		r_core_cmd_help (core, help_msg_wA);
+		r_cons_cmd_help (core->cons, help_msg_wA);
 		break;
 	}
 	return 0;
@@ -1554,7 +1552,7 @@ static int cmd_wc(void *data, const char *input) {
 		}
 		break;
 	case '?': // "wc?"
-		r_core_cmd_help (core, help_msg_wc);
+		r_cons_cmd_help (core->cons, help_msg_wc);
 		break;
 	case 'u': // "wcu"
 		r_io_cache_undo (core->io);
@@ -1566,7 +1564,7 @@ static int cmd_wc(void *data, const char *input) {
 		if (input[1] == ' ') {
 			cmd_wcf (core, r_str_trim_head_ro (input + 1));
 		} else {
-			r_core_cmd_help_match (core, help_msg_wc, "wcf");
+			r_cons_cmd_help_match (core->cons, help_msg_wc, "wcf", 0, true);
 		}
 		break;
 	case '*': // "wc*"
@@ -1580,7 +1578,7 @@ static int cmd_wc(void *data, const char *input) {
 		if (input[1] == '+') { // "wc++"
 			r_io_cache_push (core->io);
 		} else if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_wc, "wc+");
+			r_cons_cmd_help_match (core->cons, help_msg_wc, "wc+", 0, false);
 		} else if (input[1] == ' ') { // "wc+ "
 			ut64 to;
 			ut64 from = r_num_math (core->num, input + 2);
@@ -1611,7 +1609,7 @@ static int cmd_wc(void *data, const char *input) {
 				r_io_cache_pop (core->io);
 			}
 		} else if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_wc, "wc-");
+			r_cons_cmd_help_match (core->cons, help_msg_wc, "wc-", 0, false);
 		} else {
 			ut64 from, to;
 			if (input[1] == ' ') { // "wc- "
@@ -1742,7 +1740,7 @@ static int cmd_wz(RCore *core, const char *input) {
 	/* write zero-terminated string */
 	if (*input == '?' || *input != ' ' || len < 1) {
 		free (str);
-		r_core_cmd_help_match (core, help_msg_w, "wz");
+		r_cons_cmd_help_match (core->cons, help_msg_w, "wz", 0, true);
 		r_core_return_value (core, 0);
 		return 0;
 	}
@@ -1782,7 +1780,7 @@ static int cmd_wt(RCore *core, const char *input) {
 		RSocket *sock;
 
 		if (argc < 2) {
-			r_core_cmd_help_match (core, help_msg_wt, "wts");
+			r_cons_cmd_help_match (core->cons, help_msg_wt, "wts", 0, true);
 			ret = 1;
 			goto leave;
 		}
@@ -1799,7 +1797,7 @@ static int cmd_wt(RCore *core, const char *input) {
 		host = host_port;
 		port = strchr (host_port, ':');
 		if (!port) {
-			r_core_cmd_help_match (core, help_msg_wt, "wts");
+			r_cons_cmd_help_match (core->cons, help_msg_wt, "wts", 0, true);
 			free (host_port);
 			ret = 1;
 			goto leave;
@@ -1847,12 +1845,12 @@ static int cmd_wt(RCore *core, const char *input) {
 		switch (input[1]) {
 		case '\0':
 		case '?': // "wtf?"
-			r_core_cmd_help_match (core, help_msg_wt, "wtf");
+			r_cons_cmd_help_match (core->cons, help_msg_wt, "wtf", 0, true);
 			ret = 1;
 			goto leave;
 		case '!': { // "wtf!"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_wt, "wtf!");
+				r_cons_cmd_help_match (core->cons, help_msg_wt, "wtf!", 0, true);
 				ret = 1;
 				goto leave;
 			}
@@ -1870,7 +1868,7 @@ static int cmd_wt(RCore *core, const char *input) {
 		}
 		case 'f': // "wtff"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_wt, "wtff");
+				r_cons_cmd_help_match (core->cons, help_msg_wt, "wtff", 0, true);
 				ret = 1;
 				goto leave;
 			}
@@ -1883,14 +1881,14 @@ static int cmd_wt(RCore *core, const char *input) {
 			break;
 		default: // "wtf"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_wt, "wtf");
+				r_cons_cmd_help_match (core->cons, help_msg_wt, "wtf", 0, true);
 				ret = 1;
 				goto leave;
 			}
 
 			if (r_str_startswith (filename, "base64:")) {
 				const char *b64str = filename + strlen ("base64:");
-				ut8 *decoded = r_base64_decode_dyn (b64str , strlen (b64str), NULL);
+				ut8 *decoded = r_base64_decode_dyn (b64str, strlen (b64str), NULL, true);
 				if (!decoded) {
 					R_LOG_ERROR ("Couldn't decode b64 filename");
 					ret = 1;
@@ -1911,7 +1909,7 @@ static int cmd_wt(RCore *core, const char *input) {
 		break;
 	case '?': // "wt?"
 	default:
-		r_core_cmd_help (core, help_msg_wt);
+		r_cons_cmd_help (core->cons, help_msg_wt);
 		goto leave;
 	}
 
@@ -1952,13 +1950,9 @@ static int cmd_wt(RCore *core, const char *input) {
 			free_buf = true;
 		}
 
-		if (append) {
-			if (r_cmd_alias_append_raw (core->rcmd, filename, buf, sz)) {
-				R_LOG_ERROR ("Will not append to command alias \"$%s\"", filename);
-				ret = 1;
-			}
-		} else {
-			r_cmd_alias_set_raw (core->rcmd, filename, buf, sz);
+		if (!r_cmd_alias_set_raw (core->rcmd, filename, buf, sz, append)) {
+			R_LOG_ERROR ("Cannot write to alias \"$%s\"", filename);
+			ret = 1;
 		}
 
 		if (free_buf) {
@@ -2048,7 +2042,7 @@ static int cmd_wx(void *data, const char *input) {
 		if (!strcmp (arg, "-")) {
 			int len;
 			ut8 *out;
-			char *in = r_core_editor (core, NULL, NULL);
+			char *in = r_core_editor (core, NULL, NULL, NULL);
 			if (in) {
 				out = (ut8 *)strdup (in);
 				if (out) {
@@ -2098,7 +2092,7 @@ static int cmd_wx(void *data, const char *input) {
 		}
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_wx);
+		r_cons_cmd_help (core->cons, help_msg_wx);
 		break;
 	}
 	return 0;
@@ -2159,7 +2153,7 @@ static int cmd_wa(void *data, const char *input) {
 			asm_patch (core, r_str_trim_head_ro (input + 1), input[1]);
 			break;
 		default:
-			r_core_cmd_help (core, help_msg_wao);
+			r_cons_cmd_help (core->cons, help_msg_wao);
 			break;
 		}
 		break;
@@ -2313,7 +2307,7 @@ repeat:
 		}
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_wa);
+		r_cons_cmd_help (core->cons, help_msg_wa);
 		break;
 	}
 	return 0;
@@ -2327,7 +2321,7 @@ static int cmd_wb(void *data, const char *input) {
 
 	// Check that user provided some input
 	if (uil == 0) {
-		r_core_cmd_help_match (core, help_msg_w, "wb");
+		r_cons_cmd_help_match (core->cons, help_msg_w, "wb", 0, true);
 		return 0;
 	}
 
@@ -2480,11 +2474,11 @@ static int cmd_wd(void *data, const char *input) {
 				free (data);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_w, "wd");
+			r_cons_cmd_help_match (core->cons, help_msg_w, "wd", 0, true);
 		}
 		free (inp);
 	} else {
-		r_core_cmd_help_match (core, help_msg_w, "wd");
+		r_cons_cmd_help_match (core->cons, help_msg_w, "wd", 0, true);
 	}
 	return 0;
 }
@@ -2516,7 +2510,7 @@ static int cmd_ws(void *data, const char *input) {
 		}
 		arg = strchr (str, ' ');
 		if (!arg || !pss) {
-			r_core_cmd_help (core, help_msg_ws);
+			r_cons_cmd_help (core->cons, help_msg_ws);
 			free (str);
 			return 0;
 		}
@@ -2548,7 +2542,7 @@ static int cmd_ws(void *data, const char *input) {
 			r_core_block_read (core);
 		}
 	} else {
-		r_core_cmd_help (core, help_msg_ws);
+		r_cons_cmd_help (core->cons, help_msg_ws);
 	}
 	free (str);
 	return 0;
@@ -2578,7 +2572,7 @@ static int cmd_write(void *data, const char *input) {
 			w_incdec_handler (data, input + 2, input[1] - '0');
 			break;
 		case '?':
-			r_core_cmd_help_contains (core, help_msg_w, "wi");
+			r_cons_cmd_help_match (core->cons, help_msg_w, "wi", 0, false);
 			break;
 		default:
 			r_core_return_invalid_command (core, "wi", input[1]);
@@ -2699,7 +2693,7 @@ static int cmd_write(void *data, const char *input) {
 		cmd_ws (core, input + 1);
 		break;
 	case '?': // "w?"
-		r_core_cmd_help (core, help_msg_w);
+		r_cons_cmd_help (core->cons, help_msg_w);
 		break;
 	default:
 		r_core_return_invalid_command (core, "w", *input);

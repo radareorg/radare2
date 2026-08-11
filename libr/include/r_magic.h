@@ -21,7 +21,7 @@ R_LIB_VERSION_HEADER (r_magic);
 #endif
 #define MAXDESC     64
 #define MAXMAGIS    8192            /* max entries in any one magic file or directory */
-#define MAXstring   32              /* max leng of "string" types */
+#define MAXstring   128             /* max length of "string" and "regex" values */
 
 /* define this outside to fix build for g++ */
 union VALUETYPE {
@@ -39,9 +39,9 @@ union VALUETYPE {
 
 /* constants */
 #define MAGICNO         0xF11E041C
-#define VERSIONNO       5
+#define VERSIONNO       6
 #define R_MAGIC_VERSION VERSIONNO
-#define FILE_MAGICSIZE  (32 * 6)
+#define FILE_MAGICSIZE  (32 * 9)
 
 #define	FILE_LOAD       0
 #define FILE_CHECK      1
@@ -224,6 +224,7 @@ R_VEC_TYPE (RVecMagicMList, struct mlist);
 #define R_MAGIC_NO_CHECK_ELF        0x010000 /* Don't check for elf details */
 #define R_MAGIC_NO_CHECK_ASCII      0x020000 /* Don't check for ascii files */
 #define R_MAGIC_NO_CHECK_TOKENS     0x100000 /* Don't check ascii/tokens */
+#define R_MAGIC_CHECK_TEXT          0x200000 /* Check text magic entries */
 
 /* Defined for backwards compatibility; do nothing */
 #define MAGIC_NO_CHECK_FORTRAN      0x000000 /* Don't check ascii/fortran */

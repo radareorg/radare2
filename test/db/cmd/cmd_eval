@@ -21,6 +21,15 @@ scr.color.regs    false
 EOF
 RUN
 
+NAME=ed* honors R2_RCFILE
+FILE=-
+ENV=R2_RCFILE=scripts/no-nl-at-eof.r2;HOME=scripts/no-nl-at-eof.r2;USERPROFILE=scripts/no-nl-at-eof.r2
+CMDS=ed*
+EXPECT=<<EOF
+!!rahash2 -v~commit?
+EOF
+RUN
+
 NAME=deprecated cmd.onsyscall aliases cmd.syscall.enter
 FILE=-
 ARGS=-e log.level=0
@@ -66,6 +75,30 @@ FILE=bins/elf/analysis/mips64r2-cc1
 CMDS=e anal.gp
 EXPECT=<<EOF
 0x1213a5940
+EOF
+RUN
+
+NAME=e anal.gp(ppc32 sda base)
+FILE=bins/elf/ppc_classes
+CMDS=e anal.gp
+EXPECT=<<EOF
+0x10028034
+EOF
+RUN
+
+NAME=e anal.gp(ppc32 no sdata, not seeded)
+FILE=bins/elf/hello.ppc
+CMDS=e anal.gp
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+NAME=e anal.gp(ppc32 shared object not seeded)
+FILE=bins/elf/dropbear_powerpc-linux-gnu_gcc_-O2
+CMDS=e anal.gp
+EXPECT=<<EOF
+0
 EOF
 RUN
 
@@ -154,6 +187,15 @@ e asm.cpu=?
 EOF
 EXPECT=<<EOF
 mips32/64
+mips1
+mips2
+mips3
+mips4
+mips5
+mips32
+mips32r2
+mips64
+mips64r2
 micro
 r6
 v3
@@ -191,6 +233,8 @@ e asm.cpu
 e asm.arch=mips
 e asm.cpu=v
 e asm.cpu
+e asm.cpu=mips1
+e asm.cpu
 e asm.cpu=v3
 e asm.cpu
 e asm.arch=v850
@@ -200,6 +244,7 @@ EXPECT=<<EOF
 v8
 v8
 
+mips1
 v3
 
 EOF
@@ -242,5 +287,18 @@ EOF
 EXPECT=<<EOF
 scr.highlight = "e cmd.prompt =  "e scr.highlight = cmd.prompt ="e scr.rainbow = true """
 
+EOF
+RUN
+
+NAME=bin.resraw defaults to false and can be enabled
+FILE=-
+CMDS=<<EOF
+e bin.resraw
+e bin.resraw=true
+e bin.resraw
+EOF
+EXPECT=<<EOF
+false
+true
 EOF
 RUN

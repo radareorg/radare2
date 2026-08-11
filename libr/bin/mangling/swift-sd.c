@@ -111,10 +111,7 @@ static const char *getnum(const char *n, int *num) {
 			*num = 0;
 		}
 	}
-	while (*n && *n >= '0' && *n <= '9') {
-		n++;
-	}
-	return n;
+	return r_str_trim_head_digits (n);
 }
 
 static const char *numpos(const char *n) {
@@ -460,9 +457,7 @@ static char *my_swift_demangler(const char *s) {
 	if (r_str_startswith (s, "So") && r_str_endswith (s, "C")) {
 		int len = atoi (s + 2);
 		s += 2;
-		while (isdigit (*s)) {
-			s++;
-		}
+		s = r_str_trim_head_digits (s);
 		char *ns = r_str_ndup (s, len);
 		char *fs = r_str_newf ("__C.%s", ns);
 		free (ns);
@@ -988,9 +983,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 	if (r_str_startswith (s, "_TtCs") && isdigit (s[5])) {
 		int len = atoi (s + 5);
 		const char *p = s + 5;
-		while (isdigit (*p)) {
-			p++;
-		}
+		p = r_str_trim_head_digits (p);
 		if (len > 0 && len <= (int)strlen (p)) {
 			char *name = r_str_ndup (p, len);
 			char *result = r_str_newf ("Swift.%s", name);
@@ -1050,9 +1043,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 	if (swift5_body && r_str_startswith (swift5_body, "So") && isdigit (swift5_body[2]) && r_str_endswith (s, "C")) {
 		int len = atoi (swift5_body + 2);
 		const char *p = swift5_body + 2;
-		while (isdigit (*p)) {
-			p++;
-		}
+		p = r_str_trim_head_digits (p);
 		if (len > 0 && len <= (int)strlen (p) - 1) { // -1 for trailing 'C'
 			char *name = r_str_ndup (p, len);
 			char *result = r_str_newf ("__C.%s", name);

@@ -10,8 +10,8 @@ static RList *lib_list = NULL;
 static PLIB_ITEM last_lib = NULL;
 
 // XXX bad names for those defines
-#define w32_PROCESS_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF)
-#define w32_THREAD_ALL_ACCESS w32_PROCESS_ALL_ACCESS
+#define w32_PROCESS_ALL_ACCESS R_W32_PROCESS_ALL_ACCESS
+#define w32_THREAD_ALL_ACCESS R_W32_THREAD_ALL_ACCESS
 
 static int __w32_findthread_cmp(int *tid, PTHREAD_ITEM th) {
 	return (int)!(*tid == th->tid);
@@ -72,7 +72,13 @@ static int __suspend_thread(HANDLE th, int bits) {
 static int __resume_thread(HANDLE th, int bits) {
 	int ret = ResumeThread (th);
 	if (ret == -1) {
-		r_sys_perror ("__resume_thread/ResumeThread");
+		// a thread that exited between the suspend and the resume takes its
+		// handle with it: expected during library loading, not an error
+		if (GetLastError () == ERROR_INVALID_HANDLE) {
+			R_LOG_DEBUG ("ResumeThread: thread is gone");
+		} else {
+			r_sys_perror ("__resume_thread/ResumeThread");
+		}
 	}
 	return ret;
 }
@@ -124,19 +130,28 @@ static int __set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
 static int __get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
 	int ret = 0;
 	CONTEXT ctx = {0};
-	// TODO: support various types?
-	ctx.ContextFlags = CONTEXT_ALL;
-	if (GetThreadContext (th, &ctx)) {
-		if (size > sizeof (ctx)) {
-			size = sizeof (ctx);
-		}
-		memcpy (buf, &ctx, size);
-		ret = size;
-	} else {
-		if (__is_proc_alive (th)) {
-			r_sys_perror ("__get_thread_context/GetThreadContext");
+	// CONTEXT_ALL pulls in CONTEXT_EXTENDED_REGISTERS, which pre-vista kernels
+	// (xp, reactos) reject; fall back to progressively smaller register sets
+	const DWORD flagsets[] = {
+		CONTEXT_ALL,
+		CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS | CONTEXT_FLOATING_POINT,
+		CONTEXT_FULL
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (flagsets); i++) {
+		memset (&ctx, 0, sizeof (ctx));
+		ctx.ContextFlags = flagsets[i];
+		if (GetThreadContext (th, &ctx)) {
+			if (size > sizeof (ctx)) {
+				size = sizeof (ctx);
+			}
+			memcpy (buf, &ctx, size);
+			return size;
 		}
 	}
+	// report unconditionally: suppressing this when the handle looks dead hides
+	// the actual failure whenever the liveness probe itself is what went wrong
+	r_sys_perror ("__get_thread_context/GetThreadContext");
 	return ret;
 }
 
@@ -291,32 +306,60 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	bool alive = __is_thread_alive (dbg, dbg->tid);
 	HANDLE th = wrap->pi.dwThreadId == dbg->tid ? wrap->pi.hThread : NULL;
 	if (!th || th == INVALID_HANDLE_VALUE) {
-		DWORD flags = THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT;
-		if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
-			flags |= THREAD_QUERY_INFORMATION;
+		// the thread may not be in dbg->threads (the toolhelp snapshot can come
+		// back empty), but its registers are still readable, so try to open it
+		// regardless of what __is_thread_alive claimed
+		if (dbg->tid > 0) {
+			DWORD flags = THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT;
+			if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
+				flags |= THREAD_QUERY_INFORMATION;
+			}
+			th = OpenThread (flags, FALSE, dbg->tid);
+			if (!th) {
+				// recoverable: we fall back to the main thread below, so this
+				// is not worth a warning unless that fallback fails too
+				R_LOG_DEBUG ("OpenThread(%d) failed (0x%x)", dbg->tid, (ut32)GetLastError ());
+			}
 		}
-		th = OpenThread (flags, FALSE, dbg->tid);
-		if (!th && alive) {
-			r_sys_perror ("w32_reg_read/OpenThread");
+		if (!th || th == INVALID_HANDLE_VALUE) {
+			// no usable per-thread handle (no thread selected yet, or the tid
+			// is not ours): the main thread is the best answer we have
+			th = wrap->pi.hThread;
 		}
-		if (!th) {
+		if (!th || th == INVALID_HANDLE_VALUE) {
+			R_LOG_DEBUG ("no thread handle for tid %d (alive=%d)", dbg->tid, alive);
 			return 0;
 		}
+		if (!alive) {
+			// we hold a usable handle, so it is not gone after all
+			alive = true;
+		}
 	}
+	// never close a borrowed handle: wrap->pi.hThread outlives this call
+	const bool owned = th != wrap->pi.hThread;
 	// Always suspend
-	if (alive && __suspend_thread (th, dbg->bits) == -1) {
-		CloseHandle (th);
-		return 0;
+	bool suspended = false;
+	if (alive) {
+		if (__suspend_thread (th, dbg->bits) == -1) {
+			if (owned) {
+				CloseHandle (th);
+			}
+			return 0;
+		}
+		suspended = true;
 	}
 	size = __get_thread_context (th, buf, size, dbg->bits);
+	if (size < 1) {
+		R_LOG_DEBUG ("no context for tid %d", dbg->tid);
+	}
 	if (showfpu) {
 		__printwincontext (th, (CONTEXT *)buf);
 	}
-	// Always resume
-	if (alive && __resume_thread (th, dbg->bits) == -1) {
+	// only resume what we actually suspended
+	if (suspended && __resume_thread (th, dbg->bits) == -1) {
 		size = 0;
 	}
-	if (th != wrap->pi.hThread) {
+	if (owned) {
 		CloseHandle (th);
 	}
 	return size;
@@ -335,30 +378,53 @@ static void __transfer_drx(RDebug *dbg, const ut8 *buf) {
 }
 
 int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
-	DWORD flags = THREAD_SUSPEND_RESUME | THREAD_SET_CONTEXT;
-	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
-		flags |= THREAD_QUERY_INFORMATION;
+	RW32Dw *wrap = dbg->user;
+	HANDLE th = NULL;
+	if (dbg->tid > 0) {
+		DWORD flags = THREAD_SUSPEND_RESUME | THREAD_SET_CONTEXT;
+		if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
+			flags |= THREAD_QUERY_INFORMATION;
+		}
+		th = OpenThread (flags, FALSE, dbg->tid);
+		if (!th) {
+			R_LOG_DEBUG ("OpenThread(%d) failed (0x%x)", dbg->tid, (ut32)GetLastError ());
+		}
 	}
-	HANDLE th = OpenThread (flags, FALSE, dbg->tid);
-	if (!th) {
-		r_sys_perror ("w32_reg_write/OpenThread");
-		return false;
+	if (!th || th == INVALID_HANDLE_VALUE) {
+		// same fallback as w32_reg_read: no thread selected yet, or the
+		// toolhelp snapshot never gave us this tid
+		th = wrap? wrap->pi.hThread: NULL;
+		if (!th || th == INVALID_HANDLE_VALUE) {
+			R_LOG_DEBUG ("no thread handle for tid %d", dbg->tid);
+			return false;
+		}
 	}
-	bool alive = __is_thread_alive (dbg, dbg->tid);
+	// never close a borrowed handle: wrap->pi.hThread outlives this call
+	const bool owned = th != wrap->pi.hThread;
+	// holding a usable handle is better evidence than the thread list
+	bool alive = __is_thread_alive (dbg, dbg->tid) || !owned;
 	// Always suspend
-	if (alive && __suspend_thread (th, dbg->bits) == -1) {
-		CloseHandle (th);
-		return false;
+	bool suspended = false;
+	if (alive) {
+		if (__suspend_thread (th, dbg->bits) == -1) {
+			if (owned) {
+				CloseHandle (th);
+			}
+			return false;
+		}
+		suspended = true;
 	}
 	if (type == R_REG_TYPE_DRX) {
 		__transfer_drx (dbg, buf);
 	}
 	bool ret = __set_thread_context (th, buf, size, dbg->bits);
-	// Always resume
-	if (alive && __resume_thread (th, dbg->bits) == -1) {
+	// only resume what we actually suspended
+	if (suspended && __resume_thread (th, dbg->bits) == -1) {
 		ret = false;
 	}
-	CloseHandle (th);
+	if (owned) {
+		CloseHandle (th);
+	}
 	return ret;
 }
 
@@ -447,8 +513,10 @@ static char *__get_file_name_from_handle(HANDLE handle_file) {
 				if (_tcsnicmp (filename, name, name_length) == 0
 					&& *(filename + name_length) == '\\') {
 					TCHAR temp_filename[MAX_PATH + 1];
-					_sntprintf_s (temp_filename, MAX_PATH, _TRUNCATE, TEXT ("%s%s"),
+					// _sntprintf_s is missing in pre-vista msvcrt (reactos, xp)
+					_sntprintf (temp_filename, MAX_PATH, TEXT ("%s%s"),
 						drive, filename + name_length);
+					temp_filename[MAX_PATH] = (TCHAR)'\0';
 					_tcsncpy (filename, temp_filename,
 						_tcslen (temp_filename) + 1);
 					filename[MAX_PATH] = (TCHAR)'\0';
@@ -657,7 +725,21 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 	RW32Dw *wrap = dbg->user;
 
 	if (sig == 0) {
-		if (r_list_empty (dbg->threads) || (dbg->reason.tid == pid && dbg->reason.signum == EXIT_PROCESS_DEBUG_EVENT)) {
+		// liveness probe used by r_debug_is_dead()
+		bool dead = dbg->reason.tid == pid && dbg->reason.signum == EXIT_PROCESS_DEBUG_EVENT;
+		if (!dead) {
+			// an empty thread list is not proof of death: it is filled from a
+			// toolhelp snapshot, which fails on some systems (reactos) and
+			// would make every register or memory access look like a dead
+			// process. ask the kernel whenever we hold a process handle
+			DWORD code = STILL_ACTIVE;
+			if (wrap && wrap->pi.hProcess && GetExitCodeProcess (wrap->pi.hProcess, &code)) {
+				dead = code != STILL_ACTIVE;
+			} else {
+				dead = r_list_empty (dbg->threads);
+			}
+		}
+		if (dead) {
 			if (dbg->threads) {
 				r_list_purge (dbg->threads);
 			}
@@ -1027,7 +1109,7 @@ bool w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 	}
 
 	PTHREAD_ITEM th = __find_thread (dbg, tid);
-	if (th && th->hThread != INVALID_HANDLE_VALUE) {
+	if (th && th->hThread && th->hThread != INVALID_HANDLE_VALUE) {
 		__continue_thread (th->hThread, dbg->bits);
 		th->bSuspended = false;
 	}
@@ -1103,7 +1185,8 @@ bool w32_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
 	// pid is not respected for TH32CS_SNAPTHREAD flag
 	HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, 0);
-	if (th == INVALID_HANDLE_VALUE) {
+	// some implementations return NULL instead of INVALID_HANDLE_VALUE
+	if (!th || th == INVALID_HANDLE_VALUE) {
 		r_sys_perror ("w32_thread_list/CreateToolhelp32Snapshot");
 		return list;
 	}

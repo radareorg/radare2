@@ -1,0 +1,153 @@
+:root {
+	color-scheme: dark;
+	--bg: #1e1e1e;
+	--panel: #282828;
+	--border: #4a4a4a;
+	--text: #f0f0f0;
+	--muted: #aaa;
+	--accent: #80f080;
+	--danger: #f08080;
+}
+* {
+	box-sizing: border-box;
+}
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-family: monospace;
+}
+button, input, select {
+	border: 1px solid var(--border);
+	border-radius: 3px;
+	background: #3a3a3a;
+	color: var(--text);
+	font: inherit;
+}
+button, input[type="submit"] {
+	padding: 0.5rem 0.8rem;
+	cursor: pointer;
+}
+button:disabled {
+	cursor: not-allowed;
+	opacity: 0.45;
+}
+#content {
+	width: min(44rem, 100%);
+	margin: auto;
+	padding: 0 1rem 2rem;
+}
+#logo {
+	width: 100%;
+	margin-bottom: 1rem;
+	padding: 0.6rem;
+	border: 0;
+	background: white;
+}
+#logo img {
+	display: block;
+	width: 100px;
+	margin: auto;
+}
+#fortune {
+	width: 100%;
+	min-height: 2rem;
+	margin-bottom: 1rem;
+	border: 0;
+	background: transparent;
+	color: var(--muted);
+	font-style: italic;
+}
+.section {
+	margin-bottom: 1rem;
+	padding: 1rem;
+	border: 1px solid var(--border);
+	border-radius: 5px;
+	background: var(--panel);
+}
+h2, h3 {
+	margin: 0 0 0.8rem;
+}
+.details {
+	display: grid;
+	grid-template-columns: 9rem minmax(0, 1fr);
+	gap: 0.7rem;
+	margin-bottom: 1rem;
+}
+.details label, .hint, .status {
+	color: var(--muted);
+}
+.details span {
+	overflow-wrap: anywhere;
+}
+select, input[type="text"] {
+	width: 100%;
+	padding: 0.5rem;
+}
+#recent {
+	max-height: 16rem;
+	margin: 0;
+	padding: 0;
+	overflow-y: auto;
+	border: 1px solid var(--border);
+	background: #202020;
+	list-style: none;
+}
+#recent li + li {
+	border-top: 1px solid #363636;
+}
+.project {
+	width: 100%;
+	padding: 0.65rem 0.8rem;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	text-align: left;
+}
+.project:hover, .project.selected {
+	background: var(--accent);
+	color: #101010;
+}
+.empty {
+	padding: 0.8rem;
+	color: var(--muted);
+	text-align: center;
+}
+.hint, .status {
+	font-size: 0.85rem;
+}
+.error {
+	color: var(--danger);
+}
+.actions, .file-form {
+	display: flex;
+	gap: 0.5rem;
+	margin-top: 1rem;
+}
+.actions {
+	flex-wrap: wrap;
+}
+#submit {
+	margin-left: auto;
+	border-color: var(--accent);
+}
+.file-form input:first-child {
+	flex: 1;
+	min-width: 0;
+}
+.upload {
+	padding-top: 1rem;
+	border-top: 1px solid var(--border);
+}
+@media (max-width: 32rem) {
+	.details {
+		grid-template-columns: 1fr;
+		gap: 0.2rem;
+	}
+	.file-form {
+		flex-direction: column;
+	}
+	#submit {
+		margin-left: 0;
+	}
+}

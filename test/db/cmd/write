@@ -59,10 +59,10 @@ hello # world
 EOF
 RUN
 
-NAME=w quote literal and empty
+NAME=w escaped quote literal and empty
 FILE=malloc://8
 CMDS=<<EOF
-w "
+w \"
 p8 8
 s 1
 w ""
@@ -77,7 +77,7 @@ w '"'
 s 0
 p8 8
 s 4
-w '
+w \'
 s 0
 p8 8
 s 5
@@ -340,16 +340,17 @@ NAME=wci should commit the changes to the file
 FILE=malloc://1024
 BROKEN=1
 CMDS=<<EOF
-!rm -rf .tmp
-mkdir .tmp
-cp -f bins/pe/b.exe .tmp/.b.exe.orig
-cp -f bins/pe/b.exe .tmp/.b.exe.new
+rm -rf .tmp-wci
+mkdir .tmp-wci
+cp bins/pe/b.exe .tmp-wci/.b.exe.orig
+cp bins/pe/b.exe .tmp-wci/.b.exe.new
 e io.cache=true
-o+ .tmp/.b.exe.new
+o+ .tmp-wci/.b.exe.new
 wx ff
 wci
 e.src.null=true
-!!radiff2 .tmp/.b.exe.orig .tmp/.b.exe.new
+!!radiff2 .tmp-wci/.b.exe.orig .tmp-wci/.b.exe.new
+rm -rf .tmp-wci
 EOF
 EXPECT=<<EOF
 File size

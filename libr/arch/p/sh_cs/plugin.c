@@ -7,10 +7,6 @@
 #if CS_VERSION_MAJOR >= 5
 #include <capstone/sh.h>
 
-#if CS_API_MAJOR < 2
-#error Old Capstone not supported
-#endif
-
 #define INSOP(n) insn->detail->sh.operands[n]
 
 #define CSINC SH

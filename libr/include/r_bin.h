@@ -330,6 +330,12 @@ typedef struct r_bin_symbol_t {
 	const char *type;
 	char *rtype;
 	bool is_imported;
+	// Per-method arg-slot metadata for stack-VM archs (JVM, Dalvik, ...).
+	// Anal uses these to synthesize register-kind argument variables.
+	// arg_count == 0 means no metadata is available for this symbol.
+	ut16 arg_first;          // first arg register index in the bytecode reg space
+	ut16 arg_count;          // VM locals/arg slots for variable recovery (0 = no metadata)
+	ut16 cc_arg_count;       // descriptor/callconv arg slots; can be zero for no-arg funcs
 	/* only used by java */
 	ut64 vaddr;
 	ut64 paddr;
@@ -339,12 +345,6 @@ typedef struct r_bin_symbol_t {
 	int bits;
 	RBinAttribute attr; // previously known as method_flags + visibility
 	int dup_count;
-	// Per-method arg-slot metadata for stack-VM archs (JVM, Dalvik, ...).
-	// Anal uses these to synthesize register-kind argument variables.
-	// arg_count == 0 means no metadata is available for this symbol.
-	ut16 arg_first;          // first arg register index in the bytecode reg space
-	ut16 arg_count;          // VM locals/arg slots for variable recovery (0 = no metadata)
-	ut16 cc_arg_count;       // descriptor/callconv arg slots; can be zero for no-arg funcs
 	ut16 ret_count;          // number of return slots (0 = void)
 	const char *arg_prefix;  // interned register name prefix, e.g. "v" or "l"
 } RBinSymbol;
@@ -403,10 +403,29 @@ R_API void r_bin_section_fini(RBinSection *sec);
 R_API void r_bin_symbol_fini(RBinSymbol *sym);
 R_API void r_bin_import_fini(RBinImport *sym);
 R_API void r_bin_string_fini(RBinString *str);
+typedef struct r_bin_resource_t {
+	char *name;
+	char *type;
+	char *encoding; // NULL/raw, base64, data-uri, gzip, zlib, lz4, utf16, utf16le or utf16be
+	char *language;
+	char *timestamp;
+	char *origin; // source module or container, when applicable
+	ut64 vaddr;
+	ut64 paddr;
+	ut64 size;
+	ut64 id; // UT64_MAX when the resource has a textual name
+	ut32 index;
+	ut32 type_id; // UT32_MAX when the resource type has a textual name
+	ut32 language_id;
+	ut32 codepage;
+	bool named;
+} RBinResource;
+R_API void r_bin_resource_fini(RBinResource *resource);
 R_VEC_TYPE_WITH_FINI (RVecRBinImport, RBinImport, r_bin_import_fini);
 R_VEC_TYPE_WITH_FINI (RVecRBinSymbol, RBinSymbol, r_bin_symbol_fini);
 R_VEC_TYPE_WITH_FINI (RVecRBinSection, RBinSection, r_bin_section_fini);
 R_VEC_TYPE_WITH_FINI (RVecRBinString, RBinString, r_bin_string_fini);
+R_VEC_TYPE_WITH_FINI (RVecRBinResource, RBinResource, r_bin_resource_fini);
 R_VEC_TYPE(RVecRBinEntry, RBinSymbol);
 R_VEC_TYPE(RVecBinSymclassGlob, char *);
 
@@ -421,6 +440,7 @@ typedef struct r_bin_object_t {
 	RVecRBinImport imports_vec;
 	RVecRBinSymbol symbols_vec;
 	RVecRBinSection sections_vec;
+	RVecRBinResource resources_vec;
 	RVecRBinEntry entries_vec;
 	RList/*<??>*/ *entries;
 	RList/*<??>*/ *fields;
@@ -447,6 +467,7 @@ typedef struct r_bin_object_t {
 	void *filters; // symbol/section filter tables (HtPP/HtSU) owned by object
 	void *bin_obj; // internal pointer used by formats... TODO: RENAME TO internal object or sthg
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
+	bool resources_loaded;
 } RBinObject;
 
 typedef struct r_bin_file_options_t {
@@ -523,6 +544,15 @@ typedef struct r_bin_file_t {
 	RArena *arena;
 } RBinFile;
 
+#define R_BIN_DEMANGLE_TYPE_SLOTS 16
+
+typedef struct r_bin_demangle_plugin_t {
+	RPluginMeta meta;
+	RBinLanguage type;
+	const char *aliases;
+	char *(*demangle)(RBinFile *bf, const char *symbol, ut64 vaddr);
+} RBinDemanglePlugin;
+
 typedef struct r_bin_create_options_t {
 	const char *pluginname;
 	ut64 baseaddr; // where the linker maps the binary in memory
@@ -545,6 +575,7 @@ typedef struct r_bin_options_t {
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
 	bool debase64;
+	bool resraw; // extract resources without decoding their contents
 	bool skip_symbols; // skip symbol loading (e.g., for companion debug files)
 	bool setflags; // set symbol/import/class flags at load time
 	bool load_unnamed; // load unnamed/synthetic symbols/classes/methods
@@ -581,12 +612,16 @@ struct r_bin_t {
 	char *strpurge; // purge false positive strings
 	char *srcdir; // dir.source
 	char *srcdir_base; // dir.source.base
+	char *sdbdir; // dir.binsdb
 	char *prefix; // bin.prefix
 	char *strenc;
 	ut64 filter_rules;
 	RStrConstPool constpool;
 	RBinOptions options;
 	RLibStore *libstore;
+	RList /*<RBinDemanglePlugin *>*/ *demangle_plugins;
+	HtPP /*<char *, RBinDemanglePlugin *>*/ *demangle_by_name;
+	RBinDemanglePlugin *demangle_by_type[R_BIN_DEMANGLE_TYPE_SLOTS];
 	struct r_fs_t *fs; // optional: r_bin_open_buf probes containers via r_fs
 };
 
@@ -704,6 +739,9 @@ typedef struct r_bin_plugin_t {
 	char strfilter;
 	bool weak_guess;
 	void *user;
+	bool (*load_resources)(RBinFile *bf);
+	/* Optional raw-data resolver. The returned buffer is owned by the caller. */
+	RBuffer *(*get_resource_data)(RBinFile *bf, const RBinResource *resource);
 } RBinPlugin;
 
 typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);
@@ -723,9 +761,9 @@ typedef struct r_bin_field_t {
 	RBinName *name;
 	RBinName *type;
 	RBinFieldKind kind;
+	bool format_named; // whether format is the name of a format or a raw pf format string
 	char *comment;
 	char *format;
-	bool format_named; // whether format is the name of a format or a raw pf format string
 	RBinAttribute attr;
 } RBinField;
 
@@ -737,15 +775,15 @@ typedef struct r_bin_class_t {
 	RList *super; // list of RBinName
 	char *visibility_str; // XXX R2_600 - only used by dex+java should be ut32 or bitfield.. should be usable for swift too
 	int index; // should be unsigned?
+	RBinClassOrigin origin;
 	ut64 addr;
 	size_t instance_size;
 	char *ns; // namespace // maybe RBinName?
+	ut64 lang;
 	RVecRBinSymbol methods;
 	RVecRBinField fields;
 	// RList *interfaces; // <char *>
 	RBinAttribute attr;
-	ut64 lang;
-	RBinClassOrigin origin;
 } RBinClass;
 
 #define RBinSectionName r_offsetof(RBinSection, name)
@@ -763,6 +801,8 @@ typedef struct r_bin_class_t {
 typedef struct r_bin_reloc_t {
 	ut8 type; // type have implicit size.. but its anoying
 	ut8 additive;
+	bool is_ifunc;
+	ut32 visibility;
 	ut64 ntype; // type number coming from the bin file
 	RBinSymbol *symbol;
 	RBinImport *import;
@@ -771,13 +811,11 @@ typedef struct r_bin_reloc_t {
 	st64 addend;
 	ut64 vaddr;
 	ut64 paddr;
-	ut32 visibility;
 	/* is_ifunc: indirect function, `addend` points to a resolver function
 	 * that returns the actual relocation value, e.g. chooses
 	 * an optimized version depending on the CPU.
 	 * cf. https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
 	 */
-	bool is_ifunc;
 } RBinReloc;
 
 R_VEC_TYPE (RVecRBinReloc, RBinReloc);
@@ -894,6 +932,9 @@ R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *plugin);
 R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin);
 R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo);
+R_API bool r_bin_demangle_plugin_add(RBin *bin, RBinDemanglePlugin *plugin);
+R_API bool r_bin_demangle_plugin_remove(RBin *bin, RBinDemanglePlugin *plugin);
+R_API RBinDemanglePlugin *r_bin_demangle_plugin_find(RBin *bin, const char *name);
 R_API void r_bin_list(RBin *bin, PJ *pj, int format);
 R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json);
 R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBinFile *bf, RBuffer *buf);
@@ -960,6 +1001,10 @@ R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
 R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf);
 R_API RVecRBinImport *r_bin_file_get_imports_vec(RBinFile *bf);
 R_API RVecRBinSection *r_bin_file_get_sections_vec(RBinFile *bf);
+R_API RVecRBinResource *r_bin_file_get_resources(RBinFile *bf);
+R_API RBuffer *r_bin_file_get_resource_data(RBinFile *bf, const RBinResource *resource, bool decode);
+R_API bool r_bin_file_extract_resources(RBinFile *bf, const char *output);
+R_API bool r_bin_file_extract_sections(RBinFile *bf, const char *output, bool segments);
 //
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr);
 // RBinFile.add
@@ -1066,7 +1111,16 @@ R_API void r_bin_section_free(RBinSection *bs);
 
 /* plugin pointers */
 extern RBinLdrPlugin r_bin_ldr_plugin_ldr_linux;
-extern RBinPlugin r_bin_plugin_any;
+extern RBinDemanglePlugin r_bin_demangle_plugin_cxx;
+extern RBinDemanglePlugin r_bin_demangle_plugin_dlang;
+extern RBinDemanglePlugin r_bin_demangle_plugin_ibmxl;
+extern RBinDemanglePlugin r_bin_demangle_plugin_java;
+extern RBinDemanglePlugin r_bin_demangle_plugin_msvc;
+extern RBinDemanglePlugin r_bin_demangle_plugin_objc;
+extern RBinDemanglePlugin r_bin_demangle_plugin_pascal;
+extern RBinDemanglePlugin r_bin_demangle_plugin_rust;
+extern RBinDemanglePlugin r_bin_demangle_plugin_swift;
+extern RBinPlugin r_bin_plugin_null;
 extern RBinPlugin r_bin_plugin_art;
 extern RBinPlugin r_bin_plugin_avr;
 extern RBinPlugin r_bin_plugin_bf;

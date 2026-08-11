@@ -11,9 +11,29 @@ typedef struct {
 	bool msvc;
 } Langs;
 
+// Rust v0 (RFC 2603) symbols: "_R" or "__R", optional decimal version, then a
+// path production, which always starts with one of C M X Y N I B.
+R_IPI bool r_bin_lang_rustv0(const char *name) {
+	if (R_STR_ISEMPTY (name) || *name != '_') {
+		return false;
+	}
+	name++;
+	if (*name == '_') {
+		name++;
+	}
+	if (*name != 'R') {
+		return false;
+	}
+	name++;
+	while (isdigit ((unsigned char)*name)) {
+		name++;
+	}
+	return *name && strchr ("CMXYNIB", *name);
+}
+
 static inline bool check_rust(RBinSymbol *sym) {
 	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
-	return oname && strstr (oname, "_$LT$");
+	return oname && (strstr (oname, "_$LT$") || r_bin_lang_rustv0 (oname));
 }
 
 static inline bool check_objc(RBinSymbol *sym) {
@@ -305,6 +325,9 @@ R_IPI int r_bin_lang_type(RBinFile * R_NULLABLE bf, const char * R_NULLABLE def,
 	if (sym) {
 		if (is_ibmxl_symbol (sym)) {
 			return R_BIN_LANG_IBMXL;
+		}
+		if (r_bin_lang_rustv0 (sym)) {
+			return R_BIN_LANG_RUST;
 		}
 		if (r_str_startswith (sym, "__")) {
 			return R_BIN_LANG_CXX;

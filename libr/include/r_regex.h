@@ -11,10 +11,10 @@ extern "C" {
 
 typedef struct r_regex_t {
 	int re_magic;
+	int re_flags;
 	size_t re_nsub;	/* number of parenthesized subexpressions */
 	const char *re_endp; /* end pointer for R_REGEX_PEND */
 	struct re_guts *re_g; /* none of your business :-) */
-	int re_flags;
 } RRegex;
 
 typedef struct r_regmatch_t {

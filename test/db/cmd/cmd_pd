@@ -1428,7 +1428,7 @@ e asm.emu=1
 pdJ 1 @ 0x08048566
 EOF
 EXPECT=<<EOF
-[{"addr":134514022,"esil":{"expr":"134513556,eip,4,esp,-=,esp,=[4],eip,=","esp":18446744073709551612,"eip":134513556},"text":"            0x08048566      e829feffff     call sym.imp.printf         ; esp=0xfffffffffffffffc ; [0xfffffffc:4] = 0x804856b ; eip=0x8048394 -> 0xa00c25ff"},{"addr":134514022,"text":"                                                                       ; int printf(-1)"}]
+[{"addr":134514022,"esil":{"expr":"134513556,eip,4,esp,-=,esp,=[4],eip,=","esp":18446744073709551612,"eip":134513556},"text":"            0x08048566      e829feffff     call sym.imp.printf         ; esp=0xfffffffffffffffc ; [0xfffffffc:4] = 0x804856b ; eip=0x8048394 -> 0xa00c25ff"},{"addr":134514022,"text":"                                                                       ; int printf(-1, -1)"}]
 EOF
 RUN
 
@@ -2235,8 +2235,8 @@ EXPECT=<<EOF
             0x08048566      e829feffff     call sym.imp.printf
             0x08048566      e829feffff     call printf                 ; sym.imp.printf
 0x08048394    1      6 sym.imp.printf
-|           0x08048566      e829feffff     call sym.imp.printf         ; int printf(const char *format)
-|           0x08048566      e829feffff     call sym.imp.printf         ; int printf(const char *format)
+|           0x08048566      e829feffff     call sym.imp.printf         ; int printf(const char *format, ...)
+|           0x08048566      e829feffff     call sym.imp.printf         ; int printf(const char *format, ...)
 EOF
 RUN
 
@@ -2361,5 +2361,300 @@ EXPECT=<<EOF
             0x00000000      48b8000000..   movabsq $9223372036854775808, %rax
             0x00000000      48b8000000..   movabs rax, 0x8000000000000000
             0x00000000      48b8000000..   movabs rax, -9223372036854775808
+EOF
+RUN
+
+NAME=pdf emu expands printf-family varargs from the format string
+FILE=bins/elf/format
+CMDS=<<EOF2
+aa
+s main
+e asm.emu=1
+e emu.str=1
+e emu.write=1
+pdf~int printf("Results
+EOF2
+EXPECT=<<EOF2
+|                                                                      ; int printf("Results : a : %u , b: %ld\n", 0xffffffff, -1)
+EOF2
+RUN
+
+NAME=pdf emu resolves stack-located format strings and stack scalar args
+FILE=bins/elf/ioli/crackme0x01
+CMDS=<<EOF2
+aaa
+e asm.emu=1
+e emu.write=1
+aei
+aeim
+pdf @ main~int scanf("
+pdf @ main~int printf("IOLI
+EOF2
+EXPECT=<<EOF2
+|                                                                      ; int scanf("%d", 0x177ff8)
+|                                                                      ; int printf("IOLI Crackme Level 0x01\n")
+EOF2
+RUN
+
+NAME=pdf emu keeps unresolved stack args conservative without an emu stack
+FILE=bins/elf/ioli/crackme0x01
+CMDS=<<EOF2
+aaa
+e asm.emu=1
+pdf @ main~int scanf(-
+EOF2
+EXPECT=<<EOF2
+|                                                                      ; int scanf(-1, -1)
+EOF2
+RUN
+
+NAME=pd emu skips ms x64 shadow space and uses value width for stack varargs
+FILE=malloc://0x1000
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+e asm.emu=true
+wx b900010000 @ 0
+wx e8f6020000 @ 5
+w %d %d %d %d %d @ 0x100
+f printf @ 0x300
+tk func.printf.cc=ms
+aei
+aeim
+aer rsp=0x177f00
+wX deadbeef @ 0x177f00!32
+wx 0500000044434241 @ 0x177f20
+wx 7700000048474645 @ 0x177f28
+pd 2 @ 0~printf("
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int printf("%d %d %d %d %d", 0, 0, 0, 5, 0x77)
+EOF2
+RUN
+
+NAME=pd emu right-justifies sub-word stack varargs on big-endian
+FILE=malloc://0x1000
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF2
+e asm.emu=true
+wx 38600100 @ 0
+wx 480002fd @ 4
+w %d %d %d %d %d %d %d %d @ 0x100
+f printf @ 0x300
+aei
+aeim
+aer r1=0x177f00
+wx 4142434400000009 @ 0x177f70
+pd 2 @ 0~printf("
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int printf("%d %d %d %d %d %d %d %d", 0, 0, 0, 0, 0, 0, 0, 9)
+EOF2
+RUN
+
+NAME=pd emu keeps stack args conservative when the slot is not fully readable
+FILE=malloc://0x1000
+ARGS=-a x86 -b 32
+CMDS=<<EOF2
+e asm.emu=true
+wx bcfa0f0000 @ 0
+wx e8f6020000 @ 5
+w %d @ 0x100
+wx 00010000 @ 0xffa
+f printf @ 0x300
+aei
+pd 2 @ 0~printf("
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int printf("%d", -1)
+EOF2
+RUN
+
+NAME=pd emu maps reverse-stack cc args to their pushed slots
+FILE=malloc://0x1000
+ARGS=-a x86 -b 32
+CMDS=<<EOF2
+e asm.emu=true
+wx bc00080000 @ 0
+wx e8f6020000 @ 5
+f padd @ 0x300
+"td int padd(char *a, char *b);"
+tk func.padd.cc=pascal
+aei
+wx 00090000 @ 0x800
+wx 10090000 @ 0x804
+w second @ 0x900
+w first @ 0x910
+pd 2 @ 0~padd(
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int padd("first", "second")
+EOF2
+RUN
+
+NAME=pd emu reads wide varargs across two 32-bit stack slots
+FILE=malloc://0x1000
+ARGS=-a x86 -b 32
+CMDS=<<EOF2
+e asm.emu=true
+wx bc00080000 @ 0
+wx e8f6020000 @ 5
+w %lld %d @ 0x100
+wx 00010000 @ 0x800
+wx 8877665544332211 @ 0x804
+wx 2a000000 @ 0x80c
+f printf @ 0x300
+aei
+pd 2 @ 0~printf("
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int printf("%lld %d", 0x1122334455667788, 42)
+EOF2
+RUN
+
+NAME=pd emu sign-extends stack args by type signedness
+FILE=malloc://0x1000
+ARGS=-a x86 -b 32
+CMDS=<<EOF2
+e asm.emu=true
+wx bc00080000 @ 0
+wx e8f6020000 @ 5
+f myfn @ 0x300
+"td typedef int myint_t;"
+"td int myfn(long unsigned int a, ssize_t b, volatile myint_t c);"
+aei
+wX ff @ 0x800!12
+pd 2 @ 0~myfn(
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int myfn(0xffffffff, -1, -1)
+EOF2
+RUN
+
+NAME=pd emu sizes thumb pointers and vararg slots at 32 bits
+FILE=malloc://0x20000
+ARGS=-a arm -b 16
+CMDS=<<EOF2
+e asm.emu=true
+wx 00f07ef9 @ 0
+w %d %d @ 0x10000
+f printf @ 0x300
+aei
+aer r0=0x10000
+aer r1=7
+aer r2=9
+pd 1 @ 0~printf("
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int printf("%d %d", 7, 9)
+EOF2
+RUN
+
+NAME=pd emu assembles arm32 doubleword varargs from an aligned register pair
+FILE=malloc://0x20000
+ARGS=-a arm -b 32
+CMDS=<<EOF2
+e asm.emu=true
+wx be0000eb @ 0
+w %lld %d @ 0x10000
+f printf @ 0x300
+aei
+aeim
+aer r0=0x10000
+aer r1=0x55555555
+aer r2=0x44332211
+aer r3=0x88776655
+aer sp=0x177f00
+wx 2a000000 @ 0x177f00
+pd 1 @ 0~printf("
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int printf("%lld %d", -8613303245920329199, 42)
+EOF2
+RUN
+
+NAME=pd emu resolves fixed args after a wide stack parameter
+FILE=malloc://0x1000
+ARGS=-a x86 -b 32
+CMDS=<<EOF2
+e asm.emu=true
+wx bc00080000 @ 0
+wx e8f6020000 @ 5
+f wfn @ 0x300
+"td int wfn(long long x, int y);"
+aei
+wx 8877665544332211 @ 0x800
+wx 2a000000 @ 0x808
+pd 2 @ 0~wfn(
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int wfn(0x1122334455667788, 42)
+EOF2
+RUN
+
+NAME=pd emu reads a wide reverse-stack parameter from its lowest slot
+FILE=malloc://0x1000
+ARGS=-a x86 -b 32
+CMDS=<<EOF2
+e asm.emu=true
+wx bc00080000 @ 0
+wx e8f6020000 @ 5
+f wfn @ 0x300
+"td int wfn(long long x, int y);"
+tk func.wfn.cc=pascal
+aei
+wx 2a000000 @ 0x800
+wx 8877665544332211 @ 0x804
+pd 2 @ 0~wfn(
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int wfn(0x1122334455667788, 42)
+EOF2
+RUN
+
+NAME=pd emu sizes msvc long double varargs as one slot
+FILE=malloc://0x1000
+ARGS=-a x86 -b 64 -e asm.os=windows
+CMDS=<<EOF2
+e asm.emu=true
+wx b900010000 @ 0
+wx e8f6020000 @ 5
+w %Lf %d @ 0x100
+f printf @ 0x300
+tk func.printf.cc=ms
+aei
+aer rdx=0x3ff0000000000000
+aer r8=0x2a
+pd 2 @ 0~printf("
+EOF2
+EXPECT=<<EOF2
+                                                                       ; int printf("%Lf %d", 0x3ff0000000000000, 42)
+EOF2
+RUN
+
+NAME=pdp respects pointer width
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx c3 @ 0x20
+wv8 0x20 @ 0
+b 5
+echo short64
+pdp~0x00000000
+b 8
+echo full64
+pdp~0x00000000
+e asm.bits=32
+b 4
+wv4 0x20 @ 0
+echo full32
+pdp~0x00000000
+EOF
+EXPECT=<<EOF
+short64
+full64
+[0x00000000] 0x00000020
+full32
+[0x00000000] 0x00000020
 EOF
 RUN

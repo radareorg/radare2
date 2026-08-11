@@ -382,7 +382,7 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 	for (;;) {
 		hud_render (data);
 		(void)r_line_readline (cons);
-		r_str_ncpy (user_input, cons->line->buffer.data, HUD_BUF_SIZE);
+		r_str_ncpy (user_input, cons->line->state.buffer.data, HUD_BUF_SIZE);
 		memcpy (data->user_input, user_input, sizeof (data->user_input));
 		if (!hud->activate) {
 			hud->top_entry_n = 0;

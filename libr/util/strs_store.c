@@ -102,7 +102,7 @@ R_API RStrsStore *r_strs_store_from_entries(const char *buf, ut32 buf_len, const
 R_API RStrsStore *r_strs_store_from_utf16le(const ut8 *src, ut32 src_len, const RStrsEntry *src_entries, ut32 count) {
 	R_RETURN_VAL_IF_FAIL (src && src_entries, NULL);
 	/* worst case: each UTF-16 code unit (2 bytes) → 3 UTF-8 bytes */
-	ut64 max64 = (ut64)(src_len / 2) * 3;
+	ut64 max64 = (ut64)(src_len / 2) * 3 + 1;
 	if (max64 > UT32_MAX) {
 		return NULL;
 	}
@@ -132,7 +132,7 @@ R_API RStrsStore *r_strs_store_from_utf16le(const ut8 *src, ut32 src_len, const 
 			slen = src_len - soff;
 		}
 		int n = r_str_utf16_to_utf8 ((ut8 *)ss->base + pos,
-			ss->base_cap - pos, src + soff, slen, true);
+			ss->base_cap - pos, src + soff, slen, false);
 		ut32 utf8_len = (n > 0)? (ut32)n: 0;
 		ss->entries[i] = (RStrsEntry){ pos, utf8_len };
 		pos += utf8_len;

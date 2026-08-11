@@ -1100,7 +1100,7 @@ static void radiff_options_fini(RadiffOptions *ro) {
 	r_list_free (ro->runcmd);
 	r_list_free (ro->evals);
 	r_core_free (ro->core);
-	r_cons_free2 (ro->cons);
+	r_cons_free (ro->cons);
 }
 
 static void fileobj(RadiffOptions *ro, const char *ro_file, const ut8 *buf, size_t sz) {

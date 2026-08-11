@@ -29,6 +29,7 @@ static RCoreHelpMessage help_msg_L = {
 	"LA", "[qjf]", "list analysis plugins",
 	"Lb", "[qj]", "list bin plugins",
 	"Lc", "[j]", "list core plugins",
+	"Lcc", " [prefix]", "list commands registered with the new command API",
 	"Ld", "[j]", "list debug plugins (dL)",
 	"LD", "[j]", "list supported decompilers (e cmd.pdc=?)",
 	"Le", "[j]", "list esil plugins",
@@ -298,7 +299,7 @@ static int cmd_log(void *data, const char *input) {
 				static RCoreHelpMessage help_msg_less = {
 					"less", " [filename]", "view file with pagination",
 				};
-				r_core_cmd_help (core, help_msg_less);
+				r_cons_cmd_help (core->cons, help_msg_less);
 			}
 		}
 		break;
@@ -323,7 +324,7 @@ static int cmd_log(void *data, const char *input) {
 		r_core_log_del (core, n);
 		break;
 	case '?': // "T?"
-		r_core_cmd_help (core, help_msg_T);
+		r_cons_cmd_help (core->cons, help_msg_T);
 		break;
 	case 'V': // "TV"
 		r_core_cmd0 (core, "VT");
@@ -378,7 +379,7 @@ static int cmd_log(void *data, const char *input) {
 		} else {
 			const char *arg = r_str_trim_head_ro (input + 1);
 			if (r_str_startswith (arg, "base64:")) {
-				ut8 *s = r_base64_decode_dyn (arg + 7, -1, NULL);
+				ut8 *s = r_base64_decode_dyn (arg + 7, -1, NULL, false);
 				if (s) {
 					r_core_log_add (core, (const char *)s);
 					free (s);
@@ -409,11 +410,17 @@ static int cmd_log(void *data, const char *input) {
 	return 0;
 }
 
+static bool list_registered_command(RStrs name, void *user) {
+	RCons *cons = user;
+	return r_cons_write (cons, name.a, r_strs_len (name))
+		&& r_cons_write (cons, "\n", 1);
+}
+
 static int cmd_plugins(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	switch (input[0]) {
 	case 0:
-		r_core_cmd_help (core, help_msg_L);
+		r_cons_cmd_help (core->cons, help_msg_L);
 		break;
 	case '-':
 		if (!r_lib_close (core->lib, r_str_trim_head_ro (input + 1))) {
@@ -424,7 +431,7 @@ static int cmd_plugins(void *data, const char *input) {
 		r_lib_open (core->lib, r_str_trim_head_ro (input + 1));
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_L);
+		r_cons_cmd_help (core->cons, help_msg_L);
 		break;
 	case 't': // "Lt"
 		if (input[1] == 'j') {
@@ -462,12 +469,12 @@ static int cmd_plugins(void *data, const char *input) {
 		case 'j': r_core_call (core, "phj"); break;
 		case 'q': r_core_call (core, "phq"); break;
 		case 0: r_core_call (core, "ph"); break;
-		default: r_core_cmd_help_match (core, help_msg_L, "Lh"); break;
+		default: r_cons_cmd_help_match (core->cons, help_msg_L, "Lh", 0, true); break;
 		}
 		break;
 	case 'A': // "LA"
 		if (input[1] == '?') { // "La?"
-			r_core_cmd_help (core, help_msg_LA);
+			r_cons_cmd_help (core->cons, help_msg_LA);
 		} else { // asm plugins
 			int mode = input[1];
 			PJ *pj = (mode == 'j')? r_core_pj_new (core): NULL;
@@ -518,7 +525,7 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'a': // "La" // list arch plugins
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_L, "La");
+			r_cons_cmd_help_match (core->cons, help_msg_L, "La", 0, true);
 		} else {
 			int mode = input[1];
 			PJ *pj = (mode == 'j')? r_core_pj_new (core): NULL;
@@ -725,6 +732,22 @@ static int cmd_plugins(void *data, const char *input) {
 				r_cons_printf (core->cons, "%s\n", cp->meta.name);
 			}
 			break;
+		case 'c': { // "Lcc"
+			const char *prefix = "";
+			if (input[2] == ' ') {
+				prefix = r_str_trim_head_ro (input + 3);
+			} else if (input[2] == '?') {
+				r_cons_cmd_help_match (core->cons, help_msg_L, "Lcc", 0, true);
+				break;
+			} else if (input[2]) {
+				r_core_return_invalid_command (core, "Lcc", input[2]);
+				break;
+			}
+			if (!r_cmd_foreach_prefix (core->rcmd, prefix, list_registered_command, core->cons)) {
+				return 1;
+			}
+			break;
+		}
 		case 0:
 			r_list_foreach (core->rcmd->libstore->plugins, iter, cps) {
 				cp = cps->plugin;
@@ -732,7 +755,7 @@ static int cmd_plugins(void *data, const char *input) {
 			}
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_L);
+			r_cons_cmd_help (core->cons, help_msg_L);
 			break;
 		default:
 			r_core_return_invalid_command (core, "Lc", input[1]);

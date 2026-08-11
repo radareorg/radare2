@@ -22,6 +22,18 @@ hello world
 EOF
 RUN
 
+NAME=?b64 encode/decode
+FILE=-
+CMDS=<<EOF
+?b64 hello world
+?b64-aGVsbG8gd29ybGQ=
+EOF
+EXPECT=<<EOF
+aGVsbG8gd29ybGQ=
+hello world
+EOF
+RUN
+
 NAME=both bsae64
 FILE=-
 CMDS=<<EOF

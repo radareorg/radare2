@@ -1,0 +1,10 @@
+OBJ_DEMANGLE_PASCAL=bin_demangle_pascal.o ../mangling/pascal.o
+
+CFLAGS+=-DR_BIN_DEMANGLE_PASCAL=1
+STATIC_OBJ+=${OBJ_DEMANGLE_PASCAL}
+TARGET_DEMANGLE_PASCAL=bin_demangle_pascal.${EXT_SO}
+ALL_TARGETS+=${TARGET_DEMANGLE_PASCAL}
+
+${TARGET_DEMANGLE_PASCAL}: ${OBJ_DEMANGLE_PASCAL}
+	${CC} $(call libname,bin_demangle_pascal) ${CFLAGS} -o $@ \
+		${OBJ_DEMANGLE_PASCAL} $(LINK) $(LDFLAGS)

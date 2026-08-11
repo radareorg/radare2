@@ -106,6 +106,9 @@ typedef struct r_cons_grep_word_t {
 	bool neg;
 	bool begin;
 	bool end;
+	bool amp;
+	int group;
+	bool icase;
 } RConsGrepWord;
 
 typedef struct r_cons_grep_t {
@@ -119,7 +122,7 @@ typedef struct r_cons_grep_t {
 	bool gron;
 	bool json;
 	char *json_path;
-	int range_line;
+	int range_line; // 2: none, 1: range, -1: range before columns
 	int line;
 	int sort;
 	int sort_uniq;
@@ -133,7 +136,6 @@ typedef struct r_cons_grep_t {
 	int zoom;
 	int zoomy; // if set then its scaled unproportionally
 	bool xml;
-	bool icase;
 	bool ascart;
 	bool code;
 	bool colorcode;
@@ -413,7 +415,9 @@ typedef struct r_cons_canvas_t {
 // Variation Selectors
 #define R_UTF8_VS16 "\xef\xb8\x8f"
 
-typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
+typedef struct r_cons_editor_t RConsEditor;
+
+typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str, R_OUT bool * R_NULLABLE canceled);
 typedef int (*RConsClickCallback)(void *core, int x, int y);
 typedef void (*RConsBreakCallback)(void *core);
 typedef void *(*RConsSleepBeginCallback)(void *core);
@@ -425,18 +429,27 @@ typedef enum { COLOR_MODE_DISABLED = 0, COLOR_MODE_16, COLOR_MODE_256, COLOR_MOD
 
 typedef struct r_cons_context_t {
 	R_REF_TYPE;
+	// Owned capture state reset when cloning. Keep this block contiguous.
 	RConsGrep grep;
-	// RStack *cons_stack;
 	char *buffer; // TODO: maybe replace with RStrBuf to avoid duplicated logics
-	size_t buffer_len;
-	size_t buffer_sz;
-	size_t buffer_limit;
-	bool breaked;
-	bool was_breaked;
-	bool unbreakable;
 	RStack *break_stack;
 	RConsEvent event_interrupt;
 	void *event_interrupt_data;
+	char *lastOutput;
+	RList *sorted_lines; // wtf
+	RList *unsorted_lines; // wtf
+	RList *marks;
+	RStrConstPool constpool; // Pool for mark names
+	size_t buffer_len;
+	size_t buffer_sz;
+	int lastLength;
+	int sorted_column; // -1
+	bool breaked;
+	bool was_breaked;
+	bool lastMode;
+
+	size_t buffer_limit;
+	bool unbreakable;
 	// int cmd_depth;
 	int cmd_str_depth; // wtf ?
 	bool noflush;
@@ -444,9 +457,6 @@ typedef struct r_cons_context_t {
 	// Used for per-task logging redirection
 	RLogCallback log_callback; // TODO: RList of callbacks
 
-	char *lastOutput;
-	int lastLength;
-	bool lastMode;
 	bool lastEnabled;
 	bool is_interactive;
 	bool pageable;
@@ -458,9 +468,6 @@ typedef struct r_cons_context_t {
 	bool pal_dirty; // cpal was modified, needs refresh
 	bool pal_batch; // batch mode: skip auto-reload after pal_set
 
-	RList *sorted_lines; // wtf
-	RList *unsorted_lines; // wtf
-	int sorted_column; // -1
 	bool demo;
 	bool is_html;
 	bool tmp_html;
@@ -471,8 +478,6 @@ typedef struct r_cons_context_t {
 	bool use_tts;
 	bool flush;
 	int colors[256];
-	RList *marks;
-	RStrConstPool constpool; // Pool for mark names
 } RConsContext;
 
 #define HUD_BUF_SIZE 512
@@ -489,20 +494,35 @@ typedef struct input_state_t {
 	bool bufactive;
 } InputState;
 
+typedef struct r_cons_terminal_t RConsTerminal;
+
 typedef struct r_cons_t {
 	RConsContext *context; // TODO: Rename to ctx
 	RList *ctx_stack;
-	InputState input_state;
-	char *lastline;
-	int lines;
+	// Plain settings inherited by child consoles. Keep this block contiguous.
 	int rows;
-	int echo; // dump to stdout in realtime
-	int fps;
 	int columns;
 	int force_rows;
 	int force_columns;
 	int fix_rows;
 	int fix_columns;
+	bool blankline;
+	bool null; // if set, does not show anything
+	int vtmode;
+	int linesleep;
+	int pagesize;
+	int maxpage;
+	bool enable_highlight;
+	bool use_utf8; // use utf8 features
+	bool use_utf8_curvy; // use utf8 curved corners
+	bool dotted_lines;
+	bool show_vals; // show which section in Vv
+	bool is_embedded; // do not use process-wide signal handlers
+	InputState input_state;
+	char *lastline;
+	int lines;
+	bool echo; // dump to stdout in realtime
+	int fps;
 	bool break_lines;
 	// move into Completion
 	bool show_autocomplete_widget;
@@ -529,7 +549,6 @@ typedef struct r_cons_t {
 	struct termios term_raw, term_buf;
 #elif R2__WINDOWS__
 	DWORD term_raw, term_buf, term_xterm;
-	UINT old_cp;
 	bool bCtrl;
 	bool is_arrow;
 #endif
@@ -537,21 +556,12 @@ typedef struct r_cons_t {
 	/* Pager (like more or less) to use if the output doesn't fit on the
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
-	int blankline;
 	char *highlight;
-	bool enable_highlight;
-	int null; // if set, does not show anything
 	int mouse;
 	int is_wine; // -1, 0, 1
 	struct r_line_t *line;
+	RConsEditor *editor;
 	const char **vline;
-	int vtmode;
-	bool use_utf8; // use utf8 features
-	bool use_utf8_curvy; // use utf8 curved corners
-	bool dotted_lines;
-	int linesleep;
-	int pagesize;
-	int maxpage;
 	char *break_word;
 	int break_word_len;
 	ut64 timeout;
@@ -562,16 +572,21 @@ typedef struct r_cons_t {
 	bool click_set;
 	int click_x;
 	int click_y;
-	bool show_vals;		// show which section in Vv
+	bool drag_enabled; // scr.drag: click+drag to scroll in visual modes
+	bool dragging; // left button is held down
+	bool drag_moved; // pointer moved since the button was pressed
+	bool drag_event; // last key was generated by a drag motion
+	int drag_queued; // queued drag keys pending in the readbuffer
+	int drag_x;
+	int drag_y;
 	// TODO: move into instance? + avoid unnecessary copies
 	RThreadLock *lock;
 	RConsCursorPos cpos;
 	RVecFdPairs fds;
-	int oldraw; // 0 = not initialized, 1 = false, 2 = true
 	ut64 prev;
 	RStrBuf *echodata;
+	RConsTerminal *terminal; // NULL for capture-only consoles
 	bool lasti;
-	bool is_embedded; // when true, r_cons_break won't raise(SIGINT) and break_push won't install signal handlers
 	R_TH_TID main_tid; // thread that initialized cons, for signal-safety checks
 #if R2__WINDOWS__
 	HANDLE hStdout;
@@ -842,6 +857,7 @@ R_API void r_cons_canvas_line_square_defined(RConsCanvas *c, int x, int y, int x
 R_API void r_cons_canvas_line_back_edge(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert);
 
 R_API RCons *r_cons_new(void);
+R_API RCons *r_cons_thready(RCons *cons);
 R_API RCons *r_cons_singleton(void); // DEPRECATE
 R_API RCons *r_cons_global(RCons * R_NULLABLE c); // same as singleton? but taking nullable arg?
 R_API void r_cons_perm(RCons *cons, int perm, bool color_enabled, bool with_dash, char *buf, size_t buf_sz);
@@ -887,6 +903,7 @@ R_API int r_cons_win_print(RCons *cons, const char *ptr, int len, bool vmode);
 R_API int r_cons_win_printf(RCons *cons, bool vmode, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 R_API int r_cons_win_eprintf(RCons *cons, bool vmode, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 R_IPI void r_cons_win_clear(RCons *cons);
+R_IPI void r_cons_win_clear_line(RCons *cons, int fd);
 R_API int r_cons_win_vhprintf(RCons *cons, DWORD hdl, bool vmode, const char *fmt, va_list ap);
 
 #endif
@@ -913,15 +930,14 @@ enum {
 R_API RConsCodeColors r_cons_codecolors(RCons *cons);
 
 R_API void r_cons_context_pal_free(RConsContext *ctx);
-R_DEPRECATE R_API RConsContext *r_cons_context_new(RConsContext * R_NULLABLE parent);
-R_API void r_cons_context_free(RConsContext *context);
+R_API RConsContext *r_cons_context_clone(RConsContext * R_NONNULL ctx);
 R_API bool r_cons_context_is_main(RCons *cons, RConsContext *context);
 R_API void r_cons_context_break(RConsContext *context);
 R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig);
 R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig);
 
 /* control */
-R_API char *r_cons_editor(RCons *cons, const char *file, const char *str);
+R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, R_OUT bool * R_NULLABLE canceled);
 R_API void r_cons_stdout_open(const char *file, int append);
 R_API int  r_cons_stdout_set_fd(int fd);
 R_API int r_cons_get_cur_line(void);
@@ -943,10 +959,9 @@ R_API void r_cons_less(RCons *cons);
 R_API void r_cons_2048(RCons *cons, bool color);
 R_API bool r_cons_is_utf8(void);
 R_API bool r_cons_is_windows(void);
-R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color);
-R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color);
+R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help);
 R_API void r_cons_cmd_help_json(RCons *cons, const char * const help[]);
-R_API int r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, bool use_color, const char * R_NONNULL cmd, char spec, bool exact);
+R_API int r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, const char * R_NONNULL cmd, char spec, bool exact);
 R_API void r_cons_log_stub(const char *output, const char *funcname, const char *filename,
  unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(7, 8);
 
@@ -961,13 +976,11 @@ R_API void r_cons_readflush(RCons *cons);
 R_API void r_cons_switchbuf(RCons *cons, bool active);
 R_API int r_cons_readchar_timeout(RCons *cons, ut32 usec);
 R_API int r_cons_any_key(RCons *cons, const char *msg);
-R_API void r_cons_thready(void);
 
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API bool r_cons_pal_set(RCons *cons, const char *key, const char *val);
 R_API void r_cons_pal_reload(RCons *cons);
 R_API void r_cons_pal_init(RCons *cons);
-R_API void r_cons_pal_fini(void);
 R_API void r_cons_pal_copy(RCons *cons, RConsContext *src);
 R_API R_MUSTUSE char *r_cons_pal_parse(RCons *cons, const char *str, RColor *outcol);
 R_API void r_cons_pal_random(RCons *cons);
@@ -1107,28 +1120,31 @@ typedef char* (*RLineEditorCb)(void *core, const char *file, const char *str);
 typedef int (*RLineHistoryUpCb)(RLine* line);
 typedef int (*RLineHistoryDownCb)(RLine* line);
 
+typedef struct r_line_state_t {
+	RLineBuffer buffer;
+	RConsFunctionKey cb_fkey;
+	int (*hist_up)(RCons *cons, void *user);
+	int (*hist_down)(RCons *cons, void *user);
+	char *contents;
+	char *prompt;
+} RLineState;
+
 struct r_line_t {
 	struct r_cons_t *cons;
 	RLineCompletion completion;
-	RLineBuffer buffer;
+	RLineState state;
 	RLineHistory history;
 	RSelWidget *sel_widget;
 	/* callbacks */
 	RLineHistoryUpCb cb_history_up;
 	RLineHistoryDownCb cb_history_down;
-	// RLineFunctionKeyCb cb_fkey;
-	RConsFunctionKey cb_fkey;
 	bool echo;
-	char *prompt;
 	RList/*<str>*/ *kill_ring;
 	int kill_ring_ptr;
 	char *clipboard;
 	bool disable;
 	void *user;
 	bool histfilter;
-	int (*hist_up)(RCons *cons, void *user);
-	int (*hist_down)(RCons *cons, void *user);
-	char *contents;
 	bool zerosep;
 	bool enable_vi_mode; // can be merged with vi_mode
 	int vi_mode;
@@ -1196,9 +1212,9 @@ R_API void r_cons_set_interactive(RCons *cons, bool x);
 R_API void r_cons_set_last_interactive(RCons *cons);
 R_API void r_cons_flush(RCons * R_NONNULL cons);
 R_API void r_cons_last(RCons *cons);
-R_API RCons * R_NONNULL r_cons_new2(void);
+/* Independent capture console; free with r_cons_free(). */
+R_API RCons *r_cons_new_child(RCons * R_NONNULL parent);
 R_API bool r_cons_pop(RCons * R_NONNULL cons);
-R_API void r_cons_free2(RCons * R_NULLABLE cons);
 R_API void r_cons_print_clear(RCons *cons);
 R_API void r_cons_fill_line(RCons *cons);
 R_API void r_cons_clear_line(RCons *cons, bool std_err, bool flush);
@@ -1209,9 +1225,10 @@ R_API void r_cons_clear00(RCons *cons);
 R_API void r_cons_reset(RCons *cons);
 R_API const char *r_cons_get_buffer(RCons *cons, size_t *buffer_len);
 R_API void r_cons_push(RCons *cons);
-R_API RConsContext *r_cons_context_clone(RConsContext * R_NULLABLE ctx);
 R_API void r_cons_echo(RCons *cons, const char *msg);
-R_API char *r_cons_drain(RCons *cons);
+R_API char *r_cons_drain(RCons *cons, R_OUT size_t * R_NULLABLE size);
+/* Drains child output into parent without propagating child settings. */
+R_API bool r_cons_merge_output(RCons * R_NONNULL parent, RCons * R_NONNULL child);
 R_API int r_cons_get_column(RCons *cons);
 R_API int r_cons_get_cursor(RCons *cons, int *rows);
 R_API void r_cons_show_cursor(RCons *cons, int cursor);

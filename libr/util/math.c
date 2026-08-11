@@ -23,16 +23,30 @@ static inline RNumCalcValue Nmul(RNumCalcValue n, RNumCalcValue v) {
 	return n;
 }
 
-static inline RNumCalcValue Nshl(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n <<= v.n; return n; }
-static inline RNumCalcValue Nshr(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n >>= v.n; return n; }
+static inline RNumCalcValue Nshl(RNumCalcValue n, RNumCalcValue v) {
+	n.d += v.d;
+	n.n = v.n < 64? n.n << v.n: 0;
+	return n;
+}
+static inline RNumCalcValue Nshr(RNumCalcValue n, RNumCalcValue v) {
+	n.d += v.d;
+	n.n = v.n < 64? n.n >> v.n: 0;
+	return n;
+}
 static inline RNumCalcValue Nrol(RNumCalcValue n, RNumCalcValue v) {
 	n.d += v.d;
-	n.n = (n.n << v.n) | (n.n >> (sizeof (n.n) * 8 - v.n));
+	const ut64 shift = v.n & 63;
+	if (shift) {
+		n.n = (n.n << shift) | (n.n >> (64 - shift));
+	}
 	return n;
 }
 static inline RNumCalcValue Nror(RNumCalcValue n, RNumCalcValue v) {
 	n.d += v.d;
-	n.n = (n.n >> v.n) | (n.n << (sizeof (n.n) * 8 - v.n));
+	const ut64 shift = v.n & 63;
+	if (shift) {
+		n.n = (n.n >> shift) | (n.n << (64 - shift));
+	}
 	return n;
 }
 static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
@@ -85,6 +99,43 @@ static void error(RNum *num, RNumCalc *nc, const char *s) {
 	nc->errors++;
 	nc->calc_err = s;
 	//fprintf (stderr, "error: %s\n", s);
+}
+
+static ut64 calc_num_get(RNum *num, RNumCalc *nc, const char *str) {
+	const char *err = NULL;
+	RNumCalc saved = {0};
+	if (num) {
+		saved = num->nc;
+		num->nc = *nc;
+		num->nc.errors = 0;
+		num->nc.calc_err = NULL;
+		num->nc.under_calc = true;
+	}
+	ut64 ret = r_num_get_err (num, str, &err);
+	int errors = 0;
+	const char *calc_err = NULL;
+	if (num) {
+		errors = num->nc.errors;
+		calc_err = num->nc.calc_err;
+		nc->curr_tok = num->nc.curr_tok;
+		nc->number_value = num->nc.number_value;
+		num->nc = saved;
+	}
+	if (err || errors > 0) {
+		error (num, nc, err? err: calc_err);
+	}
+	return ret;
+}
+
+static const char *math_err_export(RNum *num, RNumCalc *nc) {
+	const char *err = nc->calc_err;
+	const ut64 err_addr = (ut64)(uintptr_t)err;
+	const ut64 str_addr = (ut64)(uintptr_t)nc->string_value;
+	if (num && err && err_addr >= str_addr && err_addr < str_addr + sizeof (nc->string_value)) {
+		r_str_ncpy (num->nc.string_value, err, sizeof (num->nc.string_value));
+		err = num->nc.string_value;
+	}
+	return err;
 }
 
 static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
@@ -154,7 +205,7 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		// fprintf (stderr, "error: unknown keyword (%s)\n", nc->string_value);
 		// double& v = table[nc->string_value];
 		r_str_trim (nc->string_value);
-		v = Nset (r_num_get (num, nc->string_value));
+		v = Nset (calc_num_get (num, nc, nc->string_value));
 #if 0
 		if (num && num->nc.errors > 0) {
 			return v;
@@ -281,7 +332,7 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	}
 	str[i] = 0;
 #if 1
-	*n = Nset (r_num_get (num, str));
+	*n = Nset (calc_num_get (num, nc, str));
 #else
 	ut64 v = r_num_get (num, str);
 	if (num && num->nc.errors > 0) {
@@ -454,41 +505,33 @@ static void load_token(RNum *num, RNumCalc *nc, const char *s) {
 
 R_API ut64 r_num_math_err(RNum *num, const char *str, const char **err) {
 	RNumCalcValue n;
-	RNumCalc *nc;
 	RNum num_local = {0};
 	if (R_STR_ISEMPTY (str)) {
 		return 0LL;
 	}
 	if (num) {
-		nc = &num->nc;
 		num->dbz = 0;
 	} else {
 		num = &num_local;
-		nc = &num->nc;
 	}
+	// Keep tokenizer state local to avoid races when concurrent calls share an RNum.
+	RNumCalc lnc = {0};
+	RNumCalc *nc = &lnc;
 	/* init */
 	nc->curr_tok = RNCPRINT;
-	nc->number_value.d = 0.0;
-	nc->number_value.n = 0LL;
-	nc->errors = 0;
-	nc->oc = 0;
-	nc->calc_err = NULL;
-	nc->calc_i = 0;
-	nc->calc_len = 0;
-	nc->calc_buf = NULL;
 	nc->under_calc = true;
 
 	load_token (num, nc, str);
 	get_token (num, nc);
 	n = expr (num, nc, 0);
 	if (err) {
-		*err = nc->calc_err;
+		*err = math_err_export (num, nc);
 	}
-	if (num) {
-		num->fvalue = n.d;
-		num->value = n.n;
-	}
-	nc->under_calc = false;
+	num->fvalue = n.d;
+	num->value = n.n;
+	// Publish diagnostics for callers that read num->nc after the call.
+	num->nc.errors = nc->errors;
+	num->nc.calc_err = math_err_export (num, nc);
 	return n.n;
 }
 

@@ -87,7 +87,8 @@ static RList *fields(RBinFile *bf) {
 	int i;
 	ut64 tmp = addr;
 	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
-		if (bin->nt_headers->optional_header.DataDirectory[i].Size > 0) {
+		if (bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress ||
+			bin->nt_headers->optional_header.DataDirectory[i].Size) {
 			addr = tmp + i*8;
 			switch (i) {
 			case PE_IMAGE_DIRECTORY_ENTRY_EXPORT:
@@ -255,7 +256,8 @@ static char *header(RBinFile *bf, int mode) {
 	}
 	int i;
 	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
-		if (bin->nt_headers->optional_header.DataDirectory[i].Size > 0) {
+		if (bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress ||
+			bin->nt_headers->optional_header.DataDirectory[i].Size) {
 			switch (i) {
 			case PE_IMAGE_DIRECTORY_ENTRY_EXPORT:
 				p ("IMAGE_DIRECTORY_ENTRY_EXPORT\n");
@@ -523,7 +525,8 @@ RBinPlugin r_bin_plugin_pe64 = {
 	.get_vaddr = &get_vaddr,
 	.trycatch = &trycatch,
 	.write = &r_bin_write_pe64,
-	.hashes = &compute_hashes
+	.hashes = &compute_hashes,
+	.load_resources = &load_resources
 };
 
 #ifndef R2_PLUGIN_INCORE

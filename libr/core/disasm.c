@@ -168,7 +168,6 @@ typedef struct r_disasm_state_t {
 	bool show_reloff;
 	ut32 show_reloff_to;
 	bool show_comments;
-	bool show_cmt_user;
 	bool asm_hints;
 	bool asm_hint_jmp;
 	bool asm_hint_cdiv;
@@ -184,9 +183,12 @@ typedef struct r_disasm_state_t {
 	int cmtcol;
 	bool show_calls;
 	bool show_cmt_flgrefs;
+	bool show_cmt_user;
 	bool show_cmt_esil;
 	bool show_cmt_pseudo;
+	bool show_cmt_reguse;
 	bool show_cmt_strings;
+	bool show_cmt_invalid;
 	bool show_cycles;
 	bool show_refptr;
 	bool show_stackptr;
@@ -955,6 +957,8 @@ static RDisasmState *ds_init(RCore *core, bool for_json) {
 	ds->cmtcol = r_config_get_i (core->config, "asm.cmt.col");
 	ds->show_cmt_esil = r_config_get_b (core->config, "asm.cmt.esil");
 	ds->show_cmt_pseudo = r_config_get_b (core->config, "asm.cmt.pseudo");
+	ds->show_cmt_reguse = r_config_get_b (core->config, "asm.cmt.reguse");
+	ds->show_cmt_invalid = r_config_get_b (core->config, "asm.cmt.invalid");
 	ds->show_cmt_strings = r_config_get_b (core->config, "asm.cmt.strings");
 	ds->show_cmt_flgrefs = r_config_get_b (core->config, "asm.cmt.flgrefs");
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
@@ -1053,6 +1057,10 @@ static RDisasmState *ds_init(RCore *core, bool for_json) {
 	ds->decode_mask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_DISASM;
 	if (for_json || ds->use_esil || ds->show_emu || ds->show_cmt_esil || ds->show_emu_bb || (ds->asm_hints && ds->asm_hint_cdiv)) {
 		ds->decode_mask |= R_ARCH_OP_MASK_ESIL;
+	}
+	if (core->anal->opt.stateful && core->anal->arch->session) {
+		ds->decode_mask |= R_ARCH_OP_MASK_STATEFUL;
+		r_arch_session_reset (core->anal->arch->session);
 	}
 	return ds;
 }
@@ -2649,6 +2657,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
 	// vartype also contains varname, so we use varname color to display it
 	const char *vartype = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, ds->at);
+	const char *reguse = ds->show_cmt_reguse && ds->hint? ds->hint->reguse: NULL;
 	if (!comment) {
 		if (vartype) {
 			R_FREE (ds->comment);
@@ -2663,10 +2672,18 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		}
 	} else if (vartype) {
 		ds->comment = r_str_newf ("%s%s %s %s%s%s %s",
-				COLOR_ARG (ds, color_usrcmt), ds->cmtoken, vartype, COLOR_RESET (ds),
-				COLOR (ds, color_usrcmt), ds->cmtoken, comment);
+			COLOR_ARG (ds, color_usrcmt), ds->cmtoken, vartype, COLOR_RESET (ds),
+			COLOR (ds, color_usrcmt), ds->cmtoken, comment);
 	} else {
 		ds->comment = r_str_newf ("%s%s %s", COLOR_ARG (ds, color_usrcmt), ds->cmtoken, comment);
+	}
+	if (reguse) {
+		if (R_STR_ISEMPTY (ds->comment)) {
+			free (ds->comment);
+			ds->comment = r_str_newf ("%s%s reguse: %s", COLOR_ARG (ds, color_usrcmt), ds->cmtoken, reguse);
+		} else {
+			ds->comment = r_str_appendf (ds->comment, "; reguse: %s", reguse);
+		}
 	}
 	if (R_STR_ISEMPTY (ds->comment)) {
 		R_FREE (ds->comment);
@@ -5119,6 +5136,10 @@ static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
 	return false;
 }
 
+static bool flag_name_in_opstr(RFlagItem *f, const char *opstr) {
+	return f && opstr && (strstr (opstr, f->name) || (f->realname && strstr (opstr, f->realname)));
+}
+
 /* convert numeric value in opcode to ascii char or number */
 static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	R_RETURN_IF_FAIL (ds);
@@ -5229,11 +5250,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				ut64 subrel_addr = core->rasm->parse->subrel_addr;
 				if (subrel_addr && subrel_addr != p) {
 					f2 = r_core_flag_get_by_spaces (core->flags, false, subrel_addr);
-					f2_in_opstr = f2 && ds->opstr && (strstr (ds->opstr, f2->name) || strstr (ds->opstr, f2->realname)) ;
+					f2_in_opstr = flag_name_in_opstr (f2, ds->opstr);
 				}
 				refaddr = p;
 				if (!flag_printed && !is_filtered_flag (ds, f->name)
-				    && (!ds->opstr || (!strstr (ds->opstr, f->name) && !strstr (ds->opstr, f->realname)))
+				    && !flag_name_in_opstr (f, ds->opstr)
 				    && !f2_in_opstr) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "%s %s", ds->cmtoken, f->name);
@@ -5376,7 +5397,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					string_printed = true;
 				}
 			} else if (!flag_printed && (!ds->opstr ||
-						(!strstr (ds->opstr, f->name) && !strstr (ds->opstr, f->realname)))) {
+						!flag_name_in_opstr (f, ds->opstr))) {
 				ds_begin_nl_comment (ds);
 				ds_comment (ds, true, "%s %s", ds->cmtoken, f->name);
 				const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, refaddr);
@@ -5929,16 +5950,6 @@ static const char *cc_arg_reg(RAnal *anal, const char *loc) {
 	return first && *first != '^'? first: NULL;
 }
 
-static bool cc_arg_on_stack(RAnal *anal, const char *loc) {
-	const char *first = loc? r_anal_cc_location_first (anal, loc): NULL;
-	return first && *first == '^';
-}
-
-static const char *get_cc_arg_reg(RCore *core, const char *cc, int nth) {
-	const char *loc = r_anal_cc_argloc (core->anal, cc, nth, 0, 0);
-	return cc_arg_reg (core->anal, loc);
-}
-
 static const char *getarg(RCore *core, const char *cc, int nth) {
 	const char *loc = r_anal_cc_argloc (core->anal, cc, nth, 0, 0);
 	const char *reg = cc_arg_reg (core->anal, loc);
@@ -5956,32 +5967,46 @@ static const char *getarg(RCore *core, const char *cc, int nth) {
 	return NULL;
 }
 
-// print function arguments when emu.str=true
-static void print_fcn_arg(RCore *core, int nth, const char *type, const char *name,
-			   const char *fmt, ut64 addr, const int on_stack, int asm_types) {
-	if (on_stack == 1 && asm_types > 1) {
-		r_cons_printf (core->cons, "%s", type);
+static bool unresolved_arg_addr(ut64 addr) {
+	return !addr || addr == UT32_MAX || addr == UT64_MAX;
+}
+
+// print function arguments when emu.str=true; -1 is the unresolved marker, so a real value never prints as one
+static void print_arg_val(RCore *core, ut64 rv, bool resolved, bool is_signed) {
+	if (!resolved) {
+		r_cons_printf (core->cons, "-1");
+	} else if (rv < 64 || (is_signed && (st64)rv < 0)) {
+		r_cons_printf (core->cons, "%"PFMT64d, (st64)rv);
+	} else {
+		r_cons_printf (core->cons, "0x%"PFMT64x, rv);
 	}
-	if (addr == UT32_MAX || addr == UT64_MAX || addr == 0) {
+}
+
+static void print_fcn_arg(RCore *core, int nth, const RAnalFuncArg *arg, int asm_types) {
+	const char *fmt = arg->fmt;
+	ut64 addr = arg->src;
+	if (arg->on_stack && asm_types > 1) {
+		r_cons_printf (core->cons, "%s", r_str_get (arg->orig_c_type));
+	}
+	if (unresolved_arg_addr (addr)) {
 		// if argument address cannot be resolved, fallback to use the calling convention
-		const char *cc = r_config_get (core->config, "anal.cc"); // XXX
-		const char *reg = getarg (core, cc, nth);
-		if (reg) {
-			ut64 rv = r_reg_getv (core->anal->reg, reg);
-			if (rv >> 63) {
-				fmt = NULL;
-			} else if (rv < 64) {
-				fmt = NULL;
-			} else {
-				addr = rv;
-			}
-		} else {
+		const char *reg = getarg (core, r_config_get (core->config, "anal.cc"), nth); // XXX
+		const ut64 rv = reg? r_reg_getv (core->anal->reg, reg): UT64_MAX;
+		// a tiny or negative value is not an address worth formatting
+		if (rv >> 63 || rv < 64) {
 			fmt = NULL;
+		} else {
+			addr = rv;
 		}
+	}
+	if (arg->on_stack && !arg->value_set) {
+		fmt = NULL; // the slot is unmapped, so pf would format io fill bytes into a fabricated value
+	} else if (arg->on_stack && fmt && strcmp (fmt, "z")) {
+		fmt = NULL; // a stack slot holds the scalar itself; pf-dereferencing it formats unrelated memory
 	}
 	if (fmt) {
 		char *res = NULL;
-		char *safe_name = r_str_sanitize_r2 (name);
+		char *safe_name = r_str_sanitize_r2 (arg->name);
 		const bool is_z = !strcmp (fmt, "z");
 		const char *strconv = is_z ? r_config_get (core->config, "scr.strconv") : NULL;
 		if (is_z && strconv && strstr (strconv, "raw")) { // TODO. raw or none?
@@ -5992,7 +6017,7 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 			free (s);
 		} else {
 			char *cmd = r_str_newf ("pf%s %s%s %s",
-				(asm_types == 2)? "": "q", (on_stack == 1) ? "*" : "", fmt, safe_name);
+				(asm_types == 2)? "": "q", arg->on_stack? "*": "", fmt, safe_name);
 			res = r_core_call_str_at (core, addr, cmd);
 			free (cmd);
 		}
@@ -6014,20 +6039,18 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 		}
 		free (res);
 	} else {
-		const char *cc = r_config_get (core->config, "anal.cc"); // XXX
-		const char *reg = get_cc_arg_reg (core, cc, nth);
-		if (reg) {
-			ut64 rv = r_reg_getv (core->anal->reg, reg);
-			if (rv >> 63) {
-				r_cons_printf (core->cons, "-1");
-			} else if (rv < 64) {
-				r_cons_printf (core->cons, "%"PFMT64d, rv);
-			} else {
-				r_cons_printf (core->cons, "0x%"PFMT64x, rv);
+		ut64 v = arg->value;
+		// a mapped stack slot is evidence; an all-ones register is just one the emulation never wrote
+		bool resolved = arg->value_set && (arg->on_stack || v != UT64_MAX);
+		if (!arg->value_set) {
+			// the callee has no usable convention, so fall back to the configured one
+			const char *reg = getarg (core, r_config_get (core->config, "anal.cc"), nth); // XXX
+			if (reg) {
+				v = r_reg_getv (core->anal->reg, reg);
+				resolved = v != UT64_MAX;
 			}
-		} else {
-			r_cons_printf (core->cons, "-1");
 		}
+		print_arg_val (core, v, resolved, arg->value_signed);
 	}
 	r_cons_trim (core->cons);
 }
@@ -6133,44 +6156,14 @@ static void ds_comment_call(RDisasmState *ds) {
 			}
 		}
 	}
-	ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
-	ut64 spv = r_reg_getv (core->anal->reg, "SP");
-	r_reg_setv (core->anal->reg, "SP", spv + s_width); // temporarily set stack ptr to sync with carg.c
-	RList *list = r_core_get_func_args (core, fcn_name);
+	RList *list = r_core_get_func_args (core, fcn_name, true);
 	// show function arguments
 	if (!r_list_empty (list)) {
 		int nth = 0;
-		// bool warning = false;
 		r_list_foreach (list, iter, arg) {
-			bool on_stack = cc_arg_on_stack (core->anal, arg->cc_source);
 			nextele = r_list_iter_get_next (iter);
-#if 0
-			if (!arg->size) {
-				if (ds->asm_types == 2) {
-					ds_comment_middle (ds, "%s: unk_size", arg->c_type);
-				}
-				warning = true;
-			}
-			if (arg->fmt) {
-				if (ds->asm_types > 1) {
-					if (warning) {
-						ds_comment_middle (ds, "_format");
-					} else {
-						ds_comment_middle (ds, "%s : unk_format", arg->c_type);
-					}
-				} else {
-					ds_comment_middle (ds, "?");
-				}
-				ds_comment_middle (ds, nextele?", ":")");
-			} else {
-				// TODO: may need ds_comment_esil
-				print_fcn_arg (core, nth, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, ds->asm_types);
-				ds_comment_middle (ds, nextele?", ":")");
-			}
-#else
-			print_fcn_arg (core, nth, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, ds->asm_types);
+			print_fcn_arg (core, nth, arg, ds->asm_types);
 			ds_comment_middle (ds, nextele?", ":")");
-#endif
 			nth++;
 		}
 		ds_comment_end (ds, "");
@@ -6213,7 +6206,6 @@ static void ds_comment_call(RDisasmState *ds) {
 		}
 		ds_comment_end (ds, ")");
 	}
-	r_reg_setv (core->anal->reg, "SP", spv); // reset stack ptr
 }
 
 // modifies anal register state
@@ -6388,6 +6380,23 @@ static void ds_print_comments_right(RDisasmState *ds) {
 	ds_print_pins (ds);
 	bool is_code = (!ds->hint) || (ds->hint && ds->hint->type != 'd');
 	RAnalMetaItem *mi = r_meta_get_at (ds->core->anal, ds->at, R_META_TYPE_ANY, NULL);
+	if (ds->show_cmt_invalid) {
+		if (ds->analop.type == R_ANAL_OP_TYPE_ILL) {
+			ut8 data[8];
+			const bool be = r_config_get_b (core->config, "cfg.bigendian");
+			r_io_read_at (core->io, ds->analop.addr, data, 8);
+			ut32 dw = r_read_ble32 (data, be);
+#if 0
+			ut64 dq = r_read_ble64 (data, be);
+			char *kind = r_core_cmd_strf (core, "adk 0x%08"PFMT64x, dq);
+#endif
+			if ((st32)dw > 1024) {
+				r_cons_printf (ds->core->cons, "; 0x%x", UT32_MAX & (ut32)dw);
+			} else {
+				r_cons_printf (ds->core->cons, "; %d", dw);
+			}
+		}
+	}
 	if (mi) {
 		switch (mi->type) {
 		case 'd':
@@ -6712,9 +6721,7 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 					char *s = colon + 1;
 					if (s && isdigit ((ut8)*s)) {
 						char *e = s;
-						while (*e && isdigit ((ut8)*e)) {
-							e++;
-						}
+						e = r_str_trim_head_digits (e);
 						if (!*e || IS_SEPARATOR (*e) || *e == 0x1b) {
 							size_suffix = true;
 							suffix_end = e;
@@ -7105,14 +7112,14 @@ toro:
 		}
 		ds_show_comments_right (ds);
 		// TRY adding here
-		r_strf_var (link_key, 32, "link.%08" PFMT64x, ds->addr + ds->index);
-		const char *link_type = sdb_const_get (core->anal->sdb_types, link_key, 0);
+		const char *link_type = sdb_const_getf (core->anal->sdb_types, NULL,
+			"link.%08" PFMT64x, ds->addr + ds->index);
 		if (link_type) {
 			char *fmt = r_type_format (core->anal->sdb_types, link_type);
 			if (fmt) {
 				r_cons_printf (core->cons, "(%s)\n", link_type);
 				r_core_callf_at (core, ds->addr + ds->index, "pf %s", fmt);
-				const ut32 type_bitsize = r_type_get_bitsize (core->anal->sdb_types, link_type);
+				const ut32 type_bitsize = r_anal_type_bitsize (core->anal, link_type);
 				// always round up when calculating byte_size from bit_size of types
 				// could be struct with a bitfield entry
 				inc = (type_bitsize >> 3) + (!!(type_bitsize & 0x7));
@@ -7570,9 +7577,6 @@ R_API int r_core_print_disasm_instructions_with_buf(RCore *core, ut64 address, u
 	r_reg_arena_push (core->anal->reg);
 
 	ds = ds_init (core, false);
-	if (!ds) {
-		return 0;
-	}
 	ds->count = nb_opcodes;
 	ds->len = nb_opcodes * 8;
 
@@ -7740,6 +7744,13 @@ toro:
 	return len;
 }
 
+// bb-aware start of the window of nb_opcodes instructions ending at `from`; *nbytes is the span (0 at the map start)
+static ut64 bwdisasm_window(RCore *core, ut64 from, int nb_opcodes, int *nbytes) {
+	const ut64 start = r_core_prevop_addr_force (core, from, nb_opcodes);
+	*nbytes = (start < from)? (int)(from - start): 0;
+	return start;
+}
+
 static bool handle_backwards_disasm(RCore *core, int *nb_opcodes, int *nb_bytes) {
 	if (!*nb_opcodes && !*nb_bytes) {
 		return false;
@@ -7747,27 +7758,28 @@ static bool handle_backwards_disasm(RCore *core, int *nb_opcodes, int *nb_bytes)
 	if (!*nb_bytes) {
 		*nb_bytes = core->blocksize;
 		if (*nb_opcodes < 0) {
-			/* Backward disassembly of nb_opcodes opcodes
-			 * - We compute the new starting offset
-			 * - Read at the new offset */
 			*nb_opcodes = -*nb_opcodes;
+			if (*nb_opcodes > 0xffff) {
+				R_LOG_ERROR ("Too many backward instructions");
+				return false;
+			}
 
 			const ut64 old_offset = core->addr;
 			int nbytes = 0;
 
-			// We have some anal_info.
-			if (r_core_prevop_addr (core, core->addr, *nb_opcodes, &core->addr)) {
-				nbytes = old_offset - core->addr;
-			} else {
-				// core->addr is modified by r_core_prevop_addr
+			// same backward walk as pd, so all backward disasm commands agree
+			core->addr = bwdisasm_window (core, old_offset, *nb_opcodes, &nbytes);
+			if (nbytes < 1) {
+				// nothing before the cursor (map start): show the window forward, like pd
 				core->addr = old_offset;
-				r_core_asm_bwdis_len (core, &nbytes, &core->addr, *nb_opcodes);
+				nbytes = core->blocksize;
 			}
 			if (nbytes > core->blocksize) {
 				r_core_block_size (core, nbytes);
-			}
-			if (nbytes < 1) {
-				return false;
+				if (nbytes > core->blocksize) {
+					R_LOG_ERROR ("Cannot read that much!");
+					return false;
+				}
 			}
 			r_io_read_at (core->io, core->addr, core->block, nbytes);
 		}
@@ -7831,41 +7843,21 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 	}
 	if (nb_opcodes) { // Disassemble `nb_opcodes` opcodes.
 		if (nb_opcodes < 0) {
-			int count, nbytes = 0;
-
-			/* Backward disassembly of `nb_opcodes` opcodes:
-			 * - We compute the new starting offset
-			 * - Read at the new offset */
 			nb_opcodes = -nb_opcodes;
-
 			if (nb_opcodes > 0xffff) {
 				R_LOG_ERROR ("Too many backward instructions");
 				return false;
 			}
-			if (r_core_prevop_addr (core, core->addr, nb_opcodes, &addr)) {
-				nbytes = old_offset - addr;
-			} else if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
-				/* workaround to avoid empty arrays */
-#define BWRETRY 0
-#if BWRETRY
-				nb_opcodes ++;
-				if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
-#endif
-					pj_end (pj);
-					return false;
-#if BWRETRY
-				}
-#endif
+			// same bb-aware backward walk as pd
+			int nbytes;
+			addr = bwdisasm_window (core, old_offset, nb_opcodes, &nbytes);
+			if (nbytes < 1) {
+				// nothing before the cursor (map start): show the window forward, like pd
+				addr = old_offset;
 			}
-			count = R_MIN (nb_bytes, nbytes);
-			if (count > 0) {
-				r_io_read_at (core->io, addr, buf, count);
-				r_io_read_at (core->io, addr + count, buf + count, nb_bytes - count);
-			} else {
-				if (nb_bytes > 0) {
-					memset (buf, core->io->Oxff, nb_bytes);
-				}
-			}
+			const int count = R_MIN (nb_bytes, nbytes);
+			r_io_read_at (core->io, addr, buf, count);
+			r_io_read_at (core->io, addr + count, buf + count, nb_bytes - count);
 		} else {
 			// If we are disassembling a positive number of lines, enable dis_opcodes
 			// to be used to finish the loop
@@ -7919,6 +7911,10 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 
 		if (limit_by == 'o') {
 			if (j >= nb_opcodes) {
+				break;
+			}
+			if (!dis_opcodes && i >= nb_bytes) {
+				// backward mode never refills buf, stop at its end
 				break;
 			}
 		} else if (i >= nb_bytes) {

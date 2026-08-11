@@ -103,7 +103,6 @@ FILE=--
 CMDS=rafs2 -t sep64 -l / bins/fuzzed/sep.bin
 EXPECT=
 EXPECT_ERR=<<EOF
-INFO: Second cons!
 WARN: fs_sep64: init mach-o parse failed at 0x0
 ERROR: Cannot mount sep64 filesystem at offset 0x0
 EOF

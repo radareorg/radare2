@@ -59,7 +59,7 @@ typedef void * r_ptrace_data_t;
 #elif __APPLE__
 typedef int r_ptrace_request_t;
 typedef int r_ptrace_data_t;
-#elif __OpenBSD__ || __FreeBSD__
+#elif __OpenBSD__ || __FreeBSD__ || __NetBSD__
 typedef int r_ptrace_request_t;
 typedef int r_ptrace_data_t;
 #define R_PTRACE_NODATA 0
@@ -650,6 +650,7 @@ R_API void *r_io_ptrace_func(RIO *io, void *(*func)(void *), void *user);
 #endif
 
 extern RIOPlugin r_io_plugin_procpid;
+extern RIOPlugin r_io_plugin_ebpf;
 extern RIOPlugin r_io_plugin_malloc;
 extern RIOPlugin r_io_plugin_sparse;
 extern RIOPlugin r_io_plugin_ptrace;

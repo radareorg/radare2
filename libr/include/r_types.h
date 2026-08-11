@@ -180,13 +180,13 @@
 #endif
 
 #undef HAVE_PTY
-#if EMSCRIPTEN || __wasi__ || defined(__serenity__)
+#if EMSCRIPTEN || __wasi__ || defined(__serenity__) || defined(__miknix__)
 #define HAVE_PTY 0
 #else
 #define HAVE_PTY R2__UNIX__ && LIBC_HAVE_FORK && !__sun
 #endif
 
-#if defined(EMSCRIPTEN) || defined(__wasi__) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__) || defined(__vinix__) || defined(_AIX)
+#if defined(EMSCRIPTEN) || defined(__wasi__) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__) || defined(__vinix__) || defined(__miknix__) || defined(_AIX)
   #define R2__BSD__ 0
   #define R2__UNIX__ 1
 #endif
@@ -459,6 +459,9 @@ static inline void *r_new_copy(int size, void *data) {
 #define PFMTSZu "Iu"
 #define PFMTSZo "Io"
 #define LDBLFMT "f"
+// must always match LDBLFMT, passing a long double to a "%f" vararg reads the
+// wrong number of bytes off the stack and corrupts every following argument
+#define R_LDBL double
 #define HHXFMT  "x"
 #else
 #define PFMT64x PRIx64
@@ -471,8 +474,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define PFMTSZo "zo"
 #if R2_NO_LONG_DOUBLE
 #define LDBLFMT "f"
+#define R_LDBL double
 #else
 #define LDBLFMT "Lf"
+#define R_LDBL long double
 #endif
 #define HHXFMT  "hhx"
 #endif
@@ -704,56 +709,6 @@ typedef enum {
 #ifdef __cplusplus
 }
 #endif
-
-static inline void r_run_call1(void *fcn, void *arg1) {
-	((void (*)(void *))(fcn))(arg1);
-}
-
-static inline void r_run_call2(void *fcn, void *arg1, void *arg2) {
-	((void (*)(void *, void *))(fcn))(arg1, arg2);
-}
-
-static inline void r_run_call3(void *fcn, void *arg1, void *arg2, void *arg3) {
-	((void (*)(void *, void *, void *))(fcn))(arg1, arg2, arg3);
-}
-
-static inline void r_run_call4(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4) {
-	((void (*)(void *, void *, void *, void *))(fcn))(arg1, arg2, arg3, arg4);
-}
-
-static inline void r_run_call5(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5) {
-	((void (*)(void *, void *, void *, void *, void *))(fcn))(arg1, arg2, arg3, arg4, arg5);
-}
-
-static inline void r_run_call6(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
-	void *arg6) {
-	((void (*)(void *, void *, void *, void *, void *, void *))(fcn))
-		(arg1, arg2, arg3, arg4, arg5, arg6);
-}
-
-static inline void r_run_call7(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
-	void *arg6, void *arg7) {
-	((void (*)(void *, void *, void *, void *, void *, void *, void *))(fcn))
-		(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-}
-
-static inline void r_run_call8(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
-	void *arg6, void *arg7, void *arg8) {
-	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *))(fcn))
-		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-}
-
-static inline void r_run_call9(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
-	void *arg6, void *arg7, void *arg8, void *arg9) {
-	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *, void *))(fcn))
-		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
-}
-
-static inline void r_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
-	void *arg6, void *arg7, void *arg8, void *arg9, void *arg10) {
-	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *))(fcn))
-		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-}
 
 #ifndef container_of
 #define container_of(ptr, type, member) ((ptr)? ((type *)(void *)((char *)(ptr) - r_offsetof(type, member))): NULL)

@@ -404,7 +404,6 @@ struct r_core_t {
 	RAGraph *graph;
 	RPanelsRoot *panels_root;
 	RPanels* panels;
-	RList *cmdqueue;
 	RMagic *magic;
 	char *lastcmd;
 	char *cmdlog;
@@ -429,7 +428,6 @@ struct r_core_t {
 	RList *scriptstack;
 	RCoreTaskScheduler tasks;
 	int max_cmd_depth;
-	int cur_cmd_depth;
 	ut8 switch_file_view;
 	Sdb *sdb;
 	int incomment;
@@ -553,7 +551,7 @@ R_API bool r_core_prompt_loop(RCore *core);
 R_API ut64 r_core_pava(RCore *core, ut64 addr);
 R_API int r_core_cmd(RCore *core, const char *cmd, bool log);
 R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log);
-R_API char *r_core_editor(const RCore *core, const char *file, const char *str);
+R_API char *r_core_editor(const RCore *core, const char *file, const char *str, R_OUT bool * R_NULLABLE canceled);
 R_API int r_core_fgets(RCons *cons, char *buf, int len);
 R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 off);
 // CMD
@@ -728,7 +726,7 @@ R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l);
 R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 
 /* carg.c */
-R_API RList *r_core_get_func_args(RCore *core, const char *func_name);
+R_API RList *r_core_get_func_args(RCore *core, const char *func_name, bool incall);
 R_API void r_core_print_func_args(RCore *core);
 R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to);
 
@@ -795,8 +793,8 @@ R_API RVecAnalRef *r_core_anal_fcn_get_calls(RCore *core, RAnalFunction *fcn); /
 typedef struct r_core_asm_hit {
 	char *code;
 	int len;
-	ut64 addr;
 	ut8 valid;
+	ut64 addr;
 } RCoreAsmHit;
 
 R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args);
@@ -857,7 +855,6 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name);
 
 // XXX - this is kinda hacky, maybe there should be a way to
 // refresh the bin environment without specific calls?
-R_API int r_core_pseudo_code(RCore *core, const char *input);
 
 /* gdiff.c */
 R_API bool r_core_zdiff(RCore *c, RCore *c2);
@@ -1022,12 +1019,6 @@ R_API RTable *r_core_table_new(RCore *core, const char *title);
 R_API char *r_core_md2txt(RCore *core, const char *md, bool slide_titles);
 
 /* help */
-R_API void r_core_cmd_help(const RCore *core, RCoreHelpMessage help);
-R_API void r_core_cmd_help_json(const RCore *core, RCoreHelpMessage help);
-R_API int r_core_cmd_help_match(const RCore *core, RCoreHelpMessage help, const char * R_NONNULL cmd);
-R_API void r_core_cmd_help_match_spec(const RCore *core, const char * const help[], const char * R_NONNULL cmd, char spec);
-R_API void r_core_cmd_help_contains(const RCore *core, RCoreHelpMessage help, const char * R_NONNULL cmd);
-R_API void r_core_cmd_help_contains_spec(const RCore *core, const char * const help[], const char * R_NONNULL cmd, char spec);
 
 /* anal stats */
 
@@ -1084,6 +1075,7 @@ extern RCorePlugin r_core_plugin_java;
 extern RCorePlugin r_core_plugin_prj;
 extern RCorePlugin r_core_plugin_writedwarf;
 extern RCorePlugin r_core_plugin_agD;
+extern RCorePlugin r_core_plugin_pseudo;
 
 R_IPI void r_core_plugins_init(RCmd *cmd);
 R_IPI void r_core_plugins_load(RCmd *cmd);

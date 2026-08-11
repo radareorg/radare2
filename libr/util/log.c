@@ -141,9 +141,30 @@ R_API void r_log_show_source(bool show_source) {
 	}
 }
 
+static bool log_colors_supported(void) {
+#if R2__WINDOWS__
+	DWORD mode;
+	HANDLE err = GetStdHandle (STD_ERROR_HANDLE);
+	if (!GetConsoleMode (err, &mode) || (mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING)) {
+		// Pipes may be connected to an ANSI-aware terminal such as mintty.
+		return true;
+	}
+	if (SetConsoleMode (err, mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING)) {
+		return true;
+	}
+	// ANSICON provides escape handling on Windows versions without native VT support.
+	char *ansicon = r_sys_getenv ("ANSICON");
+	const bool supported = R_STR_ISNOTEMPTY (ansicon);
+	free (ansicon);
+	return supported;
+#else
+	return true;
+#endif
+}
+
 R_API void r_log_set_colors(bool color) {
 	if (r_log_init ()) {
-		rlog->color = color;
+		rlog->color = color && log_colors_supported ();
 	}
 }
 

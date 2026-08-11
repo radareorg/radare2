@@ -2,22 +2,6 @@
 
 #include <r_arch.h>
 #include <capstone/capstone.h>
-
-#if CS_API_MAJOR >= 4 && CS_API_MINOR >= 0
-#define CAPSTONE_HAS_M680X 1
-#else
-#define CAPSTONE_HAS_M680X 0
-#endif
-
-#if !CAPSTONE_HAS_M680X
-#ifdef _MSC_VER
-#pragma message ("Cannot find support for m680x in capstone")
-#else
-#warning Cannot find capstone-m680x support
-#endif
-#endif
-
-#if CAPSTONE_HAS_M680X
 #include <capstone/m680x.h>
 
 static int m680xmode(const char *str) {
@@ -692,17 +676,6 @@ const RArchPlugin r_arch_plugin_m680x_cs = {
 	.init = init,
 	.fini = fini,
 };
-#else
-const RArchPlugin r_arch_plugin_m680x_cs = {
-	.meta = {
-		.name = "m680x (unsupported)",
-		.desc = "Capstone M680X (unsupported)",
-		.license = "Apache-2.0",
-	},
-	.arch = "m680x",
-	.bits = R_SYS_BITS_PACK1 (32),
-};
-#endif
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {

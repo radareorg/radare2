@@ -218,8 +218,8 @@ static bool gadget_esil_token_is_controlled(const char *token) {
 	if (R_STR_ISEMPTY (token)) {
 		return false;
 	}
-	if (r_str_startswith (token, "0x") || IS_DIGIT (*token)
-			|| ((*token == '-' || *token == '+') && IS_DIGIT (token[1]))) {
+	if (r_str_startswith (token, "0x") || isdigit ((ut8)*token)
+			|| ((*token == '-' || *token == '+') && isdigit ((ut8)token[1]))) {
 		return false;
 	}
 	return true;
@@ -1031,16 +1031,11 @@ static void gadget_store_classes(Sdb *db, const RCoreGadgetEsilInfo *info, const
 		if (!(info->classes & gadget_class_names[i].bit)) {
 			continue;
 		}
-		char *gkey = r_str_newf ("%s_%s", gadget_class_names[i].name, key);
-		if (!gkey) {
-			return;
-		}
 		char *value = gadget_sdb_value (info, size, gadget_class_names[i].name);
 		if (value) {
-			sdb_set (db, gkey, value, 0);
+			sdb_setf (db, value, 0, "%s_%s", gadget_class_names[i].name, key);
 			free (value);
 		}
-		free (gkey);
 	}
 }
 
@@ -1133,7 +1128,7 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 		gadget_kuery_json (pj, db_gadget);
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_slash_Gk);
+		r_cons_cmd_help (core->cons, help_msg_slash_Gk);
 		break;
 	case ' ':
 		if (gadget_kuery_print_class (core, db_gadget, input + 1)) {

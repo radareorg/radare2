@@ -88,6 +88,7 @@ static char *__io_reg_profile(RDebug *dbg) {
 	r_cons_push (cons);
 	char *drp = dbg->iob.system (dbg->iob.io, "drp");
 	if (drp) {
+		r_cons_pop (cons);
 		return drp;
 	}
 	const char *buf = r_cons_get_buffer (cons, NULL);
@@ -96,7 +97,7 @@ static char *__io_reg_profile(RDebug *dbg) {
 		r_cons_pop (cons);
 		return ret;
 	}
-	// r_cons_pop (cons);
+	r_cons_pop (cons);
 	return r_anal_get_reg_profile (dbg->anal);
 }
 

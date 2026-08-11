@@ -7,6 +7,10 @@
 
 R_LIB_VERSION(r_muta);
 
+#if !defined(R_MUTA_STATIC_PLUGINS)
+#define R_MUTA_STATIC_PLUGINS 0
+#endif
+
 static RMutaPlugin *muta_static_plugins[] = {
 	R_MUTA_STATIC_PLUGINS
 };

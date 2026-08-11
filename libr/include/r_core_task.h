@@ -24,24 +24,23 @@ typedef struct r_core_task_t {
 	int id;
 	RTaskState state;
 	bool transient; // delete when finished
+	bool dispatched;
+	bool cmd_log;
+	RCoreTaskMode mode;
 	RThreadSemaphore *running_sem;
 	void *user;
 	RCore *core;
-	// Execution mode and isolation
-	RCoreTaskMode mode;
-	RCore *task_core; // Isolated core (NULL for cooperative)
+	RCons *cons; // owned child console for captured command output
+	struct r_cmd_context_t *cur_context; // innermost command context running on this task
 	// Thread/fork specific
 	RThread *thread; // Thread handle (for thread mode)
 	int pid; // Process ID (for fork mode)
 	// Existing dispatch mechanism
-	bool dispatched;
 	RThreadCond *dispatch_cond;
 	RThreadLock *dispatch_lock;
 	// Command and results
 	char *cmd;
 	char *res;
-	bool cmd_log;
-	RConsContext *cons_context;
 	RCoreTaskCallback cb;
 } RCoreTask;
 
@@ -50,12 +49,14 @@ typedef struct r_core_tasks_t {
 	int task_id_next;
 	RList *tasks;
 	RList *tasks_queue;
-	struct r_core_task_t *current_task;
 	struct r_core_task_t *main_task;
 	RThreadLock *lock;
-	int tasks_running;
+#if !HAVE_TH_LOCAL
+	RList *task_threads; // (thread, task) bindings resolved by r_core_task_self
+#endif
 	struct r_core_task_t *foreground_task; // Current ^C target
 	RCoreTaskMode default_mode; // Default execution mode
+	int tasks_running;
 	RCore *main_core; // Reference to main core
 } RCoreTaskScheduler;
 
@@ -75,6 +76,7 @@ R_API void r_core_task_sleep_end(RCoreTask *task);
 R_API int r_core_task_del(RCoreTaskScheduler *scheduler, int id);
 R_API void r_core_task_del_all_done(RCoreTaskScheduler *scheduler);
 R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler);
+R_API bool r_core_task_ismain(RCoreTaskScheduler *scheduler);
 R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, int id);
 R_API void r_core_task_set_foreground(RCoreTaskScheduler *scheduler, int task_id);
 R_API RCoreTask *r_core_task_get_foreground(RCoreTaskScheduler *scheduler);

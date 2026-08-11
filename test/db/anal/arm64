@@ -56258,3 +56258,129 @@ EXPECT=<<EOF
 0x1000060e0
 EOF
 RUN
+
+NAME=arm64 cc clobber and preserve register sets
+FILE=malloc://16
+ARGS=-a arm -b 64 -e anal.arch=arm
+CMDS=<<EOF
+k anal/cc/cc.arm64.clobber
+k anal/cc/cc.arm64.preserve
+EOF
+EXPECT=<<EOF
+x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16,x17,x30,v0,v1,v2,v3,v4,v5,v6,v7,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25,v26,v27,v28,v29,v30,v31
+x19,x20,x21,x22,x23,x24,x25,x26,x27,x28,x29,sp,v8,v9,v10,v11,v12,v13,v14,v15
+EOF
+RUN
+
+NAME=arm.v35 rev rbit clz sbc are not typed ill
+FILE=malloc://64
+ARGS=-a arm -b 64
+REQUIRE=arm.v35
+CMDS=<<EOF
+e asm.arch=arm.v35
+wx 0008c05a
+ao~type
+wx 2004c05a
+ao~type
+wx 2008c0da
+ao~type
+wx 2000c05a
+ao~type
+wx 2010c05a
+ao~type
+wx 2000025a
+ao~type
+EOF
+EXPECT=<<EOF
+type: mov
+type: mov
+type: mov
+type: mov
+type: mov
+type: sub
+EOF
+RUN
+
+NAME=arm.v35 af covers rev and stops at udf
+FILE=malloc://64
+ARGS=-a arm -b 64
+REQUIRE=arm.v35
+CMDS=<<EOF
+e asm.arch=arm.v35
+wx 0008c05ac0035fd6
+af
+afl
+af-
+wx 00000000 @ 4
+af
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      8 fcn.00000000
+0x00000000    1      8 fcn.00000000
+EOF
+RUN
+
+NAME=arm.v35 udf types trap
+FILE=malloc://64
+ARGS=-a arm -b 64
+REQUIRE=arm.v35
+CMDS=<<EOF
+e asm.arch=arm.v35
+wx 00000000
+ao~type
+EOF
+EXPECT=<<EOF
+type: trap
+EOF
+RUN
+
+NAME=arm64 flag-setting ops get op type
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 200002ab
+ao 1~type[1]
+wx 200002ba
+ao 1~type[1]
+wx 200002eb
+ao 1~type[1]
+wx 200002ea
+ao 1~type[1]
+wx 200022ea
+ao 1~type[1]
+EOF
+EXPECT=<<EOF
+add
+add
+sub
+and
+and
+EOF
+RUN
+
+NAME=arm64 bic types as and
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2000228a
+ao 1~type[1]
+EOF
+EXPECT=<<EOF
+and
+EOF
+RUN
+
+NAME=arm64 syscall number register follows asm.os
+FILE=malloc://64
+ARGS=-a arm -b 64 -e asm.os=linux
+CMDS=<<EOF
+arp~=SN
+e asm.os=macos
+arp~=SN
+EOF
+EXPECT=<<EOF
+=SN	x8
+=SN	x16
+EOF
+RUN

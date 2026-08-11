@@ -1,0 +1,44 @@
+# /etc/profile - injected by radare2's dist/jslinux pipeline
+# The browser console (term.js) is patched by web/term-colors.patch to
+# support 256 colors and truecolor SGR sequences, advertise both; the
+# UTF-8 locale makes r2 default to scr.utf8=true (term.js decodes UTF-8)
+export TERM=xterm-256color
+export COLORTERM=truecolor
+export LANG=C.UTF-8
+# This image deliberately ships no /usr/share/radare2 tree. Point r2's
+# supported user-rc override at the image-wide defaults in /etc instead.
+export R2_RCFILE=/etc/radare2rc
+
+# Query the terminal for its real geometry (cursor position report after
+# jumping to the bottom-right corner) and sync the tty size; busybox has
+# no resize(1), so do it with stty+dd. Re-run `resize` after rotating the
+# screen or toggling the phone keyboard.
+resize() {
+	_old="$(stty -g)"
+	stty raw -echo min 0 time 5
+	printf '\0337\033[r\033[999;999H\033[6n\0338' > /dev/tty
+	_pos="$(dd bs=1 count=16 2> /dev/null < /dev/tty)"
+	stty "$_old"
+	_pos="${_pos##*\[}"
+	_rows="${_pos%%;*}"
+	_cols="${_pos##*;}"
+	_cols="${_cols%%R*}"
+	if [ -n "$_rows" ] && [ -n "$_cols" ]; then
+		stty rows "$_rows" cols "$_cols"
+	fi
+	unset _old _pos _rows _cols
+}
+resize
+
+# Files uploaded from the browser page appear in /mnt/tmp
+if ! grep -q " /mnt " /proc/mounts; then
+	mount -t 9p -o trans=virtio r2fs /mnt 2> /dev/null
+fi
+
+# start with a clean screen: prompt on the top-left instead of sitting
+# under the kernel boot messages at the bottom
+clear 2> /dev/null || printf '\033[H\033[2J'
+
+# the console shell is spawned directly by init, not by login(1), so
+# nothing prints /etc/motd for us
+[ -f /etc/motd ] && cat /etc/motd

@@ -278,13 +278,13 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 		switch (st) {
 		case R_SIGN_RAWNAME: {
 			DBL_VAL_FAIL (it->rawname, R_SIGN_RAWNAME);
-			char *dec = (char *)r_base64_decode_dyn (token, -1, NULL);
+			char *dec = (char *)r_base64_decode_dyn (token, -1, NULL, false);
 			it->rawname = dec? dec: strdup (token);
 			break;
 		}
 		case R_SIGN_DEMANGLED: {
 			DBL_VAL_FAIL (it->demangled, R_SIGN_DEMANGLED);
-			char *dec = (char *)r_base64_decode_dyn (token, -1, NULL);
+			char *dec = (char *)r_base64_decode_dyn (token, -1, NULL, false);
 			it->demangled = dec? dec: strdup (token);
 			break;
 		}

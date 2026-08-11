@@ -201,7 +201,9 @@ static int _server_handle_z(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	int type;
 	ut64 addr;
 	char cmd[64];
-	sscanf (g->data, "%c%d,%"PFMT64x, &set, &type, &addr);
+	if (sscanf (g->data, "%c%d,%"PFMT64x, &set, &type, &addr) != 3) {
+		return send_msg (g, "E01");
+	}
 	if (type != 0) {
 		// TODO handle hw breakpoints and watchpoints
 		return send_msg (g, "E01");
@@ -280,19 +282,21 @@ static int _server_handle_Hg(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 	// We don't yet support multiprocess. Client is not supposed to send Hgp. If we receive it anyway,
 	// send error
 	char cmd[32];
-	int tid;
+	unsigned int tid;
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	if (g->data_len <= 2 || isalpha ((unsigned char)g->data[2])) {
+	if (g->data_len <= 2 || isalpha ((ut8)g->data[2])) {
 		return send_msg (g, "E01");
 	}
 	// Hg-1 = "all threads", Hg0 = "pick any thread"
 	if (g->data[2] == '0' || !strncmp (g->data + 2, "-1", 2)) {
 		return send_msg (g, "OK");
 	}
-	sscanf (g->data + 2, "%x", &tid);
-	snprintf (cmd, sizeof (cmd) - 1, "dpt=%d", tid);
+	if (sscanf (g->data + 2, "%x", &tid) != 1) {
+		return send_msg (g, "E01");
+	}
+	snprintf (cmd, sizeof (cmd) - 1, "dpt=%u", tid);
 	// Set thread for future operations
 	if (cmd_cb (g, core_ptr, cmd, NULL, 0) < 0) {
 		send_msg (g, "E01");
@@ -305,19 +309,21 @@ static int _server_handle_Hg(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 static int _server_handle_Hc(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	// Usually this is only sent with Hc-1. Still. Set the threads for next operations
 	char cmd[32];
-	int tid;
+	unsigned int tid;
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	if (g->data_len <= 2 || isalpha ((unsigned char)g->data[2])) {
+	if (g->data_len <= 2 || isalpha ((ut8)g->data[2])) {
 		return send_msg (g, "E01");
 	}
 	// Hc-1 = "all threads", Hc0 = "pick any thread"
 	if (g->data[2] == '0' || !strncmp (g->data + 2, "-1", 2)) {
 		return send_msg (g, "OK");
 	}
-	sscanf (g->data + 2, "%x", &tid);
-	snprintf (cmd, sizeof (cmd) - 1, "dpt=%d", tid);
+	if (sscanf (g->data + 2, "%x", &tid) != 1) {
+		return send_msg (g, "E01");
+	}
+	snprintf (cmd, sizeof (cmd) - 1, "dpt=%u", tid);
 	// Set thread for future operations
 	if (cmd_cb (g, core_ptr, cmd, NULL, 0) < 0) {
 		send_msg (g, "E01");
@@ -377,19 +383,14 @@ static int _server_handle_g(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 }
 
 static int _server_handle_m(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	ut64 addr;
 	int length;
-	char *cmd, *buf;
 	if (send_ack (g) < 0) {
 		return -1;
 	}
 	g->data[g->data_len] = 0;
-	sscanf (g->data, "m%"PFMT64x, &addr);
-	if (!(cmd = strdup (g->data))) {
-		send_msg (g, "E01");
-		return -1;
-	}
-	if (!(buf = malloc (g->data_max / 2))) {
+	char *cmd = strdup (g->data);
+	char *buf = malloc (g->data_max / 2);
+	if (!buf) {
 		free (cmd);
 		send_msg (g, "E01");
 		return -1;
@@ -414,10 +415,13 @@ static int _server_handle_p(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	if (!isxdigit ((unsigned char)g->data[1])) {
+	if (!isxdigit ((ut8)g->data[1]) || !g->registers) {
 		return send_msg (g, "E01");
 	}
 	regnum = strtol (g->data + 1, NULL, 16);
+	if (regnum < 0) {
+		return send_msg (g, "E01");
+	}
 	// We need to do this because length of register set is not known
 	for (i = 0; i < regnum; i++) {
 		if (!*g->registers[i].name) {
@@ -437,30 +441,44 @@ static int _server_handle_p(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 
 // Write register number
 static int _server_handle_P(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	char *ptr, *cmd;
-	int regnum, len, i;
+	char *ptr, *end, *cmd;
+	int regnum, i;
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	if (!isxdigit ((unsigned char)g->data[1]) || !(ptr = strchr (g->data, '='))) {
+	if (g->data_len < 4 || !g->registers || !isxdigit ((ut8)g->data[1])) {
 		return send_msg (g, "E01");
 	}
+	ptr = memchr (g->data + 2, '=', g->data_len - 2);
+	if (!ptr) {
+		return send_msg (g, "E01");
+	}
+	long parsed_regnum = strtol (g->data + 1, &end, 16);
+	if (parsed_regnum < 0 || parsed_regnum > INT_MAX || end != ptr) {
+		return send_msg (g, "E01");
+	}
+	regnum = (int)parsed_regnum;
 	ptr++;
-	if (!isxdigit ((unsigned char)*ptr)) {
+	size_t value_len = g->data_len - (ptr - g->data);
+	if (!value_len || value_len > ST32_MAX) {
 		return send_msg (g, "E01");
 	}
-	regnum = strtol (g->data + 1, NULL, 16);
+	size_t value_pos;
+	for (value_pos = 0; value_pos < value_len; value_pos++) {
+		if (!isxdigit ((ut8)ptr[value_pos])) {
+			return send_msg (g, "E01");
+		}
+	}
 	// We need to do this because length of register set is not known
 	for (i = 0; i < regnum; i++) {
 		if (!*g->registers[i].name) {
 			return send_msg (g, "E01");
 		}
 	}
-	len = strlen (g->registers[regnum].name) + strlen (ptr) + 10;
-	if (!(cmd = calloc (len, sizeof (char)))) {
+	cmd = r_str_newf ("dr %s=0x%.*s", g->registers[regnum].name, (int)value_len, ptr);
+	if (!cmd) {
 		return send_msg (g, "E01");
 	}
-	snprintf (cmd, len - 1, "dr %s=0x%s", g->registers[regnum].name, ptr);
 	if (cmd_cb (g, core_ptr, cmd, NULL, 0) < 0) {
 		free (cmd);
 		send_msg (g, "E01");

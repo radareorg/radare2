@@ -201,6 +201,10 @@ struct MACH0_(obj_t) {
 	ut8 *signature_der; // CSSLOT_DER_ENTITLEMENTS payload (slot 7, magic 0xfade7172)
 	ut32 signature_der_size; // size of signature_der payload
 	bool cs_present; // LC_CODE_SIGNATURE parsed successfully
+	ut64 cs_paddr;
+	ut64 cs_size;
+	ut64 cert_paddr;
+	ut64 cert_size;
 	bool cs_has_cms; // CMS blob (developer signature) present and non-empty
 	ut32 cs_flags; // CodeDirectory flags word
 	ut8 cs_platform; // CodeDirectory platform byte (nonzero => platform binary)

@@ -502,7 +502,7 @@ wx b8010000004839ca7f00
 pi -3 @ 10
 EOF
 EXPECT=<<EOF
-add byte [rax], al
+mov eax, 1
 cmp rdx, rcx
 jg 0xa
 EOF
@@ -519,19 +519,20 @@ EOF
 EXPECT=<<EOF
 [
   {
-    "addr": 3,
-    "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
-    "refptr": 1,
+    "addr": 0,
+    "val": 1,
+    "esil": "1,rax,=",
+    "refptr": 0,
     "fcn_addr": 0,
     "fcn_last": 0,
-    "size": 2,
-    "opcode": "add byte [rax], al",
-    "disasm": "add byte [rax], al",
-    "bytes": "0000",
+    "size": 5,
+    "opcode": "mov eax, 1",
+    "disasm": "mov eax, 1",
+    "bytes": "b801000000",
     "family": "cpu",
-    "type": "add",
+    "type": "mov",
     "reloc": false,
-    "type_num": 17,
+    "type_num": 9,
     "type2_num": 0
   },
   {
@@ -1089,6 +1090,30 @@ EOF
 EXPECT_ERR=<<EOF
 ERROR: offset table offset points outside of valid range
 ERROR: bplist parse error
+EOF
+RUN
+
+NAME=binary plist unicode
+FILE=malloc://64
+CMDS=<<EOF
+wx 62706c69737430306800410042004300440045004600470048080000000000000101000000000000000100000000000000000000000000000019
+b 58
+pFBj
+EOF
+EXPECT=<<EOF
+"ABCDEFGH"
+EOF
+RUN
+
+NAME=binary plist unicode
+FILE=malloc://64
+CMDS=<<EOF
+wx 62706c69737430306800410042004300440045004600470048080000000000000101000000000000000100000000000000000000000000000019
+b 58
+pFBj
+EOF
+EXPECT=<<EOF
+"ABCDEFGH"
 EOF
 RUN
 

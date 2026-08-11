@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2025 - cgvwzq */
+/* radare2 - LGPL - Copyright 2017-2026 - cgvwzq */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -42,6 +42,8 @@ typedef enum {
 	R_BIN_WASM_VALUETYPE_f32 = 0x7d,
 	R_BIN_WASM_VALUETYPE_f64 = 0x7c,
 	R_BIN_WASM_VALUETYPE_v128 = 0x7b,
+	R_BIN_WASM_VALUETYPE_REF = 0x64,
+	R_BIN_WASM_VALUETYPE_REF_NULL = 0x63,
 	R_BIN_WASM_VALUETYPE_REFTYPE = 0x70,
 	R_BIN_WASM_VALUETYPE_EXTERNREF = 0x6f,
 	R_BIN_WASM_VALUETYPE_FUNC = 0x60,

@@ -66,6 +66,23 @@ static bool readpush_front(RCons *cons, int ch) {
 	return true;
 }
 
+static int r_cons_mouse_wheel_key(int button) {
+	if (!(button & 64)) {
+		return 0;
+	}
+	switch (button & 3) {
+	case 0: // wheel up
+		return 'k';
+	case 1: // wheel down
+		return 'j';
+	case 2: // wheel left
+		return 'h';
+	case 3: // wheel right
+		return 'l';
+	}
+	return 0;
+}
+
 static int r_cons_urxvt_mouse_event(RCons *cons, int first) {
 	char button[8];
 	size_t i = 0;
@@ -94,21 +111,7 @@ static int r_cons_urxvt_mouse_event(RCons *cons, int first) {
 		}
 	} while (ch != 'M' && ch != 'm');
 	cons->mouse_event = true;
-	switch (atoi (button)) {
-	case 64: // wheel up
-		return 'k';
-	case 65: // wheel down
-		return 'j';
-	case 66: // wheel left
-		return 'h';
-	case 67: // wheel right
-		return 'l';
-	case 80: // control+wheel up
-		return 'h';
-	case 81: // control+wheel down
-		return 'l';
-	}
-	return 0;
+	return r_cons_mouse_wheel_key (atoi (button));
 }
 
 static int r_cons_sgr_mouse_event(RCons *cons) {
@@ -152,24 +155,61 @@ static int r_cons_sgr_mouse_event(RCons *cons) {
 	ypos[i] = 0;
 	cons->mouse_event = true;
 	int b = atoi (button);
+	int wheel = r_cons_mouse_wheel_key (b);
+	if (wheel) {
+		return wheel;
+	}
 	switch (b) {
 	case 2: // right click
 		return ch == 'M'? INT8_MAX: -INT8_MAX;
-	case 64: // wheel up
-		return 'k';
-	case 65: // wheel down
-		return 'j';
-	case 66: // wheel left
-		return 'h';
-	case 67: // wheel right
-		return 'l';
-	case 80: // control+wheel up
-		return 'h';
-	case 81: // control+wheel down
-		return 'l';
+	}
+	int x = atoi (xpos);
+	int y = atoi (ypos);
+	if (cons->drag_enabled) {
+		if (b & 32) { // motion while a button is held
+			if (!cons->dragging) {
+				return 0;
+			}
+			int dx = x - cons->drag_x;
+			int dy = y - cons->drag_y;
+			cons->drag_x = x;
+			cons->drag_y = y;
+			cons->drag_moved = true;
+			// grab semantics: the content follows the pointer
+			int key = 0;
+			int n = 0;
+			if (dy) {
+				key = (dy > 0)? 'k': 'j';
+				n = R_ABS (dy);
+			} else if (dx) {
+				key = (dx > 0)? 'h': 'l';
+				n = R_ABS (dx);
+			}
+			if (!key) {
+				return 0;
+			}
+			while (n-- > 1) {
+				if (readpush_front (cons, key)) {
+					cons->drag_queued++;
+				}
+			}
+			cons->drag_event = true;
+			return key;
+		}
+		if (ch == 'M') { // button press
+			cons->dragging = true;
+			cons->drag_moved = false;
+			cons->drag_x = x;
+			cons->drag_y = y;
+			return 0;
+		}
+		cons->dragging = false;
+		if (cons->drag_moved) {
+			return 0; // it was a drag, not a click
+		}
 	}
 	if (ch == 'm') {
-		r_cons_set_click (cons, atoi (xpos), atoi (ypos));
+		r_cons_set_click (cons, x, y);
 	}
 	return 0;
 }
@@ -212,7 +252,17 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 		return cons->mouse_event && (ut8)ch == UT8_MAX ? 0 : ch;
 	}
 #endif
+	if (cons->drag_queued > 0) {
+		cons->drag_queued--;
+		if (ch == 'h' || ch == 'j' || ch == 'k' || ch == 'l') {
+			// key queued by a previous drag motion: keep the drag flags
+			cons->mouse_event = true;
+			return ch;
+		}
+		cons->drag_queued = 0; // queue was consumed elsewhere
+	}
 	cons->mouse_event = false;
+	cons->drag_event = false;
 	/* emacs */
 	switch ((ut8)ch) {
 	case 0xc3: r_cons_readchar (cons); ch = 'K'; break; // emacs repag (alt + v)
@@ -431,7 +481,7 @@ R_API int r_cons_fgets(RCons *cons, char *buf, int len, int argc, const char **a
 	if (cons->user_fgets) {
 		RETURN (cons->user_fgets (cons, buf, len));
 	}
-	const char *prompt = cons->line->prompt;
+	const char *prompt = cons->line->state.prompt;
 	P (prompt);
 	*buf = '\0';
 	if (color) {
@@ -743,7 +793,7 @@ R_API int r_cons_readchar(RCons *cons) {
 #endif
 }
 
-static int cons_yesnobut_normalize(int key, int def, int but) {
+static int yesnobut(int key, int def, int but) {
 	if (key == '\n' || key == '\r') {
 		key = def;
 	}
@@ -752,9 +802,9 @@ static int cons_yesnobut_normalize(int key, int def, int but) {
 	return (key == 'y' || key == but)? key: 'n';
 }
 
-static int cons_yesnobut(RCons *cons, int def, int but, const char *fmt, va_list ap) {
+static int cons_yesnobut_read(RCons *cons, int def, const char *fmt, va_list ap) {
 	if (!r_cons_is_interactive (cons)) {
-		return cons_yesnobut_normalize (def, def, but);
+		return def;
 	}
 	vfprintf (stderr, fmt, ap);
 	fflush (stderr);
@@ -766,10 +816,16 @@ static int cons_yesnobut(RCons *cons, int def, int but, const char *fmt, va_list
 		(void)write (2, buf, 3);
 	}
 	r_cons_set_raw (cons, false);
-	return cons_yesnobut_normalize (key, def, but);
+	return key;
+}
+
+static int cons_yesnobut(RCons *cons, int def, int but, const char *fmt, va_list ap) {
+	int key = cons_yesnobut_read (cons, def, fmt, ap);
+	return yesnobut (key, def, but);
 }
 
 R_API bool r_cons_yesno(RCons *cons, int def, const char *fmt, ...) {
+	R_RETURN_VAL_IF_FAIL (cons && fmt, false);
 	va_list ap;
 	va_start (ap, fmt);
 	int key = cons_yesnobut (cons, def, 0, fmt, ap);

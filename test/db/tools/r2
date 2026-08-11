@@ -16,6 +16,47 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=r2 -H lists runtime environment variables
+FILE=-
+CMDS=<<EOF
+!!r2 -H~R2_NOPLUGINS=?
+!!r2 -H~R2_SAFE_PLUGINS=?
+!!r2 -H~R2_WWWROOT=?
+!!r2 -H~R2_IHEX_IGNCSUM=?
+!!r2 -H~R2_SREC_IGNCSUM=?
+!!r2 -H~R2_DATA_HOME=?
+!!r2 -H~R2_USER_ZIGNS=?
+EOF
+EXPECT=<<EOF
+1
+1
+1
+1
+1
+1
+1
+EOF
+RUN
+
+NAME=r2 -H reads runtime environment variables
+FILE=-
+CMDS=<<EOF
+!!env R2_NOPLUGINS=1 r2 -H R2_NOPLUGINS
+!!env R2_NOPLUGINS=0 r2 -H NOPLUGINS
+!!env R2_MAGICPATH=/tmp/r2-magic r2 -H R2_MAGICPATH
+!!env R2_IHEX_IGNCSUM=1 r2 -H IHEX_IGNCSUM
+!!env R2_SREC_IGNCSUM=1 r2 -H SREC_IGNCSUM
+EOF
+EXPECT=<<EOF
+1
+0
+/tmp/r2-magic
+1
+1
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=r2 minushache (dos)
 FILE=-
 CMDS=<<EOF
@@ -65,6 +106,16 @@ FILE=-
 CMDS=!!radare2 -V~r_anal?
 EXPECT=<<EOF
 1
+EOF
+RUN
+
+NAME=radare2 -E honors R2_RCFILE
+FILE=-
+ARGS=-escr.interactive=1 -E
+ENV=R2_RCFILE=scripts/palette.r2;HOME=scripts/no-nl-at-eof.r2;USERPROFILE=scripts/no-nl-at-eof.r2;VISUAL=radare2 -NNQqc o.;EDITOR=radare2 -NNQqc o.
+CMDS=q
+EXPECT=<<EOF
+scripts/palette.r2
 EOF
 RUN
 
@@ -199,7 +250,6 @@ INFO: Type matching analysis for all functions (aaft)
 INFO: Propagate noreturn information (aanr)
 INFO: Use -AA or aaaa to perform additional experimental analysis
 --
-INFO: Second cons!
 INFO: Analyze all flags starting with sym. and entry0 (aa)
 INFO: Analyze imports (af@@@i)
 INFO: Analyze symbols (af@@@s)

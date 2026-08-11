@@ -57,37 +57,82 @@ R_API char* r_core_asm_search(RCore *core, const char *input) {
 	return ret;
 }
 
+static int asm_search_split_tokens(char *str, char **tokens, int count) {
+	if (count < 1) {
+		return 0;
+	}
+	char *src = str;
+	char *dst = str;
+	int n = 1;
+	tokens[0] = dst;
+	while (*src && n < count) {
+		if (*src == '\\' && src[1] == ';') {
+			src++;
+		}
+		if (*src == ';') {
+			*dst++ = 0;
+			r_str_trim (tokens[n - 1]);
+			src++;
+			tokens[n++] = dst;
+			continue;
+		}
+		*dst++ = *src++;
+	}
+	*dst = 0;
+	r_str_trim (tokens[n - 1]);
+	return n;
+}
+
+static int asm_search_retry_idx(bool bytewise, ut64 first, ut64 next, ut64 at, size_t bs, int fallback) {
+	ut64 addr = bytewise? first + 1: next;
+	if (addr >= at && addr - at < bs) {
+		return (int)(addr - at);
+	}
+	return fallback;
+}
+
 // TODO: add support for byte-per-byte opcode search
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
 	ut64 at, toff = core->addr;
 	const int align = core->search->align;
-	RRegex* rx = NULL;
 	char *tokens[1024] = {0};
-	char *tok, *code = NULL, *ptr;
-	char *save_ptr = NULL;
-	int idx, tidx = 0, len = 0;
-	int tokcount, matchcount, count = 0;
+	RRegex *regexes[1024] = {0};
+	char *code = NULL, *ptr;
+	char *opst = NULL;
+	int i, idx, len = 0;
+	int tokcount, matchcount = 0, count = 0;
 	int matches = 0;
 	const int addrbytes = core->io->addrbytes;
 	ut64 first_match_addr = 0;
+	ut64 next_match_addr = 0;
+	ut64 usrimm = 0;
+	ut64 usrimm2 = 0;
 
 	if (R_STR_ISEMPTY (input)) {
 		return NULL;
 	}
 
-	char *inp = r_str_trim_dup (input + 1);
-	char *inp_arg = strchr (inp, ' ');
-	if (inp_arg) {
-		*inp_arg++ = 0;
-	}
-	ut64 usrimm = r_num_math (core->num, inp);
-	ut64 usrimm2 = inp_arg? r_num_math (core->num, inp_arg): usrimm;
-	if (usrimm > usrimm2) {
-		R_LOG_ERROR ("/ci : Invalid range");
-		return NULL;
+	if (mode == 'i') {
+		char *inp = r_str_trim_dup (input + 1);
+		if (!inp) {
+			return NULL;
+		}
+		char *inp_arg = strchr (inp, ' ');
+		if (inp_arg) {
+			*inp_arg++ = 0;
+		}
+		usrimm = r_num_math (core->num, inp);
+		usrimm2 = inp_arg? r_num_math (core->num, inp_arg): usrimm;
+		if (usrimm > usrimm2) {
+			R_LOG_ERROR ("/ai: Invalid range");
+			free (inp);
+			return NULL;
+		}
+		free (inp);
 	}
 
 	const int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
+	const int maxopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	const bool bytewise = everyByte || mode == 'i' || mode == 'e';
 	size_t bs = core->blocksize;
 	if (bs < minopsz) {
@@ -98,7 +143,11 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		bs = 0x1000;
 		R_LOG_DEBUG ("Readjusting blocksize");
 	}
-	ut8 *buf = (ut8 *)calloc (bs , 1);
+	size_t read_size;
+	if (r_add_overflow (bs, (size_t)maxopsz, &read_size) || read_size > ST32_MAX) {
+		return NULL;
+	}
+	ut8 *buf = (ut8 *)calloc (read_size, 1);
 	if (!buf) {
 		return NULL;
 	}
@@ -112,18 +161,22 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		free (ptr);
 		return NULL;
 	}
-	tokens[0] = NULL;
-	for (tokcount = 0; tokcount < R_ARRAY_SIZE (tokens) - 1; tokcount++) {
-		tok = r_str_tok_r (tokcount? NULL: ptr, ";", &save_ptr);
-		if (!tok) {
-			break;
-		}
-		r_str_trim (tok);
-		tokens[tokcount] = tok;
-	}
+	tokcount = asm_search_split_tokens (ptr, tokens, R_ARRAY_SIZE (tokens) - 1);
 	tokens[tokcount] = NULL;
 	r_cons_break_push (core->cons, NULL, NULL);
-	char *opst = NULL;
+	if (regexp) {
+		for (i = 0; i < tokcount; i++) {
+			if (!*tokens[i]) {
+				continue;
+			}
+			regexes[i] = r_regex_new (tokens[i], "es");
+			if (!regexes[i]) {
+				R_LOG_ERROR ("Invalid regexp: %s", tokens[i]);
+				goto beach;
+			}
+		}
+	}
+	int next_block_idx = 0;
 	for (at = from; at < to; at += bs) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
@@ -131,13 +184,15 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		if (!r_io_is_valid_offset (core->io, at, 0)) {
 			break;
 		}
-		memset (buf, 0x00, bs);
-		int res = r_io_read_at (core->io, at, buf, bs);
+		memset (buf, 0x00, read_size);
+		size_t request_size = R_MIN (read_size, to - at);
+		int res = r_io_read_at (core->io, at, buf, (int)request_size);
 		if (res < 1) {
 			R_LOG_ERROR ("Reading at 0x%08"PFMT64x, at);
 			break;
 		}
-		idx = 0, matchcount = 0;
+		idx = bytewise? 0: next_block_idx;
+		next_block_idx = 0;
 		while (addrbytes * (idx + 1) <= bs) {
 			ut64 addr = at + idx;
 			if (addr >= to) {
@@ -209,12 +264,18 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				if (!(len = r_asm_disassemble (
 					      core->rasm, &op,
 					      buf + addrbytes * idx,
-					      bs - addrbytes * idx))) {
-					idx = (matchcount)? tidx + 1: idx + 1;
+					      request_size - addrbytes * idx))) {
+					idx = matchcount
+						? asm_search_retry_idx (bytewise, first_match_addr, next_match_addr, at, bs, idx + 1)
+						: idx + 1;
 					R_LOG_ERROR ("Failed to disassemble instruction at 0x%08"PFMT64x, op.addr);
 					matchcount = 0;
+					R_FREE (code);
 					r_anal_op_fini (&op);
 					continue;
+				}
+				if (!bytewise && idx + len > bs) {
+					next_block_idx = idx + len - bs;
 				}
 				if (op.mnemonic) {
 					//opsz = op.size;
@@ -231,22 +292,22 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				matches = 0;
 			}
 			if (matches && tokens[matchcount]) {
-				if (mode == 'a') { // check for case sensitive
+				const char *curtok = tokens[matchcount];
+				if (!*curtok) {
+					matches = true;
+				} else if (mode == 'a') { // check for case sensitive
 					matches = !r_str_ncasecmp (opst, tokens[matchcount], strlen (tokens[matchcount]));
 				} else if (!regexp) {
-					const char *curtok = tokens[matchcount];
 					if (strchr (curtok, '$') || strchr (curtok, '*') || strchr (curtok, '^')) {
 						matches = r_str_glob (opst, curtok);
 					} else {
 						matches = !!strstr (opst, tokens[matchcount]);
 					}
 				} else {
-					rx = r_regex_new (tokens[matchcount], "es");
-					matches = r_regex_exec (rx, opst, 0, 0, 0) == 0;
-					r_regex_free (rx);
+					matches = r_regex_exec (regexes[matchcount], opst, 0, 0, 0) == 0;
 				}
 			}
-			if (align && align > 1) {
+			if (!matchcount && align && align > 1) {
 				if (addr % align) {
 					matches = false;
 				}
@@ -255,11 +316,9 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				code = r_str_appendf (code, "%s; ", opst);
 				if (matchcount == 0) {
 					first_match_addr = addr;
+					next_match_addr = addr + len;
 				}
 				if (matchcount == tokcount - 1) {
-					if (tokcount == 1) {
-						tidx = idx;
-					}
 					RCoreAsmHit *hit = r_core_asm_hit_new ();
 					if (!hit) {
 						r_list_purge (hits);
@@ -267,7 +326,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 						goto beach;
 					}
 					hit->addr = first_match_addr;
-					hit->len = idx + len - tidx;
+					hit->len = (int)(addr + len - first_match_addr);
 					if (hit->len == -1) {
 						r_core_asm_hit_free (hit);
 						goto beach;
@@ -277,7 +336,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					r_list_append (hits, hit);
 					R_FREE (code);
 					matchcount = 0;
-					idx = tidx + 1;
+					idx = asm_search_retry_idx (bytewise, first_match_addr, next_match_addr, at, bs, idx + len);
 					if (maxhits) {
 						count++;
 						if (count >= maxhits) {
@@ -285,17 +344,16 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 							goto beach;
 						}
 					}
-				} else if (!matchcount) {
-					tidx = idx;
-					matchcount++;
-					idx += len;
 				} else {
 					matchcount++;
 					idx += len;
 				}
 			} else {
-				if (bytewise) {
-					idx = matchcount? tidx + 1: idx + 1;
+				if (matchcount) {
+					int fallback = idx + (bytewise? 1: R_MAX (1, len));
+					idx = asm_search_retry_idx (bytewise, first_match_addr, next_match_addr, at, bs, fallback);
+				} else if (bytewise) {
+					idx++;
 				} else {
 					idx += R_MAX (1, len);
 				}
@@ -307,10 +365,12 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	}
 beach:
 	r_asm_set_pc (core->rasm, toff);
+	for (i = 0; i < tokcount; i++) {
+		r_regex_free (regexes[i]);
+	}
 	free (buf);
 	free (ptr);
 	free (code);
-	free (inp);
 	R_FREE (opst);
 	r_cons_break_pop (core->cons);
 	return hits;
@@ -545,16 +605,19 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		return NULL;
 	}
 
-	for (idx = addrbytes; idx < len; idx += addrbytes) {
+	bool found = false;
+	// <= so the full window is tried; len is clamped to addr near file start
+	for (idx = addrbytes; idx <= len; idx += addrbytes) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
+		r_asm_set_pc (core->rasm, addr - (idx / addrbytes));
 		c = r_asm_mdisassemble (core->rasm, buf + len - idx, idx);
 		if (!c || !c->assembly) {
 			r_asm_code_free (c);
 			continue;
 		}
-		if (strstr (c->assembly, "invalid") || strstr (c->assembly, ".byte")) {
+		if (strstr (c->assembly, "invalid") || strstr (c->assembly, ".byte") || strstr (c->assembly, "unaligned")) {
 			r_asm_code_free (c);
 			continue;
 		}
@@ -567,20 +630,29 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		}
 		r_asm_code_free (c);
 		if (numinstr >= n || idx > 16 * n) { // assume average instruction length <= 16
+			found = true;
 			break;
 		}
 	}
+	if (!found) {
+		// no window ending at addr disassembles cleanly; an empty list beats far-away hits
+		free (buf);
+		return hits;
+	}
 
-	ut64 at = addr - idx / addrbytes;
+	ut64 at = addr - (idx / addrbytes);
 
-	r_asm_set_pc (core->rasm, at);
 	for (hit_count = 0; hit_count < n; hit_count++) {
 		RAnalOp op;
+		r_asm_set_pc (core->rasm, at);
 		int instrlen = r_asm_disassemble (core->rasm, &op,
 			buf + len - addrbytes * (addr - at), addrbytes * (addr - at));
+		r_anal_op_fini (&op);
+		if (instrlen < 1) {
+			break;
+		}
 		add_hit_to_hits (hits, at, instrlen, true);
 		at += instrlen;
-		r_anal_op_fini (&op);
 	}
 	free (buf);
 	return hits;
@@ -817,15 +889,19 @@ R_API ut32 r_core_asm_bwdis_len(RCore* core, int* instr_len, ut64* start_addr, u
 		*instr_len = 0;
 	}
 	if (hits && r_list_length (hits) > 0) {
-		hit = r_list_first (hits);
-		if (start_addr) {
-			*start_addr = hit->addr;
-		}
 		r_list_foreach (hits, iter, hit) {
-			instr_run += hit->len;
+			if (hit->len > 0) {
+				instr_run += hit->len;
+			}
 		}
-		if (instr_len) {
-			*instr_len = instr_run;
+		if (instr_run > 0) {
+			hit = r_list_first (hits);
+			if (start_addr) {
+				*start_addr = hit->addr;
+			}
+			if (instr_len) {
+				*instr_len = instr_run;
+			}
 		}
 	}
 	r_list_free (hits);

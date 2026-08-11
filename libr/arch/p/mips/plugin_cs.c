@@ -321,6 +321,12 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 				"0xffffffff,%s,%s,>>,&,31,%s,>>,?{,%s,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
 				ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
 			break;
+		case MIPS_INS_SRAV:
+			// like SRA but the shift amount is rs & 0x1f
+			r_strbuf_appendf (&op->esil,
+				"0xffffffff,%s,0x1f,&,%s,>>,&,31,%s,>>,?{,%s,0x1f,&,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
+				ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
+			break;
 		case MIPS_INS_SHRL:
 			// suffix 'S' forces conditional flag to be updated
 		case MIPS_INS_SRLV:
@@ -470,7 +476,8 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 					addr, ARG (0), ARG (1));
 				break;
 		case MIPS_INS_BGEZAL:
-				r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",!,?{," ES_CALL_D ("%s") ",}",
+				// the link (ra=pc+8) is unconditional; only the jump is conditional
+				r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "pc,4,+,ra,=," ES_IS_NEGATIVE ("%s") ",!,?{," ES_J_D ("%s") ",}",
 					addr, ARG (0), ARG (1));
 				break;
 		case MIPS_INS_BGEZALC:
@@ -482,7 +489,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 					addr, ARG (0), ARG (1));
 			break;
 		case MIPS_INS_BLTZAL:
-				r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",?{," ES_CALL_D ("%s") ",}",
+				r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "pc,4,+,ra,=," ES_IS_NEGATIVE ("%s") ",?{," ES_J_D ("%s") ",}",
 						addr, ARG (0), ARG (1));
 				break;
 		case MIPS_INS_BLTZC:
@@ -704,6 +711,12 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 				ES_SIGN32_64 (ARG(0));
 				break;
 			case MIPS_INS_MULT:
+				// signed: sign-extend both operands so hi holds the signed high word
+				r_strbuf_appendf (&op->esil, ES_W("32,%s,~,32,%s,~,*")",lo,=", ARG (0), ARG (1));
+				ES_SIGN32_64 ("lo");
+				r_strbuf_appendf (&op->esil, ES_W("32,32,%s,~,32,%s,~,*,>>")",hi,=", ARG (0), ARG (1));
+				ES_SIGN32_64 ("hi");
+				break;
 			case MIPS_INS_MULTU:
 				r_strbuf_appendf (&op->esil, ES_W("%s,%s,*")",lo,=", ARG (0), ARG (1));
 				ES_SIGN32_64 ("lo");
@@ -870,12 +883,10 @@ static int get_capstone_mode(RArchSession *as) {
 			mode |= CS_MODE_MICRO;
 		} else if (!strcmp (cpu, "r6")) {
 			mode |= CS_MODE_MIPS32R6;
-		} else if (!strcmp (cpu, "v3")) {
+		} else if (!strcmp (cpu, "v3") || !strcmp (cpu, "mips3")) {
 			mode |= CS_MODE_MIPS3;
-		} else if (!strcmp (cpu, "v2")) {
-#if CS_API_MAJOR > 3
+		} else if (!strcmp (cpu, "v2") || !strcmp (cpu, "mips2")) {
 			mode |= CS_MODE_MIPS2;
-#endif
 		}
 	}
 	mode |= (as->config->bits == 64)? CS_MODE_MIPS64: CS_MODE_MIPS32;
@@ -890,8 +901,9 @@ typedef struct plugin_data_t {
 	CapstonePluginData cpd;
 	RRegItem reg;
 	char *cpu;
-	int bigendian;
 	ut64 t9_pre;
+	ut64 t9_adj;
+	bool bigendian;
 	int last_syntax;
 } PluginData;
 
@@ -905,11 +917,8 @@ static bool init(RArchSession *as) {
 	}
 
 	PluginData *pd = R_NEW0 (PluginData);
-	if (!pd) {
-		return false;
-	}
-
 	pd->t9_pre = UT64_MAX;
+	pd->t9_adj = UT64_MAX;
 	pd->bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
 	if (!r_arch_cs_init (as, &pd->cpd.cs_handle)) {
@@ -931,6 +940,14 @@ static bool fini(RArchSession *as) {
 	return true;
 }
 
+static bool reset(RArchSession *as) {
+	R_RETURN_VAL_IF_FAIL (as && as->data, false);
+	PluginData *pd = as->data;
+	pd->t9_pre = UT64_MAX;
+	pd->t9_adj = UT64_MAX;
+	return true;
+}
+
 static csh cs_handle_for_session(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
 	CapstonePluginData *pd = as->data;
@@ -948,10 +965,62 @@ static bool plugin_changed(RArchSession *as) {
 	return strcmp (r_str_get (cpd->cpu), r_str_get (as->config->cpu)) != 0;
 }
 
+// t9_pre only survives writes the decoder models (gp-load set, addiu lo-adjust); any other write to t9 stales it
+static void t9_invalidate(PluginData *pd, RAnalOp *op, cs_insn *insn) {
+	if (pd->t9_pre == UT64_MAX || insn->detail->mips.op_count < 1) {
+		return;
+	}
+	if (OPERAND (0).type != MIPS_OP_REG || REGID (0) != MIPS_REG_T9) {
+		return;
+	}
+	if ((insn->id == MIPS_INS_ADDIU || insn->id == MIPS_INS_DADDIU) && insn->detail->mips.op_count == 3
+			&& OPERAND (1).type == MIPS_OP_REG && REGID (1) == MIPS_REG_T9 && OPERAND (2).type == MIPS_OP_IMM) {
+		// decode runs several times per op; apply the lo-adjust only once per address
+		if (pd->t9_adj != op->addr) {
+			pd->t9_pre += IMM (2);
+			pd->t9_adj = op->addr;
+		}
+		return;
+	}
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_NULL: // slt/mflo and friends leave no type; treat any untyped op0 write as a clobber
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_MUL:
+	case R_ANAL_OP_TYPE_DIV:
+	case R_ANAL_OP_TYPE_MOD:
+	case R_ANAL_OP_TYPE_AND:
+	case R_ANAL_OP_TYPE_OR:
+	case R_ANAL_OP_TYPE_XOR:
+	case R_ANAL_OP_TYPE_SHL:
+	case R_ANAL_OP_TYPE_SHR:
+	case R_ANAL_OP_TYPE_SAR:
+	case R_ANAL_OP_TYPE_NOT:
+	case R_ANAL_OP_TYPE_CMOV:
+	case R_ANAL_OP_TYPE_ROL:
+	case R_ANAL_OP_TYPE_ROR:
+		pd->t9_pre = UT64_MAX;
+		break;
+	}
+}
+
+// target is the first immediate operand; reg-first forms (bgezal, bltzal, ...) keep it in op1, not op0
+static void set_jump_target(RAnalOp *op, cs_insn *insn) {
+	int i;
+	for (i = 0; i < OPCOUNT (); i++) {
+		if (OPERAND (i).type == MIPS_OP_IMM) {
+			op->jump = IMM (i);
+			return;
+		}
+	}
+}
+
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
+	const bool stateful = mask & R_ARCH_OP_MASK_STATEFUL;
 	csh handle = cs_handle_for_session (as);
 	PluginData *pd;
 	if (plugin_changed (as)) {
@@ -1038,15 +1107,16 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			case MIPS_OP_MEM:
 				if (OPERAND (1).mem.base == MIPS_REG_GP) {
 					op->ptr = as->config->gp + OPERAND (1).mem.disp;
-					if (REGID (0) == MIPS_REG_T9) {
+					if (stateful && REGID (0) == MIPS_REG_T9) {
 						pd->t9_pre = op->ptr;
+						pd->t9_adj = UT64_MAX;
 						RBin *bin = as->arch->binb.bin;
 						const ut64 ptrv = mips_read_ptr_at (bin, op->ptr, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config), as->config->bits);
 						if (ptrv != UT64_MAX) {
 							pd->t9_pre = ptrv;
 						}
 					}
-				} else if (REGID (0) == MIPS_REG_T9) {
+				} else if (stateful && REGID (0) == MIPS_REG_T9) {
 					pd->t9_pre = UT64_MAX;
 				}
 				break;
@@ -1086,8 +1156,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->delay = 1;
 		if (REGID (0) == MIPS_REG_25) {
 			op->type = R_ANAL_OP_TYPE_RCALL;
-			op->jump = pd->t9_pre;
-			pd->t9_pre = UT64_MAX;
+			if (stateful) {
+				op->jump = pd->t9_pre;
+				pd->t9_pre = UT64_MAX;
+			}
 		}
 		break;
 	case MIPS_INS_JAL:
@@ -1107,7 +1179,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case MIPS_INS_JIALC:
 	case MIPS_INS_JIC:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = IMM(0);
+		set_jump_target (op, insn);
 
 		switch (insn->id) {
 		case MIPS_INS_JIALC:
@@ -1144,9 +1216,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		SET_VAL (op, 2);
 		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD);
 		op->type = R_ANAL_OP_TYPE_ADD;
-		if (REGID(0) == MIPS_REG_T9) {
-				pd->t9_pre += IMM(2);
-		}
 		if (REGID(0) == MIPS_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -IMM(2);
@@ -1249,13 +1318,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
 		}
 
-		if (OPERAND (0).type == MIPS_OP_IMM) {
-			op->jump = IMM (0);
-		} else if (OPERAND (1).type == MIPS_OP_IMM) {
-			op->jump = IMM (1);
-		} else if (OPERAND (2).type == MIPS_OP_IMM) {
-			op->jump = IMM (2);
-		}
+		set_jump_target (op, insn);
 
 		switch (insn->id) {
 		case MIPS_INS_BEQC:
@@ -1284,9 +1347,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		// register is $ra, so jmp is a return
 		if (insn->detail->mips.operands[0].reg == MIPS_REG_RA) {
 			op->type = R_ANAL_OP_TYPE_RET;
-			pd->t9_pre = UT64_MAX;
+			if (stateful) {
+				pd->t9_pre = UT64_MAX;
+			}
 		}
-		if (REGID (0) == MIPS_REG_25) {
+		if (stateful && REGID (0) == MIPS_REG_25) {
 			op->jump = pd->t9_pre;
 			pd->t9_pre = UT64_MAX;
 		}
@@ -1304,6 +1369,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case MIPS_INS_SHRA:
 	case MIPS_INS_SHRA_R:
 	case MIPS_INS_SRA:
+	case MIPS_INS_SRAV:
 		op->type = R_ANAL_OP_TYPE_SAR;
 		SET_VAL (op,2);
 		break;
@@ -1318,6 +1384,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_SHL;
 		SET_VAL (op,2);
 		break;
+	}
+	if (stateful) {
+		t9_invalidate (pd, op, insn);
 	}
 beach:
 	set_opdir (op);
@@ -1494,7 +1563,7 @@ const RArchPlugin r_arch_plugin_mips_cs = {
 		.license = "Apache-2.0",
 	},
 	.arch = "mips",
-	.cpus = "mips32/64,micro,r6,v3,v2",
+	.cpus = "mips32/64,mips1,mips2,mips3,mips4,mips5,mips32,mips32r2,mips64,mips64r2,micro,r6,v3,v2",
 	.regs = get_reg_profile,
 	.info = archinfo,
 	.preludes = preludes,
@@ -1502,6 +1571,7 @@ const RArchPlugin r_arch_plugin_mips_cs = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.init = init,
 	.fini = fini,
+	.reset = reset,
 	.decode = decode,
 	.encode = encode,
 	.mnemonics = mnemonics,

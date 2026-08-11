@@ -29,6 +29,23 @@ static int usage(bool v) {
 	return !v;
 }
 
+static RList *auth_tokens_split(char *str) {
+	RList *tokens = r_str_split_list (str, "\n", 0);
+	RListIter *iter;
+	RListIter *tmp;
+	char *tok;
+	r_list_foreach_safe (tokens, iter, tmp, tok) {
+		if (R_STR_ISEMPTY (tok)) {
+			r_list_delete (tokens, iter);
+		}
+	}
+	if (r_list_empty (tokens)) {
+		r_list_free (tokens);
+		return NULL;
+	}
+	return tokens;
+}
+
 R_API int r_main_r2agent(int argc, const char **argv) {
 	RSocket *s;
 	RCons *cons = NULL;
@@ -118,7 +135,12 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		size_t sz;
 		pfile = r_file_slurp (httpauthfile, &sz);
 		if (pfile) {
-			so.authtokens = r_str_split_list (pfile, "\n", 0);
+			so.authtokens = auth_tokens_split (pfile);
+			if (!so.authtokens) {
+				R_LOG_ERROR ("Empty list of HTTP users");
+				free (pfile);
+				return usage (false);
+			}
 		} else {
 			R_LOG_ERROR ("Empty list of HTTP users");
 			return usage (false);
@@ -188,6 +210,9 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		}
 		if (!rs->auth) {
 			r_socket_http_response (rs, 401, "", 0, NULL);
+			r_socket_http_close (rs);
+			r_socket_http_free (rs);
+			continue;
 		}
 		if (!strcmp (rs->method, "GET")) {
 			if (r_str_startswith (rs->path, "/proc/kill/")) {
@@ -204,13 +229,21 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 				int session_port = 3000 + r_num_rand (1024);
 				char *filename = rs->path + strlen ("/file/open/");
 				char *escaped_filename = r_str_escape_sh (filename);
-				char *cmd = r_str_newf ("r2 -q %s-e http.port=%d -c=h \"%s\"",
+				char *authargs = NULL;
+				if (so.httpauth) {
+					char *ea = r_str_escape_sh (httpauthfile);
+					authargs = r_str_newf ("-e http.auth=true -e \"http.authfile=%s\" ", ea);
+					free (ea);
+				}
+				char *cmd = r_str_newf ("r2 -q %s%s-e http.port=%d -c=h \"%s\"",
 					listenlocal? "": "-e http.bind=public ",
+					r_str_get (authargs),
 					session_port, escaped_filename);
 
 				/* TODO: use r_sys api to get pid when running in bg */
 				int pid = r_sys_cmdbg (cmd);
 				free (cmd);
+				free (authargs);
 				free (escaped_filename);
 
 				res = r_str_newf ("<html><body>"
@@ -224,10 +257,11 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		}
 		r_socket_http_response (rs, 200, res? res: page_index, 0, NULL);
 		r_socket_http_close (rs);
+		r_socket_http_free (rs);
 		R_FREE (res);
 	}
 
-	r_cons_free2 (cons);
+	r_cons_free (cons);
 	free (pfile);
 	r_list_free (so.authtokens);
 	r_socket_free (s);

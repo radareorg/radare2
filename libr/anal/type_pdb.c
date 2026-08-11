@@ -5,7 +5,6 @@
 #include <r_anal.h>
 #include "../bin/format/pdb/types.h"
 #include "../bin/format/pdb/tpi.h"
-#include "base_types.h"
 
 static bool is_parsable_type(const ELeafType type) {
 	return (type == eLF_STRUCTURE ||
@@ -171,7 +170,9 @@ static void parse_structure(const RAnal *anal, STpiStream *ss, SType *type, RLis
 		type_info->get_name &&
 		type_info->get_val);
 
-	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	bool is_struct = (type_info->leaf_type == eLF_STRUCTURE || type_info->leaf_type == eLF_CLASS);
+	RAnalBaseType *base_type = r_anal_base_type_new (
+		is_struct? R_ANAL_BASE_TYPE_KIND_STRUCT: R_ANAL_BASE_TYPE_KIND_UNION);
 	if (!base_type) {
 		return;
 	}
@@ -196,14 +197,14 @@ static void parse_structure(const RAnal *anal, STpiStream *ss, SType *type, RLis
 		if (!struct_member) {
 			continue; // skip the failure
 		}
-		RAnalStructMember *slot = RVecAnalStructMember_emplace_back (&base_type->struct_data.members);
+		RAnalTypeMember *slot = RVecAnalTypeMember_emplace_back (r_anal_base_type_members (base_type));
+		if (!slot) {
+			anal_type_member_fini (struct_member);
+			free (struct_member);
+			continue;
+		}
 		*slot = *struct_member;
 		free (struct_member);
-	}
-	if (type_info->leaf_type == eLF_STRUCTURE || type_info->leaf_type == eLF_CLASS) {
-		base_type->kind = R_ANAL_BASE_TYPE_KIND_STRUCT;
-	} else { // union
-		base_type->kind = R_ANAL_BASE_TYPE_KIND_UNION;
 	}
 	char *sname = r_str_sanitize_sdb_key (name);
 	base_type->name = sname;

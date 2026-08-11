@@ -20,6 +20,7 @@ enum {
 	RPRJ_EVAL,
 	RPRJ_XREF,
 	RPRJ_FUNC,
+	RPRJ_VART,
 	RPRJ_MAGIC = 0x4a525052,
 };
 

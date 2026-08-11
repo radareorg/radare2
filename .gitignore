@@ -85,6 +85,7 @@ config-user.mk
 libr/bin/d/dll/dll
 test/unit/test_anal_cc
 test/unit/test_anal_hints
+test/unit/test_anal_types
 test/unit/test_bin
 test/unit/test_reg
 libr/config.h
@@ -93,6 +94,7 @@ libr/include/r_version.h
 libr/include/r_version.h.tmp
 libr/arch/p/arm/v35/arch-arm64
 libr/arch/p/arm/v35/arch-armv7
+libr/anal/c2/a.out
 shlr/java/out
 shlr/java/out.exe
 shlr/spp/config.h
@@ -189,3 +191,4 @@ libr/xps/deps.h
 libr/xps/static.cfg
 libr/xps/p/meson.build
 libr/xps/r2plugins.h
+result*

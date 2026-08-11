@@ -11,10 +11,10 @@ typedef struct r_getopt_t {
 	bool err;
 	int ind;
 	int opt;
-	const char *arg;
-	const char *place;
 	// ...
 	int argc;
+	const char *arg;
+	const char *place;
 	const char **argv;
 	const char *ostr;
 } RGetopt;

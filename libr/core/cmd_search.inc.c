@@ -67,7 +67,7 @@ static RCoreHelpMessage help_msg_slash_pattern = {
 };
 
 static RCoreHelpMessage help_msg_slash_ad = {
-	"Usage: /ad[/<*jq>]", "[value]", "Backward search subcommands",
+	"Usage: /ad[/][a][j|q|*]", "[value]", "Backward search subcommands",
 	"/ad", " rax", "search in plaintext disasm for matching instructions",
 	"/ad", " rax$", "search in plaintext disasm for instruction matchin given glob expression",
 	"/adj", " rax", "json output searching in disasm with plaintext",
@@ -80,6 +80,7 @@ static RCoreHelpMessage help_msg_slash_ad = {
 static RCoreHelpMessage help_msg_slash_magic = {
 	"/m", "", "search for known magic patterns",
 	"/m", " [file]", "same as above but using the given magic file",
+	"/mt", " [file]", "search for text-based magic patterns",
 	"/me", " [msg]", "like ?e similar to IRC's /me",
 	"/mm", "", "search for known filesystems and mount them automatically",
 	"/mb", "", "search recognized RBin headers",
@@ -108,7 +109,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/h", "[?*] [algo] [digest] [size]", "find block of size bytes having this digest (see ph)",
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/k", " foo", "search for string 'foo' using Rabin Karp alg",
-	"/m", "[?][ebm] magicfile", "search for magic, filesystems or binary headers",
+	"/m", "[?][ebmt] magicfile", "search for magic, filesystems or binary headers",
 	"/o", " [n]", "show offset of n instructions backward",
 	"/O", " [n]", "same as /o, but with a different fallback if anal cannot be used",
 	"/p", "[?][p] patternsize", "search for pattern of given size",
@@ -153,7 +154,7 @@ static RCoreHelpMessage help_msg_slash_a = {
 	"/aa", " mov eax", "linearly find aproximated assembly (case insensitive strstr)",
 	"/ab", "[f] [delta]", "search for backward jumps (usually loops)",
 	"/ac", " mov eax", "same as /aa, but case-sensitive",
-	"/ad", "[?][/*jq] push;mov", "match ins1 followed by ins2 in linear disasm",
+	"/ad", "[?][/][a][j|q|*] push;mov", "match ins1 followed by ins2 in linear disasm",
 	"/ae", " esil", "search for esil expressions matching substring",
 	"/af", "[l] family", "search for instruction of specific family (afl=list)",
 	"/aF", "[d] opstr", "find instructions matching given opstr only in analyzed code",
@@ -244,7 +245,7 @@ static RCoreHelpMessage help_msg_slash_x = {
 
 // clang-format on
 
-struct search_parameters {
+typedef struct {
 	RCore *core;
 	RList *boundaries;
 	const char *mode;
@@ -260,14 +261,14 @@ struct search_parameters {
 	int c; // used for progress
 	int count;
 	bool progressbar;
-};
+} RSearchParameters;
 
 struct endlist_pair {
 	int instr_offset;
 	int delay_size;
 };
 
-static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_parameters *param) {
+static inline void print_search_progress(ut64 at, ut64 to, int n, RSearchParameters *param) {
 	if (!param->progressbar) {
 		return;
 	}
@@ -284,7 +285,7 @@ static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_
 	}
 }
 
-static int search_hash(RCore *core, const char *hashname, const char *hashstr, ut32 minlen, ut32 maxlen, struct search_parameters *param) {
+static int search_hash(RCore *core, const char *hashname, const char *hashstr, ut32 minlen, ut32 maxlen, RSearchParameters *param) {
 	RIOMap *map;
 	ut8 *buf;
 	int i, j;
@@ -429,7 +430,7 @@ static int __backward_prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) 
 
 static void cmd_search_ag(RCore *core, const char *input) {
 	if (input[1] == '?') {
-		r_core_cmd_help_match (core, help_msg_slash_a, "/ag");
+		r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/ag", 0, true);
 	} else {
 		ut64 addr = UT64_MAX;
 		if (input[1]) {
@@ -709,7 +710,7 @@ static char *getstring(char *b, int l) {
 
 static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (kw && user, -1);
-	struct search_parameters *param = user;
+	RSearchParameters *param = user;
 	RCore *core = param->core;
 	ut64 base_addr = 0;
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
@@ -829,7 +830,7 @@ static int _cb_hit(RSearchKeyword * R_NULLABLE kw, void *user, ut64 addr) {
 	RSearchKeyword *kw_used = &kw_fake;
 	int klen = 0;
 	if (kw) {
-		struct search_parameters *param = user;
+		RSearchParameters *param = user;
 		const RSearch *search = param->core->search;
 		klen = kw? kw->keyword_length + (search->mode == R_SEARCH_DELTAKEY): 0;
 		kw_used = kw;
@@ -1633,7 +1634,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 	}
 }
 
-static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type, int opt, const char *grep, int regexp, struct search_parameters *param) {
+static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type, int opt, const char *grep, int regexp, RSearchParameters *param) {
 	const ut8 crop = r_config_get_i (core->config, "gadget.cond"); // decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const bool gadget_esil = r_config_get_b (core->config, "gadget.esil");
 	const ut8 subchain = r_config_get_i (core->config, "gadget.subchains");
@@ -1946,7 +1947,7 @@ static bool esil_address(REsil *esil) {
 	return r_esil_pushnum (esil, esil->addr);
 }
 
-static void do_esil_search(RCore *core, struct search_parameters *param, const char *input) {
+static void do_esil_search(RCore *core, RSearchParameters *param, const char *input) {
 	const int hit_combo_limit = r_config_get_i (core->config, "search.esilcombo");
 	RSearch *search = core->search;
 	RSearchKeyword kw = {0};
@@ -1959,7 +1960,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		input++;
 	}
 	if (input[1] != ' ') { // "/E?"
-		r_core_cmd_help (core, help_msg_slash_esil);
+		r_cons_cmd_help (core->cons, help_msg_slash_esil);
 		return;
 	}
 	const ut32 addrsize = r_config_get_i (core->config, "esil.addr.size");
@@ -2080,7 +2081,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 
 #include "cmd_scsearch.inc.c"
 
-static void cb_ref_hit(RCore *core, const RAnalRef *ref, ut64 from, ut64 to, struct search_parameters *param) {
+static void cb_ref_hit(RCore *core, const RAnalRef *ref, ut64 from, ut64 to, RSearchParameters *param) {
 	ut8 buf[32];
 	if (from > ref->addr || to < ref->addr) {
 		return;
@@ -2117,7 +2118,7 @@ static void cb_ref_hit(RCore *core, const RAnalRef *ref, ut64 from, ut64 to, str
 	r_anal_op_fini (&asmop);
 }
 
-static void print_ref_search(RCore *core, ut64 addr, ut64 from, ut64 to, struct search_parameters *param) {
+static void print_ref_search(RCore *core, ut64 addr, ut64 from, ut64 to, RSearchParameters *param) {
 	RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, addr);
 	if (xrefs) {
 		RAnalRef *ref;
@@ -2161,7 +2162,7 @@ static bool parse_targets(RCore *core, const char *args, RVecSearchAddr *targets
 	return ok;
 }
 
-static void refsearch_targets(RCore *core, int mode, bool print_hits, struct search_parameters *param, const RVecSearchAddr *targets) {
+static void refsearch_targets(RCore *core, int mode, bool print_hits, RSearchParameters *param, const RVecSearchAddr *targets) {
 	const size_t target_count = RVecSearchAddr_length (targets);
 	ut64 scan_addr = UT64_MAX;
 	if (target_count == 1) {
@@ -2191,7 +2192,7 @@ static void refsearch_targets(RCore *core, int mode, bool print_hits, struct sea
 	}
 }
 
-static void esilsearch_targets(RCore *core, struct search_parameters *param, const RVecSearchAddr *targets) {
+static void esilsearch_targets(RCore *core, RSearchParameters *param, const RVecSearchAddr *targets) {
 	const ut64 curseek = core->addr;
 	RListIter *iter;
 	RIOMap *map;
@@ -2225,7 +2226,7 @@ static void esilsearch_targets(RCore *core, struct search_parameters *param, con
 static void cmd_search_aF(RCore *core, const char *input) {
 	bool quiet = *input == 'd';
 	if (*input && *input != ' ' && *input != 'd') {
-		r_core_cmd_help_contains (core, help_msg_slash_a, "aF");
+		r_cons_cmd_help_match (core->cons, help_msg_slash_a, "aF", 0, false);
 		return;
 	}
 	RAnalFunction *fcn;
@@ -2298,7 +2299,7 @@ static bool check_false_positive(const char *s) {
 }
 
 // XXX must use searchhit and be generic RSearchHit *hit) {
-static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsmHit *hit, const char *str) {
+static void search_hit_at(RCore *core, RSearchParameters *param, RCoreAsmHit *hit, const char *str) {
 	bool asm_sub_names = r_config_get_b (core->config, "asm.sub.names");
 	const int kwidx = core->search->n_kws;
 	const char *cmdhit = r_config_get (core->config, "cmd.hit");
@@ -2372,7 +2373,7 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 	}
 }
 
-static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
+static void do_unkjmp_search(RCore *core, RSearchParameters *param, bool quiet, const char *input) {
 	const int flags = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM;
 	const bool badpages = r_config_get_b (core->config, "search.badpages");
 	RAnalOp aop;
@@ -2565,7 +2566,7 @@ static char *print_analstr(RCore *core, ut64 addr, int maxlen) {
 }
 
 // R2R db/cmd/cmd_search_asm
-static bool do_analstr_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
+static bool do_analstr_search(RCore *core, RSearchParameters *param, bool quiet, const char *input) {
 	const bool badpages = r_config_get_b (core->config, "search.badpages");
 	bool silent = false;
 	if (!input) {
@@ -2763,7 +2764,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	return false;
 }
 
-static bool do_anal_search(RCore *core, struct search_parameters *param, const char *input) {
+static bool do_anal_search(RCore *core, RSearchParameters *param, const char *input) {
 	RSearch *search = core->search;
 	ut64 at;
 	RAnalOp aop;
@@ -2821,9 +2822,9 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		case '?':
 		default:
 			if (type == 't') {
-				r_core_cmd_help (core, help_msg_slash_at);
+				r_cons_cmd_help (core->cons, help_msg_slash_at);
 			} else {
-				r_core_cmd_help (core, help_msg_slash_a);
+				r_cons_cmd_help (core->cons, help_msg_slash_a);
 			}
 			return false;
 		}
@@ -3007,7 +3008,7 @@ done:
 	return false;
 }
 
-static void do_section_search(RCore *core, struct search_parameters *param, const char *input) {
+static void do_section_search(RCore *core, RSearchParameters *param, const char *input) {
 	double threshold = 1;
 	bool r2mode = false;
 	if (R_STR_ISNOTEMPTY (input)) {
@@ -3095,33 +3096,81 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 	}
 }
 
-static void do_asm_search(RCore *core, struct search_parameters *param, const char *input, int mode, RInterval search_itv) {
+static bool parse_ad_modifiers(RCore *core, const char *input, bool *regexp, bool *every_byte, int *outmode, const char **arg) {
+	const char *p = input + 1;
+	bool has_outmode = false;
+	*regexp = false;
+	*every_byte = false;
+	if (*p == '/') {
+		*regexp = true;
+		p++;
+	}
+	for (; *p && *p != ' '; p++) {
+		switch (*p) {
+		case 'a':
+			if (!*regexp || *every_byte) {
+				goto invalid;
+			}
+			*every_byte = true;
+			break;
+		case 'j':
+		case 'q':
+		case '*':
+			if (has_outmode) {
+				goto invalid;
+			}
+			*outmode = *p == 'j'? R_MODE_JSON
+				: *p == 'q'? R_MODE_SIMPLE: R_MODE_RADARE;
+			has_outmode = true;
+			break;
+		default:
+			goto invalid;
+		}
+	}
+	*arg = p;
+	return true;
+
+invalid:
+	r_core_return_invalid_command (core, "/ad", *p);
+	return false;
+}
+
+static void do_asm_search(RCore *core, RSearchParameters *param, const char *input, int mode, RInterval search_itv) {
 	RCoreAsmHit *hit; // WTF LOL must use RSearchHit in here!
 	RListIter *iter, *itermap;
 	int count = 0;
 	RIOMap *map;
-	bool regexp = input[0] && input[1] == '/'; // "/ad/"
-	bool everyByte = regexp && input[0] && input[1] && input[2] == 'a';
-	char *end_cmd = strchr (input, ' ');
-	if (regexp && input[2] == '?') {
-		r_core_cmd_help_contains (core, help_msg_slash_ad, "/ad/");
+	bool regexp = false;
+	bool everyByte = false;
+	const char *end_cmd = strchr (input, ' ');
+	if (mode == 0 && input[1] == '/' && input[2] == '?' && (!input[3] || input[3] == ' ')) {
+		r_cons_cmd_help_match (core->cons, help_msg_slash_ad, "/ad/", 0, false);
 		return;
 	}
-	switch ((end_cmd ? *(end_cmd - 1) : input[0]? input[1]: 0)) {
-	case 'j':
-		param->outmode = R_MODE_JSON;
-		break;
-	case 'q':
-		param->outmode = R_MODE_SIMPLE;
-		break;
-	case '*':
-		param->outmode = R_MODE_RADARE;
-		break;
-	case '?':
-		r_core_cmd_help (core, help_msg_slash_ad);
-		return;
-	default:
-		break;
+	if (mode == 0) {
+		int outmode = param->outmode;
+		if (!parse_ad_modifiers (core, input, &regexp, &everyByte, &outmode, &end_cmd)) {
+			param->outmode = 0;
+			return;
+		}
+		param->outmode = outmode;
+	} else {
+		switch ((end_cmd ? *(end_cmd - 1) : input[0]? input[1]: 0)) {
+		case 'j':
+			param->outmode = R_MODE_JSON;
+			break;
+		case 'q':
+			param->outmode = R_MODE_SIMPLE;
+			break;
+		case '*':
+			param->outmode = R_MODE_RADARE;
+			break;
+		case '?':
+			r_cons_cmd_help (core->cons, help_msg_slash_ad);
+			return;
+		default:
+			break;
+		}
 	}
 	if (mode == 'o') {
 		everyByte = true;
@@ -3129,12 +3178,12 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 
 	int maxhits = (int) r_config_get_i (core->config, "search.maxhits");
 	if (param->outmode == R_MODE_JSON) {
+		if (!param->pj) {
+			param->pj = r_core_pj_new (core);
+		}
 		pj_a (param->pj);
 	}
 	r_cons_break_push (core->cons, NULL, NULL);
-	if (everyByte) {
-		input ++;
-	}
 	r_list_foreach (param->boundaries, itermap, map) {
 		if (!r_itv_overlap (search_itv, map->itv)) {
 			continue;
@@ -3147,13 +3196,15 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		if (maxhits && count >= maxhits) {
 			break;
 		}
-		RList *hits = r_core_asm_strsearch (core, end_cmd, from, to, maxhits, regexp, everyByte, mode);
+		int remaining = maxhits? maxhits - count: 0;
+		RList *hits = r_core_asm_strsearch (core, end_cmd, from, to, remaining, regexp, everyByte, mode);
 		if (hits) {
 			r_list_foreach (hits, iter, hit) {
 				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				search_hit_at (core, param, hit, NULL);
+				count++;
 			}
 			r_list_free (hits);
 		}
@@ -3166,7 +3217,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	r_config_set_i (core->config, "search.kwidx", ++core->search->n_kws);
 }
 
-static void do_string_search(RCore *core, RInterval search_itv, struct search_parameters *param) {
+static void do_string_search(RCore *core, RInterval search_itv, RSearchParameters *param) {
 	ut64 at;
 	ut8 *buf;
 	RSearch *search = core->search;
@@ -3333,7 +3384,7 @@ static void search_similar_pattern_in(RCore *core, int count, ut64 from, ut64 to
 	free (block);
 }
 
-static void search_similar_pattern(RCore *core, int count, struct search_parameters *param) {
+static void search_similar_pattern(RCore *core, int count, RSearchParameters *param) {
 	RIOMap *p;
 	RListIter *iter;
 	r_cons_break_push (core->cons, NULL, NULL);
@@ -3354,7 +3405,7 @@ static bool isArm(RCore *core) {
 }
 
 void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
-	struct search_parameters *param = user;
+	RSearchParameters *param = user;
 	const bool isarm = isArm (core);
 	// this is expensive operation that could be cached but is a callback
 	// and for not messing adding a new param
@@ -3639,7 +3690,7 @@ static void __core_cmd_search_asm_infinite(RCore *core, const char *arg) {
 
 static void cmd_search_xn(RCore *core, const char *input) {
 	if (strchr (input, '?')) {
-		r_core_cmd_help_match (core, help_msg_slash_x, "/xn");
+		r_cons_cmd_help_match (core->cons, help_msg_slash_x, "/xn", 0, true);
 		return;
 	}
 	char sizeChar = input[2];
@@ -3707,7 +3758,7 @@ static void cmd_search_xn(RCore *core, const char *input) {
 
 static void cmd_search_xv(RCore *core, const char *input) {
 	if (strchr (input, '?')) {
-		r_core_cmd_help_match (core, help_msg_slash_x, "/xv");
+		r_cons_cmd_help_match (core->cons, help_msg_slash_x, "/xv", 0, true);
 		return;
 	}
 	char sizeChar = input[2];
@@ -4083,14 +4134,14 @@ static void cmd_search_baddr(RCore *core, const char *input) {
 	r_list_free (bounds);
 }
 
-static bool cmd_search_gadget(RCore *core, RInterval search_itv, const char *input, struct search_parameters *param) {
+static bool cmd_search_gadget(RCore *core, RInterval search_itv, const char *input, RSearchParameters *param) {
 	if (*input == '?') {
-		r_core_cmd_help (core, help_msg_slash_G);
+		r_cons_cmd_help (core->cons, help_msg_slash_G);
 		return true;
 	}
 	if (*input == 'k') {
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_slash_Gk);
+			r_cons_cmd_help (core->cons, help_msg_slash_Gk);
 		} else {
 			rop_kuery (core, input + 1, param->pj);
 		}
@@ -4098,7 +4149,7 @@ static bool cmd_search_gadget(RCore *core, RInterval search_itv, const char *inp
 	}
 	if (*input == 'R' || *input == 'C' || *input == 'J') {
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_slash_G);
+			r_cons_cmd_help (core->cons, help_msg_slash_G);
 		} else {
 			r_core_search_rop (core, search_itv, *input, 0, input + 1, input[1] == '/', param);
 		}
@@ -4154,12 +4205,65 @@ static bool cmd_search_gadget(RCore *core, RInterval search_itv, const char *inp
 	return true;
 }
 
+static void cmd_search_magic(RCore *core, RSearchParameters *param, const char *file, bool text) {
+	if (core->magic) {
+		r_magic_free (core->magic);
+		core->magic = NULL;
+	}
+
+	RSearchKeyword *kw = r_search_keyword_new_hexmask ("00", NULL);
+	kw->keyword_length = 1;
+	r_search_reset (core->search, R_SEARCH_MAGIC);
+	r_search_kw_add (core->search, kw);
+
+	if (param->outmode == R_MODE_JSON) {
+		pj_a (param->pj);
+	}
+
+	int maxHits = r_config_get_i (core->config, "search.maxhits");
+	MagicContext mc = {
+		.core = core,
+		.ofile = NULL,
+		.hits = 0,
+		.text = text
+	};
+	ut64 addr;
+	RListIter *iter;
+	RIOMap *map;
+	r_list_foreach (param->boundaries, iter, map) {
+		if (param->outmode != R_MODE_JSON) {
+			eprintf ("-- %"PFMT64x" %"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+		}
+		r_cons_break_push (core->cons, NULL, NULL);
+		for (addr = r_io_map_begin (map); addr < r_io_map_end (map); addr++) {
+			if (r_cons_is_breaked (core->cons)) {
+				break;
+			}
+			int ret = magic_at (&mc, kw, file, addr, 0, false,
+					param->outmode == R_MODE_JSON? param->pj: NULL);
+			if (ret == -1) {
+				break;
+			}
+			if (maxHits && mc.hits >= maxHits) {
+				break;
+			}
+			addr += ret - 1;
+		}
+		r_cons_clear_line (core->cons, true, true);
+		r_cons_break_pop (core->cons);
+	}
+	free (mc.ofile);
+	if (param->outmode == R_MODE_JSON) {
+		pj_end (param->pj);
+	}
+}
+
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	bool dosearch_read = false;
 	int errcode = -1;
 	RCore *core = (RCore *) data;
-	struct search_parameters param = {
+	RSearchParameters param = {
 		.core = core,
 		.cmd_hit = r_config_get (core->config, "cmd.hit"),
 		.outmode = 0,
@@ -4264,7 +4368,7 @@ reread:
 		goto reread;
 	case 'b': // "/b" backward search
 		if (*(++input) == '?') {
-			r_core_cmd_help (core, help_msg_slash_backward);
+			r_cons_cmd_help (core->cons, help_msg_slash_backward);
 			goto beach;
 		}
 		param_offset--;
@@ -4287,7 +4391,7 @@ reread:
 		goto beach;
 	case 'o': { // "/o" print the offset of the Previous opcode
 			  if (input[1] == '?') {
-				  r_core_cmd_help_match (core, help_msg_slash, "/o");
+				  r_cons_cmd_help_match (core->cons, help_msg_slash, "/o", 0, true);
 				  break;
 			  }
 			  ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
@@ -4299,6 +4403,10 @@ reread:
 				  addr = UT64_MAX;
 				  (void)r_core_asm_bwdis_len (core, NULL, &addr, n);
 			  }
+			  if (addr == UT64_MAX) {
+				  // no window disassembles cleanly, fall back to the same walk as pd
+				  addr = r_core_prevop_addr_force (core, core->addr, n);
+			  }
 			  if (param.outmode == R_MODE_JSON) {
 				  r_cons_printf (core->cons, "[%"PFMT64u "]", addr);
 			  } else {
@@ -4308,7 +4416,7 @@ reread:
 		break;
 	case 'O': { // "/O" alternative to "/o"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/O");
+			r_cons_cmd_help_match (core->cons, help_msg_slash, "/O", 0, true);
 			break;
 		}
 		ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
@@ -4341,7 +4449,7 @@ reread:
 		case 'e': // "/re"
 			if (input[2] && input[2] != ' ') {
 				if (input[2] == '?') {
-					r_core_cmd_help_match (core, help_msg_slash_r, "/re");
+					r_cons_cmd_help_match (core->cons, help_msg_slash_r, "/re", 0, true);
 					dosearch = false;
 				}
 				break;
@@ -4383,7 +4491,7 @@ reread:
 			}
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_slash_r);
+			r_cons_cmd_help (core->cons, help_msg_slash_r);
 			dosearch = false;
 			break;
 		default:
@@ -4396,15 +4504,15 @@ reread:
 	case 'a': // "/a"
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_slash_a);
+			r_cons_cmd_help (core->cons, help_msg_slash_a);
 			break;
 		case 'g': // "/ag" - search in graph paths
 			cmd_search_ag (core, input + 1);
 			goto beach;
 		case 'd': // "/ad"
 			dosearch = false;
-			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_a, "/ad");
+			if (input[2] == '?' && (!input[3] || input[3] == ' ')) {
+				r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/ad", 0, true);
 			} else {
 				do_asm_search (core, &param, input + 1, 0, search_itv);
 			}
@@ -4412,7 +4520,7 @@ reread:
 		case 'e': // "/ae"
 			dosearch = false;
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_a, "/ae");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/ae", 0, true);
 			} else {
 				do_asm_search (core, &param, input + 2, 'e', search_itv);
 			}
@@ -4420,7 +4528,7 @@ reread:
 		case 'c': // "/ac"
 			dosearch = false;
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_a, "/ac");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/ac", 0, true);
 			} else {
 				do_asm_search (core, &param, input + 2, 'c', search_itv);
 			}
@@ -4428,7 +4536,7 @@ reread:
 		case 'o':  // "/ao"
 			dosearch = false;
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_a, "/ao");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/ao", 0, true);
 			} else {
 				do_asm_search (core, &param, input + 2, 'o', search_itv);
 			}
@@ -4436,7 +4544,7 @@ reread:
 		case 'a': // "/aa"
 			dosearch = false;
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_a, "/aa");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/aa", 0, true);
 			} else {
 				do_asm_search (core, &param, input + 2, 'a', search_itv);
 
@@ -4444,7 +4552,7 @@ reread:
 			break;
 		case 'i': // "/ai"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_a, "/ai");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/ai", 0, true);
 			} else {
 				do_asm_search (core, &param, input + 2, 'i', search_itv);
 			}
@@ -4453,7 +4561,7 @@ reread:
 			if (input[2] == 'f') {
 				cmd_slash_ab (core, (int)r_num_math (core->num, input + 2), true);
 			} else if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_a, "/ab");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/ab", 0, true);
 			} else if (input[2] == ' ' || input[2] == 0) {
 				cmd_slash_ab (core, (int)r_num_math (core->num, input + 2), false);
 			} else {
@@ -4462,14 +4570,14 @@ reread:
 			break;
 		case '1': // "/a1"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_a, "/a1");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/a1", 0, true);
 			} else {
 				cmd_search_a1 (core, (int)r_num_math (core->num, input + 2));
 			}
 			break;
 		case 'I': //  "/aI" - infinite
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_a, "/aI");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/aI", 0, true);
 			} else {
 				__core_cmd_search_asm_infinite (core, r_str_trim_head_ro (input + 1));
 			}
@@ -4491,10 +4599,10 @@ reread:
 			break;
 		case 's': // "/asl"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_a, "/as");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/as", 0, true);
 			} else if (input[2] == 'l') { // "asl"
 				if (input[2] == '?') {
-					r_core_cmd_help_match (core, help_msg_slash_a, "/as");
+					r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/as", 0, true);
 				} else {
 					r_core_call (core, "asl");
 				}
@@ -4505,7 +4613,7 @@ reread:
 			break;
 		case 'u': // "/au"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_a, "/az");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/az", 0, true);
 			} else {
 				do_unkjmp_search (core, &param, false, r_str_trim_head_ro (input + 2));
 			}
@@ -4513,7 +4621,7 @@ reread:
 		case 'z': // "/az"
 			switch (input[2]) {
 			case '?': // "/az"
-				r_core_cmd_help_match (core, help_msg_slash_a, "/az");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/az", 0, true);
 				break;
 			case 'q': // "/azq"
 				do_analstr_search (core, &param, true, r_str_trim_head_ro (input + 3));
@@ -4533,7 +4641,7 @@ reread:
 				do_analstr_search (core, &param, false, "");
 				break;
 			default:
-				r_core_cmd_help_match (core, help_msg_slash_a, "/az");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/az", 0, true);
 				break;
 			}
 			dosearch = false;
@@ -4547,7 +4655,7 @@ reread:
 		dosearch = true;
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_slash_c);
+			r_cons_cmd_help (core->cons, help_msg_slash_c);
 			goto beach;
 
 		case 'k': // "/ck"
@@ -4598,7 +4706,7 @@ reread:
 				char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || input[2] == '?') {
-					r_core_cmd_help (core, help_msg_slash_cc);
+					r_cons_cmd_help (core->cons, help_msg_slash_cc);
 					goto beach;
 				}
 				char *s = strdup (arg);
@@ -4626,7 +4734,7 @@ reread:
 					free (hashValue);
 					r_core_return_value (core, 0);
 				} else {
-					r_core_cmd_help (core, help_msg_slash_cc);
+					r_cons_cmd_help (core->cons, help_msg_slash_cc);
 				}
 				free (s);
 				goto beach;
@@ -4709,7 +4817,7 @@ reread:
 				char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || *(space - 1) == '?') {
-					r_core_cmd_help_match (core, help_msg_slash_c, "/ca");
+					r_cons_cmd_help_match (core->cons, help_msg_slash_c, "/ca", 0, true);
 					goto beach;
 				} else {
 					if (input[2] == 'j') {
@@ -4761,14 +4869,14 @@ reread:
 				char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || *(space - 1) == '?') {
-					r_core_cmd_help_match (core, help_msg_slash_c, "/cp");
+					r_cons_cmd_help_match (core->cons, help_msg_slash_c, "/cp", 0, true);
 					goto beach;
 				} else {
 					char *p = strchr (arg, ' ');
 					if (p) {
 						*p++ = 0;
 					} else {
-						r_core_cmd_help_match (core, help_msg_slash_c, "/cp");
+						r_cons_cmd_help_match (core->cons, help_msg_slash_c, "/cp", 0, true);
 						goto beach;
 					}
 
@@ -4800,17 +4908,17 @@ reread:
 			}
 		default: {
 			dosearch = false;
-			r_core_cmd_help (core, help_msg_slash_c);
+			r_cons_cmd_help (core->cons, help_msg_slash_c);
 		}
 		}
 	} break;
 	case 'm': // "/m"
 		dosearch = false;
 		if (input[1] == '?') { // "/me"
-			r_core_cmd_help (core, help_msg_slash_magic);
+			r_cons_cmd_help (core->cons, help_msg_slash_magic);
 		} else if (input[1] == 'b') { // "/mb"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_magic, "/mb");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_magic, "/mb", 0, true);
 				break;
 			}
 			bool bin_verbose = r_config_get_i (core->config, "bin.verbose");
@@ -4820,7 +4928,7 @@ reread:
 			r_config_set_b (core->config, "bin.verbose", bin_verbose);
 		} else if (input[1] == 'm') { // "/mm"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_magic, "/mm");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_magic, "/mm", 0, true);
 				break;
 			}
 			ut64 addr = search_itv.addr;
@@ -4852,71 +4960,42 @@ reread:
 			eprintf ("\n");
 		} else if (input[1] == 'e') { // "/me"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_magic, "/me");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_magic, "/me", 0, true);
 				break;
 			}
 			r_cons_printf (core->cons, "* r2 thinks%s\n", input + 2);
+		} else if (input[1] == 't') { // "/mt"
+			const char *file = NULL;
+			if (input[2] == '?') {
+				r_cons_cmd_help_match (core->cons, help_msg_slash_magic, "/mt", 0, true);
+			} else if (input[2] == ' ') {
+				file = input + 3;
+				cmd_search_magic (core, &param, file, true);
+			} else if (input[2] == '\0') {
+				cmd_search_magic (core, &param, NULL, true);
+			} else if (input[2] == 'j' && (input[3] == '\0' || input[3] == ' ')) {
+				file = input[3] == ' '? input + 4: NULL;
+				cmd_search_magic (core, &param, file, true);
+			} else {
+				r_cons_cmd_help (core->cons, help_msg_slash_magic);
+			}
 		} else if (input[1] == ' ' || input[1] == '\0' || param.outmode == R_MODE_JSON) {
-			int ret;
-			const char *file = input[param_offset - 1]? input + param_offset: NULL;
-			ut64 addr = search_itv.addr;
-			RListIter *iter;
-			RIOMap *map;
-			RSearchKeyword *kw;
-
-			kw = r_search_keyword_new_hexmask ("00", NULL);
-			kw->keyword_length = 1;
-			r_search_reset (core->search, R_SEARCH_MAGIC);
-			r_search_kw_add (core->search, kw);
-
-			if (param.outmode == R_MODE_JSON) {
-				pj_a (param.pj);
+			const char *file = NULL;
+			if (input[param_offset - 1]) {
+				file = input + param_offset;
 			}
-
-			int maxHits = r_config_get_i (core->config, "search.maxhits");
-			MagicContext mc = {
-				.core = core,
-				.ofile = NULL,
-				.hits = 0
-			};
-			r_list_foreach (param.boundaries, iter, map) {
-				if (param.outmode != R_MODE_JSON) {
-					eprintf ("-- %"PFMT64x" %"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
-				}
-				r_cons_break_push (core->cons, NULL, NULL);
-				for (addr = r_io_map_begin (map); addr < r_io_map_end (map); addr++) {
-					if (r_cons_is_breaked (core->cons)) {
-						break;
-					}
-					ret = magic_at (&mc, kw, file, addr, 0, false,
-							param.outmode == R_MODE_JSON? param.pj: NULL);
-					if (ret == -1) {
-						// something went terribly wrong.
-						break;
-					}
-					if (maxHits && mc.hits >= maxHits) {
-						break;
-					}
-					addr += ret - 1;
-				}
-				r_cons_clear_line (core->cons, true, true);
-				r_cons_break_pop (core->cons);
-			}
-			free (mc.ofile);
-			if (param.outmode == R_MODE_JSON) {
-				pj_end (param.pj);
-			}
+			cmd_search_magic (core, &param, file, false);
 		} else {
-			r_core_cmd_help (core, help_msg_slash_magic);
+			r_cons_cmd_help (core->cons, help_msg_slash_magic);
 		}
 		r_cons_clear_line (core->cons, true, true);
 		break;
 	case 'p': // "/p"
 		if (input[1] == '?') { // "/p" -- find next pattern
-			r_core_cmd_help (core, help_msg_slash_pattern);
+			r_cons_cmd_help (core->cons, help_msg_slash_pattern);
 		} else if (input[1] == 'p') { // "/pp" -- find next prelude
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_pattern, "/pp");
+				r_cons_cmd_help_match (core->cons, help_msg_slash_pattern, "/pp", 0, true);
 			} else {
 				__core_cmd_search_backward_prelude (core, false, true);
 			}
@@ -4969,14 +5048,14 @@ reread:
 				}
 			}
 			if (err) {
-				r_core_cmd_help_match (core, help_msg_slash, "/V");
+				r_cons_cmd_help_match (core->cons, help_msg_slash, "/V", 0, true);
 			}
 		}
 		dosearch = false;
 		break;
 	case 'v': // "/v"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/v");
+			r_cons_cmd_help_match (core->cons, help_msg_slash, "/v", 0, true);
 			break;
 		}
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
@@ -4993,7 +5072,7 @@ reread:
 				bsize = sizeof (ut64) * len;
 				v_buf = v_writebuf (core, nums, len, '8', bsize);
 			} else {
-				r_core_cmd_help_match (core, help_msg_slash, "/v");
+				r_cons_cmd_help_match (core->cons, help_msg_slash, "/v", 0, true);
 			}
 			break;
 		case '1':
@@ -5001,7 +5080,7 @@ reread:
 				bsize = sizeof (ut8) * len;
 				v_buf = v_writebuf (core, nums, len, '1', bsize);
 			} else {
-				r_core_cmd_help_match (core, help_msg_slash, "/v");
+				r_cons_cmd_help_match (core->cons, help_msg_slash, "/v", 0, true);
 			}
 			break;
 		case '2':
@@ -5009,7 +5088,7 @@ reread:
 				bsize = sizeof (ut16) * len;
 				v_buf = v_writebuf (core, nums, len, '2', bsize);
 			} else {
-				r_core_cmd_help_match (core, help_msg_slash, "/v");
+				r_cons_cmd_help_match (core->cons, help_msg_slash, "/v", 0, true);
 			}
 			break;
 		default: // default size
@@ -5020,7 +5099,7 @@ reread:
 					v_buf = v_writebuf (core, nums, len, '4', bsize);
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_slash, "/v");
+				r_cons_cmd_help_match (core->cons, help_msg_slash, "/v", 0, true);
 			}
 			break;
 		}
@@ -5034,12 +5113,12 @@ reread:
 		break;
 	case 'w': // "/w" search wide string, includes ignorecase search functionality (/wi cmd)!
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_slash_wide_string);
+			r_cons_cmd_help (core->cons, help_msg_slash_wide_string);
 			break;
 		}
 		if (input[2]) {
 			if (input[2] == '?') { // "/w?"
-				r_core_cmd_help (core, help_msg_slash_wide_string);
+				r_cons_cmd_help (core->cons, help_msg_slash_wide_string);
 				break;
 			}
 			if (input[1] == 'j' || input[2] == 'j') { // "/wj"
@@ -5072,7 +5151,7 @@ reread:
 		break;
 	case 'i': // "/i"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/i");
+			r_cons_cmd_help_match (core->cons, help_msg_slash, "/i", 0, true);
 			break;
 		}
 		if (input[param_offset - 1] != ' ') {
@@ -5109,7 +5188,7 @@ reread:
 	case 'k': // "/k" Rabin Karp String search
 		{
 			if (input[1] == '?') {
-				r_core_cmd_help (core, help_msg_slash_k);
+				r_cons_cmd_help (core->cons, help_msg_slash_k);
 				break;
 			}
 			inp = r_str_trim_dup (input + 1 + ignorecase + (param.outmode == R_MODE_JSON ? 1 : 0));
@@ -5129,7 +5208,7 @@ reread:
 		break;
 	case 'e': // "/e" match regexp
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/e");
+			r_cons_cmd_help_match (core->cons, help_msg_slash, "/e", 0, true);
 		} else if (input[1]) {
 			if (input[1] == 'j') {
 				param.outmode = R_MODE_JSON;
@@ -5160,7 +5239,7 @@ reread:
 		goto beach;
 	case 'd': // "/d" search delta key
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_slash_delta);
+			r_cons_cmd_help (core->cons, help_msg_slash_delta);
 			break;
 		}
 		if (input[1]) {
@@ -5178,7 +5257,7 @@ reread:
 
 		char *p, *arg = r_str_trim_dup (input + 1);
 		if (*arg == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/h");
+			r_cons_cmd_help_match (core->cons, help_msg_slash, "/h", 0, true);
 			break;
 		}
 		// "/h*" we do not add a flag for the search hit.
@@ -5211,7 +5290,7 @@ reread:
 	break;
 	case 'f': // "/f" forward search
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_slash_forward);
+			r_cons_cmd_help (core->cons, help_msg_slash_forward);
 			break;
 		}
 		if (core->addr) {
@@ -5279,12 +5358,12 @@ reread:
 			r_str_argv_free (args);
 			free (buf);
 		} else {
-			r_core_cmd_help_match (core, help_msg_slash, "/F");
+			r_cons_cmd_help_match (core->cons, help_msg_slash, "/F", 0, true);
 		}
 		break;
 	case 'x': // "/x" search hex
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_slash_x);
+			r_cons_cmd_help (core->cons, help_msg_slash_x);
 		} else if (input[1] == 'n') {
 			cmd_search_xn (core, input);
 		} else if (input[1] == 'v') {
@@ -5314,7 +5393,7 @@ reread:
 		break;
 	case 's': // "/s"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_slash_sections);
+			r_cons_cmd_help (core->cons, help_msg_slash_sections);
 			break;
 		}
 		if (input[1] == 'j') { // "/sj"
@@ -5358,7 +5437,7 @@ again:
 			free (str);
 			free (buf);
 		} else {
-			r_core_cmd_help_match (core, help_msg_slash, "/+");
+			r_cons_cmd_help_match (core->cons, help_msg_slash, "/+", 0, true);
 		}
 		break;
 	case 'z': // "/z" search strings of min-max range
@@ -5366,7 +5445,7 @@ again:
 		char *p;
 		ut32 min, max;
 		if (!input[1]) {
-			r_core_cmd_help_match (core, help_msg_slash, "/z");
+			r_cons_cmd_help_match (core->cons, help_msg_slash, "/z", 0, true);
 			break;
 		}
 		const char *maxstr = NULL;
@@ -5375,7 +5454,7 @@ again:
 			maxstr = r_str_trim_head_ro (p + 1);
 			max = r_num_math (core->num, maxstr);
 		} else {
-			r_core_cmd_help_match (core, help_msg_slash, "/z");
+			r_cons_cmd_help_match (core->cons, help_msg_slash, "/z", 0, true);
 			break;
 		}
 		const char *minstr = r_str_trim_head_ro (input + 2);
@@ -5406,7 +5485,7 @@ again:
 	}
 	break;
 	case '?': // "/?"
-		r_core_cmd_help (core, help_msg_slash);
+		r_cons_cmd_help (core->cons, help_msg_slash);
 		break;
 	default:
 		R_LOG_INFO ("See /? for help");

@@ -87,8 +87,8 @@ typedef struct r_socket_t {
 typedef struct r_socket_http_options {
 	RList *authtokens;
 	bool accept_timeout;
-	int timeout;
 	bool httpauth;
+	int timeout;
 } RSocketHTTPOptions;
 
 #define R_SOCKET_PROTO_TCP     IPPROTO_TCP

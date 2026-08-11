@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - nibble, pancake, alvarofe */
+/* radare - LGPL - Copyright 2009-2026 - nibble, pancake, alvarofe */
 
 #include "bin_pe.inc.c"
 #include "../format/pe/dotnet.h"
@@ -180,7 +180,8 @@ static RList *fields(RBinFile *bf) {
 	int i;
 	ut64 tmp = addr;
 	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
-		if (pe->nt_headers->optional_header.DataDirectory[i].Size > 0) {
+		if (pe->nt_headers->optional_header.DataDirectory[i].VirtualAddress ||
+			pe->nt_headers->optional_header.DataDirectory[i].Size) {
 			addr = tmp + i*8;
 			switch (i) {
 			case PE_IMAGE_DIRECTORY_ENTRY_EXPORT:
@@ -349,7 +350,8 @@ static char *header(RBinFile *bf, int mode) {
 	}
 	int i;
 	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
-		if (pe->nt_headers->optional_header.DataDirectory[i].Size > 0) {
+		if (pe->nt_headers->optional_header.DataDirectory[i].VirtualAddress ||
+			pe->nt_headers->optional_header.DataDirectory[i].Size) {
 			switch (i) {
 			case PE_IMAGE_DIRECTORY_ENTRY_EXPORT:
 				p ("IMAGE_DIRECTORY_ENTRY_EXPORT\n");
@@ -468,7 +470,8 @@ RBinPlugin r_bin_plugin_pe = {
 	.create = &create,
 	.get_vaddr = &get_vaddr,
 	.write = &r_bin_write_pe,
-	.hashes = &compute_hashes
+	.hashes = &compute_hashes,
+	.load_resources = &load_resources
 };
 
 #ifndef R2_PLUGIN_INCORE

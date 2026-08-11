@@ -37,9 +37,9 @@ typedef struct r_fs_file_t {
 	char *path;
 	ut64 off;
 	ut32 size;
+	char type;
 	ut8 *data;
 	void *ctx;
-	char type;
 	ut32 uid; // owner
 	ut32 gid; // group
 	ut32 perm; // rwx
@@ -51,10 +51,10 @@ typedef struct r_fs_file_t {
 	// r_fs_file_free takes ownership and frees all of these.
 	RBuffer *buf;      // zero-copy slice of the container, or decompressed bytes
 	char *arch;        // "arm", "x86", ...; NULL when unknown
-	int bits;
 	char *machine;     // cpu subtype / abi string
 	char *btype;       // bin type (exec, dyn, ...)
 	const char *container; // name of the producing fs plugin; do not free
+	int bits;
 } RFSFile;
 
 typedef struct r_fs_root_t {

@@ -43,7 +43,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	}
 	const char *section_name = s ? s->name : "";
 	const char *type_string = r_bin_string_type (string->type);
-	ut64 vaddr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
+	ut64 vaddr = io->va ? r_bin_get_vaddr (bin, string->paddr, string->vaddr) : string->paddr;
 	ut64 addr = vaddr; // bf->bo? vaddr: string->vaddr;
 
 	// If raw string dump mode, use printf to dump directly to stdout.
@@ -98,6 +98,18 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 			section_name, type_string, string->string);
 		break;
 	}
+}
+
+static void string_set_addrs(RBinString *bs, ut64 str_start, ut64 pdelta, ut64 vdelta, ut64 baddr, ut64 maddr) {
+	ut64 addr = 0;
+	bs->paddr = r_add_overflow (str_start, baddr, &addr) ? str_start : addr;
+	if (r_sub_overflow (str_start, pdelta, &addr) ||
+			r_add_overflow (addr, vdelta, &addr) ||
+			r_add_overflow (addr, baddr, &addr) ||
+			r_add_overflow (addr, maddr, &addr)) {
+		addr = str_start;
+	}
+	bs->vaddr = addr;
 }
 
 // TODO: this code must be implemented in RSearch as options for the strings mode
@@ -419,10 +431,11 @@ static int string_scan_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_i
 				}
 			}
 			ut64 baddr = bf->loadaddr && bf->bo? bf->bo->baddr: bf->loadaddr;
-			// ut64 baddr = bf->bo? bf->bo->baddr: bf->loadaddr;
+			if (!s && bf->bo && RVecRBinSection_empty (&bf->bo->sections_vec) && !bf->loadaddr && bf->bo->baddr != UT64_MAX) {
+				baddr = bf->bo->baddr;
+			}
 			ut64 maddr = bf->bo? 0: bf->loadaddr;
-			bs.vaddr = str_start - pdelta + vdelta + baddr + maddr;
-			bs.paddr = str_start + baddr;
+			string_set_addrs (&bs, str_start, pdelta, vdelta, baddr, maddr);
 			char *str = r_strbuf_drain (sb);
 			sb = r_strbuf_new ("");
 			size_t before = strlen (str);
@@ -757,7 +770,7 @@ static RBinPlugin *get_plugin_from_buffer(RBin *bin, RBinFile *bf, const char *p
 		if (!plugin) {
 			plugin = r_bin_get_binplugin_by_buffer (bin, bf, buf);
 			if (!plugin) {
-				return r_libstore_find_name (bin->libstore, "any");
+				return r_libstore_find_name (bin->libstore, "null");
 			}
 		}
 	}
@@ -1426,8 +1439,17 @@ R_API RBinField *r_bin_file_add_field(RBinFile *binfile, const char *classname, 
  * bin, paddr otherwise */
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, paddr);
-	if (bf->bo->info && bf->bo->info->has_va) {
-		return bf->bo->baddr_shift + vaddr;
+	RBinObject *bo = bf->bo;
+	if (bo->info && bo->info->has_va) {
+		const ut64 file_baddr = bo->baddr - (ut64)bo->baddr_shift;
+		if (bo->baddr_shift && vaddr < file_baddr) {
+			return paddr;
+		}
+		if (bo->baddr_shift) {
+			ut64 addr = 0;
+			return r_add_overflow (bo->baddr, vaddr - file_baddr, &addr) ? paddr : addr;
+		}
+		return vaddr;
 	}
 	return paddr;
 }

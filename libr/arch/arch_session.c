@@ -44,6 +44,16 @@ R_API bool r_arch_session_decode(RArchSession *ai, RAnalOp *op, RArchDecodeMask 
 	return false;
 }
 
+// NULL session or missing callback is a no-op, so callers can reset unconditionally
+R_API bool r_arch_session_reset(RArchSession *ai) {
+	R_RETURN_VAL_IF_FAIL (ai, false);
+	RArchPluginResetCallback reset = R_UNWRAP3 (ai, plugin, reset);
+	if (reset != NULL) {
+		return reset (ai);
+	}
+	return false;
+}
+
 R_API bool r_arch_session_patch(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask) {
 	R_RETURN_VAL_IF_FAIL (ai && op, false);
 	RArchPluginEncodeCallback encode = R_UNWRAP3 (ai, plugin, encode);

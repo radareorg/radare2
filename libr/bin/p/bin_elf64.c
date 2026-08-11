@@ -139,6 +139,7 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.load_resources = &load_resources,
 	.sections_vec = &sections_vec,
 	.symbols_vec = symbols_vec,
 	.imports_vec = &imports_vec,

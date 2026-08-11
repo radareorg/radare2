@@ -3,3 +3,5 @@ default.cc=m68k
 m68k=cc
 cc.m68k.arg0=stack_rev
 cc.m68k.ret0=d0
+cc.m68k.clobber=d0,d1,a0,a1,fp0,fp1
+cc.m68k.preserve=d2,d3,d4,d5,d6,d7,a2,a3,a4,a5,a6,a7,fp2,fp3,fp4,fp5,fp6,fp7

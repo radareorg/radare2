@@ -8,6 +8,8 @@ typedef struct {
 
 static inline bool r_arch_cs_disasm(csh handle, const uint8_t **code, size_t *size, uint64_t *addr, RArchCSInsn *ci) {
 	ci->insn.detail = &ci->detail;
+	// capstone post printers inspect the mnemonic before fill_insn writes it
+	ci->insn.mnemonic[0] = 0;
 	return cs_disasm_iter (handle, code, size, addr, &ci->insn);
 }
 
@@ -78,42 +80,24 @@ static bool r_arch_cs_init(RArchSession *as, csh *cs_handle) {
 		*cs_handle = 0;
 	} else {
 		cs_option (*cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
-#if CS_API_MAJOR >= 4
 		// R2R db/anal/emu db/cmd/cmd_ahi
 		if (CSINC_ARCH == CS_ARCH_X86) {
 			cs_option (*cs_handle, CS_OPT_UNSIGNED, CS_OPT_ON);
 		}
-#endif
 	}
-#if 0
-	if (*cs_handle) {
-		if (a->config->syntax == R_ARCH_SYNTAX_ATT) {
-			cs_option (a->cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
-#if CS_API_MAJOR >= 4
-		} else if (a->config->syntax == R_ARCH_SYNTAX_MASM) {
-			cs_option (a->cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
-#endif
-		} else {
-			cs_option (a->cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
-		}
-	}
-#else
 	if (*cs_handle) {
 		switch (as->config->syntax) {
 		case R_ARCH_SYNTAX_ATT:
 			cs_option (*cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
 			break;
-#if CS_API_MAJOR >= 4
 		case R_ARCH_SYNTAX_MASM:
 			cs_option (*cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
 			break;
-#endif
 		default:
 			cs_option (*cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
 			break;
 		}
 	}
-#endif
 	return true;
 }
 

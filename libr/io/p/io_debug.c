@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2025 - pancake */
+/* radare - LGPL - Copyright 2007-2026 - pancake */
 
 #include <errno.h>
 #include <r_lib.h>
@@ -72,11 +72,19 @@ static int setup_tokens(void) {
 	}
 	err = 0;
 err_enable:
+	if (err) {
+		// read before CloseHandle, which clobbers the thread error code
+		// systems without SeDebugPrivilege (reactos, some wine setups) cannot
+		// grant it and debugging own child processes works anyway, so this is
+		// only worth reporting when it is an unexpected failure
+		if (GetLastError () == ERROR_NO_SUCH_PRIVILEGE) {
+			R_LOG_DEBUG ("SeDebugPrivilege is not available on this system");
+		} else {
+			r_sys_perror ("setup_tokens");
+		}
+	}
 	if (tok) {
 		CloseHandle (tok);
-	}
-	if (err) {
-		r_sys_perror ("setup_tokens");
 	}
 	return err;
 }
@@ -371,6 +379,10 @@ static void fork_child_callback(void *user) {
 	char **argv = r_str_argv (data->cmd, NULL);
 	if (!argv) {
 		exit (1);
+	}
+	if (!data->io->envprofile) {
+		char **env = r_sys_get_environ ();
+		data->io->envprofile = r_run_get_environ_profile (env);
 	}
 	r_sys_clearenv ();
 	RRunProfile *rp = _get_run_profile (data->io, data->bits, argv);

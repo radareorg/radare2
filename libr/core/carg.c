@@ -4,21 +4,34 @@
 
 #define MAXSTRLEN 50
 
-static const char *cc_source_first(RAnal *anal, const char *loc) {
-	return loc? r_anal_cc_location_first (anal, loc): NULL;
+// byte width of a C type, working around the ones the db cannot express per-target
+static int ctype_size(RAnal *anal, const char *cc, const char *ctype) {
+	const int word = r_anal_cc_wordsize (anal, cc);
+	if (strchr (ctype, '*')) {
+		return word;
+	}
+	const char *t = r_str_startswith (ctype, "unsigned ")? ctype + 9: ctype;
+	const char *os = anal->config->os;
+	const bool win = os && !strcmp (os, "windows");
+	if (!strcmp (t, "long")) {
+		// type.long.size is a fixed 64 in the db; C long is pointer-sized bar LLP64, where it is 4
+		return (win && word == 8)? 4: word;
+	}
+	if (!strcmp (t, "long double")) {
+		// absent from the db; msvc folds it onto double, i386 pads x87 to 12, 32-bit arm/mips/ppc use double
+		if (win) {
+			return 8;
+		}
+		if (word == 8) {
+			return 16;
+		}
+		const char *arch = anal->config->arch;
+		return (arch && r_str_startswith (arch, "x86"))? 12: 8;
+	}
+	return r_anal_type_bitsize (anal, t) / 8;
 }
 
-static bool cc_source_on_stack(RAnal *anal, const char *loc) {
-	const char *first = cc_source_first (anal, loc);
-	return first && *first == '^';
-}
-
-static const char *cc_source_reg(RAnal *anal, const char *loc) {
-	const char *first = cc_source_first (anal, loc);
-	return first && *first != '^'? first: NULL;
-}
-
-static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_name, const char *cc, int arg_num) {
+static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *cc, const char *fcn_name, int arg_num) {
 	if (!fcn_name || !arg || !anal) {
 		return;
 	}
@@ -33,12 +46,8 @@ static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_na
 	if (r_str_startswith (arg->c_type, "const ")) {
 		arg->c_type += 6;
 	}
-	r_strf_buffer (256);
-	const char *query = r_strf ("type.%s", arg->c_type);
-	arg->fmt = sdb_const_get (TDB, query, 0);
-	const char *t_query = r_strf ("type.%s.size", arg->c_type);
-	arg->size = sdb_num_get (TDB, t_query, 0) / 8;
-	arg->cc_source = r_anal_cc_argloc (anal, cc, arg_num, 0, -1);
+	arg->fmt = sdb_const_getf (TDB, NULL, "type.%s", arg->c_type);
+	arg->size = ctype_size (anal, cc, arg->c_type);
 }
 
 static ut64 get_buf_val(ut8 *buf, int endian, int width) {
@@ -58,7 +67,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 	ut64 bval = src;
 	int i;
 	const int endian = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
-	int width = (core->anal->config->bits == 64)? 8: 4;
+	const int width = r_anal_cc_wordsize (core->anal, r_anal_cc_default (core->anal));
 	int bsize = R_MIN (64, core->blocksize);
 
 	ut8 *buf = malloc (bsize);
@@ -170,13 +179,12 @@ R_API void r_core_print_func_args(RCore *core) {
 				}
 			}
 		}
-		RList *list = r_core_get_func_args (core, fcn_name);
+		RList *list = r_core_get_func_args (core, fcn_name, false);
 		if (!r_list_empty (list)) {
 			int argcnt = 0;
 			r_list_foreach (list, iter, arg) {
-				bool onstack = cc_source_on_stack (core->anal, arg->cc_source);
 				print_arg_str (core, argcnt, arg->name, color);
-				print_format_values (core, arg->fmt, onstack, arg->src, color);
+				print_format_values (core, arg->fmt, arg->on_stack, arg->src, color);
 				argcnt++;
 			}
 		} else {
@@ -201,13 +209,123 @@ static void r_anal_function_arg_free(RAnalFuncArg *arg) {
 	}
 }
 
+// printf-family formatters whose vararg list is described by the fixed arg right before "..."
+static bool is_format_function(const char *name) {
+	const char *base = r_str_rchr (name, NULL, '.');
+	base = base? base + 1: name;
+	static const char *const fns[] = {
+		"printf", "fprintf", "dprintf", "sprintf", "snprintf", "asprintf",
+		"syslog", "err", "errx", "warn", "warnx",
+		"wprintf", "fwprintf", "swprintf",
+		"__printf_chk", "__fprintf_chk", "__sprintf_chk", "__snprintf_chk", NULL
+	};
+	int i;
+	for (i = 0; fns[i]; i++) {
+		if (!strcmp (base, fns[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static char *read_format_string(RCore *core, ut64 ptr) {
+	if (!ptr || ptr == UT64_MAX) {
+		return NULL;
+	}
+	ut8 buf[256];
+	if (!r_io_read_at (core->io, ptr, buf, sizeof (buf) - 1)) {
+		return NULL;
+	}
+	buf[sizeof (buf) - 1] = 0;
+	if (!buf[0] || !IS_PRINTABLE (buf[0])) {
+		return NULL;
+	}
+	return strdup ((const char *)buf);
+}
+
+// the argument's home and its concrete value, resolved once from the cc layout
+static void arg_resolve(RCore *core, RAnalFuncArg *arg, const char *cc, int argno, int argc, bool incall) {
+	RAnalCCArgSlot slot;
+	if (!r_anal_cc_argslot (core->anal, cc, argno, argc, incall, &slot)) {
+		return;
+	}
+	arg->on_stack = !slot.reg;
+	const int width = (arg->size > 0 && arg->size <= 8)? (int)arg->size: 0;
+	arg->src = slot.reg
+		? r_reg_getv (core->anal->reg, slot.reg)
+		: r_anal_cc_argaddr (core->anal, core->anal->reg, &slot);
+	arg->value_set = r_anal_cc_argval (core->anal, core->anal->reg, cc, argno, argc, incall, width, &arg->value);
+	arg->value_signed = arg->c_type && r_type_is_signed (core->anal->sdb_types, arg->c_type);
+	// a narrow arg carries only its declared width, wherever it is homed
+	if (arg->value_set && width > 0 && width < 8) {
+		const ut64 mask = r_num_bitmask (width * 8);
+		arg->value &= mask;
+		if (arg->value_signed && (arg->value & (1ULL << (width * 8 - 1)))) {
+			arg->value |= ~mask;
+		}
+	}
+}
+
+static RAnalFuncArg *make_vararg(RCore *core, const char *cc, int slot, const char *ctype, int size, bool incall) {
+	RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
+	arg->orig_c_type = strdup (ctype);
+	arg->c_type = arg->orig_c_type;
+	arg->name = "";
+	arg->size = size;
+	// "z" makes print_fcn_arg/print_format_values render the string; scalars print their raw value
+	arg->fmt = !strcmp (ctype, "char *")? "z": NULL;
+	arg_resolve (core, arg, cc, slot, -1, incall);
+	return arg;
+}
+
+// 32-bit register-argument ABIs (arm, mips o32, ppc) start a doubleword on an even slot
+static int cc_align_slot(RAnal *anal, const char *cc, int slotidx, int argsize, int word) {
+	if (word != 4 || argsize <= word || !(slotidx & 1)) {
+		return slotidx;
+	}
+	RAnalCCArgSlot s;
+	if (r_anal_cc_argslot (anal, cc, 0, -1, false, &s) && s.reg) {
+		return slotidx + 1;
+	}
+	return slotidx;
+}
+
+// false leaves the "..." placeholder in place: the format arg isn't a resolvable literal
+static bool append_format_varargs(RCore *core, RList *list, const char *cc, int firstslot, bool incall) {
+	const RAnalFuncArg *fmtarg = r_list_last (list); // the fixed arg right before "..."
+	if (!fmtarg || !fmtarg->value_set) {
+		return false;
+	}
+	char *fmt = read_format_string (core, fmtarg->value);
+	if (!fmt) {
+		return false;
+	}
+	char *types = r_str_printfmt (fmt, core->anal->config->bits, 0);
+	free (fmt);
+	if (!types) {
+		return false;
+	}
+	const int word = r_anal_cc_wordsize (core->anal, cc);
+	int slotidx = firstslot; // the first vararg takes the "..." slot
+	int i, ntypes = r_str_split (types, ',');
+	const char *t = types;
+	for (i = 0; i < ntypes; i++, t += strlen (t) + 1) {
+		const int tsz = R_MAX (ctype_size (core->anal, cc, t), 4); // the default argument promotions floor a vararg at int
+		slotidx = cc_align_slot (core->anal, cc, slotidx, tsz, word);
+		r_list_append (list, make_vararg (core, cc, slotidx, t, tsz, incall));
+		slotidx += R_MAX (1, (tsz + word - 1) / word); // wide values span slots (%lld on 32-bit)
+	}
+	free (types);
+	return true;
+}
+
 /* Returns a list of RAnalFuncArg */
-R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
+R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name, bool incall) {
 	if (!fcn_name || !core->anal) {
 		return NULL;
 	}
 	Sdb *TDB = core->anal->sdb_types;
-	char *key = r_type_func_name (core->anal->sdb_types, fcn_name);
+	char *key = r_type_func_name (TDB, fcn_name);
 	if (!key) {
 		return NULL;
 	}
@@ -217,38 +335,37 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 		free (key);
 		return NULL;
 	}
-	const char *src = r_anal_cc_argloc (core->anal, cc, 0, 0, -1); // src of first argument
 	RList *list = r_list_newf ((RListFree)r_anal_function_arg_free);
 	int i;
-	ut64 spv = r_reg_getv (core->anal->reg, "SP");
-	ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
-	if (src && !strcmp (src, "^-")) {
-		for (i = nargs - 1; i >= 0; i--) {
-			RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
-			set_fcn_args_info (arg, core->anal, key, cc, i);
-			arg->src = spv;
-			spv += arg->size? arg->size : s_width;
-			r_list_append (list, arg);
+	const int word = r_anal_cc_wordsize (core->anal, cc);
+	bool variadic = nargs > 1 && is_format_function (key) && r_type_func_is_variadic (TDB, key);
+	RAnalFuncArg **args = R_NEWS0 (RAnalFuncArg *, R_MAX (nargs, 1));
+	int *slot_at = R_NEWS0 (int, R_MAX (nargs, 1));
+	// wide values occupy several slots, so home lookups need physical slot indexes, not arg numbers
+	int slotidx = 0;
+	for (i = 0; i < nargs; i++) {
+		RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
+		set_fcn_args_info (arg, core->anal, cc, key, i);
+		if (!arg->size) {
+			arg->size = word;
 		}
-	} else {
-		for (i = 0; i < nargs; i++) {
-			RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
-			set_fcn_args_info (arg, core->anal, key, cc, i);
-			if (cc_source_on_stack (core->anal, arg->cc_source)) {
-				arg->src = spv;
-				if (!arg->size) {
-					arg->size = s_width;
-				}
-				spv += arg->size;
-			} else {
-				const char *reg = cc_source_reg (core->anal, arg->cc_source);
-				if (reg) {
-					arg->src = r_reg_getv (core->anal->reg, reg);
-				}
-			}
-			r_list_append (list, arg);
-		}
+		slotidx = cc_align_slot (core->anal, cc, slotidx, (int)arg->size, word);
+		slot_at[i] = slotidx;
+		slotidx += R_MAX (1, ((int)arg->size + word - 1) / word);
+		args[i] = arg;
 	}
+	const int nslots = slotidx;
+	for (i = 0; i < nargs; i++) {
+		if (variadic && i == nargs - 1
+			&& append_format_varargs (core, list, cc, slot_at[i], incall)) {
+			r_anal_function_arg_free (args[i]); // the "..." placeholder is replaced by the expansion
+			continue;
+		}
+		arg_resolve (core, args[i], cc, slot_at[i], nslots, incall);
+		r_list_append (list, args[i]);
+	}
+	free (args);
+	free (slot_at);
 	free (key);
 	return list;
 }

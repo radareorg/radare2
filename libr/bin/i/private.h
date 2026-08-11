@@ -15,6 +15,15 @@ R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const c
 R_IPI bool r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
 
 R_IPI RBinPlugin *r_bin_get_binplugin_any(RBin *bin);
+
+static inline Sdb *open_ordinalsdb(const char *sdbdir, const char *mod) {
+	char *sfn = r_str_newf ("%s%s%s.sdb",
+			r_str_get_fail (sdbdir, "."), R_SYS_DIR, mod);
+	Sdb *db = r_file_exists (sfn)? sdb_new (NULL, sfn, 0): NULL;
+	free (sfn);
+	return db;
+}
+
 static inline bool limit_reached(const RList *list, int limit) {
 	return limit > 0 && r_list_length (list) >= limit;
 }
@@ -126,6 +135,7 @@ R_IPI bool r_bin_name_is_unnamed(const char *name);
 
 R_IPI const char *r_bin_lang_tostring(int lang);
 R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym);
+R_IPI bool r_bin_lang_rustv0(const char *sym);
 R_IPI bool r_bin_lang_swift(RBinFile *binfile);
 
 R_IPI void r_bin_class_free(RBinClass *c);

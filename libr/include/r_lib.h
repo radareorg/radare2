@@ -23,7 +23,7 @@ R_LIB_VERSION_HEADER (r_lib);
 // double-indirection required because cpp is crap
 #define STRINGIFY2(x) #x
 #define STRINGIFY(x) STRINGIFY2(x)
-#define R2_ABIVERSION 110
+#define R2_ABIVERSION 132
 #define R2_ABIVERSION_STRING STRINGIFY(R2_ABIVERSION)
 
 #define R_LIB_ENV "R2_LIBR_PLUGINS"
@@ -116,6 +116,7 @@ enum {
 	R_LIB_TYPE_ESIL,    /* r_anal.esil plugin */
 	R_LIB_TYPE_ARCH,    /* arch plugins */
 	R_LIB_TYPE_MUTA,    /* mutator */
+	R_LIB_TYPE_BIN_DEMANGLE, /* bin demanglers */
 	R_LIB_TYPE_LAST
 };
 
@@ -135,9 +136,9 @@ typedef struct r_lib_t {
 	bool ignore_version;
 	bool ignore_abiversion;
 	bool safe_loading; /* true to enable 2-step loading process */
+	ut32 abiversion; /* Current ABI version */
 	// hashtable plugname = &plugin
 	HtPP *plugins_ht[R_LIB_TYPE_LAST];
-	ut32 abiversion; /* Current ABI version */
 	RLibInternalLoadCallback cb_internal; /* callback to load internal plugins for 'i' in R2_PLUGINS_ORDER */
 	void *cb_internal_user; /* user data for cb_internal */
 } RLib;

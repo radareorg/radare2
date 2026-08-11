@@ -16,7 +16,7 @@ typedef struct {
 
 static const ExtAndType eat[] = {
 	{ ".js", "application/javascript" },
-	{ ".png", "application/png" },
+	{ ".png", "image/png" },
 	{ ".jpg", "image/jpg" },
 	{ ".jpeg", "image/jpeg" },
 	{ ".gif", "image/gif" },
@@ -166,9 +166,9 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	if (browse == 'H') {
 		const char *browser = r_config_get (core->config, "http.browser");
 		char *url = r_str_newf ("http://%s:%d/%s", host, atoi (port), r_str_get (path));
-		char *eurl = r_str_escape_sh (url);
-		r_sys_cmdf ("%s \"%s\" &", browser, eurl);
-		free (eurl);
+		if (!r_sys_open (url, browser, true)) {
+			R_LOG_WARN ("Cannot launch a browser");
+		}
 		free (url);
 	}
 
@@ -335,6 +335,8 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 
 		if (!rs->auth) {
 			r_socket_http_response (rs, 401, "", 0, NULL);
+			rtr_http_request_free (rs);
+			continue;
 		}
 		if (r_config_get_b (core->config, "http.verbose")) {
 			char *peer = r_socket_tostring (rs->s);
@@ -528,7 +530,8 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 					char *f = r_file_slurp (path, &sz);
 					if (f) {
 						char *ct = guess_filetype (path);
-						char *hdr = r_str_newf ("%s%s", ct, headers);
+						// no-cache avoids serving stale webuis from the browser cache after an upgrade
+						char *hdr = r_str_newf ("%sCache-Control: no-cache\n%s", ct, headers);
 						r_socket_http_response (rs, 200, f, (int)sz, hdr);
 						free (hdr);
 						free (f);

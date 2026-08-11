@@ -7,7 +7,7 @@ fj~{} > $fj
 $fj~__throw_length_error_char_const_
 fnj~{} > $fnj
 $fnj~__throw_length_error_char_const_
-""js a=r2.cmdj("fj").filter((x)=>x.name.indexOf("throw") !== -1);console.log(JSON.stringify(a,null, 2))
+'js a=r2.cmdj("fj").filter((x)=>x.name.indexOf("throw") !== -1);console.log(JSON.stringify(a,null, 2))
 EOF
 EXPECT=<<EOF
     "name": "sym.imp.std::__throw_length_error_char_const_",

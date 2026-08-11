@@ -3063,3 +3063,72 @@ EXPECT=<<EOF
 0x00000002
 EOF
 RUN
+
+NAME=arm cmn sets nzcv from rn+op2 (reg, overflow, immediate)
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 010070e1
+ar r0=1
+ar r1=0xffffffff
+ar pc=0
+s 0
+aes
+ar zf
+ar cf
+ar nf
+ar vf
+ar r0=0x40000000
+ar r1=0x40000000
+ar pc=0
+aes
+ar nf
+ar vf
+ar cf
+ar zf
+wx 050070e3
+ar r0=0xfffffffb
+ar pc=0
+aes
+ar zf
+ar cf
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000000
+0x00000000
+0x00000001
+0x00000001
+0x00000000
+0x00000000
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=arm movt replaces top16 preserving low16
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 340241e3
+ar r0=0xffffffff
+ar pc=0
+s 0
+aes
+ar r0
+wx cd0b4ae3
+ar r0=0x0000ffff
+ar pc=0
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x1234ffff
+0xabcdffff
+EOF
+RUN

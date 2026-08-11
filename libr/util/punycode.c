@@ -63,50 +63,63 @@ ut8 *utf32toutf8 (ut32 *input) {
 	return result;
 }
 
-ut32 *utf8toutf32 (const ut8 *input) {
-	if (!input) {
+ut32 *utf8toutf32 (const ut8 *input, int input_len) {
+	if (!input || input_len < 0) {
 		return NULL;
 	}
 
 	int i = 0;
 	int j = 0;
 	int val = 0;
-	int len = strlen ((const char *) input);
-	ut32 *result = calloc (strlen ((const char *) input) + 1, 4);
-
+	size_t alloc_size = 0;
+	if (r_mul_overflow ((size_t)input_len + 1, sizeof (ut32), &alloc_size)) {
+		return NULL;
+	}
+	ut32 *result = calloc (1, alloc_size);
 	if (!result) {
 		return NULL;
 	}
 
-	while (i < len) {
+	while (i < input_len) {
 		if (input[i] >> 7 == 0) {
 			val = input[i];
 			i += 1;
 		} else if (input[i] >> 5 == 0x6) {
+			if (input_len - i < 2) {
+				goto invalid;
+			}
 			val = (((input[i] & 0x1f) << 6) & 0xfc0) |
 			(input[i + 1] & 0x3f);
 			i += 2;
 		} else if (input[i] >> 4 == 0xe) {
+			if (input_len - i < 3) {
+				goto invalid;
+			}
 			val = (((input[i] & 0xf) << 12) & 0xf000) |
 			(((input[i + 1] & 0x3f) << 6) & 0xffc0) |
 			(input[i + 2] & 0x3f);
 			i += 3;
 		} else if (input[i] >> 3 == 0x1e) {
+			if (input_len - i < 4) {
+				goto invalid;
+			}
 			val = (((input[i] & 0xf) << 18) & 0x1c0000) |
 			(((input[i + 1] & 0x3f) << 12) & 0x1ff000) |
 			(((input[i + 2] & 0x3f) << 6) & 0x1fffc0) |
 			(input[i + 3] & 0x3f);
 			i += 4;
 		} else {
-			R_LOG_ERROR ("toutf32: invalid input");
-			free (result);
-			return NULL;
+			goto invalid;
 		}
 		result[j] = val;
 		j++;
 	}
 
 	return result;
+invalid:
+	R_LOG_ERROR ("toutf32: invalid input");
+	free (result);
+	return NULL;
 }
 
 
@@ -134,32 +147,20 @@ char encode_digit(int c) {
 }
 
 static ut32 encode_var_int(const ut32 bias, const ut32 delta, char *dst) {
-	ut32 i, k, q, t;
-	i = 0;
-	k = BASE;
-	q = delta;
+	ut32 i = 0;
+	ut32 k = BASE;
+	ut32 q = delta;
 
 	while (true) {
-		if (k <= bias) {
-			t = TMIN;
-		} else if (k >= bias + TMAX) {
-			t = TMAX;
-		} else {
-			t = k - bias;
-		}
-
+		ut32 t = k <= bias? TMIN: k >= bias + TMAX? TMAX: k - bias;
 		if (q < t) {
 			break;
 		}
-
 		dst[i++] = encode_digit (t + (q - t) % (BASE - t));
-
 		q = (q - t) / (BASE - t);
 		k += BASE;
 	}
-
 	dst[i++] = encode_digit (q);
-
 	return i;
 }
 
@@ -177,64 +178,54 @@ static ut32 decode_digit(ut32 v) {
 }
 
 R_API char *r_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
-	ut32 m, n;
-	ut32 b, h;
-	ut32 si, di;
-	ut32 delta, bias;
-	ut32 *actualsrc = NULL;
-	ut32 len = 0;
-	char *dst = NULL;
-
+	R_RETURN_VAL_IF_FAIL (src && srclen > 0 && dstlen, NULL);
 	*dstlen = 0;
-
-	if (!src || srclen < 1) {
-		return NULL;
-	}
-
-	actualsrc = utf8toutf32 (src);
+	ut32 *actualsrc = utf8toutf32 (src, srclen);
 	if (!actualsrc) {
 		return NULL;
 	}
-
-	len = utf32len (actualsrc);
-
-	dst = calloc (2 * len + 10, 1);
+	ut32 len = utf32len (actualsrc);
+	// A ut32 delta needs at most 10 digits and a non-ASCII code point consumes at least two input bytes.
+	size_t dstsize = 0;
+	if (r_mul_overflow ((size_t)srclen, (size_t)5, &dstsize)
+		|| r_add_overflow (dstsize, (size_t)2, &dstsize)) {
+		free (actualsrc);
+		return NULL;
+	}
+	char *dst = calloc (dstsize, 1);
 	if (!dst) {
 		free (actualsrc);
 		return NULL;
 	}
-
-	for (si = 0, di = 0; si < len; si++) {
+	ut32 si = 0;
+	ut32 di = 0;
+	for (; si < len; si++) {
 		if (actualsrc[si] < 128) {
 			dst[di++] = actualsrc[si];
 		}
 	}
-
-	b = h = di;
-
+	ut32 b = di;
+	ut32 h = di;
 	if (di > 0) {
 		dst[di++] = '-';
 	}
-
-	n = INITIAL_N;
-	bias = INITIAL_BIAS;
-
-	for (delta = 0; h < len; n++, delta++) {
-		for (m = UT32_MAX, si = 0; si < len; si++) {
+	ut32 n = INITIAL_N;
+	ut32 bias = INITIAL_BIAS;
+	ut32 delta = 0;
+	for (; h < len; n++, delta++) {
+		ut32 m = UT32_MAX;
+		for (si = 0; si < len; si++) {
 			if (actualsrc[si] >= n && actualsrc[si] < m) {
 				m = actualsrc[si];
 			}
 		}
-
 		if ((m - n) > (UT32_MAX - delta) / (h + 1)) {
 			free (actualsrc);
 			free (dst);
 			return NULL;
 		}
-
 		delta += (m - n) * (h + 1);
 		n = m;
-
 		for (si = 0; si < len; si++) {
 			if (actualsrc[si] < n) {
 				if (++delta == 0) {
@@ -243,7 +234,7 @@ R_API char *r_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
 					return NULL;
 				}
 			} else if (actualsrc[si] == n) {
-				di += encode_var_int (bias, delta, &dst[di]);
+				di += encode_var_int (bias, delta, dst + di);
 				bias = adapt_bias (delta, h + 1, h == b);
 				delta = 0;
 				h++;

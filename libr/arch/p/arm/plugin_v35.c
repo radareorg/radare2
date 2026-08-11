@@ -893,6 +893,7 @@ static void anop64(RArchSession *as, RAnalOp *op, Instruction *insn) {
 		op->cycles = 1;
 		/* fallthru */
 	case ARM64_MSUB:
+	case ARM64_SBC:
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case ARM64_FDIV:
@@ -999,6 +1000,7 @@ static void anop64(RArchSession *as, RAnalOp *op, Instruction *insn) {
 		break;
 	case ARM64_BRK:
 	case ARM64_HLT:
+	case ARM64_UDF:
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		// hlt stops the process, not skips some cycles like in x86
 		break;
@@ -1015,7 +1017,13 @@ static void anop64(RArchSession *as, RAnalOp *op, Instruction *insn) {
 	case ARM64_DUP:
 	case ARM64_XTN:
 	case ARM64_XTN2:
+	case ARM64_REV:
+	case ARM64_REV16:
+	case ARM64_REV32:
 	case ARM64_REV64:
+	case ARM64_RBIT:
+	case ARM64_CLZ:
+	case ARM64_CLS:
 	case ARM64_EXT:
 	case ARM64_INS:
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -2550,13 +2558,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		r_str_replace_char (output, '\t', ' ');
 		r_str_replace_char (output, '#', ' ');
 		if (r_str_startswith (output, "UNDEF")) {
+			op->type = R_ANAL_OP_TYPE_ILL;
 			if (mask & R_ARCH_OP_MASK_DISASM) {
 				op->mnemonic = strdup ("undefined");
 			}
 			return 4;
 		}
-		//r_strbuf_set (&op->buf_asm, output);
-		op->type = R_ANAL_OP_TYPE_ILL;
+		// valid but unclassified ops must not become ILL or analysis rejects them
+		op->type = R_ANAL_OP_TYPE_UNK;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup (output);
 		}
@@ -2678,7 +2687,7 @@ static char *regs(RArchSession *as) {
 		"=SF	nf\n"
 		"=OF	vf\n"
 		"=CF	cf\n"
-		"=SN	x16\n" // x8 on linux?
+		"=SN	%s\n" // x8 on linux/android, x16 on darwin
 
 		/* 8bit sub-registers */
 		"fpu	b0	.8	0	0\n"
@@ -3295,12 +3304,15 @@ static char *regs(RArchSession *as) {
 		"fpu	q15	.128	308	0\n"
 		;
 	}
+	if (as->config->bits != 64) {
+		return strdup (p);
+	}
 	const char *os = as->config->os;
-	if (!os) {
+	if (R_STR_ISEMPTY (os)) {
 		os = R_SYS_OS;
 	}
-	const char *snReg = (!strcmp (os, "android") || !strcmp (os, "linux"))? "x8": "x16";
-	return r_str_newf (p, snReg);
+	const char *snreg = (!strcmp (os, "android") || !strcmp (os, "linux"))? "x8": "x16";
+	return r_str_newf (p, snreg);
 }
 
 #if 0

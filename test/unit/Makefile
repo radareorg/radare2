@@ -26,7 +26,8 @@ $(UNITS_BINDIR)/%: %.c
 	mkdir -p "$(UNITS_BINDIR)"
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LDLIBS)
 
-test_debug: $(UNITS_BINDIR)/test_debug
+# keep the built-in %: %.c rule from dropping binaries next to the sources
+test_%: $(UNITS_BINDIR)/test_%
 	@:
 
 run: $(BINS)

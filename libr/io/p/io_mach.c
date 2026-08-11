@@ -443,7 +443,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	iodd->magic = R_MACH_MAGIC;
 	iodd->data = riom;
 	// sleep 1s to get proper path (program name instead of ls) (racy)
-	char *pidpath = pid? r_sys_pid_to_path (pid): strdup ("kernel");
+	char *pidpath = pid? r_sys_pidpath (pid): strdup ("kernel");
 	if (r_str_startswith (file, "smach://")) {
 		ret = r_io_desc_new (io, &r_io_plugin_mach, &file[1],
 			rw | R_PERM_X, mode, iodd);

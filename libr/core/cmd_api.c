@@ -2,9 +2,15 @@
 
 #define R_LOG_ORIGIN "cmdapi"
 #include <r_core.h>
+#include <r_core_priv.h>
 #include <sdb/ht_pp.h>
 
 #define NCMDS (sizeof (cmd->cmds) / sizeof (*cmd->cmds))
+
+typedef struct {
+	RCmdCtxCb callback;
+	void *user;
+} RCmdHandler;
 
 static void alias_freefn(HtPPKv *kv) {
 	if (kv) {
@@ -82,7 +88,7 @@ R_API RCmd *r_cmd_new(void *data) {
 		cmd->cmds[i] = NULL;
 	}
 	cmd->nullcallback = NULL;
-	cmd->ht_cmds = ht_pp_new0 ();
+	cmd->handlers = r_trie_new (free);
 	// cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "", &root_help, true);
 	r_cmd_macro_init (&cmd->macro);
 	r_cmd_alias_init (cmd);
@@ -97,8 +103,8 @@ R_API void r_cmd_free(RCmd *cmd) {
 	ht_up_free (cmd->ts_symbols_ht);
 	r_cmd_alias_free (cmd);
 	r_cmd_macro_fini (&cmd->macro);
-	ht_pp_free (cmd->ht_cmds);
 	r_core_plugins_fini (cmd);
+	r_trie_free (cmd->handlers);
 	for (i = 0; i < NCMDS; i++) {
 		if (cmd->cmds[i]) {
 			R_FREE (cmd->cmds[i]);
@@ -106,31 +112,6 @@ R_API void r_cmd_free(RCmd *cmd) {
 	}
 	// cmd_desc_free (cmd->root_cmd_desc);
 	free (cmd);
-}
-
-// This struct exists to store the index during hashtable foreach.
-typedef struct {
-	const char **keys;
-	size_t current_key;
-} AliasKeylist;
-
-static bool get_keys(void *keylist_in, const void *k, const void *v) {
-	AliasKeylist *keylist = keylist_in;
-	keylist->keys[keylist->current_key++] = (const char *)k;
-	return true;
-}
-
-R_API const char **r_cmd_alias_keys(RCmd *cmd) {
-	AliasKeylist keylist = {
-		.current_key = 0,
-		.keys = R_NEWS (const char *, cmd->aliases->count)
-	};
-	if (!keylist.keys) {
-		return NULL;
-	}
-	ht_pp_foreach (cmd->aliases, get_keys, &keylist);
-	// We don't need to return a count - it's already in cmd->aliases.
-	return keylist.keys;
 }
 
 R_API void r_cmd_alias_free(RCmd *cmd) {
@@ -148,9 +129,6 @@ R_API bool r_cmd_alias_set_cmd(RCmd *cmd, const char *k, const char *v) {
 	R_RETURN_VAL_IF_FAIL (cmd && k && v, false);
 	RCmdAliasVal val;
 	val.data = (ut8 *)v;
-	if (!val.data) {
-		return true;
-	}
 	val.sz = strlen (v) + 1;
 	val.is_str = true;
 	val.is_data = false;
@@ -158,169 +136,76 @@ R_API bool r_cmd_alias_set_cmd(RCmd *cmd, const char *k, const char *v) {
 	return ht_pp_update (cmd->aliases, k, &val);
 }
 
-R_API int r_cmd_alias_set_str(RCmd *cmd, const char *k, const char *v) {
-	RCmdAliasVal val;
-	val.data = (ut8 *)strdup (v);
-	if (!val.data) {
-		return 1;
-	}
-	val.is_str = true;
-	val.is_data = true;
-
-	/* No trailing newline */
-	int len = strlen (v);
-	while (len-- > 0) {
-		if (v[len] == '\r' || v[len] == '\n') {
-			val.data[len] = '\0';
-		} else {
-			break;
+R_API bool r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz, bool append) {
+	R_RETURN_VAL_IF_FAIL (cmd && k && sz >= 0 && (v || !sz), false);
+	v = v? v: (const ut8 *)"";
+	ut8 *owned = NULL;
+	RCmdAliasVal *old = append? r_cmd_alias_get (cmd, k): NULL;
+	if (old) {
+		if (!old->is_data) {
+			return false;
 		}
+		const int old_sz = old->sz - old->is_str;
+		if (old_sz < 0 || sz > ST32_MAX - old_sz) {
+			return false;
+		}
+		const int new_sz = old_sz + sz;
+		owned = malloc ((size_t)new_sz + 1);
+		if (!owned) {
+			return false;
+		}
+		memcpy (owned, old->data, old_sz);
+		memcpy (owned + old_sz, v, sz);
+		v = owned;
+		sz = new_sz;
 	}
-	// len is strlen()-1 now
-	val.sz = len + 2;
 
-	int ret = ht_pp_update (cmd->aliases, k, &val);
-	free (val.data);
-	return ret;
-}
-
-R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
 	int i;
-
-	if (sz < 1) {
-		return 1;
-	}
-
-	RCmdAliasVal val;
-	val.data = malloc (sz);
-	if (!val.data) {
-		return 1;
-	}
-
-	memcpy (val.data, v, sz);
-	val.sz = sz;
-
-	/* If it's a string already, we speed things up later by checking now */
-	const ut8 *firstnull = NULL;
-	bool is_binary = false;
+	bool is_str = true;
+	int len = sz;
 	for (i = 0; i < sz; i++) {
-		/* \0 before expected -> not string */
-		if (v[i] == '\0') {
-			firstnull = &v[i];
+		if (!v[i]) {
+			is_str = i == sz - 1;
+			len = i;
 			break;
 		}
-
-		/* Non-ascii character -> not string */
 		if (!IS_PRINTABLE (v[i]) && !IS_WHITECHAR (v[i])) {
-			is_binary = true;
+			is_str = false;
 			break;
 		}
 	}
 
-	if (firstnull == &v[sz-1] && !is_binary) {
-		/* Data is already a string */
-		val.is_str = true;
-	} else if (!firstnull && !is_binary) {
-		/* Data is an unterminated string */
-		val.sz++;
-		ut8 *data = realloc (val.data, val.sz);
-		if (!data) {
-			free (val.data);
-			return 1;
+	if (is_str) {
+		while (len > 0 && (v[len - 1] == '\r' || v[len - 1] == '\n')) {
+			len--;
 		}
-		val.data = data;
-		val.data[val.sz - 1] = '\0';
-		val.is_str = true;
-	} else {
-		/* Data has nulls or non-ascii, not a string */
-		val.is_str = false;
+		if (len == ST32_MAX) {
+			free (owned);
+			return false;
+		}
+		if (!owned) {
+			owned = (ut8 *)(len? r_str_newlen ((const char *)v, len): strdup (""));
+		}
+		if (!owned) {
+			return false;
+		}
+		owned[len] = 0;
 	}
 
-	val.is_data = true;
-
-	if (val.is_str) {
-		/* No trailing newline */
-		int len = val.sz - 1;
-		while (len-- > 0) {
-			if (v[len] == '\r' || v[len] == '\n') {
-				val.data[len] = '\0';
-			} else {
-				break;
-			}
-		}
-		// len is strlen()-1 now
-		val.sz = len + 2;
-	}
-
-	int ret = ht_pp_update (cmd->aliases, k, &val);
-	free (val.data);
+	RCmdAliasVal val = {
+		.data = owned? owned: (ut8 *)v,
+		.sz = is_str? len + 1: sz,
+		.is_str = is_str,
+		.is_data = true
+	};
+	bool ret = ht_pp_update (cmd->aliases, k, &val);
+	free (owned);
 	return ret;
 }
 
 R_API RCmdAliasVal *r_cmd_alias_get(RCmd *cmd, const char *k) {
 	R_RETURN_VAL_IF_FAIL (cmd && cmd->aliases && k, NULL);
 	return ht_pp_find (cmd->aliases, k, NULL);
-}
-
-static ut8 *alias_append_internal(int *out_szp, const RCmdAliasVal *first, const ut8 *second, int second_sz) {
-	/* If appending to a string, always overwrite the trailing \0 */
-	const int bytes_from_first = first->is_str
-		? first->sz - 1
-		: first->sz;
-
-	const int out_sz = bytes_from_first + second_sz;
-	ut8 *out = malloc (out_sz);
-	if (!out) {
-		return NULL;
-	}
-
-	/* Copy full buffer if raw bytes. Stop before \0 if string. */
-	memcpy (out, first->data, bytes_from_first);
-	/* Always copy all bytes from second, including trailing \0 */
-	memcpy (out + bytes_from_first, second, second_sz);
-
-	if (out_sz) {
-		*out_szp = out_sz;
-	}
-	return out;
-}
-
-R_API bool r_cmd_alias_append_str(RCmd *cmd, const char *k, const char *a) {
-	R_RETURN_VAL_IF_FAIL (cmd && k && a, 1);
-	RCmdAliasVal *v_old = r_cmd_alias_get (cmd, k);
-	if (v_old) {
-		if (!v_old->is_data) {
-			return true;
-		}
-		int new_len = 0;
-		ut8* new = alias_append_internal (&new_len, v_old, (ut8 *)a, strlen (a) + 1);
-		if (!new) {
-			return true;
-		}
-		r_cmd_alias_set_raw (cmd, k, new, new_len);
-		free (new);
-	} else {
-		r_cmd_alias_set_str (cmd, k, a);
-	}
-	return false;
-}
-
-R_API bool r_cmd_alias_append_raw(RCmd *cmd, const char *k, const ut8 *a, int sz) {
-	RCmdAliasVal *v_old = r_cmd_alias_get (cmd, k);
-	if (v_old) {
-		if (!v_old->is_data) {
-			return false;
-		}
-		int new_len = 0;
-		ut8 *new = alias_append_internal (&new_len, v_old, a, sz);
-		if (new) {
-			r_cmd_alias_set_raw (cmd, k, new, new_len);
-			free (new);
-		}
-	} else {
-		r_cmd_alias_set_raw (cmd, k, a, sz);
-	}
-	return true;
 }
 
 /* Returns a new copy of v->data. If !v->is_str, hex escaped */
@@ -343,6 +228,53 @@ R_API void r_cmd_set_data(RCmd *cmd, void *data) {
 	cmd->data = data;
 }
 
+// TODO: Synchronize registry mutation with concurrent command dispatch.
+R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user) {
+	R_RETURN_VAL_IF_FAIL (cmd && name && callback, false);
+	RStrs key = r_strs_from (name);
+	if (r_strs_empty (key) || r_trie_find (cmd->handlers, key)) {
+		return false;
+	}
+	RCmdHandler *handler = R_NEW (RCmdHandler);
+	handler->callback = callback;
+	handler->user = handler_user;
+	if (!r_trie_insert (cmd->handlers, key, handler)) {
+		free (handler);
+		return false;
+	}
+	return true;
+}
+
+R_API bool r_cmd_unregister(RCmd *cmd, const char *name) {
+	R_RETURN_VAL_IF_FAIL (cmd && name, false);
+	return r_trie_delete (cmd->handlers, r_strs_from (name));
+}
+
+R_API size_t r_cmd_unregister_prefix(RCmd *cmd, const char *prefix) {
+	R_RETURN_VAL_IF_FAIL (cmd && prefix, 0);
+	return r_trie_delete_prefix (cmd->handlers, r_strs_from (prefix));
+}
+
+typedef struct {
+	RCmdForeachCb callback;
+	void *user;
+} RCmdForeachContext;
+
+static bool cmd_foreach_handler(RStrs name, void *value, void *user) {
+	RCmdForeachContext *context = user;
+	(void)value;
+	return context->callback (name, context->user);
+}
+
+R_API bool r_cmd_foreach_prefix(const RCmd *cmd, const char *prefix, RCmdForeachCb callback, void *user) {
+	R_RETURN_VAL_IF_FAIL (cmd && prefix && callback, false);
+	RCmdForeachContext context = {
+		.callback = callback,
+		.user = user
+	};
+	return r_trie_foreach_prefix (cmd->handlers, r_strs_from (prefix), cmd_foreach_handler, &context);
+}
+
 R_API bool r_cmd_add(RCmd *c, const char *cmd, RCmdCb cb) {
 	int idx = (ut8)cmd[0];
 	RCmdItem *item = c->cmds[idx];
@@ -360,58 +292,260 @@ R_API void r_cmd_del(RCmd *cmd, const char *command) {
 	R_FREE (cmd->cmds[idx]);
 }
 
-R_API int r_cmd_call(RCmd *cmd, const char *input) {
+static RCmdResult cmd_result(RCmdAction action, st64 status) {
+	return (RCmdResult) {
+		.action = action,
+		.status = status
+	};
+}
+
+static RCmdResult cmd_result_from_legacy(int status) {
+	return cmd_result (status == -2? R_CMD_ACTION_QUIT: R_CMD_ACTION_CONTINUE, status);
+}
+
+static int cmd_result_to_legacy(RCmdResult result) {
+	return result.action == R_CMD_ACTION_CONTINUE
+		? (int)R_CLAMP (result.status, (st64)ST32_MIN, (st64)ST32_MAX)
+		: result.action == R_CMD_ACTION_QUIT? -2: -1;
+}
+
+static const char *cmd_decode_escape(const char *src, const char *end, char **dst) {
+	if (src >= end) {
+		*(*dst)++ = '\\';
+		return src;
+	}
+	ut8 ch = *src++;
+	switch (ch) {
+	case 'a': ch = '\a'; break;
+	case 'b': ch = '\b'; break;
+	case 'e': ch = 0x1b; break;
+	case 'f': ch = '\f'; break;
+	case 'n': ch = '\n'; break;
+	case 'r': ch = '\r'; break;
+	case 's': ch = ' '; break;
+	case 't': ch = '\t'; break;
+	case 'v': ch = '\v'; break;
+	case 'x': {
+		ut8 value = 0;
+		if (end - src >= 2 && r_hex_to_byte (&value, src[0]) && r_hex_to_byte (&value, src[1])) {
+			*(*dst)++ = value;
+			return src + 2;
+		}
+		return src;
+	}
+	default:
+		if (IS_OCTAL (ch)) {
+			ut8 value = ch - '0';
+			int i;
+			for (i = 0; i < 2 && src < end && IS_OCTAL (*src); i++, src++) {
+				value = (value * 8) + (*src - '0');
+			}
+			ch = value;
+		}
+		break;
+	}
+	*(*dst)++ = ch;
+	return src;
+}
+
+/* Rebuilds context arguments. Raw calls only split on whitespace, leaving
+ * quoting, escapes and the untouched command tail available to the handler. */
+static bool cmd_context_parse_args(RCmdContext *context, RStrs rest, bool raw) {
+	RVecRStrs_fini (&context->args);
+	free (context->args_storage);
+	context->args_storage = NULL;
+	char *storage = malloc (r_strs_len (rest) + 1);
+	if (!storage) {
+		return false;
+	}
+	context->args_storage = storage;
+	const char *src = rest.a;
+	char *dst = storage;
+	while (src < rest.b) {
+		while (src < rest.b && isspace ((ut8)*src)) {
+			src++;
+		}
+		if (src == rest.b) {
+			break;
+		}
+		char quote = 0;
+		char *begin = dst;
+		while (src < rest.b) {
+			char ch = *src;
+			if (!quote && isspace ((ut8)ch)) {
+				break;
+			}
+			src++;
+			if (!raw) {
+				if (ch == '\\') {
+					src = cmd_decode_escape (src, rest.b, &dst);
+					continue;
+				}
+				if (ch == '\'' || ch == '"') {
+					if (!quote) {
+						quote = ch;
+						continue;
+					}
+					if (quote == ch) {
+						quote = 0;
+						continue;
+					}
+				}
+			}
+			*dst++ = ch;
+		}
+		RStrs *arg = RVecRStrs_emplace_back (&context->args);
+		if (!arg) {
+			return false;
+		}
+		*arg = r_strs_new (begin, dst);
+	}
+	*dst = 0;
+	return true;
+}
+
+static void cmd_context_free(RCmdContext *context) {
+	if (context) {
+		RVecRStrs_fini (&context->args);
+		free (context->args_storage);
+		free (context);
+	}
+}
+
+static RCons *cmd_legacy_capture_begin(RCmd *cmd, RCmdContext *parent) {
+	RCons *cons = parent
+		? parent->cons
+		: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
+	if (!cmd->cons || !cons || cons == cmd->cons) {
+		return NULL;
+	}
+	r_cons_push (cmd->cons);
+	cmd->cons->context->cmd_str_depth++;
+	if (parent) {
+		parent->cons = cmd->cons;
+	}
+	return cons;
+}
+
+static void cmd_legacy_capture_end(RCmd *cmd, RCmdContext *parent, RCons *cons) {
+	if (parent) {
+		parent->cons = cons;
+	}
+	cmd->cons->context->cmd_str_depth--;
+	r_cons_filter (cmd->cons);
+	r_cons_merge_output (cons, cmd->cons);
+	r_cons_pop (cmd->cons);
+	r_cons_echo (cmd->cons, NULL);
+}
+
+static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs input, bool raw) {
+	RStrs lookup = input;
+	RCmdContext *context = NULL;
+	const char *parsed_from = NULL;
+	while (!r_strs_empty (lookup)) {
+		size_t matched = 0;
+		RCmdHandler *handler = r_trie_find_longest_prefix (cmd->handlers, lookup, &matched);
+		if (!handler || !matched) {
+			break;
+		}
+		if (!context) {
+			context = R_NEW0 (RCmdContext);
+			context->parent = parent;
+			context->cmd = cmd;
+			context->cons = parent
+				? parent->cons
+				: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
+			context->user = cmd->data;
+			context->remaining_depth = parent? parent->remaining_depth: 0;
+			context->raw = raw;
+		}
+		const char *sub_end = input.a + matched;
+		while (sub_end < input.b && !isspace ((ut8)*sub_end)) {
+			sub_end++;
+		}
+		if (parsed_from != sub_end) {
+			if (!cmd_context_parse_args (context, r_strs_new (sub_end, input.b), raw)) {
+				cmd_context_free (context);
+				return cmd_result (R_CMD_ACTION_ABORT, 2);
+			}
+			parsed_from = sub_end;
+		}
+		context->subcmd = r_strs_new (input.a + matched, sub_end);
+		context->handler_user = handler->user;
+		RCmdResult result = handler->callback (context);
+		if (result.action != R_CMD_ACTION_UNHANDLED) {
+			cmd_context_free (context);
+			return result;
+		}
+		lookup.b = lookup.a + matched - 1;
+	}
+	cmd_context_free (context);
+	return cmd_result (R_CMD_ACTION_UNHANDLED, 127);
+}
+
+R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *input, bool raw) {
 	RCore *core = cmd->data;
-	struct r_cmd_item_t *c;
-	int ret = -1;
-	RListIter *iter;
-	R_RETURN_VAL_IF_FAIL (cmd && input, -1);
+	RCons *capture = NULL;
+	RCmdResult result;
 	if (!*input) {
-		if (cmd->nullcallback) {
-			ret = cmd->nullcallback (cmd->data);
+		if (!cmd->nullcallback) {
+			return cmd_result (R_CMD_ACTION_UNHANDLED, 127);
 		}
-	} else {
-		char *nstr = NULL;
-		RCons *cons = core->cons;
-		RCmdAliasVal *v = r_cmd_alias_get (cmd, input);
-		if (v && v->is_data) {
-			char *v_str = r_cmd_alias_val_strdup (v);
-			r_cons_print (cons, v_str);
-			free (v_str);
-			return true;
-		}
+		capture = cmd_legacy_capture_begin (cmd, parent);
+		result = cmd_result_from_legacy (cmd->nullcallback (cmd->data));
+		goto beach;
+	}
+	RCmdAliasVal *v = r_cmd_alias_get (cmd, input);
+	if (v && v->is_data) {
+		char *v_str = r_cmd_alias_val_strdup (v);
+		RCons *cons = parent
+			? parent->cons
+			: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
+		r_cons_print (cons, v_str);
+		free (v_str);
+		return cmd_result_from_legacy (true);
+	}
+	result = cmd_call_registered (cmd, parent, r_strs_from (input), raw);
+	if (result.action != R_CMD_ACTION_UNHANDLED) {
+		return result;
+	}
+	capture = cmd_legacy_capture_begin (cmd, parent);
+	RListIter *iter;
+	if (cmd->libstore) {
 		RCorePluginSession *cps;
 		r_list_foreach (cmd->libstore->plugins, iter, cps) {
 			RCorePlugin *plugin = cps->plugin;
 			if (plugin->call && plugin->call (cps, input)) {
-				free (nstr);
-				return true;
+				result = cmd_result_from_legacy (true);
+				goto beach;
 			}
 		}
-		if (!*input) {
-			free (nstr);
-			return -1;
-		}
-		c = cmd->cmds[((ut8)input[0]) & 0xff];
-		if (c && c->callback) {
-			if (*input) {
-				ret = c->callback (cmd->data, input + 1);
-			} else {
-				ret = c->callback (cmd->data, "");
-			}
-		} else {
-			ret = -1;
-			// Check for command suggestion in SDB
-			if (core && core->sdb) {
-				const char *suggestion = sdb_const_get (core->sdb, input, NULL);
-				if (suggestion) {
-					R_LOG_INFO ("%s", suggestion);
-				}
-			}
-		}
-		free (nstr);
 	}
-	return ret;
+	RCmdItem *item = cmd->cmds[(ut8)input[0]];
+	if (item && item->callback) {
+		result = cmd_result_from_legacy (item->callback (cmd->data, input + 1));
+		goto beach;
+	}
+	if (core && core->sdb) {
+		const char *suggestion = sdb_const_get (core->sdb, input, NULL);
+		if (suggestion) {
+			R_LOG_INFO ("%s", suggestion);
+		}
+	}
+beach:
+	if (capture) {
+		cmd_legacy_capture_end (cmd, parent, capture);
+	}
+	return result;
+}
+
+R_API int r_cmd_call(RCmd *cmd, const char *input) {
+	R_RETURN_VAL_IF_FAIL (cmd && input, -1);
+	return cmd_result_to_legacy (r_cmd_call_result (cmd, NULL, input, false));
+}
+
+R_IPI int r_cmd_call_context(RCmd *cmd, RCmdContext *parent, const char *input, bool raw) {
+	return cmd_result_to_legacy (r_cmd_call_result (cmd, parent, input, raw));
 }
 
 /** macro.c **/
@@ -629,21 +763,6 @@ R_API char *r_cmd_macro_list(RCmdMacro *mac, int mode) {
 	}
 	return r_strbuf_drain (sb);
 }
-
-
-#if 0
-(define name value
-  f $0 @ $1)
-
-(define loop cmd
-  loop:
-  ? $0 == 0
-  ?? .loop:
-  )
-
-.(define patata 3)
-#endif
-
 R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args, int nargs) {
 	int i, j;
 	char *pcmd, cmd[R_CMD_MAXLEN];

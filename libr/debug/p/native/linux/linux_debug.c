@@ -825,6 +825,7 @@ static bool linux_attach_single_pid(RDebug *dbg, int pid) {
 	// GETSIGINFO can be called multiple times and would fail without attachment.
 	if (r_debug_ptrace (dbg, PTRACE_GETSIGINFO, pid, NULL,
 		(r_ptrace_data_t)&sig) == -1) {
+		// TODO: PTRACE_SEIZE enables PTRACE_INTERRUPT, but wont stop on attach
 		if (r_debug_ptrace (dbg, PTRACE_ATTACH, pid, NULL, NULL) == -1) {
 			r_sys_perror ("ptrace (PT_ATTACH)");
 			return false;

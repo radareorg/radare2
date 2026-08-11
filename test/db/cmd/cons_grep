@@ -223,7 +223,7 @@ fd       3
 file     malloc://1024
 humansz  1K
 mode     rwx
-format   any
+format   null
 iorw     true
 block    0x100
 EOF
@@ -238,7 +238,7 @@ fd       3
 file     malloc://1024
 humansz  1K
 mode     rwx
-format   any
+format   null
 iorw     true
 block    0x100
 EOF
@@ -253,7 +253,7 @@ file     malloc://1024
 size     0x400
 humansz  1K
 mode     rwx
-format   any
+format   null
 iorw     true
 block    0x100
 EOF
@@ -272,7 +272,7 @@ FILE=malloc://1024
 CMDS=i~f~!file
 EXPECT=<<EOF
 fd       3
-format   any
+format   null
 EOF
 RUN
 
@@ -354,6 +354,11 @@ i~:-1
 ?e 0\n1\n2\n3\n4~:-2..
 ?e 0\n1\n2~:0..
 ?e 0\n1\n2~:..
+?e 0\n1\n2~:0~:1~?
+?e 0\n1\n2~:1~:0~?
+?e 0\n1\n2~:0..2~:1..3~?
+?e aa\nbb cc~[1]~:0
+?e aa\nbb cc~:0~[1]~?
 EOF
 EXPECT=<<EOF
 fd       3
@@ -374,6 +379,11 @@ block    0x100
 0
 1
 2
+0
+1
+1
+cc
+0
 EOF
 RUN
 
@@ -386,9 +396,9 @@ i~^f~or~?
 i~?&f,or
 i~or~true
 i~&or,true
-i~or~ny[0]
-i~&or,ny[0]
-i~or[1]~any
+i~or~nu[0]
+i~&or,nu[0]
+i~or[1]~null
 i~or[1]~:1
 EOF
 EXPECT=<<EOF
@@ -400,7 +410,7 @@ iorw     true
 iorw     true
 format
 format
-any
+null
 true
 EOF
 RUN
@@ -418,6 +428,67 @@ hello world
 hello world
 hello world
 hello world
+EOF
+RUN
+
+NAME=case insensitive grep modifiers
+CMDS=<<EOF
+?e FOO BAR~+foo~bar~?
+?e FOO BAR~foo~+bar~?
+?e foo BAR~foo~+bar
+?e FOO bar~+foo~bar
+?e FOO~!+foo~?
+?e FOO~+!foo~?
+?e FOO~+foo$~?
+EOF
+EXPECT=<<EOF
+0
+0
+foo BAR
+FOO bar
+0
+0
+1
+EOF
+RUN
+
+NAME=grep groups preserve comma alternatives
+FILE=malloc://1024
+CMDS=<<EOF
+?e foo\nbar\nfoobar\nbaz~foo,bar
+?e -- chained --
+?e foo\nbar\nfoobar\nbaz~foo,bar~bar
+?e -- amp --
+?e foo\nbar\nfoobar\nbaz~&foo,bar
+?e -- negative --
+?e foo\nbar\nfoobar\nbaz~!foo,bar
+?e -- count --
+?e foo\nbar\nfoobar\nbaz~foo,bar~?
+EOF
+EXPECT=<<EOF
+foo
+bar
+foobar
+-- chained --
+bar
+foobar
+-- amp --
+foobar
+-- negative --
+baz
+-- count --
+3
+EOF
+RUN
+
+NAME=grep end modifier applies to all alternatives
+FILE=malloc://1024
+CMDS=?e xfoo\nfoobar\nbar\nbarx\nfoo x foo~foo,bar$
+EXPECT=<<EOF
+xfoo
+foobar
+bar
+foo x foo
 EOF
 RUN
 
@@ -494,9 +565,37 @@ CMDS=<<EOF
 wx 10203040
 b 128
 px~?
+?e a\nb\nb\nc~b~$$?
+?e a\nb\nb\nc~b~$$?.
+?e a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nn~$:12?
 EOF
 EXPECT=<<EOF
 9
+1
+2
+14
+EOF
+RUN
+
+NAME=nested grep modifiers
+CMDS=<<EOF
+?e abc\ndef~abc~?.;?v
+?e aa bb\ncc dd~aa~[0]~?.
+?e aa bb\naa cc\naa cc dd\ncc dd~aa~[1]~cc~!dd
+?e aa bb\naa cc\naa cc dd\ncc dd~aa~[1]~cc~!dd~?
+?e aa bb\naa cc\naa cc dd\ncc dd~aa~[1]~cc~!dd~?.
+?e a\nbb\nccc~:0..2~?.
+?e aa\naa\nb~$$?.
+EOF
+EXPECT=<<EOF
+4
+4
+3
+cc
+1
+3
+5
+5
 EOF
 RUN
 
@@ -517,6 +616,8 @@ CMDS=<<EOF
 ?e 3\n2\n4\n1~$!
 ?e -- invert (like tac) --
 ?e 3\n2\n4\n1~$!!
+?e 12y\n12x~$
+?e -1\n2\n-2~$
 EOF
 EXPECT=<<EOF
 -- alphabetical sort --
@@ -534,6 +635,11 @@ EXPECT=<<EOF
 4
 2
 3
+12x
+12y
+-2
+-1
+2
 EOF
 RUN
 
@@ -581,6 +687,8 @@ NAME=ij.gron
 FILE=bins/elf/crackme
 CMDS=<<EOF
 ij~{=}
+?e '{"a.b":1}'~{=}
+?e 'not json'~{=}
 EOF
 EXPECT=<<EOF
 json = {};
@@ -630,6 +738,9 @@ json.bin.uncaps = true;
 json.bin.subsys = "linux";
 json.bin.va = true;
 json.bin.checksums = {};
+json = {};
+json["a.b"] = 1;
+not json
 EOF
 RUN
 
@@ -663,7 +774,33 @@ CMDS=<<EOF
 ij~{}~fo
 EOF
 EXPECT=<<EOF
-    "format": "any"
+    "format": "null"
+EOF
+RUN
+
+NAME=ij.json.grep.alternatives
+FILE=bins/elf/crackme
+CMDS=<<EOF
+ij~{}~static,pic
+ij~{}~static,pic~?
+ij~{}~static,pic~?.
+EOF
+EXPECT=<<EOF
+    "pic": false,
+    "static": false,
+2
+18
+EOF
+RUN
+
+NAME=ij.gron.grep.alternatives
+FILE=bins/elf/crackme
+CMDS=<<EOF
+ij~{=}~static,pic
+EOF
+EXPECT=<<EOF
+json.bin.pic = false;
+json.bin.static = false;
 EOF
 RUN
 

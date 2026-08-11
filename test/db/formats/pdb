@@ -245,3 +245,30 @@ EXPECT=<<EOF
 pdb.__enc_textbss_end
 EOF
 RUN
+
+NAME=idp union members reach sdb via union member vec
+FILE=-
+CMDS=<<EOF
+idp bins/pdb/Project1.pdb
+tk union.R2_TEST_UNION
+tk union.R2_TEST_UNION.r2_union_var_1
+tk union.R2_TEST_UNION.r2_union_var_2
+tuc R2_TEST_UNION
+tk struct.R2_TEST_STRUCT.r2_struct_var_1
+tsc R2_TEST_STRUCT
+EOF
+EXPECT=<<EOF
+r2_union_var_1,r2_union_var_2
+int32_t,0,0
+double,0,0
+union R2_TEST_UNION {
+  int32_t r2_union_var_1;
+  double r2_union_var_2;
+};
+int32_t,0,0
+struct R2_TEST_STRUCT {
+  int32_t r2_struct_var_1;
+  uint16_t r2_struct_var_2;
+};
+EOF
+RUN

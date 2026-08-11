@@ -311,3 +311,17 @@ bedec   nop
 ledec   add byte [rax], al
 EOF
 RUN
+
+NAME=agD help without a function
+FILE=malloc://1
+CMDS=<<EOF
+agD?
+EOF
+EXPECT=<<EOF
+Usage: agD[format]  Show the current function dominator tree
+| agD   print the dominator tree as ASCII art
+| agDd  print the dominator tree as Graphviz dot
+| agDj  print the dominator tree as JSON
+| agDv  show the dominator tree in interactive visual mode
+EOF
+RUN

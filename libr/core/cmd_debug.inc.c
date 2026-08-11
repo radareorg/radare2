@@ -150,6 +150,7 @@ static RCoreHelpMessage help_msg_dc = {
 	"dcs", "[?] <num>", "continue until syscall",
 	"dct", " <len>", "traptrace from curseek to len, no argument to list",
 	"dcu", "[?] [..end|addr] ([end])", "continue until address (or range)",
+	"dcut", " ([ms])", "continue and interrupt the child after 100ms (or the given ms)",
 	/*"TODO: dcu/dcr needs dbg.untilover=true??",*/
 	/*"TODO: same for only user/libs side, to avoid steping into libs",*/
 	/*"TODO: support for threads?",*/
@@ -170,6 +171,7 @@ static RCoreHelpMessage help_msg_dcu = {
 	"dcu", " address", "continue until address",
 	"dcu", " [..tail]", "continue until the range",
 	"dcu", " [from] [to]", "continue until the range",
+	"dcut", " ([ms])", "continue and interrupt the child after 100ms (or the given ms)",
 	NULL
 };
 
@@ -452,6 +454,28 @@ static RCoreHelpMessage help_msg_drv = {
 	"drvq", " ymm0~[3]", "show fourth quadword of ymm0",
 	"drvyf", " [reg]", "show YMM registers as 32-bit floating point",
 	"drvyl", " [reg]", "show YMM registers as 64-bit floating point",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_arv = {
+	"Usage: arv", " [reg] [idx] [wordsize] [= value]", "Show analysis vector packed registers",
+	"arv", "", "show XMM registers",
+	"arv", " xmm0", "show all packings of xmm0",
+	"arv", " xmm0 0 32 = 12", "set the first 32 bit word of the xmm0 reg to 12",
+	"arvb", " [reg]", "show registers as bytes",
+	"arvw", " [reg]", "show registers as words",
+	"arvd", " [reg]", "show registers as doublewords",
+	"arvq", " [reg]", "show registers as quadwords",
+	"arvq", " xmm0~[0]", "show first quadword of xmm0",
+	"arvf", " [reg]", "show registers as 32-bit floating point",
+	"arvl", " [reg]", "show registers as 64-bit floating point",
+	"arvyb", " [reg]", "show YMM registers as bytes",
+	"arvyw", " [reg]", "show YMM registers as words",
+	"arvyd", " [reg]", "show YMM registers as doublewords",
+	"arvyq", " [reg]", "show YMM registers as quadwords",
+	"arvq", " ymm0~[3]", "show fourth quadword of ymm0",
+	"arvyf", " [reg]", "show YMM registers as 32-bit floating point",
+	"arvyl", " [reg]", "show YMM registers as 64-bit floating point",
 	NULL
 };
 
@@ -825,7 +849,7 @@ static void cmd_dtsd(RCore *core, const char *input) {
 		return;
 	}
 	if (input[3] == '?') {
-		r_core_cmd_help_match (core, help_msg_dts, "dtsd");
+		r_cons_cmd_help_match (core->cons, help_msg_dts, "dtsd", 0, true);
 		return;
 	}
 	const char *arg = r_str_trim_head_ro (input + 3);
@@ -866,7 +890,7 @@ static void cmd_dtsw(RCore *core, const char *input) {
 	char sub = input[3];
 	const char *arg = r_str_trim_head_ro (sub? input + 4: input + 3);
 	if (sub == '?' || (sub == ' ' && *arg == '?')) {
-		r_core_cmd_help (core, help_msg_dtsw);
+		r_cons_cmd_help (core->cons, help_msg_dtsw);
 		return;
 	}
 	if (!sub || sub == ' ') {
@@ -947,7 +971,7 @@ static void cmd_dtsw(RCore *core, const char *input) {
 		free (args);
 		return;
 	} else {
-		r_core_cmd_help (core, help_msg_dtsw);
+		r_cons_cmd_help (core->cons, help_msg_dtsw);
 		return;
 	}
 	char *list = debug_replay_list (core, mode);
@@ -998,7 +1022,7 @@ static void cmd_drn(RCore *core, const char *str) {
 	char *foo = r_str_trim_dup (str + 1);
 	r_str_case (foo, true);
 	if (*foo == '?') {
-		r_core_cmd_help_match (core, help_msg_dr, "drn");
+		r_cons_cmd_help_match (core->cons, help_msg_dr, "drn", 0, true);
 	} else if (*foo) {
 		char *eq = strchr (foo, '=');
 		if (eq) {
@@ -1423,7 +1447,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 	st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
 	ut64 countsteps = 0;
 	if (R_STR_ISEMPTY (optypes)) {
-		r_core_cmd_help_match (core, help_msg_dsu, "dsuo");
+		r_cons_cmd_help_match (core->cons, help_msg_dsu, "dsuo", 0, true);
 		res = false;
 		goto end;
 	}
@@ -1667,7 +1691,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			break;
 		case '?': // "dpt?"
 		default:
-			r_core_cmd_help_contains (core, help_msg_dp, "dpt");
+			r_cons_cmd_help_match (core->cons, help_msg_dp, "dpt", 0, false);
 			break;
 		}
 		break;
@@ -1728,7 +1752,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case 'e': // "dpe"
 		{
 			int pid = (input[2] == ' ')? atoi (input + 2): core->dbg->pid;
-			char *exe = r_sys_pid_to_path (pid);
+			char *exe = r_sys_pidpath (pid);
 			if (exe) {
 				r_cons_println (core->cons, exe);
 				free (exe);
@@ -1743,7 +1767,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		break;
 	case '?': // "dp?"
 	default:
-		r_core_cmd_help (core, help_msg_dp);
+		r_cons_cmd_help (core->cons, help_msg_dp);
 		break;
 	}
 }
@@ -1871,7 +1895,7 @@ static void cmd_debug_modules(RCore *core, int mode) { // "dmm"
 	/* avoid processing the list if the user only wants help */
 	if (mode == '?') {
 show_help:
-		r_core_cmd_help (core, help_msg_dmm);
+		r_cons_cmd_help (core->cons, help_msg_dmm);
 		return;
 	}
 	PJ *pj = NULL;
@@ -2126,7 +2150,7 @@ static int __r_debug_snap_diff(RCore *core, int idx) {
 static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
-		r_core_cmd_help (core, help_msg_dms);
+		r_cons_cmd_help (core->cons, help_msg_dms);
 		break;
 	case '-':
 		if (input[1] == '*') {
@@ -2173,7 +2197,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 's': // "dms"
 		if (strchr (input, '?')) {
-			r_core_cmd_help_contains (core, help_msg_dm, "dms");
+			r_cons_cmd_help_match (core->cons, help_msg_dm, "dms", 0, false);
 		}
 		cmd_debug_map_snapshot (core, input + 1);
 		break;
@@ -2188,11 +2212,11 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		}
 		break;
 	case '?': // "dm?"
-		r_core_cmd_help (core, help_msg_dm);
+		r_cons_cmd_help (core->cons, help_msg_dm);
 		break;
 	case 'p': // "dmp"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_dmp);
+			r_cons_cmd_help (core->cons, help_msg_dmp);
 		} else if (input[1] == '.' || !input[1]) {
 			ut64 addr = core->addr;
 			RList *list = core->dbg->maps;
@@ -2268,13 +2292,13 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		case 0: return dump_maps (core, -1, NULL);
 		case '?':
 		default:
-			r_core_cmd_help_match (core, help_msg_dm, "dmd");
+			r_cons_cmd_help_match (core->cons, help_msg_dm, "dmd", 0, true);
 			break;
 		}
 		break;
 	case 'l': // "dml"
 		if (input[1] != ' ') {
-			r_core_cmd_help_match (core, help_msg_dm, "dml");
+			r_cons_cmd_help_match (core->cons, help_msg_dm, "dml", 0, true);
 			return false;
 		}
 		r_debug_map_sync (core->dbg); // update process memory maps
@@ -2456,7 +2480,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			}
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_dmi);
+			r_cons_cmd_help (core->cons, help_msg_dmi);
 			break;
 		default:
 			r_core_return_invalid_command (core, "dmi", input[1]);
@@ -2541,14 +2565,14 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				size = r_num_math (core->num, p);
 				r_debug_map_alloc (core->dbg, addr, size, false);
 			} else {
-				r_core_cmd_help_match (core, help_msg_dm, "dm");
+				r_cons_cmd_help_match (core->cons, help_msg_dm, "dm", 0, true);
 				return false;
 			}
 		}
 		break;
 	case '-': // "dm-"
 		if (input[1] != ' ') {
-			r_core_cmd_help_match (core, help_msg_dm, "dm-");
+			r_cons_cmd_help_match (core->cons, help_msg_dm, "dm-", 0, true);
 			break;
 		}
 		addr = r_num_math (core->num, input + 2);
@@ -2571,7 +2595,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				size = r_num_math (core->num, p);
 				r_debug_map_alloc (core->dbg, addr, size, true);
 			} else {
-				r_core_cmd_help_match (core, help_msg_dm, "dmL");
+				r_cons_cmd_help_match (core->cons, help_msg_dm, "dmL", 0, true);
 				return false;
 			}
 		}
@@ -2861,7 +2885,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 				R_LOG_WARN ("Cannot parse gdb profile");
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_drp, "drpg");
+			r_cons_cmd_help_match (core->cons, help_msg_drp, "drpg", 0, true);
 		}
 		break;
 	case ' ': // "drp " "arp "
@@ -2980,7 +3004,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 					help_msg[i] = r_str_replace (help_msg[i], "drp", "arp", true);
 				}
 			}
-			r_core_cmd_help (core, (const char * const *)help_msg);
+			r_cons_cmd_help (core->cons, (const char * const *)help_msg);
 
 			for (i = 0; i < num_strings; i++) {
 				free (help_msg[i]);
@@ -3003,20 +3027,20 @@ static const char *pack_format[NUM_PACK_TYPES] = {
 
 #define pack_print(i, reg, pack_type_index) r_cons_printf (core->cons, pack_format[pack_type_index], i != 0 ? " " : "", reg);
 
-static void cmd_debug_reg_print_packed_reg(RCore *core, RRegItem *item, char explicit_size, char* pack_show)	{
+static void cmd_reg_print_packed_reg(RCore *core, RReg *reg, RRegItem *item, char explicit_size, char *pack_show) {
 	int pi, i;
 	for (pi = 0; pi < NUM_PACK_TYPES; pi++) {
 		if (!explicit_size || pack_show[pi]) {
 			for (i = 0; i < item->packed_size / pack_sizes[pi]; i++) {
-				ut64 res = r_reg_get_pack(core->dbg->reg, item, i, pack_sizes[pi]);
-				if (pi > NUM_INT_PACK_TYPES-1)	{ // are we printing int or double?
-					if (pack_sizes[pi] == 64)	{
+				ut64 res = r_reg_get_pack (reg, item, i, pack_sizes[pi]);
+				if (pi > NUM_INT_PACK_TYPES - 1) { // are we printing int or double?
+					if (pack_sizes[pi] == 64) {
 						double dres;
-						memcpy ((void*)&dres, (void*)&res, 8);
+						memcpy ((void *)&dres, (void *)&res, 8);
 						pack_print (i, dres, pi);
 					} else if (pack_sizes[pi] == 32) {
 						float fres;
-						memcpy ((void*)&fres, (void*)&res, 4);
+						memcpy ((void *)&fres, (void *)&res, 4);
 						pack_print (i, fres, pi);
 					}
 				} else {
@@ -3024,6 +3048,168 @@ static void cmd_debug_reg_print_packed_reg(RCore *core, RRegItem *item, char exp
 				}
 			}
 			r_cons_newline (core->cons);
+		}
+	}
+}
+
+static void cmd_reg_vector_sync(RCore *core, RRegType type, bool write, bool debug) {
+	if (debug) {
+		r_debug_reg_sync (core->dbg, type, write);
+	}
+}
+
+static void cmd_reg_vector_list(RCore *core, RReg *reg, RRegType type, int bits) {
+	RReg *debug_reg = core->dbg->reg;
+	core->dbg->reg = reg;
+	r_debug_reg_list (core->dbg, type, bits, NULL, 0, NULL);
+	core->dbg->reg = debug_reg;
+}
+
+static void cmd_reg_vector(RCore *core, RReg *reg, const char *str, bool debug, RCoreHelpMessage help) {
+	if (str[1] == '?') {
+		r_cons_cmd_help (core->cons, help);
+		return;
+	}
+	if (!str[1] || (str[1] == 'y' && !str[2])) {
+		RRegType type = str[1] == 'y'? R_REG_TYPE_VEC256: R_REG_TYPE_VEC128;
+		cmd_reg_vector_sync (core, type, false, debug);
+		cmd_reg_vector_list (core, reg, type, type == R_REG_TYPE_VEC256? 256: 128);
+		return;
+	}
+	char mode = str[1] == 'y'? str[2]: str[1];
+	if (mode != ' ' && mode != 'b' && mode != 'd' && mode != 'w' && mode != 'q' && mode != 'l' && mode != 'f') {
+		r_core_return_invalid_command (core, debug? "drv": "arv", mode);
+		return;
+	}
+
+	char explicit_index = 0;
+	char explicit_size = 0;
+	char explicit_name = 0;
+	char pack_show[NUM_PACK_TYPES] = { 0, 0, 0, 0, 0, 0 };
+	int index = 0;
+	int size = 0; // auto
+	char *q, *p, *name;
+	char *eq = NULL;
+	RRegType reg_type = R_REG_TYPE_VEC128;
+	if ((str[1] == ' ' && str[2]) || (str[1] == 'y' && str[2] == ' ' && str[3])) {
+		if (str[1] == 'y') { // support `drvy ymm0`, `drv ymm0` and their `ar` variants
+			str++;
+			reg_type = R_REG_TYPE_VEC256;
+		}
+		name = strdup (str + 2);
+		explicit_name = 1;
+		eq = strchr (name, '=');
+		if (eq) {
+			*eq++ = 0;
+		}
+		p = strchr (name, ' ');
+		if (p) {
+			*p++ = 0;
+			q = strchr (p, ' ');
+			if (p[0] != '*') {
+				explicit_index = 1;
+				index = r_num_math (core->num, p);
+			}
+			if (q) {
+				*q++ = 0;
+				size = r_num_math (core->num, q);
+				size_t i;
+				for (i = 0; i < NUM_PACK_TYPES; i++) {
+					if (size == pack_sizes[i]) {
+						explicit_size = 1;
+						pack_show[i] = 1;
+					}
+				}
+				if (!explicit_size) {
+					R_LOG_ERROR ("Unsupported wordsize %d", size);
+					free (name);
+					return;
+				}
+			}
+		}
+	} else {
+		explicit_size = 1;
+		if (str[1] == 'y') {
+			reg_type = R_REG_TYPE_VEC256;
+			str++;
+		}
+		if (str[2] == ' ' && str[3]) {
+			name = strdup (str + 3);
+			explicit_name = 1;
+		}
+		switch (str[1]) {
+		case 'b':
+			size = pack_sizes[0];
+			pack_show[0] = 1;
+			break;
+		case 'w':
+			size = pack_sizes[1];
+			pack_show[1] = 1;
+			break;
+		case 'd':
+			size = pack_sizes[2];
+			pack_show[2] = 1;
+			break;
+		case 'q':
+			size = pack_sizes[3];
+			pack_show[3] = 1;
+			break;
+		case 'f':
+			size = pack_sizes[4];
+			pack_show[4] = 1;
+			break;
+		case 'l':
+			size = pack_sizes[5];
+			pack_show[5] = 1;
+			break;
+		default:
+			R_LOG_ERROR ("Unknown command");
+			return;
+		}
+	}
+
+	if (explicit_name) {
+		RRegItem *item = r_reg_get (reg, name, -1);
+		if (item && item->type != R_REG_TYPE_VEC128 && item->type != R_REG_TYPE_VEC256) {
+			r_unref (item);
+			item = NULL;
+		}
+		if (!item) {
+			R_LOG_ERROR ("Cannot find vector register '%s'", name);
+			free (name);
+			return;
+		}
+		reg_type = item->type;
+		if (eq) {
+			if (reg_type == R_REG_TYPE_VEC256) {
+				R_LOG_WARN ("Setting ymm registers not supported yet!");
+			} else {
+				ut64 val = r_num_math (core->num, eq);
+				r_reg_set_pack (reg, item, index, size, val);
+				cmd_reg_vector_sync (core, reg_type, true, debug);
+			}
+		} else {
+			cmd_reg_vector_sync (core, reg_type, false, debug);
+			if (!explicit_index) {
+				cmd_reg_print_packed_reg (core, reg, item, explicit_size, pack_show);
+			} else {
+				ut64 res = r_reg_get_pack (reg, item, index, size);
+				r_cons_printf (core->cons, "0x%08" PFMT64x "\n", res);
+			}
+		}
+		r_unref (item);
+		free (name);
+		return;
+	}
+
+	cmd_reg_vector_sync (core, reg_type, false, debug);
+	RList *head = r_reg_get_list (reg, reg_type);
+	RListIter *iter;
+	RRegItem *item;
+	r_list_foreach (head, iter, item) {
+		if (item->type == reg_type) {
+			r_cons_printf (core->cons, "%-5s = ", item->name);
+			cmd_reg_print_packed_reg (core, reg, item, explicit_size, pack_show);
 		}
 	}
 }
@@ -3177,7 +3363,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			free (all);
 			r_list_free (args);
 		} else {
-			r_core_cmd_help (core, help_msg_dr);
+			r_cons_cmd_help (core->cons, help_msg_dr);
 		}
 		break;
 	case 'l': // "drl[j]"
@@ -3340,13 +3526,13 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					}
 			        }
 			} else {
-				r_core_cmd_help_match (core, help_msg_dr, "drx");
+				r_cons_cmd_help_match (core->cons, help_msg_dr, "drx", 0, true);
 			}
 			free (s);
 			}
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_drx);
+			r_cons_cmd_help (core->cons, help_msg_drx);
 			break;
 		default:
 			r_core_return_invalid_command (core, "drx", str[1]);
@@ -3367,7 +3553,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			r_reg_arena_push (core->dbg->reg);
 			break;
 		case '?': // "drs?"
-			r_core_cmd_help (core, help_msg_drs);
+			r_cons_cmd_help (core->cons, help_msg_drs);
 			break;
 		default:
 			r_core_return_invalid_command (core, "drs", str[1]);
@@ -3375,151 +3561,12 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'v': // "drv"
-		if (str[1] == '?') {
-			r_core_cmd_help (core, help_msg_drv);
-		} else if (str[1] == ' ' || str[1] == 'b' || str[1] == 'd' || str[1] == 'w' || str[1] == 'q' || str[1] == 'l'
-				   || str[1] == 'f' || (str[1] == 'y' && str[2] != '\x00')) {
-			char explicit_index = 0;
-			char explicit_size = 0;
-			char explicit_name = 0;
-			char pack_show[NUM_PACK_TYPES] = { 0, 0, 0, 0, 0, 0};
-			int index = 0;
-			int size = 0; // auto
-			char *q, *p, *name;
-			char *eq = NULL;
-			RRegType reg_type = R_REG_TYPE_VEC128;
-			if ((str[1] == ' ' && str[2] != '\x00') || (str[1] == 'y' && str[2] == ' ' && str[3] != '\x00')) {
-				if (str[1] == 'y') { // support `drvy ymm0` and `drv ymm0`
-					str = str + 1;
-				}
-				name = strdup (str + 2);
-				explicit_name = 1;
-				eq = strchr (name, '=');
-				if (eq) {
-					*eq++ = 0;
-				}
-				p = strchr (name, ' ');
-				if (p) {
-					*p++ = 0;
-					q = strchr (p, ' ');
-					if (p[0] != '*') {
-						// do not show whole register
-						explicit_index = 1;
-						index = r_num_math (core->num, p);
-					}
-					if (q) {
-						*q++ = 0;
-						size = r_num_math (core->num, q);
-						for (i = 0; i < NUM_PACK_TYPES; i++) {
-							if (size == pack_sizes[i]) {
-								explicit_size = 1;
-								pack_show[i] = 1;
-							}
-						}
-						if (!explicit_size) {
-							R_LOG_ERROR ("Unsupported wordsize %d", size);
-							break;
-						}
-					}
-				}
-			} else {
-				explicit_size = 1;
-				if (str[1] == 'y') {
-					reg_type = R_REG_TYPE_VEC256;
-					str = str + 1;
-				}
-				if (str[2] == ' ' && str[3] != '\x00') {
-					name = strdup (str + 3);
-					explicit_name = 1;
-				}
-				switch (str[1])	{
-				case 'b': // "drvb"
-					size = pack_sizes[0];
-					pack_show[0] = 1;
-					break;
-				case 'w': // "drvw"
-					size = pack_sizes[1];
-					pack_show[1] = 1;
-					break;
-				case 'd': // "drvd"
-					size = pack_sizes[2];
-					pack_show[2] = 1;
-					break;
-				case 'q': // "drvq"
-					size = pack_sizes[3];
-					pack_show[3] = 1;
-					break;
-				case 'f': // "drvf"
-					size = pack_sizes[4];
-					pack_show[4] = 1;
-					break;
-				case 'l': // "drvl"
-					size = pack_sizes[5];
-					pack_show[5] = 1;
-					break;
-				default:
-					R_LOG_ERROR ("Unknown command");
-					return;
-				}
-			}
-			if (explicit_name) {
-				RRegItem *item = r_reg_get (core->dbg->reg, name, -1);
-				if (item) {
-					if (eq) {
-						// TODO: support setting YMM registers
-						if (reg_type == R_REG_TYPE_VEC256) {
-							R_LOG_WARN ("Setting ymm registers not supported yet!");
-						} else {
-							ut64 val = r_num_math (core->num, eq);
-							r_reg_set_pack (core->dbg->reg, item, index, size, val);
-							r_debug_reg_sync (core->dbg, reg_type, true);
-						}
-					} else {
-						r_debug_reg_sync (core->dbg, reg_type, false);
-						if (!explicit_index) {
-							cmd_debug_reg_print_packed_reg (core, item, explicit_size, pack_show);
-						} else {
-							ut64 res = r_reg_get_pack (core->dbg->reg, item, index, size);
-							// print selected index / wordsize
-							r_cons_printf (core->cons, "0x%08" PFMT64x "\n", res);
-						}
-					}
-				} else {
-					R_LOG_ERROR ("Cannot find vector register '%s'", name);
-				}
-				free (name);
-			} else {
-				// explicit size no name
-				RListIter *iter;
-				RRegItem *item;
-				RList *head;
-				r_debug_reg_sync (core->dbg, reg_type, false);
-				head = r_reg_get_list (core->dbg->reg, reg_type);
-				if (head) {
-					r_list_foreach (head, iter, item) {
-						if (item->type != reg_type) {
-							continue;
-						}
-						r_cons_printf (core->cons, "%-5s = ", item->name);
-						cmd_debug_reg_print_packed_reg (core, item, explicit_size, pack_show);
-					}
-				}
-			}
-		} else { // drv # no arg
-			if (str[1] == 'y') { // drvy
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_VEC256, false);
-				r_debug_reg_list (core->dbg, R_REG_TYPE_VEC256, 256, NULL, 0, 0);
-			} else { // drv
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_VEC128, false);
-				r_debug_reg_list (core->dbg, R_REG_TYPE_VEC128, 128, NULL, 0, 0);
-			}
-		}
-		//r_debug_drx_list (core->dbg);
+		cmd_reg_vector (core, core->dbg->reg, str, true, help_msg_drv);
 		break;
 	case 'f': // "drf"
 		// r_debug_drx_list (core->dbg);
 		if (str[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_dr, "drf");
+			r_cons_cmd_help_match (core->cons, help_msg_dr, "drf", 0, true);
 		} else if (str[1] == ' ') {
 			char *p, *name = strdup (str + 2);
 			char *eq = strchr (name, '=');
@@ -3638,7 +3685,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		}
 		case '?': // "drt?"
 		default:
-			r_core_cmd_help (core, help_msg_drt);
+			r_cons_cmd_help (core->cons, help_msg_drt);
 			break;
 		}
 		}
@@ -3715,7 +3762,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case 'r': // "drr"
 		switch (str[1]) {
 		case '?': // "drr?"
-			r_core_cmd_help (core, help_msg_drr);
+			r_cons_cmd_help (core->cons, help_msg_drr);
 			break;
 		case 'j': // "drrj"
 			r_core_debug_rr (core, core->dbg->reg, 'j');
@@ -4048,10 +4095,10 @@ static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 					R_LOG_ERROR ("Cannot set command");
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_db, "dbic");
+				r_cons_cmd_help_match (core->cons, help_msg_db, "dbic", 0, true);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_db, "dbic");
+			r_cons_cmd_help_match (core->cons, help_msg_db, "dbic", 0, true);
 		}
 		break;
 	case 'e': // "dbie"
@@ -4134,11 +4181,11 @@ static void add_breakpoint(RCore *core, const char *input, bool hwbp, bool watch
 					} else if (!strcmp (DB_ARG (i + 1), "rw")) {
 						rw = R_BP_PROT_ACCESS;
 					} else {
-						r_core_cmd_help (core, help_msg_dbw);
+						r_cons_cmd_help (core->cons, help_msg_dbw);
 						break;
 					}
 				} else {
-					r_core_cmd_help (core, help_msg_dbw);
+					r_cons_cmd_help (core->cons, help_msg_dbw);
 					break;
 				}
 			}
@@ -4226,13 +4273,13 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		break;
 	case 'l': // "dbl"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_db, "dbl");
+			r_cons_cmd_help_match (core->cons, help_msg_db, "dbl", 0, true);
 			break;
 		}
 		{
 			const char *spec = r_str_trim_head_ro (input + 2);
 			if (R_STR_ISEMPTY (spec)) {
-				r_core_cmd_help_match (core, help_msg_db, "dbl");
+				r_cons_cmd_help_match (core->cons, help_msg_db, "dbl", 0, true);
 				break;
 			}
 			char *dup = strdup (spec);
@@ -4263,7 +4310,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		break;
 	case 'x': // "dbx"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_db, "dbx");
+			r_cons_cmd_help_match (core->cons, help_msg_db, "dbx", 0, true);
 		} else if (input[2] == ' ') {
 			if (addr == UT64_MAX) {
 				addr = core->addr;
@@ -4432,7 +4479,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_list_free (list);
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_dbt);
+			r_cons_cmd_help (core->cons, help_msg_dbt);
 			break;
 		default:
 			r_core_return_invalid_command (core, "dbt", input[2]);
@@ -4452,7 +4499,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			st64 delta = 0;
 			char *sdelta = (char *)r_str_lchr (module, ' ');
 			if (!sdelta) {
-				r_core_cmd_help_match (core, help_msg_db, "dbm");
+				r_cons_cmd_help_match (core->cons, help_msg_db, "dbm", 0, true);
 				free (module);
 				break;
 			}
@@ -4464,7 +4511,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 			free (module);
 		} else if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_db, "dbm");
+			r_cons_cmd_help_match (core->cons, help_msg_db, "dbm", 0, true);
 		} else {
 			R_LOG_INFO ("Missing argument for dbm");
 		}
@@ -4494,7 +4541,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		if (input[2] == '*') {
 			r_bp_del_all (core->dbg->bp);
 		} else if (input[2] == '?') {
-			r_core_cmd_help (core, help_msg_db);
+			r_cons_cmd_help (core->cons, help_msg_db);
 		} else {
 			#define DB_ARG(x) r_str_word_get0(str, x)
 			char *str = strdup (r_str_trim_head_ro (input +2));
@@ -4526,7 +4573,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 			free (inp);
 		} else if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_db, "dbc");
+			r_cons_cmd_help_match (core->cons, help_msg_db, "dbc", 0, true);
 		} else {
 			r_core_return_invalid_command (core, "dbc", input[2]);
 		}
@@ -4550,7 +4597,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 			free (inp);
 		} else if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_db, "dbC");
+			r_cons_cmd_help_match (core->cons, help_msg_db, "dbC", 0, true);
 		} else {
 			r_core_return_invalid_command (core, "dbC", input[2]);
 		}
@@ -4628,7 +4675,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 			break;
 		case '?':
-			r_core_cmd_help_match (core, help_msg_db, "dbh");
+			r_cons_cmd_help_match (core->cons, help_msg_db, "dbh", 0, true);
 			break;
 		default:
 			r_core_return_invalid_command (core, "dh", input[2]);
@@ -4644,7 +4691,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				R_LOG_INFO ("Breakpoint not set");
 			}
 		} else if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_db, "dbW");
+			r_cons_cmd_help_match (core->cons, help_msg_db, "dbW", 0, true);
 		} else {
 			R_LOG_ERROR ("Missing argument");
 		}
@@ -4661,13 +4708,13 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		break;
 	case 'i':
 		if (input[2] == '?') {
-			r_core_cmd_help (core, help_msg_dbi);
+			r_cons_cmd_help (core->cons, help_msg_dbi);
 		} else {
 			core_cmd_dbi (core, input, idx);
 		}
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_db);
+		r_cons_cmd_help (core->cons, help_msg_db);
 		break;
 	default:
 		r_core_return_invalid_command (core, "db", input[1]);
@@ -4909,10 +4956,10 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 					dev = p[0];
 					r_debug_esil_watch (core->dbg, perm, dev, q);
 				} else {
-					r_core_cmd_help_match (core, help_msg_de, "de ");
+					r_cons_cmd_help_match (core->cons, help_msg_de, "de ", 0, true);
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_de, "de ");
+				r_cons_cmd_help_match (core->cons, help_msg_de, "de ", 0, true);
 			}
 			free (line);
 		}
@@ -4950,7 +4997,7 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 				addr = naddr;
 			}
 		} else if (input[1] == '?' || !input[1]) {
-			r_core_cmd_help (core, help_msg_des);
+			r_cons_cmd_help (core->cons, help_msg_des);
 		} else {
 			cmd_aei (core);
 			r_debug_esil_prestep (core->dbg, r_config_get_i (core->config, "esil.prestep"));
@@ -4961,7 +5008,7 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 	case '?': // "de?"
 	default:
 		{
-			r_core_cmd_help (core, help_msg_de);
+			r_cons_cmd_help (core->cons, help_msg_de);
 			// TODO #7967 help refactor: move to detail
 			r_cons_printf (core->cons, "Examples:\n"
 					" de r r rip       # stop when reads rip\n"
@@ -4990,7 +5037,7 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 				}
 			}
 		} else {
-			r_core_cmd_help (core, help_msg_dk);
+			r_cons_cmd_help (core->cons, help_msg_dk);
 		}
 	} else if (*input == 'o') {
 		switch (input[1]) {
@@ -5032,7 +5079,7 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 		case '?':
 		default:
 			{
-				r_core_cmd_help (core, help_msg_dko);
+				r_cons_cmd_help (core->cons, help_msg_dko);
 				// TODO #7967 help refactor: move to detail
 				r_cons_println (core->cons, "NOTE: [signal] can be a number or a string that resolves with dk?\n"
 						"  skip means do not enter into the signal handler\n"
@@ -5283,12 +5330,116 @@ static bool cmd_dcu(RCore *core, const char *input) {
 	return true;
 }
 
+typedef struct {
+	RDebug *dbg;
+	int pid;
+	int tid;
+	int ms;
+	bool cancel;
+	bool fired;
+	RThreadLock *lock;
+} DcutCtx;
+
+static RThreadFunctionRet dcut_thread(RThread *th) {
+	DcutCtx *ctx = (DcutCtx *)th->user;
+	int ms = ctx->ms;
+	while (ms > 0) {
+		const int chunk = R_MIN (ms, 5);
+		r_sys_usleep (chunk * 1000);
+		ms -= chunk;
+		r_th_lock_enter (ctx->lock);
+		const bool cancel = ctx->cancel;
+		r_th_lock_leave (ctx->lock);
+		if (cancel) {
+			return R_TH_STOP;
+		}
+	}
+	r_th_lock_enter (ctx->lock);
+	if (!ctx->cancel) {
+		// the debuggee is still running, ask it to stop
+		ctx->fired = r_debug_stop (ctx->dbg);
+	}
+	r_th_lock_leave (ctx->lock);
+	return R_TH_STOP;
+}
+
+// "dcut" continue the child and interrupt it after the given amount of milliseconds
+static bool cmd_dcut(RCore *core, const char *input) {
+	if (*input == '?') {
+		r_cons_cmd_help_match (core->cons, help_msg_dcu, "dcut", 0, true);
+		return false;
+	}
+	if (!r_config_get_b (core->config, "cfg.debug")) {
+		R_LOG_ERROR ("dcut requires a native debug session");
+		return false;
+	}
+	if (r_debug_is_dead (core->dbg)) {
+		R_LOG_ERROR ("Cannot continue, run ood?");
+		return false;
+	}
+	const char *arg = r_str_trim_head_ro (input);
+	int ms = 100;
+	if (R_STR_ISNOTEMPTY (arg)) {
+		ms = (int)r_num_math (core->num, arg);
+		if (ms < 1) {
+			R_LOG_ERROR ("Invalid amount of milliseconds");
+			return false;
+		}
+	}
+	DcutCtx ctx = {
+		.dbg = core->dbg,
+		.pid = core->dbg->pid,
+		.tid = core->dbg->tid,
+		.ms = ms,
+		.cancel = false,
+		.fired = false,
+		.lock = r_th_lock_new (false)
+	};
+	if (!ctx.lock) {
+		return false;
+	}
+	RThread *th = r_th_new (dcut_thread, &ctx, 0);
+	if (!th) {
+		R_LOG_ERROR ("Cannot spawn the dcut thread");
+		r_th_lock_free (ctx.lock);
+		return false;
+	}
+	// r_th_new() only spawns the launcher, the timer wont run until started
+	if (!r_th_start (th)) {
+		R_LOG_ERROR ("Cannot start the dcut thread");
+		r_th_break (th);
+		r_th_wait (th);
+		r_th_free (th);
+		r_th_lock_free (ctx.lock);
+		return false;
+	}
+	r_th_setname (th, "dcut");
+	r_reg_arena_swap (core->dbg->reg, true);
+	r_debug_continue (core->dbg);
+	// the child stopped (or died) on its own, disarm the timer
+	r_th_lock_enter (ctx.lock);
+	ctx.cancel = true;
+	const bool fired = ctx.fired;
+	r_th_lock_leave (ctx.lock);
+	r_th_wait (th);
+	r_th_free (th);
+	r_th_lock_free (ctx.lock);
+	if (!fired) {
+		R_LOG_INFO ("The child stopped before the %dms timeout", ms);
+	}
+	return true;
+}
+
 static int cmd_debug_continue(RCore *core, const char *input) {
 	int pid, old_pid, signum;
 	char *ptr;
 	// TODO: we must use this for step 'ds' too maybe...
 	switch (input[1]) {
 	case 0: // "dc"
+		if (!r_config_get_b (core->config, "cfg.debug")) {
+			r_core_cmd0 (core, "aec");
+			break;
+		}
 		r_reg_arena_swap (core->dbg->reg, true);
 #if 0
 		// This has been disabled as it caused `dc; dc; ood; dc` to
@@ -5304,7 +5455,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		break;
 	case 'b': // "dcb"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dcb");
+			r_cons_cmd_help_match (core->cons, help_msg_dc, "dcb", 0, true);
 		} else {
 			if (!core->dbg->session) {
 				R_LOG_ERROR ("Session has not started");
@@ -5315,7 +5466,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		}
 	case 'e': // "dce"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dce");
+			r_cons_cmd_help_match (core->cons, help_msg_dc, "dce", 0, true);
 		} else {
 			r_reg_arena_swap (core->dbg->reg, true);
 			r_debug_continue_with_signal (core->dbg);
@@ -5323,7 +5474,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		break;
 	case 'f': // "dcf"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dcf");
+			r_cons_cmd_help_match (core->cons, help_msg_dc, "dcf", 0, true);
 		} else {
 			// we should stop in fork and vfork syscalls
 			//TODO: multiple syscalls not handled yet
@@ -5345,13 +5496,13 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
 			break;
 		default: // "dcc?"
-			r_core_cmd_help_match (core, help_msg_dc, "dcc");
+			r_cons_cmd_help_match (core->cons, help_msg_dc, "dcc", 0, true);
 			break;
 		}
 		break;
 	case 'r': // "dcr"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dcr");
+			r_cons_cmd_help_match (core->cons, help_msg_dc, "dcr", 0, true);
 		} else {
 			r_reg_arena_swap (core->dbg->reg, true);
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
@@ -5359,7 +5510,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		break;
 	case 'k':
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dck");
+			r_cons_cmd_help_match (core->cons, help_msg_dc, "dck", 0, true);
 		} else {
 			// select pid and r_debug_continue_kill (core->dbg,
 			r_reg_arena_swap (core->dbg->reg, true);
@@ -5392,13 +5543,13 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 			break;
 		default:
 		case '?':
-			r_core_cmd_help (core, help_msg_dcs);
+			r_cons_cmd_help (core->cons, help_msg_dcs);
 			break;
 		}
 		break;
 	case 'p': // "dcp"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dcp");
+			r_cons_cmd_help_match (core->cons, help_msg_dc, "dcp", 0, true);
 		} else {
 			// XXX: this is very slow
 			RIOMap *s;
@@ -5425,7 +5576,9 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		break;
 	case 'u': // "dcu"
 		if (input[2] == '?') {
-			r_core_cmd_help (core, help_msg_dcu);
+			r_cons_cmd_help (core->cons, help_msg_dcu);
+		} else if (input[2] == 't') { // "dcut"
+			cmd_dcut (core, input + 3);
 		} else {
 			cmd_dcu (core, input);
 		}
@@ -5453,14 +5606,14 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 	}
 	case 't':
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dct");
+			r_cons_cmd_help_match (core->cons, help_msg_dc, "dct", 0, true);
 		} else {
 			cmd_debug_backtrace (core, input + 2);
 		}
 		break;
 	case '?': // "dc?"
 	default:
-		r_core_cmd_help (core, help_msg_dc);
+		r_cons_cmd_help (core->cons, help_msg_dc);
 		return 0;
 	}
 
@@ -5540,7 +5693,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 		break;
 	case 'u': // "dsu"
 		if (input[3] == '?') {
-			r_core_cmd_help_match_spec (core, help_msg_dsu, "dsu", input[2]);
+			r_cons_cmd_help_match (core->cons, help_msg_dsu, "dsu", input[2], true);
 			return 0;
 		}
 		switch (input[2]) {
@@ -5550,7 +5703,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 		case 'i': // dsui
 			if (input[3] == 'r') {
 				if (input[4] == '?') {
-					r_core_cmd_help_match (core, help_msg_dsu, "dsuir");
+					r_cons_cmd_help_match (core->cons, help_msg_dsu, "dsuir", 0, true);
 				}
 				step_until_inst (core, input + 4, true);
 			} else {
@@ -5568,7 +5721,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 			step_until (core, r_num_math (core->num, input + 2)); // XXX dupped by times
 			break;
 		default:
-			r_core_cmd_help (core, help_msg_dsu);
+			r_cons_cmd_help (core->cons, help_msg_dsu);
 			return 0;
 		}
 		break;
@@ -5662,7 +5815,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 		break;
 	case '?': // "ds?"
 	default:
-		r_core_cmd_help (core, help_msg_ds);
+		r_cons_cmd_help (core->cons, help_msg_ds);
 		return 0;
 	}
 	return 1;
@@ -5709,12 +5862,12 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	int ret = 0;
 
 	if (input[1] == '?') { // "dd?"
-		r_core_cmd_help (core, help_msg_dd);
+		r_cons_cmd_help (core->cons, help_msg_dd);
 		return 0;
 	}
 
 	if (!strncmp (input, "d*?", 3)) { // "dd*?"
-		r_core_cmd_help_match (core, help_msg_dd, "dd");
+		r_cons_cmd_help_match (core->cons, help_msg_dd, "dd", 0, true);
 		return 0;
 	}
 
@@ -5740,7 +5893,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 				/* "ddt*?" -> "ddt?" */
 				input--;
 			}
-			r_core_cmd_help_match_spec (core, help_msg_dd, "dd", input[0]);
+			r_cons_cmd_help_match (core->cons, help_msg_dd, "dd", input[0], true);
 			goto out_free_argv;
 		}
 
@@ -5783,7 +5936,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 				if (!input[0] || input[0] == '*') {
 					ret = r_debug_desc_list (core->dbg, print);
 				} else {
-					r_core_cmd_help_match_spec (core, help_msg_dd, "dd", input[0]);
+					r_cons_cmd_help_match (core->cons, help_msg_dd, "dd", input[0], true);
 				}
 				break;
 			}
@@ -5849,7 +6002,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		ut64 offset;
 
 		if (argc < 2) {
-			r_core_cmd_help_match (core, help_msg_dd, "dds");
+			r_cons_cmd_help_match (core->cons, help_msg_dd, "dds", 0, true);
 			break;
 		}
 
@@ -5878,7 +6031,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		int newfd;
 
 		if (argc < 3) {
-			r_core_cmd_help_match (core, help_msg_dd, "ddd");
+			r_cons_cmd_help_match (core->cons, help_msg_dd, "ddd", 0, true);
 			break;
 		}
 
@@ -5904,7 +6057,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		char *perms;
 
 		if (argc < 4) {
-			r_core_cmd_help_match (core, help_msg_dd, "ddr");
+			r_cons_cmd_help_match (core->cons, help_msg_dd, "ddr", 0, true);
 			break;
 		}
 
@@ -5941,7 +6094,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		char *perms;
 
 		if (argc < 4) {
-			r_core_cmd_help_match (core, help_msg_dd, "ddw");
+			r_cons_cmd_help_match (core->cons, help_msg_dd, "ddw", 0, true);
 			break;
 		}
 
@@ -5979,7 +6132,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			fd = 0;
 		} else {
 			if (argc < 2) {
-				r_core_cmd_help_match (core, help_msg_dd, "dd-");
+				r_cons_cmd_help_match (core->cons, help_msg_dd, "dd-", 0, true);
 				break;
 			}
 			fd = (int) r_num_math (core->num, argv[1]);
@@ -6000,7 +6153,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		ut64 addr;
 
 		if (argc < 2) {
-			r_core_cmd_help_match (core, help_msg_dd, "ddf");
+			r_cons_cmd_help_match (core->cons, help_msg_dd, "ddf", 0, true);
 			break;
 		}
 
@@ -6019,7 +6172,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		break;
 	}
 	default:
-		r_core_cmd_help (core, help_msg_dd);
+		r_cons_cmd_help (core->cons, help_msg_dd);
 		break;
 	}
 
@@ -6059,7 +6212,7 @@ static ut8 *getFileData(RCore *core, const char *arg, int *sz) {
 
 static void cmd_dg(RCore *core, const char *input) {
 	if (input[1] == '?') {
-		r_core_cmd_help (core, help_msg_dg);
+		r_cons_cmd_help (core->cons, help_msg_dg);
 	} else if (input[1] == 'a' || input[1] == ' ' || !input[1]) {
 		RDebugGenerateCore gcore = R_UNWRAP5 (core, dbg, current, plugin, gcore);
 		if (!gcore) {
@@ -6116,7 +6269,7 @@ static int cmd_debug(void *data, const char *input) {
 	}
 	if (!strncmp (input, "ate", 3)) { // "date" -- same as pt.
 		if (strstr (input, "-h") || strstr (input, "?")) {
-			r_core_cmd_help_match (core, help_msg_d, "date");
+			r_cons_cmd_help_match (core->cons, help_msg_d, "date", 0, true);
 			return 0;
 		}
 		bool use_beat = strstr (input, "-b");
@@ -6179,7 +6332,7 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'c': // "dtc"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_dt, "dtc");
+				r_cons_cmd_help_match (core->cons, help_msg_dt, "dtc", 0, true);
 			} else {
 				debug_trace_calls (core, input + 2);
 			}
@@ -6347,12 +6500,12 @@ static int cmd_debug(void *data, const char *input) {
 						R_LOG_ERROR ("esil->trace is null. run 'e dbg.trace=true;dtei' to fix that. ");
 					}
 				} else {
-					r_core_cmd_help_match (core, help_msg_dte, "dtek");
+					r_cons_cmd_help_match (core->cons, help_msg_dte, "dtek", 0, true);
 				}
 				break;
 #endif
 			default:
-				r_core_cmd_help (core, help_msg_dte);
+				r_cons_cmd_help (core->cons, help_msg_dte);
 				break;
 			}
 			break;
@@ -6441,12 +6594,12 @@ static int cmd_debug(void *data, const char *input) {
 				cmd_dtsw (core, input);
 				break;
 			default:
-				r_core_cmd_help (core, help_msg_dts);
+				r_cons_cmd_help (core->cons, help_msg_dts);
 			}
 			break;
 		case '?':
 		default:
-			r_core_cmd_help (core, help_msg_dt);
+			r_cons_cmd_help (core->cons, help_msg_dt);
 			break;
 		}
 		break;
@@ -6477,6 +6630,8 @@ static int cmd_debug(void *data, const char *input) {
 	case 'r': // "dr"
 		if (r_config_get_b (core->config, "cfg.debug") || input[1] == '?') {
 			cmd_debug_reg (core, input + 1);
+		} else if (input[1] == 'v') {
+			cmd_reg_vector (core, core->anal->reg, input + 1, false, help_msg_drv);
 		} else {
 			cmd_anal_reg (core, input + 1);
 		}
@@ -6497,7 +6652,7 @@ static int cmd_debug(void *data, const char *input) {
 			core->dbg->pj = NULL;
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg_dL);
+			r_cons_cmd_help (core->cons, help_msg_dL);
 			break;
 		case ' ': {
 			char *str = r_str_trim_dup (input + 2);
@@ -6569,7 +6724,7 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case 'f': // "dif" "diff"
 				if (input[1] == '?') {
-					r_core_cmd_help_match (core, help_msg_di, "dif");
+					r_cons_cmd_help_match (core->cons, help_msg_di, "dif", 0, true);
 				} else {
 					char *arg = strchr (input, ' ');
 					if (arg) {
@@ -6595,7 +6750,7 @@ static int cmd_debug(void *data, const char *input) {
 						}
 						free (arg);
 					} else {
-						r_core_cmd_help_match (core, help_msg_di, "dif");
+						r_cons_cmd_help_match (core->cons, help_msg_di, "dif", 0, true);
 					}
 				}
 				break;
@@ -6664,7 +6819,7 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case '?': // "di?"
 			default:
-				r_core_cmd_help (core, help_msg_di);
+				r_cons_cmd_help (core->cons, help_msg_di);
 				break;
 			}
 			r_debug_info_free (rdi);
@@ -6707,7 +6862,7 @@ static int cmd_debug(void *data, const char *input) {
 					char **env = r_sys_get_environ ();
 					core->io->envprofile = r_run_get_environ_profile (env);
 				}
-				char *out = r_core_editor (core, NULL, core->io->envprofile);
+				char *out = r_core_editor (core, NULL, core->io->envprofile, NULL);
 				if (out) {
 					free (core->io->envprofile);
 					core->io->envprofile = out;
@@ -6765,7 +6920,7 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case '?': // "do?"
 		default:
-			r_core_cmd_help (core, help_msg_do);
+			r_cons_cmd_help (core->cons, help_msg_do);
 			break;
 		}
 		break;
@@ -6796,11 +6951,11 @@ static int cmd_debug(void *data, const char *input) {
 		case 'r':   // "dxr"
 			if (input[2] == 's') { // "dxrs"
 				if (input[3] != ' ') {
-					r_core_cmd_help_match (core, help_msg_dx, "dxrs");
+					r_cons_cmd_help_match (core->cons, help_msg_dx, "dxrs", 0, true);
 					break;
 				}
 			} else if (input[2] != ' ') {
-				r_core_cmd_help_match (core, help_msg_dx, "dxr");
+				r_cons_cmd_help_match (core->cons, help_msg_dx, "dxr", 0, true);
 				break;
 			}
 			/* fall through */
@@ -6845,7 +7000,7 @@ static int cmd_debug(void *data, const char *input) {
 		case 'a': { // "dxa"
 			RAsmCode *acode;
 			if (input[2] == '?' || input[2] != ' ') {
-				r_core_cmd_help_match (core, help_msg_dx, "dxa");
+				r_cons_cmd_help_match (core->cons, help_msg_dx, "dxa", 0, true);
 				break;
 			}
 			r_asm_set_pc (core->rasm, core->addr);
@@ -6862,7 +7017,7 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		case 'e': // "dxe"
 			if (input[2] == '?' || input[2] != ' ') {
-				r_core_cmd_help (core, help_msg_dxe);
+				r_cons_cmd_help (core->cons, help_msg_dxe);
 			} else { // "dxe"
 				const char *program = r_str_trim_head_ro (input + 2);
 				REgg *egg = core->egg;
@@ -6913,12 +7068,12 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case '?': // "dx?"
 		default:
-			r_core_cmd_help (core, help_msg_dx);
+			r_cons_cmd_help (core->cons, help_msg_dx);
 			break;
 		}
 		break;
 	case '?': // "d?"
-		r_core_cmd_help (core, help_msg_d);
+		r_cons_cmd_help (core->cons, help_msg_d);
 		break;
 	default:
 		r_core_return_invalid_command (core, "d", *input);

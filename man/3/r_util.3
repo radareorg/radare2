@@ -165,15 +165,20 @@ Converts binary data to a hex string.
 .Pp
 Utilities to encode binary data to base64 and decode it back, useful for transporting or embedding binary content in text contexts.
 
-.Ft char *
-.Fn r_base64_encode "const ut8 *bin" "int len"
+.Ft int
+.Fn r_base64_encode "char *bout" "const ut8 *bin" "int len"
 .Pp
 Encodes data to base64.
 .Pp
-.Ft ut8 *
-.Fn r_base64_decode "const char *str" "int *olen"
+.Ft int
+.Fn r_base64_decode "ut8 *bout" "const char *bin" "int len" "bool strict"
 .Pp
-Decodes base64 data.
+Decodes base64 data. In strict mode any invalid character, misaligned length or misplaced padding fails with -1; otherwise invalid bytes are skipped and as much data as possible is recovered.
+.Pp
+.Ft ut8 *
+.Fn r_base64_decode_dyn "const char *in" "int len" "int *olen" "bool strict"
+.Pp
+Decodes base64 data into a heap-allocated buffer, returning NULL on strict decoding failures.
 .Sh TABLES
 .Pp
 Helpers for building textual tables: create table objects, add columns and rows, and format output for display when presenting structured, columnar data.

@@ -37,7 +37,8 @@ R_API int r_sys_fork(void);
 // nocleanup = false => exit(); true => _exit()
 R_API void r_sys_exit(int status, bool nocleanup);
 R_API bool r_sys_stop(void);
-R_API char *r_sys_pid_to_path(int pid);
+R_API char *r_sys_pidpath(int pid);
+R_API char *r_sys_exepath(void);
 R_API int r_sys_run(const ut8 *buf, int len);
 R_API int r_sys_run_rop(const ut8 *buf, int len);
 R_API int r_sys_getpid(void);
@@ -107,6 +108,8 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len);
 R_API char *r_sys_cmd_strf(const char *cmd, ...) R_PRINTF_CHECK(1, 2);
 //#define r_sys_cmd_str(cmd, input, len) r_sys_cmd_str_full(cmd, input, len, 0)
 R_API void r_sys_backtrace(void);
+// Opens a file or URL; a null opener selects the platform handler.
+R_API bool r_sys_open(const char * R_NONNULL target, const char * R_NULLABLE opener, bool bg);
 R_API bool r_sys_tts(const char *txt, bool bg);
 
 #define R_DUMP(x) __builtin_dump_struct(x, &printf)

@@ -183,18 +183,14 @@ static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 		//empty body
 	}
 	p_sigpend = temp_p_sigpend - 1;
-	while (isdigit ((ut8)*temp_p_sigpend++)) {
-		//empty body
-	}
-	p_sigpend[temp_p_sigpend - p_sigpend - 1] = '\0';
+	temp_p_sigpend = r_str_trim_head_digits (temp_p_sigpend);
+	*temp_p_sigpend = '\0';
 	while (!isdigit ((ut8)*temp_p_sighold++)) {
 		//empty body
 	}
 	p_sighold = temp_p_sighold - 1;
-	while (isdigit ((ut8)*temp_p_sighold++)) {
-		//empty body
-	}
-	p_sighold[temp_p_sighold - p_sighold - 1] = '\0';
+	temp_p_sighold = r_str_trim_head_digits (temp_p_sighold);
+	*temp_p_sighold = '\0';
 	t->sigpend = atoi (p_sigpend);
 	t->sighold = atoi (p_sighold);
 	free (buff);
@@ -841,10 +837,8 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 			//empty body
 		}
 		p_uid = temp_p_uid - 1;
-		while (isdigit ((ut8)*temp_p_uid++)) {
-			//empty body
-		}
-		p_uid[temp_p_uid - p_uid - 1] = '\0';
+		temp_p_uid = r_str_trim_head_digits (temp_p_uid);
+		*temp_p_uid = '\0';
 	} else {
 		p_uid = NULL;
 	}
@@ -856,10 +850,8 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 			//empty body
 		}
 		p_gid = temp_p_gid - 1;
-		while (isdigit ((ut8)*temp_p_gid++)) {
-			//empty body
-		}
-		p_gid[temp_p_gid - p_gid - 1] = '\0';
+		temp_p_gid = r_str_trim_head_digits (temp_p_gid);
+		*temp_p_gid = '\0';
 	} else {
 		p_gid = NULL;
 	}

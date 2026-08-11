@@ -300,6 +300,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.entries = &entries,
 	.sections_vec = &sections_vec,
 	.signature = &entitlements,
+	.load_resources = &load_resources,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,
 	.info = &info,

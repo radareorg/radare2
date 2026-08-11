@@ -18,6 +18,51 @@ bool test_cmd_str_issue_18799(void) {
 	mu_end;
 }
 
+bool test_multiple_cores_share_terminal(void) {
+	RCore *first = r_core_new ();
+	RCore *second = r_core_new ();
+	mu_assert ("different console instances", first->cons != second->cons);
+	mu_assert_notnull (first->cons->terminal, "first core console is attached");
+	mu_assert_notnull (second->cons->terminal, "second core console is attached");
+
+	char *first_output = r_core_cmd_str (first, "?e first");
+	char *second_output = r_core_cmd_str (second, "?e second");
+	mu_assert_streq_free (first_output, "first\n", "first core output");
+	mu_assert_streq_free (second_output, "second\n", "second core output");
+
+	r_core_free (first);
+	mu_assert_ptreq (r_cons_singleton (), second->cons, "freeing first core preserves second");
+	r_core_free (second);
+	mu_assert_false (r_cons_is_initialized (), "freeing both cores clears current console");
+	mu_end;
+}
+
+bool test_echo_context_binding_and_depth(void) {
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "create core");
+
+	RCoreBind bind = { 0 };
+	r_core_bind (core, &bind);
+	char *output = bind.cmdStr (bind.core, "echo \"bound value\"");
+	mu_assert_streq_free (output, "bound value\n", "binding reaches registered echo");
+	output = r_core_cmd_str (core, "?e \"adapter value\"");
+	mu_assert_streq_free (output, "adapter value\n", "?e uses context echo");
+
+	r_config_set_i (core->config, "cmd.depth", 2);
+	output = r_core_cmd_str (core, "e cmd.depth=1; echo $(echo nested)");
+	mu_assert_streq_free (output, "nested\n", "active root keeps its own depth budget");
+	output = r_core_cmd_str (core, "echo $(echo hidden)");
+	mu_assert_streq_free (output, "", "next root observes the reduced limit");
+	output = r_core_cmd_str (core, "echo after");
+	mu_assert_streq_free (output, "after\n", "depth failure does not poison later roots");
+
+	r_config_set_i (core->config, "cmd.depth", 2);
+	output = r_core_cmd_str (core, "echo $(echo visible)");
+	mu_assert_streq_free (output, "visible\n", "one nested context fits depth two");
+	r_core_free (core);
+	mu_end;
+}
+
 bool test_prompt_utf8_ellipsis_width(void) {
 	RCore *core = r_core_new ();
 	mu_assert_notnull (core, "Couldn't create new RCore");
@@ -71,11 +116,73 @@ bool test_prompt_format_preserves_trailing_escaped_newline(void) {
 	mu_end;
 }
 
+bool test_autocomplete_find_prefers_exact_match(void) {
+	RCoreAutocomplete *root = R_NEW0 (RCoreAutocomplete);
+	RCoreAutocomplete *oe = r_core_autocomplete_add (root, "oe", R_CORE_AUTOCMPLT_FILE, true);
+	RCoreAutocomplete *o = r_core_autocomplete_add (root, "o", R_CORE_AUTOCMPLT_FILE, true);
+	RCoreAutocomplete *open = r_core_autocomplete_add (root, "open", R_CORE_AUTOCMPLT_FILE, true);
+	mu_assert_notnull (oe, "Couldn't add oe autocomplete");
+	mu_assert_notnull (o, "Couldn't add o autocomplete");
+	mu_assert_notnull (open, "Couldn't add open autocomplete");
+
+	mu_assert_ptreq (r_core_autocomplete_find (root, "o", false), o, "Prefix lookup should prefer exact command matches");
+	mu_assert_ptreq (r_core_autocomplete_find (root, "op", false), open, "Prefix lookup should still find longer matches");
+
+	r_core_autocomplete_free (root);
+	mu_end;
+}
+
+bool test_o_autocomplete_uses_file_completion(void) {
+	char *dir = r_file_temp ("r2-ac");
+	mu_assert_notnull (dir, "Couldn't create temporary path");
+	mu_assert_true (r_sys_mkdir (dir), "Couldn't create temporary directory");
+
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "Couldn't create new RCore");
+
+	RLineCompletion completion = {0};
+	r_line_completion_init (&completion, 16);
+
+	RLineBuffer buf = {0};
+	char *cmd = r_str_newf ("o %s", dir);
+	mu_assert_notnull (cmd, "Couldn't create autocomplete command");
+	r_str_ncpy (buf.data, cmd, sizeof (buf.data));
+	buf.length = strlen (buf.data);
+	buf.index = buf.length;
+
+	r_core_autocomplete (core, &completion, &buf, R_LINE_PROMPT_DEFAULT);
+
+	char *expected = r_str_newf ("%s%s", dir, R_SYS_DIR);
+	mu_assert_notnull (expected, "Couldn't create expected completion");
+	bool found = false;
+	char **it;
+	R_VEC_FOREACH (&completion.args, it) {
+		if (!strcmp (*it, expected)) {
+			found = true;
+			break;
+		}
+	}
+
+	free (expected);
+	free (cmd);
+	r_line_completion_clear (&completion);
+	RVecCString_fini (&completion.args);
+	r_core_free (core);
+	r_file_rm (dir);
+	free (dir);
+	mu_assert_true (found, "o <path> should use file completion");
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_cmd_str_issue_18799);
+	mu_run_test (test_multiple_cores_share_terminal);
+	mu_run_test (test_echo_context_binding_and_depth);
 	mu_run_test (test_prompt_utf8_ellipsis_width);
 	mu_run_test (test_prompt_format_preserves_trailing_escaped_space);
 	mu_run_test (test_prompt_format_preserves_trailing_escaped_newline);
+	mu_run_test (test_autocomplete_find_prefers_exact_match);
+	mu_run_test (test_o_autocomplete_uses_file_completion);
 	return tests_passed != tests_run;
 }
 

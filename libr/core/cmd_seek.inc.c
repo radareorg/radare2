@@ -266,7 +266,7 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 	}
 	switch (*input) {
 	case '?': // "sort?"
-		r_core_cmd_help_match (core, help_msg_s, "sort");
+		r_cons_cmd_help_match (core->cons, help_msg_s, "sort", 0, true);
 		break;
 	default: // "ls"
 		if (!arg) {
@@ -484,7 +484,7 @@ static void cmd_sf(RCore *core, const char *input) {
 	case 'n': // "sfn"
 		switch (input[2]) {
 		case '?':
-			r_core_cmd_help_contains (core, help_msg_sf, "sfn");
+			r_cons_cmd_help_match (core->cons, help_msg_sf, "sfn", 0, false);
 			break;
 		case 'p': // next prelude
 			r_core_cmd0 (core, "/pp;s hit.prelude;f-hit.prelude");
@@ -514,7 +514,7 @@ static void cmd_sf(RCore *core, const char *input) {
 	case 'p': // "sfp" - find function prelude backwards
 		switch (input[2]) {
 		case '?':
-			r_core_cmd_help_contains (core, help_msg_sf, "sfp");
+			r_cons_cmd_help_match (core->cons, help_msg_sf, "sfp", 0, false);
 			break;
 		case 'p': // previous prelude
 			r_core_cmd0 (core, "s `ap`");
@@ -570,7 +570,7 @@ static void cmd_sf(RCore *core, const char *input) {
 		}
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_sf);
+		r_cons_cmd_help (core->cons, help_msg_sf);
 		break;
 	default:
 		r_core_return_invalid_command (core, "sf", input[1]);
@@ -638,7 +638,7 @@ static int cmd_seek(void *data, const char *input) {
 		switch (*input) {
 		case '?':
 		case 0:
-			r_core_cmd_help (core, help_msg_ss);
+			r_cons_cmd_help (core->cons, help_msg_ss);
 			return 0;
 		}
 	}
@@ -648,7 +648,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[1] && input[2]) {
 			seek_to_register (core, input + 2, silent);
 		} else {
-			r_core_cmd_help_contains (core, help_msg_s, "sr");
+			r_cons_cmd_help_match (core->cons, help_msg_s, "sr", 0, false);
 		}
 		break;
 	case 'd': // "sd"
@@ -724,7 +724,7 @@ static int cmd_seek(void *data, const char *input) {
 				R_LOG_ERROR ("No matching comment");
 			}
 		} else {
-			r_core_cmd_help (core, help_msg_sC);
+			r_cons_cmd_help (core->cons, help_msg_sC);
 		}
 		break;
 	case '0': // "s0"
@@ -789,7 +789,7 @@ static int cmd_seek(void *data, const char *input) {
 			r_config_set_i (core->config, "search.maxhits", saved_maxhits);
 			break;
 		case '?':
-			r_core_cmd_help_contains (core, help_msg_s, "s/");
+			r_cons_cmd_help_match (core->cons, help_msg_s, "s/", 0, false);
 			break;
 		default:
 			R_LOG_ERROR ("unknown search subcommand");
@@ -799,7 +799,7 @@ static int cmd_seek(void *data, const char *input) {
 	break;
 	case '.': // "s." "s.."
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_sdot);
+			r_cons_cmd_help (core->cons, help_msg_sdot);
 		} else if (input[1]) {
 			for (input++; *input == '.'; input++) {
 				;
@@ -918,7 +918,7 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case '+': // "s+"
 		if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_s, "s+");
+			r_cons_cmd_help_match (core->cons, help_msg_s, "s+", 0, false);
 		} else if (input[1] != '\0') {
 			st64 delta = off;
 			if (input[1] == '+') {
@@ -946,7 +946,7 @@ static int cmd_seek(void *data, const char *input) {
 	case '-': // "s-"
 		switch (input[1]) {
 		case '?': // "s-?"
-			r_core_cmd_help_contains (core, help_msg_s, "s-");
+			r_cons_cmd_help_match (core->cons, help_msg_s, "s-", 0, false);
 			break;
 		case '*': // "s-*"
 			r_io_sundo_reset (core->io);
@@ -983,7 +983,7 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case 'n': // "sn"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_sn);
+			r_cons_cmd_help (core->cons, help_msg_sn);
 		} else if (input[1] == 'p') { // "snp" - seek next prelude
 			__core_cmd_search_backward_prelude (core, true, true);
 		} else {
@@ -998,7 +998,7 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case 'p': // "sp"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_sp);
+			r_cons_cmd_help (core->cons, help_msg_sp);
 		} else if (input[1] == 'p') { // "spp" - seek previous prelude
 			__core_cmd_search_backward_prelude (core, true, false);
 		} else {
@@ -1031,7 +1031,7 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			r_core_seek_align (core, off, 0);
 		} else {
-			r_core_cmd_help_contains (core, help_msg_s, "sa");
+			r_cons_cmd_help_match (core->cons, help_msg_s, "sa", 0, false);
 		}
 		break;
 	case 'b': // "sb"
@@ -1044,7 +1044,7 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			r_core_anal_bb_seek (core, off);
 		} else {
-			r_core_cmd_help_contains (core, help_msg_s, "sb");
+			r_cons_cmd_help_match (core->cons, help_msg_s, "sb", 0, false);
 		}
 		break;
 	case 'f': // "sf"
@@ -1056,13 +1056,13 @@ static int cmd_seek(void *data, const char *input) {
 			if (input[2] == 't') {
 				cmd_sort (core, input);
 			} else if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_s, "sort");
+				r_cons_cmd_help_match (core->cons, help_msg_s, "sort", 0, true);
 			} else {
 				return -1;
 			}
 			break;
 		case '?':
-			r_core_cmd_help_contains (core, help_msg_s, "so");
+			r_cons_cmd_help_match (core->cons, help_msg_s, "so", 0, false);
 		case ' ':
 		case '\0':
 		case '+':
@@ -1075,7 +1075,7 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case 'g': // "sg"
 		if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_s, "sg");
+			r_cons_cmd_help_match (core->cons, help_msg_s, "sg", 0, false);
 		} else {
 			RIOMap *map  = r_io_map_get_at (core->io, core->addr);
 			if (map) {
@@ -1087,7 +1087,7 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case 'G': // "sG"
 		if (input[1] == '?') {
-			r_core_cmd_help_contains (core, help_msg_s, "sG");
+			r_cons_cmd_help_match (core->cons, help_msg_s, "sG", 0, false);
 		} else {
 			if (!core->io->desc) {
 				break;
@@ -1103,7 +1103,7 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case 'h': // "sh"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_sh);
+			r_cons_cmd_help (core->cons, help_msg_sh);
 		} else {
 			char *arg = r_str_trim_dup (input + 1);
 			if (R_STR_ISNOTEMPTY (arg)) {
@@ -1147,7 +1147,7 @@ static int cmd_seek(void *data, const char *input) {
 					}
 					r_cons_sleep_end (core->cons, bed);
 				} else {
-					r_core_cmd_help_match (core, help_msg_sl, "sleep");
+					r_cons_cmd_help_match (core->cons, help_msg_sl, "sleep", 0, true);
 				}
 			}
 			break;
@@ -1180,7 +1180,7 @@ static int cmd_seek(void *data, const char *input) {
 			r_cons_printf (core->cons, "%d\n", core->print->lines_cache_sz - 1);
 			break;
 		case '?': // "sl?"
-			r_core_cmd_help (core, help_msg_sl);
+			r_cons_cmd_help (core->cons, help_msg_sl);
 			break;
 		}
 	}
@@ -1189,7 +1189,7 @@ static int cmd_seek(void *data, const char *input) {
 		printPadded (core, atoi (input + 1));
 		break;
 	case '?': // "s?"
-		r_core_cmd_help (core, help_msg_s);
+		r_cons_cmd_help (core->cons, help_msg_s);
 		break;
 	default:
 		if (input[0] && isdigit (input[1])) {

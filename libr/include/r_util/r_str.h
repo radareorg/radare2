@@ -149,6 +149,7 @@ R_API const char *r_str_perm(int perm, bool with_dash);
 R_API const char *r_str_rwx_i(int rwx);  // Deprecated: use r_str_perm(rwx, false)
 R_API const char *r_str_srwx_i(int rwx);  // Deprecated: use r_str_perm(rwx, true)
 R_API int r_str_fmtargs(const char *fmt);
+R_API char *r_str_printfmt(const char *fmt, int bits, int mode);
 R_API char *r_str_arg_escape(const char *arg);
 R_API int r_str_arg_unescape(char *arg);
 R_API char **r_str_argv(const char *str, int *_argc);
@@ -200,6 +201,7 @@ R_API char *r_str_trim_ndup(const char *str, size_t n);
 R_API char *r_str_trim_lines(char *str);
 R_API void r_str_trim_head(char *str);
 R_API const char *r_str_trim_head_ro(const char *str);
+R_API char *r_str_trim_head_digits(const char *str);
 R_API const char *r_str_trim_head_wp(const char *str);
 R_API void r_str_trim_tail(char *str);
 R_API void r_str_trim_args(char *str);
@@ -225,6 +227,7 @@ R_API char *r_str_ndup(const char *ptr, int len);
 R_API int r_str_inject(char *begin, char *end, char *str, int maxlen);
 R_API int r_str_delta(char *p, char a, char b);
 R_API void r_str_filter(char *str, int len);
+R_API bool r_str_filter_file(char *str);
 R_API const char *r_str_tok(const char *str1, const char b, size_t len);
 R_API char *r_str_tok_next(char *s);
 
@@ -260,16 +263,17 @@ R_API char *r_str_escape_utf16be(const char *buf, int buf_size, bool show_asciid
 R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);
 R_API void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool esc_bslash);
 R_API char *r_str_format_msvc_argv(size_t argc, const char **argv);
-R_API void r_str_uri_decode(char *buf);
+R_API int r_str_uri_decode(char *buf);
 R_API char *r_str_uri_encode(const char *buf);
 R_API char *r_str_utf16_decode(const ut8 *s, int len);
-R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian);
+R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, bool big_endian);
 R_API char *r_str_utf16_encode(const char *s, int len);
 R_API char *r_str_escape_json(const char *s, int len);
 R_API char *r_str_escape_json_strip(const char *buf, int buf_size);
 R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding);
 R_API R_MUSTUSE char *r_str_r2_prefix(const char *str);
 R_API size_t r_str_nlen(const char *s, int n);
+R_API size_t r_str_pnlen(const char *s, int n);
 R_API size_t r_str_nlen_w(const char *s, int n);
 R_API size_t r_wstr_clen(const char *s);
 R_API char *r_str_prepend(char *ptr, const char *string);
@@ -326,7 +330,7 @@ R_API const char *r_str_last(const char *in, const char *ch);
 R_API char* r_str_highlight(char *str, const char *word, const char *color, const char *color_reset);
 R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool inverted);
 R_API char *r_str_from_ut64(ut64 val);
-R_API void r_str_stripLine(char *str, const char *key);
+R_API void r_str_stripline(char *str, const char *key);
 R_API char *r_str_list_join(RList *str, const char *sep);
 R_API char *r_str_array_join(const char **a, size_t n, const char *sep);
 

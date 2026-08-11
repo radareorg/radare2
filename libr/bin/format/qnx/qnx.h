@@ -70,6 +70,12 @@ typedef struct lmf_resource {
 	ut16 spare[3];
 }) lmf_resource;
 
+typedef struct qnx_resource_entry {
+	ut16 type;
+	ut64 paddr;
+	ut64 size;
+} QnxResourceEntry;
+
 R_PACKED (
 typedef struct lmf_rw_end {
 	ut16     verify;
@@ -82,6 +88,7 @@ typedef struct {
 	lmf_header lmfh;
 	RList* fixups;
 	RList* sections;
+	RList *resources;
 	lmf_rw_end rwend;
 }) QnxObj;
 

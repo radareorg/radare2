@@ -477,8 +477,8 @@ typedef struct r_debug_pid_t {
 	int pid;
 	int ppid;
 	char status; /* stopped, running, zombie, sleeping ,... */
-	int runnable; /* when using 'run', 'continue', .. this proc will be runnable */
 	bool signalled;
+	int runnable; /* when using 'run', 'continue', .. this proc will be runnable */
 	char *path;
 	int uid;
 	int gid;
