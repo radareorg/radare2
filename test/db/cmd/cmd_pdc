@@ -939,3 +939,19 @@ EXPECT=<<EOF
     loc_0x100003a6c: // orphan
 EOF
 RUN
+
+NAME=pdc reads the case value of an orphan tag in decimal like the jmptbl writer
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64
+CMDS=<<EOF
+s 0x100003a54
+af
+f case.strcoll.65 @ 0x100003a78
+f case.strcoll.300 @ 0x100003a6c
+pdc~loc_0x100003a78,loc_0x100003a6c
+EOF
+EXPECT=<<EOF
+    loc_0x100003a78: // case 'A'
+    loc_0x100003a6c: // case 300
+EOF
+RUN

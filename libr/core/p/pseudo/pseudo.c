@@ -608,9 +608,8 @@ static char *orphan_tag(RCore *core, ut64 addr) {
 		return strdup ("orphan");
 	}
 	const char *val = r_str_lchr (fi->name, '.') + 1;
-	char *hex = r_str_newf ("0x%s", val);
-	const int nval = r_num_get (NULL, hex);
-	free (hex);
+	// the jmptbl flag carries the case value in decimal, as disasm reads it
+	const int nval = atoi (val);
 	if (IS_PRINTABLE (nval)) {
 		return r_str_newf ("case '%c'", nval);
 	}
