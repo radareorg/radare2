@@ -721,6 +721,30 @@ SAFE_NOTE
 EOF
 RUN
 
+NAME=Ignore symlinked project directory in an imported .zrp project
+FILE=bins/elf/analysis/main
+ARGS=-n
+CMDS=<<EOF
+e prj.vc=false
+e dir.projects = /tmp/r2r-project-import-dirlink
+!rm -rf /tmp/r2r-project-import-dirlink /tmp/r2r-zrp-dirlink /tmp/r2r-dirlink-outside /tmp/r2r-dirlink.zrp
+!mkdir -p /tmp/r2r-zrp-dirlink /tmp/r2r-dirlink-outside
+!printf '# r2 rdb project file\n' > /tmp/r2r-dirlink-outside/rc.r2
+!printf 'SENSITIVE_DATA\n' > /tmp/r2r-dirlink-outside/notes.txt
+!ln -sf /tmp/r2r-dirlink-outside /tmp/r2r-zrp-dirlink/evil
+!cd /tmp/r2r-zrp-dirlink && zip -y -r /tmp/r2r-dirlink.zrp evil >/dev/null
+Pzi /tmp/r2r-dirlink.zrp > /dev/null
+P evil > /dev/null
+Pn
+Pn hello
+!python3 -c "d = open('/tmp/r2r-dirlink-outside/notes.txt').read(); print('clean' if d == 'SENSITIVE_DATA\n' else 'tampered')"
+!rm -rf /tmp/r2r-project-import-dirlink /tmp/r2r-zrp-dirlink /tmp/r2r-dirlink-outside /tmp/r2r-dirlink.zrp
+EOF
+EXPECT=<<EOF
+clean
+EOF
+RUN
+
 NAME=Delete a saved project and used directory (with Pd)
 FILE=bins/elf/analysis/main
 ARGS=-n

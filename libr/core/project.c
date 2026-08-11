@@ -58,9 +58,7 @@ static bool project_path_is_within_projects_dir(RCore *core, const char *path) {
 	char *pdir = r_file_abspath (r_config_get (core->config, "dir.projects"));
 	char *ppath = r_file_abspath (path);
 	char *prefix = (pdir && ppath) ? r_str_newf ("%s%s", pdir, R_SYS_DIR) : NULL;
-	bool inside = pdir && ppath
-		? !strcmp (pdir, ppath) || (prefix && r_str_startswith (ppath, prefix))
-		: false;
+	bool inside = prefix ? r_str_startswith (ppath, prefix) : false;
 	free (prefix);
 	free (pdir);
 	free (ppath);
@@ -762,6 +760,11 @@ R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
 		R_FREE (notes_txt);
 	}
 	free (ndir);
+	char *link = notes_txt? r_file_readlink (notes_txt): NULL;
+	if (link && strcmp (link, notes_txt)) {
+		R_FREE (notes_txt);
+	}
+	free (link);
 	free (prjpath);
 	return notes_txt;
 }
