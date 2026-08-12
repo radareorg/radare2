@@ -1044,6 +1044,10 @@ R_API char *r_bin_demangle_freepascal(const char *str);
 R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_msvc(const char *str);
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib);
+// resolves a swift symbolic type reference at addr into a qualified type name
+typedef char *(*RBinSwiftResolver)(void *user, ut64 addr, bool indirect);
+R_API char *r_bin_demangle_swift_typeref(const ut8 *p, int len, ut64 va, RBinSwiftResolver resolver, void *user);
+R_API char *r_bin_demangle_swift_member(const char *context, const char *rest, ut64 *attr);
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
 R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_dlang(const char *str);
