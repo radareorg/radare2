@@ -852,6 +852,10 @@ static char *pdc_prefix_lines(const char *s, const char *prefix, bool addr_pipe)
 	}
 	RStrBuf *sb = r_strbuf_new ("");
 	while (*s) {
+		if (!addr_pipe) {
+			// the prefix replaces pdb's own leading indent
+			s += strspn (s, " \t");
+		}
 		const char *end = s + strcspn (s, "\n");
 		r_strbuf_append (sb, prefix);
 		if (addr_pipe && end - s > 2 && r_str_startswith (s, "0x")) {
@@ -2026,6 +2030,8 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		r_list_append (visited, bb);
 		r_bitset_set (state.marked, bb->addr);
 	}
+	// orphans render at the walk depth: labels one level in, statements two
+	indent = 2;
 	r_list_foreach (state.fcn->bbs, iter, bb) {
 		if (r_list_contains (visited, bb)) {
 			continue;
@@ -2080,7 +2086,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 			free (s);
 			s = os;
 		} else {
-			char *ind = r_str_pad (NULL, 0, ' ', indent * 2);
+			char *ind = r_str_pad (NULL, 0, ' ', indent * 4);
 			char *os = pdc_prefix_lines (s, r_str_get (ind), false);
 			free (ind);
 			free (s);
@@ -2097,7 +2103,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 			} else if (state.show_addr) {
 				NEWLINE (bb->addr, 0);
 			} else {
-				NEWLINE (bb->addr, 1);
+				NEWLINE (bb->addr, labeled? 1: 0);
 			}
 			if (labeled) {
 				char *tag = orphan_tag (core, bb->addr);
