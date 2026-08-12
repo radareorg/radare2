@@ -1483,37 +1483,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 
 	const bool want_swift = !r_sys_getenv_asbool ("RABIN2_MACHO_NOSWIFT");
 	if (want_swift && ms.types.have) {
-		SwiftCtx ctx = {
-			.bf = bf,
-			.relocs = relocs,
-			.symbols_ht = class_names_only (bf)? NULL: _load_symbol_by_vaddr_hashtable (bf),
-			.mangled_ht = ht_pp_new0 (),
-		};
-		const ut32 ntypes = ms.types.size / 4;
-		ut32 i;
-		for (i = 0; i < ntypes; i++) {
-			if (limit > 0 && r_list_length (ret) >= limit) {
-				R_LOG_WARN ("swift class limit reached");
-				break;
-			}
-			const ut64 entry = ms.types.vaddr + (i * 4);
-			const st32 word = swift_s32 (bf, entry);
-			if (!word) {
-				continue;
-			}
-			SwiftType st = swift_parse_type_entry (bf, entry + word);
-			if (st.valid) {
-				swift_parse_type (&ctx, ret, st);
-			}
-		}
-		if (ms.protos.have) {
-			swift_parse_protocols (&ctx, ret, &ms.protos);
-		}
-		if (ctx.symbols_ht && !class_names_only (bf)) {
-			swift_attach_symbols (&ctx);
-		}
-		ht_up_free (ctx.symbols_ht);
-		ht_pp_free (ctx.mangled_ht);
+		parse_swift_classes (bf, ret, &ms, relocs, limit);
 	}
 	if (!ms.clslist.size || !ms.clslist.have) {
 		goto get_classes_error;
