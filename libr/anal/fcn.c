@@ -2563,9 +2563,9 @@ static char *function_signature_address_type_name(Sdb *types, ut64 addr) {
 static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
 	const char *basename;
 
-	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn && fcn->name, NULL);
 	char *name = function_signature_address_type_name (anal->sdb_types, fcn->addr);
-	if (name || !fcn->name) {
+	if (name) {
 		return name;
 	}
 	const char *lookup_name = function_signature_lookup_name (anal, fcn);
