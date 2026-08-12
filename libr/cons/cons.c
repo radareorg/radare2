@@ -65,7 +65,6 @@ static void cons_current_set(RCons *cons) {
 #endif
 }
 
-#define MAX_PAGES 100
 #define R_CONS_CHILD_SETTINGS_SIZE \
 	(r_offsetof (RCons, is_embedded) + sizeof (bool) - r_offsetof (RCons, rows))
 #define R_CONS_CAPTURE_SIZE \
@@ -95,31 +94,18 @@ static BOOL __w32_control(DWORD type) {
 }
 #endif
 
-static unsigned int count_display_lines(RCons *cons, const char *buffer, size_t len) {
-	int columns, rows;
-	columns = r_cons_get_size (cons, &rows);
-	if (columns < 1) {
-		columns = 80;
-	}
-	if (rows < 1) {
-		rows = 24;
-	}
-	unsigned int max_lines = MAX_PAGES * rows;
+static unsigned int count_output_lines(const char *buffer, size_t len) {
 	unsigned int lines = 0;
 	const char *ptr = buffer;
 	const char *end = buffer + len;
 
-	while (ptr < end && lines < max_lines) {
-		const char *nl = strchr (ptr, '\n');
-		if (!nl || nl >= end) {
-			nl = end;
-		}
-		size_t line_len = nl - ptr;
-		lines += line_len? ((line_len + columns - 1) / columns): 1;
-		ptr = nl + 1;
-		if (nl == end) {
+	while (ptr < end) {
+		const char *nl = memchr (ptr, '\n', end - ptr);
+		lines++;
+		if (!nl) {
 			break;
 		}
+		ptr = nl + 1;
 	}
 	return lines;
 }
@@ -903,7 +889,7 @@ R_API void r_cons_flush(RCons *cons) {
 			r_sys_cmd_str_full (cons->pager, ctx->buffer, -1, NULL, NULL, NULL);
 			r_cons_reset (cons);
 		} else if (cons->maxpage > 0 && ctx->buffer_len > cons->maxpage) {
-			unsigned int lines = count_display_lines (cons, ctx->buffer, ctx->buffer_len);
+			unsigned int lines = count_output_lines (ctx->buffer, ctx->buffer_len);
 			if (lines > 0 && !r_cons_yesno (cons, 'n', "Do you want to print %u lines? (y/N)", lines)) {
 				r_cons_reset (cons);
 				goto beach;
