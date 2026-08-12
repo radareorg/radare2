@@ -2550,12 +2550,26 @@ static char *function_signature_try_type_name(Sdb *types, const char *candidate)
 	return NULL;
 }
 
+static char *function_signature_address_type_name(Sdb *types, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (types, NULL);
+	const char *name = sdb_const_getf (types, NULL, "link.%08" PFMT64x, addr);
+	if (R_STR_ISEMPTY (name)) {
+		return NULL;
+	}
+	const char *kind = sdb_const_get (types, name, 0);
+	return kind && !strcmp (kind, "func")? strdup (name): NULL;
+}
+
 static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
 	const char *basename;
 
-	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn && fcn->name, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn, NULL);
+	char *name = function_signature_address_type_name (anal->sdb_types, fcn->addr);
+	if (name || !fcn->name) {
+		return name;
+	}
 	const char *lookup_name = function_signature_lookup_name (anal, fcn);
-	char *name = function_signature_try_type_name (anal->sdb_types, lookup_name);
+	name = function_signature_try_type_name (anal->sdb_types, lookup_name);
 	if (name) {
 		return name;
 	}
