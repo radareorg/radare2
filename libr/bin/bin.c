@@ -2201,6 +2201,8 @@ static const char *attr_bit_name(ut64 n, bool compact) {
 		return compact? "": "transient";
 	case R_BIN_ATTR_ENUM:
 		return compact? "": "enum";
+	case R_BIN_ATTR_STRUCT:
+		return compact? "": "struct";
 	case R_BIN_ATTR_RACIST:
 		return compact? "": "racist";
 	case R_BIN_ATTR_SUPER:
