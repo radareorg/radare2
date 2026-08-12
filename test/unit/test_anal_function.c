@@ -305,11 +305,24 @@ bool test_r_anal_function_get_signature_prefers_exact_type_link(void) {
 	mu_assert_streq (signature->ret_type, "char", "exact link must take precedence over function name");
 	mu_assert_eq ((int)r_list_length (signature->params), 1, "exact linked signature param count");
 	r_anal_function_signature_free (signature);
+	RAnalFunctionParam updated_param = { .name = "changed", .type = "short" };
+	RList *updated_params = r_list_new ();
+	mu_assert_notnull (updated_params, "Couldn't create updated linked param list");
+	r_list_append (updated_params, &updated_param);
+	RAnalFunctionSignature updated = {
+		.ret_type = "short",
+		.params = updated_params,
+	};
+	mu_assert_true (r_anal_function_set_signature (anal, f, &updated),
+		"updating a linked signature must succeed");
+	r_list_free (updated_params);
+	mu_assert_streq (r_type_func_ret (anal->sdb_types, "linked_signature"), "short",
+		"updating a linked function must update the linked type");
 
 	mu_assert_true (r_anal_function_rename (f, "renamed_signature"), "function rename must succeed");
 	signature = r_anal_function_get_signature (f);
 	mu_assert_notnull (signature, "exact linked signature must survive function rename");
-	mu_assert_streq (signature->ret_type, "char", "renaming must not change exact linked signature");
+	mu_assert_streq (signature->ret_type, "short", "renaming must not change exact linked signature");
 	r_anal_function_signature_free (signature);
 
 	mu_assert_true (r_type_unlink (anal->sdb_types, f->addr), "exact function type link must be removed");
