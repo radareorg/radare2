@@ -3669,3 +3669,24 @@ func.N.cb.cc=cdecl
 func.N.cb.ret=int
 EOF
 RUN
+
+NAME=reanalysis drops the stale higher arg keys of a previously wider function
+FILE=bins/elf/pltrel/add.so
+CMDS=<<EOF
+s sym.add2
+af
+tk func.sym.add2.arg.2=int,stale2
+tk func.sym.add2.arg.3=int,stale3
+tk func.sym.add2.args=4
+af-
+af
+k anal/types/func.sym.add2.args
+k anal/types/func.sym.add2.arg.1
+k anal/types/func.sym.add2.arg.2
+k anal/types/func.sym.add2.arg.3
+EOF
+EXPECT=<<EOF
+2
+int64_t,arg2
+EOF
+RUN
