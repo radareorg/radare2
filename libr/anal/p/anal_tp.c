@@ -2010,8 +2010,8 @@ static bool rpo_collect(RAnalBlock *bb, void *user) {
 	return true;
 }
 
-// reverse post-order via r_anal_block_recurse_depth_first's on_exit callback
-static bool bblist_from_cfg(RAnalFunction *fcn, RVecUT64 *bblist) {
+// reverse post-order via r_anal_block_recurse_depth_first's on_exit callback; returns the entry-reachable prefix length, 0 on failure
+static size_t bblist_from_cfg(RAnalFunction *fcn, RVecUT64 *bblist) {
 	RAnalBlock *bb;
 	RAnalBlock *entry = NULL;
 	RListIter *it;
@@ -2020,7 +2020,7 @@ static bool bblist_from_cfg(RAnalFunction *fcn, RVecUT64 *bblist) {
 	if (!ctx.blocks || !ctx.seen) {
 		ht_up_free (ctx.blocks);
 		ht_uu_free (ctx.seen);
-		return false;
+		return 0;
 	}
 	r_list_foreach (fcn->bbs, it, bb) {
 		ht_up_insert (ctx.blocks, bb->addr, bb);
@@ -2031,10 +2031,11 @@ static bool bblist_from_cfg(RAnalFunction *fcn, RVecUT64 *bblist) {
 	if (!entry) {
 		ht_up_free (ctx.blocks);
 		ht_uu_free (ctx.seen);
-		return false;
+		return 0;
 	}
 	r_anal_block_recurse_depth_first (entry, rpo_visit, rpo_collect, &ctx);
 	ht_up_free (ctx.blocks);
+	const size_t reachable = RVecUT64_length (&ctx.postorder);
 	ut64 *pa;
 	R_VEC_FOREACH_PREV (&ctx.postorder, pa) {
 		RVecUT64_push_back (bblist, pa);
@@ -2049,11 +2050,11 @@ static bool bblist_from_cfg(RAnalFunction *fcn, RVecUT64 *bblist) {
 		}
 	}
 	ht_uu_free (ctx.seen);
-	if (RVecUT64_length (bblist) != r_list_length (fcn->bbs)) {
+	if (!reachable || RVecUT64_length (bblist) != r_list_length (fcn->bbs)) {
 		RVecUT64_clear (bblist);
-		return false;
+		return 0;
 	}
-	return true;
+	return reachable;
 }
 
 static void tps_fini(TPState *tps) {
@@ -2424,14 +2425,227 @@ static bool tp_bb_leads_to(RAnal *anal, ut64 from, ut64 to) {
 	return bb && !r_anal_block_successor_addrs_foreach (bb, tp_bb_edge_cb, &to);
 }
 
+typedef struct {
+	SetU *members; // loop blocks, header included
+	RVecUT64 srcs; // back-edge sources
+	size_t acc_start; // trace access range recorded while the header block was emulated
+	size_t acc_end;
+	bool has_call; // a call in the header writes registers the trace cannot see
+} TPLoopHdr;
+
+static void tp_loophdr_kv_free(HtUPKv *kv) {
+	TPLoopHdr *hdr = kv->value;
+	set_u_free (hdr->members);
+	RVecUT64_fini (&hdr->srcs);
+	free (hdr);
+}
+
+static void tp_u64vec_kv_free(HtUPKv *kv) {
+	RVecUT64_free (kv->value);
+}
+
+typedef struct {
+	HtUU *order;
+	HtUP *headers;
+	HtUP *preds;
+	ut64 pos;
+	ut64 src;
+	bool oom; // a partial loop map must not drive restore decisions
+} TPBackEdgeScan;
+
+// push_back cannot report failure, so emplace and check the slot
+static bool tp_vec_push(RVecUT64 *vec, ut64 addr) {
+	ut64 *slot = RVecUT64_emplace_back (vec);
+	if (slot) {
+		*slot = addr;
+	}
+	return slot != NULL;
+}
+
+static bool tp_backedge_cb(ut64 addr, void *user) {
+	TPBackEdgeScan *bs = user;
+	bool found = false;
+	const ut64 tpos = ht_uu_find (bs->order, addr, &found);
+	if (!found || tpos > bs->pos) {
+		return true;
+	}
+	TPLoopHdr *hdr = ht_up_find (bs->headers, addr, NULL);
+	if (!hdr) {
+		hdr = R_NEW0 (TPLoopHdr);
+		if (!ht_up_insert (bs->headers, addr, hdr)) {
+			free (hdr);
+			bs->oom = true;
+			return false;
+		}
+	}
+	if (!tp_vec_push (&hdr->srcs, bs->src)) {
+		bs->oom = true;
+		return false;
+	}
+	return true;
+}
+
+static bool tp_pred_cb(ut64 addr, void *user) {
+	TPBackEdgeScan *bs = user;
+	bool found = false;
+	ht_uu_find (bs->order, addr, &found);
+	if (!found) {
+		return true;
+	}
+	RVecUT64 *pv = ht_up_find (bs->preds, addr, NULL);
+	if (!pv) {
+		pv = RVecUT64_new ();
+		if (!pv || !ht_up_insert (bs->preds, addr, pv)) {
+			RVecUT64_free (pv);
+			bs->oom = true;
+			return false;
+		}
+	}
+	if (!tp_vec_push (pv, bs->src)) {
+		bs->oom = true;
+		return false;
+	}
+	return true;
+}
+
+// grow the loop's member set backward from its back-edge sources, never crossing the header
+static bool tp_loop_members_cb(void *user, const ut64 ha, const void *v) {
+	TPBackEdgeScan *bs = user;
+	TPLoopHdr *hdr = (TPLoopHdr *)v;
+	bool found = false;
+	const ut64 hpos = ht_uu_find (bs->order, ha, &found);
+	hdr->members = found? set_u_new (): NULL;
+	if (!hdr->members) {
+		return true;
+	}
+	set_u_add (hdr->members, ha);
+	// set_u_add cannot report failure; an unnoticed missing member would misapply the partial restore
+	bool ok = set_u_contains (hdr->members, ha);
+	RVecUT64 stack;
+	RVecUT64_init (&stack);
+	ut64 *pa;
+	R_VEC_FOREACH (&hdr->srcs, pa) {
+		ok &= tp_vec_push (&stack, *pa);
+	}
+	while (ok && !RVecUT64_empty (&stack)) {
+		const ut64 cur = *RVecUT64_last (&stack);
+		RVecUT64_pop_back (&stack);
+		if (set_u_contains (hdr->members, cur)) {
+			continue;
+		}
+		const ut64 cpos = ht_uu_find (bs->order, cur, &found);
+		// a block before the header in rpo means irreducible flow, not a natural loop
+		if (!found || cpos < hpos) {
+			ok = false;
+			break;
+		}
+		set_u_add (hdr->members, cur);
+		ok &= set_u_contains (hdr->members, cur);
+		RVecUT64 *pv = ht_up_find (bs->preds, cur, NULL);
+		if (pv) {
+			R_VEC_FOREACH (pv, pa) {
+				ok &= tp_vec_push (&stack, *pa);
+			}
+		}
+	}
+	RVecUT64_fini (&stack);
+	if (!ok) {
+		// a NULL member set falls back to the full snapshot restore
+		set_u_free (hdr->members);
+		hdr->members = NULL;
+	}
+	return true;
+}
+
+static void tp_scan_edges(RAnal *anal, RVecUT64 *bblist, size_t reachable, RAnalAddrCb cb, TPBackEdgeScan *bs) {
+	size_t i;
+	for (i = 0; i < reachable && !bs->oom; i++) {
+		bs->pos = i;
+		bs->src = *RVecUT64_at (bblist, i);
+		RAnalBlock *bb = r_anal_get_block_at (anal, bs->src);
+		if (bb) {
+			r_anal_block_successor_addrs_foreach (bb, cb, bs);
+		}
+	}
+}
+
+// mark emulation-order back-edge targets in the entry-reachable prefix and precompute each loop's member set
+static HtUP *tp_loop_headers(RAnal *anal, RVecUT64 *bblist, size_t reachable) {
+	if (!reachable) {
+		return NULL;
+	}
+	HtUP *ret = NULL;
+	TPBackEdgeScan bs = { ht_uu_new0 (), ht_up_new (NULL, tp_loophdr_kv_free, NULL), NULL };
+	if (bs.order && bs.headers) {
+		size_t i;
+		for (i = 0; i < reachable; i++) {
+			ht_uu_insert (bs.order, *RVecUT64_at (bblist, i), i);
+		}
+		tp_scan_edges (anal, bblist, reachable, tp_backedge_cb, &bs);
+		// most functions have no loops: build the preds table only once a header exists
+		if (!bs.oom && bs.headers->count) {
+			bs.preds = ht_up_new (NULL, tp_u64vec_kv_free, NULL);
+			if (bs.preds) {
+				tp_scan_edges (anal, bblist, reachable, tp_pred_cb, &bs);
+				if (!bs.oom) {
+					ht_up_foreach (bs.headers, tp_loop_members_cb, &bs);
+					ret = bs.headers;
+				}
+			}
+		}
+	}
+	ht_uu_free (bs.order);
+	ht_up_free (bs.preds);
+	if (!ret) {
+		ht_up_free (bs.headers);
+	}
+	return ret;
+}
+
+// restore only the registers the header block itself wrote; for the rest the live loop-body state is fresher than its snapshot
+static void tp_restore_block_writes(TypeTrace *tt, TPLoopHdr *hdr, const ut8 *snap, int size) {
+	RRegSet *rs = r_reg_regset_get (tt->reg, R_REG_TYPE_GPR);
+	if (!rs || !rs->arena) {
+		return;
+	}
+	r_reg_arena_materialize (rs->arena);
+	ut8 *live = rs->arena->bytes;
+	if (!live) {
+		return;
+	}
+	const int n = R_MIN (rs->arena->size, size);
+	size_t i;
+	// walk the trace accesses instead of diffing snapshot bytes: a header rewriting the value a register already had must still override the loop body
+	for (i = hdr->acc_start; i < hdr->acc_end; i++) {
+		TypeTraceAccess *access = VecAccess_at (&tt->db.accesses, i);
+		if (!access->is_reg || !access->is_write) {
+			continue;
+		}
+		RRegItem *item = r_reg_get (tt->reg, access->reg.name, -1);
+		if (!item) {
+			continue;
+		}
+		if (item->arena == R_REG_TYPE_GPR && item->offset >= 0 && item->size > 0) {
+			// copy whole containing bytes: some profiles keep lone bit registers in the gpr arena (ppc ca)
+			const int off = item->offset / 8;
+			const int sz = BITS2BYTES (item->offset + item->size) - off;
+			if (off + sz <= n) {
+				memcpy (live + off, snap + off, sz);
+			}
+		}
+		r_unref (item);
+	}
+}
+
 // restore the GPR arena from the nearest direct-edge predecessor with a snapshot (memory is not rewound); transitive reachers do not count
-static bool tp_restore_pred_state(TPState *tps, RVecUT64 *bblist, int j, ut64 bbat, HtUP *bbstate, int arena_size) {
+static bool tp_restore_pred_state(TPState *tps, RVecUT64 *bblist, int j, ut64 bbat, HtUP *bbstate, HtUP *loop_headers, int arena_size) {
 	if (j < 1) {
 		return false;
 	}
 	RAnal *anal = tps->anal;
+	const ut64 prev = *RVecUT64_at (bblist, j - 1);
 	// straight line: the live state is already this block's lineage
-	if (tp_bb_leads_to (anal, *RVecUT64_at (bblist, j - 1), bbat)) {
+	if (tp_bb_leads_to (anal, prev, bbat)) {
 		return false;
 	}
 	const int oldest = R_MAX (0, j - TP_PRED_SCAN_MAX);
@@ -2443,7 +2657,13 @@ static bool tp_restore_pred_state(TPState *tps, RVecUT64 *bblist, int j, ut64 bb
 		}
 		ut8 *snap = ht_up_find (bbstate, pa, NULL);
 		if (snap) {
-			r_reg_arena_poke (tps->tt.reg, snap, arena_size);
+			TPLoopHdr *hdr = ht_up_find (loop_headers, pa, NULL);
+			// partial restore only at a loop exit fed by the loop's own live state; a call in the header has untraced effects
+			if (hdr && !hdr->has_call && hdr->members && !set_u_contains (hdr->members, bbat) && set_u_contains (hdr->members, prev)) {
+				tp_restore_block_writes (&tps->tt, hdr, snap, arena_size);
+			} else {
+				r_reg_arena_poke (tps->tt.reg, snap, arena_size);
+			}
 			return true;
 		}
 		// a predecessor without a snapshot (arena peek failed) is no reason to stop: an older one may have state
@@ -2471,7 +2691,8 @@ static TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_o
 	RVecUT64_reserve (&bblist, bblist_size);
 	RAnalBlock *bb;
 	RListIter *it;
-	if (!bblist_from_cfg (fcn, &bblist)) {
+	const size_t reachable = bblist_from_cfg (fcn, &bblist);
+	if (!reachable) {
 		R_LOG_DEBUG ("cannot compute cfg order at 0x%08" PFMT64x ", using address order", fcn->addr);
 		r_list_foreach (fcn->bbs, it, bb) {
 			RVecUT64_push_back (&bblist, &bb->addr);
@@ -2481,10 +2702,15 @@ static TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_o
 	TypeTrace *etrace = &tps->tt;
 	RIO *io = anal->iob.io;
 	HtUP *bbstate = (restore_state && tps->cfg_bbstate)? ht_up_new (NULL, tp_bbstate_kv_free, NULL): NULL;
+	HtUP *loop_headers = bbstate? tp_loop_headers (anal, &bblist, reachable): NULL;
 	int arena_size = 0;
 	for (j = 0; j < bblist_size; j++) {
 		const ut64 bbat = *RVecUT64_at (&bblist, j);
-		tps->lineage_reset = bbstate && tp_restore_pred_state (tps, &bblist, j, bbat, bbstate, arena_size);
+		tps->lineage_reset = bbstate && tp_restore_pred_state (tps, &bblist, j, bbat, bbstate, loop_headers, arena_size);
+		TPLoopHdr *cur_hdr = ht_up_find (loop_headers, bbat, NULL);
+		if (cur_hdr) {
+			cur_hdr->acc_start = VecAccess_length (&etrace->db.accesses);
+		}
 		bb = r_anal_get_block_at (anal, bbat);
 		if (!bb) {
 			R_LOG_WARN ("basic block at 0x%08" PFMT64x " was removed during analysis", bbat);
@@ -2574,6 +2800,9 @@ static TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_o
 				op_cb (user, &aop, lookahead? next_op: NULL, addr, bb_addr);
 			}
 			if (tp_op_call_base (aop.type)) {
+				if (cur_hdr) {
+					cur_hdr->has_call = true;
+				}
 				if (tps->clobber) {
 					// drop caller-saved sentinels after op_cb so a size-fn harvest still sees the live arg regs
 					RListIter *cit;
@@ -2595,6 +2824,9 @@ static TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_o
 		if (have_cached_op) {
 			r_anal_op_fini (next_op);
 		}
+		if (cur_hdr) {
+			cur_hdr->acc_end = VecAccess_length (&etrace->db.accesses);
+		}
 		if (tps->cfg_rollback) {
 			type_trace_rollback_clear (etrace);
 		}
@@ -2608,6 +2840,7 @@ static TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_o
 		}
 	}
 beach:
+	ht_up_free (loop_headers);
 	ht_up_free (bbstate);
 	r_anal_op_fini (&aop);
 	r_anal_op_free (next_op); // a cached lookahead op may still be live on a break/budget exit
