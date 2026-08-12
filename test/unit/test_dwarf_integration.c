@@ -35,6 +35,59 @@ static bool teardown(void) {
 	return true;
 }
 
+static RBinDwarfAttrValue *test_find_attr(RBinDwarfDie *die, ut64 attr_name) {
+	if (!die || !die->attr_values) {
+		return NULL;
+	}
+	RBinDwarfAttrValue *value;
+	R_VEC_FOREACH (die->attr_values, value) {
+		if (value->attr_name == attr_name) {
+			return value;
+		}
+	}
+	return NULL;
+}
+
+static RBinDwarfDie *test_find_die_at(RBinDwarfCompUnit *unit, ut64 offset) {
+	if (!unit || !unit->dies) {
+		return NULL;
+	}
+	RBinDwarfDie *die;
+	R_VEC_FOREACH (unit->dies, die) {
+		if (die->offset == offset) {
+			return die;
+		}
+	}
+	return NULL;
+}
+
+static RBinDwarfDie *test_find_subtree_terminator(RBinDwarfCompUnit *unit, RBinDwarfDie *parent) {
+	if (!unit || !unit->dies || !parent || !parent->has_children) {
+		return NULL;
+	}
+	bool found = false;
+	size_t depth = 1;
+	RBinDwarfDie *die;
+	R_VEC_FOREACH (unit->dies, die) {
+		if (!found) {
+			found = die == parent;
+			continue;
+		}
+		if (die->has_children) {
+			depth++;
+		}
+		if (!die->abbrev_code && --depth == 0) {
+			return die;
+		}
+	}
+	return NULL;
+}
+
+static char *test_function_type_link_at(Sdb *types, ut64 addr) {
+	const char *link = sdb_const_getf (types, NULL, "link.%08" PFMT64x, addr);
+	return link? strdup (link): NULL;
+}
+
 #define check_kv(k, v) \
 	do { \
 		value = sdb_const_get (sdb, k, NULL); \
@@ -324,11 +377,290 @@ static bool test_dwarf_function_parsing_rust(void) {
 		teardown (); \
 	} while (0)
 
+static bool test_dwarf3_abstract_origin_prototype_join(void) {
+	r_str_ncpy (anal->config->arch, "x86", sizeof (anal->config->arch));
+	anal->config->bits = 64;
+	sdb_reset (anal->sdb_types);
+	RBinFileOptions opt = { 0 };
+	mu_assert_true (r_bin_open (bin, "bins/elf/dwarf3_cpp.elf", &opt),
+		"dwarf3_cpp.elf binary could not be opened");
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Couldn't get current dwarf3_cpp.elf bin file");
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	mu_assert_notnull (abbrevs, "Couldn't parse DWARF3 abbreviations");
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	mu_assert_notnull (info, "Couldn't parse DWARF3 debug info");
+	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 1,
+		"Expected one DWARF3 compilation unit");
+	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
+	RBinDwarfDie *concrete = test_find_die_at (unit, 0x39c);
+	RBinDwarfDie *concrete_formal = test_find_die_at (unit, 0x3c0);
+	RBinDwarfDie *origin_decl = test_find_die_at (unit, 0x6d);
+	RBinDwarfDie *foreign_formal = test_find_die_at (unit, 0x314);
+	RBinDwarfDie *missing_concrete = test_find_die_at (unit, 0x329);
+	RBinDwarfDie *missing_origin_decl = test_find_die_at (unit, 0x8a);
+	RBinDwarfDie *dog_origin_decl = test_find_die_at (unit, 0x14c);
+	mu_assert_notnull (concrete, "Missing concrete constructor DIE");
+	mu_assert_notnull (concrete_formal, "Missing concrete constructor formal");
+	mu_assert_notnull (origin_decl, "Missing constructor origin declaration");
+	mu_assert_notnull (foreign_formal, "Missing foreign abstract formal");
+	mu_assert_notnull (missing_concrete, "Missing concrete destructor DIE");
+	mu_assert_notnull (missing_origin_decl, "Missing destructor origin declaration");
+	mu_assert_notnull (dog_origin_decl, "Missing Dog constructor origin declaration");
+	RBinDwarfAttrValue *origin = test_find_attr (concrete, DW_AT_abstract_origin);
+	RBinDwarfAttrValue *formal_origin = test_find_attr (
+		concrete_formal, DW_AT_abstract_origin);
+	RBinDwarfAttrValue *high_pc = test_find_attr (concrete, DW_AT_high_pc);
+	RBinDwarfAttrValue *concrete_linkage = test_find_attr (
+		concrete, DW_AT_MIPS_linkage_name);
+	RBinDwarfAttrValue *abstract_linkage = test_find_attr (
+		origin_decl, DW_AT_MIPS_linkage_name);
+	RBinDwarfAttrValue *origin_mutable = test_find_attr (
+		origin_decl, DW_AT_decl_line);
+	RBinDwarfAttrValue *prototyped = test_find_attr (
+		origin_decl, DW_AT_decl_column);
+	RBinDwarfAttrValue *missing_prototyped = test_find_attr (
+		missing_origin_decl, DW_AT_decl_column);
+	RBinDwarfAttrValue *dog_prototyped = test_find_attr (
+		dog_origin_decl, DW_AT_decl_column);
+	mu_assert_notnull (origin, "Missing concrete abstract origin");
+	mu_assert_notnull (formal_origin, "Missing formal abstract origin");
+	mu_assert_notnull (high_pc, "Missing concrete high_pc");
+	mu_assert_notnull (concrete_linkage, "Missing concrete linkage identity");
+	mu_assert_notnull (abstract_linkage, "Missing abstract linkage identity");
+	mu_assert_streq (concrete_linkage->string.content, "_ZN4BirdC2Ev",
+		"Fixture uses an Itanium base-constructor instance");
+	mu_assert_streq (abstract_linkage->string.content, "_ZN4BirdC4Ev",
+		"Fixture origin uses an Itanium unified-constructor identity");
+	mu_assert_notnull (origin_mutable, "Missing mutable origin declaration attribute");
+	mu_assert_notnull (prototyped, "Missing mutable constructor declaration attribute");
+	mu_assert_notnull (missing_prototyped,
+		"Missing mutable destructor declaration attribute");
+	mu_assert_notnull (dog_prototyped,
+		"Missing mutable Dog constructor declaration attribute");
+	RBinDwarfAttrValue saved_prototyped = *prototyped;
+	prototyped->attr_name = DW_AT_prototyped;
+	prototyped->attr_form = DW_FORM_flag;
+	prototyped->kind = DW_AT_KIND_FLAG;
+	prototyped->flag = true;
+	RBinDwarfAttrValue saved_dog_prototyped = *dog_prototyped;
+	dog_prototyped->attr_name = DW_AT_prototyped;
+	dog_prototyped->attr_form = DW_FORM_flag;
+	dog_prototyped->kind = DW_AT_KIND_FLAG;
+	dog_prototyped->flag = true;
+	RAnalDwarfContext ctx = {
+		.info = info,
+		.loc = NULL,
+	};
+	const ut64 concrete_addr = 0x130e;
+	const ut64 dog_concrete_addr = 0x126e;
+
+	const ut64 saved_origin_ref = origin->reference;
+	origin->reference = concrete->offset;
+	r_anal_dwarf_process_info (anal, &ctx);
+	char *link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (link, "Cyclic abstract origin must not create an exact link");
+	free (link);
+	origin->reference = UT64_MAX;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (link, "Unresolved abstract origin must not create an exact link");
+	free (link);
+	origin->reference = concrete_formal->offset;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (link, "Wrong-tag abstract origin must not create an exact link");
+	free (link);
+	origin->reference = saved_origin_ref;
+
+	const ut64 saved_formal_origin_ref = formal_origin->reference;
+	formal_origin->reference = foreign_formal->offset;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (link, "Foreign formal origin must not create an exact link");
+	free (link);
+	formal_origin->reference = saved_formal_origin_ref;
+
+	RBinDwarfAttrValue saved_high_pc = *high_pc;
+	high_pc->attr_name = DW_AT_MIPS_linkage_name;
+	high_pc->attr_form = DW_FORM_string;
+	high_pc->kind = DW_AT_KIND_STRING;
+	high_pc->string.content = concrete_linkage->string.content;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (link,
+		"Duplicate concrete identities must not create an exact link");
+	free (link);
+	*high_pc = saved_high_pc;
+	const char *saved_concrete_linkage = concrete_linkage->string.content;
+	concrete_linkage->string.content = "_ZN3DogC2Ev";
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (link,
+		"Unrelated concrete and abstract linkage identities must be refused");
+	free (link);
+	concrete_linkage->string.content = saved_concrete_linkage;
+	high_pc->attr_name = DW_AT_name;
+	high_pc->attr_form = DW_FORM_string;
+	high_pc->kind = DW_AT_KIND_STRING;
+	high_pc->string.content = "ConflictingConcreteName";
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (link,
+		"Conflicting concrete and abstract source names must be refused");
+	free (link);
+	*high_pc = saved_high_pc;
+
+	const ut64 saved_foreign_offset = foreign_formal->offset;
+	foreign_formal->offset = origin_decl->offset;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (link,
+		"Duplicate CU DIE offsets must refuse exact membership authority");
+	free (link);
+	foreign_formal->offset = saved_foreign_offset;
+
+	RBinDwarfAttrValue saved_origin_mutable = *origin_mutable;
+	origin_mutable->attr_name = DW_AT_high_pc;
+	origin_mutable->attr_form = DW_FORM_data4;
+	origin_mutable->kind = DW_AT_KIND_CONSTANT;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (link,
+		"Address-bearing abstract origins must not create an exact link");
+	free (link);
+	*origin_mutable = saved_origin_mutable;
+
+	origin_mutable->attr_name = DW_AT_declaration;
+	origin_mutable->attr_form = DW_FORM_data1;
+	origin_mutable->kind = DW_AT_KIND_CONSTANT;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (link,
+		"Malformed abstract declaration flags must not create an exact link");
+	free (link);
+	*origin_mutable = saved_origin_mutable;
+
+	RBinDwarfDie *concrete_terminator = test_find_subtree_terminator (unit, concrete);
+	mu_assert_notnull (concrete_terminator, "Missing concrete subtree terminator");
+	const ut64 saved_terminator_abbrev = concrete_terminator->abbrev_code;
+	concrete_terminator->abbrev_code = 1;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (link,
+		"A later CU terminator cannot close an unterminated concrete subtree");
+	free (link);
+	concrete_terminator->abbrev_code = saved_terminator_abbrev;
+
+	const ut64 saved_high_pc_name = high_pc->attr_name;
+	high_pc->attr_name = DW_AT_ranges;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (link, "Ranges-based concrete authority must be refused");
+	free (link);
+	high_pc->attr_name = saved_high_pc_name;
+
+	high_pc->attr_form = DW_FORM_string;
+	high_pc->kind = DW_AT_KIND_STRING;
+	high_pc->string.content = "malformed";
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (link, "Malformed concrete high_pc must be refused");
+	free (link);
+	*high_pc = saved_high_pc;
+
+	RBinDwarfAttrValue saved_missing_prototyped = *missing_prototyped;
+	missing_prototyped->attr_name = DW_AT_prototyped;
+	missing_prototyped->attr_form = DW_FORM_flag;
+	missing_prototyped->kind = DW_AT_KIND_FLAG;
+	missing_prototyped->flag = true;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, 0x134a);
+	mu_assert_null (link,
+		"Concrete formals missing from the abstract prototype must be refused");
+	free (link);
+	*missing_prototyped = saved_missing_prototyped;
+
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_notnull (link,
+		"Exact concrete-to-abstract formal bijection must create an address link");
+	mu_assert_eq (r_type_kind (anal->sdb_types, link), R_TYPE_FUNCTION,
+		"Exact address link must target a function type");
+	mu_assert_streq (r_type_func_ret (anal->sdb_types, link), "void",
+		"Exact constructor return type");
+	mu_assert_eq (r_type_func_args_count (anal->sdb_types, link), 1,
+		"Exact constructor formal count");
+	char *this_type = r_type_func_args_type (anal->sdb_types, link, 0);
+	mu_assert_streq (this_type, "Bird * const", "Exact constructor formal type");
+	free (this_type);
+	char *first_link = strdup (link);
+	mu_assert_notnull (first_link, "Copy exact abstract-origin link");
+	free (link);
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_streq (link, first_link,
+		"Repeated abstract-origin import keeps the exact address link stable");
+	free (link);
+	mu_assert_true (r_anal_type_link_set (
+		anal, first_link, concrete_addr),
+		"Repeat the exact link through the ordinary mutation path");
+	origin->reference = UT64_MAX;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_streq (link, first_link,
+		"An identical ordinary write clears parser ownership");
+	free (link);
+	mu_assert_true (r_anal_type_link_unset (anal, concrete_addr),
+		"Remove the ordinary link before restoring parser ownership");
+	origin->reference = saved_origin_ref;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_notnull (link, "Restore parser-owned address link");
+	free (link);
+
+	origin->reference = UT64_MAX;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (link,
+		"A refused generation revokes its prior parser-owned address link");
+	free (link);
+	mu_assert_true (sdb_set (anal->sdb_types, "foreign_dwarf_signature", "func", 0),
+		"Seed foreign function type");
+	mu_assert_true (r_anal_type_link_set (
+		anal, "foreign_dwarf_signature", concrete_addr),
+		"Seed foreign address link");
+	Sdb *dwarf_sdb = sdb_ns (anal->sdb, "dwarf", 0);
+	mu_assert_notnull (dwarf_sdb, "Missing DWARF namespace for forged marker test");
+	mu_assert_true (sdb_setf (dwarf_sdb, "foreign_dwarf_signature", 0,
+		"exact.fcnlink.%08" PFMT64x, concrete_addr),
+		"Forge the retired public ownership marker");
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_streq (link, "foreign_dwarf_signature",
+		"A forged public marker cannot delete a foreign address link");
+	free (link);
+	origin->reference = saved_origin_ref;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, dog_concrete_addr);
+	mu_assert_null (link,
+		"A conflicting desired link rolls back every certifying sibling link");
+	free (link);
+	free (first_link);
+	*prototyped = saved_prototyped;
+	*dog_prototyped = saved_dog_prototyped;
+	r_bin_dwarf_free_debug_info (info);
+	RVecDwarfAbbrevDecl_free (abbrevs);
+	mu_end;
+}
+
+
 int all_tests(void) {
 	run_test_with_setup (test_parse_dwarf_types);
 	run_test_with_setup (test_dwarf_function_parsing_cpp);
 	run_test_with_setup (test_dwarf_function_parsing_rust);
 	run_test_with_setup (test_dwarf_function_parsing_go);
+	run_test_with_setup (test_dwarf3_abstract_origin_prototype_join);
 	return tests_passed != tests_run;
 }
 

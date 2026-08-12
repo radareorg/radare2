@@ -2550,10 +2550,11 @@ static char *function_signature_try_type_name(Sdb *types, const char *candidate)
 	return NULL;
 }
 
-static char *function_signature_address_type_name(Sdb *types, ut64 addr) {
-	R_RETURN_VAL_IF_FAIL (types, NULL);
-	char *name = r_type_link_at (types, addr);
-	if (name && r_type_kind (types, name) == R_TYPE_FUNCTION) {
+static char *function_signature_address_type_name(RAnal *anal, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types, NULL);
+	char *name = r_type_link_at (anal->sdb_types, addr);
+	if (name && r_type_kind (anal->sdb_types, name) == R_TYPE_FUNCTION
+		&& r_anal_dwarf_function_link_is_current (anal, addr, name)) {
 		return name;
 	}
 	free (name);
@@ -2564,7 +2565,7 @@ static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
 	const char *basename;
 
 	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn && fcn->name, NULL);
-	char *name = function_signature_address_type_name (anal->sdb_types, fcn->addr);
+	char *name = function_signature_address_type_name (anal, fcn->addr);
 	if (name) {
 		return name;
 	}
