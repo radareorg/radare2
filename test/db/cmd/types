@@ -3521,7 +3521,7 @@ var uint8_t [256] var_20h @ rbp-0x20
 EOF
 RUN
 
-NAME=a loop body value the header never touches is also lost after the loop
+NAME=a loop body value the header never touches survives after the loop
 FILE=malloc://128
 ARGS=-a x86 -b 64 -e types.sizes=true
 CMDS=<<EOF2
@@ -3536,7 +3536,7 @@ aft
 afv~var_20h
 EOF2
 EXPECT=<<EOF2
-var int64_t var_20h @ rbp-0x20
+var uint8_t [256] var_20h @ rbp-0x20
 EOF2
 RUN
 
@@ -3556,6 +3556,186 @@ afv~var_20h
 EOF2
 EXPECT=<<EOF2
 var uint8_t [256] var_20h @ rbp-0x20
+EOF2
+RUN
+
+NAME=a header rewriting the same value still overrides the loop body
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF2
+wx 554889e54883ec20ba04000000ba0400000085ff7407ba00010000ebf0488d7de031f6e818000000c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF2
+EXPECT=<<EOF2
+var int64_t var_20h @ rbp-0x20
+EOF2
+RUN
+
+NAME=loop arm state does not leak into the sibling arm
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF2
+wx 554889e54883ec2085ff7407ba00010000ebf5488d7de031f6e822000000ebe8
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+arg size_t n @ rdx
+var int64_t s @ rbp-0x20
+EOF2
+RUN
+
+NAME=a header byte write keeps the rest of the body's register value
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF2
+wx 554889e54883ec20ba05000000b20485ff7404b601ebf6488d7de031f6e81e000000c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF2
+EXPECT=<<EOF2
+var uint8_t [260] var_20h @ rbp-0x20
+EOF2
+RUN
+
+NAME=a loop header containing a call keeps its clobbered state at the exit
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF2
+wx 554889e54883ec20e83300000085c07407ba00010000ebf0488d7de031f6e825000000c9c3
+wx c3 @ 0x40
+wx c3 @ 0x48
+af+ 0x40 readfd
+afb+ 0x40 0x40 1
+af+ 0x48 memset
+afb+ 0x48 0x48 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv
+EOF2
+EXPECT=<<EOF2
+var int64_t s @ rbp-0x20
+EOF2
+RUN
+
+NAME=a foreign loop's state does not reach another loop's exit
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e types.sizes=true
+CMDS=<<EOF2
+wx 554889e54883ec2085ff741485f675f885c97404c9c39090ba00010000ebf190488d7de031f6e815000000c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+arg size_t n @ rdx
+arg int64_t arg4 @ rcx
+var int64_t s @ rbp-0x20
+EOF2
+RUN
+
+NAME=ppc64be header carry bit is restored at the loop exit
+FILE=malloc://128
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e types.sizes=true
+CMDS=<<EOF2
+wx f821ffa138a0007f392000013529ffff4182000c300900004bfffff47ca52914f8010028386100283880000048000015382100604e800020
+wx 4e800020 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_28h
+EOF2
+EXPECT=<<EOF2
+var uint8_t [255] var_28h @ r1+0x28
+EOF2
+RUN
+
+NAME=ppc64be loop body value survives after the loop
+FILE=malloc://128
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e types.sizes=true
+CMDS=<<EOF2
+wx f821ffa138a000042f890000419e000c38a001004bfffff4f801002838610028388000004800001d382100604e800020
+wx 4e800020 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_28h
+EOF2
+EXPECT=<<EOF2
+var uint8_t [256] var_28h @ r1+0x28
+EOF2
+RUN
+
+NAME=arm64 loop body value survives after the loop
+FILE=malloc://128
+ARGS=-a arm -b 64 -e types.sizes=true
+CMDS=<<EOF2
+wx ffc300d1ff0b00f91f0000716000005402208052fdffff17e04300910100805208000094c0035fd6
+wx c0035fd6 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_10h
+EOF2
+EXPECT=<<EOF2
+var uint8_t [256] var_10h @ sp+0x10
+EOF2
+RUN
+
+NAME=an arm64 word write in the header overrides the loop body
+FILE=malloc://128
+ARGS=-a arm -b 64 -e types.sizes=true
+CMDS=<<EOF2
+wx ffc300d1ff0b00f9820080521f0000716000005402208052fcffff17e04300910100805207000094c0035fd6
+wx c0035fd6 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_10h
+EOF2
+EXPECT=<<EOF2
+var int64_t var_10h @ sp+0x10
 EOF2
 RUN
 
