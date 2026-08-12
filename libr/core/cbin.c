@@ -4050,7 +4050,10 @@ static void classdump_swift(RCore *core, RBinClass *c) {
 	if (c->lang == R_BIN_LANG_OBJC) {
 		r_cons_printf (core->cons, "@objc\n");
 	}
-	r_cons_printf (core->cons, "class %s ", klassname);
+	const char *kw = (c->attr & R_BIN_ATTR_INTERFACE)? "protocol"
+		: (c->attr & R_BIN_ATTR_ENUM)? "enum"
+		: (c->attr & R_BIN_ATTR_STRUCT)? "struct": "class";
+	r_cons_printf (core->cons, "%s %s ", kw, klassname);
 	if (!r_list_empty (c->super)) {
 		RBinName *bn;
 		r_list_foreach (c->super, iter, bn) {
@@ -4064,13 +4067,27 @@ static void classdump_swift(RCore *core, RBinClass *c) {
 		if (!f->name) {
 			continue;
 		}
-		const char *var = r_bin_field_kindstr (f);
 		const char *fname = r_bin_name_tostring2 (f->name, pref);
 		const char *ftype = r_bin_name_tostring2 (f->type, pref);
+		if (f->attr & R_BIN_ATTR_ENUM) {
+			if (R_STR_ISNOTEMPTY (ftype)) {
+				r_cons_printf (core->cons, (*ftype == '(')? "  case %s%s\n": "  case %s(%s)\n", fname, ftype);
+			} else {
+				r_cons_printf (core->cons, "  case %s\n", fname);
+			}
+			continue;
+		}
+		if (f->attr & R_BIN_ATTR_ABSTRACT) {
+			r_cons_printf (core->cons, "  associatedtype %s\n", fname);
+			continue;
+		}
+		const char *var = (c->lang == R_BIN_LANG_SWIFT)
+			? ((f->attr & R_BIN_ATTR_CONST)? "let": "var")
+			: r_bin_field_kindstr (f);
 		if (R_STR_ISNOTEMPTY (ftype)) {
-			r_cons_printf (core->cons, "  %s %s : %s;\n", var, fname, ftype);
+			r_cons_printf (core->cons, "  %s %s : %s\n", var, fname, ftype);
 		} else {
-			r_cons_printf (core->cons, "  %s %s;\n", var, fname);
+			r_cons_printf (core->cons, "  %s %s\n", var, fname);
 		}
 	}
 	R_VEC_FOREACH (&c->methods, sym) {
@@ -4079,10 +4096,29 @@ static void classdump_swift(RCore *core, RBinClass *c) {
 		if (ms) {
 			mn = ms + strlen ("method.");
 		}
-		r_cons_printf (core->cons, "  func %s", mn? mn: ms? ms
-								: "method");
+		const char *stat = (sym->attr & R_BIN_ATTR_STATIC)? "static ": "";
+		if (sym->attr & R_BIN_ATTR_GETTER) {
+			r_cons_printf (core->cons, "  %svar %s { get }  // 0x%08" PFMT64x "\n", stat, mn, sym->vaddr);
+			continue;
+		}
+		if (sym->attr & R_BIN_ATTR_SETTER) {
+			r_cons_printf (core->cons, "  %svar %s { set }  // 0x%08" PFMT64x "\n", stat, mn, sym->vaddr);
+			continue;
+		}
+		if (sym->attr & R_BIN_ATTR_CONSTRUCTOR) {
+			if (!strcmp (mn, "init")) {
+				r_cons_printf (core->cons, "  init()  // 0x%08" PFMT64x "\n", sym->vaddr);
+			} else {
+				r_cons_printf (core->cons, "  init %s  // 0x%08" PFMT64x "\n", mn, sym->vaddr);
+			}
+			continue;
+		}
+		r_cons_printf (core->cons, "  %sfunc %s", stat, mn? mn: "method");
 		if (!strchr (mn, '(')) {
 			r_cons_printf (core->cons, "()");
+		}
+		if (sym->attr & R_BIN_ATTR_ASYNC) {
+			r_cons_printf (core->cons, " async");
 		}
 		r_cons_printf (core->cons, " {}  // 0x%08" PFMT64x "\n", sym->vaddr);
 	}

@@ -24,6 +24,7 @@
 typedef struct {
 	bool have;
 	ut64 addr;
+	ut64 vaddr;
 	ut64 size;
 	ut8 *data;
 } MetaSection;
@@ -32,6 +33,7 @@ typedef struct {
 	// swift
 	MetaSection types;
 	MetaSection fieldmd;
+	MetaSection protos;
 	// objc
 	MetaSection clslist;
 	MetaSection catlist;
@@ -89,6 +91,7 @@ static bool parse_section(RBinFile *bf, MetaSection *ms, struct section_t *secti
 	}
 	if (strstr (section->name, sname)) {
 		ms->addr = section->paddr;
+		ms->vaddr = section->vaddr;
 		ms->size = section->size;
 		ms->have = adjust_bounds (bf, ms, sname);
 		return true;
@@ -114,6 +117,7 @@ static MetaSections metadata_sections_init(RBinFile *bf) {
 			PARSECTION (&ms.catlist, "__objc_catlist");
 			PARSECTION (&ms.types, "swift5_types");
 			PARSECTION (&ms.fieldmd, "swift5_fieldmd");
+			PARSECTION (&ms.protos, "swift5_protos");
 		}
 	}
 	return ms;
@@ -1440,85 +1444,615 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 	}
 }
 
+// Swift5 type metadata. Layouts come from swift/include/swift/ABI/Metadata.h
+// and docs/ABI/TypeMetadata.rst in the swift sources
+
 enum {
-	NCD_FLAGS = 0,
-	NCD_PARENT = 1,
-	NCD_NAME = 2,
-	NCD_ACCESSFCNPTR = 3,
-	NCD_FIELDS = 4,
-	NCD_SUPER = 5,
-	NCD_MEMBERS = 8,
-	NCD_NFIELDS = 9,
-	NCD_OFIELDS = 10
+	SWIFT_CDK_MODULE = 0,
+	SWIFT_CDK_EXTENSION = 1,
+	SWIFT_CDK_ANONYMOUS = 2,
+	SWIFT_CDK_PROTOCOL = 3,
+	SWIFT_CDK_CLASS = 16,
+	SWIFT_CDK_STRUCT = 17,
+	SWIFT_CDK_ENUM = 18
 };
+
+// TypeContextDescriptorFlags (upper 16 bits of the flags word)
+#define SWIFT_TCD_METAINIT(x) ((x) & 3)
+#define SWIFT_TCD_CLASS_HAS_RESILIENT_SUPER (1 << 13)
+#define SWIFT_TCD_CLASS_HAS_OVERRIDE_TABLE (1 << 14)
+#define SWIFT_TCD_CLASS_HAS_VTABLE (1 << 15)
+
+// MethodDescriptorFlags
+#define SWIFT_MDF_KIND(x) ((x) & 0x0f) // 0 method, 1 init, 2 getter, 3 setter, 4 modify, 5 read
+#define SWIFT_MDF_INSTANCE 0x10
+#define SWIFT_MDF_DYNAMIC 0x20
+#define SWIFT_MDF_ASYNC 0x40
+
+typedef struct {
+	RBinFile *bf;
+	const RSkipList *relocs;
+	HtUP *symbols_ht;
+	HtPP *mangled_ht; // mangled context prefix -> RBinClass
+	int depth;
+} SwiftCtx;
 
 typedef struct {
 	bool valid;
+	int kind; // SWIFT_CDK_*
+	ut32 flags;
+	ut64 addr; // vaddr of the type context descriptor
 	ut64 name_addr;
-	ut64 super_addr;
-	ut64 addr;
-	ut64 fields;
-	ut64 members;
-	ut64 members_count;
-	// internal //
-	MetaSection fieldmd;
-	st32 *fieldmd_data;
+	ut64 super_addr; // mangled superclass typename (classes only)
+	ut64 fields; // FieldDescriptor vaddr
+	ut64 vtable; // vaddr of the vtable header (classes only)
 } SwiftType;
 
-static inline st32 swift_read_s32_le(const void *data, size_t idx) {
-	const ut8 *buf = (const ut8 *)data;
-	return (st32)r_read_le32 (buf + idx * sizeof (ut32));
+static st32 swift_s32(RBinFile *bf, ut64 va) {
+	ut32 offset, left;
+	ut8 b[4] = {0};
+	const mach0_ut pa = va2pa (bf, va, &offset, &left);
+	if (pa && left >= sizeof (b)) {
+		r_buf_read_at (bf->buf, pa, b, sizeof (b));
+	}
+	return (st32)r_read_le32 (b);
 }
 
-static SwiftType parse_type_entry(RBinFile *bf, ut64 typeaddr) {
+static ut64 swift_ptr(RBinFile *bf, ut64 va) {
+	ut32 offset, left;
+	ut8 b[sizeof (mach0_ut)] = {0};
+	const mach0_ut pa = va2pa (bf, va, &offset, &left);
+	if (!pa || left < sizeof (b)) {
+		return 0;
+	}
+	r_buf_read_at (bf->buf, pa, b, sizeof (b));
+	ut64 v = r_read_ble (b, false, 8 * sizeof (mach0_ut));
+	if (v >> 48) {
+		// strip chained-fixup/PAC bits, keeping the 36bit target offset
+		v &= 0xFFFFFFFFFULL;
+	}
+	return v & ~1ULL;
+}
+
+static char *swift_str(RBinFile *bf, ut64 va) {
+	ut32 offset, left;
+	return readstr (bf, va, &offset, &left);
+}
+
+static char *swift_typeref_str(SwiftCtx *ctx, const ut8 *p, int len, ut64 va);
+
+// fully qualified dotted name of a context descriptor ("CryptoKit.P256.Signing")
+static char *swift_context_qualname(SwiftCtx *ctx, ut64 va) {
+	if (ctx->depth > 12) {
+		return NULL;
+	}
+	const ut32 flags = (ut32)swift_s32 (ctx->bf, va);
+	const int kind = flags & 0x1f;
+	char *name = NULL;
+	if (kind == SWIFT_CDK_MODULE || kind == SWIFT_CDK_PROTOCOL || kind >= SWIFT_CDK_CLASS) {
+		const st32 nrel = swift_s32 (ctx->bf, va + 8);
+		if (nrel) {
+			name = swift_str (ctx->bf, va + 8 + nrel);
+		}
+	}
+	if (kind == SWIFT_CDK_MODULE) {
+		return name;
+	}
+	const st32 prel = swift_s32 (ctx->bf, va + 4);
+	if (prel) {
+		ut64 pva = va + 4 + (prel & ~1);
+		if (prel & 1) {
+			pva = swift_ptr (ctx->bf, pva);
+		}
+		if (pva) {
+			ctx->depth++;
+			char *pn = swift_context_qualname (ctx, pva);
+			ctx->depth--;
+			if (pn && name) {
+				char *res = r_str_newf ("%s.%s", pn, name);
+				free (pn);
+				free (name);
+				return res;
+			}
+			if (pn) {
+				return pn; // anonymous/extension context in between
+			}
+		}
+	}
+	return name;
+}
+
+// resolve an indirect symbolic reference: va holds a pointer (or bind) to a descriptor
+static char *swift_indirect_qualname(SwiftCtx *ctx, ut64 va) {
+	if (ctx->relocs) {
+		struct reloc_t rr = { .addr = va };
+		RSkipListNode *node = r_skiplist_find ((RSkipList *)ctx->relocs, &rr);
+		if (node) {
+			struct reloc_t *rel = node->data;
+			if (rel->name[0]) {
+				const char *rn = rel->name;
+				while (*rn == '_') {
+					rn++;
+				}
+				if (r_str_startswith (rn, "$s")) {
+					size_t l = strlen (rn + 2);
+					if (l > 2 && !strcmp (rn + l, "Mn")) {
+						l -= 2; // drop the "nominal type descriptor" suffix
+					}
+					char *res = swift_typeref_str (ctx, (const ut8 *)rn + 2, l, 0);
+					if (res) {
+						return res;
+					}
+				}
+				return strdup (rn);
+			}
+			if (rel->addend > 0) {
+				return swift_context_qualname (ctx, rel->addend);
+			}
+		}
+	}
+	const ut64 target = swift_ptr (ctx->bf, va);
+	return target? swift_context_qualname (ctx, target): NULL;
+}
+
+// mangled context chain ("9CryptoKit4P256O7SigningO9PublicKeyV") used to
+// attribute symbols to types; returns NULL for non-nominal contexts
+static char *swift_context_mangled(SwiftCtx *ctx, ut64 va) {
+	if (ctx->depth > 12) {
+		return NULL;
+	}
+	const ut32 flags = (ut32)swift_s32 (ctx->bf, va);
+	const int kind = flags & 0x1f;
+	char kindchar = 0;
+	switch (kind) {
+	case SWIFT_CDK_CLASS: kindchar = 'C'; break;
+	case SWIFT_CDK_STRUCT: kindchar = 'V'; break;
+	case SWIFT_CDK_ENUM: kindchar = 'O'; break;
+	case SWIFT_CDK_MODULE: break;
+	default:
+		return NULL;
+	}
+	const st32 nrel = swift_s32 (ctx->bf, va + 8);
+	char *name = nrel? swift_str (ctx->bf, va + 8 + nrel): NULL;
+	if (R_STR_ISEMPTY (name)) {
+		free (name);
+		return NULL;
+	}
+	char *res = NULL;
+	if (kind == SWIFT_CDK_MODULE) {
+		res = r_str_newf ("%d%s", (int)strlen (name), name);
+	} else {
+		const st32 prel = swift_s32 (ctx->bf, va + 4);
+		ut64 pva = prel? va + 4 + (prel & ~1): 0;
+		if (prel & 1) {
+			pva = swift_ptr (ctx->bf, pva);
+		}
+		if (pva) {
+			ctx->depth++;
+			char *pn = swift_context_mangled (ctx, pva);
+			ctx->depth--;
+			if (pn) {
+				res = r_str_newf ("%s%d%s%c", pn, (int)strlen (name), name, kindchar);
+				free (pn);
+			}
+		}
+	}
+	free (name);
+	return res;
+}
+
+// -- minimal demangler for swift type manglings found in field descriptors --
+
+#define TSTK 24
+#define TS_LIST 1
+#define TS_FIRST 2
+
+typedef struct {
+	char *s[TSTK];
+	ut8 mark[TSTK];
+	ut16 rep[TSTK];
+	int n;
+} TypeStack;
+
+static void tpush(TypeStack *ts, char *s, ut8 mark) {
+	if (s && ts->n < TSTK) {
+		ts->s[ts->n] = s;
+		ts->mark[ts->n] = mark;
+		ts->rep[ts->n] = 0;
+		ts->n++;
+	} else {
+		free (s);
+	}
+}
+
+static char *tpop(TypeStack *ts) {
+	if (ts->n < 1) {
+		return NULL;
+	}
+	ts->n--;
+	char *s = ts->s[ts->n];
+	if (ts->mark[ts->n] & TS_LIST) {
+		free (s);
+		return strdup ("()");
+	}
+	return s;
+}
+
+static const char *swift_stdtype(char c) {
+	switch (c) {
+	case 'a': return "Swift.Array";
+	case 'b': return "Swift.Bool";
+	case 'c': return "Swift.UnicodeScalar";
+	case 'D': return "Swift.Dictionary";
+	case 'd': return "Swift.Double";
+	case 'f': return "Swift.Float";
+	case 'h': return "Swift.Set";
+	case 'i': return "Swift.Int";
+	case 'J': return "Swift.Character";
+	case 'N': return "Swift.ClosedRange";
+	case 'n': return "Swift.Range";
+	case 'P': return "Swift.UnsafePointer";
+	case 'p': return "Swift.UnsafeMutablePointer";
+	case 'q': return "Swift.Optional";
+	case 'R': return "Swift.UnsafeBufferPointer";
+	case 'r': return "Swift.UnsafeMutableBufferPointer";
+	case 'S': case 's': return "Swift.String";
+	case 'u': return "Swift.UInt";
+	case 'V': return "Swift.UnsafeRawPointer";
+	case 'v': return "Swift.UnsafeMutableRawPointer";
+	case 'w': return "Swift.UnsafeRawBufferPointer";
+	case 'W': return "Swift.UnsafeMutableRawBufferPointer";
+	}
+	return NULL;
+}
+
+// build a tuple from the stack: pops until (and including) the TS_FIRST item,
+// or until a TS_LIST marker (exclusive)
+static char *swift_build_tuple(TypeStack *ts) {
+	char *elem[TSTK];
+	ut16 reps[TSTK];
+	int i, n = 0;
+	while (ts->n > 0 && n < TSTK) {
+		if (ts->mark[ts->n - 1] & TS_LIST) {
+			if (n == 0) {
+				ts->n--;
+				free (ts->s[ts->n]);
+			}
+			break;
+		}
+		const bool first = ts->mark[ts->n - 1] & TS_FIRST;
+		ts->n--;
+		elem[n] = ts->s[ts->n];
+		reps[n] = ts->rep[ts->n];
+		n++;
+		if (first) {
+			break;
+		}
+	}
+	if (n == 0) {
+		return strdup ("()");
+	}
+	if (n == 1 && reps[0] > 0) {
+		char *res = r_str_newf ("(%d x %s)", reps[0] + 1, elem[0]);
+		free (elem[0]);
+		return res;
+	}
+	RStrBuf *sb = r_strbuf_new ("(");
+	for (i = n - 1; i >= 0; i--) {
+		r_strbuf_append (sb, elem[i]);
+		if (i > 0) {
+			r_strbuf_append (sb, ", ");
+		}
+		free (elem[i]);
+	}
+	r_strbuf_append (sb, ")");
+	return r_strbuf_drain (sb);
+}
+
+static void swift_build_generic(TypeStack *ts) {
+	char *args[TSTK];
+	int i, n = 0;
+	while (ts->n > 0 && n < TSTK && !(ts->mark[ts->n - 1] & TS_LIST)) {
+		ts->n--;
+		args[n++] = ts->s[ts->n];
+	}
+	if (ts->n > 0 && (ts->mark[ts->n - 1] & TS_LIST)) {
+		ts->n--;
+		free (ts->s[ts->n]);
+	}
+	char *base = tpop (ts);
+	if (!base) {
+		// no base: restore args joined as-is
+		for (i = n - 1; i >= 0; i--) {
+			tpush (ts, args[i], 0);
+		}
+		return;
+	}
+	char *res = NULL;
+	if (n == 1 && !strcmp (base, "Swift.Optional")) {
+		res = r_str_newf ("%s?", args[0]);
+	} else if (n == 1 && !strcmp (base, "Swift.Array")) {
+		res = r_str_newf ("[%s]", args[0]);
+	} else if (n == 2 && !strcmp (base, "Swift.Dictionary")) {
+		res = r_str_newf ("[%s: %s]", args[1], args[0]);
+	} else {
+		RStrBuf *sb = r_strbuf_new (base);
+		r_strbuf_append (sb, "<");
+		for (i = n - 1; i >= 0; i--) {
+			r_strbuf_append (sb, args[i]);
+			if (i > 0) {
+				r_strbuf_append (sb, ", ");
+			}
+		}
+		r_strbuf_append (sb, ">");
+		res = r_strbuf_drain (sb);
+	}
+	for (i = 0; i < n; i++) {
+		free (args[i]);
+	}
+	free (base);
+	tpush (ts, res, 0);
+}
+
+static void swift_build_function(TypeStack *ts, const char *conv, bool athrows, bool aasync) {
+	char *params = tpop (ts);
+	char *result = tpop (ts);
+	if (!params) {
+		free (result);
+		return;
+	}
+	const char *fmt = (*params == '(')? "%s%s%s%s -> %s": "%s(%s)%s%s -> %s";
+	char *res = r_str_newf (fmt, conv, params,
+		aasync? " async": "", athrows? " throws": "", result? result: "()");
+	free (params);
+	free (result);
+	tpush (ts, res, 0);
+}
+
+static char *swift_typeref_str(SwiftCtx *ctx, const ut8 *p, int len, ut64 va) {
+	TypeStack ts = { {0} };
+	bool athrows = false, aasync = false;
+	int i = 0;
+	while (i < len) {
+		const ut8 b = p[i];
+		if (b < 0x20) {
+			char *name = NULL;
+			if (b >= 1 && b <= 0x17) {
+				if (i + 5 > len) {
+					break;
+				}
+				if (va && (b == 1 || b == 2)) {
+					const st32 rel = (st32)r_read_le32 (p + i + 1);
+					const ut64 tgt = va + i + 1 + rel;
+					name = (b == 1)
+						? swift_context_qualname (ctx, tgt)
+						: swift_indirect_qualname (ctx, tgt);
+				}
+				i += 5;
+			} else {
+				i += 9; // 8-byte absolute references
+			}
+			tpush (&ts, name? name: strdup ("?"), 0);
+			continue;
+		}
+		if (isdigit (b) || (b == 's' && i + 1 < len && isdigit (p[i + 1]))
+				|| (b == 'S' && i + 2 < len && p[i + 1] == 'o' && isdigit (p[i + 2]))) {
+			RStrBuf *nb = r_strbuf_new (NULL);
+			if (b == 's') {
+				r_strbuf_append (nb, "Swift");
+				i++;
+			} else if (b == 'S') {
+				r_strbuf_append (nb, "__C");
+				i += 2;
+			}
+			bool kindchar = !isdigit (b); // only bare identifiers can be tuple labels
+			int segments = 0;
+			while (i < len && isdigit (p[i])) {
+				int n = atoi ((const char *)p + i);
+				while (i < len && isdigit (p[i])) {
+					i++;
+				}
+				if (n < 1 || i + n > len) {
+					break;
+				}
+				if (r_strbuf_length (nb) > 0) {
+					r_strbuf_append (nb, ".");
+				}
+				r_strbuf_append_n (nb, (const char *)p + i, n);
+				i += n;
+				segments++;
+				if (i < len && strchr ("CVOP", p[i])) {
+					i++; // nominal kind marker
+					kindchar = true;
+				}
+			}
+			if (!kindchar && segments == 1 && ts.n > 0 && !(ts.mark[ts.n - 1] & TS_LIST)
+					&& i < len && (p[i] == '_' || p[i] == 't')) {
+				// tuple element label: follows its element type
+				char *t = tpop (&ts);
+				char *label = r_strbuf_drain (nb);
+				tpush (&ts, r_str_newf ("%s: %s", label, t), 0);
+				free (label);
+				free (t);
+			} else {
+				tpush (&ts, r_strbuf_drain (nb), 0);
+			}
+			continue;
+		}
+		switch (b) {
+		case '$':
+			i += (i + 1 < len && p[i + 1] == 's')? 2: 1;
+			break;
+		case 'S':
+			if (i + 1 >= len) {
+				i = len;
+				break;
+			}
+			if (p[i + 1] == 'g') {
+				char *t = tpop (&ts);
+				// optional function types need wrapping parens
+				tpush (&ts, t? r_str_newf (strstr (t, " -> ")? "(%s)?": "%s?", t): NULL, 0);
+				free (t);
+			} else {
+				const char *st = swift_stdtype (p[i + 1]);
+				tpush (&ts, strdup (st? st: "?"), 0);
+			}
+			i += 2;
+			break;
+		case 'y':
+			tpush (&ts, strdup ("y"), TS_LIST);
+			i++;
+			break;
+		case '_':
+			if (ts.n > 0) {
+				ts.mark[ts.n - 1] |= TS_FIRST;
+			}
+			i++;
+			break;
+		case 't':
+			tpush (&ts, swift_build_tuple (&ts), 0);
+			i++;
+			break;
+		case 'A':
+			i++;
+			if (i < len && isdigit (p[i]) && ts.n > 0) {
+				ts.rep[ts.n - 1] = atoi ((const char *)p + i);
+				while (i < len && isdigit (p[i])) {
+					i++;
+				}
+			}
+			break;
+		case 'G':
+			swift_build_generic (&ts);
+			i++;
+			break;
+		case 'X':
+			if (i + 1 < len && p[i + 1] == 'C') {
+				swift_build_function (&ts, "@convention(c) ", athrows, aasync);
+				athrows = aasync = false;
+			}
+			i += 2;
+			break;
+		case 'c':
+			swift_build_function (&ts, "", athrows, aasync);
+			athrows = aasync = false;
+			i++;
+			break;
+		case 'K':
+			athrows = true;
+			i++;
+			break;
+		case 'Y':
+			if (i + 1 < len && p[i + 1] == 'a') {
+				aasync = true;
+			}
+			i += 2;
+			break;
+		case 'z':
+			// inout marker applies to the following type; approximate by prefixing the next push
+			i++;
+			break;
+		case 'm':
+			{
+				char *t = tpop (&ts);
+				tpush (&ts, t? r_str_newf ("%s.Type", t): NULL, 0);
+				free (t);
+				i++;
+			}
+			break;
+		case 'x':
+			tpush (&ts, strdup ("A"), 0);
+			i++;
+			break;
+		case 'q':
+			if (i + 1 < len && p[i + 1] == '_') {
+				tpush (&ts, strdup ("B"), 0);
+				i += 2;
+			} else if (i + 2 < len && isdigit (p[i + 1]) && p[i + 2] == '_') {
+				char gp[2] = { (char)('C' + (p[i + 1] - '0')), 0 };
+				tpush (&ts, strdup (gp), 0);
+				i += 3;
+			} else {
+				i++;
+			}
+			break;
+		default:
+			// unknown mangling op: stop here and use what we have
+			i = len;
+			break;
+		}
+	}
+	char *res = NULL;
+	while (ts.n > 0) {
+		char *t = tpop (&ts);
+		if (!res && t && strcmp (t, "()")) {
+			res = t;
+		} else {
+			free (t);
+		}
+	}
+	return res;
+}
+
+// read a (possibly symbolic) mangled type name at va and return its demangled form
+static char *swift_read_typeref(SwiftCtx *ctx, ut64 va) {
+	ut8 buf[256] = {0};
+	ut32 offset, left;
+	const mach0_ut pa = va2pa (ctx->bf, va, &offset, &left);
+	if (!pa || left < 2) {
+		return NULL;
+	}
+	const int n = R_MIN (left, sizeof (buf) - 1);
+	r_buf_read_at (ctx->bf->buf, pa, buf, n);
+	int i = 0;
+	while (i < n && buf[i]) {
+		if (buf[i] <= 0x17) {
+			i += 5;
+		} else if (buf[i] <= 0x1f) {
+			i += 9;
+		} else {
+			i++;
+		}
+	}
+	return (i > 0)? swift_typeref_str (ctx, buf, R_MIN (i, n), va): NULL;
+}
+
+static SwiftType swift_parse_type_entry(RBinFile *bf, ut64 typeaddr) {
 	SwiftType st = {0};
-	ut8 words[16 * sizeof (ut32)] = {0};
-	if (r_buf_read_at (bf->buf, typeaddr, words, sizeof (words)) != sizeof (words)) {
-		R_LOG_DEBUG ("Invalid pointers");
+	const ut32 flags = (ut32)swift_s32 (bf, typeaddr);
+	const int kind = flags & 0x1f;
+	if (kind != SWIFT_CDK_CLASS && kind != SWIFT_CDK_STRUCT && kind != SWIFT_CDK_ENUM) {
 		return st;
 	}
-#if 0
-// struct NominalClassDescriptor
-ut32 flags
-st32 parent
-st32 name
-st32 accessfcnptr
-st32 fields
-st32 superklass
-ut32 ign;
-ut32 ign;
-ut32 members_count;
-ut32 fields_count;
-ut32 fields_offset;
-#endif
-#define NCD(x) (typeaddr + ((x) * 4) + swift_read_s32_le (words, x))
-#if 0
-	eprintf ("0x%08"PFMT64x " swift_type_entry:\n", typeaddr);
-	eprintf ("  flags:   0x%08x\n", words[0]);
-	eprintf ("  parent:  0x%08"PFMT64x"\n", NCD (NCD_PARENT));
-#endif
-	st.name_addr = NCD (NCD_NAME);
-	st.super_addr = NCD (NCD_SUPER);
-#if 0
-	char *typename = readstr (bf, typename_addr);
-	eprintf ("  name:    0x%08"PFMT64x" (%s)\n", typename_addr, typename);
-	eprintf ("  access:  0x%08"PFMT64x"\n", bf->bo->baddr + NCD (NCD_ACCESSFCNPTR));
-	eprintf ("  fields:  0x%08"PFMT64x"\n", NCD (NCD_FIELDS));
-	eprintf ("  super:   0x%08"PFMT64x"\n", NCD (NCD_SUPER));
-	eprintf ("  members: 0x%08"PFMT64x"\n", NCD (NCD_MEMBERS));
-	eprintf ("  fields:  0x%08"PFMT64x"\n", NCD (NCD_NFIELDS));
-	eprintf ("  fieldsat:0x%08"PFMT64x"\n", NCD (NCD_OFIELDS));
-
-	char * tn = r_name_filter_dup (typename);
-	r_cons_printf ("f sym.swift.%s.init = 0x%08"PFMT64x"\n",
-		tn, bf->bo->baddr + NCD (NCD_ACCESSFCNPTR));
-	free (tn);
-	free (typename);
-#endif
+#define NCD(x) (typeaddr + ((x) * 4) + swift_s32 (bf, typeaddr + ((x) * 4)))
 	st.valid = true;
-	st.fields = NCD (NCD_FIELDS);
-	st.members = NCD (NCD_MEMBERS);
-	st.members_count = NCD (NCD_MEMBERS);
+	st.kind = kind;
+	st.flags = flags;
+	st.addr = typeaddr;
+	st.name_addr = NCD (2);
+	st.fields = swift_s32 (bf, typeaddr + 16)? NCD (4): UT64_MAX;
+	if (kind == SWIFT_CDK_CLASS) {
+		if (swift_s32 (bf, typeaddr + 20)) {
+			st.super_addr = NCD (5);
+		}
+		const ut32 tcd = flags >> 16;
+		if ((tcd & SWIFT_TCD_CLASS_HAS_VTABLE) && !(tcd & (1 << 3))) {
+			ut64 p = typeaddr + 11 * 4;
+			if (flags & (1 << 7)) { // generic: skip the generic context header
+				const ut32 nparams = (ut32)swift_s32 (bf, p + 8) & 0xffff;
+				const ut32 nreqs = ((ut32)swift_s32 (bf, p + 8)) >> 16;
+				p += 16 + ((nparams + 3) & ~3) + nreqs * 12;
+			}
+			if (tcd & SWIFT_TCD_CLASS_HAS_RESILIENT_SUPER) {
+				p += 4;
+			}
+			switch (SWIFT_TCD_METAINIT (tcd)) {
+			case 1: p += 12; break; // singleton metadata initialization
+			case 2: p += 4; break; // foreign metadata initialization
+			}
+			st.vtable = p;
+		}
+	}
 	return st;
 }
 
@@ -1537,197 +2071,308 @@ static inline HtUP *_load_symbol_by_vaddr_hashtable(RBinFile *bf) {
 	return ht;
 }
 
-static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht) {
-	char *otypename = readstr (bf, st.name_addr, NULL, NULL);
+static void swift_parse_fields(SwiftCtx *ctx, RBinClass *klass, ut64 fd, bool is_enum) {
+	const ut32 nfields = (ut32)swift_s32 (ctx->bf, fd + 12);
+	const ut32 recsize = ((ut32)swift_s32 (ctx->bf, fd + 8)) >> 16;
+	if (recsize != 12 || nfields > 2048) {
+		R_LOG_DEBUG ("Unexpected swift field descriptor at 0x%08"PFMT64x, fd);
+		return;
+	}
+	ut32 i;
+	for (i = 0; i < nfields; i++) {
+		const ut64 rec = fd + 16 + (i * 12);
+		const ut32 rflags = (ut32)swift_s32 (ctx->bf, rec);
+		const st32 trel = swift_s32 (ctx->bf, rec + 4);
+		const st32 nrel = swift_s32 (ctx->bf, rec + 8);
+		char *field_name = nrel? swift_str (ctx->bf, rec + 8 + nrel): NULL;
+		if (R_STR_ISEMPTY (field_name)) {
+			free (field_name);
+			break;
+		}
+		RBinField *field = RVecRBinField_emplace_back (&klass->fields);
+		if (!field) {
+			free (field_name);
+			break;
+		}
+		memset (field, 0, sizeof (RBinField));
+		if (trel) {
+			char *ftype = swift_read_typeref (ctx, rec + 4 + trel);
+			if (ftype) {
+				field->type = r_bin_name_new (ftype);
+				free (ftype);
+			}
+		}
+		field->name = r_bin_name_new (field_name);
+		char *fname = r_name_filter_dup (field_name);
+		r_bin_name_filtered (field->name, fname);
+		free (fname);
+		free (field_name);
+		field->vaddr = rec;
+		field->paddr = va2pa (ctx->bf, rec, NULL, NULL);
+		field->kind = R_BIN_FIELD_KIND_PROPERTY;
+		if (is_enum) {
+			field->attr = R_BIN_ATTR_ENUM;
+		} else if (!(rflags & 2)) {
+			field->attr = R_BIN_ATTR_CONST; // let, not var
+		}
+	}
+}
+
+static void swift_parse_vtable(SwiftCtx *ctx, RBinClass *klass, ut64 vt) {
+	RBinFile *bf = ctx->bf;
+	const ut32 vtsize = (ut32)swift_s32 (bf, vt + 4);
+	if (vtsize > MAX_SWIFT_MEMBERS) {
+		R_LOG_DEBUG ("Truncated insane swift vtable at 0x%08"PFMT64x, vt);
+		return;
+	}
+	ut32 i;
+	for (i = 0; i < vtsize; i++) {
+		const ut64 mdesc = vt + 8 + (i * 8);
+		const ut32 mflags = (ut32)swift_s32 (bf, mdesc);
+		const st32 irel = swift_s32 (bf, mdesc + 4);
+		if (!irel || SWIFT_MDF_KIND (mflags) > 5) {
+			continue;
+		}
+		const ut64 method_addr = mdesc + 4 + irel;
+		RBinSymbol *bs = ctx->symbols_ht? ht_up_find (ctx->symbols_ht, method_addr, NULL): NULL;
+		RBinSymbol *sym;
+		if (bs) {
+			const char *rawname = r_bin_name_tostring2 (bs->name, 'o');
+			sym = r_bin_symbol_new (rawname, method_addr, method_addr);
+			char *dname = demangle_swift (bf, rawname);
+			if (dname) {
+				// keep only the member name, dropping module and type
+				const char *last = r_str_rchr (dname, NULL, '.');
+				r_bin_name_demangled (sym->name, (last && last[1])? last + 1: dname);
+				free (dname);
+			}
+		} else {
+			static const char *kindnames[] = { "method", "init", "getter", "setter", "modify", "read" };
+			char *mname = r_str_newf ("%s.%d", kindnames[SWIFT_MDF_KIND (mflags)], i);
+			sym = r_bin_symbol_new (mname, method_addr, method_addr);
+			free (mname);
+		}
+		switch (SWIFT_MDF_KIND (mflags)) {
+		case 1: sym->attr |= R_BIN_ATTR_CONSTRUCTOR; break;
+		case 2: sym->attr |= R_BIN_ATTR_GETTER; break;
+		case 3: sym->attr |= R_BIN_ATTR_SETTER; break;
+		}
+		if (!(mflags & SWIFT_MDF_INSTANCE)) {
+			sym->attr |= R_BIN_ATTR_STATIC;
+		}
+		if (mflags & SWIFT_MDF_ASYNC) {
+			sym->attr |= R_BIN_ATTR_ASYNC;
+		}
+		sym->lang = R_BIN_LANG_SWIFT;
+		RVecRBinSymbol_push_back (&klass->methods, sym);
+		free (sym);
+	}
+}
+
+static void swift_parse_type(SwiftCtx *ctx, RList *list, SwiftType st) {
+	RBinFile *bf = ctx->bf;
+	char *qname = swift_context_qualname (ctx, st.addr);
+	char *otypename = qname? qname: swift_str (bf, st.name_addr);
 	if (R_STR_ISEMPTY (otypename)) {
 		R_LOG_DEBUG ("swift-type-parse missing name");
 		free (otypename);
 		return;
 	}
+	RBinClass *klass = r_bin_class_new (otypename, NULL, false);
 	char *typename = r_name_filter_dup (otypename);
-	RBinClass *klass = r_bin_class_new (typename, NULL, false);
+	r_bin_name_filtered (klass->name, typename);
+	free (typename);
 	klass->origin = R_BIN_CLASS_ORIGIN_BIN;
-	char *super_name = readstr (bf, st.super_addr, NULL, NULL);
-	if (super_name) {
-		if ((st8)*super_name > 5) {
+	switch (st.kind) {
+	case SWIFT_CDK_ENUM:
+		klass->attr |= R_BIN_ATTR_ENUM;
+		break;
+	case SWIFT_CDK_STRUCT:
+		klass->attr |= R_BIN_ATTR_STRUCT;
+		break;
+	}
+	if (st.super_addr) {
+		char *sname = swift_read_typeref (ctx, st.super_addr);
+		if (R_STR_ISNOTEMPTY (sname)) {
 			klass->super = r_list_newf ((void *)r_bin_name_free);
-			RBinName *bn = r_bin_name_new (super_name);
-			char *sname = demangle_swift (bf, super_name);
-			if (R_STR_ISNOTEMPTY (sname)) {
-				r_bin_name_demangled (bn, sname);
-			}
-			free (sname);
-			r_list_append (klass->super, bn);
+			r_list_append (klass->super, r_bin_name_new (sname));
 		}
-		free (super_name);
+		free (sname);
 	}
 	klass->addr = st.addr;
 	klass->lang = R_BIN_LANG_SWIFT;
 	klass->index = r_list_length (bf->bo->classes) + r_list_length (list);
 	r_list_append (list, klass);
+	if (ctx->mangled_ht) {
+		char *mangled = swift_context_mangled (ctx, st.addr);
+		if (mangled) {
+			ht_pp_insert (ctx->mangled_ht, mangled, klass);
+			free (mangled);
+		}
+	}
 	if (class_names_only (bf)) {
-		free (typename);
 		free (otypename);
 		return;
 	}
-	if (st.members != UT64_MAX) {
-		ut8 buf[MAX_SWIFT_MEMBERS * 16] = {0};
-		int i = 0;
-		bool parse_members = true;
-		R_LOG_DEBUG ("parse_type.st.members 0x%08"PFMT64x, st.members);
-		if (st.members < 1 || st.members >= bf->size) {
-			R_LOG_DEBUG ("out of bounds");
-			parse_members = false;
-		}
-		if (parse_members) {
-			st64 res = r_buf_read_at (bf->buf, st.members, buf, sizeof (buf));
-			if (res != sizeof (buf)) {
-				R_LOG_DEBUG ("Partial read on st.members");
-				parse_members = false;
-			}
-		}
-		if (parse_members) {
-			ut32 count = R_MIN (MAX_SWIFT_MEMBERS, r_read_le32 (buf + 3));
-			for (i = 0; i < count; i++) {
-				int pos = (i * 8) + 3 + 8 + 8;
-				st32 n = r_read_le32 (buf + pos);
-				ut64 method_addr = st.members + pos + n;
-				if (method_addr > r_buf_size (bf->buf)) {
-					break;
-				}
-				method_addr += bf->bo->baddr;
-				RBinSymbol *sym = NULL;
-				char *method_name;
-				char *rawname = NULL;
-				if (symbols_ht && (sym = ht_up_find (symbols_ht, method_addr, NULL))) {
-					rawname = strdup (r_bin_name_tostring (sym->name));
-					method_name = r_name_filter_dup (rawname); // r_bin_name_tostring (sym->name));
-					r_bin_name_filtered (sym->name, method_name);
-					char *dname = demangle_swift (bf, method_name);
-					if (dname) {
-						r_bin_name_demangled (sym->name, dname);
-						free (sym->name->oname);
-						sym->name->oname = strdup (rawname);
-						free (method_name);
-						method_name = dname;
-					}
-				} else {
-					if (!load_unnamed (bf)) {
-						continue;
-					}
-					method_name = r_str_newf ("%d", i);
-				}
-				// skip namespace
-				char *dot = strchr (method_name, '.');
-				if (dot) {
-					// skip classname
-					dot = strchr (dot + 1, '.');
-					if (dot) {
-						char *p = method_name;
-						method_name = strdup (dot + 1);
-						free (p);
-					}
-				}
-				if (rawname) {
-					sym = r_bin_symbol_new (rawname, method_addr, method_addr);
-					r_bin_name_demangled (sym->name, method_name);
-				} else {
-					sym = r_bin_symbol_new (method_name, method_addr, method_addr);
-				}
-				free (rawname);
-#if 0
-				if (oname) {
-					r_bin_name_free (sym->name);
-					sym->name = r_bin_name_clone (oname);
-				}
-#endif
-				sym->lang = R_BIN_LANG_SWIFT;
-				RVecRBinSymbol_push_back (&klass->methods, sym);
-				free (sym);
-#if 0
-				// TODO. try to resolve the method name by symbol table or debug info
-				r_cons_printf ("f sym.swift.%s.method.%s = 0x%" PFMT64x"\n", typename, method_name, method_addr);
-#endif
-				free (method_name);
-			}
-		}
+	if (st.fields != UT64_MAX) {
+		swift_parse_fields (ctx, klass, st.fields, st.kind == SWIFT_CDK_ENUM);
 	}
-
-	if (st.fields != UT64_MAX && st.fields >= st.fieldmd.addr) {
-		const ut64 fieldmd_delta = st.fields - st.fieldmd.addr;
-		const ut64 dmax = st.fieldmd.size / sizeof (ut32);
-		const ut64 max_idx = (ut64)SZT_MAX / sizeof (ut32);
-		const ut64 j = fieldmd_delta / sizeof (ut32);
-		int i;
-		for (i = 0; i < 128; i += 3) {
-			const ut64 d = 6 + j + i;
-			if (fieldmd_delta >= st.fieldmd.size || d >= dmax || d > max_idx) {
-				break;
-			}
-			const size_t idx = (size_t)d;
-			const ut64 field_addr = st.fieldmd.addr + (d * sizeof (ut32));
-			ut64 field_name_addr = field_addr + swift_read_s32_le (st.fieldmd_data, idx);
-			ut64 field_type_addr = field_addr + swift_read_s32_le (st.fieldmd_data, idx - 1) - 4;
-			ut64 field_method_addr = field_name_addr;
-			ut64 vaddr = r_bin_file_get_baddr (bf) + field_method_addr;
-			char *field_name = readstr (bf, field_name_addr, NULL, NULL);
-			if (R_STR_ISEMPTY (field_name)) {
-				free (field_name);
-				break;
-			}
-			RBinField *field = RVecRBinField_emplace_back (&klass->fields);
-			if (!field) {
-				free (field_name);
-				break;
-			}
-			char *field_type = readstr (bf, field_type_addr, NULL, NULL);
-			if (field_type) {
-				const char *ftype = field_type;
-				if ((st8)*ftype < 6) {
-					// basic type
-					ftype += r_str_nlen (ftype, 6);
-				}
-				field->type = r_bin_name_new (ftype);
-				char *demangled_type = demangle_swift (bf, ftype);
-				if (demangled_type) {
-					r_bin_name_demangled (field->type, demangled_type);
-					free (demangled_type);
-				}
-				free (field_type);
-			}
-			field->name = r_bin_name_new (field_name);
-			char *fname = r_name_filter_dup (field_name);
-			r_bin_name_filtered (field->name, fname);
-			free (fname);
-			free (field_name);
-			field->paddr = field_method_addr;
-			field->vaddr = vaddr;
-			field->kind = R_BIN_FIELD_KIND_PROPERTY;
-		}
+	if (st.vtable) {
+		swift_parse_vtable (ctx, klass, st.vtable);
 	}
-	free (typename);
 	free (otypename);
 }
 
-static void *read_section(RBinFile *bf, MetaSection *ms, ut64 *asize) {
-	if (ms->data) {
-		return ms->data;
-	}
-	void *data = calloc (ms->size + 4, 1);
-	if (data) {
-		// align size and addr
-		if (ms->addr % 4) {
-			R_LOG_WARN ("Unaligned address for section");
+static void swift_parse_protocols(SwiftCtx *ctx, RList *list, MetaSection *ms) {
+	RBinFile *bf = ctx->bf;
+	ut32 i;
+	for (i = 0; i < ms->size / 4; i++) {
+		const ut64 entry = ms->vaddr + (i * 4);
+		const st32 rel = swift_s32 (bf, entry);
+		if (!rel) {
+			continue;
 		}
-		*asize = ms->size + (ms->size % 4);
-		if (r_buf_read_at (bf->buf, ms->addr, data, *asize) != *asize) {
-			R_FREE (ms->data);
-			return NULL;
+		const ut64 pd = entry + rel;
+		if ((swift_s32 (bf, pd) & 0x1f) != SWIFT_CDK_PROTOCOL) {
+			continue;
 		}
-		free (ms->data);
-		ms->data = data;
+		char *qname = swift_context_qualname (ctx, pd);
+		if (R_STR_ISEMPTY (qname)) {
+			free (qname);
+			continue;
+		}
+		RBinClass *klass = r_bin_class_new (qname, NULL, false);
+		klass->attr |= R_BIN_ATTR_INTERFACE;
+		klass->lang = R_BIN_LANG_SWIFT;
+		klass->origin = R_BIN_CLASS_ORIGIN_BIN;
+		klass->addr = pd;
+		const st32 atrel = swift_s32 (bf, pd + 20);
+		char *assoc = atrel? swift_str (bf, pd + 20 + atrel): NULL;
+		if (R_STR_ISNOTEMPTY (assoc)) {
+			RList *names = r_str_split_list (assoc, " ", 0);
+			RListIter *iter;
+			const char *an;
+			r_list_foreach (names, iter, an) {
+				RBinField *field = RVecRBinField_emplace_back (&klass->fields);
+				if (field) {
+					memset (field, 0, sizeof (RBinField));
+					field->name = r_bin_name_new (an);
+					field->kind = R_BIN_FIELD_KIND_PROPERTY;
+					field->attr = R_BIN_ATTR_ABSTRACT;
+					field->vaddr = pd;
+				}
+			}
+			r_list_free (names);
+		}
+		free (assoc);
+		klass->index = r_list_length (bf->bo->classes) + r_list_length (list);
+		r_list_append (list, klass);
+		free (qname);
 	}
-	return data;
+}
+
+// attribute exported swift symbols ($s<context><member>...) to their types
+static void swift_attach_symbols(SwiftCtx *ctx) {
+	RVecRBinSymbol *symbols = &ctx->bf->bo->symbols_vec;
+	RBinSymbol *bs;
+	R_VEC_FOREACH (symbols, bs) {
+		const char *rn = r_bin_name_tostring2 (bs->name, 'o');
+		while (*rn == '_') {
+			rn++;
+		}
+		if (!r_str_startswith (rn, "$s")) {
+			continue;
+		}
+		const char *p = rn + 2;
+		RBinClass *klass = NULL;
+		const char *rest = NULL;
+		const char *q = p;
+		bool in_module = true;
+		while (isdigit (*q) && *q != '0') {
+			const int n = atoi (q);
+			q = r_str_trim_head_digits (q);
+			if (n < 1 || n > (int)strlen (q)) {
+				break;
+			}
+			q += n;
+			if (strchr ("CVO", *q)) {
+				q++;
+				char *prefix = r_str_ndup (p, q - p);
+				RBinClass *k = ht_pp_find (ctx->mangled_ht, prefix, NULL);
+				free (prefix);
+				if (k) {
+					klass = k;
+					rest = q;
+				}
+			} else if (!in_module) {
+				break; // only the module segment comes without a kind marker
+			}
+			in_module = false;
+		}
+		if (!klass || !rest || !*rest) {
+			continue;
+		}
+		char *mname = NULL;
+		if (isdigit (*rest)) {
+			const int n = atoi (rest);
+			const char *e = r_str_trim_head_digits (rest);
+			if (n > 0 && n <= (int)strlen (e)) {
+				mname = r_str_ndup (e, n);
+			}
+		}
+		size_t rl = strlen (rest);
+		ut64 attr = 0;
+		if (rest[rl - 1] == 'Z') {
+			attr |= R_BIN_ATTR_STATIC;
+			rl--;
+		}
+		const char *tail = rest + rl - 2;
+		if (rl >= 2 && (!strncmp (tail, "fC", 2) || !strncmp (tail, "fc", 2))) {
+			attr |= R_BIN_ATTR_CONSTRUCTOR;
+			free (mname);
+			mname = strdup ("init");
+		} else if (rl >= 2 && (!strncmp (tail, "fD", 2) || !strncmp (tail, "fd", 2))) {
+			free (mname);
+			mname = strdup ("deinit");
+		} else if (rl >= 2 && !strncmp (tail, "vg", 2)) {
+			attr |= R_BIN_ATTR_GETTER;
+		} else if (rl >= 2 && !strncmp (tail, "vs", 2)) {
+			attr |= R_BIN_ATTR_SETTER;
+		} else if (rest[rl - 1] == 'F' && mname) {
+			if (rl >= 3 && !strncmp (rest + rl - 3, "YaF", 3)) {
+				attr |= R_BIN_ATTR_ASYNC;
+			} else if (rl >= 4 && !strncmp (rest + rl - 4, "YaKF", 4)) {
+				attr |= R_BIN_ATTR_ASYNC;
+			}
+		} else {
+			// metadata, witnesses, thunks and other non-member symbols
+			free (mname);
+			continue;
+		}
+		if (!mname) {
+			continue;
+		}
+		// skip if this address is already covered by a vtable method
+		bool dupe = false;
+		RBinSymbol *ms;
+		R_VEC_FOREACH (&klass->methods, ms) {
+			if (ms->vaddr == bs->vaddr) {
+				dupe = true;
+				break;
+			}
+		}
+		if (dupe) {
+			free (mname);
+			continue;
+		}
+		RBinSymbol *sym = r_bin_symbol_new (rn, bs->paddr, bs->vaddr);
+		r_bin_name_demangled (sym->name, mname);
+		sym->attr = attr;
+		sym->lang = R_BIN_LANG_SWIFT;
+		RVecRBinSymbol_push_back (&klass->methods, sym);
+		free (sym);
+		free (mname);
+	}
 }
 
 RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
@@ -1766,47 +2411,38 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	}
 
 	const bool want_swift = !r_sys_getenv_asbool ("RABIN2_MACHO_NOSWIFT");
-	// 2s / 16s
-	if (want_swift && ms.types.have && ms.fieldmd.have) {
-		ut64 asize = ms.fieldmd.size;
-		st32 *fieldmd = read_section (bf, &ms.fieldmd, &asize);
-
-		const int aligned_fieldmd_size = ms.fieldmd.size + (ms.fieldmd.size % 4);
-#if 0
-		const int fieldmd_count = asize / 4;
-		R_LOG_DEBUG ("swift5_fieldmd: pxd %d @ 0x%x", fieldmd_count, ms.fieldmd.addr);
-#endif
-		if (fieldmd) {
-			ut64 atsize = ms.types.size;
-			int aligned_types_count = atsize / 4;
-			st32 *types = read_section (bf, &ms.types, &atsize);
-			if (types) {
-				int remaining = limit > 0? limit - r_list_length (ret): 0;
-				if (limit > 0 && aligned_types_count > remaining) {
-					R_LOG_WARN ("swift class limit reached");
-					aligned_types_count = remaining;
-				}
-				HtUP *symbols_ht = class_names_only (bf)? NULL: _load_symbol_by_vaddr_hashtable (bf);
-				ut32 i;
-				for (i = 0; i < aligned_types_count; i++) {
-					st32 word = swift_read_s32_le (types, i);
-					ut64 type_address = ms.types.addr + (i * 4) + word;
-					SwiftType st = parse_type_entry (bf, type_address);
-					if (!st.valid) {
-						continue;
-					}
-					st.addr = type_address;
-					st.fieldmd_data = fieldmd;
-					st.fieldmd.addr = ms.fieldmd.addr;
-					st.fieldmd.size = aligned_fieldmd_size;
-					R_LOG_DEBUG ("Name address 0x%"PFMT64x" for 0x%"PFMT64x, st.name_addr, ms.fieldmd.addr);
-					if (st.fields != UT64_MAX) {
-						parse_type (bf, ret, st, symbols_ht);
-					}
-				}
-				ht_up_free (symbols_ht);
+	if (want_swift && ms.types.have) {
+		SwiftCtx ctx = {
+			.bf = bf,
+			.relocs = relocs,
+			.symbols_ht = class_names_only (bf)? NULL: _load_symbol_by_vaddr_hashtable (bf),
+			.mangled_ht = ht_pp_new0 (),
+		};
+		const ut32 ntypes = ms.types.size / 4;
+		ut32 i;
+		for (i = 0; i < ntypes; i++) {
+			if (limit > 0 && r_list_length (ret) >= limit) {
+				R_LOG_WARN ("swift class limit reached");
+				break;
+			}
+			const ut64 entry = ms.types.vaddr + (i * 4);
+			const st32 word = swift_s32 (bf, entry);
+			if (!word) {
+				continue;
+			}
+			SwiftType st = swift_parse_type_entry (bf, entry + word);
+			if (st.valid) {
+				swift_parse_type (&ctx, ret, st);
 			}
 		}
+		if (ms.protos.have) {
+			swift_parse_protocols (&ctx, ret, &ms.protos);
+		}
+		if (ctx.symbols_ht && !class_names_only (bf)) {
+			swift_attach_symbols (&ctx);
+		}
+		ht_up_free (ctx.symbols_ht);
+		ht_pp_free (ctx.mangled_ht);
 	}
 	if (!ms.clslist.size || !ms.clslist.have) {
 		goto get_classes_error;
