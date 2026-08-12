@@ -286,6 +286,63 @@ bool test_r_anal_function_get_signature(void) {
 	mu_end;
 }
 
+bool test_r_anal_function_get_signature_prefers_exact_type_link(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+	bool ok = r_anal_import_c_decls (anal,
+		"int fallback_signature (int fallback);"
+		"char linked_signature (char linked);"
+		"void renamed_signature (void);", NULL);
+	mu_assert_true (ok, "seed linked and fallback signatures");
+
+	RAnalFunction *f = r_anal_create_function (anal, "fallback_signature", 0x2800, 0, NULL);
+	mu_assert_notnull (f, "Couldn't create function for exact type link test");
+	mu_assert_true (r_type_set_link (anal->sdb_types, "linked_signature", f->addr),
+		"exact function type link must be set");
+
+	RAnalFunctionSignature *signature = r_anal_function_get_signature (f);
+	mu_assert_notnull (signature, "exact linked signature must be readable");
+	mu_assert_streq (signature->ret_type, "char", "exact link must take precedence over function name");
+	mu_assert_eq ((int)r_list_length (signature->params), 1, "exact linked signature param count");
+	r_anal_function_signature_free (signature);
+	RAnalFunctionParam updated_param = { .name = "changed", .type = "short" };
+	RList *updated_params = r_list_new ();
+	mu_assert_notnull (updated_params, "Couldn't create updated linked param list");
+	r_list_append (updated_params, &updated_param);
+	RAnalFunctionSignature updated = {
+		.ret_type = "short",
+		.params = updated_params,
+	};
+	mu_assert_true (r_anal_function_set_signature (anal, f, &updated),
+		"updating a linked signature must succeed");
+	r_list_free (updated_params);
+	mu_assert_streq (r_type_func_ret (anal->sdb_types, "linked_signature"), "short",
+		"updating a linked function must update the linked type");
+
+	mu_assert_true (r_anal_function_rename (f, "renamed_signature"), "function rename must succeed");
+	signature = r_anal_function_get_signature (f);
+	mu_assert_notnull (signature, "exact linked signature must survive function rename");
+	mu_assert_streq (signature->ret_type, "short", "renaming must not change exact linked signature");
+	r_anal_function_signature_free (signature);
+
+	mu_assert_true (r_type_unlink (anal->sdb_types, f->addr), "exact function type link must be removed");
+	signature = r_anal_function_get_signature (f);
+	mu_assert_notnull (signature, "name-based signature must remain available after unlink");
+	mu_assert_streq (signature->ret_type, "void", "unlink must restore name-based lookup");
+	r_anal_function_signature_free (signature);
+
+	sdb_set (anal->sdb_types, "not_a_function", "type", 0);
+	mu_assert_true (r_type_set_link (anal->sdb_types, "not_a_function", f->addr),
+		"non-function type link must be set for rejection test");
+	signature = r_anal_function_get_signature (f);
+	mu_assert_notnull (signature, "non-function link must fall back to name-based signature");
+	mu_assert_streq (signature->ret_type, "void", "non-function address link must be ignored");
+	r_anal_function_signature_free (signature);
+
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool test_r_anal_function_set_signature_uses_canonical_type_name(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
@@ -603,6 +660,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_str_to_fcn_returns_status);
 	mu_run_test (test_r_core_anal_fcn_prefers_exact_start_match);
 	mu_run_test (test_r_anal_function_get_signature);
+	mu_run_test (test_r_anal_function_get_signature_prefers_exact_type_link);
 	mu_run_test (test_r_anal_function_set_signature_uses_canonical_type_name);
 	mu_run_test (test_r_anal_function_get_signature_string_uses_import_flag_name);
 	mu_run_test (test_r_anal_function_get_signature_uses_basename_for_dbg_prefixed_function);

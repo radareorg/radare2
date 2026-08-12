@@ -146,6 +146,36 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=exact function type link overrides name lookup
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx c3
+af
+afn fallback_signature
+'td int fallback_signature(int fallback);
+'td char linked_signature(char linked);
+afs
+tl linked_signature = 0
+afs
+afn renamed_signature
+afs
+tl- 0
+afs
+'td struct NotAFunction { int value; };
+tl NotAFunction = 0
+afs
+EOF
+EXPECT=<<EOF
+int fallback_signature (int fallback);
+char linked_signature (char linked);
+char linked_signature (char linked);
+int renamed_signature (int fallback);
+int renamed_signature (int fallback);
+EOF
+RUN
+
 NAME=List type links
 CMDS=<<EOF
 tl int = 0x4
