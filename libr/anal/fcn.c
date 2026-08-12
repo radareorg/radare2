@@ -2552,9 +2552,14 @@ static char *function_signature_try_type_name(Sdb *types, const char *candidate)
 
 static char *function_signature_address_type_name(RAnal *anal, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types, NULL);
+	const char *dwarf_name = sdb_const_getf (anal->sdb_types, NULL,
+		"fcnlink.%08" PFMT64x, addr);
+	if (dwarf_name && r_type_kind (anal->sdb_types, dwarf_name) == R_TYPE_FUNCTION
+		&& r_anal_dwarf_function_link_is_current (anal, addr, dwarf_name)) {
+		return strdup (dwarf_name);
+	}
 	char *name = r_type_link_at (anal->sdb_types, addr);
-	if (name && r_type_kind (anal->sdb_types, name) == R_TYPE_FUNCTION
-		&& r_anal_dwarf_function_link_is_current (anal, addr, name)) {
+	if (name && r_type_kind (anal->sdb_types, name) == R_TYPE_FUNCTION) {
 		return name;
 	}
 	free (name);

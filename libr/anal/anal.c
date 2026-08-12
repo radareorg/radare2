@@ -29,8 +29,18 @@ static HtUP *dwarf_function_links_new(void) {
 
 static const char *dwarf_function_link_exact(RAnal *anal, ut64 addr) {
 	return anal && anal->sdb_types
-		? sdb_const_getf (anal->sdb_types, NULL, "link.%08" PFMT64x, addr)
+		? sdb_const_getf (anal->sdb_types, NULL, "fcnlink.%08" PFMT64x, addr)
 		: NULL;
+}
+
+static bool dwarf_function_link_unset_exact(RAnal *anal, ut64 addr) {
+	char *key = r_str_newf ("fcnlink.%08" PFMT64x, addr);
+	if (!key) {
+		return false;
+	}
+	const bool success = sdb_unset (anal->sdb_types, key, 0);
+	free (key);
+	return success;
 }
 
 typedef struct dwarf_function_link_reset_t {
@@ -60,7 +70,10 @@ static bool dwarf_function_link_reset_cb(void *user, ut64 addr, const void *valu
 	}
 	const char *current = dwarf_function_link_exact (reset->anal, addr);
 	if (current && !strcmp (current, link->type_name)) {
-		r_type_unlink (reset->anal->sdb_types, addr);
+		if (!dwarf_function_link_unset_exact (reset->anal, addr)) {
+			reset->ok = false;
+			return true;
+		}
 		if (dwarf_function_link_exact (reset->anal, addr)) {
 			reset->ok = false;
 			return true;
@@ -108,6 +121,10 @@ R_IPI bool r_anal_dwarf_function_links_reset(RAnal *anal) {
 R_IPI bool r_anal_dwarf_function_link_publish(RAnal *anal, ut64 addr, const char *type_name) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->priv && anal->lock && R_STR_ISNOTEMPTY (type_name), false);
 	r_th_lock_enter (anal->lock);
+	if (r_type_kind (anal->sdb_types, type_name) != R_TYPE_FUNCTION) {
+		r_th_lock_leave (anal->lock);
+		return false;
+	}
 	HtUP *links = R_ANAL_PRIV (anal)->dwarf_function_links;
 	if (!links) {
 		links = dwarf_function_links_new ();
@@ -126,13 +143,14 @@ R_IPI bool r_anal_dwarf_function_link_publish(RAnal *anal, ut64 addr, const char
 	RAnalDwarfFunctionLink *link = R_NEW0 (RAnalDwarfFunctionLink);
 	link->type_name = strdup (type_name);
 	link->current = true;
-	if (!link->type_name || !r_type_set_link (anal->sdb_types, type_name, addr)
+	if (!link->type_name || !sdb_setf (anal->sdb_types, type_name, 0,
+		"fcnlink.%08" PFMT64x, addr)
 		|| !dwarf_function_link_exact (anal, addr)
 		|| strcmp (dwarf_function_link_exact (anal, addr), type_name)
 		|| !ht_up_insert (links, addr, link)) {
 		const char *installed = dwarf_function_link_exact (anal, addr);
 		if (installed && !strcmp (installed, type_name)) {
-			r_type_unlink (anal->sdb_types, addr);
+			dwarf_function_link_unset_exact (anal, addr);
 		}
 		free (link->type_name);
 		free (link);
@@ -142,17 +160,6 @@ R_IPI bool r_anal_dwarf_function_link_publish(RAnal *anal, ut64 addr, const char
 	r_th_lock_leave (anal->lock);
 	return true;
 }
-
-R_IPI void r_anal_dwarf_function_link_mark_unowned(RAnal *anal, ut64 addr) {
-	R_RETURN_IF_FAIL (anal && anal->priv && anal->lock);
-	r_th_lock_enter (anal->lock);
-	HtUP *links = R_ANAL_PRIV (anal)->dwarf_function_links;
-	if (links) {
-		ht_up_delete (links, addr);
-	}
-	r_th_lock_leave (anal->lock);
-}
-
 R_IPI bool r_anal_dwarf_function_link_is_current(RAnal *anal, ut64 addr, const char *type_name) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->priv && anal->lock && R_STR_ISNOTEMPTY (type_name), false);
 	r_th_lock_enter (anal->lock);
@@ -164,29 +171,6 @@ R_IPI bool r_anal_dwarf_function_link_is_current(RAnal *anal, ut64 addr, const c
 	r_th_lock_leave (anal->lock);
 	return valid;
 }
-
-R_API bool r_anal_type_link_set(RAnal *anal, const char *type_name, ut64 addr) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && type_name, false);
-	r_th_lock_enter (anal->lock);
-	const bool success = r_type_set_link (anal->sdb_types, type_name, addr);
-	if (success) {
-		r_anal_dwarf_function_link_mark_unowned (anal, addr);
-	}
-	r_th_lock_leave (anal->lock);
-	return success;
-}
-
-R_API bool r_anal_type_link_unset(RAnal *anal, ut64 addr) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types, false);
-	r_th_lock_enter (anal->lock);
-	const bool success = r_type_unlink (anal->sdb_types, addr);
-	if (success) {
-		r_anal_dwarf_function_link_mark_unowned (anal, addr);
-	}
-	r_th_lock_leave (anal->lock);
-	return success;
-}
-
 static const char *r_anal_choose_fcnprefix(RAnal *anal, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal, "fcn");
 

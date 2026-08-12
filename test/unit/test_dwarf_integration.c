@@ -84,7 +84,7 @@ static RBinDwarfDie *test_find_subtree_terminator(RBinDwarfCompUnit *unit, RBinD
 }
 
 static char *test_function_type_link_at(Sdb *types, ut64 addr) {
-	const char *link = sdb_const_getf (types, NULL, "link.%08" PFMT64x, addr);
+	const char *link = sdb_const_getf (types, NULL, "fcnlink.%08" PFMT64x, addr);
 	return link? strdup (link): NULL;
 }
 
@@ -585,6 +585,10 @@ static bool test_dwarf3_abstract_origin_prototype_join(void) {
 	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
 	mu_assert_notnull (link,
 		"Exact concrete-to-abstract formal bijection must create an address link");
+	char *data_link = r_type_link_at (anal->sdb_types, concrete_addr);
+	mu_assert_null (data_link,
+		"DWARF function links must not become generic data type links");
+	free (data_link);
 	mu_assert_eq (r_type_kind (anal->sdb_types, link), R_TYPE_FUNCTION,
 		"Exact address link must target a function type");
 	mu_assert_streq (r_type_func_ret (anal->sdb_types, link), "void",
@@ -602,23 +606,6 @@ static bool test_dwarf3_abstract_origin_prototype_join(void) {
 	mu_assert_streq (link, first_link,
 		"Repeated abstract-origin import keeps the exact address link stable");
 	free (link);
-	mu_assert_true (r_anal_type_link_set (
-		anal, first_link, concrete_addr),
-		"Repeat the exact link through the ordinary mutation path");
-	origin->reference = UT64_MAX;
-	r_anal_dwarf_process_info (anal, &ctx);
-	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
-	mu_assert_streq (link, first_link,
-		"An identical ordinary write clears parser ownership");
-	free (link);
-	mu_assert_true (r_anal_type_link_unset (anal, concrete_addr),
-		"Remove the ordinary link before restoring parser ownership");
-	origin->reference = saved_origin_ref;
-	r_anal_dwarf_process_info (anal, &ctx);
-	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
-	mu_assert_notnull (link, "Restore parser-owned address link");
-	free (link);
-
 	origin->reference = UT64_MAX;
 	r_anal_dwarf_process_info (anal, &ctx);
 	link = test_function_type_link_at (anal->sdb_types, concrete_addr);
@@ -627,8 +614,8 @@ static bool test_dwarf3_abstract_origin_prototype_join(void) {
 	free (link);
 	mu_assert_true (sdb_set (anal->sdb_types, "foreign_dwarf_signature", "func", 0),
 		"Seed foreign function type");
-	mu_assert_true (r_anal_type_link_set (
-		anal, "foreign_dwarf_signature", concrete_addr),
+	mu_assert_true (sdb_setf (anal->sdb_types, "foreign_dwarf_signature", 0,
+		"fcnlink.%08" PFMT64x, concrete_addr),
 		"Seed foreign address link");
 	Sdb *dwarf_sdb = sdb_ns (anal->sdb, "dwarf", 0);
 	mu_assert_notnull (dwarf_sdb, "Missing DWARF namespace for forged marker test");
