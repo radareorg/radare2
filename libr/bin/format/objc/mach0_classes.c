@@ -2118,7 +2118,98 @@ static void swift_parse_fields(SwiftCtx *ctx, RBinClass *klass, ut64 fd, bool is
 	}
 }
 
-static void swift_parse_vtable(SwiftCtx *ctx, RBinClass *klass, ut64 vt) {
+// return the idx-th camelcase word of the identifiers in a mangled context,
+// as used by the swift mangling word substitutions ("AA" and friends)
+static char *swift_prefix_word(const char *prefix, int idx) {
+	const char *p = prefix;
+	while (p && *p) {
+		if (!isdigit (*p)) {
+			p++;
+			continue;
+		}
+		const int n = atoi (p);
+		p = r_str_trim_head_digits (p);
+		if (n < 1 || n > (int)strlen (p)) {
+			break;
+		}
+		int i = 0;
+		while (i < n) {
+			int j = i + 1;
+			while (j < n && !isupper (p[j])) {
+				j++;
+			}
+			if (j - i > 1) {
+				if (idx == 0) {
+					return r_str_ndup (p + i, j - i);
+				}
+				idx--;
+			}
+			i = j;
+		}
+		p += n;
+	}
+	return NULL;
+}
+
+// extract the member name and attributes from the tail of a mangled swift
+// symbol after its nominal context ("3fooSivg" -> "foo" + GETTER); returns
+// NULL for symbols that are not callable members (metadata, witnesses, ...)
+static char *swift_member_name(const char *prefix, const char *rest, ut64 *attr) {
+	if (R_STR_ISEMPTY (rest)) {
+		return NULL;
+	}
+	char *mname = NULL;
+	if (isdigit (*rest)) {
+		const int n = atoi (rest);
+		const char *e = r_str_trim_head_digits (rest);
+		if (n > 0 && n <= (int)strlen (e)) {
+			mname = r_str_ndup (e, n);
+		}
+	} else if (rest[0] == 'A' && isupper (rest[1])) {
+		// word-substituted member name referencing the context words
+		mname = swift_prefix_word (prefix, rest[1] - 'A');
+	}
+	size_t rl = strlen (rest);
+	if (rest[rl - 1] == 'Z') {
+		*attr |= R_BIN_ATTR_STATIC;
+		rl--;
+	}
+	if (rl < 2) {
+		free (mname);
+		return NULL;
+	}
+	const char *tail = rest + rl - 2;
+	if (!strncmp (tail, "fC", 2) || !strncmp (tail, "fc", 2)) {
+		*attr |= R_BIN_ATTR_CONSTRUCTOR;
+		free (mname);
+		return strdup ("init");
+	}
+	if (!strncmp (tail, "fD", 2) || !strncmp (tail, "fd", 2)) {
+		free (mname);
+		return strdup ("deinit");
+	}
+	if (!mname) {
+		return NULL;
+	}
+	if (!strncmp (tail, "vg", 2)) {
+		*attr |= R_BIN_ATTR_GETTER;
+	} else if (!strncmp (tail, "vs", 2)) {
+		*attr |= R_BIN_ATTR_SETTER;
+	} else if (!strncmp (tail, "vM", 2) || !strncmp (tail, "vr", 2)) {
+		// modify/read coroutine accessors
+	} else if (tail[1] == 'F') {
+		if ((rl >= 3 && !strncmp (rest + rl - 3, "YaF", 3))
+				|| (rl >= 4 && !strncmp (rest + rl - 4, "YaKF", 4))) {
+			*attr |= R_BIN_ATTR_ASYNC;
+		}
+	} else {
+		free (mname);
+		return NULL; // metadata, witness tables, thunks, ...
+	}
+	return mname;
+}
+
+static void swift_parse_vtable(SwiftCtx *ctx, RBinClass *klass, ut64 vt, const char *prefix) {
 	RBinFile *bf = ctx->bf;
 	const ut32 vtsize = (ut32)swift_s32 (bf, vt + 4);
 	if (vtsize > MAX_SWIFT_MEMBERS) {
@@ -2139,11 +2230,21 @@ static void swift_parse_vtable(SwiftCtx *ctx, RBinClass *klass, ut64 vt) {
 		if (bs) {
 			const char *rawname = r_bin_name_tostring2 (bs->name, 'o');
 			sym = r_bin_symbol_new (rawname, method_addr, method_addr);
-			char *dname = demangle_swift (bf, rawname);
+			const char *rn = rawname;
+			while (*rn == '_') {
+				rn++;
+			}
+			char *dname = NULL;
+			ut64 mattr = 0;
+			if (prefix && r_str_startswith (rn, "$s") && r_str_startswith (rn + 2, prefix)) {
+				dname = swift_member_name (prefix, rn + 2 + strlen (prefix), &mattr);
+				sym->attr |= mattr;
+			}
+			if (!dname) {
+				dname = demangle_swift (bf, rawname);
+			}
 			if (dname) {
-				// keep only the member name, dropping module and type
-				const char *last = r_str_rchr (dname, NULL, '.');
-				r_bin_name_demangled (sym->name, (last && last[1])? last + 1: dname);
+				r_bin_name_demangled (sym->name, dname);
 				free (dname);
 			}
 		} else {
@@ -2203,23 +2304,19 @@ static void swift_parse_type(SwiftCtx *ctx, RList *list, SwiftType st) {
 	klass->lang = R_BIN_LANG_SWIFT;
 	klass->index = r_list_length (bf->bo->classes) + r_list_length (list);
 	r_list_append (list, klass);
-	if (ctx->mangled_ht) {
-		char *mangled = swift_context_mangled (ctx, st.addr);
-		if (mangled) {
-			ht_pp_insert (ctx->mangled_ht, mangled, klass);
-			free (mangled);
+	char *mangled = swift_context_mangled (ctx, st.addr);
+	if (mangled && ctx->mangled_ht) {
+		ht_pp_insert (ctx->mangled_ht, mangled, klass);
+	}
+	if (!class_names_only (bf)) {
+		if (st.fields != UT64_MAX) {
+			swift_parse_fields (ctx, klass, st.fields, st.kind == SWIFT_CDK_ENUM);
+		}
+		if (st.vtable) {
+			swift_parse_vtable (ctx, klass, st.vtable, mangled);
 		}
 	}
-	if (class_names_only (bf)) {
-		free (otypename);
-		return;
-	}
-	if (st.fields != UT64_MAX) {
-		swift_parse_fields (ctx, klass, st.fields, st.kind == SWIFT_CDK_ENUM);
-	}
-	if (st.vtable) {
-		swift_parse_vtable (ctx, klass, st.vtable);
-	}
+	free (mangled);
 	free (otypename);
 }
 
@@ -2312,43 +2409,10 @@ static void swift_attach_symbols(SwiftCtx *ctx) {
 		if (!klass || !rest || !*rest) {
 			continue;
 		}
-		char *mname = NULL;
-		if (isdigit (*rest)) {
-			const int n = atoi (rest);
-			const char *e = r_str_trim_head_digits (rest);
-			if (n > 0 && n <= (int)strlen (e)) {
-				mname = r_str_ndup (e, n);
-			}
-		}
-		size_t rl = strlen (rest);
 		ut64 attr = 0;
-		if (rest[rl - 1] == 'Z') {
-			attr |= R_BIN_ATTR_STATIC;
-			rl--;
-		}
-		const char *tail = rest + rl - 2;
-		if (rl >= 2 && (!strncmp (tail, "fC", 2) || !strncmp (tail, "fc", 2))) {
-			attr |= R_BIN_ATTR_CONSTRUCTOR;
-			free (mname);
-			mname = strdup ("init");
-		} else if (rl >= 2 && (!strncmp (tail, "fD", 2) || !strncmp (tail, "fd", 2))) {
-			free (mname);
-			mname = strdup ("deinit");
-		} else if (rl >= 2 && !strncmp (tail, "vg", 2)) {
-			attr |= R_BIN_ATTR_GETTER;
-		} else if (rl >= 2 && !strncmp (tail, "vs", 2)) {
-			attr |= R_BIN_ATTR_SETTER;
-		} else if (rest[rl - 1] == 'F' && mname) {
-			if (rl >= 3 && !strncmp (rest + rl - 3, "YaF", 3)) {
-				attr |= R_BIN_ATTR_ASYNC;
-			} else if (rl >= 4 && !strncmp (rest + rl - 4, "YaKF", 4)) {
-				attr |= R_BIN_ATTR_ASYNC;
-			}
-		} else {
-			// metadata, witnesses, thunks and other non-member symbols
-			free (mname);
-			continue;
-		}
+		char *prefix = r_str_ndup (p, rest - p);
+		char *mname = swift_member_name (prefix, rest, &attr);
+		free (prefix);
 		if (!mname) {
 			continue;
 		}

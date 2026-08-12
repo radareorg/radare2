@@ -132,26 +132,29 @@ NAME=macho swift demangle
 FILE=bins/mach0/swift/klass.orig
 CMDS=ic
 EXPECT=<<EOF
-0x00003cb0 [0x100003cff - 0x100003d90]    145 swift class 1 SomeClass
-0x100003cff swift   method   0      0
-0x100003d08 swift   method   1      1
-0x100003d0e swift   method   2      2
-0x100003d17 swift   method   3      3
-0x100003d20 swift   method   4      4
-0x100003d24 swift   method   5      5
-0x100003d1d swift   method   6      6
-0x100003d90 swift   method   7      allocator.(...cfCTq)
-0x100003d2c swift   method   8      8
-0x100003d34 swift   method   9      9
-0x100003e8d swift property   0      meh
-0x100003e91 swift property   1      cow
-0x00003d44 [0x1000028f0 - 0x100003d9c]   5292 swift class 2 SuperKlass
-0x1000028f0 swift   method   0      superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS(...vg)
-0x100002950 swift   method   1      superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS(...vs)
-0x1000029b0 swift   method   2      superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS(...vM)
-0x100002a10 swift   method   3      allocator.(...cfC)
-0x100003d9c swift   method   4      4
-0x100003e95 swift property   0      superfield
+0x100003cb0 [0x100002470 - 0x100002770]    768 swift class 1 klass.SomeClass :: klass.SuperKlass
+0x100002470 swift   method   0      meh
+0x1000024d0 swift   method   1      meh
+0x100002530 swift   method   2      meh
+0x100002590 swift   method   3      cow
+0x1000025f0 swift   method   4      cow
+0x100002650 swift   method   5      cow
+0x1000026a0 swift   method   6      instanceMethod
+0x1000026c0 swift   method   7      deinit
+0x100002700 swift   method   8      deinit
+0x100002740 swift   method   9 C    init
+0x100002770 swift   method  10 C    init
+0x100003eb0 swift property   0      meh
+0x100003ebc swift property   1      cow
+0x100003d44 [0x1000026e0 - 0x100002a40]    864 swift class 2 klass.SuperKlass
+0x1000028f0 swift   method   0      superfield
+0x100002950 swift   method   1      superfield
+0x1000029b0 swift   method   2      superfield
+0x100002a10 swift   method   3 sC   init
+0x1000026e0 swift   method   4      deinit
+0x100002880 swift   method   5 C    init
+0x100002a40 swift   method   6      deinit
+0x100003ed8 swift property   0      superfield
 0x100008260 [0x100008260 - 0x100008260]      0 objc class 3 klass.SomeClass :: klass.SuperKlass
 0x00000000 objc      var   0      isa
 0x100003c80 objc      var   1      meh
@@ -170,9 +173,9 @@ EXPECT=<<EOF
 0x1000036b0 [0x1000036b0 - 0x100008588]  20184 ? class 7 getExistentialTypeMetadata(swift
 0x1000036b0 ?   method   0      ProtocolClassConstraint, swift::TargetMetadata<swift::InProcess> const*, unsigned long, swift::TargetProtocolDescriptorRef<swift::InProcess> const*)::$_3::operator()() const::{lambda(void*)#1}::__invoke(void*)
 0x100008588 ?   method   1      ProtocolClassConstraint, swift::TargetMetadata<swift::InProcess> const*, unsigned long, swift::TargetProtocolDescriptorRef<swift::InProcess> const*)::$_3::operator()() const::TheLazy
-0x00000000 [0x100003e7e - 0x100003e7e]      0 ? class 8 SuperKlass_1
+0x00000000 [0x100003e7e - 0x100003e7e]      0 ? class 8 SuperKlass
 0x100003e7e ?   method   0      symbolic klass.SuperKlass.allocator
-0x00000000 [0x100003e84 - 0x100003e84]      0 ? class 9 SomeClass_1
+0x00000000 [0x100003e84 - 0x100003e84]      0 ? class 9 SomeClass
 0x100003e84 ?   method   0      symbolic klass.SomeClass.allocator
 0x00000000 [0x100002b70 - 0x100008568]  23032 c++ class 10 swift
 0x100002b70 c++   method   0      getRootSuperclass()
