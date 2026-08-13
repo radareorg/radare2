@@ -1,12 +1,24 @@
-NAME=autonaming elf
+NAME=af names a local plt stub from its bin symbol
 FILE=bins/elf/pltrel/add.so
 CMDS=<<EOF
 s..1050
 af
+afn
+EOF
+EXPECT=<<EOF
+sym.plt.add2
+EOF
+RUN
+
+NAME=autonaming elf
+FILE=bins/elf/pltrel/add.so
+CMDS=<<EOF
+s..1040
+af
 afna
 EOF
 EXPECT=<<EOF
-'0x00001050'afnq sub.add2_1050
+'0x00001040'afnq sub.__cxa_finalize_1040
 EOF
 RUN
 
@@ -27,7 +39,7 @@ EXPECT=<<EOF
       |                         |                      '--------.
       |                         |                               |
 .--------------------.    .---------------------------.   .----------------------------.
-|  sub.add2_1050     |    |  sub.__cxa_finalize_1040  |   |  sym.deregister_tm_clones  |
+|  sym.plt.add2      |    |  sub.__cxa_finalize_1040  |   |  sym.deregister_tm_clones  |
 `--------------------'    `---------------------------'   `----------------------------'
 EOF
 RUN

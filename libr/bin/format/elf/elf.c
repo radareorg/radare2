@@ -15,10 +15,12 @@
 #define RISCV_PLT_OFFSET 0x20
 #define LOONGARCH_PLT_OFFSET 0x20
 #define S390_PLT_OFFSET 0x20
+#define ARM64_PLT_OFFSET 0x20
 
 #define RISCV_PLT_ENTRY_SIZE 0x10
 #define LOONGARCH_PLT_ENTRY_SIZE 0x10
 #define X86_PLT_ENTRY_SIZE 0x10
+#define ARM64_PLT_ENTRY_SIZE 0x10
 
 #define SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
 #define X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
@@ -1718,7 +1720,45 @@ static ut64 get_import_addr_arm(ELFOBJ *eo, RBinElfReloc *rel) {
 	return UT64_MAX;
 }
 
-static ut64 get_import_addr_arm64(ELFOBJ *eo, RBinElfReloc *rel) {
+static size_t get_size_rel_mode(Elf_(Xword) mode) {
+	if (mode == DT_RELA) {
+		return sizeof (Elf_(Rela));
+	} else if (mode == DT_REL) {
+		return sizeof (Elf_(Rel));
+	} else if (mode == DT_CREL) {
+		// CREL is variable-length, this is only a placeholder size
+		return sizeof (Elf_(Rela));
+	} else if (mode == DT_RELR) {
+		// RELR entries are the size of an address
+		return sizeof (Elf_(Addr));
+	}
+	return 0;
+}
+
+static ut64 get_num_relocs_dynamic_plt(ELFOBJ *eo) {
+	if (eo->dyn_info.dt_pltrelsz) {
+		const ut64 size = eo->dyn_info.dt_pltrelsz;
+		const ut64 relsize = get_size_rel_mode (eo->dyn_info.dt_pltrel);
+		return relsize ? size / relsize : 0;
+	}
+	return 0;
+}
+
+// the stride is only known when the section accounts for every reloc exactly
+static bool arm64_plt_entry_vouched(ELFOBJ *eo, ut64 pos) {
+	RBinElfSection *plt = get_section_by_name (eo, ".plt");
+	if (!plt || plt->size <= ARM64_PLT_OFFSET) {
+		return false;
+	}
+	const ut64 nrel = get_num_relocs_dynamic_plt (eo);
+	return pos < nrel && plt->size - ARM64_PLT_OFFSET == nrel * ARM64_PLT_ENTRY_SIZE;
+}
+
+static ut64 get_import_addr_arm64(ELFOBJ *eo, RBinElfReloc *rel, ut64 *size) {
+	// only a jump slot names a plt entry, so nothing else may vouch for a size
+	if (rel->type != R_AARCH64_JUMP_SLOT) {
+		size = NULL;
+	}
 	ut64 got_addr = eo->dyn_info.dt_pltgot;
 	if (got_addr == R_BIN_ELF_ADDR_MAX) {
 		return UT64_MAX;
@@ -1735,21 +1775,23 @@ static ut64 get_import_addr_arm64(ELFOBJ *eo, RBinElfReloc *rel) {
 	case R_AARCH64_RELATIVE:
 		// Direct binding: adjust by program base for relative relocations.
 		return eo->baddr + rel->addend;
-	case R_AARCH64_IRELATIVE:
-		if (rel->addend > plt_addr) { // start
-			return (plt_addr + pos * 16 + 32) + rel->addend;
-		}
-		// same as fallback to JUMP_SLOT
-		return plt_addr + pos * 16 + 32;
-	case R_AARCH64_JUMP_SLOT:
-		return plt_addr + pos * 16 + 32;
 	case R_AARCH64_GLOB_DAT:
 		return rel->rva;
+	case R_AARCH64_IRELATIVE:
+	case R_AARCH64_JUMP_SLOT:
+		break;
 	default:
 		R_LOG_WARN ("Unsupported relocation type for imports %d", rel->type);
 		return UT64_MAX;
 	}
-	return UT64_MAX;
+	const ut64 entry = plt_addr + pos * ARM64_PLT_ENTRY_SIZE + ARM64_PLT_OFFSET;
+	if (size && arm64_plt_entry_vouched (eo, pos)) {
+		*size = ARM64_PLT_ENTRY_SIZE;
+	}
+	if (rel->type == R_AARCH64_IRELATIVE && rel->addend > plt_addr) { // start
+		return entry + rel->addend;
+	}
+	return entry;
 }
 
 static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
@@ -1793,31 +1835,6 @@ static ut64 get_import_addr_loongarch(ELFOBJ *bin, RBinElfReloc *rel) {
 		}
 	}
 	return UT64_MAX;
-}
-
-static size_t get_size_rel_mode(Elf_(Xword) mode) {
-	if (mode == DT_RELA) {
-		return sizeof (Elf_(Rela));
-	} else if (mode == DT_REL) {
-		return sizeof (Elf_(Rel));
-	} else if (mode == DT_CREL) {
-		// CREL uses variable-length encoding, but we need to return a size for alignment
-		// This is just a placeholder - actual parsing will be different
-		return sizeof (Elf_(Rela));
-	} else if (mode == DT_RELR) {
-		// RELR entries are the size of an address
-		return sizeof (Elf_(Addr));
-	}
-	return 0;
-}
-
-static ut64 get_num_relocs_dynamic_plt(ELFOBJ *eo) {
-	if (eo->dyn_info.dt_pltrelsz) {
-		const ut64 size = eo->dyn_info.dt_pltrelsz;
-		const ut64 relsize = get_size_rel_mode (eo->dyn_info.dt_pltrel);
-		return relsize ? size / relsize : 0;
-	}
-	return 0;
 }
 
 static ut64 get_import_addr_sparc(ELFOBJ *eo, RBinElfReloc *rel) {
@@ -1928,11 +1945,19 @@ ut64 Elf_(ppc64_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr) {
 	return UT64_MAX;
 }
 
-static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
+static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel, ut64 *size) {
+	if (rel->type != R_PPC_JMP_SLOT) {
+		size = NULL;
+	}
 #if R_BIN_ELF64
-	if (ppc64_abi (eo)) {
+	const int abi = ppc64_abi (eo);
+	if (abi) {
 		ut64 stub = Elf_(ppc64_get_plt_stub_for_slot) (eo, rel->rva);
 		if (stub != UT64_MAX) {
+			if (size) {
+				// an ELFv2 stub is a single branch, an ELFv1 one is a pair
+				*size = (abi == 2)? 4: 8;
+			}
 			return stub;
 		}
 		return rel->rva; // no DT_PPC64_GLINK or no map entry
@@ -2038,46 +2063,47 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *eo, RBinElfReloc *rel) {
 	return UT64_MAX;
 }
 
-static ut64 get_import_addr_x86(ELFOBJ *eo, RBinElfReloc *rel) {
-	ut64 tmp = get_got_entry (eo, rel);
+static ut64 get_import_addr_x86(ELFOBJ *eo, RBinElfReloc *rel, ut64 *size) {
+	if (rel->type != R_386_JMP_SLOT && rel->type != R_X86_64_JUMP_SLOT) {
+		size = NULL;
+	}
+	const ut64 tmp = get_got_entry (eo, rel);
 	if (tmp == UT64_MAX) {
 		return get_import_addr_x86_manual (eo, rel);
 	}
 	RBinElfSection *pltsec = get_section_by_name (eo, ".plt.sec");
 	if (pltsec) {
-		ut64 got_addr = eo->dyn_info.dt_pltgot;
-		ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 3);
+		const ut64 got_addr = eo->dyn_info.dt_pltgot;
+		const ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 3);
+		// an index past the end of the section is not an entry to vouch for
+		if (size && got_addr != R_BIN_ELF_ADDR_MAX && pos < pltsec->size / X86_PLT_ENTRY_SIZE) {
+			*size = X86_PLT_ENTRY_SIZE;
+		}
 		return pltsec->rva + pos * X86_PLT_ENTRY_SIZE;
 	}
-	return tmp + X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR;
+	const ut64 classic = tmp + X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR;
+	// a prelinked slot holds the target, not entry+6, so demand a real entry
+	if (size && !(classic & (X86_PLT_ENTRY_SIZE - 1))) {
+		RBinElfSection *plt = get_section_by_name (eo, ".plt");
+		if (plt && classic >= plt->rva && classic - plt->rva < plt->size) {
+			*size = X86_PLT_ENTRY_SIZE;
+		}
+	}
+	return classic;
 }
 
-static ut64 get_import_addr(ELFOBJ *eo, int sym) {
-	if ((!eo->shdr || !eo->strtab) && !eo->phdr) {
-		return UT64_MAX;
+// size stays 0 unless the arch can vouch for the address it derived
+static ut64 get_plt_stub_addr(ELFOBJ *eo, RBinElfReloc *rel, ut64 *size) {
+	if (size) {
+		*size = 0;
 	}
-
-	if (!eo->rel_cache) {
-		return UT64_MAX;
-	}
-
-	int index = ht_uu_find (eo->rel_cache, sym + 1, NULL);
-	if (index < 1) {
-		return UT64_MAX;
-	}
-	// lookup the right rel/rela entry
-	RBinElfReloc *rel = RVecRBinElfReloc_at (&eo->g_relocs, index - 1);
-	if (!rel) {
-		return UT64_MAX;
-	}
-
 	switch (eo->ehdr.e_machine) {
 	case EM_S390:
 		return get_import_addr_s390x (eo, rel);
 	case EM_ARM:
 		return get_import_addr_arm (eo, rel);
 	case EM_AARCH64:
-		return get_import_addr_arm64 (eo, rel);
+		return get_import_addr_arm64 (eo, rel, size);
 	case EM_MIPS: // MIPS32 BIG ENDIAN relocs
 		return get_import_addr_mips (eo, rel);
 	case EM_QDSP6: // also known as HEXAGON
@@ -2093,11 +2119,11 @@ static ut64 get_import_addr(ELFOBJ *eo, int sym) {
 		return get_import_addr_sparc (eo, rel);
 	case EM_PPC:
 	case EM_PPC64:
-		return get_import_addr_ppc (eo, rel);
+		return get_import_addr_ppc (eo, rel, size);
 	case EM_386:
 	case EM_X86_64:
 	case EM_IAMCU:
-		return get_import_addr_x86 (eo, rel);
+		return get_import_addr_x86 (eo, rel, size);
 	case EM_LOONGARCH:
 		return get_import_addr_loongarch (eo, rel);
 	case EM_SBPF:
@@ -2115,6 +2141,25 @@ static ut64 get_import_addr(ELFOBJ *eo, int sym) {
 				(ut64) rel->type, eo->ehdr.e_machine);
 		return UT64_MAX;
 	}
+}
+
+static ut64 get_import_addr(ELFOBJ *eo, int sym) {
+	if ((!eo->shdr || !eo->strtab) && !eo->phdr) {
+		return UT64_MAX;
+	}
+	if (!eo->rel_cache) {
+		return UT64_MAX;
+	}
+	int index = ht_uu_find (eo->rel_cache, sym + 1, NULL);
+	if (index < 1) {
+		return UT64_MAX;
+	}
+	// lookup the right rel/rela entry
+	RBinElfReloc *rel = RVecRBinElfReloc_at (&eo->g_relocs, index - 1);
+	if (!rel) {
+		return UT64_MAX;
+	}
+	return get_plt_stub_addr (eo, rel, NULL);
 }
 
 bool Elf_(has_nobtcfi)(ELFOBJ *eo) {
@@ -5882,6 +5927,111 @@ RVecRBinImport *Elf_(load_imports_vec)(ELFOBJ *eo) {
 	return &eo->imports_cache;
 }
 
+// the executable ranges are file constants, so collect them once
+static RInterval *exec_ranges(ELFOBJ *eo, size_t *count) {
+	(void) _load_elf_sections (eo);
+	const size_t nsec = RVecRBinElfSection_length (&eo->g_sections);
+	RInterval *ranges = R_NEWS0 (RInterval, R_MAX (nsec, eo->phnum) + 1);
+	if (!ranges) {
+		*count = 0;
+		return NULL;
+	}
+	size_t n = 0;
+	RBinElfSection *sec;
+	// r_itv_contain inverts a wrapping range, so drop the broken ones here
+	R_VEC_FOREACH (&eo->g_sections, sec) {
+		if (R_BIN_ELF_SCN_IS_EXECUTABLE (sec->flags) && sec->rva + sec->size > sec->rva) {
+			ranges[n].addr = sec->rva;
+			ranges[n].size = sec->size;
+			n++;
+		}
+	}
+	// section-less objects still carry the segment permissions
+	if (!n && eo->phdr) {
+		size_t i;
+		for (i = 0; i < eo->phnum; i++) {
+			Elf_(Phdr) *p = &eo->phdr[i];
+			if (p->p_type == PT_LOAD && (p->p_flags & PF_X) && p->p_vaddr + p->p_memsz > p->p_vaddr) {
+				ranges[n].addr = p->p_vaddr;
+				ranges[n].size = p->p_memsz;
+				n++;
+			}
+		}
+	}
+	*count = n;
+	return ranges;
+}
+
+// the per-arch stub math is best effort, so it only counts if it lands in code
+static bool is_code_addr(const RInterval *ranges, size_t count, ut64 vaddr) {
+	size_t i;
+	for (i = 0; i < count; i++) {
+		if (r_itv_contain (ranges[i], vaddr)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+// a -fPIC object calls its own globals through the plt, never as imports
+static void load_local_plt_symbols(ELFOBJ *eo) {
+	// symbols_vec fills symbols_by_ord before it asks for the plt symbols
+	if (!eo->symbols_by_ord) {
+		return;
+	}
+	HtUU *seen = ht_uu_new0 ();
+	size_t nranges = 0;
+	RInterval *ranges = exec_ranges (eo, &nranges);
+	if (!seen || !nranges) {
+		ht_uu_free (seen);
+		free (ranges);
+		return;
+	}
+	RBinSymbol *ps;
+	R_VEC_FOREACH (&eo->plt_symbols_cache, ps) {
+		ht_uu_insert (seen, ps->vaddr, 1);
+	}
+	RBinElfReloc *rel;
+	R_VEC_FOREACH (&eo->g_relocs, rel) {
+		// laddr means the got scan already resolved this reloc to a stub
+		if (rel->sym < 1 || rel->laddr || (size_t)rel->sym >= eo->symbols_by_ord_size) {
+			continue;
+		}
+		RBinSymbol *target = eo->symbols_by_ord[rel->sym];
+		if (!target || target->is_imported || !target->vaddr || target->vaddr == UT64_MAX
+				|| !target->type || strcmp (target->type, R_BIN_TYPE_FUNC_STR)) {
+			continue;
+		}
+		const char *tname = r_bin_name_tostring2 (target->name, 'o');
+		if (R_STR_ISEMPTY (tname)) {
+			continue;
+		}
+		// a zero size means the arch could not vouch for the address
+		ut64 stub_size = 0;
+		const ut64 stub = get_plt_stub_addr (eo, rel, &stub_size);
+		if (!stub_size || stub == UT64_MAX || stub == target->vaddr
+				|| !is_code_addr (ranges, nranges, stub)) {
+			continue;
+		}
+		// insert fails when the address is already claimed by another reloc
+		if (!ht_uu_insert (seen, stub, 1)) {
+			continue;
+		}
+		RBinSymbol sym = {0};
+		sym.name = r_bin_name_new_from (r_str_newf ("plt.%s", tname));
+		sym.forwarder = "NONE";
+		sym.bind = target->bind;
+		sym.type = target->type;
+		sym.size = stub_size;
+		sym.ordinal = rel->sym;
+		sym.vaddr = stub;
+		sym.paddr = Elf_(v2p) (eo, stub);
+		RVecRBinSymbol_push_back (&eo->plt_symbols_cache, &sym);
+	}
+	free (ranges);
+	ht_uu_free (seen);
+}
+
 RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
 	if (eo->plt_symbols_cached) {
@@ -5913,6 +6063,7 @@ RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo) {
 		}
 		RVecRBinSymbol_push_back (&eo->plt_symbols_cache, &sym);
 	}
+	load_local_plt_symbols (eo);
 	eo->plt_symbols_cached = true;
 	return &eo->plt_symbols_cache;
 }

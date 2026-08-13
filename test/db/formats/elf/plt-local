@@ -1,0 +1,61 @@
+NAME=x86_64 shared lib: PLT stub for a locally defined function gets a symbol
+FILE=bins/elf/pltrel/add.so
+CMDS=is~plt.add2
+EXPECT=<<EOF
+6   0x00001050 0x00001050 GLOBAL FUNC   16       plt.add2
+EOF
+RUN
+
+NAME=x86_64 shared lib: local PLT stub is flagged in the symbols space
+FILE=bins/elf/pltrel/add.so
+CMDS=<<EOF
+fs symbols
+f~plt
+EOF
+EXPECT=<<EOF
+0x00001050 16 sym.plt.add2
+EOF
+RUN
+
+NAME=x86_64 shared lib: call through a local PLT stub names its target
+FILE=bins/elf/pltrel/add.so
+CMDS=<<EOF
+aa
+pd 1 @ 0x1135
+EOF
+EXPECT=<<EOF
+|           0x00001135      e816ffffff     call sym.plt.add2
+EOF
+RUN
+
+NAME=x86_64 shared lib: a locally defined stub target is not an import
+FILE=bins/elf/pltrel/add.so
+CMDS=ii~add2
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=ELF v1 shared lib: local GLINK stubs get symbols
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=is~plt.inflateReset[2]
+EXPECT=<<EOF
+0x00019544
+0x00019614
+0x0001962c
+EOF
+RUN
+
+NAME=ELF v1 shared lib: a GLINK stub is two instructions, not a flat 16 bytes
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=is~plt.crc32_z
+EXPECT=<<EOF
+29  0x000194cc 0x000194cc GLOBAL FUNC   8         plt.crc32_z
+EOF
+RUN
+
+NAME=ELF v1 exec: no local PLT stubs without locally defined stub targets
+FILE=bins/elf/ppc64v1-more
+CMDS=is~plt.
+EXPECT=<<EOF
+EOF
+RUN
