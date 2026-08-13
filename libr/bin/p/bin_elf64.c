@@ -141,6 +141,7 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.entries = &entries,
 	.load_resources = &load_resources,
 	.sections_vec = &sections_vec,
+	.classes = &swift_classes,
 	.symbols_vec = symbols_vec,
 	.imports_vec = &imports_vec,
 	.minstrlen = 4,
