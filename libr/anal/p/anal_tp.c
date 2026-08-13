@@ -2637,7 +2637,7 @@ static void tp_restore_block_writes(TypeTrace *tt, TPLoopHdr *hdr, const ut8 *sn
 	}
 }
 
-// restore the GPR arena from the nearest direct-edge predecessor with a snapshot (memory is not rewound); transitive reachers do not count
+// memory is never rewound, so the stack keeps sibling branch writes
 static bool tp_restore_pred_state(TPState *tps, RVecUT64 *bblist, int j, ut64 bbat, HtUP *bbstate, HtUP *loop_headers, int arena_size) {
 	if (j < 1) {
 		return false;
