@@ -13,13 +13,7 @@ typedef struct r_anal_priv_t {
 	bool types_dirty;
 	int types_loaded_bits;
 	char *dir_prefix;
-	HtUP *dwarf_function_links; // function address => RAnalDwarfFunctionLink *
 } RAnalPriv;
-
-typedef struct r_anal_dwarf_function_link_t {
-	char *type_name;
-	bool current;
-} RAnalDwarfFunctionLink;
 
 // Recorded adrp/add (or lea) target for a register. Populated by the
 // function recurser as it walks a basic block and consumed by the jmptbl
@@ -34,9 +28,6 @@ typedef struct r_leaddr_pair_t {
 #define R_ANAL_CC_STACK_POP_UNKNOWN (-1)
 
 R_IPI void r_anal_types_ensure_loaded(RAnal *anal);
-R_IPI bool r_anal_dwarf_function_links_reset(RAnal *anal);
-R_IPI bool r_anal_dwarf_function_link_publish(RAnal *anal, ut64 addr, const char *type_name);
-R_IPI bool r_anal_dwarf_function_link_is_current(RAnal *anal, ut64 addr, const char *type_name);
 R_IPI bool r_anal_var_is_default_argname(const char *name);
 R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth);
 R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention);

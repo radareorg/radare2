@@ -13,164 +13,6 @@ static RAnalPlugin *anal_static_plugins[] = {
 	R_ANAL_STATIC_PLUGINS
 };
 
-static void dwarf_function_link_kv_free(HtUPKv *kv) {
-	if (kv) {
-		RAnalDwarfFunctionLink *link = kv->value;
-		if (link) {
-			free (link->type_name);
-			free (link);
-		}
-	}
-}
-
-static HtUP *dwarf_function_links_new(void) {
-	return ht_up_new (NULL, dwarf_function_link_kv_free, NULL);
-}
-
-static const char *dwarf_function_link_exact(RAnal *anal, ut64 addr) {
-	return anal && anal->sdb_types
-		? sdb_const_getf (anal->sdb_types, NULL, "fcnlink.%08" PFMT64x, addr)
-		: NULL;
-}
-
-static bool dwarf_function_link_unset_exact(RAnal *anal, ut64 addr) {
-	char *key = r_str_newf ("fcnlink.%08" PFMT64x, addr);
-	if (!key) {
-		return false;
-	}
-	const bool success = sdb_unset (anal->sdb_types, key, 0);
-	free (key);
-	return success;
-}
-
-typedef struct dwarf_function_link_reset_t {
-	RAnal *anal;
-	ut64 *resolved;
-	size_t resolved_count;
-	size_t resolved_capacity;
-	bool ok;
-} DwarfFunctionLinkReset;
-
-static bool dwarf_function_link_poison_cb(void *user, ut64 addr, const void *value) {
-	(void)user;
-	(void)addr;
-	RAnalDwarfFunctionLink *link = (RAnalDwarfFunctionLink *)value;
-	if (link) {
-		link->current = false;
-	}
-	return true;
-}
-
-static bool dwarf_function_link_reset_cb(void *user, ut64 addr, const void *value) {
-	DwarfFunctionLinkReset *reset = (DwarfFunctionLinkReset *)user;
-	const RAnalDwarfFunctionLink *link = value;
-	if (!link || reset->resolved_count >= reset->resolved_capacity) {
-		reset->ok = false;
-		return true;
-	}
-	const char *current = dwarf_function_link_exact (reset->anal, addr);
-	if (current && !strcmp (current, link->type_name)) {
-		if (!dwarf_function_link_unset_exact (reset->anal, addr)) {
-			reset->ok = false;
-			return true;
-		}
-		if (dwarf_function_link_exact (reset->anal, addr)) {
-			reset->ok = false;
-			return true;
-		}
-	}
-	reset->resolved[reset->resolved_count++] = addr;
-	return true;
-}
-
-R_IPI bool r_anal_dwarf_function_links_reset(RAnal *anal) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->priv && anal->lock, false);
-	r_th_lock_enter (anal->lock);
-	HtUP *links = R_ANAL_PRIV (anal)->dwarf_function_links;
-	if (!links || !links->count) {
-		r_th_lock_leave (anal->lock);
-		return true;
-	}
-	ht_up_foreach (links, dwarf_function_link_poison_cb, NULL);
-	size_t allocation_size;
-	if (r_mul_overflow_size_t (links->count, sizeof (ut64), &allocation_size)) {
-		r_th_lock_leave (anal->lock);
-		return false;
-	}
-	ut64 *resolved = malloc (allocation_size);
-	if (!resolved) {
-		r_th_lock_leave (anal->lock);
-		return false;
-	}
-	DwarfFunctionLinkReset reset = {
-		.anal = anal,
-		.resolved = resolved,
-		.resolved_capacity = links->count,
-		.ok = true,
-	};
-	ht_up_foreach (links, dwarf_function_link_reset_cb, &reset);
-	size_t i;
-	for (i = 0; i < reset.resolved_count; i++) {
-		ht_up_delete (links, resolved[i]);
-	}
-	free (resolved);
-	r_th_lock_leave (anal->lock);
-	return reset.ok;
-}
-
-R_IPI bool r_anal_dwarf_function_link_publish(RAnal *anal, ut64 addr, const char *type_name) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->priv && anal->lock && R_STR_ISNOTEMPTY (type_name), false);
-	r_th_lock_enter (anal->lock);
-	if (r_type_kind (anal->sdb_types, type_name) != R_TYPE_FUNCTION) {
-		r_th_lock_leave (anal->lock);
-		return false;
-	}
-	HtUP *links = R_ANAL_PRIV (anal)->dwarf_function_links;
-	if (!links) {
-		links = dwarf_function_links_new ();
-		R_ANAL_PRIV (anal)->dwarf_function_links = links;
-	}
-	if (!links || ht_up_find (links, addr, NULL)) {
-		r_th_lock_leave (anal->lock);
-		return false;
-	}
-	const char *current = dwarf_function_link_exact (anal, addr);
-	if (current) {
-		const bool matches = !strcmp (current, type_name);
-		r_th_lock_leave (anal->lock);
-		return matches;
-	}
-	RAnalDwarfFunctionLink *link = R_NEW0 (RAnalDwarfFunctionLink);
-	link->type_name = strdup (type_name);
-	link->current = true;
-	if (!link->type_name || !sdb_setf (anal->sdb_types, type_name, 0,
-		"fcnlink.%08" PFMT64x, addr)
-		|| !dwarf_function_link_exact (anal, addr)
-		|| strcmp (dwarf_function_link_exact (anal, addr), type_name)
-		|| !ht_up_insert (links, addr, link)) {
-		const char *installed = dwarf_function_link_exact (anal, addr);
-		if (installed && !strcmp (installed, type_name)) {
-			dwarf_function_link_unset_exact (anal, addr);
-		}
-		free (link->type_name);
-		free (link);
-		r_th_lock_leave (anal->lock);
-		return false;
-	}
-	r_th_lock_leave (anal->lock);
-	return true;
-}
-R_IPI bool r_anal_dwarf_function_link_is_current(RAnal *anal, ut64 addr, const char *type_name) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->priv && anal->lock && R_STR_ISNOTEMPTY (type_name), false);
-	r_th_lock_enter (anal->lock);
-	HtUP *links = R_ANAL_PRIV (anal)->dwarf_function_links;
-	RAnalDwarfFunctionLink *link = links? ht_up_find (links, addr, NULL): NULL;
-	const char *current = dwarf_function_link_exact (anal, addr);
-	const bool valid = current && !strcmp (current, type_name)
-		&& (!link || (link->current && !strcmp (link->type_name, type_name)));
-	r_th_lock_leave (anal->lock);
-	return valid;
-}
 static const char *r_anal_choose_fcnprefix(RAnal *anal, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal, "fcn");
 
@@ -443,7 +285,6 @@ void __block_free_rb(RBNode *node, void *user);
 
 static void anal_priv_free(RAnal * R_NONNULL a) {
 	free (R_ANAL_PRIV (a)->dir_prefix);
-	ht_up_free (R_ANAL_PRIV (a)->dwarf_function_links);
 	free (a->priv);
 }
 
@@ -685,8 +526,6 @@ R_API void r_anal_purge(RAnal *anal) {
 	r_interval_tree_fini (&anal->meta);
 	r_interval_tree_init (&anal->meta, r_meta_item_free);
 	sdb_reset (anal->sdb_types);
-	ht_up_free (R_ANAL_PRIV (anal)->dwarf_function_links);
-	R_ANAL_PRIV (anal)->dwarf_function_links = NULL;
 	sdb_reset (anal->sdb_zigns);
 	sdb_reset (anal->sdb_classes);
 	sdb_reset (anal->sdb_classes_attrs);
