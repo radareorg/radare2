@@ -4,6 +4,19 @@
 results.json
 
 unit/*.dSYM/
+/unit/test_anal_block
+/unit/test_anal_function
+/unit/test_anal_meta
+/unit/test_anal_var
+/unit/test_arena
+/unit/test_base64
+/unit/test_codemeta
+/unit/test_esil_dfg_filter
+/unit/test_nibble_mask
+/unit/test_ovf
+/unit/test_strbuf
+/unit/test_util
+/unit/test_xpatch
 node_modules/
 .ycm_extra_conf.py
 
