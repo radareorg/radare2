@@ -142,6 +142,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.entries = &entries,
 	.load_resources = &load_resources,
 	.sections_vec = &sections_vec,
+	.classes = &swift_classes,
 	.symbols_vec = symbols_vec,
 	.minstrlen = 4,
 	.imports_vec = &imports_vec,

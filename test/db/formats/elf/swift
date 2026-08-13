@@ -1,0 +1,52 @@
+NAME=elf swift classes from swift5 metadata
+FILE=bins/elf/swift-klass
+CMDS=<<EOF
+icc
+EOF
+EXPECT=<<EOF
+class main.SuperKlass {
+  var superfield : Swift.Int
+  var superfield { get }  // 0x00001e18
+  var superfield { set }  // 0x00001e60
+  func superfield() {}  // 0x0000109c
+  func superMethod() {}  // 0x00001ea8
+  init()  // 0x00001178
+  func deinit() {}  // 0x00001118
+  func deinit() {}  // 0x0000113c
+  init()  // 0x000011b0
+}
+class main.SomeClass : main.SuperKlass {
+  var meh : Swift.Int
+  let cow : Swift.String
+  var meh { get }  // 0x00001ebc
+  var meh { set }  // 0x00001f04
+  func meh() {}  // 0x000011e8
+  func instanceMethod() {}  // 0x00001f94
+  var cow { get }  // 0x00001f4c
+  func superMethod() {}  // 0x00001f80
+  static func staticMethod() {}  // 0x00001fc4
+  init()  // 0x00001290
+  init()  // 0x000012c8
+  func deinit() {}  // 0x00001394
+  func deinit() {}  // 0x000013cc
+}
+struct main.SomeStruct {
+  var name : Swift.String
+  let id : Swift.Int
+  var name { get }  // 0x00002000
+  var name { set }  // 0x00002030
+  func name() {}  // 0x00001408
+  var id { get }  // 0x00002078
+  func describe() {}  // 0x00002080
+  init()  // 0x0000141c
+}
+enum main.SomeEnum {
+  case second(error: Swift.Int)
+  case third(Swift.String)
+  case first
+}
+protocol main.SomeProto {
+  associatedtype Item
+}
+EOF
+RUN

@@ -116,6 +116,109 @@ static bool sections_vec(RBinFile *bf) {
 }
 
 #ifndef R_BIN_CGC
+#include "../format/swift/swift.h"
+
+// glue for the shared swift5 metadata walker in format/swift/swift.c
+
+typedef struct {
+	RBinFile *bf;
+	ELFOBJ *eo;
+	HtUP *relocs_ht; // rva -> RBinElfReloc*
+} SwiftElfCtx;
+
+static int swift_elf_read_at(void *user, ut64 va, ut8 *buf, int len) {
+	SwiftElfCtx *ctx = user;
+	const ut64 pa = Elf_(v2p) (ctx->eo, va);
+	if (pa == UT64_MAX) {
+		return 0;
+	}
+	return r_buf_read_at (ctx->bf->buf, pa, buf, len);
+}
+
+static char *swift_elf_slot(void *user, ut64 va, ut64 *target) {
+	SwiftElfCtx *ctx = user;
+	ELFOBJ *eo = ctx->eo;
+	RBinElfReloc *rel = ctx->relocs_ht? ht_up_find (ctx->relocs_ht, va, NULL): NULL;
+	if (rel) {
+		if (rel->sym > 0) {
+			if (rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym]) {
+				return strdup (r_bin_name_tostring2 (eo->imports_by_ord[rel->sym]->name, 'o'));
+			}
+			if (rel->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[rel->sym]) {
+				return strdup (r_bin_name_tostring2 (eo->symbols_by_ord[rel->sym]->name, 'o'));
+			}
+		}
+		if (rel->laddr) {
+			*target = rel->laddr + rel->addend;
+		} else if (rel->addend > 0) {
+			*target = rel->addend;
+		}
+		return NULL;
+	}
+	ut8 b[sizeof (Elf_(Addr))] = {0};
+	if (swift_elf_read_at (user, va, b, sizeof (b)) == (int)sizeof (b)) {
+		const ut64 v = r_read_ble (b, eo->endian, 8 * sizeof (Elf_(Addr)));
+		if (v) {
+			*target = v;
+		}
+	}
+	return NULL;
+}
+
+static RList *swift_classes(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
+	ELFOBJ *eo = bf->bo->bin_obj;
+	const RVecRBinSection *sections = Elf_(load_sections) (bf, eo);
+	if (!sections) {
+		return NULL;
+	}
+	ut64 types_va = 0, protos_va = 0;
+	ut64 types_size = 0, protos_size = 0;
+	RBinSection *s;
+	R_VEC_FOREACH (sections, s) {
+		if (!s->name) {
+			continue;
+		}
+		if (strstr (s->name, "swift5_type_metadata")) {
+			types_va = s->vaddr;
+			types_size = s->size;
+		} else if (strstr (s->name, "swift5_protocols")) {
+			protos_va = s->vaddr;
+			protos_size = s->size;
+		}
+	}
+	if (!types_va || !types_size) {
+		return NULL;
+	}
+	SwiftElfCtx ctx = { .bf = bf, .eo = eo, .relocs_ht = ht_up_new0 () };
+	Elf_(load_imports_vec) (eo); // fill imports_by_ord for reloc symbol names
+	const RVecRBinElfReloc *relocs = Elf_(load_relocs) (eo);
+	if (relocs) {
+		RBinElfReloc *r;
+		R_VEC_FOREACH (relocs, r) {
+			ht_up_insert (ctx.relocs_ht, r->rva, r);
+		}
+	}
+	RList *ret = r_list_newf ((RListFree)r_bin_class_free);
+	RBinSwiftLoader ld = {
+		.bf = bf,
+		.user = &ctx,
+		.read_at = swift_elf_read_at,
+		.slot = swift_elf_slot,
+		.symbols = Elf_(load_symbols_vec) (eo),
+	};
+	const int limit = bf->rbin? bf->rbin->options.limit: 0;
+	r_bin_swift_load_classes (&ld, ret, types_va, types_size, protos_va, protos_size, limit);
+	ht_up_free (ctx.relocs_ht);
+	if (r_list_empty (ret)) {
+		r_list_free (ret);
+		return NULL;
+	}
+	return ret;
+}
+#endif
+
+#ifndef R_BIN_CGC
 static bool load_resources(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	return Elf_(load_gresources) (bf, bf->bo->bin_obj, &bf->bo->resources_vec);
