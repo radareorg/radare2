@@ -23,8 +23,8 @@ tl overridden = 0x130e
 afs @ 0x130e
 EOF
 EXPECT=<<EOF
-void Bird_Bird__130e (Bird * const this);
-void Bird_Bird__130e (Bird * const this);
+void Bird_Bird_ (Bird * const this);
+void Bird_Bird_ (Bird * const this);
 int overridden (int x);
 EOF
 RUN

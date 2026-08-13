@@ -1579,23 +1579,62 @@ static char *sanitize_c_identifier(const char *name) {
 	return out;
 }
 
-static char *dwarf_function_type_name(Context *ctx, const char *sname, const Function *dwarf_fcn) {
-	R_RETURN_VAL_IF_FAIL (ctx && ctx->anal && sname && dwarf_fcn, NULL);
+static bool dwarf_function_type_matches(Sdb *types, const char *name, const char *ret_type, RList/*<Variable*>*/ *variables, bool has_unspecified_parameters) {
+	if (!r_type_func_exist (types, name)
+		|| has_unspecified_parameters != r_type_func_is_variadic (types, name)) {
+		return false;
+	}
+	const char *existing_ret = r_type_func_ret (types, name);
+	if (!existing_ret || strcmp (existing_ret, ret_type)) {
+		return false;
+	}
+	int expected_args = has_unspecified_parameters? 1: 0;
+	RListIter *iter;
+	Variable *var;
+	r_list_foreach (variables, iter, var) {
+		if (var->kind == VARIABLE_KIND_FORMAL_PARAMETER && var->type) {
+			expected_args++;
+		}
+	}
+	if (r_type_func_args_count (types, name) != expected_args) {
+		return false;
+	}
+	int arg_index = 0;
+	r_list_foreach (variables, iter, var) {
+		if (var->kind != VARIABLE_KIND_FORMAL_PARAMETER || !var->type) {
+			continue;
+		}
+		char *existing_type = r_type_func_args_type (types, name, arg_index++);
+		const bool matches = existing_type && !strcmp (existing_type, var->type);
+		free (existing_type);
+		if (!matches) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static char *dwarf_function_type_name(Context *ctx, const char *sname, const Function *dwarf_fcn, const char *ret_type, RList/*<Variable*>*/ *variables, bool has_unspecified_parameters) {
+	R_RETURN_VAL_IF_FAIL (ctx && ctx->anal && sname && dwarf_fcn && ret_type && variables, NULL);
 	Sdb *types = ctx->anal->sdb_types;
 	const char *previous_name = sdb_const_getf (ctx->sdb, NULL, "fcn.%s.name", sname);
 	const char *previous = sdb_const_getf (ctx->sdb, NULL, "fcn.%s.typed_name", sname);
 	if (previous_name && !strcmp (previous_name, dwarf_fcn->name)
-		&& previous && r_type_func_exist (types, previous)) {
+		&& previous && dwarf_function_type_matches (types, previous,
+			ret_type, variables, has_unspecified_parameters)) {
 		return strdup (previous);
 	}
 	char *name = sanitize_c_identifier (dwarf_fcn->name);
-	if (!name || !sdb_const_get (types, name, 0)) {
+	if (!name || !sdb_const_get (types, name, 0)
+		|| dwarf_function_type_matches (types, name, ret_type,
+			variables, has_unspecified_parameters)) {
 		return name;
 	}
 	char *candidate = r_str_newf ("%s_%" PFMT64x, name, dwarf_fcn->addr);
 	int suffix = 2;
 	while (candidate && sdb_const_get (types, candidate, 0)
-		&& !r_type_func_exist (types, candidate)) {
+		&& !dwarf_function_type_matches (types, candidate, ret_type,
+			variables, has_unspecified_parameters)) {
 		free (candidate);
 		candidate = r_str_newf ("%s_%" PFMT64x "_%d", name, dwarf_fcn->addr, suffix++);
 	}
@@ -1732,7 +1771,8 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 		free (real_name);
 		return;
 	}
-	char *typed_name = dwarf_function_type_name (ctx, sname, dwarf_fcn);
+	char *typed_name = dwarf_function_type_name (ctx, sname, dwarf_fcn,
+		ret_type, variables, has_unspecified_parameters);
 	sdb_set (sdb, sname, "fcn", 0);
 
 	char *addr_val = r_str_newf ("0x%" PFMT64x, dwarf_fcn->addr);
