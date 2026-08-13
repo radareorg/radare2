@@ -3,6 +3,7 @@
 
 #include <r_cons.h>
 #include <r_lib.h>
+#include <r_bin.h>
 
 // R2R db/formats/mangling/swift
 // R2R db/tools/rabin2
@@ -1110,4 +1111,448 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 		return r_str_newf ("...%s", s);
 	}
 	return res;
+}
+
+// -- minimal demangler for swift type manglings found in field descriptors --
+
+#define TSTK 24
+#define TS_LIST 1
+#define TS_FIRST 2
+
+typedef struct {
+	char *s[TSTK];
+	ut8 mark[TSTK];
+	ut16 rep[TSTK];
+	int n;
+} TypeStack;
+
+static void tpush(TypeStack *ts, char *s, ut8 mark) {
+	if (s && ts->n < TSTK) {
+		ts->s[ts->n] = s;
+		ts->mark[ts->n] = mark;
+		ts->rep[ts->n] = 0;
+		ts->n++;
+	} else {
+		free (s);
+	}
+}
+
+static char *tpop(TypeStack *ts) {
+	if (ts->n < 1) {
+		return NULL;
+	}
+	ts->n--;
+	char *s = ts->s[ts->n];
+	if (ts->mark[ts->n] & TS_LIST) {
+		free (s);
+		return strdup ("()");
+	}
+	return s;
+}
+
+static const char *swift_stdtype(char c) {
+	switch (c) {
+	case 'a': return "Swift.Array";
+	case 'b': return "Swift.Bool";
+	case 'c': return "Swift.UnicodeScalar";
+	case 'D': return "Swift.Dictionary";
+	case 'd': return "Swift.Double";
+	case 'f': return "Swift.Float";
+	case 'h': return "Swift.Set";
+	case 'i': return "Swift.Int";
+	case 'J': return "Swift.Character";
+	case 'N': return "Swift.ClosedRange";
+	case 'n': return "Swift.Range";
+	case 'P': return "Swift.UnsafePointer";
+	case 'p': return "Swift.UnsafeMutablePointer";
+	case 'q': return "Swift.Optional";
+	case 'R': return "Swift.UnsafeBufferPointer";
+	case 'r': return "Swift.UnsafeMutableBufferPointer";
+	case 'S': case 's': return "Swift.String";
+	case 'u': return "Swift.UInt";
+	case 'V': return "Swift.UnsafeRawPointer";
+	case 'v': return "Swift.UnsafeMutableRawPointer";
+	case 'w': return "Swift.UnsafeRawBufferPointer";
+	case 'W': return "Swift.UnsafeMutableRawBufferPointer";
+	}
+	return NULL;
+}
+
+// build a tuple from the stack: pops until (and including) the TS_FIRST item,
+// or until a TS_LIST marker (exclusive)
+static char *swift_build_tuple(TypeStack *ts) {
+	char *elem[TSTK];
+	ut16 reps[TSTK];
+	int i, n = 0;
+	while (ts->n > 0 && n < TSTK) {
+		if (ts->mark[ts->n - 1] & TS_LIST) {
+			if (n == 0) {
+				ts->n--;
+				free (ts->s[ts->n]);
+			}
+			break;
+		}
+		const bool first = ts->mark[ts->n - 1] & TS_FIRST;
+		ts->n--;
+		elem[n] = ts->s[ts->n];
+		reps[n] = ts->rep[ts->n];
+		n++;
+		if (first) {
+			break;
+		}
+	}
+	if (n == 0) {
+		return strdup ("()");
+	}
+	if (n == 1 && reps[0] > 0) {
+		char *res = r_str_newf ("(%d x %s)", reps[0] + 1, elem[0]);
+		free (elem[0]);
+		return res;
+	}
+	RStrBuf *sb = r_strbuf_new ("(");
+	for (i = n - 1; i >= 0; i--) {
+		r_strbuf_append (sb, elem[i]);
+		if (i > 0) {
+			r_strbuf_append (sb, ", ");
+		}
+		free (elem[i]);
+	}
+	r_strbuf_append (sb, ")");
+	return r_strbuf_drain (sb);
+}
+
+static void swift_build_generic(TypeStack *ts) {
+	char *args[TSTK];
+	int i, n = 0;
+	while (ts->n > 0 && n < TSTK && !(ts->mark[ts->n - 1] & TS_LIST)) {
+		ts->n--;
+		args[n++] = ts->s[ts->n];
+	}
+	if (ts->n > 0 && (ts->mark[ts->n - 1] & TS_LIST)) {
+		ts->n--;
+		free (ts->s[ts->n]);
+	}
+	char *base = tpop (ts);
+	if (!base) {
+		// no base: restore args joined as-is
+		for (i = n - 1; i >= 0; i--) {
+			tpush (ts, args[i], 0);
+		}
+		return;
+	}
+	char *res = NULL;
+	if (n == 1 && !strcmp (base, "Swift.Optional")) {
+		res = r_str_newf ("%s?", args[0]);
+	} else if (n == 1 && !strcmp (base, "Swift.Array")) {
+		res = r_str_newf ("[%s]", args[0]);
+	} else if (n == 2 && !strcmp (base, "Swift.Dictionary")) {
+		res = r_str_newf ("[%s: %s]", args[1], args[0]);
+	} else {
+		RStrBuf *sb = r_strbuf_new (base);
+		r_strbuf_append (sb, "<");
+		for (i = n - 1; i >= 0; i--) {
+			r_strbuf_append (sb, args[i]);
+			if (i > 0) {
+				r_strbuf_append (sb, ", ");
+			}
+		}
+		r_strbuf_append (sb, ">");
+		res = r_strbuf_drain (sb);
+	}
+	for (i = 0; i < n; i++) {
+		free (args[i]);
+	}
+	free (base);
+	tpush (ts, res, 0);
+}
+
+static void swift_build_function(TypeStack *ts, const char *conv, bool athrows, bool aasync) {
+	char *params = tpop (ts);
+	char *result = tpop (ts);
+	if (!params) {
+		free (result);
+		return;
+	}
+	const char *fmt = (*params == '(')? "%s%s%s%s -> %s": "%s(%s)%s%s -> %s";
+	char *res = r_str_newf (fmt, conv, params,
+		aasync? " async": "", athrows? " throws": "", result? result: "()");
+	free (params);
+	free (result);
+	tpush (ts, res, 0);
+}
+
+// demangle a swift type mangling as found in reflection/field metadata.
+// symbolic references (control bytes 0x01-0x1f) are resolved through the
+// given callback, so this works for any container format (mach-o, elf, ...)
+R_API char *r_bin_demangle_swift_typeref(const ut8 *p, int len, ut64 va, RBinSwiftResolver resolver, void *user) {
+	TypeStack ts = { {0} };
+	bool athrows = false, aasync = false;
+	int i = 0;
+	while (i < len) {
+		const ut8 b = p[i];
+		if (b < 0x20) {
+			char *name = NULL;
+			if (b >= 1 && b <= 0x17) {
+				if (i + 5 > len) {
+					break;
+				}
+				if (va && resolver && (b == 1 || b == 2)) {
+					const st32 rel = (st32)r_read_le32 (p + i + 1);
+					name = resolver (user, va + i + 1 + rel, b == 2);
+				}
+				i += 5;
+			} else {
+				i += 9; // 8-byte absolute references
+			}
+			tpush (&ts, name? name: strdup ("?"), 0);
+			continue;
+		}
+		if (isdigit (b) || (b == 's' && i + 1 < len && isdigit (p[i + 1]))
+				|| (b == 'S' && i + 2 < len && p[i + 1] == 'o' && isdigit (p[i + 2]))) {
+			RStrBuf *nb = r_strbuf_new (NULL);
+			if (b == 's') {
+				r_strbuf_append (nb, "Swift");
+				i++;
+			} else if (b == 'S') {
+				r_strbuf_append (nb, "__C");
+				i += 2;
+			}
+			bool kindchar = !isdigit (b); // only bare identifiers can be tuple labels
+			int segments = 0;
+			while (i < len && isdigit (p[i])) {
+				int n = atoi ((const char *)p + i);
+				while (i < len && isdigit (p[i])) {
+					i++;
+				}
+				if (n < 1 || i + n > len) {
+					break;
+				}
+				if (r_strbuf_length (nb) > 0) {
+					r_strbuf_append (nb, ".");
+				}
+				r_strbuf_append_n (nb, (const char *)p + i, n);
+				i += n;
+				segments++;
+				if (i < len && strchr ("CVOP", p[i])) {
+					i++; // nominal kind marker
+					kindchar = true;
+				}
+			}
+			if (!kindchar && segments == 1 && ts.n > 0 && !(ts.mark[ts.n - 1] & TS_LIST)
+					&& i < len && (p[i] == '_' || p[i] == 't')) {
+				// tuple element label: follows its element type
+				char *t = tpop (&ts);
+				char *label = r_strbuf_drain (nb);
+				tpush (&ts, r_str_newf ("%s: %s", label, t), 0);
+				free (label);
+				free (t);
+			} else {
+				tpush (&ts, r_strbuf_drain (nb), 0);
+			}
+			continue;
+		}
+		switch (b) {
+		case '$':
+			i += (i + 1 < len && p[i + 1] == 's')? 2: 1;
+			break;
+		case 'S':
+			if (i + 1 >= len) {
+				i = len;
+				break;
+			}
+			if (p[i + 1] == 'g') {
+				char *t = tpop (&ts);
+				// optional function types need wrapping parens
+				tpush (&ts, t? r_str_newf (strstr (t, " -> ")? "(%s)?": "%s?", t): NULL, 0);
+				free (t);
+			} else {
+				const char *st = swift_stdtype (p[i + 1]);
+				tpush (&ts, strdup (st? st: "?"), 0);
+			}
+			i += 2;
+			break;
+		case 'y':
+			tpush (&ts, strdup ("y"), TS_LIST);
+			i++;
+			break;
+		case '_':
+			if (ts.n > 0) {
+				ts.mark[ts.n - 1] |= TS_FIRST;
+			}
+			i++;
+			break;
+		case 't':
+			tpush (&ts, swift_build_tuple (&ts), 0);
+			i++;
+			break;
+		case 'A':
+			i++;
+			if (i < len && isdigit (p[i]) && ts.n > 0) {
+				ts.rep[ts.n - 1] = atoi ((const char *)p + i);
+				while (i < len && isdigit (p[i])) {
+					i++;
+				}
+			}
+			break;
+		case 'G':
+			swift_build_generic (&ts);
+			i++;
+			break;
+		case 'X':
+			if (i + 1 < len && p[i + 1] == 'C') {
+				swift_build_function (&ts, "@convention(c) ", athrows, aasync);
+				athrows = aasync = false;
+			}
+			i += 2;
+			break;
+		case 'c':
+			swift_build_function (&ts, "", athrows, aasync);
+			athrows = aasync = false;
+			i++;
+			break;
+		case 'K':
+			athrows = true;
+			i++;
+			break;
+		case 'Y':
+			if (i + 1 < len && p[i + 1] == 'a') {
+				aasync = true;
+			}
+			i += 2;
+			break;
+		case 'z':
+			// inout marker applies to the following type; approximate by prefixing the next push
+			i++;
+			break;
+		case 'm':
+			{
+				char *t = tpop (&ts);
+				tpush (&ts, t? r_str_newf ("%s.Type", t): NULL, 0);
+				free (t);
+				i++;
+			}
+			break;
+		case 'x':
+			tpush (&ts, strdup ("A"), 0);
+			i++;
+			break;
+		case 'q':
+			if (i + 1 < len && p[i + 1] == '_') {
+				tpush (&ts, strdup ("B"), 0);
+				i += 2;
+			} else if (i + 2 < len && isdigit (p[i + 1]) && p[i + 2] == '_') {
+				char gp[2] = { (char)('C' + (p[i + 1] - '0')), 0 };
+				tpush (&ts, strdup (gp), 0);
+				i += 3;
+			} else {
+				i++;
+			}
+			break;
+		default:
+			// unknown mangling op: stop here and use what we have
+			i = len;
+			break;
+		}
+	}
+	char *res = NULL;
+	while (ts.n > 0) {
+		char *t = tpop (&ts);
+		if (!res && t && strcmp (t, "()")) {
+			res = t;
+		} else {
+			free (t);
+		}
+	}
+	return res;
+}
+
+// return the idx-th camelcase word of the identifiers in a mangled context,
+// as used by the swift mangling word substitutions ("AA" and friends)
+static char *swift_prefix_word(const char *prefix, int idx) {
+	const char *p = prefix;
+	while (p && *p) {
+		if (!isdigit (*p)) {
+			p++;
+			continue;
+		}
+		const int n = atoi (p);
+		p = r_str_trim_head_digits (p);
+		if (n < 1 || n > (int)strlen (p)) {
+			break;
+		}
+		int i = 0;
+		while (i < n) {
+			int j = i + 1;
+			while (j < n && !isupper (p[j])) {
+				j++;
+			}
+			if (j - i > 1) {
+				if (idx == 0) {
+					return r_str_ndup (p + i, j - i);
+				}
+				idx--;
+			}
+			i = j;
+		}
+		p += n;
+	}
+	return NULL;
+}
+
+// extract the member name and attributes from the tail of a mangled swift
+// symbol after its nominal context ("3fooSivg" -> "foo" + GETTER); returns
+// NULL for symbols that are not callable members (metadata, witnesses, ...)
+R_API char *r_bin_demangle_swift_member(const char *context, const char *rest, ut64 *attr) {
+	if (R_STR_ISEMPTY (rest)) {
+		return NULL;
+	}
+	char *mname = NULL;
+	if (isdigit (*rest)) {
+		const int n = atoi (rest);
+		const char *e = r_str_trim_head_digits (rest);
+		if (n > 0 && n <= (int)strlen (e)) {
+			mname = r_str_ndup (e, n);
+		}
+	} else if (rest[0] == 'A' && isupper (rest[1])) {
+		// word-substituted member name referencing the context words
+		mname = swift_prefix_word (context, rest[1] - 'A');
+	}
+	size_t rl = strlen (rest);
+	if (rest[rl - 1] == 'Z') {
+		*attr |= R_BIN_ATTR_STATIC;
+		rl--;
+	}
+	if (rl < 2) {
+		free (mname);
+		return NULL;
+	}
+	const char *tail = rest + rl - 2;
+	if (!strncmp (tail, "fC", 2) || !strncmp (tail, "fc", 2)) {
+		*attr |= R_BIN_ATTR_CONSTRUCTOR;
+		free (mname);
+		return strdup ("init");
+	}
+	if (!strncmp (tail, "fD", 2) || !strncmp (tail, "fd", 2)) {
+		free (mname);
+		return strdup ("deinit");
+	}
+	if (!mname) {
+		return NULL;
+	}
+	if (!strncmp (tail, "vg", 2)) {
+		*attr |= R_BIN_ATTR_GETTER;
+	} else if (!strncmp (tail, "vs", 2)) {
+		*attr |= R_BIN_ATTR_SETTER;
+	} else if (!strncmp (tail, "vM", 2) || !strncmp (tail, "vr", 2)) {
+		// modify/read coroutine accessors
+	} else if (tail[1] == 'F') {
+		if ((rl >= 3 && !strncmp (rest + rl - 3, "YaF", 3))
+				|| (rl >= 4 && !strncmp (rest + rl - 4, "YaKF", 4))) {
+			*attr |= R_BIN_ATTR_ASYNC;
+		}
+	} else {
+		free (mname);
+		return NULL; // metadata, witness tables, thunks, ...
+	}
+	return mname;
 }
