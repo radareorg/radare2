@@ -24,6 +24,7 @@
 typedef struct {
 	bool have;
 	ut64 addr;
+	ut64 vaddr;
 	ut64 size;
 	ut8 *data;
 } MetaSection;
@@ -32,6 +33,7 @@ typedef struct {
 	// swift
 	MetaSection types;
 	MetaSection fieldmd;
+	MetaSection protos;
 	// objc
 	MetaSection clslist;
 	MetaSection catlist;
@@ -89,6 +91,7 @@ static bool parse_section(RBinFile *bf, MetaSection *ms, struct section_t *secti
 	}
 	if (strstr (section->name, sname)) {
 		ms->addr = section->paddr;
+		ms->vaddr = section->vaddr;
 		ms->size = section->size;
 		ms->have = adjust_bounds (bf, ms, sname);
 		return true;
@@ -114,6 +117,7 @@ static MetaSections metadata_sections_init(RBinFile *bf) {
 			PARSECTION (&ms.catlist, "__objc_catlist");
 			PARSECTION (&ms.types, "swift5_types");
 			PARSECTION (&ms.fieldmd, "swift5_fieldmd");
+			PARSECTION (&ms.protos, "swift5_protos");
 		}
 	}
 	return ms;
@@ -1440,295 +1444,7 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 	}
 }
 
-enum {
-	NCD_FLAGS = 0,
-	NCD_PARENT = 1,
-	NCD_NAME = 2,
-	NCD_ACCESSFCNPTR = 3,
-	NCD_FIELDS = 4,
-	NCD_SUPER = 5,
-	NCD_MEMBERS = 8,
-	NCD_NFIELDS = 9,
-	NCD_OFIELDS = 10
-};
-
-typedef struct {
-	bool valid;
-	ut64 name_addr;
-	ut64 super_addr;
-	ut64 addr;
-	ut64 fields;
-	ut64 members;
-	ut64 members_count;
-	// internal //
-	MetaSection fieldmd;
-	st32 *fieldmd_data;
-} SwiftType;
-
-static inline st32 swift_read_s32_le(const void *data, size_t idx) {
-	const ut8 *buf = (const ut8 *)data;
-	return (st32)r_read_le32 (buf + idx * sizeof (ut32));
-}
-
-static SwiftType parse_type_entry(RBinFile *bf, ut64 typeaddr) {
-	SwiftType st = {0};
-	ut8 words[16 * sizeof (ut32)] = {0};
-	if (r_buf_read_at (bf->buf, typeaddr, words, sizeof (words)) != sizeof (words)) {
-		R_LOG_DEBUG ("Invalid pointers");
-		return st;
-	}
-#if 0
-// struct NominalClassDescriptor
-ut32 flags
-st32 parent
-st32 name
-st32 accessfcnptr
-st32 fields
-st32 superklass
-ut32 ign;
-ut32 ign;
-ut32 members_count;
-ut32 fields_count;
-ut32 fields_offset;
-#endif
-#define NCD(x) (typeaddr + ((x) * 4) + swift_read_s32_le (words, x))
-#if 0
-	eprintf ("0x%08"PFMT64x " swift_type_entry:\n", typeaddr);
-	eprintf ("  flags:   0x%08x\n", words[0]);
-	eprintf ("  parent:  0x%08"PFMT64x"\n", NCD (NCD_PARENT));
-#endif
-	st.name_addr = NCD (NCD_NAME);
-	st.super_addr = NCD (NCD_SUPER);
-#if 0
-	char *typename = readstr (bf, typename_addr);
-	eprintf ("  name:    0x%08"PFMT64x" (%s)\n", typename_addr, typename);
-	eprintf ("  access:  0x%08"PFMT64x"\n", bf->bo->baddr + NCD (NCD_ACCESSFCNPTR));
-	eprintf ("  fields:  0x%08"PFMT64x"\n", NCD (NCD_FIELDS));
-	eprintf ("  super:   0x%08"PFMT64x"\n", NCD (NCD_SUPER));
-	eprintf ("  members: 0x%08"PFMT64x"\n", NCD (NCD_MEMBERS));
-	eprintf ("  fields:  0x%08"PFMT64x"\n", NCD (NCD_NFIELDS));
-	eprintf ("  fieldsat:0x%08"PFMT64x"\n", NCD (NCD_OFIELDS));
-
-	char * tn = r_name_filter_dup (typename);
-	r_cons_printf ("f sym.swift.%s.init = 0x%08"PFMT64x"\n",
-		tn, bf->bo->baddr + NCD (NCD_ACCESSFCNPTR));
-	free (tn);
-	free (typename);
-#endif
-	st.valid = true;
-	st.fields = NCD (NCD_FIELDS);
-	st.members = NCD (NCD_MEMBERS);
-	st.members_count = NCD (NCD_MEMBERS);
-	return st;
-}
-
-static inline HtUP *_load_symbol_by_vaddr_hashtable(RBinFile *bf) {
-	if (!MACH0_(load_symbols) (bf->bo->bin_obj)) {
-		return NULL;
-	}
-	HtUP *ht = ht_up_new0 ();
-	if (R_LIKELY (ht)) {
-		RVecRBinSymbol *symbols = &bf->bo->symbols_vec;
-		RBinSymbol *sym;
-		R_VEC_FOREACH (symbols, sym) {
-			ht_up_insert (ht, sym->vaddr, sym);
-		}
-	}
-	return ht;
-}
-
-static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht) {
-	char *otypename = readstr (bf, st.name_addr, NULL, NULL);
-	if (R_STR_ISEMPTY (otypename)) {
-		R_LOG_DEBUG ("swift-type-parse missing name");
-		free (otypename);
-		return;
-	}
-	char *typename = r_name_filter_dup (otypename);
-	RBinClass *klass = r_bin_class_new (typename, NULL, false);
-	klass->origin = R_BIN_CLASS_ORIGIN_BIN;
-	char *super_name = readstr (bf, st.super_addr, NULL, NULL);
-	if (super_name) {
-		if ((st8)*super_name > 5) {
-			klass->super = r_list_newf ((void *)r_bin_name_free);
-			RBinName *bn = r_bin_name_new (super_name);
-			char *sname = demangle_swift (bf, super_name);
-			if (R_STR_ISNOTEMPTY (sname)) {
-				r_bin_name_demangled (bn, sname);
-			}
-			free (sname);
-			r_list_append (klass->super, bn);
-		}
-		free (super_name);
-	}
-	klass->addr = st.addr;
-	klass->lang = R_BIN_LANG_SWIFT;
-	klass->index = r_list_length (bf->bo->classes) + r_list_length (list);
-	r_list_append (list, klass);
-	if (class_names_only (bf)) {
-		free (typename);
-		free (otypename);
-		return;
-	}
-	if (st.members != UT64_MAX) {
-		ut8 buf[MAX_SWIFT_MEMBERS * 16] = {0};
-		int i = 0;
-		bool parse_members = true;
-		R_LOG_DEBUG ("parse_type.st.members 0x%08"PFMT64x, st.members);
-		if (st.members < 1 || st.members >= bf->size) {
-			R_LOG_DEBUG ("out of bounds");
-			parse_members = false;
-		}
-		if (parse_members) {
-			st64 res = r_buf_read_at (bf->buf, st.members, buf, sizeof (buf));
-			if (res != sizeof (buf)) {
-				R_LOG_DEBUG ("Partial read on st.members");
-				parse_members = false;
-			}
-		}
-		if (parse_members) {
-			ut32 count = R_MIN (MAX_SWIFT_MEMBERS, r_read_le32 (buf + 3));
-			for (i = 0; i < count; i++) {
-				int pos = (i * 8) + 3 + 8 + 8;
-				st32 n = r_read_le32 (buf + pos);
-				ut64 method_addr = st.members + pos + n;
-				if (method_addr > r_buf_size (bf->buf)) {
-					break;
-				}
-				method_addr += bf->bo->baddr;
-				RBinSymbol *sym = NULL;
-				char *method_name;
-				char *rawname = NULL;
-				if (symbols_ht && (sym = ht_up_find (symbols_ht, method_addr, NULL))) {
-					rawname = strdup (r_bin_name_tostring (sym->name));
-					method_name = r_name_filter_dup (rawname); // r_bin_name_tostring (sym->name));
-					r_bin_name_filtered (sym->name, method_name);
-					char *dname = demangle_swift (bf, method_name);
-					if (dname) {
-						r_bin_name_demangled (sym->name, dname);
-						free (sym->name->oname);
-						sym->name->oname = strdup (rawname);
-						free (method_name);
-						method_name = dname;
-					}
-				} else {
-					if (!load_unnamed (bf)) {
-						continue;
-					}
-					method_name = r_str_newf ("%d", i);
-				}
-				// skip namespace
-				char *dot = strchr (method_name, '.');
-				if (dot) {
-					// skip classname
-					dot = strchr (dot + 1, '.');
-					if (dot) {
-						char *p = method_name;
-						method_name = strdup (dot + 1);
-						free (p);
-					}
-				}
-				if (rawname) {
-					sym = r_bin_symbol_new (rawname, method_addr, method_addr);
-					r_bin_name_demangled (sym->name, method_name);
-				} else {
-					sym = r_bin_symbol_new (method_name, method_addr, method_addr);
-				}
-				free (rawname);
-#if 0
-				if (oname) {
-					r_bin_name_free (sym->name);
-					sym->name = r_bin_name_clone (oname);
-				}
-#endif
-				sym->lang = R_BIN_LANG_SWIFT;
-				RVecRBinSymbol_push_back (&klass->methods, sym);
-				free (sym);
-#if 0
-				// TODO. try to resolve the method name by symbol table or debug info
-				r_cons_printf ("f sym.swift.%s.method.%s = 0x%" PFMT64x"\n", typename, method_name, method_addr);
-#endif
-				free (method_name);
-			}
-		}
-	}
-
-	if (st.fields != UT64_MAX && st.fields >= st.fieldmd.addr) {
-		const ut64 fieldmd_delta = st.fields - st.fieldmd.addr;
-		const ut64 dmax = st.fieldmd.size / sizeof (ut32);
-		const ut64 max_idx = (ut64)SZT_MAX / sizeof (ut32);
-		const ut64 j = fieldmd_delta / sizeof (ut32);
-		int i;
-		for (i = 0; i < 128; i += 3) {
-			const ut64 d = 6 + j + i;
-			if (fieldmd_delta >= st.fieldmd.size || d >= dmax || d > max_idx) {
-				break;
-			}
-			const size_t idx = (size_t)d;
-			const ut64 field_addr = st.fieldmd.addr + (d * sizeof (ut32));
-			ut64 field_name_addr = field_addr + swift_read_s32_le (st.fieldmd_data, idx);
-			ut64 field_type_addr = field_addr + swift_read_s32_le (st.fieldmd_data, idx - 1) - 4;
-			ut64 field_method_addr = field_name_addr;
-			ut64 vaddr = r_bin_file_get_baddr (bf) + field_method_addr;
-			char *field_name = readstr (bf, field_name_addr, NULL, NULL);
-			if (R_STR_ISEMPTY (field_name)) {
-				free (field_name);
-				break;
-			}
-			RBinField *field = RVecRBinField_emplace_back (&klass->fields);
-			if (!field) {
-				free (field_name);
-				break;
-			}
-			char *field_type = readstr (bf, field_type_addr, NULL, NULL);
-			if (field_type) {
-				const char *ftype = field_type;
-				if ((st8)*ftype < 6) {
-					// basic type
-					ftype += r_str_nlen (ftype, 6);
-				}
-				field->type = r_bin_name_new (ftype);
-				char *demangled_type = demangle_swift (bf, ftype);
-				if (demangled_type) {
-					r_bin_name_demangled (field->type, demangled_type);
-					free (demangled_type);
-				}
-				free (field_type);
-			}
-			field->name = r_bin_name_new (field_name);
-			char *fname = r_name_filter_dup (field_name);
-			r_bin_name_filtered (field->name, fname);
-			free (fname);
-			free (field_name);
-			field->paddr = field_method_addr;
-			field->vaddr = vaddr;
-			field->kind = R_BIN_FIELD_KIND_PROPERTY;
-		}
-	}
-	free (typename);
-	free (otypename);
-}
-
-static void *read_section(RBinFile *bf, MetaSection *ms, ut64 *asize) {
-	if (ms->data) {
-		return ms->data;
-	}
-	void *data = calloc (ms->size + 4, 1);
-	if (data) {
-		// align size and addr
-		if (ms->addr % 4) {
-			R_LOG_WARN ("Unaligned address for section");
-		}
-		*asize = ms->size + (ms->size % 4);
-		if (r_buf_read_at (bf->buf, ms->addr, data, *asize) != *asize) {
-			R_FREE (ms->data);
-			return NULL;
-		}
-		free (ms->data);
-		ms->data = data;
-	}
-	return data;
-}
+#include "mach0_swift.inc.c"
 
 RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
@@ -1766,47 +1482,8 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	}
 
 	const bool want_swift = !r_sys_getenv_asbool ("RABIN2_MACHO_NOSWIFT");
-	// 2s / 16s
-	if (want_swift && ms.types.have && ms.fieldmd.have) {
-		ut64 asize = ms.fieldmd.size;
-		st32 *fieldmd = read_section (bf, &ms.fieldmd, &asize);
-
-		const int aligned_fieldmd_size = ms.fieldmd.size + (ms.fieldmd.size % 4);
-#if 0
-		const int fieldmd_count = asize / 4;
-		R_LOG_DEBUG ("swift5_fieldmd: pxd %d @ 0x%x", fieldmd_count, ms.fieldmd.addr);
-#endif
-		if (fieldmd) {
-			ut64 atsize = ms.types.size;
-			int aligned_types_count = atsize / 4;
-			st32 *types = read_section (bf, &ms.types, &atsize);
-			if (types) {
-				int remaining = limit > 0? limit - r_list_length (ret): 0;
-				if (limit > 0 && aligned_types_count > remaining) {
-					R_LOG_WARN ("swift class limit reached");
-					aligned_types_count = remaining;
-				}
-				HtUP *symbols_ht = class_names_only (bf)? NULL: _load_symbol_by_vaddr_hashtable (bf);
-				ut32 i;
-				for (i = 0; i < aligned_types_count; i++) {
-					st32 word = swift_read_s32_le (types, i);
-					ut64 type_address = ms.types.addr + (i * 4) + word;
-					SwiftType st = parse_type_entry (bf, type_address);
-					if (!st.valid) {
-						continue;
-					}
-					st.addr = type_address;
-					st.fieldmd_data = fieldmd;
-					st.fieldmd.addr = ms.fieldmd.addr;
-					st.fieldmd.size = aligned_fieldmd_size;
-					R_LOG_DEBUG ("Name address 0x%"PFMT64x" for 0x%"PFMT64x, st.name_addr, ms.fieldmd.addr);
-					if (st.fields != UT64_MAX) {
-						parse_type (bf, ret, st, symbols_ht);
-					}
-				}
-				ht_up_free (symbols_ht);
-			}
-		}
+	if (want_swift && ms.types.have) {
+		parse_swift_classes (bf, ret, &ms, relocs, limit);
 	}
 	if (!ms.clslist.size || !ms.clslist.have) {
 		goto get_classes_error;
