@@ -103,6 +103,7 @@ r_bin_sources = [
   'format/mach0/fatmach0.c',
   'format/mach0/mach0.c',
   'format/mach0/mach064.c',
+  'format/swift/swift.c',
   'format/xnu/r_cf_dict.c',
   'format/mdmp/mdmp.c',
   'format/mdmp/mdmp_pe.c',
