@@ -15137,6 +15137,11 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	r_cons_break_push (core->cons, NULL, NULL);
 	r_cons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
 
+	if (r_config_get_b (core->config, "anal.plt")) {
+		logline (core, 8, "Name local plt stubs from their got relocs (anal.plt)");
+		r_core_anal_plt_stubs (core);
+	}
+
 	// required for noreturn
 	if (r_config_get_b (core->config, "anal.imports")) {
 		logline (core, 10, "Analyze imports (af@@@i)");

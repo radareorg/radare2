@@ -222,6 +222,7 @@ EOF
 EXPECT_ERR=<<EOF
 INFO: Analyze all flags starting with sym. and entry0 (aa)
 INFO: Analyze imports (af@@@i)
+INFO: Name local plt stubs from their got relocs (anal.plt)
 INFO: Analyze symbols (af@@@s)
 INFO: Running plugin pre-analysis hooks
 INFO: Analyze all functions arguments/locals (afva@@F)
@@ -237,6 +238,7 @@ INFO: Use -AA or aaaa to perform additional experimental analysis
 --
 INFO: Analyze all flags starting with sym. and entry0 (aa)
 INFO: Analyze imports (af@@@i)
+INFO: Name local plt stubs from their got relocs (anal.plt)
 INFO: Analyze symbols (af@@@s)
 INFO: Running plugin pre-analysis hooks
 INFO: Analyze all functions arguments/locals (afva@@F)
@@ -252,6 +254,7 @@ INFO: Use -AA or aaaa to perform additional experimental analysis
 --
 INFO: Analyze all flags starting with sym. and entry0 (aa)
 INFO: Analyze imports (af@@@i)
+INFO: Name local plt stubs from their got relocs (anal.plt)
 INFO: Analyze symbols (af@@@s)
 INFO: Running plugin pre-analysis hooks
 INFO: Analyze all functions arguments/locals (afva@@F)
