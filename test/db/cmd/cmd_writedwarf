@@ -1,0 +1,33 @@
+NAME=writedwarf help
+FILE=malloc://1
+CMDS=<<EOF
+writedwarf?
+writedwarf
+EOF
+EXPECT=<<EOF
+Usage: writedwarf [-elf|-mac] [filename]  Write an object file with DWARF debug info for the current session
+| writedwarf [file]       write a Mach-O object with symbols and source line info
+| writedwarf -elf [file]  write an ELF object instead of Mach-O
+| writedwarf -mac [file]  write a Mach-O object (default)
+Usage: writedwarf [-elf|-mac] [filename]  Write an object file with DWARF debug info for the current session
+| writedwarf [file]       write a Mach-O object with symbols and source line info
+| writedwarf -elf [file]  write an ELF object instead of Mach-O
+| writedwarf -mac [file]  write a Mach-O object (default)
+EOF
+RUN
+
+NAME=writedwarf elf output
+FILE=malloc://1
+CMDS=<<EOF
+af+ 0x1000 sym.main
+writedwarf -elf .writedwarf_test.elf
+o .writedwarf_test.elf
+i~format[1]
+is~sym.main~?
+rm .writedwarf_test.elf
+EOF
+EXPECT=<<EOF
+elf64
+1
+EOF
+RUN
