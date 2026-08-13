@@ -1602,6 +1602,19 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		int callee_rargs = 0;
 		char *callee = NULL;
 		ut64 offset = op->jump == UT64_MAX ? op->ptr : op->jump;
+		// a plt stub has no args of its own: a sym.plt.X flag names the local
+		// function it forwards to, so resolve the args at sym.X instead
+		if (anal->flb.f && offset != UT64_MAX) {
+			RFlagItem *sf = r_flag_get_by_spaces (anal->flb.f, false, offset, R_FLAGS_FS_SYMBOLS, NULL);
+			if (sf && sf->name && r_str_startswith (sf->name, "sym.plt.")) {
+				char *tn = r_str_newf ("sym.%s", sf->name + strlen ("sym.plt."));
+				RFlagItem *tf = r_flag_get (anal->flb.f, tn);
+				if (tf && tf->addr != offset) {
+					offset = tf->addr;
+				}
+				free (tn);
+			}
+		}
 		RAnalFunction *f = r_anal_get_function_at (anal, offset);
 		if (!f) {
 			RCore *core = (RCore *)anal->coreb.core;

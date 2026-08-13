@@ -5791,6 +5791,142 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 	r_bitset_free (done);
 }
 
+// a -fPIC object calls its own globals through the plt; flag those stubs so
+// calls read sym.plt.<target> instead of an anonymous fcn address
+static void plt_stub_flag(RCore *core, ut64 entry, ut64 size, ut64 slot) {
+	const int ptrsz = R_MAX (4, core->anal->config->bits / 8);
+	// the reloc tree keeps file vaddrs while the decoded slot is a runtime address
+	RBinObject *bo = r_bin_cur_object (core->bin);
+	const st64 shift = bo? bo->baddr_shift: 0;
+	RBinReloc *rel = r_core_getreloc (core, slot - shift, ptrsz);
+	if (!rel || rel->import || !rel->symbol) {
+		return;
+	}
+	RBinSymbol *target = rel->symbol;
+	if (!target->vaddr || target->vaddr == UT64_MAX || target->vaddr == entry) {
+		return;
+	}
+	// STT_GNU_IFUNC is the only type r2 maps to LOOS
+	if (!target->type || (strcmp (target->type, R_BIN_TYPE_FUNC_STR)
+			&& strcmp (target->type, R_BIN_TYPE_LOOS_STR))) {
+		return;
+	}
+	const char *tname = r_bin_name_tostring2 (target->name, 'o');
+	if (R_STR_ISEMPTY (tname)) {
+		return;
+	}
+	char *fname = r_str_newf ("sym.plt.%s", tname);
+	r_name_filter (fname, -1);
+	if (!r_flag_get (core->flags, fname)) {
+		r_flag_set (core->flags, fname, entry, size);
+	}
+	free (fname);
+}
+
+// walk the section decoding entries: remember the last lea and load, and when an
+// entry ends in an indirect jump derive the got slot it goes through
+static void plt_stub_scan_section(RCore *core, RBinSection *sec) {
+	if (sec->vsize < 8 || sec->vsize > 0x100000) {
+		return;
+	}
+	const ut64 sec_vaddr = r_bin_get_vaddr (core->bin, sec->paddr, sec->vaddr);
+	const int len = (int)sec->vsize;
+	ut8 *buf = malloc (len);
+	if (!buf || !r_io_read_at (core->io, sec_vaddr, buf, len)) {
+		free (buf);
+		return;
+	}
+	const int minop = R_MAX (1, r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE));
+	ut64 entry = sec_vaddr;
+	ut64 lea_ptr = UT64_MAX;
+	ut64 load_disp = UT64_MAX;
+	int i = 0;
+	while (i < len) {
+		const ut64 at = sec_vaddr + i;
+		RAnalOp op;
+		const int oplen = r_anal_op (core->anal, &op, at, buf + i, len - i, R_ARCH_OP_MASK_BASIC);
+		const int type = op.type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND;
+		const bool indirect = type == R_ANAL_OP_TYPE_UJMP
+			|| (type == R_ANAL_OP_TYPE_JMP && (op.type & R_ANAL_OP_TYPE_MEM));
+		bool ends = true;
+		if (oplen < 1) {
+			r_anal_op_fini (&op);
+			i += minop;
+			entry = sec_vaddr + i;
+			lea_ptr = UT64_MAX;
+			load_disp = UT64_MAX;
+			continue;
+		}
+		if (indirect) {
+			// x86 encodes the slot in one op; arm64-alikes split it lea/load/branch
+			ut64 slot = (op.ptr > 0 && op.ptr != -1)? (ut64)op.ptr: UT64_MAX;
+			if (slot == UT64_MAX && lea_ptr != UT64_MAX && load_disp != UT64_MAX) {
+				slot = lea_ptr + load_disp;
+			}
+			if (slot != UT64_MAX) {
+				plt_stub_flag (core, entry, at + oplen - entry, slot);
+			}
+		} else {
+			switch (type) {
+			case R_ANAL_OP_TYPE_LEA:
+			case R_ANAL_OP_TYPE_MOV:
+				if (op.ptr > 0 && op.ptr != -1) {
+					lea_ptr = (ut64)op.ptr;
+				}
+				ends = false;
+				break;
+			case R_ANAL_OP_TYPE_LOAD:
+				if (op.ptr > 0 && op.ptr != -1) {
+					// riscv-style loads resolve the slot in the op itself
+					lea_ptr = (ut64)op.ptr;
+					load_disp = 0;
+				} else {
+					load_disp = op.disp;
+				}
+				ends = false;
+				break;
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_CALL:
+			case R_ANAL_OP_TYPE_UCALL:
+			case R_ANAL_OP_TYPE_RET:
+			case R_ANAL_OP_TYPE_TRAP:
+			case R_ANAL_OP_TYPE_SWI:
+			case R_ANAL_OP_TYPE_ILL:
+			case R_ANAL_OP_TYPE_UNK:
+			case R_ANAL_OP_TYPE_NOP: // trailing padding belongs to no entry
+				break;
+			default:
+				ends = false;
+				break;
+			}
+		}
+		r_anal_op_fini (&op);
+		i += oplen;
+		if (ends) {
+			entry = sec_vaddr + i;
+			lea_ptr = UT64_MAX;
+			load_disp = UT64_MAX;
+		}
+	}
+	free (buf);
+}
+
+R_API void r_core_anal_plt_stubs(RCore *core) {
+	R_RETURN_IF_FAIL (core);
+	RVecRBinSection *sections = r_bin_get_sections_vec (core->bin);
+	if (!sections) {
+		return;
+	}
+	r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS);
+	RBinSection *sec;
+	R_VEC_FOREACH (sections, sec) {
+		if (sec->name && strstr (sec->name, "plt") && (sec->perm & R_PERM_X)) {
+			plt_stub_scan_section (core, sec);
+		}
+	}
+	r_flag_space_pop (core->flags);
+}
+
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {
 	if (core) {
 		const char *type = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);

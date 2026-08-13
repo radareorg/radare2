@@ -57,6 +57,11 @@ EXPECT=<<EOF
     {
       "type": "INFO",
       "origin": "logline",
+      "message": "Name local plt stubs from their got relocs (anal.plt)"
+    },
+    {
+      "type": "INFO",
+      "origin": "logline",
       "message": "Analyze symbols (af@@@s)"
     },
     {
