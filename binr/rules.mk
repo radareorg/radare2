@@ -74,6 +74,8 @@ LINK+=$(LIBR)/lang/libr_lang.a
 LINK+=$(LIBR)/config/libr_config.a
 LINK+=$(LIBR)/muta/libr_muta.a
 LINK+=$(LIBR)/main/libr_main.a
+# extra libs required by XPS static plugins (e.g. libc++ for r2ghidra)
+LINK+=$(EXTERNAL_LINK)
 else ifeq (${COMPILER},wasm)
 LINK+=$(SHLR)/libr_shlr.a
 LINK+=$(SHLR)/../subprojects/sdb/src/libsdb.a
