@@ -872,12 +872,12 @@ R_API bool commit_rvc(Rvc *rvc, const char *message, const char *author, const R
 	}
 	{
 		const char *current_branch = sdb_const_get (rvc->db, CURRENTB, 0);
-		if (sdb_set (rvc->db, commit_hash, sdb_const_get (rvc->db, current_branch, 0), 0) < 0) {
+		if (!sdb_set (rvc->db, commit_hash, sdb_const_get (rvc->db, current_branch, 0), 0)) {
 			free_blobs (blobs);
 			free (commit_hash);
 			return false;
 		}
-		if (sdb_set (rvc->db, current_branch, commit_hash, 0) < 0) {
+		if (!sdb_set (rvc->db, current_branch, commit_hash, 0)) {
 			free_blobs (blobs);
 			free (commit_hash);
 			return false;
