@@ -27,29 +27,58 @@ icc
 icj~{}
 EOF
 EXPECT=<<EOF
-0x00003e44 [0x00003e44 - 0x00003e44]      0 swift class 0 Employee
-0x100003f60 swift property   0      name
-0x00003eac [0x00003eac - 0x00003eac]      0 swift class 1 Employer
-0x100008148 [0x100008148 - 0x100008148]      0 objc class 2 main.Employee :: Swift._SwiftObject
+0x100003e44 [0x10000366c - 0x1000039bc]    848 swift class 0 main.Employee
+0x10000366c swift   method   0      name
+0x1000036c4 swift   method   1      name
+0x100003730 swift   method   2      name
+0x1000037ac swift   method   3      message
+0x100003984 swift   method   4 sC   init
+0x100003918 swift   method   5      deinit
+0x100003948 swift   method   6      deinit
+0x1000039bc swift   method   7 C    init
+0x100003f44 swift property   0      name
+0x100003eac [0x100003a5c - 0x100003bec]    400 swift class 1 main.Employer :: main.Employee
+0x100003a5c swift   method   0      main
+0x100003b40 swift   method   1 C    init
+0x100003b78 swift   method   2 C    init
+0x100003bc4 swift   method   3      deinit
+0x100003bec swift   method   4      deinit
+0x100003e04 [0x100003e04 - 0x100003e04]      0 swift class 2 main.Greet
+0x100008148 [0x100008148 - 0x100008148]      0 objc class 3 main.Employee :: Swift._SwiftObject
 0x00000000 objc      var   0      isa
 0x100003e30 objc      var   1      name
-0x100008200 [0x100008200 - 0x100008200]      0 objc class 3 main.Employer :: main.Employee
-0x00000000 [0x100003f04 - 0x100003f04]      0 ? class 4 Greet
+0x100008200 [0x100008200 - 0x100008200]      0 objc class 4 main.Employer :: main.Employee
+0x00000000 [0x100003f04 - 0x100003f04]      0 ? class 5 Greet
 0x100003f04 ?   method   0      symbolic main.Greet.
-0x00000000 [0x100003f14 - 0x100003f14]      0 ? class 5 Employee_1
+0x00000000 [0x100003f14 - 0x100003f14]      0 ? class 6 Employee
 0x100003f14 ?   method   0      symbolic main.Employee.allocator
-0x00000000 [0x100003f1e - 0x100003f1e]      0 ? class 6 Employer_1
+0x00000000 [0x100003f1e - 0x100003f1e]      0 ? class 7 Employer
 0x100003f1e ?   method   0      symbolic main.Employer.allocator
 ---
-class Employee {
-  property name : Swift.String;
+class main.Employee {
+  var name : Swift.String
+  var name { get }  // 0x10000366c
+  var name { set }  // 0x1000036c4
+  func name() {}  // 0x100003730
+  func message() {}  // 0x1000037ac
+  init()  // 0x100003984
+  func deinit() {}  // 0x100003918
+  func deinit() {}  // 0x100003948
+  init()  // 0x1000039bc
 }
-class Employer {
+class main.Employer : main.Employee {
+  func main() {}  // 0x100003a5c
+  init()  // 0x100003b40
+  init()  // 0x100003b78
+  func deinit() {}  // 0x100003bc4
+  func deinit() {}  // 0x100003bec
+}
+protocol main.Greet {
 }
 @objc
 class main.Employee : Swift._SwiftObject {
-  var isa : struct objc_class *;
-  var name;
+  var isa : struct objc_class *
+  var name
 }
 @objc
 class main.Employer : main.Employee {
@@ -57,39 +86,165 @@ class main.Employer : main.Employee {
 class Greet {
   func symbolic main.Greet.() {}  // 0x100003f04
 }
-class Employee_1 {
+class Employee {
   func symbolic main.Employee.allocator() {}  // 0x100003f14
 }
-class Employer_1 {
+class Employer {
   func symbolic main.Employer.allocator() {}  // 0x100003f1e
 }
 ---
 [
   {
-    "classname": "Employee",
-    "addr": 15940,
+    "classname": "main.Employee",
+    "addr": 4294983236,
     "lang": "swift",
     "index": 0,
+    "methods": [
+      {
+        "name": "name",
+        "flag": "method.getter.main.Employee.name",
+        "flags": [
+          "getter"
+        ],
+        "rawname": "_$s4main8EmployeeC4nameSSvg",
+        "lang": "swift",
+        "addr": 4294981228
+      },
+      {
+        "name": "name",
+        "flag": "method.setter.main.Employee.name",
+        "flags": [
+          "setter"
+        ],
+        "rawname": "_$s4main8EmployeeC4nameSSvs",
+        "lang": "swift",
+        "addr": 4294981316
+      },
+      {
+        "name": "name",
+        "flag": "method.main.Employee.name",
+        "rawname": "_$s4main8EmployeeC4nameSSvM",
+        "lang": "swift",
+        "addr": 4294981424
+      },
+      {
+        "name": "message",
+        "flag": "method.main.Employee.message",
+        "rawname": "_$s4main8EmployeeC7messageyyF",
+        "lang": "swift",
+        "addr": 4294981548
+      },
+      {
+        "name": "init",
+        "flag": "method.static.constructor.main.Employee.init",
+        "flags": [
+          "static constructor"
+        ],
+        "rawname": "_$s4main8EmployeeCACycfC",
+        "lang": "swift",
+        "addr": 4294982020
+      },
+      {
+        "name": "deinit",
+        "flag": "func.100003918",
+        "rawname": "$s4main8EmployeeCfd",
+        "lang": "swift",
+        "addr": 4294981912
+      },
+      {
+        "name": "deinit",
+        "flag": "method.main.Employee.deinit",
+        "rawname": "$s4main8EmployeeCfD",
+        "lang": "swift",
+        "addr": 4294981960
+      },
+      {
+        "name": "init",
+        "flag": "method.constructor.main.Employee.init",
+        "flags": [
+          "constructor"
+        ],
+        "rawname": "$s4main8EmployeeCACycfc",
+        "lang": "swift",
+        "addr": 4294982076
+      }
+    ],
     "fields": [
       {
         "name": "name",
         "kind": "property",
         "type": "Swift.String",
-        "addr": 4294983520
+        "addr": 4294983492
       }
     ]
   },
   {
-    "classname": "Employer",
-    "addr": 16044,
+    "classname": "main.Employer",
+    "addr": 4294983340,
     "lang": "swift",
-    "index": 1
+    "index": 1,
+    "super": [
+      "main.Employee"
+    ],
+    "rawsuper": [
+      "main.Employee"
+    ],
+    "methods": [
+      {
+        "name": "main",
+        "flag": "method.main.Employer.main",
+        "rawname": "_$s4main8EmployerCAAyyF",
+        "lang": "swift",
+        "addr": 4294982236
+      },
+      {
+        "name": "init",
+        "flag": "func.100003b40",
+        "flags": [
+          "constructor"
+        ],
+        "rawname": "$s4main8EmployerCACycfC",
+        "lang": "swift",
+        "addr": 4294982464
+      },
+      {
+        "name": "init",
+        "flag": "method.constructor.main.Employer.init",
+        "flags": [
+          "constructor"
+        ],
+        "rawname": "$s4main8EmployerCACycfc",
+        "lang": "swift",
+        "addr": 4294982520
+      },
+      {
+        "name": "deinit",
+        "flag": "func.100003bc4",
+        "rawname": "$s4main8EmployerCfd",
+        "lang": "swift",
+        "addr": 4294982596
+      },
+      {
+        "name": "deinit",
+        "flag": "method.main.Employer.deinit",
+        "rawname": "$s4main8EmployerCfD",
+        "lang": "swift",
+        "addr": 4294982636
+      }
+    ]
+  },
+  {
+    "classname": "main.Greet",
+    "addr": 4294983172,
+    "lang": "swift",
+    "index": 2
   },
   {
     "classname": "main.Employee",
+    "rawclassname": "main.Employee_1",
     "addr": 4295000392,
     "lang": "objc",
-    "index": 2,
+    "index": 3,
     "super": [
       "Swift._SwiftObject"
     ],
@@ -112,9 +267,10 @@ class Employer_1 {
   },
   {
     "classname": "main.Employer",
+    "rawclassname": "main.Employer_1",
     "addr": 4295000576,
     "lang": "objc",
-    "index": 3,
+    "index": 4,
     "super": [
       "main.Employee"
     ],
@@ -125,7 +281,7 @@ class Employer_1 {
   {
     "classname": "Greet",
     "addr": 0,
-    "index": 4,
+    "index": 5,
     "methods": [
       {
         "name": "symbolic main.Greet.",
@@ -136,26 +292,26 @@ class Employer_1 {
     ]
   },
   {
-    "classname": "Employee_1",
+    "classname": "Employee",
     "addr": 0,
-    "index": 5,
+    "index": 6,
     "methods": [
       {
         "name": "symbolic main.Employee.allocator",
-        "flag": "method.Employee_1.symbolic_main.Employee.allocator",
+        "flag": "method.Employee.symbolic_main.Employee.allocator",
         "rawname": "_symbolic _____ 4main8EmployeeC",
         "addr": 4294983444
       }
     ]
   },
   {
-    "classname": "Employer_1",
+    "classname": "Employer",
     "addr": 0,
-    "index": 6,
+    "index": 7,
     "methods": [
       {
         "name": "symbolic main.Employer.allocator",
-        "flag": "method.Employer_1.symbolic_main.Employer.allocator",
+        "flag": "method.Employer.symbolic_main.Employer.allocator",
         "rawname": "_symbolic _____ 4main8EmployerC",
         "addr": 4294983454
       }
@@ -171,13 +327,14 @@ CMDS=<<EOF
 icqq
 EOF
 EXPECT=<<EOF
-Employee
-Employer
+main.Employee
+main.Employer
+main.Greet
 main.Employee
 main.Employer
 Greet
-Employee_1
-Employer_1
+Employee
+Employer
 EOF
 RUN
 
@@ -187,12 +344,13 @@ CMDS=<<EOF
 icq
 EOF
 EXPECT=<<EOF
-0x00003e44 [0x00003e44 - 0x00003e44] swift Employee
-0x00003eac [0x00003eac - 0x00003eac] swift Employer
+0x100003e44 [0x10000366c - 0x1000039bc] swift main.Employee
+0x100003eac [0x100003a5c - 0x100003bec] swift main.Employer main.Employee
+0x100003e04 [0x100003e04 - 0x100003e04] swift main.Greet
 0x100008148 [0x100008148 - 0x100008148] objc main.Employee Swift._SwiftObject
 0x100008200 [0x100008200 - 0x100008200] objc main.Employer main.Employee
 0x00000000 [0x100003f04 - 0x100003f04] ? Greet
-0x00000000 [0x100003f14 - 0x100003f14] ? Employee_1
-0x00000000 [0x100003f1e - 0x100003f1e] ? Employer_1
+0x00000000 [0x100003f14 - 0x100003f14] ? Employee
+0x00000000 [0x100003f1e - 0x100003f1e] ? Employer
 EOF
 RUN

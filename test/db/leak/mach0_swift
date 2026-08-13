@@ -7,7 +7,7 @@ ic~objc~?
 ?e hello
 EOF
 EXPECT=<<EOF
-1
+5
 4
 hello
 EOF
