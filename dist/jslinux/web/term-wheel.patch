@@ -1,0 +1,61 @@
+--- a/term.js
++++ b/term.js
+@@ -1163,15 +1163,52 @@
+     window.onbeforeunload = null;
+ };
+
+-Term.prototype.wheelHandler = function (ev)
++Term.prototype.sendWheel = function (deltaX, deltaY, clientX, clientY)
+ {
+-    if (ev.deltaY < 0)
+-        this.scroll_disp(-3);
+-    else if (ev.deltaY > 0)
+-        this.scroll_disp(3);
+-    ev.stopPropagation();
++    var button, rect, x, y;
++
++    if (this.mouse_reporting) {
++        if (Math.abs(deltaX) > Math.abs(deltaY)) {
++            if (!deltaX)
++                return;
++            button = deltaX < 0 ? 66 : 67;
++        } else {
++            if (!deltaY)
++                return;
++            button = deltaY < 0 ? 64 : 65;
++        }
++        rect = this.term_el.getBoundingClientRect();
++        if (typeof clientX == "number" && rect.width > 0) {
++            x = Math.floor((clientX - rect.left) * this.w / rect.width) + 1;
++        } else {
++            x = this.x + 1;
++        }
++        if (typeof clientY == "number" && rect.height > 0) {
++            y = Math.floor((clientY - rect.top) * this.h / rect.height) + 1;
++        } else {
++            y = this.y + 1;
++        }
++        x = Math.max(1, Math.min(this.w, x));
++        y = Math.max(1, Math.min(this.h, y));
++        this.handler("\x1b[<" + button + ";" + x + ";" + y + "M");
++    } else if (deltaY < 0) {
++        this.scroll_disp(-3);
++    } else if (deltaY > 0) {
++        this.scroll_disp(3);
++    }
++}
++
++Term.prototype.wheelHandler = function (ev)
++{
++    this.sendWheel(ev.deltaX || 0, ev.deltaY || 0,
++                   ev.clientX, ev.clientY);
++    if (ev.stopPropagation)
++        ev.stopPropagation();
++    if (ev.preventDefault)
++        ev.preventDefault();
++    return false;
+ }
+
+ Term.prototype.mouseDownHandler = function (ev)
+ {
+     this.thumb_el.onmouseup = this.mouseUpHandler.bind(this);
