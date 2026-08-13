@@ -15,6 +15,7 @@ FILE=bins/elf/dwarf3_cpp.elf
 CMDS=<<EOF
 e asm.dwarf=false
 aaa
+k anal/types/fcnlink.0000130e
 afs @ 0x130e
 aaa
 afs @ 0x130e
@@ -23,6 +24,7 @@ tl overridden = 0x130e
 afs @ 0x130e
 EOF
 EXPECT=<<EOF
+Bird_Bird_
 void Bird_Bird_ (Bird * const this);
 void Bird_Bird_ (Bird * const this);
 int overridden (int x);

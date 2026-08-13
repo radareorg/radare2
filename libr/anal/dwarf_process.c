@@ -1848,6 +1848,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 	bool has_linkage_name = false;
 	bool get_linkage_name = prefer_linkage_name (ctx->lang);
 	bool has_ranges = false;
+	bool has_ret_type = false;
 	size_t address_count = 0;
 	RStrBuf ret_type;
 	r_strbuf_init (&ret_type);
@@ -1878,6 +1879,8 @@ static void parse_function(Context *ctx, ut64 idx) {
 			RStrBuf origin_type;
 			r_strbuf_init (&origin_type);
 			const char *origin_name = NULL;
+			RBinDwarfDie *origin_die = ht_up_find (ctx->die_map, val->reference, NULL);
+			has_ret_type |= origin_die && !!get_die_attr (origin_die, DW_AT_type);
 			parse_abstract_origin (ctx, val->reference, &origin_type, &origin_name);
 			if (!fcn.name) {
 				fcn.name = origin_name;
@@ -1894,11 +1897,13 @@ static void parse_function(Context *ctx, ut64 idx) {
 			if (spec_die) {
 				/* I assume that if specification has a name, this DIE hasn't */
 				fcn.name = get_specification_die_name (spec_die);
+				has_ret_type |= !!get_die_attr (spec_die, DW_AT_type);
 				get_spec_die_type (ctx, spec_die, &ret_type);
 			}
 			break;
 		}
 		case DW_AT_type:
+			has_ret_type = true;
 			parse_type (ctx, val->reference, &ret_type, NULL, NULL);
 			break;
 		case DW_AT_virtuality:
@@ -1944,6 +1949,10 @@ static void parse_function(Context *ctx, ut64 idx) {
 	fcn.prototype_complete = address_count == 1 && !has_ranges && formals_complete;
 
 	if (ret_type.len == 0) { /* DW_AT_type is omitted in case of `void` ret type */
+		if (has_ret_type) {
+			R_LOG_WARN ("Failed to parse DWARF return type for %s at 0x%" PFMT64x, fcn.name, fcn.addr);
+		}
+		fcn.prototype_complete &= !has_ret_type;
 		r_strbuf_append (&ret_type, "void");
 	}
 
