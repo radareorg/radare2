@@ -2557,6 +2557,11 @@ static char *function_signature_address_type_name(Sdb *types, ut64 addr) {
 		return name;
 	}
 	free (name);
+	const char *dwarf_name = sdb_const_getf (types, NULL,
+		"fcnlink.%08" PFMT64x, addr);
+	if (dwarf_name && r_type_kind (types, dwarf_name) == R_TYPE_FUNCTION) {
+		return strdup (dwarf_name);
+	}
 	return NULL;
 }
 
