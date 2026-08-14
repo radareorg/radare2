@@ -112,6 +112,7 @@ typedef struct Elf_(dynamic_info) {
 	Elf_(Addr) dt_ppc64_glink; /* PPC64 ELFv1: DT_PPC64_GLINK lazy PLT resolver anchor */
 	Elf_(Addr) dt_crel;    // Address of Crel relocs
 	bool dt_bind_now;
+	bool dt_aarch64_pac_plt; /* AArch64 -z pac-plt: 24 byte plt entries */
 	Elf_(Xword) dt_flags;
 	Elf_(Xword) dt_flags_1;
 	Elf_(Xword) dt_rpath;
@@ -183,6 +184,7 @@ struct Elf_(obj_t) {
 	RList *inits;
 	HtUU *rel_cache;
 	HtUU *ppc64_plt_stubs; // ppc64: slot_vaddr -> stub_vaddr (lazy, NULL until first use)
+	ut64 arm64_plt_esize; // aarch64: measured plt entry stride, 0 until probed
 	ut32 g_reloc_num;
 	bool relocs_loaded;
 	RVecRBinElfReloc g_relocs;
@@ -257,5 +259,10 @@ bool Elf_(has_nobtcfi)(ELFOBJ *eo);
 ut8 *Elf_(grab_regstate)(struct Elf_(obj_t) *bin, int *len);
 RList *Elf_(get_maps)(ELFOBJ *bin);
 ut64 Elf_(ppc64_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr);
+/* plt.c */
+ut64 Elf_(plt_arm64_entry)(ELFOBJ *eo, ut64 plt_addr, ut64 pos);
+/* elf.c helpers exported for plt.c */
+RBinElfSection *Elf_(plt_section_by_name)(ELFOBJ *eo, const char *name);
+ut64 Elf_(plt_num_relocs)(ELFOBJ *eo);
 R_API RBinSection *r_bin_section_clone(RBinSection *s);
 #endif
