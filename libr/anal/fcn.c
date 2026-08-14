@@ -2928,8 +2928,8 @@ R_API char *r_anal_function_get_signature_string(RAnalFunction *fcn) {
 R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSignature *signature) {
 	char *decl = NULL;
 	char *type_name;
+	char *resolved_callconv = NULL;
 	const char *resolved_ret_type;
-	const char *resolved_callconv;
 	bool ok = false;
 
 	R_RETURN_VAL_IF_FAIL (anal && fcn && anal->sdb_types && signature, false);
@@ -2939,9 +2939,12 @@ R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const 
 		return false;
 	}
 	resolved_ret_type = R_STR_ISNOTEMPTY (signature->ret_type)? signature->ret_type: "void";
-	resolved_callconv = R_STR_ISNOTEMPTY (signature->callconv)
+	const char *callconv = R_STR_ISNOTEMPTY (signature->callconv)
 		? signature->callconv
 		: function_signature_callconv (anal, fcn, type_name);
+	if (callconv) {
+		resolved_callconv = strdup (callconv);
+	}
 	decl = function_signature_string (type_name, resolved_ret_type, signature->params, false, true);
 	if (decl) {
 		ok = r_anal_str_to_fcn (anal, fcn, decl);
@@ -2950,6 +2953,7 @@ R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const 
 		}
 	}
 	free (decl);
+	free (resolved_callconv);
 	free (type_name);
 	if (ok) {
 		RAnalFunctionSignature *signature = r_anal_function_get_signature (fcn);
