@@ -253,11 +253,15 @@ static bool check_symbol_lang(RBinFile *bf, LangCheck *lc, RBinSymbol *sym, int 
 }
 
 /* This is about 10% of the loading time, optimize checking when registering the symbols */
-R_API int r_bin_load_languages(RBinFile *bf) {
+R_API RBinLanguages r_bin_load_languages(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->info, R_BIN_LANG_NONE);
 	RBinObject *bo = bf->bo;
 	RBinInfo *info = bo->info;
 	RBinSymbol *sym = NULL;
+	RBinLanguages langs = 0;
+	R_VEC_FOREACH (&bo->symbols_vec, sym) {
+		langs = r_vpack_add (langs, sym->lang);
+	}
 	LangCheck lc = {0};
 	const char *ft = r_str_get (info->rclass);
 	const bool unknownType = info->rclass == NULL;
@@ -266,7 +270,7 @@ R_API int r_bin_load_languages(RBinFile *bf) {
 	const bool isPe = strstr (ft, "pe");
 
 	if (unknownType || !(isMacho || isElf || isPe)) {
-		return R_BIN_LANG_NONE;
+		return langs;
 	}
 	RBinImport *imp;
 	R_VEC_FOREACH (&bo->imports_vec, imp) {
@@ -285,18 +289,18 @@ R_API int r_bin_load_languages(RBinFile *bf) {
 		}
 	}
 	if (type != -1) {
-		return type;
+		return r_vpack_add (langs, type);
 	}
 	if (lc.isObjC) {
-		return R_BIN_LANG_OBJC | (lc.isBlocks?R_BIN_LANG_BLOCKS:0);
+		return r_vpack_add (langs, lc.isBlocks? R_BIN_LANG_OBJC_BLOCKS: R_BIN_LANG_OBJC);
 	}
 	if (lc.canBeCxx) {
-		return R_BIN_LANG_CXX | (lc.isBlocks? R_BIN_LANG_BLOCKS: 0);
+		return r_vpack_add (langs, lc.isBlocks? R_BIN_LANG_CXX_BLOCKS: R_BIN_LANG_CXX);
 	}
 	if (lc.isMsvc) {
-		return R_BIN_LANG_MSVC;
+		return r_vpack_add (langs, R_BIN_LANG_MSVC);
 	}
-	return R_BIN_LANG_C | (lc.isBlocks? R_BIN_LANG_BLOCKS: 0);
+	return r_vpack_add (langs, lc.isBlocks? R_BIN_LANG_C_BLOCKS: R_BIN_LANG_C);
 }
 
 // if its ipi no need to be prefixed with r_
@@ -339,36 +343,22 @@ R_IPI int r_bin_lang_type(RBinFile * R_NULLABLE bf, const char * R_NULLABLE def,
 	return type;
 }
 
-R_API const char *r_bin_lang_tostring(int lang) {
-	switch (lang & 0xffff) {
-	case R_BIN_LANG_SWIFT:
-		return "swift";
-	case R_BIN_LANG_GO:
-		return "go";
-	case R_BIN_LANG_JAVA:
-		return "java";
-	case R_BIN_LANG_KOTLIN:
-		return "kotlin";
-	case R_BIN_LANG_DART:
-		return "dart";
-	case R_BIN_LANG_GROOVY:
-		return "groovy";
-	case R_BIN_LANG_JNI:
-		return "jni";
-	case R_BIN_LANG_C:
-		return (lang & R_BIN_LANG_BLOCKS)? "c with blocks": "c";
-	case R_BIN_LANG_CXX:
-		return (lang & R_BIN_LANG_BLOCKS)? "c++ with blocks": "c++";
-	case R_BIN_LANG_IBMXL:
-		return "ibmxl";
-	case R_BIN_LANG_DLANG:
-		return "d";
-	case R_BIN_LANG_OBJC:
-		return (lang & R_BIN_LANG_BLOCKS)? "objc with blocks": "objc";
-	case R_BIN_LANG_MSVC:
-		return "msvc";
-	case R_BIN_LANG_RUST:
-		return "rust";
+static const char *const lang_names[] = {
+	"?", "java", "c", "go", "c++", "objc", "swift", "d",
+	"msvc", "rust", "kotlin", "pascal", "dart", "groovy", "jni", "cil", "ibmxl",
+	"c with blocks", "c++ with blocks", "objc with blocks"
+};
+
+R_API int r_bin_lang_fromstring(const char *name) {
+	int i;
+	for (i = R_BIN_LANG_JAVA; R_STR_ISNOTEMPTY (name) && i < R_BIN_LANG_LAST; i++) {
+		if (!strcmp (lang_names[i], name)) {
+			return i;
+		}
 	}
-	return "?";
+	return R_BIN_LANG_NONE;
+}
+
+R_API const char *r_bin_lang_tostring(int lang) {
+	return lang >= R_BIN_LANG_NONE && lang < R_BIN_LANG_LAST? lang_names[lang]: "?";
 }

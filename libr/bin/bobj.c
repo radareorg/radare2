@@ -704,7 +704,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		}
 	}
 	if (bo->info && bin->filter_rules & (R_BIN_REQ_INFO | R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
-		bo->lang = isSwift? R_BIN_LANG_SWIFT: r_bin_load_languages (bf);
+		bo->langs = isSwift? R_VPACK1 (R_BIN_LANG_SWIFT): r_bin_load_languages (bf);
 	}
 	// trim doubling-growth slack from per-class vecs
 	if (bo->classes) {

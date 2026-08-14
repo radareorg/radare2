@@ -115,25 +115,30 @@ typedef enum {
 
 typedef enum {
 	R_BIN_LANG_NONE = 0,
-	R_BIN_LANG_JAVA = 1,
-	R_BIN_LANG_C = 1<<1,
-	R_BIN_LANG_GO = 1<<2,
-	R_BIN_LANG_CXX = 1<<3,
-	R_BIN_LANG_OBJC = 1<<4,
-	R_BIN_LANG_SWIFT = 1<<5,
-	R_BIN_LANG_DLANG = 1<<6,
-	R_BIN_LANG_MSVC = 1<<7,
-	R_BIN_LANG_RUST = 1<<8,
-	R_BIN_LANG_KOTLIN = 1<<9,
-	R_BIN_LANG_PASCAL = 1<<10,
-	R_BIN_LANG_DART = 1<<11,
-	R_BIN_LANG_GROOVY = 1<<12,
-	R_BIN_LANG_JNI = 1U<<13,
-	R_BIN_LANG_CIL = 1<<14,
-	R_BIN_LANG_IBMXL = 1<<15,
-	R_BIN_LANG_BLOCKS = 1U<<31,
+	R_BIN_LANG_JAVA,
+	R_BIN_LANG_C,
+	R_BIN_LANG_GO,
+	R_BIN_LANG_CXX,
+	R_BIN_LANG_OBJC,
+	R_BIN_LANG_SWIFT,
+	R_BIN_LANG_DLANG,
+	R_BIN_LANG_MSVC,
+	R_BIN_LANG_RUST,
+	R_BIN_LANG_KOTLIN,
+	R_BIN_LANG_PASCAL,
+	R_BIN_LANG_DART,
+	R_BIN_LANG_GROOVY,
+	R_BIN_LANG_JNI,
+	R_BIN_LANG_CIL,
+	R_BIN_LANG_IBMXL,
+	R_BIN_LANG_C_BLOCKS,
+	R_BIN_LANG_CXX_BLOCKS,
+	R_BIN_LANG_OBJC_BLOCKS,
+	R_BIN_LANG_LAST,
 	R_BIN_LANG_ANY = -1,
 } RBinLanguage;
+
+typedef RVPack RBinLanguages;
 
 typedef enum {
 	R_BIN_CLASS_ORIGIN_BIN,
@@ -459,7 +464,7 @@ typedef struct r_bin_object_t {
 	RBinInfo *info;
 	RBinAddr *binsym[R_BIN_SYM_LAST];
 	struct r_bin_plugin_t *plugin;
-	int lang;
+	RBinLanguages langs;
 	Sdb *kv;
 	HtUP *addr2klassmethod;
 	HtUP *symbol_addr_ht; // vaddr/paddr -> RBinSymbol* (lazy, owned by object)
@@ -546,7 +551,7 @@ typedef struct r_bin_file_t {
 	RArena *arena;
 } RBinFile;
 
-#define R_BIN_DEMANGLE_TYPE_SLOTS 16
+#define R_BIN_DEMANGLE_TYPE_SLOTS (R_BIN_LANG_IBMXL + 1)
 
 typedef struct r_bin_demangle_plugin_t {
 	RPluginMeta meta;
@@ -975,7 +980,7 @@ R_API bool r_bin_is_static(RBin *bin); // R2_590: deprecate
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr);
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr);
 
-R_API int r_bin_load_languages(RBinFile *binfile);
+R_API RBinLanguages r_bin_load_languages(RBinFile *binfile);
 R_API RBinFile *r_bin_cur(RBin *bin);
 R_API RBinObject *r_bin_cur_object(RBin *bin);
 
@@ -1082,6 +1087,7 @@ R_API bool r_bin_wr_entry(RBin *bin, ut64 addr);
 R_API bool r_bin_wr_output(RBin *bin, const char *filename);
 
 R_API const char *r_bin_lang_tostring(int type);
+R_API int r_bin_lang_fromstring(const char *name);
 
 R_API RList *r_bin_get_mem(RBin *bin);
 
