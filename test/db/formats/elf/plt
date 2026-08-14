@@ -37,3 +37,54 @@ EXPECT=<<EOF
 0x000006d0 16 sym.imp.__stack_chk_fail
 EOF
 RUN
+
+NAME=ppc32 be: imports resolve to their plt_pic32 call thunks
+FILE=bins/elf/pltrel/ppc32be-plt.so
+CMDS=<<EOF2
+ii
+is~plt_pic32.ext
+EOF2
+EXPECT=<<EOF2
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x0001040c GLOBAL NOTYPE     ext1
+2   0x0001041c GLOBAL NOTYPE     ext2
+3   0x0000040c 0x0001040c LOCAL  FUNC   16       00000000.plt_pic32.ext1
+4   0x0000041c 0x0001041c LOCAL  FUNC   16       00000000.plt_pic32.ext2
+EOF2
+RUN
+
+NAME=ppc32 le: imports resolve to their plt_pic32 call thunks
+FILE=bins/elf/pltrel/ppc32le-plt.so
+CMDS=<<EOF2
+ii
+EOF2
+EXPECT=<<EOF2
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x0001040c GLOBAL NOTYPE     ext1
+2   0x0001041c GLOBAL NOTYPE     ext2
+EOF2
+RUN
+
+NAME=ppc32 exe with absolute glink stubs keeps the legacy import math
+FILE=bins/elf/powerpc-linux-gnu-symexec-palindrome
+CMDS=<<EOF2
+ii~fgets,puts,strlen
+EOF2
+EXPECT=<<EOF2
+1   0x10000810 GLOBAL FUNC       fgets
+3   0x10000830 GLOBAL FUNC       puts
+5   0x10000850 GLOBAL FUNC       strlen
+EOF2
+RUN
+
+NAME=ppc32 bss-plt keeps its unresolved imports
+FILE=bins/elf/hello.ppc
+CMDS=<<EOF2
+ii~printf
+EOF2
+EXPECT=<<EOF2
+1   ---------- GLOBAL FUNC       printf
+EOF2
+RUN

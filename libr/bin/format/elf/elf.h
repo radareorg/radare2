@@ -185,6 +185,9 @@ struct Elf_(obj_t) {
 	HtUU *rel_cache;
 	HtUU *ppc64_plt_stubs; // ppc64: slot_vaddr -> stub_vaddr (lazy, NULL until first use)
 	ut64 arm64_plt_esize; // aarch64: measured plt entry stride, 0 until probed
+	ut64 *ppc32_thunks; // ppc32: plt slot index -> call thunk vaddr, lazy
+	ut64 ppc32_nthunks;
+	bool ppc32_thunks_done;
 	ut32 g_reloc_num;
 	bool relocs_loaded;
 	RVecRBinElfReloc g_relocs;
@@ -261,6 +264,7 @@ RList *Elf_(get_maps)(ELFOBJ *bin);
 ut64 Elf_(ppc64_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr);
 /* plt.c */
 ut64 Elf_(plt_arm64_entry)(ELFOBJ *eo, ut64 plt_addr, ut64 pos);
+ut64 Elf_(plt_ppc32_thunk)(ELFOBJ *eo, ut64 slot_vaddr);
 /* elf.c helpers exported for plt.c */
 RBinElfSection *Elf_(plt_section_by_name)(ELFOBJ *eo, const char *name);
 ut64 Elf_(plt_num_relocs)(ELFOBJ *eo);
