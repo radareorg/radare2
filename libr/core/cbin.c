@@ -4648,6 +4648,15 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			if (lang && *lang != '?') {
 				pj_ks (pj, "lang", lang);
 			}
+			if (R_STR_ISNOTEMPTY (c->attr.ns)) {
+				pj_ks (pj, "ns", c->attr.ns);
+			}
+			if (c->attr.flags) {
+				char *cflags = r_core_bin_attr_tostring (core, c->attr.flags, mode);
+				pj_k (pj, "attr");
+				pj_j (pj, cflags);
+				free (cflags);
+			}
 			pj_ki (pj, "index", c->index);
 			if (c->super) {
 				if (c->visibility_str) {
@@ -4738,6 +4747,12 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 						pj_k (pj, "attr");
 						pj_j (pj, mflags);
 						free (mflags);
+					}
+					if (f->attr.offset) {
+						pj_kn (pj, "offset", f->attr.offset);
+					}
+					if (f->attr.size > 0) {
+						pj_ki (pj, "size", f->attr.size);
 					}
 					ut64 faddr = compute_addr (core->bin, f->paddr, f->vaddr, va);
 					pj_kN (pj, "addr", faddr);
