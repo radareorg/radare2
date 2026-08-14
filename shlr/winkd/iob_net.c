@@ -328,6 +328,10 @@ static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 		goto end;
 	}
 
+	if (size < KDNET_HMAC_SIZE) {
+    	goto end;
+	}
+
 	// Set IV to the 16 bytes HMAC at the end of KDNet packet
 	if (!mb->muta_session_set_iv (cj, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
 		goto end;
