@@ -1,4 +1,4 @@
-OBJ_TP=anal_tp.o
+OBJ_TP=tp/trace.o tp/sizefn.o tp/types.o tp/emu.o tp/match.o tp/synth.o tp/plugin.o
 
 STATIC_OBJ+=${OBJ_TP}
 TARGET_TP=anal_tp.${EXT_SO}
