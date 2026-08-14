@@ -2270,10 +2270,14 @@ R_API char *r_bin_attr_tostring(ut64 attr, bool singlechar) {
 	for (i = 0; i < 64; i++) {
 		const ut64 bit = (1ULL << i);
 		if (attr & bit) {
+			const char *bn = attr_bit_name (bit, singlechar);
+			if (R_STR_ISEMPTY (bn)) {
+				continue;
+			}
 			if (!singlechar && !r_strbuf_is_empty (sb)) {
 				r_strbuf_append (sb, " ");
 			}
-			r_strbuf_append (sb, attr_bit_name (bit, singlechar));
+			r_strbuf_append (sb, bn);
 		}
 	}
 	return r_strbuf_drain (sb);
@@ -2288,8 +2292,8 @@ R_API ut64 r_bin_attr_fromstring(const char *s, bool compact) {
 		const char *w = s;
 		while (*w) {
 			for (i = 0; i < 64; i++) {
-				const char *bn = attr_bit_name (i, true);
-				if (bn && *w == *bn) {
+				const char *bn = attr_bit_name (1ULL << i, true);
+				if (R_STR_ISNOTEMPTY (bn) && *w == *bn) {
 					bits |= (1ULL << i);
 					break;
 				}
