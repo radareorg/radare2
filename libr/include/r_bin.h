@@ -1105,6 +1105,7 @@ R_API void r_bin_name_free(RBinName *bn);
 
 R_API char *r_bin_attr_tostring(ut64 attr, bool singlechar);
 R_API ut64 r_bin_attr_fromstring(const char *s, bool compact);
+R_API char *r_bin_attr_update(RBinAttr *attr, const char *s);
 
 /* filter.c */
 typedef struct HtSU_t HtSU;

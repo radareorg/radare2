@@ -46,7 +46,7 @@ static RCoreHelpMessage help_msg_ic = {
 	"ic-", "[klass.method]", "delete method",
 	"ic-", "[klass..field]", "delete field",
 	"ic-", "[klass:base]", "delete inheritance relation",
-	"ic+", "[klass]", "add new class at current seek",
+	"ic+", "[klass]", "add new class at current seek (see ic+?)",
 	"ic+", "[klass.method]", "add new method at current seek",
 	"ic+", "[klass..field] [type]", "add new field at current seek",
 	"ic+", "[klass:base]", "add inheritance relation",
@@ -58,6 +58,29 @@ static RCoreHelpMessage help_msg_ic = {
 	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
 	"icl", "[c]", "Show addresses of class and it methods, without names (iclc = class count)",
 	"ics", "", "Show class symbols in an easy to parse format",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_icplus = {
+	"Usage: ic+", "[klass](.method|..field) ([attr ..])", "Add classes, methods and fields",
+	"ic+", "[klass] ([attr ..])", "add new class at current seek",
+	"ic+", "[klass.method] ([attr ..])", "add new method at current seek",
+	"ic+", "[klass..field] [type] ([attr ..])", "add new field at current seek",
+	"ic+", "[klass:base]", "add inheritance relation",
+	"ic+??", "", "show usage examples",
+	"", "[attr]", "attribute words: getter, static, final, ..",
+	"", "key=value", "numeric or string keys: size=, offset=, ns=, lang=",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_icplus_examples = {
+	"Examples:", "", "",
+	"ic+Foo", " size=32 abstract", "class Foo with 32 byte instances, abstract",
+	"ic+Foo:Bar", "", "class Foo extends Bar",
+	"ic+Foo.get_x", " getter @ 0x1234", "getter method at the given address",
+	"ic+Foo._new", " factory", "factory method (static constructor)",
+	"ic+Foo..count", " int offset=0x10 final", "final int field at struct offset 0x10",
+	"ic+Foo..name", " property static", "static property",
 	NULL
 };
 
@@ -1185,10 +1208,23 @@ static void cmd_ic_sub(RCore *core, const char *input) {
 	free (klass_name);
 }
 
+static void cmd_ic_field_update(RBinField *f, const char *s) {
+	char *type = r_bin_attr_update (&f->attr, s);
+	if (type) {
+		r_bin_name_free (f->type);
+		f->type = r_bin_name_new (type);
+		free (type);
+	}
+}
+
 void cmd_ic_add(RCore *core, const char *input) {
 	const char ch0 = *input;
 	if (ch0 == 0 || ch0 == '?') {
-		r_cons_cmd_help_match (core->cons, help_msg_ic, "ic+", 0, true);
+		if (ch0 == '?' && input[1] == '?') {
+			r_cons_cmd_help (core->cons, help_msg_icplus_examples);
+		} else {
+			r_cons_cmd_help (core->cons, help_msg_icplus);
+		}
 		return;
 	}
 	RList *klasses = r_bin_get_classes (core->bin);
@@ -1221,18 +1257,18 @@ void cmd_ic_add(RCore *core, const char *input) {
 		R_VEC_FOREACH (&klass->fields, f) {
 			const char *fname = r_bin_name_tostring (f->name);
 			if (fname && !strcmp (fname, field_name)) {
+				cmd_ic_field_update (f, tail);
 				free (klass_name);
 				return;
 			}
 		}
 		f = RVecRBinField_emplace_back (&klass->fields);
+		memset (f, 0, sizeof (*f));
 		f->name = r_bin_name_new (field_name);
-		if (R_STR_ISNOTEMPTY (tail)) {
-			f->type = r_bin_name_new (tail);
-		}
 		f->paddr = core->addr;
 		f->vaddr = core->addr;
 		f->attr.kind = R_BIN_FIELD_KIND_FIELD;
+		cmd_ic_field_update (f, tail);
 		free (klass_name);
 		return;
 	}
@@ -1263,8 +1299,10 @@ void cmd_ic_add(RCore *core, const char *input) {
 		free (klass_name);
 		return;
 	}
+	char *rest = NULL;
 	if (method_name == NULL) {
 		klass->addr = core->addr;
+		rest = r_bin_attr_update (&klass->attr, tail);
 	} else {
 		ut64 pa = core->addr; // XXX
 		ut64 va = core->addr;
@@ -1278,13 +1316,19 @@ void cmd_ic_add(RCore *core, const char *input) {
 			}
 		}
 		if (!found) {
-			RBinSymbol *sym = RVecRBinSymbol_emplace_back (&klass->methods);
-			sym->name = r_bin_name_new (method_name);
-			sym->paddr = pa;
-			sym->vaddr = va;
+			m = RVecRBinSymbol_emplace_back (&klass->methods);
+			memset (m, 0, sizeof (*m));
+			m->name = r_bin_name_new (method_name);
+			m->paddr = pa;
+			m->vaddr = va;
 			cmd_ic_invalidate_method_cache (core);
 		}
+		rest = r_bin_attr_update (&m->attr, tail);
 	}
+	if (R_STR_ISNOTEMPTY (rest)) {
+		R_LOG_WARN ("Ignored unknown tokens: %s", rest);
+	}
+	free (rest);
 	free (klass_name);
 }
 

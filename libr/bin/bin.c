@@ -2302,6 +2302,10 @@ R_API ut64 r_bin_attr_fromstring(const char *s, bool compact) {
 		char *a = strdup (s);
 		RList *words = r_str_split_list (a, " ", 0);
 		r_list_foreach (words, iter, word) {
+			if (!strcmp (word, "factory")) { // static constructor
+				bits |= R_BIN_ATTR_CONSTRUCTOR | R_BIN_ATTR_STATIC;
+				continue;
+			}
 			for (i = 0; i < 64; i++) {
 				const char *bn = attr_bit_name (1ULL << i, false);
 				if (bn && !strcmp (bn, word)) {
@@ -2314,6 +2318,55 @@ R_API ut64 r_bin_attr_fromstring(const char *s, bool compact) {
 		free (a);
 	}
 	return bits;
+}
+
+R_API char *r_bin_attr_update(RBinAttr *a, const char *s) {
+	R_RETURN_VAL_IF_FAIL (a, NULL);
+	RStrBuf *rest = r_strbuf_new ("");
+	char *w, *save, *str = strdup (r_str_get (s));
+	for (w = r_str_tok_r (str, " ", &save); w; w = r_str_tok_r (NULL, " ", &save)) {
+		bool handled = false;
+		char *eq = strchr (w, '=');
+		if (eq) {
+			*eq++ = 0;
+			if (!strcmp (w, "size")) {
+				a->size = r_num_get (NULL, eq);
+				handled = true;
+			} else if (!strcmp (w, "offset")) {
+				a->offset = r_num_get (NULL, eq);
+				handled = true;
+			} else if (!strcmp (w, "ns") || !strcmp (w, "lib")) {
+				free (a->ns);
+				a->ns = strdup (eq);
+				handled = true;
+			} else if (!strcmp (w, "lang")) {
+				RBinLanguage lang = r_bin_lang_fromstring (eq);
+				if (lang) {
+					a->lang = lang;
+					handled = true;
+				}
+			}
+			eq[-1] = '=';
+		} else {
+			ut64 attr = r_bin_attr_fromstring (w, false);
+			if (attr) {
+				a->flags |= attr;
+				handled = true;
+			} else if (!strcmp (w, "property")) {
+				a->kind = R_BIN_FIELD_KIND_PROPERTY;
+				handled = true;
+			}
+		}
+		if (!handled) {
+			r_strbuf_appendf (rest, "%s%s", r_strbuf_is_empty (rest)? "": " ", w);
+		}
+	}
+	free (str);
+	if (r_strbuf_is_empty (rest)) {
+		r_strbuf_free (rest);
+		return NULL;
+	}
+	return r_strbuf_drain (rest);
 }
 
 R_API bool r_bin_cmd(RBin *bin, const char *input) {
