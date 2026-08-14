@@ -262,6 +262,9 @@ bool Elf_(has_nobtcfi)(ELFOBJ *eo);
 ut8 *Elf_(grab_regstate)(struct Elf_(obj_t) *bin, int *len);
 RList *Elf_(get_maps)(ELFOBJ *bin);
 ut64 Elf_(ppc64_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr);
+#if R_BIN_ELF64
+void Elf_(plt_ppc64v1_load_text_stubs)(ELFOBJ *eo);
+#endif
 /* plt.c */
 ut64 Elf_(plt_get_import_addr)(ELFOBJ *eo, int sym);
 int Elf_(plt_ppc64_abi)(ELFOBJ *eo);

@@ -154,7 +154,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ppc64 ELFv1 glink stubs are not resolved by decoding (known limitation)
+NAME=ppc64 ELFv1 text stubs come flagged from the bin layer
 FILE=bins/elf/ppc64v1-libz.so
 CMDS=<<EOF
 aa
@@ -162,7 +162,7 @@ fs symbols
 f~plt.~?
 EOF
 EXPECT=<<EOF
-0
+49
 EOF
 RUN
 
@@ -179,6 +179,48 @@ EXPECT=<<EOF2
 0x00025370 11 sym.plt.realloc
 0x00025400 11 sym.plt.memalign
 0x00025550 11 sym.plt.calloc
+EOF2
+RUN
+
+NAME=ppc64 ELFv1 caller inherits args through a plt call stub
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=<<EOF2
+aa
+afs @ sym.crc32
+afs @ sym.compress
+afs @ sym.gzgetc_
+afs @ sym.crc32_z
+EOF2
+EXPECT=<<EOF2
+void sym.crc32 (int64_t arg1, int64_t arg2, int64_t arg3);
+void sym.compress (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
+void sym.gzgetc_ (int64_t arg1);
+void sym.crc32_z (int64_t arg1, int64_t arg2, int64_t arg3);
+EOF2
+RUN
+
+NAME=ppc64 ELFv1 stub args survive a non default base address
+FILE=bins/elf/ppc64v1-libz.so
+ARGS=-B 0x400000
+CMDS=<<EOF2
+aa
+afs @ sym.crc32
+afs @ sym.compress
+EOF2
+EXPECT=<<EOF2
+void sym.crc32 (int64_t arg1, int64_t arg2, int64_t arg3);
+void sym.compress (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
+EOF2
+RUN
+
+NAME=ppc64 ELFv1 call through a text stub names its target
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=<<EOF2
+aa
+pd 1 @ 0x52dc
+EOF2
+EXPECT=<<EOF2
+|           0x000052dc      4bffe7e5       bl sym.plt.crc32_z
 EOF2
 RUN
 

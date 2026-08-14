@@ -230,10 +230,7 @@ ut64 Elf_(plt_ppc32_thunk)(ELFOBJ *eo, ut64 slot_vaddr) {
 }
 
 #define MIPS_PLT_OFFSET 0x20
-#define RISCV_PLT_OFFSET 0x20
-#define LOONGARCH_PLT_OFFSET 0x20
-#define RISCV_PLT_ENTRY_SIZE 0x10
-#define LOONGARCH_PLT_ENTRY_SIZE 0x10
+#define PLT_HDR_SIZE 0x20
 #define X86_PLT_ENTRY_SIZE 0x10
 #define SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
 #define X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
@@ -255,24 +252,22 @@ static ut64 get_got_entry(ELFOBJ *eo, RBinElfReloc *rel) {
 	return (!addr || addr == R_BIN_ELF_WORD_MAX) ? UT64_MAX : addr;
 }
 
-static ut64 get_import_addr_qdsp6(ELFOBJ *eo, RBinElfReloc *rel) {
-	ut64 got_addr = eo->dyn_info.dt_pltgot;
+// classic layout shared by several arches: a lazy got slot points back at the
+// plt, whose header is followed by fixed-stride entries
+static ut64 indexed_plt_entry(ELFOBJ *eo, RBinElfReloc *rel, int skipped_slots, ut64 esize) {
+	const ut64 got_addr = eo->dyn_info.dt_pltgot;
 	if (got_addr == R_BIN_ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
-
-	ut64 plt_addr = get_got_entry (eo, rel);
+	const ut64 plt_addr = get_got_entry (eo, rel);
 	if (plt_addr == UT64_MAX) {
 		return UT64_MAX;
 	}
+	return plt_addr + PLT_HDR_SIZE + COMPUTE_PLTGOT_POSITION (rel, got_addr, skipped_slots) * esize;
+}
 
-	const ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 0x3);
-
-	switch (rel->type) {
-	case R_QDSP6_JUMP_SLOT:
-		return plt_addr + pos * 16 + 32;
-	}
-	return UT64_MAX;
+static ut64 get_import_addr_qdsp6(ELFOBJ *eo, RBinElfReloc *rel) {
+	return (rel->type == R_QDSP6_JUMP_SLOT)? indexed_plt_entry (eo, rel, 3, 16): UT64_MAX;
 }
 
 static ut64 get_import_addr_arm(ELFOBJ *eo, RBinElfReloc *rel) {
@@ -358,29 +353,11 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
 	return UT64_MAX;
 }
 
+// riscv, loongarch and vax share the same 16-byte entries after a 32-byte header
 static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
-	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (got_addr != R_BIN_ELF_ADDR_MAX) {
-		ut64 plt_addr = get_got_entry (bin, rel);
-		if (plt_addr != UT64_MAX) {
-			ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 2);
-			return plt_addr + RISCV_PLT_OFFSET + pos * RISCV_PLT_ENTRY_SIZE;
-		}
-	}
-	return UT64_MAX;
+	return indexed_plt_entry (bin, rel, 2, 16);
 }
 
-static ut64 get_import_addr_loongarch(ELFOBJ *bin, RBinElfReloc *rel) {
-	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (got_addr != R_BIN_ELF_ADDR_MAX) {
-		ut64 plt_addr = get_got_entry (bin, rel);
-		if (plt_addr != UT64_MAX) {
-			ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 2);
-			return plt_addr + LOONGARCH_PLT_OFFSET + pos * LOONGARCH_PLT_ENTRY_SIZE;
-		}
-	}
-	return UT64_MAX;
-}
 static ut64 get_import_addr_sparc(ELFOBJ *eo, RBinElfReloc *rel) {
 	if (rel->type != R_SPARC_JMP_SLOT) {
 		R_LOG_DEBUG ("Unknown sparc reloc type %d", rel->type);
@@ -472,6 +449,158 @@ ut64 Elf_(ppc64_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr) {
 #endif
 	return UT64_MAX;
 }
+
+#if R_BIN_ELF64
+// an ELFv1 call dispatches through a 7-word plt_call stub in .text:
+//   std r2, 40(r1); ld rX, d(r2); mtctr rX; ld r2, d+8(r2);
+//   cmpldi r2, 0; bnectr+; b <glink stub>
+// the trailing branch into a known glink stub names the plt slot it serves
+#define PPC64_STD_R2_40R1 0xf8410028
+#define PPC64_TEXT_STUB_SIZE 28
+
+// reloc index + 1 of the slot a plt_call stub serves, 0 when it is not one;
+// after the std comes an optional addis r11, r2, ha, then ld rX, d(base);
+// mtctr rX; ld r2, d+8(base), ending either in bctr (eager: the slot is
+// toc + disp) or in cmpldi r2, 0; bnectr+; b <glink> (lazy: the branch
+// target names the slot)
+static ut64 ppc64v1_text_stub_reloc(ELFOBJ *eo, const ut8 *w, ut64 vaddr,
+		HtUU *rel_by_glink, HtUU *rel_by_slot, ut64 toc, ut32 *size) {
+	int i = 1;
+	st64 ha = 0;
+	ut32 base = 2;
+	ut32 op = r_read_ble32 (w + 4 * i, eo->endian);
+	if ((op & 0xffff0000) == 0x3d620000) { // addis r11, r2, disp@ha
+		ha = (st64)(st16)op * 0x10000;
+		base = 11;
+		i++;
+		op = r_read_ble32 (w + 4 * i, eo->endian);
+	}
+	if ((op & 0xfc1f0003) != (0xe8000000 | (base << 16))) { // ld rX, d(base)
+		return 0;
+	}
+	const ut32 reg = (op >> 21) & 0x1f;
+	const st32 lo = (st16)(op & 0xfffc);
+	op = r_read_ble32 (w + 4 * ++i, eo->endian);
+	if (reg == 2 || reg == base
+			|| (op & 0xfc1fffff) != 0x7c0903a6 || ((op >> 21) & 0x1f) != reg) { // mtctr rX
+		return 0;
+	}
+	op = r_read_ble32 (w + 4 * ++i, eo->endian);
+	// the code address and the toc it runs with come from one descriptor
+	if ((op & 0xffff0003) != (0xe8400000 | (base << 16)) // ld r2, d+8(base)
+			|| (st32)(st16)(op & 0xfffc) != lo + 8) {
+		return 0;
+	}
+	op = r_read_ble32 (w + 4 * ++i, eo->endian);
+	if (op == 0x4e800420) { // bctr: an eager stub, only the toc names the slot
+		*size = 4 * (i + 1);
+		return toc? ht_uu_find (rel_by_slot, toc + ha + lo, NULL): 0;
+	}
+	if (op != 0x28220000) { // cmpldi r2, 0
+		return 0;
+	}
+	op = r_read_ble32 (w + 4 * ++i, eo->endian);
+	if ((op & 0xff9fffff) != 0x4c820420) { // bnectr+
+		return 0;
+	}
+	op = r_read_ble32 (w + 4 * ++i, eo->endian);
+	if ((op & 0xfc000003) != 0x48000000) { // b <glink>
+		return 0;
+	}
+	*size = 4 * (i + 1);
+	const st32 boff = ((st32)((op & 0x03fffffc) << 6)) >> 6;
+	return ht_uu_find (rel_by_glink, vaddr + 4 * i + boff, NULL);
+}
+
+// name the .text call stubs plt.<target> so calls read bl sym.plt.strlen and
+// the anal name join can recover forwarded arguments through them
+// the stub target is a local symbol or an import, whichever owns the reloc
+static const char *ppc64v1_stub_target(ELFOBJ *eo, RBinElfReloc *rel, const char **bind) {
+	if ((size_t)rel->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[rel->sym]) {
+		RBinSymbol *t = eo->symbols_by_ord[rel->sym];
+		*bind = t->bind;
+		return r_bin_name_tostring2 (t->name, 'o');
+	}
+	if ((size_t)rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym]) {
+		RBinImport *t = eo->imports_by_ord[rel->sym];
+		*bind = t->bind;
+		return r_bin_name_tostring2 (t->name, 'o');
+	}
+	return NULL;
+}
+
+void Elf_(plt_ppc64v1_load_text_stubs)(ELFOBJ *eo) {
+	if (Elf_(plt_ppc64_abi) (eo) != 1) {
+		return;
+	}
+	Elf_(load_symbols_vec) (eo);
+	RBinElfSection *text = Elf_(plt_section_by_name) (eo, ".text");
+	if (!text || text->size < PPC64_TEXT_STUB_SIZE || text->size > 0x2000000) {
+		return;
+	}
+	// each glink stub or plt slot identifies its reloc, and that its target
+	RBinElfSection *got = Elf_(plt_section_by_name) (eo, ".got");
+	const ut64 toc = got? got->rva + 0x8000: 0;
+	HtUU *rel_by_glink = ht_uu_new0 ();
+	HtUU *rel_by_slot = ht_uu_new0 ();
+	if (!rel_by_glink || !rel_by_slot) {
+		ht_uu_free (rel_by_glink);
+		ht_uu_free (rel_by_slot);
+		return;
+	}
+	RBinElfReloc *rel;
+	ut64 nrel = 0;
+	bool any = false;
+	R_VEC_FOREACH (&eo->g_relocs, rel) {
+		nrel++;
+		if (rel->type == R_PPC64_JMP_SLOT && rel->sym > 0) {
+			const ut64 glink = Elf_(ppc64_get_plt_stub_for_slot) (eo, rel->rva);
+			any |= ht_uu_insert (rel_by_slot, rel->rva, nrel);
+			if (glink != UT64_MAX) {
+				ht_uu_insert (rel_by_glink, glink, nrel);
+			}
+		}
+	}
+	ut8 *buf = any? malloc (text->size): NULL;
+	if (!buf || r_buf_read_at (eo->b, text->offset, buf, text->size) != (st64)text->size) {
+		free (buf);
+		ht_uu_free (rel_by_glink);
+		ht_uu_free (rel_by_slot);
+		return;
+	}
+	ut64 i;
+	for (i = 0; i + 32 <= text->size; i += 4) {
+		if (r_read_ble32 (buf + i, eo->endian) != PPC64_STD_R2_40R1) {
+			continue;
+		}
+		const ut64 vaddr = text->rva + i;
+		ut32 stub_size = 0;
+		const ut64 relnum = ppc64v1_text_stub_reloc (eo, buf + i, vaddr,
+			rel_by_glink, rel_by_slot, toc, &stub_size);
+		if (!relnum || !(rel = RVecRBinElfReloc_at (&eo->g_relocs, relnum - 1))) {
+			continue;
+		}
+		const char *tbind = NULL;
+		const char *tname = ppc64v1_stub_target (eo, rel, &tbind);
+		if (R_STR_ISEMPTY (tname)) {
+			continue;
+		}
+		RBinSymbol sym = {0};
+		sym.name = r_bin_name_new_from (r_str_newf ("plt.%s", tname));
+		sym.forwarder = "NONE";
+		sym.bind = tbind? tbind: R_BIN_BIND_LOCAL_STR;
+		sym.type = R_BIN_TYPE_FUNC_STR;
+		sym.attr.size = stub_size;
+		sym.ordinal = rel->sym;
+		sym.vaddr = vaddr;
+		sym.paddr = text->offset + i;
+		RVecRBinSymbol_push_back (&eo->plt_symbols_cache, &sym);
+	}
+	free (buf);
+	ht_uu_free (rel_by_glink);
+	ht_uu_free (rel_by_slot);
+}
+#endif
 
 static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 #if R_BIN_ELF64
@@ -647,7 +776,7 @@ ut64 Elf_(plt_get_import_addr)(ELFOBJ *eo, int sym) {
 	case EM_IAMCU:
 		return get_import_addr_x86 (eo, rel);
 	case EM_LOONGARCH:
-		return get_import_addr_loongarch (eo, rel);
+		return get_import_addr_riscv (eo, rel);
 	case EM_SBPF:
 		// sBPF relocations are handled in patch_reloc, return the offset for imports
 		return rel->offset;
