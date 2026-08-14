@@ -97,10 +97,11 @@ static bool symbol_has_value(RBinSymbol *sym) {
 	return sym && !(sym->attr & R_BIN_ATTR_SYNTHETIC) && (entry || bin_name_has_value (sym->name));
 }
 
-static void filter_unnamed_symbols_vec(RVecRBinSymbol *symbols) {
+static void filter_unnamed_symbols_vec(RBinFile *bf, RVecRBinSymbol *symbols) {
 	size_t i = 0;
 	while (i < RVecRBinSymbol_length (symbols)) {
 		RBinSymbol *sym = RVecRBinSymbol_at (symbols, i);
+		r_bin_register_symbol_language (bf, sym);
 		if (symbol_has_value (sym)) {
 			i++;
 		} else {
@@ -159,10 +160,13 @@ static void sync_class_methods_to_symbols_vec(RBinObject *bo) {
 	ht_up_free (seen);
 }
 
-static void filter_unnamed_classes(RList *classes) {
+static void filter_unnamed_classes(RBinFile *bf, RList *classes) {
 	RListIter *iter, *tmp;
 	RBinClass *klass;
 	r_list_foreach_safe (classes, iter, tmp, klass) {
+		if (klass && klass->lang != R_BIN_LANG_NONE) {
+			r_bin_file_add_language (bf, klass->lang);
+		}
 		if (!klass || (klass->attr & R_BIN_ATTR_SYNTHETIC) || !bin_name_has_value (klass->name)) {
 			r_list_delete (classes, iter);
 			continue;
@@ -170,6 +174,7 @@ static void filter_unnamed_classes(RList *classes) {
 		size_t i = 0;
 		while (i < RVecRBinSymbol_length (&klass->methods)) {
 			RBinSymbol *method = RVecRBinSymbol_at (&klass->methods, i);
+			r_bin_register_symbol_language (bf, method);
 			if (!symbol_has_value (method)) {
 				RVecRBinSymbol_remove (&klass->methods, i);
 			} else {
@@ -452,6 +457,9 @@ static bool filter_classes(RBinFile *bf, RList *list) {
 	RBinSymbol *sym;
 	const bool names_only = classes_names_only (bf);
 	r_list_foreach (list, iter, cls) {
+		if (cls->lang != R_BIN_LANG_NONE) {
+			r_bin_file_add_language (bf, cls->lang);
+		}
 		const char *kname = r_bin_name_tostring (cls->name);
 		char *fname = r_bin_filter_name (bf, db, cls->index, kname);
 		if (R_STR_ISEMPTY (fname)) {
@@ -569,7 +577,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		p->symbols_vec (bf);
 		import_cache_cleanup (bo);
 		if (!bin->options.load_unnamed) {
-			filter_unnamed_symbols_vec (&bo->symbols_vec);
+			filter_unnamed_symbols_vec (bf, &bo->symbols_vec);
 		}
 		if (bin->filter && bin->options.load_unnamed) {
 			RBinSymbol *sym;
@@ -631,7 +639,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			classes_drop_details (bo->classes);
 		}
 		if (!bin->options.load_unnamed) {
-			filter_unnamed_classes (bo->classes);
+			filter_unnamed_classes (bf, bo->classes);
 			r_bin_object_rebuild_classes_ht (bo);
 		}
 		if (bin->filter && bin->options.load_unnamed) {
@@ -704,7 +712,10 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		}
 	}
 	if (bo->info && bin->filter_rules & (R_BIN_REQ_INFO | R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
-		bo->langs = isSwift? R_VPACK1 (R_BIN_LANG_SWIFT): r_bin_load_languages (bf);
+		if (isSwift) {
+			r_bin_file_add_language (bf, R_BIN_LANG_SWIFT);
+		}
+		bo->langs = r_bin_load_languages (bf);
 	}
 	// trim doubling-growth slack from per-class vecs
 	if (bo->classes) {

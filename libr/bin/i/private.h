@@ -135,6 +135,8 @@ R_IPI bool r_bin_name_is_unnamed(const char *name);
 
 R_IPI const char *r_bin_lang_tostring(RBinLanguage lang);
 R_IPI RBinLanguage r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym);
+R_IPI RBinLanguage r_bin_lang_from_symbol_name(const char *sym);
+R_IPI void r_bin_register_symbol_language(RBinFile *binfile, RBinSymbol *symbol);
 R_IPI bool r_bin_lang_rustv0(const char *sym);
 R_IPI bool r_bin_lang_swift(RBinFile *binfile);
 

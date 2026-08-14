@@ -1467,6 +1467,9 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 
 	/* check if it's Swift */
 	MetaSections ms = metadata_sections_init (bf);
+	if (ms.clslist.have || ms.catlist.have) {
+		r_bin_file_add_language (bf, R_BIN_LANG_OBJC);
+	}
 	// R_DUMP (&ms);
 
 	RList /*<RBinClass>*/ *ret = MACH0_(parse_categories) (bf, &ms, relocs, oi);

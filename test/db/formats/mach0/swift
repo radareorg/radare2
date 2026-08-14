@@ -4218,6 +4218,7 @@ EXPECT=<<EOF
         "name": "AsyncContext*)",
         "flag": "class.task_future_wait_resume_adapter_swift",
         "rawname": "__ZL31task_future_wait_resume_adapterPN5swift12AsyncContextE",
+        "lang": "c++",
         "addr": 4295110068
       }
     ]
@@ -4231,6 +4232,7 @@ EXPECT=<<EOF
         "name": "AsyncContext*)",
         "flag": "class.task_wait_throwing_resume_adapter_swift",
         "rawname": "__ZL33task_wait_throwing_resume_adapterPN5swift12AsyncContextE",
+        "lang": "c++",
         "addr": 4295110340
       }
     ]
@@ -4244,12 +4246,14 @@ EXPECT=<<EOF
         "name": "{lambda()#1}::operator()() const::{lambda(void*)#1}::__invoke(void*)",
         "flag": "class.swift_voucher_needs_adopt_voucher_s_",
         "rawname": "__ZZZL25swift_voucher_needs_adoptP9voucher_sENKUlvE_clEvENUlPvE_8__invokeES2_",
+        "lang": "c++",
         "addr": 4295111804
       },
       {
         "name": "{lambda()#1}::operator()() const::TheLazy",
         "flag": "method.swift_voucher_needs_adopt_voucher_s_.lambda__1::operator_____const::TheLazy",
         "rawname": "__ZZZL25swift_voucher_needs_adoptP9voucher_sENKUlvE_clEvE7TheLazy",
+        "lang": "c++",
         "addr": 4295181080
       }
     ]

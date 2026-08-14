@@ -68,45 +68,37 @@ R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) 
 }
 
 R_API RBinLanguage r_bin_demangle_type(const char *str) {
+	RBinLanguage type = r_bin_lang_fromstring (str);
+	switch (type) {
+	case R_BIN_LANG_JAVA:
+	case R_BIN_LANG_CXX:
+	case R_BIN_LANG_OBJC:
+	case R_BIN_LANG_SWIFT:
+	case R_BIN_LANG_DLANG:
+	case R_BIN_LANG_MSVC:
+	case R_BIN_LANG_RUST:
+	case R_BIN_LANG_KOTLIN:
+	case R_BIN_LANG_PASCAL:
+	case R_BIN_LANG_DART:
+	case R_BIN_LANG_GROOVY:
+	case R_BIN_LANG_CIL:
+	case R_BIN_LANG_IBMXL:
+		return type;
+	default:
+		break;
+	}
 	if (R_STR_ISNOTEMPTY (str)) {
-		if (!strcmp (str, "swift")) {
-			return R_BIN_LANG_SWIFT;
-		}
-		if (!strcmp (str, "java")) {
-			return R_BIN_LANG_JAVA;
-		}
-		if (!strcmp (str, "kotlin")) {
-			return R_BIN_LANG_KOTLIN;
-		}
-		if (!strcmp (str, "groovy")) {
-			return R_BIN_LANG_GROOVY;
-		}
-		if (!strcmp (str, "dart")) {
-			return R_BIN_LANG_DART;
-		}
-		if (!strcmp (str, "objc")) {
-			return R_BIN_LANG_OBJC;
-		}
-		if (!strcmp (str, "pascal") || !strcmp (str, "freepascal")) {
+		if (!strcmp (str, "freepascal")) {
 			return R_BIN_LANG_PASCAL;
 		}
-		if (!strcmp (str, "cxx") || !strcmp (str, "c++")) {
+		if (!strcmp (str, "cxx")) {
 			return R_BIN_LANG_CXX;
 		}
-		if (!strcmp (str, "ibmxl") || !strcmp (str, "xlc") || !strcmp (str, "xlc++")) {
+		if (!strcmp (str, "xlc") || !strcmp (str, "xlc++")) {
 			return R_BIN_LANG_IBMXL;
 		}
 		if (!strcmp (str, "dlang")) {
 			return R_BIN_LANG_DLANG;
-		}
-		if (!strcmp (str, "msvc")) {
-			return R_BIN_LANG_MSVC;
-		}
-		if (!strcmp (str, "rust")) {
-			return R_BIN_LANG_RUST;
-		}
-		if (!strcmp (str, "cil")) {
-			return R_BIN_LANG_CIL;
 		}
 	}
 	return R_BIN_LANG_NONE;
@@ -221,6 +213,9 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 		}
 	} else {
 		demangled = demangle_without_bin (bf, type, str, vaddr);
+	}
+	if (demangled && bf && bf->bo && type > R_BIN_LANG_NONE && type < R_BIN_LANG_LAST) {
+		r_bin_file_add_language (bf, type);
 	}
 	if (libs && demangled && lib) {
 		char *d = r_str_newf ("%s_%s", lib, demangled);

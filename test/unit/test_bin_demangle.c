@@ -8,6 +8,9 @@ static char *unit_demangle(RBinFile *bf, const char *symbol, ut64 vaddr) {
 }
 
 static bool test_demangle_registry(void) {
+	mu_assert_eq (r_bin_demangle_type ("java"), R_BIN_LANG_JAVA, "Java selects the Java demangler");
+	mu_assert_eq (r_bin_demangle_type ("dalvik"), R_BIN_LANG_NONE, "Dalvik is a runtime, not a demangler");
+
 	RBin *bin = r_bin_new ();
 	mu_assert_notnull (bin, "RBin allocation");
 	mu_assert_true (r_libstore_load (bin->libstore), "load static RBin plugins");
@@ -31,10 +34,15 @@ static bool test_demangle_registry(void) {
 	mu_assert_ptreq (r_bin_demangle_plugin_find (bin, "unit"), r_bin_demangle_plugin_find (bin, "testalias"), "custom alias lookup");
 
 	RBinFile bf = { 0 };
+	RBinObject bo = { 0 };
 	bf.rbin = bin;
+	bf.bo = &bo;
 	char *res = r_bin_demangle (&bf, "test", "symbol", 0, false);
 	mu_assert_streq (res, "symbol", "dispatch an explicitly named demangler");
 	free (res);
+	res = r_bin_demangle (&bf, "__mh_execute_header", "__mh_execute_header", 0, false);
+	mu_assert_null (res, "reject a C symbol that only resembles C++ mangling");
+	mu_assert_false (R_VPACK_HAS (bo.langs, R_BIN_LANG_CXX), "failed demangling does not register a language");
 
 	RBinDemanglePlugin duplicate_alias = {
 		.meta.name = "duplicate",
@@ -58,6 +66,7 @@ static bool test_demangle_registry(void) {
 	mu_assert_false (r_bin_demangle_plugin_add (bin, &duplicate_type), "reject duplicate language providers");
 	res = r_bin_demangle (&bf, "cil", "typed-symbol", 0, false);
 	mu_assert_streq (res, "typed-symbol", "direct language table dispatch");
+	mu_assert_true (R_VPACK_HAS (bo.langs, R_BIN_LANG_CIL), "demangling registers the binary language");
 	free (res);
 
 	RBinDemanglePlugin invalid_type = {

@@ -980,6 +980,7 @@ R_API bool r_bin_is_static(RBin *bin); // R2_590: deprecate
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr);
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr);
 
+R_API void r_bin_file_add_language(RBinFile *binfile, RBinLanguage lang);
 R_API RBinLanguages r_bin_load_languages(RBinFile *binfile);
 R_API RBinFile *r_bin_cur(RBin *bin);
 R_API RBinObject *r_bin_cur_object(RBin *bin);
