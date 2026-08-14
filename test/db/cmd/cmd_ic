@@ -1389,3 +1389,22 @@ int
 ["getter"]
 EOF
 RUN
+
+NAME=ic+ default language
+FILE=malloc://512
+CMDS=<<EOF
+e bin.lang=dart
+ic+Widget
+ic+Widget.build
+ic+Widget..count int
+ic+Widget.build lang=java
+icj~{0.lang}
+icj~{0.methods[0].lang}
+icj~{0.fields[0].lang}
+EOF
+EXPECT=<<EOF
+dart
+java
+dart
+EOF
+RUN
