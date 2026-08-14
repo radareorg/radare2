@@ -188,15 +188,15 @@ R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *o
 				break;
 			}
 		}
-		if (ip >= ip_end) {
+		if (ip >= ip_end - 1) {
 			break;
 		}
 		LOAD_16_TO (ip, tmp);
-		s = p - tmp;
-		ip += 2;
-		if (s < 0) {
+		if (p < tmp) {
 			return -1;
 		}
+		s = p - tmp;
+		ip += 2;
 		len = (token & 15) + MIN_MATCH;
 		if (len == (15 + MIN_MATCH)) {
 			for (; ip < ip_end;) {
