@@ -45,6 +45,7 @@ static void bsymbol_fini(RBinSymbol *sym) {
 		free (sym->libname);
 		free (sym->classname);
 		free (sym->rtype);
+		free (sym->attr.ns);
 	}
 }
 
@@ -54,6 +55,7 @@ static void bfield_fini(RBinField *field) {
 		bn_free (field->type);
 		free (field->comment);
 		free (field->format);
+		free (field->attr.ns);
 	}
 }
 
@@ -786,18 +788,18 @@ static void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj) {
 	RBinClass *klass = r_list_get_n (classes, 0);
 	// pj dict already opened
 	if (klass) {
-		pj_ki (pj, "access_flags", klass->attr);
-		pj_kb (pj, "is_public", ((klass->attr & R_BIN_JAVA_CLASS_ACC_PUBLIC) != 0));
-		pj_kb (pj, "is_final", ((klass->attr & R_BIN_JAVA_CLASS_ACC_FINAL) != 0));
-		pj_kb (pj, "is_super", ((klass->attr & R_BIN_JAVA_CLASS_ACC_SUPER) != 0));
-		pj_kb (pj, "is_interface", ((klass->attr & R_BIN_JAVA_CLASS_ACC_INTERFACE) != 0));
-		pj_kb (pj, "is_abstract", ((klass->attr & R_BIN_JAVA_CLASS_ACC_ABSTRACT) != 0));
-		pj_kb (pj, "is_synthetic", ((klass->attr & R_BIN_JAVA_CLASS_ACC_SYNTHETIC) != 0));
-		pj_kb (pj, "is_annotation", ((klass->attr & R_BIN_JAVA_CLASS_ACC_ANNOTATION) != 0));
-		pj_kb (pj, "is_enum", ((klass->attr & R_BIN_JAVA_CLASS_ACC_ENUM) != 0));
-		pj_kb (pj, "is_module", ((klass->attr & R_BIN_JAVA_CLASS_ACC_MODULE) != 0));
-		pj_kb (pj, "is_record", ((klass->attr & R_BIN_JAVA_CLASS_ACC_RECORD) != 0));
-		pj_kb (pj, "is_hidden", ((klass->attr & R_BIN_JAVA_CLASS_ACC_HIDDEN) != 0));
+		pj_ki (pj, "access_flags", klass->attr.flags);
+		pj_kb (pj, "is_public", ((klass->attr.flags & R_BIN_JAVA_CLASS_ACC_PUBLIC) != 0));
+		pj_kb (pj, "is_final", ((klass->attr.flags & R_BIN_JAVA_CLASS_ACC_FINAL) != 0));
+		pj_kb (pj, "is_super", ((klass->attr.flags & R_BIN_JAVA_CLASS_ACC_SUPER) != 0));
+		pj_kb (pj, "is_interface", ((klass->attr.flags & R_BIN_JAVA_CLASS_ACC_INTERFACE) != 0));
+		pj_kb (pj, "is_abstract", ((klass->attr.flags & R_BIN_JAVA_CLASS_ACC_ABSTRACT) != 0));
+		pj_kb (pj, "is_synthetic", ((klass->attr.flags & R_BIN_JAVA_CLASS_ACC_SYNTHETIC) != 0));
+		pj_kb (pj, "is_annotation", ((klass->attr.flags & R_BIN_JAVA_CLASS_ACC_ANNOTATION) != 0));
+		pj_kb (pj, "is_enum", ((klass->attr.flags & R_BIN_JAVA_CLASS_ACC_ENUM) != 0));
+		pj_kb (pj, "is_module", ((klass->attr.flags & R_BIN_JAVA_CLASS_ACC_MODULE) != 0));
+		pj_kb (pj, "is_record", ((klass->attr.flags & R_BIN_JAVA_CLASS_ACC_RECORD) != 0));
+		pj_kb (pj, "is_hidden", ((klass->attr.flags & R_BIN_JAVA_CLASS_ACC_HIDDEN) != 0));
 		// Check if sealed by looking for PermittedSubclasses attribute
 		bool is_sealed = false;
 		RBinJavaAttrInfo *attr;
@@ -831,7 +833,7 @@ static void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj) {
 				continue;
 			}
 			// enumerate all interface classes and append them to the interfaces
-			if ((klassv->attr & R_BIN_ATTR_INTERFACE) != 0) {
+			if ((klassv->attr.flags & R_BIN_ATTR_INTERFACE) != 0) {
 				pj_s (pj, bn_tostring (klassv->name));
 			}
 		}
@@ -2489,7 +2491,7 @@ static void r_bin_java_fill_rbinfield_from_field(RBinField *field, RBinJavaField
 	field->name = R_NEW0 (RBinName);
 	field->name->name = strdup (fm_type->name);
 	field->paddr = fm_type->file_offset + baddr;
-	field->attr = fieldattr_j2r (fm_type->flags);
+	field->attr.flags = fieldattr_j2r (fm_type->flags);
 }
 
 static RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type, ut64 baddr) {
@@ -2503,7 +2505,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_typ
 		sym->type = R_BIN_TYPE_FUNC_STR;
 		sym->paddr = r_bin_java_get_method_code_offset (fm_type);
 		sym->vaddr = r_bin_java_get_method_code_offset (fm_type) + baddr;
-		sym->size = r_bin_java_get_method_code_size (fm_type);
+		sym->attr.size = r_bin_java_get_method_code_size (fm_type);
 		ut16 max_locals = r_bin_java_get_method_max_locals (fm_type);
 		ut16 cc_args = 0;
 		ut16 rets = 0;
@@ -2521,7 +2523,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_typ
 		sym->type = "FIELD";
 		sym->paddr = fm_type->file_offset; // r_bin_java_get_method_code_offset (fm_type);
 		sym->vaddr = fm_type->file_offset + baddr;
-		sym->size = fm_type->size;
+		sym->attr.size = fm_type->size;
 	}
 	if (r_bin_java_is_fm_type_protected (fm_type)) {
 		sym->bind = R_BIN_BIND_LOCAL_STR;
@@ -2537,7 +2539,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_typ
 		sym->classname = strdup ("UNKNOWN"); // dupped names?
 	}
 	sym->ordinal = fm_type->metas->ord;
-	sym->attr = fieldattr_j2r (fm_type->flags);
+	sym->attr.flags = fieldattr_j2r (fm_type->flags);
 	return sym;
 }
 
@@ -2570,8 +2572,8 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField 
 	sym->paddr = fm_type->file_offset; // r_bin_java_get_method_code_offset (fm_type);
 	sym->vaddr = fm_type->file_offset + baddr;
 	sym->ordinal = fm_type->metas->ord;
-	sym->size = fm_type->size;
-	sym->attr = fieldattr_j2r (fm_type->flags);
+	sym->attr.size = fm_type->size;
+	sym->attr.flags = fieldattr_j2r (fm_type->flags);
 	return sym;
 }
 
@@ -2606,7 +2608,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_ref(RBinJavaObj *bin, RBinJ
 	sym->paddr = obj->file_offset + baddr;
 	sym->vaddr = obj->file_offset + baddr;
 	sym->ordinal = obj->metas->ord;
-	sym->size = 0;
+	sym->attr.size = 0;
 	return sym;
 }
 
@@ -2702,7 +2704,7 @@ static void r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx, RVec
 		} else {
 			RBinSymbol *sym = RVecRBinSymbol_emplace_back (out);
 			sym->name = bn_new (field->name);
-			sym->lang = R_BIN_LANG_JAVA;
+			sym->attr.lang = R_BIN_LANG_JAVA;
 			sym->paddr = r_bin_java_get_method_code_offset (field);
 			sym->vaddr = sym->paddr;
 		}
@@ -2776,6 +2778,7 @@ static void bclass_free(void *p) {
 		bclass_fields_fini (&k->fields);
 		bn_free (k->name);
 		r_list_free (k->super);
+		free (k->attr.ns);
 		free (k);
 	}
 }
@@ -2790,7 +2793,7 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 	RBinClass *k = R_NEW0 (RBinClass);
 	RVecRBinSymbol_init (&k->methods);
 	RVecRBinField_init (&k->fields);
-	k->attr = bin->cf2.access_flags;
+	k->attr.flags = bin->cf2.access_flags;
 	k->origin = R_BIN_CLASS_ORIGIN_BIN;
 #if 0
 	if (bin->cf2.flags_str) {
@@ -2811,7 +2814,7 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 	}
 	free (n);
 	k->index = (idx++);
-	k->lang = R_BIN_LANG_JAVA;
+	k->attr.lang = R_BIN_LANG_JAVA;
 	r_list_append (classes, k);
 	r_list_foreach (bin->cp_list, iter, cp_obj) {
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_CLASS && (this_class_cp_obj != cp_obj && is_class_interface (bin, cp_obj))) {

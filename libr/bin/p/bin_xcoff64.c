@@ -52,7 +52,7 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_xcoff64_obj *bin, ut32 idx
 		break;
 	}
 
-	ptr->size = 4;
+	ptr->attr.size = 4;
 	ptr->ordinal = 0;
 	return true;
 }

@@ -85,7 +85,7 @@ static void gb_addsym(RVecRBinSymbol *ret, const char *name, ut64 addr, int ordi
 	RBinSymbol *sym = RVecRBinSymbol_emplace_back (ret);
 	sym->name = r_bin_name_new (name);
 	sym->paddr = sym->vaddr = addr;
-	sym->size = 1;
+	sym->attr.size = 1;
 	sym->ordinal = ordinal;
 }
 

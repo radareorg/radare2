@@ -1090,7 +1090,7 @@ static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RLis
 	RBinSymbol *symbol = RVecRBinSymbol_emplace_back (symbols);
 	symbol->name = r_bin_name_new (prefix);
 	symbol->type = R_BIN_TYPE_FUNC_STR;
-	symbol->size = size;
+	symbol->attr.size = size;
 	symbol->vaddr = cobj->start_offset;
 	symbol->paddr = cobj->start_offset;
 	symbol->ordinal = ctx->scount++;

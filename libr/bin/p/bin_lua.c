@@ -116,7 +116,7 @@ static void addSymbol(RVecRBinSymbol *vec, char *name, ut64 addr, ut32 size, con
 		return;
 	}
 	sym->vaddr = sym->paddr = addr;
-	sym->size = size;
+	sym->attr.size = size;
 	sym->type = type;
 }
 

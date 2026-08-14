@@ -267,12 +267,12 @@ static inline bool symbols_add_code(RBinWasmObj *bin, RVecRBinSymbol *vec, bool 
 		RBinSymbol *sym = RVecRBinSymbol_emplace_back (vec);
 		sym->forwarder = "NONE";
 		sym->type = R_BIN_TYPE_FUNC_STR;
-		sym->size = func->len;
+		sym->attr.size = func->len;
 		sym->vaddr = (ut64)func->code;
 		sym->paddr = (ut64)func->code;
 		sym->ordinal = sym_ordinal;
 		sym->bind = "NONE";
-		sym->attr = R_BIN_ATTR_STATIC;
+		sym->attr.flags = R_BIN_ATTR_STATIC;
 		RBinWasmFunctionEntry *fe = vector_at (funcs, code_idx);
 		RBinWasmTypeEntry *te = fe? vector_at (types, fe->typeindex): NULL;
 		if (te) {
@@ -290,23 +290,23 @@ static inline bool symbols_add_code(RBinWasmObj *bin, RVecRBinSymbol *vec, bool 
 static void sym_set_content_type(RBinSymbol *sym, int t) {
 	switch (t) {
 	case R_BIN_WASM_VALUETYPE_i32:
-		sym->size = 4;
+		sym->attr.size = 4;
 		sym->type = "i32";
 		break;
 	case R_BIN_WASM_VALUETYPE_f32:
-		sym->size = 4;
+		sym->attr.size = 4;
 		sym->type = "u32";
 		break;
 	case R_BIN_WASM_VALUETYPE_i64:
-		sym->size = 8;
+		sym->attr.size = 8;
 		sym->type = "i64";
 		break;
 	case R_BIN_WASM_VALUETYPE_f64:
-		sym->size = 8;
+		sym->attr.size = 8;
 		sym->type = "f64";
 		break;
 	case R_BIN_WASM_VALUETYPE_v128:
-		sym->size = 16;
+		sym->attr.size = 16;
 		sym->type = "v128";
 		break;
 	case R_BIN_WASM_VALUETYPE_REF:

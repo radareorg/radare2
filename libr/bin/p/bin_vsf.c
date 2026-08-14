@@ -371,7 +371,7 @@ static bool symbols_vec(RBinFile *bf) {
 		RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
 		ptr->name = r_bin_name_new_from (r_str_ndup (_symbols[i].symbol_name, R_BIN_SIZEOF_STRINGS));
 		ptr->vaddr = _symbols[i].address;
-		ptr->size = 2;
+		ptr->attr.size = 2;
 		ptr->paddr = vsf_obj->mem + offset + _symbols[i].address;
 		ptr->ordinal = i;
 	}

@@ -5343,7 +5343,7 @@ static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 	sym->is_imported = symbol->is_imported;
 	sym->paddr = paddr;
 	sym->vaddr = vaddr;
-	sym->size = symbol->size;
+	sym->attr.size = symbol->size;
 	sym->ordinal = symbol->ordinal;
 	if (eo->ehdr.e_machine == EM_ARM) {
 		_set_arm_thumb_bits (eo, sym);

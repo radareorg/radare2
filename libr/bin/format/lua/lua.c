@@ -297,7 +297,7 @@ static ut64 add_symbol(RLuaHeader *lh, RBuffer *buf, char *name, ut64 start, con
 		sym->name = r_bin_name_new (name);
 		if (sym->name) {
 			sym->vaddr = sym->paddr = start;
-			sym->size = end - start;
+			sym->attr.size = end - start;
 			sym->type = type;
 			return end;
 		}

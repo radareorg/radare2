@@ -50,7 +50,7 @@ static void walkSymbols(RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab,
 		RBinSymbol *sym = RVecRBinSymbol_emplace_back (&bin->methods_list);
 		sym->type = R_BIN_TYPE_FUNC_STR;
 		sym->bind = "NONE";
-		sym->size = size;
+		sym->attr.size = size;
 
 		if (addr == 0) {
 			import ++;

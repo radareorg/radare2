@@ -126,7 +126,7 @@ static void add_symbol(RList *ret, const char *name, ut64 addr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
 	ptr->name = r_bin_name_new (name);
 	ptr->paddr = ptr->vaddr = addr;
-	ptr->size = 0;
+	ptr->attr.size = 0;
 	ptr->ordinal = 0;
 	r_list_append (ret, ptr);
 }

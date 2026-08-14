@@ -3488,7 +3488,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 				memset (sym, 0, sizeof (RBinSymbol));
 				sym->vaddr = vaddr;
 				sym->paddr = addr_to_offset (mo, sym->vaddr) + obj->boffset;
-				sym->size = 0; /* TODO: Is it anywhere? */
+				sym->attr.size = 0; /* TODO: Is it anywhere? */
 				sym->bits = nl->n_desc & N_ARM_THUMB_DEF? 16: bits;
 				sym->is_imported = false;
 				sym->type = nl->n_type & N_EXT? "EXT": "LOCAL";
@@ -3532,7 +3532,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 			j++;
 			RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
 			memset (sym, 0, sizeof (RBinSymbol));
-			sym->lang = R_BIN_LANG_C;
+			sym->attr.lang = R_BIN_LANG_C;
 			sym->vaddr = symbol.addr;
 			sym->paddr = symbol.offset + obj->boffset;
 			if (symbol.name) {
@@ -3641,7 +3641,7 @@ static bool parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo
 		memset (sym, 0, sizeof (RBinSymbol));
 		sym->vaddr = mo->baddr + address;
 		sym->paddr = address + obj->boffset;
-		sym->size = 0;
+		sym->attr.size = 0;
 		char *n = r_str_newf ("func.%08" PFMT64x, sym->vaddr);
 		sym->name = r_bin_name_new (n);
 		free (n);

@@ -156,7 +156,7 @@ static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 	if (!m || !m->arg_prefix) {
 		return NULL;
 	}
-	const bool instance = !(m->attr & R_BIN_ATTR_STATIC);
+	const bool instance = !(m->attr.flags & R_BIN_ATTR_STATIC);
 	RStrBuf *sb = r_strbuf_new ("dyncc:");
 	if (!sb) {
 		return NULL;

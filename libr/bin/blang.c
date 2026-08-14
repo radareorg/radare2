@@ -158,10 +158,10 @@ R_API void r_bin_file_add_language(RBinFile *bf, RBinLanguage lang) {
 
 R_IPI void r_bin_register_symbol_language(RBinFile *bf, RBinSymbol *sym) {
 	R_RETURN_IF_FAIL (sym);
-	RBinLanguage lang = sym->lang;
+	RBinLanguage lang = sym->attr.lang;
 	if (lang == R_BIN_LANG_NONE && sym->name) {
 		lang = r_bin_lang_from_symbol_name (r_bin_name_tostring2 (sym->name, 'o'));
-		sym->lang = lang;
+		sym->attr.lang = lang;
 	}
 	if (bf && bf->bo && lang != R_BIN_LANG_NONE) {
 		r_bin_file_add_language (bf, lang);

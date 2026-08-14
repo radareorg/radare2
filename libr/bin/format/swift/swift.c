@@ -285,11 +285,11 @@ static void swift_parse_fields(RBinSwiftLoader *ld, RBinClass *klass, ut64 fd, b
 		free (fname);
 		free (field_name);
 		field->vaddr = rec;
-		field->kind = R_BIN_FIELD_KIND_PROPERTY;
+		field->attr.kind = R_BIN_FIELD_KIND_PROPERTY;
 		if (is_enum) {
-			field->attr = R_BIN_ATTR_ENUM;
+			field->attr.flags = R_BIN_ATTR_ENUM;
 		} else if (!(rflags & 2)) {
-			field->attr = R_BIN_ATTR_CONST; // let, not var
+			field->attr.flags = R_BIN_ATTR_CONST; // let, not var
 		}
 	}
 }
@@ -322,7 +322,7 @@ static void swift_parse_vtable(RBinSwiftLoader *ld, RBinClass *klass, ut64 vt, c
 			ut64 mattr = 0;
 			if (prefix && r_str_startswith (rn, "$s") && r_str_startswith (rn + 2, prefix)) {
 				dname = r_bin_demangle_swift_member (prefix, rn + 2 + strlen (prefix), &mattr);
-				sym->attr |= mattr;
+				sym->attr.flags |= mattr;
 			}
 			if (!dname) {
 				dname = r_bin_demangle (ld->bf, "swift", rawname, 0, false);
@@ -338,17 +338,17 @@ static void swift_parse_vtable(RBinSwiftLoader *ld, RBinClass *klass, ut64 vt, c
 			free (mname);
 		}
 		switch (SWIFT_MDF_KIND (mflags)) {
-		case 1: sym->attr |= R_BIN_ATTR_CONSTRUCTOR; break;
-		case 2: sym->attr |= R_BIN_ATTR_GETTER; break;
-		case 3: sym->attr |= R_BIN_ATTR_SETTER; break;
+		case 1: sym->attr.flags |= R_BIN_ATTR_CONSTRUCTOR; break;
+		case 2: sym->attr.flags |= R_BIN_ATTR_GETTER; break;
+		case 3: sym->attr.flags |= R_BIN_ATTR_SETTER; break;
 		}
 		if (!(mflags & SWIFT_MDF_INSTANCE)) {
-			sym->attr |= R_BIN_ATTR_STATIC;
+			sym->attr.flags |= R_BIN_ATTR_STATIC;
 		}
 		if (mflags & SWIFT_MDF_ASYNC) {
-			sym->attr |= R_BIN_ATTR_ASYNC;
+			sym->attr.flags |= R_BIN_ATTR_ASYNC;
 		}
-		sym->lang = R_BIN_LANG_SWIFT;
+		sym->attr.lang = R_BIN_LANG_SWIFT;
 		RVecRBinSymbol_push_back (&klass->methods, sym);
 		free (sym);
 	}
@@ -370,10 +370,10 @@ static void swift_parse_type(RBinSwiftLoader *ld, RList *list, SwiftType st) {
 	klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 	switch (st.kind) {
 	case SWIFT_CDK_ENUM:
-		klass->attr |= R_BIN_ATTR_ENUM;
+		klass->attr.flags |= R_BIN_ATTR_ENUM;
 		break;
 	case SWIFT_CDK_STRUCT:
-		klass->attr |= R_BIN_ATTR_STRUCT;
+		klass->attr.flags |= R_BIN_ATTR_STRUCT;
 		break;
 	}
 	if (st.super_addr) {
@@ -385,7 +385,7 @@ static void swift_parse_type(RBinSwiftLoader *ld, RList *list, SwiftType st) {
 		free (sname);
 	}
 	klass->addr = st.addr;
-	klass->lang = R_BIN_LANG_SWIFT;
+	klass->attr.lang = R_BIN_LANG_SWIFT;
 	klass->index = r_list_length (bf->bo->classes) + r_list_length (list);
 	r_list_append (list, klass);
 	char *mangled = swift_context_mangled (ld, st.addr);
@@ -423,8 +423,8 @@ static void swift_parse_protocols(RBinSwiftLoader *ld, RList *list, ut64 va, ut6
 			continue;
 		}
 		RBinClass *klass = r_bin_class_new (qname, NULL, false);
-		klass->attr |= R_BIN_ATTR_INTERFACE;
-		klass->lang = R_BIN_LANG_SWIFT;
+		klass->attr.flags |= R_BIN_ATTR_INTERFACE;
+		klass->attr.lang = R_BIN_LANG_SWIFT;
 		klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 		klass->addr = pd;
 		const st32 atrel = swift_s32 (ld, pd + 20);
@@ -438,8 +438,8 @@ static void swift_parse_protocols(RBinSwiftLoader *ld, RList *list, ut64 va, ut6
 				if (field) {
 					memset (field, 0, sizeof (RBinField));
 					field->name = r_bin_name_new (an);
-					field->kind = R_BIN_FIELD_KIND_PROPERTY;
-					field->attr = R_BIN_ATTR_ABSTRACT;
+					field->attr.kind = R_BIN_FIELD_KIND_PROPERTY;
+					field->attr.flags = R_BIN_ATTR_ABSTRACT;
 					field->vaddr = pd;
 				}
 			}
@@ -514,8 +514,8 @@ static void swift_attach_symbols(RBinSwiftLoader *ld) {
 		}
 		RBinSymbol *sym = r_bin_symbol_new (rn, bs->paddr, bs->vaddr);
 		r_bin_name_demangled (sym->name, mname);
-		sym->attr = attr;
-		sym->lang = R_BIN_LANG_SWIFT;
+		sym->attr.flags = attr;
+		sym->attr.lang = R_BIN_LANG_SWIFT;
 		RVecRBinSymbol_push_back (&klass->methods, sym);
 		free (sym);
 		free (mname);

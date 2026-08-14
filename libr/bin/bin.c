@@ -222,6 +222,7 @@ R_API void r_bin_symbol_copy(RBinSymbol *dst, RBinSymbol *src) {
 	dst->libname = src->libname? strdup (src->libname): NULL;
 	dst->classname = src->classname? strdup (src->classname): NULL;
 	dst->rtype = src->rtype? strdup (src->rtype): NULL;
+	dst->attr.ns = src->attr.ns? strdup (src->attr.ns): NULL;
 }
 
 R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
@@ -256,6 +257,7 @@ R_API void r_bin_symbol_fini(RBinSymbol *sym) {
 		free (sym->libname);
 		free (sym->classname);
 		free (sym->rtype);
+		free (sym->attr.ns);
 	}
 }
 
@@ -1963,7 +1965,7 @@ R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, ut64 value, int size, c
 	ptr->format_named = format_named;
 	ptr->vaddr = vaddr;
 	ptr->paddr = paddr;
-	ptr->size = size;
+	ptr->attr.size = size;
 	ptr->value = value;
 	// ptr->attr = default attributes for fields?
 	return ptr;
@@ -1975,6 +1977,7 @@ R_API void r_bin_field_fini(RBinField *field) {
 		r_bin_name_free (field->type);
 		free (field->comment);
 		free (field->format);
+		free (field->attr.ns);
 	}
 }
 
@@ -2050,7 +2053,7 @@ R_API void r_bin_trycatch_free(RBinTrycatch *tc) {
 
 R_API const char *r_bin_field_kindstr(RBinField *f) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
-	switch (f->kind) {
+	switch (f->attr.kind) {
 	case R_BIN_FIELD_KIND_PROPERTY:
 		return "property";
 	case R_BIN_FIELD_KIND_FIELD:

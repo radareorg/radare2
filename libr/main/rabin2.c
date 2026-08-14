@@ -262,9 +262,9 @@ static int rabin_dump_symbols(RBin *bin, int len) {
 	RBinSymbol *symbol;
 	int olen = len;
 	R_VEC_FOREACH (symbols, symbol) {
-		if (symbol->size && (olen > symbol->size || !olen)) {
-			len = symbol->size;
-		} else if (!symbol->size && !olen) {
+		if (symbol->attr.size && (olen > symbol->attr.size || !olen)) {
+			len = symbol->attr.size;
+		} else if (!symbol->attr.size && !olen) {
 			len = 32;
 		} else {
 			len = olen;

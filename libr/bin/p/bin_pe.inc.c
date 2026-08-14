@@ -41,10 +41,10 @@ static ut64 pe_file_size_bound(RBinFile *bf, RBinPEObj *pe) {
 static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
 	RBinSymbol *m = r_bin_get_symbol_at (bf->rbin, vaddr);
-	if (!m || !m->arg_prefix || m->lang != R_BIN_LANG_CIL) {
+	if (!m || !m->arg_prefix || m->attr.lang != R_BIN_LANG_CIL) {
 		return NULL;
 	}
-	const bool instance = !(m->attr & R_BIN_ATTR_STATIC);
+	const bool instance = !(m->attr.flags & R_BIN_ATTR_STATIC);
 	RStrBuf *sb = r_strbuf_new ("dyncc:");
 	if (!sb) {
 		return NULL;
@@ -326,15 +326,15 @@ static RList* classes(RBinFile *bf) {
 		}
 		RBinClass *cls = r_bin_file_add_class (bf, fullname, NULL, 0);
 		if (cls) {
-			cls->lang = R_BIN_LANG_CIL;
+			cls->attr.lang = R_BIN_LANG_CIL;
 			if (!names_only && dsym->fields) {
 				RListIter *iter_field;
 				DotNetField *dfield;
 				r_list_foreach (dsym->fields, iter_field, dfield) {
 					RBinField *field = RVecRBinField_emplace_back (&cls->fields);
 					field->name = r_bin_name_new (dfield->name);
-					field->kind = R_BIN_FIELD_KIND_FIELD;
-					field->offset = dfield->offset;
+					field->attr.kind = R_BIN_FIELD_KIND_FIELD;
+					field->attr.offset = dfield->offset;
 				}
 			}
 		}
@@ -380,16 +380,16 @@ static RList* classes(RBinFile *bf) {
 		}
 		RBinClass *cls = r_bin_file_add_class (bf, tmp, NULL, 0);
 		if (cls) {
-			cls->lang = R_BIN_LANG_CIL;
+			cls->attr.lang = R_BIN_LANG_CIL;
 		}
 		RBinSymbol *m = r_bin_class_add_method (bf, tmp, method_name, 0);
 		if (m) {
-			m->lang = R_BIN_LANG_CIL;
+			m->attr.lang = R_BIN_LANG_CIL;
 			m->vaddr = dsym->vaddr + image_base;
 			m->paddr = dsym->vaddr;
 			m->bind = R_BIN_BIND_GLOBAL_STR;
 			m->type = R_BIN_TYPE_FUNC_STR;
-			m->size = dsym->size;
+			m->attr.size = dsym->size;
 		}
 		free (tmp);
 	}
@@ -520,20 +520,20 @@ static bool symbols_vec(RBinFile *bf) {
 						ptr->type = R_BIN_TYPE_FUNC_STR;
 						ptr->bind = R_BIN_BIND_GLOBAL_STR;
 						if (dsym->is_native) {
-							ptr->lang = R_BIN_LANG_C;
+							ptr->attr.lang = R_BIN_LANG_C;
 							if (!has_native_dotnet) {
 								r_bin_file_add_language (bf, R_BIN_LANG_C);
 								has_native_dotnet = true;
 							}
 						} else {
-							ptr->lang = R_BIN_LANG_CIL;
+							ptr->attr.lang = R_BIN_LANG_CIL;
 							if (dsym->param_count > 0 || dsym->ret_count > 0) {
 								ptr->arg_first = 0;
 								ptr->arg_count = dsym->param_count;
 								ptr->arg_prefix = "a";
 								ptr->ret_count = dsym->ret_count;
 								if (!dsym->is_instance) {
-									ptr->attr |= R_BIN_ATTR_STATIC;
+									ptr->attr.flags |= R_BIN_ATTR_STATIC;
 								}
 							}
 						}
@@ -541,7 +541,7 @@ static bool symbols_vec(RBinFile *bf) {
 							ptr->vaddr = dsym->vaddr + image_base;
 							ptr->paddr = dsym->vaddr;
 						}
-						ptr->size = dsym->size;
+						ptr->attr.size = dsym->size;
 					}
 				}
 			}

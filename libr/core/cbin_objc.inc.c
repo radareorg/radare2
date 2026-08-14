@@ -200,7 +200,7 @@ static char *objc_decl_type(const char *field_type, bool *is_object) {
 static bool objc_has_property(RBinClass *c, const char *pname, int pref) {
 	RBinField *f;
 	R_VEC_FOREACH (&c->fields, f) {
-		if (f->kind != R_BIN_FIELD_KIND_PROPERTY || !f->name) {
+		if (f->attr.kind != R_BIN_FIELD_KIND_PROPERTY || !f->name) {
 			continue;
 		}
 		const char *fname = r_bin_name_tostring2 (f->name, pref);
@@ -214,7 +214,7 @@ static bool objc_has_property(RBinClass *c, const char *pname, int pref) {
 static char *objc_guess_property_type(RBinClass *c, const char *pname, int pref, bool *is_object) {
 	RBinField *f;
 	R_VEC_FOREACH (&c->fields, f) {
-		if (f->kind == R_BIN_FIELD_KIND_PROPERTY || !f->name) {
+		if (f->attr.kind == R_BIN_FIELD_KIND_PROPERTY || !f->name) {
 			continue;
 		}
 		const char *fname = r_bin_name_tostring2 (f->name, pref);
@@ -319,7 +319,7 @@ static void classdump_objc(RCore *core, RBinClass *c) {
 	RBinSymbol *sym;
 	bool has_ivars = false;
 	R_VEC_FOREACH (&c->fields, f) {
-		if (f->kind == R_BIN_FIELD_KIND_PROPERTY || !f->name) {
+		if (f->attr.kind == R_BIN_FIELD_KIND_PROPERTY || !f->name) {
 			continue;
 		}
 		const char *fname = r_bin_name_tostring2 (f->name, pref);
@@ -340,7 +340,7 @@ static void classdump_objc(RCore *core, RBinClass *c) {
 		r_cons_println (core->cons, "}");
 	}
 	R_VEC_FOREACH (&c->fields, f) {
-		if (f->kind != R_BIN_FIELD_KIND_PROPERTY || !f->name) {
+		if (f->attr.kind != R_BIN_FIELD_KIND_PROPERTY || !f->name) {
 			continue;
 		}
 		const char *fname = r_bin_name_tostring2 (f->name, pref);
@@ -360,7 +360,7 @@ static void classdump_objc(RCore *core, RBinClass *c) {
 	}
 	R_VEC_FOREACH (&c->methods, sym) {
 		const char *sname = r_bin_name_tostring2 (sym->name, pref);
-		bool is_class_method = (sym->attr & R_BIN_ATTR_CLASS) != 0;
+		bool is_class_method = (sym->attr.flags & R_BIN_ATTR_CLASS) != 0;
 		if (!is_class_method && sym->type) {
 			is_class_method = !r_str_startswith (sym->type, R_BIN_TYPE_METH_STR);
 		}

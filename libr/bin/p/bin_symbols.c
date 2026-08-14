@@ -153,7 +153,7 @@ static RBinSymbol *bin_symbol_from_symbol(RCoreSymCacheElement *element, RCoreSy
 		}
 		sym->paddr = s->paddr;
 		sym->vaddr = r_coresym_cache_element_pa2va (element, s->paddr);
-		sym->size = s->size;
+		sym->attr.size = s->size;
 		sym->type = R_BIN_TYPE_FUNC_STR;
 		sym->bind = "NONE";
 	}
