@@ -151,19 +151,23 @@ static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 }
 
 R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *obuf, int osz) {
-	int i, s, len, run, p = 0;
+	int i, run;
 	int ip = obuf? 0: BLOCK_SIZE;
 	int maxLen = obuf? osz: BLOCK_SIZE;
 	int ip_end = ip + comp_len;
 	ut8 *dst = obuf? obuf: g_buf;
 	ut16 tmp = 0;
+	size_t len, s, p = 0;
 
 	for (;;) {
+		if (ip >= ip_end) {
+			break;
+		}
 		const int token = g_buf[ip++];
 		if (token >= 16) {
 			run = token >> 4;
 			if (run == 15) {
-				for (;;) {
+				for (; ip < ip_end;) {
 					const int c = g_buf[ip++];
 					run += c;
 					if (c != 255) {
@@ -171,7 +175,7 @@ R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *o
 					}
 				}
 			}
-			if ((p + run) > maxLen) {
+			if ((p + run) > maxLen || (ip + run) > ip_end) {
 				return -1;
 			}
 
@@ -184,16 +188,18 @@ R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *o
 				break;
 			}
 		}
-
+		if (ip >= ip_end - 1) {
+			break;
+		}
 		LOAD_16_TO (ip, tmp);
-		s = p - tmp;
-		ip += 2;
-		if (s < 0) {
+		if (p < tmp) {
 			return -1;
 		}
+		s = p - tmp;
+		ip += 2;
 		len = (token & 15) + MIN_MATCH;
 		if (len == (15 + MIN_MATCH)) {
-			for (;;) {
+			for (; ip < ip_end;) {
 				const int c = g_buf[ip++];
 				len += c;
 				if (c != 255) {

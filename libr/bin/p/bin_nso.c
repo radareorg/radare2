@@ -39,7 +39,7 @@ static uint32_t decompress(const ut8 *cbuf, ut8 *obuf, int32_t csize, int32_t us
 	ut8 *out = r_inflate_lz4 (cbuf, (int)csize, &consumed, &osize);
 	if (out) {
 		// osize should be the same as usize
-		memcpy (obuf, out, R_MIN (usize, osize));
+		memcpy (obuf, out, R_MIN ((size_t)usize, osize));
 		free (out);
 		return usize;
 	}
