@@ -1961,6 +1961,12 @@ static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
+	// -fPIC secure-plt objects reach the slot through r30-relative call
+	// thunks; when the whole map decodes it overrides the legacy math
+	const ut64 thunk = Elf_(plt_ppc32_thunk) (eo, rel->rva);
+	if (thunk != UT64_MAX) {
+		return thunk;
+	}
 	if (rel->rva < plt_addr) {
 		ut64 delta = plt_addr - rel->rva;
 		ut64 orva = rel->rva + (2 * delta);
@@ -1982,14 +1988,8 @@ static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 	ut64 pos = COMPUTE_PLTGOT_POSITION (rel, plt_addr, 0x0);
 
 	if (eo->endian) {
-#if 0
-		base += plt_addr;
-		base -= (nrel * 16);
-		base += (pos * 8);
-#else
-		base -= (nrel * 16);
-		base += (pos * 16);
-#endif
+		base -= nrel * 16;
+		base += pos * 16;
 		return base;
 	}
 
@@ -6026,6 +6026,7 @@ void Elf_(free)(ELFOBJ* eo) {
 	}
 	ht_uu_free (eo->rel_cache);
 	ht_uu_free (eo->ppc64_plt_stubs);
+	free (eo->ppc32_thunks);
 	sdb_free (eo->kv);
 	r_list_free (eo->inits);
 	free (eo);
