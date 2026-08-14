@@ -62,10 +62,10 @@ static bool test_demangle_registry(void) {
 
 	RBinDemanglePlugin invalid_type = {
 		.meta.name = "invalid_type",
-		.type = R_BIN_LANG_C_BLOCKS,
+		.type = R_BIN_LANG_LAST,
 		.demangle = unit_demangle,
 	};
-	mu_assert_false (r_bin_demangle_plugin_add (bin, &invalid_type), "reject non-unique language types");
+	mu_assert_false (r_bin_demangle_plugin_add (bin, &invalid_type), "reject invalid language type");
 	mu_assert_true (r_bin_demangle_plugin_remove (bin, &typed), "remove typed demangler");
 	mu_assert_true (r_bin_demangle_plugin_remove (bin, &plugin), "remove named demangler");
 	mu_assert_null (r_bin_demangle_plugin_find (bin, "testalias"), "remove alias index");

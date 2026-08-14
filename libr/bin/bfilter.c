@@ -188,7 +188,7 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *na
 R_IPI bool r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym) {
 	R_RETURN_VAL_IF_FAIL (ht && sym && sym->name, false);
 	const char *name = r_bin_name_tostring2 (sym->name, 'o');
-	int lang_id = sym->lang;
+	RBinLanguage lang_id = sym->lang;
 	if (!lang_id && bf && bf->bo) {
 		lang_id = R_VPACK_FIRST (bf->bo->langs);
 	}

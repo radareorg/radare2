@@ -9,11 +9,11 @@
 
 #include "fuzz_common.h"
 
-// static int demangle_type = R_BIN_LANG_CXX;
-// static int demangle_type = R_BIN_LANG_JAVA;
-static int demangle_type = R_BIN_LANG_ANY;
+// static RBinLanguage demangle_type = R_BIN_LANG_CXX;
+// static RBinLanguage demangle_type = R_BIN_LANG_JAVA;
+static RBinLanguage demangle_type = R_BIN_LANG_ANY;
 
-static const int default_demanglers[] = {
+static const RBinLanguage default_demanglers[] = {
 	R_BIN_LANG_JAVA,
 	R_BIN_LANG_RUST,
 	R_BIN_LANG_OBJC,
@@ -77,7 +77,7 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 	return 0;
 }
 
-static const char *demangle_lang_name(int type) {
+static const char *demangle_lang_name(RBinLanguage type) {
 	switch (type) {
 	case R_BIN_LANG_JAVA:
 		return "java";
@@ -99,7 +99,7 @@ static const char *demangle_lang_name(int type) {
 	return NULL;
 }
 
-static void demangle_one(const char *symbol, ut64 vaddr, int type) {
+static void demangle_one(const char *symbol, ut64 vaddr, RBinLanguage type) {
 	char *demangled = NULL;
 	switch (type) {
 	case R_BIN_LANG_JAVA:
