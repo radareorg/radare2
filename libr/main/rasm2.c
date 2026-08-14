@@ -742,7 +742,7 @@ static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut
 	int bits = as->opt.bits;
 	if (as->opt.rad) {
 		printf ("e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
-		printf ("e asm.bits=%d\n", bits? bits: R_SYS_BITS);
+		printf ("e asm.bits=%d\n", bits? bits: (int)R_SYS_BITS);
 		if (offset) {
 			printf ("s 0x%" PFMT64x "\n", offset);
 		}

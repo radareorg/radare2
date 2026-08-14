@@ -275,36 +275,60 @@ typedef struct _utX {
 #define DEBUGGER 0
 #endif
 
-typedef ut64 RSysBits;
-typedef ut8 RSysBitValue;
+typedef ut64 RVPack;
+typedef ut8 RVPackItem;
 
-#define R_SYS_BITS_SIZE 8
-#define R_SYS_BITS_MASK 0xff
-#define R_SYS_BITS_PACK(x) (x)
-#define R_SYS_BITS_PACK1(x) (x)
-#define R_SYS_BITS_PACK2(x,y) ((x) | ((y)<<R_SYS_BITS_SIZE))
-#define R_SYS_BITS_PACK3(x,y,z) ((x) | ((y)<<R_SYS_BITS_SIZE) | ((z) << (R_SYS_BITS_SIZE*2)))
-#define R_SYS_BITS_PACK4(x,y,z,q) (RSysBits)((x) | ((y)<<R_SYS_BITS_SIZE) | ((z) << (R_SYS_BITS_SIZE*2)) | ((q) << (R_SYS_BITS_SIZE*3)) )
-#define R_SYS_BITS_CHECK(x, y) (bool)( \
-	(((x) & R_SYS_BITS_MASK) == (y)) || \
-	((((x) >> R_SYS_BITS_SIZE) & R_SYS_BITS_MASK) == (y)) || \
-	((((x) >> (R_SYS_BITS_SIZE*2)) & R_SYS_BITS_MASK) == (y)) || \
-	((((x) >> (R_SYS_BITS_SIZE*3)) & R_SYS_BITS_MASK) == (y)) \
-)
-#define R_SYS_BITS_CHECK3(x, a, b, c) (bool)( \
-	(((x) & R_SYS_BITS_MASK) == (a)) || \
-	(((x) & R_SYS_BITS_MASK) == (b)) || \
-	(((x) & R_SYS_BITS_MASK) == (c)) || \
-	((((x) >> R_SYS_BITS_SIZE) & R_SYS_BITS_MASK) == (a)) || \
-	((((x) >> R_SYS_BITS_SIZE) & R_SYS_BITS_MASK) == (b)) || \
-	((((x) >> R_SYS_BITS_SIZE) & R_SYS_BITS_MASK) == (c)) || \
-	((((x) >> (R_SYS_BITS_SIZE*2)) & R_SYS_BITS_MASK) == (a)) || \
-	((((x) >> (R_SYS_BITS_SIZE*2)) & R_SYS_BITS_MASK) == (b)) || \
-	((((x) >> (R_SYS_BITS_SIZE*2)) & R_SYS_BITS_MASK) == (c)) || \
-	((((x) >> (R_SYS_BITS_SIZE*3)) & R_SYS_BITS_MASK) == (a)) || \
-	((((x) >> (R_SYS_BITS_SIZE*3)) & R_SYS_BITS_MASK) == (b)) || \
-	((((x) >> (R_SYS_BITS_SIZE*3)) & R_SYS_BITS_MASK) == (c)) \
-)
+#define R_VPACK_SIZE 8
+#define R_VPACK_MASK 0xff
+#define R_VPACK1(x) ((x) * 1ULL)
+#define R_VPACK2(x,y) (R_VPACK1 (x) | (R_VPACK1 (y) << R_VPACK_SIZE))
+#define R_VPACK3(x,y,z) (R_VPACK2 (x, y) | (R_VPACK1 (z) << (R_VPACK_SIZE * 2)))
+#define R_VPACK4(x,y,z,q) (R_VPACK3 (x, y, z) | (R_VPACK1 (q) << (R_VPACK_SIZE * 3)))
+#define R_VPACK_FIRST(x) ((RVPackItem)((x) & R_VPACK_MASK))
+#define R_VPACK_AT(x,n) ((RVPackItem)(((RVPack)(x) >> (R_VPACK_SIZE * (n))) & R_VPACK_MASK))
+
+static inline bool r_vpack_has(RVPack pack, RVPackItem item) {
+	while (pack) {
+		if (R_VPACK_FIRST (pack) == item) {
+			return true;
+		}
+		pack >>= R_VPACK_SIZE;
+	}
+	return false;
+}
+
+static inline RVPack r_vpack_add(RVPack pack, RVPackItem item) {
+	if (!item || r_vpack_has (pack, item)) {
+		return pack;
+	}
+	int shift;
+	for (shift = 0; shift < (int)(sizeof (pack) * 8); shift += R_VPACK_SIZE) {
+		if (!((pack >> shift) & R_VPACK_MASK)) {
+			return pack | ((RVPack)item << shift);
+		}
+	}
+	return pack;
+}
+
+#define R_VPACK_HAS(x,y) r_vpack_has (x, y)
+#define R_VPACK_HAS_CONST(x,y) ((y) && ( \
+	R_VPACK_AT (x, 0) == (y) || R_VPACK_AT (x, 1) == (y) || \
+	R_VPACK_AT (x, 2) == (y) || R_VPACK_AT (x, 3) == (y) || \
+	R_VPACK_AT (x, 4) == (y) || R_VPACK_AT (x, 5) == (y) || \
+	R_VPACK_AT (x, 6) == (y) || R_VPACK_AT (x, 7) == (y)))
+
+typedef RVPack RSysBits;
+typedef RVPackItem RSysBitValue;
+
+#define R_SYS_BITS_SIZE R_VPACK_SIZE
+#define R_SYS_BITS_MASK R_VPACK_MASK
+#define R_SYS_BITS_PACK(x) R_VPACK1 (x)
+#define R_SYS_BITS_PACK1(x) R_VPACK1 (x)
+#define R_SYS_BITS_PACK2(x,y) R_VPACK2 (x, y)
+#define R_SYS_BITS_PACK3(x,y,z) R_VPACK3 (x, y, z)
+#define R_SYS_BITS_PACK4(x,y,z,q) R_VPACK4 (x, y, z, q)
+#define R_SYS_BITS_CHECK(x,y) R_VPACK_HAS_CONST (x, y)
+#define R_SYS_BITS_CHECK3(x,a,b,c) (R_VPACK_HAS_CONST (x, a) || R_VPACK_HAS_CONST (x, b) || R_VPACK_HAS_CONST (x, c))
 
 
 #define HEAPTYPE(x) \
