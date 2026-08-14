@@ -2301,8 +2301,8 @@ R_API ut64 r_bin_attr_fromstring(const char *s, bool compact) {
 		RList *words = r_str_split_list (a, " ", 0);
 		r_list_foreach (words, iter, word) {
 			for (i = 0; i < 64; i++) {
-				const char *bn = attr_bit_name (i, false);
-				if (!strcmp (bn, word)) {
+				const char *bn = attr_bit_name (1ULL << i, false);
+				if (bn && !strcmp (bn, word)) {
 					bits |= (1ULL << i);
 					break;
 				}
