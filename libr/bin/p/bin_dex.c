@@ -1770,6 +1770,7 @@ static RList *trycatch(RBinFile *bf) {
 
 static bool symbols_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
+	r_bin_file_add_language (bf, R_BIN_LANG_JAVA);
 	RBinDexObj *bin = (RBinDexObj*) bf->bo->bin_obj;
 	if (!RVecRBinSymbol_empty (&bf->bo->symbols_vec)) {
 		return true;
@@ -1919,6 +1920,7 @@ static bool dex_cmd(RBinFile *bf, const char *command) {
 
 static RList *classes(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
+	r_bin_file_add_language (bf, R_BIN_LANG_JAVA);
 	RBinDexObj *bin = (RBinDexObj*) bf->bo->bin_obj;
 	const int limit = bf->rbin->options.limit;
 	int count = 0;

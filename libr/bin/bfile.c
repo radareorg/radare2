@@ -1411,8 +1411,14 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *rawname, const
 		R_LOG_ERROR ("Cannot allocate class %s", klass);
 		return NULL;
 	}
-	const RBinLanguage lang = (strstr (method, "JNI") || strstr (klass, "JNI"))? R_BIN_LANG_JNI: R_BIN_LANG_CXX;
+	RBinLanguage lang = R_BIN_LANG_CXX;
+	if (strstr (method, "JNI") || strstr (klass, "JNI")) {
+		lang = R_BIN_LANG_JNI;
+	} else if (rawname && (rawname[0] == '-' || rawname[0] == '+') && rawname[1] == '[') {
+		lang = R_BIN_LANG_OBJC;
+	}
 	c->lang = lang;
+	r_bin_file_add_language (bf, lang);
 	RBinSymbol *sym = __getMethod (c, method);
 	if (!sym) {
 		sym = r_bin_class_add_method (bf, klass, method, nargs);

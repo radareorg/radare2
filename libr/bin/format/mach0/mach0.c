@@ -3510,6 +3510,9 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 	}
 
 	to = R_MIN ((ut32)mo->nsymtab, ds->iundefsym + ds->nundefsym);
+	if (to > ds->iundefsym) {
+		r_bin_file_add_language (bf, R_BIN_LANG_C);
+	}
 	for (i = ds->iundefsym; i < to; i++) {
 		struct symbol_t symbol;
 		if (j > symbols_count) {

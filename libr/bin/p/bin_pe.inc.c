@@ -304,6 +304,7 @@ static RList* classes(RBinFile *bf) {
 	if (!dotnet_symbols || r_list_empty (dotnet_symbols)) {
 		return NULL;
 	}
+	r_bin_file_add_language (bf, R_BIN_LANG_CIL);
 	const ut64 image_base = PE_(r_bin_pe_get_image_base) (pe);
 	const bool names_only = bf->rbin->options.classes_names_only;
 	const int limit = bf->rbin->options.limit;
@@ -325,7 +326,7 @@ static RList* classes(RBinFile *bf) {
 		}
 		RBinClass *cls = r_bin_file_add_class (bf, fullname, NULL, 0);
 		if (cls) {
-			cls->lang = R_BIN_LANG_MSVC;
+			cls->lang = R_BIN_LANG_CIL;
 			if (!names_only && dsym->fields) {
 				RListIter *iter_field;
 				DotNetField *dfield;
@@ -379,10 +380,11 @@ static RList* classes(RBinFile *bf) {
 		}
 		RBinClass *cls = r_bin_file_add_class (bf, tmp, NULL, 0);
 		if (cls) {
-			cls->lang = R_BIN_LANG_MSVC;
+			cls->lang = R_BIN_LANG_CIL;
 		}
 		RBinSymbol *m = r_bin_class_add_method (bf, tmp, method_name, 0);
 		if (m) {
+			m->lang = R_BIN_LANG_CIL;
 			m->vaddr = dsym->vaddr + image_base;
 			m->paddr = dsym->vaddr;
 			m->bind = R_BIN_BIND_GLOBAL_STR;
@@ -445,6 +447,7 @@ static bool symbols_vec(RBinFile *bf) {
 	RBinSymbol *ptr = NULL;
 	RVecPEExport *symbols = NULL;
 	RVecPEImport *imports = NULL;
+	bool has_native_dotnet = false;
 	const int limit = bf->rbin->options.limit;
 
 	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
@@ -497,6 +500,7 @@ static bool symbols_vec(RBinFile *bf) {
 		RList *dotnet_symbols = get_dotnet_symbols (bf);
 		if (dotnet_symbols) {
 			if (r_list_length (dotnet_symbols) > 0) {
+				r_bin_file_add_language (bf, R_BIN_LANG_CIL);
 				RListIter *iter;
 				DotNetSymbol *dsym;
 				r_list_foreach (dotnet_symbols, iter, dsym) {
@@ -517,6 +521,10 @@ static bool symbols_vec(RBinFile *bf) {
 						ptr->bind = R_BIN_BIND_GLOBAL_STR;
 						if (dsym->is_native) {
 							ptr->lang = R_BIN_LANG_C;
+							if (!has_native_dotnet) {
+								r_bin_file_add_language (bf, R_BIN_LANG_C);
+								has_native_dotnet = true;
+							}
 						} else {
 							ptr->lang = R_BIN_LANG_CIL;
 							if (dsym->param_count > 0 || dsym->ret_count > 0) {

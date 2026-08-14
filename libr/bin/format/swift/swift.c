@@ -524,6 +524,7 @@ static void swift_attach_symbols(RBinSwiftLoader *ld) {
 
 R_IPI void r_bin_swift_load_classes(RBinSwiftLoader *ld, RList *out, ut64 types_va, ut64 types_size, ut64 protos_va, ut64 protos_size, int limit) {
 	R_RETURN_IF_FAIL (ld && ld->bf && ld->read_at && ld->slot && out);
+	r_bin_file_add_language (ld->bf, R_BIN_LANG_SWIFT);
 	if (ld->symbols && !swift_names_only (ld->bf)) {
 		ld->symbols_ht = ht_up_new0 ();
 		RBinSymbol *sym;

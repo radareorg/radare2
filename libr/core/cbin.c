@@ -2680,6 +2680,8 @@ static void snInit(RCore *core, SymName *sn, RBinSymbol *sym, const char *lang, 
 	if (!sym_name) {
 		sym_name = r_bin_name_tostring (sym->name);
 	}
+	const bool has_stored_objc_name = R_STR_ISNOTEMPTY (sym->name->name)
+		&& lang && r_str_startswith (lang, "objc");
 
 	sn->name = r_str_newf ("%s%s", sym->is_imported? "imp.": "", sym_name);
 	sn->libname = sym->libname? strdup (sym->libname): NULL;
@@ -2693,7 +2695,8 @@ static void snInit(RCore *core, SymName *sn, RBinSymbol *sym, const char *lang, 
 	if (bin_demangle) {
 		const char *mangled = r_bin_name_tostring2 (sym->name, 'o');
 		char *demflagbase = NULL;
-		if (symname && (symname[0] == '_' || symname[0] == '$')) {
+		if (!has_stored_objc_name
+				&& symname && (symname[0] == '_' || symname[0] == '$')) {
 			demflagbase = r_bin_demangle (core->bin->cur, lang, symname, sym->vaddr, keep_lib);
 			if (demflagbase && R_STR_ISEMPTY (demflagbase)) {
 				R_FREE (demflagbase);
@@ -2734,7 +2737,7 @@ static void snInit(RCore *core, SymName *sn, RBinSymbol *sym, const char *lang, 
 	}
 	sn->demname = NULL;
 	sn->demflag = NULL;
-	if (bin_demangle && sym->paddr) {
+	if (bin_demangle && sym->paddr && !has_stored_objc_name) {
 		sn->demname = r_bin_demangle (core->bin->cur, lang, sn->name, sym->vaddr, keep_lib);
 		if (sn->demname) {
 			// XXX LEAK

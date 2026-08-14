@@ -59,10 +59,12 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RList *classes(RBinFile *bf) {
+	r_bin_file_add_language (bf, R_BIN_LANG_JAVA);
 	return r_bin_java_get_classes ((RBinJavaObj *) bf->bo->bin_obj);
 }
 
 static bool symbols_vec(RBinFile *bf) {
+	r_bin_file_add_language (bf, R_BIN_LANG_JAVA);
 	r_bin_java_load_symbols ((RBinJavaObj *) bf->bo->bin_obj, &bf->bo->symbols_vec);
 	return true;
 }
