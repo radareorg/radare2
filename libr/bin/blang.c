@@ -63,29 +63,39 @@ static inline bool is_cxx_symbol(const char *name) {
 
 static inline bool is_ibmxl_symbol(const char *name) {
 	R_RETURN_VAL_IF_FAIL (name, false);
+	const char *symbol = name;
 	if (*name == '.') {
 		name++;
 	}
 	if (*name == '?' || r_str_startswith (name, "_Z") || r_str_startswith (name, "__Z")) {
 		return false;
 	}
-	if (r_str_startswith (name, "__ct__") || r_str_startswith (name, "__dt__") || r_str_startswith (name, "__vft")) {
-		return true;
-	}
-	if (name[0] == '_' && name[1] == '_') {
+	bool candidate = r_str_startswith (name, "__ct__")
+		|| r_str_startswith (name, "__dt__") || r_str_startswith (name, "__vft");
+	if (!candidate && name[0] == '_' && name[1] == '_') {
 		const char *sep = strstr (name + 2, "__");
 		if (!sep || sep == name + 2 || !islower ((unsigned char)name[2])) {
 			return false;
 		}
 		char ch = sep[2];
-		return ch == 'F' || ch == 'H' || ch == 'C' || ch == 'V' || ch == 'Q' || isdigit ((unsigned char)ch);
+		candidate = ch == 'F' || ch == 'H' || ch == 'C' || ch == 'V'
+			|| ch == 'Q' || isdigit ((unsigned char)ch);
+	} else if (!candidate) {
+		const char *sep = strstr (name, "__");
+		if (!sep || sep == name) {
+			return false;
+		}
+		char ch = sep[2];
+		candidate = ch == 'F' || ch == 'H' || ch == 'C' || ch == 'V'
+			|| ch == 'Q' || isdigit ((unsigned char)ch);
 	}
-	const char *sep = strstr (name, "__");
-	if (!sep || sep == name) {
+	if (!candidate) {
 		return false;
 	}
-	char ch = sep[2];
-	return ch == 'F' || ch == 'H' || ch == 'C' || ch == 'V' || ch == 'Q' || isdigit ((unsigned char)ch);
+	char *demangled = r_bin_demangle_ibmxl (symbol);
+	bool valid = demangled != NULL;
+	free (demangled);
+	return valid;
 }
 
 static bool is_msvc_symbol(const char *name) {
@@ -159,7 +169,10 @@ R_API void r_bin_file_add_language(RBinFile *bf, RBinLanguage lang) {
 R_IPI void r_bin_register_symbol_language(RBinFile *bf, RBinSymbol *sym) {
 	R_RETURN_IF_FAIL (sym);
 	RBinLanguage lang = sym->attr.lang;
-	if (lang == R_BIN_LANG_NONE && sym->name) {
+	const char *rclass = bf && bf->bo && bf->bo->info? bf->bo->info->rclass: NULL;
+	bool detect = rclass && (strstr (rclass, "mach") || strstr (rclass, "elf")
+		|| strstr (rclass, "pe") || strstr (rclass, "coff"));
+	if (lang == R_BIN_LANG_NONE && sym->name && detect) {
 		lang = r_bin_lang_from_symbol_name (r_bin_name_tostring2 (sym->name, 'o'));
 		sym->attr.lang = lang;
 	}

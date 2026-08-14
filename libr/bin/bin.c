@@ -1965,7 +1965,7 @@ R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, ut64 value, int size, c
 	ptr->format_named = format_named;
 	ptr->vaddr = vaddr;
 	ptr->paddr = paddr;
-	ptr->attr.size = size;
+	ptr->attr.size = size > 0? size: 0;
 	ptr->value = value;
 	// ptr->attr = default attributes for fields?
 	return ptr;
