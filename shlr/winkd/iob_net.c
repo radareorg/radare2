@@ -303,6 +303,12 @@ static ut8 *_createKDNetPacket(iobnet_t *obj, const ut8 *buf, int size, int *osi
 
 static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	bool ret = false;
+
+	if (size < KDNET_DATA_SIZE + KDNET_HMAC_SIZE) {
+		R_LOG_ERROR ("KdNet packet too small");
+		return ret;
+	}
+
 	RMutaBind *mb = _get_mb (obj);
 	if (!mb) {
 		return false;
@@ -360,6 +366,10 @@ end:
 static bool _sendResponsePacket(iobnet_t *obj, const ut8 *pokedata) {
 	size_t i;
 	int size;
+
+	if (obj->size < 10 + 32 + sizeof (kdnet_packet_t)) {
+		return false;
+	}
 
 	// Create the following buffer as the KD packet in the KDNet Response packet:
 	// 0x01
@@ -424,7 +434,7 @@ static bool _processControlPacket(iobnet_t *obj, const ut8 *ctrlbuf, int size) {
 	return true;
 }
 
-bool _verifyhmac(iobnet_t *obj) {
+static bool _verifyhmac(iobnet_t *obj) {
 	RMutaBind *mb = _get_mb (obj);
 	if (!mb) {
 		return false;
