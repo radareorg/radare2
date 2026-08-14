@@ -5508,6 +5508,9 @@ RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo) {
 		}
 		RVecRBinSymbol_push_back (&eo->plt_symbols_cache, &sym);
 	}
+#if R_BIN_ELF64
+	Elf_(plt_ppc64v1_load_text_stubs) (eo);
+#endif
 	eo->plt_symbols_cached = true;
 	return &eo->plt_symbols_cache;
 }

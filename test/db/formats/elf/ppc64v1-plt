@@ -125,8 +125,8 @@ afi @ 0x3c60 ~name[1]
 afi @ 0x3d00 ~name[1]
 EOF2
 EXPECT=<<EOF2
-sub.memcpy
-sub.malloc
+sym.plt.memcpy
+sym.plt.malloc
 EOF2
 RUN
 
@@ -138,11 +138,11 @@ aa
 pi 1 @ 0x7be8
 EOF2
 EXPECT=<<EOF2
-bl sub.memcpy
+bl sym.plt.memcpy
 EOF2
 RUN
 
-NAME=ELF v1 shared lib: exactly the import stubs are named, no others
+NAME=ELF v1 shared lib: text stubs are bin-named so autoname has none left
 FILE=bins/elf/ppc64v1-libz.so
 CMDS=<<EOF2
 e bin.relocs.apply=true
@@ -150,7 +150,7 @@ aa
 afl~sub.?
 EOF2
 EXPECT=<<EOF2
-5
+0
 EOF2
 RUN
 
