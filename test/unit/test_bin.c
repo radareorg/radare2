@@ -23,6 +23,26 @@ bool test_r_bin(void) {
 	mu_end;
 }
 
+bool test_r_bin_languages(void) {
+	RBinInfo info = {0};
+	RBinObject bo = { .info = &info };
+	RBinFile bf = { .bo = &bo };
+	RBinSymbol c_symbol = { .lang = R_BIN_LANG_C };
+	RBinSymbol rust_symbol = { .lang = R_BIN_LANG_RUST };
+	RVecRBinSymbol_init (&bo.symbols_vec);
+	RVecRBinSymbol_push_back (&bo.symbols_vec, &c_symbol);
+	RVecRBinSymbol_push_back (&bo.symbols_vec, &rust_symbol);
+
+	bo.langs = r_bin_load_languages (&bf);
+	mu_assert_true (R_VPACK_HAS (bo.langs, R_BIN_LANG_C), "binary contains C");
+	mu_assert_true (R_VPACK_HAS (bo.langs, R_BIN_LANG_RUST), "binary contains Rust");
+	mu_assert_eq (RVecRBinSymbol_at (&bo.symbols_vec, 0)->lang, R_BIN_LANG_C, "C symbol has one language");
+	mu_assert_eq (RVecRBinSymbol_at (&bo.symbols_vec, 1)->lang, R_BIN_LANG_RUST, "Rust symbol has one language");
+
+	RVecRBinSymbol_fini (&bo.symbols_vec);
+	mu_end;
+}
+
 static RBuffer *pebble_resource_pack(ut32 table_size) {
 	size_t content_start = 12 + table_size * 16;
 	const ut8 content[] = "ICONfont-data";
@@ -436,6 +456,7 @@ bool test_r_bin_elf_pn_xnum_phdr(void) {
 
 bool all_tests(void) {
 	mu_run_test(test_r_bin);
+	mu_run_test(test_r_bin_languages);
 	mu_run_test(test_r_bin_pebble_resources);
 	mu_run_test(test_r_bin_le_resources);
 	mu_run_test(test_r_bin_external_resource_data);

@@ -67,7 +67,7 @@ R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) 
 	return demangle_legacy_plugin (bin, name, str);
 }
 
-R_API int r_bin_demangle_type(const char *str) {
+R_API RBinLanguage r_bin_demangle_type(const char *str) {
 	if (R_STR_ISNOTEMPTY (str)) {
 		if (!strcmp (str, "swift")) {
 			return R_BIN_LANG_SWIFT;
@@ -112,14 +112,14 @@ R_API int r_bin_demangle_type(const char *str) {
 	return R_BIN_LANG_NONE;
 }
 
-static RBinDemanglePlugin *demangle_plugin_by_type(RBin *bin, int type) {
+static RBinDemanglePlugin *demangle_plugin_by_type(RBin *bin, RBinLanguage type) {
 	if (!bin || type <= R_BIN_LANG_NONE || type >= R_BIN_DEMANGLE_TYPE_SLOTS) {
 		return NULL;
 	}
 	return bin->demangle_by_type[type];
 }
 
-static char *demangle_without_bin(RBinFile *bf, int type, const char *str, ut64 vaddr) {
+static char *demangle_without_bin(RBinFile *bf, RBinLanguage type, const char *str, ut64 vaddr) {
 	switch (type) {
 	case R_BIN_LANG_JAVA: return r_bin_demangle_java (str);
 	case R_BIN_LANG_RUST: return r_bin_demangle_rust (bf, str, vaddr);
@@ -130,12 +130,13 @@ static char *demangle_without_bin(RBinFile *bf, int type, const char *str, ut64 
 	case R_BIN_LANG_PASCAL: return r_bin_demangle_freepascal (str);
 	case R_BIN_LANG_MSVC: return r_bin_demangle_msvc (str);
 	case R_BIN_LANG_DLANG: return r_bin_demangle_dlang (str);
+	default: break;
 	}
 	return NULL;
 }
 
 R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs) {
-	int type = -1;
+	RBinLanguage type = R_BIN_LANG_ANY;
 	if (R_STR_ISEMPTY (str)) {
 		return NULL;
 	}
@@ -188,11 +189,11 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	if (r_bin_lang_rustv0 (str)) {
 		type = R_BIN_LANG_RUST;
 	}
-	if (type == -1 && r_str_startswith (str, "__")) {
+	if (type == R_BIN_LANG_ANY && r_str_startswith (str, "__")) {
 		if (str[2] == 'T') {
 			type = R_BIN_LANG_SWIFT;
 		} else {
-			if (type == -1 && str[2] == 's') {
+			if (type == R_BIN_LANG_ANY && str[2] == 's') {
 				type = R_BIN_LANG_SWIFT;
 			} else {
 				type = R_BIN_LANG_CXX;
@@ -203,7 +204,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	if (!*str) {
 		return NULL;
 	}
-	if (type == -1) {
+	if (type == R_BIN_LANG_ANY) {
 		type = r_bin_lang_type (bf, def, str);
 	}
 	char *demangled = NULL;

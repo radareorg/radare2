@@ -106,7 +106,7 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static int retdemangle(const char *str) {
+static RBinLanguage retdemangle(const char *str) {
 	return R_BIN_LANG_JAVA;
 }
 

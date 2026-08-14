@@ -140,7 +140,7 @@ typedef struct {
 	bool isObjC;
 } LangCheck;
 
-static bool check_symbol_lang(RBinFile *bf, LangCheck *lc, RBinSymbol *sym, int *type) {
+static bool check_symbol_lang(RBinFile *bf, LangCheck *lc, RBinSymbol *sym, RBinLanguage *type) {
 	RBinObject *bo = bf->bo;
 	RBinInfo *info = bo->info;
 	char *lib;
@@ -282,13 +282,13 @@ R_API RBinLanguages r_bin_load_languages(RBinFile *bf) {
 			lc.cantbe.objc = true;
 		}
 	}
-	int type = -1;
+	RBinLanguage type = R_BIN_LANG_ANY;
 	R_VEC_FOREACH (&bo->symbols_vec, sym) {
 		if (!check_symbol_lang (bf, &lc, sym, &type)) {
 			break;
 		}
 	}
-	if (type != -1) {
+	if (type != R_BIN_LANG_ANY) {
 		return r_vpack_add (langs, type);
 	}
 	if (lc.isObjC) {
@@ -304,8 +304,8 @@ R_API RBinLanguages r_bin_load_languages(RBinFile *bf) {
 }
 
 // if its ipi no need to be prefixed with r_
-R_IPI int r_bin_lang_type(RBinFile * R_NULLABLE bf, const char * R_NULLABLE def, const char * R_NULLABLE sym) {
-	int type = R_BIN_LANG_NONE;
+R_IPI RBinLanguage r_bin_lang_type(RBinFile * R_NULLABLE bf, const char * R_NULLABLE def, const char * R_NULLABLE sym) {
+	RBinLanguage type = R_BIN_LANG_NONE;
 	if (R_STR_ISNOTEMPTY (def)) {
 		type = r_bin_demangle_type (def);
 		if (type != R_BIN_LANG_NONE) {
@@ -349,8 +349,8 @@ static const char *const lang_names[] = {
 	"c with blocks", "c++ with blocks", "objc with blocks"
 };
 
-R_API int r_bin_lang_fromstring(const char *name) {
-	int i;
+R_API RBinLanguage r_bin_lang_fromstring(const char *name) {
+	RBinLanguage i;
 	for (i = R_BIN_LANG_JAVA; R_STR_ISNOTEMPTY (name) && i < R_BIN_LANG_LAST; i++) {
 		if (!strcmp (lang_names[i], name)) {
 			return i;
@@ -359,6 +359,6 @@ R_API int r_bin_lang_fromstring(const char *name) {
 	return R_BIN_LANG_NONE;
 }
 
-R_API const char *r_bin_lang_tostring(int lang) {
+R_API const char *r_bin_lang_tostring(RBinLanguage lang) {
 	return lang >= R_BIN_LANG_NONE && lang < R_BIN_LANG_LAST? lang_names[lang]: "?";
 }

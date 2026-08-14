@@ -348,7 +348,7 @@ typedef struct r_bin_symbol_t {
 	ut64 paddr;
 	ut32 size;
 	ut32 ordinal;
-	int lang;
+	RBinLanguage lang;
 	int bits;
 	RBinAttribute attr; // previously known as method_flags + visibility
 	int dup_count;
@@ -728,7 +728,7 @@ typedef struct r_bin_plugin_t {
 	RList/*<RBinFileHash>*/* (*hashes)(RBinFile *bf);
 	char* (*header)(RBinFile *bf, int mode);
 	char* (*signature)(RBinFile *bf, bool json);
-	int (*demangle_type)(const char *str);
+	RBinLanguage (*demangle_type)(const char *str);
 	struct r_bin_write_t *write;
 	ut64 (*get_offset) (RBinFile *bf, int type, int idx);
 	const char* (*get_name)(RBinFile *bf, int type, int idx, bool simplified);
@@ -786,7 +786,7 @@ typedef struct r_bin_class_t {
 	ut64 addr;
 	size_t instance_size;
 	char *ns; // namespace // maybe RBinName?
-	ut64 lang;
+	RBinLanguage lang;
 	RVecRBinSymbol methods;
 	RVecRBinField fields;
 	// RList *interfaces; // <char *>
@@ -1059,7 +1059,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
 R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_dlang(const char *str);
 R_API char *r_bin_demangle_ibmxl(const char *str);
-R_API int r_bin_demangle_type(const char *str);
+R_API RBinLanguage r_bin_demangle_type(const char *str);
 R_API void r_bin_demangle_list(RBin *bin);
 R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str);
 R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact);
@@ -1086,8 +1086,8 @@ R_API bool r_bin_wr_rpath_del(RBin *bin);
 R_API bool r_bin_wr_entry(RBin *bin, ut64 addr);
 R_API bool r_bin_wr_output(RBin *bin, const char *filename);
 
-R_API const char *r_bin_lang_tostring(int type);
-R_API int r_bin_lang_fromstring(const char *name);
+R_API const char *r_bin_lang_tostring(RBinLanguage type);
+R_API RBinLanguage r_bin_lang_fromstring(const char *name);
 
 R_API RList *r_bin_get_mem(RBin *bin);
 
