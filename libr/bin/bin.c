@@ -2209,6 +2209,10 @@ static const char *attr_bit_name(ut64 n, bool compact) {
 		return compact? "S": "super";
 	case R_BIN_ATTR_ANNOTATION:
 		return compact? "A": "annotation";
+	case R_BIN_ATTR_MIXIN:
+		return compact? "M": "mixin";
+	case R_BIN_ATTR_LATE:
+		return compact? "l": "late";
 	case R_BIN_ATTR_WEAK:
 		return compact? "w": "weak";
 	case R_BIN_ATTR_CLASS:
