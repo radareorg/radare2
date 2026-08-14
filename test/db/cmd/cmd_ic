@@ -22,7 +22,6 @@ EOF
 RUN
 
 NAME=ic?
-BROKEN=1
 FILE=bins/elf/libmagic.so
 CMDS=ic?~?Usage
 EXPECT=<<EOF
@@ -1005,7 +1004,7 @@ NAME=ic+? inheritance help
 FILE=malloc://512
 CMDS=ic+?~inheritance
 EXPECT=<<EOF
-| ic+[klass:base]           add inheritance relation
+| ic+[klass:base]                       add inheritance relation
 EOF
 RUN
 
@@ -1302,5 +1301,91 @@ EXPECT=<<EOF
 - (void)setPasswordField:(UITextField *)arg0;
 // - (void).cxx_destruct;
 @end
+EOF
+RUN
+
+NAME=ic+ attributes
+FILE=malloc://512
+CMDS=<<EOF
+s 0x456
+ic+Widget size=32 ns=dart:ui lang=dart abstract
+ic+Widget.build getter static @ 0x1234
+ic+Widget._new factory
+s 0x20
+ic+Widget..count int offset=0x18 size=8 final late
+ic+Widget..title property static
+icj~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "classname": "Widget",
+    "instance_size": 32,
+    "addr": 1110,
+    "lang": "dart",
+    "ns": "dart:ui",
+    "attr": [
+      "abstract"
+    ],
+    "index": 0,
+    "methods": [
+      {
+        "name": "build",
+        "flags": [
+          "static getter"
+        ],
+        "addr": 4660
+      },
+      {
+        "name": "_new",
+        "flags": [
+          "static constructor"
+        ],
+        "addr": 1110
+      }
+    ],
+    "fields": [
+      {
+        "name": "count",
+        "kind": "field",
+        "type": "int",
+        "attr": [
+          "final late"
+        ],
+        "offset": 24,
+        "size": 8,
+        "addr": 32
+      },
+      {
+        "name": "title",
+        "kind": "property",
+        "attr": [
+          "static"
+        ],
+        "addr": 32
+      }
+    ]
+  }
+]
+EOF
+RUN
+
+NAME=ic+ attribute upsert
+FILE=malloc://512
+CMDS=<<EOF
+ic+Widget..count int
+ic+Widget..count offset=0x18 final
+icj~{0.fields[0].type}
+icj~{0.fields[0].attr}
+icj~{0.fields[0].offset}
+ic+Widget.build
+ic+Widget.build getter
+icj~{0.methods[0].flags}
+EOF
+EXPECT=<<EOF
+int
+["final"]
+24
+["getter"]
 EOF
 RUN
