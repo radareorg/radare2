@@ -96,6 +96,8 @@ r_bin_sources = [
   'format/dmp/dmp64.c',
   'format/elf/elf.c',
   'format/elf/elf64.c',
+  'format/elf/plt.c',
+  'format/elf/plt64.c',
   'format/elf/elf64_write.c',
   'format/elf/elf_write.c',
   'format/mach0/coresymbolication.c',

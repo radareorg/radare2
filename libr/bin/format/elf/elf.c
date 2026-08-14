@@ -16,6 +16,8 @@
 #define LOONGARCH_PLT_OFFSET 0x20
 #define S390_PLT_OFFSET 0x20
 
+#define DT_AARCH64_PAC_PLT (DT_LOPROC + 3)
+
 #define RISCV_PLT_ENTRY_SIZE 0x10
 #define LOONGARCH_PLT_ENTRY_SIZE 0x10
 #define X86_PLT_ENTRY_SIZE 0x10
@@ -527,6 +529,7 @@ static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	di->dt_mips_gotsym = R_BIN_ELF_XWORD_MAX;
 	di->dt_mips_symtabno = 0;
 	di->dt_ppc64_glink = R_BIN_ELF_ADDR_MAX;
+	di->dt_aarch64_pac_plt = false;
 	di->dt_crel = R_BIN_ELF_ADDR_MAX;
 	di->dt_bind_now = false;
 	di->dt_flags = R_BIN_ELF_XWORD_MAX;
@@ -635,6 +638,12 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 			break;
 		case DT_PPC64_GLINK:
 			di->dt_ppc64_glink = d.d_un.d_ptr;
+			break;
+		case DT_AARCH64_PAC_PLT:
+			// shares its value with DT_PPC64_OPT and DT_MIPS_ICHECKSUM, so gate by machine
+			if (eo->ehdr.e_machine == EM_AARCH64) {
+				di->dt_aarch64_pac_plt = true;
+			}
 			break;
 		case DT_CREL:
 			di->dt_crel = d.d_un.d_ptr;
@@ -1737,12 +1746,12 @@ static ut64 get_import_addr_arm64(ELFOBJ *eo, RBinElfReloc *rel) {
 		return eo->baddr + rel->addend;
 	case R_AARCH64_IRELATIVE:
 		if (rel->addend > plt_addr) { // start
-			return (plt_addr + pos * 16 + 32) + rel->addend;
+			return Elf_(plt_arm64_entry) (eo, plt_addr, pos) + rel->addend;
 		}
 		// same as fallback to JUMP_SLOT
-		return plt_addr + pos * 16 + 32;
+		return Elf_(plt_arm64_entry) (eo, plt_addr, pos);
 	case R_AARCH64_JUMP_SLOT:
-		return plt_addr + pos * 16 + 32;
+		return Elf_(plt_arm64_entry) (eo, plt_addr, pos);
 	case R_AARCH64_GLOB_DAT:
 		return rel->rva;
 	default:
@@ -1818,6 +1827,15 @@ static ut64 get_num_relocs_dynamic_plt(ELFOBJ *eo) {
 		return relsize ? size / relsize : 0;
 	}
 	return 0;
+}
+
+// exported for the plt geometry code in plt.c
+RBinElfSection *Elf_(plt_section_by_name)(ELFOBJ *eo, const char *name) {
+	return get_section_by_name (eo, name);
+}
+
+ut64 Elf_(plt_num_relocs)(ELFOBJ *eo) {
+	return get_num_relocs_dynamic_plt (eo);
 }
 
 static ut64 get_import_addr_sparc(ELFOBJ *eo, RBinElfReloc *rel) {

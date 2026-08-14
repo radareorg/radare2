@@ -1,0 +1,39 @@
+NAME=aarch64 24-byte plt stride: imports land on their entries
+FILE=bins/elf/ls-toybox
+CMDS=<<EOF
+f~sym.imp.__libc_init
+f~sym.imp.__strchr_chk
+f~sym.imp.strtol
+EOF
+EXPECT=<<EOF
+0x000758e0 16 sym.imp.__libc_init
+0x000758f8 16 sym.imp.__strchr_chk
+0x00075910 16 sym.imp.strtol
+0x00075c10 16 sym.imp.strtoll
+0x00076f00 16 sym.imp.strtold
+EOF
+RUN
+
+NAME=aarch64 24-byte plt stride: the flagged entry decodes as a stub
+FILE=bins/elf/ls-toybox
+CMDS=<<EOF
+pd 2 @ 0x758f8
+EOF
+EXPECT=<<EOF
+            ;-- __strchr_chk:
+            0x000758f8      300000d0       adrp x16, 0x7b000
+            0x000758fc      114642f9       ldr x17, [x16, 0x488]
+EOF
+RUN
+
+NAME=aarch64 16-byte plt stride keeps its entry math
+FILE=bins/elf/libarm64.so
+CMDS=<<EOF
+f~sym.imp.__cxa_finalize
+f~sym.imp.__stack_chk_fail
+EOF
+EXPECT=<<EOF
+0x000006c0 16 sym.imp.__cxa_finalize
+0x000006d0 16 sym.imp.__stack_chk_fail
+EOF
+RUN
