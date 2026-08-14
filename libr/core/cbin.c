@@ -4358,11 +4358,11 @@ static void classdump_java(RCore *core, RBinClass *c) {
 }
 
 static bool is_swift(RBinFile *bf) {
-	return (bf->bo->lang == R_BIN_LANG_SWIFT);
+	return R_VPACK_HAS (bf->bo->langs, R_BIN_LANG_SWIFT);
 }
 
 static bool is_dart(RBinFile *bf) {
-	if (bf->bo->lang == R_BIN_LANG_DART) {
+	if (R_VPACK_HAS (bf->bo->langs, R_BIN_LANG_DART)) {
 		return true;
 	}
 	if (bf->bo->info && bf->bo->info->lang && !strcmp (bf->bo->info->lang, "dart")) {
@@ -4372,7 +4372,7 @@ static bool is_dart(RBinFile *bf) {
 }
 
 static bool is_cil(RBinFile *bf) {
-	if (bf->bo->lang == R_BIN_LANG_CIL) {
+	if (R_VPACK_HAS (bf->bo->langs, R_BIN_LANG_CIL)) {
 		return true;
 	}
 	if (bf->bo->info && bf->bo->info->lang && !strcmp (bf->bo->info->lang, "cil")) {
@@ -4382,7 +4382,7 @@ static bool is_cil(RBinFile *bf) {
 }
 
 static bool is_javaish(RBinFile *bf) {
-	if (bf->bo->lang == R_BIN_LANG_JAVA) {
+	if (R_VPACK_HAS (bf->bo->langs, R_BIN_LANG_JAVA)) {
 		return true;
 	}
 	if (bf->bo->info && bf->bo->info->lang && strstr (bf->bo->info->lang, "dalvik")) {

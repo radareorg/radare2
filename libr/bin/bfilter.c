@@ -188,8 +188,12 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *na
 R_IPI bool r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym) {
 	R_RETURN_VAL_IF_FAIL (ht && sym && sym->name, false);
 	const char *name = r_bin_name_tostring2 (sym->name, 'o');
-	if (bf && bf->bo && bf->bo->lang) {
-		const char *lang = r_bin_lang_tostring (bf->bo->lang);
+	int lang_id = sym->lang;
+	if (!lang_id && bf && bf->bo) {
+		lang_id = R_VPACK_FIRST (bf->bo->langs);
+	}
+	if (lang_id) {
+		const char *lang = r_bin_lang_tostring (lang_id);
 		char *dn = r_bin_demangle (bf, lang, name, sym->vaddr, false);
 		if (R_STR_ISNOTEMPTY (dn)) {
 			r_bin_name_demangled (sym->name, dn);

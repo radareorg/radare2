@@ -599,12 +599,7 @@ R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin) {
 }
 
 static int demangle_type_index(RBinLanguage type) {
-	ut32 value = (ut32)type & 0xffff;
-	if (!value || (value & (value - 1))) {
-		return -1;
-	}
-	int index = r_bits_ctz32 (value);
-	return index < R_BIN_DEMANGLE_TYPE_SLOTS? index: -1;
+	return type > R_BIN_LANG_NONE && type < R_BIN_DEMANGLE_TYPE_SLOTS? type: -1;
 }
 
 static void demangle_names_remove(RBin *bin, RBinDemanglePlugin *plugin) {

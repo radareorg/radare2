@@ -113,16 +113,14 @@ R_API int r_bin_demangle_type(const char *str) {
 }
 
 static RBinDemanglePlugin *demangle_plugin_by_type(RBin *bin, int type) {
-	ut32 value = (ut32)type & 0xffff;
-	if (!bin || !value || (value & (value - 1))) {
+	if (!bin || type <= R_BIN_LANG_NONE || type >= R_BIN_DEMANGLE_TYPE_SLOTS) {
 		return NULL;
 	}
-	int index = r_bits_ctz32 (value);
-	return index < R_BIN_DEMANGLE_TYPE_SLOTS? bin->demangle_by_type[index]: NULL;
+	return bin->demangle_by_type[type];
 }
 
 static char *demangle_without_bin(RBinFile *bf, int type, const char *str, ut64 vaddr) {
-	switch (type & 0xffff) {
+	switch (type) {
 	case R_BIN_LANG_JAVA: return r_bin_demangle_java (str);
 	case R_BIN_LANG_RUST: return r_bin_demangle_rust (bf, str, vaddr);
 	case R_BIN_LANG_OBJC: return r_bin_demangle_objc (NULL, str);

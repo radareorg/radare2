@@ -15,7 +15,7 @@ static bool test_demangle_registry(void) {
 	RBinDemanglePlugin *cxx = r_bin_demangle_plugin_find (bin, "cxx");
 	if (cxx) {
 		mu_assert_ptreq (cxx, r_bin_demangle_plugin_find (bin, "c++"), "C++ alias lookup");
-		mu_assert_ptreq (cxx, bin->demangle_by_type[r_bits_ctz32 (R_BIN_LANG_CXX)], "C++ direct table lookup");
+		mu_assert_ptreq (cxx, bin->demangle_by_type[R_BIN_LANG_CXX], "C++ direct table lookup");
 	}
 
 	RBinDemanglePlugin plugin = {
@@ -62,7 +62,7 @@ static bool test_demangle_registry(void) {
 
 	RBinDemanglePlugin invalid_type = {
 		.meta.name = "invalid_type",
-		.type = R_BIN_LANG_CXX | R_BIN_LANG_RUST,
+		.type = R_BIN_LANG_C_BLOCKS,
 		.demangle = unit_demangle,
 	};
 	mu_assert_false (r_bin_demangle_plugin_add (bin, &invalid_type), "reject non-unique language types");

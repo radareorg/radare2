@@ -982,7 +982,7 @@ R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject * R_NULLABLE o
 			return false;
 		}
 		if (!obj->info->lang) {
-			obj->info->lang = r_bin_lang_tostring (obj->lang);
+			obj->info->lang = r_bin_lang_tostring (R_VPACK_FIRST (obj->langs));
 		}
 	}
 	return true;
