@@ -237,6 +237,9 @@ class Employer {
     "classname": "main.Greet",
     "addr": 4294983172,
     "lang": "swift",
+    "attr": [
+      "interface"
+    ],
     "index": 2
   },
   {
@@ -244,6 +247,9 @@ class Employer {
     "rawclassname": "main.Employee_1",
     "addr": 4295000392,
     "lang": "objc",
+    "attr": [
+      "public"
+    ],
     "index": 3,
     "super": [
       "Swift._SwiftObject"
@@ -256,11 +262,13 @@ class Employer {
         "name": "isa",
         "kind": "var",
         "type": "struct objc_class *",
+        "size": 8,
         "addr": 0
       },
       {
         "name": "name",
         "kind": "var",
+        "offset": 16,
         "addr": 4294983216
       }
     ]
@@ -270,6 +278,9 @@ class Employer {
     "rawclassname": "main.Employer_1",
     "addr": 4295000576,
     "lang": "objc",
+    "attr": [
+      "public"
+    ],
     "index": 4,
     "super": [
       "main.Employee"

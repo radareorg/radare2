@@ -747,6 +747,9 @@ EXPECT=<<EOF
     "classname": "__C.LaunchOptionsKey",
     "addr": 4295117796,
     "lang": "swift",
+    "attr": [
+      "struct"
+    ],
     "index": 5,
     "fields": [
       {
@@ -1102,6 +1105,9 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.MainTabBarViewController.UpdateData",
     "addr": 4295118700,
     "lang": "swift",
+    "attr": [
+      "struct"
+    ],
     "index": 10,
     "methods": [
       {
@@ -1251,6 +1257,9 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.MainTabBarViewController.UpdateData.CodingKeys",
     "addr": 4295118872,
     "lang": "swift",
+    "attr": [
+      "enum"
+    ],
     "index": 11,
     "fields": [
       {
@@ -1275,6 +1284,9 @@ EXPECT=<<EOF
     "classname": "__C.ComparisonResult",
     "addr": 4295119224,
     "lang": "swift",
+    "attr": [
+      "enum"
+    ],
     "index": 12
   },
   {
@@ -2961,6 +2973,9 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.WKOptionsCellDelegate",
     "addr": 4295119384,
     "lang": "swift",
+    "attr": [
+      "interface"
+    ],
     "index": 19
   },
   {
@@ -2968,6 +2983,9 @@ EXPECT=<<EOF
     "rawclassname": "WheresMyBrowser.WKWebViewController_1",
     "addr": 4295176568,
     "lang": "objc",
+    "attr": [
+      "public"
+    ],
     "index": 20,
     "super": [
       "UIViewController"
@@ -3150,51 +3168,61 @@ EXPECT=<<EOF
         "name": "isa",
         "kind": "var",
         "type": "struct objc_class *",
+        "size": 8,
         "addr": 0
       },
       {
         "name": "urlBar",
         "kind": "var",
+        "offset": 8,
         "addr": 4295176432
       },
       {
         "name": "progressBar",
         "kind": "var",
+        "offset": 16,
         "addr": 4295176440
       },
       {
         "name": "backButton",
         "kind": "var",
+        "offset": 24,
         "addr": 4295176448
       },
       {
         "name": "wkWebView",
         "kind": "var",
+        "offset": 32,
         "addr": 4295176456
       },
       {
         "name": "wkWebViewPreferencesManager",
         "kind": "var",
+        "offset": 40,
         "addr": 4295176464
       },
       {
         "name": "progressBarTimer",
         "kind": "var",
+        "offset": 48,
         "addr": 4295176480
       },
       {
         "name": "progressBarPageLoaded",
         "kind": "var",
+        "offset": 56,
         "addr": 4295176488
       },
       {
         "name": "wkWebViewPlaceholder",
         "kind": "var",
+        "offset": 64,
         "addr": 4295176496
       },
       {
         "name": "scenarioButton",
         "kind": "var",
+        "offset": 72,
         "addr": 4295176504
       },
       {
@@ -3205,21 +3233,25 @@ EXPECT=<<EOF
       {
         "name": "progressBar",
         "kind": "property",
+        "offset": 1,
         "addr": 0
       },
       {
         "name": "backButton",
         "kind": "property",
+        "offset": 2,
         "addr": 0
       },
       {
         "name": "wkWebViewPlaceholder",
         "kind": "property",
+        "offset": 3,
         "addr": 0
       },
       {
         "name": "scenarioButton",
         "kind": "property",
+        "offset": 4,
         "addr": 0
       }
     ]
@@ -3229,6 +3261,9 @@ EXPECT=<<EOF
     "rawclassname": "WheresMyBrowser.AppDelegate_1",
     "addr": 4295177008,
     "lang": "objc",
+    "attr": [
+      "public"
+    ],
     "index": 21,
     "super": [
       "UIResponder"
@@ -3303,11 +3338,13 @@ EXPECT=<<EOF
         "name": "isa",
         "kind": "var",
         "type": "struct objc_class *",
+        "size": 8,
         "addr": 0
       },
       {
         "name": "window",
         "kind": "var",
+        "offset": 8,
         "addr": 4295176896
       },
       {
@@ -3322,6 +3359,9 @@ EXPECT=<<EOF
     "rawclassname": "WheresMyBrowser.JavaScriptBridgeMessageHandler_1",
     "addr": 4295177216,
     "lang": "objc",
+    "attr": [
+      "public"
+    ],
     "index": 22,
     "super": [
       "NSObject"
@@ -3349,6 +3389,9 @@ EXPECT=<<EOF
     "rawclassname": "WheresMyBrowser.AboutViewController_1",
     "addr": 4295177368,
     "lang": "objc",
+    "attr": [
+      "public"
+    ],
     "index": 23,
     "super": [
       "UIViewController"
@@ -3399,11 +3442,13 @@ EXPECT=<<EOF
         "name": "isa",
         "kind": "var",
         "type": "struct objc_class *",
+        "size": 8,
         "addr": 0
       },
       {
         "name": "versionLabel",
         "kind": "var",
+        "offset": 8,
         "addr": 4295177360
       },
       {
@@ -3418,6 +3463,9 @@ EXPECT=<<EOF
     "rawclassname": "WheresMyBrowser.DocumentationViewController_1",
     "addr": 4295177408,
     "lang": "objc",
+    "attr": [
+      "public"
+    ],
     "index": 24,
     "super": [
       "UIViewController"
@@ -3445,6 +3493,9 @@ EXPECT=<<EOF
     "rawclassname": "WheresMyBrowser.MainTabBarViewController_1",
     "addr": 4295177496,
     "lang": "objc",
+    "attr": [
+      "public"
+    ],
     "index": 25,
     "super": [
       "UITabBarController"
@@ -3483,16 +3534,19 @@ EXPECT=<<EOF
         "name": "isa",
         "kind": "var",
         "type": "struct objc_class *",
+        "size": 8,
         "addr": 0
       },
       {
         "name": "checkedForUpdates",
         "kind": "var",
+        "offset": 8,
         "addr": 4295177448
       },
       {
         "name": "updatesURL",
         "kind": "var",
+        "offset": 16,
         "addr": 4295177456
       }
     ]
@@ -3502,6 +3556,9 @@ EXPECT=<<EOF
     "rawclassname": "WheresMyBrowser.WKOptionsViewCell_1",
     "addr": 4295177656,
     "lang": "objc",
+    "attr": [
+      "public"
+    ],
     "index": 26,
     "super": [
       "UITableViewCell"
@@ -3576,46 +3633,55 @@ EXPECT=<<EOF
         "name": "isa",
         "kind": "var",
         "type": "struct objc_class *",
+        "size": 8,
         "addr": 0
       },
       {
         "name": "optionsSwitch",
         "kind": "var",
+        "offset": 8,
         "addr": 4295177568
       },
       {
         "name": "optionsNameLabel",
         "kind": "var",
+        "offset": 16,
         "addr": 4295177576
       },
       {
         "name": "optionsDescriptionLabel",
         "kind": "var",
+        "offset": 24,
         "addr": 4295177584
       },
       {
         "name": "delegate",
         "kind": "var",
+        "offset": 32,
         "addr": 4295177592
       },
       {
         "name": "optionId",
         "kind": "var",
+        "offset": 72,
         "addr": 4295177600
       },
       {
         "name": "optionName",
         "kind": "var",
+        "offset": 88,
         "addr": 4295177608
       },
       {
         "name": "optionDescription",
         "kind": "var",
+        "offset": 104,
         "addr": 4295177616
       },
       {
         "name": "enabled",
         "kind": "var",
+        "offset": 120,
         "addr": 4295177624
       },
       {
@@ -3626,11 +3692,13 @@ EXPECT=<<EOF
       {
         "name": "optionsNameLabel",
         "kind": "property",
+        "offset": 1,
         "addr": 0
       },
       {
         "name": "optionsDescriptionLabel",
         "kind": "property",
+        "offset": 2,
         "addr": 0
       }
     ]
@@ -3640,6 +3708,9 @@ EXPECT=<<EOF
     "rawclassname": "WheresMyBrowser.WKPreferencesViewController_1",
     "addr": 4295177696,
     "lang": "objc",
+    "attr": [
+      "public"
+    ],
     "index": 27,
     "super": [
       "UITableViewController"
@@ -3708,16 +3779,19 @@ EXPECT=<<EOF
         "name": "isa",
         "kind": "var",
         "type": "struct objc_class *",
+        "size": 8,
         "addr": 0
       },
       {
         "name": "preferencesManager",
         "kind": "var",
+        "offset": 8,
         "addr": 4295177640
       },
       {
         "name": "preferencesTableView",
         "kind": "var",
+        "offset": 16,
         "addr": 4295177648
       },
       {
@@ -3732,6 +3806,9 @@ EXPECT=<<EOF
     "rawclassname": "WheresMyBrowser.WKWebViewPreferencesManager_1",
     "addr": 4295177784,
     "lang": "objc",
+    "attr": [
+      "public"
+    ],
     "index": 28,
     "super": [
       "Swift._SwiftObject"
@@ -3744,36 +3821,43 @@ EXPECT=<<EOF
         "name": "isa",
         "kind": "var",
         "type": "struct objc_class *",
+        "size": 8,
         "addr": 0
       },
       {
         "name": "wkWebView",
         "kind": "var",
+        "offset": 16,
         "addr": 4295119848
       },
       {
         "name": "wkWebViewPreferences",
         "kind": "var",
+        "offset": 24,
         "addr": 4295119856
       },
       {
         "name": "wkWebViewConfiguration",
         "kind": "var",
+        "offset": 32,
         "addr": 4295119864
       },
       {
         "name": "options",
         "kind": "var",
+        "offset": 40,
         "addr": 4295119872
       },
       {
         "name": "option_ids",
         "kind": "var",
+        "offset": 48,
         "addr": 4295119880
       },
       {
         "name": "options_dict",
         "kind": "var",
+        "offset": 56,
         "addr": 4295119888
       }
     ]
@@ -3783,6 +3867,9 @@ EXPECT=<<EOF
     "rawclassname": "WheresMyBrowser.WKWebViewPreferencesManager.WebViewSetting_1",
     "addr": 4295178088,
     "lang": "objc",
+    "attr": [
+      "public"
+    ],
     "index": 29,
     "super": [
       "Swift._SwiftObject"
@@ -3795,26 +3882,31 @@ EXPECT=<<EOF
         "name": "isa",
         "kind": "var",
         "type": "struct objc_class *",
+        "size": 8,
         "addr": 0
       },
       {
         "name": "id",
         "kind": "var",
+        "offset": 16,
         "addr": 4295120104
       },
       {
         "name": "name",
         "kind": "var",
+        "offset": 32,
         "addr": 4295120112
       },
       {
         "name": "description",
         "kind": "var",
+        "offset": 48,
         "addr": 4295120120
       },
       {
         "name": "value",
         "kind": "var",
+        "offset": 64,
         "addr": 4295120128
       }
     ]
@@ -3824,6 +3916,9 @@ EXPECT=<<EOF
     "rawclassname": "WheresMyBrowser.LoadContentViewController_1",
     "addr": 4295178328,
     "lang": "objc",
+    "attr": [
+      "public"
+    ],
     "index": 30,
     "super": [
       "UIViewController"
@@ -3898,31 +3993,37 @@ EXPECT=<<EOF
         "name": "isa",
         "kind": "var",
         "type": "struct objc_class *",
+        "size": 8,
         "addr": 0
       },
       {
         "name": "baseUrlTextField",
         "kind": "var",
+        "offset": 8,
         "addr": 4295178288
       },
       {
         "name": "contentTextView",
         "kind": "var",
+        "offset": 16,
         "addr": 4295178296
       },
       {
         "name": "parentWebView",
         "kind": "var",
+        "offset": 24,
         "addr": 4295178304
       },
       {
         "name": "htmlData",
         "kind": "var",
+        "offset": 32,
         "addr": 4295178312
       },
       {
         "name": "htmlOrigin",
         "kind": "var",
+        "offset": 48,
         "addr": 4295178320
       },
       {
@@ -3933,6 +4034,7 @@ EXPECT=<<EOF
       {
         "name": "contentTextView",
         "kind": "property",
+        "offset": 1,
         "addr": 0
       }
     ]
@@ -3942,6 +4044,9 @@ EXPECT=<<EOF
     "rawclassname": "WheresMyBrowser.UIWebViewController_1",
     "addr": 4295178472,
     "lang": "objc",
+    "attr": [
+      "public"
+    ],
     "index": 31,
     "super": [
       "UIViewController"
@@ -4130,51 +4235,61 @@ EXPECT=<<EOF
         "name": "isa",
         "kind": "var",
         "type": "struct objc_class *",
+        "size": 8,
         "addr": 0
       },
       {
         "name": "urlBar",
         "kind": "var",
+        "offset": 8,
         "addr": 4295178368
       },
       {
         "name": "uiWebView",
         "kind": "var",
+        "offset": 16,
         "addr": 4295178376
       },
       {
         "name": "progressBar",
         "kind": "var",
+        "offset": 24,
         "addr": 4295178384
       },
       {
         "name": "backButton",
         "kind": "var",
+        "offset": 32,
         "addr": 4295178392
       },
       {
         "name": "scenarioButton",
         "kind": "var",
+        "offset": 40,
         "addr": 4295178400
       },
       {
         "name": "progressBarTimer",
         "kind": "var",
+        "offset": 48,
         "addr": 4295178416
       },
       {
         "name": "progressBarPageLoaded",
         "kind": "var",
+        "offset": 56,
         "addr": 4295178424
       },
       {
         "name": "htmlData",
         "kind": "var",
+        "offset": 64,
         "addr": 4295178432
       },
       {
         "name": "loadContentButtonPressed",
         "kind": "var",
+        "offset": 80,
         "addr": 4295178448
       },
       {
@@ -4185,26 +4300,31 @@ EXPECT=<<EOF
       {
         "name": "uiWebView",
         "kind": "property",
+        "offset": 1,
         "addr": 0
       },
       {
         "name": "progressBar",
         "kind": "property",
+        "offset": 2,
         "addr": 0
       },
       {
         "name": "backButton",
         "kind": "property",
+        "offset": 3,
         "addr": 0
       },
       {
         "name": "scenarioButton",
         "kind": "property",
+        "offset": 4,
         "addr": 0
       },
       {
         "name": "loadContentButtonPressed",
         "kind": "property",
+        "offset": 5,
         "addr": 0
       }
     ]
