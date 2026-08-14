@@ -263,6 +263,8 @@ ut8 *Elf_(grab_regstate)(struct Elf_(obj_t) *bin, int *len);
 RList *Elf_(get_maps)(ELFOBJ *bin);
 ut64 Elf_(ppc64_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr);
 /* plt.c */
+ut64 Elf_(plt_get_import_addr)(ELFOBJ *eo, int sym);
+int Elf_(plt_ppc64_abi)(ELFOBJ *eo);
 ut64 Elf_(plt_arm64_entry)(ELFOBJ *eo, ut64 plt_addr, ut64 pos);
 ut64 Elf_(plt_ppc32_thunk)(ELFOBJ *eo, ut64 slot_vaddr);
 /* elf.c helpers exported for plt.c */
