@@ -4742,6 +4742,10 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 					if (R_STR_ISNOTEMPTY (type)) {
 						pj_ks (pj, "type", type);
 					}
+					const char *lang = r_bin_lang_tostring (f->attr.lang);
+					if (lang && *lang != '?') {
+						pj_ks (pj, "lang", lang);
+					}
 					if (f->attr.flags) {
 						char *mflags = r_core_bin_attr_tostring (core, f->attr.flags, mode);
 						pj_k (pj, "attr");

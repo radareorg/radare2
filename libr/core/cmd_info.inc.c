@@ -1043,6 +1043,14 @@ static RBinClass *cmd_ic_find_class(RList *klasses, const char *klass_name) {
 	return NULL;
 }
 
+static void cmd_ic_set_default_lang(RCore *core, RBinAttr *attr) {
+	const char *name = r_config_get (core->config, "bin.lang");
+	RBinLanguage lang = r_bin_lang_fromstring (name);
+	if (lang) {
+		attr->lang = lang;
+	}
+}
+
 static RBinClass *cmd_ic_get_or_add_class(RCore *core, RList *klasses, const char *klass_name) {
 	RBinClass *klass = cmd_ic_find_class (klasses, klass_name);
 	if (klass) {
@@ -1055,6 +1063,7 @@ static RBinClass *cmd_ic_get_or_add_class(RCore *core, RList *klasses, const cha
 	klass = r_bin_file_add_class (bf, klass_name, NULL, 0);
 	if (klass) {
 		klass->origin = R_BIN_CLASS_ORIGIN_USER;
+		cmd_ic_set_default_lang (core, &klass->attr);
 	}
 	return klass;
 }
@@ -1268,6 +1277,7 @@ void cmd_ic_add(RCore *core, const char *input) {
 		f->paddr = core->addr;
 		f->vaddr = core->addr;
 		f->attr.kind = R_BIN_FIELD_KIND_FIELD;
+		cmd_ic_set_default_lang (core, &f->attr);
 		cmd_ic_field_update (f, tail);
 		free (klass_name);
 		return;
@@ -1321,6 +1331,7 @@ void cmd_ic_add(RCore *core, const char *input) {
 			m->name = r_bin_name_new (method_name);
 			m->paddr = pa;
 			m->vaddr = va;
+			cmd_ic_set_default_lang (core, &m->attr);
 			cmd_ic_invalidate_method_cache (core);
 		}
 		rest = r_bin_attr_update (&m->attr, tail);
