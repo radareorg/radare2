@@ -99,7 +99,13 @@ static inline bool is_ibmxl_symbol(const char *name) {
 }
 
 static bool is_msvc_symbol(const char *name) {
-	return name && *name == '?';
+	if (!name || *name != '?') {
+		return false;
+	}
+	char *demangled = r_bin_demangle_msvc (name);
+	bool valid = demangled != NULL;
+	free (demangled);
+	return valid;
 }
 
 static inline bool is_kotlin_symbol(const char *name) {
@@ -169,10 +175,7 @@ R_API void r_bin_file_add_language(RBinFile *bf, RBinLanguage lang) {
 R_IPI void r_bin_register_symbol_language(RBinFile *bf, RBinSymbol *sym) {
 	R_RETURN_IF_FAIL (sym);
 	RBinLanguage lang = sym->attr.lang;
-	const char *rclass = bf && bf->bo && bf->bo->info? bf->bo->info->rclass: NULL;
-	bool detect = rclass && (strstr (rclass, "mach") || strstr (rclass, "elf")
-		|| strstr (rclass, "pe") || strstr (rclass, "coff"));
-	if (lang == R_BIN_LANG_NONE && sym->name && detect) {
+	if (lang == R_BIN_LANG_NONE && sym->name) {
 		lang = r_bin_lang_from_symbol_name (r_bin_name_tostring2 (sym->name, 'o'));
 		sym->attr.lang = lang;
 	}

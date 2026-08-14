@@ -49,6 +49,22 @@ va       false
 EOF
 RUN
 
+NAME=WASM: native C++ symbol language
+FILE=bins/wasm/AngryBots13.wasm
+CMDS=e bin.lang
+EXPECT=<<EOF
+c++
+EOF
+RUN
+
+NAME=WASM: encoded names do not imply a symbol language
+FILE=bins/wasm/dotnet.wasm
+CMDS=e bin.lang
+EXPECT=<<EOF
+
+EOF
+RUN
+
 NAME=WASM: Wasm - detection
 FILE=bins/wasm/basic.wasm
 CMDS=iI~os

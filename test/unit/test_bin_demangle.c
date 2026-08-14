@@ -10,6 +10,8 @@ static char *unit_demangle(RBinFile *bf, const char *symbol, ut64 vaddr) {
 static bool test_demangle_registry(void) {
 	mu_assert_eq (r_bin_demangle_type ("java"), R_BIN_LANG_JAVA, "Java selects the Java demangler");
 	mu_assert_eq (r_bin_demangle_type ("dalvik"), R_BIN_LANG_NONE, "Dalvik is a runtime, not a demangler");
+	char *invalid_msvc = r_bin_demangle_msvc ("?metadata");
+	mu_assert_null (invalid_msvc, "reject invalid MSVC decoration");
 
 	RBin *bin = r_bin_new ();
 	mu_assert_notnull (bin, "RBin allocation");
