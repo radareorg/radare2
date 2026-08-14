@@ -6159,7 +6159,7 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 			RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);
 			R_VEC_FOREACH (symbols, sym) {
 				ut64 addr = va? sym->vaddr: sym->paddr;
-				append_item (list, NULL, addr, sym->size);
+				append_item (list, NULL, addr, sym->attr.size);
 			}
 		}
 		break;

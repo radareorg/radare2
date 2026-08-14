@@ -28,17 +28,17 @@ bool test_r_bin_languages(void) {
 	RBinObject bo = { .info = &info };
 	RBinFile bf = { .bo = &bo };
 	RVecRBinImport_init (&bo.imports_vec);
-	RBinSymbol c_symbol = { .lang = R_BIN_LANG_C };
-	RBinSymbol rust_symbol = { .lang = R_BIN_LANG_RUST };
-	r_bin_file_add_language (&bf, c_symbol.lang);
+	RBinSymbol c_symbol = { .attr.lang = R_BIN_LANG_C };
+	RBinSymbol rust_symbol = { .attr.lang = R_BIN_LANG_RUST };
+	r_bin_file_add_language (&bf, c_symbol.attr.lang);
 	char *demangled = r_bin_demangle (&bf, NULL, "_RNvNtCs1234_7mycrate3foo3bar", 0, false);
 	mu_assert_notnull (demangled, "valid Rust symbol is demangled");
 	free (demangled);
 
 	mu_assert_true (R_VPACK_HAS (bo.langs, R_BIN_LANG_C), "binary contains C");
 	mu_assert_true (R_VPACK_HAS (bo.langs, R_BIN_LANG_RUST), "binary contains Rust");
-	mu_assert_eq (c_symbol.lang, R_BIN_LANG_C, "C symbol has one language");
-	mu_assert_eq (rust_symbol.lang, R_BIN_LANG_RUST, "Rust symbol has one language");
+	mu_assert_eq (c_symbol.attr.lang, R_BIN_LANG_C, "C symbol has one language");
+	mu_assert_eq (rust_symbol.attr.lang, R_BIN_LANG_RUST, "Rust symbol has one language");
 	bo.langs = r_bin_load_languages (&bf);
 	mu_assert_streq (info.lang, "rust", "primary language is independent of pack order");
 

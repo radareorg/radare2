@@ -1321,7 +1321,7 @@ R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr)
 		}
 		RVecRBinSymbol_init (&c->methods);
 		RVecRBinField_init (&c->fields);
-		c->attr = attr;
+		c->attr.flags = attr;
 		c->origin = R_BIN_CLASS_ORIGIN_BIN;
 	}
 	return c;
@@ -1349,6 +1349,7 @@ R_API void r_bin_class_fini(RBinClass *k) {
 		r_bin_name_free (k->name);
 		r_list_free (k->super);
 		free (k->visibility_str);
+		free (k->attr.ns);
 		RVecRBinSymbol_fini (&k->methods);
 		RVecRBinField_fini (&k->fields);
 	}
@@ -1417,7 +1418,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *rawname, const
 	} else if (rawname && (rawname[0] == '-' || rawname[0] == '+') && rawname[1] == '[') {
 		lang = R_BIN_LANG_OBJC;
 	}
-	c->lang = lang;
+	c->attr.lang = lang;
 	r_bin_file_add_language (bf, lang);
 	RBinSymbol *sym = __getMethod (c, method);
 	if (!sym) {
@@ -1426,7 +1427,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *rawname, const
 			return NULL;
 		}
 		sym->name->name = strdup (method);
-		sym->lang = lang;
+		sym->attr.lang = lang;
 	}
 	if (sym->name) {
 		free (sym->name->oname);

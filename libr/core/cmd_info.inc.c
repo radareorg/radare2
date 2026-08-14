@@ -301,7 +301,7 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 			r_cons_printf (core->cons, "klass.%s.field.%s.%s=0x%" PFMT64x "\n", kname, kind, fname, addr);
 		}
 		R_VEC_FOREACH (&k->methods, m) {
-			char *attr = r_bin_attr_tostring (m->attr, true);
+			char *attr = r_bin_attr_tostring (m->attr.flags, true);
 			const char *mname = r_bin_name_tostring2 (m->name, 'f');
 			const ut64 addr = iova? m->vaddr: m->paddr;
 			r_cons_printf (core->cons, "klass.%s.method.%s.%s=0x%" PFMT64x "\n", kname, r_str_get (attr), mname, addr);
@@ -1232,7 +1232,7 @@ void cmd_ic_add(RCore *core, const char *input) {
 		}
 		f->paddr = core->addr;
 		f->vaddr = core->addr;
-		f->kind = R_BIN_FIELD_KIND_FIELD;
+		f->attr.kind = R_BIN_FIELD_KIND_FIELD;
 		free (klass_name);
 		return;
 	}
@@ -1492,7 +1492,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 				r_cons_printf (core->cons, "class %s\n", kname);
 				if (!names_only) {
 					R_VEC_FOREACH (&cls->methods, sym) {
-						char *flags = r_core_bin_attr_tostring (core, sym->attr, true);
+						char *flags = r_core_bin_attr_tostring (core, sym->attr.flags, true);
 						const char *name = r_bin_name_tostring (sym->name);
 						r_cons_printf (core->cons, "0x%08" PFMT64x " method %s %-4s %s\n", iova? sym->vaddr: sym->paddr, kname, flags, name);
 						free (flags);
@@ -1512,7 +1512,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 			r_cons_printf (core->cons, "class %s\n", kname);
 			if (!names_only) {
 				R_VEC_FOREACH (&cls->methods, sym) {
-					char *flags = r_core_bin_attr_tostring (core, sym->attr, true);
+					char *flags = r_core_bin_attr_tostring (core, sym->attr.flags, true);
 					const char *name = r_bin_name_tostring (sym->name);
 					r_cons_printf (core->cons, "0x%08" PFMT64x " method %s %-4s %s\n", iova? sym->vaddr: sym->paddr, kname, flags, name);
 					free (flags);
@@ -1711,10 +1711,10 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 								if (at < min) {
 									min = at;
 								}
-								if (at + sym->size > max) {
-									max = at + sym->size;
+								if (at + sym->attr.size > max) {
+									max = at + sym->attr.size;
 								}
-								if (addr >= at && addr <= at + sym->size) {
+								if (addr >= at && addr <= at + sym->attr.size) {
 									method = r_bin_name_tostring (sym->name);
 								}
 							}
@@ -2066,9 +2066,9 @@ static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bo
 				if (inrange (sec, sym)) {
 					pj_o (pj);
 					pj_ks (pj, "name", r_bin_name_tostring (sym->name));
-					if (sym->size > 0) {
-						pj_ki (pj, "size", sym->size);
-						pj_kd (pj, "percent", (sym->size * 100) / vsize);
+					if (sym->attr.size > 0) {
+						pj_ki (pj, "size", sym->attr.size);
+						pj_kd (pj, "percent", (sym->attr.size * 100) / vsize);
 					}
 					pj_end (pj);
 				}
@@ -2091,7 +2091,7 @@ static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bo
 				r_cons_newline (core->cons);
 				R_VEC_FOREACH (symbols, sym) {
 					if (inrange (sec, sym)) {
-						r_cons_printf (core->cons, "    - %8d %s\n", sym->size, r_bin_name_tostring (sym->name));
+						r_cons_printf (core->cons, "    - %8u %s\n", sym->attr.size, r_bin_name_tostring (sym->name));
 					}
 				}
 			}
@@ -2970,7 +2970,7 @@ static int idd_symbol_size(RCore *core, const char *name) {
 		R_VEC_FOREACH (symbols, sym) {
 			const char *sname = r_bin_name_tostring2 (sym->name, 'o');
 			if (!strcmp (sname, name) || (r_str_startswith (sname, "sym.") && !strcmp (sname + 4, name))) {
-				return sym->size;
+				return sym->attr.size;
 			}
 		}
 	}
@@ -3006,7 +3006,7 @@ static void cmd_iddlg(RCore *core) {
 	Sdb *seen = sdb_new0 ();
 	RBinSymbol *sym;
 	R_VEC_FOREACH (symbols, sym) {
-		if (sym->is_imported || !sym->type || strcmp (sym->type, R_BIN_TYPE_OBJECT_STR) || sym->size < 1) {
+		if (sym->is_imported || !sym->type || strcmp (sym->type, R_BIN_TYPE_OBJECT_STR) || sym->attr.size < 1) {
 			continue;
 		}
 		if (!sym->bind || strcmp (sym->bind, "GLOBAL")) {
@@ -3020,7 +3020,7 @@ static void cmd_iddlg(RCore *core) {
 			continue;
 		}
 		sdb_set (seen, name, "1", 0);
-		r_cons_printf (core->cons, "f sym.%s %u @ 0x%" PFMT64x "\n", name, sym->size, sym->vaddr);
+		r_cons_printf (core->cons, "f sym.%s %u @ 0x%" PFMT64x "\n", name, sym->attr.size, sym->vaddr);
 	}
 	sdb_free (seen);
 }

@@ -1323,8 +1323,8 @@ static void findMethodBounds(RVecRBinSymbol *methods, ut64 *min, ut64 *max) {
 			if (sym->vaddr < at_min) {
 				at_min = sym->vaddr;
 			}
-			if (sym->vaddr + sym->size > at_max) {
-				at_max = sym->vaddr + sym->size;
+			if (sym->vaddr + sym->attr.size > at_max) {
+				at_max = sym->vaddr + sym->attr.size;
 			}
 		}
 	}

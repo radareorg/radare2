@@ -398,7 +398,7 @@ static bool symbols_vec(RBinFile *bf) {
 			sym->name = r_bin_name_new_from (r_str_newf ("kt.%s", kt_name[thunk_index - 1]));
 			sym->vaddr = (h->kernel_thunk_addr ^ obj->kt_key) + (4 * i);
 			sym->paddr = sym->vaddr - h->base;
-			sym->size = 4;
+			sym->attr.size = 4;
 			sym->ordinal = i;
 		}
 	}

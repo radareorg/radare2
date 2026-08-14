@@ -203,7 +203,7 @@ void PE_(r_bin_mdmp_pe_load_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin) 
 			ptr->forwarder = r_str_constpool_get (&rbin->constpool, (char *)symbol->forwarder);
 			ptr->bind = R_BIN_BIND_GLOBAL_STR;
 			ptr->type = R_BIN_TYPE_FUNC_STR;
-			ptr->size = 0;
+			ptr->attr.size = 0;
 			ptr->vaddr = offset + pe_bin->vaddr;
 			ptr->paddr = symbol->paddr + pe_bin->paddr;
 			ptr->ordinal = symbol->ordinal;
@@ -224,7 +224,7 @@ void PE_(r_bin_mdmp_pe_load_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin) 
 			ptr->is_imported = true;
 			ptr->bind = "NONE";
 			ptr->type = R_BIN_TYPE_FUNC_STR;
-			ptr->size = 0;
+			ptr->attr.size = 0;
 			ptr->vaddr = offset + pe_bin->vaddr;
 			ptr->paddr = import->paddr + pe_bin->paddr;
 			ptr->ordinal = import->ordinal;

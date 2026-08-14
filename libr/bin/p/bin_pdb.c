@@ -146,7 +146,7 @@ static bool symbols_vec(RBinFile *bf) {
 			sym->paddr = gdata->offset;
 			sym->type = (gdata->symtype == 2)? "FUNC": "OBJ";
 			sym->bind = "GLOBAL";
-			sym->attr = R_BIN_ATTR_GLOBAL;
+			sym->attr.flags = R_BIN_ATTR_GLOBAL;
 
 			free (demangled_name);
 		}

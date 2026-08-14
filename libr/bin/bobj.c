@@ -94,7 +94,7 @@ static bool bin_name_has_value(RBinName *name) {
 static bool symbol_has_value(RBinSymbol *sym) {
 	const char *name = sym && sym->name? sym->name->name: NULL;
 	bool entry = name && r_str_startswith (name, "entry") && r_str_isnumber (name + 5);
-	return sym && !(sym->attr & R_BIN_ATTR_SYNTHETIC) && (entry || bin_name_has_value (sym->name));
+	return sym && !(sym->attr.flags & R_BIN_ATTR_SYNTHETIC) && (entry || bin_name_has_value (sym->name));
 }
 
 static void filter_unnamed_symbols_vec(RBinFile *bf, RVecRBinSymbol *symbols) {
@@ -164,10 +164,10 @@ static void filter_unnamed_classes(RBinFile *bf, RList *classes) {
 	RListIter *iter, *tmp;
 	RBinClass *klass;
 	r_list_foreach_safe (classes, iter, tmp, klass) {
-		if (klass && klass->lang != R_BIN_LANG_NONE) {
-			r_bin_file_add_language (bf, klass->lang);
+		if (klass && klass->attr.lang != R_BIN_LANG_NONE) {
+			r_bin_file_add_language (bf, klass->attr.lang);
 		}
-		if (!klass || (klass->attr & R_BIN_ATTR_SYNTHETIC) || !bin_name_has_value (klass->name)) {
+		if (!klass || (klass->attr.flags & R_BIN_ATTR_SYNTHETIC) || !bin_name_has_value (klass->name)) {
 			r_list_delete (classes, iter);
 			continue;
 		}
@@ -344,7 +344,7 @@ static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 			f->paddr = sym->paddr;
 			f->vaddr = sym->vaddr;
 			f->value = -1;
-			f->size = sym->size;
+			f->attr.size = sym->attr.size;
 		}
 		free (fn);
 	} else {
@@ -457,8 +457,8 @@ static bool filter_classes(RBinFile *bf, RList *list) {
 	RBinSymbol *sym;
 	const bool names_only = classes_names_only (bf);
 	r_list_foreach (list, iter, cls) {
-		if (cls->lang != R_BIN_LANG_NONE) {
-			r_bin_file_add_language (bf, cls->lang);
+		if (cls->attr.lang != R_BIN_LANG_NONE) {
+			r_bin_file_add_language (bf, cls->attr.lang);
 		}
 		const char *kname = r_bin_name_tostring (cls->name);
 		char *fname = r_bin_filter_name (bf, db, cls->index, kname);

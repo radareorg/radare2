@@ -1150,7 +1150,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		free (s);
 		sym.paddr = total;
 		sym.vaddr = sym.paddr; //  + baddr;
-		sym.lang = R_BIN_LANG_JAVA;
+		sym.attr.lang = R_BIN_LANG_JAVA;
 		sym.ordinal = (*sym_count)++;
 
 		if (sb) {
@@ -1167,7 +1167,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		RBinField *field = RVecRBinField_emplace_back (&cls->fields);
 		field->vaddr = field->paddr = sym.paddr;
 		field->name = r_bin_name_clone (sym.name);
-		field->attr = get_method_attr (accessFlags);
+		field->attr.flags = get_method_attr (accessFlags);
 		lastIndex = fieldIndex;
 	}
 }
@@ -1392,9 +1392,9 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			}
 			sym->vaddr = sym->paddr;
 			// sym->vaddr += bf->bo->baddr;
-			sym->lang = R_BIN_LANG_JAVA;
+			sym->attr.lang = R_BIN_LANG_JAVA;
 			sym->bind = ((MA & 1) == 1) ? R_BIN_BIND_GLOBAL_STR : R_BIN_BIND_LOCAL_STR;
-			sym->attr = get_method_attr (MA);
+			sym->attr.flags = get_method_attr (MA);
 			sym->ordinal = (*sym_count)++;
 			if (MC > 0) {
 				if (bufsz < MC || bufsz < MC + 16) {
@@ -1411,7 +1411,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				sym->paddr = MC + prolog_size;// + 0x10;
 				sym->vaddr = sym->paddr; //  + baddr;
 				//if (is_direct) {
-				sym->size = insns_size * 2;
+				sym->attr.size = insns_size * 2;
 				//}
 				//eprintf("%s (0x%x-0x%x) size=%d\nregsz=%d\ninsns_size=%d\nouts_size=%d\ntries_size=%d\ninsns_size=%d\n", flag_name, sym->vaddr, sym->vaddr+sym->size, prolog_size, regsz, ins_size, outs_size, tries_size, insns_size);
 				RVecRBinSymbol_push_back (&dex->symbols_vec, sym);
@@ -1424,7 +1424,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				if (dex->code_from == UT64_MAX || dex->code_from > sym->paddr) {
 					dex->code_from = sym->paddr;
 				}
-				ut64 code_end = sym->paddr + sym->size;
+				ut64 code_end = sym->paddr + sym->attr.size;
 				if (code_end > sym->paddr && dex->code_to < code_end) {
 					dex->code_to = code_end;
 				}
@@ -1447,10 +1447,10 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				}
 #endif
 			} else {
-				sym->size = 0;
+				sym->attr.size = 0;
 				RVecRBinSymbol_push_back (&dex->symbols_vec, sym);
 				sym = RVecRBinSymbol_last (&dex->symbols_vec);
-				sym->lang = R_BIN_LANG_JAVA;
+				sym->attr.lang = R_BIN_LANG_JAVA;
 				RBinSymbol *method = RVecRBinSymbol_emplace_back (&cls->methods);
 				r_bin_symbol_copy (method, sym);
 				method->paddr = method->vaddr;
@@ -1484,7 +1484,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	int z;
 	RBinClass clz = {0};
 	RBinClass *cls = &clz;
-	cls->lang = R_BIN_LANG_JAVA;
+	cls->attr.lang = R_BIN_LANG_JAVA;
 	cls->origin = R_BIN_CLASS_ORIGIN_BIN;
 	char *cls_name = dex_class_name (dex, c);
 	if (!cls_name) {
@@ -1730,7 +1730,7 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym.paddr = dex->header.method_offset + (sizeof (struct dex_method_t) * i);
 				sym.vaddr = sym.paddr;
 				sym.ordinal = sym_count++;
-				sym.lang = R_BIN_LANG_JAVA;
+				sym.attr.lang = R_BIN_LANG_JAVA;
 				RVecRBinSymbol_push_back (&dex->symbols_vec, &sym);
 				sdb_num_setf (dex->mdb, sym.paddr, 0, "method.%"PFMT64u, (ut64)i);
 			}
@@ -1978,7 +1978,7 @@ static RList *entries(RBinFile *bf) {
 		}
 		// skip abstract/interface methods: their paddr points to the
 		// encoded_method record, not to actual bytecode
-		if (m->size < 1 || !m->type || strcmp (m->type, R_BIN_TYPE_FUNC_STR)) {
+		if (m->attr.size < 1 || !m->type || strcmp (m->type, R_BIN_TYPE_FUNC_STR)) {
 			continue;
 		}
 		const char *oname = r_bin_name_tostring2 (m->name, 'o');
@@ -1999,7 +1999,7 @@ static RList *entries(RBinFile *bf) {
 			if (limit_reached (ret, limit)) {
 				break;
 			}
-			if (m->size < 1 || !m->type || strcmp (m->type, R_BIN_TYPE_FUNC_STR)) {
+			if (m->attr.size < 1 || !m->type || strcmp (m->type, R_BIN_TYPE_FUNC_STR)) {
 				continue;
 			}
 			const char *oname = r_bin_name_tostring2 (m->name, 'o');
@@ -2065,7 +2065,7 @@ static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 		return NULL;
 	}
 	const char *pfx = m->arg_prefix;
-	const bool instance = !(m->attr & R_BIN_ATTR_STATIC);
+	const bool instance = !(m->attr.flags & R_BIN_ATTR_STATIC);
 	RStrBuf *sb = r_strbuf_new ("dyncc:");
 	if (!sb) {
 		return NULL;
@@ -2189,14 +2189,14 @@ static void fast_code_size(RBinFile *bf) {
 	}
 	RBinSymbol *m;
 	R_VEC_FOREACH (&bin->symbols_vec, m) {
-		if (m->size < 1 || !m->type || strcmp (m->type, R_BIN_TYPE_FUNC_STR)) {
+		if (m->attr.size < 1 || !m->type || strcmp (m->type, R_BIN_TYPE_FUNC_STR)) {
 			continue;
 		}
 		if (!fsym || m->paddr < fsym) {
 			fsym = m->paddr;
 		}
-		ns = m->paddr + m->size;
-		if (ns > bs || m->paddr > bs || m->size > bs) {
+		ns = m->paddr + m->attr.size;
+		if (ns > bs || m->paddr > bs || m->attr.size > bs) {
 			continue;
 		}
 		if (ns > fsymsz) {

@@ -281,10 +281,10 @@ static mach0_ut va2pa(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left) {
 }
 
 static int sort_by_offset(const RBinField *a, const RBinField *b) {
-	if (a->offset > b->offset) {
+	if (a->attr.offset > b->attr.offset) {
 		return 1;
 	}
-	if (a->offset < b->offset) {
+	if (a->attr.offset < b->attr.offset) {
 		return -1;
 	}
 	return 0;
@@ -395,7 +395,7 @@ static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 				goto error;
 			}
 			ivar_offset = r_read_ble (offs, bigendian, 8 * sizeof (mach0_ut));
-			field->offset = ivar_offset;
+			field->attr.offset = ivar_offset;
 		}
 		r = va2pa (bf, i.name, NULL, &left);
 		if (r) {
@@ -454,7 +454,7 @@ static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 			R_LOG_WARN ("field name is empty");
 			RVecRBinField_pop_back (&klass->fields);
 		} else {
-			field->kind = R_BIN_FIELD_KIND_VARIABLE;
+			field->attr.kind = R_BIN_FIELD_KIND_VARIABLE;
 		}
 		p += sizeof (struct MACH0_(SIVar));
 		offset += sizeof (struct MACH0_(SIVar));
@@ -463,11 +463,11 @@ static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 	RBinField *isa = RVecRBinField_emplace_front (&klass->fields);
 	if (isa) {
 		isa->name = r_bin_name_new ("isa");
-		isa->size = sizeof (mach0_ut);
+		isa->attr.size = sizeof (mach0_ut);
 		isa->type = r_bin_name_new ("struct objc_class *");
-		isa->kind = R_BIN_FIELD_KIND_VARIABLE;
+		isa->attr.kind = R_BIN_FIELD_KIND_VARIABLE;
 		isa->vaddr = 0;
-		isa->offset = 0;
+		isa->attr.offset = 0;
 	}
 	return;
 error:
@@ -577,8 +577,8 @@ static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 					property->name = r_bin_name_new (lname);
 				}
 			}
-			property->kind = R_BIN_FIELD_KIND_PROPERTY;
-			property->offset = j;
+			property->attr.kind = R_BIN_FIELD_KIND_PROPERTY;
+			property->attr.offset = j;
 			property->paddr = r;
 		}
 		if (!property->name) {
@@ -854,7 +854,7 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 			method->rtype = rtype;
 			rtype = NULL;
 		}
-		method->lang = R_BIN_LANG_OBJC;
+		method->attr.lang = R_BIN_LANG_OBJC;
 		method->vaddr = m.imp;
 		if (!method->vaddr) {
 			r_bin_symbol_free (method);
@@ -863,7 +863,7 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 		method->type = is_static? R_BIN_TYPE_FUNC_STR: R_BIN_TYPE_METH_STR;
 		if (is_static) {
 			// it's a clas method, aka does not require an instance
-			method->attr |= R_BIN_ATTR_CLASS;
+			method->attr.flags |= R_BIN_ATTR_CLASS;
 		}
 		if (is_thumb (bf)) {
 			if (method->vaddr & 1) {
@@ -1432,7 +1432,7 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 
 #if SWIFT_SUPPORT
 	if (q (c.data + n_value) & 7) {
-		klass->lang = R_BIN_LANG_SWIFT;
+		klass->attr.lang = R_BIN_LANG_SWIFT;
 		R_LOG_DEBUG ("This is a Swift class");
 	}
 #endif
@@ -1512,7 +1512,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		RBinClass *klass = r_bin_class_new ("", "", R_BIN_ATTR_PUBLIC);
 		r_bin_name_free (klass->name); // allow NULL name in rbinclass?
 		klass->name = NULL;
-		klass->lang = R_BIN_LANG_OBJC;
+		klass->attr.lang = R_BIN_LANG_OBJC;
 		klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 		size = sizeof (mach0_ut);
 		if (ms.clslist.addr > bf->size || ms.clslist.addr + size > bf->size) {
@@ -1599,7 +1599,7 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 			r_bin_class_free (klass);
 			continue;
 		}
-		klass->lang = R_BIN_LANG_OBJC;
+		klass->attr.lang = R_BIN_LANG_OBJC;
 		const char *klass_name = r_bin_name_tostring (klass->name);
 		char *par = strchr (klass_name, '(');
 		if (par) {

@@ -236,6 +236,21 @@ typedef uint64_t RBinAttribute;
 #define R_BIN_ATTR_LATE (1ULL << 45)
 
 typedef enum {
+	R_BIN_FIELD_KIND_VARIABLE,
+	R_BIN_FIELD_KIND_FIELD,
+	R_BIN_FIELD_KIND_PROPERTY,
+} RBinFieldKind;
+
+typedef struct r_bin_attr_t {
+	RBinAttribute flags;
+	char *ns;
+	ut32 size;
+	int offset;
+	RBinLanguage lang;
+	RBinFieldKind kind;
+} RBinAttr;
+
+typedef enum {
 	R_BIN_RELOC_1 = 1,
 	R_BIN_RELOC_2 = 2,
 	R_BIN_RELOC_4 = 4,
@@ -346,11 +361,9 @@ typedef struct r_bin_symbol_t {
 	/* only used by java */
 	ut64 vaddr;
 	ut64 paddr;
-	ut32 size;
+	RBinAttr attr;
 	ut32 ordinal;
-	RBinLanguage lang;
 	int bits;
-	RBinAttribute attr; // previously known as method_flags + visibility
 	int dup_count;
 	ut16 ret_count;          // number of return slots (0 = void)
 	const char *arg_prefix;  // interned register name prefix, e.g. "v" or "l"
@@ -753,25 +766,16 @@ typedef struct r_bin_plugin_t {
 
 typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);
 
-typedef enum {
-	R_BIN_FIELD_KIND_VARIABLE,
-	R_BIN_FIELD_KIND_FIELD,
-	R_BIN_FIELD_KIND_PROPERTY,
-} RBinFieldKind;
-
 typedef struct r_bin_field_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut64 value;
-	int size;
-	int offset;
+	RBinAttr attr;
 	RBinName *name;
 	RBinName *type;
-	RBinFieldKind kind;
 	bool format_named; // whether format is the name of a format or a raw pf format string
 	char *comment;
 	char *format;
-	RBinAttribute attr;
 } RBinField;
 
 R_API void r_bin_field_fini(RBinField *f);
@@ -784,13 +788,10 @@ typedef struct r_bin_class_t {
 	int index; // should be unsigned?
 	RBinClassOrigin origin;
 	ut64 addr;
-	size_t instance_size;
-	char *ns; // namespace // maybe RBinName?
-	RBinLanguage lang;
+	RBinAttr attr;
 	RVecRBinSymbol methods;
 	RVecRBinField fields;
 	// RList *interfaces; // <char *>
-	RBinAttribute attr;
 } RBinClass;
 
 #define RBinSectionName r_offsetof(RBinSection, name)

@@ -181,7 +181,7 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, ut32 idx, R
 		}
 		break;
 		}
-	ptr->size = 4;
+	ptr->attr.size = 4;
 	ptr->ordinal = 0;
 	free (coffname);
 	return true;
