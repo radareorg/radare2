@@ -84,6 +84,7 @@ jobs:
 
   # merged build with capstone, libuv and openssl
   linux-deps:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
@@ -120,7 +121,7 @@ jobs:
         path: radare2-?.?.?.*
 
   filc:
-    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master') }}
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
@@ -190,7 +191,7 @@ jobs:
         path: radare2-*-static-${{ matrix.arch }}.tar.xz
 
   linux-acr-rpm-64:
-    # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
@@ -325,9 +326,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch:
-          - arm64
-          - x86_64
+        arch: ${{ fromJSON(github.event_name == 'push' && github.ref == 'refs/heads/master' && '["arm64", "x86_64"]' || '["arm64"]') }}
     runs-on: macos-15-intel
     steps:
     - name: Checkout
@@ -519,6 +518,7 @@ jobs:
           radare2-${{ steps.r2v.outputs.branch }}-w32.zip
 #          radare2-win-installer\Output\radare2.exe
   w64-static:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
@@ -650,6 +650,7 @@ jobs:
       run: meson compile -C build
 
   msys2-w64-arm-meson:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     runs-on: windows-11-arm
     steps:
     - name: Checkout
@@ -680,6 +681,7 @@ jobs:
         path: radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip
 
   w64-arm-meson:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     runs-on: windows-11-arm
     steps:
     - name: Win configure Pagefile
@@ -720,6 +722,7 @@ jobs:
 
   # FreeBSD
   freebsd:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
