@@ -40,6 +40,14 @@ va       true
 EOF
 RUN
 
+NAME=: embedded symbol language
+FILE=bins/mdmp/hello.dmp
+CMDS=e bin.lang
+EXPECT=<<EOF
+msvc
+EOF
+RUN
+
 NAME=: version info
 FILE=bins/mdmp/calc.dmp
 CMDS=iV

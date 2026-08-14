@@ -62,6 +62,14 @@ Average::getAverage()
 EOF
 RUN
 
+NAME=ibm xl rejects encoded non-symbol names
+FILE=-
+CMDS=!rabin2 -D ibmxl findBasename_28_char_20_const_2a__29_
+EXPECT=<<EOF
+findBasename_28_char_20_const_2a__29_
+EOF
+RUN
+
 NAME=ibm xl cxx constructors operators and templates
 FILE=-
 CMDS=<<EOF

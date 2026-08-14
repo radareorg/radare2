@@ -96,6 +96,14 @@ vaddr      paddr      type   ntype name
 EOF
 RUN
 
+NAME=tiny coff2 symbol language
+FILE=bins/coff/coff2.obj
+CMDS=e bin.lang
+EXPECT=<<EOF
+msvc
+EOF
+RUN
+
 NAME=tiny coff2
 FILE=bins/coff/coff2.obj
 CMDS=<<EOF

@@ -346,6 +346,11 @@ static char *ibmxl_name(IBMXLParser *p) {
 			p->fail = true;
 			goto out;
 		}
+		if (isdigit ((unsigned char)*res)) {
+			R_FREE (res);
+			p->fail = true;
+			goto out;
+		}
 		if (ibmxl_eat (p, 'X')) {
 			char *args = ibmxl_template_args (p, true);
 			if (args) {
