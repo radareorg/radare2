@@ -50,3 +50,14 @@ EXPECT=<<EOF
 0x00001350 5 caller
 EOF
 RUN
+
+NAME=ELF: section-less mips defined symbol is not an import
+FILE=bins/elf/analysis/mipsbe-ubusd
+CMDS=<<EOF
+iiq~_ftext
+isq~_ftext
+EOF
+EXPECT=<<EOF
+0x00400ec0 0 _ftext
+EOF
+RUN
