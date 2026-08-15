@@ -497,6 +497,7 @@ static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	RBinElfDynamicInfo *di = &eo->dyn_info;
 	di->dt_pltrelsz = 0;
 	di->dt_hash = R_BIN_ELF_ADDR_MAX;
+	di->dt_gnu_hash = R_BIN_ELF_ADDR_MAX;
 	di->dt_strtab = R_BIN_ELF_ADDR_MAX;
 	di->dt_symtab = R_BIN_ELF_ADDR_MAX;
 	di->dt_rela = R_BIN_ELF_ADDR_MAX;
@@ -567,6 +568,9 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 			break;
 		case DT_HASH:
 			di->dt_hash = d.d_un.d_ptr;
+			break;
+		case DT_GNU_HASH:
+			di->dt_gnu_hash = d.d_un.d_ptr;
 			break;
 		case DT_STRTAB:
 			di->dt_strtab = d.d_un.d_ptr;
@@ -665,7 +669,6 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 		case DT_PREINIT_ARRAY:
 		case DT_PREINIT_ARRAYSZ:
 		case DT_SONAME:
-		case DT_GNU_HASH:
 			// common dynamic entries in ELF, but we don't need to
 			// do anything with them.
 			break;
@@ -4701,10 +4704,20 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 static ut64 get_phdr_symtab_upper_bound(ELFOBJ *eo, ut64 addr_sym_table) {
 	ut64 bound = eo->size;
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
-	if (di->dt_strtab != R_BIN_ELF_ADDR_MAX) {
-		ut64 strtab_addr = Elf_(v2p) (eo, di->dt_strtab);
-		if (strtab_addr != UT64_MAX && strtab_addr > addr_sym_table) {
-			bound = R_MIN (bound, strtab_addr);
+	// no tag holds the symtab size, so it ends where the next table starts
+	const ut64 vsym = eo->version_info[DT_VERSIONTAGIDX (DT_VERSYM)];
+	const Elf_(Addr) table_vaddrs[] = {
+		di->dt_strtab, di->dt_gnu_hash, di->dt_hash,
+		vsym? (Elf_(Addr))vsym: R_BIN_ELF_ADDR_MAX
+	};
+	size_t t;
+	for (t = 0; t < R_ARRAY_SIZE (table_vaddrs); t++) {
+		if (table_vaddrs[t] == R_BIN_ELF_ADDR_MAX) {
+			continue;
+		}
+		const ut64 table_off = Elf_(v2p) (eo, table_vaddrs[t]);
+		if (table_off != UT64_MAX && table_off > addr_sym_table) {
+			bound = R_MIN (bound, table_off);
 		}
 	}
 	if (eo->shdr && eo->ehdr.e_shnum && eo->ehdr.e_shnum != 0xffff) {
