@@ -456,7 +456,11 @@ ut64 Elf_(ppc64_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr) {
 //   cmpldi r2, 0; bnectr+; b <glink stub>
 // the trailing branch into a known glink stub names the plt slot it serves
 #define PPC64_STD_R2_40R1 0xf8410028
-#define PPC64_TEXT_STUB_SIZE 28
+#define PPC64_TEXT_STUB_MIN 24
+// longest form: std, addis, ld, mtctr, ld env, ld r2, cmpldi, bnectr, b
+#define PPC64_TEXT_STUB_MAX 36
+// bytes of executable ranges worth scanning for stubs before giving up
+#define PPC64_TEXT_SCAN_MAX 0x2000000
 
 // reloc index + 1 of the slot a plt_call stub serves, 0 when it is not one;
 // after the std comes an optional addis r11, r2, ha, then ld rX, d(base);
@@ -485,13 +489,25 @@ static ut64 ppc64v1_text_stub_reloc(ELFOBJ *eo, const ut8 *w, ut64 vaddr,
 			|| (op & 0xfc1fffff) != 0x7c0903a6 || ((op >> 21) & 0x1f) != reg) { // mtctr rX
 		return 0;
 	}
+	// --plt-static-chain also loads the descriptor env word, ld rX, d+16(base),
+	// before the toc restore or after it, depending on whether it clobbers base
 	op = r_read_ble32 (w + 4 * ++i, eo->endian);
+	bool env = false;
+	if ((op & 0xfc1f0003) == (0xe8000000 | (base << 16)) && ((op >> 21) & 0x1f) != base
+			&& ((op >> 21) & 0x1f) != 2 && (st32)(st16)(op & 0xfffc) == lo + 16) {
+		env = true;
+		op = r_read_ble32 (w + 4 * ++i, eo->endian);
+	}
 	// the code address and the toc it runs with come from one descriptor
 	if ((op & 0xffff0003) != (0xe8400000 | (base << 16)) // ld r2, d+8(base)
 			|| (st32)(st16)(op & 0xfffc) != lo + 8) {
 		return 0;
 	}
 	op = r_read_ble32 (w + 4 * ++i, eo->endian);
+	if (!env && (op & 0xfc1f0003) == (0xe8000000 | (base << 16)) && ((op >> 21) & 0x1f) != 2
+			&& (st32)(st16)(op & 0xfffc) == lo + 16) {
+		op = r_read_ble32 (w + 4 * ++i, eo->endian);
+	}
 	if (op == 0x4e800420) { // bctr: an eager stub, only the toc names the slot
 		*size = 4 * (i + 1);
 		return toc? ht_uu_find (rel_by_slot, toc + ha + lo, NULL): 0;
@@ -529,54 +545,41 @@ static const char *ppc64v1_stub_target(ELFOBJ *eo, RBinElfReloc *rel, const char
 	return NULL;
 }
 
-void Elf_(plt_ppc64v1_load_text_stubs)(ELFOBJ *eo) {
-	if (Elf_(plt_ppc64_abi) (eo) != 1) {
+typedef struct {
+	HtUU *rel_by_glink;
+	HtUU *rel_by_slot;
+	ut64 toc;
+	ut64 budget;
+} PPC64StubScan;
+
+// scan one executable file range for plt_call stubs, clamped to the file and
+// to the remaining scan budget so corrupt headers cannot make this expensive
+static void ppc64v1_scan_stubs(ELFOBJ *eo, PPC64StubScan *sc, ut64 paddr, ut64 vaddr, ut64 size) {
+	const ut64 fsz = r_buf_size (eo->b);
+	if (paddr >= fsz || !sc->budget) {
 		return;
 	}
-	Elf_(load_symbols_vec) (eo);
-	RBinElfSection *text = Elf_(plt_section_by_name) (eo, ".text");
-	if (!text || text->size < PPC64_TEXT_STUB_SIZE || text->size > 0x2000000) {
+	size = R_MIN (size, fsz - paddr);
+	size = R_MIN (size, sc->budget);
+	if (size < PPC64_TEXT_STUB_MIN) {
 		return;
 	}
-	// each glink stub or plt slot identifies its reloc, and that its target
-	RBinElfSection *got = Elf_(plt_section_by_name) (eo, ".got");
-	const ut64 toc = got? got->rva + 0x8000: 0;
-	HtUU *rel_by_glink = ht_uu_new0 ();
-	HtUU *rel_by_slot = ht_uu_new0 ();
-	if (!rel_by_glink || !rel_by_slot) {
-		ht_uu_free (rel_by_glink);
-		ht_uu_free (rel_by_slot);
-		return;
-	}
-	RBinElfReloc *rel;
-	ut64 nrel = 0;
-	bool any = false;
-	R_VEC_FOREACH (&eo->g_relocs, rel) {
-		nrel++;
-		if (rel->type == R_PPC64_JMP_SLOT && rel->sym > 0) {
-			const ut64 glink = Elf_(ppc64_get_plt_stub_for_slot) (eo, rel->rva);
-			any |= ht_uu_insert (rel_by_slot, rel->rva, nrel);
-			if (glink != UT64_MAX) {
-				ht_uu_insert (rel_by_glink, glink, nrel);
-			}
-		}
-	}
-	ut8 *buf = any? malloc (text->size): NULL;
-	if (!buf || r_buf_read_at (eo->b, text->offset, buf, text->size) != (st64)text->size) {
+	sc->budget -= size;
+	// zero padding lets the matcher read a full stub window at the range end
+	ut8 *buf = calloc (size + PPC64_TEXT_STUB_MAX, 1);
+	if (!buf || r_buf_read_at (eo->b, paddr, buf, size) != (st64)size) {
 		free (buf);
-		ht_uu_free (rel_by_glink);
-		ht_uu_free (rel_by_slot);
 		return;
 	}
 	ut64 i;
-	for (i = 0; i + 32 <= text->size; i += 4) {
+	for (i = 0; i + PPC64_TEXT_STUB_MIN <= size; i += 4) {
 		if (r_read_ble32 (buf + i, eo->endian) != PPC64_STD_R2_40R1) {
 			continue;
 		}
-		const ut64 vaddr = text->rva + i;
 		ut32 stub_size = 0;
-		const ut64 relnum = ppc64v1_text_stub_reloc (eo, buf + i, vaddr,
-			rel_by_glink, rel_by_slot, toc, &stub_size);
+		const ut64 relnum = ppc64v1_text_stub_reloc (eo, buf + i, vaddr + i,
+			sc->rel_by_glink, sc->rel_by_slot, sc->toc, &stub_size);
+		RBinElfReloc *rel;
 		if (!relnum || !(rel = RVecRBinElfReloc_at (&eo->g_relocs, relnum - 1))) {
 			continue;
 		}
@@ -592,13 +595,67 @@ void Elf_(plt_ppc64v1_load_text_stubs)(ELFOBJ *eo) {
 		sym.type = R_BIN_TYPE_FUNC_STR;
 		sym.attr.size = stub_size;
 		sym.ordinal = rel->sym;
-		sym.vaddr = vaddr;
-		sym.paddr = text->offset + i;
+		sym.vaddr = vaddr + i;
+		sym.paddr = paddr + i;
 		RVecRBinSymbol_push_back (&eo->plt_symbols_cache, &sym);
 	}
 	free (buf);
-	ht_uu_free (rel_by_glink);
-	ht_uu_free (rel_by_slot);
+}
+
+void Elf_(plt_ppc64v1_load_text_stubs)(ELFOBJ *eo) {
+	if (Elf_(plt_ppc64_abi) (eo) != 1) {
+		return;
+	}
+	Elf_(load_symbols_vec) (eo);
+	// each glink stub or plt slot identifies its reloc, and that its target
+	RBinElfSection *got = Elf_(plt_section_by_name) (eo, ".got");
+	PPC64StubScan sc = {
+		.rel_by_glink = ht_uu_new0 (),
+		.rel_by_slot = ht_uu_new0 (),
+		.toc = got? got->rva + 0x8000: 0,
+		.budget = PPC64_TEXT_SCAN_MAX,
+	};
+	if (!sc.rel_by_glink || !sc.rel_by_slot) {
+		goto beach;
+	}
+	RBinElfReloc *rel;
+	ut64 nrel = 0;
+	bool any = false;
+	R_VEC_FOREACH (&eo->g_relocs, rel) {
+		nrel++;
+		if (rel->type == R_PPC64_JMP_SLOT && rel->sym > 0) {
+			const ut64 glink = Elf_(ppc64_get_plt_stub_for_slot) (eo, rel->rva);
+			any |= ht_uu_insert (sc.rel_by_slot, rel->rva, nrel);
+			if (glink != UT64_MAX) {
+				ht_uu_insert (sc.rel_by_glink, glink, nrel);
+			}
+		}
+	}
+	if (!any) {
+		goto beach;
+	}
+	// bfd emits stubs into every code section (.init holds __gmon_start__),
+	// and without section headers the executable segments are all we have
+	bool scanned = false;
+	RBinElfSection *s;
+	R_VEC_FOREACH (&eo->g_sections, s) {
+		if (s->type == SHT_PROGBITS && (s->flags & SHF_EXECINSTR)) {
+			ppc64v1_scan_stubs (eo, &sc, s->offset, s->rva, s->size);
+			scanned = true;
+		}
+	}
+	if (!scanned && eo->phdr) {
+		int i;
+		for (i = 0; i < eo->ehdr.e_phnum; i++) {
+			const Elf_(Phdr) *p = &eo->phdr[i];
+			if (p->p_type == PT_LOAD && (p->p_flags & PF_X)) {
+				ppc64v1_scan_stubs (eo, &sc, p->p_offset, p->p_vaddr, p->p_filesz);
+			}
+		}
+	}
+beach:
+	ht_uu_free (sc.rel_by_glink);
+	ht_uu_free (sc.rel_by_slot);
 }
 #endif
 
