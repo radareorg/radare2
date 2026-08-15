@@ -17,6 +17,9 @@
 #define R2R_ASAN 0
 #endif
 
+// valgrind makes a leak test 20-50x slower, so a native budget starves it
+#define R2R_LEAK_MIN_TIMEOUT_MS (120 * 1000)
+
 #if R2__WINDOWS__
 #include <windows.h>
 #else
@@ -1759,7 +1762,8 @@ R_API R2RProcessOutput *r2r_run_leak_test(R2RRunConfig *config, R2RCmdTest *test
 		extra_env = r_str_split_duplist (test->env.value, ";", true);
 	}
 
-	const ut64 timeout_ms = test->timeout.set? test->timeout.value * 1000: config->timeout_ms;
+	const ut64 want = test->timeout.set? test->timeout.value * 1000: config->timeout_ms;
+	const ut64 timeout_ms = R_MAX (want, R2R_LEAK_MIN_TIMEOUT_MS);
 
 	// Run with valgrind wrapping
 	R2RProcessOutput *out = run_r2_test_with_valgrind (config, timeout_ms, 1, test->cmds.value, files, extra_args, extra_env, test->load_plugins, runner, user);
