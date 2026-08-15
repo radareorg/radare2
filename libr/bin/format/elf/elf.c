@@ -4607,7 +4607,7 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		ut64 toffset = 0;
 		// Zero symbol is always empty
 		// Examine entry and maybe store
-		if (type == R_BIN_ELF_IMPORT_SYMBOLS && (new_symbol.st_shndx == SHT_NULL || new_symbol.st_shndx == SHT_DYNSYM)) {
+		if (type == R_BIN_ELF_IMPORT_SYMBOLS && is_imported) {
 			if (new_symbol.st_value) {
 				toffset = new_symbol.st_value;
 			} else if ((toffset = Elf_(plt_get_import_addr) (eo, i)) == UT64_MAX) {
