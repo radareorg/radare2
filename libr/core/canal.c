@@ -5823,14 +5823,14 @@ static void plt_stub_flag(RCore *core, ut64 entry, ut64 size, ut64 slot) {
 	free (fname);
 }
 
-// walk the section decoding entries: remember the last lea and load, and when an
-// entry ends in an indirect jump derive the got slot it goes through
+// decode entries, tracking the last lea/load to derive each got slot
 static void plt_stub_scan_section(RCore *core, RBinSection *sec) {
 	if (sec->vsize < 8 || sec->vsize > 0x100000) {
 		return;
 	}
 	const ut64 sec_vaddr = r_bin_get_vaddr (core->bin, sec->paddr, sec->vaddr);
 	const int len = (int)sec->vsize;
+	const ut64 sec_end = sec_vaddr + len;
 	ut8 *buf = malloc (len);
 	if (!buf || !r_io_read_at (core->io, sec_vaddr, buf, len)) {
 		free (buf);
@@ -5840,43 +5840,38 @@ static void plt_stub_scan_section(RCore *core, RBinSection *sec) {
 	ut64 entry = sec_vaddr;
 	ut64 lea_ptr = UT64_MAX;
 	ut64 load_disp = UT64_MAX;
+	// a dereferencing op yields the slot itself, lea/adrp only give its base
+	bool lea_is_load = false;
 	int i = 0;
 	while (i < len) {
 		const ut64 at = sec_vaddr + i;
 		RAnalOp op;
-		const int oplen = r_anal_op (core->anal, &op, at, buf + i, len - i, R_ARCH_OP_MASK_BASIC);
+		int oplen = r_anal_op (core->anal, &op, at, buf + i, len - i, R_ARCH_OP_MASK_BASIC);
 		const int type = op.type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND;
 		const bool indirect = type == R_ANAL_OP_TYPE_UJMP
 			|| (type == R_ANAL_OP_TYPE_JMP && (op.type & R_ANAL_OP_TYPE_MEM));
 		bool ends = true;
+		ut64 slot = UT64_MAX;
 		if (oplen < 1) {
-			r_anal_op_fini (&op);
-			i += minop;
-			entry = sec_vaddr + i;
-			lea_ptr = UT64_MAX;
-			load_disp = UT64_MAX;
-			continue;
-		}
-		if (indirect) {
+			oplen = minop;
+		} else if (indirect) {
 			// x86 encodes the slot in one op; arm64-alikes split it lea/load/branch
-			ut64 slot = (op.ptr > 0 && op.ptr != -1)? (ut64)op.ptr: UT64_MAX;
+			slot = (op.ptr > 0)? (ut64)op.ptr: UT64_MAX;
 			if (slot == UT64_MAX && lea_ptr != UT64_MAX && load_disp != UT64_MAX) {
 				slot = lea_ptr + load_disp;
-			}
-			if (slot != UT64_MAX) {
-				plt_stub_flag (core, entry, at + oplen - entry, slot);
 			}
 		} else {
 			switch (type) {
 			case R_ANAL_OP_TYPE_LEA:
 			case R_ANAL_OP_TYPE_MOV:
-				if (op.ptr > 0 && op.ptr != -1) {
+				if (op.ptr > 0) {
 					lea_ptr = (ut64)op.ptr;
+					lea_is_load = op.direction == R_ANAL_OP_DIR_READ;
 				}
 				ends = false;
 				break;
 			case R_ANAL_OP_TYPE_LOAD:
-				if (op.ptr > 0 && op.ptr != -1) {
+				if (op.ptr > 0) {
 					// riscv-style loads resolve the slot in the op itself
 					lea_ptr = (ut64)op.ptr;
 					load_disp = 0;
@@ -5887,6 +5882,16 @@ static void plt_stub_scan_section(RCore *core, RBinSection *sec) {
 				break;
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CALL:
+				// retpoline stubs reach an in-section thunk unconditionally
+				if (lea_ptr != UT64_MAX && !(op.type & R_ANAL_OP_TYPE_COND)
+						&& op.jump >= sec_vaddr && op.jump < sec_end) {
+					if (load_disp != UT64_MAX) {
+						slot = lea_ptr + load_disp;
+					} else if (lea_is_load) {
+						slot = lea_ptr;
+					}
+				}
+				break;
 			case R_ANAL_OP_TYPE_UCALL:
 			case R_ANAL_OP_TYPE_RET:
 			case R_ANAL_OP_TYPE_TRAP:
@@ -5900,12 +5905,16 @@ static void plt_stub_scan_section(RCore *core, RBinSection *sec) {
 				break;
 			}
 		}
+		if (slot != UT64_MAX) {
+			plt_stub_flag (core, entry, at + oplen - entry, slot);
+		}
 		r_anal_op_fini (&op);
 		i += oplen;
 		if (ends) {
 			entry = sec_vaddr + i;
 			lea_ptr = UT64_MAX;
 			load_disp = UT64_MAX;
+			lea_is_load = false;
 		}
 	}
 	free (buf);

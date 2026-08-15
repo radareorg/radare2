@@ -181,3 +181,71 @@ EXPECT=<<EOF2
 0x00025550 11 sym.plt.calloc
 EOF2
 RUN
+
+# the scan flags 12 bytes here, up to the call; the 17 below is what the later
+# function analysis resizes the flag to
+NAME=x86_64 lazy retpoline: stubs calling the shared thunk get named
+FILE=bins/elf/pltrel/x86_64-retpoline.so
+CMDS=<<EOF
+aa
+fs symbols
+f~plt.
+EOF
+EXPECT=<<EOF
+0x000014b0 17 sym.plt.add2
+0x000014d0 17 sym.plt.mul2
+0x000014f0 17 sym.plt.sub2
+EOF
+RUN
+
+NAME=x86_64 lazy retpoline: a call through the stub reads its target name
+FILE=bins/elf/pltrel/x86_64-retpoline.so
+CMDS=<<EOF
+aa
+pd 1 @ 0x144b
+EOF
+EXPECT=<<EOF
+|           0x0000144b      e860000000     call sym.plt.add2
+EOF
+RUN
+
+NAME=x86_64 retpoline with -z now: stubs jumping to the shared thunk get named
+FILE=bins/elf/pltrel/x86_64-retpoline-now.so
+CMDS=<<EOF
+aa
+fs symbols
+f~plt.
+EOF
+EXPECT=<<EOF
+0x00001460 12 sym.plt.add2
+0x00001470 12 sym.plt.mul2
+0x00001480 12 sym.plt.sub2
+EOF
+RUN
+
+NAME=x86_64 retpoline with -z now: a call through the stub reads its target name
+FILE=bins/elf/pltrel/x86_64-retpoline-now.so
+CMDS=<<EOF
+aa
+pd 1 @ 0x140b
+EOF
+EXPECT=<<EOF
+|           0x0000140b      e850000000     call sym.plt.add2
+EOF
+RUN
+
+# 75 e7 is a jne to the same thunk the call at 0x14b7 reaches, then nop padding
+NAME=x86_64 retpoline: a conditional branch to the thunk does not name a stub
+FILE=bins/elf/pltrel/x86_64-retpoline.so
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx 75e7909090 @ 0x14b7
+aa
+fs symbols
+f~plt.
+EOF
+EXPECT=<<EOF
+0x000014d0 17 sym.plt.mul2
+0x000014f0 17 sym.plt.sub2
+EOF
+RUN
