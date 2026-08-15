@@ -162,7 +162,7 @@ fs symbols
 f~plt.~?
 EOF
 EXPECT=<<EOF
-49
+50
 EOF
 RUN
 

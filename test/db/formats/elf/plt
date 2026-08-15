@@ -96,7 +96,7 @@ is~plt.~?
 is~plt.crc32_z
 EOF2
 EXPECT=<<EOF2
-49
+50
 29  0x00003ac0 0x00003ac0 GLOBAL FUNC   28        plt.crc32_z
 EOF2
 RUN
@@ -108,7 +108,50 @@ is~plt.~?
 is~plt.feof
 EOF2
 EXPECT=<<EOF2
-112
+113
 3   0x00003100 0x00003100 GLOBAL FUNC   24       plt.feof
 EOF2
+RUN
+
+NAME=ppc64 ELFv1: section-less binaries fall back to the executable segments
+FILE=bins/elf/ppc64v1-libz-noshdr.so
+CMDS=<<EOF
+iS~.text~?
+is~plt.~?
+is~plt.crc32_z
+EOF
+EXPECT=<<EOF
+0
+48
+29  0x00003ac0 0x00003ac0 GLOBAL FUNC   28        plt.crc32_z
+EOF
+RUN
+
+NAME=ppc64 ELFv1: --plt-static-chain env loads are accepted in both orders
+FILE=bins/elf/ppc64v1-libz-static-chain.so
+CMDS=<<EOF
+is~plt.~?
+is~plt.crc32_z
+o bins/elf/ppc64v1-libz-static-chain-shared.so
+is~plt.~?
+is~plt.crc32_z
+EOF
+EXPECT=<<EOF
+50
+29  0x00003ac0 0x00003ac0 GLOBAL FUNC   32        plt.crc32_z
+50
+29  0x00003ac0 0x00003ac0 GLOBAL FUNC   32        plt.crc32_z
+EOF
+RUN
+
+NAME=ppc64 ELFv1: a bogus .text size is clamped to the file, .init still scanned
+FILE=bins/elf/ppc64v1-libz-badshdr.so
+CMDS=<<EOF
+is~plt.~?
+is~plt.__gmon_start__
+EOF
+EXPECT=<<EOF
+1
+12  0x00003a00 0x00003a00 WEAK   FUNC   28        plt.__gmon_start__
+EOF
 RUN
