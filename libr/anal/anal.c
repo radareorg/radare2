@@ -301,6 +301,7 @@ R_API void r_anal_free(RAnal *a) {
 		r_bitset_free (a->visited);
 	}
 	r_anal_hint_storage_fini (a);
+	r_anal_xrefs_free (a);
 	r_th_lock_free (a->lock);
 	r_interval_tree_fini (&a->meta);
 	r_unref (a->config);
@@ -315,7 +316,6 @@ R_API void r_anal_free(RAnal *a) {
 	r_anal_pin_fini (a);
 	r_syscall_free (a->syscall);
 	r_unref (a->reg);
-	r_anal_xrefs_free (a);
 	r_list_free (a->threads);
 	r_list_free (a->leaddrs);
 	sdb_free (a->sdb);
@@ -534,6 +534,7 @@ R_API void r_anal_purge(RAnal *anal) {
 	sdb_reset (anal->sdb_cc);
 	r_list_free (anal->fcns);
 	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
+	(void)r_anal_xrefs_init (anal);
 	r_anal_purge_imports (anal);
 }
 
