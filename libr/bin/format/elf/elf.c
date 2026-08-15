@@ -4701,10 +4701,26 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 	return true;
 }
 
+// exact symtab entry count for the layouts that state one, 0 when none does
+static ut64 get_phdr_symtab_count(ELFOBJ *eo) {
+	const RBinElfDynamicInfo *di = &eo->dyn_info;
+	if (eo->ehdr.e_machine == EM_MIPS && di->dt_mips_symtabno) {
+		return di->dt_mips_symtabno;
+	}
+	if (di->dt_hash != R_BIN_ELF_ADDR_MAX) {
+		const ut64 off = Elf_(v2p) (eo, di->dt_hash);
+		// sysv hash is nbucket, nchain, and nchain counts the symtab entries
+		if (off != UT64_MAX && off + 8 <= eo->size) {
+			return r_buf_read_ble32_at (eo->b, off + 4, eo->endian);
+		}
+	}
+	return 0;
+}
+
 static ut64 get_phdr_symtab_upper_bound(ELFOBJ *eo, ut64 addr_sym_table) {
 	ut64 bound = eo->size;
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
-	// no tag holds the symtab size, so it ends where the next table starts
+	// with no exact count the symtab ends where the next table starts
 	const ut64 vsym = eo->version_info[DT_VERSIONTAGIDX (DT_VERSYM)];
 	const Elf_(Addr) table_vaddrs[] = {
 		di->dt_strtab, di->dt_gnu_hash, di->dt_hash,
@@ -4760,6 +4776,10 @@ static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	// Stop at the next table boundary so the phdr fallback does not decode
 	// adjacent dynamic metadata as synthetic dynsym entries.
 	int nsym = (symtab_end - addr_sym_table) / sym_size;
+	const ut64 nexact = get_phdr_symtab_count (eo);
+	if (nexact && nexact < (ut64)nsym) {
+		nsym = (int)nexact;
+	}
 	if (nsym < 1) {
 		return NULL;
 	}
