@@ -26,3 +26,27 @@ EXPECT=<<EOF
             0x00011b84     .string "strncmp" ; len=8
 EOF
 RUN
+
+NAME=ELF: section-less dynsym ends at the gnu hash table
+FILE=bins/elf/pltrel/aarch64-bti-lld-one-noshdr.so
+CMDS=<<EOF
+iiq
+isq
+EOF
+EXPECT=<<EOF
+0x000013b8 16 foo
+0x000013c8 28 call_foo
+EOF
+RUN
+
+NAME=ELF: section-less dynsym with no sysv hash table
+FILE=bins/elf/pltrel/x86_64-retpoline-one-noshdr.so
+CMDS=<<EOF
+iiq
+isq
+EOF
+EXPECT=<<EOF
+0x00001340 4 add2
+0x00001350 5 caller
+EOF
+RUN
