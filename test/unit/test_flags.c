@@ -151,11 +151,27 @@ bool test_r_flag_rename_unset_all(void) {
 	mu_end;
 }
 
+bool test_r_flag_metadata_lifetime(void) {
+	RFlag *flags = r_flag_new ();
+	mu_assert_notnull (flags, "r_flag_new () failed");
+
+	RFlagItem *fi = r_flag_set (flags, "with_metadata", 1024, 4);
+	mu_assert_notnull (fi, "cannot set flag");
+	mu_assert_streq (r_flag_item_set_type (flags, fi, "function"),
+		"function", "flag type set");
+	mu_assert_streq (r_flag_item_set_alias (flags, fi, "entry0 + 4"),
+		"entry0 + 4", "flag alias set");
+
+	r_flag_free (flags);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_flag_get_set);
 	mu_run_test (test_r_flag_by_spaces);
 	mu_run_test (test_r_flag_get_at);
 	mu_run_test (test_r_flag_rename_unset_all);
+	mu_run_test (test_r_flag_metadata_lifetime);
 	return tests_passed != tests_run;
 }
 

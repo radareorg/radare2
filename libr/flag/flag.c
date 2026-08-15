@@ -268,10 +268,11 @@ static HtPP *flag_ht_name_new(void) {
 
 static void ht_free_meta(HtUPKv *kv) {
 	if (kv) {
-		// free (kv->key);
 		RFlagItemMeta *fim = (RFlagItemMeta *)kv->value;
+		free (fim->type);
 		free (fim->comment);
 		free (fim->color);
+		free (fim->alias);
 		free (fim);
 	}
 }
