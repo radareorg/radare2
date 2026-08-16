@@ -35,7 +35,7 @@ int overridden (int x);
 EOF
 RUN
 
-NAME="DWARF link skips prototypes normalized by the C parser"
+NAME="DWARF prototype normalized by the C parser is repaired and linked"
 FILE=bins/elf/dwarf_go_tree
 CMDS=<<EOF
 k anal/dwarf/fcn.unicode_utf8_RuneCount.csig
@@ -46,8 +46,64 @@ afs @ 0x4635a0
 EOF
 EXPECT=<<EOF
 void unicode_utf8_RuneCount([]uint8 p,int ~r1);
-int ~,r1
-void sym.unicode_utf8.RuneCount (int64_t arg_20h, int64_t arg_28h, int64_t arg_38h);
+int,~r1
+unicode_utf8_RuneCount
+void unicode_utf8_RuneCount ([]uint8 p, int ~r1);
+EOF
+RUN
+
+NAME="DWARF mismatch preserves registered type and stable name"
+FILE=bins/elf/dwarf3_cpp.elf
+ARGS=-e bin.dbginfo=false -e asm.dwarf=false
+CMDS=<<EOF
+t- fly
+e bin.dbginfo=true
+iddi
+aaa
+tf- fly
+k anal/types/fly=func
+k anal/types/func.fly.ret=FutureType *
+k anal/types/func.fly.args=0
+k anal/types/func.fly.cc=cdecl
+k anal/types/func.fly=
+iddi
+aaa
+k anal/dwarf/fcn.fly.typed_name
+k anal/types/fcnlink.0000137a~?
+afs @ 0x137a
+iddi
+k anal/dwarf/fcn.fly.typed_name
+k anal/types/func.fly.ret
+k anal/types/*~^fly_137a~?
+EOF
+EXPECT=<<EOF
+fly
+0
+FutureType * fly ();
+fly
+FutureType *
+0
+EOF
+RUN
+
+NAME="DWARF function typed name moves off a colliding struct on reimport"
+FILE=bins/elf/dwarf4_many_comp_units.elf
+CMDS=<<EOF
+k anal/dwarf/fcn.Mammal.typed_name
+iddi
+k anal/dwarf/fcn.Mammal.typed_name
+k anal/types/Mammal
+af @ 0x401300
+afs @ 0x401300
+iddi
+k anal/dwarf/fcn.Mammal.typed_name
+EOF
+EXPECT=<<EOF
+Mammal
+Mammal_401300
+struct
+void Mammal_401300 (Mammal *this);
+Mammal_401300
 EOF
 RUN
 
