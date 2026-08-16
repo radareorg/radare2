@@ -768,14 +768,23 @@ R_API char *r_str_newf(const char *fmt, ...) {
 		va_end (ap);
 		return p;
 	}
+	// format into a stack buffer first, most strings fit and this avoids
+	// running the formatter twice (once to measure, once to fill)
+	char tmp[256];
 	va_copy (ap2, ap);
-	int ret = vsnprintf (NULL, 0, fmt, ap2);
-	ret++;
-	char *p = calloc (1, ret);
-	if (p) {
-		(void)vsnprintf (p, ret, fmt, ap);
-	}
+	int ret = vsnprintf (tmp, sizeof (tmp), fmt, ap2);
 	va_end (ap2);
+	char *p = NULL;
+	if (ret >= 0) {
+		p = malloc ((size_t)ret + 1);
+		if (p) {
+			if ((size_t)ret < sizeof (tmp)) {
+				memcpy (p, tmp, (size_t)ret + 1);
+			} else {
+				(void)vsnprintf (p, (size_t)ret + 1, fmt, ap);
+			}
+		}
+	}
 	va_end (ap);
 	return p;
 }
