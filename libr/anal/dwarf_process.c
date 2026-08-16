@@ -1751,7 +1751,8 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, const ch
 			(void)import_dwarf_function_fallback (anal, typed_name, ret_type, variables, has_unspecified_parameters);
 		}
 	}
-	if (dwarf_fcn->prototype_complete && r_type_func_exist (anal->sdb_types, typed_name)) {
+	if (dwarf_fcn->prototype_complete && dwarf_function_type_matches (anal->sdb_types,
+			typed_name, ret_type, variables, has_unspecified_parameters)) {
 		const char *linked = sdb_const_getf (anal->sdb_types, NULL,
 			"fcnlink.%08" PFMT64x, dwarf_fcn->addr);
 		if (!linked || !strcmp (linked, typed_name)) {
