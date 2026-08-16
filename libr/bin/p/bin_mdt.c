@@ -111,20 +111,6 @@ static void mdt_map_free(void *ptr) {
 	}
 }
 
-static RBinSection *segment_to_section(ut64 paddr, ut64 vaddr, ut64 psize, ut64 vsize, ut32 flags, const char *name) {
-	RBinSection *section = R_NEW0 (RBinSection);
-	r_return_val_if_fail (section, NULL);
-
-	section->paddr = paddr;
-	section->size = psize;
-	section->vsize = vsize;
-	section->vaddr = vaddr;
-	section->perm = flags & 7; // R/W/X flags
-	section->is_segment = true;
-	section->name = strdup (name);
-	return section;
-}
-
 static RBinMdtPart *load_segment_part(ELFOBJ *header, int idx) {
 	if (!header || !header->phdr || idx < 0 || idx >= header->ehdr.e_phnum) {
 		return NULL;
@@ -186,18 +172,11 @@ static RBinMdtPart *load_segment_part(ELFOBJ *header, int idx) {
 	map->file = strdup (part->name);
 
 	part->paddr = segment->p_paddr;
+	part->vsize = segment->p_memsz;
 	part->pflags = segment->p_flags;
 	part->map = map;
 	part->vfile_buf = vfile_buffer;
 	part->vfile_name = strdup (part->name);
-	part->sections = r_list_newf ((RListFree)r_bin_section_free);
-
-	// Add segment as section
-	RBinSection *bseg = segment_to_section (segment->p_paddr, segment->p_vaddr,
-		segment->p_filesz, segment->p_memsz, segment->p_flags, part->name);
-	if (bseg) {
-		r_list_append (part->sections, bseg);
-	}
 
 	// Check content type
 	ut8 magic[4];
@@ -207,30 +186,7 @@ static RBinMdtPart *load_segment_part(ELFOBJ *header, int idx) {
 		part->format = R_BIN_MDT_PART_ELF;
 		// Load nested ELF
 		part->obj.elf = Elf_(new_buf) (vfile_buffer, 0, false);
-		if (part->obj.elf) {
-			// Load symbols from nested ELF
-			part->symbols = r_list_newf ((RListFree)r_bin_symbol_free);
-			if (Elf_(load_symbols) (part->obj.elf)) {
-				// Access symbols through the symbols_by_ord array
-				if (part->obj.elf->symbols_by_ord) {
-					size_t symbols_size = part->obj.elf->symbols_by_ord_size;
-					size_t i;
-					for (i = 0; i < symbols_size; i++) {
-						RBinSymbol *sym = part->obj.elf->symbols_by_ord[i];
-						if (sym) {
-							RBinSymbol *clone = r_bin_symbol_clone (sym);
-							if (clone) {
-								clone->vaddr += part->map->addr;
-								r_list_append (part->symbols, clone);
-							}
-						}
-					}
-				}
-			}
-
-			// Load sections from nested ELF - skip for now
-			// (requires RBinFile which we don't have here)
-		}
+		// symbols are read from the nested ELF in symbols_vec
 	} else if ((segment->p_flags & QCOM_MDT_TYPE_MASK) == QCOM_MDT_TYPE_SIGNATURE) {
 		part->format = R_BIN_MDT_PART_MBN;
 		// Load MBN header
@@ -375,15 +331,19 @@ static bool symbols_vec(RBinFile *bf) {
 	RListIter *iter;
 	RBinMdtPart *part;
 	r_list_foreach (mdt->parts, iter, part) {
-		if (!part->symbols) {
+		ELFOBJ *eo = part->format == R_BIN_MDT_PART_ELF? part->obj.elf: NULL;
+		if (!eo || !Elf_(load_symbols) (eo) || !eo->symbols_by_ord) {
 			continue;
 		}
-		RListIter *it;
-		RBinSymbol *sym;
-		r_list_foreach (part->symbols, it, sym) {
+		size_t i;
+		for (i = 0; i < eo->symbols_by_ord_size; i++) {
+			RBinSymbol *sym = eo->symbols_by_ord[i];
+			if (!sym) {
+				continue;
+			}
 			RBinSymbol *clone = RVecRBinSymbol_emplace_back (ret);
 			clone->name = r_bin_name_clone (sym->name);
-			clone->vaddr = sym->vaddr;
+			clone->vaddr = sym->vaddr + part->map->addr;
 			clone->paddr = sym->paddr;
 			clone->size = sym->size;
 			clone->ordinal = sym->ordinal;
@@ -403,16 +363,15 @@ static bool sections_vec(RBinFile *bf) {
 	RListIter *iter;
 	RBinMdtPart *part;
 	r_list_foreach (mdt->parts, iter, part) {
-		if (part->sections) {
-			RListIter *it;
-			RBinSection *sec;
-			r_list_foreach (part->sections, it, sec) {
-				RBinSection *dst = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-				*dst = *sec;
-				dst->name = sec->name? strdup (sec->name): NULL;
-				dst->format = sec->format? strdup (sec->format): NULL;
-			}
-		}
+		// each segment is exposed as a section
+		RBinSection *sec = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		sec->name = strdup (part->name);
+		sec->paddr = part->paddr;
+		sec->vaddr = part->map->addr;
+		sec->size = part->map->size;
+		sec->vsize = part->vsize;
+		sec->perm = part->pflags & 7; // R/W/X flags
+		sec->is_segment = true;
 	}
 
 	return true;

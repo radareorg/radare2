@@ -1744,34 +1744,29 @@ R_API void r_core_file_reopen_in_malloc(RCore *core) {
 	}
 }
 
-static RList *__save_old_sections(RCore *core) {
+static RVecRBinSection *__save_old_sections(RCore *core) {
 	RVecRBinSection *sections = r_bin_get_sections_vec (core->bin);
 	RBinSection *sec;
-	RList *old_sections = r_list_new ();
+	RVecRBinSection *old_sections = RVecRBinSection_new ();
 
-	// Return an empty list
+	// Return an empty vec
 	if (!sections) {
 		R_LOG_WARN ("No sections found, functions and flags won't be rebased");
 		return old_sections;
 	}
 
-	old_sections->free = (RListFree)r_bin_section_free;
 	R_VEC_FOREACH (sections, sec) {
-		RBinSection *old_sec = R_NEW0 (RBinSection);
-		if (!old_sec) {
-			break;
-		}
+		RBinSection *old_sec = RVecRBinSection_emplace_back (old_sections);
 		*old_sec = *sec;
 		old_sec->name = strdup (sec->name);
 		old_sec->format = NULL;
-		r_list_append (old_sections, old_sec);
 	}
 	return old_sections;
 }
 
 struct __rebase_struct {
 	RCore *core;
-	RList *old_sections;
+	RVecRBinSection *old_sections;
 	ut64 old_base;
 	ut64 diff;
 	int type;
@@ -1783,10 +1778,9 @@ struct __rebase_struct {
 static bool __rebase_flags(RFlagItem *fi, void *user) {
 	struct __rebase_struct *reb = user;
 	ut64 old_base = reb->old_base;
-	RListIter *it;
 	RBinSection *sec;
 	// Only rebase flags that were in the rebased sections, otherwise it will take too long
-	r_list_foreach (reb->old_sections, it, sec) {
+	R_VEC_FOREACH (reb->old_sections, sec) {
 		if (__is_inside_section (fi->addr, sec)) {
 			r_flag_set (reb->core->flags, fi->name, fi->addr + reb->diff, fi->size);
 			break;
@@ -1795,8 +1789,8 @@ static bool __rebase_flags(RFlagItem *fi, void *user) {
 	return true;
 }
 
-static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base) {
-	RListIter *it, *itit, *ititit;
+static void __rebase_everything(RCore *core, RVecRBinSection *old_sections, ut64 old_base) {
+	RListIter *it, *ititit;
 	RAnalFunction *fcn;
 	ut64 new_base = (core->bin->cur && core->bin->cur->bo)? core->bin->cur->bo->baddr_shift: 0;
 	RBinSection *old_section;
@@ -1806,7 +1800,7 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 	}
 	// FUNCTIONS
 	r_list_foreach (core->anal->fcns, it, fcn) {
-		r_list_foreach (old_sections, itit, old_section) {
+		R_VEC_FOREACH (old_sections, old_section) {
 			if (!__is_inside_section (fcn->addr, old_section)) {
 				continue;
 			}
@@ -1874,7 +1868,7 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 	}
 
 	core->dbg->main_arena_resolved = false;
-	RList *old_sections = __save_old_sections (core);
+	RVecRBinSection *old_sections = __save_old_sections (core);
 	ut64 old_base = core->bin->cur->bo->baddr_shift;
 	int bits = core->rasm->config->bits;
 	r_config_set_i (core->config, "asm.bits", bits);
@@ -1898,14 +1892,14 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 		r_core_bin_load (core, uri, addr);
 	} else {
 		R_LOG_ERROR ("Cannot open remote %s", uri);
-		r_list_free (old_sections);
+		RVecRBinSection_free (old_sections);
 		return;
 	}
 	r_core_block_read (core);
 	if (r_config_get_i (core->config, "dbg.rebase")) {
 		__rebase_everything (core, old_sections, old_base);
 	}
-	r_list_free (old_sections);
+	RVecRBinSection_free (old_sections);
 	r_core_cmd0 (core, "sr PC");
 }
 
@@ -1945,14 +1939,14 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	}
 
 	core->dbg->main_arena_resolved = false;
-	RList *old_sections = __save_old_sections (core);
+	RVecRBinSection *old_sections = __save_old_sections (core);
 	ut64 old_base = (core->bin->cur && core->bin->cur->bo)? core->bin->cur->bo->baddr_shift: 0;
 	int bits = core->rasm->config->bits;
 	char *bin_abspath = r_file_abspath (binpath);
 	if (strstr (bin_abspath, "://")) {
 		free (bin_abspath);
 		free (binpath);
-		r_list_free (old_sections);
+		RVecRBinSection_free (old_sections);
 		return;
 	}
 	char *escaped_path = r_str_arg_escape (bin_abspath);
@@ -1965,7 +1959,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	if (r_config_get_i (core->config, "dbg.rebase")) {
 		__rebase_everything (core, old_sections, old_base);
 	}
-	r_list_free (old_sections);
+	RVecRBinSection_free (old_sections);
 	r_core_cmd0 (core, "sr PC");
 	free (bin_abspath);
 	free (escaped_path);
@@ -2928,7 +2922,7 @@ static int cmd_open(void *data, const char *input) {
 						// Backup the baddr and sections that were already rebased to
 						// revert the rebase after the debug session is closed
 						ut64 orig_baddr = core->bin->cur->bo->baddr_shift;
-						RList *orig_sections = __save_old_sections (core);
+						RVecRBinSection *orig_sections = __save_old_sections (core);
 
 						r_core_cmd0 (core, "ob-*");
 						r_io_close_all (core->io);
@@ -2937,7 +2931,7 @@ static int cmd_open(void *data, const char *input) {
 
 						r_core_block_read (core);
 						__rebase_everything (core, orig_sections, orig_baddr);
-						r_list_free (orig_sections);
+						RVecRBinSection_free (orig_sections);
 						free (file);
 					} else {
 						R_LOG_WARN ("Nothing to do");

@@ -18,6 +18,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	}
 	ut32 m = r_buf_read_le32_at (buf, 0);
 	RBinPycObj *obj = R_NEW0 (RBinPycObj);
+	RVecRBinSection_init (&obj->sections);
 	obj->version = get_pyc_version (m);
 	bf->bo->bin_obj = obj;
 	return true;
@@ -66,15 +67,8 @@ static bool sections_vec(RBinFile *bf) {
 	if (!obj) {
 		return false;
 	}
-	RVecRBinSection_clear (&bf->bo->sections_vec);
-	RBinSection *section;
-	RListIter *iter;
-	r_list_foreach (obj->sections_cache, iter, section) {
-		RBinSection *dst = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		*dst = *section;
-		dst->name = section->name? strdup (section->name): NULL;
-		dst->format = section->format? strdup (section->format): NULL;
-	}
+	// sections are collected while walking the code objects in symbols_vec
+	RVecRBinSection_swap (&bf->bo->sections_vec, &obj->sections);
 	return true;
 }
 
@@ -103,15 +97,14 @@ static bool symbols_vec(RBinFile *bf) {
 	if (!obj->interned_table) {
 		obj->interned_table = r_list_newf ((RListFree)free);
 	}
-	RList *sections = r_list_newf (NULL); // keep old behavior; free on destroy if needed
 	RBuffer *buffer = bf->buf;
 	if (!obj->code_start_offset) {
 		// ensure code_start_offset is initialized
 		(void) get_entrypoint (buffer, obj->version.magic, &obj->code_start_offset);
 	}
 	r_buf_seek (buffer, obj->code_start_offset, R_BUF_SET);
-	pyc_get_sections_symbols (sections, &bf->bo->symbols_vec, obj->cobjs, buffer, obj->version.magic, obj->interned_table, &obj->pobj);
-	obj->sections_cache = sections;
+	RVecRBinSection_clear (&obj->sections);
+	pyc_get_sections_symbols (&obj->sections, &bf->bo->symbols_vec, obj->cobjs, buffer, obj->version.magic, obj->interned_table, &obj->pobj);
 	return true;
 }
 
@@ -125,7 +118,7 @@ static void destroy(RBinFile *bf) {
 		r_list_free (obj->interned_table);
 		r_list_free (obj->cobjs);
 		pyc_object_free (obj->pobj);
-		// sections_cache is handled by RBin core
+		RVecRBinSection_fini (&obj->sections);
 		free (obj);
 	}
 }

@@ -15,13 +15,13 @@
 typedef struct {
 	ut64 code_start_offset;
 	struct pyc_version version;
-	RList *sections_cache;     // RList<RBinSection*>
+	RVecRBinSection sections;  // filled by symbols_vec, moved into bo->sections_vec
 	RList *interned_table;     // RList<char*>
 	RList *cobjs;              // RList<pyc_code_object*> (borrowed ptrs)
 	pyc_object *pobj;          // root object tree (owns cobjs data)
 } RBinPycObj;
 
-bool pyc_get_sections_symbols(RList *sections, RVecRBinSymbol *symbols, RList *mem, RBuffer *buf, ut32 magic, RList *interned_table, pyc_object **out_pobj);
+bool pyc_get_sections_symbols(RVecRBinSection *sections, RVecRBinSymbol *symbols, RList *mem, RBuffer *buf, ut32 magic, RList *interned_table, pyc_object **out_pobj);
 bool pyc_is_code(ut8 b, ut32 magic);
 
 #endif

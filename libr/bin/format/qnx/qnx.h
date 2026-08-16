@@ -82,14 +82,13 @@ typedef struct lmf_rw_end {
 	ut32     signature;
 }) lmf_rw_end;
 
-R_PACKED (
 typedef struct {
 	Sdb *kv;
 	lmf_header lmfh;
 	RList* fixups;
-	RList* sections;
+	RVecRBinSection sections;
 	RList *resources;
 	lmf_rw_end rwend;
-}) QnxObj;
+} QnxObj;
 
 #endif

@@ -39,7 +39,7 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 // Frees the bin_obj of the binary file
 static void destroy(RBinFile *bf) {
 	QnxObj *qo = bf->bo->bin_obj;
-	r_list_free (qo->sections);
+	RVecRBinSection_fini (&qo->sections);
 	r_list_free (qo->fixups);
 	r_list_free (qo->resources);
 	bf->bo->bin_obj = NULL;
@@ -52,15 +52,14 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	lmf_resource lres;
 	lmf_data ldata;
 	ut64 offset = QNX_RECORD_SIZE;
-	RList *sections = NULL;
 	RList *fixups = NULL;
 	RList *resources = NULL;
 
 	if (!qo) {
 		goto beach;
 	}
-	if (!(sections = r_list_newf ((RListFree)r_bin_section_free))
-		|| !(fixups = r_list_new ()) || !(resources = r_list_newf (free))) {
+	RVecRBinSection_init (&qo->sections);
+	if (!(fixups = r_list_new ()) || !(resources = r_list_newf (free))) {
 		goto beach;
 	}
 	qo->kv = sdb_new0 ();
@@ -84,45 +83,39 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		if (lrec.rec_type == LMF_IMAGE_END_REC) {
 			break;
 		} else if (lrec.rec_type == LMF_RESOURCE_REC) {
-			RBinSection *ptr = R_NEW0 (RBinSection);
 			if (lrec.data_nbytes < sizeof (lmf_resource)) {
-				free (ptr);
 				goto beach;
 			}
 			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&lres, "ssss", 1) != sizeof (lmf_resource)) {
-				free (ptr);
 				goto beach;
 			}
 			ut64 payload = offset + sizeof (lmf_resource);
 			ut64 payload_size = lrec.data_nbytes - sizeof (lmf_resource);
+			RBinSection *ptr = RVecRBinSection_emplace_back (&qo->sections);
 			ptr->name = strdup ("LMF_RESOURCE");
 			ptr->paddr = payload;
 			ptr->vsize = payload_size;
 			ptr->size = ptr->vsize;
 			ptr->add = true;
-			r_list_append (sections, ptr);
 			QnxResourceEntry *resource = R_NEW0 (QnxResourceEntry);
 			resource->type = lres.res_type;
 			resource->paddr = payload;
 			resource->size = payload_size;
 			r_list_append (resources, resource);
 		} else if (lrec.rec_type == LMF_LOAD_REC) {
-			RBinSection *ptr = R_NEW0 (RBinSection);
 			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) != sizeof (lmf_data)) {
-				free (ptr);
 				goto beach;
 			}
 			if (lrec.data_nbytes < sizeof (lmf_data)) {
-				free (ptr);
 				goto beach;
 			}
+			RBinSection *ptr = RVecRBinSection_emplace_back (&qo->sections);
 			ptr->name = strdup ("LMF_LOAD");
 			ptr->paddr = offset;
 			ptr->vaddr = ldata.offset;
 			ptr->vsize = lrec.data_nbytes - sizeof (lmf_data);
 			ptr->size = ptr->vsize;
 			ptr->add = true;
-		 	r_list_append (sections, ptr);
 		} else if (lrec.rec_type == LMF_FIXUP_REC) {
 			RBinReloc *ptr = R_NEW0 (RBinReloc);
 			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) != sizeof (lmf_data)) {
@@ -147,7 +140,6 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		offset += lrec.data_nbytes;
 	}
 	sdb_ns_set (bf->sdb, "info", qo->kv);
-	qo->sections = sections;
 	qo->fixups = fixups;
 	qo->resources = resources;
 	bf->bo->bin_obj = qo;
@@ -155,10 +147,10 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 beach:
 	if (qo) {
 		sdb_free (qo->kv);
+		RVecRBinSection_fini (&qo->sections);
 		free (qo);
 	}
 	r_list_free (fixups);
-	r_list_free (sections);
 	r_list_free (resources);
 	return false;
 }
@@ -232,15 +224,7 @@ static bool sections_vec(RBinFile *bf) {
 	if (!qo) {
 		return false;
 	}
-	RVecRBinSection_clear (&bf->bo->sections_vec);
-	RBinSection *section;
-	RListIter *iter;
-	r_list_foreach (qo->sections, iter, section) {
-		RBinSection *dst = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		*dst = *section;
-		dst->name = section->name? strdup (section->name): NULL;
-		dst->format = section->format? strdup (section->format): NULL;
-	}
+	RVecRBinSection_swap (&bf->bo->sections_vec, &qo->sections);
 	return true;
 }
 

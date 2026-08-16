@@ -2816,35 +2816,6 @@ RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) * mo) {
 	return mo->segments_vec;
 }
 
-RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) * macho) {
-	RList *list = r_list_newf ((RListFree)r_bin_section_free);
-	if (!list) {
-		return NULL;
-	}
-
-	// R2_590 slow, should return vec directly
-	RVecSegment *segments = MACH0_(get_segments_vec) (bf, macho);
-	const int limit = macho->limit;
-	int count = 0;
-	RBinSection *s;
-	R_VEC_FOREACH (segments, s) {
-		if (limit > 0 && !s->is_segment && count >= limit) {
-			break;
-		}
-		RBinSection *s_copy = r_bin_section_clone (s);
-		if (!s_copy) {
-			r_list_free (list);
-			return NULL;
-		}
-		r_list_append (list, s_copy);
-		if (!s->is_segment) {
-			count++;
-		}
-	}
-
-	return list;
-}
-
 const RVecSection *MACH0_(load_sections)(struct MACH0_(obj_t) * mo) {
 	R_RETURN_VAL_IF_FAIL (mo, NULL);
 	if (mo->sections_loaded) {
@@ -3678,35 +3649,14 @@ static bool parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo
 	return is_stripped;
 }
 
-#if 0
-// R2_612
-static inline bool is_debug_segment(const RBinSection *s, const void *user) {
-	return strstr (s->name, "DWARF.__debug_line") != NULL;
+static int is_debug_segment(const RBinSection *s, const void *user) {
+	return (s->name && strstr (s->name, ".__debug_line"))? 0: 1;
 }
 
-static inline bool is_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
-	return RVecSegment_find (mo->segments_vec, NULL, is_debug_segment) != NULL;
+static bool is_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
+	RVecSegment *segments = MACH0_(get_segments_vec) (bf, mo);
+	return segments && RVecSegment_find (segments, NULL, is_debug_segment) != NULL;
 }
-#else
-static bool is_debug_build(RBinFile *bf, struct MACH0_(obj_t) * mo) {
-	RList *sections = MACH0_(get_segments) (bf, mo);
-	if (!sections) {
-		return false;
-	}
-
-	bool res = false;
-	RListIter *iter;
-	RBinSection *section;
-	r_list_foreach (sections, iter, section) {
-		if (strstr (section->name, ".__debug_line")) {
-			res = true;
-			break;
-		}
-	}
-	r_list_free (sections);
-	return res;
-}
-#endif
 
 const bool MACH0_(load_symbols)(struct MACH0_(obj_t) * mo) {
 	R_RETURN_VAL_IF_FAIL (mo, false);

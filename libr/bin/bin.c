@@ -1994,14 +1994,6 @@ R_API void r_bin_section_fini(RBinSection *bs) {
 	}
 }
 
-R_API RBinSection *r_bin_section_clone(RBinSection *s) {
-	RBinSection *d = R_NEW0 (RBinSection);
-	memcpy (d, s, sizeof (RBinSection));
-	d->name = s->name? strdup (s->name): NULL;
-	d->format = s->format? strdup (s->format): NULL;
-	return d;
-}
-
 R_API void r_bin_section_free(RBinSection *bs) {
 	if (bs) {
 		r_bin_section_fini (bs);

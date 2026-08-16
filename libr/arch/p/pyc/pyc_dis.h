@@ -5,6 +5,7 @@
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_asm.h>
+#include <r_bin.h>
 
 #include "opcode.h"
 #include "../../../bin/format/pyc/pyc_magic.h"
@@ -14,7 +15,7 @@
 typedef struct {
 	ut64 code_start_offset;
 	struct pyc_version version;
-	RList *sections_cache;     // RList<RBinSection*>
+	RVecRBinSection sections;  // filled by symbols_vec, moved into bo->sections_vec
 	RList *interned_table;     // RList<char*>
 	RList *cobjs;              // RList<pyc_code_object*>
 } RBinPycObj;
