@@ -645,8 +645,9 @@ void Elf_(plt_ppc64v1_load_text_stubs)(ELFOBJ *eo) {
 		}
 	}
 	if (!scanned && eo->phdr) {
-		int i;
-		for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		size_t i;
+		// phnum is the resolved count, e_phnum is 0xffff under PN_XNUM
+		for (i = 0; i < eo->phnum; i++) {
 			const Elf_(Phdr) *p = &eo->phdr[i];
 			if (p->p_type == PT_LOAD && (p->p_flags & PF_X)) {
 				ppc64v1_scan_stubs (eo, &sc, p->p_offset, p->p_vaddr, p->p_filesz);
