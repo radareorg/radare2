@@ -54,6 +54,12 @@ static inline bool is_elfclass64(Elf_(Ehdr) * h) {
 	return h->e_ident[EI_CLASS] == ELFCLASS64;
 }
 
+// every string table in ELFOBJ is allocated with a trailing NUL, so any
+// offset inside it yields a bounded C string. returns NULL when out of range
+static inline const char *strtab_str(const char *strtab, size_t strtab_size, ut64 off) {
+	return (strtab && off < strtab_size)? strtab + off: NULL;
+}
+
 static bool is_intel(const ELFOBJ *eo) {
 	switch (eo->ehdr.e_machine) {
 	case EM_386:
@@ -804,16 +810,9 @@ static inline ut16 *_parse_edata(ELFOBJ *eo, EDataState *edata_state) {
 		free (edata);
 		return NULL;
 	}
-	const char *section_name = "";
-	if (eo->shstrtab && shdr->sh_name < eo->shstrtab_size) {
-		section_name = &eo->shstrtab[shdr->sh_name];
-	}
-
+	const char *section_name = r_str_get (strtab_str (eo->shstrtab, eo->shstrtab_size, shdr->sh_name));
 	Elf_(Shdr) *link_shdr = &eo->shdr[shdr->sh_link];
-	const char *link_section_name = "";
-	if (eo->shstrtab && link_shdr->sh_name < eo->shstrtab_size) {
-		link_section_name = &eo->shstrtab[link_shdr->sh_name];
-	}
+	const char *link_section_name = r_str_get (strtab_str (eo->shstrtab, eo->shstrtab_size, link_shdr->sh_name));
 	edata[0] = 0;
 	(void)r_buf_read_at (eo->b, off, edata, sizeof (ut16) * num_entries);
 	sdb_set (sdb, "section_name", section_name, 0);
@@ -896,10 +895,11 @@ static inline bool _maybe_parse_aux_ver_needed_info(ELFOBJ *eo, ParseVernauxStat
 		} while (vna.vna_other != data[i + j] && vna.vna_next != 0);
 
 		if (vna.vna_other == data[i + j]) {
-			if (vna.vna_name > eo->strtab_size) {
+			const char *name = strtab_str (eo->strtab, eo->strtab_size, vna.vna_name);
+			if (!name) {
 				return false;
 			}
-			char *val = r_str_newf ("%s(%s)", state->tmp_val, eo->strtab + vna.vna_name);
+			char *val = r_str_newf ("%s(%s)", state->tmp_val, name);
 			sdb_set (state->sdb, state->key, val, 0);
 			free (val);
 			state->check_def = false;
@@ -969,16 +969,13 @@ static inline bool _maybe_parse_version_definition_info(ELFOBJ *eo, ParseVerDefS
 		int k = 0;
 		vda.vda_name = READ32 (svda, k);
 		vda.vda_next = READ32 (svda, k);
-		if (vda.vda_name > eo->strtab_size) {
+		const char *name = strtab_str (eo->strtab, eo->strtab_size, vda.vda_name);
+		if (!name) {
 			return false;
 		}
-
-		const char *name = eo->strtab + vda.vda_name;
-		if (name) {
-			char *fname = r_str_newf ("%s(%s%-*s)", state->tmp_val, name, (int)(12 - strlen (name)),")");
-			sdb_set (state->sdb, state->key, fname, 0);
-			free (fname);
-		}
+		char *fname = r_str_newf ("%s(%s%-*s)", state->tmp_val, name, (int)(12 - strlen (name)),")");
+		sdb_set (state->sdb, state->key, fname, 0);
+		free (fname);
 	}
 
 	return true;
@@ -1245,10 +1242,8 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
 	}
 
 	Elf_(Shdr) *link_shdr = &eo->shdr[shdr->sh_link];
-	const char *link_section_name = (eo->shstrtab && link_shdr->sh_name < eo->shstrtab_size)
-		? &eo->shstrtab[link_shdr->sh_name] : "";
-	const char *section_name = (eo->shstrtab && shdr->sh_name < eo->shstrtab_size)
-		? &eo->shstrtab[shdr->sh_name] : "";
+	const char *link_section_name = r_str_get (strtab_str (eo->shstrtab, eo->shstrtab_size, link_shdr->sh_name));
+	const char *section_name = r_str_get (strtab_str (eo->shstrtab, eo->shstrtab_size, shdr->sh_name));
 	sdb_set (sdb, "section_name", section_name, 0);
 	sdb_num_set (sdb, "entries", shdr->sh_info, 0);
 	sdb_num_set (sdb, "addr", shdr->sh_addr, 0);
@@ -1410,10 +1405,8 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) 
 	}
 
 	Elf_(Shdr) *link_shdr = &eo->shdr[shdr->sh_link];
-	const char *link_section_name = eo->shstrtab && link_shdr->sh_name < eo->shstrtab_size
-		? &eo->shstrtab[link_shdr->sh_name] : "";
-	const char *section_name = eo->shstrtab && shdr->sh_name < eo->shstrtab_size
-		? &eo->shstrtab[shdr->sh_name] : "";
+	const char *link_section_name = r_str_get (strtab_str (eo->shstrtab, eo->shstrtab_size, link_shdr->sh_name));
+	const char *section_name = r_str_get (strtab_str (eo->shstrtab, eo->shstrtab_size, shdr->sh_name));
 	sdb_set (sdb, "section_name", section_name, 0);
 	sdb_num_set (sdb, "num_entries", shdr->sh_info, 0);
 	sdb_num_set (sdb, "addr", shdr->sh_addr, 0);
@@ -3125,12 +3118,8 @@ char *Elf_(get_rpath)(ELFOBJ *eo) {
 	} else {
 		return NULL;
 	}
-	if (val >= eo->strtab_size) {
-		return NULL;
-	}
-
-	size_t maxlen = R_MIN (ELF_STRING_LENGTH, (eo->strtab_size - val));
-	return r_str_ndup (eo->strtab + val, maxlen);
+	const char *rpath = strtab_str (eo->strtab, eo->strtab_size, val);
+	return rpath? r_str_ndup (rpath, ELF_STRING_LENGTH): NULL;
 }
 
 static bool has_valid_section_header(ELFOBJ *eo, size_t pos) {
@@ -3863,20 +3852,16 @@ const RVecRBinElfLib* Elf_(load_libs)(ELFOBJ *eo) {
 
 	Elf_(Off) *it = NULL;
 	R_VEC_FOREACH (&eo->dyn_info.dt_needed, it) {
-		Elf_(Off) val = *it;
-		if (val > eo->strtab_size) {
+		const char *name = strtab_str (eo->strtab, eo->strtab_size, *it);
+		if (!name) {
 			RVecRBinElfLib_clear (&eo->g_libs);
 			return NULL;
 		}
-
-		const char *const name = (eo->strtab + val);
-		if (!name[0]) {
+		if (!*name) {
 			continue;
 		}
-
 		RBinElfLib *lib = RVecRBinElfLib_emplace_back (&eo->g_libs);
 		r_str_ncpy (lib->name, name, ELF_STRING_LENGTH);
-		lib->name[ELF_STRING_LENGTH - 1] = '\0';
 	}
 
 	return &eo->g_libs;
@@ -4644,35 +4629,21 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 			is_vaddr = true;
 		}
 
-		if (new_symbol.st_name + 2 > eo->strtab_size) {
+		// get name before allocating it in the vector
+		const char *symname = strtab_str (eo->strtab, eo->strtab_size, new_symbol.st_name);
+		if (!symname) {
+			// an entry dereferencing the strtab beyond its capacity
+			// can't be a symbol, so this is the end of the table
 			R_LOG_DEBUG ("Symbol name outside the strtab section");
-			// Since we are reading beyond the symbol table what's happening
-			// is that some entry is trying to dereference the strtab beyond its capacity
-			// this can't be a symbol so this is the end
 			break;
 		}
-
-		// R2_590 - getting symbol name requires a unified function to read outside strtab, current code is wrong
-		// get name before alocating it in the vector
-		ut32 st_name = new_symbol.st_name;
-		const size_t rest = ELF_STRING_LENGTH - 1;
-		ut64 maxsize = eo->size;
-		int namelen = 0;
-		if (st_name >= maxsize) {
-			namelen = 0;
-		} else {
-			namelen = r_str_nlen (eo->strtab + st_name, rest) + 1;
-		}
-		const char *symname;
-		if (namelen < 1) {
+		if (!*symname) {
 #if PERMIT_UNNAMED_SYMBOLS
 			symname = "unksym";
 #else
 			R_LOG_DEBUG ("empty symbol name");
 			continue;
 #endif
-		} else {
-			symname = eo->strtab + st_name;
 		}
 
 		RBinElfSymbol *psym = RVecRBinElfSymbol_emplace_back (ret);
@@ -4680,7 +4651,7 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		memset (psym, 0, sizeof (RBinElfSymbol));
 		psym->offset = tmp_offset;
 		psym->size = tsize;
-		r_str_ncpy (psym->name, symname, R_MIN (rest, namelen));
+		r_str_ncpy (psym->name, symname, ELF_STRING_LENGTH);
 
 		psym->ordinal = i;
 		psym->in_shdr = false;
@@ -5295,14 +5266,13 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 			}
 		}
 
-		if (sym.st_name + 1 > strtab_section->sh_size) {
+		const char *symname = strtab_str (strtab, strtab_section->sh_size, sym.st_name);
+		if (!symname) {
 			R_LOG_DEBUG ("index out of strtab range (%"PFMT64d" / %"PFMT64d")",
 				(ut64)sym.st_name, (ut64)strtab_section->sh_size);
 			continue;
 		}
 
-		const size_t st_name = sym.st_name;
-		ut64 maxsize = strtab_section->sh_size;
 		char name[ELF_STRING_LENGTH] = {0};
 		if (is_section_local_sym (eo, &sym)) {
 			const size_t sym_section = sym.st_shndx;
@@ -5318,13 +5288,9 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 				const ut64 at = strtab_section->sh_offset + eo->shdr[sym_section].sh_name;
 				r_buf_read_at (eo->b, at, (ut8*)name, sizeof (name));
 			}
-		} else if (!st_name || st_name >= maxsize) {
-			name[0] = 0;
-		} else {
-			r_str_ncpy (name, &strtab[st_name], ELF_STRING_LENGTH - 1);
+		} else if (sym.st_name) {
+			r_str_ncpy (name, symname, sizeof (name));
 		}
-
-		name[ELF_STRING_LENGTH - 1] = '\0';
 		if (!eo->load_unnamed && r_bin_name_is_unnamed (name)) {
 			continue;
 		}
@@ -5334,7 +5300,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		es->offset = offset;
 		es->size = tsize;
 		r_str_ncpy (es->name, name, ELF_STRING_LENGTH);
-		if (!is_section_local_sym (eo, &sym) && st_name && st_name < maxsize) {
+		if (!is_section_local_sym (eo, &sym) && sym.st_name) {
 			es->type = type2str (eo, es, &sym);
 		}
 
