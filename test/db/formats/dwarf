@@ -5331,3 +5331,20 @@ addr: 0x08003797
 --
 EOF
 RUN
+
+NAME=DWARF struct member needing sdb sanitization survives the save round-trip
+FILE=bins/elf/dwarf2_many_comp_units.elf
+ARGS=-e bin.dbginfo=true
+CMDS=<<EOF
+tk struct.Bird
+tk struct.Bird._vptr_Bird
+tsc Bird
+EOF
+EXPECT=<<EOF
+_vptr_Bird
+int (**)(),2,0
+struct Bird {
+  int (**)() _vptr_Bird;
+};
+EOF
+RUN
