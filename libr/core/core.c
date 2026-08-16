@@ -84,37 +84,10 @@ static void r_core_debug_syscall_hit(RCore *core) {
 	}
 }
 
-struct getreloc_t {
-	ut64 vaddr;
-	int size;
-};
-
-static int getreloc_tree(void *incoming, void *in, void *user) {
-	struct getreloc_t *gr = (struct getreloc_t *)incoming;
-	RBinReloc *r = (RBinReloc *)in;
-	if ((r->vaddr >= gr->vaddr) && (r->vaddr < (gr->vaddr + gr->size))) {
-		return 0;
-	}
-	if (gr->vaddr > r->vaddr) {
-		return 1;
-	}
-	if (gr->vaddr < r->vaddr) {
-		return -1;
-	}
-	return 0;
-}
-
 R_API RBinReloc *r_core_getreloc(RCore *core, ut64 addr, int size) {
 	R_RETURN_VAL_IF_FAIL (core, NULL);
-	if (size < 1 || addr == UT64_MAX) {
-		return NULL;
-	}
-	RRBTree *relocs = r_bin_get_relocs (core->bin);
-	if (R_LIKELY (relocs)) {
-		struct getreloc_t gr = { .vaddr = addr, .size = size };
-		return r_crbtree_find (relocs, &gr, getreloc_tree, NULL);
-	}
-	return NULL;
+	RVecRBinReloc *relocs = r_bin_get_relocs (core->bin);
+	return relocs? r_bin_reloc_at (relocs, addr, size): NULL;
 }
 
 /* returns the address of a jmp/call given a shortcut by the user or UT64_MAX

@@ -3625,7 +3625,7 @@ static int bin_pe_init(RBinPEObj *pe) {
 	bin_pe_init_metadata_hdr (pe);
 	bin_pe_init_overlay (pe);
 	PE_(bin_pe_parse_resource) (pe);
-	pe->relocs = NULL;
+	RVecRBinReloc_init (&pe->relocs);
 	return true;
 }
 
@@ -4665,7 +4665,7 @@ void *PE_(r_bin_pe_free)(RBinPEObj *pe) {
 	free (pe->authentihash);
 	free (pe->sdbdir);
 	r_list_free (pe->rich_entries);
-	r_list_free (pe->relocs);
+	RVecRBinReloc_fini (&pe->relocs);
 	r_list_free (pe->resources);
 	r_list_free (pe->dotnet_symbols);
 	r_pkcs7_cms_free (pe->cms);

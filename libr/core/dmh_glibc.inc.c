@@ -572,7 +572,7 @@ static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc
 		R_LOG_WARN ("get_main_arena_with_relocs: Failed to open libc %s", libc_path);
 		return GHT_MAX;
 	}
-	RRBTree *relocs = r_bin_get_relocs (bin);
+	RVecRBinReloc *relocs = r_bin_get_relocs (bin);
 	if (!relocs) {
 		R_LOG_WARN ("get_main_arena_with_relocs: Failed to get relocs from libc %s", libc_path);
 		return GHT_MAX;
@@ -618,10 +618,8 @@ static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc
 	}
 
 	// Iterate over relocations and look for malloc_state structure
-	RRBNode *node;
 	RBinReloc *reloc;
-
-	r_crbtree_foreach (relocs, node, RBinReloc, reloc) {
+	R_VEC_FOREACH (relocs, reloc) {
 		// We only care about relocations in .data section
 		if (reloc->vaddr - next_field_offset < data_section->vaddr ||
 			reloc->vaddr > data_section->vaddr + data_section->size)

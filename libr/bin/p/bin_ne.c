@@ -96,7 +96,7 @@ static bool imports_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *relocs(RBinFile *bf) {
+static RVecRBinReloc *relocs(RBinFile *bf) {
 	return r_bin_ne_get_relocs (bf->bo->bin_obj, &bf->bo->symbols_vec, &bf->bo->sections_vec);
 }
 

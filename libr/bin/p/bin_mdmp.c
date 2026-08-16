@@ -444,24 +444,12 @@ static RList *mem(RBinFile *bf) {
 	return ret;
 }
 
-static RList* relocs(RBinFile *bf) {
-	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
-	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
-	RListIter *it;
-	RList* ret = r_list_newf (free);
-	if (!ret) {
-		return NULL;
-	}
+static RVecRBinReloc *relocs(RBinFile *bf) {
 	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->bo->bin_obj;
-	r_list_foreach (mdmp->pe32_bins, it, pe32_bin) {
-		if (pe32_bin->bin && pe32_bin->bin->relocs) {
-			r_list_join (ret, pe32_bin->bin->relocs);
-		}
-	}
-	r_list_foreach (mdmp->pe64_bins, it, pe64_bin) {
-		if (pe64_bin->bin && pe64_bin->bin->relocs) {
-			r_list_join (ret, pe64_bin->bin->relocs);
-		}
+	RVecRBinReloc *ret = RVecRBinReloc_new ();
+	if (ret) {
+		// filled by imports_vec
+		RVecRBinReloc_swap (ret, &mdmp->relocs);
 	}
 	return ret;
 }
@@ -473,11 +461,12 @@ static bool imports_vec(RBinFile *bf) {
 
 	RVecRBinImport *ret = &bf->bo->imports_vec;
 	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->bo->bin_obj;
+	RVecRBinReloc_clear (&mdmp->relocs);
 	r_list_foreach (mdmp->pe32_bins, it, pe32_bin) {
-		Pe32_r_bin_mdmp_pe_load_imports (pe32_bin, ret);
+		Pe32_r_bin_mdmp_pe_load_imports (pe32_bin, ret, &mdmp->relocs);
 	}
 	r_list_foreach (mdmp->pe64_bins, it, pe64_bin) {
-		Pe64_r_bin_mdmp_pe_load_imports (pe64_bin, ret);
+		Pe64_r_bin_mdmp_pe_load_imports (pe64_bin, ret, &mdmp->relocs);
 	}
 	return true;
 }

@@ -59,13 +59,6 @@ static RList *libs(RBinFile *bf) {
 	return r_bin_som_get_libs (bf->bo->bin_obj);
 }
 
-static RList *relocs(RBinFile *bf) {
-	if (!bf || !bf->bo || !bf->bo->bin_obj) {
-		return NULL;
-	}
-	return r_bin_som_get_relocs (bf->bo->bin_obj);
-}
-
 static RBinInfo *info(RBinFile *bf) {
 	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return NULL;
@@ -146,7 +139,6 @@ RBinPlugin r_bin_plugin_som = {
 	.header = &header,
 	.size = &size,
 	.libs = &libs,
-	.relocs = &relocs,
 };
 
 #ifndef R2_PLUGIN_INCORE

@@ -38,7 +38,6 @@ R_IPI void r_bin_mdt_part_free(RBinMdtPart *part) {
 		free (part->map->file);
 		free (part->map);
 	}
-	r_list_free (part->relocs);
 	r_list_free (part->sub_maps);
 	free (part->patches_vfile_name);
 	free (part->relocs_vfile_name);

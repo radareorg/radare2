@@ -1020,16 +1020,37 @@ R_API RList *r_bin_get_libs(RBin *bin) {
 	return o? o->libs: NULL;
 }
 
-R_API RRBTree *r_bin_patch_relocs(RBinFile *bf) {
+R_API RVecRBinReloc *r_bin_patch_relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
 	RBinObject *o = r_bin_cur_object (bf->rbin);
 	return o? r_bin_object_patch_relocs (bf, o): NULL;
 }
 
-R_API RRBTree *r_bin_get_relocs(RBin *bin) {
+R_API RVecRBinReloc *r_bin_get_relocs(RBin *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o? o->relocs: NULL;
+}
+
+// find the first reloc whose vaddr is inside [vaddr, vaddr + size)
+R_API RBinReloc *r_bin_reloc_at(RVecRBinReloc *relocs, ut64 vaddr, int size) {
+	R_RETURN_VAL_IF_FAIL (relocs, NULL);
+	if (size < 1 || vaddr == UT64_MAX) {
+		return NULL;
+	}
+	// relocs are sorted by vaddr, plain binary search for the lower bound
+	RBinReloc *a = R_VEC_START_ITER (relocs);
+	const size_t len = RVecRBinReloc_length (relocs);
+	size_t lo = 0, hi = len;
+	while (lo < hi) {
+		const size_t mid = lo + ((hi - lo) >> 1);
+		if (a[mid].vaddr < vaddr) {
+			lo = mid + 1;
+		} else {
+			hi = mid;
+		}
+	}
+	return (lo < len && a[lo].vaddr < vaddr + size)? &a[lo]: NULL;
 }
 
 R_API RVecRBinSection *r_bin_get_sections_vec(RBin *bin) {

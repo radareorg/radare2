@@ -145,28 +145,26 @@ bool r_bin_mz_load_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize, RVe
 	return true;
 }
 
-struct r_bin_mz_reloc_t *r_bin_mz_get_relocs (const struct r_bin_mz_obj_t *bin) {
-	int i, j;
+RVecRBinReloc *r_bin_mz_get_relocs(const struct r_bin_mz_obj_t *bin) {
+	int i;
 	const int num_relocs = bin->dos_header->num_relocs;
 	const MZ_image_relocation_entry *const rel_entry = bin->relocation_entries;
 
-	struct r_bin_mz_reloc_t *relocs = calloc (num_relocs + 1, sizeof (*relocs));
+	RVecRBinReloc *relocs = RVecRBinReloc_new ();
 	if (!relocs) {
-		R_LOG_ERROR ("calloc (struct r_bin_mz_reloc_t)");
 		return NULL;
 	}
-	for (i = 0, j = 0; i < num_relocs; i++) {
-		relocs[j].vaddr = r_bin_mz_va_to_la (rel_entry[i].segment,
-			rel_entry[i].offset);
-		relocs[j].paddr = r_bin_mz_la_to_pa (bin, relocs[j].vaddr);
-
+	RVecRBinReloc_reserve (relocs, num_relocs);
+	for (i = 0; i < num_relocs; i++) {
+		const ut64 vaddr = r_bin_mz_va_to_la (rel_entry[i].segment, rel_entry[i].offset);
 		/* Add only relocations which resides inside dos executable */
-		if (relocs[j].vaddr < bin->load_module_size) {
-			j++;
+		if (vaddr < bin->load_module_size) {
+			RBinReloc *rel = RVecRBinReloc_emplace_back (relocs);
+			rel->type = R_BIN_RELOC_16;
+			rel->vaddr = vaddr;
+			rel->paddr = r_bin_mz_la_to_pa (bin, vaddr);
 		}
 	}
-	relocs[j].last = 1;
-
 	return relocs;
 }
 

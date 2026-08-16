@@ -80,17 +80,11 @@ static inline void filter_import(ut8 *n) {
 	}
 }
 
-void PE_(r_bin_mdmp_pe_load_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin, RVecRBinImport *vec) {
+void PE_(r_bin_mdmp_pe_load_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin, RVecRBinImport *vec, RVecRBinReloc *relocs) {
 	RVecPEImport *imports = PE_(r_bin_pe_get_imports) (pe_bin->bin);
 	if (!imports) {
 		return;
 	}
-	RList *relocs = r_list_newf ((RListFree)r_bin_reloc_free);
-	if (!relocs) {
-		RVecPEImport_free (imports);
-		return;
-	}
-	pe_bin->bin->relocs = relocs;
 	struct r_bin_pe_import_t *import;
 	R_VEC_FOREACH (imports, import) {
 		filter_import (import->name);
@@ -101,10 +95,7 @@ void PE_(r_bin_mdmp_pe_load_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin, RV
 		ptr->type = R_BIN_TYPE_FUNC_STR;
 		ptr->ordinal = import->ordinal;
 
-		RBinReloc *rel = R_NEW0 (RBinReloc);
-		if (!rel) {
-			break;
-		}
+		RBinReloc *rel = RVecRBinReloc_emplace_back (relocs);
 #ifdef R_BIN_PE64
 		rel->type = R_BIN_RELOC_64;
 #else
@@ -114,12 +105,9 @@ void PE_(r_bin_mdmp_pe_load_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin, RV
 		if (offset > pe_bin->vaddr) {
 			offset -= pe_bin->vaddr;
 		}
-		rel->additive = 0;
 		rel->import = r_bin_import_clone (ptr);
-		rel->addend = 0;
 		rel->vaddr = offset + pe_bin->vaddr;
 		rel->paddr = import->paddr + pe_bin->paddr;
-		r_list_append (relocs, rel);
 	}
 	RVecPEImport_free (imports);
 }
