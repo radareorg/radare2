@@ -977,7 +977,6 @@ R_API RBinSymbol *r_bin_get_symbol_at(RBin *bin, ut64 addr);
 R_API RVecRBinImport *r_bin_get_imports_vec(RBin *bin);
 R_API RVecRBinString *r_bin_reset_strings(RBin *bin);
 R_API int r_bin_is_big_endian(RBin *bin); // R2_590: deprecate. also it returns -1, false and true
-R_API bool r_bin_is_static(RBin *bin); // R2_590: deprecate
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr);
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr);
 

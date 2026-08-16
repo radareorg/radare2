@@ -1444,15 +1444,6 @@ R_API int r_bin_is_big_endian(RBin *bin) {
 	return (o && o->info)? o->info->big_endian: -1;
 }
 
-R_API bool r_bin_is_static(RBin *bin) {
-	R_RETURN_VAL_IF_FAIL (bin, false);
-	RBinObject *o = r_bin_cur_object (bin);
-	if (o && o->libs && r_list_length (o->libs) > 0) {
-		return R_BIN_DBG_STATIC & o->info->dbg_info;
-	}
-	return true;
-}
-
 static bool collect_symclass_glob(void *user, const char *k, const char *v) {
 	if (strchr (k, '*')) {
 		char *dup = strdup (k);

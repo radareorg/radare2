@@ -1041,7 +1041,8 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 				pair_bool (core, pj, "signed", info->signature);
 			}
 			pair_bool (core, pj, "sanitize", info->has_sanitizers);
-			pair_bool (core, pj, "static", r_bin_is_static (core->bin));
+			const bool is_static = r_list_empty (obj->libs) || (info->dbg_info & R_BIN_DBG_STATIC);
+			pair_bool (core, pj, "static", is_static);
 			if (info->rclass && !strcmp (info->rclass, "mdmp")) {
 				v = sdb_num_get (bf->sdb, "mdmp.streams", 0);
 				if (v != -1) {
