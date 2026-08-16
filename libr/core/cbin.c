@@ -1894,6 +1894,9 @@ typedef struct {
 	bool is32;
 	char *flagpfx; // "[bin.prefix.]reloc."
 	size_t flagpfx_len;
+	int cdsz; // size of the data meta added for each reloc, 0 to skip
+	RIOMap *map; // map of the previous reloc, relocs are sorted so most hit it
+	ut64 meta_end; // end of the last data meta added, to skip overlapping ones
 } RelocInfo;
 
 static void ri_fini(RelocInfo *ri) {
@@ -1904,6 +1907,10 @@ static void ri_init(RCore *core, RelocInfo *ri) {
 	ri->core = core;
 	ri->flagpfx = core->bin->prefix? r_str_newf ("%s.reloc.", core->bin->prefix): strdup ("reloc.");
 	ri->flagpfx_len = strlen (ri->flagpfx);
+	RBinObject *bo = core->bin->cur? core->bin->cur->bo: NULL;
+	const int bits = bo && bo->info? bo->info->bits: 0;
+	ri->cdsz = (bits == 64)? 8: (bits == 32 || bits == 16)? 4: 0;
+	ri->meta_end = UT64_MAX;
 	ri->bin_demangle = r_config_get_b (core->config, "bin.demangle");
 	ri->keep_lib = r_config_get_b (core->config, "bin.demangle.pfxlib");
 	ri->reloc_xrefs = r_config_get_b (core->config, "bin.relocs.xrefs");
@@ -2002,24 +2009,25 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 }
 
 /* Define new data at relocation address if it's not in an executable section */
-static void add_metadata(RCore *core, RBinReloc *reloc, ut64 addr, int mode) {
-	RBinFile *binfile = core->bin->cur;
-	RBinObject *binobj = binfile? binfile->bo: NULL;
-	RBinInfo *info = binobj? binobj->info: NULL;
-
-	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4
-					: info->bits == 16? 4
-								: 0)
-			: 0;
+static void add_metadata(RelocInfo *ri, RBinReloc *reloc, ut64 addr, int mode) {
+	RCore *core = ri->core;
+	const int cdsz = ri->cdsz;
 	if (cdsz == 0) {
 		return;
 	}
-	RIOMap *map = r_io_map_get_at (core->io, addr);
-	if (!map || map->sperm & R_PERM_X) {
+	if (!ri->map || !r_io_map_contain (ri->map, addr)) {
+		ri->map = r_io_map_get_at (core->io, addr);
+	}
+	if (!ri->map || ri->map->sperm & R_PERM_X) {
 		return;
 	}
 	if (IS_MODE_SET (mode)) {
+		// relocs are sorted by vaddr: skip the ones inside the previous data meta
+		if (ri->meta_end != UT64_MAX && reloc->vaddr < ri->meta_end && reloc->vaddr >= ri->meta_end - cdsz) {
+			return;
+		}
 		r_meta_set (core->anal, R_META_TYPE_DATA, reloc->vaddr, cdsz, NULL);
+		ri->meta_end = reloc->vaddr + cdsz;
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_printf (core->cons, "'@0x%08" PFMT64x "'Cd %d\n", addr, cdsz);
 	}
@@ -2158,7 +2166,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			 */
 		} else if (IS_MODE_SET (mode)) {
 			set_bin_relocs (&ri, reloc, addr, &db, &sdb_module);
-			add_metadata (core, reloc, addr, mode);
+			add_metadata (&ri, reloc, addr, mode);
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			if (reloc->import) {
 				r_cons_printf (core->cons, "0x%08" PFMT64x "\n", addr);
@@ -2188,7 +2196,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 					r_cons_printf (core->cons, "'f %s%s%s %d 0x%08" PFMT64x "\n",
 						r_str_get_fail (core->bin->prefix, "reloc."),
 						core->bin->prefix? ".": "", n, reloc_size, addr);
-					add_metadata (core, reloc, addr, mode);
+					add_metadata (&ri, reloc, addr, mode);
 					free (n);
 					free (name);
 				}
