@@ -129,6 +129,7 @@ void r_bin_mdmp_free(struct r_bin_mdmp_obj *obj) {
 
 	r_list_free (obj->pe32_bins);
 	r_list_free (obj->pe64_bins);
+	RVecRBinReloc_fini (&obj->relocs);
 
 	r_unref (obj->b);
 	free (obj->hdr);
@@ -1206,6 +1207,7 @@ struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(RBuffer *buf, const char *sdbdir) {
 	struct r_bin_mdmp_obj *obj = R_NEW0 (struct r_bin_mdmp_obj);
 	obj->kv = sdb_new0 ();
 	obj->size = (ut32) r_buf_size (buf);
+	RVecRBinReloc_init (&obj->relocs);
 
 	fail |= (!(obj->streams.ex_threads = r_list_newf ((RListFree)free)));
 	fail |= (!(obj->streams.memories = r_list_newf ((RListFree)free)));

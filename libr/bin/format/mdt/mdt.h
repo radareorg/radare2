@@ -73,7 +73,6 @@ typedef struct {
 	ut64 vsize; ///< The segment p_memsz.
 	char *patches_vfile_name; ///< Name of the vfile of patches to the binary. If NULL, no patches are supported.
 	char *relocs_vfile_name; ///< Name of the vfile of relocs to the binary. If NULL, no relocs are supported.
-	RList/*<RBinReloc *>*/ *relocs; ///< Relocs in this part.
 	RList/*<RBinMap *>*/ *sub_maps; ///< Maps of the obj, if any.
 } RBinMdtPart;
 

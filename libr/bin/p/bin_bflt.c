@@ -46,7 +46,7 @@ static bool read_be32_at(RBuffer *b, ut64 offset, ut32 *out) {
 	return true;
 }
 
-static RList *patch_relocs(RBinFile *bf) {
+static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && bf->rbin->iob.io, NULL);
 	RBin *b = bf->rbin;
 	RBinObject *obj = r_bin_cur_object (b);
@@ -54,7 +54,7 @@ static RList *patch_relocs(RBinFile *bf) {
 		return NULL;
 	}
 	struct r_bin_bflt_obj *bin = obj->bin_obj;
-	RList *list = r_list_newf ((RListFree)free);
+	RVecRBinReloc *list = RVecRBinReloc_new ();
 	if (!list) {
 		return NULL;
 	}
@@ -63,11 +63,10 @@ static RList *patch_relocs(RBinFile *bf) {
 		int i;
 		for (i = 0; i < bin->n_got; i++) {
 			__patch_reloc (&b->iob, got_table[i].addr_to_patch, got_table[i].data_offset);
-			RBinReloc *reloc = R_NEW0 (RBinReloc);
+			RBinReloc *reloc = RVecRBinReloc_emplace_back (list);
 			reloc->type = R_BIN_RELOC_32;
 			reloc->paddr = got_table[i].addr_to_patch;
 			reloc->vaddr = reloc->paddr;
-			r_list_append (list, reloc);
 		}
 		R_FREE (bin->got_table);
 	}
@@ -84,11 +83,10 @@ static RList *patch_relocs(RBinFile *bf) {
 			} else {
 				__patch_reloc (&b->iob, reloc_table[i].addr_to_patch, reloc_table[i].data_offset);
 			}
-			RBinReloc *reloc = R_NEW0 (RBinReloc);
+			RBinReloc *reloc = RVecRBinReloc_emplace_back (list);
 			reloc->type = R_BIN_RELOC_32;
 			reloc->paddr = reloc_table[i].addr_to_patch;
 			reloc->vaddr = reloc->paddr;
-			r_list_append (list, reloc);
 		}
 		R_FREE (bin->reloc_table);
 	}
@@ -117,15 +115,14 @@ static ut32 get_ngot_entries(struct r_bin_bflt_obj *obj) {
 	return n_got;
 }
 
-static RList *relocs(RBinFile *bf) {
+static RVecRBinReloc *relocs(RBinFile *bf) {
 	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *)bf->bo->bin_obj;
-	if (obj->relocs_list) {
-		return r_list_clone (obj->relocs_list, NULL);
+	if (!obj) {
+		return NULL;
 	}
-	RList *list = r_list_newf ((RListFree)free);
+	RVecRBinReloc *list = RVecRBinReloc_new ();
 	ut32 i, len, n_got, amount;
-	if (!list || !obj) {
-		r_list_free (list);
+	if (!list) {
 		return NULL;
 	}
 	if (obj->hdr->flags & FLAT_FLAG_GOTPIC) {
@@ -209,21 +206,18 @@ static RList *relocs(RBinFile *bf) {
 				reloc_table[i].addr_to_patch = reloc_offset;
 				reloc_table[i].data_offset = reloc_data_offset;
 
-				RBinReloc *reloc = R_NEW0 (RBinReloc);
+				RBinReloc *reloc = RVecRBinReloc_emplace_back (list);
 				reloc->type = R_BIN_RELOC_32;
-				// reloc->ntype = R_BIN_RELOC_32;
 				reloc->paddr = reloc_table[i].addr_to_patch;
 				reloc->vaddr = reloc->paddr;
-				r_list_append (list, reloc);
 			}
 		}
 		free (reloc_pointer_table);
 		obj->reloc_table = reloc_table;
 	}
-	obj->relocs_list = list;
-	return r_list_clone (list, NULL);
+	return list;
 out_error:
-	r_list_free (list);
+	RVecRBinReloc_free (list);
 	return NULL;
 }
 

@@ -121,41 +121,27 @@ static RList *libs(RBinFile *bf) {
 	return r_bin_le_get_libs (bf->bo->bin_obj);
 }
 
-static RList *relocs(RBinFile *bf) {
+static RVecRBinReloc *relocs(RBinFile *bf) {
 	return r_bin_le_get_relocs (bf->bo->bin_obj);
 }
 
-static RList* patch_relocs(RBinFile * bf) {
-	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
+static RVecRBinReloc *patch_relocs(RBinFile * bf) {
 	RBin *b = bf->rbin;
 	RBinLEObj *bin = bf->bo->bin_obj;
 	LE_image_header *h = bin->header;
 
-	RList * all_relocs = relocs (bf);
-	if (all_relocs == NULL) {
-		goto beach;
+	RVecRBinReloc *all_relocs = relocs (bf);
+	if (!all_relocs) {
+		return NULL;
 	}
-
-	RListIter * it;
-	RBinReloc * original;
-
-	r_list_foreach (all_relocs, it, original) {
+	RVecRBinReloc *ret = RVecRBinReloc_new ();
+	RBinReloc *original;
+	R_VEC_FOREACH (all_relocs, original) {
 		if (original->import || original->symbol) {
 			continue;
 		}
-
-		RBinReloc * r = R_NEW0 (RBinReloc);
-		r->import = NULL;
-		r->symbol = NULL;
-		r->is_ifunc = false;
-		r->vaddr = original->vaddr;
-		r->paddr = original->paddr;
-		r->laddr = original->laddr;
-		r->addend = original->addend;
-		r->type = original->type;
-		r->ntype = original->ntype;
-
-		r_list_append (ret, r);
+		RBinReloc *r = RVecRBinReloc_emplace_back (ret);
+		*r = *original;
 
 		int size = 0, offset = 0;
 		ut8 buf[8] = {0};
@@ -188,16 +174,8 @@ static RList* patch_relocs(RBinFile * bf) {
 			}
 		}
 	}
-
-end:
-	r_list_free (all_relocs);
-
+	RVecRBinReloc_free (all_relocs);
 	return ret;
-
-beach:
-	r_list_free (ret);
-	ret = NULL;
-	goto end;
 }
 
 static RBinInfo *info(RBinFile *bf) {

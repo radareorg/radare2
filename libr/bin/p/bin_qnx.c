@@ -40,7 +40,7 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 static void destroy(RBinFile *bf) {
 	QnxObj *qo = bf->bo->bin_obj;
 	RVecRBinSection_fini (&qo->sections);
-	r_list_free (qo->fixups);
+	RVecRBinReloc_fini (&qo->fixups);
 	r_list_free (qo->resources);
 	bf->bo->bin_obj = NULL;
 	free (qo);
@@ -52,14 +52,14 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	lmf_resource lres;
 	lmf_data ldata;
 	ut64 offset = QNX_RECORD_SIZE;
-	RList *fixups = NULL;
 	RList *resources = NULL;
 
 	if (!qo) {
 		goto beach;
 	}
 	RVecRBinSection_init (&qo->sections);
-	if (!(fixups = r_list_new ()) || !(resources = r_list_newf (free))) {
+	RVecRBinReloc_init (&qo->fixups);
+	if (!(resources = r_list_newf (free))) {
 		goto beach;
 	}
 	qo->kv = sdb_new0 ();
@@ -116,31 +116,19 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 			ptr->vsize = lrec.data_nbytes - sizeof (lmf_data);
 			ptr->size = ptr->vsize;
 			ptr->add = true;
-		} else if (lrec.rec_type == LMF_FIXUP_REC) {
-			RBinReloc *ptr = R_NEW0 (RBinReloc);
+		} else if (lrec.rec_type == LMF_FIXUP_REC || lrec.rec_type == LMF_8087_FIXUP_REC) {
 			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) != sizeof (lmf_data)) {
-				free (ptr);
 				goto beach;
 			}
+			RBinReloc *ptr = RVecRBinReloc_emplace_back (&qo->fixups);
 			ptr->vaddr = ptr->paddr = ldata.offset;
-			ptr->type = 'f'; // "LMF_FIXUP";
-			r_list_append (fixups, ptr);
-		} else if (lrec.rec_type == LMF_8087_FIXUP_REC) {
-			RBinReloc *ptr = R_NEW0 (RBinReloc);
-			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) != sizeof (lmf_data)) {
-				free (ptr);
-				goto beach;
-			}
-			ptr->vaddr = ptr->paddr = ldata.offset;
-			ptr->type = 'F'; // "LMF_8087_FIXUP";
-			r_list_append (fixups, ptr);
+			ptr->type = (lrec.rec_type == LMF_FIXUP_REC)? 'f': 'F'; // "LMF_FIXUP" / "LMF_8087_FIXUP"
 		} else if (lrec.rec_type == LMF_RW_END_REC) {
 			r_buf_fread_at (bf->buf, offset, (ut8 *)&qo->rwend, "si", 1);
 		}
 		offset += lrec.data_nbytes;
 	}
 	sdb_ns_set (bf->sdb, "info", qo->kv);
-	qo->fixups = fixups;
 	qo->resources = resources;
 	bf->bo->bin_obj = qo;
 	return true;
@@ -148,9 +136,9 @@ beach:
 	if (qo) {
 		sdb_free (qo->kv);
 		RVecRBinSection_fini (&qo->sections);
+		RVecRBinReloc_fini (&qo->fixups);
 		free (qo);
 	}
-	r_list_free (fixups);
 	r_list_free (resources);
 	return false;
 }
@@ -176,13 +164,17 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList *relocs(RBinFile *bf) {
+static RVecRBinReloc *relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	QnxObj *qo = bf->bo->bin_obj;
-	if (qo && qo->fixups) {
-		return r_list_clone (qo->fixups, NULL);
+	if (!qo) {
+		return NULL;
 	}
-	return NULL;
+	RVecRBinReloc *ret = RVecRBinReloc_new ();
+	if (ret) {
+		RVecRBinReloc_swap (ret, &qo->fixups);
+	}
+	return ret;
 }
 
 static char *header(RBinFile *bf, int mode) {

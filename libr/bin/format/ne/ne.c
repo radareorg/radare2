@@ -100,8 +100,7 @@ static char *__func_name_from_ord(const char *module, ut16 ordinal) {
 		Sdb *sdb = sdb_new (NULL, path, 0);
 		const char *value = sdb_const_getf (sdb, NULL, "%d", ordinal);
 		name = value? strdup (value): NULL;
-		sdb_close (sdb);
-		free (sdb);
+		sdb_free (sdb);
 	}
 	if (!name) {
 		name = r_str_newf ("%d", ordinal);
@@ -448,7 +447,7 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 	return entries;
 }
 
-RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBinSection *sections) {
+RVecRBinReloc *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBinSection *sections) {
 	if (!bin || !bin->ne_header || !sections || RVecRBinSection_empty (sections)) {
 		return NULL;
 	}
@@ -468,7 +467,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 	}
 	r_buf_fread_at (bin->buf, (ut64)bin->ne_header->ModRefTable + bin->header_offset, (ut8 *)modref, "s", bin->ne_header->ModRefs);
 
-	RList *relocs = r_list_newf ((RListFree)r_bin_reloc_free);
+	RVecRBinReloc *relocs = RVecRBinReloc_new ();
 	if (!relocs) {
 		free (modref);
 		r_list_free (entries);
@@ -494,12 +493,12 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 			// && off + sizeof (NE_image_reloc_item) < buf_size)
 			NE_image_reloc_item rel = {0};
 			if (r_buf_fread_at (bin->buf, off, (ut8 *)&rel, "2c3s", 1) < 1) {
-				free (modref); return NULL;
+				free (modref);
+				r_list_free (entries);
+				RVecRBinReloc_free (relocs);
+				return NULL;
 			}
-			RBinReloc *reloc = R_NEW0 (RBinReloc);
-			if (!reloc) {
-				free (modref); return NULL;
-			}
+			RBinReloc *reloc = RVecRBinReloc_emplace_back (relocs);
 			reloc->paddr = seg->paddr + rel.offset;
 			reloc->ntype = rel.type;
 			switch (rel.type) {
@@ -522,10 +521,6 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 			ut64 offset;
 			if (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {
 				RBinImport *imp = R_NEW0 (RBinImport);
-				if (!imp) {
-					free (reloc);
-					break;
-				}
 				char *name = NULL;
 				if (rel.index > bin->ne_header->ModRefs) {
 					name = r_str_newf ("UnknownModule%d_%x", rel.index, off); // ????
@@ -576,10 +571,8 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 
 			if (rel.flags & ADDITIVE) {
 				reloc->additive = 1;
-				r_list_append (relocs, reloc);
 			} else {
 				RBitset *visited = r_bitset_new ();
-				r_list_append (relocs, reloc);
 				if (r_bitset_set (visited, rel.offset)) {
 					while (reloc->paddr <= bufsz && bufsz - reloc->paddr >= sizeof (ut16)) {
 						offset = r_buf_read_le16_at (bin->buf, reloc->paddr);
@@ -593,13 +586,15 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBi
 						if (bufsz - next_paddr < sizeof (ut16)) {
 							break;
 						}
-						RBinReloc *next = R_NEW0 (RBinReloc);
+						// emplace may realloc: re-fetch the previous reloc by index
+						const size_t prev = RVecRBinReloc_length (relocs) - 1;
+						RBinReloc *next = RVecRBinReloc_emplace_back (relocs);
+						reloc = RVecRBinReloc_at (relocs, prev);
 						*next = *reloc;
 						if (next->import) {
 							next->import = r_bin_import_clone (next->import);
 						}
 						next->paddr = next_paddr;
-						r_list_append (relocs, next);
 						reloc = next;
 					}
 				}

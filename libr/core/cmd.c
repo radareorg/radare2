@@ -6232,14 +6232,11 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 		break;
 	case 'R': // "@@@R" relocs
 		{
-			RRBTree *rels = r_bin_get_relocs (core->bin);
+			RVecRBinReloc *rels = r_bin_get_relocs (core->bin);
 			if (rels) {
-				RRBNode *node = r_crbtree_first_node (rels);
-				while (node) {
-					RBinReloc *rel = (RBinReloc *)node->data;
-					ut64 addr = va? rel->vaddr: rel->paddr;
-					append_item (list, NULL, addr, UT64_MAX);
-					node = r_rbnode_next (node);
+				RBinReloc *rel;
+				R_VEC_FOREACH (rels, rel) {
+					append_item (list, NULL, va? rel->vaddr: rel->paddr, UT64_MAX);
 				}
 			}
 		}

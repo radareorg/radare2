@@ -661,21 +661,18 @@ static st32 reloc_source_offset(ut16 raw) {
 	return raw & 0x8000 ? (st32)raw - 0x10000 : raw;
 }
 
-static void reloc_emit(RList *relocs, const RBinReloc *reloc, const LEObjectPage *page, st32 source, st64 addend) {
+static void reloc_emit(RVecRBinReloc *relocs, const RBinReloc *reloc, const LEObjectPage *page, st32 source, st64 addend) {
 	ut64 vaddr;
 	if (!page || source < 0 || (ut32)source >= page->vsize
 		|| r_add_overflow (page->vaddr, (ut32)source, &vaddr)) {
 		return;
 	}
-	RBinReloc *clone = R_NEW0 (RBinReloc);
+	RBinReloc *clone = RVecRBinReloc_emplace_back (relocs);
 	*clone = *reloc;
 	clone->import = reloc->import ? r_bin_import_clone (reloc->import) : NULL;
 	clone->vaddr = vaddr;
 	clone->paddr = page->has_data && (ut32)source < page->data_size ? page->paddr + source : 0;
 	clone->addend = addend;
-	if (!r_list_append (relocs, clone)) {
-		r_bin_reloc_free (clone);
-	}
 }
 
 static bool reloc_page_bounds(RBinLEObj *bin, ut64 page, ut64 fixup_end, ut64 *start, ut64 *end) {
@@ -738,8 +735,8 @@ static bool reloc_record_end(RBuffer *buf, ut64 offset, ut64 limit, ut64 *end) {
 	return true;
 }
 
-R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
-	RList *l = r_list_newf ((RListFree)r_bin_reloc_free);
+R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
+	RVecRBinReloc *l = RVecRBinReloc_new ();
 	if (!l) {
 		return NULL;
 	}
@@ -763,7 +760,8 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 				R_LOG_WARN ("Invalid LE relocation record");
 				break;
 			}
-			RBinReloc *rel = R_NEW0 (RBinReloc);
+			RBinReloc reltmp = {0}; // template for the emitted relocs
+			RBinReloc *rel = &reltmp;
 			ut8 header_source = r_buf_read8_at (bin->buf, offset);
 			ut8 header_target = r_buf_read8_at (bin->buf, offset + 1);
 			offset += sizeof (LE_fixup_record_header);
@@ -882,7 +880,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 			ut64 source_list_size = repeat * sizeof (ut16);
 			if (offset != record_end - source_list_size) {
 				offset = record_end;
-				r_bin_reloc_free (rel);
+				r_bin_reloc_fini (rel);
 				continue;
 			}
 			if (repeat) {
@@ -913,7 +911,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 			} else {
 				reloc_emit (l, rel, page_ref, source, rel->addend);
 			}
-			r_bin_reloc_free (rel);
+			r_bin_reloc_fini (rel);
 		}
 	}
 	r_list_free (entries);

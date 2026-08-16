@@ -572,11 +572,6 @@ R_IPI RList *r_bin_som_get_libs(void *o) {
 	return list;
 }
 
-R_IPI RList *r_bin_som_get_relocs(void *o) {
-	// TODO: not yet implemented
-	return NULL;
-}
-
 R_IPI RList *r_bin_som_get_entries(void *o) {
 	RSomFile *obj = (RSomFile *)o;
 	RBinAddr *entry = get_entry (obj);

@@ -85,7 +85,7 @@ typedef struct lmf_rw_end {
 typedef struct {
 	Sdb *kv;
 	lmf_header lmfh;
-	RList* fixups;
+	RVecRBinReloc fixups;
 	RVecRBinSection sections;
 	RList *resources;
 	lmf_rw_end rwend;

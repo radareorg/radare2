@@ -191,27 +191,9 @@ static char *header(RBinFile *bf, int mode) {
 	return r_strbuf_drain (sb);
 }
 
-static RList *relocs(RBinFile *bf) {
+static RVecRBinReloc *relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
-	const struct r_bin_mz_reloc_t *relocs = NULL;
-	int i;
-
-	RList *ret = r_list_newf (free);
-	if (!ret) {
-		return NULL;
-	}
-	if (!(relocs = r_bin_mz_get_relocs (bf->bo->bin_obj))) {
-		return ret;
-	}
-	for (i = 0; !relocs[i].last; i++) {
-		RBinReloc *rel = R_NEW0 (RBinReloc);
-		rel->type = R_BIN_RELOC_16;
-		rel->vaddr = relocs[i].vaddr;
-		rel->paddr = relocs[i].paddr;
-		r_list_append (ret, rel);
-	}
-	free ((void *)relocs);
-	return ret;
+	return r_bin_mz_get_relocs (bf->bo->bin_obj);
 }
 
 static RList* fields(RBinFile *bf) {

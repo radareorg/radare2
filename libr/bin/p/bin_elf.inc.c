@@ -487,12 +487,13 @@ static RList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
+// appends the converted reloc to `out` and returns it, or NULL if unsupported
+static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RVecRBinReloc *out) {
 	R_RETURN_VAL_IF_FAIL (eo && rel, NULL);
 	ut64 B = eo->baddr;
 	ut64 P = rel->rva; // rva has taken baddr into account
 
-	RBinReloc *r = R_NEW0 (RBinReloc);
+	RBinReloc *r = RVecRBinReloc_emplace_back (out);
 	r->ntype = rel->type;
 	r->addend = rel->addend;
 	r->vaddr = rel->rva;
@@ -886,7 +887,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	}
 #undef SET
 #undef ADD
-	r_bin_reloc_free (r);
+	RVecRBinReloc_pop_back (out);
 	return NULL;
 }
 
@@ -939,13 +940,10 @@ static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 	return hash;
 }
 
-static RList* relocs(RBinFile *bf) {
+static RVecRBinReloc *relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	ELFOBJ *eo = bf->bo->bin_obj;
-	if (eo->relocs_list) {
-		return eo->relocs_list;
-	}
-	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
+	RVecRBinReloc *ret = RVecRBinReloc_new ();
 	if (!ret) {
 		return NULL;
 	}
@@ -968,6 +966,7 @@ static RList* relocs(RBinFile *bf) {
 		return ret;
 	}
 
+	RVecRBinReloc_reserve (ret, RVecRBinElfReloc_length (relocs));
 	RBinElfReloc *reloc;
 	R_VEC_FOREACH (relocs, reloc) {
 		bool already_inserted = false;
@@ -975,39 +974,24 @@ static RList* relocs(RBinFile *bf) {
 		if (already_inserted) {
 			continue;
 		}
-
-		RBinReloc *ptr = reloc_convert (eo, reloc, got_addr);
-		if (ptr && ptr->paddr != UT64_MAX) {
-			r_list_append (ret, ptr);
-			ht_up_insert (reloc_ht, reloc->rva, ptr);
-		} else {
-			if (ptr) {
-				ht_up_insert (reloc_ht, reloc->rva, NULL);
-				r_bin_reloc_free (ptr);
-			} else {
-				if (reloc->rva != reloc->offset) {
-					ht_up_insert (reloc_ht, reloc->rva, ptr);
-					R_LOG_DEBUG ("Suspicious reloc patching at 0x%"PFMT64x" for 0x%08"PFMT64x" via 0x%"PFMT64x,
-						got_addr, reloc->rva, reloc->offset);
-				} else {
-					if (reloc->rva) {
-						R_LOG_WARN ("reloc conversion failed for 0x%"PFMT64x, got_addr);
-					} else {
-						R_LOG_DEBUG ("wrong reloc conversion failed for 0x%"PFMT64x, got_addr);
-					}
-				}
+		RBinReloc *ptr = reloc_convert (eo, reloc, got_addr, ret);
+		if (ptr) {
+			ht_up_insert (reloc_ht, reloc->rva, NULL);
+			if (ptr->paddr == UT64_MAX) {
+				RVecRBinReloc_pop_back (ret);
 			}
+		} else if (reloc->rva != reloc->offset) {
+			ht_up_insert (reloc_ht, reloc->rva, NULL);
+			R_LOG_DEBUG ("Suspicious reloc patching at 0x%"PFMT64x" for 0x%08"PFMT64x" via 0x%"PFMT64x,
+				got_addr, reloc->rva, reloc->offset);
+		} else if (reloc->rva) {
+			R_LOG_WARN ("reloc conversion failed for 0x%"PFMT64x, got_addr);
+		} else {
+			R_LOG_DEBUG ("wrong reloc conversion failed for 0x%"PFMT64x, got_addr);
 		}
 	}
 	ht_up_free (reloc_ht);
-	eo->relocs_list = ret;
-#if 0
-	ret->free = NULL; // already freed in the hashtable
-	return r_list_clone (eo->relocs_list, NULL);
-#endif
-	RList *result = ret;
-	eo->relocs_list = NULL; // caller takes ownership
-	return result;
+	return ret;
 }
 
 static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 toc) {
@@ -1530,7 +1514,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 	}
 }
 
-static RList* patch_relocs(RBinFile *bf) {
+static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
 	RBinReloc *ptr = NULL;
 	RBin *b = bf->rbin;
@@ -1599,13 +1583,13 @@ static RList* patch_relocs(RBinFile *bf) {
 	if (!relocs) {
 		return NULL;
 	}
-	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
+	RVecRBinReloc *ret = RVecRBinReloc_new ();
 	if (!ret) {
 		return NULL;
 	}
 	HtUU *relocs_by_sym = ht_uu_new0 ();
 	if (!relocs_by_sym) {
-		r_list_free (ret);
+		RVecRBinReloc_free (ret);
 		return NULL;
 	}
 	ut64 vaddr = n_vaddr;
@@ -1645,7 +1629,7 @@ static RList* patch_relocs(RBinFile *bf) {
 			raddr = vaddr;
 		}
 		_patch_reloc (eo, eo->ehdr.e_machine, &b->iob, reloc, raddr, eo->baddr, plt_entry_addr, toc_base);
-		ptr = reloc_convert (eo, reloc, n_vaddr);
+		ptr = reloc_convert (eo, reloc, n_vaddr, ret);
 		if (!ptr) {
 			continue;
 		}
@@ -1666,7 +1650,6 @@ static RList* patch_relocs(RBinFile *bf) {
 				vaddr += cdsz;
 			}
 		}
-		r_list_append (ret, ptr);
 	}
 	ht_uu_free (relocs_by_sym);
 	return ret;

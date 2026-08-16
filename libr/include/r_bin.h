@@ -449,6 +449,35 @@ R_VEC_TYPE_WITH_FINI (RVecRBinResource, RBinResource, r_bin_resource_fini);
 R_VEC_TYPE(RVecRBinEntry, RBinSymbol);
 R_VEC_TYPE(RVecBinSymclassGlob, char *);
 
+typedef struct r_bin_reloc_t {
+	ut8 type; // type have implicit size.. but its anoying
+	ut8 additive;
+	bool is_ifunc;
+	ut32 visibility;
+	ut64 ntype; // type number coming from the bin file
+	RBinSymbol *symbol;
+	RBinImport *import;
+	ut64 laddr; // local symbol address | UT64_MAX
+	// RBinSymbol *lsymbol; // still unused
+	st64 addend;
+	ut64 vaddr;
+	ut64 paddr;
+	/* is_ifunc: indirect function, `addend` points to a resolver function
+	 * that returns the actual relocation value, e.g. chooses
+	 * an optimized version depending on the CPU.
+	 * cf. https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
+	 */
+} RBinReloc;
+
+R_API void r_bin_import_free(RBinImport *imp);
+static inline void r_bin_reloc_fini(RBinReloc *reloc) {
+	if (reloc) {
+		r_bin_import_free (reloc->import);
+	}
+}
+// sorted by vaddr, relocs own their import (if any)
+R_VEC_TYPE_WITH_FINI (RVecRBinReloc, RBinReloc, r_bin_reloc_fini);
+
 typedef struct r_bin_object_t {
 	ut64 baddr;
 	st64 baddr_shift;
@@ -465,7 +494,7 @@ typedef struct r_bin_object_t {
 	RList/*<??>*/ *entries;
 	RList/*<??>*/ *fields;
 	RList/*<??>*/ *libs;
-	RRBTree/*<RBinReloc>*/ *relocs;
+	RVecRBinReloc *relocs;
 	RVecRBinString strings;
 	RList/*<RBinClass>*/ *classes;
 	HtPP *classes_ht;
@@ -732,11 +761,11 @@ typedef struct r_bin_plugin_t {
 	RBinInfo/*<RBinInfo>*/* (*info)(RBinFile *bf);
 	RList/*<RBinField>*/* (*fields)(RBinFile *bf);
 	RList/*<char *>*/* (*libs)(RBinFile *bf);
-	RList/*<RBinReloc>*/* (*relocs)(RBinFile *bf);
+	RVecRBinReloc *(*relocs)(RBinFile *bf);
 	RList/*<RBinTrycatch>*/* (*trycatch)(RBinFile *bf);
 	RList/*<RBinClass>*/* (*classes)(RBinFile *bf);
 	RList/*<RBinMem>*/* (*mem)(RBinFile *bf);
-	RList/*<RBinReloc>*/* (*patch_relocs)(RBinFile *bf);
+	RVecRBinReloc *(*patch_relocs)(RBinFile *bf); // NULL keeps the current relocs
 	RList/*<RBinMap>*/* (*maps)(RBinFile *bf); // this should be segments!
 	RList/*<RBinFileHash>*/* (*hashes)(RBinFile *bf);
 	char* (*header)(RBinFile *bf, int mode);
@@ -806,27 +835,6 @@ typedef struct r_bin_class_t {
 		}\
 	} while (0)
 
-typedef struct r_bin_reloc_t {
-	ut8 type; // type have implicit size.. but its anoying
-	ut8 additive;
-	bool is_ifunc;
-	ut32 visibility;
-	ut64 ntype; // type number coming from the bin file
-	RBinSymbol *symbol;
-	RBinImport *import;
-	ut64 laddr; // local symbol address | UT64_MAX
-	// RBinSymbol *lsymbol; // still unused
-	st64 addend;
-	ut64 vaddr;
-	ut64 paddr;
-	/* is_ifunc: indirect function, `addend` points to a resolver function
-	 * that returns the actual relocation value, e.g. chooses
-	 * an optimized version depending on the CPU.
-	 * cf. https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
-	 */
-} RBinReloc;
-
-R_VEC_TYPE (RVecRBinReloc, RBinReloc);
 
 R_API const char *r_bin_field_kindstr(RBinField *f);
 R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, ut64 value, int size, const char *name, const char *comment, const char *format, bool format_named);
@@ -900,13 +908,6 @@ R_API void r_bin_string_free(void *_str);
 
 #ifdef R_API
 
-static inline void r_bin_reloc_free(RBinReloc *reloc) {
-	if (reloc) {
-		r_bin_import_free (reloc->import);
-		free (reloc);
-	}
-}
-
 R_API RBinImport *r_bin_import_clone(RBinImport *o);
 typedef void (*RBinSymbolCallback)(RBinObject *obj, RBinSymbol *symbol);
 
@@ -962,8 +963,9 @@ R_API RVecRBinString *r_bin_dump_strings(RBinFile *a, int min, int raw);
 // use RBinFile instead
 R_API const RList *r_bin_get_entries(RBin *bin);
 R_API RList *r_bin_get_libs(RBin *bin);
-R_API RRBTree *r_bin_patch_relocs(RBinFile *bin);
-R_API RRBTree *r_bin_get_relocs(RBin *bin);
+R_API RVecRBinReloc *r_bin_patch_relocs(RBinFile *bin);
+R_API RVecRBinReloc *r_bin_get_relocs(RBin *bin);
+R_API RBinReloc *r_bin_reloc_at(RVecRBinReloc *relocs, ut64 vaddr, int size);
 R_API RVecRBinSection *r_bin_get_sections_vec(RBin *bin);
 R_API RList *r_bin_get_classes(RBin *bin);
 R_API char* r_bin_get_types(RBin *bin);

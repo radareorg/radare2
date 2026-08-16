@@ -146,7 +146,7 @@ struct PE_(r_bin_pe_obj_t) {
 	bool verbose;
 	int big_endian;
 	RList* rich_entries;
-	RList* relocs;
+	RVecRBinReloc relocs; // one per import, moved out by the relocs() callback
 	RList* resources; //RList of r_pe_resources
 	const char* file;
 	char *sdbdir;

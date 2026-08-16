@@ -555,12 +555,8 @@ static bool imports_vec(RBinFile *bf) {
 		return false;
 	}
 	RVecRBinImport *ret = &bf->bo->imports_vec;
-	r_list_free (pe->relocs);
-	RList *relocs = r_list_newf ((RListFree)r_bin_reloc_free);
-	if (!relocs) {
-		return false;
-	}
-	pe->relocs = relocs;
+	RVecRBinReloc *relocs = &pe->relocs;
+	RVecRBinReloc_clear (relocs);
 
 	RVecPEImport *imports = PE_(r_bin_pe_get_imports)(pe);
 	if (!imports) {
@@ -579,33 +575,31 @@ static bool imports_vec(RBinFile *bf) {
 		ptr->type = "FUNC";
 		ptr->ordinal = imp->ordinal;
 
-		RBinReloc *rel = R_NEW0 (RBinReloc);
+		RBinReloc *rel = RVecRBinReloc_emplace_back (relocs);
 #ifdef R_BIN_PE64
 		rel->type = R_BIN_RELOC_64;
 #else
 		rel->type = R_BIN_RELOC_32;
 #endif
-		rel->additive = 0;
 		rel->import = r_bin_import_clone (ptr);
-		rel->addend = 0;
 		rel->vaddr = r_buf_read_le32_at (bf->buf, imp->paddr);
 		rel->paddr = imp->paddr;
 		rel->ntype = imp->ntype;
-		r_list_append (relocs, rel);
 	}
 	RVecPEImport_free (imports);
 	return true;
 }
 
-static RList* relocs(RBinFile *bf) {
+static RVecRBinReloc *relocs(RBinFile *bf) {
 	RBinPEObj *pe = PE_(get) (bf);
-	if (pe && pe->relocs) {
-		RList *l = r_list_clone (pe->relocs, NULL);
-		// ownership transferred
-		pe->relocs->free = NULL;
-		return l;
+	if (!pe || RVecRBinReloc_empty (&pe->relocs)) {
+		return NULL;
 	}
-	return NULL;
+	RVecRBinReloc *ret = RVecRBinReloc_new ();
+	if (ret) {
+		RVecRBinReloc_swap (ret, &pe->relocs);
+	}
+	return ret;
 }
 
 static RList* libs(RBinFile *bf) {
@@ -785,29 +779,12 @@ static bool has_canary(RBinFile *bf) {
 	if (check_inlined_canary (bf)) {
 		return true;
 	}
-	RBinPEObj *pe = PE_(get) (bf);
-	if (pe) {
-		const RList *relocs_list = pe->relocs;
-		if (relocs_list) {
-			RListIter *iter;
-			RBinReloc *rel;
-			r_list_foreach (relocs_list, iter, rel) {
-				if (rel->import) {
-					const char *name = r_bin_name_tostring2 (rel->import->name, 'o');
-					if (!strcmp (name, "__security_init_cookie")) {
-						return true;
-					}
-				}
-			}
-		}
-	} else {  // rabin2 needs this as it will not initialise bin
-		imports_vec (bf);
-		RBinImport *imp;
-		R_VEC_FOREACH (&bf->bo->imports_vec, imp) {
-			const char *name = r_bin_name_tostring2 (imp->name, 'o');
-			if (!strcmp (name, "__security_init_cookie")) {
-				return true;
-			}
+	// the reloc list is 1:1 with the imports, so check those instead
+	RBinImport *imp;
+	R_VEC_FOREACH (&bf->bo->imports_vec, imp) {
+		const char *name = r_bin_name_tostring2 (imp->name, 'o');
+		if (!strcmp (name, "__security_init_cookie")) {
+			return true;
 		}
 	}
 	return false;

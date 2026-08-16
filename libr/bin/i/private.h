@@ -129,7 +129,7 @@ static inline void r_bin_object_drop_strings_db(RBinObject *bo) {
 R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz);
 R_IPI RBinObject *r_bin_object_get_cur(RBin *bin);
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name);
-R_IPI RRBTree *r_bin_object_patch_relocs(RBinFile *binfile, RBinObject *o);
+R_IPI RVecRBinReloc *r_bin_object_patch_relocs(RBinFile *binfile, RBinObject *o);
 
 R_IPI bool r_bin_name_is_unnamed(const char *name);
 

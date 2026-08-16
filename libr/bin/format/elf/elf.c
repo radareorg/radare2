@@ -5554,7 +5554,6 @@ void Elf_(free)(ELFOBJ* eo) {
 	if (!eo) {
 		return;
 	}
-	r_list_free (eo->relocs_list);
 	if (eo->imports_by_ord) {
 		size_t i;
 		for (i = 0; i < eo->imports_by_ord_size; i++) {

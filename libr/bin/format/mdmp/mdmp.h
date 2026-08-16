@@ -49,6 +49,7 @@ typedef struct r_bin_mdmp_obj {
 	/* Binary memory objects */
 	RList *pe32_bins;
 	RList *pe64_bins;
+	RVecRBinReloc relocs; // import relocs of all the embedded pe bins
 
 	RBuffer *b;
 	size_t size;

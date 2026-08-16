@@ -192,7 +192,6 @@ struct Elf_(obj_t) {
 	ut32 g_reloc_num;
 	bool relocs_loaded;
 	RVecRBinElfReloc g_relocs;
-	RList *relocs_list;
 	bool sections_loaded;
 	bool sections_cached;
 	RVecRBinElfSection g_sections;

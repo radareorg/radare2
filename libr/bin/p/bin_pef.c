@@ -862,10 +862,10 @@ static void pef_decode_reloc_blocks(RBinFile *bf) {
 	}
 }
 
-static RList *relocs(RBinFile *bf) {
+static RVecRBinReloc *relocs(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
 	pef_decode_reloc_blocks (bf);
-	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
+	RVecRBinReloc *ret = RVecRBinReloc_new ();
 	/* ensure imports vec is populated; safe even if already filled */
 	if (RVecRBinImport_empty (&bf->bo->imports_vec)) {
 		imports_vec (bf);
@@ -878,34 +878,27 @@ static RList *relocs(RBinFile *bf) {
 
 	for (i = 0; i < pef->nsec; i++) {
 		r_list_foreach (pef->sec[i].relocs, iter, r) {
-			RBinReloc *ptr = R_NEW0 (RBinReloc);
+			if (r->target >= (r->isimport? importCount: pef->nsec)) {
+				continue;
+			}
+			RBinReloc *ptr = RVecRBinReloc_emplace_back (ret);
 			ptr->type = R_BIN_RELOC_32;
 			ptr->additive = 1;
 			ptr->vaddr = pef->sec[i].addr + r->offset;
 			if (r->isimport) {
-				if (r->target >= importCount) {
-					free (ptr);
-					continue;
-				}
 				ptr->import = r_bin_import_clone (RVecRBinImport_at (importVec, r->target));
 			} else {
-				if (r->target >= pef->nsec) {
-					free (ptr);
-					continue;
-				}
 				ptr->addend = pef->sec[r->target].addr;
 			}
-			r_list_append (ret, ptr);
 		}
 	}
 	return ret;
 }
 
-static RList *patch_relocs(RBinFile *bf) {
-	RList *list = relocs (bf);
-	RListIter *iter;
+static RVecRBinReloc *patch_relocs(RBinFile *bf) {
+	RVecRBinReloc *list = relocs (bf);
 	RBinReloc *reloc;
-	r_list_foreach (list, iter, reloc) {
+	R_VEC_FOREACH (list, reloc) {
 		if (reloc->import) {
 			continue;
 		}

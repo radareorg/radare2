@@ -19,16 +19,45 @@ R_API void r_bin_mem_free(void *data) {
 	}
 }
 
-static int reloc_cmp(void *incoming, void *in, void *user) {
-	RBinReloc *_incoming = (RBinReloc *)incoming;
-	RBinReloc *_in = (RBinReloc *)in;
-	if (_incoming->vaddr > _in->vaddr) {
-		return 1;
+// stable sort by vaddr: relocs with the same vaddr keep the plugin order
+static void sort_relocs(RVecRBinReloc *relocs) {
+	const size_t n = RVecRBinReloc_length (relocs);
+	RBinReloc *a = R_VEC_START_ITER (relocs);
+	size_t i;
+	for (i = 1; i < n && a[i - 1].vaddr <= a[i].vaddr; i++) {
+		;
 	}
-	if (_incoming->vaddr < _in->vaddr) {
-		return -1;
+	if (i >= n) {
+		return; // already sorted, the common case
 	}
-	return 0;
+	RBinReloc *tmp = R_NEWS (RBinReloc, n);
+	if (!tmp) {
+		return;
+	}
+	RBinReloc *src = a, *dst = tmp;
+	size_t width;
+	for (width = 1; width < n; width *= 2) {
+		for (i = 0; i < n; i += 2 * width) {
+			size_t l = i, m = R_MIN (i + width, n), k = i;
+			const size_t lend = m, r = R_MIN (i + 2 * width, n);
+			while (l < lend && m < r) {
+				dst[k++] = (src[m].vaddr < src[l].vaddr)? src[m++]: src[l++];
+			}
+			while (l < lend) {
+				dst[k++] = src[l++];
+			}
+			while (m < r) {
+				dst[k++] = src[m++];
+			}
+		}
+		RBinReloc *t = src;
+		src = dst;
+		dst = t;
+	}
+	if (src != a) {
+		memcpy (a, src, n * sizeof (RBinReloc));
+	}
+	free (tmp);
 }
 
 R_API void r_bin_object_import_cache_cleanup(RBinObject *o) {
@@ -77,6 +106,21 @@ static void clamp_strings_vec(RVecRBinString *vec, int limit) {
 		T##_erase_back (_v, T##_at (_v, (size_t)_l)); \
 	} \
 } while (0)
+
+// take ownership of the relocs returned by the plugin: clamp, rebase and sort by vaddr
+static void set_relocs(RBinObject *bo, RVecRBinReloc *relocs, int limit) {
+	RVecRBinReloc_free (bo->relocs);
+	CLAMP_VEC (RVecRBinReloc, relocs, limit);
+	if (bo->loadaddr) {
+		RBinReloc *r;
+		R_VEC_FOREACH (relocs, r) {
+			r->paddr += bo->loadaddr;
+		}
+	}
+	sort_relocs (relocs);
+	RVecRBinReloc_shrink_to_fit (relocs);
+	bo->relocs = relocs;
+}
 
 static void rebase_sections_vec(RBinObject *bo) {
 	RBinSection *section;
@@ -213,7 +257,7 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->entries);
 	r_list_free (o->fields);
 	r_list_free (o->libs);
-	r_crbtree_free (o->relocs);
+	RVecRBinReloc_free (o->relocs);
 	RVecRBinString_fini (&o->strings);
 	ht_up_free (o->strings_db);
 
@@ -487,18 +531,6 @@ static bool filter_classes(RBinFile *bf, RList *list) {
 	return rc;
 }
 
-static RRBTree *list2rbtree(RList *relocs) {
-	RRBTree *tree = r_crbtree_new ((RListFree)r_bin_reloc_free);
-	if (tree) {
-		RListIter *it;
-		RBinReloc *reloc;
-		r_list_foreach (relocs, it, reloc) {
-			r_crbtree_insert (tree, reloc, reloc_cmp, NULL);
-		}
-	}
-	return tree;
-}
-
 static void r_bin_object_rebuild_classes_ht(RBinObject *bo) {
 	ht_pp_free (bo->classes_ht);
 	bo->classes_ht = ht_pp_new0 ();
@@ -656,13 +688,9 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	RVecRBinImport_shrink_to_fit (&bo->imports_vec);
 	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
 		if (p->relocs) {
-			RList *l = (RList *)p->relocs (bf);
-			if (l) {
-				clamp_list (l, limit);
-				REBASE_PADDR (bo, l, RBinReloc);
-				bo->relocs = list2rbtree ((RList*)l);
-				l->free = NULL; // owned by tree now, via clone with proper cleanup
-				r_list_free (l);
+			RVecRBinReloc *relocs = p->relocs (bf);
+			if (relocs) {
+				set_relocs (bo, relocs, limit);
 			}
 		}
 	}
@@ -729,20 +757,14 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	return true;
 }
 
-R_IPI RRBTree *r_bin_object_patch_relocs(RBinFile *bf, RBinObject *bo) {
+R_IPI RVecRBinReloc *r_bin_object_patch_relocs(RBinFile *bf, RBinObject *bo) {
 	R_RETURN_VAL_IF_FAIL (bf && bo, NULL);
 
 	if (!bo->is_reloc_patched && bo->plugin && bo->plugin->patch_relocs) {
-		RList *tmp = bo->plugin->patch_relocs (bf);
-		if (R_LIKELY (tmp)) {
-			const int limit = bf->rbin->options.limit;
-			r_crbtree_free (bo->relocs);
-			clamp_list (tmp, limit);
-			REBASE_PADDR (bo, tmp, RBinReloc);
-			bo->relocs = list2rbtree (tmp);
+		RVecRBinReloc *relocs = bo->plugin->patch_relocs (bf);
+		if (R_LIKELY (relocs)) {
+			set_relocs (bo, relocs, bf->rbin->options.limit);
 			bo->is_reloc_patched = true;
-			tmp->free = NULL;
-			r_list_free (tmp);
 		}
 	}
 	return bo->relocs;

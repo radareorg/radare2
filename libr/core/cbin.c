@@ -2071,7 +2071,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 
 	va = VA_TRUE; // XXX relocs always vaddr?
 	// this has been created for reloc object files
-	RRBTree *relocs = r_bin_get_relocs (core->bin);
+	RVecRBinReloc *relocs = r_bin_get_relocs (core->bin);
 	const bool apply_relocs = r_config_get_b (core->config, "bin.relocs.apply");
 	const bool bc = r_config_get_b (core->config, "bin.cache");
 	if (apply_relocs) {
@@ -2124,11 +2124,10 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 		r_flag_space_set (core->flags, R_FLAGS_FS_RELOCS);
 	}
 
-	RRBNode *node;
 	RBinReloc *reloc;
 	RelocInfo ri = { 0 };
 	ri_init (core, &ri);
-	r_crbtree_foreach (relocs, node, RBinReloc, reloc) {
+	R_VEC_FOREACH (relocs, reloc) {
 		ut64 addr = rva (core->bin, reloc->paddr, reloc->vaddr, va);
 		if (IS_MODE_SET (mode) && (is_section_reloc (reloc) || is_file_reloc (reloc))) {
 			/*

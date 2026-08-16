@@ -315,14 +315,14 @@ static bool imports_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *relocs(RBinFile *bf) {
+static RVecRBinReloc *relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
 	const RSkipList *relocs = MACH0_(load_relocs) (mo);
 	if (!relocs) {
 		return NULL;
 	}
-	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
+	RVecRBinReloc *ret = RVecRBinReloc_new ();
 
 	RVecRBinImport *imports = mo->imports_loaded
 		? &mo->imports_cache
@@ -333,10 +333,9 @@ static RList *relocs(RBinFile *bf) {
 		if (reloc->external) {
 			continue;
 		}
-		RBinReloc *ptr = R_NEW0 (RBinReloc);
+		RBinReloc *ptr = RVecRBinReloc_emplace_back (ret);
 		ptr->type = reloc->type;
 		ptr->ntype = reloc->ntype;
-		ptr->additive = 0;
 		RBinImport *imp = NULL;
 		if (reloc->name[0]) {
 			imp = import_from_name (bf->rbin, (char*) reloc->name, mo->imports_by_name);
@@ -349,24 +348,16 @@ static RList *relocs(RBinFile *bf) {
 		ptr->addend = reloc->addend;
 		ptr->vaddr = reloc->addr;
 		ptr->paddr = reloc->offset;
-		r_list_append (ret, ptr);
 	}
-	RVecRBinReloc *fixups = &mo->reloc_fixups;
-	if (!RVecRBinReloc_empty (fixups)) {
-		RBinReloc *r;
-
-		R_VEC_FOREACH (fixups, r) {
-			RBinReloc *ptr = R_NEW0 (RBinReloc);
-			ptr->type = R_BIN_RELOC_64;
-			ptr->ntype = r->ntype;
-			ut64 paddr = r->paddr + mo->baddr;
-			ptr->vaddr = paddr;
-			ptr->paddr = r->vaddr;
-			ptr->addend = r->vaddr;
-			r_list_append (ret, ptr);
-		}
+	RBinReloc *r;
+	R_VEC_FOREACH (&mo->reloc_fixups, r) {
+		RBinReloc *ptr = RVecRBinReloc_emplace_back (ret);
+		ptr->type = R_BIN_RELOC_64;
+		ptr->ntype = r->ntype;
+		ptr->vaddr = r->paddr + mo->baddr;
+		ptr->paddr = r->vaddr;
+		ptr->addend = r->vaddr;
 	}
-
 	return ret;
 }
 
@@ -490,10 +481,10 @@ static bool _patch_reloc(struct MACH0_(obj_t) *mo, RIOBind *iob, struct reloc_t 
 	return true;
 }
 
-static RList* patch_relocs(RBinFile *bf) {
+static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
 
-	RList *ret = NULL;
+	RVecRBinReloc *ret = NULL;
 	RIOMap *g = NULL;
 	HtUU *relocs_by_sym = NULL;
 	RIODesc *gotr2desc = NULL;
@@ -595,7 +586,7 @@ static RList* patch_relocs(RBinFile *bf) {
 	}
 	gotr2map->name = strdup (".got.r2");
 
-	if (!(ret = r_list_newf ((RListFree)r_bin_reloc_free))) {
+	if (!(ret = RVecRBinReloc_new ())) {
 		goto beach;
 	}
 	if (!(relocs_by_sym = ht_uu_new0 ())) {
@@ -615,20 +606,16 @@ static RList* patch_relocs(RBinFile *bf) {
 		if (!_patch_reloc (mo, iob, reloc, sym_addr)) {
 			continue;
 		}
-		RBinReloc *ptr = R_NEW0 (RBinReloc);
-		ptr->type = reloc->type;
-		ptr->ntype = reloc->ntype;
-		ptr->additive = 0;
 		RBinImport *imp = import_from_name (b, (char*) reloc->name, mo->imports_by_name);
 		if (R_LIKELY (imp)) {
+			RBinReloc *ptr = RVecRBinReloc_emplace_back (ret);
+			ptr->type = reloc->type;
+			ptr->ntype = reloc->ntype;
 			ptr->vaddr = sym_addr;
 			ptr->import = r_bin_import_clone (imp);
-			r_list_append (ret, ptr);
-		} else {
-			free (ptr);
 		}
 	}
-	if (r_list_empty (ret)) {
+	if (RVecRBinReloc_empty (ret)) {
 		goto beach;
 	}
 	ht_uu_free (relocs_by_sym);
@@ -639,7 +626,7 @@ static RList* patch_relocs(RBinFile *bf) {
 beach:
 	RVecExtReloc_fini (&ext_relocs);
 	r_io_desc_free (gotr2desc);
-	r_list_free (ret);
+	RVecRBinReloc_free (ret);
 	ht_uu_free (relocs_by_sym);
 	return NULL;
 }

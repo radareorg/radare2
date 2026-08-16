@@ -215,7 +215,6 @@ R_IPI bool r_bin_som_load_sections(void *o, RVecRBinSection *sections);
 R_IPI bool r_bin_som_get_symbols_vec(void *o, RVecRBinSymbol *vec, bool load_unnamed);
 R_IPI void r_bin_som_load_imports(void *o, RVecRBinImport *vec);
 R_IPI RList *r_bin_som_get_libs(void *o);
-R_IPI RList *r_bin_som_get_relocs(void *o);
 R_IPI RList *r_bin_som_get_entries(void *o);
 R_IPI RBinInfo *r_bin_som_get_info(void *o);
 R_IPI ut64 r_bin_som_get_baddr(void *o);

@@ -78,10 +78,6 @@ static bool r_bin_bflt_init(RBinBfltObj *obj, RBuffer *buf) {
 
 R_IPI void r_bin_bflt_free(RBinBfltObj *o) {
 	if (o) {
-		if (o->relocs_list) {
-			o->relocs_list->free = NULL;
-			r_list_free (o->relocs_list);
-		}
 		R_FREE (o->reloc_table);
 		R_FREE (o->got_table);
 		R_FREE (o->hdr);

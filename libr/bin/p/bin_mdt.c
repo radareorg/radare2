@@ -377,10 +377,10 @@ static bool sections_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *relocs(RBinFile *bf) {
+static RVecRBinReloc *relocs(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 	const RBinMdtObj *mdt = bf->bo->bin_obj;
-	RList *relocs = r_list_newf ((RListFree)r_bin_reloc_free);
+	RVecRBinReloc *relocs = RVecRBinReloc_new ();
 	if (!relocs) {
 		return NULL;
 	}
@@ -388,39 +388,23 @@ static RList *relocs(RBinFile *bf) {
 	RListIter *iter;
 	RBinMdtPart *part;
 	r_list_foreach (mdt->parts, iter, part) {
-		if (part->relocs) {
-			RListIter *it;
-			RBinReloc *rel;
-			r_list_foreach (part->relocs, it, rel) {
-				RBinReloc *clone = R_NEW0 (RBinReloc);
-				if (!clone) {
-					continue;
-				}
-				*clone = *rel;
-				if (!clone->ntype) {
-					clone->ntype = clone->type;
-				}
-				r_list_append (relocs, clone);
-			}
-		} else if (part->format == R_BIN_MDT_PART_ELF && part->obj.elf) {
-			// Get relocs from nested ELF
-			const RVecRBinElfReloc *elf_relocs = Elf_(load_relocs) (part->obj.elf);
-			if (elf_relocs) {
-				RBinElfReloc *erel;
-				R_VEC_FOREACH (elf_relocs, erel) {
-					RBinReloc *rel = R_NEW0 (RBinReloc);
-					if (!rel) {
-						continue;
-					}
-					rel->vaddr = erel->rva + part->map->addr;
-					rel->paddr = erel->offset;
-					rel->type = erel->type;
-					rel->ntype = erel->type;
-					rel->addend = erel->addend;
-					// Skip complex symbol resolution for now
-					r_list_append (relocs, rel);
-				}
-			}
+		if (part->format != R_BIN_MDT_PART_ELF || !part->obj.elf) {
+			continue;
+		}
+		// Get relocs from nested ELF
+		const RVecRBinElfReloc *elf_relocs = Elf_(load_relocs) (part->obj.elf);
+		if (!elf_relocs) {
+			continue;
+		}
+		RBinElfReloc *erel;
+		R_VEC_FOREACH (elf_relocs, erel) {
+			RBinReloc *rel = RVecRBinReloc_emplace_back (relocs);
+			rel->vaddr = erel->rva + part->map->addr;
+			rel->paddr = erel->offset;
+			rel->type = erel->type;
+			rel->ntype = erel->type;
+			rel->addend = erel->addend;
+			// Skip complex symbol resolution for now
 		}
 	}
 
