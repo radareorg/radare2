@@ -1837,31 +1837,47 @@ static ut8 bin_reloc_size(RBinReloc *reloc) {
 }
 
 // name can be optionally used to explicitly set the used base name (for example for demangling), otherwise the import name will be used.
-static char *construct_reloc_name(RBinReloc *R_NONNULL reloc, const char *R_NULLABLE name) {
-	RStrBuf *buf = r_strbuf_new ("");
-
+// builds "<pfx><libname_><name>" in a single allocation, NULL if the reloc has no name
+static char *construct_reloc_name(RBinReloc *R_NONNULL reloc, const char *R_NULLABLE name, const char *pfx) {
+	char ifunc[32];
+	if (!name) {
+		if (reloc->import) {
+			name = r_bin_name_tostring (reloc->import->name);
+		} else if (reloc->symbol) {
+			name = r_bin_name_tostring (reloc->symbol->name);
+		} else if (reloc->is_ifunc) {
+			// addend is the function pointer for the resolving ifunc
+			snprintf (ifunc, sizeof (ifunc), "ifunc_%" PFMT64x, reloc->addend);
+			name = ifunc;
+		} else {
+			// TODO implement constant relocs.
+			return NULL;
+		}
+	}
 	// (optional) libname_
+	const char *lib = NULL;
 	if (reloc->import && reloc->import->libname) {
-		r_strbuf_appendf (buf, "%s_", reloc->import->libname);
+		lib = reloc->import->libname;
 	} else if (reloc->symbol && reloc->symbol->libname) {
-		r_strbuf_appendf (buf, "%s_", reloc->symbol->libname);
+		lib = reloc->symbol->libname;
 	}
-
-	// actual name
-	if (name) {
-		r_strbuf_append (buf, name);
-	} else if (reloc->import) {
-		r_strbuf_append (buf, r_bin_name_tostring (reloc->import->name));
-	} else if (reloc->symbol) {
-		r_strbuf_append (buf, r_bin_name_tostring (reloc->symbol->name));
-	} else if (reloc->is_ifunc) {
-		// addend is the function pointer for the resolving ifunc
-		r_strbuf_appendf (buf, "ifunc_%" PFMT64x, reloc->addend);
-	} else {
-		// TODO implement constant relocs.
-		r_strbuf_set (buf, "");
+	const size_t plen = strlen (pfx);
+	const size_t llen = lib? strlen (lib): 0;
+	const size_t nlen = strlen (name);
+	char *res = malloc (plen + llen + 1 + nlen + 1);
+	if (!res) {
+		return NULL;
 	}
-	return r_strbuf_drain (buf);
+	char *p = res;
+	memcpy (p, pfx, plen);
+	p += plen;
+	if (lib) {
+		memcpy (p, lib, llen);
+		p += llen;
+		*p++ = '_';
+	}
+	memcpy (p, name, nlen + 1);
+	return res;
 }
 
 typedef struct {
@@ -1873,10 +1889,18 @@ typedef struct {
 	bool reloc_xrefs;
 	bool is_pe;
 	bool is32;
+	char *flagpfx; // "[bin.prefix.]reloc."
+	size_t flagpfx_len;
 } RelocInfo;
+
+static void ri_fini(RelocInfo *ri) {
+	free (ri->flagpfx);
+}
 
 static void ri_init(RCore *core, RelocInfo *ri) {
 	ri->core = core;
+	ri->flagpfx = core->bin->prefix? r_str_newf ("%s.reloc.", core->bin->prefix): strdup ("reloc.");
+	ri->flagpfx_len = strlen (ri->flagpfx);
 	ri->bin_demangle = r_config_get_b (core->config, "bin.demangle");
 	ri->keep_lib = r_config_get_b (core->config, "bin.demangle.pfxlib");
 	ri->reloc_xrefs = r_config_get_b (core->config, "bin.relocs.xrefs");
@@ -1926,33 +1950,28 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 		free (module);
 	}
 
-	char *reloc_name = construct_reloc_name (reloc, NULL);
-	if (R_STR_ISEMPTY (reloc_name)) {
+	// "[prefix.]reloc.[lib_]name" built in one go, r_flag_set filters the name itself
+	char *flagname = construct_reloc_name (reloc, NULL, ri->flagpfx);
+	if (!flagname) {
 		char name[32] = { 0 };
 		r_io_read_at (core->io, reloc->addend, (ut8 *)name, sizeof (name));
 		name[sizeof (name) - 1] = 0;
 		if (name[0] && name[1] && isalpha (name[0]) && isalpha (name[1])) {
 			r_name_filter (name, -1);
 			R_LOG_DEBUG ("Naming fixup reloc with string %s", name);
-			free (reloc_name);
-			reloc_name = r_str_newf ("fixup.%s", name);
+			flagname = r_str_newf ("%sfixup.%s", ri->flagpfx, name);
 			if (ri->reloc_xrefs) {
 				r_anal_xrefs_set (core->anal, reloc->vaddr, reloc->addend, R_ANAL_REF_TYPE_DATA);
 			}
 		} else {
-			free (reloc_name);
 			return;
 		}
 	}
-	char *flagname = core->bin->prefix
-		? r_str_newf ("%s.reloc.%s", core->bin->prefix, reloc_name)
-		: r_str_newf ("reloc.%s", reloc_name);
 	if (reloc->laddr) {
-		char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
+		char *internal_reloc = r_str_newf ("rsym.%s", flagname + ri->flagpfx_len);
 		(void)r_flag_set (core->flags, internal_reloc, reloc->laddr, bin_reloc_size (reloc));
 		free (internal_reloc);
 	}
-	free (reloc_name);
 	char *demname = NULL;
 	if (ri->bin_demangle) {
 		demname = r_bin_demangle (core->bin->cur, ri->lang, flagname, addr, ri->keep_lib);
@@ -1961,7 +1980,6 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 			flagname = r_str_newf ("reloc.%s", demname);
 		}
 	}
-	r_name_filter (flagname, 0);
 	if (addr == UT64_MAX) {
 		R_LOG_DEBUG ("Cannot resolve reloc %s", demname);
 	} else {
@@ -2235,7 +2253,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 					name = mn;
 				}
 			}
-			char *reloc_name = construct_reloc_name (reloc, name);
+			char *reloc_name = construct_reloc_name (reloc, name, "");
 			RStrBuf *buf = r_strbuf_new (reloc_name);
 			free (reloc_name);
 			R_FREE (name);
@@ -2277,7 +2295,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	r_table_free (table);
 	R_FREE (sdb_module);
 	sdb_free (db);
-	db = NULL;
+	ri_fini (&ri);
 
 	R_TIME_PROFILE_END;
 	return true;
