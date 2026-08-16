@@ -882,10 +882,10 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 	}
 }
 
-// Strip leading __ prefix for type database lookup
-// This allows __strcpy_chk to match strcpy_chk in the database
-static inline const char *trim_lodashes(const char *name) {
-	while (r_str_startswith (name, "__")) {
+// Strip leading __ prefix for type database lookup when the exact name
+// is not registered. This allows __strcpy_chk to match strcpy_chk
+static inline const char *trim_lodashes(Sdb *TDB, const char *name) {
+	while (!sdb_const_get (TDB, name, 0) && r_str_startswith (name, "__")) {
 		name += 2;
 	}
 	return name;
@@ -893,23 +893,23 @@ static inline const char *trim_lodashes(const char *name) {
 
 // Function prototypes api
 R_API int r_type_func_exist(Sdb *TDB, const char *func_name) {
-	const char *fcn = sdb_const_get (TDB, trim_lodashes (func_name), 0);
+	const char *fcn = sdb_const_get (TDB, trim_lodashes (TDB, func_name), 0);
 	return fcn && !strcmp (fcn, "func");
 }
 
 R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
-	return sdb_const_getf (TDB, NULL, "func.%s.ret", trim_lodashes (func_name));
+	return sdb_const_getf (TDB, NULL, "func.%s.ret", trim_lodashes (TDB, func_name));
 }
 
 R_API int r_type_func_args_count(Sdb *TDB, const char *R_NONNULL func_name) {
-	return sdb_num_getf (TDB, NULL, "func.%s.args", trim_lodashes (func_name));
+	return sdb_num_getf (TDB, NULL, "func.%s.args", trim_lodashes (TDB, func_name));
 }
 
 R_API R_OWNED char *r_type_func_args_type(Sdb *TDB, const char *R_NONNULL func_name, int i) {
-	const char *value = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", trim_lodashes (func_name), i);
+	const char *value = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", trim_lodashes (TDB, func_name), i);
 	char *ret = value? strdup (value): NULL;
 	if (ret) {
-		char *comma = strchr (ret, ',');
+		char *comma = strrchr (ret, ',');
 		if (comma) {
 			*comma = 0;
 		}
@@ -923,9 +923,9 @@ static const char *const argnames[10] = {
 };
 
 R_API const char *r_type_func_args_name(Sdb *TDB, const char *R_NONNULL func_name, int i) {
-	const char *row = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", trim_lodashes (func_name), i);
+	const char *row = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", trim_lodashes (TDB, func_name), i);
 	if (row) {
-		const char *ret = strchr (row, ',');
+		const char *ret = strrchr (row, ',');
 		if (ret) {
 			return ret + 1;
 		}

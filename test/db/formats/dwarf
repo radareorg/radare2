@@ -107,6 +107,40 @@ Mammal_401300
 EOF
 RUN
 
+NAME="DWARF prototype with __ prefix is linked"
+FILE=bins/elf/analysis/guess-number-riscv64
+CMDS=<<EOF
+k anal/types/fcnlink.0001ffbc
+af @ 0x1ffbc
+afs @ 0x1ffbc
+iddi
+k anal/dwarf/fcn.__adddf3.typed_name
+EOF
+EXPECT=<<EOF
+__adddf3
+FLO_type __adddf3 (FLO_type arg_a, FLO_type arg_b);
+__adddf3
+EOF
+RUN
+
+NAME="DWARF prototype with commas in argument types is linked"
+FILE=bins/elf/dwarf_rust_bubble
+CMDS=<<EOF
+k anal/types/fcnlink.00025ad0
+af @ 0x25ad0
+afs @ 0x25ad0
+iddi
+k anal/dwarf/fcn.check.typed_name
+k anal/types/fcnlink.00025ad0
+EOF
+EXPECT=<<EOF
+check
+bool check (u16 x, &[(u8, u8)] singletonuppers, &[u8] singletonlowers, &[u8] normal);
+check
+check
+EOF
+RUN
+
 NAME=test dwarf2
 FILE=bins/elf/dwarf/hello-dwarf2
 CMDS=<<EOF
