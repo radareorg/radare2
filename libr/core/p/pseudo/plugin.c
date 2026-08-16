@@ -170,16 +170,25 @@ static RCmdResult pseudo_callback(RCmdContext *ctx) {
 
 static bool plugin_init(RCorePluginSession *cps) {
 	RCore *core = cps->core;
-	RCmd *cmd = core->rcmd;
-	if (!r_cmd_register (cmd, "pdc", pseudo_callback, NULL)) {
+	if (!r_cmd_register (core->rcmd, "pdc", pseudo_callback, NULL)) {
 		return false;
 	}
+	RConfig *cfg = core->config;
+	r_config_lock (cfg, false);
+	RConfigNode *node = r_config_set_b (cfg, "pdc.structured", false);
+	r_config_node_desc (node, "emit structured if/else instead of goto in pdc (experimental)");
+	r_config_lock (cfg, true);
 	return true;
 }
 
 static bool plugin_fini(RCorePluginSession *cps) {
 	R_RETURN_VAL_IF_FAIL (cps && cps->core && cps->core->rcmd, false);
-	r_cmd_unregister (cps->core->rcmd, "pdc");
+	RCore *core = cps->core;
+	r_cmd_unregister (core->rcmd, "pdc");
+	// r_core_fini frees the config before it unloads the core plugins
+	if (core->config) {
+		r_config_rm (core->config, "pdc.structured");
+	}
 	return true;
 }
 
