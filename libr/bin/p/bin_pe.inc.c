@@ -349,24 +349,9 @@ static RList* classes(RBinFile *bf) {
 			continue;
 		}
 		// Method names are "Namespace.ClassName.MethodName"; the method has
-		// no embedded dots so walk back-to-front and split at the last dot
-		// whose tail is dot-free.
+		// no embedded dots so split at the last dot.
 		char *tmp = strdup (dsym->name);
-		char *split = NULL;
-		char *cur = tmp;
-		while ((split = strrchr (cur, '.'))) {
-			if (!strchr (split + 1, '.')) {
-				break;
-			}
-			cur = split - 1;
-			if (cur <= tmp) {
-				split = NULL;
-				break;
-			}
-		}
-		if (!split) {
-			split = strchr (tmp, '.');
-		}
+		char *split = strrchr (tmp, '.');
 		if (!split || split == tmp) {
 			free (tmp);
 			continue;

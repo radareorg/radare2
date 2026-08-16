@@ -121,7 +121,7 @@ static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
 	}
 	bool ret = false;
 	char *sb_str = sb->ptr ? sb->ptr : sb->buf;
-	char *pivot = strrchr (sb_str, c);
+	char *pivot = sb->len? (char *)r_str_rchr (sb_str, sb_str + sb->len - 1, c): NULL;
 	if (pivot) {
 		size_t idx = pivot - sb_str;
 		memcpy (ns, sb_str, idx);

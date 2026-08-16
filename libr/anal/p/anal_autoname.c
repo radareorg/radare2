@@ -80,8 +80,9 @@ static const char *strip_prefix(const char *s) {
 /* Strip trailing "_<hex>" address suffixes from a derived name so that
  * "free_46b0" collapses to "free" when reused as a base name. */
 static void strip_addr_tail(char *name) {
-	for (;;) {
-		char *p = strrchr (name, '_');
+	char *end = name + strlen (name);
+	while (end > name) {
+		char *p = (char *)r_str_rchr (name, end - 1, '_');
 		if (!p || p == name) {
 			return;
 		}
@@ -94,6 +95,7 @@ static void strip_addr_tail(char *name) {
 			return;
 		}
 		*p = 0;
+		end = p;
 	}
 }
 
