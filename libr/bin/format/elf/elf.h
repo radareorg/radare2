@@ -274,5 +274,4 @@ ut64 Elf_(plt_ppc32_thunk)(ELFOBJ *eo, ut64 slot_vaddr);
 /* elf.c helpers exported for plt.c */
 RBinElfSection *Elf_(plt_section_by_name)(ELFOBJ *eo, const char *name);
 ut64 Elf_(plt_num_relocs)(ELFOBJ *eo);
-R_API RBinSection *r_bin_section_clone(RBinSection *s);
 #endif

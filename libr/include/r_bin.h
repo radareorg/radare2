@@ -889,7 +889,6 @@ typedef struct r_bin_bind_t {
 	ut32 visibility;
 } RBinBind;
 
-R_API RBinSection *r_bin_section_clone(RBinSection *s);
 R_API void r_bin_info_free(RBinInfo *rb);
 R_API void r_bin_import_free(RBinImport *imp);
 R_API void r_bin_symbol_free(void *sym);
@@ -1110,7 +1109,6 @@ R_API char *r_bin_attr_update(RBinAttr *attr, const char *s);
 typedef struct HtSU_t HtSU;
 
 R_API void r_bin_load_filter(RBin *bin, ut64 rules);
-R_API void r_bin_filter_sections(RBinFile *bf, RList *list);
 R_API void r_bin_filter_sections_vec(RBinFile *bf, RVecRBinSection *sections);
 R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 addr, const char *name);
 R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr);

@@ -233,26 +233,6 @@ R_API void r_bin_filter_sections_vec(RBinFile *bf, RVecRBinSection *sections) {
 	ht_pp_free (db);
 }
 
-R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
-	RBinSection *sec;
-	HtPP *db = ht_pp_new (NULL, section_name_state_free, NULL);
-	RListIter *iter;
-	if (!db) {
-		return;
-	}
-	r_list_foreach (list, iter, sec) {
-		if (!sec->name) {
-			continue;
-		}
-		char *p = filter_section_name (db, sec->vaddr, sec->name);
-		if (p) {
-			free (sec->name);
-			sec->name = p;
-		}
-	}
-	ht_pp_free (db);
-}
-
 static bool false_positive(const char *str) {
 	int i;
 	int up = 0;

@@ -1042,7 +1042,7 @@ static pyc_object *get_object(PycUnmarshalCtx *ctx, RBuffer *buffer, int wanted_
 	return ret;
 }
 
-static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RList *sections, RVecRBinSymbol *symbols, RList *cobjs, char *prefix) {
+static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RVecRBinSection *sections, RVecRBinSymbol *symbols, RList *cobjs, char *prefix) {
 	RListIter *i = NULL;
 
 	// each code object is a section
@@ -1059,30 +1059,21 @@ static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RLis
 	if (!r_list_append (cobjs, cobj)) {
 		return false;
 	}
-	RBinSection *section = R_NEW0 (RBinSection);
-	if (!section) {
-		goto fail;
+	if (cobj->end_offset <= cobj->start_offset) {
+		return false;
 	}
 	prefix = r_str_newf ("%s%s%s", r_str_get (prefix),
 		prefix? ".": "", (const char *)cobj->name->data);
 	if (!prefix) {
-		goto fail;
-	}
-	section->name = strdup (prefix);
-	if (!section->name) {
-		goto fail;
-	}
-	if (cobj->end_offset <= cobj->start_offset) {
-		goto fail;
+		return false;
 	}
 	const ut64 size = (ut64)(cobj->end_offset - cobj->start_offset);
+	RBinSection *section = RVecRBinSection_emplace_back (sections);
+	section->name = strdup (prefix);
 	section->paddr = cobj->start_offset;
 	section->vaddr = cobj->start_offset;
 	section->size = size;
 	section->vsize = size;
-	if (!r_list_append (sections, section)) {
-		goto fail;
-	}
 	if (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE) {
 		free (prefix);
 		return false;
@@ -1107,17 +1098,13 @@ static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RLis
 	}
 	free (prefix);
 	return true;
-fail:
-	free (section);
-	free (prefix);
-	return false;
 }
 
 void pyc_object_free(pyc_object *obj) {
 	free_object (obj);
 }
 
-bool get_sections_symbols_from_code_objects(PycUnmarshalCtx *ctx, RBuffer *buffer, RList *sections, RVecRBinSymbol *symbols, RList *cobjs, pyc_object **out_pobj) {
+bool get_sections_symbols_from_code_objects(PycUnmarshalCtx *ctx, RBuffer *buffer, RVecRBinSection *sections, RVecRBinSymbol *symbols, RList *cobjs, pyc_object **out_pobj) {
 	if (!ctx) {
 		return false;
 	}
