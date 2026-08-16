@@ -747,44 +747,35 @@ R_API char *r_str_trunc_ellipsis(const char *str, int len) {
 }
 
 R_API char *r_str_newvf(const char *fmt, va_list ap) {
+	// format into a stack buffer first, most strings fit and this avoids
+	// running the formatter twice (once to measure, once to fill)
+	char tmp[256];
 	va_list ap2;
 	va_copy (ap2, ap);
-	int ret = vsnprintf (NULL, 0, fmt, ap2);
-	ret++;
-	char *p = calloc (1, ret);
-	if (p) {
-		(void)vsnprintf (p, ret, fmt, ap);
-	}
+	int ret = vsnprintf (tmp, sizeof (tmp), fmt, ap2);
 	va_end (ap2);
+	if (ret < 0) {
+		return NULL;
+	}
+	const size_t len = (size_t)ret;
+	char *p = malloc (len + 1);
+	if (p) {
+		if (len < sizeof (tmp)) {
+			memcpy (p, tmp, len + 1);
+		} else {
+			(void)vsnprintf (p, len + 1, fmt, ap);
+		}
+	}
 	return p;
 }
 
 R_API char *r_str_newf(const char *fmt, ...) {
-	va_list ap, ap2;
-
-	va_start (ap, fmt);
 	if (!strchr (fmt, '%')) {
-		char *p = strdup (fmt);
-		va_end (ap);
-		return p;
+		return strdup (fmt);
 	}
-	// format into a stack buffer first, most strings fit and this avoids
-	// running the formatter twice (once to measure, once to fill)
-	char tmp[256];
-	va_copy (ap2, ap);
-	int ret = vsnprintf (tmp, sizeof (tmp), fmt, ap2);
-	va_end (ap2);
-	char *p = NULL;
-	if (ret >= 0) {
-		p = malloc ((size_t)ret + 1);
-		if (p) {
-			if ((size_t)ret < sizeof (tmp)) {
-				memcpy (p, tmp, (size_t)ret + 1);
-			} else {
-				(void)vsnprintf (p, (size_t)ret + 1, fmt, ap);
-			}
-		}
-	}
+	va_list ap;
+	va_start (ap, fmt);
+	char *p = r_str_newvf (fmt, ap);
 	va_end (ap);
 	return p;
 }

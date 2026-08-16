@@ -1845,13 +1845,16 @@ static char *construct_reloc_name(RBinReloc *R_NONNULL reloc, const char *R_NULL
 			name = r_bin_name_tostring (reloc->import->name);
 		} else if (reloc->symbol) {
 			name = r_bin_name_tostring (reloc->symbol->name);
-		} else if (reloc->is_ifunc) {
-			// addend is the function pointer for the resolving ifunc
-			snprintf (ifunc, sizeof (ifunc), "ifunc_%" PFMT64x, reloc->addend);
-			name = ifunc;
-		} else {
-			// TODO implement constant relocs.
-			return NULL;
+		}
+		if (R_STR_ISEMPTY (name)) {
+			if (reloc->is_ifunc) {
+				// addend is the function pointer for the resolving ifunc
+				snprintf (ifunc, sizeof (ifunc), "ifunc_%" PFMT64x, reloc->addend);
+				name = ifunc;
+			} else {
+				// TODO implement constant relocs.
+				return NULL;
+			}
 		}
 	}
 	// (optional) libname_
@@ -1968,6 +1971,7 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 		}
 	}
 	if (reloc->laddr) {
+		// the "[lib_]name" part of the flag, skipping the "[prefix.]reloc." prefix
 		char *internal_reloc = r_str_newf ("rsym.%s", flagname + ri->flagpfx_len);
 		(void)r_flag_set (core->flags, internal_reloc, reloc->laddr, bin_reloc_size (reloc));
 		free (internal_reloc);
@@ -1977,7 +1981,7 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 		demname = r_bin_demangle (core->bin->cur, ri->lang, flagname, addr, ri->keep_lib);
 		if (demname) {
 			free (flagname);
-			flagname = r_str_newf ("reloc.%s", demname);
+			flagname = r_str_newf ("%s%s", ri->flagpfx, demname);
 		}
 	}
 	if (addr == UT64_MAX) {
