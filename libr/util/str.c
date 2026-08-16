@@ -1928,11 +1928,18 @@ static size_t str_dwidth(const char *str, size_t slen, bool ansi) {
 	size_t i = 0, len = 0;
 	const size_t maxlen = slen > 0? slen: (size_t)-1;
 	while (str[i] && i < maxlen) {
-		if (ansi && str[i] == 0x1b) {
-			i += __str_ansi_length (str + i);
+		const ut8 c = (ut8)str[i];
+		if (c < 0x80) {
+			// ascii fast path: one column per byte, no utf8 decoding needed
+			if (ansi && c == 0x1b) {
+				i += __str_ansi_length (str + i);
+				continue;
+			}
+			len++;
+			i++;
 			continue;
 		}
-		if (((ut8)str[i] & 0xc0) == 0x80) {
+		if ((c & 0xc0) == 0x80) {
 			i++;
 			continue;
 		}
