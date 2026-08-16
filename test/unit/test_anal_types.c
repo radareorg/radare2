@@ -118,6 +118,80 @@ static bool test_anal_save_base_type_struct(void) {
 	mu_end;
 }
 
+static bool test_anal_base_type_struct_member_needing_sanitization_roundtrip(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+
+	// A member name that sdb keys cannot hold verbatim. DWARF produces these
+	// for C++ vtable pointers, e.g. "_vptr.Bird".
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("Bird");
+
+	RAnalStructMember member = {
+		.offset = 0,
+		.type = strdup ("int (**)()"),
+		.name = strdup ("_vptr.Bird")
+	};
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
+
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	// The member list has to name the member by the key that addresses it,
+	// otherwise the reader looks up a key that was never written and the whole
+	// type becomes unreadable.
+	mu_assert_streq (sdb_const_get (anal->sdb_types, "struct.Bird", 0), "_vptr_Bird",
+		"member list names the sanitized key");
+	mu_assert_notnull (sdb_const_get (anal->sdb_types, "struct.Bird._vptr_Bird", 0),
+		"member is stored under the sanitized key");
+
+	RAnalBaseType *got = r_anal_get_base_type (anal, "Bird");
+	mu_assert_notnull (got, "reload struct whose member name needed sanitization");
+	mu_assert_eq (RVecAnalTypeMember_length (&got->struct_data.members), 1,
+		"member survives the round trip");
+	RAnalStructMember *m = RVecAnalTypeMember_at (&got->struct_data.members, 0);
+	mu_assert_streq (m->name, "_vptr_Bird", "member is named by its key");
+	mu_assert_streq (m->type, "int (**)()", "member type survives");
+	r_anal_base_type_free (got);
+
+	r_anal_free (anal);
+	mu_end;
+}
+
+static bool test_anal_base_type_enum_case_needing_sanitization_roundtrip(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ENUM);
+	base->name = strdup ("Mode");
+
+	RAnalEnumCase cas = {
+		.name = strdup ("Mode.One"),
+		.val = 1
+	};
+	RVecAnalEnumCase_push_back (&base->enum_data.cases, &cas);
+
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	mu_assert_streq (sdb_const_get (anal->sdb_types, "enum.Mode", 0), "Mode_One",
+		"case list names the sanitized key");
+
+	// get_enum_type treats a missing case key as fatal, so a single case name
+	// needing sanitization made the whole enum unreadable.
+	RAnalBaseType *got = r_anal_get_base_type (anal, "Mode");
+	mu_assert_notnull (got, "reload enum whose case name needed sanitization");
+	mu_assert_eq (RVecAnalEnumCase_length (&got->enum_data.cases), 1,
+		"case survives the round trip");
+	RAnalEnumCase *c = RVecAnalEnumCase_at (&got->enum_data.cases, 0);
+	mu_assert_streq (c->name, "Mode_One", "case is named by its key");
+	mu_assert_eq (c->val, 1, "case value survives");
+	r_anal_base_type_free (got);
+
+	r_anal_free (anal);
+	mu_end;
+}
+
 static bool test_anal_get_base_type_union(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
@@ -634,6 +708,8 @@ int all_tests(void) {
 	mu_run_test (test_anal_get_base_type_struct);
 	mu_run_test (test_anal_save_base_type_struct);
 	mu_run_test (test_anal_base_type_struct_array_roundtrip);
+	mu_run_test (test_anal_base_type_struct_member_needing_sanitization_roundtrip);
+	mu_run_test (test_anal_base_type_enum_case_needing_sanitization_roundtrip);
 	mu_run_test (test_anal_save_base_type_struct_redefine);
 	mu_run_test (test_anal_base_type_struct_comma_type_roundtrip);
 	mu_run_test (test_anal_base_type_union_comma_type_roundtrip);
