@@ -1620,8 +1620,8 @@ static char *dwarf_function_type_name(Context *ctx, const char *sname, const Fun
 	const char *previous_name = sdb_const_getf (ctx->sdb, NULL, "fcn.%s.name", sname);
 	const char *previous = sdb_const_getf (ctx->sdb, NULL, "fcn.%s.typed_name", sname);
 	if (previous_name && !strcmp (previous_name, dwarf_fcn->name)
-		&& previous && dwarf_function_type_matches (types, previous,
-			ret_type, variables, has_unspecified_parameters)) {
+		&& previous && r_type_kind (types, previous) == R_TYPE_FUNCTION
+		&& sdb_num_getf (ctx->sdb, NULL, "fcn.%s.addr", sname) == dwarf_fcn->addr) {
 		return strdup (previous);
 	}
 	char *name = sanitize_c_identifier (dwarf_fcn->name);
@@ -1731,34 +1731,32 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, const ch
 	sdb_setf (ctx->sdb, csig, 0, "fcn.%s.csig", sname);
 	r_strbuf_fini (&args_buf);
 
-	if (!r_type_func_exist (anal->sdb_types, typed_name)) {
+	if (!sdb_const_get (anal->sdb_types, typed_name, 0)) {
 		/* Only attempt C parsing for C-like languages.  Non-C languages
 		   (Rust, Go, D, etc.) produce type names that are not valid C and
 		   would choke the parser.  Use the fallback which writes the same
 		   sdb entries directly. */
 		const char *lang = ctx->lang;
 		bool is_c_like = !lang || !strcmp (lang, "cxx") || !strcmp (lang, "objc");
-		bool imported = false;
 		if (is_c_like) {
 			char *errmsg = NULL;
-			imported = r_anal_import_c_decls (anal, csig, &errmsg);
-			if (!imported && errmsg) {
+			if (!r_anal_import_c_decls (anal, csig, &errmsg) && errmsg) {
 				R_LOG_DEBUG ("DWARF type import fallback for %s: %s", typed_name, errmsg);
 			}
 			free (errmsg);
 		}
-		if (!imported) {
-			(void)import_dwarf_function_fallback (anal, typed_name, ret_type, variables, has_unspecified_parameters);
+		if (!dwarf_function_type_matches (anal->sdb_types, typed_name,
+				ret_type, variables, has_unspecified_parameters)) {
+			/* The C importer can fail or normalize the declaration into a
+			   different prototype. Replace only the function record; the
+			   types it references stay registered. */
+			r_anal_function_del_signature (anal, typed_name);
+			import_dwarf_function_fallback (anal, typed_name, ret_type, variables, has_unspecified_parameters);
 		}
 	}
 	if (dwarf_fcn->prototype_complete && dwarf_function_type_matches (anal->sdb_types,
 			typed_name, ret_type, variables, has_unspecified_parameters)) {
-		const char *linked = sdb_const_getf (anal->sdb_types, NULL,
-			"fcnlink.%08" PFMT64x, dwarf_fcn->addr);
-		if (!linked || !strcmp (linked, typed_name)) {
-			sdb_setf (anal->sdb_types, typed_name, 0,
-				"fcnlink.%08" PFMT64x, dwarf_fcn->addr);
-		}
+		sdb_setf (anal->sdb_types, typed_name, 0, "fcnlink.%08" PFMT64x, dwarf_fcn->addr);
 	}
 	free (csig);
 }
