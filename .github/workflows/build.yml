@@ -5,10 +5,27 @@ on:
     branches:
       - master
   pull_request:
+  # Manual runs exercise the master-only jobs on any branch before merging.
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Superseded pushes to a PR cancel the previous run. Master runs are never
+  # cancelled mid-flight: a release is cut from a master push, and killing that
+  # run would drop the release. A newer master push waits behind the current one.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Job gating
+#
+# This workflow only ever runs for three events: push to master, pull_request
+# and workflow_dispatch. Jobs that produce release assets, cross-arch/toolchain
+# duplicates and slow packaging jobs are gated with the single expression
+#
+#     if: ${{ github.event_name != 'pull_request' }}
+#
+# which means "master push or manual dispatch". Use exactly that form (or the
+# equivalent inside a fromJSON() matrix) so the master job set is easy to audit.
+# Only check_release/release additionally require github.ref == refs/heads/master.
 
 jobs:
   linux-wasi:
@@ -33,7 +50,7 @@ jobs:
 
   # WASI API
   linux-wasi-api:
-    if: github.ref == 'refs/heads/master'
+    if: ${{ github.event_name != 'pull_request' }}
     # Serialize behind linux-wasi so the first master run after a cache-key
     # change can reuse the freshly saved WASI SDK cache in this workflow.
     needs: linux-wasi
@@ -59,7 +76,7 @@ jobs:
 
   # WASI Browser
   linux-wasi-browser:
-    if: github.ref == 'refs/heads/master'
+    if: ${{ github.event_name != 'pull_request' }}
     # Serialize behind linux-wasi so the first master run after a cache-key
     # change can reuse the freshly saved WASI SDK cache in this workflow.
     needs: linux-wasi
@@ -120,7 +137,7 @@ jobs:
         path: radare2-?.?.?.*
 
   filc:
-    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master') }}
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
@@ -147,9 +164,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch:
-          - amd64
-          - i386
+        # amd64 (musl) is the only musl build, keep it on PRs. The i386 static
+        # build duplicates the gcc -m32 toolchain already exercised (with unit
+        # tests) by linux-acr-deb i386, so it only runs on master/dispatch.
+        arch: ${{ fromJSON(github.event_name != 'pull_request' && '["amd64", "i386"]' || '["amd64"]') }}
         runner: [ubuntu-22.04]
 #       include:
 #         - arch: arm64
@@ -190,7 +208,7 @@ jobs:
         path: radare2-*-static-${{ matrix.arch }}.tar.xz
 
   linux-acr-rpm-64:
-    # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
@@ -204,17 +222,11 @@ jobs:
         path: dist/rpm/*.rpm
 
   linux-acr-deb:
-    # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     strategy:
       fail-fast: false
-      matrix:
-        arch:
-          - amd64
-          - i386
-        runner: [ubuntu-22.04]
-        include:
-          - arch: arm64
-            runner: ubuntu-22.04-arm
+      # PRs only build i386: it is the leg that runs the 32-bit unit tests.
+      # amd64/arm64 are packaging duplicates and only run on master/dispatch.
+      matrix: ${{ fromJSON(github.event_name != 'pull_request' && '{"include":[{"arch":"amd64","runner":"ubuntu-22.04"},{"arch":"i386","runner":"ubuntu-22.04"},{"arch":"arm64","runner":"ubuntu-22.04-arm"}]}' || '{"include":[{"arch":"i386","runner":"ubuntu-22.04"}]}') }}
     # TODO: Update to 22.04 when xpatch.c warnings have been fixed
     runs-on: ${{ matrix.runner }}
     steps:
@@ -325,9 +337,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch:
-          - arm64
-          - x86_64
+        arch: ${{ fromJSON(github.event_name != 'pull_request' && '["arm64", "x86_64"]' || '["arm64"]') }}
     runs-on: macos-15-intel
     steps:
     - name: Checkout
@@ -345,7 +355,7 @@ jobs:
         name: macos-acr-${{ matrix.arch }}
 
   ios:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    if: ${{ github.event_name != 'pull_request' }}
     strategy:
       fail-fast: false
       matrix:
@@ -389,7 +399,7 @@ jobs:
 
   # Android
   android-acr:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    if: ${{ github.event_name != 'pull_request' }}
     strategy:
       fail-fast: false
       matrix:
@@ -418,7 +428,7 @@ jobs:
         path: radare2*android*${{ matrix.arch }}.tar.gz
 
   android-sdk:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v7
@@ -477,6 +487,8 @@ jobs:
 
   # Windows
   w32-meson:
+    # 32-bit MSVC duplicate of w64-meson (ci.yml also cross-builds w32-mingw)
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
@@ -519,6 +531,7 @@ jobs:
           radare2-${{ steps.r2v.outputs.branch }}-w32.zip
 #          radare2-win-installer\Output\radare2.exe
   w64-static:
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
@@ -602,7 +615,9 @@ jobs:
         bash sys/source_bat.bash 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat' "x86_64"
         # meson_options: --default-library=shared|static -Dstatic_runtime=true --backend vs2019
         meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w64 -Dc_std=c11 build
-        ninja -C build -j 1
+        # -j4 matches w32-meson (same 4-vCPU runner + 16GB pagefile), which
+        # moved from -j1 to -j4 in 2cf6931a4f without issues.
+        ninja -C build -j4
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64
@@ -623,7 +638,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sys: [MINGW64, UCRT64]
+        # PRs build MINGW64 only (msvcrt, the less conforming CRT and hence the
+        # one most likely to expose regressions); UCRT64 is added on master.
+        sys: ${{ fromJSON(github.event_name != 'pull_request' && '["MINGW64", "UCRT64"]' || '["MINGW64"]') }}
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v7
@@ -650,6 +667,7 @@ jobs:
       run: meson compile -C build
 
   msys2-w64-arm-meson:
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: windows-11-arm
     steps:
     - name: Checkout
@@ -680,6 +698,7 @@ jobs:
         path: radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip
 
   w64-arm-meson:
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: windows-11-arm
     steps:
     - name: Win configure Pagefile
@@ -720,6 +739,7 @@ jobs:
 
   # FreeBSD
   freebsd:
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
@@ -810,7 +830,7 @@ jobs:
 
   # XCFramework for release only
   macos-xcframework:
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: macos-15-intel
     steps:
     - name: Checkout
