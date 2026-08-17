@@ -173,3 +173,46 @@ seq 0x00415694
   bb 0x00415760
 EOF
 RUN
+
+NAME=pdct region ast joins a switch through its default edge
+FILE=bins/elf/bomb
+CMDS=<<EOF
+aaa
+pdct @ 0x400f43
+EOF
+EXPECT=<<EOF
+seq 0x00400f43
+  if 0x00400f43
+    bb 0x00400f65
+  if-else 0x00400f6a
+    bb 0x00400fad
+    switch 0x00400f71
+      seq 0x00400f7c
+        bb 0x00400f7c
+        if 0x00400fbe
+          bb 0x00400fc4
+        bb 0x00400fc9
+      seq 0x00400fb9
+        bb 0x00400fb9
+        goto 0x00400fbe
+      seq 0x00400f83
+        bb 0x00400f83
+        goto 0x00400fbe
+      seq 0x00400f8a
+        bb 0x00400f8a
+        goto 0x00400fbe
+      seq 0x00400f91
+        bb 0x00400f91
+        goto 0x00400fbe
+      seq 0x00400f98
+        bb 0x00400f98
+        goto 0x00400fbe
+      seq 0x00400f9f
+        bb 0x00400f9f
+        goto 0x00400fbe
+      seq 0x00400fa6
+        bb 0x00400fa6
+        goto 0x00400fbe
+      goto 0x00400fad
+EOF
+RUN
