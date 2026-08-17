@@ -656,6 +656,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_AARCH64_JUMP_SLOT: SET (64); break;
 		case R_AARCH64_COPY: ADD (64, 0); break; // copy symbol at runtime
 		case R_AARCH64_RELATIVE: ADD (64, B); break;
+		case R_AARCH64_IRELATIVE: r->is_ifunc = true; SET (64); break;
 		// data references
 		case R_AARCH64_PREL16: ADD (16, B); break;
 		case R_AARCH64_PREL32: ADD (32, B); break;
@@ -675,8 +676,12 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_AARCH64_LDST32_ABS_LO12_NC:
 		case R_AARCH64_LDST64_ABS_LO12_NC:
 		case R_AARCH64_LDST128_ABS_LO12_NC:
-			ADD (32, 0);
-			break;
+		case R_AARCH64_ADR_PREL_LO21:
+		case R_AARCH64_LD_PREL_LO19:
+		case R_AARCH64_TSTBR14:
+		case R_AARCH64_CONDBR19:
+		// a type patched here but unconverted aliases onto the next import slot
+		case R_AARCH64_JUMP26:
 		case R_AARCH64_CALL26:
 			ADD (32, 0);
 			break;
@@ -736,7 +741,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 #define R_AARCH64_MOVW_PREL_G3		293
 #endif
 		default:
-			R_LOG_WARN ("Unsupported reloc type %d for aarch64", rel->type);
+			R_LOG_DEBUG ("Unsupported reloc type %d for aarch64", rel->type);
 			break; // reg relocations
 		}
 		break;
@@ -994,6 +999,36 @@ static RVecRBinReloc *relocs(RBinFile *bf) {
 	return ret;
 }
 
+// a64 instruction words are little endian on disk even on be targets
+static void aarch64_patch_insn(RIOBind *iob, ut64 at, ut32 mask, ut32 val) {
+	ut8 buf[4] = {0};
+	// without the original opcode bits a patch would fabricate an instruction
+	if (!iob->read_at (iob->io, at, buf, sizeof (buf))) {
+		return;
+	}
+	r_write_le32 (buf, (r_read_le32 (buf) & ~mask) | (val & mask));
+	iob->overlay_write_at (iob->io, at, buf, sizeof (buf));
+}
+
+static bool aarch64_disp_fits(st64 x, int bits) {
+	return x >= -(1LL << (bits - 1)) && x < (1LL << (bits - 1));
+}
+
+// adr and adrp scatter their 21 bit immediate into the immlo:immhi fields
+static void aarch64_patch_adr(RIOBind *iob, ut64 at, st64 imm) {
+	aarch64_patch_insn (iob, at, (0x3 << 29) | (0x7ffff << 5),
+		((ut32)(imm & 3) << 29) | ((ut32)(imm >> 2) << 5));
+}
+
+static void aarch64_patch_branch(RIOBind *iob, RBinElfReloc *rel, st64 disp, int nbits, int shift) {
+	// a truncated branch invents a call target, worse than leaving it
+	if ((disp & 3) || !aarch64_disp_fits (disp, nbits + 2)) {
+		R_LOG_DEBUG ("unencodable aarch64 reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
+		return;
+	}
+	aarch64_patch_insn (iob, rel->rva, ((1U << nbits) - 1) << shift, (ut32)(disp >> 2) << shift);
+}
+
 static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 toc) {
 	ut64 V = 0;
 	ut64 A = rel->addend;
@@ -1101,20 +1136,17 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		}
 		break;
 	case EM_AARCH64: {
-		ut32 insn = 0;
+		int word = 0;
 		switch (rel->type) {
 		case R_AARCH64_ADR_PREL_PG_HI21:
 		case R_AARCH64_ADR_PREL_PG_HI21_NC: {
-			iob->read_at (iob->io, rel->rva, buf, 4);
-			insn = r_read_ble32 (buf, bo->endian);
-			st64 page_delta = ((S + A) & ~(st64)0xfff) - (P & ~(st64)0xfff);
-			st64 imm = page_delta >> 12;
-			ut32 immlo = (ut32)(imm & 3);
-			ut32 immhi = (ut32)((imm >> 2) & 0x7ffff);
-			insn &= ~((0x3 << 29) | (0x7ffff << 5));
-			insn |= (immlo << 29) | (immhi << 5);
-			r_write_ble32 (buf, insn, bo->endian);
-			iob->overlay_write_at (iob->io, rel->rva, buf, 4);
+			const st64 imm = (((st64)(S + A) & ~(st64)0xfff) - ((st64)P & ~(st64)0xfff)) >> 12;
+			// the _NC variant is defined to wrap, so only the checked one is refused
+			if (rel->type == R_AARCH64_ADR_PREL_PG_HI21 && !aarch64_disp_fits (imm, 21)) {
+				R_LOG_DEBUG ("unencodable aarch64 reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
+				break;
+			}
+			aarch64_patch_adr (iob, rel->rva, imm);
 			break;
 		}
 		case R_AARCH64_ADD_ABS_LO12_NC:
@@ -1123,8 +1155,6 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		case R_AARCH64_LDST32_ABS_LO12_NC:
 		case R_AARCH64_LDST64_ABS_LO12_NC:
 		case R_AARCH64_LDST128_ABS_LO12_NC: {
-			iob->read_at (iob->io, rel->rva, buf, 4);
-			insn = r_read_ble32 (buf, bo->endian);
 			int shift = 0;
 			switch (rel->type) {
 			case R_AARCH64_LDST16_ABS_LO12_NC:
@@ -1139,38 +1169,83 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			case R_AARCH64_LDST128_ABS_LO12_NC:
 				shift = 4;
 				break;
-			default:
-				shift = 0;
-				break;
 			}
-			ut32 imm12 = (ut32)(((S + A) >> shift) & 0xfff);
-			insn &= ~(0xfff << 10);
-			insn |= imm12 << 10;
-			r_write_ble32 (buf, insn, bo->endian);
-			iob->overlay_write_at (iob->io, rel->rva, buf, 4);
+			// the field is bits 11:shift of S + A, not bits shift+11:shift
+			aarch64_patch_insn (iob, rel->rva, 0xfff << 10,
+				(ut32)(((S + A) & 0xfff) >> shift) << 10);
 			break;
 		}
+		case R_AARCH64_JUMP26:
+		case R_AARCH64_CALL26:
+			aarch64_patch_branch (iob, rel, (st64)(S + A) - (st64)P, 26, 0);
+			break;
+		case R_AARCH64_CONDBR19:
+		case R_AARCH64_LD_PREL_LO19:
+			aarch64_patch_branch (iob, rel, (st64)(S + A) - (st64)P, 19, 5);
+			break;
+		case R_AARCH64_TSTBR14:
+			aarch64_patch_branch (iob, rel, (st64)(S + A) - (st64)P, 14, 5);
+			break;
+		case R_AARCH64_ADR_PREL_LO21: {
+			const st64 disp = (st64)(S + A) - (st64)P;
+			if (aarch64_disp_fits (disp, 21)) {
+				aarch64_patch_adr (iob, rel->rva, disp);
+			} else {
+				R_LOG_DEBUG ("unencodable aarch64 reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
+			}
+			break;
+		}
+		case R_AARCH64_MOVW_UABS_G0:
+		case R_AARCH64_MOVW_UABS_G0_NC:
+		case R_AARCH64_MOVW_UABS_G1:
+		case R_AARCH64_MOVW_UABS_G1_NC:
+		case R_AARCH64_MOVW_UABS_G2:
+		case R_AARCH64_MOVW_UABS_G2_NC:
+		case R_AARCH64_MOVW_UABS_G3: {
+			// hw already selects the group, only imm16 may be rewritten
+			const int g = (rel->type - R_AARCH64_MOVW_UABS_G0) / 2;
+			aarch64_patch_insn (iob, rel->rva, 0xffff << 5,
+				(ut32)(((S + A) >> (g * 16)) & 0xffff) << 5);
+			break;
+		}
+		case R_AARCH64_ABS16:
+			word = 2;
+			V = S + A;
+			break;
+		case R_AARCH64_ABS32:
+			word = 4;
+			V = S + A;
+			break;
+		case R_AARCH64_PREL16:
+			word = 2;
+			V = S + A - P;
+			break;
+		case R_AARCH64_PREL32:
+			word = 4;
+			V = S + A - P;
+			break;
+		case R_AARCH64_PREL64:
+			word = 8;
+			V = S + A - P;
+			break;
 		case R_AARCH64_RELATIVE:
+		case R_AARCH64_IRELATIVE:
+			word = 8;
 			V = B + A;
-			r_write_ble64 (buf, V, bo->endian);
-			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
 			break;
 		case R_AARCH64_GLOB_DAT:
 		case R_AARCH64_JUMP_SLOT:
 		case R_AARCH64_ABS64:
+			word = 8;
 			V = S + A;
-			r_write_ble64 (buf, V, bo->endian);
-			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
 			break;
 		default:
-			V = S + A;
-			iob->read_at (iob->io, rel->rva, buf, 8);
-			// only patch the relocs that are initialized with zeroes
-			// if the destination contains a different value it's a constant useful for static analysis
-			ut64 addr = r_read_ble64 (buf, bo->endian);
-			r_write_ble64 (buf, addr? A: S, bo->endian);
-			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
+			R_LOG_DEBUG ("unpatched aarch64 reloc type %d at 0x%"PFMT64x, rel->type, rel->rva);
 			break;
+		}
+		if (word) {
+			r_write_ble (buf, V, bo->endian, word * 8);
+			iob->overlay_write_at (iob->io, rel->rva, buf, word);
 		}
 		}
 		break;
@@ -1556,10 +1631,12 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		return NULL;
 	}
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
-	// Align ET_REL PPC REL24/REL14 relocs
-	if ((eo->ehdr.e_machine == EM_PPC64 || eo->ehdr.e_machine == EM_PPC)
-			&& eo->ehdr.e_type == ET_REL) {
-		n_vaddr = (n_vaddr + 3) & ~(ut64)3;
+	// branch and lo12 relocs cannot encode a misaligned import slot address
+	if (eo->ehdr.e_type == ET_REL && (eo->ehdr.e_machine == EM_PPC64
+			|| eo->ehdr.e_machine == EM_PPC || eo->ehdr.e_machine == EM_AARCH64
+			|| eo->ehdr.e_machine == EM_ARM)) {
+		const ut64 slot = (cdsz > 0)? cdsz: 4;
+		n_vaddr = (n_vaddr + slot - 1) & ~(slot - 1);
 	}
 	// reserve at least that space
 	size = eo->g_reloc_num * cdsz;
