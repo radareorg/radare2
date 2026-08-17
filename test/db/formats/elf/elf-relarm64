@@ -1,0 +1,94 @@
+NAME=ELF: aarch64 ET_REL CALL26 patches the branch immediate
+FILE=bins/elf/random_39855/random_39855.oo
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pd 2 @ 0x0800007c
+EOF
+EXPECT=<<EOF
+            0x0800007c      7f490094       bl reloc.strcmp
+        ,=< 0x08000080      a0000035       cbnz w0, 0x8000094
+EOF
+RUN
+
+NAME=ELF: aarch64 ET_REL CALL26 resolves the analysis jump target
+FILE=bins/elf/random_39855/random_39855.oo
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+p8 4 @ 0x0800007c
+ao 1 @ 0x0800007c~jump
+EOF
+EXPECT=<<EOF
+7f490094
+jump: 0x08012678
+EOF
+RUN
+
+NAME=ELF: aarch64 ET_REL PREL32 keeps the next word intact
+FILE=bins/elf/random_39855/random_39855.oo
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pxw 8 @ 0x080101c4
+EOF
+EXPECT=<<EOF
+0x080101c4  0xfffefe7c 0x00000088                        |.......
+EOF
+RUN
+
+NAME=ELF: aarch64 ET_REL branch relocs resolve to their targets
+FILE=bins/elf/analysis/arm64-relocs
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pd 6 @ 0x08000044
+EOF
+EXPECT=<<EOF
+            0x08000044      06000094       bl sym.local_target
+            0x08000048      b6000094       bl reloc.extern_target
+        ,=< 0x0800004c      80001836       tbz w0, 3, sym.local_target
+       ,==< 0x08000050      60000054       b.eq sym.local_target
+       ||   0x08000054      fd7bc1a8       ldp x29, x30, [sp], 0x10
+      ,===< 0x08000058      b4000014       b reloc.extern_tail
+EOF
+RUN
+
+NAME=ELF: aarch64 ET_REL JUMP26 import gets its own got slot
+FILE=bins/elf/analysis/arm64-relocs
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir
+EOF
+EXPECT=<<EOF
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x0800005c 0x00000044 ADD_32 283   local_target
+0x0800005c 0x0000004c ADD_32 279   local_target
+0x0800005c 0x00000050 ADD_32 280   local_target
+0x0800005c 0x0000006c ADD_32 258   local_target
+0x0800005c 0x00000070 ADD_64 257   local_target
+0x08000320 0x00000048 ADD_32 283   extern_target
+0x08000320 0x00000068 ADD_32 261   extern_target + 0x08000000
+0x08000328 0x00000058 ADD_32 282   extern_tail
+EOF
+RUN
+
+NAME=ELF: aarch64 ET_REL PREL32 and ABS relocs keep their field widths
+FILE=bins/elf/analysis/arm64-relocs
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pxw 16 @ 0x08000068
+EOF
+EXPECT=<<EOF
+0x08000068  0x000002b8 0x0800005c 0x0800005c 0x00000000  ....\...\.......
+EOF
+RUN
+
+NAME=ELF: aarch64 ET_REL relocated call creates a real xref
+FILE=bins/elf/analysis/arm64-relocs
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+aa
+axt @ sym.local_target
+EOF
+EXPECT=<<EOF
+sym.branch_relocs 0x8000044 [CALL:--x] bl sym.local_target
+EOF
+RUN
