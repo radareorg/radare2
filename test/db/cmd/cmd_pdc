@@ -820,16 +820,63 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdc structured bails to linear on loops
+NAME=pdc structured renders a self loop as do while
 FILE=bins/elf/ls
+ARGS=-e pdc.structured=1
 CMDS=<<EOF
 aa
-s 0x15c80
-e pdc.structured=1
-pdc~goto loc_0x15c60
+s 0x15e70
+pdc~do {,} while
 EOF
 EXPECT=<<EOF
-        if (!v) goto loc_0x15c60 // likely
+        do {
+        } while (rdx & rdx);
+EOF
+RUN
+
+NAME=pdc structured recovers continue and break in a loop body
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx 31c0eb0c83c00183f80a7504c390909089c3ebf0
+af
+pdc~while (true),continue,break
+EOF
+EXPECT=<<EOF
+    while (true) {
+            continue;
+        break;
+EOF
+RUN
+
+NAME=pdc structured keeps the loop header body inside the loop
+FILE=bins/elf/ls
+ARGS=-e pdc.structured=1
+CMDS=<<EOF
+aaa
+s 0x102b0
+pdc~while (true),eax += 0x30,break
+EOF
+EXPECT=<<EOF
+    while (true) {
+        eax += 0x30
+            break;
+EOF
+RUN
+
+NAME=pdc structured renders each jump table case with its own body
+FILE=bins/elf/ls
+ARGS=-e pdc.structured=1
+CMDS=<<EOF
+aaa
+s 0x145b0
+pdc~switch (r12),case 0:,abort,break
+EOF
+EXPECT=<<EOF
+        switch (r12) { // jump table of 10 cases at 0x0001bca4
+            case 0: // 0x00004056
+                qword [reloc.abort] () // [0x21ca8:8]=0 // void abort(void)
+                break;
 EOF
 RUN
 
@@ -965,5 +1012,111 @@ pdc~switch (,default:
 EOF
 EXPECT=<<EOF
     switch (switch_var) { // jump table of 1 cases at 0x004156b8
+EOF
+RUN
+
+NAME=pdc structured keeps both arms of a loop header that branches inside the loop
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx 85c0750583c001ebf783e80183f8057402ebedc3
+af
+pdc~while (true),eax += 1,eax -= 1,continue,break
+EOF
+EXPECT=<<EOF
+    while (true) {
+            eax += 1
+            eax -= 1
+                continue;
+            break;
+EOF
+RUN
+
+NAME=pdc structured ends every switch arm with an explicit transfer
+FILE=bins/elf/bomb
+ARGS=-e pdc.structured=1
+CMDS=<<EOF
+aaa
+s 0x400f43
+pdc~case ,goto loc_0x00400fbe
+EOF
+EXPECT=<<EOF
+            case 0: // 0x00400f7c
+            case 1: // 0x00400fb9
+                goto loc_0x00400fbe;
+            case 2: // 0x00400f83
+                goto loc_0x00400fbe;
+            case 3: // 0x00400f8a
+                goto loc_0x00400fbe;
+            case 4: // 0x00400f91
+                goto loc_0x00400fbe;
+            case 5: // 0x00400f98
+                goto loc_0x00400fbe;
+            case 6: // 0x00400f9f
+                goto loc_0x00400fbe;
+            case 7: // 0x00400fa6
+                goto loc_0x00400fbe;
+EOF
+RUN
+
+NAME=pdc structured renders a repeated case target once and jumps to it
+FILE=bins/elf/ls
+ARGS=-e pdc.structured=1
+CMDS=<<EOF
+aaa
+s 0x5c40
+pdc~case 88:,loc_0x00005d80:,case 120:,goto loc_0x00005d80
+EOF
+EXPECT=<<EOF
+                                    case 88: // 'X' 0x00005d80
+                                        loc_0x00005d80:
+                                    case 120: // 'x' 0x00005d80
+                                        goto loc_0x00005d80;
+EOF
+RUN
+
+NAME=pdc structured keeps the body of a loop whose header jumps to itself
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx 85c074fc83c00183f80575f4c3
+af
+pdc~while (true),eax += 1,continue,break
+EOF
+EXPECT=<<EOF
+    while (true) {
+            eax += 1
+                continue;
+            break;
+EOF
+RUN
+
+NAME=pdc structured labels no arm for an adjacent only case run
+FILE=bins/elf/ls
+ARGS=-e pdc.structured=1
+CMDS=<<EOF
+aaa
+s 0x5c40
+pdc~case 48...55:,loc_0x00005d48:
+EOF
+EXPECT=<<EOF
+                                    case 48...55: // '0'..'7' 0x00005d48
+EOF
+RUN
+
+NAME=pdc structured renders both arms behind a loop secondary exit
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx 85c0741483c00183f80574f483f807750483c002c383c003c3
+af
+pdc~loc_0x0000000c:,eax - 7,eax += 2,eax += 3
+EOF
+EXPECT=<<EOF
+    loc_0x0000000c:
+    v = eax - 7
+    if (!(eax - 7)) {
+        eax += 2
+        eax += 3
 EOF
 RUN

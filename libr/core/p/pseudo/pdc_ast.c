@@ -13,7 +13,7 @@ typedef struct {
 	HtUU *idom;	// block addr => immediate dominator addr (entry => UT64_MAX)
 	HtUU *ipdom;	// block addr => immediate post-dominator addr (UT64_MAX => exit)
 	HtUP *loops;	// natural-loop header addr => HtUU* member set
-	HtUU *cur_loop;	// member set of the innermost loop body being walked
+	HtUU *cur_loop;	// members of the innermost loop being walked (NULL outside one)
 	HtUU *emitted;	// block addr => 1 (each block heads a region at most once)
 	int build_calls;
 	int cap;
@@ -23,6 +23,7 @@ static PdcRegion *region_new(PdcRegionType type, ut64 addr) {
 	PdcRegion *r = R_NEW0 (PdcRegion);
 	r->type = type;
 	r->addr = addr;
+	r->exit = UT64_MAX;
 	RVecPdcRegionPtr_init (&r->children);
 	return r;
 }
@@ -39,10 +40,27 @@ static void region_free(PdcRegion *r) {
 	free (r);
 }
 
-static void region_add_child(PdcRegion *parent, PdcRegion *child) {
+static void region_add_child(PdcRegion *parent, PdcRegion *child, PdcRole role) {
 	if (child) {
+		child->role = role;
 		RVecPdcRegionPtr_push_back (&parent->children, &child);
 	}
+}
+
+// the conditional headed by addr, or NULL when neither arm yields a region
+static PdcRegion *region_cond(ut64 addr, PdcRegion *then_r, PdcRegion *else_r) {
+	if (then_r && else_r) {
+		PdcRegion *r = region_new (PDC_R_IFELSE, addr);
+		region_add_child (r, then_r, PDC_ROLE_JUMP);
+		region_add_child (r, else_r, PDC_ROLE_FAIL);
+		return r;
+	}
+	if (!then_r && !else_r) {
+		return NULL;
+	}
+	PdcRegion *r = region_new (PDC_R_IF, addr);
+	region_add_child (r, then_r? then_r: else_r, then_r? PDC_ROLE_JUMP: PDC_ROLE_FAIL);
+	return r;
 }
 
 static ut64 htuu_get(HtUU *m, ut64 key, ut64 dflt) {
@@ -170,12 +188,19 @@ static PdcRegion *build_loop(PdcCtx *ctx, RAnalBlock *bb, HtUU *set, ut64 *next)
 		exit = loop_exit_addr (ctx, set, h);
 	}
 	PdcRegion *loop = region_new (lt, h);
-	if (body_start != UT64_MAX && body_start != h) {
-		HtUU *prev = ctx->cur_loop;
-		ctx->cur_loop = set;
-		region_add_child (loop, region_seq (ctx, body_start, h));
-		ctx->cur_loop = prev;
+	loop->exit = exit;
+	HtUU *prev = ctx->cur_loop;
+	ctx->cur_loop = set;
+	if (j_in && f_in) {
+		// both edges stay inside, so the header's own conditional is the body
+		PdcRegion *then_r = region_seq (ctx, j, h);	// order is load-bearing
+		PdcRegion *else_r = region_seq (ctx, f, h);
+		region_add_child (loop, region_cond (h, then_r, else_r), PDC_ROLE_HEAD);
+	} else if (body_start != UT64_MAX && body_start != h) {
+		region_add_child (loop, region_seq (ctx, body_start, h),
+			(body_start == j)? PDC_ROLE_JUMP: PDC_ROLE_FAIL);
 	}
+	ctx->cur_loop = prev;
 	*next = exit;
 	return loop;
 }
@@ -183,6 +208,7 @@ static PdcRegion *build_loop(PdcCtx *ctx, RAnalBlock *bb, HtUU *set, ut64 *next)
 static PdcRegion *build_switch(PdcCtx *ctx, RAnalBlock *bb, ut64 *next) {
 	const ut64 join = htuu_get (ctx->ipdom, bb->addr, UT64_MAX);
 	PdcRegion *sw = region_new (PDC_R_SWITCH, bb->addr);
+	sw->exit = join;
 	HtUU *seen = ht_uu_new0 ();
 	RListIter *it;
 	RAnalCaseOp *co;
@@ -191,11 +217,11 @@ static PdcRegion *build_switch(PdcCtx *ctx, RAnalBlock *bb, ut64 *next) {
 			continue;
 		}
 		ht_uu_update (seen, co->jump, 1);
-		region_add_child (sw, region_seq (ctx, co->jump, join));
+		region_add_child (sw, region_seq (ctx, co->jump, join), PDC_ROLE_CASE);
 	}
 	const ut64 defv = bb->switch_op->def_val;
 	if (valid_addr (defv) && !htuu_get (seen, defv, 0)) {
-		region_add_child (sw, region_seq (ctx, defv, join));
+		region_add_child (sw, region_seq (ctx, defv, join), PDC_ROLE_CASE);
 	}
 	ht_uu_free (seen);
 	*next = join;
@@ -229,18 +255,8 @@ static PdcRegion *build_region(PdcCtx *ctx, ut64 cur, ut64 stop, ut64 *next) {
 		PdcRegion *then_r = (bb->jump == join)? NULL: region_seq (ctx, bb->jump, join);
 		PdcRegion *else_r = (bb->fail == join)? NULL: region_seq (ctx, bb->fail, join);
 		*next = join;
-		if (!then_r && !else_r) {
-			return region_new (PDC_R_BB, cur);
-		}
-		if (then_r && else_r) {
-			PdcRegion *r = region_new (PDC_R_IFELSE, cur);
-			region_add_child (r, then_r);
-			region_add_child (r, else_r);
-			return r;
-		}
-		PdcRegion *r = region_new (PDC_R_IF, cur);
-		region_add_child (r, then_r? then_r: else_r);
-		return r;
+		PdcRegion *r = region_cond (cur, then_r, else_r);
+		return r? r: region_new (PDC_R_BB, cur);
 	}
 	// one-way (continue the enclosing seq) or return block; a block may carry
 	// only a fail edge (fall-through split) with no jump
@@ -253,12 +269,10 @@ static PdcRegion *region_seq(PdcCtx *ctx, ut64 addr, ut64 stop) {
 	ut64 cur = addr;
 	int guard = ctx->cap;
 	while (cur != UT64_MAX && cur != stop && guard-- > 0) {
-		if (ctx->cur_loop && !htuu_get (ctx->cur_loop, cur, 0)) {
-			// left the enclosing loop: the loop region resumes at its exit
-			break;
-		}
-		if (htuu_get (ctx->emitted, cur, 0)) {
-			region_add_child (seq, region_new (PDC_R_GOTO, cur));
+		// leaving the loop or hitting an owned block ends the run with a jump
+		const bool left = ctx->cur_loop && !htuu_get (ctx->cur_loop, cur, 0);
+		if (left || htuu_get (ctx->emitted, cur, 0)) {
+			region_add_child (seq, region_new (PDC_R_GOTO, cur), PDC_ROLE_SEQ);
 			break;
 		}
 		ut64 next = UT64_MAX;
@@ -266,7 +280,7 @@ static PdcRegion *region_seq(PdcCtx *ctx, ut64 addr, ut64 stop) {
 		if (!r) {
 			break;
 		}
-		region_add_child (seq, r);
+		region_add_child (seq, r, PDC_ROLE_SEQ);
 		cur = next;
 	}
 	const ut64 n = RVecPdcRegionPtr_length (&seq->children);
@@ -292,6 +306,8 @@ static const char *region_kind(PdcRegionType t) {
 	case PDC_R_WHILE: return "while";
 	case PDC_R_DOWHILE: return "do-while";
 	case PDC_R_SWITCH: return "switch";
+	case PDC_R_BREAK: return "break";
+	case PDC_R_CONTINUE: return "continue";
 	case PDC_R_GOTO: return "goto";
 	}
 	return "?";
@@ -306,11 +322,61 @@ static void dump_region(PdcRegion *r, int indent, RStrBuf *sb) {
 	}
 }
 
-void pdc_ast_free(PdcRegion *root) {
-	region_free (root);
+typedef struct pdc_scope_t {
+	const struct pdc_scope_t *up;
+	ut64 brk;	// where break leaves this scope
+	ut64 cont;	// where continue restarts it, UT64_MAX for a switch
+} PdcScope;
+
+// break binds to the innermost loop or switch and continue to the innermost
+// loop, which the CFG walk cannot tell apart
+static void classify_transfers(PdcRegion *r, const PdcScope *scope) {
+	if (r->type == PDC_R_GOTO && scope) {
+		const PdcScope *s = scope;
+		while (s && s->cont == UT64_MAX) {	// continue skips switch scopes
+			s = s->up;
+		}
+		if (s && r->addr == s->cont) {
+			r->type = PDC_R_CONTINUE;
+		} else if (r->addr == scope->brk) {
+			r->type = PDC_R_BREAK;
+		}
+	}
+	PdcScope inner = { scope, r->exit, r->addr };
+	const PdcScope *sub = scope;
+	if (r->type == PDC_R_WHILE || r->type == PDC_R_DOWHILE) {
+		sub = &inner;
+	} else if (r->type == PDC_R_SWITCH) {
+		inner.cont = UT64_MAX;
+		sub = &inner;
+	}
+	PdcRegion **it;
+	R_VEC_FOREACH (&r->children, it) {
+		classify_transfers (*it, sub);
+	}
 }
 
-PdcRegion *pdc_ast_build(RCore *core, RAnalFunction *fcn) {
+void pdc_plan_free(PdcPlan *plan) {
+	if (plan) {
+		region_free (plan->root);
+		free (plan);
+	}
+}
+
+// a two-way block left to the orphan pass would lose one of its successors
+static bool blocks_are_owned(RAnalFunction *fcn, HtUU *emitted) {
+	RListIter *it;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, it, bb) {
+		if (bb->jump != UT64_MAX && bb->fail != UT64_MAX
+				&& !htuu_get (emitted, bb->addr, 0)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+PdcPlan *pdc_plan_build(RCore *core, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (core && fcn, NULL);
 	RGraphNode *entry = NULL;
 	RGraph *g = r_anal_function_get_graph (fcn, &entry, fcn->addr);
@@ -358,6 +424,27 @@ PdcRegion *pdc_ast_build(RCore *core, RAnalFunction *fcn) {
 	}
 
 	PdcRegion *root = region_seq (&ctx, fcn->addr, UT64_MAX);
+	// the orphan renderer drops a successor, so give unreached blocks a region
+	if (root) {
+		RListIter *bit;
+		RAnalBlock *b;
+		PdcRegion *extra = NULL;
+		r_list_foreach (fcn->bbs, bit, b) {
+			if (htuu_get (ctx.emitted, b->addr, 0)) {
+				continue;
+			}
+			PdcRegion *r = region_seq (&ctx, b->addr, UT64_MAX);
+			if (!r) {
+				continue;
+			}
+			if (!extra) {
+				extra = region_new (PDC_R_SEQ, root->addr);
+				region_add_child (extra, root, PDC_ROLE_SEQ);
+				root = extra;
+			}
+			region_add_child (extra, r, PDC_ROLE_SEQ);
+		}
+	}
 
 	r_graph_free (dt);
 	r_graph_free (g);
@@ -365,16 +452,22 @@ PdcRegion *pdc_ast_build(RCore *core, RAnalFunction *fcn) {
 	ht_uu_free (ctx.ipdom);
 	ht_up_foreach (ctx.loops, free_loop_set_cb, NULL);
 	ht_up_free (ctx.loops);
+	if (root) {
+		classify_transfers (root, NULL);
+	}
+	PdcPlan *plan = R_NEW0 (PdcPlan);
+	plan->root = root;
+	plan->complete = blocks_are_owned (fcn, ctx.emitted);
 	ht_uu_free (ctx.emitted);
-	return root;
+	return plan;
 }
 
 char *pdc_ast_dump(RCore *core, RAnalFunction *fcn) {
-	PdcRegion *root = pdc_ast_build (core, fcn);
+	PdcPlan *plan = pdc_plan_build (core, fcn);
 	RStrBuf *sb = r_strbuf_new ("");
-	if (root) {
-		dump_region (root, 0, sb);
-		pdc_ast_free (root);
+	if (plan && plan->root) {
+		dump_region (plan->root, 0, sb);
 	}
+	pdc_plan_free (plan);
 	return r_strbuf_drain (sb);
 }
