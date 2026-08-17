@@ -56,6 +56,7 @@ typedef struct dwarf_variable_t {
 	char *name;
 	char *type;
 	VariableKind kind;
+	bool is_result;
 } Variable;
 
 static void variable_free(Variable *var) {
@@ -1501,6 +1502,10 @@ static bool parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 					case DW_AT_location:
 						var->location = parse_dwarf_location (ctx, val, frame_base);
 						break;
+					case DW_AT_variable_parameter:
+						// go marks a result slot as a formal parameter with this flag set
+						var->is_result = val->uconstant != 0;
+						break;
 					default:
 						break;
 					}
@@ -1761,6 +1766,30 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, const ch
 	free (csig);
 }
 
+/* A formal parameter can carry a type and a name but no DW_AT_location, which
+ * happens routinely at -O2 when the parameter is never spilled. The prototype
+ * is still built from every formal, so dropping it here left the recovered
+ * signature and the placed arguments disagreeing on arity.
+ *
+ * The calling convention already answers where the caller left parameter N on
+ * entry, so use it instead of discarding the parameter. */
+static char *dwarf_formal_convention_meta(Context *ctx, int argno, int argc, const char *type) {
+	if (!ctx || !ctx->anal || argno < 0 || R_STR_ISEMPTY (type)) {
+		return NULL;
+	}
+	RAnal *anal = (RAnal *)ctx->anal;
+	const char *cc = r_anal_cc_default (anal);
+	if (R_STR_ISEMPTY (cc)) {
+		return NULL;
+	}
+	RAnalCCArgSlot slot = { 0 };
+	if (!r_anal_cc_argslot (anal, cc, argno, argc, false, &slot)
+		|| R_STR_ISEMPTY (slot.reg)) {
+		return NULL;
+	}
+	return r_str_newf ("r,%s,%s", slot.reg, type);
+}
+
 static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const char *ret_type, RList/*<Variable*>*/ *variables, bool has_unspecified_parameters) {
 	Sdb *sdb = ctx->sdb;
 	char *real_name = strdup (dwarf_fcn->name);
@@ -1791,11 +1820,25 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 	RStrBuf args_buf;
 	r_strbuf_init (&vars_buf);
 	r_strbuf_init (&args_buf);
+	int formal_count = 0;
+	{
+		RListIter *count_iter;
+		Variable *count_var;
+		r_list_foreach (variables, count_iter, count_var) {
+			if (count_var->kind == VARIABLE_KIND_FORMAL_PARAMETER) {
+				formal_count++;
+			}
+		}
+	}
 	int arg_index = 0;
 	RListIter *iter;
 	Variable *var;
 	r_list_foreach (variables, iter, var) {
 		char *meta = sdb_variable_data (var);
+		if (!meta && var->kind == VARIABLE_KIND_FORMAL_PARAMETER
+			&& !var->location && !var->is_result) {
+			meta = dwarf_formal_convention_meta (ctx, arg_index, formal_count, var->type);
+		}
 		if (!meta || !var->name) {
 			free (meta);
 			continue;

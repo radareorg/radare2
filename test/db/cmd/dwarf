@@ -684,3 +684,16 @@ EXPECT=<<EOF
 |       |   0x004019ce      e82d280200     call sym.fpc_get_output     ; fpc_get_output()
 EOF
 RUN
+
+NAME=dwarf formal parameter without location
+FILE=bins/elf/dwarf_rust_bubble
+CMDS=<<EOF
+aaa
+afvr @ 0x00010be0
+EOF
+EXPECT=<<EOF
+arg &str msg @ rdi
+arg int64_t arg2 @ rsi
+arg int64_t arg3 @ rdx
+EOF
+RUN
