@@ -47,25 +47,7 @@ ARGS=-e io.cache=true
 CMDS=<<EOF
 EOF
 EXPECT_ERR=<<EOF
-INFO: MOD Offset = 0x130
-magic 30444f4d at 0x130
-is mode0
-magic 0x30444f4d
-dynamic 0x2c1b8
-bss 0x330e8 0x3ff48
-unwind 0x26f38 0x26f38
--------------
-mod 0x130
-next 0x2c1b830444f4d
-prev 0x3ff48000330e8
-base 0xa9bf73fba9bf7bfd
-init 0xa8c16bf9a8c163f7
-fini 0xa8c17bfda8c173fb
-relplt 0x5642fb3c5642f33b
-symtab = 0x56408c0456408403
-strtab = 0x56408c0456408403
-strtabsz = 0x0
-BSS Size 0x0000ce60
+ERROR: decompression3 failure
 EOF
 EXPECT=<<EOF
 EOF
