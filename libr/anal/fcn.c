@@ -2108,7 +2108,19 @@ analopfinish:
 				RRegItem *ri0 = r_reg_get (anal->reg, dst->reg, R_REG_TYPE_GPR);
 				RRegItem *ri1 = r_reg_get (anal->reg, variadic_reg, R_REG_TYPE_GPR);
 				if (ri0 && ri1 && ri0->offset == ri1->offset) {
-					dst_is_variadic = true;
+					// the convention passes the vector-register count in the low subregister, so only that one marks a variadic
+					int lowest = ri1->size;
+					RList *gprs = r_reg_get_list (anal->reg, R_REG_TYPE_GPR);
+					if (gprs) {
+						RRegItem *gpr;
+						RListIter *gpr_iter;
+						r_list_foreach (gprs, gpr_iter, gpr) {
+							if (gpr->offset == ri1->offset && gpr->size < lowest) {
+								lowest = gpr->size;
+							}
+						}
+					}
+					dst_is_variadic = ri0->size == lowest;
 				}
 			}
 #else
