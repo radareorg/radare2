@@ -156,3 +156,20 @@ seq 0x00000000
   bb 0x0000000c
 EOF
 RUN
+
+NAME=pdct region ast has no arm for an unset switch default
+FILE=bins/elf/boa-mips
+CMDS=<<EOF
+af @ 0x415694
+pdct @ 0x415694
+EOF
+EXPECT=<<EOF
+seq 0x00415694
+  if 0x00415694
+    seq 0x004156b8
+      switch 0x004156b8
+      bb 0x004156e0
+      bb 0x0041573c
+  bb 0x00415760
+EOF
+RUN
