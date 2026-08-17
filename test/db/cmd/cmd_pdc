@@ -955,3 +955,15 @@ EXPECT=<<EOF
     loc_0x100003a6c: // case 300
 EOF
 RUN
+
+NAME=pdc renders no switch default when the switch op has none
+FILE=bins/elf/boa-mips
+CMDS=<<EOF
+af @ 0x415694
+s 0x415694
+pdc~switch (,default:
+EOF
+EXPECT=<<EOF
+    switch (switch_var) { // jump table of 1 cases at 0x004156b8
+EOF
+RUN

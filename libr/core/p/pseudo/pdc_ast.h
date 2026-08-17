@@ -25,6 +25,12 @@ struct pdc_region_t {
 	RVecPdcRegionPtr children;
 };
 
+// an unset switch default or table addr reads as 0 (jmptbl.c maps the UT64_MAX
+// "none" to 0), while other paths do write UT64_MAX: neither is an address
+static inline bool valid_addr(ut64 addr) {
+	return addr && addr != UT64_MAX;
+}
+
 // build the structuring region AST for fcn (caller frees with pdc_ast_free)
 PdcRegion *pdc_ast_build(RCore *core, RAnalFunction *fcn);
 void pdc_ast_free(PdcRegion *root);

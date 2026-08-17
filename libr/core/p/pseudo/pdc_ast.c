@@ -194,7 +194,7 @@ static PdcRegion *build_switch(PdcCtx *ctx, RAnalBlock *bb, ut64 *next) {
 		region_add_child (sw, region_seq (ctx, co->jump, join));
 	}
 	const ut64 defv = bb->switch_op->def_val;
-	if (defv != UT64_MAX && !htuu_get (seen, defv, 0)) {
+	if (valid_addr (defv) && !htuu_get (seen, defv, 0)) {
 		region_add_child (sw, region_seq (ctx, defv, join));
 	}
 	ht_uu_free (seen);

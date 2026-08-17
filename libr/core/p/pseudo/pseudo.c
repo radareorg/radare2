@@ -587,7 +587,7 @@ static bool bb_addr_is_goto_target(RAnalFunction *fcn, ut64 addr) {
 		if (!sop) {
 			continue;
 		}
-		if (sop->def_val == addr) {
+		if (valid_addr (sop->def_val) && sop->def_val == addr) {
 			return true;
 		}
 		r_list_foreach (sop->cases, cit, co) {
@@ -1038,7 +1038,7 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 		i = w;
 	}
 	char *expr = find_switch_expr (state->core, state->fcn, sw_bb);
-	ut64 table_addr = sop->daddr != UT64_MAX? sop->daddr: sw_bb->addr;
+	ut64 table_addr = valid_addr (sop->daddr)? sop->daddr: sw_bb->addr;
 	print_newline (state, sw_bb->addr, indent, false);
 	print_str (state, "switch (%s) { // jump table of %d cases at 0x%08" PFMT64x,
 		expr, i, table_addr);
@@ -1063,7 +1063,7 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 		c = k + 1;
 	}
 
-	if (sop->def_val != UT64_MAX) {
+	if (valid_addr (sop->def_val)) {
 		print_newline (state, sop->def_val, indent + 1, false);
 		print_str (state, "default: // 0x%08" PFMT64x, sop->def_val);
 		render_arm_body (state, visited, sop->def_val, indent + 2);
