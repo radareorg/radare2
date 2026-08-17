@@ -566,13 +566,21 @@ static void save_composite(const RAnal *anal, const RAnalBaseType *type) {
 	RAnalTypeMember *member;
 	R_VEC_FOREACH (members, member) {
 		// struct.name.param=type,offset,arraycount
+		// The member list has to name members by the same key that addresses
+		// them, so it stores the sanitized form. Listing the raw name instead
+		// makes every member whose name needs sanitizing unreadable: the reader
+		// would look up a key that was never written, and the stale-member
+		// cleanup above would fail to unset the key that was.
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
+		if (!member_sname) {
+			break;
+		}
 		r_strf_var (k, KSZ, "%s.%s.%s", kind, sname, member_sname);
 		sdb_set_owned (db, k,
 			member_value_kv (member->type, member->offset, member->count), 0);
-		free (member_sname);
 
-		r_strbuf_appendf (arglist, (i++ == 0) ? "%s" : ",%s", member->name);
+		r_strbuf_appendf (arglist, (i++ == 0) ? "%s" : ",%s", member_sname);
+		free (member_sname);
 	}
 	// struct.name=param1,param2,paramN
 	sdb_set_owned (db, key, r_strbuf_drain (arglist), 0);
@@ -605,12 +613,19 @@ static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 	RAnalEnumCase *cas;
 	R_VEC_FOREACH (&type->enum_data.cases, cas) {
 		// enum.name.arg1=type,offset,???
+		// As with struct members, the case list has to name cases by the key
+		// that addresses them. get_enum_type looks each list entry up as
+		// enum.<name>.<entry>, so listing the raw name makes an enum with a
+		// sanitized case name unreadable in its entirety.
 		char *case_sname = r_str_sanitize_sdb_key (cas->name);
+		if (!case_sname) {
+			break;
+		}
 		r_strf_var (param_val, KSZ, "0x%" PFMT32x, cas->val);
 		sdb_setf (anal->sdb_types, param_val, 0, "enum.%s.%s", sname, case_sname);
 		sdb_setf (anal->sdb_types, case_sname, 0, "enum.%s.0x%" PFMT32x, sname, cas->val);
+		r_strbuf_appendf (arglist, (i++ == 0) ? "%s" : ",%s", case_sname);
 		free (case_sname);
-		r_strbuf_appendf (arglist, (i++ == 0) ? "%s" : ",%s", cas->name);
 	}
 	// enum.name=arg1,arg2,argN
 	char *key = r_str_newf ("enum.%s", sname);
