@@ -132,9 +132,31 @@ EXPECT=<<EOF
 seq 0x00000000
   bb 0x00000000
   do-while 0x00000010
-    if 0x00000004
-      goto 0x00000010
+    seq 0x00000004
+      if 0x00000004
+        continue 0x00000010
+      break 0x0000000c
   bb 0x0000000c
+EOF
+RUN
+
+NAME=pdct region ast owns a second loop exit target and jumps to it
+FILE=bins/elf/ls
+CMDS=<<EOF
+aaa
+pdct @ 0xd350
+EOF
+EXPECT=<<EOF
+seq 0x0000d350
+  if-else 0x0000d350
+    bb 0x0000d36b
+    seq 0x0000d360
+      while 0x0000d360
+        if-else 0x0000d370
+          continue 0x0000d360
+          goto 0x0000d379
+      goto 0x0000d36b
+  bb 0x0000d379
 EOF
 RUN
 
@@ -214,5 +236,48 @@ seq 0x00400f43
         bb 0x00400fa6
         goto 0x00400fbe
       goto 0x00400fad
+EOF
+RUN
+
+NAME=pdct region ast keeps both arms when a loop header branches inside the loop
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 85c0750583c001ebf783e80183f8057402ebedc3
+af
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000000
+  do-while 0x00000000
+    if-else 0x00000000
+      seq 0x00000009
+        if 0x00000009
+          seq 0x00000011
+            bb 0x00000011
+            continue 0x00000000
+        break 0x00000013
+      bb 0x00000004
+  bb 0x00000013
+EOF
+RUN
+
+NAME=pdct region ast keeps the body of a loop whose header jumps to itself
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 85c074fc83c00183f80575f4c3
+af
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000000
+  do-while 0x00000000
+    if 0x00000000
+      seq 0x00000004
+        if 0x00000004
+          continue 0x00000000
+        break 0x0000000c
+  bb 0x0000000c
 EOF
 RUN

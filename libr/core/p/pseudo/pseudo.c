@@ -20,6 +20,7 @@ typedef struct {
 	RAnalFunction *fcn;
 	ut64 bb_jump; // edges of the block being rendered, owned by its region in structured mode
 	ut64 bb_fail;
+	HtUP *conds; // block addr => recovered condition, recovered once per block
 	const char *r0;
 } PDCState;
 
@@ -1000,78 +1001,51 @@ static void render_arm_body(PDCState *state, RList *visited, ut64 target, int in
 	}
 }
 
-static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, int indent) {
-	RAnalSwitchOp *sop = sw_bb->switch_op;
-	if (!sop->cases) {
-		return;
+// value-sorted, de-duplicated case table; *n returns its length, caller frees
+static PDCSwCase *switch_cases(RAnalSwitchOp *sop, int *n) {
+	*n = 0;
+	const int ncases = sop->cases? r_list_length (sop->cases): 0;
+	if (ncases < 1) {
+		return NULL;
 	}
-	int n = r_list_length (sop->cases);
-	if (n < 1) {
-		return;
-	}
-	PDCSwCase *arr = calloc (n, sizeof (PDCSwCase));
+	PDCSwCase *arr = R_NEWS0 (PDCSwCase, ncases);
 	if (!arr) {
-		return;
+		return NULL;
 	}
 	int i = 0;
 	RListIter *iter;
 	RAnalCaseOp *co;
 	r_list_foreach (sop->cases, iter, co) {
-		if (i >= n) {
-			break;
-		}
 		arr[i].value = co->value;
 		arr[i].jump = co->jump;
 		i++;
 	}
 	qsort (arr, i, sizeof (PDCSwCase), pdc_case_cmp);
-	{
-		int w = 0;
-		int r;
-		for (r = 0; r < i; r++) {
-			if (w > 0 && arr[w - 1].value == arr[r].value
-					&& arr[w - 1].jump == arr[r].jump) {
-				continue;
-			}
-			arr[w++] = arr[r];
+	int w = 0;
+	int r;
+	for (r = 0; r < i; r++) {
+		if (w > 0 && arr[w - 1].value == arr[r].value
+				&& arr[w - 1].jump == arr[r].jump) {
+			continue;
 		}
-		i = w;
+		arr[w++] = arr[r];
 	}
-	char *expr = find_switch_expr (state->core, state->fcn, sw_bb);
-	ut64 table_addr = valid_addr (sop->daddr)? sop->daddr: sw_bb->addr;
-	print_newline (state, sw_bb->addr, indent, false);
-	print_str (state, "switch (%s) { // jump table of %d cases at 0x%08" PFMT64x,
-		expr, i, table_addr);
-	free (expr);
+	*n = w;
+	return arr;
+}
 
-	int c = 0;
-	while (c < i) {
-		int k = c;
-		while (k + 1 < i && arr[k + 1].jump == arr[c].jump) {
-			k++;
-		}
-		ut64 target = arr[c].jump;
-		if (k - c >= 2 && pdc_range_is_contiguous (arr, c, k)) {
-			emit_case_label (state, arr[c].value, arr[k].value, target, indent + 1);
-		} else {
-			int j;
-			for (j = c; j <= k; j++) {
-				emit_case_label (state, arr[j].value, arr[j].value, target, indent + 1);
-			}
-		}
-		render_arm_body (state, visited, target, indent + 2);
-		c = k + 1;
-	}
+// where a jump table arm comes from: the region AST, or the linear walk
+typedef struct {
+	RList *visited;
+	PdcRegion *sw;
+	RBitset *gotos;
+} PdcArms;
 
-	if (valid_addr (sop->def_val)) {
-		print_newline (state, sop->def_val, indent + 1, false);
-		print_str (state, "default: // 0x%08" PFMT64x, sop->def_val);
-		render_arm_body (state, visited, sop->def_val, indent + 2);
-	}
+static void render_switch_cases(PDCState *state, RAnalBlock *sw_bb, PdcArms *arms, int indent);
 
-	print_newline (state, sw_bb->addr, indent, false);
-	print_str (state, "}");
-	free (arr);
+static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, int indent) {
+	PdcArms arms = { .visited = visited };
+	render_switch_cases (state, sw_bb, &arms, indent);
 }
 
 static char *extract_loop_cond(PDCState *state, RAnalBlock *test_bb, ut64 back_target) {
@@ -1104,7 +1078,17 @@ static char *extract_loop_cond(PDCState *state, RAnalBlock *test_bb, ut64 back_t
 		}
 		const char *num = strstr (g, "0x");
 		if (!num || r_num_get (NULL, num) != back_target) {
-			continue;
+			// a case.0x4319.127 flag or a loc_ label is not a bare address
+			const char *tok = r_str_trim_head_ro (g + 4);
+			if (r_str_startswith (tok, "loc_")) {
+				tok += 4;
+			}
+			char *tgt = r_str_ndup (tok, strcspn (tok, " \t"));
+			const ut64 resolved = r_num_math (state->core->num, tgt);
+			free (tgt);
+			if (resolved != back_target) {
+				continue;
+			}
 		}
 		const char *open = strchr (t, '(');
 		if (!open) {
@@ -1155,6 +1139,31 @@ static char *extract_loop_cond(PDCState *state, RAnalBlock *test_bb, ut64 back_t
 	}
 	free (vexpr);
 	return result;
+}
+
+static void cond_kvfree(HtUPKv *kv) {
+	free (kv->value);
+}
+
+// recovery costs a pi command and a parse, and every caller wants the same one
+static const char *cond_at(PDCState *state, RAnalBlock *bb) {
+	bool found = false;
+	char *cond = ht_up_find (state->conds, bb->addr, &found);
+	if (!found) {
+		cond = extract_loop_cond (state, bb, bb->jump);
+		ht_up_insert (state->conds, bb->addr, cond);
+	}
+	return cond;
+}
+
+static char *invert_cond(const char *cond);
+
+// an unrecovered condition still shows the block it came from
+static char *cond_or_addr(const char *cond, ut64 addr, bool invert) {
+	if (!cond) {
+		return r_str_newf ("/* 0x%08" PFMT64x " */", addr);
+	}
+	return invert? invert_cond (cond): strdup (cond);
 }
 
 static bool line_is_branch_to(const char *line, const char *target_hex) {
@@ -1223,23 +1232,17 @@ static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList
 	if (self_loop) {
 		print_str (state, "do {");
 	} else {
-		if (cond) {
-			print_str (state, "while (%s) {", cond);
-		} else {
-			print_str (state, "while (/* 0x%08" PFMT64x " */) {",
-				test_bb->addr);
-		}
+		char *c = cond_or_addr (cond, test_bb->addr, false);
+		print_str (state, "while (%s) {", c);
+		free (c);
 	}
 	if (self_loop) {
 		emit_bb_body_no_back_jump (state, test_bb, test_bb->addr, indent + 1);
 		mark_bb_visited (state, visited, test_bb);
 		print_newline (state, test_bb->addr, indent, false);
-		if (cond) {
-			print_str (state, "} while (%s);", cond);
-		} else {
-			print_str (state, "} while (/* 0x%08" PFMT64x " */);",
-				test_bb->addr);
-		}
+		char *c = cond_or_addr (cond, test_bb->addr, false);
+		print_str (state, "} while (%s);", c);
+		free (c);
 	} else {
 		ut64 body_start = test_bb->jump;
 		ut64 body_end = test_bb->addr;
@@ -1425,26 +1428,46 @@ static void pdc_print_comment_cmds(RCore *core, const char *s) {
 	}
 }
 
-static bool region_has_loop_or_switch(PdcRegion *r) {
-	if (r->type == PDC_R_WHILE || r->type == PDC_R_DOWHILE || r->type == PDC_R_SWITCH) {
-		return true;
-	}
-	PdcRegion **it;
-	R_VEC_FOREACH (&r->children, it) {
-		if (region_has_loop_or_switch (*it)) {
+static bool case_table_has(const PDCSwCase *arr, int n, ut64 target) {
+	int i;
+	for (i = 0; i < n; i++) {
+		if (arr[i].jump == target) {
 			return true;
 		}
 	}
 	return false;
 }
 
-static void collect_goto_targets(PdcRegion *r, RBitset *gotos) {
+// interleaved values give one target two label runs; only the first owns a body
+static bool case_run_is_first(const PDCSwCase *arr, int c) {
+	return !case_table_has (arr, c, arr[c].jump);
+}
+
+static void collect_goto_targets(PDCState *state, PdcRegion *r, RBitset *gotos) {
 	if (r->type == PDC_R_GOTO) {
 		r_bitset_set (gotos, r->addr);
 	}
+	if (r->type == PDC_R_SWITCH) {
+		RAnalBlock *bb = r_anal_get_block_at (state->core->anal, r->addr);
+		int n = 0;
+		PDCSwCase *arr = bb && bb->switch_op? switch_cases (bb->switch_op, &n): NULL;
+		int c;
+		// mid-run entries repeat their own target, so only run starts count
+		for (c = 0; c < n; c++) {
+			const bool run_start = !c || arr[c].jump != arr[c - 1].jump;
+			if (run_start && !case_run_is_first (arr, c)) {
+				r_bitset_set (gotos, arr[c].jump);
+			}
+		}
+		if (arr && valid_addr (bb->switch_op->def_val)
+				&& case_table_has (arr, n, bb->switch_op->def_val)) {
+			r_bitset_set (gotos, bb->switch_op->def_val);
+		}
+		free (arr);
+	}
 	PdcRegion **it;
 	R_VEC_FOREACH (&r->children, it) {
-		collect_goto_targets (*it, gotos);
+		collect_goto_targets (state, *it, gotos);
 	}
 }
 
@@ -1499,32 +1522,181 @@ static char *invert_cond(const char *cond) {
 }
 
 static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *gotos);
+static void render_ifelse(PDCState *state, PdcRegion *r, RAnalBlock *bb, int indent, RBitset *gotos);
+
+static PdcRegion *region_first_child(PdcRegion *r) {
+	PdcRegion **first = RVecPdcRegionPtr_at (&r->children, 0);
+	return first? *first: NULL;
+}
+
+static PdcRegion *region_child_at(PdcRegion *r, ut64 addr) {
+	PdcRegion **it;
+	R_VEC_FOREACH (&r->children, it) {
+		if ((*it)->addr == addr) {
+			return *it;
+		}
+	}
+	return NULL;
+}
+
+// whether the region's last statement already transfers control elsewhere
+static bool region_tail_transfers(PDCState *state, PdcRegion *r) {
+	switch (r->type) {
+	case PDC_R_GOTO:
+	case PDC_R_BREAK:
+	case PDC_R_CONTINUE:
+		return true;
+	case PDC_R_SEQ: {
+		PdcRegion **last = RVecPdcRegionPtr_last (&r->children);
+		return last? region_tail_transfers (state, *last): false;
+	}
+	case PDC_R_BB: {
+		RAnalBlock *bb = r_anal_get_block_at (state->core->anal, r->addr);
+		// a jump to the block's own edge is dropped, a ret or ujmp is not
+		const int t = bb? bb_last_op_type (state->core, bb): -1;
+		return t == R_ANAL_OP_TYPE_RET || t == R_ANAL_OP_TYPE_CRET
+			|| t == R_ANAL_OP_TYPE_UJMP;
+	}
+	case PDC_R_IFELSE: {
+		// both arms must leave, or control falls out of the conditional
+		PdcRegion **a = RVecPdcRegionPtr_at (&r->children, 0);
+		PdcRegion **b = RVecPdcRegionPtr_at (&r->children, 1);
+		return a && b && region_tail_transfers (state, *a)
+			&& region_tail_transfers (state, *b);
+	}
+	default:
+		return false;
+	}
+}
+
+// the header carries work too, so emit while (true) plus an explicit break
+static void render_loop(PDCState *state, PdcRegion *r, RAnalBlock *bb, int indent, RBitset *gotos) {
+	PdcRegion *body = region_first_child (r);
+	if (!body && bb->jump != bb->addr) {
+		// no body and no self edge: degrade rather than emit an empty loop
+		render_bb_body_lines (state, bb, indent);
+		return;
+	}
+	if (!body) {
+		print_newline (state, bb->addr, indent, false);
+		print_str (state, "do {");
+		render_bb_body_lines (state, bb, indent + 1);
+		print_newline (state, bb->addr, indent, false);
+		char *tc = cond_or_addr (cond_at (state, bb), bb->addr, false);
+		print_str (state, "} while (%s);", tc);
+		free (tc);
+		return;
+	}
+	print_newline (state, bb->addr, indent, false);
+	print_str (state, "while (true) {");
+	if (body->role != PDC_ROLE_HEAD) {
+		// a body that heads the loop block is its conditional, and renders it
+		render_bb_body_lines (state, bb, indent + 1);
+	}
+	if (r->type == PDC_R_WHILE) {
+		// the header picks between body and exit; break on the exit edge
+		char *ec = cond_or_addr (cond_at (state, bb), bb->addr,
+			body->role == PDC_ROLE_JUMP);
+		print_newline (state, bb->addr, indent + 1, false);
+		print_str (state, "if (%s) {", ec);
+		print_newline (state, bb->addr, indent + 2, false);
+		print_str (state, "break;");
+		print_newline (state, bb->addr, indent + 1, false);
+		print_str (state, "}");
+		free (ec);
+	}
+	if (body->role == PDC_ROLE_HEAD) {
+		// the loop region already emitted this block's label and owns its lines
+		render_ifelse (state, body, bb, indent + 1, gotos);
+	} else {
+		render_region (state, body, indent + 1, gotos);
+	}
+	print_newline (state, bb->addr, indent, false);
+	print_str (state, "}");
+}
+
+static void render_arm(PDCState *state, PdcArms *arms, ut64 target, int indent, bool owns_body) {
+	if (!arms->sw) {
+		render_arm_body (state, arms->visited, target, indent);
+		return;
+	}
+	if (!owns_body) {
+		print_newline (state, target, indent, false);
+		print_goto_or_return (state, target, "");
+		return;
+	}
+	PdcRegion *arm = region_child_at (arms->sw, target);
+	if (arm) {
+		render_region (state, arm, indent, arms->gotos);
+		if (region_tail_transfers (state, arm)) {
+			return;
+		}
+	}
+	print_newline (state, target, indent, false);
+	print_str (state, "break;");
+}
+
+// jump table emitter shared by the linear and the region renderers
+static void render_switch_cases(PDCState *state, RAnalBlock *sw_bb, PdcArms *arms, int indent) {
+	RAnalSwitchOp *sop = sw_bb->switch_op;
+	int n = 0;
+	PDCSwCase *arr = switch_cases (sop, &n);
+	if (!arr) {
+		return;
+	}
+	char *expr = find_switch_expr (state->core, state->fcn, sw_bb);
+	const ut64 table_addr = valid_addr (sop->daddr)? sop->daddr: sw_bb->addr;
+	print_newline (state, sw_bb->addr, indent, false);
+	print_str (state, "switch (%s) { // jump table of %d cases at 0x%08" PFMT64x,
+		expr, n, table_addr);
+	free (expr);
+	int c = 0;
+	while (c < n) {
+		int k = c;
+		while (k + 1 < n && arr[k + 1].jump == arr[c].jump) {
+			k++;
+		}
+		const ut64 target = arr[c].jump;
+		if (k - c >= 2 && pdc_range_is_contiguous (arr, c, k)) {
+			emit_case_label (state, arr[c].value, arr[k].value, target, indent + 1);
+		} else {
+			int j;
+			for (j = c; j <= k; j++) {
+				emit_case_label (state, arr[j].value, arr[j].value, target, indent + 1);
+			}
+		}
+		render_arm (state, arms, target, indent + 2, case_run_is_first (arr, c));
+		c = k + 1;
+	}
+	if (valid_addr (sop->def_val)) {
+		print_newline (state, sop->def_val, indent + 1, false);
+		print_str (state, "default: // 0x%08" PFMT64x, sop->def_val);
+		render_arm (state, arms, sop->def_val, indent + 2,
+			!case_table_has (arr, n, sop->def_val));
+	}
+	print_newline (state, sw_bb->addr, indent, false);
+	print_str (state, "}");
+	free (arr);
+}
+
+static void render_switch_region(PDCState *state, PdcRegion *r, RAnalBlock *bb, int indent, RBitset *gotos) {
+	render_bb_body_lines (state, bb, indent);
+	PdcArms arms = { .sw = r, .gotos = gotos };
+	render_switch_cases (state, bb, &arms, indent);
+}
 
 static void render_ifelse(PDCState *state, PdcRegion *r, RAnalBlock *bb, int indent, RBitset *gotos) {
 	render_bb_body_lines (state, bb, indent);
-	char *cond = extract_loop_cond (state, bb, bb->jump);
-	if (!cond) {
-		cond = r_str_newf ("/* 0x%08" PFMT64x " */", bb->addr);
-	}
 	PdcRegion *then_arm = *RVecPdcRegionPtr_at (&r->children, 0);
 	PdcRegion *else_arm = (r->type == PDC_R_IFELSE)? *RVecPdcRegionPtr_at (&r->children, 1): NULL;
-	// pseudo says `if (cond) goto jump`, so the fall-through (fail arm) becomes the then
-	bool invert = (then_arm->addr == bb->fail);
-	if (else_arm) {
-		const bool swap = (then_arm->addr == bb->jump && else_arm->addr == bb->fail);
-		// an unexpected arm layout keeps the faithful jump-then order
-		invert = swap || (invert && else_arm->addr == bb->jump);
-		if (swap) {
-			PdcRegion *tmp = then_arm;
-			then_arm = else_arm;
-			else_arm = tmp;
-		}
+	// pseudo says `if (cond) goto jump`, so the fall-through arm reads as the then
+	if (else_arm && then_arm->role == PDC_ROLE_JUMP && else_arm->role == PDC_ROLE_FAIL) {
+		PdcRegion *tmp = then_arm;
+		then_arm = else_arm;
+		else_arm = tmp;
 	}
-	if (invert) {
-		char *ic = invert_cond (cond);
-		free (cond);
-		cond = ic;
-	}
+	char *cond = cond_or_addr (cond_at (state, bb), bb->addr,
+		then_arm->role == PDC_ROLE_FAIL);
 	print_newline (state, bb->addr, indent, false);
 	print_str (state, "if (%s) {", cond);
 	render_region (state, then_arm, indent + 1, gotos);
@@ -1546,6 +1718,11 @@ static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *go
 		}
 		return;
 	}
+	if (r->type == PDC_R_BREAK || r->type == PDC_R_CONTINUE) {
+		print_newline (state, r->addr, indent, false);
+		print_str (state, "%s;", (r->type == PDC_R_BREAK)? "break": "continue");
+		return;
+	}
 	if (r->type == PDC_R_GOTO) {
 		print_newline (state, r->addr, indent, false);
 		print_str (state, "goto loc_0x%08" PFMT64x ";", r->addr);
@@ -1559,28 +1736,46 @@ static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *go
 		print_newline (state, r->addr, indent, false);
 		print_str (state, "loc_0x%08" PFMT64x ":", r->addr);
 	}
-	if (r->type == PDC_R_IF || r->type == PDC_R_IFELSE) {
+	switch (r->type) {
+	case PDC_R_IF:
+	case PDC_R_IFELSE:
 		render_ifelse (state, r, bb, indent, gotos);
 		return;
+	case PDC_R_WHILE:
+	case PDC_R_DOWHILE:
+		render_loop (state, r, bb, indent, gotos);
+		return;
+	case PDC_R_SWITCH:
+		render_switch_region (state, r, bb, indent, gotos);
+		return;
+	default:
+		render_bb_body_lines (state, bb, indent);
+		return;
 	}
-	// PDC_R_BB leaf
-	render_bb_body_lines (state, bb, indent);
 }
 
-// render the structured body for fully reducible (no loop/switch) functions;
-// returns false to defer to the linear renderer
 // an if with no recoverable condition would hide which way the branch went
 static bool regions_have_conds(PDCState *state, PdcRegion *r) {
-	if (r->type == PDC_R_IF || r->type == PDC_R_IFELSE) {
+	const bool loop = r->type == PDC_R_WHILE || r->type == PDC_R_DOWHILE;
+	// a loop with no body renders its test only when it is a self edge
+	const bool tested = r->type == PDC_R_IF || r->type == PDC_R_IFELSE
+		|| r->type == PDC_R_WHILE
+		|| (r->type == PDC_R_DOWHILE && !region_first_child (r));
+	if (loop || tested) {
 		RAnalBlock *bb = r_anal_get_block_at (state->core->anal, r->addr);
 		if (!bb) {
 			return false;
 		}
-		char *cond = extract_loop_cond (state, bb, bb->jump);
-		if (!cond) {
+		// build_loop wins over build_switch, and the loop renderer emits no
+		// table, so a dispatching header would lose every case
+		if (loop && bb->switch_op && !r_list_empty (bb->switch_op->cases)) {
 			return false;
 		}
-		free (cond);
+		// a bodyless header that is not a self edge renders flat, with no test
+		const bool flat = r->type == PDC_R_DOWHILE && bb->jump != bb->addr;
+		if (tested && !flat && !cond_at (state, bb)) {
+			return false;
+		}
 	}
 	PdcRegion **it;
 	R_VEC_FOREACH (&r->children, it) {
@@ -1593,22 +1788,27 @@ static bool regions_have_conds(PDCState *state, PdcRegion *r) {
 
 // renders the whole function from the region AST, or returns false to defer to the linear pass
 static bool pdc_structured_body(PDCState *state, int indent) {
-	PdcRegion *root = pdc_ast_build (state->core, state->fcn);
-	if (!root) {
+	PdcPlan *plan = pdc_plan_build (state->core, state->fcn);
+	if (!plan || !plan->root) {
+		pdc_plan_free (plan);
 		return false;
 	}
-	const bool reducible = !region_has_loop_or_switch (root) && regions_have_conds (state, root);
+	PdcRegion *root = plan->root;
+	state->conds = ht_up_new (NULL, cond_kvfree, NULL);
+	const bool reducible = plan->complete && regions_have_conds (state, root);
 	if (reducible) {
 		// scoped to this walk: the later orphan switch pass renders blocks no region owns
 		const bool was_structured = state->structured;
 		state->structured = true;
 		RBitset *gotos = r_bitset_new ();
-		collect_goto_targets (root, gotos);
+		collect_goto_targets (state, root, gotos);
 		render_region (state, root, indent, gotos);
 		r_bitset_free (gotos);
 		state->structured = was_structured;
 	}
-	pdc_ast_free (root);
+	ht_up_free (state->conds);
+	state->conds = NULL;
+	pdc_plan_free (plan);
 	return reducible;
 }
 
