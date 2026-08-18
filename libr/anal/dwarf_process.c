@@ -1504,7 +1504,7 @@ static bool parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 						break;
 					case DW_AT_variable_parameter:
 						// go marks a result slot as a formal parameter with this flag set
-						var->is_result = val->uconstant != 0;
+						var->is_result = val->flag != 0;
 						break;
 					default:
 						break;
@@ -1766,15 +1766,36 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, const ch
 	free (csig);
 }
 
-/* A formal parameter can carry a type and a name but no DW_AT_location, which
- * happens routinely at -O2 when the parameter is never spilled. The prototype
- * is still built from every formal, so dropping it here left the recovered
- * signature and the placed arguments disagreeing on arity.
- *
- * The calling convention already answers where the caller left parameter N on
- * entry, so use it instead of discarding the parameter. */
+// the cc argslot tables describe integer slots only, so a float formal would be
+// handed an integer register it never occupies, colliding with a located arg
+static bool dwarf_type_is_fp(const char *type) {
+	if (R_STR_ISEMPTY (type) || strchr (type, '*') || strchr (type, '[')) {
+		return false;
+	}
+	while (r_str_startswith (type, "const ") || r_str_startswith (type, "volatile ")) {
+		type = strchr (type, ' ') + 1;
+	}
+	const char *const names[] = {
+		"float", "double", "long double", "_Float16", "__float128",
+		"f32", "f64", "float32", "float64",
+		"complex64", "complex128", NULL
+	};
+	int i;
+	for (i = 0; names[i]; i++) {
+		if (!strcmp (type, names[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/* Place a formal that carries no DW_AT_location (routine at -O2) in the
+ * entry slot the calling convention assigns it, instead of dropping it. */
 static char *dwarf_formal_convention_meta(Context *ctx, int argno, int argc, const char *type) {
 	if (!ctx || !ctx->anal || argno < 0 || R_STR_ISEMPTY (type)) {
+		return NULL;
+	}
+	if (dwarf_type_is_fp (type)) {
 		return NULL;
 	}
 	RAnal *anal = (RAnal *)ctx->anal;
@@ -1820,24 +1841,34 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 	RStrBuf args_buf;
 	r_strbuf_init (&vars_buf);
 	r_strbuf_init (&args_buf);
+	// the abi position of a formal counts every parameter the caller passes,
+	// while arg_index below must stay dense: apply_debug_info stops reading at
+	// the first missing fcn.%s.arg.%d key. a skipped formal separates the two
 	int formal_count = 0;
 	{
 		RListIter *count_iter;
 		Variable *count_var;
 		r_list_foreach (variables, count_iter, count_var) {
-			if (count_var->kind == VARIABLE_KIND_FORMAL_PARAMETER) {
+			if (count_var->kind == VARIABLE_KIND_FORMAL_PARAMETER
+				&& !count_var->is_result) {
 				formal_count++;
 			}
 		}
 	}
 	int arg_index = 0;
+	int formal_index = 0;
 	RListIter *iter;
 	Variable *var;
 	r_list_foreach (variables, iter, var) {
+		const bool is_formal = var->kind == VARIABLE_KIND_FORMAL_PARAMETER
+			&& !var->is_result;
+		const int argno = formal_index;
+		if (is_formal) {
+			formal_index++;
+		}
 		char *meta = sdb_variable_data (var);
-		if (!meta && var->kind == VARIABLE_KIND_FORMAL_PARAMETER
-			&& !var->location && !var->is_result) {
-			meta = dwarf_formal_convention_meta (ctx, arg_index, formal_count, var->type);
+		if (!meta && is_formal && !var->location) {
+			meta = dwarf_formal_convention_meta (ctx, argno, formal_count, var->type);
 		}
 		if (!meta || !var->name) {
 			free (meta);

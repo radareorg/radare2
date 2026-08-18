@@ -697,3 +697,20 @@ arg int64_t arg2 @ rsi
 arg int64_t arg3 @ rdx
 EOF
 RUN
+
+NAME=dwarf float formal keeps out of the integer slots
+FILE=bins/elf/dwarf_go_tree
+CMDS=<<EOF
+aaa > /dev/null
+afvr @ 0x0048a1b0
+EOF
+EXPECT=<<EOF
+arg int prec @ r8
+arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+var []uint8 dst @ rdx
+var int i @ rcx
+var bool hasDecimalPoint @ r9
+var []uint8 tail @ r10
+EOF
+RUN
