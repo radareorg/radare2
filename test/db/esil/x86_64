@@ -548,9 +548,9 @@ EXPECT=<<EOF
 0x00000001
 0x300020100
 0x00000001
-0x3fffdff00
+0xfffdff00
 0x00000001
-0xfffffffc00020100
+0xffffffff00020100
 0x00000001
 EOF
 RUN
@@ -678,5 +678,27 @@ ar eax
 EOF
 EXPECT=<<EOF
 0xffffffff
+EOF
+RUN
+
+NAME=32-bit register write zero-extends
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+aei
+aeim
+wx 01c1
+ar rcx=0xffffffff00000001
+ar rax=1
+aes
+ar rcx
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0x00000002
+0x00000000
+0x00000000
 EOF
 RUN

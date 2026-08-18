@@ -114,6 +114,9 @@ struct Getarg {
 	cs_insn *insn;
 	int bits;
 	int syntax; // R_ARCH_SYNTAX_ATT or R_ARCH_SYNTAX_INTEL
+	// bare 32-bit register destination in 64-bit mode, and its 64-bit name
+	char zext32[16];
+	char zext64[16];
 };
 
 // TODO: get rid of this unnecessary wrapper
@@ -302,6 +305,20 @@ static char *shift_count(const char *src, ut32 bitsize) {
 	return r_str_newf ("%s,0x%x,&", src, (bitsize > 32)? 0x3f: 0x1f);
 }
 
+static inline bool get64from32(const char *s, char *out, size_t outsz) {
+	if (*s == 'e') {
+		snprintf (out, outsz, "r%s", s + 1);
+		return true;
+	}
+	if (*s == 'r' && isdigit (s[1])) {
+		if (s[2] == 'd' || (s[2] != 0 && isdigit(s[2]) && s[3] == 'd')) {
+			snprintf (out, outsz, "r%d", atoi (s + 1));
+			return true;
+		}
+	}
+	return false;
+}
+
 static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsize) {
 	const char *setarg = r_str_get (setop);
 	cs_insn *insn = gop->insn;
@@ -341,6 +358,11 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsi
 					rn = stbuf;
 				}
 				if (set == 1) {
+					// writing eax zero-extends into rax, which ESIL wont do on its own
+					if (gop->bits == 64
+						&& get64from32 (rn, gop->zext64, sizeof (gop->zext64))) {
+						r_str_ncpy (gop->zext32, rn, sizeof (gop->zext32));
+					}
 					return r_str_newf ("%s,%s=", rn, setarg);
 				}
 				return strdup (rn);
@@ -454,20 +476,6 @@ static const char *reg32_to_name(ut8 reg) {
 }
 #endif
 
-static inline bool get64from32(const char *s, char *out, size_t outsz) {
-	if (*s == 'e') {
-		snprintf (out, outsz, "r%s", s + 1);
-		return true;
-	}
-	if (*s == 'r' && isdigit (s[1])) {
-		if (s[2] == 'd' || (s[2] != 0 && isdigit(s[2]) && s[3] == 'd')) {
-			snprintf (out, outsz, "r%d", atoi (s + 1));
-			return true;
-		}
-	}
-	return false;
-}
-
 static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh handle, cs_insn *insn) {
 	RAnalValue *val = NULL;
 	const int bits = as->config->bits;
@@ -498,7 +506,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		.handle = handle,
 		.insn = insn,
 		.bits = bits,
-		.syntax = as->config->syntax
+		.syntax = as->config->syntax,
+		.zext32 = {0},
+		.zext64 = {0}
 	};
 	char *src = NULL;
 	char *src2 = NULL;
@@ -2735,6 +2745,10 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		r_strbuf_prepend (&op->esil, ",!,?{,BREAK,},");
 		r_strbuf_prepend (&op->esil, counter);
 		r_strbuf_appendf (&op->esil, ",%s,--=,zf,?{,BREAK,},0,GOTO", counter);
+	}
+	if (*gop.zext64 && r_strbuf_length (&op->esil) > 0) {
+		// after the flag assignments, so this doesnt disturb the comparison state
+		r_strbuf_appendf (&op->esil, ",%s,%s,=", gop.zext32, gop.zext64);
 	}
 }
 
