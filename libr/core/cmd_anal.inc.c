@@ -3497,6 +3497,18 @@ static void print_bb(RCore *core, PJ *pj, const RAnalBlock *b, const RAnalFuncti
 			pj_kn (pj, "min_val", b->switch_op->min_val);
 			pj_kn (pj, "def_val", b->switch_op->def_val);
 			pj_kn (pj, "max_val", b->switch_op->max_val);
+			if (b->switch_op->daddr && b->switch_op->daddr != UT64_MAX) {
+				pj_kn (pj, "daddr", b->switch_op->daddr);
+			}
+			if (b->switch_op->baddr) {
+				pj_kn (pj, "baddr", b->switch_op->baddr);
+			}
+			if (b->switch_op->dsize > 0) {
+				pj_ki (pj, "dsize", b->switch_op->dsize);
+			}
+			if (b->switch_op->amount > 0) {
+				pj_ki (pj, "amount", b->switch_op->amount);
+			}
 			if (b->switch_op->deps_count > 0) {
 				pj_ka (pj, "deps");
 				int i;

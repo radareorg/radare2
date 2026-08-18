@@ -1586,6 +1586,18 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 				pj_kn (pj, "defval", op->def_val);
 				pj_kn (pj, "maxval", op->max_val);
 				pj_kn (pj, "minval", op->min_val);
+				if (op->daddr && op->daddr != UT64_MAX) {
+					pj_kn (pj, "daddr", op->daddr);
+				}
+				if (op->baddr) {
+					pj_kn (pj, "baddr", op->baddr);
+				}
+				if (op->dsize > 0) {
+					pj_ki (pj, "dsize", op->dsize);
+				}
+				if (op->amount > 0) {
+					pj_ki (pj, "amount", op->amount);
+				}
 				pj_k (pj, "cases");
 				pj_a (pj);
 				RAnalCaseOp *case_op;
