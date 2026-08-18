@@ -144,6 +144,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ppc64 ELFv1: a 20-byte eager stub that fills the whole .text is named
+FILE=bins/elf/ppc64v1-stub-eagerend.so
+CMDS=<<EOF
+is~plt.~?
+is~plt.leaf
+EOF
+EXPECT=<<EOF
+1
+4   0x000002a0 0x000002a0 GLOBAL FUNC   20       plt.leaf
+EOF
+RUN
+
 NAME=ppc64 ELFv1: a bogus .text size is clamped to the file, .init still scanned
 FILE=bins/elf/ppc64v1-libz-badshdr.so
 CMDS=<<EOF

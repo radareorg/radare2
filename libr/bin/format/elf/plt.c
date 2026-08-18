@@ -456,7 +456,8 @@ ut64 Elf_(ppc64_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr) {
 //   cmpldi r2, 0; bnectr+; b <glink stub>
 // the trailing branch into a known glink stub names the plt slot it serves
 #define PPC64_STD_R2_40R1 0xf8410028
-#define PPC64_TEXT_STUB_MIN 24
+// shortest form: std, ld, mtctr, ld r2, bctr
+#define PPC64_TEXT_STUB_MIN 20
 // longest form: std, addis, ld, mtctr, ld env, ld r2, cmpldi, bnectr, b
 #define PPC64_TEXT_STUB_MAX 36
 // bytes of executable ranges worth scanning for stubs before giving up
