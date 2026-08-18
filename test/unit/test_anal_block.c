@@ -546,13 +546,30 @@ bool test_r_anal_block_successors(void) {
 	r_list_purge (result);
 
 	r_anal_block_successor_addrs_foreach (blocks[2], addr_list_cb, result);
-	mu_assert_eq (r_list_length (result), 6, "switch successors count");
+	mu_assert_eq (r_list_length (result), 7, "switch successors count");
 	mu_assert ("jmp successor", addr_list_contains (result, 0x10));
 	mu_assert ("case successor", addr_list_contains (result, 0x100));
 	mu_assert ("case successor", addr_list_contains (result, 0x110));
 	mu_assert ("case successor", addr_list_contains (result, 0x120));
 	mu_assert ("case successor", addr_list_contains (result, 0x130));
 	mu_assert ("case successor", addr_list_contains (result, 0x140));
+	mu_assert ("default successor", addr_list_contains (result, 0x42));
+	r_list_purge (result);
+
+	// a default already reachable as the jump or a case is not repeated, and 0
+	// is the unset value both r_anal_switch_op_new call sites leave behind
+	sop->def_val = 0x120;
+	r_anal_block_successor_addrs_foreach (blocks[2], addr_list_cb, result);
+	mu_assert_eq (r_list_length (result), 6, "default duplicating a case");
+	r_list_purge (result);
+	sop->def_val = 0x10;
+	r_anal_block_successor_addrs_foreach (blocks[2], addr_list_cb, result);
+	mu_assert_eq (r_list_length (result), 6, "default duplicating the jump");
+	r_list_purge (result);
+	sop->def_val = 0;
+	r_anal_block_successor_addrs_foreach (blocks[2], addr_list_cb, result);
+	mu_assert_eq (r_list_length (result), 6, "unset default is no successor");
+	sop->def_val = 0x42;
 	r_list_free (result);
 
 	result = r_anal_block_recurse_list (blocks[0]);
