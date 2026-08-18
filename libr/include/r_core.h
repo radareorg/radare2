@@ -111,6 +111,14 @@ typedef struct r_core_plugin_t {
 	RCorePluginCall call;
 } RCorePlugin;
 
+// script embedded in the binary, registered by static plugins and run at startup like plugins/*.r2.js
+typedef struct r_core_script_t {
+	char *name;
+	char *lang; // "qjs", "r2" or any lang plugin name
+	char *code;
+	int codelen;
+} RCoreScript;
+
 typedef struct r_core_rtr_host_t {
 	int proto;
 	char host[512];
@@ -426,6 +434,7 @@ struct r_core_t {
 	bool in_search;
 	RList *watchers;
 	RList *scriptstack;
+	RList *scripts; // embedded startup scripts (RCoreScript)
 	RCoreTaskScheduler tasks;
 	int max_cmd_depth;
 	ut8 switch_file_view;
@@ -586,6 +595,7 @@ R_API bool r_core_cmd_lines(RCore *core, const char *lines);
 R_API bool r_core_cmd_command(RCore *core, const char *command);
 R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls);
 R_API bool r_core_run_script(RCore *core, const char *file);
+R_API void r_core_script_embed(RCore *core, const char *name, const char *lang, const char *code, int codelen);
 R_API bool r_core_seek(RCore *core, ut64 addr, bool rb);
 R_API bool r_core_visual_bit_editor(RCore *core);
 R_API int r_core_seek_base(RCore *core, const char *hex);

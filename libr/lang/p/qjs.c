@@ -978,6 +978,10 @@ static bool eval(JSContext *ctx, const char *code) {
 static bool lang_quickjs_run(RLangSession *s, const char *code, int len) {
 	R_RETURN_VAL_IF_FAIL (s && s->plugin_data && code, false);
 	QjsPluginManager *pm = s->plugin_data;
+	const int loaded = r2qjs_loader (pm->default_ctx.ctx, code);
+	if (loaded) {
+		return loaded == 1;
+	}
 	return eval (pm->default_ctx.ctx, code);
 }
 

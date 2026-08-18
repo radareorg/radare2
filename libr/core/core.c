@@ -2814,6 +2814,7 @@ R_API void r_core_fini(RCore *c) {
 	free (c->table_query);
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);
+	r_list_free (c->scripts);
 	r_core_task_scheduler_fini (&c->tasks);
 	free (c->sessionfile);
 	r_libstore_free (c->libstore);
