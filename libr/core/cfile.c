@@ -1007,15 +1007,29 @@ beach:
 		}
 		if (r_config_get_b (r->config, "bin.dbginfo") && R_STR_ISNOTEMPTY (dbginfo_uri)) {
 			// TODO only for macho
-			// load companion dwarf files
+			// load the companion dwarf from the sidecar dSYM bundle, which
+			// sits next to the binary and is named after it:
+			// <path>.dSYM/Contents/Resources/DWARF/<basename>
 			const char *basename = r_file_basename (dbginfo_uri);
 			char *macdwarf = r_str_newf ("%s.dSYM/Contents/Resources/DWARF/%s", dbginfo_uri, basename);
+			if (!r_file_exists (macdwarf)) {
+				// when the binary is opened through a symlink the bundle lives
+				// next to the link target and takes its basename, so retry with
+				// the resolved path (r_file_abspath uses realpath on unix)
+				char *target = r_file_abspath (dbginfo_uri);
+				if (target) {
+					free (macdwarf);
+					macdwarf = r_str_newf ("%s.dSYM/Contents/Resources/DWARF/%s", target, r_file_basename (target));
+					free (target);
+				}
+			}
 			if (r_file_exists (macdwarf)) {
 				// Skip symbols for dSYM since they duplicate main binary
 				bool old_skipsyms = r->bin->options.skip_symbols;
 				r->bin->options.skip_symbols = true;
 				r_core_callf (r, "o %s", macdwarf);
 				r->bin->options.skip_symbols = old_skipsyms;
+				// merge the dwarf binfile into the main one and drop it
 				r_core_call (r, "obm-");
 			}
 			free (macdwarf);

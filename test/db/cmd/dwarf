@@ -188,6 +188,17 @@ addr: 0x100003f90
 EOF
 RUN
 
+NAME="open companion dSYM file through a symlink"
+FILE=bins/mach0/dwarf/a.out
+ARGS=-e bin.dbginfo=false
+CMDS=<<EOF
+!sh -c 'tmp=$(mktemp -d "${TMPDIR:-/tmp}/r2r-dsym.XXXXXX") || exit 1; mkdir -p "$tmp/a.out.dSYM/Contents/Resources/DWARF" && cp "${R2_FILE}" "$tmp/a.out" && cp "${R2_FILE}.dSYM/Contents/Resources/DWARF/a.out" "$tmp/a.out.dSYM/Contents/Resources/DWARF/a.out" && ln -s "$tmp/a.out" "$tmp/alias" && radare2 -Nq -e bin.dbginfo=true -c "CL~file:~?" "$tmp/alias"; rm -rf "$tmp"'
+EOF
+EXPECT=<<EOF
+7
+EOF
+RUN
+
 NAME="pdf dwarf invalid main for analysis not found (aa)"
 FILE=bins/src/dwarftest
 CMDS=<<EOF
