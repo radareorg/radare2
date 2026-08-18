@@ -156,6 +156,7 @@ static bool block_is_exit(RAnalBlock *bb) {
 
 static PdcRegion *region_seq(PdcCtx *ctx, ut64 addr, ut64 stop);
 static PdcRegion *build_region(PdcCtx *ctx, ut64 cur, ut64 stop, ut64 *next);
+static PdcRegion *build_switch(PdcCtx *ctx, RAnalBlock *bb, ut64 *next);
 
 // first post-dominator of h outside the loop: where control merges after it
 static ut64 loop_exit_addr(PdcCtx *ctx, HtUU *set, ut64 h) {
@@ -176,7 +177,9 @@ static PdcRegion *build_loop(PdcCtx *ctx, RAnalBlock *bb, HtUU *set, ut64 *next)
 	ut64 body_start = UT64_MAX;
 	ut64 exit = UT64_MAX;
 	PdcRegionType lt = PDC_R_DOWHILE;
-	if (j != UT64_MAX && f != UT64_MAX && j_in != f_in) {
+	// a dispatcher header loops over its own jump table, not a j/f test
+	const bool sw_head = bb->switch_op && !r_list_empty (bb->switch_op->cases);
+	if (!sw_head && j != UT64_MAX && f != UT64_MAX && j_in != f_in) {
 		body_start = j_in? j: f;
 		exit = j_in? f: j;
 		if (body_start != h) {
@@ -191,7 +194,10 @@ static PdcRegion *build_loop(PdcCtx *ctx, RAnalBlock *bb, HtUU *set, ut64 *next)
 	loop->exit = exit;
 	HtUU *prev = ctx->cur_loop;
 	ctx->cur_loop = set;
-	if (j_in && f_in) {
+	if (sw_head) {
+		ut64 swnext = UT64_MAX;
+		region_add_child (loop, build_switch (ctx, bb, &swnext), PDC_ROLE_HEAD);
+	} else if (j_in && f_in) {
 		// both edges stay inside, so the header's own conditional is the body
 		PdcRegion *then_r = region_seq (ctx, j, h);	// order is load-bearing
 		PdcRegion *else_r = region_seq (ctx, f, h);

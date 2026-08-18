@@ -680,13 +680,14 @@ typedef struct {
 	RGraphNode *from;
 } EdgeCtx;
 
+// a successor outside the function (tail jump, noreturn split) is not an edge
 static bool add_edge_cb(ut64 addr, void *user) {
 	EdgeCtx *ctx = user;
 	RGraphNode *to = ht_up_find (ctx->nodes, addr, NULL);
 	if (to) {
 		r_graph_add_edge (ctx->graph, ctx->from, to);
 	}
-	return to != NULL;
+	return true;
 }
 
 R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_ptr, ut64 addr) {
@@ -711,15 +712,7 @@ R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_pt
 			continue;
 		}
 		ctx.from = ht_up_find (nodes, bb->addr, NULL);
-		if (!r_anal_block_successor_addrs_foreach (bb, add_edge_cb, &ctx)) {
-			R_LOG_ERROR ("Broken fcn");
-			ht_up_free (nodes);
-			r_graph_free (g);
-			if (node_ptr) {
-				*node_ptr = NULL;
-			}
-			return NULL;
-		}
+		r_anal_block_successor_addrs_foreach (bb, add_edge_cb, &ctx);
 	}
 	ht_up_free (nodes);
 	return g;

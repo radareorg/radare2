@@ -793,6 +793,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pdc structured if-else on a flag-jump diamond
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 83ff01 7807 b801000000 eb05 b802000000 c3 @ 0
+af @ 0
+e pdc.structured=1
+pdc~if (,eax,else
+EOF
+EXPECT=<<EOF
+    if (edi >= 1) {
+        eax = 1
+    } else {
+        eax = 2
+EOF
+RUN
+
 NAME=pdc structured default off keeps gotos
 FILE=malloc://64
 ARGS=-a x86 -b 64

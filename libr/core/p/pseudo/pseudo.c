@@ -1073,10 +1073,10 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 }
 
 static char *extract_loop_cond(PDCState *state, RAnalBlock *test_bb, ut64 back_target) {
-	int ninstr = (test_bb->ninstr > 0)? test_bb->ninstr: 8;
+	// size-bounded like fetch_bb_pseudo: ninstr desyncs on overlapping blocks
 	char *code = r_core_cmd_strf (state->core,
-		"pi %d @e:asm.pseudo=1@e:scr.color=0@e:asm.addr=0@ 0x%08" PFMT64x,
-		ninstr, test_bb->addr);
+		"pD %" PFMT64d " @e:asm.pseudo=1@e:scr.color=0@e:asm.addr=0@e:asm.comments=0@ 0x%08" PFMT64x,
+		test_bb->size, test_bb->addr);
 	if (R_STR_ISEMPTY (code)) {
 		free (code);
 		return NULL;
@@ -1168,10 +1168,10 @@ static const char *cond_at(PDCState *state, RAnalBlock *bb) {
 
 static char *invert_cond(const char *cond);
 
-// an unrecovered condition still shows the block it came from
+// an unrecovered condition is named after its block, keeping the branch sense
 static char *cond_or_addr(const char *cond, ut64 addr, bool invert) {
 	if (!cond) {
-		return r_str_newf ("/* 0x%08" PFMT64x " */", addr);
+		return r_str_newf ("%scond_0x%08" PFMT64x, invert? "!": "", addr);
 	}
 	return invert? invert_cond (cond): strdup (cond);
 }
@@ -1532,6 +1532,7 @@ static char *invert_cond(const char *cond) {
 
 static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *gotos);
 static void render_ifelse(PDCState *state, PdcRegion *r, RAnalBlock *bb, int indent, RBitset *gotos);
+static void render_switch_region(PDCState *state, PdcRegion *r, RAnalBlock *bb, int indent, RBitset *gotos);
 
 static PdcRegion *region_first_child(PdcRegion *r) {
 	PdcRegion **first = RVecPdcRegionPtr_at (&r->children, 0);
@@ -1623,7 +1624,11 @@ static void render_loop(PDCState *state, PdcRegion *r, RAnalBlock *bb, int inden
 	}
 	if (body->role == PDC_ROLE_HEAD) {
 		// the loop region already emitted this block's label and owns its lines
-		render_ifelse (state, body, bb, indent + 1, gotos);
+		if (body->type == PDC_R_SWITCH) {
+			render_switch_region (state, body, bb, indent + 1, gotos);
+		} else {
+			render_ifelse (state, body, bb, indent + 1, gotos);
+		}
 	} else {
 		render_region (state, body, indent + 1, gotos);
 	}
@@ -1762,25 +1767,17 @@ static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *go
 	}
 }
 
-// an if with no recoverable condition would hide which way the branch went
-static bool regions_have_conds(PDCState *state, PdcRegion *r) {
+// a conditional heading a block anal no longer knows would drop an arm
+static bool regions_have_blocks(PDCState *state, PdcRegion *r) {
 	const bool loop = r->type == PDC_R_WHILE || r->type == PDC_R_DOWHILE;
 	if (loop || r->type == PDC_R_IF || r->type == PDC_R_IFELSE) {
-		RAnalBlock *bb = r_anal_get_block_at (state->core->anal, r->addr);
-		if (!bb) {
-			return false;
-		}
-		// build_loop beats build_switch and emits no table: a dispatcher bails
-		if (loop && bb->switch_op && !r_list_empty (bb->switch_op->cases)) {
-			return false;
-		}
-		if (region_emits_cond (r, bb) && !cond_at (state, bb)) {
+		if (!r_anal_get_block_at (state->core->anal, r->addr)) {
 			return false;
 		}
 	}
 	PdcRegion **it;
 	R_VEC_FOREACH (&r->children, it) {
-		if (!regions_have_conds (state, *it)) {
+		if (!regions_have_blocks (state, *it)) {
 			return false;
 		}
 	}
@@ -1796,7 +1793,7 @@ static bool pdc_structured_body(PDCState *state, int indent) {
 	}
 	PdcRegion *root = plan->root;
 	state->conds = ht_up_new (NULL, cond_kvfree, NULL);
-	const bool reducible = plan->complete && regions_have_conds (state, root);
+	const bool reducible = plan->complete && regions_have_blocks (state, root);
 	if (reducible) {
 		// scoped to this walk: the later orphan switch pass renders blocks no region owns
 		const bool was_structured = state->structured;
