@@ -358,9 +358,9 @@ pd 10
 EOF
 EXPECT=<<EOF
 ;-- pc:
-0x1000040c0      mov w0, 0
-0x1000040c4      mov w1, 2
-0x1000040c8      mov w2, 1
+0x1000040c0      mov w0, 0                                             ; CCOperation op
+0x1000040c4      mov w1, 2                                             ; CCAlgorithm alg
+0x1000040c8      mov w2, 1                                             ; int32_t options
 0x1000040cc      mov x3, x23
 0x1000040d0      mov w4, 0x18
 0x1000040d4      mov x5, 0

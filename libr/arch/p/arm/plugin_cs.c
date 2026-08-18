@@ -1414,6 +1414,32 @@ static void arm64fpmath(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 	}
 }
 
+/* A write to a 32-bit `w` register zero-extends into the whole 64-bit `x` one.
+ * ESIL does not do that on its own: naming `w9` stores four bytes and leaves the
+ * top half of `x9` as it was, so `add w9, w9, w10` kept whatever `x9` used to
+ * hold above bit 31. Appended once here rather than at each of the dozens of
+ * sites that spell a destination, and after the flag assignments so that the
+ * extension cannot disturb the comparison state they read. */
+static void arm64_esil_zero_extend_dst(RAnalOp *op, csh *handle, cs_insn *insn) {
+	if (!insn->detail || insn->detail->arm64.op_count < 1) {
+		return;
+	}
+	const cs_arm64_op *dst = &insn->detail->arm64.operands[0];
+	if (dst->type != ARM64_OP_REG || !(dst->access & CS_AC_WRITE)) {
+		return;
+	}
+	const char *wide = cs_reg_name (*handle, dst->reg);
+	if (!wide || *wide != 'w' || !isdigit ((ut8)wide[1])) {
+		return;
+	}
+	if (r_strbuf_length (&op->esil) < 1) {
+		return;
+	}
+	/* Storing through the 64-bit name clears the top half without reading it,
+	 * so the register-access analysis still reports only what is really read. */
+	r_strbuf_appendf (&op->esil, ",%s,x%s,=", wide, wide + 1);
+}
+
 static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
@@ -2594,6 +2620,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	}
 
 	r_strbuf_append (&op->esil, postfix);
+	arm64_esil_zero_extend_dst (op, handle, insn);
 
 	return 0;
 }
