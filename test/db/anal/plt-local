@@ -199,6 +199,20 @@ void sym.crc32_z (int64_t arg1, int64_t arg2, int64_t arg3);
 EOF2
 RUN
 
+NAME=ppc64 ELFv1 forwarded args keep the register of the callee arg they inherit
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=<<EOF2
+aa
+afva @ sym.crc32
+afvr @ sym.crc32
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ r3
+arg int64_t arg2 @ r4
+arg int64_t arg3 @ r5
+EOF2
+RUN
+
 NAME=ppc64 ELFv1 stub args survive a non default base address
 FILE=bins/elf/ppc64v1-libz.so
 ARGS=-B 0x400000

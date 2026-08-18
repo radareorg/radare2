@@ -1598,7 +1598,6 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	}
 
 	if (op_is_call (op) && scan_args) {
-		RVecAnalVarPtr *callee_rargs_vec = NULL;
 		int callee_rargs = 0;
 		char *callee = NULL;
 		ut64 offset = op->jump == UT64_MAX ? op->ptr : op->jump;
@@ -1636,7 +1635,6 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			callee_rargs = callee_rargs
 				? callee_rargs
 				: r_anal_var_count (anal, f, R_ANAL_VAR_KIND_REG, 1);
-			callee_rargs_vec = r_anal_var_vec (anal, f, R_ANAL_VAR_KIND_REG);
 		}
 		int i;
 		const int total = callee_rargs;
@@ -1665,18 +1663,9 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			if (vname) {
 				reg_set[i] = 1;
 			} else {
-				RAnalVar *found_arg = NULL;
-				RAnalVar **it;
-				if (callee_rargs_vec) {
-					R_VEC_FOREACH (callee_rargs_vec, it) {
-						RAnalVar *arg = *it;
-						if (r_anal_var_get_argnum (arg) == i) {
-							found_arg = arg;
-							break;
-						}
-					}
-				}
-				if (found_arg) {
+				// argnum can be discovery order, so match the register
+				RAnalVar *found_arg = f? r_anal_function_get_var (f, R_ANAL_VAR_KIND_REG, delta): NULL;
+				if (found_arg && found_arg->isarg) {
 					type = strdup (found_arg->type);
 					vname = name = strdup (found_arg->name);
 				}
@@ -1696,7 +1685,6 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			free (type);
 		}
 		free (callee);
-		RVecAnalVarPtr_free (callee_rargs_vec);
 		free (fname);
 		return;
 	}
