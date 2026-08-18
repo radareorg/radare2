@@ -1075,6 +1075,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pdc structured strips a flag-named own edge instead of rendering it twice
+FILE=bins/elf/ls
+ARGS=-e pdc.structured=1
+CMDS=<<EOF
+aaa
+s 0x5c40
+pdc~goto case.~?
+pdc~switch (cl)~?
+pdc~if (((unsigned) v) <= 0) {~?
+EOF
+EXPECT=<<EOF
+0
+1
+2
+EOF
+RUN
+
 NAME=pdc structured keeps the body of a loop whose header jumps to itself
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e pdc.structured=1
