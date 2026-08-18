@@ -733,6 +733,21 @@ static bool line_is_cond_goto(const char *line) {
 	return r_str_startswith (line, "if ") && strstr (line, "goto ");
 }
 
+// a rendered goto target: loc_ label, bare number or flag name, else UT64_MAX
+static ut64 goto_target(PDCState *state, const char *tok) {
+	tok = r_str_trim_head_ro (tok);
+	if (r_str_startswith (tok, "loc_")) {
+		tok += 4;
+	}
+	if (isdigit ((unsigned char)*tok)) {
+		return r_num_get (NULL, tok);
+	}
+	char *name = r_str_ndup (tok, strcspn (tok, " \t;"));
+	RFlagItem *fi = name? r_flag_get (state->core->flags, name): NULL;
+	free (name);
+	return fi? fi->addr: UT64_MAX;
+}
+
 // only the block's own two edges belong to its region, so a tail call, an indirect jump
 // or a call rendered as `jmp` (riscv jal) is the sole remaining transfer and must survive
 static bool line_targets_own_edge(PDCState *state, const char *line) {
@@ -746,20 +761,9 @@ static bool line_targets_own_edge(PDCState *state, const char *line) {
 		}
 		p += 4;
 	}
-	// the target is printed as loc_0xADDR, 0xADDR or a plain number, but a symbolic one
-	// (an import, a register, a reloc slot) leaves the function and has no region to own it
-	if (r_str_startswith (p, "loc_")) {
-		p += 4;
-	}
-	if (!isdigit ((unsigned char)*p)) {
-		return false;
-	}
-	const ut64 dst = r_num_get (NULL, p);
-	if (dst == UT64_MAX) {
-		// an unset jump or fail edge is UT64_MAX too, so it must not match
-		return false;
-	}
-	return dst == state->bb_jump || dst == state->bb_fail;
+	const ut64 dst = goto_target (state, p);
+	// an unset jump or fail edge is UT64_MAX too, so it must not match
+	return dst != UT64_MAX && (dst == state->bb_jump || dst == state->bb_fail);
 }
 
 static bool line_is_known_loop_goto(PDCState *state, const char *line) {
@@ -891,6 +895,7 @@ static void mark_bb_visited(PDCState *state, RList *visited, RAnalBlock *cbb) {
 typedef struct {
 	ut64 value;
 	ut64 jump;
+	bool first; // no lower value shares this target, so this run owns the body
 } PDCSwCase;
 
 static int pdc_case_cmp(const void *a, const void *b) {
@@ -1016,11 +1021,16 @@ static PDCSwCase *switch_cases(RAnalSwitchOp *sop, int *n) {
 	RListIter *iter;
 	RAnalCaseOp *co;
 	r_list_foreach (sop->cases, iter, co) {
+		// build_switch skips unresolved entries too, so neither side invents an arm
+		if (co->jump == UT64_MAX) {
+			continue;
+		}
 		arr[i].value = co->value;
 		arr[i].jump = co->jump;
 		i++;
 	}
 	qsort (arr, i, sizeof (PDCSwCase), pdc_case_cmp);
+	HtUU *seen = ht_uu_new0 ();
 	int w = 0;
 	int r;
 	for (r = 0; r < i; r++) {
@@ -1028,8 +1038,14 @@ static PDCSwCase *switch_cases(RAnalSwitchOp *sop, int *n) {
 				&& arr[w - 1].jump == arr[r].jump) {
 			continue;
 		}
-		arr[w++] = arr[r];
+		arr[w] = arr[r];
+		arr[w].first = !seen || !ht_uu_find (seen, arr[r].jump, NULL);
+		if (seen) {
+			ht_uu_insert (seen, arr[r].jump, 1);
+		}
+		w++;
 	}
+	ht_uu_free (seen);
 	*n = w;
 	return arr;
 }
@@ -1072,23 +1088,9 @@ static char *extract_loop_cond(PDCState *state, RAnalBlock *test_bb, ut64 back_t
 		if (!r_str_startswith (t, "if ")) {
 			continue;
 		}
-		const char *g = strstr (t, "goto");
-		if (!g) {
+		const char *g = strstr (t, "goto ");
+		if (!g || goto_target (state, g + 5) != back_target) {
 			continue;
-		}
-		const char *num = strstr (g, "0x");
-		if (!num || r_num_get (NULL, num) != back_target) {
-			// a case.0x4319.127 flag or a loc_ label is not a bare address
-			const char *tok = r_str_trim_head_ro (g + 4);
-			if (r_str_startswith (tok, "loc_")) {
-				tok += 4;
-			}
-			char *tgt = r_str_ndup (tok, strcspn (tok, " \t"));
-			const ut64 resolved = r_num_math (state->core->num, tgt);
-			free (tgt);
-			if (resolved != back_target) {
-				continue;
-			}
 		}
 		const char *open = strchr (t, '(');
 		if (!open) {
@@ -1438,11 +1440,6 @@ static bool case_table_has(const PDCSwCase *arr, int n, ut64 target) {
 	return false;
 }
 
-// interleaved values give one target two label runs; only the first owns a body
-static bool case_run_is_first(const PDCSwCase *arr, int c) {
-	return !case_table_has (arr, c, arr[c].jump);
-}
-
 static void collect_goto_targets(PDCState *state, PdcRegion *r, RBitset *gotos) {
 	if (r->type == PDC_R_GOTO) {
 		r_bitset_set (gotos, r->addr);
@@ -1455,7 +1452,7 @@ static void collect_goto_targets(PDCState *state, PdcRegion *r, RBitset *gotos) 
 		// mid-run entries repeat their own target, so only run starts count
 		for (c = 0; c < n; c++) {
 			const bool run_start = !c || arr[c].jump != arr[c - 1].jump;
-			if (run_start && !case_run_is_first (arr, c)) {
+			if (run_start && !arr[c].first) {
 				r_bitset_set (gotos, arr[c].jump);
 			}
 		}
@@ -1665,7 +1662,7 @@ static void render_switch_cases(PDCState *state, RAnalBlock *sw_bb, PdcArms *arm
 				emit_case_label (state, arr[j].value, arr[j].value, target, indent + 1);
 			}
 		}
-		render_arm (state, arms, target, indent + 2, case_run_is_first (arr, c));
+		render_arm (state, arms, target, indent + 2, arr[c].first);
 		c = k + 1;
 	}
 	if (valid_addr (sop->def_val)) {
@@ -1681,6 +1678,8 @@ static void render_switch_cases(PDCState *state, RAnalBlock *sw_bb, PdcArms *arm
 
 static void render_switch_region(PDCState *state, PdcRegion *r, RAnalBlock *bb, int indent, RBitset *gotos) {
 	render_bb_body_lines (state, bb, indent);
+	// mark even on a failed body fetch, or the hoist pass emits the table twice
+	r_bitset_set (state->marked, bb->addr);
 	PdcArms arms = { .sw = r, .gotos = gotos };
 	render_switch_cases (state, bb, &arms, indent);
 }
