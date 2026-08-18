@@ -576,6 +576,14 @@ static void print_newline(PDCState *state, ut64 addr, int indent, bool synthetic
 	r_strbuf_pad (sb, ' ', indent * 4);
 }
 
+static void print_line(PDCState *state, ut64 addr, int indent, const char *fmt, ...) {
+	print_newline (state, addr, indent, false);
+	va_list ap;
+	va_start (ap, fmt);
+	r_strbuf_vappendf (state_sb (state), fmt, ap);
+	va_end (ap);
+}
+
 static bool bb_addr_is_goto_target(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter, *cit;
 	RAnalBlock *b;
@@ -1168,6 +1176,10 @@ static char *cond_or_addr(const char *cond, ut64 addr, bool invert) {
 	return invert? invert_cond (cond): strdup (cond);
 }
 
+static char *cond_str(PDCState *state, RAnalBlock *bb, bool invert) {
+	return cond_or_addr (cond_at (state, bb), bb->addr, invert);
+}
+
 static bool line_is_branch_to(const char *line, const char *target_hex) {
 	const char *t = r_str_trim_head_ro (line);
 	return strstr (t, target_hex) && (line_is_goto (t) || line_is_cond_goto (t));
@@ -1566,40 +1578,47 @@ static bool region_tail_transfers(PDCState *state, PdcRegion *r) {
 	}
 }
 
+static bool region_emits_cond(PdcRegion *r, RAnalBlock *bb) {
+	switch (r->type) {
+	case PDC_R_IF:
+	case PDC_R_IFELSE:
+		return true;
+	case PDC_R_WHILE:
+	case PDC_R_DOWHILE:
+		// a bodyless loop renders a do/while test only as a self edge
+		return region_first_child (r)? r->type == PDC_R_WHILE: bb->jump == bb->addr;
+	default:
+		return false;
+	}
+}
+
 // the header carries work too, so emit while (true) plus an explicit break
 static void render_loop(PDCState *state, PdcRegion *r, RAnalBlock *bb, int indent, RBitset *gotos) {
 	PdcRegion *body = region_first_child (r);
-	if (!body && bb->jump != bb->addr) {
+	if (!body && !region_emits_cond (r, bb)) {
 		// no body and no self edge: degrade rather than emit an empty loop
 		render_bb_body_lines (state, bb, indent);
 		return;
 	}
 	if (!body) {
-		print_newline (state, bb->addr, indent, false);
-		print_str (state, "do {");
+		print_line (state, bb->addr, indent, "do {");
 		render_bb_body_lines (state, bb, indent + 1);
-		print_newline (state, bb->addr, indent, false);
-		char *tc = cond_or_addr (cond_at (state, bb), bb->addr, false);
-		print_str (state, "} while (%s);", tc);
+		char *tc = cond_str (state, bb, false);
+		print_line (state, bb->addr, indent, "} while (%s);", tc);
 		free (tc);
 		return;
 	}
-	print_newline (state, bb->addr, indent, false);
-	print_str (state, "while (true) {");
+	print_line (state, bb->addr, indent, "while (true) {");
 	if (body->role != PDC_ROLE_HEAD) {
 		// a body that heads the loop block is its conditional, and renders it
 		render_bb_body_lines (state, bb, indent + 1);
 	}
-	if (r->type == PDC_R_WHILE) {
+	if (region_emits_cond (r, bb)) {
 		// the header picks between body and exit; break on the exit edge
-		char *ec = cond_or_addr (cond_at (state, bb), bb->addr,
-			body->role == PDC_ROLE_JUMP);
-		print_newline (state, bb->addr, indent + 1, false);
-		print_str (state, "if (%s) {", ec);
-		print_newline (state, bb->addr, indent + 2, false);
-		print_str (state, "break;");
-		print_newline (state, bb->addr, indent + 1, false);
-		print_str (state, "}");
+		char *ec = cond_str (state, bb, body->role == PDC_ROLE_JUMP);
+		print_line (state, bb->addr, indent + 1, "if (%s) {", ec);
+		print_line (state, bb->addr, indent + 2, "break;");
+		print_line (state, bb->addr, indent + 1, "}");
 		free (ec);
 	}
 	if (body->role == PDC_ROLE_HEAD) {
@@ -1608,8 +1627,7 @@ static void render_loop(PDCState *state, PdcRegion *r, RAnalBlock *bb, int inden
 	} else {
 		render_region (state, body, indent + 1, gotos);
 	}
-	print_newline (state, bb->addr, indent, false);
-	print_str (state, "}");
+	print_line (state, bb->addr, indent, "}");
 }
 
 static void render_arm(PDCState *state, PdcArms *arms, ut64 target, int indent, bool owns_body) {
@@ -1629,8 +1647,7 @@ static void render_arm(PDCState *state, PdcArms *arms, ut64 target, int indent, 
 			return;
 		}
 	}
-	print_newline (state, target, indent, false);
-	print_str (state, "break;");
+	print_line (state, target, indent, "break;");
 }
 
 // jump table emitter shared by the linear and the region renderers
@@ -1643,8 +1660,8 @@ static void render_switch_cases(PDCState *state, RAnalBlock *sw_bb, PdcArms *arm
 	}
 	char *expr = find_switch_expr (state->core, state->fcn, sw_bb);
 	const ut64 table_addr = valid_addr (sop->daddr)? sop->daddr: sw_bb->addr;
-	print_newline (state, sw_bb->addr, indent, false);
-	print_str (state, "switch (%s) { // jump table of %d cases at 0x%08" PFMT64x,
+	print_line (state, sw_bb->addr, indent,
+		"switch (%s) { // jump table of %d cases at 0x%08" PFMT64x,
 		expr, n, table_addr);
 	free (expr);
 	int c = 0;
@@ -1666,13 +1683,12 @@ static void render_switch_cases(PDCState *state, RAnalBlock *sw_bb, PdcArms *arm
 		c = k + 1;
 	}
 	if (valid_addr (sop->def_val)) {
-		print_newline (state, sop->def_val, indent + 1, false);
-		print_str (state, "default: // 0x%08" PFMT64x, sop->def_val);
+		print_line (state, sop->def_val, indent + 1,
+			"default: // 0x%08" PFMT64x, sop->def_val);
 		render_arm (state, arms, sop->def_val, indent + 2,
 			!case_table_has (arr, n, sop->def_val));
 	}
-	print_newline (state, sw_bb->addr, indent, false);
-	print_str (state, "}");
+	print_line (state, sw_bb->addr, indent, "}");
 	free (arr);
 }
 
@@ -1694,18 +1710,14 @@ static void render_ifelse(PDCState *state, PdcRegion *r, RAnalBlock *bb, int ind
 		then_arm = else_arm;
 		else_arm = tmp;
 	}
-	char *cond = cond_or_addr (cond_at (state, bb), bb->addr,
-		then_arm->role == PDC_ROLE_FAIL);
-	print_newline (state, bb->addr, indent, false);
-	print_str (state, "if (%s) {", cond);
+	char *cond = cond_str (state, bb, then_arm->role == PDC_ROLE_FAIL);
+	print_line (state, bb->addr, indent, "if (%s) {", cond);
 	render_region (state, then_arm, indent + 1, gotos);
 	if (else_arm) {
-		print_newline (state, bb->addr, indent, false);
-		print_str (state, "} else {");
+		print_line (state, bb->addr, indent, "} else {");
 		render_region (state, else_arm, indent + 1, gotos);
 	}
-	print_newline (state, bb->addr, indent, false);
-	print_str (state, "}");
+	print_line (state, bb->addr, indent, "}");
 	free (cond);
 }
 
@@ -1718,13 +1730,11 @@ static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *go
 		return;
 	}
 	if (r->type == PDC_R_BREAK || r->type == PDC_R_CONTINUE) {
-		print_newline (state, r->addr, indent, false);
-		print_str (state, "%s;", (r->type == PDC_R_BREAK)? "break": "continue");
+		print_line (state, r->addr, indent, "%s;", (r->type == PDC_R_BREAK)? "break": "continue");
 		return;
 	}
 	if (r->type == PDC_R_GOTO) {
-		print_newline (state, r->addr, indent, false);
-		print_str (state, "goto loc_0x%08" PFMT64x ";", r->addr);
+		print_line (state, r->addr, indent, "goto loc_0x%08" PFMT64x ";", r->addr);
 		return;
 	}
 	RAnalBlock *bb = r_anal_get_block_at (state->core->anal, r->addr);
@@ -1732,8 +1742,7 @@ static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *go
 		return;
 	}
 	if (r_bitset_test (gotos, r->addr)) {
-		print_newline (state, r->addr, indent, false);
-		print_str (state, "loc_0x%08" PFMT64x ":", r->addr);
+		print_line (state, r->addr, indent, "loc_0x%08" PFMT64x ":", r->addr);
 	}
 	switch (r->type) {
 	case PDC_R_IF:
@@ -1756,23 +1765,16 @@ static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *go
 // an if with no recoverable condition would hide which way the branch went
 static bool regions_have_conds(PDCState *state, PdcRegion *r) {
 	const bool loop = r->type == PDC_R_WHILE || r->type == PDC_R_DOWHILE;
-	// a loop with no body renders its test only when it is a self edge
-	const bool tested = r->type == PDC_R_IF || r->type == PDC_R_IFELSE
-		|| r->type == PDC_R_WHILE
-		|| (r->type == PDC_R_DOWHILE && !region_first_child (r));
-	if (loop || tested) {
+	if (loop || r->type == PDC_R_IF || r->type == PDC_R_IFELSE) {
 		RAnalBlock *bb = r_anal_get_block_at (state->core->anal, r->addr);
 		if (!bb) {
 			return false;
 		}
-		// build_loop wins over build_switch, and the loop renderer emits no
-		// table, so a dispatching header would lose every case
+		// build_loop beats build_switch and emits no table: a dispatcher bails
 		if (loop && bb->switch_op && !r_list_empty (bb->switch_op->cases)) {
 			return false;
 		}
-		// a bodyless header that is not a self edge renders flat, with no test
-		const bool flat = r->type == PDC_R_DOWHILE && bb->jump != bb->addr;
-		if (tested && !flat && !cond_at (state, bb)) {
+		if (region_emits_cond (r, bb) && !cond_at (state, bb)) {
 			return false;
 		}
 	}
