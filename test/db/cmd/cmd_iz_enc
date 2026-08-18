@@ -1,0 +1,37 @@
+NAME=izz filter by encoding
+FILE=malloc://256
+CMDS=<<EOF
+wx 48656c6c6f4173636969537472696e6700570069006400650053007400720069006e006700000075746638206d6561737572c3a920636166c3a900
+?e -- all --
+izzq
+?e -- ascii --
+izzq:ascii
+?e -- short a --
+izzq:a
+?e -- wide --
+izzq:wide
+?e -- short w --
+izzq:w
+?e -- utf8 --
+izzq:utf8
+?e -- no match --
+izzq:base64
+EOF
+EXPECT=<<EOF
+-- all --
+0x0 17 16 HelloAsciiString
+0x11 22 10 WideString
+0x27 20 17 utf8 measuré café
+-- ascii --
+0x0 17 16 HelloAsciiString
+-- short a --
+0x0 17 16 HelloAsciiString
+-- wide --
+0x11 22 10 WideString
+-- short w --
+0x11 22 10 WideString
+-- utf8 --
+0x27 20 17 utf8 measuré café
+-- no match --
+EOF
+RUN
