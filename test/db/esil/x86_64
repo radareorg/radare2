@@ -662,3 +662,21 @@ EXPECT=<<EOF
 0x0000000000000000
 EOF
 RUN
+
+NAME=shift count is taken modulo the operand width
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+aei
+aeim
+wx d3f8
+ar rax=0x80000000
+ar rcx=0xff
+aes
+ar eax
+EOF
+EXPECT=<<EOF
+0xffffffff
+EOF
+RUN

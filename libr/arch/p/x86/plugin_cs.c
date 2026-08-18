@@ -294,6 +294,14 @@ static inline int norm_op(int n, int syntax, int op_count) {
  * @param  sel     Selector for output buffer in staic array
  * @return         Pointer to esil operand in static array
  */
+/* x86 takes the shift count modulo 32 for operands up to 32 bits wide, and
+ * modulo 64 for a 64-bit operand, before shifting anything. Without that,
+ * `sar eax, cl` with cl = 0xff asks ESIL for a 255-bit shift instead of the
+ * 31-bit one the processor performs. */
+static char *shift_count(const char *src, ut32 bitsize) {
+	return r_str_newf ("%s,0x%x,&", src, (bitsize > 32)? 0x3f: 0x1f);
+}
+
 static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsize) {
 	const char *setarg = r_str_get (setop);
 	cs_insn *insn = gop->insn;
@@ -1189,9 +1197,11 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		// TODO: Set CF. See case X86_INS_SHL for more details.
 		{
 		ut32 bitsize;
-		src = getarg (&gop, 1, 0, NULL, NULL);
+		char *count = getarg (&gop, 1, 0, NULL, NULL);
 		dst_r = getarg (&gop, 0, 0, NULL, NULL);
 		dst_w = getarg (&gop, 0, 1, NULL, &bitsize);
+		src = shift_count (count, bitsize);
+		free (count);
 		esilprintf (op, "0,cf,:=,1,%s,-,1,<<,%s,&,?{,1,cf,:=,},%s,%s,ASR,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=",
 			src, dst_r, src, dst_r, dst_w, bitsize - 1);
 		free (src);
@@ -1214,9 +1224,11 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_SAL:
 		{
 		ut32 bitsize;
-		src = getarg (&gop, 1, 0, NULL, NULL);
+		char *count = getarg (&gop, 1, 0, NULL, NULL);
 		dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
 		dst_w = getarg (&gop, 0, 1, NULL, NULL);
+		src = shift_count (count, bitsize);
+		free (count);
 		// CF = last bit shifted out = (dst >> (width - count)) & 1 from the
 		// pre-shift value; OF is defined only for 1-bit shifts as msb(result) ^ CF.
 		// Read via dst_r, write via dst_w so memory destinations store the result.
@@ -1244,9 +1256,11 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		// TODO: Set CF: See case X86_INS_SAL for more details.
 		{
 			ut32 bitsize;
-			src = getarg (&gop, 1, 0, NULL, NULL);
+			char *count = getarg (&gop, 1, 0, NULL, NULL);
 			dst_r = getarg (&gop, 0, 0, NULL, NULL);
 			dst_w = getarg (&gop, 0, 1, NULL, &bitsize);
+			src = count? shift_count (count, bitsize): NULL;
+			free (count);
 			if (src && dst_r && dst_w) {
 				esilprintf (op, "0,cf,:=,1,%s,-,1,<<,%s,&,?{,1,cf,:=,},%s,%s,>>,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=",
 					src, dst_r, src, dst_r, dst_w, bitsize - 1);
