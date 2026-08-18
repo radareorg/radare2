@@ -524,6 +524,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
+e io.exec=false
 e scr.null=true
 o malloc://512 0x10000
 e scr.null=false
@@ -550,6 +551,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
+e io.exec=false
 e scr.null=true
 o malloc://512 0x10000
 e scr.null=false

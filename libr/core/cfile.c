@@ -834,6 +834,10 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		r_core_cmd (r, cmd_load, 0);
 		desc = r->io->desc;
 	}
+	// apply io.exec before creating any map, so they inherit the exec permission from the descriptor
+	if (desc && r_config_get_b (r->config, "io.exec")) {
+		desc->perm |= R_PERM_X;
+	}
 
 	if (desc && plugin && plugin->meta.name) {
 		if (!strcmp (plugin->meta.name, "null")) {
@@ -877,9 +881,6 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 					r_config_get (r->config, "asm.arch"),
 					r_config_get_i (r->config, "asm.bits"));
 		}
-	}
-	if (desc && r_config_get_i (r->config, "io.exec")) {
-		desc->perm |= R_PERM_X;
 	}
 	if (plugin && plugin->meta.name && !strcmp (plugin->meta.name, "dex")) {
 		r_core_cmd0 (r, "'(fix-dex;wx `ph sha1 $s-32 @32` @12;wx `ph adler32 $s-12 @12` @8)");
@@ -1136,6 +1137,10 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 	}
 	r_core_cmd0 (r, "=!");
 beach:
+	// the exec permission of the descriptor is controlled by io.exec instead of the open flags (see 'r2 -x')
+	if (fd && r_config_get_b (r->config, "io.exec")) {
+		fd->perm |= R_PERM_X;
+	}
 	r->times->file_open_time = r_time_now_mono () - prev;
 	return fd;
 }
