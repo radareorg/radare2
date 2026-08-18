@@ -1563,10 +1563,14 @@ static void extract_dyncc_reguse(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, i
 	}
 }
 
-static bool op_is_call(RAnalOp *op) {
-	// Keep the full base opcode. A low-nibble check aliases MUL (0x14) with UCALL.
+// a direct jump out of the function is a tail call and forwards args like one
+static bool op_forwards_args(RAnalFunction *fcn, RAnalOp *op) {
+	// full opcode: a low-nibble check aliases MUL (0x14) with UCALL
 	const int type = op->type & 0xffff;
-	return type == R_ANAL_OP_TYPE_CALL || type == R_ANAL_OP_TYPE_UCALL;
+	if (type == R_ANAL_OP_TYPE_CALL || type == R_ANAL_OP_TYPE_UCALL) {
+		return true;
+	}
+	return type == R_ANAL_OP_TYPE_JMP && op->jump != UT64_MAX && !r_anal_function_contains (fcn, op->jump);
 }
 
 // arg count excluding the trailing "..." slot, which is no real caller arg register
@@ -1597,7 +1601,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		argc = func_fixed_args (TDB, fname);
 	}
 
-	if (op_is_call (op) && scan_args) {
+	if (scan_args && op_forwards_args (fcn, op)) {
 		int callee_rargs = 0;
 		char *callee = NULL;
 		ut64 offset = op->jump == UT64_MAX ? op->ptr : op->jump;

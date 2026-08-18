@@ -213,6 +213,30 @@ arg int64_t arg3 @ r5
 EOF2
 RUN
 
+NAME=x86_64 tail jump through a local plt stub inherits the target args
+FILE=bins/elf/pltrel/add2.so
+CMDS=<<EOF
+aa
+afvr @ sym.add
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+EOF
+RUN
+
+NAME=ppc64 ELFv1 import stub takes the prototype of the import it branches to
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=<<EOF2
+aa
+afvr @ sym.plt.memcpy
+EOF2
+EXPECT=<<EOF2
+arg void * s1 @ r3
+arg const void * s2 @ r4
+arg size_t n @ r5
+EOF2
+RUN
+
 NAME=ppc64 ELFv1 stub args survive a non default base address
 FILE=bins/elf/ppc64v1-libz.so
 ARGS=-B 0x400000

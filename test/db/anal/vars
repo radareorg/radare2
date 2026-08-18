@@ -697,3 +697,35 @@ EXPECT=<<EOF
 'afvs 66 var_32h int16_t
 EOF
 RUN
+
+NAME=a direct tail jump forwards the callee args to the function it leaves
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=<<EOF
+aa
+afs @ sym.gzopen
+afvr @ sym.gzwrite
+EOF
+EXPECT=<<EOF
+void sym.gzopen (int64_t arg1, int64_t arg2);
+arg int64_t arg1 @ r3
+arg int64_t arg3 @ r5
+arg int64_t arg2 @ r4
+EOF
+RUN
+
+NAME=x86_64 conditional and unconditional tail jumps forward args, own writes do not
+FILE=bins/elf/pltrel/x86_64-thunks.so
+CMDS=<<EOF
+aa
+afvr @ sym.forkwrap
+afvr @ sym.top_fork
+afs @ sym.setwrap
+afs @ sym.top_set
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+arg int64_t arg1 @ rdi
+void sym.setwrap ();
+void sym.top_set ();
+EOF
+RUN
