@@ -84,7 +84,7 @@ static RCoreHelpMessage help_msg_aav = {
 	"aav", "", "find absolute reference values (see aav0)",
 	"aavq", "", "same as aav, but in quiet mode",
 	"aav0", "", "find absolute reference values (accept maps at address zero)",
-	"aavr", "[0]", "find relative reference values (address + 4 byte signed int)",
+	"aavr", "[q0]", "find relative reference values (address + 4 byte signed int, q for quiet)",
 	NULL
 };
 
@@ -14553,7 +14553,7 @@ static void cmd_anal_aaw(RCore *core, const char *input) {
 static void cmd_anal_aav(RCore *core, const char *input) {
 	R_RETURN_IF_FAIL (*input == 'v');
 	const bool relative = input[1] == 'r'; // "aavr"
-	const bool verbose = input[1] != 'q';
+	const bool verbose = !strchr (input, 'q'); // "aavq" "aavrq"
 	const bool forcemode = input[1] == '0' || (input[1] && input[2] == '0'); // "aav0" "aavr0"
 	ut64 o_align = r_config_get_i (core->config, "search.align");
 	const char *analin = r_config_get (core->config, "anal.in");
@@ -14607,6 +14607,10 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			// TODO: Reduce multiple hits for same addr
 			from = r_itv_begin (map2->itv);
 			to = r_itv_end (map2->itv);
+			if (from >= to) {
+				// skip empty sections (eg. zero-sized __llvm_prf_vnds)
+				continue;
+			}
 			if ((to - from) > MAX_SCAN_SIZE) {
 				R_LOG_WARN ("Skipping large region");
 				continue;
@@ -14616,6 +14620,9 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 				ut64 end = r_io_map_end (map);
 				if (r_cons_is_breaked (core->cons)) {
 					break;
+				}
+				if (begin >= end) {
+					continue;
 				}
 				if (end - begin > UT32_MAX) {
 					char *unit = r_num_units (NULL, 0, end - begin);
@@ -15547,7 +15554,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 			r_core_task_yield (&core->tasks);
 		}
 		if (is_swift (core)) {
-			r_core_cmd0 (core, "aavr@e:anal.in=bin.sections.rw");
+			r_core_cmd0 (core, "aavrq@e:anal.in=bin.sections.rw");
 		}
 		r_core_call (core, "s-");
 		if (dh_orig) {
