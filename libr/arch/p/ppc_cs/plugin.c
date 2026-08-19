@@ -1193,6 +1193,38 @@ static void ppc_cond_branch(RAnalOp *op, int bc, const char *cr, const char *pre
 	}
 }
 
+// LK onto the next insn is the get-PC idiom; typing it CALL invents a fcn
+static void ppc_always_type(RAnalOp *op, ut64 dst, ut64 next, bool lk) {
+	op->jump = dst;
+	if (lk && dst != next) {
+		op->type = R_ANAL_OP_TYPE_CALL;
+		op->fail = next;
+	} else {
+		op->type = R_ANAL_OP_TYPE_JMP;
+	}
+}
+
+// cs5 prints BO=1z1zz (branch always, bcl 20,31,$+4 = get-PC) as bdnz aliases
+static bool ppc_branch_always(RAnalOp *op, cs_insn *insn, const ut8 *buf, bool be, ut64 addr, RArchDecodeMask mask) {
+	const ut32 w = r_read_ble32 (buf, be);
+	const ut32 bo = (w >> 21) & 0x1f;
+	if ((w >> 26) != 16 || (bo & 0x14) != 0x14) {
+		return false;
+	}
+	const bool lk = w & 1;
+	const ut64 dst = IMM (0);
+	ppc_always_type (op, dst, addr + 4, lk);
+	esilprintf (op, "%s0x%" PFMT64x ",pc,=", lk? "pc,lr,=,": "", dst);
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		const ut32 bi = (w >> 16) & 0x1f;
+		const bool aa = w & 2;
+		free (op->mnemonic);
+		op->mnemonic = r_str_newf ("bc%s%s %d, %d, 0x%" PFMT64x,
+			lk? "l": "", aa? "a": "", bo, bi, dst);
+	}
+	return true;
+}
+
 #if CS_API_MAJOR >= 6
 // cs6 folds the conditional-branch aliases onto the generic bc/bcctr/bclr ids and describes the
 // condition in detail->ppc.bc. Derive it from the raw BO/BI fields rather than from bc.pred_*:
@@ -2408,15 +2440,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				if (ppc6_branch (op, handle, insn, dstbuf, link)) {
 					op->type = link? R_ANAL_OP_TYPE_CCALL: R_ANAL_OP_TYPE_CJMP;
 					op->fail = addr + op->size;
-				} else if (link) {
-					// a branch-always with LK onto the next instruction is the ppc32 pic idiom
-					// bcl 20,31,$+4: it exists for the LR write, and typing it as a call
-					// makes the analysis invent a function at the fallthrough
-					op->type = (dst == addr + op->size)? R_ANAL_OP_TYPE_JMP: R_ANAL_OP_TYPE_CALL;
-					esilprintf (op, "pc,lr,=,%s,pc,=", dstbuf);
 				} else {
-					op->type = R_ANAL_OP_TYPE_JMP;
-					esilprintf (op, "%s,pc,=", dstbuf);
+					ppc_always_type (op, dst, addr + op->size, link);
+					esilprintf (op, "%s%s,pc,=", link? "pc,lr,=,": "", dstbuf);
 				}
 				break;
 			}
@@ -2473,14 +2499,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			}
 			break;
 		case PPC_INS_BDNZ:
-		case PPC_INS_BDZ: {
-			const bool zero = insn->id == PPC_INS_BDZ;
-			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = IMM (0);
-			op->fail = addr + op->size;
-			esilprintf (op, "1,ctr,-=,$z,%s?{,%s,pc,=,}", zero? "": "!,", ARG (0));
-			break;
-		}
+		case PPC_INS_BDZ:
 #if CS_API_MAJOR < 6
 		case PPC_INS_BDNZA:
 		case PPC_INS_BDZA:
@@ -2489,9 +2508,16 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_BDNZLA:
 		case PPC_INS_BDZL:
 		case PPC_INS_BDZLA:
+			if (ppc_branch_always (op, insn, buf, be, addr, mask)) {
+				break;
+			}
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = IMM (0);
 			op->fail = addr + op->size;
+			const bool zero = insn->id == PPC_INS_BDZ;
+			if (zero || insn->id == PPC_INS_BDNZ) {
+				esilprintf (op, "1,ctr,-=,$z,%s?{,%s,pc,=,}", zero? "": "!,", ARG (0));
+			}
 			break;
 		case PPC_INS_BDNZLR:
 		case PPC_INS_BDNZLRL:

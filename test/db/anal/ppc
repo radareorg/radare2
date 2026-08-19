@@ -1849,3 +1849,42 @@ arg int64_t arg1 @ r3
 arg int64_t arg2 @ r9
 EOF
 RUN
+
+NAME=ppc bcl 20,31 branch-always forms are jumps that set lr, not bdnz aliases
+FILE=malloc://64
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 429f0005 429f0004 429f0105 429f0007 42000005 42bf0009
+pi 6
+ao 1 @ 0~type,jump,fail,esil:
+ao 1 @ 4~type,jump,fail,esil:
+ao 1 @ 8~type,jump,fail,esil:
+ao 1 @ 12~type,jump,fail,esil:
+ao 1 @ 16~type,jump,fail
+EOF
+EXPECT=<<EOF
+bcl 20, 31, 0x4
+bc 20, 31, 0x8
+bcl 20, 31, 0x10c
+bcla 20, 31, 0x4
+bdnzl 0x14
+bcl 21, 31, 0x1c
+type: jmp
+esil: pc,lr,=,0x4,pc,=
+jump: 0x00000004
+type: jmp
+esil: 0x8,pc,=
+jump: 0x00000008
+type: call
+esil: pc,lr,=,0x10c,pc,=
+jump: 0x0000010c
+fail: 0x0000000c
+type: call
+esil: pc,lr,=,0x4,pc,=
+jump: 0x00000004
+fail: 0x00000010
+type: cjmp
+jump: 0x00000014
+fail: 0x00000014
+EOF
+RUN
