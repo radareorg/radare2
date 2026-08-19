@@ -105,6 +105,7 @@ typedef struct r_core_plugin_session_t {
 
 typedef bool (*RCorePluginLife) (RCorePluginSession *ctx);
 typedef bool (*RCorePluginCall) (RCorePluginSession *ctx, const char *input);
+typedef RAnalFunctionSnapshotCallback RCoreFunctionSnapshotCallback;
 
 typedef struct r_core_plugin_t {
 	RPluginMeta meta;
@@ -784,6 +785,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr);
 R_API bool r_core_anal_bb_seek(RCore *core, ut64 addr);
 R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth);
+R_API bool r_core_function_snapshot_at(RCore *core, ut64 function_addr, RCoreFunctionSnapshotCallback callback, void *user, const char **reason);
 R_API char *r_core_anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int mode);
 R_API void r_core_anal_autoname_all_fcns(RCore *core);
 R_API void r_core_anal_autoname_all_golang_fcns(RCore *core);
@@ -1054,10 +1056,54 @@ typedef struct {
 	RCoreAnalStatsItem *block;
 } RCoreAnalStats;
 
+typedef struct r_core_anal_artifact_comment_t {
+	ut64 addr;
+	const char *prefix;
+	const char *text;
+} RCoreAnalArtifactComment;
+
+typedef struct r_core_anal_artifact_flag_t {
+	const char *name;
+	ut64 addr;
+	ut64 size;
+} RCoreAnalArtifactFlag;
+
+typedef struct r_core_anal_artifact_replacement_t {
+	const char *provider_id;
+	const char *domain_id;
+	ut64 scope_id;
+	ut64 expected_function_epoch;
+	ut64 expected_type_epoch;
+	ut64 expected_snapshot_revision;
+	const RCoreAnalArtifactComment *comments;
+	size_t comment_count;
+	const RCoreAnalArtifactFlag *flags;
+	size_t flag_count;
+	const RAnalRef *xrefs;
+	size_t xref_count;
+} RCoreAnalArtifactReplacement;
+
+typedef enum {
+	R_CORE_ANAL_ARTIFACT_REPLACE_OK = 0,
+	R_CORE_ANAL_ARTIFACT_REPLACE_INVALID_ARGUMENT,
+	R_CORE_ANAL_ARTIFACT_REPLACE_STALE_SOURCE,
+	R_CORE_ANAL_ARTIFACT_REPLACE_CONFLICT,
+	R_CORE_ANAL_ARTIFACT_REPLACE_PREPARATION_FAILED,
+} RCoreAnalArtifactReplaceStatus;
+
+typedef struct r_core_anal_artifact_replace_result_t {
+	RCoreAnalArtifactReplaceStatus status;
+	size_t failed_index;
+	size_t replaced;
+	ut64 revision;
+} RCoreAnalArtifactReplaceResult;
+
 R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, int mode);
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr);
 R_API RCoreAnalStats* r_core_anal_get_stats(RCore *a, ut64 from, ut64 to, ut64 step);
 R_API void r_core_anal_stats_free(RCoreAnalStats *s);
+R_API RCoreAnalArtifactReplaceResult r_core_anal_artifacts_replace(RCore *core,
+	const RCoreAnalArtifactReplacement *replacements, size_t replacement_count);
 
 R_API void r_core_syscmd_ls(const char *input);
 R_API void r_core_syscmd_cat(const char *file);
