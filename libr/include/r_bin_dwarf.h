@@ -795,7 +795,7 @@ typedef struct {
 	//  segmented addressing, this value represents the size of the offset portion of an address.
 	ut8 address_size;
 	ut8 unit_type; // DWARF 5 addition
-	ut8 dwo_id; // DWARF 5 addition
+	ut64 dwo_id; // DWARF 5 addition
 	ut64 type_sig; // DWARF 5 addition
 	ut64 type_offset; // DWARF 5 addition
 	ut64 header_size; // excluding length field
