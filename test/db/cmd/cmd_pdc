@@ -187,11 +187,11 @@ void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
         x8 = [x8 + 0x60]
         x9 = [x1 + 0x60] // arg2
         x9 = [x9 + 0x60]
-        (a, b) = compare (x8, x9)
-        if (a <= b) goto 0x100003a74 // likely
+        v = x8 - x9
+        if (v <= 0) goto 0x100003a74 // likely
         return x0;
     loc_0x100003a74:
-        if (a >= b) goto 0x100003a80 // likely
+        if (v >= 0) goto 0x100003a80 // likely
         return x0;
     loc_0x100003a80:
         x8 = x1 + 0x68 // arg2
@@ -266,11 +266,11 @@ EXPECT=<<EOF
  0x100003a58 |         x8 = [x8 + 0x60]
  0x100003a5c |         x9 = [x1 + 0x60] // arg2
  0x100003a60 |         x9 = [x9 + 0x60]
- 0x100003a64 |         (a, b) = compare (x8, x9)
- 0x100003a68 |         if (a <= b) goto 0x100003a74 // likely
+ 0x100003a64 |         v = x8 - x9
+ 0x100003a68 |         if (v <= 0) goto 0x100003a74 // likely
  0x100003a54 |         return x0;
  0x100003a74 |     loc_0x100003a74:
- 0x100003a74 |         if (a >= b) goto 0x100003a80 // likely
+ 0x100003a74 |         if (v >= 0) goto 0x100003a80 // likely
  0x100003a74 |         return x0;
  0x100003a80 |     loc_0x100003a80:
  0x100003a80 |         x8 = x1 + 0x68 // arg2
@@ -921,9 +921,9 @@ pdcj~{annotations[11]}
 pdcj~{annotations[12]}
 EOF
 EXPECT=<<EOF
-{"start":519,"end":571,"offset":4294982284,"type":"offset"}
-{"start":571,"end":619,"offset":4294982264,"type":"offset"}
-{"start":619,"end":666,"offset":4294982252,"type":"offset"}
+{"start":505,"end":557,"offset":4294982284,"type":"offset"}
+{"start":557,"end":605,"offset":4294982264,"type":"offset"}
+{"start":605,"end":652,"offset":4294982252,"type":"offset"}
 EOF
 RUN
 
@@ -1152,5 +1152,41 @@ EXPECT=<<EOF
     if (!(eax - 7)) {
         eax += 2
         eax += 3
+EOF
+RUN
+
+NAME=pdc structured recovers arm64 b.cond operands from the cmp
+FILE=malloc://64
+ARGS=-a arm -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx 1f00016b 6c000054 20008052 02000014 40008052 c0035fd6 @ 0
+af @ 0
+pdc~if (,w0 =,else
+pdc~cond_0x~?
+EOF
+EXPECT=<<EOF
+    if (w0 <= w1) {
+        w0 = 1
+    } else {
+        w0 = 2
+0
+EOF
+RUN
+
+NAME=pdc structured recovers arm32 b<cc> operands from the cmp
+FILE=malloc://64
+ARGS=-a arm -b 32 -e pdc.structured=1
+CMDS=<<EOF
+wx 010050e1 010000ca 0100a0e3 000000ea 0200a0e3 1eff2fe1 @ 0
+af @ 0
+pdc~if (,r0 =,else
+pdc~cond_0x~?
+EOF
+EXPECT=<<EOF
+    if (r0 <= r1) {
+        r0 = 1
+    } else {
+        r0 = 2
+0
 EOF
 RUN
