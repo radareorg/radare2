@@ -322,6 +322,26 @@ static bool test_anal_get_base_type_typedef(void) {
 	mu_assert_streq (base->name, "string", "type name");
 	mu_assert_streq (base->type, "char *", "typedefd type");
 
+	sdb_set (anal->sdb_types, "word", "typedef", 0);
+	sdb_set (anal->sdb_types, "typedef.word", "unsigned long", 0);
+	sdb_num_set (anal->sdb_types, "type.word.size", 64, 0);
+	mu_assert_eq (r_type_get_bitsize (anal->sdb_types, "word"), 64,
+		"Typedef with a declared width measures that width");
+
+	sdb_set (anal->sdb_types, "u64", "type", 0);
+	sdb_num_set (anal->sdb_types, "type.u64.size", 64, 0);
+	sdb_set (anal->sdb_types, "myword", "typedef", 0);
+	sdb_set (anal->sdb_types, "typedef.myword", "u64", 0);
+	mu_assert_eq (r_type_get_bitsize (anal->sdb_types, "myword"), 64,
+		"Typedef without a declared width measures what it aliases");
+
+	sdb_set (anal->sdb_types, "cycle_a", "typedef", 0);
+	sdb_set (anal->sdb_types, "typedef.cycle_a", "cycle_b", 0);
+	sdb_set (anal->sdb_types, "cycle_b", "typedef", 0);
+	sdb_set (anal->sdb_types, "typedef.cycle_b", "cycle_a", 0);
+	mu_assert_eq (r_type_get_bitsize (anal->sdb_types, "cycle_a"), 0,
+		"Cyclic typedefs fail closed");
+
 	r_anal_base_type_free (base);
 	r_anal_free (anal);
 	mu_end;

@@ -213,7 +213,8 @@ static bool type_has_any_word(const char *R_NONNULL type, const char *const *R_N
 #define TYPEDEF_MAX_DEPTH 8
 
 // the depth bound keeps a cyclic typedef from hanging
-static R_OWNED char *type_resolve_typedef(Sdb *TDB, const char *R_NONNULL type) {
+R_API R_OWNED char *r_type_resolve_typedef(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
+	R_RETURN_VAL_IF_FAIL (TDB && type, NULL);
 	char *ret = NULL;
 	int depth;
 	for (depth = 0; depth < TYPEDEF_MAX_DEPTH; depth++) {
@@ -249,7 +250,7 @@ static bool type_name_is_signed(const char *R_NONNULL t) {
 R_API bool r_type_is_signed(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
 	R_RETURN_VAL_IF_FAIL (TDB && type, false);
 	const char *base = type_skip_qualifiers (type);
-	char *resolved = type_resolve_typedef (TDB, base);
+	char *resolved = r_type_resolve_typedef (TDB, base);
 	const char *t = type_skip_qualifiers (resolved? resolved: base);
 	const bool ret = !strchr (t, '*') && type_name_is_signed (t);
 	free (resolved);
@@ -297,6 +298,23 @@ R_API ut64 r_type_get_bitsize(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
 	}
 	if (!strcmp (t, "type")) {
 		return sdb_num_getf (TDB, NULL, "type.%s.size", tmptype); // returns size in bits
+	}
+	if (!strcmp (t, "typedef")) {
+		// a typedef is as wide as the type it names: recorded width first, else the alias
+		ut64 size = sdb_num_getf (TDB, NULL, "type.%s.size", tmptype);
+		if (size) {
+			return size; // returns size in bits
+		}
+		char *resolved = r_type_resolve_typedef (TDB, tmptype);
+		if (resolved) {
+			// still a typedef after the resolver bound means a cycle, so fail closed
+			const char *kind = sdb_const_get (TDB, resolved, 0);
+			if (!kind || strcmp (kind, "typedef")) {
+				size = r_type_get_bitsize (TDB, resolved);
+			}
+			free (resolved);
+		}
+		return size;
 	}
 	if (!strcmp (t, "struct") || !strcmp (t, "union")) {
 		const char *value = sdb_const_getf (TDB, NULL, "%s.%s", t, tmptype);
