@@ -13,6 +13,526 @@ static RAnalPlugin *anal_static_plugins[] = {
 	R_ANAL_STATIC_PLUGINS
 };
 
+static void exact_formal_proof_kv_free(HtUPKv *kv) {
+	if (kv) {
+		RAnalExactFormalProof *proof = kv->value;
+		if (proof) {
+			free (proof->type);
+			free (proof);
+		}
+	}
+}
+
+static void dwarf_exact_formal_record_free(RAnalDwarfExactFormalRecord *record) {
+	if (record) {
+		free (record->serialized);
+		free (record);
+	}
+}
+
+static void dwarf_exact_formal_records_kv_free(HtUPKv *kv) {
+	if (kv) {
+		ht_up_free (kv->value);
+	}
+}
+
+static void dwarf_exact_formal_record_kv_free(HtUPKv *kv) {
+	if (kv) {
+		dwarf_exact_formal_record_free (kv->value);
+	}
+}
+
+static void dwarf_function_link_authority_kv_free(HtUPKv *kv) {
+	if (kv) {
+		RAnalDwarfFunctionLinkAuthority *authority = kv->value;
+		if (authority) {
+			free (authority->type_name);
+			free (authority);
+		}
+	}
+}
+
+static void dwarf_frame_pointer_proof_free(RAnalDwarfFramePointerProof *proof) {
+	if (proof) {
+		free (proof->type_name);
+		free (proof->arch);
+		free (proof->reg_name);
+		free (proof);
+	}
+}
+
+static void dwarf_frame_pointer_proof_kv_free(HtUPKv *kv) {
+	if (kv) {
+		dwarf_frame_pointer_proof_free (kv->value);
+	}
+}
+
+R_IPI HtUP *r_anal_dwarf_frame_pointer_proofs_new(void) {
+	return ht_up_new (NULL, dwarf_frame_pointer_proof_kv_free, NULL);
+}
+
+R_IPI void r_anal_dwarf_frame_pointer_proofs_free(HtUP *proofs) {
+	ht_up_free (proofs);
+}
+
+R_IPI bool r_anal_dwarf_frame_pointer_proof_add(HtUP *proofs, ut64 function_addr, const char *type_name, const char *arch, int bits, int dwarf_reg_num, const char *reg_name, ut64 offset, ut32 size) {
+	if (!proofs || R_STR_ISEMPTY (type_name) || R_STR_ISEMPTY (arch)
+		|| bits <= 0 || dwarf_reg_num < 0 || dwarf_reg_num > 31
+		|| R_STR_ISEMPTY (reg_name) || !size
+		|| ht_up_find (proofs, function_addr, NULL)) {
+		return false;
+	}
+	RAnalDwarfFramePointerProof *proof = R_NEW0 (RAnalDwarfFramePointerProof);
+	proof->type_name = strdup (type_name);
+	proof->arch = strdup (arch);
+	proof->reg_name = strdup (reg_name);
+	if (!proof->type_name || !proof->arch || !proof->reg_name) {
+		dwarf_frame_pointer_proof_free (proof);
+		return false;
+	}
+	proof->bits = bits;
+	proof->dwarf_reg_num = dwarf_reg_num;
+	proof->offset = offset;
+	proof->size = size;
+	if (!ht_up_insert (proofs, function_addr, proof)) {
+		dwarf_frame_pointer_proof_free (proof);
+		return false;
+	}
+	return true;
+}
+
+static HtUP *dwarf_function_link_authority_new(void) {
+	return ht_up_new (NULL, dwarf_function_link_authority_kv_free, NULL);
+}
+
+static bool dwarf_function_link_authority_ensure(RAnal *anal) {
+	if (R_ANAL_PRIV (anal)->dwarf_function_link_authority) {
+		return true;
+	}
+	R_ANAL_PRIV (anal)->dwarf_function_link_authority =
+		dwarf_function_link_authority_new ();
+	return R_ANAL_PRIV (anal)->dwarf_function_link_authority != NULL;
+}
+
+R_IPI bool r_anal_dwarf_function_link_mark_poisoned(RAnal *anal, ut64 function_addr, const char *type_name) {
+	if (!anal || !anal->priv || !anal->lock || R_STR_ISEMPTY (type_name)) {
+		return false;
+	}
+	r_th_lock_enter (anal->lock);
+	if (!dwarf_function_link_authority_ensure (anal)) {
+		r_th_lock_leave (anal->lock);
+		return false;
+	}
+	HtUP *authorities = R_ANAL_PRIV (anal)->dwarf_function_link_authority;
+	RAnalDwarfFunctionLinkAuthority *authority = ht_up_find (
+		authorities, function_addr, NULL);
+	if (authority) {
+		authority->state = R_ANAL_DWARF_FUNCTION_LINK_POISONED;
+		authority->generation = R_ANAL_PRIV (anal)->dwarf_function_link_generation;
+		if (!strcmp (r_str_get (authority->type_name), type_name)) {
+			r_th_lock_leave (anal->lock);
+			return true;
+		}
+		char *copy = strdup (type_name);
+		if (!copy) {
+			r_th_lock_leave (anal->lock);
+			return false;
+		}
+		free (authority->type_name);
+		authority->type_name = copy;
+		r_th_lock_leave (anal->lock);
+		return true;
+	}
+	char *copy = strdup (type_name);
+	if (!copy) {
+		r_th_lock_leave (anal->lock);
+		return false;
+	}
+	authority = R_NEW0 (RAnalDwarfFunctionLinkAuthority);
+	authority->type_name = copy;
+	authority->generation = R_ANAL_PRIV (anal)->dwarf_function_link_generation;
+	authority->state = R_ANAL_DWARF_FUNCTION_LINK_POISONED;
+	if (!ht_up_insert (authorities, function_addr, authority)) {
+		free (authority->type_name);
+		free (authority);
+		r_th_lock_leave (anal->lock);
+		return false;
+	}
+	r_th_lock_leave (anal->lock);
+	return true;
+}
+
+R_IPI bool r_anal_dwarf_function_link_poisoned_matches(const RAnal *anal, ut64 function_addr, const char *type_name) {
+	if (!anal || !anal->priv || !anal->lock || R_STR_ISEMPTY (type_name)) {
+		return false;
+	}
+	RAnal *mutable_anal = (RAnal *)anal;
+	r_th_lock_enter (mutable_anal->lock);
+	HtUP *authorities = R_ANAL_PRIV (mutable_anal)->dwarf_function_link_authority;
+	RAnalDwarfFunctionLinkAuthority *authority = authorities
+		? ht_up_find (authorities, function_addr, NULL): NULL;
+	const bool matches = authority
+		&& (authority->generation != R_ANAL_PRIV (mutable_anal)->dwarf_function_link_generation
+			|| authority->state == R_ANAL_DWARF_FUNCTION_LINK_POISONED)
+		&& !strcmp (r_str_get (authority->type_name), type_name);
+	r_th_lock_leave (mutable_anal->lock);
+	return matches;
+}
+
+typedef struct dwarf_function_link_revoke_t {
+	RAnal *anal;
+	ut64 generation;
+	ut64 *resolved;
+	size_t resolved_count;
+	size_t resolved_capacity;
+	bool changed;
+	bool ok;
+} DwarfFunctionLinkRevoke;
+
+static bool dwarf_function_link_revoke_cb(void *user, ut64 function_addr, const void *value) {
+	DwarfFunctionLinkRevoke *revoke = (DwarfFunctionLinkRevoke *)user;
+	const RAnalDwarfFunctionLinkAuthority *authority = value;
+	if (!authority
+		|| (authority->generation == revoke->generation
+			&& authority->state == R_ANAL_DWARF_FUNCTION_LINK_OWNED)) {
+		return true;
+	}
+	if (R_STR_ISEMPTY (authority->type_name)
+		|| revoke->resolved_count >= revoke->resolved_capacity) {
+		revoke->ok = false;
+		return true;
+	}
+	const char *current = r_anal_function_type_link_at (
+		revoke->anal, function_addr);
+	if (current && !strcmp (current, authority->type_name)) {
+		char link_key[SDB_MAX_KEY];
+		const int length = snprintf (link_key, sizeof (link_key),
+			"fcnlink.%08" PFMT64x, function_addr);
+		if (length < 0 || (size_t)length >= sizeof (link_key)
+			|| !sdb_unset (revoke->anal->sdb_types, link_key, 0)) {
+			revoke->ok = false;
+			return true;
+		}
+		revoke->changed = true;
+	}
+	revoke->resolved[revoke->resolved_count++] = function_addr;
+	return true;
+}
+
+R_IPI bool r_anal_dwarf_function_links_revoke_owned(RAnal *anal) {
+	if (!anal || !anal->priv || !anal->lock || !anal->sdb_types) {
+		return false;
+	}
+	r_th_lock_enter (anal->lock);
+	HtUP *authorities = R_ANAL_PRIV (anal)->dwarf_function_link_authority;
+	if (!authorities || !authorities->count) {
+		r_th_lock_leave (anal->lock);
+		return true;
+	}
+	size_t allocation_size;
+	if (r_mul_overflow_size_t (authorities->count, sizeof (ut64), &allocation_size)) {
+		r_th_lock_leave (anal->lock);
+		return false;
+	}
+	ut64 *resolved = malloc (allocation_size);
+	if (!resolved) {
+		r_th_lock_leave (anal->lock);
+		return false;
+	}
+	DwarfFunctionLinkRevoke revoke = {
+		.anal = anal,
+		.generation = R_ANAL_PRIV (anal)->dwarf_function_link_generation,
+		.resolved = resolved,
+		.resolved_capacity = authorities->count,
+		.ok = true,
+	};
+	ht_up_foreach (authorities, dwarf_function_link_revoke_cb, &revoke);
+	size_t i;
+	for (i = 0; i < revoke.resolved_count; i++) {
+		if (!ht_up_delete (authorities, revoke.resolved[i])) {
+			revoke.ok = false;
+		}
+	}
+	free (resolved);
+	if (revoke.changed) {
+		r_anal_types_bump_dirty_epoch (anal);
+	}
+	r_th_lock_leave (anal->lock);
+	return revoke.ok;
+}
+
+R_IPI bool r_anal_dwarf_function_link_publish_owned(RAnal *anal, ut64 function_addr, const char *type_name) {
+	if (!anal || !anal->priv || !anal->lock || R_STR_ISEMPTY (type_name)) {
+		return false;
+	}
+	r_th_lock_enter (anal->lock);
+	HtUP *authorities = R_ANAL_PRIV (anal)->dwarf_function_link_authority;
+	RAnalDwarfFunctionLinkAuthority *authority = authorities
+		? ht_up_find (authorities, function_addr, NULL): NULL;
+	const bool prepared = authority
+		&& authority->generation == R_ANAL_PRIV (anal)->dwarf_function_link_generation
+		&& authority->state == R_ANAL_DWARF_FUNCTION_LINK_POISONED
+		&& !strcmp (r_str_get (authority->type_name), type_name);
+	if (prepared) {
+		authority->state = R_ANAL_DWARF_FUNCTION_LINK_OWNED;
+	}
+	r_th_lock_leave (anal->lock);
+	return prepared;
+}
+
+R_IPI void r_anal_dwarf_function_link_mark_unowned(RAnal *anal, ut64 function_addr) {
+	if (!anal || !anal->priv || !anal->lock) {
+		return;
+	}
+	r_th_lock_enter (anal->lock);
+	HtUP *authorities = R_ANAL_PRIV (anal)->dwarf_function_link_authority;
+	if (authorities) {
+		ht_up_delete (authorities, function_addr);
+	}
+	r_th_lock_leave (anal->lock);
+}
+
+R_IPI bool r_anal_dwarf_function_link_is_current(const RAnal *anal, ut64 function_addr, const char *type_name) {
+	if (!anal || !anal->priv || !anal->lock || R_STR_ISEMPTY (type_name)) {
+		return false;
+	}
+	RAnal *mutable_anal = (RAnal *)anal;
+	r_th_lock_enter (mutable_anal->lock);
+	HtUP *authorities = R_ANAL_PRIV (mutable_anal)->dwarf_function_link_authority;
+	RAnalDwarfFunctionLinkAuthority *authority = authorities
+		? ht_up_find (authorities, function_addr, NULL): NULL;
+	const bool current = !authority
+		|| (authority->generation == R_ANAL_PRIV (mutable_anal)->dwarf_function_link_generation
+			&& authority->state == R_ANAL_DWARF_FUNCTION_LINK_OWNED
+			&& !strcmp (r_str_get (authority->type_name), type_name));
+	r_th_lock_leave (mutable_anal->lock);
+	return current;
+}
+
+static bool dwarf_function_link_owned_current(RAnal *anal, ut64 function_addr, const char *type_name) {
+	HtUP *authorities = R_ANAL_PRIV (anal)->dwarf_function_link_authority;
+	RAnalDwarfFunctionLinkAuthority *authority = authorities
+		? ht_up_find (authorities, function_addr, NULL): NULL;
+	const char *linked = r_anal_function_type_link_at (anal, function_addr);
+	return authority && linked
+		&& authority->generation == R_ANAL_PRIV (anal)->dwarf_function_link_generation
+		&& authority->state == R_ANAL_DWARF_FUNCTION_LINK_OWNED
+		&& !strcmp (r_str_get (authority->type_name), type_name)
+		&& !strcmp (linked, type_name);
+}
+
+static bool dwarf_frame_pointer_proof_profile_current(RAnal *anal, const RAnalDwarfFramePointerProof *proof) {
+	if (!anal->config || !anal->reg || !proof
+		|| R_STR_ISEMPTY (proof->arch) || R_STR_ISEMPTY (proof->reg_name)
+		|| strcmp (anal->config->arch, proof->arch)
+		|| anal->config->bits != proof->bits) {
+		return false;
+	}
+	RRegItem *reg = r_reg_get (anal->reg, proof->reg_name, -1);
+	const bool current = reg && R_STR_ISNOTEMPTY (reg->name)
+		&& !strcmp (reg->name, proof->reg_name)
+		&& reg->offset >= 0 && !(reg->offset % 8)
+		&& reg->size > 0 && !(reg->size % 8)
+		&& (ut64)(reg->offset / 8) == proof->offset
+		&& reg->size / 8 == proof->size
+		&& reg->size == proof->bits;
+	r_unref (reg);
+	return current;
+}
+
+typedef struct dwarf_frame_pointer_publish_t {
+	RAnal *anal;
+	bool ok;
+} DwarfFramePointerPublish;
+
+static bool dwarf_frame_pointer_publish_cb(void *user, ut64 function_addr, const void *value) {
+	DwarfFramePointerPublish *publish = (DwarfFramePointerPublish *)user;
+	RAnalDwarfFramePointerProof *proof = (RAnalDwarfFramePointerProof *)value;
+	if (!proof
+		|| !dwarf_function_link_owned_current (
+			publish->anal, function_addr, proof->type_name)
+		|| !dwarf_frame_pointer_proof_profile_current (publish->anal, proof)) {
+		publish->ok = false;
+		return false;
+	}
+	proof->generation = R_ANAL_PRIV (publish->anal)->dwarf_function_link_generation;
+	return true;
+}
+
+R_IPI bool r_anal_dwarf_frame_pointer_proofs_publish(RAnal *anal, HtUP *proofs) {
+	if (!anal || !anal->priv || !anal->lock || !proofs) {
+		return false;
+	}
+	r_th_lock_enter (anal->lock);
+	DwarfFramePointerPublish publish = {
+		.anal = anal,
+		.ok = true,
+	};
+	ht_up_foreach (proofs, dwarf_frame_pointer_publish_cb, &publish);
+	if (!publish.ok) {
+		r_th_lock_leave (anal->lock);
+		return false;
+	}
+	HtUP *old_proofs = R_ANAL_PRIV (anal)->dwarf_frame_pointer_proofs;
+	R_ANAL_PRIV (anal)->dwarf_frame_pointer_proofs = proofs;
+	r_th_lock_leave (anal->lock);
+	r_anal_dwarf_frame_pointer_proofs_free (old_proofs);
+	return true;
+}
+
+R_IPI bool r_anal_dwarf_function_frame_pointer_get(const RAnal *anal, ut64 function_addr, R_OUT RAnalDwarfFramePointerStorage *storage) {
+	if (!anal || !anal->priv || !anal->lock || !storage) {
+		return false;
+	}
+	memset (storage, 0, sizeof (*storage));
+	RAnal *mutable_anal = (RAnal *)anal;
+	r_th_lock_enter (mutable_anal->lock);
+	HtUP *proofs = R_ANAL_PRIV (mutable_anal)->dwarf_frame_pointer_proofs;
+	RAnalDwarfFramePointerProof *proof = proofs
+		? ht_up_find (proofs, function_addr, NULL): NULL;
+	const bool current = proof
+		&& proof->generation == R_ANAL_PRIV (mutable_anal)->dwarf_function_link_generation
+		&& dwarf_function_link_owned_current (
+			mutable_anal, function_addr, proof->type_name)
+		&& dwarf_frame_pointer_proof_profile_current (mutable_anal, proof);
+	if (current) {
+		storage->name = strdup (proof->reg_name);
+		if (storage->name) {
+			storage->offset = proof->offset;
+			storage->size = proof->size;
+		}
+	}
+	r_th_lock_leave (mutable_anal->lock);
+	return storage->name != NULL;
+}
+
+R_IPI void r_anal_dwarf_frame_pointer_storage_fini(RAnalDwarfFramePointerStorage *storage) {
+	if (storage) {
+		free (storage->name);
+		memset (storage, 0, sizeof (*storage));
+	}
+}
+
+R_IPI void r_anal_dwarf_function_link_authority_clear(RAnal *anal) {
+	if (!anal || !anal->priv || !anal->lock) {
+		return;
+	}
+	r_th_lock_enter (anal->lock);
+	HtUP *old_authorities = R_ANAL_PRIV (anal)->dwarf_function_link_authority;
+	HtUP *old_frame_pointer_proofs = R_ANAL_PRIV (anal)->dwarf_frame_pointer_proofs;
+	R_ANAL_PRIV (anal)->dwarf_function_link_authority = NULL;
+	R_ANAL_PRIV (anal)->dwarf_frame_pointer_proofs = NULL;
+	R_ANAL_PRIV (anal)->dwarf_function_link_generation = 1;
+	r_th_lock_leave (anal->lock);
+	ht_up_free (old_authorities);
+	r_anal_dwarf_frame_pointer_proofs_free (old_frame_pointer_proofs);
+}
+
+R_IPI HtUP *r_anal_dwarf_exact_formal_records_new(void) {
+	return ht_up_new (NULL, dwarf_exact_formal_records_kv_free, NULL);
+}
+
+R_IPI void r_anal_dwarf_exact_formal_records_free(HtUP *records) {
+	ht_up_free (records);
+}
+
+R_IPI bool r_anal_dwarf_exact_formal_record_add(HtUP *records, ut64 function_addr, int arg_index, const char *serialized) {
+	if (!records || arg_index < 0 || R_STR_ISEMPTY (serialized)) {
+		return false;
+	}
+	HtUP *function_records = ht_up_find (records, function_addr, NULL);
+	if (function_records && ht_up_find (function_records, (ut64)arg_index, NULL)) {
+		return false;
+	}
+	if (!function_records) {
+		function_records = ht_up_new (NULL, dwarf_exact_formal_record_kv_free, NULL);
+		if (!function_records
+			|| !ht_up_insert (records, function_addr, function_records)) {
+			ht_up_free (function_records);
+			return false;
+		}
+	}
+	RAnalDwarfExactFormalRecord *record = R_NEW0 (RAnalDwarfExactFormalRecord);
+	record->serialized = strdup (serialized);
+	if (!record->serialized) {
+		free (record);
+		return false;
+	}
+	record->arg_index = arg_index;
+	if (!ht_up_insert (function_records, (ut64)arg_index, record)) {
+		dwarf_exact_formal_record_free (record);
+		return false;
+	}
+	return true;
+}
+
+R_IPI bool r_anal_dwarf_exact_formal_record_matches(const RAnal *anal, ut64 function_addr, int arg_index, const char *serialized) {
+	if (!anal || !anal->priv || !anal->lock || arg_index < 0
+		|| R_STR_ISEMPTY (serialized)) {
+		return false;
+	}
+	RAnal *mutable_anal = (RAnal *)anal;
+	r_th_lock_enter (mutable_anal->lock);
+	HtUP *records = R_ANAL_PRIV (mutable_anal)->dwarf_exact_formal_records;
+	HtUP *function_records = records
+		? ht_up_find (records, function_addr, NULL): NULL;
+	RAnalDwarfExactFormalRecord *record = function_records
+		? ht_up_find (function_records, (ut64)arg_index, NULL): NULL;
+	const bool matches = record && record->arg_index == arg_index
+		&& !strcmp (r_str_get (record->serialized), serialized);
+	r_th_lock_leave (mutable_anal->lock);
+	return matches;
+}
+
+R_IPI void r_anal_dwarf_exact_formal_records_publish(RAnal *anal, HtUP *records) {
+	if (!anal || !anal->priv || !anal->lock) {
+		ht_up_free (records);
+		return;
+	}
+	r_th_lock_enter (anal->lock);
+	HtUP *old_records = R_ANAL_PRIV (anal)->dwarf_exact_formal_records;
+	R_ANAL_PRIV (anal)->dwarf_exact_formal_records = records;
+	r_th_lock_leave (anal->lock);
+	ht_up_free (old_records);
+}
+
+static bool dwarf_function_link_poison_on_generation_wrap(void *user, ut64 function_addr, const void *value) {
+	(void)user;
+	(void)function_addr;
+	RAnalDwarfFunctionLinkAuthority *authority = (RAnalDwarfFunctionLinkAuthority *)value;
+	if (authority) {
+		authority->state = R_ANAL_DWARF_FUNCTION_LINK_POISONED;
+	}
+	return true;
+}
+
+R_IPI void r_anal_dwarf_exact_formal_authority_reset(RAnal *anal) {
+	if (!anal || !anal->priv || !anal->lock) {
+		return;
+	}
+	HtUP *new_proofs = ht_up_new (NULL, exact_formal_proof_kv_free, NULL);
+	r_th_lock_enter (anal->lock);
+	if (R_ANAL_PRIV (anal)->dwarf_function_link_generation == UT64_MAX) {
+		HtUP *authorities = R_ANAL_PRIV (anal)->dwarf_function_link_authority;
+		if (authorities) {
+			ht_up_foreach (authorities,
+				dwarf_function_link_poison_on_generation_wrap, NULL);
+		}
+	} else {
+		R_ANAL_PRIV (anal)->dwarf_function_link_generation++;
+	}
+	HtUP *old_proofs = R_ANAL_PRIV (anal)->exact_formal_proofs;
+	HtUP *old_records = R_ANAL_PRIV (anal)->dwarf_exact_formal_records;
+	HtUP *old_frame_pointer_proofs = R_ANAL_PRIV (anal)->dwarf_frame_pointer_proofs;
+	R_ANAL_PRIV (anal)->exact_formal_proofs = new_proofs;
+	R_ANAL_PRIV (anal)->dwarf_exact_formal_records = NULL;
+	R_ANAL_PRIV (anal)->dwarf_frame_pointer_proofs = NULL;
+	r_th_lock_leave (anal->lock);
+	ht_up_free (old_proofs);
+	ht_up_free (old_records);
+	r_anal_dwarf_frame_pointer_proofs_free (old_frame_pointer_proofs);
+}
+
 static const char *r_anal_choose_fcnprefix(RAnal *anal, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal, "fcn");
 
@@ -200,6 +720,14 @@ R_API RAnal *r_anal_new(void) {
 	anal->lea_jmptbl_ip = UT64_MAX;
 	anal->priv = R_NEW0 (RAnalPriv);
 	R_ANAL_PRIV (anal)->types_dirty = true;
+	R_ANAL_PRIV (anal)->exact_formal_proofs = ht_up_new (
+		NULL, exact_formal_proof_kv_free, NULL);
+	R_ANAL_PRIV (anal)->dwarf_exact_formal_records = r_anal_dwarf_exact_formal_records_new ();
+	R_ANAL_PRIV (anal)->dwarf_function_link_authority =
+		dwarf_function_link_authority_new ();
+	R_ANAL_PRIV (anal)->dwarf_frame_pointer_proofs =
+		r_anal_dwarf_frame_pointer_proofs_new ();
+	R_ANAL_PRIV (anal)->dwarf_function_link_generation = 1;
 	anal->bb_tree = NULL;
 	anal->ht_addr_fun = ht_up_new0 ();
 	anal->ht_name_fun = ht_pp_new0 ();
@@ -285,6 +813,11 @@ void __block_free_rb(RBNode *node, void *user);
 
 static void anal_priv_free(RAnal * R_NONNULL a) {
 	free (R_ANAL_PRIV (a)->dir_prefix);
+	ht_up_free (R_ANAL_PRIV (a)->exact_formal_proofs);
+	ht_up_free (R_ANAL_PRIV (a)->dwarf_exact_formal_records);
+	ht_up_free (R_ANAL_PRIV (a)->dwarf_function_link_authority);
+	r_anal_dwarf_frame_pointer_proofs_free (
+		R_ANAL_PRIV (a)->dwarf_frame_pointer_proofs);
 	free (a->priv);
 }
 
@@ -292,6 +825,7 @@ R_API void r_anal_free(RAnal *a) {
 	if (!a) {
 		return;
 	}
+	r_anal_xrefs_free (a);
 	/* TODO: Free anals here */
 	free (a->pincmd);
 	r_list_free (a->fcns);
@@ -522,10 +1056,12 @@ R_API bool r_anal_op_is_eob(RAnalOp *op) {
 
 R_API void r_anal_purge(RAnal *anal) {
 	R_RETURN_IF_FAIL (anal);
+	r_anal_dwarf_exact_formal_authority_reset (anal);
 	r_anal_hint_clear (anal);
 	r_interval_tree_fini (&anal->meta);
 	r_interval_tree_init (&anal->meta, r_meta_item_free);
 	sdb_reset (anal->sdb_types);
+	r_anal_dwarf_function_link_authority_clear (anal);
 	sdb_reset (anal->sdb_zigns);
 	sdb_reset (anal->sdb_classes);
 	sdb_reset (anal->sdb_classes_attrs);
