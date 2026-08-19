@@ -1772,6 +1772,7 @@ static bool __vi_mode(RCons *cons) {
 static void dietline_print_risprompt(const char *gcomp_line) {
 	RCons *cons = r_cons_singleton ();
 	RLine *line = cons->line;
+	r_cons_clear_line (cons, false, false);
 	if (cons->context->color_mode && *gcomp_line && line->state.buffer.length > 0) {
 		printf ("\r (ri-search): ");
 		const char *text = gcomp_line;
