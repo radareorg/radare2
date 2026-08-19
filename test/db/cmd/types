@@ -3991,3 +3991,18 @@ EXPECT=<<EOF
 4
 EOF
 RUN
+
+NAME=pd shows the instruction under a function typelink without a format
+FILE=malloc://8
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 9090c3
+'td int foo(int x);
+tl foo = 0
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000001      90             nop
+EOF
+RUN
