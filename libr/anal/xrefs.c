@@ -839,20 +839,6 @@ R_API void r_anal_xrefs_owned_publish(RAnal *anal, const RAnalOwnedXrefPrepared 
 	xrefs_owned_publish_locked (anal, prepared);
 }
 
-R_API RAnalOwnedXrefStatus r_anal_xrefs_replace_owned(RAnal *anal, const RAnalOwnedXrefSet *set) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->lock, R_ANAL_OWNED_XREF_STATUS_INVALID);
-	r_th_lock_enter (anal->lock);
-	RAnalOwnedXrefPrepared *prepared = NULL;
-	RAnalOwnedXrefStatus status = xrefs_owned_prepare_many_locked (
-		anal, set, 1, &prepared);
-	if (status == R_ANAL_OWNED_XREF_STATUS_OK) {
-		xrefs_owned_swap_locked (anal, prepared);
-		xrefs_owned_publish_locked (anal, prepared);
-	}
-	r_th_lock_leave (anal->lock);
-	r_anal_xrefs_owned_prepared_free (prepared);
-	return status;
-}
 
 R_API RAnalOwnedXrefStatus r_anal_xrefs_owned_clear_all(RAnal *anal) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->lock && anal->rm,

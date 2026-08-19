@@ -1864,7 +1864,6 @@ R_API ut64 r_anal_function_dirty_epoch(const RAnalFunction *fcn);
 R_API ut64 r_anal_function_bump_dirty_epoch(RAnalFunction *fcn);
 R_API ut64 r_anal_function_context_hash(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv);
-R_API bool r_anal_function_set_signature_string(RAnal *anal, RAnalFunction *fcn, const char *signature);
 R_API bool r_anal_apply_mutations(RAnal *anal, const RAnalMutation *mutations, size_t mutation_count, RAnalMutationResult *result);
 /*
  * The atomic Stage-1 API accepts only CALLCONV and VAR_RENAME. Every record is
@@ -1922,7 +1921,6 @@ R_API bool r_anal_xrefs_setf(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to
 R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to);
 // Replaces the complete contribution for one owner key atomically. An empty set
 // clears that owner while preserving overlapping owners and legacy refs.
-R_API RAnalOwnedXrefStatus r_anal_xrefs_replace_owned(RAnal *anal, const RAnalOwnedXrefSet *set);
 
 R_API RList *r_anal_get_fcns(RAnal *anal);
 
