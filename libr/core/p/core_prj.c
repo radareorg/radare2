@@ -5,6 +5,8 @@
 #define R_LOG_ORIGIN "prj"
 
 #include <r_core.h>
+#include <r_core_priv.h>
+#include <r_anal_priv.h>
 #include "newprj/newprj.h"
 #include "newprj/format.inc.c"
 #include "newprj/maps.inc.c"
@@ -58,7 +60,9 @@ static RCmdResult prj_open(RCmdContext *ctx, const char *file) {
 		R_LOG_INFO ("Aborted");
 		return (RCmdResult) { .status = 1 };
 	}
-	r_core_cmd0 (core, "o--");
+	if (r_core_cmd0 (core, "o--")) {
+		return (RCmdResult) { .status = 1 };
+	}
 	r_config_set (core->config, "prj.name", "");
 	return prj_load (ctx, file, R_CORE_NEWPRJ_MODE_LOAD | R_CORE_NEWPRJ_MODE_CMD | R_CORE_NEWPRJ_MODE_RIO);
 }
