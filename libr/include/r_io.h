@@ -320,6 +320,7 @@ typedef RIODesc *(*RIOOpen)(RIO *io, const char *uri, int flags, int mode);
 typedef RIODesc *(*RIOOpenAt)(RIO *io, const  char *uri, int flags, int mode, ut64 at);
 typedef bool (*RIOClose)(RIO *io, int fd);
 typedef bool (*RIOReadAt)(RIO *io, ut64 addr, ut8 *buf, int len);
+typedef int (*RIONReadAt)(RIO *io, ut64 addr, ut8 *buf, int len);
 typedef bool (*RIOWriteAt)(RIO *io, ut64 addr, const ut8 *buf, int len);
 typedef bool (*RIOOverlayWriteAt)(RIO *io, ut64 addr, const ut8 *buf, int len);
 typedef char *(*RIOSystem)(RIO *io, const char* cmd);
@@ -362,7 +363,9 @@ typedef struct r_io_bind_t {
 	RIOOpen open;
 	RIOOpenAt open_at;
 	RIOClose close;
+	// read_at reports success; nread_at reports the exact byte count.
 	RIOReadAt read_at;
+	RIONReadAt nread_at;
 	RIOWriteAt write_at;
 	RIOOverlayWriteAt overlay_write_at;
 	RIOSystem system;
