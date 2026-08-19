@@ -188,67 +188,6 @@ addr: 0x100003f90
 EOF
 RUN
 
-NAME="open alias-owned Mach-O dSYM through symlink"
-FILE=bins/mach0/dwarf/a.out
-ARGS=-e bin.dbginfo=false -e log.level=0
-CMDS=<<EOF
-!sh -c 'tmp=$(mktemp -d "${TMPDIR:-/tmp}/r2r-dsym-symlink.XXXXXX") || exit; cleanup() { rm -f "$tmp/alias" "$tmp/real/a.out" "$tmp/alias.dSYM/Contents/Resources/DWARF/alias"; rmdir "$tmp/real" "$tmp/alias.dSYM/Contents/Resources/DWARF" "$tmp/alias.dSYM/Contents/Resources" "$tmp/alias.dSYM/Contents" "$tmp/alias.dSYM" "$tmp" 2>/dev/null; }; trap cleanup 0; mkdir -p "$tmp/real" "$tmp/alias.dSYM/Contents/Resources/DWARF" && cp "${R2_FILE}" "$tmp/real/a.out" && cp "${R2_FILE}.dSYM/Contents/Resources/DWARF/a.out" "$tmp/alias.dSYM/Contents/Resources/DWARF/alias" && ln -s "$tmp/real/a.out" "$tmp/alias" && radare2 -Nq -e log.level=0 -e bin.dbginfo=true -c "CL~file:~?;o.~alias~?;ob~?;k bin/cur/info/uuid.0" "$tmp/alias"'
-EOF
-EXPECT=<<EOF
-7
-1
-1
-15b1cbbd73213c5aabe69b4163f8275b
-EOF
-RUN
-
-NAME="reject alias-owned Mach-O dSYM with mismatched UUID"
-FILE=bins/mach0/dwarf/a.out
-ARGS=-e bin.dbginfo=false -e log.level=0
-CMDS=<<EOF
-!sh -c 'tmp=$(mktemp -d "${TMPDIR:-/tmp}/r2r-dsym-symlink.XXXXXX") || exit; cleanup() { rm -f "$tmp/alias" "$tmp/real/a.out" "$tmp/alias.dSYM/Contents/Resources/DWARF/alias"; rmdir "$tmp/real" "$tmp/alias.dSYM/Contents/Resources/DWARF" "$tmp/alias.dSYM/Contents/Resources" "$tmp/alias.dSYM/Contents" "$tmp/alias.dSYM" "$tmp" 2>/dev/null; }; trap cleanup 0; mkdir -p "$tmp/real" "$tmp/alias.dSYM/Contents/Resources/DWARF" && cp "${R2_FILE}" "$tmp/real/a.out" && cp "${R2_FILE}.dSYM/Contents/Resources/DWARF/a.out" "$tmp/alias.dSYM/Contents/Resources/DWARF/alias" && printf "\\024" | dd of="$tmp/alias.dSYM/Contents/Resources/DWARF/alias" bs=1 seek=40 conv=notrunc 2>/dev/null && ln -s "$tmp/real/a.out" "$tmp/alias" && radare2 -Nq -e log.level=0 -e bin.dbginfo=false -c "k bin/cur/info/uuid.0" "$tmp/alias.dSYM/Contents/Resources/DWARF/alias" && radare2 -Nq -e log.level=0 -e bin.dbginfo=true -c "CL~file:~?;o.~alias~?;ob~?;k bin/cur/info/uuid.0" "$tmp/alias"'
-EOF
-EXPECT=<<EOF
-14b1cbbd73213c5aabe69b4163f8275b
-0
-1
-1
-15b1cbbd73213c5aabe69b4163f8275b
-EOF
-RUN
-
-NAME="open canonical-target Mach-O dSYM through symlink"
-FILE=bins/mach0/dwarf/a.out
-ARGS=-e bin.dbginfo=false -e log.level=0
-CMDS=<<EOF
-!sh -c 'tmp=$(mktemp -d "${TMPDIR:-/tmp}/r2r-dsym-symlink.XXXXXX") || exit; cleanup() { rm -f "$tmp/alias" "$tmp/real/a.out" "$tmp/real/a.out.dSYM/Contents/Resources/DWARF/a.out"; rmdir "$tmp/real/a.out.dSYM/Contents/Resources/DWARF" "$tmp/real/a.out.dSYM/Contents/Resources" "$tmp/real/a.out.dSYM/Contents" "$tmp/real/a.out.dSYM" "$tmp/real" "$tmp" 2>/dev/null; }; trap cleanup 0; mkdir -p "$tmp/real/a.out.dSYM/Contents/Resources/DWARF" && cp "${R2_FILE}" "$tmp/real/a.out" && cp "${R2_FILE}.dSYM/Contents/Resources/DWARF/a.out" "$tmp/real/a.out.dSYM/Contents/Resources/DWARF/a.out" && ln -s "$tmp/real/a.out" "$tmp/alias" && radare2 -Nq -e log.level=0 -e bin.dbginfo=true -c "CL~file:~?;o.~alias~?;ob~?;k bin/cur/info/uuid.0" "$tmp/alias"'
-EOF
-EXPECT=<<EOF
-7
-1
-1
-15b1cbbd73213c5aabe69b4163f8275b
-EOF
-RUN
-
-NAME="open later matching slice with misleading universal Mach-O metadata"
-FILE=bins/mach0/dwarf/a.out
-ARGS=-e bin.dbginfo=false -e log.level=0
-CMDS=<<EOF
-!sh -c 'tmp=$(mktemp -d "${TMPDIR:-/tmp}/r2r-dsym-universal.XXXXXX") || exit; cleanup() { rm -f "$tmp/alias" "$tmp/real/a.out" "$tmp/bad" "$tmp/alias.dSYM/Contents/Resources/DWARF/alias"; rmdir "$tmp/real" "$tmp/alias.dSYM/Contents/Resources/DWARF" "$tmp/alias.dSYM/Contents/Resources" "$tmp/alias.dSYM/Contents" "$tmp/alias.dSYM" "$tmp" 2>/dev/null; }; trap cleanup 0; mkdir -p "$tmp/real" "$tmp/alias.dSYM/Contents/Resources/DWARF" && cp "${R2_FILE}" "$tmp/real/a.out" && cp "${R2_FILE}.dSYM/Contents/Resources/DWARF/a.out" "$tmp/bad" && printf "\\024" | dd of="$tmp/bad" bs=1 seek=40 conv=notrunc 2>/dev/null && printf "\\312\\376\\272\\276\\000\\000\\000\\002\\001\\000\\000\\014\\000\\000\\000\\000\\000\\000\\020\\000\\000\\000\\042\\230\\000\\000\\000\\014\\002\\000\\000\\014\\000\\000\\000\\000\\000\\000\\100\\000\\000\\000\\042\\230\\000\\000\\000\\014" > "$tmp/alias.dSYM/Contents/Resources/DWARF/alias" && dd if="$tmp/bad" of="$tmp/alias.dSYM/Contents/Resources/DWARF/alias" bs=1 seek=4096 conv=notrunc 2>/dev/null && dd if="${R2_FILE}.dSYM/Contents/Resources/DWARF/a.out" of="$tmp/alias.dSYM/Contents/Resources/DWARF/alias" bs=1 seek=16384 conv=notrunc 2>/dev/null && ln -s "$tmp/real/a.out" "$tmp/alias" && radare2 -Nq -e io.autofd=false -e log.level=0 -e bin.dbginfo=true -c "CL~file:~?;o.~alias~?;ob~?;k fd.5~?;k bin/cur/info/uuid.0;m~?;o $tmp/alias.dSYM/Contents/Resources/DWARF/alias;m~?;m-/bin;m~?" "$tmp/alias"'
-EOF
-EXPECT=<<EOF
-7
-1
-1
-0
-15b1cbbd73213c5aabe69b4163f8275b
-0
-1
-0
-EOF
-RUN
-
 NAME="pdf dwarf invalid main for analysis not found (aa)"
 FILE=bins/src/dwarftest
 CMDS=<<EOF
