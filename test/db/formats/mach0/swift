@@ -1249,6 +1249,7 @@ EXPECT=<<EOF
         "attr": [
           "const"
         ],
+        "offset": 16,
         "addr": 4295135600
       }
     ]
