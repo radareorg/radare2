@@ -2046,13 +2046,24 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			ut32 bitsize;
 			src = getarg (&gop, 1, 0, NULL, NULL);
-			dst = getarg (&gop, 0, 1, "-", &bitsize);
-			if (src && dst) {
-				esilprintf (op, "cf,%s,+,%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,%d,$b,cf,:=",
-					src, dst, bitsize - 1, bitsize - 1, bitsize);
+			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
+			dst_w = getarg (&gop, 0, 1, "-", NULL);
+			if (src && dst_r && dst_w && bitsize && bitsize <= 64) {
+				// borrows pushed before the write clobbers dst, popped after
+				esilprintf (op, "%s,%s,==,%u,$b,cf,$z,&,|,"
+					"0xf,%s,&,0xf,%s,&,==,4,$b,cf,$z,&,|,"
+					"cf,%s,+,%s,"
+					"%s,0x%"PFMT64x",-,!,cf,!,&,%u,$o,^,of,:=,"
+					"%u,$s,sf,:=,$z,zf,:=,$p,pf,:=,af,:=,cf,:=",
+					src, dst_r, bitsize,
+					src, dst_r,
+					src, dst_w,
+					src, (ut64)1ULL << (bitsize - 1), bitsize - 1,
+					bitsize - 1);
 			}
 			free (src);
-			free (dst);
+			free (dst_r);
+			free (dst_w);
 		}
 		break;
 	case X86_INS_LIDT:

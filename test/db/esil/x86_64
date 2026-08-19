@@ -739,3 +739,98 @@ EXPECT=<<EOF
 0x1111110f
 EOF
 RUN
+
+NAME=sbb borrows when the carry-in wraps the operand width
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 19c1
+ar rcx=0x0
+ar rax=0xffffffff
+ar cf=1
+aes
+ar rcx
+ar cf
+ar af
+ar zf
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=sbb keeps the overflow correction off when the carry-in is set
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 19c1
+ar rcx=0x1
+ar rax=0x80000000
+ar cf=1
+aes
+ar rcx
+ar of
+ar cf
+ar sf
+EOF
+EXPECT=<<EOF
+0x80000000
+0x00000001
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=sbb overflows on an INT_MIN source without carry-in
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 19c1
+ar rcx=0x1
+ar rax=0x80000000
+ar cf=0
+aes
+ar rcx
+ar of
+ar cf
+EOF
+EXPECT=<<EOF
+0x80000001
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=sbb sets the adjust flag when the source nibble wraps
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 19c1
+ar rcx=0x0
+ar rax=0xf
+ar cf=1
+ar of=1
+aes
+ar rcx
+ar af
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0xfffffff0
+0x00000001
+0x00000001
+0x00000000
+EOF
+RUN
