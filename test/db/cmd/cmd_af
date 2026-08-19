@@ -13,6 +13,24 @@ int main (int argc, char **argv);
 EOF
 RUN
 
+NAME=af function assumptions json
+FILE=bins/mach0/ls-osx-x86_64
+CMDS=<<EOF
+s main
+af
+afAj
+afAj [{"kind":"nonnull","target":"rdi"}]
+afAj
+afA-
+afAj
+EOF
+EXPECT=<<EOF
+[]
+[{"kind":"nonnull","target":"rdi"}]
+[]
+EOF
+RUN
+
 NAME=af localflag
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF

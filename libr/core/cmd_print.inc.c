@@ -320,6 +320,7 @@ static RCoreHelpMessage help_msg_pd = {
 	"pdaj", "", "disassemble all possible opcodes (byte per byte) in JSON",
 	"pdb", "[j]", "disassemble basic block (j for JSON)",
 	"pdc", "[?][c]", "pseudo disassembler output in C-like syntax",
+	"pdd", " [name|addr]", "decompile function with the best analysis provider",
 	"pdC", "", "show comments found in N instructions",
 	"pde", "[q|qq|j] N", "disassemble N instructions following execution flow from current PC",
 	"pdo", " N", "convert esil expressions of N instructions to C (pdO for bytes)",
@@ -6789,6 +6790,95 @@ static void core_print_decompile(RCore *core, const char *input) {
 	r_esil_toc_free (ec);
 }
 
+static RAnalFunction *core_decompiler_target(RCore *core, const char *input) {
+	char *arg = r_str_trim_dup (input? input: "");
+	if (!arg) {
+		return NULL;
+	}
+	ut64 addr = core->addr;
+	if (*arg) {
+		RAnalFunction *fcn = r_anal_get_function_byname (core->anal, arg);
+		if (fcn) {
+			free (arg);
+			return fcn;
+		}
+		if (!r_num_is_valid_input (core->num, arg)) {
+			R_LOG_ERROR ("Cannot resolve function '%s'", arg);
+			free (arg);
+			return NULL;
+		}
+		addr = r_num_math (core->num, arg);
+	}
+	free (arg);
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
+	if (!fcn) {
+		fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
+	}
+	if (!fcn) {
+		R_LOG_ERROR ("Cannot find a function at 0x%08" PFMT64x, addr);
+	}
+	return fcn;
+}
+
+typedef struct {
+	RAnalPlugin *provider;
+	RCodeMeta *meta;
+} DecompileSnapshotContext;
+
+static bool decompile_snapshot_cb(const RAnalFunctionSnapshot *snapshot, void *user) {
+	DecompileSnapshotContext *ctx = user;
+	ctx->meta = ctx->provider->decompile (snapshot);
+	return true;
+}
+
+static bool core_print_provider_decompile_locked(RCore *core, const char *input) {
+	RAnalPlugin *provider = r_anal_decompiler_provider (core->anal);
+	if (!provider) {
+		return false;
+	}
+	RAnalFunction *fcn = core_decompiler_target (core, input);
+	if (!fcn) {
+		r_core_return_code (core, 1);
+		return true;
+	}
+	DecompileSnapshotContext ctx = {
+		.provider = provider,
+	};
+	const char *reason = NULL;
+	if (!r_core_function_snapshot_at (
+			core, fcn->addr, decompile_snapshot_cb, &ctx, &reason)) {
+		R_LOG_ERROR ("Cannot snapshot function '%s': %s",
+			fcn->name? fcn->name: "?", r_str_get_fail (reason, "unknown reason"));
+		r_core_return_code (core, 1);
+		return true;
+	}
+	RCodeMeta *meta = ctx.meta;
+	if (!meta) {
+		R_LOG_ERROR ("Decompiler provider failed for function '%s'", fcn->name? fcn->name: "?");
+		r_core_return_code (core, 1);
+		return true;
+	}
+	char *out = r_codemeta_print2 (meta, NULL, core->anal);
+	bool rendered = out != NULL;
+	if (rendered) {
+		r_cons_print (core->cons, out);
+	} else {
+		R_LOG_ERROR ("Cannot render decompiler output");
+	}
+	free (out);
+	r_codemeta_free (meta);
+	r_core_return_code (core, rendered? 0: 1);
+	return true;
+}
+
+static bool core_print_provider_decompile(RCore *core, const char *input) {
+	R_RETURN_VAL_IF_FAIL (core && core->lock, false);
+	r_th_lock_enter (core->lock);
+	const bool result = core_print_provider_decompile_locked (core, input);
+	r_th_lock_leave (core->lock);
+	return result;
+}
+
 static void cmd_print_pcA(RCore *core, ut64 addr, const ut8 *data, int len) {
 	RStrBuf *sb = r_strbuf_new ("");
 	if (!sb) {
@@ -7387,6 +7477,18 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 	case 'z': // "pdz" // retdec
 	case 'g': // "pdg" // r2ghidra
 	{
+		if (input[1] == 'd') {
+			if (input[2] == '?') {
+				r_cons_cmd_help_match (core->cons, help_msg_pd, "pdd", 0, true);
+				r_core_return_code (core, 0);
+				processed_cmd = true;
+				break;
+			}
+			if (core_print_provider_decompile (core, input + 2)) {
+				processed_cmd = true;
+				break;
+			}
+		}
 		// Check for fallback command in SDB (fallbackcmd.* namespace)
 		char cmd_name[4] = { 'p', 'd', input[1], '\0' };
 		const char *fallback_cmd = sdb_const_getf (core->sdb, NULL, "fallbackcmd.%s", cmd_name);

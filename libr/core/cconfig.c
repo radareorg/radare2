@@ -1764,19 +1764,8 @@ static bool cb_cmdpdc(void *user, void *data) {
 			}
 		}
 		RConfigNode *r2dec = r_config_node_get (core->config, "r2dec.asm");
-		if (r2dec) {
+		if (r2dec || r_anal_decompiler_provider (core->anal)) {
 			r_cons_printf (core->cons, "pdd\n");
-		}
-		/* Check for r2sleigh analysis plugin with decompiler support */
-		{
-			RListIter *it;
-			RAnalPlugin *ap;
-			r_list_foreach (core->anal->libstore->plugins, it, ap) {
-				if (!strcmp (ap->meta.name, "sla")) {
-					r_cons_println (core->cons, "a:sla.dec");
-					break;
-				}
-			}
 		}
 		return false;
 	}
