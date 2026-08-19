@@ -3029,7 +3029,7 @@ R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const c
 	return true;
 }
 
-R_API bool r_anal_function_set_signature_string(RAnal *anal, RAnalFunction *fcn, const char *signature) {
+static bool r_anal_function_set_signature_string(RAnal *anal, RAnalFunction *fcn, const char *signature) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn && R_STR_ISNOTEMPTY (signature), false);
 	if (!r_anal_str_to_fcn (anal, fcn, signature)) {
 		return false;
