@@ -356,6 +356,11 @@ typedef bool (*RAnalFunctionSnapshotCallback)(const RAnalFunctionSnapshot *snaps
 // Capability bits describe fields captured, not semantic completeness. Schema
 // 12 adds source-owned parameter presentation names without making names part
 // of semantic identity or revision hashing; the public ABI is 139.
+// Presence says this radare2 exposes the immutable function-snapshot API. A
+// consumer asks whether the capability is here, never which number it sits at:
+// the numbers move for reasons that have nothing to do with whether the API a
+// provider needs is present.
+#define R_ANAL_FUNCTION_SNAPSHOT_API 1
 #define R_ANAL_FUNCTION_SNAPSHOT_SCHEMA_VERSION 14
 typedef enum {
 	R_ANAL_FUNCTION_SNAPSHOT_CAP_SIGNATURE = 1ULL << 0,
