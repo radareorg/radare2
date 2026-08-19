@@ -158,6 +158,7 @@ R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
 			RRegItem *ri = r_reg_get (a->reg, var->regname, -1);
 			if (ri) {
 				if (var->delta != ri->index) {
+					r_anal_var_exact_formal_clear (a, var);
 					var->delta = ri->index;
 				}
 				r_unref (ri);
@@ -250,6 +251,101 @@ static inline bool valid_var_kind(char kind) {
 	}
 }
 
+static ut64 exact_formal_proof_key(const RAnalVar *var) {
+	return (ut64)(size_t)var;
+}
+
+static bool exact_formal_source_offset(const RAnalVar *var, RAnalVarKind kind, R_OUT st64 *source_offset) {
+	R_RETURN_VAL_IF_FAIL (var && var->fcn && source_offset, false);
+	switch (kind) {
+	case R_ANAL_VAR_KIND_BPV:
+		return !r_add_overflow ((st64)var->delta, var->fcn->bp_off, source_offset);
+	case R_ANAL_VAR_KIND_SPV:
+		return !r_add_overflow ((st64)var->delta, (st64)var->fcn->maxstack, source_offset);
+	default:
+		return false;
+	}
+}
+
+R_IPI bool r_anal_var_exact_formal_set(RAnal *anal, RAnalVar *var, ut64 function_addr, int ordinal, RAnalVarKind kind, int delta, st64 source_offset, const char *type) {
+	if (!anal || !anal->priv || !anal->lock || !var || !var->fcn
+		|| var->fcn->anal != anal || ordinal < 0 || R_STR_ISEMPTY (type)) {
+		return false;
+	}
+	r_th_lock_enter (anal->lock);
+	HtUP *proofs = R_ANAL_PRIV (anal)->exact_formal_proofs;
+	st64 current_source_offset;
+	if (!proofs || var->fcn->addr != function_addr || !var->isarg
+		|| var->argnum != ordinal || var->kind != kind || var->delta != delta
+		|| !exact_formal_source_offset (var, kind, &current_source_offset)
+		|| current_source_offset != source_offset
+		|| R_STR_ISEMPTY (var->type) || strcmp (var->type, type)) {
+		r_th_lock_leave (anal->lock);
+		return false;
+	}
+	RAnalExactFormalProof *proof = R_NEW0 (RAnalExactFormalProof);
+	proof->type = strdup (type);
+	if (!proof->type) {
+		free (proof);
+		r_th_lock_leave (anal->lock);
+		return false;
+	}
+	proof->fcn = var->fcn;
+	proof->function_addr = function_addr;
+	proof->ordinal = ordinal;
+	proof->kind = kind;
+	proof->delta = delta;
+	proof->source_offset = source_offset;
+	proof->bp_off = var->fcn->bp_off;
+	proof->maxstack = var->fcn->maxstack;
+	if (!ht_up_update (proofs, exact_formal_proof_key (var), proof)) {
+		free (proof->type);
+		free (proof);
+		r_th_lock_leave (anal->lock);
+		return false;
+	}
+	r_th_lock_leave (anal->lock);
+	return true;
+}
+
+R_IPI bool r_anal_var_exact_formal_get(RAnal *anal, const RAnalVar *var, R_OUT int *ordinal) {
+	if (!anal || !anal->priv || !anal->lock || !var || !ordinal) {
+		return false;
+	}
+	r_th_lock_enter (anal->lock);
+	HtUP *proofs = R_ANAL_PRIV (anal)->exact_formal_proofs;
+	RAnalExactFormalProof *proof = proofs
+		? ht_up_find (proofs, exact_formal_proof_key (var), NULL): NULL;
+	st64 source_offset;
+	const bool valid = proof && var->fcn && var->fcn == proof->fcn
+		&& var->fcn->anal == anal && var->fcn->addr == proof->function_addr
+		&& var->isarg && var->argnum == proof->ordinal
+		&& var->kind == proof->kind && var->delta == proof->delta
+		&& var->fcn->bp_off == proof->bp_off
+		&& var->fcn->maxstack == proof->maxstack
+		&& exact_formal_source_offset (var, proof->kind, &source_offset)
+		&& source_offset == proof->source_offset
+		&& R_STR_ISNOTEMPTY (var->type) && R_STR_ISNOTEMPTY (proof->type)
+		&& !strcmp (var->type, proof->type);
+	if (valid) {
+		*ordinal = proof->ordinal;
+	}
+	r_th_lock_leave (anal->lock);
+	return valid;
+}
+
+R_IPI void r_anal_var_exact_formal_clear(RAnal *anal, const RAnalVar *var) {
+	if (!anal || !anal->priv || !anal->lock || !var) {
+		return;
+	}
+	r_th_lock_enter (anal->lock);
+	HtUP *proofs = R_ANAL_PRIV (anal)->exact_formal_proofs;
+	if (proofs) {
+		ht_up_delete (proofs, exact_formal_proof_key (var));
+	}
+	r_th_lock_leave (anal->lock);
+}
+
 R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, const char * R_NULLABLE type, int size, bool isarg, const char * R_NONNULL name) {
 	R_RETURN_VAL_IF_FAIL (fcn && name, NULL);
 	R_LOG_DEBUG ("fcn.setvar 0x%llx delta=%d kind=%c type=%s size=%d isarg=%d name=%s", fcn->addr, delta, kind, type, size, isarg, name);
@@ -291,11 +387,13 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 		RVecAnalVarConstraint_init (&var->constraints);
 		var->argnum = -1;
 	} else {
+		r_anal_var_exact_formal_clear (fcn->anal, var);
 		free (var->name);
 		free (var->regname);
 		free (var->type);
 	}
 	R_DIRTY_SET (fcn->anal);
+	r_anal_function_bump_dirty_epoch (fcn);
 	var->name = strdup (name);
 	var->regname = reg? strdup (reg->name): NULL; // TODO: no strdup here? pool? or not keep regname at all?
 	var->type = strdup (type);
@@ -322,8 +420,10 @@ R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList *l) {
 R_API void r_anal_var_set_type(RAnal *anal, RAnalVar *var, const char * const type) {
 	char *nt = strdup (type);
 	if (nt) {
+		r_anal_var_exact_formal_clear (anal, var);
 		free (var->type);
 		var->type = nt;
+		r_anal_function_bump_dirty_epoch (var->fcn);
 		R_LOG_DEBUG ("set type %s for %s", type, var->name);
 		shadow_var_struct_members (anal, var);
 		{
@@ -335,6 +435,7 @@ R_API void r_anal_var_set_type(RAnal *anal, RAnalVar *var, const char * const ty
 
 static void var_free(RAnalVar *var) {
 	if (R_LIKELY (var)) {
+		r_anal_var_exact_formal_clear (var->fcn->anal, var);
 		r_anal_var_clear_accesses (var);
 		RVecAnalVarConstraint_fini (&var->constraints);
 		free (var->name);
@@ -759,6 +860,7 @@ R_API bool r_anal_var_rename(RAnal *anal, RAnalVar *var, const char *new_name) {
 	}
 	free (var->name);
 	var->name = nn;
+	r_anal_function_bump_dirty_epoch (var->fcn);
 	{
 		REventVariable event = { .fcn = var->fcn, .var = var, .name = nn };
 		r_event_send (anal->ev, R_EVENT_VARIABLE_NAME_CHANGED, &event);
@@ -2215,6 +2317,14 @@ R_API void r_anal_function_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache
 	cache->svars = r_anal_var_vec (anal, fcn, R_ANAL_VAR_KIND_SPV);
 	RVecAnalVarPtr_sort (cache->bvars, var_ptr_comparator);
 	assign_reg_argnums (anal, fcn, cache->rvars);
+	RVecAnalVarPtr_sort (cache->svars, var_ptr_comparator);
+}
+
+R_IPI void r_anal_function_vars_cache_init_readonly(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn) {
+	cache->bvars = r_anal_var_vec (anal, fcn, R_ANAL_VAR_KIND_BPV);
+	cache->rvars = r_anal_var_vec (anal, fcn, R_ANAL_VAR_KIND_REG);
+	cache->svars = r_anal_var_vec (anal, fcn, R_ANAL_VAR_KIND_SPV);
+	RVecAnalVarPtr_sort (cache->bvars, var_ptr_comparator);
 	RVecAnalVarPtr_sort (cache->svars, var_ptr_comparator);
 }
 
