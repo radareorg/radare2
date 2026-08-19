@@ -6,6 +6,7 @@ if get_option('enable_tests')
     'anal_block',
     'anal_cc',
     'anal_class_graph',
+    'anal_decompiler',
     'anal_function',
     'anal_hints',
     'anal_meta',
