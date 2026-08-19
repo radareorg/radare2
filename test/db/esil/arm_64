@@ -1693,3 +1693,128 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+
+NAME=w-register writes zero-extend into the x register
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aei
+wx 2000020b
+ar x0=0xffffffff00000000
+ar x1=1
+ar x2=2
+aes
+ar x0
+wx 8046a272
+ar x0=0xa5a5000089abcdef
+ar pc=0
+aes
+ar x0
+wx 2000821a
+ar x0=0xa5a5000000000000
+ar x1=0xffffffff80000005
+ar x2=0x0000000100000003
+ar zf=1
+ar pc=0
+aes
+ar x0
+wx 60044029
+ar x0=0xa5a5000000000000
+ar x1=0xa5a5000100000000
+ar x3=0x100
+wx 88776655a5a5a5a5@0x100
+ar pc=0
+aes
+ar x0
+ar x1
+wx ff430011
+ar sp=0xffffffff00001000
+ar pc=0
+aes
+ar sp
+EOF
+EXPECT=<<EOF
+0x00000003
+0x1234cdef
+0x80000005
+0x55667788
+0xa5a5a5a5
+0x00001010
+EOF
+RUN
+
+NAME=ldrsb w sign-extends to 32 bits then zero-extends, sxtw x untouched
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aei
+wx 2000c039
+ar x0=0xa5a5000000000000
+ar x1=0x100
+wx 88@0x100
+aes
+ar x0
+wx 207c4093
+ar x1=0xa5a50001ff887766
+ar pc=0
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+0xffffff88
+0xffffffffff887766
+EOF
+RUN
+
+NAME=cmp cmn tst on w registers do not touch the source x register
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aei
+wx 3f00026b
+ar x1=0xa5a5000180000000
+ar x2=0xa5a5000200000001
+aes
+ar x1
+ar nf
+wx 3f00022b
+ar pc=0
+aes
+ar x1
+wx 3f00026a
+ar pc=0
+aes
+ar x1
+wx 3f000071
+ar pc=0
+aes
+ar x1
+aoe @ 0
+EOF
+EXPECT=<<EOF
+0xa5a5000180000000
+0x00000000
+0xa5a5000180000000
+0xa5a5000180000000
+0xa5a5000180000000
+0x0 0x0,w1,==,$z,zf,:=,31,$s,nf,:=,32,$b,!,cf,:=,31,0x0,w1,^,0x0,w1,-,w1,^,&,>>,vf,:=
+EOF
+RUN
+
+NAME=zero-extension is appended after the flag block and only for written w registers
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2000022b
+aoe
+wx 200080b9
+aoe
+wx 41000088
+aoe
+EOF
+EXPECT=<<EOF
+0x0 w2,-1,*,w1,==,$z,zf,:=,31,$s,nf,:=,31,$c,cf,:=,31,$o,vf,:=,w2,w1,+,w0,=,w0,x0,=
+0x0 32,0,x1,+,DUP,tmp,=,[4],~,x0,=
+0x0 0,w0,=,w1,w1,0,+,=[8],w0,x0,=
+EOF
+RUN

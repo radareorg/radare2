@@ -1414,30 +1414,54 @@ static void arm64fpmath(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 	}
 }
 
-/* A write to a 32-bit `w` register zero-extends into the whole 64-bit `x` one.
- * ESIL does not do that on its own: naming `w9` stores four bytes and leaves the
- * top half of `x9` as it was, so `add w9, w9, w10` kept whatever `x9` used to
- * hold above bit 31. Appended once here rather than at each of the dozens of
- * sites that spell a destination, and after the flag assignments so that the
- * extension cannot disturb the comparison state they read. */
-static void arm64_esil_zero_extend_dst(RAnalOp *op, csh *handle, cs_insn *insn) {
-	if (!insn->detail || insn->detail->arm64.op_count < 1) {
+// w0..w30 -> 0..30, wsp -> 31, anything else -> -1
+static int arm64_wreg_bit(const char *tok, size_t len) {
+	if (len == 3 && !memcmp (tok, "wsp", 3)) {
+		return 31;
+	}
+	if (len < 2 || len > 3 || tok[0] != 'w' || !isdigit ((ut8)tok[1])) {
+		return -1;
+	}
+	if (len == 3 && !isdigit ((ut8)tok[2])) {
+		return -1;
+	}
+	int n = atoi (tok + 1);
+	return n <= 30? n: -1;
+}
+
+// W writes zero-extend into X; the profile maps wN onto xN's low half only
+static void arm64_esil_zext_wregs(RAnalOp *op) {
+	const char *tok = r_strbuf_get (&op->esil);
+	if (R_STR_ISEMPTY (tok)) {
 		return;
 	}
-	const cs_arm64_op *dst = &insn->detail->arm64.operands[0];
-	if (dst->type != ARM64_OP_REG || !(dst->access & CS_AC_WRITE)) {
-		return;
+	ut32 regs = 0;
+	const char *prev = NULL;
+	size_t prevlen = 0;
+	while (tok) {
+		const char *end = strchr (tok, ',');
+		size_t len = end? (size_t)(end - tok): strlen (tok);
+		// '=' assigns; "==" "<=" ">=" compare and "=[N]" stores
+		bool assign = len > 0 && tok[len - 1] == '='
+			&& !(len == 2 && strchr ("=<>", tok[0]))
+			&& !memchr (tok, '[', len);
+		int bit = assign && prev? arm64_wreg_bit (prev, prevlen): -1;
+		if (bit >= 0) {
+			regs |= 1u << bit;
+		}
+		prev = tok;
+		prevlen = len;
+		tok = end? end + 1: NULL;
 	}
-	const char *wide = cs_reg_name (*handle, dst->reg);
-	if (!wide || *wide != 'w' || !isdigit ((ut8)wide[1])) {
-		return;
+	int n;
+	for (n = 0; n < 31; n++) {
+		if (regs & (1u << n)) {
+			r_strbuf_appendf (&op->esil, ",w%d,x%d,=", n, n);
+		}
 	}
-	if (r_strbuf_length (&op->esil) < 1) {
-		return;
+	if (regs & (1u << 31)) {
+		r_strbuf_append (&op->esil, ",wsp,sp,=");
 	}
-	/* Storing through the 64-bit name clears the top half without reading it,
-	 * so the register-access analysis still reports only what is really read. */
-	r_strbuf_appendf (&op->esil, ",%s,x%s,=", wide, wide + 1);
 }
 
 static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
@@ -2619,8 +2643,8 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	}
 
+	arm64_esil_zext_wregs (op);
 	r_strbuf_append (&op->esil, postfix);
-	arm64_esil_zero_extend_dst (op, handle, insn);
 
 	return 0;
 }
