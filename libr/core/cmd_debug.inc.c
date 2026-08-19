@@ -828,6 +828,10 @@ static RCoreHelpMessage help_msg_dts = {
 };
 
 static void cmd_dtsc(RCore *core, const char *input) {
+	if (input[3] == '?') {
+		r_cons_cmd_help_match (core->cons, help_msg_dts, "dtsc", 0, true);
+		return;
+	}
 	if (!core->dbg->session) {
 		R_LOG_ERROR ("No session started");
 		return;
@@ -844,12 +848,12 @@ static void cmd_dtsc(RCore *core, const char *input) {
 }
 
 static void cmd_dtsd(RCore *core, const char *input) {
-	if (!core->dbg->session) {
-		R_LOG_ERROR ("No session started");
-		return;
-	}
 	if (input[3] == '?') {
 		r_cons_cmd_help_match (core->cons, help_msg_dts, "dtsd", 0, true);
+		return;
+	}
+	if (!core->dbg->session) {
+		R_LOG_ERROR ("No session started");
 		return;
 	}
 	const char *arg = r_str_trim_head_ro (input + 3);
@@ -866,6 +870,10 @@ static void cmd_dtsd(RCore *core, const char *input) {
 }
 
 static void cmd_dtsr(RCore *core, const char *input) {
+	if (input[3] == '?') {
+		r_cons_cmd_help_match (core->cons, help_msg_dts, "dtsr", 0, true);
+		return;
+	}
 	if (!core->dbg->session) {
 		R_LOG_ERROR ("No session started");
 		return;
@@ -882,15 +890,15 @@ static void cmd_dtsr(RCore *core, const char *input) {
 }
 
 static void cmd_dtsw(RCore *core, const char *input) {
-	if (!core->dbg->session) {
-		R_LOG_ERROR ("No session started");
-		return;
-	}
 	int mode = 0;
 	char sub = input[3];
 	const char *arg = r_str_trim_head_ro (sub? input + 4: input + 3);
 	if (sub == '?' || (sub == ' ' && *arg == '?')) {
 		r_cons_cmd_help (core->cons, help_msg_dtsw);
+		return;
+	}
+	if (!core->dbg->session) {
+		R_LOG_ERROR ("No session started");
 		return;
 	}
 	if (!sub || sub == ' ') {
@@ -6538,7 +6546,9 @@ static int cmd_debug(void *data, const char *input) {
 				cmd_dtsc (core, input);
 				break;
 			case 't': // "dtst"
-				if (core->dbg->session) {
+				if (input[3] == '?') {
+					r_cons_cmd_help_match (core->cons, help_msg_dts, "dtst", 0, true);
+				} else if (core->dbg->session) {
 					const char *sname = r_str_trim_head_ro (input + 3);
 					if (R_STR_ISNOTEMPTY (sname)) {
 						r_debug_session_save (core->dbg->session, sname);
@@ -6550,6 +6560,10 @@ static int cmd_debug(void *data, const char *input) {
 				}
 				break;
 			case 'f': // "dtsf"
+				if (input[3] == '?') {
+					r_cons_cmd_help_match (core->cons, help_msg_dts, "dtsf", 0, true);
+					break;
+				}
 				if (core->dbg->session) {
 					debug_replay_reset (core);
 					r_debug_session_free (core->dbg->session);
