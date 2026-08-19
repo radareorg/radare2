@@ -2244,3 +2244,29 @@ EXPECT=<<EOF
 0xffffffff87654321
 EOF
 RUN
+
+NAME=bcl 20,31,+4 sets lr to the next instruction and leaves ctr alone
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 429f0005 429f0004
+aei
+ar lr=0xa5a5a5a5a5a5a5a5
+ar ctr=7
+ar pc=0
+aes
+ar lr
+ar ctr
+ar pc
+aes
+ar ctr
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000004
+0x00000007
+0x00000004
+0x00000007
+0x00000008
+EOF
+RUN

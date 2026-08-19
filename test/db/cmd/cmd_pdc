@@ -1190,3 +1190,20 @@ EXPECT=<<EOF
 0
 EOF
 RUN
+
+NAME=pdc structured ppc64 plt stub has no placeholder for the bcl get-pc idiom
+FILE=bins/elf/ppc64v1-more
+ARGS=-e pdc.structured=1
+CMDS=<<EOF
+s 0xdb14
+af
+pdc~cond_0x~?
+pdc~if (~?
+pdc~lr = pc
+EOF
+EXPECT=<<EOF
+0
+0
+    lr = pc + 4; goto 0xdae0
+EOF
+RUN
