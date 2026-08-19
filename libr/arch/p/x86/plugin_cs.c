@@ -2046,9 +2046,11 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			ut32 bitsize;
 			src = getarg (&gop, 1, 0, NULL, NULL);
-			dst = getarg (&gop, 0, 0, NULL, &bitsize);
-			esilprintf (op, "cf,%s,+,%s,-=,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,%d,$b,cf,:=",
-				src, dst, bitsize - 1, bitsize - 1, bitsize);
+			dst = getarg (&gop, 0, 1, "-", &bitsize);
+			if (src && dst) {
+				esilprintf (op, "cf,%s,+,%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,%d,$b,cf,:=",
+					src, dst, bitsize - 1, bitsize - 1, bitsize);
+			}
 			free (src);
 			free (dst);
 		}
