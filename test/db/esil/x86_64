@@ -702,3 +702,40 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=sbb 32-bit register write zero-extends
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 19c1
+ar rcx=0xffffffff00000005
+ar rax=1
+ar cf=1
+aes
+ar rcx
+EOF
+EXPECT=<<EOF
+0x00000003
+EOF
+RUN
+
+NAME=sbb stores to its memory destination
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 190e
+ar rsi=0x100100
+ar rcx=1
+ar cf=1
+wv4 0x11111111 @ 0x100100
+aes
+pv4 @ 0x100100
+EOF
+EXPECT=<<EOF
+0x1111110f
+EOF
+RUN
