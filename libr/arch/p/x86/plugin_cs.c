@@ -1379,7 +1379,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			} else if (insn->id == X86_INS_CMP) {
 				esilprintf (op,
 					"%s,%s,==,$z,zf,:=,%u,$b,cf,:=,$p,pf,:=,%u,$s,sf,:=,"\
-					"%s,0x%"PFMT64x",-,!,%u,$o,^,of,:=,3,$b,af,:=",
+					"%s,0x%"PFMT64x",-,!,%u,$o,^,of,:=,4,$b,af,:=",
 					src, dst, bitsize, bitsize - 1, src, (ut64)(1ULL << (bitsize - 1)), bitsize - 1);
 			} else {
 				char *rsrc = (char *)cs_reg_name (handle, INSOP(1).mem.base);
@@ -1387,7 +1387,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				const int width = INSOP(0).size;
 				esilprintf (op,
 					"%s,%s,==,$z,zf,:=,%u,$b,cf,:=,$p,pf,:=,%u,$s,sf,:=,%s,0x%"PFMT64x","\
-					"-,!,%u,$o,^,of,:=,3,$b,af,:=,df,?{,%d,%s,-=,%d,%s,-=,}{,%d,%s,+=,%d,%s,+=,}",
+					"-,!,%u,$o,^,of,:=,4,$b,af,:=,df,?{,%d,%s,-=,%d,%s,-=,}{,%d,%s,+=,%d,%s,+=,}",
 					src, dst, bitsize, bitsize - 1, src, (ut64)(1ULL << (bitsize - 1)), bitsize - 1,
 					width, rsrc, width, rdst, width, rsrc, width, rdst);
 			}
@@ -2002,7 +2002,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			ut32 bitsize;
 			src = getarg (&gop, 0, 1, "--", &bitsize);
-			esilprintf (op, "%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,3,$b,af,:=", src, bitsize - 1, bitsize - 1);
+			esilprintf (op, "%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,4,$b,af,:=", src, bitsize - 1, bitsize - 1);
 			free (src);
 		}
 		break;
@@ -2027,16 +2027,11 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			ut32 bitsize;
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, "-", &bitsize);
-
-			if (!bitsize || bitsize > 64) {
-				break;
+			if (bitsize && bitsize <= 64) {
+				// $b, not $c: the carry flag really represents a borrow here
+				esilprintf (op, "%s,0x%"PFMT64x",-,!,%s,%s,%u,$o,^,of,:=,%u,$s,sf,:=,$z,zf,:=,$p,pf,:=,%u,$b,cf,:=,4,$b,af,:=",
+					src, (ut64)(1ULL << (bitsize - 1)), src, dst, bitsize - 1, bitsize - 1, bitsize);
 			}
-
-			// Set OF, SF, ZF, AF, PF, and CF flags.
-			// We use $b rather than $c here as the carry flag really
-			// represents a "borrow"
-			esilprintf (op, "%s,%s,%s,0x%"PFMT64x",-,!,%u,$o,^,of,:=,%u,$s,sf,:=,$z,zf,:=,$p,pf,:=,%u,$b,cf,:=,3,$b,af,:=",
-				src, dst, src, (uint64_t)(1ULL) << (bitsize - 1), bitsize - 1, bitsize - 1, bitsize);
 			free (src);
 			free (dst);
 		}
@@ -2290,28 +2285,13 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			ut32 bitsize;
 			src = getarg (&gop, 0, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, NULL, &bitsize);
-			ut64 xor = 0;
-			switch (bitsize) {
-			case 8:
-				xor = UT8_MAX;
-				break;
-			case 16:
-				xor = UT16_MAX;
-				break;
-			case 32:
-				xor = UT32_MAX;
-				break;
-			case 64:
-				xor = UT64_MAX;
-				break;
-			default:
-				R_LOG_ERROR ("Neg: Unhandled bitsize %d", bitsize);
+			if (bitsize && bitsize <= 64) {
+				const ut64 mask = r_num_bitmask (bitsize);
+				const ut64 intmin = 1ULL << (bitsize - 1);
+				// only INT_MIN overflows on negation; pf comes from the parity term
+				esilprintf (op, "%s,!,!,cf,:=,0xf,%s,&,!,!,af,:=,%s,0x%"PFMT64x",^,1,+,%s,$z,zf,:=,%s,0x%"PFMT64x",^,!,of,:=,%d,$s,sf,:=,$p,pf,:=",
+					src, src, src, mask, dst, src, intmin, bitsize - 1);
 			}
-			// OF set iff the operand is INT_MIN (the only value that overflows on
-			// negation); PF from the parity term, not the overflow term
-			ut64 intmin = 1ULL << (bitsize - 1);
-			esilprintf (op, "%s,!,!,cf,:=,%s,0x%"PFMT64x",^,1,+,%s,$z,zf,:=,%s,0x%"PFMT64x",^,!,of,:=,%d,$s,sf,:=,$p,pf,:=",
-				src, src, xor, dst, src, intmin, bitsize - 1);
 			free (src);
 			free (dst);
 		}
@@ -2595,19 +2575,22 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			ut32 bitsize;
 			src = getarg (&gop, 1, 0, NULL, NULL);
-			dst = getarg (&gop, 0, 1, "+", &bitsize);
-			// dst = dst + src + cf
-			// NOTE: We would like to add the carry first before adding the
-			// source to ensure that the flag computation from $c belongs
-			// to the operation of adding dst += src rather than the one
-			// that adds carry (as esil only keeps track of the last
-			// addition to set the flags).
-			if (src && dst) {
-				esilprintf (op, "cf,%s,+,%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,%d,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
-					src, dst, bitsize - 1, bitsize - 1, bitsize - 1);
+			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
+			dst_w = getarg (&gop, 0, 1, "+", NULL);
+			if (src && dst_r && dst_w && bitsize && bitsize <= 64) {
+				const ut64 mask = r_num_bitmask (bitsize);
+				const ut64 smax = r_num_bitmask (bitsize - 1);
+				// cf/af are stacked before the write: src+cf can wrap and lose them
+				esilprintf (op, "0x%"PFMT64x",%s,&,%s,0x%"PFMT64x",^,==,%u,$b,cf,$z,&,|,"
+					"0xf,%s,&,0xf,%s,&,0xf,^,==,4,$b,cf,$z,&,|,"
+					"%s,0x%"PFMT64x",-,!,cf,&,cf,%s,+,%s,%u,$o,^,of,:=,"
+					"%u,$s,sf,:=,$z,zf,:=,$p,pf,:=,af,:=,cf,:=",
+					mask, src, dst_r, mask, bitsize, src, dst_r,
+					src, smax, src, dst_w, bitsize - 1, bitsize - 1);
 			}
 			free (src);
-			free (dst);
+			free (dst_r);
+			free (dst_w);
 		}
 		break;
 		/* Direction flag */
