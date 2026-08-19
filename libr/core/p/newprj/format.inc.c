@@ -20,6 +20,7 @@ static const char *rprj_entry_type_tostring(int a) {
 	case RPRJ_XREF: return "Xrefs";
 	case RPRJ_FUNC: return "Functions";
 	case RPRJ_VART: return "VarTypes";
+	case RPRJ_ARTF: return "AnalysisArtifacts";
 	}
 	return "UNKNOWN";
 }
@@ -184,6 +185,15 @@ static bool rprj_read_le32(RBuffer *b, ut32 *out) {
 	return true;
 }
 
+static bool rprj_read_le64(RBuffer *b, ut64 *out) {
+	ut8 buf[8];
+	if (!rprj_read_exact (b, buf, sizeof (buf))) {
+		return false;
+	}
+	*out = r_read_le64 (buf);
+	return true;
+}
+
 static bool rprj_hint_read(RBuffer *b, R2ProjectHint *hint) {
 	ut8 buf[RPRJ_HINT_SIZE];
 	if (!rprj_read_exact (b, buf, sizeof (buf))) {
@@ -300,14 +310,13 @@ static bool rprj_entry_begin(RBuffer *b, ut64 *at, ut32 type, ut32 version) {
 	ut8 buf[RPRJ_ENTRY_SIZE] = {0};
 	r_write_le32 (buf + r_offsetof (R2ProjectEntry, size), -1);
 	r_write_le32 (buf + r_offsetof (R2ProjectEntry, type), type);
-	r_buf_write (b, buf, sizeof (buf));
-	return true;
+	return r_buf_write (b, buf, sizeof (buf)) == sizeof (buf);
 }
 
-static void rprj_entry_end(RBuffer *b, ut64 at) {
+static bool rprj_entry_end(RBuffer *b, ut64 at) {
 	ut8 buf[sizeof (ut32)];
 	r_write_le32 (buf, (ut32) (r_buf_at (b) - at));
-	r_buf_write_at (b, at, buf, sizeof (buf));
+	return r_buf_write_at (b, at, buf, sizeof (buf)) == sizeof (buf);
 }
 
 static bool rprj_string_read(RBuffer *b, ut64 next_entry, char **s) {

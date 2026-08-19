@@ -21,10 +21,12 @@ enum {
 	RPRJ_XREF,
 	RPRJ_FUNC,
 	RPRJ_VART,
+	RPRJ_ARTF,
 	RPRJ_MAGIC = 0x4a525052,
 };
 
-#define RPRJ_VERSION 5
+#define RPRJ_VERSION 6
+#define RPRJ_MIN_VERSION 5
 #define RPRJ_HEADER_SIZE (r_offsetof (R2ProjectHeader, version) + sizeof (ut32))
 #define RPRJ_ENTRY_SIZE (r_offsetof (R2ProjectEntry, type) + sizeof (ut32))
 #define RPRJ_INFO_SIZE (r_offsetof (R2ProjectInfo, time) + sizeof (ut64))
@@ -40,6 +42,12 @@ enum {
 #define RPRJ_COLOR_SIZE 9
 #define RPRJ_BLOCK_SIZE (RPRJ_ADDR_SIZE + 8 + RPRJ_ADDR_SIZE + RPRJ_ADDR_SIZE + 4)
 #define RPRJ_VAR_SIZE 16
+#define RPRJ_ARTIFACT_HEADER_SIZE 8
+#define RPRJ_ARTIFACT_SET_SIZE (4 + 4 + RPRJ_ADDR_SIZE + 4 + 4 + 4)
+#define RPRJ_ARTIFACT_COMMENT_SIZE (RPRJ_ADDR_SIZE + 4 + 4)
+#define RPRJ_ARTIFACT_FLAG_SIZE (4 + RPRJ_ADDR_SIZE + 8)
+#define RPRJ_ARTIFACT_SCHEMA_VERSION 1
+#define RPRJ_ARTIFACT_MAX_SETS 4096
 
 enum {
 	RPRJ_FUNC_ATTR_NORETURN = 1 << 0,
@@ -204,6 +212,7 @@ typedef struct {
 	RStrBuf *out;
 	RVecPrjMod mods;
 	RVecPrjMap *maps;
+	bool failed;
 } RPrjCursor;
 
 typedef struct {
@@ -272,6 +281,7 @@ static bool rprj_color_eq(const RColor *a, const RColor *b);
 static void rprj_write_color(RBuffer *b, const RColor *color);
 static bool rprj_read_color(RBuffer *b, RColor *color);
 static bool rprj_read_le32(RBuffer *b, ut32 *out);
+static bool rprj_read_le64(RBuffer *b, ut64 *out);
 static bool rprj_cmnt_read(RBuffer *b, R2ProjectComment *cmnt);
 static bool rprj_flag_read(RBuffer *b, R2ProjectFlag *flag);
 static bool rprj_hint_read(RBuffer *b, R2ProjectHint *hint);
@@ -284,7 +294,7 @@ static void rprj_header_write(RBuffer *b);
 static bool rprj_header_read(RBuffer *b, R2ProjectHeader *hdr);
 static bool rprj_entry_read(RBuffer *b, R2ProjectEntry *entry);
 static bool rprj_entry_begin(RBuffer *b, ut64 *at, ut32 type, ut32 version);
-static void rprj_entry_end(RBuffer *b, ut64 at);
+static bool rprj_entry_end(RBuffer *b, ut64 at);
 static bool rprj_string_read(RBuffer *b, ut64 next_entry, char **s);
 static bool rprj_map_read(RBuffer *b, R2ProjectMap *map);
 static RVecPrjMap *rprj_maps_current(RPrjCursor *cur);
