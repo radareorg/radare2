@@ -248,7 +248,61 @@ static SwiftType swift_parse_type_entry(RBinSwiftLoader *ld, ut64 typeaddr) {
 	return st;
 }
 
-static void swift_parse_fields(RBinSwiftLoader *ld, RBinClass *klass, ut64 fd, bool is_enum) {
+// Map each type context descriptor to its type metadata via the `...N`
+// metadata symbols: a struct/class metadata's second word points back to its
+// descriptor. Lets swift_parse_fields read the static field-offset vector.
+static void swift_build_metadata_map(RBinSwiftLoader *ld) {
+	if (!ld->symbols || !ld->slot) {
+		return;
+	}
+	ld->meta_by_desc = ht_up_new0 ();
+	RBinSymbol *sym;
+	R_VEC_FOREACH (ld->symbols, sym) {
+		const char *sn = r_bin_name_tostring2 (sym->name, 'o');
+		while (*sn == '_') {
+			sn++;
+		}
+		if (!r_str_startswith (sn, "$s")) {
+			continue;
+		}
+		// type metadata symbols end in "N" (nominal type metadata), but not
+		// "Mn" (descriptor), "Ma" (access fn) or the "M*"/"W*" helpers.
+		const size_t l = strlen (sn);
+		if (l < 3 || sn[l - 1] != 'N' || sn[l - 2] == 'M') {
+			continue;
+		}
+		// second word of the metadata points to its context descriptor
+		ut64 desc = 0;
+		char *nm = ld->slot (ld->user, sym->vaddr + 8, &desc);
+		free (nm);
+		if (desc) {
+			ht_up_update (ld->meta_by_desc, desc, (void *)(size_t)sym->vaddr);
+		}
+	}
+}
+
+// Byte offset of struct field `i` from the static field-offset vector in the
+// type metadata, or UT64_MAX when it cannot be resolved (generic/resilient
+// layout, missing metadata). `desc` is the type context descriptor vaddr.
+static ut64 swift_struct_field_offset(RBinSwiftLoader *ld, ut64 desc, ut32 i) {
+	if (!ld->meta_by_desc) {
+		return UT64_MAX;
+	}
+	bool found = false;
+	ut64 meta = (ut64)(size_t)ht_up_find (ld->meta_by_desc, desc, &found);
+	if (!found || !meta) {
+		return UT64_MAX;
+	}
+	// StructDescriptor: numFields @ +20, fieldOffsetVectorOffset (words) @ +24
+	const ut32 nfields = (ut32)swift_s32 (ld, desc + 20);
+	const ut32 fovo = (ut32)swift_s32 (ld, desc + 24);
+	if (!fovo || i >= nfields || nfields > 2048) {
+		return UT64_MAX;
+	}
+	return (ut64)(ut32)swift_s32 (ld, meta + (fovo * 8) + (i * 4));
+}
+
+static void swift_parse_fields(RBinSwiftLoader *ld, RBinClass *klass, ut64 fd, ut64 desc, bool is_struct, bool is_enum) {
 	const ut32 nfields = (ut32)swift_s32 (ld, fd + 12);
 	const ut32 recsize = ((ut32)swift_s32 (ld, fd + 8)) >> 16;
 	if (recsize != 12 || nfields > 2048) {
@@ -286,6 +340,14 @@ static void swift_parse_fields(RBinSwiftLoader *ld, RBinClass *klass, ut64 fd, b
 		free (field_name);
 		field->vaddr = rec;
 		field->attr.kind = R_BIN_FIELD_KIND_PROPERTY;
+		// Byte offset within the instance, read from the metadata's static
+		// field-offset vector (structs with fixed layout only).
+		if (is_struct) {
+			const ut64 off = swift_struct_field_offset (ld, desc, i);
+			if (off != UT64_MAX) {
+				field->attr.offset = (int)off;
+			}
+		}
 		if (is_enum) {
 			field->attr.flags = R_BIN_ATTR_ENUM;
 		} else if (!(rflags & 2)) {
@@ -394,7 +456,8 @@ static void swift_parse_type(RBinSwiftLoader *ld, RList *list, SwiftType st) {
 	}
 	if (!swift_names_only (bf)) {
 		if (st.fields != UT64_MAX) {
-			swift_parse_fields (ld, klass, st.fields, st.kind == SWIFT_CDK_ENUM);
+			swift_parse_fields (ld, klass, st.fields, st.addr,
+				st.kind == SWIFT_CDK_STRUCT, st.kind == SWIFT_CDK_ENUM);
 		}
 		if (st.vtable) {
 			swift_parse_vtable (ld, klass, st.vtable, mangled);
@@ -551,6 +614,7 @@ R_IPI void r_bin_swift_load_classes(RBinSwiftLoader *ld, RList *out, ut64 types_
 		}
 	}
 	ld->mangled_ht = ht_pp_new0 ();
+	swift_build_metadata_map (ld);
 	ut32 i;
 	for (i = 0; i < types_size / 4; i++) {
 		if (limit > 0 && r_list_length (out) >= limit) {
@@ -575,6 +639,8 @@ R_IPI void r_bin_swift_load_classes(RBinSwiftLoader *ld, RList *out, ut64 types_
 	}
 	ht_up_free (ld->symbols_ht);
 	ht_pp_free (ld->mangled_ht);
+	ht_up_free (ld->meta_by_desc);
 	ld->symbols_ht = NULL;
 	ld->mangled_ht = NULL;
+	ld->meta_by_desc = NULL;
 }

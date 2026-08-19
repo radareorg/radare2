@@ -19,6 +19,9 @@ typedef struct r_bin_swift_loader_t {
 	// internal state
 	HtUP *symbols_ht;
 	HtPP *mangled_ht;
+	// type context descriptor vaddr -> type metadata vaddr, used to read the
+	// static field-offset vector for fixed-layout structs
+	HtUP *meta_by_desc;
 	int depth;
 } RBinSwiftLoader;
 
