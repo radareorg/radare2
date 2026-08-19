@@ -279,3 +279,46 @@ EXPECT=<<EOF
 \           0x00000008      fd830091       x29 = sp + 0x20
 EOF
 RUN
+
+NAME=ARM64 pseudo compares set v and b.cond tests it
+FILE=malloc://80
+ARGS=-a arm -b 64 -e asm.pseudo=true -e asm.comments=false
+CMDS=<<EOF
+wx 1f0002eb 40000054 41000054 4a000054 4b000054 4c000054 4d000054 48000054 42000054 43000054 49000054 44000054 45000054 46000054 47000054 4e000054 1f00026a 1f0002ab
+pi 18
+EOF
+EXPECT=<<EOF
+v = x0 - x2
+if (!v) goto 0xc
+if (v) goto 0x10
+if (v >= 0) goto 0x14
+if (v < 0) goto 0x18
+if (v > 0) goto 0x1c
+if (v <= 0) goto 0x20
+if (((unsigned) v) > 0) goto 0x24
+if (((unsigned) v) >= 0) goto 0x28
+if (((unsigned) v) < 0) goto 0x2c
+if (((unsigned) v) <= 0) goto 0x30
+if (v < 0) goto 0x34
+if (v >= 0) goto 0x38
+if (overflow) goto 0x3c
+if (!overflow) goto 0x40
+goto 0x44
+v = w0 & w2
+v = x0 + x2
+EOF
+RUN
+
+NAME=ARM64 pseudo keeps the shifted or extended compare operand
+FILE=malloc://16
+ARGS=-a arm -b 64 -e asm.pseudo=true -e asm.comments=false
+CMDS=<<EOF
+wx 1f0801eb 1fc021eb 1f08026a
+pi 3
+EOF
+EXPECT=<<EOF
+v = x0 - (x1 << 2)
+v = x0 - (w1 sxtw)
+v = w0 & (w2 << 2)
+EOF
+RUN

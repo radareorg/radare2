@@ -1,0 +1,57 @@
+NAME=ARM pseudo compares set v and b<cc> tests it
+FILE=malloc://80
+ARGS=-a arm -b 32 -e asm.pseudo=true -e asm.comments=false
+CMDS=<<EOF
+wx 020051e1 0100000a 0100001a 010000aa 010000ba 010000ca 010000da 0100008a 0100002a 0100003a 0100009a 0100004a 0100005a 0100006a 0100007a 020071e1 020031e1 020011e1
+pi 18
+EOF
+EXPECT=<<EOF
+v = r1 - r2
+if (!v) goto 0x10
+if (v) goto 0x14
+if (v >= 0) goto 0x18
+if (v < 0) goto 0x1c
+if (v > 0) goto 0x20
+if (v <= 0) goto 0x24
+if (((unsigned) v) > 0) goto 0x28
+if (((unsigned) v) >= 0) goto 0x2c
+if (((unsigned) v) < 0) goto 0x30
+if (((unsigned) v) <= 0) goto 0x34
+if (v < 0) goto 0x38
+if (v >= 0) goto 0x3c
+if (overflow) goto 0x40
+if (!overflow) goto 0x44
+v = r1 + r2
+v = r1 ^ r2
+v = r1 & r2
+EOF
+RUN
+
+NAME=Thumb2 wide compares and branches share the narrow pseudo
+FILE=malloc://32
+ARGS=-a arm -b 16 -e asm.pseudo=true -e asm.comments=false
+CMDS=<<EOF
+wx b1eb020f 40f08080 02d0 11ea020f
+pi 4
+EOF
+EXPECT=<<EOF
+v = r1 - r2
+if (v) goto 0x108
+if (!v) goto 0x10
+v = r1 & r2
+EOF
+RUN
+
+NAME=ARM pseudo keeps the shifted compare operand
+FILE=malloc://16
+ARGS=-a arm -b 32 -e asm.pseudo=true -e asm.comments=false
+CMDS=<<EOF
+wx 020151e1 120251e1 020111e1
+pi 3
+EOF
+EXPECT=<<EOF
+v = r1 - (r2 << 2)
+v = r1 - (r2 << r2)
+v = r1 & (r2 << 2)
+EOF
+RUN

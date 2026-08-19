@@ -25,7 +25,6 @@ static char *replace(int argc, const char *argv[]) {
 		{ 3, "mneg ", "# = -(# * #)", { 1, 2, 3 } },
 		{ 3, "adds", "# = # + #", { 1, 2, 3 } },
 		{ 3, "addw", "# = # + #", { 1, 2, 3 } },
-		{ 3, "add.w", "# = # + #", { 1, 2, 3 } },
 		{ 0, "adf", "# = # + #", { 1, 2, 3 } },
 		{ 0, "adrp", "# = #", { 1, 2 } },
 		{ 0, "adr", "# = #", { 1, 2 } },
@@ -39,32 +38,43 @@ static char *replace(int argc, const char *argv[]) {
 		{ 0, "b", "goto #", { 1 } },
 		{ 0, "cbz", "if (!#) goto #", { 1, 2 } },
 		{ 0, "cbnz", "if (#) goto #", { 1, 2 } },
-		{ 0, "b.w", "goto #", { 1 } },
-		{ 0, "b.gt", "if (a > b) goto #", { 1 } },
-		{ 0, "b.le", "if (a <= b) goto #", { 1 } },
-		{ 0, "b.lt", "if (a < b) goto #", { 1 } },
-		{ 0, "b.ls", "if (a < b) goto #", { 1 } },
-		{ 0, "b.ge", "if (a >= b) goto #", { 1 } },
-		{ 0, "beq lr", "ifeq ret", {0} },
-		{ 0, "beq", "je #", { 1 } },
+		// compares set v and the conditional branches test it, like x86
+		{ 0, "beq", "if (!v) goto #", { 1 } },
+		{ 0, "bne", "if (v) goto #", { 1 } },
+		{ 0, "bgt", "if (v > 0) goto #", { 1 } },
+		{ 0, "bge", "if (v >= 0) goto #", { 1 } },
+		{ 0, "blt", "if (v < 0) goto #", { 1 } },
+		{ 0, "ble", "if (v <= 0) goto #", { 1 } },
+		{ 0, "bhi", "if (((unsigned) v) > 0) goto #", { 1 } },
+		{ 0, "bhs", "if (((unsigned) v) >= 0) goto #", { 1 } },
+		{ 0, "bcs", "if (((unsigned) v) >= 0) goto #", { 1 } },
+		{ 0, "blo", "if (((unsigned) v) < 0) goto #", { 1 } },
+		{ 0, "bcc", "if (((unsigned) v) < 0) goto #", { 1 } },
+		{ 0, "bls", "if (((unsigned) v) <= 0) goto #", { 1 } },
+		{ 0, "bmi", "if (v < 0) goto #", { 1 } },
+		{ 0, "bpl", "if (v >= 0) goto #", { 1 } },
+		{ 0, "bvs", "if (overflow) goto #", { 1 } },
+		{ 0, "bvc", "if (!overflow) goto #", { 1 } },
+		{ 0, "bal", "goto #", { 1 } },
+		{ 0, "bnv", "goto #", { 1 } },
 		{ 0, "call", "# ()", { 1 } },
 		{ 0, "bl", "# ()", { 1 } },
 		{ 0, "blx", "# ()", { 1 } },
 		{ 0, "bx lr", "ret", {0} },
 		{ 1, "br", "switch #", { 1 } },
-		{ 0, "bxeq", "je #", { 1 } },
-		{ 0, "b.eq", "if (eq) goto #", { 1 } },
-		{ 0, "b.ne", "if (eq) goto #", { 1 } },
-		{ 0, "b.hi", "goto ifgt #", { 1 } },
-		{ 0, "b.lo", "goto iflt #", { 1 } },
+		{ 0, "bxeq", "if (!v) goto #", { 1 } },
 		{ 0, "cmf", "if (# == #)", { 1, 2 } },
-		{ 0, "cmn", "if (# != #)", { 1, 2 } },
-		{ 0, "cmp", "(a, b) = compare (#, #)", { 1, 2 } },
-		{ 0, "fcmp", "(a, b) = compare (#, #)", { 1, 2 } },
-		{ 0, "tst", "(a, b) = compare (#, #)", { 1, 2 } },
-		// { 0, "cmp", "if (# == #)", { 1, 2 } },
-		// { 0, "fcmp", "if (# == #)", { 1, 2 } },
-		//{ 0, "tst", "if ((# & #) == 0)", { 1, 2 } },
+		// the third operand is a shift or extend of the second: keep it visible
+		{ 2, "cmn", "v = # + #", { 1, 2 } },
+		{ 3, "cmn", "v = # + (# #)", { 1, 2, 3 } },
+		{ 2, "cmp", "v = # - #", { 1, 2 } },
+		{ 3, "cmp", "v = # - (# #)", { 1, 2, 3 } },
+		{ 2, "fcmp", "v = # - #", { 1, 2 } },
+		{ 2, "fcmpe", "v = # - #", { 1, 2 } },
+		{ 2, "teq", "v = # ^ #", { 1, 2 } },
+		{ 3, "teq", "v = # ^ (# #)", { 1, 2, 3 } },
+		{ 2, "tst", "v = # & #", { 1, 2 } },
+		{ 3, "tst", "v = # & (# #)", { 1, 2, 3 } },
 		{ 4, "csel", "# = (#)? # : #", { 1, 4, 2, 3 } },
 		{ 2, "cset", "# = (#)? 1 : 0", { 1, 2 } },
 		{ 0, "dvf", "# = # / #", { 1, 2, 3 } },
@@ -89,7 +99,6 @@ static char *replace(int argc, const char *argv[]) {
 		{ 3, "ldruh", "# = (uword) # + #", { 1, 2, 3 } },
 		{ 2, "ldrb", "# = (byte) #", { 1, 2 } },
 		{ 3, "ldrb", "# = (byte) # + #", { 1, 2, 3 } },
-		{ 2, "ldr.w", "# = #", { 1, 2 } },
 		{ 4, "ldrsb", "# = (byte) # + #", { 1, 2, 3 } },
 		{ 3, "ldrsb", "# = (byte) # + #", { 1, 2, 3 } },
 		{ 2, "ldrsb", "# = (byte) #", { 1, 2 } },
@@ -98,7 +107,6 @@ static char *replace(int argc, const char *argv[]) {
 		{ 3, "ldrsw", "# = # + #", { 1, 2, 3 } },
 		{ 3, "ldr", "# = # + #", { 1, 2, 3 } },
 		{ 3, "ldrb", "# = (byte) # + #", { 1, 2, 3 } },
-		{ 3, "ldr.w", "# = # + #", { 1, 2, 3 } },
 		{ 0, "mov", "# = #", { 1, 2 } },
 		{ 0, "fmov", "# = #", { 1, 2 } },
 		{ 0, "mvn", "# = ~#", { 1, 2 } },
@@ -131,7 +139,6 @@ static char *replace(int argc, const char *argv[]) {
 		{ 0, "orr", "# = # | #", { 1, 2, 3 } },
 		{ 2, "orr", "# |= #", { 1, 2 } },
 		{ 0, "rmf", "# = # % #", { 1, 2, 3 } },
-		{ 0, "bge", "(>=) goto #", { 1 } },
 		{ 0, "sbc", "# = # - #", { 1, 2, 3 } },
 		{ 0, "sqt", "# = sqrt(#)", { 1, 2 } },
 		{ 0, "lsrs", "# = # >> #", { 1, 2, 3 } },
@@ -139,18 +146,14 @@ static char *replace(int argc, const char *argv[]) {
 		{ 1, "blr", "callreg #", { 1 } },
 		{ 0, "lsr", "# = # >> #", { 1, 2, 3 } },
 		{ 0, "lsl", "# = # << #", { 1, 2, 3 } },
-		{ 0, "lsr.w", "# = # >> #", { 1, 2, 3 } },
-		{ 0, "lsl.w", "# = # << #", { 1, 2, 3 } },
 		{ 3, "stxr", "# = #", { 3, 2 } }, // stxr w10, x9, [x8] (w10 is 0 or 1 if exclusively locked)
 		{ 3, "stlxr", "# = #", { 3, 2 } },
 		{ 2, "str", "# = #", { 2, 1 } },
 		{ 2, "strb", "# = (byte) #", { 2, 1 } },
 		{ 2, "strh", "# = (half) #", { 2, 1 } },
-		{ 2, "strh.w", "# = (half) #", { 2, 1 } },
 		{ 3, "str", "# + # = #", { 2, 3, 1 } },
 		{ 3, "strb", "# + # = (byte) #", { 2, 3, 1 } },
 		{ 3, "strh", "# + # = (half) #", { 2, 3, 1 } },
-		{ 3, "strh.w", "# + # = (half) #", { 2, 3, 1 } },
 		{ 3, "sub", "# = # - #", { 1, 2, 3 } },
 		{ 3, "subs", "# = # - #", { 1, 2, 3 } },
 		{ 3, "fsub", "# = # - #", { 1, 2, 3 } },
@@ -164,23 +167,28 @@ static char *replace(int argc, const char *argv[]) {
 		{ 0, "vmov", "# = (float) # . #", { 1, 2, 3 } },
 		{ 0, "vdiv.f64", "# = (float) # / #", { 1, 2, 3 } },
 		{ 0, "addw", "# = # + #", { 1, 2, 3 } },
-		{ 0, "sub.w", "# = # - #", { 1, 2, 3 } },
-		{ 0, "tst.w", "if ((# & #) == 0)", { 1, 2 } },
-		{ 0, "pop.w", "pop #", { 1 } },
+		{ 0, "pop", "pop #", { 1 } },
 		{ 0, "vpop", "pop #", { 1 } },
 		{ 0, "paciza", "", { 1 } },
 		{ 0, "vpush", "push #", { 1 } },
-		{ 0, "push.w", "push #", { 1 } },
+		{ 0, "push", "push #", { 1 } },
 		{ 0, NULL }
 	};
 	RStrBuf *sb = r_strbuf_new ("");
+	// thumb wide/narrow (bne.w, beq.n) and arm64 b.cond (b.ne) share the arm rows
+	char mn[32];
+	r_str_ncpy (mn, argv[0], sizeof (mn));
+	if (r_str_endswith (mn, ".w") || r_str_endswith (mn, ".n")) {
+		mn[strlen (mn) - 2] = 0;
+	}
+	if (r_str_startswith (mn, "b.")) {
+		memmove (mn + 1, mn + 2, strlen (mn + 1));
+	}
 	for (i = 0; ops[i].op; i++) {
-		if (ops[i].narg) {
-			if (argc - 1 != ops[i].narg) {
-				continue;
-			}
+		if (ops[i].narg && argc - 1 != ops[i].narg) {
+			continue;
 		}
-		if (!strcmp (ops[i].op, argv[0])) {
+		if (!strcmp (ops[i].op, mn)) {
 			d = 0;
 			j = 0;
 			ch = ops[i].str[j];
