@@ -255,7 +255,7 @@ static void swift_build_metadata_map(RBinSwiftLoader *ld) {
 	if (!ld->symbols || !ld->slot) {
 		return;
 	}
-	ld->meta_by_desc = ht_up_new0 ();
+	ld->meta_by_desc = ht_uu_new0 ();
 	RBinSymbol *sym;
 	R_VEC_FOREACH (ld->symbols, sym) {
 		const char *sn = r_bin_name_tostring2 (sym->name, 'o');
@@ -276,7 +276,7 @@ static void swift_build_metadata_map(RBinSwiftLoader *ld) {
 		char *nm = ld->slot (ld->user, sym->vaddr + 8, &desc);
 		free (nm);
 		if (desc) {
-			ht_up_update (ld->meta_by_desc, desc, (void *)(size_t)sym->vaddr);
+			ht_uu_update (ld->meta_by_desc, desc, sym->vaddr);
 		}
 	}
 }
@@ -289,7 +289,7 @@ static ut64 swift_struct_field_offset(RBinSwiftLoader *ld, ut64 desc, ut32 i) {
 		return UT64_MAX;
 	}
 	bool found = false;
-	ut64 meta = (ut64)(size_t)ht_up_find (ld->meta_by_desc, desc, &found);
+	const ut64 meta = ht_uu_find (ld->meta_by_desc, desc, &found);
 	if (!found || !meta) {
 		return UT64_MAX;
 	}
@@ -639,7 +639,7 @@ R_IPI void r_bin_swift_load_classes(RBinSwiftLoader *ld, RList *out, ut64 types_
 	}
 	ht_up_free (ld->symbols_ht);
 	ht_pp_free (ld->mangled_ht);
-	ht_up_free (ld->meta_by_desc);
+	ht_uu_free (ld->meta_by_desc);
 	ld->symbols_ht = NULL;
 	ld->mangled_ht = NULL;
 	ld->meta_by_desc = NULL;
