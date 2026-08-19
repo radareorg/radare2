@@ -321,6 +321,26 @@ static bool test_anal_get_base_type_typedef(void) {
 	mu_assert_eq (R_ANAL_BASE_TYPE_KIND_TYPEDEF, base->kind, "Wrong base type");
 	mu_assert_streq (base->name, "string", "type name");
 	mu_assert_streq (base->type, "char *", "typedefd type");
+	anal->config->bits = 64;
+	mu_assert_eq (r_anal_type_bitsize (anal, "string"), 64,
+		"Pointer typedef uses the current architecture width");
+	sdb_set (anal->sdb_types, "word", "typedef", 0);
+	sdb_set (anal->sdb_types, "typedef.word", "unsigned long", 0);
+	sdb_num_set (anal->sdb_types, "type.word.size", 64, 0);
+	mu_assert_eq (r_anal_type_bitsize (anal, "word"), 64,
+		"Scalar typedef uses its exact declared width");
+	sdb_set (anal->sdb_types, "cycle_a", "typedef", 0);
+	sdb_set (anal->sdb_types, "typedef.cycle_a", "cycle_b", 0);
+	sdb_set (anal->sdb_types, "cycle_b", "typedef", 0);
+	sdb_set (anal->sdb_types, "typedef.cycle_b", "cycle_a", 0);
+	sdb_set (anal->sdb_types, "u64", "type", 0);
+	sdb_num_set (anal->sdb_types, "type.u64.size", 64, 0);
+	sdb_set (anal->sdb_types, "myword", "typedef", 0);
+	sdb_set (anal->sdb_types, "typedef.myword", "u64", 0);
+	mu_assert_eq (r_type_get_bitsize (anal->sdb_types, "myword"), 64,
+		"Typedef without a declared width measures what it aliases");
+	mu_assert_eq (r_anal_type_bitsize (anal, "cycle_a"), 0,
+		"Cyclic typedefs fail closed");
 
 	sdb_set (anal->sdb_types, "word", "typedef", 0);
 	sdb_set (anal->sdb_types, "typedef.word", "unsigned long", 0);
