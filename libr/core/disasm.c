@@ -7126,28 +7126,27 @@ toro:
 				free (fmt);
 				continue;
 			}
+		}
+		int left = ds_left (ds);
+		R_LOG_DEBUG ("BEFORE: ds->index=%#x len=%#x left=%#x ds->addr=%#" PFMT64x " ds->at=%#" PFMT64x " ds->count=%#x ds->lines=%#x",
+			ds->index, len, left, ds->addr, ds->at, ds->count, ds->lines);
+		if (left < max_op_size && !count_bytes) {
+			R_LOG_DEBUG ("Not enough bytes to disassemble, going to retry");
+			goto retry;
+		}
+		const int real_oplen = ds->oplen;
+		int disasm_ret = ds_disassemble (ds, (ut8 *)ds_bufat (ds), left);
+		// hack over hack, this tracks metadata size vs instruction size vs padding
+		if (disasm_ret == ds->oplen) {
+			ds->oplen = disasm_ret;
 		} else {
-			int left = ds_left (ds);
-			R_LOG_DEBUG ("BEFORE: ds->index=%#x len=%#x left=%#x ds->addr=%#" PFMT64x " ds->at=%#" PFMT64x " ds->count=%#x ds->lines=%#x",
-				ds->index, len, left, ds->addr, ds->at, ds->count, ds->lines);
-			if (left < max_op_size && !count_bytes) {
-				R_LOG_DEBUG ("Not enough bytes to disassemble, going to retry");
-				goto retry;
-			}
-			const int real_oplen = ds->oplen;
-			int ret = ds_disassemble (ds, (ut8 *)ds_bufat (ds), left);
-			// hack over hack, this tracks metadata size vs instruction size vs padding
-			if (ret == ds->oplen) {
-				ds->oplen = ret;
-			} else {
-				ds->oplen = real_oplen; // overwritten by ds_disassemble
-			}
-			R_LOG_DEBUG ("AFTER: ret=%d len=%#x left=%#x ds->addr=%#" PFMT64x " ds->at=%#" PFMT64x " ds->count=%#x ds->lines=%#x",
-				ret, len, left, ds->addr, ds->at, ds->count, ds->lines);
-			if (ret == -31337) {
-				inc = ds->oplen; // minopsz maybe? or we should add invopsz
-				continue;
-			}
+			ds->oplen = real_oplen; // overwritten by ds_disassemble
+		}
+		R_LOG_DEBUG ("AFTER: ret=%d len=%#x left=%#x ds->addr=%#" PFMT64x " ds->at=%#" PFMT64x " ds->count=%#x ds->lines=%#x",
+			disasm_ret, len, left, ds->addr, ds->at, ds->count, ds->lines);
+		if (disasm_ret == -31337) {
+			inc = ds->oplen; // minopsz maybe? or we should add invopsz
+			continue;
 		}
 
 		ds_atabs_option (ds);
