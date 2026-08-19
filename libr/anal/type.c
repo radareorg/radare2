@@ -157,10 +157,17 @@ R_API void r_anal_types_load_sdb(RAnal *anal, const char *name) {
 	load_types_from (anal, "%s", name);
 }
 
-// for pointers prefer the live target width over the one baked into the type sdb
+// a pointer is one target word wide, which r_type_get_bitsize cannot know from the sdb alone
 R_API ut64 r_anal_type_bitsize(RAnal *anal, const char *type) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->config && type, 0);
-	return strchr (type, '*')? anal->config->bits: r_type_get_bitsize (anal->sdb_types, type);
+	// resolve first: "typedef char *string" is a pointer with no star in its name
+	char *resolved = r_type_resolve_typedef (anal->sdb_types, type);
+	const char *effective = resolved? resolved: type;
+	const ut64 bits = strchr (effective, '*')
+		? anal->config->bits
+		: r_type_get_bitsize (anal->sdb_types, type);
+	free (resolved);
+	return bits;
 }
 
 R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {
