@@ -193,6 +193,51 @@ WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e 
 EOF
 RUN
 
+NAME=afbi lists every switch case and leaves them in the analysis
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+af+ 0 foo
+afb+ 0 0 16
+afbe 0 0x20
+afbe 0 0x20
+afbe 0 0x30
+afbi~case
+afbi~case
+EOF
+EXPECT=<<EOF
+cases: 3
+case.0: 0x00000020
+case.0: 0x00000020
+case.0: 0x00000030
+cases: 3
+case.0: 0x00000020
+case.0: 0x00000020
+case.0: 0x00000030
+EOF
+RUN
+
+NAME=afb dedupes the printed successors without dropping the cases
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+af+ 0 foo
+afb+ 0 0 16
+afbe 0 0x20
+afbe 0 0x20
+afbe 0 0x30
+afb
+afbi~case
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000010 00:0000 16 s 0x00000020 s 0x00000030
+cases: 3
+case.0: 0x00000020
+case.0: 0x00000020
+case.0: 0x00000030
+EOF
+RUN
+
 NAME=Adding basic blocks with with wrong size (afb+)
 BROKEN=1
 FILE=bins/pe/a.exe
