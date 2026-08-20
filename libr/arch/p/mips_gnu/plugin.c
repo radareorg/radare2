@@ -1535,16 +1535,19 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			insn.id = MIPS_INS_DADDU;
 			break;
 		case 34: // sub
-		case 35: // subu
 			insn.id = MIPS_INS_SUB;
+			op->type = R_ANAL_OP_TYPE_SUB;
+			break;
+		case 35: // subu
+			insn.id = MIPS_INS_SUBU;
 			op->type = R_ANAL_OP_TYPE_SUB;
 			break;
 		case 46: // dsub
-			insn.id = MIPS_INS_SUB;
+			insn.id = MIPS_INS_DSUB;
 			op->type = R_ANAL_OP_TYPE_SUB;
 			break;
 		case 47: // dsubu
-			insn.id = MIPS_INS_SUB;
+			insn.id = MIPS_INS_DSUBU;
 			op->type = R_ANAL_OP_TYPE_SUB;
 			break;
 		case 36: // and
@@ -1838,7 +1841,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case 33: // lh
 			if (!op->refptr) {
 				op->refptr = 2;
-				insn.id = MIPS_INS_LB;
+				insn.id = MIPS_INS_LH;
 			}
 			/* fallthrough */
 		case 35: // lw
@@ -2159,7 +2162,7 @@ const RArchPlugin r_arch_plugin_mips_gnu = {
 	},
 	.cpus = "micro,mips1,mips2,mips3,mips4,mips5,mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
 	.arch = "mips",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.info = archinfo,
 	.decode = decode,
 	.regs = regs,

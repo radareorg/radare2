@@ -178,3 +178,51 @@ EXPECT=<<EOF
 0xfffffffffffffffe
 EOF
 RUN
+
+NAME=mips.gnu can be selected at 64 bits and sign-extends the 32-bit forms
+FILE=malloc://64
+ARGS=-a mips.gnu -b 64
+CMDS=<<EOF
+e asm.bits
+aei
+wx 00410900
+ar t0=0xa5a5000300000000
+ar t1=0x08000000
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+64
+0xffffffff80000000
+EOF
+RUN
+
+NAME=mips.gnu dsubu keeps all 64 bits while subu narrows to a word
+FILE=malloc://64
+ARGS=-a mips.gnu -b 64
+CMDS=<<EOF
+aei
+wx 2f402a01
+ar t0=0xa5a5000300000000
+ar t1=0x100000000
+ar t2=1
+ar pc=0
+s 0
+aes
+ar t0
+wx 23402a01
+ar t0=0xa5a5000300000000
+ar t1=0xffffffff80000000
+ar t2=1
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0xffffffff
+0x7fffffff
+EOF
+RUN
