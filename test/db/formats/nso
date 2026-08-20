@@ -40,3 +40,15 @@ EXPECT=<<EOF
 e7031eaa01000094c62302d1e50300aae40301aabf0000f1841841ba400000544a240014fb0307aaf90305aafa0304aa
 EOF
 RUN
+
+NAME=nso huge lz4 compressed section
+FILE=gzip://bins/nso/hugesection.nso.gz
+ARGS=-e io.cache=true
+CMDS=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: decompression3 failure
+EOF
+EXPECT=<<EOF
+EOF
+RUN
