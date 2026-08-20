@@ -1112,3 +1112,20 @@ R_API char *r_type_func_name(Sdb *types, const char *fname) {
 	}
 	return r_type_func_guess (types, fname);
 }
+
+// same walk as r_type_func_name, but hands back the db key the match went through
+R_API char *r_type_func_key(Sdb *types, const char *fname) {
+	const char *str = fname;
+	const char *name = fname;
+	if (r_type_func_exist (types, fname)) {
+		return strdup (trim_lodashes (types, fname));
+	}
+	while ( (str = strchr (str, '.'))) {
+		str++;
+		name = str;
+	}
+	if (r_type_func_exist (types, name)) {
+		return strdup (trim_lodashes (types, name));
+	}
+	return r_type_func_guess (types, fname);
+}
