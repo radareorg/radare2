@@ -98,6 +98,8 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 #define ES_B(x) "0xff,"x",&"
 #define ES_H(x) "0xffff,"x",&"
 #define ES_W(x) "0xffffffff,"x",&"
+// esil '<' is signed: biasing by the sign bit makes it order values unsigned
+#define ES_U(x) "0x8000000000000000,"x",^"
 
 // sign extend 32 -> 64
 #define ES_SIGN32_64(arg)	es_sign_n_64 (as, op, arg, 32)
@@ -728,12 +730,14 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 				break;
 			case MIPS_INS_SLTU:
 			case MIPS_INS_SLTIU:
-				if (OPCOUNT () < 3) {
-					r_strbuf_appendf (&op->esil, ES_W("%s")","ES_W("%s")",<,t,=",
-						ARG (1), ARG (0));
-				} else {
-					r_strbuf_appendf (&op->esil, ES_W("%s")","ES_W("%s")",<,%s,=",
-						ARG (2), ARG (1), ARG (0));
+				{
+					const bool two = OPCOUNT () < 3;
+					const char *rt = two? ARG (1): ARG (2);
+					const char *rs = two? ARG (0): ARG (1);
+					const char *rd = two? "t": ARG (0);
+					r_strbuf_appendf (&op->esil, (as->config->bits == 64)
+						? ES_U("%s")","ES_U("%s")",<,%s,="
+						: ES_W("%s")","ES_W("%s")",<,%s,=", rt, rs, rd);
 				}
 				break;
 			case MIPS_INS_MUL:
@@ -748,9 +752,12 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 				ES_SIGN32_64 ("hi");
 				break;
 			case MIPS_INS_MULTU:
-				r_strbuf_appendf (&op->esil, ES_W("%s,%s,*")",lo,=", ARG (0), ARG (1));
+				// the low words are the operands: masking the product is not enough
+				r_strbuf_appendf (&op->esil, ES_W(ES_W("%s")","ES_W("%s")",*")",lo,=",
+					ARG (0), ARG (1));
 				ES_SIGN32_64 ("lo");
-				r_strbuf_appendf (&op->esil, ES_W("32,%s,%s,*,>>")",hi,=", ARG (0), ARG (1));
+				r_strbuf_appendf (&op->esil, "32,"ES_W("%s")","ES_W("%s")",*,>>,hi,=",
+					ARG (0), ARG (1));
 				ES_SIGN32_64 ("hi");
 				break;
 			case MIPS_INS_MFLO:

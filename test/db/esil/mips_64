@@ -143,3 +143,38 @@ EXPECT=<<EOF
 0xffffff84
 EOF
 RUN
+
+NAME=mips64 sltu compares the whole register and multu multiplies the low words
+FILE=malloc://64
+ARGS=-a mips -b 64
+CMDS=<<EOF
+aei
+wx 2b402a01
+ar t1=0x100000000
+ar t2=1
+ar pc=0
+s 0
+aes
+ar t0
+ar t1=1
+ar t2=0x100000000
+ar pc=0
+s 0
+aes
+ar t0
+wx 19002a01
+ar t1=0xffffffffffffffff
+ar t2=2
+ar pc=0
+s 0
+aes
+ar hi
+ar lo
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000001
+0xfffffffffffffffe
+EOF
+RUN
