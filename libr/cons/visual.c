@@ -43,6 +43,9 @@ R_API void r_cons_visual_write(RCons *cons, char *buffer) {
 	if (cons->null) {
 		return;
 	}
+	if (cols < 1 || lines < 1) {
+		return;
+	}
 	if (cols > 0) {
 		white = r_str_pad (NULL, 0, ' ', cols);
 		if (white) {
@@ -50,6 +53,9 @@ R_API void r_cons_visual_write(RCons *cons, char *buffer) {
 		}
 	}
 	while ((nl = strchr (ptr, '\n'))) {
+		if (lines <= 0) {
+			break;
+		}
 		int len = ((int)(size_t)(nl - ptr)) + 1;
 		int lines_needed = 0;
 		bool line_wraps = false;
@@ -61,7 +67,7 @@ R_API void r_cons_visual_write(RCons *cons, char *buffer) {
 		plen = ptr > buffer ? len : len - 1;
 
 		if (break_lines) {
-			lines_needed = alen / cols + (alen % cols == 0 ? 0 : 1);
+			lines_needed = R_MAX (1, alen / cols + (alen % cols == 0 ? 0 : 1));
 			line_wraps = lines_needed > 1;
 		} else {
 			line_wraps = alen > cols;
