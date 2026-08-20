@@ -4645,6 +4645,49 @@ static void snapshot_type_strip_qualifiers(char *spec) {
 	*write = '\0';
 }
 
+// A member spec carries its own extent, as `int32_t[8]`, because that is how the
+// type importer records an array; the count field beside it stays zero. Returns
+// the element spec with the extent removed, and the extent through `count`.
+// NULL when the spec has brackets that do not spell one plain extent.
+static char *snapshot_type_member_element_spec(const char *spec, ut64 *count) {
+	*count = 1;
+	char *element = r_str_trim_dup (spec);
+	if (!element) {
+		return NULL;
+	}
+	char *open = strchr (element, '[');
+	if (!open) {
+		return element;
+	}
+	char *close = strchr (open, ']');
+	if (!close || close[1] != '\0' || close == open + 1) {
+		free (element);
+		return NULL;
+	}
+	*close = '\0';
+	const char *digits = open + 1;
+	const char *cursor;
+	for (cursor = digits; *cursor; cursor++) {
+		if (*cursor < '0' || *cursor > '9') {
+			free (element);
+			return NULL;
+		}
+	}
+	const ut64 parsed = r_num_get (NULL, digits);
+	if (!parsed) {
+		free (element);
+		return NULL;
+	}
+	*count = parsed;
+	*open = '\0';
+	r_str_trim (element);
+	if (R_STR_ISEMPTY (element)) {
+		free (element);
+		return NULL;
+	}
+	return element;
+}
+
 static bool snapshot_type_spec_rejected(const char *spec) {
 	return R_STR_ISEMPTY (spec) || strchr (spec, '[') || strchr (spec, ']')
 		|| strchr (spec, '(') || strchr (spec, ')')
@@ -5016,7 +5059,7 @@ static SnapshotTypeGraphResult snapshot_type_add_struct(
 	R_VEC_FOREACH (base_members, base_member) {
 		if (member_index >= aggregate->num_members || !base_member
 			|| R_STR_ISEMPTY (base_member->name)
-			|| R_STR_ISEMPTY (base_member->type) || base_member->count) {
+			|| R_STR_ISEMPTY (base_member->type)) {
 			return SNAPSHOT_TYPE_GRAPH_UNSUPPORTED;
 		}
 		size_t prior;
@@ -5028,9 +5071,16 @@ static SnapshotTypeGraphResult snapshot_type_add_struct(
 		// A member is a type like any other. Resolving only integers made every
 		// struct holding a pointer or a nested struct unrepresentable, which is
 		// the shape of most non-trivial C structs.
+		ut64 spec_count;
+		char *element_spec = snapshot_type_member_element_spec (
+			base_member->type, &spec_count);
+		if (!element_spec) {
+			return SNAPSHOT_TYPE_GRAPH_UNSUPPORTED;
+		}
 		RAnalSnapshotTypeId member_type_id;
 		result = snapshot_type_add_root (
-			builder, base_member->type, &member_type_id);
+			builder, element_spec, &member_type_id);
+		free (element_spec);
 		if (result != SNAPSHOT_TYPE_GRAPH_VALID) {
 			return result;
 		}
@@ -5040,18 +5090,29 @@ static SnapshotTypeGraphResult snapshot_type_add_struct(
 			|| base_member->offset > UT64_MAX / 8) {
 			return SNAPSHOT_TYPE_GRAPH_UNSUPPORTED;
 		}
+		// An array member repeats its element type. Refusing every member that
+		// states a count made one array anywhere in a struct drop the whole
+		// aggregate, so a `VmState` holding `int32_t r[8]` reached the consumer
+		// with no layout at all and every one of its fields rendered as an
+		// offset placeholder. The snapshot carries the count for exactly this.
+		const ut64 member_count = base_member->count
+			? (ut64)base_member->count : spec_count;
+		ut64 member_size_bits;
+		if (r_mul_overflow (member_type->size_bits, member_count, &member_size_bits)) {
+			return SNAPSHOT_TYPE_GRAPH_UNSUPPORTED;
+		}
 		ut64 expected_offset;
 		if (!snapshot_type_align_up (cursor, member_type->align_bits, &expected_offset)
 			|| expected_offset != (ut64)base_member->offset * 8
-			|| r_add_overflow (expected_offset, member_type->size_bits, &cursor)) {
+			|| r_add_overflow (expected_offset, member_size_bits, &cursor)) {
 			return SNAPSHOT_TYPE_GRAPH_UNSUPPORTED;
 		}
 		RAnalSnapshotAggregateMember *member = &aggregate->members[member_index];
 		member->member_id = (ut32)member_index;
 		member->type_id = member_type_id;
 		member->offset_bits = expected_offset;
-		member->size_bits = member_type->size_bits;
-		member->count = 1;
+		member->size_bits = member_size_bits;
+		member->count = (size_t)member_count;
 		member->name = strdup (base_member->name);
 		if (!member->name) {
 			return SNAPSHOT_TYPE_GRAPH_NO_MEMORY;
