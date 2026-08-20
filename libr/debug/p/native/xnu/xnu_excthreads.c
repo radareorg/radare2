@@ -215,6 +215,30 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 
 // TODO: Tuck this into RDebug; `void *user` seems like a good candidate.
 static xnu_exception_info ex = { {0} };
+#if !TARGET_OS_IPHONE
+static mig_reply_error_t pending_exception_reply;
+static bool pending_exception_reply_valid = false;
+
+static bool xnu_reply_pending_exception(void) {
+	if (!pending_exception_reply_valid) {
+		return true;
+	}
+	kern_return_t kr = mach_msg (&pending_exception_reply.Head,
+		MACH_SEND_MSG | MACH_SEND_INTERRUPT,
+		pending_exception_reply.Head.msgh_size, 0,
+		MACH_PORT_NULL, MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
+	pending_exception_reply_valid = false;
+	if (kr != MACH_MSG_SUCCESS) {
+		if (pending_exception_reply.Head.msgh_remote_port != MACH_PORT_NULL) {
+			(void)mach_port_deallocate (mach_task_self (),
+				pending_exception_reply.Head.msgh_remote_port);
+		}
+		R_LOG_ERROR ("failed to reply to pending exception");
+		return false;
+	}
+	return true;
+}
+#endif
 
 static bool xnu_restore_exception_ports(int pid) {
 	kern_return_t kr;
@@ -344,16 +368,33 @@ static int handle_exception_message(RDebug *dbg, exc_msg *msg, int *ret_code) {
 		R_LOG_ERROR ("EXC_EMULATION");
 		break;
 	case EXC_SOFTWARE:
-#if __POWERPC__
-		R_LOG_ERROR ("EXC_SOFTWARE retry dcu?");
-#else
-		R_LOG_ERROR ("EXC_SOFTWARE code %d retry dcu?", msg->code);
+#if !TARGET_OS_IPHONE
+		if (xnu_ptrace_step) {
+			ret = R_DEBUG_REASON_STEP;
+		} else {
 #endif
-		ret = R_DEBUG_REASON_BREAKPOINT;
+#if __POWERPC__
+			R_LOG_ERROR ("EXC_SOFTWARE retry dcu?");
+#else
+			R_LOG_ERROR ("EXC_SOFTWARE code %d retry dcu?", msg->code);
+#endif
+			ret = R_DEBUG_REASON_BREAKPOINT;
+#if !TARGET_OS_IPHONE
+		}
+#endif
 		*ret_code = KERN_SUCCESS;
 		kr = task_suspend (msg->task.name);
+		if (kr != KERN_SUCCESS) {
+			R_LOG_ERROR ("failed to suspend task software exception");
+		}
 		break;
 	case EXC_BREAKPOINT:
+#if !TARGET_OS_IPHONE
+		if (xnu_ptrace_step) {
+			*ret_code = KERN_FAILURE;
+			break;
+		}
+#endif
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS) {
 			R_LOG_ERROR ("failed to suspend task breakpoint");
@@ -424,7 +465,21 @@ static int __xnu_wait(RDebug *dbg, int pid) {
 		}
 
 		reason = handle_exception_message (dbg, &msg, &ret_code);
+#if !TARGET_OS_IPHONE
+		const bool retry_step = xnu_ptrace_step &&
+			msg.exception == EXC_BREAKPOINT && ret_code == KERN_FAILURE;
+		const bool completed_step = xnu_ptrace_step &&
+			msg.exception == EXC_SOFTWARE;
+#endif
 		encode_reply (&reply, &msg.hdr, ret_code);
+#if !TARGET_OS_IPHONE
+		if (completed_step) {
+			pending_exception_reply = reply;
+			pending_exception_reply_valid = true;
+			xnu_ptrace_step = false;
+			break;
+		}
+#endif
 		kr = mach_msg (&reply.Head, MACH_SEND_MSG | MACH_SEND_INTERRUPT,
 				reply.Head.msgh_size, 0,
 				MACH_PORT_NULL, 0,
@@ -435,6 +490,11 @@ static int __xnu_wait(RDebug *dbg, int pid) {
 				R_LOG_ERROR ("failed to deallocate reply port");
 			}
 		}
+#if !TARGET_OS_IPHONE
+		if (retry_step) {
+			continue;
+		}
+#endif
 		break; // to avoid infinite loops
 	}
 	dbg->stopaddr = r_debug_reg_get (dbg, "PC");

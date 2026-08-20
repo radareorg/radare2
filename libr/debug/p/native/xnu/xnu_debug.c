@@ -44,6 +44,9 @@ kern_return_t mach_vm_read
 #include <mach/mach_vm.h>
 #endif
 static task_t task_dbg = 0;
+#if !TARGET_OS_IPHONE
+static bool xnu_ptrace_step = false;
+#endif
 #include "xnu_debug.h"
 #include "xnu_threads.c"
 #if XNU_USE_EXCTHR
@@ -260,18 +263,36 @@ int xnu_wait(RDebug *dbg, int pid) {
 
 bool xnu_step(RDebug *dbg) {
 #if XNU_USE_PTRACE
-	int ret = r_debug_ptrace (dbg, PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; //SIGINT
-	if (!ret) {
+	int ret = r_debug_ptrace (dbg, PT_STEP, dbg->pid, (caddr_t)1, 0);
+	if (ret == -1) {
 		r_sys_perror ("ptrace-step");
-		R_LOG_ERROR ("mach-error: %d, %s", ret, MACH_ERROR_STRING (ret));
+		return false;
 	}
-	return ret;
+	return true;
 #else
 	task_t task = pid_to_task (dbg->pid);
 	if (!task) {
 		R_LOG_ERROR ("step failed on task %d for pid %d", task, dbg->tid);
 		return false;
 	}
+#if !TARGET_OS_IPHONE
+	int ret = r_debug_ptrace (dbg, PT_STEP, dbg->pid, (caddr_t)1, 0);
+	if (ret == -1) {
+		r_sys_perror ("ptrace-step");
+		return false;
+	}
+	xnu_ptrace_step = true;
+	if (!xnu_reply_pending_exception ()) {
+		xnu_ptrace_step = false;
+		return false;
+	}
+	if (task_resume (task) != KERN_SUCCESS) {
+		xnu_ptrace_step = false;
+		R_LOG_ERROR ("failed to resume task after stepping");
+		return false;
+	}
+	return true;
+#else
 	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th) {
 		return false;
@@ -284,9 +305,13 @@ bool xnu_step(RDebug *dbg) {
 	task_resume (task);
 	return true;
 #endif
+#endif
 }
 
 bool xnu_attach(RDebug *dbg, int pid) {
+#if !TARGET_OS_IPHONE
+	xnu_ptrace_step = false;
+#endif
 #if XNU_USE_PTRACE
 # if PT_ATTACHEXC
 #  define MY_ATTACH PT_ATTACHEXC
@@ -319,6 +344,12 @@ bool xnu_detach(RDebug *dbg, int pid) {
 	if (r < 0) {
 		r_sys_perror ("ptrace(PT_DETACH)");
 	}
+#if !TARGET_OS_IPHONE
+	if (r >= 0 && !xnu_reply_pending_exception ()) {
+		r = -1;
+	}
+	xnu_ptrace_step = false;
+#endif
 	//do the cleanup necessary
 	//XXX check for errors and ref counts
 	(void)xnu_restore_exception_ports (pid);
@@ -331,7 +362,7 @@ bool xnu_detach(RDebug *dbg, int pid) {
 	task_dbg = 0;
 	r_list_free (dbg->threads);
 	dbg->threads = NULL;
-	return true;
+	return r >= 0;
 #endif
 }
 
@@ -396,6 +427,22 @@ bool xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 	if (!task) {
 		return false;
 	}
+#if !TARGET_OS_IPHONE
+	if (pending_exception_reply_valid) {
+		if (r_debug_ptrace (dbg, PT_CONTINUE, pid, (caddr_t)1, 0) == -1) {
+			r_sys_perror ("ptrace-continue");
+			return false;
+		}
+		if (!xnu_reply_pending_exception ()) {
+			return false;
+		}
+		if (task_resume (task) != KERN_SUCCESS) {
+			R_LOG_ERROR ("failed to resume task after continuing");
+			return false;
+		}
+		return true;
+	}
+#endif
 	//TODO free refs count threads
 	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th) {
