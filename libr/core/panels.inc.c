@@ -12,6 +12,7 @@ static void handle_refs(RCore *core, RPanel *panel, ut64 tmp);
 static void jmp_to_cursor_addr(RCore *core, RPanel *panel);
 static void set_breakpoints_on_cursor(RCore *core, RPanel *panel);
 static void set_addr_by_type(RCore *core, const char *cmd, ut64 addr);
+static char *r_panels_search_db(RCore *core, const char *title);
 static bool init_panels_menu(RCore *core);
 static void init_menu_color_settings_layout(void *core, const char *parent);
 static void init_menu_disasm_asm_settings_layout(void *_core, const char *parent);
@@ -162,61 +163,6 @@ static const char *function_rotate[] = {
 static const char *cache_white_list_cmds[] = {
 	// "pdc", "pdco", "agf", "Help",
 	"agf", "Help"
-};
-
-typedef struct {
-	const char *title;
-	const char *cmd;
-} PanelDbEntry;
-
-static const PanelDbEntry panels_db[] = {
-	{ "Symbols", "isq" },
-	{ "Stack", "pxr@r:SP" },
-	{ "Locals", "afvd" },
-	{ "Registers", "dr" },
-	{ "Bit Registers", "dr 1" },
-	{ "FPU Registers", "dr fpu;drf" },
-	{ "XMM Registers", "drm" },
-	{ "YMM Registers", "drmy" },
-	{ "RegisterRefs", "drr" },
-	{ "RegisterCols", "dr=" },
-	{ "Disassembly", "pd" },
-	{ "Disassemble Summary", "pdsf" },
-	{ "Decompiler", "pdc" },
-	{ "Decompiler With Offsets", "pdco" },
-	{ "Graph", "agf" },
-	{ "Tiny Graph", "agft" },
-	{ "Info", "i" },
-	{ "Database", "k ***" },
-	{ "Console", "cat $console" },
-	{ "Hexdump", "xc $r*16" },
-	{ "Xrefs", "ax" },
-	{ "Xrefs Here", "ax." },
-	{ "Functions", "afl" },
-	{ "Function Calls", "aflm" },
-	{ "Comments", "CC" },
-	{ "Entropy", "p=e 100" },
-	{ "Entropy Fire", "p==e 100" },
-	{ "DRX", "drx" },
-	{ "Sections", "iSq" },
-	{ "Segments", "iSSq" },
-	{ "Strings in data sections", "izq" },
-	{ "Strings in the whole bin", "izzq" },
-	{ "Maps", "dm" },
-	{ "Modules", "dmm" },
-	{ "Backtrace", "dbt" },
-	{ "Breakpoints", "db" },
-	{ "Imports", "iiq" },
-	{ "Clipboard", "yx" },
-	{ "New", "o" },
-	{ "Var READ address", "afvR" },
-	{ "Var WRITE address", "afvW" },
-	{ "Summary", "pdsf" },
-	{ "Classes", "icq" },
-	{ "Methods", "ic" },
-	{ "Relocs", "ir" },
-	{ "Headers", "iH" },
-	{ "File Hashes", "it" }
 };
 
 typedef struct {
@@ -588,16 +534,6 @@ static void r_panels_cache_white_list(RCore *core, RPanel *panel) {
 		}
 	}
 	panel->model->cache = false;
-}
-
-static char *r_panels_search_db(RCore *core, const char *title) {
-	int i;
-	for (i = 0; i < R_ARRAY_SIZE (panels_db); i++) {
-		if (!strcmp (panels_db[i].title, title)) {
-			return strdup (panels_db[i].cmd);
-		}
-	}
-	return NULL;
 }
 
 static int r_panels_show_status(RCore *core, const char *msg) {
@@ -4723,11 +4659,6 @@ static int continue_cb(void *user) {
 	return 0;
 }
 
-static void continue_modal_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED const char * R_NULLABLE title) {
-	continue_cb (user);
-	update_disassembly_or_open ((RCore *)user);
-}
-
 static void panel_single_step_in(RCore *core) {
 	if (r_config_get_b (core->config, "cfg.debug")) {
 		r_core_cmd (core, "ds", 0);
@@ -4765,10 +4696,6 @@ static int step_over_cb(void *user) {
 	return 0;
 }
 
-static void step_modal_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED const char * R_NULLABLE title) {
-	step_cb (user);
-}
-
 static int break_points_cb(void *user) {
 	RCore *core = (RCore *)user;
 
@@ -4784,14 +4711,6 @@ static int break_points_cb(void *user) {
 		r_core_cmdf (core, "dbs 0x%08"PFMT64x, addr);
 	}
 	return 0;
-}
-
-static void put_breakpoints_cb(void *user, RPanel * R_UNUSED panel, R_UNUSED const RPanelLayout dir, R_UNUSED const char * R_NULLABLE title) {
-	break_points_cb (user);
-}
-
-static void step_over_modal_cb(void *user, RPanel * R_UNUSED panel, R_UNUSED const RPanelLayout dir, R_UNUSED const char * R_NULLABLE title) {
-	step_over_cb (user);
 }
 
 static int show_all_decompiler_cb(void *user) {
@@ -4832,27 +4751,88 @@ static void delegate_show_all_decompiler_cb(void *user, RPanel *panel, const RPa
 	(void)show_all_decompiler_cb ((RCore *)user);
 }
 
+typedef struct {
+	const char *name;
+	const char *cmd;
+	RPanelAlmightyCallback cb;
+} ModalEntryDef;
+
+static const ModalEntryDef modal_entries_db[] = {
+	{ "Backtrace", "dbt", NULL },
+	{ "Bit Registers", "dr 1", NULL },
+	{ "Breakpoints", "db", NULL },
+	{ "Change Command of Current Panel", NULL, replace_current_panel_input },
+	{ "Classes", "icq", NULL },
+	{ "Clipboard", "yx", NULL },
+	{ "Comments", "CC", NULL },
+	{ "Console", "cat $console", NULL },
+	{ "Create New", NULL, create_panel_input },
+	{ "Database", "k ***", NULL },
+	{ "Decompiler", "pdc", NULL },
+	{ "Decompiler With Offsets", "pdco", NULL },
+	{ "Disassemble Summary", "pdsf", NULL },
+	{ "Disassembly", "pd", NULL },
+	{ "DRX", "drx", NULL },
+	{ "Entropy", "p=e 100", NULL },
+	{ "Entropy Fire", "p==e 100", NULL },
+	{ "File Hashes", "it", NULL },
+	{ "FPU Registers", "dr fpu;drf", NULL },
+	{ "Function Calls", "aflm", NULL },
+	{ "Functions", "afl", NULL },
+	{ "Graph", "agf", NULL },
+	{ "Headers", "iH", NULL },
+	{ "Hexdump", "xc $r*16", NULL },
+	{ "Imports", "iiq", NULL },
+	{ "Info", "i", NULL },
+	{ "Locals", "afvd", NULL },
+	{ "Maps", "dm", NULL },
+	{ "Methods", "ic", NULL },
+	{ "Modules", "dmm", NULL },
+	{ "New", "o", NULL },
+	{ "RegisterCols", "dr=", NULL },
+	{ "RegisterRefs", "drr", NULL },
+	{ "Registers", "dr", NULL },
+	{ "Relocs", "ir", NULL },
+	{ "Search strings in data sections", NULL, search_strings_data_create },
+	{ "Search strings in the whole bin", NULL, search_strings_bin_create },
+	{ "Sections", "iSq", NULL },
+	{ "Segments", "iSSq", NULL },
+	{ "Show All Decompiler Output", NULL, delegate_show_all_decompiler_cb },
+	{ "Stack", "pxr@r:SP", NULL },
+	{ "Strings in data sections", "izq", NULL },
+	{ "Strings in the whole bin", "izzq", NULL },
+	{ "Summary", "pdsf", NULL },
+	{ "Symbols", "isq", NULL },
+	{ "Tiny Graph", "agft", NULL },
+	{ "Var READ address", "afvR", NULL },
+	{ "Var WRITE address", "afvW", NULL },
+	{ "XMM Registers", "drm", NULL },
+	{ "Xrefs", "ax", NULL },
+	{ "Xrefs Here", "ax.", NULL },
+	{ "YMM Registers", "drmy", NULL }
+};
+
+static char *r_panels_search_db(RCore *core, const char *title) {
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (modal_entries_db); i++) {
+		const ModalEntryDef *entry = &modal_entries_db[i];
+		if (entry->cmd && !strcmp (entry->name, title)) {
+			return strdup (entry->cmd);
+		}
+	}
+	return NULL;
+}
+
 static void init_modal_db(RCore *core) {
 	free (modal_entries);
-	int cap = R_ARRAY_SIZE (panels_db) + 10;
-	modal_entries = R_NEWS0 (ModalEntry, cap);
+	modal_entries = R_NEWS0 (ModalEntry, R_ARRAY_SIZE (modal_entries_db));
 	n_modal_entries = 0;
 	int i;
-	for (i = 0; i < R_ARRAY_SIZE (panels_db); i++) {
-		modal_entries[n_modal_entries].name = strdup (panels_db[i].title);
-		modal_entries[n_modal_entries].cb = create_panel_db;
+	for (i = 0; i < R_ARRAY_SIZE (modal_entries_db); i++) {
+		const ModalEntryDef *entry = &modal_entries_db[i];
+		modal_entries[n_modal_entries].name = strdup (entry->name);
+		modal_entries[n_modal_entries].cb = entry->cb? entry->cb: create_panel_db;
 		n_modal_entries++;
-	}
-	modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Search strings in data sections"), search_strings_data_create };
-	modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Search strings in the whole bin"), search_strings_bin_create };
-	modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Create New"), create_panel_input };
-	modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Change Command of Current Panel"), replace_current_panel_input };
-	modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Show All Decompiler Output"), delegate_show_all_decompiler_cb };
-	if (r_config_get_b (core->config, "cfg.debug")) {
-		modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Put Breakpoints"), put_breakpoints_cb };
-		modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Continue"), continue_modal_cb };
-		modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Step"), step_modal_cb };
-		modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Step Over"), step_over_modal_cb };
 	}
 }
 
