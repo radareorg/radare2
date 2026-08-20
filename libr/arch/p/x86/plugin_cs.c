@@ -1219,22 +1219,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			free (dst);
 		}
 		break;
-	case X86_INS_SAR:
-		// TODO: Set CF. See case X86_INS_SHL for more details.
-		{
-		ut32 bitsize;
-		char *count = getarg (&gop, 1, 0, NULL, NULL);
-		dst_r = getarg (&gop, 0, 0, NULL, NULL);
-		dst_w = getarg (&gop, 0, 1, NULL, &bitsize);
-		src = shift_count (count, bitsize);
-		free (count);
-		esilprintf (op, "0,cf,:=,1,%s,-,1,<<,%s,&,?{,1,cf,:=,},%s,%s,ASR,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=",
-			src, dst_r, src, dst_r, dst_w, bitsize - 1);
-		free (src);
-		free (dst_r);
-		free (dst_w);
-	}
-	break;
 	case X86_INS_SARX:
 		{
 			dst = getarg (&gop, 0, 1, NULL, NULL);
@@ -1259,12 +1243,14 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		// pre-shift value; OF is defined only for 1-bit shifts as msb(result) ^ CF.
 		// Read via dst_r, write via dst_w so memory destinations store the result.
 		esilprintf (op,
+			"%s,?{,"
 			"%s,%d,-,%s,>>,1,&,cf,:=,"
 			"%s,%s,<<,%s,"
 			"$z,zf,:=,"
 			"$p,pf,:=,"
 			"%d,$s,sf,:=,"
-			"%d,%s,>>,1,&,cf,^,of,:=",
+			"%d,%s,>>,1,&,cf,^,of,:=,}",
+			src,
 			src, bitsize, dst_r,
 			src, dst_r, dst_w,
 			bitsize - 1,
@@ -1277,9 +1263,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_SALC:
 		esilprintf (op, "$z,DUP,zf,=,al,=");
 		break;
+	case X86_INS_SAR:
 	case X86_INS_SHR:
 	case X86_INS_SHRX:
-		// TODO: Set CF: See case X86_INS_SAL for more details.
 		{
 			ut32 bitsize;
 			char *count = getarg (&gop, 1, 0, NULL, NULL);
@@ -1288,8 +1274,10 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src = count? shift_count (count, bitsize): NULL;
 			free (count);
 			if (src && dst_r && dst_w) {
-				esilprintf (op, "0,cf,:=,1,%s,-,1,<<,%s,&,?{,1,cf,:=,},%s,%s,>>,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=",
-					src, dst_r, src, dst_r, dst_w, bitsize - 1);
+				// x86 leaves the destination and all flags alone on a 0 count
+				const char *shop = (insn->id == X86_INS_SAR)? "ASR": ">>";
+				esilprintf (op, "%s,?{,1,%s,-,%s,>>,1,&,cf,:=,%s,%s,%s,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}",
+					src, src, dst_r, src, dst_r, shop, dst_w, bitsize - 1);
 			}
 			free (src);
 			free (dst_r);

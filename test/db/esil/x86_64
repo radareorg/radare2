@@ -1241,3 +1241,90 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=shr does nothing when the count masks to zero
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx d3ea
+ar rdx=0xa5a5000380000005
+ar rcx=32
+ar cf=1
+ar zf=1
+aes
+ar rdx
+ar cf
+ar zf
+EOF
+EXPECT=<<EOF
+0x80000005
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=sar does nothing when the count is zero
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx d3fa
+ar rdx=0xa5a5000380000005
+ar rcx=0
+ar cf=1
+ar sf=1
+aes
+ar rdx
+ar cf
+ar sf
+EOF
+EXPECT=<<EOF
+0x80000005
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=shl does nothing when the count masks to zero
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx d3e2
+ar rdx=0xa5a5000380000005
+ar rcx=64
+ar cf=1
+ar of=1
+aes
+ar rdx
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0x80000005
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=shr by one still shifts and sets the carry
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx d3ea
+ar rdx=0xa5a5000380000004
+ar rcx=1
+aes
+ar rdx
+ar cf
+EOF
+EXPECT=<<EOF
+0x40000002
+0x00000000
+EOF
+RUN
