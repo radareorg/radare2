@@ -342,6 +342,10 @@ static void print_notch(RCore *core) {
 	}
 }
 
+static void r_panels_clear_header_rows(RCore *core) {
+	r_cons_printf (core->cons, Color_RESET R_CONS_CLEAR_LINE"\n"R_CONS_CLEAR_LINE R_CONS_CURSOR_UP);
+}
+
 static RPanel *r_panels_get_panel(RPanels *panels, int i) {
 	return (panels && i < PANEL_NUM_LIMIT)? panels->panel[i]: NULL;
 }
@@ -818,19 +822,41 @@ static char *r_panels_menu_status_text(RPanelsMenuItem *item) {
 }
 
 static void r_panels_print_menu_status(RCore *core, const char *msg) {
+	if (R_STR_ISEMPTY (msg)) {
+		return;
+	}
 	int rows;
-	const int cols = r_cons_get_size (core->cons, &rows);
+	int cols = r_cons_get_size (core->cons, &rows);
 	if (rows < 1 || cols < 1) {
 		return;
 	}
-	r_cons_gotoxy (core->cons, 0, rows - 1);
-	if (R_STR_ISEMPTY (msg)) {
-		r_cons_printf (core->cons, R_CONS_CLEAR_LINE);
+	int width = R_MAX (cols - 1, 1);
+	char *status = r_str_newf (" Menu: %s ", msg);
+	char *cropped = r_str_ansi_crop (status, 0, 0, width, 1);
+	const char *visible = cropped? cropped: status;
+	char *padding = r_str_pad (NULL, 0, ' ', R_MAX (width - r_str_ansi_len (visible), 0));
+	char *line = r_str_newf (Color_INVERT"%s%s%s"Color_RESET,
+		PANEL_HL_COLOR, visible, padding);
+	r_cons_gotoxy (core->cons, 0, rows + 1);
+	r_cons_printf (core->cons, R_CONS_CLEAR_LINE"%s", line);
+	free (line);
+	free (padding);
+	free (cropped);
+	free (status);
+}
+
+static void r_panels_canvas_write_bar(RConsCanvas *can, int y, int width, const char *text, char pad) {
+	if (width < 1) {
 		return;
 	}
-	char *cropped = r_str_ansi_crop (msg, 0, 0, R_MAX (1, cols - 1), 1);
-	r_cons_printf (core->cons, R_CONS_CLEAR_LINE"%s%s"Color_RESET,
-		PANEL_HL_COLOR, cropped? cropped: msg);
+	char *cropped = r_str_ansi_crop (r_str_get (text), 0, 0, width, 1);
+	const char *visible = cropped? cropped: r_str_get (text);
+	char *padding = r_str_pad (NULL, 0, pad, R_MAX (width - r_str_ansi_len (visible), 0));
+	char *line = r_str_newf ("%s%s"Color_RESET, visible, padding);
+	(void)r_cons_canvas_gotoxy (can, -can->sx, y - can->sy);
+	r_cons_canvas_write (can, line);
+	free (line);
+	free (padding);
 	free (cropped);
 }
 
@@ -1045,30 +1071,25 @@ static void r_panels_layout_default(RCore *core, RPanels *panels) {
 	}
 	int h, w = r_cons_get_size (core->cons, &h);
 	if (panels->n_panels <= 1) {
-		r_panels_set_geometry (&p0->view->pos, 0, 1, w, h - 1);
+		r_panels_set_geometry (&p0->view->pos, 0, PANEL_HEADER_H, w, h - PANEL_HEADER_H);
 		return;
 	}
 
-	int ph = (h - 1) / (panels->n_panels - 1);
+	int ph = (h - PANEL_HEADER_H) / (panels->n_panels - 1);
 	int colpos = w - panels->columnWidth;
-	r_panels_set_geometry (&p0->view->pos, 0, 1, colpos + 1, h - 1);
+	r_panels_set_geometry (&p0->view->pos, 0, PANEL_HEADER_H, colpos + 1, h - PANEL_HEADER_H);
 
 	int pos_x = p0->view->pos.x + p0->view->pos.w - 1;
-	int i, total_h = 0;
+	int i;
 	for (i = 1; i < panels->n_panels; i++) {
 		RPanel *p = r_panels_get_panel (panels, i);
 		if (!p) {
 			continue;
 		}
 		int tmp_w = R_MAX (w - colpos, 0);
-		int tmp_h = 0;
-		if (i + 1 == panels->n_panels) {
-			tmp_h = h - total_h;
-		} else {
-			tmp_h = ph;
-		}
-		r_panels_set_geometry (&p->view->pos, pos_x, 2 + (ph * (i - 1)) - 1, tmp_w, tmp_h + 1);
-		total_h += 2 + (ph * (i - 1)) - 1 + tmp_h + 1;
+		int pos_y = PANEL_HEADER_H + (ph * (i - 1));
+		int tmp_h = i + 1 == panels->n_panels? h - pos_y: ph + 1;
+		r_panels_set_geometry (&p->view->pos, pos_x, pos_y, tmp_w, tmp_h);
 	}
 }
 
@@ -1087,7 +1108,7 @@ static void r_panels_layout_equal_hor(RCore *core, RPanels *panels) {
 		if (!p) {
 			continue;
 		}
-		r_panels_set_geometry (&p->view->pos, cw, 1, pw, h - 1);
+		r_panels_set_geometry (&p->view->pos, cw, PANEL_HEADER_H, pw, h - PANEL_HEADER_H);
 		cw += pw - 1;
 		if (i == panels->n_panels - 2) {
 			pw = w - cw;
@@ -1289,7 +1310,7 @@ static void r_panels_adjust_and_add_panel(RCore *core, const char *name, char *c
 	available_space = r_panels_adjust_side_panels (core);
 	r_panels_insert_panel (core, 0, name, cmd);
 	RPanel *p0 = r_panels_get_panel (panels, 0);
-	r_panels_set_geometry (&p0->view->pos, 0, 1, available_space + 1, h - 1);
+	r_panels_set_geometry (&p0->view->pos, 0, PANEL_HEADER_H, available_space + 1, h - PANEL_HEADER_H);
 	r_panels_set_curnode (core, 0);
 }
 
@@ -1324,8 +1345,8 @@ static void r_panels_fix_layout_axis(RCore *core, bool horizontal) {
 	if (!horizontal) {
 		int h;
 		(void)r_cons_get_size (core->cons, &h);
-		skip_pos = 1;
-		skip_sz = h - 1;
+		skip_pos = PANEL_HEADER_H;
+		skip_sz = h - PANEL_HEADER_H;
 	}
 	int i;
 	for (i = 0; i < panels->n_panels - 1 && n_edges < PANEL_NUM_LIMIT; i++) {
@@ -1652,7 +1673,7 @@ static void r_panels_maximize_panel_size(RPanels *panels) {
 	if (!cur) {
 		return;
 	}
-	r_panels_set_geometry (&cur->view->pos, 0, 1, panels->can->w, panels->can->h - 1);
+	r_panels_set_geometry (&cur->view->pos, 0, PANEL_HEADER_H, panels->can->w, panels->can->h - PANEL_HEADER_H);
 	cur->view->refresh = true;
 }
 
@@ -2682,6 +2703,107 @@ static char *r_panels_get_word_from_canvas_for_menu(RCore *core, RPanels *panels
 	return ret;
 }
 
+typedef struct {
+	int address_x;
+	int address_w;
+	int undo_x;
+	int redo_x;
+	int new_tab_x;
+	int prev_tabs_x;
+	int prev_tab;
+	int next_tabs_x;
+	int next_tab;
+	int tab_x[PANEL_NUM_LIMIT];
+	int tab_w[PANEL_NUM_LIMIT];
+	int close_x[PANEL_NUM_LIMIT];
+} RPanelsNavLayout;
+
+static const char *r_panels_navbar_tab_name(RPanelsRoot *root, int index, char *number, size_t number_size) {
+	RPanels *panels = r_panels_get_panels (root, index);
+	if (panels && R_STR_ISNOTEMPTY (panels->name)) {
+		return panels->name;
+	}
+	snprintf (number, number_size, "Tab%d", index + 1);
+	return number;
+}
+
+static int r_panels_navbar_window_width(RPanelsRoot *root, int first, int last) {
+	int i, width = 2;
+	for (i = first; i <= last; i++) {
+		char number[16];
+		const char *name = r_panels_navbar_tab_name (root, i, number, sizeof (number));
+		width += r_str_ansi_len (name) + 12;
+	}
+	return width;
+}
+
+static int r_panels_navbar_x(RStrBuf *bar) {
+	return r_str_ansi_len (r_strbuf_get (bar)) + 1;
+}
+
+static RStrBuf *r_panels_navbar(RCore *core, int width, RPanelsNavLayout *layout) {
+	memset (layout, -1, sizeof (*layout));
+	RStrBuf *bar = r_strbuf_new (" ");
+	char *address = r_str_newf ("[0x%08"PFMT64x "]", core->addr);
+	layout->address_x = r_panels_navbar_x (bar);
+	layout->address_w = r_str_ansi_len (address);
+	r_strbuf_appendf (bar, "%s%s%s ", PANEL_HL_COLOR, address, Color_RESET);
+	free (address);
+	layout->undo_x = r_panels_navbar_x (bar);
+	r_strbuf_appendf (bar, "%s[<]%s ", PANEL_HL_COLOR, Color_RESET);
+	layout->redo_x = r_panels_navbar_x (bar);
+	r_strbuf_appendf (bar, "%s[>]%s ", PANEL_HL_COLOR, Color_RESET);
+	RPanelsRoot *root = core->panels_root;
+	int available = width - r_str_ansi_len (r_strbuf_get (bar)) - 3;
+	if (!root || root->n_panels < 1) {
+		r_strbuf_append (bar, "__");
+	} else if (available > 0) {
+		int cur = R_MAX (0, R_MIN (root->cur_panels, root->n_panels - 1));
+		int i, first = 0, last = cur;
+		while (first < cur && r_panels_navbar_window_width (root, first, last) > available) {
+			first++;
+		}
+		while (last + 1 < root->n_panels &&
+				r_panels_navbar_window_width (root, first, last + 1) <= available) {
+			last++;
+		}
+		if (first > 0) {
+			layout->prev_tabs_x = r_panels_navbar_x (bar);
+			layout->prev_tab = first - 1;
+			r_strbuf_append (bar, "<_");
+		} else {
+			r_strbuf_append (bar, "__");
+		}
+		for (i = first; i <= last; i++) {
+			char number[16];
+			const char *name = r_panels_navbar_tab_name (root, i, number, sizeof (number));
+			int name_len = r_str_ansi_len (name);
+			layout->tab_x[i] = r_panels_navbar_x (bar);
+			layout->tab_w[i] = name_len + 10;
+			layout->close_x[i] = layout->tab_x[i] + name_len + 4;
+			if (i == cur) {
+				r_strbuf_appendf (bar, "%s/  %s [x]  \\%s", PANEL_HL_COLOR, name, Color_RESET);
+			} else {
+				r_strbuf_appendf (bar, ".--%s %s[x]%s--.", name, PANEL_HL_COLOR, Color_RESET);
+			}
+			if (i < last) {
+				r_strbuf_append (bar, "__");
+			}
+		}
+		if (last + 1 < root->n_panels) {
+			r_strbuf_append (bar, "_");
+			layout->next_tabs_x = r_panels_navbar_x (bar);
+			layout->next_tab = last + 1;
+			r_strbuf_append (bar, ">");
+		} else {
+			r_strbuf_append (bar, "__");
+		}
+	}
+	layout->new_tab_x = r_panels_navbar_x (bar);
+	r_strbuf_appendf (bar, "%s[t]%s", PANEL_HL_COLOR, Color_RESET);
+	return bar;
+}
+
 static void r_panels_handle_tab_nth(RCore *core, int ch) {
 	ch -= '0' + 1;
 	if (ch >= 0 && ch != core->panels_root->cur_panels && ch < core->panels_root->n_panels) {
@@ -2779,6 +2901,107 @@ static void r_panels_close_menu(RCore *core) {
 	}
 }
 
+static bool r_panels_navbar_hit(int x, int start, int width) {
+	return start > 0 && x >= start && x < start + width;
+}
+
+// returns the root when index is a valid tab, closing the menu first
+static RPanelsRoot *r_panels_navbar_tab_root(RCore *core, int index) {
+	RPanelsRoot *root = core->panels_root;
+	if (!root || index < 0 || index >= root->n_panels) {
+		return NULL;
+	}
+	if (core->panels->mode == PANEL_MODE_MENU) {
+		r_panels_close_menu (core);
+	}
+	return root;
+}
+
+static void r_panels_navbar_select_tab(RCore *core, int index) {
+	RPanelsRoot *root = r_panels_navbar_tab_root (core, index);
+	if (root && index != root->cur_panels) {
+		root->cur_panels = index;
+		r_panels_set_root_state (core, ROTATE);
+	}
+}
+
+static void r_panels_navbar_close_tab(RCore *core, int index) {
+	RPanelsRoot *root = r_panels_navbar_tab_root (core, index);
+	if (!root) {
+		return;
+	}
+	if (index == root->cur_panels) {
+		r_panels_set_root_state (core, DEL);
+		return;
+	}
+	r_panels_free_partial (root->panels[index]);
+	int i;
+	for (i = index; i < root->n_panels - 1; i++) {
+		root->panels[i] = root->panels[i + 1];
+	}
+	root->panels[--root->n_panels] = NULL;
+	if (index < root->cur_panels) {
+		root->cur_panels--;
+	}
+}
+
+static bool r_panels_handle_mouse_on_tabs(RCore *core, int x, RPanelsNavLayout *layout) {
+	RPanelsRoot *root = core->panels_root;
+	if (r_panels_navbar_hit (x, layout->new_tab_x, 3)) {
+		if (core->panels->mode == PANEL_MODE_MENU) {
+			r_panels_close_menu (core);
+		}
+		int old_count = root? root->n_panels: 0;
+		r_panels_handle_tab_new (core);
+		if (root && root->n_panels > old_count) {
+			root->cur_panels = root->n_panels - 1;
+			r_panels_set_root_state (core, ROTATE);
+		}
+		return true;
+	}
+	if (r_panels_navbar_hit (x, layout->prev_tabs_x, 1)) {
+		r_panels_navbar_select_tab (core, layout->prev_tab);
+		return true;
+	}
+	if (r_panels_navbar_hit (x, layout->next_tabs_x, 1)) {
+		r_panels_navbar_select_tab (core, layout->next_tab);
+		return true;
+	}
+	int i;
+	for (i = 0; root && i < root->n_panels; i++) {
+		if (r_panels_navbar_hit (x, layout->close_x[i], 3)) {
+			r_panels_navbar_close_tab (core, i);
+			return true;
+		}
+		if (r_panels_navbar_hit (x, layout->tab_x[i], layout->tab_w[i])) {
+			r_panels_navbar_select_tab (core, i);
+			return true;
+		}
+	}
+	return true;
+}
+
+static bool r_panels_handle_mouse_on_navbar(RCore *core, int x, int *key) {
+	RPanelsNavLayout layout;
+	r_strbuf_free (r_panels_navbar (core, core->panels->can->w, &layout));
+	int action = 0;
+	if (r_panels_navbar_hit (x, layout.undo_x, 3)) {
+		action = 'u';
+	} else if (r_panels_navbar_hit (x, layout.redo_x, 3)) {
+		action = 'U';
+	} else if (r_panels_navbar_hit (x, layout.address_x, layout.address_w)) {
+		action = 'g';
+	}
+	if (action) {
+		if (core->panels->mode == PANEL_MODE_MENU) {
+			r_panels_close_menu (core);
+		}
+		*key = action;
+		return false;
+	}
+	return r_panels_handle_mouse_on_tabs (core, x, &layout);
+}
+
 static void r_panels_menu_bar_range(RPanelsMenuItem *root, int sel, int bar_room, int *out_first, int *out_last) {
 	int i, n = root->n_sub;
 	*out_first = 0;
@@ -2812,7 +3035,7 @@ static void r_panels_menu_bar_range(RPanelsMenuItem *root, int sel, int bar_room
 
 static int r_panels_menu_bar_x(RPanelsMenu *menu, int index, int canw) {
 	int first, last;
-	r_panels_menu_bar_range (menu->root, index, canw - 16, &first, &last);
+	r_panels_menu_bar_range (menu->root, index, canw - 4, &first, &last);
 	int x = 4;
 	if (first > 0) {
 		x += 2;
@@ -3231,7 +3454,7 @@ static bool r_panels_handle_mouse_press(RCore *core) {
 	}
 	const int x = cons->drag_x;
 	const int y = cons->drag_y - r_config_get_i (core->config, "scr.notch");
-	if (y <= MENU_Y) {
+	if (y <= PANEL_HEADER_H) {
 		return false;
 	}
 	const int idx = r_panels_select_mouse_panel (core, x, y);
@@ -3262,11 +3485,14 @@ static bool r_panels_handle_mouse(RCore *core, int *key) {
 		if (y == MENU_Y && r_panels_handle_mouse_on_top (core, x, y)) {
 			return true;
 		}
+		if (y == MENU_Y + 1 && panels->panels_menu->n_refresh < 1) {
+			return r_panels_handle_mouse_on_navbar (core, x, key);
+		}
 		if (panels->mode == PANEL_MODE_MENU) {
 			r_panels_handle_mouse_on_menu (core, x, y);
 			return true;
 		}
-		if (y <= MENU_Y + 1) {
+		if (y <= PANEL_HEADER_H) {
 			return true;
 		}
 		if (r_panels_handle_mouse_on_X (core, x, y)) {
@@ -3320,9 +3546,9 @@ static void r_panels_move_panel_to(RCore *core, RPanel *panel, int src, Directio
 		int p_w = (w - panels->columnWidth) / 2;
 		int new_w = w - p_w;
 		if (neg) {
-			r_panels_set_geometry (&panel->view->pos, 0, 1, p_w + 1, h - 1);
+			r_panels_set_geometry (&panel->view->pos, 0, PANEL_HEADER_H, p_w + 1, h - PANEL_HEADER_H);
 		} else {
-			r_panels_set_geometry (&panel->view->pos, w - p_w - 1, 1, p_w + 1, h - 1);
+			r_panels_set_geometry (&panel->view->pos, w - p_w - 1, PANEL_HEADER_H, p_w + 1, h - PANEL_HEADER_H);
 		}
 		for (i = start; i < end; i++) {
 			RPanel *tmp = r_panels_get_panel (panels, i);
@@ -3334,7 +3560,7 @@ static void r_panels_move_panel_to(RCore *core, RPanel *panel, int src, Directio
 		int p_h = h / 2;
 		int new_h = h - p_h;
 		if (neg) {
-			r_panels_set_geometry (&panel->view->pos, 0, 1, w, p_h - 1);
+			r_panels_set_geometry (&panel->view->pos, 0, PANEL_HEADER_H, w, p_h - PANEL_HEADER_H);
 		} else {
 			r_panels_set_geometry (&panel->view->pos, 0, new_h, w, p_h);
 		}
@@ -3345,7 +3571,7 @@ static void r_panels_move_panel_to(RCore *core, RPanel *panel, int src, Directio
 				t_y = (int)((double)tmp->view->pos.y / h * new_h + p_h);
 				t_h = (int)((double)tmp->view->pos.h / h * new_h + 1);
 			} else {
-				t_y = (int)(tmp->view->pos.y * new_h / h) + 1;
+				t_y = (int)(tmp->view->pos.y * new_h / h) + PANEL_HEADER_H;
 				t_h = (tmp->view->edge & (1 << PANEL_EDGE_BOTTOM))
 					? new_h - t_y
 					: (int)(tmp->view->pos.h * new_h / h);
@@ -3410,23 +3636,52 @@ static void r_panels_do_panels_refresh(RCore *core) {
 	}
 }
 
-static void r_panels_do_panels_resize(RCore *core) {
-	RPanels *panels = core->panels;
+static int r_panels_scale_edge(int value, int old_max, int new_max) {
+	if (old_max < 1 || new_max < 1) {
+		return 0;
+	}
+	return (int)(((st64)value * new_max + (old_max / 2)) / old_max);
+}
+
+static void r_panels_resize_layout(RPanels *panels, int width, int height) {
+	if (!panels->can || width < 1 || height < 1) {
+		return;
+	}
+	int old_width = panels->can->w;
+	int old_height = panels->can->h;
+	if (old_width == width && old_height == height) {
+		return;
+	}
+	int old_x_max = R_MAX (old_width - 1, 0);
+	int new_x_max = R_MAX (width - 1, 0);
+	int old_y_max = R_MAX (old_height - PANEL_HEADER_H - 1, 0);
+	int new_y_max = R_MAX (height - PANEL_HEADER_H - 1, 0);
 	int i;
-	int h, w = r_panels_get_size (core, &h);
 	for (i = 0; i < panels->n_panels; i++) {
-		RPanel *p = r_panels_get_panel (panels, i);
-		if (!p) {
+		RPanel *panel = r_panels_get_panel (panels, i);
+		if (!panel) {
 			continue;
 		}
-		RPanelPos *pos = &p->view->pos;
-		if ((p->view->edge & (1 << PANEL_EDGE_BOTTOM)) && pos->y + pos->h < h) {
-			pos->h = h - pos->y;
-		}
-		if ((p->view->edge & (1 << PANEL_EDGE_RIGHT)) && pos->x + pos->w < w) {
-			pos->w = w - pos->x;
-		}
+		RPanelPos *pos = &panel->view->pos;
+		int left = R_MIN (R_MAX (pos->x, 0), old_x_max);
+		int right = R_MIN (R_MAX (pos->x + pos->w - 1, left), old_x_max);
+		int top = R_MIN (R_MAX (pos->y - PANEL_HEADER_H, 0), old_y_max);
+		int bottom = R_MIN (R_MAX (pos->y + pos->h - PANEL_HEADER_H - 1, top), old_y_max);
+		int new_left = r_panels_scale_edge (left, old_x_max, new_x_max);
+		int new_right = r_panels_scale_edge (right, old_x_max, new_x_max);
+		int new_top = r_panels_scale_edge (top, old_y_max, new_y_max);
+		int new_bottom = r_panels_scale_edge (bottom, old_y_max, new_y_max);
+		r_panels_set_geometry (pos, new_left, new_top + PANEL_HEADER_H,
+			R_MAX (new_right - new_left + 1, 1), R_MAX (new_bottom - new_top + 1, 1));
+		panel->view->refresh = true;
 	}
+}
+
+static void r_panels_do_panels_resize(RCore *core) {
+	RPanels *panels = core->panels;
+	int h, w = r_panels_get_size (core, &h);
+	r_panels_resize_layout (panels, w, h);
+	(void)r_cons_canvas_resize (panels->can, w, h);
 	r_panels_do_panels_refresh (core);
 }
 
@@ -3940,12 +4195,6 @@ static void r_panels_refresh(RCore *core) {
 		r_panels_panel_print (core, can, r_panels_get_panel (panels, i), 0);
 	}
 	r_panels_panel_print (core, can, r_panels_get_cur_panel (panels), panels->mode != PANEL_MODE_MENU);
-	// draw menus
-	for (i = 0; i < panels->panels_menu->n_refresh; i++) {
-		r_panels_panel_print (core, can, panels->panels_menu->refreshPanels[i], 0);
-	}
-	(void) r_cons_canvas_gotoxy (can, -can->sx, -can->sy);
-	r_cons_canvas_fill (can, -can->sx, -can->sy, w, 1, ' ');
 	if (panels->mode == PANEL_MODE_ZOOM) {
 		r_strbuf_appendf (title, "%s Zoom Mode | Press Enter or q to quit"Color_RESET, PANEL_HL_COLOR);
 	} else if (panels->mode == PANEL_MODE_WINDOW) {
@@ -3962,7 +4211,7 @@ static void r_panels_refresh(RCore *core) {
 			}
 		}
 		int menu_first, menu_last;
-		r_panels_menu_bar_range (parent, parent->selectedIndex, w - 16, &menu_first, &menu_last);
+		r_panels_menu_bar_range (parent, parent->selectedIndex, w - 4, &menu_first, &menu_last);
 		if (menu_first > 0) {
 			r_strbuf_append (title, "< ");
 		}
@@ -3978,45 +4227,18 @@ static void r_panels_refresh(RCore *core) {
 			r_strbuf_append (title, " >");
 		}
 	}
-	if (panels->mode == PANEL_MODE_MENU) {
-		r_cons_canvas_write (can, Color_YELLOW);
-		r_cons_canvas_write (can, r_strbuf_get (title));
-		r_cons_canvas_write (can, Color_RESET);
-	} else {
-		r_cons_canvas_write (can, Color_RESET);
-		r_cons_canvas_write (can, r_strbuf_get (title));
+	const bool in_menu = panels->mode == PANEL_MODE_MENU;
+	char *menubar = r_str_newf ("%s%s", in_menu? Color_YELLOW: Color_RESET, r_strbuf_get (title));
+	r_panels_canvas_write_bar (can, 0, w, menubar, ' ');
+	free (menubar);
+	RPanelsNavLayout nav_layout;
+	RStrBuf *navbar = panels->panels_menu->n_refresh > 0? NULL: r_panels_navbar (core, w, &nav_layout);
+	r_panels_canvas_write_bar (can, 1, w, navbar? r_strbuf_get (navbar): "", navbar? '_': ' ');
+	r_strbuf_free (navbar);
+	// Dropdowns occupy the row below the menubar while they are open.
+	for (i = 0; i < panels->panels_menu->n_refresh; i++) {
+		r_panels_panel_print (core, can, panels->panels_menu->refreshPanels[i], 0);
 	}
-	r_strbuf_setf (title, "[0x%08"PFMT64x "]", core->addr);
-	i = -can->sx + w - r_strbuf_length (title);
-	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
-	r_cons_canvas_write (can, r_strbuf_get (title));
-
-	int tab_pos = i;
-	for (i = core->panels_root->n_panels; i > 0; i--) {
-		RPanels *panels = core->panels_root->panels[i - 1];
-		const char *name = panels? panels->name: NULL;
-		if (i - 1 == core->panels_root->cur_panels) {
-			if (name) {
-				r_strbuf_setf (title, "%s(%s) "Color_RESET, PANEL_HL_COLOR, name);
-			} else {
-				r_strbuf_setf (title, "%s(%d) "Color_RESET, PANEL_HL_COLOR, i);
-			}
-			tab_pos -= r_str_ansi_len (r_strbuf_get (title));
-		} else {
-			if (!name) {
-				r_strbuf_setf (title, "%d ", i);
-			} else {
-				r_strbuf_setf (title, "%s ", name);
-			}
-			tab_pos -= r_strbuf_length (title);
-		}
-		(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
-		r_cons_canvas_write (can, r_strbuf_get (title));
-	}
-	r_strbuf_setf (title, "%s[t]%sab ", PANEL_HL_COLOR, Color_RESET);
-	tab_pos -= r_str_ansi_len (r_strbuf_get (title));
-	(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
-	r_cons_canvas_write (can, r_strbuf_get (title));
 	r_strbuf_free (title);
 
 	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
@@ -4035,13 +4257,13 @@ static void r_panels_refresh(RCore *core) {
 		r_panels_refresh (core);
 	} else {
 		print_notch (core);
+		r_panels_clear_header_rows (core);
 		r_cons_canvas_print (can);
 		if (core->scr_gadgets) {
 			r_core_call (core, "pg");
 		}
-		if (panels->mode == PANEL_MODE_MENU) {
-			RPanelsMenuItem *item = r_panels_get_selected_menu_item (panels);
-			char *status = r_panels_menu_status_text (item);
+		if (in_menu) {
+			char *status = r_panels_menu_status_text (r_panels_get_selected_menu_item (panels));
 			r_panels_print_menu_status (core, status);
 			free (status);
 		}
@@ -4339,8 +4561,8 @@ static int add_cmdf_panel(RCore *core, char *input, char *str) {
 	r_panels_adjust_side_panels (core);
 	r_panels_insert_panel (core, 0, child->name, "");
 	RPanel *p0 = r_panels_get_panel (panels, 0);
-	if (h > 1) {
-		r_panels_set_geometry (&p0->view->pos, 0, 1, PANEL_CONFIG_SIDEPANEL_W, h - 1);
+	if (h > PANEL_HEADER_H) {
+		r_panels_set_geometry (&p0->view->pos, 0, PANEL_HEADER_H, PANEL_CONFIG_SIDEPANEL_W, h - PANEL_HEADER_H);
 	}
 	char *cmdf = r_panels_load_cmdf (core, p0, input, str);
 	r_panels_set_cmd_str_cache (core, p0, cmdf);
@@ -6371,7 +6593,7 @@ static int open_menu_cb(void *user) {
 	int x, y;
 	if (menu->depth < 2) {
 		x = r_panels_menu_bar_x (menu, menu->root->selectedIndex, can->w);
-		y = 1;
+		y = MENU_Y;
 	} else {
 		RPanelsMenuItem *p = menu->history[menu->depth - 2];
 		RPanelsMenuItem *parent2 = p->sub[p->selectedIndex];
@@ -6492,6 +6714,7 @@ static void load_config_menu(RCore *core) {
 }
 
 static const MenuItem file_items[] = {
+	{ "New", "Open a new file", NULL },
 	{ "Open File", "Prompt for a file and open it", open_file_cb },
 	{ "Reopen...", "Reopen the current file with a different mode", open_menu_cb },
 	{ "Close File", "Close the current file descriptor", close_file_cb },
@@ -6960,7 +7183,12 @@ static void panels_process(RCore *core, RPanels *panels) {
 	core->panels = panels;
 	panels->autoUpdate = true;
 	int h, w = r_panels_get_size (core, &h);
-	panels->can = r_panels_create_new_canvas (core, w, h);
+	if (panels->can) {
+		r_panels_resize_layout (panels, w, h);
+		(void)r_cons_canvas_resize (panels->can, w, h);
+	} else {
+		panels->can = r_panels_create_new_canvas (core, w, h);
+	}
 	r_panels_set_refresh_all (core, false, true);
 
 	r_cons_switchbuf (core->cons, false);

@@ -3,6 +3,7 @@
 #include <r_core.h>
 
 #define MENU_Y 1
+#define PANEL_HEADER_H 2
 #define PANEL_NUM_LIMIT 16
 #define PANEL_HL_COLOR core->cons->context->pal.graph_box2
 #define PANEL_CONFIG_SIDEPANEL_W 60
@@ -97,7 +98,13 @@ R_API bool r_core_panels_load(RCore *core, const char *_name) {
 		w = sdb_json_get_str (tmp_cfg, "w");
 		h = sdb_json_get_str (tmp_cfg, "h");
 		RPanel *p = r_panels_get_panel (panels, panels->n_panels);
-		r_panels_set_geometry (&p->view->pos, atoi (x), atoi (y), atoi (w),atoi (h));
+		int py = atoi (y);
+		int ph = atoi (h);
+		if (py < PANEL_HEADER_H) {
+			ph = R_MAX (ph - (PANEL_HEADER_H - py), PANEL_CONFIG_MIN_SIZE);
+			py = PANEL_HEADER_H;
+		}
+		r_panels_set_geometry (&p->view->pos, atoi (x), py, atoi (w), ph);
 		r_panels_init_panel_param (core, p, title, cmd);
 		if (r_str_endswith (cmd, "Help")) {
 			r_panels_setup_help_panel(core, p, "Panels Mode", help_msg_panels);
