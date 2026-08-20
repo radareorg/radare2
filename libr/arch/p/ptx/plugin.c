@@ -12,7 +12,7 @@ const RArchPlugin r_arch_plugin_ptx = {
 	.meta = {
 		.name = "ptx",
 		.author = "pancake",
-		.desc = "nvidia sass ptx instruction decoder",
+		.desc = "nvidia sass ptx instruction assembler/disassembler",
 		.license = "MIT",
 	},
 	.arch = "ptx",
@@ -21,6 +21,7 @@ const RArchPlugin r_arch_plugin_ptx = {
 	.cpus = "sm_50,sm_52,sm_53,sm_60,sm_61,sm_62,sm_70,sm_72,sm_75,sm_80,sm_86,sm_87,sm_89,sm_90,sm_100,sm_110",
 	.info = archinfo,
 	.decode = &decode,
+	.encode = &encode,
 };
 
 #ifndef R2_PLUGIN_INCORE

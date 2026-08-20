@@ -136,6 +136,30 @@ static const SassOpcode *opcode_for(SmArch arch, ut8 opcode) {
 	return entry && entry->name && arch >= entry->minarch? entry: NULL;
 }
 
+static int opcode_lookup(const char *name) {
+	ut32 i;
+	for (i = 0; i < R_ARRAY_SIZE (sass_opcodes); i++) {
+		const SassOpcode *op = &sass_opcodes[i];
+		if (op->name && !strcmp (op->name, name)) {
+			return (int)i;
+		}
+	}
+	return -1;
+}
+
+static int parse_reg(const char *s) {
+	if (!s || !*s) {
+		return -1;
+	}
+	if (!strcmp (s, "rz")) {
+		return UT8_MAX;
+	}
+	if (s[0] == 'r' && s[1] >= '0' && s[1] <= '9') {
+		return atoi (s + 1);
+	}
+	return -1;
+}
+
 static void fmt_reg(char *buf, size_t size, ut8 reg) {
 	if (reg == UT8_MAX) {
 		r_str_ncpy (buf, "rz", size);
@@ -348,5 +372,258 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	} else {
 		op->mnemonic = r_str_newf ("%s %s, %s, %s, %s", opcode->name, rd, rs0, rs1, rs2);
 	}
+	return true;
+}
+
+static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
+	ut8 buf[16];
+	const char *mnemonic;
+	char *s, *p, *name;
+	int opcode_byte;
+	SmArch arch;
+	if (!as || !as->config || !op || !op->mnemonic) {
+		return false;
+	}
+	arch = parse_arch (r_str_get (as->config->cpu));
+	mnemonic = op->mnemonic;
+	memset (buf, 0, sizeof (buf));
+	s = strdup (mnemonic);
+	if (!s) {
+		return false;
+	}
+	p = s;
+	// parse optional predicate prefix @pN or @!pN
+	if (p[0] == '@') {
+		p++;
+		bool neg = false;
+		if (p[0] == '!') {
+			neg = true;
+			p++;
+		}
+		if (p[0] == 'p' && p[1] >= '0' && p[1] <= '7') {
+			int pnum = p[1] - '0';
+			buf[10] = pnum & 7;
+			if (neg) {
+				buf[10] |= 8;
+			}
+			p += 2;
+			if (p[0] == ' ') {
+				p++;
+			}
+		}
+	}
+	// extract opcode name
+	name = p;
+	char *space = strchr (p, ' ');
+	if (space) {
+		*space = '\0';
+		p = space + 1;
+	} else {
+		p = "";
+	}
+	opcode_byte = opcode_lookup (name);
+	if (opcode_byte < 0) {
+		free (s);
+		return false;
+	}
+	const SassOpcode *opcode = opcode_for (arch, opcode_byte);
+	if (!opcode) {
+		free (s);
+		return false;
+	}
+	buf[14] = (ut8)opcode_byte;
+	// handle simple mnemonics with no operands
+	if (opcode->type == R_ANAL_OP_TYPE_NOP || opcode->type == R_ANAL_OP_TYPE_RET || opcode->type == R_ANAL_OP_TYPE_TRAP) {
+		op->size = 16;
+		r_anal_op_set_bytes (op, op->addr, buf, 16);
+		free (s);
+		return true;
+	}
+	// handle jmp/call: "bra 0x10" or "call 0x100"
+	if (opcode->type == R_ANAL_OP_TYPE_JMP || opcode->type == R_ANAL_OP_TYPE_CALL) {
+		ut64 addr = 0;
+		if (p[0] == '0' && p[1] == 'x') {
+			addr = r_num_get (NULL, p);
+		} else {
+			addr = r_num_get (NULL, p);
+		}
+		r_write_le16 (buf + 2, (ut16)addr);
+		op->size = 16;
+		r_anal_op_set_bytes (op, op->addr, buf, 16);
+		free (s);
+		return true;
+	}
+	// handle load: "ld r0, [r1 + 8]"
+	if (opcode->type == R_ANAL_OP_TYPE_LOAD) {
+		// parse rd first (before the bracket)
+		char *bracket = strchr (p, '[');
+		if (bracket) {
+			// parse "rd, [..." - find comma before bracket
+			char *comma = strchr (p, ',');
+			if (comma && comma < bracket) {
+				*comma = '\0';
+				int rd = parse_reg (p);
+				if (rd >= 0) {
+					buf[11] = (ut8)rd;
+				}
+				p = comma + 1;
+				while (p[0] == ' ') {
+					p++;
+				}
+			}
+			// p now points to "[rs0 + offset]"
+			if (p[0] == '[') {
+				p++;
+			}
+			char *end = strchr (p, ']');
+			if (end) {
+				*end = '\0';
+			}
+			char *plus = strchr (p, '+');
+			if (plus) {
+				*plus = '\0';
+				int rs0 = parse_reg (p);
+				if (rs0 >= 0) {
+					buf[7] = (ut8)rs0;
+				}
+				p = plus + 1;
+				while (p[0] == ' ') {
+					p++;
+				}
+				ut32 offset = (ut32)r_num_get (NULL, p);
+				r_write_le32 (buf, offset);
+			} else {
+				int rs0 = parse_reg (p);
+				if (rs0 >= 0) {
+					buf[7] = (ut8)rs0;
+				}
+			}
+		}
+		op->size = 16;
+		r_anal_op_set_bytes (op, op->addr, buf, 16);
+		free (s);
+		return true;
+	}
+	// handle store: "st [r0 + 8], r1"
+	if (opcode->type == R_ANAL_OP_TYPE_STORE) {
+		char *bracket = strchr (p, '[');
+		if (bracket) {
+			p = bracket + 1;
+			char *end = strchr (p, ']');
+			if (end) {
+				*end = '\0';
+				// parse rs1 after the closing bracket
+				char *rest = end + 1;
+				if (rest[0] == ',') {
+					rest++;
+				}
+				while (rest[0] == ' ') {
+					rest++;
+				}
+				int rs1 = parse_reg (rest);
+				if (rs1 >= 0) {
+					buf[3] = (ut8)rs1;
+				}
+			}
+			char *plus = strchr (p, '+');
+			if (plus) {
+				*plus = '\0';
+				int rs0 = parse_reg (p);
+				if (rs0 >= 0) {
+					buf[7] = (ut8)rs0;
+				}
+				p = plus + 1;
+				while (p[0] == ' ') {
+					p++;
+				}
+				ut32 offset = (ut32)r_num_get (NULL, p);
+				r_write_le32 (buf, offset);
+			} else {
+				int rs0 = parse_reg (p);
+				if (rs0 >= 0) {
+					buf[7] = (ut8)rs0;
+				}
+			}
+		}
+		op->size = 16;
+		r_anal_op_set_bytes (op, op->addr, buf, 16);
+		free (s);
+		return true;
+	}
+	// handle s2r: "s2r r0, sr_1"
+	if (!strcmp (name, "s2r")) {
+		char *comma = strchr (p, ',');
+		if (comma) {
+			*comma = '\0';
+			int rd = parse_reg (p);
+			if (rd >= 0) {
+				buf[11] = (ut8)rd;
+			}
+			p = comma + 1;
+			if (p[0] == ' ') {
+				p++;
+			}
+			// parse sr_N
+			if (p[0] == 's' && p[1] == 'r' && p[2] == '_') {
+				int sr = atoi (p + 3);
+				buf[7] = (ut8)sr;
+			}
+		}
+		op->size = 16;
+		r_anal_op_set_bytes (op, op->addr, buf, 16);
+		free (s);
+		return true;
+	}
+	// generic ALU: "iadd3 rd, rs0, rs1, rs2"
+	char *comma;
+	comma = strchr (p, ',');
+	if (comma) {
+		*comma = '\0';
+		int rd = parse_reg (p);
+		if (rd >= 0) {
+			buf[11] = (ut8)rd;
+		}
+		p = comma + 1;
+		while (p[0] == ' ') {
+			p++;
+		}
+		comma = strchr (p, ',');
+		if (comma) {
+			*comma = '\0';
+			int rs0 = parse_reg (p);
+			if (rs0 >= 0) {
+				buf[7] = (ut8)rs0;
+			}
+			p = comma + 1;
+			while (p[0] == ' ') {
+				p++;
+			}
+			comma = strchr (p, ',');
+			if (comma) {
+				*comma = '\0';
+				int rs1 = parse_reg (p);
+				if (rs1 >= 0) {
+					buf[3] = (ut8)rs1;
+				}
+				p = comma + 1;
+				while (p[0] == ' ') {
+					p++;
+				}
+				int rs2 = parse_reg (p);
+				if (rs2 >= 0) {
+					buf[5] = (ut8)rs2;
+				}
+			} else {
+				// 3-operand form: "and rd, rs0, rs1"
+				int rs1 = parse_reg (p);
+				if (rs1 >= 0) {
+					buf[3] = (ut8)rs1;
+				}
+			}
+		}
+	}
+	op->size = 16;
+	r_anal_op_set_bytes (op, op->addr, buf, 16);
+	free (s);
 	return true;
 }

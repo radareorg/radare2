@@ -1,0 +1,41 @@
+NAME=PTX: kernel2 binary info
+FILE=bins/elf/ptx/kernel2.o
+CMDS=<<EOF
+e asm.arch=ptx
+e asm.bits=64
+iI~arch
+iI~cpu
+iI~machine
+iI~bits
+pd 10
+EOF
+EXPECT=<<EOF
+arch     ptx
+machine  NVIDIA CUDA architecture
+cpu      sm_75
+machine  NVIDIA CUDA architecture
+bits     64
+            ;-- section..text.kernel2:
+            0x00000680      027a010000..   lopc r0, r0, r0, r10        ; [13] -r-x section size 128 named .text.kernel2
+            0x00000690      b97a040000..   lopc r0, r0, r0, r88
+            0x000006a0      817900ff04..   @!p6 brev r12, r0, rz, r0
+            0x000006b0      817903ff04..   @!p6 brev r12, r0, rz, r4
+            0x000006c0      107800002a..   invalid
+            0x000006d0      867900ff00..   lopc r12, r0, rz, r0
+            0x000006e0      4d79000000..   lopc r3, r0, r0, r0
+            0x000006f0      47790000f0..   @p3 lopc r3, rz, r0, rz
+            ;-- elf_shdr:
+            0x00000700      0000000000..   nop
+            0x00000710      0000000000..   nop
+EOF
+RUN
+
+NAME=PTX: kernel2 sections contain .text.kernel2
+FILE=bins/elf/ptx/kernel2.o
+CMDS=iS~kernel2
+EXPECT=<<EOF
+8   0x00000488   0x40 0x00000488   0x40 ---- 0x40      LOPROC   .nv.info.kernel2
+12  0x00000508  0x168 0x00000508  0x168 -r-- 0x42      PROGBITS .nv.constant0.kernel2
+13  0x00000680   0x80 0x00000680   0x80 -r-x 0x6       PROGBITS .text.kernel2
+EOF
+RUN
