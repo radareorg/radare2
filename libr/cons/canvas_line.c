@@ -4,9 +4,6 @@
 #define W(y) r_cons_canvas_write(c,y)
 #define G(x,y) r_cons_canvas_gotoxy(c,x,y)
 
-#define useUtf8 (r_cons_singleton ()->use_utf8)
-#define useUtf8Curvy (r_cons_singleton ()->use_utf8_curvy)
-
 #define DOTTED_LINE_HORIZ "┄"
 #define DOTTED_LINE_VERT "┊"
 
@@ -92,12 +89,12 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2, RCanv
 		break;
 	case LINE_NOSYM_VERT:
 		if (G (x, y)) {
-			W (useUtf8 ? utf8_line_vert (cons, style->dot_style) : "|");
+			W (cons->use_utf8? utf8_line_vert (cons, style->dot_style): "|");
 		}
 		break;
 	case LINE_NOSYM_HORIZ:
 		if (G (x, y)) {
-			W (useUtf8 ? utf8_line_horiz (cons, style->dot_style) : "-");
+			W (cons->use_utf8? utf8_line_horiz (cons, style->dot_style): "-");
 		}
 		break;
 	case LINE_NONE:
@@ -106,10 +103,48 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2, RCanv
 	}
 }
 
+static void draw_horizontal_segment(RConsCanvas *c, int x, int y, int width, const char *unit) {
+	const int from = R_MAX (x, -c->sx);
+	const int to = R_MIN (x + width, c->w - c->sx);
+	const int count = to - from;
+	if (count < 1 || !G (from, y)) {
+		return;
+	}
+	const size_t unit_len = strlen (unit);
+	size_t len;
+	if (r_mul_overflow_size_t (unit_len, count, &len) || len == SIZE_MAX) {
+		return;
+	}
+	char *segment = malloc (len + 1);
+	if (!segment) {
+		return;
+	}
+	if (unit_len == 1) {
+		memset (segment, *unit, len);
+	} else {
+		int i;
+		for (i = 0; i < count; i++) {
+			memcpy (segment + (i * unit_len), unit, unit_len);
+		}
+	}
+	segment[len] = '\0';
+	W (segment);
+	if (c->color) {
+		// Preserve the per-cell attributes of the former one-write-per-cell loop.
+		const int loc = (c->y * c->w) + c->x;
+		int i;
+		for (i = 1; i < count; i++) {
+			ht_up_update (c->attrs, loc + i, (void *)c->attr);
+		}
+	}
+	free (segment);
+}
+
 static void draw_horizontal_line(RConsCanvas *c, int x, int y, int width, int style, int dot_style) {
 	RCons *cons = c->cons;
 	const char *l_corner = "?", *r_corner = "?";
-	int i;
+	const bool use_utf8 = cons->use_utf8;
+	const bool use_utf8_curvy = cons->use_utf8_curvy;
 
 	if (width < 1) {
 		return;
@@ -124,8 +159,8 @@ static void draw_horizontal_line(RConsCanvas *c, int x, int y, int width, int st
 
 	switch (style) {
 	case APEX_DOT:
-		if (useUtf8) {
-			if (useUtf8Curvy) {
+		if (use_utf8) {
+			if (use_utf8_curvy) {
 				l_corner = RUNECODESTR_CURVE_CORNER_BL;
 				r_corner = RUNECODESTR_CURVE_CORNER_TR;
 			} else {
@@ -138,8 +173,8 @@ static void draw_horizontal_line(RConsCanvas *c, int x, int y, int width, int st
 		}
 		break;
 	case DOT_APEX:
-		if (useUtf8) {
-			if (useUtf8Curvy) {
+		if (use_utf8) {
+			if (use_utf8_curvy) {
 				l_corner = RUNECODESTR_CURVE_CORNER_TL;
 				r_corner = RUNECODESTR_CURVE_CORNER_BR;
 			} else {
@@ -152,8 +187,8 @@ static void draw_horizontal_line(RConsCanvas *c, int x, int y, int width, int st
 		}
 		break;
 	case REV_APEX_APEX:
-		if (useUtf8) {
-			if (useUtf8Curvy) {
+		if (use_utf8) {
+			if (use_utf8_curvy) {
 				l_corner = RUNECODESTR_CURVE_CORNER_BL;
 				r_corner = RUNECODESTR_CURVE_CORNER_BR;
 			} else {
@@ -166,8 +201,8 @@ static void draw_horizontal_line(RConsCanvas *c, int x, int y, int width, int st
 		}
 		break;
 	case DOT_DOT:
-		if (useUtf8) {
-			if (useUtf8Curvy) {
+		if (use_utf8) {
+			if (use_utf8_curvy) {
 				l_corner = RUNECODESTR_CURVE_CORNER_TL;
 				r_corner = RUNECODESTR_CURVE_CORNER_TR;
 			} else {
@@ -179,9 +214,9 @@ static void draw_horizontal_line(RConsCanvas *c, int x, int y, int width, int st
 		}
 		break;
 	case NRM_DOT:
-		if (useUtf8) {
+		if (use_utf8) {
 			l_corner = utf8_line_horiz (cons, dot_style);
-			if (useUtf8Curvy) {
+			if (use_utf8_curvy) {
 				r_corner = RUNECODESTR_CURVE_CORNER_TR;
 			} else {
 				r_corner = RUNECODESTR_CORNER_TR;
@@ -192,9 +227,9 @@ static void draw_horizontal_line(RConsCanvas *c, int x, int y, int width, int st
 		}
 		break;
 	case NRM_APEX:
-		if (useUtf8) {
+		if (use_utf8) {
 			l_corner = utf8_line_horiz (cons, dot_style);
-			if (useUtf8Curvy) {
+			if (use_utf8_curvy) {
 				r_corner = RUNECODESTR_CURVE_CORNER_BR;
 			} else {
 				r_corner = RUNECODESTR_CORNER_BR;
@@ -205,8 +240,8 @@ static void draw_horizontal_line(RConsCanvas *c, int x, int y, int width, int st
 		}
 		break;
 	case DOT_NRM:
-		if (useUtf8) {
-			if (useUtf8Curvy) {
+		if (use_utf8) {
+			if (use_utf8_curvy) {
 				l_corner = RUNECODESTR_CURVE_CORNER_TL;
 			} else {
 				l_corner = RUNECODESTR_CORNER_TL;
@@ -218,8 +253,8 @@ static void draw_horizontal_line(RConsCanvas *c, int x, int y, int width, int st
 		}
 		break;
 	case REV_APEX_NRM:
-		if (useUtf8) {
-			if (useUtf8Curvy) {
+		if (use_utf8) {
+			if (use_utf8_curvy) {
 				l_corner = RUNECODESTR_CURVE_CORNER_BL;
 			} else {
 				l_corner = RUNECODESTR_CORNER_BL;
@@ -232,7 +267,7 @@ static void draw_horizontal_line(RConsCanvas *c, int x, int y, int width, int st
 		break;
 	case NRM_NRM:
 	default:
-		if (useUtf8) {
+		if (use_utf8) {
 			l_corner = r_corner = utf8_line_horiz (cons, dot_style);
 		} else {
 			l_corner = r_corner = "-";
@@ -244,17 +279,8 @@ static void draw_horizontal_line(RConsCanvas *c, int x, int y, int width, int st
 		W (l_corner);
 	}
 
-	const char *hline = useUtf8 ? utf8_line_horiz (cons, dot_style) : "-";
-	r_cons_break_push (c->cons, NULL, NULL);
-	for (i = x + 1; i < x + width - 1; i++) {
-		if (r_cons_is_breaked (c->cons)) {
-			break;
-		}
-		if (G (i, y)) {
-			W (hline);
-		}
-	}
-	r_cons_break_pop (c->cons);
+	const char *hline = use_utf8? utf8_line_horiz (cons, dot_style): "-";
+	draw_horizontal_segment (c, x + 1, y, width - 2, hline);
 
 	if (G (x + width - 1, y)) {
 		W (r_corner);
@@ -271,7 +297,7 @@ static void draw_vertical_line(RConsCanvas *c, int x, int y, int height, int dot
 	if (x + c->sx > c->w) {
 		return;
 	}
-	const char *vline = useUtf8 ? utf8_line_vert (cons, dot_style) : "|";
+	const char *vline = cons->use_utf8? utf8_line_vert (cons, dot_style): "|";
 	r_cons_break_push (c->cons, NULL, NULL);
 	for (i = y; i < y + height; i++) {
 		if (r_cons_is_breaked (c->cons)) {
@@ -333,7 +359,7 @@ loop:
 	if (!(x == x2 && y == y2)) {
 		int i = (*chizzle == '_' && sy < 0) ? 1 : 0;
 		if (G(x, y - i)) {
-			if (useUtf8) {
+			if (c->cons->use_utf8) {
 				switch (*chizzle) {
 				case '/':
 					W("╯");

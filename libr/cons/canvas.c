@@ -132,11 +132,16 @@ static const char *set_attr(RConsCanvas *c, const char *s) {
 static int __getUtf8Length(const char *s, int n) {
 	int i = 0, len = 0;
 	while (s[i] && n > 0) {
-		if ((s[i] & 0xc0) != 0x80) {
-			RRune ch;
-			int ulen = r_utf8_decode ((const ut8 *)s + i, n, &ch);
+		const ut8 ch = s[i];
+		if (ch < 0x80 || R_BETWEEN (RUNECODE_MIN, ch, RUNECODE_MAX - 1)) {
+			len++;
+			i++;
+			n--;
+		} else if ((ch & 0xc0) != 0x80) {
+			RRune rune;
+			int ulen = r_utf8_decode ((const ut8 *)s + i, n, &rune);
 			if (ulen > 0) {
-				len += rune_display_width (ch);
+				len += rune_display_width (rune);
 				i += ulen;
 				n -= ulen;
 			} else {
@@ -155,11 +160,15 @@ static int __getUtf8Length(const char *s, int n) {
 static int __getUtf8Length2(const char *s, int n, int left) {
 	int i = 0, len = 0;
 	while (i < left && s[i] && len < n) {
-		if ((s[i] & 0xc0) != 0x80) {
-			RRune ch;
-			int ulen = r_utf8_decode ((const ut8 *)s + i, left - i, &ch);
+		const ut8 ch = s[i];
+		if (ch < 0x80 || R_BETWEEN (RUNECODE_MIN, ch, RUNECODE_MAX - 1)) {
+			len++;
+			i++;
+		} else if ((ch & 0xc0) != 0x80) {
+			RRune rune;
+			int ulen = r_utf8_decode ((const ut8 *)s + i, left - i, &rune);
 			if (ulen > 0) {
-				len += rune_display_width (ch);
+				len += rune_display_width (rune);
 				i += ulen;
 			} else {
 				len += 1;
@@ -176,7 +185,9 @@ static bool __expandLine(RConsCanvas *c, int real_len, int utf8_len) {
 	if (real_len == 0) {
 		return true;
 	}
-	int buf_utf8_len = __getUtf8Length2 (c->b[c->y] + c->x, utf8_len, c->blen[c->y] - c->x);
+	int buf_utf8_len = c->blen[c->y] == c->w
+		? utf8_len
+		: __getUtf8Length2 (c->b[c->y] + c->x, utf8_len, c->blen[c->y] - c->x);
 	int goback = R_MAX (0, (buf_utf8_len - utf8_len));
 	int padding = (real_len - utf8_len) - goback;
 
@@ -352,17 +363,22 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 		return;
 	}
 	RCons *cons = c->cons;
-	char *os = r_str_ansi_resetbg (_s, c->bgcolor);
-	const char *s = os;
+	char *os = strstr (_s, Color_RESET)? r_str_ansi_resetbg (_s, c->bgcolor): NULL;
+	const char *s = os? os: _s;
 	char ch;
 	int left, slen, attr_len, piece_len;
 	int orig_x = c->x, attr_x = c->x;
+	const bool check_break = strchr (s, '\n') || strchr (s, '\x1b');
 
-	c->x = __getUtf8Length2 (c->b[c->y], c->x, c->blen[c->y]);
+	if (c->blen[c->y] != c->w) {
+		c->x = __getUtf8Length2 (c->b[c->y], c->x, c->blen[c->y]);
+	}
 
 	/* split the string into pieces of non-ANSI chars and print them normally,
 	 ** using the ANSI chars to set the attr of the canvas */
-	r_cons_break_push (cons, NULL, NULL);
+	if (check_break) {
+		r_cons_break_push (cons, NULL, NULL);
+	}
 	do {
 		const char *s_part = set_attr (c, s);
 		ch = 0;
@@ -404,15 +420,19 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 			if (*s == '\0' || c->y >= c->h) {
 				break;
 			}
-			c->x = __getUtf8Length2 (c->b[c->y], orig_x, c->blen[c->y]);
+			c->x = c->blen[c->y] == c->w
+				? orig_x
+				: __getUtf8Length2 (c->b[c->y], orig_x, c->blen[c->y]);
 			attr_x = orig_x;
 		} else {
 			c->x += slen;
 			attr_x += utf8_len;
 		}
 		s += piece_len;
-	} while (*s && !r_cons_is_breaked (cons));
-	r_cons_break_pop (cons);
+	} while (*s && (!check_break || !r_cons_is_breaked (cons)));
+	if (check_break) {
+		r_cons_break_pop (cons);
+	}
 	c->x = orig_x;
 	free (os);
 }
@@ -456,15 +476,22 @@ R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
 		is_first = false;
 		attr_x = 0;
 		for (x = 0; x < c->blen[y];) {
-			if ((c->b[y][x] & 0xc0) != 0x80) {
+			const ut8 byte = c->b[y][x];
+			if ((byte & 0xc0) != 0x80) {
 				const char *atr = __attributeAt (c, (y * c->w) + attr_x);
 				if (atr) {
 					size_t len = strlen (atr);
 					memcpy (o + olen, atr, len);
 					olen += len;
 				}
-				if (!c->b[y][x] || c->b[y][x] == '\n') {
+				if (!byte || byte == '\n') {
 					o[olen++] = ' ';
+					attr_x++;
+					x++;
+					continue;
+				}
+				if (byte < 0x80) {
+					o[olen++] = byte;
 					attr_x++;
 					x++;
 					continue;
@@ -480,7 +507,7 @@ R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
 						continue;
 					}
 				}
-				const char *rune = r_cons_get_rune ((const ut8)c->b[y][x]);
+				const char *rune = r_cons_get_rune (byte);
 				if (rune) {
 					size_t rune_len = strlen (rune);
 					memcpy (o + olen, rune, rune_len + 1);

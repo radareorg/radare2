@@ -4621,10 +4621,12 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		exit_graph = true;
 		is_error = !ret;
 	}
-	fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-	if (fcn) {
-		get_bbupdate (g, core, fcn);
+	if (!exit_graph) {
 		fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
+		if (fcn) {
+			get_bbupdate (g, core, fcn);
+			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
+		}
 	}
 
 	core->cons->event_resize = NULL; // avoid running old event with new data
