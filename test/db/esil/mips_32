@@ -708,7 +708,7 @@ aes
 ar v1
 EOF
 EXPECT=<<EOF
-0x0000bbaa
+0xffffbbaa
 EOF
 RUN
 
@@ -729,7 +729,7 @@ aes
 ar v1
 EOF
 EXPECT=<<EOF
-0x0000bbaa
+0xffffbbaa
 EOF
 RUN
 
@@ -749,7 +749,7 @@ aes
 ar v1
 EOF
 EXPECT=<<EOF
-0x0000ddcc
+0xffffddcc
 EOF
 RUN
 
@@ -2101,5 +2101,87 @@ EOF
 EXPECT=<<EOF
 0x00000008
 0x00000008
+EOF
+RUN
+
+NAME=sllv and srlv use only the low five bits of the count register
+FILE=malloc://32
+ARGS=-a mips -b 32
+CMDS=<<EOF
+aei
+wx 04404901
+ar t1=0x80000005
+ar t2=33
+ar pc=0
+s 0
+aes
+ar t0
+wx 06404901
+ar t1=0x80000000
+ar t2=33
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x0000000a
+0x40000000
+EOF
+RUN
+
+NAME=mips.gnu sra shifts the value by the count instead of masking one with the other
+FILE=malloc://32
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+aei
+wx 03410900
+ar t1=0x80000000
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0xf8000000
+EOF
+RUN
+
+NAME=lb and lh sign-extend while lbu and lhu do not
+FILE=malloc://0x200
+ARGS=-a mips -b 32
+CMDS=<<EOF
+ar > /dev/null
+s 4
+wx 84ff0000
+ar t3=4
+wx 00006881 @ 8
+s 8
+aei
+aeim
+aeip
+aes
+ar t0
+wx 00006885 @ 8
+ar pc=8
+s 8
+aes
+ar t0
+wx 00006891 @ 8
+ar pc=8
+s 8
+aes
+ar t0
+wx 00006895 @ 8
+ar pc=8
+s 8
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0xffffff84
+0xffffff84
+0x00000084
+0x0000ff84
 EOF
 RUN

@@ -14,3 +14,132 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+
+NAME=mips64 sll srl and sra deliver a sign-extended word
+FILE=malloc://64
+ARGS=-a mips -b 64
+CMDS=<<EOF
+aei
+wx 00410900
+ar t0=0xa5a5000300000000
+ar t1=0x08000000
+ar pc=0
+s 0
+aes
+ar t0
+wx 02410900
+ar t0=0xa5a5000300000000
+ar t1=0xffffffff80000000
+ar pc=0
+s 0
+aes
+ar t0
+wx 03410900
+ar t0=0xa5a5000300000000
+ar t1=0xffffffff80000000
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0xffffffff80000000
+0x08000000
+0xfffffffff8000000
+EOF
+RUN
+
+NAME=mips64 addu subu negu and lui sign-extend but daddu does not
+FILE=malloc://64
+ARGS=-a mips -b 64
+CMDS=<<EOF
+aei
+wx 21402a01
+ar t0=0xa5a5000300000000
+ar t1=0x7fffffff
+ar t2=1
+ar pc=0
+s 0
+aes
+ar t0
+wx 2d402a01
+ar t0=0xa5a5000300000000
+ar t1=0x7fffffff
+ar t2=1
+ar pc=0
+s 0
+aes
+ar t0
+wx 23402a01
+ar t0=0xa5a5000300000000
+ar t1=0xffffffff80000000
+ar t2=1
+ar pc=0
+s 0
+aes
+ar t0
+wx 23400900
+ar t0=0xa5a5000300000000
+ar t1=0xffffffff80000000
+ar pc=0
+s 0
+aes
+ar t0
+wx 0080083c
+ar t0=0xa5a5000300000000
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0xffffffff80000000
+0x80000000
+0x7fffffff
+0xffffffff80000000
+0xffffffff80000000
+EOF
+RUN
+
+NAME=mips64 lb lh and lw sign-extend into the full register but lwu does not
+FILE=malloc://0x200
+ARGS=-a mips -b 64
+CMDS=<<EOF
+ar > /dev/null
+s 4
+wx 84ffffff
+ar t0=0xa5a5000300000000
+ar t3=4
+wx 00006881 @ 8
+s 8
+aei
+aeim
+aeip
+aes
+ar t0
+wx 00006885 @ 8
+ar t0=0xa5a5000300000000
+ar pc=8
+s 8
+aes
+ar t0
+wx 0000688d @ 8
+ar t0=0xa5a5000300000000
+ar pc=8
+s 8
+aes
+ar t0
+wx 0000689d @ 8
+ar t0=0xa5a5000300000000
+ar pc=8
+s 8
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0xffffffffffffff84
+0xffffffffffffff84
+0xffffffffffffff84
+0xffffff84
+EOF
+RUN

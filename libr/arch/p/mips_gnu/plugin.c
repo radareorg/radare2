@@ -855,8 +855,9 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		break;
 	case MIPS_INS_SRA:
 		r_strbuf_appendf (&op->esil,
-			ES_W ("%s,%s") ",>>,31,%s,>>,?{,%s,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
+			ES_W ("%s,%s,>>") ",31,%s,>>,?{,%s,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
 			R_REG (sa), R_REG (rt), R_REG (rt), R_REG (sa), R_REG (rd));
+		ES_SIGN32_64 (R_REG (rd));
 		break;
 	case MIPS_INS_DSRA:
 		r_strbuf_appendf (&op->esil,
@@ -868,13 +869,16 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		break;
 	case MIPS_INS_SRLV:
 	case MIPS_INS_SRL:
-		r_strbuf_appendf (&op->esil, "%s,%s,>>,%s,=",
+		// srl shifts the zero-extended low word, not the whole register
+		r_strbuf_appendf (&op->esil, "0x1f,%s,&," ES_W ("%s") ",>>,%s,=",
 			R_REG (rs) ? R_REG (rs) : R_REG (sa), R_REG (rt), R_REG (rd));
+		ES_SIGN32_64 (R_REG (rd));
 		break;
 	case MIPS_INS_SLLV:
 	case MIPS_INS_SLL:
-		r_strbuf_appendf (&op->esil, "%s,%s,<<,%s,=",
+		r_strbuf_appendf (&op->esil, "0x1f,%s,&,%s,<<,%s,=",
 			R_REG (rs) ? R_REG (rs) : R_REG (sa), R_REG (rt), R_REG (rd));
+		ES_SIGN32_64 (R_REG (rd));
 		break;
 	case MIPS_INS_BALC:
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "" ES_CALL_ND ("%s"), addr, I_REG (jump));
@@ -1062,6 +1066,9 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 	case MIPS_INS_DSUBU:
 		r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
 			R_REG (rt), R_REG (rs), R_REG (rd));
+		if (insn->id == MIPS_INS_SUB || insn->id == MIPS_INS_SUBU) {
+			ES_SIGN32_64 (R_REG (rd));
+		}
 		break;
 	case MIPS_INS_NEG:
 	case MIPS_INS_NEGU:
@@ -1080,6 +1087,9 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 	case MIPS_INS_ADDU:
 		r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
 			R_REG (rt), R_REG (rs), R_REG (rd));
+		if (insn->id == MIPS_INS_ADDU) {
+			ES_SIGN32_64 (R_REG (rd));
+		}
 		break;
 	case MIPS_INS_DADDI:
 		ES_ADD_CK64_OVERF (I_REG (imm), I_REG (rs), I_REG (rt));
@@ -1088,7 +1098,9 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 	case MIPS_INS_DADDIU:
 		r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
 			I_REG (imm), I_REG (rs), I_REG (rt));
-		ES_SIGN32_64 (I_REG (rt));
+		if (insn->id == MIPS_INS_ADDIU) {
+			ES_SIGN32_64 (I_REG (rt));
+		}
 		break;
 	case MIPS_INS_LI:
 	case MIPS_INS_LDI:
@@ -1096,22 +1108,33 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		break;
 	case MIPS_INS_LUI:
 		r_strbuf_appendf (&op->esil, "%s0000,%s,=", I_REG (imm), I_REG (rt));
+		ES_SIGN32_64 (I_REG (rt));
 		break;
 	case MIPS_INS_LB:
 		op->sign = true; // To load a byte from memory as a signed value
-		/* fallthrough */
+		r_strbuf_appendf (&op->esil, "8,%s,%s,+,[1],~,%s,=",
+			I_REG (imm), I_REG (rs), I_REG (rt));
+		break;
 	case MIPS_INS_LBU:
-		// one of these is wrong
 		r_strbuf_appendf (&op->esil, "%s,%s,+,[1],%s,=",
 			I_REG (imm), I_REG (rs), I_REG (rt));
 		break;
 	case MIPS_INS_LW:
+	case MIPS_INS_LL:
+		// on mips64 the word is sign-extended; lwu is the other form
+		if (as->config->bits == 64) {
+			r_strbuf_appendf (&op->esil, "32,%s,%s,+,[4],~,%s,=",
+				I_REG (imm), I_REG (rs), I_REG (rt));
+		} else {
+			r_strbuf_appendf (&op->esil, "%s,%s,+,[4],%s,=",
+				I_REG (imm), I_REG (rs), I_REG (rt));
+		}
+		break;
 	case MIPS_INS_LWC1:
 	case MIPS_INS_LWC2:
 	case MIPS_INS_LWL:
 	case MIPS_INS_LWR:
 	case MIPS_INS_LWU:
-	case MIPS_INS_LL:
 		r_strbuf_appendf (&op->esil, "%s,%s,+,[4],%s,=",
 			I_REG (imm), I_REG (rs), I_REG (rt));
 		break;
@@ -1124,8 +1147,10 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 			I_REG (imm), I_REG (rs), I_REG (rt));
 		break;
 	case MIPS_INS_LH:
-		op->sign = true; // To load a byte from memory as a signed value
-		/* fallthrough */
+		op->sign = true; // To load a halfword from memory as a signed value
+		r_strbuf_appendf (&op->esil, "16,%s,%s,+,[2],~,%s,=",
+			I_REG (imm), I_REG (rs), I_REG (rt));
+		break;
 	case MIPS_INS_LHU:
 		r_strbuf_appendf (&op->esil, "%s,%s,+,[2],%s,=",
 			I_REG (imm), I_REG (rs), I_REG (rt));

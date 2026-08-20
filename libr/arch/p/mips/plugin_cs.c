@@ -170,6 +170,12 @@ static inline void es_add_ck(RAnalOp *op, const char *a1, const char *a2, const 
 			ARG(1), REG(0));\
 	}
 
+#define ESIL_LOAD_SIGNED(size, sbits) \
+	PROTECT_ZERO () {\
+		r_strbuf_appendf (&op->esil, sbits",%s,["size"],~,%s,=",\
+			ARG(1), REG(0));\
+	}
+
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new ();
@@ -320,22 +326,29 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 			r_strbuf_appendf (&op->esil,
 				"0xffffffff,%s,%s,>>,&,31,%s,>>,?{,%s,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
 				ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
+			ES_SIGN32_64 (ARG (0));
 			break;
 		case MIPS_INS_SRAV:
 			// like SRA but the shift amount is rs & 0x1f
 			r_strbuf_appendf (&op->esil,
 				"0xffffffff,%s,0x1f,&,%s,>>,&,31,%s,>>,?{,%s,0x1f,&,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
 				ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
+			ES_SIGN32_64 (ARG (0));
 			break;
 		case MIPS_INS_SHRL:
 			// suffix 'S' forces conditional flag to be updated
 		case MIPS_INS_SRLV:
 		case MIPS_INS_SRL:
-			r_strbuf_appendf (&op->esil, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
+			// srl shifts the zero-extended low word, not the whole register
+			r_strbuf_appendf (&op->esil, "0x1f,%s,&," ES_W ("%s") ",>>,%s,=",
+				ARG (2), ARG (1), ARG (0));
+			ES_SIGN32_64 (ARG (0));
 			break;
 		case MIPS_INS_SLLV:
 		case MIPS_INS_SLL:
-			r_strbuf_appendf (&op->esil, "%s,%s,<<,%s,=", ARG (2), ARG (1), ARG (0));
+			r_strbuf_appendf (&op->esil, "0x1f,%s,&,%s,<<,%s,=",
+				ARG (2), ARG (1), ARG (0));
+			ES_SIGN32_64 (ARG (0));
 			break;
 		case MIPS_INS_BALC:
 			// BALC address
@@ -555,12 +568,16 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 				PROTECT_ZERO () {
 					r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
 						ARG (2), ARG (1), ARG (0));
+					if (insn->id == MIPS_INS_SUB || insn->id == MIPS_INS_SUBU) {
+						ES_SIGN32_64 (ARG (0));
+					}
 				}
 				break;
 			case MIPS_INS_NEG:
 			case MIPS_INS_NEGU:
-				r_strbuf_appendf (&op->esil, "%s,0,-,%s,=,",
+				r_strbuf_appendf (&op->esil, "%s,0,-,%s,=",
 					ARG (1), ARG (0));
+				ES_SIGN32_64 (ARG (0));
 				break;
 
 			/** signed -- sets overflow flag */
@@ -597,6 +614,9 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 							r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
 								arg2, arg1, arg0);
 						}
+						if (insn->id == MIPS_INS_ADDU || insn->id == MIPS_INS_ADDIU) {
+							ES_SIGN32_64 (arg0);
+						}
 					}
 				}
 				break;
@@ -606,22 +626,29 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 				break;
 			case MIPS_INS_LUI:
 				r_strbuf_appendf (&op->esil, "0x%" PFMT64x "0000,%s,=", (ut64)IMM(1), ARG(0));
+				ES_SIGN32_64 (ARG (0));
 				break;
 			case MIPS_INS_LB:
 				op->sign = true;
-				ESIL_LOAD ("1");
+				ESIL_LOAD_SIGNED ("1", "8");
 				break;
 			case MIPS_INS_LBU:
-				//one of these is wrong
 				ESIL_LOAD ("1");
 				break;
 			case MIPS_INS_LW:
+			case MIPS_INS_LL:
+				// on mips64 the word is sign-extended; lwu is the other form
+				if (as->config->bits == 64) {
+					ESIL_LOAD_SIGNED ("4", "32");
+				} else {
+					ESIL_LOAD ("4");
+				}
+				break;
 			case MIPS_INS_LWC1:
 			case MIPS_INS_LWC2:
 			case MIPS_INS_LWL:
 			case MIPS_INS_LWR:
 			case MIPS_INS_LWU:
-			case MIPS_INS_LL:
 				ESIL_LOAD ("4");
 				break;
 
@@ -633,10 +660,13 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 				ESIL_LOAD ("8");
 				break;
 
-			case MIPS_INS_LWX:
 			case MIPS_INS_LH:
-			case MIPS_INS_LHU:
 			case MIPS_INS_LHX:
+				op->sign = true;
+				ESIL_LOAD_SIGNED ("2", "16");
+				break;
+			case MIPS_INS_LWX:
+			case MIPS_INS_LHU:
 				ESIL_LOAD ("2");
 				break;
 
