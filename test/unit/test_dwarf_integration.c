@@ -282,8 +282,8 @@ static bool test_dwarf_function_parsing_rust(void) {
 
 	check_kv ("fcn.main.addr", "0x5750");
 	check_kv ("fcn.main.name", "main");
-	check_kv ("fcn.main.var.numbers", "s,128,i32[11]");
-	check_kv ("fcn.main.var.strings", "s,312,&str[6]");
+	check_kv ("fcn.main.var.numbers", "s,128,i32[10]");
+	check_kv ("fcn.main.var.strings", "s,312,&str[5]");
 	// check_kv ("fcn.main.vars", "numbers,arg0,arg0,strings,arg0,arg0"); Fix these collision by unique renaming in future
 	check_kv ("fcn.lang_start_internal.sig", "isize lang_start_internal(&Fn<()> main,isize argc,u8 ** argv);");
 
