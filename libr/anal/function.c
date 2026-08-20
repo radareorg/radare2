@@ -5149,8 +5149,14 @@ static SnapshotTypeGraphResult snapshot_type_add_root(
 	}
 	const bool pointer = strchr (spec, '*') != NULL;
 	free (spec);
-	return pointer? snapshot_type_add_pointer (builder, type, result_id)
-		: SNAPSHOT_TYPE_GRAPH_UNSUPPORTED;
+	if (pointer) {
+		return snapshot_type_add_pointer (builder, type, result_id);
+	}
+	// An aggregate could only enter the graph as something a pointer pointed at,
+	// so a struct held directly -- returned by value, or kept in a frame slot --
+	// contributed no layout at all and a consumer had to invent its width and its
+	// member names from the offsets it saw touched.
+	return snapshot_type_add_struct (builder, type, result_id);
 }
 
 static bool snapshot_type_carrier_project(
@@ -5214,8 +5220,13 @@ static SnapshotTypeGraphResult function_type_graph_snapshot_collect(
 			return SNAPSHOT_TYPE_GRAPH_UNSUPPORTED;
 		}
 	}
+	// A local's type is as much a source type as a parameter's, so the slots
+	// that declare one are roots too and the graph has to have room for them.
+	const size_t slot_count = ctx->fcn_slots
+		? (size_t)r_list_length (ctx->fcn_slots): 0;
 	size_t root_capacity;
 	if (r_add_overflow_size_t (interface->num_parameters, 1, &root_capacity)
+		|| r_add_overflow_size_t (root_capacity, slot_count, &root_capacity)
 		|| r_mul_overflow_size_t (root_capacity, 2, &root_capacity)) {
 		return SNAPSHOT_TYPE_GRAPH_UNSUPPORTED;
 	}
@@ -5312,6 +5323,26 @@ static SnapshotTypeGraphResult function_type_graph_snapshot_collect(
 	} else if (result == SNAPSHOT_TYPE_GRAPH_VALID
 		&& interface->return_kind != R_ANAL_SNAPSHOT_RETURN_VOID) {
 		result = SNAPSHOT_TYPE_GRAPH_UNSUPPORTED;
+	}
+	// Root what the locals are declared as. A struct a function only ever keeps
+	// in a frame slot reached the graph through nothing, so its layout was absent
+	// and a consumer had to invent both its width and its member names. A slot
+	// whose type does not resolve is left alone rather than failing the graph,
+	// because a local is not what the interface rests on.
+	if (result == SNAPSHOT_TYPE_GRAPH_VALID && ctx->fcn_slots) {
+		RListIter *slot_iter;
+		RAnalFcnSlot *slot;
+		r_list_foreach (ctx->fcn_slots, slot_iter, slot) {
+			if (!slot || R_STR_ISEMPTY (slot->type)) {
+				continue;
+			}
+			ut32 slot_type_id = 0;
+			if (snapshot_type_add_root (&builder, slot->type, &slot_type_id)
+					== SNAPSHOT_TYPE_GRAPH_NO_MEMORY) {
+				result = SNAPSHOT_TYPE_GRAPH_NO_MEMORY;
+				break;
+			}
+		}
 	}
 	free (aggregate_sources);
 	if (result != SNAPSHOT_TYPE_GRAPH_VALID) {
