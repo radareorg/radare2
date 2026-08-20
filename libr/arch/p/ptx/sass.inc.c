@@ -148,16 +148,75 @@ static int opcode_lookup(const char *name) {
 }
 
 static int parse_reg(const char *s) {
+	ut32 reg = 0;
+	const char *p;
 	if (!s || !*s) {
 		return -1;
 	}
 	if (!strcmp (s, "rz")) {
 		return UT8_MAX;
 	}
-	if (s[0] == 'r' && s[1] >= '0' && s[1] <= '9') {
-		return atoi (s + 1);
+	if (s[0] != 'r' || s[1] < '0' || s[1] > '9') {
+		return -1;
 	}
-	return -1;
+	for (p = s + 1; *p; p++) {
+		if (*p < '0' || *p > '9') {
+			return -1;
+		}
+		reg = reg * 10 + (*p - '0');
+		if (reg >= UT8_MAX) {
+			return -1;
+		}
+	}
+	return reg;
+}
+
+static bool parse_uint(const char *s, ut64 max, ut64 *value) {
+	const char *p = s;
+	ut64 n = 0;
+	int base = 10;
+	if (!p || !*p) {
+		return false;
+	}
+	if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
+		base = 16;
+		p += 2;
+	}
+	if (!*p) {
+		return false;
+	}
+	for (; *p; p++) {
+		int digit;
+		if (*p >= '0' && *p <= '9') {
+			digit = *p - '0';
+		} else if (base == 16 && *p >= 'a' && *p <= 'f') {
+			digit = *p - 'a' + 10;
+		} else if (base == 16 && *p >= 'A' && *p <= 'F') {
+			digit = *p - 'A' + 10;
+		} else {
+			return false;
+		}
+		if (digit >= base || (ut64)digit > max || n > (max - digit) / base) {
+			return false;
+		}
+		n = n * base + digit;
+	}
+	*value = n;
+	return true;
+}
+
+static int parse_special_reg(const char *s) {
+	ut64 reg;
+	if (!s || strncmp (s, "sr_", 3) || !parse_uint (s + 3, UT8_MAX, &reg)) {
+		return -1;
+	}
+	return (int)reg;
+}
+
+static char *trim_token(char *s) {
+	char *token = (char *)r_str_trim_head_ro (s);
+	r_str_trim_tail (token);
+	return token;
 }
 
 static void fmt_reg(char *buf, size_t size, ut8 reg) {
@@ -182,7 +241,7 @@ static char *regs(RArchSession *as) {
 	(void)as;
 	r_strbuf_append (sb, "=PC\tpc\n=SP\tr1\n=BP\tr1\n=R0\tr0\n=A0\tr0\n=A1\tr1\n=A2\tr2\n=A3\tr3\n");
 	r_strbuf_append (sb, "gpr\tpc\t.64\t0\t0\n");
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < UT8_MAX; i++) {
 		r_strbuf_appendf (sb, "gpr\tr%u\t.32\t%u\t0\n", i, i * 4);
 	}
 	for (i = 0; i < 64; i++) {
@@ -209,23 +268,28 @@ static bool decode_sm110(RAnalOp *op, RArchDecodeMask mask) {
 	switch (buf[0]) {
 	case 0x02:
 		mnemonic = "mov";
+		op->type = R_ANAL_OP_TYPE_MOV;
 		op->mnemonic = r_str_newf ("mov %s, 0x%x", rd, r_read_le32 (buf + 4));
 		break;
 	case 0x0c:
 		mnemonic = "isetp";
+		op->type = R_ANAL_OP_TYPE_CMP;
 		op->mnemonic = r_str_newf ("isetp.ne.u32.and p%u, pt, r%u, 0x%x, pt", dst, buf[3], buf[4]);
 		break;
 	case 0x10:
 		mnemonic = "iadd3";
+		op->type = R_ANAL_OP_TYPE_ADD;
 		if (buf[1] == 0x7c) {
 			op->mnemonic = r_str_newf ("iadd3 %s, p0, pt, r%u, ur%u, rz", rd, buf[3], buf[4]);
 		} else {
 			const st32 imm = (st32)r_read_le32 (buf + 4);
-			op->mnemonic = r_str_newf ("iadd3 %s, pt, pt, r%u, %s0x%x, rz", rd, buf[3], imm < 0? "-": "", imm < 0? -imm: imm);
+			const ut32 magnitude = imm < 0? 0U - (ut32)imm: (ut32)imm;
+			op->mnemonic = r_str_newf ("iadd3 %s, pt, pt, r%u, %s0x%x, rz", rd, buf[3], imm < 0? "-": "", magnitude);
 		}
 		break;
 	case 0x12:
 		mnemonic = "lop3.lut";
+		op->type = R_ANAL_OP_TYPE_AND;
 		op->mnemonic = buf[1] == 0x72
 			? r_str_newf ("lop3.lut %s, r%u, r%u, rz, 0x%x, !pt", rd, buf[3], buf[4], buf[9])
 			: r_str_newf ("lop3.lut %s, r%u, 0x%x, rz, 0x%x, !pt", rd, buf[3], buf[4], buf[9]);
@@ -237,16 +301,19 @@ static bool decode_sm110(RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case 0x19:
 		mnemonic = buf[1] == 0x79? "s2r": "shf";
+		op->type = buf[1] == 0x79? R_ANAL_OP_TYPE_MOV: R_ANAL_OP_TYPE_SHL;
 		op->mnemonic = buf[1] == 0x79
 			? r_str_newf ("s2r %s, sr_tid.x", rd)
 			: r_str_newf ("shf.l.u32 %s, r%u, 0x%x, rz", rd, buf[3], buf[4]);
 		break;
 	case 0x23:
 		mnemonic = "ffma";
+		op->type = R_ANAL_OP_TYPE_MUL;
 		op->mnemonic = r_str_newf ("ffma %s, r%u, r%u, 0x%08x", rd, buf[3], buf[8], r_read_le32 (buf + 4));
 		break;
 	case 0x24:
 		mnemonic = "imad";
+		op->type = R_ANAL_OP_TYPE_MUL;
 		if (buf[1] == 0x88) {
 			op->mnemonic = r_str_newf ("imad %s, r%u, 0x%x, rz", rd, buf[3], buf[4]);
 		} else {
@@ -256,10 +323,12 @@ static bool decode_sm110(RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case 0x25:
 		mnemonic = "imad.wide.u32";
+		op->type = R_ANAL_OP_TYPE_MUL;
 		op->mnemonic = r_str_newf ("imad.wide.u32 %s, r%u, 0x%x, r%u", rd, buf[3], buf[4], buf[8]);
 		break;
 	case 0x31:
 		mnemonic = "hfma2";
+		op->type = R_ANAL_OP_TYPE_MUL;
 		op->mnemonic = r_str_newf ("hfma2 %s, -rz, rz, 1.9375, 0", rd);
 		break;
 	case 0x43:
@@ -280,6 +349,7 @@ static bool decode_sm110(RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case 0x4e:
 		mnemonic = "lepc";
+		op->type = R_ANAL_OP_TYPE_LEA;
 		op->mnemonic = r_str_newf ("lepc %s", rd);
 		break;
 	case 0x81:
@@ -363,7 +433,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (opcode->type == R_ANAL_OP_TYPE_LOAD) {
 		op->mnemonic = r_str_newf ("%s %s, [%s + %u]", opcode->name, rd, rs0, r_read_le32 (buf));
 	} else if (opcode->type == R_ANAL_OP_TYPE_STORE) {
-		op->mnemonic = r_str_newf ("%s [%s + %u], %s", opcode->name, rs0, r_read_le32 (buf), rs1);
+		op->mnemonic = r_str_newf ("%s [%s + %u], %s", opcode->name, rs0, r_read_le24 (buf), rs1);
 	} else if (!strcmp (opcode->name, "s2r")) {
 		op->mnemonic = r_str_newf ("s2r %s, sr_%u", rd, buf[7]);
 	} else if ((buf[10] & 7) || (buf[10] & 8)) {
@@ -391,7 +461,7 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	if (!s) {
 		return false;
 	}
-	p = s;
+	p = trim_token (s);
 	// parse optional predicate prefix @pN or @!pN
 	if (p[0] == '@') {
 		p++;
@@ -400,17 +470,15 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 			neg = true;
 			p++;
 		}
-		if (p[0] == 'p' && p[1] >= '0' && p[1] <= '7') {
-			int pnum = p[1] - '0';
-			buf[10] = pnum & 7;
-			if (neg) {
-				buf[10] |= 8;
-			}
-			p += 2;
-			if (p[0] == ' ') {
-				p++;
-			}
+		if (p[0] != 'p' || p[1] < '0' || p[1] > '7' || p[2] != ' ') {
+			free (s);
+			return false;
 		}
+		buf[10] = p[1] - '0';
+		if (neg) {
+			buf[10] |= 8;
+		}
+		p = (char *)r_str_trim_head_ro (p + 2);
 	}
 	// extract opcode name
 	name = p;
@@ -434,6 +502,10 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	buf[14] = (ut8)opcode_byte;
 	// handle simple mnemonics with no operands
 	if (opcode->type == R_ANAL_OP_TYPE_NOP || opcode->type == R_ANAL_OP_TYPE_RET || opcode->type == R_ANAL_OP_TYPE_TRAP) {
+		if (*p) {
+			free (s);
+			return false;
+		}
 		op->size = 16;
 		r_anal_op_set_bytes (op, op->addr, buf, 16);
 		free (s);
@@ -441,11 +513,10 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	}
 	// handle jmp/call: "bra 0x10" or "call 0x100"
 	if (opcode->type == R_ANAL_OP_TYPE_JMP || opcode->type == R_ANAL_OP_TYPE_CALL) {
-		ut64 addr = 0;
-		if (p[0] == '0' && p[1] == 'x') {
-			addr = r_num_get (NULL, p);
-		} else {
-			addr = r_num_get (NULL, p);
+		ut64 addr;
+		if (!parse_uint (trim_token (p), UT16_MAX, &addr)) {
+			free (s);
+			return false;
 		}
 		r_write_le16 (buf + 2, (ut16)addr);
 		op->size = 16;
@@ -455,50 +526,38 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	}
 	// handle load: "ld r0, [r1 + 8]"
 	if (opcode->type == R_ANAL_OP_TYPE_LOAD) {
-		// parse rd first (before the bracket)
-		char *bracket = strchr (p, '[');
-		if (bracket) {
-			// parse "rd, [..." - find comma before bracket
-			char *comma = strchr (p, ',');
-			if (comma && comma < bracket) {
-				*comma = '\0';
-				int rd = parse_reg (p);
-				if (rd >= 0) {
-					buf[11] = (ut8)rd;
-				}
-				p = comma + 1;
-				while (p[0] == ' ') {
-					p++;
-				}
-			}
-			// p now points to "[rs0 + offset]"
-			if (p[0] == '[') {
-				p++;
-			}
-			char *end = strchr (p, ']');
-			if (end) {
-				*end = '\0';
-			}
-			char *plus = strchr (p, '+');
-			if (plus) {
-				*plus = '\0';
-				int rs0 = parse_reg (p);
-				if (rs0 >= 0) {
-					buf[7] = (ut8)rs0;
-				}
-				p = plus + 1;
-				while (p[0] == ' ') {
-					p++;
-				}
-				ut32 offset = (ut32)r_num_get (NULL, p);
-				r_write_le32 (buf, offset);
-			} else {
-				int rs0 = parse_reg (p);
-				if (rs0 >= 0) {
-					buf[7] = (ut8)rs0;
-				}
+		char *comma = strchr (p, ',');
+		if (!comma) {
+			free (s);
+			return false;
+		}
+		*comma = '\0';
+		int rd = parse_reg (trim_token (p));
+		char *address = trim_token (comma + 1);
+		size_t address_len = strlen (address);
+		if (rd < 0 || address_len < 3 || address[0] != '[' || address[address_len - 1] != ']') {
+			free (s);
+			return false;
+		}
+		address[address_len - 1] = '\0';
+		address = trim_token (address + 1);
+		char *plus = strchr (address, '+');
+		ut64 offset = 0;
+		if (plus) {
+			*plus = '\0';
+			if (!parse_uint (trim_token (plus + 1), UT32_MAX, &offset)) {
+				free (s);
+				return false;
 			}
 		}
+		int rs0 = parse_reg (trim_token (address));
+		if (rs0 < 0) {
+			free (s);
+			return false;
+		}
+		buf[11] = (ut8)rd;
+		buf[7] = (ut8)rs0;
+		r_write_le32 (buf, (ut32)offset);
 		op->size = 16;
 		r_anal_op_set_bytes (op, op->addr, buf, 16);
 		free (s);
@@ -506,45 +565,41 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	}
 	// handle store: "st [r0 + 8], r1"
 	if (opcode->type == R_ANAL_OP_TYPE_STORE) {
-		char *bracket = strchr (p, '[');
-		if (bracket) {
-			p = bracket + 1;
-			char *end = strchr (p, ']');
-			if (end) {
-				*end = '\0';
-				// parse rs1 after the closing bracket
-				char *rest = end + 1;
-				if (rest[0] == ',') {
-					rest++;
-				}
-				while (rest[0] == ' ') {
-					rest++;
-				}
-				int rs1 = parse_reg (rest);
-				if (rs1 >= 0) {
-					buf[3] = (ut8)rs1;
-				}
-			}
-			char *plus = strchr (p, '+');
-			if (plus) {
-				*plus = '\0';
-				int rs0 = parse_reg (p);
-				if (rs0 >= 0) {
-					buf[7] = (ut8)rs0;
-				}
-				p = plus + 1;
-				while (p[0] == ' ') {
-					p++;
-				}
-				ut32 offset = (ut32)r_num_get (NULL, p);
-				r_write_le32 (buf, offset);
-			} else {
-				int rs0 = parse_reg (p);
-				if (rs0 >= 0) {
-					buf[7] = (ut8)rs0;
-				}
+		p = trim_token (p);
+		char *end = strchr (p, ']');
+		if (p[0] != '[' || !end) {
+			free (s);
+			return false;
+		}
+		char *rest = trim_token (end + 1);
+		if (rest[0] != ',') {
+			free (s);
+			return false;
+		}
+		int rs1 = parse_reg (trim_token (rest + 1));
+		if (rs1 < 0) {
+			free (s);
+			return false;
+		}
+		*end = '\0';
+		char *address = trim_token (p + 1);
+		char *plus = strchr (address, '+');
+		ut64 offset = 0;
+		if (plus) {
+			*plus = '\0';
+			if (!parse_uint (trim_token (plus + 1), UT24_MAX, &offset)) {
+				free (s);
+				return false;
 			}
 		}
+		int rs0 = parse_reg (trim_token (address));
+		if (rs0 < 0) {
+			free (s);
+			return false;
+		}
+		r_write_le24 (buf, (ut32)offset);
+		buf[3] = (ut8)rs1;
+		buf[7] = (ut8)rs0;
 		op->size = 16;
 		r_anal_op_set_bytes (op, op->addr, buf, 16);
 		free (s);
@@ -553,75 +608,63 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	// handle s2r: "s2r r0, sr_1"
 	if (!strcmp (name, "s2r")) {
 		char *comma = strchr (p, ',');
-		if (comma) {
-			*comma = '\0';
-			int rd = parse_reg (p);
-			if (rd >= 0) {
-				buf[11] = (ut8)rd;
-			}
-			p = comma + 1;
-			if (p[0] == ' ') {
-				p++;
-			}
-			// parse sr_N
-			if (p[0] == 's' && p[1] == 'r' && p[2] == '_') {
-				int sr = atoi (p + 3);
-				buf[7] = (ut8)sr;
-			}
+		if (!comma) {
+			free (s);
+			return false;
 		}
+		*comma = '\0';
+		int rd = parse_reg (trim_token (p));
+		int sr = parse_special_reg (trim_token (comma + 1));
+		if (rd < 0 || sr < 0) {
+			free (s);
+			return false;
+		}
+		buf[11] = (ut8)rd;
+		buf[7] = (ut8)sr;
 		op->size = 16;
 		r_anal_op_set_bytes (op, op->addr, buf, 16);
 		free (s);
 		return true;
 	}
 	// generic ALU: "iadd3 rd, rs0, rs1, rs2"
-	char *comma;
-	comma = strchr (p, ',');
+	int regs[4];
+	int i;
+	for (i = 0; i < 2; i++) {
+		char *comma = strchr (p, ',');
+		if (!comma) {
+			free (s);
+			return false;
+		}
+		*comma = '\0';
+		regs[i] = parse_reg (trim_token (p));
+		p = comma + 1;
+	}
+	char *comma = strchr (p, ',');
+	int nregs = 3;
 	if (comma) {
 		*comma = '\0';
-		int rd = parse_reg (p);
-		if (rd >= 0) {
-			buf[11] = (ut8)rd;
-		}
+		regs[2] = parse_reg (trim_token (p));
 		p = comma + 1;
-		while (p[0] == ' ') {
-			p++;
-		}
-		comma = strchr (p, ',');
-		if (comma) {
-			*comma = '\0';
-			int rs0 = parse_reg (p);
-			if (rs0 >= 0) {
-				buf[7] = (ut8)rs0;
-			}
-			p = comma + 1;
-			while (p[0] == ' ') {
-				p++;
-			}
-			comma = strchr (p, ',');
-			if (comma) {
-				*comma = '\0';
-				int rs1 = parse_reg (p);
-				if (rs1 >= 0) {
-					buf[3] = (ut8)rs1;
-				}
-				p = comma + 1;
-				while (p[0] == ' ') {
-					p++;
-				}
-				int rs2 = parse_reg (p);
-				if (rs2 >= 0) {
-					buf[5] = (ut8)rs2;
-				}
-			} else {
-				// 3-operand form: "and rd, rs0, rs1"
-				int rs1 = parse_reg (p);
-				if (rs1 >= 0) {
-					buf[3] = (ut8)rs1;
-				}
-			}
+		regs[3] = parse_reg (trim_token (p));
+		nregs = 4;
+	} else {
+		regs[2] = parse_reg (trim_token (p));
+		regs[3] = 0;
+	}
+	if (strchr (p, ',')) {
+		free (s);
+		return false;
+	}
+	for (i = 0; i < nregs; i++) {
+		if (regs[i] < 0) {
+			free (s);
+			return false;
 		}
 	}
+	buf[11] = (ut8)regs[0];
+	buf[7] = (ut8)regs[1];
+	buf[3] = (ut8)regs[2];
+	buf[5] = (ut8)regs[3];
 	op->size = 16;
 	r_anal_op_set_bytes (op, op->addr, buf, 16);
 	free (s);
