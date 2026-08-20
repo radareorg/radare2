@@ -347,7 +347,35 @@ R_API bool r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
 	return true;
 }
 
-static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, int va, ut64 skip, ut64 count) {
+// match a user given encoding filter (from "iz:enc") against a string type.
+// accepts the short type char (a/u/w/W/b), the canonical name reported by
+// r_bin_string_type() and a few friendly aliases. NULL/empty means "no filter".
+static bool str_enc_match(const char *enc, int type) {
+	if (R_STR_ISEMPTY (enc)) {
+		return true;
+	}
+	if (!enc[1]) {
+		return *enc == type;
+	}
+	if (!strcmp (enc, r_bin_string_type (type))) {
+		return true;
+	}
+	if (!r_str_casecmp (enc, "ascii")) {
+		return type == R_STRING_TYPE_ASCII;
+	}
+	if (!r_str_casecmp (enc, "unicode") || !r_str_casecmp (enc, "utf8")) {
+		return type == R_STRING_TYPE_UTF8;
+	}
+	if (!r_str_casecmp (enc, "wide") || !r_str_casecmp (enc, "utf16")) {
+		return type == R_STRING_TYPE_WIDE;
+	}
+	if (!r_str_casecmp (enc, "utf32")) {
+		return type == R_STRING_TYPE_WIDE32;
+	}
+	return false;
+}
+
+static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, int va, ut64 skip, ut64 count, const char *enc) {
 	RTable *table = r_core_table_new (core, "strings");
 	if (!table) {
 		return;
@@ -388,6 +416,9 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 			continue;
 		}
 		if (maxstr && string->length > maxstr) {
+			continue;
+		}
+		if (!str_enc_match (enc, string->type)) {
 			continue;
 		}
 #if FALSE_POSITIVES
@@ -600,7 +631,7 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 	R_CRITICAL_LEAVE (core);
 }
 
-R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count) {
+R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count, const char *enc) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	bool new_bf = false;
 	if (bf && bf->file && strstr (bf->file, "malloc://")) {
@@ -643,7 +674,7 @@ R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut6
 		va = false;
 	}
 	RVecRBinString *strings = r_bin_raw_strings (bf, 0);
-	_print_strings (core, strings, pj, mode, va, skip, count);
+	_print_strings (core, strings, pj, mode, va, skip, count, enc);
 	RVecRBinString_free (strings);
 	if (new_bf) {
 		r_unref (bf->buf);
@@ -654,7 +685,7 @@ R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut6
 	return true;
 }
 
-R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count) {
+R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count, const char *enc) {
 	RBinFile *binfile = r_bin_cur (core->bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 	int rawstr = r_config_get_i (core->config, "bin.str.raw");
@@ -676,7 +707,7 @@ R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 co
 	}
 	RVecRBinString *list = r_bin_get_strings (core->bin);
 	if (list) {
-		_print_strings (core, list, pj, mode, va, skip, count);
+		_print_strings (core, list, pj, mode, va, skip, count, enc);
 		return true;
 	}
 	return false;
@@ -5590,9 +5621,9 @@ R_API bool r_core_bin_info(RCore *core, ut64 action, PJ *pj, int mode, int va, R
 		}
 	}
 	if ((action & R_CORE_BIN_ACC_RAW_STRINGS)) {
-		ret &= bin_raw_strings (core, pj, mode, va, 0, 0);
+		ret &= bin_raw_strings (core, pj, mode, va, 0, 0, NULL);
 	} else if ((action & R_CORE_BIN_ACC_STRINGS)) {
-		ret &= bin_strings (core, pj, mode, va, 0, 0);
+		ret &= bin_strings (core, pj, mode, va, 0, 0, NULL);
 	}
 	if ((action & R_CORE_BIN_ACC_INFO)) {
 		ret &= bin_info (core, pj, mode, loadaddr);
