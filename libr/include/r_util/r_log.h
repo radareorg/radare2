@@ -3,6 +3,7 @@
 
 #include <r_userconf.h>
 #include <r_list.h>
+#include <sdb/set.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,6 +56,7 @@ typedef struct r_log_t {
 	bool iterating; // true while iterating cbs, prevents modification
 	RVecRLogCallbackUser *cbs;
 	PrintfCallback cb_printf;
+	SetU *once; // hashes of the keys passed to r_log_once
 } RLog;
 
 typedef struct r_log_source_t {
@@ -66,6 +68,7 @@ typedef struct r_log_source_t {
 R_API bool r_log_init(void);
 R_API void r_log_fini(void);
 R_API bool r_log_match(int level, const char *origin);
+R_API bool r_log_once(const char *key);
 R_API void r_log_message(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, ...);
 R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap);
 R_API void r_log_add_callback(RLogCallback cb, void *user);

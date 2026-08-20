@@ -666,8 +666,14 @@ static bool is_entry_flag(RFlagItem *f) {
 static void warn_nonexec_map(RCore *core, ut64 at) {
 	RIORegion region;
 	if (r_io_get_region_at (core->io, &region, at) && !(region.sperm & R_PERM_X)) {
-		R_LOG_WARN ("Analysis skipped on non-executable map at 0x%08"PFMT64x, at);
-		R_LOG_INFO ("Fix perms with 'ompg +x' or ignore them with 'e anal.in=io.maps'");
+		// warn only once per map to avoid flooding on af@@@s and friends
+		r_strf_var (key, 32, "nonexec.0x%"PFMT64x, r_itv_begin (region.itv));
+		if (r_log_once (key)) {
+			R_LOG_WARN ("Analysis skipped on non-executable map at 0x%08"PFMT64x, at);
+			if (r_log_once ("nonexec.hint")) {
+				R_LOG_INFO ("Fix perms with 'ompg +x' or ignore them with 'e anal.in=io.maps'");
+			}
+		}
 	}
 }
 
