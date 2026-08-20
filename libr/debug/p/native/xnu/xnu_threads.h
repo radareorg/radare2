@@ -73,6 +73,12 @@ typedef struct _xnu_thread {
 	ut32 count;
 } xnu_thread_t;
 
+R_PACKED(
+	typedef struct {
+		mach_exception_data_type_t values[EXCEPTION_CODE_MAX];
+	})
+xnu_exception_data_t;
+
 typedef struct _exc_msg {
 	mach_msg_header_t hdr;
 	/* start of the kernel processed data */
@@ -84,7 +90,7 @@ typedef struct _exc_msg {
 	exception_type_t exception;
 	mach_msg_type_number_t code_cnt;
 #if !__POWERPC__
-	mach_exception_data_t code;
+	xnu_exception_data_t code;
 #endif
 	/* some times RCV_TO_LARGE probs */
 	char pad[512];

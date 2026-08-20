@@ -215,9 +215,16 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 
 // TODO: Tuck this into RDebug; `void *user` seems like a good candidate.
 static xnu_exception_info ex = { {0} };
-#if !TARGET_OS_IPHONE
+#if XNU_PTRACE_STEP
 static mig_reply_error_t pending_exception_reply;
 static bool pending_exception_reply_valid = false;
+
+static void xnu_discard_pending_exception(void) {
+	if (pending_exception_reply_valid && pending_exception_reply.Head.msgh_remote_port != MACH_PORT_NULL) {
+		(void)mach_port_deallocate (mach_task_self (), pending_exception_reply.Head.msgh_remote_port);
+	}
+	pending_exception_reply_valid = false;
+}
 
 static bool xnu_reply_pending_exception(void) {
 	if (!pending_exception_reply_valid) {
@@ -237,6 +244,26 @@ static bool xnu_reply_pending_exception(void) {
 		return false;
 	}
 	return true;
+}
+
+static bool xnu_exception_is_signal(const exc_msg *msg, int sig) {
+	return msg->exception == EXC_SOFTWARE && msg->code_cnt > 1
+		&& msg->code.values[0] == EXC_SOFT_SIGNAL && msg->code.values[1] == sig;
+}
+
+static int xnu_signal_reason(int sig) {
+	switch (sig) {
+	case SIGABRT:
+		return R_DEBUG_REASON_ABORT;
+	case SIGILL:
+		return R_DEBUG_REASON_ILLEGAL;
+	case SIGSEGV:
+		return R_DEBUG_REASON_SEGFAULT;
+	case SIGSTOP:
+		return R_DEBUG_REASON_STOPPED;
+	default:
+		return R_DEBUG_REASON_SIGNAL;
+	}
 }
 #endif
 
@@ -341,7 +368,20 @@ static bool handle_dead_notify(RDebug *dbg, exc_msg *msg) {
 static int handle_exception_message(RDebug *dbg, exc_msg *msg, int *ret_code) {
 	int ret = R_DEBUG_REASON_UNKNOWN;
 	kern_return_t kr;
+#if XNU_PTRACE_STEP
+	const bool ptrace_step_signal = xnu_ptrace_step && xnu_exception_is_signal (msg, SIGTRAP);
+	const bool ptrace_attach_signal = xnu_ptrace_attach_stop && xnu_exception_is_signal (msg, SIGSTOP);
+	if (ptrace_attach_signal || ptrace_step_signal) {
+		xnu_ptrace_attach_stop = false;
+	}
+#endif
 	*ret_code = KERN_SUCCESS;
+#if XNU_PTRACE_STEP
+	if (xnu_ptrace_step && msg->exception != EXC_SOFTWARE) {
+		*ret_code = KERN_FAILURE;
+		goto beach;
+	}
+#endif
 	switch (msg->exception) {
 	case EXC_BAD_ACCESS:
 		ret = R_DEBUG_REASON_SEGFAULT;
@@ -368,18 +408,24 @@ static int handle_exception_message(RDebug *dbg, exc_msg *msg, int *ret_code) {
 		R_LOG_ERROR ("EXC_EMULATION");
 		break;
 	case EXC_SOFTWARE:
-#if !TARGET_OS_IPHONE
-		if (xnu_ptrace_step) {
+#if XNU_PTRACE_STEP
+		if (ptrace_attach_signal && xnu_ptrace_step) {
+			break;
+		}
+		if (ptrace_step_signal) {
 			ret = R_DEBUG_REASON_STEP;
+		} else if (msg->code_cnt > 1 && msg->code.values[0] == EXC_SOFT_SIGNAL) {
+			dbg->reason.signum = msg->code.values[1];
+			ret = xnu_signal_reason (dbg->reason.signum);
 		} else {
 #endif
 #if __POWERPC__
 			R_LOG_ERROR ("EXC_SOFTWARE retry dcu?");
 #else
-			R_LOG_ERROR ("EXC_SOFTWARE code %d retry dcu?", msg->code);
+			R_LOG_ERROR ("EXC_SOFTWARE code %" PFMT64d " retry dcu?", (st64)msg->code.values[0]);
 #endif
 			ret = R_DEBUG_REASON_BREAKPOINT;
-#if !TARGET_OS_IPHONE
+#if XNU_PTRACE_STEP
 		}
 #endif
 		*ret_code = KERN_SUCCESS;
@@ -389,7 +435,7 @@ static int handle_exception_message(RDebug *dbg, exc_msg *msg, int *ret_code) {
 		}
 		break;
 	case EXC_BREAKPOINT:
-#if !TARGET_OS_IPHONE
+#if XNU_PTRACE_STEP
 		if (xnu_ptrace_step) {
 			*ret_code = KERN_FAILURE;
 			break;
@@ -405,6 +451,9 @@ static int handle_exception_message(RDebug *dbg, exc_msg *msg, int *ret_code) {
 		R_LOG_ERROR ("UNKNOWN");
 		break;
 	}
+#if XNU_PTRACE_STEP
+beach:
+#endif
 	kr = mach_port_deallocate (mach_task_self (), msg->task.name);
 	if (kr != KERN_SUCCESS) {
 		R_LOG_ERROR ("failed to deallocate task port");
@@ -464,16 +513,20 @@ static int __xnu_wait(RDebug *dbg, int pid) {
 			continue;
 		}
 
+#if XNU_PTRACE_STEP
+		const bool ptrace_attach_signal = xnu_ptrace_attach_stop
+			&& xnu_exception_is_signal (&msg, SIGSTOP);
+		const bool ptrace_signal = xnu_ptrace_step && msg.exception == EXC_SOFTWARE
+			&& msg.code_cnt > 1 && msg.code.values[0] == EXC_SOFT_SIGNAL;
+#endif
 		reason = handle_exception_message (dbg, &msg, &ret_code);
-#if !TARGET_OS_IPHONE
+#if XNU_PTRACE_STEP
 		const bool retry_step = xnu_ptrace_step &&
-			msg.exception == EXC_BREAKPOINT && ret_code == KERN_FAILURE;
-		const bool completed_step = xnu_ptrace_step &&
-			msg.exception == EXC_SOFTWARE;
+			(ret_code == KERN_FAILURE || ptrace_attach_signal);
 #endif
 		encode_reply (&reply, &msg.hdr, ret_code);
-#if !TARGET_OS_IPHONE
-		if (completed_step) {
+#if XNU_PTRACE_STEP
+		if (ptrace_signal && !ptrace_attach_signal) {
 			pending_exception_reply = reply;
 			pending_exception_reply_valid = true;
 			xnu_ptrace_step = false;
@@ -490,7 +543,7 @@ static int __xnu_wait(RDebug *dbg, int pid) {
 				R_LOG_ERROR ("failed to deallocate reply port");
 			}
 		}
-#if !TARGET_OS_IPHONE
+#if XNU_PTRACE_STEP
 		if (retry_step) {
 			continue;
 		}
@@ -515,7 +568,11 @@ bool xnu_create_exception_thread(RDebug *dbg, int pid) {
 		R_LOG_ERROR ("xnu_start_exception_thread: cannot get task for pid %d", pid);
 		return false;
 	}
+#if XNU_PTRACE_STEP
+	xnu_ptrace_attach_stop = r_debug_ptrace (dbg, PT_ATTACHEXC, pid, 0, 0) != -1;
+#else
 	r_debug_ptrace (dbg, PT_ATTACHEXC, pid, 0, 0);
+#endif
 	if (!MACH_PORT_VALID (task_self)) {
 		R_LOG_ERROR ("cannot get self task");
 		return false;

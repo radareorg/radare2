@@ -44,8 +44,14 @@ kern_return_t mach_vm_read
 #include <mach/mach_vm.h>
 #endif
 static task_t task_dbg = 0;
-#if !TARGET_OS_IPHONE
+#if !XNU_USE_PTRACE && !TARGET_OS_IPHONE && !__POWERPC__
+#define XNU_PTRACE_STEP 1
+#else
+#define XNU_PTRACE_STEP 0
+#endif
+#if XNU_PTRACE_STEP
 static bool xnu_ptrace_step = false;
+static bool xnu_ptrace_attach_stop = false;
 #endif
 #include "xnu_debug.h"
 #include "xnu_threads.c"
@@ -275,7 +281,7 @@ bool xnu_step(RDebug *dbg) {
 		R_LOG_ERROR ("step failed on task %d for pid %d", task, dbg->tid);
 		return false;
 	}
-#if !TARGET_OS_IPHONE
+#if XNU_PTRACE_STEP
 	int ret = r_debug_ptrace (dbg, PT_STEP, dbg->pid, (caddr_t)1, 0);
 	if (ret == -1) {
 		r_sys_perror ("ptrace-step");
@@ -309,8 +315,10 @@ bool xnu_step(RDebug *dbg) {
 }
 
 bool xnu_attach(RDebug *dbg, int pid) {
-#if !TARGET_OS_IPHONE
+#if XNU_PTRACE_STEP
 	xnu_ptrace_step = false;
+	xnu_ptrace_attach_stop = false;
+	xnu_discard_pending_exception ();
 #endif
 #if XNU_USE_PTRACE
 # if PT_ATTACHEXC
@@ -344,7 +352,7 @@ bool xnu_detach(RDebug *dbg, int pid) {
 	if (r < 0) {
 		r_sys_perror ("ptrace(PT_DETACH)");
 	}
-#if !TARGET_OS_IPHONE
+#if XNU_PTRACE_STEP
 	if (r >= 0 && !xnu_reply_pending_exception ()) {
 		r = -1;
 	}
@@ -427,7 +435,7 @@ bool xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 	if (!task) {
 		return false;
 	}
-#if !TARGET_OS_IPHONE
+#if XNU_PTRACE_STEP
 	if (pending_exception_reply_valid) {
 		if (r_debug_ptrace (dbg, PT_CONTINUE, pid, (caddr_t)1, 0) == -1) {
 			r_sys_perror ("ptrace-continue");
