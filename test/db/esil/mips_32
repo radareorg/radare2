@@ -2185,3 +2185,24 @@ EXPECT=<<EOF
 0x0000ff84
 EOF
 RUN
+
+NAME=mips.gnu lh reads a halfword and not a byte
+FILE=malloc://0x200
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+ar > /dev/null
+s 4
+wx 34120000
+ar t3=4
+wx 00006885 @ 8
+s 8
+aei
+aeim
+aeip
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x00001234
+EOF
+RUN
