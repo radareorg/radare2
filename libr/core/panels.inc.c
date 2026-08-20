@@ -2986,6 +2986,17 @@ static inline bool r_panels_menu_is_separator(const char *name) {
 	return name && name[0] == '-';
 }
 
+// move selectedIndex by `dir` (+1/-1), skipping separators; clamps at both ends
+static void r_panels_menu_move(RPanelsMenuItem *parent, int dir) {
+	int next = parent->selectedIndex + dir;
+	while (next >= 0 && next < parent->n_sub && r_panels_menu_is_separator (parent->sub[next]->name)) {
+		next += dir;
+	}
+	if (next >= 0 && next < parent->n_sub) {
+		parent->selectedIndex = next;
+	}
+}
+
 // append a horizontal rule of `width` columns, box-drawing when scr.utf8 is set
 static void r_panels_menu_hline(RCore *core, RStrBuf *buf, int width) {
 	width = R_MAX (width, 1);
@@ -3041,8 +3052,8 @@ static RStrBuf *r_panels_draw_menu(RCore *core, RPanelsMenuItem *item, int max_i
 	for (i = first; i <= last; i++) {
 		const char *name = item->sub[i]->name;
 		if (r_panels_menu_is_separator (name)) {
-			r_strbuf_append (buf, PANEL_HL_COLOR);
-			r_panels_menu_hline (core, buf, content_w + 12);
+			r_strbuf_append (buf, Color_WHITE);
+			r_panels_menu_hline (core, buf, content_w + 8);
 			r_strbuf_append (buf, Color_RESET"\n");
 			continue;
 		}
@@ -6985,7 +6996,7 @@ static void handle_menu(RCore *core, const int key) {
 			if (menu->depth == 1) {
 				(void)(child->cb (core));
 			} else {
-				parent->selectedIndex = R_MIN (parent->n_sub - 1, parent->selectedIndex + 1);
+				r_panels_menu_move (parent, 1);
 				r_panels_update_menu_contents (core, menu, parent);
 			}
 		}
@@ -6998,8 +7009,9 @@ static void handle_menu(RCore *core, const int key) {
 				break;
 			}
 			RPanelsMenuItem *parent = menu->history[menu->depth - 1];
-			if (parent->selectedIndex > 0) {
-				parent->selectedIndex--;
+			int prev = parent->selectedIndex;
+			r_panels_menu_move (parent, -1);
+			if (parent->selectedIndex != prev) {
 				r_panels_update_menu_contents (core, menu, parent);
 			}
 		}
