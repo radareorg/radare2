@@ -114,9 +114,8 @@ struct Getarg {
 	cs_insn *insn;
 	int bits;
 	int syntax; // R_ARCH_SYNTAX_ATT or R_ARCH_SYNTAX_INTEL
-	// bare 32-bit register destination in 64-bit mode, and its 64-bit name
-	char zext32[16];
-	char zext64[16];
+	// pending zero-extensions for the 32-bit registers this op writes
+	char zext[32];
 };
 
 // TODO: get rid of this unnecessary wrapper
@@ -319,6 +318,37 @@ static inline bool get64from32(const char *s, char *out, size_t outsz) {
 	return false;
 }
 
+// writing a 32-bit register zero-extends into its 64-bit half, which ESIL wont
+static void zext_reg(struct Getarg *gop, const char *reg) {
+	char r64[16], pair[24];
+	if (!reg || gop->bits != 64 || !get64from32 (reg, r64, sizeof (r64))) {
+		return;
+	}
+	snprintf (pair, sizeof (pair), ",%s,%s,=", reg, r64);
+	const size_t len = strlen (gop->zext);
+	// drop rather than truncate: a half-copied pair is a corrupt esil token
+	if (!strstr (gop->zext, pair) && len + strlen (pair) < sizeof (gop->zext)) {
+		r_str_ncpy (gop->zext + len, pair, sizeof (gop->zext) - len);
+	}
+}
+
+static void zext_opnd(struct Getarg *gop, int n) {
+	const cs_x86 *x = &gop->insn->detail->x86;
+	const cs_x86_op *op = &x->operands[norm_op (n, gop->syntax, x->op_count)];
+	if (op->type == X86_OP_REG) {
+		zext_reg (gop, cs_reg_name (gop->handle, op->reg));
+	}
+}
+
+// a scan that breaks out never reaches the tail, so it extends before scanning
+static void zext_prefix(struct Getarg *gop, const char *reg, char *out, size_t sz) {
+	char r64[16];
+	*out = 0;
+	if (gop->bits == 64 && reg && get64from32 (reg, r64, sizeof (r64))) {
+		snprintf (out, sz, ",%s,%s,=", reg, r64);
+	}
+}
+
 static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsize) {
 	const char *setarg = r_str_get (setop);
 	cs_insn *insn = gop->insn;
@@ -358,11 +388,7 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsi
 					rn = stbuf;
 				}
 				if (set == 1) {
-					// writing eax zero-extends into rax, which ESIL wont do on its own
-					if (gop->bits == 64
-						&& get64from32 (rn, gop->zext64, sizeof (gop->zext64))) {
-						r_str_ncpy (gop->zext32, rn, sizeof (gop->zext32));
-					}
+					zext_reg (gop, rn);
 					return r_str_newf ("%s,%s=", rn, setarg);
 				}
 				return strdup (rn);
@@ -507,8 +533,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		.insn = insn,
 		.bits = bits,
 		.syntax = as->config->syntax,
-		.zext32 = {0},
-		.zext64 = {0}
+		.zext = {0}
 	};
 	char *src = NULL;
 	char *src2 = NULL;
@@ -1113,23 +1138,14 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				// dst is name of register from instruction.
 				dst = getarg (&gop, 0, 0, NULL, NULL);
 				char dst64[16];
-				const bool havedst = get64from32 (dst, dst64, sizeof (dst64));
-				if (bits == 64 && havedst) {
-					// Here it is still correct, because 'e** = X'
-					// turns into 'r** = X' (first one will keep higher bytes,
-					// second one will overwrite them with zeros).
-					if (insn->id == X86_INS_MOVSX || insn->id == X86_INS_MOVSXD) {
-						esilprintf (op, "%d,%s,~,%s,=", width*8, src, dst64);
-					} else {
-						esilprintf (op, "%s,%s,=", src, dst64);
-					}
-
+				const bool wide = bits == 64 && get64from32 (dst, dst64, sizeof (dst64));
+				if (insn->id == X86_INS_MOVSX || insn->id == X86_INS_MOVSXD) {
+					// the sign extension stops at the 32-bit destination
+					zext_opnd (&gop, 0);
+					esilprintf (op, "%d,%s,~,%s,=", width*8, src, dst);
 				} else {
-					if (insn->id == X86_INS_MOVSX || insn->id == X86_INS_MOVSXD) {
-						esilprintf (op, "%d,%s,~,%s,=", width*8, src, dst);
-					} else {
-						esilprintf (op, "%s,%s,=", src, dst);
-					}
+					// writing the 64-bit name zeroes the high half in one go
+					esilprintf (op, "%s,%s,=", src, wide? dst64: dst);
 				}
 				free (src);
 				free (dst);
@@ -1326,12 +1342,14 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		esilprintf (op, "al,ax,=,7,ax,>>,?{,0xff00,ax,|=,}");
 		break;
 	case X86_INS_CWDE:
+		zext_reg (&gop, "eax");
 		esilprintf (op, "ax,eax,=,15,eax,>>,?{,0xffff0000,eax,|=,}");
 		break;
 	case X86_INS_CWD:
 		esilprintf (op, "0,dx,=,15,ax,>>,?{,0xffff,dx,=,}");
 		break;
 	case X86_INS_CDQ:
+		zext_reg (&gop, "edx");
 		esilprintf (op, "0,edx,=,31,eax,>>,?{,0xffffffff,edx,=,}");
 		break;
 	case X86_INS_CQO:
@@ -1895,18 +1913,21 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 0, NULL, NULL);
+			char pre[24];
+			zext_prefix (&gop, dst, pre, sizeof (pre));
 			if (strcmp (src, dst)) {
-				// the loop target counts the extra tokens of a memory source
-				const ut32 commas = r_str_char_count (src, ',');
-				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,},"
+				// the loop target shifts by the tokens the prefix and src add
+				const ut32 extra = r_str_char_count (src, ',')
+					+ r_str_char_count (pre, ',');
+				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,}%s,"
 						"0x%"PFMT64x",%s,:=,"
 						"%s,++,%s,:=,%s,1,<<,%s,&,!,?{,%d,GOTO,}",
-						src, UT64_MAX, dst, dst, dst, dst, src, 11 + commas);
+						src, pre, UT64_MAX, dst, dst, dst, dst, src, 11 + extra);
 			} else {
 				// unroll the loop to avoid use of DUP operation
 				const ut32 bits = INSOP (0).size * 8;
 				ut32 i = 0;
-				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,}", src);
+				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,}%s", src, pre);
 				for (; i < bits - 1; i++) {
 					r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",%s,&,?{,%d,%s,:=,BREAK,}",
 						((ut64)1) << i, src, i, dst);
@@ -1922,17 +1943,20 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 0, NULL, NULL);
 			const ut32 bits = INSOP (0).size * 8;
+			char pre[24];
 
+			zext_prefix (&gop, dst, pre, sizeof (pre));
 			if (strcmp (src, dst)) {
-				const ut32 commas = r_str_char_count (src, ',');
-				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,},"
+				const ut32 extra = r_str_char_count (src, ',')
+					+ r_str_char_count (pre, ',');
+				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,}%s,"
 						"%d,%s,:=,"
 						"%s,--,%s,:=,%s,1,<<,%s,&,!,?{,%d,GOTO,}",
-						src, bits, dst, dst, dst, dst, src, 11 + commas);
+						src, pre, bits, dst, dst, dst, dst, src, 11 + extra);
 			} else {
 				// unroll the loop to avoid use of DUP operation
 				ut32 i = bits - 1;
-				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,}", src);
+				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,}%s", src, pre);
 				for (; i; i--) {
 					r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",%s,&,?{,%d,%s,:=,BREAK,}",
 						((ut64)1) << i, src, i, dst);
@@ -1946,6 +1970,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_BSWAP:
 		{
 			dst = getarg (&gop, 0, 0, NULL, NULL);
+			zext_opnd (&gop, 0);
 			if (INSOP(0).size == 4) {
 				esilprintf (op, "0xff000000,24,%s,NUM,<<,&,24,%s,NUM,>>,|,"
 						"8,0x00ff0000,%s,NUM,&,>>,|,"
@@ -2169,6 +2194,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 					const char *r_rema = (width == 1)?"ah": (width == 2)?"dx": (width == 4)?"edx":"rdx";
 					const char *r_nume = (width == 1)?"ax": r_quot;
 
+					zext_reg (&gop, r_quot);
+					zext_reg (&gop, r_rema);
 					esilprintf (op, "%d,%s,~,%d,%s,<<,%s,+,~%%,%d,%s,~,%d,%s,<<,%s,+,~/,%s,=,%s,=",
 							width*8, arg0, width*8, r_rema, r_nume, width*8, arg0, width*8, r_rema, r_nume, r_quot, r_rema);
 				}
@@ -2194,6 +2221,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			const char *r_nume = (width == 1)?"ax": r_quot;
 			// DIV does not change flags and is unsigned
 
+			zext_reg (&gop, r_quot);
+			zext_reg (&gop, r_rema);
 			esilprintf (op, "%s,%d,%s,<<,%s,+,%%,%s,%d,%s,<<,%s,+,/,%s,=,%s,=",
 					dst, width*8, r_rema, r_nume, dst, width*8, r_rema, r_nume, r_quot, r_rema);
 			free (dst);
@@ -2212,6 +2241,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				if (arg2) {
 					multiplier = arg2;
 				}
+				zext_opnd (&gop, 0);
 				esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,%s,=,%d,%s,~,-,!,!,DUP,cf,:=,of,:=",
 					width*8, multiplier, width*8, arg1, arg0, width*8, arg0);
 			} else {
@@ -2220,6 +2250,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 					const char *r_rema = (width == 1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
 					const char *r_nume = (width == 1)?"ax": r_quot;
 
+					zext_reg (&gop, r_nume);
+					zext_reg (&gop, r_rema);
 					if (width == 8) { // TODO still needs to be fixed to handle correct signed 128 bit value
 						esilprintf (op, "%s,%s,L*,%s,=,DUP,%s,=,!,!,DUP,cf,:=,of,:=", // flags will be sometimes wrong
 								arg0, r_nume, r_nume, r_rema);
@@ -2243,6 +2275,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				const char *r_rema = (width == 1)?"ah": (width == 2)?"dx": (width == 4)?"edx":"rdx";
 				const char *r_nume = (width == 1)?"ax": r_quot;
 
+				zext_reg (&gop, r_nume);
+				zext_reg (&gop, r_rema);
 				if (width == 8 ) {
 					esilprintf (op, "%s,%s,L*,%s,=,DUP,%s,=,!,!,DUP,cf,:=,of,:=",
 							src, r_nume, r_nume, r_rema);
@@ -2320,6 +2354,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			dst = getarg (&gop, 0, 0, NULL, NULL);
 			src = getarg (&gop, 1, 0, NULL, NULL);
+			zext_opnd (&gop, 0);
+			zext_opnd (&gop, 1);
 			if (!strcmp (src, dst)) {
 				esilprintf (op, ",");
 			} else if (INSOP(0).type == X86_OP_MEM) {
@@ -2351,6 +2387,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 0, NULL, NULL);
 			dstAdd = getarg (&gop, 0, 1, "+", NULL);
+			zext_opnd (&gop, 1);
 			if (INSOP(0).type == X86_OP_MEM) {
 				dst2 = getarg (&gop, 0, 1, NULL, NULL);
 				esilprintf (op,
@@ -2743,9 +2780,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		r_strbuf_prepend (&op->esil, counter);
 		r_strbuf_appendf (&op->esil, ",%s,--=,zf,?{,BREAK,},0,GOTO", counter);
 	}
-	if (*gop.zext64 && r_strbuf_length (&op->esil) > 0) {
+	if (R_STR_ISNOTEMPTY (gop.zext) && r_strbuf_length (&op->esil) > 0) {
 		// after the flag assignments, so this doesnt disturb the comparison state
-		r_strbuf_appendf (&op->esil, ",%s,%s,=", gop.zext32, gop.zext64);
+		r_strbuf_append (&op->esil, gop.zext);
 	}
 }
 

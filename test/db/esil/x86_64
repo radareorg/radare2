@@ -119,7 +119,7 @@ e asm.bits=64
 EOF
 EXPECT=<<EOF
 imul eax, ecx
-0x00000000 32,eax,~,32,ecx,~,*,DUP,eax,=,32,eax,~,-,!,!,DUP,cf,:=,of,:=
+0x00000000 32,eax,~,32,ecx,~,*,DUP,eax,=,32,eax,~,-,!,!,DUP,cf,:=,of,:=,eax,rax,=
 EOF
 RUN
 
@@ -209,7 +209,7 @@ EOF
 EXPECT=<<EOF
 opcode: imul eax, ebx, 0x89
 esilcost: 0
-esil: 32,137,~,32,ebx,~,*,DUP,eax,=,32,eax,~,-,!,!,DUP,cf,:=,of,:=
+esil: 32,137,~,32,ebx,~,*,DUP,eax,=,32,eax,~,-,!,!,DUP,cf,:=,of,:=,eax,rax,=
 EOF
 RUN
 
@@ -1047,36 +1047,197 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bsf scans a memory source
+NAME=imul zero-extends its 32-bit register destination
 FILE=malloc://0x100
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 aei
 aeim
-wx 0fbc0e
-ar rsi=0x100100
-wv4 0x100 @ 0x100100
+wx 0fafca
+ar rcx=0xffffffff00000003
+ar rdx=4
 aes
-ar ecx
+ar rcx
+EOF
+EXPECT=<<EOF
+0x0000000c
+EOF
+RUN
+
+NAME=mul zero-extends both of its implicit destinations
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx f7e1
+ar rax=0xffffffff00000003
+ar rcx=0xffffffff00000002
+ar rdx=0xdeadbeef00000000
+aes
+ar rax
+ar rdx
+EOF
+EXPECT=<<EOF
+0x00000006
+0x00000000
+EOF
+RUN
+
+NAME=div zero-extends the quotient and the remainder
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx f7f1
+ar rax=0xffffffff0000000d
+ar rdx=0xdeadbeef00000000
+ar rcx=4
+aes
+ar rax
+ar rdx
+EOF
+EXPECT=<<EOF
+0x00000003
+0x00000001
+EOF
+RUN
+
+NAME=bswap zero-extends its 32-bit destination
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 0fc9
+ar rcx=0xffffffff12345678
+aes
+ar rcx
+EOF
+EXPECT=<<EOF
+0x78563412
+EOF
+RUN
+
+NAME=bsf zero-extends when the destination is also the source
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 0fbcc9
+ar rcx=0xffffffff00000100
+aes
+ar rcx
 EOF
 EXPECT=<<EOF
 0x00000008
 EOF
 RUN
 
-NAME=bsr scans a memory source
+NAME=bsr zero-extends its 32-bit destination
 FILE=malloc://0x100
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 aei
 aeim
-wx 0fbd0e
-ar rsi=0x100100
-wv4 0x100 @ 0x100100
+wx 0fbdca
+ar rcx=0xffffffff00000000
+ar rdx=0x80000100
 aes
-ar ecx
+ar rcx
+EOF
+EXPECT=<<EOF
+0x0000001f
+EOF
+RUN
+
+NAME=cwde zero-extends eax into rax
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 98
+ar rax=0xffffffff00008000
+aes
+ar rax
+EOF
+EXPECT=<<EOF
+0xffff8000
+EOF
+RUN
+
+NAME=cdq zero-extends edx into rdx
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 99
+ar rax=0x80000000
+ar rdx=0xa5a5000100000000
+aes
+ar rdx
+EOF
+EXPECT=<<EOF
+0xffffffff
+EOF
+RUN
+
+NAME=movsx stops the sign extension at its 32-bit destination
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 0fbec8
+ar rax=0x80
+ar rcx=0xffffffff00000000
+aes
+ar rcx
+EOF
+EXPECT=<<EOF
+0xffffff80
+EOF
+RUN
+
+NAME=xchg zero-extends both of its 32-bit registers
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 87ca
+ar rdx=0xffffffff00000001
+ar rcx=0xaaaaaaaa00000002
+aes
+ar rdx
+ar rcx
+EOF
+EXPECT=<<EOF
+0x00000002
+0x00000001
+EOF
+RUN
+
+NAME=xadd zero-extends the register it exchanges into
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 0fc1d1
+ar rcx=0xffffffff00000005
+ar rdx=0xaaaaaaaa00000003
+aes
+ar rcx
+ar rdx
 EOF
 EXPECT=<<EOF
 0x00000008
+0x00000005
 EOF
 RUN
+
