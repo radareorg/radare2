@@ -2920,6 +2920,10 @@ static void r_panels_create_modal(RCore *core, RPanel *panel) {
 		okey = r_cons_readchar (cons);
 		key = r_cons_arrow_to_hjkl (cons, okey);
 		word = NULL;
+		if (cons->mouse_event && !cons->drag_event &&
+				(key == 'h' || key == 'l')) {
+			continue;
+		}
 		if (key == INT8_MAX - 1) {
 			if (r_cons_get_click (cons, &cx, &cy)) {
 				cy -= r_config_get_i (core->config, "scr.notch");
@@ -6753,6 +6757,19 @@ virtualmouse:
 		if (panels_root->root_state != DEFAULT) {
 			goto exit;
 		}
+		goto repeat;
+	}
+
+	const bool wheel_event = core->cons->mouse_event && !core->cons->drag_event &&
+		(key == 'h' || key == 'j' || key == 'k' || key == 'l');
+	if (wheel_event && panels->mode != PANEL_MODE_MENU) {
+		if (cur->model->directionCb) {
+			r_cons_switchbuf (core->cons, false);
+			cur->model->directionCb (core, key);
+		}
+		goto repeat;
+	}
+	if (wheel_event && (key == 'h' || key == 'l')) {
 		goto repeat;
 	}
 
