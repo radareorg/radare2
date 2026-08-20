@@ -834,3 +834,25 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=sbb does not overflow when the source is the destination
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 19c9
+ar rcx=0x80000000
+ar cf=0
+ar of=1
+aes
+ar rcx
+ar of
+ar zf
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000000
+0x00000001
+EOF
+RUN
