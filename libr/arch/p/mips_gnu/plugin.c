@@ -43,6 +43,8 @@ DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS ()
 #define ES_B(x) "0xff," x ",&"
 #define ES_H(x) "0xffff," x ",&"
 #define ES_W(x) "0xffffffff," x ",&"
+// esil '<' is signed: biasing by the sign bit makes it order values unsigned
+#define ES_U(x) "0x8000000000000000," x ",^"
 
 // Call with delay slot.
 #define ES_CALL_DR(ra, addr) "pc,4,+,"ra",=,"ES_J_D(addr)
@@ -76,6 +78,19 @@ static inline void es_sign_n_64(RArchSession *as, RAnalOp *op, const char *arg, 
 	} else {
 		r_strbuf_append (&op->esil, ",");
 	}
+}
+
+// mips64 compares the whole register; at 32 bits the 64-bit gpr profile needs the narrowing
+static inline const char *es_slt_fmt(RArchSession *as) {
+	return (as->config->bits == 64)
+		? "%s,%s,<,%s,="
+		: "32,%s,~,32,%s,~,<,%s,=";
+}
+
+static inline const char *es_sltu_fmt(RArchSession *as) {
+	return (as->config->bits == 64)
+		? ES_U ("%s") "," ES_U ("%s") ",<,%s,="
+		: ES_W ("%s") "," ES_W ("%s") ",<,%s,=";
 }
 
 static inline void es_add_ck(RAnalOp *op, const char *a1, const char *a2, const char *re, int bit) {
@@ -1177,21 +1192,20 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		r_strbuf_appendf (&op->esil, "%s,%s,^,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
 		break;
 	case MIPS_INS_NOR:
-		r_strbuf_appendf (&op->esil, "%s,%s,|,0xffffffff,^,%s,=", R_REG (rs), R_REG (rt), R_REG (rd));
+		r_strbuf_appendf (&op->esil, "%s,%s,|,%s,^,%s,=", R_REG (rs), R_REG (rt),
+			(as->config->bits == 64)? "0xffffffffffffffff": "0xffffffff", R_REG (rd));
 		break;
 	case MIPS_INS_SLT:
-		r_strbuf_appendf (&op->esil, "32,%s,~,32,%s,~,<,%s,=", R_REG (rt), R_REG (rs), R_REG (rd));
+		r_strbuf_appendf (&op->esil, es_slt_fmt (as), R_REG (rt), R_REG (rs), R_REG (rd));
 		break;
 	case MIPS_INS_SLTI:
-		r_strbuf_appendf (&op->esil, "32,%s,~,32,%s,~,<,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
+		r_strbuf_appendf (&op->esil, es_slt_fmt (as), I_REG (imm), I_REG (rs), I_REG (rt));
 		break;
 	case MIPS_INS_SLTU:
-		r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,%s,=",
-			R_REG (rt), R_REG (rs), R_REG (rd));
+		r_strbuf_appendf (&op->esil, es_sltu_fmt (as), R_REG (rt), R_REG (rs), R_REG (rd));
 		break;
 	case MIPS_INS_SLTIU:
-		r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,%s,=",
-			I_REG (imm), I_REG (rs), I_REG (rt));
+		r_strbuf_appendf (&op->esil, es_sltu_fmt (as), I_REG (imm), I_REG (rs), I_REG (rt));
 		break;
 	case MIPS_INS_MUL:
 		r_strbuf_appendf (&op->esil, ES_W ("%s,%s,*") ",%s,=", R_REG (rs), R_REG (rt), R_REG (rd));
@@ -1205,9 +1219,12 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		ES_SIGN32_64 ("hi");
 		break;
 	case MIPS_INS_MULTU:
-		r_strbuf_appendf (&op->esil, ES_W ("%s,%s,*") ",lo,=", R_REG (rs), R_REG (rt));
+		// the low words are the operands: masking the product is not enough
+		r_strbuf_appendf (&op->esil, ES_W (ES_W ("%s") "," ES_W ("%s") ",*") ",lo,=",
+			R_REG (rs), R_REG (rt));
 		ES_SIGN32_64 ("lo");
-		r_strbuf_appendf (&op->esil, ES_W ("32,%s,%s,*,>>") ",hi,=", R_REG (rs), R_REG (rt));
+		r_strbuf_appendf (&op->esil, "32," ES_W ("%s") "," ES_W ("%s") ",*,>>,hi,=",
+			R_REG (rs), R_REG (rt));
 		ES_SIGN32_64 ("hi");
 		break;
 	case MIPS_INS_MFLO:
