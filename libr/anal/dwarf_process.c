@@ -3018,17 +3018,23 @@ static char *dwarf_function_sname(Sdb *sdb, const char *real_name, ut64 address)
  * storage, which is exactly what an interface describes; it is not claimed as
  * exact DWARF evidence, because dwarf_exact_formal_record() requires a real
  * location and so stays ineligible for these. */
-static char *dwarf_formal_convention_meta(Context *ctx, int argno, int argc, const char *type) {
+static char *dwarf_formal_convention_meta(Context *ctx, int argno, int argc, bool is_fp, const char *type) {
 	if (!ctx || !ctx->anal || argno < 0 || R_STR_ISEMPTY (type)) {
-		return NULL;
-	}
-	if (dwarf_type_is_fp (type)) {
 		return NULL;
 	}
 	RAnal *anal = (RAnal *)ctx->anal;
 	const char *cc = r_anal_cc_default (anal);
 	if (R_STR_ISEMPTY (cc)) {
 		return NULL;
+	}
+	if (is_fp) {
+		// a convention with no floating-point argument registers cannot answer for one
+		const char *loc = r_anal_cc_fparg (anal, cc, argno);
+		if (R_STR_ISEMPTY (loc)) {
+			return NULL;
+		}
+		const char *reg = r_anal_cc_location_first (anal, loc);
+		return R_STR_ISEMPTY (reg)? NULL: r_str_newf ("r,%s,%s", reg, type);
 	}
 	RAnalCCArgSlot slot = { 0 };
 	if (!r_anal_cc_argslot (anal, cc, argno, argc, false, &slot)
@@ -3106,18 +3112,28 @@ static bool sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 	}
 	int arg_index = 0;
 	int formal_index = 0;
+	// each register class advances on its own, so a float never consumes an integer slot
+	int int_formal_index = 0;
+	int fp_formal_index = 0;
 	RListIter *iter;
 	Variable *var;
 	r_list_foreach (variables, iter, var) {
 		const bool is_formal = var->kind == VARIABLE_KIND_FORMAL_PARAMETER
 			&& !var->is_result;
-		const int argno = formal_index;
+		const bool is_fp_formal = is_formal && dwarf_type_is_fp (var->type);
+		const int argno = is_fp_formal? fp_formal_index: int_formal_index;
 		if (is_formal) {
 			formal_index++;
+			if (is_fp_formal) {
+				fp_formal_index++;
+			} else {
+				int_formal_index++;
+			}
 		}
 		char *meta = sdb_variable_data (var);
 		if (!meta && is_formal && !var->location) {
-			meta = dwarf_formal_convention_meta (ctx, argno, formal_count, var->type);
+			meta = dwarf_formal_convention_meta (ctx, argno, formal_count,
+				is_fp_formal, var->type);
 		}
 		if (!meta || !var->name) {
 			free (meta);
