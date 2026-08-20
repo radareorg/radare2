@@ -991,6 +991,29 @@ R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home,
 	return ret? dyncc_from_static_loc (anal, ret): NULL;
 }
 
+/* The register a convention hands its Nth floating-point argument in.
+ *
+ * A convention that passes floats in their own registers advances two counters,
+ * not one: `f(int a, double b, int c)` puts a and c in the first two integer
+ * registers and b in the first floating-point one. Reading the flat arg list
+ * for that signature answers with the third integer register for c, which is
+ * where the fourth integer argument would live and not where c is. The
+ * sequences are separate in the convention, so they are separate here, and a
+ * convention that has no such registers answers NULL rather than guessing. */
+R_API const char *r_anal_cc_fparg(RAnal *anal, const char *convention, int n) {
+	R_RETURN_VAL_IF_FAIL (anal && n >= 0, NULL);
+	if (!convention) {
+		return NULL;
+	}
+	const char *loc = sdb_const_getf (DB, NULL, "cc.%s.fparg%d", convention, n);
+	return loc? dyncc_from_static_loc (anal, loc): NULL;
+}
+
+R_API bool r_anal_cc_has_fpargs(RAnal *anal, const char *convention) {
+	R_RETURN_VAL_IF_FAIL (anal, false);
+	return r_anal_cc_fparg (anal, convention, 0) != NULL;
+}
+
 // caller-reserved home space below the stack args (win64 shadow area)
 R_IPI int r_anal_cc_shadow(RAnal *anal, const char *convention) {
 	if (!convention) {

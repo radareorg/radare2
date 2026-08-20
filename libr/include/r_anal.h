@@ -2066,6 +2066,9 @@ typedef struct r_anal_cc_argslot_t {
 	bool fixed; // the convention pins this slot, so it does not follow the previous arg
 } RAnalCCArgSlot;
 R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int argc, bool incall, RAnalCCArgSlot *out);
+// a convention draws integer and floating-point arguments from separate sequences, so each is counted on its own
+R_API const char *r_anal_cc_fparg(RAnal *anal, const char *convention, int n);
+R_API bool r_anal_cc_has_fpargs(RAnal *anal, const char *convention);
 R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int argno, int argc, bool incall, int width, ut64 *out);
 R_API ut64 r_anal_cc_argaddr(RAnal *anal, RReg *reg, const RAnalCCArgSlot *slot);
 R_API int r_anal_cc_wordsize(RAnal *anal, const char *convention);
