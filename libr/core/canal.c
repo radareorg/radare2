@@ -3977,7 +3977,10 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 
 	// Try plugin-based variable recovery first
 	if (r_anal_function_recover_vars_plugin (core->anal, fcn)) {
-		return;  // Done, skip ESIL-based recovery
+		// Whoever recovered them, two variables covering the same bytes cannot
+		// both be right, so the layout is settled the same way either way.
+		r_anal_function_resolve_var_overlaps (core->anal, fcn);
+		return;
 	}
 
 	// Fall back to existing ESIL-based recovery
@@ -4007,6 +4010,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	RVecIntPtr_fini (&ctx.reg_set);
 	free (ctx.buf);
 	fcn->stack = saved_stack;
+	r_anal_function_resolve_var_overlaps (core->anal, fcn);
 }
 
 typedef struct {

@@ -3828,6 +3828,10 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 				r_meta_set_string (anal, R_META_TYPE_COMMENT, faddr, fcnstr);
 			}
 			free (fcnstr);
+			// What the source declared and what recovery guessed can describe
+			// the same bytes twice, and a layout that says so is not one a
+			// consumer can read.
+			r_anal_function_resolve_var_overlaps (anal, fcn);
 		}
 		int arg_index;
 		for (arg_index = 0; ; arg_index++) {

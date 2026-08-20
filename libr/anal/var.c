@@ -1238,7 +1238,19 @@ R_API R_OWNED char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, 
 	return varname;
 }
 
-static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta, int access_size, int var_size, bool fuzzy) {
+// How many bytes a stack variable covers, from the type it was given.
+static int stack_var_extent(RAnal *anal, RAnalVar *var, int fallback) {
+	if (R_STR_ISEMPTY (var->type)) {
+		return fallback;
+	}
+	const ut64 bits = r_anal_type_bitsize (anal, var->type);
+	return bits? (int)(bits / 8): fallback;
+}
+
+// An access that starts inside a variable is an access to that variable.
+// Creating a second one there would describe one piece of storage twice, and
+// two variables covering the same bytes cannot both be right.
+static RAnalVar *get_stack_var(RAnal *anal, RAnalFunction *fcn, int delta, int access_size, int var_size, bool fuzzy) {
 	RAnalVar **it;
 	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
@@ -1246,7 +1258,14 @@ static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta, int access_size, i
 		if (is_stack && var->delta == delta) {
 			return var;
 		}
-		if (fuzzy && is_stack && access_size > 0 && access_size < var_size && delta > var->delta && delta < var->delta + var_size) {
+		if (!is_stack || delta <= var->delta) {
+			continue;
+		}
+		const int extent = stack_var_extent (anal, var, var_size);
+		if (delta < var->delta + extent) {
+			return var;
+		}
+		if (fuzzy && access_size > 0 && access_size < var_size && delta < var->delta + var_size) {
 			return var;
 		}
 	}
@@ -1460,14 +1479,14 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		const int var_size = anal->config->bits / 8;
 		const bool fuzzy = !strcmp (anal->config->arch, "arm");
-		RAnalVar *var = get_stack_var (fcn, frame_off, access_size, var_size, fuzzy);
+		RAnalVar *var = get_stack_var (anal, fcn, frame_off, access_size, var_size, fuzzy);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
 			return;
 		}
 		if (isarg && type == R_ANAL_VAR_KIND_SPV && fcn->maxstack > fcn->stack && ptr < fcn->maxstack) {
 			const st64 local_frame_off = ptr - fcn->maxstack;
-			var = get_stack_var (fcn, local_frame_off, access_size, var_size, fuzzy);
+			var = get_stack_var (anal, fcn, local_frame_off, access_size, var_size, fuzzy);
 			if (var && !var->isarg) {
 				r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
 				return;
@@ -1531,7 +1550,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		const int var_size = anal->config->bits / 8;
 		const bool fuzzy = !strcmp (anal->config->arch, "arm");
-		RAnalVar *var = get_stack_var (fcn, frame_off, access_size, var_size, fuzzy);
+		RAnalVar *var = get_stack_var (anal, fcn, frame_off, access_size, var_size, fuzzy);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, -ptr);
 			return;
@@ -1914,6 +1933,66 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		extract_dyncc_reguse (anal, fcn, op, reg_set, opsreg, opdreg, op_dst_writeonly);
 	}
 	free (fname);
+}
+
+// Two stack variables covering the same bytes cannot both be right.
+//
+// Which variable an access belongs to is decided when the access is seen, and
+// that depends on the order the accesses arrive: an unaligned access seen
+// before the variable containing it has nothing to attach to, so it becomes a
+// variable of its own and the two overlap. Order cannot settle it, so it is
+// settled once recovery has seen everything.
+//
+// The one with more accesses behind it is the one more of the function agreed
+// on, and the other's accesses move to it rather than being dropped.
+R_API void r_anal_function_resolve_var_overlaps(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_IF_FAIL (anal && fcn);
+	const int fallback = anal->config? anal->config->bits / 8: 8;
+	bool merged;
+	do {
+		merged = false;
+		RAnalVar **outer;
+		R_VEC_FOREACH (&fcn->vars, outer) {
+			RAnalVar *a = *outer;
+			if (a->kind != R_ANAL_VAR_KIND_SPV && a->kind != R_ANAL_VAR_KIND_BPV) {
+				continue;
+			}
+			RAnalVar **inner;
+			R_VEC_FOREACH (&fcn->vars, inner) {
+				RAnalVar *b = *inner;
+				if (a == b || (b->kind != R_ANAL_VAR_KIND_SPV && b->kind != R_ANAL_VAR_KIND_BPV)) {
+					continue;
+				}
+				const int a_end = a->delta + stack_var_extent (anal, a, fallback);
+				const int b_end = b->delta + stack_var_extent (anal, b, fallback);
+				if (a->delta >= b_end || b->delta >= a_end) {
+					continue;
+				}
+				// An argument is what the interface says it is, so it stays.
+				RAnalVar *keep = a;
+				RAnalVar *drop = b;
+				if (b->isarg != a->isarg) {
+					keep = a->isarg? a: b;
+					drop = a->isarg? b: a;
+				} else if (RVecAnalVarAccess_length (&b->accesses)
+						> RVecAnalVarAccess_length (&a->accesses)) {
+					keep = b;
+					drop = a;
+				}
+				RAnalVarAccess *access;
+				R_VEC_FOREACH (&drop->accesses, access) {
+					r_anal_var_set_access (anal, keep, access->reg, access->offset,
+						access->type, access->stackptr);
+				}
+				r_anal_function_delete_var (fcn, drop);
+				merged = true;
+				break;
+			}
+			if (merged) {
+				break;
+			}
+		}
+	} while (merged);
 }
 
 R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {

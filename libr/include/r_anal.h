@@ -1944,6 +1944,7 @@ R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind 
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
 R_API void r_anal_function_delete_unused_vars(RAnalFunction *fcn);
 R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var);
+R_API void r_anal_function_resolve_var_overlaps(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn);
 R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, ut64 addr);
 R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr);
