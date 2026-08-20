@@ -3199,6 +3199,13 @@ static ut64 caseval(const void* _a) {
 	return a->addr;
 }
 
+// borrowed copy: afb/afbi only print the cases, the analysis keeps them
+static RList *uniq_cases(const RAnalSwitchOp *op) {
+	RList *list = r_list_uniq (op->cases, caseval);
+	list->free = NULL;
+	return list;
+}
+
 static ut64 __opaddr(const RAnalBlock *b, ut64 addr) {
 	int i;
 	if (addr >= b->addr && addr < (b->addr + b->size)) {
@@ -3562,8 +3569,9 @@ static void print_bb(RCore *core, PJ *pj, const RAnalBlock *b, const RAnalFuncti
 		pj_end (pj);
 	} else {
 		if (b->switch_op) {
-			r_list_uniq_inplace (b->switch_op->cases, caseval);
-			outputs += r_list_length (b->switch_op->cases);
+			RList *cases = uniq_cases (b->switch_op);
+			outputs += r_list_length (cases);
+			r_list_free (cases);
 		}
 		if (b->jump != UT64_MAX) {
 			r_cons_printf (core->cons, "jump: 0x%08"PFMT64x"\n", b->jump);
@@ -3759,10 +3767,11 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			if (b->switch_op) {
 				RAnalCaseOp *cop;
 				RListIter *iter;
-				r_list_uniq_inplace (b->switch_op->cases, caseval);
-				r_list_foreach (b->switch_op->cases, iter, cop) {
+				RList *cases = uniq_cases (b->switch_op);
+				r_list_foreach (cases, iter, cop) {
 					r_cons_printf (core->cons, " s 0x%08" PFMT64x, cop->jump);
 				}
+				r_list_free (cases);
 			}
 			r_cons_newline (core->cons);
 			break;
