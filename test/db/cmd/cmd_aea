@@ -4,7 +4,7 @@ ARGS=-a x86 -b64
 CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aea 5
 EXPECT=<<EOF
  I: rsp eax edx
- A: rsp rbp rax eax rdx cf edx zf pf sf of af
+ A: rsp rbp rax eax rdx edx cf zf pf sf of af
  R: rsp eax edx
  W: rbp rax rdx cf edx zf pf sf eax of af
  V: 0 65535 1
@@ -24,8 +24,8 @@ EXPECT=<<EOF
     "rax",
     "eax",
     "rdx",
-    "cf",
     "edx",
+    "cf",
     "zf",
     "pf",
     "sf",
@@ -73,7 +73,7 @@ ARGS=-a x86 -b64
 CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aeA 15
 EXPECT=<<EOF
  I: rsp eax edx
- A: rsp rbp rax eax rdx cf edx zf pf sf of af
+ A: rsp rbp rax eax rdx edx cf zf pf sf of af
  R: rsp eax edx
  W: rbp rax rdx cf edx zf pf sf eax of af
  V: 0 65535 1
