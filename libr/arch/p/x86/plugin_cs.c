@@ -2052,13 +2052,13 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				// borrows pushed before the write clobbers dst, popped after
 				esilprintf (op, "%s,%s,==,%u,$b,cf,$z,&,|,"
 					"0xf,%s,&,0xf,%s,&,==,4,$b,cf,$z,&,|,"
-					"cf,%s,+,%s,"
-					"%s,0x%"PFMT64x",-,!,cf,!,&,%u,$o,^,of,:=,"
+					"%s,0x%"PFMT64x",-,!,cf,!,&,"
+					"cf,%s,+,%s,%u,$o,^,of,:=,"
 					"%u,$s,sf,:=,$z,zf,:=,$p,pf,:=,af,:=,cf,:=",
 					src, dst_r, bitsize,
 					src, dst_r,
-					src, dst_w,
-					src, (ut64)1ULL << (bitsize - 1), bitsize - 1,
+					src, (ut64)1ULL << (bitsize - 1),
+					src, dst_w, bitsize - 1,
 					bitsize - 1);
 			}
 			free (src);
