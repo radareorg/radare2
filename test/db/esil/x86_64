@@ -1046,3 +1046,37 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+
+NAME=bsf scans a memory source
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 0fbc0e
+ar rsi=0x100100
+wv4 0x100 @ 0x100100
+aes
+ar ecx
+EOF
+EXPECT=<<EOF
+0x00000008
+EOF
+RUN
+
+NAME=bsr scans a memory source
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 0fbd0e
+ar rsi=0x100100
+wv4 0x100 @ 0x100100
+aes
+ar ecx
+EOF
+EXPECT=<<EOF
+0x00000008
+EOF
+RUN

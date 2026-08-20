@@ -1896,11 +1896,12 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 0, NULL, NULL);
 			if (strcmp (src, dst)) {
+				// the loop target counts the extra tokens of a memory source
 				const ut32 commas = r_str_char_count (src, ',');
 				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,},"
 						"0x%"PFMT64x",%s,:=,"
 						"%s,++,%s,:=,%s,1,<<,%s,&,!,?{,%d,GOTO,}",
-						src, UT64_MAX, dst, dst, dst, dst, src, 11 + commas * 2);
+						src, UT64_MAX, dst, dst, dst, dst, src, 11 + commas);
 			} else {
 				// unroll the loop to avoid use of DUP operation
 				const ut32 bits = INSOP (0).size * 8;
@@ -1927,7 +1928,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,},"
 						"%d,%s,:=,"
 						"%s,--,%s,:=,%s,1,<<,%s,&,!,?{,%d,GOTO,}",
-						src, bits, dst, dst, dst, dst, src, 11 + commas * 2);
+						src, bits, dst, dst, dst, dst, src, 11 + commas);
 			} else {
 				// unroll the loop to avoid use of DUP operation
 				ut32 i = bits - 1;
