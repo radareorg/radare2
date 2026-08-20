@@ -1304,12 +1304,12 @@ static void arm64math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	if (dst.vas) {
 		int end = vas_count (dst.vas);
 		for (i = 0; i < end; i++) {
-			VECARG64_APPEND (&op->esil, 2, i, sign);
+			VECARG64_APPEND (&op->esil, c + 1, i, sign);
 			if (negate) {
 				r_strbuf_append (&op->esil, ",-1,^");
 			}
 			COMMA (&op->esil);
-			VECARG64_APPEND (&op->esil, 1, i, sign);
+			VECARG64_APPEND (&op->esil, c, i, sign);
 			r_strbuf_appendf (&op->esil, ",%s,", opchar);
 			VEC64_DST_APPEND (&op->esil, 0, i);
 			r_strbuf_append (&op->esil, ",=");

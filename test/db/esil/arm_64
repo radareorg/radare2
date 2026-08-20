@@ -1031,6 +1031,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=bic vector immediate
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 7114006f # bic v17.4s, 3
+aei
+aer v17l=0x112233475566778b
+aer v17h=0x99aabbcfddeeff03
+aes
+aer v17l
+aer v17h
+EOF
+EXPECT=<<EOF
+0x1122334455667788
+0x99aabbccddeeff00
+EOF
+RUN
+
 NAME=rev 64-bit register
 FILE=malloc://0x200
 CMDS=<<EOF
