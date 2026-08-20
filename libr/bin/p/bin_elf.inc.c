@@ -543,6 +543,12 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 	}
 
 	switch (eo->ehdr.e_machine) {
+	case EM_CUDA:
+		/* CUDA's standard ELF relocation is a 64-bit absolute reference. */
+		if (rel->type == 2) {
+			ADD (64, 0);
+		}
+		break;
 	case EM_S390:
 		switch (rel->type) {
 		case R_390_GLOB_DAT: // globals
@@ -989,7 +995,7 @@ static RVecRBinReloc *relocs(RBinFile *bf) {
 			ht_up_insert (reloc_ht, reloc->rva, NULL);
 			R_LOG_DEBUG ("Suspicious reloc patching at 0x%"PFMT64x" for 0x%08"PFMT64x" via 0x%"PFMT64x,
 				got_addr, reloc->rva, reloc->offset);
-		} else if (reloc->rva) {
+		} else if (reloc->rva && got_addr != UT64_MAX) {
 			R_LOG_WARN ("reloc conversion failed for 0x%"PFMT64x, got_addr);
 		} else {
 			R_LOG_DEBUG ("wrong reloc conversion failed for 0x%"PFMT64x, got_addr);

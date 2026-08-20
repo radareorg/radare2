@@ -1,0 +1,11 @@
+OBJ_PTXPSEUDO+=$(LIBR)/arch/p/ptx/pseudo.o
+
+TARGET_PTXPSEUDO=parse_ptx_pseudo.${EXT_SO}
+STATIC_OBJ+=${OBJ_PTXPSEUDO}
+
+ifeq ($(WITHPIC),1)
+ALL_TARGETS+=${TARGET_PTXPSEUDO}
+${TARGET_PTXPSEUDO}: ${OBJ_PTXPSEUDO}
+	${CC} $(call libname,parse_ptx_pseudo) ${LIBDEPS} $(LDFLAGS) \
+		$(LDFLAGS_SHARED) ${CFLAGS} -o ${TARGET_PTXPSEUDO} ${OBJ_PTXPSEUDO}
+endif

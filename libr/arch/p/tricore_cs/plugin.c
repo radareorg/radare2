@@ -98,7 +98,7 @@ static ut64 imm(cs_insn *insn, int n) {
 	return UT64_MAX;
 }
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;

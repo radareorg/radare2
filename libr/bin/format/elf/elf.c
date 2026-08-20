@@ -2287,7 +2287,8 @@ char* Elf_(get_data_encoding)(ELFOBJ *eo) {
 }
 
 int Elf_(has_va)(ELFOBJ *eo) {
-	return true;
+	/* CUDA relocatable executables use zero-valued section virtual addresses. */
+	return eo->ehdr.e_machine != EM_CUDA;
 }
 
 char* Elf_(get_arch)(ELFOBJ *eo) {
@@ -2572,6 +2573,9 @@ char* Elf_(get_cpu)(ELFOBJ *eo) {
 	char *cpu = NULL;
 
 	switch (eo->ehdr.e_machine) {
+	case EM_CUDA:
+		cpu = r_str_newf ("sm_%u", (eo->ehdr.e_flags >> 8) & 0xff);
+		break;
 	case EM_MIPS:
 		if (is_mips_micro (&eo->ehdr)) {
 			cpu = strdup ("micro");

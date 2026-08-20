@@ -39,7 +39,7 @@ sm510_common_disassembler_sm510_common_disassembler() {
 static ut64 increment_pc(ut64 pc, ut8 pclen) {
 	ut32 feed = ((pc >> 1 ^ pc) & 1) ? 0 : (1 << (pclen - 1));
 	ut32 mask = (1 << pclen) - 1;
-	return feed | (pc >> 1 & (mask >> 1)) | (pc & ~mask);
+	return feed | (pc >> 1 & (mask >> 1)) | (pc & ~(ut64)mask);
 }
 
 // common lookup tables
