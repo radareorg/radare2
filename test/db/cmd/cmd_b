@@ -9,6 +9,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=b updates its command context
+FILE=-
+CMDS=<<EOF
+b 64;b;b+4;b;b-2;b
+EOF
+EXPECT=<<EOF
+0x40
+0x44
+0x42
+EOF
+RUN
+
 NAME=bj
 FILE=-
 CMDS=<<EOF

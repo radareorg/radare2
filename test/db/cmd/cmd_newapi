@@ -1,11 +1,13 @@
 NAME=Lcc lists new command registrations by prefix
 CMDS=<<EOF
 Lcc prj
+Lcc b
 Lcc echo
 Lcc ?e
 EOF
 EXPECT=<<EOF
 prj
+b
 echo
 ?e
 EOF
