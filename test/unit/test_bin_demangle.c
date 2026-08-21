@@ -86,8 +86,125 @@ static bool test_demangle_registry(void) {
 	mu_end;
 }
 
+static bool test_java_descriptor(void) {
+	RBinJavaMember *member = r_bin_java_member_parse (NULL, "nLoadSO",
+		"(ZILjava/lang/String;)Z", R_BIN_JAVA_MEMBER_METHOD, 0x109);
+	mu_assert_notnull (member, "parse JNI method descriptor");
+	mu_assert_eq (member->kind, R_BIN_JAVA_MEMBER_METHOD, "method kind");
+	mu_assert_streq (member->name, "nLoadSO", "method name");
+	mu_assert_streq (member->visibility, "public", "method visibility");
+	mu_assert_true (member->attr.flags & R_BIN_ATTR_PUBLIC, "public attribute");
+	mu_assert_true (member->attr.flags & R_BIN_ATTR_STATIC, "static attribute");
+	mu_assert_true (member->attr.flags & R_BIN_ATTR_NATIVE, "native attribute");
+	mu_assert_eq (member->argument_slots, 3, "argument slots");
+	mu_assert_eq (member->return_slots, 1, "return slots");
+	mu_assert_eq (r_list_length (member->arguments), 3, "argument count");
+	mu_assert_streq (member->definition,
+		"public static native boolean nLoadSO (boolean, int, java.lang.String)",
+		"Java definition");
+	mu_assert_streq (member->jni_definition,
+		"public static native jboolean nLoadSO (jboolean, jint, jstring)",
+		"JNI definition");
+	RBinJavaType *argument = r_list_get_n (member->arguments, 2);
+	mu_assert_notnull (argument, "object argument");
+	mu_assert_eq (argument->kind, R_BIN_JAVA_TYPE_OBJECT, "object kind");
+	mu_assert_streq (argument->class_name, "java/lang/String", "internal class name");
+	mu_assert_streq (argument->name, "java.lang.String", "Java class name");
+	mu_assert_streq (argument->jni_name, "jstring", "JNI class name");
+	r_bin_java_member_free (member);
+
+	member = r_bin_java_member_parse (NULL, "nativeGreater", "(J[J[JJ)V",
+		R_BIN_JAVA_MEMBER_METHOD, 0);
+	mu_assert_notnull (member, "parse primitive arrays");
+	mu_assert_eq (member->argument_slots, 6, "wide primitive argument slots");
+	mu_assert_eq (member->return_slots, 0, "void return slots");
+	mu_assert_streq (member->definition,
+		"void nativeGreater (long, long[], long[], long)", "array definition");
+	argument = r_list_get_n (member->arguments, 1);
+	mu_assert_eq (argument->kind, R_BIN_JAVA_TYPE_LONG, "array element kind");
+	mu_assert_eq (argument->array_dimensions, 1, "array dimensions");
+	mu_assert_streq (argument->jni_name, "jlongArray", "JNI primitive array");
+	r_bin_java_member_free (member);
+
+	member = r_bin_java_member_parse (NULL, "primitives", "(ZBCSIJFD)V",
+		R_BIN_JAVA_MEMBER_METHOD, 0);
+	mu_assert_notnull (member, "parse every primitive type");
+	mu_assert_eq (r_list_length (member->arguments), 8, "primitive argument count");
+	mu_assert_eq (member->argument_slots, 10, "primitive argument slots");
+	mu_assert_streq (member->definition,
+		"void primitives (boolean, byte, char, short, int, long, float, double)",
+		"primitive definition");
+	r_bin_java_member_free (member);
+
+	member = r_bin_java_member_parse ("pkg/C", "values", "[[I",
+		R_BIN_JAVA_MEMBER_FIELD, 0x59);
+	mu_assert_notnull (member, "parse field descriptor");
+	mu_assert_streq (member->definition,
+		"public static final volatile int[][] pkg.C.values", "field definition");
+	mu_assert_streq (member->jni_definition,
+		"public static final volatile jobjectArray pkg.C.values", "JNI field definition");
+	mu_assert_eq (member->type->array_dimensions, 2, "multidimensional field");
+	mu_assert_eq (member->type->slots, 1, "array reference slot");
+	r_bin_java_member_free (member);
+
+	member = r_bin_java_member_parse (NULL, "pkg/C", NULL,
+		R_BIN_JAVA_MEMBER_CLASS, 0x31);
+	mu_assert_notnull (member, "parse class metadata");
+	mu_assert_streq (member->definition, "public final class pkg.C", "class definition");
+	mu_assert_true (member->attr.flags & R_BIN_ATTR_SUPER, "class super attribute");
+	r_bin_java_member_free (member);
+
+	char array_descriptor[258];
+	memset (array_descriptor, '[', 255);
+	array_descriptor[255] = 'I';
+	array_descriptor[256] = 0;
+	member = r_bin_java_member_parse (NULL, "maximumArray", array_descriptor,
+		R_BIN_JAVA_MEMBER_FIELD, 0);
+	mu_assert_notnull (member, "accept 255 array dimensions");
+	mu_assert_eq (member->type->array_dimensions, 255, "maximum array dimensions");
+	r_bin_java_member_free (member);
+	mu_end;
+}
+
+static bool test_java_descriptor_rejects_malformed(void) {
+	const char *bad_methods[] = {
+		"(I", "I)V", "(V)V", "([V)V", "(L;)V",
+		"(Ljava/lang/String)V", "(Ljava.lang.String;)V",
+		"(Ljava//lang/String;)V", "(Ljava\\/lang/String;)V",
+		"()", "()VV", "()Vx", "()[V"
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (bad_methods); i++) {
+		RBinJavaMember *member = r_bin_java_member_parse (NULL, "bad",
+			bad_methods[i], R_BIN_JAVA_MEMBER_METHOD, 0);
+		mu_assert_null (member, bad_methods[i]);
+	}
+	const char *bad_fields[] = { "V", "Igarbage", "Ljava/lang/String" };
+	for (i = 0; i < R_ARRAY_SIZE (bad_fields); i++) {
+		RBinJavaMember *member = r_bin_java_member_parse (NULL, "bad",
+			bad_fields[i], R_BIN_JAVA_MEMBER_FIELD, 0);
+		mu_assert_null (member, bad_fields[i]);
+	}
+	char too_many_dimensions[259];
+	memset (too_many_dimensions, '[', 256);
+	too_many_dimensions[256] = 'I';
+	too_many_dimensions[257] = 0;
+	RBinJavaMember *member = r_bin_java_member_parse (NULL, "bad",
+		too_many_dimensions, R_BIN_JAVA_MEMBER_FIELD, 0);
+	mu_assert_null (member, "reject more than 255 array dimensions");
+	char *demangled = r_bin_demangle_java ("nativeGreater(J[J[JJ)V");
+	mu_assert_streq (demangled, "void nativeGreater (long, long[], long[], long)",
+		"legacy demangler uses structured parser");
+	free (demangled);
+	mu_assert_null (r_bin_demangle_java ("broken(V)V"), "legacy demangler rejects void argument");
+	mu_assert_null (r_bin_demangle_java ("broken()Vx"), "legacy demangler rejects trailing garbage");
+	mu_end;
+}
+
 static bool all_tests(void) {
 	mu_run_test (test_demangle_registry);
+	mu_run_test (test_java_descriptor);
+	mu_run_test (test_java_descriptor_rejects_malformed);
 	return tests_passed != tests_run;
 }
 

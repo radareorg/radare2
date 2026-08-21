@@ -131,7 +131,19 @@ Attempt to demangle a string using the specified language and optional vaddr.
 .Ft char *
 .Fn r_bin_demangle_java "const char *str"
 .Pp
-Demangle a Java symbol.
+Demangle a Java method name followed by a strict JVM descriptor.
+.Ft RBinJavaMember *
+.Fn r_bin_java_member_parse "const char *class_name" "const char *name" "const char *descriptor" "RBinJavaMemberKind kind" "ut32 access_flags"
+.Pp
+Parse Java class, field, or method metadata into one structured result. The
+result owns its names, normalized attributes, visibility, field or return type,
+method arguments, Java and JNI definitions, and JVM slot counts. A class has no
+descriptor; fields and methods require a complete JVM descriptor.
+.Ft void
+.Fn r_bin_java_member_free "RBinJavaMember *member"
+.Pp
+Free a structured Java member returned by
+.Fn r_bin_java_member_parse .
 .Ft char *
 .Fn r_bin_demangle_cxx "RBinFile *binfile" "const char *str" "ut64 vaddr"
 .Pp

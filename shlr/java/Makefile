@@ -26,7 +26,7 @@ endif
 
 CFLAGS:=-I../../libr/include $(CFLAGS)
 LDFLAGS+=-L../../libr/util
-OBJS=code.o class.o ops.o
+OBJS=code.o class.o descriptor.o ops.o
 
 all: $(LIBAR)
 

@@ -4881,8 +4881,6 @@ static void ds_print_dwarf(RDisasmState *ds) {
 static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 	if (ds->show_varaccess) {
 		RCons *cons = ds->core->cons;
-		// XXX assume analop is filled
-		//r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
 		int v = ds->analop.ptr;
 		switch (ds->analop.stackop) {
 		case R_ANAL_STACK_GET:

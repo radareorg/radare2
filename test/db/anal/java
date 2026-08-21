@@ -379,7 +379,7 @@ import [C;
 class c { // @0x0000
 
   // Fields defined in the class
-  public static boole; // @0x0287
+  public static boolean a; // @0x0287
   private static final java.lang.String z; // @0x028f
 
   // Methods defined in the class

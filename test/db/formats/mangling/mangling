@@ -24,6 +24,20 @@ swift
 EOF
 RUN
 
+NAME=java JVM and JNI descriptors
+FILE=-
+CMDS=<<EOF
+!rabin2 -D java 'nativeGreater(J[J[JJ)V'
+!rabin2 -D java 'nLoadSO(ZILjava/lang/String;)Z'
+!rabin2 -D java 'arrays([[I[[Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Class;'
+EOF
+EXPECT=<<EOF
+void nativeGreater (long, long[], long[], long)
+boolean nLoadSO (boolean, int, java.lang.String)
+java.lang.Class arrays (int[][], java.lang.String[][], java.lang.Object[])
+EOF
+RUN
+
 NAME=pascal demangling
 FILE=-
 CMDS=<<EOF

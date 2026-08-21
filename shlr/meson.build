@@ -61,6 +61,7 @@ endif
 java_files = [
   'java/class.c',
   'java/code.c',
+  'java/descriptor.c',
   'java/ops.c',
   #'java/main.c',
 ]

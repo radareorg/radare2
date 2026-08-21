@@ -1,4 +1,4 @@
-OBJ_DEMANGLE_JAVA=bin_demangle_java.o ../mangling/java.o
+OBJ_DEMANGLE_JAVA=bin_demangle_java.o
 
 CFLAGS+=-DR_BIN_DEMANGLE_JAVA=1
 STATIC_OBJ+=${OBJ_DEMANGLE_JAVA}

@@ -251,6 +251,51 @@ typedef struct r_bin_attr_t {
 } RBinAttr;
 
 typedef enum {
+	R_BIN_JAVA_TYPE_INVALID,
+	R_BIN_JAVA_TYPE_VOID,
+	R_BIN_JAVA_TYPE_BOOLEAN,
+	R_BIN_JAVA_TYPE_BYTE,
+	R_BIN_JAVA_TYPE_CHAR,
+	R_BIN_JAVA_TYPE_SHORT,
+	R_BIN_JAVA_TYPE_INT,
+	R_BIN_JAVA_TYPE_LONG,
+	R_BIN_JAVA_TYPE_FLOAT,
+	R_BIN_JAVA_TYPE_DOUBLE,
+	R_BIN_JAVA_TYPE_OBJECT,
+} RBinJavaTypeKind;
+
+typedef enum {
+	R_BIN_JAVA_MEMBER_CLASS,
+	R_BIN_JAVA_MEMBER_FIELD,
+	R_BIN_JAVA_MEMBER_METHOD,
+} RBinJavaMemberKind;
+
+typedef struct r_bin_java_type_t {
+	RBinJavaTypeKind kind;
+	char *class_name; // JVM internal name for object types
+	char *name; // Java display name
+	char *jni_name;
+	ut16 slots;
+	ut8 array_dimensions;
+} RBinJavaType;
+
+typedef struct r_bin_java_member_t {
+	RBinJavaMemberKind kind;
+	char *class_name;
+	char *name;
+	char *descriptor;
+	ut32 access_flags; // raw JVM access_flags
+	RBinAttr attr; // access_flags normalized to R_BIN_ATTR_*
+	RBinJavaType *type; // field type or method return type
+	RList/*<RBinJavaType *>*/ *arguments; // method arguments
+	char *visibility;
+	char *definition;
+	char *jni_definition;
+	ut16 argument_slots;
+	ut16 return_slots;
+} RBinJavaMember;
+
+typedef enum {
 	R_BIN_RELOC_1 = 1,
 	R_BIN_RELOC_2 = 2,
 	R_BIN_RELOC_4 = 4,
@@ -1049,6 +1094,8 @@ R_API void r_bin_mem_free(void *data);
 // demangle functions
 R_API char *r_bin_demangle(RBinFile *binfile, const char *lang, const char *str, ut64 vaddr, bool libs);
 R_API char *r_bin_demangle_java(const char *str);
+R_API RBinJavaMember *r_bin_java_member_parse(const char *class_name, const char *name, const char *descriptor, RBinJavaMemberKind kind, ut32 access_flags);
+R_API void r_bin_java_member_free(RBinJavaMember *member);
 R_API char *r_bin_demangle_freepascal(const char *str);
 R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_msvc(const char *str);

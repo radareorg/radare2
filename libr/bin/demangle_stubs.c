@@ -2,13 +2,6 @@
 
 #include <r_bin.h>
 
-#ifndef R_BIN_DEMANGLE_JAVA
-R_API char *r_bin_demangle_java(const char *str) {
-	(void)str;
-	return NULL;
-}
-#endif
-
 #ifndef R_BIN_DEMANGLE_PASCAL
 R_API char *r_bin_demangle_freepascal(const char *str) {
 	(void)str;

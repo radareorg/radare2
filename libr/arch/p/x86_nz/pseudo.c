@@ -378,7 +378,7 @@ static void mk_reg_str(const char *regname, int delta, bool sign, bool att, char
 }
 
 static char *patch(RAsmPluginSession *aps, RAnalOp *aop, const char *op) {
-	const ut8 *b = aop->bytes; // core->block;
+	const ut8 *b = aop->bytes;
 	int i, size = aop->size;
 	char *hcmd = NULL;
 	const char *cmd = NULL;
