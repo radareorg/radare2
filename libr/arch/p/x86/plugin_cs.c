@@ -1280,26 +1280,62 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		esilprintf (op, "0xa,eax,=,0x756E6547,ebx,=,0x6C65746E,ecx,=,0x49656E69,edx,=");
 		break;
 	case X86_INS_SHLD:
-	case X86_INS_SHLX:
-		// TODO: SHLD is not implemented yet.
 		{
 			ut32 bitsize;
+			char *count = getarg (&gop, 2, 0, NULL, NULL);
 			src = getarg (&gop, 1, 0, NULL, NULL);
-			dst = getarg (&gop, 0, 1, "<<", &bitsize);
-			esilprintf (op, "%s,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=", src, dst, bitsize - 1);
+			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
+			dst_w = getarg (&gop, 0, 1, NULL, NULL);
+			src2 = count? shift_count (count, bitsize): NULL;
+			free (count);
+			if (src && src2 && dst_r && dst_w) {
+				// the vacated low bits come from the top of the source operand
+				esilprintf (op,
+					"%s,?{,1,%s,%d,-,%s,>>,&,cf,:=,"
+					"%s,%s,<<,%s,%d,-,%s,>>,|,%s,"
+					"$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}",
+					src2, src2, bitsize, dst_r,
+					src2, dst_r, src2, bitsize, src, dst_w,
+					bitsize - 1);
+			}
 			free (src);
-			free (dst);
+			free (src2);
+			free (dst_r);
+			free (dst_w);
+		}
+		break;
+	case X86_INS_SHLX:
+		{
+			ut32 bitsize;
+			char *count = getarg (&gop, 2, 0, NULL, NULL);
+			src = getarg (&gop, 1, 0, NULL, NULL);
+			dst_w = getarg (&gop, 0, 1, NULL, &bitsize);
+			src2 = count? shift_count (count, bitsize): NULL;
+			free (count);
+			if (src && src2 && dst_w) {
+				esilprintf (op, "%s,%s,<<,%s", src2, src, dst_w);
+			}
+			free (src);
+			free (src2);
+			free (dst_w);
 		}
 		break;
 	case X86_INS_SARX:
+	case X86_INS_SHRX:
 		{
-			dst = getarg (&gop, 0, 1, NULL, NULL);
+			ut32 bitsize;
+			char *count = getarg (&gop, 2, 0, NULL, NULL);
 			src = getarg (&gop, 1, 0, NULL, NULL);
-			src2 = getarg (&gop, 1, 0, NULL, NULL);
-			esilprintf (op, "%s,%s,ASR,%s,=", src2, src, dst);
+			dst_w = getarg (&gop, 0, 1, NULL, &bitsize);
+			src2 = count? shift_count (count, bitsize): NULL;
+			free (count);
+			if (src && src2 && dst_w) {
+				esilprintf (op, "%s,%s,%s,%s", src2, src,
+					(insn->id == X86_INS_SARX)? "ASR": ">>", dst_w);
+			}
 			free (src);
 			free (src2);
-			free (dst);
+			free (dst_w);
 		}
 		break;
 	case X86_INS_SHL:
@@ -1337,7 +1373,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		break;
 	case X86_INS_SAR:
 	case X86_INS_SHR:
-	case X86_INS_SHRX:
 		{
 			ut32 bitsize;
 			char *count = getarg (&gop, 1, 0, NULL, NULL);
@@ -1348,8 +1383,14 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			if (src && dst_r && dst_w) {
 				// x86 leaves the destination and all flags alone on a 0 count
 				const char *shop = (insn->id == X86_INS_SAR)? "ASR": ">>";
-				esilprintf (op, "%s,?{,1,%s,-,%s,>>,1,&,cf,:=,%s,%s,%s,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}",
-					src, src, dst_r, src, dst_r, shop, dst_w, bitsize - 1);
+				// of only exists for a 1-bit shift: sar clears it, shr keeps the old msb
+				char *ofx = (insn->id == X86_INS_SAR)
+					? strdup ("0")
+					: r_str_newf ("%d,%s,>>,1,&", bitsize - 1, dst_r);
+				esilprintf (op, "%s,?{,1,%s,-,%s,>>,1,&,cf,:=,1,%s,-,!,?{,%s,of,:=,},"
+					"%s,%s,%s,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}",
+					src, src, dst_r, src, ofx, src, dst_r, shop, dst_w, bitsize - 1);
+				free (ofx);
 			}
 			free (src);
 			free (dst_r);
@@ -1359,21 +1400,23 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_SHRD:
 		{
 			ut32 bitsize;
-			char shft[32];
+			char raw[32];
 			cs_x86_op operand = insn->detail->x86.operands[2];
 			if (operand.type == X86_OP_IMM) {
-				snprintf (shft, sizeof (shft), "%" PFMT64d, operand.imm);
+				snprintf (raw, sizeof (raw), "%" PFMT64d, operand.imm);
 			} else {
-				snprintf (shft, sizeof (shft), "%s", "cl");
+				snprintf (raw, sizeof (raw), "%s", "cl");
 			}
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst_r = getarg (&gop, 0, 0, NULL, NULL);
 			dst_w = getarg (&gop, 0, 1, NULL, &bitsize);
+			char *shft = shift_count (raw, bitsize);
 			esilprintf (op,  // set CF to last bit shifted out, OF if sign changes
 				"%s,?{,1,1,%s,-,%s,>>,&,cf,:=,1,%s,-,!,%s,%d,%s,>>,^,!,&,of,:=,"
 				"%s,%d,-,%s,<<,%s,%s,>>,|,1,%d,1,<<,-,&,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}",
 				shft, shft, dst_r, shft, src, bitsize-1, dst_r,
 				shft, bitsize, src, shft, dst_r, bitsize, dst_w, bitsize-1);
+			free (shft);
 			free (dst_r);
 			free (dst_w);
 			free (src);

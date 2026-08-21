@@ -176,7 +176,7 @@ EXPECT=<<EOF
   {
     "addr": 9,
     "val": 253,
-    "esil": "253,0x1f,&,?{,1,253,0x1f,&,-,ebx,>>,1,&,cf,:=,253,0x1f,&,ebx,>>,ebx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,},ebx,rbx,=",
+    "esil": "253,0x1f,&,?{,1,253,0x1f,&,-,ebx,>>,1,&,cf,:=,1,253,0x1f,&,-,!,?{,31,ebx,>>,1,&,of,:=,},253,0x1f,&,ebx,>>,ebx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,},ebx,rbx,=",
     "refptr": 0,
     "fcn_addr": 0,
     "fcn_last": 16,
@@ -457,7 +457,7 @@ EXPECT=<<EOF
     {
       "addr": 9,
       "val": 253,
-      "esil": "253,0x1f,&,?{,1,253,0x1f,&,-,ebx,>>,1,&,cf,:=,253,0x1f,&,ebx,>>,ebx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,},ebx,rbx,=",
+      "esil": "253,0x1f,&,?{,1,253,0x1f,&,-,ebx,>>,1,&,cf,:=,1,253,0x1f,&,-,!,?{,31,ebx,>>,1,&,of,:=,},253,0x1f,&,ebx,>>,ebx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,},ebx,rbx,=",
       "refptr": 0,
       "fcn_addr": 0,
       "fcn_last": 16,
