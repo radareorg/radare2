@@ -23,6 +23,30 @@ bool test_r_bin(void) {
 	mu_end;
 }
 
+static bool bin_is_jni(const char *path) {
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+	RBinFileOptions opt = {0};
+	r_bin_file_options_init (&opt, -1, 0, 0, 0);
+	bool is_jni = r_bin_open (bin, path, &opt)
+		&& bin->cur && bin->cur->bo && bin->cur->bo->info
+		&& R_VPACK_HAS (bin->cur->bo->langs, R_BIN_LANG_JNI)
+		&& bin->cur->bo->info->lang
+		&& !strcmp (bin->cur->bo->info->lang, "jni");
+	r_bin_free (bin);
+	r_io_free (io);
+	return is_jni;
+}
+
+bool test_r_bin_jni_language(void) {
+	mu_assert_true (bin_is_jni ("bins/elf/analysis/libsimplejni.so"),
+		"JNI_OnLoad identifies a JNI binary");
+	mu_assert_true (bin_is_jni ("bins/elf/jni/jniO2-arm64"),
+		"Java_ exports identify a JNI binary");
+	mu_end;
+}
+
 bool test_r_bin_languages(void) {
 	RBinInfo info = { .rclass = "mach0" };
 	RBinObject bo = { .info = &info };
@@ -473,6 +497,7 @@ bool test_r_bin_elf_pn_xnum_phdr(void) {
 
 bool all_tests(void) {
 	mu_run_test(test_r_bin);
+	mu_run_test(test_r_bin_jni_language);
 	mu_run_test(test_r_bin_languages);
 	mu_run_test(test_r_bin_pebble_resources);
 	mu_run_test(test_r_bin_le_resources);

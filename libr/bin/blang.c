@@ -30,6 +30,12 @@ static inline bool is_objc_symbol(const char *name) {
 	return name && r_str_startswith (name, "_OBJC_");
 }
 
+static inline bool is_jni_symbol(const char *name) {
+	return name && (r_str_startswith (name, "Java_")
+		|| !strcmp (name, "JNI_OnLoad")
+		|| !strcmp (name, "JNI_OnUnload"));
+}
+
 static bool is_dlang_symbol(const char *name) {
 	if (name && r_str_startswith (name, "__D")) {
 		name++;
@@ -140,6 +146,9 @@ R_IPI RBinLanguage r_bin_lang_from_symbol_name(const char *name) {
 	}
 	if (is_objc_symbol (name)) {
 		return R_BIN_LANG_OBJC;
+	}
+	if (is_jni_symbol (name)) {
+		return R_BIN_LANG_JNI;
 	}
 	if (is_dlang_symbol (name)) {
 		return R_BIN_LANG_DLANG;
@@ -257,7 +266,9 @@ static void register_library_languages(RBinFile *bf) {
 
 static RBinLanguage primary_language(RBinLanguages langs, RBinLanguage declared, RBinLanguageHints hints) {
 	RBinLanguage primary = declared;
-	if (hints.objc && primary != R_BIN_LANG_SWIFT) {
+	if (R_VPACK_HAS (langs, R_BIN_LANG_JNI)) {
+		primary = R_BIN_LANG_JNI;
+	} else if (hints.objc && primary != R_BIN_LANG_SWIFT) {
 		primary = hints.blocks? R_BIN_LANG_OBJC_BLOCKS: R_BIN_LANG_OBJC;
 	} else if (primary == R_BIN_LANG_NONE || primary == R_BIN_LANG_C
 			|| primary == R_BIN_LANG_C_BLOCKS) {
@@ -299,6 +310,7 @@ R_API RBinLanguages r_bin_load_languages(RBinFile *bf) {
 	RBinLanguage primary = primary_language (bo->langs, declared, hints);
 	r_bin_file_add_language (bf, primary);
 	if (!info->lang || !strcmp (info->lang, "?") || hints.objc
+			|| primary == R_BIN_LANG_JNI
 			|| ((declared == R_BIN_LANG_C || declared == R_BIN_LANG_C_BLOCKS)
 				&& primary != declared)) {
 		info->lang = r_bin_lang_tostring (primary);

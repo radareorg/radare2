@@ -603,11 +603,11 @@ static void ppc64v1_scan_stubs(ELFOBJ *eo, PPC64StubScan *sc, ut64 paddr, ut64 v
 	free (buf);
 }
 
-void Elf_(plt_ppc64v1_load_text_stubs)(ELFOBJ *eo) {
+void Elf_(plt_ppc64v1_load_text_stubs)(RBinFile *bf, ELFOBJ *eo) {
 	if (Elf_(plt_ppc64_abi) (eo) != 1) {
 		return;
 	}
-	Elf_(load_symbols_vec) (eo);
+	Elf_(load_symbols_vec) (bf, eo);
 	// each glink stub or plt slot identifies its reloc, and that its target
 	RBinElfSection *got = Elf_(plt_section_by_name) (eo, ".got");
 	PPC64StubScan sc = {
