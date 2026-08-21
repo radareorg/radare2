@@ -3369,73 +3369,96 @@ static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_
 	return true;
 }
 
-typedef struct {
-	ut64 next_addr;
-	bool has_next_addr;
-} RelrInfo;
-
-static bool read_relr_entry(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 entry, RelrInfo *info) {
-	R_RETURN_VAL_IF_FAIL (eo && r && info, false);
-	bool arm64 = eo->ehdr.e_machine == EM_AARCH64;
-
-	// If entry is even (LSB == 0), it's an address to relocate
-	if ((entry & 1) == 0) {
-		r->mode = DT_RELR;
-		r->offset = entry;
-		r->rva = entry;
-		r->type = arm64? R_AARCH64_RELATIVE: R_X86_64_RELATIVE;
-		r->sym = 0; // RELR relocations don't refer to symbols
-		r->addend = 0;
-		// Set next_addr to the word after the one pointed to by entry
-		info->next_addr = entry + sizeof (Elf_(Addr));
-		info->has_next_addr = true;
-		return true;
-	}
-	// It's a bitmap - only process if we have a valid next_addr
-	if (!info->has_next_addr) {
+// read one address-sized RELR word at a virtual address
+static bool relr_word(ELFOBJ *eo, ut64 vaddr, ut64 *out) {
+	ut64 paddr = Elf_(v2p) (eo, vaddr);
+	if (paddr == UT64_MAX) {
 		return false;
 	}
-	// Find first set bit in bitmap (skipping LSB which is always 1)
-	ut64 bitmap = entry >> 1;
-	int bit_pos = 0;
-	while (bitmap) {
-		if (bitmap & 1) {
-			r->mode = DT_RELR;
-			r->offset = info->next_addr + (bit_pos * sizeof (Elf_(Addr)));
-			r->rva = r->offset;
-			r->type = arm64? R_AARCH64_RELATIVE: R_X86_64_RELATIVE;
-			r->sym = 0; // RELR relocations don't refer to symbols
-			r->addend = 0;
-			return true;
-		}
-		bitmap >>= 1;
-		bit_pos++;
+	ut8 b[sizeof (Elf_(Addr))] = {0};
+	if (r_buf_read_at (eo->b, paddr, b, sizeof (b)) != (int)sizeof (b)) {
+		return false;
 	}
-	// No bits set or all processed - update next_addr for next bitmap
-	info->next_addr += (sizeof (Elf_(Addr)) * 8 - 1) * sizeof (Elf_(Addr));
-	return false;
+#if R_BIN_ELF64
+	*out = r_read_ble64 (b, eo->endian);
+#else
+	*out = (ut64) r_read_ble32 (b, eo->endian);
+#endif
+	return true;
+}
+
+// exact number of relocs a RELR table encodes: one per even (address) word plus
+// one per set bit (minus the marker) of each odd (bitmap) word
+static size_t get_num_relocs_relr_at(ELFOBJ *eo, ut64 vaddr, ut64 vsize) {
+	const int ws = sizeof (Elf_(Addr));
+	size_t count = 0;
+	ut64 off;
+	for (off = 0; off + ws <= vsize; off += ws) {
+		ut64 entry;
+		if (!relr_word (eo, vaddr + off, &entry)) {
+			break;
+		}
+		if (entry & 1) {
+			for (entry >>= 1; entry; entry >>= 1) {
+				count += entry & 1;
+			}
+		} else {
+			count++;
+		}
+	}
+	return count;
+}
+
+static size_t add_relr_reloc(ELFOBJ *eo, ut64 vaddr, int type, size_t pos) {
+	RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
+	memset (reloc, 0, sizeof (*reloc));
+	reloc->mode = DT_RELR;
+	reloc->type = type;
+	reloc->offset = vaddr;
+	reloc->rva = vaddr;
+	int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
+	ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
+	fix_rva_and_offset_exec_file (eo, reloc);
+	return pos + 1;
+}
+
+// RELR: an even entry is an address to relocate that also arms the cursor at the
+// next word; an odd entry is a bitmap whose set bits 1..N-1 relocate cursor +
+// (bit-1) words, after which the cursor advances by (N-1) words.
+static size_t populate_relr_at(ELFOBJ *eo, ut64 vaddr, ut64 vsize, size_t pos, size_t num_relocs) {
+	const int ws = sizeof (Elf_(Addr));
+	const int type = eo->ehdr.e_machine == EM_AARCH64? R_AARCH64_RELATIVE: R_X86_64_RELATIVE;
+	ut64 cursor = 0;
+	bool armed = false;
+	ut64 off;
+	for (off = 0; off + ws <= vsize && pos < num_relocs; off += ws) {
+		ut64 entry;
+		if (!relr_word (eo, vaddr + off, &entry)) {
+			break;
+		}
+		if (!(entry & 1)) {
+			pos = add_relr_reloc (eo, entry, type, pos);
+			cursor = entry + ws;
+			armed = true;
+			continue;
+		}
+		if (!armed) {
+			// a bitmap with no preceding address word can't be placed
+			continue;
+		}
+		int bit;
+		for (bit = 1; bit < ws * 8 && pos < num_relocs; bit++) {
+			if (entry & (1ULL << bit)) {
+				pos = add_relr_reloc (eo, cursor + (ut64)(bit - 1) * ws, type, pos);
+			}
+		}
+		cursor += (ut64)(ws * 8 - 1) * ws;
+	}
+	return pos;
 }
 
 static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 vaddr) {
-	static RelrInfo relr_info = {0};
-	// Handle RELR entries
-	if (rel_mode == DT_RELR) {
-		ut64 offset = Elf_(v2p) (eo, vaddr);
-		if (offset == UT64_MAX) {
-			return false;
-		}
-		ut8 buf[sizeof (Elf_(Addr))] = {0};
-		int res = r_buf_read_at (eo->b, offset, buf, sizeof (Elf_(Addr)));
-		if (res != sizeof (Elf_(Addr))) {
-			return false;
-		}
-#if R_BIN_ELF64
-		ut64 entry = r_read_ble64 (buf, eo->endian);
-#else
-		ut64 entry = (ut64)r_read_ble32 (buf, eo->endian);
-#endif
-		return read_relr_entry (eo, r, vaddr, entry, &relr_info);
-	}
+	// RELR is fully expanded by populate_relr_at, not one entry at a time
 	// Handle CREL entries differently
 	if (rel_mode == DT_CREL) {
 		ut64 next_offset = 0;
@@ -3505,15 +3528,10 @@ static size_t get_num_relocs_dynamic(ELFOBJ *eo) {
 	if (di->dt_relent) {
 		res += di->dt_relsz / di->dt_relent;
 	}
-	// Add RELR relocations count estimation
-	// Each RELR entry is the size of an address, but bitmap entries can encode multiple relocations
-	// So we use a conservative estimate of the number of relocations
-	if (di->dt_relrent && di->dt_relrsz) {
-		// Estimate the number of relocations - in worst case, each entry is just a single relocation
-		res += di->dt_relrsz / di->dt_relrent;
-	} else if (di->dt_relrsz) {
-		// If relrent is not set, assume it's the size of an address
-		res += di->dt_relrsz / sizeof (Elf_(Addr));
+	// RELR bitmap words each encode up to wordsize*8-1 relocations, so scan the
+	// table for the exact count instead of assuming one reloc per entry
+	if (di->dt_relr != R_BIN_ELF_ADDR_MAX && di->dt_relrsz) {
+		res += get_num_relocs_relr_at (eo, di->dt_relr, di->dt_relrsz);
 	}
 	return res + get_num_relocs_dynamic_plt (eo) + get_num_relocs_mips_got (eo);
 }
@@ -3566,6 +3584,12 @@ static size_t get_num_relocs_sections(ELFOBJ *eo) {
 			continue;
 		}
 
+		if (rel_mode == DT_RELR) {
+			// bitmap words expand to many relocs, so count them exactly
+			ret += get_num_relocs_relr_at (eo, section->rva, section->size);
+			i++;
+			continue;
+		}
 		size_t size = get_size_rel_mode (rel_mode);
 		if (size > 0) {
 			ret += NUMENTRIES_ROUNDUP (section->size, size);
@@ -3708,22 +3732,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	}
 	// parse relr - Relative relocations
 	if (di->dt_relr != R_BIN_ELF_ADDR_MAX) {
-		offset = 0;
-		while (offset < di->dt_relrsz && pos < num_relocs) {
-			RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
-			if (!read_reloc (eo, reloc, DT_RELR, di->dt_relr + offset)) {
-				// If read_reloc fails for RELR, it might be processing a bitmap entry
-				// Try the next entry
-				RVecRBinElfReloc_pop_back (&eo->g_relocs);
-				offset += sizeof (Elf_(Addr));
-				continue;
-			}
-			int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
-			ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
-			fix_rva_and_offset_exec_file (eo, reloc);
-			pos++;
-			offset += sizeof (Elf_(Addr));
-		}
+		pos = populate_relr_at (eo, di->dt_relr, di->dt_relrsz, pos, num_relocs);
 	}
 	// parse rela
 	for (offset = 0; offset < di->dt_relasz && pos < num_relocs; offset += di->dt_relaent, pos++) {
@@ -3877,6 +3886,19 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 			continue;
 		}
 
+		// RELR bitmaps expand to many relocs; skip sections already covered by
+		// the dynamic dt_relr pass, otherwise expand them here
+		if (rel_mode == DT_RELR) {
+			const RBinElfDynamicInfo *di = &eo->dyn_info;
+			bool aliases_dynamic = di->dt_relr != R_BIN_ELF_ADDR_MAX
+				&& section->rva >= di->dt_relr
+				&& section->rva < di->dt_relr + di->dt_relrsz;
+			if (!aliases_dynamic) {
+				pos = populate_relr_at (eo, section->rva, section->size, pos, num_relocs);
+			}
+			i++;
+			continue;
+		}
 		// Handle CREL sections differently since they use variable-length encoding
 		if (rel_mode == DT_CREL) {
 			ut64 next_offset = 0;

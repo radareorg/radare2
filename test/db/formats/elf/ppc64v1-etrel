@@ -160,7 +160,7 @@ NAME=aarch64 ET_DYN (regression): reloc count unchanged by ET_REL gating
 FILE=bins/elf/ls-toybox
 CMDS=ir~?
 EXPECT=<<EOF
-384
+2124
 EOF
 RUN
 
