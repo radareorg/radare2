@@ -440,8 +440,12 @@ static void cmd_sf(RCore *core, const char *input) {
 	const char *sp = strchr (input, ' ');
 	RAnalFunction *fcn = NULL;
 	if (sp) {
-		ut64 naddr = r_num_math (core->num, sp + 1);
-		// TODO: check for rnum errors and break early
+		const char *err = NULL;
+		ut64 naddr = r_num_math_err (core->num, sp + 1, &err);
+		if (err) {
+			R_LOG_ERROR ("Invalid address: %s", err);
+			return;
+		}
 		fcn = r_anal_get_fcn_in (core->anal, naddr, 0);
 		// TODO: check if function doesnt exist maybe?
 	}
@@ -455,8 +459,12 @@ static void cmd_sf(RCore *core, const char *input) {
 		break;
 	case 'x': // "sf0"
 		if (input[2] == 'x') {
-			ut64 naddr = r_num_math (core->num, input + 1);
-			// TODO: check for rnum errors and break early
+			const char *err = NULL;
+			ut64 naddr = r_num_math_err (core->num, input + 1, &err);
+			if (err) {
+				R_LOG_ERROR ("Invalid address: %s", err);
+				return;
+			}
 			fcn = r_anal_get_fcn_in (core->anal, naddr, 0);
 			if (fcn) {
 				r_core_seek (core, fcn->addr, true);
@@ -469,8 +477,12 @@ static void cmd_sf(RCore *core, const char *input) {
 		break;
 	case ' ': // "sf "
 		if (input[2] == '0') {
-			ut64 naddr = r_num_math (core->num, input + 2);
-			// TODO: check for rnum errors and break early
+			const char *err = NULL;
+			ut64 naddr = r_num_math_err (core->num, input + 2, &err);
+			if (err) {
+				R_LOG_ERROR ("Invalid address: %s", err);
+				return;
+			}
 			fcn = r_anal_get_fcn_in (core->anal, naddr, 0);
 		} else {
 			fcn = r_anal_get_function_byname (core->anal, input + 2);
@@ -740,8 +752,9 @@ static int cmd_seek(void *data, const char *input) {
 	case ' ': // "s "
 	{
 		const char *trimin = r_str_trim_head_ro (input);
-		ut64 addr = r_num_math (core->num, trimin);
-		if (core->num->nc.errors) { // TODO expose an api for this char *r_num_failed();
+		const char *err = NULL;
+		ut64 addr = r_num_math_err (core->num, trimin, &err);
+		if (err) {
 			if (core->cons->context->is_interactive) {
 				R_LOG_ERROR ("Cannot seek to unknown address '%s'", trimin);
 			}
