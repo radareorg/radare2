@@ -226,3 +226,90 @@ EXPECT=<<EOF
 0x7fffffff
 EOF
 RUN
+
+NAME=mips64 ldl and ldr merge the addressed bytes into the register
+FILE=malloc://0x200
+ARGS=-a mips -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+ar > /dev/null
+wx 1122334455667788 @ 8
+aei
+aeim
+s 0x20
+ar t3=8
+wx 69680001 @ 0x20
+ar t0=0xa1a2a3a4a5a6a7a8
+ar pc=0x20
+aes
+ar t0
+wx 6d680001 @ 0x20
+ar t0=0xa1a2a3a4a5a6a7a8
+ar pc=0x20
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x22334455667788a8
+0xa1a2a3a4a5a61122
+EOF
+RUN
+
+NAME=mips64 sdl and sdr write only the addressed bytes
+FILE=malloc://0x200
+ARGS=-a mips -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+ar > /dev/null
+aei
+aeim
+s 0x20
+ar t3=8
+ar t1=0xf1f2f3f4f5f6f7f8
+wx 1122334455667788 @ 8
+wx b1690001 @ 0x20
+ar pc=0x20
+aes
+p8 8 @ 8
+wx 1122334455667788 @ 8
+wx b5690001 @ 0x20
+ar pc=0x20
+aes
+p8 8 @ 8
+EOF
+EXPECT=<<EOF
+11f1f2f3f4f5f6f7
+f7f8334455667788
+EOF
+RUN
+
+NAME=mips64 lwl and lwr sign-extend the merged word
+FILE=malloc://0x200
+ARGS=-a mips -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+ar > /dev/null
+wx 80223344 @ 4
+aei
+aeim
+s 0x20
+ar t3=4
+wx 89680000 @ 0x20
+ar t0=0xa1a2a3a4a5a6a7a8
+ar pc=0x20
+aes
+ar t0
+wx 99680003 @ 0x20
+ar t0=0xa1a2a3a4a5a6a7a8
+ar pc=0x20
+aes
+ar t0
+wx 89680002 @ 0x20
+ar t0=0xa1a2a3a4a5a6a7a8
+ar pc=0x20
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0xffffffff80223344
+0xffffffff80223344
+0x3344a7a8
+EOF
+RUN
