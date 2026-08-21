@@ -355,6 +355,65 @@ static void zext_prefix(struct Getarg *gop, const char *reg, char *out, size_t s
 	}
 }
 
+// the implicit operands of the one-operand mul, imul, div and idiv
+static void muldiv_regs(int width, const char **quot, const char **rema) {
+	*quot = (width == 1)? "al": (width == 2)? "ax": (width == 4)? "eax": "rax";
+	*rema = (width == 1)? "ah": (width == 2)? "dx": (width == 4)? "edx": "rdx";
+}
+
+// the byte form divides ax alone, the wider ones the rema:quot pair
+static char *muldiv_dividend(int width, const char *quot, const char *rema, bool sign) {
+	char *num = (width == 1)
+		? strdup ("ax")
+		: r_str_newf ("%d,%s,<<,%s,+", width * 8, rema, quot);
+	if (sign && width < 4) {
+		// the dividend is signed at twice the operand width
+		char *snum = r_str_newf ("%d,%s,~", width * 16, num);
+		free (num);
+		return snum;
+	}
+	return num;
+}
+
+// counts the set bits of a register in place, by the usual halving sums
+static void popcnt_esil(RStrBuf *sb, const char *reg, int bits) {
+	const int sh = 64 - bits;
+	const ut64 m1 = 0x5555555555555555ULL >> sh;
+	const ut64 m2 = 0x3333333333333333ULL >> sh;
+	const ut64 m4 = 0x0f0f0f0f0f0f0f0fULL >> sh;
+	const ut64 m8 = 0x0101010101010101ULL >> sh;
+	r_strbuf_appendf (sb, ",1,%s,>>,0x%"PFMT64x",&,%s,-,%s,=", reg, m1, reg, reg);
+	r_strbuf_appendf (sb, ",0x%"PFMT64x",%s,&,2,%s,>>,0x%"PFMT64x",&,+,%s,=",
+		m2, reg, reg, m2, reg);
+	r_strbuf_appendf (sb, ",4,%s,>>,%s,+,0x%"PFMT64x",&,%s,=", reg, reg, m4, reg);
+	// the byte sums land in the top byte, which can carry out of bits
+	r_strbuf_appendf (sb, ",%d,0x%"PFMT64x",%s,*,>>,0x7f,&,%s,=",
+		bits - 8, m8, reg, reg);
+}
+
+// esil for the byte-reversed value of an expression of the given byte width
+static char *byteswap_expr(const char *v, int bytes) {
+	RStrBuf *sb = r_strbuf_new ("");
+	int i;
+	for (i = 0; i < bytes; i++) {
+		const int shr = 8 * i;
+		const int shl = 8 * (bytes - 1 - i);
+		if (i) {
+			r_strbuf_append (sb, ",");
+		}
+		if (shl) {
+			r_strbuf_appendf (sb, "%d,", shl);
+		}
+		if (shr) {
+			r_strbuf_appendf (sb, "%d,%s,>>,0xff,&", shr, v);
+		} else {
+			r_strbuf_appendf (sb, "0xff,%s,&", v);
+		}
+		r_strbuf_appendf (sb, "%s%s", shl? ",<<": "", i? ",|": "");
+	}
+	return r_strbuf_drain (sb);
+}
+
 static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsize) {
 	const char *setarg = r_str_get (setop);
 	cs_insn *insn = gop->insn;
@@ -1093,7 +1152,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_MOVHPS:
 	case X86_INS_MOVLPD:
 	case X86_INS_MOVLPS:
-	case X86_INS_MOVBE:
 	case X86_INS_MOVSX:
 	case X86_INS_MOVSXD:
 	case X86_INS_MOVQ:
@@ -2039,20 +2097,74 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			dst = getarg (&gop, 0, 0, NULL, NULL);
 			zext_opnd (&gop, 0);
-			if (INSOP(0).size == 4) {
-				esilprintf (op, "0xff000000,24,%s,NUM,<<,&,24,%s,NUM,>>,|,"
-						"8,0x00ff0000,%s,NUM,&,>>,|,"
-						"8,0x0000ff00,%s,NUM,&,<<,|,"
-						"%s,=", dst, dst, dst, dst, dst);
-			} else {
-				esilprintf (op, "0xff00000000000000,56,%s,NUM,<<,&,"
-						"56,%s,NUM,>>,|,40,0xff000000000000,%s,NUM,&,>>,|,"
-						"40,0xff00,%s,NUM,&,<<,|,24,0xff0000000000,%s,NUM,&,>>,|,"
-						"24,0xff0000,%s,NUM,&,<<,|,8,0xff00000000,%s,NUM,&,>>,|,"
-						"8,0xff000000,%s,NUM,&,<<,|,"
-						"%s,=", dst, dst, dst, dst, dst, dst, dst, dst, dst);
-			}
+			char *sw = byteswap_expr (dst, (INSOP (0).size == 4)? 4: 8);
+			esilprintf (op, "%s,%s,=", sw, dst);
+			free (sw);
 			R_FREE (dst);
+		}
+		break;
+	case X86_INS_POPCNT:
+	case X86_INS_LZCNT:
+	case X86_INS_TZCNT:
+		{
+			const int dst_idx = norm_op (0, gop.syntax, INSOPS);
+			const char *reg = (INSOP (dst_idx).type == X86_OP_REG)
+				? cs_reg_name (handle, INSOP (dst_idx).reg): NULL;
+			src = getarg (&gop, 1, 0, NULL, NULL);
+			if (reg && src) {
+				const int id = insn->id;
+				const int bits = INSOP (dst_idx).size * 8;
+				RStrBuf *sb = r_strbuf_new ("");
+				zext_reg (&gop, reg);
+				r_strbuf_appendf (sb, "%s,%s,=", src, reg);
+				if (id != X86_INS_POPCNT) {
+					r_strbuf_appendf (sb, ",%s,!,cf,:=", reg);
+				}
+				if (id == X86_INS_TZCNT) {
+					// tzcnt = popcount(~x & (x - 1))
+					r_strbuf_appendf (sb, ",0x%"PFMT64x",%s,^,1,%s,-,&,%s,=",
+						UT64_MAX >> (64 - bits), reg, reg, reg);
+				} else if (id == X86_INS_LZCNT) {
+					int i;
+					// smear: one bit per non-leading zero
+					for (i = 1; i < bits; i *= 2) {
+						r_strbuf_appendf (sb, ",%d,%s,>>,%s,|,%s,=", i, reg, reg, reg);
+					}
+				}
+				popcnt_esil (sb, reg, bits);
+				if (id == X86_INS_LZCNT) {
+					r_strbuf_appendf (sb, ",%s,%d,-,%s,=", reg, bits, reg);
+				} else if (id == X86_INS_POPCNT) {
+					r_strbuf_append (sb, ",0,cf,:=,0,of,:=,0,sf,:=,0,af,:=,0,pf,:=");
+				}
+				r_strbuf_appendf (sb, ",%s,!,zf,:=", reg);
+				esilprintf (op, "%s", r_strbuf_get (sb));
+				r_strbuf_free (sb);
+			}
+			free (src);
+		}
+		break;
+	case X86_INS_MOVBE:
+		{
+			const int dst_idx = norm_op (0, gop.syntax, INSOPS);
+			const int src_idx = norm_op (1, gop.syntax, INSOPS);
+			src = getarg (&gop, 1, 0, NULL, NULL);
+			dst = getarg (&gop, 0, 1, NULL, NULL);
+			if (src && dst) {
+				// swapping in place reads memory once
+				const bool to_reg = INSOP (dst_idx).type == X86_OP_REG;
+				const char *val = to_reg
+					? cs_reg_name (handle, INSOP (dst_idx).reg): src;
+				char *sw = byteswap_expr (val, INSOP (src_idx).size);
+				if (to_reg) {
+					esilprintf (op, "%s,%s,%s,%s", src, dst, sw, dst);
+				} else {
+					esilprintf (op, "%s,%s", sw, dst);
+				}
+				free (sw);
+			}
+			free (src);
+			free (dst);
 		}
 		break;
 	case X86_INS_OR:
@@ -2249,26 +2361,17 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			// IDIV does not change flags
 			op->sign = true;
 			if (!arg2 && !arg1) {
-				// TODO: IDIV rbx not implemented. this is just a workaround
-				//
-				// https://www.tptp.cc/mirrors/siyobik.info/instruction/IDIV.html
-				// Divides (signed) the value in the AX, DX:AX, or EDX:EAX registers (dividend) by the source operand (divisor) and stores the result in the AX (AH:AL), DX:AX, or EDX:EAX registers. The source operand can be a general-purpose register or a memory location. The action of this instruction depends on the operand size (dividend/divisor), as shown in the following table:
-				// IDIV RBX    ==   RDX:RAX /= RBX
-
-				//
+				// TODO: 64-bit idiv needs a 128-bit dividend
 				if (arg0) {
 					int width = INSOP(0).size;
-					const char *r_quot = (width == 1)?"al": (width == 2)?"ax": (width == 4)?"eax":"rax";
-					const char *r_rema = (width == 1)?"ah": (width == 2)?"dx": (width == 4)?"edx":"rdx";
-					const char *r_nume = (width == 1)?"ax": r_quot;
-
+					const char *r_quot, *r_rema;
+					muldiv_regs (width, &r_quot, &r_rema);
+					char *num = muldiv_dividend (width, r_quot, r_rema, true);
 					zext_reg (&gop, r_quot);
 					zext_reg (&gop, r_rema);
-					esilprintf (op, "%d,%s,~,%d,%s,<<,%s,+,~%%,%d,%s,~,%d,%s,<<,%s,+,~/,%s,=,%s,=",
-							width*8, arg0, width*8, r_rema, r_nume, width*8, arg0, width*8, r_rema, r_nume, r_quot, r_rema);
-				}
-				else {
-					/* should never happen */
+					esilprintf (op, "%d,%s,~,%s,~%%,%d,%s,~,%s,~/,%s,=,%s,=",
+							width*8, arg0, num, width*8, arg0, num, r_quot, r_rema);
+					free (num);
 				}
 			} else {
 				// does this instruction even exist?
@@ -2282,17 +2385,18 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		break;
 	case X86_INS_DIV:
 		{
+			// DIV does not change flags and is unsigned
+			// TODO: 64-bit div needs a 128-bit dividend, so rdx is ignored there
 			int width = INSOP(0).size;
 			dst = getarg (&gop, 0, 0, NULL, NULL);
-			const char *r_quot = (width == 1)?"al": (width == 2)?"ax": (width == 4)?"eax":"rax";
-			const char *r_rema = (width == 1)?"ah": (width == 2)?"dx": (width == 4)?"edx":"rdx";
-			const char *r_nume = (width == 1)?"ax": r_quot;
-			// DIV does not change flags and is unsigned
-
+			const char *r_quot, *r_rema;
+			muldiv_regs (width, &r_quot, &r_rema);
+			char *num = muldiv_dividend (width, r_quot, r_rema, false);
 			zext_reg (&gop, r_quot);
 			zext_reg (&gop, r_rema);
-			esilprintf (op, "%s,%d,%s,<<,%s,+,%%,%s,%d,%s,<<,%s,+,/,%s,=,%s,=",
-					dst, width*8, r_rema, r_nume, dst, width*8, r_rema, r_nume, r_quot, r_rema);
+			esilprintf (op, "%s,%s,%%,%s,%s,/,%s,=,%s,=",
+					dst, num, dst, num, r_quot, r_rema);
+			free (num);
 			free (dst);
 		}
 		break;
@@ -2312,21 +2416,19 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				zext_opnd (&gop, 0);
 				esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,%s,=,%d,%s,~,-,!,!,DUP,cf,:=,of,:=",
 					width*8, multiplier, width*8, arg1, arg0, width*8, arg0);
-			} else {
-				if (arg0) {
-					const char *r_quot = (width == 1)?"al": (width==2)?"ax": (width==4)?"eax":"rax";
-					const char *r_rema = (width == 1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
-					const char *r_nume = (width == 1)?"ax": r_quot;
-
-					zext_reg (&gop, r_nume);
-					zext_reg (&gop, r_rema);
-					if (width == 8) { // TODO still needs to be fixed to handle correct signed 128 bit value
-						esilprintf (op, "%s,%s,L*,%s,=,DUP,%s,=,!,!,DUP,cf,:=,of,:=", // flags will be sometimes wrong
-								arg0, r_nume, r_nume, r_rema);
-					} else {
-						esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,DUP,%s,=,%d,SWAP,>>,%s,=,%d,%s,~,-,!,!,DUP,cf,:=,of,:=",
-								width*8, arg0, width*8, r_nume, r_nume, width*8, r_rema, width*8, r_nume);
-					}
+			} else if (arg0) {
+				const char *r_quot, *r_rema;
+				muldiv_regs (width, &r_quot, &r_rema);
+				zext_reg (&gop, r_quot);
+				zext_reg (&gop, r_rema);
+				if (width == 8) {
+					// L* is unsigned, so fix the high half; the source is
+					// staged in rema first, to read a memory one once
+					esilprintf (op, "%s,%s,=,63,%s,>>,%s,*,63,%s,>>,%s,*,+,%s,%s,L*,%s,=,-,DUP,%s,=,63,%s,>>,0,-,^,!,!,DUP,cf,:=,of,:=",
+							arg0, r_rema, r_quot, r_rema, r_rema, r_quot, r_rema, r_quot, r_quot, r_rema, r_quot);
+				} else {
+					esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,DUP,%s,=,%d,SWAP,>>,%s,=,%d,%s,~,-,!,!,DUP,cf,:=,of,:=",
+							width*8, arg0, width*8, r_quot, r_quot, width*8, r_rema, width*8, r_quot);
 				}
 			}
 			free (arg0);
@@ -2338,19 +2440,18 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			src = getarg (&gop, 0, 0, NULL, NULL);
 			if (src) {
+				// mul multiplies al, not ax, at a byte width
 				int width = INSOP(0).size;
-				const char *r_quot = (width == 1)?"al": (width == 2)?"ax": (width == 4)?"eax":"rax";
-				const char *r_rema = (width == 1)?"ah": (width == 2)?"dx": (width == 4)?"edx":"rdx";
-				const char *r_nume = (width == 1)?"ax": r_quot;
-
-				zext_reg (&gop, r_nume);
+				const char *r_quot, *r_rema;
+				muldiv_regs (width, &r_quot, &r_rema);
+				zext_reg (&gop, r_quot);
 				zext_reg (&gop, r_rema);
-				if (width == 8 ) {
+				if (width == 8) {
 					esilprintf (op, "%s,%s,L*,%s,=,DUP,%s,=,!,!,DUP,cf,:=,of,:=",
-							src, r_nume, r_nume, r_rema);
+							src, r_quot, r_quot, r_rema);
 				} else {
 					esilprintf (op, "%s,%s,*,DUP,%s,=,%d,SWAP,>>,DUP,%s,=,!,!,DUP,cf,:=,of,:=",
-							src, r_nume, r_nume, width*8, r_rema); // this should be ok for width == 1 also
+							src, r_quot, r_quot, width*8, r_rema);
 				}
 				free (src);
 			}

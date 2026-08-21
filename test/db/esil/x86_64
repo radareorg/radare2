@@ -39,7 +39,7 @@ e asm.bits=64
 EOF
 EXPECT=<<EOF
 imul r9
-0x00000000 r9,rax,L*,rax,=,DUP,rdx,=,!,!,DUP,cf,:=,of,:=
+0x00000000 r9,rdx,=,63,rax,>>,rdx,*,63,rdx,>>,rax,*,+,rdx,rax,L*,rax,=,-,DUP,rdx,=,63,rax,>>,0,-,^,!,!,DUP,cf,:=,of,:=
 EOF
 RUN
 
@@ -1615,5 +1615,292 @@ EXPECT=<<EOF
 0x4cd55dc2
 0x00000001
 0x00000000
+EOF
+RUN
+
+NAME=byte mul div and idiv use al and ax, not the whole eax
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx f6e1
+aei
+ar rax=0x112233ff
+ar rcx=0x99aabbff
+s 0
+aeip
+aes
+ar ax
+ar cf
+wx f6f1
+ar rax=0x112233ff
+s 0
+aeip
+aes
+ar al
+ar ah
+wx f6f9
+ar rax=0x1122fff9
+ar rcx=0x99aabb02
+s 0
+aeip
+aes
+ar al
+ar ah
+EOF
+EXPECT=<<EOF
+0x0000fe01
+0x00000001
+0x00000034
+0x00000033
+0x000000fd
+0x000000ff
+EOF
+RUN
+
+NAME=idiv sign-extends the dx:ax dividend
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 66f7f9
+aei
+ar rax=0x1122fff9
+ar rdx=0x9999ffff
+ar rcx=0x77770002
+s 0
+aeip
+aes
+ar ax
+ar dx
+EOF
+EXPECT=<<EOF
+0x0000fffd
+0x0000ffff
+EOF
+RUN
+
+NAME=imul multiplies the whole signed product at 64 bits
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 48f7e9
+aei
+ar rax=-1
+ar rcx=2
+s 0
+aeip
+aes
+ar rdx
+ar rax
+ar cf
+ar rax=0x8000000000000000
+ar rcx=2
+s 0
+aeip
+aes
+ar rdx
+ar rax
+ar cf
+EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+0xfffffffffffffffe
+0x00000000
+0xffffffffffffffff
+0x00000000
+0x00000001
+EOF
+RUN
+
+NAME=movbe swaps the bytes it loads and stores
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 1122334455667788 @ 0x40
+aei
+aeim
+ar rsi=0x40
+wx 480f38f00e @ 0
+s 0
+aeip
+aes
+ar rcx
+wx 660f38f00e @ 0
+ar rcx=0xaabbccdd
+s 0
+aeip
+aes
+ar rcx
+wx 480f38f10e @ 0
+wx a5a5a5a5a5a5a5a5 @ 0x40
+ar rcx=0x1122334455667788
+s 0
+aeip
+aes
+p8 8 @ 0x40
+EOF
+EXPECT=<<EOF
+0x1122334455667788
+0xaabb1122
+1122334455667788
+EOF
+RUN
+
+NAME=popcnt lzcnt and tzcnt count bits and flag a zero source
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx f30fb8c8
+aei
+ar rax=0x80000100
+s 0
+aeip
+aes
+ar rcx
+ar zf
+wx f30fbdc8
+s 0
+aeip
+aes
+ar rcx
+wx f30fbcc8
+s 0
+aeip
+aes
+ar rcx
+ar cf
+ar rax=0
+s 0
+aeip
+aes
+ar rcx
+ar cf
+wx f30fb8c8
+ar rax=0
+s 0
+aeip
+aes
+ar rcx
+ar zf
+EOF
+EXPECT=<<EOF
+0x00000002
+0x00000000
+0x00000000
+0x00000008
+0x00000000
+0x00000020
+0x00000001
+0x00000000
+0x00000001
+EOF
+RUN
+
+NAME=att syntax keeps the popcnt and movbe operand order
+FILE=malloc://0x200
+ARGS=-a x86 -b 64 -e asm.syntax=att
+CMDS=<<EOF
+wx f30fb8c3
+aei
+ar rax=0
+ar rbx=0x80000100
+s 0
+aeip
+aes
+ar rax
+wx 1122334455667788 @ 0x40
+aeim
+ar rsi=0x40
+wx 0f38f006 @ 0
+s 0
+aeip
+aes
+ar rax
+EOF
+EXPECT=<<EOF
+0x00000002
+0x11223344
+EOF
+RUN
+
+NAME=the 64-bit imul reads a memory source once
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 48f72e
+ao 1~esilcost
+wx 0102030405060708 @ 0x40
+aei
+aeim
+ar rsi=0x40
+ar rax=-2
+s 0
+aeip
+aes
+ar rdx
+ar rax
+EOF
+EXPECT=<<EOF
+esilcost: 8
+0xffffffffffffffff
+0xeff1f3f5f7f9fbfe
+EOF
+RUN
+
+NAME=popcnt lzcnt and tzcnt at the other operand widths
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx f3480fb8c8
+aei
+ar rax=0x8000000000000100
+ar rcx=0
+s 0
+aeip
+aes
+ar rcx
+wx f3480fbdc8
+s 0
+aeip
+aes
+ar rcx
+wx f3480fbcc8
+s 0
+aeip
+aes
+ar rcx
+wx 66f30fb8c8
+ar rax=0x11228100
+ar rcx=0x99aabbcc
+s 0
+aeip
+aes
+ar rcx
+EOF
+EXPECT=<<EOF
+0x00000002
+0x00000000
+0x00000008
+0x99aa0002
+EOF
+RUN
+
+NAME=unsigned div composes the dx:ax dividend
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 66f7f1
+aei
+ar rax=0x11220010
+ar rdx=0x99990001
+ar rcx=0x77770003
+s 0
+aeip
+aes
+ar ax
+ar dx
+EOF
+EXPECT=<<EOF
+0x0000555a
+0x00000002
 EOF
 RUN
