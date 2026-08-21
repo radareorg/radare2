@@ -34,18 +34,11 @@ static RCmdResult block_help(RCmdContext *ctx) {
 		exact = false;
 	} else if (len == 2) {
 		switch (r_strs_at (ctx->subcmd, 0)) {
-		case 'f':
-			match = "bf";
-			break;
-		case 'g':
-			match = "bg";
-			break;
-		case 'm':
-			match = "bm";
-			break;
+		case 'f': match = "bf"; break;
+		case 'g': match = "bg"; break;
+		case 'm': match = "bm"; break;
 		default:
 			match = mode == 'j'? "bj": mode == '*'? "b*": NULL;
-			break;
 		}
 	}
 	if (!match || !r_cons_cmd_help_match (ctx->cons, help_msg_b, match, 0, exact)) {
