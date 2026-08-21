@@ -1546,3 +1546,74 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=a rotate flags itself from the pre-write operand and its own width
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx d3c1
+ar rcx=0x80000001
+ar cf=0
+ar of=0
+aes
+ar rcx
+ar cf
+ar of
+wx 84 @ 0x20
+s 0
+wx d006
+ar rsi=0x20
+ar cf=0
+ar of=0
+ar rip=0
+aes
+pv1 @ 0x20
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0x00000003
+0x00000001
+0x00000001
+0x09
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=a single-bit shld or shrd reports the sign change in of
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 0fa4c101
+ar rcx=0x99aabb84
+ar rax=0x9abcdef0
+ar of=0
+aes
+ar rcx
+ar of
+ar cf
+wx 0facc101
+ar rcx=0x99aabb84
+ar rax=0x9abcdef0
+ar of=0
+ar rip=0
+s 0
+aes
+ar rcx
+ar of
+ar cf
+EOF
+EXPECT=<<EOF
+0x33557709
+0x00000001
+0x00000001
+0x4cd55dc2
+0x00000001
+0x00000000
+EOF
+RUN

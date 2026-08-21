@@ -304,16 +304,10 @@ static char *shift_count(const char *src, ut32 bitsize) {
 	return r_str_newf ("%s,0x%x,&", src, (bitsize > 32)? 0x3f: 0x1f);
 }
 
-/* rcl and rcr rotate the operand together with cf, so a byte rotates through 9
- * bits and a word through 17: the masked count is reduced modulo that width. */
-static char *rotate_count(const char *src, ut32 bitsize) {
-	char *masked = shift_count (src, bitsize);
-	if (masked && bitsize < 32) {
-		char *wrapped = r_str_newf ("%d,%s,%%", bitsize + 1, masked);
-		free (masked);
-		return wrapped;
-	}
-	return masked;
+// a rotate wraps at the operand width, and at one more for rcl/rcr because cf
+// joins the rotation. only 8 and 16 bit operands can outrun their own modulus.
+static char *wrap_count(const char *masked, ut32 bitsize, ut32 modulus) {
+	return (bitsize < 32)? r_str_newf ("%d,%s,%%", modulus, masked): strdup (masked);
 }
 
 static inline bool get64from32(const char *s, char *out, size_t outsz) {
@@ -1187,88 +1181,68 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		}
 		break;
 	case X86_INS_ROL:
-		{
-			ut32 bitsize;
-			char *count = getarg (&gop, 1, 0, NULL, NULL);
-			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
-			dst_w = getarg (&gop, 0, 1, NULL, NULL);
-			src = count? shift_count (count, bitsize): NULL;
-			free (count);
-			if (src && dst_r && dst_w) {
-				// cf takes the bit that wrapped round; of exists only for a 1-bit rotate
-				esilprintf (op,
-					"%s,?{,%s,%s,ROL,%s,1,%s,&,cf,:=,"
-					"1,%s,-,!,?{,%d,%s,>>,1,&,cf,^,of,:=,},}",
-					src, src, dst_r, dst_w, dst_r,
-					src, bitsize - 1, dst_r);
-			}
-			free (src);
-			free (dst_r);
-			free (dst_w);
-		}
-		break;
 	case X86_INS_ROR:
-		{
-			ut32 bitsize;
-			char *count = getarg (&gop, 1, 0, NULL, NULL);
-			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
-			dst_w = getarg (&gop, 0, 1, NULL, NULL);
-			src = count? shift_count (count, bitsize): NULL;
-			free (count);
-			if (src && dst_r && dst_w) {
-				// of is the xor of the two top result bits, again only at a count of 1
-				esilprintf (op,
-					"%s,?{,%s,%s,ROR,%s,%d,%s,>>,1,&,cf,:=,"
-					"1,%s,-,!,?{,%d,%s,>>,1,&,%d,%s,>>,1,&,^,of,:=,},}",
-					src, src, dst_r, dst_w, bitsize - 1, dst_r,
-					src, bitsize - 1, dst_r, bitsize - 2, dst_r);
-			}
-			free (src);
-			free (dst_r);
-			free (dst_w);
-		}
-		break;
 	case X86_INS_RCL:
-		{
-			ut32 bitsize;
-			char *count = getarg (&gop, 1, 0, NULL, NULL);
-			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
-			dst_w = getarg (&gop, 0, 1, NULL, NULL);
-			src = count? rotate_count (count, bitsize): NULL;
-			free (count);
-			if (src && dst_r && dst_w) {
-				// the wrap-around term is split in two shifts: a single one would be
-				// `dst >> (bitsize + 1 - n)`, which esil clamps at 63 and gets wrong
-				esilprintf (op,
-					"%s,?{,%s,%s,<<,1,%s,-,cf,<<,|,1,%s,%d,-,%s,>>,>>,|,"
-					"1,%s,%d,-,%s,>>,&,cf,:=,%s,"
-					"1,%s,-,!,?{,%d,%s,>>,1,&,cf,^,of,:=,},}",
-					src, src, dst_r, src, src, bitsize, dst_r,
-					src, bitsize, dst_r, dst_w,
-					src, bitsize - 1, dst_r);
-			}
-			free (src);
-			free (dst_r);
-			free (dst_w);
-		}
-		break;
 	case X86_INS_RCR:
 		{
+			const bool thru_cf = insn->id == X86_INS_RCL || insn->id == X86_INS_RCR;
 			ut32 bitsize;
 			char *count = getarg (&gop, 1, 0, NULL, NULL);
 			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
 			dst_w = getarg (&gop, 0, 1, NULL, NULL);
-			src = count? rotate_count (count, bitsize): NULL;
+			src = count? shift_count (count, bitsize): NULL;
 			free (count);
-			if (src && dst_r && dst_w) {
-				esilprintf (op,
-					"%s,?{,%s,%s,>>,%s,%d,-,cf,<<,|,1,%s,%d,-,%s,<<,<<,|,"
-					"1,1,%s,-,%s,>>,&,cf,:=,%s,"
-					"1,%s,-,!,?{,%d,%s,>>,1,&,%d,%s,>>,1,&,^,of,:=,},}",
-					src, src, dst_r, src, bitsize, src, bitsize, dst_r,
-					src, dst_r, dst_w,
-					src, bitsize - 1, dst_r, bitsize - 2, dst_r);
+			char *rot = src? wrap_count (src, bitsize, bitsize + thru_cf): NULL;
+			if (src && rot && dst_r && dst_w) {
+				// of exists only at a count of 1, and every term it needs is gone
+				// once the destination is written, so it is emitted first
+				char *ofx = NULL;
+				switch (insn->id) {
+				case X86_INS_ROL:
+				case X86_INS_RCL:
+					ofx = r_str_newf ("1,%s,-,!,?{,%d,%s,>>,1,&,%d,%s,>>,1,&,^,of,:=,},",
+						src, bitsize - 2, dst_r, bitsize - 1, dst_r);
+					break;
+				case X86_INS_ROR:
+					ofx = r_str_newf ("1,%s,-,!,?{,1,%s,&,%d,%s,>>,1,&,^,of,:=,},",
+						src, dst_r, bitsize - 1, dst_r);
+					break;
+				default:
+					ofx = r_str_newf ("1,%s,-,!,?{,cf,%d,%s,>>,1,&,^,of,:=,},",
+						src, bitsize - 1, dst_r);
+					break;
+				}
+				switch (insn->id) {
+				case X86_INS_ROL:
+					// esil ROL takes its width from a register operand, which a
+					// memory destination does not give it, so the shifts are explicit
+					esilprintf (op, "%s,?{,%s%s,%s,<<,%s,%d,-,%s,>>,|,%s,1,%s,&,cf,:=,}",
+						src, ofx, rot, dst_r, rot, bitsize, dst_r, dst_w, dst_r);
+					break;
+				case X86_INS_ROR:
+					esilprintf (op, "%s,?{,%s%s,%s,>>,%s,%d,-,%s,<<,|,%s,%d,%s,>>,1,&,cf,:=,}",
+						src, ofx, rot, dst_r, rot, bitsize, dst_r, dst_w,
+						bitsize - 1, dst_r);
+					break;
+				case X86_INS_RCL:
+					// two shifts: a single `dst >> (bitsize + 1 - n)` clamps at 63
+					esilprintf (op,
+						"%s,?{,%s%s,%s,<<,1,%s,-,cf,<<,|,1,%s,%d,-,%s,>>,>>,|,"
+						"1,%s,%d,-,%s,>>,&,cf,:=,%s,}",
+						src, ofx, rot, dst_r, rot, rot, bitsize, dst_r,
+						rot, bitsize, dst_r, dst_w);
+					break;
+				default:
+					esilprintf (op,
+						"%s,?{,%s%s,%s,>>,%s,%d,-,cf,<<,|,1,%s,%d,-,%s,<<,<<,|,"
+						"1,1,%s,-,%s,>>,&,cf,:=,%s,}",
+						src, ofx, rot, dst_r, rot, bitsize, rot, bitsize, dst_r,
+						rot, dst_r, dst_w);
+					break;
+				}
+				free (ofx);
 			}
+			free (rot);
 			free (src);
 			free (dst_r);
 			free (dst_w);
@@ -1289,12 +1263,15 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src2 = count? shift_count (count, bitsize): NULL;
 			free (count);
 			if (src && src2 && dst_r && dst_w) {
-				// the vacated low bits come from the top of the source operand
+				// the vacated low bits come from the top of the source operand.
+				// of says the sign changed, so it needs the pre-write destination
 				esilprintf (op,
-					"%s,?{,1,%s,%d,-,%s,>>,&,cf,:=,"
+					"%s,?{,1,%s,-,!,?{,%d,%s,>>,1,&,%d,%s,>>,1,&,^,of,:=,},"
+					"1,%s,%d,-,%s,>>,&,cf,:=,"
 					"%s,%s,<<,%s,%d,-,%s,>>,|,%s,"
 					"$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}",
-					src2, src2, bitsize, dst_r,
+					src2, src2, bitsize - 1, dst_r, bitsize - 2, dst_r,
+					src2, bitsize, dst_r,
 					src2, dst_r, src2, bitsize, src, dst_w,
 					bitsize - 1);
 			}
@@ -1305,21 +1282,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		}
 		break;
 	case X86_INS_SHLX:
-		{
-			ut32 bitsize;
-			char *count = getarg (&gop, 2, 0, NULL, NULL);
-			src = getarg (&gop, 1, 0, NULL, NULL);
-			dst_w = getarg (&gop, 0, 1, NULL, &bitsize);
-			src2 = count? shift_count (count, bitsize): NULL;
-			free (count);
-			if (src && src2 && dst_w) {
-				esilprintf (op, "%s,%s,<<,%s", src2, src, dst_w);
-			}
-			free (src);
-			free (src2);
-			free (dst_w);
-		}
-		break;
 	case X86_INS_SARX:
 	case X86_INS_SHRX:
 		{
@@ -1330,8 +1292,10 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src2 = count? shift_count (count, bitsize): NULL;
 			free (count);
 			if (src && src2 && dst_w) {
-				esilprintf (op, "%s,%s,%s,%s", src2, src,
-					(insn->id == X86_INS_SARX)? "ASR": ">>", dst_w);
+				// bmi2 shifts take the count from operand 3 and touch no flags
+				const char *shop = (insn->id == X86_INS_SHLX)? "<<":
+					(insn->id == X86_INS_SARX)? "ASR": ">>";
+				esilprintf (op, "%s,%s,%s,%s", src2, src, shop, dst_w);
 			}
 			free (src);
 			free (src2);
@@ -1383,13 +1347,13 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			if (src && dst_r && dst_w) {
 				// x86 leaves the destination and all flags alone on a 0 count
 				const char *shop = (insn->id == X86_INS_SAR)? "ASR": ">>";
-				// of only exists for a 1-bit shift: sar clears it, shr keeps the old msb
-				char *ofx = (insn->id == X86_INS_SAR)
-					? strdup ("0")
-					: r_str_newf ("%d,%s,>>,1,&", bitsize - 1, dst_r);
+				// of exists only at count 1: sar clears it, shr keeps old msb
+				char *ofx = (insn->id == X86_INS_SAR)? NULL:
+					r_str_newf ("%d,%s,>>,1,&", bitsize - 1, dst_r);
 				esilprintf (op, "%s,?{,1,%s,-,%s,>>,1,&,cf,:=,1,%s,-,!,?{,%s,of,:=,},"
 					"%s,%s,%s,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}",
-					src, src, dst_r, src, ofx, src, dst_r, shop, dst_w, bitsize - 1);
+					src, src, dst_r, src, r_str_get_fail (ofx, "0"),
+					src, dst_r, shop, dst_w, bitsize - 1);
 				free (ofx);
 			}
 			free (src);
@@ -1400,26 +1364,27 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_SHRD:
 		{
 			ut32 bitsize;
-			char raw[32];
-			cs_x86_op operand = insn->detail->x86.operands[2];
-			if (operand.type == X86_OP_IMM) {
-				snprintf (raw, sizeof (raw), "%" PFMT64d, operand.imm);
-			} else {
-				snprintf (raw, sizeof (raw), "%s", "cl");
-			}
+			char *count = getarg (&gop, 2, 0, NULL, NULL);
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst_r = getarg (&gop, 0, 0, NULL, NULL);
 			dst_w = getarg (&gop, 0, 1, NULL, &bitsize);
-			char *shft = shift_count (raw, bitsize);
-			esilprintf (op,  // set CF to last bit shifted out, OF if sign changes
-				"%s,?{,1,1,%s,-,%s,>>,&,cf,:=,1,%s,-,!,%s,%d,%s,>>,^,!,&,of,:=,"
-				"%s,%d,-,%s,<<,%s,%s,>>,|,1,%d,1,<<,-,&,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}",
-				shft, shft, dst_r, shft, src, bitsize-1, dst_r,
-				shft, bitsize, src, shft, dst_r, bitsize, dst_w, bitsize-1);
-			free (shft);
+			src2 = count? shift_count (count, bitsize): NULL;
+			free (count);
+			if (src && src2 && dst_r && dst_w) {
+				// cf = last bit shifted out; of says the sign changed, and the new
+				// sign is the low bit of the source, so both read pre-write values
+				esilprintf (op,
+					"%s,?{,1,%s,-,!,?{,%d,%s,>>,1,&,1,%s,&,^,of,:=,},"
+					"1,1,%s,-,%s,>>,&,cf,:=,"
+					"%s,%d,-,%s,<<,%s,%s,>>,|,1,%d,1,<<,-,&,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}",
+					src2, src2, bitsize - 1, dst_r, src,
+					src2, dst_r,
+					src2, bitsize, src, src2, dst_r, bitsize, dst_w, bitsize-1);
+			}
+			free (src);
+			free (src2);
 			free (dst_r);
 			free (dst_w);
-			free (src);
 		}
 		break;
 	case X86_INS_PSLLDQ:
