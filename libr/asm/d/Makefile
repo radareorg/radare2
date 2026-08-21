@@ -3,6 +3,10 @@ FILES+=i8080 java i4004 dalvik msp430 lm32 s390 tms320 propeller v810 v850 nds32
 FILES+=pic18c chip8 tricore bf pickle riscv evm sm5xx gb stm8 cosmac vax sbpf
 F_SDB=$(addsuffix .sdb,${FILES})
 
+# sdb -r regenerates every database in this directory, so running one recipe
+# per target in parallel makes the processes overwrite each other's output.
+.NOTPARALLEL:
+
 CFLAGS+=-fvisibility=hidden
 LDFLAGS+=-fvisibility=hidden
 include ../../../config-user.mk

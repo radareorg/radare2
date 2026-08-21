@@ -454,6 +454,7 @@ io_plugins += [
     'pickle',
     'ppc',
     'riscv',
+    's390',
     'sh',
     'stm8',
     'sparc',

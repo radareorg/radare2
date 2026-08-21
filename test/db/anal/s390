@@ -141,6 +141,7 @@ EXPECT=<<EOF
   {
     "opcode": "la r4, 8(r15)",
     "disasm": "la r4, 8(r15)",
+    "pseudo": "r4 = 8(r15)",
     "description": "Load Address",
     "mnemonic": "la",
     "mask": "ffffffff",
@@ -172,6 +173,24 @@ EXPECT=<<EOF
   }
 ]
 EOF
+RUN
+
+NAME=s390 pseudo parser
+FILE=-
+CMDS=<<EOF
+e asm.arch=s390
+e asm.bits=64
+e asm.pseudo=true
+wx 4140f008
+pi 1
+e asm.arch=s390.gnu
+pi 1
+EOF
+EXPECT=<<EOF
+r4 = 8(r15)
+%r4 = 8(%r15)
+EOF
+EXPECT_ERR=
 RUN
 
 NAME=offs390 bininfo

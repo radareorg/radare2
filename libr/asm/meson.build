@@ -20,6 +20,7 @@ r_asm_sources = [
   '../arch/p/java/pseudo.c',
   '../arch/p/sh/pseudo.c',
   '../arch/p/riscv/pseudo.c',
+  '../arch/p/s390/pseudo.c',
   '../arch/p/ppc/pseudo.c',
   '../arch/p/mips/pseudo.c',
   '../arch/p/sparc/pseudo.c',
