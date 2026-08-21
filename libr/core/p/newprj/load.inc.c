@@ -1040,6 +1040,206 @@ static void rprj_vart_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	rprj_meta_load (cur, mode, next_entry, R_META_TYPE_VARTYPE);
 }
 
+typedef struct {
+	RCoreAnalArtifactReplacement replacement;
+	RCoreAnalArtifactComment *comments;
+	RCoreAnalArtifactFlag *flags;
+	RAnalRef *xrefs;
+} RPrjArtifactSet;
+
+typedef struct {
+	ut64 revision;
+	bool captured;
+} RPrjArtifactRevision;
+
+static bool rprj_artifact_revision_cb(const RAnalFunctionSnapshot *snapshot, void *user) {
+	RPrjArtifactRevision *result = user;
+	RAnalFunctionSnapshotView view;
+	if (!r_anal_function_snapshot_view (snapshot, &view)) {
+		return false;
+	}
+	result->revision = view.revision_identity;
+	result->captured = true;
+	return true;
+}
+
+static void rprj_artifact_sets_free(RPrjArtifactSet *sets, ut32 count) {
+	if (sets) {
+		ut32 i;
+		for (i = 0; i < count; i++) {
+			free (sets[i].comments);
+			free (sets[i].flags);
+			free (sets[i].xrefs);
+		}
+	}
+	free (sets);
+}
+
+static bool rprj_artifact_read_addr(RBuffer *buffer, R2ProjectAddr *addr) {
+	return rprj_read_le32 (buffer, &addr->mod) && rprj_read_le64 (buffer, &addr->delta);
+}
+
+static bool rprj_artifact_read_set(RPrjCursor *cur, int mode, ut64 next_entry, RPrjArtifactSet *set) {
+	RBuffer *buffer = cur->b;
+	ut32 provider_index;
+	ut32 domain_index;
+	R2ProjectAddr scope;
+	ut32 comment_count;
+	ut32 flag_count;
+	ut32 xref_count;
+	if (!rprj_entry_has (buffer, next_entry, RPRJ_ARTIFACT_SET_SIZE)
+			|| !rprj_read_le32 (buffer, &provider_index)
+			|| !rprj_read_le32 (buffer, &domain_index)
+			|| !rprj_artifact_read_addr (buffer, &scope)
+			|| !rprj_read_le32 (buffer, &comment_count)
+			|| !rprj_read_le32 (buffer, &flag_count)
+			|| !rprj_read_le32 (buffer, &xref_count)) {
+		return false;
+	}
+	const char *provider_id = rprj_st_get (cur->st, provider_index);
+	const char *domain_id = rprj_st_get (cur->st, domain_index);
+	ut64 scope_id;
+	if (!provider_id || !domain_id || !rprj_mod_va (cur, &scope, &scope_id)
+			|| comment_count > 4096 || flag_count > 4096 || xref_count > 1 << 20) {
+		return false;
+	}
+	ut64 required = (ut64)comment_count * RPRJ_ARTIFACT_COMMENT_SIZE
+		+ (ut64)flag_count * RPRJ_ARTIFACT_FLAG_SIZE
+		+ (ut64)xref_count * RPRJ_XREF_SIZE;
+	if (required > rprj_entry_remaining (buffer, next_entry)) {
+		return false;
+	}
+	set->comments = comment_count? R_NEWS0 (RCoreAnalArtifactComment, comment_count): NULL;
+	set->flags = flag_count? R_NEWS0 (RCoreAnalArtifactFlag, flag_count): NULL;
+	set->xrefs = xref_count? R_NEWS0 (RAnalRef, xref_count): NULL;
+	if ((comment_count && !set->comments) || (flag_count && !set->flags)
+			|| (xref_count && !set->xrefs)) {
+		return false;
+	}
+	ut32 i;
+	for (i = 0; i < comment_count; i++) {
+		R2ProjectAddr addr;
+		ut32 prefix_index;
+		ut32 text_index;
+		if (!rprj_artifact_read_addr (buffer, &addr)
+				|| !rprj_read_le32 (buffer, &prefix_index)
+				|| !rprj_read_le32 (buffer, &text_index)
+				|| !rprj_mod_va (cur, &addr, &set->comments[i].addr)) {
+			return false;
+		}
+		set->comments[i].prefix = rprj_st_get (cur->st, prefix_index);
+		set->comments[i].text = rprj_st_get (cur->st, text_index);
+		if (!set->comments[i].prefix || !set->comments[i].text) {
+			return false;
+		}
+	}
+	for (i = 0; i < flag_count; i++) {
+		ut32 name_index;
+		R2ProjectAddr addr;
+		if (!rprj_read_le32 (buffer, &name_index)
+				|| !rprj_artifact_read_addr (buffer, &addr)
+				|| !rprj_read_le64 (buffer, &set->flags[i].size)
+				|| !rprj_mod_va (cur, &addr, &set->flags[i].addr)) {
+			return false;
+		}
+		set->flags[i].name = rprj_st_get (cur->st, name_index);
+		if (!set->flags[i].name) {
+			return false;
+		}
+	}
+	for (i = 0; i < xref_count; i++) {
+		R2ProjectAddr from;
+		R2ProjectAddr to;
+		ut32 type;
+		if (!rprj_artifact_read_addr (buffer, &from)
+				|| !rprj_artifact_read_addr (buffer, &to)
+				|| !rprj_read_le32 (buffer, &type)
+				|| !rprj_mod_va (cur, &from, &set->xrefs[i].at)
+				|| !rprj_mod_va (cur, &to, &set->xrefs[i].addr)) {
+			return false;
+		}
+		set->xrefs[i].type = type;
+	}
+	set->replacement = (RCoreAnalArtifactReplacement) {
+		.provider_id = provider_id,
+		.domain_id = domain_id,
+		.scope_id = scope_id,
+		.comments = set->comments,
+		.comment_count = comment_count,
+		.flags = set->flags,
+		.flag_count = flag_count,
+		.xrefs = set->xrefs,
+		.xref_count = xref_count,
+	};
+	if (mode & R_CORE_NEWPRJ_MODE_LOAD) {
+		RAnalFunction *function = r_anal_get_function_at (cur->core->anal, scope_id);
+		if (!function || function->addr != scope_id) {
+			return false;
+		}
+		RPrjArtifactRevision revision = {0};
+		if (!r_core_function_snapshot_at (cur->core, scope_id, rprj_artifact_revision_cb, &revision, NULL)
+				|| !revision.captured || !revision.revision) {
+			return false;
+		}
+		set->replacement.expected_function_epoch = r_anal_function_dirty_epoch (function);
+		set->replacement.expected_type_epoch = cur->core->anal->type_dirty_epoch;
+		set->replacement.expected_snapshot_revision = revision.revision;
+	}
+	return true;
+}
+
+static void rprj_artifact_load(RPrjCursor *cur, int mode, ut64 next_entry) {
+	RBuffer *buffer = cur->b;
+	ut32 schema_version;
+	ut32 set_count;
+	if (!rprj_entry_has (buffer, next_entry, RPRJ_ARTIFACT_HEADER_SIZE)
+			|| !rprj_read_le32 (buffer, &schema_version)
+			|| !rprj_read_le32 (buffer, &set_count)
+			|| schema_version != RPRJ_ARTIFACT_SCHEMA_VERSION
+			|| set_count > RPRJ_ARTIFACT_MAX_SETS) {
+		R_LOG_WARN ("Invalid analysis-artifact project entry");
+		cur->failed = true;
+		return;
+	}
+	RPrjArtifactSet *sets = set_count? R_NEWS0 (RPrjArtifactSet, set_count): NULL;
+	if (set_count && !sets) {
+		cur->failed = true;
+		return;
+	}
+	ut32 i;
+	for (i = 0; i < set_count; i++) {
+		if (!rprj_artifact_read_set (cur, mode, next_entry, &sets[i])) {
+			R_LOG_WARN ("Invalid analysis-artifact set %u/%u", i, set_count);
+			rprj_artifact_sets_free (sets, set_count);
+			cur->failed = true;
+			return;
+		}
+	}
+	if (mode & R_CORE_NEWPRJ_MODE_LOG) {
+		r_strbuf_appendf (cur->out, "  schema = %u, sets = %u\n", schema_version, set_count);
+	}
+	if ((mode & R_CORE_NEWPRJ_MODE_LOAD) && set_count) {
+		RCoreAnalArtifactReplacement *replacements = R_NEWS0 (
+			RCoreAnalArtifactReplacement, set_count);
+		if (!replacements) {
+			cur->failed = true;
+			rprj_artifact_sets_free (sets, set_count);
+			return;
+		}
+		for (i = 0; i < set_count; i++) {
+			replacements[i] = sets[i].replacement;
+		}
+		RCoreAnalArtifactReplaceResult result = r_core_anal_artifacts_replace (
+			cur->core, replacements, set_count);
+		if (result.status != R_CORE_ANAL_ARTIFACT_REPLACE_OK) {
+			R_LOG_WARN ("Cannot restore analysis-artifact ownership: %u", result.status);
+			cur->failed = true;
+		}
+		free (replacements);
+	}
+	rprj_artifact_sets_free (sets, set_count);
+}
+
 static void rprj_xref_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	RCore *core = cur->core;
 	RBuffer *b = cur->b;
@@ -1269,8 +1469,9 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 		r_unref (b);
 		return NULL;
 	}
-	if (hdr.version != RPRJ_VERSION) {
-		R_LOG_ERROR ("Unsupported project version %d (this build understands version %d)", hdr.version, RPRJ_VERSION);
+	if (hdr.version < RPRJ_MIN_VERSION || hdr.version > RPRJ_VERSION) {
+		R_LOG_ERROR ("Unsupported project version %d (this build understands versions %d-%d)",
+			hdr.version, RPRJ_MIN_VERSION, RPRJ_VERSION);
 		r_unref (b);
 		return NULL;
 	}
@@ -1294,10 +1495,12 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 	st.data = rprj_find (b, RPRJ_STRS, &st.size);
 	if (!st.data) {
 		R_LOG_ERROR ("Missing string table (RPRJ_STRS) in project file");
+		cur.failed = true;
 		goto done;
 	}
 	if (!rprj_st_is_valid (&st)) {
 		R_LOG_ERROR ("Invalid string table (RPRJ_STRS) in project file");
+		cur.failed = true;
 		goto done;
 	}
 	if (mode & R_CORE_NEWPRJ_MODE_RIO) {
@@ -1313,10 +1516,12 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 		const ut64 entry_at = r_buf_at (b);
 		if (!rprj_entry_read (b, &entry)) {
 			R_LOG_ERROR ("Cannot read entry");
+			cur.failed = true;
 			break;
 		}
 		if (entry.size < RPRJ_ENTRY_SIZE || entry.size > bsz - entry_at) {
 			R_LOG_ERROR ("Invalid entry size %u", entry.size);
+			cur.failed = true;
 			break;
 		}
 		if (mode & R_CORE_NEWPRJ_MODE_LOG) {
@@ -1358,11 +1563,17 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 		case RPRJ_XREF:
 			rprj_xref_load (&cur, mode, next_entry);
 			break;
+		case RPRJ_ARTF:
+			rprj_artifact_load (&cur, mode, next_entry);
+			break;
 		case RPRJ_FUNC:
 			rprj_function_load (&cur, mode, next_entry);
 			break;
 		case RPRJ_HINT:
 			rprj_hint_load (&cur, mode, next_entry);
+			break;
+		}
+		if (cur.failed) {
 			break;
 		}
 		if (mode & R_CORE_NEWPRJ_MODE_LOG) {
@@ -1380,5 +1591,9 @@ done:
 	RVecPrjMod_fini (&cur.mods);
 	free (st.data);
 	r_unref (b);
+	if (cur.failed) {
+		r_strbuf_free (out);
+		return NULL;
+	}
 	return r_strbuf_drain (out);
 }
