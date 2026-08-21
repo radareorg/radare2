@@ -164,96 +164,6 @@ static void task_context_release(TaskContextState *state) {
 	r_th_lock_leave (state->lock);
 }
 
-typedef struct {
-	RThreadLock *lock;
-	RThreadCond *cond;
-	ut32 before;
-	ut32 after;
-	ut32 nested;
-	bool entered;
-	bool release;
-} BlockSizeContextState;
-
-static RCmdResult blocksize_child_handler(RCmdContext *ctx) {
-	BlockSizeContextState *state = ctx->handler_user;
-	state->nested = ctx->blocksize;
-	return (RCmdResult) { 0 };
-}
-
-static RCmdResult blocksize_parent_handler(RCmdContext *ctx) {
-	BlockSizeContextState *state = ctx->handler_user;
-	r_th_lock_enter (state->lock);
-	state->before = ctx->blocksize;
-	state->entered = true;
-	r_th_cond_signal_all (state->cond);
-	while (!state->release) {
-		r_th_cond_wait (state->cond, state->lock, 0);
-	}
-	r_th_lock_leave (state->lock);
-	state->after = r_core_block_size_get (ctx->user);
-	r_core_call (ctx->user, "blocksizechild");
-	return (RCmdResult) { 0 };
-}
-
-static void blocksize_context_wait(BlockSizeContextState *state) {
-	r_th_lock_enter (state->lock);
-	while (!state->entered) {
-		r_th_cond_wait (state->cond, state->lock, 0);
-	}
-	r_th_lock_leave (state->lock);
-}
-
-static void blocksize_context_release(BlockSizeContextState *state) {
-	r_th_lock_enter (state->lock);
-	state->release = true;
-	r_th_cond_signal_all (state->cond);
-	r_th_lock_leave (state->lock);
-}
-
-bool test_task_context_blocksize_snapshot(void) {
-	RCore *core = r_core_new ();
-	mu_assert_notnull (core, "create core");
-	const ut32 initial = r_core_block_size_get (core);
-	BlockSizeContextState state = {
-		.lock = r_th_lock_new (false),
-		.cond = r_th_cond_new ()
-	};
-	mu_assert_true (r_cmd_register (core->rcmd, "blocksizeparent", blocksize_parent_handler, &state), "register parent block size command");
-	mu_assert_true (r_cmd_register (core->rcmd, "blocksizechild", blocksize_child_handler, &state), "register child block size command");
-	RCoreTask *task = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true, "blocksizeparent", NULL, NULL);
-	mu_assert_notnull (task, "create block size task");
-	mu_assert_eq (r_core_task_run_threaded (&core->tasks, task), task->id, "run block size task");
-	blocksize_context_wait (&state);
-
-	const ut32 changed = initial + 32;
-	bool resized = r_core_block_size (core, changed);
-	bool global_changed = r_core_block_size_get (core) == changed;
-	blocksize_context_release (&state);
-	r_core_task_join (&core->tasks, core->tasks.main_task, task->id);
-
-	bool snapshot_stable = state.before == initial && state.after == initial;
-	bool nested_inherited = state.nested == initial;
-	state.nested = 0;
-	r_core_call (core, "blocksizechild");
-	bool new_root_changed = state.nested == changed;
-	char *output = r_core_cmd_str (core, "b 96;b+4;b");
-	bool explicit_update = output && !strcmp (output, "0x64\n");
-	free (output);
-	r_cmd_unregister (core->rcmd, "blocksizeparent");
-	r_cmd_unregister (core->rcmd, "blocksizechild");
-	r_core_free (core);
-	r_th_cond_free (state.cond);
-	r_th_lock_free (state.lock);
-
-	mu_assert_true (resized, "resize shared block size");
-	mu_assert_true (global_changed, "new roots observe changed block size");
-	mu_assert_true (snapshot_stable, "running command keeps its block size snapshot");
-	mu_assert_true (nested_inherited, "nested command inherits the parent block size");
-	mu_assert_true (new_root_changed, "later root snapshots the changed block size");
-	mu_assert_true (explicit_update, "explicit b updates the current command context");
-	mu_end;
-}
-
 bool test_task_context_console_isolation(void) {
 	RCore *core = r_core_new ();
 	mu_assert_notnull (core, "create core");
@@ -387,7 +297,6 @@ bool test_registered_echo_nested_task(void) {
 
 int all_tests(void) {
 	mu_run_test (test_task_join_uses_thread_identity);
-	mu_run_test (test_task_context_blocksize_snapshot);
 	mu_run_test (test_task_context_console_isolation);
 	mu_run_test (test_task_cancel_breaks_child_console);
 	mu_run_test (test_registered_echo_nested_task);

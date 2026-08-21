@@ -457,9 +457,6 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 				: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
 			context->user = cmd->data;
 			context->remaining_depth = parent? parent->remaining_depth: 0;
-			context->blocksize = parent
-				? parent->blocksize
-				: cmd->get_blocksize? cmd->get_blocksize (cmd->data): 0;
 			context->raw = raw;
 		}
 		const char *sub_end = input.a + matched;

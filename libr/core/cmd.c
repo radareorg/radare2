@@ -106,7 +106,6 @@ R_API ut8 *r_core_readblock(RCore *core, ut64 size) {
 #include "cmd_search.inc.c" // defines incDigitBuffer... used by cmd_print
 
 #include "cmd_print.inc.c"
-#include "r/block.inc.c"
 #include "r/echo.inc.c"
 #include "cmd_help.inc.c"
 
@@ -324,6 +323,23 @@ static RCoreHelpMessage help_msg_equalg = {
 	"Usage:", " =[g] [...]", " # gdb server",
 	"gdbserver:", "", "",
 	"=g", " port file [args]", "listen on 'port' debugging 'file' using gdbserver",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_b = {
+	"Usage:",  "b[f] [arg]", "change working block size",
+	"b", " 32", "set block size to 33",
+	"b", "=32", "same as 'b 32'",
+	"b", " eip+4", "numeric argument can be an expression",
+	"b", "", "display current block size",
+	"b", "+3", "increase blocksize by 3",
+	"b", "-16", "decrease blocksize by 16",
+	"b*", "", "display current block size in r2 command",
+	"b64:", "AA=", "execute a base64-encoded r2 script",
+	"b64:'", "AA=", "execute a base64-encoded command without evaluating special chars",
+	"bf", " foo", "set block size to flag size",
+	"bj", "", "display block size information in JSON",
+	"bm", " 1M", "set max block size",
 	NULL
 };
 
@@ -2703,6 +2719,100 @@ static int cmd_kuery(void *data, const char *input) {
 		}
 		free (inp);
 		return 0;
+	}
+	return 0;
+}
+
+static int cmd_bsize(void *data, const char *input) {
+	ut64 n;
+	RFlagItem *flag;
+	RCore *core = (RCore *)data;
+	switch (input[0]) {
+	case '6': // "b6"
+		if (r_str_startswith (input, "64:")) {
+			const bool raw = input[3] == '\'';
+			const char *encoded = input + (raw? 4: 3);
+			int len = 0;
+			char *cmd = (char *)sdb_decode (encoded, &len);
+			if (cmd) {
+				cmd[len] = 0;
+				if (raw) {
+					r_core_call (core, cmd);
+				} else {
+					r_core_cmd_lines (core, cmd);
+				}
+				free (cmd);
+			} else {
+				R_LOG_ERROR ("Missing base64 string after b64:");
+			}
+		} else {
+			r_cons_cmd_help_match (core->cons, help_msg_b, "b64:", 0, false);
+		}
+		break;
+	case 'm': // "bm"
+		n = r_num_math (core->num, input + 1);
+		if (n > 1) {
+			core->blocksize_max = n;
+		} else {
+			r_cons_printf (core->cons, "0x%x\n", (ut32)core->blocksize_max);
+		}
+		break;
+	case '+': // "b+"
+		n = r_num_math (core->num, input + 1);
+		r_core_block_size (core, core->blocksize + n);
+		break;
+	case '-': // "b-"
+		n = r_num_math (core->num, input + 1);
+		r_core_block_size (core, core->blocksize - n);
+		break;
+	case 'f': // "bf"
+		if (input[1] == ' ') {
+			flag = r_flag_get (core->flags, input + 2);
+			if (flag) {
+				r_core_block_size (core, flag->size);
+			} else {
+				R_LOG_ERROR ("bf: cannot find flag named '%s'", input + 2);
+			}
+		} else {
+			r_cons_cmd_help_match (core->cons, help_msg_b, "bf", 0, true);
+		}
+		break;
+	case 'j': { // "bj"
+		PJ *pj = r_core_pj_new (core);
+		if (!pj) {
+			break;
+		}
+		pj_o (pj);
+		pj_ki (pj, "blocksize", core->blocksize);
+		pj_ki (pj, "blocksize_limit", core->blocksize_max);
+		pj_end (pj);
+		r_cons_println (core->cons, pj_string (pj));
+		pj_free (pj);
+		break;
+	}
+	case '*': // "b*"
+		r_cons_printf (core->cons, "b 0x%x\n", core->blocksize);
+		break;
+	case '\0': // "b"
+		r_cons_printf (core->cons, "0x%x\n", core->blocksize);
+		break;
+	case '=':
+	case ' ':
+		r_core_block_size (core, r_num_math (core->num, input + 1));
+		break;
+	case '?': // "b?"
+		r_cons_cmd_help (core->cons, help_msg_b);
+		break;
+	case 'g': // "bg"
+		if (input[1] == ' ') {
+			r_core_cmdf (core, "& %s", r_str_trim_head_ro (input + 1));
+		} else {
+			R_LOG_ERROR ("Usage: 'bg r2cmd' # Expected command to run in background, See '&?' for help");
+		}
+		break;
+	default:
+		r_core_return_invalid_command (core, "b", *input);
+		break;
 	}
 	return 0;
 }
@@ -6828,8 +6938,7 @@ static bool core_context_init(RCore *core, RCmdContext *parent, RCmdContext *con
 		.cmd = core->rcmd,
 		.cons = parent? parent->cons: core_cmd_cons (core),
 		.user = core,
-		.remaining_depth = available_depth - 1,
-		.blocksize = parent? parent->blocksize: r_core_block_size_get (core)
+		.remaining_depth = available_depth - 1
 	};
 	return true;
 }
@@ -7375,10 +7484,6 @@ static RCons *core_cmd_cons(void *data) {
 	return r_core_get_cons (data);
 }
 
-static ut32 core_cmd_blocksize(void *data) {
-	return r_core_block_size_get (data);
-}
-
 R_API void r_core_cmd_init(RCore *core) {
 	struct {
 		const char *cmd;
@@ -7404,6 +7509,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{ ":", "alias for =!", cmd_iosys },
 		{ "0", "alias for s 0x", cmd_ox },
 		{ "a", "analysis", cmd_anal },
+		{ "b", "change block size", cmd_bsize },
 		{ "c", "compare memory", cmd_cmp },
 		{ "C", "code metadata", cmd_meta },
 		{ "d", "debugger operations", cmd_debug },
@@ -7441,14 +7547,10 @@ R_API void r_core_cmd_init(RCore *core) {
 		r_cmd_set_data (core->rcmd, core);
 		core->rcmd->cons = core->cons;
 		core->rcmd->get_cons = core_cmd_cons;
-		core->rcmd->get_blocksize = core_cmd_blocksize;
 		core->rcmd->macro.user = core;
 		core->rcmd->macro.num = core->num;
 		core->rcmd->macro.cmd = core_cmd0_wrapper;
 		core->rcmd->nullcallback = r_core_cmd_nullcallback;
-		if (!r_core_cmd_block_init (core->rcmd)) {
-			R_LOG_ERROR ("Cannot register block size command");
-		}
 		if (!r_core_cmd_echo_init (core->rcmd)) {
 			R_LOG_ERROR ("Cannot register echo commands");
 		}

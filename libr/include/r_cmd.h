@@ -45,7 +45,6 @@ typedef struct r_cmd_context_t {
 	void *user;
 	void *handler_user;
 	int remaining_depth; // nested core command budget
-	ut32 blocksize; // block size snapshot inherited by nested command contexts
 	bool raw; // command requested verbatim argument handling
 	char *args_storage; // private: owned buffer backing args, do not use
 	RVecRStrs args; // arguments after the matched name and subcmd
@@ -119,7 +118,6 @@ struct r_cmd_t {
 	void *data; // maybe its user?
 	RCons *cons; // borrowed by new command contexts
 	RCons *(*get_cons)(void *data); // optional execution-console resolver
-	ut32 (*get_blocksize)(void *data); // optional block-size snapshot resolver
 	RCmdNullCb nullcallback;
 	RCmdItem *cmds[UT8_MAX];
 	RCmdMacro macro;
