@@ -2407,8 +2407,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		char sign = (disp >= 0)? '+': '-';
 		ut64 abs = (ut64)((disp >= 0)? MEMDISP64 (2): (st64)(-disp));
 		const int size = REGSIZE64 (0);
-		// Pre-index case
-		// x2,x8,32,+,=[8],x3,x8,32,+,8,+,=[8]
+		// a writeback form is unpredictable when rt == rn, so it may write first
 		if (ISPREINDEX64 ()) {
 			// "ldp x0, x1, [x8, -0x10]!"
 			// 16,x8,-=,x8,[8],x0,=,x8,8,+,[8],x1,=
@@ -2419,7 +2418,6 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 					abs, MEMBASE64 (2), sign,
 					MEMBASE64 (2), size, REG64 (0),
 					size, MEMBASE64 (2), size, REG64 (1));
-		// Post-index case
 		} else if (ISPOSTINDEX64 ()) {
 			int val = IMM64 (3);
 			sign = (val >= 0)?'+':'-';
@@ -2434,11 +2432,14 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 					MEMBASE64 (2), size, size, REG64 (1),
 					abs, MEMBASE64 (2), sign);
 		} else {
+			// both words are loaded first, so the base may be a destination
 			r_strbuf_setf (&op->esil,
-					"%"PFMT64d",%s,%c,[%d],%s,=,"
-					"%d,%"PFMT64d",%s,%c,+,[%d],%s,=",
-					abs, MEMBASE64 (2), sign, size, REG64 (0),
-					size, abs, MEMBASE64 (2), sign, size, REG64 (1));
+					"%"PFMT64d",%s,%c,[%d],"
+					"%d,%"PFMT64d",%s,%c,+,[%d],"
+					"%s,=,%s,=",
+					abs, MEMBASE64 (2), sign, size,
+					size, abs, MEMBASE64 (2), sign, size,
+					REG64 (1), REG64 (0));
 		}
 		break;
 	}
@@ -2733,9 +2734,13 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 
 	switch (insn->id) {
 	case ARM_INS_CLZ:
-		r_strbuf_appendf (&op->esil, "%s,!,?{,32,%s,=,BREAK,},"
-			"0,%s,=,%s,%s,<<,0x80000000,&,!,?{,1,%s,+=,11,GOTO,}",
-			REG (1), REG (0), REG (0), REG (0), REG (1), REG (0));
+		{
+			// counts on the stack, so the source may be the destination
+			const ut32 head = r_str_char_count (r_strbuf_get (&op->esil), ',') + 12;
+			r_strbuf_appendf (&op->esil, "%s,!,?{,32,%s,=,BREAK,},"
+				"%s,%s,:=,0,%s,0x80000000,&,!,?{,1,%s,<<=,++,%d,GOTO,},%s,=",
+				REG (1), REG (0), REG (1), REG (0), REG (0), REG (0), head, REG (0));
+		}
 		break;
 	case ARM_INS_IT:
 		r_strbuf_appendf (&op->esil, "0x%"PFMT64x",pc,:=", addr + 2);
@@ -3493,35 +3498,33 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	{
 		const char *r0 = REG(0);
 		const char *r1 = REG(1);
-		r_strbuf_setf (&op->esil,
-			"24,0xff,%s,&,<<,%s,=,"
-			"16,0xff,8,%s,>>,&,<<,%s,|=,"
-			"8,0xff,16,%s,>>,&,<<,%s,|=,"
-			"0xff,24,%s,>>,&,%s,|=,",
-			r1, r0, r1, r0, r1, r0, r1, r0);
+		// the whole source is read before the write, so rd == rn works
+		r_strbuf_appendf (&op->esil,
+			"24,0xff,%s,&,<<,"
+			"16,0xff,8,%s,>>,&,<<,|,"
+			"8,0xff,16,%s,>>,&,<<,|,"
+			"0xff,24,%s,>>,&,|,%s,=",
+			r1, r1, r1, r1, r0);
 		break;
 	}
 	case ARM_INS_REV16:
 	{
 		const char *r0 = REG(0);
 		const char *r1 = REG(1);
-		r_strbuf_setf (&op->esil,
-			"8,0xff00ff00,%s,&,>>,%s,=,"
-			"8,0x00ff00ff,%s,&,<<,%s,|=,",
-			r1, r0, r1, r0);
+		r_strbuf_appendf (&op->esil,
+			"8,0xff00ff00,%s,&,>>,"
+			"8,0x00ff00ff,%s,&,<<,|,%s,=",
+			r1, r1, r0);
 		break;
 	}
 	case ARM_INS_REVSH:
 	{
 		const char *r0 = REG(0);
 		const char *r1 = REG(1);
-		r_strbuf_setf (&op->esil,
-			"8,0xff00,%s,&,>>,%s,=,"
-			"8,0x00ff,%s,&,<<,%s,|=,"
-			"0x8000,%s,&,?{,"
-				"0xffff0000,%s,|=,"
-			"}",
-			r1, r0, r1, r0, r0, r0);
+		r_strbuf_appendf (&op->esil,
+			"16,8,0xff00,%s,&,>>,"
+			"8,0x00ff,%s,&,<<,|,~,%s,=",
+			r1, r1, r0);
 		break;
 	}
 	case ARM_INS_TBB:

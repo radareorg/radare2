@@ -2644,3 +2644,24 @@ EXPECT=<<EOF
 0x000000ff
 EOF
 RUN
+
+NAME=xadd stores through the source register it overwrites
+FILE=malloc://0x200
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 11000000 @ 0x40
+wx 0fc136 @ 0
+aei
+aeim
+ar esi=0x40
+s 0
+aeip
+aes
+ar esi
+p8 4 @ 0x40
+EOF
+EXPECT=<<EOF
+0x00000011
+51000000
+EOF
+RUN
