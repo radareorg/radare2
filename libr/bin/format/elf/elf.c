@@ -5411,8 +5411,8 @@ bool Elf_(load_imports)(ELFOBJ *eo) {
 	return eo->g_imports_vec != NULL;
 }
 
-RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo) {
-	R_RETURN_VAL_IF_FAIL (eo, NULL);
+RVecRBinSymbol *Elf_(load_symbols_vec)(RBinFile *bf, ELFOBJ *eo) {
+	R_RETURN_VAL_IF_FAIL (bf && eo, NULL);
 	if (eo->symbols_cached) {
 		return &eo->symbols_cache;
 	}
@@ -5437,6 +5437,7 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo) {
 		}
 		RBinSymbol sym;
 		fill_symbol (eo, symbol, &sym);
+		r_bin_register_symbol_language (bf, &sym);
 		if (sbo && !symbol->is_imported && symbol->ordinal < sbo_size && !sbo[symbol->ordinal]) {
 			sbo[symbol->ordinal] = r_bin_symbol_clone (&sym);
 		}
@@ -5480,8 +5481,8 @@ RVecRBinImport *Elf_(load_imports_vec)(ELFOBJ *eo) {
 	return &eo->imports_cache;
 }
 
-RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo) {
-	R_RETURN_VAL_IF_FAIL (eo, NULL);
+RVecRBinSymbol *Elf_(load_plt_symbols_vec)(RBinFile *bf, ELFOBJ *eo) {
+	R_RETURN_VAL_IF_FAIL (bf && eo, NULL);
 	if (eo->plt_symbols_cached) {
 		return &eo->plt_symbols_cache;
 	}
@@ -5512,7 +5513,7 @@ RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo) {
 		RVecRBinSymbol_push_back (&eo->plt_symbols_cache, &sym);
 	}
 #if R_BIN_ELF64
-	Elf_(plt_ppc64v1_load_text_stubs) (eo);
+	Elf_(plt_ppc64v1_load_text_stubs) (bf, eo);
 #endif
 	eo->plt_symbols_cached = true;
 	return &eo->plt_symbols_cache;

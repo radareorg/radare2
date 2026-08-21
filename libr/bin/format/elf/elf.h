@@ -238,9 +238,9 @@ const RVecRBinSection *Elf_(load_sections)(RBinFile *bf, ELFOBJ *eo);
 bool Elf_(load_gresources)(RBinFile *bf, ELFOBJ *eo, RVecRBinResource *resources);
 bool Elf_(load_symbols)(ELFOBJ *eo);
 bool Elf_(load_imports)(ELFOBJ *eo);
-RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo);
+RVecRBinSymbol *Elf_(load_symbols_vec)(RBinFile *bf, ELFOBJ *eo);
 RVecRBinImport *Elf_(load_imports_vec)(ELFOBJ *eo);
-RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo);
+RVecRBinSymbol *Elf_(load_plt_symbols_vec)(RBinFile *bf, ELFOBJ *eo);
 const RVecRBinElfField *Elf_(load_fields)(struct Elf_(obj_t) *bin);
 char *Elf_(get_rpath)(struct Elf_(obj_t) *bin);
 
@@ -263,7 +263,7 @@ ut8 *Elf_(grab_regstate)(struct Elf_(obj_t) *bin, int *len);
 RList *Elf_(get_maps)(ELFOBJ *bin);
 ut64 Elf_(ppc64_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr);
 #if R_BIN_ELF64
-void Elf_(plt_ppc64v1_load_text_stubs)(ELFOBJ *eo);
+void Elf_(plt_ppc64v1_load_text_stubs)(RBinFile *bf, ELFOBJ *eo);
 #endif
 /* plt.c */
 ut64 Elf_(plt_get_import_addr)(ELFOBJ *eo, int sym);

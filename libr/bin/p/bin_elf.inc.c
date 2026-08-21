@@ -205,7 +205,7 @@ static RList *swift_classes(RBinFile *bf) {
 		.user = &ctx,
 		.read_at = swift_elf_read_at,
 		.slot = swift_elf_slot,
-		.symbols = Elf_(load_symbols_vec) (eo),
+		.symbols = Elf_(load_symbols_vec) (bf, eo),
 	};
 	const int limit = bf->rbin? bf->rbin->options.limit: 0;
 	r_bin_swift_load_classes (&ld, ret, types_va, types_size, protos_va, protos_size, limit);
@@ -429,7 +429,7 @@ static bool symbols_vec(RBinFile *bf) {
 		return true;
 	}
 	ELFOBJ *eo = bf->bo->bin_obj;
-	RVecRBinSymbol *symbols = Elf_(load_symbols_vec) (eo);
+	RVecRBinSymbol *symbols = Elf_(load_symbols_vec) (bf, eo);
 	if (!symbols) {
 		return false;
 	}
@@ -439,7 +439,7 @@ static bool symbols_vec(RBinFile *bf) {
 	eo->symbols_cached = false;
 
 	// Also add PLT entries from imports
-	RVecRBinSymbol *plt_symbols = Elf_(load_plt_symbols_vec) (eo);
+	RVecRBinSymbol *plt_symbols = Elf_(load_plt_symbols_vec) (bf, eo);
 	if (plt_symbols && !RVecRBinSymbol_empty (plt_symbols)) {
 		RBinSymbol *sym;
 		R_VEC_FOREACH (plt_symbols, sym) {

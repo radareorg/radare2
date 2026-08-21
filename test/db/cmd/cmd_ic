@@ -874,66 +874,46 @@ NAME=icc
 FILE=bins/elf/libmagic.so
 CMDS=icc
 EXPECT=<<EOF
-class _JNIEnv {
-};
-
-class SystemClassLoaderInjector {
-};
-
-class std {
-};
-
-class std::exception {
-};
-
-class std::bad_exception {
-};
-
-class __cxxabiv1::__forced_unwind {
-};
-
-class __cxxabiv1::__foreign_exception {
-};
-
-class __eh_globals_init {
-};
-
-class __cxxabiv1 {
-};
-
-class __cxxabiv1::__fundamental_type_info {
-};
-
-class std::type_info {
-};
-
-class __cxxabiv1::__pointer_type_info {
-};
-
-class __cxxabiv1::__pbase_type_info {
-};
-
-class __cxxabiv1::__si_class_type_info {
-};
-
-class __cxxabiv1::__class_type_info {
-};
-
-class __gnu_cxx {
-};
-
-class __gnu_cxx::__concurrence_lock_error {
-};
-
-class __gnu_cxx::__concurrence_unlock_error {
-};
-
-class std::bad_cast {
-};
-
-class std::bad_typeid {
-};
-
+typedef struct {
+} class__JNIEnv;
+typedef struct {
+} class_SystemClassLoaderInjector;
+typedef struct {
+} class_std;
+typedef struct {
+} class_std::exception;
+typedef struct {
+} class_std::bad_exception;
+typedef struct {
+} class___cxxabiv1::__forced_unwind;
+typedef struct {
+} class___cxxabiv1::__foreign_exception;
+typedef struct {
+} class___eh_globals_init;
+typedef struct {
+} class___cxxabiv1;
+typedef struct {
+} class___cxxabiv1::__fundamental_type_info;
+typedef struct {
+} class_std::type_info;
+typedef struct {
+} class___cxxabiv1::__pointer_type_info;
+typedef struct {
+} class___cxxabiv1::__pbase_type_info;
+typedef struct {
+} class___cxxabiv1::__si_class_type_info;
+typedef struct {
+} class___cxxabiv1::__class_type_info;
+typedef struct {
+} class___gnu_cxx;
+typedef struct {
+} class___gnu_cxx::__concurrence_lock_error;
+typedef struct {
+} class___gnu_cxx::__concurrence_unlock_error;
+typedef struct {
+} class_std::bad_cast;
+typedef struct {
+} class_std::bad_typeid;
 EOF
 RUN
 
@@ -1087,10 +1067,11 @@ NAME=ic (file Java)
 FILE=bins/java/Hello.class
 CMDS=ic
 EXPECT=<<EOF
-0x00000000 [0x0000022b - 0x000002aa]    127 java class 0 Hello :: java/lang/Object
-0x0000022b java   method   0      <init>
-0x00000263 java   method   1      say
-0x000002aa java   method   2      main
+0x00000000 [0x0000022b - 0x000002b7]    140 java class 0 Hello :: java/lang/Object
+0x0000022b java   method   0 pC   <init>
+0x00000263 java   method   1 p    say
+0x000002aa java   method   2 ps   main
+0x0000020b java    field   0 P    who
 EOF
 RUN
 
@@ -1113,7 +1094,7 @@ NAME=icq (file Java)
 FILE=bins/java/Hello.class
 CMDS=icq
 EXPECT=<<EOF
-0x00000000 [0x0000022b - 0x000002aa] java Hello java/lang/Object
+0x00000000 [0x0000022b - 0x000002b7] java Hello java/lang/Object
 EOF
 RUN
 
