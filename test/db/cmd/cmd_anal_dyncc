@@ -25,8 +25,8 @@ CMDS=<<EOF
 aaa
 afi @ main~callconv
 afv @ main
-afi @ method.Hello.say~callconv
-afv @ method.Hello.say
+afi @ method.public.Hello.say~callconv
+afv @ method.public.Hello.say
 EOF
 EXPECT=<<EOF
 callconv: dyncc:l0+1:
@@ -329,7 +329,7 @@ NAME=afch resolves dyncc instance cc
 FILE=bins/java/Hello.class
 CMDS=<<EOF
 aaa
-afch @ method.Hello.say~callconv:,self:
+afch @ method.public.Hello.say~callconv:,self:
 EOF
 EXPECT=<<EOF
 callconv: dyncc:l0+1:!T0
