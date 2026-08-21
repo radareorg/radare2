@@ -882,6 +882,11 @@ typedef struct {
 #define DT_RELR		36
 #define DT_RELRENT	37
 #define	DT_NUM		38		/* Number used */
+/* Android packed relocations (APS2 format) */
+#define DT_ANDROID_REL		0x6000000f
+#define DT_ANDROID_RELSZ	0x60000010
+#define DT_ANDROID_RELA		0x60000011
+#define DT_ANDROID_RELASZ	0x60000012
 #define DT_LOOS		0x6000000d	/* Start of OS-specific */
 #define DT_HIOS		0x6ffff000	/* End of OS-specific */
 #define DT_LOPROC	0x70000000	/* Start of processor-specific */

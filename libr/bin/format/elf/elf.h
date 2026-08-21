@@ -112,6 +112,9 @@ typedef struct Elf_(dynamic_info) {
 	Elf_(Xword) dt_mips_symtabno;
 	Elf_(Addr) dt_ppc64_glink; /* PPC64 ELFv1: DT_PPC64_GLINK lazy PLT resolver anchor */
 	Elf_(Addr) dt_crel;    // Address of Crel relocs
+	Elf_(Addr) dt_android_rel;    // Address of Android packed (APS2) relocs
+	Elf_(Xword) dt_android_relsz; // Size in bytes of the packed reloc stream
+	bool dt_android_is_rela;      // true for DT_ANDROID_RELA, false for DT_ANDROID_REL
 	bool dt_bind_now;
 	bool dt_aarch64_pac_plt; /* AArch64 -z pac-plt: 24 byte plt entries */
 	Elf_(Xword) dt_flags;

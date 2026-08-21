@@ -527,6 +527,9 @@ static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	di->dt_ppc64_glink = R_BIN_ELF_ADDR_MAX;
 	di->dt_aarch64_pac_plt = false;
 	di->dt_crel = R_BIN_ELF_ADDR_MAX;
+	di->dt_android_rel = R_BIN_ELF_ADDR_MAX;
+	di->dt_android_relsz = 0;
+	di->dt_android_is_rela = false;
 	di->dt_bind_now = false;
 	di->dt_flags = R_BIN_ELF_XWORD_MAX;
 	di->dt_flags_1 = R_BIN_ELF_XWORD_MAX;
@@ -646,6 +649,18 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 			break;
 		case DT_CREL:
 			di->dt_crel = d.d_un.d_ptr;
+			break;
+		case DT_ANDROID_REL:
+			di->dt_android_rel = d.d_un.d_ptr;
+			di->dt_android_is_rela = false;
+			break;
+		case DT_ANDROID_RELA:
+			di->dt_android_rel = d.d_un.d_ptr;
+			di->dt_android_is_rela = true;
+			break;
+		case DT_ANDROID_RELSZ:
+		case DT_ANDROID_RELASZ:
+			di->dt_android_relsz = d.d_un.d_val;
 			break;
 		case DT_BIND_NOW:
 			di->dt_bind_now = true;
@@ -3460,9 +3475,29 @@ static size_t get_num_relocs_mips_got(ELFOBJ *eo) {
 	return di->dt_mips_symtabno - di->dt_mips_gotsym;
 }
 
+// the APS2 header stores the total reloc count as its first sleb128 field
+static size_t get_num_relocs_android(ELFOBJ *eo) {
+	const RBinElfDynamicInfo *di = &eo->dyn_info;
+	if (di->dt_android_rel == R_BIN_ELF_ADDR_MAX || di->dt_android_relsz < 5) {
+		return 0;
+	}
+	ut64 paddr = Elf_(v2p) (eo, di->dt_android_rel);
+	if (paddr == UT64_MAX) {
+		return 0;
+	}
+	ut8 hdr[16] = {0};
+	int n = r_buf_read_at (eo->b, paddr, hdr, sizeof (hdr));
+	if (n < 5 || memcmp (hdr, "APS2", 4)) {
+		return 0;
+	}
+	st64 count = 0;
+	read_sleb128 (hdr + 4, n - 4, &count, NULL);
+	return (count > 0)? (size_t)count: 0;
+}
+
 static size_t get_num_relocs_dynamic(ELFOBJ *eo) {
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
-	size_t res = 0;
+	size_t res = get_num_relocs_android (eo);
 
 	if (di->dt_relaent) {
 		res += di->dt_relasz / di->dt_relaent;
@@ -3547,6 +3582,109 @@ static size_t get_num_relocs_approx(ELFOBJ *eo) {
 		return eo->size / 2;
 	}
 	return total;
+}
+
+// Android packed relocations (APS2): a delta+group encoded RELA/REL stream.
+// See bionic's packed_reloc_iterator for the reference decoder.
+#define ANDROID_GROUPED_BY_INFO_FLAG         1
+#define ANDROID_GROUPED_BY_OFFSET_DELTA_FLAG 2
+#define ANDROID_GROUPED_BY_ADDEND_FLAG       4
+#define ANDROID_GROUP_HAS_ADDEND_FLAG        8
+
+static size_t populate_relocs_record_from_android(ELFOBJ *eo, size_t pos, size_t num_relocs) {
+	const RBinElfDynamicInfo *di = &eo->dyn_info;
+	if (di->dt_android_rel == R_BIN_ELF_ADDR_MAX || di->dt_android_relsz < 5) {
+		return pos;
+	}
+	ut64 paddr = Elf_(v2p) (eo, di->dt_android_rel);
+	if (paddr == UT64_MAX) {
+		return pos;
+	}
+	const int size = (int)di->dt_android_relsz;
+	ut8 *buf = malloc (size);
+	if (!buf) {
+		return pos;
+	}
+	if (r_buf_read_at (eo->b, paddr, buf, size) != size || memcmp (buf, "APS2", 4)) {
+		free (buf);
+		return pos;
+	}
+	const bool is_rela = di->dt_android_is_rela;
+	int cur = 4;
+	st64 v = 0;
+	// pop one sleb128 out of the stream, jumping to `done` when it runs dry
+#define POP(dst) do { \
+		int _rb = 0; \
+		if (cur >= size) { goto done; } \
+		read_sleb128 (buf + cur, size - cur, &v, &_rb); \
+		if (_rb < 1) { goto done; } \
+		cur += _rb; (dst) = v; \
+	} while (0)
+	st64 relocation_count = 0, r_offset = 0, r_addend = 0, idx = 0;
+	POP (relocation_count);
+	POP (r_offset);
+	while (idx < relocation_count) {
+		st64 group_size = 0, group_flags = 0, group_offset_delta = 0, group_info = 0;
+		POP (group_size);
+		POP (group_flags);
+		const bool g_by_offset = group_flags & ANDROID_GROUPED_BY_OFFSET_DELTA_FLAG;
+		const bool g_by_info = group_flags & ANDROID_GROUPED_BY_INFO_FLAG;
+		const bool g_by_addend = group_flags & ANDROID_GROUPED_BY_ADDEND_FLAG;
+		const bool g_has_addend = group_flags & ANDROID_GROUP_HAS_ADDEND_FLAG;
+		if (g_by_offset) {
+			POP (group_offset_delta);
+		}
+		if (g_by_info) {
+			POP (group_info);
+		}
+		if (g_has_addend && g_by_addend) {
+			st64 delta = 0;
+			POP (delta);
+			r_addend += delta;
+		}
+		st64 g;
+		for (g = 0; g < group_size && idx < relocation_count; g++, idx++) {
+			if (pos >= num_relocs) {
+				goto done;
+			}
+			if (g_by_offset) {
+				r_offset += group_offset_delta;
+			} else {
+				st64 delta = 0;
+				POP (delta);
+				r_offset += delta;
+			}
+			st64 info = group_info;
+			if (!g_by_info) {
+				POP (info);
+			}
+			if (g_has_addend) {
+				if (!g_by_addend) {
+					st64 delta = 0;
+					POP (delta);
+					r_addend += delta;
+				}
+			} else {
+				r_addend = 0;
+			}
+			RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
+			memset (reloc, 0, sizeof (*reloc));
+			reloc->mode = is_rela? DT_RELA: DT_REL;
+			reloc->offset = r_offset;
+			reloc->rva = r_offset;
+			reloc->sym = ELF_R_SYM ((Elf_(Xword))info);
+			reloc->type = ELF_R_TYPE ((Elf_(Xword))info);
+			reloc->addend = is_rela? r_addend: 0;
+			int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
+			ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
+			fix_rva_and_offset_exec_file (eo, reloc);
+			pos++;
+		}
+	}
+done:
+#undef POP
+	free (buf);
+	return pos;
 }
 
 static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t num_relocs) {
@@ -3693,6 +3831,12 @@ static ut64 get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, size_
 		&& gvaddr >= di->dt_relr && gvaddr < di->dt_relr + di->dt_relrsz) {
 		return di->dt_relr + di->dt_relrsz - section_vaddr;
 	}
+	// the APS2 packed stream is decoded from the dynamic pass, so a .rela.dyn
+	// section overlapping it must be skipped here or it reparses as raw RELA
+	if (di->dt_android_rel != R_BIN_ELF_ADDR_MAX
+		&& gvaddr >= di->dt_android_rel && gvaddr < di->dt_android_rel + di->dt_android_relsz) {
+		return di->dt_android_rel + di->dt_android_relsz - section_vaddr;
+	}
 	return offset;
 }
 
@@ -3821,6 +3965,7 @@ static bool populate_relocs_record(ELFOBJ *eo) {
 	}
 
 	size_t i = 0;
+	i = populate_relocs_record_from_android (eo, i, num_relocs);
 	i = populate_relocs_record_from_dynamic (eo, i, num_relocs);
 	i = populate_relocs_record_from_mips_got (eo, i, num_relocs);
 	i = populate_relocs_record_from_section (eo, i, num_relocs);
