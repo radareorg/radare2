@@ -2206,3 +2206,121 @@ EXPECT=<<EOF
 0x00001234
 EOF
 RUN
+
+NAME=mips lwl and lwr merge the addressed bytes into the register
+FILE=malloc://0x200
+ARGS=-a mips -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+ar > /dev/null
+wx 11223344 @ 4
+aei
+aeim
+s 8
+ar t3=4
+wx 89680001 @ 8
+ar t0=0xaabbccdd
+ar pc=8
+aes
+ar t0
+wx 99680001 @ 8
+ar t0=0xaabbccdd
+ar pc=8
+aes
+ar t0
+wx 89680003 @ 8
+ar t0=0xaabbccdd
+ar pc=8
+aes
+ar t0
+wx 99680003 @ 8
+ar t0=0xaabbccdd
+ar pc=8
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x223344dd
+0xaabb1122
+0x44bbccdd
+0x11223344
+EOF
+RUN
+
+NAME=mips swl and swr write only the addressed bytes
+FILE=malloc://0x200
+ARGS=-a mips -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+ar > /dev/null
+aei
+aeim
+s 8
+ar t3=4
+ar t1=0x55667788
+wx 11223344 @ 4
+wx a9690001 @ 8
+ar pc=8
+aes
+p8 4 @ 4
+wx 11223344 @ 4
+wx b9690001 @ 8
+ar pc=8
+aes
+p8 4 @ 4
+wx 11223344 @ 4
+wx a9690003 @ 8
+ar pc=8
+aes
+p8 4 @ 4
+wx 11223344 @ 4
+wx b9690003 @ 8
+ar pc=8
+aes
+p8 4 @ 4
+EOF
+EXPECT=<<EOF
+11556677
+77883344
+11223355
+55667788
+EOF
+RUN
+
+NAME=mips counts the unaligned bytes from the other end when little endian
+FILE=malloc://0x200
+ARGS=-a mips -b 32
+CMDS=<<EOF
+ar > /dev/null
+wx 11223344 @ 4
+aei
+aeim
+s 8
+ar t3=4
+ar t1=0x55667788
+wx 01006889 @ 8
+ar t0=0xaabbccdd
+ar pc=8
+aes
+ar t0
+wx 01006899 @ 8
+ar t0=0xaabbccdd
+ar pc=8
+aes
+ar t0
+wx 11223344 @ 4
+wx 010069a9 @ 8
+ar pc=8
+aes
+p8 4 @ 4
+wx 11223344 @ 4
+wx 010069b9 @ 8
+ar pc=8
+aes
+p8 4 @ 4
+EOF
+EXPECT=<<EOF
+0x2211ccdd
+0xaa443322
+66553344
+11887766
+EOF
+RUN

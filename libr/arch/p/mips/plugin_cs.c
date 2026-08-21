@@ -291,10 +291,18 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 				ARG (0), ARG (1));
 			break;
 		case MIPS_INS_SW:
-		case MIPS_INS_SWL:
-		case MIPS_INS_SWR:
 			r_strbuf_appendf (&op->esil, "%s,%s,=[4]",
 				ARG (0), ARG (1));
+			break;
+		case MIPS_INS_SWL:
+		case MIPS_INS_SWR:
+		case MIPS_INS_SDL:
+		case MIPS_INS_SDR:
+			{
+				const bool wide = insn->id == MIPS_INS_SDL || insn->id == MIPS_INS_SDR;
+				const bool left = insn->id == MIPS_INS_SWL || insn->id == MIPS_INS_SDL;
+				mips_esil_unaligned (&op->esil, as->config, ARG (1), ARG (0), wide? 8: 4, left, true);
+			}
 			break;
 		case MIPS_INS_SH:
 			r_strbuf_appendf (&op->esil, "%s,%s,=[2]",
@@ -648,13 +656,19 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 				break;
 			case MIPS_INS_LWC1:
 			case MIPS_INS_LWC2:
-			case MIPS_INS_LWL:
-			case MIPS_INS_LWR:
 			case MIPS_INS_LWU:
 				ESIL_LOAD ("4");
 				break;
-
+			case MIPS_INS_LWL:
+			case MIPS_INS_LWR:
 			case MIPS_INS_LDL:
+			case MIPS_INS_LDR:
+				PROTECT_ZERO () {
+					const bool wide = insn->id == MIPS_INS_LDL || insn->id == MIPS_INS_LDR;
+					const bool left = insn->id == MIPS_INS_LWL || insn->id == MIPS_INS_LDL;
+					mips_esil_unaligned (&op->esil, as->config, ARG (1), REG (0), wide? 8: 4, left, false);
+				}
+				break;
 			case MIPS_INS_LDC1:
 			case MIPS_INS_LDC2:
 			case MIPS_INS_LLD:
@@ -1172,6 +1186,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case MIPS_INS_SWL:
 	case MIPS_INS_SWR:
 	case MIPS_INS_SWXC1:
+	case MIPS_INS_SDL:
+	case MIPS_INS_SDR:
 		op->type = R_ANAL_OP_TYPE_STORE;
 		break;
 	case MIPS_INS_NOP:
