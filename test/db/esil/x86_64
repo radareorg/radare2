@@ -1442,3 +1442,107 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+
+NAME=shld and shrd shift by their third operand with the count masked
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 0fa4c105
+ar rcx=0xa5a5000212345678
+ar rax=0xa5a500019abcdef0
+aes
+ar rcx
+wx 0fa5c2
+ar rdx=0xa5a5000312345678
+ar rax=0x9abcdef0
+ar rcx=32
+ar cf=1
+ar rip=0
+s 0
+aes
+ar rdx
+ar cf
+wx 0fadc2
+ar rdx=0xa5a5000312345678
+ar rax=0x9abcdef0
+ar rcx=33
+ar rip=0
+s 0
+aes
+ar rdx
+EOF
+EXPECT=<<EOF
+0x468acf13
+0x12345678
+0x00000001
+0x091a2b3c
+EOF
+RUN
+
+NAME=the bmi2 shifts take their count from the third operand and touch no flags
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e263f7c8
+ar rcx=0xa5a5000212345678
+ar rax=0x80000005
+ar rbx=4
+ar cf=1
+aes
+ar rcx
+ar cf
+wx c4e262f7c8
+ar rcx=0xa5a5000212345678
+ar rip=0
+s 0
+aes
+ar rcx
+wx c4e261f7c8
+ar rcx=0xa5a5000212345678
+ar rip=0
+s 0
+aes
+ar rcx
+EOF
+EXPECT=<<EOF
+0x08000000
+0x00000001
+0xf8000000
+0x00000050
+EOF
+RUN
+
+NAME=a single-bit shr keeps the old sign in of and sar clears it
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx d1e9
+ar rcx=0xa5a5000280000005
+ar of=0
+aes
+ar rcx
+ar of
+ar cf
+wx d1f9
+ar rcx=0xa5a5000280000005
+ar of=1
+ar rip=0
+s 0
+aes
+ar rcx
+ar of
+EOF
+EXPECT=<<EOF
+0x40000002
+0x00000001
+0x00000001
+0xc0000002
+0x00000000
+EOF
+RUN
