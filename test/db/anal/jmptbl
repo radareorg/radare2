@@ -383,7 +383,7 @@ pdr
 EOF
 EXPECT=<<EOF
 904: sym.func.100004124 (int64_t arg1, int64_t arg2);
-`- args(x0, x1) vars(25:sp[0x10..0x140])
+`- args(x0, x1) vars(29:sp[0x10..0x140])
 0x100004124      sub sp, sp, 0x140
 0x100004128      str x28, [var_e0h]
 0x10000412c      stp x27, x26, [var_f0h]
@@ -395,7 +395,7 @@ EXPECT=<<EOF
 0x100004144      adrp x8, reloc.Foundation.__DataStorage.bytes.allocator_...itcfc_ ; 0x10000c000
 0x100004148      ldr x8, [x8, 0x390]
 0x10000414c      ldr x8, [x8]
-0x100004150      stur x8, [x29, -0x60]
+0x100004150      stur x8, [var_e0h]
 0x100004154      str x1, [var_80h]                                     ; arg2
 0x100004158      lsr x25, x1, 0x3e                                     ; arg2
 0x10000415c      adrp x24, reloc.Foundation.__DataStorage.bytes.allocator_...itcfc_ ; 0x10000c000
@@ -468,7 +468,7 @@ EXPECT=<<EOF
 0x100004214      ldr x9, [var_80h]
 0x100004218      and x20, x9, 0x3fffffffffffffff
 0x10000421c      ubfx x8, x9, 0x30, 8
-0x100004220      stp x10, x8, [var_68h]
+0x100004220      stp x10, x8, [var_sp_68h]
 0x100004224      lsr x10, x22, 8
 0x100004228      lsr x8, x22, 0x10
 0x10000422c      stp x8, x10, [var_58h]
@@ -504,7 +504,7 @@ EXPECT=<<EOF
 0x100004294      cmp x23, x8
 0x100004298      b.lt 0x10000447c
 | // true: 0x10000447c  false: 0x10000429c
-0x10000429c      ldr x8, [var_68h]
+0x10000429c      ldr x8, [var_sp_68h]
 0x1000042a0      cmp x23, x8
 0x1000042a4      b.ge 0x10000447c
 | // true: 0x10000447c  false: 0x1000042a8
@@ -628,7 +628,7 @@ EXPECT=<<EOF
 | // true: 0x100004438
 ;-- case 3:                                                            ; from 0x100004170
 ; CODE XREF from sym.func.100004124 @ 0x100004170(x)
-0x100004438      ldur x8, [x29, -0x60]
+0x100004438      ldur x8, [var_e0h]
 0x10000443c      adrp x9, reloc.Foundation.__DataStorage.bytes.allocator_...itcfc_ ; 0x10000c000
 0x100004440      ldr x9, [x9, 0x390]
 0x100004444      ldr x9, [x9]

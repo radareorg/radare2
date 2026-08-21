@@ -1160,8 +1160,29 @@ static bool ra_in_reg(RAnal *anal) {
 		|| r_reg_alias_getname (anal->reg, R_REG_ALIAS_RA);
 }
 
+// Two register names denote the same physical register when their storage
+// (arena/offset/size) matches. Needed because a base register can be spelled
+// differently by the disassembler and the register profile - arm64 stack
+// accesses report the frame pointer as "fp" while the BP alias resolves to
+// "x29" - so a plain strcmp would miss every frame-pointer stack access.
+static bool var_reg_same(RAnal *anal, const char *a, const char *b) {
+	if (!a || !b) {
+		return false;
+	}
+	if (!strcmp (a, b)) {
+		return true;
+	}
+	RRegItem *ra = r_reg_get (anal->reg, a, -1);
+	RRegItem *rb = r_reg_get (anal->reg, b, -1);
+	const bool same = ra && rb && ra->arena == rb->arena
+		&& ra->offset == rb->offset && ra->size == rb->size;
+	r_unref (ra);
+	r_unref (rb);
+	return same;
+}
+
 static bool extract_arg_from_value(RAnal *anal, RAnalValue *val, const char *reg, const char *sign, R_OUT st64 *ptr, R_OUT int *access_size) {
-	if (!val || !val->reg || strcmp (reg, val->reg)) {
+	if (!val || !val->reg || !var_reg_same (anal, reg, val->reg)) {
 		return false;
 	}
 	st64 delta = val->delta;

@@ -80,6 +80,7 @@ ret paths
            .---------------------------------.
            |  0x100007ed8                    |
            | 92: sym._retbool ();            |
+           | ; var int8_t var_1h @ x29-0x1   |
            | ; var int64_t var_10h @ sp+0x10 |
            | sub sp, sp, 0x20                |
            | stp x29, x30, [var_10h]         |
