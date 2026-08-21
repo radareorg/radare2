@@ -1904,3 +1904,70 @@ EXPECT=<<EOF
 0x00000002
 EOF
 RUN
+
+NAME=bsf and bsr scan a memory source addressed by their destination
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 00010000 @ 0x40
+wx 0fbc09 @ 0
+aei
+aeim
+ar rcx=0x40
+s 0
+aeip
+aes
+ar rcx
+wx 0fbd09 @ 0
+ar rcx=0x40
+s 0
+aeip
+aes
+ar rcx
+EOF
+EXPECT=<<EOF
+0x00000008
+0x00000008
+EOF
+RUN
+
+NAME=xadd adds a register to itself instead of zeroing it
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 0fc1c9
+aei
+aeim
+ar rcx=0xffffffff80000005
+s 0
+aeip
+aes
+ar rcx
+ar cf
+EOF
+EXPECT=<<EOF
+0x0000000a
+0x00000001
+EOF
+RUN
+
+NAME=xadd stores through the source register it overwrites
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 1100000000000000 @ 0x40
+wx 480fc136 @ 0
+aei
+aeim
+ar rsi=0x40
+s 0
+aeip
+aes
+ar rsi
+p8 8 @ 0x40
+EOF
+EXPECT=<<EOF
+0x00000011
+5100000000000000
+EOF
+RUN

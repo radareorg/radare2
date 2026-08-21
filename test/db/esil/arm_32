@@ -3132,3 +3132,95 @@ EXPECT=<<EOF
 0xabcdffff
 EOF
 RUN
+
+NAME=rev family reverses a register into itself
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 300fbfe6
+aer r0=0x12345680
+aes
+aer r0
+wx b00fbfe6
+aer r0=0x12345680
+aer PC=0
+aes
+aer r0
+wx b00fffe6
+aer r0=0x12345680
+aer PC=0
+aes
+aer r0
+EOF
+EXPECT=<<EOF
+0x80563412
+0x34128056
+0xffff8056
+EOF
+RUN
+
+NAME=clz counts the zeros of a register that is also its destination
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 100f6fe1
+aer r0=0x1234f680
+aes
+aer r0
+aer r0=0x00001234
+aer PC=0
+aes
+aer r0
+aer r0=0
+aer PC=0
+aes
+aer r0
+EOF
+EXPECT=<<EOF
+0x00000003
+0x00000013
+0x00000020
+EOF
+RUN
+
+NAME=a conditional rev keeps its condition
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 300fbf16
+aer cpsr=0
+aer r0=0x12345680
+aes
+aer r0
+aer cpsr=0x40000000
+aer r0=0x12345680
+aer PC=0
+aes
+aer r0
+EOF
+EXPECT=<<EOF
+0x80563412
+0x12345680
+EOF
+RUN
+
+NAME=a conditional clz jumps to its own loop head
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 100f6f11
+aer cpsr=0
+aer r0=0x00001234
+aes
+aer r0
+aer cpsr=0x40000000
+aer r0=0x00001234
+aer PC=0
+aes
+aer r0
+EOF
+EXPECT=<<EOF
+0x00000013
+0x00001234
+EOF
+RUN

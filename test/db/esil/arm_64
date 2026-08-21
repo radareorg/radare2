@@ -1837,3 +1837,22 @@ EXPECT=<<EOF
 0x0 0,w0,=,w1,w1,0,+,=[8],w0,x0,=
 EOF
 RUN
+
+NAME=ldp loads both words before writing the register that addresses them
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 1122334455667788aabbccddeeff0011 @ 0x40
+wx 000440a9 @ 0
+aei
+aeim
+aer x0=0x40
+aes
+aer x0
+aer x1
+EOF
+EXPECT=<<EOF
+0x8877665544332211
+0x1100ffeeddccbbaa
+EOF
+RUN

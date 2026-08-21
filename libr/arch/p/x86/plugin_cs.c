@@ -414,6 +414,12 @@ static char *byteswap_expr(const char *v, int bytes) {
 	return r_strbuf_drain (sb);
 }
 
+// the flags an addition defines, shared by add and xadd
+static char *add_flags(ut32 bitsize) {
+	return r_str_newf ("%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,%d,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
+		bitsize - 1, bitsize - 1, bitsize - 1);
+}
+
 static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsize) {
 	const char *setarg = r_str_get (setop);
 	cs_insn *insn = gop->insn;
@@ -606,7 +612,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	char *dst2 = NULL;
 	char *dst_r = NULL;
 	char *dst_w = NULL;
-	char *dstAdd = NULL;
 	char *arg0 = NULL;
 	char *arg1 = NULL;
 	char *arg2 = NULL;
@@ -2036,59 +2041,25 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		}
 		break;
 	case X86_INS_BSF:
-		{
-			src = getarg (&gop, 1, 0, NULL, NULL);
-			dst = getarg (&gop, 0, 0, NULL, NULL);
-			char pre[24];
-			zext_prefix (&gop, dst, pre, sizeof (pre));
-			if (strcmp (src, dst)) {
-				// the loop target shifts by the tokens the prefix and src add
-				const ut32 extra = r_str_char_count (src, ',')
-					+ r_str_char_count (pre, ',');
-				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,}%s,"
-						"0x%"PFMT64x",%s,:=,"
-						"%s,++,%s,:=,%s,1,<<,%s,&,!,?{,%d,GOTO,}",
-						src, pre, UT64_MAX, dst, dst, dst, dst, src, 11 + extra);
-			} else {
-				// unroll the loop to avoid use of DUP operation
-				const ut32 bits = INSOP (0).size * 8;
-				ut32 i = 0;
-				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,}%s", src, pre);
-				for (; i < bits - 1; i++) {
-					r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",%s,&,?{,%d,%s,:=,BREAK,}",
-						((ut64)1) << i, src, i, dst);
-				}
-				r_strbuf_appendf (&op->esil, ",%d,%s,:=", i, dst);
-			}
-			R_FREE (src);
-			R_FREE (dst);
-		}
-		break;
 	case X86_INS_BSR:
 		{
+			// bsr scans from the top bit downwards, bsf from bit zero up
+			const bool up = insn->id == X86_INS_BSF;
+			const ut32 bits = INSOP (0).size * 8;
+			const int start = up? 0: (int)bits - 1;
+			const ut64 bit = up? 1: (ut64)1 << (bits - 1);
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 0, NULL, NULL);
-			const ut32 bits = INSOP (0).size * 8;
 			char pre[24];
-
 			zext_prefix (&gop, dst, pre, sizeof (pre));
-			if (strcmp (src, dst)) {
-				const ut32 extra = r_str_char_count (src, ',')
-					+ r_str_char_count (pre, ',');
-				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,}%s,"
-						"%d,%s,:=,"
-						"%s,--,%s,:=,%s,1,<<,%s,&,!,?{,%d,GOTO,}",
-						src, pre, bits, dst, dst, dst, dst, src, 11 + extra);
-			} else {
-				// unroll the loop to avoid use of DUP operation
-				ut32 i = bits - 1;
-				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,}%s", src, pre);
-				for (; i; i--) {
-					r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",%s,&,?{,%d,%s,:=,BREAK,}",
-						((ut64)1) << i, src, i, dst);
-				}
-				r_strbuf_appendf (&op->esil, ",0,%s,:=", dst);
-			}
+			// the source is staged first, so dst may be src or address it
+			const ut32 head = r_str_char_count (src, ',')
+				+ r_str_char_count (pre, ',') + 13;
+			esilprintf (op, "%s,NUM,DUP,!,zf,:=,zf,?{,BREAK,}%s,"
+					"%d,%s,:=,"
+					"DUP,0x%"PFMT64x",&,!,?{,1,SWAP,%s,1,%s,%s,%d,GOTO,}",
+					src, pre, start, dst, bit, up? ">>": "<<",
+					dst, up? "+=": "-=", head);
 			R_FREE (src);
 			R_FREE (dst);
 		}
@@ -2553,37 +2524,23 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		break;
 	case X86_INS_XADD: /* xchg + add */
 		{
+			ut32 bitsize;
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 0, NULL, NULL);
-			dstAdd = getarg (&gop, 0, 1, "+", NULL);
+			dst2 = getarg (&gop, 0, 1, NULL, &bitsize);
 			zext_opnd (&gop, 1);
-			if (INSOP(0).type == X86_OP_MEM) {
-				dst2 = getarg (&gop, 0, 1, NULL, NULL);
-				esilprintf (op,
-					"%s,%s,^,%s,=,"
-					"%s,%s,^,%s,"
-					"%s,%s,^,%s,=,"
-					"%s,%s",
-					dst, src, src,	// x = x ^ y
-					src, dst, dst2,	// y = y ^ x
-					dst, src, src,  // x = x ^ y
-					src, dstAdd);
-				R_FREE (dst2);
+			char *fl = add_flags (bitsize);
+			// the sum is staged, so xadd r,r doubles r instead of zeroing it
+			if (INSOP (norm_op (0, gop.syntax, INSOPS)).type == X86_OP_MEM) {
+				// src may address dst, so the store goes before it
+				esilprintf (op, "%s,DUP,%s,+,%s,%s,%s,=", dst, src, dst2, fl, src);
 			} else {
-				esilprintf (op,
-					"%s,%s,^,%s,=,"
-					"%s,%s,^,%s,=,"
-					"%s,%s,^,%s,=,"
-					"%s,%s",
-					dst, src, src,  // x = x ^ y
-					src, dst, dst,  // y = y ^ x
-					dst, src, src,  // x = x ^ y
-					src, dstAdd);
-				//esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
+				esilprintf (op, "%s,DUP,%s,+,SWAP,%s,=,%s,%s", dst, src, src, dst2, fl);
 			}
+			free (fl);
 			free (src);
 			free (dst);
-			free (dstAdd);
+			free (dst2);
 		}
 		break;
 	case X86_INS_FADD:
@@ -2771,8 +2728,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, "+", &bitsize);
 			if (src && dst) {
-				esilprintf (op, "%s,%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,%d,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
-					src, dst, bitsize - 1, bitsize - 1, bitsize - 1);
+				char *fl = add_flags (bitsize);
+				esilprintf (op, "%s,%s,%s", src, dst, fl);
+				free (fl);
 			}
 			free (src);
 			free (dst);
