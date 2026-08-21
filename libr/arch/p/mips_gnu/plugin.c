@@ -849,8 +849,6 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 			I_REG (rt), I_REG (imm), I_REG (rs));
 		break;
 	case MIPS_INS_SW:
-	case MIPS_INS_SWL:
-	case MIPS_INS_SWR:
 		r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[4]",
 			I_REG (rt), I_REG (imm), I_REG (rs));
 		break;
@@ -1151,17 +1149,32 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		break;
 	case MIPS_INS_LWC1:
 	case MIPS_INS_LWC2:
-	case MIPS_INS_LWL:
-	case MIPS_INS_LWR:
 	case MIPS_INS_LWU:
 		ESIL_LOAD ("4");
 		break;
-	case MIPS_INS_LDL:
 	case MIPS_INS_LDC1:
 	case MIPS_INS_LDC2:
 	case MIPS_INS_LLD:
 	case MIPS_INS_LD:
 		ESIL_LOAD ("8");
+		break;
+	case MIPS_INS_LWL:
+	case MIPS_INS_LWR:
+	case MIPS_INS_LDL:
+	case MIPS_INS_LDR:
+	case MIPS_INS_SWL:
+	case MIPS_INS_SWR:
+	case MIPS_INS_SDL:
+	case MIPS_INS_SDR:
+		{
+			const int id = insn->id;
+			const bool wide = id == MIPS_INS_LDL || id == MIPS_INS_LDR || id == MIPS_INS_SDL || id == MIPS_INS_SDR;
+			const bool left = id == MIPS_INS_LWL || id == MIPS_INS_LDL || id == MIPS_INS_SWL || id == MIPS_INS_SDL;
+			const bool store = id == MIPS_INS_SWL || id == MIPS_INS_SWR || id == MIPS_INS_SDL || id == MIPS_INS_SDR;
+			char a[REG_BUF_MAX * 2 + 4];
+			snprintf (a, sizeof (a), "%s,%s,+", I_REG (imm), I_REG (rs));
+			mips_esil_unaligned (&op->esil, as->config, a, I_REG (rt), wide? 8: 4, left, store);
+		}
 		break;
 	case MIPS_INS_LH:
 		op->sign = true;
@@ -1833,6 +1846,30 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				insn.id = MIPS_INS_LDI;
 				snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
 			}
+			break;
+		case 26: // ldl
+		case 27: // ldr
+			insn.id = (optype == 26)? MIPS_INS_LDL: MIPS_INS_LDR;
+			op->refptr = 8;
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
+		case 34: // lwl
+		case 38: // lwr
+			insn.id = (optype == 34)? MIPS_INS_LWL: MIPS_INS_LWR;
+			op->refptr = 4;
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
+		case 42: // swl
+		case 46: // swr
+			insn.id = (optype == 42)? MIPS_INS_SWL: MIPS_INS_SWR;
+			op->refptr = 4;
+			op->type = R_ANAL_OP_TYPE_STORE;
+			break;
+		case 44: // sdl
+		case 45: // sdr
+			insn.id = (optype == 44)? MIPS_INS_SDL: MIPS_INS_SDR;
+			op->refptr = 8;
+			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
 		case 32: // lb
 			op->refptr = 1;

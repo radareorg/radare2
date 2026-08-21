@@ -2324,3 +2324,33 @@ EXPECT=<<EOF
 11887766
 EOF
 RUN
+
+NAME=mips.gnu decodes the unaligned word loads and stores
+FILE=malloc://0x200
+ARGS=-a mips.gnu -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+ar > /dev/null
+wx 11223344 @ 4
+aei
+aeim
+s 8
+ar t3=4
+wx 89680001 @ 8
+ar t0=0xaabbccdd
+ar pc=8
+aes
+ar t0
+wx 11223344 @ 4
+wx a9690001 @ 8
+ar t1=0x55667788
+ar pc=8
+aes
+p8 4 @ 4
+ao 1~type
+EOF
+EXPECT=<<EOF
+0x223344dd
+11556677
+type: store
+EOF
+RUN
