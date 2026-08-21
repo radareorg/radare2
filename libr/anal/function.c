@@ -3956,6 +3956,21 @@ static bool function_interface_snapshot_collect(
 		return false;
 	}
 	size_t parameter_count = (size_t)r_list_length (ctx->signature->params);
+	/* A variadic signature carries the ellipsis as a trailing parameter with no
+	 * type. It names no storage, so counting it as a parameter leaves a slot the
+	 * convention cannot fill and marks the whole interface incomplete, which
+	 * throws away the recovered carriers for the fixed prefix and every stack
+	 * slot the function owns. Record it as variadic and describe only the fixed
+	 * parameters, the way the call-site path already does. */
+	if (parameter_count > 0) {
+		RAnalFunctionParam *last = r_list_get_n (ctx->signature->params,
+			(int)(parameter_count - 1));
+		if (last && R_STR_ISEMPTY (last->type)
+			&& !strcmp (r_str_get (last->name), "...")) {
+			interface->variadic = true;
+			parameter_count--;
+		}
+	}
 	if (parameter_count > INT_MAX || parameter_count > UT32_MAX
 		|| parameter_count > limits->max_interface_parameters) {
 		return false;
@@ -3976,6 +3991,9 @@ static bool function_interface_snapshot_collect(
 	RAnalFunctionParam *parameter;
 	size_t index = 0;
 	r_list_foreach (ctx->signature->params, iter, parameter) {
+		if (index >= parameter_count) {
+			break;
+		}
 		RAnalSnapshotParameter *snapshot_parameter = &interface->parameters[index];
 		snapshot_parameter->index = (ut32)index;
 		snapshot_parameter->logical_type_id = R_ANAL_SNAPSHOT_TYPE_ID_INVALID;
@@ -4049,16 +4067,19 @@ static bool function_interface_snapshot_collect(
 		snapshot_register_storage_fini (&interface->stack_pointer_storage);
 		stack_pointer_complete = false;
 	}
-	// noreturn says control does not come back, which is not a statement about
+	// noreturn says control does not come back, and variadic says the call site
+	// may pass more than the declaration names. Neither is a statement about
 	// whether the parameter and return storage were recovered. Every field the
-	// completeness of this interface rests on was resolved independently of it,
-	// and the call-site path computes the same notion without consulting it, so
-	// letting it disqualify an interface discards recovered storage for every
-	// exit, abort and assert helper.
+	// completeness of this interface rests on was resolved independently of
+	// both, and the call-site path computes the same notion without consulting
+	// them, so letting either disqualify an interface discards recovered
+	// storage for every exit, abort and assert helper, and for every function
+	// that takes a "...". A variadic interface still carries where its named
+	// parameters live, and the tail travels separately as `variadic`, so a
+	// consumer that must account for it can still read it.
 	// the frame extent is a separate claim, so it is not what makes an interface exact
 	const bool physical_interface_complete = parameters_complete && return_complete
-		&& return_address_complete && stack_pointer_complete
-		&& !interface->variadic;
+		&& return_address_complete && stack_pointer_complete;
 	// The convention names the carriers a callee restores, which is what lets a
 	// consumer treat them as surviving a call instead of withholding every
 	// entry-relative fact from any function that makes one.
