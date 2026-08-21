@@ -414,6 +414,40 @@ static char *mount_oldstr(RParse* p, const char *reg, st64 delta, bool ucase) {
 	return oldstr;
 }
 
+// The variable analysis records ESIL/profile register names for each access
+// (arm64 spells the frame pointer "fp"), but the disassembler prints the
+// architectural name ("x29"). They alias the same storage, so map a recorded
+// stack/frame register onto the role-alias spelling the disassembler emits so
+// the operand text matches during substitution.
+static const char *disasm_reg_spelling(RReg *rreg, const char *reg) {
+	if (!rreg || !reg) {
+		return reg;
+	}
+	RRegItem *have = r_reg_get (rreg, reg, -1);
+	if (!have) {
+		return reg;
+	}
+	const char *out = reg;
+	const int roles[] = { R_REG_ALIAS_BP, R_REG_ALIAS_SP };
+	size_t i;
+	for (i = 0; i < sizeof (roles) / sizeof (roles[0]); i++) {
+		const char *alias = rreg->alias[roles[i]];
+		if (!alias || !strcmp (alias, reg)) {
+			continue;
+		}
+		RRegItem *ai = r_reg_get (rreg, alias, -1);
+		if (ai && ai->arena == have->arena && ai->offset == have->offset && ai->size == have->size) {
+			out = alias;
+		}
+		r_unref (ai);
+		if (out != reg) {
+			break;
+		}
+	}
+	r_unref (have);
+	return out;
+}
+
 static char *r_core_hack_arm64(RAsmPluginSession *s, RAnalOp *aop, const char *op) {
 	const char *cmd = NULL;
 	if (!strcmp (op, "nop")) {
@@ -686,6 +720,19 @@ static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen
 		bool ucase = isupper (*tstr);
 		RAnalVarField *var;
 		bool is64 = f->bits == 64;
+		// On arm64 the frame pointer (x29) aliases BP. Locals recovered as
+		// stack-pointer vars are routinely addressed through it (`[x29, -N]`),
+		// so the sp-var pass must fire on frame-pointer-spelled accesses too,
+		// not just literal `[sp` text.
+		const char *bpalias = anal->reg->alias[R_REG_ALIAS_BP];
+		char bpbrk[32] = {0};
+		if (is64 && bpalias) {
+			snprintf (bpbrk, sizeof (bpbrk), "[%s", bpalias);
+		}
+		// Only a bracketed `[x29` is a memory access through the frame pointer;
+		// the bare register name also appears in its setup (`add x29, sp, #N`),
+		// which must not be var-substituted.
+		const bool fp_access = bpbrk[0] && strstr (tstr, bpbrk);
 		// NOTE: on arm32 bp is fp
 		if ((is64 && strstr (tstr, "[bp")) || !is64) {
 			r_list_foreach (bpargs, iter, var) {
@@ -704,6 +751,7 @@ static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen
 				if (!reg) {
 					reg = anal->reg->alias[R_REG_ALIAS_BP];
 				}
+				reg = disasm_reg_spelling (anal->reg, reg);
 				oldstr = mount_oldstr (p, reg, delta, ucase);
 				if (strstr (tstr, oldstr)) {
 					tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
@@ -713,7 +761,7 @@ static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen
 				free (oldstr);
 			}
 		}
-		if ((is64 && strstr (tstr, "[sp")) || !is64) {
+		if ((is64 && (strstr (tstr, "[sp") || fp_access)) || !is64) {
 			r_list_foreach (spargs, iter, var) {
 				st64 delta;
 				if (is64) {
@@ -746,11 +794,16 @@ static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen
 				}
 				const char *reg = NULL;
 				if (p->get_reg_at) {
-					reg = p->get_reg_at (f, delta, addr);
+					// Look up the register recorded for this access by the
+					// var's own delta; `delta` above is the access displacement
+					// and never matches a var identity, so passing it here fell
+					// back to SP and lost frame-pointer (`x29`) accesses.
+					reg = p->get_reg_at (f, var->delta, addr);
 				}
 				if (!reg) {
 					reg = anal->reg->alias[R_REG_ALIAS_SP];
 				}
+				reg = disasm_reg_spelling (anal->reg, reg);
 				oldstr = mount_oldstr (p, reg, delta, ucase);
 				if (strstr (tstr, oldstr)) {
 					tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
