@@ -2169,6 +2169,15 @@ static RBinJavaMember *r_bin_java_fm_member(RBinJavaField *fm_type) {
 		fm_type->descriptor, kind, fm_type->flags);
 }
 
+static void r_bin_java_sym_method_info(RBinSymbol *sym, RBinJavaMember *member) {
+	const bool instance = !(member->attr.flags & R_BIN_ATTR_STATIC);
+	if (!instance || member->argument_slots < UT16_MAX) {
+		sym->cc_arg_count = member->argument_slots + (instance? 1: 0);
+	}
+	sym->ret_count = member->return_slots;
+	sym->rtype = strdup (member->type->name);
+}
+
 static void r_bin_java_fill_rbinfield_from_field(RBinField *field, RBinJavaField *fm_type, ut64 baddr) {
 	field->name = R_NEW0 (RBinName);
 	field->name->name = strdup (fm_type->name);
@@ -2202,12 +2211,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_typ
 		sym->attr.size = r_bin_java_get_method_code_size (fm_type);
 		ut16 max_locals = r_bin_java_get_method_max_locals (fm_type);
 		if (member) {
-			const bool instance = !(member->attr.flags & R_BIN_ATTR_STATIC);
-			if (!instance || member->argument_slots < UT16_MAX) {
-				sym->cc_arg_count = member->argument_slots + (instance? 1: 0);
-			}
-			sym->ret_count = member->return_slots;
-			sym->rtype = strdup (member->type->name);
+			r_bin_java_sym_method_info (sym, member);
 		}
 		if (max_locals > 0 || sym->cc_arg_count > 0 || sym->ret_count > 0) {
 			sym->arg_first = 0;
@@ -2223,11 +2227,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_typ
 	sym->bind = member && (member->attr.flags & R_BIN_ATTR_PUBLIC)
 		? R_BIN_BIND_GLOBAL_STR: R_BIN_BIND_LOCAL_STR;
 	sym->forwarder = "NONE";
-	if (fm_type->class_name) {
-		sym->classname = strdup (fm_type->class_name);
-	} else {
-		sym->classname = strdup ("UNKNOWN"); // dupped names?
-	}
+	sym->classname = strdup (r_str_get_fail (fm_type->class_name, "UNKNOWN"));
 	sym->ordinal = fm_type->metas->ord;
 	r_bin_java_member_free (member);
 	return sym;
@@ -2250,11 +2250,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField 
 	sym->bind = member && (member->attr.flags & R_BIN_ATTR_PUBLIC)
 		? R_BIN_BIND_GLOBAL_STR: R_BIN_BIND_LOCAL_STR;
 	sym->forwarder = "NONE";
-	if (fm_type->class_name) {
-		sym->classname = strdup (fm_type->class_name);
-	} else {
-		sym->classname = strdup ("UNKNOWN");
-	}
+	sym->classname = strdup (r_str_get_fail (fm_type->class_name, "UNKNOWN"));
 	sym->paddr = fm_type->file_offset; // r_bin_java_get_method_code_offset (fm_type);
 	sym->vaddr = fm_type->file_offset + baddr;
 	sym->ordinal = fm_type->metas->ord;
@@ -2396,17 +2392,12 @@ static void r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx, RVec
 		sym->name = bn_new (field->name);
 		sym->classname = strdup (class_name);
 		sym->type = R_BIN_TYPE_FUNC_STR;
-		sym->rtype = strdup (member->type->name);
 		sym->attr.flags = member->attr.flags;
 		sym->attr.lang = R_BIN_LANG_JAVA;
 		sym->attr.size = r_bin_java_get_method_code_size (field);
 		sym->paddr = r_bin_java_get_method_code_offset (field);
 		sym->vaddr = sym->paddr;
-		const bool instance = !(member->attr.flags & R_BIN_ATTR_STATIC);
-		if (!instance || member->argument_slots < UT16_MAX) {
-			sym->cc_arg_count = member->argument_slots + (instance? 1: 0);
-		}
-		sym->ret_count = member->return_slots;
+		r_bin_java_sym_method_info (sym, member);
 		r_bin_java_member_free (member);
 	}
 	free (class_name);

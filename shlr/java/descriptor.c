@@ -25,66 +25,44 @@ typedef enum {
 	JAVA_STYLE_JNI,
 } JavaTypeStyle;
 
-static const char *java_type_name(RBinJavaTypeKind kind, JavaTypeStyle style) {
-	if (style == JAVA_STYLE_JNI) {
-		switch (kind) {
-		case R_BIN_JAVA_TYPE_VOID: return "void";
-		case R_BIN_JAVA_TYPE_BOOLEAN: return "jboolean";
-		case R_BIN_JAVA_TYPE_BYTE: return "jbyte";
-		case R_BIN_JAVA_TYPE_CHAR: return "jchar";
-		case R_BIN_JAVA_TYPE_SHORT: return "jshort";
-		case R_BIN_JAVA_TYPE_INT: return "jint";
-		case R_BIN_JAVA_TYPE_LONG: return "jlong";
-		case R_BIN_JAVA_TYPE_FLOAT: return "jfloat";
-		case R_BIN_JAVA_TYPE_DOUBLE: return "jdouble";
-		default: return NULL;
-		}
-	}
-	switch (kind) {
-	case R_BIN_JAVA_TYPE_VOID: return "void";
-	case R_BIN_JAVA_TYPE_BOOLEAN: return "boolean";
-	case R_BIN_JAVA_TYPE_BYTE: return "byte";
-	case R_BIN_JAVA_TYPE_CHAR: return "char";
-	case R_BIN_JAVA_TYPE_SHORT: return "short";
-	case R_BIN_JAVA_TYPE_INT: return "int";
-	case R_BIN_JAVA_TYPE_LONG: return "long";
-	case R_BIN_JAVA_TYPE_FLOAT: return "float";
-	case R_BIN_JAVA_TYPE_DOUBLE: return "double";
-	default: return NULL;
-	}
-}
+// indexed by RBinJavaTypeKind - R_BIN_JAVA_TYPE_VOID
+static const struct {
+	char tag;
+	ut8 slots;
+	const char *name;
+	const char *jni_name;
+} java_primitives[] = {
+	{ 'V', 0, "void", "void" },
+	{ 'Z', 1, "boolean", "jboolean" },
+	{ 'B', 1, "byte", "jbyte" },
+	{ 'C', 1, "char", "jchar" },
+	{ 'S', 1, "short", "jshort" },
+	{ 'I', 1, "int", "jint" },
+	{ 'J', 2, "long", "jlong" },
+	{ 'F', 1, "float", "jfloat" },
+	{ 'D', 2, "double", "jdouble" },
+};
 
-static const char *java_jni_array_name(RBinJavaTypeKind kind) {
-	switch (kind) {
-	case R_BIN_JAVA_TYPE_BOOLEAN: return "jbooleanArray";
-	case R_BIN_JAVA_TYPE_BYTE: return "jbyteArray";
-	case R_BIN_JAVA_TYPE_CHAR: return "jcharArray";
-	case R_BIN_JAVA_TYPE_SHORT: return "jshortArray";
-	case R_BIN_JAVA_TYPE_INT: return "jintArray";
-	case R_BIN_JAVA_TYPE_LONG: return "jlongArray";
-	case R_BIN_JAVA_TYPE_FLOAT: return "jfloatArray";
-	case R_BIN_JAVA_TYPE_DOUBLE: return "jdoubleArray";
-	default: return "jobjectArray";
+static const char *java_type_name(RBinJavaTypeKind kind, JavaTypeStyle style) {
+	const int idx = (int)kind - R_BIN_JAVA_TYPE_VOID;
+	if (idx < 0 || idx >= (int)R_ARRAY_SIZE (java_primitives)) {
+		return NULL;
 	}
+	return style == JAVA_STYLE_JNI? java_primitives[idx].jni_name: java_primitives[idx].name;
 }
 
 static char *java_type_tostring(const RBinJavaType *type, JavaTypeStyle style) {
 	if (style == JAVA_STYLE_JNI && type->array_dimensions) {
-		return strdup (type->array_dimensions == 1? java_jni_array_name (type->kind): "jobjectArray");
+		const char *elem = type->array_dimensions == 1? java_type_name (type->kind, JAVA_STYLE_JNI): NULL;
+		return elem? r_str_newf ("%sArray", elem): strdup ("jobjectArray");
 	}
 	char *result = NULL;
 	if (type->kind == R_BIN_JAVA_TYPE_OBJECT) {
 		if (style == JAVA_STYLE_JNI) {
-			if (!strcmp (type->class_name, "java/lang/String")) {
-				return strdup ("jstring");
-			}
-			if (!strcmp (type->class_name, "java/lang/Class")) {
-				return strdup ("jclass");
-			}
-			if (!strcmp (type->class_name, "java/lang/Throwable")) {
-				return strdup ("jthrowable");
-			}
-			return strdup ("jobject");
+			const char *cn = type->class_name;
+			return strdup (!strcmp (cn, "java/lang/String")? "jstring"
+				: !strcmp (cn, "java/lang/Class")? "jclass"
+				: !strcmp (cn, "java/lang/Throwable")? "jthrowable": "jobject");
 		}
 		result = strdup (type->class_name);
 		r_str_replace_char (result, '/', '.');
@@ -139,12 +117,9 @@ static RBinJavaType *java_type_new(RBinJavaTypeKind kind, char *class_name, ut32
 	type->kind = kind;
 	type->class_name = class_name;
 	type->array_dimensions = dimensions;
-	if (dimensions) {
-		type->slots = 1;
-	} else if (kind == R_BIN_JAVA_TYPE_VOID) {
-		type->slots = 0;
-	} else {
-		type->slots = kind == R_BIN_JAVA_TYPE_LONG || kind == R_BIN_JAVA_TYPE_DOUBLE? 2: 1;
+	type->slots = 1;
+	if (!dimensions && kind != R_BIN_JAVA_TYPE_OBJECT) {
+		type->slots = java_primitives[kind - R_BIN_JAVA_TYPE_VOID].slots;
 	}
 	type->name = java_type_tostring (type, JAVA_STYLE_DISPLAY);
 	type->jni_name = java_type_tostring (type, JAVA_STYLE_JNI);
@@ -160,39 +135,57 @@ static RBinJavaType *java_type_parse(const char **cursor, bool allow_void) {
 		}
 		p++;
 	}
-	RBinJavaTypeKind kind = R_BIN_JAVA_TYPE_INVALID;
-	switch (*p) {
-	case 'V':
-		if (!allow_void || dimensions) {
+	if (*p == 'L') {
+		const char *name = ++p;
+		const char *end = strchr (name, ';');
+		if (!end || !java_class_name_valid (name, end - name)) {
 			return NULL;
 		}
-		kind = R_BIN_JAVA_TYPE_VOID;
-		p++;
-		break;
-	case 'Z': kind = R_BIN_JAVA_TYPE_BOOLEAN; p++; break;
-	case 'B': kind = R_BIN_JAVA_TYPE_BYTE; p++; break;
-	case 'C': kind = R_BIN_JAVA_TYPE_CHAR; p++; break;
-	case 'S': kind = R_BIN_JAVA_TYPE_SHORT; p++; break;
-	case 'I': kind = R_BIN_JAVA_TYPE_INT; p++; break;
-	case 'J': kind = R_BIN_JAVA_TYPE_LONG; p++; break;
-	case 'F': kind = R_BIN_JAVA_TYPE_FLOAT; p++; break;
-	case 'D': kind = R_BIN_JAVA_TYPE_DOUBLE; p++; break;
-	case 'L':
-		{
-			const char *name = ++p;
-			const char *end = strchr (name, ';');
-			if (!end || !java_class_name_valid (name, end - name)) {
-				return NULL;
-			}
-			*cursor = end + 1;
-			return java_type_new (R_BIN_JAVA_TYPE_OBJECT, r_str_ndup (name, end - name), dimensions);
+		*cursor = end + 1;
+		return java_type_new (R_BIN_JAVA_TYPE_OBJECT, r_str_ndup (name, end - name), dimensions);
+	}
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (java_primitives); i++) {
+		if (*p == java_primitives[i].tag) {
+			break;
 		}
-	default:
+	}
+	const RBinJavaTypeKind kind = R_BIN_JAVA_TYPE_VOID + i;
+	if (i == R_ARRAY_SIZE (java_primitives) || (kind == R_BIN_JAVA_TYPE_VOID && (!allow_void || dimensions))) {
 		return NULL;
 	}
-	*cursor = p;
+	*cursor = p + 1;
 	return java_type_new (kind, NULL, dimensions);
 }
+
+#define JK_C (1 << R_BIN_JAVA_MEMBER_CLASS)
+#define JK_F (1 << R_BIN_JAVA_MEMBER_FIELD)
+#define JK_M (1 << R_BIN_JAVA_MEMBER_METHOD)
+#define JK_ANY (JK_C | JK_F | JK_M)
+
+// the same JVM bit maps to different attributes depending on the member kind
+static const struct {
+	ut32 acc;
+	RBinAttribute attr;
+	ut8 kinds;
+} java_attr_bits[] = {
+	{ JAVA_ACC_STATIC, R_BIN_ATTR_STATIC, JK_ANY },
+	{ JAVA_ACC_FINAL, R_BIN_ATTR_FINAL, JK_ANY },
+	{ JAVA_ACC_SYNTHETIC, R_BIN_ATTR_SYNTHETIC, JK_ANY },
+	{ JAVA_ACC_SUPER_SYNCHRONIZED, R_BIN_ATTR_SUPER, JK_C },
+	{ JAVA_ACC_SUPER_SYNCHRONIZED, R_BIN_ATTR_SYNCHRONIZED, JK_M },
+	{ JAVA_ACC_VOLATILE_BRIDGE, R_BIN_ATTR_VOLATILE, JK_F },
+	{ JAVA_ACC_VOLATILE_BRIDGE, R_BIN_ATTR_BRIDGE, JK_M },
+	{ JAVA_ACC_TRANSIENT_VARARGS, R_BIN_ATTR_TRANSIENT, JK_F },
+	{ JAVA_ACC_TRANSIENT_VARARGS, R_BIN_ATTR_VARARGS, JK_M },
+	{ JAVA_ACC_NATIVE, R_BIN_ATTR_NATIVE, JK_M },
+	{ JAVA_ACC_INTERFACE, R_BIN_ATTR_INTERFACE, JK_C },
+	{ JAVA_ACC_ABSTRACT, R_BIN_ATTR_ABSTRACT, JK_C | JK_M },
+	{ JAVA_ACC_STRICT, R_BIN_ATTR_STRICT, JK_M },
+	{ JAVA_ACC_ANNOTATION, R_BIN_ATTR_ANNOTATION, JK_C },
+	{ JAVA_ACC_ENUM, R_BIN_ATTR_ENUM, JK_C | JK_F },
+	{ JAVA_ACC_HIDDEN, R_BIN_ATTR_HIDDEN, JK_C },
+};
 
 static RBinAttribute java_access_flags(RBinJavaMemberKind kind, ut32 access_flags) {
 	RBinAttribute attr = R_BIN_ATTR_NONE;
@@ -203,132 +196,53 @@ static RBinAttribute java_access_flags(RBinJavaMemberKind kind, ut32 access_flag
 	} else if (access_flags & JAVA_ACC_PROTECTED) {
 		attr |= R_BIN_ATTR_PROTECTED;
 	}
-	if (access_flags & JAVA_ACC_STATIC) {
-		attr |= R_BIN_ATTR_STATIC;
-	}
-	if (access_flags & JAVA_ACC_FINAL) {
-		attr |= R_BIN_ATTR_FINAL;
-	}
-	if (access_flags & JAVA_ACC_SYNTHETIC) {
-		attr |= R_BIN_ATTR_SYNTHETIC;
-	}
-	if (kind == R_BIN_JAVA_MEMBER_CLASS) {
-		if (access_flags & JAVA_ACC_SUPER_SYNCHRONIZED) {
-			attr |= R_BIN_ATTR_SUPER;
-		}
-		if (access_flags & JAVA_ACC_INTERFACE) {
-			attr |= R_BIN_ATTR_INTERFACE;
-		}
-		if (access_flags & JAVA_ACC_ABSTRACT) {
-			attr |= R_BIN_ATTR_ABSTRACT;
-		}
-		if (access_flags & JAVA_ACC_ANNOTATION) {
-			attr |= R_BIN_ATTR_ANNOTATION;
-		}
-		if (access_flags & JAVA_ACC_ENUM) {
-			attr |= R_BIN_ATTR_ENUM;
-		}
-		if (access_flags & JAVA_ACC_HIDDEN) {
-			attr |= R_BIN_ATTR_HIDDEN;
-		}
-	} else if (kind == R_BIN_JAVA_MEMBER_FIELD) {
-		if (access_flags & JAVA_ACC_VOLATILE_BRIDGE) {
-			attr |= R_BIN_ATTR_VOLATILE;
-		}
-		if (access_flags & JAVA_ACC_TRANSIENT_VARARGS) {
-			attr |= R_BIN_ATTR_TRANSIENT;
-		}
-		if (access_flags & JAVA_ACC_ENUM) {
-			attr |= R_BIN_ATTR_ENUM;
-		}
-	} else if (kind == R_BIN_JAVA_MEMBER_METHOD) {
-		if (access_flags & JAVA_ACC_SUPER_SYNCHRONIZED) {
-			attr |= R_BIN_ATTR_SYNCHRONIZED;
-		}
-		if (access_flags & JAVA_ACC_VOLATILE_BRIDGE) {
-			attr |= R_BIN_ATTR_BRIDGE;
-		}
-		if (access_flags & JAVA_ACC_TRANSIENT_VARARGS) {
-			attr |= R_BIN_ATTR_VARARGS;
-		}
-		if (access_flags & JAVA_ACC_NATIVE) {
-			attr |= R_BIN_ATTR_NATIVE;
-		}
-		if (access_flags & JAVA_ACC_ABSTRACT) {
-			attr |= R_BIN_ATTR_ABSTRACT;
-		}
-		if (access_flags & JAVA_ACC_STRICT) {
-			attr |= R_BIN_ATTR_STRICT;
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (java_attr_bits); i++) {
+		if ((java_attr_bits[i].kinds & (1 << kind)) && (access_flags & java_attr_bits[i].acc)) {
+			attr |= java_attr_bits[i].attr;
 		}
 	}
 	return attr;
 }
 
 static const char *java_visibility(RBinAttribute attr) {
-	if (attr & R_BIN_ATTR_PUBLIC) {
-		return "public";
-	}
-	if (attr & R_BIN_ATTR_PRIVATE) {
-		return "private";
-	}
-	if (attr & R_BIN_ATTR_PROTECTED) {
-		return "protected";
-	}
-	return "package";
+	return (attr & R_BIN_ATTR_PUBLIC)? "public"
+		: (attr & R_BIN_ATTR_PRIVATE)? "private"
+		: (attr & R_BIN_ATTR_PROTECTED)? "protected": "package";
 }
 
+static const struct {
+	RBinAttribute attr;
+	const char *keyword;
+} java_keywords[] = {
+	{ R_BIN_ATTR_STATIC, "static" },
+	{ R_BIN_ATTR_FINAL, "final" },
+	{ R_BIN_ATTR_SYNCHRONIZED, "synchronized" },
+	{ R_BIN_ATTR_VOLATILE, "volatile" },
+	{ R_BIN_ATTR_TRANSIENT, "transient" },
+	{ R_BIN_ATTR_NATIVE, "native" },
+	{ R_BIN_ATTR_ABSTRACT, "abstract" },
+	{ R_BIN_ATTR_STRICT, "strictfp" },
+};
+
 static void java_member_attributes_tostring(RStrBuf *sb, RBinAttribute attr) {
-	if (attr & R_BIN_ATTR_PUBLIC) {
-		r_strbuf_append (sb, "public ");
-	} else if (attr & R_BIN_ATTR_PRIVATE) {
-		r_strbuf_append (sb, "private ");
-	} else if (attr & R_BIN_ATTR_PROTECTED) {
-		r_strbuf_append (sb, "protected ");
+	if (attr & (R_BIN_ATTR_PUBLIC | R_BIN_ATTR_PRIVATE | R_BIN_ATTR_PROTECTED)) {
+		r_strbuf_appendf (sb, "%s ", java_visibility (attr));
 	}
-	if (attr & R_BIN_ATTR_STATIC) {
-		r_strbuf_append (sb, "static ");
-	}
-	if (attr & R_BIN_ATTR_FINAL) {
-		r_strbuf_append (sb, "final ");
-	}
-	if (attr & R_BIN_ATTR_SYNCHRONIZED) {
-		r_strbuf_append (sb, "synchronized ");
-	}
-	if (attr & R_BIN_ATTR_VOLATILE) {
-		r_strbuf_append (sb, "volatile ");
-	}
-	if (attr & R_BIN_ATTR_TRANSIENT) {
-		r_strbuf_append (sb, "transient ");
-	}
-	if (attr & R_BIN_ATTR_NATIVE) {
-		r_strbuf_append (sb, "native ");
-	}
-	if (attr & R_BIN_ATTR_ABSTRACT) {
-		r_strbuf_append (sb, "abstract ");
-	}
-	if (attr & R_BIN_ATTR_STRICT) {
-		r_strbuf_append (sb, "strictfp ");
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (java_keywords); i++) {
+		if (attr & java_keywords[i].attr) {
+			r_strbuf_appendf (sb, "%s ", java_keywords[i].keyword);
+		}
 	}
 }
 
 static char *java_member_name(const RBinJavaMember *member) {
-	RStrBuf *sb = r_strbuf_new (NULL);
-	if (R_STR_ISNOTEMPTY (member->class_name)) {
-		char *class_name = strdup (member->class_name);
-		r_str_replace_char (class_name, '/', '.');
-		r_strbuf_append (sb, class_name);
-		r_strbuf_append (sb, ".");
-		free (class_name);
-	}
-	if (member->kind == R_BIN_JAVA_MEMBER_CLASS) {
-		char *name = strdup (r_str_get (member->name));
-		r_str_replace_char (name, '/', '.');
-		r_strbuf_append (sb, name);
-		free (name);
-	} else {
-		r_strbuf_append (sb, r_str_get (member->name));
-	}
-	return r_strbuf_drain (sb);
+	// '/' only occurs in class names; unqualified member names cannot contain it
+	const char *dot = R_STR_ISNOTEMPTY (member->class_name)? ".": "";
+	char *name = r_str_newf ("%s%s%s", r_str_get (member->class_name), dot, r_str_get (member->name));
+	r_str_replace_char (name, '/', '.');
+	return name;
 }
 
 static char *java_member_tostring(const RBinJavaMember *member, JavaTypeStyle style) {
@@ -336,16 +250,11 @@ static char *java_member_tostring(const RBinJavaMember *member, JavaTypeStyle st
 	java_member_attributes_tostring (sb, member->attr.flags);
 	char *name = java_member_name (member);
 	if (member->kind == R_BIN_JAVA_MEMBER_CLASS) {
-		if (member->attr.flags & R_BIN_ATTR_ANNOTATION) {
-			r_strbuf_append (sb, "@interface ");
-		} else if (member->attr.flags & R_BIN_ATTR_INTERFACE) {
-			r_strbuf_append (sb, "interface ");
-		} else if (member->attr.flags & R_BIN_ATTR_ENUM) {
-			r_strbuf_append (sb, "enum ");
-		} else {
-			r_strbuf_append (sb, "class ");
-		}
-		r_strbuf_append (sb, name);
+		const RBinAttribute flags = member->attr.flags;
+		const char *keyword = (flags & R_BIN_ATTR_ANNOTATION)? "@interface"
+			: (flags & R_BIN_ATTR_INTERFACE)? "interface"
+			: (flags & R_BIN_ATTR_ENUM)? "enum": "class";
+		r_strbuf_appendf (sb, "%s %s", keyword, name);
 		free (name);
 		return r_strbuf_drain (sb);
 	}
@@ -359,13 +268,9 @@ static char *java_member_tostring(const RBinJavaMember *member, JavaTypeStyle st
 		r_strbuf_append (sb, " (");
 		RListIter *iter;
 		RBinJavaType *argument;
-		bool first = true;
 		r_list_foreach (member->arguments, iter, argument) {
-			if (!first) {
-				r_strbuf_append (sb, ", ");
-			}
-			r_strbuf_append (sb, style == JAVA_STYLE_JNI? argument->jni_name: argument->name);
-			first = false;
+			const char *comma = iter->p? ", ": "";
+			r_strbuf_appendf (sb, "%s%s", comma, style == JAVA_STYLE_JNI? argument->jni_name: argument->name);
 		}
 		r_strbuf_append (sb, ")");
 	}
@@ -387,6 +292,12 @@ R_API void r_bin_java_member_free(RBinJavaMember *member) {
 	}
 }
 
+static RBinJavaMember *java_member_finish(RBinJavaMember *member) {
+	member->definition = java_member_tostring (member, JAVA_STYLE_DISPLAY);
+	member->jni_definition = java_member_tostring (member, JAVA_STYLE_JNI);
+	return member;
+}
+
 R_API RBinJavaMember *r_bin_java_member_parse(const char *class_name, const char *name, const char *descriptor, RBinJavaMemberKind kind, ut32 access_flags) {
 	if (kind < R_BIN_JAVA_MEMBER_CLASS || kind > R_BIN_JAVA_MEMBER_METHOD) {
 		return NULL;
@@ -401,52 +312,41 @@ R_API RBinJavaMember *r_bin_java_member_parse(const char *class_name, const char
 	member->visibility = strdup (java_visibility (member->attr.flags));
 	if (kind == R_BIN_JAVA_MEMBER_CLASS) {
 		if (!member->name || R_STR_ISNOTEMPTY (descriptor)) {
-			r_bin_java_member_free (member);
-			return NULL;
+			goto beach;
 		}
-		member->definition = java_member_tostring (member, JAVA_STYLE_DISPLAY);
-		member->jni_definition = java_member_tostring (member, JAVA_STYLE_JNI);
-		return member;
+		return java_member_finish (member);
 	}
 	if (R_STR_ISEMPTY (descriptor)) {
-		r_bin_java_member_free (member);
-		return NULL;
+		goto beach;
 	}
 	member->descriptor = strdup (descriptor);
 	const char *p = descriptor;
 	if (kind == R_BIN_JAVA_MEMBER_FIELD) {
 		member->type = java_type_parse (&p, false);
 		if (!member->type || *p) {
-			r_bin_java_member_free (member);
-			return NULL;
+			goto beach;
 		}
-		member->definition = java_member_tostring (member, JAVA_STYLE_DISPLAY);
-		member->jni_definition = java_member_tostring (member, JAVA_STYLE_JNI);
-		return member;
+		return java_member_finish (member);
 	}
 	if (*p++ != '(') {
-		r_bin_java_member_free (member);
-		return NULL;
+		goto beach;
 	}
 	member->arguments = r_list_newf (java_type_free);
 	while (*p && *p != ')') {
 		RBinJavaType *argument = java_type_parse (&p, false);
 		if (!argument || member->argument_slots > UT16_MAX - argument->slots) {
 			java_type_free (argument);
-			r_bin_java_member_free (member);
-			return NULL;
+			goto beach;
 		}
 		member->argument_slots += argument->slots;
 		r_list_append (member->arguments, argument);
 	}
 	if (*p++ != ')') {
-		r_bin_java_member_free (member);
-		return NULL;
+		goto beach;
 	}
 	member->type = java_type_parse (&p, true);
 	if (!member->type || *p) {
-		r_bin_java_member_free (member);
-		return NULL;
+		goto beach;
 	}
 	member->return_slots = member->type->slots;
 	if (member->name && !strcmp (member->name, "<init>")) {
@@ -454,7 +354,8 @@ R_API RBinJavaMember *r_bin_java_member_parse(const char *class_name, const char
 	} else if (member->name && !strcmp (member->name, "<clinit>")) {
 		member->attr.flags |= R_BIN_ATTR_STATIC;
 	}
-	member->definition = java_member_tostring (member, JAVA_STYLE_DISPLAY);
-	member->jni_definition = java_member_tostring (member, JAVA_STYLE_JNI);
-	return member;
+	return java_member_finish (member);
+beach:
+	r_bin_java_member_free (member);
+	return NULL;
 }
