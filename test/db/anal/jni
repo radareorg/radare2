@@ -33,6 +33,19 @@ jobject jni.overloaded.fd920b56 (JNIEnv *env, jobject receiver, jintArray arg0, 
 EOF
 RUN
 
+NAME=JNI typed signatures survive deep analysis
+FILE=bins/elf/jni/native-methods-arm64.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+aaa
+s `k anal/jni/table.0.method.0.function`
+afs
+EOF
+EXPECT=<<EOF
+jobject jni.overloaded.fd920b56 (JNIEnv *env, jobject receiver, jintArray arg0, jstring arg1);
+EOF
+RUN
+
 NAME=JNI materialization preserves exact symbol names
 FILE=bins/elf/jni/native-methods-arm64.so
 ARGS=-e bin.relocs.apply=true

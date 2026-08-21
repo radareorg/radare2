@@ -1371,6 +1371,15 @@ static ut64 faddr(RCore *core, ut64 addr, bool *nr) {
 
 // function argument types and names into anal/types
 static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
+	char *linked_type = r_type_link_at (core->anal->sdb_types, fcn->addr);
+	if (linked_type) {
+		const bool has_signature = r_type_kind (core->anal->sdb_types,
+			linked_type) == R_TYPE_FUNCTION;
+		free (linked_type);
+		if (has_signature) {
+			return;
+		}
+	}
 	RAnalFcnVarsCache cache;
 	r_anal_function_vars_cache_init (core->anal, &cache, fcn);
 	size_t arg_count = 0;
