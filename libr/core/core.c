@@ -3138,10 +3138,29 @@ R_API int r_core_prompt_exec(RCore *r) {
 	return ret;
 }
 
+R_API ut32 r_core_block_size_get(RCore *core) {
+	R_RETURN_VAL_IF_FAIL (core, 0);
+	RCoreTask *task = r_core_task_self (&core->tasks);
+	if (task && task->cur_context) {
+		return task->cur_context->blocksize;
+	}
+	r_th_lock_enter (core->lock);
+	const ut32 blocksize = core->blocksize;
+	r_th_lock_leave (core->lock);
+	return blocksize;
+}
+
+static void core_context_set_block_size(RCore *core, ut32 blocksize) {
+	RCoreTask *task = r_core_task_self (&core->tasks);
+	RCmdContext *ctx = task? task->cur_context: NULL;
+	while (ctx) {
+		ctx->blocksize = blocksize;
+		ctx = ctx->parent;
+	}
+}
+
 R_API int r_core_block_size(RCore *core, int bsize) {
-	const ut64 addr = core->addr;
-	ut8 *bump;
-	int ret = false;
+	R_RETURN_VAL_IF_FAIL (core, false);
 	if (r_sandbox_enable (0)) {
 		// TODO : restrict to filesize?
 		if (bsize > 1024 * 1024 * 32) {
@@ -3149,31 +3168,29 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 			return false;
 		}
 	}
+	r_th_lock_enter (core->lock);
 	if (bsize < 0) {
+		r_th_lock_leave (core->lock);
 		return false;
 	}
 	if (bsize == core->blocksize) {
+		r_th_lock_leave (core->lock);
+		core_context_set_block_size (core, bsize);
 		return true;
 	}
 	if (bsize > core->blocksize_max) {
 		R_LOG_ERROR ("Block size %d is too big", bsize);
 		// r_sys_breakpoint ();
+		r_th_lock_leave (core->lock);
 		return false;
 	}
-	R_CRITICAL_ENTER (core);
-	core->addr = addr;
 	if (bsize < 1) {
 		bsize = 1;
-	} else if (core->blocksize_max && bsize > core->blocksize_max) {
-		R_LOG_ERROR ("bsize is bigger than `bm`. dimmed to 0x%x > 0x%x",
-			bsize,
-			core->blocksize_max);
-		bsize = core->blocksize_max;
 	}
-	bump = realloc (core->block, bsize + 1);
+	ut8 *bump = realloc (core->block, bsize + 1);
+	int ret = false;
 	if (!bump) {
 		R_LOG_ERROR ("Oops. cannot allocate that much (%u)", bsize);
-		ret = false;
 	} else {
 		ret = true;
 		core->block = bump;
@@ -3181,7 +3198,10 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 		memset (core->block, 0xff, core->blocksize);
 		r_core_block_read (core);
 	}
-	R_CRITICAL_LEAVE (core);
+	r_th_lock_leave (core->lock);
+	if (ret) {
+		core_context_set_block_size (core, bsize);
+	}
 	return ret;
 }
 

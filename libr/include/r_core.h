@@ -609,6 +609,7 @@ R_API void r_core_seek_arch_bits(RCore *core, ut64 addr);
 R_API ut8 *r_core_readblock(RCore *core, ut64 size);
 R_API int r_core_block_read(RCore *core);
 R_API int r_core_block_size(RCore *core, int bsize);
+R_API ut32 r_core_block_size_get(RCore *core);
 R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize);
 R_API bool r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
 R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type);
