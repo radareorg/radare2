@@ -1,0 +1,101 @@
+NAME=JNI native tables materialize typed overloads
+FILE=bins/elf/jni/native-methods-arm64.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+aa
+k anal/jni/tables
+k anal/jni/table.0.count
+k anal/jni/table.0.method.0.name
+k anal/jni/table.0.method.0.descriptor
+k anal/jni/table.0.method.0.receiver_type
+k anal/jni/table.0.method.0.analysis_name
+k anal/jni/table.0.method.1.analysis_name
+k anal/jni/table.0.method.2.analysis_name
+afl~?jni.
+s `k anal/jni/table.0.method.0.function`
+afs
+axt
+pdc~^jobject
+EOF
+EXPECT=<<EOF
+0x1
+0x3
+overloaded
+([ILjava/lang/String;)Ljava/lang/Object;
+jobject|jclass
+jni.overloaded.fd920b56
+jni.overloaded.0ad484cd
+sym.exact_native
+2
+jobject jni.overloaded.fd920b56 (JNIEnv *env, jobject receiver, jintArray arg0, jstring arg1);
+(nofunc) 0x27d8 [DATA:--x] invalid
+jobject jni.overloaded.fd920b56 (JNIEnv *env, jobject receiver, jintArray arg0, jstring arg1) {
+EOF
+RUN
+
+NAME=JNI materialization preserves exact symbol names
+FILE=bins/elf/jni/native-methods-arm64.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+aa
+s `k anal/jni/table.0.method.2.function`
+afn
+afs
+axt
+EOF
+EXPECT=<<EOF
+sym.exact_native
+jlong sym.exact_native (JNIEnv *env, jobject receiver, jlong arg0);
+(nofunc) 0x2808 [DATA:--x] invalid
+EOF
+RUN
+
+NAME=JNI native analysis survives project save and load
+FILE=bins/elf/jni/native-methods-arm64.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+e dir.projects=/tmp
+P- r2r_jni003_test >/dev/null
+aa
+P+ r2r_jni003_test >/dev/null
+Pc
+P r2r_jni003_test
+afl~?jni.
+k anal/jni/table.0.method.0.analysis_name
+s `k anal/jni/table.0.method.0.function`
+afs
+axt~?
+Pc
+P- r2r_jni003_test >/dev/null
+EOF
+EXPECT=<<EOF
+2
+jni.overloaded.fd920b56
+jobject jni.overloaded.fd920b56 (JNIEnv *env, jobject receiver, jintArray arg0, jstring arg1);
+1
+EOF
+RUN
+
+NAME=JNI native table materialization is idempotent
+FILE=bins/elf/jni/native-methods-arm64.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+aa
+afl~?jni.
+s `k anal/jni/table.0.method.0.function`
+axt~?
+CC.
+aa
+afl~?jni.
+axt~?
+CC.
+EOF
+EXPECT=<<EOF
+2
+1
+JNI: overloaded([ILjava/lang/String;)Ljava/lang/Object; receiver=jobject|jclass
+2
+1
+JNI: overloaded([ILjava/lang/String;)Ljava/lang/Object; receiver=jobject|jclass
+EOF
+RUN

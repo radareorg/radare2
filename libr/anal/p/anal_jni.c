@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2026 - pancake */
 
 #include <r_anal.h>
+#include <r_anal_priv.h>
 
 #define JNI_MIN_TABLE_METHODS 2
 #define JNI_MAX_DATA_SECTION (64 * 1024 * 1024)
@@ -30,6 +31,186 @@ typedef struct {
 	bool big_endian;
 	int tables_count;
 } JniScanContext;
+
+static void jni_function_param_free(void *ptr) {
+	RAnalFunctionParam *param = ptr;
+	if (param) {
+		free (param->name);
+		free (param->type);
+		free (param);
+	}
+}
+
+static bool jni_comment_contains_line(const char *comment, const char *line) {
+	if (!comment || !line) {
+		return false;
+	}
+	const size_t line_length = strlen (line);
+	const char *p = comment;
+	while ((p = strstr (p, line))) {
+		const bool start_ok = p == comment || p[-1] == '\n';
+		const char after = p[line_length];
+		if (start_ok && (!after || after == '\n')) {
+			return true;
+		}
+		p++;
+	}
+	return false;
+}
+
+static void jni_append_unique_comment(RAnal *anal, ut64 addr, const char *line) {
+	const char *comment = r_meta_get_string (anal, R_META_TYPE_COMMENT, addr);
+	if (jni_comment_contains_line (comment, line)) {
+		return;
+	}
+	char *next = comment && *comment
+		? r_str_newf ("%s\n%s", comment, line)
+		: strdup (line);
+	if (next) {
+		r_meta_set_string (anal, R_META_TYPE_COMMENT, addr, next);
+		free (next);
+	}
+}
+
+static bool jni_function_name_is_generic(const char *name) {
+	return r_str_startswith (name, "fcn.")
+		|| r_str_startswith (name, "fcn_")
+		|| r_str_startswith (name, "loc.")
+		|| r_str_startswith (name, "loc_")
+		|| r_str_startswith (name, "sub.")
+		|| r_str_startswith (name, "sub_");
+}
+
+static char *jni_function_name(JniScanContext *ctx, JniMethod *method) {
+	char *method_name = r_name_filter_dup (method->name);
+	char *name = r_str_newf ("jni.%s.%08"PFMT32x,
+		method_name, r_str_hash (method->descriptor));
+	free (method_name);
+	RAnalFunction *other = r_anal_get_function_byname (ctx->anal, name);
+	if (!other || other->addr == method->function_addr) {
+		return name;
+	}
+	char *unique_name = r_str_newf ("%s.%08"PFMT64x,
+		name, method->function_addr);
+	free (name);
+	return unique_name;
+}
+
+static void jni_function_rename(RAnal *anal, RAnalFunction *fcn, const char *name) {
+	char *old_name = strdup (fcn->name);
+	if (!r_anal_function_rename (fcn, name)) {
+		free (old_name);
+		return;
+	}
+	if (anal->flb.f) {
+		RFlagItem *flag = r_flag_get_by_spaces (anal->flb.f, false,
+			fcn->addr, "functions", NULL);
+		if (flag && flag->space && !strcmp (flag->space->name, "functions")
+				&& !strcmp (flag->name, old_name)) {
+			r_flag_rename (anal->flb.f, flag, name);
+		}
+	}
+	free (old_name);
+}
+
+static bool jni_function_has_prototype(RAnal *anal, RAnalFunction *fcn) {
+	r_anal_types_ensure_loaded (anal);
+	char *linked_name = r_type_link_at (anal->sdb_types, fcn->addr);
+	if (linked_name) {
+		const bool is_function = r_type_kind (anal->sdb_types, linked_name)
+			== R_TYPE_FUNCTION;
+		free (linked_name);
+		if (is_function) {
+			return true;
+		}
+	}
+	const char *dwarf_name = sdb_const_getf (anal->sdb_types, NULL,
+		"fcnlink.%08"PFMT64x, fcn->addr);
+	if (dwarf_name && r_type_kind (anal->sdb_types, dwarf_name)
+			== R_TYPE_FUNCTION) {
+		return true;
+	}
+	if (r_type_func_exist (anal->sdb_types, fcn->name)) {
+		r_type_set_link (anal->sdb_types, fcn->name, fcn->addr);
+		return true;
+	}
+	const char *basename = r_str_rchr (fcn->name, NULL, '.');
+	if (basename && basename[1]
+			&& r_type_func_exist (anal->sdb_types, basename + 1)) {
+		r_type_set_link (anal->sdb_types, basename + 1, fcn->addr);
+		return true;
+	}
+	return false;
+}
+
+static void jni_function_add_param(RList *params, const char *type, char *name) {
+	RAnalFunctionParam *param = R_NEW (RAnalFunctionParam);
+	param->name = name;
+	param->type = strdup (type);
+	r_list_append (params, param);
+}
+
+static void jni_function_set_signature(JniScanContext *ctx,
+		RAnalFunction *fcn, JniMethod *method) {
+	Sdb *types = ctx->anal->sdb_types;
+	sdb_set (types, fcn->name, "func", 0);
+	r_type_set_link (types, fcn->name, fcn->addr);
+	RList *params = r_list_newf (jni_function_param_free);
+	jni_function_add_param (params, "JNIEnv *", strdup ("env"));
+	// A native table alone cannot tell instance and static receivers apart.
+	jni_function_add_param (params, "jobject", strdup ("receiver"));
+	RListIter *iter;
+	RBinJavaType *argument;
+	int argument_index = 0;
+	r_list_foreach (method->member->arguments, iter, argument) {
+		char *name = r_str_newf ("arg%d", argument_index++);
+		jni_function_add_param (params, argument->jni_name, name);
+	}
+	RAnalFunctionSignature signature = {
+		.ret_type = method->member->type->jni_name,
+		.params = params,
+	};
+	const bool result = r_anal_function_set_signature (ctx->anal, fcn,
+		&signature);
+	if (!result) {
+		r_type_unlink (types, fcn->addr);
+		r_type_del (types, fcn->name);
+	}
+	r_list_free (params);
+}
+
+static RAnalFunction *jni_materialize_method(JniScanContext *ctx,
+		JniMethod *method) {
+	RAnalFunction *fcn = r_anal_get_function_at (ctx->anal,
+		method->function_addr);
+	const bool has_prototype = fcn
+		&& jni_function_has_prototype (ctx->anal, fcn);
+	char *name = jni_function_name (ctx, method);
+	if (!fcn) {
+		fcn = r_anal_create_function (ctx->anal, name,
+			method->function_addr, R_ANAL_FCN_TYPE_FCN, NULL);
+	} else if (jni_function_name_is_generic (fcn->name)) {
+		jni_function_rename (ctx->anal, fcn, name);
+	}
+	free (name);
+	if (!fcn) {
+		return NULL;
+	}
+	if (!has_prototype) {
+		jni_function_set_signature (ctx, fcn, method);
+	}
+	if (r_list_empty (fcn->bbs)) {
+		r_anal_function (ctx->anal, fcn, fcn->addr, R_ANAL_REF_TYPE_CALL);
+	}
+	const ut64 pointer_addr = method->record_addr + ctx->pointer_size * 2;
+	r_anal_xrefs_set (ctx->anal, pointer_addr, fcn->addr,
+		R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_EXEC);
+	char *comment = r_str_newf ("JNI: %s%s receiver=jobject|jclass",
+		method->name, method->descriptor);
+	jni_append_unique_comment (ctx->anal, fcn->addr, comment);
+	free (comment);
+	return fcn;
+}
 
 static void jni_method_free(void *ptr) {
 	JniMethod *method = ptr;
@@ -196,19 +377,18 @@ static JniMethod *jni_parse_method(JniScanContext *ctx, const ut8 *buf, ut64 rec
 	return method;
 }
 
-static JniTable *jni_parse_table(JniScanContext *ctx, const ut8 *buf, size_t size, size_t offset, ut64 section_addr) {
+static JniTable *jni_table_at(JniScanContext *ctx, const ut8 *b, size_t sz, size_t off, ut64 va) {
 	const size_t record_size = ctx->pointer_size * 3;
 	JniTable *table = R_NEW (JniTable);
-	table->addr = section_addr + offset;
+	table->addr = va + off;
 	table->methods = r_list_newf (jni_method_free);
-	while (offset <= size - record_size) {
-		JniMethod *method = jni_parse_method (ctx, buf + offset,
-			section_addr + offset);
+	while (off <= sz - record_size) {
+		JniMethod *method = jni_parse_method (ctx, b + off, va + off);
 		if (!method) {
 			break;
 		}
 		r_list_append (table->methods, method);
-		offset += record_size;
+		off += record_size;
 	}
 	if (r_list_length (table->methods) < JNI_MIN_TABLE_METHODS) {
 		jni_table_free (table);
@@ -226,6 +406,7 @@ static void jni_store_table(JniScanContext *ctx, JniTable *table) {
 	JniMethod *method;
 	int method_index = 0;
 	r_list_foreach (table->methods, iter, method) {
+		RAnalFunction *fcn = jni_materialize_method (ctx, method);
 		sdb_num_setf (ctx->db, method->record_addr, 0,
 			"table.%d.method.%d.record", table_index, method_index);
 		sdb_num_setf (ctx->db, method->name_addr, 0,
@@ -242,6 +423,12 @@ static void jni_store_table(JniScanContext *ctx, JniTable *table) {
 			"table.%d.method.%d.definition", table_index, method_index);
 		sdb_setf (ctx->db, method->member->jni_definition, 0,
 			"table.%d.method.%d.jni_definition", table_index, method_index);
+		sdb_setf (ctx->db, "jobject|jclass", 0,
+			"table.%d.method.%d.receiver_type", table_index, method_index);
+		if (fcn) {
+			sdb_setf (ctx->db, fcn->name, 0,
+				"table.%d.method.%d.analysis_name", table_index, method_index);
+		}
 		method_index++;
 	}
 }
@@ -276,7 +463,7 @@ static void jni_scan_section(JniScanContext *ctx, const RBinSection *section) {
 	size_t offset = (ctx->pointer_size - (section_addr % ctx->pointer_size))
 		% ctx->pointer_size;
 	while (offset <= size - min_size) {
-		JniTable *table = jni_parse_table (ctx, buf, size, offset, section_addr);
+		JniTable *table = jni_table_at (ctx, buf, size, offset, section_addr);
 		if (!table) {
 			offset += ctx->pointer_size;
 			continue;
