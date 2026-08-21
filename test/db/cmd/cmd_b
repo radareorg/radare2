@@ -21,6 +21,71 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=b command token help suffixes
+FILE=-
+CMDS=<<EOF
+b?~?change working block size
+bf?~?set block size to flag size
+bm?~?set max block size
+bj?~?display block size information in JSON
+b*?~?display current block size in r2 command
+b+?~?increase blocksize by 3
+b-?~?decrease blocksize by 16
+b64:?~?execute a base64-encoded r2 script
+bg?~?run command in background
+EOF
+EXPECT=<<EOF
+1
+1
+1
+1
+1
+1
+1
+1
+1
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=b64 raw command help suffix
+FILE=-
+CMDS=b64:'?
+EXPECT=<<EOF
+| b64:AA=   execute a base64-encoded r2 script
+| b64:'AA=  execute a base64-encoded command without evaluating special chars
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=b help and invalid arithmetic do not change block size
+FILE=-
+CMDS=<<EOF
+b 32
+b+?~__no_help_line__
+b-?~__no_help_line__
+b
+b-33
+b
+b+0xffffffffffffffff
+b
+b-0xffffffffffffffff
+b
+b 0xffffffffffffffff
+b
+bm 0x100000000
+bm
+EOF
+EXPECT=<<EOF
+0x20
+0x20
+0x20
+0x20
+0x20
+0x3200000
+EOF
+RUN
+
 NAME=bj
 FILE=-
 CMDS=<<EOF
