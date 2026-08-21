@@ -1328,3 +1328,117 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=rol and ror set the carry and the single-bit overflow flag
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx d1c1
+ar rcx=0xa5a5000280000005
+ar cf=0
+ar of=0
+aes
+ar rcx
+ar cf
+ar of
+wx d1c9
+ar rcx=0xa5a5000280000005
+ar cf=0
+ar of=1
+ar rip=0
+s 0
+aes
+ar rcx
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0x0000000b
+0x00000001
+0x00000001
+0xc0000002
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=a rotate whose count masks to zero leaves the flags alone
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx d3c2
+ar rdx=0xa5a5000380000005
+ar rcx=32
+ar cf=1
+aes
+ar rdx
+ar cf
+EOF
+EXPECT=<<EOF
+0x80000005
+0x00000001
+EOF
+RUN
+
+NAME=rcl and rcr rotate the operand together with the carry flag
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c1d103
+ar rcx=0xa5a5000280000005
+ar cf=0
+aes
+ar rcx
+ar cf
+wx d1d9
+ar rcx=0xa5a5000280000005
+ar cf=0
+ar rip=0
+s 0
+aes
+ar rcx
+ar cf
+EOF
+EXPECT=<<EOF
+0x0000002a
+0x00000000
+0x40000002
+0x00000001
+EOF
+RUN
+
+NAME=a byte rcl takes its count modulo nine and a 64-bit one wraps a single bit
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c0d21f
+ar rdx=0x99aabb84
+ar cf=1
+aes
+ar rdx
+ar cf
+wx 48d3d2
+ar rdx=0x8000000000000005
+ar rcx=1
+ar cf=1
+ar rip=0
+s 0
+aes
+ar rdx
+ar cf
+EOF
+EXPECT=<<EOF
+0x99aabb4c
+0x00000000
+0x0000000b
+0x00000001
+EOF
+RUN

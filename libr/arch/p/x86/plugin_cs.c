@@ -304,6 +304,18 @@ static char *shift_count(const char *src, ut32 bitsize) {
 	return r_str_newf ("%s,0x%x,&", src, (bitsize > 32)? 0x3f: 0x1f);
 }
 
+/* rcl and rcr rotate the operand together with cf, so a byte rotates through 9
+ * bits and a word through 17: the masked count is reduced modulo that width. */
+static char *rotate_count(const char *src, ut32 bitsize) {
+	char *masked = shift_count (src, bitsize);
+	if (masked && bitsize < 32) {
+		char *wrapped = r_str_newf ("%d,%s,%%", bitsize + 1, masked);
+		free (masked);
+		return wrapped;
+	}
+	return masked;
+}
+
 static inline bool get64from32(const char *s, char *out, size_t outsz) {
 	if (*s == 'e') {
 		snprintf (out, outsz, "r%s", s + 1);
@@ -1175,31 +1187,91 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		}
 		break;
 	case X86_INS_ROL:
-	case X86_INS_RCL:
-		// TODO: RCL Still does not work as intended
-		//  - Set flags
 		{
-			src = getarg (&gop, 1, 0, NULL, NULL);
-			src2 = getarg (&gop, 0, 0, NULL, NULL);
-			dst = getarg (&gop, 0, 1, NULL, NULL);
-			esilprintf (op, "%s,%s,ROL,%s", src, src2, dst);
+			ut32 bitsize;
+			char *count = getarg (&gop, 1, 0, NULL, NULL);
+			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
+			dst_w = getarg (&gop, 0, 1, NULL, NULL);
+			src = count? shift_count (count, bitsize): NULL;
+			free (count);
+			if (src && dst_r && dst_w) {
+				// cf takes the bit that wrapped round; of exists only for a 1-bit rotate
+				esilprintf (op,
+					"%s,?{,%s,%s,ROL,%s,1,%s,&,cf,:=,"
+					"1,%s,-,!,?{,%d,%s,>>,1,&,cf,^,of,:=,},}",
+					src, src, dst_r, dst_w, dst_r,
+					src, bitsize - 1, dst_r);
+			}
 			free (src);
-			free (src2);
-			free (dst);
+			free (dst_r);
+			free (dst_w);
 		}
 		break;
 	case X86_INS_ROR:
-	case X86_INS_RCR:
-		// TODO: RCR Still does not work as intended
-		//  - Set flags
 		{
-			src = getarg (&gop, 1, 0, NULL, NULL);
-			src2 = getarg (&gop, 0, 0, NULL, NULL);
-			dst = getarg (&gop, 0, 1, NULL, NULL);
-			esilprintf (op, "%s,%s,ROR,%s", src, src2, dst);
+			ut32 bitsize;
+			char *count = getarg (&gop, 1, 0, NULL, NULL);
+			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
+			dst_w = getarg (&gop, 0, 1, NULL, NULL);
+			src = count? shift_count (count, bitsize): NULL;
+			free (count);
+			if (src && dst_r && dst_w) {
+				// of is the xor of the two top result bits, again only at a count of 1
+				esilprintf (op,
+					"%s,?{,%s,%s,ROR,%s,%d,%s,>>,1,&,cf,:=,"
+					"1,%s,-,!,?{,%d,%s,>>,1,&,%d,%s,>>,1,&,^,of,:=,},}",
+					src, src, dst_r, dst_w, bitsize - 1, dst_r,
+					src, bitsize - 1, dst_r, bitsize - 2, dst_r);
+			}
 			free (src);
-			free (src2);
-			free (dst);
+			free (dst_r);
+			free (dst_w);
+		}
+		break;
+	case X86_INS_RCL:
+		{
+			ut32 bitsize;
+			char *count = getarg (&gop, 1, 0, NULL, NULL);
+			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
+			dst_w = getarg (&gop, 0, 1, NULL, NULL);
+			src = count? rotate_count (count, bitsize): NULL;
+			free (count);
+			if (src && dst_r && dst_w) {
+				// the wrap-around term is split in two shifts: a single one would be
+				// `dst >> (bitsize + 1 - n)`, which esil clamps at 63 and gets wrong
+				esilprintf (op,
+					"%s,?{,%s,%s,<<,1,%s,-,cf,<<,|,1,%s,%d,-,%s,>>,>>,|,"
+					"1,%s,%d,-,%s,>>,&,cf,:=,%s,"
+					"1,%s,-,!,?{,%d,%s,>>,1,&,cf,^,of,:=,},}",
+					src, src, dst_r, src, src, bitsize, dst_r,
+					src, bitsize, dst_r, dst_w,
+					src, bitsize - 1, dst_r);
+			}
+			free (src);
+			free (dst_r);
+			free (dst_w);
+		}
+		break;
+	case X86_INS_RCR:
+		{
+			ut32 bitsize;
+			char *count = getarg (&gop, 1, 0, NULL, NULL);
+			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
+			dst_w = getarg (&gop, 0, 1, NULL, NULL);
+			src = count? rotate_count (count, bitsize): NULL;
+			free (count);
+			if (src && dst_r && dst_w) {
+				esilprintf (op,
+					"%s,?{,%s,%s,>>,%s,%d,-,cf,<<,|,1,%s,%d,-,%s,<<,<<,|,"
+					"1,1,%s,-,%s,>>,&,cf,:=,%s,"
+					"1,%s,-,!,?{,%d,%s,>>,1,&,%d,%s,>>,1,&,^,of,:=,},}",
+					src, src, dst_r, src, bitsize, src, bitsize, dst_r,
+					src, dst_r, dst_w,
+					src, bitsize - 1, dst_r, bitsize - 2, dst_r);
+			}
+			free (src);
+			free (dst_r);
+			free (dst_w);
 		}
 		break;
 	case X86_INS_CPUID:
