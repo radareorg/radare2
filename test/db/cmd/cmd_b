@@ -97,6 +97,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=bj preserves unsigned block size limit
+FILE=-
+CMDS=<<EOF
+bm 0xffffffff
+bj
+EOF
+EXPECT=<<EOF
+{"blocksize":256,"blocksize_limit":4294967295}
+EOF
+RUN
+
 NAME=b64
 FILE=-
 CMDS=<<EOF

@@ -26,35 +26,33 @@ static RCoreHelpMessage help_msg_b = {
 
 static RCmdResult block_help(RCmdContext *ctx) {
 	const size_t len = r_strs_len (ctx->subcmd);
-	const char mode = r_cmd_ctx_mode (ctx, "j*");
-	const char *match = NULL;
+	char command[5] = "b";
 	bool exact = true;
 	if (r_strs_equals_str (ctx->subcmd, "64?") || r_strs_startswith (ctx->subcmd, "64:")) {
-		match = "b64:";
+		command[1] = '6';
+		command[2] = '4';
+		command[3] = ':';
 		exact = false;
 	} else if (len == 2) {
-		switch (r_strs_at (ctx->subcmd, 0)) {
-		case 'f': match = "bf"; break;
-		case 'g': match = "bg"; break;
-		case 'm': match = "bm"; break;
-		default:
-			match = mode == 'j'? "bj": mode == '*'? "b*": NULL;
-		}
+		command[1] = r_strs_at (ctx->subcmd, 0);
+		command[2] = 0;
+	} else {
+		command[0] = 0;
 	}
-	if (!match || !r_cons_cmd_help_match (ctx->cons, help_msg_b, match, 0, exact)) {
+	if (!*command || !r_cons_cmd_help_match (ctx->cons, help_msg_b, command, 0, exact)) {
 		r_cons_cmd_help (ctx->cons, help_msg_b);
 	}
 	return (RCmdResult) { 0 };
 }
 
 static RCmdResult block_base64(RCmdContext *ctx) {
-	RStrs input = ctx->subcmd;
+	const RStrs input = ctx->subcmd;
 	if (!r_strs_startswith (input, "64:")) {
 		r_cons_cmd_help_match (ctx->cons, help_msg_b, "b64:", 0, false);
 		return (RCmdResult) { 0 };
 	}
 	const bool raw = r_strs_at (input, 3) == '\'';
-	RStrs encoded = r_strs_sub (input, raw? 4: 3, r_strs_len (input));
+	const RStrs encoded = r_strs_sub (input, raw? 4: 3, r_strs_len (input));
 	char *encoded_str = r_strs_tostring (encoded);
 	if (!encoded_str) {
 		return (RCmdResult) { .status = 1 };
@@ -90,8 +88,8 @@ static RCmdResult block_json(RCmdContext *ctx) {
 		return (RCmdResult) { .status = 1 };
 	}
 	pj_o (pj);
-	pj_ki (pj, "blocksize", ctx->blocksize);
-	pj_ki (pj, "blocksize_limit", block_size_max (core));
+	pj_kn (pj, "blocksize", ctx->blocksize);
+	pj_kn (pj, "blocksize_limit", block_size_max (core));
 	pj_end (pj);
 	r_cons_println (ctx->cons, pj_string (pj));
 	pj_free (pj);
@@ -100,12 +98,6 @@ static RCmdResult block_json(RCmdContext *ctx) {
 
 static RCmdResult block_invalid_size(ut64 blocksize) {
 	R_LOG_ERROR ("Block size 0x%"PFMT64x" is out of range", blocksize);
-	return (RCmdResult) { .status = 1 };
-}
-
-static RCmdResult block_invalid_adjustment(ut64 current, bool add, ut64 amount) {
-	R_LOG_ERROR ("Block size adjustment 0x%"PFMT64x" %c 0x%"PFMT64x" is out of range",
-		current, add? '+': '-', amount);
 	return (RCmdResult) { .status = 1 };
 }
 
@@ -126,6 +118,25 @@ static const char *block_operand(RCmdContext *ctx, size_t prefix_len) {
 	return r_str_trim_head_ro (operand);
 }
 
+static RCmdResult block_max_size(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	ut64 size = 0;
+	if (!block_parse_size (core, block_operand (ctx, 1), &size)) {
+		return (RCmdResult) { .status = 1 };
+	}
+	if (size <= 1) {
+		r_cons_printf (ctx->cons, "0x%x\n", block_size_max (core));
+		return (RCmdResult) { 0 };
+	}
+	if (size > UT32_MAX) {
+		return block_invalid_size (size);
+	}
+	r_th_lock_enter (core->lock);
+	core->blocksize_max = (ut32)size;
+	r_th_lock_leave (core->lock);
+	return (RCmdResult) { 0 };
+}
+
 static RCmdResult block_set_size(RCmdContext *ctx, ut64 blocksize) {
 	if (blocksize > ST32_MAX) {
 		return block_invalid_size (blocksize);
@@ -138,15 +149,33 @@ static RCmdResult block_set_size(RCmdContext *ctx, ut64 blocksize) {
 	return (RCmdResult) { 0 };
 }
 
-static RCmdResult block_adjust_size(RCmdContext *ctx, bool add) {
+static RCmdResult block_flag_size(RCmdContext *ctx) {
+	if (!r_strs_equals_str (ctx->subcmd, "f") || RVecRStrs_length (&ctx->args) != 1) {
+		r_cons_cmd_help_match (ctx->cons, help_msg_b, "bf", 0, true);
+		return (RCmdResult) { 0 };
+	}
+	RCore *core = ctx->user;
+	const char *name = RVecRStrs_at (&ctx->args, 0)->a;
+	const RFlagItem *flag = r_flag_get (core->flags, name);
+	if (!flag) {
+		R_LOG_ERROR ("bf: cannot find flag named '%s'", name);
+		return (RCmdResult) { .status = 1 };
+	}
+	return block_set_size (ctx, flag->size);
+}
+
+static RCmdResult block_adjust_size(RCmdContext *ctx, char op) {
 	RCore *core = ctx->user;
 	ut64 amount = 0;
 	if (!block_parse_size (core, block_operand (ctx, 1), &amount)) {
 		return (RCmdResult) { .status = 1 };
 	}
+	const bool add = op == '+';
 	const ut64 current = ctx->blocksize;
 	if (current > ST32_MAX || (add? amount > ST32_MAX - current: amount > current)) {
-		return block_invalid_adjustment (current, add, amount);
+		R_LOG_ERROR ("Block size adjustment 0x%"PFMT64x" %c 0x%"PFMT64x" is out of range",
+			current, op, amount);
+		return (RCmdResult) { .status = 1 };
 	}
 	return block_set_size (ctx, add? current + amount: current - amount);
 }
@@ -168,43 +197,14 @@ static RCmdResult block_callback(RCmdContext *ctx) {
 	switch (r_strs_at (ctx->subcmd, 0)) {
 	case '6': // "b6"
 		return block_base64 (ctx);
-	case 'm': { // "bm"
-		ut64 n = 0;
-		if (!block_parse_size (core, block_operand (ctx, 1), &n)) {
-			return (RCmdResult) { .status = 1 };
-		}
-		if (n > 1) {
-			if (n > UT32_MAX) {
-				return block_invalid_size (n);
-			}
-			r_th_lock_enter (core->lock);
-			core->blocksize_max = (ut32)n;
-			r_th_lock_leave (core->lock);
-		} else {
-			r_cons_printf (ctx->cons, "0x%x\n", block_size_max (core));
-		}
-		break;
-	}
+	case 'm': // "bm"
+		return block_max_size (ctx);
 	case '+': // "b+"
-		return block_adjust_size (ctx, true);
+		return block_adjust_size (ctx, '+');
 	case '-': // "b-"
-		return block_adjust_size (ctx, false);
+		return block_adjust_size (ctx, '-');
 	case 'f': // "bf"
-		if (r_strs_equals_str (ctx->subcmd, "f") && argc == 1) {
-			RStrs *arg = RVecRStrs_at (&ctx->args, 0);
-			char *name = r_strs_tostring (*arg);
-			RFlagItem *flag = name? r_flag_get (core->flags, name): NULL;
-			if (flag) {
-				const ut64 size = flag->size;
-				free (name);
-				return block_set_size (ctx, size);
-			}
-			R_LOG_ERROR ("bf: cannot find flag named '%s'", name? name: "");
-			free (name);
-			return (RCmdResult) { .status = 1 };
-		}
-		r_cons_cmd_help_match (ctx->cons, help_msg_b, "bf", 0, true);
-		break;
+		return block_flag_size (ctx);
 	case '\0': // "b"
 		if (!argc) {
 			r_cons_printf (ctx->cons, "0x%x\n", ctx->blocksize);
