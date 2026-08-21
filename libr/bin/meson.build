@@ -137,7 +137,8 @@ r_bin_sources = [
   'format/pdb/stream_pe.c',
   'format/pdb/tpi.c',
 # language detection
-  'mangling/swift.c'
+  'mangling/swift.c',
+  'mangling/java.c',
 ]
 
 demangle_c_args = []
@@ -173,7 +174,7 @@ if bin_demangle_plugins.contains('ibmxl')
 endif
 if bin_demangle_plugins.contains('java')
   demangle_c_args += ['-DR_BIN_DEMANGLE_JAVA=1']
-  r_bin_sources += ['p/bin_demangle_java.c', 'mangling/java.c']
+  r_bin_sources += ['p/bin_demangle_java.c']
 endif
 if bin_demangle_plugins.contains('msvc')
   demangle_c_args += ['-DR_BIN_DEMANGLE_MSVC=1']

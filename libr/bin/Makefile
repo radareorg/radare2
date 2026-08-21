@@ -23,6 +23,7 @@ include $(LIBR)/magic/deps.mk
 STATIC_OBJS=$(sort $(addprefix $(LTOP)/bin/p/, $(STATIC_OBJ)))
 OBJS=bin.o addrline.o bin_ldr.o bin_write.o demangle.o demangle_stubs.o
 OBJS+=dwarf.o bfilter.o bfile.o bobj.o blang.o
+OBJS+=mangling/java.o
 OBJS+=${STATIC_OBJS}
 OBJS+=mangling/swift.o
 OBJS+=format/swift/swift.o
