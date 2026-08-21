@@ -2616,3 +2616,31 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+
+NAME=byte mul and idiv use al and ax in 32-bit mode too
+FILE=malloc://0x200
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx f6e1
+aei
+ar eax=0x112233ff
+ar ecx=0x99aabbff
+s 0
+aeip
+aes
+ar ax
+wx f6f9
+ar eax=0x1122fff9
+ar ecx=0x99aabb02
+s 0
+aeip
+aes
+ar al
+ar ah
+EOF
+EXPECT=<<EOF
+0x0000fe01
+0x000000fd
+0x000000ff
+EOF
+RUN
