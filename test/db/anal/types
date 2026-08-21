@@ -102,6 +102,75 @@ struct Inner {
 EOF
 RUN
 
+NAME=arm64 field propagation follows a const interface wrapper
+FILE=malloc://64
+ARGS=-a arm -b 64 -e types.fields=true
+CMDS=<<EOF
+wa ldr x2, [x0]
+wa ldr x0, [x2, 0x10] @ 4
+wa bl 0x20 @ 8
+wa ret @ 0xc
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Table { char pad[16]; int slot; };"
+"td struct Wrapper { const struct Table *functions; };"
+"td typedef struct Wrapper Env;"
+afs int helper(char *s) @ 0x20
+afvt arg1 "Env *" @ 0
+aei
+aeim
+aaft
+aaft
+tsc Wrapper
+tsc Table
+EOF
+EXPECT=<<EOF
+struct Wrapper {
+  const struct Table *functions;
+};
+struct Table {
+  char pad[16];
+  char *slot;
+};
+EOF
+RUN
+
+NAME=arm64 field propagation follows a copied const interface wrapper
+FILE=malloc://64
+ARGS=-a arm -b 64 -e types.fields=true
+CMDS=<<EOF
+wa mov x19, x0
+wa ldr x2, [x19] @ 4
+wa ldr x0, [x2, 0x10] @ 8
+wa bl 0x20 @ 0xc
+wa ret @ 0x10
+wa ret @ 0x20
+af @ 0x20
+afn helper @ 0x20
+af @ 0
+afn caller @ 0
+"td struct Table { char pad[16]; int slot; };"
+"td struct Wrapper { const struct Table *functions; };"
+"td typedef struct Wrapper Env;"
+afs int helper(char *s) @ 0x20
+afvt arg1 "Env *" @ 0
+aei
+aeim
+aaft
+aaft
+tsc Table
+EOF
+EXPECT=<<EOF
+struct Table {
+  char pad[16];
+  char *slot;
+};
+EOF
+RUN
+
 NAME=struct field type propagation through callee-saved pointer copy
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e types.fields=true

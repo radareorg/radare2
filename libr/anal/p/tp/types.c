@@ -571,6 +571,15 @@ static bool tp_prim_scalar(const char *t) {
 #define TP_TYPEDEF_MAX 4
 
 static const char *tp_skip_kind_prefix(const char *t) {
+	for (;;) {
+		const char *old = t;
+		t = r_str_skip_prefix (r_str_trim_head_ro (t), "const ");
+		t = r_str_skip_prefix (r_str_trim_head_ro (t), "volatile ");
+		t = r_str_skip_prefix (r_str_trim_head_ro (t), "restrict ");
+		if (old == t) {
+			break;
+		}
+	}
 	t = r_str_skip_prefix (t, "struct ");
 	return r_str_skip_prefix (t, "union ");
 }

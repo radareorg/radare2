@@ -3817,14 +3817,19 @@ RUN
 
 NAME=td stores a void parameter list on a member as zero arguments
 FILE=-
+ARGS=-b 64
 CMDS=<<EOF
 'td struct A2 { float (*m)(void); void *x; };
 tk~func.A2
+tss A2.m
+tss A2
 EOF
 EXPECT=<<EOF
 func.A2.m.args=0
 func.A2.m.cc=cdecl
 func.A2.m.ret=float
+8
+16
 EOF
 RUN
 

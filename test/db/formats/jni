@@ -5,8 +5,10 @@ e asm.os=android
 tk jboolean
 tk jstring
 tk JNIEnv
+tk _JNIEnv
 tk JNINativeInterface
 tk JavaVM
+tk _JavaVM
 tk JNIInvokeInterface
 EOF
 EXPECT=<<EOF
@@ -14,7 +16,9 @@ typedef
 typedef
 typedef
 struct
+struct
 typedef
+struct
 struct
 EOF
 RUN
@@ -83,9 +87,9 @@ tk struct.JNINativeInterface.NewStringUTF
 tk struct.JNINativeInterface.GetObjectRefType
 EOF
 EXPECT=<<EOF
-void *,32,0
-void *,48,0
-void *,1336,0
+JNINativeInterface.GetVersion,32,0
+JNINativeInterface.FindClass,48,0
+JNINativeInterface.NewStringUTF,1336,0
 void *,1856,0
 EOF
 RUN
@@ -98,8 +102,165 @@ tk struct.JNIInvokeInterface.DestroyJavaVM
 tk struct.JNIInvokeInterface.GetEnv
 EOF
 EXPECT=<<EOF
-void *,24,0
-void *,48,0
+JNIInvokeInterface.DestroyJavaVM,24,0
+JNIInvokeInterface.GetEnv,48,0
+EOF
+RUN
+
+NAME=jni interface wrappers preserve public indirection
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.os=android
+tk typedef.JNIEnv
+tk struct._JNIEnv.functions
+tk typedef.JavaVM
+tk struct._JavaVM.functions
+tss JNIEnv
+tss JavaVM
+EOF
+EXPECT=<<EOF
+struct _JNIEnv
+const struct JNINativeInterface *,0,0
+struct _JavaVM
+const struct JNIInvokeInterface *,0,0
+8
+8
+EOF
+RUN
+
+NAME=jni high value slots have typed prototypes
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.os=android
+tk func.JNIInvokeInterface.GetEnv.ret
+tk func.JNIInvokeInterface.GetEnv.arg.0
+tk func.JNIInvokeInterface.GetEnv.arg.1
+tk func.JNIInvokeInterface.GetEnv.arg.2
+tk func.JNINativeInterface.FindClass.ret
+tk func.JNINativeInterface.FindClass.arg.1
+tk func.JNINativeInterface.GetMethodID.arg.3
+tk func.JNINativeInterface.GetStaticMethodID.ret
+tk func.JNINativeInterface.NewStringUTF.ret
+tk func.JNINativeInterface.GetStringUTFChars.ret
+tk func.JNINativeInterface.ReleaseStringUTFChars.ret
+tk func.JNINativeInterface.GetArrayLength.ret
+tk func.JNINativeInterface.RegisterNatives.arg.2
+tk func.JNINativeInterface.RegisterNatives.arg.3
+tk func.JNINativeInterface.GetDirectBufferAddress.ret
+EOF
+EXPECT=<<EOF
+jint
+JavaVM *,vm
+void **,penv
+jint,version
+jclass
+const char *,name
+const char *,signature
+jmethodID
+jstring
+const char *
+void
+jsize
+const JNINativeMethod *,methods
+jint,count
+void *
+EOF
+RUN
+
+NAME=jni slot prototypes use the target calling convention
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.os=android
+tfj JNINativeInterface.FindClass
+EOF
+EXPECT=<<EOF
+{"name":"JNINativeInterface.FindClass","ret":"jclass","cc":"arm64","ret_reg":"x0","args":[{"type":"JNIEnv *","name":"env","size":8,"offset":0,"loc":"x0"},{"type":"const char *","name":"name","size":8,"offset":8,"loc":"x1"}],"size":16}
+EOF
+RUN
+
+NAME=jni call method variants remain distinct
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.os=android
+tk func.JNINativeInterface.CallIntMethod.arg.3
+tk func.JNINativeInterface.CallIntMethodV.arg.3
+tk func.JNINativeInterface.CallIntMethodA.arg.3
+tk func.JNINativeInterface.CallNonvirtualObjectMethod.arg.2
+tk func.JNINativeInterface.CallNonvirtualObjectMethod.arg.4
+tk func.JNINativeInterface.CallStaticDoubleMethodV.ret
+tk func.JNINativeInterface.CallStaticDoubleMethodV.arg.3
+tk~^type.JNINativeInterface.Call?
+EOF
+EXPECT=<<EOF
+,...
+va_list,args
+const jvalue *,args
+jclass,clazz
+,...
+jdouble
+va_list,args
+90
+EOF
+RUN
+
+NAME=jni typed table layout keeps arm64 offsets and sizes
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.os=android
+tss JNIInvokeInterface
+tss JNINativeInterface
+ahts 48
+ahts 1720
+ahts 1840
+EOF
+EXPECT=<<EOF
+64
+1864
+JNIInvokeInterface.GetEnv
+JNINativeInterface.FindClass
+JNINativeInterface.RegisterNatives
+JNINativeInterface.GetDirectBufferAddress
+EOF
+RUN
+
+NAME=jni C++ fixture preserves interface indirection
+FILE=bins/elf/librsjni_androix.so
+CMDS=<<EOF
+e asm.os=android
+aa
+s sym.JNI_OnLoad
+afs
+afvt vm
+ao @ 0x238~opcode
+ao @ 0x244~opcode
+tk struct._JavaVM.functions
+tk struct.JNIInvokeInterface.GetEnv
+tk func.JNIInvokeInterface.GetEnv.arg.0
+ao @ 0x260~opcode
+ao @ 0x270~opcode
+tk struct._JNIEnv.functions
+tk struct.JNINativeInterface.FindClass
+tk func.JNINativeInterface.FindClass.arg.0
+ao @ 0x290~opcode
+ao @ 0x294~opcode
+tk struct.JNINativeInterface.RegisterNatives
+EOF
+EXPECT=<<EOF
+jint JNI_OnLoad (JavaVM *vm, void *reserved);
+JavaVM *
+opcode: ldr x8, [x0]
+opcode: ldr x8, [x8, 0x30]
+const struct JNIInvokeInterface *,0,0
+JNIInvokeInterface.GetEnv,48,0
+JavaVM *,vm
+opcode: ldr x9, [x8]
+opcode: ldr x9, [x9, 0x30]
+const struct JNINativeInterface *,0,0
+JNINativeInterface.FindClass,48,0
+JNIEnv *,env
+opcode: ldr x8, [x0]
+opcode: ldr x8, [x8, 0x6b8]
+JNINativeInterface.RegisterNatives,1720,0
 EOF
 RUN
 

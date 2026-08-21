@@ -202,8 +202,16 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 						get_src_regname_from_esil (anal, r_strbuf_get (&op->esil), instr_addr, regname, sizeof (regname));
 						break;
 					case R_ANAL_OP_TYPE_LEA:
-					case R_ANAL_OP_TYPE_LOAD:
 					case R_ANAL_OP_TYPE_STORE:
+						res = true;
+						break;
+					case R_ANAL_OP_TYPE_LOAD:
+						// A load through a copied struct pointer is another deref hop.
+						// Keep the old stop behavior when it is not a plain field load.
+						if (tps->cfg_fields
+								&& tp_chain_collect (tt, j, op, &chain, regname, sizeof (regname))) {
+							break;
+						}
 						res = true;
 						break;
 					default:
