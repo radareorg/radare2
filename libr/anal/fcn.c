@@ -157,7 +157,8 @@ static int fcn_type_stack_pop(RAnal *anal, const char *cc, const char *callee, i
 static char *fcn_call_type(RAnal *anal, RAnalOp *op, RAnalFunction **callee) {
 	ut64 offset = op->jump != UT64_MAX? op->jump: op->ptr;
 	if (offset == UT64_MAX) {
-		return NULL;
+		const char *type = r_anal_call_type_at (anal, op->addr);
+		return type? strdup (type): NULL;
 	}
 	*callee = r_anal_get_function_at (anal, offset);
 	if (*callee) {
@@ -172,6 +173,25 @@ static char *fcn_call_type(RAnal *anal, RAnalOp *op, RAnalFunction **callee) {
 		flag = r_flag_get_by_spaces (anal->flb.f, false, offset, R_FLAGS_FS_IMPORTS, NULL);
 	}
 	return flag? r_type_func_guess (anal->sdb_types, flag->name): NULL;
+}
+
+R_IPI const char *r_anal_call_type_at(RAnal *anal, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types, NULL);
+	return sdb_const_getf (anal->sdb_types, NULL,
+		"calllink.%08" PFMT64x, addr);
+}
+
+R_IPI void r_anal_call_type_set(RAnal *anal, ut64 addr, const char *type) {
+	R_RETURN_IF_FAIL (anal && anal->sdb_types);
+	if (R_STR_ISNOTEMPTY (type)) {
+		sdb_setf (anal->sdb_types, type, 0,
+			"calllink.%08" PFMT64x, addr);
+	} else {
+		char key[64];
+		snprintf (key, sizeof (key),
+			"calllink.%08" PFMT64x, addr);
+		sdb_unset (anal->sdb_types, key, 0);
+	}
 }
 
 static const char *fcn_call_convention(RAnal *anal, RAnalOp *op, RAnalFunction **callee, char **callee_type) {

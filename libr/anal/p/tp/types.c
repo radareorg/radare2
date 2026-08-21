@@ -935,10 +935,91 @@ void tp_flush_pending_const(TPState *tps) {
 	RVecTPPendingConst_clear (&tps->pending_const);
 }
 
-#define TP_REGCOPY_MAX 4
+#define TP_REGCOPY_MAX 8
+
+static char *tp_fcn_reg_type(RAnal *anal, RAnalFunction *fcn, const char *reg) {
+	RAnalFunctionSignature *sig = r_anal_function_get_signature (fcn);
+	if (sig && R_STR_ISNOTEMPTY (sig->callconv)) {
+		const int argc = r_list_length (sig->params);
+		int i;
+		for (i = 0; i < argc; i++) {
+			const char *loc = r_anal_cc_argloc (anal,
+				sig->callconv, i, 0, argc);
+			if (loc && r_anal_cc_location_uses (anal, loc, reg)) {
+				RAnalFunctionParam *param = r_list_get_n (sig->params, i);
+				char *type = param && R_STR_ISNOTEMPTY (param->type)
+					? strdup (param->type): NULL;
+				r_anal_function_signature_free (sig);
+				return type;
+			}
+		}
+	}
+	r_anal_function_signature_free (sig);
+	RRegItem *item = r_reg_get (anal->reg, reg, -1);
+	if (!item) {
+		return NULL;
+	}
+	RAnalVar *var = r_anal_function_get_var (fcn,
+		R_ANAL_VAR_KIND_REG, item->index);
+	r_unref (item);
+	return var && R_STR_ISNOTEMPTY (var->type)
+		? strdup (var->type): NULL;
+}
+
+static bool tp_stack_reg(TypeTrace *tt, const char *reg) {
+	const char *sp = r_reg_alias_getname (tt->reg, R_REG_ALIAS_SP);
+	const char *bp = r_reg_alias_getname (tt->reg, R_REG_ALIAS_BP);
+	if ((sp && !strcmp (reg, sp)) || (bp && !strcmp (reg, bp))) {
+		return true;
+	}
+	RRegItem *item = r_reg_get (tt->reg, reg, -1);
+	RRegItem *sp_item = sp? r_reg_get (tt->reg, sp, -1): NULL;
+	RRegItem *bp_item = bp? r_reg_get (tt->reg, bp, -1): NULL;
+	const bool result = item
+		&& ((sp_item && item->offset == sp_item->offset)
+			|| (bp_item && item->offset == bp_item->offset));
+	r_unref (item);
+	r_unref (sp_item);
+	r_unref (bp_item);
+	return result;
+}
+
+static int tp_spill_source(TPState *tps, int idx, ut64 addr, char *reg, int reg_size) {
+	TypeTrace *tt = &tps->tt;
+	int steps;
+	for (steps = 1; idx >= 0 && steps < TYPE_MATCH_MAX_BACKTRACE;
+			idx--, steps++) {
+		if (etrace_memwrite_addr (tt, idx) != addr) {
+			continue;
+		}
+		RAnalOp *op = tp_anal_op (tps->anal,
+			etrace_addrof (tt, idx),
+			R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL);
+		if (!op) {
+			return -1;
+		}
+		get_src_regname_from_esil (tps->anal,
+			r_strbuf_get (&op->esil), op->addr, reg, reg_size);
+		r_anal_op_free (op);
+		return reg[0]? idx: -1;
+	}
+	return -1;
+}
+
+const char *tp_mem_type_at(TPState *tps, ut64 addr) {
+	return tps? ht_up_find (tps->mem_types, addr, NULL): NULL;
+}
+
+void tp_mem_type_set(TPState *tps, ut64 addr, const char *type) {
+	R_RETURN_IF_FAIL (tps && addr != UT64_MAX && type);
+	char *copy = strdup (type);
+	if (copy && !ht_up_update (tps->mem_types, addr, copy)) {
+		free (copy);
+	}
+}
 
 // resolve a register to the type of the reg arg it was copied from, following copies and deref hops
-static char *tp_reg_var_type(TPState *tps, RAnalFunction *fcn, const char *reg, TPFieldChain *chain) {
+static char *tp_reg_var_type(TPState *tps, RAnalFunction *fcn, const char *reg, TPFieldChain *chain, ut64 *slot_iaddr) {
 	RAnal *anal = tps->anal;
 	TypeTrace *tt = &tps->tt;
 	char cur[REGNAME_SIZE] = { 0 };
@@ -957,16 +1038,8 @@ static char *tp_reg_var_type(TPState *tps, RAnalFunction *fcn, const char *reg, 
 		steps += walked;
 		j = w;
 		if (j < 0) {
-			// no write since entry, so the reg arg's declared type still holds
-			RRegItem *item = r_reg_get (anal->reg, cur, -1);
-			if (item) {
-				RAnalVar *var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, item->index);
-				r_unref (item);
-				if (var && R_STR_ISNOTEMPTY (var->type)) {
-					return strdup (var->type);
-				}
-			}
-			return NULL;
+			// no write since entry, so the signature's register type still holds
+			return tp_fcn_reg_type (anal, fcn, cur);
 		}
 		RAnalOp *op = tp_anal_op (anal, etrace_addrof (tt, j), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL);
 		if (!op) {
@@ -977,8 +1050,26 @@ static char *tp_reg_var_type(TPState *tps, RAnalFunction *fcn, const char *reg, 
 		if (copy) {
 			get_src_regname_from_esil (anal, r_strbuf_get (&op->esil), op->addr, src, sizeof (src));
 		} else {
-			// a base+disp load is a deref hop, keep following the base pointer
-			tp_chain_collect (tt, j, op, chain, src, sizeof (src));
+			const RArchValue *v = RVecRArchValue_at (&op->srcs, 0);
+			ut64 read_addr = UT64_MAX;
+			if (v && v->reg && v->memref && tp_stack_reg (tt, v->reg)
+					&& etrace_memread_first_addr (tt, j, &read_addr)) {
+				const char *mem_type = tp_mem_type_at (tps, read_addr);
+				if (mem_type) {
+					r_anal_op_free (op);
+					return strdup (mem_type);
+				}
+				const int store = tp_spill_source (tps, j - 1,
+					read_addr, src, sizeof (src));
+				j = store;
+			} else {
+				// a base+disp load is a deref hop, keep following the base pointer
+				if (!chain->len && slot_iaddr) {
+					*slot_iaddr = op->addr;
+				}
+				tp_chain_collect (tt, j, op, chain,
+					src, sizeof (src));
+			}
 		}
 		r_anal_op_free (op);
 		if (!src[0]) {
@@ -988,6 +1079,67 @@ static char *tp_reg_var_type(TPState *tps, RAnalFunction *fcn, const char *reg, 
 		j--;
 	}
 	return NULL;
+}
+
+static char *tp_member_function_type(RAnal *anal, const char *ptr_type, const TPFieldChain *chain) {
+	if (!chain->ok || chain->len < 1) {
+		return NULL;
+	}
+	char *pt = strdup (ptr_type);
+	if (!pt) {
+		return NULL;
+	}
+	char *result = NULL;
+	int i;
+	for (i = chain->len - 1; i >= 0; i--) {
+		RAnalBaseType *bt = tp_resolve_ptr_base (anal, pt);
+		if (!bt) {
+			break;
+		}
+		const bool last = i == 0;
+		const bool is_union = bt->kind == R_ANAL_BASE_TYPE_KIND_UNION;
+		const int width = last && is_union? chain->width: 0;
+		RAnalTypeMember *member = tp_pick_member (anal, bt,
+			chain->hops[i], width);
+		if (!member) {
+			r_anal_base_type_free (bt);
+			break;
+		}
+		if (last) {
+			if (r_type_func_exist (anal->sdb_types, member->type)) {
+				result = strdup (member->type);
+			}
+		} else {
+			free (pt);
+			pt = strdup (member->type);
+		}
+		r_anal_base_type_free (bt);
+		if (last || !pt) {
+			break;
+		}
+	}
+	free (pt);
+	return result;
+}
+
+char *tp_indirect_call_type(TPState *tps, RAnalFunction *fcn, const char *reg, ut64 *load_addr) {
+	R_RETURN_VAL_IF_FAIL (tps && fcn && reg, NULL);
+	TPFieldChain chain = {
+		.slot_addr = UT64_MAX,
+		.ok = true
+	};
+	if (load_addr) {
+		*load_addr = UT64_MAX;
+	}
+	char *ptr_type = tp_reg_var_type (tps, fcn, reg,
+		&chain, load_addr);
+	if (!ptr_type) {
+		return NULL;
+	}
+	char *type = tp_member_function_type (tps->anal,
+		ptr_type, &chain);
+	free (ptr_type);
+	return type;
 }
 
 // a callee return value stored into *(struct-ptr + disp) types the member behind it
@@ -1013,7 +1165,7 @@ bool tp_field_from_ret(TPState *tps, RAnalFunction *fcn, RAnalOp *op, const char
 		return false;
 	}
 	TPFieldChain chain = { .slot_addr = UT64_MAX, .ok = true };
-	char *ptr_type = tp_reg_var_type (tps, fcn, base, &chain);
+	char *ptr_type = tp_reg_var_type (tps, fcn, base, &chain, NULL);
 	if (!ptr_type) {
 		return false;
 	}

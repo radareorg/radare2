@@ -260,13 +260,35 @@ const char *tp_call_target_name(RAnal *anal, RAnalOp *aop, ut32 type, RAnalFunct
 			return flag->realname;
 		}
 	}
-	return NULL;
+	return r_anal_call_type_at (anal, aop->addr);
 }
 
 // the callee's calling convention: its own when known, else derived from the name
 const char *tp_call_cc(RAnal *anal, RAnalFunction *fcn_call, const char *name) {
 	const char *cc = fcn_call? r_anal_function_cc (fcn_call): NULL;
 	return cc? cc: r_anal_cc_func (anal, name);
+}
+
+static void tp_call_effect(TPState *tps, const char *name, const char *cc) {
+	if (strcmp (name, "JNIInvokeInterface.GetEnv")
+			&& strcmp (name, "JNIInvokeInterface.AttachCurrentThread")
+			&& strcmp (name,
+				"JNIInvokeInterface.AttachCurrentThreadAsDaemon")) {
+		return;
+	}
+	const int argc = r_type_func_args_count (
+		tps->anal->sdb_types, name);
+	const char *loc = r_anal_cc_argloc (
+		tps->anal, cc, 1, 0, argc);
+	RRegItem *item = loc? r_reg_get (tps->tt.reg, loc, -1): NULL;
+	if (!item) {
+		return;
+	}
+	r_unref (item);
+	const ut64 addr = r_reg_getv (tps->tt.reg, loc);
+	if (addr && addr != UT64_MAX) {
+		tp_mem_type_set (tps, addr, "JNIEnv *");
+	}
 }
 
 // per-op type propagation body run by tp_emulate_linear for r_anal_type_match
@@ -425,6 +447,21 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 	}
 	RAnalVar *var = r_anal_get_used_function_var (anal, aop->addr);
 	ut32 type = aop->type & R_ANAL_OP_TYPE_MASK;
+	if ((type == R_ANAL_OP_TYPE_UCALL || type == R_ANAL_OP_TYPE_UCCALL)
+			&& R_STR_ISNOTEMPTY (aop->reg)) {
+		r_anal_call_type_set (anal, addr, NULL);
+		ut64 load_addr = UT64_MAX;
+		char *call_type = tp_indirect_call_type (tps,
+			c->fcn, aop->reg, &load_addr);
+		if (call_type) {
+			r_anal_call_type_set (anal, addr, call_type);
+			if (load_addr != UT64_MAX) {
+				r_anal_hint_set_offset (anal,
+					load_addr, call_type);
+			}
+			free (call_type);
+		}
+	}
 	// UCALL is the base value 4, not a flag: type & UCALL also matches STORE and swallows the return-value consumer below
 	if (type == R_ANAL_OP_TYPE_CALL || type == R_ANAL_OP_TYPE_UCALL || type == R_ANAL_OP_TYPE_UCCALL) {
 		RAnalFunction *fcn_call = NULL;
@@ -443,6 +480,7 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 			R_LOG_DEBUG ("CC can %s %s", Cc, fcn_name);
 			if (Cc && r_anal_cc_exist (anal, Cc)) {
 				type_match (tps, fcn_name, addr, bb_addr, Cc, c->prev_idx, c->tp.userfnc);
+				tp_call_effect (tps, fcn_name, Cc);
 				c->prev_idx = etrace->cur_idx;
 				R_FREE (c->tp.ret_type);
 				const char *rt = r_type_func_ret (TDB, fcn_name);

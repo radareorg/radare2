@@ -37,6 +37,8 @@ R_IPI int r_anal_cc_raslot(RAnal *anal, int word);
 R_IPI const char *r_anal_cc_rolelabel(char tag, char label[2], int *slot);
 R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg);
 R_IPI bool r_anal_cc_location_in_regset(RAnal *anal, const char *loc, const char *regset, bool all);
+R_IPI const char *r_anal_call_type_at(RAnal *anal, ut64 addr);
+R_IPI void r_anal_call_type_set(RAnal *anal, ut64 addr, const char *type);
 
 // Bump the recorded leaddr of the most recent entry that matches `reg` by
 // `delta`. Used on arm64 to finalise `adrp Rd, page; add Rd, Rd, #imm`

@@ -4016,6 +4016,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_BLRABZ:
 		op->family = R_ANAL_OP_FAMILY_SECURITY;
 		op->type = R_ANAL_OP_TYPE_RCALL;
+		op->reg = cs_reg_name (handle, insn->detail->arm64.operands[0].reg);
 		break;
 	case ARM64_INS_BRAA:
 	case ARM64_INS_BRAAZ:
@@ -4054,7 +4055,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_BLR: // blr x0
 		op->type = R_ANAL_OP_TYPE_RCALL;
 		op->fail = addr + 4;
-		//op->jump = IMM64(0);
+		op->reg = cs_reg_name (handle, insn->detail->arm64.operands[0].reg);
 		break;
 	case ARM64_INS_CBZ:
 	case ARM64_INS_CBNZ:

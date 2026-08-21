@@ -1163,6 +1163,7 @@ static void anop64(RArchSession *as, RAnalOp *op, Instruction *insn) {
 	case ARM64_BLRABZ:
 		op->family = R_ANAL_OP_FAMILY_SECURITY;
 		op->type = R_ANAL_OP_TYPE_RCALL;
+		op->reg = REG64 (0);
 		break;
 	case ARM64_BRAA:
 	case ARM64_BRAAZ:
@@ -1199,7 +1200,7 @@ static void anop64(RArchSession *as, RAnalOp *op, Instruction *insn) {
 	case ARM64_BLR: // blr x0
 		op->type = R_ANAL_OP_TYPE_RCALL;
 		op->fail = addr + 4;
-		//op->jump = IMM64(0);
+		op->reg = REG64 (0);
 		break;
 	case ARM64_CBZ:
 	case ARM64_CBNZ:

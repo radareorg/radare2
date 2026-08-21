@@ -1237,6 +1237,45 @@ static const char *get_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
 	return r_anal_function_get_var_reg_at (fcn, delta, addr);
 }
 
+static const char *ds_call_type_at(RAnal *anal, ut64 addr) {
+	return sdb_const_getf (anal->sdb_types, NULL,
+		"calllink.%08" PFMT64x, addr);
+}
+
+static char *ds_typed_call_pseudo(RDisasmState *ds) {
+	const char *name = ds_call_type_at (ds->core->anal, ds->at);
+	if (!name) {
+		return NULL;
+	}
+	const ut32 type = ds->analop.type & R_ANAL_OP_TYPE_MASK;
+	if (type != R_ANAL_OP_TYPE_UCALL
+			&& type != R_ANAL_OP_TYPE_UCCALL) {
+		return NULL;
+	}
+	Sdb *TDB = ds->core->anal->sdb_types;
+	const char *cc = r_anal_cc_func (ds->core->anal, name);
+	const int argc = r_type_func_args_count (TDB, name);
+	if (!cc || argc < 0) {
+		return NULL;
+	}
+	RStrBuf *sb = r_strbuf_new (name);
+	r_strbuf_append (sb, " (");
+	int i;
+	for (i = 0; i < argc; i++) {
+		const char *loc = r_anal_cc_argloc (ds->core->anal,
+			cc, i, 0, argc);
+		if (!loc) {
+			loc = r_type_func_args_name (TDB, name, i);
+		}
+		if (i > 0) {
+			r_strbuf_append (sb, ", ");
+		}
+		r_strbuf_append (sb, r_str_get (loc));
+	}
+	r_strbuf_append (sb, ")");
+	return r_strbuf_drain (sb);
+}
+
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	RCore *core = ds->core;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (ds->core->rasm->config);
@@ -1289,6 +1328,11 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		if (res) {
 			free (ds->opstr);
 			ds->opstr = res;
+		}
+		char *call = ds_typed_call_pseudo (ds);
+		if (call) {
+			free (ds->opstr);
+			ds->opstr = call;
 		}
 	}
 	/* initialize */
@@ -6103,7 +6147,7 @@ static void ds_comment_call(RDisasmState *ds) {
 	RAnalFuncArg *arg;
 	RListIter *iter;
 	RListIter *nextele;
-	const char *fcn_name = NULL;
+	const char *fcn_name = ds_call_type_at (core->anal, ds->at);
 	char *key = NULL;
 	ut64 pcv = ds->analop.jump;
 	if (ds->analop.type == R_ANAL_OP_TYPE_RCALL) {
@@ -6119,12 +6163,14 @@ static void ds_comment_call(RDisasmState *ds) {
 		}
 	}
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, pcv);
-	if (fcn) {
-		fcn_name = fcn->name;
-	} else {
-		RFlagItem *item = r_flag_get_in (core->flags, pcv);
-		if (item) {
-			fcn_name = item->name;
+	if (!fcn_name) {
+		if (fcn) {
+			fcn_name = fcn->name;
+		} else {
+			RFlagItem *item = r_flag_get_in (core->flags, pcv);
+			if (item) {
+				fcn_name = item->name;
+			}
 		}
 	}
 	if (fcn_name) {
@@ -6314,8 +6360,11 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
 	Sdb *TDB = anal->sdb_types;
 	char *name;
-	char *full_name = NULL;
-	if (ds->analop.type == R_ANAL_OP_TYPE_CALL) {
+	const char *full_name = NULL;
+	const char *call_type = ds_call_type_at (anal, ds->at);
+	if (call_type) {
+		full_name = call_type;
+	} else if (ds->analop.type == R_ANAL_OP_TYPE_CALL) {
 		// RAnalFunction *fcn = r_anal_get_fcn_in (anal, ds->analop.jump, -1);
 		RAnalFunction *fcn = r_anal_get_function_at (anal, ds->analop.jump);
 		if (!fcn) {

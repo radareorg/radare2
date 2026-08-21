@@ -155,6 +155,7 @@ typedef struct tp_state_t {
 	RVecTPPendingConst pending_const;
 	HtUP *var_facts; // RAnalVar * => TPVarFact *
 	HtUP *reach_cache; // block addr => SetU of reachable block addrs
+	HtUP *mem_types; // emulated address => pointer type written by a call
 } TPState;
 
 typedef bool (*AccessPredicate)(const TypeTraceAccess *access, void *user);
@@ -311,6 +312,9 @@ void tp_apply_arg_type(TPState *tps, ut64 baddr, int j, RAnalVar *var, RAnalOp *
 bool tp_chain_collect(TypeTrace *tt, int idx, RAnalOp *op, TPFieldChain *chain, char *regname, int size);
 TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPEmulateOpCb op_cb, void *user, bool lookahead, bool restore_state);
 bool tp_field_from_ret(TPState *tps, RAnalFunction *fcn, RAnalOp *op, const char *ret_type);
+char *tp_indirect_call_type(TPState *tps, RAnalFunction *fcn, const char *reg, ut64 *load_addr);
+const char *tp_mem_type_at(TPState *tps, ut64 addr);
+void tp_mem_type_set(TPState *tps, ut64 addr, const char *type);
 bool tp_op_loads_value(TypeTrace *tt, RAnalOp *op, ut32 j);
 bool tp_selfsize_hit(TPState *tps, ut32 idx, RAnalVar *var, const char *rname, ut64 pv);
 void tp_selfsize_var(TPState *tps, ut64 baddr, RAnalVar *var, ut64 n);
