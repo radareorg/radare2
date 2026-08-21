@@ -722,22 +722,17 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 				break;
 			case MIPS_INS_SLT:
 			case MIPS_INS_SLTI:
-				if (OPCOUNT () < 3) {
-					r_strbuf_appendf (&op->esil, "%s,%s,<,t,=", ARG(1), ARG(0));
-				} else {
-					r_strbuf_appendf (&op->esil, "%s,%s,<,%s,=", ARG(2), ARG(1), ARG(0));
-				}
-				break;
 			case MIPS_INS_SLTU:
 			case MIPS_INS_SLTIU:
 				{
 					const bool two = OPCOUNT () < 3;
+					const bool sign = insn->id == MIPS_INS_SLT || insn->id == MIPS_INS_SLTI;
 					const char *rt = two? ARG (1): ARG (2);
 					const char *rs = two? ARG (0): ARG (1);
 					const char *rd = two? "t": ARG (0);
-					r_strbuf_appendf (&op->esil, (as->config->bits == 64)
-						? ES_U("%s")","ES_U("%s")",<,%s,="
-						: ES_W("%s")","ES_W("%s")",<,%s,=", rt, rs, rd);
+					r_strbuf_appendf (&op->esil, sign? "%s,%s,<,%s,=":
+						(as->config->bits == 64)? ES_U("%s")","ES_U("%s")",<,%s,=":
+						ES_W("%s")","ES_W("%s")",<,%s,=", rt, rs, rd);
 				}
 				break;
 			case MIPS_INS_MUL:

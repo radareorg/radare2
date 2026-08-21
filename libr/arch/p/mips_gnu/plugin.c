@@ -770,6 +770,14 @@ typedef struct gnu_insn {
 #define I_REG(x) ((const char *)insn->i_reg.x)
 #define J_REG(x) ((const char *)insn->j_reg.x)
 
+#define ESIL_LOAD(size) \
+	r_strbuf_appendf (&op->esil, "%s,%s,+,["size"],%s,=",\
+		I_REG (imm), I_REG (rs), I_REG (rt))
+
+#define ESIL_LOAD_SIGNED(size, sbits) \
+	r_strbuf_appendf (&op->esil, sbits",%s,%s,+,["size"],~,%s,=",\
+		I_REG (imm), I_REG (rs), I_REG (rt))
+
 /* Return a mapping from the register number i.e. $0 .. $31 to string name */
 static const char *mips_reg_decode(ut32 reg_num) {
 	/* See page 36 of "See Mips Run Linux, 2e, D. Sweetman, 2007"*/
@@ -1126,23 +1134,19 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		ES_SIGN32_64 (I_REG (rt));
 		break;
 	case MIPS_INS_LB:
-		op->sign = true; // To load a byte from memory as a signed value
-		r_strbuf_appendf (&op->esil, "8,%s,%s,+,[1],~,%s,=",
-			I_REG (imm), I_REG (rs), I_REG (rt));
+		op->sign = true;
+		ESIL_LOAD_SIGNED ("1", "8");
 		break;
 	case MIPS_INS_LBU:
-		r_strbuf_appendf (&op->esil, "%s,%s,+,[1],%s,=",
-			I_REG (imm), I_REG (rs), I_REG (rt));
+		ESIL_LOAD ("1");
 		break;
 	case MIPS_INS_LW:
 	case MIPS_INS_LL:
 		// on mips64 the word is sign-extended; lwu is the other form
 		if (as->config->bits == 64) {
-			r_strbuf_appendf (&op->esil, "32,%s,%s,+,[4],~,%s,=",
-				I_REG (imm), I_REG (rs), I_REG (rt));
+			ESIL_LOAD_SIGNED ("4", "32");
 		} else {
-			r_strbuf_appendf (&op->esil, "%s,%s,+,[4],%s,=",
-				I_REG (imm), I_REG (rs), I_REG (rt));
+			ESIL_LOAD ("4");
 		}
 		break;
 	case MIPS_INS_LWC1:
@@ -1150,25 +1154,21 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 	case MIPS_INS_LWL:
 	case MIPS_INS_LWR:
 	case MIPS_INS_LWU:
-		r_strbuf_appendf (&op->esil, "%s,%s,+,[4],%s,=",
-			I_REG (imm), I_REG (rs), I_REG (rt));
+		ESIL_LOAD ("4");
 		break;
 	case MIPS_INS_LDL:
 	case MIPS_INS_LDC1:
 	case MIPS_INS_LDC2:
 	case MIPS_INS_LLD:
 	case MIPS_INS_LD:
-		r_strbuf_appendf (&op->esil, "%s,%s,+,[8],%s,=",
-			I_REG (imm), I_REG (rs), I_REG (rt));
+		ESIL_LOAD ("8");
 		break;
 	case MIPS_INS_LH:
-		op->sign = true; // To load a halfword from memory as a signed value
-		r_strbuf_appendf (&op->esil, "16,%s,%s,+,[2],~,%s,=",
-			I_REG (imm), I_REG (rs), I_REG (rt));
+		op->sign = true;
+		ESIL_LOAD_SIGNED ("2", "16");
 		break;
 	case MIPS_INS_LHU:
-		r_strbuf_appendf (&op->esil, "%s,%s,+,[2],%s,=",
-			I_REG (imm), I_REG (rs), I_REG (rt));
+		ESIL_LOAD ("2");
 		break;
 	case MIPS_INS_LHX:
 	case MIPS_INS_LWX:
