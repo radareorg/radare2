@@ -467,7 +467,7 @@ static inline size_t r_vec_grow(size_t capacity) {
 					copy_fn (dst, src); \
 				} \
 			} \
-		} else { \
+		} else if (num_values > 0) { \
 			memcpy (vec->_end, values->_start, num_values * sizeof (type)); \
 			vec->_end += num_values; \
 		} \

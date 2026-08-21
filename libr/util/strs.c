@@ -81,7 +81,9 @@ R_API char *r_strs_tostring(RStrs s) {
 	const size_t sl = r_strs_len (s);
 	char *res = malloc (sl + 1);
 	if (res) {
-		memcpy (res, s.a, sl);
+		if (sl > 0) {
+			memcpy (res, s.a, sl);
+		}
 		res[sl] = 0;
 	}
 	return res;

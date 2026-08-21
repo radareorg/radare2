@@ -16,6 +16,10 @@ EXPECT=<<EOF
 |           ; arg int64_t arg3 @ x2
 |           ; arg int64_t arg4 @ x3
 |           ; arg int64_t arg5 @ x4
+|           ; var int32_t var_24h @ x29-0x24
+|           ; var int64_t var_50h @ x29-0x50
+|           ; var int64_t var_58h @ x29-0x58
+|           ; var int64_t var_60h @ x29-0x60
 |           ; var int64_t var_0h @ sp+0x0
 |           ; var int32_t var_ch @ sp+0xc
 |           ; var int64_t var_10h @ sp+0x10
@@ -24,9 +28,9 @@ EXPECT=<<EOF
 |           ; var int64_t var_28h @ sp+0x28
 |           ; var int64_t var_40h @ sp+0x40
 |           ; var int8_t var_4fh @ sp+0x4f
-|           ; var int64_t var_50h @ sp+0x50
+|           ; var int64_t var_sp_50h @ sp+0x50
 |           ; var int64_t var_5ch @ sp+0x5c
-|           ; var int64_t var_60h @ sp+0x60
+|           ; var int64_t var_sp_60h @ sp+0x60
 |           ; var int64_t var_68h @ sp+0x68
 |           ; var int64_t var_70h @ sp+0x70
 |           ; var int64_t var_78h @ sp+0x78
@@ -77,6 +81,10 @@ EXPECT=<<EOF
 |           ; arg int64_t arg3 @ x2
 |           ; arg int64_t arg4 @ x3
 |           ; arg int64_t arg5 @ x4
+|           ; var int32_t var_24h @ x29-0x24
+|           ; var int64_t var_50h @ x29-0x50
+|           ; var int64_t var_58h @ x29-0x58
+|           ; var int64_t var_60h @ x29-0x60
 |           ; var int64_t var_0h @ sp+0x0
 |           ; var int32_t var_ch @ sp+0xc
 |           ; var int64_t var_10h @ sp+0x10
@@ -85,9 +93,9 @@ EXPECT=<<EOF
 |           ; var int64_t var_28h @ sp+0x28
 |           ; var int64_t var_40h @ sp+0x40
 |           ; var int8_t var_4fh @ sp+0x4f
-|           ; var int64_t var_50h @ sp+0x50
+|           ; var int64_t var_sp_50h @ sp+0x50
 |           ; var int64_t var_5ch @ sp+0x5c
-|           ; var int64_t var_60h @ sp+0x60
+|           ; var int64_t var_sp_60h @ sp+0x60
 |           ; var int64_t var_68h @ sp+0x68
 |           ; var int64_t var_70h @ sp+0x70
 |           ; var int64_t var_78h @ sp+0x78

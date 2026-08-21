@@ -1479,6 +1479,8 @@ static bool cmd_anal_aaft(RCore *core) {
 		}
 		r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
 		r_esil_set_pc (core->anal->esil, fcn->addr);
+		// type propagation reads arg types from the sdb signature, so retyped vars (afvt) must land there first
+		__add_vars_sdb (core, fcn);
 		r_core_cmd0 (core, "a:tp");
 		if (r_cons_is_breaked (core->cons)) {
 			break;
@@ -2256,6 +2258,7 @@ static int cmd_afv(RCore *core, const char *str) {
 	default:
 		if (str[0]) {
 			r_core_return_invalid_command (core, "afv", str[0]);
+			free (ostr);
 			return false;
 		}
 	}
