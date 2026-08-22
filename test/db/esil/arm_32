@@ -3296,3 +3296,47 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=the unprivileged loads write back their post-index offset
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 11223344 @ 0x40
+wx 0100f3e4 @ 0
+aei
+aeim
+aer r3=0x40
+aer PC=0
+aes
+aer r0
+aer r3
+wx 0400b3e4 @ 0
+aer r3=0x40
+aer PC=0
+aes
+aer r0
+aer r3
+wx 0100b3e6 @ 0
+aer r3=0x40
+aer r1=4
+aer PC=0
+aes
+aer r0
+aer r3
+wx 040013e4 @ 0
+aer r3=0x40
+aer PC=0
+aes
+aer r0
+aer r3
+EOF
+EXPECT=<<EOF
+0x00000011
+0x00000041
+0x44332211
+0x00000044
+0x44332211
+0x00000044
+0x44332211
+0x0000003c
+EOF
+RUN
