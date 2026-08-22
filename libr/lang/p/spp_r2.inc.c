@@ -1,3 +1,4 @@
+#define r_cons_printf_singleton(...) r_cons_printf(r_cons_singleton(), __VA_ARGS__)
 /* SPP-R2, a template programming language with r2 integration */
 
 #include <r_util.h>
@@ -40,7 +41,7 @@ static TAG_CALLBACK(spp_r2_get) {
 	}
 	char *var = spp_r2_var_get (buf);
 	if (var) {
-		r_cons_gprintf ("%s", var);
+		r_cons_printf_singleton ("%s", var);
 		free (var);
 	}
 	return 0;
@@ -56,7 +57,7 @@ static TAG_CALLBACK(spp_r2_getrandom) {
 	if (max > 0) {
 		max = (int)(rand () % max);
 	}
-	r_cons_gprintf ("%d", max);
+	r_cons_printf_singleton ("%d", max);
 	return 0;
 }
 
@@ -112,7 +113,7 @@ static TAG_CALLBACK(spp_r2_trace) {
 /* TODO: deprecate */
 static TAG_CALLBACK(spp_r2_echo) {
 	if (state->echo[state->ifl]) {
-		r_cons_gprintf ("%s", buf);
+		r_cons_printf_singleton ("%s", buf);
 	}
 	// TODO: add variable replacement here?? not necessary, done by {{get}}
 	return 0;

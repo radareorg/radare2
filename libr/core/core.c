@@ -2637,12 +2637,12 @@ R_API bool r_core_init(RCore *core) {
 	core->print->sdb_types = core->anal->sdb_types;
 	core->rasm->syscall = r_syscall_ref (core->anal->syscall); // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);
-	core->anal->cb_printf = (void *)r_cons_gprintf;
+	core->anal->cb_printf = (PrintfCallback)r_cons_printf;
 	core->rasm->parse->varlist = r_anal_function_get_var_fields;
 	core->bin = r_bin_new ();
 	r_cons_bind (core->cons, &core->bin->consb);
 	// XXX we should use RConsBind instead of this hardcoded pointer
-	core->bin->cb_printf = (PrintfCallback)r_cons_gprintf;
+	core->bin->cb_printf = (PrintfCallback)r_cons_printf;
 	r_bin_set_user_ptr (core->bin, core);
 	core->io = r_io_new ();
 	r_event_hook (core->io->event, R_EVENT_IO_WRITE, ev_iowrite_cb, core);
@@ -2706,8 +2706,8 @@ R_API bool r_core_init(RCore *core) {
 	// XXX pushing uninitialized regstate results in trashed reg values
 	//	r_reg_arena_push (core->dbg->reg); // create a 2 level register state stack
 	//	core->dbg->anal->reg = core->anal->reg; // XXX: dupped instance.. can cause lost pointerz
-	core->io->cb_printf = r_cons_gprintf;
-	core->dbg->cb_printf = r_cons_gprintf;
+	core->io->cb_printf = (PrintfCallback)r_cons_printf;
+	core->dbg->cb_printf = (PrintfCallback)r_cons_printf;
 	core->dbg->ev = core->ev;
 	core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	r_core_plugins_init (core->rcmd);

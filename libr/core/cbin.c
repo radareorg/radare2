@@ -1477,7 +1477,7 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	}
 	RBinPdb pdb = { 0 };
 
-	pdb.cb_printf = r_cons_gprintf;
+	pdb.cb_printf = (PrintfCallback)r_cons_printf;
 	if (!r_bin_pdb_parser (&pdb, file)) {
 		if (jsonmode) {
 			pj_o (pj);

@@ -948,7 +948,6 @@ R_API void r_cons_invert(RCons *cons, int set, int color);
 
 /* output */
 
-R_API int r_cons_gprintf(const char *format, ...) R_PRINTF_CHECK(1, 2);
 R_API void r_cons_print(RCons *cons, const char *str);
 R_API void r_cons_print_at(RCons *cons, const char *str, int x, char y, int w, int h);
 R_API void r_cons_print_justify(RCons *cons, const char *str, int j, char c);
