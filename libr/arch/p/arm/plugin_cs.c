@@ -2654,6 +2654,22 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 #define MATH32_NEG(opchar) arm32math(as, op, addr, buf, len, handle, insn, pcdelta, str, opchar, 1)
 #define MATH32AS(opchar) arm32mathaddsub(as, op, addr, buf, len, handle, insn, pcdelta, str, opchar)
 
+// adc = rn + op2 + c, sbc = rn + ~op2 + c, rsc = op2 + ~rn + c
+static void arm32carry(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn, RStringShort str[32]) {
+	const bool three = OPCOUNT () > 2;
+	const char *rn = three? ARG (1): ARG (0);
+	const char *op2 = three? ARG (2): ARG (1);
+	const bool rev = insn->id == ARM_INS_RSC;
+	const char *comp = (insn->id == ARM_INS_ADC)? "": ",0xffffffff,^";
+	char sh[80];
+	if (OPCOUNT () > 3) { // the modified-immediate form carries its own rotate
+		snprintf (sh, sizeof (sh), "%s,%s,ROR", ARG (3), op2);
+		op2 = sh;
+	}
+	r_strbuf_appendf (&op->esil, "cf,%s%s,+,%s,+,0xffffffff,&,%s,=",
+		rev? rn: op2, comp, rev? op2: rn, ARG (0));
+}
+
 static void arm32math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	csh *handle, cs_insn *insn, int pcdelta, RStringShort str[32], const char *opchar, int negate) {
 	const char *dest = ARG(0);
@@ -2781,11 +2797,9 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 		MATH32 ("+");
 		break;
 	case ARM_INS_ADC:
-		if (OPCOUNT () == 2) {
-			r_strbuf_appendf (&op->esil, "cf,%s,+=,%s,%s,+=", ARG (0), ARG (1), ARG (0));
-		} else {
-			r_strbuf_appendf (&op->esil, "cf,%s,+=,%s,%s,+,%s,+=", ARG (0), ARG (2), ARG (1), ARG (0));
-		}
+	case ARM_INS_SBC:
+	case ARM_INS_RSC:
+		arm32carry (as, op, handle, insn, str);
 		break;
 	case ARM_INS_SSUB16:
 	case ARM_INS_SSUB8:
@@ -2794,13 +2808,6 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	case ARM_INS_SUBW:
 	case ARM_INS_SUB:
 		MATH32 ("-");
-		break;
-	case ARM_INS_SBC:
-		if (OPCOUNT () == 2) {
-			r_strbuf_appendf (&op->esil, "cf,%s,-=,%s,%s,-=", ARG (0), ARG (1), ARG (0));
-		} else {
-			r_strbuf_appendf (&op->esil, "cf,%s,-=,%s,%s,+,%s,-=", ARG (0), ARG (2), ARG (1), ARG (0));
-		}
 		break;
 	case ARM_INS_MUL:
 		MATH32 ("*");
@@ -3547,6 +3554,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			break;
 		case ARM_INS_ADD:
 		case ARM_INS_RSB:
+		case ARM_INS_RSC:
 		case ARM_INS_SUB:
 		case ARM_INS_SBC:
 		case ARM_INS_ADC:

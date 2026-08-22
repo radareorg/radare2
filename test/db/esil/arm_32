@@ -3224,3 +3224,75 @@ EXPECT=<<EOF
 0x00001234
 EOF
 RUN
+
+NAME=adc sbc and rsc assign their result instead of accumulating it
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 0200a1e0
+aer cpsr=0x20000000
+aer r0=0x1000
+aer r1=9
+aer r2=3
+aer PC=0
+aes
+aer r0
+wx 0200c1e0
+aer cpsr=0x20000000
+aer r0=0x1000
+aer r1=9
+aer r2=3
+aer PC=0
+aes
+aer r0
+wx 0200e1e0
+aer cpsr=0x20000000
+aer r0=0x1000
+aer r1=9
+aer r2=3
+aer PC=0
+aes
+aer r0
+wx 010da1e2
+aer cpsr=0x20000000
+aer r0=0x1000
+aer r1=9
+aer PC=0
+aes
+aer r0
+EOF
+EXPECT=<<EOF
+0x0000000d
+0x00000006
+0xfffffffa
+0x0000004a
+EOF
+RUN
+
+NAME=sbc and rsc borrow the complement of the carry flag
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 0200c1e0
+aer cpsr=0
+aer r0=0x1000
+aer r1=9
+aer r2=3
+aer PC=0
+aes
+aer r0
+wx 0200e1e0
+aer cpsr=0
+aer r0=0x1000
+aer r1=9
+aer r2=3
+aer PC=0
+aes
+aer r0
+EOF
+EXPECT=<<EOF
+0x00000005
+0xfffffff9
+EOF
+RUN
+
