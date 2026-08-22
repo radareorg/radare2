@@ -1273,7 +1273,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		} \
 	}
 	core.bin = bin;
-	bin->cb_printf = r_cons_gprintf; // XXX deprecate
+	bin->cb_printf = (PrintfCallback)r_cons_printf; // XXX deprecate
 	filter.addr = at;
 	filter.name = name;
 	core.cons->context->is_interactive = false;
