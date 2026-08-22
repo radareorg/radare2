@@ -169,8 +169,8 @@ afs
 EOF
 EXPECT=<<EOF
 int fallback_signature (int fallback);
-char linked_signature (char linked);
-char linked_signature (char linked);
+char fallback_signature (char linked);
+char renamed_signature (char linked);
 int renamed_signature (int fallback);
 int renamed_signature (int fallback);
 EOF
@@ -2034,7 +2034,7 @@ af
 afs
 EOF
 EXPECT=<<EOF
-size_t strlen (const char *s);
+size_t sym.imp.strlen (const char *s);
 EOF
 RUN
 
@@ -2282,7 +2282,7 @@ int main (int argc, char **argv, char **envp);
     }
   ]
 }
-char * strcpy (char *dest, const char *src);
+char * sym.imp.strcpy (char *dest, const char *src);
 {
   "name": "sym.imp.strcpy",
   "noreturn": false,

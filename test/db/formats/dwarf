@@ -27,11 +27,11 @@ afs @ 0x130e
 EOF
 EXPECT=<<EOF
 main_1169
-int main_1169 ();
+int dbg.main ();
 Bird_Bird_
-void Bird_Bird_ (Bird * const this);
-void Bird_Bird_ (Bird * const this);
-int overridden (int x);
+void dbg.Bird__Bird__ (Bird * const this);
+void dbg.Bird__Bird__ (Bird * const this);
+int dbg.Bird__Bird__ (int x);
 EOF
 RUN
 
@@ -48,7 +48,7 @@ EXPECT=<<EOF
 void unicode_utf8_RuneCount([]uint8 p,int ~r1);
 int,~r1
 unicode_utf8_RuneCount
-void unicode_utf8_RuneCount ([]uint8 p, int ~r1);
+void sym.unicode_utf8.RuneCount ([]uint8 p, int ~r1);
 EOF
 RUN
 
@@ -79,7 +79,7 @@ EOF
 EXPECT=<<EOF
 fly
 0
-FutureType * fly ();
+FutureType * dbg.fly ();
 fly
 FutureType *
 0
@@ -102,7 +102,7 @@ EXPECT=<<EOF
 Mammal
 Mammal_401300
 struct
-void Mammal_401300 (Mammal *this);
+void method.Mammal.Mammal__ (Mammal *this);
 Mammal_401300
 EOF
 RUN
@@ -118,7 +118,7 @@ k anal/dwarf/fcn.__adddf3.typed_name
 EOF
 EXPECT=<<EOF
 __adddf3
-FLO_type __adddf3 (FLO_type arg_a, FLO_type arg_b);
+FLO_type sym.__adddf3 (FLO_type arg_a, FLO_type arg_b);
 __adddf3
 EOF
 RUN
@@ -135,7 +135,7 @@ k anal/types/fcnlink.00025ad0
 EOF
 EXPECT=<<EOF
 check
-bool check (u16 x, &[(u8, u8)] singletonuppers, &[u8] singletonlowers, &[u8] normal);
+bool sym.core__unicode__printable__check__h1d9e8c426a95acd5__clone_llvm3277309261110959063_ (u16 x, &[(u8, u8)] singletonuppers, &[u8] singletonlowers, &[u8] normal);
 check
 check
 EOF

@@ -2508,7 +2508,7 @@ R_API bool r_anal_function_del_signature(RAnal *a, const char *name) {
 
 	R_RETURN_VAL_IF_FAIL (a && a->sdb_types && name, false);
 	Sdb *db = a->sdb_types;
-	char *type_name = r_type_func_name (db, name);
+	char *type_name = r_type_func_key (db, name);
 	if (!type_name) {
 		type_name = strdup (name);
 	}
@@ -2567,7 +2567,7 @@ static const char *function_signature_lookup_name(RAnal *anal, RAnalFunction *fc
 
 static char *function_signature_try_type_name(Sdb *types, const char *candidate) {
 	R_RETURN_VAL_IF_FAIL (types && candidate && *candidate, NULL);
-	char *name = r_type_func_name (types, candidate);
+	char *name = r_type_func_key (types, candidate);
 	if (name) {
 		const char *kind = sdb_const_get (types, name, 0);
 		if (kind && !strcmp (kind, "func")) {
@@ -2918,7 +2918,10 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *funct
 		&& !function_signature_fallback_to_vars (anal, function, signature)) {
 		goto beach;
 	}
-	signature->signature = function_signature_string (type_name, signature->ret_type, signature->params, true, false);
+	// the declaration carries the function's own name; the key is only a lookup handle
+	signature->signature = function_signature_string (
+		R_STR_ISNOTEMPTY (function->name)? function->name: type_name,
+		signature->ret_type, signature->params, true, false);
 	if (!signature->signature) {
 		goto beach;
 	}
@@ -2950,7 +2953,9 @@ R_API char *r_anal_function_get_signature_string(RAnalFunction *fcn) {
 	}
 	type_name = function_signature_type_name (fcn->anal, fcn);
 	if (type_name) {
-		res = function_signature_string (type_name, signature->ret_type, signature->params, true, false);
+		res = function_signature_string (
+			R_STR_ISNOTEMPTY (fcn->name)? fcn->name: type_name,
+			signature->ret_type, signature->params, true, false);
 		free (type_name);
 	}
 	r_anal_function_signature_free (signature);
