@@ -6,6 +6,7 @@ ifeq ($(OSTYPE),android)
 LDFLAGS+=${DL_LIBS} -lm
 endif
 include ../../libr/main/deps.mk
+include ../../shlr/java/deps.mk
 
 include ../rules.mk
 

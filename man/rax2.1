@@ -1,4 +1,4 @@
-.Dd Jul 10, 2025
+.Dd Aug 22, 2026
 .Dt RAX2 1
 .Sh NAME
 .Nm rax2
@@ -27,6 +27,13 @@ Force output mode (numeric base)
   8    octal
   10   decimal
   16   hexadecimal
+.Pp
+When used with
+.Fl s
+and
+.Fl e ,
+select the word size in bits for endian-swapping hex input. Valid word sizes
+are 8, 16, 32, and 64 bits.
 .It Fl c
 Show hexadecimal C string from integer value
 .It Fl C
@@ -36,7 +43,11 @@ Print the result in decimal (base 10)
 .It Fl D
 Decode the input data using base64
 .It Fl e
-Swap endianness
+Swap endianness. With
+.Fl s ,
+requires
+.Fl b
+to specify the word size.
 .It Fl E
 Encode the input data using base64
 .It Fl f
@@ -121,6 +132,11 @@ You can do 'unpack' hexpair encoded strings easily.
 .Pp
   $ rax2 \-s 41 42 43
   ABC
+.Pp
+Swap the byte order of each 32-bit word in a hex stream:
+.Pp
+  $ printf 1122334455667788 | rax2 \-esb 32 | rax2 \-S
+  4433221188776655
 .Pp
 It supports some math operations:
 .Pp

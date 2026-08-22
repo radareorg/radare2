@@ -39,6 +39,7 @@ typedef struct {
 	bool jsonbases; // -j
 	bool forcebase; // -b
 	bool quiet; // -q
+	int swapbytes;
 } RaxActions;
 
 typedef struct {
@@ -50,13 +51,17 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 
 static int use_stdin(RNum *num, RaxActions *flags, RaxMode *mode, PJ **pj) {
 	R_RETURN_VAL_IF_FAIL (num && flags, -1);
+	if (flags->hexstr2raw && flags->swapendian && !flags->swapbytes) {
+		R_LOG_ERROR ("Endian swap with -s requires -b <8|16|32|64>");
+		return 1;
+	}
 	int rc = 0;
 	if (flags->slurphex) {
 		char buf[1] = { 0 };
 		if (!rax (num, buf, 1, 0, flags, mode, pj)) {
 			rc = 1;
 		}
-	} else if (flags->raw2hexstr) {
+	} else if (flags->raw2hexstr || (flags->hexstr2raw && flags->swapendian)) {
 		int len = 0;
 		char *buf = r_stdin_slurp (&len);
 		if (buf) {
@@ -203,7 +208,8 @@ static int help(void) {
 		"  raw        ->  hex              ;  rax2 -S < /binfile\n"
 		"  hex        ->  raw              ;  rax2 -s 414141\n"
 		"  -a         show ascii table     ;  rax2 -a\n"
-		"  -b <base>  output in <base>     ;  rax2 -b 10 0x46\n"
+		"  -b <base>  output in <base>; with -s, word size in bits\n"
+		"             rax2 -esb 32 < in.hex > out.raw\n"
 		"  -c         output in C string   ;  rax2 -c 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -C         dump as C byte array ;  rax2 -C < bytes\n"
 		"  -d         force integer        ;  rax2 -d 3 -> 3 instead of 0x3\n"
@@ -329,12 +335,37 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 	}
 
 dotherax:
+	if (flags->hexstr2raw && flags->forcebase) {
+		ut64 bits = r_num_math_err (num, str, &errstr);
+		flags->forcebase = false;
+		if (errstr || (bits != 8 && bits != 16 && bits != 32 && bits != 64)) {
+			R_LOG_ERROR ("Invalid word size, expected 8, 16, 32, or 64 bits");
+			return false;
+		}
+		flags->swapbytes = bits / 8;
+		return last? !use_stdin (num, flags, mode, pj): true;
+	}
 	if (flags->hexstr2raw) { // -s
 		int n = ((strlen (str)) >> 1) + 1;
 		buf = calloc (1, n);
 		if (buf) {
 			n = r_hex_str2bin (str, (ut8 *)buf);
 			if (n > 0) {
+				if (flags->swapendian) {
+					if (!flags->swapbytes) {
+						R_LOG_ERROR ("Endian swap with -s requires -b <8|16|32|64>");
+						free (buf);
+						return false;
+					}
+					if (n % flags->swapbytes) {
+						R_LOG_ERROR ("Input size is not a multiple of the word size");
+						free (buf);
+						return false;
+					}
+					for (i = 0; i < n; i += flags->swapbytes) {
+						r_mem_swapendian (buf + i, buf + i, flags->swapbytes);
+					}
+				}
 				fwrite (buf, n, 1, stdout);
 			}
 			rax2_newline (*flags);
