@@ -1,4 +1,5 @@
 #include <r_io.h>
+#include <r_util.h>
 #include "minunit.h"
 
 bool test_r_io_cache(void) {
@@ -63,6 +64,26 @@ bool test_r_io_cache(void) {
 	mu_end;
 #endif
 	return true;
+}
+
+bool test_r_io_bind_exact_read_count(void) {
+	char *filename = r_file_temp ("r2-io-nread");
+	mu_assert_notnull (filename, "temporary filename should be created");
+	const ut8 source[] = { 1, 2, 3 };
+	mu_assert_true (r_file_dump (filename, source, sizeof (source), false), "temporary source should be written");
+	char *uri = r_str_newf ("file://%s", filename);
+	RIO *io = r_io_new ();
+	RIOBind bind = { 0 };
+	mu_assert_notnull (r_io_open (io, uri, R_PERM_R, 0), "file IO should open");
+	r_io_bind (io, &bind);
+	mu_assert_notnull (bind.nread_at, "RIO bind should expose exact-count reads");
+	ut8 buf[4] = { 0 };
+	mu_assert_eq (bind.nread_at (io, 0, buf, sizeof (buf)), 3, "exact-count read should expose a short physical read");
+	r_io_free (io);
+	free (uri);
+	r_file_rm (filename);
+	free (filename);
+	mu_end;
 }
 
 bool test_r_io_mapsplit (void) {
@@ -279,6 +300,7 @@ bool test_r_io_priority2(void) {
 
 int all_tests(void) {
 	mu_run_test(test_r_io_cache);
+	mu_run_test(test_r_io_bind_exact_read_count);
 	mu_run_test(test_r_io_mapsplit);
 	mu_run_test(test_r_io_mapsplit2);
 	mu_run_test(test_r_io_mapsplit3);
