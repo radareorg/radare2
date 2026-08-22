@@ -19,10 +19,10 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 #define PRINTF_RA(fmt, ...) PRINTF_A ("%s", fmt, pal->invalid, __VA_ARGS__)
 
 #define PRINT_A(color, msg) r_cons_gprint (color msg Color_RESET)
-#define PRINT_YA(msg) r_cons_printf ("%s" msg Color_RESET, pal->addr)
-#define PRINT_GA(msg) r_cons_printf ("%s" msg Color_RESET, pal->args)
-#define PRINT_BA(msg) r_cons_printf ("%s" msg Color_RESET, pal->num)
-#define PRINT_RA(msg) r_cons_printf ("%s" msg Color_RESET, pal->invalid)
+#define PRINT_YA(msg) r_cons_printf (cons, "%s" msg Color_RESET, pal->addr)
+#define PRINT_GA(msg) r_cons_printf (cons, "%s" msg Color_RESET, pal->args)
+#define PRINT_BA(msg) r_cons_printf (cons, "%s" msg Color_RESET, pal->num)
+#define PRINT_RA(msg) r_cons_printf (cons, "%s" msg Color_RESET, pal->invalid)
 
 #endif
 
