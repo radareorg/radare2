@@ -113,7 +113,6 @@ struct Getarg {
 	csh handle;
 	cs_insn *insn;
 	int bits;
-	int syntax; // R_ARCH_SYNTAX_ATT or R_ARCH_SYNTAX_INTEL
 	// pending zero-extensions for the 32-bit registers this op writes
 	char zext[32];
 };
@@ -275,17 +274,6 @@ static bool is_xmm_reg(cs_x86_op op) {
 }
 
 /**
- * Get normalized operand index for AT&T syntax
- * In AT&T, operands are source,dest so we swap for 2-operand instructions
- */
-static inline int norm_op(int n, int syntax, int op_count) {
-	if (syntax == R_ARCH_SYNTAX_ATT && op_count == 2) {
-		return 1 - n; // swap 0<->1
-	}
-	return n;
-}
-
-/**
  * Translates operand N to esil
  *
  * @param  handle  csh
@@ -339,8 +327,7 @@ static void zext_reg(struct Getarg *gop, const char *reg) {
 }
 
 static void zext_opnd(struct Getarg *gop, int n) {
-	const cs_x86 *x = &gop->insn->detail->x86;
-	const cs_x86_op *op = &x->operands[norm_op (n, gop->syntax, x->op_count)];
+	const cs_x86_op *op = &gop->insn->detail->x86.operands[n];
 	if (op->type == X86_OP_REG) {
 		zext_reg (gop, cs_reg_name (gop->handle, op->reg));
 	}
@@ -429,19 +416,10 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsi
 		// default blind bitsize which may be wrong
 		*bitsize = 8;
 	}
-	// For AT&T syntax, capstone reports operands in source,dest order
-	// We need to swap indices for 2-operand instructions to normalize
-	int actual_n = n;
-	if (gop->syntax == R_ARCH_SYNTAX_ATT && INSOPS == 2) {
-		actual_n = 1 - n; // swap 0<->1
-	}
-	cs_x86_op op = INSOP (actual_n);
-	if (!insn->detail) {
+	if (!insn->detail || n < 0 || n >= INSOPS) {
 		return NULL;
 	}
-	if (actual_n < 0 || actual_n >= INSOPS) {
-		return NULL;
-	}
+	cs_x86_op op = INSOP (n);
 	if (bitsize) {
 		size_t bs = op.size * 8;
 		*bitsize = bs? bs: 8;
@@ -603,7 +581,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		.handle = handle,
 		.insn = insn,
 		.bits = bits,
-		.syntax = as->config->syntax,
 		.zext = {0}
 	};
 	char *src = NULL;
@@ -1164,15 +1141,12 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_MOVDQA:
 	case X86_INS_MOVDQ2Q:
 		{
-		// Use normalized operand indices for AT&T syntax support
-		int dst_idx = norm_op (0, gop.syntax, INSOPS);
-		int src_idx = norm_op (1, gop.syntax, INSOPS);
-		switch (INSOP (dst_idx).type) {
+		switch (INSOP (0).type) {
 		case X86_OP_MEM:
 			if (op->prefix & R_ANAL_OP_PREFIX_REP) {
-				int width = INSOP (dst_idx).size;
-				const char *src = cs_reg_name (handle, INSOP (src_idx).mem.base);
-				const char *dst = cs_reg_name (handle, INSOP (dst_idx).mem.base);
+				int width = INSOP (0).size;
+				const char *src = cs_reg_name (handle, INSOP (1).mem.base);
+				const char *dst = cs_reg_name (handle, INSOP (0).mem.base);
 				const char *counter = (bits == 16)?"cx": (bits==32)?"ecx":"rcx";
 				esilprintf (op, "%s,!,?{,BREAK,},%s,NUM,%s,NUM,"\
 						"%s,[%d],%s,=[%d],df,?{,%d,%s,-=,%d,%s,-=,},"\
@@ -1191,17 +1165,14 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			break;
 		case X86_OP_REG:
 		default:
-			if (INSOP (dst_idx).type == X86_OP_MEM) {
-				op->direction = R_ANAL_OP_DIR_READ;
-			}
-			if (INSOP (src_idx).type == X86_OP_MEM) {
+			if (INSOP (1).type == X86_OP_MEM) {
 				// MOV REG, [PTR + IREG*SCALE]
-				op->ireg = cs_reg_name (handle, INSOP (src_idx).mem.index);
-				op->disp = INSOP (src_idx).mem.disp;
-				op->scale = INSOP (src_idx).mem.scale;
+				op->ireg = cs_reg_name (handle, INSOP (1).mem.index);
+				op->disp = INSOP (1).mem.disp;
+				op->scale = INSOP (1).mem.scale;
 			}
 			{
-				int width = INSOP (src_idx).size;
+				int width = INSOP (1).size;
 
 				src = getarg (&gop, 1, 0, NULL, NULL);
 				// dst is name of register from instruction.
@@ -2078,13 +2049,12 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_LZCNT:
 	case X86_INS_TZCNT:
 		{
-			const int dst_idx = norm_op (0, gop.syntax, INSOPS);
-			const char *reg = (INSOP (dst_idx).type == X86_OP_REG)
-				? cs_reg_name (handle, INSOP (dst_idx).reg): NULL;
+			const char *reg = (INSOP (0).type == X86_OP_REG)
+				? cs_reg_name (handle, INSOP (0).reg): NULL;
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			if (reg && src) {
 				const int id = insn->id;
-				const int bits = INSOP (dst_idx).size * 8;
+				const int bits = INSOP (0).size * 8;
 				RStrBuf *sb = r_strbuf_new ("");
 				zext_reg (&gop, reg);
 				r_strbuf_appendf (sb, "%s,%s,=", src, reg);
@@ -2117,16 +2087,14 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		break;
 	case X86_INS_MOVBE:
 		{
-			const int dst_idx = norm_op (0, gop.syntax, INSOPS);
-			const int src_idx = norm_op (1, gop.syntax, INSOPS);
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, NULL, NULL);
 			if (src && dst) {
 				// swapping in place reads memory once
-				const bool to_reg = INSOP (dst_idx).type == X86_OP_REG;
+				const bool to_reg = INSOP (0).type == X86_OP_REG;
 				const char *val = to_reg
-					? cs_reg_name (handle, INSOP (dst_idx).reg): src;
-				char *sw = byteswap_expr (val, INSOP (src_idx).size);
+					? cs_reg_name (handle, INSOP (0).reg): src;
+				char *sw = byteswap_expr (val, INSOP (1).size);
 				if (to_reg) {
 					esilprintf (op, "%s,%s,%s,%s", src, dst, sw, dst);
 				} else {
@@ -2531,7 +2499,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			zext_opnd (&gop, 1);
 			char *fl = add_flags (bitsize);
 			// the sum is staged, so xadd r,r doubles r instead of zeroing it
-			if (INSOP (norm_op (0, gop.syntax, INSOPS)).type == X86_OP_MEM) {
+			if (INSOP (0).type == X86_OP_MEM) {
 				// src may address dst, so the store goes before it
 				esilprintf (op, "%s,DUP,%s,+,%s,%s,%s,=", dst, src, dst2, fl, src);
 			} else {
@@ -3272,18 +3240,15 @@ static void op_stackidx(RAnalOp *op, cs_insn *insn, bool minus) {
 	}
 }
 
-static void set_opdir(RAnalOp *op, cs_insn *insn, int syntax) {
-	// Use normalized operand indices for AT&T syntax support
-	int dst_idx = norm_op (0, syntax, INSOPS);
-	int src_idx = norm_op (1, syntax, INSOPS);
+static void set_opdir(RAnalOp *op, cs_insn *insn) {
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
-		switch (INSOP (dst_idx).type) {
+		switch (INSOP (0).type) {
 		case X86_OP_MEM:
 			op->direction = R_ANAL_OP_DIR_WRITE;
 			break;
 		case X86_OP_REG:
-			if (INSOP (src_idx).type == X86_OP_MEM) {
+			if (INSOP (1).type == X86_OP_MEM) {
 				op->direction = R_ANAL_OP_DIR_READ;
 			}
 			break;
@@ -3710,11 +3675,10 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op0_memimmhandle (op, insn, addr, regsz);
 		op1_memimmhandle (op, insn, addr, regsz);
-		const int src_idx = norm_op (1, a->config->syntax, INSOPS);
-		if (INSOP (src_idx).type == X86_OP_MEM) {
-			op->ireg = cs_reg_name (*handle, INSOP (src_idx).mem.index);
-			op->disp = INSOP (src_idx).mem.disp;
-			op->scale = INSOP (src_idx).mem.scale;
+		if (INSOP (1).type == X86_OP_MEM) {
+			op->ireg = cs_reg_name (*handle, INSOP (1).mem.index);
+			op->disp = INSOP (1).mem.disp;
+			op->scale = INSOP (1).mem.scale;
 		}
 		}
 		break;
@@ -4445,7 +4409,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		}
 		anop (as, op, addr, buf, len, &handle, insn);
-		set_opdir (op, insn, as->config->syntax);
+		set_opdir (op, insn);
 		if (mask & R_ARCH_OP_MASK_ESIL) {
 			anop_esil (as, op, addr, buf, len, handle, insn);
 		}

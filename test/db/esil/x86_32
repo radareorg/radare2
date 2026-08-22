@@ -2665,3 +2665,64 @@ EXPECT=<<EOF
 51000000
 EOF
 RUN
+
+NAME=x86-32 esil does not depend on asm.syntax
+FILE=malloc://0x200
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 8739
+e asm.syntax=intel
+ao 1~esil:
+e asm.syntax=att
+ao 1~esil:
+wx a5
+e asm.syntax=intel
+ao 1~esil:
+e asm.syntax=att
+ao 1~esil:
+wx 6bc805
+e asm.syntax=intel
+ao 1~esil:
+e asm.syntax=att
+ao 1~esil:
+wx 83f8ab
+e asm.syntax=intel
+ao 1~esil:
+e asm.syntax=att
+ao 1~esil:
+EOF
+EXPECT=<<EOF
+esil: ecx,[4],edi,^,edi,=,edi,ecx,[4],^,ecx,=[4],ecx,[4],edi,^,edi,=
+esil: ecx,[4],edi,^,edi,=,edi,ecx,[4],^,ecx,=[4],ecx,[4],edi,^,edi,=
+esil: esi,[4],edi,=[4],df,?{,4,esi,-=,4,edi,-=,},df,!,?{,4,esi,+=,4,edi,+=,}
+esil: esi,[4],edi,=[4],df,?{,4,esi,-=,4,edi,-=,},df,!,?{,4,esi,+=,4,edi,+=,}
+esil: 32,5,~,32,eax,~,*,DUP,ecx,=,32,ecx,~,-,!,!,DUP,cf,:=,of,:=
+esil: 32,5,~,32,eax,~,*,DUP,ecx,=,32,ecx,~,-,!,!,DUP,cf,:=,of,:=
+esil: 18446744073709551531,eax,==,$z,zf,:=,32,$b,cf,:=,$p,pf,:=,31,$s,sf,:=,18446744073709551531,0x80000000,-,!,31,$o,^,of,:=,4,$b,af,:=
+esil: 18446744073709551531,eax,==,$z,zf,:=,32,$b,cf,:=,$p,pf,:=,31,$s,sf,:=,18446744073709551531,0x80000000,-,!,31,$o,^,of,:=,4,$b,af,:=
+EOF
+RUN
+
+NAME=att string move copies from esi to edi
+FILE=malloc://0x200
+ARGS=-a x86 -b 32 -e asm.syntax=att
+CMDS=<<EOF
+wx 11223344 @ 0x40
+wx a5 @ 0
+aei
+aeim
+ar esi=0x40
+ar edi=0x80
+s 0
+aeip
+aes
+pv4 @ 0x80
+ar esi
+ar edi
+EOF
+EXPECT=<<EOF
+0x44332211
+0x00000044
+0x00000084
+EOF
+RUN

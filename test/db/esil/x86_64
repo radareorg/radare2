@@ -1971,3 +1971,121 @@ EXPECT=<<EOF
 5100000000000000
 EOF
 RUN
+
+NAME=x86-64 esil does not depend on asm.syntax
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8739
+e asm.syntax=intel
+ao 1~esil:
+e asm.syntax=att
+ao 1~esil:
+wx a5
+e asm.syntax=intel
+ao 1~esil:
+e asm.syntax=att
+ao 1~esil:
+wx 6bc805
+e asm.syntax=intel
+ao 1~esil:
+e asm.syntax=att
+ao 1~esil:
+wx d323
+e asm.syntax=intel
+ao 1~esil:
+e asm.syntax=att
+ao 1~esil:
+wx d313
+e asm.syntax=intel
+ao 1~esil:
+e asm.syntax=att
+ao 1~esil:
+wx 83f8ab
+e asm.syntax=intel
+ao 1~esil:
+e asm.syntax=att
+ao 1~esil:
+wx c8080000
+e asm.syntax=intel
+ao 1~esil:
+e asm.syntax=att
+ao 1~esil:
+EOF
+EXPECT=<<EOF
+esil: rcx,[4],edi,^,edi,=,edi,rcx,[4],^,rcx,=[4],rcx,[4],edi,^,edi,=,edi,rdi,=
+esil: rcx,[4],edi,^,edi,=,edi,rcx,[4],^,rcx,=[4],rcx,[4],edi,^,edi,=,edi,rdi,=
+esil: rsi,[4],rdi,=[4],df,?{,4,rsi,-=,4,rdi,-=,},df,!,?{,4,rsi,+=,4,rdi,+=,}
+esil: rsi,[4],rdi,=[4],df,?{,4,rsi,-=,4,rdi,-=,},df,!,?{,4,rsi,+=,4,rdi,+=,}
+esil: 32,5,~,32,eax,~,*,DUP,ecx,=,32,ecx,~,-,!,!,DUP,cf,:=,of,:=,ecx,rcx,=
+esil: 32,5,~,32,eax,~,*,DUP,ecx,=,32,ecx,~,-,!,!,DUP,cf,:=,of,:=,ecx,rcx,=
+esil: cl,0x1f,&,?{,cl,0x1f,&,32,-,rbx,[4],>>,1,&,cf,:=,cl,0x1f,&,rbx,[4],<<,rbx,=[4],$z,zf,:=,$p,pf,:=,31,$s,sf,:=,31,rbx,[4],>>,1,&,cf,^,of,:=,}
+esil: cl,0x1f,&,?{,cl,0x1f,&,32,-,rbx,[4],>>,1,&,cf,:=,cl,0x1f,&,rbx,[4],<<,rbx,=[4],$z,zf,:=,$p,pf,:=,31,$s,sf,:=,31,rbx,[4],>>,1,&,cf,^,of,:=,}
+esil: cl,0x1f,&,?{,1,cl,0x1f,&,-,!,?{,30,rbx,[4],>>,1,&,31,rbx,[4],>>,1,&,^,of,:=,},cl,0x1f,&,rbx,[4],<<,1,cl,0x1f,&,-,cf,<<,|,1,cl,0x1f,&,32,-,rbx,[4],>>,>>,|,1,cl,0x1f,&,32,-,rbx,[4],>>,&,cf,:=,rbx,=[4],}
+esil: cl,0x1f,&,?{,1,cl,0x1f,&,-,!,?{,30,rbx,[4],>>,1,&,31,rbx,[4],>>,1,&,^,of,:=,},cl,0x1f,&,rbx,[4],<<,1,cl,0x1f,&,-,cf,<<,|,1,cl,0x1f,&,32,-,rbx,[4],>>,>>,|,1,cl,0x1f,&,32,-,rbx,[4],>>,&,cf,:=,rbx,=[4],}
+esil: 18446744073709551531,eax,==,$z,zf,:=,32,$b,cf,:=,$p,pf,:=,31,$s,sf,:=,18446744073709551531,0x80000000,-,!,31,$o,^,of,:=,4,$b,af,:=
+esil: 18446744073709551531,eax,==,$z,zf,:=,32,$b,cf,:=,$p,pf,:=,31,$s,sf,:=,18446744073709551531,0x80000000,-,!,31,$o,^,of,:=,4,$b,af,:=
+esil: 8,8,rsp,-,=[8],8,rsp,-=
+esil: 8,8,rsp,-,=[8],8,rsp,-=
+EOF
+RUN
+
+NAME=att xchg with a memory destination stores to memory
+FILE=malloc://0x200
+ARGS=-a x86 -b 64 -e asm.syntax=att
+CMDS=<<EOF
+wx 1122334455667788 @ 0x40
+wx 8739 @ 0
+aei
+aeim
+ar rcx=0x40
+ar rdi=0xaabbccdd
+s 0
+aeip
+aes
+ar rdi
+pv4 @ 0x40
+EOF
+EXPECT=<<EOF
+0x44332211
+0xaabbccdd
+EOF
+RUN
+
+NAME=att shift by cl takes its count from cl
+FILE=malloc://0x200
+ARGS=-a x86 -b 64 -e asm.syntax=att
+CMDS=<<EOF
+wx 44332211 @ 0x40
+wx d323 @ 0
+aei
+aeim
+ar rbx=0x40
+ar rcx=4
+s 0
+aeip
+aes
+pv4 @ 0x40
+EOF
+EXPECT=<<EOF
+0x12233440
+EOF
+RUN
+
+NAME=att three-operand imul writes the register destination
+FILE=malloc://0x200
+ARGS=-a x86 -b 64 -e asm.syntax=att
+CMDS=<<EOF
+wx 6bc805
+aei
+ar rax=7
+ar rcx=0
+s 0
+aeip
+aes
+ar rcx
+EOF
+EXPECT=<<EOF
+0x00000023
+EOF
+RUN

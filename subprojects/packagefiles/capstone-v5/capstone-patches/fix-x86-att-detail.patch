@@ -1,0 +1,173 @@
+--- a/arch/X86/X86ATTInstPrinter.c
++++ b/arch/X86/X86ATTInstPrinter.c
+@@ -596,23 +596,24 @@
+ 						SStream_concat(O, "$%"PRIu64, imm);
+ 				} else {
+ 					if (MI->csh->imm_unsigned) {
++						int64_t p = imm;
+ 						if (opsize) {
+ 							switch(opsize) {
+ 								default:
+ 									break;
+ 								case 1:
+-									imm &= 0xff;
++									p &= 0xff;
+ 									break;
+ 								case 2:
+-									imm &= 0xffff;
++									p &= 0xffff;
+ 									break;
+ 								case 4:
+-									imm &= 0xffffffff;
++									p &= 0xffffffff;
+ 									break;
+ 							}
+ 						}
+ 
+-						SStream_concat(O, "$0x%"PRIx64, imm);
++						SStream_concat(O, "$0x%"PRIx64, p);
+ 					} else {
+ 						if (imm == 0x8000000000000000LL)  // imm == -imm
+ 							SStream_concat0(O, "$0x8000000000000000");
+@@ -873,8 +874,10 @@
+ 							MI->flat_insn->detail->x86.operands[MI->flat_insn->detail->x86.op_count - 1].size;
+ 				}
+ 			}
+-		} else
++		} else if (!MI->flat_insn->detail->x86.operands[0].size) {
++			// printPCRelImm leaves the size unset; printOperand does not
+ 			MI->flat_insn->detail->x86.operands[0].size = MI->imm_size;
++		}
+ 	}
+ 
+ 	if (MI->csh->detail) {
+@@ -951,9 +954,10 @@
+ 				// shift all the ops right to leave 1st slot for this new register op
+ 				memmove(&(MI->flat_insn->detail->x86.operands[1]), &(MI->flat_insn->detail->x86.operands[0]),
+ 						sizeof(MI->flat_insn->detail->x86.operands[0]) * (ARR_SIZE(MI->flat_insn->detail->x86.operands) - 1));
++				memset(&(MI->flat_insn->detail->x86.operands[0]), 0, sizeof(MI->flat_insn->detail->x86.operands[0]));
+ 				MI->flat_insn->detail->x86.operands[0].type = X86_OP_IMM;
+ 				MI->flat_insn->detail->x86.operands[0].imm = 1;
+-				MI->flat_insn->detail->x86.operands[0].size = 1;
++				MI->flat_insn->detail->x86.operands[0].size = MI->flat_insn->detail->x86.operands[1].size;
+ 				MI->flat_insn->detail->x86.op_count++;
+ 		}
+ 
+@@ -968,6 +972,7 @@
+ 			// shift all the ops right to leave 1st slot for this new register op
+ 			memmove(&(MI->flat_insn->detail->x86.operands[1]), &(MI->flat_insn->detail->x86.operands[0]),
+ 					sizeof(MI->flat_insn->detail->x86.operands[0]) * (ARR_SIZE(MI->flat_insn->detail->x86.operands) - 1));
++			memset(&(MI->flat_insn->detail->x86.operands[0]), 0, sizeof(MI->flat_insn->detail->x86.operands[0]));
+ 			MI->flat_insn->detail->x86.operands[0].type = X86_OP_REG;
+ 			MI->flat_insn->detail->x86.operands[0].reg = reg;
+ 			MI->flat_insn->detail->x86.operands[0].size = MI->csh->regsize_map[reg];
+@@ -994,6 +999,31 @@
+ 		MI->flat_insn->detail->x86.operands[0].access = access[0];
+ 		MI->flat_insn->detail->x86.operands[1].access = access[1];
+ #endif
++
++		// the public operand array is built as a side effect of printing, so it
++		// comes out in att order; enter/bound/lcall/ljmp are not reversed
++		switch (MI->flat_insn->id) {
++			case X86_INS_ENTER:
++			case X86_INS_BOUND:
++			case X86_INS_LCALL:
++			case X86_INS_LJMP:
++				if (MI->flat_insn->detail->x86.op_count > 1) {
++					uint8_t a0 = MI->flat_insn->detail->x86.operands[0].access;
++					MI->flat_insn->detail->x86.operands[0].access =
++						MI->flat_insn->detail->x86.operands[1].access;
++					MI->flat_insn->detail->x86.operands[1].access = a0;
++				}
++				break;
++			default: {
++				int lo = 0, hi = MI->flat_insn->detail->x86.op_count - 1;
++				for (; lo < hi; lo++, hi--) {
++					cs_x86_op t = MI->flat_insn->detail->x86.operands[lo];
++					MI->flat_insn->detail->x86.operands[lo] = MI->flat_insn->detail->x86.operands[hi];
++					MI->flat_insn->detail->x86.operands[hi] = t;
++				}
++				break;
++			}
++		}
+ 	}
+ }
+ 
+--- a/arch/X86/X86Mapping.c
++++ b/arch/X86/X86Mapping.c
+@@ -1278,33 +1278,61 @@
+ 	{ X86_PUSHGS64, X86_REG_GS, CS_AC_READ },
+ 	{ X86_PUSHSS16, X86_REG_SS, CS_AC_READ },
+ 	{ X86_PUSHSS32, X86_REG_SS, CS_AC_READ },
++	{ X86_RCL16mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_RCL16rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_RCL32mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_RCL32rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_RCL64mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_RCL64rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_RCL8mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_RCL8rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_RCR16mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_RCR16rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_RCR32mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_RCR32rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_RCR64mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_RCR64rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_RCR8mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_RCR8rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_ROL16mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_ROL16rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_ROL32mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_ROL32rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_ROL64mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_ROL64rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_ROL8mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_ROL8rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_ROR16mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_ROR16rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_ROR32mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_ROR32rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_ROR64mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_ROR64rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_ROR8mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_ROR8rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SAL16mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SAL16rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SAL32mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SAL32rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SAL64mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SAL64rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SAL8mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SAL8rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SAR16mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SAR16rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SAR32mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SAR32rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SAR64mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SAR64rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SAR8mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SAR8rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SHL16mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SHL16rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SHL32mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SHL32rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SHL64mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SHL64rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SHL8mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SHL8rCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SHLD16mrCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SHLD16rrCL, X86_REG_CL, CS_AC_READ },
+@@ -1312,9 +1340,13 @@
+ 	{ X86_SHLD32rrCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SHLD64mrCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SHLD64rrCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SHR16mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SHR16rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SHR32mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SHR32rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SHR64mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SHR64rCL, X86_REG_CL, CS_AC_READ },
++	{ X86_SHR8mCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SHR8rCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SHRD16mrCL, X86_REG_CL, CS_AC_READ },
+ 	{ X86_SHRD16rrCL, X86_REG_CL, CS_AC_READ },
