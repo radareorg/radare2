@@ -60,6 +60,7 @@
 #define NET_IPV6 0x86dd
 
 #define TRANSPORT_TCP 6
+#define TRANSPORT_UDP 17
 
 // Global Header
 typedef struct pcap_hdr_s {
@@ -103,20 +104,6 @@ typedef struct pcaprec_ipv6 {
 	ut8  dst[16];  // destination address
 } pcaprec_ipv6_t;
 
-// TCP header, 20 - 60 bytes
-typedef struct pcaprec_tcp {
-	ut16 src_port;	// Port on source
-	ut16 dst_port;	// Port on destination
-	ut32 seq_num;	// Sequence number
-	ut32 ack_num;	// Ack number
-	ut8  hdr_len;	// Length of TCP header
-	ut16 flags;		// TCP flags
-	ut16 win_sz;	// Window size
-	ut16 chksum;
-	ut16 urgnt_ptr;	// Urgent
-	// Variable length options. Use hdr_len
-} pcaprec_tcp_t;
-
 // Record (Packet) Header
 typedef struct pcaprec_hdr_s {
 	ut32 ts_sec; // Timestamp in seconds
@@ -124,6 +111,17 @@ typedef struct pcaprec_hdr_s {
 	ut32 incl_len;	// Length of packet captured
 	ut32 orig_len;	// Original length of packet
 } pcaprec_hdr_t;
+
+// A reconstructed tcp/udp conversation between two endpoints
+typedef struct pcap_stream_s {
+	int id;
+	ut8 proto;	// TRANSPORT_TCP or TRANSPORT_UDP
+	bool v6;
+	ut8 ip[2][16];	// endpoint addresses, ipv4 uses the first 4 bytes
+	ut16 port[2];
+	ut64 bytes[2];	// payload bytes sent by each endpoint
+	RList/*<pcaprec_t>*/ *recs;	// packets in capture order, not owned
+} pcap_stream_t;
 
 typedef struct pcaprec_s {
 	ut64 paddr;
@@ -135,17 +133,23 @@ typedef struct pcaprec_s {
 		pcaprec_ipv4_t *ipv4_hdr;
 		pcaprec_ipv6_t *ipv6_hdr;
 	} net;
-	union {
-		pcaprec_tcp_t *tcp_hdr;
-	} transport;
-	ut32 datasz;
-	ut8 *data;
+	bool v6;
+	ut8 proto;	// transport protocol, 0 if unknown
+	ut16 sport;
+	ut16 dport;
+	ut32 seq;	// tcp sequence number
+	ut64 dataoff;	// paddr of the transport payload
+	ut32 datasz;	// captured payload bytes
+	pcap_stream_t *stream;
+	int dir;	// 0 if sent by stream->ip[0] (the initiator), 1 otherwise
 } pcaprec_t;
 
 // The pcap object for RBinFile
 typedef struct pcap_obj_s {
 	pcap_hdr_t *header; // File header
 	RList/*<pcaprec_t>*/ *recs;
+	RList/*<pcap_stream_t>*/ *streams;
+	int cur;	// selected stream
 	bool is_nsec; // nsec timestamp resolution?
 	bool bigendian;
 	RBuffer *b;
@@ -157,5 +161,8 @@ void pcaprec_free(pcaprec_t *rec);
 void pcaprec_frame_sym_add(RVecRBinSymbol *vec, pcaprec_t *rec, int n);
 void pcaprec_ether_sym_add(RVecRBinSymbol *vec, pcaprec_t *rec, ut64 paddr);
 const char* pcap_network_string(ut32 network);
+pcaprec_t *pcap_rec_at(pcap_obj_t *obj, ut64 addr);
+char *pcap_stream_name(pcap_stream_t *s);
+ut8 *pcap_stream_data(pcap_obj_t *obj, pcap_stream_t *s, int dir, ut64 *len);
 
 #endif  // _PCAP_H_

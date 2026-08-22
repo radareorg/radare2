@@ -6,6 +6,7 @@ void pcap_obj_free(pcap_obj_t *obj) {
 	if (obj) {
 		free (obj->header);
 		r_list_free (obj->recs);
+		r_list_free (obj->streams);
 		r_unref (obj->b);
 		free (obj);
 	}
@@ -29,62 +30,62 @@ void pcaprec_free(pcaprec_t *rec) {
 		free (rec->hdr);
 		free (rec->link.ether_hdr);
 		free (rec->net.ipv4_hdr);
-		free (rec->transport.tcp_hdr);
-		free (rec->data);
 		free (rec);
 	}
 }
 
-static bool parse_tcp(RBuffer *b, ut64 off, pcaprec_t *rec, ut32 size) {
-	pcaprec_tcp_t *tcp = R_NEW0 (pcaprec_tcp_t);
-	ut8 buf[sizeof (pcaprec_tcp_t)] = {0};
-	r_buf_read_at (b, off, buf, sizeof (buf));
-	tcp->src_port = r_read_at_be16 (buf, 0);
-	tcp->dst_port = r_read_at_be16 (buf, 2);
-	tcp->seq_num = r_read_at_be32 (buf, 4);
-	tcp->ack_num = r_read_at_be32 (buf, 8);
-	tcp->hdr_len = r_read_at_be8 (buf, 12);
-	tcp->flags = r_read_at_be16 (buf, 13);
-	tcp->win_sz = r_read_at_be16 (buf, 15);
-	tcp->chksum = r_read_at_be16 (buf, 17);
-	tcp->urgnt_ptr = r_read_at_be16 (buf, 19);
+// end of the captured bytes of this record
+static ut64 rec_end(pcaprec_t *rec) {
+	return rec->paddr + sizeof (pcaprec_hdr_t) + rec->hdr->incl_len;
+}
 
-	// data offset at (((tcp->hdr_len >> 4) & 0x0F) * 4)
-	ut32 dataoff = ((tcp->hdr_len & 0xF0) >> 2);
-	if (dataoff > size) {
-		free (tcp);
-		return false;
+static void parse_tcp(RBuffer *b, ut64 off, pcaprec_t *rec, ut32 size) {
+	ut8 buf[20];
+	if (size < sizeof (buf) || r_buf_read_at (b, off, buf, sizeof (buf)) != sizeof (buf)) {
+		return;
 	}
-	rec->datasz = size - dataoff;
-#if 0
-	rec->data = malloc (rec->datasz + 1);
-	if (!rec->data) {
-		free (tcp);
-		return false;
+	ut32 hdrlen = (buf[12] >> 4) * 4;
+	if (hdrlen < sizeof (buf) || hdrlen > size) {
+		return;
 	}
-	r_buf_read_at (b, off + dataoff, rec->data, rec->datasz);
-	if (r_str_nlen ((const char *)rec->data, rec->datasz) > 10) {
-#if 0
-		eprintf ("0x%08x  ", off + dataoff);
-		fflush (stderr);
-		write (1, rec->data, rec->datasz);
-		write (1, "\n", 1);
-		rec->data[10] = 0;
-#endif
-	// eprintf ("SIZE %d %d : %s\n", off + dataoff, rec->datasz, rec->data);
-		rec->data[rec->datasz] = 0;
-		rec->transport.tcp_hdr = tcp;
-		return true;
-	}
-#else
-	rec->transport.tcp_hdr = tcp;
-	return true;
+	rec->proto = TRANSPORT_TCP;
+	rec->sport = r_read_at_be16 (buf, 0);
+	rec->dport = r_read_at_be16 (buf, 2);
+	rec->seq = r_read_at_be32 (buf, 4);
+	rec->dataoff = off + hdrlen;
+	rec->datasz = size - hdrlen;
+}
 
-#endif
-	free (rec->data);
-	free (rec);
-	return false;
-	// memcpy (rec->data, buf + dataoff, rec->datasz);
+static void parse_udp(RBuffer *b, ut64 off, pcaprec_t *rec, ut32 size) {
+	ut8 buf[8];
+	if (size < sizeof (buf) || r_buf_read_at (b, off, buf, sizeof (buf)) != sizeof (buf)) {
+		return;
+	}
+	ut32 len = R_MIN (r_read_at_be16 (buf, 4), size);
+	if (len < sizeof (buf)) {
+		return;
+	}
+	rec->proto = TRANSPORT_UDP;
+	rec->sport = r_read_at_be16 (buf, 0);
+	rec->dport = r_read_at_be16 (buf, 2);
+	rec->dataoff = off + sizeof (buf);
+	rec->datasz = len - sizeof (buf);
+}
+
+static void parse_transport(RBuffer *b, ut64 off, pcaprec_t *rec, ut8 proto, ut32 size) {
+	ut64 end = rec_end (rec);
+	if (off >= end) {
+		return;
+	}
+	size = R_MIN (size, end - off);
+	switch (proto) {
+	case TRANSPORT_TCP:
+		parse_tcp (b, off, rec, size);
+		break;
+	case TRANSPORT_UDP:
+		parse_udp (b, off, rec, size);
+		break;
+	}
 }
 
 static bool parse_ipv4(RBuffer *b, ut64 off, pcaprec_t *rec) {
@@ -102,18 +103,9 @@ static bool parse_ipv4(RBuffer *b, ut64 off, pcaprec_t *rec) {
 	ipv4->src = r_read_at_be32 (buf, 12);
 	ipv4->dst = r_read_at_be32 (buf, 16);
 
-	switch (ipv4->protocol) {
-	case TRANSPORT_TCP:
-	{
-		ut32 tcpoff = ((ipv4->ver_len & 0x0F) * 4);
-		if (!parse_tcp (b, off + tcpoff, rec, ipv4->tot_len - tcpoff)) {
-			free (ipv4);
-			return false;
-		}
-		break;
-	}
-	default:
-		break;
+	ut32 hdrlen = (ipv4->ver_len & 0x0F) * 4;
+	if (hdrlen >= sizeof (buf) && ipv4->tot_len >= hdrlen) {
+		parse_transport (b, off + hdrlen, rec, ipv4->protocol, ipv4->tot_len - hdrlen);
 	}
 	rec->net.ipv4_hdr = ipv4;
 	return true;
@@ -125,16 +117,12 @@ static bool parse_ipv6(RBuffer *b, ut64 off, pcaprec_t *rec) {
 	r_buf_read_at (b, off, (ut8*)buf, sizeof (pcaprec_ipv6_t));
 	ipv6->vc_flow = r_read_at_be32 (buf, 0);
 	ipv6->plen = r_read_at_be16 (buf, 4);
-	switch (ipv6->nxt) {
-	case TRANSPORT_TCP:
-		if (!parse_tcp (b, off + sizeof (pcaprec_ipv6_t), rec, ipv6->plen)) {
-			free (ipv6);
-			return false;
-		}
-		break;
-	default:
-		break;
-	}
+	ipv6->nxt = buf[6];
+	ipv6->hlim = buf[7];
+	memcpy (ipv6->src, buf + 8, 16);
+	memcpy (ipv6->dst, buf + 24, 16);
+	parse_transport (b, off + sizeof (pcaprec_ipv6_t), rec, ipv6->nxt, ipv6->plen);
+	rec->v6 = true;
 	rec->net.ipv6_hdr = ipv6;
 	return true;
 }
@@ -218,6 +206,70 @@ error:
 	return false;
 }
 
+static void pcap_stream_free(pcap_stream_t *s) {
+	if (s) {
+		r_list_free (s->recs);
+		free (s);
+	}
+}
+
+// endpoint as 16 byte address + 2 byte port, so they can be compared with memcmp
+static void rec_endpoint(pcaprec_t *rec, bool dst, ut8 *ep) {
+	memset (ep, 0, 16);
+	if (rec->v6) {
+		memcpy (ep, dst? rec->net.ipv6_hdr->dst: rec->net.ipv6_hdr->src, 16);
+	} else {
+		r_write_be32 (ep, dst? rec->net.ipv4_hdr->dst: rec->net.ipv4_hdr->src);
+	}
+	r_write_be16 (ep + 16, dst? rec->dport: rec->sport);
+}
+
+static bool pcap_obj_init_streams(pcap_obj_t *obj) {
+	obj->streams = r_list_newf ((RListFree)pcap_stream_free);
+	HtPP *ht = ht_pp_new0 ();
+	if (!obj->streams || !ht) {
+		ht_pp_free (ht);
+		return false;
+	}
+	RListIter *iter;
+	pcaprec_t *rec;
+	r_list_foreach (obj->recs, iter, rec) {
+		if (!rec->proto) {
+			continue;
+		}
+		ut8 ep[2][18];
+		rec_endpoint (rec, false, ep[0]);
+		rec_endpoint (rec, true, ep[1]);
+		// the key orders the endpoints, so both directions map to the same stream
+		int lo = memcmp (ep[0], ep[1], sizeof (ep[0])) > 0;
+		ut8 raw[1 + sizeof (ep)] = { rec->proto };
+		memcpy (raw + 1, ep[lo], sizeof (ep[0]));
+		memcpy (raw + 1 + sizeof (ep[0]), ep[!lo], sizeof (ep[0]));
+		char key[sizeof (raw) * 2 + 1];
+		r_hex_bin2str (raw, sizeof (raw), key);
+		pcap_stream_t *s = ht_pp_find (ht, key, NULL);
+		if (!s) {
+			s = R_NEW0 (pcap_stream_t);
+			s->id = r_list_length (obj->streams);
+			s->proto = rec->proto;
+			s->v6 = rec->v6;
+			memcpy (s->ip[0], ep[0], 16);
+			memcpy (s->ip[1], ep[1], 16);
+			s->port[0] = rec->sport;
+			s->port[1] = rec->dport;
+			s->recs = r_list_new ();
+			r_list_append (obj->streams, s);
+			ht_pp_insert (ht, key, s);
+		}
+		rec->stream = s;
+		rec->dir = memcmp (ep[0], s->ip[0], 16) || rec->sport != s->port[0];
+		s->bytes[rec->dir] += rec->datasz;
+		r_list_append (s->recs, rec);
+	}
+	ht_pp_free (ht);
+	return true;
+}
+
 static bool pcap_obj_init(pcap_obj_t *obj) {
 	switch (r_buf_read_be32_at (obj->b, 0)) {
 	case PCAP_MAGIC_LE:
@@ -239,10 +291,7 @@ static bool pcap_obj_init(pcap_obj_t *obj) {
 	default:
 		return false;
 	}
-	if (pcap_obj_init_hdr (obj) && pcap_obj_init_recs (obj)) {
-		return true;
-	}
-	return false;
+	return pcap_obj_init_hdr (obj) && pcap_obj_init_recs (obj) && pcap_obj_init_streams (obj);
 }
 
 pcap_obj_t *pcap_obj_new_buf(RBuffer *buf) {
@@ -264,15 +313,21 @@ void pcaprec_frame_sym_add(RVecRBinSymbol *vec, pcaprec_t *rec, int n) {
 	ptr->paddr = ptr->vaddr = rec->paddr;
 }
 
-static void pcaprec_tcp_sym_add(RVecRBinSymbol *vec, pcaprec_t* rec, ut64 paddr, int size) {
-	pcaprec_tcp_t *tcp = rec->transport.tcp_hdr;
-	if (!tcp) {
+static void pcaprec_transport_sym_add(RVecRBinSymbol *vec, pcaprec_t *rec, ut64 paddr) {
+	const char *name;
+	switch (rec->proto) {
+	case TRANSPORT_TCP:
+		name = "Transmission Control Protocol";
+		break;
+	case TRANSPORT_UDP:
+		name = "User Datagram Protocol";
+		break;
+	default:
 		return;
 	}
 	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (vec);
-	int datasz = size - ((tcp->hdr_len & 0xF0) >> 2);
-	ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": Transmission Control Protocol, Src Port: %d, Dst"
-		" port: %d, Len: %d", paddr, tcp->src_port, tcp->dst_port, datasz));
+	ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": %s, Src Port: %d, Dst"
+		" port: %d, Len: %d", paddr, name, rec->sport, rec->dport, rec->datasz));
 	ptr->paddr = ptr->vaddr = paddr;
 }
 
@@ -286,69 +341,34 @@ static void pcaprec_ipv4_sym_add(RVecRBinSymbol *vec, pcaprec_t* rec, ut64 paddr
 	(ipv4->dst >> 24) & 0xFF, (ipv4->dst >> 16) & 0xFF,
 	(ipv4->dst >> 8) & 0xFF, ipv4->dst & 0xFF));
 	ptr->paddr = ptr->vaddr = paddr;
-
-	switch (ipv4->protocol) {
-	case TRANSPORT_TCP:
-		{
-			ut32 tcpoff = ((ipv4->ver_len & 0x0F) * 4);
-			pcaprec_tcp_sym_add (vec, rec, paddr + tcpoff, ipv4->tot_len - tcpoff);
-		}
-		break;
-#if 0
-	case TRANSPORT_UDP:
-		// TODO
-		break;
-#endif
-	default:
-		break;
-	}
+	pcaprec_transport_sym_add (vec, rec, paddr + ((ipv4->ver_len & 0x0F) * 4));
 }
 
-static char *ipv6_addr_string(ut8 *addr) {
-	size_t i;
-	size_t start = -1;
-	size_t tmp = -1;
-	size_t len = 0, maxlen = 0;
-
-	ut16 words[8] = { 0 };
+static char *ipv6_addr_string(const ut8 *addr) {
+	ut16 words[8];
+	int i, start = -1, len = 0, maxlen = 0;
+	// find the longest run of zero words, rfc5952 replaces it with "::"
 	for (i = 0; i < 8; i++) {
 		words[i] = r_read_at_be16 (addr, i * 2);
-	}
-
-	// find the longest sequence of zero field
-	for (i = 0; i < 8; i++) {
-		if (words[i] == 0) {
-			if (tmp == -1) {
-				tmp = i;
-				len = 1;
-			} else {
-				len++;
-			}
-			continue;
-		}
-
+		len = words[i]? 0: len + 1;
 		if (len > maxlen) {
 			maxlen = len;
-			start = tmp;
+			start = i - len + 1;
 		}
-		tmp = -1;
 	}
-
-	if (maxlen > 1) {
-		RStrBuf *addr = r_strbuf_new (NULL);
-		for (i = 0; i < 8; i++) {
-			if (i == start) {
-				r_strbuf_append (addr, "::");
-				i += maxlen - 1;
-			} else {
-				r_strbuf_appendf (addr, "%02x", words[i]);
-			}
+	if (maxlen < 2) {
+		start = -1;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	for (i = 0; i < 8; i++) {
+		if (i == start) {
+			r_strbuf_append (sb, "::");
+			i += maxlen - 1;
+		} else {
+			r_strbuf_appendf (sb, "%s%x", (i > 0 && i != start + maxlen)? ":": "", words[i]);
 		}
-		return r_strbuf_drain (addr);
 	}
-	return r_str_newf ("%x:%x:%x:%x:%x:%x:%x:%x",
-		words[0], words[1], words[2], words[3],
-		words[4], words[5], words[6], words[7]);
+	return r_strbuf_drain (sb);
 }
 
 static void pcaprec_ipv6_sym_add(RVecRBinSymbol *vec, pcaprec_t* rec, ut64 paddr) {
@@ -360,19 +380,7 @@ static void pcaprec_ipv6_sym_add(RVecRBinSymbol *vec, pcaprec_t* rec, ut64 paddr
 	ptr->paddr = ptr->vaddr = paddr;
 	free (src);
 	free (dst);
-
-	switch (ipv6->nxt) {
-	case TRANSPORT_TCP:
-		pcaprec_tcp_sym_add (vec, rec, paddr + sizeof (pcaprec_ipv6_t), ipv6->plen);
-		break;
-#if 0
-	case TRANSPORT_UDP:
-		// TODO
-		break;
-#endif
-	default:
-		break;
-	}
+	pcaprec_transport_sym_add (vec, rec, paddr + sizeof (pcaprec_ipv6_t));
 }
 
 void pcaprec_ether_sym_add(RVecRBinSymbol *vec, pcaprec_t *rec, ut64 paddr) {
@@ -489,4 +497,79 @@ const char* pcap_network_string(ut32 network) {
 	default:
 		return "Unknown";
 	}
+}
+
+pcaprec_t *pcap_rec_at(pcap_obj_t *obj, ut64 addr) {
+	RListIter *iter;
+	pcaprec_t *rec;
+	r_list_foreach (obj->recs, iter, rec) {
+		if (addr >= rec->paddr && addr < rec_end (rec)) {
+			return rec;
+		}
+	}
+	return NULL;
+}
+
+static char *endpoint_string(pcap_stream_t *s, int ep) {
+	const ut8 *ip = s->ip[ep];
+	if (s->v6) {
+		char *a = ipv6_addr_string (ip);
+		char *r = r_str_newf ("[%s]:%d", a, s->port[ep]);
+		free (a);
+		return r;
+	}
+	return r_str_newf ("%d.%d.%d.%d:%d", ip[0], ip[1], ip[2], ip[3], s->port[ep]);
+}
+
+char *pcap_stream_name(pcap_stream_t *s) {
+	char *a = endpoint_string (s, 0);
+	char *b = endpoint_string (s, 1);
+	char *r = r_str_newf ("%s %s -> %s", s->proto == TRANSPORT_TCP? "tcp": "udp", a, b);
+	free (a);
+	free (b);
+	return r;
+}
+
+// payload sent in one direction, tcp retransmissions are dropped and overlaps trimmed
+ut8 *pcap_stream_data(pcap_obj_t *obj, pcap_stream_t *s, int dir, ut64 *len) {
+	ut8 *buf = malloc (s->bytes[dir] + 1);
+	if (!buf) {
+		return NULL;
+	}
+	ut64 n = 0;
+	ut32 next = 0;
+	bool first = true;
+	RListIter *iter;
+	pcaprec_t *rec;
+	r_list_foreach (s->recs, iter, rec) {
+		if (rec->dir != dir || !rec->datasz) {
+			continue;
+		}
+		ut64 off = rec->dataoff;
+		ut32 sz = rec->datasz;
+		if (s->proto == TRANSPORT_TCP) {
+			if (first) {
+				next = rec->seq;
+				first = false;
+			}
+			st32 delta = (st32)(rec->seq - next);
+			if (delta < 0) {
+				if ((ut32)-delta >= sz) {
+					continue;
+				}
+				off -= delta;
+				sz += delta;
+			}
+			if ((st32)(rec->seq + rec->datasz - next) > 0) {
+				next = rec->seq + rec->datasz;
+			}
+		}
+		st64 r = r_buf_read_at (obj->b, off, buf + n, sz);
+		if (r > 0) {
+			n += r;
+		}
+	}
+	buf[n] = 0;
+	*len = n;
+	return buf;
 }

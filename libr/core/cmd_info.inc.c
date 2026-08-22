@@ -3618,6 +3618,11 @@ static int cmd_info(void *data, const char *input) {
 		case 'e': // "ie?"
 			r_cons_cmd_help (core->cons, help_msg_ie);
 			break;
+		case ':': // "i:?"
+			if (r_bin_cmd (core->bin, "?")) {
+				break;
+			}
+			// fallthrough
 		default:
 			r_cons_cmd_help_match (core->cons, help_msg_i, cmd, 0, false);
 			break;
@@ -3937,7 +3942,7 @@ static int cmd_info(void *data, const char *input) {
 		cmd_info_demangle (core, input, pj, mode);
 		break;
 	case ':': // "i:"
-		if (!r_bin_cmd (core->bin, input)) {
+		if (!r_bin_cmd (core->bin, input + 1)) {
 			R_LOG_ERROR ("Unhandled RBinPlugin.cmd");
 		}
 		break;

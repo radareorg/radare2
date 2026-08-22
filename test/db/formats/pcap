@@ -1,0 +1,128 @@
+NAME=pcap stream list
+FILE=bins/pcap/udp6.pcap
+CMDS=<<EOF
+i:s
+i:s 1
+i:s
+EOF
+EXPECT=<<EOF
+* 0 udp 10.0.0.1:5353 -> 10.0.0.2:53 pkts=3 a=11 b=7
+  1 tcp [fe80::1]:4000 -> [2001:db8::]:80 pkts=4 a=43 b=16
+* 1 tcp [fe80::1]:4000 -> [2001:db8::]:80 pkts=4 a=43 b=16
+  0 udp 10.0.0.1:5353 -> 10.0.0.2:53 pkts=3 a=11 b=7
+* 1 tcp [fe80::1]:4000 -> [2001:db8::]:80 pkts=4 a=43 b=16
+EOF
+RUN
+
+NAME=pcap udp stream dump
+FILE=bins/pcap/udp6.pcap
+CMDS=<<EOF
+i:sa
+?e
+i:sb
+?e
+i:sp
+EOF
+EXPECT=<<EOF
+query?again
+answer!
+0x00000052 > 6
+0x00000092 < 7
+0x00000276 > 5
+EOF
+RUN
+
+NAME=pcap tcp stream reassembly
+FILE=bins/pcap/udp6.pcap
+CMDS=<<EOF
+i:s 1~?
+i:sa
+i:sb
+i:sp
+EOF
+EXPECT=<<EOF
+1
+GET / HTTP/1.0
+
+extra
+HTTP/1.0 200 OK
+0x000000f3 > 16
+0x0000015d > 16
+0x000001c7 < 16
+0x00000231 > 11
+EOF
+RUN
+
+NAME=pcap stream navigation
+FILE=bins/pcap/udp6.pcap
+CMDS=<<EOF
+s 0x99
+i:n
+?v $$
+i:n
+?v $$
+i:n
+?v $$
+i:p
+?v $$
+i:s.~?
+i:s~*
+EOF
+EXPECT=<<EOF
+0x15d
+0x1c7
+0x231
+0x1c7
+1
+* 1 tcp [fe80::1]:4000 -> [2001:db8::]:80 pkts=4 a=43 b=16
+EOF
+RUN
+
+NAME=pcap transport symbols
+FILE=bins/pcap/udp6.pcap
+CMDS=<<EOF
+isq~Protocol
+isq~IPV6
+EOF
+EXPECT=<<EOF
+0x0000004a 0 0x4a: User Datagram Protocol, Src Port: 5353, Dst port: 53, Len: 6
+0x0000008a 0 0x8a: User Datagram Protocol, Src Port: 53, Dst port: 5353, Len: 7
+0x000000df 0 0xdf: Transmission Control Protocol, Src Port: 4000, Dst port: 80, Len: 16
+0x00000149 0 0x149: Transmission Control Protocol, Src Port: 4000, Dst port: 80, Len: 16
+0x000001b3 0 0x1b3: Transmission Control Protocol, Src Port: 80, Dst port: 4000, Len: 16
+0x0000021d 0 0x21d: Transmission Control Protocol, Src Port: 4000, Dst port: 80, Len: 11
+0x0000026e 0 0x26e: User Datagram Protocol, Src Port: 5353, Dst port: 53, Len: 5
+0x000000b7 0 0xb7: IPV6, Src: fe80::1, Dst: 2001:db8::
+0x00000121 0 0x121: IPV6, Src: fe80::1, Dst: 2001:db8::
+0x0000018b 0 0x18b: IPV6, Src: 2001:db8::, Dst: fe80::1
+0x000001f5 0 0x1f5: IPV6, Src: fe80::1, Dst: 2001:db8::
+EOF
+RUN
+
+NAME=pcap gdb session stream
+FILE=bins/pcap/sample0.pcap
+CMDS=<<EOF
+i:s~?
+i:s 3
+i:sp~?
+i:sb~<?xml?
+s 0x3f5
+i:s.~?
+i:n
+?v $$
+i:p
+i:p
+?v $$
+ps
+EOF
+EXPECT=<<EOF
+32
+* 3 tcp 127.0.0.1:49326 -> 127.0.0.1:4444 pkts=825 a=9287 b=789331
+807
+9
+1
+0x538
+0x350
++m
+EOF
+RUN
