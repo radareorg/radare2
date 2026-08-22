@@ -1,0 +1,38 @@
+diff --git a/arch/ARM/ARMInstPrinter.c b/arch/ARM/ARMInstPrinter.c
+index a7a7bef..5cd2a23 100644
+--- a/arch/ARM/ARMInstPrinter.c
++++ b/arch/ARM/ARMInstPrinter.c
+@@ -376,6 +376,9 @@ void ARM_post_printer(csh ud, cs_insn *insn, char *insn_asm, MCInst *mci)
+ 			case ARM_LDC_POST:
+ 
+ 			case ARM_LDRBT_POST:
++			case ARM_LDRBT_POST_IMM:
++			case ARM_LDRBT_POST_REG:
++			case ARM_LDRB_POST_REG:
+ 			case ARM_LDRD_POST:
+ 			case ARM_LDRH_POST:
+ 			case ARM_LDRSB_POST:
+@@ -387,14 +390,23 @@ void ARM_post_printer(csh ud, cs_insn *insn, char *insn_asm, MCInst *mci)
+ 			case ARM_STC_POST:
+ 
+ 			case ARM_STRBT_POST:
++			case ARM_STRBT_POST_IMM:
++			case ARM_STRBT_POST_REG:
++			case ARM_STRB_POST_REG:
+ 			case ARM_STRD_POST:
+ 			case ARM_STRH_POST:
+ 
+ 			case ARM_LDRB_POST_IMM:
++			case ARM_LDRT_POST:
++			case ARM_LDRT_POST_IMM:
++			case ARM_LDRT_POST_REG:
+ 			case ARM_LDR_POST_IMM:
+ 			case ARM_LDR_POST_REG:
+ 			case ARM_STRB_POST_IMM:
+ 
++			case ARM_STRT_POST:
++			case ARM_STRT_POST_IMM:
++			case ARM_STRT_POST_REG:
+ 			case ARM_STR_POST_IMM:
+ 			case ARM_STR_POST_REG:
+ 				insn->detail->arm.writeback = true;

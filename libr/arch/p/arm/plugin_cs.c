@@ -3377,8 +3377,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				if (ISWRITEBACK32 ()) {
 					if (ISPOSTINDEX32 ()) {
 						if (ISIMM (2)) {
-							r_strbuf_appendf (&op->esil, ",%s,%d,+,%s,=",
-								MEMBASE (1), IMM (2), MEMBASE (1));
+							const char op_index = ISMEMINDEXSUB (2)? '-': '+';
+							r_strbuf_appendf (&op->esil, ",%d,%s,%c,%s,=",
+								IMM (2), MEMBASE (1), op_index, MEMBASE (1));
 						} else {
 							const char op_index = ISMEMINDEXSUB (2)? '-': '+';
 							r_strbuf_appendf (&op->esil, ",%d,%s,<<,%s,%c,%s,=",
