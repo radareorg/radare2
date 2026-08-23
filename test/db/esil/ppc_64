@@ -2391,3 +2391,83 @@ EXPECT=<<EOF
 0x4000000000000000
 EOF
 RUN
+
+NAME=mfxer folds the carry overflow and summary bits into the read value ppc-64
+FILE=malloc://0x100
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7c6102a6
+aei
+aeim
+ar xer=0xe00000ff
+ar ca=1
+ar ov=0
+ar so=0
+aepc 0
+aes
+ar r3
+ar xer=0xe00000ff
+ar ca=0
+ar ov=1
+ar so=0
+aepc 0
+aes
+ar r3
+ar xer=0xe00000ff
+ar ca=0
+ar ov=0
+ar so=1
+aepc 0
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0x200000ff
+0x400000ff
+0x800000ff
+EOF
+RUN
+
+NAME=mtxer splits the written value back into the carry overflow and summary bits ppc-64
+FILE=malloc://0x100
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7c6103a6
+aei
+aeim
+ar ca=0
+ar ov=0
+ar so=0
+ar r3=0x20000005
+aepc 0
+aes
+ar ca
+ar ov
+ar so
+ar r3=0x40000005
+aepc 0
+aes
+ar ca
+ar ov
+ar so
+ar r3=0x80000005
+aepc 0
+aes
+ar ca
+ar ov
+ar so
+ar xer
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000000
+0x00000000
+0x00000001
+0x00000000
+0x00000000
+0x00000000
+0x00000001
+0x00000005
+EOF
+RUN
