@@ -654,6 +654,7 @@ extern RIOPlugin r_io_plugin_ebpf;
 extern RIOPlugin r_io_plugin_malloc;
 extern RIOPlugin r_io_plugin_sparse;
 extern RIOPlugin r_io_plugin_ptrace;
+extern RIOPlugin r_io_plugin_haiku;
 extern RIOPlugin r_io_plugin_w32dbg;
 extern RIOPlugin r_io_plugin_windbg;
 extern RIOPlugin r_io_plugin_mach;

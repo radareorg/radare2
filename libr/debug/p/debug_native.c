@@ -72,6 +72,11 @@ R_API RList *r_w32_dbg_maps(RDebug *);
 #if (__x86_64__ || __i386__ || __arm__ || __arm64__) && !defined(__ANDROID__)
 #include "native/linux/linux_coredump.h"
 #endif
+
+#elif __HAIKU__
+#include <r_haiku.h>
+#include "native/haiku/haiku_debug.c"
+
 #else // OS
 
 #warning Unsupported debugging platform
@@ -90,7 +95,7 @@ R_API RList *r_w32_dbg_maps(RDebug *);
 /* begin of debugger code */
 #if DEBUGGER
 
-#if !R2__WINDOWS__ && !(__linux__ && !defined(WAIT_ON_ALL_CHILDREN)) && !__APPLE__
+#if !R2__WINDOWS__ && !(__linux__ && !defined(WAIT_ON_ALL_CHILDREN)) && !__APPLE__ && !defined(__HAIKU__)
 static int r_debug_handle_signals(RDebug *dbg) {
 #if __KFBSD__
 	return bsd_handle_signals (dbg);
@@ -127,6 +132,8 @@ static bool r_debug_native_step(RDebug *dbg) {
 		return false;
 	}
 	return true;
+#elif __HAIKU__
+	return haiku_dbg_step (dbg);
 #else // linux
 	return linux_step (dbg);
 #endif
@@ -147,6 +154,8 @@ static bool r_debug_native_attach(RDebug *dbg, int pid) {
 		r_sys_perror ("ptrace (PT_ATTACH)");
 	}
 	return true;
+#elif __HAIKU__
+	return haiku_dbg_attach (dbg, pid);
 #else
 	int ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 	if (ret != -1) {
@@ -164,6 +173,8 @@ static bool r_debug_native_detach(RDebug *dbg, int pid) {
 	return w32_detach (dbg, pid);
 #elif R2__BSD__
 	return ptrace (PT_DETACH, pid, NULL, 0);
+#elif __HAIKU__
+	return haiku_dbg_detach (dbg, pid);
 #else
 	return r_debug_ptrace (dbg, PTRACE_DETACH, pid, NULL, (r_ptrace_data_t)(size_t)0);
 #endif
@@ -194,7 +205,7 @@ static bool r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 #endif
 }
 
-#if !R2__WINDOWS__ && !__APPLE__ && !R2__BSD__
+#if !R2__WINDOWS__ && !__APPLE__ && !R2__BSD__ && !defined(__HAIKU__)
 /* Callback to trigger SIGINT signal */
 static void interrupt_process(RDebug *dbg) {
 	RCore *core = dbg->coreb.core;
@@ -217,7 +228,7 @@ static bool r_debug_native_stop(RDebug *dbg) {
 #endif
 }
 
-#if !__APPLE__ && !R2__WINDOWS__ && !R2__BSD__
+#if !__APPLE__ && !R2__WINDOWS__ && !R2__BSD__ && !defined(__HAIKU__)
 static bool r_debug_native_syscall_hooks_enabled(RDebug *dbg) {
 	if (!dbg) {
 		return false;
@@ -234,6 +245,8 @@ static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return w32_continue (dbg, pid, tid, sig);
 #elif R2__BSD__
 	return bsd_continue (dbg, pid, (sig != -1) ? sig : dbg->reason.signum, bsd_syscall_hooks_enabled (dbg));
+#elif __HAIKU__
+	return haiku_dbg_continue (dbg, pid, tid, sig, false);
 #else
 	int ret = -1;
 	const int ptrace_cmd = r_debug_native_syscall_hooks_enabled (dbg)? PTRACE_SYSCALL: PTRACE_CONT;
@@ -273,6 +286,8 @@ static RDebugInfo* r_debug_native_info(RDebug *dbg, const char *arg) {
 	return linux_info (dbg, arg);
 #elif __KFBSD__ || __OpenBSD__ || __NetBSD__
 	return bsd_info (dbg, arg);
+#elif __HAIKU__
+	return haiku_dbg_info (dbg, arg);
 #else
 	return NULL;
 #endif
@@ -463,6 +478,16 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	dbg->reason.type = reason;
 	return reason;
 }
+#elif __HAIKU__
+static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
+	if (pid == -1) {
+		R_LOG_ERROR ("r_debug_native_wait called with pid -1");
+		return R_DEBUG_REASON_ERROR;
+	}
+	RDebugReasonType reason = haiku_dbg_wait (dbg, pid);
+	dbg->reason.type = reason;
+	return reason;
+}
 #else // if R2__WINDOWS__ & elif __linux__ && !defined (WAIT_ON_ALL_CHILDREN)
 static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
@@ -634,6 +659,8 @@ static RList *r_debug_native_pids(RDebug *dbg, int pid) {
 	return w32_pid_list (dbg, pid, list);
 #elif __linux__
 	return linux_pid_list (pid, list);
+#elif __HAIKU__
+	return haiku_dbg_pids (dbg, pid, list);
 #else /* rest is BSD */
 	return bsd_pid_list (dbg, pid, list);
 #endif
@@ -651,6 +678,8 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 	return w32_thread_list (dbg, pid, list);
 #elif __linux__
 	return linux_thread_list (dbg, pid, list);
+#elif __HAIKU__
+	return haiku_dbg_threads (dbg, pid, list);
 #else
 	return bsd_thread_list (dbg, pid, list);
 #endif
@@ -744,6 +773,8 @@ static bool r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	return linux_reg_read (dbg, type, buf, size);
 #elif __sun || __NetBSD__ || __KFBSD__ || __OpenBSD__ || __DragonFly__
 	return bsd_reg_read (dbg, type, buf, size);
+#elif __HAIKU__
+	return haiku_dbg_reg_read (dbg, type, buf, size);
 #else
 	#warning dbg-native not supported for this platform
 	return false;
@@ -760,6 +791,8 @@ static bool r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int 
 		return w32_reg_write (dbg, type, buf, size);
 #elif __linux__
 		return linux_reg_write (dbg, type, buf, size);
+#elif __HAIKU__
+		return false;
 #else
 		return bsd_reg_write (dbg, type, buf, size);
 #endif
@@ -780,6 +813,8 @@ static bool r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int 
 			size = sizeof (R_DEBUG_REG_T);
 		}
 		return ret == 0;
+#elif __HAIKU__
+		return haiku_dbg_reg_write (dbg, type, buf, size);
 #else
 		return bsd_reg_write (dbg, type, buf, size);
 #endif
@@ -789,6 +824,8 @@ static bool r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int 
 #elif __APPLE__
 		return false;
 #elif R2__WINDOWS__
+		return false;
+#elif __HAIKU__
 		return false;
 #else
 		return bsd_reg_write (dbg, type, buf, size);
@@ -1028,7 +1065,7 @@ static bool r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 #endif
 }
 
-#if !R2__WINDOWS__ && !__APPLE__
+#if !R2__WINDOWS__ && !__APPLE__ && !defined(__HAIKU__)
 static void _map_free(RDebugMap *map) {
 	if (map) {
 		free (map->name);
@@ -1048,6 +1085,8 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 	list = xnu_dbg_maps (dbg, 0);
 #elif R2__WINDOWS__
 	list = r_w32_dbg_maps (dbg);
+#elif __HAIKU__
+	list = haiku_dbg_map_get (dbg);
 #else
 #if __sun
 	char path[1024];
@@ -1219,6 +1258,11 @@ static RList *r_debug_native_modules_get(RDebug *dbg) {
 	if (list && !r_list_empty (list)) {
 		return list;
 	}
+#elif __HAIKU__
+	list = haiku_dbg_modules_get (dbg);
+	if (list && !r_list_empty (list)) {
+		return list;
+	}
 #endif
 	if (!(list = r_debug_native_map_get (dbg))) {
 		return NULL;
@@ -1300,7 +1344,7 @@ static bool r_debug_native_init(RDebug *dbg) {
 	return true;
 }
 
-#if __i386__ || __x86_64__
+#if (__i386__ || __x86_64__) && !defined(__HAIKU__)
 static void sync_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS) {
@@ -1323,7 +1367,7 @@ static void sync_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 }
 #endif
 
-#if __i386__ || __x86_64__
+#if (__i386__ || __x86_64__) && !defined(__HAIKU__)
 static void set_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS) {
@@ -1341,7 +1385,7 @@ static void set_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 #endif
 
 static bool r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g, int api_type) {
-#if __i386__ || __x86_64__
+#if (__i386__ || __x86_64__) && !defined(__HAIKU__)
 	int retval = false;
 	drxt regs[NUM_DRX_REGISTERS] = {0};
 	sync_drx_regs (dbg, regs, NUM_DRX_REGISTERS);
@@ -1596,7 +1640,9 @@ found:
 // Set or unset breakpoints... only handle hardware breakpoints here. otherwise, the caller must do the work
 static bool r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	if (b && b->hw) {
-#if __i386__ || __x86_64__
+#if defined(__HAIKU__)
+		return haiku_dbg_bp (bp, b, set);
+#elif __i386__ || __x86_64__
 		RDebug *dbg = bp->user;
 		return set
 			? drx_add (dbg, bp, b)

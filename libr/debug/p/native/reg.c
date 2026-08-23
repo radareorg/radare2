@@ -65,6 +65,16 @@ static char *r_debug_native_reg_profile(RDebug *dbg) {
 #error "Unsupported BSD architecture"
 #endif
 
+#elif __HAIKU__
+#if __x86_64__
+#include "reg/haiku-x64.h"
+#elif __i386__
+#include "reg/haiku-x86.h"
+#else
+#warning Unsupported Haiku architecture
+	return NULL;
+#endif
+
 #else
 #warning Unsupported Kernel
 	return NULL;
