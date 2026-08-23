@@ -29,6 +29,7 @@ r_io_sources = [
   'p/io_gdb.c',
   'p/io_gprobe.c',
   'p/io_gzip.c',
+  'p/io_haiku.c',
   'p/io_http.c',
   'p/io_ihex.c',
   'p/io_srec.c',

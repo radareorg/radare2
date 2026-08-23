@@ -379,6 +379,7 @@ io_plugins += [
     'gdb',
     'gprobe',
     'gzip',
+    'haiku',
     'http',
     'ihex',
     'srec',
