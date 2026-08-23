@@ -1322,10 +1322,38 @@ static bool ppc6_branch(RAnalOp *op, csh handle, cs_insn *insn, const char *targ
 	return true;
 }
 
+// cs6 ids every overflow form separately, so addo misses the add case
+static unsigned int ppc6_oe_base_id(unsigned int id) {
+	switch (id) {
+	case PPC_INS_ADDO: return PPC_INS_ADD;
+	case PPC_INS_ADDCO: return PPC_INS_ADDC;
+	case PPC_INS_ADDEO: return PPC_INS_ADDE;
+	case PPC_INS_ADDMEO: return PPC_INS_ADDME;
+	case PPC_INS_ADDZEO: return PPC_INS_ADDZE;
+	case PPC_INS_SUBFO: return PPC_INS_SUBF;
+	case PPC_INS_SUBFCO: return PPC_INS_SUBFC;
+	case PPC_INS_SUBFEO: return PPC_INS_SUBFE;
+	case PPC_INS_SUBFMEO: return PPC_INS_SUBFME;
+	case PPC_INS_SUBFZEO: return PPC_INS_SUBFZE;
+	case PPC_INS_NEGO: return PPC_INS_NEG;
+	case PPC_INS_MULLWO: return PPC_INS_MULLW;
+	case PPC_INS_MULLDO: return PPC_INS_MULLD;
+	case PPC_INS_DIVWO: return PPC_INS_DIVW;
+	case PPC_INS_DIVWUO: return PPC_INS_DIVWU;
+	case PPC_INS_DIVDO: return PPC_INS_DIVD;
+	case PPC_INS_DIVDUO: return PPC_INS_DIVDU;
+	case PPC_INS_DIVWEO: return PPC_INS_DIVWE;
+	case PPC_INS_DIVWEUO: return PPC_INS_DIVWEU;
+	case PPC_INS_DIVDEO: return PPC_INS_DIVDE;
+	case PPC_INS_DIVDEUO: return PPC_INS_DIVDEU;
+	}
+	return id;
+}
+
 // cs6 reports alias-shaped operands under the parent id (li -> addi), so reroute onto the alias-id case; branch aliases stay generic
 static unsigned int ppc6_case_id(cs_insn *insn) {
 	if (!CS6_ALIAS (insn)) {
-		return insn->id;
+		return ppc6_oe_base_id (insn->id);
 	}
 	switch (insn->alias_id) {
 	case PPC_INS_ALIAS_LI:
