@@ -1065,12 +1065,15 @@ type: mov
 --
 mnemonic: mulhwu
 type: mul
+esil: 32,0xffffffff,r9,&,0xffffffff,r3,&,*,>>,r30,=
 --
 mnemonic: rldic
 type: rol
+esil: 0x2,r26,ROL,0xfffffffc,&,r26,=
 --
 mnemonic: rldimi
 type: rol
+esil: 0x7,r10,ROL,0xffffff80,&,r9,0xffffffff0000007f,&,|,r9,=
 EOF
 RUN
 

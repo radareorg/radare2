@@ -2330,3 +2330,64 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+
+NAME=rotate-insert and high multiply emulation ppc-64
+FILE=malloc://0x100
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 5083221e508327067883440c788322087c6428967c6428167c6428927c642812
+aei
+aeim
+ar r3=0xa5a5000389abcdef
+ar r4=0xa5a50004123456f8
+aepc 0
+aes
+ar r3
+ar r3=0xa5a5000389abcdef
+ar r4=0xa5a5000412345678
+aepc 4
+aes
+ar r3
+ar r3=0x89abcdef01234567
+ar r4=0x123456789abcdef0
+aepc 8
+aes
+ar r3
+ar r4=0x123456789abcdef0
+aepc 0xc
+aes
+ar r3
+ar r4=0xa5a50004ffffffff
+ar r5=0xa5a5000500000002
+aepc 0x10
+aes
+ar r3
+aepc 0x14
+aes
+ar r3
+ar r4=0xffffffffffffffff
+ar r5=0xa5a5000500000002
+aepc 0x18
+aes
+ar r3
+aepc 0x1c
+aes
+ar r3
+ar r4=0x8000000000000000
+ar r5=0x8000000000000000
+aepc 0x18
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0xa5a500038945cdef
+0x2345678129abcde1
+0x89ab789abcdef067
+0x456789abcdef00
+0xffffffff
+0x00000001
+0x00000000
+0xa5a5000500000001
+0x4000000000000000
+EOF
+RUN
