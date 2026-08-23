@@ -2,6 +2,7 @@
 
 #include <r_anal.h>
 #include <r_anal_priv.h>
+#include "../../../shlr/java/descriptor.h"
 
 #define JNI_MIN_TABLE_METHODS 2
 #define JNI_MAX_DATA_SECTION (64 * 1024 * 1024)
@@ -15,7 +16,7 @@ typedef struct {
 	ut64 function_addr;
 	char *name;
 	char *descriptor;
-	RBinJavaMember *member;
+	RJavaMember *member;
 } JniMethod;
 
 typedef struct {
@@ -160,7 +161,7 @@ static void jni_function_set_signature(JniScanContext *ctx,
 	// A native table alone cannot tell instance and static receivers apart.
 	jni_function_add_param (params, "jobject", strdup ("receiver"));
 	RListIter *iter;
-	RBinJavaType *argument;
+	RJavaType *argument;
 	int argument_index = 0;
 	r_list_foreach (method->member->arguments, iter, argument) {
 		char *name = r_str_newf ("arg%d", argument_index++);
@@ -217,7 +218,7 @@ static void jni_method_free(void *ptr) {
 	if (method) {
 		free (method->name);
 		free (method->descriptor);
-		r_bin_java_member_free (method->member);
+		r_java_member_free (method->member);
 		free (method);
 	}
 }
@@ -359,8 +360,8 @@ static JniMethod *jni_parse_method(JniScanContext *ctx, const ut8 *buf, ut64 rec
 		free (descriptor);
 		return NULL;
 	}
-	RBinJavaMember *member = r_bin_java_member_parse (NULL, name, descriptor,
-		R_BIN_JAVA_MEMBER_METHOD, 0);
+	RJavaMember *member = r_java_member_parse (NULL, name, descriptor,
+		R_JAVA_MEMBER_METHOD, 0);
 	if (!member) {
 		free (name);
 		free (descriptor);

@@ -74,6 +74,8 @@ LINK+=$(LIBR)/lang/libr_lang.a
 LINK+=$(LIBR)/config/libr_config.a
 LINK+=$(LIBR)/muta/libr_muta.a
 LINK+=$(LIBR)/main/libr_main.a
+# libr_anal and libr_bin members reference the java class parser
+LINK+=$(SHLR)/java/libr_java.a
 # extra libs required by XPS static plugins (e.g. libc++ for r2ghidra)
 LINK+=$(EXTERNAL_LINK)
 else ifeq (${COMPILER},wasm)
