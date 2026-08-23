@@ -1504,9 +1504,9 @@ spr_272,r3,=
 mov
 r3,spr_272,=
 mov
-xer,r3,=
+0x1fffffff,xer,&,29,ca,<<,|,30,ov,<<,|,31,so,<<,|,r3,=
 mov
-r3,xer,=
+29,r3,>>,1,&,ca,=,30,r3,>>,1,&,ov,=,31,r3,>>,1,&,so,=,0x1fffffff,r3,&,xer,=
 EOF
 RUN
 

@@ -446,7 +446,9 @@ static char *regs(RArchSession *as) {
 			"fpu	f29 .64 524 0\n"
 			"fpu	f30 .64 532 0\n"
 			"fpu	f31 .64 540 0\n"
-			"gpr	ca .1 292 0\n";
+			"gpr	ca .1 292 0\n"
+			"gpr	ov .1 293 0\n"
+			"gpr	so .1 294 0\n";
 		return strdup (p);
 	}
 
@@ -584,7 +586,9 @@ static char *regs(RArchSession *as) {
 		"fpu	f29 .64 728 0\n"
 		"fpu	f30 .64 736 0\n"
 		"fpu	f31 .64 744 0\n"
-		"gpr	ca .1 496 0\n";
+		"gpr	ca .1 496 0\n"
+		"gpr	ov .1 497 0\n"
+		"gpr	so .1 498 0\n";
 	return strdup (p);
 }
 
@@ -1267,7 +1271,7 @@ static int ppc6_cr_pred(cs_insn *insn) {
 	default:
 		break;
 	}
-	// the summary-overflow bit is not modelled, as in the v5 path
+	// bso/bns need CR0.SO, but the eq predicate tests the whole cr0 byte
 	return PPC_PRED_INVALID;
 }
 
@@ -1350,6 +1354,98 @@ static unsigned int ppc6_oe_base_id(unsigned int id) {
 	return id;
 }
 
+// x+y+c overflows when the addends agree in sign and the sum does not
+static void ppc6_ov_addsub(char *buf, size_t sz, const char *sgn,
+		const char *x, const char *y, const char *c) {
+	snprintf (buf, sz, "%s,%s,%s,^,&,!,%s,%s,%s,%s,+,%s,+,^,&,!,!,&",
+		sgn, y, x, sgn, x, y, x, c);
+}
+
+// XER.OV/SO for an OE form; false for a non-OE id or an unmodelled family
+static bool ppc6_ov_expr(char *buf, size_t sz, PluginData *pd, struct Getarg *gop) {
+	cs_insn *insn = gop->insn;
+	const unsigned int base = ppc6_oe_base_id (insn->id);
+	if (base == insn->id) {
+		return false;
+	}
+	const bool w64 = gop->bits != 32;
+	const char *sgn = w64? "0x8000000000000000": "0x80000000";
+	const char *ones = w64? "0xffffffffffffffff": "0xffffffff";
+	const char *ra = getarg2 (pd, gop, 1, "");
+	// neg/addme/addze/subfme/subfze report two operands, so there is no rB
+	const char *rb = INSOPS > 2? getarg2 (pd, gop, 2, ""): "";
+	char inv[48], body[288];
+	// subtract forms are rB + ~rA + carry, so they share the add test
+	snprintf (inv, sizeof (inv), "%s,%s,^", ones, ra);
+	switch (base) {
+	case PPC_INS_ADD:
+	case PPC_INS_ADDC:
+		ppc6_ov_addsub (body, sizeof (body), sgn, ra, rb, "0");
+		break;
+	case PPC_INS_ADDE:
+		ppc6_ov_addsub (body, sizeof (body), sgn, ra, rb, "ca");
+		break;
+	case PPC_INS_ADDME:
+		ppc6_ov_addsub (body, sizeof (body), sgn, ra, ones, "ca");
+		break;
+	case PPC_INS_ADDZE:
+		ppc6_ov_addsub (body, sizeof (body), sgn, ra, "0", "ca");
+		break;
+	case PPC_INS_SUBF:
+	case PPC_INS_SUBFC:
+		ppc6_ov_addsub (body, sizeof (body), sgn, inv, rb, "1");
+		break;
+	case PPC_INS_SUBFE:
+		ppc6_ov_addsub (body, sizeof (body), sgn, inv, rb, "ca");
+		break;
+	case PPC_INS_SUBFME:
+		ppc6_ov_addsub (body, sizeof (body), sgn, inv, ones, "ca");
+		break;
+	case PPC_INS_SUBFZE:
+	case PPC_INS_NEG:
+		ppc6_ov_addsub (body, sizeof (body), sgn, inv, "0", base == PPC_INS_NEG? "1": "ca");
+		break;
+	case PPC_INS_MULLW:
+		// overflows when the product no longer fits a signed word
+		snprintf (body, sizeof (body), "32,32,%s,~,32,%s,~,*,~,32,%s,~,32,%s,~,*,^,!,!",
+			rb, ra, rb, ra);
+		break;
+	case PPC_INS_MULLD:
+		if (!w64) {
+			// the test is 64-bit; at 32 bits ASR and >> clamp to garbage
+			return false;
+		}
+		// overflows unless the 128-bit product fits 64 signed bits
+		snprintf (body, sizeof (body),
+			"%s,%s,L*,POP,63,%s,>>,%s,*,0,-,+,63,%s,>>,%s,*,0,-,+,63,%s,%s,*,ASR,^,!,!",
+			rb, ra, ra, rb, rb, ra, rb, ra);
+		break;
+	case PPC_INS_DIVW:
+	case PPC_INS_DIVD: {
+		// division by zero, and the one quotient with no representation
+		const bool d = base == PPC_INS_DIVD;
+		// divw is a word divide even in 64-bit mode
+		char a32[48], b32[48];
+		snprintf (a32, sizeof (a32), d? "%s": "0xffffffff,%s,&", ra);
+		snprintf (b32, sizeof (b32), d? "%s": "0xffffffff,%s,&", rb);
+		snprintf (body, sizeof (body), "%s,!,%s,%s,^,!,%s,%s,^,!,&,|",
+			b32, d? "0xffffffffffffffff": "0xffffffff", b32,
+			d? "0x8000000000000000": "0x80000000", a32);
+		break;
+	}
+	case PPC_INS_DIVWU:
+		snprintf (body, sizeof (body), "0xffffffff,%s,&,!", rb);
+		break;
+	case PPC_INS_DIVDU:
+		snprintf (body, sizeof (body), "%s,!", rb);
+		break;
+	default:
+		return false;
+	}
+	snprintf (buf, sz, "%s,ov,=,ov,so,|,so,=,", body);
+	return true;
+}
+
 // cs6 reports alias-shaped operands under the parent id (li -> addi), so reroute onto the alias-id case; branch aliases stay generic
 static unsigned int ppc6_case_id(cs_insn *insn) {
 	if (!CS6_ALIAS (insn)) {
@@ -1387,7 +1483,7 @@ static unsigned int ppc6_case_id(cs_insn *insn) {
 	case PPC_INS_ALIAS_SLDI:
 		return PPC_INS_SLDI;
 	}
-	return insn->id;
+	return ppc6_oe_base_id (insn->id);
 }
 #endif
 
@@ -2880,16 +2976,29 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				op->type = R_ANAL_OP_TYPE_MOV;
 				esilprintf (op, "%s,%s,=", ARG (1), PPCSPR (0));
 			} else if (!strcmp (insn->mnemonic, "mfxer")) {
+				// fold the split SO/OV/CA back into bits 0:2
 				op->type = R_ANAL_OP_TYPE_MOV;
-				esilprintf (op, "xer,%s,=", ARG (0));
+				esilprintf (op, "0x1fffffff,xer,&,29,ca,<<,|,30,ov,<<,|,31,so,<<,|,%s,=",
+					ARG (0));
 			} else if (!strcmp (insn->mnemonic, "mtxer")) {
+				const char *rs = ARG (0);
 				op->type = R_ANAL_OP_TYPE_MOV;
-				esilprintf (op, "%s,xer,=", ARG (0));
+				esilprintf (op, "29,%s,>>,1,&,ca,=,30,%s,>>,1,&,ov,=,31,%s,>>,1,&,so,=,0x1fffffff,%s,&,xer,=",
+					rs, rs, rs, rs);
 			} else if (CS6_ALIAS (insn) && (insn->mnemonic[1] == 'f' || insn->mnemonic[1] == 't')) {
 				// cs6 names the spr in the mnemonic instead of an operand, so only the move type is left
 				op->type = R_ANAL_OP_TYPE_MOV;
 			}
 		}
+#if CS_API_MAJOR >= 6
+		// prepended: rD is written last and may alias a source
+		if (!r_strbuf_is_empty (&op->esil)) {
+			char ov[320];
+			if (ppc6_ov_expr (ov, sizeof (ov), pd, &gop)) {
+				r_strbuf_prepend (&op->esil, ov);
+			}
+		}
+#endif
 		if (insn->detail->ppc.update_cr0 && !r_strbuf_is_empty (&op->esil)
 				&& (op->type & R_ANAL_OP_TYPE_MASK) != R_ANAL_OP_TYPE_STORE
 				&& INSOP (0).type == PPC_OP_REG
