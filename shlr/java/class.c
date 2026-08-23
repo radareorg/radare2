@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include "class.h"
+#include "descriptor.h"
 
 static inline RBinName *bn_new(const char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
@@ -156,7 +157,7 @@ static char *r_bin_java_print_unknown_cp_stringify(RBinJavaCPTypeObj *obj);
 static char *r_bin_java_print_utf8_cp_stringify(RBinJavaCPTypeObj *obj);
 static char *r_bin_java_resolve(RBinJavaObj *BIN_OBJ, int idx, ut8 spacy);
 static void r_bin_java_set_imports(RBinJavaObj *bin);
-static char *r_bin_java_unmangle(ut32 flags, const char *name, const char *descriptor, RBinJavaMemberKind kind);
+static char *r_bin_java_unmangle(ut32 flags, const char *name, const char *descriptor, RJavaMemberKind kind);
 
 R_API int r_bin_java_new_bin(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv, const ut8 *buf, ut64 len);
 static ut8 *r_bin_java_cp_get_4bytes(ut8 tag, ut32 *out_sz, const ut8 *buf, const ut64 len);
@@ -655,14 +656,14 @@ static void r_bin_java_reset_bin_info(RBinJavaObj *bin) {
 	bin->interfaces_list = r_list_newf (r_bin_java_interface_free);
 }
 
-static char *r_bin_java_unmangle(ut32 flags, const char *name, const char *descriptor, RBinJavaMemberKind kind) {
-	RBinJavaMember *member = r_bin_java_member_parse (NULL, name, descriptor, kind, flags);
+static char *r_bin_java_unmangle(ut32 flags, const char *name, const char *descriptor, RJavaMemberKind kind) {
+	RJavaMember *member = r_java_member_parse (NULL, name, descriptor, kind, flags);
 	if (!member) {
 		return NULL;
 	}
 	char *result = member->definition;
 	member->definition = NULL;
-	r_bin_java_member_free (member);
+	r_java_member_free (member);
 	return result;
 }
 
@@ -852,7 +853,7 @@ static void r_bin_java_get_fm_type_definition_json(RBinJavaObj *bin, RBinJavaFie
 	pj_ks (pj, "fq_name", fq_name);
 	free (fq_name);
 
-	const RBinJavaMemberKind kind = is_method? R_BIN_JAVA_MEMBER_METHOD: R_BIN_JAVA_MEMBER_FIELD;
+	const RJavaMemberKind kind = is_method? R_JAVA_MEMBER_METHOD: R_JAVA_MEMBER_FIELD;
 	char *prototype = r_bin_java_unmangle (fm_type->flags, fm_type->name, fm_type->descriptor, kind);
 	pj_ks (pj, "prototype", prototype);
 	free (prototype);
@@ -2162,14 +2163,14 @@ static ut16 r_bin_java_get_method_max_locals(RBinJavaField *fm_type) {
 	return 0;
 }
 
-static RBinJavaMember *r_bin_java_fm_member(RBinJavaField *fm_type) {
-	const RBinJavaMemberKind kind = fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD
-		? R_BIN_JAVA_MEMBER_METHOD: R_BIN_JAVA_MEMBER_FIELD;
-	return r_bin_java_member_parse (fm_type->class_name, fm_type->name,
+static RJavaMember *r_bin_java_fm_member(RBinJavaField *fm_type) {
+	const RJavaMemberKind kind = fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD
+		? R_JAVA_MEMBER_METHOD: R_JAVA_MEMBER_FIELD;
+	return r_java_member_parse (fm_type->class_name, fm_type->name,
 		fm_type->descriptor, kind, fm_type->flags);
 }
 
-static void r_bin_java_sym_method_info(RBinSymbol *sym, RBinJavaMember *member) {
+static void r_bin_java_sym_method_info(RBinSymbol *sym, RJavaMember *member) {
 	const bool instance = !(member->attr.flags & R_BIN_ATTR_STATIC);
 	if (!instance || member->argument_slots < UT16_MAX) {
 		sym->cc_arg_count = member->argument_slots + (instance? 1: 0);
@@ -2184,11 +2185,11 @@ static void r_bin_java_fill_rbinfield_from_field(RBinField *field, RBinJavaField
 	field->paddr = fm_type->file_offset + baddr;
 	field->attr.kind = R_BIN_FIELD_KIND_FIELD;
 	field->attr.lang = R_BIN_LANG_JAVA;
-	RBinJavaMember *member = r_bin_java_fm_member (fm_type);
+	RJavaMember *member = r_bin_java_fm_member (fm_type);
 	if (member) {
 		field->attr.flags = member->attr.flags;
 		field->type = bn_new (member->type->name);
-		r_bin_java_member_free (member);
+		r_java_member_free (member);
 	}
 }
 
@@ -2198,7 +2199,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_typ
 	}
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	sym->name = bn_new (fm_type->name);
-	RBinJavaMember *member = r_bin_java_fm_member (fm_type);
+	RJavaMember *member = r_bin_java_fm_member (fm_type);
 	if (member) {
 		sym->attr.flags = member->attr.flags;
 		sym->attr.lang = R_BIN_LANG_JAVA;
@@ -2229,7 +2230,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_typ
 	sym->forwarder = "NONE";
 	sym->classname = strdup (r_str_get_fail (fm_type->class_name, "UNKNOWN"));
 	sym->ordinal = fm_type->metas->ord;
-	r_bin_java_member_free (member);
+	r_java_member_free (member);
 	return sym;
 }
 
@@ -2238,7 +2239,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField 
 		return NULL;
 	}
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
-	RBinJavaMember *member = r_bin_java_fm_member (fm_type);
+	RJavaMember *member = r_bin_java_fm_member (fm_type);
 	char *s = r_str_newf ("meta_%s", fm_type->name);
 	sym->name = bn_new (s);
 	free (s);
@@ -2259,7 +2260,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField 
 		sym->attr.flags = member->attr.flags;
 		sym->attr.lang = R_BIN_LANG_JAVA;
 	}
-	r_bin_java_member_free (member);
+	r_java_member_free (member);
 	return sym;
 }
 
@@ -2383,8 +2384,8 @@ static void r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx, RVec
 	RListIter *iter;
 	RBinJavaField *field;
 	r_list_foreach (bin->methods_list, iter, field) {
-		RBinJavaMember *member = r_bin_java_member_parse (class_name, field->name,
-			field->descriptor, R_BIN_JAVA_MEMBER_METHOD, field->flags);
+		RJavaMember *member = r_java_member_parse (class_name, field->name,
+			field->descriptor, R_JAVA_MEMBER_METHOD, field->flags);
 		if (!member) {
 			continue;
 		}
@@ -2398,7 +2399,7 @@ static void r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx, RVec
 		sym->paddr = r_bin_java_get_method_code_offset (field);
 		sym->vaddr = sym->paddr;
 		r_bin_java_sym_method_info (sym, member);
-		r_bin_java_member_free (member);
+		r_java_member_free (member);
 	}
 	free (class_name);
 }
@@ -2491,12 +2492,12 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 	RVecRBinField_init (&k->fields);
 	k->origin = R_BIN_CLASS_ORIGIN_BIN;
 	char *kname = r_bin_java_get_this_class_name (bin);
-	RBinJavaMember *class_member = r_bin_java_member_parse (NULL, kname, NULL,
-		R_BIN_JAVA_MEMBER_CLASS, bin->cf2.access_flags);
+	RJavaMember *class_member = r_java_member_parse (NULL, kname, NULL,
+		R_JAVA_MEMBER_CLASS, bin->cf2.access_flags);
 	if (class_member) {
 		k->attr.flags = class_member->attr.flags;
 		k->visibility_str = strdup (class_member->visibility);
-		r_bin_java_member_free (class_member);
+		r_java_member_free (class_member);
 	}
 	if (!names_only) {
 		r_bin_java_enum_class_methods (bin, bin->cf2.this_class, &k->methods);
@@ -7283,28 +7284,28 @@ R_API RList *r_bin_java_extract_all_bin_type_values(RBinJavaObj *bin_obj) {
 	RBinJavaField *fm_type;
 	// get all field types
 	r_list_foreach (bin_obj->fields_list, fm_type_iter, fm_type) {
-		RBinJavaMember *member = r_bin_java_fm_member (fm_type);
+		RJavaMember *member = r_bin_java_fm_member (fm_type);
 		if (!member) {
 			r_list_free (all_types);
 			return NULL;
 		}
 		r_list_append (all_types, strdup (member->type->name));
-		r_bin_java_member_free (member);
+		r_java_member_free (member);
 	}
 	// get all method types
 	r_list_foreach (bin_obj->methods_list, fm_type_iter, fm_type) {
-		RBinJavaMember *member = r_bin_java_fm_member (fm_type);
+		RJavaMember *member = r_bin_java_fm_member (fm_type);
 		if (!member) {
 			r_list_free (all_types);
 			return NULL;
 		}
 		RListIter *arg_iter;
-		RBinJavaType *argument;
+		RJavaType *argument;
 		r_list_foreach (member->arguments, arg_iter, argument) {
 			r_list_append (all_types, strdup (argument->name));
 		}
 		r_list_append (all_types, strdup (member->type->name));
-		r_bin_java_member_free (member);
+		r_java_member_free (member);
 	}
 	return all_types;
 }
@@ -7321,7 +7322,7 @@ R_API RList *r_bin_java_get_method_definitions(RBinJavaObj *bin) {
 	}
 	r_list_foreach (bin->methods_list, iter, fm_type) {
 		char *definition = r_bin_java_unmangle (fm_type->flags, fm_type->name,
-			fm_type->descriptor, R_BIN_JAVA_MEMBER_METHOD);
+			fm_type->descriptor, R_JAVA_MEMBER_METHOD);
 		r_list_append (the_list, definition);
 	}
 	return the_list;
@@ -7339,7 +7340,7 @@ R_API RList *r_bin_java_get_field_definitions(RBinJavaObj *bin) {
 	}
 	r_list_foreach (bin->fields_list, iter, fm_type) {
 		char *definition = r_bin_java_unmangle (fm_type->flags, fm_type->name,
-			fm_type->descriptor, R_BIN_JAVA_MEMBER_FIELD);
+			fm_type->descriptor, R_JAVA_MEMBER_FIELD);
 		r_list_append (the_list, definition);
 	}
 	return the_list;
