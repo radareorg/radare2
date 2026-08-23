@@ -7,7 +7,7 @@
 #include <r_lib.h>
 #include <errno.h>
 
-#if __linux__
+#if __linux__ && !R2_UEFI
 #include "i/isotp.h"
 #endif
 
@@ -286,7 +286,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 		}
 #endif
 	} else if (proto == R_SOCKET_PROTO_CAN) {
-#if __linux__
+#if __linux__ && !R2_UEFI
 		// host: can interface name
 		// port: src and dst can identifiers
 		ut32 srcid = 0;

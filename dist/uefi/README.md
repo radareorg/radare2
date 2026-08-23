@@ -1,59 +1,59 @@
 # UEFI port
 
-This document explains the caveats, dependncies, requirements and challenges to build radare2 for UEFI targets
+This directory contains everything needed to build radare2 as an EFI
+application (`BOOTX64.EFI`) that runs on top of the UEFI firmware, with no
+operating system and no libc underneath.
 
-* No libc (we use the `libr/include/r_util/libc.h` shim)
-* Meson and make builds are supported
-* Install the gnu-efi toolchain
-* Disable all the features like dlopen/fork/...
+* The freestanding libc lives in two places:
+  * `dist/uefi/include/` provides the libc headers used by the cross build
+    (the compiler builtin headers are kept via `-nostdlibinc`)
+  * `libr/util/uefi.c` implements them natively on top of the boot services:
+    console io through the simple text protocols, the heap through
+    `AllocatePool`, file io through the simple file system protocol of the
+    boot volume, time through the runtime services, and plain C
+    implementations for the str/mem/printf/qsort/math family
+* Features that make no sense on firmware are disabled with `R2_UEFI` ifdefs
+  or build options: threads, fork, dynamic loading, sockets, CAN bus, ptrace,
+  shared memory and the debugger
+* `dist/uefi/main.c` is the `efi_main` entrypoint: it calls `r_uefi_init ()`
+  to hand the boot services over to the shim and then spawns the usual r2
+  core prompt loop
+* `dist/uefi/relocate.c` replaces the gnu-efi `_relocate`, which relies on
+  implicit addends that bfd ld writes but lld does not
 
 ## Dependencies
 
 ```bash
-sudo apt install -y build-essential git python3 \
-	nasm acpica-tools uuid-dev \
-	gnu-efi binutils binutils-x86-64-linux-gnu \
-	clang lld uuid-dev
-
+sudo apt install -y build-essential git python3 clang lld gnu-efi
+pip install meson ninja
 ```
 
-## Crosscompile
+## Building
 
 ```bash
-meson setup build-uefi \
-  --cross-file cross-uefi.ini \
-  -Dstatic=true \
-  -Duse_sys_zlib=false \
-  -Duse_magic=false \
-  -Duse_openssl=false \
-  -Dexamples=false \
-  -Dtests=false \
-  -Dplugins=false
-meson compile -C build-uefi
+make -C dist/uefi
 ```
 
-using acr:
-
-```bash
-cp -f dist/plugins/plugins.uefi.cfg plugins.cfg
-./configure-plugins
-CFLAGS="-ffreestanding -fno-stack-protector -fshort-wchar -mno-red-zone -fPIC" \
-LDFLAGS="-nostdlib -Wl,--subsystem,10" \
-./configure --host=x86_64-unknown-none --disable-all --enable-static
-make -j
-
-```
+That configures meson with `dist/uefi/cross-uefi.ini`, compiles all the
+libraries and links `build-uefi/BOOTX64.EFI`. The steps can be run separately
+with `make -C dist/uefi configure build link`.
 
 ## Running
 
 ```bash
-mkdir -p esp/EFI/BOOT
-cp BOOTX64.EFI esp/EFI/BOOT/
-
-qemu-system-x86_64 \
-  -machine q35,accel=kvm:tcg \
-  -cpu max -m 512M \
-  -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd \
-  -drive if=pflash,format=raw,file=/usr/share/OVMF/OVMF_VARS.fd \
-  -drive format=raw,file=fat:rw:esp
+sudo apt install -y qemu-system-x86 ovmf
+make -C dist/uefi run
 ```
+
+Which boots the application in qemu with the OVMF firmware:
+
+```
+radare2 6.2.1 on UEFI
+[0x00000000]> ?V
+6.2.1 ...
+[0x00000000]> wx 9090
+[0x00000000]> px 16
+```
+
+To run it on real hardware copy `BOOTX64.EFI` into `EFI/BOOT/` on a FAT32
+formatted usb stick and select it from the firmware boot menu.

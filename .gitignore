@@ -81,6 +81,7 @@ binr/r2pm/r2pm
 binr/r2pm/r2pm.exe
 binr/*/_CodeSignature/*
 build
+build-uefi
 build_sdb
 config-user.mk
 libr/bin/d/dll/dll

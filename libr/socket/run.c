@@ -41,7 +41,7 @@
 #if defined(__sun)
 #include <sys/filio.h>
 #endif
-#if __linux__ && !__ANDROID__
+#if __linux__ && !__ANDROID__ && !R2_UEFI
 #include <sys/personality.h>
 #include <pty.h>
 #include <utmp.h>
