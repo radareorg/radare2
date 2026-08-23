@@ -885,14 +885,14 @@ static void toc_invalidate(PluginData *pd, RAnalOp *op, cs_insn *insn) {
 	}
 }
 
-// algebraic shift right: ca = sign(rs) & (low bits shifted out != 0); set ca before rd to stay alias-safe
+// ca = sign(rs) & (bits shifted out != 0); ca before rd for alias safety
 static void set_sra(RAnalOp *op, const char *rd, const char *rs, const char *cnt, bool w64, const char *mask) {
 	const char *sgn = w64? "0x8000000000000000": "0x80000000";
 	const char *lo = w64? "0xffffffffffffffff": "0xffffffff";
 	char sx[48];
 	const char *v = rs;
 	if (!w64) {
-		// the word forms shift the sign-extended low word, not the raw 64-bit register
+		// word forms shift the sign-extended low word
 		snprintf (sx, sizeof (sx), "32,%s,~", rs);
 		v = sx;
 	}
@@ -2152,12 +2152,19 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_SRAW:
 		case PPC_INS_SRAD:
 			{
-				char m[32];
 				const bool w64 = insn->id == PPC_INS_SRAD;
+				const char *cbits = w64? "0x3f": "0x1f";
+				const char *obit = w64? "0x40": "0x20";
+				const char *rb = ARG (2);
+				char cnt[64], mask[64];
 				op->sign = true;
 				op->type = R_ANAL_OP_TYPE_SAR;
-				snprintf (m, sizeof (m), "1,%s,0x3f,&,1,<<,-", ARG (2));
-				set_sra (op, ARG (0), ARG (1), ARG (2), w64, m);
+				// a count >= the width shifts every bit out
+				snprintf (cnt, sizeof (cnt), "%s,%s,&,%s,%s,&,!,!,%s,*,|",
+					rb, cbits, rb, obit, cbits);
+				snprintf (mask, sizeof (mask), "1,%s,%s,&,1,<<,-,%s,%s,&,!,!,0,-,|",
+					rb, cbits, rb, obit);
+				set_sra (op, ARG (0), ARG (1), cnt, w64, mask);
 			}
 			break;
 		case PPC_INS_SRAWI:
@@ -2178,10 +2185,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case PPC_INS_MULLI:
 			op->sign = true;
-		case PPC_INS_MULLW:
 		case PPC_INS_MULLD:
 			op->type = R_ANAL_OP_TYPE_MUL;
 			esilprintf (op, "%s,%s,*,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_MULLW:
+			op->type = R_ANAL_OP_TYPE_MUL;
+			// the word forms multiply the sign-extended low words
+			esilprintf (op, "32,%s,~,32,%s,~,*,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_MULHW:
 		case PPC_INS_MULHD:

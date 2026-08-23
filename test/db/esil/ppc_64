@@ -2270,3 +2270,63 @@ EXPECT=<<EOF
 0x00000008
 EOF
 RUN
+
+NAME=mullw multiplies the sign-extended low words ppc-64
+FILE=malloc://0x100
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7c6429d6
+aei
+aeim
+ar r4=0xa5a5000400000002
+ar r5=0xa5a5000500000003
+aepc 0
+aes
+ar r3
+ar r4=0xa5a50004ffffffff
+ar r5=0xa5a5000500000002
+aepc 0
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000006
+0xfffffffffffffffe
+EOF
+RUN
+
+NAME=sraw and srad take the low count bits ppc-64
+FILE=malloc://0x100
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7c832e307c832e34
+aei
+aeim
+ar r4=0xa5a5000480000005
+ar r5=0xa5a5000500000040
+aepc 0
+aes
+ar r3
+ar ca
+ar r4=0xa5a5000480000001
+ar r5=0xa5a5000500000004
+aepc 0
+aes
+ar r3
+ar ca
+ar r4=0x8000000000000005
+ar r5=64
+aepc 4
+aes
+ar r3
+ar ca
+EOF
+EXPECT=<<EOF
+0xffffffff80000005
+0x00000000
+0xfffffffff8000000
+0x00000001
+0xffffffffffffffff
+0x00000001
+EOF
+RUN
