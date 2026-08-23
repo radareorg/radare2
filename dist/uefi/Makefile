@@ -15,8 +15,8 @@ MESON_FLAGS=-Duse_zip=false -Dstatic_runtime=true -Duse_sys_zlib=false \
 	-Dplugins= -Duse_fork=false -Duse_dylink=false -Ddebugger=false \
 	-Dcli=disabled -Dwant_qjs=false -Dwant_zydis=false -Dwant_threads=false
 
-UEFI_CFLAGS=-DR2_UEFI=1 -D__thread= -ffreestanding -fno-stack-protector \
-	-fshort-wchar -mno-red-zone -fPIC -nostdlibinc -isystem include \
+UEFI_CFLAGS=-DR2_UEFI=1 -D__thread= -D_GNU_SOURCE -ffreestanding -fno-stack-protector \
+	-mno-red-zone -fPIC -nostdlibinc -isystem /usr/include/x86_64-linux-musl \
 	-I/usr/include/efi -I/usr/include/efi/x86_64 \
 	-I$(R2DIR)/libr/include -I$(BUILDDIR) -I$(R2DIR)/subprojects/sdb/include
 

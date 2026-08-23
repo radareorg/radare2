@@ -9,6 +9,10 @@
 
 #if defined(R2_UEFI) && R2_UEFI
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+
 #define GNU_EFI_USE_MS_ABI 1
 #include <efi.h>
 
@@ -20,6 +24,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <assert.h>
 #include <string.h>
 #include <strings.h>
 #include <errno.h>
@@ -44,9 +49,22 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <pwd.h>
+#include <grp.h>
+#include <locale.h>
+#include <ctype.h>
+#include <wctype.h>
 #include <poll.h>
 
-int errno = 0;
+int *__errno_location(void) {
+	static int e = 0;
+	return &e;
+}
+
+int *__h_errno_location(void) {
+	static int e = 0;
+	return &e;
+}
+
 char **environ = NULL;
 char *optarg = NULL;
 int optind = 1;
@@ -55,7 +73,6 @@ int optopt = 0;
 long timezone = 0;
 int daylight = 0;
 char *tzname[2] = { "UTC", "UTC" };
-int h_errno = 0;
 
 static EFI_HANDLE r2efi_image = NULL;
 static EFI_SYSTEM_TABLE *r2efi_st = NULL;
@@ -164,6 +181,11 @@ void *memmem(const void *haystack, size_t hlen, const void *needle, size_t nlen)
 
 void bzero(void *s, size_t n) {
 	memset (s, 0, n);
+}
+
+void explicit_bzero(void *s, size_t n) {
+	memset (s, 0, n);
+	__asm__ volatile ("": : "r" (s): "memory");
 }
 
 void bcopy(const void *src, void *dest, size_t n) {
@@ -1363,7 +1385,7 @@ int ttyname_r(int fd, char *buf, size_t buflen) {
 	return 0;
 }
 
-int ioctl(int fd, unsigned long request, ...) {
+int ioctl(int fd, int request, ...) {
 	if (request == TIOCGWINSZ && isatty (fd) && r2efi_st && r2efi_st->ConOut) {
 		va_list ap;
 		va_start (ap, request);
@@ -1396,7 +1418,7 @@ int flock(int fd, int operation) {
 
 /* ---------- directories ---------- */
 
-struct _r2efi_DIR {
+struct __dirstream {
 	EFI_FILE_HANDLE h;
 	struct dirent de;
 };
@@ -1834,6 +1856,7 @@ int asprintf(char **strp, const char *format, ...) {
 
 /* ---------- stdio streams ---------- */
 
+/* the musl FILE is a complete dummy type, so the real state hides behind it */
 struct _r2efi_FILE {
 	int fd;
 	bool eof;
@@ -1841,13 +1864,15 @@ struct _r2efi_FILE {
 	int ungetc;
 };
 
-static FILE r2efi_stdin = { 0, false, false, -1 };
-static FILE r2efi_stdout = { 1, false, false, -1 };
-static FILE r2efi_stderr = { 2, false, false, -1 };
+#define R2F(x) ((struct _r2efi_FILE *)(x))
 
-FILE *stdin = &r2efi_stdin;
-FILE *stdout = &r2efi_stdout;
-FILE *stderr = &r2efi_stderr;
+static struct _r2efi_FILE r2efi_stdin = { 0, false, false, -1 };
+static struct _r2efi_FILE r2efi_stdout = { 1, false, false, -1 };
+static struct _r2efi_FILE r2efi_stderr = { 2, false, false, -1 };
+
+FILE *const stdin = (FILE *)&r2efi_stdin;
+FILE *const stdout = (FILE *)&r2efi_stdout;
+FILE *const stderr = (FILE *)&r2efi_stderr;
 
 FILE *fopen(const char *path, const char *mode) {
 	int flags = O_RDONLY;
@@ -1865,22 +1890,22 @@ FILE *fopen(const char *path, const char *mode) {
 	if (fd < 0) {
 		return NULL;
 	}
-	FILE *f = calloc (1, sizeof (FILE));
+	FILE *f = calloc (1, sizeof (struct _r2efi_FILE));
 	if (!f) {
 		close (fd);
 		return NULL;
 	}
-	f->fd = fd;
-	f->ungetc = -1;
+	R2F (f)->fd = fd;
+	R2F (f)->ungetc = -1;
 	return f;
 }
 
 FILE *fdopen(int fd, const char *mode) {
 	(void)mode;
-	FILE *f = calloc (1, sizeof (FILE));
+	FILE *f = calloc (1, sizeof (struct _r2efi_FILE));
 	if (f) {
-		f->fd = fd;
-		f->ungetc = -1;
+		R2F (f)->fd = fd;
+		R2F (f)->ungetc = -1;
 	}
 	return f;
 }
@@ -1905,8 +1930,8 @@ int fclose(FILE *f) {
 	if (!f) {
 		return EOF;
 	}
-	if (f->fd > 2) {
-		close (f->fd);
+	if (R2F (f)->fd > 2) {
+		close (R2F (f)->fd);
 	}
 	if (f != stdin && f != stdout && f != stderr) {
 		free (f);
@@ -1915,8 +1940,8 @@ int fclose(FILE *f) {
 }
 
 int fflush(FILE *f) {
-	if (f && f->fd > 2) {
-		fsync (f->fd);
+	if (f && R2F (f)->fd > 2) {
+		fsync (R2F (f)->fd);
 	}
 	return 0;
 }
@@ -1925,12 +1950,12 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *f) {
 	if (!f || !size || !nmemb) {
 		return 0;
 	}
-	ssize_t r = read (f->fd, ptr, size * nmemb);
+	ssize_t r = read (R2F (f)->fd, ptr, size * nmemb);
 	if (r <= 0) {
 		if (r == 0) {
-			f->eof = true;
+			R2F (f)->eof = true;
 		} else {
-			f->err = true;
+			R2F (f)->err = true;
 		}
 		return 0;
 	}
@@ -1941,9 +1966,9 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *f) {
 	if (!f || !size || !nmemb) {
 		return 0;
 	}
-	ssize_t r = write (f->fd, ptr, size * nmemb);
+	ssize_t r = write (R2F (f)->fd, ptr, size * nmemb);
 	if (r <= 0) {
-		f->err = true;
+		R2F (f)->err = true;
 		return 0;
 	}
 	return (size_t)r / size;
@@ -1953,8 +1978,8 @@ int fseeko(FILE *f, off_t offset, int whence) {
 	if (!f) {
 		return -1;
 	}
-	f->eof = false;
-	return (lseek (f->fd, offset, whence) < 0)? -1: 0;
+	R2F (f)->eof = false;
+	return (lseek (R2F (f)->fd, offset, whence) < 0)? -1: 0;
 }
 
 int fseek(FILE *f, long offset, int whence) {
@@ -1962,7 +1987,7 @@ int fseek(FILE *f, long offset, int whence) {
 }
 
 off_t ftello(FILE *f) {
-	return f? lseek (f->fd, 0, SEEK_CUR): -1;
+	return f? lseek (R2F (f)->fd, 0, SEEK_CUR): -1;
 }
 
 long ftell(FILE *f) {
@@ -1978,31 +2003,33 @@ int fgetpos(FILE *f, fpos_t *pos) {
 	if (o < 0) {
 		return -1;
 	}
-	*pos = o;
+	memcpy (pos, &o, sizeof (o));
 	return 0;
 }
 
 int fsetpos(FILE *f, const fpos_t *pos) {
-	return fseeko (f, *pos, SEEK_SET);
+	off_t o = 0;
+	memcpy (&o, pos, sizeof (o));
+	return fseeko (f, o, SEEK_SET);
 }
 
 int feof(FILE *f) {
-	return f? f->eof: 1;
+	return f? R2F (f)->eof: 1;
 }
 
 int ferror(FILE *f) {
-	return f? f->err: 1;
+	return f? R2F (f)->err: 1;
 }
 
 void clearerr(FILE *f) {
 	if (f) {
-		f->eof = false;
-		f->err = false;
+		R2F (f)->eof = false;
+		R2F (f)->err = false;
 	}
 }
 
 int fileno(FILE *f) {
-	return f? f->fd: -1;
+	return f? R2F (f)->fd: -1;
 }
 
 void setbuf(FILE *f, char *buf) {
@@ -2022,14 +2049,14 @@ int fgetc(FILE *f) {
 	if (!f) {
 		return EOF;
 	}
-	if (f->ungetc >= 0) {
-		int c = f->ungetc;
-		f->ungetc = -1;
+	if (R2F (f)->ungetc >= 0) {
+		int c = R2F (f)->ungetc;
+		R2F (f)->ungetc = -1;
 		return c;
 	}
 	unsigned char c;
-	if (read (f->fd, &c, 1) != 1) {
-		f->eof = true;
+	if (read (R2F (f)->fd, &c, 1) != 1) {
+		R2F (f)->eof = true;
 		return EOF;
 	}
 	return c;
@@ -2064,7 +2091,7 @@ char *fgets(char *s, int size, FILE *f) {
 
 int fputc(int c, FILE *f) {
 	unsigned char ch = (unsigned char)c;
-	return (write (f? f->fd: 1, &ch, 1) == 1)? c: EOF;
+	return (write (f? R2F (f)->fd: 1, &ch, 1) == 1)? c: EOF;
 }
 
 int putc(int c, FILE *f) {
@@ -2077,7 +2104,7 @@ int putchar(int c) {
 
 int fputs(const char *s, FILE *f) {
 	size_t n = strlen (s);
-	return (write (f? f->fd: 1, s, n) == (ssize_t)n)? 0: EOF;
+	return (write (f? R2F (f)->fd: 1, s, n) == (ssize_t)n)? 0: EOF;
 }
 
 int puts(const char *s) {
@@ -2089,8 +2116,8 @@ int ungetc(int c, FILE *f) {
 	if (!f || c == EOF) {
 		return EOF;
 	}
-	f->ungetc = c;
-	f->eof = false;
+	R2F (f)->ungetc = c;
+	R2F (f)->eof = false;
 	return c;
 }
 
@@ -2133,7 +2160,7 @@ ssize_t getline(char **lineptr, size_t *n, FILE *f) {
 }
 
 int vfprintf(FILE *f, const char *format, va_list ap) {
-	R2EfiPr pr = { NULL, 0, 0, f? f->fd: 1 };
+	R2EfiPr pr = { NULL, 0, 0, f? R2F (f)->fd: 1 };
 	return r2efi_vpr (&pr, format, ap);
 }
 
@@ -2428,7 +2455,7 @@ int poll(struct pollfd *pfds, nfds_t nfds, int timeout) {
 	return 0;
 }
 
-int pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, const struct timespec *timeout, const void *sigmask) {
+int pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, const struct timespec *timeout, const sigset_t *sigmask) {
 	(void)nfds;
 	(void)readfds;
 	(void)writefds;
@@ -2928,7 +2955,7 @@ int nanosleep(const struct timespec *req, struct timespec *rem) {
 void tzset(void) {
 }
 
-int gettimeofday(struct timeval *tv, struct timezone *tz) {
+int gettimeofday(struct timeval *tv, void *tz) {
 	(void)tz;
 	if (tv) {
 		tv->tv_sec = time (NULL);
@@ -3369,10 +3396,10 @@ void pthread_exit(void *retval) {
 }
 
 pthread_t pthread_self(void) {
-	return 1;
+	return (pthread_t)1;
 }
 
-int pthread_equal(pthread_t t1, pthread_t t2) {
+int (pthread_equal)(pthread_t t1, pthread_t t2) {
 	return t1 == t2;
 }
 
@@ -3388,7 +3415,7 @@ int pthread_kill(pthread_t thread, int sig) {
 }
 
 int pthread_attr_init(pthread_attr_t *attr) {
-	attr->stacksize = 0;
+	(void)attr;
 	return 0;
 }
 
@@ -3398,12 +3425,14 @@ int pthread_attr_destroy(pthread_attr_t *attr) {
 }
 
 int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize) {
-	attr->stacksize = stacksize;
+	(void)attr;
+	(void)stacksize;
 	return 0;
 }
 
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize) {
-	*stacksize = attr->stacksize;
+	(void)attr;
+	*stacksize = 0x100000;
 	return 0;
 }
 
@@ -3415,7 +3444,7 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate) {
 
 int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
 	(void)attr;
-	mutex->__v = 0;
+	(void)mutex;
 	return 0;
 }
 
@@ -3425,17 +3454,17 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex) {
 }
 
 int pthread_mutex_lock(pthread_mutex_t *mutex) {
-	mutex->__v++;
+	(void)mutex;
 	return 0;
 }
 
 int pthread_mutex_trylock(pthread_mutex_t *mutex) {
-	mutex->__v++;
+	(void)mutex;
 	return 0;
 }
 
 int pthread_mutex_unlock(pthread_mutex_t *mutex) {
-	mutex->__v--;
+	(void)mutex;
 	return 0;
 }
 
@@ -3473,7 +3502,7 @@ int pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clock_id) {
 
 int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr) {
 	(void)attr;
-	cond->__v = 0;
+	(void)cond;
 	return 0;
 }
 
@@ -3507,7 +3536,7 @@ int pthread_cond_broadcast(pthread_cond_t *cond) {
 
 int pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr) {
 	(void)attr;
-	rwlock->__v = 0;
+	(void)rwlock;
 	return 0;
 }
 
@@ -3604,7 +3633,8 @@ int sched_getaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask) {
 
 int sem_init(sem_t *sem, int pshared, unsigned int value) {
 	(void)pshared;
-	sem->__v = (int)value;
+	(void)sem;
+	(void)value;
 	return 0;
 }
 
@@ -3614,19 +3644,13 @@ int sem_destroy(sem_t *sem) {
 }
 
 int sem_wait(sem_t *sem) {
-	if (sem->__v > 0) {
-		sem->__v--;
-	}
+	(void)sem;
 	return 0;
 }
 
 int sem_trywait(sem_t *sem) {
-	if (sem->__v > 0) {
-		sem->__v--;
-		return 0;
-	}
-	errno = EAGAIN;
-	return -1;
+	(void)sem;
+	return 0;
 }
 
 int sem_timedwait(sem_t *sem, const struct timespec *abs_timeout) {
@@ -3635,12 +3659,13 @@ int sem_timedwait(sem_t *sem, const struct timespec *abs_timeout) {
 }
 
 int sem_post(sem_t *sem) {
-	sem->__v++;
+	(void)sem;
 	return 0;
 }
 
 int sem_getvalue(sem_t *sem, int *sval) {
-	*sval = sem->__v;
+	(void)sem;
+	*sval = 0;
 	return 0;
 }
 
@@ -3668,6 +3693,34 @@ size_t malloc_usable_size(void *ptr) {
 	return (c->magic == R2EFI_CHUNK_MAGIC)? c->size: 0;
 }
 
+/* ---------- fenv ---------- */
+
+#include <fenv.h>
+
+int feclearexcept(int excepts) {
+	(void)excepts;
+	return 0;
+}
+
+int fetestexcept(int excepts) {
+	(void)excepts;
+	return 0;
+}
+
+int fegetround(void) {
+	return FE_TONEAREST;
+}
+
+int fesetround(int round_) {
+	(void)round_;
+	return 0;
+}
+
+int feraiseexcept(int excepts) {
+	(void)excepts;
+	return 0;
+}
+
 /* ---------- setjmp ---------- */
 
 __attribute__((naked)) int setjmp(jmp_buf env) {
@@ -3687,6 +3740,38 @@ __attribute__((naked)) int setjmp(jmp_buf env) {
 }
 
 __attribute__((naked)) void longjmp(jmp_buf env, int val) {
+	__asm__ volatile (
+		"movq 0(%rdi), %rbx\n"
+		"movq 8(%rdi), %rbp\n"
+		"movq 16(%rdi), %r12\n"
+		"movq 24(%rdi), %r13\n"
+		"movq 32(%rdi), %r14\n"
+		"movq 40(%rdi), %r15\n"
+		"movq 48(%rdi), %rsp\n"
+		"movl %esi, %eax\n"
+		"testl %eax, %eax\n"
+		"jnz 1f\n"
+		"incl %eax\n"
+		"1: jmpq *56(%rdi)\n");
+}
+
+__attribute__((naked)) int sigsetjmp(sigjmp_buf env, int savemask) {
+	__asm__ volatile (
+		"movq %rbx, 0(%rdi)\n"
+		"movq %rbp, 8(%rdi)\n"
+		"movq %r12, 16(%rdi)\n"
+		"movq %r13, 24(%rdi)\n"
+		"movq %r14, 32(%rdi)\n"
+		"movq %r15, 40(%rdi)\n"
+		"leaq 8(%rsp), %rax\n"
+		"movq %rax, 48(%rdi)\n"
+		"movq (%rsp), %rax\n"
+		"movq %rax, 56(%rdi)\n"
+		"xorl %eax, %eax\n"
+		"retq\n");
+}
+
+__attribute__((naked)) void siglongjmp(sigjmp_buf env, int val) {
 	__asm__ volatile (
 		"movq 0(%rdi), %rbx\n"
 		"movq 8(%rdi), %rbp\n"
@@ -4163,6 +4248,194 @@ double tanh(double x) {
 
 double hypot(double x, double y) {
 	return sqrt (x * x + y * y);
+}
+
+int __fpclassify(double x) {
+	if (x != x) {
+		return FP_NAN;
+	}
+	if (x == 0) {
+		return FP_ZERO;
+	}
+	double ax = (x < 0)? -x: x;
+	if (ax > 1.7976931348623157e308) {
+		return FP_INFINITE;
+	}
+	return (ax < 2.2250738585072014e-308)? FP_SUBNORMAL: FP_NORMAL;
+}
+
+int __fpclassifyf(float x) {
+	if (x != x) {
+		return FP_NAN;
+	}
+	if (x == 0) {
+		return FP_ZERO;
+	}
+	float ax = (x < 0)? -x: x;
+	if (ax > 3.402823466e38f) {
+		return FP_INFINITE;
+	}
+	return (ax < 1.1754943508222875e-38f)? FP_SUBNORMAL: FP_NORMAL;
+}
+
+int __fpclassifyl(long double x) {
+	return __fpclassify ((double)x);
+}
+
+int __signbitl(long double x) {
+	return __builtin_signbit ((double)x);
+}
+
+/* ---------- ctype ---------- */
+
+/* the parenthesized names dodge the musl function-like macros */
+
+int (isdigit)(int c) {
+	return c >= '0' && c <= '9';
+}
+
+int (isupper)(int c) {
+	return c >= 'A' && c <= 'Z';
+}
+
+int (islower)(int c) {
+	return c >= 'a' && c <= 'z';
+}
+
+int (isalpha)(int c) {
+	return (isupper) (c) || (islower) (c);
+}
+
+int (isalnum)(int c) {
+	return (isalpha) (c) || (isdigit) (c);
+}
+
+int (isxdigit)(int c) {
+	return (isdigit) (c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
+int (isspace)(int c) {
+	return c == ' ' || (c >= '\t' && c <= '\r');
+}
+
+int (isblank)(int c) {
+	return c == ' ' || c == '\t';
+}
+
+int (iscntrl)(int c) {
+	return (c >= 0 && c < 0x20) || c == 0x7f;
+}
+
+int (isprint)(int c) {
+	return c >= 0x20 && c < 0x7f;
+}
+
+int (isgraph)(int c) {
+	return c > 0x20 && c < 0x7f;
+}
+
+int (ispunct)(int c) {
+	return (isgraph) (c) && !(isalnum) (c);
+}
+
+int (isascii)(int c) {
+	return c >= 0 && c < 0x80;
+}
+
+int (toupper)(int c) {
+	return (islower) (c)? c - 0x20: c;
+}
+
+int (tolower)(int c) {
+	return (isupper) (c)? c + 0x20: c;
+}
+
+int (toascii)(int c) {
+	return c & 0x7f;
+}
+
+int (iswspace)(wint_t wc) {
+	return wc < 0x80 && (isspace) ((int)wc);
+}
+
+int (iswdigit)(wint_t wc) {
+	return wc < 0x80 && (isdigit) ((int)wc);
+}
+
+int (iswalpha)(wint_t wc) {
+	return wc < 0x80 && (isalpha) ((int)wc);
+}
+
+int (iswalnum)(wint_t wc) {
+	return wc < 0x80 && (isalnum) ((int)wc);
+}
+
+int (iswxdigit)(wint_t wc) {
+	return wc < 0x80 && (isxdigit) ((int)wc);
+}
+
+int (iswprint)(wint_t wc) {
+	return wc < 0x80 && (isprint) ((int)wc);
+}
+
+int (iswgraph)(wint_t wc) {
+	return wc < 0x80 && (isgraph) ((int)wc);
+}
+
+int (iswpunct)(wint_t wc) {
+	return wc < 0x80 && (ispunct) ((int)wc);
+}
+
+int (iswcntrl)(wint_t wc) {
+	return wc < 0x80 && (iscntrl) ((int)wc);
+}
+
+int (iswblank)(wint_t wc) {
+	return wc < 0x80 && (isblank) ((int)wc);
+}
+
+int (iswupper)(wint_t wc) {
+	return wc < 0x80 && (isupper) ((int)wc);
+}
+
+int (iswlower)(wint_t wc) {
+	return wc < 0x80 && (islower) ((int)wc);
+}
+
+wint_t (towupper)(wint_t wc) {
+	return wc < 0x80? (wint_t)(toupper) ((int)wc): wc;
+}
+
+wint_t (towlower)(wint_t wc) {
+	return wc < 0x80? (wint_t)(tolower) ((int)wc): wc;
+}
+
+int wcwidth(wchar_t c) {
+	return (c >= 0x20)? 1: 0;
+}
+
+/* ---------- locale ---------- */
+
+char *setlocale(int category, const char *locale) {
+	(void)category;
+	(void)locale;
+	return "C";
+}
+
+struct lconv *localeconv(void) {
+	static struct lconv lc = {
+		.decimal_point = ".",
+		.thousands_sep = "",
+		.grouping = ""
+	};
+	return &lc;
+}
+
+/* ---------- assert ---------- */
+
+_Noreturn void __assert_fail(const char *expr, const char *file, int line, const char *func) {
+	fprintf (stderr, "assert failed: %s (%s:%d %s)\n", expr, file, line, func);
+	abort ();
 }
 
 long lrint(double x) {

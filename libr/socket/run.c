@@ -364,11 +364,11 @@ beach:
 static void setASLR(RRunProfile *r, int enabled) {
 #if __linux__
 	r_sys_aslr (enabled);
-#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__
+#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__ && !R2_UEFI
 	if (personality (ADDR_NO_RANDOMIZE) == -1) {
 #endif
 		r_sys_aslr (0);
-#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__
+#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__ && !R2_UEFI
 	}
 #endif
 #elif __APPLE__

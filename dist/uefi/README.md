@@ -4,14 +4,13 @@ This directory contains everything needed to build radare2 as an EFI
 application (`BOOTX64.EFI`) that runs on top of the UEFI firmware, with no
 operating system and no libc underneath.
 
-* The freestanding libc lives in two places:
-  * `dist/uefi/include/` provides the libc headers used by the cross build
-    (the compiler builtin headers are kept via `-nostdlibinc`)
-  * `libr/util/uefi.c` implements them natively on top of the boot services:
-    console io through the simple text protocols, the heap through
-    `AllocatePool`, file io through the simple file system protocol of the
-    boot volume, time through the runtime services, and plain C
-    implementations for the str/mem/printf/qsort/math family
+* No libc headers are shipped: the cross build compiles against the musl
+  headers (`musl-dev`), keeping the compiler builtin ones via `-nostdlibinc`
+* `libr/util/uefi.c` implements the libc natively on top of the boot
+  services: console io through the simple text protocols, the heap through
+  `AllocatePool`, file io through the simple file system protocol of the
+  boot volume, time through the runtime services, and plain C
+  implementations for the str/mem/printf/qsort/math family
 * Features that make no sense on firmware are disabled with `R2_UEFI` ifdefs
   or build options: threads, fork, dynamic loading, sockets, CAN bus, ptrace,
   shared memory and the debugger
@@ -24,7 +23,7 @@ operating system and no libc underneath.
 ## Dependencies
 
 ```bash
-sudo apt install -y build-essential git python3 clang lld gnu-efi
+sudo apt install -y build-essential git python3 clang lld gnu-efi musl-dev
 pip install meson ninja
 ```
 
