@@ -1128,19 +1128,40 @@ static void ppc_esil_stx(RAnalOp *op, PluginData *pd, struct Getarg *gop, int wi
 	}
 }
 
-// 32-bit rotate by hand (ESIL ROL is 64-bit); wrapping mask (MB>ME) also fills bits 32:63
+// 32-bit rotate by hand, because ESIL ROL is 64-bit
+static void ppc_rotl32(char *buf, size_t sz, const char *sh, const char *rs) {
+	snprintf (buf, sz, "%s,0x1f,&,%s,<<,%s,0x1f,&,32,-,%s,0xffffffff,&,>>,|,0xffffffff,&",
+		sh, rs, sh, rs);
+}
+
 static void ppc_esil_rlwnm(RAnalOp *op, PluginData *pd, struct Getarg *gop, const char *mask, bool wrap) {
 	const char *sh = getarg2 (pd, gop, 2, "");
 	const char *rs = getarg2 (pd, gop, 1, "");
 	const char *rd = getarg2 (pd, gop, 0, "");
 	char rot[128];
-	snprintf (rot, sizeof (rot), "%s,0x1f,&,%s,<<,%s,0x1f,&,32,-,%s,0xffffffff,&,>>,|,0xffffffff,&",
-		sh, rs, sh, rs);
+	ppc_rotl32 (rot, sizeof (rot), sh, rs);
 	if (wrap) {
 		esilprintf (op, "%s,%s,&,32,%s,<<,|,%s,=", rot, mask, rot, rd);
 	} else {
 		esilprintf (op, "%s,%s,&,%s,=", rot, mask, rd);
 	}
+}
+
+// rlwimi/rldimi insert: the bits the mask misses keep rA's old value
+static void ppc_esil_insert(RAnalOp *op, const char *val, ut64 mask, const char *rd) {
+	esilprintf (op, "%s,0x%"PFMT64x",&,%s,0x%"PFMT64x",&,|,%s,=", val, mask, rd, ~mask, rd);
+}
+
+static void ppc_esil_rlwimi(RAnalOp *op, PluginData *pd, struct Getarg *gop, ut64 mask) {
+	char rot[128], val[272];
+	ppc_rotl32 (rot, sizeof (rot), getarg2 (pd, gop, 2, ""), getarg2 (pd, gop, 1, ""));
+	// only a wrapping mask reaches bits 32:63; else the copy is dead
+	if (mask >> 32) {
+		snprintf (val, sizeof (val), "%s,32,%s,<<,|", rot, rot);
+	} else {
+		r_str_ncpy (val, rot, sizeof (val));
+	}
+	ppc_esil_insert (op, val, mask, getarg2 (pd, gop, 0, ""));
 }
 
 static void ppc_fpop(RAnalOp *op, PluginData *pd, struct Getarg *gop, bool single, int nsrc, const char *fop) {
@@ -2195,12 +2216,25 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			esilprintf (op, "32,%s,~,32,%s,~,*,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_MULHW:
+			op->sign = true;
+			op->type = R_ANAL_OP_TYPE_MUL;
+			esilprintf (op, "32,32,%s,~,32,%s,~,*,>>,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_MULHWU:
+			op->type = R_ANAL_OP_TYPE_MUL;
+			esilprintf (op, "32,0xffffffff,%s,&,0xffffffff,%s,&,*,>>,%s,=",
+				ARG (2), ARG (1), ARG (0));
+			break;
 		case PPC_INS_MULHD:
 			op->sign = true;
-		case PPC_INS_MULHWU:
+			op->type = R_ANAL_OP_TYPE_MUL;
+			// signed high = unsigned high - rA<0?rB:0 - rB<0?rA:0
+			esilprintf (op, "%s,%s,L*,POP,63,%s,>>,%s,*,0,-,+,63,%s,>>,%s,*,0,-,+,%s,=",
+				ARG (2), ARG (1), ARG (1), ARG (2), ARG (2), ARG (1), ARG (0));
+			break;
 		case PPC_INS_MULHDU:
 			op->type = R_ANAL_OP_TYPE_MUL;
-			// type only: ESIL has no high-half multiply operator
+			esilprintf (op, "%s,%s,L*,POP,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_SUB:
 		case PPC_INS_SUBC:
@@ -2763,6 +2797,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case PPC_INS_RLWIMI:
 			op->type = R_ANAL_OP_TYPE_ROL;
+			if (INSOP (2).type == PPC_OP_IMM && INSOP (3).type == PPC_OP_IMM
+					&& INSOP (4).type == PPC_OP_IMM) {
+				const ut32 mb = getarg (&gop, 3) & 0x1f;
+				const ut32 me = getarg (&gop, 4) & 0x1f;
+				// a wrapping mask covers the whole high word
+				const ut64 hi = (mb > me)? 0xffffffff00000000ULL: 0;
+				ppc_esil_rlwimi (op, pd, &gop, mask32 (mb, me) | hi);
+			}
 			break;
 		case PPC_INS_RLDCL:
 		case PPC_INS_RLDICL:
@@ -2777,8 +2819,18 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_RLDIC:
 		case PPC_INS_RLDIMI:
 			op->type = R_ANAL_OP_TYPE_ROL;
-			// type only: rldic masks mb..63-sh and rldimi inserts into the
-			// destination; neither is expressible via cmask64(mb,me)
+			if (INSOP (2).type == PPC_OP_IMM && INSOP (3).type == PPC_OP_IMM) {
+				// both mask mb..63-sh, rldimi also keeps rA
+				const ut64 sh = getarg (&gop, 2) & 0x3f;
+				const ut64 m = mask64 (getarg (&gop, 3) & 0x3f, 63 - sh);
+				char rot[64];
+				snprintf (rot, sizeof (rot), "%s,%s,ROL", ARG (2), ARG (1));
+				if (insn->id == PPC_INS_RLDIMI) {
+					ppc_esil_insert (op, rot, m, ARG (0));
+				} else {
+					esilprintf (op, "%s,0x%"PFMT64x",&,%s,=", rot, m, ARG (0));
+				}
+			}
 			break;
 		}
 		if (stateful) {
