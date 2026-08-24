@@ -2483,3 +2483,83 @@ EXPECT=<<EOF
 0x34127856
 EOF
 RUN
+
+NAME=div, divu, madd and msub write hi and lo
+FILE=malloc://32
+ARGS=-a mips -b 32
+CMDS=<<EOF
+aei
+wx 1a002a01
+ar t1=0xfffffff9
+ar t2=2
+ar pc=0
+s 0
+aes
+ar lo
+ar hi
+wx 1b002a01
+ar pc=0
+s 0
+aes
+ar lo
+ar hi
+wx 00002a71
+ar hi=1
+ar lo=5
+ar pc=0
+s 0
+aes
+ar hi
+ar lo
+wx 04002a71
+ar hi=1
+ar lo=5
+ar pc=0
+s 0
+aes
+ar hi
+ar lo
+EOF
+EXPECT=<<EOF
+0xfffffffd
+0xffffffff
+0x7ffffffc
+0x00000001
+0x00000000
+0xfffffff7
+0x00000001
+0x00000013
+EOF
+RUN
+
+NAME=maddu and msubu accumulate the unsigned product
+FILE=malloc://32
+ARGS=-a mips -b 32
+CMDS=<<EOF
+aei
+wx 01002a71
+ar t1=0xffffffff
+ar t2=2
+ar hi=1
+ar lo=5
+ar pc=0
+s 0
+aes
+ar hi
+ar lo
+wx 05002a71
+ar hi=1
+ar lo=5
+ar pc=0
+s 0
+aes
+ar hi
+ar lo
+EOF
+EXPECT=<<EOF
+0x00000003
+0x00000003
+0xffffffff
+0x00000007
+EOF
+RUN
