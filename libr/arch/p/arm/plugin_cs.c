@@ -885,13 +885,23 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free (pj);
 }
 
-static int decode_sign_ext(arm64_extender extender) {
+// uxtx extends nothing; the narrower unsigned extenders are masks
+static int decode_zero_ext(arm64_extender extender) {
 	switch (extender) {
 	case ARM64_EXT_UXTB:
+		return 8;
 	case ARM64_EXT_UXTH:
+		return 16;
 	case ARM64_EXT_UXTW:
-	case ARM64_EXT_UXTX:
-		return 0; // nothing needs to be done for unsigned
+		return 32;
+	default:
+		break;
+	}
+	return 0;
+}
+
+static int decode_sign_ext(arm64_extender extender) {
+	switch (extender) {
 	case ARM64_EXT_SXTB:
 		return 8;
 	case ARM64_EXT_SXTH:
@@ -1261,14 +1271,18 @@ static void arg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i, 
 		? MEMINDEX64 (n): REG64 (n);
 	int shift = LSHIFT2_64 (n);
 	int signext = EXT64 (n);
+	const int zeroext = decode_zero_ext (op.ext);
 	if (sign && !signext) {
 		signext = size;
 	}
-	if (signext) {
-		r_strbuf_appendf (sb, "%d,", signext);
-	}
+	// a64 extends the register first and shifts the extended value
 	if (shift) {
 		r_strbuf_appendf (sb, "%d,", shift);
+	}
+	if (signext) {
+		r_strbuf_appendf (sb, "%d,", signext);
+	} else if (zeroext) {
+		r_strbuf_appendf (sb, "0x%"PFMT64x",", r_num_bitmask (zeroext));
 	}
 
 #if CS_API_MAJOR == 4
@@ -1286,11 +1300,13 @@ static void arg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i, 
 		}
 	}
 
-	if (shift) {
-		r_strbuf_appendf (sb, ",%s", DECODE_SHIFT64 (n));
-	}
 	if (signext) {
 		r_strbuf_append (sb, ",~");
+	} else if (zeroext) {
+		r_strbuf_append (sb, ",&");
+	}
+	if (shift) {
+		r_strbuf_appendf (sb, ",%s", DECODE_SHIFT64 (n));
 	}
 }
 

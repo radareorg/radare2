@@ -1856,3 +1856,38 @@ EXPECT=<<EOF
 0x1100ffeeddccbbaa
 EOF
 RUN
+
+NAME=the extended register operands extend first and shift after
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aei
+wx 2008228b
+aer x1=0x1000
+aer x2=0x1ff
+aer pc=0
+s 0
+aes
+aer x0
+wx 20a422cb
+aer x1=0x1000
+aer x2=0x18000
+aer pc=0
+s 0
+aes
+aer x0
+wx 2000220b
+aer x1=0x1000
+aer x2=0x1ff
+aer pc=0
+s 0
+aes
+aer x0
+EOF
+EXPECT=<<EOF
+0x000013fc
+0x00011000
+0x000010ff
+EOF
+RUN
+
