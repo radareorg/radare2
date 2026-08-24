@@ -2427,3 +2427,28 @@ EXPECT=<<EOF
 0x81234567
 EOF
 RUN
+
+NAME=the ext and ins bitfield forms
+FILE=malloc://32
+ARGS=-a mips -b 32
+CMDS=<<EOF
+aei
+wx 0039287d
+ar t1=0x89abcdef
+ar pc=0
+s 0
+aes
+ar t0
+wx 0459287d
+ar t0=0xffffffff
+ar t1=0
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x000000de
+0xfffff00f
+EOF
+RUN

@@ -154,6 +154,11 @@ static inline void es_sign_n_64(RArchSession *as, RAnalOp *op, const char *arg, 
 	}
 }
 
+// the m/u bitfield forms encode a field 32 wider or 32 higher than capstone says
+static ut64 es_bitmask(int size) {
+	return (size >= 64)? UT64_MAX: (1ULL << size) - 1;
+}
+
 // a mips64 arithmetic shift fills from bit 63, and esil ASR rewrites a big count
 static void es_dsra(RAnalOp *op, const char *cnt, const char *rt, const char *rd) {
 	r_strbuf_appendf (&op->esil,
@@ -369,6 +374,37 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 						|| id == MIPS_INS_DSLLV;
 					r_strbuf_appendf (&op->esil, "%s,%s,%s,%s,=",
 						cnt, ARG (1), left? "<<": ">>", ARG (0));
+				}
+			}
+			break;
+		case MIPS_INS_EXT:
+		case MIPS_INS_DEXT:
+		case MIPS_INS_DEXTM:
+		case MIPS_INS_DEXTU:
+			{
+				const int pos = IMM (2) + ((insn->id == MIPS_INS_DEXTU)? 32: 0);
+				const int size = IMM (3) + ((insn->id == MIPS_INS_DEXTM)? 32: 0);
+				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%d,%s,>>,&,%s,=",
+					es_bitmask (size), pos, ARG (1), ARG (0));
+				if (insn->id == MIPS_INS_EXT) {
+					ES_SIGN32_64 (ARG (0));
+				}
+			}
+			break;
+		case MIPS_INS_INS:
+		case MIPS_INS_DINS:
+		case MIPS_INS_DINSM:
+		case MIPS_INS_DINSU:
+			{
+				const int pos = IMM (2) + ((insn->id == MIPS_INS_DINSU)? 32: 0);
+				const int size = IMM (3) + ((insn->id == MIPS_INS_DINSM)? 32: 0);
+				const bool word = insn->id == MIPS_INS_INS;
+				const ut64 mask = es_bitmask (size) << pos;
+				const ut64 keep = word? (~mask & UT32_MAX): ~mask;
+				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,&,0x%"PFMT64x",%d,%s,<<,&,|,%s,=",
+					keep, ARG (0), mask, pos, ARG (1), ARG (0));
+				if (word) {
+					ES_SIGN32_64 (ARG (0));
 				}
 			}
 			break;
