@@ -446,3 +446,54 @@ EXPECT=<<EOF
 0x08000000
 EOF
 RUN
+
+NAME=the mips64 bitfield forms and their wider field encodings
+FILE=malloc://32
+ARGS=-a mips -b 64
+CMDS=<<EOF
+aei
+wx 0339287d
+ar t1=0x0123456789abcdef
+ar pc=0
+s 0
+aes
+ar t0
+wx 0139287d
+ar pc=0
+s 0
+aes
+ar t0
+wx 0239287d
+ar pc=0
+s 0
+aes
+ar t0
+wx 0759287d
+ar t0=0xffffffffffffffff
+ar t1=0
+ar pc=0
+s 0
+aes
+ar t0
+wx 0559287d
+ar t0=0xffffffffffffffff
+ar pc=0
+s 0
+aes
+ar t0
+wx 0659287d
+ar t0=0xffffffffffffffff
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x000000de
+0x56789abcde
+0x00000056
+0xfffffffffffff00f
+0xfffff0000000000f
+0xfffff00fffffffff
+EOF
+RUN
