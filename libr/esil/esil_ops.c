@@ -952,10 +952,13 @@ static bool esil_signed_mod(REsil *esil) {
 	const RStrs src = r_esil_pop (esil);
 	if (!r_strs_empty (src) && r_esil_get_parm (esil, src, (ut64 *)&s)) {
 		if (!r_strs_empty (dst) && r_esil_get_parm (esil, dst, (ut64 *)&d)) {
-			if (r_div_overflow_st64 (d, s)) {
+			if (s == 0) {
 				R_LOG_DEBUG ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->addr);
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
+				r_esil_pushnum (esil, 0);
+			} else if (d == ST64_MIN && s == -1) {
+				// the remainder of the wrapped division is 0; C overflows
 				r_esil_pushnum (esil, 0);
 			} else {
 				r_esil_pushnum (esil, d % s);
@@ -1026,11 +1029,14 @@ static bool esil_signed_div(REsil *esil) {
 	const RStrs src = r_esil_pop (esil);
 	if (!r_strs_empty (src) && r_esil_get_parm (esil, src, (ut64 *)&s)) {
 		if (!r_strs_empty (dst) && r_esil_get_parm (esil, dst, (ut64 *)&d)) {
-			if (r_div_overflow_st64 (d, s)) {
+			if (s == 0) {
 				R_LOG_DEBUG ("esil_div: Division by zero!");
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 				r_esil_pushnum (esil, 0);
+			} else if (d == ST64_MIN && s == -1) {
+				// wraps to ST64_MIN, as arm64 sdiv does; C overflows
+				r_esil_pushnum (esil, (ut64)ST64_MIN);
 			} else {
 				r_esil_pushnum (esil, d / s);
 			}
