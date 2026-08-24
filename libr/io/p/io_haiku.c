@@ -6,7 +6,7 @@
 
 #if defined(__HAIKU__) && DEBUGGER
 
-#include <r_haiku.h>
+#include "io_haiku.h"
 
 #define RIOHDBG(x) ((RIOHaikuDbg *)((x)->data))
 

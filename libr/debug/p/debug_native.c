@@ -74,7 +74,7 @@ R_API RList *r_w32_dbg_maps(RDebug *);
 #endif
 
 #elif __HAIKU__
-#include <r_haiku.h>
+#include "../../io/p/io_haiku.h"
 #include "native/haiku/haiku_debug.c"
 
 #else // OS

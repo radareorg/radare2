@@ -4,8 +4,6 @@
 
 #ifdef __HAIKU__
 
-#include <r_haiku.h>
-
 #define HAIKU_WAIT_TIMEOUT 200000 // 200ms, keeps ^C responsive
 
 static RIOHaikuDbg *haiku_dbg_get(RDebug *dbg) {

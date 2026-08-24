@@ -500,7 +500,6 @@ include_files = [
   'include/r_flag.h',
   'include/r_fs.h',
   'include/r_getopt.h',
-  'include/r_haiku.h',
   'include/r_hash.h',
   'include/r_heap_glibc.h',
   'include/r_heap_jemalloc.h',
