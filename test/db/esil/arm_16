@@ -1323,3 +1323,41 @@ EXPECT=<<EOF
 |           0x00010558      adds r0, 0xe                               ; (pstr 0x000618b4) "Hello World\n"
 EOF
 RUN
+
+NAME=the thumb two-register shifts take their count from the low byte
+FILE=malloc://0x200
+ARGS=-a arm -b 16
+CMDS=<<EOF
+aei
+aeim
+wx 8840 @ 0
+aer r0=0x80000005
+aer r1=255
+aer PC=0
+aes
+aer r0
+aer r0=0x80000005
+aer r1=256
+aer PC=0
+aes
+aer r0
+wx 0841 @ 0
+aer r0=0x80000000
+aer r1=40
+aer PC=0
+aes
+aer r0
+wx c841 @ 0
+aer r0=0x80000005
+aer r1=256
+aer PC=0
+aes
+aer r0
+EOF
+EXPECT=<<EOF
+0x00000000
+0x80000005
+0xffffffff
+0x80000005
+EOF
+RUN

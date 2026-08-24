@@ -63,7 +63,7 @@ aoeq @ 8
 EOF
 EXPECT=<<EOF
 8,r0,+,0xffffffff,&,[2],0xffff,&,r2,=
-0,r0,+,0xffffffff,&,[2],0xffff,&,r2,=
+0,r0,+,0xffffffff,&,[2],16,SWAP,~,r2,=
 r0,12,+,[1],r1,=
 EOF
 RUN

@@ -3340,3 +3340,199 @@ EXPECT=<<EOF
 0x0000003c
 EOF
 RUN
+
+NAME=a register shift count is taken from the low byte of the register
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 1102a0e1 @ 0
+aer r1=0x80000005
+aer r2=255
+aer PC=0
+aes
+aer r0
+aer r2=256
+aer PC=0
+aes
+aer r0
+wx 3102a0e1 @ 0
+aer r2=256
+aer PC=0
+aes
+aer r0
+wx 5102a0e1 @ 0
+aer r2=40
+aer PC=0
+aes
+aer r0
+wx 7102a0e1 @ 0
+aer r2=256
+aer PC=0
+aes
+aer r0
+EOF
+EXPECT=<<EOF
+0x00000000
+0x80000005
+0x80000005
+0xffffffff
+0x80000005
+EOF
+RUN
+NAME=the shift carry follows the count that was actually applied
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 1102b0e1 @ 0
+aer r1=0x80000005
+aer r2=31
+aer cf=1
+aer PC=0
+aes
+aer cf
+wx 5102b0e1 @ 0
+aer r2=40
+aer cf=0
+aer PC=0
+aes
+aer cf
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+EOF
+RUN
+NAME=asr by 32 fills the register with the sign bit
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 4100a0e1 @ 0
+aer r1=0x80000000
+aer PC=0
+aes
+aer r0
+EOF
+EXPECT=<<EOF
+0xffffffff
+EOF
+RUN
+NAME=rrx rotates the carry in and rrxs takes the carry from the source
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 6100a0e1 @ 0
+aer r1=0x80000000
+aer cf=1
+aer PC=0
+aes
+aer r0
+aer cf
+wx 6100b0e1 @ 0
+aer r1=0x80000000
+aer cf=1
+aer PC=0
+aes
+aer r0
+aer cf
+EOF
+EXPECT=<<EOF
+0xc0000000
+0x00000001
+0xc0000000
+0x00000000
+EOF
+RUN
+
+NAME=the signed byte and halfword loads sign-extend
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 90 @ 0x3f
+wx 80ff @ 0x44
+aei
+aeim
+wx d400d3e1 @ 0
+aer r3=0x40
+aer PC=0
+aes
+aer r0
+wx f400d3e1 @ 0
+aer r3=0x40
+aer PC=0
+aes
+aer r0
+wx d10053e1 @ 0
+aer r3=0x40
+aer PC=0
+aes
+aer r0
+wx d400f3e1 @ 0
+aer r3=0x40
+aer PC=0
+aes
+aer r0
+aer r3
+EOF
+EXPECT=<<EOF
+0xffffff80
+0xffffff80
+0xffffff90
+0xffffff80
+0x00000044
+EOF
+RUN
+NAME=sxtb and sxth extend the low bits and honour the rotation
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 7100bfe6 @ 0
+aer r1=0x1234
+aer PC=0
+aes
+aer r0
+aer r1=0xf234
+aer PC=0
+aes
+aer r0
+wx 7104afe6 @ 0
+aer r1=0xf200
+aer PC=0
+aes
+aer r0
+EOF
+EXPECT=<<EOF
+0x00001234
+0xfffff234
+0xfffffff2
+EOF
+RUN
+NAME=uadd8 adds each byte on its own and leaves the flags alone
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 920f51e6 @ 0
+aer r1=0x80ff0102
+aer r2=0x80010102
+aer zf=1
+aer PC=0
+aes
+aer r0
+aer zf
+EOF
+EXPECT=<<EOF
+0x00000204
+0x00000001
+EOF
+RUN
