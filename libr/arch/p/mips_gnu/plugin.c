@@ -769,6 +769,8 @@ typedef struct gnu_insn {
 #define R_REG(x) ((const char *)insn->r_reg.x)
 #define I_REG(x) ((const char *)insn->i_reg.x)
 #define J_REG(x) ((const char *)insn->j_reg.x)
+// shift amount: the rs register for the v-forms, else the sa immediate
+#define R_SHAMT (R_REG (rs)? R_REG (rs): R_REG (sa))
 
 #define ESIL_LOAD(size) \
 	r_strbuf_appendf (&op->esil, "%s,%s,+,["size"],%s,=",\
@@ -892,13 +894,22 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 	case MIPS_INS_SRL:
 		// srl shifts the zero-extended low word, not the whole register
 		r_strbuf_appendf (&op->esil, "0x1f,%s,&," ES_W ("%s") ",>>,%s,=",
-			R_REG (rs) ? R_REG (rs) : R_REG (sa), R_REG (rt), R_REG (rd));
+			R_SHAMT, R_REG (rt), R_REG (rd));
+		ES_SIGN32_64 (R_REG (rd));
+		break;
+	case MIPS_INS_ROTRV:
+	case MIPS_INS_ROTR:
+		// open-coded: esil ROR rotates at register width, 64-bit on mips64
+		r_strbuf_appendf (&op->esil,
+			"0x1f,%s,&," ES_W ("%s") ",>>,0x1f,%s,&,32,-,"
+			ES_W ("%s") ",<<,0xffffffff,&,|,%s,=",
+			R_SHAMT, R_REG (rt), R_SHAMT, R_REG (rt), R_REG (rd));
 		ES_SIGN32_64 (R_REG (rd));
 		break;
 	case MIPS_INS_SLLV:
 	case MIPS_INS_SLL:
 		r_strbuf_appendf (&op->esil, "0x1f,%s,&,%s,<<,%s,=",
-			R_REG (rs) ? R_REG (rs) : R_REG (sa), R_REG (rt), R_REG (rd));
+			R_SHAMT, R_REG (rt), R_REG (rd));
 		ES_SIGN32_64 (R_REG (rd));
 		break;
 	case MIPS_INS_BALC:
@@ -1442,17 +1453,21 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			insn.id = MIPS_INS_SLL;
 			insn.r_reg.rs = NULL;
 			op->val = sa;
+			op->type = R_ANAL_OP_TYPE_SHL;
+			break;
 		case 4: // sllv
 			insn.id = MIPS_INS_SLLV;
 			op->type = R_ANAL_OP_TYPE_SHL;
 			break;
-		case 2: // srl
-			insn.id = MIPS_INS_SRL;
+		case 2: // srl, or rotr when the rs field selects the rotate
+			insn.id = (rs == 1)? MIPS_INS_ROTR: MIPS_INS_SRL;
 			insn.r_reg.rs = NULL;
 			op->val = sa;
-		case 6: // srlv
-			insn.id = MIPS_INS_SRLV;
-			op->type = R_ANAL_OP_TYPE_SHR;
+			op->type = (rs == 1)? R_ANAL_OP_TYPE_ROR: R_ANAL_OP_TYPE_SHR;
+			break;
+		case 6: // srlv, or rotrv when the sa field selects the rotate
+			insn.id = (sa == 1)? MIPS_INS_ROTRV: MIPS_INS_SRLV;
+			op->type = (sa == 1)? R_ANAL_OP_TYPE_ROR: R_ANAL_OP_TYPE_SHR;
 			break;
 		case 3: // sra
 			insn.id = MIPS_INS_SRA;
