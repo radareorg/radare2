@@ -1,56 +1,77 @@
-# builds radare2 as an EFI application (BOOTX64.EFI) using clang + lld
+# builds radare2 as an EFI application (BOOTX64.EFI) using acr, clang and lld
 
 .PHONY: all configure build link clean run
 
-R2DIR=../..
+R2DIR:=$(abspath ../..)
 BUILDDIR=$(R2DIR)/build-uefi
+UEFI_INCLUDE=$(R2DIR)/dist/uefi/include
+CONFIG_STAMP=$(BUILDDIR)/.configured
 LDS?=/usr/lib/elf_x86_64_efi.lds
 CRT0?=/usr/lib/crt0-efi-x86_64.o
 CC=clang
+AR=ar
+RANLIB=ranlib
 LLD?=ld.lld
 OBJCOPY?=objcopy
 
-MESON_FLAGS=-Duse_zip=false -Dstatic_runtime=true -Duse_sys_zlib=false \
-	-Duse_sys_magic=false -Duse_sys_openssl=false -Denable_tests=false \
-	-Dplugins= -Duse_fork=false -Duse_dylink=false -Ddebugger=false \
-	-Dcli=disabled -Dwant_qjs=false -Dwant_zydis=false -Dwant_threads=false
-
-UEFI_CFLAGS=-DR2_UEFI=1 -D__thread= -D_GNU_SOURCE -ffreestanding -fno-stack-protector \
-	-mno-red-zone -fPIC -nostdlibinc -isystem /usr/include/x86_64-linux-musl \
+UEFI_CFLAGS=-DR2_UEFI=1 -D__thread= -D_GNU_SOURCE -ffreestanding \
+	-fno-stack-protector -mno-red-zone -fPIC -ffunction-sections \
+	-fdata-sections -nostdlibinc -include $(UEFI_INCLUDE)/r2_uefi.h \
+	-isystem /usr/include/x86_64-linux-musl -I$(UEFI_INCLUDE) \
 	-I/usr/include/efi -I/usr/include/efi/x86_64 \
-	-I$(R2DIR)/libr/include -I$(BUILDDIR) -I$(R2DIR)/subprojects/sdb/include
+	-I$(R2DIR)/libr/include -I$(R2DIR)/subprojects/sdb/include
 
-R2LIBS=$(wildcard $(BUILDDIR)/libr/*/libr_*.a) \
-	$(BUILDDIR)/subprojects/capstone-v5/libcapstone.a \
-	$(BUILDDIR)/subprojects/qjs/libqjs.a \
-	$(BUILDDIR)/subprojects/sdb/liblibsdb_static.a \
-	$(wildcard $(BUILDDIR)/shlr/*.a)
+CONFIGURE_FLAGS=--host=x86_64-unknown-none --with-ostype=gnulinux \
+	--with-compiler=clang --with-libr --with-static-themes \
+	--disable-debugger --disable-threads --disable-loadlibs \
+	--without-qjs --without-dylink --without-fork --without-ptrace-wrap \
+	--without-gperf --without-zydis --without-zip --without-gpl \
+	--without-jemalloc
 
-all: build link
+R2LIBS=$(wildcard $(R2DIR)/libr/*/libr_*.a) \
+	$(R2DIR)/subprojects/capstone-v5/libcapstone.a \
+	$(R2DIR)/subprojects/sdb/src/libsdb.a \
+	$(wildcard $(R2DIR)/shlr/*.a)
 
-configure:
-	cd $(R2DIR) && meson setup build-uefi --cross-file dist/uefi/cross-uefi.ini $(MESON_FLAGS)
+all: link
 
-$(BUILDDIR)/build.ninja:
-	$(MAKE) configure
+configure: $(CONFIG_STAMP)
 
-build: $(BUILDDIR)/build.ninja
-	cd $(R2DIR) && meson compile -C build-uefi
+$(BUILDDIR):
+	mkdir -p $@
+
+$(CONFIG_STAMP): $(R2DIR)/configure.acr \
+		$(R2DIR)/dist/plugins-cfg/plugins.uefi.cfg | $(BUILDDIR)
+	cp $(R2DIR)/dist/plugins-cfg/plugins.uefi.cfg $(R2DIR)/plugins.cfg
+	cd $(R2DIR) && ./configure-plugins
+	cd $(R2DIR) && CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) \
+		PKGCONFIG=/usr/bin/false CFLAGS="$(UEFI_CFLAGS)" LDFLAGS="-nostdlib" \
+		./configure $(CONFIGURE_FLAGS)
+	touch $@
+
+build: $(CONFIG_STAMP)
+	$(MAKE) -j -C $(R2DIR) libs LIBS_TARGET=sublibs WITH_LIBS=0 \
+		WITH_LIBR=1 WITHOUT_PULL=1 > /dev/null
 
 link: $(BUILDDIR)/BOOTX64.EFI
 
-$(BUILDDIR)/main.o: main.c
+$(BUILDDIR)/main.o: main.c $(CONFIG_STAMP)
 	$(CC) -c -o $@ $< $(UEFI_CFLAGS)
 
-$(BUILDDIR)/relocate.o: relocate.c
+$(BUILDDIR)/relocate.o: relocate.c $(CONFIG_STAMP)
+	$(CC) -c -o $@ $< $(UEFI_CFLAGS)
+
+$(BUILDDIR)/uefi.o: include/uefi.c $(CONFIG_STAMP)
 	$(CC) -c -o $@ $< $(UEFI_CFLAGS)
 
 # lld does not write the implicit addends that the gnu-efi _relocate expects,
 # so relocate.o provides a rela-aware replacement for it
-$(BUILDDIR)/r2efi.so: $(BUILDDIR)/main.o $(BUILDDIR)/relocate.o
-	$(LLD) -nostdlib -shared -Bsymbolic --no-undefined -znocombreloc \
-		-T $(LDS) $(CRT0) $(BUILDDIR)/relocate.o $(BUILDDIR)/main.o \
-		--start-group $(R2LIBS) --end-group -o $@
+$(BUILDDIR)/r2efi.so: build $(BUILDDIR)/main.o $(BUILDDIR)/relocate.o \
+		$(BUILDDIR)/uefi.o
+	$(LLD) -nostdlib -shared -Bsymbolic --no-undefined --gc-sections \
+		-znocombreloc -T $(LDS) $(CRT0) $(BUILDDIR)/relocate.o \
+		$(BUILDDIR)/main.o $(BUILDDIR)/uefi.o --start-group $(R2LIBS) \
+		--end-group -o $@
 
 $(BUILDDIR)/BOOTX64.EFI: $(BUILDDIR)/r2efi.so
 	$(OBJCOPY) -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym \
@@ -68,4 +89,5 @@ run: $(BUILDDIR)/BOOTX64.EFI
 		-drive format=raw,file=fat:rw:$(BUILDDIR)/esp
 
 clean:
+	$(MAKE) -C $(R2DIR) clean
 	rm -rf $(BUILDDIR)

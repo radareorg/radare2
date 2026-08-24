@@ -104,7 +104,6 @@ r_util_sources = [
   'treemap.c',
   'ubase64.c',
   'udiff.c',
-  'uefi.c',
   'uleb128.c',
   'unum.c',
   'utf16.c',

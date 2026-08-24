@@ -174,8 +174,7 @@ jobs:
     - name: Install the uefi toolchain
       run: |
         sudo apt-get update --assume-yes
-        sudo apt-get --assume-yes install clang lld gnu-efi musl-dev
-        pip install meson ninja --break-system-packages
+        sudo apt-get --assume-yes install binutils clang lld gnu-efi musl-dev
     - name: Build radare2 for UEFI
       run: make -C dist/uefi
     - name: Upload the EFI application
