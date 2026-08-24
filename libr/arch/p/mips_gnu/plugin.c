@@ -899,7 +899,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		break;
 	case MIPS_INS_ROTRV:
 	case MIPS_INS_ROTR:
-		// open-coded: esil ROR rotates at register width, 64-bit on mips64
+		// esil ROR rotates at the register width
 		r_strbuf_appendf (&op->esil,
 			"0x1f,%s,&," ES_W ("%s") ",>>,0x1f,%s,&,32,-,"
 			ES_W ("%s") ",<<,0xffffffff,&,|,%s,=",
@@ -908,7 +908,8 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		break;
 	case MIPS_INS_SLLV:
 	case MIPS_INS_SLL:
-		r_strbuf_appendf (&op->esil, "0x1f,%s,&,%s,<<,%s,=",
+		// a 32-bit shift cannot keep high bits
+		r_strbuf_appendf (&op->esil, ES_W ("0x1f,%s,&,%s,<<") ",%s,=",
 			R_SHAMT, R_REG (rt), R_REG (rd));
 		ES_SIGN32_64 (R_REG (rd));
 		break;
