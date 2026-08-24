@@ -883,8 +883,9 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		ES_SIGN32_64 (R_REG (rd));
 		break;
 	case MIPS_INS_DSRA:
+		// a 64-bit shift fills from bit 63, not bit 31
 		r_strbuf_appendf (&op->esil,
-			"%s,%s,>>,31,%s,>>,?{,32,%s,32,-,0xffffffff,<<,0xffffffff,&,<<,}{,0,},|,%s,=",
+			"%s,%s,>>,63,%s,>>,?{,%s,64,-,0xffffffffffffffff,<<,}{,0,},|,%s,=",
 			R_REG (sa), R_REG (rt), R_REG (rt), R_REG (sa), R_REG (rd));
 		break;
 	case MIPS_INS_SHRL:
