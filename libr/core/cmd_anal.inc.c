@@ -441,6 +441,8 @@ static RCoreHelpMessage help_detail_ae = {
 	"ASR", "", "a asr b => b,a,ASR  # arithmetic shift right",
 	"ROR", "", "a ror b => b,a,ROR  # rotate right",
 	"ROL", "", "a rol b => b,a,ROL  # rotate left",
+	"CLZ", "", "leading zeros of b in a bits => a,b,CLZ  # a when b is 0",
+	"POPCNT", "", "count the set bits => a,POPCNT",
 	"?{", "", "if popped value != 0 run the block until }",
 	"}{", "", "else block",
 	"}", "", "end of conditional block",
