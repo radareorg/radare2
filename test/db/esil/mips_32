@@ -2387,3 +2387,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=mips.gnu sll keeps its result inside 32 bits
+FILE=malloc://32
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+aei
+wx 00410900
+ar t1=0x87654321
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x76543210
+EOF
+RUN
