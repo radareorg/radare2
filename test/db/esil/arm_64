@@ -1891,3 +1891,61 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=bfxil, extr, smulh, smsubl and the wrapping sdiv
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aei
+wx 202c0433
+aer x0=0x89abcdef
+aer x1=0x12345f78
+aer pc=0
+s 0
+aes
+aer x0
+wx 20108213
+aer x1=0x12345678
+aer x2=0x9abcdef0
+aer pc=0
+s 0
+aes
+aer x0
+wx 207c429b
+aer x1=0xfffffffffffffffe
+aer x2=0x7fffffffffffffff
+aer pc=0
+s 0
+aes
+aer x0
+wx 2090229b
+aer x1=0xfffffffe
+aer x2=3
+aer x4=0x100000000
+aer pc=0
+s 0
+aes
+aer x0
+wx 200cc29a
+aer x1=0x8000000000000000
+aer x2=0xffffffffffffffff
+aer pc=0
+s 0
+aes
+aer x0
+wx 20008213
+aer x1=0x12345678
+aer x2=0x9abcdef0
+aer pc=0
+s 0
+aes
+aer x0
+EOF
+EXPECT=<<EOF
+0x89abcdf7
+0x89abcdef
+0xffffffffffffffff
+0x100000006
+0x8000000000000000
+0x9abcdef0
+EOF
+RUN
