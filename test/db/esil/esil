@@ -517,3 +517,17 @@ EXPECT=<<EOF
 | $$      internal flag: pc address
 EOF
 RUN
+
+NAME=signed division of INT_MIN by -1 wraps instead of clearing
+FILE=-
+CMDS=<<EOF
+"ae 0xffffffffffffffff,0x8000000000000000,~/"
+"ae 0xffffffffffffffff,0x8000000000000000,~%"
+"ae 2,0xfffffffffffffff9,~/"
+EOF
+EXPECT=<<EOF
+0x8000000000000000
+0
+0xfffffffffffffffd
+EOF
+RUN
