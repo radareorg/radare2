@@ -773,3 +773,8 @@ R_API int r_cons_canvas_flags(RCons *R_NONNULL cons) {
 	}
 	return flags;
 }
+
+R_API void r_cons_image(const ut8 *buf, int bufsz, int width, int mode, int components) {
+	/* Deprecated fallback stub to satisfy linker */
+	(void)buf; (void)bufsz; (void)width; (void)mode; (void)components;
+}

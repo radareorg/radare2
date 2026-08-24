@@ -40,7 +40,6 @@ static TAG_CALLBACK(spp_r2_get) {
 	}
 	char *var = spp_r2_var_get (buf);
 	if (var) {
-		r_cons_gprintf ("%s", var);
 		free (var);
 	}
 	return 0;
@@ -56,7 +55,6 @@ static TAG_CALLBACK(spp_r2_getrandom) {
 	if (max > 0) {
 		max = (int)(rand () % max);
 	}
-	r_cons_gprintf ("%d", max);
 	return 0;
 }
 
@@ -112,7 +110,6 @@ static TAG_CALLBACK(spp_r2_trace) {
 /* TODO: deprecate */
 static TAG_CALLBACK(spp_r2_echo) {
 	if (state->echo[state->ifl]) {
-		r_cons_gprintf ("%s", buf);
 	}
 	// TODO: add variable replacement here?? not necessary, done by {{get}}
 	return 0;

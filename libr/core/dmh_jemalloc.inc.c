@@ -140,20 +140,20 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 				r_io_read_at (core->io, arena, (ut8 *)ar, sizeof (arena_t));
 				r_io_read_at (core->io, (GHT)(size_t)ar->achunks.qlh_first, (ut8 *)head, sizeof (extent_node_t));
 				if (head->en_addr) {
-					PRINT_YA ("   Chunk - start: ");
-					PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)head->en_addr);
-					PRINT_YA (", end: ");
-					PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)((char *)head->en_addr + cnksz));
-					PRINT_YA (", size: ");
-					PRINTF_BA ("0x%08"PFMT64x"\n", (ut64)cnksz);
+					PRINT_YA (core->cons, "   Chunk - start: ");
+					PRINT_BA (core->cons, "0x%08"PFMT64x, (ut64)(size_t)head->en_addr);
+					PRINT_YA (core->cons, ", end: ");
+					PRINT_BA (core->cons, "0x%08"PFMT64x, (ut64)(size_t)((char *)head->en_addr + cnksz));
+					PRINT_YA (core->cons, ", size: ");
+					PRINT_BA (core->cons, "0x%08"PFMT64x"\n", (ut64)cnksz);
 					r_io_read_at (core->io, (ut64)(size_t)head->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
 					while (node && node->en_addr != head->en_addr) {
-						PRINT_YA ("   Chunk - start: ");
-						PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)node->en_addr);
-						PRINT_YA (", end: ");
-						PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)((char *)node->en_addr + cnksz));
-						PRINT_YA (", size: ");
-						PRINTF_BA ("0x%08"PFMT64x"\n", cnksz);
+						PRINT_YA (core->cons, "   Chunk - start: ");
+						PRINT_BA (core->cons, "0x%08"PFMT64x, (ut64)(size_t)node->en_addr);
+						PRINT_YA (core->cons, ", end: ");
+						PRINT_BA (core->cons, "0x%"PFMT64x, (ut64)(size_t)((char *)node->en_addr + cnksz));
+						PRINT_YA (core->cons, ", size: ");
+						PRINT_BA (core->cons, "0x%08"PFMT64x"\n", cnksz);
 						r_io_read_at (core->io, (ut64)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
 					}
 				}
@@ -179,29 +179,29 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 					if (!arena) {
 						break;
 					}
-					PRINTF_GA ("arenas[%d]: @ 0x%"PFMTx" { \n", i++, (GHT)arena);
+					PRINT_GA (core->cons, "arenas[%d]: @ 0x%"PFMTx" { \n", i++, (GHT)arena);
 					r_io_read_at (core->io, arena, (ut8 *)ar, sizeof (arena_t));
 					r_io_read_at (core->io, (GHT)(size_t)ar->achunks.qlh_first, (ut8 *)head, sizeof (extent_node_t));
 					if (head->en_addr != 0) {
-						PRINT_YA ("   Chunk - start: ");
-						PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)head->en_addr);
-						PRINT_YA (", end: ");
-						PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)((char *)head->en_addr + cnksz));
-						PRINT_YA (", size: ");
-						PRINTF_BA ("0x%08"PFMT64x"\n", (ut64)cnksz);
+						PRINT_YA (core->cons, "   Chunk - start: ");
+						PRINT_BA (core->cons, "0x%08"PFMT64x, (ut64)(size_t)head->en_addr);
+						PRINT_YA (core->cons, ", end: ");
+						PRINT_BA (core->cons, "0x%"PFMT64x, (ut64)(size_t)((char *)head->en_addr + cnksz));
+						PRINT_YA (core->cons, ", size: ");
+						PRINT_BA (core->cons, "0x%08"PFMT64x"\n", (ut64)cnksz);
 						ut64 addr = (ut64) (size_t)head->ql_link.qre_next;
 						r_io_read_at (core->io, addr, (ut8 *)node, sizeof (extent_node_t));
 						while (node && head && node->en_addr != head->en_addr) {
-							PRINT_YA ("   Chunk - start: ");
-							PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)node->en_addr);
-							PRINT_YA (", end: ");
-							PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)((char *)node->en_addr + cnksz));
-							PRINT_YA (", size: ");
-							PRINTF_BA ("0x%"PFMT64x"\n", cnksz);
+							PRINT_YA (core->cons, "   Chunk - start: ");
+							PRINT_BA (core->cons, "0x%08"PFMT64x, (ut64)(size_t)node->en_addr);
+							PRINT_YA (core->cons, ", end: ");
+							PRINT_BA (core->cons, "0x%"PFMT64x, (ut64)(size_t)((char *)node->en_addr + cnksz));
+							PRINT_YA (core->cons, ", size: ");
+							PRINT_BA (core->cons, "0x%"PFMT64x"\n", cnksz);
 							r_io_read_at (core->io, (GHT)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
 						}
 					}
-					PRINT_GA (" }\n");
+					PRINT_GA (core->cons, " }\n");
 				}
 			}
 			free (ar);
@@ -226,7 +226,7 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 	case '\0':
 		if (GH(r_resolve_jemalloc)(core, "narenas_total", &symaddr)) {
 			r_io_read_at (core->io, symaddr, (ut8 *)&narenas, sizeof (GHT));
-			PRINTF_GA ("narenas : %"PFMT64d"\n", (ut64)narenas);
+			PRINT_GA (core->cons, "narenas : %"PFMT64d"\n", (ut64)narenas);
 		}
 		if (narenas == 0) {
 			R_LOG_ERROR ("No arenas allocated");
@@ -243,60 +243,60 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 
 		if (GH(r_resolve_jemalloc)(core, "je_arenas", &arenas)) {
 			r_io_read_at (core->io, arenas, (ut8 *)&arenas, sizeof (GHT));
-			PRINTF_GA ("arenas[%"PFMT64d"] @ 0x%"PFMT64x" {\n", (ut64)narenas, (ut64)arenas);
+			PRINT_GA (core->cons, "arenas[%"PFMT64d"] @ 0x%"PFMT64x" {\n", (ut64)narenas, (ut64)arenas);
 			for (i = 0; i < narenas; i++) {
 				ut64 at = arenas + (i * sizeof (GHT));
 				r_io_read_at (core->io, at, (ut8 *)&arena, sizeof (GHT));
 				if (!arena) {
-					PRINTF_YA ("  arenas[%d]: (empty)\n", i);
+					PRINT_YA (core->cons, "  arenas[%d]: (empty)\n", i);
 					continue;
 				}
-				PRINTF_YA ("  arenas[%d]: ", i);
-				PRINTF_BA ("@ 0x%"PFMT64x"\n", at);
+				PRINT_YA (core->cons, "  arenas[%d]: ", i);
+				PRINT_BA (core->cons, "@ 0x%"PFMT64x"\n", at);
 			}
 		}
-		PRINT_GA (" }\n");
+		PRINT_GA (core->cons, " }\n");
 		break;
 	case ' ':
 		arena = r_num_math (core->num, input + 1);
 		r_io_read_at (core->io, (GHT)arena, (ut8 *)ar, sizeof (arena_t));
 
-		PRINT_GA ("struct arena_s {\n");
+		PRINT_GA (core->cons, "struct arena_s {\n");
 #define OO(x) (ut64)(arena + r_offsetof (arena_t, x))
-		PRINTF_BA ("  ind = 0x%x\n", ar->ind);
-		PRINTF_BA ("  nthreads: application allocation = 0x%"PFMT64x"\n", (ut64)ar->nthreads[0]);
-		PRINTF_BA ("  nthreads: internal metadata allocation = 0x%"PFMT64x"\n", (ut64)ar->nthreads[1]);
-		PRINTF_BA ("  lock = 0x%"PFMT64x"\n", OO(lock));
-		PRINTF_BA ("  stats = 0x%"PFMT64x"\n", OO(stats));
-		PRINTF_BA ("  tcache_ql = 0x%"PFMT64x"\n", OO(tcache_ql));
-		PRINTF_BA ("  prof_accumbytes = 0x%"PFMT64x"x\n", (ut64)ar->prof_accumbytes);
-		PRINTF_BA ("  offset_state = 0x%"PFMT64x"\n", (ut64)ar->offset_state);
-		PRINTF_BA ("  dss_prec_t = 0x%"PFMT64x"\n",OO(dss_prec));
-		PRINTF_BA ("  achunks = 0x%"PFMT64x"\n", OO(achunks));
-		PRINTF_BA ("  extent_sn_next = 0x%"PFMT64x"\n", (ut64)(size_t)ar->extent_sn_next);
-		PRINTF_BA ("  spare = 0x%"PFMT64x"\n", (ut64)(size_t)ar->spare);
-		PRINTF_BA ("  lg_dirty_mult = 0x%"PFMT64x"\n", (ut64)(ssize_t)ar->lg_dirty_mult);
-		PRINTF_BA ("  purging = %s\n", r_str_bool (ar->purging));
-		PRINTF_BA ("  nactive = 0x%"PFMT64x"\n", (ut64)(size_t)ar->nactive);
-		PRINTF_BA ("  ndirty = 0x%"PFMT64x"\n", (ut64)(size_t)ar->ndirty);
+		PRINT_BA (core->cons, "  ind = 0x%x\n", ar->ind);
+		PRINT_BA (core->cons, "  nthreads: application allocation = 0x%"PFMT64x"\n", (ut64)ar->nthreads[0]);
+		PRINT_BA (core->cons, "  nthreads: internal metadata allocation = 0x%"PFMT64x"\n", (ut64)ar->nthreads[1]);
+		PRINT_BA (core->cons, "  lock = 0x%"PFMT64x"\n", OO(lock));
+		PRINT_BA (core->cons, "  stats = 0x%"PFMT64x"\n", OO(stats));
+		PRINT_BA (core->cons, "  tcache_ql = 0x%"PFMT64x"\n", OO(tcache_ql));
+		PRINT_BA (core->cons, "  prof_accumbytes = 0x%"PFMT64x"x\n", (ut64)ar->prof_accumbytes);
+		PRINT_BA (core->cons, "  offset_state = 0x%"PFMT64x"\n", (ut64)ar->offset_state);
+		PRINT_BA (core->cons, "  dss_prec_t = 0x%"PFMT64x"\n",OO(dss_prec));
+		PRINT_BA (core->cons, "  achunks = 0x%"PFMT64x"\n", OO(achunks));
+		PRINT_BA (core->cons, "  extent_sn_next = 0x%"PFMT64x"\n", (ut64)(size_t)ar->extent_sn_next);
+		PRINT_BA (core->cons, "  spare = 0x%"PFMT64x"\n", (ut64)(size_t)ar->spare);
+		PRINT_BA (core->cons, "  lg_dirty_mult = 0x%"PFMT64x"\n", (ut64)(ssize_t)ar->lg_dirty_mult);
+		PRINT_BA (core->cons, "  purging = %s\n", r_str_bool (ar->purging));
+		PRINT_BA (core->cons, "  nactive = 0x%"PFMT64x"\n", (ut64)(size_t)ar->nactive);
+		PRINT_BA (core->cons, "  ndirty = 0x%"PFMT64x"\n", (ut64)(size_t)ar->ndirty);
 
-		PRINTF_BA ("  runs_dirty = 0x%"PFMT64x"\n", OO(runs_dirty));
-		PRINTF_BA ("  chunks_cache = 0x%"PFMT64x"\n", OO(chunks_cache));
-		PRINTF_BA ("  huge = 0x%"PFMT64x"\n", OO(huge));
-		PRINTF_BA ("  huge_mtx = 0x%"PFMT64x"\n", OO(huge_mtx));
+		PRINT_BA (core->cons, "  runs_dirty = 0x%"PFMT64x"\n", OO(runs_dirty));
+		PRINT_BA (core->cons, "  chunks_cache = 0x%"PFMT64x"\n", OO(chunks_cache));
+		PRINT_BA (core->cons, "  huge = 0x%"PFMT64x"\n", OO(huge));
+		PRINT_BA (core->cons, "  huge_mtx = 0x%"PFMT64x"\n", OO(huge_mtx));
 
-		PRINTF_BA ("  chunks_szsnad_cached = 0x%"PFMT64x"\n", OO(chunks_szsnad_cached));
-		PRINTF_BA ("  chunks_ad_cached = 0x%"PFMT64x"\n", OO(chunks_ad_cached));
-		PRINTF_BA ("  chunks_szsnad_retained = 0x%"PFMT64x"\n", OO(chunks_szsnad_retained));
-		PRINTF_BA ("  chunks_ad_cached = 0x%"PFMT64x"\n", OO(chunks_ad_retained));
+		PRINT_BA (core->cons, "  chunks_szsnad_cached = 0x%"PFMT64x"\n", OO(chunks_szsnad_cached));
+		PRINT_BA (core->cons, "  chunks_ad_cached = 0x%"PFMT64x"\n", OO(chunks_ad_cached));
+		PRINT_BA (core->cons, "  chunks_szsnad_retained = 0x%"PFMT64x"\n", OO(chunks_szsnad_retained));
+		PRINT_BA (core->cons, "  chunks_ad_cached = 0x%"PFMT64x"\n", OO(chunks_ad_retained));
 
-		PRINTF_BA ("  chunks_mtx = 0x%"PFMT64x"\n", OO(chunks_mtx));
-		PRINTF_BA ("  node_cache = 0x%"PFMT64x"\n", OO(node_cache));
-		PRINTF_BA ("  node_cache_mtx = 0x%"PFMT64x"\n", OO(node_cache_mtx));
-		PRINTF_BA ("  chunks_hooks = 0x%"PFMT64x"\n", OO(chunk_hooks));
-		PRINTF_BA ("  bins = %d 0x%"PFMT64x"\n", JM_NBINS, OO(bins));
-		PRINTF_BA ("  runs_avail = %d 0x%"PFMT64x"\n", NPSIZES, OO(runs_avail));
-		PRINT_GA (" }\n");
+		PRINT_BA (core->cons, "  chunks_mtx = 0x%"PFMT64x"\n", OO(chunks_mtx));
+		PRINT_BA (core->cons, "  node_cache = 0x%"PFMT64x"\n", OO(node_cache));
+		PRINT_BA (core->cons, "  node_cache_mtx = 0x%"PFMT64x"\n", OO(node_cache_mtx));
+		PRINT_BA (core->cons, "  chunks_hooks = 0x%"PFMT64x"\n", OO(chunk_hooks));
+		PRINT_BA (core->cons, "  bins = %d 0x%"PFMT64x"\n", JM_NBINS, OO(bins));
+		PRINT_BA (core->cons, "  runs_avail = %d 0x%"PFMT64x"\n", NPSIZES, OO(runs_avail));
+		PRINT_GA (core->cons, " }\n");
 		break;
 	}
 	free (ar);
@@ -323,54 +323,54 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 		}
 		if (GH(r_resolve_jemalloc)(core, "je_arenas", &arenas)) {
 			r_io_read_at (core->io, arenas, (ut8 *)&arenas, sizeof (GHT));
-			PRINTF_GA ("arenas @ 0x%"PFMTx" {\n", (GHT)arenas);
+			PRINT_GA (core->cons, "arenas @ 0x%"PFMTx" {\n", (GHT)arenas);
 			for (;;) {
 				r_io_read_at (core->io, arenas + i * sizeof (GHT), (ut8 *)&arena, sizeof (GHT));
 				if (!arena) {
 					R_FREE (b);
 					break;
 				}
-				PRINTF_YA ("   arenas[%d]: ", i++);
-				PRINTF_BA ("@ 0x%"PFMTx, (GHT)arena);
-				PRINT_YA (" {\n");
+				PRINT_YA (core->cons, "   arenas[%d]: ", i++);
+				PRINT_BA (core->cons, "@ 0x%"PFMTx, (GHT)arena);
+				PRINT_YA (core->cons, " {\n");
 				r_io_read_at (core->io, arena, (ut8 *)ar, sizeof (arena_t));
 				for (j = 0; j < JM_NBINS; j++) {
 					r_io_read_at (core->io, (GHT)(bin_info + j * sizeof (arena_bin_info_t)),
 						(ut8*)b, sizeof (arena_bin_info_t));
-					PRINT_YA ("    {\n");
-					PRINT_YA ("       regsize : ");
-					PRINTF_BA ("0x%zx\n", b->reg_size);
-					PRINT_YA ("       redzone size ");
-					PRINTF_BA ("0x%zx\n", b->redzone_size);
-					PRINT_YA ("       reg_interval : ");
-					PRINTF_BA ("0x%zx\n", b->reg_interval);
-					PRINT_YA ("       run_size : ");
-					PRINTF_BA ("0x%zx\n", b->run_size);
-					PRINT_YA ("       nregs : ");
-					PRINTF_BA ("0x%x\n", b->nregs);
+					PRINT_YA (core->cons, "    {\n");
+					PRINT_YA (core->cons, "       regsize : ");
+					PRINT_BA (core->cons, "0x%zx\n", b->reg_size);
+					PRINT_YA (core->cons, "       redzone size ");
+					PRINT_BA (core->cons, "0x%zx\n", b->redzone_size);
+					PRINT_YA (core->cons, "       reg_interval : ");
+					PRINT_BA (core->cons, "0x%zx\n", b->reg_interval);
+					PRINT_YA (core->cons, "       run_size : ");
+					PRINT_BA (core->cons, "0x%zx\n", b->run_size);
+					PRINT_YA (core->cons, "       nregs : ");
+					PRINT_BA (core->cons, "0x%x\n", b->nregs);
 					// FIXME: It's a structure of bitmap_info_t
-					//PRINT_YA ("       bitmap_info : ");
-					//PRINTF_BA ("0x%"PFMT64x"\n", b->bitmap_info);
-					PRINT_YA ("       reg0_offset : ");
-					PRINTF_BA ("0x%"PFMT64x"\n\n", (ut64)b->reg0_offset);
+					//PRINT_YA (core->cons, "       bitmap_info : ");
+					//PRINT_BA (core->cons, "0x%"PFMT64x"\n", b->bitmap_info);
+					PRINT_YA (core->cons, "       reg0_offset : ");
+					PRINT_BA (core->cons, "0x%"PFMT64x"\n\n", (ut64)b->reg0_offset);
 					// FIXME: It's a structure of malloc_mutex_t
-					//PRINTF_YA ("       bins[%d]->lock ", j);
-					//PRINTF_BA ("= 0x%"PFMT64x"\n", ar->bins[j].lock);
+					//PRINT_YA (core->cons, "       bins[%d]->lock ", j);
+					//PRINT_BA (core->cons, "= 0x%"PFMT64x"\n", ar->bins[j].lock);
 					// FIXME: It's a structure of arena_run_t*
-					//PRINTF_YA ("       bins[%d]->runcur ", j);
-					//PRINTF_BA ("@ 0x%"PFMT64x"\n", ar->bins[j].runcur);
+					//PRINT_YA (core->cons, "       bins[%d]->runcur ", j);
+					//PRINT_BA (core->cons, "@ 0x%"PFMT64x"\n", ar->bins[j].runcur);
 					// FIXME: It's a structure of arena_run_heap_t*
-					//PRINTF_YA ("       bins[%d]->runs ", j);
-					//PRINTF_BA ("@ 0x%"PFMTx"\n", ar->bins[j].runs);
+					//PRINT_YA (core->cons, "       bins[%d]->runs ", j);
+					//PRINT_BA (core->cons, "@ 0x%"PFMTx"\n", ar->bins[j].runs);
 					// FIXME: It's a structure of malloc_bin_stats_t
-					//PRINTF_YA ("       bins[%d]->stats ", j);
-					//PRINTF_BA ("= 0x%"PFMTx"\n", ar->bins[j].stats);
-					PRINT_YA ("    }\n");
+					//PRINT_YA (core->cons, "       bins[%d]->stats ", j);
+					//PRINT_BA (core->cons, "= 0x%"PFMTx"\n", ar->bins[j].stats);
+					PRINT_YA (core->cons, "    }\n");
 				}
-				PRINT_YA ("  }\n");
+				PRINT_YA (core->cons, "  }\n");
 			}
 		}
-		PRINT_GA (" }\n");
+		PRINT_GA (core->cons, " }\n");
 		break;
 	}
 	free (ar);
