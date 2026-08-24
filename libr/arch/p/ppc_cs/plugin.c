@@ -2326,8 +2326,32 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_CNTLZW:
 		case PPC_INS_CNTLZD:
 			op->type = R_ANAL_OP_TYPE_MOV;
-			// type only: ESIL has no count-leading-zeros operator
+			esilprintf (op, "%d,%s,CLZ,%s,=",
+				(insn->id == PPC_INS_CNTLZD)? 64: 32, ARG (1), ARG (0));
 			break;
+		case PPC_INS_POPCNTD:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			esilprintf (op, "%s,POPCNT,%s,=", ARG (1), ARG (0));
+			break;
+		case PPC_INS_POPCNTW:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			esilprintf (op, "32,32,%s,>>,POPCNT,<<,0xffffffff,%s,&,POPCNT,|,%s,=",
+				ARG (1), ARG (1), ARG (0));
+			break;
+#if CS_API_MAJOR > 4
+		case PPC_INS_POPCNTB:
+			{
+				op->type = R_ANAL_OP_TYPE_MOV;
+				esilprintf (op, "0xff,%s,&,POPCNT", ARG (1));
+				int i;
+				for (i = 1; i < 8; i++) {
+					r_strbuf_appendf (&op->esil, ",%d,0xff,%d,%s,>>,&,POPCNT,<<,|",
+						i * 8, i * 8, ARG (1));
+				}
+				r_strbuf_appendf (&op->esil, ",%s,=", ARG (0));
+			}
+			break;
+#endif
 		case PPC_INS_MULLI:
 			op->sign = true;
 		case PPC_INS_MULLD:

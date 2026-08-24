@@ -1037,9 +1037,11 @@ esil: 0x8000000000000000,r4,&,!,!,0x7,r4,&,0xffffffffffffffff,&,!,!,&,ca,=,0x3,r
 --
 mnemonic: cntlzw
 type: mov
+esil: 32,r3,CLZ,r3,=
 --
 mnemonic: cntlzd
 type: mov
+esil: 64,r3,CLZ,r3,=
 --
 mnemonic: stbx
 type: store

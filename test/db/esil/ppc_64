@@ -2471,3 +2471,58 @@ EXPECT=<<EOF
 0x00000005
 EOF
 RUN
+
+NAME=cntlzw, cntlzd and the popcnt family
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+aei
+wx 7c830034
+aer r4=0x00001000
+aer pc=0
+s 0
+aes
+aer r3
+wx 7c830035
+aer r4=0
+aer cr0=0
+aer pc=0
+s 0
+aes
+aer r3
+aer cr0
+wx 7c830074
+aer r4=0x00001000
+aer pc=0
+s 0
+aes
+aer r3
+wx 7c8300f4
+aer r4=0xf0f0ff01
+aer pc=0
+s 0
+aes
+aer r3
+wx 7c8302f4
+aer r4=0xf0f0ff01
+aer pc=0
+s 0
+aes
+aer r3
+wx 7c8303f4
+aer r4=0xf0f0ff01
+aer pc=0
+s 0
+aes
+aer r3
+EOF
+EXPECT=<<EOF
+0x00000013
+0x00000020
+0x00000001
+0x00000033
+0x04040801
+0x00000011
+0x00000011
+EOF
+RUN
