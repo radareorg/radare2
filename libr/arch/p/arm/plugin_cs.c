@@ -1546,11 +1546,16 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_setf (&op->esil, "%d,%s,~,%d,%s,~,*,%s,+,%s,=",
 			REGBITS64 (1), REG64 (2), REGBITS64 (1), REG64 (1), REG64 (3), REG64 (0));
 		break;
+	case ARM64_INS_SMSUBL:
+		r_strbuf_setf (&op->esil, "%d,%s,~,%d,%s,~,*,%s,-,%s,=",
+			REGBITS64 (1), REG64 (2), REGBITS64 (1), REG64 (1), REG64 (3), REG64 (0));
+		break;
 	case ARM64_INS_UMADDL:
 	case ARM64_INS_MADD:
 		r_strbuf_setf (&op->esil, "%s,%s,*,%s,+,%s,=",
 			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
 		break;
+	case ARM64_INS_UMSUBL:
 	case ARM64_INS_MSUB:
 		r_strbuf_setf (&op->esil, "%s,%s,*,%s,-,%s,=",
 			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
@@ -1622,9 +1627,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 			REG64 (2), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_SMULH:
-		// TODO this needs to be a 128 bit sign ext to be right
-		r_strbuf_setf (&op->esil, "%d,%s,~,%d,%s,~,L*,SWAP,%s,=",
-			REGBITS64 (1), REG64 (2), REGBITS64 (1), REG64 (1), REG64 (0));
+		// the unsigned high half, corrected by the sign of each source
+		r_strbuf_setf (&op->esil, "63,%s,>>,%s,*,63,%s,>>,%s,*,+,%s,%s,L*,POP,-,%s,=",
+			REG64 (1), REG64 (2), REG64 (2), REG64 (1), REG64 (2), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_AND:
 		OPCALL ("&");
@@ -2466,17 +2471,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,=", IMM64 (1), REG64 (0));
 		break;
 	case ARM64_INS_EXTR:
-		// from VEX
-		/*
-			01 | t0 = GET:I64(x4)
-			02 | t1 = GET:I64(x0)
-			03 | t4 = Shr64(t1,0x20)
-			04 | t5 = Shl64(t0,0x20)
-			05 | t3 = Or64(t5,t4)
-			06 | PUT(x4) = t3
-		*/
-		r_strbuf_setf (&op->esil, "%" PFMT64d ",%s,>>,%" PFMT64d ",%s,<<,|,%s,=",
-			IMM64 (3), REG64 (2), IMM64 (3), REG64 (1), REG64 (0));
+		// (rn:rm) >> lsb: the high half shifts left by regsize - lsb
+		r_strbuf_setf (&op->esil, "%" PFMT64d ",%s,>>,%d,%s,<<,|,%s,=",
+			IMM64 (3), REG64 (2), (int)(REGBITS64 (1) - IMM64 (3)), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_RBIT:
 		// slightly shorter expression to reverse bits
@@ -2586,8 +2583,14 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_ERET:
 		r_strbuf_set (&op->esil, "lr,pc,:=");
 		break;
-	case ARM64_INS_BFI: // bfi w8, w8, 2, 1
 	case ARM64_INS_BFXIL:
+		if (OPCOUNT64 () >= 3 && ISIMM64 (3) && IMM64 (3) > 0) {
+			const ut64 mask = r_num_bitmask (IMM64 (3));
+			r_strbuf_setf (&op->esil, "0x%"PFMT64x",%s,&,0x%"PFMT64x",%"PFMT64u",%s,>>,&,|,%s,=",
+				~mask, REG64 (0), mask, IMM64 (2), REG64 (1), REG64 (0));
+		}
+		break;
+	case ARM64_INS_BFI: // bfi w8, w8, 2, 1
 	{
 		if (OPCOUNT64 () >= 3 && ISIMM64 (3) && IMM64 (3) > 0) {
 			size_t index = IMM64 (3) - 1;
