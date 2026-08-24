@@ -2354,3 +2354,36 @@ EXPECT=<<EOF
 type: store
 EOF
 RUN
+
+NAME=mips.gnu rotr and rotrv rotate instead of shifting
+FILE=malloc://32
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+aei
+wx 02412900
+ar t1=0x12345678
+ar pc=0
+s 0
+aes
+ar t0
+wx 46404901
+ar t1=0x12345678
+ar t2=4
+ar pc=0
+s 0
+aes
+ar t0
+wx 02410900
+ar t1=0x12345678
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x81234567
+0x81234567
+0x01234567
+EOF
+RUN
+

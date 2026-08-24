@@ -313,3 +313,28 @@ EXPECT=<<EOF
 0x3344a7a8
 EOF
 RUN
+
+NAME=mips.gnu rotr sign-extends its 32-bit result
+FILE=malloc://32
+ARGS=-a mips.gnu -b 64
+CMDS=<<EOF
+aei
+wx 02412900
+ar t1=0x12345678
+ar pc=0
+s 0
+aes
+ar t0
+wx 46404901
+ar t1=0x12345678
+ar t2=4
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0xffffffff81234567
+0xffffffff81234567
+EOF
+RUN
