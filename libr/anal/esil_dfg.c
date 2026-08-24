@@ -1740,6 +1740,8 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *R_NULLABLE d
 	r_esil_set_op (esil, "ROR", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
 	r_esil_set_op (esil, "ROL", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
 	r_esil_set_op (esil, "ASR", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "CLZ", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "POPCNT", edf_consume_1_push_1, 1, 1, R_ESIL_OP_TYPE_MATH, NULL);
 	r_esil_set_op (esil, "!", edf_consume_1_push_1, 1, 1, R_ESIL_OP_TYPE_MATH, NULL);
 	r_esil_set_op (esil, "++", edf_consume_1_push_1, 1, 1, R_ESIL_OP_TYPE_MATH, NULL);
 	r_esil_set_op (esil, "--", edf_consume_1_push_1, 1, 1, R_ESIL_OP_TYPE_MATH, NULL);

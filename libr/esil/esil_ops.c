@@ -2,6 +2,7 @@
 
 #include <r_esil.h>
 #include <r_anal.h>
+#include <r_util/r_bits.h>
 
 #if __wasi__ || EMSCRIPTEN
 #define FE_OVERFLOW 0
@@ -111,6 +112,34 @@ static ut32 esil_internal_packed_size_reg(REsil *esil, const char *r) {
 		return 0;
 	}
 	return esil->reg_if.reg_packed_size (esil->reg_if.reg, r);
+}
+
+// width,value,CLZ: leading zeros of value in the low width bits (width if 0)
+static bool esil_clz(REsil *esil) {
+	ut64 val, width;
+	const RStrs p_val = r_esil_pop (esil);
+	if (r_strs_empty (p_val) || !r_esil_get_parm (esil, p_val, &val)) {
+		return false;
+	}
+	const RStrs p_width = r_esil_pop (esil);
+	if (r_strs_empty (p_width) || !r_esil_get_parm (esil, p_width, &width)) {
+		return false;
+	}
+	if (width > 64) {
+		width = 64;
+	}
+	val &= r_num_bitmask (width);
+	const ut64 res = val? (ut64)r_bits_clz64 (val) - (64 - width): width;
+	return r_esil_pushnum (esil, res);
+}
+
+static bool esil_popcount(REsil *esil) {
+	ut64 val;
+	const RStrs p_val = r_esil_pop (esil);
+	if (r_strs_empty (p_val) || !r_esil_get_parm (esil, p_val, &val)) {
+		return false;
+	}
+	return r_esil_pushnum (esil, r_bits_popcount64 (val));
 }
 
 // Sign-extend n-bit value to 64 bits. Example: "ae 8,0x81,~" -> 0xffffffffffffff81.
@@ -1799,6 +1828,8 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("ASR", esil_asr, 1, 2, OT_MATH);
 	ret &= OP ("ROR", esil_ror, 1, 2, OT_MATH);
 	ret &= OP ("ROL", esil_rol, 1, 2, OT_MATH);
+	ret &= OP ("CLZ", esil_clz, 1, 2, OT_MATH);
+	ret &= OP ("POPCNT", esil_popcount, 1, 1, OT_MATH);
 	ret &= OP ("&", esil_and, 1, 2, OT_MATH);
 	ret &= OPD ("&=", "DUP,ROT,SWAP,&,SWAP,=", 0, 2, OT_MATH | OT_REGW);
 	ret &= OP ("}", esil_nop, 0, 0, OT_CTR); // just to avoid push

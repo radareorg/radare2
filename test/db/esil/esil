@@ -510,6 +510,8 @@ EXPECT=<<EOF
 | ASR     a asr b => b,a,ASR  # arithmetic shift right
 | ROR     a ror b => b,a,ROR  # rotate right
 | ROL     a rol b => b,a,ROL  # rotate left
+| CLZ     leading zeros of b in a bits => a,b,CLZ  # a when b is 0
+| POPCNT  count the set bits => a,POPCNT
 | ?{      if popped value != 0 run the block until }
 | }{      else block
 | }       end of conditional block
@@ -614,5 +616,41 @@ e io.cache=true
 EOF
 EXPECT=<<EOF
 0x1
+EOF
+RUN
+
+NAME=clz counts within the given width and masks the value to it
+FILE=-
+CMDS=<<EOF
+ae 32,0x80000000,CLZ
+ae 32,1,CLZ
+ae 32,0,CLZ
+ae 64,0,CLZ
+ae 32,0xffffffff00000001,CLZ
+ae 8,0x10,CLZ
+ae 70,1,CLZ
+EOF
+EXPECT=<<EOF
+0
+0x1f
+0x20
+0x40
+0x1f
+0x3
+0x3f
+EOF
+RUN
+
+NAME=popcnt counts the set bits
+FILE=-
+CMDS=<<EOF
+ae 0xf0f0,POPCNT
+ae 0,POPCNT
+ae 0xffffffffffffffff,POPCNT
+EOF
+EXPECT=<<EOF
+0x8
+0
+0x40
 EOF
 RUN
