@@ -527,3 +527,49 @@ EXPECT=<<EOF
 0xfffffffffffffff6
 EOF
 RUN
+
+NAME=the mips64 divide and wide multiply forms
+FILE=malloc://32
+ARGS=-a mips -b 64
+CMDS=<<EOF
+aei
+wx 1e002a01
+ar t1=0xfffffffffffffff9
+ar t2=2
+ar pc=0
+s 0
+aes
+ar lo
+ar hi
+wx 1f002a01
+ar pc=0
+s 0
+aes
+ar lo
+ar hi
+wx 1c002a01
+ar t1=0xffffffffffffffff
+ar t2=2
+ar pc=0
+s 0
+aes
+ar lo
+ar hi
+wx 1d002a01
+ar pc=0
+s 0
+aes
+ar lo
+ar hi
+EOF
+EXPECT=<<EOF
+0xfffffffffffffffd
+0xffffffffffffffff
+0x7ffffffffffffffc
+0x00000001
+0xfffffffffffffffe
+0xffffffffffffffff
+0xfffffffffffffffe
+0x00000001
+EOF
+RUN
