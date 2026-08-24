@@ -2452,3 +2452,34 @@ EXPECT=<<EOF
 0xfffff00f
 EOF
 RUN
+
+NAME=seb, seh and wsbh
+FILE=malloc://32
+ARGS=-a mips -b 32
+CMDS=<<EOF
+aei
+wx 2044097c
+ar t1=0x000000f6
+ar pc=0
+s 0
+aes
+ar t0
+wx 2046097c
+ar t1=0x00008056
+ar pc=0
+s 0
+aes
+ar t0
+wx a040097c
+ar t1=0x12345678
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0xfffffff6
+0xffff8056
+0x34127856
+EOF
+RUN
