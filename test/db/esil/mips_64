@@ -497,3 +497,33 @@ EXPECT=<<EOF
 0xfffff00fffffffff
 EOF
 RUN
+
+NAME=dsbh, dshd and the 64-bit reach of seb
+FILE=malloc://32
+ARGS=-a mips -b 64
+CMDS=<<EOF
+aei
+wx a440097c
+ar t1=0x0123456789abcdef
+ar pc=0
+s 0
+aes
+ar t0
+wx 6441097c
+ar pc=0
+s 0
+aes
+ar t0
+wx 2044097c
+ar t1=0x000000f6
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x23016745ab89efcd
+0xcdef89ab45670123
+0xfffffffffffffff6
+EOF
+RUN

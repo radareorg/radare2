@@ -377,6 +377,29 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 				}
 			}
 			break;
+		case MIPS_INS_SEB:
+		case MIPS_INS_SEH:
+			r_strbuf_appendf (&op->esil, "%d,%s,~,%s,=",
+				(insn->id == MIPS_INS_SEB)? 8: 16, ARG (1), ARG (0));
+			break;
+		case MIPS_INS_WSBH:
+			r_strbuf_appendf (&op->esil,
+				"8,0xff00ff00,%s,&,>>,8,0x00ff00ff,%s,&,<<,|,%s,=",
+				ARG (1), ARG (1), ARG (0));
+			ES_SIGN32_64 (ARG (0));
+			break;
+		case MIPS_INS_DSBH:
+			r_strbuf_appendf (&op->esil,
+				"8,0xff00ff00ff00ff00,%s,&,>>,8,0x00ff00ff00ff00ff,%s,&,<<,|,%s,=",
+				ARG (1), ARG (1), ARG (0));
+			break;
+		case MIPS_INS_DSHD:
+			// swap the halfwords inside each word, then swap the two words
+			r_strbuf_appendf (&op->esil,
+				"16,0xffff0000ffff0000,%s,&,>>,16,0x0000ffff0000ffff,%s,&,<<,|,%s,=,"
+				"32,%s,>>,32,0xffffffff,%s,&,<<,|,%s,=",
+				ARG (1), ARG (1), ARG (0), ARG (0), ARG (0), ARG (0));
+			break;
 		case MIPS_INS_EXT:
 		case MIPS_INS_DEXT:
 		case MIPS_INS_DEXTM:
