@@ -1,0 +1,18 @@
+diff --git a/arch/SH/SHDisassembler.c b/arch/SH/SHDisassembler.c
+index 9986b32..fbecaa5 100644
+--- a/arch/SH/SHDisassembler.c
++++ b/arch/SH/SHDisassembler.c
+@@ -17,7 +17,12 @@
+ 	if (_detail)							\
+ 		_detail->regs_write[_detail->regs_write_count++] = _reg
+ 
+-enum direction {read, write};
++/* read and write collide with the unistd.h prototypes when a libc header
++ * set is preincluded in freestanding builds (like the radare2 uefi port),
++ * so give the enum values their own names and keep the short spelling */
++enum direction {sh_dir_read, sh_dir_write};
++#define read sh_dir_read
++#define write sh_dir_write
+ 
+ static void regs_rw(cs_detail *detail, enum direction rw, sh_reg reg)
+ {

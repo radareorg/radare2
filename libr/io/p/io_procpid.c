@@ -6,7 +6,7 @@
 #include <r_lib.h>
 #include <r_cons.h>
 
-#if __linux__
+#if __linux__ && !R2_UEFI
 
 #include <sys/ptrace.h>
 #include <sys/types.h>

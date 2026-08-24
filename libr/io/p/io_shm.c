@@ -14,7 +14,7 @@
 // make this work across all unixes without adding extra depenencies
 #define USE_SHM_OPEN 0
 
-#if R2__UNIX__ && !defined (__QNX__) && !defined (__HAIKU__)
+#if R2__UNIX__ && !defined (__QNX__) && !defined (__HAIKU__) && !R2_UEFI
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/mman.h>

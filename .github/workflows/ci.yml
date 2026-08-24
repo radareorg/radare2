@@ -165,6 +165,23 @@ jobs:
       run: sys/mipsbe.sh unit
     - name: Run mipsbe r2r smoke tests
       run: sys/mipsbe.sh smoke
+  linux-uefi:
+    name: linux-uefi
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+    - name: Install the uefi toolchain
+      run: |
+        sudo apt-get update --assume-yes
+        sudo apt-get --assume-yes install binutils clang lld gnu-efi musl-dev
+    - name: Build radare2 for UEFI
+      run: make -C dist/uefi
+    - name: Upload the EFI application
+      uses: actions/upload-artifact@v7
+      with:
+        name: BOOTX64.EFI
+        path: build-uefi/BOOTX64.EFI
   linux-static-meson:
 #    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     continue-on-error: true

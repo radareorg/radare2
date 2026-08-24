@@ -11,7 +11,7 @@
 # define r_listxattr(x,y,z) listxattr(x,y,z,0)
 # define r_getxattr(x,y,z,u) getxattr(x,y,z,u,0,0)
 # define r_setxattr(x,y,z,u,v) setxattr(x,y,z,u,v,0)
-#elif __linux__
+#elif __linux__ && !R2_UEFI
 #define HAS_XATTR 1
 # define r_listxattr listxattr
 # define r_getxattr getxattr

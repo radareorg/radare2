@@ -41,7 +41,7 @@
 #if defined(__sun)
 #include <sys/filio.h>
 #endif
-#if __linux__ && !__ANDROID__
+#if __linux__ && !__ANDROID__ && !R2_UEFI
 #include <sys/personality.h>
 #include <pty.h>
 #include <utmp.h>
@@ -364,11 +364,11 @@ beach:
 static void setASLR(RRunProfile *r, int enabled) {
 #if __linux__
 	r_sys_aslr (enabled);
-#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__
+#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__ && !R2_UEFI
 	if (personality (ADDR_NO_RANDOMIZE) == -1) {
 #endif
 		r_sys_aslr (0);
-#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__
+#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__ && !R2_UEFI
 	}
 #endif
 #elif __APPLE__
@@ -482,7 +482,7 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 #else
 #ifdef _MSC_VER
 #pragma message("TODO: handle_redirection_proc: Not implemented for this platform")
-#else
+#elif !R2_UEFI
 #warning handle_redirection_proc : unimplemented for this platform
 #endif
 	return -1;
