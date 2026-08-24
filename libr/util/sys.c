@@ -384,7 +384,9 @@ R_API void r_sys_backtrace(void) {
 		printf ("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
 	}
 #else
+#if !R2_UEFI
 #pragma message ("TODO: r_sys_bt : unimplemented")
+#endif
 #endif
 #endif
 }

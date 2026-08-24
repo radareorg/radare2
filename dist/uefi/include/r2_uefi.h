@@ -168,10 +168,22 @@ static inline int r2_uefi_fscanf(FILE *stream, const char *format, ...) { (void)
 static inline int r2_uefi_scanf(const char *format, ...) { (void)format; return 0; }
 static inline FILE *r2_uefi_popen(const char *command, const char *type) { (void)command; (void)type; errno = ENOSYS; return NULL; }
 static inline int r2_uefi_pclose(FILE *stream) { (void)stream; return r2_uefi_unsupported (); }
+static inline int r2_uefi_rename(const char *oldpath, const char *newpath) { (void)oldpath; (void)newpath; return r2_uefi_unsupported (); }
 #define fscanf r2_uefi_fscanf
 #define scanf r2_uefi_scanf
 #define popen r2_uefi_popen
 #define pclose r2_uefi_pclose
+#define rename r2_uefi_rename
+
+/* there are no signals on firmware, so pretend the handlers are installed */
+typedef void (*r2_uefi_sighandler)(int);
+static inline r2_uefi_sighandler r2_uefi_signal(int sig, r2_uefi_sighandler handler) { (void)sig; (void)handler; return SIG_DFL; }
+static inline int r2_uefi_sigemptyset(sigset_t *set) { if (set) { memset (set, 0, sizeof (*set)); } return 0; }
+static inline int r2_uefi_sigsetop(sigset_t *set, int sig) { (void)set; (void)sig; return 0; }
+#define signal r2_uefi_signal
+#define sigemptyset r2_uefi_sigemptyset
+#define sigaddset r2_uefi_sigsetop
+#define sigdelset r2_uefi_sigsetop
 
 static inline int r2_uefi_system(const char *command) { (void)command; return r2_uefi_unsupported (); }
 static inline pid_t r2_uefi_fork(void) { return (pid_t)r2_uefi_unsupported (); }
@@ -222,6 +234,10 @@ static inline int r2_uefi_flock(int fd, int operation) { (void)fd; (void)operati
 static inline int r2_uefi_ftruncate(int fd, off_t length) { (void)fd; (void)length; return r2_uefi_unsupported (); }
 static inline int r2_uefi_truncate(const char *path, off_t length) { (void)path; (void)length; return r2_uefi_unsupported (); }
 static inline ssize_t r2_uefi_readlink(const char *path, char *buf, size_t size) { (void)path; (void)buf; (void)size; return r2_uefi_unsupported (); }
+static inline unsigned int r2_uefi_alarm(unsigned int seconds) { (void)seconds; return 0; }
+static inline int r2_uefi_chroot(const char *path) { (void)path; return r2_uefi_unsupported (); }
+static inline int r2_uefi_setgroups(size_t size, const gid_t *list) { (void)size; (void)list; return 0; }
+static inline int r2_uefi_getpagesize(void) { return 4096; }
 #define dup r2_uefi_dup
 #define dup2 r2_uefi_dup2
 #define pipe r2_uefi_pipe
@@ -230,6 +246,10 @@ static inline ssize_t r2_uefi_readlink(const char *path, char *buf, size_t size)
 #define ftruncate r2_uefi_ftruncate
 #define truncate r2_uefi_truncate
 #define readlink r2_uefi_readlink
+#define alarm r2_uefi_alarm
+#define chroot r2_uefi_chroot
+#define setgroups r2_uefi_setgroups
+#define getpagesize r2_uefi_getpagesize
 
 static inline int r2_uefi_chmod(const char *path, mode_t mode) { (void)path; (void)mode; return 0; }
 static inline int r2_uefi_fchmod(int fd, mode_t mode) { (void)fd; (void)mode; return 0; }
@@ -269,6 +289,21 @@ static inline ssize_t r2_uefi_sockio(int fd, ...) { (void)fd; errno = EAFNOSUPPO
 #define sendto r2_uefi_sockio
 #define recvfrom r2_uefi_sockio
 
+/* the console read blocks in the firmware until a key arrives, so report
+ * the descriptors as ready instead of implementing the select machinery */
+static inline int r2_uefi_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout) { (void)nfds; (void)readfds; (void)writefds; (void)exceptfds; (void)timeout; return 1; }
+static inline int r2_uefi_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, const struct timespec *timeout, const sigset_t *sigmask) { (void)nfds; (void)readfds; (void)writefds; (void)exceptfds; (void)timeout; (void)sigmask; return 1; }
+#define select r2_uefi_select
+#define pselect r2_uefi_pselect
+
+/* efi only runs little endian */
+static inline unsigned short r2_uefi_bswap16(unsigned short x) { return __builtin_bswap16 (x); }
+static inline unsigned int r2_uefi_bswap32(unsigned int x) { return __builtin_bswap32 (x); }
+#define htons r2_uefi_bswap16
+#define ntohs r2_uefi_bswap16
+#define htonl r2_uefi_bswap32
+#define ntohl r2_uefi_bswap32
+
 static inline int r2_uefi_getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **result) { (void)node; (void)service; (void)hints; (void)result; return EAI_FAIL; }
 static inline void r2_uefi_freeaddrinfo(struct addrinfo *result) { (void)result; }
 static inline const char *r2_uefi_gai_strerror(int error) { (void)error; return "networking is unavailable on UEFI"; }
@@ -294,6 +329,7 @@ static inline int r2_uefi_tcsetattr(int fd, int action, const struct termios *te
 static inline int r2_uefi_tcsimple(int fd, ...) { (void)fd; return 0; }
 static inline int r2_uefi_cfsetspeed(struct termios *termios, speed_t speed) { (void)termios; (void)speed; return 0; }
 static inline speed_t r2_uefi_cfgetspeed(const struct termios *termios) { (void)termios; return 0; }
+static inline void r2_uefi_cfmakeraw(struct termios *termios) { if (termios) { memset (termios, 0, sizeof (*termios)); } }
 #define tcgetattr r2_uefi_tcgetattr
 #define tcsetattr r2_uefi_tcsetattr
 #define tcsendbreak r2_uefi_tcsimple
@@ -303,6 +339,10 @@ static inline speed_t r2_uefi_cfgetspeed(const struct termios *termios) { (void)
 #define cfsetospeed r2_uefi_cfsetspeed
 #define cfgetispeed r2_uefi_cfgetspeed
 #define cfgetospeed r2_uefi_cfgetspeed
+#define cfmakeraw r2_uefi_cfmakeraw
+
+static inline long double r2_uefi_fmaxl(long double a, long double b) { return a > b? a: b; }
+#define fmaxl r2_uefi_fmaxl
 
 static inline int r2_uefi_feclearexcept(int exceptions) { (void)exceptions; return 0; }
 static inline int r2_uefi_fetestexcept(int exceptions) { (void)exceptions; return 0; }
@@ -313,8 +353,8 @@ static inline int r2_uefi_fesetround(int round) { (void)round; return 0; }
 #define fegetround r2_uefi_fegetround
 #define fesetround r2_uefi_fesetround
 
-static inline char *r2_uefi_setlocale(int category, const char *locale) { (void)category; (void)locale; return "C"; }
-static inline struct lconv *r2_uefi_localeconv(void) { static struct lconv value = { .decimal_point = "." }; return &value; }
+static inline char *r2_uefi_setlocale(int category, const char *locale) { (void)category; (void)locale; static char name[] = "C"; return name; }
+static inline struct lconv *r2_uefi_localeconv(void) { static char dot[] = "."; static struct lconv value = { .decimal_point = dot }; return &value; }
 #define setlocale r2_uefi_setlocale
 #define localeconv r2_uefi_localeconv
 

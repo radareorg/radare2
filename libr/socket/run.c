@@ -482,7 +482,7 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 #else
 #ifdef _MSC_VER
 #pragma message("TODO: handle_redirection_proc: Not implemented for this platform")
-#else
+#elif !R2_UEFI
 #warning handle_redirection_proc : unimplemented for this platform
 #endif
 	return -1;

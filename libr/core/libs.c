@@ -80,7 +80,9 @@ static void load_plugins(RCore *core, int where, const char *path) {
 }
 #else
 static void load_plugins(RCore *core, int where, const char *path) {
+#if !R2_UEFI
 #warning built without the ability to load plugins dynamically
+#endif
 }
 #endif
 
