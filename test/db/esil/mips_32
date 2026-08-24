@@ -2403,3 +2403,27 @@ EXPECT=<<EOF
 0x76543210
 EOF
 RUN
+
+NAME=rotr and rotrv rotate the low word
+FILE=malloc://32
+ARGS=-a mips -b 32
+CMDS=<<EOF
+aei
+wx 02412900
+ar t1=0x12345678
+ar pc=0
+s 0
+aes
+ar t0
+wx 46404901
+ar t2=4
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x81234567
+0x81234567
+EOF
+RUN

@@ -154,6 +154,19 @@ static inline void es_sign_n_64(RArchSession *as, RAnalOp *op, const char *arg, 
 	}
 }
 
+// a mips64 arithmetic shift fills from bit 63, and esil ASR rewrites a big count
+static void es_dsra(RAnalOp *op, const char *cnt, const char *rt, const char *rd) {
+	r_strbuf_appendf (&op->esil,
+		"%s,%s,>>,63,%s,>>,?{,%s,64,-,0xffffffffffffffff,<<,}{,0,},|,%s,=",
+		cnt, rt, rt, cnt, rd);
+}
+
+// esil ROR takes its width from the config, so the rotate is spelled out here
+static void es_drotr(RAnalOp *op, const char *cnt, const char *rt, const char *rd) {
+	r_strbuf_appendf (&op->esil, "%s,%s,>>,%s,64,-,%s,<<,|,%s,=",
+		cnt, rt, cnt, rt, rd);
+}
+
 static inline void es_add_ck(RAnalOp *op, const char *a1, const char *a2, const char *re, int bit) {
 	ut64 mask = 1ULL << (bit-1);
 	r_strbuf_appendf (&op->esil,
@@ -323,10 +336,50 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 		case MIPS_INS_CMPI:
 			r_strbuf_appendf (&op->esil, "%s,%s,==", ARG (1), ARG (0));
 			break;
+		case MIPS_INS_DSLL:
+		case MIPS_INS_DSLL32:
+		case MIPS_INS_DSLLV:
+		case MIPS_INS_DSRL:
+		case MIPS_INS_DSRL32:
+		case MIPS_INS_DSRLV:
 		case MIPS_INS_DSRA:
+		case MIPS_INS_DSRA32:
+		case MIPS_INS_DSRAV:
+		case MIPS_INS_DROTR:
+		case MIPS_INS_DROTR32:
+		case MIPS_INS_DROTRV:
+			{
+				const int id = insn->id;
+				const bool var = id == MIPS_INS_DSLLV || id == MIPS_INS_DSRLV
+					|| id == MIPS_INS_DSRAV || id == MIPS_INS_DROTRV;
+				const bool wide = id == MIPS_INS_DSLL32 || id == MIPS_INS_DSRL32
+					|| id == MIPS_INS_DSRA32 || id == MIPS_INS_DROTR32;
+				char cnt[48];
+				if (var) {
+					snprintf (cnt, sizeof (cnt), "0x3f,%s,&", ARG (2));
+				} else {
+					snprintf (cnt, sizeof (cnt), "%d", (int)IMM (2) + (wide? 32: 0));
+				}
+				if (id == MIPS_INS_DSRA || id == MIPS_INS_DSRA32 || id == MIPS_INS_DSRAV) {
+					es_dsra (op, cnt, ARG (1), ARG (0));
+				} else if (id == MIPS_INS_DROTR || id == MIPS_INS_DROTR32 || id == MIPS_INS_DROTRV) {
+					es_drotr (op, cnt, ARG (1), ARG (0));
+				} else {
+					const bool left = id == MIPS_INS_DSLL || id == MIPS_INS_DSLL32
+						|| id == MIPS_INS_DSLLV;
+					r_strbuf_appendf (&op->esil, "%s,%s,%s,%s,=",
+						cnt, ARG (1), left? "<<": ">>", ARG (0));
+				}
+			}
+			break;
+		case MIPS_INS_ROTR:
+		case MIPS_INS_ROTRV:
+			// a 32-bit rotate, so the halves have to be masked back into a word
 			r_strbuf_appendf (&op->esil,
-				"%s,%s,>>,31,%s,>>,?{,32,%s,32,-,0xffffffff,<<,0xffffffff,&,<<,}{,0,},|,%s,=",
-				ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
+				"0x1f,%s,&," ES_W ("%s") ",>>,0x1f,%s,&,32,-," ES_W ("%s")
+				",<<,0xffffffff,&,|,%s,=",
+				ARG (2), ARG (1), ARG (2), ARG (1), ARG (0));
+			ES_SIGN32_64 (ARG (0));
 			break;
 		case MIPS_INS_SHRAV:
 		case MIPS_INS_SHRAV_R:

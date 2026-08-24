@@ -361,3 +361,88 @@ EXPECT=<<EOF
 0xf800000000000000
 EOF
 RUN
+
+NAME=the mips64 shift and rotate forms
+FILE=malloc://32
+ARGS=-a mips -b 64
+CMDS=<<EOF
+aei
+wx 38410900
+ar t1=0x8000000000000005
+ar pc=0
+s 0
+aes
+ar t0
+wx 3c410900
+ar pc=0
+s 0
+aes
+ar t0
+wx 14404901
+ar t2=4
+ar pc=0
+s 0
+aes
+ar t0
+wx 3a410900
+ar pc=0
+s 0
+aes
+ar t0
+wx 3e410900
+ar pc=0
+s 0
+aes
+ar t0
+wx 3b410900
+ar pc=0
+s 0
+aes
+ar t0
+wx 3f410900
+ar pc=0
+s 0
+aes
+ar t0
+wx 17404901
+ar pc=0
+s 0
+aes
+ar t0
+wx 3a412900
+ar pc=0
+s 0
+aes
+ar t0
+wx 3e412900
+ar pc=0
+s 0
+aes
+ar t0
+wx 56404901
+ar pc=0
+s 0
+aes
+ar t0
+wx 3b410900
+ar t1=0x80000000
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x00000050
+0x5000000000
+0x00000050
+0x800000000000000
+0x08000000
+0xf800000000000000
+0xfffffffff8000000
+0xf800000000000000
+0x5800000000000000
+0x58000000
+0x5800000000000000
+0x08000000
+EOF
+RUN
