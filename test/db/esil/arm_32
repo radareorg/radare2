@@ -3204,7 +3204,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=a conditional clz jumps to its own loop head
+NAME=a conditional clz keeps its condition
 FILE=malloc://0x200
 ARGS=-a arm -b 32
 CMDS=<<EOF

@@ -1949,3 +1949,40 @@ EXPECT=<<EOF
 0x9abcdef0
 EOF
 RUN
+
+NAME=clz counts at the register width
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aei
+wx 2010c05a
+aer x1=0x00001000
+aer pc=0
+s 0
+aes
+aer x0
+wx 2010c0da
+aer x1=0x00001000
+aer pc=0
+s 0
+aes
+aer x0
+aer x1=0
+aer pc=0
+s 0
+aes
+aer x0
+wx 2010c05a
+aer x1=0xffffffff00001000
+aer pc=0
+s 0
+aes
+aer x0
+EOF
+EXPECT=<<EOF
+0x00000013
+0x00000033
+0x00000040
+0x00000013
+EOF
+RUN
