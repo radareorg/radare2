@@ -1942,48 +1942,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_setf (&op->esil, "pc,lr,:=,%s,pc,:=", REG64 (0));
 		break;
 	case ARM64_INS_CLZ:
-	{
-		/*
-		from https://en.wikipedia.org/wiki/Find_first_set modified for up to size 64
-		function clz3 (x)
-			if x = 0 return 32
-			n ← 0
-			if (x & 0xFFFF0000) = 0: n ← n + 16, x ← x << 16
-			if (x & 0xFF000000) = 0: n ← n +  8, x ← x <<  8
-			if (x & 0xF0000000) = 0: n ← n +  4, x ← x <<  4
-			if (x & 0xC0000000) = 0: n ← n +  2, x ← x <<  2
-			if (x & 0x80000000) = 0: n ← n +  1
-			return n
-		*/
-
-		int size = 8 * REGSIZE64 (0);
-		const char *r0 = REG64 (0);
-		const char *r1 = REG64 (1);
-
-		if (size == 32) {
-			r_strbuf_setf (&op->esil,
-			"%s,tmp,=,0,"
-			"tmp,0xffff0000,&,!,?{,16,tmp,<<=,16,+,},"
-			"tmp,0xff000000,&,!,?{,8,tmp,<<=,8,+,},"
-			"tmp,0xf0000000,&,!,?{,4,tmp,<<=,4,+,},"
-			"tmp,0xc0000000,&,!,?{,2,tmp,<<=,2,+,},"
-			"tmp,0x80000000,&,!,?{,1,+,},"
-			"%s,!,?{,32,%s,=,}{,%s,=,}",
-			r1, r1, r0, r0);
-		} else {
-			r_strbuf_setf (&op->esil,
-			"%s,tmp,=,0,"
-			"tmp,0xffffffff00000000,&,!,?{,32,tmp,<<=,32,+,},"
-			"tmp,0xffff000000000000,&,!,?{,16,tmp,<<=,16,+,},"
-			"tmp,0xff00000000000000,&,!,?{,8,tmp,<<=,8,+,},"
-			"tmp,0xf000000000000000,&,!,?{,4,tmp,<<=,4,+,},"
-			"tmp,0xc000000000000000,&,!,?{,2,tmp,<<=,2,+,},"
-			"tmp,0x8000000000000000,&,!,?{,1,+,},"
-			"%s,!,?{,64,%s,=,}{,%s,=,}",
-			r1, r1, r0, r0);
-		}
+		r_strbuf_setf (&op->esil, "%d,%s,CLZ,%s,=",
+			8 * REGSIZE64 (0), REG64 (1), REG64 (0));
 		break;
-	}
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDUR:
 	case ARM64_INS_LDURB:
@@ -2810,13 +2771,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 
 	switch (insn->id) {
 	case ARM_INS_CLZ:
-		{
-			// counts on the stack, so the source may be the destination
-			const ut32 head = r_str_char_count (r_strbuf_get (&op->esil), ',') + 12;
-			r_strbuf_appendf (&op->esil, "%s,!,?{,32,%s,=,BREAK,},"
-				"%s,%s,:=,0,%s,0x80000000,&,!,?{,1,%s,<<=,++,%d,GOTO,},%s,=",
-				REG (1), REG (0), REG (1), REG (0), REG (0), REG (0), head, REG (0));
-		}
+		r_strbuf_appendf (&op->esil, "32,%s,CLZ,%s,=", REG (1), REG (0));
 		break;
 	case ARM_INS_IT:
 		r_strbuf_appendf (&op->esil, "0x%"PFMT64x",pc,:=", addr + 2);
