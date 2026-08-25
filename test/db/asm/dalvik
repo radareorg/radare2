@@ -57,7 +57,7 @@ d "const-wide/16 v0, 0000" 16000000
 d "const-wide/32 v2:v3, 0x00bc614e" 17024e61bc00
 d "const-wide/high16 v0:v1, 0x40240000" 19002440
 d "const/16 v0, 0x0a" 13000A00
-d "const/4 v1, 0x2" 1221
+d "const/4 v1, 2" 1221
 d "const/high16 v0, 0x41200000" 15002041
 d "div-double v6, v0, v2" AE060002
 d "div-double/2addr v0, v2" CE20

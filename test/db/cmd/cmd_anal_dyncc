@@ -164,9 +164,9 @@ REQUIRE=x86
 FILE=bins/cil/hello.exe
 CMDS=<<EOF
 e anal.cc
-af @ method.HelloWorld..ctor
-afi @ method.HelloWorld..ctor~callconv,args
-afv @ method.HelloWorld..ctor
+af @ method.public.constructor.HelloWorld..ctor
+afi @ method.public.constructor.HelloWorld..ctor~callconv,args
+afv @ method.public.constructor.HelloWorld..ctor
 EOF
 EXPECT=<<EOF
 dyncc
@@ -181,12 +181,12 @@ REQUIRE=x86
 FILE=bins/cil/AStyleWhore.exe
 CMDS=<<EOF
 e anal.cc
-af @ method.AStyleWhore.Properties.Settings.get_Default
-afi @ method.AStyleWhore.Properties.Settings.get_Default~name,callconv,args
+af @ method.public.static.AStyleWhore.Properties.Settings.get_Default
+afi @ method.public.static.AStyleWhore.Properties.Settings.get_Default~name,callconv,args
 EOF
 EXPECT=<<EOF
 dyncc
-name: method.AStyleWhore.Properties.Settings.get_Default
+name: method.public.static.AStyleWhore.Properties.Settings.get_Default
 callconv: dyncc::r0+1
 args: 0
 EOF
@@ -238,8 +238,8 @@ REQUIRE=x86
 FILE=bins/cil/hello.exe
 CMDS=<<EOF
 aaa
-afi @ method.HelloWorld..ctor~callconv
-afv @ method.HelloWorld..ctor
+afi @ method.public.constructor.HelloWorld..ctor~callconv
+afv @ method.public.constructor.HelloWorld..ctor
 EOF
 EXPECT=<<EOF
 callconv: dyncc:a0+1:!T0
