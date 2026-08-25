@@ -220,6 +220,32 @@ static void format51l(int len, const ut8* data, ut32* dst, st64* src) {
 	}
 }
 
+static void method_call(RArch *a, RAnalOp *op, const ut8 *data, int len, RAnalOpMask mask) {
+	op->fail = op->addr + op->size;
+	op->direction = R_ANAL_OP_DIR_EXEC;
+	if (len < 4) {
+		op->type = R_ANAL_OP_TYPE_UCALL;
+		return;
+	}
+	ut32 method = r_read_le16 (data + 2);
+	ut64 target = _anal_get_offset (a, 'm', method);
+	if (target == 0 || target == UT64_MAX) {
+		op->type = R_ANAL_OP_TYPE_UCALL;
+		return;
+	}
+	op->type = R_ANAL_OP_TYPE_CALL;
+	op->jump = target;
+	if (mask & R_ARCH_OP_MASK_ESIL) {
+		esilprintf (op, "4,sp,-=,0x%" PFMT64x ",sp,=[4],0x%" PFMT64x ",ip,=", op->fail, op->jump);
+	}
+}
+
+static void unresolved_call(RAnalOp *op) {
+	op->type = R_ANAL_OP_TYPE_UCALL;
+	op->direction = R_ANAL_OP_DIR_EXEC;
+	op->fail = op->addr + op->size;
+}
+
 #define OPCALL(x, y, z) dalvik_math_op(op, data, len, mask, x, y, z)
 static void dalvik_math_op(RAnalOp* op, const ut8* data, int len, RAnalOpMask mask, char* operation, unsigned int optype, OperandType ot) {
 	ut32 vA = 0, vB = 0, vC = 0;
@@ -888,31 +914,53 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		break;
 	case 0x0a: // move-result
-	case 0x0b: // move-result-wide
 	case 0x0c: // move-result-object
-	case 0x0d: // move-exception
-	 	// TODO: add MOVRET OP TYPE ??
 		op->type = R_ANAL_OP_TYPE_MOV;
 		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format11x(len, data, &vA);
-			esilprintf (op, "sp,v%u,=[8],8,sp,+=,8", vA);
+			esilprintf (op, "result,v%u,=", vA);
+		}
+		break;
+	case 0x0b: // move-result-wide
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->datatype = R_ANAL_DATATYPE_INT64;
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			format11x (len, data, &vA);
+			esilprintf (op, "result,v%u,=,result_hi,v%u,=", vA, vA + 1);
+		}
+		break;
+	case 0x0d: // move-exception
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->datatype = R_ANAL_DATATYPE_OBJECT;
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			format11x (len, data, &vA);
+			esilprintf (op, "exception,v%u,=", vA);
 		}
 		break;
 	case 0x0e: // return-void
-	case 0x0f: // return
-	case 0x10: // return-wide
-	case 0x11: // return-object
 	case 0xf1: // return-void-barrier
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->eob = true;
-		//TODO: handle return if (0x0e) {} else {}
 		if (mask & R_ARCH_OP_MASK_ESIL) {
-			if (data[0] == 0x0e) {// return-void
-				esilprintf (op, "sp,[8],ip,=,8,sp,+=");
-			} else {
-				ut32 vA = data[1];
-				esilprintf (op, "sp,[8],ip,=,8,sp,+=,8,sp,-=,v%d,sp,=[8]", vA);
-			}
+			esilprintf (op, "sp,[4],ip,=,4,sp,+=");
+		}
+		break;
+	case 0x0f: // return
+	case 0x11: // return-object
+		op->type = R_ANAL_OP_TYPE_RET;
+		op->eob = true;
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			format11x (len, data, &vA);
+			esilprintf (op, "v%u,result,=,sp,[4],ip,=,4,sp,+=", vA);
+		}
+		break;
+	case 0x10: // return-wide
+		op->type = R_ANAL_OP_TYPE_RET;
+		op->datatype = R_ANAL_DATATYPE_INT64;
+		op->eob = true;
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			format11x (len, data, &vA);
+			esilprintf (op, "v%u,result,=,v%u,result_hi,=,sp,[4],ip,=,4,sp,+=", vA, vA + 1);
 		}
 		break;
 	case 0x12: // const/4
@@ -1624,49 +1672,22 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case 0x70: // invoke-direct
 	case 0x71: // invoke-static
 	case 0x72: // invoke-interface
-	case 0x77: //
-	case 0x6e: // invoke-virtual
-		if (len > 2) {
-			//XXX fix this better since the check avoid an oob
-			//but the jump will be incorrect
-			ut32 vB = len > 3?(data[3] << 8) | data[2] : 0;
-			ut64 dst = _anal_get_offset (a, 'm', vB);
-			if (dst == 0) {
-				op->type = R_ANAL_OP_TYPE_UCALL;
-			} else {
-				op->type = R_ANAL_OP_TYPE_CALL;
-				op->jump = dst;
-			}
-			op->fail = addr + sz;
-			if (mask & R_ARCH_OP_MASK_ESIL) {
-				// TODO: handle /range instructions
-				esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", op->fail, op->jump);
-			}
-		}
-		break;
-	case 0x78: // invokeinterface/range
-	case 0xf0: // invoke-object-init-range
-	case 0xf9: // invoke-virtual-quick/range
-	case 0xfb: // invoke-super-quick/range
 	case 0x74: // invoke-virtual/range
 	case 0x75: // invoke-super/range
 	case 0x76: // invoke-direct/range
-	case 0xfa: // invoke-super-quick // invoke-polymorphic
-		if (len > 2) {
-			//XXX fix this better since the check avoid an oob
-			//but the jump will be incorrect
-			// ut32 vB = len > 3?(data[3] << 8) | data[2] : 3;
-			//op->jump = _anal_get_offset (a, 'm', vB);
-			op->fail = addr + sz;
-			// op->type = R_ANAL_OP_TYPE_CALL;
-			op->type = R_ANAL_OP_TYPE_UCALL;
-			// TODO: handle /range instructions
-			// NOP esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", addr);
-		}
-		if (mask & R_ARCH_OP_MASK_ESIL) {
-			// TODO: handle /range instructions
-			esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", op->fail, op->jump);
-		}
+	case 0x77: // invoke-static/range
+	case 0x78: // invoke-interface/range
+	case 0xf0: // invoke-object-init/range
+	case 0xfa: // invoke-polymorphic
+	case 0xfb: // invoke-polymorphic/range
+	case 0x6e: // invoke-virtual
+		method_call (a, op, data, len, mask);
+		break;
+	case 0xf8: // invoke-virtual-quick
+	case 0xf9: // invoke-virtual-quick/range
+	case 0xfc: // invoke-custom
+	case 0xfd: // invoke-custom/range
+		unresolved_call (op);
 		break;
 	case 0xee: // execute-inline
 	case 0xef: // execute-inline/range
@@ -1689,6 +1710,8 @@ static char *regs(RArchSession *as) {
 		"=PC	ip\n"
 		"=SP	sp\n"
 		"=BP	bp\n"
+		"=R0	result\n"
+		"=R1	result_hi\n"
 	);
 	int i;
 	for (i = 0; i < 256; i++) {
@@ -1697,6 +1720,9 @@ static char *regs(RArchSession *as) {
 	r_strbuf_appendf (sb, "gpr\tip\t.32\t%d\t0\n", 256 * 4);
 	r_strbuf_appendf (sb, "gpr\tsp\t.32\t%d\t0\n", 256 * 4 + 4);
 	r_strbuf_appendf (sb, "gpr\tbp\t.32\t%d\t0\n", 256 * 4 + 8);
+	r_strbuf_appendf (sb, "gpr\tresult\t.32\t%d\t0\n", 256 * 4 + 12);
+	r_strbuf_appendf (sb, "gpr\tresult_hi\t.32\t%d\t0\n", 256 * 4 + 16);
+	r_strbuf_appendf (sb, "gpr\texception\t.32\t%d\t0\n", 256 * 4 + 20);
 	return r_strbuf_drain (sb);
 }
 

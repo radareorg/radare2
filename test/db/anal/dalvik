@@ -10,6 +10,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=dalvik ESIL uses VM result registers
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=dalvik
+wx 0cc8
+ao~esil:
+wx 0fc8
+ao~esil:
+EOF
+EXPECT=<<EOF
+esil: result,v200,=
+esil: v200,result,=,sp,[4],ip,=,4,sp,+=
+EOF
+RUN
+
 NAME=dalvik signed conditional branch operands
 FILE=malloc://0x2000
 CMDS=<<EOF
@@ -27,6 +42,15 @@ opcode: if-nez v4, 0x00000ff8
 jump: 0x00000ff8
 opcode: if-ge v3, v4, 0x00000ff8
 jump: 0x00000ff8
+EOF
+RUN
+
+NAME=dalvik non-void result calling convention
+FILE=bins/dex/test.dex
+CMDS=e io.va=0; af @ 0x21c; afij @ 0x21c~{0.calltype}; aoj 2 @ 0x21c~{1.esil}
+EXPECT=<<EOF
+dyncc:v1+2:result
+v0,result,=,sp,[4],ip,=,4,sp,+=
 EOF
 RUN
 

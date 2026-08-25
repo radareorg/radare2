@@ -2074,8 +2074,10 @@ static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 		r_strbuf_appendf (sb, "%s%u+%u", pfx, m->arg_first, m->arg_count);
 	}
 	r_strbuf_append (sb, ":");
-	if (m->ret_count > 0) {
-		r_strbuf_appendf (sb, "v0+%u", m->ret_count);
+	if (m->ret_count == 1) {
+		r_strbuf_append (sb, "result");
+	} else if (m->ret_count > 1) {
+		r_strbuf_append (sb, "result,result_hi");
 	}
 	if (instance) {
 		if (m->arg_count > 0) {
