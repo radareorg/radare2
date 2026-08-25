@@ -58,7 +58,8 @@ static RDebugReasonType haiku_dbg_reason(RDebug *dbg, debug_debugger_message_dat
 	case B_DEBUGGER_MESSAGE_THREAD_CREATED:
 		return R_DEBUG_REASON_NEW_TID;
 	case B_DEBUGGER_MESSAGE_THREAD_DELETED:
-		return R_DEBUG_REASON_EXIT_TID;
+		// asynchronous: no thread is stopped for the core to synchronize
+		return R_DEBUG_REASON_NONE;
 	case B_DEBUGGER_MESSAGE_IMAGE_CREATED:
 		return R_DEBUG_REASON_NEW_LIB;
 	case B_DEBUGGER_MESSAGE_IMAGE_DELETED:
