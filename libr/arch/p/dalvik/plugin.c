@@ -245,7 +245,9 @@ static void dalvik_math_op(RAnalOp* op, const ut8* data, int len, RAnalOpMask ma
 
 	if (mask & R_ARCH_OP_MASK_ESIL) {
 		if (ot == OP_INT) {
-			if (optype == R_ANAL_OP_TYPE_DIV || optype == R_ANAL_OP_TYPE_MOD) {
+			if (data[0] == 0xd1 || data[0] == 0xd9) {
+				esilprintf (op, "v%u,%d,-,v%u,=", vB, (st32)vC, vA);
+			} else if (optype == R_ANAL_OP_TYPE_DIV || optype == R_ANAL_OP_TYPE_MOD) {
 				esilprintf (op, "32,%s%d,~,32,v%u,~,%s,v%u,=", v, vC, vB, operation, vA);
 			} else {
 				esilprintf (op, "%s%d,v%u,%s,v%u,=", v, vC, vB, operation, vA);
@@ -364,8 +366,8 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			break;
 		case fmtopvAcB:
 			vA = buf[1] & 0x0f;
-			vB = (buf[1] & 0xf0) >> 4;
-			snprintf (str, sizeof (str), " v%i, %#x", vA, vB);
+			vB = (st8)buf[1] >> 4;
+			snprintf (str, sizeof (str), " v%i, %i", vA, vB);
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAAcBBBB:
@@ -416,14 +418,14 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 		case fmtopvAAvBBcCC:
 			vA = (int) buf[1];
 			vB = (int) buf[2];
-			vC = (int) buf[3];
+			vC = (st8)buf[3];
 			snprintf (str, sizeof (str), " v%i, v%i, %#x", vA, vB, vC);
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAvBcCCCC:
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0) >> 4;
-			vC = (buf[3] << 8) | buf[2];
+			vC = (st16)r_read_le16 (buf + 2);
 			snprintf (str, sizeof (str), " v%i, v%i, %#x", vA, vB, vC);
 			strasm = r_str_append (strasm, str);
 			break;
@@ -440,7 +442,7 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			break;
 		case fmtopvAApBBBB: // if-*z
 			vA = (int) buf[1];
-			vB = (int) (buf[3] << 8 | buf[2]);
+			vB = (st16)r_read_le16 (buf + 2);
 			//snprintf (str, sizeof (str), " v%i, %i", vA, vB);
 			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, addr + (vB * 2));
 			strasm = r_str_append (strasm, str);
@@ -454,7 +456,7 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 		case fmtopvAvBpCCCC: // if-*
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0) >> 4;
-			vC = (int) (buf[3] << 8 | buf[2]);
+			vC = (st16)r_read_le16 (buf + 2);
 			//snprintf (str, sizeof (str), " v%i, v%i, %i", vA, vB, vC);
 			snprintf (str, sizeof (str)," v%i, v%i, 0x%08"PFMT64x, vA, vB, addr + (vC * 2));
 			strasm = r_str_append (strasm, str);
@@ -1211,10 +1213,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case 0x36: // if-gt
 	case 0x37: // if-le
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		//XXX fix this better the check is to avoid an oob
 		if (len > 2) {
-			format22t(len, data, &vA, &vB, &vC);
-			op->jump = addr + vC; //(len>3?(short)(data[2]|data[3]<<8)*2 : 0);
+			st32 delta = 0;
+			format22t (len, data, &vA, &vB, &delta);
+			op->jump = addr + delta;
 			op->fail = addr + sz;
 			op->eob = true;
 			if (mask & R_ARCH_OP_MASK_ESIL) {
@@ -1229,12 +1231,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case 0x3b: // if-gez
 	case 0x3c: // if-gtz
 	case 0x3d: // if-lez
-	//case 0x3e: // glitch 0 width instruction .. invalid instruction
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		//XXX fix this better the check is to avoid an oob
 		if (len > 2) {
-			format21t(len, data, &vA, &vB);
-			op->jump = addr + vB; //(len>3?(short)(data[2]|data[3]<<8)*2 : 0);
+			st32 delta = 0;
+			format21t (len, data, &vA, &delta);
+			op->jump = addr + delta;
 			op->fail = addr + sz;
 			op->eob = true;
 			if (mask & R_ARCH_OP_MASK_ESIL) {

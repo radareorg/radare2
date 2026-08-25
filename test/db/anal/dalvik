@@ -10,6 +10,26 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=dalvik signed conditional branch operands
+FILE=malloc://0x2000
+CMDS=<<EOF
+e asm.arch=dalvik
+s 0x1000
+wx 3904fcff
+ao~opcode:
+ao~jump:
+wx 3543fcff
+ao~opcode:
+ao~jump:
+EOF
+EXPECT=<<EOF
+opcode: if-nez v4, 0x00000ff8
+jump: 0x00000ff8
+opcode: if-ge v3, v4, 0x00000ff8
+jump: 0x00000ff8
+EOF
+RUN
+
 NAME=Dalvik HelloWorld string xref
 FILE=bins/dex/HelloWorld.dex
 CMDS=aa; axt @ str.Findus
