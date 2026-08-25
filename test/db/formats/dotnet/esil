@@ -1,0 +1,48 @@
+NAME=.NET user strings expose addresses to CIL ESIL
+FILE=bins/dotnet/TestPInvoke.dll
+CMDS=<<EOF
+e asm.esil=true
+iz~PID:~[1,2,3,6]
+aoe 1 @ 0x40205c
+EOF
+EXPECT=<<EOF
+0x0000079e 0x0040259e 5 utf16le
+0x40205c 8,sp,-=,0x40259e,sp,=[8]
+EOF
+RUN
+
+NAME=CIL conversions and callvirt preserve stack semantics
+FILE=bins/cil/AStyleWhore.exe
+CMDS=<<EOF
+e asm.esil=true
+aoe 1 @ 0x402232
+aoe 1 @ 0x40223f
+EOF
+EXPECT=<<EOF
+0x402232 32,sp,[8],~,sp,=[8]
+0x40223f 24,sp,+=,8,sp,-=,r0,sp,=[8]
+EOF
+RUN
+
+NAME=.NET MethodDef calls expose analysis targets
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+ao @ 0x10002303~jump
+EOF
+EXPECT=<<EOF
+jump: 0x10002090
+EOF
+RUN
+
+NAME=CIL analysis rejects truncated switch tables
+FILE=malloc://5
+CMDS=<<EOF
+e asm.arch=cil
+wx 45ffffffff
+aaa
+echo survived
+EOF
+EXPECT=<<EOF
+survived
+EOF
+RUN
