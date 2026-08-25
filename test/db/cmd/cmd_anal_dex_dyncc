@@ -22,7 +22,7 @@ afi @ 0x15bc8~callconv,args
 EOF
 EXPECT=<<EOF
 dyncc
-callconv: dyncc::v0+1
+callconv: dyncc::result
 args: 0
 EOF
 RUN

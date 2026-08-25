@@ -459,6 +459,51 @@ static void remove_double_spaces(char *s) {
 	}
 }
 
+static char *next_comment(char *s, char *line_end) {
+	char *next = strstr (s, " // ");
+	return next && (!line_end || next < line_end)? next: NULL;
+}
+
+static void dedup_comments(char *s) {
+	char *line = s;
+	while (*line) {
+		char *line_end = strchr (line, '\n');
+		char *comment = next_comment (line, line_end);
+		while (comment) {
+			char *next = next_comment (comment + 4, line_end);
+			if (!next) {
+				break;
+			}
+			char *after = next_comment (next + 4, line_end);
+			char *next_end = after? after: line_end;
+			if (!next_end) {
+				next_end = next + strlen (next);
+			}
+			const char *text = comment + 4;
+			const char *next_text = next + 4;
+			size_t text_len = next - text;
+			size_t next_len = next_end - next_text;
+			bool repeated = text_len == next_len && !strncmp (text, next_text, text_len);
+			if (!repeated && text_len < next_len && next_text[text_len] == '(') {
+				repeated = !strncmp (text, next_text, text_len);
+			}
+			if (repeated) {
+				size_t removed = next - comment;
+				memmove (comment, next, strlen (next) + 1);
+				if (line_end) {
+					line_end -= removed;
+				}
+				continue;
+			}
+			comment = next;
+		}
+		if (!line_end) {
+			break;
+		}
+		line = line_end + 1;
+	}
+}
+
 static char *comments_to_c(char *s) {
 	if (!strchr (s, ';')) {
 		return s;
@@ -511,6 +556,7 @@ static char *cleancomments(char *s) {
 	}
 	s = r_str_replace (s, "\n\n", "\n", true);
 	remove_double_spaces (s);
+	dedup_comments (s);
 	return s;
 }
 

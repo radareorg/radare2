@@ -13,6 +13,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pdc dedup dalvik call comments
+FILE=bins/dex/HelloWorld.dex
+CMDS=<<EOF
+e scr.color=0
+af
+pdc~println
+pdc~LHello.foo
+EOF
+EXPECT=<<EOF
+        call Ljava/io/PrintStream.println(Ljava/lang/String;)V // 0x5 {v0, v1} // sym.imp.Ljava_io_PrintStream.method.println_Ljava_lang_String__V(0x0, 0x0, 0x0, 0x0)
+        call LHello.foo(I)V // 0x1 {v0, v1} // method.public.LHello.LHello.method.foo_I_V(0x0, 0x0)
+EOF
+RUN
+
 NAME=pd pseudo @ t1
 FILE=bins/pe/t1.exe
 ARGS=-e bin.str.real=true
