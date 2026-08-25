@@ -6908,14 +6908,22 @@ static void bitimage(RCore *core, const ut8 *data, const int data_size) {
 	r_strbuf_free (sb);
 }
 
+static void cmd_pri_image(RCore *core, const ut8 *buf, size_t bsz, int cols, int mode, int components) {
+	char *s = r_cons_image (buf, bsz, cols, mode, components);
+	if (s) {
+		r_cons_print (core->cons, s);
+	}
+	free (s);
+}
+
 static void cmd_pri(RCore *core, const char *input, int l) {
 	int cols = r_config_get_i (core->config, "hex.cols");
 	bool has_color = r_config_get_i (core->config, "scr.color") > 0;
-	ut8 *buf = r_core_readblock (core, 0);
+	size_t bsz = core->blocksize;
+	ut8 *buf = r_core_readblock (core, bsz);
 	if (!buf) {
 		return;
 	}
-	const int data_size = core->blocksize;
 	switch (input[2]) {
 	case '?':
 		r_cons_cmd_help (core->cons, help_msg_pri);
@@ -6924,7 +6932,7 @@ static void cmd_pri(RCore *core, const char *input, int l) {
 		cmd_printmsg (core, input + 4);
 		break;
 	case '1':
-		bitimage (core, buf, data_size);
+		bitimage (core, buf, bsz);
 		break;
 	case '2': // "pri2"
 		if (l) {
@@ -6967,17 +6975,17 @@ static void cmd_pri(RCore *core, const char *input, int l) {
 		}
 		break;
 	case 'g': // gresycale
-		r_cons_image (buf, core->blocksize, cols, 'g', 3);
+		cmd_pri_image (core, buf, bsz, cols, 'g', 3);
 		break;
 	case 's': // sixel
-		r_cons_image (buf, core->blocksize, cols, 's', 3);
+		cmd_pri_image (core, buf, bsz, cols, 's', 3);
 		break;
 	case '4':
-		r_cons_image (buf, core->blocksize, cols, 'r', 4);
+		cmd_pri_image (core, buf, bsz, cols, 'r', 4);
 		break;
 	case 'r':
 	default:
-		r_cons_image (buf, core->blocksize, cols, has_color? 'r': 'a', 3);
+		cmd_pri_image (core, buf, bsz, cols, has_color? 'r': 'a', 3);
 		break;
 	}
 	free (buf);

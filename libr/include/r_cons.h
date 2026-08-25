@@ -832,7 +832,7 @@ typedef struct r_cons_canvas_line_style_t {
 #define ARROW_LEFT 9
 
 #ifdef R_API
-R_API void r_cons_image(const ut8 *buf, int bufsz, int width, int mode, int components);
+R_API char *r_cons_image(const ut8 *buf, int bufsz, int width, int mode, int components);
 R_API RConsCanvas* r_cons_canvas_new(RCons *cons, int w, int h, int flags);
 R_API int r_cons_canvas_flags(RCons * R_NONNULL cons);
 R_API void r_cons_canvas_free(RConsCanvas *c);

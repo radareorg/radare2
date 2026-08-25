@@ -1,13 +1,12 @@
 /* tiv - terminal image viewer - MIT 2013-2024 - pancake */
 
 #include <r_cons.h>
-#include <r_th.h>
 
 #define XY(b,x,y) ( b+((y)*(w*components))+(x*components) )
 #define ABS(x) (((x)<0)?-(x):(x))
 #define POND(x,y) (ABS((x)) * (y))
 
-typedef void (*Renderer)(PrintfCallback cb_printf, const ut8*, const ut8 *);
+typedef void (*Renderer)(RStrBuf *sb, const ut8*, const ut8 *);
 
 static int reduce8(int r, int g, int b) {
 	int colors_len = 8;
@@ -49,14 +48,14 @@ static int reduce8(int r, int g, int b) {
 	return select;
 }
 
-static void render_ansi(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
+static void render_ansi(RStrBuf *sb, const ut8 *c, const ut8 *d) {
 	int fg = 0;
 	int color = reduce8 (c[0], c[1], c[2]);
 	if (color == -1) {
 		return;
 	}
 	//if (c[0]<30 && c[1]<30 && c[2]<30) fg = 1;
-	cb_printf ("\x1b[%dm", color+(fg?30:40));
+	r_strbuf_appendf (sb, "\x1b[%dm", color+(fg?30:40));
 }
 
 static int rgb(int r, int g, int b) {
@@ -69,45 +68,45 @@ static int rgb(int r, int g, int b) {
 	return 16 + (r * 36) + (g * 6) + b;
 }
 
-static void render_sixel(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
+static void render_sixel(RStrBuf *sb, const ut8 *c, const ut8 *d) {
 	int r = (c[0] * 100 / 255);
 	int g = (c[1] * 100 / 255);
 	int b = (c[2] * 100 / 255);
-	cb_printf ("#0;2;%d;%d;%d", r, g, b); // bg is black
+	r_strbuf_appendf (sb, "#0;2;%d;%d;%d", r, g, b); // bg is black
 	r = (d[1] * 100 / 255);
 	g = (d[2] * 100 / 255);
 	b = (d[3] * 100 / 255);
-	cb_printf ("#1;2;%d;%d;%d", r, g, b); // fg is color
-	// cb_printf ("#%d!6%c", 1, 0x3f); // 6x6 pixel block
-	cb_printf ("#%d~~~~~~", 1); // 6x6 pixel block
+	r_strbuf_appendf (sb, "#1;2;%d;%d;%d", r, g, b); // fg is color
+	// r_strbuf_appendf (sb, "#%d!6%c", 1, 0x3f); // 6x6 pixel block
+	r_strbuf_appendf (sb, "#%d~~~~~~", 1); // 6x6 pixel block
 }
 
-static void render_256(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
-	cb_printf ("\x1b[%d;5;%dm", 38, rgb (c[0], c[1], c[2]));
-	cb_printf ("\x1b[%d;5;%dm", 48, rgb (d[0], d[1], d[2]));
+static void render_256(RStrBuf *sb, const ut8 *c, const ut8 *d) {
+	r_strbuf_appendf (sb, "\x1b[%d;5;%dm", 38, rgb (c[0], c[1], c[2]));
+	r_strbuf_appendf (sb, "\x1b[%d;5;%dm", 48, rgb (d[0], d[1], d[2]));
 }
 
-static void render_rgb(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
-	cb_printf ("\x1b[38;2;%d;%d;%dm", c[0], c[1], c[2]);
-	cb_printf ("\x1b[48;2;%d;%d;%dm", d[0], d[1], d[2]);
+static void render_rgb(RStrBuf *sb, const ut8 *c, const ut8 *d) {
+	r_strbuf_appendf (sb, "\x1b[38;2;%d;%d;%dm", c[0], c[1], c[2]);
+	r_strbuf_appendf (sb, "\x1b[48;2;%d;%d;%dm", d[0], d[1], d[2]);
 }
 
-static void render_greyscale(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
+static void render_greyscale(RStrBuf *sb, const ut8 *c, const ut8 *d) {
 	int color1 = (c[0] + c[1] + c[2]) / 3;
 	int color2 = (d[0] + d[1] + d[2]) / 3;
 	int k = 231 + ((int)((float)color1 / 10.3));
 	if (k < 232) {
 		k = 232;
 	}
-	cb_printf ("\x1b[%d;5;%dm", 48, k); // bg
+	r_strbuf_appendf (sb, "\x1b[%d;5;%dm", 48, k); // bg
 	k = 231 + ((int)((float)color2 / 10.3));
 	if (k < 232) {
 		k = 232;
 	}
-	cb_printf ("\x1b[%d;5;%dm", 38, k); // fg
+	r_strbuf_appendf (sb, "\x1b[%d;5;%dm", 38, k); // fg
 }
 
-static void render_ascii(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
+static void render_ascii(RStrBuf *sb, const ut8 *c, const ut8 *d) {
 	const char * const pal = " `.,-:+*%$#";
 	int idx, pal_len = strlen (pal);
 	float p = ((double)(c[0] + c[1] + c[2]) / 3);
@@ -116,14 +115,14 @@ static void render_ascii(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
 	if (idx >= pal_len) {
 		idx = pal_len - 1;
 	}
-	cb_printf ("%c", pal[idx]);
+	r_strbuf_appendf (sb, "%c", pal[idx]);
 }
 
-static void do_render(Renderer renderer, PrintfCallback cb_printf, const ut8 *buf, int len, int w, int h, int components) {
+static void do_render(Renderer renderer, RStrBuf *sb, const ut8 *buf, int len, int w, int h, int components) {
 	const ut8 *c, *d;
 	int x, y;
 	if (renderer == render_sixel) {
-		cb_printf ("\x1bPq");
+		r_strbuf_append (sb, "\x1bPq");
 		for (y = 0; y < h; y += 6) {
 			for (x = 0; x < w; x += 3) {
 				c = XY (buf, x, y);
@@ -131,11 +130,11 @@ static void do_render(Renderer renderer, PrintfCallback cb_printf, const ut8 *bu
 				if (d + 3 > (buf + len)) {
 					break;
 				}
-				render_sixel (cb_printf, c, d);
+				render_sixel (sb, c, d);
 			}
-			cb_printf ("$-");
+			r_strbuf_append (sb, "$-");
 		}
-		cb_printf ("\x1b\\\n");
+		r_strbuf_append (sb, "\x1b\\\n");
 		return;
 	}
 	for (y = 0; y < h; y += 2) {
@@ -145,12 +144,12 @@ static void do_render(Renderer renderer, PrintfCallback cb_printf, const ut8 *bu
 			if (d + 3 > (buf + len)) {
 				break;
 			}
-			renderer (cb_printf, c, d);
+			renderer (sb, c, d);
 			if (renderer != render_ascii) {
-				render_ascii (cb_printf, c, d);
+				render_ascii (sb, c, d);
 			}
 		}
-		cb_printf ((renderer == render_ascii)? "\n": "\x1b[0m\n");
+		r_strbuf_append (sb, (renderer == render_ascii)? "\n": "\x1b[0m\n");
 	}
 }
 
@@ -172,10 +171,13 @@ static Renderer select_renderer(int mode) {
 	}
 }
 
-R_API void r_cons_image(const ut8 *buf, int bufsz, int width, int mode, int components) {
+R_API char *r_cons_image(const ut8 *buf, int bufsz, int width, int mode, int components) {
+	R_RETURN_VAL_IF_FAIL (buf && bufsz >= 0 && width > 0 && components > 0, NULL);
 	const int height = (bufsz / width) / components;
 	Renderer renderer = select_renderer (mode);
-	do_render (renderer, r_cons_gprintf, buf, bufsz, width, height, components);
+	RStrBuf *sb = r_strbuf_new (NULL);
+	do_render (renderer, sb, buf, bufsz, width, height, components);
+	return r_strbuf_drain (sb);
 }
 
 #if 0
