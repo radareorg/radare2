@@ -53,8 +53,8 @@ EXPECT=<<EOF
 |           0x08000828      011d00f9       str x1, [x8, 0x38]          ; arg2
 |           0x0800082c      031900f9       str x3, [x8, 0x30]          ; arg4
 |           0x08000830      041500f9       str x4, [x8, 0x28]          ; arg5
-|           0x08000834      280000b0       adrp x8, 0x8005000
-|           0x08000838      08412091       add x8, x8, 0x810           ; str.O_n_
+|           0x08000834      280000b0       adrp x8, 0x8005000          ; RELOC 32 .rodata @ 0x080057f8 + 0x18
+|           0x08000838      08412091       add x8, x8, 0x810           ; RELOC 32 .rodata @ 0x080057f8 + 0x18 ; str.O_n_
 |           0x0800083c      0001c03d       ldr q0, [x8]                ; str.O_n_
 |           0x08000840      2001803d       str q0, [x9]
 |           0x08000844      080940f9       ldr x8, [x8, 0x10]

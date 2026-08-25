@@ -329,3 +329,15 @@ EXPECT=<<EOF
 0x000014f0 17 sym.plt.sub2
 EOF
 RUN
+
+NAME=x86_64 plt stubs keep their names with bin.relocs.apply
+FILE=bins/elf/pltrel/add.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+aaa
+afl~sym.plt.
+EOF
+EXPECT=<<EOF
+0x00001050    1     10 sym.plt.add2
+EOF
+RUN

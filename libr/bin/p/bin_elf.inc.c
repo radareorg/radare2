@@ -1690,48 +1690,39 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	R_VEC_FOREACH (relocs, reloc) {
 		ut64 plt_entry_addr = vaddr;
 		ut64 sym_addr = UT64_MAX;
+		const bool is_import = reloc->sym && reloc->sym < eo->imports_by_ord_size
+			&& eo->imports_by_ord[reloc->sym];
 
-		if (reloc->sym) {
-			if (reloc->sym < eo->imports_by_ord_size && eo->imports_by_ord[reloc->sym]) {
-				bool found;
-				sym_addr = ht_uu_find (relocs_by_sym, reloc->sym, &found);
-				if (found) {
-					plt_entry_addr = sym_addr;
-				}
-			} else if (reloc->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[reloc->sym]) {
-				sym_addr = eo->symbols_by_ord[reloc->sym]->vaddr;
+		if (is_import) {
+			bool found;
+			sym_addr = ht_uu_find (relocs_by_sym, reloc->sym, &found);
+			if (found) {
 				plt_entry_addr = sym_addr;
 			}
+		} else if (reloc->sym && reloc->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[reloc->sym]) {
+			sym_addr = eo->symbols_by_ord[reloc->sym]->vaddr;
+			plt_entry_addr = sym_addr;
 		}
-		// ut64 raddr = sym_addr? sym_addr: vaddr;
-		// For sBPF, use rel->rva for relocations without symbols (like R_BPF_64_RELATIVE)
-		ut64 raddr;
-		if (sym_addr && sym_addr != UT64_MAX) {
-			raddr = sym_addr;
-		} else {
-			raddr = vaddr;
-		}
+		const bool resolved = sym_addr && sym_addr != UT64_MAX;
+		const ut64 raddr = resolved? sym_addr: vaddr;
 		_patch_reloc (eo, eo->ehdr.e_machine, &b->iob, reloc, raddr, eo->baddr, plt_entry_addr, toc_base);
 		ptr = reloc_convert (eo, reloc, n_vaddr, ret);
 		if (!ptr) {
 			continue;
 		}
 
-		if (sym_addr && sym_addr != UT64_MAX) {
-			// PPC64 ET_REL only: S + A so multiple .rela.opd entries don't
-			// collapse onto the section base. Other architectures emit ET_REL
-			// relocs against section symbols + addend on every reference, and
-			// folding A in would alias ptr->vaddr onto unrelated instruction
-			// addresses (showing up as phantom RELOC comments mid-function).
-			const bool ppc64_etrel = eo->ehdr.e_type == ET_REL && eo->ehdr.e_machine == EM_PPC64;
-			ptr->vaddr = ppc64_etrel ? sym_addr + reloc->addend : sym_addr;
-		} else {
-			// In sBPF, symbol relocations are handled independently as R_BPF_64_64
-			if (eo->ehdr.e_machine != EM_SBPF) {
-				ptr->vaddr = vaddr;
-				ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
-				vaddr += cdsz;
+		// only imports move to their .got.r2 slot, where the patched bytes
+		// point; everything else is reported at its site
+		if (resolved) {
+			if (is_import) {
+				ptr->vaddr = sym_addr;
 			}
+		} else if (eo->ehdr.e_machine != EM_SBPF) {
+			if (is_import) {
+				ptr->vaddr = vaddr;
+			}
+			ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
+			vaddr += cdsz;
 		}
 	}
 	ht_uu_free (relocs_by_sym);

@@ -946,3 +946,12 @@ EXPECT=<<EOF
 \      `==< 0x0002e080      abffffea       b 0x2df34
 EOF
 RUN
+
+NAME=ELF: relocs.apply does not flag a defined symbol reloc on its function
+FILE=bins/elf/libcurl.so.4.2.0
+ARGS=-e bin.relocs.apply=true
+CMDS=f~0x0001de5c
+EXPECT=<<EOF
+0x0001de5c 604 sym.Curl_close
+EOF
+RUN
