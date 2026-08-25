@@ -5116,11 +5116,9 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 	const bool no_return = r_anal_noreturn_at_addr (a, fcn->addr);
 	pj_kb (pj, "noreturn", no_return);
 	pj_ks (pj, "ret", r_str_get_fail (ret_type, "void"));
-	{
-		const char *fcncc = r_anal_function_cc (fcn);
-		if (fcncc) {
-			pj_ks (pj, "callconv", fcncc);
-		}
+	const char *fcncc = r_anal_function_cc (fcn);
+	if (fcncc) {
+		pj_ks (pj, "callconv", fcncc);
 	}
 	pj_kn (pj, "argc", argc);
 	pj_k (pj, "args");
@@ -5137,7 +5135,10 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 			*comma = 0;
 			pj_ks (pj, "name", comma + 1);
 			pj_ks (pj, "type", arg_i);
-			const char *rn = r_reg_alias_getname (a->reg, R_REG_ALIAS_A0 + i);
+			const char *rn = fcncc? r_anal_cc_argloc (a, fcncc, i, 0, -1): NULL;
+			if (!rn) {
+				rn = r_reg_alias_getname (a->reg, R_REG_ALIAS_A0 + i);
+			}
 			if (rn) {
 				pj_ks (pj, "cc", rn);
 			}
