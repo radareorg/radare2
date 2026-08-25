@@ -25,6 +25,7 @@ static thread_id haiku_dbg_tid(RDebug *dbg, RIOHaikuDbg *hdbg) {
 
 // map a kernel debugger event to a stop reason, NONE for the boring ones
 static RDebugReasonType haiku_dbg_reason(RDebug *dbg, debug_debugger_message_data *msg, int32 code) {
+	dbg->reason.signum = -1;
 	switch (code) {
 	case B_DEBUGGER_MESSAGE_THREAD_DEBUGGED:
 		return R_DEBUG_REASON_STOPPED;
@@ -40,6 +41,7 @@ static RDebugReasonType haiku_dbg_reason(RDebug *dbg, debug_debugger_message_dat
 		dbg->reason.signum = msg->signal_received.signal;
 		return R_DEBUG_REASON_SIGNAL;
 	case B_DEBUGGER_MESSAGE_EXCEPTION_OCCURRED:
+		dbg->reason.signum = msg->exception_occurred.signal;
 		switch (msg->exception_occurred.exception) {
 		case B_SEGMENT_VIOLATION:
 			return R_DEBUG_REASON_SEGFAULT;
@@ -169,14 +171,16 @@ static bool haiku_dbg_continue(RDebug *dbg, int pid, int tid, int sig, bool sing
 		return false;
 	}
 	const thread_id t = (hdbg->stopped_thread >= 0)? hdbg->stopped_thread: (thread_id)tid;
-	const bool sigev = hdbg->event_code == B_DEBUGGER_MESSAGE_SIGNAL_RECEIVED;
-	// sig: -1 keeps the received signal, 0 drops it, else replaces it
+	const bool signal_event = hdbg->event_code == B_DEBUGGER_MESSAGE_SIGNAL_RECEIVED
+		|| hdbg->event_code == B_DEBUGGER_MESSAGE_EXCEPTION_OCCURRED;
+	// sig: -1 preserves the event, 0 suppresses it, else replaces its signal
 	uint32 handle = B_THREAD_DEBUG_HANDLE_EVENT;
-	if (sigev && sig >= 0 && sig != dbg->reason.signum) {
+	if (signal_event && sig >= 0 && sig != dbg->reason.signum) {
 		handle = B_THREAD_DEBUG_IGNORE_EVENT;
 	}
-	if (sig > 0 && (!sigev || sig != dbg->reason.signum)) {
-		send_signal (t, sig);
+	if (sig > 0 && (!signal_event || sig != dbg->reason.signum)
+			&& send_signal (t, sig) != B_OK) {
+		return false;
 	}
 	if (!r_haiku_continue_thread (hdbg->nub_port, t, single_step, handle)) {
 		return false;
