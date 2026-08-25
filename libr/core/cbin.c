@@ -3107,7 +3107,9 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 				pj_ks (pj, "classname", symbol->classname);
 			}
 			pj_ki (pj, "ordinal", symbol->ordinal);
-			pj_ks (pj, "bind", symbol->bind);
+			if (symbol->bind) {
+				pj_ks (pj, "bind", symbol->bind);
+			}
 			pj_kn (pj, "size", (ut64)symbol->attr.size);
 			const char *safetyName = r_bin_import_tags (core->bin, name);
 			if (safetyName) {
