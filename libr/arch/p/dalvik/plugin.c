@@ -62,14 +62,14 @@ typedef enum {
 
 static void format11x(int len, const ut8* data, ut32* dst) {
 	if (len > 1) {
-		*dst = data[1] & 0x0F;
+		*dst = data[1];
 	}
 }
 
 static void format11n(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 1) {
 		*dst = data[1] & 0x0F;
-		*src = (st32)((st8)((data[1] & 0xF0) >> 4)); // uhhh
+		*src = (st32)(st8)data[1] >> 4;
 	}
 }
 
@@ -86,10 +86,10 @@ static void format12x(int len, const ut8* data, ut32* dst, ut32* src) {
 	}
 }*/
 
-static void format21t(int len, const ut8* data, ut32* dst, ut32* src) {
+static void format21t(int len, const ut8* data, ut32* dst, st32* src) {
 	if (len > 3) {
 		*dst = data[1];
-		*src = 2*r_read_le16 (data + 2);
+		*src = 2 * (st32)(st16)r_read_le16 (data + 2);
 	}
 }
 
@@ -137,11 +137,11 @@ static void format22x(int len, const ut8* data, ut32* dst, ut32* src) {
 	}
 }
 
-static void format22t(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
+static void format22t(int len, const ut8* data, ut32* dst, ut32* src, st32* ref) {
 	if (len > 3) {
 		*dst = data[1] & 0x0F;
 		*src = (data[1] & 0xF0) >> 4;
-		*ref = 2*r_read_le16 (data + 2);
+		*ref = 2 * (st32)(st16)r_read_le16 (data + 2);
 	}
 }
 
