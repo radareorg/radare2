@@ -65,6 +65,47 @@ static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 	return ret;
 }
 
+static void normalize_dotnet_method_bodies(RBinFile *bf, RBinPEObj *pe, RList *symbols) {
+	R_RETURN_IF_FAIL (bf && bf->buf && pe && symbols);
+	const ut64 file_size = r_buf_size (bf->buf);
+	RListIter *iter;
+	DotNetSymbol *sym;
+	r_list_foreach (symbols, iter, sym) {
+		if (!sym->type || strcmp (sym->type, "methoddef") || !sym->vaddr) {
+			continue;
+		}
+		sym->paddr = PE_(va2pa) (pe, sym->vaddr);
+		if (sym->is_native || sym->paddr >= file_size) {
+			continue;
+		}
+		ut8 header[12];
+		if (r_buf_read_at (bf->buf, sym->paddr, header, 1) != 1) {
+			continue;
+		}
+		ut32 header_size = 0;
+		ut32 code_size = 0;
+		if ((header[0] & 3) == 2) {
+			header_size = 1;
+			code_size = header[0] >> 2;
+		} else if ((header[0] & 3) == 3
+				&& r_buf_read_at (bf->buf, sym->paddr, header, sizeof (header)) == sizeof (header)) {
+			ut16 flags_size = r_read_le16 (header);
+			header_size = ((flags_size >> 12) & 0xf) * 4;
+			code_size = r_read_le32 (header + 4);
+			if (header_size < sizeof (header)) {
+				header_size = 0;
+			}
+		}
+		if (!header_size || header_size > file_size - sym->paddr
+				|| code_size > file_size - sym->paddr - header_size) {
+			continue;
+		}
+		sym->paddr += header_size;
+		sym->vaddr += header_size;
+		sym->size = code_size;
+	}
+}
+
 static RList *get_dotnet_symbols(RBinFile *bf) {
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe || !pe->clr_hdr) {
@@ -76,6 +117,7 @@ static RList *get_dotnet_symbols(RBinFile *bf) {
 		if (data && size > 0 && size <= INT_MAX) {
 			ut64 image_base = PE_(r_bin_pe_get_image_base) (pe);
 			pe->dotnet_symbols = dotnet_parse (data, (int)size, image_base);
+			normalize_dotnet_method_bodies (bf, pe, pe->dotnet_symbols);
 		}
 	}
 	return pe->dotnet_symbols;
@@ -181,7 +223,7 @@ static RList* entries(RBinFile *bf) {
 					if (dsym->token == token && dsym->vaddr > 0) {
 						RBinAddr *ptr = R_NEW0 (RBinAddr);
 						ptr->vaddr = dsym->vaddr + image_base;
-						ptr->paddr = dsym->vaddr;
+						ptr->paddr = dsym->paddr;
 						ptr->type = R_BIN_ENTRY_TYPE_PROGRAM;
 						r_list_append (ret, ptr);
 						break;
@@ -295,6 +337,134 @@ static void find_pe_overlay(RBinFile *bf) {
 	}
 }
 
+static RBinAttribute dotnet_type_attr(ut32 flags) {
+	RBinAttribute attr = R_BIN_ATTR_NONE;
+	switch (flags & 7) {
+	case 1:
+	case 2:
+		attr |= R_BIN_ATTR_PUBLIC;
+		break;
+	case 3:
+		attr |= R_BIN_ATTR_PRIVATE;
+		break;
+	case 4:
+		attr |= R_BIN_ATTR_PROTECTED;
+		break;
+	case 5:
+		attr |= R_BIN_ATTR_INTERNAL;
+		break;
+	case 6:
+		attr |= R_BIN_ATTR_PROTECTED | R_BIN_ATTR_INTERNAL;
+		break;
+	default:
+		break;
+	}
+	if (flags & 0x20) {
+		attr |= R_BIN_ATTR_INTERFACE;
+	}
+	if (flags & 0x80) {
+		attr |= R_BIN_ATTR_ABSTRACT;
+	}
+	if (flags & 0x100) {
+		attr |= R_BIN_ATTR_SEALED;
+	}
+	return attr;
+}
+
+static RBinAttribute dotnet_method_attr(ut32 flags, const char *name) {
+	RBinAttribute attr = R_BIN_ATTR_NONE;
+	switch (flags & 7) {
+	case 1:
+		attr |= R_BIN_ATTR_PRIVATE;
+		break;
+	case 2:
+		attr |= R_BIN_ATTR_PRIVATE | R_BIN_ATTR_PROTECTED;
+		break;
+	case 3:
+		attr |= R_BIN_ATTR_INTERNAL;
+		break;
+	case 4:
+		attr |= R_BIN_ATTR_PROTECTED;
+		break;
+	case 5:
+		attr |= R_BIN_ATTR_PROTECTED | R_BIN_ATTR_INTERNAL;
+		break;
+	case 6:
+		attr |= R_BIN_ATTR_PUBLIC;
+		break;
+	default:
+		break;
+	}
+	if (flags & 0x10) {
+		attr |= R_BIN_ATTR_STATIC;
+	}
+	if (flags & 0x20) {
+		attr |= R_BIN_ATTR_FINAL;
+	}
+	if (flags & 0x40) {
+		attr |= R_BIN_ATTR_VIRTUAL;
+	}
+	if (flags & 0x400) {
+		attr |= R_BIN_ATTR_ABSTRACT;
+	}
+	if (flags & 0x2000) {
+		attr |= R_BIN_ATTR_EXTERN | R_BIN_ATTR_NATIVE;
+	}
+	if (name && (!strcmp (name, ".ctor") || !strcmp (name, ".cctor"))) {
+		attr |= R_BIN_ATTR_CONSTRUCTOR;
+	}
+	return attr;
+}
+
+static RBinAttribute dotnet_field_attr(ut32 flags) {
+	RBinAttribute attr = R_BIN_ATTR_NONE;
+	switch (flags & 7) {
+	case 1:
+		attr |= R_BIN_ATTR_PRIVATE;
+		break;
+	case 2:
+		attr |= R_BIN_ATTR_PRIVATE | R_BIN_ATTR_PROTECTED;
+		break;
+	case 3:
+		attr |= R_BIN_ATTR_INTERNAL;
+		break;
+	case 4:
+		attr |= R_BIN_ATTR_PROTECTED;
+		break;
+	case 5:
+		attr |= R_BIN_ATTR_PROTECTED | R_BIN_ATTR_INTERNAL;
+		break;
+	case 6:
+		attr |= R_BIN_ATTR_PUBLIC;
+		break;
+	default:
+		break;
+	}
+	if (flags & 0x10) {
+		attr |= R_BIN_ATTR_STATIC;
+	}
+	if (flags & 0x20) {
+		attr |= R_BIN_ATTR_READONLY;
+	}
+	if (flags & 0x40) {
+		attr |= R_BIN_ATTR_CONST;
+	}
+	return attr;
+}
+
+static char *dotnet_symbol_name_by_token(RList *symbols, ut32 token) {
+	RListIter *iter;
+	DotNetSymbol *sym;
+	r_list_foreach (symbols, iter, sym) {
+		if (sym->token != token || !sym->name) {
+			continue;
+		}
+		return R_STR_ISNOTEMPTY (sym->namespace)
+			? r_str_newf ("%s.%s", sym->namespace, sym->name): strdup (sym->name);
+	}
+	return NULL;
+}
+
 static RList* classes(RBinFile *bf) {
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe || !pe->dos_header || !pe->nt_headers) {
@@ -324,7 +494,8 @@ static RList* classes(RBinFile *bf) {
 			free (fullname);
 			break;
 		}
-		RBinClass *cls = r_bin_file_add_class (bf, fullname, NULL, 0);
+		char *super = dotnet_symbol_name_by_token (dotnet_symbols, dsym->extends_token);
+		RBinClass *cls = r_bin_file_add_class (bf, fullname, super, dotnet_type_attr (dsym->flags));
 		if (cls) {
 			cls->attr.lang = R_BIN_LANG_CIL;
 			if (!names_only && dsym->fields) {
@@ -333,11 +504,15 @@ static RList* classes(RBinFile *bf) {
 				r_list_foreach (dsym->fields, iter_field, dfield) {
 					RBinField *field = RVecRBinField_emplace_back (&cls->fields);
 					field->name = r_bin_name_new (dfield->name);
+					field->type = r_bin_name_new (r_str_get_fail (dfield->type_name, "unknown"));
 					field->attr.kind = R_BIN_FIELD_KIND_FIELD;
+					field->attr.lang = R_BIN_LANG_CIL;
+					field->attr.flags = dotnet_field_attr (dfield->flags);
 					field->attr.offset = dfield->offset;
 				}
 			}
 		}
+		free (super);
 		free (fullname);
 	}
 	if (names_only) {
@@ -348,40 +523,41 @@ static RList* classes(RBinFile *bf) {
 		if (!dsym->name || !dsym->type || strcmp (dsym->type, "methoddef")) {
 			continue;
 		}
-		// Method names are "Namespace.ClassName.MethodName"; the method has
-		// no embedded dots so split at the last dot.
-		char *tmp = strdup (dsym->name);
-		char *split = strrchr (tmp, '.');
-		if (!split || split == tmp) {
-			free (tmp);
+		if (!R_STR_ISNOTEMPTY (dsym->classname) || !R_STR_ISNOTEMPTY (dsym->short_name)) {
 			continue;
 		}
-		*split = '\0';
-		const char *method_name = split + 1;
 		if (!bf->rbin->options.load_unnamed
-				&& (r_bin_name_is_unnamed (tmp) || r_bin_name_is_unnamed (method_name))) {
-			free (tmp);
+				&& (r_bin_name_is_unnamed (dsym->classname) || r_bin_name_is_unnamed (dsym->short_name))) {
 			continue;
 		}
-		RBinClass *cls = r_bin_file_add_class (bf, tmp, NULL, 0);
+		RBinClass *cls = r_bin_file_add_class (bf, dsym->classname, NULL, 0);
 		if (cls) {
 			cls->attr.lang = R_BIN_LANG_CIL;
 		}
-		RBinSymbol *m = r_bin_class_add_method (bf, tmp, method_name, 0);
+		RBinSymbol *m = r_bin_class_add_method (bf, dsym->classname, dsym->short_name, dsym->param_count);
 		if (m) {
 			m->attr.lang = R_BIN_LANG_CIL;
+			m->attr.flags = dotnet_method_attr (dsym->flags, dsym->short_name);
 			m->vaddr = dsym->vaddr + image_base;
-			m->paddr = dsym->vaddr;
+			m->paddr = dsym->paddr;
 			m->bind = R_BIN_BIND_GLOBAL_STR;
 			m->type = R_BIN_TYPE_FUNC_STR;
 			m->attr.size = dsym->size;
+			m->rtype = strdup (r_str_get_fail (dsym->return_type, "unknown"));
+			m->arg_first = 0;
+			m->arg_count = dsym->param_count;
+			m->cc_arg_count = dsym->param_count;
+			m->ret_count = dsym->ret_count;
+			m->arg_prefix = "a";
+			if (dsym->signature) {
+				m->name->name = strdup (dsym->short_name);
+				r_bin_name_update (m->name, dsym->signature);
+			}
 		}
-		free (tmp);
 	}
 	return NULL;
 }
 
-#ifndef R_BIN_PE64
 static char* types(RBinFile *bf) {
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe || !pe->dos_header || !pe->nt_headers) {
@@ -413,20 +589,21 @@ static char* types(RBinFile *bf) {
 				DotNetField *field;
 				r_list_foreach (dsym->fields, iter_field, field) {
 					if (field->name) {
-						r_strbuf_appendf (sb, "  %s;\n", field->name);
+						r_strbuf_appendf (sb, "  %s %s;\n",
+							r_str_get_fail (field->type_name, "unknown"), field->name);
 					}
 				}
 			}
 			r_strbuf_append (sb, "};\n\n");
 		} else if (dsym->type && !strcmp (dsym->type, "methoddef")) {
 			// Function signature
-			r_strbuf_appendf (sb, "void %s();\n", dsym->name);
+			r_strbuf_appendf (sb, "%s %s();\n",
+				r_str_get_fail (dsym->return_type, "unknown"), dsym->name);
 		}
 	}
 
 	return r_strbuf_drain (sb);
 }
-#endif
 
 static bool symbols_vec(RBinFile *bf) {
 	RBinSymbol *ptr = NULL;
@@ -502,6 +679,10 @@ static bool symbols_vec(RBinFile *bf) {
 						} else {
 							ptr->name = r_bin_name_new (dsym->name);
 						}
+						if (ptr->name && dsym->signature) {
+							ptr->name->name = strdup (dsym->name);
+							r_bin_name_update (ptr->name, dsym->signature);
+						}
 						ptr->type = R_BIN_TYPE_FUNC_STR;
 						ptr->bind = R_BIN_BIND_GLOBAL_STR;
 						if (dsym->is_native) {
@@ -512,19 +693,20 @@ static bool symbols_vec(RBinFile *bf) {
 							}
 						} else {
 							ptr->attr.lang = R_BIN_LANG_CIL;
-							if (dsym->param_count > 0 || dsym->ret_count > 0) {
-								ptr->arg_first = 0;
-								ptr->arg_count = dsym->param_count;
-								ptr->arg_prefix = "a";
-								ptr->ret_count = dsym->ret_count;
-								if (!dsym->is_instance) {
-									ptr->attr.flags |= R_BIN_ATTR_STATIC;
-								}
+							ptr->rtype = strdup (r_str_get_fail (dsym->return_type, "unknown"));
+							ptr->arg_first = 0;
+							ptr->arg_count = dsym->param_count;
+							ptr->cc_arg_count = dsym->param_count;
+							ptr->arg_prefix = "a";
+							ptr->ret_count = dsym->ret_count;
+							ptr->attr.flags |= dotnet_method_attr (dsym->flags, dsym->short_name);
+							if (!dsym->is_instance) {
+								ptr->attr.flags |= R_BIN_ATTR_STATIC;
 							}
 						}
 						if (dsym->vaddr > 0) {
 							ptr->vaddr = dsym->vaddr + image_base;
-							ptr->paddr = dsym->vaddr;
+							ptr->paddr = dsym->paddr;
 						}
 						ptr->attr.size = dsym->size;
 					}
@@ -967,79 +1149,216 @@ static RList *compute_hashes(RBinFile *bf) {
 	return file_hashes;
 }
 
-#ifndef R_BIN_PE64
+static const char *dotnet_token_name(RList *symbols, ut32 token) {
+	RListIter *iter;
+	DotNetSymbol *sym;
+	r_list_foreach (symbols, iter, sym) {
+		if (sym->token == token) {
+			return sym->signature? sym->signature: sym->name;
+		}
+	}
+	return NULL;
+}
+
+static bool dotnet_compressed_length(const ut8 *buf, int available, ut32 *value, int *prefix_size) {
+	if (available < 1 || !value || !prefix_size) {
+		return false;
+	}
+	if (!(buf[0] & 0x80)) {
+		*value = buf[0];
+		*prefix_size = 1;
+		return true;
+	}
+	if ((buf[0] & 0xc0) == 0x80 && available >= 2) {
+		*value = ((ut32)(buf[0] & 0x3f) << 8) | buf[1];
+		*prefix_size = 2;
+		return true;
+	}
+	if ((buf[0] & 0xe0) == 0xc0 && available >= 4) {
+		*value = ((ut32)(buf[0] & 0x1f) << 24) | ((ut32)buf[1] << 16)
+			| ((ut32)buf[2] << 8) | buf[3];
+		*prefix_size = 4;
+		return true;
+	}
+	return false;
+}
+
+typedef struct {
+	char *string;
+	ut64 paddr;
+	ut64 vaddr;
+	ut32 size;
+	ut32 length;
+	ut32 encoded_size;
+} DotNetUserString;
+
+static bool dotnet_user_string_at(RBinFile *bf, RBinPEObj *pe, ut32 index, DotNetUserString *result) {
+	if (!bf || !bf->buf || !pe || !pe->clr_hdr || !pe->streams || !index || !result) {
+		return false;
+	}
+	int i;
+	for (i = 0; pe->streams[i]; i++) {
+		PE_(image_metadata_stream) *stream = pe->streams[i];
+		if (!stream->Name || strcmp (stream->Name, "#US")) {
+			continue;
+		}
+		ut32 stream_size = stream->Size;
+		if (index >= stream_size) {
+			return false;
+		}
+		ut64 stream_rva = (ut64)pe->clr_hdr->MetaDataDirectoryAddress + stream->Offset;
+		ut64 offset = PE_(va2pa) (pe, stream_rva) + index;
+		ut8 prefix[4];
+		int available = R_MIN ((ut32)sizeof (prefix), stream_size - index);
+		if (r_buf_read_at (bf->buf, offset, prefix, available) != available) {
+			return false;
+		}
+		ut32 length;
+		int prefix_size;
+		if (!dotnet_compressed_length (prefix, available, &length, &prefix_size)
+				|| !length || length > stream_size - index - prefix_size
+				|| length - 1 > (INT_MAX - 1) / 2) {
+			return false;
+		}
+		int utf16_size = length - 1; // Last byte is the ECMA-335 terminal flag.
+		ut8 *utf16 = malloc (R_MAX (utf16_size, 1));
+		ut8 *utf8 = malloc (utf16_size * 2 + 1);
+		if (!utf16 || !utf8
+				|| (utf16_size && r_buf_read_at (bf->buf,
+					offset + prefix_size, utf16, utf16_size) != utf16_size)) {
+			free (utf16);
+			free (utf8);
+			return false;
+		}
+		int utf8_size = r_str_utf16_to_utf8 (utf8, utf16_size * 2 + 1,
+			utf16, utf16_size, false);
+		free (utf16);
+		if (utf8_size < 0) {
+			free (utf8);
+			return false;
+		}
+		utf8[utf8_size] = 0;
+		*result = (DotNetUserString){
+			.string = (char *)utf8,
+			.paddr = offset + prefix_size,
+			.vaddr = PE_(r_bin_pe_get_image_base) (pe) + stream_rva + index + prefix_size,
+			.size = utf16_size,
+			.length = r_utf8_strlen (utf8),
+			.encoded_size = prefix_size + length,
+		};
+		return true;
+	}
+	return false;
+}
+
+static const char *dotnet_user_string(RBinFile *bf, RBinPEObj *pe, ut32 index) {
+	DotNetUserString us = {0};
+	if (!dotnet_user_string_at (bf, pe, index, &us)) {
+		return NULL;
+	}
+	char *escaped = r_str_escape (us.string);
+	free (us.string);
+	char *quoted = escaped? r_str_newf ("\"%s\"", escaped): NULL;
+	free (escaped);
+	const char *result = r_str_constpool_get (&bf->rbin->constpool, quoted);
+	free (quoted);
+	return result;
+}
+
+static RVecRBinString *strings(RBinFile *bf) {
+	RVecRBinString *ret = r_bin_file_get_strings (bf,
+		bf->rbin->options.minstrlen, 0, bf->rawstr);
+	if (!ret) {
+		ret = RVecRBinString_new ();
+	}
+	RBinPEObj *pe = PE_(get) (bf);
+	if (!ret || !pe || !pe->clr_hdr || !pe->streams) {
+		return ret;
+	}
+	int i;
+	for (i = 0; pe->streams[i]; i++) {
+		PE_(image_metadata_stream) *stream = pe->streams[i];
+		if (!stream->Name || strcmp (stream->Name, "#US")) {
+			continue;
+		}
+		ut32 index = 1; // Offset zero is reserved by ECMA-335.
+		while (index < stream->Size) {
+			DotNetUserString us = {0};
+			if (!dotnet_user_string_at (bf, pe, index, &us)) {
+				break;
+			}
+			RBinString *bs = RVecRBinString_emplace_back (ret);
+			if (!bs) {
+				free (us.string);
+				break;
+			}
+			*bs = (RBinString){
+				.string = us.string,
+				.vaddr = us.vaddr,
+				.paddr = us.paddr,
+				.ordinal = index,
+				.size = us.size,
+				.length = us.length,
+				.type = R_STRING_TYPE_WIDE,
+			};
+			index += us.encoded_size;
+		}
+		break;
+	}
+	return ret;
+}
+
 static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe || !pe->clr_hdr) {
 		return NULL;
 	}
+	if (type == 's') {
+		return dotnet_user_string (bf, pe, idx);
+	}
 	RList *dotnet_symbols = get_dotnet_symbols (bf);
 	if (!dotnet_symbols) {
 		return NULL;
 	}
-	RListIter *iter;
-	DotNetSymbol *dsym;
+	(void)sd;
 	ut32 token = 0;
 	switch (type) {
-	case 'm': // methoddef or memberref
-		token = (0x06 << 24) | idx; // try methoddef first
-		r_list_foreach (dotnet_symbols, iter, dsym) {
-			if (dsym->token == token) {
-				return dsym->name;
-			}
-		}
-		token = (0x0A << 24) | idx; // try memberref
-		r_list_foreach (dotnet_symbols, iter, dsym) {
-			if (dsym->token == token) {
-				return dsym->name;
-			}
-		}
-		break;
-	case 't': // typedef
-		token = (0x02 << 24) | idx;
-		r_list_foreach (dotnet_symbols, iter, dsym) {
-			if (dsym->token == token) {
-				return dsym->name;
-			}
-		}
-		break;
-	case 'r': // typeref
-		token = (0x01 << 24) | idx;
-		r_list_foreach (dotnet_symbols, iter, dsym) {
-			if (dsym->token == token) {
-				return dsym->name;
-			}
-		}
-		break;
-	case 'f': // field
-		token = (0x04 << 24) | idx;
-		r_list_foreach (dotnet_symbols, iter, dsym) {
-			if (dsym->token == token) {
-				return dsym->name;
-			}
-		}
-		break;
-	case 's': // strings
-		if (pe->streams) {
-			int i;
-			for (i = 0; pe->streams[i]; i++) {
-				if (pe->streams[i]->Name && !strcmp (pe->streams[i]->Name, "#Strings")) {
-					DATA_DIRECTORY *metadata_dir = (DATA_DIRECTORY *)((ut8*)pe->clr_hdr + 8);
-					ut64 rva = metadata_dir->VirtualAddress + pe->streams[i]->Offset + idx;
-					ut64 offset = PE_(va2pa) (pe, rva);
-					const char *str = r_buf_get_string (pe->b, offset);
-					if (str) {
-						char *escaped = r_str_escape (str);
-						char *quoted = r_str_newf ("\"%s\"", escaped);
-						free (escaped);
-						return quoted;
-					}
-					return NULL;
-				}
-			}
-		}
-		break;
+	case 'r': token = 0x01000000 | idx; break;
+	case 't': token = 0x02000000 | idx; break;
+	case 'f': token = 0x04000000 | idx; break;
+	case 'm': token = 0x06000000 | idx; break;
+	case 'M': token = 0x0a000000 | idx; break;
+	case 'S': token = 0x11000000 | idx; break;
+	case 'T': token = 0x1b000000 | idx; break;
+	case 'g': token = 0x2b000000 | idx; break;
+	default: break;
 	}
-	return NULL;
+	return token? dotnet_token_name (dotnet_symbols, token): NULL;
 }
-#endif
+
+static ut64 getoffset(RBinFile *bf, int type, int idx) {
+	RBinPEObj *pe = PE_(get) (bf);
+	if (!pe || !pe->clr_hdr || idx < 0) {
+		return UT64_MAX;
+	}
+	if (type == 's') {
+		DotNetUserString us = {0};
+		if (!dotnet_user_string_at (bf, pe, idx, &us)) {
+			return UT64_MAX;
+		}
+		free (us.string);
+		return us.vaddr;
+	}
+	ut32 token = type == 'm'? 0x06000000 | idx: 0;
+	RList *dotnet_symbols = token? get_dotnet_symbols (bf): NULL;
+	if (dotnet_symbols) {
+		RListIter *iter;
+		DotNetSymbol *sym;
+		r_list_foreach (dotnet_symbols, iter, sym) {
+			if (sym->token == token && sym->vaddr) {
+				return PE_(r_bin_pe_get_image_base) (pe) + sym->vaddr;
+			}
+		}
+	}
+	return UT64_MAX;
+}

@@ -148,10 +148,39 @@ typedef struct _TILDE_HEADER {
 // them. This only includes the ones we care about.
 // ECMA-335 Section II.23.1.16
 //
+#define ELEMENT_TYPE_END 0x00
 #define ELEMENT_TYPE_VOID 0x01
+#define ELEMENT_TYPE_BOOLEAN 0x02
+#define ELEMENT_TYPE_CHAR 0x03
+#define ELEMENT_TYPE_I1 0x04
+#define ELEMENT_TYPE_U1 0x05
+#define ELEMENT_TYPE_I2 0x06
+#define ELEMENT_TYPE_U2 0x07
+#define ELEMENT_TYPE_I4 0x08
+#define ELEMENT_TYPE_U4 0x09
+#define ELEMENT_TYPE_I8 0x0A
+#define ELEMENT_TYPE_U8 0x0B
+#define ELEMENT_TYPE_R4 0x0C
+#define ELEMENT_TYPE_R8 0x0D
 #define ELEMENT_TYPE_STRING 0x0E
+#define ELEMENT_TYPE_PTR 0x0F
+#define ELEMENT_TYPE_BYREF 0x10
+#define ELEMENT_TYPE_VALUETYPE 0x11
+#define ELEMENT_TYPE_CLASS 0x12
+#define ELEMENT_TYPE_VAR 0x13
+#define ELEMENT_TYPE_ARRAY 0x14
+#define ELEMENT_TYPE_GENERICINST 0x15
+#define ELEMENT_TYPE_TYPEDBYREF 0x16
+#define ELEMENT_TYPE_I 0x18
+#define ELEMENT_TYPE_U 0x19
+#define ELEMENT_TYPE_FNPTR 0x1B
+#define ELEMENT_TYPE_OBJECT 0x1C
+#define ELEMENT_TYPE_SZARRAY 0x1D
+#define ELEMENT_TYPE_MVAR 0x1E
 #define ELEMENT_TYPE_CMOD_REQD 0x1F
 #define ELEMENT_TYPE_CMOD_OPT 0x20
+#define ELEMENT_TYPE_SENTINEL 0x41
+#define ELEMENT_TYPE_PINNED 0x45
 
 
 // The string length of a typelib attribute is at most 0xFF.
@@ -358,11 +387,17 @@ typedef struct _INDEX_SIZES {
 typedef struct {
 	char *name;
 	ut64 vaddr;
+	ut64 paddr;
 	ut32 size;
 	char *namespace;  // For types
+	char *classname;  // Declaring class for methods and fields
+	char *short_name; // Unqualified method/type/member name
+	char *signature;  // Canonical source signature for method tokens
+	char *return_type;
 	char *type;       // "typedef", "methoddef", "memberref", "typeref", etc.
 	ut32 flags;       // access flags, etc.
 	ut32 token;       // Token value for symbolication
+	ut32 extends_token;
 	bool is_native;   // true if method is native code, false if IL
 	bool is_instance; // For methoddef: HASTHIS flag, first arg slot is `this`
 	ut16 param_count; // For methoddef: argument slot count including implicit 'this'
@@ -379,8 +414,10 @@ typedef struct {
 
 typedef struct {
 	char *name;
+	char *type_name;
 	ut32 flags;
 	ut32 offset;
+	ut32 token;
 } DotNetField;
 
 typedef struct {

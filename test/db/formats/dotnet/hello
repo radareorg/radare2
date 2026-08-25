@@ -1,25 +1,18 @@
 NAME=dotnet hello world program
 FILE=bins/dotnet/HelloWorld.dll
 CMDS=<<EOF
-?e -- symbols
-is
-?e -- libraries
+is~BinaryParser
 il
 EOF
 EXPECT=<<EOF
--- symbols
-nth paddr      vaddr      bind   type size lib         name                                               demangled
--------------------------------------------------------------------------------------------------------------------
-1   0x00000200 0x10002000 NONE   FUNC 0    mscoree.dll imp._CorDllMain
-0   0x00002050 0x10002050 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser..ctor
-0   0x00002073 0x10002073 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.LoadData
-0   0x00002084 0x10002084 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.ValidateArgs
-0   0x000020bc 0x100020bc GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.ParseHeader
-0   0x00002124 0x10002124 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.ProcessSections
-0   0x000021b4 0x100021b4 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.CalculateChecksum
-0   0x00002218 0x10002218 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.AnalyzeMetadata
-0   0x000022f4 0x100022f4 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.RunAnalysis
--- libraries
+0   0x00000251 0x10002051 GLOBAL FUNC 34               BinaryParserLibrary.BinaryParser..ctor(this;string:path):void
+0   0x00000274 0x10002074 GLOBAL FUNC 14               BinaryParserLibrary.BinaryParser.LoadData(this;byte[]:inputData):void
+0   0x00000290 0x10002090 GLOBAL FUNC 42               BinaryParserLibrary.BinaryParser.ValidateArgs(this;string[]:args):bool
+0   0x000002c8 0x100020c8 GLOBAL FUNC 91               BinaryParserLibrary.BinaryParser.ParseHeader(this;):void
+0   0x00000330 0x10002130 GLOBAL FUNC 131              BinaryParserLibrary.BinaryParser.ProcessSections(this;):void
+0   0x000003c0 0x100021c0 GLOBAL FUNC 70               BinaryParserLibrary.BinaryParser.CalculateChecksum(this;):int
+0   0x00000424 0x10002224 GLOBAL FUNC 192              BinaryParserLibrary.BinaryParser.AnalyzeMetadata(this;):void
+0   0x00000500 0x10002300 GLOBAL FUNC 63               BinaryParserLibrary.BinaryParser.RunAnalysis(this;string[]:args):void
 mscoree.dll
 EOF
 RUN

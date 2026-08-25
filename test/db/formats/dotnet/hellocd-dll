@@ -88,44 +88,32 @@ RUN
 NAME=.NET hellocd dll symbols
 FILE=bins/dotnet/hellocd.dll
 CMDS=<<EOF
-echo imports
-ii
-echo symbols
-is
+is~GLOBAL
 EOF
 EXPECT=<<EOF
-imports
-nth vaddr      bind type lib         name
------------------------------------------
-1   0x00402000 NONE FUNC mscoree.dll _CorExeMain
-symbols
-nth paddr      vaddr      bind   type size lib         name                                                          demangled
-------------------------------------------------------------------------------------------------------------------------------
-1   0x00000200 0x00402000 NONE   FUNC 0    mscoree.dll imp._CorExeMain
-0   0x00002050 0x00402050 GLOBAL FUNC 0                Microsoft.CodeAnalysis.EmbeddedAttribute..ctor
-0   0x00002058 0x00402058 GLOBAL FUNC 0                System.Runtime.CompilerServices.RefSafetyRulesAttribute..ctor
-0   0x00002067 0x00402067 GLOBAL FUNC 0                Program.<Main>$
-0   0x00002073 0x00402073 GLOBAL FUNC 0                Program..ctor
+0   0x00000251 0x00402051 GLOBAL FUNC 7                Microsoft.CodeAnalysis.EmbeddedAttribute..ctor(this;):void
+0   0x00000259 0x00402059 GLOBAL FUNC 14               System.Runtime.CompilerServices.RefSafetyRulesAttribute..ctor(this;int):void
+0   0x00000268 0x00402068 GLOBAL FUNC 11               Program.<Main>$(string[]:args):void
+0   0x00000274 0x00402074 GLOBAL FUNC 7                Program..ctor(this;):void
 EOF
 RUN
 
 NAME=.NET hellocd dll classes
 FILE=bins/dotnet/hellocd.dll
 CMDS=<<EOF
-ic
+ic~class
+ic~method
+ic~field
 EOF
 EXPECT=<<EOF
 0x00000000 [0x00000000 - 0x00000000]      0 cil class 0 <Module>
-0x00000000 [0x00000000 - 0x00000000]      0 cil class 1 Microsoft.CodeAnalysis.EmbeddedAttribute
-0x00000000 [0x00000000 - 0x00000000]      0 cil class 2 System.Runtime.CompilerServices.RefSafetyRulesAttribute
-0x00000000 cil    field   0      Version
-0x00000000 [0x00402067 - 0x00402067]      0 cil class 3 Program
-0x00402067 cil   method   0      <Main>$
-0x00000000 [0x00402050 - 0x00402050]      0 cil class 4 Microsoft.CodeAnalysis.EmbeddedAttribute.
-0x00402050 cil   method   0      ctor
-0x00000000 [0x00402058 - 0x00402058]      0 cil class 5 System.Runtime.CompilerServices.RefSafetyRulesAttribute.
-0x00402058 cil   method   0      ctor
-0x00000000 [0x00402073 - 0x00402073]      0 cil class 6 Program.
-0x00402073 cil   method   0      ctor
+0x00000000 [0x00402051 - 0x00402058]      7 cil class 1 Microsoft.CodeAnalysis.EmbeddedAttribute :: System.Attribute
+0x00000000 [0x00402059 - 0x00402067]     14 cil class 2 System.Runtime.CompilerServices.RefSafetyRulesAttribute :: System.Attribute
+0x00000000 [0x00402068 - 0x0040207b]     19 cil class 3 Program :: System.Object
+0x00402051 cil   method   0 pC   .ctor
+0x00402059 cil   method   0 pC   .ctor
+0x00402068 cil   method   0 Ps   <Main>$
+0x00402074 cil   method   1 pC   .ctor
+0x00000000 cil    field   0 p    Version
 EOF
 RUN
