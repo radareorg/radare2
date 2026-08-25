@@ -10,6 +10,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=dalvik signed const ESIL
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=dalvik
+wx 12f1
+ao~esil:
+EOF
+EXPECT=<<EOF
+esil: -1,v1,=
+EOF
+RUN
+
 NAME=dalvik ESIL uses VM result registers
 FILE=malloc://16
 CMDS=<<EOF
@@ -22,6 +34,33 @@ EOF
 EXPECT=<<EOF
 esil: result,v200,=
 esil: v200,result,=,sp,[4],ip,=,4,sp,+=
+EOF
+RUN
+
+NAME=dalvik standard memory access ESIL
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=dalvik
+wx 44010203
+ao~esil:
+wx 4d010203
+ao~esil:
+wx 54346e03
+ao~esil:
+wx 5b346e03
+ao~esil:
+wx 62c86e03
+ao~esil:
+wx 69c86e03
+ao~esil:
+EOF
+EXPECT=<<EOF
+esil: 4,v3,*,4,+,v2,+,[4],v1,=
+esil: v1,4,v3,*,4,+,v2,+,=[4]
+esil: 878,v3,+,[4],v4,=
+esil: v4,878,v3,+,=[4]
+esil: 878,[4],v200,=
+esil: v200,878,=[4]
 EOF
 RUN
 

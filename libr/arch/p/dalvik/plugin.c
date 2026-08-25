@@ -220,6 +220,133 @@ static void format51l(int len, const ut8* data, ut32* dst, st64* src) {
 	}
 }
 
+typedef struct {
+	RAnalDataType datatype;
+	ut8 size;
+	bool sign;
+} DalvikValue;
+
+static DalvikValue value_info(ut8 kind) {
+	static const DalvikValue values[] = {
+		{ R_ANAL_DATATYPE_INT32, 4, false }, // int or float
+		{ R_ANAL_DATATYPE_INT64, 8, false }, // wide
+		{ R_ANAL_DATATYPE_OBJECT, 4, false },
+		{ R_ANAL_DATATYPE_BOOLEAN, 1, false },
+		{ R_ANAL_DATATYPE_INT32, 1, true }, // byte
+		{ R_ANAL_DATATYPE_INT16, 2, false }, // char
+		{ R_ANAL_DATATYPE_INT16, 2, true }, // short
+	};
+	return values[kind < R_ARRAY_SIZE (values)? kind: 0];
+}
+
+static void esil_load(RAnalOp *op, const char *address, int size, bool sign, ut32 dst) {
+	if (size == 8) {
+		esilprintf (op, "%s,[8]," SETWIDE, address, dst, dst + 1);
+	} else if (sign) {
+		esilprintf (op, "%d,%s,[%d],~,v%u,=", size * 8, address, size, dst);
+	} else {
+		esilprintf (op, "%s,[%d],v%u,=", address, size, dst);
+	}
+}
+
+static void esil_store(RAnalOp *op, const char *address, int size, ut32 src) {
+	if (size == 8) {
+		esilprintf (op, GETWIDE ",%s,=[8]", src + 1, src, address);
+	} else {
+		esilprintf (op, "v%u,%s,=[%d]", src, address, size);
+	}
+}
+
+static void array_access(RAnalOp *op, const ut8 *data, int len, RAnalOpMask mask, bool store) {
+	ut32 vA = 0;
+	ut32 vB = 0;
+	ut32 vC = 0;
+	format23x (len, data, &vA, &vB, &vC);
+	ut8 kind = data[0] - (store? 0x4b: 0x44);
+	DalvikValue value = value_info (kind);
+	op->type = store? R_ANAL_OP_TYPE_STORE: R_ANAL_OP_TYPE_LOAD;
+	op->direction = store? R_ANAL_OP_DIR_WRITE: R_ANAL_OP_DIR_READ;
+	op->refptr = value.size;
+	op->datatype = value.datatype;
+	if (mask & R_ARCH_OP_MASK_ESIL) {
+		// Abstract Dalvik arrays as a length word followed by packed elements.
+		char *address = r_str_newf ("%d,v%u,*,4,+,v%u,+", value.size, vC, vB);
+		if (store) {
+			esil_store (op, address, value.size, vA);
+		} else {
+			esil_load (op, address, value.size, value.sign, vA);
+		}
+		free (address);
+	}
+}
+
+static void field_access(RArch *a, RAnalOp *op, const ut8 *data, int len, RAnalOpMask mask, bool store, ut8 kind) {
+	ut32 vA = 0;
+	ut32 vB = 0;
+	ut32 field = 0;
+	format22c (len, data, &vA, &vB, &field);
+	DalvikValue value = value_info (kind);
+	op->type = store? R_ANAL_OP_TYPE_STORE: R_ANAL_OP_TYPE_LOAD;
+	op->direction = store? R_ANAL_OP_DIR_WRITE: R_ANAL_OP_DIR_READ;
+	op->refptr = value.size;
+	op->ptr = _anal_get_offset (a, 'f', field);
+	op->datatype = value.datatype;
+	if (mask & R_ARCH_OP_MASK_ESIL) {
+		ut64 offset = op->ptr == UT64_MAX? field: op->ptr;
+		char *address = r_str_newf ("%" PFMT64u ",v%u,+", offset, vB);
+		if (store) {
+			esil_store (op, address, value.size, vA);
+		} else {
+			esil_load (op, address, value.size, value.sign, vA);
+		}
+		free (address);
+	}
+}
+
+static void static_access(RArch *a, RAnalOp *op, const ut8 *data, int len, RAnalOpMask mask, bool store, ut8 kind) {
+	ut32 vA = 0;
+	ut32 field = 0;
+	format21c (len, data, &vA, &field);
+	DalvikValue value = value_info (kind);
+	op->type = store? R_ANAL_OP_TYPE_STORE: R_ANAL_OP_TYPE_LOAD;
+	op->direction = store? R_ANAL_OP_DIR_WRITE: R_ANAL_OP_DIR_READ;
+	op->refptr = value.size;
+	op->ptr = _anal_get_offset (a, 'f', field);
+	op->datatype = value.datatype;
+	if (mask & R_ARCH_OP_MASK_ESIL) {
+		ut64 address = op->ptr == UT64_MAX? field: op->ptr;
+		char *address_esil = r_str_newf ("%" PFMT64u, address);
+		if (store) {
+			esil_store (op, address_esil, value.size, vA);
+		} else {
+			esil_load (op, address_esil, value.size, value.sign, vA);
+		}
+		free (address_esil);
+	}
+}
+
+static void quick_access(RAnalOp *op, const ut8 *data, int len, RAnalOpMask mask, bool store, ut8 kind) {
+	ut32 vA = 0;
+	ut32 vB = 0;
+	ut32 offset = 0;
+	format22c (len, data, &vA, &vB, &offset);
+	DalvikValue value = value_info (kind);
+	op->type = store? R_ANAL_OP_TYPE_STORE: R_ANAL_OP_TYPE_LOAD;
+	op->direction = store? R_ANAL_OP_DIR_WRITE: R_ANAL_OP_DIR_READ;
+	op->refptr = value.size;
+	op->ptr = offset;
+	op->datatype = value.datatype;
+	if (mask & R_ARCH_OP_MASK_ESIL) {
+		char *address = r_str_newf ("%u,v%u,+", offset, vB);
+		if (store) {
+			esil_store (op, address, value.size, vA);
+		} else {
+			esil_load (op, address, value.size, value.sign, vA);
+		}
+		free (address);
+	}
+}
+
 static void method_call(RArch *a, RAnalOp *op, const ut8 *data, int len, RAnalOpMask mask) {
 	op->fail = op->addr + op->size;
 	op->direction = R_ANAL_OP_DIR_EXEC;
@@ -1044,7 +1171,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			ut64 offset = _anal_get_offset (a, 's', vB);
 			op->ptr = offset;
 			if (mask & R_ARCH_OP_MASK_ESIL) {
-				esilprintf (op, "0x%"PFMT64x",v%u,=", offset, vA);
+				esilprintf (op, "0x%"PFMT64x",v%u,=", offset == UT64_MAX? vB: offset, vA);
 			}
 		}
 		break;
@@ -1056,7 +1183,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			ut64 offset = _anal_get_offset (a, 's', vB);
 			op->ptr = offset;
 			if (mask & R_ARCH_OP_MASK_ESIL) {
-				esilprintf (op, "0x%"PFMT64x",v%u,=", offset, vA);
+				esilprintf (op, "0x%"PFMT64x",v%u,=", offset == UT64_MAX? vB: offset, vA);
 			}
 			break;
 		}
@@ -1065,40 +1192,36 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_MOV;
 			op->datatype = R_ANAL_DATATYPE_CLASS;
 			format21c(len, data, &vA, &vB);
-			ut64 offset = _anal_get_offset (a, 's', vB);
+			ut64 offset = _anal_get_offset (a, 't', vB);
 			op->ptr = offset;
 			if (mask & R_ARCH_OP_MASK_ESIL) {
-				esilprintf (op, "0x%"PFMT64x",v%u,=", offset, vA);
+				esilprintf (op, "0x%"PFMT64x",v%u,=", offset == UT64_MAX? vB: offset, vA);
 			}
 			break;
 		}
 	case 0x1d: // monitor-enter
-		op->type = R_ANAL_OP_TYPE_PUSH;
-		op->stackop = R_ANAL_STACK_INC;
-		op->stackptr = 1;
+	case 0x1e: // monitor-exit
+		op->type = R_ANAL_OP_TYPE_SYNC;
+		op->family = R_ANAL_OP_FAMILY_THREAD;
 		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, ",");
 		}
 		break;
-	case 0x1e: // monitor-exit /// wrong type?
-		op->type = R_ANAL_OP_TYPE_POP;
-		op->stackop = R_ANAL_STACK_INC;
-		op->stackptr = -1;
-		if (mask & R_ARCH_OP_MASK_ESIL) {
-			esilprintf (op, ",");
-		}
-		break;
-	// we are going to completely ignore exception stuff
 	case 0x1f: // check-cast
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ANAL_OP_TYPE_CAST;
+		format21c (len, data, &vA, &vB);
+		op->ptr = _anal_get_offset (a, 't', vB);
 		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, ",");
 		}
 		break;
 	case 0x20: // instance-of
 		op->type = R_ANAL_OP_TYPE_CMP;
+		format22c (len, data, &vA, &vB, &vC);
+		op->ptr = _anal_get_offset (a, 't', vC);
 		if (mask & R_ARCH_OP_MASK_ESIL) {
-			esilprintf (op, "%d,instanceof,%d,-,!,v%u,=", vC, vB, vA);
+			ut64 type = op->ptr == UT64_MAX? vC: op->ptr;
+			esilprintf (op, "%" PFMT64u ",v%u,-,!,v%u,=", type, vB, vA);
 		}
 		break;
 	case 0x21: // array-length
@@ -1106,43 +1229,56 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->datatype = R_ANAL_DATATYPE_ARRAY;
 		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format12x(len, data, &vA, &vB);
-			esilprintf (op, "v%d,arraylength,v%d,=", vB, vA);
+			esilprintf (op, "v%u,[4],v%u,=", vB, vA);
 		}
 		break;
 	case 0x22: // new-instance
 		op->type = R_ANAL_OP_TYPE_NEW;
-
-		// resolve class name for vB
+		op->datatype = R_ANAL_DATATYPE_OBJECT;
 		format21c(len, data, &vA, &vB);
 		ut64 off = _anal_get_offset (a, 't', vB);
 		op->ptr = off;
 		if (mask & R_ARCH_OP_MASK_ESIL) {
-			esilprintf (op, "%" PFMT64u ",new,v%d,=", off, vA);
+			esilprintf (op, "%" PFMT64u ",v%u,=", off == UT64_MAX? vB: off, vA);
 		}
 		break;
 	case 0x23: // new-array
 		op->type = R_ANAL_OP_TYPE_NEW;
-		// 0x1c, 0x1f, 0x22
+		op->datatype = R_ANAL_DATATYPE_ARRAY;
+		format22c (len, data, &vA, &vB, &vC);
+		op->ptr = _anal_get_offset (a, 't', vC);
 		if (mask & R_ARCH_OP_MASK_ESIL) {
-			format22c (len, data, &vA, &vB, &vC);
-			esilprintf (op, "%u,%u,newarray,v%u,=",vC, vB, vA);
+			ut64 type = op->ptr == UT64_MAX? vC: op->ptr;
+			esilprintf (op, "%" PFMT64u ",v%u,=,v%u,v%u,=[4]", type, vA, vB, vA);
 		}
 		break;
 	case 0x24: // filled-new-array
-	case 0x25: // filled-new-array-range
-	case 0x26: // filled-new-array-data
+	case 0x25: // filled-new-array/range
 		op->type = R_ANAL_OP_TYPE_NEW;
-		// 0x1c, 0x1f, 0x22
-		/*if (len > 2 && mask & R_ARCH_OP_MASK_ESIL) {
-			format35c(data, &vA, &vB, &vC);
-			esilprintf (op, "%u,%u,newarray,v%u,=",vC, vB, vA);
-		}*/
+		op->datatype = R_ANAL_DATATYPE_ARRAY;
+		vB = r_read_le16 (data + 2);
+		op->ptr = _anal_get_offset (a, 't', vB);
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			esilprintf (op, "%" PFMT64u ",result,=", op->ptr == UT64_MAX? vB: op->ptr);
+		}
+		break;
+	case 0x26: // fill-array-data
+		op->type = R_ANAL_OP_TYPE_STORE;
+		op->direction = R_ANAL_OP_DIR_WRITE;
+		if (len > 5) {
+			st32 delta = (st32)r_read_le32 (data + 2) * 2;
+			op->ptr = addr + delta;
+		}
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			esilprintf (op, ",");
+		}
 		break;
 	case 0x27: // throw
 		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->eob = true;
 		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format11x (len, data, &vA);
-			esilprintf (op, "0, v%u,TRAP", vA);
+			esilprintf (op, "v%u,exception,=,0,v%u,TRAP", vA, vA);
 		}
 		break;
 	case 0x28: // goto
@@ -1301,103 +1437,106 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		break;
 	case 0x44: // aget
-	case 0x45: // aget-bool
-	case 0x46:
-	case 0x47: // aget-bool
+	case 0x45: // aget-wide
+	case 0x46: // aget-object
+	case 0x47: // aget-boolean
 	case 0x48: // aget-byte
 	case 0x49: // aget-char
 	case 0x4a: // aget-short
-	case 0x52: // get
-	case 0x58: // iget-short
-	case 0x53: // iget-wide
-	case 0x56: // iget-byte
-	case 0x57: // iget-char
-	case 0xea: // sget-wide-volatile
-	case 0xf4: // iget-byte
-	case 0x66: // sget-short
-	case 0xfd: // sget-object
-	case 0x55: // iget-bool
-	case 0x60: // sget
-	case 0x61: //
-	case 0x64: // sget-byte
-	case 0x65: // sget-char
-	case 0xe3: // iget-volatile
-	case 0xe4: //
-	case 0xe5: // sget
-	case 0xe6: // sget
-	case 0xe7: // iget-object-volatile
-	case 0xe8: // iget-bool
-	case 0xf3: // iget-bool
-	case 0xf8: // iget-bool
-	case 0xf2: // iget-quick
-		//op->type = R_ANAL_OP_TYPE_LOAD;
-		//break;
-	case 0x54: // iget-object
-		op->type = R_ANAL_OP_TYPE_LOAD;
-		if (mask & R_ARCH_OP_MASK_ESIL) {
-			ut32 vA = (data[1] & 0x0f);
-			ut32 vB = (data[1] & 0xf0) >> 4;
-			ut32 vC = (data[2] & 0x0f);
-			esilprintf (op, "%d,v%d,iget,v%d,=", vC, vB, vA);
-		}
-		break;
-	case 0x62: // sget-object
-		{
-			op->datatype = R_ANAL_DATATYPE_OBJECT;
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			ut32 vC = len > 3?(data[3] << 8) | data[2] : 0;
-			op->ptr = _anal_get_offset (a, 'f', vC);
-			if (mask & R_ARCH_OP_MASK_ESIL) {
-				ut32 vA = (data[1] & 0x0f);
-				esilprintf (op, "%" PFMT64d ",v%d,=", op->ptr, vA);
-			}
-		}
-		break;
-	case 0x63: // sget-boolean
-		op->datatype = R_ANAL_DATATYPE_BOOLEAN;
-		op->type = R_ANAL_OP_TYPE_LOAD;
-		if (mask & R_ARCH_OP_MASK_ESIL) {
-			ut32 vA = (data[1] & 0x0f);
-			ut32 vB = (data[1] & 0xf0) >> 4;
-			ut32 vC = (data[2] & 0x0f);
-			const char *vT = "-boolean";
-			esilprintf (op, "%d,%d,sget%s,v%d,=", vC, vB, vT, vA);
-		}
+		array_access (op, data, len, mask, false);
 		break;
 	case 0x4b: // aput
 	case 0x4c: // aput-wide
 	case 0x4d: // aput-object
-	case 0x4e: // aput-bool
+	case 0x4e: // aput-boolean
 	case 0x4f: // aput-byte
 	case 0x50: // aput-char
 	case 0x51: // aput-short
-	case 0x5c: // iput-bool
-	case 0x5e: // iput-char
-	case 0x5f: // iput-wide
-	case 0x59: // iput-wide
+		array_access (op, data, len, mask, true);
+		break;
+	case 0x52: // iget
+	case 0x53: // iget-wide
+	case 0x54: // iget-object
+	case 0x55: // iget-boolean
+	case 0x56: // iget-byte
+	case 0x57: // iget-char
+	case 0x58: // iget-short
+		field_access (a, op, data, len, mask, false, data[0] - 0x52);
+		break;
+	case 0x59: // iput
 	case 0x5a: // iput-wide
-	case 0x5b: // iput-wide
-	case 0x5d: // iput-wide
-	case 0x67: // iput-wide
+	case 0x5b: // iput-object
+	case 0x5c: // iput-boolean
+	case 0x5d: // iput-byte
+	case 0x5e: // iput-char
+	case 0x5f: // iput-short
+		field_access (a, op, data, len, mask, true, data[0] - 0x59);
+		break;
+	case 0x60: // sget
+	case 0x61: // sget-wide
+	case 0x62: // sget-object
+	case 0x63: // sget-boolean
+	case 0x64: // sget-byte
+	case 0x65: // sget-char
+	case 0x66: // sget-short
+		static_access (a, op, data, len, mask, false, data[0] - 0x60);
+		break;
+	case 0x67: // sput
 	case 0x68: // sput-wide
 	case 0x69: // sput-object
 	case 0x6a: // sput-boolean
 	case 0x6b: // sput-byte
-	case 0x6c: // sput-wide
+	case 0x6c: // sput-char
 	case 0x6d: // sput-short
+		static_access (a, op, data, len, mask, true, data[0] - 0x67);
+		break;
+	case 0xe3: // iget-volatile
+		field_access (a, op, data, len, mask, false, 0);
+		break;
+	case 0xe4: // iput-volatile
+		field_access (a, op, data, len, mask, true, 0);
+		break;
+	case 0xe5: // sget-volatile
+		static_access (a, op, data, len, mask, false, 0);
+		break;
+	case 0xe6: // sput-volatile
+		static_access (a, op, data, len, mask, true, 0);
+		break;
+	case 0xe7: // iget-object-volatile
+		field_access (a, op, data, len, mask, false, 2);
+		break;
+	case 0xe8: // iget-wide-volatile
+		field_access (a, op, data, len, mask, false, 1);
+		break;
 	case 0xe9: // iput-wide-volatile
+		field_access (a, op, data, len, mask, true, 1);
+		break;
+	case 0xea: // sget-wide-volatile
+		static_access (a, op, data, len, mask, false, 1);
+		break;
 	case 0xeb: // sput-wide-volatile
+		static_access (a, op, data, len, mask, true, 1);
+		break;
+	case 0xf2: // iget-quick
+		quick_access (op, data, len, mask, false, 0);
+		break;
+	case 0xf3: // iget-wide-quick
+		quick_access (op, data, len, mask, false, 1);
+		break;
+	case 0xf4: // iget-object-quick
+		quick_access (op, data, len, mask, false, 2);
+		break;
 	case 0xf5: // iput-quick
-	case 0xf6:
-	case 0xfc:
-	case 0xfe:
-		op->type = R_ANAL_OP_TYPE_STORE;
-		vC = len > 3?(data[3] << 8) | data[2] : 0;
-		op->ptr = _anal_get_offset (a, 'f', vC);
-		if (mask & R_ARCH_OP_MASK_ESIL) {
-			ut32 vA = (data[1] & 0x0f);
-			esilprintf (op, "%" PFMT64d ",v%u,=", op->ptr, vA);
-		}
+		quick_access (op, data, len, mask, true, 0);
+		break;
+	case 0xf6: // iput-wide-quick
+		quick_access (op, data, len, mask, true, 1);
+		break;
+	case 0xf7: // iput-object-quick
+		quick_access (op, data, len, mask, true, 2);
+		break;
+	case 0xfe: // sput-object-volatile
+		static_access (a, op, data, len, mask, true, 2);
 		break;
 	case 0x7b: // neg-int
 		op->type = R_ANAL_OP_TYPE_NOT;
@@ -1493,7 +1632,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 					esilprintf (op, "32,v%u,F2D,D2I," SETWIDE, vB, vA, vA+1);
 					break;
 				case 0x89:
-					esilprintf (op, "32,v%u,F2D,v%u,=", vB, vA);
+					esilprintf (op, "32,v%u,F2D," SETWIDE, vB, vA, vA + 1);
 					break;
 				case 0x8a:
 					esilprintf (op, GETWIDE ",D2I,v%u,=", vB+1, vB, vA);
@@ -1505,11 +1644,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 					esilprintf (op, "32," GETWIDE ",D2F,v%u,=", vB+1, vB, vA);
 					break;
 				case 0x8d:
+					esilprintf (op, "8,v%u,~,v%u,=", vB, vA);
+					break;
 				case 0x8e:
-					esilprintf (op, "v%d,0xff,&,v%d,=", vB, vA);
+					esilprintf (op, "0xffff,v%u,&,v%u,=", vB, vA);
 					break;
 				case 0x8f:
-					esilprintf (op, "v%u,0xffff,&,v%u,=", vB, vA);
+					esilprintf (op, "16,v%u,~,v%u,=", vB, vA);
 					break;
 				default:
 					break;
@@ -1636,10 +1777,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		OPCALL ("*", R_ANAL_OP_TYPE_MUL, OP_FLOAT);
 		break;
 	case 0xa9: // div-float
-	case 0xaa:
 	case 0xc9:
-	case 0xca:
 		OPCALL ("/", R_ANAL_OP_TYPE_DIV, OP_FLOAT);
+		break;
+	case 0xaa: // rem-float
+	case 0xca:
+		op->type = R_ANAL_OP_TYPE_MOD;
+		op->family = R_ANAL_OP_FAMILY_FPU;
 		break;
 	case 0xab: // add-double
 	case 0xcb:
@@ -1654,10 +1798,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		OPCALL ("*", R_ANAL_OP_TYPE_MUL, OP_DOUBLE);
 		break;
 	case 0xae: // div-double
-	case 0xaf:
 	case 0xce:
-	case 0xcf:
 		OPCALL ("/", R_ANAL_OP_TYPE_DIV, OP_DOUBLE);
+		break;
+	case 0xaf: // rem-double
+	case 0xcf:
+		op->type = R_ANAL_OP_TYPE_MOD;
+		op->family = R_ANAL_OP_FAMILY_FPU;
 		break;
 
 	case 0xec: // breakpoint
@@ -1731,7 +1878,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	case R_ARCH_INFO_CODE_ALIGN:
 		return 1;
 	case R_ARCH_INFO_MAXOP_SIZE:
-		return 6;
+		return 10;
 	case R_ARCH_INFO_INVOP_SIZE:
 		return 2;
 	case R_ARCH_INFO_MINOP_SIZE:
