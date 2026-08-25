@@ -6222,6 +6222,13 @@ static void ds_comment_call(RDisasmState *ds) {
 	if (fcn) {
 		// @TODO: fcn->nargs should be updated somewhere and used here instead
 		nargs = r_anal_var_count_args (fcn);
+		if (nargs < 1) {
+			// arg vars may not be recovered yet, but a dyncc carries the argcount
+			const char *fcncc = r_anal_function_cc (fcn);
+			if (fcncc && r_str_startswith (fcncc, "dyncc:")) {
+				nargs = r_anal_cc_max_arg (core->anal, fcncc);
+			}
+		}
 	}
 	if (nargs > 0) {
 		ds_comment_esil (ds, true, false, "%s", ds->show_color? ds->pal_comment : "");
