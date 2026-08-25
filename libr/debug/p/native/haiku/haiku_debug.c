@@ -369,26 +369,61 @@ static RDebugInfo *haiku_dbg_info(RDebug *dbg, const char *arg) {
 	return rdi;
 }
 
-// kernel assisted (hardware) breakpoints through the debug nub
+static bool haiku_dbg_watchpoint(RIOHaikuDbg *hdbg, RBreakpointItem *b, bool set, uint32 type) {
+	if (set) {
+		debug_nub_set_watchpoint msg = {
+			.reply_port = hdbg->reply_port,
+			.address = (void *)(size_t)b->addr,
+			.type = type,
+			.length = b->size
+		};
+		debug_nub_set_watchpoint_reply reply;
+		return r_haiku_send_msg (hdbg, B_DEBUG_MESSAGE_SET_WATCHPOINT,
+			&msg, sizeof (msg), &reply, sizeof (reply)) == B_OK && reply.error == B_OK;
+	}
+	debug_nub_clear_watchpoint msg = {
+		.address = (void *)(size_t)b->addr
+	};
+	return write_port (hdbg->nub_port, B_DEBUG_MESSAGE_CLEAR_WATCHPOINT, &msg, sizeof (msg)) == B_OK;
+}
+
+// kernel assisted breakpoints and watchpoints through the debug nub
 static bool haiku_dbg_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	RDebug *dbg = bp->user;
 	RIOHaikuDbg *hdbg = dbg? haiku_dbg_get (dbg): NULL;
 	if (!hdbg) {
 		return false;
 	}
-	if (set) {
-		debug_nub_set_breakpoint msg = {
-			.reply_port = hdbg->reply_port,
+	uint32 watchpoint_type;
+	switch (b->perm) {
+	case R_BP_PROT_READ:
+		watchpoint_type = B_DATA_READ_WATCHPOINT;
+		break;
+	case R_BP_PROT_WRITE:
+		watchpoint_type = B_DATA_WRITE_WATCHPOINT;
+		break;
+	case R_BP_PROT_ACCESS:
+	case R_BP_PROT_READ | R_BP_PROT_WRITE:
+		watchpoint_type = B_DATA_READ_WRITE_WATCHPOINT;
+		break;
+	case R_BP_PROT_EXEC:
+		if (set) {
+			debug_nub_set_breakpoint msg = {
+				.reply_port = hdbg->reply_port,
+				.address = (void *)(size_t)b->addr
+			};
+			debug_nub_set_breakpoint_reply reply;
+			return r_haiku_send_msg (hdbg, B_DEBUG_MESSAGE_SET_BREAKPOINT,
+				&msg, sizeof (msg), &reply, sizeof (reply)) == B_OK && reply.error == B_OK;
+		}
+		debug_nub_clear_breakpoint msg = {
 			.address = (void *)(size_t)b->addr
 		};
-		debug_nub_set_breakpoint_reply reply;
-		return r_haiku_send_msg (hdbg, B_DEBUG_MESSAGE_SET_BREAKPOINT,
-			&msg, sizeof (msg), &reply, sizeof (reply)) == B_OK && reply.error == B_OK;
+		return write_port (hdbg->nub_port, B_DEBUG_MESSAGE_CLEAR_BREAKPOINT, &msg, sizeof (msg)) == B_OK;
+	default:
+		return false;
 	}
-	debug_nub_clear_breakpoint msg = {
-		.address = (void *)(size_t)b->addr
-	};
-	return write_port (hdbg->nub_port, B_DEBUG_MESSAGE_CLEAR_BREAKPOINT, &msg, sizeof (msg)) == B_OK;
+	return haiku_dbg_watchpoint (hdbg, b, set, watchpoint_type);
 }
 
 #endif // __HAIKU__
