@@ -3409,6 +3409,25 @@ static size_t get_num_relocs_relr_at(ELFOBJ *eo, ut64 vaddr, ut64 vsize) {
 	return count;
 }
 
+// relr holds only relative relocs; the type number is per-machine, 0 = unknown
+static int relr_reloc_type(ut16 machine) {
+	switch (machine) {
+	case EM_AARCH64: return R_AARCH64_RELATIVE;
+	case EM_ARM: return R_ARM_RELATIVE;
+	case EM_386: return R_386_RELATIVE;
+	case EM_X86_64: return R_X86_64_RELATIVE;
+	case EM_PPC:
+	case EM_PPC64: return R_PPC_RELATIVE;
+	case EM_RISCV: return R_RISCV_RELATIVE;
+	case EM_S390: return R_390_RELATIVE;
+	case EM_SPARC:
+	case EM_SPARCV9: return R_SPARC_RELATIVE;
+	case EM_68K: return R_68K_RELATIVE;
+	case EM_MIPS: return R_MIPS_REL32;
+	}
+	return 0;
+}
+
 static size_t add_relr_reloc(ELFOBJ *eo, ut64 vaddr, int type, size_t pos) {
 	RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 	memset (reloc, 0, sizeof (*reloc));
@@ -3427,7 +3446,7 @@ static size_t add_relr_reloc(ELFOBJ *eo, ut64 vaddr, int type, size_t pos) {
 // (bit-1) words, after which the cursor advances by (N-1) words.
 static size_t populate_relr_at(ELFOBJ *eo, ut64 vaddr, ut64 vsize, size_t pos, size_t num_relocs) {
 	const int ws = sizeof (Elf_(Addr));
-	const int type = eo->ehdr.e_machine == EM_AARCH64? R_AARCH64_RELATIVE: R_X86_64_RELATIVE;
+	const int type = relr_reloc_type (eo->ehdr.e_machine);
 	ut64 cursor = 0;
 	bool armed = false;
 	ut64 off;
