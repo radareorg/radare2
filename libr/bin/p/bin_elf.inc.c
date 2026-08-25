@@ -1040,6 +1040,12 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 	ut64 A = rel->addend;
 	ut64 P = rel->rva;
 	ut8 buf[8] = {0};
+	if (rel->mode == DT_RELR) {
+		// relr has no explicit addend: the slot's own word is it
+		ut8 slot[sizeof (Elf_(Addr))] = {0};
+		iob->read_at (iob->io, rel->rva, slot, sizeof (slot));
+		A = r_read_ble (slot, bo->endian, 8 * sizeof (slot));
+	}
 	switch (e_machine) {
 	case EM_S390:
 		switch (rel->type) {
