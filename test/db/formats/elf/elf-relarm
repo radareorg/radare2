@@ -34,6 +34,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: arm thumb relocs keep a valid branch when applied
+FILE=bins/elf/analysis/arm-relocs
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pi 5 @ 0x08000034
+EOF
+EXPECT=<<EOF
+bl reloc.r0
+bl reloc.r1
+bl reloc.r2
+bl reloc.r3
+bl reloc.r4
+EOF
+RUN
+
 NAME=ELF: ppc relocs
 FILE=bins/elf/hello.ppc
 CMDS=<<EOF

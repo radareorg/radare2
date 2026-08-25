@@ -1016,7 +1016,7 @@ static void aarch64_patch_insn(RIOBind *iob, ut64 at, ut32 mask, ut32 val) {
 	iob->overlay_write_at (iob->io, at, buf, sizeof (buf));
 }
 
-static bool aarch64_disp_fits(st64 x, int bits) {
+static bool disp_fits(st64 x, int bits) {
 	return x >= -(1LL << (bits - 1)) && x < (1LL << (bits - 1));
 }
 
@@ -1028,7 +1028,7 @@ static void aarch64_patch_adr(RIOBind *iob, ut64 at, st64 imm) {
 
 static void aarch64_patch_branch(RIOBind *iob, RBinElfReloc *rel, st64 disp, int nbits, int shift) {
 	// a truncated branch invents a call target, worse than leaving it
-	if ((disp & 3) || !aarch64_disp_fits (disp, nbits + 2)) {
+	if ((disp & 3) || !disp_fits (disp, nbits + 2)) {
 		R_LOG_DEBUG ("unencodable aarch64 reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
 		return;
 	}
@@ -1069,6 +1069,22 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				addend = imm;
 				break;
 			}
+			case R_ARM_THM_PC22:
+			case R_ARM_THM_JUMP24: {
+				const ut32 hi = r_read_ble16 (buf, bo->endian);
+				const ut32 lo = r_read_ble16 (buf + 2, bo->endian);
+				const ut32 sb = (hi >> 10) & 1;
+				// i1/i2 are stored inverted against the sign
+				const ut32 i1 = ((lo >> 13) & 1) ^ sb ^ 1;
+				const ut32 i2 = ((lo >> 11) & 1) ^ sb ^ 1;
+				st32 imm = (sb << 24) | (i1 << 23) | (i2 << 22)
+					| ((hi & 0x3ff) << 12) | ((lo & 0x7ff) << 1);
+				if (sb) {
+					imm |= ~0x01ffffff;
+				}
+				addend = imm;
+				break;
+			}
 			case R_ARM_MOVW_ABS_NC:
 			case R_ARM_MOVW_PREL_NC:
 				addend = ((insn >> 4) & 0xf000) | (insn & 0x0fff);
@@ -1103,6 +1119,25 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			insn &= 0xff000000;
 			insn |= imm24 & 0x00ffffff;
 			r_write_ble32 (buf, insn, bo->endian);
+			break;
+		}
+		case R_ARM_THM_PC22:
+		case R_ARM_THM_JUMP24: {
+			const st64 target = S + addend - P;
+			ut32 hi = r_read_ble16 (buf, bo->endian);
+			ut32 lo = r_read_ble16 (buf + 2, bo->endian);
+			// blx switches to arm state, so it needs 4 alignment
+			const st64 amask = (lo & 0x1000)? 1: 3;
+			// a thumb branch reaches +-16MB, leave the rest alone
+			if ((target & amask) || !disp_fits (target, 25)) {
+				return;
+			}
+			const ut32 sb = (target >> 24) & 1;
+			hi = (hi & 0xf800) | (sb << 10) | ((target >> 12) & 0x3ff);
+			lo = (lo & 0xd000) | ((((target >> 23) & 1) ^ sb ^ 1) << 13)
+				| ((((target >> 22) & 1) ^ sb ^ 1) << 11) | ((target >> 1) & 0x7ff);
+			r_write_ble16 (buf, hi, bo->endian);
+			r_write_ble16 (buf + 2, lo, bo->endian);
 			break;
 		}
 		case R_ARM_MOVW_ABS_NC:
@@ -1148,7 +1183,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		case R_AARCH64_ADR_PREL_PG_HI21_NC: {
 			const st64 imm = (((st64)(S + A) & ~(st64)0xfff) - ((st64)P & ~(st64)0xfff)) >> 12;
 			// the _NC variant is defined to wrap, so only the checked one is refused
-			if (rel->type == R_AARCH64_ADR_PREL_PG_HI21 && !aarch64_disp_fits (imm, 21)) {
+			if (rel->type == R_AARCH64_ADR_PREL_PG_HI21 && !disp_fits (imm, 21)) {
 				R_LOG_DEBUG ("unencodable aarch64 reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
 				break;
 			}
@@ -1194,7 +1229,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			break;
 		case R_AARCH64_ADR_PREL_LO21: {
 			const st64 disp = (st64)(S + A) - (st64)P;
-			if (aarch64_disp_fits (disp, 21)) {
+			if (disp_fits (disp, 21)) {
 				aarch64_patch_adr (iob, rel->rva, disp);
 			} else {
 				R_LOG_DEBUG ("unencodable aarch64 reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
