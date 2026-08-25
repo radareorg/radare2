@@ -69,23 +69,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=PPC64 ELFv1 ET_REL: .opd ADDR64 relocs resolve to distinct vaddrs (S + A, not collapsed)
+NAME=PPC64 ELFv1 ET_REL: .opd ADDR64 relocs are reported at their .opd slot
 FILE=bins/elf/ppc64v1-crc32_generic.ko
 ARGS=-e bin.relocs.apply=true
 CMDS=ir~SET_64[0]
 EXPECT=<<EOF
-0x080000b0
-0x080000f0
-0x08000130
-0x080001a0
-0x080001f0
-0x08000270
-0x080002f0
-0x08000358
-0x0800038c
+0x08000700
 0x08000708
 0x08000720
-0x08000738
 0x08000738
 0x08000750
 0x08000768
@@ -93,9 +84,18 @@ EXPECT=<<EOF
 0x08000798
 0x080007b0
 0x080007c8
-0x080007c8
 0x080007e0
-0x08000a00
+0x080007e8
+0x080007f0
+0x080007f8
+0x08000800
+0x08000818
+0x080009a0
+0x080009b8
+0x080009c0
+0x080009c8
+0x08000b38
+0x08000db0
 EOF
 RUN
 
@@ -164,21 +164,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=aarch64 ET_REL (regression): section-symbol relocs collapse to base, not S + A
+NAME=aarch64 ET_REL: section-symbol relocs are reported at their site, not at S + A
 FILE=bins/elf/random_39855/random_39855.oo
 ARGS=-e bin.relocs.apply=true
-CMDS=ir~ADD_32[0]|sort -u
+CMDS=ir~0x000101c4
 EXPECT=<<EOF
-0x08000040
-0x080057dc
-0x080057f0
-0x080057f4
-0x080057f8
-0x08005960
-0x08005978
-0x08005988
-0x08012678
-0x08012680
+0x080101c4 0x000101c4 ADD_32 261   .text + 0x08000000
 EOF
 RUN
 
