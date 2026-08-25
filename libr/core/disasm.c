@@ -7929,8 +7929,8 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		}
 	}
 	core->addr = addr;
+	r_core_seek_arch_bits (core, addr);
 
-	// TODO: add support for anal hints
 	// If using #bytes i = j
 	// If using #opcodes, j is the offset from start address. i is the
 	// offset in current disassembly buffer (256 by default)
@@ -7940,7 +7940,6 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 	// k = delta from addr
 	ds = ds_init (core, true);
 	bool result = false;
-	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 
 	r_cons_break_push (core->cons, NULL, NULL);
 	for (;;) {
@@ -7952,7 +7951,10 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		int skip_bytes_flag = 0, skip_bytes_bb = 0;
 
 		at = addr + k;
-		ds_hint_begin (ds, ds->at);
+		r_core_seek_arch_bits (core, at);
+		ds->at = at;
+		ds_hint_begin (ds, at);
+		const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 		r_asm_set_pc (core->rasm, at);
 		// 32 is the biggest opcode length in intel
 		// Make sure we have room for it
@@ -8020,7 +8022,6 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			}
 		}
 		ds->oplen = asmop.size;
-		ds->at = at;
 		skip_bytes_flag = handleMidFlags (core, ds, false);
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB (core, ds);

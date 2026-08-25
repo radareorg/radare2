@@ -23,3 +23,18 @@ EXPECT=<<EOF
 mscoree.dll
 EOF
 RUN
+
+NAME=agfj honors CIL architecture hints on first use
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+aaa
+s 0x10002224
+agfj > $graph
+$graph~{[0].blocks[0].ops[0].opcode}
+$graph~{[0].blocks[0].ops[1].opcode}
+EOF
+EXPECT=<<EOF
+nop
+newobj System.Collections.Generic.Dictionary`2<string,object>..ctor(this;):void
+EOF
+RUN
