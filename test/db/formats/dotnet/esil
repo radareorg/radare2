@@ -24,6 +24,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=CIL equality comparisons produce Boolean ESIL values
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+e asm.esil=true
+aoe 1 @ 0x10002309
+aoe 1 @ 0x10002355
+EOF
+EXPECT=<<EOF
+0x10002309 sp,[8],8,sp,+,[8],==,$z,8,sp,+,=[8],8,sp,+=
+0x10002355 sp,[8],8,sp,+,[8],==,$z,!,?{,0x10002387,pc,=,},16,sp,+=
+EOF
+RUN
+
 NAME=.NET MethodDef calls expose analysis targets
 FILE=bins/dotnet/HelloWorld.dll
 CMDS=<<EOF

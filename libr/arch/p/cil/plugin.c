@@ -207,7 +207,7 @@ static void cil_build_esil(RAnalOp *op, ut8 opcode, ut8 opcode2, const ut8 *buf,
 	if (extended) {
 		switch (opcode2) {
 		case 0x00: cil_esil_unknown_result (op, 0); return;
-		case 0x01: cil_esil_binary (op, "=="); return;
+		case 0x01: cil_esil_binary (op, "==,$z"); return;
 		case 0x02: cil_esil_binary (op, ">"); return;
 		case 0x03: cil_esil_unsigned_compare (op, "gt"); return;
 		case 0x04: cil_esil_binary (op, "<"); return;
@@ -330,12 +330,12 @@ static void cil_build_esil(RAnalOp *op, ut8 opcode, ut8 opcode2, const ut8 *buf,
 		r_strbuf_setf (&op->esil, "sp,[8],?{,0x%" PFMT64x ",pc,=,},8,sp,+=", op->jump);
 		cil_stack_delta (op, 8);
 		break;
-	case 0x2e: case 0x3b: cil_esil_compare_branch (op, "=="); break;
+	case 0x2e: case 0x3b: cil_esil_compare_branch (op, "==,$z"); break;
 	case 0x2f: case 0x3c: cil_esil_compare_branch (op, ">="); break;
 	case 0x30: case 0x3d: cil_esil_compare_branch (op, ">"); break;
 	case 0x31: case 0x3e: cil_esil_compare_branch (op, "<="); break;
 	case 0x32: case 0x3f: cil_esil_compare_branch (op, "<"); break;
-	case 0x33: case 0x40: cil_esil_compare_branch (op, "==,!"); break;
+	case 0x33: case 0x40: cil_esil_compare_branch (op, "==,$z,!"); break;
 	case 0x34: case 0x41: cil_esil_unsigned_branch (op, "ge"); break;
 	case 0x35: case 0x42: cil_esil_unsigned_branch (op, "gt"); break;
 	case 0x36: case 0x43: cil_esil_unsigned_branch (op, "le"); break;
