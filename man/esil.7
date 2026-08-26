@@ -155,7 +155,15 @@ ROL - Rotate left
 ROR - Rotate right
 .It
 ASR - Arithmetic shift right
+.It
+CLZ - Count leading zeros of a value within an explicit width
+.It
+POPCNT - Count the set bits of a value
 .El
+.Pp
+An operation takes an explicit leading width operand only when its result depends
+on that width: CLZ does (the count for 1 is 31 at width 32 and 63 at width 64),
+POPCNT does not.
 .Pp
 .It Cm Comparison operations
 Compare values and set flags:

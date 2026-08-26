@@ -226,6 +226,13 @@ What to do with them? What about bit arithmetic if use variables instead of regi
 7. ROL  "ROL"
 8. ROR  "ROR"
 9. NEG  "!"
+10. CLZ  "CLZ" (count leading zeros: "w,x,CLZ")
+11. POPCNT "POPCNT" (count set bits: "x,POPCNT")
+
+An operation takes an explicit leading width operand only when its result depends
+on that width. CLZ does: the count for the value 1 is 31 at width 32 and 63 at
+width 64. POPCNT does not, because a caller wanting a narrower count masks the
+value first.
 
 # Floating point
 
