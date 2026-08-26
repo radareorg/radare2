@@ -257,6 +257,40 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=esil peek some (32-bits ARM little endian)
+FILE=-
+ARGS=-a arm -b 32
+CMDS=<<EOF
+e cfg.bigendian=false
+aeim
+e io.cache=true
+wx 66676869 @ 0x00100000
+ar r0=0x00100000
+"ae r1,1,r0,[*]"
+ar r1
+EOF
+EXPECT=<<EOF
+0x69686766
+EOF
+RUN
+
+NAME=esil peek some (64-bits ARM little endian)
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e cfg.bigendian=false
+aeim
+e io.cache=true
+wx 6667686900000080 @ 0x00100000
+ar x0=0x00100000
+"ae x1,1,x0,[*]"
+ar x1
+EOF
+EXPECT=<<EOF
+0x8000000069686766
+EOF
+RUN
+
 NAME=rol
 FILE=-
 CMDS=<<EOF

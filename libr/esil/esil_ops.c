@@ -1326,7 +1326,6 @@ static bool esil_poke16(REsil *esil) {
 }
 
 static bool esil_poke_some(REsil *esil) {
-	bool ret = false;
 	int i, regsize;
 	ut64 ptr, regs = 0, tmp;
 	const RStrs dst = r_esil_pop (esil);
@@ -1358,7 +1357,7 @@ static bool esil_poke_some(REsil *esil) {
 					ptr += size_bytes;
 				}
 			}
-			return ret;
+			return true;
 		}
 	}
 	return false;
@@ -1427,7 +1426,7 @@ static bool esil_peek16(REsil *esil) {
 
 static bool esil_peek_some(REsil *esil) {
 	int i;
-	ut64 ptr, regs;
+	ut64 ptr, regs, tmp;
 	// pop ptr
 	const RStrs dst = r_esil_pop (esil);
 	if (!r_strs_empty (dst)) {
@@ -1437,27 +1436,34 @@ static bool esil_peek_some(REsil *esil) {
 		if (!r_strs_empty (count)) {
 			isregornum (esil, count, &regs);
 			if (regs > 0) {
-				ut8 a[4];
+				ut8 a[8] = {0};
 				for (i = 0; i < regs; i++) {
 					const RStrs foo = r_esil_pop (esil);
 					if (r_strs_empty (foo)) {
 						R_LOG_DEBUG ("Cannot pop in peek");
 						return false;
 					}
-					bool oks = r_esil_mem_read (esil, ptr, a, 4);
+					int regsize = 0;
+					r_esil_get_parm_size (esil, foo, &tmp, &regsize);
+					const int size_bytes = regsize / 8;
+					if (size_bytes < 1 || size_bytes > (int)sizeof (a)) {
+						R_LOG_DEBUG ("Invalid register size in peek");
+						return false;
+					}
+					bool oks = r_esil_mem_read (esil, ptr, a, size_bytes);
 					if (!oks) {
 						R_LOG_DEBUG ("Cannot peek from 0x%08" PFMT64x, ptr);
 						return false;
 					}
-					ut32 num32 = r_read_ble32 (a, esil_is_big_endian (esil));
-					r_esil_reg_write (esil, foo.a, num32);
-					ptr += 4;
+					const ut64 num = esil_read_ble (a, regsize, esil_is_big_endian (esil));
+					r_esil_reg_write (esil, foo.a, num);
+					ptr += size_bytes;
 				}
 			}
-			return 1;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
 /* OREQ */
