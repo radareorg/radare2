@@ -574,3 +574,45 @@ EXPECT=<<EOF
 2,3,1
 EOF
 RUN
+
+NAME=esil compound assign flags
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+ar rax=0xffffffffffffffff
+ae 1,rax,+=,63,$c,$z
+ar rax
+ar rbx=16
+ae 1,rbx,-=,64,$b
+ar rbx
+EOF
+EXPECT=<<EOF
+0x1,0x1
+0x00000000
+0
+0x0000000f
+EOF
+RUN
+
+NAME=esil compound memory ops
+FILE=-
+CMDS=<<EOF
+aeim
+e io.cache=true
+"ae 7,0x00100000,=[4]"
+"ae 3,0x00100000,+=[4]"
+"ae 2,0x00100000,*=[4]"
+"ae 1,0x00100000,-=[4]"
+"ae 4,0x00100000,/=[4]"
+"ae 3,0x00100000,%=[4]"
+"ae 0x00100000,++=[4]"
+"ae 0x00100000,--=[4]"
+"ae 1,0x00100000,<<=[4]"
+"ae 1,0x00100000,>>=[4]"
+"ae 0x00100000,[4]"
+EOF
+EXPECT=<<EOF
+0x1
+EOF
+RUN
