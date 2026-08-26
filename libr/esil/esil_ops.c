@@ -126,6 +126,7 @@ static bool esil_clz(REsil *esil) {
 		return false;
 	}
 	if (width > 64) {
+		R_LOG_WARN ("CLZ width %"PFMT64u" clamped to 64", width);
 		width = 64;
 	}
 	val &= r_num_bitmask (width);
@@ -1828,8 +1829,14 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("ASR", esil_asr, 1, 2, OT_MATH);
 	ret &= OP ("ROR", esil_ror, 1, 2, OT_MATH);
 	ret &= OP ("ROL", esil_rol, 1, 2, OT_MATH);
-	ret &= OP ("CLZ", esil_clz, 1, 2, OT_MATH);
-	ret &= OP ("POPCNT", esil_popcount, 1, 1, OT_MATH);
+#if 1 // ESIL_NATIVE_BITOPS
+	ret &= OP2 ("CLZ", esil_clz, 1, 2, OT_MATH, "w,x,CLZ: leading zeros of x in its low w bits, w if x is 0");
+	ret &= OP2 ("POPCNT", esil_popcount, 1, 1, OT_MATH, "x,POPCNT: number of set bits in x");
+#else
+	// plain esil fallbacks for engines without the native ops (w in 1..64)
+	ret &= OPD ("CLZ", "SWAP,DUP,64,-,ROT,<<,0,SWAP,DUP,32,SWAP,>>,!,?{,SWAP,32,+,SWAP,32,SWAP,<<,},DUP,48,SWAP,>>,!,?{,SWAP,16,+,SWAP,16,SWAP,<<,},DUP,56,SWAP,>>,!,?{,SWAP,8,+,SWAP,8,SWAP,<<,},DUP,60,SWAP,>>,!,?{,SWAP,4,+,SWAP,4,SWAP,<<,},DUP,62,SWAP,>>,!,?{,SWAP,2,+,SWAP,2,SWAP,<<,},DUP,63,SWAP,>>,!,?{,SWAP,1,+,SWAP,1,SWAP,<<,},!,?{,POP,}{,SWAP,POP,}", 1, 2, OT_MATH);
+	ret &= OPD ("POPCNT", "DUP,1,SWAP,>>,0x5555555555555555,&,SWAP,-,DUP,0x3333333333333333,&,SWAP,2,SWAP,>>,0x3333333333333333,&,+,DUP,4,SWAP,>>,+,0x0f0f0f0f0f0f0f0f,&,0x0101010101010101,*,56,SWAP,>>", 1, 1, OT_MATH);
+#endif
 	ret &= OP ("&", esil_and, 1, 2, OT_MATH);
 	ret &= OPD ("&=", "DUP,ROT,SWAP,&,SWAP,=", 0, 2, OT_MATH | OT_REGW);
 	ret &= OP ("}", esil_nop, 0, 0, OT_CTR); // just to avoid push
