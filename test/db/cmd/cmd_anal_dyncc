@@ -111,6 +111,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=isj exposes bytecode symbol slot metadata
+FILE=bins/wasm/multiret3.wasm
+CMDS=<<EOF
+isj~{[0].arg_first}
+isj~{[0].arg_count}
+isj~{[0].cc_arg_count}
+isj~{[0].ret_count}
+isj~{[0].arg_prefix}
+EOF
+EXPECT=<<EOF
+0
+3
+0
+3
+l
+EOF
+RUN
+
 NAME=Pyc dyncc direct af uses code args
 FILE=bins/pyc/py38.pyc
 CMDS=<<EOF

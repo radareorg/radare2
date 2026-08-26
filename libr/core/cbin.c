@@ -3116,6 +3116,15 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 				pj_ks (pj, "unsafe", safetyName);
 			}
 			pj_ks (pj, "type", symbol->type);
+			if (symbol->arg_count || symbol->cc_arg_count || symbol->ret_count || symbol->arg_prefix) {
+				pj_ki (pj, "arg_first", symbol->arg_first);
+				pj_ki (pj, "arg_count", symbol->arg_count);
+				pj_ki (pj, "cc_arg_count", symbol->cc_arg_count);
+				pj_ki (pj, "ret_count", symbol->ret_count);
+				if (symbol->arg_prefix) {
+					pj_ks (pj, "arg_prefix", symbol->arg_prefix);
+				}
+			}
 			pj_kn (pj, "vaddr", addr);
 			pj_kn (pj, "paddr", symbol->paddr);
 			pj_kb (pj, "is_imported", symbol->is_imported);
