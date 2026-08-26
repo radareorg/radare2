@@ -2870,11 +2870,14 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				pj_ks (pj, "mask", maskstr);
 				free (maskstr);
 			} else {
-				ut8 *mask = r_anal_mask (core->anal, len - idx, buf + idx, core->addr + idx);
-				char *maskstr = r_hex_bin2strdup (mask, size);
-				pj_ks (pj, "mask", maskstr);
-				free (mask);
-				free (maskstr);
+				const int instlen = R_MIN (size, len - idx);
+				ut8 *mask = r_anal_mask (core->anal, instlen, buf + idx, core->addr + idx);
+				if (mask) {
+					char *maskstr = r_hex_bin2strdup (mask, instlen);
+					pj_ks (pj, "mask", maskstr);
+					free (mask);
+					free (maskstr);
+				}
 			}
 			if (hint && hint->opcode) {
 				pj_ks (pj, "ophint", hint->opcode);
