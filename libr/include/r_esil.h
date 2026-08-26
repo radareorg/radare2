@@ -235,8 +235,8 @@ typedef enum {
 
 typedef struct r_esil_t {
 	struct r_anal_t *anal; // required for io, reg, and call esil_init/fini of the selected arch plugin
-	// Heapless stack: entries are RStrs slices into `stack_buf`, an append-only
-	// arena that is reset on r_esil_stack_free. Within one expression, popped
+	// Heapless stack: entries are RStrs slices into `stack_buf`, a bump arena
+	// trimmed to the live slices between words. Within one word, popped
 	// slices stay valid across subsequent pushes — the arena never moves.
 	RStrs *stack;
 	char *stack_buf;

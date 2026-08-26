@@ -802,6 +802,38 @@ R_API bool r_esil_push(REsil *esil, RStrs s) {
 	return true;
 }
 
+// Slide live slices down, lowest first; only safe between words
+static void esil_arena_trim(REsil *esil) {
+	char *cur = esil->stack_buf;
+	for (;;) {
+		const RStrs *low = NULL;
+		int i;
+		for (i = 0; i < esil->stackptr; i++) {
+			const RStrs *s = &esil->stack[i];
+			if (s->a >= cur && (!low || s->a < low->a)) {
+				low = s;
+			}
+		}
+		if (!low) {
+			break;
+		}
+		const char *src = low->a;
+		const size_t n = (size_t)(low->b - src);
+		if (src != cur) {
+			memmove (cur, src, n + 1);
+		}
+		for (i = 0; i < esil->stackptr; i++) {
+			RStrs *s = &esil->stack[i];
+			if (s->a == src) {
+				s->a = cur;
+				s->b = cur + n;
+			}
+		}
+		cur += n + 1;
+	}
+	esil->stack_buf_len = (ut32)(cur - esil->stack_buf);
+}
+
 R_API bool r_esil_pushnum(REsil *esil, ut64 num) {
 	if (esil->stackptr >= esil->stacksize
 			|| esil->stack_buf_len + 20 > esil->stack_buf_cap) {
@@ -1130,6 +1162,7 @@ static bool runword(REsil *esil, RStrs w) {
 				if (esil->parse_stop) {
 					break;
 				}
+				esil_arena_trim (esil);
 			}
 			esil->parse_goto_count++;
 		}
@@ -1244,6 +1277,7 @@ loop:
 			if (!runword (esil, tok)) {
 				goto step_out;
 			}
+			esil_arena_trim (esil);
 			switch (eval_word (esil, ostr, &str)) {
 			case 0: goto loop;
 			case 1: goto step_out;
