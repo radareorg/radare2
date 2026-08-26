@@ -1772,6 +1772,15 @@ static void render_ifelse(PDCState *state, PdcRegion *r, RAnalBlock *bb, int ind
 	free (cond);
 }
 
+// a block that falls off the end of the function still returns
+static void render_exit_return(PDCState *state, RAnalBlock *bb, int indent) {
+	if (bb->jump != UT64_MAX || bb->fail != UT64_MAX
+			|| bb_ends_with_terminator (state->core, bb)) {
+		return;
+	}
+	print_line (state, bb->addr, indent, state->r0? "return %s;": "return;", state->r0);
+}
+
 static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *gotos) {
 	if (r->type == PDC_R_SEQ) {
 		PdcRegion **it;
@@ -1809,6 +1818,7 @@ static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *go
 		return;
 	default:
 		render_bb_body_lines (state, bb, indent);
+		render_exit_return (state, bb, indent);
 		return;
 	}
 }
@@ -1853,6 +1863,7 @@ static bool pdc_structured_body(PDCState *state, int indent) {
 	ht_up_free (state->conds);
 	state->conds = NULL;
 	pdc_plan_free (plan);
+	R_LOG_DEBUG ("pdc: structured=%d 0x%08" PFMT64x, reducible, state->fcn->addr);
 	return reducible;
 }
 
