@@ -3116,6 +3116,12 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 				pj_ks (pj, "unsafe", safetyName);
 			}
 			pj_ks (pj, "type", symbol->type);
+			if (symbol->attr.flags) {
+				char *flags = r_core_bin_attr_tostring (core, symbol->attr.flags, mode);
+				pj_k (pj, "flags");
+				pj_j (pj, flags);
+				free (flags);
+			}
 			if (symbol->arg_count || symbol->cc_arg_count || symbol->ret_count || symbol->arg_prefix) {
 				pj_ki (pj, "arg_first", symbol->arg_first);
 				pj_ki (pj, "arg_count", symbol->arg_count);

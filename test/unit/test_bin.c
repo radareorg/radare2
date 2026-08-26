@@ -84,6 +84,13 @@ bool test_r_bin_languages(void) {
 	mu_end;
 }
 
+bool test_r_bin_function_kind_attributes(void) {
+	char *attrs = r_bin_attr_tostring (R_BIN_ATTR_ASYNC | R_BIN_ATTR_GENERATOR, false);
+	mu_assert_streq (attrs, "async generator", "async generator attributes");
+	free (attrs);
+	mu_end;
+}
+
 static RBuffer *pebble_resource_pack(ut32 table_size) {
 	size_t content_start = 12 + table_size * 16;
 	const ut8 content[] = "ICONfont-data";
@@ -499,6 +506,7 @@ bool all_tests(void) {
 	mu_run_test(test_r_bin);
 	mu_run_test(test_r_bin_jni_language);
 	mu_run_test(test_r_bin_languages);
+	mu_run_test(test_r_bin_function_kind_attributes);
 	mu_run_test(test_r_bin_pebble_resources);
 	mu_run_test(test_r_bin_le_resources);
 	mu_run_test(test_r_bin_external_resource_data);

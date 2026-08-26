@@ -2215,6 +2215,8 @@ static const char *attr_bit_name(ut64 n, bool compact) {
 		return compact? "M": "mixin";
 	case R_BIN_ATTR_LATE:
 		return compact? "l": "late";
+	case R_BIN_ATTR_GENERATOR:
+		return compact? "G": "generator";
 	case R_BIN_ATTR_WEAK:
 		return compact? "w": "weak";
 	case R_BIN_ATTR_CLASS:

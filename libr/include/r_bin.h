@@ -234,6 +234,7 @@ typedef uint64_t RBinAttribute;
 #define R_BIN_ATTR_ANNOTATION (1ULL << 43)
 #define R_BIN_ATTR_MIXIN (1ULL << 44)
 #define R_BIN_ATTR_LATE (1ULL << 45)
+#define R_BIN_ATTR_GENERATOR (1ULL << 46)
 
 typedef enum {
 	R_BIN_FIELD_KIND_VARIABLE,
