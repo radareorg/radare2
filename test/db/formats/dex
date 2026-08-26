@@ -2065,9 +2065,9 @@ s method.public.final.Landroid_arch_a_a_a_1.Landroid_arch_a_a_a_1.method.execute
 pd 2
 EOF
 EXPECT=<<EOF
-{"name":"Landroid/arch/a/a/a$1.method.<init>()V","flagname":"sym.Landroid_arch_a_a_a_1.method._init___V","realname":"Landroid/arch/a/a/a$1.method.<init>()V","ordinal":0,"bind":"LOCAL","size":8,"type":"FUNC","vaddr":874156,"paddr":69220,"is_imported":false}
+{"name":"Landroid/arch/a/a/a$1.method.<init>()V","flagname":"sym.Landroid_arch_a_a_a_1.method._init___V","realname":"Landroid/arch/a/a/a$1.method.<init>()V","ordinal":0,"bind":"LOCAL","size":8,"type":"FUNC","arg_first":0,"arg_count":1,"cc_arg_count":0,"ret_count":0,"arg_prefix":"v","vaddr":874156,"paddr":69220,"is_imported":false}
 {}
-{"name":"Landroid/arch/a/a/a$1.method.execute(Ljava/lang/Runnable;)V","flagname":"sym.Landroid_arch_a_a_a_1.method.execute_Ljava_lang_Runnable__V","realname":"Landroid/arch/a/a/a$1.method.execute(Ljava/lang/Runnable;)V","ordinal":1,"bind":"GLOBAL","size":16,"type":"FUNC","vaddr":874180,"paddr":69244,"is_imported":false}
+{"name":"Landroid/arch/a/a/a$1.method.execute(Ljava/lang/Runnable;)V","flagname":"sym.Landroid_arch_a_a_a_1.method.execute_Ljava_lang_Runnable__V","realname":"Landroid/arch/a/a/a$1.method.execute(Ljava/lang/Runnable;)V","ordinal":1,"bind":"GLOBAL","size":16,"type":"FUNC","arg_first":1,"arg_count":2,"cc_arg_count":0,"ret_count":0,"arg_prefix":"v","vaddr":874180,"paddr":69244,"is_imported":false}
             ;-- method.public.final.Landroid_arch_a_a_a_1.Landroid_arch_a_a_a_1.method.execute_Ljava_lang_Runnable__V:
             0x000d56c4      710024000000   invoke-static {}, Landroid/arch/a/a/a.a()Landroid/arch/a/a/a; ; 0x24
             0x000d56ca      0c00           move-result-object v0
