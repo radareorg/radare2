@@ -151,9 +151,37 @@ bool test_reg_alias_op(void) {
 	mu_end;
 }
 
+bool test_define_op(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "r_anal_new failed");
+	bool profile = r_reg_set_profile_string (anal->reg,
+		"=PC r0\n"
+		"=A0 r0\n"
+		"gpr r0 .16 0 0\n"
+		"gpr r1 .16 16 0");
+	mu_assert_true (profile, "failed to set reg profile");
+
+	bool defined = r_esil_define (anal->esil, "TRIPLE", "DUP,DUP,+,+", 1, 1, R_ESIL_OP_TYPE_MATH);
+	mu_assert_true (defined, "failed to define op");
+	bool parsed = r_esil_parse (anal->esil, "5,TRIPLE,r1,=");
+	mu_assert_true (parsed, "failed to parse defined op");
+	mu_assert_eq (r_reg_getv (anal->reg, "r1"), 15, "defined op computed wrong value");
+
+	// redefining replaces the expansion in place
+	defined = r_esil_define (anal->esil, "TRIPLE", "1,+", 1, 1, R_ESIL_OP_TYPE_MATH);
+	mu_assert_true (defined, "failed to redefine op");
+	parsed = r_esil_parse (anal->esil, "5,TRIPLE,r1,=");
+	mu_assert_true (parsed, "failed to parse redefined op");
+	mu_assert_eq (r_reg_getv (anal->reg, "r1"), 6, "redefined op computed wrong value");
+
+	r_anal_free (anal);
+	mu_end;
+}
+
 int main(int argc, char **argv) {
 	mu_run_test (test_setup_keeps_custom_interfaces);
 	mu_run_test (test_setup_installs_default_interfaces);
 	mu_run_test (test_reg_alias_op);
+	mu_run_test (test_define_op);
 	return tests_passed != tests_run;
 }
