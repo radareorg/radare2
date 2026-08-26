@@ -164,7 +164,7 @@ typedef enum {
 	R_LIB_LOAD_SYSTEM = 1 << 2,
 	R_LIB_LOAD_CONFIG = 1 << 3,
 	R_LIB_LOAD_DEFAULT = R_LIB_LOAD_ENV | R_LIB_LOAD_HOME | R_LIB_LOAD_SYSTEM,
-	R_LIB_LOAD_ALL = UT32_MAX
+	R_LIB_LOAD_ALL = (UT32_MAX >> 1) // because enums are int lol
 } RLibLoadMask;
 
 #ifdef R_API

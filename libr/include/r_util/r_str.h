@@ -36,8 +36,7 @@ typedef struct {
 	ut16 to;
 } RStringSlice;
 
-R_VEC_TYPE (RVecStringSlice, RStringSlice);
-
+R_VEC_TYPE (RVecStringSlice, RStringSlice)
 
 typedef int (*RStrRangeCallback) (void *, int);
 
