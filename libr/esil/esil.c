@@ -65,6 +65,7 @@ static void esil_voyeurs_fini(REsil *esil) {
 // key is embedded in value (REsilOp.name); freeing value reclaims both
 static void esil_ops_kv_free(HtPPKv *kv) {
 	if (R_LIKELY (kv)) {
+		free (((REsilOp *)kv->value)->tokens);
 		free (kv->value);
 	}
 }
@@ -332,6 +333,45 @@ R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push,
 	eop->pop = pop;
 	eop->type = type;
 	eop->info = info;
+	// overriding a defined op with a native one drops its expansion
+	R_FREE (eop->tokens);
+	eop->body = NULL;
+	eop->ntokens = 0;
+	return true;
+}
+
+R_API bool r_esil_define(REsil *esil, const char *op, const char *body, ut32 push, ut32 pop, ut32 type) {
+	R_RETURN_VAL_IF_FAIL (esil && esil->ops && R_STR_ISNOTEMPTY (op) && R_STR_ISNOTEMPTY (body), false);
+	const ut32 n = r_str_char_count (body, ',') + 1;
+	// slice the body in place — like op names, `body` must outlive esil,
+	// so this array is the definition's only allocation
+	RStrs *tokens = R_NEWS (RStrs, n);
+	if (!tokens) {
+		return false;
+	}
+	RStrs rest = r_strs_from (body);
+	ut32 i;
+	for (i = 0; i < n; i++) {
+		if (!r_strs_split (rest, ',', &tokens[i], &rest)) {
+			break;
+		}
+	}
+	REsilOp *eop = R_NEW0 (REsilOp);
+	eop->name = r_strs_from (op); // points at caller's const char* — must outlive esil
+	eop->code = NULL;
+	eop->body = body;
+	eop->tokens = tokens;
+	eop->ntokens = n;
+	eop->push = push;
+	eop->pop = pop;
+	eop->type = type;
+	eop->info = body; // listings show the expansion
+	if (!ht_pp_update (esil->ops, &eop->name, eop)) {
+		R_LOG_ERROR ("Cannot define esil op %s", op);
+		free (tokens);
+		free (eop);
+		return false;
+	}
 	return true;
 }
 
@@ -1075,7 +1115,23 @@ static bool runword(REsil *esil, RStrs w) {
 			} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_OP], &i));
 		}
 		esil->current_opstr = (char *)name;
-		const bool ret = op->code (esil);
+		bool ret;
+		if (R_LIKELY (op->code)) {
+			ret = op->code (esil);
+		} else {
+			// defined op: run the pre-tokenized expansion in place
+			ret = true;
+			ut32 mi;
+			for (mi = 0; mi < op->ntokens; mi++) {
+				if (!runword (esil, op->tokens[mi])) {
+					ret = false;
+					break;
+				}
+				if (esil->parse_stop) {
+					break;
+				}
+			}
+		}
 		esil->current_opstr = NULL;
 		if (!ret) {
 			R_LOG_DEBUG ("%s returned 0", name);
