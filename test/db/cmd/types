@@ -3997,6 +3997,42 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Windows fixed-width integer aliases resolve in CIL binaries
+FILE=bins/cil/hello.exe
+CMDS=<<EOF
+k anal/types/LONG
+k anal/types/type.LONG
+k anal/types/type.LONG.size
+k anal/types/ULONG
+k anal/types/type.ULONG
+k anal/types/type.ULONG.size
+k anal/types/ULONGLONG
+k anal/types/type.ULONGLONG
+k anal/types/type.ULONGLONG.size
+k anal/types/u_long
+k anal/types/type.u_long
+k anal/types/type.u_long.size
+tss l_timeval
+tsj l_timeval
+EOF
+EXPECT=<<EOF
+type
+d
+32
+type
+d
+32
+type
+q
+64
+type
+d
+32
+8
+{"name":"l_timeval","format":"dd tv_sec tv_usec","fields":[{"name":"tv_sec","type":"LONG","offset":0,"size":4},{"name":"tv_usec","type":"LONG","offset":4,"size":4}]}
+EOF
+RUN
+
 NAME=pd shows the instruction under a function typelink without a format
 FILE=malloc://8
 ARGS=-a x86 -b 64

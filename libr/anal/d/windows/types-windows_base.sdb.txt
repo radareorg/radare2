@@ -233,11 +233,13 @@ PLONG=type
 type.PLONG=p
 type.PLONG.pointto=LONG
 
-LONG=typedef
-typedef.LONG=long
+LONG=type
+type.LONG=d
+type.LONG.size=32
 
-ULONG=typedef
-typedef.ULONG=unsigned long
+ULONG=type
+type.ULONG=d
+type.ULONG.size=32
 
 LSTATUS=typedef
 typedef.LSTATUS=LONG
@@ -375,8 +377,9 @@ type.PINIT_ONCE_FN=p
 LONGLONG=typedef
 typedef.LONGLONG=long long
 
-ULONGLONG=typedef
-typedef.ULONGLONG=unsigned long long
+ULONGLONG=type
+type.ULONGLONG=q
+type.ULONGLONG.size=64
 
 PCFG_CALL_TARGET_INFO=type
 type.PCFG_CALL_TARGET_INFO=p
@@ -823,8 +826,9 @@ typedef.u_short=unsigned short
 u_int=typedef
 typedef.u_int=unsigned int
 
-u_long=typedef
-typedef.u_long=unsigned long
+u_long=type
+type.u_long=d
+type.u_long.size=32
 
 __int64=typedef
 typedef.__int64=int64_t
