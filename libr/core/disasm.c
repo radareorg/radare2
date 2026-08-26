@@ -4269,20 +4269,24 @@ static void ds_print_bytes(RDisasmState *ds) {
 						}
 					}
 				}
-				char *p = (char *)r_str_ansi_chrn (nstr, nb);
-				if (p) {
-					off = true;
-					if (!core->print->bytespace) {
-						p--;
+				const char *cp = r_str_ansi_chrn (nstr, nb);
+				if (cp) {
+					if (cp > nstr && !core->print->bytespace) {
+						cp--;
 					}
-				//	eprintf ("PP(%s)=(%s) %d\n", nstr, p, r_str_ansi_len (p));
-					p[0] = '.';
-					p[1] = '.';
-					if (ds->show_bytes_align) {
-						p[2] = '\0';
-					} else {
-						if (core->print->bytespace) {
-							int pos = ds->nbytes + 2;
+					const size_t cut = cp - nstr;
+					// the ellipsis and padding land after the cut
+					char *tmp = realloc (nstr, cut + ds->nbytes + 4);
+					if (tmp) {
+						off = true;
+						nstr = tmp;
+						char *p = nstr + cut;
+						p[0] = '.';
+						p[1] = '.';
+						if (ds->show_bytes_align) {
+							p[2] = '\0';
+						} else if (core->print->bytespace) {
+							const int pos = ds->nbytes + 2;
 							memset (p + 2, ' ', pos - 2);
 							p[pos] = 0;
 						} else {
