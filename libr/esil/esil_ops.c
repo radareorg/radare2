@@ -2008,6 +2008,21 @@ static bool esil_swap(REsil *esil) {
 	return true;
 }
 
+/* rotate the third element to the top: [x,y,z] -> [y,z,x] */
+static bool esil_rot(REsil *esil) {
+	R_RETURN_VAL_IF_FAIL (esil, false);
+	const int sp = esil->stackptr;
+	if (!esil->stack || sp < 3) {
+		return false;
+	}
+	// rotate slot metadata -- strings stay in the arena
+	const RStrs tmp = esil->stack[sp - 3];
+	esil->stack[sp - 3] = esil->stack[sp - 2];
+	esil->stack[sp - 2] = esil->stack[sp - 1];
+	esil->stack[sp - 1] = tmp;
+	return true;
+}
+
 static bool esil_smaller(REsil *esil) { // 'dst < src' => 'src,dst,<'
 	ut64 num, num2;
 	bool ret = false;
@@ -2675,6 +2690,7 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("DUP", esil_dup, 2, 1, OT_UNK);
 	ret &= OP ("NUM", esil_num, 1, 1, OT_UNK);
 	ret &= OP ("SWAP", esil_swap, 2, 2, OT_UNK);
+	ret &= OP ("ROT", esil_rot, 3, 3, OT_UNK);
 	ret &= OP ("TRAP", esil_trap, 0, 2, OT_UNK); // syscall?
 	ret &= OP ("BITS", esil_bits, 1, 0, OT_UNK);
 	ret &= OP ("SETJT", esil_set_jump_target, 0, 1, OT_UNK);

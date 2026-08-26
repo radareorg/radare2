@@ -459,6 +459,7 @@ static RCoreHelpMessage help_detail_ae = {
 	"DUP", "", "duplicate last value in stack",
 	"NUM", "", "evaluate last item in stack to number",
 	"SWAP", "", "swap last two values in stack",
+	"ROT", "", "rotate the third element in the stack to the top",
 	"TRAP", "", "stop execution",
 	"BITS", "", "16,BITS  # change bits, useful for arm/thumb",
 	"TODO", "", "the instruction is not yet esilized",
