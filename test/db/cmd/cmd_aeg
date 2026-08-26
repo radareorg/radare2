@@ -1,0 +1,49 @@
+NAME=aeg keeps the source of an op without a dedicated dfg handler
+FILE=--
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aeg r0,r2,F+,r1,=~generative
+EOF
+EXPECT=<<EOF
+         | generative:r0,r2,F+ |        |
+                | generative:result_8,r1,= |
+EOF
+RUN
+
+NAME=aeg float op keeps both sources
+FILE=malloc://64
+ARGS=-w -a arm -b 64
+CMDS=<<EOF
+wx 2028621e
+aeg~generative
+EOF
+EXPECT=<<EOF
+         | generative:d2,d1,F+ |        |
+                | generative:result_8,d0,= |
+EOF
+RUN
+
+NAME=aeg 16 byte memory write
+FILE=malloc://64
+ARGS=-w -a x86 -b 64
+CMDS=<<EOF
+wx 0f1107
+aeg~generative,mem_var
+EOF
+EXPECT=<<EOF
+          | generative:xmm0,rdi,=[16] |
+         | [16]@<rdi:var_5>:mem_var_8 |
+EOF
+RUN
+
+NAME=aeg 3 byte memory read
+FILE=--
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+aeg eax,[3],ebx,=~generative,mem_var
+EOF
+EXPECT=<<EOF
+| generative:eax,[3] |         |
+       | generative:result_5,ebx,= |
+EOF
+RUN
