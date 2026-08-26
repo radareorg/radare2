@@ -4207,7 +4207,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("esil.maxbacksteps", 256, &cb_esilmaxbacksteps, "esil back step capacity");
 	SETB ("esil.stepover.force", "false", "force PC to the return address when ESIL step-over stops before returning");
 	SETS ("esil.fillstack", "", "initialize ESIL stack with (random, debruijn, sequence, zeros, ...)");
-	SETICB ("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "maximum number of gotos per ESIL expression");
+	SETICB ("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "maximum number of gotos and nested definitions per ESIL expression");
 	SETICB ("esil.stack.depth", 256, &cb_esilstackdepth, "number of elements that can be pushed on the esilstack");
 	SETI ("esil.stack.size", 0xf0000, "set stack size in ESIL VM");
 	SETI ("esil.stack.addr", 0x100000, "set stack address in ESIL VM");

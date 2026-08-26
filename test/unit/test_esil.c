@@ -178,10 +178,24 @@ bool test_define_op(void) {
 	mu_end;
 }
 
+bool test_define_recursion(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "r_anal_new failed");
+	// a self-referencing definition must trap instead of overflowing the C stack
+	bool defined = r_esil_define (anal->esil, "LOOP", "1,LOOP", 1, 0, R_ESIL_OP_TYPE_MATH);
+	mu_assert_true (defined, "failed to define recursive op");
+	bool parsed = r_esil_parse (anal->esil, "LOOP");
+	mu_assert_false (parsed, "recursive definition did not stop");
+	mu_assert_eq (anal->esil->trap, 1, "recursive definition did not trap");
+	r_anal_free (anal);
+	mu_end;
+}
+
 int main(int argc, char **argv) {
 	mu_run_test (test_setup_keeps_custom_interfaces);
 	mu_run_test (test_setup_installs_default_interfaces);
 	mu_run_test (test_reg_alias_op);
 	mu_run_test (test_define_op);
+	mu_run_test (test_define_recursion);
 	return tests_passed != tests_run;
 }

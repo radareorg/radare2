@@ -1067,13 +1067,6 @@ R_API bool r_esil_dumpstack(REsil *esil) {
 }
 
 static bool runword(REsil *esil, RStrs w) {
-	esil->parse_goto_count--;
-	if (esil->parse_goto_count < 1) {
-		R_LOG_DEBUG ("ESIL infinite loop detected");
-		esil->trap = 1;       // INTERNAL ERROR
-		esil->parse_stop = 1; // INTERNAL ERROR
-		return false;
-	}
 	// Brace checks inlined — r_strs_equals_str wouldn't inline at -O0.
 	const size_t wlen = (size_t)(w.b - w.a);
 	if (wlen == 0) {
@@ -1118,8 +1111,15 @@ static bool runword(REsil *esil, RStrs w) {
 		bool ret;
 		if (R_LIKELY (op->code)) {
 			ret = op->code (esil);
+		} else if (esil->parse_goto_count < 1) {
+			// definition nesting shares the goto budget to bound recursion
+			R_LOG_DEBUG ("ESIL definition nesting too deep");
+			esil->trap = 1;
+			esil->parse_stop = 1;
+			ret = false;
 		} else {
 			// defined op: run the pre-tokenized expansion in place
+			esil->parse_goto_count--;
 			ret = true;
 			ut32 mi;
 			for (mi = 0; mi < op->ntokens; mi++) {
@@ -1131,6 +1131,7 @@ static bool runword(REsil *esil, RStrs w) {
 					break;
 				}
 			}
+			esil->parse_goto_count++;
 		}
 		esil->current_opstr = NULL;
 		if (!ret) {
@@ -1168,7 +1169,13 @@ static const char *goto_word(const char *str, int n) {
 // Return: 0=restart loop, 1=stop, 2=continue (no separator advance), 3=normal.
 static int eval_word(REsil *esil, const char *ostr, const char **str) {
 	if (esil->parse_goto != -1) {
-		// TODO: detect infinite loop
+		if (esil->parse_goto_count < 1) {
+			R_LOG_DEBUG ("ESIL goto limit reached");
+			esil->trap = 1;
+			esil->parse_stop = 1;
+			return 1;
+		}
+		esil->parse_goto_count--;
 		*str = goto_word (ostr, esil->parse_goto);
 		if (*str) {
 			esil->parse_goto = -1;
