@@ -656,7 +656,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 	R_RETURN_VAL_IF_FAIL (p && str, NULL);
 	const char *s, *lastcol = Color_WHITE;
-	char *d, *dst = (char *) calloc ((strlen (str) + 2), 32);
+	RStrBuf *sb = r_strbuf_new ("");
 	int colors = p->flags & R_PRINT_FLAGS_COLOR;
 	const char *color_0x00 = "";
 	const char *color_0x7f = "";
@@ -682,25 +682,17 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 		cur = ocur;
 	}
 	ocur++;
-	d = dst;
-// XXX: overflow here
-// TODO: Use r_cons primitives here
-#define memcat(x, y)\
-	{ \
-		memcpy ((x), (y), strlen (y));\
-		(x) += strlen (y);\
-	}
 	for (s = str, i = 0; *s; i++) {
 		int d_inc = 2;
 		if (p->cur_enabled) {
 			if (i == ocur - n) {
-				memcat (d, Color_RESET);
+				r_strbuf_append (sb, Color_RESET);
 			}
 			if (colors) {
-				memcat (d, lastcol);
+				r_strbuf_append (sb, lastcol);
 			}
 			if (i >= cur - n && i < ocur - n) {
-				memcat (d, Color_INVERT);
+				r_strbuf_append (sb, R_CONS_INVERT (true, true));
 			}
 		}
 		if (colors) {
@@ -721,27 +713,25 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 				}
 				lastcol = IS_PRINTABLE (ch) ? color_text: color_other;
 			}
-			memcat (d, lastcol);
+			r_strbuf_append (sb, lastcol);
 		}
 		if (s[0] == '.') {
 			d_inc = 1;
 		}
-		memcpy (d, s, d_inc);
-		d += d_inc;
+		r_strbuf_append_n (sb, s, d_inc);
 		s += d_inc;
 		if (bs) {
-			memcat (d, " ");
+			r_strbuf_append (sb, " ");
 		}
 	}
 	if (colors || p->cur_enabled) {
 		if (p->resetbg) {
-			memcat (d, Color_RESET);
+			r_strbuf_append (sb, Color_RESET);
 		} else {
-			memcat (d, Color_RESET_NOBG);
+			r_strbuf_append (sb, Color_RESET_NOBG);
 		}
 	}
-	*d = '\0';
-	return dst;
+	return r_strbuf_drain (sb);
 }
 
 #define P(x) (p->consb.cons && p->consb.cons->context->pal.x)? p->consb.cons->context->pal.x
