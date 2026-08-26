@@ -1514,6 +1514,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 		// To improve this, the function r_anal_optype_string_to_int should be implemented
 		// I also don't check if the opcode type exists.
 		const char *optype_str = r_anal_optype_tostring (op.type);
+		r_anal_op_fini (&op);
 		r_list_foreach (optypes_list, iter, optype) {
 			if (!strcmp (optype_str, optype)) {
 				goto cleanup_after_push;
@@ -1781,7 +1782,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 }
 
 static void cmd_debug_backtrace(RCore *core, const char *input) {
-	RAnalOp analop;
+	RAnalOp analop = {0};
 	ut64 addr, len = r_num_math (core->num, input);
 	if (!len) {
 		r_bp_traptrace_list (core->dbg->bp);
@@ -1808,8 +1809,10 @@ static void cmd_debug_backtrace(RCore *core, const char *input) {
 			/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
 			// XXX Do asm.arch should define the max size of opcode?
 			r_io_read_at (core->io, addr, buf, 32); // XXX longer opcodes?
+			r_anal_op_fini (&analop);
 			r_anal_op (core->anal, &analop, addr, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC);
 		} while (r_bp_traptrace_at (core->dbg->bp, addr, analop.size));
+		r_anal_op_fini (&analop);
 		r_bp_traptrace_enable (core->dbg->bp, false);
 	}
 }
@@ -4893,6 +4896,7 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 #endif
 			break;
 		}
+		r_anal_op_fini (&aop);
 	}
 }
 
@@ -5743,9 +5747,12 @@ static int cmd_debug_step(RCore *core, const char *input) {
 			addr = r_debug_reg_get (core->dbg, "PC");
 			r_io_read_at (core->io, addr, buf, sizeof (buf));
 			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC);
-			if (aop.type == R_ANAL_OP_TYPE_CALL) {
+			const bool call = aop.type == R_ANAL_OP_TYPE_CALL;
+			const ut64 jump = aop.jump;
+			r_anal_op_fini (&aop);
+			if (call) {
 				RBinObject *o = r_bin_cur_object (core->bin);
-				RBinSection *s = r_bin_get_section_at (o, aop.jump, true);
+				RBinSection *s = r_bin_get_section_at (o, jump, true);
 				if (!s) {
 					r_debug_step_over (core->dbg, times);
 					continue;
@@ -5772,6 +5779,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 				}
 #endif
 				addr += aop.size;
+				r_anal_op_fini (&aop);
 			}
 			r_debug_reg_set (core->dbg, "PC", addr);
 			r_reg_setv (core->anal->reg, "PC", addr);

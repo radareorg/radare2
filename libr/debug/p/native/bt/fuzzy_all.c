@@ -54,8 +54,10 @@ static int iscallret(RDebug *dbg, ut64 addr) {
 		// Try different positions
 		for (i = maxdist - 1; i >= maxdist - 8 && i >= 0; i--) {
 			if (r_anal_op (dbg->anal, &op, addr - (maxdist - i), buf + i, maxdist - i, R_ARCH_OP_MASK_BASIC) > 0) {
-				if ((op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_UCALL) &&
-				    (addr - (maxdist - i) + op.size == addr)) {
+				const bool call = op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_UCALL;
+				const bool adjacent = addr - (maxdist - i) + op.size == addr;
+				r_anal_op_fini (&op);
+				if (call && adjacent) {
 					return 1;
 				}
 			}

@@ -71,8 +71,9 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 					memset (bb->fingerprint+idx+op->nopcode, 0, oplen-op->nopcode);
 				}
 				idx += oplen;
+				r_anal_op_fini (op);
 			}
-			free (op);
+			r_anal_op_free (op);
 		}
 	}
 	free (buf);

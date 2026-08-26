@@ -887,6 +887,7 @@ R_API bool r_debug_step_soft(RDebug *dbg) {
 		return false;
 	}
 	if (op.type == R_ANAL_OP_TYPE_ILL) {
+		r_anal_op_fini (&op);
 		return false;
 	}
 	switch (op.type) {
@@ -942,6 +943,7 @@ R_API bool r_debug_step_soft(RDebug *dbg) {
 		br = 1;
 		break;
 	}
+	r_anal_op_fini (&op);
 
 	for (i = 0; i < br; i++) {
 		RBreakpointItem *bpi = r_bp_add_sw (dbg->bp, next[i], dbg->options.bpsize, R_BP_PROT_EXEC);
@@ -1144,13 +1146,16 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			// Use op.fail here instead of pc+op.size to enforce anal backends to fill in this field
 			ins_size = op.fail;
 		}
+		const bool overable = isStepOverable (op.type);
+		const bool rep = op.prefix & (R_ANAL_OP_PREFIX_REP | R_ANAL_OP_PREFIX_REPNE | R_ANAL_OP_PREFIX_LOCK);
+		r_anal_op_fini (&op);
 		// Skip over all the subroutine calls
-		if (isStepOverable (op.type)) {
+		if (overable) {
 			if (!r_debug_continue_until (dbg, ins_size)) {
 				R_LOG_ERROR ("Could not step over call @ 0x%"PFMT64x, pc);
 				return steps_taken;
 			}
-		} else if ((op.prefix & (R_ANAL_OP_PREFIX_REP | R_ANAL_OP_PREFIX_REPNE | R_ANAL_OP_PREFIX_LOCK))) {
+		} else if (rep) {
 			//R_LOG_ERROR ("REP: skip to next instruction");
 			if (!r_debug_continue_until (dbg, ins_size)) {
 				R_LOG_ERROR ("step over failed over rep");
@@ -1377,9 +1382,11 @@ repeat:
 			ut64 pc = r_debug_reg_get (dbg, "PC");
 			dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
 			r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC);
-			if (op.size > 0) {
+			const int opsize = op.size;
+			r_anal_op_fini (&op);
+			if (opsize > 0) {
 				const char *signame = r_signal_tostring (dbg->reason.signum);
-				r_debug_reg_set (dbg, "PC", pc+op.size);
+				r_debug_reg_set (dbg, "PC", pc + opsize);
 				R_LOG_INFO ("Skip signal %d handler %s",
 					dbg->reason.signum, signame);
 				goto repeat;
@@ -1466,7 +1473,9 @@ R_API bool r_debug_continue_until_optype(RDebug *dbg, int type, bool over) {
 			R_LOG_ERROR ("Decode error at %"PFMT64x, pc);
 			return false;
 		}
-		if (op.type == type) {
+		const int optype = op.type;
+		r_anal_op_fini (&op);
+		if (optype == type) {
 			switch (type) {
 			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_UCALL:
