@@ -1221,3 +1221,43 @@ EXPECT=<<EOF
     lr = pc + 4; goto 0xdae0
 EOF
 RUN
+
+NAME=pdc structured keeps a jump into another function as a transfer
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx b801000000eb09 @ 0
+wx b802000000c3 @ 0x10
+af @ 0x10
+af+ 0 fcn.caller
+afb+ 0 0 7 0x10
+pdc @ 0
+EOF
+EXPECT=<<EOF
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);
+void fcn.caller (void) {
+    eax = 1
+    goto loc_0x00000010;
+}
+
+EOF
+RUN
+
+NAME=pdc structured returns from a block that ends without a terminator
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx b805000000f4 @ 0
+af
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);
+void fcn.00000000 (void) {
+    eax = 5
+    hlt
+    return rax;
+}
+
+EOF
+RUN

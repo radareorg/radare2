@@ -10,6 +10,7 @@
 
 typedef struct {
 	RAnal *anal;
+	RAnalFunction *fcn;
 	HtUU *idom;	// block addr => immediate dominator addr (entry => UT64_MAX)
 	HtUU *ipdom;	// block addr => immediate post-dominator addr (UT64_MAX => exit)
 	HtUP *loops;	// natural-loop header addr => HtUU* member set
@@ -244,7 +245,8 @@ static PdcRegion *build_region(PdcCtx *ctx, ut64 cur, ut64 stop, ut64 *next) {
 		return region_new (PDC_R_GOTO, cur);
 	}
 	RAnalBlock *bb = r_anal_get_block_at (ctx->anal, cur);
-	if (!bb) {
+	// a tail call or a jump into a neighbour would splice its blocks in here
+	if (!bb || !r_anal_function_contains (ctx->fcn, cur)) {
 		return region_new (PDC_R_GOTO, cur);
 	}
 	ht_uu_update (ctx->emitted, cur, 1);
@@ -392,6 +394,7 @@ PdcPlan *pdc_plan_build(RCore *core, RAnalFunction *fcn) {
 	}
 	PdcCtx ctx = {
 		.anal = core->anal,
+		.fcn = fcn,
 		.idom = ht_uu_new0 (),
 		.ipdom = ht_uu_new0 (),
 		.loops = ht_up_new0 (),
