@@ -654,3 +654,28 @@ EXPECT=<<EOF
 0x40
 EOF
 RUN
+
+NAME=esil.gotolimit counts jumps, not words
+FILE=-
+ARGS=-a x86 -b 64 -e esil.gotolimit=4
+CMDS=<<EOF
+'ae 1,1,+,1,+,1,+,1,+,1,+,1,+,1,+,1,+,1,+,1,+,1,+,1,+,1,+,1,+,1,+,1,+,1,+,1,+,1,+,1,+
+'ae 0,rax,=,rax,1,+,rax,=,rax,4,==,$z,!,?{,3,GOTO,},rax
+EOF
+EXPECT=<<EOF
+0x15
+rax
+EOF
+RUN
+
+NAME=esil.gotolimit traps a runaway loop
+FILE=-
+ARGS=-a x86 -b 64 -e esil.gotolimit=2
+CMDS=<<EOF
+'ae 0,rax,=,rax,1,+,rax,=,rax,4,==,$z,!,?{,3,GOTO,},rax
+'ae 1,0,GOTO
+EOF
+EXPECT=<<EOF
+1,1,1
+EOF
+RUN
