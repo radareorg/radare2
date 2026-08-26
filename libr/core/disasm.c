@@ -8562,6 +8562,7 @@ toro:
 					r_cons_println (core->cons, opstr);
 				}
 				free (tmpopstr);
+				r_anal_op_fini (&analop);
 			} else {
 				char *asm_str = strdup (asmop.mnemonic);
 				if (asm_ucase) {
@@ -8601,6 +8602,7 @@ toro:
 				}
 			}
 		}
+		r_anal_op_fini (&asmop);
 		i += ret;
 	}
 	r_anal_op_fini (&asmop);

@@ -10882,6 +10882,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			} else {
 				R_LOG_WARN ("Unable to analyze instruction");
 			}
+			r_anal_op_fini (&aop);
 		}
 		break;
 	case '?':
