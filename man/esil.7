@@ -1,4 +1,4 @@
-.Dd Jul 13, 2025
+.Dd August 26, 2026
 .Dt ESIL 7
 .Sh NAME
 .Nm ESIL
@@ -217,6 +217,8 @@ DUP - Duplicate top value
 NUM - Push number or register value
 .It
 SWAP - Swap top two values
+.It
+ROT - Rotate the third stack element to the top: [x,y,z] becomes [y,z,x]
 .It
 CLEAR - Empty the stack
 .El

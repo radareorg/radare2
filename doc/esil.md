@@ -242,6 +242,7 @@ take care to not reuse any of the following:
 	BREAK    - stop evaluating the expression
 	STACK    - dump stack contents to screen
 	CLEAR    - clear stack
+	ROT      - rotate the third stack element to the top: [x,y,z] -> [y,z,x]
 
 
 Usage example:
