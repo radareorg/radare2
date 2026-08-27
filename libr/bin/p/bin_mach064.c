@@ -311,6 +311,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.fields = &MACH0_(mach_fields),
 	.create = &create,
 	.classes = &classes,
+	.trycatch = &trycatch,
 	.write = &r_bin_write_mach064,
 };
 

@@ -4014,6 +4014,24 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 			pj_kn (pj, "to", tc->to);
 			pj_kn (pj, "handler", tc->handler);
 			pj_kn (pj, "filter", tc->filter);
+			if (tc->kind != R_BIN_TRYCATCH_UNSPECIFIED) {
+				const char *kind = "catch";
+				if (tc->kind == R_BIN_TRYCATCH_CLEANUP) {
+					kind = "cleanup";
+				} else if (tc->kind == R_BIN_TRYCATCH_FILTER) {
+					kind = "filter";
+				}
+				pj_ks (pj, "kind", kind);
+				if (tc->kind != R_BIN_TRYCATCH_CLEANUP) {
+					pj_kN (pj, "typeFilter", tc->type_filter);
+				}
+				if (tc->type) {
+					pj_ks (pj, "type", tc->type);
+				}
+				if (tc->catch_all) {
+					pj_kb (pj, "catchAll", true);
+				}
+			}
 			pj_end (pj);
 		} else if (IS_MODE_SET (mode)) {
 			char *name = r_str_newf ("try.%d.%"PFMT64x".from", idx, tc->source);
