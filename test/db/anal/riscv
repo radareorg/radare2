@@ -83,3 +83,18 @@ ra,t0,t1,t2,t3,t4,t5,t6,a0,a1,a2,a3,a4,a5,a6,a7,ft0,ft1,ft2,ft3,ft4,ft5,ft6,ft7,
 sp,gp,tp,s0,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,fs0,fs1,fs2,fs3,fs4,fs5,fs6,fs7,fs8,fs9,fs10,fs11
 EOF
 RUN
+
+NAME=asm pseudo for riscv branches
+FILE=malloc://64
+ARGS=-a riscv -b 64 -e asm.pseudo=true
+CMDS=<<EOF
+wx 6364b500 63f4a500 63440500 6354a000 @ 0
+pi 4
+EOF
+EXPECT=<<EOF
+if ((unsigned)a0 < a1) goto 0x8
+if ((unsigned)a0 <= a1) goto 0xc
+if (a0 < 0) goto 0x10
+if (a0 <= 0) goto 0x14
+EOF
+RUN

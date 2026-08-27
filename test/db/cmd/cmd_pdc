@@ -1261,3 +1261,21 @@ void fcn.00000000 (void) {
 
 EOF
 RUN
+
+NAME=pdc structured recovers riscv unsigned branch operands
+FILE=malloc://64
+ARGS=-a riscv -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx 6366b500 13051000 67800000 13052000 67800000 @ 0
+af @ 0
+pdc~if (,a0 =,else
+pdc~cond_0x~?
+EOF
+EXPECT=<<EOF
+    if ((unsigned)a0 >= a1) {
+        a0 = 1
+    } else {
+        a0 = 2
+0
+EOF
+RUN
