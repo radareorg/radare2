@@ -375,6 +375,29 @@ static const char *cxx_call_open(const char *name) {
 	return NULL;
 }
 
+static bool cxx_is_itanium(const char *name) {
+	return r_str_startswith (name, "_Z") || r_str_startswith (name, "__Z");
+}
+
+static const char *cxx_strip_prefix(const char *name, const char *prefixes[]) {
+	int i;
+	for (i = 0; prefixes[i]; i++) {
+		if (r_str_startswith (name, prefixes[i])) {
+			return name + strlen (prefixes[i]);
+		}
+	}
+	return name;
+}
+
+static bool cxx_strip_any(const char **name, const char *prefixes[]) {
+	const char *stripped = cxx_strip_prefix (*name, prefixes);
+	if (stripped != *name) {
+		*name = stripped;
+		return true;
+	}
+	return false;
+}
+
 static char *cxx_demangled_symbol(RBinSymbol *sym, RBinLanguage *lang_out) {
 	const char *dname = r_bin_name_tostring2 (sym->name, 'd');
 	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
@@ -390,22 +413,16 @@ static char *cxx_demangled_symbol(RBinSymbol *sym, RBinLanguage *lang_out) {
 	}
 	const char *mangled = oname;
 	const char *prefixes[] = { "sym.imp.", "imp.", "reloc.", NULL };
-	int i;
-	for (i = 0; prefixes[i]; i++) {
-		if (r_str_startswith (mangled, prefixes[i])) {
-			mangled += strlen (prefixes[i]);
-			break;
-		}
-	}
-	const bool itanium = r_str_startswith (mangled, "_Z") || r_str_startswith (mangled, "__Z");
+	mangled = cxx_strip_prefix (mangled, prefixes);
+	const bool itanium = cxx_is_itanium (mangled);
 	if (lang != R_BIN_LANG_CXX && lang != R_BIN_LANG_IBMXL && !itanium) {
 		return NULL;
 	}
-	if (R_STR_ISNOTEMPTY (dname) && R_STR_ISNOTEMPTY (oname) && strcmp (dname, oname)) {
-		return strdup (dname);
-	}
 	if (lang == R_BIN_LANG_RUST) {
 		return NULL;
+	}
+	if (R_STR_ISNOTEMPTY (dname) && strcmp (dname, oname)) {
+		return strdup (dname);
 	}
 	return r_bin_demangle_cxx (NULL, oname, sym->vaddr);
 }
@@ -413,79 +430,17 @@ static char *cxx_demangled_symbol(RBinSymbol *sym, RBinLanguage *lang_out) {
 static char *cxx_basename(const char *name) {
 	const char *scope = cxx_last_scope (name, name + strlen (name));
 	char *base = strdup (scope? scope + 2: name);
-	if (!base) {
-		return NULL;
+	char *p;
+	if ((p = strchr (base, '<'))) {
+		*p = 0;
 	}
-	char *template = strchr (base, '<');
-	if (template) {
-		*template = 0;
-	}
-	char *tag = strchr (base, '[');
-	if (tag) {
-		*tag = 0;
+	if ((p = strchr (base, '['))) {
+		*p = 0;
 	}
 	return base;
 }
 
-static CxxMemberInfo *cxx_member_info(RBinSymbol *sym) {
-	RBinLanguage lang;
-	char *demangled = cxx_demangled_symbol (sym, &lang);
-	if (!demangled) {
-		return NULL;
-	}
-	CxxMemberInfo *info = R_NEW0 (CxxMemberInfo);
-	if (!info) {
-		free (demangled);
-		return NULL;
-	}
-	info->sym = sym;
-	info->lang = lang;
-	const char *name = demangled;
-	const char *thunk_prefixes[] = {
-		"non-virtual thunk to ",
-		"virtual thunk to ",
-		"covariant return thunk to ",
-		NULL
-	};
-	int i;
-	for (i = 0; thunk_prefixes[i]; i++) {
-		if (r_str_startswith (name, thunk_prefixes[i])) {
-			name += strlen (thunk_prefixes[i]);
-			info->flags |= R_BIN_ATTR_SYNTHETIC;
-			info->proves_class = true;
-			break;
-		}
-	}
-	const char *class_prefixes[] = {
-		"vtable for ",
-		"VTT for ",
-		"typeinfo for ",
-		"typeinfo name for ",
-		NULL
-	};
-	for (i = 0; class_prefixes[i]; i++) {
-		if (r_str_startswith (name, class_prefixes[i])) {
-			name += strlen (class_prefixes[i]);
-			if (R_STR_ISNOTEMPTY (name) && !r_str_startswith (name, "__cxxabiv1::")) {
-				info->classname = strdup (name);
-				info->proves_class = true;
-			}
-			free (demangled);
-			return info;
-		}
-	}
-	const char *open = cxx_call_open (name);
-	if (!open) {
-		free (demangled);
-		cxx_member_info_free (info);
-		return NULL;
-	}
-	const char *scope = cxx_last_scope (name, open);
-	if (!scope) {
-		free (demangled);
-		cxx_member_info_free (info);
-		return NULL;
-	}
+static bool cxx_derive_name(CxxMemberInfo *info, const char *name, const char *open, const char *scope) {
 	const char *owner = scope;
 	int angles = 0;
 	while (owner > name) {
@@ -502,26 +457,21 @@ static CxxMemberInfo *cxx_member_info(RBinSymbol *sym) {
 	info->classname = r_str_ndup (owner, scope - owner);
 	info->method = strdup (scope + 2);
 	if (!info->classname || !info->method) {
-		free (demangled);
-		cxx_member_info_free (info);
-		return NULL;
+		return false;
 	}
 	char *owner_base = cxx_basename (info->classname);
 	char *method_base = r_str_ndup (scope + 2, open - (scope + 2));
 	if (!owner_base || !method_base) {
 		free (owner_base);
 		free (method_base);
-		free (demangled);
-		cxx_member_info_free (info);
-		return NULL;
+		return false;
 	}
-	char *tag = strchr (method_base, '[');
-	if (tag) {
-		*tag = 0;
+	char *p;
+	if ((p = strchr (method_base, '['))) {
+		*p = 0;
 	}
-	char *template = strchr (method_base, '<');
-	if (template) {
-		*template = 0;
+	if ((p = strchr (method_base, '<'))) {
+		*p = 0;
 	}
 	if (!strcmp (owner_base, method_base)) {
 		info->flags |= R_BIN_ATTR_CONSTRUCTOR;
@@ -532,6 +482,51 @@ static CxxMemberInfo *cxx_member_info(RBinSymbol *sym) {
 	}
 	free (owner_base);
 	free (method_base);
+	return true;
+}
+
+static CxxMemberInfo *cxx_member_info(RBinSymbol *sym) {
+	RBinLanguage lang;
+	char *demangled = cxx_demangled_symbol (sym, &lang);
+	if (!demangled) {
+		return NULL;
+	}
+	CxxMemberInfo *info = R_NEW0 (CxxMemberInfo);
+	info->sym = sym;
+	info->lang = lang;
+	const char *name = demangled;
+	const char *thunk_prefixes[] = {
+		"non-virtual thunk to ",
+		"virtual thunk to ",
+		"covariant return thunk to ",
+		NULL
+	};
+	if (cxx_strip_any (&name, thunk_prefixes)) {
+		info->flags |= R_BIN_ATTR_SYNTHETIC;
+		info->proves_class = true;
+	}
+	const char *class_prefixes[] = {
+		"vtable for ",
+		"VTT for ",
+		"typeinfo for ",
+		"typeinfo name for ",
+		NULL
+	};
+	if (cxx_strip_any (&name, class_prefixes)) {
+		if (R_STR_ISNOTEMPTY (name) && !r_str_startswith (name, "__cxxabiv1::")) {
+			info->classname = strdup (name);
+			info->proves_class = true;
+		}
+		free (demangled);
+		return info;
+	}
+	const char *open = cxx_call_open (name);
+	const char *scope = open? cxx_last_scope (name, open): NULL;
+	if (!scope || !cxx_derive_name (info, name, open, scope)) {
+		free (demangled);
+		cxx_member_info_free (info);
+		return NULL;
+	}
 	const char *close = strrchr (open, ')');
 	if (close) {
 		if (strstr (close + 1, " const")) {
@@ -587,15 +582,8 @@ static void cxx_add_method(RBinFile *bf, CxxMemberInfo *info) {
 		return;
 	}
 	RBinSymbol *copy = r_bin_symbol_clone (info->sym);
-	if (!copy) {
-		return;
-	}
 	r_bin_name_demangled (copy->name, info->method);
 	RBinSymbol *dst = RVecRBinSymbol_emplace_back (&c->methods);
-	if (!dst) {
-		r_bin_symbol_free (copy);
-		return;
-	}
 	*dst = *copy;
 	free (copy);
 }
@@ -653,9 +641,8 @@ static RList *classes_from_symbols(RBinFile *bf, bool include_language_symbols) 
 				cxx_add_class (bf, info);
 			}
 			if (info->method) {
-				if (r_list_append (cxx_members, info)) {
-					continue;
-				}
+				r_list_append (cxx_members, info);
+				continue;
 			}
 		}
 		cxx_member_info_free (info);
