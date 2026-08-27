@@ -27,9 +27,21 @@ bool test_uleb128_small(void) {
 
 bool test_sleb128_small(void) {
 	st64 val;
-	const ut8 *data = (const ut8 *)"\xd3\xc2\x7c";
+	const ut8 *encoded = (const ut8 *)"\xd3\xc2\x7c";
+	const ut8 *data = encoded;
 	val = r_sleb128 (&data, data + 3);
 	mu_assert_eq (val, -0xdead, "sleb128 decoded");
+	st32 val32;
+	mu_assert_eq (read_i32_leb128 (encoded, encoded + 3, &val32), 3,
+		"signed i32 leb128 consumed all bytes");
+	mu_assert_eq (val32, -0xdead, "signed i32 leb128 decoded");
+	mu_assert_eq (read_i64_leb128 (encoded, encoded + 3, &val), 3,
+		"signed i64 leb128 consumed all bytes");
+	mu_assert_eq (val, -0xdead, "signed i64 leb128 decoded");
+	const ut8 minus_three = 0x7d;
+	mu_assert_eq (read_i64_leb128 (&minus_three, &minus_three + 1, &val), 1,
+		"single-byte signed leb128 consumed one byte");
+	mu_assert_eq (val, -3, "single-byte signed leb128 decoded");
 
 	RBuffer *b = r_buf_new_with_bytes ((ut8 *)"\xd3\xc2\x7c", 3);
 	int r = r_buf_sleb128 (b, &val);
