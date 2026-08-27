@@ -14,3 +14,82 @@ f bb.00027 = 0x00000027
 f bb.0002c = 0x0000002c
 EOF
 RUN
+
+NAME=m680x jsr/jmp/bsr set jump targets
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=m680x
+wx bd7e1e8d107e123424102510
+aoj 5~{}~"opcode","jump","fail","type"
+EOF
+EXPECT=<<EOF
+    "opcode": "jsr 0x7e1e",
+    "jump": 32286,
+    "fail": 3,
+    "type": "call",
+    "opcode": "bsr 0x0015",
+    "jump": 21,
+    "fail": 5,
+    "type": "call",
+    "opcode": "jmp 0x1234",
+    "jump": 4660,
+    "type": "jmp",
+    "opcode": "bcc 0x001a",
+    "jump": 26,
+    "fail": 10,
+    "type": "cjmp",
+    "opcode": "bcs 0x001c",
+    "jump": 28,
+    "fail": 12,
+    "type": "cjmp",
+EOF
+RUN
+
+NAME=m680x jsr creates callee function and xref
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=m680x
+wx bd001039 @ 0
+wx 4f39 @ 0x10
+af
+afl
+axl
+EOF
+EXPECT=<<EOF
+0x00000000    1      4 fcn.00000000
+0x00000010    1      2 fcn.00000010
+                            fcn.00000000 0x0 > CALL:--x > 0x10 fcn.00000010
+EOF
+RUN
+
+NAME=m6809 direct/indexed/indirect jsr and long branches
+FILE=malloc://32
+ARGS=-a m680x -e asm.cpu=6809
+CMDS=<<EOF
+wx 9d12ad846e9f123417001c1600031026000a
+aoj 6~{}~"opcode","jump","fail","ptr","type"
+EOF
+EXPECT=<<EOF
+    "opcode": "jsr 0x12",
+    "jump": 18,
+    "fail": 2,
+    "type": "call",
+    "opcode": "jsr , x",
+    "fail": 4,
+    "type": "rcall",
+    "opcode": "jmp [0x1234]]",
+    "ptr": 4660,
+    "type": "ujmp",
+    "opcode": "lbsr 0x0027",
+    "jump": 39,
+    "fail": 11,
+    "type": "call",
+    "opcode": "lbra 0x0011",
+    "jump": 17,
+    "type": "jmp",
+    "opcode": "lbne 0x001c",
+    "jump": 28,
+    "fail": 18,
+    "type": "cjmp",
+EOF
+RUN
