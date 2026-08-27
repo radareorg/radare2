@@ -1347,6 +1347,11 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 							ut64 handler = method_offset + (handler_addr * 2);
 							RBinTrycatch *tc = r_bin_trycatch_new (method_offset, try_from, try_to, handler, 0);
 							if (tc) {
+								tc->kind = R_BIN_TRYCATCH_CATCH;
+								tc->type_filter = handler_type;
+								if (handler_type < dex->header.types_size) {
+									tc->type = strdup (getstr (dex, dex->types[handler_type].descriptor_id));
+								}
 								r_list_append (dex->trycatch_list, tc);
 							}
 						}
@@ -1369,6 +1374,8 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 							ut64 handler = method_offset + (handler_addr * 2);
 							RBinTrycatch *tc = r_bin_trycatch_new (method_offset, try_from, try_to, handler, 0);
 							if (tc) {
+								tc->kind = R_BIN_TRYCATCH_CATCH;
+								tc->catch_all = true;
 								r_list_append (dex->trycatch_list, tc);
 							}
 						}
