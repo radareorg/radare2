@@ -38,7 +38,11 @@ static bool vtable_reloc_target(RAnal *anal, ut64 addr, ut64 *target) {
 		*target = reloc->symbol->vaddr + reloc->addend;
 		return true;
 	}
-	if (reloc->addend > 0) {
+	/* Itanium uses the top bit of a type-name pointer to mark a non-unique
+	 * name.  Mach-O chained rebase targets therefore legitimately appear as
+	 * negative st64 addends; only zero means that no local target was
+	 * supplied. */
+	if (reloc->addend != 0) {
 		*target = (ut64)reloc->addend;
 		return true;
 	}
