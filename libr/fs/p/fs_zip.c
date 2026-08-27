@@ -104,6 +104,19 @@ static void append_file(RList *list, const char *name, int type, int time, ut64 
 	}
 }
 
+static void fs_zip_close_archive(zip_t *za, zip_source_t *zs) {
+	zip_close (za);
+#ifdef OTEZIP_H_
+	/* otezip's zip_open_from_source() copies the data and never takes
+	 * ownership of the source, so it must be freed by the caller. With
+	 * libzip the archive owns the source after a successful open and
+	 * zip_close() frees it, so freeing it here would be a double free */
+	zip_source_free (zs);
+#else
+	(void)zs;
+#endif
+}
+
 static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 	ut64 addr = 0;
 	RIOMap *map = root->iob.map_get_at (root->iob.io, addr);
@@ -146,7 +159,7 @@ static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 	bool hasfailed = false;
 	RList *list = r_list_new ();
 	if (!list) {
-		zip_close (za);
+		fs_zip_close_archive (za, zs);
 		free (buf);
 		return NULL;
 	}
@@ -188,7 +201,7 @@ static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 		free (k);
 	}
 
-	zip_close (za);
+	fs_zip_close_archive (za, zs);
 	free (buf);
 	if (!hasdir || hasfailed) {
 		r_list_free (list);
@@ -224,6 +237,6 @@ RFSPlugin r_fs_plugin_zip = {
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_FS,
 	.data = &r_fs_plugin_zip,
-	.verszipn = R2_VERSION
+	.version = R2_VERSION
 };
 #endif
