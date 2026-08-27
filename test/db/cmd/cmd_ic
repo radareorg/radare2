@@ -5,7 +5,7 @@ ic~_JNIEnv
 ic~FindClass
 EOF
 EXPECT=<<EOF
-0x00000000 [0x00006060 - 0x0000697c]   2332 jni class 0 _JNIEnv
+0x00006060 [0x00006060 - 0x0000699a]   2362 jni class 0 _JNIEnv
 0x000074f8 jni   method   0      inject(_JNIEnv*, _jobject*, _jstring*, _jstring*)
 0x0000699c jni   method   1      findBaseDexClassloader(_JNIEnv*, _jobject*)
 0x00006a2c jni   method   2      getField(_JNIEnv*, _jobject*, _jobject*, _jstring*)
@@ -41,20 +41,17 @@ EOF
 EXPECT=<<EOF
 'agn _JNIEnv
 'agn SystemClassLoaderInjector
-'agn std
 'agn std::exception
 'agn std::bad_exception
 'agn __cxxabiv1::__forced_unwind
 'agn __cxxabiv1::__foreign_exception
 'agn __eh_globals_init
-'agn __cxxabiv1
 'agn __cxxabiv1::__fundamental_type_info
 'agn std::type_info
 'agn __cxxabiv1::__pointer_type_info
 'agn __cxxabiv1::__pbase_type_info
 'agn __cxxabiv1::__si_class_type_info
 'agn __cxxabiv1::__class_type_info
-'agn __gnu_cxx
 'agn __gnu_cxx::__concurrence_lock_error
 'agn __gnu_cxx::__concurrence_unlock_error
 'agn std::bad_cast
@@ -72,24 +69,21 @@ CMDS=icl
 EXPECT=<<EOF
 0x6060 0x606a 0x6074 0x608e 0x6098 0x60a4 0x60c0 0x60dc 0x60ea 0x695e 0x697c
 0x74f8 0x699c 0x6a2c 0x6abc 0x6af4 0x6b1c 0x6bb0 0x6d00 0x6e5c 0x6f68 0x720c
-0x9470 0x886c 0x9494 0x94ac 0x94c8
-0x8884 0x88f4
-0x889c 0x8904
-0x88c4
-0x88dc
+0x8884 0x88f4 0x8914
+0x889c 0x8904 0x8930
+0x88c4 0x894c
+0x88dc 0x8968
 0x8984
-0x943c 0x9488
-0x94e4
-0x97bc 0x97d4 0x97dc 0x9854 0x97e4 0x9808
-0x9528 0x9530 0x9574
-0x9df0 0x9e34 0x9dd0
-0x95f4 0x9638 0x969c 0x977c
-0x98d8 0x991c 0x9948 0x9868 0x98c4 0x998c
-0x9ec4 0x12780 0x127c8
-0x126b0 0x126f8
-0x126c0 0x126d0
-0x12bd8 0x12bc8
-0x12c2c 0x12c1c
+0x94e4 0x950c
+0x97bc 0x97d4 0x97dc 0x9854 0x97e4 0x9808 0x97ec
+0x9528 0x9530 0x9558 0x9574
+0x9df0 0x9e34 0x9dd0 0x9e18
+0x95f4 0x961c 0x9638 0x969c 0x977c
+0x98d8 0x991c 0x9948 0x9868 0x98c4 0x9900 0x998c
+0x126b0 0x126f8 0x12750
+0x126c0 0x126d0 0x12720
+0x12bd8 0x12bc8 0x12c00
+0x12c2c 0x12c1c 0x12c54
 EOF
 RUN
 
@@ -100,13 +94,13 @@ EXPECT=<<EOF
 [
   {
     "classname": "_JNIEnv",
-    "addr": 0,
+    "addr": 24672,
     "lang": "jni",
     "index": 0,
     "methods": [
       {
         "name": "FindClass(char const*)",
-        "flag": "method._JNIEnv.FindClass_char_const_",
+        "flag": "class._JNIEnv",
         "rawname": "_ZN7_JNIEnv9FindClassEPKc",
         "lang": "jni",
         "addr": 24672
@@ -185,13 +179,13 @@ EXPECT=<<EOF
   },
   {
     "classname": "SystemClassLoaderInjector",
-    "addr": 0,
+    "addr": 29944,
     "lang": "jni",
     "index": 1,
     "methods": [
       {
         "name": "inject(_JNIEnv*, _jobject*, _jstring*, _jstring*)",
-        "flag": "method.SystemClassLoaderInjector.inject__JNIEnv___jobject___jstring___jstring_",
+        "flag": "class.SystemClassLoaderInjector",
         "rawname": "_ZN25SystemClassLoaderInjector6injectEP7_JNIEnvP8_jobjectP8_jstringS5_",
         "lang": "jni",
         "addr": 29944
@@ -269,247 +263,303 @@ EXPECT=<<EOF
     ]
   },
   {
-    "classname": "std",
-    "addr": 0,
+    "classname": "std::exception",
+    "addr": 34948,
     "lang": "c++",
     "index": 2,
     "methods": [
       {
-        "name": "terminate()",
-        "flag": "method.std.terminate__",
-        "rawname": "_ZSt9terminatev",
-        "lang": "c++",
-        "addr": 38000
-      },
-      {
-        "name": "uncaught_exception()",
-        "flag": "method.std.uncaught_exception__",
-        "rawname": "_ZSt18uncaught_exceptionv",
-        "lang": "c++",
-        "addr": 34924
-      },
-      {
-        "name": "unexpected()",
-        "flag": "method.std.unexpected__",
-        "rawname": "_ZSt10unexpectedv",
-        "lang": "c++",
-        "addr": 38036
-      },
-      {
-        "name": "set_terminate(void (*)())",
-        "flag": "method.std.set_terminate_void______",
-        "rawname": "_ZSt13set_terminatePFvvE",
-        "lang": "c++",
-        "addr": 38060
-      },
-      {
-        "name": "set_unexpected(void (*)())",
-        "flag": "method.std.set_unexpected_void______",
-        "rawname": "_ZSt14set_unexpectedPFvvE",
-        "lang": "c++",
-        "addr": 38088
-      }
-    ]
-  },
-  {
-    "classname": "std::exception",
-    "addr": 0,
-    "lang": "c++",
-    "index": 3,
-    "methods": [
-      {
         "name": "~exception()",
-        "flag": "method.std::exception._exception__",
-        "rawname": "_ZNSt9exceptionD0Ev",
+        "flag": "class.std::exception",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZNSt9exceptionD2Ev",
         "lang": "c++",
         "addr": 34948
       },
       {
         "name": "what() const",
-        "flag": "method.std::exception.what___const",
+        "flag": "method.const.std::exception.what___const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNKSt9exception4whatEv",
         "lang": "c++",
         "addr": 35060
+      },
+      {
+        "name": "~exception()",
+        "flag": "method.destructor.std::exception._exception__",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZNSt9exceptionD0Ev",
+        "lang": "c++",
+        "addr": 35092
       }
     ]
   },
   {
     "classname": "std::bad_exception",
-    "addr": 0,
+    "addr": 34972,
     "lang": "c++",
-    "index": 4,
+    "index": 3,
     "methods": [
       {
         "name": "~bad_exception()",
-        "flag": "method.std::bad_exception._bad_exception__",
-        "rawname": "_ZNSt13bad_exceptionD0Ev",
+        "flag": "class.std::bad_exception",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZNSt13bad_exceptionD2Ev",
         "lang": "c++",
         "addr": 34972
       },
       {
         "name": "what() const",
-        "flag": "method.std::bad_exception.what___const",
+        "flag": "method.const.std::bad_exception.what___const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNKSt13bad_exception4whatEv",
         "lang": "c++",
         "addr": 35076
+      },
+      {
+        "name": "~bad_exception()",
+        "flag": "method.destructor.std::bad_exception._bad_exception__",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZNSt13bad_exceptionD0Ev",
+        "lang": "c++",
+        "addr": 35120
       }
     ]
   },
   {
     "classname": "__cxxabiv1::__forced_unwind",
-    "addr": 0,
+    "addr": 35012,
     "lang": "c++",
-    "index": 5,
+    "index": 4,
     "methods": [
       {
         "name": "~__forced_unwind()",
-        "flag": "method.__cxxabiv1::__forced_unwind.___forced_unwind__",
-        "rawname": "_ZN10__cxxabiv115__forced_unwindD0Ev",
+        "flag": "class.__cxxabiv1::__forced_unwind",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN10__cxxabiv115__forced_unwindD2Ev",
         "lang": "c++",
         "addr": 35012
+      },
+      {
+        "name": "~__forced_unwind()",
+        "flag": "method.destructor.__cxxabiv1::__forced_unwind.___forced_unwind__",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN10__cxxabiv115__forced_unwindD0Ev",
+        "lang": "c++",
+        "addr": 35148
       }
     ]
   },
   {
     "classname": "__cxxabiv1::__foreign_exception",
-    "addr": 0,
+    "addr": 35036,
     "lang": "c++",
-    "index": 6,
+    "index": 5,
     "methods": [
       {
         "name": "~__foreign_exception()",
-        "flag": "method.__cxxabiv1::__foreign_exception.___foreign_exception__",
-        "rawname": "_ZN10__cxxabiv119__foreign_exceptionD0Ev",
+        "flag": "class.__cxxabiv1::__foreign_exception",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN10__cxxabiv119__foreign_exceptionD2Ev",
         "lang": "c++",
         "addr": 35036
+      },
+      {
+        "name": "~__foreign_exception()",
+        "flag": "method.destructor.__cxxabiv1::__foreign_exception.___foreign_exception__",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN10__cxxabiv119__foreign_exceptionD0Ev",
+        "lang": "c++",
+        "addr": 35176
       }
     ]
   },
   {
     "classname": "__eh_globals_init",
-    "addr": 0,
+    "addr": 35204,
     "lang": "c++",
-    "index": 7,
+    "index": 6,
     "methods": [
       {
         "name": "~__eh_globals_init()",
-        "flag": "method.__eh_globals_init.___eh_globals_init__",
-        "rawname": "_ZN17__eh_globals_initD1Ev",
+        "flag": "class.__eh_globals_init",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN17__eh_globals_initD2Ev",
         "lang": "c++",
         "addr": 35204
       }
     ]
   },
   {
-    "classname": "__cxxabiv1",
-    "addr": 0,
-    "lang": "c++",
-    "index": 8,
-    "methods": [
-      {
-        "name": "__terminate(void (*)())",
-        "flag": "method.__cxxabiv1.__terminate_void______",
-        "rawname": "_ZN10__cxxabiv111__terminateEPFvvE",
-        "lang": "c++",
-        "addr": 37948
-      },
-      {
-        "name": "__unexpected(void (*)())",
-        "flag": "method.__cxxabiv1.__unexpected_void______",
-        "rawname": "_ZN10__cxxabiv112__unexpectedEPFvvE",
-        "lang": "c++",
-        "addr": 38024
-      }
-    ]
-  },
-  {
     "classname": "__cxxabiv1::__fundamental_type_info",
-    "addr": 0,
+    "addr": 38116,
     "lang": "c++",
-    "index": 9,
+    "index": 7,
     "methods": [
       {
         "name": "~__fundamental_type_info()",
-        "flag": "method.__cxxabiv1::__fundamental_type_info.___fundamental_type_info__",
-        "rawname": "_ZN10__cxxabiv123__fundamental_type_infoD0Ev",
+        "flag": "class.__cxxabiv1::__fundamental_type_info",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN10__cxxabiv123__fundamental_type_infoD2Ev",
         "lang": "c++",
         "addr": 38116
+      },
+      {
+        "name": "~__fundamental_type_info()",
+        "flag": "method.destructor.__cxxabiv1::__fundamental_type_info.___fundamental_type_info__",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN10__cxxabiv123__fundamental_type_infoD0Ev",
+        "lang": "c++",
+        "addr": 38156
       }
     ]
   },
   {
     "classname": "std::type_info",
-    "addr": 0,
+    "addr": 38844,
     "lang": "c++",
-    "index": 10,
+    "index": 8,
     "methods": [
       {
         "name": "~type_info()",
-        "flag": "method.std::type_info._type_info__",
-        "rawname": "_ZNSt9type_infoD0Ev",
+        "flag": "class.std::type_info",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZNSt9type_infoD2Ev",
         "lang": "c++",
         "addr": 38844
       },
       {
         "name": "__is_pointer_p() const",
-        "flag": "method.std::type_info.__is_pointer_p___const",
+        "flag": "method.const.std::type_info.__is_pointer_p___const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNKSt9type_info14__is_pointer_pEv",
         "lang": "c++",
         "addr": 38868
       },
       {
         "name": "__is_function_p() const",
-        "flag": "method.std::type_info.__is_function_p___const",
+        "flag": "method.const.std::type_info.__is_function_p___const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNKSt9type_info15__is_function_pEv",
         "lang": "c++",
         "addr": 38876
       },
       {
         "name": "__do_catch(std::type_info const*, void**, unsigned int) const",
-        "flag": "method.std::type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
+        "flag": "method.const.std::type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNKSt9type_info10__do_catchEPKS_PPvj",
         "lang": "c++",
         "addr": 38996
       },
       {
         "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void**) const",
-        "flag": "method.std::type_info.__do_upcast___cxxabiv1::__class_type_info_const__void__const",
+        "flag": "method.const.std::type_info.__do_upcast___cxxabiv1::__class_type_info_const__void__const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNKSt9type_info11__do_upcastEPKN10__cxxabiv117__class_type_infoEPPv",
         "lang": "c++",
         "addr": 38884
       },
       {
         "name": "operator==(std::type_info const&) const",
-        "flag": "method.std::type_info.operator_std::type_info_const__const",
+        "flag": "method.const.std::type_info.operator_std::type_info_const__const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNKSt9type_infoeqERKS_",
         "lang": "c++",
         "addr": 38920
+      },
+      {
+        "name": "~type_info()",
+        "flag": "method.destructor.std::type_info._type_info__",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZNSt9type_infoD0Ev",
+        "lang": "c++",
+        "addr": 38892
       }
     ]
   },
   {
     "classname": "__cxxabiv1::__pointer_type_info",
-    "addr": 0,
+    "addr": 38184,
     "lang": "c++",
-    "index": 11,
+    "index": 9,
     "methods": [
       {
         "name": "__is_pointer_p() const",
-        "flag": "method.__cxxabiv1::__pointer_type_info.__is_pointer_p___const",
+        "flag": "class.__cxxabiv1::__pointer_type_info",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNK10__cxxabiv119__pointer_type_info14__is_pointer_pEv",
         "lang": "c++",
         "addr": 38184
       },
       {
         "name": "~__pointer_type_info()",
-        "flag": "method.__cxxabiv1::__pointer_type_info.___pointer_type_info__",
-        "rawname": "_ZN10__cxxabiv119__pointer_type_infoD0Ev",
+        "flag": "__cxxabiv1::__pointer_type_info::~__pointer_type_info()",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN10__cxxabiv119__pointer_type_infoD2Ev",
         "lang": "c++",
         "addr": 38192
       },
       {
+        "name": "~__pointer_type_info()",
+        "flag": "method.destructor.__cxxabiv1::__pointer_type_info.___pointer_type_info__",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN10__cxxabiv119__pointer_type_infoD0Ev",
+        "lang": "c++",
+        "addr": 38232
+      },
+      {
         "name": "__pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const",
-        "flag": "method.__cxxabiv1::__pointer_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const__void__unsigned_int__const",
+        "flag": "method.const.__cxxabiv1::__pointer_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const__void__unsigned_int__const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNK10__cxxabiv119__pointer_type_info15__pointer_catchEPKNS_17__pbase_type_infoEPPvj",
         "lang": "c++",
         "addr": 38260
@@ -518,63 +568,104 @@ EXPECT=<<EOF
   },
   {
     "classname": "__cxxabiv1::__pbase_type_info",
-    "addr": 0,
+    "addr": 40432,
     "lang": "c++",
-    "index": 12,
+    "index": 10,
     "methods": [
       {
         "name": "~__pbase_type_info()",
-        "flag": "method.__cxxabiv1::__pbase_type_info.___pbase_type_info__",
-        "rawname": "_ZN10__cxxabiv117__pbase_type_infoD0Ev",
+        "flag": "class.__cxxabiv1::__pbase_type_info",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN10__cxxabiv117__pbase_type_infoD2Ev",
         "lang": "c++",
         "addr": 40432
       },
       {
         "name": "__do_catch(std::type_info const*, void**, unsigned int) const",
-        "flag": "method.__cxxabiv1::__pbase_type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
+        "flag": "method.const.__cxxabiv1::__pbase_type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNK10__cxxabiv117__pbase_type_info10__do_catchEPKSt9type_infoPPvj",
         "lang": "c++",
         "addr": 40500
       },
       {
         "name": "__pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const",
-        "flag": "method.__cxxabiv1::__pbase_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const__void__unsigned_int__const",
+        "flag": "method.const.__cxxabiv1::__pbase_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const__void__unsigned_int__const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNK10__cxxabiv117__pbase_type_info15__pointer_catchEPKS0_PPvj",
         "lang": "c++",
         "addr": 40400
+      },
+      {
+        "name": "~__pbase_type_info()",
+        "flag": "method.destructor.__cxxabiv1::__pbase_type_info.___pbase_type_info__",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN10__cxxabiv117__pbase_type_infoD0Ev",
+        "lang": "c++",
+        "addr": 40472
       }
     ]
   },
   {
     "classname": "__cxxabiv1::__si_class_type_info",
-    "addr": 0,
+    "addr": 38388,
     "lang": "c++",
-    "index": 13,
+    "index": 11,
     "methods": [
       {
         "name": "~__si_class_type_info()",
-        "flag": "method.__cxxabiv1::__si_class_type_info.___si_class_type_info__",
-        "rawname": "_ZN10__cxxabiv120__si_class_type_infoD0Ev",
+        "flag": "class.__cxxabiv1::__si_class_type_info",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN10__cxxabiv120__si_class_type_infoD2Ev",
         "lang": "c++",
         "addr": 38388
       },
       {
+        "name": "~__si_class_type_info()",
+        "flag": "method.destructor.__cxxabiv1::__si_class_type_info.___si_class_type_info__",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN10__cxxabiv120__si_class_type_infoD0Ev",
+        "lang": "c++",
+        "addr": 38428
+      },
+      {
         "name": "__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const",
-        "flag": "method.__cxxabiv1::__si_class_type_info.__do_find_public_src_int__void_const____cxxabiv1::__class_type_info_const__void_const__const",
+        "flag": "method.const.__cxxabiv1::__si_class_type_info.__do_find_public_src_int__void_const____cxxabiv1::__class_type_info_const__void_const__const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNK10__cxxabiv120__si_class_type_info20__do_find_public_srcEiPKvPKNS_17__class_type_infoES2_",
         "lang": "c++",
         "addr": 38456
       },
       {
         "name": "__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const",
-        "flag": "method.__cxxabiv1::__si_class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__const",
+        "flag": "method.const.__cxxabiv1::__si_class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNK10__cxxabiv120__si_class_type_info12__do_dyncastEiNS_17__class_type_info10__sub_kindEPKS1_PKvS4_S6_RNS1_16__dyncast_resultE",
         "lang": "c++",
         "addr": 38556
       },
       {
         "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const",
-        "flag": "method.__cxxabiv1::__si_class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__upcast_result__const",
+        "flag": "method.const.__cxxabiv1::__si_class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__upcast_result__const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNK10__cxxabiv120__si_class_type_info11__do_upcastEPKNS_17__class_type_infoEPKvRNS1_15__upcast_resultE",
         "lang": "c++",
         "addr": 38780
@@ -583,48 +674,76 @@ EXPECT=<<EOF
   },
   {
     "classname": "__cxxabiv1::__class_type_info",
-    "addr": 0,
+    "addr": 39128,
     "lang": "c++",
-    "index": 14,
+    "index": 12,
     "methods": [
       {
         "name": "~__class_type_info()",
-        "flag": "method.__cxxabiv1::__class_type_info.___class_type_info__",
-        "rawname": "_ZN10__cxxabiv117__class_type_infoD0Ev",
+        "flag": "class.__cxxabiv1::__class_type_info",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN10__cxxabiv117__class_type_infoD2Ev",
         "lang": "c++",
         "addr": 39128
       },
       {
         "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const",
-        "flag": "method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__upcast_result__const",
+        "flag": "method.const.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__upcast_result__const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNK10__cxxabiv117__class_type_info11__do_upcastEPKS0_PKvRNS0_15__upcast_resultE",
         "lang": "c++",
         "addr": 39196
       },
       {
         "name": "__do_catch(std::type_info const*, void**, unsigned int) const",
-        "flag": "method.__cxxabiv1::__class_type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
+        "flag": "method.const.__cxxabiv1::__class_type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNK10__cxxabiv117__class_type_info10__do_catchEPKSt9type_infoPPvj",
         "lang": "c++",
         "addr": 39240
       },
       {
         "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void**) const",
-        "flag": "method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void__const",
+        "flag": "method.const.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void__const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNK10__cxxabiv117__class_type_info11__do_upcastEPKS0_PPv",
         "lang": "c++",
         "addr": 39016
       },
       {
         "name": "__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const",
-        "flag": "method.__cxxabiv1::__class_type_info.__do_find_public_src_int__void_const____cxxabiv1::__class_type_info_const__void_const__const",
+        "flag": "method.const.__cxxabiv1::__class_type_info.__do_find_public_src_int__void_const____cxxabiv1::__class_type_info_const__void_const__const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNK10__cxxabiv117__class_type_info20__do_find_public_srcEiPKvPKS0_S2_",
         "lang": "c++",
         "addr": 39108
       },
       {
+        "name": "~__class_type_info()",
+        "flag": "method.destructor.__cxxabiv1::__class_type_info.___class_type_info__",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN10__cxxabiv117__class_type_infoD0Ev",
+        "lang": "c++",
+        "addr": 39168
+      },
+      {
         "name": "__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const",
-        "flag": "method.__cxxabiv1::__class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__const",
+        "flag": "method.const.__cxxabiv1::__class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNK10__cxxabiv117__class_type_info12__do_dyncastEiNS0_10__sub_kindEPKS0_PKvS3_S5_RNS0_16__dyncast_resultE",
         "lang": "c++",
         "addr": 39308
@@ -632,119 +751,154 @@ EXPECT=<<EOF
     ]
   },
   {
-    "classname": "__gnu_cxx",
-    "addr": 0,
-    "lang": "c++",
-    "index": 15,
-    "methods": [
-      {
-        "name": "__verbose_terminate_handler()",
-        "flag": "method.__gnu_cxx.__verbose_terminate_handler__",
-        "rawname": "_ZN9__gnu_cxx27__verbose_terminate_handlerEv",
-        "lang": "c++",
-        "addr": 40644
-      },
-      {
-        "name": "__throw_concurrence_lock_error()",
-        "flag": "method.__gnu_cxx.__throw_concurrence_lock_error__",
-        "rawname": "_ZN9__gnu_cxx30__throw_concurrence_lock_errorEv",
-        "lang": "c++",
-        "addr": 75648
-      },
-      {
-        "name": "__throw_concurrence_unlock_error()",
-        "flag": "method.__gnu_cxx.__throw_concurrence_unlock_error__",
-        "rawname": "_ZN9__gnu_cxx32__throw_concurrence_unlock_errorEv",
-        "lang": "c++",
-        "addr": 75720
-      }
-    ]
-  },
-  {
     "classname": "__gnu_cxx::__concurrence_lock_error",
-    "addr": 0,
+    "addr": 75440,
     "lang": "c++",
-    "index": 16,
+    "index": 13,
     "methods": [
       {
         "name": "what() const",
-        "flag": "method.__gnu_cxx::__concurrence_lock_error.what___const",
+        "flag": "class.__gnu_cxx::__concurrence_lock_error",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNK9__gnu_cxx24__concurrence_lock_error4whatEv",
         "lang": "c++",
         "addr": 75440
       },
       {
         "name": "~__concurrence_lock_error()",
-        "flag": "method.__gnu_cxx::__concurrence_lock_error.___concurrence_lock_error__",
-        "rawname": "_ZN9__gnu_cxx24__concurrence_lock_errorD0Ev",
+        "flag": "__gnu_cxx::__concurrence_lock_error::~__concurrence_lock_error()",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN9__gnu_cxx24__concurrence_lock_errorD2Ev",
         "lang": "c++",
         "addr": 75512
+      },
+      {
+        "name": "~__concurrence_lock_error()",
+        "flag": "method.destructor.__gnu_cxx::__concurrence_lock_error.___concurrence_lock_error__",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN9__gnu_cxx24__concurrence_lock_errorD0Ev",
+        "lang": "c++",
+        "addr": 75600
       }
     ]
   },
   {
     "classname": "__gnu_cxx::__concurrence_unlock_error",
-    "addr": 0,
+    "addr": 75456,
     "lang": "c++",
-    "index": 17,
+    "index": 14,
     "methods": [
       {
         "name": "what() const",
-        "flag": "method.__gnu_cxx::__concurrence_unlock_error.what___const",
+        "flag": "class.__gnu_cxx::__concurrence_unlock_error",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNK9__gnu_cxx26__concurrence_unlock_error4whatEv",
         "lang": "c++",
         "addr": 75456
       },
       {
         "name": "~__concurrence_unlock_error()",
-        "flag": "method.__gnu_cxx::__concurrence_unlock_error.___concurrence_unlock_error__",
-        "rawname": "_ZN9__gnu_cxx26__concurrence_unlock_errorD0Ev",
+        "flag": "__gnu_cxx::__concurrence_unlock_error::~__concurrence_unlock_error()",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN9__gnu_cxx26__concurrence_unlock_errorD2Ev",
         "lang": "c++",
         "addr": 75472
+      },
+      {
+        "name": "~__concurrence_unlock_error()",
+        "flag": "method.destructor.__gnu_cxx::__concurrence_unlock_error.___concurrence_unlock_error__",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZN9__gnu_cxx26__concurrence_unlock_errorD0Ev",
+        "lang": "c++",
+        "addr": 75552
       }
     ]
   },
   {
     "classname": "std::bad_cast",
-    "addr": 0,
+    "addr": 76760,
     "lang": "c++",
-    "index": 18,
+    "index": 15,
     "methods": [
       {
         "name": "~bad_cast()",
-        "flag": "method.std::bad_cast._bad_cast__",
-        "rawname": "_ZNSt8bad_castD0Ev",
+        "flag": "class.std::bad_cast",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZNSt8bad_castD1Ev",
         "lang": "c++",
         "addr": 76760
       },
       {
         "name": "what() const",
-        "flag": "method.std::bad_cast.what___const",
+        "flag": "method.const.std::bad_cast.what___const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNKSt8bad_cast4whatEv",
         "lang": "c++",
         "addr": 76744
+      },
+      {
+        "name": "~bad_cast()",
+        "flag": "method.destructor.std::bad_cast._bad_cast__",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZNSt8bad_castD0Ev",
+        "lang": "c++",
+        "addr": 76800
       }
     ]
   },
   {
     "classname": "std::bad_typeid",
-    "addr": 0,
+    "addr": 76844,
     "lang": "c++",
-    "index": 19,
+    "index": 16,
     "methods": [
       {
         "name": "~bad_typeid()",
-        "flag": "method.std::bad_typeid._bad_typeid__",
-        "rawname": "_ZNSt10bad_typeidD0Ev",
+        "flag": "class.std::bad_typeid",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZNSt10bad_typeidD1Ev",
         "lang": "c++",
         "addr": 76844
       },
       {
         "name": "what() const",
-        "flag": "method.std::bad_typeid.what___const",
+        "flag": "method.const.std::bad_typeid.what___const",
+        "flags": [
+          "const"
+        ],
         "rawname": "_ZNKSt10bad_typeid4whatEv",
         "lang": "c++",
         "addr": 76828
+      },
+      {
+        "name": "~bad_typeid()",
+        "flag": "method.destructor.std::bad_typeid._bad_typeid__",
+        "flags": [
+          "destructor"
+        ],
+        "rawname": "_ZNSt10bad_typeidD0Ev",
+        "lang": "c++",
+        "addr": 76884
       }
     ]
   }
@@ -783,89 +937,87 @@ fs classes
 'f method.SystemClassLoaderInjector.injectInAliyunOs(_JNIEnv*,__jobject*,__jstring*,__jstring*) = 0x6f68
 'f method.SystemClassLoaderInjector.injectBelowApiLevel14(_JNIEnv*,__jobject*,__jstring*,__jstring*) = 0x720c
 'td struct SystemClassLoaderInjector { char empty[0];};
-'f class.std = 0x886c
-'f method.std.terminate() = 0x9470
-'f method.std.uncaught_exception() = 0x886c
-'f method.std.unexpected() = 0x9494
-'f method.std.set_terminate(void_(*)()) = 0x94ac
-'f method.std.set_unexpected(void_(*)()) = 0x94c8
-'td struct std { char empty[0];};
 'f class.std::exception = 0x8884
-'f method.std::exception.~exception() = 0x8884
-'f method.std::exception.what()_const = 0x88f4
+'f method.std::exception.destructor.~exception() = 0x8884
+'f method.std::exception.const.what()_const = 0x88f4
+'f method.std::exception.destructor.~exception() = 0x8914
 'td struct std::exception { char empty[0];};
 'f class.std::bad_exception = 0x889c
-'f method.std::bad_exception.~bad_exception() = 0x889c
-'f method.std::bad_exception.what()_const = 0x8904
+'f method.std::bad_exception.destructor.~bad_exception() = 0x889c
+'f method.std::bad_exception.const.what()_const = 0x8904
+'f method.std::bad_exception.destructor.~bad_exception() = 0x8930
 'td struct std::bad_exception { char empty[0];};
 'f class.__cxxabiv1::__forced_unwind = 0x88c4
-'f method.__cxxabiv1::__forced_unwind.~__forced_unwind() = 0x88c4
+'f method.__cxxabiv1::__forced_unwind.destructor.~__forced_unwind() = 0x88c4
+'f method.__cxxabiv1::__forced_unwind.destructor.~__forced_unwind() = 0x894c
 'td struct __cxxabiv1::__forced_unwind { char empty[0];};
 'f class.__cxxabiv1::__foreign_exception = 0x88dc
-'f method.__cxxabiv1::__foreign_exception.~__foreign_exception() = 0x88dc
+'f method.__cxxabiv1::__foreign_exception.destructor.~__foreign_exception() = 0x88dc
+'f method.__cxxabiv1::__foreign_exception.destructor.~__foreign_exception() = 0x8968
 'td struct __cxxabiv1::__foreign_exception { char empty[0];};
 'f class.__eh_globals_init = 0x8984
-'f method.__eh_globals_init.~__eh_globals_init() = 0x8984
+'f method.__eh_globals_init.destructor.~__eh_globals_init() = 0x8984
 'td struct __eh_globals_init { char empty[0];};
-'f class.__cxxabiv1 = 0x943c
-'f method.__cxxabiv1.__terminate(void_(*)()) = 0x943c
-'f method.__cxxabiv1.__unexpected(void_(*)()) = 0x9488
-'td struct __cxxabiv1 { char empty[0];};
 'f class.__cxxabiv1::__fundamental_type_info = 0x94e4
-'f method.__cxxabiv1::__fundamental_type_info.~__fundamental_type_info() = 0x94e4
+'f method.__cxxabiv1::__fundamental_type_info.destructor.~__fundamental_type_info() = 0x94e4
+'f method.__cxxabiv1::__fundamental_type_info.destructor.~__fundamental_type_info() = 0x950c
 'td struct __cxxabiv1::__fundamental_type_info { char empty[0];};
 'f class.std::type_info = 0x97bc
-'f method.std::type_info.~type_info() = 0x97bc
-'f method.std::type_info.__is_pointer_p()_const = 0x97d4
-'f method.std::type_info.__is_function_p()_const = 0x97dc
-'f method.std::type_info.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9854
-'f method.std::type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void**)_const = 0x97e4
-'f method.std::type_info.operator==(std::type_info_const&)_const = 0x9808
+'f method.std::type_info.destructor.~type_info() = 0x97bc
+'f method.std::type_info.const.__is_pointer_p()_const = 0x97d4
+'f method.std::type_info.const.__is_function_p()_const = 0x97dc
+'f method.std::type_info.const.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9854
+'f method.std::type_info.const.__do_upcast(__cxxabiv1::__class_type_info_const*,_void**)_const = 0x97e4
+'f method.std::type_info.const.operator==(std::type_info_const&)_const = 0x9808
+'f method.std::type_info.destructor.~type_info() = 0x97ec
 'td struct std::type_info { char empty[0];};
 'f class.__cxxabiv1::__pointer_type_info = 0x9528
-'f method.__cxxabiv1::__pointer_type_info.__is_pointer_p()_const = 0x9528
-'f method.__cxxabiv1::__pointer_type_info.~__pointer_type_info() = 0x9530
-'f method.__cxxabiv1::__pointer_type_info.__pointer_catch(__cxxabiv1::__pbase_type_info_const*,_void**,_unsigned_int)_const = 0x9574
+'f method.__cxxabiv1::__pointer_type_info.const.__is_pointer_p()_const = 0x9528
+'f method.__cxxabiv1::__pointer_type_info.destructor.~__pointer_type_info() = 0x9530
+'f method.__cxxabiv1::__pointer_type_info.destructor.~__pointer_type_info() = 0x9558
+'f method.__cxxabiv1::__pointer_type_info.const.__pointer_catch(__cxxabiv1::__pbase_type_info_const*,_void**,_unsigned_int)_const = 0x9574
 'td struct __cxxabiv1::__pointer_type_info { char empty[0];};
 'f class.__cxxabiv1::__pbase_type_info = 0x9dd0
-'f method.__cxxabiv1::__pbase_type_info.~__pbase_type_info() = 0x9df0
-'f method.__cxxabiv1::__pbase_type_info.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9e34
-'f method.__cxxabiv1::__pbase_type_info.__pointer_catch(__cxxabiv1::__pbase_type_info_const*,_void**,_unsigned_int)_const = 0x9dd0
+'f method.__cxxabiv1::__pbase_type_info.destructor.~__pbase_type_info() = 0x9df0
+'f method.__cxxabiv1::__pbase_type_info.const.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9e34
+'f method.__cxxabiv1::__pbase_type_info.const.__pointer_catch(__cxxabiv1::__pbase_type_info_const*,_void**,_unsigned_int)_const = 0x9dd0
+'f method.__cxxabiv1::__pbase_type_info.destructor.~__pbase_type_info() = 0x9e18
 'td struct __cxxabiv1::__pbase_type_info { char empty[0];};
 'f class.__cxxabiv1::__si_class_type_info = 0x95f4
-'f method.__cxxabiv1::__si_class_type_info.~__si_class_type_info() = 0x95f4
-'f method.__cxxabiv1::__si_class_type_info.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x9638
-'f method.__cxxabiv1::__si_class_type_info.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x969c
-'f method.__cxxabiv1::__si_class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x977c
+'f method.__cxxabiv1::__si_class_type_info.destructor.~__si_class_type_info() = 0x95f4
+'f method.__cxxabiv1::__si_class_type_info.destructor.~__si_class_type_info() = 0x961c
+'f method.__cxxabiv1::__si_class_type_info.const.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x9638
+'f method.__cxxabiv1::__si_class_type_info.const.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x969c
+'f method.__cxxabiv1::__si_class_type_info.const.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x977c
 'td struct __cxxabiv1::__si_class_type_info { char empty[0];};
 'f class.__cxxabiv1::__class_type_info = 0x9868
-'f method.__cxxabiv1::__class_type_info.~__class_type_info() = 0x98d8
-'f method.__cxxabiv1::__class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x991c
-'f method.__cxxabiv1::__class_type_info.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9948
-'f method.__cxxabiv1::__class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void**)_const = 0x9868
-'f method.__cxxabiv1::__class_type_info.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x98c4
-'f method.__cxxabiv1::__class_type_info.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x998c
+'f method.__cxxabiv1::__class_type_info.destructor.~__class_type_info() = 0x98d8
+'f method.__cxxabiv1::__class_type_info.const.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x991c
+'f method.__cxxabiv1::__class_type_info.const.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9948
+'f method.__cxxabiv1::__class_type_info.const.__do_upcast(__cxxabiv1::__class_type_info_const*,_void**)_const = 0x9868
+'f method.__cxxabiv1::__class_type_info.const.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x98c4
+'f method.__cxxabiv1::__class_type_info.destructor.~__class_type_info() = 0x9900
+'f method.__cxxabiv1::__class_type_info.const.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x998c
 'td struct __cxxabiv1::__class_type_info { char empty[0];};
-'f class.__gnu_cxx = 0x9ec4
-'f method.__gnu_cxx.__verbose_terminate_handler() = 0x9ec4
-'f method.__gnu_cxx.__throw_concurrence_lock_error() = 0x12780
-'f method.__gnu_cxx.__throw_concurrence_unlock_error() = 0x127c8
-'td struct __gnu_cxx { char empty[0];};
 'f class.__gnu_cxx::__concurrence_lock_error = 0x126b0
-'f method.__gnu_cxx::__concurrence_lock_error.what()_const = 0x126b0
-'f method.__gnu_cxx::__concurrence_lock_error.~__concurrence_lock_error() = 0x126f8
+'f method.__gnu_cxx::__concurrence_lock_error.const.what()_const = 0x126b0
+'f method.__gnu_cxx::__concurrence_lock_error.destructor.~__concurrence_lock_error() = 0x126f8
+'f method.__gnu_cxx::__concurrence_lock_error.destructor.~__concurrence_lock_error() = 0x12750
 'td struct __gnu_cxx::__concurrence_lock_error { char empty[0];};
 'f class.__gnu_cxx::__concurrence_unlock_error = 0x126c0
-'f method.__gnu_cxx::__concurrence_unlock_error.what()_const = 0x126c0
-'f method.__gnu_cxx::__concurrence_unlock_error.~__concurrence_unlock_error() = 0x126d0
+'f method.__gnu_cxx::__concurrence_unlock_error.const.what()_const = 0x126c0
+'f method.__gnu_cxx::__concurrence_unlock_error.destructor.~__concurrence_unlock_error() = 0x126d0
+'f method.__gnu_cxx::__concurrence_unlock_error.destructor.~__concurrence_unlock_error() = 0x12720
 'td struct __gnu_cxx::__concurrence_unlock_error { char empty[0];};
 'f class.std::bad_cast = 0x12bc8
-'f method.std::bad_cast.~bad_cast() = 0x12bd8
-'f method.std::bad_cast.what()_const = 0x12bc8
+'f method.std::bad_cast.destructor.~bad_cast() = 0x12bd8
+'f method.std::bad_cast.const.what()_const = 0x12bc8
+'f method.std::bad_cast.destructor.~bad_cast() = 0x12c00
 'td struct std::bad_cast { char empty[0];};
 'f class.std::bad_typeid = 0x12c1c
-'f method.std::bad_typeid.~bad_typeid() = 0x12c2c
-'f method.std::bad_typeid.what()_const = 0x12c1c
+'f method.std::bad_typeid.destructor.~bad_typeid() = 0x12c2c
+'f method.std::bad_typeid.const.what()_const = 0x12c1c
+'f method.std::bad_typeid.destructor.~bad_typeid() = 0x12c54
 'td struct std::bad_typeid { char empty[0];};
 EOF
 RUN
@@ -879,8 +1031,6 @@ typedef struct {
 typedef struct {
 } class_SystemClassLoaderInjector;
 typedef struct {
-} class_std;
-typedef struct {
 } class_std::exception;
 typedef struct {
 } class_std::bad_exception;
@@ -890,8 +1040,6 @@ typedef struct {
 } class___cxxabiv1::__foreign_exception;
 typedef struct {
 } class___eh_globals_init;
-typedef struct {
-} class___cxxabiv1;
 typedef struct {
 } class___cxxabiv1::__fundamental_type_info;
 typedef struct {
@@ -904,8 +1052,6 @@ typedef struct {
 } class___cxxabiv1::__si_class_type_info;
 typedef struct {
 } class___cxxabiv1::__class_type_info;
-typedef struct {
-} class___gnu_cxx;
 typedef struct {
 } class___gnu_cxx::__concurrence_lock_error;
 typedef struct {
@@ -1010,7 +1156,7 @@ icg User
 EOF
 EXPECT=<<EOF
 'f class.UserKlass = 0x456
-'f super.UserKlass.UserBase = 20
+'f super.UserKlass.UserBase = 17
 'f method.UserKlass.doThing = 0x456
 'f field.UserKlass.field.count = 0x00000020
 'td struct UserKlass { int count;};

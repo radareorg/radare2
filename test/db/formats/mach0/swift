@@ -40,33 +40,11 @@ class klass.SuperKlass : Swift._SwiftObject {
   var isa : struct objc_class *
   var superfield
 }
-class _swiftoverride_class_getSuperclass(swift {
-  func TargetMetadata<swift::InProcess> const*)() {}  // 0x100002ab0
-}
-class getObjCClassMetadata(swift {
-  func TargetClassMetadata<swift::InProcess> const*)::$_1::operator()() const::{lambda(void*)#1}::__invoke(void*) {}  // 0x100003620
-  func TargetClassMetadata<swift::InProcess> const*)::$_1::operator()() const::TheLazy {}  // 0x100008558
-}
-class getTypeContextDescriptor(swift {
-  func TargetMetadata<swift::InProcess> const*)::$_2::operator()() const::{lambda(void*)#1}::__invoke(void*) {}  // 0x100003670
-  func TargetMetadata<swift::InProcess> const*)::$_2::operator()() const::TheLazy {}  // 0x100008578
-}
-class getExistentialTypeMetadata(swift {
-  func ProtocolClassConstraint, swift::TargetMetadata<swift::InProcess> const*, unsigned long, swift::TargetProtocolDescriptorRef<swift::InProcess> const*)::$_3::operator()() const::{lambda(void*)#1}::__invoke(void*) {}  // 0x1000036b0
-  func ProtocolClassConstraint, swift::TargetMetadata<swift::InProcess> const*, unsigned long, swift::TargetProtocolDescriptorRef<swift::InProcess> const*)::$_3::operator()() const::TheLazy {}  // 0x100008588
-}
 class SuperKlass {
   func symbolic klass.SuperKlass.allocator() {}  // 0x100003e7e
 }
 class SomeClass {
   func symbolic klass.SomeClass.allocator() {}  // 0x100003e84
-}
-class swift {
-  func getRootSuperclass() {}  // 0x100002b70
-  func swift51override_conformsToSwiftProtocol(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef, swift::TargetProtocolConformanceDescriptor<swift::InProcess> const* (*)(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef)) {}  // 0x100002bb0
-  func Lazy<(anonymous namespace)::ConformanceState>::defaultInitCallback(void*) {}  // 0x1000031f0
-  func getRootSuperclass()::$_0::operator()() const::{lambda(void*)#1}::__invoke(void*) {}  // 0x100003650
-  func getRootSuperclass()::$_0::operator()() const::TheLazy {}  // 0x100008568
 }
 EOF
 RUN
@@ -122,7 +100,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.WKWebViewController",
     "addr": 4295117188,
     "lang": "swift",
-    "index": 3,
+    "index": 0,
     "super": [
       "__C.UIViewController"
     ],
@@ -629,7 +607,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.AppDelegate",
     "addr": 4295117608,
     "lang": "swift",
-    "index": 4,
+    "index": 1,
     "super": [
       "__C.UIResponder"
     ],
@@ -750,7 +728,7 @@ EXPECT=<<EOF
     "attr": [
       "struct"
     ],
-    "index": 5,
+    "index": 2,
     "fields": [
       {
         "name": "_rawValue",
@@ -764,7 +742,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.JavaScriptBridgeMessageHandler",
     "addr": 4295118240,
     "lang": "swift",
-    "index": 6,
+    "index": 3,
     "super": [
       "__C.NSObject"
     ],
@@ -812,7 +790,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.AboutViewController",
     "addr": 4295118324,
     "lang": "swift",
-    "index": 7,
+    "index": 4,
     "super": [
       "__C.UIViewController"
     ],
@@ -915,7 +893,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.DocumentationViewController",
     "addr": 4295118428,
     "lang": "swift",
-    "index": 8,
+    "index": 5,
     "super": [
       "__C.UIViewController"
     ],
@@ -976,7 +954,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.MainTabBarViewController",
     "addr": 4295118604,
     "lang": "swift",
-    "index": 9,
+    "index": 6,
     "super": [
       "__C.UITabBarController"
     ],
@@ -1108,7 +1086,7 @@ EXPECT=<<EOF
     "attr": [
       "struct"
     ],
-    "index": 10,
+    "index": 7,
     "methods": [
       {
         "name": "download_url",
@@ -1261,7 +1239,7 @@ EXPECT=<<EOF
     "attr": [
       "enum"
     ],
-    "index": 11,
+    "index": 8,
     "fields": [
       {
         "name": "latest_version",
@@ -1288,13 +1266,13 @@ EXPECT=<<EOF
     "attr": [
       "enum"
     ],
-    "index": 12
+    "index": 9
   },
   {
     "classname": "WheresMyBrowser.WKOptionsViewCell",
     "addr": 4295119444,
     "lang": "swift",
-    "index": 13,
+    "index": 10,
     "super": [
       "__C.UITableViewCell"
     ],
@@ -1628,7 +1606,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.WKPreferencesViewController",
     "addr": 4295119724,
     "lang": "swift",
-    "index": 14,
+    "index": 11,
     "super": [
       "__C.UITableViewController"
     ],
@@ -1805,7 +1783,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.WKWebViewPreferencesManager",
     "addr": 4295119932,
     "lang": "swift",
-    "index": 15,
+    "index": 12,
     "methods": [
       {
         "name": "options",
@@ -2138,7 +2116,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.WKWebViewPreferencesManager.WebViewSetting",
     "addr": 4295120152,
     "lang": "swift",
-    "index": 16,
+    "index": 13,
     "methods": [
       {
         "name": "WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator.Setting.value(...vg)",
@@ -2218,7 +2196,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.LoadContentViewController",
     "addr": 4295120268,
     "lang": "swift",
-    "index": 17,
+    "index": 14,
     "super": [
       "__C.UIViewController"
     ],
@@ -2467,7 +2445,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.UIWebViewController",
     "addr": 4295120484,
     "lang": "swift",
-    "index": 18,
+    "index": 15,
     "super": [
       "__C.UIViewController"
     ],
@@ -2977,7 +2955,7 @@ EXPECT=<<EOF
     "attr": [
       "interface"
     ],
-    "index": 19
+    "index": 16
   },
   {
     "classname": "WheresMyBrowser.WKWebViewController",
@@ -2987,7 +2965,7 @@ EXPECT=<<EOF
     "attr": [
       "public"
     ],
-    "index": 20,
+    "index": 17,
     "super": [
       "UIViewController"
     ],
@@ -3265,7 +3243,7 @@ EXPECT=<<EOF
     "attr": [
       "public"
     ],
-    "index": 21,
+    "index": 18,
     "super": [
       "UIResponder"
     ],
@@ -3363,7 +3341,7 @@ EXPECT=<<EOF
     "attr": [
       "public"
     ],
-    "index": 22,
+    "index": 19,
     "super": [
       "NSObject"
     ],
@@ -3393,7 +3371,7 @@ EXPECT=<<EOF
     "attr": [
       "public"
     ],
-    "index": 23,
+    "index": 20,
     "super": [
       "UIViewController"
     ],
@@ -3467,7 +3445,7 @@ EXPECT=<<EOF
     "attr": [
       "public"
     ],
-    "index": 24,
+    "index": 21,
     "super": [
       "UIViewController"
     ],
@@ -3497,7 +3475,7 @@ EXPECT=<<EOF
     "attr": [
       "public"
     ],
-    "index": 25,
+    "index": 22,
     "super": [
       "UITabBarController"
     ],
@@ -3560,7 +3538,7 @@ EXPECT=<<EOF
     "attr": [
       "public"
     ],
-    "index": 26,
+    "index": 23,
     "super": [
       "UITableViewCell"
     ],
@@ -3712,7 +3690,7 @@ EXPECT=<<EOF
     "attr": [
       "public"
     ],
-    "index": 27,
+    "index": 24,
     "super": [
       "UITableViewController"
     ],
@@ -3810,7 +3788,7 @@ EXPECT=<<EOF
     "attr": [
       "public"
     ],
-    "index": 28,
+    "index": 25,
     "super": [
       "Swift._SwiftObject"
     ],
@@ -3871,7 +3849,7 @@ EXPECT=<<EOF
     "attr": [
       "public"
     ],
-    "index": 29,
+    "index": 26,
     "super": [
       "Swift._SwiftObject"
     ],
@@ -3920,7 +3898,7 @@ EXPECT=<<EOF
     "attr": [
       "public"
     ],
-    "index": 30,
+    "index": 27,
     "super": [
       "UIViewController"
     ],
@@ -4048,7 +4026,7 @@ EXPECT=<<EOF
     "attr": [
       "public"
     ],
-    "index": 31,
+    "index": 28,
     "super": [
       "UIViewController"
     ],
@@ -4331,58 +4309,9 @@ EXPECT=<<EOF
     ]
   },
   {
-    "classname": "task_future_wait_resume_adapter(swift",
-    "addr": 4295110068,
-    "index": 29,
-    "methods": [
-      {
-        "name": "AsyncContext*)",
-        "flag": "class.task_future_wait_resume_adapter_swift",
-        "rawname": "__ZL31task_future_wait_resume_adapterPN5swift12AsyncContextE",
-        "lang": "c++",
-        "addr": 4295110068
-      }
-    ]
-  },
-  {
-    "classname": "task_wait_throwing_resume_adapter(swift",
-    "addr": 4295110340,
-    "index": 30,
-    "methods": [
-      {
-        "name": "AsyncContext*)",
-        "flag": "class.task_wait_throwing_resume_adapter_swift",
-        "rawname": "__ZL33task_wait_throwing_resume_adapterPN5swift12AsyncContextE",
-        "lang": "c++",
-        "addr": 4295110340
-      }
-    ]
-  },
-  {
-    "classname": "swift_voucher_needs_adopt(voucher_s*)",
-    "addr": 4295111804,
-    "index": 31,
-    "methods": [
-      {
-        "name": "{lambda()#1}::operator()() const::{lambda(void*)#1}::__invoke(void*)",
-        "flag": "class.swift_voucher_needs_adopt_voucher_s_",
-        "rawname": "__ZZZL25swift_voucher_needs_adoptP9voucher_sENKUlvE_clEvENUlPvE_8__invokeES2_",
-        "lang": "c++",
-        "addr": 4295111804
-      },
-      {
-        "name": "{lambda()#1}::operator()() const::TheLazy",
-        "flag": "method.swift_voucher_needs_adopt_voucher_s_.lambda__1::operator_____const::TheLazy",
-        "rawname": "__ZZZL25swift_voucher_needs_adoptP9voucher_sENKUlvE_clEvE7TheLazy",
-        "lang": "c++",
-        "addr": 4295181080
-      }
-    ]
-  },
-  {
     "classname": "WKWebViewController",
     "addr": 0,
-    "index": 32,
+    "index": 29,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.WKWebViewController.allocator",
@@ -4395,7 +4324,7 @@ EXPECT=<<EOF
   {
     "classname": "WKWebViewPreferencesManager",
     "addr": 0,
-    "index": 33,
+    "index": 30,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.allocator",
@@ -4414,12 +4343,6 @@ EXPECT=<<EOF
         "flag": "sym.WKWebViewPreferencesManager._symbolic_Say_____G_15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
         "rawname": "_symbolic Say_____G 15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
         "addr": 4295134048
-      },
-      {
-        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator(",
-        "flag": "method.WKWebViewPreferencesManager.symbolic_WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator_",
-        "rawname": "_symbolic _____ySay_____GG s16IndexingIteratorV 15WheresMyBrowser27WKWebViewPreferencesManagerC03WebG7SettingC",
-        "addr": 4295134058
       },
       {
         "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator.Setting",
@@ -4444,7 +4367,7 @@ EXPECT=<<EOF
   {
     "classname": "AppDelegate",
     "addr": 0,
-    "index": 34,
+    "index": 31,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.AppDelegate.allocator",
@@ -4457,7 +4380,7 @@ EXPECT=<<EOF
   {
     "classname": "JavaScriptBridgeMessageHandler",
     "addr": 0,
-    "index": 35,
+    "index": 32,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.JavaScriptBridgeMessageHandler.allocator",
@@ -4470,7 +4393,7 @@ EXPECT=<<EOF
   {
     "classname": "AboutViewController",
     "addr": 0,
-    "index": 36,
+    "index": 33,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.AboutViewController.allocator",
@@ -4483,7 +4406,7 @@ EXPECT=<<EOF
   {
     "classname": "DocumentationViewController",
     "addr": 0,
-    "index": 37,
+    "index": 34,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.DocumentationViewController.allocator",
@@ -4496,44 +4419,20 @@ EXPECT=<<EOF
   {
     "classname": "MainTabBarViewController",
     "addr": 0,
-    "index": 38,
+    "index": 35,
     "methods": [
-      {
-        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E(",
-        "flag": "sym.MainTabBarViewController._symbolic______y_____G_s22KeyedEncodingContainerV_15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
-        "rawname": "_symbolic _____y_____G s22KeyedEncodingContainerV 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
-        "addr": 4295133766
-      },
-      {
-        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E(",
-        "flag": "sym.MainTabBarViewController._symbolic______y_____G_s22KeyedDecodingContainerV_15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
-        "rawname": "_symbolic _____y_____G s22KeyedDecodingContainerV 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
-        "addr": 4295133780
-      },
       {
         "name": "symbolic WheresMyBrowser.MainTabBarViewController.allocator",
         "flag": "method.MainTabBarViewController.symbolic_WheresMyBrowser.MainTabBarViewController.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser24MainTabBarViewControllerC",
         "addr": 4295133794
-      },
-      {
-        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
-        "flag": "method.MainTabBarViewController.symbolic_WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
-        "rawname": "_symbolic _____ 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV",
-        "addr": 4295133824
-      },
-      {
-        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E(",
-        "flag": "method.MainTabBarViewController.symbolic_WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E_",
-        "rawname": "_symbolic _____ 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
-        "addr": 4295133830
       }
     ]
   },
   {
     "classname": "WKOptionsCellDelegate",
     "addr": 0,
-    "index": 39,
+    "index": 36,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.WKOptionsCellDelegate.",
@@ -4552,7 +4451,7 @@ EXPECT=<<EOF
   {
     "classname": "WKOptionsViewCell",
     "addr": 0,
-    "index": 40,
+    "index": 37,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.WKOptionsViewCell.allocator",
@@ -4565,7 +4464,7 @@ EXPECT=<<EOF
   {
     "classname": "WKPreferencesViewController",
     "addr": 0,
-    "index": 41,
+    "index": 38,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.WKPreferencesViewController.allocator",
@@ -4578,7 +4477,7 @@ EXPECT=<<EOF
   {
     "classname": "LoadContentViewController",
     "addr": 0,
-    "index": 42,
+    "index": 39,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.LoadContentViewController.allocator",
@@ -4591,254 +4490,13 @@ EXPECT=<<EOF
   {
     "classname": "UIWebViewController",
     "addr": 0,
-    "index": 43,
+    "index": 40,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.UIWebViewController.allocator",
         "flag": "method.UIWebViewController.symbolic_WheresMyBrowser.UIWebViewController.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser19UIWebViewControllerC",
         "addr": 4295134220
-      }
-    ]
-  },
-  {
-    "classname": "swift::AsyncTask",
-    "addr": 0,
-    "lang": "c++",
-    "index": 44,
-    "methods": [
-      {
-        "name": "waitFuture(swift::AsyncTask*, swift::AsyncContext*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context), swift::AsyncContext*, swift::OpaqueValue*)",
-        "flag": "method.swift::AsyncTask.waitFuture_swift::AsyncTask__swift::AsyncContext__void___swiftasynccall__swift::AsyncContext_swift_async_context___swift::AsyncContext__swift::OpaqueValue_",
-        "rawname": "__ZN5swift9AsyncTask10waitFutureEPS0_PNS_12AsyncContextEPU14swiftasynccallFvU19swift_async_contextS3_ES3_PNS_11OpaqueValueE",
-        "lang": "c++",
-        "addr": 4295109344
-      },
-      {
-        "name": "flagAsRunning_slow()",
-        "flag": "method.swift::AsyncTask.flagAsRunning_slow__",
-        "rawname": "__ZN5swift9AsyncTask18flagAsRunning_slowEv",
-        "lang": "c++",
-        "addr": 4295110372
-      },
-      {
-        "name": "flagAsSuspended_slow()",
-        "flag": "method.swift::AsyncTask.flagAsSuspended_slow__",
-        "rawname": "__ZN5swift9AsyncTask20flagAsSuspended_slowEv",
-        "lang": "c++",
-        "addr": 4295110700
-      }
-    ]
-  },
-  {
-    "classname": "swift",
-    "addr": 0,
-    "lang": "c++",
-    "index": 45,
-    "methods": [
-      {
-        "name": "swift56override_swift_task_future_wait(swift::OpaqueValue*, swift::AsyncContext*, swift::AsyncTask*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context), swift::AsyncContext*, void ( swiftasynccall*)(swift::OpaqueValue*, swift::AsyncContext* swift_async_context, swift::AsyncTask*, void (swift::AsyncContext* swift_async_context), swift::AsyncContext*))",
-        "flag": "method.swift.swift56override_swift_task_future_wait_swift::OpaqueValue__swift::AsyncContext__swift::AsyncTask__void___swiftasynccall__swift::AsyncContext_swift_async_context___swift::AsyncContext__void___swiftasynccall__swift::OpaqueValue__swift::AsyncContext_swift_async_context__swift::AsyncTask__void__swift::AsyncContext_swift_async_context___swift::AsyncContext__",
-        "rawname": "__ZN5swift38swift56override_swift_task_future_waitEPNS_11OpaqueValueEPNS_12AsyncContextEPNS_9AsyncTaskEPU14swiftasynccallFvU19swift_async_contextS3_ES3_PU14swiftasynccallFvS1_U19swift_async_contextS3_S5_S7_S3_E",
-        "lang": "c++",
-        "addr": 4295109840
-      },
-      {
-        "name": "swift56override_swift_task_future_wait_throwing(swift::OpaqueValue*, swift::AsyncContext*, swift::AsyncTask*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context, void* swift_context), swift::AsyncContext*, void ( swiftasynccall*)(swift::OpaqueValue*, swift::AsyncContext* swift_async_context, swift::AsyncTask*, void* swift_context, swift::AsyncContext*))",
-        "flag": "method.swift.swift56override_swift_task_future_wait_throwing_swift::OpaqueValue__swift::AsyncContext__swift::AsyncTask__void___swiftasynccall__swift::AsyncContext_swift_async_context__void_swift_context___swift::AsyncContext__void___swiftasynccall__swift::OpaqueValue__swift::AsyncContext_swift_async_context__swift::AsyncTask__void_swift_context__swift::AsyncContext__",
-        "rawname": "__ZN5swift47swift56override_swift_task_future_wait_throwingEPNS_11OpaqueValueEPNS_12AsyncContextEPNS_9AsyncTaskEPU14swiftasynccallFvU19swift_async_contextS3_U13swift_contextPvES3_PU14swiftasynccallFvS1_U19swift_async_contextS3_S5_S8_S3_E",
-        "lang": "c++",
-        "addr": 4295110076
-      },
-      {
-        "name": "swift56override_swift_task_create_common(unsigned long, swift::TaskOptionRecord*, swift::TargetMetadata<swift::InProcess> const*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context), void*, unsigned long, swift::AsyncTaskAndContext ( swiftcall*)(unsigned long, swift::TaskOptionRecord*, swift::TargetMetadata<swift::InProcess> const*, void (swift::AsyncContext* swift_async_context), void ( swiftasynccall)(swift::AsyncContext* swift_async_context), unsigned long))",
-        "flag": "method.swift.swift56override_swift_task_create_common_unsigned_long__swift::TaskOptionRecord__swift::TargetMetadata_swift::InProcess__const__void___swiftasynccall__swift::AsyncContext_swift_async_context___void__unsigned_long__swift::AsyncTaskAndContext___swiftcall__unsigned_long__swift::TaskOptionRecord__swift::TargetMetadata_swift::InProcess__const__void__swift::AsyncContext_swift_async_context___void___swiftasynccall__swift::AsyncContext_swift_async_context___unsigned_long__",
-        "rawname": "__ZN5swift40swift56override_swift_task_create_commonEmPNS_16TaskOptionRecordEPKNS_14TargetMetadataINS_9InProcessEEEPU14swiftasynccallFvU19swift_async_contextPNS_12AsyncContextEEPvmPU9swiftcallFNS_19AsyncTaskAndContextEmS1_S6_SA_SB_mE",
-        "lang": "c++",
-        "addr": 4295110356
-      },
-      {
-        "name": "swift_task_escalateBackdeploy56(swift::AsyncTask*, swift::JobPriority)",
-        "flag": "method.swift.swift_task_escalateBackdeploy56_swift::AsyncTask__swift::JobPriority_",
-        "rawname": "__ZN5swift31swift_task_escalateBackdeploy56EPNS_9AsyncTaskENS_11JobPriorityE",
-        "lang": "c++",
-        "addr": 4295111028
-      },
-      {
-        "name": "swift_task_escalateBackdeploy56(swift::AsyncTask*, swift::JobPriority)::$_2::operator()() const::{lambda(void*)#1}::__invoke(void*)",
-        "flag": "method.swift.swift_task_escalateBackdeploy56_swift::AsyncTask__swift::JobPriority_::__2::operator_____const::lambda_void_1::__invoke_void_",
-        "rawname": "__ZZZN5swift31swift_task_escalateBackdeploy56EPNS_9AsyncTaskENS_11JobPriorityEENK3$_2clEvENUlPvE_8__invokeES4_",
-        "lang": "c++",
-        "addr": 4295111128
-      },
-      {
-        "name": "waitForStatusRecordUnlock(swift::AsyncTask*, swift::ActiveTaskStatus&)",
-        "flag": "method.swift.waitForStatusRecordUnlock_swift::AsyncTask__swift::ActiveTaskStatus_",
-        "rawname": "__ZN5swiftL25waitForStatusRecordUnlockEPNS_9AsyncTaskERNS_16ActiveTaskStatusE",
-        "lang": "c++",
-        "addr": 4295111176
-      },
-      {
-        "name": "swift_Concurrency_fatalError(unsigned int, char const*, ...)",
-        "flag": "method.swift.swift_Concurrency_fatalError_unsigned_int__char_const__..._",
-        "rawname": "__ZN5swift28swift_Concurrency_fatalErrorEjPKcz",
-        "lang": "c++",
-        "addr": 4295111400
-      },
-      {
-        "name": "swift_task_getCurrent()",
-        "flag": "method.swift.swift_task_getCurrent__",
-        "rawname": "__ZN5swift21swift_task_getCurrentEv",
-        "lang": "c++",
-        "addr": 4295111412
-      },
-      {
-        "name": "_swift_task_clearCurrent()",
-        "flag": "method.swift._swift_task_clearCurrent__",
-        "rawname": "__ZN5swift24_swift_task_clearCurrentEv",
-        "lang": "c++",
-        "addr": 4295111420
-      },
-      {
-        "name": "adoptTaskVoucher(swift::AsyncTask*)",
-        "flag": "method.swift.adoptTaskVoucher_swift::AsyncTask_",
-        "rawname": "__ZN5swift16adoptTaskVoucherEPNS_9AsyncTaskE",
-        "lang": "c++",
-        "addr": 4295111472
-      },
-      {
-        "name": "restoreTaskVoucher(swift::AsyncTask*)",
-        "flag": "method.swift.restoreTaskVoucher_swift::AsyncTask_",
-        "rawname": "__ZN5swift18restoreTaskVoucherEPNS_9AsyncTaskE",
-        "lang": "c++",
-        "addr": 4295111656
-      },
-      {
-        "name": "_swift_tsan_acquire(void*)",
-        "flag": "method.swift._swift_tsan_acquire_void_",
-        "rawname": "__ZN5swift19_swift_tsan_acquireEPv",
-        "lang": "c++",
-        "addr": 4295111852
-      },
-      {
-        "name": "_swift_tsan_release(void*)",
-        "flag": "method.swift._swift_tsan_release_void_",
-        "rawname": "__ZN5swift19_swift_tsan_releaseEPv",
-        "lang": "c++",
-        "addr": 4295111952
-      },
-      {
-        "name": "_swift_tsan_acquire(void*)::$_0::operator()() const::{lambda(void*)#1}::__invoke(void*)",
-        "flag": "method.swift._swift_tsan_acquire_void_::__0::operator_____const::lambda_void_1::__invoke_void_",
-        "rawname": "__ZZZN5swift19_swift_tsan_acquireEPvENK3$_0clEvENUlS0_E_8__invokeES0_",
-        "lang": "c++",
-        "addr": 4295112052
-      },
-      {
-        "name": "_swift_tsan_release(void*)::$_1::operator()() const::{lambda(void*)#1}::__invoke(void*)",
-        "flag": "method.swift._swift_tsan_release_void_::__1::operator_____const::lambda_void_1::__invoke_void_",
-        "rawname": "__ZZZN5swift19_swift_tsan_releaseEPvENK3$_1clEvENUlS0_E_8__invokeES0_",
-        "lang": "c++",
-        "addr": 4295112100
-      },
-      {
-        "name": "swift_task_enterThreadLocalContextBackdeploy56(char*)",
-        "flag": "method.swift.swift_task_enterThreadLocalContextBackdeploy56_char_",
-        "rawname": "__ZN5swift46swift_task_enterThreadLocalContextBackdeploy56EPc",
-        "lang": "c++",
-        "addr": 4295112200
-      },
-      {
-        "name": "swift_task_exitThreadLocalContextBackdeploy56(char*)",
-        "flag": "method.swift.swift_task_exitThreadLocalContextBackdeploy56_char_",
-        "rawname": "__ZN5swift45swift_task_exitThreadLocalContextBackdeploy56EPc",
-        "lang": "c++",
-        "addr": 4295112300
-      },
-      {
-        "name": "swift_task_enterThreadLocalContextBackdeploy56(char*)::$_0::operator()() const::{lambda(void*)#1}::__invoke(void*)",
-        "flag": "method.swift.swift_task_enterThreadLocalContextBackdeploy56_char_::__0::operator_____const::lambda_void_1::__invoke_void_",
-        "rawname": "__ZZZN5swift46swift_task_enterThreadLocalContextBackdeploy56EPcENK3$_0clEvENUlPvE_8__invokeES2_",
-        "lang": "c++",
-        "addr": 4295112400
-      },
-      {
-        "name": "swift_task_exitThreadLocalContextBackdeploy56(char*)::$_1::operator()() const::{lambda(void*)#1}::__invoke(void*)",
-        "flag": "method.swift.swift_task_exitThreadLocalContextBackdeploy56_char_::__1::operator_____const::lambda_void_1::__invoke_void_",
-        "rawname": "__ZZZN5swift45swift_task_exitThreadLocalContextBackdeploy56EPcENK3$_1clEvENUlPvE_8__invokeES2_",
-        "lang": "c++",
-        "addr": 4295112448
-      },
-      {
-        "name": "swift_task_escalateBackdeploy56(swift::AsyncTask*, swift::JobPriority)::$_2::operator()() const::TheLazy",
-        "flag": "method.swift.swift_task_escalateBackdeploy56_swift::AsyncTask__swift::JobPriority_::__2::operator_____const::TheLazy",
-        "rawname": "__ZZZN5swift31swift_task_escalateBackdeploy56EPNS_9AsyncTaskENS_11JobPriorityEENK3$_2clEvE7TheLazy",
-        "lang": "c++",
-        "addr": 4295181056
-      },
-      {
-        "name": "_swift_tsan_acquire(void*)::$_0::operator()() const::TheLazy",
-        "flag": "method.swift._swift_tsan_acquire_void_::__0::operator_____const::TheLazy",
-        "rawname": "__ZZZN5swift19_swift_tsan_acquireEPvENK3$_0clEvE7TheLazy",
-        "lang": "c++",
-        "addr": 4295181096
-      },
-      {
-        "name": "_swift_tsan_release(void*)::$_1::operator()() const::TheLazy",
-        "flag": "method.swift._swift_tsan_release_void_::__1::operator_____const::TheLazy",
-        "rawname": "__ZZZN5swift19_swift_tsan_releaseEPvENK3$_1clEvE7TheLazy",
-        "lang": "c++",
-        "addr": 4295181112
-      },
-      {
-        "name": "swift_task_enterThreadLocalContextBackdeploy56(char*)::$_0::operator()() const::TheLazy",
-        "flag": "method.swift.swift_task_enterThreadLocalContextBackdeploy56_char_::__0::operator_____const::TheLazy",
-        "rawname": "__ZZZN5swift46swift_task_enterThreadLocalContextBackdeploy56EPcENK3$_0clEvE7TheLazy",
-        "lang": "c++",
-        "addr": 4295181128
-      },
-      {
-        "name": "swift_task_exitThreadLocalContextBackdeploy56(char*)::$_1::operator()() const::TheLazy",
-        "flag": "method.swift.swift_task_exitThreadLocalContextBackdeploy56_char_::__1::operator_____const::TheLazy",
-        "rawname": "__ZZZN5swift45swift_task_exitThreadLocalContextBackdeploy56EPcENK3$_1clEvE7TheLazy",
-        "lang": "c++",
-        "addr": 4295181144
-      }
-    ]
-  },
-  {
-    "classname": "swift::MutexPlatformHelper",
-    "addr": 0,
-    "lang": "c++",
-    "index": 46,
-    "methods": [
-      {
-        "name": "init(os_unfair_lock_s&, bool)",
-        "flag": "method.swift::MutexPlatformHelper.init_os_unfair_lock_s__bool_",
-        "rawname": "__ZN5swift19MutexPlatformHelper4initER16os_unfair_lock_sb",
-        "lang": "c++",
-        "addr": 4295112148
-      },
-      {
-        "name": "destroy(os_unfair_lock_s&)",
-        "flag": "method.swift::MutexPlatformHelper.destroy_os_unfair_lock_s_",
-        "rawname": "__ZN5swift19MutexPlatformHelper7destroyER16os_unfair_lock_s",
-        "lang": "c++",
-        "addr": 4295112156
-      },
-      {
-        "name": "lock(os_unfair_lock_s&)",
-        "flag": "method.swift::MutexPlatformHelper.lock_os_unfair_lock_s_",
-        "rawname": "__ZN5swift19MutexPlatformHelper4lockER16os_unfair_lock_s",
-        "lang": "c++",
-        "addr": 4295112160
-      },
-      {
-        "name": "unlock(os_unfair_lock_s&)",
-        "flag": "method.swift::MutexPlatformHelper.unlock_os_unfair_lock_s_",
-        "rawname": "__ZN5swift19MutexPlatformHelper6unlockER16os_unfair_lock_s",
-        "lang": "c++",
-        "addr": 4295112180
       }
     ]
   }

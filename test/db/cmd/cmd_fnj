@@ -12,10 +12,8 @@ EOF
 EXPECT=<<EOF
     "name": "sym.imp.std::__throw_length_error_char_const_",
     "name": "reloc.std::__throw_length_error_char_const_",
-    "name": "method.std.__throw_length_error_char_const_",
     "name": "sym.imp.std::__throw_length_error_char_const_",
     "name": "reloc.std::__throw_length_error_char_const_",
-    "name": "method.std.__throw_length_error_char_const_",
 [
   {
     "name": "sym.imp.std::__throw_bad_alloc__",
@@ -42,19 +40,9 @@ EXPECT=<<EOF
     "addr": 16408
   },
   {
-    "name": "method.std.__throw_bad_alloc__",
-    "size": 1,
-    "addr": 16408
-  },
-  {
     "name": "reloc.std::__throw_length_error_char_const_",
     "realname": "std::__throw_length_error(char const*)",
     "size": 8,
-    "addr": 16424
-  },
-  {
-    "name": "method.std.__throw_length_error_char_const_",
-    "size": 1,
     "addr": 16424
   },
   {

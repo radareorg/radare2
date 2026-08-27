@@ -633,14 +633,12 @@ pd 1 @ 0x080493ca
 EOF
 EXPECT=<<EOF
 |           0x080493b4      call 0x80490b0                             ; sym.imp.strlen ; size_t strlen(const char *s)
-|           0x080493ca      call 0x80490e0                             ; sym.imp.QString::fromAscii_helper_char_const__int_
-|                                                                      ; QString::fromAscii_helper(char const*, int)
+|           0x080493ca      call 0x80490e0                             ; method.QString.fromAscii_helper_char_const__int_
 
 |           ; sym.imp.strlen
 |           ; size_t strlen(const char *s)
 |           0x080493b4      call 0x80490b0
-|           ; sym.imp.QString::fromAscii_helper_char_const__int_
-|           ; QString::fromAscii_helper(char const*, int)
+|           ; method.QString.fromAscii_helper_char_const__int_
 |           0x080493ca      call 0x80490e0
 EOF
 RUN

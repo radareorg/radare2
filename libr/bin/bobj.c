@@ -398,6 +398,23 @@ static bool cxx_strip_any(const char **name, const char *prefixes[]) {
 	return false;
 }
 
+static bool cxx_typeinfo_is_class(RBinSymbol *sym) {
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+	if (R_STR_ISEMPTY (name)) {
+		return false;
+	}
+	const char *prefixes[] = { "sym.imp.", "imp.", "reloc.", NULL };
+	name = cxx_strip_prefix (name, prefixes);
+	if (r_str_startswith (name, "__ZT")) {
+		name++;
+	}
+	if (!r_str_startswith (name, "_ZTI") && !r_str_startswith (name, "_ZTS")) {
+		return false;
+	}
+	name += 4;
+	return (*name >= '0' && *name <= '9') || *name == 'N' || *name == 'S' || *name == 'Z';
+}
+
 static char *cxx_demangled_symbol(RBinSymbol *sym, RBinLanguage *lang_out) {
 	const char *dname = r_bin_name_tostring2 (sym->name, 'd');
 	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
@@ -443,13 +460,23 @@ static char *cxx_basename(const char *name) {
 static bool cxx_derive_name(CxxMemberInfo *info, const char *name, const char *open, const char *scope) {
 	const char *owner = scope;
 	int angles = 0;
+	int parens = 0;
+	int brackets = 0;
 	while (owner > name) {
 		const char ch = owner[-1];
 		if (ch == '>') {
 			angles++;
 		} else if (ch == '<' && angles > 0) {
 			angles--;
-		} else if (!angles && IS_WHITESPACE (ch)) {
+		} else if (ch == ')') {
+			parens++;
+		} else if (ch == '(' && parens > 0) {
+			parens--;
+		} else if (ch == ']') {
+			brackets++;
+		} else if (ch == '[' && brackets > 0) {
+			brackets--;
+		} else if (!angles && !parens && !brackets && IS_WHITESPACE (ch)) {
 			break;
 		}
 		owner--;
@@ -508,8 +535,6 @@ static CxxMemberInfo *cxx_member_info(RBinSymbol *sym) {
 	const char *class_prefixes[] = {
 		"vtable for ",
 		"VTT for ",
-		"typeinfo for ",
-		"typeinfo name for ",
 		NULL
 	};
 	if (cxx_strip_any (&name, class_prefixes)) {
@@ -520,14 +545,41 @@ static CxxMemberInfo *cxx_member_info(RBinSymbol *sym) {
 		free (demangled);
 		return info;
 	}
+	const char *typeinfo_prefixes[] = {
+		"typeinfo for ",
+		"typeinfo name for ",
+		NULL
+	};
+	if (cxx_strip_any (&name, typeinfo_prefixes)) {
+		if (cxx_typeinfo_is_class (sym) && R_STR_ISNOTEMPTY (name)
+			&& !r_str_startswith (name, "__cxxabiv1::")) {
+			info->classname = strdup (name);
+			info->proves_class = true;
+		}
+		free (demangled);
+		return info;
+	}
 	const char *open = cxx_call_open (name);
+	const char *close = open? strrchr (open, ')'): NULL;
+	if (close && strstr (close + 1, "::")) {
+		free (demangled);
+		cxx_member_info_free (info);
+		return NULL;
+	}
 	const char *scope = open? cxx_last_scope (name, open): NULL;
+	const char *conversion = strstr (name, "operator ");
+	if (scope && conversion && conversion < scope) {
+		scope = cxx_last_scope (name, conversion);
+	}
 	if (!scope || !cxx_derive_name (info, name, open, scope)) {
 		free (demangled);
 		cxx_member_info_free (info);
 		return NULL;
 	}
-	const char *close = strrchr (open, ')');
+	if (strstr (info->classname, "JNI") || strstr (info->method, "JNI")) {
+		info->lang = R_BIN_LANG_JNI;
+		info->proves_class = true;
+	}
 	if (close) {
 		if (strstr (close + 1, " const")) {
 			info->flags |= R_BIN_ATTR_CONST;
@@ -559,7 +611,11 @@ static bool cxx_class_has_method(RBinClass *c, CxxMemberInfo *info) {
 	RBinSymbol *method;
 	R_VEC_FOREACH (&c->methods, method) {
 		const char *name = r_bin_name_tostring2 (method->name, 'd');
-		if (method->vaddr == info->sym->vaddr && name && !strcmp (name, info->method)) {
+		const char *rawname = r_bin_name_tostring2 (method->name, 'o');
+		const char *info_rawname = r_bin_name_tostring2 (info->sym->name, 'o');
+		if (method->vaddr == info->sym->vaddr
+			&& ((name && !strcmp (name, info->method))
+				|| (rawname && info_rawname && !strcmp (rawname, info_rawname)))) {
 			return true;
 		}
 	}
@@ -649,15 +705,15 @@ static RList *classes_from_symbols(RBinFile *bf, bool include_language_symbols) 
 	}
 	CxxMemberInfo *info;
 	RListIter *iter;
-	r_list_foreach (cxx_members, iter, info) {
-		cxx_add_method (bf, info);
-	}
-	r_list_free (cxx_members);
 	if (include_language_symbols) {
 		R_VEC_FOREACH (&bf->bo->symbols_vec, sym) {
 			classes_from_symbol_language (bf, sym);
 		}
 	}
+	r_list_foreach (cxx_members, iter, info) {
+		cxx_add_method (bf, info);
+	}
+	r_list_free (cxx_members);
 	return bf->bo->classes;
 }
 
