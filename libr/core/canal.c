@@ -671,6 +671,55 @@ static void warn_nonexec_map(RCore *core, ut64 at) {
 	}
 }
 
+typedef struct {
+	const char *suffix;
+	RVecUT64 handlers;
+} TrycatchHandlerCollector;
+
+static bool collect_trycatch_handler(RFlagItem *flag, void *user) {
+	TrycatchHandlerCollector *ctx = user;
+	if (!r_str_endswith (flag->name, ctx->suffix)) {
+		return true;
+	}
+	ut64 *handler;
+	R_VEC_FOREACH (&ctx->handlers, handler) {
+		if (*handler == flag->addr) {
+			return true;
+		}
+	}
+	RVecUT64_push_back (&ctx->handlers, &flag->addr);
+	return true;
+}
+
+/* Exception handlers are not ordinary CFG successors. Analyze their entry
+ * blocks as part of the owning function without inventing conditional edges. */
+static void core_anal_fcn_trycatch(RCore *core, RAnalFunction *fcn) {
+	if (!core->anal->opt.trycatch) {
+		return;
+	}
+	char *suffix = r_str_newf (".%"PFMT64x".catch", fcn->addr);
+	if (!suffix) {
+		return;
+	}
+	TrycatchHandlerCollector ctx = {
+		.suffix = suffix,
+	};
+	RVecUT64_init (&ctx.handlers);
+	r_flag_foreach_prefix (core->flags, "try.", 4, collect_trycatch_handler, &ctx);
+	ut64 *handler;
+	R_VEC_FOREACH (&ctx.handlers, handler) {
+		if (*handler == fcn->addr || r_anal_function_contains (fcn, *handler)) {
+			continue;
+		}
+		int ret = r_anal_function_bb (core->anal, fcn, *handler, core->anal->opt.depth);
+		if (ret < 0 && ret != R_ANAL_RET_END) {
+			R_LOG_DEBUG ("Cannot analyze exception handler at 0x%08"PFMT64x, *handler);
+		}
+	}
+	RVecUT64_fini (&ctx.handlers);
+	free (suffix);
+}
+
 static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	const bool verbose = r_config_get_b (core->config, "scr.interactive") && r_config_get_b (core->config, "scr.prompt");
 	if (depth < 0) {
@@ -813,6 +862,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 				RAnalRefType ref_type = reftype == UT64_MAX ? R_ANAL_REF_TYPE_CODE : reftype;
 				r_anal_xrefs_set (core->anal, from, fcn->addr, ref_type | R_ANAL_REF_TYPE_EXEC);
 			}
+			core_anal_fcn_trycatch (core, fcn);
 			if (!r_anal_add_function (core->anal, fcn)) {
 				r_anal_function_free (fcn);
 				fcn = NULL;
@@ -888,6 +938,7 @@ error:
 				r_flag_set (core->flags, fcn->name, at, r_anal_function_linear_size (fcn));
 				r_flag_space_pop (core->flags);
 			}
+			core_anal_fcn_trycatch (core, fcn);
 			if (!r_anal_add_function (core->anal, fcn)) {
 				r_anal_function_free (fcn);
 				fcn = NULL;

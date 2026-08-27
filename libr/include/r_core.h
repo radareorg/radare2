@@ -62,6 +62,7 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_FLAGS_FS_SEGMENTS "segments"
 #define R_FLAGS_FS_SIGNS "sign"
 #define R_FLAGS_FS_STRINGS "strings"
+#define R_FLAGS_FS_TRYCATCH "trycatch"
 #define R_FLAGS_FS_SYMBOLS "symbols"
 #define R_FLAGS_FS_SYMBOLS_SECTIONS "symbols.sections"
 #define R_FLAGS_FS_SYSCALLS "syscalls"
@@ -919,7 +920,7 @@ R_API void r_core_anal_plugin_data_refs(RCore *core);
 #define R_CORE_BIN_ACC_TRYCATCH 0x20000000
 #define R_CORE_BIN_ACC_SECTIONS_MAPPING (ut64)0x40000000
 #define R_CORE_BIN_ACC_TYPES (ut64) 0x80000000
-#define R_CORE_BIN_ACC_ALL	(ut64) 0xD04FFF
+#define R_CORE_BIN_ACC_ALL	((ut64)0xD04FFF | R_CORE_BIN_ACC_TRYCATCH)
 
 #define R_CORE_PRJ_FLAGS	0x0001
 #define R_CORE_PRJ_EVAL		0x0002

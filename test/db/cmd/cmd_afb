@@ -13,6 +13,21 @@ main
 EOF
 RUN
 
+NAME=Analyze disconnected exception handler blocks
+FILE=bins/java/Main.dex
+CMDS=<<EOF
+af @ 572
+afbi @ 672~^addr:
+afij @ 572~{[0].nbbs}
+afij @ 572~{[0].maxaddr}
+EOF
+EXPECT=<<EOF
+addr: 0x000002a0
+6
+716
+EOF
+RUN
+
 NAME=ab opaddr
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
