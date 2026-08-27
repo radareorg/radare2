@@ -1180,9 +1180,9 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 	const bool bin_dbginfo = bf->rbin->want_dbginfo;
 	const bool dump_dbginfo = bin_dbginfo && sb;
 	ut64 omi = 0;
-	bool catchAll;
 	ut16 regsz = 0, ins_size = 0, outs_size = 0, tries_size = 0;
-	ut16 start_addr, insn_count = 0;
+	ut16 insn_count = 0;
+	ut32 start_addr;
 	ut32 debug_info_off = 0, insns_size = 0;
 
 	if (!dex->trycatch_list) {
@@ -1236,8 +1236,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		}
 		// TODO: check size
 		// ut64 prolog_size = 2 + 2 + 2 + 2 + 4 + 4;
-		ut64 v2, handler_type, handler_addr;
-		int t = 0;
+		ut64 t = 0;
 		if (MC > 0) {
 			if (MC + 16 >= dex->size || MC + 16 < MC) {
 				R_FREE (flag_name);
@@ -1308,17 +1307,16 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 					insn_count = r_buf_read_le16_at (b, offset + 4);
 					ut64 handler_off = r_buf_read_le16_at (b, offset + 6);
 					ut64 method_offset = MC + 16;
-					ut64 try_from = (start_addr * 2) + method_offset;
-					ut64 try_to = (start_addr * 2) + (insn_count * 2) + method_offset + 2;
-					ut64 try_catch = try_to + handler_off - 1;
+					ut64 try_from = ((ut64)start_addr * 2) + method_offset;
+					ut64 try_to = try_from + (insn_count * 2);
+					bool valid_range = start_addr <= insns_size && insn_count <= insns_size - start_addr;
 					if (sb) {
 						pf ("        0x%04x - 0x%04x\n", start_addr, (start_addr + insn_count));
 					}
-					RBinTrycatch *tc = r_bin_trycatch_new (method_offset, try_from, try_to, try_catch, 0);
-					r_list_append (dex->trycatch_list, tc);
 
-					int off = MC + t + tries_size * 8 + handler_off;
-					if (off >= dex->size || off < tries_size) {
+					ut64 handlers_base = MC + t + ((ut64)tries_size * 8);
+					ut64 off = handlers_base + handler_off;
+					if (handlers_base < MC || off < handlers_base || off >= dex->size) {
 						break;
 					}
 					st64 size;
@@ -1329,24 +1327,31 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 					if (r <= 0) {
 						break;
 					}
-					if (size <= 0) {
-						catchAll = true;
+					bool catch_all = size <= 0;
+					if (catch_all) {
 						size = -size;
-					} else {
-						catchAll = false;
 					}
 
 					for (m = 0; m < size; m++) {
+						ut64 handler_type;
 						r = r_buf_uleb128 (b, &handler_type);
 						if (r <= 0) {
 							break;
 						}
+						ut64 handler_addr;
 						r = r_buf_uleb128 (b, &handler_addr);
 						if (r <= 0) {
 							break;
 						}
+						if (valid_range && handler_addr < insns_size) {
+							ut64 handler = method_offset + (handler_addr * 2);
+							RBinTrycatch *tc = r_bin_trycatch_new (method_offset, try_from, try_to, handler, 0);
+							if (tc) {
+								r_list_append (dex->trycatch_list, tc);
+							}
+						}
 						if (sb) {
-							if (handler_type > 0 && handler_type < dex->header.types_size) {
+							if (handler_type < dex->header.types_size) {
 								const char *s = getstr (dex, dex->types[handler_type].descriptor_id);
 								pf ("          %s -> 0x%04"PFMT64x"\n", s, handler_addr);
 							} else {
@@ -1354,13 +1359,21 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 							}
 						}
 					}
-					if (catchAll) {
-						r = r_buf_uleb128 (b, &v2);
+					if (catch_all) {
+						ut64 handler_addr;
+						r = r_buf_uleb128 (b, &handler_addr);
 						if (r <= 0) {
 							break;
 						}
+						if (valid_range && handler_addr < insns_size) {
+							ut64 handler = method_offset + (handler_addr * 2);
+							RBinTrycatch *tc = r_bin_trycatch_new (method_offset, try_from, try_to, handler, 0);
+							if (tc) {
+								r_list_append (dex->trycatch_list, tc);
+							}
+						}
 						if (sb) {
-							pf ("          <any> -> 0x%04"PFMT64x"\n", v2);
+							pf ("          <any> -> 0x%04"PFMT64x"\n", handler_addr);
 						}
 					}
 				}

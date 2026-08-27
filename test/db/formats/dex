@@ -57,6 +57,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=DEX exception handlers
+FILE=bins/java/Main.dex
+CMDS=iwj
+EXPECT=<<EOF
+[{"index":0,"source":572,"from":590,"to":670,"handler":672,"filter":0},{"index":1,"source":572,"from":708,"to":714,"handler":672,"filter":0}]
+EOF
+RUN
+
 NAME=Checking file size
 FILE=bins/dex/HelloSlack.dex
 CMDS=<<EOF
