@@ -4668,6 +4668,7 @@ void *PE_(r_bin_pe_free)(RBinPEObj *pe) {
 	RVecRBinReloc_fini (&pe->relocs);
 	r_list_free (pe->resources);
 	r_list_free (pe->dotnet_symbols);
+	r_list_free (pe->trycatch_list);
 	r_pkcs7_cms_free (pe->cms);
 	r_pkcs7_spcinfo_free (pe->spcinfo);
 	sdb_free (pe->kv);
