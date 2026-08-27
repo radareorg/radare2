@@ -125,6 +125,7 @@ struct PE_(r_bin_pe_obj_t) {
 	PE_(image_metadata_header) * metadata_header;
 	PE_(image_metadata_stream) * *streams;
 	RList *dotnet_symbols;
+	RList *trycatch_list;
 
 	/* store the section information for future use */
 	RVecPESection sections;

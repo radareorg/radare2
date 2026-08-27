@@ -392,6 +392,9 @@ static RList *trycatch(RBinFile *bf) {
 	if (!expdir->Size) {
 		return NULL;
 	}
+	if (bin->trycatch_list) {
+		return bin->trycatch_list;
+	}
 	ut64 dirsize = expdir->Size;
 	const ut64 filesize = bin->b? r_buf_size (bin->b): 0;
 	if (dirsize > filesize) {
@@ -399,7 +402,7 @@ static RList *trycatch(RBinFile *bf) {
 		dirsize = filesize;
 	}
 
-	RList *tclist = r_list_newf ((RListFree)r_bin_trycatch_free);
+	RList *tclist = bin->trycatch_list = r_list_newf ((RListFree)r_bin_trycatch_free);
 	if (!tclist) {
 		return NULL;
 	}
