@@ -187,6 +187,19 @@ name_unique: true
 EOF
 RUN
 
+NAME=arm64e vtables without applied relocations
+FILE=bins/mach0/TestRTTI-arm64e
+CMDS=<<EOF
+avj~{[0].offset}
+avrr
+aclj~{[0].name}
+EOF
+EXPECT=<<EOF
+4295000176
+B
+EOF
+RUN
+
 NAME=anal classes arm64e
 FILE=bins/mach0/TestRTTI-arm64e
 ARGS=-e bin.relocs.apply=true
