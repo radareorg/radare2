@@ -270,3 +270,16 @@ INFO: Use -AA or aaaa to perform additional experimental analysis
 EOF
 EXPECT=
 RUN
+
+NAME=r2 -m rebases the bin info to the map address
+FILE=bins/elf/bomb
+CMDS=<<EOF
+!!r2 -m 0x100000 -qc 'izq 1' bins/elf/bomb
+!!r2 -m 0x100000 -qc 'ps @ 0x1022b6' bins/elf/bomb
+EOF
+EXPECT=<<EOF
+0x1022b6 29 28 %s: Error: Couldn't open %s\n
+%s: Error: Couldn't open %s
+
+EOF
+RUN

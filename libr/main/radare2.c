@@ -668,14 +668,8 @@ static RThreadFunctionRet th_binload(RThread *th) {
 	ThreadData *td = (ThreadData *)th->user;
 	RCore *r = td->core;
 	const char *filepath = td->filepath;
-	const ut64 baddr = UT64_MAX;
+	const ut64 baddr = td->baddr;
 	(void)r_core_bin_load (r, filepath, baddr);
-	// check if bin info is loaded and complain if -B was used
-	RBinFile *bi = r_bin_cur (r->bin);
-	bool haveBinInfo = bi && bi->bo && bi->bo->info && bi->bo->info->type;
-	if (!haveBinInfo && baddr != UT64_MAX) {
-		R_LOG_WARN ("Don't use -B on unknown files. Consider using -m");
-	}
 	free (td->filepath);
 	r_cons_free (cons);
 	R_FREE (th->user);
@@ -683,12 +677,12 @@ static RThreadFunctionRet th_binload(RThread *th) {
 	return false;
 }
 
-static void binload(RCore *r, const char *filepath, ut64 baddr) {
+static void binload(RCore *r, const char *filepath, ut64 baddr, bool baddr_set) {
 	(void)r_core_bin_load (r, filepath, baddr);
 	// check if bin info is loaded and complain if -B was used
 	RBinFile *bi = r_bin_cur (r->bin);
 	bool haveBinInfo = bi && bi->bo && bi->bo->info && bi->bo->info->type;
-	if (!haveBinInfo && baddr != UT64_MAX) {
+	if (!haveBinInfo && baddr_set) {
 		R_LOG_WARN ("Don't use -B on unknown files. Consider using -m");
 	}
 }
@@ -717,6 +711,7 @@ typedef struct {
 	int perms;
 	bool sandbox;
 	ut64 baddr;
+	bool baddr_set;
 	ut64 seek;
 	bool do_list_io_plugins;
 	bool do_list_core_plugins;
@@ -983,6 +978,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'B':
 			mr.baddr = r_num_math (r->num, opt.arg);
+			mr.baddr_set = true;
 			break;
 		case 'X':
 			r_config_set_b (r->config, "bin.usextr", false);
@@ -1599,6 +1595,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 		}
 		if (!mr.debug || mr.debug == 2) {
+			// `-m` maps the file at the given address, so rbin must use it as
+			// base address too. otherwise the addresses of the bin objects
+			// (strings, symbols, sections, ...) are relative to the base
+			// address stored in the binary, while the contents of the file
+			// are mapped somewhere else, so they point outside of the maps
+			if (mr.mapaddr && r_config_get_b (r->config, "file.info")) {
+				mr.baddr = mr.mapaddr;
+			}
 			if (opt.ind == argc && mr.pfile) {
 				if (R_STR_ISEMPTY (mr.pfile)) {
 					R_LOG_ERROR ("Missing file to open");
@@ -1680,7 +1684,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 									mr.th_bin = r_th_new (th_binload, td, false);
 									r_th_start (mr.th_bin);
 								} else {
-									binload (r, filepath, mr.baddr);
+									binload (r, filepath, mr.baddr, mr.baddr_set);
 								}
 							}
 						} else {
@@ -1713,13 +1717,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 						}
 					}
 				}
-			}
-			// XXX use UT64_MAX?
-			if (mr.mapaddr && r_config_get_b (r->config, "file.info")) {
-				R_LOG_WARN ("using oba to load the syminfo from different mapaddress");
-				// load symbols when using r2 -m 0x1000 /bin/ls
-				r_core_cmdf (r, "oba 0 0x%" PFMT64x, mr.mapaddr);
-				r_core_cmd0 (r, ".ie*");
 			}
 		} else if (mr.pfile) {
 			RIODesc *f = r_core_file_open (r, mr.pfile, mr.perms, mr.mapaddr);
