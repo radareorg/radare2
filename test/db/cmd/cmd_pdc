@@ -1279,3 +1279,21 @@ EXPECT=<<EOF
 0
 EOF
 RUN
+
+NAME=pdc structured recovers sparc b<cc> operands from the cmp
+FILE=malloc://64
+ARGS=-a sparc -b 32 -e cfg.bigendian=true -e pdc.structured=1
+CMDS=<<EOF
+wx 80a20009 04800005 01000000 90102001 81c3e008 01000000 90102002 81c3e008 01000000 @ 0
+af @ 0
+pdc~if (,o0 =,else
+pdc~cond_0x~?
+EOF
+EXPECT=<<EOF
+    if (o0 > o1) {
+        o0 = 1
+    } else {
+        o0 = 2
+0
+EOF
+RUN
