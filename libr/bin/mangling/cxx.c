@@ -8,7 +8,8 @@
 #include "./cxx2/cxx2.h"
 
 R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
-	const char *rawname = str;
+	(void)bf;
+	(void)vaddr;
 	// DMGL_TYPES | DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE
 	// | DMGL_RET_POSTFIX | DMGL_TYPES;
 	int i;
@@ -96,38 +97,5 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 		}
 	}
 	free (tmpstr);
-	if (out) {
-		char *sign = (char *)strchr (out, '(');
-		if (sign) {
-			char *str = out;
-			char *ptr = NULL;
-			char *nerd = NULL;
-			for (;;) {
-				ptr = strstr (str, "::");
-				if (!ptr || ptr > sign) {
-					break;
-				}
-				nerd = ptr;
-				str = ptr + 1;
-			}
-			if (R_STR_ISNOTEMPTY (nerd)) {
-				*nerd = 0;
-				if (bf) {
-					RBinSymbol *sym = r_bin_file_add_method (bf, rawname, out, nerd + 2, 0);
-					if (sym) {
-						if (sym->vaddr != 0 && sym->vaddr != vaddr) {
-							if (bf && bf->rbin && bf->rbin->options.verbose) {
-								R_LOG_WARN ("Dupped method found: %s", r_bin_name_tostring (sym->name));
-							}
-						}
-						if (sym->vaddr == 0) {
-							sym->vaddr = vaddr;
-						}
-					}
-				}
-				*nerd = ':';
-			}
-		}
-	}
 	return out;
 }
