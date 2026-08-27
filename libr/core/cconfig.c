@@ -4160,7 +4160,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.jmp.pair", "false", &cb_anal_jmppair, "treat inverse jcc pairs as obfuscation (x86 only)");
 
 	SETCB ("anal.refstr", "false", &cb_anal_searchstringrefs, "search string references in data references");
-	SETCB ("anal.trycatch", "false", &cb_anal_trycatch, "honor try.X.Y.{from,to,catch} flags");
+	SETCB ("anal.trycatch", "true", &cb_anal_trycatch, "analyze exception handlers described by try.X.Y.{from,to,catch} flags");
 	SETCB ("anal.bb.maxsize", "64K", &cb_anal_bb_max_size, "maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "analyze push+ret as jmp");
 	SETCB ("types.plugin", "", &cb_anal_types_parser, "use the new c parser instead of tcc");

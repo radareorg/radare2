@@ -1159,32 +1159,6 @@ noskip:
 				gotoBeach (R_ANAL_RET_END);
 			}
 		}
-		if (anal->opt.trycatch) {
-			const char *name = anal->coreb.getName (anal->coreb.core, at);
-			if (name) {
-				if (r_str_startswith (name, "try.") && r_str_endswith (name, ".from")) {
-					char *handle = strdup (name);
-					// handle = r_str_replace (handle, ".from", ".to", 0);
-					ut64 from_addr = anal->coreb.numGet (anal->coreb.core, handle);
-					handle = r_str_replace (handle, ".from", ".catch", 0);
-					ut64 handle_addr = anal->coreb.numGet (anal->coreb.core, handle);
-					bb->jump = at + oplen;
-					if (from_addr != bb->addr) {
-						bb->fail = handle_addr;
-						ret = r_anal_function_bb (anal, fcn, handle_addr, depth - 1);
-						R_LOG_INFO ("(%s) 0x%08"PFMT64x, handle, handle_addr);
-						if (bb->size == 0) {
-							r_anal_function_remove_block (fcn, bb);
-						}
-						r_unref (bb);
-						bb = fcn_append_basic_block (anal, fcn, addr);
-						if (!bb) {
-							gotoBeach (R_ANAL_RET_ERROR);
-						}
-					}
-				}
-			}
-		}
 		idx += oplen;
 		delay.un_idx = idx;
 		if (anal->opt.delay && op->delay > 0 && !delay.pending) {

@@ -3999,6 +3999,9 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 	RBinTrycatch *tc;
 	RList *trycatch = r_bin_file_get_trycatch (bf);
 	int idx = 0;
+	if (IS_MODE_SET (mode)) {
+		r_flag_space_push (core->flags, R_FLAGS_FS_TRYCATCH);
+	}
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	}
@@ -4012,12 +4015,25 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 			pj_kn (pj, "handler", tc->handler);
 			pj_kn (pj, "filter", tc->filter);
 			pj_end (pj);
+		} else if (IS_MODE_SET (mode)) {
+			char *name = r_str_newf ("try.%d.%"PFMT64x".from", idx, tc->source);
+			r_flag_set (core->flags, name, tc->from, 1);
+			free (name);
+			name = r_str_newf ("try.%d.%"PFMT64x".to", idx, tc->source);
+			r_flag_set (core->flags, name, tc->to, 1);
+			free (name);
+			name = r_str_newf ("try.%d.%"PFMT64x".catch", idx, tc->source);
+			r_flag_set (core->flags, name, tc->handler, 1);
+			free (name);
 		} else {
 			r_cons_printf (core->cons, "f try.%d.%" PFMT64x ".from=0x%08" PFMT64x "\n", idx, tc->source, tc->from);
 			r_cons_printf (core->cons, "f try.%d.%" PFMT64x ".to=0x%08" PFMT64x "\n", idx, tc->source, tc->to);
 			r_cons_printf (core->cons, "f try.%d.%" PFMT64x ".catch=0x%08" PFMT64x "\n", idx, tc->source, tc->handler);
 		}
 		idx++;
+	}
+	if (IS_MODE_SET (mode)) {
+		r_flag_space_pop (core->flags);
 	}
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
