@@ -316,9 +316,21 @@ static char *header(RBinFile *bf, int mode) {
 
 extern struct r_bin_write_t r_bin_write_pe64;
 
+static bool read_at_checked(RIO *io, ut64 addr, ut8 *buf, int size) {
+	// r_io_read_at succeeds on unmapped areas by filling the gaps with
+	// io.Oxff, so ensure the range lives inside the binary before reading
+	if (addr > UT64_MAX - size) {
+		return false;
+	}
+	if (!r_io_is_valid_offset (io, addr, 0) || !r_io_is_valid_offset (io, addr + size - 1, 0)) {
+		return false;
+	}
+	return r_io_read_at (io, addr, buf, size);
+}
+
 static bool read_u32_at(RIO *io, ut64 addr, ut32 *out) {
 	ut8 buf[sizeof (ut32)];
-	if (!r_io_read_at (io, addr, buf, sizeof (buf))) {
+	if (!read_at_checked (io, addr, buf, sizeof (buf))) {
 		return false;
 	}
 	*out = r_read_le32 (buf);
@@ -327,7 +339,7 @@ static bool read_u32_at(RIO *io, ut64 addr, ut32 *out) {
 
 static bool read_runtime_function_at(RIO *io, ut64 addr, PE64_RUNTIME_FUNCTION *rfcn) {
 	ut8 buf[sizeof (*rfcn)];
-	if (!r_io_read_at (io, addr, buf, sizeof (buf))) {
+	if (!read_at_checked (io, addr, buf, sizeof (buf))) {
 		return false;
 	}
 	rfcn->BeginAddress = r_read_le32 (buf);
@@ -338,7 +350,7 @@ static bool read_runtime_function_at(RIO *io, ut64 addr, PE64_RUNTIME_FUNCTION *
 
 static bool read_unwind_info_at(RIO *io, ut64 addr, PE64_UNWIND_INFO *info) {
 	ut8 buf[offsetof (PE64_UNWIND_INFO, UnwindCode)];
-	if (!r_io_read_at (io, addr, buf, sizeof (buf))) {
+	if (!read_at_checked (io, addr, buf, sizeof (buf))) {
 		return false;
 	}
 	info->Version = buf[0] & 7;
@@ -352,7 +364,7 @@ static bool read_unwind_info_at(RIO *io, ut64 addr, PE64_UNWIND_INFO *info) {
 
 static bool read_scope_record_at(RIO *io, ut64 addr, PE64_SCOPE_RECORD *scope) {
 	ut8 buf[sizeof (*scope)];
-	if (!r_io_read_at (io, addr, buf, sizeof (buf))) {
+	if (!read_at_checked (io, addr, buf, sizeof (buf))) {
 		return false;
 	}
 	scope->BeginAddress = r_read_le32 (buf);
@@ -362,17 +374,29 @@ static bool read_scope_record_at(RIO *io, ut64 addr, PE64_SCOPE_RECORD *scope) {
 	return true;
 }
 
+#define PE64_UNWIND_CHAIN_LIMIT 32
+
 static RList *trycatch(RBinFile *bf) {
 	RIO *io = bf->rbin->iob.io;
 	ut64 baseAddr = bf->bo->baddr;
-	int i;
 	ut64 offset;
 	ut32 c_handler = 0;
 
 	struct PE_(r_bin_pe_obj_t) * bin = bf->bo->bin_obj;
+	if (!bin->nt_headers || bin->nt_headers->file_header.Machine != PE_IMAGE_FILE_MACHINE_AMD64) {
+		// The exception directory of ARM64 and other machines does not
+		// use the x86-64 RUNTIME_FUNCTION/UNWIND_INFO format parsed here
+		return NULL;
+	}
 	PE_(image_data_directory) *expdir = &bin->optional_header->DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION];
 	if (!expdir->Size) {
 		return NULL;
+	}
+	ut64 dirsize = expdir->Size;
+	const ut64 filesize = bin->b? r_buf_size (bin->b): 0;
+	if (dirsize > filesize) {
+		// RUNTIME_FUNCTION entries beyond the file contents can only be padding or garbage
+		dirsize = filesize;
 	}
 
 	RList *tclist = r_list_newf ((RListFree)r_bin_trycatch_free);
@@ -380,15 +404,22 @@ static RList *trycatch(RBinFile *bf) {
 		return NULL;
 	}
 
-	for (offset = expdir->VirtualAddress; offset < (ut64)expdir->VirtualAddress + expdir->Size; offset += sizeof (PE64_RUNTIME_FUNCTION)) {
+	for (offset = expdir->VirtualAddress; offset < (ut64)expdir->VirtualAddress + dirsize; offset += sizeof (PE64_RUNTIME_FUNCTION)) {
 		PE64_RUNTIME_FUNCTION rfcn;
 		bool suc = read_runtime_function_at (io, offset + baseAddr, &rfcn);
-		if (!rfcn.BeginAddress) {
+		if (!suc || !rfcn.BeginAddress || rfcn.BeginAddress == UT32_MAX) {
+			// zero and ff-filled entries mark the end of the directory
 			break;
 		}
 		ut32 savedBeginOff = rfcn.BeginAddress;
 		ut32 savedEndOff = rfcn.EndAddress;
+		// Chained entries can form cycles in malformed binaries, so bound the walk
+		int chain = 0;
 		while (suc && rfcn.UnwindData & 1) {
+			if (chain++ >= PE64_UNWIND_CHAIN_LIMIT) {
+				suc = false;
+				break;
+			}
 			// XXX this ugly (int) cast is needed for MSVC for not to crash
 			int delta = (rfcn.UnwindData & (int)~1);
 			ut64 at = baseAddr + delta;
@@ -412,7 +443,12 @@ static RList *trycatch(RBinFile *bf) {
 		if (info.Flags & PE64_UNW_FLAG_CHAININFO) {
 			savedBeginOff = rfcn.BeginAddress;
 			savedEndOff = rfcn.EndAddress;
+			int chains = 0;
 			do {
+				if (chains++ >= PE64_UNWIND_CHAIN_LIMIT) {
+					suc = false;
+					break;
+				}
 				if (!read_runtime_function_at (io, exceptionDataOff, &rfcn)) {
 					break;
 				}
@@ -420,7 +456,12 @@ static RList *trycatch(RBinFile *bf) {
 				if (!suc || info.Version != 1) {
 					break;
 				}
+				int chain = 0;
 				while (suc && (rfcn.UnwindData & 1)) {
+					if (chain++ >= PE64_UNWIND_CHAIN_LIMIT) {
+						suc = false;
+						break;
+					}
 					// XXX this ugly (int) cast is needed for MSVC for not to crash
 					suc = read_runtime_function_at (io, baseAddr + ((int)rfcn.UnwindData & (int)~1), &rfcn);
 				}
@@ -431,6 +472,9 @@ static RList *trycatch(RBinFile *bf) {
 				sizeOfCodeEntries *= sizeof (PE64_UNWIND_CODE);
 				exceptionDataOff = baseAddr + rfcn.UnwindData + offsetof (PE64_UNWIND_INFO, UnwindCode) + sizeOfCodeEntries;
 			} while (info.Flags & PE64_UNW_FLAG_CHAININFO);
+			if (!suc) {
+				continue;
+			}
 			if (!(info.Flags & PE64_UNW_FLAG_EHANDLER)) {
 				continue;
 			}
@@ -465,6 +509,7 @@ static RList *trycatch(RBinFile *bf) {
 
 		PE64_SCOPE_RECORD scope;
 		ut64 scopeRecOff = exceptionDataOff + sizeof (ut32);
+		ut32 i;
 		for (i = 0; i < scope_count; i++) {
 			if (!read_scope_record_at (io, scopeRecOff, &scope)) {
 				break;
