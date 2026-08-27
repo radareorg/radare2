@@ -673,3 +673,20 @@ g1,g2,g3,g4,g5,o0,o1,o2,o3,o4,o5,o7,f0,f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f1
 l0,l1,l2,l3,l4,l5,l6,l7,i0,i1,i2,i3,i4,i5,i6,i7,o6,sp,fp
 EOF
 RUN
+
+NAME=asm pseudo for sparc branches
+FILE=malloc://64
+ARGS=-a sparc -b 32 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 80a22000 22800005 12680005 10800005 08800005 1c800005 @ 0
+pi 6
+EOF
+EXPECT=<<EOF
+v = o0 - 0
+if (!v) goto 0x18
+if (v) goto 0x1c
+goto 0x20
+if (((unsigned) v) <= 0) goto 0x24
+if (v >= 0) goto 0x28
+EOF
+RUN
