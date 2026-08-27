@@ -153,6 +153,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,
+	.trycatch = &r_bin_trycatch_from_eh_frame,
 	// .dbginfo = &r_bin_dbginfo_elf,
 	.create = &create,
 	.write = &r_bin_write_elf,

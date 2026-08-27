@@ -752,6 +752,8 @@ typedef struct r_bin_trycatch_t {
 
 R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler, ut64 filter);
 R_API void r_bin_trycatch_free(RBinTrycatch *tc);
+R_API void r_bin_trycatch_parse_itanium_lsda(RBinFile *bf, RList *result, ut64 source, ut64 lsda_addr);
+R_API RList *r_bin_trycatch_from_eh_frame(RBinFile *bf);
 
 typedef struct r_bin_plugin_t {
 	RPluginMeta meta;

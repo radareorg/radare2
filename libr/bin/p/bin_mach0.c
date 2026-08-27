@@ -1397,6 +1397,9 @@ static void mach0_eh_add_action(RBinFile *bf, RList *result, const Mach0EhReader
 		}
 		return;
 	}
+	if (action > (ut64)(lsda->end - action_table)) {
+		return;
+	}
 	const ut8 *record = action_table + action - 1;
 	for (size_t depth = 0; record >= action_table && record < lsda->end && depth < 64; depth++) {
 		Mach0EhReader action_reader = *lsda;
@@ -1422,7 +1425,11 @@ static void mach0_eh_add_action(RBinFile *bf, RList *result, const Mach0EhReader
 		if (!next) {
 			break;
 		}
-		record = next_field + next;
+		st64 next_index = (next_field - action_table) + next;
+		if (next_index < 0 || (ut64)next_index >= (ut64)(lsda->end - action_table)) {
+			break;
+		}
+		record = action_table + next_index;
 	}
 }
 
