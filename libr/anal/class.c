@@ -481,7 +481,7 @@ static RAnalClassErr r_anal_class_add_attr_unique(RAnal *anal, const char *class
 
 
 // ---- METHODS ----
-// Format: addr,vtable_offset
+// Format: addr,vtable_offset,vtable_addr
 
 static char *flagname_method(const char *class_name, const char *meth_name) {
 	return flagname_attr ("method", class_name, meth_name);
@@ -511,9 +511,11 @@ R_API RAnalClassErr r_anal_class_method_get(RAnal *anal, const char *class_name,
 		free (content);
 		return R_ANAL_CLASS_ERR_OTHER;
 	}
-	sdb_anext (cur, NULL);
+	char *vtable_addr = NULL;
+	sdb_anext (cur, &vtable_addr);
 
 	meth->vtable_offset = atoll (cur);
+	meth->vtable_addr = vtable_addr? r_num_math (NULL, vtable_addr): UT64_MAX;
 
 	free (content);
 
@@ -564,7 +566,11 @@ R_API RVecAnalMethod *r_anal_class_method_get_all(RAnal *anal, const char *class
 
 R_API RAnalClassErr r_anal_class_method_set(RAnal *anal, const char *class_name, RAnalMethod *meth) {
 	R_RETURN_VAL_IF_FAIL (anal && class_name && meth, R_ANAL_CLASS_ERR_OTHER);
-	char *content = r_str_newf ("%"PFMT64u"%c%"PFMT64d, meth->addr, SDB_RS, meth->vtable_offset);
+	char *content = meth->vtable_addr == UT64_MAX
+		? r_str_newf ("%"PFMT64u"%c%"PFMT64d,
+			meth->addr, SDB_RS, meth->vtable_offset)
+		: r_str_newf ("%"PFMT64u"%c%"PFMT64d"%c%"PFMT64u,
+			meth->addr, SDB_RS, meth->vtable_offset, SDB_RS, meth->vtable_addr);
 	RAnalClassErr err = r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, meth->name, content);
 	free (content);
 	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
@@ -1106,7 +1112,11 @@ static void print_class(RAnal *anal, RStrBuf *sb, const char *class_name) {
 	if (methods) {
 		RAnalMethod *meth;
 		R_VEC_FOREACH (methods, meth) {
-			r_strbuf_appendf (sb, "'acm %s %s 0x%"PFMT64x" %"PFMT64d"\n", class_name, meth->name, meth->addr, meth->vtable_offset);
+			r_strbuf_appendf (sb, "'acm %s %s 0x%"PFMT64x" %"PFMT64d, class_name, meth->name, meth->addr, meth->vtable_offset);
+			if (meth->vtable_addr != UT64_MAX) {
+				r_strbuf_appendf (sb, " 0x%"PFMT64x, meth->vtable_addr);
+			}
+			r_strbuf_append (sb, "\n");
 		}
 		RVecAnalMethod_free (methods);
 	}
@@ -1159,6 +1169,9 @@ R_API void r_anal_class_json(RAnal *anal, PJ *j, const char *class_name) {
 			pj_kn (j, "addr", meth->addr);
 			if (meth->vtable_offset >= 0) {
 				pj_kn (j, "vtable_offset", (ut64)meth->vtable_offset);
+			}
+			if (meth->vtable_addr != UT64_MAX) {
+				pj_kn (j, "vtable_addr", meth->vtable_addr);
 			}
 			pj_end (j);
 		}

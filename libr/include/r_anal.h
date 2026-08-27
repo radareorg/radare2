@@ -1719,6 +1719,7 @@ typedef struct r_anal_method_t {
 	char *name;
 	ut64 addr;
 	st64 vtable_offset; // >= 0 if method is virtual, else -1
+	ut64 vtable_addr; // address of the owning vtable, UT64_MAX if unknown
 } RAnalMethod;
 
 typedef struct r_anal_base_class_t {

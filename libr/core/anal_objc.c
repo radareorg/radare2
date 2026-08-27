@@ -396,7 +396,8 @@ static void objc_recover_class(RAnal *anal, RBinClass *klass) {
 		RAnalMethod meth = {
 			.name = (char *)method_name,
 			.addr = method->vaddr,
-			.vtable_offset = -1
+			.vtable_offset = -1,
+			.vtable_addr = UT64_MAX
 		};
 		r_anal_class_method_set (anal, class_name, &meth);
 		free (class_method_name);

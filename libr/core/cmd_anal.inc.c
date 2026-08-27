@@ -324,7 +324,7 @@ static RCoreHelpMessage help_msg_ac = {
 	"acb", " [class name]", "list bases of class",
 	"acb", " [class name] [base class name] ([offset])", "add base class",
 	"acb-", " [class name] [base class id]", "delete base by id (from acb [class name])",
-	"acm", " [class name] [method name] [offset] ([vtable offset])", "add/edit method",
+	"acm", " [class name] [method name] [offset] ([vtable offset]) ([vtable addr])", "add/edit method",
 	"acm-", " [class name] [method name]", "delete method",
 	"acmn", " [class name] [method name] [new name]", "rename method",
 	"acg", "", "print inheritance ascii graph",
@@ -16164,8 +16164,15 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 			meth.name = name_str;
 			meth.addr = r_num_get (core->num, addr_str);
 			meth.vtable_offset = -1;
+			meth.vtable_addr = UT64_MAX;
 			if (end) {
-				meth.vtable_offset = (int)r_num_get (core->num, end + 1);
+				char *vtable_offset_str = end + 1;
+				char *vtable_addr_str = strchr (vtable_offset_str, ' ');
+				if (vtable_addr_str) {
+					*vtable_addr_str++ = '\0';
+					meth.vtable_addr = r_num_get (core->num, vtable_addr_str);
+				}
+				meth.vtable_offset = (int)r_num_get (core->num, vtable_offset_str);
 			}
 			err = r_anal_class_method_set (core->anal, cstr, &meth);
 		} else if (c == 'n') {
