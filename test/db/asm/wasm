@@ -1,8 +1,11 @@
 d "trap" 00
 d "nop" 01
 d "block" 0240
+d "block (result i32)" 027f
 d "loop" 0340
+d "loop (result i64)" 037e
 d "if" 0440
+d "if (result f32)" 047d
 d "else" 05
 d "end" 0b
 d "br 0" 0c00
