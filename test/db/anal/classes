@@ -191,11 +191,13 @@ NAME=arm64e vtables without applied relocations
 FILE=bins/mach0/TestRTTI-arm64e
 CMDS=<<EOF
 avj~{[0].offset}
+avraj~{[0].name}
 avrr
 aclj~{[0].name}
 EOF
 EXPECT=<<EOF
 4295000176
+A
 B
 EOF
 RUN
