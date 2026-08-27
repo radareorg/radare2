@@ -327,6 +327,15 @@ static bool is_symbol_flag(const char *name) {
 		|| !strcmp (name, "main");
 }
 
+// a pc-relative slot holds one pointer, so it is never a table
+static bool is_pcrel_jmp(RAnal *anal, const RAnalOp *op) {
+	if (op->ireg || !op->reg) {
+		return false;
+	}
+	const char *pc = r_reg_alias_getname (anal->reg, R_REG_ALIAS_PC);
+	return pc && !strcmp (op->reg, pc);
+}
+
 static bool next_instruction_is_symbol(RAnal *anal, RAnalOp *op) {
 	if (!anal->flb.get_at) {
 		return false;
@@ -1819,7 +1828,8 @@ noskip:
 				gotoBeach (R_ANAL_RET_END);
 			}
 			// switch statement
-			if (anal->opt.jmptbl && anal->lea_jmptbl_ip != op->addr) {
+			// gates every case: movdisp walks these too (bash 0x432b1)
+			if (anal->opt.jmptbl && anal->lea_jmptbl_ip != op->addr && !is_pcrel_jmp (anal, op)) {
 				ut8 buf[32]; // 32 bytes is enough to hold any instruction.
 					// op->ireg since rip relative addressing produces way too many false positives otherwise
 					// op->ireg is 0 for rip relative, "rax", etc otherwise
