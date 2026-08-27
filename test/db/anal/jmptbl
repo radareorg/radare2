@@ -856,3 +856,35 @@ EXPECT=<<EOF
 j=0x200,e=4,n=1,s=0,b=0x0,d=0xffffffffffffffff,v=0xffffffffffffffff,V=0,L=0,F=0x300,r=reg_abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
 EOF
 RUN
+
+NAME=pc-relative indirect jmp is not a jump table
+FILE=malloc://0x1000
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4839f77406ff25f5000000c3 @ 0x100
+wx c3 @ 0x300
+wx 0003000000000000000300000000000000030000000000000003000000000000 @ 0x200
+af @ 0x100
+f~case.~?
+afbj @ 0x100~switch_op~?
+afi @ 0x100~num-bbs
+EOF
+EXPECT=<<EOF
+0
+0
+num-bbs: 3
+EOF
+RUN
+
+NAME=pc-relative tail call after a scaled load is not a jump table
+FILE=bins/elf/bash
+CMDS=<<EOF
+af @ 0x43290
+f~case.~?
+pdf @ 0x43290~switch table?
+EOF
+EXPECT=<<EOF
+0
+0
+EOF
+RUN
