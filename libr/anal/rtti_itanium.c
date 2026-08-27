@@ -806,8 +806,14 @@ static void add_class_bases(RVTableContext *context, const class_type_info *cti)
 			base_class_type_info *base_class_info = vmi_class->vmi_bases + i;
 			ut64 base_addr = base_class_info->base_class_addr + VT_WORD_SIZE (context); // offset to name
 			if (rtti_itanium_read_type_name (context, base_addr, &base_info)) {
-				// TODO in future, store the RTTI offset from vtable and use it
-				RAnalBaseClass base = { .class_name = base_info.name, .offset = 0 };
+				const st64 offset = (st64)base_class_info->flags >> 8;
+				const bool is_virtual = base_class_info->flags & base_is_virtual;
+				RAnalBaseClass base = {
+					.class_name = base_info.name,
+					// A virtual base stores a vtable displacement here rather than a
+					// fixed object offset, which RAnalBaseClass cannot represent.
+					.offset = !is_virtual && offset > 0? offset: 0,
+				};
 				r_anal_class_base_set (context->anal, cti->name, &base);
 				r_anal_class_base_fini (&base);
 			}

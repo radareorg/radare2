@@ -20,6 +20,17 @@ type_info
 EOF
 RUN
 
+NAME=itanium multiple inheritance base offsets
+FILE=bins/elf/class_test
+CMDS=<<EOF
+aaa
+aclj~{[2].bases[1].offset}
+EOF
+EXPECT=<<EOF
+4
+EOF
+RUN
+
 NAME=anal classes armv7
 FILE=bins/mach0/TestRTTI-armv7
 CMDS=<<EOF
