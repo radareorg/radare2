@@ -147,12 +147,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=PPC64 ELFv1 (regression): shared lib JMP_SLOT vaddr unchanged by ET_REL gating
+NAME=PPC64 ELFv1: shared lib JMP_SLOT import keeps its got.plt site
 FILE=bins/elf/ppc64v1-libz.so
 ARGS=-e bin.relocs.apply=true
 CMDS=ir~strlen[0]
 EXPECT=<<EOF
-0x000304d8
+0x00030048
 EOF
 RUN
 

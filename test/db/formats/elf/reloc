@@ -729,3 +729,43 @@ EXPECT=<<EOF
 0x00078030 0x00078030 SET_64 22
 EOF
 RUN
+
+NAME=ELF: import GOT site keeps its reloc flag under bin.relocs.apply
+FILE=bins/elf/analysis/ls-linux64
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~_ITM_deregisterTMCloneTable
+fd @ 0x21cf88
+pi 1 @ 0x5c6b
+EOF
+EXPECT=<<EOF
+0x0021cf88 0x0001cf88 SET_64 6     _ITM_deregisterTMCloneTable
+reloc._ITM_deregisterTMCloneTable
+mov rax, qword [reloc._ITM_deregisterTMCloneTable]
+EOF
+RUN
+
+NAME=ELF: call graph names an import called through its GOT slot under bin.relocs.apply
+FILE=bins/elf/ls
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+af @ entry0
+agcj~{[0].imports}
+EOF
+EXPECT=<<EOF
+["reloc.__libc_start_main"]
+EOF
+RUN
+
+NAME=ELF: patched ET_REL branch keeps naming its got.r2 target
+FILE=bins/elf/random_39855/random_39855.oo
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pi 1 @ 0x0800007c
+ir~strcmp[0]
+EOF
+EXPECT=<<EOF
+bl reloc.strcmp
+0x08012678
+EOF
+RUN

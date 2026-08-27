@@ -62,10 +62,10 @@ vaddr      paddr      type   ntype name
 0x08000044 0x00000044 ADD_32 283   local_target
 0x0800004c 0x0000004c ADD_32 279   local_target
 0x08000050 0x00000050 ADD_32 280   local_target
+0x08000068 0x00000068 ADD_32 261   extern_target + 0x08000000
 0x0800006c 0x0000006c ADD_32 258   local_target
 0x08000070 0x00000070 ADD_64 257   local_target
 0x08000320 0x00000048 ADD_32 283   extern_target
-0x08000320 0x00000068 ADD_32 261   extern_target + 0x08000000
 0x08000328 0x00000058 ADD_32 282   extern_tail
 EOF
 RUN
