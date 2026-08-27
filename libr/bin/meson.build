@@ -7,6 +7,7 @@ r_bin_sources = [
   'demangle.c',
   'demangle_stubs.c',
   'dwarf.c',
+  'eh.c',
   'blang.c',
   'bfilter.c',
   'bfile.c',
