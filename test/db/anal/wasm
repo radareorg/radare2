@@ -6,7 +6,7 @@ EOF
 EXPECT=<<EOF
             ;-- entry0:
             ;-- main:
-            0x000000be      4185feff77     i32.const 251657989
+            0x000000be      4185feff77     i32.const -16777467
             0x000000c3      fd0f           i8x16.splat
             0x000000c5      fda001         incorrect
             0x000000c8      fd64           incorrect

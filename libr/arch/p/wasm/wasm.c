@@ -689,7 +689,8 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 					goto err;
 				}
 				if (txt && opdef->txt) {
-					switch (val) {
+					// Single-byte block types use their raw value-type encoding.
+					switch (buf[1]) {
 					case R_BIN_WASM_VALUETYPE_VOID:
 						op->txt = strdup (opdef->txt);
 						break;
