@@ -515,7 +515,9 @@ R_API RAnalClassErr r_anal_class_method_get(RAnal *anal, const char *class_name,
 	sdb_anext (cur, &vtable_addr);
 
 	meth->vtable_offset = atoll (cur);
-	meth->vtable_addr = vtable_addr? r_num_math (NULL, vtable_addr): UT64_MAX;
+		meth->vtable_addr = (vtable_addr && *vtable_addr)
+			? r_num_math (NULL, vtable_addr)
+			: UT64_MAX;
 
 	free (content);
 
@@ -566,11 +568,11 @@ R_API RVecAnalMethod *r_anal_class_method_get_all(RAnal *anal, const char *class
 
 R_API RAnalClassErr r_anal_class_method_set(RAnal *anal, const char *class_name, RAnalMethod *meth) {
 	R_RETURN_VAL_IF_FAIL (anal && class_name && meth, R_ANAL_CLASS_ERR_OTHER);
-	char *content = meth->vtable_addr == UT64_MAX
-		? r_str_newf ("%"PFMT64u"%c%"PFMT64d,
-			meth->addr, SDB_RS, meth->vtable_offset)
-		: r_str_newf ("%"PFMT64u"%c%"PFMT64d"%c%"PFMT64u,
-			meth->addr, SDB_RS, meth->vtable_offset, SDB_RS, meth->vtable_addr);
+		char *content = R_ANAL_CLASS_METHOD_HAS_VTABLE_ADDR (meth)
+			? r_str_newf ("%"PFMT64u"%c%"PFMT64d"%c%"PFMT64u,
+				meth->addr, SDB_RS, meth->vtable_offset, SDB_RS, meth->vtable_addr)
+			: r_str_newf ("%"PFMT64u"%c%"PFMT64d,
+				meth->addr, SDB_RS, meth->vtable_offset);
 	RAnalClassErr err = r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, meth->name, content);
 	free (content);
 	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
@@ -1113,7 +1115,7 @@ static void print_class(RAnal *anal, RStrBuf *sb, const char *class_name) {
 		RAnalMethod *meth;
 		R_VEC_FOREACH (methods, meth) {
 			r_strbuf_appendf (sb, "'acm %s %s 0x%"PFMT64x" %"PFMT64d, class_name, meth->name, meth->addr, meth->vtable_offset);
-			if (meth->vtable_addr != UT64_MAX) {
+			if (R_ANAL_CLASS_METHOD_HAS_VTABLE_ADDR (meth)) {
 				r_strbuf_appendf (sb, " 0x%"PFMT64x, meth->vtable_addr);
 			}
 			r_strbuf_append (sb, "\n");
@@ -1170,7 +1172,7 @@ R_API void r_anal_class_json(RAnal *anal, PJ *j, const char *class_name) {
 			if (meth->vtable_offset >= 0) {
 				pj_kn (j, "vtable_offset", (ut64)meth->vtable_offset);
 			}
-			if (meth->vtable_addr != UT64_MAX) {
+			if (R_ANAL_CLASS_METHOD_HAS_VTABLE_ADDR (meth)) {
 				pj_kn (j, "vtable_addr", meth->vtable_addr);
 			}
 			pj_end (j);

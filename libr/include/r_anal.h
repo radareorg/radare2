@@ -1722,6 +1722,8 @@ typedef struct r_anal_method_t {
 	ut64 vtable_addr; // address of the owning vtable, UT64_MAX if unknown
 } RAnalMethod;
 
+#define R_ANAL_CLASS_METHOD_HAS_VTABLE_ADDR(m) ((m)->vtable_addr != UT64_MAX)
+
 typedef struct r_anal_base_class_t {
 	char *id; // id to identify the class attr
 	ut64 offset; // offset of the base class inside the derived class

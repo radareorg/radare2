@@ -772,7 +772,7 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 	RAnalVTable vtable = {
 		.id = NULL,
 		.offset = class_offset,
-		.size = r_anal_vtable_info_get_size (context, vtable_info),
+		.size = RVecRVTableMethodInfo_length (&vtable_info->methods) * context->word_size,
 		.addr = vtable_info->saddr
 	};
 	r_anal_class_vtable_set (context->anal, class_name, &vtable);
