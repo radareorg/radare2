@@ -85,8 +85,8 @@ bool test_r_bin_languages(void) {
 }
 
 bool test_r_bin_function_kind_attributes(void) {
-	char *attrs = r_bin_attr_tostring (R_BIN_ATTR_ASYNC | R_BIN_ATTR_GENERATOR, false);
-	mu_assert_streq (attrs, "async generator", "async generator attributes");
+	char *attrs = r_bin_attr_tostring (R_BIN_ATTR_ASYNC | R_BIN_ATTR_GENERATOR | R_BIN_ATTR_DESTRUCTOR, false);
+	mu_assert_streq (attrs, "async generator destructor", "function kind attributes");
 	free (attrs);
 	mu_end;
 }
