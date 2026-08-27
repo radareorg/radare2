@@ -10,13 +10,17 @@ EXPECT=<<EOF
 11  0x00002b0c 0x100002b0c LOCAL  FUNC 0        __ZN7MyClassD1Ev                                                                                                                                   MyClass::~MyClass()
 13  0x00002b44 0x100002b44 LOCAL  FUNC 0        __ZN7MyClassC2Ev                                                                                                                                   MyClass::MyClass()
 41  0x00003150 0x100003150 LOCAL  FUNC 0        __ZN7MyClassD2Ev                                                                                                                                   MyClass::~MyClass()
-0x00000000 1 class.MyClass
+0x100002a20 0 sym.MyClass.__ZN7MyClassC1Ev
 0x100002a20 0 sym.MyClass::MyClass__
-0x100002a20 1 method.MyClass.MyClass__
+0x100002a20 1 class.MyClass
+0x100002b0c 0 sym.MyClass.__ZN7MyClassD1Ev
 0x100002b0c 0 sym.MyClass::_MyClass__
-0x100002b0c 1 method.MyClass._MyClass__
+0x100002b44 0 sym.MyClass.__ZN7MyClassC2Ev
 0x100002b44 0 sym.MyClass::MyClass____1
+0x100002b44 1 method.constructor.MyClass.MyClass__
+0x100003150 0 sym.MyClass.__ZN7MyClassD2Ev
 0x100003150 0 sym.MyClass::_MyClass____1
+0x100003150 1 method.destructor.MyClass._MyClass__
 EOF
 RUN
 
@@ -32,13 +36,17 @@ EXPECT=<<EOF
 11  0x00002b0c 0x100002b0c LOCAL  FUNC 0        __ZN7MyClassD1Ev
 13  0x00002b44 0x100002b44 LOCAL  FUNC 0        __ZN7MyClassC2Ev
 41  0x00003150 0x100003150 LOCAL  FUNC 0        __ZN7MyClassD2Ev
-0x00000000 1 class.MyClass
+0x100002a20 0 sym.MyClass.__ZN7MyClassC1Ev
 0x100002a20 0 sym.__ZN7MyClassC1Ev
-0x100002a20 1 method.MyClass.MyClass__
+0x100002a20 1 class.MyClass
+0x100002b0c 0 sym.MyClass.__ZN7MyClassD1Ev
 0x100002b0c 0 sym.__ZN7MyClassD1Ev
-0x100002b0c 1 method.MyClass._MyClass__
+0x100002b44 0 sym.MyClass.__ZN7MyClassC2Ev
 0x100002b44 0 sym.__ZN7MyClassC2Ev
+0x100002b44 1 method.constructor.MyClass.MyClass__
+0x100003150 0 sym.MyClass.__ZN7MyClassD2Ev
 0x100003150 0 sym.__ZN7MyClassD2Ev
+0x100003150 1 method.destructor.MyClass._MyClass__
 EOF
 RUN
 
@@ -54,11 +62,14 @@ EXPECT=<<EOF
 67  0x000013bc 0x000013bc WEAK   FUNC   35       _ZN7MyClassC2Ev                                                                                         MyClass::MyClass()
 69  0x000013bc 0x000013bc WEAK   FUNC   35       _ZN7MyClassC1Ev                                                                                         MyClass::MyClass()
 70  0x000013e0 0x000013e0 WEAK   FUNC   35       _ZN7MyClassD2Ev                                                                                         MyClass::~MyClass()
-0x00000000 1 class.MyClass
+0x000013bc 35 sym.MyClass._ZN7MyClassC2Ev
 0x000013bc 35 sym.MyClass::MyClass__
-0x000013bc 1 method.MyClass.MyClass__
+0x000013bc 35 sym.MyClass._ZN7MyClassC1Ev
+0x000013bc 1 method.constructor.MyClass.MyClass__
+0x000013e0 35 sym.MyClass._ZN7MyClassD1Ev
 0x000013e0 35 sym.MyClass::_MyClass__
-0x000013e0 1 method.MyClass._MyClass__
+0x000013e0 35 sym.MyClass._ZN7MyClassD2Ev
+0x000013e0 1 class.MyClass
 EOF
 RUN
 
@@ -74,10 +85,16 @@ EXPECT=<<EOF
 67  0x000013bc 0x000013bc WEAK   FUNC   35       _ZN7MyClassC2Ev
 69  0x000013bc 0x000013bc WEAK   FUNC   35       _ZN7MyClassC1Ev
 70  0x000013e0 0x000013e0 WEAK   FUNC   35       _ZN7MyClassD2Ev
+0x000013bc 35 sym.MyClass._ZN7MyClassC2Ev
 0x000013bc 35 sym._ZN7MyClassC2Ev
+0x000013bc 35 sym.MyClass._ZN7MyClassC1Ev
 0x000013bc 35 sym._ZN7MyClassC1Ev
+0x000013bc 1 method.constructor.MyClass.MyClass__
+0x000013e0 35 sym.MyClass._ZN7MyClassD1Ev
 0x000013e0 35 sym._ZN7MyClassD1Ev
+0x000013e0 35 sym.MyClass._ZN7MyClassD2Ev
 0x000013e0 35 sym._ZN7MyClassD2Ev
+0x000013e0 1 class.MyClass
 EOF
 RUN
 

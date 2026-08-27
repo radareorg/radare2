@@ -31,6 +31,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=itanium class and method metadata
+FILE=bins/elf/class_test
+CMDS=<<EOF
+icqq
+icj~{[0].classname}
+icj~{[0].methods[0].flags[0]}
+icj~{[0].methods[1].flags[0]}
+EOF
+EXPECT=<<EOF
+Dog
+Bat
+Mammal
+Bird
+Cat
+std::ios_base::Init
+Dog
+destructor
+constructor
+EOF
+RUN
+
 NAME=anal classes armv7
 FILE=bins/mach0/TestRTTI-armv7
 CMDS=<<EOF

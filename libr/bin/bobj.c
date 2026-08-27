@@ -324,51 +324,327 @@ static char *swiftField(const char *dn, const char *cn) {
 	return NULL;
 }
 
-static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
-	const char *dname = r_bin_name_tostring2 (sym->name, 'd');
-	char *tridot = strstr (dname, "...");
-	if (tridot) {
-		*tridot = 0;
+typedef struct {
+	RBinSymbol *sym;
+	char *classname;
+	char *method;
+	RBinLanguage lang;
+	RBinAttribute flags;
+	bool proves_class;
+} CxxMemberInfo;
+
+static void cxx_member_info_free(void *ptr) {
+	CxxMemberInfo *info = ptr;
+	if (info) {
+		free (info->classname);
+		free (info->method);
+		free (info);
 	}
-	if (strstr (dname, "::")) {
-		char *klass = strdup (dname);
-		char *par = strchr (klass, '(');
-		char *method = strstr (klass, "::");
-		bool check = (*klass != '(' && par && method > par);
-		if (check) {
-#if 1
-			char *method2 = strstr (method + 2, "::");
-			if (method2 && (par && method2 < par)) {
-				*method2 = 0;
-				method = method2 + 2;
-			} else {
-				*method = 0;
-				method += 2;
-			}
-#else
-			*method = 0;
-			method += 2;
-#endif
-			// eprintf ("(%s) = (%s)\n", klass, method);
-			RBinClass *c = r_bin_file_add_class (bf, klass, NULL, 0);
-			if (c) {
-				if (c->addr == 0) {
-					c->addr = sym->vaddr;
-				}
-				c->origin = R_BIN_CLASS_ORIGIN_NAME;
-				if (!classes_names_only (bf)) {
-					RBinSymbol *bs = r_bin_symbol_clone (sym);
-					r_bin_name_demangled (bs->name, method);
-					RBinSymbol *dst = RVecRBinSymbol_emplace_back (&c->methods);
-					*dst = *bs;
-					free (bs);
-				}
-			}
-			free (klass);
-			return;
+}
+
+static const char *cxx_last_scope(const char *start, const char *end) {
+	int angles = 0;
+	const char *p = end;
+	while (p > start) {
+		p--;
+		if (*p == '>') {
+			angles++;
+		} else if (*p == '<' && angles > 0) {
+			angles--;
+		} else if (!angles && *p == ':' && p > start && p[-1] == ':') {
+			return p - 1;
 		}
-		free (klass);
 	}
+	return NULL;
+}
+
+static const char *cxx_call_open(const char *name) {
+	const char *p = strrchr (name, ')');
+	if (!p) {
+		return NULL;
+	}
+	int depth = 1;
+	while (p > name) {
+		p--;
+		if (*p == ')') {
+			depth++;
+		} else if (*p == '(' && --depth == 0) {
+			return p;
+		}
+	}
+	return NULL;
+}
+
+static bool cxx_is_itanium(const char *name) {
+	return r_str_startswith (name, "_Z") || r_str_startswith (name, "__Z");
+}
+
+static const char *cxx_strip_prefix(const char *name, const char *prefixes[]) {
+	int i;
+	for (i = 0; prefixes[i]; i++) {
+		if (r_str_startswith (name, prefixes[i])) {
+			return name + strlen (prefixes[i]);
+		}
+	}
+	return name;
+}
+
+static bool cxx_strip_any(const char **name, const char *prefixes[]) {
+	const char *stripped = cxx_strip_prefix (*name, prefixes);
+	if (stripped != *name) {
+		*name = stripped;
+		return true;
+	}
+	return false;
+}
+
+static bool cxx_typeinfo_is_class(RBinSymbol *sym) {
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+	if (R_STR_ISEMPTY (name)) {
+		return false;
+	}
+	const char *prefixes[] = { "sym.imp.", "imp.", "reloc.", NULL };
+	name = cxx_strip_prefix (name, prefixes);
+	if (r_str_startswith (name, "__ZT")) {
+		name++;
+	}
+	if (!r_str_startswith (name, "_ZTI") && !r_str_startswith (name, "_ZTS")) {
+		return false;
+	}
+	name += 4;
+	return (*name >= '0' && *name <= '9') || *name == 'N' || *name == 'S' || *name == 'Z';
+}
+
+static char *cxx_demangled_symbol(RBinSymbol *sym, RBinLanguage *lang_out) {
+	const char *dname = r_bin_name_tostring2 (sym->name, 'd');
+	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
+	RBinLanguage lang = sym->attr.lang;
+	if (lang == R_BIN_LANG_NONE && R_STR_ISNOTEMPTY (oname)) {
+		lang = r_bin_lang_from_symbol_name (oname);
+	}
+	if (lang_out) {
+		*lang_out = lang == R_BIN_LANG_IBMXL? R_BIN_LANG_IBMXL: R_BIN_LANG_CXX;
+	}
+	if (R_STR_ISEMPTY (oname)) {
+		return NULL;
+	}
+	const char *mangled = oname;
+	const char *prefixes[] = { "sym.imp.", "imp.", "reloc.", NULL };
+	mangled = cxx_strip_prefix (mangled, prefixes);
+	const bool itanium = cxx_is_itanium (mangled);
+	if (lang != R_BIN_LANG_CXX && lang != R_BIN_LANG_IBMXL && !itanium) {
+		return NULL;
+	}
+	if (lang == R_BIN_LANG_RUST) {
+		return NULL;
+	}
+	if (R_STR_ISNOTEMPTY (dname) && strcmp (dname, oname)) {
+		return strdup (dname);
+	}
+	return r_bin_demangle_cxx (NULL, oname, sym->vaddr);
+}
+
+static char *cxx_basename(const char *name) {
+	const char *scope = cxx_last_scope (name, name + strlen (name));
+	char *base = strdup (scope? scope + 2: name);
+	char *p;
+	if ((p = strchr (base, '<'))) {
+		*p = 0;
+	}
+	if ((p = strchr (base, '['))) {
+		*p = 0;
+	}
+	return base;
+}
+
+static bool cxx_derive_name(CxxMemberInfo *info, const char *name, const char *open, const char *scope) {
+	const char *owner = scope;
+	int angles = 0;
+	int parens = 0;
+	int brackets = 0;
+	while (owner > name) {
+		const char ch = owner[-1];
+		if (ch == '>') {
+			angles++;
+		} else if (ch == '<' && angles > 0) {
+			angles--;
+		} else if (ch == ')') {
+			parens++;
+		} else if (ch == '(' && parens > 0) {
+			parens--;
+		} else if (ch == ']') {
+			brackets++;
+		} else if (ch == '[' && brackets > 0) {
+			brackets--;
+		} else if (!angles && !parens && !brackets && IS_WHITESPACE (ch)) {
+			break;
+		}
+		owner--;
+	}
+	info->classname = r_str_ndup (owner, scope - owner);
+	info->method = strdup (scope + 2);
+	if (!info->classname || !info->method) {
+		return false;
+	}
+	char *owner_base = cxx_basename (info->classname);
+	char *method_base = r_str_ndup (scope + 2, open - (scope + 2));
+	if (!owner_base || !method_base) {
+		free (owner_base);
+		free (method_base);
+		return false;
+	}
+	char *p;
+	if ((p = strchr (method_base, '['))) {
+		*p = 0;
+	}
+	if ((p = strchr (method_base, '<'))) {
+		*p = 0;
+	}
+	if (!strcmp (owner_base, method_base)) {
+		info->flags |= R_BIN_ATTR_CONSTRUCTOR;
+		info->proves_class = true;
+	} else if (*method_base == '~' && !strcmp (owner_base, method_base + 1)) {
+		info->flags |= R_BIN_ATTR_DESTRUCTOR;
+		info->proves_class = true;
+	}
+	free (owner_base);
+	free (method_base);
+	return true;
+}
+
+static CxxMemberInfo *cxx_member_info(RBinSymbol *sym) {
+	RBinLanguage lang;
+	char *demangled = cxx_demangled_symbol (sym, &lang);
+	if (!demangled) {
+		return NULL;
+	}
+	CxxMemberInfo *info = R_NEW0 (CxxMemberInfo);
+	info->sym = sym;
+	info->lang = lang;
+	const char *name = demangled;
+	const char *thunk_prefixes[] = {
+		"non-virtual thunk to ",
+		"virtual thunk to ",
+		"covariant return thunk to ",
+		NULL
+	};
+	if (cxx_strip_any (&name, thunk_prefixes)) {
+		info->flags |= R_BIN_ATTR_SYNTHETIC;
+		info->proves_class = true;
+	}
+	const char *class_prefixes[] = {
+		"vtable for ",
+		"VTT for ",
+		NULL
+	};
+	if (cxx_strip_any (&name, class_prefixes)) {
+		if (R_STR_ISNOTEMPTY (name) && !r_str_startswith (name, "__cxxabiv1::")) {
+			info->classname = strdup (name);
+			info->proves_class = true;
+		}
+		free (demangled);
+		return info;
+	}
+	const char *typeinfo_prefixes[] = {
+		"typeinfo for ",
+		"typeinfo name for ",
+		NULL
+	};
+	if (cxx_strip_any (&name, typeinfo_prefixes)) {
+		if (cxx_typeinfo_is_class (sym) && R_STR_ISNOTEMPTY (name)
+			&& !r_str_startswith (name, "__cxxabiv1::")) {
+			info->classname = strdup (name);
+			info->proves_class = true;
+		}
+		free (demangled);
+		return info;
+	}
+	const char *open = cxx_call_open (name);
+	const char *close = open? strrchr (open, ')'): NULL;
+	if (close && strstr (close + 1, "::")) {
+		free (demangled);
+		cxx_member_info_free (info);
+		return NULL;
+	}
+	const char *scope = open? cxx_last_scope (name, open): NULL;
+	const char *conversion = strstr (name, "operator ");
+	if (scope && conversion && conversion < scope) {
+		scope = cxx_last_scope (name, conversion);
+	}
+	if (!scope || !cxx_derive_name (info, name, open, scope)) {
+		free (demangled);
+		cxx_member_info_free (info);
+		return NULL;
+	}
+	if (strstr (info->classname, "JNI") || strstr (info->method, "JNI")) {
+		info->lang = R_BIN_LANG_JNI;
+		info->proves_class = true;
+	}
+	if (close) {
+		if (strstr (close + 1, " const")) {
+			info->flags |= R_BIN_ATTR_CONST;
+			info->proves_class = true;
+		}
+		if (strstr (close + 1, " volatile")) {
+			info->flags |= R_BIN_ATTR_VOLATILE;
+			info->proves_class = true;
+		}
+		if (strstr (close + 1, " &")) {
+			info->proves_class = true;
+		}
+	}
+	free (demangled);
+	return info;
+}
+
+static RBinClass *cxx_add_class(RBinFile *bf, CxxMemberInfo *info) {
+	RBinClass *c = r_bin_file_add_class (bf, info->classname, NULL, 0);
+	if (c) {
+		c->origin = R_BIN_CLASS_ORIGIN_NAME;
+		c->attr.lang = info->lang;
+		r_bin_file_add_language (bf, info->lang);
+	}
+	return c;
+}
+
+static bool cxx_class_has_method(RBinClass *c, CxxMemberInfo *info) {
+	RBinSymbol *method;
+	R_VEC_FOREACH (&c->methods, method) {
+		const char *name = r_bin_name_tostring2 (method->name, 'd');
+		const char *rawname = r_bin_name_tostring2 (method->name, 'o');
+		const char *info_rawname = r_bin_name_tostring2 (info->sym->name, 'o');
+		if (method->vaddr == info->sym->vaddr
+			&& ((name && !strcmp (name, info->method))
+				|| (rawname && info_rawname && !strcmp (rawname, info_rawname)))) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static void cxx_add_method(RBinFile *bf, CxxMemberInfo *info) {
+	RBinClass *c = ht_pp_find (bf->bo->classes_ht, info->classname, NULL);
+	if (!c) {
+		return;
+	}
+	if (!c->addr) {
+		c->addr = info->sym->vaddr;
+	}
+	free (info->sym->classname);
+	info->sym->classname = strdup (info->classname);
+	info->sym->attr.lang = info->lang;
+	info->sym->attr.flags |= info->flags;
+	if (classes_names_only (bf) || cxx_class_has_method (c, info)) {
+		return;
+	}
+	RBinSymbol *copy = r_bin_symbol_clone (info->sym);
+	r_bin_name_demangled (copy->name, info->method);
+	RBinSymbol *dst = RVecRBinSymbol_emplace_back (&c->methods);
+	*dst = *copy;
+	free (copy);
+}
+
+static void classes_from_symbol_language(RBinFile *bf, RBinSymbol *sym) {
 	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
 	if (!oname || oname[0] != '_') {
 		return;
@@ -408,11 +684,36 @@ static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 	}
 }
 
-static RList *classes_from_symbols(RBinFile *bf) {
+static RList *classes_from_symbols(RBinFile *bf, bool include_language_symbols) {
+	RList *cxx_members = r_list_newf (cxx_member_info_free);
+	if (!cxx_members) {
+		return bf->bo->classes;
+	}
 	RBinSymbol *sym;
 	R_VEC_FOREACH (&bf->bo->symbols_vec, sym) {
-		classes_from_symbols2 (bf, sym);
+		CxxMemberInfo *info = cxx_member_info (sym);
+		if (info && info->classname) {
+			if (info->proves_class) {
+				cxx_add_class (bf, info);
+			}
+			if (info->method) {
+				r_list_append (cxx_members, info);
+				continue;
+			}
+		}
+		cxx_member_info_free (info);
 	}
+	CxxMemberInfo *info;
+	RListIter *iter;
+	if (include_language_symbols) {
+		R_VEC_FOREACH (&bf->bo->symbols_vec, sym) {
+			classes_from_symbol_language (bf, sym);
+		}
+	}
+	r_list_foreach (cxx_members, iter, info) {
+		cxx_add_method (bf, info);
+	}
+	r_list_free (cxx_members);
 	return bf->bo->classes;
 }
 
@@ -657,12 +958,10 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 				r_bin_object_rebuild_classes_ht (bo);
 			}
 			isSwift = r_bin_lang_swift (bf);
-			if (isSwift) {
-				classes_from_symbols (bf);
-				r_bin_object_rebuild_classes_ht (bo);
-			}
+			classes_from_symbols (bf, isSwift);
+			r_bin_object_rebuild_classes_ht (bo);
 		} else {
-			RList *classes = classes_from_symbols (bf);
+			RList *classes = classes_from_symbols (bf, true);
 			if (classes) {
 				bo->classes = classes;
 			}

@@ -507,7 +507,6 @@ aaa
 pdf @  dbg.init
 EOF
 EXPECT=<<EOF
-            ;-- method.Grid.init__:
             ;-- Grid::init():
             ; CALL XREF from dbg.main @ 0x10001ae8(x)
 / 64: void dbg.init (Grid * const this);
