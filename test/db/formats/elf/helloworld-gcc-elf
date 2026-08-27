@@ -344,6 +344,7 @@ EXPECT=<<EOF
     9 * segments
     1 * strings
    34 * symbols
+    0 * trycatch
 EOF
 RUN
 
@@ -364,6 +365,7 @@ EXPECT=<<EOF
     9 * segments
     1 * strings
    34 * symbols
+    0 * trycatch
 14
 EOF
 RUN
@@ -384,6 +386,7 @@ EXPECT=<<EOF
     9 * segments
     1 * strings
    34 * symbols
+    0 * trycatch
 EOF
 RUN
 

@@ -10,7 +10,7 @@ EXPECT=<<EOF
             ;-- method.public.Lcom_stericson_RootTools_SanityCheckRootTools.Lcom_stericson_RootTools_SanityCheckRootTools.method.onCreate_Landroid_os_Bundle__V:
             ;-- Lcom/stericson/RootTools/SanityCheckRootTools.method.onCreate(Landroid/os/Bundle;)V:
             ;-- ip:
-/ 256: entry0 (int v8, int v9);
+/ 304: entry0 (int v8, int v9);
 | `- args(v8, v9)
 |           0x000155b8      1207           const/4 v7, 0
 |           0x000155ba      6f2003009800   invoke-super {v8, v9}, Landroid/app/Activity.onCreate(Landroid/os/Bundle;)V ; 0x3
@@ -38,6 +38,7 @@ EXPECT=<<EOF
 |                                                                      ; [0x4588:4]=0x3b006e ; u"n;\u0723"
 |           0x00015602      6e2028024800   invoke-virtual {v8, v4}, Lcom/stericson/RootTools/SanityCheckRootTools.setContentView(Landroid/view/View;)V ; 0x228
 |           0x00015608      1a03f100       const-string v3, 0x2c3e0
+|           ;-- try.170.155b8.from:
 |           0x0001560c      6e1024020800   invoke-virtual {v8}, Lcom/stericson/RootTools/SanityCheckRootTools.getPackageManager()Landroid/content/pm/PackageManager; ; 0x224 ; SanityCheckRootTools.java:84
 |           0x00015612      0c04           move-result-object v4       ; SanityCheckRootTools.java:85
 |           0x00015614      6e1025020800   invoke-virtual {v8}, Lcom/stericson/RootTools/SanityCheckRootTools.getPackageName()Ljava/lang/String; ; 0x225
@@ -46,43 +47,69 @@ EXPECT=<<EOF
 |           0x0001561e      6e3035005406   invoke-virtual {v4, v5, v6}, Landroid/content/pm/PackageManager.getPackageInfo(Ljava/lang/String;I)Landroid/content/pm/PackageInfo; ; 0x35 ; SanityCheckRootTools.java:79
 |           0x00015624      0c02           move-result-object v2
 |           0x00015626      54230200       iget-object v3, v2, Landroid/content/pm/PackageInfo;->versionName Ljava/lang/String; ; [0x3f08:4]=0xd90013
-|           0x0001562a      2204db00       new-instance v4, Ljava/lang/StringBuilder; ; 0x2aa0
-|           0x0001562e      1a056703       const-string v5, str.SanityCheckRootTools_v_ ; SanityCheckRootTools.java:94 ; 0x30435
-|           0x00015632      702085035400   invoke-direct {v4, v5}, Ljava/lang/StringBuilder.<init>(Ljava/lang/String;)V ; 0x385
-|           0x00015638      6e208a033400   invoke-virtual {v4, v3}, Ljava/lang/StringBuilder.append(Ljava/lang/String;)Ljava/lang/StringBuilder; ; 0x38a
-|           0x0001563e      0c04           move-result-object v4
-|           0x00015640      1a050200       const-string v5, 0x2b125
-|           0x00015644      6e208a035400   invoke-virtual {v4, v5}, Ljava/lang/StringBuilder.append(Ljava/lang/String;)Ljava/lang/StringBuilder; ; 0x38a
-|           0x0001564a      0c04           move-result-object v4
-|           0x0001564c      6e108c030400   invoke-virtual {v4}, Ljava/lang/StringBuilder.toString()Ljava/lang/String; ; 0x38c
-|           0x00015652      0c04           move-result-object v4
-|           0x00015654      6e2027024800   invoke-virtual {v8, v4}, Lcom/stericson/RootTools/SanityCheckRootTools.print(Ljava/lang/CharSequence;)V ; 0x227 ; method.protected.Lcom_stericson_RootTools_SanityCheckRootTools.Lcom_stericson_RootTools_SanityCheckRootTools.method.print_Ljava_lang_CharSequence__V
-|           0x0001565a      710049020000   invoke-static {}, Lcom/stericson/RootTools/Shell.startRootShell()Lcom/stericson/RootTools/Shell; ; 0x249 ; method.public.static.Lcom_stericson_RootTools_Shell.Lcom_stericson_RootTools_Shell.method.startRootShell__Lcom_stericson_RootTools_Shell_
-|      ..-> 0x00015660      7100ee010000   invoke-static {}, Lcom/stericson/RootTools/RootTools.isAccessGiven()Z ; 0x1ee ; method.public.static.Lcom_stericson_RootTools_RootTools.Lcom_stericson_RootTools_RootTools.method.isAccessGiven__Z
-|      ::   0x00015666      0a04           move-result v4
-|     ,===< 0x00015668      39041e00       if-nez v4, 0x000156a4
-|     |::   0x0001566c      1a044201       const-string v4, str.ERROR:_No_root_access_to_this_device. ; 0x2c9dd ; "ERROR: No root access to this device. |     |::   ; "
-|     |::   0x00015670      6e2027024800   invoke-virtual {v8, v4}, Lcom/stericson/RootTools/SanityCheckRootTools.print(Ljava/lang/CharSequence;)V ; 0x227 ; method.protected.Lcom_stericson_RootTools_SanityCheckRootTools.Lcom_stericson_RootTools_SanityCheckRootTools.method.print_Ljava_lang_CharSequence__V
-|     |::   ; CODE XREF from entry0 @ 0x156e2(x)
-|   ..----> 0x00015676      0e00           return-void
-..
-|    :`---> 0x000156a4      22040b00       new-instance v4, Landroid/app/ProgressDialog; ; 0x2760
-|    :      0x000156a8      702012008400   invoke-direct {v4, v8}, Landroid/app/ProgressDialog.<init>(Landroid/content/Context;)V ; 0x12
-|    :      0x000156ae      5b84d100       iput-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mPDialog Landroid/app/ProgressDialog; ; field.class.Lcom_stericson_RootTools_SanityCheckRootTools.var.Lcom_stericson_RootTools_SanityCheckRootTools.ifield_mPDialog:Landroid_app_ProgressDialog_
-|    :                                                                 ; [0x4580:4]=0xb006e ; u"n\v\u0722"
-|    :      0x000156b2      5484d100       iget-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mPDialog Landroid/app/ProgressDialog; ; field.class.Lcom_stericson_RootTools_SanityCheckRootTools.var.Lcom_stericson_RootTools_SanityCheckRootTools.ifield_mPDialog:Landroid_app_ProgressDialog_
-|    :                                                                 ; [0x4580:4]=0xb006e ; u"n\v\u0722"
-|    :      0x000156b6      6e2014007400   invoke-virtual {v4, v7}, Landroid/app/ProgressDialog.setCancelable(Z)V ; 0x14
-|    :      0x000156bc      5484d100       iget-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mPDialog Landroid/app/ProgressDialog; ; field.class.Lcom_stericson_RootTools_SanityCheckRootTools.var.Lcom_stericson_RootTools_SanityCheckRootTools.ifield_mPDialog:Landroid_app_ProgressDialog_
-|    :                                                                 ; [0x4580:4]=0xb006e ; u"n\v\u0722"
-|    :      0x000156c0      6e2016007400   invoke-virtual {v4, v7}, Landroid/app/ProgressDialog.setProgressStyle(I)V ; 0x16
-|    :      0x000156c6      22046c00       new-instance v4, Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread; ; 0x28e4
-|    :      0x000156ca      22056d00       new-instance v5, Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler; ; 0x28e8
-|    :      0x000156ce      1206           const/4 v6, 0
-|    :      0x000156d0      70301f028506   invoke-direct {v5, v8, v6}, Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.<init>(Lcom/stericson/RootTools/SanityCheckRootTools;Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler;)V ; 0x21f ; method.synthetic.constructor.Lcom_stericson_RootTools_SanityCheckRootTools_TestHandler.Lcom_stericson_RootTools_SanityCheckRootTools_TestHandler.method._init__Lcom_stericson_RootTools_SanityCheckRootTools_Lcom_stericson_RootTools_SanityCheckRootTools_TestHandler__V
-|    :      0x000156d6      704019028458   invoke-direct {v4, v8, v8, v5}, Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread.<init>(Lcom/stericson/RootTools/SanityCheckRootTools;Landroid/content/Context;Landroid/os/Handler;)V ; 0x219 ; method.public.constructor.Lcom_stericson_RootTools_SanityCheckRootTools_SanityCheckThread.Lcom_stericson_RootTools_SanityCheckRootTools_SanityCheckThread.method._init__Lcom_stericson_RootTools_SanityCheckRootTools_Landroid_content_Context_Landroid_os_Handler__V
-|    :      0x000156dc      6e101c020400   invoke-virtual {v4}, Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread.start()V ; 0x21c
-\    `====< 0x000156e2      28ca           goto 0x00015676
+|           ;-- try.170.155b8.to:
+|           ; CODE XREF from entry0 @ 0x156e6(x)
+|       .-> 0x0001562a      2204db00       new-instance v4, Ljava/lang/StringBuilder; ; 0x2aa0
+|       :   0x0001562e      1a056703       const-string v5, str.SanityCheckRootTools_v_ ; SanityCheckRootTools.java:94 ; 0x30435
+|       :   0x00015632      702085035400   invoke-direct {v4, v5}, Ljava/lang/StringBuilder.<init>(Ljava/lang/String;)V ; 0x385
+|       :   0x00015638      6e208a033400   invoke-virtual {v4, v3}, Ljava/lang/StringBuilder.append(Ljava/lang/String;)Ljava/lang/StringBuilder; ; 0x38a
+|       :   0x0001563e      0c04           move-result-object v4
+|       :   0x00015640      1a050200       const-string v5, 0x2b125
+|       :   0x00015644      6e208a035400   invoke-virtual {v4, v5}, Ljava/lang/StringBuilder.append(Ljava/lang/String;)Ljava/lang/StringBuilder; ; 0x38a
+|       :   0x0001564a      0c04           move-result-object v4
+|       :   0x0001564c      6e108c030400   invoke-virtual {v4}, Ljava/lang/StringBuilder.toString()Ljava/lang/String; ; 0x38c
+|       :   0x00015652      0c04           move-result-object v4
+|       :   0x00015654      6e2027024800   invoke-virtual {v8, v4}, Lcom/stericson/RootTools/SanityCheckRootTools.print(Ljava/lang/CharSequence;)V ; 0x227 ; method.protected.Lcom_stericson_RootTools_SanityCheckRootTools.Lcom_stericson_RootTools_SanityCheckRootTools.method.print_Ljava_lang_CharSequence__V
+|       :   ;-- try.171.155b8.from:
+|       :   ;-- try.172.155b8.from:
+|       :   0x0001565a      710049020000   invoke-static {}, Lcom/stericson/RootTools/Shell.startRootShell()Lcom/stericson/RootTools/Shell; ; 0x249 ; method.public.static.Lcom_stericson_RootTools_Shell.Lcom_stericson_RootTools_Shell.method.startRootShell__Lcom_stericson_RootTools_Shell_
+|       :   ;-- try.171.155b8.to:
+|       :   ;-- try.172.155b8.to:
+|       :   ;-- try.173.155b8.from:
+|       :   ; CODE XREFS from entry0 @ 0x15680(x), 0x15694(x)
+|     ..--> 0x00015660      7100ee010000   invoke-static {}, Lcom/stericson/RootTools/RootTools.isAccessGiven()Z ; 0x1ee ; method.public.static.Lcom_stericson_RootTools_RootTools.Lcom_stericson_RootTools_RootTools.method.isAccessGiven__Z
+|     :::   0x00015666      0a04           move-result v4
+|    ,====< 0x00015668      39041e00       if-nez v4, 0x000156a4
+|    |:::   0x0001566c      1a044201       const-string v4, str.ERROR:_No_root_access_to_this_device. ; 0x2c9dd ; "ERROR: No root access to this device. |    |:::   ; "
+|    |:::   0x00015670      6e2027024800   invoke-virtual {v8, v4}, Lcom/stericson/RootTools/SanityCheckRootTools.print(Ljava/lang/CharSequence;)V ; 0x227 ; method.protected.Lcom_stericson_RootTools_SanityCheckRootTools.Lcom_stericson_RootTools_SanityCheckRootTools.method.print_Ljava_lang_CharSequence__V
+|    |:::   ;-- try.173.155b8.to:
+|    |:::   ; CODE XREFS from entry0 @ 0x156a2(x), 0x156e2(x)
+|  ..-----> 0x00015676      0e00           return-void
+|  ::|:::   ;-- try.171.155b8.catch:
+|  ::|:::   0x00015678      0d01           move-exception v1
+|  ::|:::   0x0001567a      6e1005030100   invoke-virtual {v1}, Ljava/io/IOException.printStackTrace()V ; 0x305
+|  ::|`===< 0x00015680      28f0           goto try.171.155b8.to
+|  ::| ::   ;-- try.172.155b8.catch:
+|  ::| ::   0x00015682      0d00           move-exception v0
+|  ::| ::   0x00015684      1a041504       const-string v4, str.__TIMEOUT_EXCEPTION___ ; 0x31043
+|  ::| ::   0x00015688      6e2027024800   invoke-virtual {v8, v4}, Lcom/stericson/RootTools/SanityCheckRootTools.print(Ljava/lang/CharSequence;)V ; 0x227 ; method.protected.Lcom_stericson_RootTools_SanityCheckRootTools.Lcom_stericson_RootTools_SanityCheckRootTools.method.print_Ljava_lang_CharSequence__V
+|  ::| ::   0x0001568e      6e10ed030000   invoke-virtual {v0}, Ljava/util/concurrent/TimeoutException.printStackTrace()V ; 0x3ed
+|  ::| `==< 0x00015694      28e6           goto try.171.155b8.to
+|  ::|  :   ;-- try.173.155b8.catch:
+|  ::|  :   0x00015696      0d00           move-exception v0
+|  ::|  :   0x00015698      1a044501       const-string v4, str.ERROR:_could_not_determine_root_access_to_this_device. ; 0x2ca6f ; "ERROR: could not determine root access to this device. |  ::|  :   ; "
+|  ::|  :   0x0001569c      6e2027024800   invoke-virtual {v8, v4}, Lcom/stericson/RootTools/SanityCheckRootTools.print(Ljava/lang/CharSequence;)V ; 0x227 ; method.protected.Lcom_stericson_RootTools_SanityCheckRootTools.Lcom_stericson_RootTools_SanityCheckRootTools.method.print_Ljava_lang_CharSequence__V
+|  `======< 0x000156a2      28ea           goto try.173.155b8.to
+|   :`----> 0x000156a4      22040b00       new-instance v4, Landroid/app/ProgressDialog; ; 0x2760
+|   :   :   0x000156a8      702012008400   invoke-direct {v4, v8}, Landroid/app/ProgressDialog.<init>(Landroid/content/Context;)V ; 0x12
+|   :   :   0x000156ae      5b84d100       iput-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mPDialog Landroid/app/ProgressDialog; ; field.class.Lcom_stericson_RootTools_SanityCheckRootTools.var.Lcom_stericson_RootTools_SanityCheckRootTools.ifield_mPDialog:Landroid_app_ProgressDialog_
+|   :   :                                                              ; [0x4580:4]=0xb006e ; u"n\v\u0722"
+|   :   :   0x000156b2      5484d100       iget-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mPDialog Landroid/app/ProgressDialog; ; field.class.Lcom_stericson_RootTools_SanityCheckRootTools.var.Lcom_stericson_RootTools_SanityCheckRootTools.ifield_mPDialog:Landroid_app_ProgressDialog_
+|   :   :                                                              ; [0x4580:4]=0xb006e ; u"n\v\u0722"
+|   :   :   0x000156b6      6e2014007400   invoke-virtual {v4, v7}, Landroid/app/ProgressDialog.setCancelable(Z)V ; 0x14
+|   :   :   0x000156bc      5484d100       iget-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mPDialog Landroid/app/ProgressDialog; ; field.class.Lcom_stericson_RootTools_SanityCheckRootTools.var.Lcom_stericson_RootTools_SanityCheckRootTools.ifield_mPDialog:Landroid_app_ProgressDialog_
+|   :   :                                                              ; [0x4580:4]=0xb006e ; u"n\v\u0722"
+|   :   :   0x000156c0      6e2016007400   invoke-virtual {v4, v7}, Landroid/app/ProgressDialog.setProgressStyle(I)V ; 0x16
+|   :   :   0x000156c6      22046c00       new-instance v4, Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread; ; 0x28e4
+|   :   :   0x000156ca      22056d00       new-instance v5, Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler; ; 0x28e8
+|   :   :   0x000156ce      1206           const/4 v6, 0
+|   :   :   0x000156d0      70301f028506   invoke-direct {v5, v8, v6}, Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.<init>(Lcom/stericson/RootTools/SanityCheckRootTools;Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler;)V ; 0x21f ; method.synthetic.constructor.Lcom_stericson_RootTools_SanityCheckRootTools_TestHandler.Lcom_stericson_RootTools_SanityCheckRootTools_TestHandler.method._init__Lcom_stericson_RootTools_SanityCheckRootTools_Lcom_stericson_RootTools_SanityCheckRootTools_TestHandler__V
+|   :   :   0x000156d6      704019028458   invoke-direct {v4, v8, v8, v5}, Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread.<init>(Lcom/stericson/RootTools/SanityCheckRootTools;Landroid/content/Context;Landroid/os/Handler;)V ; 0x219 ; method.public.constructor.Lcom_stericson_RootTools_SanityCheckRootTools_SanityCheckThread.Lcom_stericson_RootTools_SanityCheckRootTools_SanityCheckThread.method._init__Lcom_stericson_RootTools_SanityCheckRootTools_Landroid_content_Context_Landroid_os_Handler__V
+|   :   :   0x000156dc      6e101c020400   invoke-virtual {v4}, Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread.start()V ; 0x21c
+|   `=====< 0x000156e2      28ca           goto try.173.155b8.to
+|       :   ;-- try.170.155b8.catch:
+|       :   0x000156e4      0d04           move-exception v4
+\       `=< 0x000156e6      28a2           goto try.170.155b8.to
 EOF
 RUN
 

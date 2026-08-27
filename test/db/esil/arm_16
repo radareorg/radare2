@@ -1212,6 +1212,7 @@ EXPECT=<<EOF
     0 * segments
     0 * symbols
    25 * syscalls
+    0 * trycatch
 0x00016918   18    134 fcn.00016918
 0x000160c0    5     60 fcn.000160c0
 0x00017600    1     72 fcn.00017600
