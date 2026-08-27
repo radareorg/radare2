@@ -1,0 +1,11 @@
+NAME=Mach-O compact unwind exception regions
+FILE=bins/mach0/ClassCpp.out
+CMDS=<<EOF
+iwj~{[0]}
+iwj~{[1]}
+EOF
+EXPECT=<<EOF
+{"index":0,"source":4294977836,"from":4294977888,"to":4294978008,"handler":4294978040,"filter":0,"kind":"cleanup"}
+{"index":1,"source":4294977836,"from":4294978052,"to":4294978060,"handler":4294978076,"filter":0,"kind":"catch","typeFilter":1,"catchAll":true}
+EOF
+RUN

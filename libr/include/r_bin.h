@@ -731,13 +731,23 @@ typedef struct r_bin_arch_options_t {
 	int bits;
 } RBinArchOptions;
 
+typedef enum r_bin_trycatch_kind_t {
+	R_BIN_TRYCATCH_UNSPECIFIED,
+	R_BIN_TRYCATCH_CATCH,
+	R_BIN_TRYCATCH_CLEANUP,
+	R_BIN_TRYCATCH_FILTER,
+} RBinTrycatchKind;
+
 typedef struct r_bin_trycatch_t {
 	ut64 source;
 	ut64 from;
 	ut64 to;
 	ut64 handler;
 	ut64 filter;
-	// TODO: add type/name of exception
+	RBinTrycatchKind kind;
+	st64 type_filter;
+	char *type;
+	bool catch_all;
 } RBinTrycatch;
 
 R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler, ut64 filter);
