@@ -1751,17 +1751,19 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		if (!ptr) {
 			continue;
 		}
-
-		// only imports move to their .got.r2 slot, where the patched bytes
-		// point; everything else is reported at its site
-		if (resolved) {
-			if (is_import) {
-				ptr->vaddr = sym_addr;
+		// a patched code site branches to the slot, so the slot is what the
+		// reloc describes; a data site holds the value and keeps its own vaddr
+		if (is_import) {
+			RBinSection *s = r_bin_get_section_at (bf->bo, ptr->vaddr, true);
+			if (s && (s->perm & R_PERM_X)) {
+				if (resolved) {
+					ptr->vaddr = sym_addr;
+				} else if (eo->ehdr.e_machine != EM_SBPF) {
+					ptr->vaddr = vaddr;
+				}
 			}
-		} else if (eo->ehdr.e_machine != EM_SBPF) {
-			if (is_import) {
-				ptr->vaddr = vaddr;
-			}
+		}
+		if (!resolved && eo->ehdr.e_machine != EM_SBPF) {
 			ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
 			vaddr += cdsz;
 		}
