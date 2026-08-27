@@ -297,7 +297,7 @@ EXPECT=<<EOF
  0x100003a6c | loc_0x100003a6c: // orphan
  0x100003a6c |      w0 = 1
 
- 0x100003a8c | }
+ 0x100003a6c | }
 
 EOF
 RUN
@@ -1250,6 +1250,11 @@ CMDS=<<EOF
 wx b805000000f4 @ 0
 af
 pdc
+pdco~return,}
+pdca~hlt,return,}
+pdcj~{annotations[2].offset}
+.pdc*
+CC
 EOF
 EXPECT=<<EOF
 // callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);
@@ -1259,6 +1264,14 @@ void fcn.00000000 (void) {
     return rax;
 }
 
+ 0x00000005 |     return rax;
+ 0x00000005 | }
+ 0x00000005 | hlt                            |     hlt
+ 0x00000005 |                                |     return rax;
+ 0x00000005 |                                | }
+5
+0x00000000 CCu "void fcn.00000000 (void) {\neax = 5"
+0x00000005 CCu "hlt\nreturn rax;"
 EOF
 RUN
 
@@ -1295,5 +1308,204 @@ EXPECT=<<EOF
     } else {
         o0 = 2
 0
+EOF
+RUN
+
+NAME=pdc modes render an if and else through the structured renderer
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx 83ff01 7507 b801000000 eb05 b802000000 c3 @ 0
+af @ 0
+pdco~if (,eax,else,}
+pdca~if (,eax,else,},jmp
+pdc*
+pdcj~{annotations[1].offset}
+pdcj~{annotations[1].type}
+pdcj~{annotations[3].offset}
+pdcj~} else {~?
+EOF
+EXPECT=<<EOF
+ 0x00000003 |     if (!(edi - 1)) {
+ 0x00000005 |         eax = 1
+ 0x00000003 |     } else {
+ 0x0000000c |         eax = 2
+ 0x00000003 |     }
+ 0x00000011 | }
+ 0x00000003 | jne 0xc                        |     if (!(edi - 1)) {
+ 0x00000005 | mov eax, 1                     |         eax = 1
+ 0x0000000a | jmp 0x11
+ 0x00000003 |                                |     } else {
+ 0x0000000c | mov eax, 2                     |         eax = 2
+ 0x00000003 |                                |     }
+ 0x00000011 |                                | }
+CCu base64:dm9pZCBmY24uMDAwMDAwMDAgKGludDY0X3QgYXJnMSkgewp2ID0gZWRpIC0gMSAgIC8vIGFyZzE= @ 0x00000000
+CCu base64:aWYgKCEoZWRpIC0gMSkpIHsKfSBlbHNlIHsKfQ== @ 0x00000003
+CCu base64:ZWF4ID0gMQ== @ 0x00000005
+CCu base64:ZWF4ID0gMg== @ 0x0000000c
+CCu base64:Ly8gQ09ERSBYUkVGIGZyb20gZmNuLjAwMDAwMDAwIEAgMHhhKHgpCnJldHVybg== @ 0x00000011
+3
+offset
+3
+1
+EOF
+RUN
+
+NAME=pdc modes anchor a transfer on the jump that performs it
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx 83c701 83ff05 7d0e 83ff09 7407 b801000000 ebec c3 90 b802000000 c3 @ 0
+af @ 0
+pdco~break,continue,goto,else
+pdca~if (,break,continue,goto
+.pdc*
+CC
+EOF
+EXPECT=<<EOF
+ 0x00000006 |             break;
+ 0x00000012 |             continue;
+ 0x0000000b |         } else {
+ 0x0000000b |             goto loc_0x00000014;
+ 0x00000006 | jge 0x16                       |         if (edi >= 5) {
+ 0x00000006 |                                |             break;
+ 0x0000000b | je 0x14                        |         if (edi != 9) {
+ 0x00000012 | jmp fcn.00000000               |             continue;
+ 0x0000000b |                                |             goto loc_0x00000014;
+0x00000000 CCu "void fcn.00000000 (int64_t arg1) {\nwhile (true) {\n// CODE XREF from fcn.00000000 @ 0x12(x)\nedi += 1      // arg1\n}"
+0x00000003 CCu "v = edi - 5   // arg1"
+0x00000006 CCu "if (edi >= 5) {\nbreak;\n}"
+0x00000008 CCu "v = edi - 9   // arg1"
+0x0000000b CCu "if (edi != 9) {\n} else {\ngoto loc_0x00000014;\n}"
+0x0000000d CCu "eax = 1"
+0x00000012 CCu "continue;"
+0x00000014 CCu "loc_0x00000014:\nreturn"
+0x00000016 CCu "eax = 2"
+0x0000001b CCu "return 2"
+EOF
+RUN
+
+NAME=pdcj annotates no empty line
+FILE=malloc://32
+ARGS=-a x86 -b 64 -e anal.nopskip=false
+CMDS=<<EOF
+wx 90 b801000000 c3 @ 0
+af @ 0
+pdcj~{}~"offset":~?
+pdcj~{annotations[0].offset}
+pdcj~{annotations[1].offset}
+pdcj~{annotations[2].offset}
+EOF
+EXPECT=<<EOF
+3
+1
+6
+6
+EOF
+RUN
+
+NAME=pdca structured places the switch header after the dispatching block
+FILE=-
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx 49bf00000000000000804c8b24244c89e04c31f84d85e46a0159480f48c8488d053b00000048630c884801c1ffe1909090eb1590eb1290eb0f909090909090909090909090909090c390909090909090c3909090909090909090909090909090ceffffffd6ffffffd0ffffffcefffffff0ffffff @ 0
+s 0
+afr
+pdca~cmovs,switch (,case ,goto
+.pdc*
+CC~switch
+EOF
+EXPECT=<<EOF
+ 0x0000001a | cmovs rcx, rax                 |     cmovs rcx rax
+ 0x0000002c |                                |     switch (switch_var) { // jump table of 4 cases at 0x00000060
+ 0x0000002e |                                |         case 0: // 0x0000002e
+ 0x00000036 |                                |         case 1: // 0x00000036
+ 0x00000030 |                                |         case 2: // 0x00000030
+ 0x00000030 |                                |             goto loc_0x00000030;
+ 0x0000002e |                                |         case 3: // 0x0000002e
+ 0x0000002e |                                |             goto loc_0x0000002e;
+0x0000002c CCu "switch (switch_var) { // jump table of 4 cases at 0x00000060\n}"
+EOF
+RUN
+
+NAME=pdca case labels carry no asm column
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 49bf00000000000000804c8b24244c89e04c31f84d85e46a0159480f48c8488d053b00000048630c884801c1ffe1909090eb1590eb1290eb0f909090909090909090909090909090c390909090909090c3909090909090909090909090909090ceffffffd6ffffffd0ffffffcefffffff0ffffff @ 0
+s 0
+afr
+pdca~: // 0x
+EOF
+EXPECT=<<EOF
+ 0x0000002e |                                |         case 0: // 0x0000002e
+ 0x00000036 |                                |         case 1: // 0x00000036
+ 0x00000030 |                                |         case 2: // 0x00000030
+ 0x0000002e |                                |         case 3: // 0x0000002e
+EOF
+RUN
+
+NAME=pdca structured renders a transfer after its delay slot
+FILE=malloc://128
+ARGS=-a mips -b 32 -e cfg.bigendian=true -e pdc.structured=1
+CMDS=<<EOF
+wx 24840001 28820005 10400009 00000000 24080003 15080003 00000000 10000004 24630001 24630002 1000fff5 24630003 03e00008 00000000 @ 0
+af @ 0
+pdca~continue,break,v1 += 3
+EOF
+EXPECT=<<EOF
+ 0x00000008 |                                |             break;
+ 0x0000002c | addiu v1, v1, 3                |             v1 += 3
+ 0x00000028 | b fcn.00000000                 |             continue;
+EOF
+RUN
+
+NAME=pdc* keeps one comment per line without the structured renderer
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 83c701 83ff05 7d0e 83ff09 7407 b801000000 ebec c3 90 b802000000 c3 @ 0
+af @ 0
+pdc*
+EOF
+EXPECT=<<EOF
+CCu base64:dm9pZCBmY24uMDAwMDAwMDAgKGludDY0X3QgYXJnMSkgew== @ 0x00000000
+CCu base64:bG9jXzB4MDAwMDAwMDA6 @ 0x00000000
+CCu base64:Ly8gQ09ERSBYUkVGIGZyb20gZmNuLjAwMDAwMDAwIEAgMHgxMih4KQ== @ 0x00000000
+CCu base64:ZWRpICs9IDEgICAgICAvLyBhcmcx @ 0x00000000
+CCu base64:diA9IGVkaSAtIDUgICAvLyBhcmcx @ 0x00000003
+CCu base64:aWYgKHYgPj0gMCkgZ290byBsb2NfMHgxNiAvLyB1bmxpa2VseQ== @ 0x00000006
+CCu base64:Z290byBsb2NfMHgwMDAwMDAwODs= @ 0x00000000
+CCu base64:bG9jXzB4MDAwMDAwMTY6 @ 0x00000016
+CCu base64:ZWF4ID0gMg== @ 0x00000016
+CCu base64:cmV0dXJuIDI= @ 0x0000001b
+CCu base64:Z290byBsb2NfMHgwMDAwMDAwZDs= @ 0x00000008
+CCu base64:cmV0dXJuIHJheDs= @ 0x00000008
+CCu base64:bG9jXzB4MDAwMDAwMGQ6 @ 0x0000000d
+CCu base64:ZWF4ID0gMQ== @ 0x0000000d
+CCu base64:Z290byBsb2NfMCAgICAvLyBmY24uMDAwMDAwMDAoMHgwKQ== @ 0x00000012
+CCu base64:YnJlYWs7 @ 0x0000000d
+CCu base64:bG9jXzB4MDAwMDAwMDg6IC8vIG9ycGhhbg== @ 0x00000008
+CCu base64:diA9IGVkaSAtIDkgICAvLyBhcmcx @ 0x00000008
+CCu base64:aWYgKCF2KQ== @ 0x0000000b
+CCu base64:bG9jXzB4MDAwMDAwMTQ6IC8vIG9ycGhhbg== @ 0x00000014
+CCu base64:cmV0dXJu @ 0x00000014
+EOF
+RUN
+
+NAME=pdc modes anchor a transfer with no jump of its own on the line above it
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx 31ff 83c701 83f805 7d0a 83f803 75f3 b801000000 c3 @ 0
+af @ 0
+pdco~eax = 1,goto loc_0x00000014
+pdca~eax = 1,goto loc_0x00000014
+EOF
+EXPECT=<<EOF
+ 0x0000000f |     eax = 1
+ 0x0000000f |     goto loc_0x00000014;
+ 0x0000000f | mov eax, 1                     |     eax = 1
+ 0x0000000f |                                |     goto loc_0x00000014;
 EOF
 RUN

@@ -22,6 +22,8 @@ typedef struct {
 	ut64 bb_fail;
 	HtUP *conds; // block addr => recovered condition, recovered once per block
 	const char *r0;
+	ut64 last_addr; // anchor of the last printed line
+	char *transfer; // pending transfer the current block's own jump renders
 } PDCState;
 
 static const char *pseudo_arg_name(RAnal *anal, const char *arg) {
@@ -563,7 +565,9 @@ static char *cleancomments(char *s) {
 static char *disat(RCore *core, ut64 addr, int *pad) {
 	char *s = r_core_cmd_strf (core, "pi 1 @e:scr.color=0@e:asm.pseudo=0@e:asm.addr=1@ 0x%08" PFMT64x, addr);
 	r_str_trim (s);
-	*pad = 30 - r_str_ansi_len (s);
+	if (pad) {
+		*pad = 30 - r_str_ansi_len (s);
+	}
 	return s;
 }
 
@@ -607,6 +611,9 @@ static void print_pipe_header(PDCState *state, ut64 addr) {
 
 static void print_newline(PDCState *state, ut64 addr, int indent, bool synthetic) {
 	RStrBuf *sb = state_sb (state);
+	if (!synthetic) {
+		state->last_addr = addr;
+	}
 	r_strbuf_append (sb, "\n");
 	if (state->show_asm) {
 		if (synthetic) {
@@ -622,13 +629,28 @@ static void print_newline(PDCState *state, ut64 addr, int indent, bool synthetic
 	r_strbuf_pad (sb, ' ', indent * 4);
 }
 
-static void print_line(PDCState *state, ut64 addr, int indent, const char *fmt, ...) {
-	print_newline (state, addr, indent, false);
+// an instruction the structure absorbed keeps its row, with no code column.
+// asm_append pads that column, which would leave trailing spaces on the row
+static void print_asm_only(PDCState *state, ut64 addr) {
+	char *s = disat (state->core, addr, NULL);
+	r_strbuf_appendf (state_sb (state), "\n 0x%08" PFMT64x " | %s", addr, s);
+	state->last_addr = addr;
+	free (s);
+}
+
+// synthetic lines get no asm column; an instruction line keeps its own
+static void print_line_at(PDCState *state, ut64 addr, int indent, bool synthetic, const char *fmt, ...) {
+	const size_t start = r_strbuf_length (state->codestr);
 	va_list ap;
 	va_start (ap, fmt);
+	print_newline (state, addr, indent, synthetic);
 	r_strbuf_vappendf (state_sb (state), fmt, ap);
 	va_end (ap);
+	annotate_offset (state, start, addr);
 }
+
+#define print_line(s, a, i, ...) print_line_at (s, a, i, true, __VA_ARGS__)
+#define print_insn_line(s, a, i, ...) print_line_at (s, a, i, false, __VA_ARGS__)
 
 static bool bb_addr_is_goto_target(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter, *cit;
@@ -680,16 +702,23 @@ static bool pdc_is_ret_only_bb(RCore *core, ut64 addr) {
 	return t == R_ANAL_OP_TYPE_RET || t == R_ANAL_OP_TYPE_CRET;
 }
 
-static void print_goto_or_return(PDCState *state, ut64 dst_addr, const char *prefix) {
-	if (pdc_is_ret_only_bb (state->core, dst_addr)) {
-		if (state->r0) {
-			print_str (state, "%sreturn %s;", prefix, state->r0);
-		} else {
-			print_str (state, "%sreturn;", prefix);
-		}
-	} else {
-		print_str (state, "%sgoto loc_0x%08" PFMT64x ";", prefix, dst_addr);
+static char *goto_or_return(PDCState *state, ut64 dst_addr) {
+	if (!pdc_is_ret_only_bb (state->core, dst_addr)) {
+		return r_str_newf ("goto loc_0x%08" PFMT64x ";", dst_addr);
 	}
+	return state->r0? r_str_newf ("return %s;", state->r0): strdup ("return;");
+}
+
+static void print_goto_or_return(PDCState *state, ut64 dst_addr, const char *prefix) {
+	char *s = goto_or_return (state, dst_addr);
+	print_str (state, "%s%s", prefix, s);
+	free (s);
+}
+
+static void print_goto_or_return_line(PDCState *state, ut64 dst_addr, int indent) {
+	char *s = goto_or_return (state, dst_addr);
+	print_line (state, dst_addr, indent, "%s", s);
+	free (s);
 }
 
 static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr, int indent) {
@@ -730,8 +759,12 @@ static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut
 #define PRINTGOTO(dst_addr, curr_addr) print_goto(&state, bb, dst_addr, curr_addr, indent)
 #define PRINTGOTO_DIRECT(dst_addr, curr_addr) print_goto_direct(&state, bb, dst_addr, curr_addr, indent)
 
+static ut64 bb_last_op_addr(RAnalBlock *bb) {
+	return bb->ninstr > 0? r_anal_bb_opaddr_i (bb, bb->ninstr - 1): UT64_MAX;
+}
+
 static int bb_last_op_type(RCore *core, RAnalBlock *bb) {
-	ut64 last_addr = bb->ninstr > 0? r_anal_bb_opaddr_i (bb, bb->ninstr - 1): UT64_MAX;
+	const ut64 last_addr = bb_last_op_addr (bb);
 	if (last_addr == UT64_MAX) {
 		return -1;
 	}
@@ -742,6 +775,12 @@ static int bb_last_op_type(RCore *core, RAnalBlock *bb) {
 	int t = lop->type & R_ANAL_OP_TYPE_MASK;
 	r_anal_op_free (lop);
 	return t;
+}
+
+// the block's last instruction, where its condition is decided
+static ut64 bb_cond_addr(RAnalBlock *bb) {
+	const ut64 at = bb_last_op_addr (bb);
+	return at == UT64_MAX? bb->addr: at;
 }
 
 static bool bb_ends_with_terminator(RCore *core, RAnalBlock *bb) {
@@ -802,8 +841,7 @@ static ut64 goto_target(PDCState *state, const char *tok) {
 	return fi? fi->addr: UT64_MAX;
 }
 
-// only the block's own two edges belong to its region, so a tail call, an indirect jump
-// or a call rendered as `jmp` (riscv jal) is the sole remaining transfer and must survive
+// only the block's own two edges are its region's; other transfers survive
 static bool line_targets_own_edge(PDCState *state, const char *line) {
 	const char *p = strstr (line, "goto ");
 	if (p) {
@@ -855,11 +893,12 @@ static void collect_switch_addrs(PDCState *state) {
 	}
 }
 
-static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int indent, bool emit_pj) {
+static void emit_code_lines(PDCState *state, char *code, ut64 start_addr, int indent) {
 	RList *lines = r_str_split_list (code, "\n", 0);
 	RListIter *iter;
 	const char *line;
 	ut64 addr = start_addr;
+	ut64 jump_at = UT64_MAX;
 	r_list_foreach (lines, iter, line) {
 		if (*line == '0') {
 			ut64 at = r_num_get (NULL, line);
@@ -872,29 +911,35 @@ static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 		if (part_of_a_switch (state, addr)) {
 			continue;
 		}
-		if (R_STR_ISNOTEMPTY (line)) {
-			const char *t = r_str_trim_head_ro (line);
-			if (state->structured && (line_is_goto (t) || line_is_cond_goto (t))
-					&& line_targets_own_edge (state, t)) {
-				continue;
+		if (R_STR_ISEMPTY (line)) {
+			continue;
+		}
+		const char *t = r_str_trim_head_ro (line);
+		if (state->structured && (line_is_goto (t) || line_is_cond_goto (t))
+				&& line_targets_own_edge (state, t)) {
+			if (line_is_goto (t)) {
+				jump_at = addr;
 			}
-			// drop tail goto into a structured loop header (the while/do owns that edge)
-			if (line_is_goto (t) && (strstr (t, "switch table")
-					|| line_is_known_loop_goto (state, t))) {
-				continue;
-			}
+			continue;
 		}
-		const size_t start = r_strbuf_length (state->codestr);
-		if (R_STR_ISNOTEMPTY (line)) {
-			print_newline (state, addr, indent, false);
-			print_str (state, "%s", line);
+		// drop a tail goto into a loop header the while/do already owns
+		if (line_is_goto (t) && (strstr (t, "switch table")
+				|| line_is_known_loop_goto (state, t))) {
+			continue;
 		}
-		if (emit_pj) {
-			annotate_offset (state, start, addr);
-		}
+		print_insn_line (state, addr, indent, "%s", line);
 	}
 	r_list_free (lines);
-	return addr;
+	if (jump_at == UT64_MAX) {
+		return;
+	}
+	// the block's own jump renders the transfer after it, past a delay slot
+	if (state->transfer) {
+		print_insn_line (state, jump_at, indent, "%s", state->transfer);
+		R_FREE (state->transfer);
+	} else if (state->show_asm) {
+		print_asm_only (state, jump_at);
+	}
 }
 
 static void emit_close_braces(PDCState *state, ut64 addr, int from, int to) {
@@ -1010,24 +1055,23 @@ static void render_bb_body_lines(PDCState *state, RAnalBlock *bb, int indent) {
 		r_bitset_set (state->marked, bb->addr);
 		state->bb_jump = bb->jump;
 		state->bb_fail = bb->fail;
-		emit_code_lines (state, code, bb->addr, indent, false);
+		emit_code_lines (state, code, bb->addr, indent);
 		state->bb_jump = state->bb_fail = UT64_MAX;
 		free (code);
 	}
 }
 
 static void emit_case_label(PDCState *state, ut64 lo, ut64 hi, ut64 target, int indent) {
-	print_newline (state, target, indent, false);
 	if (lo == hi && IS_PRINTABLE (lo)) {
-		print_str (state, "case %" PFMT64d ": // '%c' 0x%08" PFMT64x,
+		print_line (state, target, indent, "case %" PFMT64d ": // '%c' 0x%08" PFMT64x,
 			lo, (int)lo, target);
 	} else if (lo == hi) {
-		print_str (state, "case %" PFMT64d ": // 0x%08" PFMT64x, lo, target);
+		print_line (state, target, indent, "case %" PFMT64d ": // 0x%08" PFMT64x, lo, target);
 	} else if (IS_PRINTABLE (lo) && IS_PRINTABLE (hi)) {
-		print_str (state, "case %" PFMT64d "...%" PFMT64d ": // '%c'..'%c' 0x%08" PFMT64x,
+		print_line (state, target, indent, "case %" PFMT64d "...%" PFMT64d ": // '%c'..'%c' 0x%08" PFMT64x,
 			lo, hi, (int)lo, (int)hi, target);
 	} else {
-		print_str (state, "case %" PFMT64d "...%" PFMT64d ": // 0x%08" PFMT64x,
+		print_line (state, target, indent, "case %" PFMT64d "...%" PFMT64d ": // 0x%08" PFMT64x,
 			lo, hi, target);
 	}
 }
@@ -1050,13 +1094,11 @@ static void render_arm_body(PDCState *state, RList *visited, ut64 target, int in
 	if (cbb && r_anal_function_contains (state->fcn, target) && !r_list_contains (visited, cbb)) {
 		render_bb_body_lines (state, cbb, indent);
 		if (!bb_ends_with_terminator (state->core, cbb)) {
-			print_newline (state, target, indent, false);
-			print_str (state, "break;");
+			print_line (state, target, indent, "break;");
 		}
 		mark_bb_visited (state, visited, cbb);
 	} else {
-		print_newline (state, target, indent, false);
-		print_goto_or_return (state, target, "");
+		print_goto_or_return_line (state, target, indent);
 	}
 }
 
@@ -1434,58 +1476,113 @@ static char *pdc_return_type(const char *fs, const char *name) {
 	return ret;
 }
 
-static bool pdc_comment_line_is_meaningful(const char *line) {
-	if (R_STR_ISEMPTY (line) || !strcmp (line, "{") || !strcmp (line, "}")) {
-		return false;
-	}
-	return !r_str_startswith (line, "// callconv:");
+// the switch header is the one opener with a trailing comment; a '{' anywhere
+// else in a line is data, as in the label of case 123
+static bool pdc_line_opens_brace(const char *line) {
+	return r_str_endswith (line, "{") || strstr (line, "{ // ");
 }
 
-static void pdc_print_comment_cmds(RCore *core, const char *s) {
-	while (R_STR_ISNOTEMPTY (s)) {
-		const char *end = strchr (s, '\n');
-		size_t len = end? (size_t)(end - s): strlen (s);
-		char *line = r_str_ndup (s, len);
-		if (!line) {
-			return;
+static bool pdc_line_is_brace(const char *line) {
+	return !strcmp (line, "{") || !strcmp (line, "}") || !strcmp (line, "} else {");
+}
+
+typedef struct {
+	RStrBuf *sb;
+	ut64 addr;
+	int depth; // braces this comment opened and has not closed
+} PdcCmt;
+
+static void pdc_cmt_free(PdcCmt *c) {
+	r_strbuf_free (c->sb);
+	free (c);
+}
+
+static PdcCmt *pdc_cmt_at(RList *cmts, ut64 addr) {
+	RListIter *iter;
+	PdcCmt *c;
+	r_list_foreach (cmts, iter, c) {
+		if (c->addr == addr) {
+			return c;
 		}
-		const char *p = r_str_trim_head_ro (line);
-		if (r_str_startswith (p, "0x")) {
-			const char *q = p + 2;
-			while (IS_HEXCHAR (*q)) {
-				q++;
-			}
-			if (q > p + 2) {
-				ut64 addr = r_num_get (core->num, p);
-				while (*q == ' ') {
-					q++;
-				}
-				if (*q == '|') {
-					const char *body = r_str_trim_head_ro (q + 1);
-					if (*body == '|') {
-						body = r_str_trim_head_ro (body + 1);
-					}
-					char *comment = strdup (body);
-					if (comment) {
-						r_str_trim_tail (comment);
-						if (pdc_comment_line_is_meaningful (comment)) {
-							char *b64 = r_base64_encode_dyn ((const ut8 *)comment, -1);
-							if (b64) {
-								r_cons_printf (r_core_get_cons (core), "CCu base64:%s @ 0x%08" PFMT64x "\n", b64, addr);
-								free (b64);
-							}
-						}
-						free (comment);
-					}
-				}
-			}
-		}
-		free (line);
-		if (!end) {
-			break;
-		}
-		s = end + 1;
 	}
+	c = R_NEW0 (PdcCmt);
+	c->addr = addr;
+	c->sb = r_strbuf_new (NULL);
+	r_list_append (cmts, c);
+	return c;
+}
+
+static void pdc_print_comment(RCore *core, ut64 addr, const char *text) {
+	char *b64 = r_base64_encode_dyn ((const ut8 *)text, -1);
+	if (b64) {
+		r_cons_printf (r_core_get_cons (core), "CCu base64:%s @ 0x%08" PFMT64x "\n", b64, addr);
+		free (b64);
+	}
+}
+
+static void pdc_comment_add(RList *cmts, ut64 addr, const char *line) {
+	PdcCmt *c = pdc_cmt_at (cmts, addr);
+	// a brace never leads a comment and only closes what it opened
+	if (pdc_line_is_brace (line)
+			&& (r_strbuf_is_empty (c->sb) || (*line == '}' && c->depth < 1))) {
+		return;
+	}
+	if (!r_strbuf_is_empty (c->sb)) {
+		r_strbuf_append (c->sb, "\n");
+	}
+	r_strbuf_append (c->sb, line);
+	if (pdc_line_opens_brace (line)) {
+		c->depth++;
+	}
+	if (*line == '}') {
+		c->depth--;
+	}
+}
+
+// the address and body of a pdco/pdca line: `0xaddr | [asm |] body`
+static const char *pdc_line_body(RCore *core, const char *line, ut64 *addr) {
+	if (!r_str_startswith (line, "0x")) {
+		return NULL;
+	}
+	const char *hex = line + 2;
+	while (IS_HEXCHAR (*hex)) {
+		hex++;
+	}
+	const char *q = r_str_trim_head_ro (hex);
+	if (hex == line + 2 || *q != '|') {
+		return NULL;
+	}
+	*addr = r_num_get (core->num, line);
+	const char *body = r_str_trim_head_ro (q + 1);
+	return (*body == '|')? r_str_trim_head_ro (body + 1): body;
+}
+
+static void pdc_print_comment_cmds(RCore *core, const char *s, bool join) {
+	RList *cmts = join? r_list_newf ((RListFree)pdc_cmt_free): NULL;
+	RList *lines = r_str_split_duplist (s, "\n", true);
+	RListIter *iter;
+	const char *line;
+	r_list_foreach (lines, iter, line) {
+		ut64 addr = UT64_MAX;
+		const char *body = pdc_line_body (core, line, &addr);
+		if (!body || R_STR_ISEMPTY (body) || r_str_startswith (body, "// callconv:")) {
+			continue;
+		}
+		if (cmts) {
+			pdc_comment_add (cmts, addr, body);
+		} else if (!pdc_line_is_brace (body)) {
+			// without the join, one comment per line
+			pdc_print_comment (core, addr, body);
+		}
+	}
+	r_list_free (lines);
+	PdcCmt *c;
+	r_list_foreach (cmts, iter, c) {
+		if (!r_strbuf_is_empty (c->sb)) {
+			pdc_print_comment (core, c->addr, r_strbuf_get (c->sb));
+		}
+	}
+	r_list_free (cmts);
 }
 
 static bool case_table_has(const PDCSwCase *arr, int n, ut64 target) {
@@ -1576,7 +1673,7 @@ static char *invert_cond(const char *cond) {
 	return r_str_newf ("!(%s)", cond);
 }
 
-static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *gotos);
+static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *gotos, ut64 from);
 static void render_ifelse(PDCState *state, PdcRegion *r, RAnalBlock *bb, int indent, RBitset *gotos);
 static void render_switch_region(PDCState *state, PdcRegion *r, RAnalBlock *bb, int indent, RBitset *gotos);
 
@@ -1647,14 +1744,16 @@ static void render_loop(PDCState *state, PdcRegion *r, RAnalBlock *bb, int inden
 		render_bb_body_lines (state, bb, indent);
 		return;
 	}
+	const ut64 at = bb_cond_addr (bb);
 	if (!body) {
 		print_line (state, bb->addr, indent, "do {");
 		render_bb_body_lines (state, bb, indent + 1);
 		char *tc = cond_str (state, bb, false);
-		print_line (state, bb->addr, indent, "} while (%s);", tc);
+		print_insn_line (state, at, indent, "} while (%s);", tc);
 		free (tc);
 		return;
 	}
+	// braces pair on the loop entry; the exit test sits on its branch
 	print_line (state, bb->addr, indent, "while (true) {");
 	if (body->role != PDC_ROLE_HEAD) {
 		// a body that heads the loop block is its conditional, and renders it
@@ -1663,9 +1762,9 @@ static void render_loop(PDCState *state, PdcRegion *r, RAnalBlock *bb, int inden
 	if (region_emits_cond (r, bb)) {
 		// the header picks between body and exit; break on the exit edge
 		char *ec = cond_str (state, bb, body->role == PDC_ROLE_JUMP);
-		print_line (state, bb->addr, indent + 1, "if (%s) {", ec);
-		print_line (state, bb->addr, indent + 2, "break;");
-		print_line (state, bb->addr, indent + 1, "}");
+		print_insn_line (state, at, indent + 1, "if (%s) {", ec);
+		print_line (state, at, indent + 2, "break;");
+		print_line (state, at, indent + 1, "}");
 		free (ec);
 	}
 	if (body->role == PDC_ROLE_HEAD) {
@@ -1676,7 +1775,7 @@ static void render_loop(PDCState *state, PdcRegion *r, RAnalBlock *bb, int inden
 			render_ifelse (state, body, bb, indent + 1, gotos);
 		}
 	} else {
-		render_region (state, body, indent + 1, gotos);
+		render_region (state, body, indent + 1, gotos, at);
 	}
 	print_line (state, bb->addr, indent, "}");
 }
@@ -1687,13 +1786,13 @@ static void render_arm(PDCState *state, PdcArms *arms, ut64 target, int indent, 
 		return;
 	}
 	if (!owns_body) {
-		print_newline (state, target, indent, false);
-		print_goto_or_return (state, target, "");
+		print_goto_or_return_line (state, target, indent);
 		return;
 	}
 	PdcRegion *arm = region_child_at (arms->sw, target);
 	if (arm) {
-		render_region (state, arm, indent, arms->gotos);
+		// an arm's transfer belongs with its case label
+		render_region (state, arm, indent, arms->gotos, target);
 		if (region_tail_transfers (state, arm)) {
 			return;
 		}
@@ -1711,7 +1810,8 @@ static void render_switch_cases(PDCState *state, RAnalBlock *sw_bb, PdcArms *arm
 	}
 	char *expr = find_switch_expr (state->core, state->fcn, sw_bb);
 	const ut64 table_addr = valid_addr (sop->daddr)? sop->daddr: sw_bb->addr;
-	print_line (state, sw_bb->addr, indent,
+	const ut64 at = bb_cond_addr (sw_bb);
+	print_line (state, at, indent,
 		"switch (%s) { // jump table of %d cases at 0x%08" PFMT64x,
 		expr, n, table_addr);
 	free (expr);
@@ -1739,7 +1839,7 @@ static void render_switch_cases(PDCState *state, RAnalBlock *sw_bb, PdcArms *arm
 		render_arm (state, arms, sop->def_val, indent + 2,
 			!case_table_has (arr, n, sop->def_val));
 	}
-	print_line (state, sw_bb->addr, indent, "}");
+	print_line (state, at, indent, "}");
 	free (arr);
 }
 
@@ -1762,13 +1862,14 @@ static void render_ifelse(PDCState *state, PdcRegion *r, RAnalBlock *bb, int ind
 		else_arm = tmp;
 	}
 	char *cond = cond_str (state, bb, then_arm->role == PDC_ROLE_FAIL);
-	print_line (state, bb->addr, indent, "if (%s) {", cond);
-	render_region (state, then_arm, indent + 1, gotos);
+	const ut64 at = bb_cond_addr (bb);
+	print_insn_line (state, at, indent, "if (%s) {", cond);
+	render_region (state, then_arm, indent + 1, gotos, at);
 	if (else_arm) {
-		print_line (state, bb->addr, indent, "} else {");
-		render_region (state, else_arm, indent + 1, gotos);
+		print_line (state, at, indent, "} else {");
+		render_region (state, else_arm, indent + 1, gotos, at);
 	}
-	print_line (state, bb->addr, indent, "}");
+	print_line (state, at, indent, "}");
 	free (cond);
 }
 
@@ -1778,23 +1879,61 @@ static void render_exit_return(PDCState *state, RAnalBlock *bb, int indent) {
 			|| bb_ends_with_terminator (state->core, bb)) {
 		return;
 	}
-	print_line (state, bb->addr, indent, state->r0? "return %s;": "return;", state->r0);
+	print_line (state, state->last_addr, indent, state->r0? "return %s;": "return;", state->r0);
 }
 
-static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *gotos) {
-	if (r->type == PDC_R_SEQ) {
-		PdcRegion **it;
-		R_VEC_FOREACH (&r->children, it) {
-			render_region (state, *it, indent, gotos);
+static bool region_is_transfer(PdcRegion *r) {
+	return r->type == PDC_R_BREAK || r->type == PDC_R_CONTINUE || r->type == PDC_R_GOTO;
+}
+
+static char *transfer_str(PdcRegion *r) {
+	switch (r->type) {
+	case PDC_R_BREAK:
+		return strdup ("break;");
+	case PDC_R_CONTINUE:
+		return strdup ("continue;");
+	case PDC_R_GOTO:
+		return r_str_newf ("goto loc_0x%08" PFMT64x ";", r->addr);
+	default:
+		return NULL;
+	}
+}
+
+static void render_seq(PDCState *state, PdcRegion *r, int indent, RBitset *gotos, ut64 from) {
+	const size_t n = RVecPdcRegionPtr_length (&r->children);
+	size_t i;
+	for (i = 0; i < n; i++) {
+		PdcRegion *c = *RVecPdcRegionPtr_at (&r->children, i);
+		// unreachable after a region whose every path leaves
+		if (i > 0 && region_is_transfer (c)
+				&& region_tail_transfers (state, *RVecPdcRegionPtr_at (&r->children, i - 1))) {
+			continue;
 		}
+		if (c->type == PDC_R_BB && i + 1 < n) {
+			state->transfer = transfer_str (*RVecPdcRegionPtr_at (&r->children, i + 1));
+		}
+		const bool handoff = state->transfer != NULL;
+		render_region (state, c, indent, gotos, from);
+		// only the first child is entered by that branch
+		from = UT64_MAX;
+		if (handoff && !state->transfer) {
+			i++;
+		}
+		R_FREE (state->transfer);
+	}
+}
+
+// from: the branch that takes a transfer heading r; UT64_MAX anchors it on the
+// last line printed instead, which is where a fall-through leaves
+static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *gotos, ut64 from) {
+	if (r->type == PDC_R_SEQ) {
+		render_seq (state, r, indent, gotos, from);
 		return;
 	}
-	if (r->type == PDC_R_BREAK || r->type == PDC_R_CONTINUE) {
-		print_line (state, r->addr, indent, "%s;", (r->type == PDC_R_BREAK)? "break": "continue");
-		return;
-	}
-	if (r->type == PDC_R_GOTO) {
-		print_line (state, r->addr, indent, "goto loc_0x%08" PFMT64x ";", r->addr);
+	if (region_is_transfer (r)) {
+		char *s = transfer_str (r);
+		print_line (state, (from == UT64_MAX)? state->last_addr: from, indent, "%s", s);
+		free (s);
 		return;
 	}
 	RAnalBlock *bb = r_anal_get_block_at (state->core->anal, r->addr);
@@ -1808,18 +1947,18 @@ static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *go
 	case PDC_R_IF:
 	case PDC_R_IFELSE:
 		render_ifelse (state, r, bb, indent, gotos);
-		return;
+		break;
 	case PDC_R_WHILE:
 	case PDC_R_DOWHILE:
 		render_loop (state, r, bb, indent, gotos);
-		return;
+		break;
 	case PDC_R_SWITCH:
 		render_switch_region (state, r, bb, indent, gotos);
-		return;
+		break;
 	default:
 		render_bb_body_lines (state, bb, indent);
 		render_exit_return (state, bb, indent);
-		return;
+		break;
 	}
 }
 
@@ -1856,7 +1995,7 @@ static bool pdc_structured_body(PDCState *state, int indent) {
 		state->structured = true;
 		RBitset *gotos = r_bitset_new ();
 		collect_goto_targets (state, root, gotos);
-		render_region (state, root, indent, gotos);
+		render_region (state, root, indent, gotos, UT64_MAX);
 		r_bitset_free (gotos);
 		state->structured = was_structured;
 	}
@@ -2033,13 +2172,11 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	free (fs);
 	indent++;
 	RList *visited = r_list_newf (NULL);
-	ut64 addr = state.fcn->addr;
-	// structured if/else emission for fully reducible functions; the linear
-	// worklist below is skipped (finalize closes the brace) when it succeeds
-	if (r_config_get_b (core->config, "pdc.structured")) {
-		if (!state.pj && !state.show_asm && !comment_cmds && pdc_structured_body (&state, indent)) {
-			bb = NULL;
-		}
+	state.last_addr = state.fcn->addr;
+	const bool structured = r_config_get_b (core->config, "pdc.structured")
+		&& pdc_structured_body (&state, indent);
+	if (structured) {
+		bb = NULL;
 	}
 	// pre-pass: mark loop header bbs so emit_code_lines can strip stale gotos to them
 	{
@@ -2117,7 +2254,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 					print_newline (&state, bb->addr, indent - 1, true);
 					PRINTF ("loc_0x%08" PFMT64x ":", bb->addr);
 				}
-				addr = emit_code_lines (&state, code, bb->addr, indent, true);
+				emit_code_lines (&state, code, bb->addr, indent);
 				r_bitset_set (state.marked, bb->addr);
 			}
 		}
@@ -2349,6 +2486,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		}
 		if (R_STR_ISNOTEMPTY (r_str_trim_head_ro (s))) {
 			const size_t start = r_strbuf_length (state.codestr);
+			state.last_addr = bb->addr;
 			const bool labeled = bb_addr_is_goto_target (state.fcn, bb->addr);
 			if (!labeled && (state.show_asm || state.show_addr)) {
 				// without a label the block starts on its body lines, which carry their own columns
@@ -2382,12 +2520,8 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	}
 	r_list_free (visited);
 	indent = 0;
-	if (state.show_asm && bb) {
-		print_newline (&state, bb->addr, indent, true);
-	} else {
-		NEWLINE (addr, indent);
-	}
-	PRINTF ("}\n");
+	print_line (&state, state.last_addr, indent, "}");
+	PRINTF ("\n");
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	if (state.pj) {
@@ -2403,7 +2537,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	} else {
 		char *s = r_strbuf_drain (state.out);
 		if (comment_cmds) {
-			pdc_print_comment_cmds (core, s);
+			pdc_print_comment_cmds (core, s, structured);
 		} else if (r_config_get_i (state.core->config, "scr.color") > 0) {
 			RConsCodeColors codecolors = r_cons_codecolors (cons);
 			char *ss = r_print_code_tocolor (s, &codecolors);
@@ -2416,6 +2550,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		free (s);
 		r_strbuf_free (state.codestr);
 	}
+	free (state.transfer);
 	sdb_free (state.db);
 	sdb_free (state.goto_cache);
 	r_bitset_free (state.marked);
