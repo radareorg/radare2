@@ -25,9 +25,15 @@ FILE=bins/elf/class_test
 CMDS=<<EOF
 aaa
 aclj~{[2].bases[1].offset}
+aclj~{[2].vtables[1].offset}
+aclj~{[2].methods[3].name}
+aclj~{[2].methods[3].vtable_addr}
 EOF
 EXPECT=<<EOF
 4
+4
+virtual_4_0
+134516464
 EOF
 RUN
 
@@ -78,15 +84,29 @@ ViewController: UIViewController
   application:didFinishLaunchingWithOptions: @ 0xa0f8
   application:configurationForConnectingSceneSession:options: @ 0xa134
   application:didDiscardSceneSessions: @ 0xa1fc
-  virtual_0 @ 0xa29d (vtable + 0x0)
-  virtual_4 @ 0xa24f (vtable + 0x4)
-  virtual_8 @ 0xa2cb (vtable + 0x8)
-  virtual_0 @ 0xa235 (vtable + 0x0)
-  virtual_4 @ 0xa2f9 (vtable + 0x4)
-  virtual_8 @ 0xa327 (vtable + 0x8)
-  virtual_0 @ 0xa29d (vtable + 0x0)
-  virtual_4 @ 0xa2f9 (vtable + 0x4)
-  virtual_8 @ 0xa363 (vtable + 0x8)
+  virtual_0 @ 0xa283 (vtable + 0x0)
+  virtual_4 @ 0xa2b1 (vtable + 0x4)
+  virtual_8_0 @ 0xa29d (vtable + 0x0)
+  virtual_8_4 @ 0xa24f (vtable + 0x4)
+  virtual_8_8 @ 0xa2cb (vtable + 0x8)
+  virtual_20_0 @ 0xa29d (vtable + 0x0)
+  virtual_20_4 @ 0xa24f (vtable + 0x4)
+  virtual_20_8 @ 0xa2cb (vtable + 0x8)
+  virtual_0 @ 0xa2df (vtable + 0x0)
+  virtual_4 @ 0xa30d (vtable + 0x4)
+  virtual_8_0 @ 0xa235 (vtable + 0x0)
+  virtual_8_4 @ 0xa2f9 (vtable + 0x4)
+  virtual_8_8 @ 0xa327 (vtable + 0x8)
+  virtual_12_0 @ 0xa235 (vtable + 0x0)
+  virtual_12_4 @ 0xa2f9 (vtable + 0x4)
+  virtual_12_8 @ 0xa327 (vtable + 0x8)
+  virtual_0 @ 0xa283 (vtable + 0x0)
+  virtual_4 @ 0xa33b (vtable + 0x4)
+  virtual_8_0 @ 0xa2df (vtable + 0x0)
+  virtual_8_4 @ 0xa355 (vtable + 0x4)
+  virtual_20_0 @ 0xa29d (vtable + 0x0)
+  virtual_20_4 @ 0xa2f9 (vtable + 0x4)
+  virtual_20_8 @ 0xa363 (vtable + 0x8)
   scene:willConnectToSession:options: @ 0xa3f0
   sceneDidDisconnect: @ 0xa444
   sceneDidBecomeActive: @ 0xa466
@@ -140,27 +160,38 @@ AppDelegate: UIResponder
   application:didDiscardSceneSessions: @ 0x100005e9c
 B: A
   (vtable at 0x1000080b8)
-  (vtable at 0x1000080f0)
+  (vtable at 0x1000080f0 in class at +0x10)
   (vtable at 0x1000082c0)
-  (vtable at 0x1000082f8)
-  virtual_0 @ 0x100005fbc (vtable + 0x0)
-  virtual_8 @ 0x100005f44 (vtable + 0x8)
-  virtual_16 @ 0x100006008 (vtable + 0x10)
+  (vtable at 0x1000082f8 in class at +0x20)
+  virtual_0 @ 0x100005f94 (vtable + 0x0)
+  virtual_8 @ 0x100005fe0 (vtable + 0x8)
+  virtual_16_0 @ 0x100005fbc (vtable + 0x0)
+  virtual_16_8 @ 0x100005f44 (vtable + 0x8)
+  virtual_16_16 @ 0x100006008 (vtable + 0x10)
+  virtual_32_0 @ 0x100005fbc (vtable + 0x0)
+  virtual_32_8 @ 0x100005f44 (vtable + 0x8)
+  virtual_32_16 @ 0x100006008 (vtable + 0x10)
 C: A
   (vtable at 0x100008158)
-  (vtable at 0x100008190)
+  (vtable at 0x100008190 in class at +0x10)
   (vtable at 0x100008328)
-  (vtable at 0x100008360)
-  virtual_0 @ 0x100005f1c (vtable + 0x0)
-  virtual_8 @ 0x100006054 (vtable + 0x8)
-  virtual_16 @ 0x1000060a0 (vtable + 0x10)
+  (vtable at 0x100008360 in class at +0x10)
+  virtual_0 @ 0x10000602c (vtable + 0x0)
+  virtual_8 @ 0x100006078 (vtable + 0x8)
+  virtual_16_0 @ 0x100005f1c (vtable + 0x0)
+  virtual_16_8 @ 0x100006054 (vtable + 0x8)
+  virtual_16_16 @ 0x1000060a0 (vtable + 0x10)
 D: B, C
   (vtable at 0x1000081f8)
-  (vtable at 0x100008220)
-  (vtable at 0x100008258)
-  virtual_0 @ 0x100005fbc (vtable + 0x0)
-  virtual_8 @ 0x100006054 (vtable + 0x8)
-  virtual_16 @ 0x100006108 (vtable + 0x10)
+  (vtable at 0x100008220 in class at +0x10)
+  (vtable at 0x100008258 in class at +0x20)
+  virtual_0 @ 0x100005f94 (vtable + 0x0)
+  virtual_8 @ 0x1000060c4 (vtable + 0x8)
+  virtual_16_0 @ 0x10000602c (vtable + 0x0)
+  virtual_16_8 @ 0x1000060ec (vtable + 0x8)
+  virtual_32_0 @ 0x100005fbc (vtable + 0x0)
+  virtual_32_8 @ 0x100006054 (vtable + 0x8)
+  virtual_32_16 @ 0x100006108 (vtable + 0x10)
 SceneDelegate: UIResponder
   scene:willConnectToSession:options: @ 0x1000061d8
   sceneDidDisconnect: @ 0x10000628c
@@ -214,15 +245,26 @@ ViewController: UIViewController
   application:didFinishLaunchingWithOptions: @ 0x100005d30
   application:configurationForConnectingSceneSession:options: @ 0x100005dbc
   application:didDiscardSceneSessions: @ 0x100005ecc
-  virtual_0 @ 0x100006000 (vtable + 0x0)
-  virtual_8 @ 0x100005f7c (vtable + 0x8)
-  virtual_16 @ 0x100006050 (vtable + 0x10)
-  virtual_0 @ 0x100005f50 (vtable + 0x0)
-  virtual_8 @ 0x1000060a0 (vtable + 0x8)
-  virtual_16 @ 0x1000060f0 (vtable + 0x10)
-  virtual_0 @ 0x100006000 (vtable + 0x0)
-  virtual_8 @ 0x1000060a0 (vtable + 0x8)
-  virtual_16 @ 0x10000615c (vtable + 0x10)
+  virtual_0 @ 0x100005fd4 (vtable + 0x0)
+  virtual_8 @ 0x100006024 (vtable + 0x8)
+  virtual_16_0 @ 0x100006000 (vtable + 0x0)
+  virtual_16_8 @ 0x100005f7c (vtable + 0x8)
+  virtual_16_16 @ 0x100006050 (vtable + 0x10)
+  virtual_32_0 @ 0x100006000 (vtable + 0x0)
+  virtual_32_8 @ 0x100005f7c (vtable + 0x8)
+  virtual_32_16 @ 0x100006050 (vtable + 0x10)
+  virtual_0 @ 0x100006074 (vtable + 0x0)
+  virtual_8 @ 0x1000060c4 (vtable + 0x8)
+  virtual_16_0 @ 0x100005f50 (vtable + 0x0)
+  virtual_16_8 @ 0x1000060a0 (vtable + 0x8)
+  virtual_16_16 @ 0x1000060f0 (vtable + 0x10)
+  virtual_0 @ 0x100005fd4 (vtable + 0x0)
+  virtual_8 @ 0x100006114 (vtable + 0x8)
+  virtual_16_0 @ 0x100006074 (vtable + 0x0)
+  virtual_16_8 @ 0x100006140 (vtable + 0x8)
+  virtual_32_0 @ 0x100006000 (vtable + 0x0)
+  virtual_32_8 @ 0x1000060a0 (vtable + 0x8)
+  virtual_32_16 @ 0x10000615c (vtable + 0x10)
   scene:willConnectToSession:options: @ 0x100006230
   sceneDidDisconnect: @ 0x1000062e8
   sceneDidBecomeActive: @ 0x100006338
