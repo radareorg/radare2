@@ -573,25 +573,25 @@ static RList *trycatch(RBinFile *bf) {
 	if (bin->trycatch_list) {
 		return bin->trycatch_list;
 	}
+	// managed methods carry their own exception clauses
+	RList *tclist = pe_trycatch (bf);
+	if (!tclist) {
+		return NULL;
+	}
 	if (!bin->nt_headers || bin->nt_headers->file_header.Machine != PE_IMAGE_FILE_MACHINE_AMD64) {
 		// The exception directory of ARM64 and other machines does not
 		// use the x86-64 RUNTIME_FUNCTION/UNWIND_INFO format parsed here
-		return NULL;
+		return tclist;
 	}
 	PE_(image_data_directory) *expdir = &bin->optional_header->DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION];
 	if (!expdir->Size) {
-		return NULL;
+		return tclist;
 	}
 	ut64 dirsize = expdir->Size;
 	const ut64 filesize = bin->b? r_buf_size (bin->b): 0;
 	if (dirsize > filesize) {
 		// RUNTIME_FUNCTION entries beyond the file contents can only be padding or garbage
 		dirsize = filesize;
-	}
-
-	RList *tclist = bin->trycatch_list = r_list_newf ((RListFree)r_bin_trycatch_free);
-	if (!tclist) {
-		return NULL;
 	}
 
 	for (offset = expdir->VirtualAddress; offset < (ut64)expdir->VirtualAddress + dirsize; offset += sizeof (PE64_RUNTIME_FUNCTION)) {

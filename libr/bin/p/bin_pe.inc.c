@@ -65,6 +65,18 @@ static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 	return ret;
 }
 
+// ECMA-335 II.25.4.4 method body header flags
+#define CIL_METHOD_MORE_SECTS 0x8
+// ECMA-335 II.25.4.5 method data section kinds
+#define CIL_SECT_EHTABLE 0x1
+#define CIL_SECT_FATFORMAT 0x40
+#define CIL_SECT_MORESECTS 0x80
+// ECMA-335 II.25.4.6 exception clause flags
+#define CIL_EH_CATCH 0x0
+#define CIL_EH_FILTER 0x1
+#define CIL_EH_FINALLY 0x2
+#define CIL_EH_FAULT 0x4
+
 static void normalize_dotnet_method_bodies(RBinFile *bf, RBinPEObj *pe, RList *symbols) {
 	R_RETURN_IF_FAIL (bf && bf->buf && pe && symbols);
 	const ut64 file_size = r_buf_size (bf->buf);
@@ -84,6 +96,7 @@ static void normalize_dotnet_method_bodies(RBinFile *bf, RBinPEObj *pe, RList *s
 		}
 		ut32 header_size = 0;
 		ut32 code_size = 0;
+		bool more_sects = false;
 		if ((header[0] & 3) == 2) {
 			header_size = 1;
 			code_size = header[0] >> 2;
@@ -92,6 +105,8 @@ static void normalize_dotnet_method_bodies(RBinFile *bf, RBinPEObj *pe, RList *s
 			ut16 flags_size = r_read_le16 (header);
 			header_size = ((flags_size >> 12) & 0xf) * 4;
 			code_size = r_read_le32 (header + 4);
+			// CorILMethod_MoreSects: the exception clauses follow the code
+			more_sects = (flags_size & CIL_METHOD_MORE_SECTS) != 0;
 			if (header_size < sizeof (header)) {
 				header_size = 0;
 			}
@@ -103,6 +118,13 @@ static void normalize_dotnet_method_bodies(RBinFile *bf, RBinPEObj *pe, RList *s
 		sym->paddr += header_size;
 		sym->vaddr += header_size;
 		sym->size = code_size;
+		if (more_sects) {
+			// the section headers are aligned to a 4 byte boundary
+			ut64 at = (sym->paddr + code_size + 3) & ~(ut64)3;
+			if (at >= sym->paddr && at + 4 <= file_size) {
+				sym->eh_paddr = at;
+			}
+		}
 	}
 }
 
@@ -463,6 +485,139 @@ static char *dotnet_symbol_name_by_token(RList *symbols, ut32 token) {
 			? r_str_newf ("%s.%s", sym->namespace, sym->name): strdup (sym->name);
 	}
 	return NULL;
+}
+
+// the type of a CIL catch clause is a TypeDef, TypeRef or TypeSpec token
+static char *clr_class_name(RList *symbols, ut32 token) {
+	switch (token >> 24) {
+	case 0x01: // TypeRef
+	case 0x02: // TypeDef
+	case 0x1b: // TypeSpec
+		return dotnet_symbol_name_by_token (symbols, token);
+	}
+	return NULL;
+}
+
+// ECMA-335 II.25.4.6 - parse the exception clauses of a single IL method body
+static void clr_trycatch_method(RBinFile *bf, RList *list, RList *symbols, DotNetSymbol *sym, ut64 image_base) {
+	const ut64 file_size = r_buf_size (bf->buf);
+	const ut64 source = sym->vaddr + image_base;
+	ut64 at = sym->eh_paddr;
+	int section;
+	// a method carries a handful of data sections at most, but a crafted
+	// binary may chain them forever, so bound the walk
+	for (section = 0; section < 8; section++) {
+		ut8 shdr[4];
+		if (at + sizeof (shdr) > file_size
+				|| r_buf_read_at (bf->buf, at, shdr, sizeof (shdr)) != sizeof (shdr)) {
+			return;
+		}
+		const ut8 kind = shdr[0];
+		const bool fat = (kind & CIL_SECT_FATFORMAT) != 0;
+		const ut32 data_size = fat
+			? (ut32)shdr[1] | ((ut32)shdr[2] << 8) | ((ut32)shdr[3] << 16)
+			: (ut32)shdr[1];
+		const ut32 entry_size = fat? 24: 12;
+		if (data_size < 4 + entry_size || at + data_size > file_size) {
+			return;
+		}
+		if (kind & CIL_SECT_EHTABLE) {
+			ut32 count = (data_size - 4) / entry_size;
+			ut64 clause = at + 4;
+			ut32 i;
+			for (i = 0; i < count; i++, clause += entry_size) {
+				ut8 buf[24];
+				if (r_buf_read_at (bf->buf, clause, buf, entry_size) != (int)entry_size) {
+					return;
+				}
+				ut32 flags, try_off, try_len, handler_off, handler_len, extra;
+				if (fat) {
+					flags = r_read_le32 (buf);
+					try_off = r_read_le32 (buf + 4);
+					try_len = r_read_le32 (buf + 8);
+					handler_off = r_read_le32 (buf + 12);
+					handler_len = r_read_le32 (buf + 16);
+					extra = r_read_le32 (buf + 20);
+				} else {
+					flags = r_read_le16 (buf);
+					try_off = r_read_le16 (buf + 2);
+					try_len = buf[4];
+					handler_off = r_read_le16 (buf + 5);
+					handler_len = buf[7];
+					extra = r_read_le32 (buf + 8);
+				}
+				// every offset is relative to the start of the method body
+				if (try_off > sym->size || try_len > sym->size - try_off
+						|| handler_off > sym->size || handler_len > sym->size - handler_off) {
+					continue;
+				}
+				RBinTrycatch *tc = r_bin_trycatch_new (source,
+					source + try_off, source + try_off + try_len,
+					source + handler_off,
+					(flags & CIL_EH_FILTER) && extra <= sym->size? source + extra: 0);
+				if (!tc) {
+					return;
+				}
+				switch (flags & 7) {
+				case CIL_EH_FILTER:
+					tc->kind = R_BIN_TRYCATCH_FILTER;
+					break;
+				case CIL_EH_FINALLY:
+				case CIL_EH_FAULT:
+					tc->kind = R_BIN_TRYCATCH_CLEANUP;
+					break;
+				case CIL_EH_CATCH:
+					tc->kind = R_BIN_TRYCATCH_CATCH;
+					tc->type_filter = extra;
+					tc->type = clr_class_name (symbols, extra);
+					// catching System.Object catches everything
+					tc->catch_all = tc->type && !strcmp (tc->type, "System.Object");
+					break;
+				default:
+					break;
+				}
+				r_list_append (list, tc);
+			}
+		}
+		if (!(kind & CIL_SECT_MORESECTS)) {
+			return;
+		}
+		at = (at + data_size + 3) & ~(ut64)3;
+	}
+}
+
+// collect the exception clauses of every managed method in the assembly
+static void clr_trycatch(RBinFile *bf, RList *list) {
+	RBinPEObj *pe = PE_(get) (bf);
+	if (!pe || !pe->clr_hdr) {
+		return;
+	}
+	RList *symbols = get_dotnet_symbols (bf);
+	if (!symbols) {
+		return;
+	}
+	const ut64 image_base = PE_(r_bin_pe_get_image_base) (pe);
+	RListIter *iter;
+	DotNetSymbol *sym;
+	r_list_foreach (symbols, iter, sym) {
+		if (sym->eh_paddr && sym->type && !strcmp (sym->type, "methoddef")) {
+			clr_trycatch_method (bf, list, symbols, sym, image_base);
+		}
+	}
+}
+
+static RList *pe_trycatch(RBinFile *bf) {
+	RBinPEObj *pe = PE_(get) (bf);
+	if (!pe) {
+		return NULL;
+	}
+	if (!pe->trycatch_list) {
+		pe->trycatch_list = r_list_newf ((RListFree)r_bin_trycatch_free);
+		if (pe->trycatch_list) {
+			clr_trycatch (bf, pe->trycatch_list);
+		}
+	}
+	return pe->trycatch_list;
 }
 
 static RList* classes(RBinFile *bf) {

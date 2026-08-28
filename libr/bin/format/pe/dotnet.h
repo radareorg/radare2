@@ -388,6 +388,7 @@ typedef struct {
 	char *name;
 	ut64 vaddr;
 	ut64 paddr;
+	ut64 eh_paddr;    // methoddef: paddr of the IL exception handling sections (0 if none)
 	ut32 size;
 	char *namespace;  // For types
 	char *classname;  // Declaring class for methods and fields
