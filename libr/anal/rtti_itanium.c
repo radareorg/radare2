@@ -762,7 +762,19 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 		return;
 	}
 
-	RAnalVTable vtable = { .id = NULL, .offset = 0, .size = 0, .addr = vtable_info->saddr};
+	ut64 raw_offset_to_top = 0;
+	context->read_addr (context->anal,
+		vtable_info->saddr - 2 * context->word_size, &raw_offset_to_top);
+	const st64 offset_to_top = context->word_size == 4
+		? (st64)(st32)raw_offset_to_top
+		: (st64)raw_offset_to_top;
+	const ut64 class_offset = offset_to_top < 0? (ut64)-offset_to_top: 0;
+	RAnalVTable vtable = {
+		.id = NULL,
+		.offset = class_offset,
+		.size = RVecRVTableMethodInfo_length (&vtable_info->methods) * context->word_size,
+		.addr = vtable_info->saddr
+	};
 	r_anal_class_vtable_set (context->anal, class_name, &vtable);
 	r_anal_class_vtable_fini (&vtable);
 
@@ -771,7 +783,10 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 		RAnalMethod meth;
 		meth.addr = vmeth->addr;
 		meth.vtable_offset = vmeth->vtable_offset;
-		meth.name = r_str_newf ("virtual_%" PFMT64d, meth.vtable_offset);
+		meth.vtable_addr = vtable_info->saddr;
+		meth.name = class_offset
+			? r_str_newf ("virtual_%"PFMT64u"_%"PFMT64d, class_offset, meth.vtable_offset)
+			: r_str_newf ("virtual_%"PFMT64d, meth.vtable_offset);
 		r_anal_class_method_set (context->anal, class_name, &meth);
 		r_anal_class_method_fini (&meth);
 	}

@@ -836,24 +836,33 @@ static char *unique_class_name(RAnal *anal, const char *original_name) {
 	return name;
 }
 
-static void recovery_apply_vtable(RAnal *anal, const char *class_name, RVTableInfo *vtable_info) {
+static void recovery_apply_vtable(RAnal *anal, const char *class_name, RVTableInfo *vtable_info, ut64 class_offset) {
 	if (!vtable_info) {
 		return;
 	}
 
 	RAnalVTable vtable = {0};
 	vtable.addr = vtable_info->saddr;
-	r_anal_class_vtable_set (anal, class_name, &vtable);
-	r_anal_class_vtable_fini (&vtable);
+	vtable.offset = class_offset;
+	const size_t vtable_len = RVecRVTableMethodInfo_length (&vtable_info->methods);
+	const ut32 word_size = anal->config->bits / 8;
+	if (vtable_len && word_size) {
+		vtable.size = vtable_len * word_size;
+		r_anal_class_vtable_set (anal, class_name, &vtable);
+		r_anal_class_vtable_fini (&vtable);
 
-	RVTableMethodInfo *vmeth;
-	R_VEC_FOREACH (&vtable_info->methods, vmeth) {
-		RAnalMethod meth;
-		meth.addr = vmeth->addr;
-		meth.vtable_offset = vmeth->vtable_offset;
-		meth.name = r_str_newf ("virtual_%" PFMT64d, meth.vtable_offset);
-		r_anal_class_method_set (anal, class_name, &meth);
-		r_anal_class_method_fini (&meth);
+		RVTableMethodInfo *vmeth;
+		R_VEC_FOREACH (&vtable_info->methods, vmeth) {
+			RAnalMethod meth;
+			meth.addr = vmeth->addr;
+			meth.vtable_offset = vmeth->vtable_offset;
+			meth.vtable_addr = vtable_info->saddr;
+			meth.name = class_offset
+				? r_str_newf ("virtual_%"PFMT64u"_%"PFMT64d, class_offset, meth.vtable_offset)
+				: r_str_newf ("virtual_%"PFMT64d, meth.vtable_offset);
+			r_anal_class_method_set (anal, class_name, &meth);
+			r_anal_class_method_fini (&meth);
+		}
 	}
 }
 
@@ -932,7 +941,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	r_anal_class_create (anal, name);
 	ht_up_insert (context->col_td_classes, col->addr, name);
 
-	recovery_apply_vtable (anal, name, col->vtable);
+	recovery_apply_vtable (anal, name, col->vtable, col->col.vtable_offset);
 	recovery_apply_bases (context, name, &col->base_td);
 
 	return name;
@@ -968,7 +977,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 		return name;
 	}
 
-	recovery_apply_vtable (anal, name, td->col->vtable);
+	recovery_apply_vtable (anal, name, td->col->vtable, td->col->col.vtable_offset);
 	recovery_apply_bases (context, name, &td->col->base_td);
 
 	return name;
