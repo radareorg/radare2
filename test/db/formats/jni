@@ -309,7 +309,7 @@ ao @ 0x294~opcode
 tk struct.JNINativeInterface.RegisterNatives
 EOF
 EXPECT=<<EOF
-jint JNI_OnLoad (JavaVM *vm, void *reserved);
+jint sym.JNI_OnLoad (JavaVM *vm, void *reserved);
 JavaVM *
 opcode: ldr x8, [x0]
 opcode: ldr x8, [x8, 0x30]
