@@ -100,11 +100,11 @@ class R2Shell {
      * @param {string|number}
      * @returns {number} return code (0 is success)
      */
-    mount(fstype, path, offset) {
-        if (!offset) {
-            offset = 0;
+    mount(fstype, path, addr) {
+        if (!addr) {
+            addr = 0;
         }
-        this.rp.call(`m ${fstype} ${path} ${offset}`);
+        this.rp.call(`m ${fstype} ${path} ${addr}`);
         return true;
     }
     /**
@@ -1114,7 +1114,7 @@ class R2PapiSync {
      */
     getBaseAddress() {
         const v = this.cmd("e bin.baddr");
-        return new NativePointer(v);
+        return new NativePointer(v, this);
     }
     jsonToTypescript(name, a) {
         let str = `interface ${name} {\n`;
@@ -1187,7 +1187,7 @@ class R2PapiSync {
         this.cmd(`om ${fd} ${vaddr} ${size} ${paddr} ${perm} ${name}`);
     }
     at(a) {
-        return new NativePointer(a);
+        return new NativePointer(a, this);
     }
     getShell() {
         return new shell_js_1.R2Shell(this);
@@ -1268,7 +1268,7 @@ class R2PapiSync {
         return this;
     }
     currentSeek() {
-        return new NativePointer("$$");
+        return new NativePointer("$$", this);
     }
     seekToRelativeOpcode(nth) {
         this.cmd(`so ${nth}`);
@@ -1542,6 +1542,156 @@ class NativeCallback {
     constructor() { }
 }
 exports.NativeCallback = NativeCallback;
+function clampByte(n) {
+    return n & 0xff;
+}
+function byteToHex(n) {
+    return clampByte(n).toString(16).padStart(2, "0");
+}
+function byteArrayToHex(data) {
+    let hex = "";
+    for (let i = 0; i < data.length; i++) {
+        hex += byteToHex(data[i]);
+    }
+    return hex;
+}
+function normalizeHexString(hex) {
+    const normalized = hex.replace(/0x/gi, "").replace(/\s+/g, "");
+    if (normalized.length % 2 !== 0) {
+        throw new Error("Hex string must contain an even number of digits");
+    }
+    return normalized.toLowerCase();
+}
+function bytesToUnsignedBigInt(bytes, littleEndian) {
+    const ordered = littleEndian ? [...bytes].reverse() : bytes;
+    let value = 0n;
+    for (const byte of ordered) {
+        value = (value << 8n) | BigInt(clampByte(byte));
+    }
+    return value;
+}
+function bytesToSignedBigInt(bytes, littleEndian) {
+    const unsigned = bytesToUnsignedBigInt(bytes, littleEndian);
+    const bits = BigInt(bytes.length * 8);
+    const signBit = 1n << (bits - 1n);
+    if ((unsigned & signBit) !== 0n) {
+        return unsigned - (1n << bits);
+    }
+    return unsigned;
+}
+function unsignedBigIntToBytes(value, byteLength, littleEndian) {
+    const bits = BigInt(byteLength * 8);
+    const max = 1n << bits;
+    if (value < 0n || value >= max) {
+        throw new RangeError(`Value ${value} does not fit in ${byteLength * 8} bits`);
+    }
+    const bytes = new Array(byteLength).fill(0);
+    let current = value;
+    for (let i = byteLength - 1; i >= 0; i--) {
+        bytes[i] = Number(current & 0xffn);
+        current >>= 8n;
+    }
+    return littleEndian ? bytes.reverse() : bytes;
+}
+function signedBigIntToBytes(value, byteLength, littleEndian) {
+    const bits = BigInt(byteLength * 8);
+    const min = -(1n << (bits - 1n));
+    const max = (1n << (bits - 1n)) - 1n;
+    if (value < min || value > max) {
+        throw new RangeError(`Value ${value} does not fit in ${byteLength * 8} signed bits`);
+    }
+    const normalized = value < 0n ? value + (1n << bits) : value;
+    return unsignedBigIntToBytes(normalized, byteLength, littleEndian);
+}
+function parseInteger(value) {
+    if (typeof value === "bigint") {
+        return value;
+    }
+    if (typeof value === "number") {
+        if (!Number.isFinite(value) || !Number.isInteger(value)) {
+            throw new TypeError("Expected an integer number");
+        }
+        return BigInt(value);
+    }
+    const trimmed = value.trim();
+    if (trimmed === "") {
+        throw new TypeError("Expected a non-empty integer string");
+    }
+    return BigInt(trimmed);
+}
+function bigintToSafeNumber(value, methodName) {
+    const numberValue = Number(value);
+    if (!Number.isSafeInteger(numberValue)) {
+        throw new RangeError(`${methodName} exceeds Number.MAX_SAFE_INTEGER; use a bigint or string helper instead`);
+    }
+    return numberValue;
+}
+function encodeUtf8String(text, zeroTerminated) {
+    const encoded = encodeURIComponent(text);
+    const bytes = [];
+    for (let i = 0; i < encoded.length; i++) {
+        const ch = encoded[i];
+        if (ch === "%") {
+            bytes.push(parseInt(encoded.slice(i + 1, i + 3), 16));
+            i += 2;
+        }
+        else {
+            bytes.push(ch.charCodeAt(0));
+        }
+    }
+    if (zeroTerminated) {
+        bytes.push(0);
+    }
+    return bytes;
+}
+function decodeUtf8Bytes(bytes) {
+    let encoded = "";
+    for (const byte of bytes) {
+        encoded += "%" + byteToHex(byte);
+    }
+    try {
+        return decodeURIComponent(encoded);
+    }
+    catch (e) {
+        let text = "";
+        for (const byte of bytes) {
+            text += String.fromCharCode(clampByte(byte));
+        }
+        return text;
+    }
+}
+function encodeUtf16String(text, littleEndian, zeroTerminated) {
+    const bytes = [];
+    for (let i = 0; i < text.length; i++) {
+        const code = text.charCodeAt(i);
+        const hi = (code >> 8) & 0xff;
+        const lo = code & 0xff;
+        if (littleEndian) {
+            bytes.push(lo, hi);
+        }
+        else {
+            bytes.push(hi, lo);
+        }
+    }
+    if (zeroTerminated) {
+        bytes.push(0, 0);
+    }
+    return bytes;
+}
+function decodeUtf16Bytes(bytes, littleEndian) {
+    const evenLength = bytes.length - (bytes.length % 2);
+    let text = "";
+    for (let i = 0; i < evenLength; i += 2) {
+        const code = littleEndian
+            ? clampByte(bytes[i]) | (clampByte(bytes[i + 1]) << 8)
+            : (clampByte(bytes[i]) << 8) | clampByte(bytes[i + 1]);
+        if (code === 0) {
+            break;
+        }
+        text += String.fromCharCode(code);
+    }
+    return text;
+}
 /**
  * Class providing a way to work with 64bit pointers from Javascript, this API mimics the same
  * well-known promitive available in Frida, but it's baked by the current session of r2.
@@ -1552,8 +1702,47 @@ exports.NativeCallback = NativeCallback;
  */
 class NativePointer {
     constructor(s, api) {
-        this.api = api ?? exports.R;
-        this.addr = (s == undefined) ? "$$" : ("" + s).trim();
+        const sourceApi = s instanceof NativePointer ? s.api : undefined;
+        this.api = api ?? sourceApi ?? exports.R;
+        this.addr =
+            s === undefined
+                ? "$$"
+                : s instanceof NativePointer
+                    ? s.addr.trim()
+                    : ("" + s).trim();
+    }
+    formatPointer(value) {
+        return value instanceof NativePointer ? value.addr.trim() : ("" + value).trim();
+    }
+    newPointer(value) {
+        return new NativePointer(value, this.api);
+    }
+    formatInteger(value) {
+        return typeof value === "bigint" ? value.toString() : ("" + value).trim();
+    }
+    isBigEndian() {
+        const output = this.api.call("e cfg.bigendian");
+        return output.trim() === "true";
+    }
+    readInteger(byteLength, signed, littleEndian) {
+        const data = this.readByteArray(byteLength);
+        const useLittleEndian = littleEndian ?? !(this.isBigEndian());
+        return signed
+            ? bytesToSignedBigInt(data, useLittleEndian)
+            : bytesToUnsignedBigInt(data, useLittleEndian);
+    }
+    writeInteger(value, byteLength, signed, littleEndian) {
+        const useLittleEndian = littleEndian ?? !(this.isBigEndian());
+        const bigintValue = parseInteger(value);
+        const bytes = signed
+            ? signedBigIntToBytes(bigintValue, byteLength, useLittleEndian)
+            : unsignedBigIntToBytes(bigintValue, byteLength, useLittleEndian);
+        this.writeByteArray(bytes);
+        return true;
+    }
+    pointerSize() {
+        const output = this.api.cmd("e asm.bits");
+        return Math.max(1, parseInt(output.trim(), 10) / 8);
     }
     /**
      * Copy N bytes from current pointer to the destination
@@ -1562,7 +1751,7 @@ class NativePointer {
      * @param {string|number} amount of bytes
      */
     copyTo(addr, size) {
-        this.api.call(`wf ${this.addr} ${size} @ ${addr}`);
+        this.api.cmd(`wf ${this.addr} ${size} @ ${this.formatPointer(addr)}`);
     }
     /**
      * Copy N bytes from given address to the current destination
@@ -1571,7 +1760,7 @@ class NativePointer {
      * @param {string|number} amount of bytes
      */
     copyFrom(addr, size) {
-        this.api.call(`wf ${addr} ${size} @ ${this.addr}`);
+        this.api.cmd(`wf ${this.formatPointer(addr)} ${size} @ ${this.addr}`);
     }
     /**
      * Fill N bytes in this address with zero
@@ -1579,7 +1768,7 @@ class NativePointer {
      * @param {string|number} amount of bytes
      */
     zeroFill(size) {
-        this.api.call(`w0 ${size} @ ${this.addr}`);
+        this.api.cmd(`w0 ${size} @ ${this.addr}`);
     }
     /**
      * Filter a string to be used as a valid flag name
@@ -1591,7 +1780,7 @@ class NativePointer {
         return this.api.call(`fD ${name}`);
     }
     /**
-     * Set a flag (name) at the offset pointed
+     * Set a flag (name) at the address pointed
      *
      * @param {string} name of the flag to set
      * @returns {string} base64 decoded string
@@ -1600,7 +1789,7 @@ class NativePointer {
         this.api.call(`f ${name}=${this.addr}`);
     }
     /**
-     * Remove the flag in the current offset
+     * Remove the flag in the current address
      *
      */
     unsetFlag() {
@@ -1630,44 +1819,114 @@ class NativePointer {
         return this.api.cmd(`agf@${this.addr}`);
     }
     readByteArray(len) {
-        const v = this.api.cmd(`p8j ${len}@${this.addr}`);
-        return JSON.parse(v);
+        if (len <= 0) {
+            return [];
+        }
+        return this.api.cmdj(`p8j ${len}@${this.addr}`);
     }
     readHexString(len) {
-        const v = this.api.cmd(`p8 ${len}@${this.addr}`);
-        return v.trim();
+        if (len <= 0) {
+            return "";
+        }
+        const output = this.api.cmd(`p8 ${len}@${this.addr}`);
+        return output.trim();
+    }
+    slice(length) {
+        return this.readByteArray(length);
+    }
+    writeHexString(hex) {
+        const normalized = normalizeHexString(hex);
+        if (normalized !== "") {
+            this.api.cmd(`wx ${normalized} @ ${this.addr}`);
+        }
+        return this;
     }
     and(a) {
-        const addr = this.api.call(`?v ${this.addr} & ${a}`);
-        return new NativePointer(addr.trim());
+        const addr = this.api.call(`?v ${this.addr} & ${this.formatInteger(a)}`);
+        return this.newPointer(addr.trim());
     }
     or(a) {
-        const addr = this.api.call(`?v ${this.addr} | ${a}`);
-        return new NativePointer(addr.trim());
+        const addr = this.api.call(`?v ${this.addr} | ${this.formatInteger(a)}`);
+        return this.newPointer(addr.trim());
     }
     add(a) {
-        const addr = this.api.call(`?v ${this.addr}+${a}`);
-        return new NativePointer(addr);
+        const addr = this.api.call(`?v ${this.addr} + ${this.formatInteger(a)}`);
+        return this.newPointer(addr.trim());
     }
     sub(a) {
-        const addr = this.api.call(`?v ${this.addr}-${a}`);
-        return new NativePointer(addr);
+        const addr = this.api.call(`?v ${this.addr} - ${this.formatInteger(a)}`);
+        return this.newPointer(addr.trim());
+    }
+    distance(a) {
+        return (this.toBigInt()) - (this.newPointer(a).toBigInt());
     }
     writeByteArray(data) {
-        this.api.cmd("wx " + data.join(""));
+        const hex = byteArrayToHex(data);
+        if (hex !== "") {
+            this.api.cmd(`wx ${hex} @ ${this.addr}`);
+        }
         return this;
+    }
+    patchByteArray(data) {
+        return this.writeByteArray(data);
+    }
+    patchHexString(hex) {
+        return this.writeHexString(hex);
     }
     writeAssembly(instruction) {
         this.api.cmd(`wa ${instruction} @ ${this.addr}`);
         return this;
     }
+    patchInstruction(instruction) {
+        return this.writeAssembly(instruction);
+    }
+    writeString(s) {
+        return this.writeUtf8String(s, false);
+    }
+    writeUtf8String(s, zeroTerminated = false) {
+        return this.writeByteArray(encodeUtf8String(s, zeroTerminated));
+    }
     writeCString(s) {
-        this.api.call("w " + s);
-        return this;
+        return this.writeUtf8String(s, true);
+    }
+    writeUtf16String(s, zeroTerminated = false, littleEndian) {
+        const useLittleEndian = littleEndian ?? !(this.isBigEndian());
+        return this.writeByteArray(encodeUtf16String(s, useLittleEndian, zeroTerminated));
     }
     writeWideString(s) {
-        this.api.call("ww " + s);
-        return this;
+        return this.writeUtf16String(s, true);
+    }
+    patchCString(s) {
+        return this.writeCString(s);
+    }
+    patchWideString(s) {
+        return this.writeWideString(s);
+    }
+    patchData(data) {
+        if (typeof data === "string") {
+            return this.writeHexString(data);
+        }
+        return this.writeByteArray(data);
+    }
+    readString(length) {
+        if (length === undefined) {
+            return this.readCString();
+        }
+        return this.readUtf8String(length);
+    }
+    readUtf8String(length) {
+        if (length === undefined) {
+            const output = this.api.cmdj(`pszj@${this.addr}`);
+            return output.string;
+        }
+        return decodeUtf8Bytes(this.readByteArray(length));
+    }
+    readUtf16String(length, littleEndian) {
+        if (length === undefined) {
+            return this.readWideString();
+        }
+        const useLittleEndian = littleEndian ?? !(this.isBigEndian());
+        return decodeUtf16Bytes(this.readByteArray(length), useLittleEndian);
     }
     /**
      * Check if it's a pointer to the address zero. Also known as null pointer.
@@ -1675,8 +1934,7 @@ class NativePointer {
      * @returns {boolean} true if null
      */
     isNull() {
-        const v = this.toNumber();
-        return v === 0;
+        return (this.toBigInt()) === 0n;
     }
     /**
      * Compare current pointer with the passed one, and return -1, 0 or 1.
@@ -1688,17 +1946,24 @@ class NativePointer {
      * @returns {number} returns -1, 0 or 1 depending on the comparison of the pointers
      */
     compare(a) {
-        const bv = typeof a === "string" || typeof a === "number"
-            ? new NativePointer(a)
-            : a;
-        const dist = r2pipe_js_1.r2.call(`?vi ${this.addr} - ${bv.addr}`);
-        if (dist[0] === "-") {
+        const lhs = this.toBigInt();
+        const rhs = this.newPointer(a).toBigInt();
+        if (lhs < rhs) {
             return -1;
         }
-        if (dist[0] === "0") {
-            return 0;
+        if (lhs > rhs) {
+            return 1;
         }
-        return 1;
+        return 0;
+    }
+    equals(a) {
+        return (this.compare(a)) === 0;
+    }
+    isBelow(a) {
+        return (this.compare(a)) < 0;
+    }
+    isAbove(a) {
+        return (this.compare(a)) > 0;
     }
     /**
      * Check if it's a pointer to the address zero. Also known as null pointer.
@@ -1707,146 +1972,220 @@ class NativePointer {
      */
     pointsToNull() {
         const value = this.readPointer();
-        const v = value.compare(0);
-        return v == 0;
+        return value.isNull();
     }
     toJSON() {
         const output = this.api.cmd("?vi " + this.addr.trim());
         return output.trim();
     }
     toString() {
-        const v = this.api.cmd("?v " + this.addr.trim());
-        return v.trim();
+        const output = this.api.cmd("?v " + this.addr.trim());
+        return output.trim();
+    }
+    toBigInt() {
+        return BigInt(this.toJSON());
     }
     toNumber() {
-        const v = this.toString();
-        return parseInt(v);
+        return bigintToSafeNumber(this.toBigInt(), "NativePointer.toNumber");
     }
     writePointer(p) {
+        this.api.cmd(`wvp ${this.formatPointer(p)} @ ${this.addr}`);
+        return true;
     }
     readRelativePointer() {
-        const v = this.readS32();
-        return this.add(v);
+        return this.add(this.readS32());
     }
     readPointer() {
-        const address = this.api.call("pvp@" + this.addr);
-        return new NativePointer(address);
+        const address = this.api.cmd(`pvp@${this.addr}`);
+        return this.newPointer(address.trim());
+    }
+    follow(levels = 1) {
+        let current = this;
+        for (let i = 0; i < levels; i++) {
+            current = current.readPointer();
+        }
+        return current;
+    }
+    readPointers(count) {
+        const pointers = [];
+        const step = this.pointerSize();
+        let current = this;
+        for (let i = 0; i < count; i++) {
+            pointers.push(current.readPointer());
+            current = current.add(step);
+        }
+        return pointers;
     }
     readS8() {
-        const v = this.api.cmd(`pv1d@${this.addr}`);
-        return parseInt(v);
+        return bigintToSafeNumber(this.readInteger(1, true), "readS8");
     }
     readU8() {
-        const v = this.api.cmd(`pv1u@${this.addr}`);
-        return parseInt(v);
+        return bigintToSafeNumber(this.readInteger(1, false), "readU8");
     }
     readU16() {
-        const v = this.api.cmd(`pv2d@${this.addr}`);
-        return parseInt(v);
+        return bigintToSafeNumber(this.readInteger(2, false), "readU16");
     }
     readU16le() {
-        const v = this.api.cmd(`pv2d@${this.addr}@e:cfg.bigendian=false`);
+        return bigintToSafeNumber(this.readInteger(2, false, true), "readU16le");
     }
     readU16be() {
-        const v = this.api.cmd(`pv2d@${this.addr}@e:cfg.bigendian=true`);
+        return bigintToSafeNumber(this.readInteger(2, false, false), "readU16be");
     }
     readS16() {
-        return parseInt(v);
+        return bigintToSafeNumber(this.readInteger(2, true), "readS16");
     }
     readS16le() {
-        const v = this.api.cmd(`pv2d@${this.addr}@e:cfg.bigendian=false`);
+        return bigintToSafeNumber(this.readInteger(2, true, true), "readS16le");
     }
     readS16be() {
-        const v = this.api.cmd(`pv2d@${this.addr}@e:cfg.bigendian=true`);
+        return bigintToSafeNumber(this.readInteger(2, true, false), "readS16be");
     }
     readS32() {
-        const v = this.api.cmd(`pv4d@${this.addr}`);
-        return parseInt(v);
+        return bigintToSafeNumber(this.readInteger(4, true), "readS32");
+    }
+    readS32le() {
+        return bigintToSafeNumber(this.readInteger(4, true, true), "readS32le");
+    }
+    readS32be() {
+        return bigintToSafeNumber(this.readInteger(4, true, false), "readS32be");
     }
     readU32() {
-        const v = this.api.cmd(`pv4u@${this.addr}`);
-        return parseInt(v);
+        return bigintToSafeNumber(this.readInteger(4, false), "readU32");
     }
     readU32le() {
-        const v = this.api.cmd(`pv4u@${this.addr}@e:cfg.bigendian=false`);
+        return bigintToSafeNumber(this.readInteger(4, false, true), "readU32le");
     }
     readU32be() {
-        const v = this.api.cmd(`pv4u@${this.addr}@e:cfg.bigendian=true`);
+        return bigintToSafeNumber(this.readInteger(4, false, false), "readU32be");
+    }
+    readU64BigInt() {
+        return this.readInteger(8, false);
+    }
+    readU64leBigInt() {
+        return this.readInteger(8, false, true);
+    }
+    readU64beBigInt() {
+        return this.readInteger(8, false, false);
     }
     readU64() {
-        // XXX: use bignum or string here
-        const v = this.api.cmd(`pv8u@${this.addr}`);
-        return parseInt(v);
+        return bigintToSafeNumber(this.readU64BigInt(), "readU64");
     }
     readU64le() {
-        const v = this.api.cmd(`pv8u@${this.addr}@e:cfg.bigendian=false`);
+        return bigintToSafeNumber(this.readU64leBigInt(), "readU64le");
     }
     readU64be() {
-        const v = this.api.cmd(`pv8u@${this.addr}@e:cfg.bigendian=true`);
+        return bigintToSafeNumber(this.readU64beBigInt(), "readU64be");
+    }
+    readU64String() {
+        return (this.readU64BigInt()).toString();
+    }
+    readU64leString() {
+        return (this.readU64leBigInt()).toString();
+    }
+    readU64beString() {
+        return (this.readU64beBigInt()).toString();
+    }
+    readS64() {
+        return this.readInteger(8, true);
+    }
+    readS64le() {
+        return this.readInteger(8, true, true);
+    }
+    readS64be() {
+        return this.readInteger(8, true, false);
+    }
+    readS64String() {
+        return (this.readS64()).toString();
+    }
+    readS64leString() {
+        return (this.readS64le()).toString();
+    }
+    readS64beString() {
+        return (this.readS64be()).toString();
     }
     writeInt(n) {
-        return this.writeU32(n);
+        return this.writeS32(n);
     }
     /**
-     * Write a byte in the current offset, the value must be between 0 and 255
+     * Write a byte in the current address, the value must be between 0 and 255
      *
      * @param {string} n number to write in the pointed byte in the current address
      * @returns {boolean} false if the operation failed
      */
     writeU8(n) {
-        this.api.cmd(`wv1 ${n}@${this.addr}`);
-        return true;
+        return this.writeInteger(n, 1, false);
+    }
+    writeS8(n) {
+        return this.writeInteger(n, 1, true);
     }
     writeU16(n) {
-        this.api.cmd(`wv2 ${n}@${this.addr}`);
-        return true;
+        return this.writeInteger(n, 2, false);
     }
     writeU16be(n) {
-        this.api.cmd(`wv2 ${n}@${this.addr}@e:cfg.bigendian=true`);
-        return true;
+        return this.writeInteger(n, 2, false, false);
     }
     writeU16le(n) {
-        this.api.cmd(`wv2 ${n}@${this.addr}@e:cfg.bigendian=false`);
-        return true;
+        return this.writeInteger(n, 2, false, true);
+    }
+    writeS16(n) {
+        return this.writeInteger(n, 2, true);
+    }
+    writeS16be(n) {
+        return this.writeInteger(n, 2, true, false);
+    }
+    writeS16le(n) {
+        return this.writeInteger(n, 2, true, true);
     }
     writeU32(n) {
-        this.api.cmd(`wv4 ${n}@${this.addr}`);
-        return true;
+        return this.writeInteger(n, 4, false);
     }
     writeU32be(n) {
-        this.api.cmd(`wv4 ${n}@${this.addr}@e:cfg.bigendian=true`);
-        return true;
+        return this.writeInteger(n, 4, false, false);
     }
     writeU32le(n) {
-        this.api.cmd(`wv4 ${n}@${this.addr}@e:cfg.bigendian=false`);
-        return true;
+        return this.writeInteger(n, 4, false, true);
+    }
+    writeS32(n) {
+        return this.writeInteger(n, 4, true);
+    }
+    writeS32be(n) {
+        return this.writeInteger(n, 4, true, false);
+    }
+    writeS32le(n) {
+        return this.writeInteger(n, 4, true, true);
     }
     writeU64(n) {
-        this.api.cmd(`wv8 ${n}@${this.addr}`);
-        return true;
+        return this.writeInteger(n, 8, false);
     }
     writeU64be(n) {
-        this.api.cmd(`wv8 ${n}@${this.addr}@e:cfg.bigendian=true`);
-        return true;
+        return this.writeInteger(n, 8, false, false);
     }
     writeU64le(n) {
-        this.api.cmd(`wv8 ${n}@${this.addr}@e:cfg.bigendian=false`);
-        return true;
+        return this.writeInteger(n, 8, false, true);
+    }
+    writeS64(n) {
+        return this.writeInteger(n, 8, true);
+    }
+    writeS64be(n) {
+        return this.writeInteger(n, 8, true, false);
+    }
+    writeS64le(n) {
+        return this.writeInteger(n, 8, true, true);
     }
     readInt32() {
-        return this.readU32();
+        return this.readS32();
     }
     readCString() {
-        const output = this.api.cmd(`pszj@${this.addr}`);
-        return JSON.parse(output).string;
+        const output = this.api.cmdj(`pszj@${this.addr}`);
+        return output.string;
     }
     readWideString() {
-        const output = this.api.cmd(`pswj@${this.addr}`);
-        return JSON.parse(output).string;
+        const output = this.api.cmdj(`pswj@${this.addr}`);
+        return output.string;
     }
     readPascalString() {
-        const output = this.api.cmd(`pspj@${this.addr}`);
-        return JSON.parse(output).string;
+        const output = this.api.cmdj(`pspj@${this.addr}`);
+        return output.string;
     }
     instruction() {
         const output = this.api.cmdj(`aoj@${this.addr}`);
