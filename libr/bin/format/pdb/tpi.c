@@ -1664,6 +1664,7 @@ static void get_bitfield_print_type(STpiStream *ss, void *type, char **name) {
 	SLF_BITFIELD *bitfeild_info = (SLF_BITFIELD *)ti->type_info;
 
 	ti->get_base_type (ss, ti, (void **)&t);
+	R_RETURN_IF_FAIL (t); // t == NULL indicates malformed PDB?
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
 		tmp_name = strdup (base_type->type);
@@ -1775,6 +1776,7 @@ static void get_nesttype_print_type(STpiStream *ss, void *type, char **name) {
 	char *tmp_name = 0;
 
 	ti->get_index (ss, ti, (void **)&t);
+	R_RETURN_IF_FAIL (t); // t == NULL indicates malformed PDB?
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
 		tmp_name = strdup (base_type->type);
@@ -1806,6 +1808,7 @@ static void get_member_print_type(STpiStream *ss, void *type, char **name) {
 	char *tmp_name = NULL;
 
 	ti->get_index (ss, ti, (void **)&t);
+	R_RETURN_IF_FAIL (t); // t == NULL indicates malformed PDB?
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
 		tmp_name = strdup (base_type->type);
@@ -1825,6 +1828,7 @@ static void get_onemethod_print_type(STpiStream *ss, void *type, char **name) {
 	char *tmp_name = NULL;
 
 	ti->get_index (ss, ti, (void **)&t);
+	R_RETURN_IF_FAIL (t); // t == NULL indicates malformed PDB?
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
 		tmp_name = strdup (base_type->type);
