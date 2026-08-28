@@ -5798,6 +5798,7 @@ void Elf_(free)(ELFOBJ* eo) {
 	free (eo->ppc32_thunks);
 	sdb_free (eo->kv);
 	r_list_free (eo->inits);
+	r_list_free (eo->trycatch_list);
 	free (eo);
 }
 

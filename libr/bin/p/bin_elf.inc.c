@@ -1636,6 +1636,19 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 	}
 }
 
+// parse the exception regions referenced by the eh_frame FDEs
+static RList *trycatch(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
+	ELFOBJ *eo = bf->bo->bin_obj;
+	if (!eo->trycatch_list) {
+		eo->trycatch_list = r_list_newf ((RListFree)r_bin_trycatch_free);
+		if (eo->trycatch_list) {
+			r_bin_dwarf_parse_eh_frame (bf, eo->trycatch_list);
+		}
+	}
+	return eo->trycatch_list;
+}
+
 static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
 	RBinReloc *ptr = NULL;

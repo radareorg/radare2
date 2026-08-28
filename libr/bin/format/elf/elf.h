@@ -206,6 +206,7 @@ struct Elf_(obj_t) {
 	RVecRBinElfField g_fields;
 	int limit;
 	char *osabi;
+	RList *trycatch_list; // cache of RBinTrycatch for the trycatch plugin callback
 };
 
 int Elf_(has_va)(struct Elf_(obj_t) *bin);

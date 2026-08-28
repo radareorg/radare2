@@ -4424,3 +4424,205 @@ R_IPI void r_bin_dwarf_parse_lsda(RBinFile *bf, RList *result, ut64 fcn_addr, ut
 			lpstart + landing_pad);
 	}
 }
+
+/* eh_frame CIE parser, only extracts the pointer encodings needed to locate
+ * the LSDA of each FDE. */
+
+typedef struct {
+	ut8 fde_encoding;
+	ut8 lsda_encoding;
+	bool has_augmentation_data;
+} EhCie;
+
+static bool eh_parse_cie(const EhReader *section_reader, const ut8 *record, const ut8 *record_end, EhCie *cie) {
+	EhReader r = *section_reader;
+	r.p = record;
+	r.end = record_end;
+	cie->fde_encoding = DW_EH_PE_ABSPTR;
+	cie->lsda_encoding = DW_EH_PE_OMIT;
+	cie->has_augmentation_data = false;
+	if (r.p >= r.end) {
+		return false;
+	}
+	ut8 version = *r.p++;
+	const ut8 *augmentation = r.p;
+	const ut8 *nul = memchr (augmentation, 0, r.end - augmentation);
+	if (!nul) {
+		return false;
+	}
+	r.p = nul + 1;
+	if (version >= 4) {
+		if (r.end - r.p < 2) {
+			return false;
+		}
+		r.bits = *r.p++ * 8;
+		ut8 segment_size = *r.p++;
+		if (segment_size) {
+			return false;
+		}
+	}
+	if (augmentation[0] == 'e' && augmentation[1] == 'h') {
+		ut64 ignored;
+		if (!eh_encoded (&r, DW_EH_PE_ABSPTR, &ignored, false)) {
+			return false;
+		}
+	}
+	ut64 ignored_u;
+	st64 ignored_s;
+	if (!eh_uleb (&r, &ignored_u) || !eh_sleb (&r, &ignored_s)) {
+		return false;
+	}
+	if (version == 1) {
+		if (r.p >= r.end) {
+			return false;
+		}
+		r.p++; // return address register
+	} else if (!eh_uleb (&r, &ignored_u)) {
+		return false;
+	}
+	if (augmentation[0] != 'z') {
+		return true;
+	}
+	cie->has_augmentation_data = true;
+	ut64 augmentation_size;
+	if (!eh_uleb (&r, &augmentation_size) || augmentation_size > (ut64)(r.end - r.p)) {
+		return false;
+	}
+	r.end = r.p + augmentation_size;
+	const ut8 *a;
+	for (a = augmentation + 1; *a; a++) {
+		switch (*a) {
+		case 'L':
+			if (r.p >= r.end) {
+				return false;
+			}
+			cie->lsda_encoding = *r.p++;
+			break;
+		case 'P':
+			if (r.p >= r.end) {
+				return false;
+			}
+			{
+				ut8 encoding = *r.p++;
+				ut64 ignored;
+				if (!eh_encoded (&r, encoding, &ignored, true)) {
+					return false;
+				}
+			}
+			break;
+		case 'R':
+			if (r.p >= r.end) {
+				return false;
+			}
+			cie->fde_encoding = *r.p++;
+			break;
+		case 'S':
+			break;
+		default:
+			return false;
+		}
+	}
+	return true;
+}
+
+// walk the FDEs in the eh_frame section parsing the LSDA referenced by each one
+R_IPI void r_bin_dwarf_parse_eh_frame(RBinFile *bf, RList *result) {
+	R_RETURN_IF_FAIL (bf && bf->bo && result);
+	RBinSection *section = NULL, *s;
+	R_VEC_FOREACH (&bf->bo->sections_vec, s) {
+		if (s->name && r_str_endswith (s->name, ".eh_frame")) {
+			section = s;
+			break;
+		}
+	}
+	if (!section || section->size < 8 || section->size > ST32_MAX) {
+		return;
+	}
+	const ut8 *bytes = get_section_bytes (bf, section);
+	if (!bytes) {
+		return;
+	}
+	const ut64 section_size = section->bytes.len;
+	RBinInfo *info = bf->bo->info;
+	EhReader section_reader = {
+		.buf = bytes,
+		.end = bytes + section_size,
+		.vaddr = bf->bo->baddr_shift + section->vaddr,
+		.baddr = bf->bo->baddr_shift + bf->bo->baddr,
+		.bits = (info && info->bits)? info->bits: 64,
+		.be = info? info->big_endian: false,
+	};
+	ut64 offset = 0;
+	while (offset + 4 <= section_size) {
+		const ut8 *entry = bytes + offset;
+		ut64 length = r_read_ble32 (entry, section_reader.be);
+		size_t length_size = 4;
+		size_t id_size = 4;
+		if (!length) {
+			break;
+		}
+		if (length == UT32_MAX) {
+			if (offset + 12 > section_size) {
+				break;
+			}
+			length = r_read_ble64 (entry + 4, section_reader.be);
+			length_size = 12;
+			id_size = 8;
+		}
+		if (length < id_size || length > section_size - offset - length_size) {
+			break;
+		}
+		const ut8 *id_field = entry + length_size;
+		const ut8 *record = id_field + id_size;
+		const ut8 *record_end = entry + length_size + length;
+		// a zero id marks a CIE, FDEs hold the relative offset to their CIE
+		ut64 cie_pointer = r_read_ble (id_field, section_reader.be, id_size * 8);
+		if (!cie_pointer || cie_pointer > (ut64)(id_field - bytes)) {
+			offset += length_size + length;
+			continue;
+		}
+		const ut8 *cie_entry = id_field - cie_pointer;
+		ut64 cie_offset = cie_entry - bytes;
+		if (cie_offset + 4 > section_size) {
+			offset += length_size + length;
+			continue;
+		}
+		ut64 cie_length = r_read_ble32 (cie_entry, section_reader.be);
+		size_t cie_length_size = 4;
+		size_t cie_id_size = 4;
+		if (cie_length == UT32_MAX && cie_offset + 12 <= section_size) {
+			cie_length = r_read_ble64 (cie_entry + 4, section_reader.be);
+			cie_length_size = 12;
+			cie_id_size = 8;
+		}
+		if (cie_length < cie_id_size
+				|| cie_length > section_size - cie_offset - cie_length_size
+				|| r_read_ble (cie_entry + cie_length_size, section_reader.be, cie_id_size * 8)) {
+			offset += length_size + length;
+			continue;
+		}
+		EhCie cie;
+		if (eh_parse_cie (&section_reader, cie_entry + cie_length_size + cie_id_size,
+				cie_entry + cie_length_size + cie_length, &cie)) {
+			EhReader fde = section_reader;
+			fde.p = record;
+			fde.end = record_end;
+			ut64 fcn_addr, range;
+			if (eh_encoded (&fde, cie.fde_encoding, &fcn_addr, true)
+					&& eh_encoded (&fde, cie.fde_encoding & 0x0f, &range, false)) {
+				fde.fcn_addr = fcn_addr;
+				ut64 augmentation_size;
+				if (cie.has_augmentation_data && cie.lsda_encoding != DW_EH_PE_OMIT
+						&& eh_uleb (&fde, &augmentation_size)
+						&& augmentation_size <= (ut64)(fde.end - fde.p)) {
+					fde.end = fde.p + augmentation_size;
+					ut64 lsda;
+					if (eh_encoded (&fde, cie.lsda_encoding, &lsda, true) && lsda) {
+						r_bin_dwarf_parse_lsda (bf, result, fcn_addr, lsda);
+					}
+				}
+			}
+		}
+		offset += length_size + length;
+	}
+}
