@@ -4321,9 +4321,18 @@ static void eh_add_action(RBinFile *bf, RList *result, const EhReader *lsda,
 		}
 		return;
 	}
-	const ut8 *record = action_table + action - 1;
+	if (!action_table) {
+		return;
+	}
+	const ut64 table_offset = action_table - lsda->buf;
+	const ut64 lsda_size = lsda->end - lsda->buf;
+	if (action - 1 >= lsda_size - table_offset) {
+		return;
+	}
+	const ut8 *record = action_table + (action - 1);
 	// the depth limit keeps cyclic next-record chains from looping forever
-	for (size_t depth = 0; record >= action_table && record < lsda->end && depth < 64; depth++) {
+	size_t depth;
+	for (depth = 0; depth < 64; depth++) {
 		EhReader action_reader = *lsda;
 		action_reader.p = record;
 		st64 type_filter;
@@ -4347,7 +4356,12 @@ static void eh_add_action(RBinFile *bf, RList *result, const EhReader *lsda,
 		if (!next) {
 			break;
 		}
-		record = next_field + next;
+		// the offset is relative to the field holding it and may be negative
+		const ut64 target = (ut64)(next_field - lsda->buf) + (ut64)next;
+		if (target < table_offset || target >= lsda_size) {
+			break;
+		}
+		record = lsda->buf + target;
 	}
 }
 
@@ -4432,6 +4446,7 @@ typedef struct {
 	ut8 fde_encoding;
 	ut8 lsda_encoding;
 	bool has_augmentation_data;
+	int bits; // address size, honoring the one given by the version 4 CIEs
 } EhCie;
 
 static bool eh_parse_cie(const EhReader *section_reader, const ut8 *record, const ut8 *record_end, EhCie *cie) {
@@ -4441,10 +4456,15 @@ static bool eh_parse_cie(const EhReader *section_reader, const ut8 *record, cons
 	cie->fde_encoding = DW_EH_PE_ABSPTR;
 	cie->lsda_encoding = DW_EH_PE_OMIT;
 	cie->has_augmentation_data = false;
+	cie->bits = section_reader->bits;
 	if (r.p >= r.end) {
 		return false;
 	}
-	ut8 version = *r.p++;
+	const ut8 version = *r.p++;
+	// version 2 was never used and anything newer than 5 is unknown
+	if (version != 1 && (version < 3 || version > 5)) {
+		return false;
+	}
 	const ut8 *augmentation = r.p;
 	const ut8 *nul = memchr (augmentation, 0, r.end - augmentation);
 	if (!nul) {
@@ -4455,8 +4475,13 @@ static bool eh_parse_cie(const EhReader *section_reader, const ut8 *record, cons
 		if (r.end - r.p < 2) {
 			return false;
 		}
-		r.bits = *r.p++ * 8;
-		ut8 segment_size = *r.p++;
+		const ut8 address_size = *r.p++;
+		if (address_size != 4 && address_size != 8) {
+			return false;
+		}
+		cie->bits = address_size * 8;
+		r.bits = cie->bits;
+		const ut8 segment_size = *r.p++;
 		if (segment_size) {
 			return false;
 		}
@@ -4503,9 +4528,9 @@ static bool eh_parse_cie(const EhReader *section_reader, const ut8 *record, cons
 				return false;
 			}
 			{
-				ut8 encoding = *r.p++;
+				const ut8 encoding = *r.p++;
 				ut64 ignored;
-				if (!eh_encoded (&r, encoding, &ignored, true)) {
+				if (!eh_encoded (&r, encoding & ~DW_EH_PE_INDIRECT, &ignored, true)) {
 					return false;
 				}
 			}
@@ -4516,7 +4541,10 @@ static bool eh_parse_cie(const EhReader *section_reader, const ut8 *record, cons
 			}
 			cie->fde_encoding = *r.p++;
 			break;
+		// flags taking no augmentation data: signal frame, b-key and mte frames
 		case 'S':
+		case 'B':
+		case 'G':
 			break;
 		default:
 			return false;
@@ -4525,12 +4553,71 @@ static bool eh_parse_cie(const EhReader *section_reader, const ut8 *record, cons
 	return true;
 }
 
+// decode the header of an eh_frame record, returns false on a terminator or a truncated entry
+static bool eh_record_header(const EhReader *r, ut64 offset, ut64 *length, ut64 *length_size, ut64 *id_size) {
+	const ut64 section_size = r->end - r->buf;
+	if (offset + 4 > section_size) {
+		return false;
+	}
+	const ut8 *entry = r->buf + offset;
+	ut64 len = r_read_ble32 (entry, r->be);
+	*length_size = 4;
+	*id_size = 4;
+	if (len == UT32_MAX) { // 64 bit dwarf format
+		if (offset + 12 > section_size) {
+			return false;
+		}
+		len = r_read_ble64 (entry + 4, r->be);
+		*length_size = 12;
+		*id_size = 8;
+	}
+	// a zero length marks the end of the section
+	if (len < *id_size || len > section_size - offset - *length_size) {
+		return false;
+	}
+	*length = len;
+	return true;
+}
+
+// resolve the lsda pointer held in the augmentation data of one fde
+static void eh_parse_fde(RBinFile *bf, RList *result, const EhReader *section_reader,
+		const EhCie *cie, const ut8 *record, const ut8 *record_end, HtUP *seen) {
+	if (!cie->has_augmentation_data || cie->lsda_encoding == DW_EH_PE_OMIT) {
+		return;
+	}
+	// the indirect flag asks for a dereference that can't be done from the section bytes
+	if ((cie->fde_encoding | cie->lsda_encoding) & DW_EH_PE_INDIRECT) {
+		return;
+	}
+	EhReader r = *section_reader;
+	r.p = record;
+	r.end = record_end;
+	r.bits = cie->bits;
+	ut64 fcn_addr, range, augmentation_size, lsda;
+	if (!eh_encoded (&r, cie->fde_encoding, &fcn_addr, true)
+			|| !eh_encoded (&r, cie->fde_encoding & 0x0f, &range, false)
+			|| !eh_uleb (&r, &augmentation_size)
+			|| augmentation_size > (ut64)(r.end - r.p)) {
+		return;
+	}
+	r.fcn_addr = fcn_addr;
+	r.end = r.p + augmentation_size;
+	if (!eh_encoded (&r, cie->lsda_encoding, &lsda, true) || !lsda) {
+		return;
+	}
+	// every lsda describes a single function, so parse each one just once
+	if (!ht_up_insert (seen, lsda, (void *)(size_t)1)) {
+		return;
+	}
+	r_bin_dwarf_parse_lsda (bf, result, fcn_addr, lsda);
+}
+
 // walk the FDEs in the eh_frame section parsing the LSDA referenced by each one
 R_IPI void r_bin_dwarf_parse_eh_frame(RBinFile *bf, RList *result) {
 	R_RETURN_IF_FAIL (bf && bf->bo && result);
 	RBinSection *section = NULL, *s;
 	R_VEC_FOREACH (&bf->bo->sections_vec, s) {
-		if (s->name && r_str_endswith (s->name, ".eh_frame")) {
+		if (!s->is_segment && s->name && r_str_endswith (s->name, ".eh_frame")) {
 			section = s;
 			break;
 		}
@@ -4539,90 +4626,56 @@ R_IPI void r_bin_dwarf_parse_eh_frame(RBinFile *bf, RList *result) {
 		return;
 	}
 	const ut8 *bytes = get_section_bytes (bf, section);
-	if (!bytes) {
+	if (!bytes || section->bytes.len < 8) {
 		return;
 	}
-	const ut64 section_size = section->bytes.len;
 	RBinInfo *info = bf->bo->info;
 	EhReader section_reader = {
 		.buf = bytes,
-		.end = bytes + section_size,
+		.end = bytes + section->bytes.len,
 		.vaddr = bf->bo->baddr_shift + section->vaddr,
 		.baddr = bf->bo->baddr_shift + bf->bo->baddr,
 		.bits = (info && info->bits)? info->bits: 64,
 		.be = info? info->big_endian: false,
 	};
+	HtUP *seen = ht_up_new0 ();
+	if (!seen) {
+		return;
+	}
+	// most objects share a single CIE, so caching the last one avoids reparsing it
+	EhCie cie = {0};
+	ut64 cached_cie = UT64_MAX;
+	bool cie_ok = false;
 	ut64 offset = 0;
-	while (offset + 4 <= section_size) {
-		const ut8 *entry = bytes + offset;
-		ut64 length = r_read_ble32 (entry, section_reader.be);
-		size_t length_size = 4;
-		size_t id_size = 4;
-		if (!length) {
-			break;
-		}
-		if (length == UT32_MAX) {
-			if (offset + 12 > section_size) {
-				break;
-			}
-			length = r_read_ble64 (entry + 4, section_reader.be);
-			length_size = 12;
-			id_size = 8;
-		}
-		if (length < id_size || length > section_size - offset - length_size) {
-			break;
-		}
-		const ut8 *id_field = entry + length_size;
-		const ut8 *record = id_field + id_size;
-		const ut8 *record_end = entry + length_size + length;
+	ut64 length, length_size, id_size;
+	while (eh_record_header (&section_reader, offset, &length, &length_size, &id_size)) {
+		const ut64 next_offset = offset + length_size + length;
+		const ut8 *id_field = bytes + offset + length_size;
 		// a zero id marks a CIE, FDEs hold the relative offset to their CIE
-		ut64 cie_pointer = r_read_ble (id_field, section_reader.be, id_size * 8);
+		const ut64 cie_pointer = r_read_ble (id_field, section_reader.be, id_size * 8);
 		if (!cie_pointer || cie_pointer > (ut64)(id_field - bytes)) {
-			offset += length_size + length;
+			offset = next_offset;
 			continue;
 		}
-		const ut8 *cie_entry = id_field - cie_pointer;
-		ut64 cie_offset = cie_entry - bytes;
-		if (cie_offset + 4 > section_size) {
-			offset += length_size + length;
-			continue;
-		}
-		ut64 cie_length = r_read_ble32 (cie_entry, section_reader.be);
-		size_t cie_length_size = 4;
-		size_t cie_id_size = 4;
-		if (cie_length == UT32_MAX && cie_offset + 12 <= section_size) {
-			cie_length = r_read_ble64 (cie_entry + 4, section_reader.be);
-			cie_length_size = 12;
-			cie_id_size = 8;
-		}
-		if (cie_length < cie_id_size
-				|| cie_length > section_size - cie_offset - cie_length_size
-				|| r_read_ble (cie_entry + cie_length_size, section_reader.be, cie_id_size * 8)) {
-			offset += length_size + length;
-			continue;
-		}
-		EhCie cie;
-		if (eh_parse_cie (&section_reader, cie_entry + cie_length_size + cie_id_size,
-				cie_entry + cie_length_size + cie_length, &cie)) {
-			EhReader fde = section_reader;
-			fde.p = record;
-			fde.end = record_end;
-			ut64 fcn_addr, range;
-			if (eh_encoded (&fde, cie.fde_encoding, &fcn_addr, true)
-					&& eh_encoded (&fde, cie.fde_encoding & 0x0f, &range, false)) {
-				fde.fcn_addr = fcn_addr;
-				ut64 augmentation_size;
-				if (cie.has_augmentation_data && cie.lsda_encoding != DW_EH_PE_OMIT
-						&& eh_uleb (&fde, &augmentation_size)
-						&& augmentation_size <= (ut64)(fde.end - fde.p)) {
-					fde.end = fde.p + augmentation_size;
-					ut64 lsda;
-					if (eh_encoded (&fde, cie.lsda_encoding, &lsda, true) && lsda) {
-						r_bin_dwarf_parse_lsda (bf, result, fcn_addr, lsda);
-					}
+		const ut64 cie_offset = (id_field - bytes) - cie_pointer;
+		if (cie_offset != cached_cie) {
+			ut64 cie_length, cie_length_size, cie_id_size;
+			cached_cie = cie_offset;
+			cie_ok = false;
+			if (eh_record_header (&section_reader, cie_offset, &cie_length, &cie_length_size, &cie_id_size)) {
+				const ut8 *cie_entry = bytes + cie_offset;
+				// the pointed record must be a CIE, so its id must be zero
+				if (!r_read_ble (cie_entry + cie_length_size, section_reader.be, cie_id_size * 8)) {
+					cie_ok = eh_parse_cie (&section_reader, cie_entry + cie_length_size + cie_id_size,
+						cie_entry + cie_length_size + cie_length, &cie);
 				}
 			}
 		}
-		offset += length_size + length;
+		if (cie_ok) {
+			eh_parse_fde (bf, result, &section_reader, &cie,
+				id_field + id_size, bytes + next_offset, seen);
+		}
+		offset = next_offset;
 	}
+	ht_up_free (seen);
 }

@@ -1684,6 +1684,15 @@ static void ds_show_anos(RDisasmState *ds) {
 	}
 }
 
+// exception region markers describe a range, they don't name the code they cover
+static RFlagItem *closest_named_flag(RCore *core, ut64 addr) {
+	RFlagItem *f = r_flag_get_at (core->flags, addr, true);
+	while (f && f->addr > 0 && f->space && !strcmp (f->space->name, R_FLAGS_FS_TRYCATCH)) {
+		f = r_flag_get_at (core->flags, f->addr - 1, true);
+	}
+	return f;
+}
+
 static void ds_show_xrefs(RDisasmState *ds) {
 	char xrefs_char[32] = {0}; // no more than 32 xrefs meh
 	int xci = 0;
@@ -1802,12 +1811,12 @@ static void ds_show_xrefs(RDisasmState *ds) {
 				}
 				r_list_append (addrs, r_num_dup (refi->addr));
 			} else {
-				f = r_flag_get_at (core->flags, refi->addr, true);
+				f = closest_named_flag (core, refi->addr);
 				if (f) {
 					if (!is_at_second_last) {
 						const RAnalRef *next = RVecAnalRef_at (xrefs, i + 1);
 						ut64 next_addr = next->addr;
-						next_f = r_flag_get_at (core->flags, next_addr, true);
+						next_f = closest_named_flag (core, next_addr);
 						if (next_f && f->addr == next_f->addr) {
 							if (xci < 32) {
 								xrefs_char[xci++] = r_anal_ref_perm_tochar (refi);
@@ -5884,7 +5893,7 @@ static void ds_pre_emulation(RDisasmState *ds) {
 	if (!ds->pre_emu) {
 		return;
 	}
-	RFlagItem *f = r_flag_get_at (ds->core->flags, ds->core->addr, true);
+	RFlagItem *f = closest_named_flag (ds->core, ds->core->addr);
 	if (!f) {
 		return;
 	}
