@@ -116,6 +116,7 @@ RBinPlugin r_bin_plugin_cgc = {
 	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
+	.trycatch = &trycatch,
 //	.dbginfo = &r_bin_dbginfo_elf,
 	.create = &create,
 	.patch_relocs = &patch_relocs,
