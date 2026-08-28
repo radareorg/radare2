@@ -395,7 +395,8 @@ bool test_r_anal_function_set_signature_uses_canonical_type_name(void) {
 	mu_assert_streq (arg0->type, "const char *", "first typed param type");
 	mu_assert_streq (arg1->name, "value", "second typed param name");
 	mu_assert_streq (arg1->type, "int *", "second typed param type");
-	mu_assert_streq (signature->signature, "int scanf (const char *format, int *value);", "canonical signature string");
+	mu_assert_streq (signature->signature, "int sym.imp.__isoc99_scanf (const char *format, int *value);",
+		"declaration must carry the function's own name, not the type db key");
 	r_anal_function_signature_free (signature);
 	mu_assert_streq (f->callconv, "amd64", "typed apply must sync live callconv");
 
@@ -426,7 +427,7 @@ bool test_r_anal_function_set_signature_uses_canonical_type_name(void) {
 	mu_end;
 }
 
-bool test_r_anal_function_get_signature_string_uses_import_flag_name(void) {
+bool test_r_anal_function_get_signature_string_resolves_import_flag_prototype(void) {
 	RCore *core = r_core_new ();
 	mu_assert_notnull (core, "Couldn't create new RCore");
 	RAnal *anal = core->anal;
@@ -442,7 +443,9 @@ bool test_r_anal_function_get_signature_string_uses_import_flag_name(void) {
 
 	char *sig = r_anal_function_get_signature_string (f);
 	mu_assert_notnull (sig, "import flag signature");
-	mu_assert_streq (sig, "int scanf (const char *fmt);", "import flag must resolve canonical type name");
+	// the prototype is resolved through the import flag, but the declaration
+	// names the function so that an unedited afs! cannot rename it
+	mu_assert_streq (sig, "int fcn.00003000 (const char *fmt);", "import flag must resolve canonical prototype");
 	free (sig);
 	r_core_free (core);
 	mu_end;
@@ -662,7 +665,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_get_signature);
 	mu_run_test (test_r_anal_function_get_signature_prefers_exact_type_link);
 	mu_run_test (test_r_anal_function_set_signature_uses_canonical_type_name);
-	mu_run_test (test_r_anal_function_get_signature_string_uses_import_flag_name);
+	mu_run_test (test_r_anal_function_get_signature_string_resolves_import_flag_prototype);
 	mu_run_test (test_r_anal_function_get_signature_uses_basename_for_dbg_prefixed_function);
 	mu_run_test (test_r_anal_function_get_signature_string_falls_back_to_vars);
 	mu_run_test (test_r_anal_function_get_signature_string_hides_variadic_placeholder);

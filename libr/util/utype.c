@@ -1097,35 +1097,30 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name)
 	return result;
 }
 
-R_API char *r_type_func_name(Sdb *types, const char *fname) {
+// walks name, then the last dotted component, then the fuzzy guesser. When
+// `key` is set the db key the match went through is returned instead of the
+// name that was matched, because r_type_func_exist trims leading lodashes
+static char *type_func_lookup(Sdb *types, const char *fname, bool key) {
 	const char *str = fname;
 	const char *name = fname;
 	if (r_type_func_exist (types, fname)) {
-		return strdup (fname);
+		return strdup (key? trim_lodashes (types, fname): fname);
 	}
 	while ( (str = strchr (str, '.'))) {
 		str++;
 		name = str;
 	}
 	if (r_type_func_exist (types, name)) {
-		return strdup (name);
+		return strdup (key? trim_lodashes (types, name): name);
 	}
 	return r_type_func_guess (types, fname);
 }
 
+R_API char *r_type_func_name(Sdb *types, const char *fname) {
+	return type_func_lookup (types, fname, false);
+}
+
 // same walk as r_type_func_name, but hands back the db key the match went through
 R_API char *r_type_func_key(Sdb *types, const char *fname) {
-	const char *str = fname;
-	const char *name = fname;
-	if (r_type_func_exist (types, fname)) {
-		return strdup (trim_lodashes (types, fname));
-	}
-	while ( (str = strchr (str, '.'))) {
-		str++;
-		name = str;
-	}
-	if (r_type_func_exist (types, name)) {
-		return strdup (trim_lodashes (types, name));
-	}
-	return r_type_func_guess (types, fname);
+	return type_func_lookup (types, fname, true);
 }
