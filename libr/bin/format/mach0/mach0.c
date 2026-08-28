@@ -2562,6 +2562,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	if (mo->libs_loaded) {
 		RVecMach0Lib_fini (&mo->libs_cache);
 	}
+	r_list_free (mo->trycatch_list);
 	free (mo->func_start);
 	free (mo->signature);
 	free (mo->signature_der);

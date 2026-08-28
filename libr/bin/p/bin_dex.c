@@ -1350,7 +1350,10 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 								tc->kind = R_BIN_TRYCATCH_CATCH;
 								tc->type_filter = handler_type;
 								if (handler_type < dex->header.types_size) {
-									tc->type = strdup (getstr (dex, dex->types[handler_type].descriptor_id));
+									const char *tn = getstr (dex, dex->types[handler_type].descriptor_id);
+									if (tn) {
+										tc->type = strdup (tn);
+									}
 								}
 								r_list_append (dex->trycatch_list, tc);
 							}
