@@ -214,6 +214,9 @@ R_API char *r_config_list(RConfig *cfg, const char *str, int rad) {
 				if (r_str_startswith (node->name, "dir.")) {
 					continue;
 				}
+				if (!strcmp (node->name, "scr.theme")) {
+					continue;
+				}
 				config_print_node (cfg, node, sb, NULL, "'e ", "", verbose);
 			}
 		}
