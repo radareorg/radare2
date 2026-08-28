@@ -468,6 +468,7 @@ RBinPlugin r_bin_plugin_pe = {
 	.strings = &strings,
 	.libs = &libs,
 	.relocs = relocs,
+	.trycatch = &pe_trycatch,
 	.minstrlen = 4,
 	.create = &create,
 	.get_vaddr = &get_vaddr,

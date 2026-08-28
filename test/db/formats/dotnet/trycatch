@@ -1,0 +1,174 @@
+NAME=dotnet: HelloWorld.dll - IL finally clauses
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+iwj~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "index": 0,
+    "source": 268444096,
+    "from": 268444112,
+    "to": 268444139,
+    "handler": 268444139,
+    "filter": 0,
+    "kind": "cleanup"
+  },
+  {
+    "index": 1,
+    "source": 268444196,
+    "from": 268444285,
+    "to": 268444372,
+    "handler": 268444372,
+    "filter": 0,
+    "kind": "cleanup"
+  }
+]
+EOF
+RUN
+
+NAME=dotnet: HelloWorld.dll - trycatch flags
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+iw
+EOF
+EXPECT=<<EOF
+f try.0.100021c0.from=0x100021d0
+f try.0.100021c0.to=0x100021eb
+f try.0.100021c0.cleanup=0x100021eb
+f try.1.10002224.from=0x1000227d
+f try.1.10002224.to=0x100022d4
+f try.1.10002224.cleanup=0x100022d4
+EOF
+RUN
+
+NAME=dotnet: AStyleWhore.exe - typed IL catch clauses
+FILE=bins/cil/AStyleWhore.exe
+CMDS=<<EOF
+iwj~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "index": 0,
+    "source": 4203244,
+    "from": 4203250,
+    "to": 4203298,
+    "handler": 4203298,
+    "filter": 0,
+    "kind": "catch",
+    "typeFilter": 16777278,
+    "type": "System.BadImageFormatException"
+  },
+  {
+    "index": 1,
+    "source": 4203244,
+    "from": 4203250,
+    "to": 4203298,
+    "handler": 4203325,
+    "filter": 0,
+    "kind": "catch",
+    "typeFilter": 16777280,
+    "type": "System.DllNotFoundException"
+  },
+  {
+    "index": 2,
+    "source": 4203244,
+    "from": 4203250,
+    "to": 4203298,
+    "handler": 4203345,
+    "filter": 0,
+    "kind": "catch",
+    "typeFilter": 16777279,
+    "type": "System.Exception"
+  },
+  {
+    "index": 3,
+    "source": 4203416,
+    "from": 4203422,
+    "to": 4203450,
+    "handler": 4203450,
+    "filter": 0,
+    "kind": "catch",
+    "typeFilter": 16777278,
+    "type": "System.BadImageFormatException"
+  },
+  {
+    "index": 4,
+    "source": 4203416,
+    "from": 4203422,
+    "to": 4203450,
+    "handler": 4203477,
+    "filter": 0,
+    "kind": "catch",
+    "typeFilter": 16777280,
+    "type": "System.DllNotFoundException"
+  },
+  {
+    "index": 5,
+    "source": 4203416,
+    "from": 4203422,
+    "to": 4203450,
+    "handler": 4203497,
+    "filter": 0,
+    "kind": "catch",
+    "typeFilter": 16777279,
+    "type": "System.Exception"
+  }
+]
+EOF
+RUN
+
+NAME=dotnet: ch22.exe - IL filter clause
+FILE=bins/pe/ch22.exe
+CMDS=<<EOF
+iwj~{[1]}
+EOF
+EXPECT=<<EOF
+{"index":1,"source":4204484,"from":4204592,"to":4204600,"handler":4204636,"filter":4204600,"kind":"filter","typeFilter":0}
+EOF
+RUN
+
+NAME=dotnet: mitigation_nothing.exe - IL exception clause kinds
+FILE=bins/pe/mitigation_nothing.exe
+CMDS=<<EOF
+iw~from~?
+iw~catch=~?
+iw~filter=~?
+iw~cleanup=~?
+EOF
+EXPECT=<<EOF
+22
+7
+4
+11
+EOF
+RUN
+
+NAME=dotnet: mscorlib.dll - IL exception clause kinds
+FILE=bins/pe/mscorlib.dll
+CMDS=<<EOF
+iw~from~?
+iw~catch=~?
+iw~filter=~?
+iw~cleanup=~?
+EOF
+EXPECT=<<EOF
+835
+323
+0
+512
+EOF
+RUN
+
+NAME=dotnet: mscorlib.dll - catch all and typed clauses
+FILE=bins/pe/mscorlib.dll
+CMDS=<<EOF
+iwj~{[3]}
+iwj~{[18]}
+EOF
+EXPECT=<<EOF
+{"index":3,"source":4204700,"from":4204728,"to":4204744,"handler":4204744,"filter":0,"kind":"catch","typeFilter":33554659,"type":"System.NullReferenceException"}
+{"index":18,"source":4240192,"from":4240206,"to":4240617,"handler":4240617,"filter":0,"kind":"catch","typeFilter":33554822,"type":"System.Object","catchAll":true}
+EOF
+RUN
