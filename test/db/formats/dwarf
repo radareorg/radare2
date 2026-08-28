@@ -102,7 +102,7 @@ EXPECT=<<EOF
 Mammal
 Mammal_401300
 struct
-void method.Mammal.Mammal__ (Mammal *this);
+void method.constructor.Mammal.Mammal__ (Mammal *this);
 Mammal_401300
 EOF
 RUN
