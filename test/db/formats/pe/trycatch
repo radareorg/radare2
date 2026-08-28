@@ -1,0 +1,107 @@
+NAME=PE64: kernel32.dll - SEH scope table kinds
+FILE=bins/pe/kernel32.dll
+CMDS=<<EOF
+iw~from~?
+iw~catch=~?
+iw~filter=~?
+iw~cleanup=~?
+EOF
+EXPECT=<<EOF
+148
+7
+52
+89
+EOF
+RUN
+
+NAME=PE64: dhcpssvc.dll - SEH scope table kinds
+FILE=bins/pe/dhcpssvc.dll
+CMDS=<<EOF
+iw~from~?
+iw~catch=~?
+iw~filter=~?
+iw~cleanup=~?
+EOF
+EXPECT=<<EOF
+66
+46
+9
+11
+EOF
+RUN
+
+NAME=PE64: kernel32.dll - __except and __finally regions
+FILE=bins/pe/kernel32.dll
+CMDS=<<EOF
+iwj~{[0]}
+iwj~{[3]}
+iwj~{[6]}
+EOF
+EXPECT=<<EOF
+{"index":0,"source":6442456588,"from":6442456666,"to":6442456816,"handler":6442605238,"filter":0,"kind":"cleanup"}
+{"index":3,"source":6442461416,"from":6442461499,"to":6442461725,"handler":6442605354,"filter":0,"kind":"cleanup"}
+{"index":6,"source":6442464484,"from":6442464538,"to":6442464679,"handler":6442464679,"filter":6442605461,"kind":"filter","typeFilter":0}
+EOF
+RUN
+
+NAME=PE64: hello_gs_x64.exe - __GSHandlerCheck_SEH regions
+FILE=bins/pe/hello_gs_x64.exe
+CMDS=<<EOF
+iwj~{[0]}
+iwj~{[4]}
+iwj~{[10]}
+EOF
+EXPECT=<<EOF
+{"index":0,"source":5368713676,"from":5368713717,"to":5368713978,"handler":5368713978,"filter":5368783488,"kind":"filter","typeFilter":0}
+{"index":4,"source":5368720976,"from":5368721006,"to":5368721016,"handler":5368783692,"filter":0,"kind":"cleanup"}
+{"index":10,"source":5368731884,"from":5368731902,"to":5368731910,"handler":5368731910,"filter":0,"kind":"catch","typeFilter":0}
+EOF
+RUN
+
+NAME=PE64: synthetic __CxxFrameHandler3 try/catch blocks
+FILE=malloc://2048
+CMDS=<<EOF
+wx 4d5a @ 0x0
+wx 4000000050450000648602 @ 0x3c
+wx f00022000b020e00000200000004000000000000001000000010000000000040010000000010000000020000060000000000000006000000000000000030000000040000000000000300000000001000000000000010000000000000000010000000000000100000000000000000000010 @ 0x54
+wx 2000000c @ 0xe1
+wx 2e746578740000000010000000100000000200000004 @ 0x148
+wx 200000602e726461746100000010000000200000000200000006 @ 0x16c
+wx 40000040 @ 0x194
+wx c3 @ 0x400
+wx 100000001100001020000000000000090000000012000020200000000000002205931902000000000000000100000050200000030000007020 @ 0x601
+wx 01000000020000009020 @ 0x658
+wx 100000ffffffff101000000000000040100000ffffffff000000000000000000000000b82000002000000060100000300000004000000000000000000000008010000030 @ 0x671
+wx 2e3f41564d794572726f724040 @ 0x6c8
+wtf .tmp_pe64cxx.exe 2048
+o .tmp_pe64cxx.exe
+iwj~{}
+rm .tmp_pe64cxx.exe
+EOF
+EXPECT=<<EOF
+[
+  {
+    "index": 0,
+    "source": 5368713216,
+    "from": 5368713232,
+    "to": 5368713280,
+    "handler": 5368713312,
+    "filter": 0,
+    "kind": "catch",
+    "typeFilter": 0,
+    "type": "MyError"
+  },
+  {
+    "index": 1,
+    "source": 5368713216,
+    "from": 5368713232,
+    "to": 5368713280,
+    "handler": 5368713344,
+    "filter": 0,
+    "kind": "catch",
+    "typeFilter": 0,
+    "catchAll": true
+  }
+]
+EOF
+RUN

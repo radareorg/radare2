@@ -697,15 +697,21 @@ static void core_anal_fcn_trycatch(RCore *core, RAnalFunction *fcn) {
 	if (!core->anal->opt.trycatch) {
 		return;
 	}
-	char *suffix = r_str_newf (".%"PFMT64x".catch", fcn->addr);
-	if (!suffix) {
-		return;
-	}
-	TrycatchHandlerCollector ctx = {
-		.suffix = suffix,
-	};
+	// catch and filter handlers are entrypoints of the owning function, the
+	// cleanup ones only run while unwinding so they are left out on purpose
+	const char *kinds[] = { "catch", "filter" };
+	TrycatchHandlerCollector ctx = { 0 };
 	RVecUT64_init (&ctx.handlers);
-	r_flag_foreach_prefix (core->flags, "try.", 4, collect_trycatch_handler, &ctx);
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (kinds); i++) {
+		char *suffix = r_str_newf (".%"PFMT64x".%s", fcn->addr, kinds[i]);
+		if (!suffix) {
+			break;
+		}
+		ctx.suffix = suffix;
+		r_flag_foreach_prefix (core->flags, "try.", 4, collect_trycatch_handler, &ctx);
+		free (suffix);
+	}
 	ut64 *handler;
 	R_VEC_FOREACH (&ctx.handlers, handler) {
 		if (*handler == fcn->addr || r_anal_function_contains (fcn, *handler)) {
@@ -717,7 +723,6 @@ static void core_anal_fcn_trycatch(RCore *core, RAnalFunction *fcn) {
 		}
 	}
 	RVecUT64_fini (&ctx.handlers);
-	free (suffix);
 }
 
 static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
