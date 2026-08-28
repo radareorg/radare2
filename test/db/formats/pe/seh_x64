@@ -9,7 +9,15 @@ NAME=PE: seh_x64.exe - Get trycatchs as JSON
 FILE=bins/pe/seh_x64.exe
 CMDS=iwj~{[0]}
 EXPECT=<<EOF
-{"index":0,"source":5368713232,"from":5368713292,"to":5368713318,"handler":5368713318,"filter":0}
+{"index":0,"source":5368713232,"from":5368713292,"to":5368713318,"handler":5368713318,"filter":0,"kind":"catch","typeFilter":0}
+EOF
+RUN
+
+NAME=PE: seh_x64.exe - __except with a filter function
+FILE=bins/pe/seh_x64.exe
+CMDS=iwj~{[2]}
+EXPECT=<<EOF
+{"index":2,"source":5368713232,"from":5368713348,"to":5368713364,"handler":5368713364,"filter":5368716592,"kind":"filter","typeFilter":0}
 EOF
 RUN
 
@@ -25,18 +33,18 @@ f try.1.140001010.to=0x140001076
 f try.1.140001010.catch=0x140001076
 f try.2.140001010.from=0x140001084
 f try.2.140001010.to=0x140001094
-f try.2.140001010.catch=0x140001094
+f try.2.140001010.filter=0x140001094
 f try.3.140001170.from=0x140001192
 f try.3.140001170.to=0x1400011c6
-f try.3.140001170.catch=0x1400011c6
+f try.3.140001170.filter=0x1400011c6
 f try.4.14000132c.from=0x140001355
 f try.4.14000132c.to=0x14000145a
-f try.4.14000132c.catch=0x14000145a
+f try.4.14000132c.filter=0x14000145a
 f try.5.14000132c.from=0x14000148e
 f try.5.14000132c.to=0x1400014a0
-f try.5.14000132c.catch=0x14000145a
+f try.5.14000132c.filter=0x14000145a
 f try.6.1400015d0.from=0x1400015d7
 f try.6.1400015d0.to=0x140001661
-f try.6.1400015d0.catch=0x140001661
+f try.6.1400015d0.filter=0x140001661
 EOF
 RUN

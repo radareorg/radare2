@@ -27,5 +27,7 @@ EXPECT=<<EOF
 |       :   0x7ff5d4981a7      5f             pop rdi
 |       `=< 0x7ff5d4981a8      e9cffdffff     jmp 0x7ff5d497f7c
 ..
+      ||    ;-- try.64.7ff5d49823c.from:
+      ||    ;-- try.64.7ff5d49823c.to:
 EOF
 RUN
