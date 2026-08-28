@@ -677,8 +677,8 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		r_file_rm (prj_file);
 		r_core_cmdf (core, "prj save %s", prj_file);
 		if (!r_file_exists (prj_file)) {
-			R_LOG_ERROR ("Cannot create binary project '%s'", prj_file);
-			ret = false;
+			// the binary project is an optional artifact, the rc.r2 script is already saved
+			R_LOG_WARN ("Cannot create binary project '%s', the project script was saved", prj_file);
 		}
 		free (prj_file);
 	}
@@ -700,32 +700,28 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		free (bin_file);
 	}
 	if (core->prj->rvc || r_config_get_b (core->config, "prj.vc")) {
+		// version control is a secondary step, a failure here must not
+		// discard the project script that was already saved on disk
 		// assume that if the repo is not loaded, the repo doesn't exist
 		if (!core->prj->rvc) {
 			core->prj->rvc = rvc_open (prj_dir, RVC_TYPE_GIT);
-			if (!core->prj->rvc) {
-				R_LOG_WARN ("Cannot initialize git repositorty");
-				free (prj_dir);
-				free (script_path);
-				return false;
+		}
+		if (!core->prj->rvc) {
+			R_LOG_WARN ("Cannot initialize the version control repository, project saved without versioning");
+		} else {
+			RList *paths = r_list_new ();
+			if (paths && r_list_append (paths, prj_dir)) {
+				const char *author = r_config_get (core->config, "cfg.user");
+				const char *message = r_config_get (core->config, "prj.vc.message");
+				if (rvc_commit (core->prj->rvc, message, author, paths)) {
+					rvc_save (core->prj->rvc);
+				} else {
+					// commit fails when there's nothing new to commit, which is not a save error
+					R_LOG_WARN ("Nothing to commit or version control commit failed, project saved anyway");
+				}
 			}
-		}
-		RList *paths = r_list_new ();
-		if (!paths || !r_list_append (paths, prj_dir)) {
 			r_list_free (paths);
-			free (prj_dir);
-			free (script_path);
-			return false;
 		}
-		const char *author = r_config_get (core->config, "cfg.user");
-		const char *message = r_config_get (core->config, "prj.vc.message");
-		if (!rvc_commit (core->prj->rvc, message, author, paths)) {
-			r_list_free (paths);
-			free (prj_dir);
-			free (script_path);
-			return false;
-		}
-		rvc_save (core->prj->rvc);
 	}
 	if (r_config_get_b (core->config, "prj.history")) {
 		char *history = r_core_cmd_str (core, "!!");
