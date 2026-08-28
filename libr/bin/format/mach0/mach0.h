@@ -218,6 +218,7 @@ struct MACH0_(obj_t) {
 	} thread_state;
 	bool libs_loaded;
 	RVecMach0Lib libs_cache;
+	RList *trycatch_list; // cache of RBinTrycatch for the trycatch plugin callback
 	int nlibs;
 	ut64 size;
 	ut64 baddr;

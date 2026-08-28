@@ -9,3 +9,28 @@ EXPECT=<<EOF
 {"index":1,"source":4294977836,"from":4294978052,"to":4294978060,"handler":4294978076,"filter":0,"kind":"catch","typeFilter":1,"catchAll":true}
 EOF
 RUN
+
+NAME=Mach-O exception regions in disassembly
+FILE=bins/mach0/ClassCpp.out
+CMDS=<<EOF
+e scr.utf8=false
+pd 11 @ 0x1000029f4
+EOF
+EXPECT=<<EOF
+            0x1000029f4      c0035fd6       ret
+            ;-- try.0.10000292c.cleanup:
+            0x1000029f8      e01b00f9       str x0, [sp, 0x30]
+            0x1000029fc      e80301aa       mov x8, x1
+            0x100002a00      e82f00b9       str w8, [sp, 0x2c]
+            ;-- try.1.10000292c.from:
+            0x100002a04      a0a300d1       sub x0, x29, 0x28
+            0x100002a08      41000094       bl sym.MyClass.__ZN7MyClassD1Ev
+            ;-- try.1.10000292c.to:
+        ,=< 0x100002a0c      01000014       b 0x100002a10
+       ,`-> 0x100002a10      01000014       b 0x100002a14
+       `--> 0x100002a14      e01b40f9       ldr x0, [sp, 0x30]
+            0x100002a18      a1040094       bl sym.imp._Unwind_Resume
+            ;-- try.1.10000292c.catch:
+            0x100002a1c      47000094       bl sym.___clang_call_terminate
+EOF
+RUN
