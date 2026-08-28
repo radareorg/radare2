@@ -25,6 +25,8 @@ typedef struct {
 	ut64 last_addr; // anchor of the last printed line
 	char *transfer; // pending transfer the current block's own jump renders
 	RList *trys; // RBinTrycatch entries touching the function, borrowed from the bin plugin
+	int open_trys; // try braces printed and not yet closed
+	ut64 attached; // handler being rendered attached to its try close
 } PDCState;
 
 static const char *pseudo_arg_name(RAnal *anal, const char *arg) {
@@ -610,11 +612,15 @@ static void print_pipe_header(PDCState *state, ut64 addr) {
 	print_str (state, " | ");
 }
 
+static int tc_depth(PDCState *state, ut64 addr);
+
 static void print_newline(PDCState *state, ut64 addr, int indent, bool synthetic) {
 	RStrBuf *sb = state_sb (state);
 	if (!synthetic) {
 		state->last_addr = addr;
 	}
+	// a line inside an exception region indents like any structured body
+	indent += tc_depth (state, addr);
 	r_strbuf_append (sb, "\n");
 	if (state->show_asm) {
 		if (synthetic) {
@@ -690,15 +696,15 @@ static const char *tc_kind_name(const RBinTrycatch *tc) {
 	}
 }
 
-// "catch (std::exception) for try 0xfrom..0xto", typeless kinds drop the parens
+// "catch (std::exception) { // try 0xfrom..0xto", typeless kinds drop the parens
 static char *tc_handler_tag(const RBinTrycatch *tc) {
 	const char *ty = NULL;
 	if (tc->kind != R_BIN_TRYCATCH_CLEANUP && tc->kind != R_BIN_TRYCATCH_FILTER) {
 		ty = tc->type? tc->type: (tc->catch_all? "...": NULL);
 	}
 	return ty
-		? r_str_newf ("%s (%s) for try 0x%08" PFMT64x "..0x%08" PFMT64x, tc_kind_name (tc), ty, tc->from, tc->to)
-		: r_str_newf ("%s for try 0x%08" PFMT64x "..0x%08" PFMT64x, tc_kind_name (tc), tc->from, tc->to);
+		? r_str_newf ("catch (%s) { // try 0x%08" PFMT64x "..0x%08" PFMT64x, ty, tc->from, tc->to)
+		: r_str_newf ("%s { // try 0x%08" PFMT64x "..0x%08" PFMT64x, tc_kind_name (tc), tc->from, tc->to);
 }
 
 static RBinTrycatch *trycatch_handler_at(PDCState *state, ut64 addr) {
@@ -730,30 +736,93 @@ static bool tc_region_seen(PDCState *state, const RBinTrycatch *tc) {
 	return false;
 }
 
-// exception region boundaries render as comment lines anchored on their
-// address; the orphan pass labels the handler itself, so it skips that mark
-static void emit_trycatch_marks(PDCState *state, ut64 addr, int indent, bool with_handler) {
+// regions containing the address; print_newline shifts its lines by this
+static int tc_depth(PDCState *state, ut64 addr) {
+	int depth = 0;
 	RListIter *iter;
 	RBinTrycatch *tc;
 	r_list_foreach (state->trys, iter, tc) {
-		if ((addr == tc->from || addr == tc->to) && tc_region_seen (state, tc)) {
+		if (addr >= tc->from && addr < tc->to && !tc_region_seen (state, tc)) {
+			depth++;
+		}
+	}
+	return depth;
+}
+
+static void render_bb_body_lines(PDCState *state, RAnalBlock *bb, int indent);
+static bool bb_addr_is_goto_target(RAnalFunction *fcn, ut64 addr);
+
+// a handler only the exception path enters renders cuddled on its try close,
+// which is where C puts it; one reached by normal flow stays in its own place
+static bool attach_handler(PDCState *state, const RBinTrycatch *tc, int indent) {
+	RAnalBlock *hb = r_anal_get_block_at (state->core->anal, tc->handler);
+	if (!hb || r_bitset_test (state->marked, hb->addr)
+			|| !r_anal_function_contains (state->fcn, tc->handler)
+			|| bb_addr_is_goto_target (state->fcn, tc->handler)) {
+		return false;
+	}
+	char *tag = tc_handler_tag (tc);
+	print_line_at (state, tc->to, indent, true, "} %s", tag);
+	free (tag);
+	const ut64 jump = state->bb_jump;
+	const ut64 fail = state->bb_fail;
+	const ut64 attached = state->attached;
+	state->attached = tc->handler;
+	render_bb_body_lines (state, hb, indent + 1);
+	state->attached = attached;
+	state->bb_jump = jump;
+	state->bb_fail = fail;
+	print_line_at (state, tc->handler, indent, true, "}");
+	return true;
+}
+
+// region boundaries render as real braces; print_newline adds the depth of the
+// anchor, which includes the opening region itself, so the header passes it back
+static void emit_trycatch_marks(PDCState *state, ut64 addr, int indent) {
+	RListIter *iter;
+	RBinTrycatch *tc;
+	r_list_foreach (state->trys, iter, tc) {
+		if (tc_region_seen (state, tc)) {
 			continue;
 		}
+		if (addr == tc->to && state->open_trys > 0) {
+			state->open_trys--;
+			if (!attach_handler (state, tc, indent)) {
+				print_line_at (state, addr, indent, true, "} // end try");
+			}
+		}
 		if (addr == tc->from) {
-			print_line_at (state, addr, indent, true, "// try { // %s at 0x%08" PFMT64x, tc_kind_name (tc), tc->handler);
+			print_line_at (state, addr, indent - 1, true, "try { // %s at 0x%08" PFMT64x, tc_kind_name (tc), tc->handler);
+			state->open_trys++;
 		}
-		if (addr == tc->to) {
-			print_line_at (state, addr, indent, true, "// } // end try from 0x%08" PFMT64x, tc->from);
+	}
+}
+
+// without per-line addresses the orphan pass anchors boundary braces on the
+// edges of the block that contains them
+static void orphan_trycatch_bounds(PDCState *state, RAnalBlock *bb, bool opening) {
+	RListIter *iter;
+	RBinTrycatch *tc;
+	const ut64 end = bb->addr + bb->size;
+	r_list_foreach (state->trys, iter, tc) {
+		if (tc_region_seen (state, tc)) {
+			continue;
 		}
-		if (with_handler && addr == tc->handler) {
-			char *tag = tc_handler_tag (tc);
-			print_line_at (state, addr, indent, true, "// %s", tag);
-			free (tag);
+		if (!opening && tc->to > bb->addr && tc->to <= end && state->open_trys > 0) {
+			print_line_at (state, tc->to, 1, true, "} // end try");
+			state->open_trys--;
+		}
+		if (opening && tc->from >= bb->addr && tc->from < end) {
+			print_line_at (state, tc->from, 0, true, "try { // %s at 0x%08" PFMT64x, tc_kind_name (tc), tc->handler);
+			state->open_trys++;
 		}
 	}
 }
 
 static RList *pdc_collect_trycatch(RCore *core, RAnalFunction *fcn) {
+	if (!r_config_get_b (core->config, "pdc.trycatch")) {
+		return NULL;
+	}
 	RBinFile *bf = r_bin_cur (core->bin);
 	RList *all = bf? r_bin_file_get_trycatch (bf): NULL;
 	if (!all) {
@@ -774,12 +843,7 @@ static RList *pdc_collect_trycatch(RCore *core, RAnalFunction *fcn) {
 }
 
 // a case flag names the orphan it labels, renames included, so never truncate it
-static char *orphan_tag(PDCState *state, ut64 addr) {
-	RBinTrycatch *tc = trycatch_handler_at (state, addr);
-	if (tc) {
-		return tc_handler_tag (tc);
-	}
-	RCore *core = state->core;
+static char *orphan_tag(RCore *core, ut64 addr) {
 	RFlagItem *fi = r_flag_get_in (core->flags, addr);
 	if (!fi || !r_str_startswith (fi->name, "case.")) {
 		return strdup ("orphan");
@@ -994,12 +1058,22 @@ static void collect_switch_addrs(PDCState *state) {
 }
 
 static void emit_code_lines(PDCState *state, char *code, ut64 start_addr, int indent) {
+	// a region ending on this block head closes before its handler opens; an
+	// attached handler already got its header from its try close
+	emit_trycatch_marks (state, start_addr, indent);
+	RBinTrycatch *h = (start_addr == state->attached)? NULL: trycatch_handler_at (state, start_addr);
+	if (h) {
+		char *tag = tc_handler_tag (h);
+		print_line (state, start_addr, indent, "%s", tag);
+		free (tag);
+		indent++;
+	}
 	RList *lines = r_str_split_list (code, "\n", 0);
 	RListIter *iter;
 	const char *line;
 	ut64 addr = start_addr;
 	ut64 jump_at = UT64_MAX;
-	ut64 mark_at = UT64_MAX;
+	ut64 mark_at = start_addr;
 	r_list_foreach (lines, iter, line) {
 		if (*line == '0') {
 			ut64 at = r_num_get (NULL, line);
@@ -1010,7 +1084,7 @@ static void emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 			line = s? r_str_trim_head_ro (s + 1): "";
 		}
 		if (addr != mark_at) {
-			emit_trycatch_marks (state, addr, indent, true);
+			emit_trycatch_marks (state, addr, indent);
 			mark_at = addr;
 		}
 		if (part_of_a_switch (state, addr)) {
@@ -1035,15 +1109,17 @@ static void emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 		print_insn_line (state, addr, indent, "%s", line);
 	}
 	r_list_free (lines);
-	if (jump_at == UT64_MAX) {
-		return;
+	if (jump_at != UT64_MAX) {
+		// the block's own jump renders the transfer after it, past a delay slot
+		if (state->transfer) {
+			print_insn_line (state, jump_at, indent, "%s", state->transfer);
+			R_FREE (state->transfer);
+		} else if (state->show_asm) {
+			print_asm_only (state, jump_at);
+		}
 	}
-	// the block's own jump renders the transfer after it, past a delay slot
-	if (state->transfer) {
-		print_insn_line (state, jump_at, indent, "%s", state->transfer);
-		R_FREE (state->transfer);
-	} else if (state->show_asm) {
-		print_asm_only (state, jump_at);
+	if (h) {
+		print_line (state, addr, indent - 1, "}");
 	}
 }
 
@@ -1154,6 +1230,9 @@ static char *find_switch_expr(RCore *core, RAnalFunction *fcn, RAnalBlock *sw_bb
 }
 
 static void render_bb_body_lines(PDCState *state, RAnalBlock *bb, int indent) {
+	if (r_bitset_test (state->marked, bb->addr)) {
+		return;
+	}
 	char *code = fetch_bb_pseudo (state, bb);
 	// mark only once the body is in hand, so a failed fetch leaves the block to the orphan pass
 	if (code) {
@@ -1405,7 +1484,7 @@ static void emit_bb_body_no_back_jump(PDCState *state, RAnalBlock *bb, ut64 back
 			rendered = s? r_str_trim_head_ro (s + 1): "";
 		}
 		if (addr != mark_at) {
-			emit_trycatch_marks (state, addr, indent, true);
+			emit_trycatch_marks (state, addr, indent);
 			mark_at = addr;
 		}
 		if (R_STR_ISEMPTY (rendered)) {
@@ -2187,6 +2266,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	}
 	collect_switch_addrs (&state);
 	state.trys = pdc_collect_trycatch (core, state.fcn);
+	state.attached = UT64_MAX;
 	r_config_hold (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", "asm.stackptr", NULL);
 	r_config_hold (hc, "asm.addr", "asm.flags", "asm.lines.fcn", "asm.comments", NULL);
 	r_config_hold (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.sub.names", NULL);
@@ -2598,10 +2678,14 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		if (R_STR_ISNOTEMPTY (r_str_trim_head_ro (s))) {
 			const size_t start = r_strbuf_length (state.codestr);
 			state.last_addr = bb->addr;
-			// a region boundary on the block head renders even without per-line addresses
-			emit_trycatch_marks (&state, bb->addr, 1, false);
-			const bool labeled = bb_addr_is_goto_target (state.fcn, bb->addr)
-				|| trycatch_handler_at (&state, bb->addr);
+			orphan_trycatch_bounds (&state, bb, true);
+			RBinTrycatch *h = trycatch_handler_at (&state, bb->addr);
+			if (h) {
+				char *tag = tc_handler_tag (h);
+				print_line (&state, bb->addr, 1, "%s", tag);
+				free (tag);
+			}
+			const bool labeled = bb_addr_is_goto_target (state.fcn, bb->addr);
 			if (!labeled && (state.show_asm || state.show_addr)) {
 				// without a label the block starts on its body lines, which carry their own columns
 				PRINTF ("\n");
@@ -2613,7 +2697,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 				NEWLINE (bb->addr, labeled? 1: 0);
 			}
 			if (labeled) {
-				char *tag = orphan_tag (&state, bb->addr);
+				char *tag = orphan_tag (core, bb->addr);
 				PRINTF ("loc_0x%08" PFMT64x ": // %s\n%s", bb->addr, tag, s);
 				free (tag);
 			} else {
@@ -2628,11 +2712,23 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 			} else {
 				PRINTGOTO (nextbbaddr, bb->jump);
 			}
+			if (h) {
+				print_line (&state, bb->addr, 1, "}");
+			}
+			orphan_trycatch_bounds (&state, bb, false);
 			annotate_offset (&state, start, bb->addr);
 		}
 		free (s);
 	}
 	r_list_free (visited);
+	// balance the region braces whose end never rendered; the epilogue anchors
+	// on addresses inside those regions, so drop the depth shift first
+	r_list_free (state.trys);
+	state.trys = NULL;
+	while (state.open_trys > 0) {
+		state.open_trys--;
+		print_line (&state, state.last_addr, 1 + state.open_trys, "} // end try");
+	}
 	indent = 0;
 	print_line (&state, state.last_addr, indent, "}");
 	PRINTF ("\n");
@@ -2665,7 +2761,6 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		r_strbuf_free (state.codestr);
 	}
 	free (state.transfer);
-	r_list_free (state.trys);
 	sdb_free (state.db);
 	sdb_free (state.goto_cache);
 	r_bitset_free (state.marked);

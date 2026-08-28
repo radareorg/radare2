@@ -1510,98 +1510,132 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdc trycatch marks mach0 compact unwind
+NAME=pdc trycatch blocks mach0 compact unwind
 FILE=bins/mach0/ClassCpp.out
 CMDS=<<EOF
 e scr.color=0
 aaa
 s main
-pdc~// try {
+pdc~try { //
 pdc~end try
-pdc~for try
+pdc~// try 0x
 EOF
 EXPECT=<<EOF
-        // try { // cleanup at 0x1000029f8
-    loc_0x100002a1c: // catch (...) for try 0x100002a04..0x100002a0c
+        try { // cleanup at 0x1000029f8
+    } // end try
+    catch (...) { // try 0x100002a04..0x100002a0c
 EOF
 RUN
 
-NAME=pdc trycatch marks mach0 structured
+NAME=pdc trycatch blocks mach0 structured
 FILE=bins/mach0/ClassCpp.out
 ARGS=-e pdc.structured=1
 CMDS=<<EOF
 e scr.color=0
 aaa
 s main
-pdc~// try {
+pdc~try { //
 pdc~end try
-pdc~for try
+pdc~// try 0x
 EOF
 EXPECT=<<EOF
-    // try { // cleanup at 0x1000029f8
-    // } // end try from 0x100002960
-    // catch (...) for try 0x100002a04..0x100002a0c
+    try { // cleanup at 0x1000029f8
+    } // end try
+    catch (...) { // try 0x100002a04..0x100002a0c
 EOF
 RUN
 
-NAME=pdc trycatch marks elf itanium typed catch
+NAME=pdc trycatch blocks elf itanium attached typed catch
 FILE=bins/elf/0pack
 CMDS=<<EOF
 e scr.color=0
 af @ 0x4779b4
 s 0x4779b4
-pdc~// try {
-pdc~end try
-pdc~for try
+pdc~try { // catch
+pdc~// try 0x
 EOF
 EXPECT=<<EOF
-        // try { // catch at 0x004779d8
-        // } // end try from 0x004779d0
-    loc_0x004779d8: // catch (std::exception) for try 0x004779d0..0x004779d3
+        try { // catch at 0x004779d8
+        } catch (std::exception) { // try 0x004779d0..0x004779d3
 EOF
 RUN
 
-NAME=pdc trycatch marks pe64 seh
+NAME=pdc trycatch blocks pe64 seh
 FILE=bins/pe/dhcpssvc.dll
 CMDS=<<EOF
 e scr.color=0
 af @ 0x7ff5d426bdc
 s 0x7ff5d426bdc
-pdc~// try {
-pdc~for try
+pdc~try { //
+pdc~end try
+pdc~// try 0x
 EOF
 EXPECT=<<EOF
-    // try { // catch at 0x7ff5d426eb2
-    loc_0x7ff5d426eb2: // catch for try 0x7ff5d426e95..0x7ff5d426ea3
+    try { // catch at 0x7ff5d426eb2
+    } // end try
+    catch { // try 0x7ff5d426e95..0x7ff5d426ea3
 EOF
 RUN
 
-NAME=pdc trycatch marks dotnet finally
+NAME=pdc trycatch blocks dotnet finally
 FILE=bins/dotnet/HelloWorld.dll
 CMDS=<<EOF
 e scr.color=0
 s 0x100021c0
 af
-pdc~// try {
+pdc~try { //
+pdc~end try
 EOF
 EXPECT=<<EOF
-        // try { // cleanup at 0x100021eb
+        try { // cleanup at 0x100021eb
+    } // end try
 EOF
 RUN
 
-NAME=pdc trycatch marks dex typed catch
+NAME=pdc trycatch blocks dex attached catch
 FILE=bins/dex/dex38.dex
 CMDS=<<EOF
 e scr.color=0
 af @ 0x1378
 s 0x1378
-pdc~// try {
-pdc~end try
-pdc~for try
+pdc~try { //
+pdc~// try 0x
+pdc~v0 = exception
 EOF
 EXPECT=<<EOF
-        // try { // catch at 0x000013d8
-        // } // end try from 0x00001384
-    loc_0x000013d8: // catch (Ljava/lang/Throwable;) for try 0x00001384..0x000013b2
+        try { // catch at 0x000013d8
+        } catch (Ljava/lang/Throwable;) { // try 0x00001384..0x000013b2
+            v0 = exception
+EOF
+RUN
+
+NAME=pdc trycatch blocks dex structured
+FILE=bins/dex/dex38.dex
+ARGS=-e pdc.structured=1
+CMDS=<<EOF
+e scr.color=0
+af @ 0x1378
+s 0x1378
+pdc~try { //
+pdc~// try 0x
+EOF
+EXPECT=<<EOF
+    try { // catch at 0x000013d8
+    } catch (Ljava/lang/Throwable;) { // try 0x00001384..0x000013b2
+EOF
+RUN
+
+NAME=pdc trycatch disabled with pdc.trycatch=false
+FILE=bins/dex/dex38.dex
+CMDS=<<EOF
+e scr.color=0
+e pdc.trycatch=false
+af @ 0x1378
+s 0x1378
+pdc~try { //
+pdc~catch (
+pdc~end try
+EOF
+EXPECT=<<EOF
 EOF
 RUN
