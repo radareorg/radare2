@@ -37,3 +37,67 @@ EXPECT=<<EOF
 2,3
 EOF
 RUN
+
+NAME=nested cond skipped branch
+FILE=-
+CMDS=ae 0,?{,1,?{,7,}{,9,},},3
+EXPECT=<<EOF
+3
+EOF
+RUN
+
+NAME=nested cond else arm
+FILE=-
+CMDS=ae 1,?{,0,?{,7,}{,9,},},3
+EXPECT=<<EOF
+9,3
+EOF
+RUN
+
+NAME=nested cond then arm
+FILE=-
+CMDS=ae 1,?{,1,?{,7,}{,9,},},3
+EXPECT=<<EOF
+7,3
+EOF
+RUN
+
+NAME=triple nested cond skipped branch
+FILE=-
+CMDS=ae 0,?{,1,?{,1,?{,7,}{,9,},},},3
+EXPECT=<<EOF
+3
+EOF
+RUN
+
+NAME=nested cond followed by outer else arm
+FILE=-
+CMDS=ae 0,?{,1,?{,7,}{,9,},5,}{,4,},3
+EXPECT=<<EOF
+4,3
+EOF
+RUN
+
+NAME=nested cond in v850 satadd
+FILE=-
+ARGS=-a v850
+CMDS=<<EOF
+e asm.cpu=e0
+wx c110
+aei
+aeim
+ar r1=1
+ar r2=1
+aes
+ar r2
+ar r1=0x7fffffff
+ar r2=1
+ar pc=0
+aes
+ar r2
+EOF
+EXPECT=<<EOF
+0x00000002
+0x7fffffff
+EOF
+RUN

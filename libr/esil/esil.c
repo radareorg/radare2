@@ -1074,7 +1074,10 @@ static bool runword(REsil *esil, RStrs w) {
 	}
 	const char c0 = w.a[0];
 	if (wlen == 2 && c0 == '}' && w.a[1] == '{') {
-		esil->skip = (esil->skip == 0);
+		// skip counts nesting depth, not a boolean
+		if (esil->skip < 2) {
+			esil->skip = (esil->skip == 0);
+		}
 		return true;
 	}
 	if (wlen == 1 && c0 == '}') {
