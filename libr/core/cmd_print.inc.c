@@ -8166,6 +8166,10 @@ static int cmd_print(void *data, const char *input) {
 	if (len < 0) {
 		len = -len;
 	}
+	/* pf, pm and pa don't take a length and never read the block, so don't size an allocation from their argument */
+	if (input[0] && strchr ("fma", input[0])) {
+		len = core->blocksize;
+	}
 	if (len > core->blocksize) {
 		block = calloc (1, len);
 		if (block) {
