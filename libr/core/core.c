@@ -2894,6 +2894,7 @@ R_API void r_core_fini(RCore *c) {
 	free (c->theme);
 	free (c->themepath);
 	r_search_free (c->search);
+	r_core_anal_trycatch_index_reset (c);
 	r_flag_free (c->flags);
 	r_fs_free (c->fs);
 	r_egg_free (c->egg);
