@@ -75,4 +75,9 @@ EXPECT=<<EOF
 0x64
 0x0
 EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot seek to unknown address 'unkval' (unknown symbol)
+ERROR: Cannot seek to unknown address ']' (cannot find opening [)
+ERROR: Cannot seek to unknown address '[' (cannot find closing ])
+EOF
 RUN

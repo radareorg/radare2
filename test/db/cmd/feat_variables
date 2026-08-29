@@ -36,6 +36,7 @@ s $FB
 s
 EOF
 EXPECT=<<EOF
+ERROR: Cannot seek to unknown address '$FB' (cant find function)
 0x2c
 EOF
 RUN
