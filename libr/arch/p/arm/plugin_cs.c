@@ -1762,8 +1762,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_FCMPE:
 	case ARM64_INS_FCCMP:
 	case ARM64_INS_FCCMPE:
+		// setf would wipe the cond guard emitted before the switch
 		if (ISREG64 (1)) {
-			r_strbuf_setf (&op->esil,
+			r_strbuf_appendf (&op->esil,
 				"%d,%s,F2D,NAN,%d,%s,F2D,NAN,|,vf,:="
 				",%d,%s,F2D,%d,%s,F2D,F==,vf,|,zf,:="
 				",%d,%s,F2D,%d,%s,F2D,F<,vf,|,nf,:=",
@@ -1772,7 +1773,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 				REGBITS64 (1), REG64 (1), REGBITS64 (1), REG64 (0)
 			);
 		} else {
-			r_strbuf_setf (&op->esil,
+			r_strbuf_appendf (&op->esil,
 				"%d,%s,F2D,NAN,vf,:="
 				",0,I2D,%d,%s,F2D,F==,vf,|,zf,:="
 				",0,I2D,%d,%s,F2D,F<,vf,|,nf,:=",
@@ -1782,10 +1783,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 			);
 		}
 
-		if (insn->id == ARM64_INS_FCCMP || insn->id == ARM64_INS_FCCMPE) {
-			r_strbuf_append (&op->esil, ",");
-			arm_prefix_cond (op, insn->detail->arm64.cc);
-			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,0x%"PFMT64x",|,pstate,:=", IMM64(2) << 28);
+		// an AL cond opens no ?{, so there is no else arm
+		if (*postfix && (insn->id == ARM64_INS_FCCMP || insn->id == ARM64_INS_FCCMPE)) {
+			r_strbuf_appendf (&op->esil, ",}{,pstate,1,28,1,<<,-,&,0x%"PFMT64x",|,pstate,:=", IMM64 (2) << 28);
 		}
 		break;
 	case ARM64_INS_FCVT:
@@ -2164,10 +2164,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		ARG64_APPEND (&op->esil, 0);
 		r_strbuf_append (&op->esil, ",^,&,>>,vf,:=");
 
-		if (insn->id == ARM64_INS_CCMP || insn->id == ARM64_INS_CCMN) {
-			r_strbuf_append (&op->esil, ",");
-			arm_prefix_cond (op, insn->detail->arm64.cc);
-			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,28,%"PFMT64d",<<,|,pstate,:=", IMM64 (2));
+		// an AL cond opens no ?{, so there is no else arm
+		if (*postfix && insn->id == ARM64_INS_CCMP) {
+			r_strbuf_appendf (&op->esil, ",}{,pstate,1,28,1,<<,-,&,28,%"PFMT64d",<<,|,pstate,:=", IMM64 (2));
 		}
 		break;
 	case ARM64_INS_CMN:
@@ -2180,10 +2179,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_appendf (&op->esil, ",==,$z,zf,:=,%d,$s,nf,:=,%d,$c,cf,:=,%d,$o,vf,:=",
 			REGBITS64 (0) - 1, REGBITS64 (0) - 1, REGBITS64 (0) - 1);
 
-		if (insn->id == ARM64_INS_CCMN) {
-			r_strbuf_append (&op->esil, ",");
-			arm_prefix_cond (op, insn->detail->arm64.cc);
-			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,28,%"PFMT64d",<<,|,pstate,:=", IMM64 (2));
+		// an AL cond opens no ?{, so there is no else arm
+		if (*postfix && insn->id == ARM64_INS_CCMN) {
+			r_strbuf_appendf (&op->esil, ",}{,pstate,1,28,1,<<,-,&,28,%"PFMT64d",<<,|,pstate,:=", IMM64 (2));
 		}
 		break;
 	case ARM64_INS_TST: // tst w8, 0xd
