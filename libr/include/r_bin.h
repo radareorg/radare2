@@ -739,19 +739,35 @@ typedef enum r_bin_trycatch_kind_t {
 } RBinTrycatchKind;
 
 typedef struct r_bin_trycatch_t {
+	char *type;
 	ut64 source;
 	ut64 from;
 	ut64 to;
 	ut64 handler;
 	ut64 filter;
-	RBinTrycatchKind kind;
 	st64 type_filter;
-	char *type;
+	RBinTrycatchKind kind;
 	bool catch_all;
 } RBinTrycatch;
 
-R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler, ut64 filter);
-R_API void r_bin_trycatch_free(RBinTrycatch *tc);
+static inline void r_bin_trycatch_fini(RBinTrycatch *tc) {
+	if (tc) {
+		free (tc->type);
+	}
+}
+R_VEC_TYPE_WITH_FINI (RVecRBinTrycatch, RBinTrycatch, r_bin_trycatch_fini);
+
+static inline R_MUSTUSE RBinTrycatch *r_bin_trycatch_add(RVecRBinTrycatch *trycatch, ut64 source, ut64 from, ut64 to, ut64 handler, ut64 filter) {
+	RBinTrycatch *tc = RVecRBinTrycatch_emplace_back (trycatch);
+	if (tc) {
+		tc->source = source;
+		tc->from = from;
+		tc->to = to;
+		tc->handler = handler;
+		tc->filter = filter;
+	}
+	return tc;
+}
 
 typedef struct r_bin_plugin_t {
 	RPluginMeta meta;
@@ -774,7 +790,7 @@ typedef struct r_bin_plugin_t {
 	RList/*<RBinField>*/* (*fields)(RBinFile *bf);
 	RList/*<char *>*/* (*libs)(RBinFile *bf);
 	RVecRBinReloc *(*relocs)(RBinFile *bf);
-	RList/*<RBinTrycatch>*/* (*trycatch)(RBinFile *bf);
+	R_UNOWNED RVecRBinTrycatch *(*trycatch)(RBinFile *bf);
 	RList/*<RBinClass>*/* (*classes)(RBinFile *bf);
 	RList/*<RBinMem>*/* (*mem)(RBinFile *bf);
 	RVecRBinReloc *(*patch_relocs)(RBinFile *bf); // NULL keeps the current relocs
@@ -982,7 +998,7 @@ R_API RVecRBinSection *r_bin_get_sections_vec(RBin *bin);
 R_API RList *r_bin_get_classes(RBin *bin);
 R_API char* r_bin_get_types(RBin *bin);
 R_API RVecRBinString *r_bin_get_strings(RBin *bin);
-R_API RList *r_bin_file_get_trycatch(RBinFile *bf);
+R_API R_UNOWNED RVecRBinTrycatch *r_bin_file_get_trycatch(RBinFile * R_NONNULL bf);
 R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin);
 // O(1) lookup by address (vaddr first, then paddr). Builds a lazy index on the
 // current RBinObject on first call; returns NULL if no symbol matches.

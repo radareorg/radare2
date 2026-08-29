@@ -237,12 +237,12 @@ R_IPI void r_bin_dex_free(RBinDexObj *dex) {
 	RVecRBinSymbol_fini (&dex->symbols_vec);
 	RVecRBinImport_fini (&dex->imports_vec);
 	RVecRBinClass_fini (&dex->classes_vec);
+	RVecRBinTrycatch_fini (&dex->trycatch);
 	free (dex->types);
 	free (dex->fields);
 	free (dex->protos);
 	free (dex->version);
 	r_list_free (dex->lines_list);
-	r_list_free (dex->trycatch_list);
 	r_strbuf_free (dex->sb);
 	sdb_free (dex->mdb);
 	sdb_free (dex->kv);
@@ -254,6 +254,7 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	ut32 i;
 	RBinDexObj *dex = R_NEW0 (RBinDexObj);
+	RVecRBinTrycatch_init (&dex->trycatch);
 	dex->size = r_buf_size (buf);
 	dex->b = r_ref (buf);
 	dex->verbose = verbose;

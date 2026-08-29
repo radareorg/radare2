@@ -5,6 +5,8 @@
 
 // R2R db/cmd/cmd_pdc
 
+R_VEC_TYPE (RVecPdcTrycatch, RBinTrycatch *);
+
 typedef struct {
 	RCore *core;
 	RStrBuf *out;
@@ -24,7 +26,7 @@ typedef struct {
 	const char *r0;
 	ut64 last_addr; // anchor of the last printed line
 	char *transfer; // pending transfer the current block's own jump renders
-	RList *trys; // RBinTrycatch entries touching the function, borrowed from the bin plugin
+	RVecPdcTrycatch trys; // entries touching the function, borrowed from the bin plugin
 	int open_trys; // try braces printed and not yet closed
 	ut64 attached; // handler being rendered attached to its try close
 } PDCState;
@@ -708,13 +710,11 @@ static char *tc_handler_tag(const RBinTrycatch *tc) {
 }
 
 static RBinTrycatch *trycatch_handler_at(PDCState *state, ut64 addr) {
-	RListIter *iter;
-	RBinTrycatch *tc;
-	if (state->trys) {
-		r_list_foreach (state->trys, iter, tc) {
-			if (tc->handler == addr) {
-				return tc;
-			}
+	RBinTrycatch **iter;
+	R_VEC_FOREACH (&state->trys, iter) {
+		RBinTrycatch *tc = *iter;
+		if (tc->handler == addr) {
+			return tc;
 		}
 	}
 	return NULL;
@@ -722,9 +722,9 @@ static RBinTrycatch *trycatch_handler_at(PDCState *state, ut64 addr) {
 
 // sibling LSDA type entries repeat the same region, which needs one mark only
 static bool tc_region_seen(PDCState *state, const RBinTrycatch *tc) {
-	RListIter *iter;
-	RBinTrycatch *p;
-	r_list_foreach (state->trys, iter, p) {
+	RBinTrycatch **iter;
+	R_VEC_FOREACH (&state->trys, iter) {
+		RBinTrycatch *p = *iter;
 		if (p == tc) {
 			break;
 		}
@@ -739,9 +739,9 @@ static bool tc_region_seen(PDCState *state, const RBinTrycatch *tc) {
 // regions containing the address; print_newline shifts its lines by this
 static int tc_depth(PDCState *state, ut64 addr) {
 	int depth = 0;
-	RListIter *iter;
-	RBinTrycatch *tc;
-	r_list_foreach (state->trys, iter, tc) {
+	RBinTrycatch **iter;
+	R_VEC_FOREACH (&state->trys, iter) {
+		RBinTrycatch *tc = *iter;
 		if (addr >= tc->from && addr < tc->to && !tc_region_seen (state, tc)) {
 			depth++;
 		}
@@ -779,9 +779,9 @@ static bool attach_handler(PDCState *state, const RBinTrycatch *tc, int indent) 
 // region boundaries render as real braces; print_newline adds the depth of the
 // anchor, which includes the opening region itself, so the header passes it back
 static void emit_trycatch_marks(PDCState *state, ut64 addr, int indent) {
-	RListIter *iter;
-	RBinTrycatch *tc;
-	r_list_foreach (state->trys, iter, tc) {
+	RBinTrycatch **iter;
+	R_VEC_FOREACH (&state->trys, iter) {
+		RBinTrycatch *tc = *iter;
 		if (tc_region_seen (state, tc)) {
 			continue;
 		}
@@ -801,10 +801,10 @@ static void emit_trycatch_marks(PDCState *state, ut64 addr, int indent) {
 // without per-line addresses the orphan pass anchors boundary braces on the
 // edges of the block that contains them
 static void orphan_trycatch_bounds(PDCState *state, RAnalBlock *bb, bool opening) {
-	RListIter *iter;
-	RBinTrycatch *tc;
 	const ut64 end = bb->addr + bb->size;
-	r_list_foreach (state->trys, iter, tc) {
+	RBinTrycatch **iter;
+	R_VEC_FOREACH (&state->trys, iter) {
+		RBinTrycatch *tc = *iter;
 		if (tc_region_seen (state, tc)) {
 			continue;
 		}
@@ -819,27 +819,21 @@ static void orphan_trycatch_bounds(PDCState *state, RAnalBlock *bb, bool opening
 	}
 }
 
-static RList *pdc_collect_trycatch(RCore *core, RAnalFunction *fcn) {
+static void pdc_collect_trycatch(RCore *core, RAnalFunction *fcn, RVecPdcTrycatch *res) {
 	if (!r_config_get_b (core->config, "pdc.trycatch")) {
-		return NULL;
+		return;
 	}
 	RBinFile *bf = r_bin_cur (core->bin);
-	RList *all = bf? r_bin_file_get_trycatch (bf): NULL;
+	RVecRBinTrycatch *all = bf? r_bin_file_get_trycatch (bf): NULL;
 	if (!all) {
-		return NULL;
+		return;
 	}
-	RList *res = NULL;
-	RListIter *iter;
 	RBinTrycatch *tc;
-	r_list_foreach (all, iter, tc) {
+	R_VEC_FOREACH (all, tc) {
 		if (r_anal_function_contains (fcn, tc->from) || r_anal_function_contains (fcn, tc->handler)) {
-			if (!res) {
-				res = r_list_new ();
-			}
-			r_list_append (res, tc);
+			RVecPdcTrycatch_push_back (res, &tc);
 		}
 	}
-	return res;
 }
 
 // a case flag names the orphan it labels, renames included, so never truncate it
@@ -2234,6 +2228,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	}
 
 	PDCState state = { 0 };
+	RVecPdcTrycatch_init (&state.trys);
 	state.core = core;
 	state.out = r_strbuf_new ("");
 	state.codestr = r_strbuf_new ("");
@@ -2265,7 +2260,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		return false;
 	}
 	collect_switch_addrs (&state);
-	state.trys = pdc_collect_trycatch (core, state.fcn);
+	pdc_collect_trycatch (core, state.fcn, &state.trys);
 	state.attached = UT64_MAX;
 	r_config_hold (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", "asm.stackptr", NULL);
 	r_config_hold (hc, "asm.addr", "asm.flags", "asm.lines.fcn", "asm.comments", NULL);
@@ -2723,8 +2718,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	r_list_free (visited);
 	// balance the region braces whose end never rendered; the epilogue anchors
 	// on addresses inside those regions, so drop the depth shift first
-	r_list_free (state.trys);
-	state.trys = NULL;
+	RVecPdcTrycatch_fini (&state.trys);
 	while (state.open_trys > 0) {
 		state.open_trys--;
 		print_line (&state, state.last_addr, 1 + state.open_trys, "} // end try");

@@ -499,7 +499,7 @@ static char *clr_class_name(RList *symbols, ut32 token) {
 }
 
 // ECMA-335 II.25.4.6 - parse the exception clauses of a single IL method body
-static void clr_trycatch_method(RBinFile *bf, RList *list, RList *symbols, DotNetSymbol *sym, ut64 image_base) {
+static void clr_trycatch_method(RBinFile *bf, RVecRBinTrycatch *trycatch, RList *symbols, DotNetSymbol *sym, ut64 image_base) {
 	const ut64 file_size = r_buf_size (bf->buf);
 	const ut64 source = sym->vaddr + image_base;
 	ut64 at = sym->eh_paddr;
@@ -551,7 +551,7 @@ static void clr_trycatch_method(RBinFile *bf, RList *list, RList *symbols, DotNe
 						|| handler_off > sym->size || handler_len > sym->size - handler_off) {
 					continue;
 				}
-				RBinTrycatch *tc = r_bin_trycatch_new (source,
+				RBinTrycatch *tc = r_bin_trycatch_add (trycatch, source,
 					source + try_off, source + try_off + try_len,
 					source + handler_off,
 					(flags & CIL_EH_FILTER) && extra <= sym->size? source + extra: 0);
@@ -576,7 +576,6 @@ static void clr_trycatch_method(RBinFile *bf, RList *list, RList *symbols, DotNe
 				default:
 					break;
 				}
-				r_list_append (list, tc);
 			}
 		}
 		if (!(kind & CIL_SECT_MORESECTS)) {
@@ -587,7 +586,7 @@ static void clr_trycatch_method(RBinFile *bf, RList *list, RList *symbols, DotNe
 }
 
 // collect the exception clauses of every managed method in the assembly
-static void clr_trycatch(RBinFile *bf, RList *list) {
+static void clr_trycatch(RBinFile *bf, RVecRBinTrycatch *trycatch) {
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe || !pe->clr_hdr) {
 		return;
@@ -601,23 +600,24 @@ static void clr_trycatch(RBinFile *bf, RList *list) {
 	DotNetSymbol *sym;
 	r_list_foreach (symbols, iter, sym) {
 		if (sym->eh_paddr && sym->type && !strcmp (sym->type, "methoddef")) {
-			clr_trycatch_method (bf, list, symbols, sym, image_base);
+			clr_trycatch_method (bf, trycatch, symbols, sym, image_base);
 		}
 	}
 }
 
-static RList *pe_trycatch(RBinFile *bf) {
+static RVecRBinTrycatch *pe_trycatch(RBinFile *bf) {
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe) {
 		return NULL;
 	}
-	if (!pe->trycatch_list) {
-		pe->trycatch_list = r_list_newf ((RListFree)r_bin_trycatch_free);
-		if (pe->trycatch_list) {
-			clr_trycatch (bf, pe->trycatch_list);
-		}
+	if (!pe->trycatch_loaded) {
+		pe->trycatch_loaded = true;
+		clr_trycatch (bf, &pe->trycatch);
+#ifndef R_BIN_PE64
+		RVecRBinTrycatch_shrink_to_fit (&pe->trycatch);
+#endif
 	}
-	return pe->trycatch_list;
+	return &pe->trycatch;
 }
 
 static RList* classes(RBinFile *bf) {

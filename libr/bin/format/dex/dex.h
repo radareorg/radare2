@@ -147,7 +147,8 @@ typedef struct r_bin_dex_obj_t {
 	RVecRBinSymbol symbols_vec;
 	RVecRBinImport imports_vec;
 	RVecRBinClass classes_vec;
-	RList *trycatch_list;
+	RVecRBinTrycatch trycatch;
+	bool trycatch_loaded;
 	RList *lines_list;
 	ut64 code_from;
 	ut64 code_to;

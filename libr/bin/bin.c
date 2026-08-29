@@ -2041,26 +2041,6 @@ R_API RBinFile *r_bin_file_at(RBin *bin, ut64 at) {
 	return NULL;
 }
 
-R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler, ut64 filter) {
-	RBinTrycatch *tc = R_NEW0 (RBinTrycatch);
-	if (R_LIKELY (tc)) {
-		tc->source = source;
-		tc->from = from;
-		tc->to = to;
-		tc->handler = handler;
-		tc->filter = filter;
-	}
-	return tc;
-}
-
-R_API void r_bin_trycatch_free(RBinTrycatch *tc) {
-	if (!tc) {
-		return;
-	}
-	free (tc->type);
-	free (tc);
-}
-
 R_API const char *r_bin_field_kindstr(RBinField *f) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
 	switch (f->attr.kind) {

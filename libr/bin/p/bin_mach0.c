@@ -1169,17 +1169,14 @@ static ut64 size(RBinFile *bf) {
 #endif
 
 // walk the compact unwind LSDA index and parse each referenced exception region
-static RList *trycatch(RBinFile *bf) {
+static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
-	if (mo->trycatch_list) {
-		return mo->trycatch_list;
+	RVecRBinTrycatch *result = &mo->trycatch;
+	if (mo->trycatch_loaded) {
+		return result;
 	}
-	RList *result = r_list_newf ((RListFree)r_bin_trycatch_free);
-	if (!result) {
-		return NULL;
-	}
-	mo->trycatch_list = result;
+	mo->trycatch_loaded = true;
 	RBinSection *section = NULL, *s;
 	R_VEC_FOREACH (&bf->bo->sections_vec, s) {
 		if (s->name && r_str_endswith (s->name, ".__unwind_info")) {
@@ -1222,6 +1219,7 @@ static RList *trycatch(RBinFile *bf) {
 		}
 	}
 	free (bytes);
+	RVecRBinTrycatch_shrink_to_fit (result);
 	return result;
 }
 

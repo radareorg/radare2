@@ -148,8 +148,8 @@ R_IPI RBinFile *r_bin_file_xtr_load(RBin *bin, RBinXtrPlugin *xtr, const char *f
 R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer *buf, RBinFileOptions *opt);
 
 // parse the Itanium C++ ABI LSDA at lsda_addr filling result with RBinTrycatch entries
-R_IPI void r_bin_dwarf_parse_lsda(RBinFile *bf, RList *result, ut64 fcn_addr, ut64 lsda_addr);
+R_IPI void r_bin_dwarf_parse_lsda(RBinFile *bf, RVecRBinTrycatch *result, ut64 fcn_addr, ut64 lsda_addr);
 // walk the FDEs in the eh_frame section parsing the LSDA referenced by each one
-R_IPI void r_bin_dwarf_parse_eh_frame(RBinFile *bf, RList *result);
+R_IPI void r_bin_dwarf_parse_eh_frame(RBinFile *bf, RVecRBinTrycatch *result);
 
 #endif

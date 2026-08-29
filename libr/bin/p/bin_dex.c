@@ -1185,9 +1185,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 	ut32 start_addr;
 	ut32 debug_info_off = 0, insns_size = 0;
 
-	if (!dex->trycatch_list) {
-		dex->trycatch_list = r_list_newf ((RListFree)r_bin_trycatch_free);
-	}
 	size_t skip = 0;
 	const ut64 bufsz = r_buf_size (b);
 	ut64 encoded_method_addr;
@@ -1345,7 +1342,8 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 						}
 						if (valid_range && handler_addr < insns_size) {
 							ut64 handler = method_offset + (handler_addr * 2);
-							RBinTrycatch *tc = r_bin_trycatch_new (method_offset, try_from, try_to, handler, 0);
+							RBinTrycatch *tc = r_bin_trycatch_add (&dex->trycatch,
+								method_offset, try_from, try_to, handler, 0);
 							if (tc) {
 								tc->kind = R_BIN_TRYCATCH_CATCH;
 								tc->type_filter = handler_type;
@@ -1355,7 +1353,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 										tc->type = strdup (tn);
 									}
 								}
-								r_list_append (dex->trycatch_list, tc);
 							}
 						}
 						if (sb) {
@@ -1375,11 +1372,11 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 						}
 						if (valid_range && handler_addr < insns_size) {
 							ut64 handler = method_offset + (handler_addr * 2);
-							RBinTrycatch *tc = r_bin_trycatch_new (method_offset, try_from, try_to, handler, 0);
+							RBinTrycatch *tc = r_bin_trycatch_add (&dex->trycatch,
+								method_offset, try_from, try_to, handler, 0);
 							if (tc) {
 								tc->kind = R_BIN_TRYCATCH_CATCH;
 								tc->catch_all = true;
-								r_list_append (dex->trycatch_list, tc);
 							}
 						}
 						if (sb) {
@@ -1667,6 +1664,7 @@ static bool dex_loadcode(RBinFile *bf) {
 		RVecRBinSymbol_reserve (&dex->symbols_vec, want);
 	}
 
+	dex->trycatch_loaded = true;
 	if (dex->classes) {
 		if (!names_only) {
 			ut64 amount = sizeof (int) * dex->header.method_size;
@@ -1782,13 +1780,14 @@ static bool imports_vec(RBinFile *bf) {
 	return false;
 }
 
-static RList *trycatch(RBinFile *bf) {
+static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinDexObj *bin = (RBinDexObj*) bf->bo->bin_obj;
-	if (!bin->trycatch_list) {
+	if (!bin->trycatch_loaded) {
 		dex_loadcode (bf);
 	}
-	return bin->trycatch_list;
+	RVecRBinTrycatch_shrink_to_fit (&bin->trycatch);
+	return &bin->trycatch;
 }
 
 static bool symbols_vec(RBinFile *bf) {
