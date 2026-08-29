@@ -1764,22 +1764,26 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_FCCMPE:
 		// setf would wipe the cond guard emitted before the switch
 		if (ISREG64 (1)) {
+			// an unordered compare sets NZCV=0011, so vf feeds cf
 			r_strbuf_appendf (&op->esil,
 				"%d,%s,F2D,NAN,%d,%s,F2D,NAN,|,vf,:="
-				",%d,%s,F2D,%d,%s,F2D,F==,vf,|,zf,:="
-				",%d,%s,F2D,%d,%s,F2D,F<,vf,|,nf,:=",
+				",%d,%s,F2D,%d,%s,F2D,F==,zf,:="
+				",%d,%s,F2D,%d,%s,F2D,F<,nf,:="
+				",nf,!,vf,|,cf,:=",
 				REGBITS64 (1), REG64 (1), REGBITS64 (1), REG64 (0),
 				REGBITS64 (1), REG64 (1), REGBITS64 (1), REG64 (0),
 				REGBITS64 (1), REG64 (1), REGBITS64 (1), REG64 (0)
 			);
 		} else {
+			// operand 1 is an fp immediate, width comes from op 0
 			r_strbuf_appendf (&op->esil,
 				"%d,%s,F2D,NAN,vf,:="
-				",0,I2D,%d,%s,F2D,F==,vf,|,zf,:="
-				",0,I2D,%d,%s,F2D,F<,vf,|,nf,:=",
-				REGBITS64 (1), REG64 (0),
-				REGBITS64 (1), REG64 (0),
-				REGBITS64 (1), REG64 (0)
+				",0,I2D,%d,%s,F2D,F==,zf,:="
+				",0,I2D,%d,%s,F2D,F<,nf,:="
+				",nf,!,vf,|,cf,:=",
+				REGBITS64 (0), REG64 (0),
+				REGBITS64 (0), REG64 (0),
+				REGBITS64 (0), REG64 (0)
 			);
 		}
 
