@@ -79,7 +79,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 				hr->agent = strdup (buf + 12);
 			} else if (!hr->host && r_str_startswith (buf, "Host: ")) {
 				hr->host = strdup (buf + 6);
-			} else if (r_str_startswith (buf, "Content-Length: ")) {
+			} else if (r_str_ncasecmp (buf, "Content-Length: ", 16) == 0) {
 				content_length = atoi (buf + 16);
 			} else if (so->httpauth && r_str_startswith (buf, "Authorization: Basic ")) {
 				int declen;
