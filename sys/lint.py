@@ -282,7 +282,7 @@ CHECKS = [
 		[L(b"strbuf_append (")],
 		filters=[(rb"\"", True), (rb"%", True)]),
 	Check("typo-unkown",
-		[L(b"unknown")], icase=True),
+		[L(b"unkown")], icase=True),
 	Check("eq-zero",
 		[L(b"=0")],
 		filters=[(rb"c:", True), (rb"\"", False), (rb"//", False), (rb"=0x", False)]),
