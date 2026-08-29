@@ -1297,94 +1297,62 @@ static int r2pm_info(void) {
 	return 0;
 }
 
-// Return the current platform name as a canonical string. The R2PM_PLATFORM
-// environment variable overrides the detection, useful to test the search
-// filter from a different host or to target a cross-prefix. Empty/unset means
-// autodetect.
+// Returns "windows" or "unix", the platform where r2pm is running on. It can
+// be overriden with the R2PM_PLATFORM environment variable, which is also
+// useful to disable the search filter by setting it to "any".
 static const char *r2pm_platform(void) {
-	char *p = r_sys_getenv ("R2PM_PLATFORM");
-	if (R_STR_ISNOTEMPTY (p)) {
-		static char buf[32];
-		r_str_ncpy (buf, p, sizeof (buf));
-		free (p);
-		return buf;
-	}
-	free (p);
+	static R_TH_LOCAL char buf[32] = {0};
+	if (!*buf) {
+		char *env = r_sys_getenv ("R2PM_PLATFORM");
+		if (R_STR_ISNOTEMPTY (env)) {
+			r_str_ncpy (buf, env, sizeof (buf));
+		} else {
 #if R2__WINDOWS__
-	return "windows";
-#elif __APPLE__
-	return "macos";
-#elif defined(__linux__) || defined(__ANDROID__)
-	return "linux";
-#elif R2__BSD__
-	return "bsd";
-#elif __HAIKU__
-	return "haiku";
-#elif __QNX__
-	return "qnx";
+			r_str_ncpy (buf, "windows", sizeof (buf));
 #else
-	return "unix";
+			r_str_ncpy (buf, "unix", sizeof (buf));
 #endif
+		}
+		free (env);
+	}
+	return buf;
 }
 
-static bool r2pm_has_block(const char *pkg, const char *token) {
-	char *s = r2pm_get (pkg, token, TT_CODEBLOCK);
-	if (s) {
-		free (s);
+// Returns the space separated list of platforms supported by a package, which
+// is taken from the install blocks defined in its recipe. Empty when unknown.
+static char *r2pm_pkg_platforms(const char *pkg) {
+	char *dbdir = r2pm_dbdir ();
+	char *path = r_file_new (dbdir, pkg, NULL);
+	free (dbdir);
+	char *data = r_file_slurp (path, NULL);
+	free (path);
+	if (!data) {
+		return strdup ("");
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	if (strstr (data, "\nR2PM_INSTALL() {")) {
+		r_strbuf_append (sb, "unix");
+	}
+	if (strstr (data, "\nR2PM_INSTALL_WINDOWS() {")) {
+		r_strbuf_appendf (sb, "%swindows", r_strbuf_length (sb)? " ": "");
+	}
+	if (strstr (data, "\nR2PM_INSTALL_QJS() {")) {
+		r_strbuf_appendf (sb, "%sqjs", r_strbuf_length (sb)? " ": "");
+	}
+	free (data);
+	return r_strbuf_drain (sb);
+}
+
+// Packages with no known platform are always shown, and the qjs ones run
+// everywhere, so they are never filtered out.
+static bool r2pm_pkg_supported(const char *platforms, const char *platform) {
+	if (R_STR_ISEMPTY (platforms) || !strcmp (platform, "any")) {
 		return true;
 	}
-	return false;
+	return strstr (platforms, "qjs") || strstr (platforms, platform);
 }
 
-// Return the list of platforms a package is known to work on. An explicit
-// R2PM_PLATFORMS keyword wins over the inference below. Otherwise the list is
-// derived from the install blocks: R2PM_INSTALL_WINDOWS means usable on
-// windows, R2PM_INSTALL (or a QJS-only package) means usable on unix-likes.
-static RList *r2pm_pkg_platforms(const char *pkg) {
-	RList *pl = r_list_newf (free);
-	char *explicit = r2pm_get (pkg, "\nR2PM_PLATFORMS ", TT_TEXTLINE);
-	if (explicit) {
-		r_str_trim (explicit);
-		int argc;
-		char **argv = r_str_argv (explicit, &argc);
-		if (argv) {
-			int i;
-			for (i = 0; i < argc; i++) {
-				r_list_append (pl, strdup (argv[i]));
-			}
-			r_str_argv_free (argv);
-		} else {
-			r_list_append (pl, strdup (explicit));
-		}
-		free (explicit);
-		return pl;
-	}
-	free (explicit);
-	bool windows = r2pm_has_block (pkg, "\nR2PM_INSTALL_WINDOWS() {\n");
-	bool unix = r2pm_has_block (pkg, "\nR2PM_INSTALL() {\n");
-	if (!windows && !unix) {
-		unix = r2pm_has_block (pkg, "\nR2PM_INSTALL_QJS() {\n");
-	}
-	if (windows) {
-		r_list_append (pl, strdup ("windows"));
-	}
-	if (unix) {
-		r_list_append (pl, strdup ("unix"));
-	}
-	return pl;
-}
-
-static bool r2pm_platform_matches(const char *platform, const char *needle) {
-	return !strcmp (platform, needle)
-		|| !strcmp (platform, "any")
-		|| (!strcmp (needle, "unix") && !strcmp (platform, "macos"))
-		|| (!strcmp (needle, "unix") && !strcmp (platform, "linux"))
-		|| (!strcmp (needle, "unix") && !strcmp (platform, "bsd"))
-		|| (!strcmp (needle, "unix") && !strcmp (platform, "haiku"))
-		|| (!strcmp (needle, "unix") && !strcmp (platform, "qnx"));
-}
-
-static char *r2pm_search(const char *grep, int mode, bool filter) {
+static char *r2pm_search(const char *grep, int mode) {
 	char *path = r2pm_dbdir ();
 	RList *files = r_sys_dir (path);
 	free (path);
@@ -1408,33 +1376,13 @@ static char *r2pm_search(const char *grep, int mode, bool filter) {
 			char *desc = r2pm_desc (file);
 			if (desc) {
 				if (match || r_str_casestr (desc, grep)) {
-					RList *plats = r2pm_pkg_platforms (file);
-					bool ok = !filter;
-					if (filter && plats) {
-						RListIter *piter;
-						const char *plat;
-						r_list_foreach (plats, piter, plat) {
-							if (r2pm_platform_matches (platform, plat)) {
-								ok = true;
-								break;
-							}
-						}
-					}
-					if (ok) {
+					char *platforms = r2pm_pkg_platforms (file);
+					if (r2pm_pkg_supported (platforms, platform)) {
 						if (pj) {
 							pj_o (pj);
 							pj_ks (pj, "name", file);
 							pj_ks (pj, "desc", desc);
-							pj_k (pj, "platforms");
-							pj_a (pj);
-							if (plats) {
-								RListIter *piter;
-								const char *plat;
-								r_list_foreach (plats, piter, plat) {
-									pj_s (pj, plat);
-								}
-							}
-							pj_end (pj);
+							pj_ks (pj, "platforms", platforms);
 							pj_end (pj);
 						} else {
 							r_strbuf_appendf (sb, "%s", file);
@@ -1442,7 +1390,7 @@ static char *r2pm_search(const char *grep, int mode, bool filter) {
 							r_strbuf_appendf (sb, "%s\n", desc);
 						}
 					}
-					r_list_free (plats);
+					free (platforms);
 				}
 				free (desc);
 			}
@@ -1477,7 +1425,7 @@ static void r2pm_envhelp(void) {
 	"MAKE=make              # path to the GNU MAKE executable\n"
 	"R2PM_OFFLINE=%d         # don't git pull\n"
 	"R2PM_TIME=YYYY-MM-DD\n"
-	"R2PM_PLATFORM=%s\n"
+	"R2PM_PLATFORM=%s     # unix, windows or any (to disable the -s filter)\n"
 	"R2PM_PLUGDIR=%s\n"
 	"R2PM_PLUGDIR=%s (global)\n"
 	"R2PM_PREFIX=%s\n"
@@ -1755,7 +1703,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		res = r2pm_clean (targets);
 	}
 	if (r2pm.search) {
-		char *s = r2pm_search (argv[opt.ind], r2pm.json? 'j': 0, false);
+		char *s = r2pm_search (argv[opt.ind], r2pm.json? 'j': 0);
 		if (s) {
 			if (*s) {
 				r_cons_print (cons, s);
