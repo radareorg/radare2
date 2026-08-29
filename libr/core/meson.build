@@ -20,6 +20,7 @@ r_core_sources += [
   'cundo.c',
   'disasm.c',
   'cfile.c',
+  'file_subs.c',
   'fortune.c',
   'gdiff.c',
   'zdiff.c',
