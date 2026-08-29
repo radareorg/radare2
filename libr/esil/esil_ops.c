@@ -9,7 +9,6 @@
 #define feclearexcept(x)
 #endif
 #include <math.h>
-#include <float.h>
 #include <fenv.h>
 
 #define OP(v, w, x, y, z) r_esil_set_op (esil, v, w, x, y, z, NULL)
@@ -1518,12 +1517,8 @@ static bool esil_float_cmp(REsil *esil) {
 	const RStrs dst = r_esil_pop (esil);
 	const RStrs src = r_esil_pop (esil);
 
-	if (!r_strs_empty (src) && !r_strs_empty (dst) && esil_get_parm_float_strs (esil, src, &s) && esil_get_parm_float_strs (esil, dst, &d)) {
-		if (isnan (s) || isnan (d)) {
-			ret = r_esil_pushnum (esil, 0);
-		} else {
-			ret = r_esil_pushnum (esil, fabs (s - d) <= DBL_EPSILON);
-		}
+	if (esil_get_parm_float_strs (esil, src, &s) && esil_get_parm_float_strs (esil, dst, &d)) {
+		ret = r_esil_pushnum (esil, s == d);
 	} else {
 		R_LOG_DEBUG ("esil_float_cmp: invalid parameters");
 	}
@@ -1536,12 +1531,9 @@ static bool esil_float_negcmp(REsil *esil) {
 	const RStrs dst = r_esil_pop (esil);
 	const RStrs src = r_esil_pop (esil);
 
-	if (!r_strs_empty (src) && !r_strs_empty (dst) && esil_get_parm_float_strs (esil, src, &s) && esil_get_parm_float_strs (esil, dst, &d)) {
-		if (isnan (s) || isnan (d)) {
-			ret = r_esil_pushnum (esil, 0);
-		} else {
-			ret = r_esil_pushnum (esil, fabs (s - d) >= DBL_EPSILON);
-		}
+	if (esil_get_parm_float_strs (esil, src, &s) && esil_get_parm_float_strs (esil, dst, &d)) {
+		// NaN must compare unequal here, unlike F< / F<=
+		ret = r_esil_pushnum (esil, s != d);
 	} else {
 		R_LOG_DEBUG ("esil_float_negcmp: invalid parameters");
 	}
