@@ -5798,12 +5798,13 @@ void Elf_(free)(ELFOBJ* eo) {
 	free (eo->ppc32_thunks);
 	sdb_free (eo->kv);
 	r_list_free (eo->inits);
-	r_list_free (eo->trycatch_list);
+	RVecRBinTrycatch_fini (&eo->trycatch);
 	free (eo);
 }
 
 ELFOBJ* Elf_(new_buf)(RBuffer *buf, ut64 baddr, bool verbose) {
 	ELFOBJ *eo = R_NEW0 (ELFOBJ);
+	RVecRBinTrycatch_init (&eo->trycatch);
 	eo->kv = sdb_new0 ();
 	eo->size = r_buf_size (buf);
 	eo->verbose = verbose;

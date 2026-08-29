@@ -3626,6 +3626,7 @@ static int bin_pe_init(RBinPEObj *pe) {
 	bin_pe_init_overlay (pe);
 	PE_(bin_pe_parse_resource) (pe);
 	RVecRBinReloc_init (&pe->relocs);
+	RVecRBinTrycatch_init (&pe->trycatch);
 	return true;
 }
 
@@ -4666,9 +4667,9 @@ void *PE_(r_bin_pe_free)(RBinPEObj *pe) {
 	free (pe->sdbdir);
 	r_list_free (pe->rich_entries);
 	RVecRBinReloc_fini (&pe->relocs);
+	RVecRBinTrycatch_fini (&pe->trycatch);
 	r_list_free (pe->resources);
 	r_list_free (pe->dotnet_symbols);
-	r_list_free (pe->trycatch_list);
 	r_pkcs7_cms_free (pe->cms);
 	r_pkcs7_spcinfo_free (pe->spcinfo);
 	sdb_free (pe->kv);

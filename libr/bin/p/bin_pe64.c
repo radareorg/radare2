@@ -439,7 +439,7 @@ static bool cxx_state_range(const ut32 *ipmap, ut32 ip_count, ut64 baseAddr,
 }
 
 // parse the MSVC FuncInfo of a __CxxFrameHandler3 protected function
-static void cxx_trycatch(RBinFile *bf, RIO *io, RList *tclist, ut64 baseAddr,
+static void cxx_trycatch(RBinFile *bf, RIO *io, RVecRBinTrycatch *trycatch, ut64 baseAddr,
 		const PE64_RUNTIME_FUNCTION *rfcn, ut32 funcinfo) {
 	const ut64 fi = baseAddr + funcinfo;
 	ut32 try_count, try_map, ip_count, ip_map;
@@ -493,7 +493,7 @@ static void cxx_trycatch(RBinFile *bf, RIO *io, RList *tclist, ut64 baseAddr,
 			if (!handler_rva) {
 				continue;
 			}
-			RBinTrycatch *tc = r_bin_trycatch_new (source, from, to, baseAddr + handler_rva, 0);
+			RBinTrycatch *tc = r_bin_trycatch_add (trycatch, source, from, to, baseAddr + handler_rva, 0);
 			if (!tc) {
 				break;
 			}
@@ -504,14 +504,13 @@ static void cxx_trycatch(RBinFile *bf, RIO *io, RList *tclist, ut64 baseAddr,
 				// a null type descriptor is `catch (...)`
 				tc->catch_all = true;
 			}
-			r_list_append (tclist, tc);
 		}
 	}
 	free (ipmap);
 }
 
 // parse the scope table of a __C_specific_handler protected function
-static void seh_trycatch(RIO *io, RList *tclist, ut64 baseAddr,
+static void seh_trycatch(RIO *io, RVecRBinTrycatch *trycatch, ut64 baseAddr,
 		const PE64_RUNTIME_FUNCTION *rfcn, ut64 scopeTableOff) {
 	ut32 scope_count;
 	if (!read_u32_at (io, scopeTableOff, &scope_count)
@@ -541,7 +540,7 @@ static void seh_trycatch(RIO *io, RList *tclist, ut64 baseAddr,
 		if (scope.JumpTarget) {
 			// __except: HandlerAddress is the filter, 1 means EXCEPTION_EXECUTE_HANDLER
 			const ut64 filter = scope.HandlerAddress > 1? baseAddr + scope.HandlerAddress: 0;
-			tc = r_bin_trycatch_new (source, from, to, baseAddr + scope.JumpTarget, filter);
+			tc = r_bin_trycatch_add (trycatch, source, from, to, baseAddr + scope.JumpTarget, filter);
 			if (tc) {
 				tc->kind = filter? R_BIN_TRYCATCH_FILTER: R_BIN_TRYCATCH_CATCH;
 			}
@@ -550,7 +549,7 @@ static void seh_trycatch(RIO *io, RList *tclist, ut64 baseAddr,
 			if (!scope.HandlerAddress || scope.HandlerAddress == 1) {
 				continue;
 			}
-			tc = r_bin_trycatch_new (source, from, to, baseAddr + scope.HandlerAddress, 0);
+			tc = r_bin_trycatch_add (trycatch, source, from, to, baseAddr + scope.HandlerAddress, 0);
 			if (tc) {
 				tc->kind = R_BIN_TRYCATCH_CLEANUP;
 			}
@@ -558,34 +557,35 @@ static void seh_trycatch(RIO *io, RList *tclist, ut64 baseAddr,
 		if (!tc) {
 			return;
 		}
-		r_list_append (tclist, tc);
 	}
 }
 
 // walk the exception directory collecting the SEH and C++ exception regions
-static RList *trycatch(RBinFile *bf) {
+static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 	RIO *io = bf->rbin->iob.io;
 	ut64 baseAddr = bf->bo->baddr;
 	ut64 offset;
 	ut32 c_handler = 0;
 
 	struct PE_(r_bin_pe_obj_t) * bin = bf->bo->bin_obj;
-	if (bin->trycatch_list) {
-		return bin->trycatch_list;
+	if (bin->trycatch_loaded) {
+		return &bin->trycatch;
 	}
 	// managed methods carry their own exception clauses
-	RList *tclist = pe_trycatch (bf);
-	if (!tclist) {
+	RVecRBinTrycatch *tcs = pe_trycatch (bf);
+	if (!tcs) {
 		return NULL;
 	}
 	if (!bin->nt_headers || bin->nt_headers->file_header.Machine != PE_IMAGE_FILE_MACHINE_AMD64) {
 		// The exception directory of ARM64 and other machines does not
 		// use the x86-64 RUNTIME_FUNCTION/UNWIND_INFO format parsed here
-		return tclist;
+		RVecRBinTrycatch_shrink_to_fit (tcs);
+		return tcs;
 	}
 	PE_(image_data_directory) *expdir = &bin->optional_header->DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION];
 	if (!expdir->Size) {
-		return tclist;
+		RVecRBinTrycatch_shrink_to_fit (tcs);
+		return tcs;
 	}
 	ut64 dirsize = expdir->Size;
 	const ut64 filesize = bin->b? r_buf_size (bin->b): 0;
@@ -689,21 +689,22 @@ static RList *trycatch(RBinFile *bf) {
 			if (read_u32_at (io, exceptionDataOff, &rva_to_fcninfo)
 					&& read_u32_at (io, baseAddr + rva_to_fcninfo, &magic)
 					&& is_cxx_magic (magic)) {
-				cxx_trycatch (bf, io, tclist, baseAddr, &rfcn, rva_to_fcninfo);
+				cxx_trycatch (bf, io, tcs, baseAddr, &rfcn, rva_to_fcninfo);
 				continue;
 			}
 		}
 		if (c_handler && c_handler != handler) {
 			continue;
 		}
-		const int before = r_list_length (tclist);
-		seh_trycatch (io, tclist, baseAddr, &rfcn, exceptionDataOff);
-		if (r_list_length (tclist) != before) {
+		const size_t before = RVecRBinTrycatch_length (tcs);
+		seh_trycatch (io, tcs, baseAddr, &rfcn, exceptionDataOff);
+		if (RVecRBinTrycatch_length (tcs) != before) {
 			// the language specific handler of this binary is now known
 			c_handler = handler;
 		}
 	}
-	return tclist;
+	RVecRBinTrycatch_shrink_to_fit (tcs);
+	return tcs;
 }
 
 RBinPlugin r_bin_plugin_pe64 = {

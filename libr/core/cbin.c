@@ -4006,9 +4006,12 @@ static const char *trycatch_kind_name(RBinTrycatchKind kind) {
 
 static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 	RBinFile *bf = r_bin_cur (core->bin);
-	RListIter *iter;
 	RBinTrycatch *tc;
-	RList *trycatch = r_bin_file_get_trycatch (bf);
+	RVecRBinTrycatch *trycatch = bf? r_bin_file_get_trycatch (bf): NULL;
+	RVecRBinTrycatch empty = { 0 };
+	if (!trycatch) {
+		trycatch = &empty;
+	}
 	int idx = 0;
 	if (IS_MODE_SET (mode)) {
 		r_flag_space_push (core->flags, R_FLAGS_FS_TRYCATCH);
@@ -4016,7 +4019,7 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	}
-	r_list_foreach (trycatch, iter, tc) {
+	R_VEC_FOREACH (trycatch, tc) {
 		if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
 			pj_ki (pj, "index", idx);

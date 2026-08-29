@@ -4310,14 +4310,13 @@ static char *eh_read_type(RBinFile *bf, const EhReader *lsda,
 	return eh_type_name (bf, type_addr);
 }
 
-static void eh_add_action(RBinFile *bf, RList *result, const EhReader *lsda,
+static void eh_add_action(RBinFile *bf, RVecRBinTrycatch *result, const EhReader *lsda,
 		const ut8 *action_table, const ut8 *type_table, ut8 type_encoding, ut64 action,
 		ut64 source, ut64 from, ut64 to, ut64 handler) {
 	if (!action) {
-		RBinTrycatch *tc = r_bin_trycatch_new (source, from, to, handler, 0);
+		RBinTrycatch *tc = r_bin_trycatch_add (result, source, from, to, handler, 0);
 		if (tc) {
 			tc->kind = R_BIN_TRYCATCH_CLEANUP;
-			r_list_append (result, tc);
 		}
 		return;
 	}
@@ -4344,7 +4343,7 @@ static void eh_add_action(RBinFile *bf, RList *result, const EhReader *lsda,
 		if (!eh_sleb (&action_reader, &next)) {
 			break;
 		}
-		RBinTrycatch *tc = r_bin_trycatch_new (source, from, to, handler, 0);
+		RBinTrycatch *tc = r_bin_trycatch_add (result, source, from, to, handler, 0);
 		if (!tc) {
 			break;
 		}
@@ -4352,7 +4351,6 @@ static void eh_add_action(RBinFile *bf, RList *result, const EhReader *lsda,
 		tc->type_filter = type_filter;
 		tc->type = eh_read_type (bf, lsda, type_table, type_encoding,
 			type_filter, &tc->catch_all);
-		r_list_append (result, tc);
 		if (!next) {
 			break;
 		}
@@ -4365,7 +4363,7 @@ static void eh_add_action(RBinFile *bf, RList *result, const EhReader *lsda,
 	}
 }
 
-R_IPI void r_bin_dwarf_parse_lsda(RBinFile *bf, RList *result, ut64 fcn_addr, ut64 lsda_addr) {
+R_IPI void r_bin_dwarf_parse_lsda(RBinFile *bf, RVecRBinTrycatch *result, ut64 fcn_addr, ut64 lsda_addr) {
 	R_RETURN_IF_FAIL (bf && bf->bo && result);
 	RBinSection *section = r_bin_get_section_at (bf->bo, lsda_addr, true);
 	if (!section || section->size > ST32_MAX) {
@@ -4580,7 +4578,7 @@ static bool eh_record_header(const EhReader *r, ut64 offset, ut64 *length, ut64 
 }
 
 // resolve the lsda pointer held in the augmentation data of one fde
-static void eh_parse_fde(RBinFile *bf, RList *result, const EhReader *section_reader,
+static void eh_parse_fde(RBinFile *bf, RVecRBinTrycatch *result, const EhReader *section_reader,
 		const EhCie *cie, const ut8 *record, const ut8 *record_end, HtUP *seen) {
 	if (!cie->has_augmentation_data || cie->lsda_encoding == DW_EH_PE_OMIT) {
 		return;
@@ -4613,7 +4611,7 @@ static void eh_parse_fde(RBinFile *bf, RList *result, const EhReader *section_re
 }
 
 // walk the FDEs in the eh_frame section parsing the LSDA referenced by each one
-R_IPI void r_bin_dwarf_parse_eh_frame(RBinFile *bf, RList *result) {
+R_IPI void r_bin_dwarf_parse_eh_frame(RBinFile *bf, RVecRBinTrycatch *result) {
 	R_RETURN_IF_FAIL (bf && bf->bo && result);
 	RBinSection *section = NULL, *s;
 	R_VEC_FOREACH (&bf->bo->sections_vec, s) {
