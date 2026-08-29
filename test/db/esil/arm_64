@@ -1986,3 +1986,116 @@ EXPECT=<<EOF
 0x00000013
 EOF
 RUN
+
+NAME=ccmp emits a balanced conditional
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 000041fa
+ao 1~esil:
+EOF
+EXPECT=<<EOF
+esil: zf,?{,x1,x0,==,$z,zf,:=,63,$s,nf,:=,64,$b,!,cf,:=,63,x1,x0,^,x1,x0,-,x0,^,&,>>,vf,:=,}{,pstate,1,28,1,<<,-,&,28,0,<<,|,pstate,:=,}
+EOF
+RUN
+
+NAME=ccmp with an always condition has no else arm
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 07e041fa
+ao 1~esil:
+EOF
+EXPECT=<<EOF
+esil: x1,x0,==,$z,zf,:=,63,$s,nf,:=,64,$b,!,cf,:=,63,x1,x0,^,x1,x0,-,x0,^,&,>>,vf,:=
+EOF
+RUN
+
+NAME=ccmn emits a balanced conditional
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 000041ba
+ao 1~esil:
+EOF
+EXPECT=<<EOF
+esil: zf,?{,x1,-1,*,x0,==,$z,zf,:=,63,$s,nf,:=,63,$c,cf,:=,63,$o,vf,:=,}{,pstate,1,28,1,<<,-,&,28,0,<<,|,pstate,:=,}
+EOF
+RUN
+
+NAME=ccmn with an always condition has no else arm
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 07e041ba
+ao 1~esil:
+EOF
+EXPECT=<<EOF
+esil: x1,-1,*,x0,==,$z,zf,:=,63,$s,nf,:=,63,$c,cf,:=,63,$o,vf,:=
+EOF
+RUN
+
+NAME=fccmp guards the compare with its condition
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 0044611e
+ao 1~esil:
+EOF
+EXPECT=<<EOF
+esil: nf,?{,64,d1,F2D,NAN,64,d0,F2D,NAN,|,vf,:=,64,d1,F2D,64,d0,F2D,F==,vf,|,zf,:=,64,d1,F2D,64,d0,F2D,F<,vf,|,nf,:=,}{,pstate,1,28,1,<<,-,&,0x0,|,pstate,:=,}
+EOF
+RUN
+
+NAME=fccmp with an always condition has no else arm
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 07e4611e
+ao 1~esil:
+EOF
+EXPECT=<<EOF
+esil: 64,d1,F2D,NAN,64,d0,F2D,NAN,|,vf,:=,64,d1,F2D,64,d0,F2D,F==,vf,|,zf,:=,64,d1,F2D,64,d0,F2D,F<,vf,|,nf,:=
+EOF
+RUN
+
+NAME=conditional compares encode the nzcv immediate
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 0a0041fa
+ao 1~esil:
+wx 0a0041ba
+ao 1~esil:
+wx 0a44611e
+ao 1~esil:
+EOF
+EXPECT=<<EOF
+esil: zf,?{,x1,x0,==,$z,zf,:=,63,$s,nf,:=,64,$b,!,cf,:=,63,x1,x0,^,x1,x0,-,x0,^,&,>>,vf,:=,}{,pstate,1,28,1,<<,-,&,28,10,<<,|,pstate,:=,}
+esil: zf,?{,x1,-1,*,x0,==,$z,zf,:=,63,$s,nf,:=,63,$c,cf,:=,63,$o,vf,:=,}{,pstate,1,28,1,<<,-,&,28,10,<<,|,pstate,:=,}
+esil: nf,?{,64,d1,F2D,NAN,64,d0,F2D,NAN,|,vf,:=,64,d1,F2D,64,d0,F2D,F==,vf,|,zf,:=,64,d1,F2D,64,d0,F2D,F<,vf,|,nf,:=,}{,pstate,1,28,1,<<,-,&,0xa0000000,|,pstate,:=,}
+EOF
+RUN
+
+NAME=ccmp else arm lands the nzcv immediate in the flags
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aei
+wx 0a0041fa
+aer zf=0
+aer pc=0
+s 0
+aes
+aer nf
+aer zf
+aer cf
+aer vf
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000001
+0x00000000
+EOF
+RUN
