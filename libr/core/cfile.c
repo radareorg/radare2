@@ -538,38 +538,6 @@ static int r_core_file_load_for_debug(RCore *r, ut64 baseaddr, const char * R_NU
 	return true;
 }
 
-// A bin plugin may request IO redirection by exposing a URI scheme in
-// RBinInfo.bclass (see bin_uf2.c: "uf2://"). Only a self-contained scheme
-// token is trusted here: an identifier-only scheme immediately followed by
-// "://" at the end of the string. This is deliberately strict: some bin
-// plugins fill bclass with raw, attacker-controlled bytes from the parsed
-// file (name/company/header fields), and treating those as an openable URI
-// allowed a crafted file to inject arguments into IO plugins such as
-// dbg:// -> execvp (arbitrary command execution). Requiring a bare scheme
-// makes it impossible to smuggle spaces, extra path components or a command
-// payload through bclass, regardless of which plugin the scheme resolves to.
-static bool is_bin_redirect_scheme(const char *s) {
-	if (R_STR_ISEMPTY (s)) {
-		return false;
-	}
-	const char *p = s;
-	// scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ), non-empty
-	if (!isalpha ((unsigned char)*p)) {
-		return false;
-	}
-	for (; *p; p++) {
-		const char c = *p;
-		if (c == ':') {
-			break;
-		}
-		if (!isalnum ((unsigned char)c) && c != '+' && c != '-' && c != '.') {
-			return false;
-		}
-	}
-	// must be exactly "<scheme>://" with nothing trailing
-	return !strcmp (p, "://");
-}
-
 static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr) {
 	RIODesc *cd = r->io->desc;
 	int fd = cd ? cd->fd : -1;
@@ -603,15 +571,16 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 	}
 	if (bf) {
 		const char *bclass = R_UNWRAP4 (bf, bo, info, bclass);
-		if (bclass && strstr (bclass, "://") && !is_bin_redirect_scheme (bclass)) {
-			// bclass contains "://" but is not a bare, trusted URI scheme
-			// (likely raw bytes from the parsed file: an app/company name,
-			// header field, etc). Do not open it as a URI: fall through to
-			// normal loading of the already-opened file.
-			R_LOG_DEBUG ("Ignoring untrusted bclass IO redirection: %s", bclass);
-			bclass = NULL;
-		}
-		if (bclass && strstr (bclass, "://")) {
+		if (bclass && r_str_endswith (bclass, "://")) {
+			// only redirect on a bare "scheme://": r_name_check rejects attacker bytes with shell or uri metachars
+			char *scheme = r_str_ndup (bclass, strlen (bclass) - 3);
+			bool bare = scheme && r_name_check (scheme);
+			free (scheme);
+			if (!bare) {
+				R_LOG_WARN ("Ignoring bclass IO redirect: not a bare scheme://");
+				R_CRITICAL_LEAVE (r);
+				return false;
+			}
 			if (bf->file && strstr (bf->file, "://")) {
 				R_LOG_ERROR ("Skipping IO redirection for already-redirected file");
 				R_CRITICAL_LEAVE (r);
