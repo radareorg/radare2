@@ -46,6 +46,7 @@ RUN
 NAME=glibc ld.so: interposable locals get their plt stubs named
 FILE=bins/elf/ld-2.31.so
 CMDS=<<EOF
+e anal.vars=false
 aa
 fs symbols
 f~plt.
@@ -169,6 +170,7 @@ RUN
 NAME=glibc libc.so: local jump-slot and plt.got stubs both get named
 FILE=bins/elf/libc-2.31.so
 CMDS=<<EOF2
+e anal.vars=false
 aa
 fs symbols
 f~plt.
