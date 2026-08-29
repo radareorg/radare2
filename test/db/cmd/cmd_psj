@@ -41,3 +41,14 @@ EXPECT=<<EOF
 {"string":"Hello World","offset":33624,"section":".rodata","length":11,"type":"ascii"}
 EOF
 RUN
+
+NAME=psj ascii with zero padding tail
+FILE=malloc://128
+CMDS=<<EOF
+wx 48656c6c6f20257300000000ffffffff
+psj
+EOF
+EXPECT=<<EOF
+{"string":"Hello %s","offset":0,"section":"unknown","length":8,"type":"ascii"}
+EOF
+RUN
