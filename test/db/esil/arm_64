@@ -2043,7 +2043,7 @@ wx 0044611e
 ao 1~esil:
 EOF
 EXPECT=<<EOF
-esil: nf,?{,64,d1,F2D,NAN,64,d0,F2D,NAN,|,vf,:=,64,d1,F2D,64,d0,F2D,F==,vf,|,zf,:=,64,d1,F2D,64,d0,F2D,F<,vf,|,nf,:=,}{,pstate,1,28,1,<<,-,&,0x0,|,pstate,:=,}
+esil: nf,?{,64,d1,F2D,NAN,64,d0,F2D,NAN,|,vf,:=,64,d1,F2D,64,d0,F2D,F==,zf,:=,64,d1,F2D,64,d0,F2D,F<,nf,:=,nf,!,vf,|,cf,:=,}{,pstate,1,28,1,<<,-,&,0x0,|,pstate,:=,}
 EOF
 RUN
 
@@ -2055,7 +2055,22 @@ wx 07e4611e
 ao 1~esil:
 EOF
 EXPECT=<<EOF
-esil: 64,d1,F2D,NAN,64,d0,F2D,NAN,|,vf,:=,64,d1,F2D,64,d0,F2D,F==,vf,|,zf,:=,64,d1,F2D,64,d0,F2D,F<,vf,|,nf,:=
+esil: 64,d1,F2D,NAN,64,d0,F2D,NAN,|,vf,:=,64,d1,F2D,64,d0,F2D,F==,zf,:=,64,d1,F2D,64,d0,F2D,F<,nf,:=,nf,!,vf,|,cf,:=
+EOF
+RUN
+
+NAME=fcmp against the zero immediate uses the register width
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 0820201e
+ao 1~esil:
+wx 0820601e
+ao 1~esil:
+EOF
+EXPECT=<<EOF
+esil: 32,s0,F2D,NAN,vf,:=,0,I2D,32,s0,F2D,F==,zf,:=,0,I2D,32,s0,F2D,F<,nf,:=,nf,!,vf,|,cf,:=
+esil: 64,d0,F2D,NAN,vf,:=,0,I2D,64,d0,F2D,F==,zf,:=,0,I2D,64,d0,F2D,F<,nf,:=,nf,!,vf,|,cf,:=
 EOF
 RUN
 
@@ -2073,7 +2088,7 @@ EOF
 EXPECT=<<EOF
 esil: zf,?{,x1,x0,==,$z,zf,:=,63,$s,nf,:=,64,$b,!,cf,:=,63,x1,x0,^,x1,x0,-,x0,^,&,>>,vf,:=,}{,pstate,1,28,1,<<,-,&,28,10,<<,|,pstate,:=,}
 esil: zf,?{,x1,-1,*,x0,==,$z,zf,:=,63,$s,nf,:=,63,$c,cf,:=,63,$o,vf,:=,}{,pstate,1,28,1,<<,-,&,28,10,<<,|,pstate,:=,}
-esil: nf,?{,64,d1,F2D,NAN,64,d0,F2D,NAN,|,vf,:=,64,d1,F2D,64,d0,F2D,F==,vf,|,zf,:=,64,d1,F2D,64,d0,F2D,F<,vf,|,nf,:=,}{,pstate,1,28,1,<<,-,&,0xa0000000,|,pstate,:=,}
+esil: nf,?{,64,d1,F2D,NAN,64,d0,F2D,NAN,|,vf,:=,64,d1,F2D,64,d0,F2D,F==,zf,:=,64,d1,F2D,64,d0,F2D,F<,nf,:=,nf,!,vf,|,cf,:=,}{,pstate,1,28,1,<<,-,&,0xa0000000,|,pstate,:=,}
 EOF
 RUN
 
@@ -2097,5 +2112,29 @@ EXPECT=<<EOF
 0x00000000
 0x00000001
 0x00000000
+EOF
+RUN
+
+NAME=fcmp with a nan operand sets nzcv to 0011
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aei
+wx 0020611e
+ar d0=0x7ff8000000000000
+ar d1=0x3ff0000000000000
+aer pc=0
+s 0
+aes
+aer nf
+aer zf
+aer cf
+aer vf
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000000
+0x00000001
+0x00000001
 EOF
 RUN
