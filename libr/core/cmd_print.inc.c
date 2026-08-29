@@ -1481,6 +1481,13 @@ static char get_string_type(const ut8 *buf, ut64 len) {
 				needle++;
 				break;
 			}
+			if (!r) {
+				/* The classification describes the string at the start of
+				 * the buffer, so its NUL terminator ends the scan. Walking
+				 * on would reclassify the trailing zero padding as a wide
+				 * string and hide an ordinary ascii string. */
+				return str_type;
+			}
 			needle += rc;
 		}
 	}
