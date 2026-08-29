@@ -41,10 +41,9 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("IO");
 	ret->machine = strdup ("IO");
-	ut8 tmp[32];
-	r_buf_read_at (bf->buf, 0x100, tmp, sizeof (tmp));
-	ret->bclass = r_str_ndup ((char *)tmp, 32);
-	r_str_sanitize (ret->bclass);
+	// CVE-fix: never place attacker-controlled bytes in bclass — it is
+    // interpreted as an IO URI scheme in r_core_file_load_for_io_plugin.
+    ret->bclass = strdup ("io");
 	ret->os = strdup ("io");
 	ret->arch = strdup ("arm");
 	ret->bits = 64;

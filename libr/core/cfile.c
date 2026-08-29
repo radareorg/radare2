@@ -539,94 +539,102 @@ static int r_core_file_load_for_debug(RCore *r, ut64 baseaddr, const char * R_NU
 }
 
 static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr) {
-	RIODesc *cd = r->io->desc;
-	int fd = cd ? cd->fd : -1;
-	int xtr_idx = 0; // if 0, load all if xtr is used
-	RBinPlugin *plugin;
+    RIODesc *cd = r->io->desc;
+    int fd = cd ? cd->fd : -1;
+    int xtr_idx = 0; // if 0, load all if xtr is used
+    RBinPlugin *plugin;
 
-	if (fd < 0) {
-		return false;
-	}
-	R_CRITICAL_ENTER (r);
-	r_io_use_fd (r->io, fd);
-	if (baseaddr == UT64_MAX) {
-		if (r->bin->options.aslr) {
-			baseaddr = ((ut64)r_num_rand (32)) << 24;
-			r_config_set_i (r->config, "bin.baddr", baseaddr);
-		}
-	}
-	RBinFileOptions opt;
-	r_bin_file_options_init (&opt, fd, baseaddr, loadaddr, r->bin->options.rawstr);
-	// opt.fd = fd;
-	opt.xtr_idx = xtr_idx;
-	if (!r_bin_open_io (r->bin, &opt)) {
-		R_CRITICAL_LEAVE (r);
-		return false;
-	}
-	RBinFile *bf = r_bin_cur (r->bin);
-	if (r_core_bin_set_env (r, bf)) {
-		if (r->anal->verbose && !sdb_const_get (r->anal->sdb_cc, "default.cc", 0)) {
-			R_LOG_WARN ("No calling convention defined for this file, analysis may be inaccurate");
-		}
-	}
-	if (bf) {
-		const char *bclass = R_UNWRAP4 (bf, bo, info, bclass);
-		if (bclass && strstr (bclass, "://")) {
-			if (bf->file && strstr (bf->file, "://")) {
-				R_LOG_ERROR ("Skipping IO redirection for already-redirected file");
-				R_CRITICAL_LEAVE (r);
-				return false;
-			}
-			char *uri = r_str_newf ("%s%s", bclass, bf->file);
-			RIOPlugin *iop = r_io_plugin_resolve (r->io, uri, false);
-			if (iop && strcmp (iop->meta.name, "default")) {
-				r_bin_file_delete_all (r->bin);
-				RIODesc *desc = r_core_file_open (r, uri, R_PERM_R, 0);
-				if (desc) {
-					r_core_bin_load (r, uri, UT64_MAX);
-					free (uri);
-					R_CRITICAL_LEAVE (r);
-					return true;
-				}
-			} else {
-				R_LOG_WARN ("bclass URI scheme has no matching IO plugin");
-			}
-			free (uri);
-			R_CRITICAL_LEAVE (r);
-			return false;
-		}
-	}
-	plugin = r_bin_file_cur_plugin (bf);
-	if (plugin && !strcmp (plugin->meta.name, "null")) {
-		RBinObject *obj = r_bin_cur_object (r->bin);
-		RBinInfo *info = obj? obj->info: NULL;
-		if (!info) {
-			R_CRITICAL_LEAVE (r);
-			return false;
-		}
-		// set use of raw strings
-		// r_config_set_i (r->config, "io.va", false);
-		// r_config_set_b (r->config, "bin.str.raw", true);
-		// get bin.str.min
-		r->bin->options.minstrlen = r_config_get_i (r->config, "bin.str.min");
-		r->bin->options.maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
-	} else if (bf) {
-		RBinObject *obj = r_bin_cur_object (r->bin);
-		RBinInfo *info = obj? obj->info: NULL;
-		if (!info) {
-			R_CRITICAL_LEAVE (r);
-			return false;
-		}
-		if (plugin) {
-			r_core_bin_set_arch_bits (r, bf->file, info->arch, info->bits);
-		}
-	}
+    if (fd < 0) {
+        return false;
+    }
+    R_CRITICAL_ENTER (r);
+    r_io_use_fd (r->io, fd);
+    if (baseaddr == UT64_MAX) {
+        if (r->bin->options.aslr) {
+            baseaddr = ((ut64)r_num_rand (32)) << 24;
+            r_config_set_i (r->config, "bin.baddr", baseaddr);
+        }
+    }
+    RBinFileOptions opt;
+    r_bin_file_options_init (&opt, fd, baseaddr, loadaddr, r->bin->options.rawstr);
+    opt.xtr_idx = xtr_idx;
+    if (!r_bin_open_io (r->bin, &opt)) {
+        R_CRITICAL_LEAVE (r);
+        return false;
+    }
+    RBinFile *bf = r_bin_cur (r->bin);
+    if (r_core_bin_set_env (r, bf)) {
+        if (r->anal->verbose && !sdb_const_get (r->anal->sdb_cc, "default.cc", 0)) {
+            R_LOG_WARN ("No calling convention defined for this file, analysis may be inaccurate");
+        }
+    }
+    if (bf) {
+        const char *bclass = R_UNWRAP4 (bf, bo, info, bclass);
+        if (bclass && r_str_endswith (bclass, "://")) {
+            const char *sep = strstr (bclass, "://");
+            bool scheme_only = true;
+            for (const char *p = bclass; p < sep; p++) {
+                if (!(isalnum ((unsigned char)*p) || *p == '+' || *p == '-' || *p == '.')) {
+                    scheme_only = false;
+                    break;
+                }
+            }
+            if (!scheme_only || sep == bclass) {
+                R_LOG_WARN ("Ignoring bclass URI redirect: not a bare scheme://");
+                R_CRITICAL_LEAVE (r);
+                return false;
+            }
+            if (bf->file && strstr (bf->file, "://")) {
+                R_LOG_ERROR ("Skipping IO redirection for already-redirected file");
+                R_CRITICAL_LEAVE (r);
+                return false;
+            }
+            char *uri = r_str_newf ("%s%s", bclass, bf->file);
+            RIOPlugin *iop = r_io_plugin_resolve (r->io, uri, false);
+            if (iop && strcmp (iop->meta.name, "default")) {
+                r_bin_file_delete_all (r->bin);
+                RIODesc *desc = r_core_file_open (r, uri, R_PERM_R, 0);
+                if (desc) {
+                    r_core_bin_load (r, uri, UT64_MAX);
+                    free (uri);
+                    R_CRITICAL_LEAVE (r);
+                    return true;
+                }
+            } else {
+                R_LOG_WARN ("bclass URI scheme has no matching IO plugin");
+            }
+            free (uri);
+            R_CRITICAL_LEAVE (r);
+            return false;
+        }
+    }
+    plugin = r_bin_file_cur_plugin (bf);
+    if (plugin && !strcmp (plugin->meta.name, "null")) {
+        RBinObject *obj = r_bin_cur_object (r->bin);
+        RBinInfo *info = obj? obj->info: NULL;
+        if (!info) {
+            R_CRITICAL_LEAVE (r);
+            return false;
+        }
+        r->bin->options.minstrlen = r_config_get_i (r->config, "bin.str.min");
+        r->bin->options.maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
+    } else if (bf) {
+        RBinObject *obj = r_bin_cur_object (r->bin);
+        RBinInfo *info = obj? obj->info: NULL;
+        if (!info) {
+            R_CRITICAL_LEAVE (r);
+            return false;
+        }
+        if (plugin) {
+            r_core_bin_set_arch_bits (r, bf->file, info->arch, info->bits);
+        }
+    }
 
-	if (plugin && !strcmp (plugin->meta.name, "dex")) {
-		r_core_cmd0 (r, "'(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)");
-	}
-	R_CRITICAL_LEAVE (r);
-	return true;
+    if (plugin && !strcmp (plugin->meta.name, "dex")) {
+        r_core_cmd0 (r, "'(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)");
+    }
+    R_CRITICAL_LEAVE (r);
+    return true;
 }
 
 static bool try_loadlib(RCore *core, const char *lib, ut64 addr) {

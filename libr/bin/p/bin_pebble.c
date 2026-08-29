@@ -200,8 +200,9 @@ static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("pebble");
-	ret->bclass = r_str_ndup (pai.name, 32);
-	r_str_sanitize (ret->bclass);
+	// CVE-fix: never place attacker-controlled bytes in bclass — it is
+    // interpreted as an IO URI scheme in r_core_file_load_for_io_plugin.
+	ret->bclass = strdup ("app");
 	ret->rclass = r_str_ndup (pai.company, 32);
 	ret->os = strdup ("pebble");
 	ret->subsystem = strdup ("pebble");
