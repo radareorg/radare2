@@ -499,11 +499,13 @@ R_API bool r_socket_close(RSocket *s) {
 #if R2__WINDOWS__
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/ms740481 (v=vs.85).aspx
 		shutdown (s->fd, SD_SEND);
-		if (r_socket_ready (s, 0, 250)) {
-			do {
-				char buf = 0;
-				ret = recv (s->fd, &buf, 1, 0);
-			} while (ret != 0 && ret != SOCKET_ERROR);
+		{
+			u_long nonblock = 1;
+			char drain;
+			ioctlsocket (s->fd, FIONBIO, &nonblock);
+			while (recv (s->fd, &drain, 1, 0) > 0) {}
+			nonblock = 0;
+			ioctlsocket (s->fd, FIONBIO, &nonblock);
 		}
 		ret = closesocket (s->fd);
 #else
@@ -586,6 +588,16 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	if (ret < 0) {
 		return false;
 	}
+#if R2__WINDOWS__
+	{ // On Windows, accepted sockets inherit the listening socket's SO_SNDBUF.
+	  // 1500 truncates HTTP responses; use 64K so r2mcp/=H responses fit.
+		int x = 65536;
+		ret = setsockopt (s->fd, SOL_SOCKET, SO_SNDBUF, (void *)&x, sizeof (int));
+		if (ret < 0) {
+			return false;
+		}
+	}
+#else
 	{ // fix close after write bug //
 		int x = 1500; // FORCE MTU
 		ret = setsockopt (s->fd, SOL_SOCKET, SO_SNDBUF, (void *)&x, sizeof (int));
@@ -593,6 +605,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 			return false;
 		}
 	}
+#endif
 	ret = setsockopt (s->fd, SOL_SOCKET, SO_REUSEADDR, (void *)&optval, sizeof optval);
 	if (ret < 0) {
 		return false;
@@ -735,7 +748,10 @@ R_API bool r_socket_block_time(RSocket *s, bool block, int sec, int usec) {
 		return false;
 	}
 #elif R2__WINDOWS__
-	ioctlsocket (s->fd, FIONBIO, (u_long FAR *)&block);
+	{
+		u_long nonblock = block ? 0 : 1;
+		ioctlsocket (s->fd, FIONBIO, &nonblock);
+	}
 #endif
 	if (sec < 0) {
 		sec = 0;
