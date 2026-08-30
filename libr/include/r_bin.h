@@ -363,6 +363,8 @@ typedef struct r_bin_symbol_t {
 	/* only used by java */
 	ut64 vaddr;
 	ut64 paddr;
+	/* Contiguous format metadata immediately before the code entrypoint. */
+	ut32 hsize;
 	RBinAttr attr;
 	ut32 ordinal;
 	int bits;

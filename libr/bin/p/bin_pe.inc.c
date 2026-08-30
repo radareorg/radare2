@@ -117,6 +117,7 @@ static void normalize_dotnet_method_bodies(RBinFile *bf, RBinPEObj *pe, RList *s
 		}
 		sym->paddr += header_size;
 		sym->vaddr += header_size;
+		sym->hsize = header_size;
 		sym->size = code_size;
 		if (more_sects) {
 			// the section headers are aligned to a 4 byte boundary
@@ -862,6 +863,7 @@ static bool symbols_vec(RBinFile *bf) {
 						if (dsym->vaddr > 0) {
 							ptr->vaddr = dsym->vaddr + image_base;
 							ptr->paddr = dsym->paddr;
+							ptr->hsize = dsym->hsize;
 						}
 						ptr->attr.size = dsym->size;
 					}
