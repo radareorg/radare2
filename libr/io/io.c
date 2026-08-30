@@ -285,8 +285,20 @@ static int internal_r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	} else {
 		ret = r_io_pread_at (io, addr, buf, len);
 	}
-	if (ret > 0 && io->cache.mode & R_PERM_R) {
-		(void)r_io_cache_read_at (io, addr, buf, len);
+	if (io->cache.mode & R_PERM_R) {
+		int total = R_MAX (ret, 0);
+		const int cached = r_io_cache_nread_at (io, addr, buf, len);
+		total = R_MAX (total, cached);
+		while (total < len) {
+			const int next = r_io_cache_nread_at (io, addr + total, buf + total, len - total);
+			if (next < 1) {
+				break;
+			}
+			total += next;
+		}
+		if (total > 0) {
+			ret = total;
+		}
 	}
 	return ret;
 }

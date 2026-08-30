@@ -590,6 +590,7 @@ R_API bool r_io_cache_writable(RIO *io);
 // apply patches in given buffer
 R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
+R_IPI int r_io_cache_nread_at(RIO *io, ut64 addr, ut8 *buf, int len);
 // invalidate ranges and commit to io
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many);
 R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to, bool many);

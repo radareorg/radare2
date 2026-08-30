@@ -208,9 +208,37 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	return true;
 }
 
+static int cache_prefix_size(RIO *io, ut64 addr, int len) {
+	RInterval itv = (RInterval){addr, len};
+	ut64 prefix_size = 0;
+	bool changed;
+	do {
+		changed = false;
+		RIOCacheLayer *layer;
+		RListIter *iter;
+		r_list_foreach (io->cache.layers, iter, layer) {
+			RRBNode *node = _find_entry_ci_node (layer->tree, &itv);
+			RIOCacheItem *ci = node? (RIOCacheItem *)node->data: NULL;
+			while (ci && r_itv_overlap (ci->tree_itv[0], itv)) {
+				const RInterval overlap = r_itv_intersect (ci->tree_itv[0], itv);
+				const ut64 overlap_offset = overlap.addr - addr;
+				const ut64 overlap_end = overlap_offset + overlap.size;
+				if (overlap_offset <= prefix_size && overlap_end > prefix_size) {
+					prefix_size = overlap_end;
+					changed = true;
+				}
+				node = r_rbnode_next (node);
+				ci = node? (RIOCacheItem *)node->data: NULL;
+			}
+		}
+	} while (changed && prefix_size < itv.size);
+	return prefix_size;
+}
+
 // read happens by iterating over all the layers
-R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (io && buf && (len > 0), false);
+static int cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len, bool *overlaid) {
+	*overlaid = false;
+	R_RETURN_VAL_IF_FAIL (io && buf && len > 0, 0);
 #if 0
 	// X perm is the io.cache.. this is disabled by bin.cache.. so many tests fail because of this
 	if (!(io->cache.mode & R_PERM_X)) {
@@ -218,22 +246,22 @@ R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	}
 #endif
 	if ((UT64_MAX - len + 1) < addr) {
-		const int olen = len;
-		len = UT64_MAX - addr + 1;
-		if (!r_io_cache_read_at (io, 0ULL, &buf[len], olen - len)) {
-			return false;
-		}
+		const int first_len = UT64_MAX - addr + 1;
+		bool first_overlaid, second_overlaid;
+		const int first = cache_read_at (io, addr, buf, first_len, &first_overlaid);
+		const int second = cache_read_at (io, 0, buf + first_len, len - first_len, &second_overlaid);
+		*overlaid = first_overlaid || second_overlaid;
+		return first == first_len? first + second: first;
 	}
 	RIOCacheLayer *layer;
 	RListIter *iter;
 	RInterval itv = (RInterval){addr, len};
-	bool ret = false;
 	r_list_foreach (io->cache.layers, iter, layer) {
 		RRBNode *node = _find_entry_ci_node (layer->tree, &itv);
 		if (!node) {
 			continue;
 		}
-		ret = true;
+		*overlaid = true;
 		RIOCacheItem *ci = (RIOCacheItem *)node->data;
 		while (ci && r_itv_overlap (ci->tree_itv[0], itv)) {
 			node = r_rbnode_next (node);
@@ -265,7 +293,18 @@ R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			ci = node? (RIOCacheItem *)node->data: NULL;
 		}
 	}
-	return ret;
+	return cache_prefix_size (io, addr, len);
+}
+
+R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
+	bool overlaid;
+	(void)cache_read_at (io, addr, buf, len, &overlaid);
+	return overlaid;
+}
+
+R_IPI int r_io_cache_nread_at(RIO *io, ut64 addr, ut8 *buf, int len) {
+	bool overlaid;
+	return cache_read_at (io, addr, buf, len, &overlaid);
 }
 
 R_API bool r_io_cache_writable(RIO *io) {
