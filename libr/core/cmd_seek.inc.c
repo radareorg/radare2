@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #if R_INCLUDE_BEGIN
+static void __clean_lines_cache(RCore *core);
 
 static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool forward);
 
@@ -113,7 +114,13 @@ static void __init_seek_line(RCore *core) {
 	r_config_bump (core->config, "lines.to");
 	const ut64 from = r_config_get_i (core->config, "lines.from");
 	const char *to_str = r_config_get (core->config, "lines.to");
-	const ut64 to = r_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
+	const char *err = NULL;
+	const ut64 to = r_num_math_err (core->num, (to_str && *to_str) ? to_str : "$s", &err);
+	if (err) {
+		R_LOG_ERROR ("Invalid lines.to value '%s' (%s)", to_str, err);
+		__clean_lines_cache (core);
+		return;
+	}
 	if (r_core_lines_initcache (core, from, to) == -1) {
 		R_LOG_ERROR ("lines.from and lines.to are not defined");
 	}
@@ -591,7 +598,14 @@ static void cmd_seek_opcode(RCore *core, const char *input) {
 	if (!strcmp (input, "-")) {
 		input = "-1";
 	}
-	int n = r_num_math (core->num, input);
+	const char *err = NULL;
+	int n = r_num_math_err (core->num, input, &err);
+	if (err && *input) {
+		const char *clean_input = r_str_trim_head_ro (input);
+		R_LOG_ERROR ("Cannot seek to unknown opcode '%s' (%s)", clean_input, err);
+		r_core_return_value (core, R_CMD_RC_FAILURE);
+		return;
+	}
 	if (n == 0) {
 		n = 1;
 	}
@@ -614,7 +628,14 @@ static int cmd_seek(void *data, const char *input) {
 	if ((ptr = strstr (input, "+."))) {
 		char *dup = strdup (input);
 		dup[ptr - input] = '\x00';
-		off = r_num_math (core->num, dup + 1);
+		const char *err = NULL;
+		off = r_num_math_err (core->num, dup + 1, &err);
+		if (err) {
+			R_LOG_ERROR ("Cannot seek to unknown address '%s' (%s)", dup + 1, err);
+			r_core_return_value (core, R_CMD_RC_FAILURE);
+			free (dup);
+			return 0;
+		}
 		core->addr = off;
 		free (dup);
 	}
@@ -1036,7 +1057,15 @@ static int cmd_seek(void *data, const char *input) {
 				cmd = strdup (input);
 				p = strchr (cmd + 2, ' ');
 				if (p) {
-					off = r_num_math (core->num, p + 1);
+					const char *err = NULL;
+					off = r_num_math_err (core->num, p + 1, &err);
+					if (err) {
+						const char *clean_input = r_str_trim_head_ro (p + 1);
+						R_LOG_ERROR ("Cannot evaluate block size '%s' (%s)", clean_input, err);
+						r_core_return_value (core, R_CMD_RC_FAILURE);
+						free (cmd);
+						return 0;
+					}
 					*p = '\0';
 				}
 				cmd[0] = 's';
@@ -1081,6 +1110,7 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case '?':
 			r_cons_cmd_help_match (core->cons, help_msg_s, "so", 0, false);
+			break;
 		case ' ':
 		case '\0':
 		case '+':
@@ -1148,7 +1178,17 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case 'l': // "sl"
 	{
-		int sl_arg = r_num_math (core->num, input + 1);
+		int sl_arg = 0;
+		if (input[1] == ' ' || input[1] == '+' || input[1] == '-') {
+			const char *err = NULL;
+			sl_arg = r_num_math_err (core->num, input + 1, &err);
+			if (err) {
+				const char *clean_input = r_str_trim_head_ro (input + 1);
+				R_LOG_ERROR ("Cannot evaluate line '%s' (%s)", clean_input, err);
+				r_core_return_value (core, R_CMD_RC_FAILURE);
+				break;
+			}
+		}
 		switch (input[1]) {
 		case 'e': // "sleep"
 			{
