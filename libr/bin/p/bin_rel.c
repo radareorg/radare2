@@ -447,7 +447,7 @@ static bool _overlay_write_at_hack(RIO *io, ut64 addr, const ut8 *buf, int len) 
 // Does not generate RBinReloc/RBinImport entries.
 // patches the reloc and appends it to `out`, returns false if unsupported
 static bool patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *reloc, ut32 module, ut32 P, RVecRBinReloc *out) {
-	ut32 value_old, value; // (*P)
+	ut32 value_old, value = 0; // (*P)
 	ut32 S; // Section vaddr of symbol
 	ut32 A = reloc->addend; // sym vaddr = S + A
 
@@ -465,7 +465,7 @@ static bool patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *reloc, ut
 
 	// Load original slot
 	// if (r_buf_fread_at (buf, paddr, (void *)&V, "I", 1) == -1) {
-	if (!vread_at_be32 (b, P, &value)) {
+	if (b->iob.overlay_write_at != _overlay_write_at_hack && !vread_at_be32 (b, P, &value)) {
 		R_LOG_ERROR ("REL: Cannot read reloc target at %#08x", P);
 		return false;
 	}
