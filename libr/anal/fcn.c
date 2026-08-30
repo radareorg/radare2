@@ -58,15 +58,9 @@ static int read_ahead(ReadAhead *ra, RAnal *anal, ut64 addr, ut8 *buf, int len) 
 	}
 	bool is_cached = false;
 #if READ_AHEAD
-	if (ra->cache_addr != UT64_MAX && addr >= ra->cache_addr && addr - ra->cache_addr < ra->cache_size) {
-		ut64 addr_end, cache_addr_end;
-		if (r_add_overflow (addr, (ut64)len, &addr_end)) {
-			addr_end = UT64_MAX;
-		}
-		if (r_add_overflow (ra->cache_addr, (ut64)ra->cache_size, &cache_addr_end)) {
-			cache_addr_end = UT64_MAX;
-		}
-		is_cached = ((addr != UT64_MAX) && (addr >= ra->cache_addr) && (addr_end <= cache_addr_end));
+	if (ra->cache_addr != UT64_MAX && addr >= ra->cache_addr) {
+		const ut64 delta = addr - ra->cache_addr;
+		is_cached = delta < ra->cache_size && len <= ra->cache_size - delta;
 	}
 #endif
 	if (!is_cached) {
@@ -83,11 +77,7 @@ static int read_ahead(ReadAhead *ra, RAnal *anal, ut64 addr, ut8 *buf, int len) 
 		ra->cache_size = cache_size;
 	}
 	int delta = addr - ra->cache_addr;
-	R_RETURN_VAL_IF_FAIL (delta >= 0, -1);
 	int length = ra->cache_size - delta;
-	if (length < 1) {
-		return 0;
-	}
 	const int nread = R_MIN (len, length);
 	memcpy (buf, ra->cache + delta, nread);
 	return nread;
