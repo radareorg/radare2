@@ -40,10 +40,12 @@ R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to) {
 			}
 
 			int len = R_MIN (to - addr, buflen);
-			if (s->iob.read_at (s->iob.io, addr, buf, len) != len) {
+			const int nread = s->iob.read_at (s->iob.io, addr, buf, len);
+			if (nread < 1) {
 				ret = -1; // failed to read
 				goto beach;
 			}
+			len = nread;
 
 			match.rm_so = 0;
 			match.rm_eo = len;
@@ -78,7 +80,7 @@ R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to) {
 			} else if (m == R_REGEX_NOMATCH) {
 				// if a match exists accross buffer boundary, this will still
 				// find it, unless start of match is withen first 7/8th of buffer
-				addr += buflen - (buflen / 8);
+				addr += len - (len / 8);
 			} else { // regex error
 				ret = -1;
 				goto beach;
