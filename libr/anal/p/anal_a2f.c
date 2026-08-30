@@ -151,7 +151,8 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, RBitset *handled, ut64 addr,
 			op->size = 32; // maxopsz
 			op->bytes = malloc (op->size); // maxopsz
 			RIOBind *iob = &core->anal->iob;
-			if (iob->read_at (iob->io, op->addr, op->bytes, op->size) != op->size) {
+			const int nread = iob->read_at (iob->io, op->addr, op->bytes, op->size);
+			if (nread < 1) {
 				R_LOG_DEBUG ("Cannot read opcode at 0x%"PFMT64x, addr+cur);
 				oaddr = UT64_MAX;
 				r_anal_op_free (op);
@@ -160,7 +161,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, RBitset *handled, ut64 addr,
 			}
 			// RArchSession *as = core->anal->arch->session;
 			// bool res = r_arch_decode (as, op, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
-			bool res = r_anal_op (core->anal, op, addr + cur, op->bytes, op->size, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
+			bool res = r_anal_op (core->anal, op, addr + cur, op->bytes, nread, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 			if (!res || !op->mnemonic) {
 				R_LOG_DEBUG ("Cannot analyze opcode at 0x%"PFMT64x, addr+cur);
 				oaddr = UT64_MAX;

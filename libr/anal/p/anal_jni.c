@@ -457,10 +457,12 @@ static void jni_scan_section(JniScanContext *ctx, const RBinSection *section) {
 		return;
 	}
 	ut8 *buf = R_NEWS (ut8, size);
-	if (ctx->anal->iob.read_at (ctx->anal->iob.io, section_addr, buf, (int)size) != (int)size) {
+	const int nread = ctx->anal->iob.read_at (ctx->anal->iob.io, section_addr, buf, (int)size);
+	if (nread < min_size) {
 		free (buf);
 		return;
 	}
+	size = nread;
 	size_t offset = (ctx->pointer_size - (section_addr % ctx->pointer_size))
 		% ctx->pointer_size;
 	while (offset <= size - min_size) {
