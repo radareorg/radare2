@@ -244,8 +244,14 @@ static void parse_array_type(Context *ctx, int idx, RStrBuf *strbuf) {
 				R_VEC_FOREACH(child_die->attr_values, value) {
 					switch (value->attr_name) {
 					case DW_AT_upper_bound:
-					case DW_AT_count:
+						// The last index, so the extent is one more than it.
 						r_strbuf_appendf (strbuf, "[%" PFMT64d "]", value->uconstant + 1);
+						break;
+					case DW_AT_count:
+						// Already the extent. Adding one to it as well made every
+						// clang-built array import one element too large, so
+						// `int32_t r[8]` came back as `int32_t[9]`.
+						r_strbuf_appendf (strbuf, "[%" PFMT64d "]", value->uconstant);
 						break;
 					default:
 						break;
