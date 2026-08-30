@@ -119,7 +119,7 @@ static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64
 		return false;
 	}
 
-	if (!context->anal->iob.read_at (context->anal->iob.io, addr, buf, colSize)) {
+	if (context->anal->iob.read_at (context->anal->iob.io, addr, buf, colSize) != colSize) {
 		return false;
 	}
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (context->anal->config);
@@ -156,7 +156,7 @@ static bool rtti_msvc_read_class_hierarchy_descriptor(RVTableContext *context, u
 		return false;
 	}
 
-	if (!context->anal->iob.read_at (context->anal->iob.io, addr, buf, chdSize)) {
+	if (context->anal->iob.read_at (context->anal->iob.io, addr, buf, chdSize) != chdSize) {
 		return false;
 	}
 
@@ -191,7 +191,7 @@ static bool rtti_msvc_read_base_class_descriptor(RVTableContext *context, ut64 a
 		return false;
 	}
 
-	if (!context->anal->iob.read_at (context->anal->iob.io, addr, buf, bcdSize)) {
+	if (context->anal->iob.read_at (context->anal->iob.io, addr, buf, bcdSize) != bcdSize) {
 		return false;
 	}
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (context->anal->config);
@@ -243,7 +243,7 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 		} else {
 			// special offset calculation for 64bit
 			ut8 tmp[4] = {0};
-			if (!context->anal->iob.read_at(context->anal->iob.io, addr, tmp, 4)) {
+			if (context->anal->iob.read_at (context->anal->iob.io, addr, tmp, 4) != 4) {
 				r_list_free (ret);
 				return NULL;
 			}
@@ -284,7 +284,7 @@ static char *rtti_msvc_read_name(RVTableContext *context, ut64 addr) {
 	ut8 buf[NAME_BUF_SIZE];
 	ut64 off = 0;
 	while (r_strbuf_length (&sb) < NAME_LEN_MAX) {
-		if (!context->anal->iob.read_at (context->anal->iob.io, addr + off, buf, sizeof (buf))) {
+		if (context->anal->iob.read_at (context->anal->iob.io, addr + off, buf, sizeof (buf)) != sizeof (buf)) {
 			break;
 		}
 		size_t i;

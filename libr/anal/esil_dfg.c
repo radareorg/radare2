@@ -1529,10 +1529,10 @@ static bool _dfg_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (dfg->use_maps) {
 		RIOMap *map = dfg->iob.map_get_at (dfg->iob.io, addr);
 		if (map && (map->perm & R_PERM_RW) == R_PERM_R) {
-			return dfg->iob.read_at (dfg->iob.io, addr, buf, len);
+			return dfg->iob.read_at (dfg->iob.io, addr, buf, len) == len;
 		}
 	}
-	return (dfg->iob.fd_read_at (dfg->iob.io, dfg->fd, addr, buf, len) > 0);
+	return dfg->iob.fd_read_at (dfg->iob.io, dfg->fd, addr, buf, len) == len;
 }
 
 static bool _dfg_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {

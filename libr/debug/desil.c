@@ -233,7 +233,10 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 	Gopc = r_debug_reg_get (dbg, "PC");
-	dbg->iob.read_at (dbg->iob.io, Gopc, obuf, sizeof (obuf));
+	const int nread = dbg->iob.read_at (dbg->iob.io, Gopc, obuf, sizeof (obuf));
+	if (nread < 1) {
+		return false;
+	}
 
 	//dbg->iob.read_at (dbg->iob.io, npc, buf, sizeof (buf));
 
@@ -254,7 +257,7 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 		// npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_ALIAS_PC]);
 	}
 
-	if (r_anal_op (dbg->anal, &op, Gopc, obuf, sizeof (obuf), R_ARCH_OP_MASK_ESIL)) {
+	if (r_anal_op (dbg->anal, &op, Gopc, obuf, nread, R_ARCH_OP_MASK_ESIL)) {
 		if (esilbreak_check_pc (dbg, Gopc)) {
 			R_LOG_WARN ("STOP AT 0x%08"PFMT64x, Gopc);
 			ret = 0;

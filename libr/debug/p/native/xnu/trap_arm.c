@@ -69,7 +69,9 @@ static bool ios_hwstep_enable32(RDebug *dbg, bool enable) {
 				ds.__bcr[i] |= BAS_IMVA_0_1;
 			}
 			/* check for thumb */
-			bio->read_at (bio->io, pc, (void *)&op, 2);
+			if (bio->read_at (bio->io, pc, (void *)&op, sizeof (op)) != sizeof (op)) {
+				return false;
+			}
 			if (isThumb32 (op)) {
 				eprintf ("Thumb32 chain stepping not supported yet\n");
 			} else {

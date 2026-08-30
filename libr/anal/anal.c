@@ -149,11 +149,11 @@ static bool anal_esil_mem_read(void *mem, ut64 addr, ut8 *buf, int len) {
 	if (!r_itv_contain (region.itv, addr + len - 1)) {
 		const int _len = r_itv_end (region.itv) - addr;
 		return anal_esil_mem_read (mem, r_itv_end (region.itv), &buf[_len], len - _len)
-			&& anal->iob.read_at (anal->iob.io, addr, buf, _len);
+			&& anal->iob.read_at (anal->iob.io, addr, buf, _len) == _len;
 	}
 	// do not set esil->trap or esil->trap_code here. esil handles that on it's own
 	// do not invoke esil->cmd_ioer, this is about to get removed from esil. core_esil is supposed to handle this
-	return anal->iob.read_at (anal->iob.io, addr, buf, len);
+	return anal->iob.read_at (anal->iob.io, addr, buf, len) == len;
 }
 
 static bool anal_esil_mem_write(void *mem, ut64 addr, const ut8 *buf, int len) {
@@ -719,7 +719,7 @@ static bool noreturn_recurse(RAnal *anal, ut64 addr) {
 	if (!addr || addr == UT64_MAX) {
 		return false;
 	}
-	if (!anal->iob.read_at (anal->iob.io, addr, bbuf, sizeof (bbuf))) {
+	if (anal->iob.read_at (anal->iob.io, addr, bbuf, sizeof (bbuf)) != sizeof (bbuf)) {
 		R_LOG_ERROR ("Couldn't read buffer");
 		return false;
 	}
@@ -841,7 +841,11 @@ R_API bool r_anal_is_prelude(RAnal *anal, ut64 addr, const ut8 *data, int len) {
 			return false;
 		}
 		data = owned;
-		(void)anal->iob.read_at (anal->iob.io, addr, (ut8 *) owned, maxis);
+		len = anal->iob.read_at (anal->iob.io, addr, (ut8 *)owned, maxis);
+		if (len < 1) {
+			free (owned);
+			return false;
+		}
 	}
 	RList *l = r_anal_preludes (anal);
 	if (l) {

@@ -391,7 +391,9 @@ static ut64 __get_dispatchmessage_offset(RDebug *dbg) {
 		char *sym = strrchr (line, ' ');
 		if (sym && r_str_startswith (sym + 1, "sym.imp")) {
 			offset = r_num_math (NULL, line);
-			dbg->iob.read_at (dbg->iob.io, offset, (ut8 *)&offset, sizeof (offset));
+			if (dbg->iob.read_at (dbg->iob.io, offset, (ut8 *)&offset, sizeof (offset)) != sizeof (offset)) {
+				offset = 0;
+			}
 			break;
 		}
 	} while ((line = r_str_tok_r (NULL, "\n", &save_ptr)));

@@ -20,11 +20,16 @@ static RList *backtrace_x86_32(RDebug *dbg, ut64 at) {
 		// TODO: implement [stack] map uptrace method too
 	esp = _esp;
 	for (i = 0; i < dbg->options.btdepth; i++) {
-		bio->read_at (bio->io, esp, (void *)&ebp2, 4);
+		if (bio->read_at (bio->io, esp, (void *)&ebp2, sizeof (ebp2)) != sizeof (ebp2)) {
+			break;
+		}
 		if (ebp2 == UT32_MAX)
 			break;
 		*buf = '\0';
-		bio->read_at (bio->io, (ebp2-5)-(ebp2-5)%4, (void *)&buf, 4);
+		if (bio->read_at (bio->io, (ebp2 - 5) - (ebp2 - 5) % 4, (void *)&buf, sizeof (buf)) != sizeof (buf)) {
+			esp += 4;
+			continue;
+		}
 
 		// TODO: arch_is_call() here and this fun will be portable
 		if (buf[(ebp2-5)%4] == 0xe8) {
@@ -68,11 +73,16 @@ static RList *backtrace_x86_32_anal(RDebug *dbg, ut64 at) {
 	}
 
 	for (i = 1; i < dbg->options.btdepth; i++) {
-		bio->read_at (bio->io, esp, (void *)&ebp2, 4);
+		if (bio->read_at (bio->io, esp, (void *)&ebp2, sizeof (ebp2)) != sizeof (ebp2)) {
+			break;
+		}
 		if (ebp2 == UT32_MAX)
 			break;
 		*buf = '\0';
-		bio->read_at (bio->io, (ebp2 - 5) - (ebp2 - 5) % 4, (void *)&buf, 4);
+		if (bio->read_at (bio->io, (ebp2 - 5) - (ebp2 - 5) % 4, (void *)&buf, sizeof (buf)) != sizeof (buf)) {
+			esp += 4;
+			continue;
+		}
 
 		// TODO: arch_is_call() here and this fun will be portable
 		if (buf[(ebp2-5)%4]==0xe8) {

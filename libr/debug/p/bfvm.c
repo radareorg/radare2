@@ -8,7 +8,7 @@
 static ut8 bfvm_op(BfvmCPU *c) {
 	// XXX: this is slow :(
 	ut8 buf[4] = {0};
-	if (c && c->iob.read_at && !c->iob.read_at (c->iob.io, c->eip, buf, 4)) {
+	if (c && c->iob.read_at && c->iob.read_at (c->iob.io, c->eip, buf, 4) != 4) {
 		return 0xff;
 	}
 	return buf[0];

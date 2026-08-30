@@ -55,7 +55,8 @@ static int is_fi_present(fnditem* n, unsigned char* blk , int patlen) {
 R_IPI bool search_pattern(RSearch *s, ut64 from, ut64 to) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	ut8 block[BSIZE+MAX_PATLEN], sblk[BSIZE+MAX_PATLEN + 1];
-	ut64 addr, bact, bytes, intaddr, rb, bproc = 0;
+	ut64 addr, bact, bytes, intaddr, bproc = 0;
+	int rb;
 	int nr,i, moar = 0, pcnt, cnt = 0, k = 0;
 	int patlen = s->pattern_size;
 	fnditem* root;
@@ -83,6 +84,9 @@ R_IPI bool search_pattern(RSearch *s, ut64 from, ut64 to) {
 		bproc = bact + patlen ;
 		nr = ((bytes - bproc) < BSIZE)?(bytes - bproc):BSIZE;
 		rb = s->iob.read_at (s->iob.io, addr, sblk, nr);
+		if (rb < patlen) {
+			break;
+		}
 		sblk[patlen] = 0;
 
 		intaddr = bact;

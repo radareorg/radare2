@@ -667,7 +667,7 @@ static bool node_match_functions(RAnal *anal, const RFlirtNode *root_node) {
 		if (!func_buf) {
 			continue;
 		}
-		if (!anal->iob.read_at (anal->iob.io, func->addr, func_buf, (int)func_size)) {
+		if (anal->iob.read_at (anal->iob.io, func->addr, func_buf, (int)func_size) != (int)func_size) {
 			R_LOG_WARN ("Couldn't read function %s at 0x%" PFMT64x, func->name, func->addr);
 			free (func_buf);
 			continue;

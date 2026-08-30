@@ -1407,15 +1407,19 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 
 	if (info.all_image_info_format == TASK_DYLD_ALL_IMAGE_INFO_64) {
 		DyldAllImageInfos64 all_infos;
-		dbg->iob.read_at (dbg->iob.io, info.all_image_info_addr,
-			(ut8*)&all_infos, sizeof (DyldAllImageInfos64));
+		if (dbg->iob.read_at (dbg->iob.io, info.all_image_info_addr,
+			(ut8*)&all_infos, sizeof (DyldAllImageInfos64)) != sizeof (DyldAllImageInfos64)) {
+			return NULL;
+		}
 		info_array_count = all_infos.info_array_count;
 		info_array_size = info_array_count * DYLD_IMAGE_INFO_64_SIZE;
 		info_array_address = all_infos.info_array;
 	} else {
 		DyldAllImageInfos32 all_info;
-		dbg->iob.read_at (dbg->iob.io, info.all_image_info_addr,
-			(ut8*)&all_info, sizeof (DyldAllImageInfos32));
+		if (dbg->iob.read_at (dbg->iob.io, info.all_image_info_addr,
+			(ut8*)&all_info, sizeof (DyldAllImageInfos32)) != sizeof (DyldAllImageInfos32)) {
+			return NULL;
+		}
 		info_array_count = all_info.info_array_count;
 		info_array_size = info_array_count * DYLD_IMAGE_INFO_32_SIZE;
 		info_array_address = all_info.info_array;
@@ -1431,7 +1435,10 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 		return NULL;
 	}
 
-	dbg->iob.read_at (dbg->iob.io, info_array_address, info_array, info_array_size);
+	if (dbg->iob.read_at (dbg->iob.io, info_array_address, info_array, info_array_size) != info_array_size) {
+		free (info_array);
+		return NULL;
+	}
 
 	list = r_list_newf ((RListFree)xnu_map_free);
 	if (!list) {
@@ -1451,8 +1458,10 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 			file_path_address = info->image_file_path;
 		}
 		memset (file_path, 0, MAXPATHLEN);
-		dbg->iob.read_at (dbg->iob.io, file_path_address,
-				(ut8*)file_path, MAXPATHLEN - 1);
+		if (dbg->iob.read_at (dbg->iob.io, file_path_address,
+				(ut8*)file_path, MAXPATHLEN - 1) < 1) {
+			continue;
+		}
 		size = mach0_size (dbg, addr);
 		mr = r_debug_map_new (file_path, addr, addr + size, 7, 7);
 		if (!mr) {

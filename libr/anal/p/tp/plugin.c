@@ -47,14 +47,18 @@ RAnalOp *tp_anal_op(RAnal *anal, ut64 addr, int mask) {
 		}
 	}
 	RAnalOp *op = NULL;
-	if (!anal->iob.read_at || anal->iob.read_at (anal->iob.io, addr, buf, maxopsz) < 1) {
+	if (!anal->iob.read_at) {
+		goto beach;
+	}
+	const int nread = anal->iob.read_at (anal->iob.io, addr, buf, maxopsz);
+	if (nread < 1) {
 		goto beach;
 	}
 	op = R_NEW0 (RAnalOp);
 	if (!op) {
 		goto beach;
 	}
-	if (r_anal_op (anal, op, addr, buf, maxopsz, mask) < 1) {
+	if (r_anal_op (anal, op, addr, buf, nread, mask) < 1) {
 		r_anal_op_free (op);
 		op = NULL;
 		goto beach;

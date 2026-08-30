@@ -171,7 +171,7 @@ static int load_reloc_table(RelReloc *out, RBuffer *buf, ut64 addr) {
 
 static bool vread_at_be32(RBin *b, ut32 vaddr, ut32 *out) {
 	ut8 buf[4] = { 0 };
-	if (!b->iob.read_at (b->iob.io, vaddr, (void *)&buf, sizeof (buf))) {
+	if (b->iob.read_at (b->iob.io, vaddr, (void *)&buf, sizeof (buf)) != sizeof (buf)) {
 		return false;
 	}
 	*out = r_read_be32 (&buf);

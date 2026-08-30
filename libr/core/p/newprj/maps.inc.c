@@ -65,7 +65,7 @@ static ut32 rprj_checksum(RCore *core, ut64 va, ut64 size) {
 		if (i && samples[i] == samples[i - 1]) {
 			continue;
 		}
-		const int n = r_io_read_at (core->io, samples[i], buf, sample_size);
+		const int n = r_io_nread_at (core->io, samples[i], buf, sample_size);
 		if (n > 0) {
 			csum = rprj_checksum_update (csum ^ (ut32)(samples[i] - va), buf, n);
 		}

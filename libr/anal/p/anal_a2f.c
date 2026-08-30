@@ -151,7 +151,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, RBitset *handled, ut64 addr,
 			op->size = 32; // maxopsz
 			op->bytes = malloc (op->size); // maxopsz
 			RIOBind *iob = &core->anal->iob;
-			if (iob->read_at (iob->io, op->addr, op->bytes, op->size) < 1) {
+			if (iob->read_at (iob->io, op->addr, op->bytes, op->size) != op->size) {
 				R_LOG_DEBUG ("Cannot read opcode at 0x%"PFMT64x, addr+cur);
 				oaddr = UT64_MAX;
 				r_anal_op_free (op);

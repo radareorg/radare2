@@ -20,6 +20,7 @@ static const uint32_t ram_amt = 64 * 1024 * 1024;
 #define MINIRV32_OTHERCSR_WRITE(csrno, value) HandleOtherCSRWrite (image, csrno, value);
 #define MINIRV32_OTHERCSR_READ(csrno, value) value = HandleOtherCSRRead (image, csrno);
 #endif
+
 #include "./mini-rv32ima.h"
 
 typedef struct plugin_data_t {
@@ -52,7 +53,9 @@ static bool __rv32ima_step(RDebug *dbg) {
 //pc = 0x100001478;
 	//memset (buf, 0, sizeof (buf));
 	// dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-	dbg->iob.read_at (dbg->iob.io, 0, buf, sizeof (buf));
+	if (dbg->iob.read_at (dbg->iob.io, 0, buf, sizeof (buf)) != sizeof (buf)) {
+		return false;
+	}
 	// eprintf ("READ 0x%08"PFMT64x" %02x %02x %02x\n", pc, buf[0], buf[1], buf[2]);
 	pd->elapsed += 1;
 	// uint32_t vProcAddress = pc;
@@ -274,4 +277,3 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-

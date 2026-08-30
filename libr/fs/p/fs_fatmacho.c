@@ -336,7 +336,7 @@ static bool fatmacho_slice_read(RFSRoot *root, ut64 offset, ut8 *data, ut64 size
 	if (ctx && ctx->fd >= 0) {
 		return root->iob.fd_read_at (root->iob.io, ctx->fd, offset, data, size) == (int)size;
 	}
-	return root->iob.read_at (root->iob.io, offset, data, size);
+	return root->iob.read_at (root->iob.io, offset, data, size) == (int)size;
 }
 
 static RFSFile *fs_fatmacho_slurp(RFSRoot *root, const char *path) {

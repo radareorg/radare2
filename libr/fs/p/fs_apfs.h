@@ -419,7 +419,7 @@ static inline bool apfs_read_at(ApfsFS *ctx, ut64 offset, ut8 *buf, int len) {
 	if (!ctx || !ctx->iob || !ctx->iob->read_at) {
 		return false;
 	}
-	return ctx->iob->read_at (ctx->iob->io, ctx->delta + offset, buf, len);
+	return ctx->iob->read_at (ctx->iob->io, ctx->delta + offset, buf, len) == len;
 }
 
 static inline ut32 apfs_read32(ApfsFS *ctx, ut8 *buf) {

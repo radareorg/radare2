@@ -48,39 +48,49 @@ R_API const char *r_anal_functiontype_tostring(int type) {
 typedef struct {
 	ut8 cache[1024];
 	ut64 cache_addr;
+	int cache_size;
 } ReadAhead;
 
 // TODO: move into io :?
 static int read_ahead(ReadAhead *ra, RAnal *anal, ut64 addr, ut8 *buf, int len) {
-	const size_t cache_len = sizeof (ra->cache);
 	if (len < 1) {
 		return -1;
 	}
 	bool is_cached = false;
 #if READ_AHEAD
-	if (ra->cache_addr != UT64_MAX && addr >= ra->cache_addr && addr < ra->cache_addr + sizeof (ra->cache)) {
+	if (ra->cache_addr != UT64_MAX && addr >= ra->cache_addr && addr - ra->cache_addr < ra->cache_size) {
 		ut64 addr_end, cache_addr_end;
 		if (r_add_overflow (addr, (ut64)len, &addr_end)) {
 			addr_end = UT64_MAX;
 		}
-		if (r_add_overflow (ra->cache_addr, (ut64)cache_len, &cache_addr_end)) {
+		if (r_add_overflow (ra->cache_addr, (ut64)ra->cache_size, &cache_addr_end)) {
 			cache_addr_end = UT64_MAX;
 		}
-		is_cached = ((addr != UT64_MAX) && (addr >= ra->cache_addr) && (addr_end < cache_addr_end));
+		is_cached = ((addr != UT64_MAX) && (addr >= ra->cache_addr) && (addr_end <= cache_addr_end));
 	}
 #endif
 	if (!is_cached) {
 		if (len > sizeof (ra->cache)) {
 			len = sizeof (ra->cache);
 		}
-		(void)anal->iob.read_at (anal->iob.io, addr, ra->cache, sizeof (ra->cache));
+		const int cache_size = anal->iob.read_at (anal->iob.io, addr, ra->cache, sizeof (ra->cache));
+		if (cache_size < 1) {
+			ra->cache_addr = UT64_MAX;
+			ra->cache_size = 0;
+			return cache_size;
+		}
 		ra->cache_addr = addr;
+		ra->cache_size = cache_size;
 	}
 	int delta = addr - ra->cache_addr;
 	R_RETURN_VAL_IF_FAIL (delta >= 0, -1);
-	size_t length = sizeof (ra->cache) - delta;
-	memcpy (buf, ra->cache + delta, R_MIN (len, length));
-	return len;
+	int length = ra->cache_size - delta;
+	if (length < 1) {
+		return 0;
+	}
+	const int nread = R_MIN (len, length);
+	memcpy (buf, ra->cache + delta, nread);
+	return nread;
 }
 
 static bool cond_is_inverse(RAnalCondType a, RAnalCondType b) {
@@ -577,7 +587,7 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 				&& (!jumpmid || r_anal_block_op_starts_at (bb, addr))) {
 			if (anal->opt.delay) {
 				ut8 *buf = malloc (bb->size);
-				if (anal->iob.read_at (anal->iob.io, bb->addr, buf, bb->size)) {
+				if (anal->iob.read_at (anal->iob.io, bb->addr, buf, bb->size) == bb->size) {
 					const int last_instr_idx = bb->ninstr - 1;
 					bool in_delay_slot = false;
 					int i;
@@ -1417,24 +1427,25 @@ noskip:
 			if (want_icods && anal->iob.is_valid_offset (anal->iob.io, op->ptr, 0)) {
 				// TODO: what about the qword loads!??!?
 				ut8 dd[4] = {0};
-				(void)anal->iob.read_at (anal->iob.io, op->ptr, (ut8 *) dd, sizeof (dd));
-				// if page have exec perms
-				ut64 da = (ut64)r_read_ble32 (dd, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
-				if (da != UT32_MAX && da != UT64_MAX && anal->iob.is_valid_offset (anal->iob.io, da, 0)) {
-					/// TODO: this must be CODE | READ , not CODE|DATA, but raises 10 fails
-					if (is_mips && anal->opt.jmptbl) {
-						if (op_dst && !strcmp (op_dst, "v1")) {
-							// eprintf("iftarget is v1 (%s) %llx %llx\n", esil, op->ptr, da);
-							v1 = da;
+				if (anal->iob.read_at (anal->iob.io, op->ptr, (ut8 *)dd, sizeof (dd)) == sizeof (dd)) {
+					// if page have exec perms
+					ut64 da = (ut64)r_read_ble32 (dd, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+					if (da != UT32_MAX && da != UT64_MAX && anal->iob.is_valid_offset (anal->iob.io, da, 0)) {
+						/// TODO: this must be CODE | READ , not CODE|DATA, but raises 10 fails
+						if (is_mips && anal->opt.jmptbl) {
+							if (op_dst && !strcmp (op_dst, "v1")) {
+								// eprintf("iftarget is v1 (%s) %llx %llx\n", esil, op->ptr, da);
+								v1 = da;
+							}
 						}
+						// r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_DATA);
+						// Register an indirect code pointer reference
+						r_anal_xrefs_setf (anal, fcn, op->addr, da, R_ANAL_REF_TYPE_ICOD | R_ANAL_REF_TYPE_EXEC);
+					} else {
+						R_LOG_DEBUG ("Invalid refs 0x%08"PFMT64x" .. 0x%08"PFMT64x" .. 0x%08"PFMT64x" not adding", op->addr, op->ptr, da);
+						/// XXX this breaks the db/esil/apple tests
+					//	r_meta_set (anal, R_META_TYPE_DATA, op->ptr, 4, "");
 					}
-					// r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_DATA);
-					// Register an indirect code pointer reference
-					r_anal_xrefs_setf (anal, fcn, op->addr, da, R_ANAL_REF_TYPE_ICOD | R_ANAL_REF_TYPE_EXEC);
-				} else {
-					R_LOG_DEBUG ("Invalid refs 0x%08"PFMT64x" .. 0x%08"PFMT64x" .. 0x%08"PFMT64x" not adding", op->addr, op->ptr, da);
-					/// XXX this breaks the db/esil/apple tests
-				//	r_meta_set (anal, R_META_TYPE_DATA, op->ptr, 4, "");
 				}
 				// maybe optional or in the else
 				// r_anal_xrefs_set (anal, op->addr, op->ptr, R_ANAL_REF_TYPE_DATA);
@@ -1555,8 +1566,8 @@ noskip:
 			// TAILCALL CHECKS BELOW
 			{ // check if destination is a prelude, so we assume that's a tailcall
 				ut8 buf[32];
-				(void)anal->iob.read_at (anal->iob.io, op->jump, (ut8 *) buf, sizeof (buf));
-				if (r_anal_is_prelude (anal, op->jump, buf, sizeof (buf))) {
+				const int nread = anal->iob.read_at (anal->iob.io, op->jump, (ut8 *)buf, sizeof (buf));
+				if (nread > 0 && r_anal_is_prelude (anal, op->jump, buf, nread)) {
 					R_LOG_DEBUG ("tail call jump found at 0x%08"PFMT64x, op->addr);
 					// XXX using type-jump wont analyze the destination as a function
 					// calling fcn_recurse wont make it analyze it either
@@ -1796,7 +1807,9 @@ noskip:
 				while (1) {
 					ut8 dd[4];
 					// read le32 until the number is not negative
-					(void)anal->iob.read_at (anal->iob.io, tblptr, (ut8 *) dd, sizeof (dd));
+					if (anal->iob.read_at (anal->iob.io, tblptr, (ut8 *)dd, sizeof (dd)) != sizeof (dd)) {
+						break;
+					}
 					// if page have exec perms
 					st32 n = (st32)r_read_ble32 (dd, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
 					if (n >= -1) {
@@ -1840,9 +1853,9 @@ noskip:
 						bool case_table = false;
 						RAnalOp prev_op_storage;
 						r_anal_op_init (&prev_op_storage);
-						anal->iob.read_at (anal->iob.io, op->addr - op->size, buf, sizeof (buf));
+						const int nread = anal->iob.read_at (anal->iob.io, op->addr - op->size, buf, sizeof (buf));
 						// out-of-order prev-op probe: must stay non-STATEFUL
-						if (r_anal_op (anal, &prev_op_storage, op->addr - op->size, buf, sizeof (buf), R_ARCH_OP_MASK_VAL) > 0) {
+						if (nread > 0 && r_anal_op (anal, &prev_op_storage, op->addr - op->size, buf, nread, R_ARCH_OP_MASK_VAL) > 0) {
 							RAnalValue *prev_dst = RVecRArchValue_at (&prev_op_storage.dsts, 0);
 							bool prev_op_has_dst_name = prev_dst && prev_dst->reg;
 							bool op_has_src_name = src0 && src0->reg;
@@ -3126,7 +3139,10 @@ R_API ut32 r_anal_function_cost(RAnalFunction *fcn) {
 		if (!buf) {
 			continue;
 		}
-		(void)anal->iob.read_at (anal->iob.io, bb->addr, (ut8 *) buf, bb->size);
+		if (anal->iob.read_at (anal->iob.io, bb->addr, (ut8 *)buf, bb->size) != bb->size) {
+			free (buf);
+			continue;
+		}
 		int idx = 0;
 		for (at = bb->addr; at < end;) {
 			memset (&op, 0, sizeof (op));
@@ -3221,7 +3237,10 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 		if (!buf) {
 			continue;
 		}
-		(void)anal->iob.read_at (anal->iob.io, bb->addr, (ut8 *) buf, bb->size);
+		if (anal->iob.read_at (anal->iob.io, bb->addr, (ut8 *)buf, bb->size) != bb->size) {
+			free (buf);
+			continue;
+		}
 		int idx = 0;
 		for (at = bb->addr; at < end;) {
 			r_anal_op (anal, &op, at, buf + idx, bb->size - idx, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_OPEX);
@@ -3345,6 +3364,7 @@ static void update_var_analysis(RAnalFunction *fcn, int align, ut64 from, ut64 t
 		return;
 	}
 	if (anal->iob.read_at (anal->iob.io, from, buf, len) < len) {
+		free (buf);
 		return;
 	}
 	for (cur_addr = from; cur_addr < to; cur_addr += opsz, len -= opsz) {

@@ -1100,7 +1100,7 @@ R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int 
 		addr -= sz - slotsz; // a reverse layout homes a wide value's first slot at its highest address
 	}
 	ut8 buf[8] = { 0 };
-	if (!cc_slot_mapped (anal, addr, sz) || !anal->iob.read_at (anal->iob.io, addr, buf, sz)) {
+	if (!cc_slot_mapped (anal, addr, sz) || anal->iob.read_at (anal->iob.io, addr, buf, sz) != sz) {
 		return false;
 	}
 	*out = r_read_ble (buf, be, sz * 8);

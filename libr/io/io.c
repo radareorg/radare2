@@ -506,7 +506,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->open = r_io_open_nomap;
 	bnd->open_at = r_io_open_at;
 	bnd->close = r_io_fd_close;
-	bnd->read_at = r_io_read_at;
+	bnd->read_at = r_io_nread_at;
 	bnd->write_at = r_io_write_at;
 	bnd->overlay_write_at = r_io_vwrite_to_overlay_at;
 	bnd->system = r_io_system;

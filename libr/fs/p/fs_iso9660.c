@@ -59,7 +59,7 @@ static void details_iso9660(RFSRoot *root, RStrBuf *sb) {
 	// Primary Volume Descriptor is at sector 16
 	ut64 pvd_offset = root->delta + (16 * 2048);
 
-	if (!root->iob.read_at (root->iob.io, pvd_offset, (ut8 *)&pvd, sizeof (pvd))) {
+	if (root->iob.read_at (root->iob.io, pvd_offset, (ut8 *)&pvd, sizeof (pvd)) != sizeof (pvd)) {
 		r_strbuf_append (sb, "ERROR: Could not read Primary Volume Descriptor\n");
 		return;
 	}

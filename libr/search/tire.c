@@ -150,7 +150,7 @@ R_IPI int search_tire(RSearch *srch, ut64 from, ut64 to) {
 	ut64 addr = from;
 	ut32 blen = R_MIN (maxbuf, to - from);
 	ut8 *buf = malloc (blen);
-	if (!buf || !srch->iob.read_at (srch->iob.io, from, buf, blen)) {
+	if (!buf || srch->iob.read_at (srch->iob.io, from, buf, blen) != blen) {
 		free (buf);
 		return -1;
 	}
@@ -202,7 +202,7 @@ R_IPI int search_tire(RSearch *srch, ut64 from, ut64 to) {
 		// move leftover to start of buffer, and fill the rest
 		memmove (buf, finger, maxkey);
 		blen = R_MIN (maxbuf, to - addr);
-		if (!srch->iob.read_at (srch->iob.io, addr + maxkey, buf + maxkey, blen - maxkey)) {
+		if (srch->iob.read_at (srch->iob.io, addr + maxkey, buf + maxkey, blen - maxkey) != blen - maxkey) {
 			free (buf);
 			return -1;
 		}

@@ -904,7 +904,9 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		}
 		RIOBind *b = &bf->rbin->iob;
 		ut8 buf[4] = {};
-		b->read_at (b->io, reloc->vaddr, buf, 4);
+		if (b->read_at (b->io, reloc->vaddr, buf, 4) != 4) {
+			continue;
+		}
 		r_write_be32 (buf, r_read_be32 (buf) + reloc->addend);
 		b->overlay_write_at (b->io, reloc->vaddr, buf, 4);
 	}

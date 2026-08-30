@@ -2128,7 +2128,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, const ZydisDecodedInstructi
 			const ut64 retaddr = op->addr + op->size;
 			ut8 thunk[4] = {0};
 			RBin *bin = as->arch->binb.bin;
-			if (bin && bin->iob.read_at && bin->iob.read_at (bin->iob.io, target, thunk, sizeof (thunk))) {
+			if (bin && bin->iob.read_at && bin->iob.read_at (bin->iob.io, target, thunk, sizeof (thunk)) == sizeof (thunk)) {
 				if (thunk[0] == 0x8b && thunk[3] == 0xc3
 						&& (thunk[1] & 0xc7) == 4
 						&& (thunk[2] & 0x3f) == 0x24) {
@@ -2137,7 +2137,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, const ZydisDecodedInstructi
 					break;
 				}
 			}
-			if (target == retaddr && bin && bin->iob.read_at && bin->iob.read_at (bin->iob.io, retaddr, thunk, 1)) {
+			if (target == retaddr && bin && bin->iob.read_at && bin->iob.read_at (bin->iob.io, retaddr, thunk, 1) == 1) {
 				if (thunk[0] >= 0x58 && thunk[0] <= 0x5f) {
 					esilprintf (op, "0x%"PFMT64x",%s,=", retaddr, reg32_to_name (thunk[0] - 0x58));
 					break;

@@ -2185,7 +2185,9 @@ R_API void r_print_zoom_buf(RPrint *p, RPrintZoomCallback cb, void *user, ut64 f
 			if (p->consb.cons->context->breaked) {
 				break;
 			}
-			p->iob.read_at (p->iob.io, from + j, bufz2, size);
+			if (p->iob.read_at (p->iob.io, from + j, bufz2, size) != size) {
+				break;
+			}
 			bufz[i] = cb (user, p->zoom->mode, from + j, bufz2, size);
 			j += size;
 		}

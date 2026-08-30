@@ -63,7 +63,7 @@ static void details_ext2(RFSRoot *root, RStrBuf *sb) {
 	// Superblock is at offset 1024
 	ut64 sb_offset = root->delta + 1024;
 
-	if (!root->iob.read_at (root->iob.io, sb_offset, (ut8 *)&super, sizeof (super))) {
+	if (root->iob.read_at (root->iob.io, sb_offset, (ut8 *)&super, sizeof (super)) != sizeof (super)) {
 		r_strbuf_append (sb, "ERROR: Could not read ext2/3/4 superblock\n");
 		return;
 	}

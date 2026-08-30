@@ -287,14 +287,14 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		RBin *bin = R_UNWRAP2 (arch, binb.bin);
 		if (bin && bin->iob.read_at) {
 			ut8 hdr[8];
-			if (bin->iob.read_at (bin->iob.io, payload_addr, hdr, sizeof (hdr))) {
+			if (bin->iob.read_at (bin->iob.io, payload_addr, hdr, sizeof (hdr)) == sizeof (hdr)) {
 				const ut16 ident = hdr[0] | (hdr[1] << 8);
 				const ut16 array_size = hdr[2] | (hdr[3] << 8);
 				if (instr.op == DALVIK_OP_PACKED_SWITCH && ident == 0x0100 && array_size > 0) {
 					const st32 first_key = (st32)(hdr[4] | (hdr[5] << 8) | (hdr[6] << 16) | ((ut32)hdr[7] << 24));
 					const ut32 tbytes = (ut32)array_size * 4;
 					ut8 *targets = malloc (tbytes);
-					if (targets && bin->iob.read_at (bin->iob.io, payload_addr + 8, targets, tbytes)) {
+					if (targets && bin->iob.read_at (bin->iob.io, payload_addr + 8, targets, tbytes) == tbytes) {
 						op->switch_op = r_anal_switch_op_new (op->addr, first_key, first_key + array_size - 1, op->addr + op->size);
 						ut32 i;
 						for (i = 0; i < array_size; i++) {
@@ -309,8 +309,8 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 					ut8 *keys = malloc (kbytes);
 					ut8 *targets = malloc (kbytes);
 					if (keys && targets
-							&& bin->iob.read_at (bin->iob.io, payload_addr + 4, keys, kbytes)
-							&& bin->iob.read_at (bin->iob.io, payload_addr + 4 + kbytes, targets, kbytes)) {
+							&& bin->iob.read_at (bin->iob.io, payload_addr + 4, keys, kbytes) == kbytes
+							&& bin->iob.read_at (bin->iob.io, payload_addr + 4 + kbytes, targets, kbytes) == kbytes) {
 						op->switch_op = r_anal_switch_op_new (op->addr, 0, 0, op->addr + op->size);
 						ut32 i;
 						for (i = 0; i < array_size; i++) {

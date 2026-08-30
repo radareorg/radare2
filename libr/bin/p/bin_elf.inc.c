@@ -1009,7 +1009,7 @@ static RVecRBinReloc *relocs(RBinFile *bf) {
 static void aarch64_patch_insn(RIOBind *iob, ut64 at, ut32 mask, ut32 val) {
 	ut8 buf[4] = {0};
 	// without the original opcode bits a patch would fabricate an instruction
-	if (!iob->read_at (iob->io, at, buf, sizeof (buf))) {
+	if (iob->read_at (iob->io, at, buf, sizeof (buf)) != sizeof (buf)) {
 		return;
 	}
 	r_write_le32 (buf, (r_read_le32 (buf) & ~mask) | (val & mask));
@@ -1043,7 +1043,9 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 	if (rel->mode == DT_RELR) {
 		// relr has no explicit addend: the slot's own word is it
 		ut8 slot[sizeof (Elf_(Addr))] = {0};
-		iob->read_at (iob->io, rel->rva, slot, sizeof (slot));
+		if (iob->read_at (iob->io, rel->rva, slot, sizeof (slot)) != sizeof (slot)) {
+			return;
+		}
 		A = r_read_ble (slot, bo->endian, 8 * sizeof (slot));
 	}
 	switch (e_machine) {
@@ -1061,7 +1063,9 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 	{
 		ut32 insn = 0;
 		st64 addend = rel->addend;
-		iob->read_at (iob->io, rel->rva, buf, 4);
+		if (iob->read_at (iob->io, rel->rva, buf, 4) != 4) {
+			return;
+		}
 		insn = r_read_ble32 (buf, bo->endian);
 		if (rel->mode == DT_REL) {
 			switch (rel->type) {
@@ -1367,13 +1371,17 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			switch (low) {
 			case 14:
 				V &= (1 << 14) - 1;
-				iob->read_at (iob->io, rel->rva, buf, 4);
+				if (iob->read_at (iob->io, rel->rva, buf, 4) != 4) {
+					return;
+				}
 				r_write_ble32 (buf, (r_read_ble32 (buf, bo->endian) & ~((1<<16) - (1<<2))) | V << 2, bo->endian);
 				iob->overlay_write_at (iob->io, rel->rva, buf, 4);
 				break;
 			case 24:
 				V &= (1 << 24) - 1;
-				iob->read_at (iob->io, rel->rva, buf, 4);
+				if (iob->read_at (iob->io, rel->rva, buf, 4) != 4) {
+					return;
+				}
 				r_write_ble32 (buf, (r_read_ble32 (buf, bo->endian) & ~((1<<26) - (1<<2))) | V << 2, bo->endian);
 				iob->overlay_write_at (iob->io, rel->rva, buf, 4);
 				break;
@@ -1394,7 +1402,9 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				break;
 			}
 		} else if (ds) {
-			iob->read_at (iob->io, rel->rva, buf, 2);
+			if (iob->read_at (iob->io, rel->rva, buf, 2) != 2) {
+				return;
+			}
 			ut16 cur = r_read_ble16 (buf, bo->endian);
 			r_write_ble16 (buf, (cur & 3) | (V & 0xfffc), bo->endian);
 			iob->overlay_write_at (iob->io, rel->rva, buf, 2);
@@ -1406,7 +1416,9 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
  		case R_386_32:
  		case R_386_PC32:
 			{
- 			r_io_read_at (iob->io, rel->rva, buf, 4);
+			if (r_io_nread_at (iob->io, rel->rva, buf, 4) != 4) {
+				return;
+			}
  			ut32 v = r_read_le32 (buf) + S + A;
  			if (rel->type == R_386_PC32) {
  				v -= P;

@@ -49,7 +49,7 @@ static bool sbpf_check_string_pointer(RAnal *anal, ut64 ptr_addr, ut64 data_star
 
 	// First check if the address itself could be a direct string
 	ut8 struct_buf[16];
-	if (!anal->iob.read_at (anal->iob.io, ptr_addr, struct_buf, 16)) {
+	if (anal->iob.read_at (anal->iob.io, ptr_addr, struct_buf, 16) != 16) {
 		return false;
 	}
 
@@ -91,7 +91,7 @@ static bool sbpf_check_string_pointer(RAnal *anal, ut64 ptr_addr, ut64 data_star
 	// Try to read the actual string to verify it's printable
 	char sample[0x100];
 	ut32 sample_size = (size < 0x100) ? size : 0x100;
-	if (!anal->iob.read_at (anal->iob.io, str_ptr, (ut8 *)sample, sample_size)) {
+	if (anal->iob.read_at (anal->iob.io, str_ptr, (ut8 *)sample, sample_size) != sample_size) {
 		R_LOG_DEBUG ("Rejected: failed to read string at 0x%"PFMT64x, str_ptr);
 		return false;
 	}
@@ -126,7 +126,7 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 	ut8 buf[24]; // Read extra to handle unaligned reads
 
 	for (addr = from; addr < to - 15; addr++) {
-		if (!anal->iob.read_at (anal->iob.io, addr, buf, 16)) {
+		if (anal->iob.read_at (anal->iob.io, addr, buf, 16) != 16) {
 			continue;
 		}
 
@@ -278,7 +278,7 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 	char buf[SBPF_MAX_STRING_SIZE + 1];
 
 	// Read the string data
-	if (!anal->iob.read_at (anal->iob.io, addr, (ut8*)buf, size)) {
+	if (anal->iob.read_at (anal->iob.io, addr, (ut8*)buf, size) != size) {
 		R_LOG_WARN ("Failed to read string data at 0x%"PFMT64x, addr);
 		return;
 	}
@@ -427,7 +427,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 		// Handle pointer structures separately
 		if (ref->is_pointer) {
 			ut8 struct_buf[16];
-			if (!anal->iob.read_at (anal->iob.io, ref->addr, struct_buf, 16)) {
+			if (anal->iob.read_at (anal->iob.io, ref->addr, struct_buf, 16) != 16) {
 				continue;
 			}
 			ut64 str_ptr = r_read_le64 (struct_buf);
@@ -446,7 +446,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 				continue;
 			}
 
-			if (anal->iob.read_at (anal->iob.io, str_ptr, (ut8 *)str_buf, size)) {
+			if (anal->iob.read_at (anal->iob.io, str_ptr, (ut8 *)str_buf, size) == size) {
 				ut32 actual_len = r_str_nlen (str_buf, size);
 				str_buf[actual_len] = 0;  // Ensure termination at actual length
 
@@ -622,7 +622,7 @@ static char *sbpf_print_string_xrefs(RAnal *anal) {
 		if (ref->is_pointer) {
 			// Read the pointer structure to get the actual string
 			ut8 struct_buf[16];
-			if (!anal->iob.read_at (anal->iob.io, ref->addr, struct_buf, 16)) {
+			if (anal->iob.read_at (anal->iob.io, ref->addr, struct_buf, 16) != 16) {
 				continue;
 			}
 			ut64 str_ptr = r_read_le64 (struct_buf);
@@ -634,7 +634,7 @@ static char *sbpf_print_string_xrefs(RAnal *anal) {
 				size = sizeof (str_buf) - 1;
 			}
 
-			if (anal->iob.read_at (anal->iob.io, str_ptr, (ut8 *)str_buf, size)) {
+			if (anal->iob.read_at (anal->iob.io, str_ptr, (ut8 *)str_buf, size) == size) {
 				str_buf[size] = 0; // null terminated
 				r_str_filter (str_buf, -1);
 				if (str_buf[sizeof (str_buf) - 5]) {
@@ -672,7 +672,7 @@ static char *sbpf_print_string_xrefs(RAnal *anal) {
 
 		char buf[SBPF_MAX_STRING_SIZE + 1] = {0};
 
-		if (anal->iob.read_at (anal->iob.io, ref->addr, (ut8 *)buf, string_size)) {
+		if (anal->iob.read_at (anal->iob.io, ref->addr, (ut8 *)buf, string_size) == string_size) {
 			buf[sizeof (buf) - 1] = 0;
 
 			ut32 actual_len = 0;

@@ -61,7 +61,7 @@ R_API REsilTrace *r_esil_trace_new(REsil *esil) {
 		goto error;
 	}
 	int res = esil->anal->iob.read_at (esil->anal->iob.io, trace->stack_addr, trace->stack_data, trace->stack_size);
-	if (res < 1) {
+	if (res != trace->stack_size) {
 		goto error;
 	}
 

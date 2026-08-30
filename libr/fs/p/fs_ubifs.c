@@ -326,7 +326,7 @@ static bool ubifs_read_at(ubifs_ctx_t *ctx, ut64 offset, ut8 *buf, int len) {
 	if (!ctx || !ctx->iob || !ctx->iob->read_at) {
 		return false;
 	}
-	return ctx->iob->read_at (ctx->iob->io, ctx->delta + offset, buf, len);
+	return ctx->iob->read_at (ctx->iob->io, ctx->delta + offset, buf, len) == len;
 }
 
 static bool ubifs_read_ch(ubifs_ctx_t *ctx, ut64 offset, ubifs_ch_t *ch) {

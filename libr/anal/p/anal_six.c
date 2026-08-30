@@ -256,7 +256,7 @@ static void siguza_xrefs(RAnal *anal, RStrBuf *sb, bool register_refs, ut64 sear
 		int process_len = (int)R_MIN (lenbytes - pos, SIX_CHUNK_SIZE);
 		ut64 lookahead_rem = lenbytes - pos - process_len;
 		int to_read = process_len + (int)R_MIN (lookahead_rem, SIX_LOOKAHEAD_SIZE);
-		if (anal->iob.read_at (anal->iob.io, start + pos, buf, to_read) < 1) {
+		if (anal->iob.read_at (anal->iob.io, start + pos, buf, to_read) != to_read) {
 			break;
 		}
 		if (process_len < 4) {

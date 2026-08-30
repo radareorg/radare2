@@ -79,7 +79,7 @@ static bool rtti_itanium_read_type_name(RVTableContext *context, ut64 addr, clas
 	at &= ~unique_mask;
 	cti->name_addr = at;
 	ut8 buf[NAME_BUF_SIZE];
-	if (!context->anal->iob.read_at (context->anal->iob.io, at, buf, sizeof (buf))) {
+	if (context->anal->iob.read_at (context->anal->iob.io, at, buf, sizeof (buf)) != sizeof (buf)) {
 		return false;
 	}
 	buf[NAME_BUF_SIZE - 1] = 0;
@@ -101,7 +101,7 @@ static char *rtti_itanium_read_type_name_custom(RVTableContext *context, ut64 ad
 	at &= ~unique_mask;
 	*str_addr = at;
 	ut8 buf[NAME_BUF_SIZE];
-	if (!context->anal->iob.read_at (context->anal->iob.io, at, buf, sizeof (buf))) {
+	if (context->anal->iob.read_at (context->anal->iob.io, at, buf, sizeof (buf)) != sizeof (buf)) {
 		return NULL;
 	}
 	buf[NAME_BUF_SIZE - 1] = 0;

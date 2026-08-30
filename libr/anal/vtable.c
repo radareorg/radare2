@@ -10,7 +10,7 @@
 #define VTABLE_READ_ADDR_FUNC(fname, read_fname, sz) \
 	static bool fname(RAnal *anal, ut64 addr, ut64 *buf) {\
 		ut8 tmp[sz];\
-		if (!anal->iob.read_at (anal->iob.io, addr, tmp, sz)) {\
+		if (anal->iob.read_at (anal->iob.io, addr, tmp, sz) != sz) {\
 			return false;\
 		}\
 		*buf = read_fname (tmp);\
@@ -155,9 +155,12 @@ static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAd
 	R_VEC_FOREACH (xrefs, xref) {
 		// section in which current xref lies
 		if (vtable_addr_in_text_section (context, xref->addr)) {
-			context->anal->iob.read_at (context->anal->iob.io, xref->addr, buf, sizeof (buf));
+			const int nread = context->anal->iob.read_at (context->anal->iob.io, xref->addr, buf, sizeof (buf));
+			if (nread < 1) {
+				continue;
+			}
 			RAnalOp analop = {0};
-			r_anal_op (context->anal, &analop, xref->addr, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC);
+			r_anal_op (context->anal, &analop, xref->addr, buf, nread, R_ARCH_OP_MASK_BASIC);
 			if (analop.type == R_ANAL_OP_TYPE_MOV || analop.type == R_ANAL_OP_TYPE_LEA) {
 				RVecAnalRef_free (xrefs);
 				r_anal_op_fini (&analop);

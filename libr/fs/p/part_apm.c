@@ -38,7 +38,7 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 
 	// Read first APM entry at sector 1 to get number of partitions
 	APMEntry first_entry;
-	if (!fs->iob.read_at (fs->iob.io, 512, (ut8 *)&first_entry, sizeof (first_entry))) {
+	if (fs->iob.read_at (fs->iob.io, 512, (ut8 *)&first_entry, sizeof (first_entry)) != sizeof (first_entry)) {
 		R_LOG_ERROR ("Failed to read APM entry");
 		return 0;
 	}
@@ -67,10 +67,9 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 	}
 
 	// Read all partition entries starting from sector 1
-	bool success = fs->iob.read_at (fs->iob.io, 512, (ut8 *)entries, alloc_size);
-	int bytes_read = (int) (success ? alloc_size : -1);
+	int bytes_read = fs->iob.read_at (fs->iob.io, 512, (ut8 *)entries, (int)alloc_size);
 	if (bytes_read < 0 || (size_t)bytes_read != alloc_size) {
-		R_LOG_ERROR ("Failed to read APM partition entries: expected %zu bytes, got %zd", alloc_size, bytes_read);
+		R_LOG_ERROR ("Failed to read APM partition entries: expected %zu bytes, got %d", alloc_size, bytes_read);
 		free (entries);
 		return 0;
 	}

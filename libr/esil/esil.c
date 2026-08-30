@@ -152,7 +152,7 @@ static bool simple_mem_switch(void *iob, ut32 idx) {
 
 static bool simple_mem_read(void *iob, ut64 addr, ut8 *buf, int len) {
 	RIOBind *bnd = iob;
-	return bnd->read_at? bnd->read_at (bnd->io, addr, buf, len): false;
+	return bnd->read_at? bnd->read_at (bnd->io, addr, buf, len) == len: false;
 }
 
 static bool simple_mem_write(void *iob, ut64 addr, const ut8 *buf, int len) {
@@ -1321,9 +1321,12 @@ static bool internal_esil_mem_read_no_null(REsil *esil, ut64 addr, ut8 *buf, int
 		return false;
 	}
 	if (iob->is_valid_offset (io, addr, false)) {
-		if (!iob->read_at (io, addr, buf, len) && esil->iotrap) {
-			esil->trap = R_ANAL_TRAP_READ_ERR;
-			esil->trap_code = addr;
+		if (iob->read_at (io, addr, buf, len) != len) {
+			if (esil->iotrap) {
+				esil->trap = R_ANAL_TRAP_READ_ERR;
+				esil->trap_code = addr;
+			}
+			return false;
 		}
 	} else {
 		memset (buf, io->Oxff, len);
@@ -1357,11 +1360,9 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			}
 		}
 	}
-	// TODO: Check if read_at fails
-	(void)esil->anal->iob.read_at (io, addr, buf, len);
+	const int nread = esil->anal->iob.read_at (io, addr, buf, len);
 	// check if request address is mapped , if don't fire trap and esil ioer callback
-	// now with siol, read_at return true/false can't be used to check error vs len
-	if (!esil->anal->iob.is_valid_offset (io, addr, false)) {
+	if (nread != len || !esil->anal->iob.is_valid_offset (io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_READ_ERR;
 			esil->trap_code = addr;
@@ -1370,7 +1371,7 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			esil->cmd (esil, esil->cmd_ioer, esil->addr, 0);
 		}
 	}
-	return len;
+	return nread == len;
 }
 
 /* register callbacks using this anal module. */

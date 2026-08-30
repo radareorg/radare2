@@ -288,10 +288,11 @@ static inline bool parse_control_flow(RArchSession *s, ut64 opaddr) {
 		ut8 buffer[16];
 		ut8 *ptr = buffer;
 		ut32 readsize = R_MIN (sizeof (buffer), len);
+		int nread;
 
 		// TODO: bigger and fewer reads to speed up
-		while (readsize && read_at (bin->iob.io, addr, buffer, readsize)) {
-			int size = wasm_dis (&wop, ptr, readsize, false);
+		while (readsize && (nread = read_at (bin->iob.io, addr, buffer, readsize)) > 0) {
+			int size = wasm_dis (&wop, ptr, nread, false);
 			if (!parse_op_cf (scope, keep, addr, &wop, &lastcf)) {
 				break;
 			}

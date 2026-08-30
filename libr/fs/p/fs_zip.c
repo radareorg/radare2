@@ -133,7 +133,7 @@ static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 		return NULL;
 	}
 	int res = root->iob.read_at (root->iob.io, 0, buf, buflen);
-	if (res < 1) {
+	if (res != buflen) {
 		R_LOG_ERROR ("io read problems");
 		free (buf);
 		return NULL;

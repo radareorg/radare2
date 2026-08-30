@@ -75,7 +75,7 @@ static void emulate_to(RAnal *a, ut64 pcv) {
 
 static RAnalOp *decode(RAnal *a, ut64 pcv) {
 	ut8 buf[16] = {0};
-	if (!a->iob.read_at || !a->iob.read_at (a->iob.io, pcv, buf, sizeof (buf))) {
+	if (!a->iob.read_at || a->iob.read_at (a->iob.io, pcv, buf, sizeof (buf)) != sizeof (buf)) {
 		return NULL;
 	}
 	RAnalOp *op = r_anal_op_new ();
