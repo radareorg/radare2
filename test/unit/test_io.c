@@ -80,6 +80,13 @@ bool test_r_io_nread_at(void) {
 	RIOBind bind = { 0 };
 	r_io_bind (io, &bind);
 	mu_assert_eq (bind.read_at (io, 0, buf, 4), 3, "RIOBind should expose the byte count");
+	io->cache.mode |= R_PERM_R;
+	mu_assert_true (r_io_cache_write_at (io, 3, (const ut8 *)"def", 3), "adjacent cache write should succeed");
+	mu_assert_eq (r_io_nread_at (io, 0, buf, sizeof (buf)), 6, "cached data should extend a physical read prefix");
+	mu_assert_memeq (buf, (const ut8 *)"abcdef", sizeof (buf), "physical and cached data should be combined");
+	mu_assert_true (r_io_cache_write_at (io, 8, (const ut8 *)"cache", 5), "cache write should succeed");
+	mu_assert_eq (r_io_nread_at (io, 8, buf, sizeof (buf)), 5, "cached data should form a read prefix past the descriptor");
+	mu_assert_memeq (buf, (const ut8 *)"cache", 5, "cached data should be returned");
 	r_io_free (io);
 	free (uri);
 	r_file_rm (filename);
