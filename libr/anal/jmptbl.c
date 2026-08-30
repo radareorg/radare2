@@ -304,14 +304,15 @@ static bool jmptbl_table_bytes(ut64 entries, ut64 sz, ut64 *bytes) {
 	return !r_mul_overflow (entries, sz, bytes) && *bytes > 0 && *bytes <= ST32_MAX;
 }
 
-static ut8 *jmptbl_read_table(RAnal *anal, ut64 addr, ut64 entries, ut64 sz, ut64 *bytes) {
+static ut8 *jmptbl_read_table(RAnal *anal, ut64 addr, ut64 entries, ut64 sz, ut64 *entries_read) {
 	ut64 table_bytes;
 	if (jmptbl_table_bytes (entries, sz, &table_bytes)) {
 		ut8 *table = malloc (table_bytes);
 		if (table) {
-			if (anal->iob.read_at (anal->iob.io, addr, table, table_bytes) == table_bytes) {
-				if (bytes) {
-					*bytes = table_bytes;
+			const int nread = anal->iob.read_at (anal->iob.io, addr, table, table_bytes);
+			if (nread >= sz) {
+				if (entries_read) {
+					*entries_read = nread / sz;
 				}
 				return table;
 			}
@@ -569,13 +570,14 @@ R_API void r_anal_switch_unset(RAnal *anal, ut64 startea) {
 // INDIRECT with vsize > 1, SPARSE).
 static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, const RAnalSwitchSpec *spec) {
 	JmptblTargetCtx target_ctx = { 0 };
-	const ut32 ncases = switch_spec_ncases (anal, spec);
+	ut32 ncases = switch_spec_ncases (anal, spec);
 	if (spec->jtbl_addr == UT64_MAX) {
 		R_LOG_DEBUG ("Invalid JumpTable location");
 		return false;
 	}
 	const ut8 esize = spec->esize? spec->esize: 4;
-	ut8 *jmptbl = jmptbl_read_table (anal, spec->jtbl_addr, ncases, esize, NULL);
+	ut64 jtbl_entries = 0;
+	ut8 *jmptbl = jmptbl_read_table (anal, spec->jtbl_addr, ncases, esize, &jtbl_entries);
 	if (!jmptbl) {
 		R_LOG_DEBUG ("Invalid jump table size at 0x%08" PFMT64x, spec->jtbl_addr);
 		return false;
@@ -592,12 +594,15 @@ static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bl
 			free (jmptbl);
 			return false;
 		}
-		vtbl = jmptbl_read_table (anal, spec->vtbl_addr, ncases, vsize, NULL);
+		ut64 vtbl_entries = 0;
+		vtbl = jmptbl_read_table (anal, spec->vtbl_addr, ncases, vsize, &vtbl_entries);
 		if (!vtbl) {
 			free (jmptbl);
 			return false;
 		}
+		ncases = R_MIN (ncases, vtbl_entries);
 	}
+	ncases = R_MIN (ncases, jtbl_entries);
 	jmptbl_target_ctx_init (&target_ctx, anal, spec->startea);
 	const bool signed_entry = (spec->flags & R_ANAL_SWITCH_F_SIGNED) != 0;
 	const bool insn_entry = (spec->flags & R_ANAL_SWITCH_F_INSN) != 0;
@@ -910,20 +915,23 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 	if (!jmptbl_detect_arch (anal, &a)) {
 		return false;
 	}
-	ut8 *jmptbl = jmptbl_read_table (anal, jmptbl_loc, jmptbl_size, sz, NULL);
+	ut64 jtbl_entries = 0;
+	ut8 *jmptbl = jmptbl_read_table (anal, jmptbl_loc, jmptbl_size, sz, &jtbl_entries);
 	if (!jmptbl) {
 		return false;
 	}
-	ut8 *casetbl = jmptbl_read_table (anal, casetbl_loc, jmptbl_size, 1, NULL);
+	ut64 casetbl_entries = 0;
+	ut8 *casetbl = jmptbl_read_table (anal, casetbl_loc, jmptbl_size, 1, &casetbl_entries);
 	if (!casetbl) {
 		free (jmptbl);
 		return false;
 	}
+	jmptbl_size = R_MIN (jmptbl_size, casetbl_entries);
 	jmptbl_target_ctx_init (&target_ctx, anal, ip);
 	ut64 case_idx;
 	for (case_idx = 0; case_idx < jmptbl_size; case_idx++) {
 		const ut64 jmpptr_idx = casetbl[case_idx];
-		if (jmpptr_idx >= jmptbl_size) {
+		if (jmpptr_idx >= jtbl_entries) {
 			ret = false;
 			break;
 		}
@@ -974,11 +982,13 @@ R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block
 		R_LOG_DEBUG ("Invalid JumpTable location 0x%08" PFMT64x, jmptbl_loc);
 		return false;
 	}
-	ut8 *jmptbl = jmptbl_read_table (anal, jmptbl_loc, jmptbl_size, sz, NULL);
+	ut64 jtbl_entries = 0;
+	ut8 *jmptbl = jmptbl_read_table (anal, jmptbl_loc, jmptbl_size, sz, &jtbl_entries);
 	if (!jmptbl) {
 		R_LOG_DEBUG ("Invalid jump table size at 0x%08" PFMT64x, jmptbl_loc);
 		return false;
 	}
+	jmptbl_size = R_MIN (jmptbl_size, jtbl_entries);
 	jmptbl_target_ctx_init (&target_ctx, anal, ip);
 	ut64 case_idx;
 	for (case_idx = 0; case_idx < jmptbl_size; case_idx++) {
@@ -1423,11 +1433,13 @@ R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	if (table_size == 0 || table_size == UT64_MAX) {
 		return false;
 	}
-	const size_t max = (size_t)R_MIN (table_size, (ut64) (4096 / loadsize));
-	ut8 *table = jmptbl_read_table (anal, tblptr, max, loadsize, NULL);
+	size_t max = (size_t)R_MIN (table_size, (ut64) (4096 / loadsize));
+	ut64 entries_read = 0;
+	ut8 *table = jmptbl_read_table (anal, tblptr, max, loadsize, &entries_read);
 	if (!table) {
 		return false;
 	}
+	max = R_MIN (max, entries_read);
 	const ut8 esize = (ut8)loadsize;
 	const st64 delta_scale = loadsize == 1? 4: loadsize == 2? 2: 1;
 	RBitset *s = r_bitset_new ();
