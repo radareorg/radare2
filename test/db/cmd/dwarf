@@ -132,7 +132,7 @@ line: 11
 colu: 1
 addr: 0x00001186
 - offset -  6061 6263 6465 6667 6869 6A6B 6C6D 6E6F  0123456789ABCDEF  comment
-0x00001060  f30f 1efa 31ed 4989 d15e 4889 e248 83e4  ....1.I..^H..H..  ; rip ; [16] -r-x section size 294 named .text ; arg3
+0x00001060  f30f 1efa 31ed 4989 d15e 4889 e248 83e4  ....1.I..^H..H..  ; rip ; [16] -r-x section size 294 named .text ; arg1
 0x00001070  f050 5445 31c0 31c9 488d 3de9 0000 00ff  .PTE1.1.H.=.....
 0x00001080  1553 2f00 00f4 662e 0f1f 8400 0000 0000  .S/...f.........
 0x00001090  488d 3d79 2f00 0048 8d05 722f 0000 4839  H.=y/..H..r/..H9  ; sym.deregister_tm_clones

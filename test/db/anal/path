@@ -151,7 +151,7 @@ pdb @@= 0x000067d0 0x00004df0 0x000132d0 0x000132de 0x00004960
 | `- args(rdx)
 |           0x000067d0      f30f1efa       endbr64
 |           0x000067d4      31ed           xor ebp, ebp
-|           0x000067d6      4989d1         mov r9, rdx                 ; arg3
+|           0x000067d6      4989d1         mov r9, rdx                 ; arg1
 |           0x000067d9      5e             pop rsi
 |           0x000067da      4889e2         mov rdx, rsp
 |           0x000067dd      4883e4f0       and rsp, 0xfffffffffffffff0

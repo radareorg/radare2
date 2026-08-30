@@ -45,7 +45,7 @@ EXPECT=<<EOF
 |           ; arg int64_t arg1 @ rdx
 |           ; arg void *stack_end @ xmm0
 |           entry0                         31ed           xor ebp, ebp
-|           entry0+0x2                     4989d1         mov r9, rdx  ; arg3
+|           entry0+0x2                     4989d1         mov r9, rdx  ; arg1
 |           entry0+0x5                     5e             pop rsi
 |           entry0+0x6                     4889e2         mov rdx, rsp
 |           entry0+0x9                     4883e4f0       and rsp, 0xfffffffffffffff0
@@ -58,7 +58,7 @@ EXPECT=<<EOF
 [36m|[0m           [37m; [37marg [36mint64_t [33marg1 [32m@ rdx[0m
 [36m|[0m           [37m; [37marg [36mvoid *[33mstack_end [32m@ xmm0[0m
 [36m|[0m           [32mentry0[0m                          [33m31[36med[0m           [33mxor[37m ebp[0m,[37m ebp[0m[0m
-[36m|[0m           [32mentry0[0m+0x2                      [33m49[36m89[36md1[0m         [36mmov[37m r9[0m,[37m rdx[0m[0m [37m; arg3[0m
+[36m|[0m           [32mentry0[0m+0x2                      [33m49[36m89[36md1[0m         [36mmov[37m r9[0m,[37m rdx[0m[0m [37m; arg1[0m
 [36m|[0m           [32mentry0[0m+0x5                      [33m5e[0m             [35mpop[37m rsi[0m[0m
 [36m|[0m           [32mentry0[0m+0x6                      [33m48[36m89[36me2[0m         [36mmov[37m rdx[0m,[37m rsp[0m[0m
 [36m|[0m           [32mentry0[0m+0x9                      [33m48[36m83[36me4[36mf0[0m       [33mand[37m rsp[0m,[33m[33m [32m0xfffffffffffffff0[0m[0m

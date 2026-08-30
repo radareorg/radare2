@@ -2125,6 +2125,21 @@ R_IPI bool r_anal_var_is_default_argname(const char *name) {
 	return true;
 }
 
+// the vartype comment names the variable an access was seen through, so a
+// later renumbering leaves the old name behind in the disassembly. Only the
+// entries still naming this variable are rewritten, so an address shared with
+// another variable keeps whichever name it already had.
+static void var_refresh_vartype_meta(RAnal *anal, RAnalVar *var, const char *oldname) {
+	RAnalVarAccess *acc;
+	R_VEC_FOREACH (&var->accesses, acc) {
+		const ut64 addr = var->fcn->addr + acc->offset;
+		const char *cur = r_meta_get_string (anal, R_META_TYPE_VARTYPE, addr);
+		if (cur && !strcmp (cur, oldname)) {
+			r_meta_set_string (anal, R_META_TYPE_VARTYPE, addr, var->name);
+		}
+	}
+}
+
 static void assign_reg_argnums(RAnal *anal, RAnalFunction *fcn, RVecAnalVarPtr *rvars) {
 	RAnalVar **it;
 	R_VEC_FOREACH (rvars, it) {
@@ -2152,7 +2167,11 @@ static void assign_reg_argnums(RAnal *anal, RAnalFunction *fcn, RVecAnalVarPtr *
 		var->argnum = dense++;
 		if (r_anal_var_is_default_argname (var->name)) {
 			char *newname = r_str_newf ("arg%d", var->argnum + 1);
-			r_anal_var_rename (anal, var, newname);
+			char *oldname = strdup (var->name);
+			if (oldname && r_anal_var_rename (anal, var, newname)) {
+				var_refresh_vartype_meta (anal, var, oldname);
+			}
+			free (oldname);
 			free (newname);
 		}
 	}
