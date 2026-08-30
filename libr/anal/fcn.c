@@ -357,11 +357,14 @@ static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fc
 	const char *reg_src = NULL;
 	const char *o_reg_dst = NULL;
 	RAnalValue cur_scr, cur_dst = {0};
-	read_ahead (ra, anal, addr, (ut8*)buf, sizeof (buf));
+	const int nread = read_ahead (ra, anal, addr, (ut8*)buf, sizeof (buf));
+	if (nread < 1) {
+		return false;
+	}
 	bool isValid = false;
-	for (i = 0; i + 8 < JMPTBL_LEA_SEARCH_SZ; i++) {
+	for (i = 0; i + 8 < nread; i++) {
 		ut64 at = addr + i;
-		int left = JMPTBL_LEA_SEARCH_SZ - i;
+		int left = nread - i;
 		int len = r_anal_op (anal, aop, at, buf + i, left, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_VAL);
 		if (len < 1) {
 			len = 1;
@@ -1066,7 +1069,12 @@ repeat:
 			R_LOG_ERROR ("Failed to read");
 			break;
 		}
-		// ret is the max length of bytes available
+		if (ret < 1) {
+			R_LOG_DEBUG ("Nothing to read at 0x%08"PFMT64x, at);
+			gotoBeach (R_ANAL_RET_END);
+		}
+		// only the first `ret` bytes were filled, the rest of buf is uninitialized
+		bytes_read = ret;
 		// eprintf("%02x %02x\n", buf[0], buf[1]);
 		const bool check_invalid_fill = bb->size < sizeof (buf) || anal->opt.nonull > 0;
 		const bool bits_unknown = !anal->config->bits || anal->config->bits > 64 || !fcn->bits || fcn->bits > 64;
