@@ -327,6 +327,64 @@ fcn.00013c70 (int64_t arg1, int64_t arg2, int64_t arg3);
 EOF
 RUN
 
+NAME=float args keep their own sequence beside the integer one
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4889f04889d0f20f58c8c3 @ 0
+af
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rsi
+arg int64_t arg2 @ rdx
+arg double arg3 @ xmm0
+arg double arg4 @ xmm1
+EOF
+RUN
+
+NAME=arm64 float arg spilled straight to the frame is still an argument
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx e00300fdc0035fd6 @ 0
+af
+afv
+EOF
+EXPECT=<<EOF
+arg double arg1 @ d0
+arg int64_t arg_0h @ sp+0x0
+EOF
+RUN
+
+NAME=arm64 float args come from the v register sequence
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 0000669e2100669ec0035fd6 @ 0
+af
+afv
+EOF
+EXPECT=<<EOF
+arg double arg1 @ d0
+arg double arg2 @ d1
+EOF
+RUN
+
+NAME=float args are recovered when no integer argument is passed
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx f20f58c8c3 @ 0
+af
+afv
+EOF
+EXPECT=<<EOF
+arg double arg1 @ xmm0
+arg double arg2 @ xmm1
+EOF
+RUN
+
 NAME=float args afli
 FILE=bins/elf/float_point
 CMDS=<<EOF

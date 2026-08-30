@@ -31,6 +31,9 @@ R_IPI void r_anal_types_ensure_loaded(RAnal *anal);
 R_IPI bool r_anal_var_is_default_argname(const char *name);
 R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth);
 R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention);
+// integer and floating-point arguments are counted on separate sequences
+R_IPI const char *r_anal_cc_fparg(RAnal *anal, const char *cc, int n);
+R_IPI int r_anal_cc_max_fparg(RAnal *anal, const char *cc);
 R_IPI int r_anal_cc_shadow(RAnal *anal, const char *convention);
 R_IPI bool r_anal_cc_stack_rev(RAnal *anal, const char *cc);
 R_IPI int r_anal_cc_raslot(RAnal *anal, int word);

@@ -648,6 +648,9 @@ static void cc_unset_slots(Sdb *db, const char *name) {
 		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.arg%d", name, i), 0);
 		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.ret%d", name, i), 0);
 	}
+	for (i = 0; i < R_ANAL_CC_MAXFPARG; i++) {
+		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.fparg%d", name, i), 0);
+	}
 	r_strbuf_fini (&sb);
 }
 
@@ -882,6 +885,34 @@ R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home,
 		ret = sdb_const_getf (db, NULL, "cc.%s.argn", cc);
 	}
 	return ret? dyncc_from_static_loc (anal, ret): NULL;
+}
+
+// the register carrying the Nth floating-point argument, NULL if the
+// convention has no such sequence
+static int cc_seq_count(RAnal *anal, const char *cc, const char *tag, int max);
+
+// a dyncc convention is spelled out in its own name and declares no sequence
+// keys, so it can never carry one of these
+static bool cc_has_seq_keys(const char *cc) {
+	RAnalDynCC d;
+	return !dyncc_parse (cc, &d);
+}
+
+R_IPI const char *r_anal_cc_fparg(RAnal *anal, const char *cc, int n) {
+	R_RETURN_VAL_IF_FAIL (anal && DB && n >= 0, NULL);
+	if (!cc || !cc_has_seq_keys (cc)) {
+		return NULL;
+	}
+	const char *loc = sdb_const_getf (DB, NULL, "cc.%s.fparg%d", cc, n);
+	return loc? dyncc_from_static_loc (anal, loc): NULL;
+}
+
+R_IPI int r_anal_cc_max_fparg(RAnal *anal, const char *cc) {
+	R_RETURN_VAL_IF_FAIL (anal && DB && cc, 0);
+	if (!cc_has_seq_keys (cc)) {
+		return 0;
+	}
+	return cc_seq_count (anal, cc, "fparg", R_ANAL_CC_MAXFPARG);
 }
 
 // caller-reserved home space below the stack args (win64 shadow area)
@@ -1141,22 +1172,24 @@ R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *
 	cc_set_roleloc (anal, convention, "error", error);
 }
 
-R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
-	int i = 0;
-	R_RETURN_VAL_IF_FAIL (anal && DB && cc, 0);
-
-	RAnalDynCC d;
-	if (dyncc_parse (cc, &d)) {
-		return dyncc_max_arg (anal, &d);
-	}
-
-	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-		const char *res = sdb_const_getf (DB, NULL, "cc.%s.arg%d", cc, i);
-		if (!res) {
+// how many slots a convention declares in one of its argument sequences
+static int cc_seq_count(RAnal *anal, const char *cc, const char *tag, int max) {
+	int i;
+	for (i = 0; i < max; i++) {
+		if (!sdb_const_getf (DB, NULL, "cc.%s.%s%d", cc, tag, i)) {
 			break;
 		}
 	}
 	return i;
+}
+
+R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
+	R_RETURN_VAL_IF_FAIL (anal && DB && cc, 0);
+	RAnalDynCC d;
+	if (dyncc_parse (cc, &d)) {
+		return dyncc_max_arg (anal, &d);
+	}
+	return cc_seq_count (anal, cc, "arg", R_ANAL_CC_MAXARG);
 }
 
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n) {
