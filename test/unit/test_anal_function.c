@@ -1230,6 +1230,7 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 	r_anal_use (anal, "x86");
 	r_anal_set_bits (anal, 64);
 	mu_assert_true (r_anal_cc_set (anal, "rax exactcc(rdi)"), "seed exact calling convention");
+	sdb_set (anal->sdb_cc, "cc.exactcc.preserve", "rbp,rsp", 0);
 	sdb_set (anal->sdb_cc, "cc.exactcc.retmech", "stack:0:8:8", 0);
 	sdb_set (anal->sdb_cc, "cc.exactcc.stackalloc", "lower", 0);
 	sdb_set (anal->sdb_cc, "cc.exactcc.redzone", "128", 0);
@@ -1258,6 +1259,22 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 		"name lookup remains available for ordinary signatures");
 	mu_assert_false (name_only->capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FUNCTION_INTERFACE,
 		"name-only signature cannot certify an exact interface");
+	mu_assert_true (name_only->capabilities
+		& R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_STACK_ALLOCATION_CONTRACT,
+		"stack allocation authority is independent of prototype completeness");
+	mu_assert_true (name_only->function_interface.stack_pointer_preserved_across_calls,
+		"call preservation is independent of prototype authority");
+	mu_assert_true (name_only->function_interface.frame_pointer_preserved_across_calls,
+		"frame-carrier preservation is independent of prototype authority");
+	RAnalSnapshotStackAllocationContractView name_only_stack_allocation = {0};
+	mu_assert_true (r_anal_function_snapshot_interface_stack_allocation_contract (
+		name_only, &name_only_stack_allocation),
+		"incomplete prototype still exposes exact machine stack geometry");
+	mu_assert_eq (name_only_stack_allocation.growth,
+		R_ANAL_SNAPSHOT_STACK_GROWTH_LOWER,
+		"incomplete prototype preserves exact stack growth");
+	mu_assert_eq (name_only_stack_allocation.implicit_active_sp_bytes, 128,
+		"incomplete prototype preserves exact implicit stack extent");
 	ut64 link_epoch = r_anal_types_dirty_epoch (anal);
 	ut64 link_hash = r_anal_types_context_hash (anal);
 	r_anal_function_snapshot_free (name_only);
@@ -1299,6 +1316,10 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 	mu_assert_true (frame_snapshot->capabilities
 		& R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FRAME_POINTER_STORAGE,
 		"slotless exact interface carries parser-owned frame pointer");
+	mu_assert_true (frame_snapshot->function_interface.stack_pointer_preserved_across_calls,
+		"calling convention preserves the stack-pointer carrier across calls");
+	mu_assert_true (frame_snapshot->function_interface.frame_pointer_preserved_across_calls,
+		"calling convention preserves the frame-pointer carrier across calls");
 	RAnalSnapshotRegisterStorageView frame_pointer = {0};
 	mu_assert_true (r_anal_function_snapshot_interface_frame_pointer_storage (
 		frame_snapshot, &frame_pointer), "copy exact frame-pointer storage");
