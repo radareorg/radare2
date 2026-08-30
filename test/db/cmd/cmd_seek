@@ -557,3 +557,78 @@ EXPECT=<<EOF
 0x100
 EOF
 RUN
+
+NAME=s++ with invalid expression does not seek
+FILE=malloc://1024
+CMDS=<<EOF
+s 0x100
+s++ foo
+s
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot seek to unknown address 'foo' (invalid octal number)
+EOF
+EXPECT=<<EOF
+0x100
+EOF
+RUN
+
+NAME=so with invalid expression does not seek
+FILE=malloc://1024
+CMDS=<<EOF
+s 0x100
+so foo
+s
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot seek to unknown opcode 'foo' (invalid octal number)
+EOF
+EXPECT=<<EOF
+0x100
+EOF
+RUN
+
+NAME=sa with invalid expression does not seek
+FILE=malloc://1024
+CMDS=<<EOF
+s 0x100
+sa 0x100 foo
+s
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot evaluate block size 'foo' (invalid octal number)
+EOF
+EXPECT=<<EOF
+0x100
+EOF
+RUN
+
+NAME=sl with invalid expression does not seek
+FILE=malloc://1024
+CMDS=<<EOF
+s 0x100
+sl foo
+s
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot evaluate line 'foo' (invalid octal number)
+EOF
+EXPECT=<<EOF
+0x100
+EOF
+RUN
+
+NAME=s+. with invalid expression does not seek
+FILE=malloc://1024
+CMDS=<<EOF
+s 0x100
+s foo+.bar
+s
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot seek to unknown address 'foo' (invalid octal number)
+EOF
+EXPECT=<<EOF
+0x100
+EOF
+RUN
