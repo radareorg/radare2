@@ -165,7 +165,9 @@ static bool tt_reg_alias(void *reg, int alias, const char *name) {
 static bool tt_mem_read(void *mem, ut64 addr, ut8 *buf, int len) {
 	TPState *tps = (TPState *)mem;
 	if (tps->anal->iob.read_at) {
-		return tps->anal->iob.read_at (tps->anal->iob.io, addr, buf, len) == len;
+		const int nread = tps->anal->iob.read_at (tps->anal->iob.io, addr, buf, len);
+		// Keep symbolic reads traceable without accepting null or sentinel dereferences.
+		return nread == len || (addr >= tps->stack_base && addr != UT32_MAX && addr != UT64_MAX);
 	}
 	return false;
 }
@@ -718,9 +720,12 @@ TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPE
 			break;
 		}
 		ut8 *buf_ptr = R_VEC_START_ITER (&buf);
-		if (!anal->iob.read_at || anal->iob.read_at (io, bb_addr, buf_ptr, bb_size) != bb_size) {
+		const int nread = anal->iob.read_at
+			? anal->iob.read_at (io, bb_addr, buf_ptr, bb_size): -1;
+		if (nread < 1) {
 			break;
 		}
+		bb_size = nread;
 		ut64 addr = bb_addr;
 		bool have_cached_op = false;
 		for (i = 0; i < bb_size;) {
