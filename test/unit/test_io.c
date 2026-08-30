@@ -1,4 +1,5 @@
 #include <r_io.h>
+#include <r_util.h>
 #include "minunit.h"
 
 bool test_r_io_cache(void) {
@@ -63,6 +64,55 @@ bool test_r_io_cache(void) {
 	mu_end;
 #endif
 	return true;
+}
+
+bool test_r_io_nread_at(void) {
+	char *filename = r_file_temp ("r2-io-nread");
+	mu_assert_notnull (filename, "temporary filename should be created");
+	mu_assert_true (r_file_dump (filename, (const ut8 *)"abc", 3, false), "physical contents should be written");
+	char *uri = r_str_newf ("file://%s", filename);
+	RIO *io = r_io_new ();
+	RIODesc *desc = r_io_open (io, uri, R_PERM_R, 0);
+	mu_assert_notnull (desc, "physical IO should open");
+	ut8 buf[6] = { 0 };
+	mu_assert_eq (r_io_nread_at (io, 0, buf, 4), 3, "physical short read should return its byte count");
+	mu_assert_memeq (buf, (const ut8 *)"abc", 3, "physical short read contents");
+	r_io_free (io);
+	free (uri);
+	r_file_rm (filename);
+	free (filename);
+
+	io = r_io_new ();
+	io->va = true;
+	io->ff = true;
+	io->Oxff = 0xff;
+	int fd0 = r_io_fd_open (io, "malloc://2", R_PERM_RW, 0);
+	int fd1 = r_io_fd_open (io, "malloc://2", R_PERM_RW, 0);
+	mu_assert_neq (fd0, -1, "first virtual IO should open");
+	mu_assert_neq (fd1, -1, "second virtual IO should open");
+	mu_assert_notnull (r_io_map_add (io, fd0, R_PERM_R, 0, 0, 2), "first adjacent map should be added");
+	mu_assert_notnull (r_io_map_add (io, fd1, R_PERM_R, 0, 2, 2), "second adjacent map should be added");
+	mu_assert_eq (r_io_fd_write_at (io, fd0, 0, (const ut8 *)"ab", 2), 2, "first virtual contents should be written");
+	mu_assert_eq (r_io_fd_write_at (io, fd1, 0, (const ut8 *)"cd", 2), 2, "second virtual contents should be written");
+	memset (buf, 0, sizeof (buf));
+	mu_assert_eq (r_io_nread_at (io, 0, buf, 4), 4, "adjacent maps should form one read prefix");
+	mu_assert_memeq (buf, (const ut8 *)"abcd", 4, "adjacent map contents");
+	r_io_map_remap (io, r_io_map_get_at (io, 2)->id, 4);
+	memset (buf, 0, sizeof (buf));
+	mu_assert_eq (r_io_nread_at (io, 0, buf, sizeof (buf)), 2, "a virtual hole should stop the read prefix");
+	mu_assert_memeq (buf, (const ut8 *)"ab\xff\xff\xff\xff", sizeof (buf), "io.ff should only fill the unread tail");
+	r_io_free (io);
+
+	io = r_io_new ();
+	desc = r_io_open (io, "malloc://4", R_PERM_RW, 0);
+	mu_assert_notnull (desc, "masked physical IO should open");
+	mu_assert_eq (r_io_fd_write_at (io, desc->fd, 0, (const ut8 *)"abcd", 4), 4, "masked contents should be written");
+	io->mask = 3;
+	memset (buf, 0, sizeof (buf));
+	mu_assert_eq (r_io_nread_at (io, 2, buf, 4), 4, "masked reads should wrap and preserve their count");
+	mu_assert_memeq (buf, (const ut8 *)"cdab", 4, "masked read contents");
+	r_io_free (io);
+	mu_end;
 }
 
 bool test_r_io_mapsplit (void) {
@@ -279,6 +329,7 @@ bool test_r_io_priority2(void) {
 
 int all_tests(void) {
 	mu_run_test(test_r_io_cache);
+	mu_run_test(test_r_io_nread_at);
 	mu_run_test(test_r_io_mapsplit);
 	mu_run_test(test_r_io_mapsplit2);
 	mu_run_test(test_r_io_mapsplit3);
