@@ -390,6 +390,7 @@ typedef struct {
 	ut64 paddr;
 	ut64 eh_paddr;    // methoddef: paddr of the IL exception handling sections (0 if none)
 	ut32 size;
+	ut32 hsize;
 	char *namespace;  // For types
 	char *classname;  // Declaring class for methods and fields
 	char *short_name; // Unqualified method/type/member name

@@ -1430,6 +1430,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				// TODO: prolog_size
 				sym->paddr = MC + prolog_size;// + 0x10;
 				sym->vaddr = sym->paddr; //  + baddr;
+				sym->hsize = prolog_size;
 				//if (is_direct) {
 				sym->attr.size = insns_size * 2;
 				//}
