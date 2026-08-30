@@ -708,8 +708,8 @@ EOF
 EXPECT=<<EOF
 void sym.gzopen (int64_t arg1, int64_t arg2);
 arg int64_t arg1 @ r3
-arg int64_t arg3 @ r5
 arg int64_t arg2 @ r4
+arg int64_t arg3 @ r5
 EOF
 RUN
 

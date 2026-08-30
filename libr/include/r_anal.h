@@ -176,7 +176,13 @@ enum {
 };
 
 #define R_ANAL_CC_MAXARG 16
+// floats come from a second sequence, tracked apart from the integer one
+#define R_ANAL_CC_MAXFPARG 8
 #define R_ANAL_CC_DYNSLOT_COUNT (26 + 5)
+// reg_set layout: integer args, self and error, dyncc roles, fp args
+#define R_ANAL_CC_DYNSLOT_BASE (R_ANAL_CC_MAXARG + 2)
+#define R_ANAL_CC_FPSLOT_BASE (R_ANAL_CC_DYNSLOT_BASE + R_ANAL_CC_DYNSLOT_COUNT)
+#define R_ANAL_CC_REGSET_SIZE (R_ANAL_CC_FPSLOT_BASE + R_ANAL_CC_MAXFPARG)
 
 enum {
 	R_ANAL_FCN_TYPE_NULL = 0,
@@ -1378,6 +1384,7 @@ typedef struct r_anal_function_vars_cache {
 	for (RVecAnalVarPtr *const *_vc_p = (RVecAnalVarPtr *const[]){(cache)->rvars, (cache)->bvars, (cache)->svars}, *const *_vc_e = _vc_p + 3; _vc_p < _vc_e; _vc_p++) \
 		R_VEC_FOREACH (*_vc_p, it)
 
+R_API void r_anal_function_normalize_reg_argnums(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_function_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn);
 R_API void r_anal_function_vars_cache_fini(RAnalFcnVarsCache *cache);
 
@@ -1454,6 +1461,9 @@ typedef struct r_anal_cc_argslot_t {
 	bool fixed; // the convention pins this slot, so it does not follow the previous arg
 } RAnalCCArgSlot;
 R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int argc, bool incall, RAnalCCArgSlot *out);
+// integer and floating-point arguments are counted on separate sequences
+R_API const char *r_anal_cc_fparg(RAnal *anal, const char *cc, int n);
+R_API int r_anal_cc_max_fparg(RAnal *anal, const char *cc);
 R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int argno, int argc, bool incall, int width, ut64 *out);
 R_API ut64 r_anal_cc_argaddr(RAnal *anal, RReg *reg, const RAnalCCArgSlot *slot);
 R_API int r_anal_cc_wordsize(RAnal *anal, const char *convention);
