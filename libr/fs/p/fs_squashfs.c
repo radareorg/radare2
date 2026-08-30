@@ -50,7 +50,7 @@ static int fs_sqsh_mapper_map(const struct SqshMapper *mapper, sqsh_index_t offs
 		return -1;
 	}
 	int res = root->iob.read_at (root->iob.io, offset, buf, size);
-	if (res < 1) {
+	if (res != size) {
 		R_LOG_ERROR ("cannot allocate %d bytes", size);
 		free (buf);
 		return -1;

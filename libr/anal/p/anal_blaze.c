@@ -289,7 +289,7 @@ static bool anal_bbs(RCore *core, const char *input, bool nopskip) {
 		return false;
 	}
 	int res = anal->iob.read_at (anal->iob.io, start, data, size);
-	if (res < 0) {
+	if (res != (int)size) {
 		R_LOG_ERROR ("Failed to read data at 0x%" PFMT64x, start);
 		free (data);
 		return false;
@@ -501,7 +501,7 @@ static bool anal_bbs_range(RCore *core, const char *input) {
 		return false;
 	}
 	int res = core->anal->iob.read_at (core->anal->iob.io, start, data, size);
-	if (res < 0) {
+	if (res != (int)size) {
 		R_LOG_ERROR ("Failed to read data at 0x%" PFMT64x, start);
 		free (data);
 		return false;

@@ -114,7 +114,7 @@ static int thumb_scan(RAnal *anal) {
 		ctx.bits = anal->config->bits;
 		while (addr < end) {
 			int toread = R_MIN (end - addr, bsz);
-			if (!anal->iob.read_at (anal->iob.io, addr, buf, toread)) {
+			if (anal->iob.read_at (anal->iob.io, addr, buf, toread) != toread) {
 				break;
 			}
 			scan_chunk (&ctx, buf, toread, addr);

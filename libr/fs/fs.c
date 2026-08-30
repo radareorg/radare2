@@ -788,11 +788,15 @@ R_API char *r_fs_name(RFS *fs, ut64 offset) {
 	for (i = 0; fstypes[i].name; i++) {
 		const RFSType *f = &fstypes[i];
 		len = R_MIN (f->buflen, sizeof (buf) - 1);
-		fs->iob.read_at (fs->iob.io, offset + f->bufoff, buf, len);
+		if (fs->iob.read_at (fs->iob.io, offset + f->bufoff, buf, len) != len) {
+			continue;
+		}
 		if (f->buflen > 0 && !memcmp (buf, f->buf, f->buflen)) {
 			ret = true;
 			len = R_MIN (f->bytelen, sizeof (buf));
-			fs->iob.read_at (fs->iob.io, offset + f->byteoff, buf, len);
+			if (fs->iob.read_at (fs->iob.io, offset + f->byteoff, buf, len) != len) {
+				continue;
+			}
 			// for (j = 0; j < f->bytelen; j++) {
 			for (j = 0; j < len; j++) {
 				if (buf[j] != f->byte) {

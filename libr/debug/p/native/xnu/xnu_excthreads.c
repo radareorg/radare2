@@ -164,7 +164,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 				} else {
 					state->__bcr[i] |= BAS_IMVA_0_1;
 				}
-				if (bio->read_at (bio->io, regs->ts_32.__pc, (void *)&op, 2) < 1) {
+				if (bio->read_at (bio->io, regs->ts_32.__pc, (void *)&op, sizeof (op)) != sizeof (op)) {
 					R_LOG_ERROR ("Failed to read opcode modify_trace_bit");
 					return false;
 				}

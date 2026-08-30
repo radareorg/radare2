@@ -52,7 +52,7 @@ static void details_hfs(RFSRoot *root, RStrBuf *sb) {
 	// MDB is at offset 1024 from the start
 	ut64 mdb_offset = root->delta + 1024;
 
-	if (!root->iob.read_at (root->iob.io, mdb_offset, (ut8 *)&mdb, sizeof (mdb))) {
+	if (root->iob.read_at (root->iob.io, mdb_offset, (ut8 *)&mdb, sizeof (mdb)) != sizeof (mdb)) {
 		r_strbuf_append (sb, "ERROR: Could not read HFS Master Directory Block\n");
 		return;
 	}

@@ -11,7 +11,7 @@ R_API int r_anal_data_type(RAnal *anal, ut64 da) {
 	}
 	ut8 buf[64] = {0};
 	// check if valid address
-	if (!anal->iob.read_at (io, da, buf, sizeof (buf))) {
+	if (anal->iob.read_at (io, da, buf, sizeof (buf)) != sizeof (buf)) {
 		// R_LOG_ERROR ("RAnal.dataType(): Cannot read at 0x%08"PFMT64x, da);
 		return R_ANAL_REF_TYPE_ERROR;
 	}

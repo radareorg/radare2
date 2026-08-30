@@ -174,7 +174,7 @@ static inline bool bfs_read_at(BeosFS *ctx, ut64 offset, ut8 *buf, int len) {
 	if (!ctx || !ctx->iob || !ctx->iob->read_at) {
 		return false;
 	}
-	return ctx->iob->read_at (ctx->iob->io, ctx->delta + offset, buf, len);
+	return ctx->iob->read_at (ctx->iob->io, ctx->delta + offset, buf, len) == len;
 }
 
 static inline ut32 bfs_read32(BeosFS *ctx, ut8 *buf) {

@@ -869,7 +869,7 @@ R_API bool r_anal_block_was_modified(RAnalBlock *block) {
 	if (!buf) {
 		return false;
 	}
-	if (!block->anal->iob.read_at (block->anal->iob.io, block->addr, buf, block->size)) {
+	if (block->anal->iob.read_at (block->anal->iob.io, block->addr, buf, block->size) != block->size) {
 		free (buf);
 		return false;
 	}
@@ -888,7 +888,7 @@ R_API void r_anal_block_update_hash(RAnalBlock *block) {
 	}
 	ut8 *buf = malloc (block->size);
 	if (buf) {
-		if (!block->anal->iob.read_at (block->anal->iob.io, block->addr, buf, block->size)) {
+		if (block->anal->iob.read_at (block->anal->iob.io, block->addr, buf, block->size) != block->size) {
 			free (buf);
 			return;
 		}

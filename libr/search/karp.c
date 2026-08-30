@@ -138,7 +138,7 @@ R_IPI int search_rk(RSearch *srch, ut64 from, ut64 to) {
 	const ut32 maxbuf = R_MAX (0x1000, klen * 2);
 	ut32 blen = R_MIN (maxbuf, to - from);
 	ut8 *buf = malloc (blen);
-	if (!buf || !srch->iob.read_at (srch->iob.io, from, buf, blen)) {
+	if (!buf || srch->iob.read_at (srch->iob.io, from, buf, blen) != blen) {
 		free (buf);
 		return -1;
 	}
@@ -182,7 +182,7 @@ R_IPI int search_rk(RSearch *srch, ut64 from, ut64 to) {
 		// move leftover to start of buffer, and fill the rest
 		memmove (buf, buf + i, klen);
 		blen = R_MIN (maxbuf, to - addr);
-		if (!srch->iob.read_at (srch->iob.io, addr + klen, buf + klen, blen - klen)) {
+		if (srch->iob.read_at (srch->iob.io, addr + klen, buf + klen, blen - klen) != blen - klen) {
 			free (buf);
 			return -1;
 		}

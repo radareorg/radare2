@@ -77,6 +77,9 @@ bool test_r_io_nread_at(void) {
 	ut8 buf[6] = { 0 };
 	mu_assert_eq (r_io_nread_at (io, 0, buf, 4), 3, "physical short read should return its byte count");
 	mu_assert_memeq (buf, (const ut8 *)"abc", 3, "physical short read contents");
+	RIOBind bind = { 0 };
+	r_io_bind (io, &bind);
+	mu_assert_eq (bind.read_at (io, 0, buf, 4), 3, "RIOBind should expose the byte count");
 	r_io_free (io);
 	free (uri);
 	r_file_rm (filename);

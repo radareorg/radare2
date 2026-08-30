@@ -37,7 +37,9 @@ static void parse_ebr(RFS *fs, RFSPartitionIterator iterate, RList *list, ut64 e
 	}
 
 	memset (&ebr, 0, sizeof (ebr));
-	fs->iob.read_at (fs->iob.io, ebr_sector * 512, (ut8 *)&ebr, sizeof (ebr));
+	if (fs->iob.read_at (fs->iob.io, ebr_sector * 512, (ut8 *)&ebr, sizeof (ebr)) != sizeof (ebr)) {
+		return;
+	}
 	if (ebr.aa55 != 0xaa55) {
 		R_LOG_ERROR ("Invalid EBR signature at sector 0x%" PFMT64x, ebr_sector);
 		return;
@@ -69,7 +71,9 @@ static int parse_mbr_partitions(RFS *fs, RFSPartitionIterator iterate, RList *li
 	RFSPartition *par = NULL;
 
 	memset (&mbr, 0, sizeof (mbr));
-	fs->iob.read_at (fs->iob.io, 0, (ut8 *)&mbr, sizeof (mbr));
+	if (fs->iob.read_at (fs->iob.io, 0, (ut8 *)&mbr, sizeof (mbr)) != sizeof (mbr)) {
+		return 0;
+	}
 	if (mbr.aa55 != 0xaa55) {
 		R_LOG_ERROR ("Invalid DOS signature at 0x%x", (int)r_offsetof (MBR, aa55));
 		return 0;

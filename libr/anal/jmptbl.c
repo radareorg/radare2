@@ -45,7 +45,7 @@ static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs, ut64 br_addr, co
 	}
 	ut8 buf[JMPTBL_DISPATCH_LOOKBACK * 4];
 	const ut64 scan_base = br_addr - lookback_bytes;
-	if (!anal->iob.read_at (anal->iob.io, scan_base, buf, sizeof (buf))) {
+	if (anal->iob.read_at (anal->iob.io, scan_base, buf, sizeof (buf)) != sizeof (buf)) {
 		return false;
 	}
 	char add_s0[32] = { 0 };
@@ -169,7 +169,7 @@ static bool check_jmptbl_case_target(RAnal *anal, JmptblTargetCtx *ctx, ut64 cas
 		maxop = 16;
 	}
 	const size_t probe_sz = R_MIN (sizeof (probe), (size_t)maxop * JMPTBL_TARGET_MAX_OPS);
-	if (!anal->iob.read_at (anal->iob.io, case_addr, probe, probe_sz)) {
+	if (anal->iob.read_at (anal->iob.io, case_addr, probe, probe_sz) != probe_sz) {
 		return false;
 	}
 	RAnalOp op = { 0 };
@@ -309,7 +309,7 @@ static ut8 *jmptbl_read_table(RAnal *anal, ut64 addr, ut64 entries, ut64 sz, ut6
 	if (jmptbl_table_bytes (entries, sz, &table_bytes)) {
 		ut8 *table = malloc (table_bytes);
 		if (table) {
-			if (anal->iob.read_at (anal->iob.io, addr, table, table_bytes)) {
+			if (anal->iob.read_at (anal->iob.io, addr, table, table_bytes) == table_bytes) {
 				if (bytes) {
 					*bytes = table_bytes;
 				}
@@ -446,7 +446,7 @@ static bool function_has_ret_between(RAnal *anal, RAnalFunction *fcn, ut64 from,
 			continue;
 		}
 		ut8 buf[32];
-		if (!anal->iob.read_at (anal->iob.io, addr, buf, sizeof (buf))) {
+		if (anal->iob.read_at (anal->iob.io, addr, buf, sizeof (buf)) != sizeof (buf)) {
 			continue;
 		}
 		RAnalOp op = { 0 };
@@ -816,7 +816,7 @@ static bool jmptbl_fixup_jmpptr(RAnal *anal, const JmptblArch *a, ut64 ip, ut64 
 
 static bool jmptbl_ref_is_table(RAnal *anal, const JmptblArch *a, ut64 ref, ut64 sz) {
 	ut8 buf[8];
-	if (sz < 1 || sz > sizeof (buf) || !anal->iob.read_at (anal->iob.io, ref, buf, sz)) {
+	if (sz < 1 || sz > sizeof (buf) || anal->iob.read_at (anal->iob.io, ref, buf, sz) != sz) {
 		return false;
 	}
 	ut64 jmpptr = switch_read_entry (buf, (ut8)sz, false);
@@ -1152,7 +1152,7 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 	bool isValid = false;
 	RAnalOp tmp_aop = { 0 };
 	// search for a cmp register with a reasonable size
-	if (!anal->iob.read_at (anal->iob.io, lea_addr, buf, search_sz)) {
+	if (anal->iob.read_at (anal->iob.io, lea_addr, buf, search_sz) != search_sz) {
 		R_LOG_ERROR ("Cannot read at 0x%08" PFMT64x, lea_addr);
 		free (buf);
 		return false;
@@ -1314,7 +1314,7 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 		return false;
 	}
 	// search for a cmp register with a reasonable size
-	if (!anal->iob.read_at (anal->iob.io, prev_bb->addr, bb_buf, prev_bb->size)) {
+	if (anal->iob.read_at (anal->iob.io, prev_bb->addr, bb_buf, prev_bb->size) != prev_bb->size) {
 		free (bb_buf);
 		return false;
 	}

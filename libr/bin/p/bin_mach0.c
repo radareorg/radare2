@@ -539,7 +539,9 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			}
 			ut64 paddr = r->paddr + mo->baddr;
 			r_write_ble64 (buf, r->vaddr, false);
-			iob->read_at (io, paddr, obuf, 8);
+			if (iob->read_at (io, paddr, obuf, 8) != 8) {
+				continue;
+			}
 			if (memcmp (buf, obuf, 8)) {
 				if (!iob->overlay_write_at (io, paddr, buf, 8)) {
 					R_LOG_ERROR ("write error at 0x%"PFMT64x, paddr);

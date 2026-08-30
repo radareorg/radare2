@@ -1483,7 +1483,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 				res = false;
 				goto cleanup_after_push;
 			}
-			if (!core->dbg->iob.read_at (core->dbg->iob.io, pc, buf, sizeof (buf))) {
+			if (core->dbg->iob.read_at (core->dbg->iob.io, pc, buf, sizeof (buf)) != sizeof (buf)) {
 				R_LOG_ERROR ("cannot read");
 				res = false;
 				goto cleanup_after_push;
@@ -2142,11 +2142,12 @@ static int __r_debug_snap_diff(RCore *core, int idx) {
 		if (count == idx) {
 			ut8 *b = malloc (snap->size);
 			if (R_LIKELY (b)) {
-				dbg->iob.read_at (dbg->iob.io, snap->addr, b , snap->size);
-				r_print_hexdiff (core->print,
+				if (dbg->iob.read_at (dbg->iob.io, snap->addr, b, snap->size) == snap->size) {
+					r_print_hexdiff (core->print,
 						snap->addr, snap->data,
 						snap->addr, b,
 						snap->size, col);
+				}
 				free (b);
 			} else {
 				R_LOG_ERROR ("Cannot allocate snapshot");
@@ -5135,7 +5136,9 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 static bool is_x86_call(RDebug *dbg, ut64 addr) {
 	ut8 buf[3];
 	ut8 *op = buf;
-	(void)dbg->iob.read_at (dbg->iob.io, addr, buf, R_ARRAY_SIZE (buf));
+	if (dbg->iob.read_at (dbg->iob.io, addr, buf, R_ARRAY_SIZE (buf)) != R_ARRAY_SIZE (buf)) {
+		return false;
+	}
 	switch (buf[0]) {  /* Segment override prefixes */
 	case 0x65:
 	case 0x64:
@@ -5158,7 +5161,9 @@ static bool is_x86_call(RDebug *dbg, ut64 addr) {
 
 static bool is_x86_ret(RDebug *dbg, ut64 addr) {
 	ut8 buf[1];
-	(void)dbg->iob.read_at (dbg->iob.io, addr, buf, R_ARRAY_SIZE (buf));
+	if (dbg->iob.read_at (dbg->iob.io, addr, buf, R_ARRAY_SIZE (buf)) != R_ARRAY_SIZE (buf)) {
+		return false;
+	}
 	switch (buf[0]) {
 	case 0xc3:
 	case 0xcb:
@@ -5264,8 +5269,11 @@ static bool cmd_dcu(RCore *core, const char *input) {
 					ut32 ret_addr;
 					RDebugFrame *frame = R_NEW0 (RDebugFrame);
 					cur_sp = r_debug_reg_get (core->dbg, "SP");
-					(void)core->dbg->iob.read_at (core->dbg->iob.io, cur_sp,
-							(ut8 *)&ret_addr, sizeof (ret_addr));
+					if (core->dbg->iob.read_at (core->dbg->iob.io, cur_sp,
+							(ut8 *)&ret_addr, sizeof (ret_addr)) != sizeof (ret_addr)) {
+						free (frame);
+						break;
+					}
 					frame->addr = ret_addr;
 					frame->size = old_sp - cur_sp;
 					frame->sp = cur_sp;
@@ -5977,8 +5985,8 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 				}
 				if (!filename) {
 					char pathbuf[1024] = {0};
-					core->dbg->iob.read_at (core->dbg->iob.io, addr, (ut8*)pathbuf, sizeof (pathbuf) - 1);
-					if (*pathbuf) {
+					const int nread = core->dbg->iob.read_at (core->dbg->iob.io, addr, (ut8 *)pathbuf, sizeof (pathbuf) - 1);
+					if (nread > 0 && *pathbuf) {
 						filename = strdup (pathbuf);
 					}
 				}

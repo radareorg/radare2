@@ -60,7 +60,7 @@ static int fs_part_bsd(void *disk, void *ptr, void *closure) {
 	BSDDiskLabel label;
 
 	// Read BSD disklabel at sector 1 (offset 512)
-	if (!fs->iob.read_at (fs->iob.io, 512, (ut8 *)&label, sizeof (label))) {
+	if (fs->iob.read_at (fs->iob.io, 512, (ut8 *)&label, sizeof (label)) != sizeof (label)) {
 		R_LOG_ERROR ("Failed to read BSD disklabel");
 		return 0;
 	}

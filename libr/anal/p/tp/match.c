@@ -128,7 +128,8 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 						if (f && f->size > 0) {
 							char formatstr[0x200];
 							int len = R_MIN (sizeof (formatstr) - 1, f->size);
-							bool ok = anal->iob.read_at? anal->iob.read_at (anal->iob.io, f->addr, (ut8 *)formatstr, len): false;
+							bool ok = anal->iob.read_at
+								&& anal->iob.read_at (anal->iob.io, f->addr, (ut8 *)formatstr, len) == len;
 							if (ok) {
 								formatstr[len] = '\0';
 								RVecString_clear (&types);
@@ -611,10 +612,12 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 		if (aop->ptr && aop->refptr && aop->ptr != UT64_MAX) {
 			if (type == R_ANAL_OP_TYPE_LOAD) {
 				ut8 sbuf[256] = { 0 };
-				if (anal->iob.read_at) {
-					anal->iob.read_at (anal->iob.io, aop->ptr, sbuf, sizeof (sbuf) - 1);
-				}
-				ut64 ptr = r_read_ble (sbuf, c->be, aop->refptr * 8);
+				int nread = anal->iob.read_at
+					? anal->iob.read_at (anal->iob.io, aop->ptr, sbuf, sizeof (sbuf) - 1)
+					: -1;
+				ut64 ptr = nread >= aop->refptr
+					? r_read_ble (sbuf, c->be, aop->refptr * 8)
+					: 0;
 				if (ptr && ptr != UT64_MAX) {
 					RFlagItem *f = anal->flb.f? r_flag_get_by_spaces (anal->flb.f, false, ptr, "strings", NULL): NULL;
 					if (f) {

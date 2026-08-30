@@ -40,7 +40,7 @@ R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to) {
 			}
 
 			int len = R_MIN (to - addr, buflen);
-			if (!s->iob.read_at (s->iob.io, addr, buf, len)) {
+			if (s->iob.read_at (s->iob.io, addr, buf, len) != len) {
 				ret = -1; // failed to read
 				goto beach;
 			}

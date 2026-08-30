@@ -160,10 +160,17 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		RArch *a = as->arch;
 		RIOReadAt read_at = NULL;
 		RBin *bin = R_UNWRAP2 (a, binb.bin);
+		ut8 *owned_buf = NULL;
 		if (bin && bin->iob.read_at) {
-			RIOReadAt read_at = bin->iob.read_at;
-			buf = malloc (0xff);
-			read_at (bin->iob.io, op->addr, buf, 0xff);
+			read_at = bin->iob.read_at;
+			owned_buf = malloc (0xff);
+			if (owned_buf) {
+				const int nread = read_at (bin->iob.io, op->addr, owned_buf, 0xff);
+				if (nread > 0) {
+					buf = owned_buf;
+					len = nread;
+				}
+			}
 		}
 		r_strbuf_set (&op->esil, "1,pc,-,brk,=[4],4,brk,+=");
 #if 1
@@ -213,7 +220,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			}
 		}
 beach:
-		free (buf);
+		free (owned_buf);
 #endif
 		break;
 	case ']':

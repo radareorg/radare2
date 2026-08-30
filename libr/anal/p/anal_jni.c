@@ -288,7 +288,7 @@ static char *jni_read_string(JniScanContext *ctx, ut64 addr, size_t maxlen) {
 	}
 	size_t available = R_MIN ((ut64)maxlen, end - addr);
 	char *str = R_NEWS (char, available + 1);
-	if (!ctx->anal->iob.read_at (ctx->anal->iob.io, addr, (ut8 *)str, available)) {
+	if (ctx->anal->iob.read_at (ctx->anal->iob.io, addr, (ut8 *)str, available) != available) {
 		free (str);
 		return NULL;
 	}
@@ -457,7 +457,7 @@ static void jni_scan_section(JniScanContext *ctx, const RBinSection *section) {
 		return;
 	}
 	ut8 *buf = R_NEWS (ut8, size);
-	if (!ctx->anal->iob.read_at (ctx->anal->iob.io, section_addr, buf, (int)size)) {
+	if (ctx->anal->iob.read_at (ctx->anal->iob.io, section_addr, buf, (int)size) != (int)size) {
 		free (buf);
 		return;
 	}

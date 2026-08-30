@@ -44,7 +44,10 @@ R_API RDebugSnap *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 		return NULL;
 	}
 	R_LOG_INFO ("Reading %d byte(s) from 0x%08"PFMT64x, snap->size, snap->addr);
-	dbg->iob.read_at (dbg->iob.io, snap->addr, snap->data, snap->size);
+	if (dbg->iob.read_at (dbg->iob.io, snap->addr, snap->data, snap->size) != snap->size) {
+		r_debug_snap_free (snap);
+		return NULL;
+	}
 
 	r_list_append (dbg->snaps, snap);
 	return snap;

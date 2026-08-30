@@ -478,12 +478,12 @@ bool test_r_anal_cc_argslot_homes(void) {
 	mu_end;
 }
 
-static bool fake_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
+static int fake_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int i;
 	for (i = 0; i < len; i++) {
 		buf[i] = 0x10 + i;
 	}
-	return true;
+	return len;
 }
 
 bool test_r_anal_cc_argval_stack(void) {

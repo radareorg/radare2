@@ -3299,7 +3299,10 @@ static RList *get_calls(RAnalBlock *block) {
 	RAnalOp op;
 	ut8 *data = malloc (block->size);
 	if (data) {
-		block->anal->iob.read_at (block->anal->iob.io, block->addr, data, block->size);
+		if (block->anal->iob.read_at (block->anal->iob.io, block->addr, data, block->size) != block->size) {
+			free (data);
+			return NULL;
+		}
 		size_t i;
 		for (i = 0; i < block->size; i++) {
 			int ret = r_anal_op (block->anal, &op, block->addr + i, data + i, block->size - i, R_ARCH_OP_MASK_HINT);
@@ -13774,7 +13777,8 @@ static inline bool mermaid_add_node_asm(RAnal *a, RAnalBlock *bb, RStrBuf *nodes
 	if (!bb_buf) {
 		return false;
 	}
-	if (!a->iob.read_at (a->iob.io, bb->addr, (ut8 *)bb_buf, bb->size)) {
+	if (a->iob.read_at (a->iob.io, bb->addr, (ut8 *)bb_buf, bb->size) != bb->size) {
+		free (bb_buf);
 		return false;
 	}
 	RAnalOpMask mask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM | R_ANAL_OP_HINT_MASK;

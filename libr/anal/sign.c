@@ -841,7 +841,7 @@ static RSignBytes *r_sign_func_empty_mask(RAnal *a, RAnalFunction *fcn) {
 		sig->bytes = malloc (size);
 		sig->mask = R_NEWS0 (ut8, size);
 		sig->size = size;
-		if (sig->bytes && sig->mask && a->iob.read_at (a->iob.io, ea, sig->bytes, size)) {
+		if (sig->bytes && sig->mask && a->iob.read_at (a->iob.io, ea, sig->bytes, size) == size) {
 			return sig;
 		}
 	}
@@ -2082,7 +2082,7 @@ R_API char *r_sign_calc_bbhash(RAnal *a, RAnalFunction *fcn) {
 		if (!buf) {
 			return NULL;
 		}
-		if (!a->iob.read_at (a->iob.io, bbi->addr, buf, bbi->size)) {
+		if (a->iob.read_at (a->iob.io, bbi->addr, buf, bbi->size) != bbi->size) {
 			free (buf);
 			return NULL;
 		}

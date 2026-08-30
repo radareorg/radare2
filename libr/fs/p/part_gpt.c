@@ -44,7 +44,10 @@ static int fs_part_gpt(void *disk, void *ptr, void *closure) {
 	RList *list = (RList *)closure;
 
 	// Read GPT header at LBA 1
-	fs->iob.read_at (fs->iob.io, 512, (ut8 *)&header, sizeof (header));
+	if (fs->iob.read_at (fs->iob.io, 512, (ut8 *)&header, sizeof (header)) != sizeof (header)) {
+		R_LOG_ERROR ("Failed to read GPT header");
+		return 0;
+	}
 	if (memcmp (header.signature, GPT_SIGNATURE, GPT_SIGNATURE_LEN) != 0) {
 		R_LOG_ERROR ("Invalid GPT signature");
 		return 0;
@@ -83,7 +86,11 @@ static int fs_part_gpt(void *disk, void *ptr, void *closure) {
 		R_LOG_ERROR ("Failed to allocate memory for GPT partition entries");
 		return 0;
 	}
-	fs->iob.read_at (fs->iob.io, entries_lba, entries, num_entries * entry_size);
+	if (fs->iob.read_at (fs->iob.io, entries_lba, entries, (int)alloc_size) != (int)alloc_size) {
+		R_LOG_ERROR ("Failed to read GPT partition entries");
+		free (entries);
+		return 0;
+	}
 
 	int i;
 	for (i = 0; i < num_entries; i++) {

@@ -90,7 +90,7 @@ static time_t ntfs_filetime_to_unix(ut64 filetime) {
 
 static void details_ntfs(RFSRoot *root, RStrBuf *sb) {
 	ntfs_bpb_t bpb;
-	if (!root->iob.read_at (root->iob.io, root->delta, (ut8 *)&bpb, sizeof (bpb))) {
+	if (root->iob.read_at (root->iob.io, root->delta, (ut8 *)&bpb, sizeof (bpb)) != sizeof (bpb)) {
 		r_strbuf_append (sb, "ERROR: Could not read NTFS boot sector\n");
 		return;
 	}
@@ -145,7 +145,7 @@ static void details_ntfs(RFSRoot *root, RStrBuf *sb) {
 	ut8 *mft_record = calloc (1, mft_record_size);
 	if (mft_record) {
 		ut64 volume_mft_offset = mft_offset + (3 * mft_record_size);
-		if (root->iob.read_at (root->iob.io, volume_mft_offset, mft_record, mft_record_size)) {
+		if (root->iob.read_at (root->iob.io, volume_mft_offset, mft_record, mft_record_size) == mft_record_size) {
 			ntfs_mft_record_t *mft = (ntfs_mft_record_t *)mft_record;
 
 			if (memcmp (mft->signature, "FILE", 4) == 0) {

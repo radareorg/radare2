@@ -57,7 +57,7 @@ typedef struct {
 
 static void details_fat(RFSRoot *root, RStrBuf *sb) {
 	fat_bpb_t bpb;
-	if (!root->iob.read_at (root->iob.io, root->delta, (ut8 *)&bpb, sizeof (bpb))) {
+	if (root->iob.read_at (root->iob.io, root->delta, (ut8 *)&bpb, sizeof (bpb)) != sizeof (bpb)) {
 		r_strbuf_append (sb, "ERROR: Could not read boot sector\n");
 		return;
 	}
@@ -104,7 +104,7 @@ static void details_fat(RFSRoot *root, RStrBuf *sb) {
 	ut8 bpb_buf[90];
 	int i;
 
-	if (!root->iob.read_at (root->iob.io, root->delta, bpb_buf, sizeof (bpb_buf))) {
+	if (root->iob.read_at (root->iob.io, root->delta, bpb_buf, sizeof (bpb_buf)) != sizeof (bpb_buf)) {
 		r_strbuf_append (sb, "ERROR: Could not re-read boot sector\n");
 		return;
 	}

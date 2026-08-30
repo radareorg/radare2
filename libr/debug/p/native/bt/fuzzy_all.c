@@ -14,7 +14,7 @@ static int iscallret(RDebug *dbg, ut64 addr) {
 		// On x86, try to find CALL instructions of various lengths
 		// Check for common patterns
 		int maxdist = (dbg->bits == 64) ? 16 : 8;
-		if (!dbg->iob.read_at (dbg->iob.io, addr - maxdist, buf, maxdist)) {
+		if (dbg->iob.read_at (dbg->iob.io, addr - maxdist, buf, maxdist) != maxdist) {
 			return 0;
 		}
 		// Look backwards for CALL instructions
@@ -48,7 +48,7 @@ static int iscallret(RDebug *dbg, ut64 addr) {
 	} else {
 		// For non-x86, use anal to check
 		int maxdist = 16;
-		if (!dbg->iob.read_at (dbg->iob.io, addr - maxdist, buf, maxdist)) {
+		if (dbg->iob.read_at (dbg->iob.io, addr - maxdist, buf, maxdist) != maxdist) {
 			return 0;
 		}
 		// Try different positions
@@ -79,6 +79,10 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 	RList *list;
 
 	const int stacksize = 1024 * 512; // 512KB .. should get the size from the regions if possible
+	if (wordsize != 2 && wordsize != 4 && wordsize != 8) {
+		R_LOG_ERROR ("Invalid word size with asm.bits");
+		return NULL;
+	}
 	ut8 *stack = malloc (stacksize);
 	if (!stack) {
 		return NULL;
@@ -106,9 +110,9 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 	list = r_list_new ();
 	list->free = free;
 	cursp = oldsp = sp;
-	(void)bio->read_at (bio->io, sp, stack, stacksize);
+	const int nread = bio->read_at (bio->io, sp, stack, stacksize);
 	ptr = stack;
-	for (i = 0; i < dbg->options.btdepth; i++) {
+	for (i = 0; i < dbg->options.btdepth && i < nread / wordsize; i++) {
 		p64 = (ut64*)ptr;
 		p32 = (ut32*)ptr;
 		p16 = (ut16*)ptr;
@@ -117,10 +121,7 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 		case 4: addr = *p32; break;
 		case 2: addr = *p16; break;
 		default:
-			R_LOG_ERROR ("Invalid word size with asm.bits");
-			r_list_free (list);
-			free (stack);
-			return NULL;
+			break;
 		}
 		if (iscallret (dbg, addr)) {
 			RDebugFrame *frame = R_NEW0 (RDebugFrame);

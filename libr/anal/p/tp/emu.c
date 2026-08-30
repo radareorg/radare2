@@ -165,7 +165,7 @@ static bool tt_reg_alias(void *reg, int alias, const char *name) {
 static bool tt_mem_read(void *mem, ut64 addr, ut8 *buf, int len) {
 	TPState *tps = (TPState *)mem;
 	if (tps->anal->iob.read_at) {
-		return tps->anal->iob.read_at (tps->anal->iob.io, addr, buf, len);
+		return tps->anal->iob.read_at (tps->anal->iob.io, addr, buf, len) == len;
 	}
 	return false;
 }
@@ -718,7 +718,7 @@ TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPE
 			break;
 		}
 		ut8 *buf_ptr = R_VEC_START_ITER (&buf);
-		if (!anal->iob.read_at || anal->iob.read_at (io, bb_addr, buf_ptr, bb_size) < 1) {
+		if (!anal->iob.read_at || anal->iob.read_at (io, bb_addr, buf_ptr, bb_size) != bb_size) {
 			break;
 		}
 		ut64 addr = bb_addr;

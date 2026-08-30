@@ -27,9 +27,9 @@ int main(int argc, char **argv) {
 		/* dump process memory */
 		ut8 buf[128];
 #if __arm__
-		int ret = r_io_read_at(io, 0x8000, buf, 128);
+		int ret = r_io_nread_at(io, 0x8000, buf, 128);
 #else
-		int ret = r_io_read_at(io, 0x8048000, buf, 128);
+		int ret = r_io_nread_at(io, 0x8048000, buf, 128);
 #endif
 		if (ret != 128)
 			eprintf ("OOps cannot read 128 bytes\n");

@@ -377,7 +377,7 @@ static bool go_load_range(GoPclnCtx *ctx, ut64 vaddr, ut64 size) {
 		return false;
 	}
 	const int rc = ctx->anal->iob.read_at (ctx->anal->iob.io, vaddr, buf, (int)size);
-	if (rc < 1) {
+	if (rc != (int)size) {
 		free (buf);
 		return false;
 	}
@@ -486,7 +486,7 @@ static bool go_try_scan_sections_cb(const char *name, ut64 vaddr, ut64 sec_size,
 	ut64 chunk_off;
 	for (chunk_off = 0; chunk_off < sec_size; chunk_off += GO_SCAN_STEP) {
 		const ut64 read_size = R_MIN ((ut64)GO_SCAN_CHUNK, sec_size - chunk_off);
-		if (ctx->anal->iob.read_at (ctx->anal->iob.io, vaddr + chunk_off, buf, (int)read_size) < 1) {
+		if (ctx->anal->iob.read_at (ctx->anal->iob.io, vaddr + chunk_off, buf, (int)read_size) != (int)read_size) {
 			continue;
 		}
 		ut64 found = 0;

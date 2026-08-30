@@ -122,7 +122,7 @@ typedef struct {
 } FossilOpenFile;
 
 static inline bool fossil_read_at(FossilFS *fs, ut64 offset, ut8 *buf, int len) {
-	return fs->iob->read_at (fs->iob->io, fs->delta + offset, buf, len);
+	return fs->iob->read_at (fs->iob->io, fs->delta + offset, buf, len) == len;
 }
 
 static inline ut64 fossil_part_off(FossilFS *fs, ut32 part, ut32 addr) {
