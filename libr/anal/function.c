@@ -3930,6 +3930,22 @@ static bool function_interface_snapshot_collect(
 	if (!snapshot_convention_slots_collect (anal, fcn, interface)) {
 		return false;
 	}
+	/* Preservation belongs to the calling convention, not to a recovered
+	 * prototype. Seal it as soon as the convention and machine carriers are
+	 * available so signatureless functions do not lose entry-relative facts. */
+	const char *sp_name = interface->stack_pointer_storage.name;
+	const char *fp_name = anal->reg
+		? r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP): NULL;
+	interface->stack_pointer_preserved_across_calls =
+		r_anal_cc_preserves_reg (anal, interface->calling_convention, sp_name);
+	interface->frame_pointer_preserved_across_calls =
+		r_anal_cc_preserves_reg (anal, interface->calling_convention, fp_name);
+	if (r_sys_getenv_asbool ("R2SLEIGH_DEBUG_MERGES")) {
+		eprintf ("R2CALLPRESERVE cc=%s sp=%s/%d fp=%s/%d\n",
+			r_str_get (interface->calling_convention), r_str_get (sp_name),
+			interface->stack_pointer_preserved_across_calls,
+			r_str_get (fp_name), interface->frame_pointer_preserved_across_calls);
+	}
 	if (!ctx->signature || !r_anal_function_has_address_linked_signature_current (fcn)) {
 		return true;
 	}
@@ -4080,17 +4096,6 @@ static bool function_interface_snapshot_collect(
 	// the frame extent is a separate claim, so it is not what makes an interface exact
 	const bool physical_interface_complete = parameters_complete && return_complete
 		&& return_address_complete && stack_pointer_complete;
-	// The convention names the carriers a callee restores, which is what lets a
-	// consumer treat them as surviving a call instead of withholding every
-	// entry-relative fact from any function that makes one.
-	const char *sp_name = anal->reg
-		? r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP): NULL;
-	const char *fp_name = anal->reg
-		? r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP): NULL;
-	interface->stack_pointer_preserved_across_calls =
-		r_anal_cc_preserves_reg (anal, interface->calling_convention, sp_name);
-	interface->frame_pointer_preserved_across_calls =
-		r_anal_cc_preserves_reg (anal, interface->calling_convention, fp_name);
 	// roles carry the extent claim: unsized slots cannot prove they do not overlap
 	interface->stack_slot_roles_complete = physical_interface_complete
 		&& interface->stack_resources_complete
@@ -4162,7 +4167,7 @@ static void snapshot_stack_allocation_contract_collect(RAnal *anal,
 		const RAnalFunctionInterfaceSnapshot *interface,
 		RAnalSnapshotStackAllocationContractView *view) {
 	*view = (RAnalSnapshotStackAllocationContractView) {0};
-	if (!interface->complete || R_STR_ISEMPTY (interface->calling_convention)
+	if (R_STR_ISEMPTY (interface->calling_convention)
 		|| R_STR_ISEMPTY (interface->stack_pointer_storage.name)
 		|| !interface->stack_pointer_storage.size) {
 		return;
@@ -6156,11 +6161,8 @@ static RAnalFunctionSnapshot *function_snapshot_collect_with_limits_unlocked(RAn
 	}
 	if (snapshot->stack_allocation_contract.growth
 			!= R_ANAL_SNAPSHOT_STACK_GROWTH_NONE
-		&& (snapshot->capabilities & (
-			R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FUNCTION_INTERFACE
-			| R_ANAL_FUNCTION_SNAPSHOT_CAP_STACK_POINTER_STORAGE)) == (
-			R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FUNCTION_INTERFACE
-			| R_ANAL_FUNCTION_SNAPSHOT_CAP_STACK_POINTER_STORAGE)) {
+		&& (snapshot->capabilities
+			& R_ANAL_FUNCTION_SNAPSHOT_CAP_STACK_POINTER_STORAGE)) {
 		snapshot->capabilities |=
 			R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_STACK_ALLOCATION_CONTRACT;
 	}
