@@ -440,10 +440,11 @@ static void cmd_sf(RCore *core, const char *input) {
 	const char *sp = strchr (input, ' ');
 	RAnalFunction *fcn = NULL;
 	if (sp) {
-		ut64 naddr = r_num_math (core->num, sp + 1);
-		// TODO: check for rnum errors and break early
-		fcn = r_anal_get_fcn_in (core->anal, naddr, 0);
-		// TODO: check if function doesnt exist maybe?
+		const char *err = NULL;
+		ut64 naddr = r_num_math_err (core->num, sp + 1, &err);
+		if (!err) {
+			fcn = r_anal_get_fcn_in (core->anal, naddr, 0);
+		}
 	}
 	switch (input[1]) {
 	case '\0': // "sf"
@@ -453,10 +454,14 @@ static void cmd_sf(RCore *core, const char *input) {
 			R_LOG_ERROR ("Cannot find function here");
 		}
 		break;
-	case 'x': // "sf0"
+	case '0': // "sf0"
 		if (input[2] == 'x') {
-			ut64 naddr = r_num_math (core->num, input + 1);
-			// TODO: check for rnum errors and break early
+			const char *err = NULL;
+			ut64 naddr = r_num_math_err (core->num, input + 1, &err);
+			if (err) {
+				R_LOG_ERROR ("Cannot seek to unknown address '%s' (%s)", input + 1, err);
+				return;
+			}
 			fcn = r_anal_get_fcn_in (core->anal, naddr, 0);
 			if (fcn) {
 				r_core_seek (core, fcn->addr, true);
@@ -469,8 +474,12 @@ static void cmd_sf(RCore *core, const char *input) {
 		break;
 	case ' ': // "sf "
 		if (input[2] == '0') {
-			ut64 naddr = r_num_math (core->num, input + 2);
-			// TODO: check for rnum errors and break early
+			const char *err = NULL;
+			ut64 naddr = r_num_math_err (core->num, input + 2, &err);
+			if (err) {
+				R_LOG_ERROR ("Cannot seek to unknown address '%s' (%s)", input + 2, err);
+				return;
+			}
 			fcn = r_anal_get_fcn_in (core->anal, naddr, 0);
 		} else {
 			fcn = r_anal_get_function_byname (core->anal, input + 2);
@@ -611,8 +620,25 @@ static int cmd_seek(void *data, const char *input) {
 	}
 	const char *inputnum = strchr (input, ' ');
 	if (!r_str_startswith (input, "ort")) { // hack to handle Invalid Argument for sort
-		const char *u_num = inputnum? inputnum + 1: input + 1;
-		off = r_num_math (core->num, u_num);
+		const char *u_num;
+		if (inputnum) {
+			u_num = inputnum + 1;
+		} else if (input[0] == '+' || input[0] == '-' || input[0] == '*' || input[0] == '/' || input[0] == 'b') {
+			u_num = input + 1;
+		} else {
+			u_num = input;
+		}
+		const char *err = NULL;
+		off = r_num_math_err (core->num, u_num, &err);
+		if (err && (*input == ' ' || *input == '+' || *input == '-' || *input == 'b' || (*input >= '0' && *input <= '9'))) {
+			if (strchr (u_num, '?') != NULL) {
+				off = 0; // Fall through for help queries like s+?
+			} else {
+				R_LOG_ERROR ("Cannot seek to unknown address '%s' (%s)", u_num, err);
+				r_core_return_value (core, R_CMD_RC_FAILURE);
+				return 0;
+			}
+		}
 		if (*u_num == '-') {
 			off = -(st64)off;
 		}
@@ -739,18 +765,10 @@ static int cmd_seek(void *data, const char *input) {
 	case '9': // "s9"
 	case ' ': // "s "
 	{
-		const char *trimin = r_str_trim_head_ro (input);
-		ut64 addr = r_num_math (core->num, trimin);
-		if (core->num->nc.errors) { // TODO expose an api for this char *r_num_failed();
-			if (core->cons->context->is_interactive) {
-				R_LOG_ERROR ("Cannot seek to unknown address '%s'", trimin);
-			}
-			break;
-		}
 		if (!silent) {
 			r_io_sundo_push (core->io, core->addr, r_print_get_cursor (core->print));
 		}
-		r_core_seek (core, addr, true);
+		r_core_seek (core, off, true);
 		r_core_block_read (core);
 	}
 	break;
