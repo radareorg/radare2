@@ -474,6 +474,7 @@ RIOPlugin r_io_plugin_uf2 = {
 	.write = __write,
 	.resize = __resize,
 	.system = __system,
+	.binuris = "uf2://",
 };
 
 #ifndef R2_PLUGIN_INCORE

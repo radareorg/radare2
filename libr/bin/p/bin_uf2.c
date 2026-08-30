@@ -21,9 +21,8 @@ static RBinInfo *info(RBinFile *bf) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
-	ret->type = strdup ("io"); // requires IO redirection to work
+	ret->type = strdup ("UF2");
 	ret->machine = strdup ("Microsoft UF2"); // XXX
-	ret->bclass = strdup ("uf2://");
 	ret->os = strdup ("hw"); // aka baremetal
 	ret->arch = strdup ("arm");
 	ret->bits = 32;
@@ -42,6 +41,7 @@ RBinPlugin r_bin_plugin_uf2 = {
 	.load = &load,
 	.check = &check,
 	.info = &info,
+	.iouris = "uf2://",
 };
 
 #ifndef R2_PLUGIN_INCORE

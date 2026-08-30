@@ -221,6 +221,7 @@ typedef struct r_io_plugin_t {
 	bool (*accept)(RIO *io, RIODesc *desc, int fd);
 	int (*create)(RIO *io, const char *file, int mode, int type);
 	bool (*check)(RIO *io, const char *, bool many);
+	const char *binuris; // comma-separated URI prefixes accepted from bin redirects
 } RIOPlugin;
 
 #define	R_IO_MAP_TIE_FLG_BACK	1		//ties a map so that it resizes when the desc resizes
