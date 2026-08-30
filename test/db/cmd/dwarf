@@ -705,8 +705,8 @@ aaa > /dev/null
 afvr @ 0x0048a1b0
 EOF
 EXPECT=<<EOF
-arg int prec @ r8
 arg int64_t arg1 @ rdi
+arg int prec @ r8
 var []uint8 dst @ rdx
 var int i @ rcx
 var bool hasDecimalPoint @ r9

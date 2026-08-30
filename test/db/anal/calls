@@ -11,9 +11,8 @@ EOF
 EXPECT=<<EOF
             ;-- section..text:
             ;-- _start:
-/ 41: entry0 (int64_t arg1, void *stack_end);
+/ 41: entry0 (int64_t arg1);
 |           ; arg int64_t arg1 @ rdx
-|           ; arg void *stack_end @ xmm0
 |           0x00400410      31ed           xor ebp, ebp                ; [13] -r-x section size 498 named .text
 |           0x00400412      4989d1         mov r9, rdx                 ; arg3
 |           0x00400415      5e             pop rsi
@@ -39,9 +38,8 @@ EOF
 EXPECT=<<EOF
             ;-- section..text:
             ;-- _start:
-/ 41: entry0 (int64_t arg1, void *stack_end);
+/ 41: entry0 (int64_t arg1);
 |           ; arg int64_t arg1 @ rdx
-|           ; arg void *stack_end @ xmm0
 |           0x00400410      31ed           xor ebp, ebp                ; [13] -r-x section size 498 named .text
 |           0x00400412      4989d1         mov r9, rdx                 ; arg3
 |           0x00400415      5e             pop rsi
@@ -68,9 +66,8 @@ EOF
 EXPECT=<<EOF
             ;-- section..text:
             ;-- _start:
-/ 34: entry0 (int64_t arg1, void *stack_end);
+/ 34: entry0 (int64_t arg1);
 |           ; arg int64_t arg1 @ rdx
-|           ; arg void *stack_end @ xmm0
 |           0x00400410      31ed           xor ebp, ebp                ; [13] -r-x section size 498 named .text
 |           0x00400412      4989d1         mov r9, rdx                 ; arg3
 |           0x00400415      5e             pop rsi

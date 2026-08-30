@@ -648,6 +648,9 @@ static void cc_unset_slots(Sdb *db, const char *name) {
 		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.arg%d", name, i), 0);
 		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.ret%d", name, i), 0);
 	}
+	for (i = 0; i < R_ANAL_CC_MAXFPARG; i++) {
+		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.fparg%d", name, i), 0);
+	}
 	r_strbuf_fini (&sb);
 }
 
@@ -882,6 +885,28 @@ R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home,
 		ret = sdb_const_getf (db, NULL, "cc.%s.argn", cc);
 	}
 	return ret? dyncc_from_static_loc (anal, ret): NULL;
+}
+
+// the register carrying the Nth floating-point argument, NULL if the
+// convention has no such sequence
+R_API const char *r_anal_cc_fparg(RAnal *anal, const char *cc, int n) {
+	R_RETURN_VAL_IF_FAIL (anal && DB && n >= 0, NULL);
+	if (!cc) {
+		return NULL;
+	}
+	const char *loc = sdb_const_getf (DB, NULL, "cc.%s.fparg%d", cc, n);
+	return loc? dyncc_from_static_loc (anal, loc): NULL;
+}
+
+R_API int r_anal_cc_max_fparg(RAnal *anal, const char *cc) {
+	R_RETURN_VAL_IF_FAIL (anal && DB && cc, 0);
+	int i;
+	for (i = 0; i < R_ANAL_CC_MAXFPARG; i++) {
+		if (!sdb_const_getf (DB, NULL, "cc.%s.fparg%d", cc, i)) {
+			break;
+		}
+	}
+	return i;
 }
 
 // caller-reserved home space below the stack args (win64 shadow area)

@@ -770,6 +770,15 @@ static int cc_reg_index(RAnal *anal, const char *callconv, const char *regname) 
 			return i;
 		}
 	}
+	// the interleaving needs a prototype, so floats take positions right after
+	// the integer sequence, where a prototype can still index them
+	const int fparg_max = r_anal_cc_max_fparg (anal, callconv);
+	for (i = 0; i < fparg_max; i++) {
+		const char *reg_arg = r_anal_cc_fparg (anal, callconv, i);
+		if (reg_arg && r_anal_cc_location_uses (anal, reg_arg, regname)) {
+			return arg_max + i;
+		}
+	}
 	return -1;
 }
 
@@ -1572,7 +1581,7 @@ static void extract_dyncc_reguse(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, i
 		if (!loc) {
 			continue;
 		}
-		const int slot = R_ANAL_CC_MAXARG + 2 + dynslot;
+		const int slot = R_ANAL_CC_DYNSLOT_BASE + dynslot;
 		const bool is_arg = is_used_like_arg (loc, opsreg, opdreg, op, anal, op_dst_writeonly);
 		if (is_arg && reg_set[slot] != 2) {
 			const char *regname = reguse_regname_for_loc (anal, op, loc, opdreg);
@@ -1714,34 +1723,62 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		return;
 	}
 
-	if (scan_args) {
-		const int total = 0; // TODO: pass argn
-		for (i = 0; i < max_count; i++) {
-			const char *regname = r_anal_cc_argloc (anal, fcn->callconv, i, 0, total);
+	// one walk per argument sequence: integers from rdi onward, floats from
+	// xmm0 onward, each counted and tracked on slots of its own
+	const struct {
+		bool fp;
+		int slot_base;
+		int count;
+		const char *deftype;
+	} sequences[] = {
+		{ false, 0, scan_args? max_count: 0, NULL },
+		{ true, R_ANAL_CC_FPSLOT_BASE, R_ANAL_CC_MAXFPARG, "double" },
+	};
+	size_t seq;
+	for (seq = 0; seq < R_ARRAY_SIZE (sequences); seq++) {
+		const bool fp = sequences[seq].fp;
+		const int slot_base = sequences[seq].slot_base;
+		const int seq_count = sequences[seq].count;
+		const char *deftype = sequences[seq].deftype;
+		int n;
+		for (n = 0; n < seq_count; n++) {
+			const char *regname = fp
+				? r_anal_cc_fparg (anal, fcn->callconv, n)
+				: r_anal_cc_argloc (anal, fcn->callconv, n, 0, 0); // TODO: pass argn
 			if (!regname) {
+				if (fp) {
+					// the sequence ends at its first gap, so no count is needed
+					break;
+				}
 				continue;
 			}
+			const int slot = slot_base + n;
 			int delta = 0;
 			RAnalVar *var = NULL;
 			bool is_arg = is_used_like_arg (regname, opsreg, opdreg, op, anal, op_dst_writeonly);
-			if (is_arg && reg_set[i] != 2) {
+			if (is_arg && reg_set[slot] != 2) {
 				delta = cc_loc_delta (anal, regname);
 			}
-			if (is_arg && reg_set[i] == 1) {
+			if (is_arg && reg_set[slot] == 1) {
 				var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
-			} else if (is_arg && reg_set[i] != 2) {
+			} else if (is_arg && reg_set[slot] != 2) {
 				const char *vname = NULL;
 				char *type = NULL;
 				char *name = NULL;
-				if ((i < argc) && fname) {
-					type = r_type_func_args_type (TDB, fname, i);
-					vname = r_type_func_args_name (TDB, fname, i);
+				// only the integer sequence indexes a prototype: the position of
+				// a float depends on an interleaving the code cannot see
+				if (!fp && (n < argc) && fname) {
+					type = r_type_func_args_type (TDB, fname, n);
+					vname = r_type_func_args_name (TDB, fname, n);
 				}
 				if (!vname) {
-					name = r_str_newf ("arg%d", i + 1);
+					// past the integer sequence so the names cannot collide;
+					// assign_reg_argnums gives the final one
+					name = r_str_newf ("arg%d", fp? max_count + n + 1: n + 1);
 					vname = name;
 				}
-				var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, size, true, vname);
+				var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG,
+					type? type: deftype, size, true, vname);
 				if (var && var->argnum < 0) {
 					var->argnum = *count;
 				}
@@ -1750,12 +1787,12 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				(*count)++;
 			} else {
 				if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
-					reg_set[i] = 2;
+					reg_set[slot] = 2;
 				}
 				continue;
 			}
 			if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
-				reg_set[i] = 1;
+				reg_set[slot] = 1;
 			}
 			if (var) {
 				r_anal_var_set_access (anal, var, var->regname, op->addr, R_PERM_R, 0);
@@ -1764,7 +1801,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			}
 			if (is_arg) {
 				const char *hintreg = reguse_regname_for_loc (anal, op, regname, opdreg);
-				r_strf_var (usage, 32, "arg%d", i);
+				r_strf_var (usage, 32, "arg%d", fp? R_ANAL_CC_MAXARG + n: n);
 				reguse_append_hint (anal, op->addr, hintreg, usage);
 			}
 		}
@@ -1955,6 +1992,8 @@ static int var_ptr_comparator(RAnalVar * const *a, RAnalVar * const *b) {
 	return var_comparator (a? *a: NULL, b? *b: NULL);
 }
 
+static void assign_reg_argnums(RAnal *anal, RAnalFunction *fcn, RVecAnalVarPtr *rvars);
+
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ *pj) {
 	R_RETURN_IF_FAIL (anal && fcn);
 	if (!pj && mode == 'j') {
@@ -1973,6 +2012,9 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 	//s- at the end of the loop
 	if (mode == '*' && !RVecAnalVarPtr_empty (vec)) {
 		anal->cb_printf ("s 0x%" PFMT64x "\n", fcn->addr);
+	}
+	if (kind == R_ANAL_VAR_KIND_REG) {
+		assign_reg_argnums (anal, fcn, vec);
 	}
 	RVecAnalVarPtr_sort (vec, var_ptr_comparator);
 	RAnalVar **it;
@@ -2155,6 +2197,17 @@ static void assign_reg_argnums(RAnal *anal, RAnalFunction *fcn, RVecAnalVarPtr *
 			r_anal_var_rename (anal, var, newname);
 			free (newname);
 		}
+	}
+}
+
+// a listing shows the final argument numbering, not the one an extraction
+// happened to hand out first
+R_API void r_anal_function_normalize_reg_argnums(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_IF_FAIL (anal && fcn);
+	RVecAnalVarPtr *rvars = r_anal_var_vec (anal, fcn, R_ANAL_VAR_KIND_REG);
+	if (rvars) {
+		assign_reg_argnums (anal, fcn, rvars);
+		RVecAnalVarPtr_free (rvars);
 	}
 }
 
