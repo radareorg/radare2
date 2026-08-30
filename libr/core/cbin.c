@@ -3111,6 +3111,9 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 				pj_ks (pj, "bind", symbol->bind);
 			}
 			pj_kn (pj, "size", (ut64)symbol->attr.size);
+			if (symbol->hsize) {
+				pj_kn (pj, "hsize", symbol->hsize);
+			}
 			const char *safetyName = r_bin_import_tags (core->bin, name);
 			if (safetyName) {
 				pj_ks (pj, "unsafe", safetyName);
