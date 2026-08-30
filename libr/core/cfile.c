@@ -541,11 +541,10 @@ static int r_core_file_load_for_debug(RCore *r, ut64 baseaddr, const char * R_NU
 static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr) {
 	RIODesc *cd = r->io->desc;
 	int fd = cd ? cd->fd : -1;
-	int xtr_idx = 0; // if 0, load all if xtr is used
-	RBinPlugin *plugin;
+	bool redirected = false;
 
 	if (fd < 0) {
-		return false;
+		return -1;
 	}
 	R_CRITICAL_ENTER (r);
 	r_io_use_fd (r->io, fd);
@@ -556,53 +555,52 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 		}
 	}
 	RBinFileOptions opt;
+repeat:
 	r_bin_file_options_init (&opt, fd, baseaddr, loadaddr, r->bin->options.rawstr);
-	// opt.fd = fd;
-	opt.xtr_idx = xtr_idx;
 	if (!r_bin_open_io (r->bin, &opt)) {
 		R_CRITICAL_LEAVE (r);
-		return false;
+		return fd;
 	}
 	RBinFile *bf = r_bin_cur (r->bin);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	if (r_core_bin_set_env (r, bf)) {
 		if (r->anal->verbose && !sdb_const_get (r->anal->sdb_cc, "default.cc", 0)) {
 			R_LOG_WARN ("No calling convention defined for this file, analysis may be inaccurate");
 		}
 	}
-	if (bf) {
-		const char *bclass = R_UNWRAP4 (bf, bo, info, bclass);
-		if (bclass && strstr (bclass, "://")) {
-			if (bf->file && strstr (bf->file, "://")) {
-				R_LOG_ERROR ("Skipping IO redirection for already-redirected file");
-				R_CRITICAL_LEAVE (r);
-				return false;
-			}
-			char *uri = r_str_newf ("%s%s", bclass, bf->file);
-			RIOPlugin *iop = r_io_plugin_resolve (r->io, uri, false);
-			if (iop && strcmp (iop->meta.name, "default")) {
-				r_bin_file_delete_all (r->bin);
-				RIODesc *desc = r_core_file_open (r, uri, R_PERM_R, 0);
-				if (desc) {
-					r_core_bin_load (r, uri, UT64_MAX);
+	if (!redirected && plugin && plugin->iouris && bf->file) {
+		const char *iouri = plugin->iouri? plugin->iouri (bf): plugin->iouris;
+		if (R_STR_ISNOTEMPTY (iouri) && isalpha ((ut8)*iouri) && r_str_endswith (iouri, "://")
+			&& strspn (iouri, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+.-") == strlen (iouri) - 3
+			&& r_str_cmp_list (plugin->iouris, iouri, ',')) {
+			char *uri = r_str_newf ("%s%s", iouri, bf->file);
+			RIOPlugin *iop = uri? r_io_plugin_resolve (r->io, uri, false): NULL;
+			if (iop && r_str_cmp_list (iop->binuris, iouri, ',')) {
+				RIODesc *desc = r_io_desc_open_plugin (r->io, iop, uri, R_PERM_R, 0644);
+				if (desc && desc->plugin == iop && desc->uri && !strcmp (desc->uri, uri)) {
+					r_bin_file_delete_all (r->bin);
+					fd = desc->fd;
+					r_io_use_fd (r->io, fd);
+					redirected = true;
 					free (uri);
-					R_CRITICAL_LEAVE (r);
-					return true;
+					goto repeat;
 				}
-			} else {
-				R_LOG_WARN ("bclass URI scheme has no matching IO plugin");
+				if (desc) {
+					const int desc_fd = desc->fd;
+					if (!r_io_desc_close (desc)) {
+						r_io_desc_del (r->io, desc_fd);
+					}
+				}
 			}
 			free (uri);
-			R_CRITICAL_LEAVE (r);
-			return false;
 		}
 	}
-	plugin = r_bin_file_cur_plugin (bf);
 	if (plugin && !strcmp (plugin->meta.name, "null")) {
 		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
 			R_CRITICAL_LEAVE (r);
-			return false;
+			return fd;
 		}
 		// set use of raw strings
 		// r_config_set_i (r->config, "io.va", false);
@@ -615,7 +613,7 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 		RBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
 			R_CRITICAL_LEAVE (r);
-			return false;
+			return fd;
 		}
 		if (plugin) {
 			r_core_bin_set_arch_bits (r, bf->file, info->arch, info->bits);
@@ -626,7 +624,7 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 		r_core_cmd0 (r, "'(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)");
 	}
 	R_CRITICAL_LEAVE (r);
-	return true;
+	return fd;
 }
 
 static bool try_loadlib(RCore *core, const char *lib, ut64 addr) {
@@ -964,7 +962,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 					mustclose = true;
 				}
 			}
-			r_core_file_load_for_io_plugin (r, baddr, 0LL);
+			desc_fd = r_core_file_load_for_io_plugin (r, baddr, 0LL);
 			desc = r->io->desc;
 		}
 		r_io_use_fd (r->io, desc_fd);

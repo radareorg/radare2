@@ -819,6 +819,8 @@ typedef struct r_bin_plugin_t {
 	bool (*load_resources)(RBinFile *bf);
 	/* Optional raw-data resolver. The returned buffer is owned by the caller. */
 	RBuffer *(*get_resource_data)(RBinFile *bf, const RBinResource *resource);
+	const char *iouris; // comma-separated IO URI prefixes allowed for redirects
+	const char *(*iouri)(RBinFile *bf); // selects one iouris item, or the sole item by default
 } RBinPlugin;
 
 typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);

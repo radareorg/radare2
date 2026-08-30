@@ -816,20 +816,16 @@ R_API bool r_str_cmp_list(const char *list, const char *item, char sep) {
 	if (!list || !item) {
 		return false;
 	}
-	int i = 0, j = 0;
-	for (; list[i] && list[i] != sep; i++, j++) {
-		if (item[j] != list[i]) {
-			while (list[i] && list[i] != sep) {
-				i++;
-			}
-			if (!list[i]) {
-				return false;
-			}
-			j = -1;
-			continue;
+	const size_t item_len = strlen (item);
+	while (list && *list) {
+		const char *next = sep? strchr (list, sep): NULL;
+		const size_t list_len = next? (size_t)(next - list): strlen (list);
+		if (list_len == item_len && !strncmp (list, item, item_len)) {
+			return true;
 		}
+		list = next? next + 1: NULL;
 	}
-	return true;
+	return false;
 }
 
 R_API char *r_str_word_get_first(const char *text) {
