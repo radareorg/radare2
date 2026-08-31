@@ -4075,7 +4075,6 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 	}
 	if (IS_MODE_SET (mode)) {
 		r_flag_space_pop (core->flags);
-		// the analysis caches these flags, they just changed under it
 		r_core_anal_trycatch_index_reset (core);
 	}
 	if (IS_MODE_JSON (mode)) {
