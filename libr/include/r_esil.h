@@ -235,13 +235,17 @@ typedef enum {
 
 typedef struct r_esil_t {
 	struct r_anal_t *anal; // required for io, reg, and call esil_init/fini of the selected arch plugin
-	// Heapless stack: entries are RStrs slices into `stack_buf`, an append-only
-	// arena that is reset on r_esil_stack_free. Within one expression, popped
-	// slices stay valid across subsequent pushes — the arena never moves.
+	// Heapless stack: entries are RStrs slices into `stack_buf`, a fixed-size
+	// ring. Bytes are handed out at `head`, the live span runs forward from
+	// `tail`, and both only move forward and wrap, so the buffer never moves,
+	// grows or shrinks and no value is ever relocated. Within one word popped
+	// slices stay valid across subsequent pushes; their bytes are released
+	// between words. Exhaustion is head meeting tail.
 	RStrs *stack;
 	char *stack_buf;
 	ut32 stack_buf_cap;
-	ut32 stack_buf_len;
+	ut32 stack_buf_head;
+	ut32 stack_buf_tail;
 	ut64 addrmask;
 	int stacksize;
 	int stackptr;
