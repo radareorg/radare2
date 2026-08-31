@@ -26,3 +26,6 @@ ${LIBAR}: $(OFILES)
 
 clean:
 	rm -f $(OBJS) ${LIBAR} $(OFILES)
+
+# autodetect dependencies object
+-include $(OFILES:.o=.d)
