@@ -762,21 +762,15 @@ static int cc_reg_index(RAnal *anal, const char *callconv, const char *regname) 
 	if (!callconv || !regname) {
 		return -1;
 	}
-	const int arg_max = r_anal_cc_max_arg (anal, callconv);
 	int i;
-	for (i = 0; i < arg_max; i++) {
+	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		const char *reg_arg = r_anal_cc_argloc (anal, callconv, i, 0, 0);
 		if (reg_arg && r_anal_cc_location_uses (anal, reg_arg, regname)) {
 			return i;
 		}
-	}
-	// the interleaving needs a prototype, so floats take positions right after
-	// the integer sequence, where a prototype can still index them
-	const int fparg_max = r_anal_cc_max_fparg (anal, callconv);
-	for (i = 0; i < fparg_max; i++) {
-		const char *reg_arg = r_anal_cc_fparg (anal, callconv, i);
+		reg_arg = r_anal_cc_argloc (anal, callconv, R_ANAL_CC_MAXARG + i, 0, 0);
 		if (reg_arg && r_anal_cc_location_uses (anal, reg_arg, regname)) {
-			return arg_max + i;
+			return R_ANAL_CC_MAXARG + i;
 		}
 	}
 	return -1;
@@ -1729,83 +1723,68 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		|| op->family == R_ANAL_OP_FAMILY_VEC
 		|| op->family == R_ANAL_OP_FAMILY_SIMD
 		|| op->family == R_ANAL_OP_FAMILY_UNKNOWN;
-	// one walk per argument sequence: integers from rdi onward, floats from
-	// xmm0 onward, each counted and tracked on slots of its own
-	const struct {
-		bool fp;
-		int slot_base;
-		int count;
-		const char *deftype;
-	} sequences[] = {
-		{ false, 0, scan_args? max_count: 0, NULL },
-		{ true, R_ANAL_CC_FPSLOT_BASE, scan_fpargs? r_anal_cc_max_fparg (anal, fcn->callconv): 0, "double" },
-	};
-	size_t seq;
-	for (seq = 0; seq < R_ARRAY_SIZE (sequences); seq++) {
-		const bool fp = sequences[seq].fp;
-		const int slot_base = sequences[seq].slot_base;
-		const int seq_count = sequences[seq].count;
-		const char *deftype = sequences[seq].deftype;
-		int n;
-		for (n = 0; n < seq_count; n++) {
-			const char *regname = fp
-				? r_anal_cc_fparg (anal, fcn->callconv, n)
-				: r_anal_cc_argloc (anal, fcn->callconv, n, 0, 0); // TODO: pass argn
-			if (!regname) {
-				continue;
+	// The fixed register-state array lets both sequences use one bounded walk.
+	for (i = 0; i < R_ANAL_CC_MAXARG * 2; i++) {
+		const bool fp = i >= R_ANAL_CC_MAXARG;
+		const int n = fp? i - R_ANAL_CC_MAXARG: i;
+		const int slot = fp? R_ANAL_CC_FPSLOT_BASE + n: n;
+		const char *deftype = fp? "double": NULL;
+		if ((fp && !scan_fpargs) || (!fp && (!scan_args || n >= max_count))) {
+			continue;
+		}
+		const char *regname = r_anal_cc_argloc (anal, fcn->callconv,
+			fp? R_ANAL_CC_MAXARG + n: n, 0, 0); // TODO: pass argn
+		if (!regname) {
+			continue;
+		}
+		int delta = 0;
+		RAnalVar *var = NULL;
+		bool is_arg = is_used_like_arg (regname, opsreg, opdreg, op, anal, op_dst_writeonly);
+		if (is_arg && reg_set[slot] != 2) {
+			delta = cc_loc_delta (anal, regname);
+		}
+		if (is_arg && reg_set[slot] == 1) {
+			var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
+		} else if (is_arg && reg_set[slot] != 2) {
+			const char *vname = NULL;
+			char *type = NULL;
+			char *name = NULL;
+			// only the integer sequence indexes a prototype: the position of
+			// a float depends on an interleaving the code cannot see
+			if (!fp && (n < argc) && fname) {
+				type = r_type_func_args_type (TDB, fname, n);
+				vname = r_type_func_args_name (TDB, fname, n);
 			}
-			const int slot = slot_base + n;
-			int delta = 0;
-			RAnalVar *var = NULL;
-			bool is_arg = is_used_like_arg (regname, opsreg, opdreg, op, anal, op_dst_writeonly);
-			if (is_arg && reg_set[slot] != 2) {
-				delta = cc_loc_delta (anal, regname);
+			if (!vname) {
+				name = r_str_newf ("arg%d", fp? max_count + n + 1: n + 1);
+				vname = name;
 			}
-			if (is_arg && reg_set[slot] == 1) {
-				var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
-			} else if (is_arg && reg_set[slot] != 2) {
-				const char *vname = NULL;
-				char *type = NULL;
-				char *name = NULL;
-				// only the integer sequence indexes a prototype: the position of
-				// a float depends on an interleaving the code cannot see
-				if (!fp && (n < argc) && fname) {
-					type = r_type_func_args_type (TDB, fname, n);
-					vname = r_type_func_args_name (TDB, fname, n);
-				}
-				if (!vname) {
-					// past the integer sequence so the names cannot collide;
-					// assign_reg_argnums gives the final one
-					name = r_str_newf ("arg%d", fp? max_count + n + 1: n + 1);
-					vname = name;
-				}
-				var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG,
-					type? type: deftype, size, true, vname);
-				if (var && var->argnum < 0) {
-					var->argnum = *count;
-				}
-				free (name);
-				free (type);
-				(*count)++;
-			} else {
-				if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
-					reg_set[slot] = 2;
-				}
-				continue;
+			var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG,
+				type? type: deftype, size, true, vname);
+			if (var && var->argnum < 0) {
+				var->argnum = *count;
 			}
+			free (name);
+			free (type);
+			(*count)++;
+		} else {
 			if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
-				reg_set[slot] = 1;
+				reg_set[slot] = 2;
 			}
-			if (var) {
-				r_anal_var_set_access (anal, var, var->regname, op->addr, R_PERM_R, 0);
-				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, var->name);
-				is_arg = r_anal_var_is_default_argname (var->name);
-			}
-			if (is_arg) {
-				const char *hintreg = reguse_regname_for_loc (anal, op, regname, opdreg);
-				r_strf_var (usage, 32, "arg%d", fp? R_ANAL_CC_MAXARG + n: n);
-				reguse_append_hint (anal, op->addr, hintreg, usage);
-			}
+			continue;
+		}
+		if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
+			reg_set[slot] = 1;
+		}
+		if (var) {
+			r_anal_var_set_access (anal, var, var->regname, op->addr, R_PERM_R, 0);
+			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, var->name);
+			is_arg = r_anal_var_is_default_argname (var->name);
+		}
+		if (is_arg) {
+			const char *hintreg = reguse_regname_for_loc (anal, op, regname, opdreg);
+			r_strf_var (usage, 32, "arg%d", fp? R_ANAL_CC_MAXARG + n: n);
+			reguse_append_hint (anal, op->addr, hintreg, usage);
 		}
 	}
 

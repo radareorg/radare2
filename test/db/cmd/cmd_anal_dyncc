@@ -322,6 +322,32 @@ r0:r1:r2 dyncc:l0+2:r0+3 (l0, l1);
 EOF
 RUN
 
+NAME=dyncc accepts a floating-point argument sequence
+FILE=malloc://32
+CMDS=<<EOF
+tcc dyncc:rdi,rsi:rax!Fxmm0,xmm1
+EOF
+EXPECT=<<EOF
+rax dyncc:rdi,rsi:rax!Fxmm0,xmm1 (rdi, rsi);
+EOF
+RUN
+
+NAME=dyncc recovers floating-point arguments
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx f20f58c8c3 @ 0
+af
+afc dyncc::rax!Fxmm0,xmm1
+afva
+afv
+EOF
+EXPECT=<<EOF
+arg double arg1 @ xmm0
+arg double arg2 @ xmm1
+EOF
+RUN
+
 NAME=tcck shows static CCs not dyncc sentinels
 FILE=bins/elf/ls
 CMDS=<<EOF
