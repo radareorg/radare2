@@ -746,7 +746,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=esil arena is reclaimed between words, not just slots
+NAME=esil ring wraps after popped words
 FILE=-
 ARGS=-e esil.stack.depth=3
 CMDS=<<EOF
@@ -758,7 +758,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=esil loop runs to the goto limit, not to the arena size
+NAME=esil loop runs to the goto limit through ring wraps
 FILE=-
 ARGS=-a x86 -b 64 -e esil.stack.depth=3 -e esil.gotolimit=4096
 CMDS=<<EOF
@@ -772,7 +772,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=esil arena wraps under a value that stays live
+NAME=esil ring wraps under a value that stays live
 FILE=-
 ARGS=-e esil.stack.depth=3
 CMDS=<<EOF

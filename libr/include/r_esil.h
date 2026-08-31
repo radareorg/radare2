@@ -235,12 +235,11 @@ typedef enum {
 
 typedef struct r_esil_t {
 	struct r_anal_t *anal; // required for io, reg, and call esil_init/fini of the selected arch plugin
-	// Fixed-size NUL-terminated ESIL string ring; reclaim popped values between words.
+	// Fixed-size NUL-terminated ESIL string history.
 	RStrs *stack;
 	char *ring;
 	ut32 ring_size;
 	ut32 ring_head;
-	ut32 ring_tail;
 	ut64 addrmask;
 	int stacksize;
 	int stackptr;
