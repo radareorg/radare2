@@ -280,8 +280,50 @@ bool test_r_anal_var(void) {
 	mu_end;
 }
 
+bool test_r_anal_var_rename_meta(void) {
+	RAnal *anal = r_anal_new ();
+	r_anal_use (anal, "x86");
+	r_anal_set_bits (anal, 64);
+
+	RAnalFunction *fcn = r_anal_create_function (anal, "fcn", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "create function");
+	RAnalVar *var = r_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "int64_t", 8, true, "arg7");
+	mu_assert_notnull (var, "create variable to rename");
+	RAnalVar *collision = r_anal_function_set_var (fcn, -16, R_ANAL_VAR_KIND_BPV, "int64_t", 8, true, "arg1");
+	mu_assert_notnull (collision, "create variable with conflicting name");
+
+	r_anal_var_set_access (anal, var, "rbp", 0x110, R_PERM_R, 0);
+	r_anal_var_set_access (anal, var, "rbp", 0x120, R_PERM_R, 0);
+	r_anal_var_set_access (anal, var, "rbp", 0x130, R_PERM_R, 0);
+	r_anal_var_set_access (anal, var, "rbp", 0x140, R_PERM_R, 0);
+	r_meta_set_string (anal, R_META_TYPE_VARTYPE, 0x110, "arg7");
+	r_meta_set_string (anal, R_META_TYPE_VARTYPE, 0x120, "arg7");
+	r_meta_set_string (anal, R_META_TYPE_VARTYPE, 0x130, "custom");
+	r_meta_set_string (anal, R_META_TYPE_VARTYPE, 0x150, "arg7");
+
+	mu_assert_false (r_anal_var_rename (anal, var, "invalid name"), "reject invalid variable name");
+	mu_assert_streq (var->name, "arg7", "invalid rename keeps variable name");
+	mu_assert_streq (r_meta_get_string (anal, R_META_TYPE_VARTYPE, 0x110), "arg7", "invalid rename keeps matching meta");
+	mu_assert_false (r_anal_var_rename (anal, var, "arg1"), "reject conflicting variable name");
+	mu_assert_streq (var->name, "arg7", "failed rename keeps variable name");
+	mu_assert_streq (r_meta_get_string (anal, R_META_TYPE_VARTYPE, 0x110), "arg7", "failed rename keeps matching meta");
+	mu_assert_streq (r_meta_get_string (anal, R_META_TYPE_VARTYPE, 0x130), "custom", "failed rename keeps custom meta");
+
+	mu_assert_true (r_anal_var_rename (anal, var, "arg2"), "rename variable");
+	mu_assert_streq (var->name, "arg2", "rename updates variable name");
+	mu_assert_streq (r_meta_get_string (anal, R_META_TYPE_VARTYPE, 0x110), "arg2", "rename updates first matching meta");
+	mu_assert_streq (r_meta_get_string (anal, R_META_TYPE_VARTYPE, 0x120), "arg2", "rename updates second matching meta");
+	mu_assert_streq (r_meta_get_string (anal, R_META_TYPE_VARTYPE, 0x130), "custom", "rename keeps custom meta");
+	mu_assert_null (r_meta_get_string (anal, R_META_TYPE_VARTYPE, 0x140), "rename does not create missing meta");
+	mu_assert_streq (r_meta_get_string (anal, R_META_TYPE_VARTYPE, 0x150), "arg7", "rename ignores meta outside variable accesses");
+
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_anal_var);
+	mu_run_test (test_r_anal_var_rename_meta);
 	return tests_passed != tests_run;
 }
 

@@ -334,12 +334,18 @@ CMDS=<<EOF
 wx 4889f04889d0f20f58c8c3 @ 0
 af
 afv
+pdf~arg
 EOF
 EXPECT=<<EOF
 arg int64_t arg1 @ rsi
 arg int64_t arg2 @ rdx
 arg double arg3 @ xmm0
 arg double arg4 @ xmm1
+/ 11: fcn.00000000 (int64_t arg1, int64_t arg2, double arg3, double arg4);
+| `- args(rsi, rdx, xmm0, xmm1)
+|           0x00000000      4889f0         mov rax, rsi                ; arg1
+|           0x00000003      4889d0         mov rax, rdx                ; arg2
+|           0x00000006      f20f58c8       addsd xmm1, xmm0            ; arg4
 EOF
 RUN
 
