@@ -143,26 +143,6 @@ static RCmdResult r_cmd_agD_call(RCmdContext *ctx) {
 	return (RCmdResult) { 0 };
 }
 
-static bool plugin_init(RCorePluginSession *cps) {
-	RCore *core = cps->core;
-	if (!core) {
-		return true;
-	}
-	RCmd *cmd = core->rcmd;
-	if (!r_cmd_register (cmd, "agD", r_cmd_agD_call, NULL)) {
-		return false;
-	}
-	cps->data = cmd;
-	return true;
-}
-
-static bool plugin_fini(RCorePluginSession *cps) {
-	if (cps->data) {
-		r_cmd_unregister (cps->data, "agD");
-	}
-	return true;
-}
-
 RCorePlugin r_core_plugin_agD = {
 	.meta = {
 		.name = "agD",
@@ -170,8 +150,8 @@ RCorePlugin r_core_plugin_agD = {
 		.license = "LGPL-3.0-only",
 		.author = "condret",
 	},
-	.init = plugin_init,
-	.fini = plugin_fini,
+	.command = "agD",
+	.call_ctx = r_cmd_agD_call,
 };
 
 #ifndef R2_PLUGIN_INCORE

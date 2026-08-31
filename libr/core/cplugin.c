@@ -14,6 +14,9 @@ static RCorePlugin *cmd_static_plugins[] = {
 
 static void core_plugin_session_free(RCorePluginSession *cps) {
 	if (cps) {
+		if (cps->registered) {
+			r_cmd_unregister (cps->core->rcmd, cps->plugin->command);
+		}
 		if (cps->plugin && cps->plugin->fini) {
 			cps->plugin->fini (cps);
 		}
@@ -29,6 +32,9 @@ R_IPI void r_core_plugins_fini(RCmd *cmd) {
 
 R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 	R_RETURN_VAL_IF_FAIL (cmd && plugin, false);
+	if (!!plugin->command != !!plugin->call_ctx) {
+		return false;
+	}
 	RCorePluginSession *ctx = R_NEW0 (RCorePluginSession);
 	ctx->core = cmd->data;
 	ctx->plugin = plugin;
@@ -36,6 +42,14 @@ R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 		free (ctx);
 		return false;
 	}
+	if (plugin->call_ctx && !r_cmd_register (cmd, plugin->command, plugin->call_ctx, ctx)) {
+		if (plugin->fini) {
+			plugin->fini (ctx);
+		}
+		free (ctx);
+		return false;
+	}
+	ctx->registered = plugin->call_ctx != NULL;
 	r_list_append (cmd->libstore->plugins, ctx);
 	REventPlugin ep = {
 		.name = plugin->meta.name,
@@ -46,13 +60,19 @@ R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 }
 
 R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin) {
-	R_RETURN_VAL_IF_FAIL (cmd, false);
+	R_RETURN_VAL_IF_FAIL (cmd && plugin, false);
 	const char *name = plugin->meta.name;
 	RListIter *iter, *iter2;
 	RCorePluginSession *cps;
 	bool res = false;
 	r_list_foreach_safe (cmd->libstore->plugins, iter, iter2, cps) {
 		if (cps && !strcmp (name, cps->plugin->meta.name)) {
+			if (cps->registered) {
+				if (!r_cmd_unregister (cmd, cps->plugin->command)) {
+					return false;
+				}
+				cps->registered = false;
+			}
 			r_list_delete (cmd->libstore->plugins, iter);
 			res = true;
 			break;
@@ -87,7 +107,9 @@ R_API bool r_core_plugin_check(RCmd *cmd, const char *a0) {
 	RListIter *iter;
 	RCorePluginSession *cps;
 	r_list_foreach (cmd->libstore->plugins, iter, cps) {
-		return cps->plugin->call (NULL, a0);
+		if (cps->plugin->call && cps->plugin->call (cps, a0)) {
+			return true;
+		}
 	}
 	return false;
 }

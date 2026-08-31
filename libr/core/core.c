@@ -727,6 +727,43 @@ static int autocomplete_pfele(RCore *core, RLineCompletion *completion, char *ke
 		r_line_completion_push (completion, x); \
 	}
 
+static bool autocomplete_has(RLineCompletion *completion, RStrs name) {
+	const size_t length = r_strs_len (name);
+	char **it;
+	R_VEC_FOREACH (&completion->args, it) {
+		if (strlen (*it) == length && !strncmp (*it, name.a, length)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool autocomplete_registered(RStrs name, void *user) {
+	RLineCompletion *completion = user;
+	if (autocomplete_has (completion, name)) {
+		return true;
+	}
+	const size_t length = r_strs_len (name);
+	if (length > ST32_MAX) {
+		return false;
+	}
+	char *command = r_str_ndup (name.a, (int)length);
+	if (!command) {
+		return false;
+	}
+	r_line_completion_push (completion, command);
+	free (command);
+	return !completion->quit;
+}
+
+static void autocomplete_registered_commands(RCore *core, RLineCompletion *completion, RLineBuffer *buf) {
+	const int index = R_MIN (R_MAX (buf->index, 0), (int)sizeof (buf->data) - 1);
+	const char saved = buf->data[index];
+	buf->data[index] = 0;
+	r_cmd_foreach_prefix (core->rcmd, buf->data, autocomplete_registered, completion);
+	buf->data[index] = saved;
+}
+
 static void autocomplete_default(RCore *core, RLineCompletion *completion, RLineBuffer *buf) {
 	RCoreAutocomplete *a = core->autocomplete;
 	RCoreAutocomplete *iter;
@@ -1594,8 +1631,11 @@ R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBu
 		autocomplete_flags (core, completion, buf->data);
 	} else if (prompt_type == R_LINE_PROMPT_FILE) {
 		autocomplete_file (completion, buf->data);
-	} else if (!find_autocomplete (core, completion, buf)) {
-		autocomplete_default (core, completion, buf);
+	} else {
+		if (!find_autocomplete (core, completion, buf)) {
+			autocomplete_default (core, completion, buf);
+		}
+		autocomplete_registered_commands (core, completion, buf);
 	}
 }
 

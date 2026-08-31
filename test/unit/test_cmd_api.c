@@ -304,6 +304,70 @@ static bool test_r_core_call_context_args(void) {
 	mu_end;
 }
 
+typedef struct {
+	RCorePluginSession *session;
+	int calls;
+	int legacy_calls;
+	bool context_ok;
+} CorePluginState;
+
+static CorePluginState core_plugin_state;
+
+static bool test_core_plugin_init(RCorePluginSession *cps) {
+	core_plugin_state = (CorePluginState) { 0 };
+	core_plugin_state.session = cps;
+	cps->data = &core_plugin_state;
+	return true;
+}
+
+static RCmdResult test_core_plugin_call(RCmdContext *ctx) {
+	RCorePluginSession *cps = ctx->handler_user;
+	CorePluginState *state = cps->data;
+	state->calls++;
+	state->context_ok = cps == state->session
+		&& ctx->user == cps->core
+		&& ctx->cmd == cps->core->rcmd
+		&& ctx->cons == r_core_get_cons (cps->core)
+		&& r_strs_equals_str (ctx->subcmd, "?");
+	return (RCmdResult) { 0 };
+}
+
+static bool test_core_plugin_legacy_call(RCorePluginSession *cps, const char *input) {
+	CorePluginState *state = cps->data;
+	if (!strcmp (input, "legacyplug")) {
+		state->legacy_calls++;
+		return true;
+	}
+	return false;
+}
+
+static bool test_r_core_plugin_context_callback(void) {
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "create core");
+	RCorePlugin plugin = {
+		.meta = {
+			.name = "test-context-plugin",
+			.desc = "test contextual core plugin",
+			.license = "MIT",
+		},
+		.init = test_core_plugin_init,
+		.call = test_core_plugin_legacy_call,
+		.command = "ctxplug",
+		.call_ctx = test_core_plugin_call,
+	};
+	mu_assert_true (r_core_plugin_add (core->rcmd, &plugin), "add contextual core plugin");
+	mu_assert_eq (r_core_call (core, "ctxplug?"), 0, "dispatch contextual core plugin");
+	mu_assert_eq (core_plugin_state.calls, 1, "context callback called once");
+	mu_assert_true (core_plugin_state.context_ok, "plugin receives its session and command context");
+	mu_assert_eq (r_core_call (core, "legacyplug"), 1, "legacy callback remains available");
+	mu_assert_eq (core_plugin_state.legacy_calls, 1, "legacy callback called once");
+	mu_assert_true (r_core_plugin_remove (core->rcmd, &plugin), "remove contextual core plugin");
+	r_core_call (core, "ctxplug?");
+	mu_assert_eq (core_plugin_state.calls, 1, "removed plugin is no longer dispatched");
+	r_core_free (core);
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test (test_r_cmd_register);
 	mu_run_test (test_r_cmd_unregister);
@@ -313,6 +377,7 @@ static int all_tests(void) {
 	mu_run_test (test_r_cmd_multiword_dispatch);
 	mu_run_test (test_r_cmd_context_args);
 	mu_run_test (test_r_core_call_context_args);
+	mu_run_test (test_r_core_plugin_context_callback);
 	return tests_passed != tests_run;
 }
 
