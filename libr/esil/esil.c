@@ -81,22 +81,22 @@ static HtPP *esil_ops_new(void) {
 	return ht_pp_new_opt (&opt);
 }
 
-// Average token width for sizing the stack arena (stacksize * 32 bytes).
-#define R_ESIL_STACK_ARENA_WIDTH 32
+// Average token width for sizing the string ring (stacksize * 32 bytes).
+#define R_ESIL_RING_WIDTH 32
 
 static bool esil_stack_alloc(REsil *esil, int stacksize) {
 	esil->stack = calloc (stacksize, sizeof (RStrs));
 	if (!esil->stack) {
 		return false;
 	}
-	esil->stack_buf_cap = (ut32)stacksize * R_ESIL_STACK_ARENA_WIDTH;
-	esil->stack_buf = malloc (esil->stack_buf_cap);
-	if (!esil->stack_buf) {
+	esil->ring_size = (ut32)stacksize * R_ESIL_RING_WIDTH;
+	esil->ring = malloc (esil->ring_size);
+	if (!esil->ring) {
 		R_FREE (esil->stack);
 		return false;
 	}
-	esil->stack_buf_head = 0;
-	esil->stack_buf_tail = 0;
+	esil->ring_head = 0;
+	esil->ring_tail = 0;
 	return true;
 }
 
@@ -254,7 +254,7 @@ ops_setup_fail:
 	ht_pp_free (esil->ops);
 	esil->ops = NULL;
 	free (esil->stack);
-	free (esil->stack_buf);
+	free (esil->ring);
 	return false;
 }
 
@@ -425,7 +425,7 @@ R_API void r_esil_fini(REsil *esil) {
 	esil->stats = NULL;
 	r_esil_stack_free (esil);
 	R_FREE (esil->stack);
-	R_FREE (esil->stack_buf);
+	R_FREE (esil->ring);
 	r_esil_trace_free (esil->trace);
 	esil->trace = NULL;
 	R_FREE (esil->cmd_intr);
@@ -776,72 +776,53 @@ static bool setup_esil_set_bits(void *user, int bits) {
 	return true;
 }
 
-// The arena is a ring. Bytes are handed out at `head` and the span of live
-// data runs forward from `tail`; both only ever move forward, wrapping at the
-// end, so nothing is ever relocated and the buffer stays exactly the size it
-// was allocated with. r_esil_pop cannot release bytes itself — an op reads the
-// operands it popped while it pushes its result, which is what lets the stack
-// hand out slices instead of strdup'ing — so the space a dead value held is
-// recovered by walking `tail` forward between words instead.
-//
-// Strings are handed to ops as plain NUL-terminated char*, so an entry may
-// never straddle the wrap: when the run to the end of the buffer is too short
-// the allocation restarts at 0 and the tail end is left as slack for this
-// expression. Exhaustion is `head` meeting `tail`.
-static char *esil_arena_alloc(REsil *esil, size_t need) {
-	const ut32 cap = esil->stack_buf_cap;
-	const ut32 head = esil->stack_buf_head;
-	const ut32 tail = esil->stack_buf_tail;
-	// The ring is never filled to the last byte, so head meeting tail always
-	// means empty and can never be a full ring mistaken for one.
-	if (need > 0 && need < cap) {
-		if (head >= tail) {
-			const ut32 run = (cap - head) - (tail == 0);
-			if (run >= need) {
-				esil->stack_buf_head = head + need;
-				return esil->stack_buf + head;
-			}
-			if (tail > need) { // wrap, abandoning the short run at the end
-				esil->stack_buf_head = need;
-				return esil->stack_buf;
-			}
-		} else if (tail - head > need) {
-			esil->stack_buf_head = head + need;
-			return esil->stack_buf + head;
-		}
+// Allocate a contiguous NUL-terminated string from the fixed-size ring.
+static char *esil_ring_alloc(REsil *esil, size_t need) {
+	const ut32 size = esil->ring_size;
+	const ut32 head = esil->ring_head;
+	const ut32 tail = esil->ring_tail;
+	if (!need || need >= size) {
+		R_LOG_DEBUG ("esil ring exhausted");
+		return NULL;
 	}
-	R_LOG_DEBUG ("esil stack arena exhausted");
+	if (head >= tail && size - head - !tail >= need) {
+		esil->ring_head = (head + need) % size;
+		return esil->ring + head;
+	}
+	if (head >= tail && tail > need) {
+		esil->ring_head = need;
+		return esil->ring;
+	}
+	if (head < tail && tail - head > need) {
+		esil->ring_head = head + need;
+		return esil->ring + head;
+	}
+	R_LOG_DEBUG ("esil ring exhausted");
 	return NULL;
 }
 
-// Shrink the live span onto what the stack still references: `tail` forward to
-// the oldest value still live, `head` back to the end of the newest. Both only
-// move within the ring, so no value is ever relocated. Distances are measured
-// forward from `tail` to stay correct across the wrap. Called between words,
-// where no op is mid-flight still reading a slice it popped.
-static void esil_arena_sync(REsil *esil) {
+// Release slices no longer referenced by the stack after a complete ESIL word.
+static void esil_ring_reclaim(REsil *esil) {
 	const int n = esil->stackptr;
 	if (n < 1) {
-		esil->stack_buf_head = 0;
-		esil->stack_buf_tail = 0;
+		esil->ring_head = 0;
+		esil->ring_tail = 0;
 		return;
 	}
-	const ut32 cap = esil->stack_buf_cap;
-	const ut32 tail = esil->stack_buf_tail;
-	// Usually the bottom of the stack still owns the oldest bytes and the top
-	// owns the newest, which pins both ends and leaves nothing to release.
-	if ((ut32)(esil->stack[0].a - esil->stack_buf) == tail
-			&& (ut32)(esil->stack[n - 1].b + 1 - esil->stack_buf) == esil->stack_buf_head) {
+	const ut32 size = esil->ring_size;
+	const ut32 tail = esil->ring_tail;
+	if ((ut32)(esil->stack[0].a - esil->ring) == tail
+			&& (ut32)(esil->stack[n - 1].b + 1 - esil->ring) % size == esil->ring_head) {
 		return;
 	}
 	ut32 first = UT32_MAX;
 	ut32 last = 0;
 	int i;
 	for (i = 0; i < n; i++) {
-		const ut32 a = (ut32)(esil->stack[i].a - esil->stack_buf);
-		const ut32 b = (ut32)(esil->stack[i].b + 1 - esil->stack_buf);
-		const ut32 da = (a >= tail)? a - tail: a + cap - tail;
-		const ut32 db = (b > tail)? b - tail: b + cap - tail;
+		const ut32 a = (ut32)(esil->stack[i].a - esil->ring);
+		const ut32 b = (ut32)(esil->stack[i].b + 1 - esil->ring);
+		const ut32 da = (a >= tail)? a - tail: a + size - tail;
+		const ut32 db = (b > tail)? b - tail: b + size - tail;
 		if (da < first) {
 			first = da;
 		}
@@ -849,8 +830,8 @@ static void esil_arena_sync(REsil *esil) {
 			last = db;
 		}
 	}
-	esil->stack_buf_tail = (tail + first) % cap;
-	esil->stack_buf_head = (tail + last) % cap;
+	esil->ring_tail = (tail + first) % size;
+	esil->ring_head = (tail + last) % size;
 }
 
 // Push a slice. Arena-backed slices are stored by reference; external ones
@@ -859,13 +840,13 @@ R_API bool r_esil_push(REsil *esil, RStrs s) {
 	if (esil->stackptr >= esil->stacksize || s.a >= s.b) {
 		return false;
 	}
-	const char *const bufbeg = esil->stack_buf;
-	if (s.a >= bufbeg && s.b < bufbeg + esil->stack_buf_cap) {
+	const char *const ring = esil->ring;
+	if (s.a >= ring && s.b < ring + esil->ring_size) {
 		esil->stack[esil->stackptr++] = s;
 		return true;
 	}
 	const size_t n = (size_t)(s.b - s.a);
-	char *const dst = esil_arena_alloc (esil, n + 1);
+	char *const dst = esil_ring_alloc (esil, n + 1);
 	if (!dst) {
 		return false;
 	}
@@ -881,14 +862,14 @@ R_API bool r_esil_pushnum(REsil *esil, ut64 num) {
 	if (esil->stackptr >= esil->stacksize) {
 		return false;
 	}
-	char *const dst = esil_arena_alloc (esil, 20);
+	char *const dst = esil_ring_alloc (esil, 20);
 	if (!dst) {
 		return false;
 	}
 	const RStrs s = r_strs_u64hex (dst, 20, num);
 	esil->stack[esil->stackptr++] = s;
-	// hand back what the number did not need
-	esil->stack_buf_head = (ut32)(s.b + 1 - esil->stack_buf);
+	// Return the unused part of the formatting buffer to the ring.
+	esil->ring_head = (ut32)(s.b + 1 - esil->ring) % esil->ring_size;
 	return true;
 }
 
@@ -1211,7 +1192,7 @@ static bool runword(REsil *esil, RStrs w) {
 				if (esil->parse_stop) {
 					break;
 				}
-				esil_arena_sync (esil);
+				esil_ring_reclaim (esil);
 			}
 			esil->parse_goto_count++;
 		}
@@ -1304,8 +1285,8 @@ R_API bool r_esil_parse(REsil *esil, const char *str) {
 	// Fresh stack+arena per parse — slices come from the input directly
 	// and are copied into the arena on push to guarantee NUL-termination.
 	esil->stackptr = 0;
-	esil->stack_buf_head = 0;
-	esil->stack_buf_tail = 0;
+	esil->ring_head = 0;
+	esil->ring_tail = 0;
 	const bool in_delay = esil->delay > 0;
 	const char *ostr = str;
 	int rc = 0;
@@ -1327,7 +1308,7 @@ loop:
 			if (!runword (esil, tok)) {
 				goto step_out;
 			}
-			esil_arena_sync (esil);
+			esil_ring_reclaim (esil);
 			switch (eval_word (esil, ostr, &str)) {
 			case 0: goto loop;
 			case 1: goto step_out;
@@ -1357,15 +1338,17 @@ step_out:
 
 R_API bool r_esil_runword(REsil *esil, RStrs word) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
-	return runword (esil, word);
+	const bool ret = runword (esil, word);
+	esil_ring_reclaim (esil);
+	return ret;
 }
 
 // TODO rename to clearstack() or reset_stack()
 R_API void r_esil_stack_free(REsil *esil) {
 	R_RETURN_IF_FAIL (esil);
 	esil->stackptr = 0;
-	esil->stack_buf_head = 0;
-	esil->stack_buf_tail = 0;
+	esil->ring_head = 0;
+	esil->ring_tail = 0;
 }
 
 R_API int r_esil_condition(REsil *esil, const char *str) {
