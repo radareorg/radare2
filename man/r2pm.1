@@ -1,15 +1,21 @@
-.Dd Jul 10, 2025
+.Dd September 1, 2026
 .Dt R2PM 1
 .Sh NAME
 .Nm r2pm
 .Nd Radare2 Package Manager
 .Sh SYNOPSIS
 .Nm r2pm
-.Op Fl acdeHhijlpqrRstuUvw
+.Op Fl AacdeHhijlpqrRstuUvw
 .Op Ar pkgs...
 .Sh DESCRIPTION
 The package manager for Radare2, allowing installation, update, uninstallation, and discovery of plugins and tools.
 .Bl -tag -width Fl
+.It Fl A
+Include packages unsupported by the local platform or build in
+.Fl s
+results.
+Text output marks them as
+.Ql [unsupported] .
 .It Fl a Ar repository
 Add or delete external repository. Using '-a repository' adds a repository, and '-a -repository' deletes it. Use with no arguments to list all registered repos.
 .It Fl c Ar pkgname
@@ -41,7 +47,12 @@ JSON output. Requires
 .Fl l ,
 .Fl s
 or
-.Fl v
+.Fl v .
+Search objects include a
+.Va platforms
+array of strings and a
+.Va supported
+boolean.
 .It Fl l
 List installed packages
 .It Fl q
@@ -51,7 +62,9 @@ Run shell command with R2PM_BINDIR in PATH
 .It Fl R Ar pkgname
 Reload plugin (See R2PM_RELOAD code block package)
 .It Fl s Op keyword
-Search available packages in database matching a string. Return error code if no package was found
+Search available packages in the database matching a string.
+By default, filter to packages supported by the local platform and build.
+Return an error code if no package was found
 .It Fl t Ar YYYY-MM-DD
 Set the package checkout date. Requires an action
 .It Fl u Ar pkgname
@@ -130,6 +143,10 @@ Force uninstall a package
 Search a package
 .Pp
   $ r2pm -s yara
+.Pp
+Search all packages, including unsupported ones
+.Pp
+  $ r2pm -As
 .Pp
 List installed packages
 .Pp

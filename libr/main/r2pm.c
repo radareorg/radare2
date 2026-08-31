@@ -16,6 +16,7 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 static const char *helpmsg =
 	"Usage: r2pm [-flags] [pkgs...]\n"
 	"Commands:\n"
+	" -A                include unsupported packages in search results\n"
 	" -a [repository]   add or -delete external repository\n"
 	" -c <pkgname>      clear cached sources for the given package (see -cp)\n"
 	" -ci <pkgname>     clean + install\n"
@@ -44,6 +45,7 @@ static const char *helpmsg =
 
 typedef struct r_r2pm_t {
 	bool add;
+	bool all;
 	bool clean;
 	bool doc;
 	bool edit;
@@ -79,6 +81,9 @@ static int r2pm_missing_argument(const char *option, const char *what) {
 }
 
 static const char *r2pm_modifier_option(const R2Pm *r2pm) {
+	if (r2pm->all) {
+		return "-A";
+	}
 	if (r2pm->json) {
 		return "-j";
 	}
@@ -258,86 +263,69 @@ static char *r2pm_pkgpath(const char *file) {
 	return NULL;
 }
 
-static char *find_newline(char *s) {
-	char *r = strchr (s, '\r');
-	char *n = strchr (s, '\n');
+static const char *find_newline(const char *s) {
+	const char *r = strchr (s, '\r');
+	const char *n = strchr (s, '\n');
 	if (r && n) {
 		return (r < n)? r: n;
 	}
 	return r? r: n;
 }
+static char *r2pm_parse(const char *data, const char *token, R2pmTokenType type) {
+	const char *descptr = strstr (data, token);
+	if (descptr) {
+		const char *nl;
+		switch (type) {
+		case TT_TEXTLINE:
+			descptr += strlen (token);
+			nl = find_newline (descptr);
+			if (!nl) {
+				nl = descptr + strlen (descptr);
+			} else if (nl > descptr && nl[-1] == '"') {
+				nl--;
+			}
+			descptr = r_str_trim_head_ro (descptr);
+			if (*descptr == '"') {
+				descptr++;
+			}
+			return r_str_ndup (descptr, nl - descptr);
+		case TT_TEXTLINE_LIST:
+			descptr += strlen (token);
+			nl = find_newline (descptr);
+			return nl? r_str_ndup (descptr, nl - descptr): strdup (descptr);
+		case TT_ENDQUOTE:
+			nl = find_newline (descptr + strlen (token));
+			if (nl) {
+				const char *begin = nl + 1;
+				const char *eoc = strstr (begin, "\n\"\n"); // windows have \r\n
+				if (eoc) {
+					return r_str_ndup (begin, eoc - begin);
+				}
+				R_LOG_ERROR ("Cannot find end of thing");
+			}
+			break;
+		case TT_CODEBLOCK:
+			{
+				const char *begin = descptr + strlen (token);
+				const char *eoc = strstr (begin, "\n}\n");
+				if (eoc) {
+					return r_str_ndup (begin, eoc - begin);
+				}
+				R_LOG_ERROR ("Cannot find end of thing");
+			}
+			break;
+		}
+	}
+	return NULL;
+}
+
 static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
-	char *res = NULL;
 	char *dbdir = r2pm_dbdir ();
 	char *path = r_str_newf ("%s/%s", dbdir, file);
 	free (dbdir);
 	char *data = r_file_slurp (path, NULL);
 	free (path);
-	if (!data) {
-		return NULL;
-	}
-	const char *needle = token; // "\nR2PM_DESC ";
-	char *descptr = strstr (data, needle);
-	if (descptr) {
-		char *nl = NULL;
-		switch (type) {
-		case TT_TEXTLINE:
-			descptr += strlen (needle);
-			nl = find_newline (descptr);
-			if (nl) {
-				*nl = 0;
-				if (nl > descptr) {
-					nl--;
-					if (*nl == '"') {
-						*nl = 0;
-					}
-				}
-			}
-			descptr = (char *)r_str_trim_head_ro (descptr);
-			if (*descptr == '"') {
-				descptr++;
-			}
-			res = strdup (descptr);
-			break;
-		case TT_TEXTLINE_LIST:
-			descptr += strlen (needle);
-			nl = find_newline (descptr);
-			if (nl) {
-				*nl = 0;
-			}
-			res = strdup (descptr);
-			break;
-		case TT_ENDQUOTE:
-			nl = find_newline (descptr + strlen (token));
-			if (nl) {
-				char *begin = nl + 1;
-				char *eoc = strstr (begin, "\n\"\n"); // windows have \r\n
-				if (eoc) {
-					res = r_str_ndup (begin, eoc - begin);
-					free (data);
-					return res;
-				}
-				R_LOG_ERROR ("Cannot find end of thing");
-				free (data);
-				return NULL;
-			}
-			break;
-		case TT_CODEBLOCK:
-			{
-				char *begin = descptr + strlen (token);
-				char *eoc = strstr (begin, "\n}\n");
-				if (eoc) {
-					char *res = r_str_ndup (begin, eoc - begin);
-					free (data);
-					return res;
-				}
-				R_LOG_ERROR ("Cannot find end of thing");
-				free (data);
-				return NULL;
-			}
-			break;
-		}
-	}
+	char *res = data? r2pm_parse (data, token, type): NULL;
 	free (data);
 	return res;
 }
@@ -368,10 +356,6 @@ static void r2pm_upgrade(bool force) {
 #else
 	R_LOG_INFO ("Auto upgrade feature is not yet supported on windows");
 #endif
-}
-
-static char *r2pm_desc(const char *file) {
-	return r2pm_get (file, "\nR2PM_DESC ", TT_TEXTLINE);
 }
 
 static char *r2pm_list(int mode) {
@@ -1021,7 +1005,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 	char *qjs_script = r2pm_get (pkg, "\nR2PM_INSTALL_QJS() {\n", TT_CODEBLOCK);
 	if (qjs_script) {
 		int res = 0;
-#if R2__UNIX__ && !defined(__wasi__)
+#if WANT_QJS && R2__UNIX__ && !defined(__wasi__)
 		const char *const argv[5] = {
 			"radare2", "-j", "-e", qjs_script, NULL
 		};
@@ -1297,98 +1281,59 @@ static int r2pm_info(void) {
 	return 0;
 }
 
-// Return the current platform name as a canonical string. The R2PM_PLATFORM
-// environment variable overrides the detection, useful to test the search
-// filter from a different host or to target a cross-prefix. Empty/unset means
-// autodetect.
-static const char *r2pm_platform(void) {
-	char *p = r_sys_getenv ("R2PM_PLATFORM");
-	if (R_STR_ISNOTEMPTY (p)) {
-		static char buf[32];
-		r_str_ncpy (buf, p, sizeof (buf));
-		free (p);
-		return buf;
+static RList *r2pm_pkg_platforms(const char *data, bool *qjs) {
+	RList *platforms = r_list_newf (free);
+	bool windows = strstr (data, "\nR2PM_INSTALL_WINDOWS() {\n");
+	bool unix = strstr (data, "\nR2PM_INSTALL() {\n");
+	*qjs = strstr (data, "\nR2PM_INSTALL_QJS() {\n");
+	char *explicit = r2pm_parse (data, "\nR2PM_PLATFORMS ", TT_TEXTLINE);
+	if (explicit) {
+		r_str_trim (explicit);
+		int argc = 0;
+		char **argv = r_str_argv (explicit, &argc);
+		int i;
+		for (i = 0; argv && i < argc; i++) {
+			r_list_append (platforms, strdup (argv[i]));
+		}
+		r_str_argv_free (argv);
+		free (explicit);
+		return platforms;
 	}
-	free (p);
-#if R2__WINDOWS__
-	return "windows";
-#elif __APPLE__
-	return "macos";
-#elif defined(__linux__) || defined(__ANDROID__)
-	return "linux";
-#elif R2__BSD__
-	return "bsd";
-#elif __HAIKU__
-	return "haiku";
-#elif __QNX__
-	return "qnx";
-#else
-	return "unix";
-#endif
+	if (windows) {
+		r_list_append (platforms, strdup ("windows"));
+	}
+	if (unix || (!windows && *qjs)) {
+		r_list_append (platforms, strdup ("unix"));
+	}
+	return platforms;
 }
 
-static bool r2pm_has_block(const char *pkg, const char *token) {
-	char *s = r2pm_get (pkg, token, TT_CODEBLOCK);
-	if (s) {
-		free (s);
-		return true;
+static bool r2pm_pkg_supported(RList *platforms, bool qjs) {
+#if !WANT_QJS || !R2__UNIX__ || defined(__wasi__)
+	if (qjs) {
+		return false;
+	}
+#endif
+	RListIter *iter;
+	const char *platform;
+	r_list_foreach (platforms, iter, platform) {
+		if (!strcmp (platform, R_SYS_OS) || !strcmp (platform, "any")) {
+			return true;
+		}
+#if R2__UNIX__
+		if (!strcmp (platform, "unix")) {
+			return true;
+		}
+#endif
 	}
 	return false;
 }
 
-// Return the list of platforms a package is known to work on. An explicit
-// R2PM_PLATFORMS keyword wins over the inference below. Otherwise the list is
-// derived from the install blocks: R2PM_INSTALL_WINDOWS means usable on
-// windows, R2PM_INSTALL (or a QJS-only package) means usable on unix-likes.
-static RList *r2pm_pkg_platforms(const char *pkg) {
-	RList *pl = r_list_newf (free);
-	char *explicit = r2pm_get (pkg, "\nR2PM_PLATFORMS ", TT_TEXTLINE);
-	if (explicit) {
-		r_str_trim (explicit);
-		int argc;
-		char **argv = r_str_argv (explicit, &argc);
-		if (argv) {
-			int i;
-			for (i = 0; i < argc; i++) {
-				r_list_append (pl, strdup (argv[i]));
-			}
-			r_str_argv_free (argv);
-		} else {
-			r_list_append (pl, strdup (explicit));
-		}
-		free (explicit);
-		return pl;
-	}
-	free (explicit);
-	bool windows = r2pm_has_block (pkg, "\nR2PM_INSTALL_WINDOWS() {\n");
-	bool unix = r2pm_has_block (pkg, "\nR2PM_INSTALL() {\n");
-	if (!windows && !unix) {
-		unix = r2pm_has_block (pkg, "\nR2PM_INSTALL_QJS() {\n");
-	}
-	if (windows) {
-		r_list_append (pl, strdup ("windows"));
-	}
-	if (unix) {
-		r_list_append (pl, strdup ("unix"));
-	}
-	return pl;
-}
-
-static bool r2pm_platform_matches(const char *platform, const char *needle) {
-	return !strcmp (platform, needle)
-		|| !strcmp (platform, "any")
-		|| (!strcmp (needle, "unix") && !strcmp (platform, "macos"))
-		|| (!strcmp (needle, "unix") && !strcmp (platform, "linux"))
-		|| (!strcmp (needle, "unix") && !strcmp (platform, "bsd"))
-		|| (!strcmp (needle, "unix") && !strcmp (platform, "haiku"))
-		|| (!strcmp (needle, "unix") && !strcmp (platform, "qnx"));
-}
-
-static char *r2pm_search(const char *grep, int mode, bool filter) {
+static char *r2pm_search(const char *grep, int mode, bool all) {
 	char *path = r2pm_dbdir ();
 	RList *files = r_sys_dir (path);
-	free (path);
 	if (!files) {
+		free (path);
 		return NULL;
 	}
 	RListIter *iter;
@@ -1401,54 +1346,46 @@ static char *r2pm_search(const char *grep, int mode, bool filter) {
 	} else {
 		sb = r_strbuf_new ("");
 	}
-	const char *platform = r2pm_platform ();
 	r_list_foreach (files, iter, file) {
-		if (*file != '.') {
-			bool match = R_STR_ISEMPTY (grep) || r_str_casestr (file, grep);
-			char *desc = r2pm_desc (file);
-			if (desc) {
-				if (match || r_str_casestr (desc, grep)) {
-					RList *plats = r2pm_pkg_platforms (file);
-					bool ok = !filter;
-					if (filter && plats) {
-						RListIter *piter;
-						const char *plat;
-						r_list_foreach (plats, piter, plat) {
-							if (r2pm_platform_matches (platform, plat)) {
-								ok = true;
-								break;
-							}
-						}
-					}
-					if (ok) {
-						if (pj) {
-							pj_o (pj);
-							pj_ks (pj, "name", file);
-							pj_ks (pj, "desc", desc);
-							pj_k (pj, "platforms");
-							pj_a (pj);
-							if (plats) {
-								RListIter *piter;
-								const char *plat;
-								r_list_foreach (plats, piter, plat) {
-									pj_s (pj, plat);
-								}
-							}
-							pj_end (pj);
-							pj_end (pj);
-						} else {
-							r_strbuf_appendf (sb, "%s", file);
-							r_strbuf_pad (sb, ' ', 20 - strlen (file));
-							r_strbuf_appendf (sb, "%s\n", desc);
-						}
-					}
-					r_list_free (plats);
+		if (*file == '.') {
+			continue;
+		}
+		char *pkgpath = r_file_new (path, file, NULL);
+		char *data = r_file_slurp (pkgpath, NULL);
+		free (pkgpath);
+		char *desc = data? r2pm_parse (data, "\nR2PM_DESC ", TT_TEXTLINE): NULL;
+		if (!desc || (R_STR_ISNOTEMPTY (grep) && !r_str_casestr (file, grep) && !r_str_casestr (desc, grep))) {
+			free (desc);
+			free (data);
+			continue;
+		}
+		bool qjs;
+		RList *platforms = r2pm_pkg_platforms (data, &qjs);
+		bool supported = r2pm_pkg_supported (platforms, qjs);
+		free (data);
+		if (all || supported) {
+			if (pj) {
+				pj_o (pj);
+				pj_ks (pj, "name", file);
+				pj_ks (pj, "desc", desc);
+				pj_ka (pj, "platforms");
+				RListIter *piter;
+				const char *platform;
+				r_list_foreach (platforms, piter, platform) {
+					pj_s (pj, platform);
 				}
-				free (desc);
+				pj_end (pj);
+				pj_kb (pj, "supported", supported);
+				pj_end (pj);
+			} else {
+				r_strbuf_appendf (sb, "%-20s%s%s\n", file, supported? "": "[unsupported] ", desc);
 			}
 		}
+		r_list_free (platforms);
+		free (desc);
 	}
 	r_list_free (files);
+	free (path);
 	if (pj) {
 		pj_end (pj);
 		return pj_drain (pj);
@@ -1477,7 +1414,6 @@ static void r2pm_envhelp(void) {
 	"MAKE=make              # path to the GNU MAKE executable\n"
 	"R2PM_OFFLINE=%d         # don't git pull\n"
 	"R2PM_TIME=YYYY-MM-DD\n"
-	"R2PM_PLATFORM=%s\n"
 	"R2PM_PLUGDIR=%s\n"
 	"R2PM_PLUGDIR=%s (global)\n"
 	"R2PM_PREFIX=%s\n"
@@ -1493,7 +1429,6 @@ static void r2pm_envhelp(void) {
 	"R2_LIBS=%s\n",
 		r2pm_log_level,
 		r2pm_offline,
-		r2pm_platform (),
 		r2pm_plugdir,
 		r2pm_plugdir2,
 		r2pm_prefix,
@@ -1571,7 +1506,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		0
 	};
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "aqecdiIjhH:flgrRpst:uUv");
+	r_getopt_init (&opt, argc, argv, "AaqecdiIjhH:flgrRpst:uUv");
 	int i, c;
 	bool action = false;
 	// -H option without argument
@@ -1582,6 +1517,9 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	}
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
+		case 'A':
+			r2pm.all = true;
+			break;
 		case 'a':
 			r2pm.add = true;
 			action = true;
@@ -1755,7 +1693,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		res = r2pm_clean (targets);
 	}
 	if (r2pm.search) {
-		char *s = r2pm_search (argv[opt.ind], r2pm.json? 'j': 0, false);
+		char *s = r2pm_search (argv[opt.ind], r2pm.json? 'j': 0, r2pm.all);
 		if (s) {
 			if (*s) {
 				r_cons_print (cons, s);
