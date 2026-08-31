@@ -1003,9 +1003,9 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 	char *srcdir = r2pm_gitdir ();
 	R_LOG_DEBUG ("Entering %s", srcdir);
 	char *qjs_script = r2pm_get (pkg, "\nR2PM_INSTALL_QJS() {\n", TT_CODEBLOCK);
+#if WANT_QJS && R2__UNIX__ && !defined(__wasi__)
 	if (qjs_script) {
 		int res = 0;
-#if WANT_QJS && R2__UNIX__ && !defined(__wasi__)
 		const char *const argv[5] = {
 			"radare2", "-j", "-e", qjs_script, NULL
 		};
@@ -1023,15 +1023,14 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 			execv (argv[0], (char *const *)argv);
 			exit (1);
 		}
-#else
-		R_LOG_WARN ("r2pm.qjs support is experimental");
-		res = 1;
-#endif
 		// run script!
 		free (qjs_script);
 		free (srcdir);
 		return res;
 	}
+#else
+	free (qjs_script);
+#endif
 #if R2__WINDOWS__
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL_WINDOWS() {\n", TT_CODEBLOCK);
 	if (!script) {
@@ -1281,10 +1280,10 @@ static int r2pm_info(void) {
 	return 0;
 }
 
-static RList *r2pm_pkg_platforms(const char *data, bool *qjs) {
+static RList *r2pm_pkg_platforms(const char *data, bool *windows, bool *unix, bool *qjs) {
 	RList *platforms = r_list_newf (free);
-	bool windows = strstr (data, "\nR2PM_INSTALL_WINDOWS() {\n");
-	bool unix = strstr (data, "\nR2PM_INSTALL() {\n");
+	*windows = strstr (data, "\nR2PM_INSTALL_WINDOWS() {\n");
+	*unix = strstr (data, "\nR2PM_INSTALL() {\n");
 	*qjs = strstr (data, "\nR2PM_INSTALL_QJS() {\n");
 	char *explicit = r2pm_parse (data, "\nR2PM_PLATFORMS ", TT_TEXTLINE);
 	if (explicit) {
@@ -1299,27 +1298,46 @@ static RList *r2pm_pkg_platforms(const char *data, bool *qjs) {
 		free (explicit);
 		return platforms;
 	}
-	if (windows) {
+	if (*windows) {
 		r_list_append (platforms, strdup ("windows"));
 	}
-	if (unix || (!windows && *qjs)) {
+	if (*unix || *qjs) {
 		r_list_append (platforms, strdup ("unix"));
 	}
 	return platforms;
 }
 
-static bool r2pm_pkg_supported(RList *platforms, bool qjs) {
-#if !WANT_QJS || !R2__UNIX__ || defined(__wasi__)
-	if (qjs) {
+static bool r2pm_pkg_supported(RList *platforms, bool windows, bool unix, bool qjs) {
+	bool installer = windows || unix || qjs;
+#if R2__WINDOWS__
+	installer = windows;
+#elif R2__UNIX__
+	installer = unix;
+#if WANT_QJS && !defined(__wasi__)
+	installer |= qjs;
+#endif
+#else
+	installer = false;
+#endif
+	if (!installer) {
 		return false;
 	}
-#endif
 	RListIter *iter;
 	const char *platform;
 	r_list_foreach (platforms, iter, platform) {
 		if (!strcmp (platform, R_SYS_OS) || !strcmp (platform, "any")) {
 			return true;
 		}
+#if defined(__APPLE__)
+		if (!strcmp (platform, "macos")) {
+			return true;
+		}
+#endif
+#if R2__BSD__
+		if (!strcmp (platform, "bsd")) {
+			return true;
+		}
+#endif
 #if R2__UNIX__
 		if (!strcmp (platform, "unix")) {
 			return true;
@@ -1359,9 +1377,9 @@ static char *r2pm_search(const char *grep, int mode, bool all) {
 			free (data);
 			continue;
 		}
-		bool qjs;
-		RList *platforms = r2pm_pkg_platforms (data, &qjs);
-		bool supported = r2pm_pkg_supported (platforms, qjs);
+		bool windows, unix, qjs;
+		RList *platforms = r2pm_pkg_platforms (data, &windows, &unix, &qjs);
+		bool supported = r2pm_pkg_supported (platforms, windows, unix, qjs);
 		free (data);
 		if (all || supported) {
 			if (pj) {
@@ -1700,7 +1718,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 				if (own_cons) {
 					r_cons_flush (cons);
 				}
-				res = 0;
+				res = r2pm.json && !strcmp (s, "[]");
 			} else {
 				res = 1;
 			}
