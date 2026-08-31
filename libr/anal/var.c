@@ -749,6 +749,14 @@ R_API bool r_anal_var_rename(RAnal *anal, RAnalVar *var, const char *new_name) {
 	if (!nn) {
 		return false;
 	}
+	RAnalVarAccess *acc;
+	R_VEC_FOREACH (&var->accesses, acc) {
+		ut64 addr = var->fcn->addr + acc->offset;
+		const char *vartype = r_meta_get_string (anal, R_META_TYPE_VARTYPE, addr);
+		if (vartype && !strcmp (vartype, var->name)) {
+			r_meta_set_string (anal, R_META_TYPE_VARTYPE, addr, new_name);
+		}
+	}
 	free (var->name);
 	var->name = nn;
 	{
