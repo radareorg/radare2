@@ -82,6 +82,11 @@ static void apply_call_regsets(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, int
 			reg_set[i] = 2;
 		}
 	}
+	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
+		if (r_anal_cc_argclob (anal, fcncc, R_ANAL_CC_MAXARG + i, cc)) {
+			reg_set[R_ANAL_CC_FPSLOT_BASE + i] = 2;
+		}
+	}
 }
 
 
