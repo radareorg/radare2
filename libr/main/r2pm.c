@@ -297,7 +297,7 @@ static char *r2pm_parse(const char *data, const char *token, R2pmTokenType type)
 			nl = find_newline (descptr + strlen (token));
 			if (nl) {
 				const char *begin = nl + 1;
-				const char *eoc = strstr (begin, "\n\"\n"); // windows have \r\n
+				const char *eoc = strstr (begin, "\n\"\n");
 				if (eoc) {
 					return r_str_ndup (begin, eoc - begin);
 				}
@@ -1023,7 +1023,6 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 			execv (argv[0], (char *const *)argv);
 			exit (1);
 		}
-		// run script!
 		free (qjs_script);
 		free (srcdir);
 		return res;
