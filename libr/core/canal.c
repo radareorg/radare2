@@ -3772,8 +3772,6 @@ static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
 	return NULL;
 }
 
-#define REG_SET_SIZE R_ANAL_CC_REGSET_SIZE
-
 typedef struct {
 	int count;
 	RVecIntPtr reg_set;
@@ -3805,7 +3803,7 @@ static bool anal_block_on_exit(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	}
 	int *prev_regset = *RVecIntPtr_at (&ctx->reg_set, RVecIntPtr_length (&ctx->reg_set) - 1);
 	size_t i;
-	for (i = 0; i < REG_SET_SIZE; i++) {
+	for (i = 0; i < R_ANAL_CC_REGSET_SIZE; i++) {
 		if (!prev_regset[i] && cur_regset[i] == 1) {
 			prev_regset[i] = 1;
 		}
@@ -3852,8 +3850,8 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		return false;
 	}
 	int *parent_reg_set = *RVecIntPtr_at (&ctx->reg_set, RVecIntPtr_length (&ctx->reg_set) - 1);
-	int *reg_set = R_NEWS (int, REG_SET_SIZE);
-	memcpy (reg_set, parent_reg_set, REG_SET_SIZE * sizeof (int));
+	int *reg_set = R_NEWS (int, R_ANAL_CC_REGSET_SIZE);
+	memcpy (reg_set, parent_reg_set, R_ANAL_CC_REGSET_SIZE * sizeof (int));
 	RVecIntPtr_push_back (&ctx->reg_set, &reg_set);
 	RCore *core = ctx->core;
 	RAnalFunction *fcn = ctx->fcn;
@@ -3947,7 +3945,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	ctx.fcn = fcn;
 	ctx.core = core;
 	RVecIntPtr_init (&ctx.reg_set);
-	int *reg_set = R_NEWS0 (int, REG_SET_SIZE);
+	int *reg_set = R_NEWS0 (int, R_ANAL_CC_REGSET_SIZE);
 	RVecIntPtr_push_back (&ctx.reg_set, &reg_set);
 	int saved_stack = fcn->stack;
 	RAnalBlock *first_bb = r_anal_get_block_at (fcn->anal, fcn->addr);

@@ -627,24 +627,7 @@ static bool dyncc_refs_exist(RAnal *anal, const RAnalDynCC *d) {
 }
 
 // the keys spelling a cc's argument and return layout, all invalidated by a redefinition
-static const char *cc_layout_keys[] = { "ret", "retn", "argn", "revarg", "pop", "shadow", "nargs", "nfpargs", NULL };
-
-// count a "cc.NAME.<tag>%d" sequence once and memo it on the cc itself.
-// stored as count+1, so a missing key means "not counted yet"
-static int cc_seq_count(RAnal *anal, const char *cc, const char *tag, const char *memo, int max) {
-	const ut64 n = sdb_num_getf (DB, NULL, "cc.%s.%s", cc, memo);
-	if (n > 0) {
-		return (int)n - 1;
-	}
-	int i;
-	for (i = 0; i < max; i++) {
-		if (!sdb_const_getf (DB, NULL, "cc.%s.%s%d", cc, tag, i)) {
-			break;
-		}
-	}
-	sdb_num_setf (DB, i + 1, 0, "cc.%s.%s", cc, memo);
-	return i;
-}
+static const char *cc_layout_keys[] = { "ret", "retn", "argn", "revarg", "pop", "shadow", NULL };
 
 static void cc_unset_keys(Sdb *db, const char *name, const char **keys) {
 	RStrBuf sb;
@@ -917,11 +900,13 @@ R_API const char *r_anal_cc_fparg(RAnal *anal, const char *cc, int n) {
 
 R_API int r_anal_cc_max_fparg(RAnal *anal, const char *cc) {
 	R_RETURN_VAL_IF_FAIL (anal && DB && cc, 0);
-	RAnalDynCC d;
-	if (dyncc_parse (cc, &d)) {
-		return 0;
+	int i;
+	for (i = 0; i < R_ANAL_CC_MAXFPARG; i++) {
+		if (!sdb_const_getf (DB, NULL, "cc.%s.fparg%d", cc, i)) {
+			break;
+		}
 	}
-	return cc_seq_count (anal, cc, "fparg", "nfpargs", R_ANAL_CC_MAXFPARG);
+	return i;
 }
 
 // caller-reserved home space below the stack args (win64 shadow area)
@@ -1182,6 +1167,7 @@ R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *
 }
 
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
+	int i = 0;
 	R_RETURN_VAL_IF_FAIL (anal && DB && cc, 0);
 
 	RAnalDynCC d;
@@ -1189,7 +1175,13 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 		return dyncc_max_arg (anal, &d);
 	}
 
-	return cc_seq_count (anal, cc, "arg", "nargs", R_ANAL_CC_MAXARG);
+	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
+		const char *res = sdb_const_getf (DB, NULL, "cc.%s.arg%d", cc, i);
+		if (!res) {
+			break;
+		}
+	}
+	return i;
 }
 
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n) {
