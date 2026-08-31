@@ -1,5 +1,8 @@
 default.cc=amd64
 
+# win64 passes argument N in rcx/rdx/r8/r9 OR xmm0-3 depending on its type: one
+# sequence with per-type homes, not two parallel sequences like sysv. A separate
+# fparg sequence would invent extra arguments, so this cc must not define one.
 ms=cc
 cc.ms.arg0=rcx
 cc.ms.arg1=rdx
@@ -40,11 +43,15 @@ cc.swift.arg2=rdx
 cc.swift.arg3=rcx
 cc.swift.arg4=r8
 cc.swift.arg5=r9
-cc.swift.arg6=xmm0
-cc.swift.arg7=xmm1
-cc.swift.arg8=xmm2
-cc.swift.arg9=xmm3
-cc.swift.arg10=xmm4
+cc.swift.argn=stack
+cc.swift.fparg0=xmm0
+cc.swift.fparg1=xmm1
+cc.swift.fparg2=xmm2
+cc.swift.fparg3=xmm3
+cc.swift.fparg4=xmm4
+cc.swift.fparg5=xmm5
+cc.swift.fparg6=xmm6
+cc.swift.fparg7=xmm7
 cc.swift.self=r13
 cc.swift.error=r12
 cc.swift.pop=caller
