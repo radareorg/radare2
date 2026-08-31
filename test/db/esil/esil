@@ -745,3 +745,41 @@ EXPECT=<<EOF
 1,1,1
 EOF
 RUN
+
+NAME=esil arena is reclaimed between words, not just slots
+FILE=-
+ARGS=-e esil.stack.depth=3
+CMDS=<<EOF
+aei
+'ae 0x1122334455667788,POP,0x1122334455667788,POP,0x1122334455667788,POP,0x1122334455667788,POP,0x1122334455667788,POP,0x1122334455667788,POP,7
+EOF
+EXPECT=<<EOF
+7
+EOF
+RUN
+
+NAME=esil loop runs to the goto limit, not to the arena size
+FILE=-
+ARGS=-a x86 -b 64 -e esil.stack.depth=3 -e esil.gotolimit=4096
+CMDS=<<EOF
+aei
+ae 5,rax,=,0,rbx,=
+ae 1,rax,-,rax,=,1,rbx,+,rbx,=,rax,?{,0,GOTO,}
+ar rbx
+EOF
+EXPECT=<<EOF
+0x00000005
+EOF
+RUN
+
+NAME=esil arena wraps under a value that stays live
+FILE=-
+ARGS=-e esil.stack.depth=3
+CMDS=<<EOF
+aei
+'ae 3,2,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+,DUP,+
+EOF
+EXPECT=<<EOF
+0x50000000000
+EOF
+RUN
