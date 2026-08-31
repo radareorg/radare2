@@ -16,9 +16,16 @@
 extern "C" {
 #endif
 
+// Extracts the sort key of an element. When a list is created with one, the
+// key is cached in every node, so traversal never dereferences the payload.
+// Contract: keyfn(a) < keyfn(b) exactly when compare(a, b) < 0, and
+// keyfn(a) == keyfn(b) exactly when compare(a, b) == 0.
+typedef ut64 (*RSkipListKey)(const void *data);
+
 typedef struct r_skiplist_node_t {
 	void *data;	// pointer to the value
 	struct r_skiplist_node_t **forward; // forward pointer
+	ut64 key;	// cached sort key, only meaningful when the list has a keyfn
 } RSkipListNode;
 
 typedef struct r_skiplist_t {
@@ -27,9 +34,11 @@ typedef struct r_skiplist_t {
 	int size;
 	RListFree freefn;
 	RListComparator compare;
+	RSkipListKey keyfn; // optional, see RSkipListKey
 } RSkipList;
 
 R_API RSkipList* r_skiplist_new(RListFree freefn, RListComparator comparefn);
+R_API RSkipList* r_skiplist_new_with_key(RListFree freefn, RListComparator comparefn, RSkipListKey keyfn);
 R_API void r_skiplist_free(RSkipList *list);
 R_API void r_skiplist_purge(RSkipList *list);
 R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data);
@@ -44,6 +53,10 @@ R_API void *r_skiplist_get_first(RSkipList *list);
 R_API void *r_skiplist_get_n(RSkipList *list, int n);
 R_API void* r_skiplist_get_geq(RSkipList* list, void* data);
 R_API void* r_skiplist_get_leq(RSkipList* list, void* data);
+// Key-based lookups. Only valid on a list created with r_skiplist_new_with_key.
+// These never build a probe element and never touch any payload.
+R_API void* r_skiplist_get_geq_key(RSkipList* list, ut64 key);
+R_API void* r_skiplist_get_leq_key(RSkipList* list, ut64 key);
 R_API bool r_skiplist_empty(RSkipList *list);
 R_API RList *r_skiplist_to_list(RSkipList *list);
 

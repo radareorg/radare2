@@ -47,6 +47,10 @@ static void flag_skiplist_free(void *data) {
 	}
 }
 
+static ut64 flag_skiplist_key(const void *data) {
+	return ((const RFlagsAtOffset *)data)->addr;
+}
+
 static int flag_skiplist_cmp(const void *va, const void *vb) {
 	const ut64 ao = ((RFlagsAtOffset *)va)->addr;
 	const ut64 bo = ((RFlagsAtOffset *)vb)->addr;
@@ -110,10 +114,11 @@ dir == 0 ->  result == addr
 dir == 1 ->  result >= addr
 #endif
 static RFlagsAtOffset *r_flag_get_nearest_list(RFlag *f, ut64 addr, int dir) {
-	RFlagsAtOffset key = { .addr = addr };
+	// key-based lookup: no probe element on the stack, and the traversal
+	// never dereferences an RFlagsAtOffset
 	RFlagsAtOffset *flags = (dir >= 0)
-		? r_skiplist_get_geq (f->by_addr, &key)
-		: r_skiplist_get_leq (f->by_addr, &key);
+		? r_skiplist_get_geq_key (f->by_addr, addr)
+		: r_skiplist_get_leq_key (f->by_addr, addr);
 	return (dir == 0 && flags && flags->addr != addr)? NULL: flags;
 }
 
@@ -337,7 +342,7 @@ R_API RFlag *r_flag_new(void) {
 	f->names->default_alignment = 1;
 	f->ht_name = flag_ht_name_new ();
 	f->ht_meta = ht_up_new (NULL, ht_free_meta, NULL);
-	f->by_addr = r_skiplist_new (flag_skiplist_free, flag_skiplist_cmp);
+	f->by_addr = r_skiplist_new_with_key (flag_skiplist_free, flag_skiplist_cmp, flag_skiplist_key);
 	new_spaces (f);
 	R_DIRTY_SET (f);
 	return f;
