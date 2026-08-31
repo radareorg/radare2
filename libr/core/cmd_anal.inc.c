@@ -1674,7 +1674,6 @@ static void var_accesses_list(RCore *core, RAnalFunction *fcn, RAnalVar *var, PJ
 
 static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const char *name) {
 	RAnalVar *var = NULL;
-	r_anal_function_normalize_reg_argnums (core->anal, fcn);
 	RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
 	RAnalVar **it;
 	if (type == '=') {
