@@ -217,6 +217,7 @@ name=cc
 cc.name.arg0=reg
 cc.name.arg1=reg
 cc.name.argn=stack
+cc.name.fparg0=freg
 cc.name.ret0=reg
 ```
 
