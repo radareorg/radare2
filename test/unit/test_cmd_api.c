@@ -305,6 +305,39 @@ static bool test_r_core_call_context_args(void) {
 }
 
 typedef struct {
+	RCmdContext *outer;
+	bool nested;
+} NestedContextState;
+
+static RCmdResult nested_context_inner(RCmdContext *ctx) {
+	NestedContextState *state = ctx->handler_user;
+	state->nested = ctx->parent && ctx->parent->parent == state->outer;
+	r_cons_print (ctx->cons, "nested");
+	return (RCmdResult) { 0 };
+}
+
+static RCmdResult nested_context_outer(RCmdContext *ctx) {
+	NestedContextState *state = ctx->handler_user;
+	state->outer = ctx;
+	char *output = r_core_cmd_str_ctx (ctx, "ctxinner");
+	state->nested &= output && !strcmp (output, "nested");
+	free (output);
+	return (RCmdResult) { 0 };
+}
+
+static bool test_r_core_cmd_str_ctx(void) {
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "create core");
+	NestedContextState state = { 0 };
+	mu_assert_true (r_cmd_register (core->rcmd, "ctxouter", nested_context_outer, &state), "register outer handler");
+	mu_assert_true (r_cmd_register (core->rcmd, "ctxinner", nested_context_inner, &state), "register inner handler");
+	mu_assert_eq (r_core_call (core, "ctxouter"), 0, "dispatch nested context handler");
+	mu_assert_true (state.nested, "nested command preserves context ancestry and output");
+	r_core_free (core);
+	mu_end;
+}
+
+typedef struct {
 	RCorePluginSession *session;
 	int calls;
 	int legacy_calls;
@@ -377,6 +410,7 @@ static int all_tests(void) {
 	mu_run_test (test_r_cmd_multiword_dispatch);
 	mu_run_test (test_r_cmd_context_args);
 	mu_run_test (test_r_core_call_context_args);
+	mu_run_test (test_r_core_cmd_str_ctx);
 	mu_run_test (test_r_core_plugin_context_callback);
 	return tests_passed != tests_run;
 }
