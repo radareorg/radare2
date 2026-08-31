@@ -371,6 +371,20 @@ arg double arg2 @ xmm1
 EOF
 RUN
 
+NAME=xmm0 read after a call is not an argument
+FILE=malloc://32
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx e80b000000f20f59c0c3 @ 0
+wx c3 @ 0x10
+af @ 0x10
+af @ 0
+afv @ 0
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME=float args afli
 FILE=bins/elf/float_point
 CMDS=<<EOF
