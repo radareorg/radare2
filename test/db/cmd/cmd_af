@@ -363,11 +363,12 @@ arg double arg2 @ d1
 EOF
 RUN
 
-NAME=arm64 float args match the s register spelling of the v sequence
+NAME=arm64 swift float args match the s register spelling of the v sequence
 FILE=malloc://32
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 0000261ec0035fd6 @ 0
+e anal.cc=swift
 af
 afv
 EOF
