@@ -2161,7 +2161,7 @@ EXPECT=<<EOF
 | `- args(rdx)
 |           0x00005ae0      f30f1efa       endbr64
 |           0x00005ae4      31ed           xor ebp, ebp
-|           0x00005ae6      4989d1         mov r9, rdx                 ; arg3
+|           0x00005ae6      4989d1         mov r9, rdx                 ; arg1
 |           0x00005ae9      5e             pop rsi
 |           0x00005aea      4889e2         mov rdx, rsp
 |           0x00005aed      4883e4f0       and rsp, 0xfffffffffffffff0

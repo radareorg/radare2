@@ -20,10 +20,10 @@ EXPECT=<<EOF
 0x100004018      stp x29, x30, [var_70h]
 0x10000401c      add x29, sp, 0x70
 0x100004020      mov x20, x8
-0x100004024      lsr x8, x4, 0x3e                                      ; arg5
+0x100004024      lsr x8, x4, 0x3e                                      ; arg4
 0x100004028      mov x19, x21
-0x10000402c      mov x24, x6                                           ; arg7
-0x100004030      mov x26, x5                                           ; arg6
+0x10000402c      mov x24, x6                                           ; arg6
+0x100004030      mov x26, x5                                           ; arg5
 0x100004034      mov x22, x1                                           ; arg2
 0x100004038      mov x23, x0                                           ; arg1
 0x10000403c      mov x25, 0
@@ -37,13 +37,13 @@ EXPECT=<<EOF
 | // true: 0x100004058
 ;-- case 0:                                                            ; from 0x100004048
 ; CODE XREF from sym.func.100004000 @ 0x100004048(x)
-0x100004058      ubfx x25, x4, 0x30, 8                                 ; arg5
+0x100004058      ubfx x25, x4, 0x30, 8                                 ; arg4
 0x10000405c      b case.0x100004048.3
 | // true: 0x100004080
 ;-- case 1:                                                            ; from 0x100004048
 ; CODE XREF from sym.func.100004000 @ 0x100004048(x)
-0x100004060      lsr x8, x3, 0x20                                      ; arg4
-0x100004064      subs w8, w8, w3                                       ; arg4
+0x100004060      lsr x8, x3, 0x20                                      ; arg3
+0x100004064      subs w8, w8, w3                                       ; arg3
 0x100004068      b.vs 0x10000410c
 | // true: 0x10000410c  false: 0x10000406c
 0x10000406c      sxtw x25, w8
@@ -51,7 +51,7 @@ EXPECT=<<EOF
 | // true: 0x100004080
 ;-- case 2:                                                            ; from 0x100004048
 ; CODE XREF from sym.func.100004000 @ 0x100004048(x)
-0x100004074      ldp x9, x8, [x3, 0x10]                                ; arg4
+0x100004074      ldp x9, x8, [x3, 0x10]                                ; arg3
 0x100004078      subs x25, x8, x9
 0x10000407c      b.vs 0x100004110
 | // true: 0x100004110  false: 0x100004080
