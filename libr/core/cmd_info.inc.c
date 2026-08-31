@@ -1920,6 +1920,20 @@ static void cmd_izminus(RCore *core, const char *input) {
 	r_bin_file_string_delete (bf, args.addr, args.len, args.type);
 }
 
+// Parse an optional ":encoding" filter (as in "iz:utf8") at *p, advancing *p
+// past it. Returns a newly allocated encoding name, or NULL when absent.
+static char *iz_parse_enc(const char **p) {
+	if (**p != ':') {
+		return NULL;
+	}
+	(*p)++;
+	const char *s = *p;
+	while (**p && **p != ' ') {
+		(*p)++;
+	}
+	return r_str_ndup (s, *p - s);
+}
+
 static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const char *input) {
 	switch (input[1]) {
 	case '+': // "iz+"
@@ -1970,14 +1984,7 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		return;
 	}
 	// Encoding filter can come right after the z's: "iz:utf8", "izz:ascii"
-	if (*p == ':') {
-		p++;
-		const char *s = p;
-		while (*p && *p != ' ') {
-			p++;
-		}
-		enc = r_str_ndup (s, p - s);
-	}
+	enc = iz_parse_enc (&p);
 	// Parse suffix (j, jq, qj, q, qq, *, ,)
 	bool local_pj = false;
 	bool dotmode = false;
@@ -2016,13 +2023,8 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		p = ""; // consume rest
 	}
 	// Also accept the filter after a mode char: "izj:utf8", "izq:ascii"
-	if (!enc && *p == ':') {
-		p++;
-		const char *s = p;
-		while (*p && *p != ' ') {
-			p++;
-		}
-		enc = r_str_ndup (s, p - s);
+	if (!enc) {
+		enc = iz_parse_enc (&p);
 	}
 	// Check for '.' suffix after mode specifier
 	if (*p == '.') {
