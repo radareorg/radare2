@@ -5195,6 +5195,12 @@ static bool flag_name_in_opstr(RFlagItem *f, const char *opstr) {
 	return f && opstr && (strstr (opstr, f->name) || (f->realname && strstr (opstr, f->realname)));
 }
 
+// a reloc here means the slot holds an address, not text
+static bool ds_is_ptr_slot(RDisasmState *ds, ut64 addr) {
+	return r_core_getreloc (ds->core, addr, 1)
+		&& !r_meta_get_in (ds->core->anal, addr, R_META_TYPE_STRING);
+}
+
 /* convert numeric value in opcode to ascii char or number */
 static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	R_RETURN_IF_FAIL (ds);
@@ -5333,7 +5339,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					r_io_read_at (ds->core->io, ds->analop.ptr,
 						      (ut8 *)str, sizeof (str) - 1);
 					str[sizeof (str) - 1] = 0;
-					if (!string_printed && str[0] && r_str_is_printable_incl_newlines (str)) {
+					if (!string_printed && str[0]
+						&& r_str_is_printable_incl_newlines (str)
+						&& !ds_is_ptr_slot (ds, ds->analop.ptr)) {
 						ds_print_str (ds, str, sizeof (str), ds->analop.ptr);
 						string_printed = true;
 					}
@@ -5447,7 +5455,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 			}
 			if (print_msg) {
-				if (!string_printed) {
+				if (!string_printed && !ds_is_ptr_slot (ds, refaddr)) {
 					ds_print_str (ds, msg, len, refaddr);
 					string_printed = true;
 				}
@@ -5490,7 +5498,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				} else {
 					if (r_core_anal_address (core, refaddr) & R_ANAL_ADDR_TYPE_ASCII) {
-						if (!string_printed && print_msg) {
+						if (!string_printed && print_msg && !ds_is_ptr_slot (ds, refaddr)) {
 							ds_print_str (ds, msg, len, refaddr);
 							string_printed = true;
 						}
@@ -5501,7 +5509,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			kind = r_anal_data_kind (core->anal, refaddr, (const ut8*)msg, len - 1);
 			if (kind) {
 				if (!strcmp (kind, "text")) {
-					if (!string_printed && print_msg) {
+					if (!string_printed && print_msg && !ds_is_ptr_slot (ds, refaddr)) {
 						ds_print_str (ds, msg, len, refaddr);
 						string_printed = true;
 					}
