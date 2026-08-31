@@ -374,8 +374,7 @@ typedef struct r_core_esil_t {
 #define	R_CORE_ESIL_TRAP_REVERT_CONFIG	0x8
 
 /* Lookup table for the exception handlers described by the try.* flags, so the
- * analysis does not have to walk the whole flag table once per function. It is
- * rebuilt whenever the trycatch flags are (re)generated for a bin file. */
+ * analysis does not have to walk the whole flag table once per function. */
 typedef struct r_core_trycatch_index_t {
 	RBinFile *bf; // bin file the index was built from, NULL when never built
 	HtUP *by_source; // ut64 source address -> RVecUT64 of handler addresses
