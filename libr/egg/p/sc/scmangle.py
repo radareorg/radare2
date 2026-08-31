@@ -287,12 +287,14 @@ def main(argv: List[str]) -> int:
     args = ap.parse_args(argv)
 
     # Seed selection
-    if args.seed is None:
-        import time
-        seed = (os.getpid() * 0x9E3779B1) ^ int(time.time_ns() & 0xFFFFFFFF)
-        seed &= 0xFFFFFFFF
+    if args.seed is not None:
+        seed = args.seed
+    elif os.environ.get('SOURCE_DATE_EPOCH') is not None:
+        seed = int(os.environ['SOURCE_DATE_EPOCH'])
     else:
-        seed = args.seed & 0xFFFFFFFF
+        import time
+        seed = (os.getpid() * 0x9E3779B1) ^ time.time_ns()
+    seed &= 0xFFFFFFFF
 
     rng = LCG(seed)
     ops = choose_ops(rng)
