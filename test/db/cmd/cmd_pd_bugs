@@ -52,7 +52,7 @@ EXPECT=<<EOF
 |           entry0+0xd                     50             push rax
 |           entry0+0xe                     54             push rsp
 |           entry0+0xf                     4c8b05e693..   mov r8, qword [reloc.fixup.UHH_] ; [0x1f220:8]=0x16ee0
-|           entry0+0x16                    488b0de793..   mov rcx, qword [reloc.fixup.UHAWAVAUATSH8] ; [0x1f228:8]=0x16e60 ; "`n\x01"
+|           entry0+0x16                    488b0de793..   mov rcx, qword [reloc.fixup.UHAWAVAUATSH8] ; [0x1f228:8]=0x16e60
 |           entry0+0x1d                    488b3de893..   mov rdi, qword [reloc.fixup.UHAWAVAUATSHH] ; [0x1f230:8]=0x3bd0 main
 [36m/[0m 41: [33mentry0[0m (int64_t arg1, void *stack_end);
 [36m|[0m           [37m; [37marg [36mint64_t [33marg1 [32m@ rdx[0m
@@ -65,7 +65,7 @@ EXPECT=<<EOF
 [36m|[0m           [32mentry0[0m+0xd                      [33m50[0m             [35mpush[37m rax[0m[0m
 [36m|[0m           [32mentry0[0m+0xe                      [33m54[0m             [35mpush[37m rsp[0m[0m
 [36m|[0m           [32mentry0[0m+0xf                      [33m4c[36m8b[36m05[36me6[36m93[36m..   [36mmov[37m r8[0m,[33m qword[33m [0m[[33mreloc.fixup.UHH_[0m][37m[0m[31m [31m; [[31m0x1f220[31m:8]=0x16ee0[0m
-[36m|[0m           [32mentry0[0m+0x16                     [33m48[36m8b[36m0d[36me7[36m93[36m..   [36mmov[37m rcx[0m,[33m qword[33m [0m[[33mreloc.fixup.UHAWAVAUATSH8[0m][37m[0m[31m [31m; [[31m0x1f228[31m:8]=0x16e60[31m [31m; "`n\x01"[0m
+[36m|[0m           [32mentry0[0m+0x16                     [33m48[36m8b[36m0d[36me7[36m93[36m..   [36mmov[37m rcx[0m,[33m qword[33m [0m[[33mreloc.fixup.UHAWAVAUATSH8[0m][37m[0m[31m [31m; [[31m0x1f228[31m:8]=0x16e60[0m
 [36m|[0m           [32mentry0[0m+0x1d                     [33m48[36m8b[33m3d[36me8[36m93[36m..   [36mmov[37m rdi[0m,[33m qword[33m [0m[[33mreloc.fixup.UHAWAVAUATSHH[0m][37m[0m[31m [31m; [[31m0x1f230[31m:8]=0x3bd0 main[0m
 EOF
 RUN
@@ -447,5 +447,78 @@ nop
 nop
 nop
 nop
+EOF
+RUN
+
+NAME=pd got.plt stub slot not decoded as string
+FILE=bins/elf/analysis/ls-alxchk
+CMDS=pd 1 @ 0x3520
+EXPECT=<<EOF
+            ;-- fwrite_unlocked:
+            0x00003520      ff253abe0100   jmp qword [reloc.fwrite_unlocked] ; [0x1f360:8]=0x3526
+EOF
+RUN
+
+NAME=pd Cs string at a pointer slot is not overruled
+FILE=bins/elf/analysis/ls-alxchk
+ARGS=-e asm.bytes=0
+CMDS=<<EOF
+Cs 2 @ 0x1f228
+pd 1 @ 0x5e3a
+EOF
+EXPECT=<<EOF
+            0x00005e3a      mov rcx, qword [reloc.fixup.UHAWAVAUATSH8] ; [0x1f228:8]=0x16e60 ; "`n"
+EOF
+RUN
+
+NAME=pd Cs covering a pointer slot is not overruled
+FILE=bins/elf/analysis/ls-alxchk
+ARGS=-e asm.bytes=0
+CMDS=<<EOF
+Cs 16 @ 0x1f220
+pd 1 @ 0x5e3a
+EOF
+EXPECT=<<EOF
+            0x00005e3a      mov rcx, qword [reloc.fixup.UHAWAVAUATSH8] ; [0x1f228:8]=0x16e60 ; "`n\x01"
+EOF
+RUN
+
+NAME=pd string before a relocated slot keeps its comment
+FILE=bins/elf/ls
+ARGS=-e asm.bytes=0 -e io.cache=true
+CMDS=<<EOF
+wx 41424300 @ 0x21d74
+f str.ABC 4 @ 0x21d74
+wa lea rsi, [0x21d74] @ 0x5f9a
+pd 1 @ 0x5f9a
+EOF
+EXPECT=<<EOF
+            0x00005f9a      lea rsi, str.ABC                           ; 0x21d74 ; "ABC"
+EOF
+RUN
+
+NAME=pd unflagged got slot not decoded as string
+FILE=bins/elf/analysis/ls-alxchk
+ARGS=-e asm.bytes=0 -e io.cache=true
+CMDS=<<EOF
+wx 4142434445460000 @ 0x1f228
+f-*
+pd 1 @ 0x5e3a
+EOF
+EXPECT=<<EOF
+            0x00005e3a      mov rcx, qword [0x0001f228]                ; [0x1f228:8]=0x464544434241
+EOF
+RUN
+
+NAME=pd 32bit stub slot not decoded as string
+FILE=bins/mach0/hellocxx-osx-i386
+ARGS=-e asm.bytes=0
+CMDS=pd 1 @ 0x1dee
+EXPECT=<<EOF
+            ;-- section.2.__TEXT.__symbol_stub:
+            ;-- class.std::string:
+            ;-- sym.std::string._ZNKSs4sizeEv:
+            ;-- std::string::size() const:
+            0x00001dee      jmp dword [reloc.std::string::size___const] ; 0x2030 ; [02] -r-x section size 54 named 2.__TEXT.__symbol_stub
 EOF
 RUN
