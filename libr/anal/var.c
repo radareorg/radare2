@@ -1723,6 +1723,12 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		return;
 	}
 
+	// only an fp/vector instruction can carry an fp argument, so the second
+	// sequence is not worth walking for the integer bulk of a function
+	const bool scan_fpargs = op->family == R_ANAL_OP_FAMILY_FPU
+		|| op->family == R_ANAL_OP_FAMILY_VEC
+		|| op->family == R_ANAL_OP_FAMILY_SIMD
+		|| op->family == R_ANAL_OP_FAMILY_UNKNOWN;
 	// one walk per argument sequence: integers from rdi onward, floats from
 	// xmm0 onward, each counted and tracked on slots of its own
 	const struct {
@@ -1732,7 +1738,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		const char *deftype;
 	} sequences[] = {
 		{ false, 0, scan_args? max_count: 0, NULL },
-		{ true, R_ANAL_CC_FPSLOT_BASE, R_ANAL_CC_MAXFPARG, "double" },
+		{ true, R_ANAL_CC_FPSLOT_BASE, scan_fpargs? r_anal_cc_max_fparg (anal, fcn->callconv): 0, "double" },
 	};
 	size_t seq;
 	for (seq = 0; seq < R_ARRAY_SIZE (sequences); seq++) {
@@ -1746,10 +1752,6 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				? r_anal_cc_fparg (anal, fcn->callconv, n)
 				: r_anal_cc_argloc (anal, fcn->callconv, n, 0, 0); // TODO: pass argn
 			if (!regname) {
-				if (fp) {
-					// the sequence ends at its first gap, so no count is needed
-					break;
-				}
 				continue;
 			}
 			const int slot = slot_base + n;
