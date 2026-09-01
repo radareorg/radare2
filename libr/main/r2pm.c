@@ -1279,10 +1279,10 @@ static int r2pm_info(void) {
 	return 0;
 }
 
-static RList *r2pm_pkg_platforms(const char *data, bool *windows, bool *unix, bool *qjs) {
+static RList *r2pm_pkg_platforms(const char *data, bool *windows, bool *unix_installer, bool *qjs) {
 	RList *platforms = r_list_newf (free);
 	*windows = strstr (data, "\nR2PM_INSTALL_WINDOWS() {\n");
-	*unix = strstr (data, "\nR2PM_INSTALL() {\n");
+	*unix_installer = strstr (data, "\nR2PM_INSTALL() {\n");
 	*qjs = strstr (data, "\nR2PM_INSTALL_QJS() {\n");
 	char *explicit = r2pm_parse (data, "\nR2PM_PLATFORMS ", TT_TEXTLINE);
 	if (explicit) {
@@ -1300,18 +1300,18 @@ static RList *r2pm_pkg_platforms(const char *data, bool *windows, bool *unix, bo
 	if (*windows) {
 		r_list_append (platforms, strdup ("windows"));
 	}
-	if (*unix || *qjs) {
+	if (*unix_installer || *qjs) {
 		r_list_append (platforms, strdup ("unix"));
 	}
 	return platforms;
 }
 
-static bool r2pm_pkg_supported(RList *platforms, bool windows, bool unix, bool qjs) {
-	bool installer = windows || unix || qjs;
+static bool r2pm_pkg_supported(RList *platforms, bool windows, bool unix_installer, bool qjs) {
+	bool installer = windows || unix_installer || qjs;
 #if R2__WINDOWS__
 	installer = windows;
 #elif R2__UNIX__
-	installer = unix;
+	installer = unix_installer;
 #if WANT_QJS && !defined(__wasi__)
 	installer |= qjs;
 #endif
@@ -1376,9 +1376,9 @@ static char *r2pm_search(const char *grep, int mode, bool all) {
 			free (data);
 			continue;
 		}
-		bool windows, unix, qjs;
-		RList *platforms = r2pm_pkg_platforms (data, &windows, &unix, &qjs);
-		bool supported = r2pm_pkg_supported (platforms, windows, unix, qjs);
+		bool windows, unix_installer, qjs;
+		RList *platforms = r2pm_pkg_platforms (data, &windows, &unix_installer, &qjs);
+		bool supported = r2pm_pkg_supported (platforms, windows, unix_installer, qjs);
 		free (data);
 		if (all || supported) {
 			if (pj) {
