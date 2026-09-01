@@ -359,6 +359,7 @@ wx 0028221e2128631ec0035fd6 @ 0x20
 wx 040000940000669ec0035fd6 @ 0x40
 wx c0035fd6 @ 0x50
 wx 281ca14e091ca04e2029291e0029601ec0035fd6 @ 0x60
+wx 081ca04ec0035fd6 @ 0x80
 wx 0c000094c0035fd6 @ 0xa0
 wx c0035fd6 @ 0xd0
 tk main=func
@@ -373,6 +374,7 @@ e anal.cc=swift
 af @ 0x10
 af @ 0x20
 af @ 0x60
+af @ 0x80
 af @ 0xd0
 s 0xd0
 afn main
@@ -384,6 +386,7 @@ afv @ 0
 afv @ 0x10
 afv @ 0x20
 afv @ 0x60
+afv @ 0x80
 afv @ 0xa0~argv~?
 afv @ 0xa0~envp~?
 afv @ 0x40
@@ -398,6 +401,7 @@ arg float arg3 @ s2
 arg double arg4 @ d3
 arg float arg1 @ s0
 arg double arg2 @ d1
+arg uint8_t[16] arg1 @ v0
 0
 0
 EOF
@@ -633,7 +637,7 @@ EXPECT=<<EOF
 0x1000047a8
             ;-- func.1000047a8:
 / 728: sym.il.piltrafilla (int64_t arg1, int64_t arg2, int64_t arg3);
-| `- args(x0, x1, x2) vars(5:sp[0x10..0x50])
+| `- args(x0, x1, x2) vars(10:sp[0x8..0x50])
 |           0x1000047a8      7f2303d5       pacibsp
 |           0x1000047ac      fc6fbaa9       stp x28, x27, [sp, -0x60]!
 EOF

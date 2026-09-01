@@ -1600,7 +1600,7 @@ static RAnalVar *grouped_fparg(RAnal *anal, RAnalFunction *fcn, const char *regn
 }
 
 static void refine_fparg(RAnal *anal, RAnalVar *var, const char *regname) {
-	if (!var) {
+	if (!var || !r_anal_var_is_default_argname (var->name)) {
 		return;
 	}
 	RRegItem *reg = r_reg_get (anal->reg, regname, -1);
@@ -1861,7 +1861,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			int argsize = size;
 			if (fp) {
 				RRegItem *ri = r_reg_get (anal->reg, argreg, -1);
-				deftype = ri && ri->size > 64? "uint8_t[16]"
+				deftype = is_swift && ri && ri->size > 64? "uint8_t[16]"
 					: ri && ri->size == 32? "float": "double";
 				argsize = ri? BITS2BYTES (ri->size): size;
 				r_unref (ri);
