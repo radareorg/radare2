@@ -571,6 +571,17 @@ typedef struct r_anal_snapshot_string_literal_t {
 // which addresses the table holds, not which of them a given call reaches. That
 // second question is the caller's to answer, from the range it can prove for
 // the index, and answering it by reading the table alone would be a guess.
+// A named data object the function refers to, and where it lives.
+//
+// The same argument as the string literal beside it: a consumer holding only
+// the snapshot sees the address a constant carries, so a global renders as its
+// address rather than as its name. This is radare2's own flag for that address,
+// travelling with the function that reads it, and it is a display fact -- it
+// says what the address is called, never what is stored there.
+typedef struct r_anal_snapshot_data_symbol_t {
+	ut64 addr;
+	char *name;
+} RAnalSnapshotDataSymbol;
 typedef struct r_anal_snapshot_code_pointer_table_t {
 	ut64 addr;
 	ut32 entry_size;
@@ -585,6 +596,8 @@ typedef struct r_anal_function_image_snapshot_t {
 	size_t num_external_exits;
 	RAnalSnapshotStringLiteral *string_literals;
 	size_t num_string_literals;
+	RAnalSnapshotDataSymbol *data_symbols;
+	size_t num_data_symbols;
 	RAnalSnapshotCodePointerTable *code_pointer_tables;
 	size_t num_code_pointer_tables;
 	size_t total_source_bytes;
@@ -612,6 +625,7 @@ typedef struct r_anal_function_snapshot_view_t {
 	size_t num_blocks;
 	size_t num_external_exits;
 	size_t num_string_literals;
+	size_t num_data_symbols;
 	size_t total_source_bytes;
 	size_t num_callee_snapshots;
 	size_t num_code_pointer_tables;
@@ -629,6 +643,10 @@ typedef struct r_anal_snapshot_string_literal_view_t {
 	ut64 addr;
 	size_t text_length;
 } RAnalSnapshotStringLiteralView;
+typedef struct r_anal_snapshot_data_symbol_view_t {
+	ut64 addr;
+	size_t name_length;
+} RAnalSnapshotDataSymbolView;
 typedef struct r_anal_snapshot_successor_view_t {
 	RAnalSnapshotSuccessorKind kind;
 	ut64 target_addr;
@@ -1760,6 +1778,8 @@ R_API bool r_anal_function_snapshot_block_bytes(const RAnalFunctionSnapshot *sna
 R_API bool r_anal_function_snapshot_successor_view(const RAnalFunctionSnapshot *snapshot, size_t block_index, size_t successor_index, R_OUT RAnalSnapshotSuccessorView *view);
 R_API bool r_anal_function_snapshot_external_exit(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT ut64 *target);
 R_API bool r_anal_function_snapshot_string_literal_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotStringLiteralView *view);
+R_API bool r_anal_function_snapshot_data_symbol_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotDataSymbolView *view);
+R_API bool r_anal_function_snapshot_data_symbol_name(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
 R_API bool r_anal_function_snapshot_string_literal_text(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
 R_API bool r_anal_function_recover_vars_plugin(RAnal *anal, RAnalFunction *fcn);
 // Stack-VM helper: create register-kind argument vars named "<prefix><first+i>"

@@ -875,6 +875,11 @@ static void function_image_snapshot_fini(RAnalFunctionImageSnapshot *image) {
 			free (image->string_literals[literal].text);
 		}
 		free (image->string_literals);
+		size_t symbol;
+		for (symbol = 0; symbol < image->num_data_symbols; symbol++) {
+			free (image->data_symbols[symbol].name);
+		}
+		free (image->data_symbols);
 		size_t table;
 		for (table = 0; table < image->num_code_pointer_tables; table++) {
 			free (image->code_pointer_tables[table].targets);
@@ -1377,6 +1382,79 @@ static bool function_image_string_literals_collect(RAnal *anal,
 	return true;
 }
 
+// The names radare2 already has for the data this function points at.
+//
+// Mirrors the string-literal collector exactly: walk every reference out of the
+// function's own bytes, and where radare2 has a flag for the address, keep the
+// name beside it. A consumer holding only the snapshot otherwise renders a
+// global as its address, which is the difference between `progName` and
+// `0x6000`.
+//
+// Only flags that name data. A reference to another function is already carried
+// as a successor or a callee, and repeating it here would let a call render its
+// target twice under two different authorities.
+static bool function_image_data_symbols_collect(RAnal *anal,
+		RAnalFunctionImageSnapshot *image,
+		const RAnalFunctionSnapshotLimits *limits) {
+	if (!anal->flb.get_at || !anal->flb.f) {
+		return true;
+	}
+	size_t index;
+	for (index = 0; index < image->num_blocks; index++) {
+		const RAnalSnapshotBlock *block = &image->blocks[index];
+		ut64 offset;
+		for (offset = 0; offset < block->size; offset++) {
+			RVecAnalRef *refs = r_anal_xrefs_get_from (anal, block->addr + offset);
+			if (!refs) {
+				continue;
+			}
+			RAnalRef *ref;
+			R_VEC_FOREACH (refs, ref) {
+				RFlagItem *flag = anal->flb.get_at (anal->flb.f, ref->addr, false);
+				if (!flag || !flag->name || !*flag->name) {
+					continue;
+				}
+				if (!strncmp (flag->name, "str.", 4) || !strncmp (flag->name, "fcn.", 4)
+					|| !strncmp (flag->name, "sym.", 4) || !strncmp (flag->name, "loc.", 4)) {
+					continue;
+				}
+				size_t existing;
+				bool known = false;
+				for (existing = 0; existing < image->num_data_symbols; existing++) {
+					if (image->data_symbols[existing].addr == ref->addr) {
+						known = true;
+						break;
+					}
+				}
+				if (known) {
+					continue;
+				}
+				if (image->num_data_symbols >= limits->max_function_successors) {
+					RVecAnalRef_free (refs);
+					return false;
+				}
+				RAnalSnapshotDataSymbol *grown = realloc (image->data_symbols,
+					(image->num_data_symbols + 1) * sizeof (*grown));
+				if (!grown) {
+					RVecAnalRef_free (refs);
+					return false;
+				}
+				image->data_symbols = grown;
+				RAnalSnapshotDataSymbol *symbol = &image->data_symbols[image->num_data_symbols];
+				symbol->addr = ref->addr;
+				symbol->name = strdup (flag->name);
+				if (!symbol->name) {
+					RVecAnalRef_free (refs);
+					return false;
+				}
+				image->num_data_symbols++;
+			}
+			RVecAnalRef_free (refs);
+		}
+	}
+	return true;
+}
+
 static bool function_image_snapshot_collect(RAnal *anal, const RAnalFunction *fcn, const RAnalFunctionSnapshotLimits *limits, RAnalFunctionImageSnapshot *image, const char **reason) {
 	const char *refusal = "the function image is not coherent";
 	R_RETURN_VAL_IF_FAIL (anal && fcn && limits && image, false);
@@ -1493,6 +1571,9 @@ static bool function_image_snapshot_collect(RAnal *anal, const RAnalFunction *fc
 	}
 	if (!function_image_code_pointer_tables_collect (anal, image)) {
 		return false;
+	}
+	if (!function_image_data_symbols_collect (anal, image, limits)) {
+		IMAGE_REFUSE ("the data symbol table could not be built");
 	}
 	if (!function_image_string_literals_collect (anal, image, limits)) {
 		IMAGE_REFUSE ("the referenced string literals are not coherent");
@@ -1910,6 +1991,7 @@ R_API bool r_anal_function_snapshot_view(const RAnalFunctionSnapshot *snapshot, 
 		.num_blocks = snapshot->image.num_blocks,
 		.num_external_exits = snapshot->image.num_external_exits,
 		.num_string_literals = snapshot->image.num_string_literals,
+		.num_data_symbols = snapshot->image.num_data_symbols,
 		.total_source_bytes = snapshot->image.total_source_bytes,
 		.num_callee_snapshots = snapshot->num_callee_snapshots,
 		.num_code_pointer_tables = snapshot->image.num_code_pointer_tables,
@@ -2477,6 +2559,27 @@ R_API bool r_anal_function_snapshot_string_literal_text(const RAnalFunctionSnaps
 		return false;
 	}
 	return snapshot_owned_string_copy (r_str_get (snapshot->image.string_literals[index].text), buffer, buffer_size);
+}
+
+R_API bool r_anal_function_snapshot_data_symbol_view(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotDataSymbolView *view) {
+	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
+	if (index >= snapshot->image.num_data_symbols) {
+		return false;
+	}
+	const RAnalSnapshotDataSymbol *symbol = &snapshot->image.data_symbols[index];
+	*view = (RAnalSnapshotDataSymbolView) {
+		.addr = symbol->addr,
+		.name_length = strlen (r_str_get (symbol->name)),
+	};
+	return true;
+}
+
+R_API bool r_anal_function_snapshot_data_symbol_name(const RAnalFunctionSnapshot *snapshot, size_t index, char *buffer, size_t buffer_size) {
+	R_RETURN_VAL_IF_FAIL (snapshot, false);
+	if (index >= snapshot->image.num_data_symbols) {
+		return false;
+	}
+	return snapshot_owned_string_copy (r_str_get (snapshot->image.data_symbols[index].name), buffer, buffer_size);
 }
 
 R_API bool r_anal_function_snapshot_successor_view(const RAnalFunctionSnapshot *snapshot, size_t block_index, size_t successor_index, RAnalSnapshotSuccessorView *view) {
