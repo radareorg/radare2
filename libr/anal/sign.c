@@ -17,16 +17,14 @@ static inline const char *get_xrefname(RCore *core, ut64 addr) {
 }
 
 static const char *get_refname(RCore *core, ut64 addr) {
-	const RList *list = r_flag_get_list (core->flags, addr);
-	if (list) {
-		RFlagItem *item;
-		RListIter *iter;
-		r_list_foreach (list, iter, item) {
-			if (!item->name || !r_str_startswith (item->name, "sym.")) {
-				continue;
-			}
-			return item->name;
+	const RVecFlagItemPtr *list = r_flag_get_vec (core->flags, addr);
+	RFlagItem **iter;
+	RFlagItem *item;
+	r_flag_item_vec_foreach (list, iter, item) {
+		if (!item->name || !r_str_startswith (item->name, "sym.")) {
+			continue;
 		}
+		return item->name;
 	}
 	return NULL;
 }
@@ -71,13 +69,10 @@ static RFlagItem *get_sym_flag_at(RCore *core, ut64 addr) {
 	if (!core || !core->flags) {
 		return NULL;
 	}
-	const RList *list = r_flag_get_list (core->flags, addr);
-	if (!list) {
-		return NULL;
-	}
-	RListIter *it;
+	const RVecFlagItemPtr *list = r_flag_get_vec (core->flags, addr);
+	RFlagItem **it;
 	RFlagItem *fi;
-	r_list_foreach (list, it, fi) {
+	r_flag_item_vec_foreach (list, it, fi) {
 		if (fi && fi->name && r_str_startswith (fi->name, "sym.")) {
 			return fi;
 		}

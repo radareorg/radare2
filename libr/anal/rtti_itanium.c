@@ -454,14 +454,14 @@ static RTypeInfoType rtti_itanium_type_info_type_from_flag(RVTableContext *conte
 	R_RETURN_VAL_IF_FAIL (core, R_TYPEINFO_TYPE_CLASS);
 
 	// get the reloc flags
-	const RList *flags = context->anal->flb.get_list (core->flags, atAddress);
+	const RVecFlagItemPtr *flags = context->anal->flb.get_vec (core->flags, atAddress);
 	if (!flags) {
 		return R_TYPEINFO_TYPE_UNKNOWN;
 	}
 
-	RListIter *iter;
+	RFlagItem **iter;
 	RFlagItem *flag;
-	r_list_foreach (flags, iter, flag) {
+	r_flag_item_vec_foreach (flags, iter, flag) {
 		if (strstr (flag->name, VMI_CLASS_TYPE_INFO_NAME)) {
 			return R_TYPEINFO_TYPE_VMI_CLASS;
 		} else if (strstr (flag->name, SI_CLASS_TYPE_INFO_NAME)) {
