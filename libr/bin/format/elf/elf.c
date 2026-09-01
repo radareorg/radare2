@@ -3357,6 +3357,7 @@ static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_
 	crel_info.count--;
 	// Fill in the relocation structure
 	r->mode = DT_CREL;
+	r->implicit_addend = !crel_info.addend_bit;
 	r->offset = crel_info.offset;  // This is the file offset
 	r->rva = crel_info.offset;     // Also store as RVA for now, will be adjusted in fix_rva_and_offset
 	r->sym = crel_info.symidx;
@@ -3432,6 +3433,7 @@ static size_t add_relr_reloc(ELFOBJ *eo, ut64 vaddr, int type, size_t pos) {
 	RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 	memset (reloc, 0, sizeof (*reloc));
 	reloc->mode = DT_RELR;
+	reloc->implicit_addend = true;
 	reloc->type = type;
 	reloc->offset = vaddr;
 	reloc->rva = vaddr;
@@ -3503,6 +3505,7 @@ static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 v
 		r->addend = reloc_info.r_addend;
 	}
 	r->mode = rel_mode;
+	r->implicit_addend = rel_mode != DT_RELA;
 	r->offset = reloc_info.r_offset;
 	r->sym = ELF_R_SYM (reloc_info.r_info);
 	r->type = ELF_R_TYPE (reloc_info.r_info);
@@ -3823,6 +3826,7 @@ static size_t populate_relocs_record_from_mips_got(ELFOBJ *eo, size_t pos, size_
 		reloc->sym = (int)i;
 		reloc->type = R_MIPS_REL32;
 		reloc->mode = DT_REL;
+		reloc->implicit_addend = true;
 		reloc->offset = global_got + (i - gotsym) * wordsize;
 		fix_rva_and_offset_exec_file (eo, reloc);
 		int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;

@@ -509,7 +509,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		} else {
 			r->type = R_BIN_RELOC_64;
 		}
-		r->additive = true;
+		r->additive = !rel->implicit_addend;
 	}
 	if (rel->sym) {
 		if (rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym]) {
@@ -522,7 +522,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 	ut64 sym_vaddr = r->symbol ? r->symbol->vaddr : (rel->sym ? rel->rva : 0);
 
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
-	#define ADD(T, A) do { r->type = R_BIN_RELOC_ ## T; st32 _tmp; if (!r_add_overflow_st32 (r->addend, A, &_tmp)) { r->addend = _tmp; } r->additive = rel->mode == DT_RELA || rel->mode == DT_CREL; return r; } while (0)
+	#define ADD(T, A) do { r->type = R_BIN_RELOC_ ## T; st32 _tmp; if (!r_add_overflow_st32 (r->addend, A, &_tmp)) { r->addend = _tmp; } r->additive = !rel->implicit_addend; return r; } while (0)
 
 	// Early return if it's a CREL relocation - it was already set up in the initialization above
 	if (rel->mode == DT_CREL) {
@@ -1047,7 +1047,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		if (iob->read_at (iob->io, rel->rva, slot, ws) != ws) {
 			return;
 		}
-		if (rel->mode == DT_RELR || rel->mode == DT_REL) {
+		if (rel->implicit_addend) {
 			A = r_read_ble (slot, bo->endian, 8 * ws);
 		}
 	}

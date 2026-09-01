@@ -29,3 +29,18 @@ vaddr      paddr      type   ntype name
 EOF
 RUN
 
+
+NAME=ELF: i386 implicit-addend crel patches with the in-place word
+FILE=bins/elf/i386-crel-implicit.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pxw 4 @ 0x08000035
+pxw 4 @ 0x0800003a
+pxw 4 @ 0x08000048
+EOF
+EXPECT=<<EOF
+0x08000035  0x00000006                                   ....
+0x0800003a  0x08000044                                   D...
+0x08000048  0x08000048                                   H...
+EOF
+RUN
