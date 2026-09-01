@@ -2378,7 +2378,9 @@ static void remove_default_dwarf_args(RAnal *anal, RAnalFunction *fcn) {
 	while (i < RVecAnalVarPtr_length (&fcn->vars)) {
 		RAnalVar **varp = RVecAnalVarPtr_at (&fcn->vars, i);
 		RAnalVar *var = varp? *varp: NULL;
-		if (var && var->isarg && r_anal_var_is_default_argname (var->name)) {
+		const bool default_arg = var && (r_anal_var_is_default_argname (var->name)
+			|| (var->isarg && r_str_startswith (var->name, "arg_") && r_str_endswith (var->name, "h")));
+		if (default_arg) {
 			r_anal_var_delete (anal, var);
 			continue;
 		}
