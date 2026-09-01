@@ -7320,11 +7320,6 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	return core_cmd_str_context (core, NULL, cmd);
 }
 
-R_API char *r_core_cmd_str_ctx(RCmdContext *ctx, const char *cmd) {
-	R_RETURN_VAL_IF_FAIL (ctx && ctx->user, NULL);
-	return core_cmd_str_context (ctx->user, ctx, cmd);
-}
-
 /* get command output in raw bytes */
 R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd) {
 	RCons *cons = r_core_get_cons (core);

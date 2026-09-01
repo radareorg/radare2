@@ -13,15 +13,17 @@ static RCorePlugin *cmd_static_plugins[] = {
 };
 
 static void core_plugin_session_free(RCorePluginSession *cps) {
-	if (cps) {
-		if (cps->registered) {
-			r_cmd_unregister (cps->core->rcmd, cps->plugin->command);
-		}
-		if (cps->plugin && cps->plugin->fini) {
-			cps->plugin->fini (cps);
-		}
-		free (cps);
+	if (!cps) {
+		return;
 	}
+	RCorePlugin *plugin = cps->plugin;
+	if (cps->command_registered) {
+		r_cmd_unregister (cps->core->rcmd, plugin->command);
+	}
+	if (plugin->fini) {
+		plugin->fini (cps);
+	}
+	free (cps);
 }
 
 R_IPI void r_core_plugins_fini(RCmd *cmd) {
@@ -49,7 +51,7 @@ R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 		free (ctx);
 		return false;
 	}
-	ctx->registered = plugin->call_ctx != NULL;
+	ctx->command_registered = plugin->call_ctx != NULL;
 	r_list_append (cmd->libstore->plugins, ctx);
 	REventPlugin ep = {
 		.name = plugin->meta.name,
@@ -64,29 +66,25 @@ R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin) {
 	const char *name = plugin->meta.name;
 	RListIter *iter, *iter2;
 	RCorePluginSession *cps;
-	bool res = false;
 	r_list_foreach_safe (cmd->libstore->plugins, iter, iter2, cps) {
-		if (cps && !strcmp (name, cps->plugin->meta.name)) {
-			if (cps->registered) {
-				if (!r_cmd_unregister (cmd, cps->plugin->command)) {
-					return false;
-				}
-				cps->registered = false;
-			}
-			r_list_delete (cmd->libstore->plugins, iter);
-			res = true;
-			break;
+		RCorePlugin *candidate = cps->plugin;
+		if (strcmp (name, candidate->meta.name)) {
+			continue;
 		}
-	}
-	if (res) {
+		if (cps->command_registered && !r_cmd_unregister (cmd, candidate->command)) {
+			return false;
+		}
+		cps->command_registered = false;
+		r_list_delete (cmd->libstore->plugins, iter);
 		RCore *core = cmd->data;
 		REventPlugin ep = {
-			.name = plugin->meta.name,
+			.name = name,
 			.type = R_LIB_TYPE_CORE,
 		};
 		r_event_send (core->ev, R_EVENT_PLUGIN_UNLOAD, &ep);
+		return true;
 	}
-	return res;
+	return false;
 }
 
 R_IPI void r_core_plugins_init(RCmd *cmd) {

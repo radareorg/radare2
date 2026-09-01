@@ -100,7 +100,7 @@ typedef struct r_core_plugin_session_t {
 	RCore *core;
 	struct r_core_plugin_t *plugin;
 	void *data; // plugin instance data
-	bool registered;
+	bool command_registered;
 } RCorePluginSession;
 
 typedef bool (*RCorePluginLife) (RCorePluginSession *ctx);
@@ -588,7 +588,6 @@ R_API int r_core_callf_at(RCore *core, ut64 addr, const char *fmt, ...) R_PRINTF
 
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd);
 R_API R_MUSTUSE char *r_core_cmd_str(RCore *core, const char *cmd);
-R_API R_MUSTUSE char *r_core_cmd_str_ctx(RCmdContext *ctx, const char *cmd);
 R_API R_MUSTUSE char *r_core_cmd_str_r(RCore *core, const char *cmd);
 R_API R_MUSTUSE char *r_core_cmd_strf(RCore *core, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API R_MUSTUSE char *r_core_cmd_strf_at(RCore *core, ut64 addr, const char *fmt, ...) R_PRINTF_CHECK(3, 4);

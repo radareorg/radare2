@@ -129,8 +129,8 @@ struct r_cmd_t {
 	HtUP *ts_symbols_ht;
 	// RCmdDesc *root_cmd_desc;
 	RTrie *handlers;
-	RThreadLock *handlers_lock;
-	RThreadCond *handlers_cond;
+	RThreadLock *handlers_lock; // protects the registry and active call counts
+	RThreadCond *handlers_idle; // notified when a handler has no active calls
 };
 
 #ifdef R_API

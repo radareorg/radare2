@@ -10,7 +10,7 @@
 typedef struct {
 	RCmdCtxCb callback;
 	void *user;
-	size_t active;
+	size_t active_calls;
 } RCmdHandler;
 
 typedef struct r_cmd_handler_frame_t {
@@ -19,10 +19,6 @@ typedef struct r_cmd_handler_frame_t {
 } RCmdHandlerFrame;
 
 static R_TH_LOCAL RCmdHandlerFrame *current_handler_frame;
-
-static void cmd_handler_free(void *value) {
-	free (value);
-}
 
 static bool cmd_handler_is_current(const RCmdHandler *handler) {
 	RCmdHandlerFrame *frame;
@@ -34,11 +30,11 @@ static bool cmd_handler_is_current(const RCmdHandler *handler) {
 	return false;
 }
 
-static void cmd_handler_release(RCmd *cmd, RCmdHandler *handler) {
+static void cmd_handler_call_end(RCmd *cmd, RCmdHandler *handler) {
 	r_th_lock_enter (cmd->handlers_lock);
-	handler->active--;
-	if (!handler->active) {
-		r_th_cond_signal_all (cmd->handlers_cond);
+	handler->active_calls--;
+	if (!handler->active_calls) {
+		r_th_cond_signal_all (cmd->handlers_idle);
 	}
 	r_th_lock_leave (cmd->handlers_lock);
 }
@@ -119,13 +115,13 @@ R_API RCmd *r_cmd_new(void *data) {
 		cmd->cmds[i] = NULL;
 	}
 	cmd->nullcallback = NULL;
-	cmd->handlers = r_trie_new (cmd_handler_free);
+	cmd->handlers = r_trie_new (free);
 	cmd->handlers_lock = r_th_lock_new (false);
-	cmd->handlers_cond = r_th_cond_new ();
-	if (!cmd->handlers || !cmd->handlers_lock || !cmd->handlers_cond) {
+	cmd->handlers_idle = r_th_cond_new ();
+	if (!cmd->handlers || !cmd->handlers_lock || !cmd->handlers_idle) {
 		r_trie_free (cmd->handlers);
 		r_th_lock_free (cmd->handlers_lock);
-		r_th_cond_free (cmd->handlers_cond);
+		r_th_cond_free (cmd->handlers_idle);
 		free (cmd);
 		return NULL;
 	}
@@ -146,7 +142,7 @@ R_API void r_cmd_free(RCmd *cmd) {
 	r_core_plugins_fini (cmd);
 	r_trie_free (cmd->handlers);
 	r_th_lock_free (cmd->handlers_lock);
-	r_th_cond_free (cmd->handlers_cond);
+	r_th_cond_free (cmd->handlers_idle);
 	for (i = 0; i < NCMDS; i++) {
 		if (cmd->cmds[i]) {
 			R_FREE (cmd->cmds[i]);
@@ -281,10 +277,10 @@ R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void 
 	RCmdHandler *handler = R_NEW (RCmdHandler);
 	handler->callback = callback;
 	handler->user = handler_user;
-	handler->active = 0;
+	handler->active_calls = 0;
 	if (!r_trie_insert (cmd->handlers, key, handler)) {
 		r_th_lock_leave (cmd->handlers_lock);
-		cmd_handler_free (handler);
+		free (handler);
 		return false;
 	}
 	r_th_lock_leave (cmd->handlers_lock);
@@ -301,11 +297,11 @@ R_API bool r_cmd_unregister(RCmd *cmd, const char *name) {
 		return false;
 	}
 	handler = r_trie_take (cmd->handlers, key);
-	while (handler->active) {
-		r_th_cond_wait (cmd->handlers_cond, cmd->handlers_lock, 0);
+	while (handler->active_calls) {
+		r_th_cond_wait (cmd->handlers_idle, cmd->handlers_lock, 0);
 	}
 	r_th_lock_leave (cmd->handlers_lock);
-	cmd_handler_free (handler);
+	free (handler);
 	return true;
 }
 
@@ -344,13 +340,14 @@ R_API size_t r_cmd_unregister_prefix(RCmd *cmd, const char *prefix) {
 		return 0;
 	}
 	r_th_lock_enter (cmd->handlers_lock);
-	r_trie_foreach_prefix (cmd->handlers, r_strs_from (prefix), cmd_handler_collect_key, &result);
-	if (!result.valid) {
+	const bool collected = r_trie_foreach_prefix (cmd->handlers,
+		r_strs_from (prefix), cmd_handler_collect_key, &result);
+	if (!collected || !result.valid) {
 		r_th_lock_leave (cmd->handlers_lock);
 		r_list_free (result.keys);
 		return 0;
 	}
-	RList *handlers = r_list_newf (cmd_handler_free);
+	RList *handlers = r_list_newf (free);
 	if (!handlers) {
 		r_th_lock_leave (cmd->handlers_lock);
 		r_list_free (result.keys);
@@ -366,8 +363,8 @@ R_API size_t r_cmd_unregister_prefix(RCmd *cmd, const char *prefix) {
 	}
 	RCmdHandler *handler;
 	r_list_foreach (handlers, iter, handler) {
-		while (handler->active) {
-			r_th_cond_wait (cmd->handlers_cond, cmd->handlers_lock, 0);
+		while (handler->active_calls) {
+			r_th_cond_wait (cmd->handlers_idle, cmd->handlers_lock, 0);
 		}
 	}
 	r_th_lock_leave (cmd->handlers_lock);
@@ -576,7 +573,7 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 		if (handler && matched) {
 			callback = handler->callback;
 			handler_user = handler->user;
-			handler->active++;
+			handler->active_calls++;
 		}
 		r_th_lock_leave (cmd->handlers_lock);
 		if (!callback) {
@@ -602,7 +599,7 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 		}
 		if (parsed_from != sub_end) {
 			if (!cmd_context_parse_args (context, r_strs_new (sub_end, input.b), raw)) {
-				cmd_handler_release (cmd, handler);
+				cmd_handler_call_end (cmd, handler);
 				cmd_context_free (context);
 				return cmd_result (R_CMD_ACTION_ABORT, 2);
 			}
@@ -617,7 +614,7 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 		current_handler_frame = &frame;
 		RCmdResult result = callback (context);
 		current_handler_frame = frame.parent;
-		cmd_handler_release (cmd, handler);
+		cmd_handler_call_end (cmd, handler);
 		if (result.action != R_CMD_ACTION_UNHANDLED) {
 			cmd_context_free (context);
 			return result;
