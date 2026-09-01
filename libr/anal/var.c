@@ -1280,7 +1280,7 @@ static bool op_is_ppc_toc_save(RAnal *anal, RAnalOp *op) {
 	return toc && toc->reg && !strcmp (toc->reg, "r2");
 }
 
-static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type, st64 ptr, int access_size) {
+static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type, st64 ptr, int access_size, bool exact) {
 	const st64 maxstackframe = 1024 * 8;
 
 	const int maxarg = 32; // TODO: use maxarg ?
@@ -1302,7 +1302,7 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 			return;
 		}
 		const int var_size = anal->config->bits / 8;
-		const bool fuzzy = !strcmp (anal->config->arch, "arm");
+		const bool fuzzy = !exact && !strcmp (anal->config->arch, "arm");
 		RAnalVar *var = get_stack_var (fcn, frame_off, access_size, var_size, fuzzy);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
@@ -1373,7 +1373,7 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 			return;
 		}
 		const int var_size = anal->config->bits / 8;
-		const bool fuzzy = !strcmp (anal->config->arch, "arm");
+		const bool fuzzy = !exact && !strcmp (anal->config->arch, "arm");
 		RAnalVar *var = get_stack_var (fcn, frame_off, access_size, var_size, fuzzy);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, -ptr);
@@ -1426,15 +1426,15 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	}
 	if (have_ptr) {
 		const st64 first_ptr = ptr;
-		extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size);
+		extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size, false);
 		R_VEC_FOREACH (&op->srcs, val) {
-			if (!(val->access & R_PERM_R) || !val->memref) {
+			if (!val->memref) {
 				continue;
 			}
 			ptr = 0;
 			access_size = 0;
 			if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size) && ptr != first_ptr) {
-				extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size);
+				extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size, true);
 			}
 		}
 		return;
@@ -1446,12 +1446,12 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 	}
 	if (have_ptr) {
-		extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size);
+		extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size, false);
 		return;
 	}
 	if (extract_arg_from_immop (anal, fcn, op, reg, sign, &ptr)) {
 		if (!op_is_stack_frame_setup (anal, op, reg)) {
-			extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size);
+			extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size, false);
 		}
 		return;
 	}
@@ -1469,7 +1469,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		ptr = R_ABS (op->ptr);
 		access_size = op->refptr > 0 ? op->refptr : 0;
-		extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size);
+		extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size, false);
 	}
 }
 

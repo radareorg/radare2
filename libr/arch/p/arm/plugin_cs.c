@@ -4978,7 +4978,6 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 					set_src_dst (op, src, &handle, insn, 2, bits);
 					if (src) {
 						src->delta += src->memref;
-						src->access = R_PERM_R;
 					}
 					set_src_dst (op, RVecRArchValue_emplace_back (&op->dsts), &handle, insn, 1, bits);
 					break;

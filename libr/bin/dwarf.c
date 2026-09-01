@@ -4055,19 +4055,17 @@ static void parse_loclists_raw(RBin *bin, HtUP /*<offset, List *<LocListEntry>*/
 R_API HtUP /*<offset, RBinDwarfLocList*/ *r_bin_dwarf_parse_loc(RBinFile *bf, int addr_size) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
 	RBinSection *section = get_section (bf, DWARF_SN_LOCLISTS);
-	const bool loclists = section != NULL;
+	const bool loclists = section;
 	if (!section) {
 		section = get_section (bf, DWARF_SN_LOC);
 	}
-	if (!bf || !section) {
+	if (!section) {
 		return NULL;
 	}
-	/* The standarparse_loc_raw_frame, not sure why is that */
 	const ut8 *buf = get_section_bytes (bf, section);
 	if (!buf) {
 		return NULL;
 	}
-	/* set the endianity global [HOTFIX] */
 	HtUP /*<offset, RBinDwarfLocList*/ *loc_table = ht_up_new0 ();
 	if (!loc_table) {
 		return NULL;

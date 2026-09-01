@@ -192,7 +192,7 @@ FILE=-
 ARGS=-a arm -b 64
 CMDS=<<EOF
 e anal.vars.stackname=true
-wx f30f1ef8e92342a9ea1b40f9fd7b01a9fd430091fd7b41a9e00313aaf30742f8c0035fd6
+wx f30f1ef8e92342a9ea1b40f9eb334769fd7b01a9fd430091fd7b41a9e00313aaf30742f8c0035fd6
 aap
 aaef
 afvx
@@ -202,15 +202,19 @@ afvR
     arg_0h  0x4
     arg_8h  0x4
    arg_10h  0x8
-   var_10h  0x10,0x14
-    var_8h  0x14
-   var_20h  0x1c
+   arg_18h  0xc
+   arg_1ch  0xc
+   var_10h  0x14,0x18
+    var_8h  0x18
+   var_20h  0x20
 afvW
     arg_0h
     arg_8h
    arg_10h
-   var_10h  0xc
-    var_8h  0xc
+   arg_18h
+   arg_1ch
+   var_10h  0x10
+    var_8h  0x10
    var_20h  0x0
 EOF
 RUN
