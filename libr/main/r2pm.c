@@ -1287,19 +1287,6 @@ static RList *r2pm_pkg_platforms(const char *data, bool *windows, bool *unix_ins
 	*windows = strstr (data, "\nR2PM_INSTALL_WINDOWS() {\n");
 	*unix_installer = strstr (data, "\nR2PM_INSTALL() {\n");
 	*qjs = strstr (data, "\nR2PM_INSTALL_QJS() {\n");
-	char *explicit = r2pm_parse (data, "\nR2PM_PLATFORMS ", TT_TEXTLINE);
-	if (explicit) {
-		r_str_trim (explicit);
-		int argc = 0;
-		char **argv = r_str_argv (explicit, &argc);
-		int i;
-		for (i = 0; argv && i < argc; i++) {
-			r_list_append (platforms, strdup (argv[i]));
-		}
-		r_str_argv_free (argv);
-		free (explicit);
-		return platforms;
-	}
 	if (*windows) {
 		r_list_append (platforms, strdup ("windows"));
 	}
@@ -1309,7 +1296,7 @@ static RList *r2pm_pkg_platforms(const char *data, bool *windows, bool *unix_ins
 	return platforms;
 }
 
-static bool r2pm_pkg_supported(RList *platforms, bool windows, bool unix_installer, bool qjs) {
+static bool r2pm_pkg_supported(bool windows, bool unix_installer, bool qjs) {
 	bool installer = windows || unix_installer || qjs;
 #if R2__WINDOWS__
 	installer = windows;
@@ -1321,32 +1308,7 @@ static bool r2pm_pkg_supported(RList *platforms, bool windows, bool unix_install
 #else
 	installer = false;
 #endif
-	if (!installer) {
-		return false;
-	}
-	RListIter *iter;
-	const char *platform;
-	r_list_foreach (platforms, iter, platform) {
-		if (!strcmp (platform, R_SYS_OS) || !strcmp (platform, "any")) {
-			return true;
-		}
-#if defined(__APPLE__)
-		if (!strcmp (platform, "macos")) {
-			return true;
-		}
-#endif
-#if R2__BSD__
-		if (!strcmp (platform, "bsd")) {
-			return true;
-		}
-#endif
-#if R2__UNIX__
-		if (!strcmp (platform, "unix")) {
-			return true;
-		}
-#endif
-	}
-	return false;
+	return installer;
 }
 
 static char *r2pm_search(const char *grep, int mode, bool all) {
@@ -1381,7 +1343,7 @@ static char *r2pm_search(const char *grep, int mode, bool all) {
 		}
 		bool windows, unix_installer, qjs;
 		RList *platforms = r2pm_pkg_platforms (data, &windows, &unix_installer, &qjs);
-		bool supported = r2pm_pkg_supported (platforms, windows, unix_installer, qjs);
+		bool supported = r2pm_pkg_supported (windows, unix_installer, qjs);
 		free (data);
 		if (all || supported) {
 			if (pj) {
