@@ -363,6 +363,20 @@ arg double arg2 @ d1
 EOF
 RUN
 
+NAME=arm64 float arg spilled straight to the frame is still an argument
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx e00300fdc0035fd6 @ 0
+af
+afv
+EOF
+EXPECT=<<EOF
+arg double arg1 @ d0
+arg int64_t arg_0h @ sp+0x0
+EOF
+RUN
+
 NAME=arm64 float args match the s register spelling of the v sequence
 FILE=malloc://32
 ARGS=-a arm -b 64
