@@ -725,7 +725,8 @@ R_API void r_cons_grepbuf(RCons *cons) {
 		return;
 	}
 
-	if ((!len || R_STR_ISEMPTY (buf)) && (grep->json || grep->less)) {
+	if ((!len || R_STR_ISEMPTY (buf)) && (grep->gron || grep->json || grep->less)) {
+		grep->gron = false;
 		grep->json = false;
 		grep->hud = false;
 		grep->less = 0;

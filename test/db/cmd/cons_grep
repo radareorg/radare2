@@ -689,6 +689,7 @@ CMDS=<<EOF
 ij~{=}
 ?e '{"a.b":1}'~{=}
 ?e 'not json'~{=}
+s 0~{=}
 EOF
 EXPECT=<<EOF
 json = {};
