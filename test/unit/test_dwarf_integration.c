@@ -322,9 +322,10 @@ static bool test_dwarf_argument_register_reuse(void) {
 		"=BP x29\n"
 		"gpr x0 .64 0 0\n"
 		"gpr x1 .64 8 0\n"
-		"gpr x29 .64 16 0\n"
-		"gpr sp .64 24 0\n"
-		"gpr pc .64 32 0\n"));
+		"gpr x2 .64 16 0\n"
+		"gpr x29 .64 24 0\n"
+		"gpr sp .64 32 0\n"
+		"gpr pc .64 40 0\n"));
 	RAnalFunction *fcn = r_anal_create_function (anal, "collision", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
 	mu_assert_notnull (fcn, "create function");
 	RRegItem *x1 = r_reg_get (anal->reg, "x1", -1);
@@ -333,6 +334,12 @@ static bool test_dwarf_argument_register_reuse(void) {
 	mu_assert_notnull (r_anal_function_set_var (fcn, x1->index, R_ANAL_VAR_KIND_REG,
 		"int64_t", 8, true, "arg2"), "create generic register argument");
 	r_unref (x1);
+	RRegItem *x2 = r_reg_get (anal->reg, "x2", -1);
+	mu_assert_notnull (x2, "get x2");
+	const int x2_index = x2->index;
+	mu_assert_notnull (r_anal_function_set_var (fcn, x2_index, R_ANAL_VAR_KIND_REG,
+		"int64_t", 8, true, "first"), "create misplaced named argument");
+	r_unref (x2);
 	mu_assert_notnull (r_anal_function_set_var (fcn, 32, R_ANAL_VAR_KIND_BPV,
 		"int64_t", 8, true, "arg_20h"), "create generic stack argument");
 	mu_assert_notnull (r_anal_function_set_var (fcn, 40, R_ANAL_VAR_KIND_SPV,
@@ -371,6 +378,7 @@ static bool test_dwarf_argument_register_reuse(void) {
 	mu_assert ("formal remains an argument", first->isarg);
 	mu_assert_null (r_anal_function_get_var_byname (fcn, "result"), "later local did not replace formal");
 	mu_assert_null (r_anal_function_get_var_byname (fcn, "arg2"), "generic register argument removed");
+	mu_assert_null (r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, x2_index), "named argument relocated");
 	mu_assert_null (r_anal_function_get_var_byname (fcn, "arg_20h"), "generic stack argument removed");
 	mu_assert_notnull (r_anal_function_get_var_byname (fcn, "arg0"), "non-argument local preserved");
 	mu_assert_notnull (r_anal_function_get_var_byname (fcn, "arg_nameh"), "source argument preserved");

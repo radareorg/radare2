@@ -2380,6 +2380,10 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
 }
 
 static bool set_dwarf_var(RAnalFunction *fcn, int delta, char kind, const char *type, bool is_arg, const char *name) {
+	RAnalVar *named = r_anal_function_get_var_byname (fcn, name);
+	if (is_arg && named && named->isarg && (named->kind != kind || named->delta != delta)) {
+		r_anal_var_delete (fcn->anal, named);
+	}
 	RAnalVar *var = r_anal_function_get_var (fcn, kind, delta);
 	if (var && var->isarg && !is_arg) {
 		return true;
