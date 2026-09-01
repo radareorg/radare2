@@ -99,12 +99,21 @@ Disable online operations (default: 0)
 Override the platform used to filter
 .Fl s
 results. Accepted values are
+.Cm r2 ,
 .Cm unix ,
 .Cm windows ,
 .Cm qjs ,
 and
 .Cm any ;
 multiple values may be space-separated.
+Packages with an
+.Ic R2PM_INSTALL_R2()
+block are portable radare2-command packages; the automatically detected platform
+always includes
+.Cm r2 .
+The block is executed by radare2 during installation; a matching
+.Ic R2PM_UNINSTALL_R2()
+block handles uninstallation.
 .It Ev R2PM_DBDIR
 Directory for r2pm database (default: ~/.local/share/radare2/r2pm/db)
 .It Ev R2PM_GITDIR

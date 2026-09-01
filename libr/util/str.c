@@ -113,6 +113,19 @@ R_API int r_str_replace_char(char *s, int a, int b) {
 	return r_str_replace_ch (s, a, b, true);
 }
 
+R_API void r_str_normalize_newlines(char *str) {
+	R_RETURN_IF_FAIL (str);
+	char *dst = str;
+	for (; *str; str++, dst++) {
+		const bool newline = *str == '\r' || *str == '\n';
+		if (newline && str[1] && str[1] != *str && strchr ("\r\n", str[1])) {
+			str++;
+		}
+		*dst = newline? '\n': *str;
+	}
+	*dst = 0;
+}
+
 R_API void r_str_remove_char(char *str, char c) {
 	while (*str) {
 		if (*str == c) {

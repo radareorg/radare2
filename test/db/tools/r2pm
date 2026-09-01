@@ -7,6 +7,68 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=r2pm r2 platform is available by default
+FILE=-
+CMDS=<<EOF
+rmrf /tmp/r2pm-platform-r2r
+mkdir -p /tmp/r2pm-platform-r2r
+!printf 'R2PM_BEGIN\nR2PM_DESC "portable r2"\nR2PM_INSTALL_R2() {\n:\n}\nR2PM_END\n' > /tmp/r2pm-platform-r2r/r2only
+%R2PM_DBDIR=/tmp/r2pm-platform-r2r
+%R2PM_OFFLINE=1
+%R2PM_PLATFORM=
+r2pm -qs r2only
+%R2PM_PLATFORM=windows
+r2pm -Aqs r2only
+rmrf /tmp/r2pm-platform-r2r
+EOF
+EXPECT=<<EOF
+r2only              portable r2
+r2only              [unsupported] portable r2
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=r2pm r2 platform json
+FILE=-
+CMDS=<<EOF
+rmrf /tmp/r2pm-platform-json-r2r
+mkdir -p /tmp/r2pm-platform-json-r2r
+!printf 'R2PM_BEGIN\nR2PM_DESC "portable r2"\nR2PM_INSTALL_R2() {\n:\n}\nR2PM_END\n' > /tmp/r2pm-platform-json-r2r/r2only
+%R2PM_DBDIR=/tmp/r2pm-platform-json-r2r
+%R2PM_OFFLINE=1
+%R2PM_PLATFORM=r2
+r2pm -qjs r2only
+rmrf /tmp/r2pm-platform-json-r2r
+EOF
+EXPECT=[{"name":"r2only","desc":"portable r2","platforms":["r2"],"supported":true}]
+EXPECT_ERR=
+RUN
+
+NAME=r2pm r2 platform install and uninstall
+FILE=-
+CMDS=<<EOF
+rmrf /tmp/r2pm-platform-install-r2r
+mkdir -p /tmp/r2pm-platform-install-r2r/db
+mkdir -p /tmp/r2pm-platform-install-r2r/git/radare2-pm
+!printf 'R2PM_BEGIN\nR2PM_DESC "r2 installer smoke"\nR2PM_INSTALL_R2() {\n?e R2PM_R2_INSTALL_OK\n}\nR2PM_UNINSTALL_R2() {\n?e R2PM_R2_UNINSTALL_OK\n}\nR2PM_END\n' > /tmp/r2pm-platform-install-r2r/db/r2smoke
+%R2PM_DBDIR=/tmp/r2pm-platform-install-r2r/db
+%R2PM_GITDIR=/tmp/r2pm-platform-install-r2r/git
+%R2PM_OFFLINE=1
+%XDG_DATA_HOME=/tmp/r2pm-platform-install-r2r/data
+%R2_LOG_LEVEL=1
+r2pm -qi r2smoke
+r2pm -qu r2smoke
+r2pm -qI
+rmrf /tmp/r2pm-platform-install-r2r
+EOF
+EXPECT=<<EOF
+R2PM_R2_INSTALL_OK
+R2PM_R2_UNINSTALL_OK
+Installed 0 packages of 1 in database
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=r2pm -H R2PM_GITDIR
 FILE=-
 CMDS=%R2PM_GITDIR=test;r2pm -H R2PM_GITDIR
@@ -165,6 +227,38 @@ FILE=-
 CMDS='!!r2pm -j >/dev/null 2>/dev/null; echo $?
 EXPECT=<<EOF
 1
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=r2pm portable newlines
+FILE=-
+CMDS=<<EOF
+!!rm -rf /tmp/r2pm-newlines-r2r
+!!mkdir -p /tmp/r2pm-newlines-r2r
+!!printf '#!/bin/sh\nR2PM_DESC "portable unix"\nR2PM_INSTALL() {\n:\n}\nR2PM_DOC="\nunix doc\n"\n' > /tmp/r2pm-newlines-r2r/unix
+!!printf '#!/bin/sh\rR2PM_DESC "portable classic"\rR2PM_INSTALL() {\r:\r}\rR2PM_DOC="\rclassic doc\r"\r' > /tmp/r2pm-newlines-r2r/classic
+!!printf '#!/bin/sh\r\nR2PM_DESC "portable dos"\r\nR2PM_INSTALL() {\r\n:\r\n}\r\nR2PM_DOC="\r\ndos doc\r\n"\r\n' > /tmp/r2pm-newlines-r2r/dos
+!!printf '#!/bin/sh\n\rR2PM_DESC "portable lfcr"\n\rR2PM_INSTALL() {\n\r:\n\r}\n\rR2PM_DOC="\n\rlfcr doc\n\r"\n\r' > /tmp/r2pm-newlines-r2r/lfcr
+!!env R2PM_DBDIR=/tmp/r2pm-newlines-r2r R2PM_OFFLINE=1 R2PM_PLATFORM=any r2pm -qs unix
+!!env R2PM_DBDIR=/tmp/r2pm-newlines-r2r R2PM_OFFLINE=1 R2PM_PLATFORM=any r2pm -qs classic
+!!env R2PM_DBDIR=/tmp/r2pm-newlines-r2r R2PM_OFFLINE=1 R2PM_PLATFORM=any r2pm -qs dos
+!!env R2PM_DBDIR=/tmp/r2pm-newlines-r2r R2PM_OFFLINE=1 R2PM_PLATFORM=any r2pm -qs lfcr
+!!env R2PM_DBDIR=/tmp/r2pm-newlines-r2r R2PM_OFFLINE=1 r2pm -qd unix
+!!env R2PM_DBDIR=/tmp/r2pm-newlines-r2r R2PM_OFFLINE=1 r2pm -qd classic
+!!env R2PM_DBDIR=/tmp/r2pm-newlines-r2r R2PM_OFFLINE=1 r2pm -qd dos
+!!env R2PM_DBDIR=/tmp/r2pm-newlines-r2r R2PM_OFFLINE=1 r2pm -qd lfcr
+!!rm -rf /tmp/r2pm-newlines-r2r
+EOF
+EXPECT=<<EOF
+unix                portable unix
+classic             portable classic
+dos                 portable dos
+lfcr                portable lfcr
+unix doc
+classic doc
+dos doc
+lfcr doc
 EOF
 EXPECT_ERR=
 RUN

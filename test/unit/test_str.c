@@ -128,6 +128,23 @@ bool test_r_str_replace_char(void) {
 	mu_end;
 }
 
+bool test_r_str_normalize_newlines(void) {
+	const char *inputs[] = {
+		"one\ntwo\n", "one\rtwo\r", "one\r\ntwo\r\n", "one\n\rtwo\n\r", NULL
+	};
+	const char *names[] = { "unix", "classic", "dos", "lfcr" };
+	int i;
+	for (i = 0; inputs[i]; i++) {
+		char *str = strdup (inputs[i]);
+		r_str_normalize_newlines (str);
+		mu_assert_streq_free (str, "one\ntwo\n", names[i]);
+	}
+	char repeated[] = "one\n\ntwo\r\rthree\r\n\rfour\n\r\n";
+	r_str_normalize_newlines (repeated);
+	mu_assert_streq (repeated, "one\n\ntwo\n\nthree\n\nfour\n\n", "preserve repeated newlines");
+	mu_end;
+}
+
 bool test_r_str_filter_file(void) {
 	char file[32] = "theme.zip";
 	mu_assert ("single dot is valid", !r_str_filter_file (file));
@@ -968,6 +985,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_newf);
 	mu_run_test (test_r_str_replace_char_once);
 	mu_run_test (test_r_str_replace_char);
+	mu_run_test (test_r_str_normalize_newlines);
 	mu_run_test (test_r_str_filter_file);
 	mu_run_test (test_r_str_replace);
 	mu_run_test (test_r_str_bits64);
