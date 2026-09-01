@@ -1658,7 +1658,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		if (!f) {
 			RCore *core = (RCore *)anal->coreb.core;
 			RFlagItem *flag = r_flag_get_by_spaces (core->flags, false, offset, R_FLAGS_FS_IMPORTS, NULL);
-			if (flag) {
+			if (flag && flag->space && !strcmp (flag->space->name, R_FLAGS_FS_IMPORTS)) {
 				callee = r_type_func_guess (TDB, flag->name);
 				if (callee) {
 					const char *cc = r_anal_cc_func (anal, callee);
