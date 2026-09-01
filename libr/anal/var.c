@@ -1280,78 +1280,8 @@ static bool op_is_ppc_toc_save(RAnal *anal, RAnalOp *op) {
 	return toc && toc->reg && !strcmp (toc->reg, "r2");
 }
 
-static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
-	st64 ptr = 0;
+static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type, st64 ptr, int access_size) {
 	const st64 maxstackframe = 1024 * 8;
-	RAnalValue *val;
-	int access_size = 0;
-	bool have_ptr = false;
-
-	R_RETURN_IF_FAIL (anal && fcn && op && reg);
-
-	if (!fcn->bp_from_sp) {
-		// the prologue copies SP into BP before any use of it, so seeing it here settles the question
-		const char *spreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
-		if (spreg && op_is_stack_frame_setup (anal, op, spreg)) {
-			fcn->bp_from_sp = true;
-		}
-	}
-
-	r_anal_function_cc (fcn); // resolve a lazy dyncc marker before reading fcn->callconv
-
-	if (op_is_ppc_toc_save (anal, op)) {
-		return;
-	}
-
-	R_VEC_FOREACH (&op->srcs, val) {
-		if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size)) {
-			have_ptr = true;
-			break;
-		}
-	}
-	if (!have_ptr) {
-		R_VEC_FOREACH (&op->dsts, val) {
-			if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size)) {
-				have_ptr = true;
-				break;
-			}
-		}
-	}
-
-	if (!have_ptr && extract_arg_from_immop (anal, fcn, op, reg, sign, &ptr)) {
-		have_ptr = true;
-		// `add fp, sp, #N` is a frame pointer setup, so it gets no var for the saved-LR/FP slot
-		if (op_is_stack_frame_setup (anal, op, reg)) {
-			return;
-		}
-	}
-	if (!have_ptr) {
-		val = RVecRArchValue_at (&op->dsts, 0);
-		if (op_dst_is_stack_reg (anal, op)) {
-			if (!op->stackop && val) {
-				R_LOG_DEBUG ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x, op->addr);
-			}
-			return;
-		}
-		if (((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET))
-				&& ((op->reg && !strcmp (op->reg, reg)) || (op->ireg && !strcmp (op->ireg, reg)))) {
-			if (op->ptr % 4) {
-				return;
-			}
-			ptr = R_ABS (op->ptr);
-			access_size = op->refptr > 0 ? op->refptr : 0;
-			have_ptr = true;
-		} else {
-			return;
-		}
-	}
-
-	if (!RVecRArchValue_at (&op->srcs, 0) || !RVecRArchValue_at (&op->dsts, 0)) {
-		R_LOG_DEBUG ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
-	}
-	if (op->stackop == R_ANAL_STACK_INC && !strcmp (anal->config->arch, "arm")) {
-		return;
-	}
 
 	const int maxarg = 32; // TODO: use maxarg ?
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_PERM_W : R_PERM_R;
@@ -1460,6 +1390,86 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			}
 			free (varname);
 		}
+	}
+}
+
+static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
+	R_RETURN_IF_FAIL (anal && fcn && op && reg);
+
+	if (!fcn->bp_from_sp) {
+		const char *spreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
+		if (spreg && op_is_stack_frame_setup (anal, op, spreg)) {
+			fcn->bp_from_sp = true;
+		}
+	}
+
+	r_anal_function_cc (fcn);
+	if (op_is_ppc_toc_save (anal, op)) {
+		return;
+	}
+	if (!RVecRArchValue_at (&op->srcs, 0) || !RVecRArchValue_at (&op->dsts, 0)) {
+		R_LOG_DEBUG ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
+	}
+	if (op->stackop == R_ANAL_STACK_INC && !strcmp (anal->config->arch, "arm")) {
+		return;
+	}
+
+	RAnalValue *val;
+	st64 ptr = 0;
+	int access_size = 0;
+	bool have_ptr = false;
+	R_VEC_FOREACH (&op->srcs, val) {
+		if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size)) {
+			have_ptr = true;
+			break;
+		}
+	}
+	if (have_ptr) {
+		const st64 first_ptr = ptr;
+		extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size);
+		R_VEC_FOREACH (&op->srcs, val) {
+			if (!(val->access & R_PERM_R) || !val->memref) {
+				continue;
+			}
+			ptr = 0;
+			access_size = 0;
+			if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size) && ptr != first_ptr) {
+				extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size);
+			}
+		}
+		return;
+	}
+	R_VEC_FOREACH (&op->dsts, val) {
+		if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size)) {
+			have_ptr = true;
+			break;
+		}
+	}
+	if (have_ptr) {
+		extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size);
+		return;
+	}
+	if (extract_arg_from_immop (anal, fcn, op, reg, sign, &ptr)) {
+		if (!op_is_stack_frame_setup (anal, op, reg)) {
+			extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size);
+		}
+		return;
+	}
+	val = RVecRArchValue_at (&op->dsts, 0);
+	if (op_dst_is_stack_reg (anal, op)) {
+		if (!op->stackop && val) {
+			R_LOG_DEBUG ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x, op->addr);
+		}
+		return;
+	}
+	if (((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET))
+			&& ((op->reg && !strcmp (op->reg, reg)) || (op->ireg && !strcmp (op->ireg, reg)))) {
+		if (op->ptr % 4) {
+			return;
+		}
+		ptr = R_ABS (op->ptr);
+		access_size = op->refptr > 0 ? op->refptr : 0;
+		extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size);
 	}
 }
 
@@ -1807,7 +1817,13 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 
 	i = max_count;
 	const bool is_dyncc = r_str_startswith (fcn->callconv, "dyncc:");
-	const char *selfreg = r_anal_cc_roleloc (anal, fcn->callconv, is_dyncc? "T": "self");
+	const bool is_swift = !strcmp (fcn->callconv, "swift");
+	const bool swift_method = r_str_startswith (fcn->name, "method.");
+	const bool swift_throws = r_str_endswith (fcn->name, "KF")
+		|| r_str_endswith (fcn->name, "KF_");
+	const char *selfreg = !is_swift || swift_method
+		? r_anal_cc_roleloc (anal, fcn->callconv, is_dyncc? "T": "self")
+		: NULL;
 	if (selfreg) {
 		bool is_arg = is_used_like_arg (selfreg, opsreg, opdreg, op, anal, op_dst_writeonly);
 		if (is_arg && reg_set[i] != 2) {
@@ -1828,7 +1844,9 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		i++;
 	}
 
-	const char *errorreg = r_anal_cc_roleloc (anal, fcn->callconv, is_dyncc? "E": "error");
+	const char *errorreg = !is_swift || swift_throws
+		? r_anal_cc_roleloc (anal, fcn->callconv, is_dyncc? "E": "error")
+		: NULL;
 	if (errorreg && reg_set[i] == 0 && STR_EQUAL (opdreg, errorreg)) {
 		int delta = cc_loc_delta (anal, errorreg);
 		RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, "error");

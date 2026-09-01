@@ -896,11 +896,23 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 		r_core_anal_type_init (core);
 		r_core_anal_cc_init (core);
 		const char *default_cc = info->default_cc;
+		const char *current_cc = r_anal_cc_default (core->anal);
+		const char *auto_cc = sdb_const_get (core->anal->sdb_cc, "default.cc.autolang", 0);
+		bool auto_swift = false;
 		if (!default_cc && info->lang && !strcmp (info->lang, "swift")) {
+			if (!auto_cc && current_cc && strcmp (current_cc, "swift")) {
+				sdb_set (core->anal->sdb_cc, "default.cc.swiftbase", current_cc, 0);
+			}
 			default_cc = "swift";
+			auto_swift = true;
+		} else if (!default_cc && auto_cc && current_cc && !strcmp (auto_cc, current_cc)) {
+			default_cc = sdb_const_get (core->anal->sdb_cc, "default.cc.swiftbase", 0);
 		}
 		if (default_cc && r_anal_cc_exist (core->anal, default_cc)) {
 			r_config_set (core->config, "anal.cc", default_cc);
+			if (auto_swift) {
+				sdb_set (core->anal->sdb_cc, "default.cc.autolang", "swift", 0);
+			}
 		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf (core->cons, "arch %s\n", info->arch);

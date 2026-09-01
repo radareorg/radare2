@@ -1,5 +1,6 @@
 #include <r_anal.h>
 #include <r_bin.h>
+#include <r_flag.h>
 #include "minunit.h"
 
 #define MODE 2
@@ -314,6 +315,44 @@ static bool test_dwarf_function_parsing_rust(void) {
 	mu_end;
 }
 
+static bool test_dwarf_argument_register_reuse(void) {
+	mu_assert ("set register profile", r_reg_set_profile_string (anal->reg,
+		"=PC pc\n"
+		"=SP sp\n"
+		"=BP x29\n"
+		"gpr x0 .64 0 0\n"
+		"gpr x29 .64 8 0\n"
+		"gpr sp .64 16 0\n"
+		"gpr pc .64 24 0\n"));
+	RAnalFunction *fcn = r_anal_create_function (anal, "collision", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "create function");
+	RRegItem *x0 = r_reg_get (anal->reg, "x0", -1);
+	mu_assert_notnull (x0, "get x0");
+	const int x0_index = x0->index;
+	r_unref (x0);
+	RFlag *flags = r_flag_new ();
+	mu_assert_notnull (flags, "create flags");
+	Sdb *dwarf = sdb_new0 ();
+	mu_assert_notnull (dwarf, "create dwarf database");
+	sdb_set (dwarf, "collision", "fcn", 0);
+	sdb_set (dwarf, "fcn.collision.addr", "0x100", 0);
+	sdb_set (dwarf, "fcn.collision.arg.0", "first,r,x0,Swift.Int", 0);
+	sdb_set (dwarf, "fcn.collision.args", "first", 0);
+	sdb_set (dwarf, "fcn.collision.var.result", "r,x0,Swift.Int", 0);
+	sdb_set (dwarf, "fcn.collision.vars", "result", 0);
+	r_anal_dwarf_integrate_functions (anal, flags, dwarf);
+	RAnalVar *location = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, x0_index);
+	mu_assert_notnull (location, "register variable integrated");
+	mu_assert_streq (location->name, "first", "formal owns reused register");
+	RAnalVar *first = r_anal_function_get_var_byname (fcn, "first");
+	mu_assert_notnull (first, "formal argument survived register reuse");
+	mu_assert ("formal remains an argument", first->isarg);
+	mu_assert_null (r_anal_function_get_var_byname (fcn, "result"), "later local did not replace formal");
+	sdb_free (dwarf);
+	r_flag_free (flags);
+	mu_end;
+}
+
 #define run_test_with_setup(test_func) \
 	do { \
 		if (!setup ()) { \
@@ -325,6 +364,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 	} while (0)
 
 int all_tests(void) {
+	run_test_with_setup (test_dwarf_argument_register_reuse);
 	run_test_with_setup (test_parse_dwarf_types);
 	run_test_with_setup (test_dwarf_function_parsing_cpp);
 	run_test_with_setup (test_dwarf_function_parsing_rust);

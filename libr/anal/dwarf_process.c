@@ -1253,6 +1253,19 @@ static const char *get_dwarf_reg_name(const char *arch, int reg_num, VariableLoc
 	return "unsupported_reg";
 }
 
+static bool dwarf_location_expression_supported(const RBinDwarfBlock *expression) {
+	if (!expression || !expression->length) {
+		return false;
+	}
+	const ut8 op = expression->data[0];
+	if ((op >= DW_OP_reg0 && op <= DW_OP_reg31)
+		|| (op >= DW_OP_breg0 && op <= DW_OP_breg31)) {
+		return true;
+	}
+	return op == DW_OP_fbreg || op == DW_OP_regx || op == DW_OP_bregx
+		|| op == DW_OP_addr || op == DW_OP_call_frame_cfa;
+}
+
 static RBinDwarfLocRange *find_largest_loc_range(RList *loc_list) {
 	RBinDwarfLocRange *largest = NULL;
 	ut64 max_range_size = 0;
@@ -1260,7 +1273,7 @@ static RBinDwarfLocRange *find_largest_loc_range(RList *loc_list) {
 	RBinDwarfLocRange *range;
 	r_list_foreach (loc_list, iter, range) {
 		ut64 diff = range->end - range->start;
-		if (diff > max_range_size) {
+		if (diff > max_range_size && dwarf_location_expression_supported (range->expression)) {
 			max_range_size = diff ;
 			largest = range;
 		}
@@ -1720,6 +1733,39 @@ static char *dwarf_function_type_name(Context *ctx, const char *sname, const Fun
 	return candidate;
 }
 
+static char dwarf_type_fp_alias(const char *type) {
+	if (R_STR_ISEMPTY (type) || strchr (type, '*') || strchr (type, '[')) {
+		return 0;
+	}
+	while (r_str_startswith (type, "const ") || r_str_startswith (type, "volatile ")) {
+		type = strchr (type, ' ') + 1;
+	}
+	const char *end = type + strlen (type);
+	while (end > type && end[-1] == ' ') {
+		end--;
+	}
+	if (end - type >= 6 && !strncmp (end - 6, " const", 6)) {
+		end -= 6;
+	}
+	if (end == type) {
+		return 0;
+	}
+	const char *name = r_str_rchr (type, end - 1, ':');
+	const char *dot = r_str_rchr (type, end - 1, '.');
+	if (!name || (dot && dot > name)) {
+		name = dot;
+	}
+	name = name? name + 1: type;
+	const size_t len = end - name;
+	if (len == 5 && (!strncmp (name, "float", len) || !strncmp (name, "Float", len))) {
+		return 's';
+	}
+	if (len == 6 && (!strncmp (name, "double", len) || !strncmp (name, "Double", len))) {
+		return 'd';
+	}
+	return 0;
+}
+
 static char *sdb_variable_data(const Variable *var) {
 	if (!var || !var->location || !var->type) {
 		return NULL;
@@ -1731,8 +1777,16 @@ static char *sdb_variable_data(const Variable *var) {
 		return r_str_newf ("s,%" PFMT64d ",%s", var->location->offset, var->type);
 	case LOCATION_GLOBAL:
 		return r_str_newf ("g,%" PFMT64u ",%s", var->location->address, var->type);
-	case LOCATION_REGISTER:
+	case LOCATION_REGISTER: {
+		const char fp_alias = dwarf_type_fp_alias (var->type);
+		if (var->location->reg_name && var->location->reg_name[0] == 'v'
+			&& var->location->reg_num >= 64 && var->location->reg_num <= 95
+			&& fp_alias) {
+			return r_str_newf ("r,%c%" PFMT64u ",%s", fp_alias,
+				var->location->reg_num - 64, var->type);
+		}
 		return r_str_newf ("r,%s,%s", var->location->reg_name, var->type);
+	}
 	default:
 		break;
 	}
@@ -1842,6 +1896,9 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, const ch
 // the cc argslot tables describe integer slots only, so a float formal would be
 // handed an integer register it never occupies, colliding with a located arg
 static bool dwarf_type_is_fp(const char *type) {
+	if (dwarf_type_fp_alias (type)) {
+		return true;
+	}
 	if (R_STR_ISEMPTY (type) || strchr (type, '*') || strchr (type, '[')) {
 		return false;
 	}
@@ -2265,6 +2322,14 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
 	return !strcmp (v, "fcn");
 }
 
+static bool set_dwarf_var(RAnalFunction *fcn, int delta, char kind, const char *type, bool is_arg, const char *name) {
+	RAnalVar *var = r_anal_function_get_var (fcn, kind, delta);
+	if (var && var->isarg && !is_arg) {
+		return true;
+	}
+	return r_anal_function_set_var (fcn, delta, kind, type, 4, is_arg, name) != NULL;
+}
+
 static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, const char *var_name, char *var_data, bool is_arg) {
 	R_RETURN_VAL_IF_FAIL (anal && flags && var_name && var_data, false);
 	char *extra = NULL;
@@ -2289,19 +2354,16 @@ static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, c
 		return false;
 	}
 	if (*kind == 's') {
-		r_anal_function_set_var (fcn, offset - fcn->maxstack, *kind, type, 4, is_arg, var_name);
-		return true;
+		return set_dwarf_var (fcn, offset - fcn->maxstack, *kind, type, is_arg, var_name);
 	}
 	if (*kind == 'r') {
 		RRegItem *ri = r_reg_get (anal->reg, extra, -1);
 		if (!ri) {
 			return false;
 		}
-		r_anal_function_set_var (fcn, ri->index, *kind, type, 4, is_arg, var_name);
-		return true;
+		return set_dwarf_var (fcn, ri->index, *kind, type, is_arg, var_name);
 	}
-	r_anal_function_set_var (fcn, offset - fcn->bp_off, *kind, type, 4, is_arg, var_name);
-	return true;
+	return set_dwarf_var (fcn, offset - fcn->bp_off, *kind, type, is_arg, var_name);
 }
 
 /**
