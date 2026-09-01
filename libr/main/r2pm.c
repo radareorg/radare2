@@ -1282,33 +1282,47 @@ static int r2pm_info(void) {
 	return 0;
 }
 
-static RList *r2pm_pkg_platforms(const char *data, bool *windows, bool *unix_installer, bool *qjs) {
-	RList *platforms = r_list_newf (free);
-	*windows = strstr (data, "\nR2PM_INSTALL_WINDOWS() {\n");
-	*unix_installer = strstr (data, "\nR2PM_INSTALL() {\n");
-	*qjs = strstr (data, "\nR2PM_INSTALL_QJS() {\n");
-	if (*windows) {
-		r_list_append (platforms, strdup ("windows"));
+static const char *r2pm_platform(char **env) {
+#if (defined(__wasi__) || defined(__EMSCRIPTEN__)) && !WANT_QJS
+	*env = NULL;
+	return NULL;
+#else
+	*env = r_sys_getenv ("R2PM_PLATFORM");
+	if (R_STR_ISNOTEMPTY (*env)) {
+		return *env;
 	}
-	if (*unix_installer || *qjs) {
-		r_list_append (platforms, strdup ("unix"));
-	}
-	return platforms;
-}
-
-static bool r2pm_pkg_supported(bool windows, bool unix_installer, bool qjs) {
-	bool installer = windows || unix_installer || qjs;
+	free (*env);
+	*env = NULL;
 #if R2__WINDOWS__
-	installer = windows;
+	return "windows";
+#elif defined(__wasi__) || defined(__EMSCRIPTEN__)
+	return "qjs";
 #elif R2__UNIX__
-	installer = unix_installer;
-#if WANT_QJS && !defined(__wasi__)
-	installer |= qjs;
+#if WANT_QJS
+	return "unix qjs";
+#else
+	return "unix";
 #endif
 #else
-	installer = false;
+	return NULL;
 #endif
-	return installer;
+#endif
+}
+
+static bool r2pm_pkg_supported(const char *data) {
+	char *env = NULL;
+	const char *platform = r2pm_platform (&env);
+	if (!platform) {
+		return false;
+	}
+	bool supported = (strstr (platform, "unix") && strstr (data, "\nR2PM_INSTALL() {\n"))
+		|| (strstr (platform, "windows") && strstr (data, "\nR2PM_INSTALL_WINDOWS() {\n"))
+		|| (strstr (platform, "qjs") && strstr (data, "\nR2PM_INSTALL_QJS() {\n"))
+		|| (strstr (platform, "any") && (strstr (data, "\nR2PM_INSTALL() {\n")
+			|| strstr (data, "\nR2PM_INSTALL_WINDOWS() {\n")
+			|| strstr (data, "\nR2PM_INSTALL_QJS() {\n")));
+	free (env);
+	return supported;
 }
 
 static char *r2pm_search(const char *grep, int mode, bool all) {
@@ -1341,20 +1355,21 @@ static char *r2pm_search(const char *grep, int mode, bool all) {
 			free (data);
 			continue;
 		}
-		bool windows, unix_installer, qjs;
-		RList *platforms = r2pm_pkg_platforms (data, &windows, &unix_installer, &qjs);
-		bool supported = r2pm_pkg_supported (windows, unix_installer, qjs);
-		free (data);
+		bool supported = r2pm_pkg_supported (data);
 		if (all || supported) {
 			if (pj) {
 				pj_o (pj);
 				pj_ks (pj, "name", file);
 				pj_ks (pj, "desc", desc);
 				pj_ka (pj, "platforms");
-				RListIter *piter;
-				const char *platform;
-				r_list_foreach (platforms, piter, platform) {
-					pj_s (pj, platform);
+				if (strstr (data, "\nR2PM_INSTALL_WINDOWS() {\n")) {
+					pj_s (pj, "windows");
+				}
+				if (strstr (data, "\nR2PM_INSTALL() {\n")) {
+					pj_s (pj, "unix");
+				}
+				if (strstr (data, "\nR2PM_INSTALL_QJS() {\n")) {
+					pj_s (pj, "qjs");
 				}
 				pj_end (pj);
 				pj_kb (pj, "supported", supported);
@@ -1363,8 +1378,8 @@ static char *r2pm_search(const char *grep, int mode, bool all) {
 				r_strbuf_appendf (sb, "%-20s%s%s\n", file, supported? "": "[unsupported] ", desc);
 			}
 		}
-		r_list_free (platforms);
 		free (desc);
+		free (data);
 	}
 	r_list_free (files);
 	free (path);
@@ -1396,6 +1411,7 @@ static void r2pm_envhelp(void) {
 	"MAKE=make              # path to the GNU MAKE executable\n"
 	"R2PM_OFFLINE=%d         # don't git pull\n"
 	"R2PM_TIME=YYYY-MM-DD\n"
+	"R2PM_PLATFORM=          # unix, windows, qjs or any (overrides the search filter)\n"
 	"R2PM_PLUGDIR=%s\n"
 	"R2PM_PLUGDIR=%s (global)\n"
 	"R2PM_PREFIX=%s\n"

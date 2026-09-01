@@ -95,6 +95,16 @@ Directory for user man pages (default: ~/.local/share/radare2/prefix/man)
 Directory for user documentation (default: ~/.local/share/radare2/prefix/doc)
 .It Ev R2PM_OFFLINE
 Disable online operations (default: 0)
+.It Ev R2PM_PLATFORM
+Override the platform used to filter
+.Fl s
+results. Accepted values are
+.Cm unix ,
+.Cm windows ,
+.Cm qjs ,
+and
+.Cm any ;
+multiple values may be space-separated.
 .It Ev R2PM_DBDIR
 Directory for r2pm database (default: ~/.local/share/radare2/r2pm/db)
 .It Ev R2PM_GITDIR
