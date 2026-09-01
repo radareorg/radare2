@@ -1414,8 +1414,29 @@ static bool function_image_data_symbols_collect(RAnal *anal,
 				if (!flag || !flag->name || !*flag->name) {
 					continue;
 				}
+				// What the reference is decides this, not how the flag is
+				// spelled. Skipping every "sym." name dropped ordinary data
+				// objects: a lookup table emitted by the compiler carries a
+				// "sym." flag exactly as an imported function does, so the
+				// name test threw away the symbol the caller asked for while
+				// keeping nothing it needed. A data reference is a reference
+				// to data whatever its target is called.
+				// A `lea` of a lookup table is typed ICOD, because the
+				// analysis cannot tell a loaded data pointer from a loaded
+				// code pointer by the instruction alone. Both kinds of
+				// reference are admitted here and the target settles it: an
+				// address a function starts at is code, and anything else a
+				// reference points at is data.
+				ut64 kind = R_ANAL_REF_TYPE_MASK (ref->type);
+				if (kind != R_ANAL_REF_TYPE_DATA && kind != R_ANAL_REF_TYPE_ICOD) {
+					continue;
+				}
+				if (r_anal_get_function_at (anal, ref->addr)) {
+					continue;
+				}
+				// Strings have their own table, and a code label is not data.
 				if (!strncmp (flag->name, "str.", 4) || !strncmp (flag->name, "fcn.", 4)
-					|| !strncmp (flag->name, "sym.", 4) || !strncmp (flag->name, "loc.", 4)) {
+					|| !strncmp (flag->name, "loc.", 4)) {
 					continue;
 				}
 				size_t existing;
