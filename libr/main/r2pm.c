@@ -288,6 +288,9 @@ static char *r2pm_parse(const char *data, const char *token, R2pmTokenType type)
 			if (*descptr == '"') {
 				descptr++;
 			}
+			if (descptr > nl) {
+				descptr = nl;
+			}
 			return r_str_ndup (descptr, nl - descptr);
 		case TT_TEXTLINE_LIST:
 			descptr += strlen (token);
