@@ -1930,7 +1930,7 @@ static bool dwarf_formal_location_is_arg(Context *ctx, const Variable *var) {
 	}
 	RAnal *anal = (RAnal *)ctx->anal;
 	const char *cc = r_anal_cc_default (anal);
-	if (R_STR_ISEMPTY (cc)) {
+	if (R_STR_ISEMPTY (cc) || strcmp (cc, "swift")) {
 		return true;
 	}
 	const char *role = var->name && (!strcmp (var->name, "self") || !strcmp (var->name, "error"))
@@ -1962,8 +1962,12 @@ static char *dwarf_formal_convention_meta(Context *ctx, int argno, int argc, con
 	if (R_STR_ISEMPTY (cc)) {
 		return NULL;
 	}
+	const bool swift_cc = !strcmp (cc, "swift");
+	if (!swift_cc && dwarf_type_is_fp (type)) {
+		return NULL;
+	}
 	const char *reg = NULL;
-	if (name && (!strcmp (name, "self") || !strcmp (name, "error"))) {
+	if (swift_cc && name && (!strcmp (name, "self") || !strcmp (name, "error"))) {
 		const char *place = r_anal_cc_roleloc (anal, cc, name);
 		reg = place? r_anal_cc_location_first (anal, place): NULL;
 	} else {
@@ -1975,7 +1979,7 @@ static char *dwarf_formal_convention_meta(Context *ctx, int argno, int argc, con
 	if (R_STR_ISEMPTY (reg)) {
 		return NULL;
 	}
-	const char fp_alias = dwarf_type_fp_alias (type);
+	const char fp_alias = swift_cc? dwarf_type_fp_alias (type): 0;
 	if (fp_alias && strchr ("dsvq", reg[0]) && isdigit ((ut8)reg[1])) {
 		return r_str_newf ("r,%c%s,%s", fp_alias, reg + 1, type);
 	}
@@ -2027,8 +2031,12 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 		}
 	}
 	int arg_index = 0;
+	int formal_index = 0;
 	int int_index = 0;
 	int fp_index = 0;
+	int saved_formals = 0;
+	const char *cc = r_anal_cc_default ((RAnal *)ctx->anal);
+	const bool swift_cc = cc && !strcmp (cc, "swift");
 	RListIter *iter;
 	Variable *var;
 	r_list_foreach (variables, iter, var) {
@@ -2036,7 +2044,10 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 			&& !var->is_result;
 		int argno = -1;
 		if (is_formal) {
-			argno = dwarf_type_is_fp (var->type)? R_ANAL_CC_MAXARG + fp_index++: int_index++;
+			argno = formal_index++;
+			if (swift_cc) {
+				argno = dwarf_type_is_fp (var->type)? R_ANAL_CC_MAXARG + fp_index++: int_index++;
+			}
 		}
 		char *meta = !is_formal || dwarf_formal_location_is_arg (ctx, var)
 			? sdb_variable_data (var): NULL;
@@ -2053,6 +2064,7 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 			r_strbuf_appendf (&args_buf, "%s,", var->name);
 			free (arg_val);
 			arg_index++;
+			saved_formals += is_formal;
 		} else if (var->kind == VARIABLE_KIND_LOCAL) {
 			sdb_setf (sdb, meta, 0, "fcn.%s.var.%s", sname, var->name);
 			r_strbuf_appendf (&vars_buf, "%s,", var->name);
@@ -2067,6 +2079,8 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 	}
 	sdb_setf (sdb, r_strbuf_get (&vars_buf), 0, "fcn.%s.vars", sname);
 	sdb_setf (sdb, r_strbuf_get (&args_buf), 0, "fcn.%s.args", sname);
+	sdb_num_setf (sdb, formal_count > 0 && saved_formals == formal_count, 0,
+		"fcn.%s.args.complete", sname);
 	r_strbuf_fini (&vars_buf);
 	r_strbuf_fini (&args_buf);
 	if (typed_name) {
@@ -2373,14 +2387,32 @@ static bool set_dwarf_var(RAnalFunction *fcn, int delta, char kind, const char *
 	return r_anal_function_set_var (fcn, delta, kind, type, 4, is_arg, name) != NULL;
 }
 
+static bool is_default_dwarf_arg(const RAnalVar *var) {
+	if (!var || !var->isarg || R_STR_ISEMPTY (var->name)) {
+		return false;
+	}
+	if (r_anal_var_is_default_argname (var->name)) {
+		return true;
+	}
+	if (!r_str_startswith (var->name, "arg_")) {
+		return false;
+	}
+	const char *hex = var->name + 4;
+	if (!isxdigit ((ut8)*hex)) {
+		return false;
+	}
+	while (isxdigit ((ut8)*hex)) {
+		hex++;
+	}
+	return *hex == 'h' && !hex[1];
+}
+
 static void remove_default_dwarf_args(RAnal *anal, RAnalFunction *fcn) {
 	size_t i = 0;
 	while (i < RVecAnalVarPtr_length (&fcn->vars)) {
 		RAnalVar **varp = RVecAnalVarPtr_at (&fcn->vars, i);
 		RAnalVar *var = varp? *varp: NULL;
-		const bool default_arg = var && (r_anal_var_is_default_argname (var->name)
-			|| (var->isarg && r_str_startswith (var->name, "arg_") && r_str_endswith (var->name, "h")));
-		if (default_arg) {
+		if (is_default_dwarf_arg (var)) {
 			r_anal_var_delete (anal, var);
 			continue;
 		}
@@ -2467,7 +2499,8 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 			}
 			free (fcnstr);
 		}
-		if (fcn && sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.arg.0", func_sname)) {
+		if (fcn && sdb_num_getf (dwarf_sdb, NULL, "fcn.%s.args.complete", func_sname)
+			&& sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.arg.0", func_sname)) {
 			remove_default_dwarf_args (anal, fcn);
 		}
 		int arg_index;

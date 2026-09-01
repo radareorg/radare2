@@ -350,7 +350,7 @@ EOF
 RUN
 
 NAME=arm64 float args preserve scalar widths and stop at calls
-FILE=malloc://128
+FILE=malloc://256
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 0000669e2100669ec0035fd6 @ 0
@@ -358,17 +358,34 @@ wx 0000261ec0035fd6 @ 0x10
 wx 0028221e2128631ec0035fd6 @ 0x20
 wx 040000940000669ec0035fd6 @ 0x40
 wx c0035fd6 @ 0x50
+wx 281ca14e091ca04e2029291e0029601ec0035fd6 @ 0x60
+wx 0c000094c0035fd6 @ 0xa0
+wx c0035fd6 @ 0xd0
+tk main=func
+tk func.main.args=3
+tk func.main.arg.0=int,argc
+tk func.main.arg.1=char **,argv
+tk func.main.arg.2=char **,envp
 e anal.cc=arm64
 af @ 0x50
 af @ 0
 e anal.cc=swift
 af @ 0x10
 af @ 0x20
+af @ 0x60
+af @ 0xd0
+s 0xd0
+afn main
+afc swift
+af @ 0xa0
 e anal.cc=arm64
 af @ 0x40
 afv @ 0
 afv @ 0x10
 afv @ 0x20
+afv @ 0x60
+afv @ 0xa0~argv~?
+afv @ 0xa0~envp~?
 afv @ 0x40
 EOF
 EXPECT=<<EOF
@@ -379,6 +396,10 @@ arg float arg1 @ s0
 arg double arg2 @ d1
 arg float arg3 @ s2
 arg double arg4 @ d3
+arg float arg1 @ s0
+arg double arg2 @ d1
+0
+0
 EOF
 RUN
 

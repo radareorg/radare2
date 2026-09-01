@@ -1571,6 +1571,54 @@ static const char *reguse_regname_for_loc(RAnal *anal, RAnalOp *op, const char *
 		? opdreg: r_anal_cc_location_first (anal, loc);
 }
 
+static bool regs_share_storage(RAnal *anal, const char *a, const char *b) {
+	RRegItem *ra = r_reg_get (anal->reg, a, -1);
+	RRegItem *rb = r_reg_get (anal->reg, b, -1);
+	const bool same = ra && rb && ra->arena == rb->arena && ra->offset == rb->offset;
+	r_unref (ra);
+	r_unref (rb);
+	return same;
+}
+
+static RAnalVar *grouped_fparg(RAnal *anal, RAnalFunction *fcn, const char *regname, bool access) {
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
+		RAnalVar *var = *it;
+		if (!var->isarg || var->kind != R_ANAL_VAR_KIND_REG) {
+			continue;
+		}
+		const char *candidate = var->regname;
+		if (access && !RVecAnalVarAccess_empty (&var->accesses)) {
+			RAnalVarAccess *acc = RVecAnalVarAccess_last (&var->accesses);
+			candidate = acc->reg;
+		}
+		if (candidate && regs_share_storage (anal, candidate, regname)) {
+			return var;
+		}
+	}
+	return NULL;
+}
+
+static void refine_fparg(RAnal *anal, RAnalVar *var, const char *regname) {
+	if (!var) {
+		return;
+	}
+	RRegItem *reg = r_reg_get (anal->reg, regname, -1);
+	RRegItem *old = r_reg_get (anal->reg, var->regname, -1);
+	if (reg && old && (reg->size == 32 || reg->size == 64) && old->size > 64) {
+		RRegItem *alias = r_reg_get_at (anal->reg, old->type, reg->size, BITS2BYTES (old->offset));
+		char *name = alias? strdup (alias->name): NULL;
+		if (name) {
+			r_anal_var_set_type (anal, var, reg->size == 32? "float": "double");
+			free (var->regname);
+			var->regname = name;
+			var->delta = alias->index;
+		}
+	}
+	r_unref (reg);
+	r_unref (old);
+}
+
 static int cc_loc_delta(RAnal *anal, const char *loc) {
 	const char *first = loc? r_anal_cc_location_first (anal, loc): NULL;
 	RRegItem *ri = first? r_reg_get (anal->reg, first, -1): NULL;
@@ -1625,6 +1673,18 @@ static int func_fixed_args(Sdb *TDB, const char *name) {
 	return r_type_func_is_variadic (TDB, name)? argc - 1: argc;
 }
 
+static char *linked_func_type(RAnal *anal, RAnalFunction *fcn) {
+	char *name = r_type_link_at (anal->sdb_types, fcn->addr);
+	if (name && r_type_kind (anal->sdb_types, name) == R_TYPE_FUNCTION) {
+		return name;
+	}
+	free (name);
+	const char *linked = sdb_const_getf (anal->sdb_types, NULL,
+		"fcnlink.%08" PFMT64x, fcn->addr);
+	return linked && r_type_kind (anal->sdb_types, linked) == R_TYPE_FUNCTION
+		? strdup (linked): NULL;
+}
+
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
 	int i = 0, argc = 0;
 	R_RETURN_IF_FAIL (anal && op && fcn);
@@ -1639,7 +1699,9 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments", fcn->name);
 		return;
 	}
-	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
+	const bool is_swift = !strcmp (fcn->callconv, "swift");
+	char *fname = is_swift? linked_func_type (anal, fcn)
+		: r_type_func_guess (anal->sdb_types, fcn->name);
 	Sdb *TDB = anal->sdb_types;
 	const int max_count = r_anal_cc_max_arg (anal, fcn->callconv);
 	const bool scan_args = max_count > 0 && *count < max_count;
@@ -1668,7 +1730,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		if (!f) {
 			RCore *core = (RCore *)anal->coreb.core;
 			RFlagItem *flag = r_flag_get_by_spaces (core->flags, false, offset, R_FLAGS_FS_IMPORTS, NULL);
-			if (flag) {
+			if (flag && flag->space && !strcmp (flag->space->name, R_FLAGS_FS_IMPORTS)) {
 				callee = r_type_func_guess (TDB, flag->name);
 				if (callee) {
 					const char *cc = r_anal_cc_func (anal, callee);
@@ -1678,7 +1740,8 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				}
 			}
 		} else if (!f->is_variadic && fcn->callconv && f->callconv && !strcmp (fcn->callconv, f->callconv)) {
-			callee = r_type_func_guess (TDB, f->name);
+			callee = is_swift? linked_func_type (anal, f)
+				: r_type_func_guess (TDB, f->name);
 			if (callee) {
 				callee_rargs = R_MIN (max_count, func_fixed_args (TDB, callee));
 			}
@@ -1745,6 +1808,13 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		|| op->family == R_ANAL_OP_FAMILY_VEC
 		|| op->family == R_ANAL_OP_FAMILY_SIMD
 		|| op->family == R_ANAL_OP_FAMILY_UNKNOWN;
+	if (scan_fpargs && opsreg) {
+		RAnalVar *var = grouped_fparg (anal, fcn, opsreg, true);
+		refine_fparg (anal, var, opsreg);
+		if (var) {
+			r_anal_var_set_access (anal, var, opsreg, op->addr, R_PERM_R, 0);
+		}
+	}
 	// The fixed register-state array lets both sequences use one bounded walk.
 	for (i = 0; i < R_ANAL_CC_MAXARG * 2; i++) {
 		const bool fp = i >= R_ANAL_CC_MAXARG;
@@ -1767,6 +1837,12 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		}
 		if (is_arg && reg_set[slot] == 1) {
 			var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
+			if (!var && fp) {
+				var = grouped_fparg (anal, fcn, argreg, false);
+			}
+			if (fp) {
+				refine_fparg (anal, var, argreg);
+			}
 		} else if (is_arg && reg_set[slot] != 2) {
 			const char *vname = NULL;
 			char *type = NULL;
@@ -1782,13 +1858,16 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				vname = name;
 			}
 			const char *deftype = NULL;
+			int argsize = size;
 			if (fp) {
 				RRegItem *ri = r_reg_get (anal->reg, argreg, -1);
-				deftype = ri && ri->size == 32? "float": "double";
+				deftype = ri && ri->size > 64? "uint8_t[16]"
+					: ri && ri->size == 32? "float": "double";
+				argsize = ri? BITS2BYTES (ri->size): size;
 				r_unref (ri);
 			}
 			var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG,
-				type? type: deftype, size, true, vname);
+				type? type: deftype, argsize, true, vname);
 			if (var && var->argnum < 0) {
 				var->argnum = *count;
 			}
@@ -1805,7 +1884,9 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			reg_set[slot] = 1;
 		}
 		if (var) {
-			r_anal_var_set_access (anal, var, var->regname, op->addr, R_PERM_R, 0);
+			const bool copied = fp && (op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_MOV
+				&& opdreg && !r_anal_cc_location_uses (anal, regname, opdreg);
+			r_anal_var_set_access (anal, var, copied? opdreg: var->regname, op->addr, R_PERM_R, 0);
 			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, var->name);
 			is_arg = r_anal_var_is_default_argname (var->name);
 		}
@@ -1817,7 +1898,6 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 
 	i = max_count;
 	const bool is_dyncc = r_str_startswith (fcn->callconv, "dyncc:");
-	const bool is_swift = !strcmp (fcn->callconv, "swift");
 	const bool swift_method = r_str_startswith (fcn->name, "method.");
 	const bool swift_throws = r_str_endswith (fcn->name, "KF")
 		|| r_str_endswith (fcn->name, "KF_");
