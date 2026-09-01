@@ -895,8 +895,12 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 		}
 		r_core_anal_type_init (core);
 		r_core_anal_cc_init (core);
-		if (info->default_cc && r_anal_cc_exist (core->anal, info->default_cc)) {
-			r_config_set (core->config, "anal.cc", info->default_cc);
+		const char *default_cc = info->default_cc;
+		if (!default_cc && info->lang && !strcmp (info->lang, "swift")) {
+			default_cc = "swift";
+		}
+		if (default_cc && r_anal_cc_exist (core->anal, default_cc)) {
+			r_config_set (core->config, "anal.cc", default_cc);
 		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf (core->cons, "arch %s\n", info->arch);

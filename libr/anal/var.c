@@ -1740,7 +1740,6 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		const bool fp = i >= R_ANAL_CC_MAXARG;
 		const int n = fp? i - R_ANAL_CC_MAXARG: i;
 		const int slot = fp? R_ANAL_CC_FPSLOT_BASE + n: n;
-		const char *deftype = fp? "double": NULL;
 		if ((fp && !scan_fpargs) || (!fp && (!scan_args || n >= max_count))) {
 			continue;
 		}
@@ -1752,8 +1751,9 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		int delta = 0;
 		RAnalVar *var = NULL;
 		bool is_arg = is_used_like_arg (regname, opsreg, opdreg, op, anal, op_dst_writeonly);
+		const char *argreg = is_arg? reguse_regname_for_loc (anal, op, regname, opdreg): regname;
 		if (is_arg && reg_set[slot] != 2) {
-			delta = cc_loc_delta (anal, regname);
+			delta = cc_loc_delta (anal, argreg);
 		}
 		if (is_arg && reg_set[slot] == 1) {
 			var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
@@ -1770,6 +1770,12 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			if (!vname) {
 				name = r_str_newf ("arg%d", fp? max_count + n + 1: n + 1);
 				vname = name;
+			}
+			const char *deftype = NULL;
+			if (fp) {
+				RRegItem *ri = r_reg_get (anal->reg, argreg, -1);
+				deftype = ri && ri->size == 32? "float": "double";
+				r_unref (ri);
 			}
 			var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG,
 				type? type: deftype, size, true, vname);
@@ -1794,9 +1800,8 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			is_arg = r_anal_var_is_default_argname (var->name);
 		}
 		if (is_arg) {
-			const char *hintreg = reguse_regname_for_loc (anal, op, regname, opdreg);
 			r_strf_var (usage, 32, "arg%d", fp? R_ANAL_CC_MAXARG + n: n);
-			reguse_append_hint (anal, op->addr, hintreg, usage);
+			reguse_append_hint (anal, op->addr, argreg, usage);
 		}
 	}
 

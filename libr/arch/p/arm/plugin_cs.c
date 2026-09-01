@@ -3805,6 +3805,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->cycles = 1;
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
+	case ARM64_INS_FADD:
 	case ARM64_INS_ADC:
 	case ARM64_INS_UMADDL:
 	case ARM64_INS_SMADDL:

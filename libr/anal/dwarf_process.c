@@ -1015,6 +1015,38 @@ static const char *map_dwarf_reg_to_arm64_reg(ut64 reg_num, VariableLocationKind
 	case 37: return "tpidr_el1";
 	case 38: return "tpidr_el2";
 	case 39: return "tpidr_el3";
+	case 64: return "v0";
+	case 65: return "v1";
+	case 66: return "v2";
+	case 67: return "v3";
+	case 68: return "v4";
+	case 69: return "v5";
+	case 70: return "v6";
+	case 71: return "v7";
+	case 72: return "v8";
+	case 73: return "v9";
+	case 74: return "v10";
+	case 75: return "v11";
+	case 76: return "v12";
+	case 77: return "v13";
+	case 78: return "v14";
+	case 79: return "v15";
+	case 80: return "v16";
+	case 81: return "v17";
+	case 82: return "v18";
+	case 83: return "v19";
+	case 84: return "v20";
+	case 85: return "v21";
+	case 86: return "v22";
+	case 87: return "v23";
+	case 88: return "v24";
+	case 89: return "v25";
+	case 90: return "v26";
+	case 91: return "v27";
+	case 92: return "v28";
+	case 93: return "v29";
+	case 94: return "v30";
+	case 95: return "v31";
 	}
 #if 0
 ARM64 - dwarf register mapping
@@ -1236,6 +1268,18 @@ static RBinDwarfLocRange *find_largest_loc_range(RList *loc_list) {
 	return largest;
 }
 
+static VariableLocationKind dwarf_base_location_kind(const char *arch, int bits, ut64 reg_num, VariableLocationKind kind) {
+	if (arch && !strcmp (arch, "arm") && bits == 64) {
+		if (reg_num == 29) {
+			return LOCATION_BP;
+		}
+		if (reg_num == 31) {
+			return LOCATION_SP;
+		}
+	}
+	return kind;
+}
+
 /* TODO move a lot of the parsing here into dwarf.c and do only processing here */
 static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrValue *loc, const RBinDwarfAttrValue *frame_base) {
 	/* reg5 - val is in register 5
@@ -1286,16 +1330,14 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			}
 			i++;
 			const ut8 *dump = block.data + i;
-			if (loc->block.length > block.length) {
-				return NULL;
-			}
-			offset = r_sleb128 (&dump, block.data + loc->block.length);
+			offset = r_sleb128 (&dump, block.data + block.length);
 			if (frame_base) {
 				/* recursive parsing, but frame_base should be only one, but someone
 				   could make malicious resource exhaustion attack, so a depth counter might be cool? */
 				VariableLocation *location = parse_dwarf_location (ctx, frame_base, NULL);
 				if (location) {
 					location->offset += offset;
+					location->kind = dwarf_base_location_kind (arch, bits, location->reg_num, location->kind);
 					return location;
 				}
 			} else {
@@ -1341,6 +1383,21 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			reg_name = get_dwarf_reg_name (arch, reg_num, &kind, bits);
 			break;
 		}
+		case DW_OP_regx: {
+			if (i == block.length - 1) {
+				return NULL;
+			}
+			const ut8 *buffer = &block.data[++i];
+			const ut8 *buf_end = &block.data[block.length];
+			const char *error = NULL;
+			const ut8 *next = r_uleb128 (buffer, buf_end - buffer, &reg_num, &error);
+			if (!next || next <= buffer || next > buf_end || error) {
+				return NULL;
+			}
+			i = next - block.data - 1;
+			reg_name = get_dwarf_reg_name (arch, reg_num, &kind, bits);
+			break;
+		}
 		case DW_OP_breg0:
 		case DW_OP_breg1:
 		case DW_OP_breg2:
@@ -1381,9 +1438,9 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			reg_num = block.data[i] - DW_OP_breg0; // get the reg number
 			const ut8 *buffer = &block.data[++i];
 			offset = r_sleb128 (&buffer, &block.data[block.length]);
-			/* TODO do a proper expression parsing, move by the amount of bytes sleb reads */
-			i += buffer - &block.data[0];
+			i = buffer - block.data - 1;
 			reg_name = get_dwarf_reg_name (arch, reg_num, &kind, bits);
+			kind = dwarf_base_location_kind (arch, bits, reg_num, kind);
 			break;
 		}
 		case DW_OP_bregx: {
@@ -1394,14 +1451,24 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			/* I need to find binaries that uses this so I can test it out*/
 			const ut8 *buffer = &block.data[++i];
 			const ut8 *buf_end = &block.data[block.length];
-			buffer = r_uleb128 (buffer, buf_end - buffer, &reg_num, NULL);
-			if (buffer == buf_end) {
+			const char *error = NULL;
+			const ut8 *next = r_uleb128 (buffer, buf_end - buffer, &reg_num, &error);
+			if (!next || next <= buffer || next >= buf_end || error) {
 				return NULL;
 			}
+			buffer = next;
 			offset = r_sleb128 (&buffer, buf_end);
+			i = buffer - block.data - 1;
 			reg_name = get_dwarf_reg_name (arch, reg_num, &kind, bits);
+			kind = dwarf_base_location_kind (arch, bits, reg_num, kind);
 			break;
 		}
+		case DW_OP_piece:
+			if (kind == LOCATION_UNKNOWN) {
+				return NULL;
+			}
+			i = block.length - 1;
+			break;
 		case DW_OP_addr: {
 			/* The DW_OP_addr operation has a single operand that encodes a machine address and whose
 			size is the size of an address on the target machine.  */

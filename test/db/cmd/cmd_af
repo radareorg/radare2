@@ -349,45 +349,36 @@ arg double arg4 @ xmm1
 EOF
 RUN
 
-NAME=arm64 float args come from the v register sequence
-FILE=malloc://64
+NAME=arm64 float args preserve scalar widths and stop at calls
+FILE=malloc://128
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 0000669e2100669ec0035fd6 @ 0
-af
-afv
+wx 0000261ec0035fd6 @ 0x10
+wx 0028221e2128631ec0035fd6 @ 0x20
+wx 040000940000669ec0035fd6 @ 0x40
+wx c0035fd6 @ 0x50
+e anal.cc=arm64
+af @ 0x50
+af @ 0
+e anal.cc=swift
+af @ 0x10
+af @ 0x20
+e anal.cc=arm64
+af @ 0x40
+afv @ 0
+afv @ 0x10
+afv @ 0x20
+afv @ 0x40
 EOF
 EXPECT=<<EOF
 arg double arg1 @ d0
 arg double arg2 @ d1
-EOF
-RUN
-
-NAME=arm64 swift float args match the s register spelling of the v sequence
-FILE=malloc://32
-ARGS=-a arm -b 64
-CMDS=<<EOF
-wx 0000261ec0035fd6 @ 0
-e anal.cc=swift
-af
-afv
-EOF
-EXPECT=<<EOF
-arg double arg1 @ d0
-EOF
-RUN
-
-NAME=arm64 d0 read after a call is not an argument
-FILE=malloc://64
-ARGS=-a arm -b 64
-CMDS=<<EOF
-wx 040000940000669ec0035fd6 @ 0
-wx c0035fd6 @ 0x10
-af @ 0x10
-af @ 0
-afv @ 0
-EOF
-EXPECT=<<EOF
+arg float arg1 @ s0
+arg float arg1 @ s0
+arg double arg2 @ d1
+arg float arg3 @ s2
+arg double arg4 @ d3
 EOF
 RUN
 

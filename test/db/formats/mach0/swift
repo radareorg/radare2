@@ -64,13 +64,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=swift arm64 default calling convention
+FILE=bins/mach0/swift-main3
+CMDS=<<EOF
+e bin.lang
+e anal.cc
+EOF
+EXPECT=<<EOF
+swift
+swift
+EOF
+RUN
+
 NAME=swift-x86-64 calling convention json
 ARGS=-e bin.demangle=false
 FILE=bins/mach0/swift5.1-throwError
 CMDS=<<EOF
 s sym.__s10throwError7ThrowerC0a2MyB0yyKF
 af
-afc swift
 afva
 afcrj
 afvj
