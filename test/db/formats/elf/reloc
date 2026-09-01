@@ -769,3 +769,76 @@ bl reloc.strcmp
 0x08012678
 EOF
 RUN
+
+NAME=ELF: i386 GOT sites resolve under bin.relocs.apply
+FILE=bins/elf/libtest_32.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~printf
+pxw 4 @ 0x200c
+pxw 4 @ 0x1fec
+EOF
+EXPECT=<<EOF
+0x0000200c 0x0000100c SET_32 7     printf
+0x0000200c  0x00002018                                   . ..
+0x00001fec  0x00002028                                   ( ..
+EOF
+RUN
+
+NAME=ELF: i386 glob_dat resolves under bin.relocs.apply (fcn_in_test)
+FILE=bins/elf/fcn_in_test.elf
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~__libc_start_main
+pxw 4 @ 0x400c
+pxw 4 @ 0x3ff4
+EOF
+EXPECT=<<EOF
+0x0000400c 0x0000300c SET_32 7     __libc_start_main
+0x0000400c  0x0000401c                                   .@..
+0x00003ff4  0x00004038                                   8@..
+EOF
+RUN
+
+NAME=ELF: i386 full-relro slot resolves under bin.relocs.apply
+FILE=bins/elf/hello_world32
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~free
+pxw 4 @ 0x1fd0
+pxw 4 @ 0x1fe8
+EOF
+EXPECT=<<EOF
+0x00001fd0 0x00000fd0 SET_32 7     free
+0x00001fd0  0x0000200c                                   . ..
+0x00001fe8  0x00002024                                   $ ..
+EOF
+RUN
+
+NAME=ELF: i386 relative reloc keeps the link base out
+FILE=bins/elf/i386-base10000-rel.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pxw 4 @ 0x132c0
+pxw 4 @ 0x122b8
+pxw 4 @ 0x132d0
+EOF
+EXPECT=<<EOF
+0x000132c0  0x00011216                                   ....
+0x000122b8  0x000132bc                                   .2..
+0x000132d0  0x000132d4                                   .2..
+EOF
+RUN
+
+NAME=ELF: i386 rela relative materializes the addend
+FILE=bins/elf/i386-base10000-rela.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pxw 4 @ 0x132d0
+pxw 4 @ 0x122c8
+EOF
+EXPECT=<<EOF
+0x000132d0  0x00011222                                   "...
+0x000122c8  0x000132cc                                   .2..
+EOF
+RUN
