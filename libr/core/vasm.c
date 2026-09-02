@@ -53,6 +53,9 @@ static int readline_callback(RCons *cons, void *_a, const char *str) {
 		size_t len = 0;
 		ut8 *out = r_hex_str2bin_dup (str, &len);
 		if (out) {
+			if (!a->acode) {
+				a->acode = r_asm_code_new ();
+			}
 			if (a->acode) {
 				free (a->acode->bytes);
 				a->acode->bytes = out;
@@ -63,7 +66,8 @@ static int readline_callback(RCons *cons, void *_a, const char *str) {
 		}
 		a->codebuf[0] = 0;
 	}
-	const char *hex = a->acode? r_asm_code_get_hex (a->acode): "";
+	char *hexstr = a->acode? r_asm_code_get_hex (a->acode): NULL;
+	const char *hex = r_str_get (hexstr);
 	r_cons_printf (core->cons, "[%s:%d]> %s\n",
 		a->amode? "ASM": "HEX",
 		a->acode? a->acode->len: 0, str);
@@ -92,6 +96,7 @@ static int readline_callback(RCons *cons, void *_a, const char *str) {
 	r_cons_println (core->cons, msg);
 	free (msg);
 	free (res);
+	free (hexstr);
 	r_cons_flush (core->cons);
 	return 1;
 }
