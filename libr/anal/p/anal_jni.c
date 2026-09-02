@@ -106,8 +106,7 @@ static void jni_function_rename(RAnal *anal, RAnalFunction *fcn, const char *nam
 	if (anal->flb.f) {
 		RFlagItem *flag = r_flag_get_by_spaces (anal->flb.f, false,
 			fcn->addr, "functions", NULL);
-		if (flag && flag->space && !strcmp (flag->space->name, "functions")
-				&& !strcmp (flag->name, old_name)) {
+		if (flag && !strcmp (flag->name, old_name)) {
 			r_flag_rename (anal->flb.f, flag, name);
 		}
 	}

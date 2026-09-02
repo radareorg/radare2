@@ -54,6 +54,53 @@ bool test_r_flag_by_spaces(void) {
 	mu_assert_notnull (fi, "something should be retrieved");
 	mu_assert_streq (fi->name, "foo1", "first defined in sp1 should be get");
 
+	// asking for spaces that hold no flag at this address must not fall
+	// back to whatever else is flagged there
+	fi = r_flag_get_by_spaces (flags, false, 1024, "sp5", "sp8", NULL);
+	mu_assert_null (fi, "no flag in the requested spaces");
+
+	r_flag_space_set (flags, "sp1");
+	r_flag_set (flags, "bar1", 2048, 0);
+	fi = r_flag_get_by_spaces (flags, false, 2048, "sp2", NULL);
+	mu_assert_null (fi, "a lone flag in another space must not be returned");
+	fi = r_flag_get_by_spaces (flags, false, 2048, "sp1", NULL);
+	mu_assert_notnull (fi, "lone flag in the requested space should be retrieved");
+	mu_assert_streq (fi->name, "bar1", "lone flag in sp1 should be get");
+	fi = r_flag_get_by_spaces (flags, false, 2048, NULL);
+	mu_assert_notnull (fi, "any flag is fine when no space is requested");
+	mu_assert_streq (fi->name, "bar1", "lone flag should be get without spaces");
+
+	// a flag without space only wins when explicitly asked for
+	r_flag_space_set (flags, NULL);
+	r_flag_set (flags, "nospace", 4096, 0);
+	r_flag_space_set (flags, "sp1");
+	r_flag_set (flags, "insp1", 4096, 0);
+	fi = r_flag_get_by_spaces (flags, false, 4096, "sp1", NULL);
+	mu_assert_notnull (fi, "flag in sp1 should be retrieved");
+	mu_assert_streq (fi->name, "insp1", "sp1 wins over a flag without space");
+	fi = r_flag_get_by_spaces (flags, true, 4096, "sp1", NULL);
+	mu_assert_notnull (fi, "flag without space should be retrieved");
+	mu_assert_streq (fi->name, "nospace", "prionospace prefers the flag without space");
+	fi = r_flag_get_by_spaces (flags, false, 4096, "sp2", NULL);
+	mu_assert_null (fi, "neither flag lives in sp2");
+	fi = r_flag_get_by_spaces (flags, true, 4096, "nosuchspace", NULL);
+	mu_assert_notnull (fi, "flag without space should be retrieved");
+	mu_assert_streq (fi->name, "nospace", "prionospace works even for unknown spaces");
+
+	// same again with the flag without space defined after the other one
+	r_flag_set (flags, "insp1b", 8192, 0);
+	r_flag_space_set (flags, NULL);
+	r_flag_set (flags, "nospaceb", 8192, 0);
+	fi = r_flag_get_by_spaces (flags, true, 8192, "nosuchspace", NULL);
+	mu_assert_notnull (fi, "flag without space should be retrieved");
+	mu_assert_streq (fi->name, "nospaceb", "prionospace keeps looking past unknown spaces");
+	fi = r_flag_get_by_spaces (flags, true, 8192, "sp1", NULL);
+	mu_assert_notnull (fi, "flag without space should be retrieved");
+	mu_assert_streq (fi->name, "nospaceb", "prionospace wins over a flag in sp1 defined earlier");
+	fi = r_flag_get_by_spaces (flags, false, 8192, "sp1", NULL);
+	mu_assert_notnull (fi, "flag in sp1 should be retrieved");
+	mu_assert_streq (fi->name, "insp1b", "sp1 flag is found without prionospace");
+
 	r_flag_free (flags);
 	mu_end;
 }

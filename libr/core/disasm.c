@@ -1800,7 +1800,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					}
 				}
 				if (ds->asm_demangle) {
-					f = r_flag_get_by_spaces (core->flags, false, fun->addr, R_FLAGS_FS_SYMBOLS, NULL);
+					f = r_flag_get_by_spaces (core->flags, false, fun->addr, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
 					if (f && f->demangled && f->realname) {
 						realname = strdup (f->realname);
 					}
@@ -1830,7 +1830,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 						RFlagItem *f_sym = f;
 						if (!r_str_startswith (f_sym->name, "sym.")) {
 							f_sym = r_flag_get_by_spaces (core->flags, false, f->addr,
-									R_FLAGS_FS_SYMBOLS, NULL);
+									R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
 						}
 						if (f_sym && f_sym->demangled && f_sym->realname) {
 							f = f_sym;
@@ -4597,7 +4597,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 	if (!f && ds->core->flags && (!ds->core->vmode || (!ds->subjmp && !ds->subnames))) {
 		const char *arch;
 		RFlagItem *flag = r_flag_get_by_spaces (ds->core->flags, false, ds->analop.jump,
-				R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, NULL);
+				R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
 		if (flag && flag->name
 				&& ds->opstr && !strstr (ds->opstr, flag->name)
 				&& (r_str_startswith (flag->name, "sym.")
@@ -4608,7 +4608,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 			if (flag_sym->demangled && ds->core->vmode && ds->asm_demangle
 					&& (r_str_startswith (flag->name, "sym.")
 						|| (flag_sym = r_flag_get_by_spaces (ds->core->flags, false,
-							ds->analop.jump, R_FLAGS_FS_SYMBOLS, NULL)))) {
+							ds->analop.jump, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL)))) {
 				return;
 			}
 			ds_begin_comment (ds);
@@ -4643,7 +4643,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 					&& ds->asm_demangle
 					&& (flag_sym = r_flag_get_by_spaces (ds->core->flags, false,
 						ds->analop.jump,
-						R_FLAGS_FS_SYMBOLS, NULL))
+						R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL))
 					&& flag_sym->demangled) {
 				return;
 			}
@@ -5566,7 +5566,7 @@ static void ds_print_demangled(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_UJMP:
 	case R_ANAL_OP_TYPE_CALL:
-		f = r_flag_get_by_spaces (core->flags, false, ds->analop.jump, R_FLAGS_FS_SYMBOLS, NULL);
+		f = r_flag_get_by_spaces (core->flags, false, ds->analop.jump, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
 		if (f && f->demangled && f->realname && ds->opstr && !strstr (ds->opstr, f->realname)) {
 			ds_begin_nl_comment (ds);
 			ds_comment (ds, true, "%s %s", ds->cmtoken, f->realname);
