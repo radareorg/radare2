@@ -54,6 +54,13 @@ struct r_anal_function_snapshot_t {
 	RAnalCallSiteInterfaceSnapshot *call_site_interfaces;
 	size_t num_call_site_interfaces;
 	ut64 revision_identity;
+	// Identity of this function's own captured payload, which the capture
+	// identity above deliberately is not: a callee inherits the root's
+	// revision so a consumer can tell the bodies were read together, and that
+	// makes the same callee under two callers carry two identities. A cache
+	// keyed on the capture therefore never hits for the one case a callee
+	// cache exists to serve.
+	ut64 content_identity;
 	RAnalSnapshotTypeGraph type_graph;
 	RAnalFunctionImageSnapshot image;
 	// Snapshots of the functions this one calls directly, collected in the same
