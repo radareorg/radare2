@@ -649,8 +649,11 @@ R_API RFlagItem *r_flag_get_in(RFlag *f, ut64 addr) {
 	return list? evalFlag (f, r_list_last (list)): NULL;
 }
 
-/* Return the first flag matching an address ordered by the operands */
-/* Pass in the name of each space, in order, followed by a NULL */
+/* Return the first flag at addr that lives in one of the given spaces, the
+ * spaces being ordered by priority. Pass in the name of each space followed
+ * by a NULL. Flags in other spaces are never returned, so NULL means no flag
+ * of the requested kind exists at addr. Without any space name every flag at
+ * addr qualifies. With prionospace a flag without space wins over the rest */
 R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 addr, ...) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
 	if (f->mask) {
@@ -658,33 +661,31 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 addr, ...
 	}
 
 	const RList *list = r_flag_get_list (f, addr);
+	if (r_list_empty (list)) {
+		return NULL;
+	}
 	RFlagItem *ret = NULL;
 	RListIter *iter;
 	RFlagItem *fi;
 	va_list ap, aq;
 
 	va_start (ap, addr);
-	// some quick checks for common cases
-	if (r_list_empty (list)) {
-		goto beach;
-	}
-	if (r_list_length (list) == 1) {
-		ret = r_list_last (list);
-		goto beach;
-	}
-
 	// count spaces in the vaarg
 	va_copy (aq, ap);
 	const char *spacename = va_arg (aq, const char *);
-
 	size_t n_spaces = 0;
 	while (spacename) {
 		n_spaces++;
 		spacename = va_arg (aq, const char *);
 	}
 	va_end (aq);
+	if (!n_spaces) {
+		// no space requested, any flag at this address is fine
+		ret = r_list_first (list);
+		goto beach;
+	}
 
-	// get RSpaces from the names
+	// get RSpaces from the names, unknown spaces just never match
 	size_t i = 0;
 	RSpace **spaces = R_NEWS (RSpace *, n_spaces);
 	if (!spaces) {
@@ -700,28 +701,21 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 addr, ...
 	}
 	n_spaces = i;
 
-	ut64 min_space_i = n_spaces + 1;
+	// lower index means higher priority, n_spaces means nothing found yet
+	size_t best = n_spaces;
 	r_list_foreach (list, iter, fi) {
-		// get the "priority" of the flag flagspace and
-		// check if better than what we found so far
 		if (prionospace && !fi->space) {
 			ret = fi;
 			break;
 		}
-		for (i = 0; i < n_spaces; i++) {
+		for (i = 0; i < best; i++) {
 			if (fi->space == spaces[i]) {
-				break;
-			}
-			if (i >= min_space_i) {
+				ret = fi;
+				best = i;
 				break;
 			}
 		}
-
-		if (i < min_space_i) {
-			min_space_i = i;
-			ret = fi;
-		}
-		if (!min_space_i) {
+		if (ret && !best) {
 			// this is the best flag we can find, let's stop immediately
 			break;
 		}

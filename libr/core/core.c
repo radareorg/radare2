@@ -2379,12 +2379,17 @@ R_API void r_core_autocomplete_reload(RCore *core) {
 }
 
 R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 off) {
-	return r_flag_get_by_spaces (f, prionospace, off, R_FLAGS_FS_FUNCTIONS, R_FLAGS_FS_SIGNS, R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, R_FLAGS_FS_RELOCS, R_FLAGS_FS_STRINGS, R_FLAGS_FS_RESOURCES, R_FLAGS_FS_SYMBOLS_SECTIONS,
+	RFlagItem *fi = r_flag_get_by_spaces (f, prionospace, off, R_FLAGS_FS_FUNCTIONS, R_FLAGS_FS_SIGNS, R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, R_FLAGS_FS_RELOCS, R_FLAGS_FS_STRINGS, R_FLAGS_FS_RESOURCES, R_FLAGS_FS_SYMBOLS_SECTIONS,
 #if 1
 		R_FLAGS_FS_SECTIONS,
 		R_FLAGS_FS_SEGMENTS,
 #endif
 		NULL);
+	if (!fi) {
+		// nothing in the well known spaces, take whatever else is flagged here
+		fi = r_flag_get_by_spaces (f, prionospace, off, NULL);
+	}
+	return fi;
 }
 
 static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
