@@ -910,6 +910,7 @@ typedef char *(*RBinDemangle)(RBinFile *bf, const char *def, const char *str, ut
 typedef ut64 (*RBinBaddr)(RBinFile *bf, ut64 addr);
 typedef RVecRBinSymbol *(*RBinGetSymbolsVec)(RBin *bin);
 typedef RBinSymbol *(*RBinGetSymbolAt)(RBin *bin, ut64 addr);
+typedef RBinReloc *(*RBinGetRelocAt)(RBin *bin, ut64 vaddr);
 typedef const char *(*RBinGetCC)(RBin *bin, ut64 vaddr);
 
 typedef struct r_bin_bind_t {
@@ -926,6 +927,10 @@ typedef struct r_bin_bind_t {
 	RBinAddrLineGet addrline_get;
 	RBinBaddr baddr;
 	ut32 visibility;
+	// The relocation recorded against exactly this address, if any. An
+	// analysis holding only the bind can ask what a loaded slot names
+	// without reaching for the RBin behind it.
+	RBinGetRelocAt get_reloc_at;
 } RBinBind;
 
 R_API void r_bin_info_free(RBinInfo *rb);
@@ -997,6 +1002,7 @@ R_API RList *r_bin_get_libs(RBin *bin);
 R_API RVecRBinReloc *r_bin_patch_relocs(RBinFile *bin);
 R_API RVecRBinReloc *r_bin_get_relocs(RBin *bin);
 R_API RBinReloc *r_bin_reloc_at(RVecRBinReloc *relocs, ut64 vaddr, int size);
+R_API RBinReloc *r_bin_get_reloc_at(RBin *bin, ut64 vaddr);
 R_API RVecRBinSection *r_bin_get_sections_vec(RBin *bin);
 R_API RList *r_bin_get_classes(RBin *bin);
 R_API char* r_bin_get_types(RBin *bin);

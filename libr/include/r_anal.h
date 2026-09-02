@@ -320,12 +320,24 @@ typedef enum {
 	R_ANAL_FCN_CALLEE_IMPORTED = 2,
 } RAnalFcnCalleeLinkage;
 
+// How control reaches a callee. A call comes back; a tail transfer does not,
+// and the callee's return is the caller's. The two tail forms differ in what
+// names the callee: a jump names its target directly, and a jump through a
+// loaded value is licensed by the relocation on the slot the value was loaded
+// from, so `addr` is then that slot rather than any code address.
+typedef enum {
+	R_ANAL_CALL_TRANSFER_CALL = 0,
+	R_ANAL_CALL_TRANSFER_TAIL_JUMP = 1,
+	R_ANAL_CALL_TRANSFER_TAIL_SLOT = 2,
+} RAnalCallTransfer;
+
 typedef struct r_anal_fcn_callee_t {
 	ut64 call_addr;
 	ut64 addr;
 	char *name;
 	RAnalFcnCalleeLinkage linkage;
 	RAnalFunctionSignature *signature;
+	RAnalCallTransfer transfer;
 } RAnalFcnCallee;
 
 typedef struct r_anal_function_assumption_t {
@@ -497,6 +509,7 @@ typedef struct r_anal_call_site_interface_snapshot_t {
 	bool variadic;
 	bool noreturn;
 	bool complete;
+	RAnalCallTransfer transfer;
 } RAnalCallSiteInterfaceSnapshot;
 typedef struct r_anal_snapshot_type_t {
 	RAnalSnapshotTypeId id;
@@ -1764,6 +1777,7 @@ R_API bool r_anal_function_snapshot_code_pointer_table_target(const RAnalFunctio
 R_API bool r_anal_function_snapshot_signature_view(const RAnalFunctionSnapshot *snapshot, R_OUT RAnalSnapshotSignatureView *view);
 R_API bool r_anal_function_snapshot_signature_string(const RAnalFunctionSnapshot *snapshot, RAnalSnapshotSignatureStringKind kind, size_t index, R_OUT char *buffer, size_t buffer_size);
 R_API bool r_anal_function_snapshot_call_site_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalCallSiteInterfaceSnapshotView *view);
+R_API bool r_anal_function_snapshot_call_site_transfer(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalCallTransfer *transfer);
 R_API bool r_anal_function_snapshot_call_site_signature_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotSignatureView *view);
 R_API bool r_anal_function_snapshot_call_site_signature_string(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotSignatureStringKind kind, size_t parameter_index, R_OUT char *buffer, size_t buffer_size);
 R_API bool r_anal_function_snapshot_call_site_target_name(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
@@ -1875,6 +1889,9 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API RAnalFunction *r_anal_function_next(RAnal *anal, ut64 addr);
 R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *function);
 R_API RAnalFunctionSignature *r_anal_function_get_signature_current(RAnalFunction *function);
+// The prototype the type database holds under a bare name, for a callee that
+// is not a function of this binary: an import named by a relocation.
+R_IPI RAnalFunctionSignature *r_anal_function_signature_from_type_name(RAnal *anal, const char *name);
 R_API bool r_anal_function_has_signature_current(RAnalFunction *function);
 R_API void r_anal_function_signature_free(RAnalFunctionSignature *signature);
 R_API char *r_anal_function_get_signature_string(RAnalFunction *function);

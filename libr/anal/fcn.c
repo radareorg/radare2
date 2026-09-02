@@ -2700,17 +2700,18 @@ static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
 	return strdup (lookup_name);
 }
 
+// fcn may be NULL for a prototype that belongs to no function of this binary
 static const char *function_signature_callconv(RAnal *anal, RAnalFunction *fcn, const char *type_name, bool resolve_dynamic) {
 	const char *callconv = NULL;
 
-	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	if (R_STR_ISNOTEMPTY (type_name)) {
 		callconv = sdb_const_getf (anal->sdb_types, NULL, "func.%s.cc", type_name);
 	}
 	if (R_STR_ISNOTEMPTY (callconv) && r_anal_cc_exist (anal, callconv)) {
 		return callconv;
 	}
-	const char *fcncc = resolve_dynamic? r_anal_function_cc (fcn): fcn->callconv;
+	const char *fcncc = !fcn? NULL: resolve_dynamic? r_anal_function_cc (fcn): fcn->callconv;
 	if (R_STR_ISNOTEMPTY (fcncc) && r_anal_cc_exist (anal, fcncc)) {
 		callconv = fcncc;
 	}
@@ -2938,21 +2939,13 @@ R_API void r_anal_function_signature_free(RAnalFunctionSignature *signature) {
 	}
 }
 
-static RAnalFunctionSignature *function_get_signature(RAnalFunction *function, bool load_types) {
-	char *type_name;
+// Builds the prototype stored under type_name, which is owned and freed here.
+// function may be NULL: the prototype then belongs to nothing in this binary,
+// so nothing about the function's own variables or name can fill it in.
+static RAnalFunctionSignature *function_signature_build(RAnal *anal, RAnalFunction *function, char *type_name, bool load_types) {
 	int i;
-	RAnal *anal;
 	RAnalFunctionSignature *signature = NULL;
 
-	R_RETURN_VAL_IF_FAIL (function && function->anal && function->anal->sdb_types, NULL);
-	anal = function->anal;
-	if (load_types) {
-		r_anal_types_ensure_loaded (anal);
-	}
-	type_name = function_signature_type_name (anal, function);
-	if (!type_name) {
-		return NULL;
-	}
 	signature = R_NEW0 (RAnalFunctionSignature);
 	signature->params = r_list_newf ((RListFree)function_param_free);
 	const char *type_kind = sdb_const_get (anal->sdb_types, type_name, 0);
@@ -2975,12 +2968,12 @@ static RAnalFunctionSignature *function_get_signature(RAnalFunction *function, b
 		}
 	}
 	if ((!type_kind || strcmp (type_kind, "func")) && r_list_empty (signature->params)
-		&& !function_signature_fallback_to_vars (anal, function, signature)) {
+		&& (!function || !function_signature_fallback_to_vars (anal, function, signature))) {
 		goto beach;
 	}
 	// the declaration carries the function's own name; the key is only a lookup handle
 	signature->signature = function_signature_string (
-		R_STR_ISNOTEMPTY (function->name)? function->name: type_name,
+		function && R_STR_ISNOTEMPTY (function->name)? function->name: type_name,
 		signature->ret_type, signature->params, true, true);
 	if (!signature->signature) {
 		goto beach;
@@ -2993,7 +2986,8 @@ static RAnalFunctionSignature *function_get_signature(RAnalFunction *function, b
 			goto beach;
 		}
 	}
-	signature->noreturn = function_signature_is_noreturn (anal->sdb_types, type_name, function->is_noreturn);
+	signature->noreturn = function_signature_is_noreturn (anal->sdb_types, type_name,
+		function? function->is_noreturn: false);
 	free (type_name);
 	return signature;
 
@@ -3001,6 +2995,28 @@ beach:
 	free (type_name);
 	r_anal_function_signature_free (signature);
 	return NULL;
+}
+
+static RAnalFunctionSignature *function_get_signature(RAnalFunction *function, bool load_types) {
+	R_RETURN_VAL_IF_FAIL (function && function->anal && function->anal->sdb_types, NULL);
+	RAnal *anal = function->anal;
+	if (load_types) {
+		r_anal_types_ensure_loaded (anal);
+	}
+	char *type_name = function_signature_type_name (anal, function);
+	if (!type_name) {
+		return NULL;
+	}
+	return function_signature_build (anal, function, type_name, load_types);
+}
+
+R_IPI RAnalFunctionSignature *r_anal_function_signature_from_type_name(RAnal *anal, const char *name) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && name, NULL);
+	char *type_name = function_signature_try_type_name (anal->sdb_types, name);
+	if (!type_name) {
+		return NULL;
+	}
+	return function_signature_build (anal, NULL, type_name, false);
 }
 
 R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *function) {
