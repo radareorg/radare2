@@ -2007,6 +2007,7 @@ R_API bool r_anal_function_snapshot_view(const RAnalFunctionSnapshot *snapshot, 
 			? (size_t)r_list_length (snapshot->context.fcn_slots)
 			: 0,
 		.revision_identity = snapshot->revision_identity,
+		.content_identity = snapshot->content_identity,
 		.num_types = snapshot->type_graph.num_types,
 		.num_aggregates = snapshot->type_graph.num_aggregates,
 		.num_blocks = snapshot->image.num_blocks,
@@ -6301,6 +6302,10 @@ static RAnalFunctionSnapshot *function_snapshot_collect_with_limits_unlocked(RAn
 		snapshot->capabilities |= R_ANAL_FUNCTION_SNAPSHOT_CAP_CALL_SITE_INTERFACES;
 	}
 	snapshot->revision_identity = function_snapshot_hash (snapshot);
+	// The same hash, before any callee is attached and before a caller may
+	// overwrite the revision with its own. For the function asked for the two
+	// are equal; for a callee only this one survives.
+	snapshot->content_identity = snapshot->revision_identity;
 	ctx->context_hash = snapshot->revision_identity;
 	return snapshot;
 
@@ -6400,6 +6405,9 @@ static void function_snapshot_collect_callees_unlocked(RAnal *anal, RAnalFunctio
 		// function in it. A consumer reasoning across a call has to be able to
 		// tell that these bodies were read together, and a per-function hash
 		// says the opposite about every member.
+		// Only the revision. `content_identity` stays the callee's own hash,
+		// computed by its own collect above, so a consumer can tell both that
+		// these bodies were read together and which body this is.
 		callee_snapshot->revision_identity = snapshot->revision_identity;
 		collected[count++] = callee_snapshot;
 	}

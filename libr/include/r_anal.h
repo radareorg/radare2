@@ -364,7 +364,7 @@ typedef bool (*RAnalFunctionSnapshotCallback)(const RAnalFunctionSnapshot *snaps
 // the numbers move for reasons that have nothing to do with whether the API a
 // provider needs is present.
 #define R_ANAL_FUNCTION_SNAPSHOT_API 1
-#define R_ANAL_FUNCTION_SNAPSHOT_SCHEMA_VERSION 14
+#define R_ANAL_FUNCTION_SNAPSHOT_SCHEMA_VERSION 15
 typedef enum {
 	R_ANAL_FUNCTION_SNAPSHOT_CAP_SIGNATURE = 1ULL << 0,
 	R_ANAL_FUNCTION_SNAPSHOT_CAP_REGISTER_ARGS = 1ULL << 1,
@@ -620,6 +620,10 @@ typedef struct r_anal_function_snapshot_view_t {
 	size_t num_stack_slots;
 	// Stable diagnostic/cache identity of the owned payload, never proof authority.
 	ut64 revision_identity;
+	// Identity of this function's own payload rather than of the capture it
+	// arrived in. Equal to revision_identity for the function asked for, and
+	// its own hash for a callee collected beside it.
+	ut64 content_identity;
 	size_t num_types;
 	size_t num_aggregates;
 	size_t num_blocks;
