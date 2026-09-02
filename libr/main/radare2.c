@@ -1866,7 +1866,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		// no flagspace selected by default the beginning
 		r_flag_space_set (r->flags, NULL);
 		/* load <file>.r2 */
-		{
+		if (mr.run_rc) {
 			char *f = r_str_newf ("%s.r2", mr.pfile);
 			const char *uri_splitter = strstr (f, "://");
 			const char *path = uri_splitter? uri_splitter + 3: f;
@@ -1893,7 +1893,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_core_cmd0 (r, "aei"); // should be implicit
 		r_core_block_read (r);
 	}
-	{
+	if (mr.run_rc) {
 		char *global_rc = r_str_r2_prefix (R2_GLOBAL_RC);
 		if (r_file_exists (global_rc)) {
 			(void)r_core_run_script (r, global_rc);
