@@ -715,7 +715,7 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 addr, ...
 				break;
 			}
 		}
-		if (ret && !best) {
+		if (ret && !best && !prionospace) {
 			// this is the best flag we can find, let's stop immediately
 			break;
 		}
