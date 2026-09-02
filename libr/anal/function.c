@@ -807,7 +807,7 @@ static bool fcn_context_has_callee(RList *callees, ut64 call_addr, ut64 addr) {
 	return false;
 }
 
-static bool fcn_context_append_callee(RAnal *anal, RList *callees, ut64 call_addr, ut64 addr) {
+static bool fcn_context_append_callee(RAnal *anal, RList *callees, ut64 call_addr, ut64 addr, RAnalCallTransfer transfer) {
 	RAnalFcnCallee *callee;
 	R_RETURN_VAL_IF_FAIL (anal && callees, false);
 	if (addr == UT64_MAX || fcn_context_has_callee (callees, call_addr, addr)) {
@@ -822,11 +822,172 @@ static bool fcn_context_append_callee(RAnal *anal, RList *callees, ut64 call_add
 	callee->name = fcn_context_resolve_callee_name (anal, addr);
 	callee->linkage = fcn_context_resolve_callee_linkage (anal, addr);
 	callee->signature = fcn_context_resolve_callee_signature (anal, addr);
+	callee->transfer = transfer;
+	r_list_append (callees, callee);
+	return true;
+}
+
+static const char *fcn_context_reloc_name(const RBinReloc *reloc) {
+	const RBinName *name = reloc->import? reloc->import->name
+		: reloc->symbol? reloc->symbol->name: NULL;
+	if (!name) {
+		return NULL;
+	}
+	if (R_STR_ISNOTEMPTY (name->name)) {
+		return name->name;
+	}
+	if (R_STR_ISNOTEMPTY (name->oname)) {
+		return name->oname;
+	}
+	return R_STR_ISNOTEMPTY (name->fname)? name->fname: NULL;
+}
+
+// A callee reached by jumping through a value loaded from a relocated slot.
+// The relocation is what names it: nothing at the slot address is code, so
+// the name, the linkage and the prototype all come from the relocation record
+// rather than from a function at `addr`. A relocation with no name offers
+// nothing, because a prototype cannot be looked up for it.
+static bool fcn_context_append_slot_callee(RAnal *anal, RList *callees, ut64 call_addr, ut64 slot, const RBinReloc *reloc) {
+	RAnalFcnCallee *callee;
+	R_RETURN_VAL_IF_FAIL (anal && callees && reloc, false);
+	const char *name = fcn_context_reloc_name (reloc);
+	if (!name || fcn_context_has_callee (callees, call_addr, slot)) {
+		return true;
+	}
+	callee = R_NEW0 (RAnalFcnCallee);
+	if (!callee) {
+		return false;
+	}
+	callee->call_addr = call_addr;
+	callee->addr = slot;
+	callee->name = strdup (name);
+	if (!callee->name) {
+		fcn_context_callee_free (callee);
+		return false;
+	}
+	callee->linkage = reloc->import? R_ANAL_FCN_CALLEE_IMPORTED
+		: reloc->symbol? R_ANAL_FCN_CALLEE_INTERNAL: R_ANAL_FCN_CALLEE_UNKNOWN;
+	callee->signature = r_anal_function_signature_from_type_name (anal, name);
+	callee->transfer = R_ANAL_CALL_TRANSFER_TAIL_SLOT;
 	r_list_append (callees, callee);
 	return true;
 }
 
 static int function_image_target_classify(const RAnalFunctionImageSnapshot *image, ut64 target);
+
+// Whether the instruction at transfer_addr, the last one of the block, jumps
+// through a value rather than to a fixed address. The block records no
+// successor either way, which is how the analysis says it does not know where
+// control goes, and a return or a trap looks the same from there; only the
+// instruction itself tells them apart. The memory operand of a jump that reads
+// its target straight from memory is handed back, because that is the slot.
+static bool fcn_context_block_jumps_through_value(RAnal *anal, const RAnalSnapshotBlock *block, ut64 transfer_addr, ut64 *memory_operand) {
+	RAnalOp op;
+	*memory_operand = UT64_MAX;
+	const ut64 offset = transfer_addr - block->addr;
+	if (offset >= block->size || block->size - offset > INT_MAX) {
+		return false;
+	}
+	r_anal_op_init (&op);
+	const int decoded = r_anal_op (anal, &op, transfer_addr, block->bytes + offset,
+		(int)(block->size - offset), R_ARCH_OP_MASK_BASIC);
+	const ut32 base = op.type & 0xffff;
+	const bool conditional = (op.type & R_ANAL_OP_TYPE_COND) != 0;
+	const bool through_memory = base == R_ANAL_OP_TYPE_JMP && (op.type & R_ANAL_OP_TYPE_MEM) != 0;
+	const bool through_value = decoded > 0 && !conditional
+		&& (base == R_ANAL_OP_TYPE_UJMP || through_memory);
+	if (through_value && through_memory) {
+		*memory_operand = op.ptr;
+	}
+	r_anal_op_fini (&op);
+	return through_value;
+}
+
+static bool fcn_context_offer_slot_callee(RAnal *anal, RList *callees, ut64 call_addr, ut64 slot) {
+	if (slot == UT64_MAX) {
+		return true;
+	}
+	const RBinReloc *reloc = anal->binb.get_reloc_at (anal->binb.bin, slot);
+	return !reloc || fcn_context_append_slot_callee (anal, callees, call_addr, slot, reloc);
+}
+
+// A block that ends in a jump through a value may be a tail transfer to the
+// function a relocated slot names. Every relocated slot the block refers to is
+// offered: the jump's own memory operand where it has one, and the target of
+// every data reference the block makes. Which of them the jump actually reads
+// is machine evidence the consumer holds and this side does not, so this
+// offers rather than decides, and an offer the machine cannot confirm is
+// simply unmatched.
+static bool fcn_context_collect_slot_callees(RAnal *anal, RList *callees, const RAnalSnapshotBlock *block, ut64 transfer_addr, const RVecAnalRef *refs) {
+	if (!anal->binb.bin || !anal->binb.get_reloc_at || !block->bytes) {
+		return true;
+	}
+	ut64 memory_operand = UT64_MAX;
+	if (!fcn_context_block_jumps_through_value (anal, block, transfer_addr, &memory_operand)) {
+		return true;
+	}
+	if (!fcn_context_offer_slot_callee (anal, callees, transfer_addr, memory_operand)) {
+		return false;
+	}
+	if (!refs) {
+		return true;
+	}
+	const ut64 block_end = block->addr + block->size;
+	const size_t len = RVecAnalRef_length (refs);
+	size_t i;
+	for (i = 0; i < len; i++) {
+		const RAnalRef *ref = RVecAnalRef_at (refs, i);
+		if (!ref || ref->at < block->addr || ref->at >= block_end
+			|| R_ANAL_REF_TYPE_MASK (ref->type) != R_ANAL_REF_TYPE_DATA) {
+			continue;
+		}
+		if (!fcn_context_offer_slot_callee (anal, callees, transfer_addr, ref->addr)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+// The jumps that leave the function for another one. A jump whose target is
+// exactly where a function starts is a tail transfer: the jump is the call,
+// and the callee's return is this function's. The function map decides it,
+// not the shape of the jump, so a jump into the middle of another function
+// stays what it is. The transfer is recorded at the block's last instruction,
+// which is the one that performs it.
+static bool fcn_context_collect_tail_callees(RAnal *anal, RList *callees, const RAnalFunctionImageSnapshot *image, const RVecAnalRef *refs) {
+	size_t block_index;
+	for (block_index = 0; block_index < image->num_blocks; block_index++) {
+		const RAnalSnapshotBlock *block = &image->blocks[block_index];
+		RAnalBlock *bb = r_anal_get_block_at (anal, block->addr);
+		if (!bb || bb->size != block->size || bb->ninstr < 1) {
+			continue;
+		}
+		const ut64 transfer_addr = r_anal_bb_opaddr_i (bb, bb->ninstr - 1);
+		if (transfer_addr < block->addr || transfer_addr >= block->addr + block->size) {
+			continue;
+		}
+		size_t successor_index;
+		for (successor_index = 0; successor_index < block->num_successors; successor_index++) {
+			const RAnalSnapshotSuccessor *successor = &block->successors[successor_index];
+			if (successor->kind != R_ANAL_SNAPSHOT_SUCCESSOR_DIRECT
+				|| function_image_target_classify (image, successor->target_addr) != 0
+				|| !r_anal_get_function_at (anal, successor->target_addr)) {
+				continue;
+			}
+			if (!fcn_context_append_callee (anal, callees, transfer_addr,
+					successor->target_addr, R_ANAL_CALL_TRANSFER_TAIL_JUMP)) {
+				return false;
+			}
+		}
+		if (block->num_successors || block->switch_addr != UT64_MAX) {
+			continue;
+		}
+		if (!fcn_context_collect_slot_callees (anal, callees, block, transfer_addr, refs)) {
+			return false;
+		}
+	}
+	return true;
+}
 
 static RList *fcn_context_collect_callees(RAnal *anal, const RAnalFunctionImageSnapshot *image) {
 	RVecAnalRef *refs;
@@ -847,14 +1008,20 @@ static RList *fcn_context_collect_callees(RAnal *anal, const RAnalFunctionImageS
 				|| function_image_target_classify (image, ref->at) == 0) {
 				continue;
 			}
-			if (!fcn_context_append_callee (anal, callees, ref->at, ref->addr)) {
+			if (!fcn_context_append_callee (anal, callees, ref->at, ref->addr,
+					R_ANAL_CALL_TRANSFER_CALL)) {
 				RVecAnalRef_free (refs);
 				r_list_free (callees);
 				return NULL;
 			}
 		}
-		RVecAnalRef_free (refs);
 	}
+	if (!fcn_context_collect_tail_callees (anal, callees, image, refs)) {
+		RVecAnalRef_free (refs);
+		r_list_free (callees);
+		return NULL;
+	}
+	RVecAnalRef_free (refs);
 	return callees;
 }
 
@@ -2406,6 +2573,15 @@ R_API bool r_anal_function_snapshot_call_site_view(const RAnalFunctionSnapshot *
 	return true;
 }
 
+R_API bool r_anal_function_snapshot_call_site_transfer(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalCallTransfer *transfer) {
+	R_RETURN_VAL_IF_FAIL (snapshot && transfer, false);
+	if (index >= snapshot->num_call_site_interfaces) {
+		return false;
+	}
+	*transfer = snapshot->call_site_interfaces[index].transfer;
+	return true;
+}
+
 R_API bool r_anal_function_snapshot_call_site_target_name(const RAnalFunctionSnapshot *snapshot, size_t index, char *buffer, size_t buffer_size) {
 	R_RETURN_VAL_IF_FAIL (snapshot, false);
 	if (index >= snapshot->num_call_site_interfaces) {
@@ -2837,6 +3013,7 @@ static ut64 function_snapshot_hash_call_interface(ut64 hash, const RAnalCallSite
 	hash = function_snapshot_hash_storage (hash, &interface->result_storage);
 	hash = function_context_hash_mix (hash, interface->variadic? 1: 0);
 	hash = function_context_hash_mix (hash, interface->noreturn? 1: 0);
+	hash = function_context_hash_mix (hash, interface->transfer);
 	return function_context_hash_mix (hash, interface->complete? 1: 0);
 }
 
@@ -5588,15 +5765,22 @@ static bool call_site_interface_snapshot_collect_one(
 	const RAnalFunctionSnapshotLimits *limits) {
 	interface->instruction_addr = callee->call_addr;
 	interface->target_addr = callee->addr;
-	RAnalFunction *target = r_anal_get_fcn_in (anal, callee->addr, R_ANAL_FCN_TYPE_ANY);
+	interface->transfer = callee->transfer;
+	// A slot is not code, so no function is looked up at it: the relocation
+	// named the callee when it was collected, and the name and prototype it
+	// gave travel on the callee itself.
+	const bool through_slot = callee->transfer == R_ANAL_CALL_TRANSFER_TAIL_SLOT;
+	RAnalFunction *target = through_slot? NULL
+		: r_anal_get_fcn_in (anal, callee->addr, R_ANAL_FCN_TYPE_ANY);
 	const bool target_is_exact = target && target->addr == callee->addr;
-	if (target_is_exact && R_STR_ISNOTEMPTY (target->name)) {
-		interface->target_name = strdup (target->name);
+	const char *target_name = target_is_exact? target->name: through_slot? callee->name: NULL;
+	if (R_STR_ISNOTEMPTY (target_name)) {
+		interface->target_name = strdup (target_name);
 		if (!interface->target_name) {
 			return false;
 		}
 	}
-	if (!callee->signature || !target_is_exact) {
+	if (!callee->signature || (!target_is_exact && !through_slot)) {
 		return true;
 	}
 	const char *calling_convention = callee->signature->callconv;
@@ -5678,8 +5862,8 @@ static bool call_site_interface_snapshot_collect_one(
 		|| snapshot_parameter_storages_overlap (interface->arguments, argument_count)) {
 		arguments_complete = false;
 	}
-	interface->variadic = target->is_variadic || signature_variadic;
-	interface->noreturn = callee->signature->noreturn || target->is_noreturn;
+	interface->variadic = (target && target->is_variadic) || signature_variadic;
+	interface->noreturn = callee->signature->noreturn || (target && target->is_noreturn);
 	bool result_complete = false;
 	if (!strcmp (r_str_get (callee->signature->ret_type), "void")) {
 		interface->result_kind = R_ANAL_SNAPSHOT_RETURN_VOID;
