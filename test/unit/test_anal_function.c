@@ -367,6 +367,63 @@ static bool test_r_anal_function_snapshot_reads_current_state_only(void) {
 	mu_end;
 }
 
+static bool test_r_anal_function_snapshot_carries_linked_data_object_type(void) {
+	RCore *core = snapshot_test_core_new ();
+	RAnal *anal = core? core->anal: NULL;
+	mu_assert_notnull (anal, "create typed-data snapshot analysis");
+	RAnalFunction *fcn = r_anal_create_function (
+		anal, "reads_typed_global", 0x6800, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "create typed-data snapshot function");
+	mu_assert_true (snapshot_test_ensure_block (anal, fcn, 1),
+		"back typed-data function with exact bytes");
+	mu_assert_notnull (r_flag_set (core->flags, "global_counter", 0x7000, 4),
+		"name typed data object");
+	mu_assert_true (r_anal_xrefs_setf (
+		anal, fcn, fcn->addr, 0x7000, R_ANAL_REF_TYPE_DATA),
+		"record typed data reference");
+	mu_assert_true (set_function_type_link (anal, "int32_t", 0x7000),
+		"link source-owned data type by address");
+
+	RAnalFunctionSnapshot *snapshot =
+		r_anal_function_snapshot_collect_bounded (anal, fcn, NULL);
+	mu_assert_notnull (snapshot, "collect typed-data snapshot");
+	mu_assert_eq (snapshot->image.num_data_symbols, 1, "one referenced data object");
+	RAnalSnapshotDataSymbolView view;
+	mu_assert_true (r_anal_function_snapshot_data_symbol_view (snapshot, 0, &view),
+		"view typed data object");
+	mu_assert_eq (view.addr, 0x7000, "typed data address");
+	mu_assert_eq (view.name_length, strlen ("global_counter"), "typed data name length");
+	mu_assert_eq (view.type_name_length, strlen ("int32_t"), "typed data type length");
+	char name[32];
+	char type_name[32];
+	mu_assert_true (r_anal_function_snapshot_data_symbol_name (
+		snapshot, 0, name, sizeof (name)), "copy typed data name");
+	mu_assert_true (r_anal_function_snapshot_data_symbol_type_name (
+		snapshot, 0, type_name, sizeof (type_name)), "copy typed data type");
+	mu_assert_streq (name, "global_counter", "exact typed data name");
+	mu_assert_streq (type_name, "int32_t", "exact source-owned data type spelling");
+
+	const ut64 old_revision = snapshot->revision_identity;
+	mu_assert_true (set_function_type_link (anal, "uint32_t", 0x7000),
+		"replace source-owned data type");
+	RAnalFunctionSnapshot *changed =
+		r_anal_function_snapshot_collect_bounded (anal, fcn, NULL);
+	mu_assert_notnull (changed, "collect changed typed-data snapshot");
+	mu_assert_neq (changed->revision_identity, old_revision,
+		"data type participates in snapshot identity");
+	mu_assert_true (r_anal_function_snapshot_data_symbol_type_name (
+		changed, 0, type_name, sizeof (type_name)), "copy changed data type");
+	mu_assert_streq (type_name, "uint32_t", "changed data type is current");
+	mu_assert_true (r_anal_function_snapshot_data_symbol_type_name (
+		snapshot, 0, type_name, sizeof (type_name)), "old data type remains readable");
+	mu_assert_streq (type_name, "int32_t", "old snapshot remains immutable");
+
+	r_anal_function_snapshot_free (changed);
+	r_anal_function_snapshot_free (snapshot);
+	r_core_free (core);
+	mu_end;
+}
+
 static bool test_r_anal_function_snapshot_does_not_mutate_var_cache(void) {
 	RCore *core = snapshot_test_core_new ();
 	RAnal *anal = core? core->anal: NULL;
@@ -3272,6 +3329,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_get_signature_falls_back_to_valid_callconv);
 	mu_run_test (test_r_anal_function_context_collect_is_conservative_for_stack_slots);
 	mu_run_test (test_r_anal_function_snapshot_reads_current_state_only);
+	mu_run_test (test_r_anal_function_snapshot_carries_linked_data_object_type);
 	mu_run_test (test_r_anal_function_snapshot_does_not_mutate_var_cache);
 	mu_run_test (test_r_anal_function_snapshot_distinguishes_split_fallthrough);
 	mu_run_test (test_r_anal_function_snapshot_limits_bound_type_clone);

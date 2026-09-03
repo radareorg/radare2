@@ -1085,6 +1085,7 @@ static void function_image_snapshot_fini(RAnalFunctionImageSnapshot *image) {
 		size_t symbol;
 		for (symbol = 0; symbol < image->num_data_symbols; symbol++) {
 			free (image->data_symbols[symbol].name);
+			free (image->data_symbols[symbol].type_name);
 		}
 		free (image->data_symbols);
 		size_t table;
@@ -1674,6 +1675,11 @@ static bool function_image_data_symbols_collect(RAnal *anal,
 				if (!symbol->name) {
 					RVecAnalRef_free (refs);
 					return false;
+				}
+				symbol->type_name = r_type_link_at (anal->sdb_types, ref->addr);
+				if (symbol->type_name && !*symbol->type_name) {
+					free (symbol->type_name);
+					symbol->type_name = NULL;
 				}
 				image->num_data_symbols++;
 			}
@@ -2808,6 +2814,7 @@ R_API bool r_anal_function_snapshot_data_symbol_view(const RAnalFunctionSnapshot
 	*view = (RAnalSnapshotDataSymbolView) {
 		.addr = symbol->addr,
 		.name_length = strlen (r_str_get (symbol->name)),
+		.type_name_length = strlen (r_str_get (symbol->type_name)),
 	};
 	return true;
 }
@@ -2818,6 +2825,15 @@ R_API bool r_anal_function_snapshot_data_symbol_name(const RAnalFunctionSnapshot
 		return false;
 	}
 	return snapshot_owned_string_copy (r_str_get (snapshot->image.data_symbols[index].name), buffer, buffer_size);
+}
+
+R_API bool r_anal_function_snapshot_data_symbol_type_name(const RAnalFunctionSnapshot *snapshot, size_t index, char *buffer, size_t buffer_size) {
+	R_RETURN_VAL_IF_FAIL (snapshot, false);
+	if (index >= snapshot->image.num_data_symbols
+		|| !snapshot->image.data_symbols[index].type_name) {
+		return false;
+	}
+	return snapshot_owned_string_copy (snapshot->image.data_symbols[index].type_name, buffer, buffer_size);
 }
 
 R_API bool r_anal_function_snapshot_successor_view(const RAnalFunctionSnapshot *snapshot, size_t block_index, size_t successor_index, RAnalSnapshotSuccessorView *view) {
@@ -3086,6 +3102,13 @@ static ut64 function_snapshot_hash_image(ut64 hash, const RAnalFunctionImageSnap
 	hash = function_context_hash_mix (hash, image->num_external_exits);
 	for (i = 0; i < image->num_external_exits; i++) {
 		hash = function_context_hash_mix (hash, image->external_exits[i]);
+	}
+	hash = function_context_hash_mix (hash, image->num_data_symbols);
+	for (i = 0; i < image->num_data_symbols; i++) {
+		const RAnalSnapshotDataSymbol *symbol = &image->data_symbols[i];
+		hash = function_context_hash_mix (hash, symbol->addr);
+		hash = function_context_hash_string (hash, symbol->name);
+		hash = function_context_hash_string (hash, symbol->type_name);
 	}
 	return hash;
 }
