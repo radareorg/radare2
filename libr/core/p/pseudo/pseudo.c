@@ -2267,6 +2267,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	r_config_hold (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.sub.names", NULL);
 	r_config_hold (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
 	r_config_hold (hc, "io.cache", "asm.syntax", "asm.addr.relto", "asm.addr.base", NULL);
+	r_config_hold (hc, "emu.pre", "emu.bb", NULL);
 	r_config_set_i (core->config, "scr.color", 0);
 	r_config_set_b (core->config, "asm.stackptr", false);
 	r_config_set_b (core->config, "asm.pseudo", true);
@@ -2279,6 +2280,8 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	r_config_set_b (core->config, "asm.emu", true);
 	r_config_set_b (core->config, "emu.str", true);
 	r_config_set_b (core->config, "emu.write", true);
+	r_config_set_b (core->config, "emu.pre", false);
+	r_config_set_b (core->config, "emu.bb", false);
 	r_config_set_b (core->config, "asm.lines.fcn", false);
 	r_config_set_b (core->config, "asm.comments", true);
 	r_config_set_b (core->config, "asm.functions", false);
@@ -2289,6 +2292,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	r_config_set (core->config, "asm.syntax", "intel");
 	r_config_set (core->config, "asm.addr.relto", "");
 	r_config_set_i (core->config, "asm.addr.base", 16);
+	r_io_cache_push (core->io);
 	r_core_cmd0 (core, "aeim");
 
 	r_strf_buffer (64);
@@ -2726,6 +2730,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	indent = 0;
 	print_line (&state, state.last_addr, indent, "}");
 	PRINTF ("\n");
+	r_io_cache_pop (core->io);
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	if (state.pj) {
