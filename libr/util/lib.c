@@ -300,6 +300,13 @@ static bool already_loaded(RLib *lib, const char *name, int type) {
 }
 
 R_API bool r_lib_open(RLib *lib, const char *file) {
+	if (r_str_endswith (file, ".r2so")) {
+		char *libpath = r_str_newf ("%.*s%s",
+			(int)strlen (file) - 4, file, R_LIB_EXT);
+		const bool res = r_lib_open (lib, libpath);
+		free (libpath);
+		return res;
+	}
 	/* ignored by filename */
 	if (!check_filename (file)) {
 		R_LOG_ERROR ("Invalid library extension: %s", file);
