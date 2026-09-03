@@ -135,11 +135,11 @@ void entry0 (void) {
     loc_0x00402042:
         eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
-        eax ()        // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_puts // int puts("Hello, World!")
-        dword [GetProcessHeap] () // 0x403088 // (pstr 0x00401000) "Hello, World!" // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
+        eax ()        // reloc.crtdll.dll_puts // int puts("Hello, World!")
+        dword [GetProcessHeap] () // 0x403088 // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
         push (eax)
         push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
-        dword [printf] () // 0x4030e0 // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_printf // int printf(">%p\n", 0x30e8)
+        dword [printf] () // 0x4030e0 // reloc.crtdll.dll_printf // int printf(">%p\n", 0x30e8)
         push (0)
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
@@ -159,7 +159,7 @@ void entry0 (void) {
  0x0040201a |         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
  0x0040201f |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x00402024 |         push (0)
- 0x00402026 |         dword [MessageBoxA] () // 0x4030b8 // (pstr 0x00401014) ">%p\n" // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x40100e, 0)
+ 0x00402026 |         dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x40100e, 0)
  0x0040202c |         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
  0x00402031 |         dword [puts] () // 0x4030dc // reloc.crtdll.dll_puts // int puts("LABEL")
  0x00402037 |         esp += 4      // (pstr 0x0040100e) "LABEL"
@@ -169,16 +169,16 @@ void entry0 (void) {
  0x00402042 |     loc_0x00402042:
  0x00402042 |         eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
  0x00402047 |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
- 0x0040204c |         eax ()        // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_puts // int puts("Hello, World!")
- 0x0040204e |         dword [GetProcessHeap] () // 0x403088 // (pstr 0x00401000) "Hello, World!" // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
+ 0x0040204c |         eax ()        // reloc.crtdll.dll_puts // int puts("Hello, World!")
+ 0x0040204e |         dword [GetProcessHeap] () // 0x403088 // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
  0x00402054 |         push (eax)
  0x00402055 |         push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
- 0x0040205a |         dword [printf] () // 0x4030e0 // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_printf // int printf(">%p\n", 0x30e8)
+ 0x0040205a |         dword [printf] () // 0x4030e0 // reloc.crtdll.dll_printf // int printf(">%p\n", 0x30e8)
  0x00402060 |         push (0)
  0x00402062 |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x00402067 |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x0040206c |         push (0)
- 0x0040206e |         dword [MessageBoxA] () // 0x4030b8 // (pstr 0x00402074) "j" // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x401000, 0)
+ 0x0040206e |         dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x401000, 0)
  0x00402074 |         push (0)
  0x00402076 |         dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(0)
  0x00402076 | }
@@ -322,7 +322,7 @@ void fcn.00000000 (int64_t arg1) {
         r3 = 0
         return
     loc_0x00000008: // orphan
-        r3 = 1                   // "#"
+        r3 = 1        // "#"
         return
 
 }
@@ -698,7 +698,7 @@ pdc~printf("Results
 pdc~printf("msg
 EOF2
 EXPECT=<<EOF2
-        sym.imp.printf () // int printf("Results : a : %u , b: %ld\n", 21, 21)
+        sym.imp.printf () // int printf("Results : a : %u , b: %ld\n", 30, 0x2710)
         sym.imp.printf () // int printf("msg : %s\n", "")
 EOF2
 RUN
@@ -1483,7 +1483,7 @@ CCu base64:Z290byBsb2NfMHgwMDAwMDAwZDs= @ 0x00000008
 CCu base64:cmV0dXJuIHJheDs= @ 0x00000008
 CCu base64:bG9jXzB4MDAwMDAwMGQ6 @ 0x0000000d
 CCu base64:ZWF4ID0gMQ== @ 0x0000000d
-CCu base64:Z290byBsb2NfMCAgICAvLyBmY24uMDAwMDAwMDAoMHgwKQ== @ 0x00000012
+CCu base64:Z290byBsb2NfMCAgICAvLyBmY24uMDAwMDAwMDAoMHgxKQ== @ 0x00000012
 CCu base64:YnJlYWs7 @ 0x0000000d
 CCu base64:bG9jXzB4MDAwMDAwMDg6IC8vIG9ycGhhbg== @ 0x00000008
 CCu base64:diA9IGVkaSAtIDkgICAvLyBhcmcx @ 0x00000008
@@ -1637,5 +1637,77 @@ pdc~catch (
 pdc~end try
 EOF
 EXPECT=<<EOF
+EOF
+RUN
+
+NAME=pdc emu string args are not clipped to the block size
+FILE=bins/elf/analysis/clark
+ARGS=-e pdc.structured=1
+CMDS=<<EOF
+aa
+s main
+pdc~puts("Booh,puts("No no
+EOF
+EXPECT=<<EOF
+        sym.imp.puts () // int puts("Booh! Don't debug me!")
+            sym.imp.puts () // int puts("No no no! Don't patch me!")
+EOF
+RUN
+
+NAME=pdc leaves no emulated writes in the io cache
+FILE=bins/elf/format
+CMDS=<<EOF
+aa
+s main
+pdc~zzznomatch
+wc~?
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+NAME=pdc structured reports the same emulated args as linear
+FILE=bins/elf/format
+ARGS=-e pdc.structured=1
+CMDS=<<EOF
+aa
+s main
+pdc~printf("Results
+EOF
+EXPECT=<<EOF
+    sym.imp.printf () // int printf("Results : a : %u , b: %ld\n", 30, 0x2710)
+EOF
+RUN
+
+NAME=pdc emulates each block once
+FILE=malloc://0x2000
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488b1c2500080000488b0425000800004883c00148890425000800004883fb037c1e @ 0
+wx 488b1c2508080000488b0425080800004883c0014889042508080000eb20 @ 34
+wx 488b1c2510080000488b0425100800004883c0014889042510080000eb02 @ 64
+wx 9090 @ 94
+wx 488b1c2518080000488b0425180800004883c0014889042518080000c3 @ 96
+af @ 0
+pdc @ 0~0x808
+EOF
+EXPECT=<<EOF
+        rbx = qword [0x808] // [0x808:8]=0
+        rax = qword [0x808] // [0x808:8]=0
+        qword [0x808] = rax
+EOF
+RUN
+
+NAME=pdc renders a landing pad no edge reaches
+FILE=bins/elf/demangle-test-cpp
+CMDS=<<EOF
+aaa
+pdco @ 0x15aa~__cxa_begin_catch,loc_0x000017d8:,loc_0x000017b6:
+EOF
+EXPECT=<<EOF
+ 0x00001786 |             sym.imp.__cxa_begin_catch ()
+ 0x000017b6 |     loc_0x000017b6: // orphan
+ 0x000017d8 |     loc_0x000017d8: // orphan
 EOF
 RUN
