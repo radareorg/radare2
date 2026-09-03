@@ -947,14 +947,30 @@ static bool bb_ends_with_terminator(RCore *core, RAnalBlock *bb) {
 		|| t == R_ANAL_OP_TYPE_RET || t == R_ANAL_OP_TYPE_CRET;
 }
 
-static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
-	RCons *cons = r_core_get_cons (state->core);
+// pD would shrink the blocksize to bb->size, which clips string arguments
+static char *render_bb_raw(RCore *core, RAnalBlock *bb) {
+	ut8 *buf = malloc (bb->size);
+	if (!buf) {
+		return NULL;
+	}
+	r_io_read_at (core->io, bb->addr, buf, bb->size);
+	RCons *cons = r_core_get_cons (core);
+	const ut64 oaddr = core->addr;
+	const bool html = r_config_get_b (core->config, "scr.html");
+	r_config_set_b (core->config, "scr.html", false);
+	r_core_seek (core, bb->addr, true);
 	r_cons_push (cons);
-	bool html = r_config_get_b (state->core->config, "scr.html");
-	r_config_set_b (state->core->config, "scr.html", false);
-	char *code = r_core_cmd_strf (state->core, "pD %" PFMT64d " @ 0x%08" PFMT64x, bb->size, bb->addr);
+	r_core_print_disasm (core, bb->addr, buf, bb->size, bb->size, 0, NULL, true, false, NULL, NULL);
+	char *code = strdup (r_str_get (r_cons_get_buffer (cons, NULL)));
 	r_cons_pop (cons);
-	r_config_set_b (state->core->config, "scr.html", html);
+	r_core_seek (core, oaddr, true);
+	r_config_set_b (core->config, "scr.html", html);
+	free (buf);
+	return code;
+}
+
+static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
+	char *code = render_bb_raw (state->core, bb);
 	if (R_STR_ISEMPTY (code)) {
 		free (code);
 		return NULL;
