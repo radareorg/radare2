@@ -1432,6 +1432,120 @@ static bool dwarf_render_exact_type(Context *ctx, ut64 offset, RStrBuf *type) {
 	return false;
 }
 
+static bool dwarf_exact_global_address_operand(Context *ctx,
+		const RBinDwarfAttrValue *location, R_OUT ut64 *address) {
+	R_RETURN_VAL_IF_FAIL (ctx && ctx->anal && ctx->anal->config
+		&& location && address, false);
+	if (location->kind != DW_AT_KIND_BLOCK || !location->block.data) {
+		return false;
+	}
+	const int address_size = ctx->anal->config->bits / 8;
+	if ((address_size != 1 && address_size != 2
+			&& address_size != 4 && address_size != 8)
+		|| location->block.length != (size_t)address_size + 1
+		|| location->block.data[0] != DW_OP_addr) {
+		return false;
+	}
+	const ut8 *operand = location->block.data + 1;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (ctx->anal->config);
+	switch (address_size) {
+	case 1:
+		*address = r_read_ble8 (operand);
+		break;
+	case 2:
+		*address = r_read_ble16 (operand, be);
+		break;
+	case 4:
+		*address = r_read_ble32 (operand, be);
+		break;
+	case 8:
+		*address = r_read_ble64 (operand, be);
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+static bool dwarf_collect_exact_global_address(Context *ctx,
+		const RBinDwarfDie *die, R_OUT ut64 *address) {
+	R_RETURN_VAL_IF_FAIL (ctx && die && address, false);
+	SetU *visited = set_u_new ();
+	if (!visited) {
+		return false;
+	}
+	bool exact = false;
+	bool has_address = false;
+	size_t depth = 0;
+	for (;;) {
+		if (!die || !die->attr_values || die->tag != DW_TAG_variable
+			|| depth++ >= DWARF_EXACT_REFERENCE_LIMIT
+			|| set_u_contains (visited, die->offset)) {
+			goto beach;
+		}
+		set_u_add (visited, die->offset);
+		const RBinDwarfAttrValue *origin = NULL;
+		size_t origin_count = 0;
+		size_t location_count = 0;
+		const RBinDwarfAttrValue *value;
+		R_VEC_FOREACH (die->attr_values, value) {
+			if (value->attr_name == DW_AT_location) {
+				ut64 candidate;
+				location_count++;
+				if (!dwarf_exact_global_address_operand (
+						ctx, value, &candidate)
+					|| (has_address && candidate != *address)) {
+					goto beach;
+				}
+				*address = candidate;
+				has_address = true;
+			} else if (value->attr_name == DW_AT_specification
+				|| value->attr_name == DW_AT_abstract_origin) {
+				origin_count++;
+				if (value->kind != DW_AT_KIND_REFERENCE) {
+					goto beach;
+				}
+				origin = value;
+			}
+		}
+		if (location_count > 1 || origin_count > 1) {
+			goto beach;
+		}
+		if (!origin) {
+			break;
+		}
+		die = ht_up_find (ctx->die_map, origin->reference, NULL);
+	}
+	exact = has_address;
+beach:
+	set_u_free (visited);
+	return exact;
+}
+
+static void parse_data_object_type_link(Context *ctx, const RBinDwarfDie *die) {
+	DwarfExactDecl decl = { 0 };
+	ut64 address;
+	if (!dwarf_collect_exact_decl (
+			ctx, die, DW_TAG_variable, false, &decl, NULL)
+		|| !decl.has_type
+		|| !dwarf_collect_exact_global_address (ctx, die, &address)) {
+		return;
+	}
+	RStrBuf rendered;
+	r_strbuf_init (&rendered);
+	if (!dwarf_render_exact_type (ctx, decl.type_ref, &rendered)) {
+		r_strbuf_fini (&rendered);
+		return;
+	}
+	char *current = r_type_link_at (ctx->anal->sdb_types, address);
+	if (!current) {
+		(void)r_anal_types_set_link (
+			(RAnal *)ctx->anal, r_strbuf_get (&rendered), address);
+	}
+	free (current);
+	r_strbuf_fini (&rendered);
+}
+
 static const char *dwarf_exact_decl_name(Context *ctx, const DwarfExactDecl *decl) {
 	if (prefer_linkage_name (ctx->lang) && decl->linkage_name) {
 		return decl->linkage_name;
@@ -3505,6 +3619,9 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
 		break;
 	case DW_TAG_subprogram:
 		parse_function (ctx, idx);
+		break;
+	case DW_TAG_variable:
+		parse_data_object_type_link (ctx, die);
 		break;
 	case DW_TAG_compile_unit:
 		/* used for name demangling */

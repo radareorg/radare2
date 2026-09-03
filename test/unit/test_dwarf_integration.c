@@ -417,6 +417,10 @@ static bool test_dwarf_function_parsing_go(void) {
 	check_kv ("fcn.main_tree_iterInorder.name", "main.tree.iterInorder");
 	check_kv ("fcn.main_tree_iterInorder.addr", "0x491d90");
 	check_kv ("fcn.main_tree_iterInorder.sig", "void main.tree.iterInorder(main.tree t,func(int) visit);");
+	char *cache_line_type = r_type_link_at (anal->sdb_types, 0x5500e0);
+	mu_assert_streq (cache_line_type, "uintptr",
+		"exact fixed-address DWARF data object type is linked by address");
+	free (cache_line_type);
 
 	/* We do not parse variable information from .debug_frame that is this Go binary using, so
 	don't check variable information and add it in the future */
