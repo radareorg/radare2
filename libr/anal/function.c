@@ -875,18 +875,32 @@ static bool fcn_context_append_slot_callee(RAnal *anal, RList *callees, ut64 cal
 
 static int function_image_target_classify(const RAnalFunctionImageSnapshot *image, ut64 target);
 
-// Whether the instruction at transfer_addr, the last one of the block, jumps
-// through a value rather than to a fixed address. The block records no
-// successor either way, which is how the analysis says it does not know where
-// control goes, and a return or a trap looks the same from there; only the
-// instruction itself tells them apart. The memory operand of a jump that reads
-// its target straight from memory is handed back, because that is the slot.
-static bool fcn_context_block_jumps_through_value(RAnal *anal, const RAnalSnapshotBlock *block, ut64 transfer_addr, ut64 *memory_operand) {
+typedef enum {
+	FCN_TRANSFER_NONE = 0,
+	// `jmp target`, the target spelled in the instruction
+	FCN_TRANSFER_DIRECT_JUMP,
+	// `jmp [slot]` or `br reg`, the target read from somewhere
+	FCN_TRANSFER_VALUE_JUMP,
+} FcnContextTransferKind;
+
+// How the instruction at transfer_addr, the last one of its block, leaves.
+//
+// The block itself cannot answer this. A tail jump records no successor at
+// all: the function walk stops at a jump whose target is a named function or
+// an import, and it stops before it stores the edge, so a return, a trap and
+// a jump out of the function are indistinguishable from the block record.
+// Only the instruction tells them apart, so it is decoded here.
+//
+// `target` receives the address a direct jump names. `memory_operand` receives
+// the address a value jump reads its target from, when the instruction names
+// one; a jump through a register names none and leaves it absent.
+static FcnContextTransferKind fcn_context_block_transfer(RAnal *anal, const RAnalSnapshotBlock *block, ut64 transfer_addr, ut64 *target, ut64 *memory_operand) {
 	RAnalOp op;
+	*target = UT64_MAX;
 	*memory_operand = UT64_MAX;
 	const ut64 offset = transfer_addr - block->addr;
 	if (offset >= block->size || block->size - offset > INT_MAX) {
-		return false;
+		return FCN_TRANSFER_NONE;
 	}
 	r_anal_op_init (&op);
 	const int decoded = r_anal_op (anal, &op, transfer_addr, block->bytes + offset,
@@ -894,13 +908,20 @@ static bool fcn_context_block_jumps_through_value(RAnal *anal, const RAnalSnapsh
 	const ut32 base = op.type & 0xffff;
 	const bool conditional = (op.type & R_ANAL_OP_TYPE_COND) != 0;
 	const bool through_memory = base == R_ANAL_OP_TYPE_JMP && (op.type & R_ANAL_OP_TYPE_MEM) != 0;
-	const bool through_value = decoded > 0 && !conditional
-		&& (base == R_ANAL_OP_TYPE_UJMP || through_memory);
-	if (through_value && through_memory) {
-		*memory_operand = op.ptr;
+	FcnContextTransferKind kind = FCN_TRANSFER_NONE;
+	if (decoded > 0 && !conditional) {
+		if (base == R_ANAL_OP_TYPE_UJMP || through_memory) {
+			kind = FCN_TRANSFER_VALUE_JUMP;
+			if (through_memory) {
+				*memory_operand = op.ptr;
+			}
+		} else if (base == R_ANAL_OP_TYPE_JMP && op.jump != UT64_MAX) {
+			kind = FCN_TRANSFER_DIRECT_JUMP;
+			*target = op.jump;
+		}
 	}
 	r_anal_op_fini (&op);
-	return through_value;
+	return kind;
 }
 
 static bool fcn_context_offer_slot_callee(RAnal *anal, RList *callees, ut64 call_addr, ut64 slot) {
@@ -918,12 +939,8 @@ static bool fcn_context_offer_slot_callee(RAnal *anal, RList *callees, ut64 call
 // is machine evidence the consumer holds and this side does not, so this
 // offers rather than decides, and an offer the machine cannot confirm is
 // simply unmatched.
-static bool fcn_context_collect_slot_callees(RAnal *anal, RList *callees, const RAnalSnapshotBlock *block, ut64 transfer_addr, const RVecAnalRef *refs) {
-	if (!anal->binb.bin || !anal->binb.get_reloc_at || !block->bytes) {
-		return true;
-	}
-	ut64 memory_operand = UT64_MAX;
-	if (!fcn_context_block_jumps_through_value (anal, block, transfer_addr, &memory_operand)) {
+static bool fcn_context_collect_slot_callees(RAnal *anal, RList *callees, const RAnalSnapshotBlock *block, ut64 transfer_addr, ut64 memory_operand, const RVecAnalRef *refs) {
+	if (!anal->binb.bin || !anal->binb.get_reloc_at) {
 		return true;
 	}
 	if (!fcn_context_offer_slot_callee (anal, callees, transfer_addr, memory_operand)) {
@@ -979,10 +996,33 @@ static bool fcn_context_collect_tail_callees(RAnal *anal, RList *callees, const 
 				return false;
 			}
 		}
-		if (block->num_successors || block->switch_addr != UT64_MAX) {
+		if (block->switch_addr != UT64_MAX || !block->bytes) {
 			continue;
 		}
-		if (!fcn_context_collect_slot_callees (anal, callees, block, transfer_addr, refs)) {
+		// A tail jump usually records no successor to have found above. The
+		// function walk stops at a jump whose target is a named function or an
+		// import, and it stops before it stores the edge, so the block ends
+		// with an edge the analysis declined to keep rather than with none.
+		// The instruction still names the target, so it is decoded and the
+		// function map asked directly.
+		ut64 direct_target = UT64_MAX;
+		ut64 memory_operand = UT64_MAX;
+		const FcnContextTransferKind kind = fcn_context_block_transfer (
+			anal, block, transfer_addr, &direct_target, &memory_operand);
+		if (kind == FCN_TRANSFER_DIRECT_JUMP) {
+			if (function_image_target_classify (image, direct_target) == 0
+				&& r_anal_get_function_at (anal, direct_target)
+				&& !fcn_context_append_callee (anal, callees, transfer_addr,
+					direct_target, R_ANAL_CALL_TRANSFER_TAIL_JUMP)) {
+				return false;
+			}
+			continue;
+		}
+		if (kind != FCN_TRANSFER_VALUE_JUMP || block->num_successors) {
+			continue;
+		}
+		if (!fcn_context_collect_slot_callees (anal, callees, block, transfer_addr,
+				memory_operand, refs)) {
 			return false;
 		}
 	}
