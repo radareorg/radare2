@@ -4274,17 +4274,23 @@ static bool function_interface_snapshot_collect(
 		return false;
 	}
 	size_t parameter_count = (size_t)r_list_length (ctx->signature->params);
-	/* A variadic signature carries the ellipsis as a trailing parameter with no
-	 * type. It names no storage, so counting it as a parameter leaves a slot the
+	/* A variadic signature carries the ellipsis as a trailing parameter. It
+	 * names no storage, so counting it as a parameter leaves a slot the
 	 * convention cannot fill and marks the whole interface incomplete, which
 	 * throws away the recovered carriers for the fixed prefix and every stack
 	 * slot the function owns. Record it as variadic and describe only the fixed
-	 * parameters, the way the call-site path already does. */
+	 * parameters, the way the call-site path already does.
+	 *
+	 * `r_type_arg_is_vararg` is the canonical test and the only one that holds.
+	 * Reading the ellipsis as "empty type named ..." looks equivalent and is
+	 * not: `func.fprintf.arg.2` stores a single space for its type, which is
+	 * not empty, so that spelling reported two of the fifty-six vararg entries
+	 * in the type database -- `fprintf` and `sscanf` -- as fixed-arity with one
+	 * parameter too many. */
 	if (parameter_count > 0) {
 		RAnalFunctionParam *last = r_list_get_n (ctx->signature->params,
 			(int)(parameter_count - 1));
-		if (last && R_STR_ISEMPTY (last->type)
-			&& !strcmp (r_str_get (last->name), "...")) {
+		if (last && r_type_arg_is_vararg (last->type, last->name)) {
 			interface->variadic = true;
 			parameter_count--;
 		}
@@ -5792,17 +5798,19 @@ static bool call_site_interface_snapshot_collect_one(
 	if (!interface->calling_convention) {
 		return false;
 	}
-	/* A variadic signature carries the ellipsis as a trailing parameter with no
-	 * type. It names no storage, so counting it as an argument leaves a slot the
+	/* A variadic signature carries the ellipsis as a trailing parameter. It
+	 * names no storage, so counting it as an argument leaves a slot the
 	 * convention cannot fill and marks the whole call site incomplete. Record it
 	 * as variadic and describe only the fixed arguments, the way argument
-	 * recovery already does elsewhere. */
+	 * recovery already does elsewhere. `r_type_arg_is_vararg` is the canonical
+	 * test; see the note on the interface path above for why the shorter
+	 * spelling silently misses two entries. */
 	size_t argument_count = (size_t)r_list_length (callee->signature->params);
 	bool signature_variadic = false;
 	if (argument_count > 0) {
 		RAnalFunctionParam *last = r_list_get_n (callee->signature->params,
 			(int)(argument_count - 1));
-		if (last && R_STR_ISEMPTY (last->type) && !strcmp (r_str_get (last->name), "...")) {
+		if (last && r_type_arg_is_vararg (last->type, last->name)) {
 			signature_variadic = true;
 			argument_count--;
 		}
