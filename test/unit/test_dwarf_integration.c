@@ -1,5 +1,6 @@
 #include <r_anal.h>
 #include <r_bin.h>
+#include <r_flag.h>
 #include "minunit.h"
 
 #define MODE 2
@@ -314,6 +315,79 @@ static bool test_dwarf_function_parsing_rust(void) {
 	mu_end;
 }
 
+static bool test_dwarf_argument_register_reuse(void) {
+	mu_assert ("set register profile", r_reg_set_profile_string (anal->reg,
+		"=PC pc\n"
+		"=SP sp\n"
+		"=BP x29\n"
+		"gpr x0 .64 0 0\n"
+		"gpr x1 .64 8 0\n"
+		"gpr x2 .64 16 0\n"
+		"gpr x29 .64 24 0\n"
+		"gpr sp .64 32 0\n"
+		"gpr pc .64 40 0\n"));
+	RAnalFunction *fcn = r_anal_create_function (anal, "collision", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "create function");
+	RRegItem *x1 = r_reg_get (anal->reg, "x1", -1);
+	mu_assert_notnull (x1, "get x1");
+	const int x1_index = x1->index;
+	mu_assert_notnull (r_anal_function_set_var (fcn, x1->index, R_ANAL_VAR_KIND_REG,
+		"int64_t", 8, true, "arg2"), "create generic register argument");
+	r_unref (x1);
+	RRegItem *x2 = r_reg_get (anal->reg, "x2", -1);
+	mu_assert_notnull (x2, "get x2");
+	const int x2_index = x2->index;
+	mu_assert_notnull (r_anal_function_set_var (fcn, x2_index, R_ANAL_VAR_KIND_REG,
+		"int64_t", 8, true, "first"), "create misplaced named argument");
+	r_unref (x2);
+	mu_assert_notnull (r_anal_function_set_var (fcn, 32, R_ANAL_VAR_KIND_BPV,
+		"int64_t", 8, true, "arg_20h"), "create generic stack argument");
+	mu_assert_notnull (r_anal_function_set_var (fcn, 40, R_ANAL_VAR_KIND_SPV,
+		"int64_t", 8, false, "arg0"), "create generic alternate entry");
+	mu_assert_notnull (r_anal_function_set_var (fcn, 48, R_ANAL_VAR_KIND_BPV,
+		"int64_t", 8, true, "arg_nameh"), "create source argument");
+	RAnalFunction *partial = r_anal_create_function (anal, "partial", 0x200, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (partial, "create partial function");
+	mu_assert_notnull (r_anal_function_set_var (partial, x1_index, R_ANAL_VAR_KIND_REG,
+		"int64_t", 8, true, "arg2"), "create partial generic argument");
+	RRegItem *x0 = r_reg_get (anal->reg, "x0", -1);
+	mu_assert_notnull (x0, "get x0");
+	const int x0_index = x0->index;
+	r_unref (x0);
+	RFlag *flags = r_flag_new ();
+	mu_assert_notnull (flags, "create flags");
+	Sdb *dwarf = sdb_new0 ();
+	mu_assert_notnull (dwarf, "create dwarf database");
+	sdb_set (dwarf, "collision", "fcn", 0);
+	sdb_set (dwarf, "fcn.collision.addr", "0x100", 0);
+	sdb_set (dwarf, "fcn.collision.arg.0", "first,r,x0,Swift.Int", 0);
+	sdb_set (dwarf, "fcn.collision.args", "first", 0);
+	sdb_set (dwarf, "fcn.collision.args.complete", "1", 0);
+	sdb_set (dwarf, "fcn.collision.var.result", "r,x0,Swift.Int", 0);
+	sdb_set (dwarf, "fcn.collision.vars", "result", 0);
+	sdb_set (dwarf, "partial", "fcn", 0);
+	sdb_set (dwarf, "fcn.partial.addr", "0x200", 0);
+	sdb_set (dwarf, "fcn.partial.arg.0", "first,r,x0,Swift.Int", 0);
+	sdb_set (dwarf, "fcn.partial.args", "first", 0);
+	r_anal_dwarf_integrate_functions (anal, flags, dwarf);
+	RAnalVar *location = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, x0_index);
+	mu_assert_notnull (location, "register variable integrated");
+	mu_assert_streq (location->name, "first", "formal owns reused register");
+	RAnalVar *first = r_anal_function_get_var_byname (fcn, "first");
+	mu_assert_notnull (first, "formal argument survived register reuse");
+	mu_assert ("formal remains an argument", first->isarg);
+	mu_assert_null (r_anal_function_get_var_byname (fcn, "result"), "later local did not replace formal");
+	mu_assert_null (r_anal_function_get_var_byname (fcn, "arg2"), "generic register argument removed");
+	mu_assert_null (r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, x2_index), "named argument relocated");
+	mu_assert_null (r_anal_function_get_var_byname (fcn, "arg_20h"), "generic stack argument removed");
+	mu_assert_notnull (r_anal_function_get_var_byname (fcn, "arg0"), "non-argument local preserved");
+	mu_assert_notnull (r_anal_function_get_var_byname (fcn, "arg_nameh"), "source argument preserved");
+	mu_assert_notnull (r_anal_function_get_var_byname (partial, "arg2"), "partial arguments preserved");
+	sdb_free (dwarf);
+	r_flag_free (flags);
+	mu_end;
+}
+
 #define run_test_with_setup(test_func) \
 	do { \
 		if (!setup ()) { \
@@ -325,6 +399,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 	} while (0)
 
 int all_tests(void) {
+	run_test_with_setup (test_dwarf_argument_register_reuse);
 	run_test_with_setup (test_parse_dwarf_types);
 	run_test_with_setup (test_dwarf_function_parsing_cpp);
 	run_test_with_setup (test_dwarf_function_parsing_rust);

@@ -3805,6 +3805,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->cycles = 1;
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
+	case ARM64_INS_FADD:
 	case ARM64_INS_ADC:
 	case ARM64_INS_UMADDL:
 	case ARM64_INS_SMADDL:
@@ -4968,6 +4969,23 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 				set_src_dst (op, RVecRArchValue_at (&op->srcs, j), &handle, insn, i, bits);
 			}
 			set_src_dst (op, RVecRArchValue_at (&op->dsts, 0), &handle, insn, 0, bits);
+			if (bits == 64) {
+				switch (insn->id) {
+				case ARM64_INS_LDP:
+				case ARM64_INS_LDNP:
+				case ARM64_INS_LDPSW: {
+					RAnalValue *src = RVecRArchValue_emplace_back (&op->srcs);
+					set_src_dst (op, src, &handle, insn, 2, bits);
+					if (src) {
+						src->delta += src->memref;
+					}
+					set_src_dst (op, RVecRArchValue_emplace_back (&op->dsts), &handle, insn, 1, bits);
+					break;
+				}
+				default:
+					break;
+				}
+			}
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:

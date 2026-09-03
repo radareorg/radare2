@@ -3534,6 +3534,7 @@ static bool cb_analcc(RCore *core, RConfigNode *node) {
 			r_core_call (core, "afcl");
 			return false;
 		}
+		sdb_unset (core->anal->sdb_cc, "default.cc.autolang", 0);
 		r_anal_set_cc_default (core->anal, node->value);
 	}
 	return true;

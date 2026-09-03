@@ -394,6 +394,7 @@ enum {
 	DWARF_SN_FRAME,
 	DWARF_SN_LINE,
 	DWARF_SN_LOC,
+	DWARF_SN_LOCLISTS,
 	DWARF_SN_STR,
 	DWARF_SN_LINE_STR,
 	DWARF_SN_STR_OFFSETS,
@@ -412,6 +413,7 @@ static const char *dwarf_sn_elf[DWARF_SN_MAX] = {
 	[DWARF_SN_FRAME] = "debug_frame",
 	[DWARF_SN_LINE] = "debug_line",
 	[DWARF_SN_LOC] = "debug_loc",
+	[DWARF_SN_LOCLISTS] = "debug_loclists",
 	[DWARF_SN_STR] = "debug_str",
 	[DWARF_SN_LINE_STR] = "debug_line_str",
 	[DWARF_SN_STR_OFFSETS] = "debug_str_offs",
@@ -452,6 +454,9 @@ static RBinSection *get_section(RBinFile *bf, int sn) {
 		RBinSection *section;
 		R_VEC_FOREACH (&o->sections_vec, section) {
 			if (section->name && strstr (section->name, name_str)) {
+				if (sn == DWARF_SN_LOC && strstr (section->name, "debug_loclists")) {
+					continue;
+				}
 				if (sn == DWARF_SN_STR && strstr (section->name, "debug_str_off")) {
 					continue;
 				}
@@ -3944,6 +3949,101 @@ static void parse_loc_raw(RBin *bin, HtUP /*<offset, List *<LocListEntry>*/ *loc
 	}
 }
 
+static void parse_loclists_raw(RBin *bin, HtUP /*<offset, List *<LocListEntry>*/ *loc_table, const ut8 *buf, size_t len, size_t addr_size) {
+	enum {
+		LLE_END_OF_LIST,
+		LLE_BASE_ADDRESSX,
+		LLE_OFFSET_PAIR = 4
+	};
+	const bool be = r_bin_is_big_endian (bin);
+	const ut8 *const buf_start = buf;
+	const ut8 *const buf_end = buf + len;
+	while (buf < buf_end) {
+		ut64 unit_length;
+		ut64 offset_count;
+		ut64 offset_size = 4;
+		const ut8 *next = dwarf_read_index (buf, buf_end, be, 4, &unit_length);
+		if (!next || !unit_length) {
+			break;
+		}
+		buf = next;
+		if (unit_length == DWARF_INIT_LEN_64) {
+			offset_size = 8;
+			buf = dwarf_read_index (buf, buf_end, be, 8, &unit_length);
+			if (!buf) {
+				break;
+			}
+		}
+		if (unit_length > (ut64)(buf_end - buf)) {
+			break;
+		}
+		const ut8 *unit_end = buf + unit_length;
+		ut64 version;
+		buf = dwarf_read_index (buf, unit_end, be, 2, &version);
+		if (!buf || unit_end - buf < 2) {
+			break;
+		}
+		const ut8 unit_addr_size = *buf++;
+		const ut8 segment_size = *buf++;
+		buf = dwarf_read_index (buf, unit_end, be, 4, &offset_count);
+		if (!buf || offset_count > (ut64)(unit_end - buf) / offset_size) {
+			break;
+		}
+		buf += offset_count * offset_size;
+		if (version != 5 || unit_addr_size != addr_size || segment_size) {
+			buf = unit_end;
+			continue;
+		}
+		while (buf < unit_end) {
+			const ut64 list_offset = buf - buf_start;
+			RBinDwarfLocList *loc_list = create_loc_list (list_offset);
+			bool done = false;
+			while (buf < unit_end && !done) {
+				const ut8 entry = *buf++;
+				switch (entry) {
+				case LLE_END_OF_LIST:
+					done = true;
+					break;
+				case LLE_BASE_ADDRESSX: {
+					ut64 base_index;
+					buf = dwarf_read_uleb_index (buf, unit_end, &base_index);
+					if (!buf) {
+						done = true;
+						buf = unit_end;
+					}
+					break;
+				}
+				case LLE_OFFSET_PAIR: {
+					ut64 start;
+					ut64 end;
+					ut64 expression_length;
+					buf = dwarf_read_uleb_index (buf, unit_end, &start);
+					buf = buf? dwarf_read_uleb_index (buf, unit_end, &end): NULL;
+					buf = buf? dwarf_read_uleb_index (buf, unit_end, &expression_length): NULL;
+					if (!buf || expression_length > (ut64)(unit_end - buf)) {
+						done = true;
+						buf = unit_end;
+						break;
+					}
+					RBinDwarfBlock *block = R_NEW0 (RBinDwarfBlock);
+					block->length = expression_length;
+					block->data = expression_length? buf: NULL;
+					buf += expression_length;
+					r_list_append (loc_list->list, create_loc_range (start, end, block));
+					break;
+				}
+				default:
+					done = true;
+					buf = unit_end;
+					break;
+				}
+			}
+			ht_up_insert (loc_table, loc_list->offset, loc_list);
+		}
+		buf = unit_end;
+	}
+}
+
 #if 0
 * @brief Parses out the .debug_loc section into a table that maps each list as
 *        offset of a list -> LocationList
@@ -3954,21 +4054,27 @@ static void parse_loc_raw(RBin *bin, HtUP /*<offset, List *<LocListEntry>*/ *loc
 #endif
 R_API HtUP /*<offset, RBinDwarfLocList*/ *r_bin_dwarf_parse_loc(RBinFile *bf, int addr_size) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
-	RBinSection *section = get_section (bf, DWARF_SN_LOC);
-	if (!bf || !section) {
+	RBinSection *section = get_section (bf, DWARF_SN_LOCLISTS);
+	const bool loclists = section;
+	if (!section) {
+		section = get_section (bf, DWARF_SN_LOC);
+	}
+	if (!section) {
 		return NULL;
 	}
-	/* The standarparse_loc_raw_frame, not sure why is that */
 	const ut8 *buf = get_section_bytes (bf, section);
 	if (!buf) {
 		return NULL;
 	}
-	/* set the endianity global [HOTFIX] */
 	HtUP /*<offset, RBinDwarfLocList*/ *loc_table = ht_up_new0 ();
 	if (!loc_table) {
 		return NULL;
 	}
-	parse_loc_raw (bf->rbin, loc_table, buf, section->bytes.len, addr_size);
+	if (loclists) {
+		parse_loclists_raw (bf->rbin, loc_table, buf, section->bytes.len, addr_size);
+	} else {
+		parse_loc_raw (bf->rbin, loc_table, buf, section->bytes.len, addr_size);
+	}
 	return loc_table;
 }
 

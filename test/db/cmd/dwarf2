@@ -52,3 +52,12 @@ twocall.c
 EOF
 RUN
 
+NAME=mach0 companion dSYM function address
+FILE=bins/mach0/twocall
+CMDS=<<EOF
+k anal/dwarf/fcn.main.addr
+EOF
+EXPECT=<<EOF
+0x100003f64
+EOF
+RUN

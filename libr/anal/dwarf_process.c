@@ -2,6 +2,7 @@
 
 #include <ctype.h>
 #include <r_anal.h>
+#include <r_anal_priv.h>
 #include <r_bin_dwarf.h>
 
 typedef struct dwarf_parse_context_t {
@@ -1015,6 +1016,38 @@ static const char *map_dwarf_reg_to_arm64_reg(ut64 reg_num, VariableLocationKind
 	case 37: return "tpidr_el1";
 	case 38: return "tpidr_el2";
 	case 39: return "tpidr_el3";
+	case 64: return "v0";
+	case 65: return "v1";
+	case 66: return "v2";
+	case 67: return "v3";
+	case 68: return "v4";
+	case 69: return "v5";
+	case 70: return "v6";
+	case 71: return "v7";
+	case 72: return "v8";
+	case 73: return "v9";
+	case 74: return "v10";
+	case 75: return "v11";
+	case 76: return "v12";
+	case 77: return "v13";
+	case 78: return "v14";
+	case 79: return "v15";
+	case 80: return "v16";
+	case 81: return "v17";
+	case 82: return "v18";
+	case 83: return "v19";
+	case 84: return "v20";
+	case 85: return "v21";
+	case 86: return "v22";
+	case 87: return "v23";
+	case 88: return "v24";
+	case 89: return "v25";
+	case 90: return "v26";
+	case 91: return "v27";
+	case 92: return "v28";
+	case 93: return "v29";
+	case 94: return "v30";
+	case 95: return "v31";
 	}
 #if 0
 ARM64 - dwarf register mapping
@@ -1221,23 +1254,51 @@ static const char *get_dwarf_reg_name(const char *arch, int reg_num, VariableLoc
 	return "unsupported_reg";
 }
 
-static RBinDwarfLocRange *find_largest_loc_range(RList *loc_list) {
+static bool dwarf_location_expression_supported(const RBinDwarfBlock *expression) {
+	if (!expression || !expression->length) {
+		return false;
+	}
+	const ut8 op = expression->data[0];
+	if ((op >= DW_OP_reg0 && op <= DW_OP_reg31)
+		|| (op >= DW_OP_breg0 && op <= DW_OP_breg31)) {
+		return true;
+	}
+	return op == DW_OP_fbreg || op == DW_OP_regx || op == DW_OP_bregx
+		|| op == DW_OP_addr || op == DW_OP_call_frame_cfa;
+}
+
+static RBinDwarfLocRange *find_dwarf_loc_range(RList *loc_list, bool first_supported) {
 	RBinDwarfLocRange *largest = NULL;
 	ut64 max_range_size = 0;
 	RListIter *iter;
 	RBinDwarfLocRange *range;
 	r_list_foreach (loc_list, iter, range) {
 		ut64 diff = range->end - range->start;
-		if (diff > max_range_size) {
+		if (dwarf_location_expression_supported (range->expression) && (first_supported || diff > max_range_size)) {
 			max_range_size = diff ;
 			largest = range;
+			if (first_supported) {
+				break;
+			}
 		}
 	}
 	return largest;
 }
 
+static VariableLocationKind dwarf_base_location_kind(const char *arch, int bits, ut64 reg_num, VariableLocationKind kind) {
+	if (arch && !strcmp (arch, "arm") && bits == 64) {
+		if (reg_num == 29) {
+			return LOCATION_BP;
+		}
+		if (reg_num == 31) {
+			return LOCATION_SP;
+		}
+	}
+	return kind;
+}
+
 /* TODO move a lot of the parsing here into dwarf.c and do only processing here */
-static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrValue *loc, const RBinDwarfAttrValue *frame_base) {
+static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrValue *loc, const RBinDwarfAttrValue *frame_base, bool first_supported) {
 	/* reg5 - val is in register 5
 	fbreg <leb> - offset from frame base
 	regx <leb> - contents is in register X
@@ -1256,8 +1317,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 		if (!range_list) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
 			return NULL;
 		}
-		/* use the largest range as a variable */
-		RBinDwarfLocRange *range = find_largest_loc_range (range_list->list);
+		RBinDwarfLocRange *range = find_dwarf_loc_range (range_list->list, first_supported);
 		if (!range) {
 			return NULL;
 		}
@@ -1286,16 +1346,14 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			}
 			i++;
 			const ut8 *dump = block.data + i;
-			if (loc->block.length > block.length) {
-				return NULL;
-			}
-			offset = r_sleb128 (&dump, block.data + loc->block.length);
+			offset = r_sleb128 (&dump, block.data + block.length);
 			if (frame_base) {
 				/* recursive parsing, but frame_base should be only one, but someone
 				   could make malicious resource exhaustion attack, so a depth counter might be cool? */
-				VariableLocation *location = parse_dwarf_location (ctx, frame_base, NULL);
+				VariableLocation *location = parse_dwarf_location (ctx, frame_base, NULL, false);
 				if (location) {
 					location->offset += offset;
+					location->kind = dwarf_base_location_kind (arch, bits, location->reg_num, location->kind);
 					return location;
 				}
 			} else {
@@ -1341,6 +1399,21 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			reg_name = get_dwarf_reg_name (arch, reg_num, &kind, bits);
 			break;
 		}
+		case DW_OP_regx: {
+			if (i == block.length - 1) {
+				return NULL;
+			}
+			const ut8 *buffer = &block.data[++i];
+			const ut8 *buf_end = &block.data[block.length];
+			const char *error = NULL;
+			const ut8 *next = r_uleb128 (buffer, buf_end - buffer, &reg_num, &error);
+			if (!next || next <= buffer || next > buf_end || error) {
+				return NULL;
+			}
+			i = next - block.data - 1;
+			reg_name = get_dwarf_reg_name (arch, reg_num, &kind, bits);
+			break;
+		}
 		case DW_OP_breg0:
 		case DW_OP_breg1:
 		case DW_OP_breg2:
@@ -1381,9 +1454,9 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			reg_num = block.data[i] - DW_OP_breg0; // get the reg number
 			const ut8 *buffer = &block.data[++i];
 			offset = r_sleb128 (&buffer, &block.data[block.length]);
-			/* TODO do a proper expression parsing, move by the amount of bytes sleb reads */
-			i += buffer - &block.data[0];
+			i = buffer - block.data - 1;
 			reg_name = get_dwarf_reg_name (arch, reg_num, &kind, bits);
+			kind = dwarf_base_location_kind (arch, bits, reg_num, kind);
 			break;
 		}
 		case DW_OP_bregx: {
@@ -1394,14 +1467,24 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			/* I need to find binaries that uses this so I can test it out*/
 			const ut8 *buffer = &block.data[++i];
 			const ut8 *buf_end = &block.data[block.length];
-			buffer = r_uleb128 (buffer, buf_end - buffer, &reg_num, NULL);
-			if (buffer == buf_end) {
+			const char *error = NULL;
+			const ut8 *next = r_uleb128 (buffer, buf_end - buffer, &reg_num, &error);
+			if (!next || next <= buffer || next >= buf_end || error) {
 				return NULL;
 			}
+			buffer = next;
 			offset = r_sleb128 (&buffer, buf_end);
+			i = buffer - block.data - 1;
 			reg_name = get_dwarf_reg_name (arch, reg_num, &kind, bits);
+			kind = dwarf_base_location_kind (arch, bits, reg_num, kind);
 			break;
 		}
+		case DW_OP_piece:
+			if (kind == LOCATION_UNKNOWN) {
+				return NULL;
+			}
+			i = block.length - 1;
+			break;
 		case DW_OP_addr: {
 			/* The DW_OP_addr operation has a single operand that encodes a machine address and whose
 			size is the size of an address on the target machine.  */
@@ -1506,7 +1589,8 @@ static bool parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 						parse_abstract_origin (ctx, val->reference, &type, &name);
 						break;
 					case DW_AT_location:
-						var->location = parse_dwarf_location (ctx, val, frame_base);
+						var->location = parse_dwarf_location (ctx, val, frame_base,
+							child_die->tag == DW_TAG_formal_parameter && child_depth == 1);
 						break;
 					case DW_AT_variable_parameter:
 						// go marks a result slot as a formal parameter with this flag set
@@ -1653,6 +1737,39 @@ static char *dwarf_function_type_name(Context *ctx, const char *sname, const Fun
 	return candidate;
 }
 
+static char dwarf_type_fp_alias(const char *type) {
+	if (R_STR_ISEMPTY (type) || strchr (type, '*') || strchr (type, '[')) {
+		return 0;
+	}
+	while (r_str_startswith (type, "const ") || r_str_startswith (type, "volatile ")) {
+		type = strchr (type, ' ') + 1;
+	}
+	const char *end = type + strlen (type);
+	while (end > type && end[-1] == ' ') {
+		end--;
+	}
+	if (end - type >= 6 && !strncmp (end - 6, " const", 6)) {
+		end -= 6;
+	}
+	if (end == type) {
+		return 0;
+	}
+	const char *name = r_str_rchr (type, end - 1, ':');
+	const char *dot = r_str_rchr (type, end - 1, '.');
+	if (!name || (dot && dot > name)) {
+		name = dot;
+	}
+	name = name? name + 1: type;
+	const size_t len = end - name;
+	if (len == 5 && (!strncmp (name, "float", len) || !strncmp (name, "Float", len))) {
+		return 's';
+	}
+	if (len == 6 && (!strncmp (name, "double", len) || !strncmp (name, "Double", len))) {
+		return 'd';
+	}
+	return 0;
+}
+
 static char *sdb_variable_data(const Variable *var) {
 	if (!var || !var->location || !var->type) {
 		return NULL;
@@ -1664,8 +1781,16 @@ static char *sdb_variable_data(const Variable *var) {
 		return r_str_newf ("s,%" PFMT64d ",%s", var->location->offset, var->type);
 	case LOCATION_GLOBAL:
 		return r_str_newf ("g,%" PFMT64u ",%s", var->location->address, var->type);
-	case LOCATION_REGISTER:
+	case LOCATION_REGISTER: {
+		const char fp_alias = dwarf_type_fp_alias (var->type);
+		if (var->location->reg_name && var->location->reg_name[0] == 'v'
+			&& var->location->reg_num >= 64 && var->location->reg_num <= 95
+			&& fp_alias) {
+			return r_str_newf ("r,%c%" PFMT64u ",%s", fp_alias,
+				var->location->reg_num - 64, var->type);
+		}
 		return r_str_newf ("r,%s,%s", var->location->reg_name, var->type);
+	}
 	default:
 		break;
 	}
@@ -1775,6 +1900,9 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, const ch
 // the cc argslot tables describe integer slots only, so a float formal would be
 // handed an integer register it never occupies, colliding with a located arg
 static bool dwarf_type_is_fp(const char *type) {
+	if (dwarf_type_fp_alias (type)) {
+		return true;
+	}
 	if (R_STR_ISEMPTY (type) || strchr (type, '*') || strchr (type, '[')) {
 		return false;
 	}
@@ -1795,13 +1923,38 @@ static bool dwarf_type_is_fp(const char *type) {
 	return false;
 }
 
-/* Place a formal that carries no DW_AT_location (routine at -O2) in the
- * entry slot the calling convention assigns it, instead of dropping it. */
-static char *dwarf_formal_convention_meta(Context *ctx, int argno, int argc, const char *type) {
-	if (!ctx || !ctx->anal || argno < 0 || R_STR_ISEMPTY (type)) {
-		return NULL;
+static bool dwarf_formal_location_is_arg(Context *ctx, const Variable *var) {
+	if (!ctx || !ctx->anal || !var || !var->location
+		|| var->location->kind != LOCATION_REGISTER || R_STR_ISEMPTY (var->location->reg_name)) {
+		return true;
 	}
-	if (dwarf_type_is_fp (type)) {
+	RAnal *anal = (RAnal *)ctx->anal;
+	const char *cc = r_anal_cc_default (anal);
+	if (R_STR_ISEMPTY (cc) || strcmp (cc, "swift")) {
+		return true;
+	}
+	const char *role = var->name && (!strcmp (var->name, "self") || !strcmp (var->name, "error"))
+		? var->name: NULL;
+	if (role) {
+		const char *place = r_anal_cc_roleloc (anal, cc, role);
+		return place && r_anal_cc_location_uses (anal, place, var->location->reg_name);
+	}
+	int i;
+	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
+		const char *place = r_anal_cc_argloc (anal, cc, i, 0, -1);
+		if (place && r_anal_cc_location_uses (anal, place, var->location->reg_name)) {
+			return true;
+		}
+		place = r_anal_cc_argloc (anal, cc, R_ANAL_CC_MAXARG + i, 0, -1);
+		if (place && r_anal_cc_location_uses (anal, place, var->location->reg_name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static char *dwarf_formal_convention_meta(Context *ctx, int argno, int argc, const char *name, const char *type) {
+	if (!ctx || !ctx->anal || argno < 0 || R_STR_ISEMPTY (type)) {
 		return NULL;
 	}
 	RAnal *anal = (RAnal *)ctx->anal;
@@ -1809,12 +1962,28 @@ static char *dwarf_formal_convention_meta(Context *ctx, int argno, int argc, con
 	if (R_STR_ISEMPTY (cc)) {
 		return NULL;
 	}
-	RAnalCCArgSlot slot = { 0 };
-	if (!r_anal_cc_argslot (anal, cc, argno, argc, false, &slot)
-		|| R_STR_ISEMPTY (slot.reg)) {
+	const bool swift_cc = !strcmp (cc, "swift");
+	if (!swift_cc && dwarf_type_is_fp (type)) {
 		return NULL;
 	}
-	return r_str_newf ("r,%s,%s", slot.reg, type);
+	const char *reg = NULL;
+	if (swift_cc && name && (!strcmp (name, "self") || !strcmp (name, "error"))) {
+		const char *place = r_anal_cc_roleloc (anal, cc, name);
+		reg = place? r_anal_cc_location_first (anal, place): NULL;
+	} else {
+		RAnalCCArgSlot slot = { 0 };
+		if (r_anal_cc_argslot (anal, cc, argno, argc, false, &slot)) {
+			reg = slot.reg;
+		}
+	}
+	if (R_STR_ISEMPTY (reg)) {
+		return NULL;
+	}
+	const char fp_alias = swift_cc? dwarf_type_fp_alias (type): 0;
+	if (fp_alias && strchr ("dsvq", reg[0]) && isdigit ((ut8)reg[1])) {
+		return r_str_newf ("r,%c%s,%s", fp_alias, reg + 1, type);
+	}
+	return r_str_newf ("r,%s,%s", reg, type);
 }
 
 static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const char *ret_type, RList/*<Variable*>*/ *variables, bool has_unspecified_parameters) {
@@ -1863,18 +2032,27 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 	}
 	int arg_index = 0;
 	int formal_index = 0;
+	int int_index = 0;
+	int fp_index = 0;
+	int saved_formals = 0;
+	const char *cc = r_anal_cc_default ((RAnal *)ctx->anal);
+	const bool swift_cc = cc && !strcmp (cc, "swift");
 	RListIter *iter;
 	Variable *var;
 	r_list_foreach (variables, iter, var) {
 		const bool is_formal = var->kind == VARIABLE_KIND_FORMAL_PARAMETER
 			&& !var->is_result;
-		const int argno = formal_index;
+		int argno = -1;
 		if (is_formal) {
-			formal_index++;
+			argno = formal_index++;
+			if (swift_cc) {
+				argno = dwarf_type_is_fp (var->type)? R_ANAL_CC_MAXARG + fp_index++: int_index++;
+			}
 		}
-		char *meta = sdb_variable_data (var);
-		if (!meta && is_formal && !var->location) {
-			meta = dwarf_formal_convention_meta (ctx, argno, formal_count, var->type);
+		char *meta = !is_formal || dwarf_formal_location_is_arg (ctx, var)
+			? sdb_variable_data (var): NULL;
+		if (!meta && is_formal) {
+			meta = dwarf_formal_convention_meta (ctx, argno, formal_count, var->name, var->type);
 		}
 		if (!meta || !var->name) {
 			free (meta);
@@ -1886,6 +2064,7 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 			r_strbuf_appendf (&args_buf, "%s,", var->name);
 			free (arg_val);
 			arg_index++;
+			saved_formals += is_formal;
 		} else if (var->kind == VARIABLE_KIND_LOCAL) {
 			sdb_setf (sdb, meta, 0, "fcn.%s.var.%s", sname, var->name);
 			r_strbuf_appendf (&vars_buf, "%s,", var->name);
@@ -1900,6 +2079,8 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 	}
 	sdb_setf (sdb, r_strbuf_get (&vars_buf), 0, "fcn.%s.vars", sname);
 	sdb_setf (sdb, r_strbuf_get (&args_buf), 0, "fcn.%s.args", sname);
+	sdb_num_setf (sdb, formal_count > 0 && saved_formals == formal_count, 0,
+		"fcn.%s.args.complete", sname);
 	r_strbuf_fini (&vars_buf);
 	r_strbuf_fini (&args_buf);
 	if (typed_name) {
@@ -2198,6 +2379,51 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
 	return !strcmp (v, "fcn");
 }
 
+static bool set_dwarf_var(RAnalFunction *fcn, int delta, char kind, const char *type, bool is_arg, const char *name) {
+	RAnalVar *named = r_anal_function_get_var_byname (fcn, name);
+	if (is_arg && named && named->isarg && (named->kind != kind || named->delta != delta)) {
+		r_anal_var_delete (fcn->anal, named);
+	}
+	RAnalVar *var = r_anal_function_get_var (fcn, kind, delta);
+	if (var && var->isarg && !is_arg) {
+		return true;
+	}
+	return r_anal_function_set_var (fcn, delta, kind, type, 4, is_arg, name) != NULL;
+}
+
+static bool is_default_dwarf_arg(const RAnalVar *var) {
+	if (!var || !var->isarg || R_STR_ISEMPTY (var->name)) {
+		return false;
+	}
+	if (r_anal_var_is_default_argname (var->name)) {
+		return true;
+	}
+	if (!r_str_startswith (var->name, "arg_")) {
+		return false;
+	}
+	const char *hex = var->name + 4;
+	if (!isxdigit ((ut8)*hex)) {
+		return false;
+	}
+	while (isxdigit ((ut8)*hex)) {
+		hex++;
+	}
+	return *hex == 'h' && !hex[1];
+}
+
+static void remove_default_dwarf_args(RAnal *anal, RAnalFunction *fcn) {
+	size_t i = 0;
+	while (i < RVecAnalVarPtr_length (&fcn->vars)) {
+		RAnalVar **varp = RVecAnalVarPtr_at (&fcn->vars, i);
+		RAnalVar *var = varp? *varp: NULL;
+		if (is_default_dwarf_arg (var)) {
+			r_anal_var_delete (anal, var);
+			continue;
+		}
+		i++;
+	}
+}
+
 static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, const char *var_name, char *var_data, bool is_arg) {
 	R_RETURN_VAL_IF_FAIL (anal && flags && var_name && var_data, false);
 	char *extra = NULL;
@@ -2222,19 +2448,16 @@ static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, c
 		return false;
 	}
 	if (*kind == 's') {
-		r_anal_function_set_var (fcn, offset - fcn->maxstack, *kind, type, 4, is_arg, var_name);
-		return true;
+		return set_dwarf_var (fcn, offset - fcn->maxstack, *kind, type, is_arg, var_name);
 	}
 	if (*kind == 'r') {
 		RRegItem *ri = r_reg_get (anal->reg, extra, -1);
 		if (!ri) {
 			return false;
 		}
-		r_anal_function_set_var (fcn, ri->index, *kind, type, 4, is_arg, var_name);
-		return true;
+		return set_dwarf_var (fcn, ri->index, *kind, type, is_arg, var_name);
 	}
-	r_anal_function_set_var (fcn, offset - fcn->bp_off, *kind, type, 4, is_arg, var_name);
-	return true;
+	return set_dwarf_var (fcn, offset - fcn->bp_off, *kind, type, is_arg, var_name);
 }
 
 /**
@@ -2279,6 +2502,10 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 				r_meta_set_string (anal, R_META_TYPE_COMMENT, faddr, fcnstr);
 			}
 			free (fcnstr);
+		}
+		if (fcn && sdb_num_getf (dwarf_sdb, NULL, "fcn.%s.args.complete", func_sname)
+			&& sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.arg.0", func_sname)) {
+			remove_default_dwarf_args (anal, fcn);
 		}
 		int arg_index;
 		for (arg_index = 0; ; arg_index++) {
