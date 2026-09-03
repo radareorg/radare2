@@ -240,7 +240,7 @@ JNINativeInterface.GetDirectBufferAddress
         JNINativeInterface.GetDirectBufferAddress (x0, x1) // void *JNINativeInterface.GetDirectBufferAddress(0, 0)
         JNINativeInterface.GetDirectBufferAddress (x0, x1) // void *JNINativeInterface.GetDirectBufferAddress(0, 0)
         JNINativeInterface.GetDirectBufferAddress (x0, x1) // void *JNINativeInterface.GetDirectBufferAddress(0, 0)
-void *JNINativeInterface.GetDirectBufferAddress(0x0, 0x0)
+void *JNINativeInterface.GetDirectBufferAddress(?, ?)
 EOF
 RUN
 
@@ -350,8 +350,8 @@ JNINativeInterface.RegisterNatives
  0x00000244 => offset='JNIInvokeInterface.GetEnv'
  0x00000270 => offset='JNINativeInterface.FindClass'
  0x00000294 => offset='JNINativeInterface.RegisterNatives'
-        JNINativeInterface.FindClass (x0, x1) // jclass JNINativeInterface.FindClass(0, "BD.\x91\xeb")
-        JNINativeInterface.RegisterNatives (x0, x1, x2, x3) // jint JNINativeInterface.RegisterNatives(0, 0, 0xd008, 0x5d)
+        JNINativeInterface.FindClass (x0, x1) // jclass JNINativeInterface.FindClass(0xffffffff, "BD.\x91\xeb")
+        JNINativeInterface.RegisterNatives (x0, x1, x2, x3) // jint JNINativeInterface.RegisterNatives(0, 0xffffffff, 0xd008, 0x5d)
 jclass JNINativeInterface.FindClass(0x0, "androidx/renderscript/RenderScript")
 jint JNINativeInterface.RegisterNatives(0x0, 0x0, 0xd008, 0x5d)
 EOF

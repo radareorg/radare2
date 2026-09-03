@@ -1656,14 +1656,20 @@ RUN
 
 NAME=pdc leaves no emulated writes in the io cache
 FILE=bins/elf/format
+ARGS=-e io.cache=true
 CMDS=<<EOF
 aa
 s main
+wx 41 @ main
+wc~?
 pdc~zzznomatch
 wc~?
+p8 1 @ main
 EOF
 EXPECT=<<EOF
-0
+1
+1
+41
 EOF
 RUN
 
@@ -1710,4 +1716,69 @@ EXPECT=<<EOF
  0x000017b6 |     loc_0x000017b6: // orphan
  0x000017d8 |     loc_0x000017d8: // orphan
 EOF
+RUN
+
+NAME=pdc seeds jump table cases from the dispatcher state
+FILE=bins/elf/ls
+ARGS=-e pdc.structured=1
+CMDS=<<EOF2
+aaa
+s 0x145b0
+pdc~rdx = rax
+EOF2
+EXPECT=<<EOF2
+                rdx = rax     // case.0x14659.0
+                rdx = rax     // case.0x14659.0
+                rdx = rax     // case.0x14659.0
+                rdx = rax     // case.0x14659.0
+                rdx = rax     // case.0x14659.0
+        rdx = rax
+EOF2
+RUN
+
+NAME=pdc disassembles the bytes an emulated store overwrote
+FILE=malloc://0x2000
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx c604251100000002eb06909090909090b801000000c3 @ 0
+af @ 0
+pdc @ 0~eax =
+EOF2
+EXPECT=<<EOF2
+        eax = 1
+EOF2
+RUN
+
+NAME=pdc keeps a branch's stores from the sibling branch
+FILE=malloc://0x2000
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+wx 4885ff740a488b1c2500080000eb0c48c704250008000001000000c3 @ 0
+af @ 0
+pdc @ 0~0x800]
+EOF2
+EXPECT=<<EOF2
+        qword [0x800] = 1
+        rbx = qword [0x800] // [0x800:8]=0
+EOF2
+RUN
+
+NAME=pdc ignores the seeds another command left on the blocks
+FILE=bins/elf/ls
+ARGS=-e asm.emu=true -e graph.few=true
+CMDS=<<EOF2
+aaa
+s 0x145b0
+agf~zzznomatch
+pdc~rdi = rbp
+EOF2
+EXPECT=<<EOF2
+                rdi = rbp     // rsp
+                rdi = rbp     // rsp
+                rdi = rbp     // rsp
+        rdi = rbp     // rsp
+        rdi = rbp     // rsp
+        rdi = rbp     // rsp
+        rdi = rbp     // rsp
+EOF2
 RUN
