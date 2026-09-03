@@ -23,6 +23,7 @@ typedef struct {
 	ut64 bb_jump; // edges of the block being rendered, owned by its region in structured mode
 	ut64 bb_fail;
 	HtUP *conds; // block addr => recovered condition, recovered once per block
+	HtUP *bbtext; // block addr => raw disasm text, emulated once in CFG order
 	const char *r0;
 	ut64 last_addr; // anchor of the last printed line
 	char *transfer; // pending transfer the current block's own jump renders
@@ -969,8 +970,13 @@ static char *render_bb_raw(RCore *core, RAnalBlock *bb) {
 	return code;
 }
 
+static const char *cached_bb_raw(PDCState *state, RAnalBlock *bb) {
+	return ht_up_find (state->bbtext, bb->addr, NULL);
+}
+
 static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
-	char *code = render_bb_raw (state->core, bb);
+	const char *raw = cached_bb_raw (state, bb);
+	char *code = raw? strdup (raw): NULL;
 	if (R_STR_ISEMPTY (code)) {
 		free (code);
 		return NULL;
@@ -986,6 +992,115 @@ static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
 	code[len - 1] = 0;
 	find_and_change (code, len);
 	return fold_resolved_refs (state->core, code);
+}
+
+static void seed_block(PDCState *state, RBitset *vis, ut64 addr) {
+	RAnal *anal = state->core->anal;
+	if (addr == UT64_MAX || r_bitset_test (vis, addr) || !anal->last_disasm_reg) {
+		return;
+	}
+	RAnalBlock *bb = r_anal_get_block_at (anal, addr);
+	if (!bb || bb->parent_reg_arena || !r_list_contains (bb->fcns, state->fcn)) {
+		return;
+	}
+	bb->parent_reg_arena = r_reg_arena_dup (anal->reg, anal->last_disasm_reg);
+	bb->parent_reg_arena_size = anal->last_disasm_reg_size;
+}
+
+static void emulate_block(PDCState *state, RAnalBlock *bb, const ut8 *saved, int len) {
+	RReg *reg = state->core->anal->reg;
+	if (bb->parent_reg_arena) {
+		r_reg_arena_poke (reg, bb->parent_reg_arena, bb->parent_reg_arena_size);
+		R_FREE (bb->parent_reg_arena);
+	} else {
+		r_reg_arena_poke (reg, saved, len);
+	}
+	char *raw = render_bb_raw (state->core, bb);
+	if (raw) {
+		ht_up_insert (state->bbtext, bb->addr, raw);
+	}
+}
+
+static void emulate_dfs(PDCState *state, RBitset *vis, ut64 addr, const ut8 *saved, int len) {
+	RAnalBlock *bb = (addr == UT64_MAX)? NULL: r_anal_get_block_at (state->core->anal, addr);
+	if (!bb || r_bitset_test (vis, addr) || !r_list_contains (bb->fcns, state->fcn)) {
+		return;
+	}
+	r_bitset_set (vis, addr);
+	emulate_block (state, bb, saved, len);
+	RAnalSwitchOp *sop = bb->switch_op;
+	RListIter *iter;
+	RAnalCaseOp *co;
+	seed_block (state, vis, bb->jump);
+	seed_block (state, vis, bb->fail);
+	if (sop) {
+		r_list_foreach (sop->cases, iter, co) {
+			seed_block (state, vis, co->jump);
+		}
+		seed_block (state, vis, sop->def_val);
+	}
+	emulate_dfs (state, vis, bb->jump, saved, len);
+	emulate_dfs (state, vis, bb->fail, saved, len);
+	if (sop) {
+		r_list_foreach (sop->cases, iter, co) {
+			emulate_dfs (state, vis, co->jump, saved, len);
+		}
+		emulate_dfs (state, vis, sop->def_val, saved, len);
+	}
+}
+
+// emulate once in CFG order so the text does not depend on render order
+static void pdc_emulate_blocks(PDCState *state) {
+	RReg *reg = state->core->anal->reg;
+	int len = 0;
+	ut8 *saved = r_reg_arena_peek (reg, &len);
+	RBitset *vis = r_bitset_new ();
+	emulate_dfs (state, vis, state->fcn->addr, saved, len);
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (state->fcn->bbs, iter, bb) {
+		if (!r_bitset_test (vis, bb->addr)) {
+			r_bitset_set (vis, bb->addr);
+			emulate_block (state, bb, saved, len);
+		}
+		R_FREE (bb->parent_reg_arena);
+	}
+	r_bitset_free (vis);
+	r_reg_arena_poke (reg, saved, len);
+	free (saved);
+}
+
+// the cached render carries an address column; the orphan pass may not want it
+static char *orphan_text(PDCState *state, RAnalBlock *bb) {
+	const char *raw = cached_bb_raw (state, bb);
+	if (!raw) {
+		return strdup ("");
+	}
+	if (state->show_addr) {
+		return strdup (raw);
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	const char *p = raw;
+	while (*p) {
+		const char *end = p + strcspn (p, "\n");
+		const char *q = p;
+		if (r_str_startswith (q, "0x")) {
+			q += 2;
+			while (q < end && IS_HEXCHAR (*q)) {
+				q++;
+			}
+			while (q < end && *q == ' ') {
+				q++;
+			}
+		}
+		r_strbuf_append_n (sb, q, end - q);
+		if (!*end) {
+			break;
+		}
+		r_strbuf_append (sb, "\n");
+		p = end + 1;
+	}
+	return r_strbuf_drain (sb);
 }
 
 static bool is_known_loop_header(PDCState *state, ut64 addr) {
@@ -2308,8 +2423,10 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	r_config_set (core->config, "asm.syntax", "intel");
 	r_config_set (core->config, "asm.addr.relto", "");
 	r_config_set_i (core->config, "asm.addr.base", 16);
+	state.bbtext = ht_up_new (NULL, cond_kvfree, NULL);
 	r_io_cache_push (core->io);
 	r_core_cmd0 (core, "aeim");
+	pdc_emulate_blocks (&state);
 
 	r_strf_buffer (64);
 	RAnalBlock *bb = r_list_first (state.fcn->bbs);
@@ -2612,7 +2729,6 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		}
 	}
 	RListIter *iter;
-	bool use_html = r_config_get_b (core->config, "scr.html");
 	// hoist unconsumed switch dispatchers before orphan labels
 	r_list_foreach (state.fcn->bbs, iter, bb) {
 		if (!bb->switch_op) {
@@ -2643,13 +2759,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 			RAnalBlock *nbb = (RAnalBlock *) (nit->data);
 			nextbbaddr = nbb->addr;
 		}
-		if (use_html) {
-			r_config_set_b (core->config, "scr.html", false);
-		}
-		char *s = r_core_cmd_strf (state.core, "pdb@0x%08" PFMT64x "@e:asm.addr=%d", bb->addr, state.show_addr);
-		if (use_html) {
-			r_config_set_b (core->config, "scr.html", true);
-		}
+		char *s = orphan_text (&state, bb);
 		s = comments_to_c (s);
 		s = r_str_replace (s, "goto ", "// goto loc_", true);
 		s = cleancomments (s);
@@ -2747,6 +2857,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	print_line (&state, state.last_addr, indent, "}");
 	PRINTF ("\n");
 	r_io_cache_pop (core->io);
+	ht_up_free (state.bbtext);
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	if (state.pj) {
