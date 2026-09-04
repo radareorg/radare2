@@ -59,11 +59,6 @@ typedef struct r_anal_dwarf_frame_pointer_proof_t {
 	int bits;
 } RAnalDwarfFramePointerProof;
 
-typedef struct r_anal_dwarf_frame_pointer_storage_t {
-	char *name;
-	ut64 offset;
-	ut32 size;
-} RAnalDwarfFramePointerStorage;
 
 typedef struct r_anal_function_snapshot_limits_t RAnalFunctionSnapshotLimits;
 typedef struct r_anal_meta_store_shadow_t RAnalMetaStoreShadow;
@@ -102,11 +97,8 @@ typedef struct r_anal_cc_stack_allocation_contract_t {
 	ut32 red_zone_bytes;
 } RAnalCCStackAllocationContract;
 
-R_IPI RAnalFunctionSnapshot *r_anal_function_snapshot_collect_bounded(RAnal *anal, RAnalFunction *fcn, const char **reason);
-R_IPI void r_anal_function_snapshot_free(RAnalFunctionSnapshot *snapshot);
 // Internal cross-library bridge. It provides bounded immutable data only; it
 // does not establish core-lock, IO-trust, CFG, or semantic authority.
-R_API bool r_anal_function_snapshot_visit_bounded_advisory(RAnal *anal, ut64 function_addr, RAnalFunctionSnapshotCallback callback, void *user, const char **reason);
 R_API R_OWNED RVecAnalRef *r_anal_refs_get_unowned(RAnal *anal, ut64 from);
 // Returns an owned RList<RAnalPluginDataRefsBatch *>; r_list_free releases it.
 R_API bool r_anal_plugin_data_refs_collect(RAnal *anal, RAnalFunction *fcn, R_OUT RList **batches);
@@ -133,13 +125,11 @@ typedef struct r_leaddr_pair_t {
 
 R_IPI void r_anal_types_ensure_loaded(RAnal *anal);
 R_IPI RList *r_anal_types_snapshot_with_limits(RAnal *anal, const RAnalFunctionSnapshotLimits *limits);
-R_IPI ut64 r_anal_types_context_hash_from_snapshot(RAnal *anal, const RList *types, ut64 type_dirty_epoch);
 R_IPI const char *r_anal_function_type_link_at(RAnal *anal, ut64 addr);
 R_IPI bool r_anal_function_type_link_set(RAnal *anal, const char *type_name, ut64 addr);
 R_IPI bool r_anal_function_type_link_set_owned(RAnal *anal, const char *type_name, ut64 addr);
 R_IPI bool r_anal_var_is_default_argname(const char *name);
 R_IPI bool r_anal_var_exact_formal_set(RAnal *anal, RAnalVar *var, ut64 function_addr, int ordinal, RAnalVarKind kind, int delta, st64 source_offset, const char *type);
-R_IPI bool r_anal_var_exact_formal_get(RAnal *anal, const RAnalVar *var, R_OUT int *ordinal);
 R_IPI void r_anal_var_exact_formal_clear(RAnal *anal, const RAnalVar *var);
 R_IPI HtUP *r_anal_dwarf_exact_formal_records_new(void);
 R_IPI void r_anal_dwarf_exact_formal_records_free(HtUP *records);
@@ -162,17 +152,13 @@ R_IPI bool r_anal_dwarf_function_link_publish_owned(RAnal *anal, ut64 function_a
 R_IPI void r_anal_dwarf_function_link_mark_unowned(RAnal *anal, ut64 function_addr);
 // Returns true for no private state (an ordinary user link) or an exact live
 // owned match; poisoned and mismatched owned records fail closed.
-R_IPI bool r_anal_dwarf_function_link_is_current(const RAnal *anal, ut64 function_addr, const char *type_name);
 R_IPI void r_anal_dwarf_function_link_authority_clear(RAnal *anal);
 R_IPI HtUP *r_anal_dwarf_frame_pointer_proofs_new(void);
 R_IPI void r_anal_dwarf_frame_pointer_proofs_free(HtUP *proofs);
 R_IPI bool r_anal_dwarf_frame_pointer_proof_add(HtUP *proofs, ut64 function_addr, const char *type_name, const char *arch, int bits, int dwarf_reg_num, const char *reg_name, ut64 offset, ut32 size);
 R_IPI bool r_anal_dwarf_frame_pointer_proofs_publish(RAnal *anal, HtUP *proofs);
 R_IPI bool r_anal_dwarf_frame_pointer_proofs_rebind_current(RAnal *anal);
-R_IPI bool r_anal_dwarf_function_frame_pointer_get(const RAnal *anal, ut64 function_addr, R_OUT RAnalDwarfFramePointerStorage *storage);
-R_IPI void r_anal_dwarf_frame_pointer_storage_fini(RAnalDwarfFramePointerStorage *storage);
 R_IPI void r_anal_function_vars_cache_init_readonly(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn);
-R_IPI bool r_anal_function_has_address_linked_signature_current(RAnalFunction *function);
 R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth);
 R_API RAnalMetaStoreShadow *r_meta_store_shadow_prepare(RAnal *anal);
 R_API const char *r_meta_get_string_in_space(RAnal *anal, RAnalMetaType type, const RSpace *space, ut64 addr);
@@ -187,7 +173,6 @@ R_IPI int r_anal_cc_raslot(RAnal *anal, int word);
 R_IPI bool r_anal_cc_return_mechanism(RAnal *anal, const char *convention, R_OUT RAnalCCReturnMechanism *mechanism);
 R_IPI bool r_anal_cc_stack_allocation_contract(RAnal *anal, const char *convention, R_OUT RAnalCCStackAllocationContract *contract);
 R_IPI const char *r_anal_cc_rolelabel(char tag, char label[2], int *slot);
-R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg);
 R_IPI bool r_anal_cc_location_in_regset(RAnal *anal, const char *loc, const char *regset, bool all);
 R_IPI const char *r_anal_call_type_at(RAnal *anal, ut64 addr);
 R_IPI void r_anal_call_type_set(RAnal *anal, ut64 addr, const char *type);

@@ -105,7 +105,6 @@ typedef struct r_core_plugin_session_t {
 
 typedef bool (*RCorePluginLife) (RCorePluginSession *ctx);
 typedef bool (*RCorePluginCall) (RCorePluginSession *ctx, const char *input);
-typedef RAnalFunctionSnapshotCallback RCoreFunctionSnapshotCallback;
 
 typedef struct r_core_plugin_t {
 	RPluginMeta meta;
@@ -785,7 +784,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr);
 R_API bool r_core_anal_bb_seek(RCore *core, ut64 addr);
 R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth);
-R_API bool r_core_function_snapshot_at(RCore *core, ut64 function_addr, RCoreFunctionSnapshotCallback callback, void *user, const char **reason);
+R_API bool r_core_function_context_hash(RCore *core, ut64 function_addr, ut64 *out_hash, const char **reason);
 R_API char *r_core_anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int mode);
 R_API void r_core_anal_autoname_all_fcns(RCore *core);
 R_API void r_core_anal_autoname_all_golang_fcns(RCore *core);

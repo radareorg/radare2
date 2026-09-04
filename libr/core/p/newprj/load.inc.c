@@ -1052,16 +1052,6 @@ typedef struct {
 	bool captured;
 } RPrjArtifactRevision;
 
-static bool rprj_artifact_revision_cb(const RAnalFunctionSnapshot *snapshot, void *user) {
-	RPrjArtifactRevision *result = user;
-	RAnalFunctionSnapshotView view;
-	if (!r_anal_function_snapshot_view (snapshot, &view)) {
-		return false;
-	}
-	result->revision = view.revision_identity;
-	result->captured = true;
-	return true;
-}
 
 static void rprj_artifact_sets_free(RPrjArtifactSet *sets, ut32 count) {
 	if (sets) {
@@ -1176,14 +1166,13 @@ static bool rprj_artifact_read_set(RPrjCursor *cur, int mode, ut64 next_entry, R
 		if (!function || function->addr != scope_id) {
 			return false;
 		}
-		RPrjArtifactRevision revision = {0};
-		if (!r_core_function_snapshot_at (cur->core, scope_id, rprj_artifact_revision_cb, &revision, NULL)
-				|| !revision.captured || !revision.revision) {
+		ut64 revision = 0;
+		if (!r_core_function_context_hash (cur->core, scope_id, &revision, NULL)) {
 			return false;
 		}
 		set->replacement.expected_function_epoch = r_anal_function_dirty_epoch (function);
 		set->replacement.expected_type_epoch = cur->core->anal->type_dirty_epoch;
-		set->replacement.expected_snapshot_revision = revision.revision;
+		set->replacement.expected_snapshot_revision = revision;
 	}
 	return true;
 }

@@ -14,32 +14,15 @@ static RCore *artifact_test_core_new(void) {
 	return core;
 }
 
-typedef struct {
-	ut64 revision;
-	bool captured;
-} ArtifactTestRevision;
-
-static bool artifact_test_revision_cb(const RAnalFunctionSnapshot *snapshot, void *user) {
-	ArtifactTestRevision *result = user;
-	RAnalFunctionSnapshotView view;
-	if (!r_anal_function_snapshot_view (snapshot, &view)) {
-		return false;
-	}
-	result->revision = view.revision_identity;
-	result->captured = true;
-	return true;
-}
-
 static bool artifact_test_prepare_function(RCore *core, RAnalFunction *function,
-		ArtifactTestRevision *revision) {
+		ut64 *revision) {
 	RAnalBlock *block = r_anal_create_block (core->anal, function->addr, 16);
 	if (!block) {
 		return false;
 	}
 	r_anal_function_add_block (function, block);
 	r_unref (block);
-	return r_core_function_snapshot_at (
-		core, function->addr, artifact_test_revision_cb, revision, NULL) && revision->captured;
+	return r_core_function_context_hash (core, function->addr, revision, NULL);
 }
 
 static bool refs_have(RAnal *anal, ut64 from, ut64 to) {
@@ -129,7 +112,7 @@ bool test_plugin_data_refs_preserve_producer_ownership(void) {
 	RAnalFunction *function = r_anal_create_function (
 		core->anal, "plugin_data_refs", 0xb000, R_ANAL_FCN_TYPE_FCN, NULL);
 	mu_assert_notnull (function, "create plugin data-ref function");
-	ArtifactTestRevision revision = {0};
+	ut64 revision = 0;
 	mu_assert_true (artifact_test_prepare_function (core, function, &revision),
 		"prepare plugin data-ref function");
 
@@ -274,7 +257,7 @@ bool test_owned_artifacts_replace_all_stores_atomically(void) {
 	RAnalFunction *function = r_anal_create_function (
 		core->anal, "artifact_owner", 0x1000, R_ANAL_FCN_TYPE_FCN, NULL);
 	mu_assert_notnull (function, "create function");
-	ArtifactTestRevision revision = {0};
+	ut64 revision = 0;
 	mu_assert_true (artifact_test_prepare_function (core, function, &revision),
 		"capture source revision");
 	mu_assert_true (r_meta_set_string (core->anal, R_META_TYPE_COMMENT, 0x1004,
@@ -324,7 +307,7 @@ bool test_owned_artifacts_replace_all_stores_atomically(void) {
 			.scope_id = function->addr,
 			.expected_function_epoch = initial_epoch,
 			.expected_type_epoch = core->anal->type_dirty_epoch,
-			.expected_snapshot_revision = revision.revision,
+			.expected_snapshot_revision = revision,
 			.comments = comments,
 			.comment_count = R_ARRAY_SIZE (comments),
 			.flags = flags,
@@ -338,7 +321,7 @@ bool test_owned_artifacts_replace_all_stores_atomically(void) {
 			.scope_id = function->addr,
 			.expected_function_epoch = initial_epoch,
 			.expected_type_epoch = core->anal->type_dirty_epoch,
-			.expected_snapshot_revision = revision.revision,
+			.expected_snapshot_revision = revision,
 			.xrefs = refs_b,
 			.xref_count = R_ARRAY_SIZE (refs_b),
 		},
@@ -371,14 +354,13 @@ bool test_owned_artifacts_replace_all_stores_atomically(void) {
 		.addr = 0x1002,
 		.size = 2,
 	};
-	memset (&revision, 0, sizeof (revision));
-	mu_assert_true (r_core_function_snapshot_at (
-		core, function->addr, artifact_test_revision_cb, &revision, NULL),
+	revision = 0;
+	mu_assert_true (r_core_function_context_hash (core, function->addr, &revision, NULL),
 		"recapture before flag update");
 	RCoreAnalArtifactReplacement update = replacements[0];
 	update.expected_function_epoch = r_anal_function_dirty_epoch (function);
 	update.expected_type_epoch = core->anal->type_dirty_epoch;
-	update.expected_snapshot_revision = revision.revision;
+	update.expected_snapshot_revision = revision;
 	update.flags = &updated_flag;
 	update.flag_count = 1;
 	result = r_core_anal_artifacts_replace (core, &update, 1);
@@ -395,10 +377,10 @@ bool test_owned_artifacts_replace_all_stores_atomically(void) {
 		.expected_function_epoch = r_anal_function_dirty_epoch (function),
 		.expected_type_epoch = core->anal->type_dirty_epoch,
 	};
-	memset (&revision, 0, sizeof (revision));
-	mu_assert_true (r_core_function_snapshot_at (
-		core, function->addr, artifact_test_revision_cb, &revision, NULL), "recapture after replace");
-	clear_a.expected_snapshot_revision = revision.revision;
+	revision = 0;
+	mu_assert_true (r_core_function_context_hash (core, function->addr, &revision, NULL),
+		"recapture after replace");
+	clear_a.expected_snapshot_revision = revision;
 	result = r_core_anal_artifacts_replace (core, &clear_a, 1);
 	mu_assert_eq (result.status, R_CORE_ANAL_ARTIFACT_REPLACE_OK, "owner clear succeeds");
 	mu_assert_streq (r_meta_get_string (core->anal, R_META_TYPE_COMMENT, 0x1004),
@@ -414,10 +396,10 @@ bool test_owned_artifacts_replace_all_stores_atomically(void) {
 		.expected_function_epoch = r_anal_function_dirty_epoch (function),
 		.expected_type_epoch = core->anal->type_dirty_epoch,
 	};
-	memset (&revision, 0, sizeof (revision));
-	mu_assert_true (r_core_function_snapshot_at (
-		core, function->addr, artifact_test_revision_cb, &revision, NULL), "recapture before second clear");
-	clear_b.expected_snapshot_revision = revision.revision;
+	revision = 0;
+	mu_assert_true (r_core_function_context_hash (core, function->addr, &revision, NULL),
+		"recapture before second clear");
+	clear_b.expected_snapshot_revision = revision;
 	result = r_core_anal_artifacts_replace (core, &clear_b, 1);
 	mu_assert_eq (result.status, R_CORE_ANAL_ARTIFACT_REPLACE_OK, "second owner clear succeeds");
 	mu_assert_false (refs_have (core->anal, 0x100c, 0x2010), "last owner removes xref");
@@ -431,7 +413,7 @@ bool test_owned_artifacts_accept_function_at_address_zero(void) {
 	RAnalFunction *function = r_anal_create_function (
 		core->anal, "artifact_zero", 0, R_ANAL_FCN_TYPE_FCN, NULL);
 	mu_assert_notnull (function, "create address-zero function");
-	ArtifactTestRevision revision = {0};
+	ut64 revision = 0;
 	mu_assert_true (artifact_test_prepare_function (core, function, &revision),
 		"capture address-zero source revision");
 	RCoreAnalArtifactComment comment = {
@@ -445,7 +427,7 @@ bool test_owned_artifacts_accept_function_at_address_zero(void) {
 		.scope_id = 0,
 		.expected_function_epoch = r_anal_function_dirty_epoch (function),
 		.expected_type_epoch = core->anal->type_dirty_epoch,
-		.expected_snapshot_revision = revision.revision,
+		.expected_snapshot_revision = revision,
 		.comments = &comment,
 		.comment_count = 1,
 	};
@@ -464,7 +446,7 @@ bool test_function_delete_retires_owned_artifacts(void) {
 	RAnalFunction *function = r_anal_create_function (
 		core->anal, "artifact_delete", 0xb000, R_ANAL_FCN_TYPE_FCN, NULL);
 	mu_assert_notnull (function, "create function");
-	ArtifactTestRevision revision = {0};
+	ut64 revision = 0;
 	mu_assert_true (artifact_test_prepare_function (core, function, &revision),
 		"capture delete source revision");
 	mu_assert_true (r_meta_set_string (core->anal, R_META_TYPE_COMMENT, 0xb004,
@@ -492,7 +474,7 @@ bool test_function_delete_retires_owned_artifacts(void) {
 		.scope_id = function->addr,
 		.expected_function_epoch = r_anal_function_dirty_epoch (function),
 		.expected_type_epoch = r_anal_types_dirty_epoch (core->anal),
-		.expected_snapshot_revision = revision.revision,
+		.expected_snapshot_revision = revision,
 		.comments = &comment,
 		.comment_count = 1,
 		.flags = &flag,
@@ -528,7 +510,7 @@ bool test_owned_artifacts_project_round_trip_preserves_ownership(void) {
 	RAnalFunction *function = r_anal_create_function (
 		source->anal, "artifact_project", 0x5000, R_ANAL_FCN_TYPE_FCN, NULL);
 	mu_assert_notnull (function, "create project function");
-	ArtifactTestRevision revision = {0};
+	ut64 revision = 0;
 	mu_assert_true (artifact_test_prepare_function (source, function, &revision),
 		"capture project source revision");
 	RCoreAnalArtifactComment comment = {
@@ -561,7 +543,7 @@ bool test_owned_artifacts_project_round_trip_preserves_ownership(void) {
 		.scope_id = function->addr,
 		.expected_function_epoch = r_anal_function_dirty_epoch (function),
 		.expected_type_epoch = source->anal->type_dirty_epoch,
-		.expected_snapshot_revision = revision.revision,
+		.expected_snapshot_revision = revision,
 		.comments = &comment,
 		.comment_count = 1,
 		.flags = &flag,
@@ -590,16 +572,14 @@ bool test_owned_artifacts_project_round_trip_preserves_ownership(void) {
 	function = r_anal_get_function_at (loaded->anal, 0x5000);
 	mu_assert_notnull (function, "project function restored");
 	memset (&revision, 0, sizeof (revision));
-	mu_assert_true (r_core_function_snapshot_at (
-		loaded, function->addr, artifact_test_revision_cb, &revision, NULL),
-		"capture restored source revision");
+	mu_assert_true (r_core_function_context_hash (loaded, function->addr, &revision, NULL), "capture restored source revision");
 	RCoreAnalArtifactReplacement clear = {
 		.provider_id = "sla",
 		.domain_id = "semantic",
 		.scope_id = function->addr,
 		.expected_function_epoch = r_anal_function_dirty_epoch (function),
 		.expected_type_epoch = loaded->anal->type_dirty_epoch,
-		.expected_snapshot_revision = revision.revision,
+		.expected_snapshot_revision = revision,
 	};
 	result = r_core_anal_artifacts_replace (loaded, &clear, 1);
 	mu_assert_eq (result.status, R_CORE_ANAL_ARTIFACT_REPLACE_OK,
@@ -626,7 +606,7 @@ bool test_legacy_project_artifacts_remain_unowned(void) {
 	RAnalFunction *function = r_anal_create_function (
 		source->anal, "artifact_legacy", 0x7000, R_ANAL_FCN_TYPE_FCN, NULL);
 	mu_assert_notnull (function, "create legacy function");
-	ArtifactTestRevision revision = {0};
+	ut64 revision = 0;
 	mu_assert_true (artifact_test_prepare_function (source, function, &revision),
 		"capture legacy source revision");
 	mu_assert_true (r_meta_set_string (source->anal, R_META_TYPE_COMMENT, 0x7004,
@@ -669,7 +649,7 @@ bool test_legacy_project_artifacts_remain_unowned(void) {
 		.scope_id = function->addr,
 		.expected_function_epoch = r_anal_function_dirty_epoch (function),
 		.expected_type_epoch = loaded->anal->type_dirty_epoch,
-		.expected_snapshot_revision = revision.revision,
+		.expected_snapshot_revision = revision,
 		.comments = &stale_comment,
 		.comment_count = 1,
 		.xrefs = &stale_xref,
@@ -685,16 +665,14 @@ bool test_legacy_project_artifacts_remain_unowned(void) {
 	function = r_anal_get_function_at (loaded->anal, 0x7000);
 	mu_assert_notnull (function, "legacy function restored");
 	memset (&revision, 0, sizeof (revision));
-	mu_assert_true (r_core_function_snapshot_at (
-		loaded, function->addr, artifact_test_revision_cb, &revision, NULL),
-		"capture legacy restored revision");
+	mu_assert_true (r_core_function_context_hash (loaded, function->addr, &revision, NULL), "capture legacy restored revision");
 	RCoreAnalArtifactReplacement clear = {
 		.provider_id = "sla",
 		.domain_id = "semantic",
 		.scope_id = function->addr,
 		.expected_function_epoch = r_anal_function_dirty_epoch (function),
 		.expected_type_epoch = loaded->anal->type_dirty_epoch,
-		.expected_snapshot_revision = revision.revision,
+		.expected_snapshot_revision = revision,
 	};
 	result = r_core_anal_artifacts_replace (loaded, &clear, 1);
 	mu_assert_eq (result.status, R_CORE_ANAL_ARTIFACT_REPLACE_OK,
@@ -717,7 +695,7 @@ bool test_owned_artifacts_reject_stale_and_foreign_conflicts(void) {
 	RAnalFunction *function = r_anal_create_function (
 		core->anal, "artifact_conflict", 0x3000, R_ANAL_FCN_TYPE_FCN, NULL);
 	mu_assert_notnull (function, "create function");
-	ArtifactTestRevision revision = {0};
+	ut64 revision = 0;
 	mu_assert_true (artifact_test_prepare_function (core, function, &revision),
 		"capture source revision");
 	mu_assert_notnull (r_flag_set (core->flags, "foreign.flag", 0x3010, 4),
@@ -741,7 +719,7 @@ bool test_owned_artifacts_reject_stale_and_foreign_conflicts(void) {
 		.scope_id = function->addr,
 		.expected_function_epoch = epoch,
 		.expected_type_epoch = core->anal->type_dirty_epoch,
-		.expected_snapshot_revision = revision.revision,
+		.expected_snapshot_revision = revision,
 		.comments = &comment,
 		.comment_count = 1,
 		.flags = &flag,
@@ -784,7 +762,7 @@ bool test_owned_artifacts_reject_mismatched_xref_types(void) {
 	RAnalFunction *function = r_anal_create_function (
 		core->anal, "artifact_xref_conflict", 0x9000, R_ANAL_FCN_TYPE_FCN, NULL);
 	mu_assert_notnull (function, "create function");
-	ArtifactTestRevision revision = {0};
+	ut64 revision = 0;
 	mu_assert_true (artifact_test_prepare_function (core, function, &revision),
 		"capture source revision");
 	mu_assert_true (r_anal_xrefs_set (core->anal, 0x9004, 0xa000, R_ANAL_REF_TYPE_DATA),
@@ -807,7 +785,7 @@ bool test_owned_artifacts_reject_mismatched_xref_types(void) {
 		.scope_id = function->addr,
 		.expected_function_epoch = r_anal_function_dirty_epoch (function),
 		.expected_type_epoch = core->anal->type_dirty_epoch,
-		.expected_snapshot_revision = revision.revision,
+		.expected_snapshot_revision = revision,
 		.xrefs = xrefs,
 		.xref_count = R_ARRAY_SIZE (xrefs),
 	};

@@ -1,12 +1,13 @@
-/* radare - LGPL - Copyright 2026 - pancake */
+/* Capture limits radare2 still enforces on its own type budget.
+ *
+ * The snapshot this file used to describe now lives in the r2sleigh
+ * plugin; what stays is the bound radare2 checks for itself. */
 
 #ifndef R2_ANAL_FUNCTION_SNAPSHOT_H
 #define R2_ANAL_FUNCTION_SNAPSHOT_H
 
 #include <r_anal.h>
 
-// Inclusive limits for owned data collected into a function snapshot.
-// String/JSON byte limits include each terminating NUL byte.
 #define R_ANAL_FUNCTION_SNAPSHOT_LIMITS_VERSION 4
 typedef struct r_anal_function_snapshot_limits_t {
 	ut32 struct_size;
@@ -30,51 +31,5 @@ typedef struct r_anal_function_snapshot_limits_t {
 	size_t max_type_graph_members;
 	size_t max_total_owned_bytes;
 } RAnalFunctionSnapshotLimits;
-
-struct r_anal_function_snapshot_t {
-	ut32 schema_version;
-	ut32 struct_size;
-	ut64 capabilities;
-	RAnalFcnContext context;
-	// Logical return arity from a recovered signature or an exact loader role.
-	RAnalSnapshotReturnArity return_arity;
-	ut64 function_addr;
-	ut64 function_size;
-	int bits;
-	ut32 endian;
-	st64 maxstack;
-	char *arch_id;
-	char *cpu_id;
-	char *function_name;
-	RList *base_types; // RList<RAnalBaseType *>
-	ut64 type_context_hash;
-	RAnalFunctionInterfaceSnapshot function_interface;
-	RAnalSnapshotReturnMechanismView return_mechanism;
-	RAnalSnapshotRegisterStorage frame_pointer_storage;
-	RAnalSnapshotStackAllocationContractView stack_allocation_contract;
-	RAnalCallSiteInterfaceSnapshot *call_site_interfaces;
-	size_t num_call_site_interfaces;
-	ut64 revision_identity;
-	// Identity of this function's own captured payload, which the capture
-	// identity above deliberately is not: a callee inherits the root's
-	// revision so a consumer can tell the bodies were read together, and that
-	// makes the same callee under two callers carry two identities. A cache
-	// keyed on the capture therefore never hits for the one case a callee
-	// cache exists to serve.
-	ut64 content_identity;
-	RAnalSnapshotTypeGraph type_graph;
-	RAnalFunctionImageSnapshot image;
-	// Snapshots of the functions this one calls directly, collected in the same
-	// locked transaction so the set describes one state of the analysis rather
-	// than several. Bounded and one level deep: a consumer that reasons across a
-	// call needs the callee's body, not the whole program.
-	RAnalFunctionSnapshot **callee_snapshots;
-	size_t num_callee_snapshots;
-};
-
-R_IPI RAnalFunctionSnapshot *r_anal_function_snapshot_collect_with_limits(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSnapshotLimits *limits, const char **reason);
-R_IPI RAnalFunctionSnapshot *r_anal_function_snapshot_collect_bounded(RAnal *anal, RAnalFunction *fcn, const char **reason);
-R_IPI void r_anal_function_snapshot_limits_default(R_OUT RAnalFunctionSnapshotLimits *limits);
-R_IPI void r_anal_function_snapshot_free(RAnalFunctionSnapshot *snapshot);
 
 #endif
