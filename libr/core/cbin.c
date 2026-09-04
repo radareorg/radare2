@@ -784,6 +784,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		Sdb *gd = sdb_new0 ();
 		sdb_open_gperf (gd, gp);
 		sdb_merge (core->anal->sdb_cc, gd);
+		core->anal->cc_generation++;
 		sdb_close (gd);
 		sdb_free (gd);
 	}

@@ -1489,11 +1489,39 @@ static bool is_reg_in_src(const char *regname, RAnal *anal, const char *const *s
 	return false;
 }
 
-static void resolve_srcregs(RAnal *anal, RAnalOp *op, const char **srcregs) {
+// get_regname already walks the register table, so the index it found comes
+// back with the name instead of costing a second walk. A name that widened is
+// a different register, so that one does need looking up again.
+static const char *regname_and_index(RAnal *anal, RAnalValue *value, int *idx) {
+	*idx = -1;
+	if (!value || !value->reg) {
+		return NULL;
+	}
+	const char *name = value->reg;
+	RRegItem *ri = r_reg_get (anal->reg, value->reg, -1);
+	if (!ri) {
+		return name;
+	}
+	*idx = ri->index;
+	if (ri->size == 32 && anal->config->bits == 64) {
+		// only gprs have a 64bit twin: an fp reg like arm64 s0 must keep its name
+		const char *name64 = r_reg_32_to_64 (anal->reg, value->reg);
+		if (name64) {
+			name = name64;
+			RRegItem *wide = r_reg_get (anal->reg, name64, -1);
+			*idx = wide? wide->index: -1;
+			r_unref (wide);
+		}
+	}
+	r_unref (ri);
+	return name;
+}
+
+static void resolve_srcregs(RAnal *anal, RAnalOp *op, const char **srcregs, int *srcidx) {
 	int i;
 	for (i = 0; i < 3; i++) {
 		RAnalValue *src = RVecRArchValue_at (&op->srcs, i);
-		srcregs[i] = src? get_regname (anal, src): NULL;
+		srcregs[i] = regname_and_index (anal, src, &srcidx[i]);
 	}
 }
 #endif
@@ -1633,7 +1661,10 @@ static int func_fixed_args(Sdb *TDB, const char *name) {
 typedef struct {
 	const RAnalFunction *fcn;
 	const char *cc;
-	const char *loc[ARGSEQ_SLOTS];
+	ut64 generation;
+	// owned: r_anal_cc_argloc returns the sdb value pointer for a plain
+	// register slot, and a write to the cc db frees it
+	char *loc[ARGSEQ_SLOTS];
 	// index of a slot naming one plain register, -1 when it names a set
 	int regidx[ARGSEQ_SLOTS];
 	int max_arg;
@@ -1649,16 +1680,21 @@ static int reg_index_of(RAnal *anal, const char *name) {
 }
 
 static const ArgSeqCache *argseq_of(RAnal *anal, RAnalFunction *fcn) {
-	if (argseq.fcn == fcn && argseq.cc == fcn->callconv) {
+	if (argseq.fcn == fcn && argseq.cc == fcn->callconv
+			&& argseq.generation == anal->cc_generation) {
 		return &argseq;
 	}
 	int i;
+	for (i = 0; i < ARGSEQ_SLOTS; i++) {
+		R_FREE (argseq.loc[i]);
+	}
 	argseq.fcn = fcn;
 	argseq.cc = fcn->callconv;
+	argseq.generation = anal->cc_generation;
 	argseq.max_arg = r_anal_cc_max_arg (anal, fcn->callconv);
 	for (i = 0; i < ARGSEQ_SLOTS; i++) {
 		const char *loc = r_anal_cc_argloc (anal, fcn->callconv, i, 0, 0); // TODO: pass argn
-		argseq.loc[i] = loc;
+		argseq.loc[i] = loc? strdup (loc): NULL;
 		argseq.regidx[i] = (loc && *loc && *loc != '{')? reg_index_of (anal, loc): -1;
 	}
 	return &argseq;
@@ -1673,17 +1709,18 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	const char *opdreg = dst ? get_regname (anal, dst) : NULL;
 	const bool op_dst_writeonly = r_arch_info (anal->arch, R_ARCH_INFO_WODST) == 1;
 	const char *srcregs[3];
-	resolve_srcregs (anal, op, srcregs);
+	int srcidx[3];
+	resolve_srcregs (anal, op, srcregs, srcidx);
 	int opidx[4], opidx_count = 0;
 	{
 		int k;
 		for (k = 0; k < 3; k++) {
-			const int ri = reg_index_of (anal, srcregs[k]);
-			if (ri >= 0) {
-				opidx[opidx_count++] = ri;
+			if (srcidx[k] >= 0) {
+				opidx[opidx_count++] = srcidx[k];
 			}
 		}
-		const int di = reg_index_of (anal, opdreg);
+		int di = -1;
+		(void)regname_and_index (anal, dst, &di);
 		if (di >= 0) {
 			opidx[opidx_count++] = di;
 		}

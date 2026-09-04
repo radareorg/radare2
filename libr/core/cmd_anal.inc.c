@@ -6930,6 +6930,7 @@ static int cmd_af(RCore *core, const char *input) {
 					  Sdb *db = sdb_new (0, dbpath, 0);
 					  if (db) {
 						  sdb_merge (core->anal->sdb_cc, db);
+						  core->anal->cc_generation++;
 						  sdb_close (db);
 						  sdb_free (db);
 					  }
