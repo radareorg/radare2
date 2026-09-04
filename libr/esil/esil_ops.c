@@ -366,10 +366,6 @@ static bool esil_neg(REsil *esil) {
 	return ret;
 }
 
-static bool esil_nop(REsil *esil) {
-	return true;
-}
-
 #if 0
 static int esil_interrupt_linux_i386(REsil *esil) { 		//move this into a plugin
 	ut32 sn, ret = false;
