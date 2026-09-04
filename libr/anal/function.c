@@ -2055,10 +2055,17 @@ static bool snapshot_signature_view_of(const RAnalFunctionSignature *signature, 
 	if (!signature) {
 		return false;
 	}
+	RAnalSnapshotReturnArity return_arity = R_ANAL_SNAPSHOT_RETURN_ARITY_UNKNOWN;
+	if (!strcmp (r_str_get (signature->ret_type), "void")) {
+		return_arity = R_ANAL_SNAPSHOT_RETURN_ARITY_VOID;
+	} else if (R_STR_ISNOTEMPTY (signature->ret_type)) {
+		return_arity = R_ANAL_SNAPSHOT_RETURN_ARITY_VALUE;
+	}
 	*view = (RAnalSnapshotSignatureView) {
 		.num_parameters = signature->params
 			? (size_t)r_list_length (signature->params): 0,
 		.noreturn = signature->noreturn,
+		.return_arity = return_arity,
 	};
 	return true;
 }
