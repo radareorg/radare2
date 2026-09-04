@@ -691,16 +691,25 @@ static bool test_anal_types_link_context_hash_is_order_independent(void) {
 	mu_end;
 }
 
-static bool test_anal_type_link_bumps_type_context(void) {
+static bool test_anal_mutation_type_link_bumps_type_context(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	sdb_set (anal->sdb_types, "codex_mut_type", "type", 0);
 	ut64 epoch0 = r_anal_types_dirty_epoch (anal);
 	ut64 hash0 = r_anal_types_context_hash (anal);
-	mu_assert_true (r_anal_types_set_link (anal, "codex_mut_type", 0x402000), "type link succeeds");
-	mu_assert_neq (r_anal_types_dirty_epoch (anal), epoch0, "type link bumps dirty epoch");
-	mu_assert_neq (r_anal_types_context_hash (anal), hash0, "type link changes context hash");
-	mu_assert_streq (sdb_const_get (anal->sdb_types, "link.00402000", 0), "codex_mut_type", "type link stored in sdb");
+	RAnalMutation mutation = {
+		.kind = R_ANAL_MUTATION_TYPE_LINK,
+		.type = "codex_mut_type",
+		.addr = 0x402000,
+	};
+	RAnalMutationResult result = {0};
+	mu_assert_true (r_anal_apply_mutations (anal, &mutation, 1, &result), "type link mutation batch succeeds");
+	mu_assert_eq (result.attempted, 1, "one mutation attempted");
+	mu_assert_eq (result.applied, 1, "one mutation applied");
+	mu_assert_eq (result.failed, 0, "no mutation failed");
+	mu_assert_neq (r_anal_types_dirty_epoch (anal), epoch0, "type link mutation bumps dirty epoch");
+	mu_assert_neq (r_anal_types_context_hash (anal), hash0, "type link mutation changes context hash");
+	mu_assert_streq (sdb_const_get (anal->sdb_types, "link.00402000", 0), "codex_mut_type", "type link mutation stored in sdb");
 
 	r_anal_free (anal);
 	mu_end;
@@ -736,11 +745,18 @@ static bool test_anal_base_type_union_comma_type_roundtrip(void) {
 	mu_end;
 }
 
-static bool test_anal_type_link_accepts_zero_addr(void) {
+static bool test_anal_mutation_type_link_accepts_zero_addr(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	sdb_set (anal->sdb_types, "codex_zero_type", "type", 0);
-	mu_assert_true (r_anal_types_set_link (anal, "codex_zero_type", 0), "zero-address type link succeeds");
+	RAnalMutation mutation = {
+		.kind = R_ANAL_MUTATION_TYPE_LINK,
+		.type = "codex_zero_type",
+		.addr = 0,
+	};
+	RAnalMutationResult result = {0};
+	mu_assert_true (r_anal_apply_mutations (anal, &mutation, 1, &result), "zero-address type link mutation succeeds");
+	mu_assert_eq (result.applied, 1, "zero-address type link mutation applied");
 	mu_assert_streq (sdb_const_get (anal->sdb_types, "link.00000000", 0), "codex_zero_type", "zero-address type link stored in sdb");
 
 	r_anal_free (anal);
@@ -1005,8 +1021,8 @@ int all_tests(void) {
 	mu_run_test (test_anal_function_type_mutations_bump_type_revision);
 	mu_run_test (test_anal_types_link_epoch_and_context_hash);
 	mu_run_test (test_anal_types_link_context_hash_is_order_independent);
-	mu_run_test (test_anal_type_link_bumps_type_context);
-	mu_run_test (test_anal_type_link_accepts_zero_addr);
+	mu_run_test (test_anal_mutation_type_link_bumps_type_context);
+	mu_run_test (test_anal_mutation_type_link_accepts_zero_addr);
 	return tests_passed != tests_run;
 }
 

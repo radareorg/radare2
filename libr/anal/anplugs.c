@@ -275,23 +275,282 @@ static bool plugin_order_list(RAnal *anal, RAnalPluginAction action, RList **res
 	return true;
 }
 
-static void merge_refs(RVecAnalRef **all_refs, RVecAnalRef *refs) {
-	if (all_refs && refs) {
-		if (*all_refs) {
-			RAnalRef *ref;
-			R_VEC_FOREACH (refs, ref) {
-				RVecAnalRef_push_back (*all_refs, ref);
-			}
-			RVecAnalRef_free (refs);
-		} else {
-			*all_refs = refs;
-		}
+static void plugin_data_refs_batch_free(void *ptr) {
+	RAnalPluginDataRefsBatch *batch = ptr;
+	if (batch) {
+		free (batch->provider_id);
+		RVecAnalRef_free (batch->refs);
+		free (batch);
 	}
 }
 
+static bool plugin_data_refs_provider_id_valid(const char *provider_id) {
+	if (R_STR_ISEMPTY (provider_id) || strlen (provider_id) > 128) {
+		return false;
+	}
+	const unsigned char *cursor = (const unsigned char *)provider_id;
+	for (; *cursor; cursor++) {
+		if (!(isalnum (*cursor) || *cursor == '.' || *cursor == '_'
+				|| *cursor == '-')) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool plugin_data_refs_provider_id_unique(const RList *batches, const char *provider_id) {
+	RListIter *iter;
+	RAnalPluginDataRefsBatch *batch;
+	r_list_foreach (batches, iter, batch) {
+		if (!strcmp (batch->provider_id, provider_id)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static const char *plugin_data_refs_config(RAnal *anal) {
+	if (anal->coreb.cfgGet && anal->coreb.core) {
+		return anal->coreb.cfgGet (anal->coreb.core, "anal.plugins.datarefs");
+	}
+	return NULL;
+}
+
+static bool plugin_data_refs_append_if_callback(RList *plugins, RAnalPlugin *p) {
+	if (p->get_data_refs && !plugin_in_list (plugins, p)) {
+		return r_list_append (plugins, p) != NULL;
+	}
+	return true;
+}
+
+static bool plugin_data_refs_append_all_callbacks(RList *plugins, RAnal *anal) {
+	RListIter *iter;
+	RAnalPlugin *p;
+	r_list_foreach (anal->libstore->plugins, iter, p) {
+		if (!plugin_data_refs_append_if_callback (plugins, p)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+// Eligibility is intentionally excluded from selection identity: a registered,
+// configured producer that is temporarily ineligible must preserve its old set.
+static bool plugin_data_refs_selected(RAnal *anal, RList **selected, char **config_identity) {
+	R_RETURN_VAL_IF_FAIL (anal && selected && config_identity, false);
+	*selected = NULL;
+	*config_identity = NULL;
+	const char *cfg = plugin_data_refs_config (anal);
+	char *identity = strdup (r_str_get (cfg));
+	if (!identity) {
+		return false;
+	}
+	RList *plugins = r_list_new ();
+	if (!plugins) {
+		free (identity);
+		return false;
+	}
+	if (R_STR_ISEMPTY (cfg)) {
+		if (!plugin_data_refs_append_all_callbacks (plugins, anal)) {
+			free (identity);
+			r_list_free (plugins);
+			return false;
+		}
+		*selected = plugins;
+		*config_identity = identity;
+		return true;
+	}
+	RList *names = r_str_split_duplist (cfg, ",", true);
+	if (!names) {
+		free (identity);
+		r_list_free (plugins);
+		return false;
+	}
+	RListIter *iter;
+	char *name;
+	r_list_foreach (names, iter, name) {
+		if (R_STR_ISEMPTY (name)) {
+			continue;
+		}
+		if (!strcmp (name, "*")) {
+			if (!plugin_data_refs_append_all_callbacks (plugins, anal)) {
+				free (identity);
+				r_list_free (names);
+				r_list_free (plugins);
+				return false;
+			}
+			continue;
+		}
+		RAnalPlugin *p = r_libstore_find_name (anal->libstore, name);
+		if (p && !plugin_data_refs_append_if_callback (plugins, p)) {
+			free (identity);
+			r_list_free (names);
+			r_list_free (plugins);
+			return false;
+		}
+	}
+	r_list_free (names);
+	*selected = plugins;
+	*config_identity = identity;
+	return true;
+}
+
+static bool plugin_data_refs_selection_matches(RAnal *anal, const RList *batches,
+		const RAnalDataRefsCallback *callbacks, size_t callback_count,
+		const char *config_identity) {
+	RList *selected = NULL;
+	char *current_config = NULL;
+	if (!plugin_data_refs_selected (anal, &selected, &current_config)) {
+		return false;
+	}
+	bool matches = !strcmp (config_identity, current_config);
+	RListIter *plugin_iter = selected->head;
+	RListIter *batch_iter = batches->head;
+	size_t index = 0;
+	while (matches && plugin_iter && batch_iter && index < callback_count) {
+		RAnalPlugin *p = plugin_iter->data;
+		RAnalPluginDataRefsBatch *batch = batch_iter->data;
+		matches = p->get_data_refs == callbacks[index]
+			&& !strcmp (p->meta.name, batch->provider_id);
+		plugin_iter = plugin_iter->n;
+		batch_iter = batch_iter->n;
+		index++;
+	}
+	matches = matches && !plugin_iter && !batch_iter && index == callback_count;
+	free (current_config);
+	r_list_free (selected);
+	return matches;
+}
+
+R_API bool r_anal_plugin_data_refs_collect(RAnal *anal, RAnalFunction *fcn, RList **batches) {
+	R_RETURN_VAL_IF_FAIL (batches, false);
+	*batches = NULL;
+	R_RETURN_VAL_IF_FAIL (anal && anal->libstore && anal->libstore->plugins && fcn, false);
+	RList *selected = NULL;
+	char *config_identity = NULL;
+	if (!plugin_data_refs_selected (anal, &selected, &config_identity)) {
+		return false;
+	}
+	const ut64 function_addr = fcn->addr;
+	const size_t callback_count = r_list_length (selected);
+	size_t callbacks_size;
+	if (r_mul_overflow_size_t (callback_count, sizeof (RAnalDataRefsCallback),
+			&callbacks_size)) {
+		free (config_identity);
+		r_list_free (selected);
+		return false;
+	}
+	RAnalDataRefsCallback *callbacks = callbacks_size? malloc (callbacks_size): NULL;
+	if (callbacks_size && !callbacks) {
+		free (config_identity);
+		r_list_free (selected);
+		return false;
+	}
+	RList *result = r_list_newf (plugin_data_refs_batch_free);
+	if (!result) {
+		free (callbacks);
+		free (config_identity);
+		r_list_free (selected);
+		return false;
+	}
+	RListIter *iter;
+	RAnalPlugin *p;
+	size_t callback_index = 0;
+	r_list_foreach (selected, iter, p) {
+		const char *provider_id = p->meta.name;
+		if (!plugin_data_refs_provider_id_valid (provider_id)
+				|| !plugin_data_refs_provider_id_unique (result, provider_id)) {
+			free (callbacks);
+			free (config_identity);
+			r_list_free (result);
+			r_list_free (selected);
+			return false;
+		}
+		RAnalPluginDataRefsBatch *batch = R_NEW0 (RAnalPluginDataRefsBatch);
+		if (!batch) {
+			free (callbacks);
+			free (config_identity);
+			r_list_free (result);
+			r_list_free (selected);
+			return false;
+		}
+		batch->provider_id = strdup (provider_id);
+		if (!batch->provider_id) {
+			free (batch);
+			free (callbacks);
+			free (config_identity);
+			r_list_free (result);
+			r_list_free (selected);
+			return false;
+		}
+		callbacks[callback_index++] = p->get_data_refs;
+		if (!r_list_append (result, batch)) {
+			plugin_data_refs_batch_free (batch);
+			free (callbacks);
+			free (config_identity);
+			r_list_free (result);
+			r_list_free (selected);
+			return false;
+		}
+	}
+	r_list_free (selected);
+
+	RListIter *batch_iter = result->head;
+	callback_index = 0;
+	while (batch_iter && callback_index < callback_count) {
+		RAnalPluginDataRefsBatch *batch = batch_iter->data;
+		RVecAnalRef *refs = NULL;
+		RAnalDataRefsCallback callback = callbacks[callback_index];
+		bool callback_success = false;
+		p = r_libstore_find_name (anal->libstore, batch->provider_id);
+		RAnalFunction *current_function = r_anal_get_function_at (anal, function_addr);
+		if (p && p->get_data_refs == callback && current_function
+				&& current_function->addr == function_addr && plugin_is_eligible (anal, p)) {
+			p = r_libstore_find_name (anal->libstore, batch->provider_id);
+			current_function = r_anal_get_function_at (anal, function_addr);
+			if (p && p->get_data_refs == callback && current_function
+					&& current_function->addr == function_addr) {
+				callback_success = callback (anal, current_function, &refs);
+			}
+		}
+		p = r_libstore_find_name (anal->libstore, batch->provider_id);
+		current_function = r_anal_get_function_at (anal, function_addr);
+		if (callback_success && p && p->get_data_refs == callback && current_function
+				&& current_function->addr == function_addr && plugin_is_eligible (anal, p)) {
+			p = r_libstore_find_name (anal->libstore, batch->provider_id);
+			current_function = r_anal_get_function_at (anal, function_addr);
+			batch->success = p && p->get_data_refs == callback && current_function
+				&& current_function->addr == function_addr;
+		}
+		if (!batch->success || (refs && RVecAnalRef_empty (refs))) {
+			RVecAnalRef_free (refs);
+			refs = NULL;
+		}
+		batch->refs = refs;
+		batch_iter = batch_iter->n;
+		callback_index++;
+	}
+	if (!plugin_data_refs_selection_matches (anal, result, callbacks,
+			callback_count, config_identity)) {
+		free (callbacks);
+		free (config_identity);
+		r_list_free (result);
+		return false;
+	}
+	free (callbacks);
+	free (config_identity);
+	*batches = result;
+	return true;
+}
+
+// Unified plugin action dispatcher.
+// For ANALYZE_FCN and POST_ANALYSIS: calls all eligible plugins (returns NULL).
+// For RECOVER_VARS: returns first non-NULL RList* of vars from an eligible plugin.
 R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
-	RVecAnalRef *all_refs = NULL;
+	if (action == R_ANAL_PLUGIN_ACTION_GET_DATA_REFS) {
+		return NULL;
+	}
 	RList *ordered = NULL;
 	if (!plugin_order_list (anal, action, &ordered)) {
 		return NULL;
@@ -318,7 +577,6 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
 				}
 				break;
 			case R_ANAL_PLUGIN_ACTION_GET_DATA_REFS:
-				merge_refs (&all_refs, p->get_data_refs (anal, fcn));
 				break;
 			case R_ANAL_PLUGIN_ACTION_POST_ANALYSIS:
 				p->post_analysis (anal);
@@ -326,7 +584,7 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
 			}
 		}
 		r_list_free (ordered);
-		return all_refs; // non-NULL only for GET_DATA_REFS
+		return NULL;
 	}
 
 	// Fallback: iterate all plugins in registration order with eligibility check
@@ -350,14 +608,13 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
 			}
 			break;
 		case R_ANAL_PLUGIN_ACTION_GET_DATA_REFS:
-			merge_refs (&all_refs, p->get_data_refs (anal, fcn));
 			break;
 		case R_ANAL_PLUGIN_ACTION_POST_ANALYSIS:
 			p->post_analysis (anal);
 			break;
 		}
 	}
-	return all_refs; // non-NULL only for GET_DATA_REFS
+	return NULL;
 }
 
 R_API RAnalPlugin *r_anal_decompiler_provider(RAnal *anal) {

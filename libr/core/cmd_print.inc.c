@@ -6820,56 +6820,63 @@ static RAnalFunction *core_decompiler_target(RCore *core, const char *input) {
 	return fcn;
 }
 
-static bool core_print_provider_decompile(RCore *core, const char *input) {
-	R_RETURN_VAL_IF_FAIL (core && core->lock, false);
+typedef struct {
+	RAnalPlugin *provider;
+	RCodeMeta *meta;
+} DecompileSnapshotContext;
+
+static bool decompile_snapshot_cb(const RAnalFunctionSnapshot *snapshot, void *user) {
+	DecompileSnapshotContext *ctx = user;
+	ctx->meta = ctx->provider->decompile (snapshot);
+	return true;
+}
+
+static bool core_print_provider_decompile_locked(RCore *core, const char *input) {
 	RAnalPlugin *provider = r_anal_decompiler_provider (core->anal);
 	if (!provider) {
 		return false;
 	}
-	// Resolve the target under the lock, then keep only what outlives it. The
-	// RAnalFunction itself does not.
-	r_th_lock_enter (core->lock);
 	RAnalFunction *fcn = core_decompiler_target (core, input);
-	const ut64 addr = fcn? fcn->addr: UT64_MAX;
-	char *name = strdup (fcn && fcn->name? fcn->name: "?");
-	r_th_lock_leave (core->lock);
 	if (!fcn) {
-		free (name);
 		r_core_return_code (core, 1);
 		return true;
 	}
+	DecompileSnapshotContext ctx = {
+		.provider = provider,
+	};
 	const char *reason = NULL;
-	RAnalFunctionSnapshot *snapshot = r_core_function_snapshot_take (core, addr, &reason);
-	if (!snapshot) {
+	if (!r_core_function_snapshot_at (
+			core, fcn->addr, decompile_snapshot_cb, &ctx, &reason)) {
 		R_LOG_ERROR ("Cannot snapshot function '%s': %s",
-			name, r_str_get_fail (reason, "unknown reason"));
-		free (name);
+			fcn->name? fcn->name: "?", r_str_get_fail (reason, "unknown reason"));
 		r_core_return_code (core, 1);
 		return true;
 	}
-	// The snapshot is the caller's, so the provider runs with nothing held.
-	RCodeMeta *meta = provider->decompile (snapshot);
-	r_anal_function_snapshot_free (snapshot);
+	RCodeMeta *meta = ctx.meta;
 	if (!meta) {
-		R_LOG_ERROR ("Decompiler provider failed for function '%s'", name);
-		free (name);
+		R_LOG_ERROR ("Decompiler provider failed for function '%s'", fcn->name? fcn->name: "?");
 		r_core_return_code (core, 1);
 		return true;
 	}
-	free (name);
-	r_th_lock_enter (core->lock);
 	char *out = r_codemeta_print2 (meta, NULL, core->anal);
-	const bool rendered = out != NULL;
+	bool rendered = out != NULL;
 	if (rendered) {
 		r_cons_print (core->cons, out);
 	} else {
 		R_LOG_ERROR ("Cannot render decompiler output");
 	}
-	r_th_lock_leave (core->lock);
 	free (out);
 	r_codemeta_free (meta);
 	r_core_return_code (core, rendered? 0: 1);
 	return true;
+}
+
+static bool core_print_provider_decompile(RCore *core, const char *input) {
+	R_RETURN_VAL_IF_FAIL (core && core->lock, false);
+	r_th_lock_enter (core->lock);
+	const bool result = core_print_provider_decompile_locked (core, input);
+	r_th_lock_leave (core->lock);
+	return result;
 }
 
 static void cmd_print_pcA(RCore *core, ut64 addr, const ut8 *data, int len) {

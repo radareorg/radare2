@@ -26,12 +26,9 @@ static bool core_snapshot_io_is_debug(RIO *io) {
 	return false;
 }
 
-// The returned snapshot belongs to the caller and outlives every lock this
-// takes, so a consumer that reads it - a decompiler, say - does not hold the
-// core or the analysis while it works.
-R_API RAnalFunctionSnapshot *r_core_function_snapshot_take(RCore *core, ut64 function_addr, const char **reason) {
-	R_RETURN_VAL_IF_FAIL (core && core->anal && core->lock, NULL);
-	RAnalFunctionSnapshot *snapshot = NULL;
+R_API bool r_core_function_snapshot_at(RCore *core, ut64 function_addr, RCoreFunctionSnapshotCallback callback, void *user, const char **reason) {
+	R_RETURN_VAL_IF_FAIL (core && core->anal && core->lock && callback, false);
+	bool result = false;
 	r_th_lock_enter (core->lock);
 	if (reason) {
 		*reason = NULL;
@@ -40,11 +37,13 @@ R_API RAnalFunctionSnapshot *r_core_function_snapshot_take(RCore *core, ut64 fun
 		if (reason) {
 			*reason = "snapshots are not taken from a debug-backed target";
 		}
-	} else {
-		snapshot = r_anal_function_snapshot_take (core->anal, function_addr, reason);
+		goto beach;
 	}
+	result = r_anal_function_snapshot_visit_bounded_advisory (
+		core->anal, function_addr, callback, user, reason);
+beach:
 	r_th_lock_leave (core->lock);
-	return snapshot;
+	return result;
 }
 
 // used to speedup strcmp with rconfig.get in loops
@@ -2127,6 +2126,11 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 	if (!addr) {
 		r_th_lock_enter (core->lock);
 		r_th_lock_enter (core->anal->lock);
+		if (!r_core_anal_artifacts_reset (core)) {
+			r_th_lock_leave (core->anal->lock);
+			r_th_lock_leave (core->lock);
+			return false;
+		}
 		r_list_purge (core->anal->fcns);
 		if (!(core->anal->fcns = r_list_new ())) {
 			r_th_lock_leave (core->anal->lock);
@@ -4008,6 +4012,172 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	free (ctx.buf);
 	fcn->stack = saved_stack;
 	r_anal_function_rename_default_args (fcn);
+}
+
+typedef struct {
+	ut64 revision;
+	bool captured;
+} PluginDataRefsRevision;
+
+static bool plugin_data_refs_revision_cb(const RAnalFunctionSnapshot *snapshot, void *user) {
+	PluginDataRefsRevision *result = user;
+	RAnalFunctionSnapshotView view;
+	if (!r_anal_function_snapshot_view (snapshot, &view)) {
+		return false;
+	}
+	result->revision = view.revision_identity;
+	result->captured = true;
+	return true;
+}
+
+static RList *plugin_data_refs_function_scopes(RAnal *anal) {
+	RList *scopes = r_list_newf (free);
+	if (!scopes) {
+		return NULL;
+	}
+	RListIter *iter;
+	RAnalFunction *function;
+	r_list_foreach (anal->fcns, iter, function) {
+		ut64 *scope = R_NEW (ut64);
+		*scope = function->addr;
+		if (!r_list_append (scopes, scope)) {
+			free (scope);
+			r_list_free (scopes);
+			return NULL;
+		}
+	}
+	return scopes;
+}
+
+static bool plugin_data_refs_batches_include(const RList *batches, const char *provider_id) {
+	RListIter *iter;
+	RAnalPluginDataRefsBatch *batch;
+	r_list_foreach (batches, iter, batch) {
+		if (!strcmp (batch->provider_id, provider_id)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static void plugin_data_refs_replace_for_function(RCore *core, ut64 scope_id) {
+	RAnal *anal = core->anal;
+	RAnalFunction *function = r_anal_get_function_at (anal, scope_id);
+	if (!function || function->addr != scope_id) {
+		return;
+	}
+	const ut64 function_epoch = r_anal_function_dirty_epoch (function);
+	const ut64 type_epoch = r_anal_types_dirty_epoch (anal);
+	PluginDataRefsRevision revision = {0};
+	if (!r_core_function_snapshot_at (
+			core, scope_id, plugin_data_refs_revision_cb, &revision, NULL)
+			|| !revision.captured
+			|| r_anal_function_dirty_epoch (function) != function_epoch
+			|| r_anal_types_dirty_epoch (anal) != type_epoch) {
+		return;
+	}
+	RList *batches = NULL;
+	if (!r_anal_plugin_data_refs_collect (anal, function, &batches)) {
+		return;
+	}
+	size_t successful_count = 0;
+	RListIter *iter;
+	RAnalPluginDataRefsBatch *batch;
+	r_list_foreach (batches, iter, batch) {
+		if (batch->success) {
+			successful_count++;
+		}
+	}
+	size_t retired_count = 0;
+	const size_t artifact_set_count = r_core_anal_artifact_set_count (core);
+	size_t set_index;
+	for (set_index = 0; set_index < artifact_set_count; set_index++) {
+		RCoreAnalArtifactSetView set;
+		if (!r_core_anal_artifact_set_view (core, set_index, &set)) {
+			r_list_free (batches);
+			return;
+		}
+		if (set.scope_id == scope_id && !strcmp (set.domain_id, "dataref")
+				&& !plugin_data_refs_batches_include (batches, set.provider_id)) {
+			retired_count++;
+		}
+	}
+	const size_t replacement_count = successful_count + retired_count;
+	if (!replacement_count) {
+		r_list_free (batches);
+		return;
+	}
+	RCoreAnalArtifactReplacement *replacements = R_NEWS0 (
+		RCoreAnalArtifactReplacement, replacement_count);
+	if (!replacements) {
+		r_list_free (batches);
+		return;
+	}
+	size_t index = 0;
+	r_list_foreach (batches, iter, batch) {
+		if (!batch->success) {
+			continue;
+		}
+		replacements[index] = (RCoreAnalArtifactReplacement) {
+			.provider_id = batch->provider_id,
+			.domain_id = "dataref",
+			.scope_id = scope_id,
+			.expected_function_epoch = function_epoch,
+			.expected_type_epoch = type_epoch,
+			.expected_snapshot_revision = revision.revision,
+			.xrefs = batch->refs? R_VEC_START_ITER (batch->refs): NULL,
+			.xref_count = batch->refs? RVecAnalRef_length (batch->refs): 0,
+		};
+		index++;
+	}
+	for (set_index = 0; set_index < artifact_set_count; set_index++) {
+		RCoreAnalArtifactSetView set;
+		if (!r_core_anal_artifact_set_view (core, set_index, &set)) {
+			free (replacements);
+			r_list_free (batches);
+			return;
+		}
+		if (set.scope_id != scope_id || strcmp (set.domain_id, "dataref")
+				|| plugin_data_refs_batches_include (batches, set.provider_id)) {
+			continue;
+		}
+		replacements[index] = (RCoreAnalArtifactReplacement) {
+			.provider_id = set.provider_id,
+			.domain_id = "dataref",
+			.scope_id = scope_id,
+			.expected_function_epoch = function_epoch,
+			.expected_type_epoch = type_epoch,
+			.expected_snapshot_revision = revision.revision,
+		};
+		index++;
+	}
+	RCoreAnalArtifactReplaceResult result = r_core_anal_artifacts_replace (
+		core, replacements, replacement_count);
+	if (result.status != R_CORE_ANAL_ARTIFACT_REPLACE_OK) {
+		R_LOG_WARN ("Cannot replace plugin data references at 0x%08"PFMT64x": %u",
+			scope_id, result.status);
+	}
+	free (replacements);
+	r_list_free (batches);
+}
+
+// Collect each plugin's authoritative per-function data refs and replace all
+// successful producer sets atomically. A refused producer preserves its set.
+R_API void r_core_anal_plugin_data_refs(RCore *core) {
+	R_RETURN_IF_FAIL (core && core->anal);
+	r_th_lock_enter (core->lock);
+	RList *scopes = plugin_data_refs_function_scopes (core->anal);
+	if (!scopes) {
+		r_th_lock_leave (core->lock);
+		return;
+	}
+	RListIter *iter;
+	ut64 *scope;
+	r_list_foreach (scopes, iter, scope) {
+		plugin_data_refs_replace_for_function (core, *scope);
+	}
+	r_list_free (scopes);
+	r_th_lock_leave (core->lock);
 }
 
 static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, HtUP *state, HtUP *avoid) {

@@ -4,7 +4,7 @@
 #include "minunit.h"
 #include <string.h>
 
-#include <r_anal_priv.h>
+#include "../../libr/anal/function_snapshot.h"
 
 #include "test_anal_block_invars.inl"
 
@@ -125,47 +125,12 @@ static RAnalFcnSlot *find_stack_slot(RAnalFcnContext *ctx, const char *name) {
 }
 
 static bool set_function_type_link(RAnal *anal, const char *type, ut64 addr) {
-	if (!anal->sdb_types || R_STR_ISEMPTY (type)) {
-		return false;
-	}
-	if (r_type_func_exist (anal->sdb_types, type)) {
-		return r_anal_function_type_link_set (anal, type, addr);
-	}
-	return r_anal_types_set_link (anal, type, addr)
-		|| r_anal_types_set_link_offset (anal, type, addr);
-}
-
-// The deleted accessors gated each of these on a capability bit. Reading the
-// field directly means applying the same gate here.
-static bool snapshot_return_mechanism(const RAnalFunctionSnapshot *snapshot,
-		RAnalSnapshotReturnMechanism *out) {
-	*out = (RAnalSnapshotReturnMechanism) {0};
-	if (!(snapshot->capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_RETURN_MECHANISM)) {
-		return false;
-	}
-	*out = snapshot->return_mechanism;
-	return true;
-}
-
-static bool snapshot_frame_pointer_storage(const RAnalFunctionSnapshot *snapshot,
-		RAnalSnapshotRegisterStorage *out) {
-	*out = (RAnalSnapshotRegisterStorage) {0};
-	if (!(snapshot->capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FRAME_POINTER_STORAGE)) {
-		return false;
-	}
-	*out = snapshot->frame_pointer_storage;
-	return true;
-}
-
-static bool snapshot_stack_allocation_contract(const RAnalFunctionSnapshot *snapshot,
-		RAnalSnapshotStackAllocationContract *out) {
-	*out = (RAnalSnapshotStackAllocationContract) {0};
-	if (!(snapshot->capabilities
-			& R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_STACK_ALLOCATION_CONTRACT)) {
-		return false;
-	}
-	*out = snapshot->stack_allocation_contract;
-	return true;
+	RAnalMutation mutation = {
+		.kind = R_ANAL_MUTATION_TYPE_LINK,
+		.type = type,
+		.addr = addr,
+	};
+	return r_anal_apply_mutations (anal, &mutation, 1, NULL);
 }
 
 static RAnalBaseType *find_snapshot_base_type(const RAnalFunctionSnapshot *snapshot, const char *name) {
@@ -423,10 +388,20 @@ static bool test_r_anal_function_snapshot_carries_linked_data_object_type(void) 
 		r_anal_function_snapshot_collect_bounded (anal, fcn, NULL);
 	mu_assert_notnull (snapshot, "collect typed-data snapshot");
 	mu_assert_eq (snapshot->image.num_data_symbols, 1, "one referenced data object");
-	const RAnalSnapshotDataSymbol *symbol = &snapshot->image.data_symbols[0];
-	mu_assert_eq (symbol->addr, 0x7000, "typed data address");
-	mu_assert_streq (symbol->name, "global_counter", "exact typed data name");
-	mu_assert_streq (symbol->type_name, "int32_t", "exact source-owned data type spelling");
+	RAnalSnapshotDataSymbolView view;
+	mu_assert_true (r_anal_function_snapshot_data_symbol_view (snapshot, 0, &view),
+		"view typed data object");
+	mu_assert_eq (view.addr, 0x7000, "typed data address");
+	mu_assert_eq (view.name_length, strlen ("global_counter"), "typed data name length");
+	mu_assert_eq (view.type_name_length, strlen ("int32_t"), "typed data type length");
+	char name[32];
+	char type_name[32];
+	mu_assert_true (r_anal_function_snapshot_data_symbol_name (
+		snapshot, 0, name, sizeof (name)), "copy typed data name");
+	mu_assert_true (r_anal_function_snapshot_data_symbol_type_name (
+		snapshot, 0, type_name, sizeof (type_name)), "copy typed data type");
+	mu_assert_streq (name, "global_counter", "exact typed data name");
+	mu_assert_streq (type_name, "int32_t", "exact source-owned data type spelling");
 
 	const ut64 old_revision = snapshot->revision_identity;
 	mu_assert_true (set_function_type_link (anal, "uint32_t", 0x7000),
@@ -436,9 +411,12 @@ static bool test_r_anal_function_snapshot_carries_linked_data_object_type(void) 
 	mu_assert_notnull (changed, "collect changed typed-data snapshot");
 	mu_assert_neq (changed->revision_identity, old_revision,
 		"data type participates in snapshot identity");
-	mu_assert_streq (changed->image.data_symbols[0].type_name, "uint32_t",
-		"changed data type is current");
-	mu_assert_streq (symbol->type_name, "int32_t", "old snapshot remains immutable");
+	mu_assert_true (r_anal_function_snapshot_data_symbol_type_name (
+		changed, 0, type_name, sizeof (type_name)), "copy changed data type");
+	mu_assert_streq (type_name, "uint32_t", "changed data type is current");
+	mu_assert_true (r_anal_function_snapshot_data_symbol_type_name (
+		snapshot, 0, type_name, sizeof (type_name)), "old data type remains readable");
+	mu_assert_streq (type_name, "int32_t", "old snapshot remains immutable");
 
 	r_anal_function_snapshot_free (changed);
 	r_anal_function_snapshot_free (snapshot);
@@ -1003,6 +981,7 @@ bool test_r_anal_function_context_collect_is_conservative_for_stack_slots(void) 
 	mu_assert_notnull (snapshot, "collect typed function snapshot");
 	RAnalFcnContext *ctx = &snapshot->context;
 	mu_assert_eq (snapshot->schema_version, R_ANAL_FUNCTION_SNAPSHOT_SCHEMA_VERSION, "snapshot schema version");
+	mu_assert_eq (snapshot->struct_size, sizeof (RAnalFunctionSnapshot), "snapshot structure size");
 	mu_assert_eq (snapshot->function_addr, fcn->addr, "snapshot function address");
 	mu_assert_streq (snapshot->function_name, fcn->name, "snapshot function name");
 	mu_assert_notnull (snapshot->base_types, "snapshot owns a type-layout list");
@@ -1089,9 +1068,9 @@ static bool test_r_anal_function_snapshot_distinguishes_split_fallthrough(void) 
 	RAnalFunctionSnapshot *split_snapshot = r_anal_function_snapshot_collect_bounded (
 		anal, split_fcn, NULL);
 	mu_assert_notnull (split_snapshot, "collect split-fallthrough snapshot");
-	mu_assert_eq (split_snapshot->image.blocks[0].num_successors, 1,
-		"split block has exactly one successor");
-	RAnalSnapshotSuccessor successor = split_snapshot->image.blocks[0].successors[0];
+	RAnalSnapshotSuccessorView successor = {0};
+	mu_assert_true (r_anal_function_snapshot_successor_view (
+		split_snapshot, 0, 0, &successor), "read split-fallthrough successor");
 	mu_assert_eq (successor.kind, R_ANAL_SNAPSHOT_SUCCESSOR_FALLTHROUGH,
 		"MOV-only split block has a machine-sequential successor");
 	mu_assert_eq (successor.target_addr, split_addr + 7,
@@ -1118,9 +1097,8 @@ static bool test_r_anal_function_snapshot_distinguishes_split_fallthrough(void) 
 	RAnalFunctionSnapshot *branch_snapshot = r_anal_function_snapshot_collect_bounded (
 		anal, branch_fcn, NULL);
 	mu_assert_notnull (branch_snapshot, "collect branch-to-next snapshot");
-	mu_assert_eq (branch_snapshot->image.blocks[0].num_successors, 1,
-		"branch-to-next block has exactly one successor");
-	successor = branch_snapshot->image.blocks[0].successors[0];
+	mu_assert_true (r_anal_function_snapshot_successor_view (
+		branch_snapshot, 0, 0, &successor), "read branch-to-next successor");
 	mu_assert_eq (successor.kind, R_ANAL_SNAPSHOT_SUCCESSOR_DIRECT,
 		"explicit branch-to-next remains a direct successor");
 	mu_assert_eq (successor.target_addr, branch_addr + 2,
@@ -1171,11 +1149,16 @@ static bool test_r_anal_function_snapshot_distinguishes_split_fallthrough(void) 
 		anal, indirect_fcn, NULL);
 	mu_assert_notnull (indirect_snapshot,
 		"one unresolved branch does not discard the whole function");
-	const RAnalSnapshotBlock *indirect_block = &indirect_snapshot->image.blocks[0];
-	mu_assert_eq (indirect_block->addr, indirect_addr,
+	RAnalSnapshotBlockView indirect_view = {0};
+	mu_assert_true (r_anal_function_snapshot_block_view (
+		indirect_snapshot, 0, &indirect_view), "read the indirect branch block");
+	mu_assert_eq (indirect_view.addr, indirect_addr,
 		"the first block is the one ending in the indirect branch");
-	mu_assert_eq (indirect_block->num_successors, 0,
+	mu_assert_eq (indirect_view.num_successors, 0,
 		"indirect edge cannot masquerade as direct or fallthrough");
+	mu_assert_false (r_anal_function_snapshot_successor_view (
+		indirect_snapshot, 0, 0, &successor),
+		"the dropped indirect edge is not readable as a successor");
 	r_anal_function_snapshot_free (indirect_snapshot);
 
 	anal->config->endian = R_SYS_ENDIAN_BIG;
@@ -1205,9 +1188,8 @@ static bool test_r_anal_function_snapshot_distinguishes_split_fallthrough(void) 
 	RAnalFunctionSnapshot *delay_snapshot = r_anal_function_snapshot_collect_bounded (
 		anal, delay_fcn, NULL);
 	mu_assert_notnull (delay_snapshot, "collect delayed branch-to-next snapshot");
-	mu_assert_eq (delay_snapshot->image.blocks[0].num_successors, 1,
-		"delayed branch block has exactly one successor");
-	successor = delay_snapshot->image.blocks[0].successors[0];
+	mu_assert_true (r_anal_function_snapshot_successor_view (
+		delay_snapshot, 0, 0, &successor), "read delayed branch successor");
 	mu_assert_eq (successor.kind, R_ANAL_SNAPSHOT_SUCCESSOR_DIRECT,
 		"delay-slot instruction cannot demote the effective direct terminator");
 	r_anal_function_snapshot_free (delay_snapshot);
@@ -1308,6 +1290,10 @@ bool test_r_anal_function_snapshot_limits_bound_type_clone(void) {
 	rejected.max_assumptions_json_bytes--;
 	mu_assert_null (r_anal_function_snapshot_collect_with_limits (anal, fcn, &rejected, NULL),
 		"assumptions JSON bytes reject before snapshot allocation");
+	rejected = limits;
+	rejected.struct_size--;
+	mu_assert_null (r_anal_function_snapshot_collect_with_limits (anal, fcn, &rejected, NULL),
+		"truncated limits contract is rejected");
 
 	RAnalFunctionSnapshotLimits unbounded = limits;
 	unbounded.max_base_types = SIZE_MAX;
@@ -1378,8 +1364,8 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 		"call preservation is independent of prototype authority");
 	mu_assert_true (name_only->function_interface.frame_pointer_preserved_across_calls,
 		"frame-carrier preservation is independent of prototype authority");
-	RAnalSnapshotStackAllocationContract name_only_stack_allocation = {0};
-	mu_assert_true (snapshot_stack_allocation_contract (
+	RAnalSnapshotStackAllocationContractView name_only_stack_allocation = {0};
+	mu_assert_true (r_anal_function_snapshot_interface_stack_allocation_contract (
 		name_only, &name_only_stack_allocation),
 		"incomplete prototype still exposes exact machine stack geometry");
 	mu_assert_eq (name_only_stack_allocation.growth,
@@ -1432,8 +1418,8 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 		"calling convention preserves the stack-pointer carrier across calls");
 	mu_assert_true (frame_snapshot->function_interface.frame_pointer_preserved_across_calls,
 		"calling convention preserves the frame-pointer carrier across calls");
-	RAnalSnapshotRegisterStorage frame_pointer = {0};
-	mu_assert_true (snapshot_frame_pointer_storage (
+	RAnalSnapshotRegisterStorageView frame_pointer = {0};
+	mu_assert_true (r_anal_function_snapshot_interface_frame_pointer_storage (
 		frame_snapshot, &frame_pointer), "copy exact frame-pointer storage");
 	RRegItem *rbp = r_reg_get (anal->reg, "rbp", -1);
 	mu_assert_notnull (rbp, "resolve exact frame-pointer register");
@@ -1441,7 +1427,12 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 		"frame pointer uses canonical byte coordinates");
 	mu_assert_eq (frame_pointer.size, 8, "frame pointer is address width");
 	r_unref (rbp);
-	mu_assert_streq (frame_pointer.name, "rbp", "frame pointer name is owned");
+	char frame_pointer_name[16] = {0};
+	mu_assert_true (r_anal_function_snapshot_interface_storage_name (
+		frame_snapshot, R_ANAL_SNAPSHOT_INTERFACE_STORAGE_FRAME_POINTER,
+		frame_pointer_name, sizeof (frame_pointer_name)),
+		"copy exact frame-pointer name");
+	mu_assert_streq (frame_pointer_name, "rbp", "frame pointer name is owned");
 	const ut64 frame_pointer_revision = frame_snapshot->revision_identity;
 
 	mu_assert_true (snapshot_test_publish_frame_pointer (anal, fcn, NULL),
@@ -1454,13 +1445,13 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 		"absent proof cannot carry frame-pointer authority");
 	frame_pointer.offset = 99;
 	frame_pointer.size = 99;
-	mu_assert_false (snapshot_frame_pointer_storage (
+	mu_assert_false (r_anal_function_snapshot_interface_frame_pointer_storage (
 		no_frame_snapshot, &frame_pointer), "absent frame-pointer accessor refuses");
 	mu_assert_eq (frame_pointer.offset, 0, "failed frame accessor clears offset");
 	mu_assert_eq (frame_pointer.size, 0, "failed frame accessor clears size");
 	mu_assert_neq (no_frame_snapshot->revision_identity, frame_pointer_revision,
 		"frame-pointer presence participates in snapshot identity");
-	mu_assert_true (snapshot_frame_pointer_storage (
+	mu_assert_true (r_anal_function_snapshot_interface_frame_pointer_storage (
 		frame_snapshot, &frame_pointer), "old snapshot retains frame-pointer proof");
 	mu_assert_eq (frame_pointer.size, 8, "old frame-pointer snapshot is immutable");
 	r_anal_function_snapshot_free (no_frame_snapshot);
@@ -1538,6 +1529,16 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 	mu_assert_streq (snapshot->function_interface.parameters[0].name, "value",
 		"exact parameter presentation name is owned");
 	mu_assert_streq (snapshot->function_interface.parameters[0].storage.name, "rdi", "exact parameter register");
+	RAnalSnapshotParameterView parameter_view = {0};
+	mu_assert_true (r_anal_function_snapshot_parameter_view (
+		snapshot, 0, &parameter_view), "copy exact parameter view");
+	mu_assert_eq (parameter_view.name_length, strlen ("value"),
+		"parameter view reports the exact owned presentation length");
+	char parameter_name[16] = {0};
+	mu_assert_true (r_anal_function_snapshot_parameter_name (
+		snapshot, 0, parameter_name, sizeof (parameter_name)),
+		"copy exact parameter presentation name");
+	mu_assert_streq (parameter_name, "value", "parameter presentation copy is exact");
 	RRegItem *rdi_item = r_reg_get (anal->reg, "rdi", -1);
 	mu_assert_notnull (rdi_item, "resolve exact parameter carrier");
 	mu_assert_eq (snapshot->function_interface.parameters[0].storage.offset,
@@ -1578,8 +1579,8 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 	mu_assert_true (snapshot->capabilities
 		& R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_RETURN_MECHANISM,
 		"exact x86 snapshot carries its stack-return mechanism");
-	RAnalSnapshotReturnMechanism return_mechanism;
-	mu_assert_true (snapshot_return_mechanism (
+	RAnalSnapshotReturnMechanismView return_mechanism;
+	mu_assert_true (r_anal_function_snapshot_interface_return_mechanism (
 		snapshot, &return_mechanism), "copy exact stack-return mechanism");
 	mu_assert_eq (return_mechanism.kind,
 		R_ANAL_SNAPSHOT_RETURN_MECHANISM_STACK, "stack-return mechanism kind");
@@ -1589,8 +1590,8 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 	mu_assert_true (snapshot->capabilities
 		& R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_STACK_ALLOCATION_CONTRACT,
 		"exact x86 snapshot carries its source-owned stack allocation contract");
-	RAnalSnapshotStackAllocationContract stack_allocation_contract;
-	mu_assert_true (snapshot_stack_allocation_contract (
+	RAnalSnapshotStackAllocationContractView stack_allocation_contract;
+	mu_assert_true (r_anal_function_snapshot_interface_stack_allocation_contract (
 		snapshot, &stack_allocation_contract), "copy exact stack allocation contract");
 	mu_assert_eq (stack_allocation_contract.growth,
 		R_ANAL_SNAPSHOT_STACK_GROWTH_LOWER, "exact CC owns only lower-address reservations");
@@ -1601,7 +1602,7 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 	RAnalFunctionSnapshot *changed_red_zone =
 		r_anal_function_snapshot_collect_bounded (anal, fcn, NULL);
 	mu_assert_notnull (changed_red_zone, "collect changed red-zone contract");
-	mu_assert_true (snapshot_stack_allocation_contract (
+	mu_assert_true (r_anal_function_snapshot_interface_stack_allocation_contract (
 		changed_red_zone, &stack_allocation_contract),
 		"changed red zone remains exact allocation authority");
 	mu_assert_eq (stack_allocation_contract.growth,
@@ -1626,7 +1627,7 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 			"malformed red zone disables exact stack-allocation authority");
 		stack_allocation_contract.growth = R_ANAL_SNAPSHOT_STACK_GROWTH_HIGHER;
 		stack_allocation_contract.implicit_active_sp_bytes = 1;
-		mu_assert_false (snapshot_stack_allocation_contract (
+		mu_assert_false (r_anal_function_snapshot_interface_stack_allocation_contract (
 			malformed_red_zone, &stack_allocation_contract),
 			"malformed red-zone accessor refuses");
 		mu_assert_eq (stack_allocation_contract.growth,
@@ -1643,7 +1644,7 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 	mu_assert_true (absent_red_zone->capabilities
 		& R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_STACK_ALLOCATION_CONTRACT,
 		"absent red zone preserves exact stack-allocation authority");
-	mu_assert_true (snapshot_stack_allocation_contract (
+	mu_assert_true (r_anal_function_snapshot_interface_stack_allocation_contract (
 		absent_red_zone, &stack_allocation_contract),
 		"allocation accessor accepts an absent red zone");
 	mu_assert_eq (stack_allocation_contract.growth,
@@ -1663,7 +1664,7 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 		& R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_STACK_ALLOCATION_CONTRACT,
 		"unknown growth spelling carries no allocation authority");
 	stack_allocation_contract.growth = R_ANAL_SNAPSHOT_STACK_GROWTH_HIGHER;
-	mu_assert_false (snapshot_stack_allocation_contract (
+	mu_assert_false (r_anal_function_snapshot_interface_stack_allocation_contract (
 		malformed_stack_allocation, &stack_allocation_contract),
 		"malformed allocation accessor refuses");
 	mu_assert_eq (stack_allocation_contract.growth,
@@ -1675,7 +1676,7 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 	RAnalFunctionSnapshot *higher_stack_allocation =
 		r_anal_function_snapshot_collect_bounded (anal, fcn, NULL);
 	mu_assert_notnull (higher_stack_allocation, "collect higher-address stack allocation contract");
-	mu_assert_true (snapshot_stack_allocation_contract (
+	mu_assert_true (r_anal_function_snapshot_interface_stack_allocation_contract (
 		higher_stack_allocation, &stack_allocation_contract),
 		"higher-address contract remains explicit authority");
 	mu_assert_eq (stack_allocation_contract.growth,
@@ -1702,7 +1703,7 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 		"noncanonical return-slot geometry carries no authority");
 	mu_assert_neq (noncanonical_return_mechanism->revision_identity,
 		return_mechanism_revision, "refused return mechanism changes snapshot identity");
-	mu_assert_true (snapshot_return_mechanism (
+	mu_assert_true (r_anal_function_snapshot_interface_return_mechanism (
 		snapshot, &return_mechanism), "old snapshot retains return mechanism");
 	mu_assert_eq (return_mechanism.entry_sp_offset, 0, "old snapshot remains immutable");
 	r_anal_function_snapshot_free (noncanonical_return_mechanism);
@@ -1715,7 +1716,7 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 		"malformed return mechanism carries no authority");
 	return_mechanism.kind = R_ANAL_SNAPSHOT_RETURN_MECHANISM_STACK;
 	return_mechanism.slot_size = 99;
-	mu_assert_false (snapshot_return_mechanism (
+	mu_assert_false (r_anal_function_snapshot_interface_return_mechanism (
 		malformed_return_mechanism, &return_mechanism),
 		"accessor rejects malformed return mechanism");
 	mu_assert_eq (return_mechanism.kind, R_ANAL_SNAPSHOT_RETURN_MECHANISM_NONE,
@@ -1919,25 +1920,45 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 	RAnalFcnSlot *sp_resource = find_stack_slot (&snapshot->context, "exact_sp_slot");
 	mu_assert_notnull (bp_resource, "snapshot owns exact BP resource");
 	mu_assert_notnull (sp_resource, "snapshot owns exact SP resource");
+	RAnalFunctionSnapshotView public_snapshot;
+	mu_assert_true (r_anal_function_snapshot_view (snapshot, &public_snapshot),
+		"open public exact snapshot view");
+	mu_assert_eq (public_snapshot.num_stack_slots,
+		(size_t)r_list_length (snapshot->context.fcn_slots),
+		"public view reports every owned stack slot");
 	bool saw_public_bp_slot = false;
-	RListIter *slot_iter;
-	RAnalFcnSlot *slot;
-	r_list_foreach (snapshot->context.fcn_slots, slot_iter, slot) {
-		if (slot->name && !strcmp (slot->name, "exact_bp_slot")) {
-			saw_public_bp_slot = slot->base == R_ANAL_FCN_BASE_BP
-				&& slot->base_offset == bp_resource->base_offset
-				&& slot->base_size == bp_resource->base_size
-				&& slot->offset == bp_resource->offset
-				&& slot->size == bp_resource->size
-				&& slot->offset_valid && slot->role == bp_resource->role
-				&& slot->arg_index == bp_resource->arg_index
-				&& slot->home_reg_offset == bp_resource->home_reg_offset
-				&& slot->home_reg_size == bp_resource->home_reg_size
-				&& slot->base_name && !strcmp (slot->base_name, "rbp");
+	size_t slot_index;
+	for (slot_index = 0; slot_index < public_snapshot.num_stack_slots; slot_index++) {
+		RAnalSnapshotStackSlotView slot_view;
+		char slot_name[64];
+		char base_name[64];
+		mu_assert_true (r_anal_function_snapshot_stack_slot_view (
+			snapshot, slot_index, &slot_view), "copy public stack-slot view");
+		mu_assert_true (r_anal_function_snapshot_stack_slot_string (
+			snapshot, slot_index, R_ANAL_SNAPSHOT_STACK_SLOT_STRING_NAME,
+			slot_name, sizeof (slot_name)), "copy public stack-slot name");
+		mu_assert_true (r_anal_function_snapshot_stack_slot_string (
+			snapshot, slot_index, R_ANAL_SNAPSHOT_STACK_SLOT_STRING_BASE_NAME,
+			base_name, sizeof (base_name)), "copy public stack-slot base name");
+		if (!strcmp (slot_name, "exact_bp_slot")) {
+			saw_public_bp_slot = slot_view.base == R_ANAL_FCN_BASE_BP
+				&& slot_view.base_offset == bp_resource->base_offset
+				&& slot_view.base_size == bp_resource->base_size
+				&& slot_view.offset == bp_resource->offset
+				&& slot_view.size == bp_resource->size
+				&& slot_view.offset_valid && slot_view.role == bp_resource->role
+				&& slot_view.arg_index == bp_resource->arg_index
+				&& slot_view.home_reg_offset == bp_resource->home_reg_offset
+				&& slot_view.home_reg_size == bp_resource->home_reg_size
+				&& !strcmp (base_name, "rbp");
 		}
 	}
 	mu_assert_true (saw_public_bp_slot,
-		"published stack slots preserve exact typed coordinates");
+		"public stack-slot accessors preserve exact typed coordinates");
+	RAnalSnapshotStackSlotView invalid_slot;
+	mu_assert_false (r_anal_function_snapshot_stack_slot_view (
+		snapshot, public_snapshot.num_stack_slots, &invalid_slot),
+		"public stack-slot view rejects out-of-range index");
 	mu_assert_eq (bp_resource->base, R_ANAL_FCN_BASE_BP, "exact BP resource base");
 	mu_assert_streq (bp_resource->base_name, "rbp", "exact BP resource register");
 	mu_assert_eq (bp_resource->base_size, 8, "exact BP resource register size");
@@ -2096,8 +2117,8 @@ bool test_r_anal_function_snapshot_prefers_link_register_return_address(void) {
 	mu_assert_false (snapshot->capabilities
 		& R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_RETURN_MECHANISM,
 		"ARM64 profile without an exact mechanism carries no return authority");
-	RAnalSnapshotReturnMechanism return_mechanism;
-	mu_assert_false (snapshot_return_mechanism (
+	RAnalSnapshotReturnMechanismView return_mechanism;
+	mu_assert_false (r_anal_function_snapshot_interface_return_mechanism (
 		snapshot, &return_mechanism), "ARM64 absent mechanism is not exposed");
 	r_anal_function_snapshot_free (snapshot);
 
@@ -2204,8 +2225,8 @@ bool test_r_anal_function_snapshot_falls_back_from_unusable_linked_cc(void) {
 		"fallback snapshot certifies its exact interface");
 	mu_assert_streq (snapshot->function_interface.calling_convention, "amd64",
 		"physical carriers use the usable live target CC");
-	RAnalSnapshotReturnMechanism return_mechanism;
-	mu_assert_true (snapshot_return_mechanism (
+	RAnalSnapshotReturnMechanismView return_mechanism;
+	mu_assert_true (r_anal_function_snapshot_interface_return_mechanism (
 		snapshot, &return_mechanism), "fallback exposes selected live CC mechanism");
 	mu_assert_eq (return_mechanism.entry_sp_offset, 0,
 		"fallback mechanism comes from selected amd64 CC");
@@ -2589,22 +2610,40 @@ bool test_r_anal_function_snapshot_resolves_lp64_integer_typedefs(void) {
 	mu_assert_notnull (snapshot->context.signature, "LP64 typedef signature is present");
 	mu_assert_streq (snapshot->context.signature->ret_type, "uint64_t",
 		"LP64 typedef return spelling is preserved");
-	mu_assert_eq (snapshot->image.num_code_pointer_tables, 0,
+	RAnalSnapshotCodePointerTableView table_view = {0};
+	mu_assert_false (r_anal_function_snapshot_code_pointer_table_view (snapshot, 0, &table_view),
 		"a function referencing no pointer table carries none");
-	mu_assert_eq (snapshot->num_callee_snapshots, 0,
+	ut64 table_target = 0;
+	mu_assert_false (r_anal_function_snapshot_code_pointer_table_target (snapshot, 0, 0, &table_target),
+		"a table that was not collected hands out no target");
+	RAnalFunctionSnapshotView callee_top = {0};
+	mu_assert_true (r_anal_function_snapshot_view (snapshot, &callee_top),
+		"read the top view for the callee snapshot count");
+	mu_assert_eq (callee_top.num_callee_snapshots, 0,
 		"a function that calls nothing carries no callee snapshot");
-	mu_assert_null (snapshot->callee_snapshots,
+	mu_assert_null (r_anal_function_snapshot_callee_snapshot (snapshot, 0),
 		"a callee snapshot that was not taken is not handed out");
-	const RAnalFunctionSignature *signature = snapshot->context.signature;
-	mu_assert_eq (r_list_length (signature->params), 2,
+	RAnalSnapshotSignatureView signature_view = {0};
+	mu_assert_true (r_anal_function_snapshot_signature_view (snapshot, &signature_view),
+		"the recovered signature is offered to a reader");
+	mu_assert_eq (signature_view.num_parameters, 2,
 		"the offered signature keeps both parameters");
-	mu_assert_streq (signature->ret_type, "uint64_t", "the return spelling is the source's");
-	const RAnalFunctionParam *second = r_list_get_n (signature->params, 1);
-	mu_assert_notnull (second, "the second parameter is present");
-	mu_assert_streq (second->type, "uint32_t", "the parameter spelling is the source's");
-	mu_assert_streq (second->name, "narrow", "the parameter name is the source's");
-	mu_assert_null (r_list_get_n (signature->params, 2),
-		"a parameter the signature does not have is not invented");
+	char spelling[64];
+	mu_assert_true (r_anal_function_snapshot_signature_string (snapshot,
+		R_ANAL_SNAPSHOT_SIGNATURE_STRING_RETURN_TYPE, 0, spelling, sizeof (spelling)),
+		"the return spelling is readable");
+	mu_assert_streq (spelling, "uint64_t", "the return spelling is the source's");
+	mu_assert_true (r_anal_function_snapshot_signature_string (snapshot,
+		R_ANAL_SNAPSHOT_SIGNATURE_STRING_PARAMETER_TYPE, 1, spelling, sizeof (spelling)),
+		"the second parameter spelling is readable");
+	mu_assert_streq (spelling, "uint32_t", "the parameter spelling is the source's");
+	mu_assert_true (r_anal_function_snapshot_signature_string (snapshot,
+		R_ANAL_SNAPSHOT_SIGNATURE_STRING_PARAMETER_NAME, 1, spelling, sizeof (spelling)),
+		"the second parameter name is readable");
+	mu_assert_streq (spelling, "narrow", "the parameter name is the source's");
+	mu_assert_false (r_anal_function_snapshot_signature_string (snapshot,
+		R_ANAL_SNAPSHOT_SIGNATURE_STRING_PARAMETER_TYPE, 2, spelling, sizeof (spelling)),
+		"a parameter the signature does not have is refused");
 	mu_assert_true (snapshot->capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FUNCTION_TYPES,
 		"LP64 typedef graph carries exact type authority");
 	mu_assert_true (snapshot->function_interface.logical_types_complete,
@@ -3043,6 +3082,185 @@ bool test_r_anal_function_overlapped_walk_keeps_one_switch_owner(void) {
 	mu_assert_eq (ownership.switch_addr, addr + 197,
 		"switch ownership names the indirect jump");
 	r_core_free (core);
+bool test_r_anal_apply_mutations_atomic_is_all_or_nothing(void) {
+	RAnal *anal = atomic_mutation_test_anal_new ();
+	mu_assert_notnull (anal, "create atomic mutation analysis");
+	mu_assert_true (r_anal_cc_set (anal, "rax atomiccc(rdi)"), "seed atomic calling convention");
+	RAnalFunction *fcn = r_anal_create_function (anal, "atomic_failure", 0x7100, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "create atomic mutation function");
+	RAnalVar *var = r_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "int", 4, false, "before");
+	mu_assert_notnull (var, "create atomic mutation variable");
+	ut64 initial_epoch = r_anal_function_dirty_epoch (fcn);
+	int event_count = 0;
+	mu_assert_true (r_event_hook (anal->ev, R_EVENT_VARIABLE_NAME_CHANGED,
+		atomic_mutation_count_event_cb, &event_count), "hook variable rename events");
+	RAnalMutation mutations[] = {
+		{
+			.kind = R_ANAL_MUTATION_VAR_RENAME,
+			.var = var,
+			.name = "after",
+		},
+		{
+			.kind = R_ANAL_MUTATION_CALLCONV,
+			.fcn = fcn,
+			.callconv = "missingcc",
+		},
+	};
+	RAnalMutationAtomicResult result = r_anal_apply_mutations_atomic (anal, mutations, R_ARRAY_SIZE (mutations));
+	mu_assert_eq (result.status, R_ANAL_MUTATION_ATOMIC_STATUS_VALIDATION_FAILED, "invalid record rejects atomic batch");
+	mu_assert_eq (result.failed_index, 1, "invalid record index");
+	mu_assert_eq (result.validated, 1, "validated prefix count");
+	mu_assert_eq (result.committed, 0, "failed batch commits nothing");
+	mu_assert_streq (var->name, "before", "earlier valid rename stays unapplied");
+	mu_assert_null (fcn->callconv, "invalid callconv stays unapplied");
+	mu_assert_eq (r_anal_function_dirty_epoch (fcn), initial_epoch, "failed batch does not publish an epoch");
+	mu_assert_eq (event_count, 0, "failed batch does not publish events");
+	atomic_mutation_test_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_apply_mutations_atomic_rejects_unsupported_preflight(void) {
+	RAnal *anal = atomic_mutation_test_anal_new ();
+	mu_assert_notnull (anal, "create unsupported mutation analysis");
+	RAnalFunction *fcn = r_anal_create_function (anal, "atomic_unsupported", 0x7200, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "create unsupported mutation function");
+	RAnalVar *var = r_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "int", 4, false, "before");
+	mu_assert_notnull (var, "create unsupported mutation variable");
+	ut64 initial_epoch = r_anal_function_dirty_epoch (fcn);
+	int event_count = 0;
+	mu_assert_true (r_event_hook (anal->ev, R_EVENT_VARIABLE_NAME_CHANGED,
+		atomic_mutation_count_event_cb, &event_count), "hook unsupported rename events");
+	RAnalMutationKind unsupported[] = {
+		R_ANAL_MUTATION_FLAG,
+		R_ANAL_MUTATION_TYPE_DECL,
+		R_ANAL_MUTATION_VAR,
+		R_ANAL_MUTATION_VAR_TYPE,
+		R_ANAL_MUTATION_SIGNATURE,
+		R_ANAL_MUTATION_XREF,
+		R_ANAL_MUTATION_COMMENT,
+		R_ANAL_MUTATION_TYPE_LINK,
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (unsupported); i++) {
+		RAnalMutation mutations[] = {
+			{
+				.kind = R_ANAL_MUTATION_VAR_RENAME,
+				.var = var,
+				.name = "after",
+			},
+			{
+				.kind = unsupported[i],
+			},
+		};
+		RAnalMutationAtomicResult result = r_anal_apply_mutations_atomic (
+			anal, mutations, R_ARRAY_SIZE (mutations));
+		mu_assert_eq (result.status, R_ANAL_MUTATION_ATOMIC_STATUS_UNSUPPORTED, "unsupported kind rejects preflight");
+		mu_assert_eq (result.failed_index, 1, "unsupported record index");
+		mu_assert_eq (result.validated, 0, "unsupported scan precedes validation");
+		mu_assert_eq (result.committed, 0, "unsupported batch commits nothing");
+		mu_assert_streq (var->name, "before", "unsupported batch leaves valid prefix untouched");
+	}
+	mu_assert_eq (r_anal_function_dirty_epoch (fcn), initial_epoch, "unsupported batches do not publish epochs");
+	mu_assert_eq (event_count, 0, "unsupported batches do not publish events");
+	atomic_mutation_test_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_apply_mutations_atomic_rolls_back_commit_conflict(void) {
+	RAnal *anal = atomic_mutation_test_anal_new ();
+	mu_assert_notnull (anal, "create rollback analysis");
+	RAnalFunction *fcn = r_anal_create_function (anal, "atomic_rollback", 0x7300, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "create rollback function");
+	RAnalVar *var = r_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "int", 4, false, "before");
+	mu_assert_notnull (var, "create rollback variable");
+	ut64 initial_epoch = r_anal_function_dirty_epoch (fcn);
+	int event_count = 0;
+	mu_assert_true (r_event_hook (anal->ev, R_EVENT_VARIABLE_NAME_CHANGED,
+		atomic_mutation_count_event_cb, &event_count), "hook rollback rename events");
+	RAnalMutation mutations[] = {
+		{
+			.kind = R_ANAL_MUTATION_VAR_RENAME,
+			.var = var,
+			.name = "first_write",
+		},
+		{
+			.kind = R_ANAL_MUTATION_VAR_RENAME,
+			.var = var,
+			.name = "conflicting_write",
+		},
+	};
+	RAnalMutationAtomicResult result = r_anal_apply_mutations_atomic (anal, mutations, R_ARRAY_SIZE (mutations));
+	mu_assert_eq (result.status, R_ANAL_MUTATION_ATOMIC_STATUS_COMMIT_FAILED, "write conflict fails guarded commit");
+	mu_assert_eq (result.failed_index, 1, "conflicting write index");
+	mu_assert_eq (result.validated, 2, "both conflicting records validate against entry state");
+	mu_assert_eq (result.committed, 0, "rolled-back batch reports no committed records");
+	mu_assert_streq (var->name, "before", "first pointer swap is rolled back");
+	mu_assert_eq (r_anal_function_dirty_epoch (fcn), initial_epoch, "rollback does not publish an epoch");
+	mu_assert_eq (event_count, 0, "rollback does not publish events");
+	atomic_mutation_test_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_apply_mutations_atomic_defers_publication(void) {
+	RAnal *anal = atomic_mutation_test_anal_new ();
+	mu_assert_notnull (anal, "create publication analysis");
+	mu_assert_true (r_anal_cc_set (anal, "rax atomica(rdi)"), "seed initial atomic calling convention");
+	mu_assert_true (r_anal_cc_set (anal, "rax atomicb(rsi)"), "seed replacement atomic calling convention");
+	RAnalFunction *fcn = r_anal_create_function (anal, "atomic_publication", 0x7400, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "create publication function");
+	mu_assert_true (r_anal_function_set_callconv (anal, fcn, "atomica"), "set initial calling convention");
+	RAnalVar *first = r_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "int", 4, false, "first");
+	RAnalVar *second = r_anal_function_set_var (fcn, -16, R_ANAL_VAR_KIND_BPV, "int", 4, false, "second");
+	mu_assert_notnull (first, "create first publication variable");
+	mu_assert_notnull (second, "create second publication variable");
+	ut64 initial_epoch = r_anal_function_dirty_epoch (fcn);
+	AtomicMutationEventState event_state = {
+		.fcn = fcn,
+		.first = first,
+		.second = second,
+		.callconv = "atomicb",
+		.first_name = "renamed_first",
+		.second_name = "renamed_second",
+		.expected_epoch = initial_epoch + 1,
+		.saw_complete_state = true,
+	};
+	int function_modified_events = 0;
+	mu_assert_true (r_event_hook (anal->ev, R_EVENT_VARIABLE_NAME_CHANGED,
+		atomic_mutation_event_cb, &event_state), "hook deferred rename events");
+	mu_assert_true (r_event_hook (anal->ev, R_EVENT_FUNCTION_MODIFIED,
+		atomic_mutation_count_event_cb, &function_modified_events), "hook function modified events");
+	anal->is_dirty = false;
+	RAnalMutation mutations[] = {
+		{
+			.kind = R_ANAL_MUTATION_VAR_RENAME,
+			.var = first,
+			.name = "renamed_first",
+		},
+		{
+			.kind = R_ANAL_MUTATION_CALLCONV,
+			.fcn = fcn,
+			.callconv = "atomicb",
+		},
+		{
+			.kind = R_ANAL_MUTATION_VAR_RENAME,
+			.var = second,
+			.name = "renamed_second",
+		},
+	};
+	RAnalMutationAtomicResult result = r_anal_apply_mutations_atomic (anal, mutations, R_ARRAY_SIZE (mutations));
+	mu_assert_eq (result.status, R_ANAL_MUTATION_ATOMIC_STATUS_OK, "atomic batch commits");
+	mu_assert_eq (result.failed_index, R_ANAL_MUTATION_ATOMIC_INDEX_NONE, "successful batch has no failed index");
+	mu_assert_eq (result.validated, 3, "successful batch validates every record");
+	mu_assert_eq (result.committed, 3, "successful batch commits every record");
+	mu_assert_streq (fcn->callconv, "atomicb", "calling convention pointer swap commits");
+	mu_assert_streq (first->name, "renamed_first", "first rename commits");
+	mu_assert_streq (second->name, "renamed_second", "second rename commits");
+	mu_assert_eq (r_anal_function_dirty_epoch (fcn), initial_epoch + 1, "changed function epoch publishes exactly once");
+	mu_assert_true (anal->is_dirty, "successful changed batch marks analysis dirty");
+	mu_assert_eq (event_state.count, 2, "one event is published for each changed rename");
+	mu_assert_true (event_state.saw_complete_state, "rename events observe the fully committed batch and published epoch");
+	mu_assert_eq (function_modified_events, 0, "callconv mutation does not invent a function event");
+	atomic_mutation_test_anal_free (anal);
 	mu_end;
 }
 
@@ -3103,6 +3321,10 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_snapshot_resolves_lp64_integer_typedefs);
 	mu_run_test (test_r_anal_function_snapshot_seals_exact_call_site_interfaces);
 	mu_run_test (test_r_anal_function_snapshot_rejects_inexact_stack_resources);
+	mu_run_test (test_r_anal_apply_mutations_atomic_is_all_or_nothing);
+	mu_run_test (test_r_anal_apply_mutations_atomic_rejects_unsupported_preflight);
+	mu_run_test (test_r_anal_apply_mutations_atomic_rolls_back_commit_conflict);
+	mu_run_test (test_r_anal_apply_mutations_atomic_defers_publication);
 	mu_run_test (test_r_anal_function_switches_foreach);
 	mu_run_test (test_r_anal_function_overlapped_walk_keeps_one_switch_owner);
 	return tests_passed != tests_run;
