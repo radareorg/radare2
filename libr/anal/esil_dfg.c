@@ -1754,6 +1754,7 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *R_NULLABLE d
 	r_esil_set_op (esil, "=[2]", edf_consume_2_set_mem, 0, 2, R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "=[4]", edf_consume_2_set_mem, 0, 2, R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "=[8]", edf_consume_2_set_mem, 0, 2, R_ESIL_OP_TYPE_MEM_WRITE, NULL);
+	r_esil_set_op (esil, "=[16]", edf_consume_2_set_mem, 0, 2, R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "|=[1]", edf_consume_2_use_set_mem, 0, 2,
 		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "|=[2]", edf_consume_2_use_set_mem, 0, 2,

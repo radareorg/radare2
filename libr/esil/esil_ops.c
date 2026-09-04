@@ -1047,6 +1047,10 @@ static bool esil_poke8(REsil *esil) {
 	return esil_poke_n (esil, 64);
 }
 
+static bool esil_poke16(REsil *esil) {
+	return esil_poke_n (esil, 128);
+}
+
 /* PEEK */
 
 static bool esil_peek_n(REsil *esil, int bits) {
@@ -1791,6 +1795,7 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("=[2]", esil_poke2, 0, 2, OT_MEMW);
 	ret &= OP ("=[4]", esil_poke4, 0, 2, OT_MEMW);
 	ret &= OP ("=[8]", esil_poke8, 0, 2, OT_MEMW);
+	ret &= OP ("=[16]", esil_poke16, 0, 2, OT_MEMW);
 	ret &= OPD ("|=[1]", "DUP,ROT,SWAP,[1],|,SWAP,=[1]", 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	ret &= OPD ("|=[2]", "DUP,ROT,SWAP,[2],|,SWAP,=[2]", 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	ret &= OPD ("|=[4]", "DUP,ROT,SWAP,[4],|,SWAP,=[4]", 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
