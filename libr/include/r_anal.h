@@ -1725,6 +1725,7 @@ typedef struct r_anal_snapshot_code_pointer_table_view_t {
 R_API bool r_anal_function_snapshot_code_pointer_table_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotCodePointerTableView *view);
 R_API bool r_anal_function_snapshot_code_pointer_table_target(const RAnalFunctionSnapshot *snapshot, size_t index, size_t target_index, R_OUT ut64 *target);
 R_API bool r_anal_function_snapshot_signature_view(const RAnalFunctionSnapshot *snapshot, R_OUT RAnalSnapshotSignatureView *view);
+R_API RAnalSnapshotReturnArity r_anal_function_snapshot_return_arity(const RAnalFunctionSnapshot *snapshot);
 R_API bool r_anal_function_snapshot_signature_string(const RAnalFunctionSnapshot *snapshot, RAnalSnapshotSignatureStringKind kind, size_t index, R_OUT char *buffer, size_t buffer_size);
 R_API bool r_anal_function_snapshot_call_site_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalCallSiteInterfaceSnapshotView *view);
 R_API bool r_anal_function_snapshot_call_site_transfer(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalCallTransfer *transfer);

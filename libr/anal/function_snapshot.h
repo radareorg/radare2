@@ -36,6 +36,8 @@ struct r_anal_function_snapshot_t {
 	ut32 struct_size;
 	ut64 capabilities;
 	RAnalFcnContext context;
+	// Logical return arity from a recovered signature or an exact loader role.
+	RAnalSnapshotReturnArity return_arity;
 	ut64 function_addr;
 	ut64 function_size;
 	int bits;

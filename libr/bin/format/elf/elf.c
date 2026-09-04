@@ -514,6 +514,7 @@ static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	di->dt_relrent = 0;
 	di->dt_strsz = 0;
 	di->dt_syment = 0;
+	di->dt_init = R_BIN_ELF_ADDR_MAX;
 	di->dt_rel = R_BIN_ELF_ADDR_MAX;
 	di->dt_relsz = 0;
 	di->dt_relent = 0;
@@ -681,6 +682,8 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 			RVecElfOff_push_back (&di->dt_needed, &d.d_un.d_val);
 			break;
 		case DT_INIT:
+			di->dt_init = d.d_un.d_ptr;
+			break;
 		case DT_FINI:
 		case DT_DEBUG:
 		case DT_INIT_ARRAY:
@@ -1926,6 +1929,9 @@ ut64 Elf_(get_boffset)(ELFOBJ *eo) {
 
 ut64 Elf_(get_init_offset)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
+	if (eo->dyn_info.dt_init && eo->dyn_info.dt_init != R_BIN_ELF_ADDR_MAX) {
+		return Elf_(v2p) (eo, eo->dyn_info.dt_init);
+	}
 	if (is_intel (eo)) { // push // x86 only
 		ut64 entry = Elf_(get_entry_offset) (eo);
 		if (entry == UT64_MAX) {
