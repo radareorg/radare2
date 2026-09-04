@@ -249,6 +249,47 @@ bool test_r_core_anal_fcn_prefers_exact_start_match(void) {
 	mu_end;
 }
 
+bool test_r_core_anal_fcn_variadic_marker_requires_unclobbered_al(void) {
+	const ut64 addr = 0x1000;
+	const ut8 bytes[] = {
+		0x0f, 0xb6, 0x07, // movzx eax, byte [rdi]
+		0x84, 0xc0, // test al, al
+		0xc3, // ret
+		0x84, 0xc0, // test al, al
+		0x74, 0x01, // je +1
+		0xc3, // ret
+		0xc3, // ret
+	};
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "Couldn't create new RCore");
+	core->io->va = true;
+	mu_assert_notnull (r_io_open_at (core->io, "malloc://12",
+		R_PERM_RWX, 0, addr), "open variadic marker test map");
+	mu_assert_true (r_io_write_at (core->io, addr, bytes, sizeof (bytes)),
+		"write variadic marker test bytes");
+	r_config_set (core->config, "asm.arch", "x86");
+	r_config_set_i (core->config, "asm.bits", 64);
+	r_config_set_b (core->config, "anal.esil", false);
+
+	mu_assert_true (r_core_anal_fcn (core, addr, UT64_MAX,
+		R_ANAL_REF_TYPE_NULL, 1), "analyze clobbered marker function");
+	RAnalFunction *clobbered = r_anal_get_function_at (core->anal, addr);
+	mu_assert_notnull (clobbered, "analysis creates clobbered marker function");
+	mu_assert_false (clobbered->is_variadic,
+		"writing eax invalidates the incoming al variadic marker");
+
+	const ut64 preserved_addr = addr + 6;
+	mu_assert_true (r_core_anal_fcn (core, preserved_addr, UT64_MAX,
+		R_ANAL_REF_TYPE_NULL, 1), "analyze preserved marker function");
+	RAnalFunction *preserved = r_anal_get_function_at (core->anal, preserved_addr);
+	mu_assert_notnull (preserved, "analysis creates preserved marker function");
+	mu_assert_true (preserved->is_variadic,
+		"an unclobbered test of al remains a variadic marker");
+
+	r_core_free (core);
+	mu_end;
+}
+
 bool test_r_anal_function_get_signature(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
@@ -662,6 +703,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_labels);
 	mu_run_test (test_r_anal_str_to_fcn_returns_status);
 	mu_run_test (test_r_core_anal_fcn_prefers_exact_start_match);
+	mu_run_test (test_r_core_anal_fcn_variadic_marker_requires_unclobbered_al);
 	mu_run_test (test_r_anal_function_get_signature);
 	mu_run_test (test_r_anal_function_get_signature_prefers_exact_type_link);
 	mu_run_test (test_r_anal_function_set_signature_uses_canonical_type_name);
