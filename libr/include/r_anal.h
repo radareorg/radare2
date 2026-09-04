@@ -354,7 +354,7 @@ typedef bool (*RAnalFunctionSnapshotCallback)(const RAnalFunctionSnapshot *snaps
 // the numbers move for reasons that have nothing to do with whether the API a
 // provider needs is present.
 #define R_ANAL_FUNCTION_SNAPSHOT_API 1
-#define R_ANAL_FUNCTION_SNAPSHOT_SCHEMA_VERSION 17
+#define R_ANAL_FUNCTION_SNAPSHOT_SCHEMA_VERSION 18
 typedef enum {
 	R_ANAL_FUNCTION_SNAPSHOT_CAP_SIGNATURE = 1ULL << 0,
 	R_ANAL_FUNCTION_SNAPSHOT_CAP_STACK_SLOTS = 1ULL << 2,
@@ -500,7 +500,6 @@ typedef struct r_anal_snapshot_aggregate_member_t {
 	RAnalSnapshotTypeId type_id;
 	ut64 offset_bits;
 	ut64 size_bits;
-	size_t count;
 	char *name;
 } RAnalSnapshotAggregateMember;
 typedef struct r_anal_snapshot_aggregate_layout_t {
@@ -512,9 +511,6 @@ typedef struct r_anal_snapshot_aggregate_layout_t {
 	RAnalSnapshotAggregateMember *members;
 	size_t num_members;
 	bool complete;
-	// Natural scalar C layout for the sealed target ABI. Consumers that emit C
-	// must preserve it with compile-time size/alignment/offset assertions.
-	bool c_layout_compatible;
 } RAnalSnapshotAggregateLayout;
 typedef struct r_anal_snapshot_type_graph_t {
 	RAnalSnapshotType *types;
@@ -594,19 +590,13 @@ typedef struct r_anal_function_image_snapshot_t {
 	size_t total_source_bytes;
 } RAnalFunctionImageSnapshot;
 typedef struct r_anal_function_snapshot_view_t {
-	ut32 schema_version;
-	ut32 struct_size;
 	ut64 capabilities;
 	ut64 function_addr;
-	ut64 function_size;
 	int bits;
 	ut32 endian;
-	st64 maxstack;
 	size_t arch_id_length;
 	size_t cpu_id_length;
 	size_t function_name_length;
-	size_t num_base_types;
-	ut64 type_context_hash;
 	size_t num_call_site_interfaces;
 	size_t num_stack_slots;
 	// Stable diagnostic/cache identity of the owned payload, never proof authority.
@@ -615,8 +605,6 @@ typedef struct r_anal_function_snapshot_view_t {
 	// arrived in. Equal to revision_identity for the function asked for, and
 	// its own hash for a callee collected beside it.
 	ut64 content_identity;
-	size_t num_types;
-	size_t num_aggregates;
 	size_t num_blocks;
 	size_t num_external_exits;
 	size_t num_string_literals;
@@ -636,7 +624,6 @@ typedef struct r_anal_snapshot_block_view_t {
 } RAnalSnapshotBlockView;
 typedef struct r_anal_snapshot_string_literal_view_t {
 	ut64 addr;
-	size_t text_length;
 } RAnalSnapshotStringLiteralView;
 typedef struct r_anal_snapshot_data_symbol_view_t {
 	ut64 addr;
@@ -650,7 +637,6 @@ typedef struct r_anal_snapshot_successor_view_t {
 	bool external;
 } RAnalSnapshotSuccessorView;
 typedef struct r_anal_snapshot_register_storage_view_t {
-	size_t name_length;
 	ut64 offset;
 	ut32 size;
 } RAnalSnapshotRegisterStorageView;
@@ -668,14 +654,8 @@ typedef struct r_anal_function_interface_snapshot_view_t {
 	RAnalSnapshotRegisterStorageView return_storage;
 	RAnalSnapshotRegisterStorageView return_address_storage;
 	RAnalSnapshotRegisterStorageView stack_pointer_storage;
-	bool variadic;
-	bool noreturn;
-	bool stack_resources_complete;
-	bool stack_slot_roles_complete;
-	bool complete;
 	RAnalSnapshotTypeId return_type_id;
 	RAnalSnapshotCarrierProjection return_carrier;
-	bool logical_types_complete;
 	bool stack_pointer_preserved_across_calls;
 	bool frame_pointer_preserved_across_calls;
 	size_t num_convention_argument_slots;
@@ -685,8 +665,6 @@ typedef struct r_anal_function_interface_snapshot_view_t {
 typedef struct r_anal_call_site_interface_snapshot_view_t {
 	ut64 instruction_addr;
 	ut64 target_addr;
-	size_t target_name_length;
-	size_t calling_convention_length;
 	size_t num_arguments;
 	RAnalSnapshotReturnKind result_kind;
 	RAnalSnapshotRegisterStorageView result_storage;
@@ -704,25 +682,18 @@ typedef struct r_anal_snapshot_aggregate_layout_view_t {
 	RAnalSnapshotTypeId type_id;
 	ut64 size_bits;
 	ut64 align_bits;
-	size_t name_length;
 	size_t num_members;
 	bool complete;
-	bool c_layout_compatible;
 } RAnalSnapshotAggregateLayoutView;
 typedef struct r_anal_snapshot_aggregate_member_view_t {
 	ut32 member_id;
 	RAnalSnapshotTypeId type_id;
 	ut64 offset_bits;
 	ut64 size_bits;
-	size_t count;
-	size_t name_length;
 } RAnalSnapshotAggregateMemberView;
 
 typedef struct r_anal_snapshot_stack_slot_view_t {
-	size_t name_length;
-	size_t type_length;
 	RAnalFcnSlotBase base;
-	size_t base_name_length;
 	ut64 base_offset;
 	ut32 base_size;
 	st64 offset;
@@ -730,7 +701,6 @@ typedef struct r_anal_snapshot_stack_slot_view_t {
 	bool offset_valid;
 	RAnalFcnSlotRole role;
 	int arg_index;
-	size_t home_reg_length;
 	ut64 home_reg_offset;
 	ut32 home_reg_size;
 } RAnalSnapshotStackSlotView;
@@ -746,8 +716,6 @@ typedef enum {
 // interface describes where values live; this says what they are called.
 typedef struct r_anal_snapshot_signature_view_t {
 	size_t num_parameters;
-	size_t return_type_length;
-	size_t calling_convention_length;
 	bool noreturn;
 } RAnalSnapshotSignatureView;
 

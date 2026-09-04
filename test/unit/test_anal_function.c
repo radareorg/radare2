@@ -1520,7 +1520,6 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 		(ut64)(rdi_item->offset / 8),
 		"parameter storage uses canonical byte coordinates");
 	mu_assert_eq (snapshot->function_interface.return_kind, R_ANAL_SNAPSHOT_RETURN_REGISTER, "register return kind");
-	mu_assert_streq (snapshot->function_interface.return_storage.name, "rax", "exact return register");
 	RRegItem *rax_item = r_reg_get (anal->reg, "rax", -1);
 	mu_assert_notnull (rax_item, "resolve exact return carrier");
 	mu_assert_eq (snapshot->function_interface.return_storage.offset,
@@ -2053,8 +2052,12 @@ bool test_r_anal_function_snapshot_seals_exact_register_interface(void) {
 	mu_assert_eq (snapshot->function_interface.return_kind,
 		R_ANAL_SNAPSHOT_RETURN_REGISTER,
 		"noreturn snapshot keeps the result carrier kind");
-	mu_assert_streq (snapshot->function_interface.return_storage.name, "rax",
-		"noreturn snapshot keeps the result carrier");
+	rax_item = r_reg_get (anal->reg, "rax", -1);
+	mu_assert_notnull (rax_item, "resolve noreturn result carrier");
+	mu_assert_eq (snapshot->function_interface.return_storage.offset,
+		(ut64)(rax_item->offset / 8),
+		"noreturn snapshot keeps the canonical result carrier");
+	r_unref (rax_item);
 	mu_assert_neq (snapshot->revision_identity, exact_revision, "interface mutation changes revision");
 	r_anal_function_snapshot_free (snapshot);
 	r_core_free (core);
@@ -2217,8 +2220,12 @@ bool test_r_anal_function_snapshot_falls_back_from_unusable_linked_cc(void) {
 		"linked int parameter projects to 32 carrier bits");
 	mu_assert_eq (snapshot->function_interface.return_kind,
 		R_ANAL_SNAPSHOT_RETURN_REGISTER, "live target CC supplies a register return");
-	mu_assert_streq (snapshot->function_interface.return_storage.name, "rax",
-		"live target CC supplies the return carrier");
+	RRegItem *rax = r_reg_get (anal->reg, "rax", -1);
+	mu_assert_notnull (rax, "resolve live target return carrier");
+	mu_assert_eq (snapshot->function_interface.return_storage.offset,
+		(ut64)(rax->offset / 8),
+		"live target CC supplies the canonical return carrier");
+	r_unref (rax);
 	mu_assert_eq (snapshot->function_interface.return_carrier.kind,
 		R_ANAL_SNAPSHOT_CARRIER_LOW_BITS, "linked int return retains its logical width");
 	mu_assert_eq (snapshot->function_interface.return_carrier.size_bits, 32,
@@ -2345,13 +2352,9 @@ bool test_r_anal_function_snapshot_seals_exact_reachable_type_graph(void) {
 	const RAnalSnapshotAggregateLayout *layout =
 		&snapshot->type_graph.aggregates[structure->aggregate_id];
 	mu_assert_true (layout->complete, "DemoStruct layout is complete");
-	mu_assert_true (layout->c_layout_compatible,
-		"DemoStruct obeys the sealed natural C layout contract");
 	mu_assert_streq (layout->name, "DemoStruct", "aggregate label is preserved");
 	mu_assert_eq (layout->num_members, 14, "all DemoStruct members are reachable");
 	mu_assert_eq (layout->members[2].member_id, 2, "third field ordinal is exact");
-	mu_assert_eq (layout->members[2].count, 1,
-		"scalar aggregate members use the canonical single-element count");
 	mu_assert_streq (layout->members[2].name, "third", "third field label is preserved");
 	mu_assert_eq (layout->members[2].offset_bits, 8 * 8, "third field offset is eight bytes");
 	mu_assert_eq (layout->members[13].member_id, 13, "fourteenth field ordinal is exact");
@@ -2386,8 +2389,8 @@ bool test_r_anal_function_snapshot_seals_exact_reachable_type_graph(void) {
 		R_ANAL_SNAPSHOT_TYPE_ID_INVALID, "rejected graph clears return logical ref");
 	mu_assert_true (snapshot->type_graph.complete,
 		"previous exact graph remains immutable after live type mutation");
-	mu_assert_eq (layout->members[13].count, 1,
-		"previous exact aggregate retains its owned non-array member");
+	mu_assert_eq (layout->members[13].size_bits, 32,
+		"previous exact aggregate retains its owned non-array member width");
 	r_anal_function_snapshot_free (rejected);
 
 	mu_assert_true (save_snapshot_demo_struct_type (anal, 48, 0),
@@ -2789,7 +2792,11 @@ bool test_r_anal_function_snapshot_seals_exact_call_site_interfaces(void) {
 	mu_assert_streq (call->calling_convention, "exactcall", "exact callsite calling convention");
 	mu_assert_eq (call->num_arguments, 1, "one exact call argument");
 	mu_assert_eq (call->arguments[0].index, 0, "exact call argument order");
-	mu_assert_streq (call->arguments[0].storage.name, "rdi", "full-width call argument register");
+	RRegItem *rdi = r_reg_get (anal->reg, "rdi", -1);
+	mu_assert_notnull (rdi, "resolve full-width call argument carrier");
+	mu_assert_eq (call->arguments[0].storage.offset,
+		(ut64)(rdi->offset / 8), "full-width call argument register");
+	r_unref (rdi);
 	mu_assert_eq (call->arguments[0].storage.size, 8, "full-width call argument size");
 	mu_assert_eq (call->result_kind, R_ANAL_SNAPSHOT_RETURN_VOID, "void call result contract");
 	// Completeness describes the prototype, not the call instruction. The xref
@@ -2940,8 +2947,12 @@ bool test_r_anal_function_snapshot_rejects_inexact_stack_resources(void) {
 		"overlap still names the parameter carrier it recovered");
 	mu_assert_eq (snapshot->function_interface.return_kind,
 		R_ANAL_SNAPSHOT_RETURN_REGISTER, "overlap still reports the result carrier");
-	mu_assert_streq (snapshot->function_interface.return_storage.name, "rax",
-		"overlap still names the result carrier it recovered");
+	RRegItem *rax = r_reg_get (anal->reg, "rax", -1);
+	mu_assert_notnull (rax, "resolve overlap result carrier");
+	mu_assert_eq (snapshot->function_interface.return_storage.offset,
+		(ut64)(rax->offset / 8),
+		"overlap still reports the canonical result carrier");
+	r_unref (rax);
 	r_anal_function_snapshot_free (snapshot);
 
 	mu_assert_true (r_anal_var_delete (anal, second), "remove overlapping resource");
