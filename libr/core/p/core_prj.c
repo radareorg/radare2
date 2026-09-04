@@ -123,26 +123,6 @@ static RCmdResult prj_callback(RCmdContext *ctx) {
 	return prj_invalid (ctx);
 }
 
-static bool plugin_init(RCorePluginSession *cps) {
-	RCore *core = cps->core;
-	if (!core) {
-		return true;
-	}
-	RCmd *cmd = core->rcmd;
-	if (!r_cmd_register (cmd, "prj", prj_callback, NULL)) {
-		return false;
-	}
-	cps->data = cmd;
-	return true;
-}
-
-static bool plugin_fini(RCorePluginSession *cps) {
-	if (cps->data) {
-		r_cmd_unregister (cps->data, "prj");
-	}
-	return true;
-}
-
 RCorePlugin r_core_plugin_prj = {
 	.meta = {
 		.name = "prj",
@@ -150,8 +130,8 @@ RCorePlugin r_core_plugin_prj = {
 		.author = "pancake",
 		.license = "MIT",
 	},
-	.init = plugin_init,
-	.fini = plugin_fini,
+	.command = "prj",
+	.call_ctx = prj_callback,
 };
 
 #ifndef R2_PLUGIN_INCORE

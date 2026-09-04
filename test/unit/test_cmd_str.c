@@ -174,6 +174,38 @@ bool test_o_autocomplete_uses_file_completion(void) {
 	mu_end;
 }
 
+static RCmdResult autocomplete_context_handler(RCmdContext *ctx) {
+	(void)ctx;
+	return (RCmdResult) { 0 };
+}
+
+bool test_registered_command_autocomplete(void) {
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "Couldn't create new RCore");
+	mu_assert_true (r_cmd_register (core->rcmd, "ctxcomplete", autocomplete_context_handler, NULL),
+		"register contextual command");
+	RLineCompletion completion = { 0 };
+	r_line_completion_init (&completion, 16);
+	RLineBuffer buf = { 0 };
+	r_str_ncpy (buf.data, "ctxcom", sizeof (buf.data));
+	buf.length = strlen (buf.data);
+	buf.index = buf.length;
+	r_core_autocomplete (core, &completion, &buf, R_LINE_PROMPT_DEFAULT);
+	bool found = false;
+	char **it;
+	R_VEC_FOREACH (&completion.args, it) {
+		if (!strcmp (*it, "ctxcomplete")) {
+			found = true;
+			break;
+		}
+	}
+	r_line_completion_clear (&completion);
+	RVecCString_fini (&completion.args);
+	r_core_free (core);
+	mu_assert_true (found, "registered contextual command is autocompleted");
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_cmd_str_issue_18799);
 	mu_run_test (test_multiple_cores_share_terminal);
@@ -183,6 +215,7 @@ int all_tests(void) {
 	mu_run_test (test_prompt_format_preserves_trailing_escaped_newline);
 	mu_run_test (test_autocomplete_find_prefers_exact_match);
 	mu_run_test (test_o_autocomplete_uses_file_completion);
+	mu_run_test (test_registered_command_autocomplete);
 	return tests_passed != tests_run;
 }
 

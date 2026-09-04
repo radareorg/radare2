@@ -170,9 +170,6 @@ static RCmdResult pseudo_callback(RCmdContext *ctx) {
 
 static bool plugin_init(RCorePluginSession *cps) {
 	RCore *core = cps->core;
-	if (!r_cmd_register (core->rcmd, "pdc", pseudo_callback, NULL)) {
-		return false;
-	}
 	RConfig *cfg = core->config;
 	r_config_lock (cfg, false);
 	RConfigNode *node = r_config_set_b (cfg, "pdc.structured", false);
@@ -184,9 +181,8 @@ static bool plugin_init(RCorePluginSession *cps) {
 }
 
 static bool plugin_fini(RCorePluginSession *cps) {
-	R_RETURN_VAL_IF_FAIL (cps && cps->core && cps->core->rcmd, false);
+	R_RETURN_VAL_IF_FAIL (cps && cps->core, false);
 	RCore *core = cps->core;
-	r_cmd_unregister (core->rcmd, "pdc");
 	// r_core_fini frees the config before it unloads the core plugins
 	if (core->config) {
 		r_config_rm (core->config, "pdc.structured");
@@ -204,6 +200,8 @@ RCorePlugin r_core_plugin_pseudo = {
 	},
 	.init = plugin_init,
 	.fini = plugin_fini,
+	.command = "pdc",
+	.call_ctx = pseudo_callback,
 };
 
 #ifndef R2_PLUGIN_INCORE

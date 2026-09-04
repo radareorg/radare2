@@ -129,6 +129,8 @@ struct r_cmd_t {
 	HtUP *ts_symbols_ht;
 	// RCmdDesc *root_cmd_desc;
 	RTrie *handlers;
+	RThreadLock *handlers_lock; // protects the registry and active call counts
+	RThreadCond *handlers_idle; // notified when a handler has no active calls
 };
 
 #ifdef R_API
@@ -140,11 +142,13 @@ R_API bool r_cmd_add(RCmd *cmd, const char *command, RCmdCb callback);
 /* New handlers are keyed by their complete command prefix. The registry copies
  * name and borrows handler_user until the command is unregistered. */
 R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user);
-/* Removes only the exact registered name, preserving descendant handlers. */
+/* Removes only the exact registered name, preserving descendant handlers.
+ * Returns false rather than deadlocking if this thread is running it. */
 R_API bool r_cmd_unregister(RCmd *cmd, const char *name);
 /* Removes every handler whose name starts with prefix and returns their count. */
 R_API size_t r_cmd_unregister_prefix(RCmd *cmd, const char *prefix);
-/* Visits matching names in lexical order; name is transient and false stops. */
+/* Visits matching names in lexical order; name is transient and false stops.
+ * The callback must not mutate this command registry. */
 R_API bool r_cmd_foreach_prefix(const RCmd *cmd, const char *prefix, RCmdForeachCb callback, void *user);
 
 /* r_cmd_macro */

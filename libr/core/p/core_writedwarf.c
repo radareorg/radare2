@@ -804,26 +804,6 @@ static RCmdResult writedwarf_callback(RCmdContext *ctx) {
 	return writedwarf_write (ctx, elf, args[i].a);
 }
 
-static bool plugin_init(RCorePluginSession *cps) {
-	RCore *core = cps->core;
-	if (!core) {
-		return true;
-	}
-	RCmd *cmd = core->rcmd;
-	if (!r_cmd_register (cmd, "writedwarf", writedwarf_callback, NULL)) {
-		return false;
-	}
-	cps->data = cmd;
-	return true;
-}
-
-static bool plugin_fini(RCorePluginSession *cps) {
-	if (cps->data) {
-		r_cmd_unregister (cps->data, "writedwarf");
-	}
-	return true;
-}
-
 RCorePlugin r_core_plugin_writedwarf = {
 	.meta = {
 		.name = "writedwarf",
@@ -831,8 +811,8 @@ RCorePlugin r_core_plugin_writedwarf = {
 		.author = "pancake",
 		.license = "MIT",
 	},
-	.init = plugin_init,
-	.fini = plugin_fini,
+	.command = "writedwarf",
+	.call_ctx = writedwarf_callback,
 };
 
 #ifndef R2_PLUGIN_INCORE

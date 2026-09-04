@@ -100,6 +100,7 @@ typedef struct r_core_plugin_session_t {
 	RCore *core;
 	struct r_core_plugin_t *plugin;
 	void *data; // plugin instance data
+	bool command_registered;
 } RCorePluginSession;
 
 typedef bool (*RCorePluginLife) (RCorePluginSession *ctx);
@@ -109,7 +110,9 @@ typedef struct r_core_plugin_t {
 	RPluginMeta meta;
 	RCorePluginLife init;
 	RCorePluginLife fini;
-	RCorePluginCall call;
+	RCorePluginCall call; // legacy callback receiving the complete input line
+	const char *command; // command prefix registered automatically for call_ctx
+	RCmdCtxCb call_ctx; // ctx->handler_user is this plugin's session
 } RCorePlugin;
 
 // script embedded in the binary, registered by static plugins and run at startup like plugins/*.r2.js
