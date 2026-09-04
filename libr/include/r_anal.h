@@ -289,13 +289,6 @@ typedef enum {
 	R_ANAL_FCN_SLOT_UNKNOWN
 } RAnalFcnSlotRole;
 
-typedef struct r_anal_fcn_reg_arg_t {
-	char *name;
-	char *type;
-	char *reg;
-	int arg_index;
-} RAnalFcnRegArg;
-
 typedef struct r_anal_fcn_slot_t {
 	char *name;
 	char *type;
@@ -308,7 +301,6 @@ typedef struct r_anal_fcn_slot_t {
 	bool offset_valid;
 	RAnalFcnSlotRole role;
 	int arg_index;
-	char *arg_name;
 	char *home_reg;
 	ut64 home_reg_offset;
 	ut32 home_reg_size;
@@ -342,14 +334,11 @@ typedef struct r_anal_fcn_callee_t {
 
 typedef struct r_anal_fcn_context_t {
 	RAnalFunctionSignature *signature;
-	RList *reg_args; // RList<RAnalFcnRegArg *>
 	// Authoritative owner of immutable stack-resource declarations.
 	RList *fcn_slots; // RList<RAnalFcnSlot *>
 	RList *callees; // RList<RAnalFcnCallee *>
-	char *assumptions_json;
 	ut64 function_dirty_epoch;
 	ut64 type_dirty_epoch;
-	ut64 context_hash;
 } RAnalFcnContext;
 
 // Opaque immutable snapshot borrowed by decompiler providers.
@@ -365,14 +354,12 @@ typedef bool (*RAnalFunctionSnapshotCallback)(const RAnalFunctionSnapshot *snaps
 // the numbers move for reasons that have nothing to do with whether the API a
 // provider needs is present.
 #define R_ANAL_FUNCTION_SNAPSHOT_API 1
-#define R_ANAL_FUNCTION_SNAPSHOT_SCHEMA_VERSION 16
+#define R_ANAL_FUNCTION_SNAPSHOT_SCHEMA_VERSION 17
 typedef enum {
 	R_ANAL_FUNCTION_SNAPSHOT_CAP_SIGNATURE = 1ULL << 0,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_REGISTER_ARGS = 1ULL << 1,
 	R_ANAL_FUNCTION_SNAPSHOT_CAP_STACK_SLOTS = 1ULL << 2,
 	R_ANAL_FUNCTION_SNAPSHOT_CAP_CALLEES = 1ULL << 3,
 	R_ANAL_FUNCTION_SNAPSHOT_CAP_TYPES = 1ULL << 4,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_ASSUMPTIONS = 1ULL << 5,
 	R_ANAL_FUNCTION_SNAPSHOT_CAP_REVISION = 1ULL << 6,
 	R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FUNCTION_INTERFACE = 1ULL << 7,
 	R_ANAL_FUNCTION_SNAPSHOT_CAP_CALL_SITE_INTERFACES = 1ULL << 8,
@@ -743,7 +730,6 @@ typedef struct r_anal_snapshot_stack_slot_view_t {
 	bool offset_valid;
 	RAnalFcnSlotRole role;
 	int arg_index;
-	size_t arg_name_length;
 	size_t home_reg_length;
 	ut64 home_reg_offset;
 	ut32 home_reg_size;
@@ -753,7 +739,6 @@ typedef enum {
 	R_ANAL_SNAPSHOT_STACK_SLOT_STRING_NAME = 0,
 	R_ANAL_SNAPSHOT_STACK_SLOT_STRING_TYPE,
 	R_ANAL_SNAPSHOT_STACK_SLOT_STRING_BASE_NAME,
-	R_ANAL_SNAPSHOT_STACK_SLOT_STRING_ARG_NAME,
 	R_ANAL_SNAPSHOT_STACK_SLOT_STRING_HOME_REGISTER,
 } RAnalSnapshotStackSlotStringKind;
 

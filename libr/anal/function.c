@@ -426,16 +426,6 @@ R_API int r_anal_function_coverage(RAnalFunction *fcn) {
 	return (traced * 100) / total;
 }
 
-static void fcn_context_reg_arg_free(RAnalFcnRegArg *arg) {
-	if (!arg) {
-		return;
-	}
-	free (arg->name);
-	free (arg->type);
-	free (arg->reg);
-	free (arg);
-}
-
 static void fcn_context_slot_free(RAnalFcnSlot *slot) {
 	if (!slot) {
 		return;
@@ -443,7 +433,6 @@ static void fcn_context_slot_free(RAnalFcnSlot *slot) {
 	free (slot->name);
 	free (slot->type);
 	free (slot->base_name);
-	free (slot->arg_name);
 	free (slot->home_reg);
 	free (slot);
 }
@@ -455,21 +444,6 @@ static void fcn_context_callee_free(RAnalFcnCallee *callee) {
 	free (callee->name);
 	r_anal_function_signature_free (callee->signature);
 	free (callee);
-}
-
-static char *fcn_context_dup_var_regname(RAnal *anal, const RAnalVar *var) {
-	if (R_STR_ISNOTEMPTY (var->regname)) {
-		return strdup (var->regname);
-	}
-	if (var->kind == R_ANAL_VAR_KIND_REG) {
-		RRegItem *ri = r_reg_index_get (anal->reg, R_ABS (var->delta));
-		if (ri) {
-			char *name = strdup (ri->name);
-			r_unref (ri);
-			return name;
-		}
-	}
-	return NULL;
 }
 
 static RRegItem *fcn_context_var_regitem(RAnal *anal, const RAnalVar *var) {
@@ -573,33 +547,6 @@ static RAnalFcnSlotRole fcn_context_classify_slot(const RAnalVar *var, RAnalVar 
 	return R_ANAL_FCN_SLOT_UNKNOWN;
 }
 
-static RAnalFcnRegArg *fcn_context_collect_reg_arg(RAnal *anal, const RAnalFcnContext *ctx, RAnalVar *var, int arg_index) {
-	R_RETURN_VAL_IF_FAIL (anal && ctx && var, NULL);
-	RAnalFcnRegArg *arg = R_NEW0 (RAnalFcnRegArg);
-	const RAnalFunctionParam *signature_param = (ctx->signature && arg_index >= 0)
-		? r_list_get_n (ctx->signature->params, arg_index)
-		: NULL;
-	arg->arg_index = arg_index;
-	if (signature_param && R_STR_ISNOTEMPTY (signature_param->name) && r_anal_var_is_default_argname (var->name)) {
-		arg->name = strdup (signature_param->name);
-	} else if (R_STR_ISNOTEMPTY (var->name)) {
-		arg->name = strdup (var->name);
-	}
-	if (R_STR_ISNOTEMPTY (var->type)) {
-		arg->type = strdup (var->type);
-	} else if (signature_param && R_STR_ISNOTEMPTY (signature_param->type)) {
-		arg->type = strdup (signature_param->type);
-	}
-	arg->reg = fcn_context_dup_var_regname (anal, var);
-	if ((R_STR_ISNOTEMPTY (var->name) && !arg->name)
-		|| (R_STR_ISNOTEMPTY (var->type) && !arg->type)
-		|| !arg->reg) {
-		fcn_context_reg_arg_free (arg);
-		return NULL;
-	}
-	return arg;
-}
-
 static RAnalFcnSlot *fcn_context_collect_slot(RAnal *anal, const RAnalFcnContext *ctx, RAnalFunction *fcn, RAnalVar *var, RAnalVar *home_source, int arg_index) {
 	const RAnalFunctionParam *signature_param = NULL;
 
@@ -662,11 +609,6 @@ static RAnalFcnSlot *fcn_context_collect_slot(RAnal *anal, const RAnalFcnContext
 			slot->home_reg_size = (ut32)(home_reg->size / 8);
 		}
 		r_unref (home_reg);
-		if (signature_param && R_STR_ISNOTEMPTY (signature_param->name)) {
-			slot->arg_name = strdup (signature_param->name);
-		} else if (R_STR_ISNOTEMPTY (home_source->name)) {
-			slot->arg_name = strdup (home_source->name);
-		}
 		if (!slot->type && signature_param && R_STR_ISNOTEMPTY (signature_param->type)) {
 			slot->type = strdup (signature_param->type);
 		}
@@ -674,11 +616,6 @@ static RAnalFcnSlot *fcn_context_collect_slot(RAnal *anal, const RAnalFcnContext
 		slot->arg_index = arg_index;
 		if (arg_index >= 0) {
 			signature_param = ctx->signature? r_list_get_n (ctx->signature->params, arg_index): NULL;
-			if (signature_param && R_STR_ISNOTEMPTY (signature_param->name)) {
-				slot->arg_name = strdup (signature_param->name);
-			} else if (R_STR_ISNOTEMPTY (var->name)) {
-				slot->arg_name = strdup (var->name);
-			}
 			if (!slot->type && signature_param && R_STR_ISNOTEMPTY (signature_param->type)) {
 				slot->type = strdup (signature_param->type);
 			}
@@ -699,15 +636,6 @@ static RAnalFcnSlot *fcn_context_collect_slot(RAnal *anal, const RAnalFcnContext
 		return NULL;
 	}
 	return slot;
-}
-
-static int fcn_context_reg_arg_compare(const void *left, const void *right) {
-	const RAnalFcnRegArg *a = left;
-	const RAnalFcnRegArg *b = right;
-	if (a->arg_index != b->arg_index) {
-		return a->arg_index < b->arg_index? -1: 1;
-	}
-	return strcmp (r_str_get (a->reg), r_str_get (b->reg));
 }
 
 static RAnalFunctionSignature *fcn_context_collect_signature(RAnalFunction *fcn) {
@@ -1862,10 +1790,8 @@ static bool function_image_snapshot_equal(const RAnalFunctionImageSnapshot *left
 
 static void function_context_fini(RAnalFcnContext *ctx) {
 	r_anal_function_signature_free (ctx->signature);
-	r_list_free (ctx->reg_args);
 	r_list_free (ctx->fcn_slots);
 	r_list_free (ctx->callees);
-	free (ctx->assumptions_json);
 }
 
 static void snapshot_register_storage_fini(RAnalSnapshotRegisterStorage *storage) {
@@ -2300,7 +2226,6 @@ R_API bool r_anal_function_snapshot_stack_slot_view(const RAnalFunctionSnapshot 
 		.offset_valid = slot->offset_valid,
 		.role = slot->role,
 		.arg_index = slot->arg_index,
-		.arg_name_length = strlen (r_str_get (slot->arg_name)),
 		.home_reg_length = strlen (r_str_get (slot->home_reg)),
 		.home_reg_offset = slot->home_reg_offset,
 		.home_reg_size = slot->home_reg_size,
@@ -2324,9 +2249,6 @@ R_API bool r_anal_function_snapshot_stack_slot_string(const RAnalFunctionSnapsho
 		break;
 	case R_ANAL_SNAPSHOT_STACK_SLOT_STRING_BASE_NAME:
 		string = slot->base_name;
-		break;
-	case R_ANAL_SNAPSHOT_STACK_SLOT_STRING_ARG_NAME:
-		string = slot->arg_name;
 		break;
 	case R_ANAL_SNAPSHOT_STACK_SLOT_STRING_HOME_REGISTER:
 		string = slot->home_reg;
@@ -2853,16 +2775,8 @@ static ut64 function_snapshot_hash(const RAnalFunctionSnapshot *snapshot) {
 		hash = function_snapshot_hash_call_interface (
 			hash, &snapshot->call_site_interfaces[call_index]);
 	}
-	hash = function_context_hash_string (hash, snapshot->context.assumptions_json);
 	hash = function_snapshot_hash_signature (hash, snapshot->context.signature);
 	RListIter *iter;
-	RAnalFcnRegArg *reg_arg;
-	r_list_foreach (snapshot->context.reg_args, iter, reg_arg) {
-		hash = function_context_hash_string (hash, reg_arg? reg_arg->name: NULL);
-		hash = function_context_hash_string (hash, reg_arg? reg_arg->type: NULL);
-		hash = function_context_hash_string (hash, reg_arg? reg_arg->reg: NULL);
-		hash = function_context_hash_mix (hash, reg_arg? (ut64)(st64)reg_arg->arg_index: 0);
-	}
 	RAnalFcnSlot *slot;
 	r_list_foreach (snapshot->context.fcn_slots, iter, slot) {
 		hash = function_context_hash_string (hash, slot? slot->name: NULL);
@@ -2876,7 +2790,6 @@ static ut64 function_snapshot_hash(const RAnalFunctionSnapshot *snapshot) {
 		hash = function_context_hash_mix (hash, slot && slot->offset_valid? 1: 0);
 		hash = function_context_hash_mix (hash, slot? (ut64)slot->role: 0);
 		hash = function_context_hash_mix (hash, slot? (ut64)(st64)slot->arg_index: 0);
-		hash = function_context_hash_string (hash, slot? slot->arg_name: NULL);
 		hash = function_context_hash_string (hash, slot? slot->home_reg: NULL);
 		hash = function_context_hash_mix (hash, slot? slot->home_reg_offset: 0);
 		hash = function_context_hash_mix (hash, slot? slot->home_reg_size: 0);
@@ -5640,25 +5553,10 @@ static bool snapshot_context_within_limits(const RAnalFunctionSnapshot *snapshot
 			limits->max_context_string_bytes, &strings)
 		|| !snapshot_string_budget_add (snapshot->function_name,
 			limits->max_context_string_bytes, &strings)
-		|| !snapshot_string_budget_add (ctx->assumptions_json,
-			limits->max_context_string_bytes, &strings)
 		|| !snapshot_signature_budget_add (ctx->signature, limits, &items, &strings)) {
 		return false;
 	}
 	RListIter *iter;
-	RAnalFcnRegArg *arg;
-	r_list_foreach (ctx->reg_args, iter, arg) {
-		if (!arg || r_add_overflow_size_t (items, 1, &items)
-			|| items > limits->max_context_items
-			|| !snapshot_string_budget_add (arg->name,
-				limits->max_context_string_bytes, &strings)
-			|| !snapshot_string_budget_add (arg->type,
-				limits->max_context_string_bytes, &strings)
-			|| !snapshot_string_budget_add (arg->reg,
-				limits->max_context_string_bytes, &strings)) {
-			return false;
-		}
-	}
 	RAnalFcnSlot *slot;
 	r_list_foreach (ctx->fcn_slots, iter, slot) {
 		if (!slot || r_add_overflow_size_t (items, 1, &items)
@@ -5668,8 +5566,6 @@ static bool snapshot_context_within_limits(const RAnalFunctionSnapshot *snapshot
 			|| !snapshot_string_budget_add (slot->type,
 				limits->max_context_string_bytes, &strings)
 			|| !snapshot_string_budget_add (slot->base_name,
-				limits->max_context_string_bytes, &strings)
-			|| !snapshot_string_budget_add (slot->arg_name,
 				limits->max_context_string_bytes, &strings)
 			|| !snapshot_string_budget_add (slot->home_reg,
 				limits->max_context_string_bytes, &strings)) {
@@ -5769,7 +5665,6 @@ static bool snapshot_limits_valid(const RAnalFunctionSnapshotLimits *limits) {
 		limits->max_base_types,
 		limits->max_base_type_children,
 		limits->max_base_type_string_bytes,
-		limits->max_assumptions_json_bytes,
 		limits->max_function_blocks,
 		limits->max_block_source_bytes,
 		limits->max_function_source_bytes,
@@ -5812,7 +5707,6 @@ static bool snapshot_limits_valid(const RAnalFunctionSnapshotLimits *limits) {
 	} while (0)
 	SNAPSHOT_LIMIT_ADD (limits->max_function_source_bytes);
 	SNAPSHOT_LIMIT_ADD (limits->max_base_type_string_bytes);
-	SNAPSHOT_LIMIT_ADD (limits->max_assumptions_json_bytes);
 	SNAPSHOT_LIMIT_ADD (limits->max_context_string_bytes);
 	SNAPSHOT_LIMIT_ADD (limits->max_interface_string_bytes);
 	SNAPSHOT_LIMIT_MUL_ADD (limits->max_function_blocks, sizeof (RAnalSnapshotBlock));
@@ -5889,13 +5783,6 @@ static RAnalFunctionSnapshot *function_snapshot_collect_with_limits_unlocked(RAn
 			anal, fcn, limits, &snapshot->image, &refusal)) {
 		goto fail;
 	}
-	const char *assumptions_json = R_STR_ISNOTEMPTY (fcn->assumptions_json)
-		? fcn->assumptions_json: "[]";
-	size_t assumptions_json_bytes;
-	if (r_add_overflow_size_t (strlen (assumptions_json), 1, &assumptions_json_bytes)
-		|| assumptions_json_bytes > limits->max_assumptions_json_bytes) {
-		SNAPSHOT_REFUSE ("the assumptions payload exceeds its limit");
-	}
 	RList *base_types = snapshot_type_resolver_capture (anal, limits);
 	if (!base_types || type_dirty_epoch != r_anal_types_dirty_epoch (anal)) {
 		r_anal_types_snapshot_free (base_types);
@@ -5905,10 +5792,8 @@ static RAnalFunctionSnapshot *function_snapshot_collect_with_limits_unlocked(RAn
 	snapshot->base_types = base_types;
 	RAnalFcnContext *ctx = &snapshot->context;
 	ctx->signature = fcn_context_collect_signature (fcn);
-	ctx->reg_args = r_list_newf ((RListFree)fcn_context_reg_arg_free);
 	ctx->fcn_slots = r_list_newf ((RListFree)fcn_context_slot_free);
 	ctx->callees = fcn_context_collect_callees (anal, &snapshot->image);
-	ctx->assumptions_json = strdup (assumptions_json);
 	snapshot->schema_version = R_ANAL_FUNCTION_SNAPSHOT_SCHEMA_VERSION;
 	snapshot->struct_size = sizeof (RAnalFunctionSnapshot);
 	snapshot->function_addr = snapshot->image.entry_addr;
@@ -5925,30 +5810,13 @@ static RAnalFunctionSnapshot *function_snapshot_collect_with_limits_unlocked(RAn
 	ctx->type_dirty_epoch = type_dirty_epoch;
 	snapshot->type_context_hash = r_anal_types_context_hash_from_snapshot (
 		anal, snapshot->base_types, type_dirty_epoch);
-	if (!ctx->reg_args || !ctx->fcn_slots || !ctx->callees
-		|| !ctx->assumptions_json
-		|| !snapshot->function_name || !snapshot->base_types) {
+	if (!ctx->fcn_slots || !ctx->callees || !snapshot->function_name
+		|| !snapshot->base_types) {
 		SNAPSHOT_REFUSE ("out of memory collecting the function context");
 	}
 
 	r_anal_function_vars_cache_init_readonly (anal, &cache, fcn);
 	RAnalVar **it;
-	R_VEC_FOREACH (cache.rvars, it) {
-		RAnalVar *var = *it;
-		if (!var || !var->isarg || var->kind != R_ANAL_VAR_KIND_REG) {
-			continue;
-		}
-		const int arg_index = fcn_context_register_arg_index (
-			anal, fcn, cache.rvars, var);
-		RAnalFcnRegArg *arg = fcn_context_collect_reg_arg (
-			anal, ctx, var, arg_index);
-		if (!arg || !r_list_append (ctx->reg_args, arg)) {
-			fcn_context_reg_arg_free (arg);
-			SNAPSHOT_REFUSE ("out of memory collecting function variables");
-		}
-	}
-	r_list_sort (ctx->reg_args, fcn_context_reg_arg_compare);
-
 	R_VEC_FOREACH (cache.bvars, it) {
 		RAnalVar *var = *it;
 		if (!var) {
@@ -6046,11 +5914,9 @@ static RAnalFunctionSnapshot *function_snapshot_collect_with_limits_unlocked(RAn
 		|| !frame_pointer_current) {
 		SNAPSHOT_REFUSE ("the function or type state changed during capture");
 	}
-	snapshot->capabilities = R_ANAL_FUNCTION_SNAPSHOT_CAP_REGISTER_ARGS
-		| R_ANAL_FUNCTION_SNAPSHOT_CAP_STACK_SLOTS
+	snapshot->capabilities = R_ANAL_FUNCTION_SNAPSHOT_CAP_STACK_SLOTS
 		| R_ANAL_FUNCTION_SNAPSHOT_CAP_CALLEES
 		| R_ANAL_FUNCTION_SNAPSHOT_CAP_TYPES
-		| R_ANAL_FUNCTION_SNAPSHOT_CAP_ASSUMPTIONS
 		| R_ANAL_FUNCTION_SNAPSHOT_CAP_REVISION
 		| R_ANAL_FUNCTION_SNAPSHOT_CAP_OWNED_BOUNDED_FUNCTION_IMAGE;
 	if (ctx->signature) {
@@ -6111,7 +5977,6 @@ static RAnalFunctionSnapshot *function_snapshot_collect_with_limits_unlocked(RAn
 	// overwrite the revision with its own. For the function asked for the two
 	// are equal; for a callee only this one survives.
 	snapshot->content_identity = snapshot->revision_identity;
-	ctx->context_hash = snapshot->revision_identity;
 	return snapshot;
 
 fail:
@@ -6132,7 +5997,6 @@ R_IPI void r_anal_function_snapshot_limits_default(RAnalFunctionSnapshotLimits *
 		.max_base_types = 4096,
 		.max_base_type_children = 65536,
 		.max_base_type_string_bytes = 16 * 1024 * 1024,
-		.max_assumptions_json_bytes = 1024 * 1024,
 		.max_function_blocks = 65536,
 		.max_block_source_bytes = 16 * 1024 * 1024,
 		.max_function_source_bytes = 256 * 1024 * 1024,
