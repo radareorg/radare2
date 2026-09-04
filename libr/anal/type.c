@@ -1106,6 +1106,15 @@ R_API bool r_anal_types_set_link(RAnal *anal, const char *type, ut64 addr) {
 	return true;
 }
 
+R_API bool r_anal_types_set_link_expression(RAnal *anal, const char *type, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && R_STR_ISNOTEMPTY (type), false);
+	if (r_type_set_link_expression (anal->sdb_types, type, addr) <= 0) {
+		return false;
+	}
+	r_anal_types_bump_dirty_epoch (anal);
+	return true;
+}
+
 R_API bool r_anal_types_set_link_offset(RAnal *anal, const char *type, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && R_STR_ISNOTEMPTY (type), false);
 	if (r_type_link_offset (anal->sdb_types, type, addr) <= 0) {

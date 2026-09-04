@@ -2483,6 +2483,7 @@ R_API ut64 r_anal_types_dirty_epoch(const RAnal *anal);
 R_API ut64 r_anal_types_bump_dirty_epoch(RAnal *anal);
 R_API ut64 r_anal_types_context_hash(RAnal *anal);
 R_API bool r_anal_types_set_link(RAnal *anal, const char *type, ut64 addr);
+R_API bool r_anal_types_set_link_expression(RAnal *anal, const char *type, ut64 addr);
 R_API bool r_anal_types_set_link_offset(RAnal *anal, const char *type, ut64 addr);
 R_API bool r_anal_types_unlink(RAnal *anal, ut64 addr);
 R_API void r_parse_pdb_types(const RAnal *anal, const RBinPdb *pdb);

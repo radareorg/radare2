@@ -421,6 +421,10 @@ static bool test_dwarf_function_parsing_go(void) {
 	mu_assert_streq (cache_line_type, "uintptr",
 		"exact fixed-address DWARF data object type is linked by address");
 	free (cache_line_type);
+	char *static_bytes_type = r_type_link_at (anal->sdb_types, 0x553da0);
+	mu_assert_streq (static_bytes_type, "uint8[256]",
+		"exact composite DWARF data object type is linked by address");
+	free (static_bytes_type);
 
 	/* We do not parse variable information from .debug_frame that is this Go binary using, so
 	don't check variable information and add it in the future */
