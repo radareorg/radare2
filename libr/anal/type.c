@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <sdb/sdb.h>
+#include "function_snapshot.h"
 
 #define KSZ 256
 
