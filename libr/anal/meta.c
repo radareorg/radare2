@@ -3,31 +3,6 @@
 #include <r_core.h>
 #include <r_anal_priv.h>
 
-typedef enum {
-	META_SHADOW_OP_NONE,
-	META_SHADOW_OP_INSERTED,
-	META_SHADOW_OP_SET,
-	META_SHADOW_OP_DELETE
-} RAnalMetaShadowOpType;
-
-typedef struct r_anal_meta_shadow_op_t {
-	ut64 addr;
-	const RSpace *space;
-	RIntervalNode *node;
-	RAnalMetaItem *item;
-	char *text;
-	bool original_exists;
-	RAnalMetaShadowOpType type;
-	struct r_anal_meta_shadow_op_t *next;
-} RAnalMetaShadowOp;
-
-struct r_anal_meta_store_shadow_t {
-	RAnal *source_anal;
-	RAnalMetaShadowOp *ops;
-	bool committed;
-	bool lock_held;
-};
-
 static void meta_item_free(void *data) {
 	RAnalMetaItem *item = data;
 	if (item) {
@@ -43,222 +18,26 @@ static bool item_matches_filter(RAnalMetaItem *item, RAnalMetaType type, const R
 typedef struct {
 	RAnalMetaType type;
 	const RSpace *space;
-	ut64 addr;
-	bool exact_space;
-	bool exact_start;
 	RIntervalNode *node;
 } FindCtx;
 
 static bool find_node_cb(RIntervalNode *node, void *user) {
 	FindCtx *ctx = user;
-	RAnalMetaItem *item = node->data;
-	if ((!ctx->exact_start || node->start == ctx->addr) && (ctx->exact_space
-			? (ctx->type == R_META_TYPE_ANY || item->type == ctx->type) && item->space == ctx->space
-			: item_matches_filter (item, ctx->type, ctx->space))) {
+	if (item_matches_filter (node->data, ctx->type, ctx->space)) {
 		ctx->node = node;
 		return false;
 	}
 	return true;
 }
 
-static RIntervalNode *find_node_at_tree_mode(RIntervalTree *tree, RAnalMetaType type,
-		const RSpace *R_NULLABLE space, ut64 addr, bool exact_space, bool exact_start) {
+static RIntervalNode *find_node_at(RAnal *anal, RAnalMetaType type, const RSpace *R_NULLABLE space, ut64 addr) {
 	FindCtx ctx = {
 		.type = type,
 		.space = space,
-		.addr = addr,
-		.exact_space = exact_space,
-		.exact_start = exact_start,
 		.node = NULL
 	};
-	r_interval_tree_all_at (tree, addr, find_node_cb, &ctx);
+	r_interval_tree_all_at (&anal->meta, addr, find_node_cb, &ctx);
 	return ctx.node;
-}
-
-static RIntervalNode *find_node_at_tree(RIntervalTree *tree, RAnalMetaType type, const RSpace *R_NULLABLE space, ut64 addr) {
-	return find_node_at_tree_mode (tree, type, space, addr, false, false);
-}
-
-static RIntervalNode *find_node_at_tree_exact(RIntervalTree *tree, RAnalMetaType type, const RSpace *R_NULLABLE space, ut64 addr) {
-	return find_node_at_tree_mode (tree, type, space, addr, true, true);
-}
-
-static RIntervalNode *find_node_at(RAnal *anal, RAnalMetaType type, const RSpace *R_NULLABLE space, ut64 addr) {
-	return find_node_at_tree (&anal->meta, type, space, addr);
-}
-
-static RAnalMetaShadowOp *meta_shadow_find_op(RAnalMetaStoreShadow *shadow, const RSpace *space, ut64 addr) {
-	RAnalMetaShadowOp *op;
-	for (op = shadow->ops; op; op = op->next) {
-		if (op->addr == addr && op->space == space) {
-			return op;
-		}
-	}
-	return NULL;
-}
-
-static RAnalMetaShadowOp *meta_shadow_new_op(RAnalMetaStoreShadow *shadow, const RSpace *space, ut64 addr) {
-	RAnalMetaShadowOp *op = R_NEW0 (RAnalMetaShadowOp);
-	op->addr = addr;
-	op->space = space;
-	op->next = shadow->ops;
-	shadow->ops = op;
-	return op;
-}
-
-R_API RAnalMetaStoreShadow *r_meta_store_shadow_prepare(RAnal *anal) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->lock, NULL);
-	r_th_lock_enter (anal->lock);
-	RAnalMetaStoreShadow *shadow = R_NEW0 (RAnalMetaStoreShadow);
-	shadow->source_anal = anal;
-	shadow->lock_held = true;
-	return shadow;
-}
-
-R_API bool r_meta_store_shadow_set_comment(RAnalMetaStoreShadow *shadow, const RSpace *space, ut64 addr, const char *text) {
-	R_RETURN_VAL_IF_FAIL (shadow && shadow->source_anal && !shadow->committed && text, false);
-	RAnalMetaShadowOp *op = meta_shadow_find_op (shadow, space, addr);
-	if (op && op->type == META_SHADOW_OP_INSERTED) {
-		if (!strcmp (op->item->str, text)) {
-			return true;
-		}
-		char *copy = strdup (text);
-		if (!copy) {
-			return false;
-		}
-		free (op->item->str);
-		op->item->str = copy;
-		return true;
-	}
-	if (op && op->original_exists && r_str_eq (op->item->str, text)) {
-		free (op->text);
-		op->text = NULL;
-		op->type = META_SHADOW_OP_NONE;
-		return true;
-	}
-	if (op && op->type == META_SHADOW_OP_SET && r_str_eq (op->text, text)) {
-		return true;
-	}
-	char *copy = strdup (text);
-	if (!copy) {
-		return false;
-	}
-	RIntervalNode *node = op && op->original_exists
-		? op->node
-		: find_node_at_tree_exact (&shadow->source_anal->meta, R_META_TYPE_COMMENT, space, addr);
-	if (node) {
-		RAnalMetaItem *item = node->data;
-		if (!op && r_str_eq (item->str, text)) {
-			free (copy);
-			return true;
-		}
-		if (!op) {
-			op = meta_shadow_new_op (shadow, space, addr);
-			op->node = node;
-			op->item = item;
-			op->original_exists = true;
-		}
-		free (op->text);
-		op->text = copy;
-		op->type = META_SHADOW_OP_SET;
-		return true;
-	}
-	RAnalMetaItem *item = R_NEW0 (RAnalMetaItem);
-	item->type = R_META_TYPE_COMMENT;
-	item->space = space;
-	item->str = copy;
-	if (!r_interval_tree_insert (&shadow->source_anal->meta, addr, addr, item)) {
-		meta_item_free (item);
-		return false;
-	}
-	if (!op) {
-		op = meta_shadow_new_op (shadow, space, addr);
-	}
-	op->node = find_node_at_tree_exact (&shadow->source_anal->meta, R_META_TYPE_COMMENT, space, addr);
-	op->item = item;
-	op->original_exists = false;
-	op->type = META_SHADOW_OP_INSERTED;
-	return true;
-}
-
-R_API void r_meta_store_shadow_del_comment(RAnalMetaStoreShadow *shadow, const RSpace *space, ut64 addr) {
-	R_RETURN_IF_FAIL (shadow && shadow->source_anal && !shadow->committed);
-	RAnalMetaShadowOp *op = meta_shadow_find_op (shadow, space, addr);
-	if (op && op->type == META_SHADOW_OP_INSERTED) {
-		r_interval_tree_delete (&shadow->source_anal->meta, op->node, true);
-		op->node = NULL;
-		op->item = NULL;
-		op->type = META_SHADOW_OP_NONE;
-		return;
-	}
-	RIntervalNode *node = op && op->original_exists
-		? op->node
-		: find_node_at_tree_exact (&shadow->source_anal->meta, R_META_TYPE_COMMENT, space, addr);
-	if (!node) {
-		return;
-	}
-	if (!op) {
-		op = meta_shadow_new_op (shadow, space, addr);
-		op->node = node;
-		op->item = node->data;
-		op->original_exists = true;
-	}
-	free (op->text);
-	op->text = NULL;
-	op->type = META_SHADOW_OP_DELETE;
-}
-
-R_API void r_meta_store_shadow_swap(RAnal *anal, RAnalMetaStoreShadow *shadow) {
-	R_RETURN_IF_FAIL (anal && shadow && shadow->source_anal == anal && !shadow->committed);
-	RAnalMetaShadowOp *op;
-	bool changed = false;
-	for (op = shadow->ops; op; op = op->next) {
-		switch (op->type) {
-		case META_SHADOW_OP_SET:
-			free (op->item->str);
-			op->item->str = op->text;
-			op->text = NULL;
-			changed = true;
-			break;
-		case META_SHADOW_OP_DELETE:
-			r_interval_tree_delete (&anal->meta, op->node, true);
-			op->node = NULL;
-			op->item = NULL;
-			changed = true;
-			break;
-		case META_SHADOW_OP_INSERTED:
-			changed = true;
-			break;
-		default:
-			break;
-		}
-	}
-	if (changed) {
-		R_DIRTY_SET (anal);
-	}
-	shadow->committed = true;
-	r_th_lock_leave (anal->lock);
-	shadow->lock_held = false;
-}
-
-R_API void r_meta_store_shadow_free(RAnalMetaStoreShadow *shadow) {
-	if (!shadow) {
-		return;
-	}
-	RAnalMetaShadowOp *op = shadow->ops;
-	while (op) {
-		RAnalMetaShadowOp *next = op->next;
-		if (!shadow->committed && op->type == META_SHADOW_OP_INSERTED) {
-			r_interval_tree_delete (&shadow->source_anal->meta, op->node, true);
-		}
-		free (op->text);
-		free (op);
-		op = next;
-	}
-	if (shadow->lock_held) {
-		r_th_lock_leave (shadow->source_anal->lock);
-	}
-	free (shadow);
 }
 
 static RIntervalNode *find_node_in(RAnal *anal, RAnalMetaType type, const RSpace *R_NULLABLE space, ut64 addr) {
@@ -376,16 +155,7 @@ R_API bool r_meta_set_string(RAnal *a, RAnalMetaType type, ut64 addr, const char
 R_API const char *r_meta_get_string(RAnal *a, RAnalMetaType type, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (a && a->lock, NULL);
 	r_th_lock_enter (a->lock);
-	RIntervalNode *node = find_node_at_tree (&a->meta, type, r_spaces_current (&a->meta_spaces), addr);
-	const char *result = node? ((RAnalMetaItem *)node->data)->str: NULL;
-	r_th_lock_leave (a->lock);
-	return result;
-}
-
-R_API const char *r_meta_get_string_in_space(RAnal *a, RAnalMetaType type, const RSpace *space, ut64 addr) {
-	R_RETURN_VAL_IF_FAIL (a && a->lock, NULL);
-	r_th_lock_enter (a->lock);
-	RIntervalNode *node = find_node_at_tree_exact (&a->meta, type, space, addr);
+	RIntervalNode *node = find_node_at (a, type, r_spaces_current (&a->meta_spaces), addr);
 	const char *result = node? ((RAnalMetaItem *)node->data)->str: NULL;
 	r_th_lock_leave (a->lock);
 	return result;

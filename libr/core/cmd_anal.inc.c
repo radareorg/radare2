@@ -15535,9 +15535,6 @@ static void cmd_aaa(RCore *core, const char *input) {
 		logline (core, 40, "Analyze len bytes of instructions for references (aar)");
 		(void)r_core_anal_refs (core, ""); // "aar"
 		r_core_task_yield (&core->tasks);
-		// Add plugin-provided data flow refs
-		r_core_anal_plugin_data_refs (core);
-		r_core_task_yield (&core->tasks);
 		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;
 		}
@@ -16021,9 +16018,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		case 0:
 		case ' ':
 			(void)r_core_anal_refs (core, input + 1);
-			// Keep aar behavior consistent with aa* pipelines by inserting
-			// plugin-provided data-flow refs after reference analysis.
-			r_core_anal_plugin_data_refs (core);
 			break;
 		case '*':
 		case 'j':

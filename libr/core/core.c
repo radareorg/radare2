@@ -31,11 +31,6 @@ static int on_fcn_new(RAnal *_anal, void *_user, RAnalFunction *fcn) {
 static int on_fcn_delete(RAnal *_anal, void *_user, RAnalFunction *fcn) {
 	(void)_user;
 	RCore *core = _anal? _anal->coreb.core: NULL;
-	if (core && core->priv && !r_core_anal_artifacts_drop_scope (core, fcn->addr)) {
-		R_LOG_ERROR ("Cannot remove analysis artifacts for function at 0x%08"PFMT64x,
-			fcn->addr);
-		return R_ANAL_FUNCTION_DELETE_REFUSE;
-	}
 	const char *cmd = core && core->config
 		? r_config_get (core->config, "cmd.fcn.delete"): NULL;
 	if (R_STR_ISNOTEMPTY (cmd)) {
@@ -2551,14 +2546,6 @@ R_API bool r_core_init(RCore *core) {
 	core->priv = R_NEW0 (RCorePriv);
 	RCorePriv *priv = core->priv;
 	priv->old_bits = -1;
-	priv->anal_artifacts = r_core_anal_artifact_store_new ();
-	if (!priv->anal_artifacts) {
-		free (core->priv);
-		core->priv = NULL;
-		r_muta_free (core->muta);
-		core->muta = NULL;
-		return false;
-	}
 	core->log = r_core_log_new ();
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -2831,8 +2818,6 @@ R_API void r_core_bind_cons(RCore *core) {
 R_API void r_core_fini(RCore *c) {
 	R_RETURN_IF_FAIL (c);
 	RCorePriv *priv = c->priv;
-	r_core_anal_artifact_store_free (priv->anal_artifacts);
-	priv->anal_artifacts = NULL;
 	if (c->chan) {
 		r_th_channel_free (c->chan);
 	}

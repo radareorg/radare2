@@ -113,12 +113,14 @@ static char *test_function_type_link_at(Sdb *types, ut64 addr) {
 }
 
 static bool test_set_function_type_link(RAnal *anal, const char *type_name, ut64 addr) {
-	RAnalMutation mutation = {
-		.kind = R_ANAL_MUTATION_TYPE_LINK,
-		.type = type_name,
-		.addr = addr,
-	};
-	return r_anal_apply_mutations (anal, &mutation, 1, NULL);
+	if (!anal->sdb_types || R_STR_ISEMPTY (type_name)) {
+		return false;
+	}
+	if (r_type_func_exist (anal->sdb_types, type_name)) {
+		return r_anal_function_type_link_set (anal, type_name, addr);
+	}
+	return r_anal_types_set_link (anal, type_name, addr)
+		|| r_anal_types_set_link_offset (anal, type_name, addr);
 }
 
 static RAnalDwarfFramePointerProof *test_current_frame_pointer_proof(RAnal *anal, ut64 addr) {
@@ -149,73 +151,63 @@ static RAnalDwarfFramePointerProof *test_current_frame_pointer_proof(RAnal *anal
 	return current? proof: NULL;
 }
 
-static bool test_dwarf5_exact_stack_homes(const RAnalFunctionSnapshot *snapshot, void *user) {
-	(void)user;
-	RAnalFunctionSnapshotView view;
-	RAnalFunctionInterfaceSnapshotView interface;
-	if (!r_anal_function_snapshot_view (snapshot, &view)
-		|| !r_anal_function_snapshot_interface_view (snapshot, &interface)
-		|| interface.num_parameters != 2 || !interface.stack_slot_roles_complete
-		|| !interface.complete
-		|| !(view.capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_STACK_SLOT_ROLES)
-		|| !(view.capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FUNCTION_INTERFACE)) {
+static bool test_dwarf5_exact_stack_homes(const RAnalFunctionSnapshot *snapshot) {
+	const RAnalFunctionInterfaceSnapshot *interface = &snapshot->function_interface;
+	if (interface->num_parameters != 2 || !interface->stack_slot_roles_complete
+		|| !interface->complete
+		|| !(snapshot->capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_STACK_SLOT_ROLES)
+		|| !(snapshot->capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FUNCTION_INTERFACE)) {
 		return false;
 	}
 	const char *expected[] = { "rdi", "rsi" };
 	bool seen[] = { false, false };
-	size_t i;
-	for (i = 0; i < view.num_stack_slots; i++) {
-		RAnalSnapshotStackSlotView slot;
-		if (!r_anal_function_snapshot_stack_slot_view (snapshot, i, &slot)) {
-			return false;
-		}
-		if (slot.role != R_ANAL_FCN_SLOT_HOME || slot.arg_index < 0
-			|| slot.arg_index >= 2) {
+	RListIter *iter;
+	RAnalFcnSlot *slot;
+	r_list_foreach (snapshot->context.fcn_slots, iter, slot) {
+		if (slot->role != R_ANAL_FCN_SLOT_HOME || slot->arg_index < 0
+			|| slot->arg_index >= 2) {
 			continue;
 		}
-		RAnalSnapshotParameterView parameter;
-		char home[16];
-		char storage[16];
-		if (!r_anal_function_snapshot_parameter_view (
-				snapshot, (size_t)slot.arg_index, &parameter)
-			|| !r_anal_function_snapshot_stack_slot_string (snapshot, i,
-				R_ANAL_SNAPSHOT_STACK_SLOT_STRING_HOME_REGISTER,
-				home, sizeof (home))
-			|| !r_anal_function_snapshot_parameter_storage_name (snapshot,
-				(size_t)slot.arg_index, storage, sizeof (storage))
-			|| strcmp (home, expected[slot.arg_index])
-			|| strcmp (home, storage)
-			|| slot.home_reg_offset != parameter.storage.offset
-			|| slot.home_reg_size != parameter.storage.size) {
+		const RAnalSnapshotParameter *parameter =
+			&interface->parameters[slot->arg_index];
+		if (!slot->home_reg || strcmp (slot->home_reg, expected[slot->arg_index])
+			|| strcmp (slot->home_reg, r_str_get (parameter->storage.name))
+			|| slot->home_reg_offset != parameter->storage.offset
+			|| slot->home_reg_size != parameter->storage.size) {
 			return false;
 		}
-		seen[slot.arg_index] = true;
+		seen[slot->arg_index] = true;
 	}
 	return seen[0] && seen[1];
 }
 
-static bool test_dwarf5_inexact_stack_homes(const RAnalFunctionSnapshot *snapshot, void *user) {
-	(void)user;
-	RAnalFunctionSnapshotView view;
-	RAnalFunctionInterfaceSnapshotView interface;
-	if (!r_anal_function_snapshot_view (snapshot, &view)
-		|| !r_anal_function_snapshot_interface_view (snapshot, &interface)
-		|| interface.stack_slot_roles_complete || interface.complete
-		|| (view.capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_STACK_SLOT_ROLES)
-		|| (view.capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FUNCTION_INTERFACE)) {
+static bool test_dwarf5_inexact_stack_homes(const RAnalFunctionSnapshot *snapshot) {
+	const RAnalFunctionInterfaceSnapshot *interface = &snapshot->function_interface;
+	if (interface->stack_slot_roles_complete || interface->complete
+		|| (snapshot->capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_STACK_SLOT_ROLES)
+		|| (snapshot->capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FUNCTION_INTERFACE)) {
 		return false;
 	}
-	size_t i;
-	for (i = 0; i < view.num_stack_slots; i++) {
-		RAnalSnapshotStackSlotView slot;
-		if (!r_anal_function_snapshot_stack_slot_view (snapshot, i, &slot)) {
-			return false;
-		}
-		if (slot.role == R_ANAL_FCN_SLOT_ARG) {
+	RListIter *iter;
+	RAnalFcnSlot *slot;
+	r_list_foreach (snapshot->context.fcn_slots, iter, slot) {
+		if (slot->role == R_ANAL_FCN_SLOT_ARG) {
 			return true;
 		}
 	}
 	return false;
+}
+
+// The snapshot outlives the capture now, so a probe is a take, a read and a
+// free rather than a callback run while the analysis is still locked.
+static bool snapshot_probe(RAnal *a, ut64 addr, bool (*predicate)(const RAnalFunctionSnapshot *)) {
+	RAnalFunctionSnapshot *snapshot = r_anal_function_snapshot_take (a, addr, NULL);
+	if (!snapshot) {
+		return false;
+	}
+	const bool result = predicate (snapshot);
+	r_anal_function_snapshot_free (snapshot);
+	return result;
 }
 
 #define check_kv(k, v) \
@@ -598,23 +590,23 @@ static bool test_dwarf5_function_type_links(void) {
 	mu_assert_notnull (second, "Couldn't integrate second DWARF5 formal");
 	mu_assert_eq (first->argnum, 0, "First exact formal keeps its DWARF ordinal");
 	mu_assert_eq (second->argnum, 1, "Second exact formal keeps its DWARF ordinal");
-	mu_assert_true (r_anal_function_snapshot_visit_bounded_advisory (
-		anal, main_addr, test_dwarf5_exact_stack_homes, NULL, NULL),
+	mu_assert_true (snapshot_probe (
+		anal, main_addr, test_dwarf5_exact_stack_homes),
 		"Exact DWARF formals become complete ABI stack homes");
 	const st64 saved_bp_off = fcn->bp_off;
 	const int saved_maxstack = fcn->maxstack;
 	fcn->bp_off++;
-	mu_assert_true (r_anal_function_snapshot_visit_bounded_advisory (
-		anal, main_addr, test_dwarf5_inexact_stack_homes, NULL, NULL),
+	mu_assert_true (snapshot_probe (
+		anal, main_addr, test_dwarf5_inexact_stack_homes),
 		"Changed BP basis invalidates exact DWARF stack homes");
 	fcn->bp_off = saved_bp_off;
 	fcn->maxstack++;
-	mu_assert_true (r_anal_function_snapshot_visit_bounded_advisory (
-		anal, main_addr, test_dwarf5_inexact_stack_homes, NULL, NULL),
+	mu_assert_true (snapshot_probe (
+		anal, main_addr, test_dwarf5_inexact_stack_homes),
 		"Changed maximum-stack basis invalidates exact DWARF stack homes");
 	fcn->maxstack = saved_maxstack;
-	mu_assert_true (r_anal_function_snapshot_visit_bounded_advisory (
-		anal, main_addr, test_dwarf5_exact_stack_homes, NULL, NULL),
+	mu_assert_true (snapshot_probe (
+		anal, main_addr, test_dwarf5_exact_stack_homes),
 		"Restored exact frame state restores source-offset validation");
 
 	mu_assert_true (r_anal_function_rename (fcn, "renamed_dwarf_entry"),
@@ -623,23 +615,23 @@ static bool test_dwarf5_function_type_links(void) {
 		"Couldn't rename first DWARF-backed formal");
 	mu_assert_true (r_anal_var_rename (anal, second, "renamed_second"),
 		"Couldn't rename second DWARF-backed formal");
-	mu_assert_true (r_anal_function_snapshot_visit_bounded_advisory (
-		anal, main_addr, test_dwarf5_exact_stack_homes, NULL, NULL),
+	mu_assert_true (snapshot_probe (
+		anal, main_addr, test_dwarf5_exact_stack_homes),
 		"Names do not supply stack-home authority");
 
 	mu_assert_true (sdb_set (dwarf_sdb, "fcn.main.arg.0",
 		"dwarf-stack-home-v1,0,b,-8,YQ==,aW50,extra", 0),
 		"Install malformed marked formal record");
 	r_anal_dwarf_integrate_functions (anal, flags, dwarf_sdb);
-	mu_assert_true (r_anal_function_snapshot_visit_bounded_advisory (
-		anal, main_addr, test_dwarf5_inexact_stack_homes, NULL, NULL),
+	mu_assert_true (snapshot_probe (
+		anal, main_addr, test_dwarf5_inexact_stack_homes),
 		"Malformed marked records revoke prior exact formal proof");
 	mu_assert_true (sdb_set (dwarf_sdb, "fcn.main.arg.0",
 		"dwarf-stack-home-v1,0,b,-16,YQ==,aW50", 0),
 		"Install canonical forged marked formal record");
 	r_anal_dwarf_integrate_functions (anal, flags, dwarf_sdb);
-	mu_assert_true (r_anal_function_snapshot_visit_bounded_advisory (
-		anal, main_addr, test_dwarf5_inexact_stack_homes, NULL, NULL),
+	mu_assert_true (snapshot_probe (
+		anal, main_addr, test_dwarf5_inexact_stack_homes),
 		"Canonical marked records without parser provenance cannot mint homes");
 	mu_assert_true (sdb_set (dwarf_sdb, "fcn.main.arg.0", saved_first_record, 0),
 		"Restore exact formal after malformed-record refusal");
@@ -649,8 +641,8 @@ static bool test_dwarf5_function_type_links(void) {
 	mu_assert_notnull (first, "Couldn't restore first exact formal");
 	mu_assert_notnull (second, "Couldn't restore second exact formal");
 	r_anal_var_set_type (anal, first, first->type);
-	mu_assert_true (r_anal_function_snapshot_visit_bounded_advisory (
-		anal, main_addr, test_dwarf5_inexact_stack_homes, NULL, NULL),
+	mu_assert_true (snapshot_probe (
+		anal, main_addr, test_dwarf5_inexact_stack_homes),
 		"Absent private formal proof refuses exact stack-slot roles");
 	char *legacy_record = r_str_newf ("%s,%c,%" PFMT64d ",%s",
 		first->name, first->kind, (st64)first->delta + fcn->bp_off, first->type);
@@ -663,8 +655,8 @@ static bool test_dwarf5_function_type_links(void) {
 	mu_assert_true (sdb_num_set (dwarf_sdb, "fcn.main.arg.0.ordinal", 0, 0),
 		"Install forged legacy ordinal side key");
 	r_anal_dwarf_integrate_functions (anal, flags, dwarf_sdb);
-	mu_assert_true (r_anal_function_snapshot_visit_bounded_advisory (
-		anal, main_addr, test_dwarf5_inexact_stack_homes, NULL, NULL),
+	mu_assert_true (snapshot_probe (
+		anal, main_addr, test_dwarf5_inexact_stack_homes),
 		"Legacy records and forged side keys cannot mint exact homes");
 	mu_assert_true (sdb_set (dwarf_sdb, "fcn.main.arg.0", saved_first_record, 0),
 		"Restore exact formal record");
@@ -676,15 +668,15 @@ static bool test_dwarf5_function_type_links(void) {
 	mu_assert_notnull (first, "Couldn't reintegrate first exact formal");
 	mu_assert_notnull (second, "Couldn't reintegrate second exact formal");
 	first->argnum = 2;
-	mu_assert_true (r_anal_function_snapshot_visit_bounded_advisory (
-		anal, main_addr, test_dwarf5_inexact_stack_homes, NULL, NULL),
+	mu_assert_true (snapshot_probe (
+		anal, main_addr, test_dwarf5_inexact_stack_homes),
 		"Out-of-range formal ordinal refuses exact stack-slot roles");
 	r_anal_dwarf_integrate_functions (anal, flags, dwarf_sdb);
 	first = r_anal_function_get_var_byname (fcn, "a");
 	mu_assert_notnull (first, "Couldn't restore exact formal before type mutation");
 	r_anal_var_set_type (anal, first, "char *");
-	mu_assert_true (r_anal_function_snapshot_visit_bounded_advisory (
-		anal, main_addr, test_dwarf5_inexact_stack_homes, NULL, NULL),
+	mu_assert_true (snapshot_probe (
+		anal, main_addr, test_dwarf5_inexact_stack_homes),
 		"Mismatched formal type refuses exact stack-slot roles");
 
 	const char first_kind = first->kind;
@@ -720,8 +712,8 @@ static bool test_dwarf5_function_type_links(void) {
 		"Exact second formal replaces the heuristic home type");
 	mu_assert_true (first_home->isarg && second_home->isarg,
 		"Exact formal records promote existing resources to argument homes");
-	mu_assert_true (r_anal_function_snapshot_visit_bounded_advisory (
-		anal, main_addr, test_dwarf5_exact_stack_homes, NULL, NULL),
+	mu_assert_true (snapshot_probe (
+		anal, main_addr, test_dwarf5_exact_stack_homes),
 		"Exact stack homes survive source-name collisions with ABI register formals");
 	free (saved_first_record);
 
