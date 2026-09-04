@@ -899,6 +899,57 @@ bool test_r_anal_function_get_signature_falls_back_to_valid_callconv(void) {
 	mu_end;
 }
 
+bool test_r_anal_function_snapshot_signature_view_reports_logical_return_arity(void) {
+	RCore *core = snapshot_test_core_new ();
+	RAnal *anal = core? core->anal: NULL;
+	mu_assert_notnull (anal, "create logical return-arity analysis");
+	r_anal_use (anal, "x86");
+	r_anal_set_bits (anal, 64);
+	r_anal_types_ensure_loaded (anal);
+
+	RAnalFunction *fcn = r_anal_create_function (
+		anal, "return_arity_snapshot", 0x6800, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "create logical return-arity function");
+	mu_assert_true (snapshot_test_ensure_block (anal, fcn, 1),
+		"back logical return-arity snapshot with exact bytes");
+	RList *params = r_list_new ();
+	mu_assert_notnull (params, "create empty logical return-arity parameter list");
+	RAnalFunctionSignature signature = {
+		.ret_type = "void",
+		.callconv = "amd64",
+		.params = params,
+	};
+	mu_assert_true (r_anal_function_set_signature (anal, fcn, &signature),
+		"apply unlinked void signature");
+	mu_assert_false (r_anal_function_has_address_linked_signature_current (fcn),
+		"the fixture deliberately has no physical-interface authority");
+
+	RAnalFunctionSnapshot *snapshot = r_anal_function_snapshot_collect_bounded (anal, fcn, NULL);
+	mu_assert_notnull (snapshot, "collect unlinked void signature");
+	mu_assert_eq (snapshot->function_interface.return_kind, R_ANAL_SNAPSHOT_RETURN_UNKNOWN,
+		"an unlinked signature does not invent a physical result carrier");
+	RAnalSnapshotSignatureView view = {0};
+	mu_assert_true (r_anal_function_snapshot_signature_view (snapshot, &view),
+		"read unlinked void signature view");
+	mu_assert_eq (view.return_arity, R_ANAL_SNAPSHOT_RETURN_ARITY_VOID,
+		"the typed signature view retains logical void arity");
+	r_anal_function_snapshot_free (snapshot);
+
+	signature.ret_type = "int";
+	mu_assert_true (r_anal_function_set_signature (anal, fcn, &signature),
+		"apply unlinked value signature");
+	snapshot = r_anal_function_snapshot_collect_bounded (anal, fcn, NULL);
+	mu_assert_notnull (snapshot, "collect unlinked value signature");
+	mu_assert_true (r_anal_function_snapshot_signature_view (snapshot, &view),
+		"read unlinked value signature view");
+	mu_assert_eq (view.return_arity, R_ANAL_SNAPSHOT_RETURN_ARITY_VALUE,
+		"the typed signature view retains one-value arity");
+	r_anal_function_snapshot_free (snapshot);
+	r_list_free (params);
+	r_core_free (core);
+	mu_end;
+}
+
 bool test_r_anal_function_context_collect_is_conservative_for_stack_slots(void) {
 	RCore *core = snapshot_test_core_new ();
 	RAnal *anal = core? core->anal: NULL;
@@ -3293,6 +3344,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_get_signature_string_falls_back_to_vars);
 	mu_run_test (test_r_anal_function_get_signature_string_hides_variadic_placeholder);
 	mu_run_test (test_r_anal_function_get_signature_falls_back_to_valid_callconv);
+	mu_run_test (test_r_anal_function_snapshot_signature_view_reports_logical_return_arity);
 	mu_run_test (test_r_anal_function_context_collect_is_conservative_for_stack_slots);
 	mu_run_test (test_r_anal_function_snapshot_reads_current_state_only);
 	mu_run_test (test_r_anal_function_snapshot_carries_linked_data_object_type);

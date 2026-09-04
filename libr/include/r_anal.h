@@ -354,7 +354,7 @@ typedef bool (*RAnalFunctionSnapshotCallback)(const RAnalFunctionSnapshot *snaps
 // the numbers move for reasons that have nothing to do with whether the API a
 // provider needs is present.
 #define R_ANAL_FUNCTION_SNAPSHOT_API 1
-#define R_ANAL_FUNCTION_SNAPSHOT_SCHEMA_VERSION 18
+#define R_ANAL_FUNCTION_SNAPSHOT_SCHEMA_VERSION 19
 typedef enum {
 	R_ANAL_FUNCTION_SNAPSHOT_CAP_SIGNATURE = 1ULL << 0,
 	R_ANAL_FUNCTION_SNAPSHOT_CAP_STACK_SLOTS = 1ULL << 2,
@@ -417,6 +417,11 @@ typedef enum {
 	R_ANAL_SNAPSHOT_RETURN_VOID,
 	R_ANAL_SNAPSHOT_RETURN_REGISTER,
 } RAnalSnapshotReturnKind;
+typedef enum {
+	R_ANAL_SNAPSHOT_RETURN_ARITY_UNKNOWN = 0,
+	R_ANAL_SNAPSHOT_RETURN_ARITY_VOID,
+	R_ANAL_SNAPSHOT_RETURN_ARITY_VALUE,
+} RAnalSnapshotReturnArity;
 typedef enum {
 	R_ANAL_SNAPSHOT_RETURN_MECHANISM_NONE = 0,
 	R_ANAL_SNAPSHOT_RETURN_MECHANISM_STACK,
@@ -717,6 +722,7 @@ typedef enum {
 typedef struct r_anal_snapshot_signature_view_t {
 	size_t num_parameters;
 	bool noreturn;
+	RAnalSnapshotReturnArity return_arity;
 } RAnalSnapshotSignatureView;
 
 typedef enum {
