@@ -821,10 +821,6 @@ static RList *types_baselist_with_limits(RAnal *anal, const RAnalFunctionSnapsho
 	return types;
 }
 
-R_API RList *r_anal_types_baselist(RAnal *anal) {
-	return types_baselist_with_limits (anal, NULL);
-}
-
 // canonical serialization of a struct/union member value: "type,offset,arraycount"
 static char *member_value_kv(const char *type, size_t offset, size_t count) {
 	return r_str_newf ("%s,%u,%u", type, (unsigned int)offset, (unsigned int)count);
@@ -946,7 +942,7 @@ static void save_composite(const RAnal *anal, const RAnalBaseType *type) {
 }
 
 R_API RList *r_anal_types_snapshot(RAnal *anal) {
-	return r_anal_types_baselist (anal);
+	return types_baselist_with_limits (anal, NULL);
 }
 
 R_IPI RList *r_anal_types_snapshot_with_limits(RAnal *anal, const RAnalFunctionSnapshotLimits *limits) {

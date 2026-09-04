@@ -840,44 +840,6 @@ R_API void r_anal_xrefs_owned_publish(RAnal *anal, const RAnalOwnedXrefPrepared 
 }
 
 
-R_API RAnalOwnedXrefStatus r_anal_xrefs_owned_clear_all(RAnal *anal) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->lock && anal->rm,
-		R_ANAL_OWNED_XREF_STATUS_INVALID);
-	size_t set_count = 0;
-	OwnedXrefSetInternal *owned;
-	for (owned = anal->rm->owned_sets; owned; owned = owned->next) {
-		set_count++;
-	}
-	if (!set_count) {
-		return R_ANAL_OWNED_XREF_STATUS_OK;
-	}
-	size_t alloc_size;
-	if (r_mul_overflow_size_t (set_count, sizeof (RAnalOwnedXrefSet), &alloc_size)) {
-		return R_ANAL_OWNED_XREF_STATUS_INVALID;
-	}
-	RAnalOwnedXrefSet *sets = calloc (1, alloc_size);
-	if (!sets) {
-		return R_ANAL_OWNED_XREF_STATUS_NOMEM;
-	}
-	size_t index = 0;
-	for (owned = anal->rm->owned_sets; owned; owned = owned->next) {
-		sets[index++] = (RAnalOwnedXrefSet) {
-			.producer_namespace = owned->producer_namespace,
-			.owner_addr = owned->owner_addr,
-		};
-	}
-	RAnalOwnedXrefPrepared *prepared = NULL;
-	RAnalOwnedXrefStatus status = xrefs_owned_prepare_many_locked (
-		anal, sets, set_count, &prepared);
-	free (sets);
-	if (status == R_ANAL_OWNED_XREF_STATUS_OK) {
-		xrefs_owned_swap_locked (anal, prepared);
-		xrefs_owned_publish_locked (anal, prepared);
-	}
-	r_anal_xrefs_owned_prepared_free (prepared);
-	return status;
-}
-
 // set a reference from FROM to TO and a cross-reference(xref) from TO to FROM.
 // when fcn is known (the function containing FROM), pass it to skip hash lookups.
 static bool xrefs_setf_locked(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to, const RAnalRefType _type) {

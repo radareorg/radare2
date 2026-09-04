@@ -1054,7 +1054,7 @@ R_API RBinReloc *r_bin_reloc_at(RVecRBinReloc *relocs, ut64 vaddr, int size) {
 }
 
 // the relocation recorded against exactly vaddr, or NULL
-R_API RBinReloc *r_bin_get_reloc_at(RBin *bin, ut64 vaddr) {
+static RBinReloc *get_reloc_at(RBin *bin, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RVecRBinReloc *relocs = r_bin_get_relocs (bin);
 	return relocs? r_bin_reloc_at (relocs, vaddr, 1): NULL;
@@ -1808,7 +1808,7 @@ R_API void r_bin_bind(RBin *bin, RBinBind *b) {
 		b->get_vsect_at = __get_vsection_at;
 		b->get_symbols_vec = r_bin_get_symbols_vec;
 		b->get_symbol_at = r_bin_get_symbol_at;
-		b->get_reloc_at = r_bin_get_reloc_at;
+		b->get_reloc_at = get_reloc_at;
 		b->demangle = r_bin_demangle;
 	}
 }

@@ -1002,7 +1002,6 @@ R_API RList *r_bin_get_libs(RBin *bin);
 R_API RVecRBinReloc *r_bin_patch_relocs(RBinFile *bin);
 R_API RVecRBinReloc *r_bin_get_relocs(RBin *bin);
 R_API RBinReloc *r_bin_reloc_at(RVecRBinReloc *relocs, ut64 vaddr, int size);
-R_API RBinReloc *r_bin_get_reloc_at(RBin *bin, ut64 vaddr);
 R_API RVecRBinSection *r_bin_get_sections_vec(RBin *bin);
 R_API RList *r_bin_get_classes(RBin *bin);
 R_API char* r_bin_get_types(RBin *bin);

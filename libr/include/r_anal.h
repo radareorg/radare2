@@ -340,23 +340,12 @@ typedef struct r_anal_fcn_callee_t {
 	RAnalCallTransfer transfer;
 } RAnalFcnCallee;
 
-typedef struct r_anal_function_assumption_t {
-	char *kind;
-	char *target;
-	char *scope;
-	char *provenance;
-	char *subject_json;
-	char *value_json;
-	char *payload_json;
-} RAnalFunctionAssumption;
-
 typedef struct r_anal_fcn_context_t {
 	RAnalFunctionSignature *signature;
 	RList *reg_args; // RList<RAnalFcnRegArg *>
 	// Authoritative owner of immutable stack-resource declarations.
 	RList *fcn_slots; // RList<RAnalFcnSlot *>
 	RList *callees; // RList<RAnalFcnCallee *>
-	RList *assumptions; // RList<RAnalFunctionAssumption *>
 	char *assumptions_json;
 	ut64 function_dirty_epoch;
 	ut64 type_dirty_epoch;
@@ -1764,7 +1753,6 @@ R_API bool r_anal_function_snapshot_convention_argument_slot(const RAnalFunction
 R_API bool r_anal_function_snapshot_interface_storage_name(const RAnalFunctionSnapshot *snapshot, RAnalSnapshotInterfaceStorageKind kind, R_OUT char *buffer, size_t buffer_size);
 R_API bool r_anal_function_snapshot_parameter_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotParameterView *parameter);
 R_API bool r_anal_function_snapshot_parameter_name(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_parameter_storage_name(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
 R_API bool r_anal_function_snapshot_stack_slot_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotStackSlotView *view);
 R_API bool r_anal_function_snapshot_stack_slot_string(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotStackSlotStringKind kind, R_OUT char *buffer, size_t buffer_size);
 // One directly-called function, snapshotted in the same transaction as its
@@ -1785,9 +1773,7 @@ R_API bool r_anal_function_snapshot_call_site_signature_view(const RAnalFunction
 R_API bool r_anal_function_snapshot_call_site_signature_string(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotSignatureStringKind kind, size_t parameter_index, R_OUT char *buffer, size_t buffer_size);
 R_API bool r_anal_function_snapshot_call_site_target_name(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
 R_API bool r_anal_function_snapshot_call_site_calling_convention(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_call_site_result_storage_name(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
 R_API bool r_anal_function_snapshot_call_argument_view(const RAnalFunctionSnapshot *snapshot, size_t call_index, size_t argument_index, R_OUT RAnalSnapshotParameterView *argument);
-R_API bool r_anal_function_snapshot_call_argument_storage_name(const RAnalFunctionSnapshot *snapshot, size_t call_index, size_t argument_index, R_OUT char *buffer, size_t buffer_size);
 R_API bool r_anal_function_snapshot_type_graph_view(const RAnalFunctionSnapshot *snapshot, R_OUT RAnalSnapshotTypeGraphView *view);
 R_API bool r_anal_function_snapshot_type_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotType *type);
 R_API bool r_anal_function_snapshot_aggregate_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotAggregateLayoutView *view);
@@ -1896,17 +1882,10 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature_current(RAnalFunctio
 // The prototype the type database holds under a bare name, for a callee that
 // is not a function of this binary: an import named by a relocation.
 R_IPI RAnalFunctionSignature *r_anal_function_signature_from_type_name(RAnal *anal, const char *name);
-R_API bool r_anal_function_has_signature_current(RAnalFunction *function);
 R_API void r_anal_function_signature_free(RAnalFunctionSignature *signature);
 R_API char *r_anal_function_get_signature_string(RAnalFunction *function);
 R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSignature *signature);
 R_API bool r_anal_function_del_signature(RAnal *a, const char *name);
-R_API void r_anal_function_assumption_free(RAnalFunctionAssumption *assumption);
-R_API RList *r_anal_function_list_assumptions(RAnal *anal, RAnalFunction *fcn);
-R_API RAnalFunctionAssumption *r_anal_function_get_assumption(RAnal *anal, RAnalFunction *fcn, const char *kind, const char *target);
-R_API bool r_anal_function_set_assumptions(RAnal *anal, RAnalFunction *fcn, RList *assumptions);
-R_API bool r_anal_function_set_assumption(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionAssumption *assumption);
-R_API bool r_anal_function_delete_assumption(RAnal *anal, RAnalFunction *fcn, const char *kind, const char *target);
 R_API char *r_anal_function_get_assumptions_json(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_function_set_assumptions_json(RAnal *anal, RAnalFunction *fcn, const char *json);
 R_API bool r_anal_function_clear_assumptions(RAnal *anal, RAnalFunction *fcn);
@@ -1924,8 +1903,6 @@ R_API bool r_anal_apply_mutations(RAnal *anal, const RAnalMutation *mutations, s
  * guarded commit rolls every pointer swap back before any epoch or event.
  */
 R_API RAnalMutationAtomicResult r_anal_apply_mutations_atomic(RAnal *anal, const RAnalMutation *mutations, size_t mutation_count);
-R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn);
-R_API void r_anal_function_context_free(RAnalFcnContext *ctx);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
 R_API int r_anal_function_count(RAnal *a, ut64 from, ut64 to);
 R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64 addr);
@@ -2116,7 +2093,6 @@ typedef struct r_anal_cc_argslot_t {
 R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int argc, bool incall, RAnalCCArgSlot *out);
 // a convention draws integer and floating-point arguments from separate sequences, so each is counted on its own
 R_API const char *r_anal_cc_fparg(RAnal *anal, const char *convention, int n);
-R_API bool r_anal_cc_has_fpargs(RAnal *anal, const char *convention);
 R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int argno, int argc, bool incall, int width, ut64 *out);
 R_API ut64 r_anal_cc_argaddr(RAnal *anal, RReg *reg, const RAnalCCArgSlot *slot);
 R_API int r_anal_cc_wordsize(RAnal *anal, const char *convention);
@@ -2476,7 +2452,6 @@ R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
-R_API RList *r_anal_types_baselist(RAnal *anal);
 R_API RList *r_anal_types_snapshot(RAnal *anal);
 R_API void r_anal_types_snapshot_free(RList *snapshot);
 R_API ut64 r_anal_types_dirty_epoch(const RAnal *anal);
