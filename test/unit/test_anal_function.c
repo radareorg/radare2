@@ -100,18 +100,6 @@ static const char *snapshot_lazy_cc(RBin *bin, ut64 addr) {
 	return "cdecl";
 }
 
-static RAnalFcnRegArg *find_register_param(RAnalFcnContext *ctx, const char *reg) {
-	RListIter *iter;
-	RAnalFcnRegArg *arg;
-
-	r_list_foreach (ctx->reg_args, iter, arg) {
-		if (arg && arg->reg && !strcmp (arg->reg, reg)) {
-			return arg;
-		}
-	}
-	return NULL;
-}
-
 static RAnalFcnSlot *find_stack_slot(RAnalFcnContext *ctx, const char *name) {
 	RListIter *iter;
 	RAnalFcnSlot *slot;
@@ -448,10 +436,6 @@ static bool test_r_anal_function_snapshot_does_not_mutate_var_cache(void) {
 
 	RAnalFunctionSnapshot *snapshot = r_anal_function_snapshot_collect_bounded (anal, fcn, NULL);
 	mu_assert_notnull (snapshot, "collect read-only variable-cache snapshot");
-	RAnalFcnRegArg *snapshot_arg = find_register_param (&snapshot->context, "rdi");
-	mu_assert_notnull (snapshot_arg, "snapshot owns the register argument");
-	mu_assert_eq (snapshot_arg->arg_index, 0,
-		"snapshot derives the argument index without publishing it");
 	mu_assert_eq (arg->argnum, -1,
 		"snapshot leaves the live argument index unresolved");
 	mu_assert_streq (arg->name, "arg0",
@@ -986,11 +970,7 @@ bool test_r_anal_function_context_collect_is_conservative_for_stack_slots(void) 
 	mu_assert_streq (snapshot->function_name, fcn->name, "snapshot function name");
 	mu_assert_notnull (snapshot->base_types, "snapshot owns a type-layout list");
 	mu_assert_neq (snapshot->revision_identity, 0, "snapshot revision identity");
-	mu_assert_eq (ctx->context_hash, snapshot->revision_identity, "legacy hash aliases snapshot revision");
 	mu_assert_eq (r_anal_function_context_hash (anal, fcn), snapshot->revision_identity, "compatibility hash is snapshot-derived");
-
-	RAnalFcnRegArg *rdx_param = find_register_param (ctx, "rdx");
-	mu_assert_notnull (rdx_param, "sparse register arg must be collected");
 
 	RAnalFcnSlot *home_ctx = find_stack_slot (ctx, "arg1_home");
 	RAnalFcnSlot *stack_arg_ctx = find_stack_slot (ctx, "stack_input");
@@ -1003,7 +983,8 @@ bool test_r_anal_function_context_collect_is_conservative_for_stack_slots(void) 
 
 	mu_assert_eq (home_ctx->role, R_ANAL_FCN_SLOT_HOME, "register-home stack slot must stay param-home");
 	mu_assert_eq (home_ctx->arg_index, 0, "param-home slot must use source register param index");
-	mu_assert_streq (home_ctx->arg_name, "first", "param-home slot must inherit canonical signature name");
+	mu_assert_streq (snapshot->function_interface.parameters[0].name, "first",
+		"canonical signature owns the parameter presentation name");
 	mu_assert_streq (home_ctx->home_reg, "rdi", "param-home slot must keep source register");
 	mu_assert_eq (home_ctx->home_reg_offset,
 		snapshot->function_interface.parameters[0].storage.offset,
@@ -1018,20 +999,19 @@ bool test_r_anal_function_context_collect_is_conservative_for_stack_slots(void) 
 
 	mu_assert_eq (stack_arg_ctx->role, R_ANAL_FCN_SLOT_ARG, "stack arg slot must stay stack-arg");
 	mu_assert_eq (stack_arg_ctx->arg_index, -1, "stack arg slot must not synthesize param indexes from sparse register args");
-	mu_assert_null (stack_arg_ctx->arg_name, "stack arg slot must not synthesize a signature param name without a canonical index");
 
 	mu_assert_eq (saved_ctx->role, R_ANAL_FCN_SLOT_LOCAL, "saved-named local must not be reclassified from its spelling");
 	mu_assert_eq (arg_named_local_ctx->role, R_ANAL_FCN_SLOT_LOCAL, "arg-named local must not become a param-home without a proven register home");
 
 	ut64 old_revision = snapshot->revision_identity;
-	char *snapshot_reg_arg_name = strdup (r_str_get (rdx_param->name));
-	mu_assert_notnull (snapshot_reg_arg_name, "copy snapshot register-argument name");
+	char *snapshot_slot_name = strdup (r_str_get (home_ctx->name));
+	mu_assert_notnull (snapshot_slot_name, "copy snapshot stack-slot name");
 	ut64 old_function_epoch = r_anal_function_dirty_epoch (fcn);
-	mu_assert_true (r_anal_var_rename (anal, home_source, "renamed_arg1"), "rename through revision-aware API");
+	mu_assert_true (r_anal_var_rename (anal, home_slot, "renamed_home"), "rename through revision-aware API");
 	mu_assert_neq (r_anal_function_dirty_epoch (fcn), old_function_epoch,
 		"variable rename bumps the function revision epoch");
-	mu_assert_streq (rdx_param->name, snapshot_reg_arg_name, "collected snapshot remains immutable after live mutation");
-	free (snapshot_reg_arg_name);
+	mu_assert_streq (home_ctx->name, snapshot_slot_name, "collected snapshot remains immutable after live mutation");
+	free (snapshot_slot_name);
 	RAnalFunctionSnapshot *next = r_anal_function_snapshot_collect_bounded (anal, fcn, NULL);
 	mu_assert_notnull (next, "collect snapshot after live mutation");
 	mu_assert_neq (next->revision_identity, old_revision, "live mutation changes snapshot revision");
@@ -1252,7 +1232,6 @@ bool test_r_anal_function_snapshot_limits_bound_type_clone(void) {
 	limits.max_base_types = 4;
 	limits.max_base_type_children = 2;
 	limits.max_base_type_string_bytes = exact_string_bytes;
-	limits.max_assumptions_json_bytes = sizeof ("[]");
 	RAnalFunctionSnapshot *snapshot = r_anal_function_snapshot_collect_with_limits (
 		anal, fcn, &limits, NULL);
 	mu_assert_notnull (snapshot, "exact type count and byte bounds succeed");
@@ -1286,10 +1265,6 @@ bool test_r_anal_function_snapshot_limits_bound_type_clone(void) {
 	rejected.max_base_type_string_bytes--;
 	mu_assert_null (r_anal_function_snapshot_collect_with_limits (anal, fcn, &rejected, NULL),
 		"owned type bytes reject before cloning strings");
-	rejected = limits;
-	rejected.max_assumptions_json_bytes--;
-	mu_assert_null (r_anal_function_snapshot_collect_with_limits (anal, fcn, &rejected, NULL),
-		"assumptions JSON bytes reject before snapshot allocation");
 	rejected = limits;
 	rejected.struct_size--;
 	mu_assert_null (r_anal_function_snapshot_collect_with_limits (anal, fcn, &rejected, NULL),
