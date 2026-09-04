@@ -2117,12 +2117,14 @@ analopfinish:
 			variadic_reg = "rax";
 #if 1
 			// XXX arm_cs plugin
+			bool dst_overlaps_variadic = false;
 			bool dst_is_variadic = dst && dst->reg && variadic_reg;
 			if (dst_is_variadic) {
 				dst_is_variadic = false;
 				RRegItem *ri0 = r_reg_get (anal->reg, dst->reg, R_REG_TYPE_GPR);
 				RRegItem *ri1 = r_reg_get (anal->reg, variadic_reg, R_REG_TYPE_GPR);
 				if (ri0 && ri1 && ri0->offset == ri1->offset) {
+					dst_overlaps_variadic = true;
 					// the convention passes the vector-register count in the low subregister, so only that one marks a variadic
 					int lowest = ri1->size;
 					RList *gprs = r_reg_get_list (anal->reg, R_REG_TYPE_GPR);
@@ -2139,10 +2141,11 @@ analopfinish:
 				}
 			}
 #else
+			bool dst_overlaps_variadic = dst && dst->reg && variadic_reg && !strcmp (dst->reg, variadic_reg);
 			bool dst_is_variadic = dst && dst->reg && variadic_reg && !strcmp (dst->reg, variadic_reg);
 #endif
 			bool op_is_cmp = (op->type == R_ANAL_OP_TYPE_CMP) || op->type == R_ANAL_OP_TYPE_ACMP;
-			if (dst_is_variadic && !op_is_cmp) {
+			if (dst_overlaps_variadic && !op_is_cmp) {
 				has_variadic_reg = false;
 			} else if (op_is_cmp) {
 				if (dst_is_variadic && src0 && src0->reg && (dst->reg == src0->reg)) {
