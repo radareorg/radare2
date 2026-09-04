@@ -1026,25 +1026,72 @@ static void aarch64_patch_adr(RIOBind *iob, ut64 at, st64 imm) {
 		((ut32)(imm & 3) << 29) | ((ut32)(imm >> 2) << 5));
 }
 
-static void aarch64_patch_branch(RIOBind *iob, RBinElfReloc *rel, st64 disp, int nbits, int shift) {
+static void aarch64_patch_branch(RIOBind *iob, RBinElfReloc *rel, ut64 at, st64 disp, int nbits, int shift) {
 	// a truncated branch invents a call target, worse than leaving it
 	if ((disp & 3) || !disp_fits (disp, nbits + 2)) {
 		R_LOG_DEBUG ("unencodable aarch64 reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
 		return;
 	}
-	aarch64_patch_insn (iob, rel->rva, ((1U << nbits) - 1) << shift, (ut32)(disp >> 2) << shift);
+	aarch64_patch_insn (iob, at, ((1U << nbits) - 1) << shift, (ut32)(disp >> 2) << shift);
 }
 
-static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 toc) {
+// where the loader put a bin-space address: its owner either moved by
+// baddr_shift or did not, and the maps of the file's own fd say which
+static ut64 elf_io_addr(RBinFile *bf, ELFOBJ *eo, ut64 v) {
+	RBinObject *bo = bf->bo;
+	const st64 shift = bo->baddr_shift;
+	if (!shift || !bo->info || !bo->info->has_va) {
+		return v;
+	}
+	const ut64 moved = v + shift;
+	const ut64 off = Elf_(v2p) (eo, v);
+	if (off == UT64_MAX) {
+		return moved;
+	}
+	RBin *b = bf->rbin;
+	RIO *io = b->iob.io;
+	RIOBank *bank = b->iob.bank_get (io, io->bank);
+	if (!bank) {
+		return moved;
+	}
+	RListIter *iter;
+	RIOMapRef *mapref;
+	ut64 agreed = UT64_MAX;
+	bool any = false, disagree = false, unmoved = false;
+	r_list_foreach (bank->maprefs, iter, mapref) {
+		RIOMap *map = b->iob.map_get (io, mapref->id);
+		if (!map || map->fd != bf->fd || off < map->delta
+				|| off >= map->delta + r_io_map_size (map)) {
+			continue;
+		}
+		const ut64 at = r_io_map_from (map) + (off - map->delta);
+		if (at == moved) {
+			return moved;
+		}
+		if (at == v) {
+			unmoved = true;
+		} else if (!any) {
+			agreed = at;
+			any = true;
+		} else if (at != agreed) {
+			disagree = true;
+		}
+	}
+	if (unmoved) {
+		return v;
+	}
+	return (any && !disagree)? agreed: moved;
+}
+
+static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 B, ut64 L, ut64 toc) {
 	ut64 V = 0;
 	ut64 A = rel->addend;
-	ut64 P = rel->rva;
 	ut8 buf[8] = {0};
 	// rel/relr carry no explicit addend: the slot's own word is it
 	if (rel->mode == DT_RELR || e_machine == EM_386) {
 		ut8 slot[8] = {0};
 		const int ws = (e_machine == EM_386)? 4: (int)sizeof (Elf_(Addr));
-		if (iob->read_at (iob->io, rel->rva, slot, ws) != ws) {
+		if (iob->read_at (iob->io, P, slot, ws) != ws) {
 			return;
 		}
 		if (rel->mode == DT_RELR || rel->mode == DT_REL) {
@@ -1055,10 +1102,10 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 	case EM_S390:
 		switch (rel->type) {
 		case R_390_GLOB_DAT: // globals
-			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
+			iob->overlay_write_at (iob->io, P, buf, 8);
 			break;
 		case R_390_RELATIVE:
-			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
+			iob->overlay_write_at (iob->io, P, buf, 8);
 			break;
 		}
 		break;
@@ -1066,7 +1113,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 	{
 		ut32 insn = 0;
 		st64 addend = rel->addend;
-		if (iob->read_at (iob->io, rel->rva, buf, 4) != 4) {
+		if (iob->read_at (iob->io, P, buf, 4) != 4) {
 			return;
 		}
 		insn = r_read_ble32 (buf, bo->endian);
@@ -1186,7 +1233,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			}
 			break;
 		}
-		iob->overlay_write_at (iob->io, rel->rva, buf, 4);
+		iob->overlay_write_at (iob->io, P, buf, 4);
 		}
 		break;
 	case EM_AARCH64: {
@@ -1200,7 +1247,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				R_LOG_DEBUG ("unencodable aarch64 reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
 				break;
 			}
-			aarch64_patch_adr (iob, rel->rva, imm);
+			aarch64_patch_adr (iob, P, imm);
 			break;
 		}
 		case R_AARCH64_ADD_ABS_LO12_NC:
@@ -1225,25 +1272,25 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				break;
 			}
 			// the field is bits 11:shift of S + A, not bits shift+11:shift
-			aarch64_patch_insn (iob, rel->rva, 0xfff << 10,
+			aarch64_patch_insn (iob, P, 0xfff << 10,
 				(ut32)(((S + A) & 0xfff) >> shift) << 10);
 			break;
 		}
 		case R_AARCH64_JUMP26:
 		case R_AARCH64_CALL26:
-			aarch64_patch_branch (iob, rel, (st64)(S + A) - (st64)P, 26, 0);
+			aarch64_patch_branch (iob, rel, P, (st64)(S + A) - (st64)P, 26, 0);
 			break;
 		case R_AARCH64_CONDBR19:
 		case R_AARCH64_LD_PREL_LO19:
-			aarch64_patch_branch (iob, rel, (st64)(S + A) - (st64)P, 19, 5);
+			aarch64_patch_branch (iob, rel, P, (st64)(S + A) - (st64)P, 19, 5);
 			break;
 		case R_AARCH64_TSTBR14:
-			aarch64_patch_branch (iob, rel, (st64)(S + A) - (st64)P, 14, 5);
+			aarch64_patch_branch (iob, rel, P, (st64)(S + A) - (st64)P, 14, 5);
 			break;
 		case R_AARCH64_ADR_PREL_LO21: {
 			const st64 disp = (st64)(S + A) - (st64)P;
 			if (disp_fits (disp, 21)) {
-				aarch64_patch_adr (iob, rel->rva, disp);
+				aarch64_patch_adr (iob, P, disp);
 			} else {
 				R_LOG_DEBUG ("unencodable aarch64 reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
 			}
@@ -1258,7 +1305,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		case R_AARCH64_MOVW_UABS_G3: {
 			// hw already selects the group, only imm16 may be rewritten
 			const int g = (rel->type - R_AARCH64_MOVW_UABS_G0) / 2;
-			aarch64_patch_insn (iob, rel->rva, 0xffff << 5,
+			aarch64_patch_insn (iob, P, 0xffff << 5,
 				(ut32)(((S + A) >> (g * 16)) & 0xffff) << 5);
 			break;
 		}
@@ -1300,7 +1347,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		}
 		if (word) {
 			r_write_ble (buf, V, bo->endian, word * 8);
-			iob->overlay_write_at (iob->io, rel->rva, buf, word);
+			iob->overlay_write_at (iob->io, P, buf, word);
 		}
 		}
 		break;
@@ -1330,7 +1377,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		case R_PPC64_JMP_SLOT: { // 21 — write the PLT stub vaddr to the GOT slot, S when no stub is known
 			ut64 stub = Elf_(ppc64_get_plt_stub_for_slot) (bo, rel->rva);
 			word = 8;
-			V = (stub != UT64_MAX) ? stub : S;
+			V = (stub != UT64_MAX)? elf_io_addr (bf, bo, stub): S;
 			break;
 		}
 		case R_PPC64_ADDR64: // 38 — S + A (absolute 64-bit)
@@ -1375,43 +1422,43 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			switch (low) {
 			case 14:
 				V &= (1 << 14) - 1;
-				if (iob->read_at (iob->io, rel->rva, buf, 4) != 4) {
+				if (iob->read_at (iob->io, P, buf, 4) != 4) {
 					return;
 				}
 				r_write_ble32 (buf, (r_read_ble32 (buf, bo->endian) & ~((1<<16) - (1<<2))) | V << 2, bo->endian);
-				iob->overlay_write_at (iob->io, rel->rva, buf, 4);
+				iob->overlay_write_at (iob->io, P, buf, 4);
 				break;
 			case 24:
 				V &= (1 << 24) - 1;
-				if (iob->read_at (iob->io, rel->rva, buf, 4) != 4) {
+				if (iob->read_at (iob->io, P, buf, 4) != 4) {
 					return;
 				}
 				r_write_ble32 (buf, (r_read_ble32 (buf, bo->endian) & ~((1<<26) - (1<<2))) | V << 2, bo->endian);
-				iob->overlay_write_at (iob->io, rel->rva, buf, 4);
+				iob->overlay_write_at (iob->io, P, buf, 4);
 				break;
 			}
 		} else if (word) {
 			switch (word) {
 			case 2:
 				r_write_ble16 (buf, V, bo->endian);
-				iob->overlay_write_at (iob->io, rel->rva, buf, 2);
+				iob->overlay_write_at (iob->io, P, buf, 2);
 				break;
 			case 4:
 				r_write_ble32 (buf, V, bo->endian);
-				iob->overlay_write_at (iob->io, rel->rva, buf, 4);
+				iob->overlay_write_at (iob->io, P, buf, 4);
 				break;
 			case 8:
 				r_write_ble64 (buf, V, bo->endian);
-				iob->overlay_write_at (iob->io, rel->rva, buf, 8);
+				iob->overlay_write_at (iob->io, P, buf, 8);
 				break;
 			}
 		} else if (ds) {
-			if (iob->read_at (iob->io, rel->rva, buf, 2) != 2) {
+			if (iob->read_at (iob->io, P, buf, 2) != 2) {
 				return;
 			}
 			ut16 cur = r_read_ble16 (buf, bo->endian);
 			r_write_ble16 (buf, (cur & 3) | (V & 0xfffc), bo->endian);
-			iob->overlay_write_at (iob->io, rel->rva, buf, 2);
+			iob->overlay_write_at (iob->io, P, buf, 2);
 		}
 		break;
 	}
@@ -1435,7 +1482,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			return;
 		}
 		r_write_ble32 (buf, V, bo->endian);
-		iob->overlay_write_at (iob->io, rel->rva, buf, 4);
+		iob->overlay_write_at (iob->io, P, buf, 4);
 		break;
 	case EM_X86_64: {
 		int word = 0;
@@ -1507,19 +1554,19 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			break;
 		case 1:
 			buf[0] = V;
-			iob->overlay_write_at (iob->io, rel->rva, buf, 1);
+			iob->overlay_write_at (iob->io, P, buf, 1);
 			break;
 		case 2:
 			r_write_le16 (buf, V);
-			iob->overlay_write_at (iob->io, rel->rva, buf, 2);
+			iob->overlay_write_at (iob->io, P, buf, 2);
 			break;
 		case 4:
 			r_write_le32 (buf, V);
-			iob->overlay_write_at (iob->io, rel->rva, buf, 4);
+			iob->overlay_write_at (iob->io, P, buf, 4);
 			break;
 		case 8:
 			r_write_le64 (buf, V);
-			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
+			iob->overlay_write_at (iob->io, P, buf, 8);
 			break;
 		}
 		break;
@@ -1754,7 +1801,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			t = Elf_(get_section_addr) (eo, ".got");
 		}
 		if (t != UT64_MAX) {
-			toc_base = t + 0x8000;
+			toc_base = elf_io_addr (bf, eo, t) + 0x8000;
 		}
 	}
 	RBinElfReloc *reloc;
@@ -1771,25 +1818,34 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 				plt_entry_addr = sym_addr;
 			}
 		} else if (reloc->sym && reloc->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[reloc->sym]) {
-			sym_addr = eo->symbols_by_ord[reloc->sym]->vaddr;
+			RBinSymbol *sym = eo->symbols_by_ord[reloc->sym];
+			// a tls symbol's value is an offset in the thread block, not an address
+			const bool is_tls = sym->type && !strcmp (sym->type, R_BIN_TYPE_TLS_STR);
+			sym_addr = sym->vaddr;
+			if (!is_tls && sym_addr && sym_addr != UT64_MAX) {
+				sym_addr = elf_io_addr (bf, eo, sym_addr);
+			}
 			plt_entry_addr = sym_addr;
 		}
 		const bool resolved = sym_addr && sym_addr != UT64_MAX;
 		const ut64 raddr = resolved? sym_addr: vaddr;
-		_patch_reloc (eo, eo->ehdr.e_machine, &b->iob, reloc, raddr, eo->baddr, plt_entry_addr, toc_base);
-		ptr = reloc_convert (eo, reloc, n_vaddr, ret);
+		_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
+			elf_io_addr (bf, eo, reloc->rva), raddr,
+			elf_io_addr (bf, eo, eo->baddr), plt_entry_addr, toc_base);
+		ptr = reloc_convert (eo, reloc, n_vaddr - bf->bo->baddr_shift, ret);
 		if (!ptr) {
 			continue;
 		}
 		// a patched code site branches to the slot, so the slot is what the
 		// reloc describes; a data site holds the value and keeps its own vaddr
 		if (is_import) {
-			RBinSection *s = r_bin_get_section_at (bf->bo, ptr->vaddr, true);
+			const st64 shift = bf->bo->baddr_shift;
+			RBinSection *s = r_bin_get_section_at (bf->bo, ptr->vaddr + shift, true);
 			if (s && (s->perm & R_PERM_X)) {
 				if (resolved) {
-					ptr->vaddr = sym_addr;
+					ptr->vaddr = sym_addr - shift;
 				} else if (eo->ehdr.e_machine != EM_SBPF) {
-					ptr->vaddr = vaddr;
+					ptr->vaddr = vaddr - shift;
 				}
 			}
 		}
