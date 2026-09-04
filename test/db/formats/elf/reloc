@@ -842,3 +842,118 @@ EXPECT=<<EOF
 0x000122c8  0x000132cc                                   .2..
 EOF
 RUN
+
+NAME=ELF: ppc64 slot is patched at the mapped address under a custom base
+FILE=bins/elf/ppc64v1-libz.so
+ARGS=-B 0x100000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+?v [0x100030048]
+EOF
+EXPECT=<<EOF
+0x1000194dc
+EOF
+RUN
+
+NAME=ELF: ppc64 nobits plt slot is patched under a custom base
+FILE=bins/elf/ppc64v1-stub-eagerend.so
+ARGS=-B 0x100000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+?v [0x100002018]
+EOF
+EXPECT=<<EOF
+0x10000034c
+EOF
+RUN
+
+NAME=ELF: import at a code site keeps its got.r2 slot under a custom base
+FILE=bins/elf/test.ko
+ARGS=-B 0x100000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+ir~__fentry__
+EOF
+EXPECT=<<EOF
+0x100000500 0x0000007d ADD_32 4     __fentry__ - 0x08000081
+EOF
+RUN
+
+NAME=ELF: a reloc into an unrebased map is patched where it already is
+FILE=bins/elf/cfile_o
+ARGS=-B 0x100000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+ompg+r
+p8 8 @ 0x08004099
+EOF
+EXPECT=<<EOF
+4d3d01084147aa01
+EOF
+RUN
+
+NAME=ELF: ppc64 toc window follows its section under a custom base
+FILE=bins/elf/ppc64v1-crc32_generic.ko
+ARGS=-B 0x10000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+p8 8 @ 0x1000036c
+EOF
+EXPECT=<<EOF
+3d220000e8698000
+EOF
+RUN
+
+NAME=ELF: a tls symbol value is not an address and keeps its offset
+FILE=bins/elf/glibc-2.34-39.el9.x86_64_libc.so.6
+ARGS=-B 0x10000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+?v [0x101f9f40]
+EOF
+EXPECT=<<EOF
+0x40
+EOF
+RUN
+
+NAME=ELF: got.r2 slot address is not shifted twice
+FILE=bins/elf/ada_test_dwarf
+ARGS=-B 0x50000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+?v [0x50004ff8]
+EOF
+EXPECT=<<EOF
+0x50007bb0
+EOF
+RUN
+
+NAME=ELF: aarch64 ET_REL branch relocs are patched under a custom base
+FILE=bins/elf/analysis/arm64-relocs
+ARGS=-B 0x100000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+p8 4 @ 0x100000044
+p8 8 @ 0x10000004c
+EOF
+EXPECT=<<EOF
+06000094
+8000183660000054
+EOF
+RUN
+
+NAME=ELF: aarch64 ET_REL adrp/add pair is patched under a custom base
+FILE=bins/elf/random_39855/random_39855.oo
+ARGS=-B 0x100000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+p8 8 @ 0x100000074
+EOF
+EXPECT=<<EOF
+210000b021701f91
+EOF
+RUN
+
+NAME=ELF: overlapping PT_LOADs patch each reloc in its own segment
+FILE=bins/elf/x86-64-ovl-ptload.so
+ARGS=-B 0x40000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+p8 8 @ 0x40005800
+p8 8 @ 0x40000900
+EOF
+EXPECT=<<EOF
+0051004000000000
+0001004000000000
+EOF
+RUN
