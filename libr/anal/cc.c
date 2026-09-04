@@ -1479,7 +1479,7 @@ static bool cc_location_range(const char *loc, const char **s, const char **end)
 	return true;
 }
 
-R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
+R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (anal && loc && reg, false);
 	if (*loc && *loc != '{') {
 		return !strcmp (loc, reg);

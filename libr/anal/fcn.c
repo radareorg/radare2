@@ -3027,7 +3027,7 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature_current(RAnalFunctio
 	return function_get_signature (function, false);
 }
 
-R_IPI bool r_anal_function_has_address_linked_signature_current(RAnalFunction *function) {
+R_API bool r_anal_function_has_address_linked_signature_current(RAnalFunction *function) {
 	R_RETURN_VAL_IF_FAIL (function && function->anal && function->anal->lock
 		&& function->anal->sdb_types, false);
 	RAnal *anal = function->anal;

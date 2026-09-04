@@ -6820,16 +6820,6 @@ static RAnalFunction *core_decompiler_target(RCore *core, const char *input) {
 	return fcn;
 }
 
-typedef struct {
-	RAnalPlugin *provider;
-	RCodeMeta *meta;
-} DecompileSnapshotContext;
-
-static bool decompile_snapshot_cb(const RAnalFunctionSnapshot *snapshot, void *user) {
-	DecompileSnapshotContext *ctx = user;
-	ctx->meta = ctx->provider->decompile (snapshot);
-	return true;
-}
 
 static bool core_print_provider_decompile_locked(RCore *core, const char *input) {
 	RAnalPlugin *provider = r_anal_decompiler_provider (core->anal);
@@ -6841,18 +6831,7 @@ static bool core_print_provider_decompile_locked(RCore *core, const char *input)
 		r_core_return_code (core, 1);
 		return true;
 	}
-	DecompileSnapshotContext ctx = {
-		.provider = provider,
-	};
-	const char *reason = NULL;
-	if (!r_core_function_snapshot_at (
-			core, fcn->addr, decompile_snapshot_cb, &ctx, &reason)) {
-		R_LOG_ERROR ("Cannot snapshot function '%s': %s",
-			fcn->name? fcn->name: "?", r_str_get_fail (reason, "unknown reason"));
-		r_core_return_code (core, 1);
-		return true;
-	}
-	RCodeMeta *meta = ctx.meta;
+	RCodeMeta *meta = provider->decompile (core->anal, fcn);
 	if (!meta) {
 		R_LOG_ERROR ("Decompiler provider failed for function '%s'", fcn->name? fcn->name: "?");
 		r_core_return_code (core, 1);

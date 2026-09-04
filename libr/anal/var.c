@@ -308,7 +308,7 @@ R_IPI bool r_anal_var_exact_formal_set(RAnal *anal, RAnalVar *var, ut64 function
 	return true;
 }
 
-R_IPI bool r_anal_var_exact_formal_get(RAnal *anal, const RAnalVar *var, R_OUT int *ordinal) {
+R_API bool r_anal_var_exact_formal_get(RAnal *anal, const RAnalVar *var, R_OUT int *ordinal) {
 	if (!anal || !anal->priv || !anal->lock || !var || !ordinal) {
 		return false;
 	}

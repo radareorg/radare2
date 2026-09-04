@@ -945,10 +945,6 @@ R_API RList *r_anal_types_snapshot(RAnal *anal) {
 	return types_baselist_with_limits (anal, NULL);
 }
 
-R_IPI RList *r_anal_types_snapshot_with_limits(RAnal *anal, const RAnalFunctionSnapshotLimits *limits) {
-	R_RETURN_VAL_IF_FAIL (anal && limits, NULL);
-	return types_baselist_with_limits (anal, limits);
-}
 
 R_API void r_anal_types_snapshot_free(RList *snapshot) {
 	r_list_free (snapshot);
@@ -1073,10 +1069,6 @@ static ut64 types_context_hash_from_snapshot(RAnal *anal, const RList *types, ut
 	return hash;
 }
 
-R_IPI ut64 r_anal_types_context_hash_from_snapshot(RAnal *anal, const RList *types, ut64 type_dirty_epoch) {
-	R_RETURN_VAL_IF_FAIL (anal && types, 0);
-	return types_context_hash_from_snapshot (anal, types, type_dirty_epoch);
-}
 
 R_API ut64 r_anal_types_context_hash(RAnal *anal) {
 	R_RETURN_VAL_IF_FAIL (anal, 0);

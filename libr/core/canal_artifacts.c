@@ -1083,21 +1083,6 @@ static bool artifact_xref_sets_prepare(const RCoreAnalArtifactReplacement *repla
 	return true;
 }
 
-typedef struct {
-	ut64 revision;
-	bool captured;
-} ArtifactSnapshotRevision;
-
-static bool capture_artifact_snapshot_revision(const RAnalFunctionSnapshot *snapshot, void *user) {
-	ArtifactSnapshotRevision *result = user;
-	RAnalFunctionSnapshotView view;
-	if (!r_anal_function_snapshot_view (snapshot, &view)) {
-		return false;
-	}
-	result->revision = view.revision_identity;
-	result->captured = true;
-	return true;
-}
 
 static bool artifact_replacement_epoch_matches(RCore *core, RAnal *anal,
 		const RCoreAnalArtifactReplacement *replacement) {
@@ -1107,11 +1092,10 @@ static bool artifact_replacement_epoch_matches(RCore *core, RAnal *anal,
 			|| anal->type_dirty_epoch != replacement->expected_type_epoch) {
 		return false;
 	}
-	ArtifactSnapshotRevision revision = {0};
+	ut64 revision = 0;
 	return replacement->expected_snapshot_revision
-		&& r_core_function_snapshot_at (core, replacement->scope_id,
-			capture_artifact_snapshot_revision, &revision, NULL)
-		&& revision.captured && revision.revision == replacement->expected_snapshot_revision;
+		&& r_core_function_context_hash (core, replacement->scope_id, &revision, NULL)
+		&& revision == replacement->expected_snapshot_revision;
 }
 
 static void publish_artifact_function_epochs(RAnal *anal,

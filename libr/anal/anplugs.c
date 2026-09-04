@@ -636,10 +636,16 @@ R_API RAnalPlugin *r_anal_decompiler_provider(RAnal *anal) {
 	return provider;
 }
 
-R_API RCodeMeta *r_anal_decompile(RAnal *anal, const RAnalFunctionSnapshot *snapshot) {
-	R_RETURN_VAL_IF_FAIL (anal && snapshot, NULL);
+/* Decompile one function with the best-scoring provider.
+ *
+ * The provider is handed the function rather than a prebuilt snapshot of it.
+ * What a decompiler needs to know about a function is the decompiler's
+ * business, and shaping radare2's plugin ABI around one plugin's capture
+ * format made every other caller carry that format too. */
+R_API RCodeMeta *r_anal_decompile(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
 	RAnalPlugin *provider = r_anal_decompiler_provider (anal);
-	return provider? provider->decompile (snapshot): NULL;
+	return provider? provider->decompile (anal, fcn): NULL;
 }
 
 // For stack-VM archs (JVM, Dalvik, ...) bin parses each method's frame header

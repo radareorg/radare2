@@ -289,22 +289,6 @@ typedef enum {
 	R_ANAL_FCN_SLOT_UNKNOWN
 } RAnalFcnSlotRole;
 
-typedef struct r_anal_fcn_slot_t {
-	char *name;
-	char *type;
-	RAnalFcnSlotBase base;
-	char *base_name;
-	ut64 base_offset;
-	ut32 base_size;
-	st64 offset;
-	ut32 size;
-	bool offset_valid;
-	RAnalFcnSlotRole role;
-	int arg_index;
-	char *home_reg;
-	ut64 home_reg_offset;
-	ut32 home_reg_size;
-} RAnalFcnSlot;
 
 typedef enum {
 	R_ANAL_FCN_CALLEE_UNKNOWN = 0,
@@ -323,27 +307,9 @@ typedef enum {
 	R_ANAL_CALL_TRANSFER_TAIL_SLOT = 2,
 } RAnalCallTransfer;
 
-typedef struct r_anal_fcn_callee_t {
-	ut64 call_addr;
-	ut64 addr;
-	char *name;
-	RAnalFcnCalleeLinkage linkage;
-	RAnalFunctionSignature *signature;
-	RAnalCallTransfer transfer;
-} RAnalFcnCallee;
 
-typedef struct r_anal_fcn_context_t {
-	RAnalFunctionSignature *signature;
-	// Authoritative owner of immutable stack-resource declarations.
-	RList *fcn_slots; // RList<RAnalFcnSlot *>
-	RList *callees; // RList<RAnalFcnCallee *>
-	ut64 function_dirty_epoch;
-	ut64 type_dirty_epoch;
-} RAnalFcnContext;
 
 // Opaque immutable snapshot borrowed by decompiler providers.
-typedef struct r_anal_function_snapshot_t RAnalFunctionSnapshot;
-typedef bool (*RAnalFunctionSnapshotCallback)(const RAnalFunctionSnapshot *snapshot, void *user);
 
 // Immutable snapshot data supplied to decompiler providers.
 // Capability bits describe fields captured, not semantic completeness. Schema
@@ -353,208 +319,12 @@ typedef bool (*RAnalFunctionSnapshotCallback)(const RAnalFunctionSnapshot *snaps
 // consumer asks whether the capability is here, never which number it sits at:
 // the numbers move for reasons that have nothing to do with whether the API a
 // provider needs is present.
-#define R_ANAL_FUNCTION_SNAPSHOT_API 1
-#define R_ANAL_FUNCTION_SNAPSHOT_SCHEMA_VERSION 19
-typedef enum {
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_SIGNATURE = 1ULL << 0,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_STACK_SLOTS = 1ULL << 2,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_CALLEES = 1ULL << 3,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_TYPES = 1ULL << 4,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_REVISION = 1ULL << 6,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FUNCTION_INTERFACE = 1ULL << 7,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_CALL_SITE_INTERFACES = 1ULL << 8,
-	// Reserved for a future machine-derived callsite identity source. Xrefs
-	// and callee metadata must never mint this capability.
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_CALL_SITE_INTERFACES = 1ULL << 9,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FUNCTION_TYPES = 1ULL << 10,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_STACK_SLOT_ROLES = 1ULL << 11,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_RETURN_ADDRESS_STORAGE = 1ULL << 12,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_STACK_POINTER_STORAGE = 1ULL << 13,
-	// Bytes are exact reads owned by the snapshot. CFG/successor metadata is
-	// advisory until a trusted decoder independently validates it.
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_OWNED_BOUNDED_FUNCTION_IMAGE = 1ULL << 14,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_RETURN_MECHANISM = 1ULL << 15,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FRAME_POINTER_STORAGE = 1ULL << 16,
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_STACK_ALLOCATION_CONTRACT = 1ULL << 17,
-	// The snapshot carries snapshots of the functions it calls directly, taken
-	// in the same locked transaction. A consumer that reasons across a call
-	// needs the callee's body, and one snapshot per call cannot supply it.
-	R_ANAL_FUNCTION_SNAPSHOT_CAP_CALLEE_SNAPSHOTS = 1ULL << 18,
-} RAnalFunctionSnapshotCapability;
-typedef struct r_anal_snapshot_register_storage_t {
-	char *name;
-	ut64 offset;
-	ut32 size;
-} RAnalSnapshotRegisterStorage;
-#define R_ANAL_SNAPSHOT_TYPE_ID_INVALID UT32_MAX
-typedef ut32 RAnalSnapshotTypeId;
-typedef enum {
-	R_ANAL_SNAPSHOT_TYPE_INVALID = 0,
-	R_ANAL_SNAPSHOT_TYPE_SIGNED_INTEGER,
-	R_ANAL_SNAPSHOT_TYPE_UNSIGNED_INTEGER,
-	R_ANAL_SNAPSHOT_TYPE_POINTER,
-	R_ANAL_SNAPSHOT_TYPE_STRUCT,
-} RAnalSnapshotTypeKind;
-typedef enum {
-	R_ANAL_SNAPSHOT_CARRIER_INVALID = 0,
-	R_ANAL_SNAPSHOT_CARRIER_FULL,
-	R_ANAL_SNAPSHOT_CARRIER_LOW_BITS,
-} RAnalSnapshotCarrierProjectionKind;
-typedef struct r_anal_snapshot_carrier_projection_t {
-	RAnalSnapshotCarrierProjectionKind kind;
-	ut64 offset_bits;
-	ut64 size_bits;
-} RAnalSnapshotCarrierProjection;
-typedef struct r_anal_snapshot_parameter_t {
-	ut32 index;
-	char *name;
-	RAnalSnapshotRegisterStorage storage;
-	RAnalSnapshotTypeId logical_type_id;
-	RAnalSnapshotCarrierProjection carrier;
-} RAnalSnapshotParameter;
-typedef enum {
-	R_ANAL_SNAPSHOT_RETURN_UNKNOWN = 0,
-	R_ANAL_SNAPSHOT_RETURN_VOID,
-	R_ANAL_SNAPSHOT_RETURN_REGISTER,
-} RAnalSnapshotReturnKind;
-typedef enum {
-	R_ANAL_SNAPSHOT_RETURN_ARITY_UNKNOWN = 0,
-	R_ANAL_SNAPSHOT_RETURN_ARITY_VOID,
-	R_ANAL_SNAPSHOT_RETURN_ARITY_VALUE,
-} RAnalSnapshotReturnArity;
-typedef enum {
-	R_ANAL_SNAPSHOT_RETURN_MECHANISM_NONE = 0,
-	R_ANAL_SNAPSHOT_RETURN_MECHANISM_STACK,
-} RAnalSnapshotReturnMechanismKind;
-typedef struct r_anal_snapshot_return_mechanism_view_t {
-	RAnalSnapshotReturnMechanismKind kind;
-	st64 entry_sp_offset;
-	ut32 slot_size;
-	st64 exit_sp_delta;
-} RAnalSnapshotReturnMechanismView;
-typedef enum {
-	R_ANAL_SNAPSHOT_STACK_GROWTH_NONE = 0,
-	R_ANAL_SNAPSHOT_STACK_GROWTH_LOWER,
-	R_ANAL_SNAPSHOT_STACK_GROWTH_HIGHER,
-} RAnalSnapshotStackGrowth;
-typedef struct r_anal_snapshot_stack_allocation_contract_view_t {
-	RAnalSnapshotStackGrowth growth;
-	ut32 implicit_active_sp_bytes;
-} RAnalSnapshotStackAllocationContractView;
-typedef struct r_anal_function_interface_snapshot_t {
-	char *calling_convention;
-	RAnalSnapshotParameter *parameters;
-	size_t num_parameters;
-	RAnalSnapshotReturnKind return_kind;
-	RAnalSnapshotRegisterStorage return_storage;
-	// Register consumed by the lifted return: LR/RA on link-register targets,
-	// otherwise PC after the stack return address has been loaded.
-	RAnalSnapshotRegisterStorage return_address_storage;
-	// Full-width architectural stack pointer resolved from the typed SP role,
-	// independently of whether the function declares SP-relative stack slots.
-	RAnalSnapshotRegisterStorage stack_pointer_storage;
-	bool variadic;
-	bool noreturn;
-	bool stack_resources_complete;
-	bool stack_slot_roles_complete;
-	bool complete;
-	RAnalSnapshotTypeId return_type_id;
-	RAnalSnapshotCarrierProjection return_carrier;
-	bool logical_types_complete;
-	// The calling convention states that a callee restores these carriers, so a
-	// consumer can establish that they survive a call rather than assuming it.
-	bool stack_pointer_preserved_across_calls;
-	bool frame_pointer_preserved_across_calls;
-	// Registers the calling convention would use for arguments and the result,
-	// in convention order. These come from the convention itself rather than
-	// from any recovered prototype, so they are present even when no signature
-	// was recovered, and they say where a caller *would* leave a value, not
-	// that the function takes one.
-	RAnalSnapshotRegisterStorage *convention_argument_slots;
-	size_t num_convention_argument_slots;
-	RAnalSnapshotRegisterStorage convention_result_slot;
-	bool convention_slots_known;
-} RAnalFunctionInterfaceSnapshot;
-typedef struct r_anal_call_site_interface_snapshot_t {
-	ut64 instruction_addr;
-	ut64 target_addr;
-	// What the target is called. A consumer that renders the call has no other
-	// way to spell it, and rediscovering the name would mean handing out the
-	// RAnal this snapshot exists to replace.
-	char *target_name;
-	char *calling_convention;
-	RAnalSnapshotParameter *arguments;
-	size_t num_arguments;
-	RAnalSnapshotReturnKind result_kind;
-	RAnalSnapshotRegisterStorage result_storage;
-	bool variadic;
-	bool noreturn;
-	bool complete;
-	RAnalCallTransfer transfer;
-} RAnalCallSiteInterfaceSnapshot;
-typedef struct r_anal_snapshot_type_t {
-	RAnalSnapshotTypeId id;
-	RAnalSnapshotTypeKind kind;
-	ut64 size_bits;
-	ut64 align_bits;
-	RAnalSnapshotTypeId target_type_id;
-	ut32 aggregate_id;
-} RAnalSnapshotType;
-typedef struct r_anal_snapshot_aggregate_member_t {
-	ut32 member_id;
-	RAnalSnapshotTypeId type_id;
-	ut64 offset_bits;
-	ut64 size_bits;
-	char *name;
-} RAnalSnapshotAggregateMember;
-typedef struct r_anal_snapshot_aggregate_layout_t {
-	ut32 id;
-	RAnalSnapshotTypeId type_id;
-	ut64 size_bits;
-	ut64 align_bits;
-	char *name;
-	RAnalSnapshotAggregateMember *members;
-	size_t num_members;
-	bool complete;
-} RAnalSnapshotAggregateLayout;
-typedef struct r_anal_snapshot_type_graph_t {
-	RAnalSnapshotType *types;
-	size_t num_types;
-	RAnalSnapshotAggregateLayout *aggregates;
-	size_t num_aggregates;
-	bool complete;
-} RAnalSnapshotTypeGraph;
-typedef enum {
-	R_ANAL_SNAPSHOT_SUCCESSOR_DIRECT = 0,
-	R_ANAL_SNAPSHOT_SUCCESSOR_FALLTHROUGH,
-	R_ANAL_SNAPSHOT_SUCCESSOR_SWITCH_CASE,
-	R_ANAL_SNAPSHOT_SUCCESSOR_SWITCH_DEFAULT,
-} RAnalSnapshotSuccessorKind;
-typedef struct r_anal_snapshot_successor_t {
-	RAnalSnapshotSuccessorKind kind;
-	ut64 target_addr;
-	ut64 case_value;
-	bool external;
-} RAnalSnapshotSuccessor;
-typedef struct r_anal_snapshot_block_t {
-	ut64 addr;
-	ut64 size;
-	ut8 *bytes;
-	RAnalSnapshotSuccessor *successors;
-	size_t num_successors;
-	// Exact indirect-branch instruction address, or UT64_MAX without a switch.
-	ut64 switch_addr;
-} RAnalSnapshotBlock;
 // A string literal the function refers to, and where it lives.
 //
 // A consumer holding only the snapshot can see the address a constant carries
 // but not what is stored there, so a rendered call could name its callee and
 // still spell its argument as an address. This is the same fact radare2
 // already keeps as `Cs` metadata, travelling with the function that reads it.
-typedef struct r_anal_snapshot_string_literal_t {
-	ut64 addr;
-	char *text;
-} RAnalSnapshotStringLiteral;
 // A call through a table of function pointers reaches every entry the index can
 // select, and a consumer holding only the function's own bytes cannot read the
 // table to find out which. These are the words themselves, carried as fact:
@@ -569,175 +339,16 @@ typedef struct r_anal_snapshot_string_literal_t {
 // travelling with the function that reads it. When radare2 has an address type
 // link for the same object, that exact spelling travels beside the display name
 // as an optional, source-owned type fact.
-typedef struct r_anal_snapshot_data_symbol_t {
-	ut64 addr;
-	char *name;
-	char *type_name;
-} RAnalSnapshotDataSymbol;
-typedef struct r_anal_snapshot_code_pointer_table_t {
-	ut64 addr;
-	ut32 entry_size;
-	ut64 *targets;
-	size_t num_targets;
-} RAnalSnapshotCodePointerTable;
-typedef struct r_anal_function_image_snapshot_t {
-	ut64 entry_addr;
-	RAnalSnapshotBlock *blocks;
-	size_t num_blocks;
-	ut64 *external_exits;
-	size_t num_external_exits;
-	RAnalSnapshotStringLiteral *string_literals;
-	size_t num_string_literals;
-	RAnalSnapshotDataSymbol *data_symbols;
-	size_t num_data_symbols;
-	RAnalSnapshotCodePointerTable *code_pointer_tables;
-	size_t num_code_pointer_tables;
-	size_t total_source_bytes;
-} RAnalFunctionImageSnapshot;
-typedef struct r_anal_function_snapshot_view_t {
-	ut64 capabilities;
-	ut64 function_addr;
-	int bits;
-	ut32 endian;
-	size_t arch_id_length;
-	size_t cpu_id_length;
-	size_t function_name_length;
-	size_t num_call_site_interfaces;
-	size_t num_stack_slots;
-	// Stable diagnostic/cache identity of the owned payload, never proof authority.
-	ut64 revision_identity;
-	// Identity of this function's own payload rather than of the capture it
-	// arrived in. Equal to revision_identity for the function asked for, and
-	// its own hash for a callee collected beside it.
-	ut64 content_identity;
-	size_t num_blocks;
-	size_t num_external_exits;
-	size_t num_string_literals;
-	size_t num_data_symbols;
-	size_t total_source_bytes;
-	size_t num_callee_snapshots;
-	size_t num_code_pointer_tables;
-} RAnalFunctionSnapshotView;
 
 // Transitively const scalar projections. Owned strings are available only
 // through caller-buffer copy accessors while the callback is active.
-typedef struct r_anal_snapshot_block_view_t {
-	ut64 addr;
-	ut64 size;
-	size_t num_successors;
-	ut64 switch_addr;
-} RAnalSnapshotBlockView;
-typedef struct r_anal_snapshot_string_literal_view_t {
-	ut64 addr;
-} RAnalSnapshotStringLiteralView;
-typedef struct r_anal_snapshot_data_symbol_view_t {
-	ut64 addr;
-	size_t name_length;
-	size_t type_name_length;
-} RAnalSnapshotDataSymbolView;
-typedef struct r_anal_snapshot_successor_view_t {
-	RAnalSnapshotSuccessorKind kind;
-	ut64 target_addr;
-	ut64 case_value;
-	bool external;
-} RAnalSnapshotSuccessorView;
-typedef struct r_anal_snapshot_register_storage_view_t {
-	ut64 offset;
-	ut32 size;
-} RAnalSnapshotRegisterStorageView;
-typedef struct r_anal_snapshot_parameter_view_t {
-	ut32 index;
-	size_t name_length;
-	RAnalSnapshotRegisterStorageView storage;
-	RAnalSnapshotTypeId logical_type_id;
-	RAnalSnapshotCarrierProjection carrier;
-} RAnalSnapshotParameterView;
-typedef struct r_anal_function_interface_snapshot_view_t {
-	size_t calling_convention_length;
-	size_t num_parameters;
-	RAnalSnapshotReturnKind return_kind;
-	RAnalSnapshotRegisterStorageView return_storage;
-	RAnalSnapshotRegisterStorageView return_address_storage;
-	RAnalSnapshotRegisterStorageView stack_pointer_storage;
-	RAnalSnapshotTypeId return_type_id;
-	RAnalSnapshotCarrierProjection return_carrier;
-	bool stack_pointer_preserved_across_calls;
-	bool frame_pointer_preserved_across_calls;
-	size_t num_convention_argument_slots;
-	RAnalSnapshotRegisterStorageView convention_result_slot;
-	bool convention_slots_known;
-} RAnalFunctionInterfaceSnapshotView;
-typedef struct r_anal_call_site_interface_snapshot_view_t {
-	ut64 instruction_addr;
-	ut64 target_addr;
-	size_t num_arguments;
-	RAnalSnapshotReturnKind result_kind;
-	RAnalSnapshotRegisterStorageView result_storage;
-	bool variadic;
-	bool noreturn;
-	bool complete;
-} RAnalCallSiteInterfaceSnapshotView;
-typedef struct r_anal_snapshot_type_graph_view_t {
-	size_t num_types;
-	size_t num_aggregates;
-	bool complete;
-} RAnalSnapshotTypeGraphView;
-typedef struct r_anal_snapshot_aggregate_layout_view_t {
-	ut32 id;
-	RAnalSnapshotTypeId type_id;
-	ut64 size_bits;
-	ut64 align_bits;
-	size_t num_members;
-	bool complete;
-} RAnalSnapshotAggregateLayoutView;
-typedef struct r_anal_snapshot_aggregate_member_view_t {
-	ut32 member_id;
-	RAnalSnapshotTypeId type_id;
-	ut64 offset_bits;
-	ut64 size_bits;
-} RAnalSnapshotAggregateMemberView;
 
-typedef struct r_anal_snapshot_stack_slot_view_t {
-	RAnalFcnSlotBase base;
-	ut64 base_offset;
-	ut32 base_size;
-	st64 offset;
-	ut32 size;
-	bool offset_valid;
-	RAnalFcnSlotRole role;
-	int arg_index;
-	ut64 home_reg_offset;
-	ut32 home_reg_size;
-} RAnalSnapshotStackSlotView;
 
-typedef enum {
-	R_ANAL_SNAPSHOT_STACK_SLOT_STRING_NAME = 0,
-	R_ANAL_SNAPSHOT_STACK_SLOT_STRING_TYPE,
-	R_ANAL_SNAPSHOT_STACK_SLOT_STRING_BASE_NAME,
-	R_ANAL_SNAPSHOT_STACK_SLOT_STRING_HOME_REGISTER,
-} RAnalSnapshotStackSlotStringKind;
 
 // The signature radare2 recovered, spelled the way the source spells it. The
 // interface describes where values live; this says what they are called.
-typedef struct r_anal_snapshot_signature_view_t {
-	size_t num_parameters;
-	bool noreturn;
-	RAnalSnapshotReturnArity return_arity;
-} RAnalSnapshotSignatureView;
 
-typedef enum {
-	R_ANAL_SNAPSHOT_SIGNATURE_STRING_RETURN_TYPE = 0,
-	R_ANAL_SNAPSHOT_SIGNATURE_STRING_CALLING_CONVENTION,
-	R_ANAL_SNAPSHOT_SIGNATURE_STRING_PARAMETER_TYPE,
-	R_ANAL_SNAPSHOT_SIGNATURE_STRING_PARAMETER_NAME,
-} RAnalSnapshotSignatureStringKind;
 
-typedef enum {
-	R_ANAL_SNAPSHOT_INTERFACE_STORAGE_RETURN = 0,
-	R_ANAL_SNAPSHOT_INTERFACE_STORAGE_RETURN_ADDRESS,
-	R_ANAL_SNAPSHOT_INTERFACE_STORAGE_STACK_POINTER,
-	R_ANAL_SNAPSHOT_INTERFACE_STORAGE_FRAME_POINTER,
-} RAnalSnapshotInterfaceStorageKind;
 
 typedef struct r_anal_diff_t {
 	int type;
@@ -1448,7 +1059,7 @@ typedef bool (*RAnalPreAnalysisCallback)(RAnal *a);
 typedef bool (*RAnalPostAnalysisCallback)(RAnal *a);
 
 // Decompiler callback. The snapshot is borrowed only for the callback duration.
-typedef RCodeMeta *(*RAnalDecompilerCallback)(const RAnalFunctionSnapshot *snapshot);
+typedef RCodeMeta *(*RAnalDecompilerCallback)(RAnal *anal, RAnalFunction *fcn);
 
 typedef struct r_anal_plugin_t {
 	RPluginMeta meta;
@@ -1697,58 +1308,25 @@ typedef enum {
 
 // Unified plugin action dispatcher (replaces per-action APIs)
 R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFunction *fcn);
+/* True when calling convention `cc` uses register `reg` for the location
+ * class `loc`. Exported because a decompiler plugin has to ask this to map a
+ * convention onto the registers a function actually touches, and cannot
+ * reimplement the convention database without duplicating it. */
+R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg);
+R_API bool r_anal_var_exact_formal_get(RAnal *anal, const RAnalVar *var, R_OUT int *ordinal);
+R_API bool r_anal_dwarf_function_link_is_current(const RAnal *anal, ut64 function_addr, const char *type_name);
+typedef struct r_anal_dwarf_frame_pointer_storage_t {
+	char *name;
+	ut64 offset;
+	ut32 size;
+} RAnalDwarfFramePointerStorage;
+R_API bool r_anal_dwarf_function_frame_pointer_get(const RAnal *anal, ut64 function_addr, R_OUT RAnalDwarfFramePointerStorage *storage);
+R_API void r_anal_dwarf_frame_pointer_storage_fini(RAnalDwarfFramePointerStorage *storage);
+R_API bool r_anal_function_has_address_linked_signature_current(RAnalFunction *function);
 R_API R_UNOWNED RAnalPlugin *r_anal_decompiler_provider(RAnal *anal);
-R_API R_OWNED RCodeMeta *r_anal_decompile(RAnal *anal, const RAnalFunctionSnapshot *snapshot);
-R_API bool r_anal_function_snapshot_view(const RAnalFunctionSnapshot *snapshot, R_OUT RAnalFunctionSnapshotView *view);
-R_API bool r_anal_function_snapshot_arch_id(const RAnalFunctionSnapshot *snapshot, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_cpu_id(const RAnalFunctionSnapshot *snapshot, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_function_name(const RAnalFunctionSnapshot *snapshot, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_interface_view(const RAnalFunctionSnapshot *snapshot, R_OUT RAnalFunctionInterfaceSnapshotView *view);
-R_API bool r_anal_function_snapshot_interface_return_mechanism(const RAnalFunctionSnapshot *snapshot, R_OUT RAnalSnapshotReturnMechanismView *view);
-R_API bool r_anal_function_snapshot_interface_frame_pointer_storage(const RAnalFunctionSnapshot *snapshot, R_OUT RAnalSnapshotRegisterStorageView *view);
-R_API bool r_anal_function_snapshot_interface_stack_allocation_contract(const RAnalFunctionSnapshot *snapshot, R_OUT RAnalSnapshotStackAllocationContractView *view);
-R_API bool r_anal_function_snapshot_interface_calling_convention(const RAnalFunctionSnapshot *snapshot, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_convention_argument_slot(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotRegisterStorageView *view);
-R_API bool r_anal_function_snapshot_interface_storage_name(const RAnalFunctionSnapshot *snapshot, RAnalSnapshotInterfaceStorageKind kind, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_parameter_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotParameterView *parameter);
-R_API bool r_anal_function_snapshot_parameter_name(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_stack_slot_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotStackSlotView *view);
-R_API bool r_anal_function_snapshot_stack_slot_string(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotStackSlotStringKind kind, R_OUT char *buffer, size_t buffer_size);
+R_API R_OWNED RCodeMeta *r_anal_decompile(RAnal *anal, RAnalFunction *fcn);
 // One directly-called function, snapshotted in the same transaction as its
 // caller. Borrowed for exactly as long as the caller's snapshot lives.
-R_API const RAnalFunctionSnapshot *r_anal_function_snapshot_callee_snapshot(const RAnalFunctionSnapshot *snapshot, size_t index);
-typedef struct r_anal_snapshot_code_pointer_table_view_t {
-	ut64 addr;
-	ut32 entry_size;
-	size_t num_targets;
-} RAnalSnapshotCodePointerTableView;
-R_API bool r_anal_function_snapshot_code_pointer_table_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotCodePointerTableView *view);
-R_API bool r_anal_function_snapshot_code_pointer_table_target(const RAnalFunctionSnapshot *snapshot, size_t index, size_t target_index, R_OUT ut64 *target);
-R_API bool r_anal_function_snapshot_signature_view(const RAnalFunctionSnapshot *snapshot, R_OUT RAnalSnapshotSignatureView *view);
-R_API RAnalSnapshotReturnArity r_anal_function_snapshot_return_arity(const RAnalFunctionSnapshot *snapshot);
-R_API bool r_anal_function_snapshot_signature_string(const RAnalFunctionSnapshot *snapshot, RAnalSnapshotSignatureStringKind kind, size_t index, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_call_site_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalCallSiteInterfaceSnapshotView *view);
-R_API bool r_anal_function_snapshot_call_site_transfer(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalCallTransfer *transfer);
-R_API bool r_anal_function_snapshot_call_site_signature_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotSignatureView *view);
-R_API bool r_anal_function_snapshot_call_site_signature_string(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotSignatureStringKind kind, size_t parameter_index, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_call_site_target_name(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_call_site_calling_convention(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_call_argument_view(const RAnalFunctionSnapshot *snapshot, size_t call_index, size_t argument_index, R_OUT RAnalSnapshotParameterView *argument);
-R_API bool r_anal_function_snapshot_type_graph_view(const RAnalFunctionSnapshot *snapshot, R_OUT RAnalSnapshotTypeGraphView *view);
-R_API bool r_anal_function_snapshot_type_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotType *type);
-R_API bool r_anal_function_snapshot_aggregate_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotAggregateLayoutView *view);
-R_API bool r_anal_function_snapshot_aggregate_name(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_aggregate_member_view(const RAnalFunctionSnapshot *snapshot, size_t aggregate_index, size_t member_index, R_OUT RAnalSnapshotAggregateMemberView *member);
-R_API bool r_anal_function_snapshot_aggregate_member_name(const RAnalFunctionSnapshot *snapshot, size_t aggregate_index, size_t member_index, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_block_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotBlockView *view);
-R_API bool r_anal_function_snapshot_block_bytes(const RAnalFunctionSnapshot *snapshot, size_t index, size_t offset, R_OUT ut8 *buffer, size_t length);
-R_API bool r_anal_function_snapshot_successor_view(const RAnalFunctionSnapshot *snapshot, size_t block_index, size_t successor_index, R_OUT RAnalSnapshotSuccessorView *view);
-R_API bool r_anal_function_snapshot_external_exit(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT ut64 *target);
-R_API bool r_anal_function_snapshot_string_literal_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotStringLiteralView *view);
-R_API bool r_anal_function_snapshot_data_symbol_view(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT RAnalSnapshotDataSymbolView *view);
-R_API bool r_anal_function_snapshot_data_symbol_name(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_data_symbol_type_name(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
-R_API bool r_anal_function_snapshot_string_literal_text(const RAnalFunctionSnapshot *snapshot, size_t index, R_OUT char *buffer, size_t buffer_size);
 R_API bool r_anal_function_recover_vars_plugin(RAnal *anal, RAnalFunction *fcn);
 // Stack-VM helper: create register-kind argument vars named "<prefix><first+i>"
 // for i in [0, count). Used for JVM/Dalvik-style per-method arg recovery driven
@@ -1841,7 +1419,6 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *funct
 R_API RAnalFunctionSignature *r_anal_function_get_signature_current(RAnalFunction *function);
 // The prototype the type database holds under a bare name, for a callee that
 // is not a function of this binary: an import named by a relocation.
-R_IPI RAnalFunctionSignature *r_anal_function_signature_from_type_name(RAnal *anal, const char *name);
 R_API void r_anal_function_signature_free(RAnalFunctionSignature *signature);
 R_API char *r_anal_function_get_signature_string(RAnalFunction *function);
 R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSignature *signature);
