@@ -669,6 +669,63 @@ bool test_r_anal_function_context_collect_is_conservative_for_stack_slots(void) 
 	mu_end;
 }
 
+typedef struct {
+	size_t count;
+	ut64 owner_addr;
+	ut64 switch_addr;
+} SwitchOwnershipProbe;
+
+static bool switch_ownership_probe(RAnalFunction *fcn, RAnalBlock *block,
+		RAnalSwitchOp *switch_op, void *user) {
+	(void)fcn;
+	SwitchOwnershipProbe *probe = user;
+	probe->count++;
+	probe->owner_addr = block->addr;
+	probe->switch_addr = switch_op->jump_addr;
+	return true;
+}
+
+// the walk reaches the indirect jump twice; the second arrival must not publish the switch on the start block
+bool test_r_anal_function_overlapped_walk_keeps_one_switch_owner(void) {
+	const ut64 addr = 0x1000;
+	const char *hex =
+		"554889e54883fe040f82990000004889f148c1e9024883f901750431c0eb644883e1fe31c066662e0f1f8400000000004469"
+		"0407512d9ecc41c1c00f4569c09335871b4131d041c1c00d438d148081c2646b54e64469440704512d9ecc41c1c00f4569c0"
+		"9335871b4131d041c1c00d438d148081c2646b54e64883c0084883c1fe75ad40f6c604741e690407512d9eccc1c00f69c093"
+		"35871b31d0c1c00d8d148081c2646b54e64889f04883e0fc4189f04183e00331c94c8d0d5e0000004f6304814d01c841ffe0"
+		"0fb64c0702c1e110440fb644070141c1e0084409c10fb6040731c869c0512d9eccc1c00f69c09335871b31c231d689f0c1e8"
+		"1031f069c06bcaeb8589c1c1e90d31c169c935aeb2c289c8c1e81031c85dc30f1f00d8ffffffc1ffffffb4ffffffacffffff";
+	size_t bytes_size = 0;
+	ut8 *bytes = r_hex_str2bin_dup (hex, &bytes_size);
+	mu_assert_notnull (bytes, "decode overlapping-switch fixture");
+	mu_assert_eq (bytes_size, 300, "fixture contains function and jump table");
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "create overlapping-switch analysis core");
+	core->io->va = true;
+	mu_assert_notnull (r_io_open_at (core->io, "malloc://300",
+		R_PERM_RWX, 0, addr), "open overlapping-switch analysis map");
+	mu_assert_true (r_io_write_at (core->io, addr, bytes, bytes_size),
+		"write overlapping-switch fixture");
+	free (bytes);
+	r_config_set (core->config, "asm.arch", "x86");
+	r_config_set_i (core->config, "asm.bits", 64);
+	r_config_set_b (core->config, "anal.jmptbl", true);
+	r_config_set_b (core->config, "anal.esil", false);
+	(void)r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, 256);
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
+	mu_assert_notnull (fcn, "analysis creates overlapping-switch function");
+	SwitchOwnershipProbe ownership = {0};
+	mu_assert_true (r_anal_function_switches_foreach (
+		fcn, switch_ownership_probe, &ownership), "enumerate switch owners");
+	mu_assert_eq (ownership.count, 1, "one block owns the discovered switch");
+	mu_assert_eq (ownership.owner_addr, addr + 167,
+		"the indirect-jump block owns the discovered switch");
+	mu_assert_eq (ownership.switch_addr, addr + 197,
+		"switch ownership names the indirect jump");
+	r_core_free (core);
+	mu_end;
+}
+
 bool test_r_anal_function_switches_foreach(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
@@ -714,6 +771,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_get_signature_falls_back_to_valid_callconv);
 	mu_run_test (test_r_anal_function_context_collect_is_conservative_for_stack_slots);
 	mu_run_test (test_r_anal_function_switches_foreach);
+	mu_run_test (test_r_anal_function_overlapped_walk_keeps_one_switch_owner);
 	return tests_passed != tests_run;
 }
 
