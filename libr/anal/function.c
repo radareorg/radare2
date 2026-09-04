@@ -1875,27 +1875,19 @@ R_IPI void r_anal_function_snapshot_free(RAnalFunctionSnapshot *snapshot) {
 R_API bool r_anal_function_snapshot_view(const RAnalFunctionSnapshot *snapshot, RAnalFunctionSnapshotView *view) {
 	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
 	*view = (RAnalFunctionSnapshotView) {
-		.schema_version = snapshot->schema_version,
-		.struct_size = sizeof (*view),
 		.capabilities = snapshot->capabilities,
 		.function_addr = snapshot->function_addr,
-		.function_size = snapshot->function_size,
 		.bits = snapshot->bits,
 		.endian = snapshot->endian,
-		.maxstack = snapshot->maxstack,
 		.arch_id_length = strlen (snapshot->arch_id),
 		.cpu_id_length = strlen (snapshot->cpu_id),
 		.function_name_length = strlen (snapshot->function_name),
-		.num_base_types = snapshot->base_types? (size_t)r_list_length (snapshot->base_types): 0,
-		.type_context_hash = snapshot->type_context_hash,
 		.num_call_site_interfaces = snapshot->num_call_site_interfaces,
 		.num_stack_slots = snapshot->context.fcn_slots
 			? (size_t)r_list_length (snapshot->context.fcn_slots)
 			: 0,
 		.revision_identity = snapshot->revision_identity,
 		.content_identity = snapshot->content_identity,
-		.num_types = snapshot->type_graph.num_types,
-		.num_aggregates = snapshot->type_graph.num_aggregates,
 		.num_blocks = snapshot->image.num_blocks,
 		.num_external_exits = snapshot->image.num_external_exits,
 		.num_string_literals = snapshot->image.num_string_literals,
@@ -1934,7 +1926,6 @@ R_API bool r_anal_function_snapshot_function_name(const RAnalFunctionSnapshot *s
 
 static RAnalSnapshotRegisterStorageView snapshot_register_storage_view(const RAnalSnapshotRegisterStorage *storage) {
 	return (RAnalSnapshotRegisterStorageView) {
-		.name_length = strlen (r_str_get (storage->name)),
 		.offset = storage->offset,
 		.size = storage->size,
 	};
@@ -1960,14 +1951,8 @@ R_API bool r_anal_function_snapshot_interface_view(const RAnalFunctionSnapshot *
 		.return_storage = snapshot_register_storage_view (&interface->return_storage),
 		.return_address_storage = snapshot_register_storage_view (&interface->return_address_storage),
 		.stack_pointer_storage = snapshot_register_storage_view (&interface->stack_pointer_storage),
-		.variadic = interface->variadic,
-		.noreturn = interface->noreturn,
-		.stack_resources_complete = interface->stack_resources_complete,
-		.stack_slot_roles_complete = interface->stack_slot_roles_complete,
-		.complete = interface->complete,
 		.return_type_id = interface->return_type_id,
 		.return_carrier = interface->return_carrier,
-		.logical_types_complete = interface->logical_types_complete,
 		.stack_pointer_preserved_across_calls =
 			interface->stack_pointer_preserved_across_calls,
 		.frame_pointer_preserved_across_calls =
@@ -2073,8 +2058,6 @@ static bool snapshot_signature_view_of(const RAnalFunctionSignature *signature, 
 	*view = (RAnalSnapshotSignatureView) {
 		.num_parameters = signature->params
 			? (size_t)r_list_length (signature->params): 0,
-		.return_type_length = strlen (r_str_get (signature->ret_type)),
-		.calling_convention_length = strlen (r_str_get (signature->callconv)),
 		.noreturn = signature->noreturn,
 	};
 	return true;
@@ -2215,10 +2198,7 @@ R_API bool r_anal_function_snapshot_stack_slot_view(const RAnalFunctionSnapshot 
 		return false;
 	}
 	*view = (RAnalSnapshotStackSlotView) {
-		.name_length = strlen (r_str_get (slot->name)),
-		.type_length = strlen (r_str_get (slot->type)),
 		.base = slot->base,
-		.base_name_length = strlen (r_str_get (slot->base_name)),
 		.base_offset = slot->base_offset,
 		.base_size = slot->base_size,
 		.offset = slot->offset,
@@ -2226,7 +2206,6 @@ R_API bool r_anal_function_snapshot_stack_slot_view(const RAnalFunctionSnapshot 
 		.offset_valid = slot->offset_valid,
 		.role = slot->role,
 		.arg_index = slot->arg_index,
-		.home_reg_length = strlen (r_str_get (slot->home_reg)),
 		.home_reg_offset = slot->home_reg_offset,
 		.home_reg_size = slot->home_reg_size,
 	};
@@ -2268,8 +2247,6 @@ R_API bool r_anal_function_snapshot_call_site_view(const RAnalFunctionSnapshot *
 	*view = (RAnalCallSiteInterfaceSnapshotView) {
 		.instruction_addr = call->instruction_addr,
 		.target_addr = call->target_addr,
-		.target_name_length = strlen (r_str_get (call->target_name)),
-		.calling_convention_length = strlen (r_str_get (call->calling_convention)),
 		.num_arguments = call->num_arguments,
 		.result_kind = call->result_kind,
 		.result_storage = snapshot_register_storage_view (&call->result_storage),
@@ -2348,10 +2325,8 @@ R_API bool r_anal_function_snapshot_aggregate_view(const RAnalFunctionSnapshot *
 		.type_id = aggregate->type_id,
 		.size_bits = aggregate->size_bits,
 		.align_bits = aggregate->align_bits,
-		.name_length = strlen (r_str_get (aggregate->name)),
 		.num_members = aggregate->num_members,
 		.complete = aggregate->complete,
-		.c_layout_compatible = aggregate->c_layout_compatible,
 	};
 	return true;
 }
@@ -2379,8 +2354,6 @@ R_API bool r_anal_function_snapshot_aggregate_member_view(const RAnalFunctionSna
 		.type_id = member->type_id,
 		.offset_bits = member->offset_bits,
 		.size_bits = member->size_bits,
-		.count = member->count,
-		.name_length = strlen (r_str_get (member->name)),
 	};
 	return true;
 }
@@ -2433,7 +2406,6 @@ R_API bool r_anal_function_snapshot_string_literal_view(const RAnalFunctionSnaps
 	const RAnalSnapshotStringLiteral *literal = &snapshot->image.string_literals[index];
 	*view = (RAnalSnapshotStringLiteralView) {
 		.addr = literal->addr,
-		.text_length = strlen (r_str_get (literal->text)),
 	};
 	return true;
 }
@@ -2675,11 +2647,9 @@ static ut64 function_snapshot_hash_type_graph(ut64 hash, const RAnalSnapshotType
 			hash = function_context_hash_mix (hash, member->type_id);
 			hash = function_context_hash_mix (hash, member->offset_bits);
 			hash = function_context_hash_mix (hash, member->size_bits);
-			hash = function_context_hash_mix (hash, member->count);
 			hash = function_context_hash_string (hash, member->name);
 		}
 		hash = function_context_hash_mix (hash, aggregate->complete? 1: 0);
-		hash = function_context_hash_mix (hash, aggregate->c_layout_compatible? 1: 0);
 	}
 	return function_context_hash_mix (hash, graph->complete? 1: 0);
 }
@@ -3254,7 +3224,8 @@ typedef enum {
 } SnapshotStorageResult;
 
 static SnapshotStorageResult snapshot_register_storage_collect(
-	RAnal *anal, const char *name, RAnalSnapshotRegisterStorage *storage) {
+	RAnal *anal, const char *name, bool copy_name,
+	RAnalSnapshotRegisterStorage *storage) {
 	if (R_STR_ISEMPTY (name) || !anal->reg) {
 		return SNAPSHOT_STORAGE_INVALID;
 	}
@@ -3264,11 +3235,17 @@ static SnapshotStorageResult snapshot_register_storage_collect(
 		r_unref (item);
 		return SNAPSHOT_STORAGE_INVALID;
 	}
-	storage->name = strdup (r_str_get (item->name));
+	if (copy_name) {
+		storage->name = strdup (r_str_get (item->name));
+		if (!storage->name) {
+			r_unref (item);
+			return SNAPSHOT_STORAGE_NO_MEMORY;
+		}
+	}
 	storage->offset = (ut64)(item->offset / 8);
 	storage->size = (ut32)(item->size / 8);
 	r_unref (item);
-	return storage->name? SNAPSHOT_STORAGE_VALID: SNAPSHOT_STORAGE_NO_MEMORY;
+	return SNAPSHOT_STORAGE_VALID;
 }
 
 static bool snapshot_function_address_size(const RAnalFunction *fcn, ut32 *size) {
@@ -3295,7 +3272,7 @@ static SnapshotStorageResult snapshot_return_address_storage_collect(
 	for (i = 0; i < R_ARRAY_SIZE (aliases); i++) {
 		RAnalSnapshotRegisterStorage candidate = {0};
 		SnapshotStorageResult collected = snapshot_register_storage_collect (
-			anal, r_reg_alias_getname (anal->reg, aliases[i]), &candidate);
+			anal, r_reg_alias_getname (anal->reg, aliases[i]), true, &candidate);
 		if (collected == SNAPSHOT_STORAGE_NO_MEMORY) {
 			return collected;
 		}
@@ -3315,7 +3292,7 @@ static SnapshotStorageResult snapshot_stack_pointer_storage_collect(
 		return SNAPSHOT_STORAGE_INVALID;
 	}
 	SnapshotStorageResult collected = snapshot_register_storage_collect (
-		anal, r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP), storage);
+		anal, r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP), true, storage);
 	if (collected == SNAPSHOT_STORAGE_VALID && storage->size != address_size) {
 		snapshot_register_storage_fini (storage);
 		return SNAPSHOT_STORAGE_INVALID;
@@ -3434,7 +3411,7 @@ static bool snapshot_promote_exact_dwarf_stack_homes(
 		}
 		RAnalSnapshotRegisterStorage storage = {0};
 		SnapshotStorageResult collected = snapshot_register_storage_collect (
-			anal, abi_slot.reg, &storage);
+			anal, abi_slot.reg, true, &storage);
 		if (collected == SNAPSHOT_STORAGE_NO_MEMORY) {
 			return false;
 		}
@@ -3713,7 +3690,7 @@ static bool snapshot_convention_slots_collect(
 			|| R_STR_ISEMPTY (slot.reg)) {
 			break;
 		}
-		if (snapshot_register_storage_collect (anal, slot.reg, &slots[count])
+		if (snapshot_register_storage_collect (anal, slot.reg, false, &slots[count])
 				!= SNAPSHOT_STORAGE_VALID) {
 			break;
 		}
@@ -3736,7 +3713,7 @@ static bool snapshot_convention_slots_collect(
 	const char *result = r_anal_cc_ret (anal, convention, 0);
 	if (R_STR_ISNOTEMPTY (result)
 		&& snapshot_register_storage_collect (anal, result,
-			&interface->convention_result_slot) == SNAPSHOT_STORAGE_NO_MEMORY) {
+			false, &interface->convention_result_slot) == SNAPSHOT_STORAGE_NO_MEMORY) {
 		return false;
 	}
 	interface->convention_slots_known = true;
@@ -3890,7 +3867,7 @@ static bool function_interface_snapshot_collect(
 			continue;
 		}
 		SnapshotStorageResult collected = snapshot_register_storage_collect (
-			anal, slot.reg, &snapshot_parameter->storage);
+			anal, slot.reg, true, &snapshot_parameter->storage);
 		if (collected == SNAPSHOT_STORAGE_NO_MEMORY) {
 			return false;
 		}
@@ -3917,7 +3894,7 @@ static bool function_interface_snapshot_collect(
 		if (R_STR_ISNOTEMPTY (return_name) && *return_name != '{'
 			&& *return_name != '^' && R_STR_ISEMPTY (second_return)) {
 			SnapshotStorageResult collected = snapshot_register_storage_collect (
-				anal, return_name, &interface->return_storage);
+				anal, return_name, false, &interface->return_storage);
 			if (collected == SNAPSHOT_STORAGE_NO_MEMORY) {
 				return false;
 			}
@@ -4120,7 +4097,7 @@ static bool snapshot_frame_pointer_storage_collect(RAnal *anal,
 	ut32 address_size;
 	RAnalSnapshotRegisterStorage candidate = {0};
 	SnapshotStorageResult collected = snapshot_register_storage_collect (
-		anal, proof.name, &candidate);
+		anal, proof.name, true, &candidate);
 	if (collected == SNAPSHOT_STORAGE_NO_MEMORY) {
 		r_anal_dwarf_frame_pointer_storage_fini (&proof);
 		return false;
@@ -4972,11 +4949,9 @@ static SnapshotTypeGraphResult snapshot_type_add_struct(
 			|| base_member->offset > UT64_MAX / 8) {
 			return SNAPSHOT_TYPE_GRAPH_UNSUPPORTED;
 		}
-		// An array member repeats its element type. Refusing every member that
-		// states a count made one array anywhere in a struct drop the whole
-		// aggregate, so a `VmState` holding `int32_t r[8]` reached the consumer
-		// with no layout at all and every one of its fields rendered as an
-		// offset placeholder. The snapshot carries the count for exactly this.
+		// An array member repeats its element type. Fold that extent into the
+		// member's exact size; the consumer needs the occupied range, not a
+		// second copy of the source spelling's element count.
 		const ut64 member_count = base_member->count
 			? (ut64)base_member->count : spec_count;
 		ut64 member_size_bits;
@@ -4994,7 +4969,6 @@ static SnapshotTypeGraphResult snapshot_type_add_struct(
 		member->type_id = member_type_id;
 		member->offset_bits = expected_offset;
 		member->size_bits = member_size_bits;
-		member->count = (size_t)member_count;
 		member->name = strdup (base_member->name);
 		if (!member->name) {
 			return SNAPSHOT_TYPE_GRAPH_NO_MEMORY;
@@ -5010,7 +4984,6 @@ static SnapshotTypeGraphResult snapshot_type_add_struct(
 	aggregate->size_bits = size_bits;
 	aggregate->align_bits = maximum_alignment;
 	aggregate->complete = true;
-	aggregate->c_layout_compatible = true;
 	snapshot_type->size_bits = size_bits;
 	snapshot_type->align_bits = maximum_alignment;
 	*result_id = snapshot_type->id;
@@ -5405,7 +5378,7 @@ static bool call_site_interface_snapshot_collect_one(
 			continue;
 		}
 		SnapshotStorageResult collected = snapshot_register_storage_collect (
-			anal, slot.reg, &snapshot_argument->storage);
+			anal, slot.reg, false, &snapshot_argument->storage);
 		if (collected == SNAPSHOT_STORAGE_NO_MEMORY) {
 			return false;
 		}
@@ -5430,7 +5403,7 @@ static bool call_site_interface_snapshot_collect_one(
 		if (R_STR_ISNOTEMPTY (return_name) && *return_name != '{'
 			&& *return_name != '^' && R_STR_ISEMPTY (second_return)) {
 			SnapshotStorageResult collected = snapshot_register_storage_collect (
-				anal, return_name, &interface->result_storage);
+				anal, return_name, false, &interface->result_storage);
 			if (collected == SNAPSHOT_STORAGE_NO_MEMORY) {
 				return false;
 			}
@@ -5593,8 +5566,6 @@ static bool snapshot_interface_within_limits(const RAnalFunctionSnapshot *snapsh
 	if (interface->num_parameters > limits->max_interface_parameters
 		|| !snapshot_string_budget_add (interface->calling_convention,
 			limits->max_interface_string_bytes, &strings)
-		|| !snapshot_string_budget_add (interface->return_storage.name,
-			limits->max_interface_string_bytes, &strings)
 		|| !snapshot_string_budget_add (interface->return_address_storage.name,
 			limits->max_interface_string_bytes, &strings)
 		|| !snapshot_string_budget_add (interface->stack_pointer_storage.name,
@@ -5619,17 +5590,8 @@ static bool snapshot_interface_within_limits(const RAnalFunctionSnapshot *snapsh
 		const RAnalCallSiteInterfaceSnapshot *call = &snapshot->call_site_interfaces[i];
 		if (call->num_arguments > limits->max_call_site_parameters
 			|| !snapshot_string_budget_add (call->calling_convention,
-				limits->max_interface_string_bytes, &strings)
-			|| !snapshot_string_budget_add (call->result_storage.name,
 				limits->max_interface_string_bytes, &strings)) {
 			return false;
-		}
-		size_t argument_index;
-		for (argument_index = 0; argument_index < call->num_arguments; argument_index++) {
-			if (!snapshot_string_budget_add (call->arguments[argument_index].storage.name,
-					limits->max_interface_string_bytes, &strings)) {
-				return false;
-			}
 		}
 	}
 	const RAnalSnapshotTypeGraph *graph = &snapshot->type_graph;
