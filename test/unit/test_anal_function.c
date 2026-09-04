@@ -52,6 +52,13 @@ static bool snapshot_test_ensure_block(RAnal *anal, RAnalFunction *fcn, ut64 siz
 	return true;
 }
 
+static RBinAddr snapshot_test_loader_init;
+
+static RBinAddr *snapshot_test_get_loader_symbol(RBin *bin, int symbol) {
+	(void)bin;
+	return symbol == R_BIN_SYM_INIT? &snapshot_test_loader_init: NULL;
+}
+
 static bool set_function_type_link(RAnal *anal, const char *type, ut64 addr);
 
 static bool snapshot_test_publish_owned_function_link(RAnal *anal, RAnalFunction *fcn) {
@@ -933,6 +940,9 @@ bool test_r_anal_function_snapshot_signature_view_reports_logical_return_arity(v
 		"read unlinked void signature view");
 	mu_assert_eq (view.return_arity, R_ANAL_SNAPSHOT_RETURN_ARITY_VOID,
 		"the typed signature view retains logical void arity");
+	mu_assert_eq (r_anal_function_snapshot_return_arity (snapshot),
+		R_ANAL_SNAPSHOT_RETURN_ARITY_VOID,
+		"the snapshot return-arity accessor retains logical void arity");
 	r_anal_function_snapshot_free (snapshot);
 
 	signature.ret_type = "int";
@@ -944,8 +954,44 @@ bool test_r_anal_function_snapshot_signature_view_reports_logical_return_arity(v
 		"read unlinked value signature view");
 	mu_assert_eq (view.return_arity, R_ANAL_SNAPSHOT_RETURN_ARITY_VALUE,
 		"the typed signature view retains one-value arity");
+	mu_assert_eq (r_anal_function_snapshot_return_arity (snapshot),
+		R_ANAL_SNAPSHOT_RETURN_ARITY_VALUE,
+		"the snapshot return-arity accessor retains one-value arity");
 	r_anal_function_snapshot_free (snapshot);
 	r_list_free (params);
+	r_core_free (core);
+	mu_end;
+}
+
+bool test_r_anal_function_snapshot_uses_exact_loader_init_return_arity(void) {
+	RCore *core = snapshot_test_core_new ();
+	RAnal *anal = core? core->anal: NULL;
+	mu_assert_notnull (anal, "create loader return-arity analysis");
+	r_anal_use (anal, "x86");
+	r_anal_set_bits (anal, 64);
+	r_anal_types_ensure_loaded (anal);
+
+	RAnalFunction *fcn = r_anal_create_function (
+		anal, "presentation_name_is_not_evidence", 0x6900, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "create loader initialization function");
+	mu_assert_true (snapshot_test_ensure_block (anal, fcn, 1),
+		"back loader initialization snapshot with exact bytes");
+	snapshot_test_loader_init = (RBinAddr) {
+		.vaddr = fcn->addr,
+	};
+	anal->binb.get_sym = snapshot_test_get_loader_symbol;
+
+	RAnalFunctionSnapshot *snapshot = r_anal_function_snapshot_collect_bounded (anal, fcn, NULL);
+	mu_assert_notnull (snapshot, "collect exact loader initialization function");
+	RAnalSnapshotSignatureView view = {0};
+	if (r_anal_function_snapshot_signature_view (snapshot, &view)) {
+		mu_assert_eq (view.return_arity, R_ANAL_SNAPSHOT_RETURN_ARITY_UNKNOWN,
+			"a loader role does not invent a signature return type");
+	}
+	mu_assert_eq (r_anal_function_snapshot_return_arity (snapshot),
+		R_ANAL_SNAPSHOT_RETURN_ARITY_VOID,
+		"the loader-owned initialization role proves logical void arity");
+	r_anal_function_snapshot_free (snapshot);
 	r_core_free (core);
 	mu_end;
 }
@@ -3345,6 +3391,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_get_signature_string_hides_variadic_placeholder);
 	mu_run_test (test_r_anal_function_get_signature_falls_back_to_valid_callconv);
 	mu_run_test (test_r_anal_function_snapshot_signature_view_reports_logical_return_arity);
+	mu_run_test (test_r_anal_function_snapshot_uses_exact_loader_init_return_arity);
 	mu_run_test (test_r_anal_function_context_collect_is_conservative_for_stack_slots);
 	mu_run_test (test_r_anal_function_snapshot_reads_current_state_only);
 	mu_run_test (test_r_anal_function_snapshot_carries_linked_data_object_type);

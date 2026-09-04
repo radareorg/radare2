@@ -2051,21 +2051,25 @@ R_API bool r_anal_function_snapshot_parameter_name(const RAnalFunctionSnapshot *
 	return snapshot_owned_string_copy (r_str_get (snapshot->function_interface.parameters[index].name), buffer, buffer_size);
 }
 
+static RAnalSnapshotReturnArity snapshot_signature_return_arity(const RAnalFunctionSignature *signature) {
+	RAnalSnapshotReturnArity return_arity = R_ANAL_SNAPSHOT_RETURN_ARITY_UNKNOWN;
+	if (signature && !strcmp (r_str_get (signature->ret_type), "void")) {
+		return_arity = R_ANAL_SNAPSHOT_RETURN_ARITY_VOID;
+	} else if (signature && R_STR_ISNOTEMPTY (signature->ret_type)) {
+		return_arity = R_ANAL_SNAPSHOT_RETURN_ARITY_VALUE;
+	}
+	return return_arity;
+}
+
 static bool snapshot_signature_view_of(const RAnalFunctionSignature *signature, RAnalSnapshotSignatureView *view) {
 	if (!signature) {
 		return false;
-	}
-	RAnalSnapshotReturnArity return_arity = R_ANAL_SNAPSHOT_RETURN_ARITY_UNKNOWN;
-	if (!strcmp (r_str_get (signature->ret_type), "void")) {
-		return_arity = R_ANAL_SNAPSHOT_RETURN_ARITY_VOID;
-	} else if (R_STR_ISNOTEMPTY (signature->ret_type)) {
-		return_arity = R_ANAL_SNAPSHOT_RETURN_ARITY_VALUE;
 	}
 	*view = (RAnalSnapshotSignatureView) {
 		.num_parameters = signature->params
 			? (size_t)r_list_length (signature->params): 0,
 		.noreturn = signature->noreturn,
-		.return_arity = return_arity,
+		.return_arity = snapshot_signature_return_arity (signature),
 	};
 	return true;
 }
@@ -2154,6 +2158,11 @@ R_API const RAnalFunctionSnapshot *r_anal_function_snapshot_callee_snapshot(cons
 R_API bool r_anal_function_snapshot_signature_view(const RAnalFunctionSnapshot *snapshot, RAnalSnapshotSignatureView *view) {
 	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
 	return snapshot_signature_view_of (snapshot_signature (snapshot), view);
+}
+
+R_API RAnalSnapshotReturnArity r_anal_function_snapshot_return_arity(const RAnalFunctionSnapshot *snapshot) {
+	R_RETURN_VAL_IF_FAIL (snapshot, R_ANAL_SNAPSHOT_RETURN_ARITY_UNKNOWN);
+	return snapshot->return_arity;
 }
 
 R_API bool r_anal_function_snapshot_signature_string(const RAnalFunctionSnapshot *snapshot, RAnalSnapshotSignatureStringKind kind, size_t index, char *buffer, size_t buffer_size) {
@@ -2739,6 +2748,7 @@ static ut64 function_snapshot_hash(const RAnalFunctionSnapshot *snapshot) {
 	hash = function_context_hash_string (hash, snapshot->arch_id);
 	hash = function_context_hash_string (hash, snapshot->cpu_id);
 	hash = function_context_hash_string (hash, snapshot->function_name);
+	hash = function_context_hash_mix (hash, snapshot->return_arity);
 	hash = function_snapshot_hash_base_types (hash, snapshot->base_types);
 	hash = function_snapshot_hash_interface (hash, &snapshot->function_interface);
 	hash = function_snapshot_hash_return_mechanism (hash, &snapshot->return_mechanism);
@@ -5761,6 +5771,17 @@ static RAnalFunctionSnapshot *function_snapshot_collect_with_limits_unlocked(RAn
 	snapshot->base_types = base_types;
 	RAnalFcnContext *ctx = &snapshot->context;
 	ctx->signature = fcn_context_collect_signature (fcn);
+	snapshot->return_arity = snapshot_signature_return_arity (ctx->signature);
+	if (snapshot->return_arity == R_ANAL_SNAPSHOT_RETURN_ARITY_UNKNOWN
+		&& anal->binb.bin && anal->binb.get_sym) {
+		const RBinAddr *init = anal->binb.get_sym (anal->binb.bin, R_BIN_SYM_INIT);
+		if (init && init->vaddr == fcn->addr) {
+			// The loader invokes the initialization hook for its effects and
+			// discards the machine return carrier. This establishes logical
+			// void arity without inventing a source prototype or parameter list.
+			snapshot->return_arity = R_ANAL_SNAPSHOT_RETURN_ARITY_VOID;
+		}
+	}
 	ctx->fcn_slots = r_list_newf ((RListFree)fcn_context_slot_free);
 	ctx->callees = fcn_context_collect_callees (anal, &snapshot->image);
 	snapshot->schema_version = R_ANAL_FUNCTION_SNAPSHOT_SCHEMA_VERSION;

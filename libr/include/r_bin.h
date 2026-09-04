@@ -912,6 +912,7 @@ typedef RVecRBinSymbol *(*RBinGetSymbolsVec)(RBin *bin);
 typedef RBinSymbol *(*RBinGetSymbolAt)(RBin *bin, ut64 addr);
 typedef RBinReloc *(*RBinGetRelocAt)(RBin *bin, ut64 vaddr);
 typedef const char *(*RBinGetCC)(RBin *bin, ut64 vaddr);
+typedef RBinAddr *(*RBinGetSym)(RBin *bin, int sym);
 
 typedef struct r_bin_bind_t {
 	RBin *bin;
@@ -922,6 +923,7 @@ typedef struct r_bin_bind_t {
 	RBinGetSectionAt get_vsect_at;
 	RBinGetSymbolsVec get_symbols_vec;
 	RBinGetSymbolAt get_symbol_at;
+	RBinGetSym get_sym;
 	RBinDemangle demangle;
 	RBinAddrLineAdd addrline_add;
 	RBinAddrLineGet addrline_get;

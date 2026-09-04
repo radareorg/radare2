@@ -1808,6 +1808,7 @@ R_API void r_bin_bind(RBin *bin, RBinBind *b) {
 		b->get_vsect_at = __get_vsection_at;
 		b->get_symbols_vec = r_bin_get_symbols_vec;
 		b->get_symbol_at = r_bin_get_symbol_at;
+		b->get_sym = r_bin_get_sym;
 		b->get_reloc_at = get_reloc_at;
 		b->demangle = r_bin_demangle;
 	}

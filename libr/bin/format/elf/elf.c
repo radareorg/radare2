@@ -514,6 +514,7 @@ static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	di->dt_relrent = 0;
 	di->dt_strsz = 0;
 	di->dt_syment = 0;
+	di->dt_init = R_BIN_ELF_ADDR_MAX;
 	di->dt_rel = R_BIN_ELF_ADDR_MAX;
 	di->dt_relsz = 0;
 	di->dt_relent = 0;
