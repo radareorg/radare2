@@ -1331,8 +1331,9 @@ static bool cc_location_range(const char *loc, const char **s, const char **end)
 
 R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (anal && loc && reg, false);
+	// profiles and convention tables disagree on case, as r_anal_cc_preserves_reg already tolerates
 	if (*loc && *loc != '{') {
-		return !strcmp (loc, reg);
+		return !r_str_casecmp (loc, reg);
 	}
 	const char *s, *end;
 	if (!cc_location_range (loc, &s, &end)) {
@@ -1343,7 +1344,7 @@ R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg
 		if (!name) {
 			return false;
 		}
-		if (!strcmp (name, reg)) {
+		if (!r_str_casecmp (name, reg)) {
 			return true;
 		}
 	}

@@ -1098,6 +1098,20 @@ static bool var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, RList *list
 	return false;
 }
 
+// The register containing this one at the given width, matched by arena and offset rather than by name
+static const char *reg_parent_name(RReg *reg, RRegItem *item, int bits) {
+	R_RETURN_VAL_IF_FAIL (reg && item, NULL);
+	RListIter *iter;
+	RRegItem *candidate;
+	r_list_foreach (reg->regset[item->arena].regs, iter, candidate) {
+		if (candidate->size == bits && candidate->offset == item->offset
+				&& candidate->arena == item->arena) {
+			return candidate->name;
+		}
+	}
+	return NULL;
+}
+
 #if 0
 static const char *get_regname(RAnal *anal, RAnalValue *value) {
 	return value? value->reg: NULL;
@@ -1114,11 +1128,11 @@ static const char *get_regname(RAnal *anal, RAnalValue *value) {
 	if (value && value->reg) {
 		name = value->reg;
 		RRegItem *ri = r_reg_get (anal->reg, value->reg, -1);
-		if (ri && (ri->size == 32) && (anal->config->bits == 64)) {
-			// only gprs have a 64bit twin: an fp reg like arm64 s0 must keep its name
-			const char *name64 = r_reg_32_to_64 (anal->reg, value->reg);
-			if (name64) {
-				name = name64;
+		// any narrower gpr names its parent; only gprs have one, arm64 s0 and d0 share an fpu offset
+		if (ri && ri->arena == R_REG_TYPE_GPR && ri->size < anal->config->bits) {
+			const char *parent = reg_parent_name (anal->reg, ri, anal->config->bits);
+			if (parent) {
+				name = parent;
 			}
 		}
 	}

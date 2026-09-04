@@ -424,7 +424,8 @@ pd 4 @ 0
 EOF
 EXPECT=<<EOF
 |           0x00000000  ~   b821c10010     mov eax, 0x1000c121
-/ 9: fcn.00000003 ();
+/ 9: fcn.00000003 (int64_t arg1);
+| `- args(rdx)
 |           0x00000003      0010           add byte [rax], dl
 |           0x00000005      ebf9           jmp 0
             0x00000007  ~   b8210011c1     mov eax, 0xc1110021
