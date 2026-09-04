@@ -3027,15 +3027,6 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature_current(RAnalFunctio
 	return function_get_signature (function, false);
 }
 
-R_API bool r_anal_function_has_signature_current(RAnalFunction *function) {
-	R_RETURN_VAL_IF_FAIL (function && function->anal && function->anal->sdb_types, false);
-	char *type_name = function_signature_type_name (function->anal, function);
-	bool exists = R_STR_ISNOTEMPTY (type_name)
-		&& r_type_func_exist (function->anal->sdb_types, type_name);
-	free (type_name);
-	return exists;
-}
-
 R_IPI bool r_anal_function_has_address_linked_signature_current(RAnalFunction *function) {
 	R_RETURN_VAL_IF_FAIL (function && function->anal && function->anal->lock
 		&& function->anal->sdb_types, false);

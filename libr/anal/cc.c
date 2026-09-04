@@ -1073,11 +1073,6 @@ R_API const char *r_anal_cc_fparg(RAnal *anal, const char *convention, int n) {
 	return loc? dyncc_from_static_loc (anal, loc): NULL;
 }
 
-R_API bool r_anal_cc_has_fpargs(RAnal *anal, const char *convention) {
-	R_RETURN_VAL_IF_FAIL (anal, false);
-	return r_anal_cc_fparg (anal, convention, 0) != NULL;
-}
-
 // caller-reserved home space below the stack args (win64 shadow area)
 R_IPI int r_anal_cc_shadow(RAnal *anal, const char *convention) {
 	if (!convention) {

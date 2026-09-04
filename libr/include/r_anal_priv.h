@@ -118,9 +118,6 @@ R_API bool r_anal_xrefs_owned_changed(const RAnalOwnedXrefPrepared *prepared);
 R_API void r_anal_xrefs_owned_swap(RAnal *anal, RAnalOwnedXrefPrepared *prepared);
 R_API void r_anal_xrefs_owned_publish(RAnal *anal, const RAnalOwnedXrefPrepared *prepared);
 R_API void r_anal_xrefs_owned_prepared_free(RAnalOwnedXrefPrepared *prepared);
-// Caller-held anal->lock required. Clears every owned contribution atomically,
-// preserving the complete unowned/legacy projection.
-R_API RAnalOwnedXrefStatus r_anal_xrefs_owned_clear_all(RAnal *anal);
 
 // Recorded adrp/add (or lea) target for a register. Populated by the
 // function recurser as it walks a basic block and consumed by the jmptbl
