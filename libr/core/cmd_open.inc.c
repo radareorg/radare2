@@ -2713,10 +2713,6 @@ static int cmd_open(void *data, const char *input) {
 			if (input[2] == '?') {
 				r_cons_cmd_help_match (core->cons, help_msg_o_dash, "o--", 0, true);
 			} else {
-				if (!r_core_anal_artifacts_reset (core)) {
-					R_LOG_ERROR ("Cannot reset analysis-artifact ownership");
-					return 1;
-				}
 				r_io_close_all (core->io);
 				r_bin_file_delete_all (core->bin);
 				r_core_cmd0 (core, "o-*;om-*");

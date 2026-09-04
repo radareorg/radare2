@@ -8,7 +8,7 @@ R2DEPS+=r_reg r_search r_syscall r_socket r_fs r_magic r_muta
 
 OBJS=core.o cmd.o cfile.o cconfig.o visual.o cio.o yank.o libs.o agraph.o xpatch.o
 OBJS+=fortune.o vasm.o patch.o cbin.o corelog.o rtr.o cmd_api.o cundo.o cproject.o
-OBJS+=carg.o canal.o canal_artifacts.o project.o gdiff.o casm.o disasm.o cplugin.o cmd_print_list.o
+OBJS+=carg.o canal.o project.o gdiff.o casm.o disasm.o cplugin.o cmd_print_list.o
 OBJS+=vmenus.o vmenus_graph.o vmenus_zigns.o zdiff.o citem.o vslides.o clist.o
 OBJS+=task.o panels.o vmarks.o anal_objc.o core_esil.o
 OBJS+=vmatrix.o prompt.o

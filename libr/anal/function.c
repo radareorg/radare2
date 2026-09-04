@@ -2,7 +2,6 @@
 
 #include <r_anal_priv.h>
 #include <r_util/r_json.h>
-#include "function_snapshot.h"
 
 static bool get_functions_block_cb(RAnalBlock *block, void *user) {
 	RList *list = user;
@@ -1824,42 +1823,6 @@ fail:
 
 #undef IMAGE_REFUSE
 
-static bool function_image_snapshot_equal(const RAnalFunctionImageSnapshot *left, const RAnalFunctionImageSnapshot *right) {
-	if (left->entry_addr != right->entry_addr
-		|| left->num_blocks != right->num_blocks
-		|| left->num_external_exits != right->num_external_exits
-		|| left->total_source_bytes != right->total_source_bytes) {
-		return false;
-	}
-	if (left->num_external_exits && memcmp (left->external_exits,
-			right->external_exits,
-			left->num_external_exits * sizeof (ut64))) {
-		return false;
-	}
-	size_t i;
-	for (i = 0; i < left->num_blocks; i++) {
-		const RAnalSnapshotBlock *a = &left->blocks[i];
-		const RAnalSnapshotBlock *b = &right->blocks[i];
-		if (a->addr != b->addr || a->size != b->size
-			|| a->switch_addr != b->switch_addr
-			|| a->num_successors != b->num_successors
-			|| memcmp (a->bytes, b->bytes, (size_t)a->size)) {
-			return false;
-		}
-		size_t j;
-		for (j = 0; j < a->num_successors; j++) {
-			const RAnalSnapshotSuccessor *as = &a->successors[j];
-			const RAnalSnapshotSuccessor *bs = &b->successors[j];
-			if (as->kind != bs->kind || as->target_addr != bs->target_addr
-				|| as->case_value != bs->case_value
-				|| as->external != bs->external) {
-				return false;
-			}
-		}
-	}
-	return true;
-}
-
 static bool assumption_json_emit(PJ *pj, const RJson *json) {
 	R_RETURN_VAL_IF_FAIL (pj && json, false);
 	const RJson *child;
@@ -2173,7 +2136,7 @@ static void call_site_interface_snapshot_fini(RAnalCallSiteInterfaceSnapshot *in
 	snapshot_register_storage_fini (&interface->result_storage);
 }
 
-R_IPI void r_anal_function_snapshot_free(RAnalFunctionSnapshot *snapshot) {
+R_API void r_anal_function_snapshot_free(RAnalFunctionSnapshot *snapshot) {
 	if (!snapshot) {
 		return;
 	}
@@ -2197,671 +2160,6 @@ R_IPI void r_anal_function_snapshot_free(RAnalFunctionSnapshot *snapshot) {
 	free (snapshot->cpu_id);
 	free (snapshot->function_name);
 	free (snapshot);
-}
-
-R_API bool r_anal_function_snapshot_view(const RAnalFunctionSnapshot *snapshot, RAnalFunctionSnapshotView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	*view = (RAnalFunctionSnapshotView) {
-		.schema_version = snapshot->schema_version,
-		.struct_size = sizeof (*view),
-		.capabilities = snapshot->capabilities,
-		.function_addr = snapshot->function_addr,
-		.function_size = snapshot->function_size,
-		.bits = snapshot->bits,
-		.endian = snapshot->endian,
-		.maxstack = snapshot->maxstack,
-		.arch_id_length = strlen (snapshot->arch_id),
-		.cpu_id_length = strlen (snapshot->cpu_id),
-		.function_name_length = strlen (snapshot->function_name),
-		.num_base_types = snapshot->base_types? (size_t)r_list_length (snapshot->base_types): 0,
-		.type_context_hash = snapshot->type_context_hash,
-		.num_call_site_interfaces = snapshot->num_call_site_interfaces,
-		.num_stack_slots = snapshot->context.fcn_slots
-			? (size_t)r_list_length (snapshot->context.fcn_slots)
-			: 0,
-		.revision_identity = snapshot->revision_identity,
-		.content_identity = snapshot->content_identity,
-		.num_types = snapshot->type_graph.num_types,
-		.num_aggregates = snapshot->type_graph.num_aggregates,
-		.num_blocks = snapshot->image.num_blocks,
-		.num_external_exits = snapshot->image.num_external_exits,
-		.num_string_literals = snapshot->image.num_string_literals,
-		.num_data_symbols = snapshot->image.num_data_symbols,
-		.total_source_bytes = snapshot->image.total_source_bytes,
-		.num_callee_snapshots = snapshot->num_callee_snapshots,
-		.num_code_pointer_tables = snapshot->image.num_code_pointer_tables,
-	};
-	return true;
-}
-
-static bool snapshot_owned_string_copy(const char *string, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (string && buffer, false);
-	size_t length = strlen (string);
-	if (buffer_size <= length) {
-		return false;
-	}
-	memcpy (buffer, string, length + 1);
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_arch_id(const RAnalFunctionSnapshot *snapshot, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	return snapshot_owned_string_copy (snapshot->arch_id, buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_cpu_id(const RAnalFunctionSnapshot *snapshot, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	return snapshot_owned_string_copy (snapshot->cpu_id, buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_function_name(const RAnalFunctionSnapshot *snapshot, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	return snapshot_owned_string_copy (snapshot->function_name, buffer, buffer_size);
-}
-
-static RAnalSnapshotRegisterStorageView snapshot_register_storage_view(const RAnalSnapshotRegisterStorage *storage) {
-	return (RAnalSnapshotRegisterStorageView) {
-		.name_length = strlen (r_str_get (storage->name)),
-		.offset = storage->offset,
-		.size = storage->size,
-	};
-}
-
-static RAnalSnapshotParameterView snapshot_parameter_view(const RAnalSnapshotParameter *parameter) {
-	return (RAnalSnapshotParameterView) {
-		.index = parameter->index,
-		.name_length = strlen (r_str_get (parameter->name)),
-		.storage = snapshot_register_storage_view (&parameter->storage),
-		.logical_type_id = parameter->logical_type_id,
-		.carrier = parameter->carrier,
-	};
-}
-
-R_API bool r_anal_function_snapshot_interface_view(const RAnalFunctionSnapshot *snapshot, RAnalFunctionInterfaceSnapshotView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	const RAnalFunctionInterfaceSnapshot *interface = &snapshot->function_interface;
-	*view = (RAnalFunctionInterfaceSnapshotView) {
-		.calling_convention_length = strlen (r_str_get (interface->calling_convention)),
-		.num_parameters = interface->num_parameters,
-		.return_kind = interface->return_kind,
-		.return_storage = snapshot_register_storage_view (&interface->return_storage),
-		.return_address_storage = snapshot_register_storage_view (&interface->return_address_storage),
-		.stack_pointer_storage = snapshot_register_storage_view (&interface->stack_pointer_storage),
-		.variadic = interface->variadic,
-		.noreturn = interface->noreturn,
-		.stack_resources_complete = interface->stack_resources_complete,
-		.stack_slot_roles_complete = interface->stack_slot_roles_complete,
-		.complete = interface->complete,
-		.return_type_id = interface->return_type_id,
-		.return_carrier = interface->return_carrier,
-		.logical_types_complete = interface->logical_types_complete,
-		.stack_pointer_preserved_across_calls =
-			interface->stack_pointer_preserved_across_calls,
-		.frame_pointer_preserved_across_calls =
-			interface->frame_pointer_preserved_across_calls,
-		.num_convention_argument_slots = interface->num_convention_argument_slots,
-		.convention_result_slot =
-			snapshot_register_storage_view (&interface->convention_result_slot),
-		.convention_slots_known = interface->convention_slots_known,
-	};
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_interface_return_mechanism(const RAnalFunctionSnapshot *snapshot, RAnalSnapshotReturnMechanismView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	*view = (RAnalSnapshotReturnMechanismView) {0};
-	if (!(snapshot->capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_RETURN_MECHANISM)) {
-		return false;
-	}
-	*view = snapshot->return_mechanism;
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_interface_frame_pointer_storage(const RAnalFunctionSnapshot *snapshot, RAnalSnapshotRegisterStorageView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	*view = (RAnalSnapshotRegisterStorageView) {0};
-	if (!(snapshot->capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_FRAME_POINTER_STORAGE)) {
-		return false;
-	}
-	*view = snapshot_register_storage_view (&snapshot->frame_pointer_storage);
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_interface_stack_allocation_contract(const RAnalFunctionSnapshot *snapshot, RAnalSnapshotStackAllocationContractView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	*view = (RAnalSnapshotStackAllocationContractView) {0};
-	if (!(snapshot->capabilities
-			& R_ANAL_FUNCTION_SNAPSHOT_CAP_EXACT_STACK_ALLOCATION_CONTRACT)) {
-		return false;
-	}
-	*view = snapshot->stack_allocation_contract;
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_interface_calling_convention(const RAnalFunctionSnapshot *snapshot, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	return snapshot_owned_string_copy (r_str_get (snapshot->function_interface.calling_convention), buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_interface_storage_name(const RAnalFunctionSnapshot *snapshot, RAnalSnapshotInterfaceStorageKind kind, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	const RAnalSnapshotRegisterStorage *storage;
-	switch (kind) {
-	case R_ANAL_SNAPSHOT_INTERFACE_STORAGE_RETURN:
-		storage = &snapshot->function_interface.return_storage;
-		break;
-	case R_ANAL_SNAPSHOT_INTERFACE_STORAGE_RETURN_ADDRESS:
-		storage = &snapshot->function_interface.return_address_storage;
-		break;
-	case R_ANAL_SNAPSHOT_INTERFACE_STORAGE_STACK_POINTER:
-		storage = &snapshot->function_interface.stack_pointer_storage;
-		break;
-	case R_ANAL_SNAPSHOT_INTERFACE_STORAGE_FRAME_POINTER:
-		storage = &snapshot->frame_pointer_storage;
-		break;
-	default:
-		return false;
-	}
-	return snapshot_owned_string_copy (r_str_get (storage->name), buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_convention_argument_slot(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotRegisterStorageView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	const RAnalFunctionInterfaceSnapshot *interface = &snapshot->function_interface;
-	if (!interface->convention_slots_known
-		|| index >= interface->num_convention_argument_slots) {
-		return false;
-	}
-	*view = snapshot_register_storage_view (&interface->convention_argument_slots[index]);
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_parameter_view(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotParameterView *parameter) {
-	R_RETURN_VAL_IF_FAIL (snapshot && parameter, false);
-	if (index >= snapshot->function_interface.num_parameters) {
-		return false;
-	}
-	*parameter = snapshot_parameter_view (&snapshot->function_interface.parameters[index]);
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_parameter_name(const RAnalFunctionSnapshot *snapshot, size_t index, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	if (index >= snapshot->function_interface.num_parameters) {
-		return false;
-	}
-	return snapshot_owned_string_copy (r_str_get (snapshot->function_interface.parameters[index].name), buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_parameter_storage_name(const RAnalFunctionSnapshot *snapshot, size_t index, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	if (index >= snapshot->function_interface.num_parameters) {
-		return false;
-	}
-	return snapshot_owned_string_copy (r_str_get (snapshot->function_interface.parameters[index].storage.name), buffer, buffer_size);
-}
-
-static bool snapshot_signature_view_of(const RAnalFunctionSignature *signature, RAnalSnapshotSignatureView *view) {
-	if (!signature) {
-		return false;
-	}
-	*view = (RAnalSnapshotSignatureView) {
-		.num_parameters = signature->params
-			? (size_t)r_list_length (signature->params): 0,
-		.return_type_length = strlen (r_str_get (signature->ret_type)),
-		.calling_convention_length = strlen (r_str_get (signature->callconv)),
-		.noreturn = signature->noreturn,
-	};
-	return true;
-}
-
-static bool snapshot_signature_string_of(const RAnalFunctionSignature *signature, RAnalSnapshotSignatureStringKind kind, size_t index, char *buffer, size_t buffer_size) {
-	if (!signature) {
-		return false;
-	}
-	const RAnalFunctionParam *param = NULL;
-	if (kind == R_ANAL_SNAPSHOT_SIGNATURE_STRING_PARAMETER_TYPE
-		|| kind == R_ANAL_SNAPSHOT_SIGNATURE_STRING_PARAMETER_NAME) {
-		if (!signature->params || index > INT_MAX
-			|| index >= (size_t)r_list_length (signature->params)) {
-			return false;
-		}
-		param = r_list_get_n (signature->params, (int)index);
-		if (!param) {
-			return false;
-		}
-	}
-	const char *string;
-	switch (kind) {
-	case R_ANAL_SNAPSHOT_SIGNATURE_STRING_RETURN_TYPE:
-		string = signature->ret_type;
-		break;
-	case R_ANAL_SNAPSHOT_SIGNATURE_STRING_CALLING_CONVENTION:
-		string = signature->callconv;
-		break;
-	case R_ANAL_SNAPSHOT_SIGNATURE_STRING_PARAMETER_TYPE:
-		string = param->type;
-		break;
-	case R_ANAL_SNAPSHOT_SIGNATURE_STRING_PARAMETER_NAME:
-		string = param->name;
-		break;
-	default:
-		return false;
-	}
-	return snapshot_owned_string_copy (r_str_get (string), buffer, buffer_size);
-}
-
-// The signature is only offered when the capability says it was recovered, so
-// an absent one reads as absent rather than as an empty prototype.
-static const RAnalFunctionSignature *snapshot_signature(const RAnalFunctionSnapshot *snapshot) {
-	if (!snapshot
-		|| !(snapshot->capabilities & R_ANAL_FUNCTION_SNAPSHOT_CAP_SIGNATURE)) {
-		return NULL;
-	}
-	return snapshot->context.signature;
-}
-
-R_API bool r_anal_function_snapshot_code_pointer_table_view(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotCodePointerTableView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	if (index >= snapshot->image.num_code_pointer_tables) {
-		return false;
-	}
-	const RAnalSnapshotCodePointerTable *table = &snapshot->image.code_pointer_tables[index];
-	*view = (RAnalSnapshotCodePointerTableView) {
-		.addr = table->addr,
-		.entry_size = table->entry_size,
-		.num_targets = table->num_targets,
-	};
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_code_pointer_table_target(const RAnalFunctionSnapshot *snapshot, size_t index, size_t target_index, ut64 *target) {
-	R_RETURN_VAL_IF_FAIL (snapshot && target, false);
-	if (index >= snapshot->image.num_code_pointer_tables) {
-		return false;
-	}
-	const RAnalSnapshotCodePointerTable *table = &snapshot->image.code_pointer_tables[index];
-	if (target_index >= table->num_targets) {
-		return false;
-	}
-	*target = table->targets[target_index];
-	return true;
-}
-
-R_API const RAnalFunctionSnapshot *r_anal_function_snapshot_callee_snapshot(const RAnalFunctionSnapshot *snapshot, size_t index) {
-	R_RETURN_VAL_IF_FAIL (snapshot, NULL);
-	if (index >= snapshot->num_callee_snapshots) {
-		return NULL;
-	}
-	return snapshot->callee_snapshots[index];
-}
-
-R_API bool r_anal_function_snapshot_signature_view(const RAnalFunctionSnapshot *snapshot, RAnalSnapshotSignatureView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	return snapshot_signature_view_of (snapshot_signature (snapshot), view);
-}
-
-R_API bool r_anal_function_snapshot_signature_string(const RAnalFunctionSnapshot *snapshot, RAnalSnapshotSignatureStringKind kind, size_t index, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot && buffer, false);
-	return snapshot_signature_string_of (snapshot_signature (snapshot), kind, index, buffer, buffer_size);
-}
-
-// The prototype of the function a call site targets, which is where a spelling
-// like `size_t` for an argument comes from.
-static const RAnalFunctionSignature *snapshot_call_site_signature(const RAnalFunctionSnapshot *snapshot, size_t index) {
-	if (!snapshot || index >= snapshot->num_call_site_interfaces
-		|| !snapshot->context.callees) {
-		return NULL;
-	}
-	const RAnalCallSiteInterfaceSnapshot *call = &snapshot->call_site_interfaces[index];
-	RListIter *iter;
-	RAnalFcnCallee *callee;
-	r_list_foreach (snapshot->context.callees, iter, callee) {
-		if (callee && callee->call_addr == call->instruction_addr
-			&& callee->addr == call->target_addr) {
-			return callee->signature;
-		}
-	}
-	return NULL;
-}
-
-R_API bool r_anal_function_snapshot_call_site_signature_view(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotSignatureView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	return snapshot_signature_view_of (snapshot_call_site_signature (snapshot, index), view);
-}
-
-R_API bool r_anal_function_snapshot_call_site_signature_string(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotSignatureStringKind kind, size_t parameter_index, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot && buffer, false);
-	return snapshot_signature_string_of (snapshot_call_site_signature (snapshot, index), kind, parameter_index, buffer, buffer_size);
-}
-
-static const RAnalFcnSlot *snapshot_stack_slot(const RAnalFunctionSnapshot *snapshot, size_t index) {
-	if (!snapshot || !snapshot->context.fcn_slots || index > INT_MAX
-		|| index >= (size_t)r_list_length (snapshot->context.fcn_slots)) {
-		return NULL;
-	}
-	return r_list_get_n (snapshot->context.fcn_slots, (int)index);
-}
-
-R_API bool r_anal_function_snapshot_stack_slot_view(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotStackSlotView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	const RAnalFcnSlot *slot = snapshot_stack_slot (snapshot, index);
-	if (!slot) {
-		return false;
-	}
-	*view = (RAnalSnapshotStackSlotView) {
-		.name_length = strlen (r_str_get (slot->name)),
-		.type_length = strlen (r_str_get (slot->type)),
-		.base = slot->base,
-		.base_name_length = strlen (r_str_get (slot->base_name)),
-		.base_offset = slot->base_offset,
-		.base_size = slot->base_size,
-		.offset = slot->offset,
-		.size = slot->size,
-		.offset_valid = slot->offset_valid,
-		.role = slot->role,
-		.arg_index = slot->arg_index,
-		.arg_name_length = strlen (r_str_get (slot->arg_name)),
-		.home_reg_length = strlen (r_str_get (slot->home_reg)),
-		.home_reg_offset = slot->home_reg_offset,
-		.home_reg_size = slot->home_reg_size,
-	};
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_stack_slot_string(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotStackSlotStringKind kind, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot && buffer, false);
-	const RAnalFcnSlot *slot = snapshot_stack_slot (snapshot, index);
-	if (!slot) {
-		return false;
-	}
-	const char *string;
-	switch (kind) {
-	case R_ANAL_SNAPSHOT_STACK_SLOT_STRING_NAME:
-		string = slot->name;
-		break;
-	case R_ANAL_SNAPSHOT_STACK_SLOT_STRING_TYPE:
-		string = slot->type;
-		break;
-	case R_ANAL_SNAPSHOT_STACK_SLOT_STRING_BASE_NAME:
-		string = slot->base_name;
-		break;
-	case R_ANAL_SNAPSHOT_STACK_SLOT_STRING_ARG_NAME:
-		string = slot->arg_name;
-		break;
-	case R_ANAL_SNAPSHOT_STACK_SLOT_STRING_HOME_REGISTER:
-		string = slot->home_reg;
-		break;
-	default:
-		return false;
-	}
-	return snapshot_owned_string_copy (r_str_get (string), buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_call_site_view(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalCallSiteInterfaceSnapshotView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	if (index >= snapshot->num_call_site_interfaces) {
-		return false;
-	}
-	const RAnalCallSiteInterfaceSnapshot *call = &snapshot->call_site_interfaces[index];
-	*view = (RAnalCallSiteInterfaceSnapshotView) {
-		.instruction_addr = call->instruction_addr,
-		.target_addr = call->target_addr,
-		.target_name_length = strlen (r_str_get (call->target_name)),
-		.calling_convention_length = strlen (r_str_get (call->calling_convention)),
-		.num_arguments = call->num_arguments,
-		.result_kind = call->result_kind,
-		.result_storage = snapshot_register_storage_view (&call->result_storage),
-		.variadic = call->variadic,
-		.noreturn = call->noreturn,
-		.complete = call->complete,
-	};
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_call_site_transfer(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalCallTransfer *transfer) {
-	R_RETURN_VAL_IF_FAIL (snapshot && transfer, false);
-	if (index >= snapshot->num_call_site_interfaces) {
-		return false;
-	}
-	*transfer = snapshot->call_site_interfaces[index].transfer;
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_call_site_target_name(const RAnalFunctionSnapshot *snapshot, size_t index, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	if (index >= snapshot->num_call_site_interfaces) {
-		return false;
-	}
-	return snapshot_owned_string_copy (r_str_get (snapshot->call_site_interfaces[index].target_name), buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_call_site_calling_convention(const RAnalFunctionSnapshot *snapshot, size_t index, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	if (index >= snapshot->num_call_site_interfaces) {
-		return false;
-	}
-	return snapshot_owned_string_copy (r_str_get (snapshot->call_site_interfaces[index].calling_convention), buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_call_site_result_storage_name(const RAnalFunctionSnapshot *snapshot, size_t index, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	if (index >= snapshot->num_call_site_interfaces) {
-		return false;
-	}
-	return snapshot_owned_string_copy (r_str_get (snapshot->call_site_interfaces[index].result_storage.name), buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_call_argument_view(const RAnalFunctionSnapshot *snapshot, size_t call_index, size_t argument_index, RAnalSnapshotParameterView *argument) {
-	R_RETURN_VAL_IF_FAIL (snapshot && argument, false);
-	if (call_index >= snapshot->num_call_site_interfaces) {
-		return false;
-	}
-	const RAnalCallSiteInterfaceSnapshot *call = &snapshot->call_site_interfaces[call_index];
-	if (argument_index >= call->num_arguments) {
-		return false;
-	}
-	*argument = snapshot_parameter_view (&call->arguments[argument_index]);
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_call_argument_storage_name(const RAnalFunctionSnapshot *snapshot, size_t call_index, size_t argument_index, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	if (call_index >= snapshot->num_call_site_interfaces) {
-		return false;
-	}
-	const RAnalCallSiteInterfaceSnapshot *call = &snapshot->call_site_interfaces[call_index];
-	if (argument_index >= call->num_arguments) {
-		return false;
-	}
-	return snapshot_owned_string_copy (r_str_get (call->arguments[argument_index].storage.name), buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_type_graph_view(const RAnalFunctionSnapshot *snapshot, RAnalSnapshotTypeGraphView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	*view = (RAnalSnapshotTypeGraphView) {
-		.num_types = snapshot->type_graph.num_types,
-		.num_aggregates = snapshot->type_graph.num_aggregates,
-		.complete = snapshot->type_graph.complete,
-	};
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_type_view(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotType *type) {
-	R_RETURN_VAL_IF_FAIL (snapshot && type, false);
-	if (index >= snapshot->type_graph.num_types) {
-		return false;
-	}
-	*type = snapshot->type_graph.types[index];
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_aggregate_view(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotAggregateLayoutView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	if (index >= snapshot->type_graph.num_aggregates) {
-		return false;
-	}
-	const RAnalSnapshotAggregateLayout *aggregate = &snapshot->type_graph.aggregates[index];
-	*view = (RAnalSnapshotAggregateLayoutView) {
-		.id = aggregate->id,
-		.type_id = aggregate->type_id,
-		.size_bits = aggregate->size_bits,
-		.align_bits = aggregate->align_bits,
-		.name_length = strlen (r_str_get (aggregate->name)),
-		.num_members = aggregate->num_members,
-		.complete = aggregate->complete,
-		.c_layout_compatible = aggregate->c_layout_compatible,
-	};
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_aggregate_name(const RAnalFunctionSnapshot *snapshot, size_t index, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	if (index >= snapshot->type_graph.num_aggregates) {
-		return false;
-	}
-	return snapshot_owned_string_copy (r_str_get (snapshot->type_graph.aggregates[index].name), buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_aggregate_member_view(const RAnalFunctionSnapshot *snapshot, size_t aggregate_index, size_t member_index, RAnalSnapshotAggregateMemberView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	if (aggregate_index >= snapshot->type_graph.num_aggregates) {
-		return false;
-	}
-	const RAnalSnapshotAggregateLayout *aggregate = &snapshot->type_graph.aggregates[aggregate_index];
-	if (member_index >= aggregate->num_members) {
-		return false;
-	}
-	const RAnalSnapshotAggregateMember *member = &aggregate->members[member_index];
-	*view = (RAnalSnapshotAggregateMemberView) {
-		.member_id = member->member_id,
-		.type_id = member->type_id,
-		.offset_bits = member->offset_bits,
-		.size_bits = member->size_bits,
-		.count = member->count,
-		.name_length = strlen (r_str_get (member->name)),
-	};
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_aggregate_member_name(const RAnalFunctionSnapshot *snapshot, size_t aggregate_index, size_t member_index, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	if (aggregate_index >= snapshot->type_graph.num_aggregates) {
-		return false;
-	}
-	const RAnalSnapshotAggregateLayout *aggregate = &snapshot->type_graph.aggregates[aggregate_index];
-	if (member_index >= aggregate->num_members) {
-		return false;
-	}
-	return snapshot_owned_string_copy (r_str_get (aggregate->members[member_index].name), buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_block_view(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotBlockView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	if (index >= snapshot->image.num_blocks) {
-		return false;
-	}
-	const RAnalSnapshotBlock *block = &snapshot->image.blocks[index];
-	*view = (RAnalSnapshotBlockView) {
-		.addr = block->addr,
-		.size = block->size,
-		.num_successors = block->num_successors,
-		.switch_addr = block->switch_addr,
-	};
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_block_bytes(const RAnalFunctionSnapshot *snapshot, size_t index, size_t offset, ut8 *buffer, size_t length) {
-	R_RETURN_VAL_IF_FAIL (snapshot && buffer, false);
-	if (index >= snapshot->image.num_blocks) {
-		return false;
-	}
-	const RAnalSnapshotBlock *block = &snapshot->image.blocks[index];
-	if (offset > block->size || length > block->size - offset) {
-		return false;
-	}
-	memcpy (buffer, block->bytes + offset, length);
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_string_literal_view(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotStringLiteralView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	if (index >= snapshot->image.num_string_literals) {
-		return false;
-	}
-	const RAnalSnapshotStringLiteral *literal = &snapshot->image.string_literals[index];
-	*view = (RAnalSnapshotStringLiteralView) {
-		.addr = literal->addr,
-		.text_length = strlen (r_str_get (literal->text)),
-	};
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_string_literal_text(const RAnalFunctionSnapshot *snapshot, size_t index, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	if (index >= snapshot->image.num_string_literals) {
-		return false;
-	}
-	return snapshot_owned_string_copy (r_str_get (snapshot->image.string_literals[index].text), buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_data_symbol_view(const RAnalFunctionSnapshot *snapshot, size_t index, RAnalSnapshotDataSymbolView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	if (index >= snapshot->image.num_data_symbols) {
-		return false;
-	}
-	const RAnalSnapshotDataSymbol *symbol = &snapshot->image.data_symbols[index];
-	*view = (RAnalSnapshotDataSymbolView) {
-		.addr = symbol->addr,
-		.name_length = strlen (r_str_get (symbol->name)),
-		.type_name_length = strlen (r_str_get (symbol->type_name)),
-	};
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_data_symbol_name(const RAnalFunctionSnapshot *snapshot, size_t index, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	if (index >= snapshot->image.num_data_symbols) {
-		return false;
-	}
-	return snapshot_owned_string_copy (r_str_get (snapshot->image.data_symbols[index].name), buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_data_symbol_type_name(const RAnalFunctionSnapshot *snapshot, size_t index, char *buffer, size_t buffer_size) {
-	R_RETURN_VAL_IF_FAIL (snapshot, false);
-	if (index >= snapshot->image.num_data_symbols
-		|| !snapshot->image.data_symbols[index].type_name) {
-		return false;
-	}
-	return snapshot_owned_string_copy (snapshot->image.data_symbols[index].type_name, buffer, buffer_size);
-}
-
-R_API bool r_anal_function_snapshot_successor_view(const RAnalFunctionSnapshot *snapshot, size_t block_index, size_t successor_index, RAnalSnapshotSuccessorView *view) {
-	R_RETURN_VAL_IF_FAIL (snapshot && view, false);
-	if (block_index >= snapshot->image.num_blocks) {
-		return false;
-	}
-	const RAnalSnapshotBlock *block = &snapshot->image.blocks[block_index];
-	if (successor_index >= block->num_successors) {
-		return false;
-	}
-	const RAnalSnapshotSuccessor *successor = &block->successors[successor_index];
-	*view = (RAnalSnapshotSuccessorView) {
-		.kind = successor->kind,
-		.target_addr = successor->target_addr,
-		.case_value = successor->case_value,
-		.external = successor->external,
-	};
-	return true;
-}
-
-R_API bool r_anal_function_snapshot_external_exit(const RAnalFunctionSnapshot *snapshot, size_t index, ut64 *target) {
-	R_RETURN_VAL_IF_FAIL (snapshot && target, false);
-	if (index >= snapshot->image.num_external_exits) {
-		return false;
-	}
-	*target = snapshot->image.external_exits[index];
-	return true;
 }
 
 R_API void r_anal_function_context_free(RAnalFcnContext *ctx) {
@@ -3002,14 +2300,14 @@ static ut64 function_snapshot_hash_interface(ut64 hash, const RAnalFunctionInter
 	return function_context_hash_mix (hash, interface->logical_types_complete? 1: 0);
 }
 
-static ut64 function_snapshot_hash_return_mechanism(ut64 hash, const RAnalSnapshotReturnMechanismView *mechanism) {
+static ut64 function_snapshot_hash_return_mechanism(ut64 hash, const RAnalSnapshotReturnMechanism *mechanism) {
 	hash = function_context_hash_mix (hash, mechanism->kind);
 	hash = function_context_hash_mix (hash, (ut64)mechanism->entry_sp_offset);
 	hash = function_context_hash_mix (hash, mechanism->slot_size);
 	return function_context_hash_mix (hash, (ut64)mechanism->exit_sp_delta);
 }
 
-static ut64 function_snapshot_hash_stack_allocation_contract(ut64 hash, const RAnalSnapshotStackAllocationContractView *contract) {
+static ut64 function_snapshot_hash_stack_allocation_contract(ut64 hash, const RAnalSnapshotStackAllocationContract *contract) {
 	hash = function_context_hash_mix (hash, contract->growth);
 	return function_context_hash_mix (hash, contract->implicit_active_sp_bytes);
 }
@@ -3116,7 +2414,6 @@ static ut64 function_snapshot_hash_image(ut64 hash, const RAnalFunctionImageSnap
 static ut64 function_snapshot_hash(const RAnalFunctionSnapshot *snapshot) {
 	ut64 hash = 0xcbf29ce484222325ULL;
 	hash = function_context_hash_mix (hash, snapshot->schema_version);
-	hash = function_context_hash_mix (hash, snapshot->struct_size);
 	hash = function_context_hash_mix (hash, snapshot->capabilities);
 	hash = function_context_hash_mix (hash, snapshot->function_addr);
 	hash = function_context_hash_mix (hash, snapshot->function_size);
@@ -3401,365 +2698,6 @@ static bool r_anal_function_set_signature_string(RAnal *anal, RAnalFunction *fcn
 	}
 	r_anal_function_bump_dirty_epoch (fcn);
 	return true;
-}
-
-static bool r_anal_apply_one_mutation(RAnal *anal, const RAnalMutation *mutation) {
-	R_RETURN_VAL_IF_FAIL (anal && mutation, false);
-	switch (mutation->kind) {
-	case R_ANAL_MUTATION_SIGNATURE:
-		if (mutation->signature) {
-			return r_anal_function_set_signature (anal, mutation->fcn, mutation->signature);
-		}
-		return r_anal_function_set_signature_string (anal, mutation->fcn, mutation->signature_string);
-	case R_ANAL_MUTATION_CALLCONV:
-		return r_anal_function_set_callconv (anal, mutation->fcn, mutation->callconv);
-	case R_ANAL_MUTATION_VAR:
-		return mutation->fcn && mutation->name && mutation->size <= INT_MAX
-			&& r_anal_function_set_var (mutation->fcn, mutation->delta, mutation->var_kind,
-				mutation->type, (int)mutation->size, mutation->is_arg, mutation->name);
-	case R_ANAL_MUTATION_VAR_RENAME: {
-		RAnalVar *var = mutation->var;
-		if (!var && mutation->fcn && R_STR_ISNOTEMPTY (mutation->old_name)) {
-			var = r_anal_function_get_var_byname (mutation->fcn, mutation->old_name);
-		}
-		return var && R_STR_ISNOTEMPTY (mutation->name)
-			&& r_anal_var_rename (anal, var, mutation->name);
-	}
-	case R_ANAL_MUTATION_VAR_TYPE: {
-		RAnalVar *var = mutation->var;
-		if (!var && mutation->fcn && R_STR_ISNOTEMPTY (mutation->old_name)) {
-			var = r_anal_function_get_var_byname (mutation->fcn, mutation->old_name);
-		}
-		if (!var || R_STR_ISEMPTY (mutation->type)) {
-			return false;
-		}
-		r_anal_var_set_type (anal, var, mutation->type);
-		return true;
-	}
-	case R_ANAL_MUTATION_XREF:
-		return r_anal_xrefs_setf (anal, mutation->fcn, mutation->from, mutation->to, mutation->ref_type);
-	case R_ANAL_MUTATION_COMMENT:
-		return R_STR_ISNOTEMPTY (mutation->text)
-			&& r_meta_set_string (anal, R_META_TYPE_COMMENT, mutation->addr, mutation->text);
-	case R_ANAL_MUTATION_FLAG:
-		return anal->flb.f && anal->flb.set && R_STR_ISNOTEMPTY (mutation->name) && mutation->size <= UT32_MAX
-			&& anal->flb.set (anal->flb.f, mutation->name, mutation->addr,
-				mutation->size? (ut32)mutation->size: 1);
-	case R_ANAL_MUTATION_TYPE_DECL: {
-		char *errmsg = NULL;
-		if (R_STR_ISEMPTY (mutation->text)) {
-			return false;
-		}
-		bool ok = r_anal_import_c_decls (anal, mutation->text, &errmsg);
-		free (errmsg);
-		return ok;
-	}
-	case R_ANAL_MUTATION_TYPE_LINK:
-		if (!anal->sdb_types || R_STR_ISEMPTY (mutation->type)) {
-			return false;
-		}
-		if (r_type_func_exist (anal->sdb_types, mutation->type)) {
-			return r_anal_function_type_link_set (anal, mutation->type, mutation->addr);
-		}
-		return r_anal_types_set_link (anal, mutation->type, mutation->addr)
-			|| r_anal_types_set_link_offset (anal, mutation->type, mutation->addr);
-	default:
-		return false;
-	}
-}
-
-R_API bool r_anal_apply_mutations(RAnal *anal, const RAnalMutation *mutations, size_t mutation_count, RAnalMutationResult *result) {
-	size_t i;
-	RAnalMutationResult local = {0};
-
-	R_RETURN_VAL_IF_FAIL (anal && (mutations || !mutation_count), false);
-	for (i = 0; i < mutation_count; i++) {
-		local.attempted++;
-		if (r_anal_apply_one_mutation (anal, &mutations[i])) {
-			local.applied++;
-		} else {
-			local.failed++;
-		}
-	}
-	if (result) {
-		*result = local;
-	}
-	return local.failed == 0;
-}
-
-typedef struct {
-	RAnalMutationKind kind;
-	RAnalFunction *fcn;
-	bool changed;
-	bool applied;
-	union {
-		struct {
-			const char *requested;
-			const char *old_value;
-			const char *new_value;
-		} callconv;
-		struct {
-			RAnalVar *var;
-			const char *requested;
-			char *old_value;
-			char *new_value;
-		} rename;
-	} value;
-} RAnalPreparedAtomicMutation;
-
-static RAnalMutationAtomicResult atomic_mutation_result(RAnalMutationAtomicStatus status, size_t failed_index) {
-	RAnalMutationAtomicResult result = {
-		.status = status,
-		.failed_index = failed_index,
-	};
-	return result;
-}
-
-static bool atomic_mutation_kind_supported(RAnalMutationKind kind) {
-	return kind == R_ANAL_MUTATION_CALLCONV || kind == R_ANAL_MUTATION_VAR_RENAME;
-}
-
-static bool atomic_mutation_validate_callconv(RAnal *anal, const RAnalMutation *mutation, RAnalPreparedAtomicMutation *prepared) {
-	RAnalFunction *fcn = mutation->fcn;
-	if (!fcn || fcn->anal != anal || R_STR_ISEMPTY (mutation->callconv)
-			|| !r_anal_cc_exist (anal, mutation->callconv)) {
-		return false;
-	}
-	prepared->kind = mutation->kind;
-	prepared->fcn = fcn;
-	prepared->value.callconv.requested = mutation->callconv;
-	prepared->value.callconv.old_value = fcn->callconv;
-	prepared->changed = !fcn->callconv || strcmp (fcn->callconv, mutation->callconv);
-	return true;
-}
-
-static bool atomic_mutation_validate_rename(RAnal *anal, const RAnalMutation *mutation, RAnalPreparedAtomicMutation *prepared) {
-	RAnalVar *var = mutation->var;
-	if (!var && mutation->fcn && R_STR_ISNOTEMPTY (mutation->old_name)) {
-		var = r_anal_function_get_var_byname (mutation->fcn, mutation->old_name);
-	}
-	if (!var || !var->fcn || var->fcn->anal != anal
-			|| (mutation->fcn && mutation->fcn != var->fcn)
-			|| R_STR_ISEMPTY (var->name) || !r_anal_var_check_name (mutation->name)) {
-		return false;
-	}
-	RAnalVar *existing = r_anal_function_get_var_byname (var->fcn, mutation->name);
-	if (existing && existing != var) {
-		return false;
-	}
-	prepared->kind = mutation->kind;
-	prepared->fcn = var->fcn;
-	prepared->value.rename.var = var;
-	prepared->value.rename.requested = mutation->name;
-	prepared->value.rename.old_value = var->name;
-	prepared->changed = strcmp (var->name, mutation->name);
-	return true;
-}
-
-static bool atomic_mutation_validate(RAnal *anal, const RAnalMutation *mutation, RAnalPreparedAtomicMutation *prepared) {
-	switch (mutation->kind) {
-	case R_ANAL_MUTATION_CALLCONV:
-		return atomic_mutation_validate_callconv (anal, mutation, prepared);
-	case R_ANAL_MUTATION_VAR_RENAME:
-		return atomic_mutation_validate_rename (anal, mutation, prepared);
-	default:
-		return false;
-	}
-}
-
-static bool atomic_mutation_prepare(RAnal *anal, RAnalPreparedAtomicMutation *prepared) {
-	switch (prepared->kind) {
-	case R_ANAL_MUTATION_CALLCONV:
-		prepared->value.callconv.new_value = r_str_constpool_get (
-			&anal->constpool, prepared->value.callconv.requested);
-		return prepared->value.callconv.new_value != NULL;
-	case R_ANAL_MUTATION_VAR_RENAME:
-		prepared->value.rename.new_value = strdup (prepared->value.rename.requested);
-		return prepared->value.rename.new_value != NULL;
-	default:
-		return false;
-	}
-}
-
-static void atomic_mutation_plan_fini(RAnalPreparedAtomicMutation *prepared, size_t mutation_count) {
-	size_t i;
-	for (i = 0; i < mutation_count; i++) {
-		if (prepared[i].kind == R_ANAL_MUTATION_VAR_RENAME) {
-			free (prepared[i].value.rename.new_value);
-		}
-	}
-	free (prepared);
-}
-
-static bool atomic_mutation_commit_one(RAnalPreparedAtomicMutation *prepared) {
-	switch (prepared->kind) {
-	case R_ANAL_MUTATION_CALLCONV:
-		if (prepared->fcn->callconv != prepared->value.callconv.old_value) {
-			return false;
-		}
-		if (prepared->changed) {
-			prepared->fcn->callconv = prepared->value.callconv.new_value;
-			prepared->applied = true;
-		}
-		return true;
-	case R_ANAL_MUTATION_VAR_RENAME: {
-		RAnalVar *var = prepared->value.rename.var;
-		if (var->name != prepared->value.rename.old_value) {
-			return false;
-		}
-		RAnalVar *existing = r_anal_function_get_var_byname (
-			var->fcn, prepared->value.rename.new_value);
-		if (existing && existing != var) {
-			return false;
-		}
-		if (prepared->changed) {
-			var->name = prepared->value.rename.new_value;
-			prepared->applied = true;
-		}
-		return true;
-	}
-	default:
-		return false;
-	}
-}
-
-static void atomic_mutation_rollback_one(RAnalPreparedAtomicMutation *prepared) {
-	if (!prepared->applied) {
-		return;
-	}
-	switch (prepared->kind) {
-	case R_ANAL_MUTATION_CALLCONV:
-		prepared->fcn->callconv = prepared->value.callconv.old_value;
-		break;
-	case R_ANAL_MUTATION_VAR_RENAME:
-		prepared->value.rename.var->name = prepared->value.rename.old_value;
-		break;
-	default:
-		break;
-	}
-	prepared->applied = false;
-}
-
-static bool atomic_mutation_first_function_change(const RAnalPreparedAtomicMutation *prepared, size_t index) {
-	size_t i;
-	if (!prepared[index].changed) {
-		return false;
-	}
-	for (i = 0; i < index; i++) {
-		if (prepared[i].changed && prepared[i].fcn == prepared[index].fcn) {
-			return false;
-		}
-	}
-	return true;
-}
-
-static void atomic_mutation_publish(RAnal *anal, RAnalPreparedAtomicMutation *prepared, size_t mutation_count) {
-	size_t i;
-	bool changed = false;
-	for (i = 0; i < mutation_count; i++) {
-		if (atomic_mutation_first_function_change (prepared, i)) {
-			r_anal_function_bump_dirty_epoch (prepared[i].fcn);
-			changed = true;
-		}
-	}
-	if (changed) {
-		R_DIRTY_SET (anal);
-	}
-	for (i = 0; i < mutation_count; i++) {
-		if (prepared[i].changed && prepared[i].kind == R_ANAL_MUTATION_VAR_RENAME) {
-			REventVariable event = {
-				.fcn = prepared[i].fcn,
-				.var = prepared[i].value.rename.var,
-				.name = prepared[i].value.rename.var->name,
-			};
-			r_event_send (anal->ev, R_EVENT_VARIABLE_NAME_CHANGED, &event);
-		}
-	}
-}
-
-static void atomic_mutation_finish_commit(RAnalPreparedAtomicMutation *prepared, size_t mutation_count) {
-	size_t i;
-	for (i = 0; i < mutation_count; i++) {
-		if (prepared[i].changed && prepared[i].kind == R_ANAL_MUTATION_VAR_RENAME) {
-			free (prepared[i].value.rename.old_value);
-			prepared[i].value.rename.old_value = NULL;
-			prepared[i].value.rename.new_value = NULL;
-		}
-	}
-}
-
-R_API RAnalMutationAtomicResult r_anal_apply_mutations_atomic(RAnal *anal, const RAnalMutation *mutations, size_t mutation_count) {
-	RAnalMutationAtomicResult result = atomic_mutation_result (
-		R_ANAL_MUTATION_ATOMIC_STATUS_OK, R_ANAL_MUTATION_ATOMIC_INDEX_NONE);
-	if (!anal || (!mutations && mutation_count)) {
-		result.status = R_ANAL_MUTATION_ATOMIC_STATUS_INVALID_ARGUMENT;
-		result.failed_index = anal && mutation_count? 0: R_ANAL_MUTATION_ATOMIC_INDEX_NONE;
-		return result;
-	}
-	if (!mutation_count) {
-		return result;
-	}
-	r_th_lock_enter (anal->lock);
-	size_t i;
-	for (i = 0; i < mutation_count; i++) {
-		if (!atomic_mutation_kind_supported (mutations[i].kind)) {
-			result.status = R_ANAL_MUTATION_ATOMIC_STATUS_UNSUPPORTED;
-			result.failed_index = i;
-			r_th_lock_leave (anal->lock);
-			return result;
-		}
-	}
-	size_t allocation_size;
-	if (r_mul_overflow_size_t (mutation_count, sizeof (RAnalPreparedAtomicMutation), &allocation_size)) {
-		result.status = R_ANAL_MUTATION_ATOMIC_STATUS_PREPARATION_FAILED;
-		r_th_lock_leave (anal->lock);
-		return result;
-	}
-	RAnalPreparedAtomicMutation *prepared = calloc (1, allocation_size);
-	if (!prepared) {
-		result.status = R_ANAL_MUTATION_ATOMIC_STATUS_PREPARATION_FAILED;
-		r_th_lock_leave (anal->lock);
-		return result;
-	}
-	for (i = 0; i < mutation_count; i++) {
-		if (!atomic_mutation_validate (anal, &mutations[i], &prepared[i])) {
-			result.status = R_ANAL_MUTATION_ATOMIC_STATUS_VALIDATION_FAILED;
-			result.failed_index = i;
-			atomic_mutation_plan_fini (prepared, mutation_count);
-			r_th_lock_leave (anal->lock);
-			return result;
-		}
-		result.validated++;
-	}
-	for (i = 0; i < mutation_count; i++) {
-		if (!atomic_mutation_prepare (anal, &prepared[i])) {
-			result.status = R_ANAL_MUTATION_ATOMIC_STATUS_PREPARATION_FAILED;
-			result.failed_index = i;
-			atomic_mutation_plan_fini (prepared, mutation_count);
-			r_th_lock_leave (anal->lock);
-			return result;
-		}
-	}
-	for (i = 0; i < mutation_count; i++) {
-		if (!atomic_mutation_commit_one (&prepared[i])) {
-			result.status = R_ANAL_MUTATION_ATOMIC_STATUS_COMMIT_FAILED;
-			result.failed_index = i;
-			while (i > 0) {
-				i--;
-				atomic_mutation_rollback_one (&prepared[i]);
-			}
-			result.committed = 0;
-			atomic_mutation_plan_fini (prepared, mutation_count);
-			r_th_lock_leave (anal->lock);
-			return result;
-		}
-		result.committed++;
-	}
-	atomic_mutation_publish (anal, prepared, mutation_count);
-	atomic_mutation_finish_commit (prepared, mutation_count);
-	atomic_mutation_plan_fini (prepared, mutation_count);
-	r_th_lock_leave (anal->lock);
-	return result;
 }
 
 typedef enum {
@@ -4477,8 +3415,8 @@ static bool function_interface_snapshot_collect(
 
 static void snapshot_return_mechanism_collect(RAnal *anal, const RAnalFunction *fcn,
 		const RAnalFcnContext *ctx, const RAnalFunctionInterfaceSnapshot *interface,
-		RAnalSnapshotReturnMechanismView *view) {
-	*view = (RAnalSnapshotReturnMechanismView) {0};
+		RAnalSnapshotReturnMechanism *view) {
+	*view = (RAnalSnapshotReturnMechanism) {0};
 	if (!interface->complete || R_STR_ISEMPTY (interface->calling_convention)) {
 		return;
 	}
@@ -4518,7 +3456,7 @@ static void snapshot_return_mechanism_collect(RAnal *anal, const RAnalFunction *
 			return;
 		}
 	}
-	*view = (RAnalSnapshotReturnMechanismView) {
+	*view = (RAnalSnapshotReturnMechanism) {
 		.kind = R_ANAL_SNAPSHOT_RETURN_MECHANISM_STACK,
 		.entry_sp_offset = mechanism.entry_sp_offset,
 		.slot_size = mechanism.slot_size,
@@ -4526,18 +3464,10 @@ static void snapshot_return_mechanism_collect(RAnal *anal, const RAnalFunction *
 	};
 }
 
-static bool snapshot_return_mechanism_equal(const RAnalSnapshotReturnMechanismView *a,
-		const RAnalSnapshotReturnMechanismView *b) {
-	return a->kind == b->kind
-		&& a->entry_sp_offset == b->entry_sp_offset
-		&& a->slot_size == b->slot_size
-		&& a->exit_sp_delta == b->exit_sp_delta;
-}
-
 static void snapshot_stack_allocation_contract_collect(RAnal *anal,
 		const RAnalFunctionInterfaceSnapshot *interface,
-		RAnalSnapshotStackAllocationContractView *view) {
-	*view = (RAnalSnapshotStackAllocationContractView) {0};
+		RAnalSnapshotStackAllocationContract *view) {
+	*view = (RAnalSnapshotStackAllocationContract) {0};
 	if (R_STR_ISEMPTY (interface->calling_convention)
 		|| R_STR_ISEMPTY (interface->stack_pointer_storage.name)
 		|| !interface->stack_pointer_storage.size) {
@@ -4560,13 +3490,6 @@ static void snapshot_stack_allocation_contract_collect(RAnal *anal,
 	default:
 		break;
 	}
-}
-
-static bool snapshot_stack_allocation_contract_equal(
-		const RAnalSnapshotStackAllocationContractView *a,
-		const RAnalSnapshotStackAllocationContractView *b) {
-	return a->growth == b->growth
-		&& a->implicit_active_sp_bytes == b->implicit_active_sp_bytes;
 }
 
 static bool snapshot_frame_pointer_storage_conflicts_interface(
@@ -4657,13 +3580,6 @@ static bool snapshot_frame_pointer_storage_collect(RAnal *anal,
 	return true;
 }
 
-static bool snapshot_frame_pointer_storage_equal(
-		const RAnalSnapshotRegisterStorage *a,
-		const RAnalSnapshotRegisterStorage *b) {
-	return !strcmp (r_str_get (a->name), r_str_get (b->name))
-		&& a->offset == b->offset && a->size == b->size;
-}
-
 typedef enum {
 	SNAPSHOT_TYPE_GRAPH_UNSUPPORTED = 0,
 	SNAPSHOT_TYPE_GRAPH_VALID,
@@ -4679,72 +3595,6 @@ static int snapshot_base_type_compare(const void *left, const void *right) {
 		return name_cmp;
 	}
 	return a->kind < b->kind? -1: 1;
-}
-
-static bool snapshot_nullable_string_equal(const char *left, const char *right) {
-	return (!left && !right) || (left && right && !strcmp (left, right));
-}
-
-static bool snapshot_base_type_equal(const RAnalBaseType *left, const RAnalBaseType *right) {
-	if (!left || !right) {
-		return left == right;
-	}
-	if (left->kind != right->kind || left->size != right->size
-		|| !snapshot_nullable_string_equal (left->name, right->name)
-		|| !snapshot_nullable_string_equal (left->type, right->type)) {
-		return false;
-	}
-	if (left->kind == R_ANAL_BASE_TYPE_KIND_STRUCT
-		|| left->kind == R_ANAL_BASE_TYPE_KIND_UNION) {
-		const RVecAnalTypeMember *left_members = r_anal_base_type_members (left);
-		const RVecAnalTypeMember *right_members = r_anal_base_type_members (right);
-		const size_t count = RVecAnalTypeMember_length (left_members);
-		if (count != RVecAnalTypeMember_length (right_members)) {
-			return false;
-		}
-		size_t i;
-		for (i = 0; i < count; i++) {
-			const RAnalTypeMember *a = RVecAnalTypeMember_at (left_members, i);
-			const RAnalTypeMember *b = RVecAnalTypeMember_at (right_members, i);
-			if (a->offset != b->offset || a->bitsize != b->bitsize
-				|| a->count != b->count
-				|| !snapshot_nullable_string_equal (a->name, b->name)
-				|| !snapshot_nullable_string_equal (a->type, b->type)) {
-				return false;
-			}
-		}
-	} else if (left->kind == R_ANAL_BASE_TYPE_KIND_ENUM) {
-		const size_t count = RVecAnalEnumCase_length (&left->enum_data.cases);
-		if (count != RVecAnalEnumCase_length (&right->enum_data.cases)) {
-			return false;
-		}
-		size_t i;
-		for (i = 0; i < count; i++) {
-			const RAnalEnumCase *a = RVecAnalEnumCase_at (&left->enum_data.cases, i);
-			const RAnalEnumCase *b = RVecAnalEnumCase_at (&right->enum_data.cases, i);
-			if (a->val != b->val
-				|| !snapshot_nullable_string_equal (a->name, b->name)) {
-				return false;
-			}
-		}
-	}
-	return true;
-}
-
-static bool snapshot_base_types_equal(const RList *left, const RList *right) {
-	if (!left || !right || r_list_length (left) != r_list_length (right)) {
-		return false;
-	}
-	RListIter *left_iter = r_list_iterator (left);
-	RListIter *right_iter = r_list_iterator (right);
-	while (left_iter && right_iter) {
-		if (!snapshot_base_type_equal (left_iter->data, right_iter->data)) {
-			return false;
-		}
-		left_iter = left_iter->n;
-		right_iter = right_iter->n;
-	}
-	return !left_iter && !right_iter;
 }
 
 static bool snapshot_base_type_string_add(size_t *total, const char *string) {
@@ -6211,7 +5061,7 @@ static bool snapshot_interface_within_limits(const RAnalFunctionSnapshot *snapsh
 }
 
 static bool snapshot_limits_valid(const RAnalFunctionSnapshotLimits *limits) {
-	if (!limits || limits->struct_size != sizeof (*limits)) {
+	if (!limits) {
 		return false;
 	}
 	const size_t values[] = {
@@ -6308,13 +5158,6 @@ static bool function_snapshot_machine_tuple_collect(RAnalFunctionSnapshot *snaps
 	return snapshot->arch_id && snapshot->cpu_id;
 }
 
-static bool function_snapshot_machine_tuple_is_current(const RAnalFunctionSnapshot *snapshot, const RAnal *anal) {
-	const RArchConfig *config = function_snapshot_active_arch_config (anal);
-	return config && snapshot->bits == config->bits && snapshot->endian == config->endian
-		&& !strcmp (snapshot->arch_id, r_str_get (config->arch))
-		&& !strcmp (snapshot->cpu_id, r_str_get (config->cpu));
-}
-
 // Refusals are reported through `reason` so a caller can say why a function
 // could not be captured. Every refusal below names one cause.
 #define SNAPSHOT_REFUSE(why) do { refusal = (why); goto fail; } while (0)
@@ -6346,7 +5189,7 @@ static RAnalFunctionSnapshot *function_snapshot_collect_with_limits_unlocked(RAn
 		SNAPSHOT_REFUSE ("the assumptions payload exceeds its limit");
 	}
 	RList *base_types = snapshot_type_resolver_capture (anal, limits);
-	if (!base_types || type_dirty_epoch != r_anal_types_dirty_epoch (anal)) {
+	if (!base_types) {
 		r_anal_types_snapshot_free (base_types);
 		SNAPSHOT_REFUSE ("the type database is unreadable or changed during capture");
 	}
@@ -6360,7 +5203,6 @@ static RAnalFunctionSnapshot *function_snapshot_collect_with_limits_unlocked(RAn
 	ctx->assumptions = r_anal_function_list_assumptions (anal, fcn);
 	ctx->assumptions_json = strdup (assumptions_json);
 	snapshot->schema_version = R_ANAL_FUNCTION_SNAPSHOT_SCHEMA_VERSION;
-	snapshot->struct_size = sizeof (RAnalFunctionSnapshot);
 	snapshot->function_addr = snapshot->image.entry_addr;
 	const RAnalSnapshotBlock *first_block = &snapshot->image.blocks[0];
 	const RAnalSnapshotBlock *last_block =
@@ -6462,40 +5304,6 @@ static RAnalFunctionSnapshot *function_snapshot_collect_with_limits_unlocked(RAn
 	if (!snapshot_interface_within_limits (snapshot, limits)) {
 		SNAPSHOT_REFUSE ("the function interface exceeds its limits");
 	}
-	RAnalFunctionImageSnapshot current_image = {0};
-	const bool image_current = function_image_snapshot_collect (
-		anal, fcn, limits, &current_image, NULL)
-		&& function_image_snapshot_equal (&snapshot->image, &current_image);
-	function_image_snapshot_fini (&current_image);
-	RList *current_base_types = snapshot_type_resolver_capture (anal, limits);
-	const bool base_types_current = snapshot_base_types_equal (
-		snapshot->base_types, current_base_types);
-	r_list_free (current_base_types);
-	RAnalSnapshotReturnMechanismView current_return_mechanism = {0};
-	snapshot_return_mechanism_collect (anal, fcn,
-		ctx, &snapshot->function_interface, &current_return_mechanism);
-	RAnalSnapshotStackAllocationContractView current_stack_allocation_contract = {0};
-	snapshot_stack_allocation_contract_collect (anal,
-		&snapshot->function_interface, &current_stack_allocation_contract);
-	RAnalSnapshotRegisterStorage current_frame_pointer_storage = {0};
-	const bool frame_pointer_current = snapshot_frame_pointer_storage_collect (
-		anal, fcn, ctx, &snapshot->function_interface,
-		&current_frame_pointer_storage)
-		&& snapshot_frame_pointer_storage_equal (
-			&snapshot->frame_pointer_storage, &current_frame_pointer_storage);
-	snapshot_register_storage_fini (&current_frame_pointer_storage);
-	if (function_dirty_epoch != r_anal_function_dirty_epoch (fcn)
-		|| type_dirty_epoch != r_anal_types_dirty_epoch (anal)
-		|| !function_snapshot_machine_tuple_is_current (snapshot, anal)
-		|| !image_current || !base_types_current
-		|| !snapshot_return_mechanism_equal (
-			&snapshot->return_mechanism, &current_return_mechanism)
-		|| !snapshot_stack_allocation_contract_equal (
-			&snapshot->stack_allocation_contract,
-			&current_stack_allocation_contract)
-		|| !frame_pointer_current) {
-		SNAPSHOT_REFUSE ("the function or type state changed during capture");
-	}
 	snapshot->capabilities = R_ANAL_FUNCTION_SNAPSHOT_CAP_REGISTER_ARGS
 		| R_ANAL_FUNCTION_SNAPSHOT_CAP_STACK_SLOTS
 		| R_ANAL_FUNCTION_SNAPSHOT_CAP_CALLEES
@@ -6578,7 +5386,6 @@ fail:
 R_IPI void r_anal_function_snapshot_limits_default(RAnalFunctionSnapshotLimits *limits) {
 	R_RETURN_IF_FAIL (limits);
 	*limits = (RAnalFunctionSnapshotLimits) {
-		.struct_size = sizeof (*limits),
 		.max_base_types = 4096,
 		.max_base_type_children = 65536,
 		.max_base_type_string_bytes = 16 * 1024 * 1024,
@@ -6693,30 +5500,31 @@ R_IPI RAnalFunctionSnapshot *r_anal_function_snapshot_collect_bounded(RAnal *ana
 	return r_anal_function_snapshot_collect_with_limits (anal, fcn, &limits, reason);
 }
 
-R_API bool r_anal_function_snapshot_visit_bounded_advisory(RAnal *anal, ut64 function_addr, RAnalFunctionSnapshotCallback callback, void *user, const char **reason) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->lock && callback, false);
+R_API RAnalFunctionSnapshot *r_anal_function_snapshot_take_with_limits(RAnal *anal, ut64 function_addr, const RAnalFunctionSnapshotLimits *limits, const char **reason) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->lock && limits, NULL);
 	if (reason) {
 		*reason = NULL;
 	}
 	r_th_lock_enter (anal->lock);
+	RAnalFunctionSnapshot *snapshot = NULL;
 	RAnalFunction *fcn = r_anal_get_function_at (anal, function_addr);
-	if (!fcn) {
-		if (reason) {
-			*reason = "no function starts at that address";
+	if (fcn) {
+		snapshot = function_snapshot_collect_with_limits_unlocked (
+			anal, fcn, limits, reason);
+		if (snapshot) {
+			function_snapshot_collect_callees_unlocked (anal, snapshot, limits);
 		}
-		r_th_lock_leave (anal->lock);
-		return false;
+	} else if (reason) {
+		*reason = "no function starts at that address";
 	}
-	RAnalFunctionSnapshot *snapshot = r_anal_function_snapshot_collect_bounded (
-		anal, fcn, reason);
-	if (!snapshot) {
-		r_th_lock_leave (anal->lock);
-		return false;
-	}
-	const bool result = callback (snapshot, user);
-	r_anal_function_snapshot_free (snapshot);
 	r_th_lock_leave (anal->lock);
-	return result;
+	return snapshot;
+}
+
+R_API RAnalFunctionSnapshot *r_anal_function_snapshot_take(RAnal *anal, ut64 function_addr, const char **reason) {
+	RAnalFunctionSnapshotLimits limits;
+	r_anal_function_snapshot_limits_default (&limits);
+	return r_anal_function_snapshot_take_with_limits (anal, function_addr, &limits, reason);
 }
 
 R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn) {

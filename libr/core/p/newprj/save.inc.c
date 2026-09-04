@@ -117,7 +117,7 @@ static void rprj_xref_write_one(RPrjCursor *cur, RAnalRef *ref) {
 }
 
 static void rprj_xref_write(RPrjCursor *cur) {
-	RVecAnalRef *refs = r_anal_refs_get_unowned (cur->core->anal, UT64_MAX);
+	RVecAnalRef *refs = r_anal_refs_get (cur->core->anal, UT64_MAX);
 	const ut64 count_at = rprj_le32_reserve (cur->b);
 	ut32 count = 0;
 	if (refs) {
@@ -129,94 +129,6 @@ static void rprj_xref_write(RPrjCursor *cur) {
 		RVecAnalRef_free (refs);
 	}
 	rprj_le32_patch (cur->b, count_at, count);
-}
-
-static bool rprj_artifact_write_le32(RBuffer *buffer, ut32 value) {
-	ut8 bytes[sizeof (ut32)];
-	r_write_le32 (bytes, value);
-	return r_buf_write (buffer, bytes, sizeof (bytes)) == sizeof (bytes);
-}
-
-static bool rprj_artifact_write_le64(RBuffer *buffer, ut64 value) {
-	ut8 bytes[sizeof (ut64)];
-	r_write_le64 (bytes, value);
-	return r_buf_write (buffer, bytes, sizeof (bytes)) == sizeof (bytes);
-}
-
-static bool rprj_artifact_write_addr(RBuffer *buffer, R2ProjectAddr addr) {
-	return rprj_artifact_write_le32 (buffer, addr.mod)
-		&& rprj_artifact_write_le64 (buffer, addr.delta);
-}
-
-static bool rprj_artifact_write_string(RPrjCursor *cur, const char *string) {
-	const ut32 index = rprj_st_append (cur->st, string);
-	return index != UT32_MAX && rprj_artifact_write_le32 (cur->b, index);
-}
-
-static bool rprj_artifact_write(RPrjCursor *cur) {
-	bool success = false;
-	r_th_lock_enter (cur->core->lock);
-	const size_t set_count = r_core_anal_artifact_set_count (cur->core);
-	if (set_count > RPRJ_ARTIFACT_MAX_SETS
-			|| !rprj_artifact_write_le32 (cur->b, RPRJ_ARTIFACT_SCHEMA_VERSION)
-			|| !rprj_artifact_write_le32 (cur->b, (ut32)set_count)) {
-		goto beach;
-	}
-	size_t set_index;
-	for (set_index = 0; set_index < set_count; set_index++) {
-		RCoreAnalArtifactSetView set;
-		if (!r_core_anal_artifact_set_view (cur->core, set_index, &set)
-				|| set.comment_count > UT32_MAX || set.flag_count > UT32_MAX
-				|| set.xref_count > UT32_MAX) {
-			goto beach;
-		}
-		if (!rprj_artifact_write_string (cur, set.provider_id)
-				|| !rprj_artifact_write_string (cur, set.domain_id)
-				|| !rprj_artifact_write_addr (cur->b, rprj_mod_addr (cur, set.scope_id))
-				|| !rprj_artifact_write_le32 (cur->b, (ut32)set.comment_count)
-				|| !rprj_artifact_write_le32 (cur->b, (ut32)set.flag_count)
-				|| !rprj_artifact_write_le32 (cur->b, (ut32)set.xref_count)) {
-			goto beach;
-		}
-		size_t index;
-		for (index = 0; index < set.comment_count; index++) {
-			RCoreAnalArtifactComment comment;
-			if (!r_core_anal_artifact_comment_view (cur->core, set_index, index, &comment)) {
-				goto beach;
-			}
-			if (!rprj_artifact_write_addr (cur->b, rprj_mod_addr (cur, comment.addr))
-					|| !rprj_artifact_write_string (cur, comment.prefix)
-					|| !rprj_artifact_write_string (cur, comment.text)) {
-				goto beach;
-			}
-		}
-		for (index = 0; index < set.flag_count; index++) {
-			RCoreAnalArtifactFlag flag;
-			if (!r_core_anal_artifact_flag_view (cur->core, set_index, index, &flag)) {
-				goto beach;
-			}
-			if (!rprj_artifact_write_string (cur, flag.name)
-					|| !rprj_artifact_write_addr (cur->b, rprj_mod_addr (cur, flag.addr))
-					|| !rprj_artifact_write_le64 (cur->b, flag.size)) {
-				goto beach;
-			}
-		}
-		for (index = 0; index < set.xref_count; index++) {
-			RAnalRef xref;
-			if (!r_core_anal_artifact_xref_view (cur->core, set_index, index, &xref)) {
-				goto beach;
-			}
-			if (!rprj_artifact_write_addr (cur->b, rprj_mod_addr (cur, xref.at))
-					|| !rprj_artifact_write_addr (cur->b, rprj_mod_addr (cur, xref.addr))
-					|| !rprj_artifact_write_le32 (cur->b, xref.type)) {
-				goto beach;
-			}
-		}
-	}
-	success = true;
-beach:
-	r_th_lock_leave (cur->core->lock);
-	return success;
 }
 
 static ut32 rprj_color_index(RVecPrjColor *colors, RColor *color) {
@@ -480,32 +392,13 @@ static void rprj_strs_write_entry(RPrjCursor *cur) {
 }
 
 typedef void (*RPrjEntryWriter)(RPrjCursor *cur);
-typedef bool (*RPrjFallibleEntryWriter)(RPrjCursor *cur);
 
 static void rprj_write_entry(RPrjCursor *cur, ut32 type, RPrjEntryWriter fn) {
 	ut64 at;
 	if (rprj_entry_begin (cur->b, &at, type, 1)) {
 		fn (cur);
-		(void)rprj_entry_end (cur->b, at);
+		rprj_entry_end (cur->b, at);
 	}
-}
-
-static bool rprj_write_entry_fallible(RPrjCursor *cur, ut32 type, RPrjFallibleEntryWriter fn) {
-	ut64 at = r_buf_at (cur->b);
-	if (!rprj_entry_begin (cur->b, &at, type, 1)) {
-		return false;
-	}
-	if (!fn (cur)) {
-		r_buf_resize (cur->b, at);
-		r_buf_seek (cur->b, at, SEEK_SET);
-		return false;
-	}
-	if (!rprj_entry_end (cur->b, at)) {
-		r_buf_resize (cur->b, at);
-		r_buf_seek (cur->b, at, SEEK_SET);
-		return false;
-	}
-	return true;
 }
 
 static bool r_core_newprj_save(RCore *core, const char *file) {
@@ -529,9 +422,6 @@ static bool r_core_newprj_save(RCore *core, const char *file) {
 	r_th_lock_enter (core->anal->lock);
 	r_th_lock_enter (core->flags->lock);
 	rprj_write_entry (&cur, RPRJ_FUNC, rprj_function_write);
-	if (!rprj_write_entry_fallible (&cur, RPRJ_ARTF, rprj_artifact_write)) {
-		cur.failed = true;
-	}
 	if (!cur.failed) {
 		rprj_write_entry (&cur, RPRJ_FLAG, rprj_flag_write);
 		rprj_write_entry (&cur, RPRJ_CMNT, rprj_cmnt_write);

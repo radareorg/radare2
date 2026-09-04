@@ -8,7 +8,6 @@ r_core_sources += [
   'prompt.c',
   'citem.c',
   'canal.c',
-  'canal_artifacts.c',
   'carg.c',
   'cbin.c',
   'cmd_print_list.c',

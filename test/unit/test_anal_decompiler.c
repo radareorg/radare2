@@ -27,12 +27,9 @@ typedef struct {
 
 typedef struct {
 	int calls;
-	bool view_ok;
-	bool image_view_ok;
+	bool image_ok;
 	bool advisory_edge_ok;
 	bool owned_bounded_image;
-	bool exact_string_copy_ok;
-	bool truncation_refused;
 	ut64 function_addr;
 	ut64 revision_identity;
 	int bits;
@@ -60,101 +57,56 @@ typedef struct {
 static DecompilerTestContext *decompiler_ctx;
 static CoreDecompilerTestContext *core_decompiler_ctx;
 
-static bool invoke_decompiler(const RAnalFunctionSnapshot *snapshot, void *user) {
-	InvokeDecompilerContext *invoke = user;
-	invoke->result = r_anal_decompile (invoke->anal, snapshot);
-	return invoke->result != NULL;
-}
-
 static bool snapshot_probe(const RAnalFunctionSnapshot *snapshot, void *user) {
 	SnapshotProbe *probe = user;
-	RAnalFunctionSnapshotView view;
 	probe->calls++;
-	probe->view_ok = r_anal_function_snapshot_view (snapshot, &view);
-	if (!probe->view_ok) {
-		return false;
-	}
-	probe->function_addr = view.function_addr;
-	probe->revision_identity = view.revision_identity;
-	probe->bits = view.bits;
-	probe->endian = view.endian;
-	probe->owned_bounded_image = view.capabilities
+	probe->function_addr = snapshot->function_addr;
+	probe->revision_identity = snapshot->revision_identity;
+	probe->bits = snapshot->bits;
+	probe->endian = snapshot->endian;
+	probe->owned_bounded_image = snapshot->capabilities
 		& R_ANAL_FUNCTION_SNAPSHOT_CAP_OWNED_BOUNDED_FUNCTION_IMAGE;
-	RAnalSnapshotBlockView block;
-	probe->image_view_ok = view.num_blocks == 1
-		&& r_anal_function_snapshot_block_view (snapshot, 0, &block)
-		&& block.addr == view.function_addr && block.size == 1
-		&& r_anal_function_snapshot_block_bytes (snapshot, 0, 0,
-			&probe->first_byte, 1);
-	RAnalSnapshotSuccessorView successor;
-	ut64 external_exit = 0;
-	probe->advisory_edge_ok = block.num_successors == 1
-		&& r_anal_function_snapshot_successor_view (snapshot, 0, 0, &successor)
-		&& successor.kind == R_ANAL_SNAPSHOT_SUCCESSOR_DIRECT
-		&& successor.target_addr == 2 && successor.external
-		&& view.num_external_exits == 1
-		&& r_anal_function_snapshot_external_exit (snapshot, 0, &external_exit)
-		&& external_exit == 2;
+	const RAnalFunctionImageSnapshot *image = &snapshot->image;
+	const RAnalSnapshotBlock *block = image->num_blocks == 1? &image->blocks[0]: NULL;
+	probe->image_ok = block && block->addr == snapshot->function_addr
+		&& block->size == 1 && block->bytes;
+	if (probe->image_ok) {
+		probe->first_byte = block->bytes[0];
+	}
+	probe->advisory_edge_ok = probe->image_ok && block->num_successors == 1
+		&& block->successors[0].kind == R_ANAL_SNAPSHOT_SUCCESSOR_DIRECT
+		&& block->successors[0].target_addr == 2 && block->successors[0].external
+		&& image->num_external_exits == 1 && image->external_exits[0] == 2;
 	free (probe->function_name);
 	free (probe->arch_id);
 	free (probe->cpu_id);
 	free (probe->calling_convention);
-	probe->function_name = malloc (view.function_name_length + 1);
-	probe->arch_id = malloc (view.arch_id_length + 1);
-	probe->cpu_id = malloc (view.cpu_id_length + 1);
-	RAnalFunctionInterfaceSnapshotView interface;
-	if (!r_anal_function_snapshot_interface_view (snapshot, &interface)) {
-		return false;
-	}
-	probe->calling_convention = malloc (interface.calling_convention_length + 1);
-	char *truncated = malloc (view.function_name_length? view.function_name_length: 1);
-	probe->truncation_refused = truncated
-		&& !r_anal_function_snapshot_function_name (snapshot, truncated,
-			view.function_name_length);
-	free (truncated);
-	probe->exact_string_copy_ok = probe->function_name && probe->arch_id
-		&& probe->cpu_id && probe->calling_convention
-		&& r_anal_function_snapshot_function_name (snapshot,
-			probe->function_name, view.function_name_length + 1)
-		&& r_anal_function_snapshot_arch_id (snapshot,
-			probe->arch_id, view.arch_id_length + 1)
-		&& r_anal_function_snapshot_cpu_id (snapshot,
-			probe->cpu_id, view.cpu_id_length + 1)
-		&& r_anal_function_snapshot_interface_calling_convention (snapshot,
-			probe->calling_convention, interface.calling_convention_length + 1)
-		&& !probe->function_name[view.function_name_length]
-		&& !probe->arch_id[view.arch_id_length]
-		&& !probe->cpu_id[view.cpu_id_length]
-		&& !probe->calling_convention[interface.calling_convention_length];
-	return probe->exact_string_copy_ok && probe->truncation_refused;
+	probe->function_name = strdup (r_str_get (snapshot->function_name));
+	probe->arch_id = strdup (r_str_get (snapshot->arch_id));
+	probe->cpu_id = strdup (r_str_get (snapshot->cpu_id));
+	probe->calling_convention = strdup (
+		r_str_get (snapshot->function_interface.calling_convention));
+	return probe->image_ok;
 }
 
 static bool analyzed_snapshot_probe(const RAnalFunctionSnapshot *snapshot, void *user) {
 	AnalyzedSnapshotProbe *probe = user;
-	RAnalFunctionSnapshotView view;
+	const RAnalFunctionImageSnapshot *image = &snapshot->image;
 	probe->calls++;
-	if (!r_anal_function_snapshot_view (snapshot, &view)) {
-		return false;
-	}
 	size_t i;
-	for (i = 0; i < view.num_blocks; i++) {
-		RAnalSnapshotBlockView block;
-		if (r_anal_function_snapshot_block_view (snapshot, i, &block)
-			&& block.addr == view.function_addr && block.size > 0) {
-			probe->copied_decoder_block = r_anal_function_snapshot_block_bytes (
-				snapshot, i, 0, &probe->first_byte, 1);
-			RAnalSnapshotSuccessorView first;
-			RAnalSnapshotSuccessorView second;
-			probe->decoder_topology_ok = view.num_blocks == 3
-				&& view.num_external_exits == 0 && block.num_successors == 2
-				&& r_anal_function_snapshot_successor_view (
-					snapshot, i, 0, &first)
-				&& r_anal_function_snapshot_successor_view (
-					snapshot, i, 1, &second)
-				&& first.target_addr == view.function_addr + 3
-				&& first.kind == R_ANAL_SNAPSHOT_SUCCESSOR_DIRECT
-				&& second.target_addr == view.function_addr + 2
-				&& second.kind == R_ANAL_SNAPSHOT_SUCCESSOR_FALLTHROUGH;
+	for (i = 0; i < image->num_blocks; i++) {
+		const RAnalSnapshotBlock *block = &image->blocks[i];
+		if (block->addr == snapshot->function_addr && block->size > 0) {
+			probe->copied_decoder_block = block->bytes != NULL;
+			if (probe->copied_decoder_block) {
+				probe->first_byte = block->bytes[0];
+			}
+			probe->decoder_topology_ok = image->num_blocks == 3
+				&& image->num_external_exits == 0 && block->num_successors == 2
+				&& block->successors[0].target_addr == snapshot->function_addr + 3
+				&& block->successors[0].kind == R_ANAL_SNAPSHOT_SUCCESSOR_DIRECT
+				&& block->successors[1].target_addr == snapshot->function_addr + 2
+				&& block->successors[1].kind == R_ANAL_SNAPSHOT_SUCCESSOR_FALLTHROUGH;
 			return probe->copied_decoder_block && probe->decoder_topology_ok;
 		}
 	}
@@ -173,10 +125,22 @@ static bool switch_ownership_probe(RAnalFunction *fcn, RAnalBlock *block,
 
 static bool snapshot_view_probe(const RAnalFunctionSnapshot *snapshot, void *user) {
 	int *calls = user;
-	RAnalFunctionSnapshotView view;
 	(*calls)++;
-	return r_anal_function_snapshot_view (snapshot, &view)
-		&& view.num_blocks > 0;
+	return snapshot->image.num_blocks > 0;
+}
+
+// Every probe below is now take, read, free: the snapshot belongs to the
+// caller and nothing is held while it is read.
+static bool core_snapshot_probe(RCore *core, ut64 addr,
+		bool (*probe)(const RAnalFunctionSnapshot *, void *), void *user,
+		const char **reason) {
+	RAnalFunctionSnapshot *snapshot = r_core_function_snapshot_take (core, addr, reason);
+	if (!snapshot) {
+		return false;
+	}
+	const bool result = probe (snapshot, user);
+	r_anal_function_snapshot_free (snapshot);
+	return result;
 }
 
 static void snapshot_probe_fini(SnapshotProbe *probe) {
@@ -266,18 +230,14 @@ static int core_decompiler_score(RAnal *anal) {
 
 static RCodeMeta *core_decompile(const RAnalFunctionSnapshot *snapshot) {
 	core_decompiler_ctx->decompile_calls++;
-	RAnalFunctionSnapshotView view;
-	core_decompiler_ctx->view_ok = r_anal_function_snapshot_view (snapshot, &view);
-	if (!core_decompiler_ctx->view_ok) {
+	core_decompiler_ctx->view_ok = snapshot != NULL;
+	if (!snapshot) {
 		return NULL;
 	}
-	core_decompiler_ctx->last_function_addr = view.function_addr;
+	core_decompiler_ctx->last_function_addr = snapshot->function_addr;
 	free (core_decompiler_ctx->last_function_name);
-	core_decompiler_ctx->last_function_name = malloc (view.function_name_length + 1);
-	if (!core_decompiler_ctx->last_function_name
-		|| !r_anal_function_snapshot_function_name (snapshot,
-			core_decompiler_ctx->last_function_name,
-			view.function_name_length + 1)) {
+	core_decompiler_ctx->last_function_name = strdup (r_str_get (snapshot->function_name));
+	if (!core_decompiler_ctx->last_function_name) {
 		return NULL;
 	}
 	return core_decompiler_ctx->fail? NULL: r_codemeta_new (core_decompiler_ctx->last_function_name);
@@ -372,8 +332,12 @@ static bool test_decompile_invokes_provider_once_and_returns_owned_result(void) 
 	InvokeDecompilerContext invoke = {
 		.anal = anal,
 	};
-	mu_assert_true (r_core_function_snapshot_at (
-		core, fcn->addr, invoke_decompiler, &invoke, NULL), "invoke snapshot provider");
+	RAnalFunctionSnapshot *snapshot = r_anal_function_snapshot_take (
+		invoke.anal, fcn->addr, NULL);
+	mu_assert_notnull (snapshot, "take snapshot for the provider");
+	invoke.result = r_anal_decompile (invoke.anal, snapshot);
+	r_anal_function_snapshot_free (snapshot);
+	mu_assert_notnull (invoke.result, "invoke snapshot provider");
 	RCodeMeta *result = invoke.result;
 	mu_assert_notnull (result, "decompiler result");
 	mu_assert_ptreq (result, ctx.returned, "return caller-owned callback allocation unchanged");
@@ -437,7 +401,7 @@ static bool test_core_pdd_routes_analysis_decompiler(void) {
 	out = r_core_cmd_str (core, "pdd");
 	mu_assert_streq (out, "current\n", "pdd resolves current function");
 	mu_assert_eq (ctx.decompile_calls, 1, "current function invokes provider once");
-	mu_assert_true (ctx.view_ok, "provider opens borrowed snapshot view");
+	mu_assert_true (ctx.view_ok, "provider reads the snapshot it was handed");
 	mu_assert_eq (ctx.last_function_addr, current->addr, "current snapshot address");
 	mu_assert_streq (ctx.last_function_name, "current", "current snapshot name");
 	mu_assert_eq (core->rc, 0, "current function decompilation succeeds");
@@ -508,25 +472,32 @@ static bool test_core_snapshot_transaction_owns_lifetime_and_rejects_untrusted_i
 	mu_assert_notnull (source_block, "get source block");
 	source_block->jump = 2;
 	SnapshotProbe probe = {0};
-	mu_assert_true (r_core_function_snapshot_at (
+	mu_assert_true (core_snapshot_probe (
 		core, fcn->addr, snapshot_probe, &probe, NULL), "visit opaque snapshot");
 	mu_assert_eq (probe.calls, 1, "callback runs exactly once");
-	mu_assert_true (probe.view_ok, "callback opens read-only view");
 	mu_assert_true (probe.owned_bounded_image, "snapshot owns bounded exact-read bytes");
-	mu_assert_true (probe.image_view_ok, "indexed image accessor copies block bytes");
-	mu_assert_eq (probe.first_byte, nop, "snapshot callback observes copied source byte");
-	mu_assert_true (probe.advisory_edge_ok, "indexed accessor exposes advisory source edge");
-	mu_assert_true (probe.exact_string_copy_ok, "owned strings copy with exact NUL bounds");
-	mu_assert_true (probe.truncation_refused, "owned string copy refuses truncated output");
-	mu_assert_eq (probe.function_addr, fcn->addr, "view preserves function address");
+	mu_assert_true (probe.image_ok, "snapshot owns the block bytes it captured");
+	mu_assert_eq (probe.first_byte, nop, "probe observes the copied source byte");
+	mu_assert_true (probe.advisory_edge_ok, "snapshot carries the advisory source edge");
+	mu_assert_eq (probe.function_addr, fcn->addr, "snapshot preserves function address");
 	mu_assert_streq (probe.cpu_id, "snapshot-baseline", "snapshot owns active CPU id");
 	mu_assert_streq (probe.function_name, "owned", "callback deep-copies borrowed name");
 	ut64 first_revision = probe.revision_identity;
+
+	// The snapshot is the caller's: it survives the capture and keeps reading
+	// the state it captured, whatever the analysis does next.
+	RAnalFunctionSnapshot *held = r_core_function_snapshot_take (core, fcn->addr, NULL);
+	mu_assert_notnull (held, "hold a snapshot past its capture");
 	mu_assert_true (r_anal_function_rename (fcn, "renamed"), "rename live function");
 	r_arch_config_set_cpu (active_config, "snapshot-mutated");
-	mu_assert_streq (probe.function_name, "owned", "copied callback data outlives snapshot");
-	mu_assert_streq (probe.cpu_id, "snapshot-baseline", "copied machine tuple outlives snapshot");
-	mu_assert_true (r_core_function_snapshot_at (
+	mu_assert_streq (held->function_name, "owned", "held snapshot outlives the rename");
+	mu_assert_streq (held->cpu_id, "snapshot-baseline",
+		"held snapshot outlives the machine-tuple change");
+	mu_assert_eq (held->image.blocks[0].bytes[0], nop, "held snapshot owns its bytes");
+	r_anal_function_snapshot_free (held);
+	mu_assert_streq (probe.function_name, "owned", "copied probe data outlives the snapshot");
+	mu_assert_streq (probe.cpu_id, "snapshot-baseline", "copied machine tuple outlives the snapshot");
+	mu_assert_true (core_snapshot_probe (
 		core, fcn->addr, snapshot_probe, &probe, NULL), "visit renamed snapshot");
 	mu_assert_eq (probe.calls, 2, "second transaction invokes callback once");
 	mu_assert_streq (probe.function_name, "renamed", "next transaction sees live rename");
@@ -538,7 +509,7 @@ static bool test_core_snapshot_transaction_owns_lifetime_and_rejects_untrusted_i
 	RIOPlugin *saved_plugin = core->io->desc->plugin;
 	debug_plugin.isdbg = true;
 	core->io->desc->plugin = &debug_plugin;
-	mu_assert_false (r_core_function_snapshot_at (
+	mu_assert_false (core_snapshot_probe (
 		core, fcn->addr, snapshot_probe, &probe, NULL), "debug IO is rejected");
 	mu_assert_eq (probe.calls, 2, "debug refusal does not invoke callback");
 	core->io->desc->plugin = saved_plugin;
@@ -550,7 +521,7 @@ static bool test_core_snapshot_transaction_owns_lifetime_and_rejects_untrusted_i
 	fcn = snapshot_function_new (core, "short", 0, 2);
 	mu_assert_notnull (fcn, "create short-read function");
 	probe = (SnapshotProbe) {0};
-	mu_assert_false (r_core_function_snapshot_at (
+	mu_assert_false (core_snapshot_probe (
 		core, fcn->addr, snapshot_probe, &probe, NULL), "short exact read is rejected");
 	mu_assert_eq (probe.calls, 0, "short-read refusal does not invoke callback");
 	r_core_free (core);
@@ -560,7 +531,7 @@ static bool test_core_snapshot_transaction_owns_lifetime_and_rejects_untrusted_i
 	fcn = snapshot_function_new (core, "oversized", 0, 16 * 1024 * 1024 + 1);
 	mu_assert_notnull (fcn, "create oversized function image");
 	probe = (SnapshotProbe) {0};
-	mu_assert_false (r_core_function_snapshot_at (
+	mu_assert_false (core_snapshot_probe (
 		core, fcn->addr, snapshot_probe, &probe, NULL), "source-byte limit is rejected");
 	mu_assert_eq (probe.calls, 0, "limit refusal does not invoke callback");
 	r_core_free (core);
@@ -586,7 +557,7 @@ static bool test_core_snapshot_transaction_captures_analyzed_real_bytes(void) {
 	mu_assert_notnull (fcn, "decoder analysis creates function");
 	mu_assert_true (!r_list_empty (fcn->bbs), "decoder analysis creates CFG block");
 	AnalyzedSnapshotProbe probe = {0};
-	mu_assert_true (r_core_function_snapshot_at (core, addr,
+	mu_assert_true (core_snapshot_probe (core, addr,
 		analyzed_snapshot_probe, &probe, NULL), "capture analyzed function snapshot");
 	mu_assert_eq (probe.calls, 1, "analyzed snapshot callback runs once");
 	mu_assert_true (probe.copied_decoder_block,
@@ -638,7 +609,7 @@ static bool test_overlapped_walk_keeps_one_switch_owner(void) {
 		"switch ownership names the indirect jump");
 	int snapshot_calls = 0;
 	const char *reason = NULL;
-	mu_assert_true (r_core_function_snapshot_at (
+	mu_assert_true (core_snapshot_probe (
 		core, addr, snapshot_view_probe, &snapshot_calls, &reason),
 		"capture coherent snapshot after overlapping analysis");
 	mu_assert_null (reason, "coherent snapshot has no refusal reason");
