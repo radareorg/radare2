@@ -20,6 +20,7 @@ typedef struct dwarf_parse_context_t {
 	HtUP *exact_function_links;
 	HtUP *exact_frame_pointer_proofs;
 	bool *exact_formal_records_ok;
+	HtUU/*<RBinDwarfDie *, remaining DIEs in exact CU>*/ *exact_die_remaining;
 	bool tree_exact;
 } Context;
 
@@ -232,21 +233,26 @@ static ut64 get_die_size(const RBinDwarfDie *die) {
  * @brief Parses array type entry signature into strbuf
  *
  * @param ctx
- * @param idx index of the current entry
+ * @param die array type entry
  * @param strbuf strbuf to store the type into
  * @return st32 -1 if error else 0
  */
-static void parse_array_type(Context *ctx, int idx, RStrBuf *strbuf) {
-	if (idx < 0 || idx >= ctx->count) {
+static void parse_array_type(Context *ctx, const RBinDwarfDie *die, RStrBuf *strbuf) {
+	if (!ctx || !ctx->exact_die_remaining || !die) {
 		return;
 	}
-	const RBinDwarfDie *die = &ctx->all_dies[idx++];
+	bool found = false;
+	const ut64 remaining = ht_uu_find (ctx->exact_die_remaining,
+		(ut64)(uintptr_t)die, &found);
+	if (!found || remaining < 2 || remaining > SIZE_MAX) {
+		return;
+	}
 
 	if (die->has_children) {
 		int child_depth = 1;
 		size_t j;
-		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
-			const RBinDwarfDie *child_die = &ctx->all_dies[j];
+		for (j = 1; child_depth > 0 && j < (size_t)remaining; j++) {
+			const RBinDwarfDie *child_die = &die[j];
 			// right now we skip non direct descendats of the structure
 			// can be also DW_TAG_suprogram for class methods or tag for templates
 			if (child_depth == 1 && child_die->tag == DW_TAG_subrange_type && child_die->attr_values) {
@@ -392,7 +398,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 		if (type_idx != -1) {
 			parse_type (ctx, attr_values[type_idx].reference, strbuf, size, visited);
 		}
-		parse_array_type (ctx, die - ctx->all_dies, strbuf);
+		parse_array_type (ctx, die, strbuf);
 		break;
 	case DW_TAG_const_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
@@ -1078,6 +1084,35 @@ static bool dwarf_cu_tree_is_exact(const RBinDwarfDie *dies, size_t count) {
 	return depth == 0;
 }
 
+static HtUU *dwarf_exact_die_remaining_new(const RBinDwarfDebugInfo *info) {
+	if (!info || !info->comp_units) {
+		return NULL;
+	}
+	HtUU *remaining = ht_uu_new0 ();
+	if (!remaining) {
+		return NULL;
+	}
+	const RBinDwarfCompUnit *unit;
+	R_VEC_FOREACH (info->comp_units, unit) {
+		const size_t count = RVecDwarfDie_length (unit->dies);
+		const RBinDwarfDie *dies = unit->dies? unit->dies->_start: NULL;
+		if (!dwarf_cu_tree_is_exact (dies, count)) {
+			continue;
+		}
+		size_t i;
+		for (i = 0; i < count; i++) {
+			const ut64 key = (ut64)(uintptr_t)&dies[i];
+			bool found = false;
+			ht_uu_find (remaining, key, &found);
+			if (found || !ht_uu_insert (remaining, key, (ut64)(count - i))) {
+				ht_uu_free (remaining);
+				return NULL;
+			}
+		}
+	}
+	return remaining;
+}
+
 static bool dwarf_direct_signature_iter_init(Context *ctx, const RBinDwarfDie *parent, R_OUT DwarfDirectSignatureIter *iter) {
 	size_t index;
 	if (!iter || !ctx->tree_exact
@@ -1350,6 +1385,60 @@ static bool dwarf_exact_named_type(const RBinDwarfDie *die) {
 	return count == 1;
 }
 
+static bool dwarf_array_bounds_are_exact(Context *ctx, const RBinDwarfDie *array) {
+	if (!ctx || !ctx->exact_die_remaining || !array || !array->has_children) {
+		return false;
+	}
+	bool found = false;
+	const ut64 remaining = ht_uu_find (ctx->exact_die_remaining,
+		(ut64)(uintptr_t)array, &found);
+	if (!found || remaining < 2 || remaining > SIZE_MAX) {
+		return false;
+	}
+	size_t dimensions = 0;
+	int child_depth = 1;
+	size_t i;
+	for (i = 1; child_depth > 0 && i < (size_t)remaining; i++) {
+		const RBinDwarfDie *child = &array[i];
+		if (!child->abbrev_code) {
+			child_depth--;
+			continue;
+		}
+		if (child_depth == 1) {
+			if (child->tag != DW_TAG_subrange_type || !child->attr_values) {
+				return false;
+			}
+			size_t bound_count = 0;
+			size_t lower_bound_count = 0;
+			const RBinDwarfAttrValue *value;
+			R_VEC_FOREACH (child->attr_values, value) {
+				if (value->attr_name == DW_AT_count
+					|| value->attr_name == DW_AT_upper_bound) {
+					bound_count++;
+					if (value->kind != DW_AT_KIND_CONSTANT
+						|| (value->attr_name == DW_AT_upper_bound
+							&& value->uconstant == UT64_MAX)) {
+						return false;
+					}
+				} else if (value->attr_name == DW_AT_lower_bound) {
+					lower_bound_count++;
+					if (value->kind != DW_AT_KIND_CONSTANT || value->uconstant) {
+						return false;
+					}
+				}
+			}
+			if (bound_count != 1 || lower_bound_count > 1) {
+				return false;
+			}
+			dimensions++;
+		}
+		if (child->has_children) {
+			child_depth++;
+		}
+	}
+	return child_depth == 0 && dimensions > 0;
+}
+
 static bool dwarf_type_reference_is_exact(Context *ctx, ut64 offset) {
 	SetU *visited = set_u_new ();
 	if (!visited) {
@@ -1392,6 +1481,12 @@ static bool dwarf_type_reference_is_exact(Context *ctx, ut64 offset) {
 		case DW_TAG_pointer_type:
 			if (!type_attr) {
 				exact = true;
+				goto beach;
+			}
+			offset = type_attr->reference;
+			break;
+		case DW_TAG_array_type:
+			if (!type_attr || !dwarf_array_bounds_are_exact (ctx, die)) {
 				goto beach;
 			}
 			offset = type_attr->reference;
@@ -1539,7 +1634,7 @@ static void parse_data_object_type_link(Context *ctx, const RBinDwarfDie *die) {
 	}
 	char *current = r_type_link_at (ctx->anal->sdb_types, address);
 	if (!current) {
-		(void)r_anal_types_set_link (
+		(void)r_anal_types_set_link_expression (
 			(RAnal *)ctx->anal, r_strbuf_get (&rendered), address);
 	}
 	free (current);
@@ -3668,6 +3763,7 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) 
 		exact_formal_records_ok = false;
 		goto beach;
 	}
+	HtUU *exact_die_remaining = dwarf_exact_die_remaining_new (info);
 	R_VEC_FOREACH (info->comp_units, unit) {
 		const size_t die_count = RVecDwarfDie_length (unit->dies);
 		HtUU *cu_die_indices = dwarf_cu_die_indices_new (
@@ -3686,6 +3782,7 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) 
 			.exact_function_links = exact_function_links,
 			.exact_frame_pointer_proofs = exact_frame_pointer_proofs,
 			.exact_formal_records_ok = &exact_formal_records_ok,
+			.exact_die_remaining = exact_die_remaining,
 			.tree_exact = cu_die_indices
 				&& dwarf_cu_tree_is_exact (unit->dies->_start, die_count),
 		};
@@ -3694,6 +3791,7 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) 
 		}
 		ht_uu_free (cu_die_indices);
 	}
+	ht_uu_free (exact_die_remaining);
 	r_arena_free (arena);
 beach:
 	if (exact_formal_records_ok) {
