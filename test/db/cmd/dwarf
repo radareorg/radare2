@@ -706,6 +706,7 @@ afvr @ 0x0048a1b0
 EOF
 EXPECT=<<EOF
 arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
 arg int prec @ r8
 var []uint8 dst @ rdx
 var int i @ rcx
