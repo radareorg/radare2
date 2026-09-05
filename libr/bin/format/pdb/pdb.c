@@ -1291,14 +1291,14 @@ static char *print_types(const RBinPdb *pdb, PJ *pj, const int mode) {
 			RStrBuf sb;
 			r_strbuf_init (&sb);
 			print_types_regular (ss, ss->types, &sb);
-			return r_strbuf_drain (&sb);
+			return r_strbuf_drain_nofree (&sb);
 		}
 		case 'j': print_types_json (pdb, pj, ss, ss->types); return NULL;
 		case 'r': {
 			RStrBuf sb;
 			r_strbuf_init (&sb);
 			print_types_format (ss, ss->types, &sb);
-			return r_strbuf_drain (&sb);
+			return r_strbuf_drain_nofree (&sb);
 		}
 		}
 	} else {
@@ -1395,7 +1395,7 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 		pj_end (pj);
 		return NULL;
 	}
-	return r_strbuf_drain (&sb);
+	return r_strbuf_drain_nofree (&sb);
 }
 
 
