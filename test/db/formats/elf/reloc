@@ -872,7 +872,7 @@ CMDS=<<EOF
 ir~__fentry__
 EOF
 EXPECT=<<EOF
-0x100000500 0x0000007d ADD_32 4     __fentry__ - 0x08000081
+0x100000b0f 0x0000007d ADD_32 4     __fentry__ - 0x08000081
 EOF
 RUN
 
@@ -955,5 +955,76 @@ EOF
 EXPECT=<<EOF
 0051004000000000
 0001004000000000
+EOF
+RUN
+
+NAME=ELF: ET_REL NOBITS section is laid out past the file image, not over the next section
+FILE=bins/elf/random_39855/random_39855.oo
+CMDS=<<EOF
+iS~NOBITS
+iS~PROGBITS .rodata$
+is~crc32_tab
+EOF
+EXPECT=<<EOF
+6   0x00012af8     0x0 0x08012af8   0x400 -rw- 0x3   NOBITS   .bss
+7   0x000057f8   0x168 0x080057f8   0x168 -r-- 0x2   PROGBITS .rodata
+9   0x00012af8 0x08012af8 LOCAL  OBJ    1024     crc32_tab
+EOF
+RUN
+
+NAME=ELF: ET_REL adrp/add to a .bss symbol lands in the bss map under a custom base
+FILE=bins/elf/random_39855/random_39855.oo
+ARGS=-B 0x1000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pd 2 @ 0x1168
+om~mmap..bss[4,6]
+EOF
+EXPECT=<<EOF
+            0x00001168      890000d0       adrp x9, 0x13000
+            0x0000116c      29e12b91       add x9, x9, 0xaf8
+0x00013af8 0x00013ef7
+EOF
+RUN
+
+NAME=ELF: ET_REL import slots stay below the NOBITS block
+FILE=bins/elf/radare2.c.obj
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[4,6]
+iS~NOBITS
+is~rabin_cmd
+EOF
+EXPECT=<<EOF
+0x080384db 0x08040e2a
+4   0x00040e40      0x0 0x08040e40  0x618a0 -rw- 0x3   NOBITS   .bss
+8   0x00040e40 0x08040e40 LOCAL  OBJ    8          rabin_cmd
+EOF
+RUN
+
+NAME=ELF: ET_REL import slots sit below the .bss flag under a custom base
+FILE=bins/elf/test.ko
+ARGS=-B 0x100000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[4,6]
+f~section..bss
+EOF
+EXPECT=<<EOF
+0x100000b0f 0x100000b5e
+0x100001050 0 section..bss
+EOF
+RUN
+
+NAME=ELF: ELF32 ET_REL NOBITS section is laid out past the import slots
+FILE=bins/elf/pngrutil_o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+iS~NOBITS
+iS~PROGBITS .rodata$
+om~.got.r2[4,6]
+EOF
+EXPECT=<<EOF
+4   0x00009a83     0x0 0x08009a83     0x0 -rw- 0x3   NOBITS   .bss
+5   0x000055c8   0xe64 0x080055c8   0xe64 -r-- 0x2   PROGBITS .rodata
+0x08008703 0x080090be
 EOF
 RUN
