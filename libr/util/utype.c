@@ -305,7 +305,6 @@ R_API ut64 r_type_get_bitsize(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
 		return mt && !strcmp (mt, "func")? type_ptr_bitsize (TDB): 0;
 	}
 	if (!strcmp (t, "enum")) {
-		// the declared width when it was recorded; C makes an enum int-sized otherwise
 		const ut64 size = sdb_num_getf (TDB, NULL, "type.%s.size", tmptype);
 		return size? size: 32;
 	}
