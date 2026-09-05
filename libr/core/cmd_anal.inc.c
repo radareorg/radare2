@@ -15186,6 +15186,10 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	const bool anal_vars = r_config_get_b (core->config, "anal.vars");
 	const bool anal_calls = r_config_get_b (core->config, "anal.calls");
 	const int anal_symsort = r_config_get_i (core->config, "anal.symsort");
+	// best-practice hints are helpful for a manual command but just noise when
+	// analysis sweeps hundreds of data symbols (af@@@s), silence them here
+	const bool log_hints = r_config_get_b (core->config, "log.hints");
+	r_config_set_b (core->config, "log.hints", false);
 	r_cons_break_push (core->cons, NULL, NULL);
 	r_cons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
 
@@ -15301,6 +15305,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 			}
 		}
 	}
+	r_config_set_b (core->config, "log.hints", log_hints);
 	r_cons_break_pop (core->cons);
 	return true;
 }

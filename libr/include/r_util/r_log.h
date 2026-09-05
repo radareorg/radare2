@@ -31,10 +31,11 @@ typedef enum r_log_level {
 	R_LOG_LEVEL_ERROR = 1,
 	R_LOG_LEVEL_INFO = 2,
 	R_LOG_LEVEL_WARN = 3,
-	R_LOG_LEVEL_TODO = 4,
-	R_LOG_LEVEL_DEBUG = 5,
-	R_LOG_LEVEL_TRACE = 6,
-	R_LOG_LEVEL_LAST = 7,
+	R_LOG_LEVEL_HINT = 4, // best-practice hint, also gated by log.hints
+	R_LOG_LEVEL_TODO = 5,
+	R_LOG_LEVEL_DEBUG = 6,
+	R_LOG_LEVEL_TRACE = 7,
+	R_LOG_LEVEL_LAST = 8,
 } RLogLevel;
 
 typedef bool (*RLogCallback)(void *user, int type, const char *origin, const char *msg);
@@ -48,6 +49,7 @@ typedef struct r_log_t {
 	char *file;
 	char *filter;
 	bool color; // colorize depending on msg level
+	bool hints; // show R_LOG_HINT best-practice messages
 	bool quiet; // be quiet in the console
 	bool show_origin;
 	bool show_source;
@@ -78,6 +80,7 @@ R_API void r_log_del_callback(RLogCallback cb);
 #define R_LOG_INFO(f,...) do {} while(0)
 #define R_LOG_TODO(f,...) do {} while(0)
 #define R_LOG_WARN(f,...) do {} while(0)
+#define R_LOG_HINT(f,...) do {} while(0)
 #define R_LOG_DEBUG(f,...) do {} while(0)
 #else
 #define R_LOG(f,...) if (r_log_match (R_LOG_LEVEL_INFO, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_INFO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
@@ -86,6 +89,7 @@ R_API void r_log_del_callback(RLogCallback cb);
 #define R_LOG_INFO(f,...) if (r_log_match (R_LOG_LEVEL_INFO, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_INFO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
 #define R_LOG_TODO(f,...) if (r_log_match (R_LOG_LEVEL_TODO, R_LOG_ORIGIN)) {r_log_message(R_LOG_LEVEL_TODO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
 #define R_LOG_WARN(f,...) if (r_log_match (R_LOG_LEVEL_WARN, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_WARN, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_HINT(f,...) if (r_log_match (R_LOG_LEVEL_HINT, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_HINT, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
 #if WANT_DEBUGSTUFF
 #define R_LOG_DEBUG(f,...) if (r_log_match (R_LOG_LEVEL_DEBUG, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_DEBUG, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
 #else
@@ -99,6 +103,8 @@ R_API void r_log_set_colors(bool show_colors);
 R_API void r_log_show_origin(bool show_origin);
 R_API void r_log_show_source(bool show_source);
 R_API void r_log_set_quiet(bool be_quiet);
+R_API void r_log_set_hints(bool show_hints);
+R_API bool r_log_hints(void);
 R_API void r_log_set_level(RLogLevel level);
 R_API void r_log_show_ts(bool ts);
 R_API RLogLevel r_log_get_level(void);

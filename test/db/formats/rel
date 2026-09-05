@@ -26,7 +26,7 @@ RUN
 
 NAME=dump relocs
 FILE=bins/rel/d_profileNP.rel
-ARGS=-e bin.relocs.apply=true -B 0x80500000 -e log.level=5
+ARGS=-e bin.relocs.apply=true -B 0x80500000 -e log.level=6
 CMDS=
 EXPECT_ERR=<<EOF
 DEBUG: RCoreCmd: =!

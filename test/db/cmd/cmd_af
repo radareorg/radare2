@@ -676,8 +676,8 @@ EXPECT=<<EOF
 1
 EOF
 EXPECT_ERR=<<EOF
-WARN: Analysis skipped on non-executable map at 0x00010000
-INFO: Fix perms with 'ompg +x' or ignore them with 'e anal.in=io.maps'
+HINT: Analysis skipped on non-executable map at 0x00010000
+HINT: Fix perms with 'ompg +x' or ignore them with 'e anal.in=io.maps'
 EOF
 RUN
 
