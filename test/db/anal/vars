@@ -769,3 +769,43 @@ arg double f1 @ xmm0
 arg double f2 @ xmm1
 EOF
 RUN
+
+NAME=a declared struct takes over the recovered var inside it
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"td struct pair {short lo; short hi;};"
+wx 8845ed897decc3
+af
+afvb
+afvt var_14h pair
+afvb
+afvx
+EOF
+EXPECT=<<EOF
+var int8_t var_13h @ rbp-0x13
+var int32_t var_14h @ rbp-0x14
+var pair var_14h @ rbp-0x14
+afvR
+      arg1  0x3
+   var_14h
+afvW
+      arg1
+   var_14h  0x3
+EOF
+RUN
+
+NAME=a declared scalar leaves its neighbours alone
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 897dec8975e8c3
+af
+afvt var_14h int32_t
+afvb
+EOF
+EXPECT=<<EOF
+var int32_t var_14h @ rbp-0x14
+var int32_t var_18h @ rbp-0x18
+EOF
+RUN
