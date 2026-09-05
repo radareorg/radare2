@@ -3943,6 +3943,54 @@ static bool dwarf_exact_formal_record_parse(char *serialized,
 	return true;
 }
 
+/* Give a formal's DWARF stack record to the slot recovery already found.
+ *
+ * By the time DWARF is integrated the function can hold two machine facts
+ * about a formal: a register variable, named after the formal by the
+ * signature, whose accesses include the store that spills it, and the
+ * anonymous stack variable that store writes. Those accesses are the link
+ * between the register and its home, and a consumer that classifies the slot
+ * as the formal's home reads exactly that link. The record adds the slot's
+ * type and identity; it must not cost the link.
+ *
+ * So the register variable stays. The slot takes the record's type, and the
+ * record's name only when nothing else holds it: names are unique within a
+ * function and the register variable already carries this one. Deleting the
+ * register variable to free the name, which this code once did, discarded
+ * the spill accesses and left the slot unclassifiable. The slot is marked an
+ * argument only where the exact-formal promotion still needs the mark: an
+ * exact record whose spill the machine has not already proven, or a record
+ * no register variable answers for. */
+static RAnalVar *dwarf_integrate_stack_var(RAnal *anal, RAnalFunction *fcn, char kind, int delta, const char *type, const char *var_name, bool is_arg, int arg_index) {
+	RAnalVar *named = r_anal_function_get_var_byname (fcn, var_name);
+	RAnalVar *var = r_anal_function_get_var (fcn, kind, delta);
+	const bool spilled_from_register = named && named != var
+		&& named->isarg && named->kind == R_ANAL_VAR_KIND_REG
+		&& var && r_anal_var_get_dst_var (named) == var;
+	const bool mark_arg = is_arg && !spilled_from_register
+		&& (arg_index >= 0 || !named || named == var);
+	if (var) {
+		r_anal_var_set_type (anal, var, type);
+		if ((!named || named == var) && strcmp (var->name, var_name)) {
+			(void)r_anal_var_rename (anal, var, var_name);
+		}
+		if (mark_arg) {
+			var->isarg = true;
+		}
+		return var;
+	}
+	char *fresh_name = named
+		? r_anal_function_autoname_var (fcn, kind, mark_arg? "arg": "var", delta)
+		: NULL;
+	if (named && !fresh_name) {
+		return NULL;
+	}
+	var = r_anal_function_set_var (fcn, delta, kind, type, 4, mark_arg,
+		fresh_name? fresh_name: var_name);
+	free (fresh_name);
+	return var;
+}
+
 static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, const char *var_name, char *var_data, bool is_arg, int arg_index) {
 	R_RETURN_VAL_IF_FAIL (anal && flags && var_name && var_data, false);
 	char *extra = NULL;
@@ -3973,18 +4021,8 @@ static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, c
 			|| delta < INT_MIN || delta > INT_MAX) {
 			return false;
 		}
-		RAnalVar *named = arg_index >= 0
-			? r_anal_function_get_var_byname (fcn, var_name): NULL;
-		if (named) {
-			var = r_anal_function_get_var (fcn, *kind, (int)delta);
-		}
-		if (var && var != named) {
-			r_anal_var_set_type (anal, var, type);
-			var->isarg = true;
-		} else {
-			var = r_anal_function_set_var (
-				fcn, (int)delta, *kind, type, 4, is_arg, var_name);
-		}
+		var = dwarf_integrate_stack_var (anal, fcn, *kind, (int)delta, type,
+			var_name, is_arg, arg_index);
 	} else if (*kind == 'r') {
 		RRegItem *ri = r_reg_get (anal->reg, extra, -1);
 		if (!ri) {
@@ -3999,25 +4037,15 @@ static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, c
 			|| delta < INT_MIN || delta > INT_MAX) {
 			return false;
 		}
-		RAnalVar *named = arg_index >= 0
-			? r_anal_function_get_var_byname (fcn, var_name): NULL;
-		if (named) {
-			var = r_anal_function_get_var (fcn, *kind, (int)delta);
-		}
-		if (var && var != named) {
-			r_anal_var_set_type (anal, var, type);
-			var->isarg = true;
-		} else {
-			var = r_anal_function_set_var (
-				fcn, (int)delta, *kind, type, 4, is_arg, var_name);
-		}
+		var = dwarf_integrate_stack_var (anal, fcn, *kind, (int)delta, type,
+			var_name, is_arg, arg_index);
 	} else {
 		return false;
 	}
 	if (!var) {
 		return false;
 	}
-	if (is_arg) {
+	if (var->isarg) {
 		var->argnum = arg_index;
 		if (arg_index >= 0 && !r_anal_var_exact_formal_set (anal, var,
 				fcn->addr, arg_index, var->kind, var->delta, offset, var->type)) {
