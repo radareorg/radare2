@@ -1038,9 +1038,9 @@ static void aarch64_patch_branch(RIOBind *iob, RBinElfReloc *rel, ut64 at, st64 
 // where the loader put a bin-space address: its owner either moved by
 // baddr_shift or did not, and the maps of the file's own fd say which
 static ut64 elf_io_addr(RBinFile *bf, ELFOBJ *eo, ut64 v) {
-	RBinObject *bo = bf->bo;
-	const st64 shift = bo->baddr_shift;
-	if (!shift || !bo->info || !bo->info->has_va) {
+	RBinObject *o = bf->bo;
+	const st64 shift = o->baddr_shift;
+	if (!shift || !o->info || !o->info->has_va) {
 		return v;
 	}
 	const ut64 moved = v + shift;
@@ -1804,6 +1804,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			toc_base = elf_io_addr (bf, eo, t) + 0x8000;
 		}
 	}
+	const ut64 B = elf_io_addr (bf, eo, eo->baddr);
 	RBinElfReloc *reloc;
 	R_VEC_FOREACH (relocs, reloc) {
 		ut64 plt_entry_addr = vaddr;
@@ -1830,8 +1831,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		const bool resolved = sym_addr && sym_addr != UT64_MAX;
 		const ut64 raddr = resolved? sym_addr: vaddr;
 		_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
-			elf_io_addr (bf, eo, reloc->rva), raddr,
-			elf_io_addr (bf, eo, eo->baddr), plt_entry_addr, toc_base);
+			elf_io_addr (bf, eo, reloc->rva), raddr, B, plt_entry_addr, toc_base);
 		ptr = reloc_convert (eo, reloc, n_vaddr - bf->bo->baddr_shift, ret);
 		if (!ptr) {
 			continue;
