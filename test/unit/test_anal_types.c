@@ -744,6 +744,34 @@ static bool test_anal_cparse_multiline_fnptr(void) {
 	mu_end;
 }
 
+static bool test_anal_type_bitsize_struct_cycle(void) {
+	RAnal *anal = r_anal_new ();
+	Sdb *TDB = anal->sdb_types;
+	sdb_set (TDB, "int32_t", "type", 0);
+	sdb_num_set (TDB, "type.int32_t.size", 32, 0);
+	sdb_set (TDB, "self", "struct", 0);
+	sdb_set (TDB, "struct.self", "n,inner", 0);
+	sdb_set (TDB, "struct.self.n", "int32_t,0,0", 0);
+	sdb_set (TDB, "struct.self.inner", "self,4,0", 0);
+	mu_assert_eq (r_type_get_bitsize (TDB, "self"), 0, "A struct containing itself fails closed");
+	sdb_set (TDB, "ping", "struct", 0);
+	sdb_set (TDB, "struct.ping", "pong", 0);
+	sdb_set (TDB, "struct.ping.pong", "pong_t,0,0", 0);
+	sdb_set (TDB, "pong_t", "typedef", 0);
+	sdb_set (TDB, "typedef.pong_t", "pong", 0);
+	sdb_set (TDB, "pong", "struct", 0);
+	sdb_set (TDB, "struct.pong", "ping", 0);
+	sdb_set (TDB, "struct.pong.ping", "ping,0,0", 0);
+	mu_assert_eq (r_type_get_bitsize (TDB, "ping"), 0, "A struct cycle through a typedef fails closed");
+	sdb_set (TDB, "pair", "struct", 0);
+	sdb_set (TDB, "struct.pair", "a,b", 0);
+	sdb_set (TDB, "struct.pair.a", "int32_t,0,0", 0);
+	sdb_set (TDB, "struct.pair.b", "int32_t,4,0", 0);
+	mu_assert_eq (r_type_get_bitsize (TDB, "pair"), 64, "An acyclic struct still measures its members");
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_anal_get_base_type_struct);
 	mu_run_test (test_anal_save_base_type_struct);
@@ -762,6 +790,7 @@ int all_tests(void) {
 	mu_run_test (test_anal_get_base_type_enum);
 	mu_run_test (test_anal_save_base_type_enum);
 	mu_run_test (test_anal_get_base_type_typedef);
+	mu_run_test (test_anal_type_bitsize_struct_cycle);
 	mu_run_test (test_anal_save_base_type_typedef);
 	mu_run_test (test_anal_get_base_type_atomic);
 	mu_run_test (test_anal_save_base_type_atomic);

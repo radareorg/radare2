@@ -279,8 +279,11 @@ static ut64 type_ptr_bitsize(Sdb *R_NONNULL TDB) {
 	return bits? bits: 32;
 }
 
-R_API ut64 r_type_get_bitsize(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
-	R_RETURN_VAL_IF_FAIL (TDB && type, 0);
+// how many nested structs or unions a measurement follows before giving up
+#define TYPE_CHAIN_MAX 32
+
+// UT64_MAX means an aggregate reached itself; r_type_get_bitsize turns that into 0
+static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int depth) {
 	const char *type_view = type_skip_qualifiers (type);
 	if (strchr (type_view, '*')) {
 		return type_ptr_bitsize (TDB);
@@ -315,13 +318,23 @@ R_API ut64 r_type_get_bitsize(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
 			// still a typedef after the resolver bound means a cycle, so fail closed
 			const char *kind = sdb_const_get (TDB, resolved, 0);
 			if (!kind || strcmp (kind, "typedef")) {
-				size = r_type_get_bitsize (TDB, resolved);
+				size = type_bitsize (TDB, resolved, chain, depth);
 			}
 			free (resolved);
 		}
 		return size;
 	}
 	if (!strcmp (t, "struct") || !strcmp (t, "union")) {
+		int i;
+		for (i = 0; i < depth; i++) {
+			if (!strcmp (chain[i], tmptype)) {
+				return UT64_MAX;
+			}
+		}
+		if (depth >= TYPE_CHAIN_MAX) {
+			return UT64_MAX;
+		}
+		chain[depth] = tmptype;
 		const char *value = sdb_const_getf (TDB, NULL, "%s.%s", t, tmptype);
 		char *members = value? strdup (value): NULL;
 		char *next, *ptr = members;
@@ -342,13 +355,18 @@ R_API ut64 r_type_get_bitsize(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
 				if (elements == 0) {
 					elements = 1;
 				}
+				const ut64 member = type_bitsize (TDB, subtype, chain, depth + 1);
+				free (subtype);
+				if (member == UT64_MAX) {
+					ret = UT64_MAX;
+					break;
+				}
 				if (!strcmp (t, "struct")) {
-					ret += r_type_get_bitsize (TDB, subtype) * elements;
+					ret += member * elements;
 				} else {
-					ut64 sz = r_type_get_bitsize (TDB, subtype) * elements;
+					ut64 sz = member * elements;
 					ret = sz > ret ? sz : ret;
 				}
-				free (subtype);
 				ptr = next;
 			} while (next);
 			free (members);
@@ -356,6 +374,13 @@ R_API ut64 r_type_get_bitsize(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
 		return ret;
 	}
 	return 0;
+}
+
+R_API ut64 r_type_get_bitsize(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
+	R_RETURN_VAL_IF_FAIL (TDB && type, 0);
+	const char *chain[TYPE_CHAIN_MAX];
+	const ut64 bits = type_bitsize (TDB, type, chain, 0);
+	return bits == UT64_MAX? 0: bits;
 }
 
 static const char *type_aggregate_kind(Sdb *R_NONNULL TDB, const char *R_NONNULL type, const char **R_NONNULL name) {
