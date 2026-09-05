@@ -1477,7 +1477,6 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	}
 	RBinPdb pdb = { 0 };
 
-	pdb.cb_printf = r_cons_gprintf;
 	if (!r_bin_pdb_parser (&pdb, file)) {
 		if (jsonmode) {
 			pj_o (pj);
@@ -1509,8 +1508,16 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	if (jsonmode) {
 		pj_o (pj);
 	}
-	pdb.print_types (&pdb, pj, fmt_mode);
-	pdb.print_gvars (&pdb, baddr, pj, fmt_mode);
+	char *types = pdb.print_types (&pdb, pj, fmt_mode);
+	if (types) {
+		r_cons_print (core->cons, types);
+		free (types);
+	}
+	char *gvars = pdb.print_gvars (&pdb, baddr, pj, fmt_mode);
+	if (gvars) {
+		r_cons_print (core->cons, gvars);
+		free (gvars);
+	}
 	// Save compound types into SDB
 	r_parse_pdb_types (core->anal, &pdb);
 	char *decls = r_bin_get_types (core->bin);
