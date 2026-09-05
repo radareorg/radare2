@@ -285,8 +285,26 @@ static void parse_array_type(Context *ctx, int idx, RStrBuf *strbuf) {
 static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size, HtUP **visited) {
 	R_RETURN_VAL_IF_FAIL (strbuf, -1);
 	RBinDwarfDie *die = ht_up_find (ctx->die_map, offset, NULL);
-	if (!die || !die->attr_values) {
+	if (!die) {
 		return -1;
+	}
+	if (!die->attr_values) {
+		// A qualifier with no attribute at all qualifies `void`, which DWARF
+		// spells by omission; returning nothing here left `const void *`
+		// rendered as a bare ` *`.
+		switch (die->tag) {
+		case DW_TAG_const_type:
+			r_strbuf_append (strbuf, "void const");
+			return 0;
+		case DW_TAG_volatile_type:
+			r_strbuf_append (strbuf, "void volatile");
+			return 0;
+		case DW_TAG_restrict_type:
+			r_strbuf_append (strbuf, "void restrict");
+			return 0;
+		default:
+			return -1;
+		}
 	}
 	bool root = false;
 
