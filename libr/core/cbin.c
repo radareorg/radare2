@@ -4072,6 +4072,7 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 	}
 	if (IS_MODE_SET (mode)) {
 		r_flag_space_pop (core->flags);
+		r_core_anal_trycatch_index_reset (core);
 	}
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
