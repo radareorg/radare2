@@ -729,3 +729,43 @@ void sym.setwrap ();
 void sym.top_set ();
 EOF
 RUN
+
+NAME=the signature and the variable list agree no matter which one is read first
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4889f84889f04889d0c3
+af+ 0 myfcn
+afb+ 0 0 10
+afvr rdx arg0 int64_t
+afsq
+afvr
+afsq
+EOF
+EXPECT=<<EOF
+void myfcn (int64_t arg0);
+arg int64_t arg0 @ rdx
+void myfcn (int64_t arg0);
+EOF
+RUN
+
+NAME=float register arguments keep the same order in the signature and in the variable list
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4889f84889f04889d0c3
+af+ 0 myfcn
+afb+ 0 0 10
+afvr xmm1 f2 double
+afvr xmm0 f1 double
+afvr rdi i1 int64_t
+afsq
+afvr
+EOF
+EXPECT=<<EOF
+void myfcn (int64_t i1, double f1, double f2);
+arg int64_t i1 @ rdi
+arg double f1 @ xmm0
+arg double f2 @ xmm1
+EOF
+RUN

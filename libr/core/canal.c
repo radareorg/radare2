@@ -3930,7 +3930,8 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 
 	// Try plugin-based variable recovery first
 	if (r_anal_function_recover_vars_plugin (core->anal, fcn)) {
-		return;  // Done, skip ESIL-based recovery
+		r_anal_function_rename_default_args (fcn);
+		return;
 	}
 
 	// Fall back to existing ESIL-based recovery
@@ -3960,6 +3961,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	RVecIntPtr_fini (&ctx.reg_set);
 	free (ctx.buf);
 	fcn->stack = saved_stack;
+	r_anal_function_rename_default_args (fcn);
 }
 
 // Collect plugin-provided data refs for all functions and add them as xrefs
