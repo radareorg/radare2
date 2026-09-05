@@ -7,6 +7,48 @@
 
 #define VTABLE_BUFF_SIZE 10
 
+/* Chained Mach-O fixups are exposed as relocations even when bin.cache is
+ * disabled.  Reading the underlying file returns the encoded chain word (or
+ * zero from the swizzled buffer), not the pointer consumed by RTTI/vtables.
+ * Resolve only relocations with an in-binary target; imports deliberately
+ * remain unresolved. */
+static bool vtable_reloc_target(RAnal *anal, ut64 addr, ut64 *target) {
+	RBin *bin = anal? anal->binb.bin: NULL;
+	RBinObject *bo = bin && bin->cur? bin->cur->bo: NULL;
+	RVecRBinReloc *relocs = bo? bo->relocs: NULL;
+	if (!relocs) {
+		return false;
+	}
+	RBinReloc *items = R_VEC_START_ITER (relocs);
+	size_t lo = 0;
+	size_t hi = RVecRBinReloc_length (relocs);
+	while (lo < hi) {
+		const size_t mid = lo + ((hi - lo) >> 1);
+		if (items[mid].vaddr < addr) {
+			lo = mid + 1;
+		} else {
+			hi = mid;
+		}
+	}
+	RBinReloc *reloc = lo < RVecRBinReloc_length (relocs)? &items[lo]: NULL;
+	if (!reloc || reloc->vaddr != addr || reloc->import) {
+		return false;
+	}
+	if (reloc->symbol && reloc->symbol->vaddr != UT64_MAX) {
+		*target = reloc->symbol->vaddr + reloc->addend;
+		return true;
+	}
+	/* Itanium uses the top bit of a type-name pointer to mark a non-unique
+	 * name.  Mach-O chained rebase targets therefore legitimately appear as
+	 * negative st64 addends; only zero means that no local target was
+	 * supplied. */
+	if (reloc->addend != 0) {
+		*target = (ut64)reloc->addend;
+		return true;
+	}
+	return false;
+}
+
 #define VTABLE_READ_ADDR_FUNC(fname, read_fname, sz) \
 	static bool fname(RAnal *anal, ut64 addr, ut64 *buf) {\
 		ut8 tmp[sz];\
@@ -14,6 +56,7 @@
 			return false;\
 		}\
 		*buf = read_fname (tmp);\
+		vtable_reloc_target (anal, addr, buf);\
 		return true;\
 	}
 VTABLE_READ_ADDR_FUNC (vtable_read_addr_le8, r_read_le8, 1)
