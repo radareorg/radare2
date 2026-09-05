@@ -208,7 +208,7 @@ static void parse_structure(const RAnal *anal, STpiStream *ss, SType *type, RLis
 	}
 	char *sname = r_str_sanitize_sdb_key (name);
 	base_type->name = sname;
-	base_type->size = size;
+	base_type->size = (ut64)size * CHAR_BIT; // pdb records bytes, the base type holds bits
 	r_anal_save_base_type (anal, base_type);
 	if (to_free_name) {
 		R_FREE (name);

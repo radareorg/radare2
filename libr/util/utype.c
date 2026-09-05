@@ -329,6 +329,10 @@ static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int dep
 		return size;
 	}
 	if (!strcmp (t, "struct") || !strcmp (t, "union")) {
+		const ut64 recorded = sdb_num_getf (TDB, NULL, "type.%s.size", tmptype);
+		if (recorded) {
+			return recorded;
+		}
 		int i;
 		for (i = 0; i < depth; i++) {
 			if (!strcmp (chain[i], tmptype)) {
@@ -901,6 +905,7 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 			free (p);
 		}
 		sdb_unset (TDB, elements_key, 0);
+		sdb_unsetf (TDB, 0, "type.%s.size", name);
 		sdb_unset (TDB, name, 0);
 		free (elements_key);
 	} else if (!strcmp (kind, "func")) {
