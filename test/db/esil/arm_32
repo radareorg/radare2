@@ -3575,3 +3575,54 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=register shifted operand uses only the low byte of the shift register
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+aer r1=1
+aer r2=0x80000005
+aer r3=0x100
+wx 520381e0 @ 0
+aer PC=0
+aes
+aer r0
+wx 120381e0 @ 0
+aer PC=0
+aes
+aer r0
+wx 320381e0 @ 0
+aer PC=0
+aes
+aer r0
+aer r3=0x105
+wx 520381e0 @ 0
+aer PC=0
+aes
+aer r0
+aer r3=0x20
+wx 520381e0 @ 0
+aer PC=0
+aes
+aer r0
+wx 120381e0 @ 0
+aer PC=0
+aes
+aer r0
+wx 320381e0 @ 0
+aer PC=0
+aes
+aer r0
+EOF
+EXPECT=<<EOF
+0x80000006
+0x80000006
+0x80000006
+0xfc000001
+0x00000000
+0x00000001
+0x00000001
+EOF
+RUN

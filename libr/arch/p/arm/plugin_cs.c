@@ -1103,7 +1103,8 @@ static const char *arg(RArchSession *as, csh *handle, cs_insn *insn, char *buf, 
 	case ARM_OP_REG:
 		if (ISSHIFTED (n)) {
 			if (SHIFTTYPEREG (n)) {
-				snprintf (buf, buf_sz, "%s,%s,%s",
+				// the shift count is Rs[7:0]
+				snprintf (buf, buf_sz, "0xff,%s,&,%s,%s",
 						cs_reg_name(*handle, LSHIFT2(n)),
 						REG (n), DECODE_SHIFT (n));
 			} else {
