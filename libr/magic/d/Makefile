@@ -6,7 +6,8 @@ all: $(F_SDB)
 
 install: ${F_SDB}
 	mkdir -p "$(MAGICDIR)"
-	for a in default/* ; do readlink "$(MAGICDIR)";  if [ $$? != 0 ]; then cp -f $$a "${MAGICDIR}" ; fi ; done
+	# symstall leaves symlinks here; cp refuses to copy a file onto itself
+	for a in default/* ; do readlink "$(MAGICDIR)";  if [ $$? != 0 ]; then rm -f "${MAGICDIR}/$$(basename $$a)" ; cp -f $$a "${MAGICDIR}" ; fi ; done
 
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}

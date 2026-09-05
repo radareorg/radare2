@@ -276,6 +276,8 @@ install: install-doc install-man install-panels install-www install-pkgconfig
 	cp -f doc/hud "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)$(LIBDIR)/radare2/last/
+	# symstall leaves a symlink here; install(1) refuses to copy a file onto itself
+	rm -f "${DESTDIR}${BINDIR}/r2sdb${BUILD_EXT_EXE}"
 	${INSTALL_PROGRAM} "subprojects/sdb/sdb${BUILD_EXT_EXE}" "${DESTDIR}${BINDIR}/r2sdb${BUILD_EXT_EXE}"
 
 install-panels:
@@ -308,6 +310,7 @@ symstall-www: $(WWW_UI_INDEXES)
 install-pkgconfig pkgconfig-install:
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}/pkgconfig"
 	for FILE in $(shell cd pkgcfg ; ls *.pc) ; do \
+		rm -f "${DESTDIR}${LIBDIR}/pkgconfig/$$FILE" ; \
 		cp -f "$(PWD)/pkgcfg/$$FILE" "${DESTDIR}${LIBDIR}/pkgconfig/$$FILE" ; done
 
 install-pkgconfig-symlink pkgconfig-symstall symstall-pkgconfig:
