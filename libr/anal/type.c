@@ -271,6 +271,8 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 	if (!base_type) {
 		return NULL;
 	}
+	const ut64 recorded = sdb_num_getf (anal->sdb_types, NULL, "type.%s.size", sname);
+	base_type->size = recorded? recorded: 32;
 
 	char *members = get_type_data (anal->sdb_types, "enum", sname);
 	if (!members) {
@@ -614,6 +616,9 @@ static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 	*/
 	char *sname = r_str_sanitize_sdb_key (type->name);
 	sdb_set (anal->sdb_types, sname, "enum", 0);
+	if (type->size) {
+		sdb_num_setf (anal->sdb_types, type->size, 0, "type.%s.size", sname);
+	}
 
 	RStrBuf *arglist = r_strbuf_new ("");
 	int i = 0;

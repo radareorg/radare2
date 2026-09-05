@@ -304,6 +304,10 @@ R_API ut64 r_type_get_bitsize(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
 		const char *mt = sdb_const_getf (TDB, NULL, "type.%s", tmptype);
 		return mt && !strcmp (mt, "func")? type_ptr_bitsize (TDB): 0;
 	}
+	if (!strcmp (t, "enum")) {
+		const ut64 size = sdb_num_getf (TDB, NULL, "type.%s.size", tmptype);
+		return size? size: 32;
+	}
 	if (!strcmp (t, "typedef")) {
 		// a typedef is as wide as the type it names: recorded width first, else the alias
 		ut64 size = sdb_num_getf (TDB, NULL, "type.%s.size", tmptype);
