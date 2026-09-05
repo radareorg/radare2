@@ -321,18 +321,19 @@ static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 	if (r + sizeof (struct MACH0_(SIVarList)) > bf->size) {
 		return;
 	}
-	if (left < sizeof (struct MACH0_(SIVarList))) {
-		if (r_buf_read_at (bf->buf, r, sivarlist, left) != left) {
-			return;
-		}
-	} else {
-		len = r_buf_read_at (bf->buf, r, sivarlist, sizeof (struct MACH0_(SIVarList)));
-		if (len != sizeof (struct MACH0_(SIVarList))) {
-			return;
-		}
+	if (left < sizeof (il)) {
+		return;
+	}
+	len = r_buf_read_at (bf->buf, r, sivarlist, sizeof (il));
+	if (len != sizeof (il)) {
+		return;
 	}
 	il.entsize = r_read_ble (&sivarlist[0], bigendian, 32);
 	il.count = r_read_ble (&sivarlist[4], bigendian, 32);
+	if (il.entsize != sizeof (i) || il.count > (left - sizeof (il)) / sizeof (i)) {
+		R_LOG_DEBUG ("Invalid ivar list at 0x%08"PFMT64x, (ut64)p);
+		return;
+	}
 	p += sizeof (struct MACH0_(SIVarList));
 	offset += sizeof (struct MACH0_(SIVarList));
 
@@ -509,19 +510,19 @@ static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 	if (r + sizeof (struct MACH0_(SObjcPropertyList)) > bf->size) {
 		return;
 	}
-	if (left < sizeof (struct MACH0_(SObjcPropertyList))) {
-		if (r_buf_read_at (bf->buf, r, sopl, left) != left) {
-			return;
-		}
-	} else {
-		len = r_buf_read_at (bf->buf, r, sopl, sizeof (struct MACH0_(SObjcPropertyList)));
-		if (len != sizeof (struct MACH0_(SObjcPropertyList))) {
-			return;
-		}
+	if (left < sizeof (opl)) {
+		return;
 	}
-
+	len = r_buf_read_at (bf->buf, r, sopl, sizeof (opl));
+	if (len != sizeof (opl)) {
+		return;
+	}
 	opl.entsize = r_read_ble (&sopl[0], bigendian, 32);
 	opl.count = r_read_ble (&sopl[4], bigendian, 32);
+	if (opl.entsize != sizeof (op) || opl.count > (left - sizeof (opl)) / sizeof (op)) {
+		R_LOG_DEBUG ("Invalid property list at 0x%08"PFMT64x, (ut64)p);
+		return;
+	}
 
 	p += sizeof (struct MACH0_(SObjcPropertyList));
 	offset += sizeof (struct MACH0_(SObjcPropertyList));
@@ -630,7 +631,7 @@ static void iterate_list_of_lists(RBinFile *bf, OnList cb, void * ctx, mach0_ut 
 	if (count < 1 || count > ST32_MAX) {
 		return;
 	}
-	if (r + count * entsize > bf->size) {
+	if (entsize < 1 || count > (left - sizeof (tmp)) / entsize) {
 		return;
 	}
 
@@ -703,32 +704,29 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 	if (r + sizeof (struct MACH0_(SMethodList)) > bf->size) {
 		return;
 	}
-	if (left < sizeof (struct MACH0_(SMethodList))) {
-		if (r_buf_read_at (bf->buf, r, sml, left) != left) {
-			return;
-		}
-	} else {
-		len = r_buf_read_at (bf->buf, r, sml, sizeof (struct MACH0_(SMethodList)));
-		if (len != sizeof (struct MACH0_(SMethodList))) {
-			return;
-		}
+	if (left < sizeof (ml)) {
+		return;
+	}
+	len = r_buf_read_at (bf->buf, r, sml, sizeof (ml));
+	if (len != sizeof (ml)) {
+		return;
 	}
 	ml.entsize = r_read_ble (&sml[0], bigendian, 32);
 	ml.count = r_read_ble (&sml[4], bigendian, 32);
 	if (ml.count < 1 || ml.count > ST32_MAX) {
 		return;
 	}
-	if (r + (ml.count * (ml.entsize & ~METHOD_LIST_ENTSIZE_FLAG_MASK)) > bf->size) {
-		return;
-	}
 
 	bool is_small = (ml.entsize & METHOD_LIST_FLAG_IS_SMALL) != 0;
 	ut8 mlflags = ml.entsize & 0x3;
+	size_t read_size = is_small ? 3 * sizeof (ut32): sizeof (struct MACH0_(SMethod));
+	if (ml.count > (left - sizeof (ml)) / read_size) {
+		R_LOG_DEBUG ("Invalid method list at 0x%08"PFMT64x, (ut64)p);
+		return;
+	}
 
 	p += sizeof (struct MACH0_(SMethodList));
 	offset += sizeof (struct MACH0_(SMethodList));
-
-	size_t read_size = is_small ? 3 * sizeof (ut32): sizeof (struct MACH0_(SMethod));
 
 	RBinSymbol *method = NULL;
 	for (i = 0; i < ml.count; i++) {
@@ -913,18 +911,15 @@ static void get_protocol_list(RBinFile *bf, RBinClass *klass, objc_cache_opt_inf
 	if (r + sizeof (struct MACH0_(SProtocolList)) > bf->size) {
 		return;
 	}
-	if (left < sizeof (struct MACH0_(SProtocolList))) {
-		if (r_buf_read_at (bf->buf, r, spl, left) != left) {
-			return;
-		}
-	} else {
-		len = r_buf_read_at (bf->buf, r, spl, sizeof (struct MACH0_(SProtocolList)));
-		if (len != sizeof (struct MACH0_(SProtocolList))) {
-			return;
-		}
+	if (left < sizeof (pl)) {
+		return;
+	}
+	len = r_buf_read_at (bf->buf, r, spl, sizeof (pl));
+	if (len != sizeof (pl)) {
+		return;
 	}
 	pl.count = r_read_ble (&spl[0], bigendian, 8 * sizeof (mach0_ut));
-	if (pl.count < 1 || pl.count > ST32_MAX) {
+	if (pl.count < 1 || pl.count > (left - sizeof (pl)) / ptr_size) {
 		return;
 	}
 
@@ -1456,6 +1451,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	ut32 left = 0;
 	int len;
 	ut8 pp[sizeof (mach0_ut)] = {0};
+	RBitset *seen = NULL;
 
 	const int limit = bf->rbin->options.limit;
 
@@ -1498,6 +1494,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	}
 	// end of seaching of section with name __objc_classlist
 	// start of getting information about each class in file
+	seen = r_bitset_new ();
 	ut32 i;
 	for (i = 0; i < ms.clslist.size; i += sizeof (mach0_ut)) {
 		left = ms.clslist.size - i;
@@ -1526,6 +1523,11 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			goto get_classes_error;
 		}
 		p = r_read_ble (&pp[0], bigendian, 8 * sizeof (mach0_ut));
+		if (!r_bitset_set (seen, p)) {
+			R_LOG_DEBUG ("Repeated class pointer 0x%08"PFMT64x" in __objc_classlist", (ut64)p);
+			r_bin_class_free (klass);
+			continue;
+		}
 		MACH0_(get_class_t) (bf, klass, p, false, relocs, oi);
 		if (klass->name) {
 			const char *klass_name = r_bin_name_tostring (klass->name);
@@ -1550,10 +1552,12 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		klass->index = r_list_length (bf->bo->classes) + r_list_length (ret);
 		r_list_append (ret, klass);
 	}
+	r_bitset_free (seen);
 	metadata_sections_fini (&ms);
 	return ret;
 
 get_classes_error:
+	r_bitset_free (seen);
 	metadata_sections_fini (&ms);
 	r_list_free (sctns);
 	r_list_free (ret);

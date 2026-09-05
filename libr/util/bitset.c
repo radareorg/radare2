@@ -72,7 +72,9 @@ R_API RBitset *r_bitset_new(void) {
 }
 
 R_API void r_bitset_free(RBitset *b) {
-	R_RETURN_IF_FAIL (b);
+	if (!b) {
+		return;
+	}
 	ht_up_free (b->chunks);
 	free (b->idxs);
 	free (b);
