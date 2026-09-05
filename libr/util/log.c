@@ -18,6 +18,7 @@ static const char *level_tags[] = { // Log level to tag string lookup array
 	[R_LOG_LEVEL_ERROR] = "ERROR",
 	[R_LOG_LEVEL_INFO]  = "INFO",
 	[R_LOG_LEVEL_WARN]  = "WARN",
+	[R_LOG_LEVEL_HINT]  = "HINT",
 	[R_LOG_LEVEL_TODO]  = "TODO",
 	[R_LOG_LEVEL_DEBUG] = "DEBUG",
 	[R_LOG_LEVEL_TRACE] = "TRACE",
@@ -59,6 +60,7 @@ R_API const char *r_log_level_tocolor(int level) {
 		break;
 	case R_LOG_LEVEL_TODO:
 	case R_LOG_LEVEL_TRACE:
+	case R_LOG_LEVEL_HINT:
 		k = Color_CYAN;
 		break;
 	default:
@@ -72,6 +74,7 @@ R_API bool r_log_init(void) {
 	if (!rlog) {
 		rlog = R_NEW0 (RLog);
 		rlog->level = R_LOG_LEVEL_DEFAULT;
+		rlog->hints = true;
 	}
 	return true;
 }
@@ -111,6 +114,16 @@ R_API void r_log_set_traplevel(RLogLevel level) {
 	if (r_log_init ()) {
 		rlog->traplevel = level;
 	}
+}
+
+R_API void r_log_set_hints(bool show_hints) {
+	if (r_log_init ()) {
+		rlog->hints = show_hints;
+	}
+}
+
+R_API bool r_log_hints(void) {
+	return r_log_init ()? rlog->hints: true;
 }
 
 R_API void r_log_set_filter(const char *s) {
@@ -194,6 +207,9 @@ R_API bool r_log_match(int level, const char *origin) {
 		}
 		rlog->iterating = false;
 	}
+	if (level == R_LOG_LEVEL_HINT && !rlog->hints) {
+		return false;
+	}
 	return level <= rlog->level;
 }
 
@@ -260,7 +276,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		r_file_dump (rlog->file, (const ut8*)s, strlen (s), true);
 	}
 	free (s);
-	if (rlog->traplevel && (level >= rlog->traplevel || level == R_LOG_LEVEL_FATAL)) {
+	if (rlog->traplevel && level != R_LOG_LEVEL_HINT && (level >= rlog->traplevel || level == R_LOG_LEVEL_FATAL)) {
 		r_sys_backtrace ();
 		r_sys_breakpoint ();
 	}

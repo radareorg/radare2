@@ -612,7 +612,7 @@ be configured with eval variables.
             log.cons: Log messages using rcons (handy for monochannel r2pipe)
             log.file: Save log messages to given filename
           log.filter: Filter only messages matching given origin
-           log.level: Target log level/severity (0:FATAL 1:ERROR 2:INFO 3:WARN 4:TODO 5:DEBUG)
+           log.level: Target log level/severity (0:FATAL 1:ERROR 2:INFO 3:WARN 4:HINT 5:TODO 6:DEBUG)
           log.origin: Show [origin] in log messages
            log.quiet: Be quiet, dont log anything to console
           log.source: Show source [file:line] in the log message

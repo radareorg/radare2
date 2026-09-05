@@ -3943,6 +3943,12 @@ static bool cb_config_log_quiet(void *coreptr, void *nodeptr) {
 	return true;
 }
 
+static bool cb_config_log_hints(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	r_log_set_hints (r_str_is_true (node->value));
+	return true;
+}
+
 static bool cb_dbg_verbose(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -4512,9 +4518,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.regnums", "false", &cb_cfg_regnums, "Query register values before flags in RNum calls (EXPERIMENTAL)");
 
 	/* log */
-	SETICB ("log.level", R_LOG_LEVEL_DEFAULT, cb_config_log_level, "Target log level/severity (0:FATAL 1:ERROR 2:INFO 3:WARN 4:TODO 5:DEBUG)");
+	SETICB ("log.level", R_LOG_LEVEL_DEFAULT, cb_config_log_level, "Target log level/severity (0:FATAL 1:ERROR 2:INFO 3:WARN 4:HINT 5:TODO 6:DEBUG)");
 	n = r_config_node_get (cfg, "log.level");
-	SETOPTIONS (n, "0", "1", "2", "3", "4", "5", NULL);
+	SETOPTIONS (n, "0", "1", "2", "3", "4", "5", "6", "7", NULL);
 	SETCB ("log.ts", "false", cb_config_log_ts, "Show timestamp in log messages");
 
 	SETICB ("log.traplevel", 0, cb_config_log_traplevel, "Log level for trapping R2 when hit");
@@ -4523,6 +4529,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("log.source", "false", cb_log_source, "Show source [file:line] in the log message");
 	SETCB ("log.color", "true", cb_config_log_colors, "Should the log output use colors");
 	SETCB ("log.quiet", "false", cb_config_log_quiet, "Be quiet, dont log anything to console");
+	SETCB ("log.hints", "true", cb_config_log_hints, "Show best-practice hint messages (R_LOG_HINT)");
 	SETCB ("log.cons", "false", cb_config_log_cons, "Log messages using rcons (handy for monochannel r2pipe)");
 
 	// zign
