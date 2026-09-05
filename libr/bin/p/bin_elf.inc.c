@@ -1755,6 +1755,10 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		return NULL;
 	}
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
+	// the loader put the slot area below its NOBITS block; 0 without shdr
+	if (eo->ehdr.e_type == ET_REL && eo->etrel_slots) {
+		n_vaddr = elf_io_addr (bf, eo, eo->baddr + eo->etrel_slots);
+	}
 	// branch and lo12 relocs cannot encode a misaligned import slot address
 	if (eo->ehdr.e_type == ET_REL && (eo->ehdr.e_machine == EM_PPC64
 			|| eo->ehdr.e_machine == EM_PPC || eo->ehdr.e_machine == EM_AARCH64

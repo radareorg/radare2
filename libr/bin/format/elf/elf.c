@@ -1582,6 +1582,50 @@ static bool init_dynstr(ELFOBJ *eo) {
 
 static const RVecRBinElfSection *_load_elf_sections(ELFOBJ *eo);
 
+// NOBITS own no file bytes: put them past the file image and the import slots
+static void etrel_place_nobits(ELFOBJ *eo) {
+	if (!eo->shdr) {
+		return;
+	}
+	ut64 end = 0;
+	RBinElfSection *s;
+	R_VEC_FOREACH (&eo->g_sections, s) {
+		if (s->type == SHT_NOBITS || s->size > UT64_MAX - s->offset) {
+			continue;
+		}
+		end = R_MAX (end, s->offset + s->size);
+	}
+	eo->etrel_slots = end? end: eo->size;
+	// slots are at most 8 bytes; the spare one absorbs the base rounding
+	const ut64 slots = ((ut64)eo->g_reloc_num + 1) * 8;
+	if (eo->etrel_slots > UT64_MAX - slots) {
+		return;
+	}
+	ut64 at = R_MAX (eo->etrel_slots + slots, eo->size);
+	R_VEC_FOREACH (&eo->g_sections, s) {
+		if (s->type != SHT_NOBITS) {
+			continue;
+		}
+		const ut64 a = s->align;
+		if (a > 1 && a <= 0x100000 && at <= UT64_MAX - a) {
+			at = R_ROUND (at, a);
+		}
+		if (at > UT64_MAX - s->size || at > UT64_MAX - eo->baddr) {
+			break;
+		}
+		s->offset = at;
+		s->rva = eo->baddr + at;
+		at += s->size;
+	}
+}
+
+static ut64 etrel_symbol_offset(ELFOBJ *eo, Elf_(Sym) *sym) {
+	if (sym->st_shndx < RVecRBinElfSection_length (&eo->g_sections)) {
+		return sym->st_value + RVecRBinElfSection_at (&eo->g_sections, sym->st_shndx)->offset;
+	}
+	return sym->st_value + eo->shdr[sym->st_shndx].sh_offset;
+}
+
 static void relro_insdb(ELFOBJ *eo) {
 	int r = Elf_(has_relro) (eo);
 	switch (r) {
@@ -1643,6 +1687,9 @@ static bool elf_init(ELFOBJ *eo) {
 	eo->boffset = Elf_(get_boffset) (eo);
 	eo->rel_cache = ht_uu_new0 ();
 	(void) Elf_(load_relocs) (eo);
+	if (is_bin_etrel (eo)) {
+		etrel_place_nobits (eo);
+	}
 	sdb_ns_set (eo->kv, "versioninfo", store_versioninfo (eo));
 	reloc_fill_local_address (eo);
 	return true;
@@ -5450,7 +5497,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 
 		if (is_bin_etrel (eo)) {
 			if (sym.st_shndx < eo->ehdr.e_shnum) {
-				offset = sym.st_value + eo->shdr[sym.st_shndx].sh_offset;
+				offset = etrel_symbol_offset (eo, &sym);
 			}
 		} else {
 			offset = Elf_(v2p) (eo, toffset);

@@ -194,6 +194,7 @@ struct Elf_(obj_t) {
 	ut64 ppc32_nthunks;
 	bool ppc32_thunks_done;
 	ut32 g_reloc_num;
+	ut64 etrel_slots; // ET_REL: file offset of the import slot area
 	bool relocs_loaded;
 	RVecRBinElfReloc g_relocs;
 	bool sections_loaded;
