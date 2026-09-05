@@ -115,6 +115,10 @@ static bool sections_vec(RBinFile *bf) {
 	return true;
 }
 
+static inline bool reloc_is_import(ELFOBJ *eo, const RBinElfReloc *rel) {
+	return rel->sym && rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym];
+}
+
 #ifndef R_BIN_CGC
 #include "../format/swift/swift.h"
 
@@ -141,7 +145,7 @@ static char *swift_elf_slot(void *user, ut64 va, ut64 *target) {
 	RBinElfReloc *rel = ctx->relocs_ht? ht_up_find (ctx->relocs_ht, va, NULL): NULL;
 	if (rel) {
 		if (rel->sym > 0) {
-			if (rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym]) {
+			if (reloc_is_import (eo, rel)) {
 				return strdup (r_bin_name_tostring2 (eo->imports_by_ord[rel->sym]->name, 'o'));
 			}
 			if (rel->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[rel->sym]) {
@@ -511,12 +515,10 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		}
 		r->additive = !rel->implicit_addend;
 	}
-	if (rel->sym) {
-		if (rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym]) {
-			r->import = r_bin_import_clone (eo->imports_by_ord[rel->sym]);
-		} else if (rel->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[rel->sym]) {
-			r->symbol = eo->symbols_by_ord[rel->sym];
-		}
+	if (reloc_is_import (eo, rel)) {
+		r->import = r_bin_import_clone (eo->imports_by_ord[rel->sym]);
+	} else if (rel->sym && rel->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[rel->sym]) {
+		r->symbol = eo->symbols_by_ord[rel->sym];
 	}
 
 	ut64 sym_vaddr = r->symbol ? r->symbol->vaddr : (rel->sym ? rel->rva : 0);
@@ -684,6 +686,9 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_AARCH64_LDST128_ABS_LO12_NC:
 		case R_AARCH64_ADR_PREL_LO21:
 		case R_AARCH64_LD_PREL_LO19:
+		case R_AARCH64_GOT_LD_PREL19:
+		case R_AARCH64_ADR_GOT_PAGE:
+		case R_AARCH64_LD64_GOT_LO12_NC:
 		case R_AARCH64_TSTBR14:
 		case R_AARCH64_CONDBR19:
 		// a type patched here but unconverted aliases onto the next import slot
@@ -1026,6 +1031,11 @@ static void aarch64_patch_adr(RIOBind *iob, ut64 at, st64 imm) {
 		((ut32)(imm & 3) << 29) | ((ut32)(imm >> 2) << 5));
 }
 
+static bool aarch64_got_reloc(int type) {
+	return type == R_AARCH64_ADR_GOT_PAGE || type == R_AARCH64_LD64_GOT_LO12_NC
+		|| type == R_AARCH64_GOT_LD_PREL19;
+}
+
 static void aarch64_patch_branch(RIOBind *iob, RBinElfReloc *rel, ut64 at, st64 disp, int nbits, int shift) {
 	// a truncated branch invents a call target, worse than leaving it
 	if ((disp & 3) || !disp_fits (disp, nbits + 2)) {
@@ -1238,12 +1248,21 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		break;
 	case EM_AARCH64: {
 		int word = 0;
+		// only an import has a GOT entry here: the .got.r2 slot that S names
+		if (aarch64_got_reloc (rel->type)) {
+			if (!reloc_is_import (bo, rel)) {
+				R_LOG_DEBUG ("unpatched aarch64 got reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
+				break;
+			}
+			A = 0; // the addend selects the entry, it is no offset from it
+		}
 		switch (rel->type) {
+		case R_AARCH64_ADR_GOT_PAGE:
 		case R_AARCH64_ADR_PREL_PG_HI21:
 		case R_AARCH64_ADR_PREL_PG_HI21_NC: {
 			const st64 imm = (((st64)(S + A) & ~(st64)0xfff) - ((st64)P & ~(st64)0xfff)) >> 12;
-			// the _NC variant is defined to wrap, so only the checked one is refused
-			if (rel->type == R_AARCH64_ADR_PREL_PG_HI21 && !disp_fits (imm, 21)) {
+			// the _NC variant is defined to wrap, so only the checked ones are refused
+			if (rel->type != R_AARCH64_ADR_PREL_PG_HI21_NC && !disp_fits (imm, 21)) {
 				R_LOG_DEBUG ("unencodable aarch64 reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
 				break;
 			}
@@ -1255,6 +1274,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		case R_AARCH64_LDST16_ABS_LO12_NC:
 		case R_AARCH64_LDST32_ABS_LO12_NC:
 		case R_AARCH64_LDST64_ABS_LO12_NC:
+		case R_AARCH64_LD64_GOT_LO12_NC:
 		case R_AARCH64_LDST128_ABS_LO12_NC: {
 			int shift = 0;
 			switch (rel->type) {
@@ -1265,6 +1285,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 				shift = 2;
 				break;
 			case R_AARCH64_LDST64_ABS_LO12_NC:
+			case R_AARCH64_LD64_GOT_LO12_NC:
 				shift = 3;
 				break;
 			case R_AARCH64_LDST128_ABS_LO12_NC:
@@ -1282,6 +1303,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			break;
 		case R_AARCH64_CONDBR19:
 		case R_AARCH64_LD_PREL_LO19:
+		case R_AARCH64_GOT_LD_PREL19:
 			aarch64_patch_branch (iob, rel, P, (st64)(S + A) - (st64)P, 19, 5);
 			break;
 		case R_AARCH64_TSTBR14:
@@ -1654,7 +1676,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			ut64 sym_addr = 0;
 			if (rel->sym) {
 				// Check imports first
-				if (rel->sym < bo->imports_by_ord_size && bo->imports_by_ord[rel->sym]) {
+				if (reloc_is_import (bo, rel)) {
 					RBinImport *import = bo->imports_by_ord[rel->sym];
 					if (import && import->name) {
 						sym_name = r_bin_name_tostring (import->name);
@@ -1813,8 +1835,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	R_VEC_FOREACH (relocs, reloc) {
 		ut64 plt_entry_addr = vaddr;
 		ut64 sym_addr = UT64_MAX;
-		const bool is_import = reloc->sym && reloc->sym < eo->imports_by_ord_size
-			&& eo->imports_by_ord[reloc->sym];
+		const bool is_import = reloc_is_import (eo, reloc);
 
 		if (is_import) {
 			bool found;

@@ -92,3 +92,37 @@ EXPECT=<<EOF
 sym.branch_relocs 0x8000044 [CALL:--x] bl sym.local_target
 EOF
 RUN
+
+NAME=ELF: aarch64 ET_REL GOT relocs patch an import slot but not a defined symbol
+FILE=bins/elf/aarch64-got-etrel.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir
+p8 20 @ 0x08000040
+EOF
+EXPECT=<<EOF
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x08000040 0x00000040 ADD_32 311   gdef
+0x08000044 0x00000044 ADD_32 312   gdef
+0x08000188 0x00000048 ADD_32 311   gundef
+0x08000188 0x0000004c ADD_32 312   gundef
+00000090000040f90100009021c440f9c0035fd6
+EOF
+RUN
+
+NAME=ELF: aarch64 ET_REL ADR_GOT_PAGE encodes the page of the import slot
+FILE=bins/elf/ptx/ptx_ops.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~__stack_chk_guard:0
+p8 8 @ 0x08000080
+pd 2 @ 0x08000080
+EOF
+EXPECT=<<EOF
+0x08003550 0x00000080 ADD_32 311   __stack_chk_guard
+000000f000a842f9
+            0x08000080      000000f0       adrp x0, 0x8003000
+            0x08000084      00a842f9       ldr x0, [x0, 0x550]
+EOF
+RUN
