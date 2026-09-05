@@ -718,6 +718,7 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 }
 
 R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
+	anal->cc_generation++;
 	R_RETURN_VAL_IF_FAIL (anal && expr, false);
 	bool ret = false;
 	char *args = NULL;
@@ -795,6 +796,7 @@ R_API bool r_anal_cc_once(RAnal *anal) {
 R_API void r_anal_cc_reset(RAnal *anal) {
 	R_CRITICAL_ENTER (anal);
 	sdb_reset (DB);
+	anal->cc_generation++;
 	R_CRITICAL_LEAVE (anal);
 }
 

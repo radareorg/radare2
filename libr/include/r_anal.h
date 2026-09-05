@@ -560,6 +560,9 @@ typedef struct r_anal_t {
 	RIntervalTree meta;
 	RSpaces meta_spaces;
 	Sdb *sdb_cc; // calling conventions
+	// Bumped by every write to sdb_cc. r_anal_cc_argloc hands out borrowed
+	// pointers into it, so a reader that keeps one past a write needs to know.
+	ut64 cc_generation;
 	Sdb *sdb_classes;
 	Sdb *sdb_classes_attrs;
 	RAnalCallbacks cb;

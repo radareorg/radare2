@@ -1474,19 +1474,55 @@ static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
 	return (STR_EQUAL (regname, opsreg0)) || (STR_EQUAL (regname, opsreg1)) || (STR_EQUAL (regname, opsreg2));
 }
 #else
-static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
+// get_regname walks the register table, and the sources do not change between
+// the slots of one instruction, so they are resolved once by the caller
+static bool is_reg_in_src(const char *regname, RAnal *anal, const char *const *srcregs) {
 	int i;
 	for (i = 0; i < 3; i++) {
-		RAnalValue *src = RVecRArchValue_at (&op->srcs, i);
-		if (!src) {
+		if (!srcregs[i]) {
 			return false;
 		}
-		const char *srcreg = get_regname (anal, src);
-		if (srcreg && r_anal_cc_location_uses (anal, regname, srcreg)) {
+		if (r_anal_cc_location_uses (anal, regname, srcregs[i])) {
 			return true;
 		}
 	}
 	return false;
+}
+
+// get_regname already walks the register table, so the index it found comes
+// back with the name instead of costing a second walk. A name that widened is
+// a different register, so that one does need looking up again.
+static const char *regname_and_index(RAnal *anal, RAnalValue *value, int *idx) {
+	*idx = -1;
+	if (!value || !value->reg) {
+		return NULL;
+	}
+	const char *name = value->reg;
+	RRegItem *ri = r_reg_get (anal->reg, value->reg, -1);
+	if (!ri) {
+		return name;
+	}
+	*idx = ri->index;
+	if (ri->size == 32 && anal->config->bits == 64) {
+		// only gprs have a 64bit twin: an fp reg like arm64 s0 must keep its name
+		const char *name64 = r_reg_32_to_64 (anal->reg, value->reg);
+		if (name64) {
+			name = name64;
+			RRegItem *wide = r_reg_get (anal->reg, name64, -1);
+			*idx = wide? wide->index: -1;
+			r_unref (wide);
+		}
+	}
+	r_unref (ri);
+	return name;
+}
+
+static void resolve_srcregs(RAnal *anal, RAnalOp *op, const char **srcregs, int *srcidx) {
+	int i;
+	for (i = 0; i < 3; i++) {
+		RAnalValue *src = RVecRArchValue_at (&op->srcs, i);
+		srcregs[i] = regname_and_index (anal, src, &srcidx[i]);
+	}
 }
 #endif
 
@@ -1514,11 +1550,11 @@ static inline bool op_affect_dst(RAnalOp *op) {
 	}
 }
 
-static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal, bool op_dst_writeonly) {
+// in_src and in_dst are the only facts every branch below is built from, so a
+// register the instruction does not touch can never be an argument here
+static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal, bool op_dst_writeonly, bool in_src, bool in_dst) {
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
-	const bool in_src = is_reg_in_src (regname, anal, op);
-	const bool in_dst = opdreg && r_anal_cc_location_uses (anal, regname, opdreg);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_POP:
 		return false;
@@ -1569,7 +1605,7 @@ static int cc_loc_delta(RAnal *anal, const char *loc) {
 	return delta;
 }
 
-static void extract_dyncc_reguse(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, int *reg_set, const char *opsreg, const char *opdreg, bool op_dst_writeonly) {
+static void extract_dyncc_reguse(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, int *reg_set, const char *opsreg, const char *opdreg, bool op_dst_writeonly, const char *const *srcregs) {
 	const char *p = fcn->callconv;
 	for (; (p = strchr (p, '!')); p++) {
 		const char tag = p[1];
@@ -1588,12 +1624,13 @@ static void extract_dyncc_reguse(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, i
 			continue;
 		}
 		const int slot = R_ANAL_CC_DYNSLOT_BASE + dynslot;
-		const bool is_arg = is_used_like_arg (loc, opsreg, opdreg, op, anal, op_dst_writeonly);
+		const bool is_arg = is_used_like_arg (loc, opsreg, opdreg, op, anal, op_dst_writeonly,
+			is_reg_in_src (loc, anal, srcregs), opdreg && r_anal_cc_location_uses (anal, loc, opdreg));
 		if (is_arg && reg_set[slot] != 2) {
 			const char *regname = reguse_regname_for_loc (anal, op, loc, opdreg);
 			reguse_append_hint (anal, op->addr, regname, name);
 			reg_set[slot] = 1;
-		} else if (is_reg_in_src (loc, anal, op) || (opdreg && r_anal_cc_location_uses (anal, loc, opdreg))) {
+		} else if (is_reg_in_src (loc, anal, srcregs) || (opdreg && r_anal_cc_location_uses (anal, loc, opdreg))) {
 			reg_set[slot] = 2;
 		}
 	}
@@ -1615,6 +1652,54 @@ static int func_fixed_args(Sdb *TDB, const char *name) {
 	return r_type_func_is_variadic (TDB, name)? argc - 1: argc;
 }
 
+// Which registers a convention passes arguments in is a property of the
+// convention, not of the instruction, and it cannot change while a function is
+// walked. Resolving it per instruction cost a formatted sdb lookup per slot, so
+// it is resolved once and dropped whenever the function or its convention does.
+#define ARGSEQ_SLOTS (R_ANAL_CC_MAXARG * 2)
+
+typedef struct {
+	const RAnalFunction *fcn;
+	const char *cc;
+	ut64 generation;
+	// owned: r_anal_cc_argloc returns the sdb value pointer for a plain
+	// register slot, and a write to the cc db frees it
+	char *loc[ARGSEQ_SLOTS];
+	// index of a slot naming one plain register, -1 when it names a set
+	int regidx[ARGSEQ_SLOTS];
+	int max_arg;
+} ArgSeqCache;
+
+static R_TH_LOCAL ArgSeqCache argseq = {0};
+
+static int reg_index_of(RAnal *anal, const char *name) {
+	RRegItem *ri = name? r_reg_get (anal->reg, name, -1): NULL;
+	const int idx = ri? ri->index: -1;
+	r_unref (ri);
+	return idx;
+}
+
+static const ArgSeqCache *argseq_of(RAnal *anal, RAnalFunction *fcn) {
+	if (argseq.fcn == fcn && argseq.cc == fcn->callconv
+			&& argseq.generation == anal->cc_generation) {
+		return &argseq;
+	}
+	int i;
+	for (i = 0; i < ARGSEQ_SLOTS; i++) {
+		R_FREE (argseq.loc[i]);
+	}
+	argseq.fcn = fcn;
+	argseq.cc = fcn->callconv;
+	argseq.generation = anal->cc_generation;
+	argseq.max_arg = r_anal_cc_max_arg (anal, fcn->callconv);
+	for (i = 0; i < ARGSEQ_SLOTS; i++) {
+		const char *loc = r_anal_cc_argloc (anal, fcn->callconv, i, 0, 0); // TODO: pass argn
+		argseq.loc[i] = loc? strdup (loc): NULL;
+		argseq.regidx[i] = (loc && *loc && *loc != '{')? reg_index_of (anal, loc): -1;
+	}
+	return &argseq;
+}
+
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
 	int i = 0, argc = 0;
 	R_RETURN_IF_FAIL (anal && op && fcn);
@@ -1623,6 +1708,23 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	const char *opsreg = src ? get_regname (anal, src) : NULL;
 	const char *opdreg = dst ? get_regname (anal, dst) : NULL;
 	const bool op_dst_writeonly = r_arch_info (anal->arch, R_ARCH_INFO_WODST) == 1;
+	const char *srcregs[3];
+	int srcidx[3];
+	resolve_srcregs (anal, op, srcregs, srcidx);
+	int opidx[4], opidx_count = 0;
+	{
+		int k;
+		for (k = 0; k < 3; k++) {
+			if (srcidx[k] >= 0) {
+				opidx[opidx_count++] = srcidx[k];
+			}
+		}
+		int di = -1;
+		(void)regname_and_index (anal, dst, &di);
+		if (di >= 0) {
+			opidx[opidx_count++] = di;
+		}
+	}
 	const int size = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
 	r_anal_function_cc (fcn); // resolve a lazy dyncc marker before reading fcn->callconv
 	if (!fcn->callconv) {
@@ -1631,7 +1733,8 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	}
 	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
 	Sdb *TDB = anal->sdb_types;
-	const int max_count = r_anal_cc_max_arg (anal, fcn->callconv);
+	const ArgSeqCache *seq = argseq_of (anal, fcn);
+	const int max_count = seq->max_arg;
 	const bool scan_args = max_count > 0 && *count < max_count;
 	if (fname) {
 		argc = func_fixed_args (TDB, fname);
@@ -1729,29 +1832,43 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		return;
 	}
 
-	// only an fp/vector instruction can carry an fp argument, so the second
-	// sequence is not worth walking for the integer bulk of a function
-	const bool scan_fpargs = op->family == R_ANAL_OP_FAMILY_FPU
-		|| op->family == R_ANAL_OP_FAMILY_VEC
-		|| op->family == R_ANAL_OP_FAMILY_SIMD
-		|| op->family == R_ANAL_OP_FAMILY_UNKNOWN;
 	// The fixed register-state array lets both sequences use one bounded walk.
-	for (i = 0; i < R_ANAL_CC_MAXARG * 2; i++) {
+	for (i = 0; i < ARGSEQ_SLOTS; i++) {
 		const bool fp = i >= R_ANAL_CC_MAXARG;
 		const int n = fp? i - R_ANAL_CC_MAXARG: i;
 		const int slot = fp? R_ANAL_CC_FPSLOT_BASE + n: n;
 		const char *deftype = fp? "double": NULL;
-		if ((fp && !scan_fpargs) || (!fp && (!scan_args || n >= max_count))) {
+		if (!fp && (!scan_args || n >= max_count)) {
 			continue;
 		}
-		const char *regname = r_anal_cc_argloc (anal, fcn->callconv,
-			fp? R_ANAL_CC_MAXARG + n: n, 0, 0); // TODO: pass argn
+		const char *regname = seq->loc[i];
 		if (!regname) {
+			continue;
+		}
+		if (seq->regidx[i] >= 0) {
+			// a slot naming one register can only matter when the instruction
+			// names it too, which is an index compare rather than a string one
+			int k;
+			bool touched = false;
+			for (k = 0; k < opidx_count; k++) {
+				if (opidx[k] == seq->regidx[i]) {
+					touched = true;
+					break;
+				}
+			}
+			if (!touched) {
+				continue;
+			}
+		}
+		const bool in_src = is_reg_in_src (regname, anal, srcregs);
+		const bool in_dst = opdreg && r_anal_cc_location_uses (anal, regname, opdreg);
+		if (!in_src && !in_dst) {
+			// neither an argument read nor a clobber: nothing below applies
 			continue;
 		}
 		int delta = 0;
 		RAnalVar *var = NULL;
-		bool is_arg = is_used_like_arg (regname, opsreg, opdreg, op, anal, op_dst_writeonly);
+		bool is_arg = is_used_like_arg (regname, opsreg, opdreg, op, anal, op_dst_writeonly, in_src, in_dst);
 		if (is_arg && reg_set[slot] != 2) {
 			delta = cc_loc_delta (anal, regname);
 		}
@@ -1780,14 +1897,12 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			free (type);
 			(*count)++;
 		} else {
-			if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
+			if (is_reg_in_src (regname, anal, srcregs) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
 				reg_set[slot] = 2;
 			}
 			continue;
 		}
-		if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
-			reg_set[slot] = 1;
-		}
+		reg_set[slot] = 1;
 		if (var) {
 			r_anal_var_set_access (anal, var, var->regname, op->addr, R_PERM_R, 0);
 			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, var->name);
@@ -1804,7 +1919,8 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	const bool is_dyncc = r_str_startswith (fcn->callconv, "dyncc:");
 	const char *selfreg = r_anal_cc_roleloc (anal, fcn->callconv, is_dyncc? "T": "self");
 	if (selfreg) {
-		bool is_arg = is_used_like_arg (selfreg, opsreg, opdreg, op, anal, op_dst_writeonly);
+		bool is_arg = is_used_like_arg (selfreg, opsreg, opdreg, op, anal, op_dst_writeonly,
+			is_reg_in_src (selfreg, anal, srcregs), opdreg && r_anal_cc_location_uses (anal, selfreg, opdreg));
 		if (is_arg && reg_set[i] != 2) {
 			int delta = cc_loc_delta (anal, selfreg);
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, "self");
@@ -1817,7 +1933,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			}
 			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, "self");
 			(*count)++;
-		} else if (is_reg_in_src (selfreg, anal, op) || STR_EQUAL (opdreg, selfreg)) {
+		} else if (is_reg_in_src (selfreg, anal, srcregs) || STR_EQUAL (opdreg, selfreg)) {
 			reg_set[i] = 2;
 		}
 		i++;
@@ -1839,7 +1955,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		}
 	}
 	if (is_dyncc) {
-		extract_dyncc_reguse (anal, fcn, op, reg_set, opsreg, opdreg, op_dst_writeonly);
+		extract_dyncc_reguse (anal, fcn, op, reg_set, opsreg, opdreg, op_dst_writeonly, srcregs);
 	}
 	free (fname);
 }
