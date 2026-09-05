@@ -366,6 +366,10 @@ static bool esil_neg(REsil *esil) {
 	return ret;
 }
 
+static bool esil_nop(REsil *esil) {
+	return true;
+}
+
 #if 0
 static int esil_interrupt_linux_i386(REsil *esil) { 		//move this into a plugin
 	ut32 sn, ret = false;
@@ -1805,6 +1809,8 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("<=", esil_smaller_equal, 1, 2, OT_MATH);
 	ret &= OP (">=", esil_bigger_equal, 1, 2, OT_MATH);
 	ret &= OP ("?{", esil_if, 0, 1, OT_CTR);
+	ret &= OP ("}", esil_nop, 0, 0, OT_CTR);
+	ret &= OP ("}{", esil_nop, 0, 0, OT_CTR);
 	ret &= OP ("<<", esil_lsl, 1, 2, OT_MATH);
 	ret &= OP ("LSL", esil_lsl, 1, 2, OT_MATH);
 	ret &= OPD ("<<=", "DUP,ROT,SWAP,<<,SWAP,=", 0, 2, OT_MATH | OT_REGW);
