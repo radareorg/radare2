@@ -1324,7 +1324,10 @@ R_API char *r_bin_demangle_swift_typeref(const ut8 *p, int len, ut64 va, RBinSwi
 				while (i < len && isdigit (p[i])) {
 					i++;
 				}
-				if (n < 1 || i + n > len) {
+				// n comes from the mangled name, so `i + n` would wrap for a
+				// large digit run and let the check pass. i <= len here, so
+				// subtracting instead cannot overflow.
+				if (n < 1 || n > len - i) {
 					break;
 				}
 				if (r_strbuf_length (nb) > 0) {
