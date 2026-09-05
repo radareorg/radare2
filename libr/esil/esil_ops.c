@@ -1043,16 +1043,16 @@ static bool esil_poke2(REsil *esil) {
 	return esil_poke_n (esil, 16);
 }
 
-static bool esil_poke3(REsil *esil) {
-	return esil_poke_n (esil, 24);
-}
-
 static bool esil_poke4(REsil *esil) {
 	return esil_poke_n (esil, 32);
 }
 
 static bool esil_poke8(REsil *esil) {
 	return esil_poke_n (esil, 64);
+}
+
+static bool esil_poke3(REsil *esil) {
+	return esil_poke_n (esil, 24);
 }
 
 static bool esil_poke16(REsil *esil) {
@@ -1065,7 +1065,6 @@ static bool esil_poke_some(REsil *esil) {
 	const RStrs dst = r_esil_pop (esil);
 
 	if (!r_strs_empty (dst) && r_esil_get_parm_size (esil, dst, &tmp, &regsize)) {
-		// reg
 		isregornum (esil, dst, &ptr);
 		const RStrs count = r_esil_pop (esil);
 		if (!r_strs_empty (count)) {
@@ -1076,7 +1075,6 @@ static bool esil_poke_some(REsil *esil) {
 				for (i = 0; i < regs; i++) {
 					const RStrs foo = r_esil_pop (esil);
 					if (r_strs_empty (foo)) {
-						// avoid looping out of stack
 						return true;
 					}
 					r_esil_get_parm_size (esil, foo, &tmp, &regsize);
@@ -1085,7 +1083,6 @@ static bool esil_poke_some(REsil *esil) {
 					const int size_bytes = regsize / 8;
 					const ut32 written = r_esil_mem_write (esil, ptr, b, size_bytes);
 					if (written != size_bytes) {
-						//R_LOG_ERROR ("Cannot write at 0x%08" PFMT64x, ptr);
 						esil->trap = 1;
 					}
 					ptr += size_bytes;
@@ -1812,6 +1809,8 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("<=", esil_smaller_equal, 1, 2, OT_MATH);
 	ret &= OP (">=", esil_bigger_equal, 1, 2, OT_MATH);
 	ret &= OP ("?{", esil_if, 0, 1, OT_CTR);
+	ret &= OP ("}", esil_nop, 0, 0, OT_CTR);
+	ret &= OP ("}{", esil_nop, 0, 0, OT_CTR);
 	ret &= OP ("<<", esil_lsl, 1, 2, OT_MATH);
 	ret &= OP ("LSL", esil_lsl, 1, 2, OT_MATH);
 	ret &= OPD ("<<=", "DUP,ROT,SWAP,<<,SWAP,=", 0, 2, OT_MATH | OT_REGW);
@@ -1831,8 +1830,6 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 #endif
 	ret &= OP ("&", esil_and, 1, 2, OT_MATH);
 	ret &= OPD ("&=", "DUP,ROT,SWAP,&,SWAP,=", 0, 2, OT_MATH | OT_REGW);
-	ret &= OP ("}", esil_nop, 0, 0, OT_CTR); // just to avoid push
-	ret &= OP ("}{", esil_nop, 0, 0, OT_CTR);
 	ret &= OP ("|", esil_or, 1, 2, OT_MATH);
 	ret &= OPD ("|=", "DUP,ROT,SWAP,|,SWAP,=", 0, 2, OT_MATH | OT_REGW);
 	ret &= OP ("!", esil_neg, 1, 1, OT_MATH);
@@ -1860,10 +1857,10 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OPD ("%=", "DUP,ROT,SWAP,%,SWAP,=", 0, 2, OT_MATH | OT_REGW);
 	ret &= OP ("=[1]", esil_poke1, 0, 2, OT_MEMW);
 	ret &= OP ("=[2]", esil_poke2, 0, 2, OT_MEMW);
-	ret &= OP ("=[3]", esil_poke3, 0, 2, OT_MEMW);
 	ret &= OP ("=[4]", esil_poke4, 0, 2, OT_MEMW);
 	ret &= OP ("=[8]", esil_poke8, 0, 2, OT_MEMW);
 	ret &= OP ("=[16]", esil_poke16, 0, 2, OT_MEMW);
+	ret &= OP ("=[3]", esil_poke3, 0, 2, OT_MEMW);
 	ret &= OPD ("|=[1]", "DUP,ROT,SWAP,[1],|,SWAP,=[1]", 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	ret &= OPD ("|=[2]", "DUP,ROT,SWAP,[2],|,SWAP,=[2]", 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	ret &= OPD ("|=[4]", "DUP,ROT,SWAP,[4],|,SWAP,=[4]", 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
@@ -1946,7 +1943,7 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("D2F", esil_double_to_float, 1, 2, OT_MATH);
 	ret &= OP ("F2D", esil_float_to_double, 1, 2, OT_MATH);
 	ret &= OP ("F==", esil_float_cmp, 1, 2, OT_MATH);
-	ret &= OP ("F!=", esil_float_negcmp, 1, 2, OT_MATH); // DEPRECATE
+	ret &= OP ("F!=", esil_float_negcmp, 1, 2, OT_MATH);
 	ret &= OP ("F<", esil_float_less, 1, 2, OT_MATH);
 	ret &= OP ("F<=", esil_float_lesseq, 1, 2, OT_MATH);
 	ret &= OP ("F+", esil_float_add, 1, 2, OT_MATH);
