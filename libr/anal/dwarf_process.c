@@ -2716,8 +2716,9 @@ static bool dwarf_sdb_no_key_matches(void *user, const char *key, const char *va
 
 static bool dwarf_sdb_unset_like_checked(Sdb *sdb, const char *pattern) {
 	R_RETURN_VAL_IF_FAIL (sdb && pattern, false);
-	return sdb_unset_like (sdb, pattern)
-		&& sdb_foreach (sdb, dwarf_sdb_no_key_matches, (void *)pattern);
+	// sdb_unset_like returns a count, not success: the scan below is the check
+	sdb_unset_like (sdb, pattern);
+	return sdb_foreach (sdb, dwarf_sdb_no_key_matches, (void *)pattern);
 }
 
 typedef struct dwarf_exact_function_link_t {
