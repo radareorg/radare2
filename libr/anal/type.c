@@ -418,8 +418,14 @@ static RAnalBaseType *get_atomic_type(RAnal *anal, const char *sname) {
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 	R_RETURN_VAL_IF_FAIL (anal && name, NULL);
 
-	char *sname = r_str_sanitize_sdb_key (name);
+	// a base type is saved under its C spelling; composites and typedefs still under the sanitized one
+	char *sname = strdup (name);
 	const char *type = sdb_const_get (anal->sdb_types, sname, NULL);
+	if (!type) {
+		free (sname);
+		sname = r_str_sanitize_sdb_key (name);
+		type = sdb_const_get (anal->sdb_types, sname, NULL);
+	}
 	if (!type) {
 		free (sname);
 		return NULL;
@@ -647,6 +653,14 @@ static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 	free (sname);
 }
 
+// a base type's key is the C spelling typedefs and members refer to it by; only what sdb cannot key is refused
+static char *atomic_type_key(const char *name) {
+	if (R_STR_ISEMPTY (name) || strpbrk (name, "=,\n")) {
+		return NULL;
+	}
+	return strdup (name);
+}
+
 static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
 	r_strf_buffer (KSZ);
 	R_RETURN_IF_FAIL (anal && type && type->name);
@@ -658,7 +672,10 @@ static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
 		type.char=c
 		type.char.size=8
 	*/
-	char *sname = r_str_sanitize_sdb_key (type->name);
+	char *sname = atomic_type_key (type->name);
+	if (!sname) {
+		return;
+	}
 	sdb_set (anal->sdb_types, sname, "type", 0);
 #if 0
 	sdb_num_set (anal->sdb_types, r_strf ("type.%s.size", sname), type->size, 0);

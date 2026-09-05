@@ -716,3 +716,15 @@ var bool hasDecimalPoint @ r9
 var []uint8 tail @ r10
 EOF
 RUN
+
+NAME=a base type spelled with spaces keeps its width
+FILE=bins/elf/ppc64_sudoku_dwarf
+CMDS=<<EOF
+k anal/types/long unsigned int
+tss long unsigned int
+EOF
+EXPECT=<<EOF
+type
+8
+EOF
+RUN
