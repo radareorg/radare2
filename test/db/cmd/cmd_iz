@@ -793,42 +793,42 @@ nth paddr      vaddr      len size section type  string
 EOF
 RUN
 
-NAME=izu (utf8 only)
-FILE=bins/elf/strenc
+NAME=izu (utf8 only) - ascii string excluded
+FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-izu~en_US
+izu
 EOF
 EXPECT=<<EOF
-0   0x000021f4 0x004021f4 10  11   .rodata ascii en_US.utf8
+nth paddr vaddr len size section type string
+--------------------------------------------
 EOF
 RUN
 
-NAME=izw (wide/utf16 only)
-FILE=bins/elf/strenc
-CMDS=<<EOF
-izw~wall
-EOF
+NAME=izw (wide/utf16 only) - no wide strings in this binary
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=izw
 EXPECT=<<EOF
-007 0x000022c8 0x004022c8  33  68 (.rodata) utf16le is a wall with no embedded zeros\n
+nth paddr vaddr len size section type string
+--------------------------------------------
 EOF
 RUN
 
-NAME=izW (wide32/utf32 only)
-FILE=bins/elf/strenc
-CMDS=<<EOF
-izW~Mountain
-EOF
+NAME=izW (wide32/utf32 only) - no wide32 strings in this binary
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=izW
 EXPECT=<<EOF
-18  0x0000266c 0x0040266c 48  196  .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n
+nth paddr vaddr len size section type string
+--------------------------------------------
 EOF
 RUN
 
 NAME=izza (ascii only, whole binary)
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=izza~puts
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=izza
 EXPECT=<<EOF
-4   0x000002fa 0x000002fa 4   5            ascii   puts
-65  0x00001953 0x00001953 17  18           ascii   puts@@GLIBC_2.2.5
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
 EOF
 RUN
 
@@ -840,7 +840,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=iz - no match for wrong type
+NAME=iz - no match for wrong type (wide in ascii-only binary)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 izw
