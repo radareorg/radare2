@@ -8,6 +8,9 @@ typedef struct {
 	libbochs_t desc;
 } RIOBochs;
 
+// size of the cached register arena, must match the malloc in bochs_attach
+#define BOCHS_SAVEREGS_SIZE 1024
+
 typedef struct plugin_data_t {
 	bool bCapturaRegs;
 	bool bStep;
@@ -106,7 +109,7 @@ static bool bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	}
 
 	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
-	if (!pd) {
+	if (!pd || !pd->saveRegs || size < 1) {
 		return false;
 	}
 
@@ -118,8 +121,15 @@ static bool bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		//<bochs:109>return -1;
 		pos = 0x78;
 		lenRec = strlen (pd->desc->data);
-		while (pd->desc->data[i] != 0 && i < lenRec -4) {
+		// a register token is "rNN: hhhhhhhh_hhhhhhhh", exactly 22 chars, and
+		// the strncpy()s below reach i+21, so require the whole token to be
+		// present instead of just i < lenRec - 4
+		while (i + 22 <= lenRec && pd->desc->data[i] != 0) {
 			if ((pd->desc->data[i] == (ut8)'r' && pd->desc->data[i + 3] == (ut8)':')) {
+				if (pos + 8 > size) {
+					// the stub sent more registers than the arena can hold
+					break;
+				}
 				strncpy (regname, &pd->desc->data[i], 3);
 				regname[3] = 0;
 				strncpy (&strReg[2], &pd->desc->data[i + 5], 8);
@@ -182,6 +192,9 @@ static bool bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		int n;
 		for (n = 0; s[n] != 0; n++) {
 			if ((x = strstr (pd->desc->data,s[n]))) {
+				if (pos + 2 > size) {
+					break;
+				}
 				strncpy (&strReg[0], x+3, 7);
 				strReg[6] = 0;
 				val = r_num_get (NULL, strReg);
@@ -207,15 +220,17 @@ static bool bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			}
 		}
 		// Cheat para evitar traducciones de direcciones
-		if (pd->ripStop != 0) {
-			memcpy (&buf[0], &pd->ripStop, 8);
-		} else {
-			memcpy (&buf[0], &valRIP, 8);	// guardamos el valor cs:ip en el registro virtual "vip"
+		if (size >= 8) {
+			if (pd->ripStop != 0) {
+				memcpy (&buf[0], &pd->ripStop, 8);
+			} else {
+				memcpy (&buf[0], &valRIP, 8);	// guardamos el valor cs:ip en el registro virtual "vip"
+			}
 		}
-		memcpy (pd->saveRegs, buf, size);
+		memcpy (pd->saveRegs, buf, R_MIN (size, BOCHS_SAVEREGS_SIZE));
 		pd->bCapturaRegs = false;
 	} else {
-		memcpy (buf, pd->saveRegs, size);
+		memcpy (buf, pd->saveRegs, R_MIN (size, BOCHS_SAVEREGS_SIZE));
 	}
 	return true; // size
 }
@@ -373,7 +388,7 @@ static bool r_debug_bochs_attach(RDebug *dbg, int pid) {
 			// int bits = dbg->anal->bits;
 			if ((pd->desc = &g->desc)) {
 				R_LOG_INFO ("bochs attach: ok");
-				pd->saveRegs = malloc(1024);
+				pd->saveRegs = calloc (1, BOCHS_SAVEREGS_SIZE);
 				pd->bCapturaRegs = true;
 				pd->bStep = false;
 				pd->bBreak = false;
