@@ -81,10 +81,27 @@ R_API void r_log_fini(void) {
 		RLog *log = rlog;
 		rlog = NULL;
 		RVecRLogCallbackUser_free (log->cbs);
+		set_u_free (log->once);
 		free (log->file);
 		free (log->filter);
 		free (log);
 	}
+}
+
+// true only the first time the given key is seen, used to log a message once
+R_API bool r_log_once(const char *key) {
+	if (!r_log_init ()) {
+		return true;
+	}
+	if (!rlog->once) {
+		rlog->once = set_u_new ();
+	}
+	const ut64 hash = r_str_hash64 (key);
+	if (set_u_contains (rlog->once, hash)) {
+		return false;
+	}
+	set_u_add (rlog->once, hash);
+	return true;
 }
 
 R_API void r_log_show_ts(bool ts) {
