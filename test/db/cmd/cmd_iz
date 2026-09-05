@@ -782,3 +782,71 @@ EXPECT=<<EOF
 [{"vaddr":22915,"paddr":22915,"ordinal":2,"size":13,"length":12,"section":".rodata","type":"ascii","string":"socket %x %x"}]
 EOF
 RUN
+
+NAME=iza (ascii only)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=iza
+EXPECT=<<EOF
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+EOF
+RUN
+
+NAME=izu (utf8 only) - ascii string excluded
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+izu
+EOF
+EXPECT=<<EOF
+nth paddr vaddr len size section type string
+--------------------------------------------
+EOF
+RUN
+
+NAME=izw (wide/utf16 only) - no wide strings in this binary
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=izw
+EXPECT=<<EOF
+nth paddr vaddr len size section type string
+--------------------------------------------
+EOF
+RUN
+
+NAME=izW (wide32/utf32 only) - no wide32 strings in this binary
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=izW
+EXPECT=<<EOF
+nth paddr vaddr len size section type string
+--------------------------------------------
+EOF
+RUN
+
+NAME=izza (ascii only, whole binary)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=izza
+EXPECT=<<EOF
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+EOF
+RUN
+
+NAME=izaj (ascii only, JSON)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=izaj
+EXPECT=<<EOF
+[{"vaddr":134513840,"paddr":1200,"ordinal":0,"size":13,"length":12,"section":".rodata","type":"ascii","string":"Hello world!"}]
+EOF
+RUN
+
+NAME=iz - no match for wrong type (wide in ascii-only binary)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+izw
+EOF
+EXPECT=<<EOF
+nth paddr vaddr len size section type string
+--------------------------------------------
+EOF
+RUN
