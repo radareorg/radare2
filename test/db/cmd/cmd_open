@@ -85,7 +85,7 @@ oon
 o
 EOF
 EXPECT=<<EOF
- 5 * r-- 0x00009730 bins/mach0/mac-ls2
+ 5 * r-x 0x00009730 bins/mach0/mac-ls2
 EOF
 RUN
 
