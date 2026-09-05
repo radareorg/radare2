@@ -1453,7 +1453,15 @@ static bool dwarf_type_reference_is_exact(Context *ctx, ut64 offset) {
 		}
 		set_u_add (visited, offset);
 		RBinDwarfDie *die = ht_up_find (ctx->die_map, offset, NULL);
-		if (!die || !die->attr_values) {
+		if (!die) {
+			break;
+		}
+		if (!die->attr_values) {
+			// A qualifier carrying no attribute at all qualifies `void`,
+			// which DWARF spells by omission: `const void *` is exact.
+			exact = die->tag == DW_TAG_const_type
+				|| die->tag == DW_TAG_volatile_type
+				|| die->tag == DW_TAG_restrict_type;
 			break;
 		}
 		const RBinDwarfAttrValue *type_attr = NULL;
@@ -1464,8 +1472,13 @@ static bool dwarf_type_reference_is_exact(Context *ctx, ut64 offset) {
 		case DW_TAG_base_type:
 			exact = !type_attr && dwarf_exact_named_type (die);
 			goto beach;
-		case DW_TAG_structure_type:
 		case DW_TAG_enumeration_type:
+			// An enumeration's DW_AT_type names its underlying integer type
+			// (DWARF 4 and later); it is part of the definition, not an
+			// indirection, so it does not make the reference inexact.
+			exact = named_typedef || dwarf_exact_named_type (die);
+			goto beach;
+		case DW_TAG_structure_type:
 		case DW_TAG_union_type:
 		case DW_TAG_class_type:
 			exact = !type_attr
@@ -1494,6 +1507,14 @@ static bool dwarf_type_reference_is_exact(Context *ctx, ut64 offset) {
 		case DW_TAG_const_type:
 		case DW_TAG_volatile_type:
 		case DW_TAG_restrict_type:
+			if (!type_attr) {
+				// A qualifier with no type qualifies `void`, which DWARF
+				// spells by omission: `const void *` is exact.
+				exact = true;
+				goto beach;
+			}
+			offset = type_attr->reference;
+			break;
 		case DW_TAG_rvalue_reference_type:
 		case DW_TAG_reference_type:
 			if (!type_attr) {
@@ -1513,6 +1534,8 @@ beach:
 static bool dwarf_render_exact_type(Context *ctx, ut64 offset, RStrBuf *type) {
 	bool exact = dwarf_type_reference_is_exact (ctx, offset);
 	if (!exact || parse_type (ctx, offset, type, NULL, NULL) < 0) {
+		R_LOG_DEBUG ("dwarf type at 0x%" PFMT64x " not rendered exactly: exact=%d rendered=%s",
+			offset, exact? 1: 0, r_strbuf_get (type));
 		return false;
 	}
 	const char *rendered = r_strbuf_get (type);
@@ -2533,6 +2556,13 @@ static bool parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 					} else if (child_die->tag == DW_TAG_formal_parameter && child_depth == 1) {
 						decl_complete = false;
 					}
+				}
+				if (!decl_complete && child_die->tag == DW_TAG_formal_parameter && child_depth == 1) {
+					// Which formal kept the prototype from linking, and whether it
+					// was the declaration or its type that was not exact.
+					R_LOG_DEBUG ("dwarf formal inexact at die 0x%" PFMT64x ": name=%s has_type=%d rendered=%s",
+						child_die->offset, r_str_get (name), decl.has_type? 1: 0,
+						r_strbuf_get (&type));
 				}
 				if (!decl_complete && child_die->attr_values) {
 					const RBinDwarfAttrValue *value;
@@ -3575,6 +3605,14 @@ static void parse_function(Context *ctx, ut64 idx) {
 	// exact authority above it does not require locations or a whole-exact CU
 	bool link_complete = exact_decl && !decl_corrupt && args_complete
 		&& address_exact && address_count == 1 && return_type_exact;
+	if (!link_complete) {
+		// Six terms decide whether a function's prototype is linked to its
+		// address, and a consumer only ever sees that it was not.
+		R_LOG_DEBUG ("dwarf link incomplete for %s: exact_decl=%d decl_corrupt=%d args_complete=%d address_exact=%d address_count=%u return_type_exact=%d",
+			r_str_get (fcn.name), exact_decl? 1: 0, decl_corrupt? 1: 0,
+			args_complete? 1: 0, address_exact? 1: 0, (unsigned)address_count,
+			return_type_exact? 1: 0);
+	}
 
 
 	if (ret_type.len == 0) { /* DW_AT_type is omitted in case of `void` ret type */
