@@ -167,14 +167,13 @@ struct R_PDB7_ROOT_STREAM;
 typedef struct r_pdb_t {
 	bool (*pdb_parse)(struct r_pdb_t *pdb);
 	void (*finish_pdb_parse)(struct r_pdb_t *pdb);
-	void (*print_types)(const struct r_pdb_t *pdb, PJ *pj, int mode);
-	PrintfCallback cb_printf;
+	char *(*print_types)(const struct r_pdb_t *pdb, PJ *pj, int mode);
 	struct R_PDB7_ROOT_STREAM *root_stream;
 	void *stream_map;
 	RList *pdb_streams;
 	RList *pdb_streams2;
 	RBuffer *buf; // mmap of file
-	void (*print_gvars)(struct r_pdb_t *pdb, ut64 img_base, PJ *pj, int format);
+	char *(*print_gvars)(struct r_pdb_t *pdb, ut64 img_base, PJ *pj, int format);
 } RBinPdb;
 
 // TODO: use better api names

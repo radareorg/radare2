@@ -952,11 +952,11 @@ static char *get_enum_base_type_name(STpiStream *ss, STypeInfo *type_info) {
 	return base_type_name;
 }
 
-static void print_struct(STpiStream *ss, const char *name, const int size, const RList *members, PrintfCallback printf) {
-	if (!name || !printf) {
+static void print_struct(STpiStream *ss, const char *name, const int size, const RList *members, RStrBuf *sb) {
+	if (!name || !sb) {
 		return;
 	}
-	printf ("struct %s { // size 0x%x\n", name, size);
+	r_strbuf_appendf (sb, "struct %s { // size 0x%x\n", name, size);
 
 	STypeInfo *type_info;
 	RListIter *member_iter;
@@ -973,18 +973,18 @@ static void print_struct(STpiStream *ss, const char *name, const int size, const
 		if (type_info->get_print_type) {
 			type_info->get_print_type (ss, type_info, &type_name);
 		}
-		printf ("  %s %s; // offset +0x%x\n", type_name, member_name, offset);
+		r_strbuf_appendf (sb, "  %s %s; // offset +0x%x\n", type_name, member_name, offset);
 		R_FREE (type_name);
 	}
-	printf ("};\n");
+	r_strbuf_append (sb, "};\n");
 }
 
-static void print_union(STpiStream *ss, const char *name, const int size, const RList *members, PrintfCallback printf) {
-	if (!printf) {
+static void print_union(STpiStream *ss, const char *name, const int size, const RList *members, RStrBuf *sb) {
+	if (!sb) {
 		return;
 	}
 	const char *n = R_STR_ISEMPTY (name)? "<unnamed>": name;
-	printf ("union %s { // size 0x%x\n", n, size);
+	r_strbuf_appendf (sb, "union %s { // size 0x%x\n", n, size);
 
 	STypeInfo *type_info;
 	RListIter *member_iter;
@@ -1001,17 +1001,17 @@ static void print_union(STpiStream *ss, const char *name, const int size, const 
 		if (type_info->get_print_type) {
 			type_info->get_print_type (ss, type_info, &type_name);
 		}
-		printf ("  %s %s;\n", type_name, member_name);
+		r_strbuf_appendf (sb, "  %s %s;\n", type_name, member_name);
 		R_FREE (type_name);
 	}
-	printf ("};\n");
+	r_strbuf_append (sb, "};\n");
 }
 
-static void print_enum(STpiStream *ss, const char *name, const char *type, const RList *members, PrintfCallback printf) {
-	if (!name || !printf) {
+static void print_enum(STpiStream *ss, const char *name, const char *type, const RList *members, RStrBuf *sb) {
+	if (!name || !sb) {
 		return;
 	}
-	printf ("enum %s { // type: %s\n", name, type);
+	r_strbuf_appendf (sb, "enum %s { // type: %s\n", name, type);
 
 	STypeInfo *type_info;
 	RListIter *member_iter;
@@ -1024,13 +1024,13 @@ static void print_enum(STpiStream *ss, const char *name, const char *type, const
 		if (type_info->get_val) {
 			type_info->get_val (ss, type_info, &value);
 		}
-		printf ("  %s = %d,\n", member_name, value);
+		r_strbuf_appendf (sb, "  %s = %d,\n", member_name, value);
 	}
-	printf ("};\n");
+	r_strbuf_append (sb, "};\n");
 }
 
-static void print_types_regular(const RBinPdb *pdb, STpiStream *ss, const RList *types) {
-	if (!pdb || !types) {
+static void print_types_regular(STpiStream *ss, const RList *types, RStrBuf *sb) {
+	if (!types || !sb) {
 		return;
 	}
 	SType *type;
@@ -1065,13 +1065,13 @@ static void print_types_regular(const RBinPdb *pdb, STpiStream *ss, const RList 
 		switch (type_info->leaf_type) {
 		case eLF_CLASS:
 		case eLF_STRUCTURE:
-			print_struct (ss, name, size, members, pdb->cb_printf);
+			print_struct (ss, name, size, members, sb);
 			break;
 		case eLF_UNION:
-			print_union (ss, name, size, members, pdb->cb_printf);
+			print_union (ss, name, size, members, sb);
 			break;
 		case eLF_ENUM:;
-			print_enum (ss, name, get_enum_base_type_name (ss, type_info), members, pdb->cb_printf);
+			print_enum (ss, name, get_enum_base_type_name (ss, type_info), members, sb);
 			break;
 		default:
 			// Unimplemented printing of printable type
@@ -1203,8 +1203,8 @@ static void print_types_json(const RBinPdb *pdb, PJ *pj, STpiStream *ss, const R
 	pj_end (pj);
 }
 
-static void print_types_format(const RBinPdb *pdb, STpiStream *ss, const RList *types) {
-	if (!pdb || !types) {
+static void print_types_format(STpiStream *ss, const RList *types, RStrBuf *sb) {
+	if (!types || !sb) {
 		return;
 	}
 	SType *type;
@@ -1271,7 +1271,7 @@ static void print_types_format(const RBinPdb *pdb, STpiStream *ss, const RList *
 		}
 		if (!failed && format.len > 0) {
 			char *sanitized_name = r_str_sanitize_sdb_key (name);
-			pdb->cb_printf ("pf.%s %s %s\n", sanitized_name, r_strbuf_get (&format), r_strbuf_get (&member_names));
+			r_strbuf_appendf (sb, "pf.%s %s %s\n", sanitized_name, r_strbuf_get (&format), r_strbuf_get (&member_names));
 			free (sanitized_name);
 		}
 		if (owned_name) {
@@ -1282,26 +1282,35 @@ static void print_types_format(const RBinPdb *pdb, STpiStream *ss, const RList *
 	}
 }
 
-static void print_types(const RBinPdb *pdb, PJ *pj, const int mode) {
+static char *print_types(const RBinPdb *pdb, PJ *pj, const int mode) {
 	RList *plist = pdb->pdb_streams;
 	STpiStream *ss = r_list_get_n (plist, ePDB_STREAM_TPI);
 	if (R_LIKELY (ss)) {
 		switch (mode) {
-		case 'd': print_types_regular (pdb, ss, ss->types); return;
-		case 'j': print_types_json (pdb, pj, ss, ss->types); return;
-		case 'r': print_types_format (pdb, ss, ss->types); return;
+		case 'd': {
+			RStrBuf sb;
+			r_strbuf_init (&sb);
+			print_types_regular (ss, ss->types, &sb);
+			return r_strbuf_drain (&sb);
+		}
+		case 'j': print_types_json (pdb, pj, ss, ss->types); return NULL;
+		case 'r': {
+			RStrBuf sb;
+			r_strbuf_init (&sb);
+			print_types_format (ss, ss->types, &sb);
+			return r_strbuf_drain (&sb);
+		}
 		}
 	} else {
 		R_LOG_ERROR ("There is no tpi stream in current pdb");
 	}
+	return NULL;
 }
 
 
-static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
+static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	SStreamParseFunc *omap = NULL, *sctns = NULL, *sctns_orig = NULL, *gsym = NULL, *tmp;
 	SIMAGE_SECTION_HEADER *sctn_header = NULL;
-	SGDATAStream *gsym_data_stream = NULL;
-	SPEStream *pe_stream = NULL;
 	SGlobal *gdata;
 	RListIter *it;
 	char *name;
@@ -1326,23 +1335,24 @@ static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	}
 	if (!gsym) {
 		R_LOG_ERROR ("There is no global symbols in current PDB");
-		return;
+		return NULL;
 	}
 
 	if (format == 'j') {
 		pj_ka (pj, "gvars");
 	}
-	gsym_data_stream = (SGDATAStream *)gsym->stream;
+	SGDATAStream *gsym_data_stream = (SGDATAStream *)gsym->stream;
+	SPEStream *pe_stream = NULL;
 	if ((omap != 0) && (sctns_orig != 0)) {
 		pe_stream = (SPEStream *)sctns_orig->stream;
-	} else {
-		if (sctns) {
-			pe_stream = (SPEStream *)sctns->stream;
-		}
+	} else if (sctns) {
+		pe_stream = (SPEStream *)sctns->stream;
 	}
 	if (!pe_stream) {
-		return;
+		return NULL;
 	}
+	RStrBuf sb;
+	r_strbuf_init (&sb);
 	r_list_foreach (gsym_data_stream->globals_list, it, gdata) {
 		sctn_header = r_list_get_n (pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
@@ -1357,7 +1367,7 @@ static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			case 2:
 			case 'j': // JSON
 				pj_o (pj);
-				pj_kN (pj, "address", (img_base + omap_remap ((omap)? (omap->stream): 0, gdata->offset + sctn_header->virtual_address)));
+				pj_kN (pj, "address", addr);
 				pj_kN (pj, "symtype", gdata->symtype);
 				pj_ks (pj, "section_name", sname);
 				pj_ks (pj, "gdata_name", name);
@@ -1367,14 +1377,13 @@ static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			case '*':
 			case 'r': // r2 script
 				filtered_name = r_name_filter_dup (r_str_trim_head_ro (name));
-				pdb->cb_printf ("'@0x%" PFMT64x "'f pdb.%s\n", addr, filtered_name);
+				r_strbuf_appendf (&sb, "'@0x%" PFMT64x "'f pdb.%s\n", addr, filtered_name);
 				free (filtered_name);
 				break;
 			// case 'd':
 			default:
-				pdb->cb_printf ("0x%08" PFMT64x "  %d  %s  %s\n",
-					(ut64) (img_base + omap_remap ((omap)? (omap->stream): 0, gdata->offset + sctn_header->virtual_address)),
-					gdata->symtype, sname, name);
+				r_strbuf_appendf (&sb, "0x%08" PFMT64x "  %d  %s  %s\n",
+					(ut64) addr, gdata->symtype, sname, name);
 				break;
 			}
 			free (name);
@@ -1384,7 +1393,9 @@ static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	}
 	if (format == 'j') {
 		pj_end (pj);
+		return NULL;
 	}
+	return r_strbuf_drain (&sb);
 }
 
 
@@ -1394,9 +1405,6 @@ R_API bool r_bin_pdb_parser_with_buf(RBinPdb *pdb, R_OWNED RBuffer *buf) {
 	if (!pdb) {
 		R_LOG_ERROR ("R_PDB structure is incorrect");
 		goto error;
-	}
-	if (!pdb->cb_printf) {
-		pdb->cb_printf = (PrintfCallback)printf;
 	}
 	pdb->buf = buf;
 	if (!pdb->buf) {
