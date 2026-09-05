@@ -1113,13 +1113,17 @@ static const char *get_regname(RAnal *anal, RAnalValue *value) {
 #else
 	if (value && value->reg) {
 		name = value->reg;
-		RRegItem *ri = r_reg_get (anal->reg, value->reg, -1);
-		if (ri && (ri->size == 32) && (anal->config->bits == 64)) {
-			// only gprs have a 64bit twin: an fp reg like arm64 s0 must keep its name
-			const char *name64 = r_reg_32_to_64 (anal->reg, value->reg);
-			if (name64) {
-				name = name64;
+		// only gprs have a wider twin: an fp reg like arm64 s0 must keep its name
+		RRegItem *ri = r_reg_get (anal->reg, value->reg, R_REG_TYPE_GPR);
+		if (ri) {
+			const int bits = anal->config->bits;
+			if (ri->type == R_REG_TYPE_GPR && ri->size < bits) {
+				RRegItem *parent = r_reg_get_at (anal->reg, R_REG_TYPE_GPR, bits, BITS2BYTES (ri->offset));
+				if (parent) {
+					name = parent->name;
+				}
 			}
+			r_unref (ri);
 		}
 	}
 #endif

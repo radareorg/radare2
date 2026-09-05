@@ -1,7 +1,7 @@
 #include <r_util.h>
 #include "minunit.h"
+#include <r_anal.h>
 #include <r_bin.h>
-#include <r_core.h>
 #include <r_bin_dwarf.h>
 #include "../../libr/bin/format/pdb/types.h"
 #include "../../libr/bin/format/pdb/tpi.h"
@@ -17,7 +17,6 @@
 
 // copy from cbin.c modified to get pdb back
 int pdb_info(const char *file, RBinPdb *pdb) {
-	pdb->cb_printf = r_cons_gprintf;
 	if (!r_bin_pdb_parser (pdb, file)) {
 		return false;
 	}
@@ -30,7 +29,6 @@ int pdb_info(const char *file, RBinPdb *pdb) {
 }
 
 int pdb_info_save_types(RAnal *anal, const char *file, RBinPdb *pdb) {
-	pdb->cb_printf = r_cons_gprintf;
 	if (!r_bin_pdb_parser (pdb, file)) {
 		return false;
 	}
