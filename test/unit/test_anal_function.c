@@ -741,6 +741,24 @@ static void atomic_mutation_test_anal_free(RAnal *anal) {
 	r_anal_free (anal);
 }
 
+typedef struct {
+	size_t count;
+	ut64 owner_addr;
+	ut64 switch_addr;
+} SwitchOwnershipProbe;
+
+static bool switch_ownership_probe(RAnalFunction *fcn, RAnalBlock *block,
+		RAnalSwitchOp *switch_op, void *user) {
+	(void)fcn;
+	SwitchOwnershipProbe *probe = user;
+	probe->count++;
+	probe->owner_addr = block->addr;
+	probe->switch_addr = switch_op->jump_addr;
+	return true;
+}
+
+// the walk reaches the indirect jump twice; the second arrival must not publish the switch on the start block
+
 bool test_r_anal_function_overlapped_walk_keeps_one_switch_owner(void) {
 	const ut64 addr = 0x1000;
 	const char *hex =
@@ -778,6 +796,9 @@ bool test_r_anal_function_overlapped_walk_keeps_one_switch_owner(void) {
 	mu_assert_eq (ownership.switch_addr, addr + 197,
 		"switch ownership names the indirect jump");
 	r_core_free (core);
+	mu_end;
+}
+
 bool test_r_anal_apply_mutations_atomic_is_all_or_nothing(void) {
 	RAnal *anal = atomic_mutation_test_anal_new ();
 	mu_assert_notnull (anal, "create atomic mutation analysis");
