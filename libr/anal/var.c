@@ -198,45 +198,45 @@ static bool array_type_info(RAnal *anal, const char *type, int *esize, int *coun
 	return true;
 }
 
-// If the type of var is a struct,
-// remove all other vars that are overlapped by var and are at the offset of one of its struct members
-static void shadow_var_struct_members(RAnal *anal, RAnalVar *var) {
-	Sdb *TDB = var->fcn->anal->sdb_types;
-	// drop emulation slots synthesised inside an array var's extent (e.g. ucTemp[4] byte stores that became arg_81h..83h)
+// Bytes a stack variable covers when its type is an aggregate; 0 for anything else
+static int aggregate_extent(RAnal *anal, const RAnalVar *var) {
+	if (R_STR_ISEMPTY (var->type)) {
+		return 0;
+	}
 	int esize, count;
-	if ((var->kind == R_ANAL_VAR_KIND_SPV || var->kind == R_ANAL_VAR_KIND_BPV)
-			&& var->type && array_type_info (anal, var->type, &esize, &count)) {
-		const int extent = esize * count;
-		int off;
-		for (off = 1; off < extent; off++) {
-			RAnalVar *other = r_anal_function_get_var (var->fcn, var->kind, var->delta + off);
-			if (other && other != var) {
-				r_anal_var_delete (anal, other);
-			}
+	if (array_type_info (anal, var->type, &esize, &count)) {
+		return esize * count;
+	}
+	char *resolved = r_type_resolve_typedef (anal->sdb_types, var->type);
+	const RTypeKind kind = r_type_kind (anal->sdb_types, resolved? resolved: var->type);
+	free (resolved);
+	if (kind != R_TYPE_STRUCT && kind != R_TYPE_UNION) {
+		return 0;
+	}
+	return (int)(r_anal_type_bitsize (anal, var->type) / 8);
+}
+
+// An aggregate owns its whole extent: drop the stack vars recovery had named inside it
+static void shadow_interior_vars(RAnal *anal, RAnalVar *var) {
+	if (var->kind != R_ANAL_VAR_KIND_SPV && var->kind != R_ANAL_VAR_KIND_BPV) {
+		return;
+	}
+	const int extent = aggregate_extent (anal, var);
+	if (extent < 2) {
+		return;
+	}
+	RVecAnalVarPtr *vars = anal_var_ptr_clone (&var->fcn->vars);
+	if (!vars) {
+		return;
+	}
+	RAnalVar **it;
+	R_VEC_FOREACH (vars, it) {
+		RAnalVar *other = *it;
+		if (other != var && other->kind == var->kind && other->delta > var->delta && other->delta < var->delta + extent) {
+			r_anal_var_delete (anal, other);
 		}
 	}
-	const char *type_kind = sdb_const_get (TDB, var->type, 0);
-	if (type_kind && r_str_startswith (type_kind, "struct")) {
-		char *field;
-		int field_n;
-		char *type_key = r_str_newf ("%s.%s", type_kind, var->type);
-		for (field_n = 0; (field = sdb_array_get (TDB, type_key, field_n, NULL)); field_n++) {
-			char field_key[0x300];
-			if (snprintf (field_key, sizeof (field_key), "%s.%s", type_key, field) < 0) {
-				continue;
-			}
-			ut64 field_offset = 0;
-			free (r_type_get_member (TDB, field_key, &field_offset, NULL));
-			if (field_offset != 0) { // delete variables which are overlaid by structure
-				RAnalVar *other = r_anal_function_get_var (var->fcn, var->kind, var->delta + field_offset);
-				if (other && other != var) {
-					r_anal_var_delete (anal, other);
-				}
-			}
-			free (field);
-		}
-		free (type_key);
-	}
+	RVecAnalVarPtr_free (vars);
 }
 
 static inline bool valid_var_kind(char kind) {
@@ -302,7 +302,7 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 	var->kind = kind;
 	var->isarg = isarg;
 	var->delta = delta;
-	shadow_var_struct_members (fcn->anal, var);
+	shadow_interior_vars (fcn->anal, var);
 	return var;
 }
 
@@ -325,7 +325,7 @@ R_API void r_anal_var_set_type(RAnal *anal, RAnalVar *var, const char * const ty
 		free (var->type);
 		var->type = nt;
 		R_LOG_DEBUG ("set type %s for %s", type, var->name);
-		shadow_var_struct_members (anal, var);
+		shadow_interior_vars (anal, var);
 		{
 			REventVariable event = { .fcn = var->fcn, .var = var, .type = type };
 			r_event_send (anal->ev, R_EVENT_VARIABLE_TYPE_CHANGED, &event);
