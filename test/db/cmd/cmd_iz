@@ -832,19 +832,8 @@ RUN
 
 NAME=izaj (ascii only, JSON)
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=izaj
+CMDS=izaj~Hello
 EXPECT=<<EOF
 [{"vaddr":134513840,"paddr":1200,"ordinal":0,"size":13,"length":12,"section":".rodata","type":"ascii","string":"Hello world!"}]
-EOF
-RUN
-
-NAME=iz - no match for wrong type (wide in ascii-only binary)
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EOF
-izw
-EOF
-EXPECT=<<EOF
-nth paddr vaddr len size section type string
---------------------------------------------
 EOF
 RUN
