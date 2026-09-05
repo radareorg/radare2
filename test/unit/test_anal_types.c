@@ -772,6 +772,62 @@ static bool test_anal_type_bitsize_struct_cycle(void) {
 	mu_end;
 }
 
+static bool test_anal_type_bitsize_struct_recorded(void) {
+	RAnal *anal = r_anal_new ();
+	Sdb *TDB = anal->sdb_types;
+	sdb_set (TDB, "int32_t", "type", 0);
+	sdb_num_set (TDB, "type.int32_t.size", 32, 0);
+	// an importer that knows the real width, padding included, saves it with the members
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("padded");
+	base->size = 128;
+	RAnalStructMember member = {
+		.offset = 0,
+		.type = strdup ("int32_t"),
+		.name = strdup ("a")
+	};
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
+	member.offset = 8;
+	member.type = strdup ("int32_t");
+	member.name = strdup ("b");
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+	mu_assert_eq (sdb_num_get (TDB, "type.padded.size", NULL), 128, "The struct width is saved beside its members");
+	mu_assert_eq (r_type_get_bitsize (TDB, "padded"), 128, "A recorded width wins over the member sum");
+	mu_assert_eq (r_type_get_bitsize (TDB, "struct padded"), 128, "The keyword spelling reads the same record");
+	// a re-save of what was read back keeps the width
+	base = r_anal_get_base_type (anal, "padded");
+	mu_assert_notnull (base, "The saved struct reads back");
+	mu_assert_eq (base->size, 128, "The width reads back with the members");
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+	mu_assert_eq (r_type_get_bitsize (TDB, "padded"), 128, "A re-save keeps the recorded width");
+	// a struct that names itself still measures when the importer recorded its width
+	sdb_set (TDB, "self", "struct", 0);
+	sdb_set (TDB, "struct.self", "inner", 0);
+	sdb_set (TDB, "struct.self.inner", "self,0,0", 0);
+	sdb_num_set (TDB, "type.self.size", 8, 0);
+	mu_assert_eq (r_type_get_bitsize (TDB, "self"), 8, "A recorded width answers for a self-naming struct");
+	// a definition without a width drops a stale record and walks the members again
+	base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	base->name = strdup ("padded");
+	member.offset = 0;
+	member.type = strdup ("int32_t");
+	member.name = strdup ("a");
+	RVecAnalTypeMember_push_back (&base->struct_data.members, &member);
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+	mu_assert_null (sdb_const_get (TDB, "type.padded.size", NULL), "A save without a width drops the stale record");
+	mu_assert_eq (r_type_get_bitsize (TDB, "padded"), 32, "Without a record the members are measured");
+	// deleting the type drops its width too
+	sdb_num_set (TDB, "type.padded.size", 64, 0);
+	r_type_del (TDB, "padded");
+	mu_assert_null (sdb_const_get (TDB, "type.padded.size", NULL), "Deleting the struct drops its width");
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_anal_get_base_type_struct);
 	mu_run_test (test_anal_save_base_type_struct);
@@ -791,6 +847,7 @@ int all_tests(void) {
 	mu_run_test (test_anal_save_base_type_enum);
 	mu_run_test (test_anal_get_base_type_typedef);
 	mu_run_test (test_anal_type_bitsize_struct_cycle);
+	mu_run_test (test_anal_type_bitsize_struct_recorded);
 	mu_run_test (test_anal_save_base_type_typedef);
 	mu_run_test (test_anal_get_base_type_atomic);
 	mu_run_test (test_anal_save_base_type_atomic);

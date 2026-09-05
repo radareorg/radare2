@@ -341,6 +341,8 @@ static RAnalBaseType *get_composite_type(RAnal *anal, const char *sname, RAnalBa
 	if (!sdb_members) {
 		goto error;
 	}
+	// carry the recorded width along so a re-save keeps it
+	base_type->size = sdb_num_getf (anal->sdb_types, NULL, "type.%s.size", sname);
 
 	RVecAnalTypeMember *members = r_anal_base_type_members (base_type);
 	if (!RVecAnalTypeMember_reserve (members, (size_t)sdb_alen (sdb_members))) {
@@ -574,6 +576,13 @@ static void save_composite(const RAnal *anal, const RAnalBaseType *type) {
 	}
 	// name=struct
 	sdb_set (db, sname, kind, 0);
+	// type.name.size=bits, when the importer knew it, so r_type_get_bitsize need not walk the members
+	r_strf_var (sk, KSZ, "type.%s.size", sname);
+	if (type->size) {
+		sdb_num_set (db, sk, type->size, 0);
+	} else {
+		sdb_unset (db, sk, 0);
+	}
 
 	RStrBuf *arglist = r_strbuf_new ("");
 
