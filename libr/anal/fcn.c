@@ -1840,7 +1840,9 @@ noskip:
 			}
 			// switch statement
 			// gates every case: movdisp walks these too (bash 0x432b1)
-			if (anal->opt.jmptbl && anal->lea_jmptbl_ip != op->addr && !is_pcrel_jmp (anal, op)) {
+			// on an already-owned block `bb` is still the walk's start block, not the owner of this jump
+			if (!overlapped && anal->opt.jmptbl && anal->lea_jmptbl_ip != op->addr
+					&& !is_pcrel_jmp (anal, op)) {
 				ut8 buf[32]; // 32 bytes is enough to hold any instruction.
 					// op->ireg since rip relative addressing produces way too many false positives otherwise
 					// op->ireg is 0 for rip relative, "rax", etc otherwise
