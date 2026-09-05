@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <sdb/sdb.h>
+#include "function_snapshot.h"
 
 #define KSZ 256
 
@@ -106,6 +107,7 @@ R_IPI void r_anal_types_ensure_loaded(RAnal *anal) {
 	load_types_from (anal, "types-%s-%s-%d", arch, os, bits);
 	priv->types_dirty = false;
 	priv->types_loaded_bits = bits;
+	r_anal_types_bump_dirty_epoch (anal);
 }
 
 R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *os, const char *subsystem) {
@@ -150,11 +152,13 @@ R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *
 	load_types_from (anal, "types-%s-%s-%d", arch, os, bits);
 	priv->types_dirty = false;
 	priv->types_loaded_bits = bits;
+	r_anal_types_bump_dirty_epoch (anal);
 }
 
 R_API void r_anal_types_load_sdb(RAnal *anal, const char *name) {
 	R_RETURN_IF_FAIL (anal && name);
 	load_types_from (anal, "%s", name);
+	r_anal_types_bump_dirty_epoch (anal);
 }
 
 // a pointer is one target word wide, which r_type_get_bitsize cannot know from the sdb alone
@@ -195,6 +199,7 @@ R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {
 	}
 	ls_free (l);
 	free (subkey);
+	r_anal_types_bump_dirty_epoch (anal);
 }
 
 // RENAME TO r_anal_types_save(); // parses the string and imports the types
@@ -223,6 +228,7 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 
 	// Now add the type to sdb.
 	sdb_query_lines (anal->sdb_types, parsed);
+	r_anal_types_bump_dirty_epoch (anal);
 }
 
 R_API bool r_anal_import_c_decls(RAnal *anal, const char *decls, char **errmsg) {
@@ -293,8 +299,14 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 		}
 
 		RAnalEnumCase cas = { .name = strdup (cur), .val = strtol (value, NULL, 16) };
-
+		if (!cas.name) {
+			goto error;
+		}
 		RAnalEnumCase *element = RVecAnalEnumCase_emplace_back (cases);
+		if (!element) {
+			free (cas.name);
+			goto error;
+		}
 		*element = cas;
 
 		sdb_aforeach_next (cur);
@@ -365,8 +377,15 @@ static RAnalBaseType *get_composite_type(RAnal *anal, const char *sname, RAnalBa
 			.count = R_STR_ISNOTEMPTY (count)? strtoul (count, NULL, 10): 0
 		};
 		free (values);
-
+		if (!memb.name || !memb.type) {
+			anal_type_member_fini (&memb);
+			goto error;
+		}
 		RAnalTypeMember *element = RVecAnalTypeMember_emplace_back (members);
+		if (!element) {
+			anal_type_member_fini (&memb);
+			goto error;
+		}
 		*element = memb;
 
 		sdb_aforeach_next (cur);
@@ -454,40 +473,351 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 	return base_type;
 }
 
-R_API RList *r_anal_types_baselist(RAnal *anal) {
+static int base_type_name_cmp(const void *a, const void *b) {
+	const RAnalBaseType *ta = (const RAnalBaseType *)a;
+	const RAnalBaseType *tb = (const RAnalBaseType *)b;
+	return strcmp (ta && ta->name? ta->name: "", tb && tb->name? tb->name: "");
+}
+
+static RAnalBaseType *get_base_type_for_kind(RAnal *anal, const char *kind, const char *sname) {
+	R_RETURN_VAL_IF_FAIL (anal && R_STR_ISNOTEMPTY (kind) && R_STR_ISNOTEMPTY (sname), NULL);
+	if (!strcmp (kind, "struct")) {
+		return get_composite_type (anal, sname, R_ANAL_BASE_TYPE_KIND_STRUCT);
+	}
+	if (!strcmp (kind, "enum")) {
+		return get_enum_type (anal, sname);
+	}
+	if (!strcmp (kind, "union")) {
+		return get_composite_type (anal, sname, R_ANAL_BASE_TYPE_KIND_UNION);
+	}
+	if (!strcmp (kind, "typedef")) {
+		return get_typedef_type (anal, sname);
+	}
+	if (!strcmp (kind, "type")) {
+		return get_atomic_type (anal, sname);
+	}
+	return NULL;
+}
+
+typedef enum {
+	BASE_TYPE_APPEND_OK,
+	BASE_TYPE_APPEND_SKIPPED,
+	BASE_TYPE_APPEND_ERROR,
+} BaseTypeAppendResult;
+
+static BaseTypeAppendResult append_base_type_if_unseen(RAnal *anal, RList *types, Sdb *seen, const char *kind, const char *sname) {
+	R_RETURN_VAL_IF_FAIL (anal && types && seen && R_STR_ISNOTEMPTY (kind) && R_STR_ISNOTEMPTY (sname), BASE_TYPE_APPEND_ERROR);
+	char *seen_key = r_str_newf ("%s.%s", kind, sname);
+	if (!seen_key) {
+		return BASE_TYPE_APPEND_ERROR;
+	}
+	if (sdb_exists (seen, seen_key)) {
+		free (seen_key);
+		return BASE_TYPE_APPEND_SKIPPED;
+	}
+	RAnalBaseType *base_type = get_base_type_for_kind (anal, kind, sname);
+	if (!base_type) {
+		free (seen_key);
+		return BASE_TYPE_APPEND_ERROR;
+	}
+	base_type->name = strdup (sname);
+	if (!base_type->name || !sdb_set (seen, seen_key, "1", 0)
+		|| !r_list_append (types, base_type)) {
+		sdb_unset (seen, seen_key, 0);
+		r_anal_base_type_free (base_type);
+		free (seen_key);
+		return BASE_TYPE_APPEND_ERROR;
+	}
+	free (seen_key);
+	return BASE_TYPE_APPEND_OK;
+}
+
+static bool split_base_type_namespace_key(const char *key, const char **kind, const char **sname) {
+	static const char *kinds[] = { "struct", "union", "enum", "typedef", "type", NULL };
+	R_RETURN_VAL_IF_FAIL (key && kind && sname, false);
+	size_t i;
+	for (i = 0; kinds[i]; i++) {
+		const char *candidate = kinds[i];
+		const size_t len = strlen (candidate);
+		if (strncmp (key, candidate, len) || key[len] != '.') {
+			continue;
+		}
+		const char *name = key + len + 1;
+		if (R_STR_ISEMPTY (name) || strchr (name, '.')) {
+			return false;
+		}
+		*kind = candidate;
+		*sname = name;
+		return true;
+	}
+	return false;
+}
+
+typedef struct {
+	size_t base_types;
+	size_t children;
+	size_t string_bytes;
+} RAnalTypeSnapshotBudget;
+
+static bool type_snapshot_budget_add(size_t *total, size_t amount, size_t maximum) {
+	size_t next;
+	if (r_add_overflow_size_t (*total, amount, &next) || next > maximum) {
+		return false;
+	}
+	*total = next;
+	return true;
+}
+
+static bool type_snapshot_budget_add_string(RAnalTypeSnapshotBudget *budget, size_t length) {
+	size_t owned_bytes;
+	return !r_add_overflow_size_t (length, 1, &owned_bytes)
+		&& type_snapshot_budget_add (&budget->string_bytes, owned_bytes, SIZE_MAX);
+}
+
+static bool type_snapshot_budget_fits(
+	const RAnalTypeSnapshotBudget *used,
+	const RAnalTypeSnapshotBudget *added,
+	const RAnalFunctionSnapshotLimits *limits) {
+	size_t total;
+	return !r_add_overflow_size_t (used->base_types, added->base_types, &total)
+		&& total <= limits->max_base_types
+		&& !r_add_overflow_size_t (used->children, added->children, &total)
+		&& total <= limits->max_base_type_children
+		&& !r_add_overflow_size_t (used->string_bytes, added->string_bytes, &total)
+		&& total <= limits->max_base_type_string_bytes;
+}
+
+static bool type_snapshot_budget_commit(
+	RAnalTypeSnapshotBudget *used,
+	const RAnalTypeSnapshotBudget *added,
+	const RAnalFunctionSnapshotLimits *limits) {
+	if (!type_snapshot_budget_fits (used, added, limits)) {
+		return false;
+	}
+	return type_snapshot_budget_add (&used->base_types, added->base_types, SIZE_MAX)
+		&& type_snapshot_budget_add (&used->children, added->children, SIZE_MAX)
+		&& type_snapshot_budget_add (&used->string_bytes, added->string_bytes, SIZE_MAX);
+}
+
+static bool type_snapshot_kind_supported(const char *kind) {
+	return !strcmp (kind, "struct") || !strcmp (kind, "union")
+		|| !strcmp (kind, "enum") || !strcmp (kind, "typedef")
+		|| !strcmp (kind, "type");
+}
+
+static size_t type_snapshot_member_type_length(const char *value) {
+	const char *last = strrchr (value, ',');
+	if (!last) {
+		return strlen (value);
+	}
+	const char *middle = NULL;
+	const char *cursor;
+	for (cursor = value; cursor < last; cursor++) {
+		if (*cursor == ',') {
+			middle = cursor;
+		}
+	}
+	return (size_t)((middle? middle: last) - value);
+}
+
+static bool type_snapshot_preflight_one(
+	RAnal *anal,
+	Sdb *seen,
+	RAnalTypeSnapshotBudget *used,
+	const RAnalFunctionSnapshotLimits *limits,
+	const char *kind,
+	const char *sname) {
+	const char *data = sdb_const_getf (anal->sdb_types, NULL, "%s.%s", kind, sname);
+	if (!data) {
+		return true;
+	}
+	size_t name_bytes;
+	if (r_add_overflow_size_t (strlen (sname), 1, &name_bytes)
+		|| name_bytes > limits->max_base_type_string_bytes) {
+		return false;
+	}
+	char *seen_key = r_str_newf ("%s.%s", kind, sname);
+	if (!seen_key) {
+		return false;
+	}
+	if (sdb_exists (seen, seen_key)) {
+		free (seen_key);
+		return true;
+	}
+	RAnalTypeSnapshotBudget added = { .base_types = 1 };
+	if (!type_snapshot_budget_add_string (&added, strlen (sname))
+		|| !type_snapshot_budget_fits (used, &added, limits)) {
+		free (seen_key);
+		return false;
+	}
+	if (!strcmp (kind, "typedef") || !strcmp (kind, "type")) {
+		if (!type_snapshot_budget_add_string (&added, strlen (data))) {
+			free (seen_key);
+			return false;
+		}
+	} else {
+		const bool composite = strcmp (kind, "enum");
+		const char *cursor = data;
+		while (*cursor) {
+			const char *comma = strchr (cursor, ',');
+			const size_t name_length = comma? (size_t)(comma - cursor): strlen (cursor);
+			if (!name_length) {
+				cursor = comma? comma + 1: cursor + 1;
+				continue;
+			}
+			if (!type_snapshot_budget_add (&added.children, 1, SIZE_MAX)
+				|| !type_snapshot_budget_add_string (&added, name_length)
+				|| !type_snapshot_budget_fits (used, &added, limits)) {
+				free (seen_key);
+				return false;
+			}
+			char *child_name = r_str_ndup (cursor, name_length);
+			char *child_key = child_name
+				? r_str_newf ("%s.%s.%s", kind, sname, child_name): NULL;
+			free (child_name);
+			if (!child_key) {
+				free (seen_key);
+				return false;
+			}
+			const char *value = sdb_const_get (anal->sdb_types, child_key, NULL);
+			free (child_key);
+			if (!value) {
+				free (seen_key);
+				return true;
+			}
+			if (composite
+				&& (!type_snapshot_budget_add_string (
+						&added, type_snapshot_member_type_length (value))
+					|| !type_snapshot_budget_fits (used, &added, limits))) {
+				free (seen_key);
+				return false;
+			}
+			if (!comma) {
+				break;
+			}
+			cursor = comma + 1;
+		}
+	}
+	if (!type_snapshot_budget_commit (used, &added, limits)
+		|| !sdb_set (seen, seen_key, "1", 0)) {
+		free (seen_key);
+		return false;
+	}
+	free (seen_key);
+	return true;
+}
+
+typedef struct {
+	RAnal *anal;
+	Sdb *seen;
+	RAnalTypeSnapshotBudget budget;
+	const RAnalFunctionSnapshotLimits *limits;
+} TypeSnapshotPreflightContext;
+
+static bool types_snapshot_preflight_cb(void *user, const char *name, const char *kind) {
+	TypeSnapshotPreflightContext *ctx = user;
+	if (R_STR_ISEMPTY (name) || R_STR_ISEMPTY (kind)) {
+		return true;
+	}
+	const char *namespace_kind = NULL;
+	const char *namespace_name = NULL;
+	if (split_base_type_namespace_key (name, &namespace_kind, &namespace_name)) {
+		return type_snapshot_preflight_one (
+			ctx->anal, ctx->seen, &ctx->budget, ctx->limits, namespace_kind, namespace_name);
+	}
+	if (!strchr (name, '.') && type_snapshot_kind_supported (kind)) {
+		return type_snapshot_preflight_one (
+			ctx->anal, ctx->seen, &ctx->budget, ctx->limits, kind, name);
+	}
+	return true;
+}
+
+static bool types_snapshot_preflight(RAnal *anal, const RAnalFunctionSnapshotLimits *limits, RAnalTypeSnapshotBudget *result) {
+	TypeSnapshotPreflightContext ctx = {
+		.anal = anal,
+		.seen = sdb_new0 (),
+		.limits = limits,
+	};
+	if (!ctx.seen) {
+		return false;
+	}
+	const bool valid = sdb_foreach (anal->sdb_types, types_snapshot_preflight_cb, &ctx);
+	sdb_free (ctx.seen);
+	if (valid) {
+		*result = ctx.budget;
+	}
+	return valid;
+}
+
+typedef struct {
+	RAnal *anal;
+	RList *types;
+	Sdb *seen;
+	bool fail_closed;
+	bool valid;
+} TypeSnapshotCloneContext;
+
+static bool types_snapshot_clone_cb(void *user, const char *name, const char *kind) {
+	TypeSnapshotCloneContext *ctx = user;
+	if (R_STR_ISEMPTY (name) || R_STR_ISEMPTY (kind)) {
+		return true;
+	}
+	BaseTypeAppendResult result = BASE_TYPE_APPEND_SKIPPED;
+	const char *namespace_kind = NULL;
+	const char *namespace_name = NULL;
+	if (split_base_type_namespace_key (name, &namespace_kind, &namespace_name)) {
+		if (!sdb_const_getf (ctx->anal->sdb_types, NULL, "%s.%s",
+				namespace_kind, namespace_name)) {
+			return true;
+		}
+		result = append_base_type_if_unseen (
+			ctx->anal, ctx->types, ctx->seen, namespace_kind, namespace_name);
+	} else if (!strchr (name, '.') && type_snapshot_kind_supported (kind)) {
+		if (!sdb_const_getf (ctx->anal->sdb_types, NULL, "%s.%s", kind, name)) {
+			return true;
+		}
+		result = append_base_type_if_unseen (
+			ctx->anal, ctx->types, ctx->seen, kind, name);
+	}
+	if (result == BASE_TYPE_APPEND_ERROR && ctx->fail_closed) {
+		ctx->valid = false;
+		return false;
+	}
+	return true;
+}
+
+static RList *types_baselist_with_limits(RAnal *anal, const RAnalFunctionSnapshotLimits *limits) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
+	RAnalTypeSnapshotBudget expected = {0};
+	if (limits && !types_snapshot_preflight (anal, limits, &expected)) {
+		return NULL;
+	}
 	RList *types = r_list_newf ((RListFree)r_anal_base_type_free);
 	if (!types) {
 		return NULL;
 	}
-
-	SdbList *keys = sdb_foreach_list (anal->sdb_types, true);
-	if (!keys) {
+	TypeSnapshotCloneContext ctx = {
+		.anal = anal,
+		.types = types,
+		.seen = sdb_new0 (),
+		.fail_closed = limits != NULL,
+		.valid = true,
+	};
+	if (!ctx.seen) {
+		if (limits) {
+			r_list_free (types);
+			return NULL;
+		}
 		return types;
 	}
-
-	SdbKv *kv;
-	SdbListIter *iter;
-	ls_foreach (keys, iter, kv) {
-		const char *name = sdbkv_key (kv);
-		const char *kind = sdbkv_value (kv);
-		if (R_STR_ISEMPTY (name) || R_STR_ISEMPTY (kind)) {
-			continue;
-		}
-		if (strchr (name, '.')) {
-			continue;
-		}
-		if (strcmp (kind, "struct") && strcmp (kind, "union")
-			&& strcmp (kind, "enum") && strcmp (kind, "typedef")
-			&& strcmp (kind, "type")) {
-			continue;
-		}
-		RAnalBaseType *base_type = r_anal_get_base_type (anal, name);
-		if (base_type) {
-			r_list_append (types, base_type);
-		}
+	const bool completed = sdb_foreach (anal->sdb_types, types_snapshot_clone_cb, &ctx);
+	sdb_free (ctx.seen);
+	r_list_sort (types, base_type_name_cmp);
+	if (limits && (!completed || !ctx.valid
+			|| (size_t)r_list_length (types) != expected.base_types)) {
+		r_list_free (types);
+		return NULL;
 	}
-	ls_free (keys);
 	return types;
 }
 
@@ -609,6 +939,186 @@ static void save_composite(const RAnal *anal, const RAnalBaseType *type) {
 
 	free (key);
 	free (sname);
+}
+
+R_API RList *r_anal_types_snapshot(RAnal *anal) {
+	return types_baselist_with_limits (anal, NULL);
+}
+
+
+R_API void r_anal_types_snapshot_free(RList *snapshot) {
+	r_list_free (snapshot);
+}
+
+R_API ut64 r_anal_types_dirty_epoch(const RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal, 0);
+	return anal->type_dirty_epoch;
+}
+
+R_API ut64 r_anal_types_bump_dirty_epoch(RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal, 0);
+	anal->type_dirty_epoch++;
+	if (!anal->type_dirty_epoch) {
+		anal->type_dirty_epoch++;
+	}
+	anal->type_context_hash_cache = 0;
+	anal->type_context_hash_epoch = 0;
+	return anal->type_dirty_epoch;
+}
+
+static ut64 type_context_hash_mix(ut64 hash, ut64 value) {
+	hash ^= value + 0x9e3779b97f4a7c15ULL + (hash << 6) + (hash >> 2);
+	return hash;
+}
+
+static ut64 type_context_hash_string(ut64 hash, const char *value) {
+	return type_context_hash_mix (hash, R_STR_ISNOTEMPTY (value)? r_str_hash64 (value): 0);
+}
+
+static bool type_context_hash_should_include_sdb_key(const char *key) {
+	return r_str_startswith (key, "link.")
+		|| r_str_startswith (key, "offset.")
+		|| r_str_startswith (key, "fcnlink.");
+}
+
+typedef struct {
+	ut64 xor_hash;
+	ut64 sum_hash;
+	ut64 count;
+} TypeContextLinkHash;
+
+static bool type_context_hash_link_cb(void *user, const char *key, const char *value) {
+	TypeContextLinkHash *links = user;
+	if (type_context_hash_should_include_sdb_key (key)) {
+		ut64 item = type_context_hash_string (0xcbf29ce484222325ULL, key);
+		item = type_context_hash_string (item, value);
+		links->xor_hash ^= item;
+		links->sum_hash += item;
+		links->count++;
+	}
+	return true;
+}
+
+static ut64 types_context_hash_from_snapshot(RAnal *anal, const RList *types, ut64 type_dirty_epoch) {
+	if (type_dirty_epoch == r_anal_types_dirty_epoch (anal)
+		&& anal->type_context_hash_cache
+		&& anal->type_context_hash_epoch == type_dirty_epoch) {
+		return anal->type_context_hash_cache;
+	}
+	ut64 hash = 0xcbf29ce484222325ULL;
+	hash = type_context_hash_mix (hash, type_dirty_epoch);
+	RListIter *iter;
+	RAnalBaseType *type;
+	r_list_foreach (types, iter, type) {
+		if (!type) {
+			continue;
+		}
+		hash = type_context_hash_string (hash, type->name);
+		hash = type_context_hash_string (hash, type->type);
+		hash = type_context_hash_mix (hash, (ut64)type->size);
+		hash = type_context_hash_mix (hash, (ut64)type->kind);
+		switch (type->kind) {
+		case R_ANAL_BASE_TYPE_KIND_STRUCT: {
+			RAnalStructMember *member;
+			R_VEC_FOREACH (&type->struct_data.members, member) {
+				hash = type_context_hash_string (hash, member->name);
+				hash = type_context_hash_string (hash, member->type);
+				hash = type_context_hash_mix (hash, (ut64)member->offset);
+				hash = type_context_hash_mix (hash, (ut64)member->bitsize);
+				hash = type_context_hash_mix (hash, (ut64)member->count);
+			}
+			break;
+		}
+		case R_ANAL_BASE_TYPE_KIND_UNION: {
+			RAnalUnionMember *member;
+			R_VEC_FOREACH (&type->union_data.members, member) {
+				hash = type_context_hash_string (hash, member->name);
+				hash = type_context_hash_string (hash, member->type);
+				hash = type_context_hash_mix (hash, (ut64)member->offset);
+				hash = type_context_hash_mix (hash, (ut64)member->bitsize);
+				hash = type_context_hash_mix (hash, (ut64)member->count);
+			}
+			break;
+		}
+		case R_ANAL_BASE_TYPE_KIND_ENUM: {
+			RAnalEnumCase *cas;
+			R_VEC_FOREACH (&type->enum_data.cases, cas) {
+				hash = type_context_hash_string (hash, cas->name);
+				hash = type_context_hash_mix (hash, (ut64)(st64)cas->val);
+			}
+			break;
+		}
+		default:
+			break;
+		}
+	}
+	TypeContextLinkHash links = {0};
+	(void)sdb_foreach (anal->sdb_types, type_context_hash_link_cb, &links);
+	if (links.count) {
+		hash = type_context_hash_mix (hash, links.xor_hash);
+		hash = type_context_hash_mix (hash, links.sum_hash);
+		hash = type_context_hash_mix (hash, links.count);
+	}
+	if (!hash) {
+		hash = 1;
+	}
+	if (type_dirty_epoch == r_anal_types_dirty_epoch (anal)) {
+		anal->type_context_hash_cache = hash;
+		anal->type_context_hash_epoch = type_dirty_epoch;
+	}
+	return hash;
+}
+
+
+R_API ut64 r_anal_types_context_hash(RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal, 0);
+	if (anal->type_context_hash_cache && anal->type_context_hash_epoch == anal->type_dirty_epoch) {
+		return anal->type_context_hash_cache;
+	}
+	const ut64 type_dirty_epoch = r_anal_types_dirty_epoch (anal);
+	RList *types = r_anal_types_snapshot (anal);
+	if (!types) {
+		return 0;
+	}
+	ut64 hash = types_context_hash_from_snapshot (anal, types, type_dirty_epoch);
+	r_anal_types_snapshot_free (types);
+	return hash;
+}
+
+R_API bool r_anal_types_set_link(RAnal *anal, const char *type, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && R_STR_ISNOTEMPTY (type), false);
+	if (r_type_set_link (anal->sdb_types, type, addr) <= 0) {
+		return false;
+	}
+	r_anal_types_bump_dirty_epoch (anal);
+	return true;
+}
+
+R_API bool r_anal_types_set_link_expression(RAnal *anal, const char *type, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && R_STR_ISNOTEMPTY (type), false);
+	if (r_type_set_link_expression (anal->sdb_types, type, addr) <= 0) {
+		return false;
+	}
+	r_anal_types_bump_dirty_epoch (anal);
+	return true;
+}
+
+R_API bool r_anal_types_set_link_offset(RAnal *anal, const char *type, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && R_STR_ISNOTEMPTY (type), false);
+	if (r_type_link_offset (anal->sdb_types, type, addr) <= 0) {
+		return false;
+	}
+	r_anal_types_bump_dirty_epoch (anal);
+	return true;
+}
+
+R_API bool r_anal_types_unlink(RAnal *anal, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types, false);
+	if (r_type_unlink (anal->sdb_types, addr) <= 0) {
+		return false;
+	}
+	r_anal_types_bump_dirty_epoch (anal);
+	return true;
 }
 
 static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
@@ -783,4 +1293,5 @@ R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type) {
 	default:
 		break;
 	}
+	r_anal_types_bump_dirty_epoch ((RAnal *)anal);
 }

@@ -80,6 +80,109 @@ static bool cc_parse_stack_pop(const char *s, int *out) {
 	return s? cc_parse_stack_pop_range (s, s + strlen (s), out): false;
 }
 
+static bool cc_parse_u64_field(const char **sp, const char *end, ut64 limit, char separator, ut64 *out) {
+	const char *s = *sp;
+	if (s >= end || !isdigit ((ut8)*s)) {
+		return false;
+	}
+	ut64 n = 0;
+	do {
+		const ut64 digit = (ut64)(*s - '0');
+		if (n > (limit - digit) / 10) {
+			return false;
+		}
+		n = (n * 10) + digit;
+		s++;
+	} while (s < end && isdigit ((ut8)*s));
+	if (separator) {
+		if (s >= end || *s != separator) {
+			return false;
+		}
+		s++;
+	} else if (s != end) {
+		return false;
+	}
+	*sp = s;
+	*out = n;
+	return true;
+}
+
+static bool cc_parse_s64_field(const char **sp, const char *end, char separator, st64 *out) {
+	const char *s = *sp;
+	const bool negative = s < end && *s == '-';
+	if (negative) {
+		s++;
+	}
+	const ut64 negative_limit = (ut64)ST64_MAX + 1;
+	ut64 magnitude;
+	if (!cc_parse_u64_field (&s, end, negative? negative_limit: ST64_MAX,
+			separator, &magnitude) || (negative && !magnitude)) {
+		return false;
+	}
+	if (!negative) {
+		*out = (st64)magnitude;
+	} else if (magnitude == negative_limit) {
+		*out = ST64_MIN;
+	} else {
+		*out = -(st64)magnitude;
+	}
+	*sp = s;
+	return true;
+}
+
+static bool cc_parse_return_mechanism(const char *record, RAnalCCReturnMechanism *mechanism) {
+	const char prefix[] = "stack:";
+	if (!record || !r_str_startswith (record, prefix)) {
+		return false;
+	}
+	const char *p = record + sizeof (prefix) - 1;
+	const char *end = record + strlen (record);
+	st64 entry_sp_offset;
+	ut64 slot_size;
+	st64 exit_sp_delta;
+	if (!cc_parse_s64_field (&p, end, ':', &entry_sp_offset)
+		|| !cc_parse_u64_field (&p, end, UT32_MAX, ':', &slot_size)
+		|| !cc_parse_s64_field (&p, end, 0, &exit_sp_delta)
+		|| !slot_size || exit_sp_delta < (st64)slot_size
+		|| entry_sp_offset > ST64_MAX - (st64)slot_size) {
+		return false;
+	}
+	*mechanism = (RAnalCCReturnMechanism) {
+		.kind = R_ANAL_CC_RETURN_MECHANISM_STACK,
+		.entry_sp_offset = entry_sp_offset,
+		.slot_size = (ut32)slot_size,
+		.exit_sp_delta = exit_sp_delta,
+	};
+	return true;
+}
+
+static bool cc_parse_stack_allocation_contract(const char *record, const char *red_zone_record, RAnalCCStackAllocationContract *contract) {
+	if (!record || !contract) {
+		return false;
+	}
+	RAnalCCStackGrowth growth;
+	if (!strcmp (record, "lower")) {
+		growth = R_ANAL_CC_STACK_GROWTH_LOWER;
+	} else if (!strcmp (record, "higher")) {
+		growth = R_ANAL_CC_STACK_GROWTH_HIGHER;
+	} else {
+		return false;
+	}
+	ut64 red_zone_bytes = 0;
+	if (red_zone_record) {
+		const char *p = red_zone_record;
+		const char *end = red_zone_record + strlen (red_zone_record);
+		if (!cc_parse_u64_field (&p, end, UT32_MAX, 0, &red_zone_bytes)) {
+			return false;
+		}
+	}
+	*contract = (RAnalCCStackAllocationContract) {
+		.growth = growth,
+		.red_zone_bytes = (ut32)red_zone_bytes,
+	};
+	return true;
+}
+
 static bool dyncc_slice_eq(const RAnalDynCCSlice *slice, const char *s) {
 	size_t len = strlen (s);
 	return slice->len == len && !strncmp (slice->p, s, len);
@@ -677,7 +780,7 @@ static bool dyncc_refs_exist(RAnal *anal, const RAnalDynCC *d) {
 }
 
 // the keys spelling a cc's argument and return layout, all invalidated by a redefinition
-static const char *cc_layout_keys[] = { "ret", "retn", "argn", "revarg", "pop", "shadow", NULL };
+static const char *cc_layout_keys[] = { "ret", "retn", "argn", "revarg", "pop", "shadow", "retmech", "stackalloc", "redzone", NULL };
 
 static void cc_unset_keys(Sdb *db, const char *name, const char **keys) {
 	RStrBuf sb;
@@ -710,15 +813,18 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	if (dyncc_parse (name, &d)) {
 		return;
 	}
+	R_CRITICAL_ENTER (anal);
 	static const char *keys[] = { "self", "error", "clobber", "preserve", NULL };
 	sdb_unset (DB, name, 0);
 	cc_unset_keys (DB, name, cc_layout_keys);
 	cc_unset_keys (DB, name, keys);
 	cc_unset_slots (DB, name);
+	R_CRITICAL_LEAVE (anal);
 }
 
 R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 	R_RETURN_VAL_IF_FAIL (anal && expr, false);
+	R_CRITICAL_ENTER (anal);
 	bool ret = false;
 	char *args = NULL;
 	char *e = strdup (expr);
@@ -782,6 +888,7 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 beach:
 	free (e);
 	free (args);
+	R_CRITICAL_LEAVE (anal);
 	return ret;
 }
 
@@ -946,6 +1053,24 @@ R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home,
 		ret = sdb_const_getf (db, NULL, "cc.%s.argn", cc);
 	}
 	return ret? dyncc_from_static_loc (anal, ret): NULL;
+}
+
+/* The register a convention hands its Nth floating-point argument in.
+ *
+ * A convention that passes floats in their own registers advances two counters,
+ * not one: `f(int a, double b, int c)` puts a and c in the first two integer
+ * registers and b in the first floating-point one. Reading the flat arg list
+ * for that signature answers with the third integer register for c, which is
+ * where the fourth integer argument would live and not where c is. The
+ * sequences are separate in the convention, so they are separate here, and a
+ * convention that has no such registers answers NULL rather than guessing. */
+R_API const char *r_anal_cc_fparg(RAnal *anal, const char *convention, int n) {
+	R_RETURN_VAL_IF_FAIL (anal && n >= 0, NULL);
+	if (!convention) {
+		return NULL;
+	}
+	const char *loc = sdb_const_getf (DB, NULL, "cc.%s.fparg%d", convention, n);
+	return loc? dyncc_from_static_loc (anal, loc): NULL;
 }
 
 // caller-reserved home space below the stack args (win64 shadow area)
@@ -1197,12 +1322,16 @@ static void cc_set_roleloc(RAnal *anal, const char *convention, const char *role
 
 R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self) {
 	R_RETURN_IF_FAIL (anal && convention && self);
+	R_CRITICAL_ENTER (anal);
 	cc_set_roleloc (anal, convention, "self", self);
+	R_CRITICAL_LEAVE (anal);
 }
 
 R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error) {
 	R_RETURN_IF_FAIL (anal && convention && error);
+	R_CRITICAL_ENTER (anal);
 	cc_set_roleloc (anal, convention, "error", error);
+	R_CRITICAL_LEAVE (anal);
 }
 
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
@@ -1254,6 +1383,27 @@ R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention) {
 	const char *pop = sdb_const_getf (DB, NULL, "cc.%s.pop", convention);
 	int ret = 0;
 	return cc_parse_stack_pop (pop, &ret)? ret: 0;
+}
+
+R_IPI bool r_anal_cc_return_mechanism(RAnal *anal, const char *convention, RAnalCCReturnMechanism *mechanism) {
+	R_RETURN_VAL_IF_FAIL (anal && convention && mechanism, false);
+	*mechanism = (RAnalCCReturnMechanism) {0};
+	if (!r_anal_cc_exist (anal, convention)) {
+		return false;
+	}
+	const char *record = sdb_const_getf (DB, NULL, "cc.%s.retmech", convention);
+	return cc_parse_return_mechanism (record, mechanism);
+}
+
+R_IPI bool r_anal_cc_stack_allocation_contract(RAnal *anal, const char *convention, RAnalCCStackAllocationContract *contract) {
+	R_RETURN_VAL_IF_FAIL (anal && convention && contract, false);
+	*contract = (RAnalCCStackAllocationContract) {0};
+	if (!r_anal_cc_exist (anal, convention)) {
+		return false;
+	}
+	const char *record = sdb_const_getf (DB, NULL, "cc.%s.stackalloc", convention);
+	const char *red_zone_record = sdb_const_getf (DB, NULL, "cc.%s.redzone", convention);
+	return cc_parse_stack_allocation_contract (record, red_zone_record, contract);
 }
 
 static const char *cc_regset(RAnal *anal, const char *convention, const char *field) {
@@ -1329,10 +1479,11 @@ static bool cc_location_range(const char *loc, const char **s, const char **end)
 	return true;
 }
 
-R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
+R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (anal && loc && reg, false);
+	// profiles and convention tables disagree on case, as r_anal_cc_preserves_reg already tolerates
 	if (*loc && *loc != '{') {
-		return !strcmp (loc, reg);
+		return !r_str_casecmp (loc, reg);
 	}
 	const char *s, *end;
 	if (!cc_location_range (loc, &s, &end)) {
@@ -1343,7 +1494,7 @@ R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg
 		if (!name) {
 			return false;
 		}
-		if (!strcmp (name, reg)) {
+		if (!r_str_casecmp (name, reg)) {
 			return true;
 		}
 	}
@@ -1357,6 +1508,35 @@ R_API const char *r_anal_cc_location_first(RAnal *anal, const char *loc) {
 	}
 	const char *s, *end;
 	return cc_location_range (loc, &s, &end) && s < end? cc_location_next (anal, &s, end): NULL;
+}
+
+/* True when the calling convention states that a callee restores this register.
+ *
+ * The preserved set is ABI data the convention already carries, so a caller can
+ * establish that a register survives a call instead of assuming it.
+ */
+R_IPI bool r_anal_cc_preserves_reg(RAnal *anal, const char *convention, const char *reg) {
+	R_RETURN_VAL_IF_FAIL (anal, false);
+	if (R_STR_ISEMPTY (convention) || R_STR_ISEMPTY (reg)) {
+		return false;
+	}
+	const char *preserves = cc_regset (anal, convention, "preserve");
+	if (R_STR_ISEMPTY (preserves)) {
+		return false;
+	}
+	if (r_anal_cc_regset_contains (preserves, reg)) {
+		return true;
+	}
+	// Register profiles and convention tables do not agree on case: an arch
+	// plugin may name the carrier RSP where the convention lists rsp.
+	char *folded = strdup (reg);
+	if (!folded) {
+		return false;
+	}
+	r_str_case (folded, false);
+	const bool preserved = r_anal_cc_regset_contains (preserves, folded);
+	free (folded);
+	return preserved;
 }
 
 R_IPI bool r_anal_cc_location_in_regset(RAnal *anal, const char *loc, const char *regset, bool all) {
@@ -1445,7 +1625,9 @@ R_API const char *r_anal_cc_default(RAnal *anal) {
 
 R_API void r_anal_set_cc_default(RAnal *anal, const char *cc) {
 	R_RETURN_IF_FAIL (anal && cc);
+	R_CRITICAL_ENTER (anal);
 	sdb_set (DB, "default.cc", cc, 0);
+	R_CRITICAL_LEAVE (anal);
 }
 
 R_API const char *r_anal_syscc_default(RAnal *anal) {
@@ -1455,7 +1637,9 @@ R_API const char *r_anal_syscc_default(RAnal *anal) {
 
 R_API void r_anal_set_syscc_default(RAnal *anal, const char *cc) {
 	R_RETURN_IF_FAIL (anal && cc);
+	R_CRITICAL_ENTER (anal);
 	sdb_set (DB, "default.syscc", cc, 0);
+	R_CRITICAL_LEAVE (anal);
 }
 
 R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name) {

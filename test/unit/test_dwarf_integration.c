@@ -1,4 +1,5 @@
 #include <r_anal.h>
+#include <r_anal_priv.h>
 #include <r_bin.h>
 #include "minunit.h"
 
@@ -8,15 +9,18 @@
 static RBin *bin = NULL;
 static RIO *io = NULL;
 static RAnal *anal = NULL;
+static RFlag *flags = NULL;
 
 static bool setup(void) {
 	bin = r_bin_new ();
 	io = r_io_new ();
 	anal = r_anal_new ();
-	if (!bin || !io || !anal) {
+	flags = r_flag_new ();
+	if (!bin || !io || !anal || !flags) {
 		r_bin_free (bin);
 		r_io_free (io);
 		r_anal_free (anal);
+		r_flag_free (flags);
 		return false;
 	}
 	anal->binb.demangle = r_bin_demangle;
@@ -29,11 +33,118 @@ static bool teardown(void) {
 	r_anal_free (anal);
 	r_bin_free (bin);
 	r_io_free (io);
+	r_flag_free (flags);
 	anal = NULL;
 	bin = NULL;
 	io = NULL;
+	flags = NULL;
 	return true;
 }
+
+static RBinDwarfAttrValue *test_find_attr(RBinDwarfDie *die, ut64 attr_name) {
+	if (!die || !die->attr_values) {
+		return NULL;
+	}
+	RBinDwarfAttrValue *value;
+	R_VEC_FOREACH (die->attr_values, value) {
+		if (value->attr_name == attr_name) {
+			return value;
+		}
+	}
+	return NULL;
+}
+
+static RBinDwarfDie *test_find_named_die(RBinDwarfCompUnit *unit, ut64 tag, const char *name) {
+	if (!unit || !unit->dies) {
+		return NULL;
+	}
+	RBinDwarfDie *die;
+	R_VEC_FOREACH (unit->dies, die) {
+		if (die->tag != tag) {
+			continue;
+		}
+		RBinDwarfAttrValue *value = test_find_attr (die, DW_AT_name);
+		if (value && value->kind == DW_AT_KIND_STRING
+			&& value->string.content && !strcmp (value->string.content, name)) {
+			return die;
+		}
+	}
+	return NULL;
+}
+
+static RBinDwarfDie *test_find_die_at(RBinDwarfCompUnit *unit, ut64 offset) {
+	if (!unit || !unit->dies) {
+		return NULL;
+	}
+	RBinDwarfDie *die;
+	R_VEC_FOREACH (unit->dies, die) {
+		if (die->offset == offset) {
+			return die;
+		}
+	}
+	return NULL;
+}
+
+static RBinDwarfDie *test_find_subtree_terminator(RBinDwarfCompUnit *unit, RBinDwarfDie *parent) {
+	if (!unit || !unit->dies || !parent || !parent->has_children) {
+		return NULL;
+	}
+	bool found = false;
+	size_t depth = 1;
+	RBinDwarfDie *die;
+	R_VEC_FOREACH (unit->dies, die) {
+		if (!found) {
+			found = die == parent;
+			continue;
+		}
+		if (die->has_children) {
+			depth++;
+		}
+		if (!die->abbrev_code && --depth == 0) {
+			return die;
+		}
+	}
+	return NULL;
+}
+
+static char *test_function_type_link_at(Sdb *types, ut64 addr) {
+	const char *link = sdb_const_getf (types, NULL, "fcnlink.%08" PFMT64x, addr);
+	return link? strdup (link): NULL;
+}
+
+
+static RAnalDwarfFramePointerProof *test_current_frame_pointer_proof(RAnal *anal, ut64 addr) {
+	RAnalPriv *priv = R_ANAL_PRIV (anal);
+	RAnalDwarfFramePointerProof *proof = priv->dwarf_frame_pointer_proofs
+		? ht_up_find (priv->dwarf_frame_pointer_proofs, addr, NULL): NULL;
+	RAnalDwarfFunctionLinkAuthority *authority = priv->dwarf_function_link_authority
+		? ht_up_find (priv->dwarf_function_link_authority, addr, NULL): NULL;
+	const char *linked = sdb_const_getf (
+		anal->sdb_types, NULL, "fcnlink.%08" PFMT64x, addr);
+	if (!proof || !authority || !linked || !anal->config || !anal->reg
+		|| proof->generation != priv->dwarf_function_link_generation
+		|| authority->generation != priv->dwarf_function_link_generation
+		|| authority->state != R_ANAL_DWARF_FUNCTION_LINK_OWNED
+		|| strcmp (proof->type_name, authority->type_name)
+		|| strcmp (proof->type_name, linked)
+		|| strcmp (proof->arch, anal->config->arch)
+		|| proof->bits != anal->config->bits) {
+		return NULL;
+	}
+	RRegItem *reg = r_reg_get (anal->reg, proof->reg_name, -1);
+	const bool current = reg && reg->offset >= 0 && !(reg->offset % 8)
+		&& reg->size > 0 && !(reg->size % 8)
+		&& (ut64)(reg->offset / 8) == proof->offset
+		&& reg->size / 8 == proof->size
+		&& reg->size == proof->bits;
+	r_unref (reg);
+	return current? proof: NULL;
+}
+
+
+
+// The snapshot outlives the capture now, so a probe is a take, a read and a
+// free rather than a callback run while the analysis is still locked.
 
 #define check_kv(k, v) \
 	do { \
@@ -234,6 +345,14 @@ static bool test_dwarf_function_parsing_go(void) {
 	check_kv ("fcn.main_tree_iterInorder.name", "main.tree.iterInorder");
 	check_kv ("fcn.main_tree_iterInorder.addr", "0x491d90");
 	check_kv ("fcn.main_tree_iterInorder.sig", "void main.tree.iterInorder(main.tree t,func(int) visit);");
+	char *cache_line_type = r_type_link_at (anal->sdb_types, 0x5500e0);
+	mu_assert_streq (cache_line_type, "uintptr",
+		"exact fixed-address DWARF data object type is linked by address");
+	free (cache_line_type);
+	char *static_bytes_type = r_type_link_at (anal->sdb_types, 0x553da0);
+	mu_assert_streq (static_bytes_type, "uint8[256]",
+		"exact composite DWARF data object type is linked by address");
+	free (static_bytes_type);
 
 	/* We do not parse variable information from .debug_frame that is this Go binary using, so
 	don't check variable information and add it in the future */
@@ -295,6 +414,11 @@ static bool test_dwarf_function_parsing_rust(void) {
 	check_kv ("fcn.bubble_sort_i32_.var.i", "s,176,usize");
 	check_kv ("fcn.bubble_sort_i32_.name", "bubble_sort<i32>");
 	check_kv ("fcn.bubble_sort_i32_.addr", "0x5270");
+	char *into_iter = r_str_sanitize_sdb_key ("into_iter<core::ops::range::Range<usize>>");
+	char *into_iter_addr = r_str_newf ("fcn.%s.addr", into_iter);
+	check_kv (into_iter_addr, "0x6710");
+	free (into_iter_addr);
+	free (into_iter);
 	const char *typed_bubble = sdb_const_get (sdb, "fcn.bubble_sort_i32_.typed_name", NULL);
 	mu_assert_notnull ("Missing typed name for bubble_sort_i32_", typed_bubble);
 	sdb = anal->sdb_types;
@@ -314,6 +438,315 @@ static bool test_dwarf_function_parsing_rust(void) {
 	mu_end;
 }
 
+
+static bool test_dwarf5_named_typedef_to_anonymous_aggregate(void) {
+	mu_assert_true (r_anal_use (anal, "x86"), "Couldn't load x86 analysis profile");
+	mu_assert_true (r_anal_set_bits (anal, 64), "Couldn't select x86-64 analysis");
+	mu_assert_true (r_anal_cc_set (anal, "rax amd64(rdi,rsi,rdx,rcx,r8,r9)"),
+		"Couldn't seed the fixture calling convention");
+	sdb_reset (anal->sdb_types);
+
+	RBinFileOptions opt = {
+		.baseaddr = 0x400000,
+	};
+	mu_assert_true (r_bin_open (bin, "bins/elf/dwarf5_line_cl", &opt),
+		"dwarf5_line_cl binary could not be opened");
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Couldn't get current bin file");
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	mu_assert_notnull (abbrevs, "Couldn't parse DWARF5 abbreviations");
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	mu_assert_notnull (info, "Couldn't parse DWARF5 indexed info");
+	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 1,
+		"Expected one DWARF5 compilation unit");
+	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
+	RBinDwarfDie *foo_pointer = test_find_die_at (unit, 0xc9);
+	RBinDwarfDie *typedef_die = test_find_die_at (unit, 0xd3);
+	RBinDwarfDie *anonymous_struct = test_find_die_at (unit, 0xd8);
+	mu_assert_notnull (foo_pointer, "Missing Foo pointer DIE");
+	mu_assert_notnull (typedef_die, "Missing typedef candidate DIE");
+	mu_assert_notnull (anonymous_struct, "Missing anonymous-struct candidate DIE");
+	RBinDwarfAttrValue *foo_type = test_find_attr (foo_pointer, DW_AT_type);
+	RBinDwarfAttrValue *struct_name = test_find_attr (anonymous_struct, DW_AT_name);
+	mu_assert_notnull (foo_type, "Missing Foo pointee type");
+	mu_assert_notnull (struct_name, "Missing aggregate name to anonymize");
+	foo_type->reference = typedef_die->offset;
+	typedef_die->tag = DW_TAG_typedef;
+	RBinDwarfAttrValue typedef_name = {
+		.attr_name = DW_AT_name,
+		.kind = DW_AT_KIND_STRING,
+		.string.content = "DemoStruct",
+	};
+	const size_t old_attr_count = RVecDwarfAttrValue_length (
+		typedef_die->attr_values);
+	RVecDwarfAttrValue_push_back (typedef_die->attr_values, &typedef_name);
+	mu_assert_eq (RVecDwarfAttrValue_length (typedef_die->attr_values),
+		old_attr_count + 1, "Couldn't name synthetic typedef");
+	struct_name->attr_name = DW_AT_linkage_name;
+
+	RAnalDwarfContext ctx = {
+		.info = info,
+		.loc = NULL,
+	};
+	r_anal_dwarf_process_info (anal, &ctx);
+	const ut64 new_foo_addr = 0x1170 + (ut64)bf->bo->baddr_shift;
+	char *link = test_function_type_link_at (anal->sdb_types, new_foo_addr);
+	mu_assert_notnull (link,
+		"Named typedef to anonymous aggregate keeps exact function authority");
+	const char *ret_type = r_type_func_ret (anal->sdb_types, link);
+	mu_assert_streq (ret_type, "DemoStruct *",
+		"Exact linked prototype retains the canonical typedef name");
+	free (link);
+
+	r_bin_dwarf_free_debug_info (info);
+	RVecDwarfAbbrevDecl_free (abbrevs);
+	mu_end;
+}
+
+
+
+static bool test_dwarf5_malformed_prototypes_do_not_link(void) {
+	r_str_ncpy (anal->config->arch, "x86", sizeof (anal->config->arch));
+	anal->config->bits = 64;
+	sdb_reset (anal->sdb_types);
+	RBinFileOptions opt = {
+		.baseaddr = 0x400000,
+	};
+	mu_assert_true (r_bin_open (bin, "bins/elf/dwarf5_line_cl", &opt),
+		"dwarf5_line_cl binary could not be opened");
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Couldn't get current bin file");
+	ut64 main_addr = 0x11c0 + (ut64)bf->bo->baddr_shift;
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	mu_assert_notnull (abbrevs, "Couldn't parse DWARF5 abbreviations");
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	mu_assert_notnull (info, "Couldn't parse DWARF5 indexed info");
+	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 1,
+		"Expected one DWARF5 compilation unit");
+	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
+	RBinDwarfDie *main_die = test_find_named_die (unit, DW_TAG_subprogram, "main");
+	mu_assert_notnull (main_die, "Couldn't find DWARF5 main DIE");
+	RBinDwarfAttrValue *low_pc = test_find_attr (main_die, DW_AT_low_pc);
+	mu_assert_notnull (low_pc, "Couldn't find main low_pc");
+	RBinDwarfAttrKind low_pc_kind = low_pc->kind;
+	low_pc->kind = DW_AT_KIND_CONSTANT;
+	RAnalDwarfContext ctx = {
+		.info = info,
+		.loc = NULL,
+	};
+	r_anal_dwarf_process_info (anal, &ctx);
+	char *link = test_function_type_link_at (anal->sdb_types, main_addr);
+	mu_assert_null (link, "Malformed address kind must not create an exact link");
+	free (link);
+	low_pc->kind = low_pc_kind;
+
+	RBinDwarfDie *formal = NULL;
+	RBinDwarfDie *die;
+	bool after_main = false;
+	R_VEC_FOREACH (unit->dies, die) {
+		if (die == main_die) {
+			after_main = true;
+			continue;
+		}
+		if (after_main && die->tag == DW_TAG_formal_parameter) {
+			formal = die;
+			break;
+		}
+	}
+	mu_assert_notnull (formal, "Couldn't find main formal parameter");
+	RBinDwarfAttrValue *formal_type = test_find_attr (formal, DW_AT_type);
+	mu_assert_notnull (formal_type, "Couldn't find formal parameter type");
+	RBinDwarfAttrKind formal_type_kind = formal_type->kind;
+	formal_type->kind = DW_AT_KIND_CONSTANT;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, main_addr);
+	mu_assert_null (link, "Malformed formal type kind must not create an exact link");
+	free (link);
+	formal_type->kind = formal_type_kind;
+	ut64 formal_type_ref = formal_type->reference;
+	formal_type->reference = UT64_MAX;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, main_addr);
+	mu_assert_null (link, "Unresolved formal type must not create an exact link");
+	free (link);
+	formal_type->reference = formal_type_ref;
+	RBinDwarfAttrValue *main_name = test_find_attr (main_die, DW_AT_name);
+	mu_assert_notnull (main_name, "Couldn't find main name");
+	RBinDwarfAttrValue saved_main_name = *main_name;
+	main_name->attr_name = DW_AT_specification;
+	main_name->attr_form = DW_FORM_ref4;
+	main_name->kind = DW_AT_KIND_REFERENCE;
+	main_name->reference = main_die->offset;
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, main_addr);
+	mu_assert_null (link, "Cyclic specification must not create an exact link");
+	free (link);
+	*main_name = saved_main_name;
+
+	after_main = false;
+	R_VEC_FOREACH (unit->dies, die) {
+		if (die == main_die) {
+			after_main = true;
+			continue;
+		}
+		if (after_main && die->abbrev_code == 0) {
+			die->abbrev_code = 1;
+		}
+	}
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, main_addr);
+	mu_assert_null (link, "Unclosed formal subtree must not create an exact link");
+	free (link);
+	R_VEC_FOREACH (unit->dies, die) {
+		if (die->tag == 0 && die->abbrev_code == 1) {
+			die->abbrev_code = 0;
+		}
+	}
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, main_addr);
+	mu_assert_notnull (link, "Restored complete prototype must create an exact link");
+	char *first_link = strdup (link);
+	free (link);
+	r_anal_dwarf_process_info (anal, &ctx);
+	link = test_function_type_link_at (anal->sdb_types, main_addr);
+	mu_assert_streq (link, first_link, "Repeated DWARF import keeps the exact address link stable");
+	free (first_link);
+	free (link);
+
+	RBinDwarfAttrValue *formal_location = test_find_attr (formal, DW_AT_location);
+	RBinDwarfAttrValue *frame_base = test_find_attr (main_die, DW_AT_frame_base);
+	mu_assert_notnull (formal_location, "Couldn't find formal parameter location");
+	mu_assert_notnull (frame_base, "Couldn't find function frame base");
+	RBinDwarfAttrValue saved_formal_location = *formal_location;
+	RBinDwarfAttrValue saved_frame_base = *frame_base;
+	ut8 direct_register[] = { DW_OP_reg6 };
+	formal_location->kind = DW_AT_KIND_BLOCK;
+	formal_location->block.data = direct_register;
+	formal_location->block.length = sizeof (direct_register);
+	r_anal_dwarf_process_info (anal, &ctx);
+	const char *arg_record = sdb_const_get (
+		sdb_ns (anal->sdb, "dwarf", 0), "fcn.main.arg.0", NULL);
+	mu_assert_true (!arg_record || !r_str_startswith (arg_record, "dwarf-stack-home-v1,"),
+		"A direct register value cannot certify a stack home");
+
+	ut8 direct_breg[] = { DW_OP_breg6, 0 };
+	formal_location->block.data = direct_breg;
+	formal_location->block.length = sizeof (direct_breg);
+	r_anal_dwarf_process_info (anal, &ctx);
+	arg_record = sdb_const_get (
+		sdb_ns (anal->sdb, "dwarf", 0), "fcn.main.arg.0", NULL);
+	mu_assert_true (!arg_record || !r_str_startswith (arg_record, "dwarf-stack-home-v1,"),
+		"A direct breg expression remains advisory");
+
+	ut8 direct_bregx[] = { DW_OP_bregx, 6, 0 };
+	formal_location->block.data = direct_bregx;
+	formal_location->block.length = sizeof (direct_bregx);
+	r_anal_dwarf_process_info (anal, &ctx);
+	arg_record = sdb_const_get (
+		sdb_ns (anal->sdb, "dwarf", 0), "fcn.main.arg.0", NULL);
+	mu_assert_true (!arg_record || !r_str_startswith (arg_record, "dwarf-stack-home-v1,"),
+		"A direct bregx expression remains advisory");
+
+	ut8 operand_opcode_alias[] = { DW_OP_bregx, 6, 0, DW_OP_fbreg, 0 };
+	formal_location->block.data = operand_opcode_alias;
+	formal_location->block.length = sizeof (operand_opcode_alias);
+	r_anal_dwarf_process_info (anal, &ctx);
+	arg_record = sdb_const_get (
+		sdb_ns (anal->sdb, "dwarf", 0), "fcn.main.arg.0", NULL);
+	mu_assert_true (!arg_record || !r_str_startswith (arg_record, "dwarf-stack-home-v1,"),
+		"Operand bytes cannot be reinterpreted as exact location opcodes");
+
+	ut8 oversized_bregx[] = {
+		DW_OP_bregx, 0x86, 0x80, 0x80, 0x80, 0x10, 0
+	};
+	formal_location->block.data = oversized_bregx;
+	formal_location->block.length = sizeof (oversized_bregx);
+	r_anal_dwarf_process_info (anal, &ctx);
+	arg_record = sdb_const_get (
+		sdb_ns (anal->sdb, "dwarf", 0), "fcn.main.arg.0", NULL);
+	mu_assert_true (!arg_record || !strstr (arg_record, ",YQ==,"),
+		"An oversized bregx register cannot alias a supported register");
+
+	ut8 overflowing_bregx[] = {
+		DW_OP_bregx, 0x86, 0x80, 0x80, 0x80, 0x80, 0x80,
+		0x80, 0x80, 0x80, 0x02, 0
+	};
+	formal_location->block.data = overflowing_bregx;
+	formal_location->block.length = sizeof (overflowing_bregx);
+	r_anal_dwarf_process_info (anal, &ctx);
+	arg_record = sdb_const_get (
+		sdb_ns (anal->sdb, "dwarf", 0), "fcn.main.arg.0", NULL);
+	mu_assert_true (!arg_record || !strstr (arg_record, ",YQ==,"),
+		"An overflowing bregx ULEB refuses exact authority");
+
+	ut8 noncanonical_bregx[] = { DW_OP_bregx, 0x86, 0, 0 };
+	formal_location->block.data = noncanonical_bregx;
+	formal_location->block.length = sizeof (noncanonical_bregx);
+	r_anal_dwarf_process_info (anal, &ctx);
+	arg_record = sdb_const_get (
+		sdb_ns (anal->sdb, "dwarf", 0), "fcn.main.arg.0", NULL);
+	mu_assert_true (!arg_record || !strstr (arg_record, ",YQ==,"),
+		"A noncanonical bregx ULEB refuses exact authority");
+
+	ut8 trailing_expression[] = { DW_OP_fbreg, 0, DW_OP_reg6 };
+	formal_location->block.data = trailing_expression;
+	formal_location->block.length = sizeof (trailing_expression);
+	r_anal_dwarf_process_info (anal, &ctx);
+	arg_record = sdb_const_get (
+		sdb_ns (anal->sdb, "dwarf", 0), "fcn.main.arg.0", NULL);
+	mu_assert_true (!arg_record || !r_str_startswith (arg_record, "dwarf-stack-home-v1,"),
+		"A trailing location opcode refuses exact authority");
+
+	ut8 noncanonical_sleb[] = { DW_OP_fbreg, 0x80, 0 };
+	formal_location->block.data = noncanonical_sleb;
+	formal_location->block.length = sizeof (noncanonical_sleb);
+	r_anal_dwarf_process_info (anal, &ctx);
+	arg_record = sdb_const_get (
+		sdb_ns (anal->sdb, "dwarf", 0), "fcn.main.arg.0", NULL);
+	mu_assert_true (!arg_record || !r_str_startswith (arg_record, "dwarf-stack-home-v1,"),
+		"A noncanonical stack offset refuses exact authority");
+
+	ut8 exact_fbreg[] = { DW_OP_fbreg, 0 };
+	ut8 compound_frame_base[] = { DW_OP_reg6, DW_OP_reg7 };
+	formal_location->block.data = exact_fbreg;
+	formal_location->block.length = sizeof (exact_fbreg);
+	frame_base->kind = DW_AT_KIND_BLOCK;
+	frame_base->block.data = compound_frame_base;
+	frame_base->block.length = sizeof (compound_frame_base);
+	r_anal_dwarf_process_info (anal, &ctx);
+	arg_record = sdb_const_get (
+		sdb_ns (anal->sdb, "dwarf", 0), "fcn.main.arg.0", NULL);
+	mu_assert_true (!arg_record || !r_str_startswith (arg_record, "dwarf-stack-home-v1,"),
+		"A compound frame-base expression refuses exact authority");
+
+	r_str_ncpy (anal->config->arch, "arm", sizeof (anal->config->arch));
+	anal->config->bits = 64;
+	ut8 arm64_sp_frame_base[] = { DW_OP_reg31 };
+	frame_base->block.data = arm64_sp_frame_base;
+	frame_base->block.length = sizeof (arm64_sp_frame_base);
+	r_anal_dwarf_process_info (anal, &ctx);
+	arg_record = sdb_const_get (
+		sdb_ns (anal->sdb, "dwarf", 0), "fcn.main.arg.0", NULL);
+	mu_assert_true (arg_record && r_str_startswith (
+		arg_record, "dwarf-stack-home-v1,0,s,"),
+		"An exact AArch64 SP frame base certifies an SP-relative formal home");
+
+	ut8 arm64_fp_frame_base[] = { DW_OP_reg29 };
+	frame_base->block.data = arm64_fp_frame_base;
+	frame_base->block.length = sizeof (arm64_fp_frame_base);
+	r_anal_dwarf_process_info (anal, &ctx);
+	arg_record = sdb_const_get (
+		sdb_ns (anal->sdb, "dwarf", 0), "fcn.main.arg.0", NULL);
+	mu_assert_true (arg_record && r_str_startswith (
+		arg_record, "dwarf-stack-home-v1,0,b,"),
+		"An exact AArch64 FP frame base certifies a BP-relative formal home");
+	*formal_location = saved_formal_location;
+	*frame_base = saved_frame_base;
+	r_bin_dwarf_free_debug_info (info);
+	RVecDwarfAbbrevDecl_free (abbrevs);
+	mu_end;
+}
+
 #define run_test_with_setup(test_func) \
 	do { \
 		if (!setup ()) { \
@@ -329,6 +762,8 @@ int all_tests(void) {
 	run_test_with_setup (test_dwarf_function_parsing_cpp);
 	run_test_with_setup (test_dwarf_function_parsing_rust);
 	run_test_with_setup (test_dwarf_function_parsing_go);
+	run_test_with_setup (test_dwarf5_named_typedef_to_anonymous_aggregate);
+	run_test_with_setup (test_dwarf5_malformed_prototypes_do_not_link);
 	return tests_passed != tests_run;
 }
 

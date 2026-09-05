@@ -36,6 +36,7 @@ R_API RList *r_type_get_by_offset(Sdb * R_NONNULL TDB, ut64 offset);
 R_API char *r_type_get_struct_memb(Sdb * R_NONNULL TDB, const char * R_NONNULL type, int offset);
 R_API char *r_type_link_at(Sdb *TDB, ut64 addr);
 R_API int r_type_set_link(Sdb *TDB, const char *val, ut64 addr);
+R_API int r_type_set_link_expression(Sdb *TDB, const char *val, ut64 addr);
 R_API int r_type_unlink(Sdb *TDB, ut64 addr);
 R_API int r_type_link_offset(Sdb *TDB, const char *val, ut64 addr);
 R_API char *r_type_format(Sdb *TDB, const char *t);

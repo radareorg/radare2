@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "core"
 
 #include "../include/r_core.h"
+#include <r_core_priv.h>
 #include <r_vec.h>
 
 R_LIB_VERSION(r_core);
@@ -28,8 +29,10 @@ static int on_fcn_new(RAnal *_anal, void *_user, RAnalFunction *fcn) {
 }
 
 static int on_fcn_delete(RAnal *_anal, void *_user, RAnalFunction *fcn) {
-	RCore *core = (RCore *)_user;
-	const char *cmd = r_config_get (core->config, "cmd.fcn.delete");
+	(void)_user;
+	RCore *core = _anal? _anal->coreb.core: NULL;
+	const char *cmd = core && core->config
+		? r_config_get (core->config, "cmd.fcn.delete"): NULL;
 	if (R_STR_ISNOTEMPTY (cmd)) {
 		ut64 oaddr = core->addr;
 		ut64 addr = fcn->addr;

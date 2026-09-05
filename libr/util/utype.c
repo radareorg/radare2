@@ -576,11 +576,17 @@ R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
 
 R_API int r_type_set_link(Sdb *TDB, const char *type, ut64 addr) {
 	if (sdb_const_get (TDB, type, 0)) {
-		sdb_setf (TDB, type, 0, "link.%08" PFMT64x, addr);
-		types_range_add (TDB, addr);
-		return true;
+		return r_type_set_link_expression (TDB, type, addr);
 	}
 	return false;
+}
+
+R_API int r_type_set_link_expression(Sdb *TDB, const char *type, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (TDB && R_STR_ISNOTEMPTY (type)
+		&& addr != UT64_MAX && addr != UT64_MAX - 1, false);
+	sdb_setf (TDB, type, 0, "link.%08" PFMT64x, addr);
+	types_range_add (TDB, addr);
+	return true;
 }
 
 R_API int r_type_link_offset(Sdb *TDB, const char *type, ut64 addr) {

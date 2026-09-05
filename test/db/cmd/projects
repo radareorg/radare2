@@ -281,6 +281,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Function assumptions in project file
+FILE=bins/mach0/ls-osx-x86_64
+CMDS=<<EOF
+e prj.vc=false
+e dir.projects = .tmp/
+P- assumptions > /dev/null
+s main
+af
+afAj [{"subject":{"register":{"name":"rdi"}},"value":{"type_hint":{"ty":"int32_t"}}}]
+P+ assumptions > /dev/null
+P-
+afA-
+P assumptions
+s main
+afAj
+rm .tmp/assumptions
+EOF
+EXPECT=<<EOF
+[{"subject":{"register":{"name":"rdi"}},"value":{"type_hint":{"ty":"int32_t"}}}]
+EOF
+RUN
+
 
 NAME=Types and link in project file
 FILE=-

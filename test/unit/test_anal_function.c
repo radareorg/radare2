@@ -1,7 +1,10 @@
 #include <r_anal.h>
+#include <r_anal_priv.h>
 #include <r_core.h>
 #include "minunit.h"
 #include <string.h>
+
+#include "../../libr/anal/function_snapshot.h"
 
 #include "test_anal_block_invars.inl"
 
@@ -24,28 +27,112 @@ static int reg_index(RAnal *anal, const char *name) {
 	return index;
 }
 
-static RAnalFcnRegArg *find_register_param(RAnalFcnContext *ctx, const char *reg) {
-	RListIter *iter;
-	RAnalFcnRegArg *arg;
 
-	r_list_foreach (ctx->reg_args, iter, arg) {
-		if (arg && arg->reg && !strcmp (arg->reg, reg)) {
-			return arg;
-		}
-	}
-	return NULL;
+
+static RBinAddr snapshot_test_loader_init;
+
+
+static bool set_function_type_link(RAnal *anal, const char *type, ut64 addr);
+
+
+
+static int snapshot_lazy_cc_calls;
+
+static const char *snapshot_lazy_cc(RBin *bin, ut64 addr) {
+	(void)bin;
+	(void)addr;
+	snapshot_lazy_cc_calls++;
+	return "cdecl";
 }
 
-static RAnalFcnSlot *find_stack_slot(RAnalFcnContext *ctx, const char *name) {
-	RListIter *iter;
-	RAnalFcnSlot *slot;
 
-	r_list_foreach (ctx->fcn_slots, iter, slot) {
-		if (slot && slot->name && !strcmp (slot->name, name)) {
-			return slot;
-		}
+static bool set_function_type_link(RAnal *anal, const char *type, ut64 addr) {
+	RAnalMutation mutation = {
+		.kind = R_ANAL_MUTATION_TYPE_LINK,
+		.type = type,
+		.addr = addr,
+	};
+	return r_anal_apply_mutations (anal, &mutation, 1, NULL);
+}
+
+
+
+static bool save_snapshot_demo_struct_type(
+	RAnal *anal, size_t fourteenth_offset, size_t fourteenth_count) {
+	static const char *names[] = {
+		"first", "second", "third", "fourth", "fifth", "sixth", "seventh",
+		"eighth", "ninth", "tenth", "eleventh", "twelfth", "thirteenth",
+		"fourteenth",
+	};
+	RAnalBaseType *type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	if (!type) {
+		return false;
 	}
-	return NULL;
+	type->name = strdup ("DemoStruct");
+	type->size = R_ARRAY_SIZE (names) * 32;
+	if (!type->name) {
+		r_anal_base_type_free (type);
+		return false;
+	}
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		RAnalStructMember member = {
+			.name = strdup (names[i]),
+			.type = strdup ("int32_t"),
+			.offset = i == R_ARRAY_SIZE (names) - 1? fourteenth_offset: i * 4,
+			.count = i == R_ARRAY_SIZE (names) - 1? fourteenth_count: 0,
+		};
+		if (!member.name || !member.type) {
+			anal_type_member_fini (&member);
+			r_anal_base_type_free (type);
+			return false;
+		}
+		RAnalStructMember *element = RVecAnalTypeMember_emplace_back (
+			&type->struct_data.members);
+		if (!element) {
+			anal_type_member_fini (&member);
+			r_anal_base_type_free (type);
+			return false;
+		}
+		*element = member;
+	}
+	r_anal_save_base_type (anal, type);
+	r_anal_base_type_free (type);
+	return true;
+}
+
+static bool save_snapshot_atomic_type(
+	RAnal *anal, const char *name, const char *encoding, ut64 size) {
+	RAnalBaseType *type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ATOMIC);
+	if (!type) {
+		return false;
+	}
+	type->name = strdup (name);
+	type->type = strdup (encoding);
+	type->size = size;
+	if (!type->name || !type->type) {
+		r_anal_base_type_free (type);
+		return false;
+	}
+	r_anal_save_base_type (anal, type);
+	r_anal_base_type_free (type);
+	return true;
+}
+
+static bool save_snapshot_typedef_type(RAnal *anal, const char *name, const char *target) {
+	RAnalBaseType *type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	if (!type) {
+		return false;
+	}
+	type->name = strdup (name);
+	type->type = strdup (target);
+	if (!type->name || !type->type) {
+		r_anal_base_type_free (type);
+		return false;
+	}
+	r_anal_save_base_type (anal, type);
+	r_anal_base_type_free (type);
+	return true;
 }
 
 typedef struct {
@@ -117,16 +204,27 @@ bool test_r_anal_function_relocate(void) {
 	assert_invariants (anal);
 	mu_assert_false (success, "failed relocate");
 	mu_assert_eq (fa->addr, 0x1337, "failed relocate addr");
+	ut64 revision_epoch = r_anal_function_dirty_epoch (fa);
 
 	success = r_anal_function_relocate (fa, 0x1234);
 	assert_invariants (anal);
 	mu_assert_true (success, "successful relocate");
 	mu_assert_eq (fa->addr, 0x1234, "successful relocate addr");
+	mu_assert_neq (r_anal_function_dirty_epoch (fa), revision_epoch,
+		"relocation bumps the function revision epoch");
+	revision_epoch = r_anal_function_dirty_epoch (fa);
+	mu_assert_true (r_anal_function_rename (fa, "relocated_function"),
+		"rename relocated function");
+	mu_assert_neq (r_anal_function_dirty_epoch (fa), revision_epoch,
+		"rename bumps the function revision epoch");
 
 	assert_leaks (anal);
 	r_anal_free (anal);
 	mu_end;
 }
+
+
+
 
 bool test_r_anal_function_labels(void) {
 	RAnal *anal = r_anal_new ();
@@ -580,93 +678,67 @@ bool test_r_anal_function_get_signature_falls_back_to_valid_callconv(void) {
 	mu_end;
 }
 
-bool test_r_anal_function_context_collect_is_conservative_for_stack_slots(void) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+	RAnalFunction *fcn;
+	RAnalVar *first;
+	RAnalVar *second;
+	const char *callconv;
+	const char *first_name;
+	const char *second_name;
+	ut64 expected_epoch;
+	int count;
+	bool saw_complete_state;
+} AtomicMutationEventState;
+
+static void atomic_mutation_event_cb(REvent *event, int type, void *user, void *data) {
+	AtomicMutationEventState *state = user;
+	REventVariable *variable_event = data;
+	state->count++;
+	state->saw_complete_state = state->saw_complete_state
+		&& type == R_EVENT_VARIABLE_NAME_CHANGED
+		&& variable_event && variable_event->fcn == state->fcn
+		&& variable_event->var
+		&& !strcmp (state->fcn->callconv, state->callconv)
+		&& !strcmp (state->first->name, state->first_name)
+		&& !strcmp (state->second->name, state->second_name)
+		&& r_anal_function_dirty_epoch (state->fcn) == state->expected_epoch;
+}
+
+static void atomic_mutation_count_event_cb(REvent *event, int type, void *user, void *data) {
+	int *count = user;
+	(*count)++;
+}
+
+static RAnal *atomic_mutation_test_anal_new(void) {
 	RAnal *anal = r_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RAnal");
-	r_anal_use (anal, "x86");
-	r_anal_set_bits (anal, 64);
-	mu_assert_true (r_anal_cc_set (anal, "rax ctxcall(rdi, rdx, stack)"), "Couldn't seed test-local calling convention");
+	if (anal) {
+		anal->ev = r_event_new (anal);
+		if (!anal->ev) {
+			r_anal_free (anal);
+			anal = NULL;
+		}
+	}
+	return anal;
+}
 
-	RAnalFunction *fcn = r_anal_create_function (anal, "fcn_ctx", 0x1000, R_ANAL_FCN_TYPE_FCN, NULL);
-	mu_assert_notnull (fcn, "Couldn't create function for function-context test");
-	fcn->callconv = r_str_constpool_get (&anal->constpool, "ctxcall");
-
-	RAnalFunctionParam params_data[] = {
-		{ .name = "first", .type = "int" },
-		{ .name = "second", .type = "int" },
-		{ .name = "third", .type = "int" },
-		{ .name = "fourth", .type = "int" },
-	};
-	RList *params = r_list_new ();
-	mu_assert_notnull (params, "Couldn't create param list for function-context test");
-	r_list_append (params, &params_data[0]);
-	r_list_append (params, &params_data[1]);
-	r_list_append (params, &params_data[2]);
-	r_list_append (params, &params_data[3]);
-	RAnalFunctionSignature signature = {
-		.ret_type = "int",
-		.callconv = "ctxcall",
-		.params = params,
-		.noreturn = false,
-	};
-	mu_assert_true (r_anal_function_set_signature (anal, fcn, &signature), "typed signature apply for function-context test");
-	r_list_free (params);
-
-	const int rdi = reg_index (anal, "rdi");
-	const int rdx = reg_index (anal, "rdx");
-	mu_assert ("rdi register index must resolve", rdi >= 0);
-	mu_assert ("rdx register index must resolve", rdx >= 0);
-
-	RAnalVar *home_source = r_anal_function_set_var (fcn, rdi, R_ANAL_VAR_KIND_REG, "int", 4, true, "arg1");
-	RAnalVar *sparse_reg = r_anal_function_set_var (fcn, rdx, R_ANAL_VAR_KIND_REG, "int", 4, true, "arg3");
-	RAnalVar *home_slot = r_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "int", 4, false, "arg1_home");
-	RAnalVar *stack_arg = r_anal_function_set_var (fcn, 0x28, R_ANAL_VAR_KIND_SPV, "int", 4, true, "stack_input");
-	RAnalVar *saved_named = r_anal_function_set_var (fcn, -0x10, R_ANAL_VAR_KIND_BPV, "int", 4, false, "saved_rbx");
-	RAnalVar *arg_named_local = r_anal_function_set_var (fcn, 0x30, R_ANAL_VAR_KIND_SPV, "int", 4, false, "arg2");
-	mu_assert_notnull (home_source, "create register home source");
-	mu_assert_notnull (sparse_reg, "create sparse register arg");
-	mu_assert_notnull (home_slot, "create home slot");
-	mu_assert_notnull (stack_arg, "create stack arg");
-	mu_assert_notnull (saved_named, "create saved-named local");
-	mu_assert_notnull (arg_named_local, "create arg-named local");
-	free (home_source->regname);
-	home_source->regname = strdup ("rdi");
-	free (sparse_reg->regname);
-	sparse_reg->regname = strdup ("rdx");
-
-	r_anal_var_set_access (anal, home_source, "rdi", 0x1010, R_PERM_R, 0);
-	r_anal_var_set_access (anal, home_slot, "rbp", 0x1010, R_PERM_W, -8);
-
-	RAnalFcnContext *ctx = r_anal_function_context_collect (anal, fcn);
-	mu_assert_notnull (ctx, "collect typed function context");
-
-	RAnalFcnRegArg *rdx_param = find_register_param (ctx, "rdx");
-	mu_assert_notnull (rdx_param, "sparse register arg must be collected");
-
-	RAnalFcnSlot *home_ctx = find_stack_slot (ctx, "arg1_home");
-	RAnalFcnSlot *stack_arg_ctx = find_stack_slot (ctx, "stack_input");
-	RAnalFcnSlot *saved_ctx = find_stack_slot (ctx, "saved_rbx");
-	RAnalFcnSlot *arg_named_local_ctx = find_stack_slot (ctx, "arg2");
-	mu_assert_notnull (home_ctx, "home slot must be present in function context");
-	mu_assert_notnull (stack_arg_ctx, "stack arg slot must be present in function context");
-	mu_assert_notnull (saved_ctx, "saved-named slot must be present in function context");
-	mu_assert_notnull (arg_named_local_ctx, "arg-named local slot must be present in function context");
-
-	mu_assert_eq (home_ctx->role, R_ANAL_FCN_SLOT_HOME, "register-home stack slot must stay param-home");
-	mu_assert_eq (home_ctx->arg_index, 0, "param-home slot must use source register param index");
-	mu_assert_streq (home_ctx->arg_name, "first", "param-home slot must inherit canonical signature name");
-	mu_assert_streq (home_ctx->home_reg, "rdi", "param-home slot must keep source register");
-
-	mu_assert_eq (stack_arg_ctx->role, R_ANAL_FCN_SLOT_ARG, "stack arg slot must stay stack-arg");
-	mu_assert_eq (stack_arg_ctx->arg_index, -1, "stack arg slot must not synthesize param indexes from sparse register args");
-	mu_assert_null (stack_arg_ctx->arg_name, "stack arg slot must not synthesize a signature param name without a canonical index");
-
-	mu_assert_eq (saved_ctx->role, R_ANAL_FCN_SLOT_LOCAL, "saved-named local must not be reclassified from its spelling");
-	mu_assert_eq (arg_named_local_ctx->role, R_ANAL_FCN_SLOT_LOCAL, "arg-named local must not become a param-home without a proven register home");
-
-	r_anal_function_context_free (ctx);
+static void atomic_mutation_test_anal_free(RAnal *anal) {
+	REvent *event = anal->ev;
+	anal->ev = NULL;
+	r_event_free (event);
 	r_anal_free (anal);
-	mu_end;
 }
 
 typedef struct {
@@ -686,6 +758,7 @@ static bool switch_ownership_probe(RAnalFunction *fcn, RAnalBlock *block,
 }
 
 // the walk reaches the indirect jump twice; the second arrival must not publish the switch on the start block
+
 bool test_r_anal_function_overlapped_walk_keeps_one_switch_owner(void) {
 	const ut64 addr = 0x1000;
 	const char *hex =
@@ -723,6 +796,188 @@ bool test_r_anal_function_overlapped_walk_keeps_one_switch_owner(void) {
 	mu_assert_eq (ownership.switch_addr, addr + 197,
 		"switch ownership names the indirect jump");
 	r_core_free (core);
+	mu_end;
+}
+
+bool test_r_anal_apply_mutations_atomic_is_all_or_nothing(void) {
+	RAnal *anal = atomic_mutation_test_anal_new ();
+	mu_assert_notnull (anal, "create atomic mutation analysis");
+	mu_assert_true (r_anal_cc_set (anal, "rax atomiccc(rdi)"), "seed atomic calling convention");
+	RAnalFunction *fcn = r_anal_create_function (anal, "atomic_failure", 0x7100, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "create atomic mutation function");
+	RAnalVar *var = r_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "int", 4, false, "before");
+	mu_assert_notnull (var, "create atomic mutation variable");
+	ut64 initial_epoch = r_anal_function_dirty_epoch (fcn);
+	int event_count = 0;
+	mu_assert_true (r_event_hook (anal->ev, R_EVENT_VARIABLE_NAME_CHANGED,
+		atomic_mutation_count_event_cb, &event_count), "hook variable rename events");
+	RAnalMutation mutations[] = {
+		{
+			.kind = R_ANAL_MUTATION_VAR_RENAME,
+			.var = var,
+			.name = "after",
+		},
+		{
+			.kind = R_ANAL_MUTATION_CALLCONV,
+			.fcn = fcn,
+			.callconv = "missingcc",
+		},
+	};
+	RAnalMutationAtomicResult result = r_anal_apply_mutations_atomic (anal, mutations, R_ARRAY_SIZE (mutations));
+	mu_assert_eq (result.status, R_ANAL_MUTATION_ATOMIC_STATUS_VALIDATION_FAILED, "invalid record rejects atomic batch");
+	mu_assert_eq (result.failed_index, 1, "invalid record index");
+	mu_assert_eq (result.validated, 1, "validated prefix count");
+	mu_assert_eq (result.committed, 0, "failed batch commits nothing");
+	mu_assert_streq (var->name, "before", "earlier valid rename stays unapplied");
+	mu_assert_null (fcn->callconv, "invalid callconv stays unapplied");
+	mu_assert_eq (r_anal_function_dirty_epoch (fcn), initial_epoch, "failed batch does not publish an epoch");
+	mu_assert_eq (event_count, 0, "failed batch does not publish events");
+	atomic_mutation_test_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_apply_mutations_atomic_rejects_unsupported_preflight(void) {
+	RAnal *anal = atomic_mutation_test_anal_new ();
+	mu_assert_notnull (anal, "create unsupported mutation analysis");
+	RAnalFunction *fcn = r_anal_create_function (anal, "atomic_unsupported", 0x7200, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "create unsupported mutation function");
+	RAnalVar *var = r_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "int", 4, false, "before");
+	mu_assert_notnull (var, "create unsupported mutation variable");
+	ut64 initial_epoch = r_anal_function_dirty_epoch (fcn);
+	int event_count = 0;
+	mu_assert_true (r_event_hook (anal->ev, R_EVENT_VARIABLE_NAME_CHANGED,
+		atomic_mutation_count_event_cb, &event_count), "hook unsupported rename events");
+	RAnalMutationKind unsupported[] = {
+		R_ANAL_MUTATION_FLAG,
+		R_ANAL_MUTATION_TYPE_DECL,
+		R_ANAL_MUTATION_VAR,
+		R_ANAL_MUTATION_VAR_TYPE,
+		R_ANAL_MUTATION_SIGNATURE,
+		R_ANAL_MUTATION_XREF,
+		R_ANAL_MUTATION_COMMENT,
+		R_ANAL_MUTATION_TYPE_LINK,
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (unsupported); i++) {
+		RAnalMutation mutations[] = {
+			{
+				.kind = R_ANAL_MUTATION_VAR_RENAME,
+				.var = var,
+				.name = "after",
+			},
+			{
+				.kind = unsupported[i],
+			},
+		};
+		RAnalMutationAtomicResult result = r_anal_apply_mutations_atomic (
+			anal, mutations, R_ARRAY_SIZE (mutations));
+		mu_assert_eq (result.status, R_ANAL_MUTATION_ATOMIC_STATUS_UNSUPPORTED, "unsupported kind rejects preflight");
+		mu_assert_eq (result.failed_index, 1, "unsupported record index");
+		mu_assert_eq (result.validated, 0, "unsupported scan precedes validation");
+		mu_assert_eq (result.committed, 0, "unsupported batch commits nothing");
+		mu_assert_streq (var->name, "before", "unsupported batch leaves valid prefix untouched");
+	}
+	mu_assert_eq (r_anal_function_dirty_epoch (fcn), initial_epoch, "unsupported batches do not publish epochs");
+	mu_assert_eq (event_count, 0, "unsupported batches do not publish events");
+	atomic_mutation_test_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_apply_mutations_atomic_rolls_back_commit_conflict(void) {
+	RAnal *anal = atomic_mutation_test_anal_new ();
+	mu_assert_notnull (anal, "create rollback analysis");
+	RAnalFunction *fcn = r_anal_create_function (anal, "atomic_rollback", 0x7300, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "create rollback function");
+	RAnalVar *var = r_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "int", 4, false, "before");
+	mu_assert_notnull (var, "create rollback variable");
+	ut64 initial_epoch = r_anal_function_dirty_epoch (fcn);
+	int event_count = 0;
+	mu_assert_true (r_event_hook (anal->ev, R_EVENT_VARIABLE_NAME_CHANGED,
+		atomic_mutation_count_event_cb, &event_count), "hook rollback rename events");
+	RAnalMutation mutations[] = {
+		{
+			.kind = R_ANAL_MUTATION_VAR_RENAME,
+			.var = var,
+			.name = "first_write",
+		},
+		{
+			.kind = R_ANAL_MUTATION_VAR_RENAME,
+			.var = var,
+			.name = "conflicting_write",
+		},
+	};
+	RAnalMutationAtomicResult result = r_anal_apply_mutations_atomic (anal, mutations, R_ARRAY_SIZE (mutations));
+	mu_assert_eq (result.status, R_ANAL_MUTATION_ATOMIC_STATUS_COMMIT_FAILED, "write conflict fails guarded commit");
+	mu_assert_eq (result.failed_index, 1, "conflicting write index");
+	mu_assert_eq (result.validated, 2, "both conflicting records validate against entry state");
+	mu_assert_eq (result.committed, 0, "rolled-back batch reports no committed records");
+	mu_assert_streq (var->name, "before", "first pointer swap is rolled back");
+	mu_assert_eq (r_anal_function_dirty_epoch (fcn), initial_epoch, "rollback does not publish an epoch");
+	mu_assert_eq (event_count, 0, "rollback does not publish events");
+	atomic_mutation_test_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_apply_mutations_atomic_defers_publication(void) {
+	RAnal *anal = atomic_mutation_test_anal_new ();
+	mu_assert_notnull (anal, "create publication analysis");
+	mu_assert_true (r_anal_cc_set (anal, "rax atomica(rdi)"), "seed initial atomic calling convention");
+	mu_assert_true (r_anal_cc_set (anal, "rax atomicb(rsi)"), "seed replacement atomic calling convention");
+	RAnalFunction *fcn = r_anal_create_function (anal, "atomic_publication", 0x7400, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "create publication function");
+	mu_assert_true (r_anal_function_set_callconv (anal, fcn, "atomica"), "set initial calling convention");
+	RAnalVar *first = r_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "int", 4, false, "first");
+	RAnalVar *second = r_anal_function_set_var (fcn, -16, R_ANAL_VAR_KIND_BPV, "int", 4, false, "second");
+	mu_assert_notnull (first, "create first publication variable");
+	mu_assert_notnull (second, "create second publication variable");
+	ut64 initial_epoch = r_anal_function_dirty_epoch (fcn);
+	AtomicMutationEventState event_state = {
+		.fcn = fcn,
+		.first = first,
+		.second = second,
+		.callconv = "atomicb",
+		.first_name = "renamed_first",
+		.second_name = "renamed_second",
+		.expected_epoch = initial_epoch + 1,
+		.saw_complete_state = true,
+	};
+	int function_modified_events = 0;
+	mu_assert_true (r_event_hook (anal->ev, R_EVENT_VARIABLE_NAME_CHANGED,
+		atomic_mutation_event_cb, &event_state), "hook deferred rename events");
+	mu_assert_true (r_event_hook (anal->ev, R_EVENT_FUNCTION_MODIFIED,
+		atomic_mutation_count_event_cb, &function_modified_events), "hook function modified events");
+	anal->is_dirty = false;
+	RAnalMutation mutations[] = {
+		{
+			.kind = R_ANAL_MUTATION_VAR_RENAME,
+			.var = first,
+			.name = "renamed_first",
+		},
+		{
+			.kind = R_ANAL_MUTATION_CALLCONV,
+			.fcn = fcn,
+			.callconv = "atomicb",
+		},
+		{
+			.kind = R_ANAL_MUTATION_VAR_RENAME,
+			.var = second,
+			.name = "renamed_second",
+		},
+	};
+	RAnalMutationAtomicResult result = r_anal_apply_mutations_atomic (anal, mutations, R_ARRAY_SIZE (mutations));
+	mu_assert_eq (result.status, R_ANAL_MUTATION_ATOMIC_STATUS_OK, "atomic batch commits");
+	mu_assert_eq (result.failed_index, R_ANAL_MUTATION_ATOMIC_INDEX_NONE, "successful batch has no failed index");
+	mu_assert_eq (result.validated, 3, "successful batch validates every record");
+	mu_assert_eq (result.committed, 3, "successful batch commits every record");
+	mu_assert_streq (fcn->callconv, "atomicb", "calling convention pointer swap commits");
+	mu_assert_streq (first->name, "renamed_first", "first rename commits");
+	mu_assert_streq (second->name, "renamed_second", "second rename commits");
+	mu_assert_eq (r_anal_function_dirty_epoch (fcn), initial_epoch + 1, "changed function epoch publishes exactly once");
+	mu_assert_true (anal->is_dirty, "successful changed batch marks analysis dirty");
+	mu_assert_eq (event_state.count, 2, "one event is published for each changed rename");
+	mu_assert_true (event_state.saw_complete_state, "rename events observe the fully committed batch and published epoch");
+	mu_assert_eq (function_modified_events, 0, "callconv mutation does not invent a function event");
+	atomic_mutation_test_anal_free (anal);
 	mu_end;
 }
 
@@ -769,7 +1024,10 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_get_signature_string_falls_back_to_vars);
 	mu_run_test (test_r_anal_function_get_signature_string_hides_variadic_placeholder);
 	mu_run_test (test_r_anal_function_get_signature_falls_back_to_valid_callconv);
-	mu_run_test (test_r_anal_function_context_collect_is_conservative_for_stack_slots);
+	mu_run_test (test_r_anal_apply_mutations_atomic_is_all_or_nothing);
+	mu_run_test (test_r_anal_apply_mutations_atomic_rejects_unsupported_preflight);
+	mu_run_test (test_r_anal_apply_mutations_atomic_rolls_back_commit_conflict);
+	mu_run_test (test_r_anal_apply_mutations_atomic_defers_publication);
 	mu_run_test (test_r_anal_function_switches_foreach);
 	mu_run_test (test_r_anal_function_overlapped_walk_keeps_one_switch_owner);
 	return tests_passed != tests_run;

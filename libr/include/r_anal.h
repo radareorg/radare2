@@ -289,30 +289,66 @@ typedef enum {
 	R_ANAL_FCN_SLOT_UNKNOWN
 } RAnalFcnSlotRole;
 
-typedef struct r_anal_fcn_reg_arg_t {
-	char *name;
-	char *type;
-	char *reg;
-	int arg_index;
-} RAnalFcnRegArg;
 
-typedef struct r_anal_fcn_slot_t {
-	char *name;
-	char *type;
-	RAnalFcnSlotBase base;
-	char *base_name;
-	st64 offset;
-	RAnalFcnSlotRole role;
-	int arg_index;
-	char *arg_name;
-	char *home_reg;
-} RAnalFcnSlot;
+typedef enum {
+	R_ANAL_FCN_CALLEE_UNKNOWN = 0,
+	R_ANAL_FCN_CALLEE_INTERNAL = 1,
+	R_ANAL_FCN_CALLEE_IMPORTED = 2,
+} RAnalFcnCalleeLinkage;
 
-typedef struct r_anal_fcn_context_t {
-	RAnalFunctionSignature *signature;
-	RList *reg_args; // RList<RAnalFcnRegArg *>
-	RList *fcn_slots; // RList<RAnalFcnSlot *>
-} RAnalFcnContext;
+// How control reaches a callee. A call comes back; a tail transfer does not,
+// and the callee's return is the caller's. The two tail forms differ in what
+// names the callee: a jump names its target directly, and a jump through a
+// loaded value is licensed by the relocation on the slot the value was loaded
+// from, so `addr` is then that slot rather than any code address.
+typedef enum {
+	R_ANAL_CALL_TRANSFER_CALL = 0,
+	R_ANAL_CALL_TRANSFER_TAIL_JUMP = 1,
+	R_ANAL_CALL_TRANSFER_TAIL_SLOT = 2,
+} RAnalCallTransfer;
+
+
+
+// Opaque immutable snapshot borrowed by decompiler providers.
+
+// Immutable snapshot data supplied to decompiler providers.
+// Capability bits describe fields captured, not semantic completeness. Schema
+// 12 adds source-owned parameter presentation names without making names part
+// of semantic identity or revision hashing; the public ABI is 139.
+// Presence says this radare2 exposes the immutable function-snapshot API. A
+// consumer asks whether the capability is here, never which number it sits at:
+// the numbers move for reasons that have nothing to do with whether the API a
+// provider needs is present.
+// A string literal the function refers to, and where it lives.
+//
+// A consumer holding only the snapshot can see the address a constant carries
+// but not what is stored there, so a rendered call could name its callee and
+// still spell its argument as an address. This is the same fact radare2
+// already keeps as `Cs` metadata, travelling with the function that reads it.
+// A call through a table of function pointers reaches every entry the index can
+// select, and a consumer holding only the function's own bytes cannot read the
+// table to find out which. These are the words themselves, carried as fact:
+// which addresses the table holds, not which of them a given call reaches. That
+// second question is the caller's to answer, from the range it can prove for
+// the index, and answering it by reading the table alone would be a guess.
+// A named data object the function refers to, and where it lives.
+//
+// The same argument as the string literal beside it: a consumer holding only
+// the snapshot sees the address a constant carries, so a global renders as its
+// address rather than as its name. This is radare2's own flag for that address,
+// travelling with the function that reads it. When radare2 has an address type
+// link for the same object, that exact spelling travels beside the display name
+// as an optional, source-owned type fact.
+
+// Transitively const scalar projections. Owned strings are available only
+// through caller-buffer copy accessors while the callback is active.
+
+
+
+// The signature radare2 recovered, spelled the way the source spells it. The
+// interface describes where values live; this says what they are called.
+
+
 
 typedef struct r_anal_diff_t {
 	int type;
@@ -350,6 +386,7 @@ typedef struct r_anal_function_t {
 	char *name;
 	char *realname; // R2_590: add realname for the mangled one
 	char *pin; // user-defined pin string (emoji or any utf-8) to mark this function; NULL if not pinned
+	char *assumptions_json; // typed external-analysis assumptions owned by the user/project
 	int bits; // ((> bits 0) (set-bits bits))
 	int type;
 	const char *callconv; // calling convention (RAnal.constpool string). May hold the bare "dyncc" marker until r_anal_function_cc() resolves it
@@ -359,6 +396,7 @@ typedef struct r_anal_function_t {
 	RVecAnalVarPtr vars;
 	HtUP/*<st64, RVecAnalVarPtr *>*/ *inst_vars; // offset of instructions => the variables they access
 	ut64 reg_save_area; // size of stack area pre-reserved for saving registers
+	ut64 dirty_epoch; // incremented when typed function metadata changes
 	st64 bp_off; // offset of bp inside owned stack frame
 	st64 stack;  // stack frame size
 	int maxstack;
@@ -425,6 +463,7 @@ typedef struct r_anal_meta_item_t {
 
 struct r_anal_t;
 struct r_anal_bb_t;
+#define R_ANAL_FUNCTION_DELETE_REFUSE (-0x7fffffff - 1)
 typedef struct r_anal_callbacks_t {
 	int (*on_fcn_new) (struct r_anal_t *, void *user, RAnalFunction *fcn);
 	int (*on_fcn_delete) (struct r_anal_t *, void *user, RAnalFunction *fcn);
@@ -511,6 +550,13 @@ typedef struct {
 
 typedef struct r_ref_manager_t RefManager;
 
+typedef enum {
+	R_ANAL_PLUGIN_ANALYSIS_DEPTH_UNSPECIFIED = 0,
+	R_ANAL_PLUGIN_ANALYSIS_DEPTH_BASIC,
+	R_ANAL_PLUGIN_ANALYSIS_DEPTH_BALANCED,
+	R_ANAL_PLUGIN_ANALYSIS_DEPTH_AGGRESSIVE,
+} RAnalPluginAnalysisDepth;
+
 typedef struct r_anal_t {
 	RArchConfig *config;
 	int lineswidth; // asm.lines.width
@@ -562,8 +608,12 @@ typedef struct r_anal_t {
 	Sdb *sdb_cc; // calling conventions
 	Sdb *sdb_classes;
 	Sdb *sdb_classes_attrs;
+	ut64 type_dirty_epoch; // incremented when global typed metadata changes
+	ut64 type_context_hash_cache;
+	ut64 type_context_hash_epoch;
 	RAnalCallbacks cb;
 	RAnalOptions opt;
+	RAnalPluginAnalysisDepth plugin_analysis_depth;
 	RList *reflines;
 	RList *reflines2;
 	RListComparator columnSort;
@@ -779,6 +829,81 @@ typedef struct r_anal_ref_t {
 
 R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
+#define R_ANAL_OWNED_XREF_NAMESPACE_MAX 128
+
+// Desired xrefs owned by one producer for one address. In refs, at is the
+// source address and addr is the target address. The callee copies all data.
+typedef struct r_anal_owned_xref_set_t {
+	const char * R_NONNULL producer_namespace;
+	ut64 owner_addr;
+	const RAnalRef *refs;
+	size_t ref_count;
+} RAnalOwnedXrefSet;
+
+typedef enum {
+	R_ANAL_OWNED_XREF_STATUS_OK = 0,
+	R_ANAL_OWNED_XREF_STATUS_INVALID,
+	R_ANAL_OWNED_XREF_STATUS_NOMEM,
+} RAnalOwnedXrefStatus;
+
+typedef enum {
+	R_ANAL_MUTATION_SIGNATURE = 0,
+	R_ANAL_MUTATION_CALLCONV,
+	R_ANAL_MUTATION_VAR,
+	R_ANAL_MUTATION_VAR_RENAME,
+	R_ANAL_MUTATION_VAR_TYPE,
+	R_ANAL_MUTATION_XREF,
+	R_ANAL_MUTATION_COMMENT,
+	R_ANAL_MUTATION_FLAG,
+	R_ANAL_MUTATION_TYPE_DECL,
+	R_ANAL_MUTATION_TYPE_LINK
+} RAnalMutationKind;
+
+typedef struct r_anal_mutation_t {
+	RAnalMutationKind kind;
+	RAnalFunction *fcn;
+	RAnalFunctionSignature *signature;
+	const char *signature_string;
+	const char *callconv;
+	RAnalVar *var;
+	const char *old_name;
+	const char *name;
+	const char *type;
+	const char *text;
+	ut64 addr;
+	ut64 from;
+	ut64 to;
+	ut64 size;
+	int delta;
+	char var_kind;
+	bool is_arg;
+	RAnalRefType ref_type;
+} RAnalMutation;
+
+typedef struct r_anal_mutation_result_t {
+	size_t attempted;
+	size_t applied;
+	size_t failed;
+} RAnalMutationResult;
+
+typedef enum {
+	R_ANAL_MUTATION_ATOMIC_STATUS_OK = 0,
+	R_ANAL_MUTATION_ATOMIC_STATUS_INVALID_ARGUMENT,
+	R_ANAL_MUTATION_ATOMIC_STATUS_UNSUPPORTED,
+	R_ANAL_MUTATION_ATOMIC_STATUS_VALIDATION_FAILED,
+	R_ANAL_MUTATION_ATOMIC_STATUS_PREPARATION_FAILED,
+	R_ANAL_MUTATION_ATOMIC_STATUS_COMMIT_FAILED,
+} RAnalMutationAtomicStatus;
+
+#define R_ANAL_MUTATION_ATOMIC_INDEX_NONE ((size_t)-1)
+
+typedef struct r_anal_mutation_atomic_result_t {
+	RAnalMutationAtomicStatus status;
+	size_t failed_index; // R_ANAL_MUTATION_ATOMIC_INDEX_NONE when no record failed
+	size_t validated; // records validated against transaction-entry state
+	size_t committed; // records in the final committed state; zero after rollback
+} RAnalMutationAtomicResult;
+
 /* represents a reference line from one address (from) to another (to) */
 typedef struct r_anal_refline_t {
 	ut64 from;
@@ -922,15 +1047,19 @@ typedef bool (*RAnalFcnAnalyzeCallback)(RAnal *a, RAnalFunction *fcn);
 // Returns list of RAnalVarProt or NULL to use default ESIL recovery
 typedef RList *(*RAnalRecoverVarsCallback)(RAnal *a, RAnalFunction *fcn);
 
-// Data flow refs callback (called during aar)
-// Returns vector of RAnalRef for data flow xrefs
-typedef RVecAnalRef *(*RAnalDataRefsCallback)(RAnal *a, RAnalFunction *fcn);
+// Data flow refs callback (called during aar). A true result makes `*refs`
+// authoritative, including NULL/empty; false preserves the producer's old refs.
+// A non-empty output vector is transferred to the caller.
+typedef bool (*RAnalDataRefsCallback)(RAnal *a, RAnalFunction *fcn, R_OUT RVecAnalRef **refs);
 
 // Pre-analysis callback (called early in aaa, after aa, before per-function work)
 typedef bool (*RAnalPreAnalysisCallback)(RAnal *a);
 
-// Post-analysis callback (called at end of aaaa)
+// Post-analysis callback (called at end of aa/aaa/aaaa)
 typedef bool (*RAnalPostAnalysisCallback)(RAnal *a);
+
+// Decompiler callback. The snapshot is borrowed only for the callback duration.
+typedef RCodeMeta *(*RAnalDecompilerCallback)(RAnal *anal, RAnalFunction *fcn);
 
 typedef struct r_anal_plugin_t {
 	RPluginMeta meta;
@@ -962,12 +1091,13 @@ typedef struct r_anal_plugin_t {
 	// Per-function analysis hooks
 	RAnalFcnAnalyzeCallback analyze_fcn;      // Called after af completes
 	RAnalRecoverVarsCallback recover_vars;    // Called during afva, returns vars
-	RAnalDataRefsCallback get_data_refs;      // Called during aar, returns refs
+	RAnalDataRefsCallback get_data_refs;      // Called during aar, produces authoritative refs
 
 	// Pre-analysis hook (called early in aaa, filtered by eligible)
 	RAnalPreAnalysisCallback pre_analysis;
-	// Post-analysis hook (for aaaa)
+	// Post-analysis hook (for aa/aaa/aaaa)
 	RAnalPostAnalysisCallback post_analysis;
+	RAnalDecompilerCallback decompile;
 } RAnalPlugin;
 
 /*----------------------------------------------------------------------------------------------*/
@@ -1172,12 +1302,31 @@ typedef enum {
 	R_ANAL_PLUGIN_ACTION_PRE_ANALYSIS,   // aaa hook: call pre_analysis on all eligible plugins
 	R_ANAL_PLUGIN_ACTION_ANALYZE_FCN,   // af hook: call analyze_fcn on all eligible plugins
 	R_ANAL_PLUGIN_ACTION_RECOVER_VARS,  // afva hook: first plugin returning vars wins
-	R_ANAL_PLUGIN_ACTION_GET_DATA_REFS, // aar hook: merge data refs from all eligible plugins
-	R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, // aaaa hook: call post_analysis on all eligible plugins
+	R_ANAL_PLUGIN_ACTION_GET_DATA_REFS, // aar hook selector used by the typed collector
+	R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, // aa/aaa/aaaa hook: call post_analysis on all eligible plugins
 } RAnalPluginAction;
 
 // Unified plugin action dispatcher (replaces per-action APIs)
 R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFunction *fcn);
+/* True when calling convention `cc` uses register `reg` for the location
+ * class `loc`. Exported because a decompiler plugin has to ask this to map a
+ * convention onto the registers a function actually touches, and cannot
+ * reimplement the convention database without duplicating it. */
+R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg);
+R_API bool r_anal_var_exact_formal_get(RAnal *anal, const RAnalVar *var, R_OUT int *ordinal);
+R_API bool r_anal_dwarf_function_link_is_current(const RAnal *anal, ut64 function_addr, const char *type_name);
+typedef struct r_anal_dwarf_frame_pointer_storage_t {
+	char *name;
+	ut64 offset;
+	ut32 size;
+} RAnalDwarfFramePointerStorage;
+R_API bool r_anal_dwarf_function_frame_pointer_get(const RAnal *anal, ut64 function_addr, R_OUT RAnalDwarfFramePointerStorage *storage);
+R_API void r_anal_dwarf_frame_pointer_storage_fini(RAnalDwarfFramePointerStorage *storage);
+R_API bool r_anal_function_has_address_linked_signature_current(RAnalFunction *function);
+R_API R_UNOWNED RAnalPlugin *r_anal_decompiler_provider(RAnal *anal);
+R_API R_OWNED RCodeMeta *r_anal_decompile(RAnal *anal, RAnalFunction *fcn);
+// One directly-called function, snapshotted in the same transaction as its
+// caller. Borrowed for exactly as long as the caller's snapshot lives.
 R_API bool r_anal_function_recover_vars_plugin(RAnal *anal, RAnalFunction *fcn);
 // Stack-VM helper: create register-kind argument vars named "<prefix><first+i>"
 // for i in [0, count). Used for JVM/Dalvik-style per-method arg recovery driven
@@ -1267,12 +1416,30 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API RAnalFunction *r_anal_function_next(RAnal *anal, ut64 addr);
 R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *function);
+R_API RAnalFunctionSignature *r_anal_function_get_signature_current(RAnalFunction *function);
+// The prototype the type database holds under a bare name, for a callee that
+// is not a function of this binary: an import named by a relocation.
 R_API void r_anal_function_signature_free(RAnalFunctionSignature *signature);
 R_API char *r_anal_function_get_signature_string(RAnalFunction *function);
 R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSignature *signature);
 R_API bool r_anal_function_del_signature(RAnal *a, const char *name);
-R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn);
-R_API void r_anal_function_context_free(RAnalFcnContext *ctx);
+R_API char *r_anal_function_get_assumptions_json(RAnal *anal, RAnalFunction *fcn);
+R_API bool r_anal_function_set_assumptions_json(RAnal *anal, RAnalFunction *fcn, const char *json);
+R_API bool r_anal_function_clear_assumptions(RAnal *anal, RAnalFunction *fcn);
+R_API ut64 r_anal_function_dirty_epoch(const RAnalFunction *fcn);
+R_API ut64 r_anal_function_bump_dirty_epoch(RAnalFunction *fcn);
+R_API ut64 r_anal_function_context_hash(RAnal *anal, RAnalFunction *fcn);
+R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv);
+R_API bool r_anal_apply_mutations(RAnal *anal, const RAnalMutation *mutations, size_t mutation_count, RAnalMutationResult *result);
+/*
+ * The atomic Stage-1 API accepts only CALLCONV and VAR_RENAME. Every record is
+ * validated against the state at transaction entry and all owned replacements
+ * are prepared before commit. On success, each changed function epoch is
+ * bumped once and VARIABLE_NAME_CHANGED events are sent after the complete
+ * batch is visible. CALLCONV does not publish an event. A write conflict during
+ * guarded commit rolls every pointer swap back before any epoch or event.
+ */
+R_API RAnalMutationAtomicResult r_anal_apply_mutations_atomic(RAnal *anal, const RAnalMutation *mutations, size_t mutation_count);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
 R_API int r_anal_function_count(RAnal *a, ut64 from, ut64 to);
 R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64 addr);
@@ -1316,6 +1483,8 @@ R_API ut64 r_anal_function_count_xrefs(RAnalFunction *fcn, RAnalRefType type);
 R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
 R_API bool r_anal_xrefs_setf(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to, const RAnalRefType type);
 R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to);
+// Replaces the complete contribution for one owner key atomically. An empty set
+// clears that owner while preserving overlapping owners and legacy refs.
 
 R_API RList *r_anal_get_fcns(RAnal *anal);
 
@@ -1343,6 +1512,7 @@ R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, u
 R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr);
 R_API R_UNOWNED RVecAnalVarPtr *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr);
 
+R_API bool r_anal_var_check_name(const char *name);
 R_API bool r_anal_var_rename(RAnal *anal, RAnalVar *var, const char *new_name);
 R_API void r_anal_var_set_type(RAnal *anal, RAnalVar *var, const char *type);
 R_API bool r_anal_var_delete(RAnal *anal, RAnalVar *var);
@@ -1458,6 +1628,8 @@ typedef struct r_anal_cc_argslot_t {
 	bool fixed; // the convention pins this slot, so it does not follow the previous arg
 } RAnalCCArgSlot;
 R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int argc, bool incall, RAnalCCArgSlot *out);
+// a convention draws integer and floating-point arguments from separate sequences, so each is counted on its own
+R_API const char *r_anal_cc_fparg(RAnal *anal, const char *convention, int n);
 R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int argno, int argc, bool incall, int width, ut64 *out);
 R_API ut64 r_anal_cc_argaddr(RAnal *anal, RReg *reg, const RAnalCCArgSlot *slot);
 R_API int r_anal_cc_wordsize(RAnal *anal, const char *convention);
@@ -1817,7 +1989,15 @@ R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
-R_API RList *r_anal_types_baselist(RAnal *anal);
+R_API RList *r_anal_types_snapshot(RAnal *anal);
+R_API void r_anal_types_snapshot_free(RList *snapshot);
+R_API ut64 r_anal_types_dirty_epoch(const RAnal *anal);
+R_API ut64 r_anal_types_bump_dirty_epoch(RAnal *anal);
+R_API ut64 r_anal_types_context_hash(RAnal *anal);
+R_API bool r_anal_types_set_link(RAnal *anal, const char *type, ut64 addr);
+R_API bool r_anal_types_set_link_expression(RAnal *anal, const char *type, ut64 addr);
+R_API bool r_anal_types_set_link_offset(RAnal *anal, const char *type, ut64 addr);
+R_API bool r_anal_types_unlink(RAnal *anal, ut64 addr);
 R_API void r_parse_pdb_types(const RAnal *anal, const RBinPdb *pdb);
 R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);
 R_API char *r_anal_base_type_to_kv(const RAnalBaseType *type);
