@@ -212,26 +212,24 @@ static int copy_string(STypeCodeStr *type_code_str, const char *str_for_copy, si
 	if (free_space < str_for_copy_len) {
 		int newlen = type_code_str->type_str_len + (str_for_copy_len << 1) + 1;
 		if (newlen < 1 || newlen > UT16_MAX) {
-			R_FREE (type_code_str->type_str);
-			goto copy_string_err;
-		}
-		type_code_str->type_str_len = newlen;
-		char *type_str = (char *) realloc (type_code_str->type_str, newlen);
-		if (!type_str) {
-			R_FREE (type_code_str->type_str);
-			goto copy_string_err;
-		}
-		type_code_str->type_str = type_str;
-		if (!type_code_str->type_str) {
 			res = 0;
 			goto copy_string_err;
 		}
+		char *type_str = (char *) realloc (type_code_str->type_str, newlen);
+		if (!type_str) {
+			res = 0;
+			goto copy_string_err;
+		}
+		// publish the new length only once the buffer really grew, so that
+		// type_str_len never describes an allocation that does not exist
+		type_code_str->type_str = type_str;
+		type_code_str->type_str_len = newlen;
 	}
 
-	char *dst = type_code_str->type_str + type_code_str->curr_pos;
-	if (!dst) {
+	if (!type_code_str->type_str) {
 		return 0;
 	}
+	char *dst = type_code_str->type_str + type_code_str->curr_pos;
 
 	if (str_for_copy) {
 		r_str_ncpy  (dst, str_for_copy, str_for_copy_len + 1);
@@ -239,11 +237,17 @@ static int copy_string(STypeCodeStr *type_code_str, const char *str_for_copy, si
 		memset (dst, 0, str_for_copy_len);
 	}
 	type_code_str->curr_pos += str_for_copy_len;
-	if (type_code_str->type_str) {
-		type_code_str->type_str[type_code_str->curr_pos] = '\0';
-	}
+	type_code_str->type_str[type_code_str->curr_pos] = '\0';
 
 copy_string_err:
+	if (!res) {
+		// the buffer is unusable from here on. Drop it and reset the
+		// bookkeeping so any later call bails out at the curr_pos check
+		// above rather than writing through a stale offset.
+		R_FREE (type_code_str->type_str);
+		type_code_str->type_str_len = 0;
+		type_code_str->curr_pos = 0;
+	}
 	return res;
 }
 
