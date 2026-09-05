@@ -115,7 +115,7 @@ static bool sections_vec(RBinFile *bf) {
 	return true;
 }
 
-static bool reloc_is_import(ELFOBJ *eo, const RBinElfReloc *rel) {
+static inline bool reloc_is_import(ELFOBJ *eo, const RBinElfReloc *rel) {
 	return rel->sym && rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym];
 }
 
