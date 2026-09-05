@@ -2089,3 +2089,48 @@ EXPECT=<<EOF
 0x00000023
 EOF
 RUN
+
+NAME=sar on a byte or word register keeps its sign
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx d0f8 @ 0
+ar rax=0xa5a5000300000080
+ar cf=1
+aes
+ar al
+ar rax
+ar sf
+ar cf
+wx 66d1f8 @ 0
+ar rax=0xa5a5000300008000
+ar rip=0
+aes
+ar ax
+ar sf
+wx c0f808 @ 0
+ar rax=0xa5a5000300000080
+ar rip=0
+aes
+ar al
+ar cf
+wx c0f809 @ 0
+ar rax=0xa5a5000300000080
+ar rip=0
+aes
+ar al
+EOF
+EXPECT=<<EOF
+0x000000c0
+0xa5a50003000000c0
+0x00000001
+0x00000000
+0x0000c000
+0x00000001
+0x000000ff
+0x00000001
+0x000000ff
+EOF
+RUN

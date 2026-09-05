@@ -1107,12 +1107,7 @@ static const char *arg(RArchSession *as, csh *handle, cs_insn *insn, char *buf, 
 						cs_reg_name(*handle, LSHIFT2(n)),
 						REG (n), DECODE_SHIFT (n));
 			} else {
-				// asr #32 is encodable, but esil ASR rewrites a count above 31
-				unsigned int sh = LSHIFT2 (n);
-				if (SHIFTTYPE (n) == ARM_SFT_ASR) {
-					sh = R_MIN (sh, 31);
-				}
-				snprintf (buf, buf_sz, "%u,%s,%s", sh, REG (n), DECODE_SHIFT (n));
+				snprintf (buf, buf_sz, "%u,%s,%s", LSHIFT2 (n), REG (n), DECODE_SHIFT (n));
 			}
 		} else {
 			snprintf (buf, buf_sz, "%s",
@@ -2716,9 +2711,8 @@ static bool arm32shiftreg(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *i
 		res = "0xff,%s,&,%s,>>,0xffffffff,&,%s,=";
 		break;
 	case ARM_INS_ASR:
-		cf = "0xff,%s,&,!,!,?{,1,1,0xff,%s,&,-,32,%s,~,>>,&,cf,:=,},";
-		// esil ASR rewrites an out-of-range count, so saturate at 31 here
-		res = "0xff,%s,&,DUP,5,SWAP,>>,!,!,0x1f,*,SWAP,0x1f,&,|,%s,ASR,%s,=";
+		cf = "0xff,%s,&,!,!,?{,1,1,0xff,%s,&,-,%s,ASR,&,cf,:=,},";
+		res = "0xff,%s,&,%s,ASR,%s,=";
 		break;
 	default:
 		cf = "0xff,%s,&,!,!,?{,1,0x1f,1,0xff,%s,&,-,&,%s,>>,&,cf,:=,},";
@@ -3115,12 +3109,11 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 						}
 						break;
 					case ARM_SFT_ASR:
-						// esil ASR rewrites a count above 31
 						r_strbuf_appendf (&op->esil, "%s,%s,%d,%s,ASR,+,0xffffffff,&,=[%d]",
-								  REG(0), MEMBASE(1), R_MIN (SHIFTVALUE(1), 31), MEMINDEX(1), str_ldr_bytes);
+								  REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
 						if (ISWRITEBACK32 ()) {
 							r_strbuf_appendf (&op->esil, ",%s,%d,%s,ASR,+,%s,=",
-										MEMBASE(1), R_MIN (SHIFTVALUE(1), 31), MEMINDEX(1), MEMBASE(1));
+										MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
 						break;
 					case ARM_SFT_ROR:
@@ -3165,9 +3158,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 							       REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
 						break;
 					case ARM_SFT_ASR:
-						// esil ASR rewrites a count above 31
 						r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,ASR,+,%s,=",
-								      REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), R_MIN (SHIFTVALUE(2), 31), REG(2), MEMBASE(1));
+								      REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
 						break;
 					case ARM_SFT_ROR:
 						r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,ROR,+,%s,=",

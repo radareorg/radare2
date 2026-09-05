@@ -142,6 +142,17 @@ static bool esil_popcount(REsil *esil) {
 	return r_esil_pushnum (esil, r_bits_popcount64 (val));
 }
 
+static ut64 sext(ut64 v, ut64 bits) {
+	if (bits == 0) {
+		return 0;
+	}
+	if (bits > 63) {
+		return v;
+	}
+	const ut64 m = 1ULL << (bits - 1);
+	return ((v & r_num_bitmask (bits)) ^ m) - m;
+}
+
 // Sign-extend n-bit value to 64 bits. Example: "ae 8,0x81,~" -> 0xffffffffffffff81.
 static bool esil_signext(REsil *esil) {
 	ut64 src, dst;
@@ -164,15 +175,7 @@ static bool esil_signext(REsil *esil) {
 		return false;
 	}
 
-	// Make sure the other bits are 0
-	ut64 m = 0;
-	if (dst > 0 && dst < 64) {
-		src &= UT64_MAX >> (64 - dst);
-		m = 1ULL << (dst - 1);
-	} else if (dst == 0) {
-		src = 0;
-	}
-	return r_esil_pushnum (esil, ((src ^ m) - m));
+	return r_esil_pushnum (esil, sext (src, dst));
 }
 
 static bool esil_zf(REsil *esil) {
@@ -627,13 +630,8 @@ static bool esil_lsl(REsil *esil) {
 	const RStrs src = r_esil_pop (esil);
 	if (!r_strs_empty (dst) && r_esil_get_parm (esil, dst, &num)) {
 		if (!r_strs_empty (src) && r_esil_get_parm (esil, src, &num2)) {
-			if (num2 > sizeof (ut64) * 8) {
-				R_LOG_DEBUG ("esil_lsl: shift is too big");
-			} else {
-				const ut64 shift = (num2 > 63)? 0: num << num2;
-				r_esil_pushnum (esil, shift);
-				ret = true;
-			}
+			r_esil_pushnum (esil, (num2 > 63)? 0: num << num2);
+			ret = true;
 		} else {
 			R_LOG_DEBUG ("esil_lsl: empty stack");
 		}
@@ -648,8 +646,7 @@ static bool esil_lsr(REsil *esil) {
 	const RStrs src = r_esil_pop (esil);
 	if (!r_strs_empty (dst) && r_esil_get_parm (esil, dst, &num)) {
 		if (!r_strs_empty (src) && r_esil_get_parm (esil, src, &num2)) {
-			ut64 res = num >> R_MIN (num2, 63);
-			r_esil_pushnum (esil, res);
+			r_esil_pushnum (esil, (num2 > 63)? 0: num >> num2);
 			ret = true;
 		} else {
 			R_LOG_DEBUG ("esil_lsr: empty stack");
@@ -661,43 +658,19 @@ static bool esil_lsr(REsil *esil) {
 static bool esil_asr(REsil *esil) {
 	bool ret = false;
 	int regsize = 0;
-	ut64 op_num = 0, param_num = 0;
-	const RStrs op = r_esil_pop (esil);
-	const RStrs param = r_esil_pop (esil);
-	if (!r_strs_empty (op) && r_esil_get_parm_size (esil, op, &op_num, &regsize)) {
-		if (!r_strs_empty (param) && r_esil_get_parm (esil, param, &param_num)) {
-			if (param_num > regsize - 1) {
-				// capstone bug?
-				R_LOG_DEBUG ("Invalid asr shift of %"PFMT64d" at 0x%"PFMT64x, param_num, esil->addr);
-				param_num = 30;
+	ut64 num, num2;
+	const RStrs dst = r_esil_pop (esil);
+	const RStrs src = r_esil_pop (esil);
+	if (!r_strs_empty (dst) && r_esil_get_parm_size (esil, dst, &num, &regsize)) {
+		if (!r_strs_empty (src) && r_esil_get_parm (esil, src, &num2)) {
+			// a literal is 32 bits wide under asm.bits=32, else 64
+			const bool narrow = regsize > 0 && regsize < 64 &&
+				(regsize == 32 || r_esil_get_parm_type (esil, dst) == R_ESIL_PARM_REG);
+			if (narrow) {
+				num = sext (num, regsize);
 			}
-			bool isNegative;
-			if (regsize == 32) {
-				isNegative = ((st32)op_num) < 0;
-				st32 snum = op_num;
-				op_num = snum;
-			} else {
-				isNegative = ((st64)op_num) < 0;
-			}
-			if (isNegative) {
-				ut64 mask = (regsize - 1);
-				param_num &= mask;
-				ut64 left_bits = 0;
-				if (regsize <= 64) {
-					if (op_num & (1ULL << (regsize - 1))) {
-						if (regsize - param_num >= 64) {
-							left_bits = 0;
-						} else {
-							left_bits = (1ULL << param_num) - 1;
-							left_bits <<= regsize - param_num;
-						}
-					}
-				}
-				op_num = left_bits | (op_num >> param_num);
-			} else {
-				op_num >>= param_num;
-			}
-			ut64 res = op_num;
+			const ut64 fill = ((st64)num < 0)? UT64_MAX: 0;
+			const ut64 res = (num2 > 63)? fill: (num >> num2) | (fill & ~(UT64_MAX >> num2));
 			r_esil_pushnum (esil, res);
 			ret = true;
 		} else {

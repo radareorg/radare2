@@ -18,3 +18,48 @@ EXPECT=<<EOF
 0x0000000c
 EOF
 RUN
+
+NAME=sar keeps the sign of a word register and shifts a dword memory operand
+FILE=malloc://0x200
+ARGS=-a x86 -b 16
+CMDS=<<EOF
+aei
+aeim
+wx d1f8 @ 0
+ar ax=0x8000
+aes
+ar ax
+ar sf
+wx 66d138 @ 0
+ar bx=0x100
+ar si=0
+wv4 0x00008000 @ 0x100
+ar ip=0
+aes
+pxw 4 @ 0x100
+EOF
+EXPECT=<<EOF
+0x0000c000
+0x00000001
+0000:0100  0x00004000                                   .@..
+EOF
+RUN
+
+NAME=sar keeps the sign of a negative dword memory operand
+BROKEN=1
+FILE=malloc://0x200
+ARGS=-a x86 -b 16
+CMDS=<<EOF
+aei
+aeim
+wx 66d138 @ 0
+ar bx=0x100
+ar si=0
+wv4 0x80000000 @ 0x100
+aes
+pxw 4 @ 0x100
+EOF
+EXPECT=<<EOF
+0000:0100  0xc0000000                                   ....
+EOF
+RUN

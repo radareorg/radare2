@@ -234,6 +234,12 @@ on that width. CLZ does: the count for the value 1 is 31 at width 32 and 63 at
 width 64. POPCNT does not, because a caller wanting a narrower count masks the
 value first.
 
+The shifts are total in the count: LSL and LSR push 0 for a count of 64 or
+more. ASR takes the sign of its value from the top bit of the register that
+holds it (bit 7 of `al`, bit 15 of `ax`, bit 31 of `eax`); a literal is 32
+bits wide under `asm.bits=32` and 64 bits wide otherwise. A count of that width
+or more pushes the sign fill, 0 or 0xffffffffffffffff.
+
 # Floating point
 
 _TODO_

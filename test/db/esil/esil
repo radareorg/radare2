@@ -936,3 +936,113 @@ EXPECT=<<EOF
 0x50000000000
 EOF
 RUN
+
+NAME=a shift count of 64 or more pushes zero
+FILE=-
+CMDS=<<EOF
+ae 65,1,LSL
+ae 64,1,LSL
+ae 63,1,LSL
+ae 64,0xffffffffffffffff,LSR
+ae 100,0xffffffffffffffff,LSR
+ae 63,0xffffffffffffffff,LSR
+EOF
+EXPECT=<<EOF
+0
+0
+0x8000000000000000
+0
+0
+0x1
+EOF
+RUN
+
+NAME=asr by the width or more is the sign fill
+FILE=-
+CMDS=<<EOF
+ae 64,0x8000000000000000,ASR
+ae 100,0x8000000000000000,ASR
+ae 63,0x8000000000000000,ASR
+ae 64,1,ASR
+ae 100,0x7fffffffffffffff,ASR
+ae 1,0x8000000000000000,ASR
+ae 0,0x8000000000000000,ASR
+ae 0,0xffffffffffffffff,ASR
+EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+0xffffffffffffffff
+0xffffffffffffffff
+0
+0
+0xc000000000000000
+0x8000000000000000
+0xffffffffffffffff
+EOF
+RUN
+
+NAME=asr at 32 bits takes its sign from bit 31
+FILE=-
+ARGS=-b 32
+CMDS=<<EOF
+ae 33,0x80000000,ASR
+ae 1,0x80000000,ASR
+ae 31,0x80000000,ASR
+ae 16,16,0x8000,LSL,ASR
+ae 1,0x40000000,ASR
+EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+0xffffffffc0000000
+0xffffffffffffffff
+0xffffffffffff8000
+0x20000000
+EOF
+RUN
+
+NAME=asr takes its sign from the register width and a literal keeps its own
+FILE=malloc://0x10
+ARGS=-a x86 -b 16
+CMDS=<<EOF
+ar ax=0x8000
+ae 1,ax,ASR
+ar al=0x80
+ae 8,al,ASR
+ae 9,al,ASR
+ae 1,0x8000,ASR
+ae 1,0x80000000,ASR
+ae 1,0x8000000000000000,ASR
+EOF
+EXPECT=<<EOF
+0xffffffffffffc000
+0xffffffffffffffff
+0xffffffffffffffff
+0x4000
+0x40000000
+0xc000000000000000
+EOF
+RUN
+
+NAME=the assign forms inherit total shifts
+FILE=malloc://0x10
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+ar rax=1
+'ae 65,rax,<<=
+ar rax
+ar rbx=0xffffffffffffffff
+'ae 64,rbx,>>=
+ar rbx
+ar rbx=0x8000000000000000
+'ae 70,rbx,>>=
+ar rbx
+ar eax=0x80000000
+ae 31,eax,ASR
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000000
+0x00000000
+0xffffffffffffffff
+EOF
+RUN

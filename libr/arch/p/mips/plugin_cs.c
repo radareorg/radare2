@@ -154,7 +154,7 @@ static inline void es_sign_n_64(RArchSession *as, RAnalOp *op, const char *arg, 
 	}
 }
 
-// a mips64 arithmetic shift fills from bit 63, and esil ASR rewrites the count
+// spelled out with >> so the fill does not depend on the ASR width rule
 static inline void es_dsra(RAnalOp *op, const char *cnt, const char *rt, const char *rd) {
 	r_strbuf_appendf (&op->esil,
 		"%s,%s,>>,63,%s,>>,?{,%s,64,-,0xffffffffffffffff,<<,}{,0,},|,%s,=",

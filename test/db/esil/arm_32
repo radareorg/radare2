@@ -3536,3 +3536,42 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+NAME=asr by the register width or more is the sign fill and asrs keeps the carry
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+aer r1=0x80000005
+ae 32,r1,ASR
+ae 40,r1,ASR
+wx 5102b0e1 @ 0
+aer r2=255
+aer cf=0
+aer PC=0
+aes
+aer cf
+aer r0
+aer r2=64
+aer cf=0
+aer PC=0
+aes
+aer cf
+aer r1=0x7fffffff
+aer r2=255
+aer cf=1
+aer PC=0
+aes
+aer cf
+aer r0
+EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+0xffffffffffffffff
+0x00000001
+0xffffffff
+0x00000001
+0x00000000
+0x00000000
+EOF
+RUN
