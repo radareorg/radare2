@@ -2840,7 +2840,9 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 			break;
 		}
 		if (insn->detail->arm.update_flags) {
-			if (OPCOUNT () == 2) {
+			if (OPCOUNT () == 2 && ISSHIFTED (1)) {
+				r_strbuf_appendf (&op->esil, "%s,1,%u,-,0x1,<<,&,!,!,cf,:=,", REG (1), LSHIFT2 (1));
+			} else if (OPCOUNT () == 2) {
 				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<,&,!,!,cf,:=,},", ARG (1), ARG (0), ARG (1));
 			} else {
 				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<,&,!,!,cf,:=,},", ARG (2), ARG (1), ARG (2));
@@ -2853,7 +2855,9 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 			break;
 		}
 		if (insn->detail->arm.update_flags) {
-			if (OPCOUNT () == 2) {
+			if (OPCOUNT () == 2 && ISSHIFTED (1)) {
+				r_strbuf_appendf (&op->esil, "%s,%u,32,-,0x1,<<,&,!,!,cf,:=,", REG (1), LSHIFT2 (1));
+			} else if (OPCOUNT () == 2) {
 				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,32,-,%s,>>,cf,:=,},", ARG (1), ARG (1), ARG (0));
 			} else {
 				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,32,-,%s,>>,cf,:=,},", ARG (2), ARG (2), ARG (1));
@@ -2874,7 +2878,9 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 			break;
 		}
 		if (insn->detail->arm.update_flags) {
-			if (OPCOUNT () == 2) {
+			if (OPCOUNT () == 2 && ISSHIFTED (1)) {
+				r_strbuf_appendf (&op->esil, "%s,1,%u,-,0x1,<<,&,!,!,cf,:=,", REG (1), LSHIFT2 (1));
+			} else if (OPCOUNT () == 2) {
 				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,LSL,&,!,!,cf,:=,},", ARG (1), ARG (0), ARG (1));
 			} else {
 				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,LSL,&,!,!,cf,:=,},", ARG (2), ARG (1), ARG (2));
@@ -2974,7 +2980,9 @@ PUSH { r4, r5, r6, r7, lr }
 		}
 		// suffix 'S' forces conditional flag to be updated
 		if (insn->detail->arm.update_flags) {
-			if (OPCOUNT () == 2) {
+			if (OPCOUNT () == 2 && ISSHIFTED (1)) {
+				r_strbuf_appendf (&op->esil, "%s,1,%u,-,0x1,<<,&,!,!,cf,:=,", REG (1), LSHIFT2 (1));
+			} else if (OPCOUNT () == 2) {
 				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<,&,!,!,cf,:=,},", ARG (1), ARG (0), ARG (1));
 			} else if (OPCOUNT () == 3) {
 				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<,&,!,!,cf,:=,},", ARG (2), ARG (1), ARG (2));

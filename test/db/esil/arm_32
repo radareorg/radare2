@@ -3575,3 +3575,59 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=immediate shifts with the s suffix take the carry from the source register
+FILE=malloc://0x200
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+aer r1=0x20000004
+wx a101b0e1 @ 0
+aer PC=0
+aes
+aer r0
+aer cf
+wx c101b0e1 @ 0
+aer PC=0
+aes
+aer r0
+aer cf
+wx 8101b0e1 @ 0
+aer PC=0
+aes
+aer r0
+aer cf
+wx e101b0e1 @ 0
+aer PC=0
+aes
+aer r0
+aer cf
+aer r1=0x80000008
+wx c101b0e1 @ 0
+aer PC=0
+aes
+aer r0
+aer cf
+wx a101b0e1 @ 0
+aer cf=1
+aer PC=0
+aes
+aer r0
+aer cf
+EOF
+EXPECT=<<EOF
+0x04000000
+0x00000001
+0x04000000
+0x00000001
+0x00000020
+0x00000001
+0x84000000
+0x00000001
+0xf0000001
+0x00000000
+0x10000001
+0x00000000
+EOF
+RUN
