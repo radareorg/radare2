@@ -134,6 +134,7 @@ R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b, bool highli
 R_API void r_agraph_add_edge_at(const RAGraph *g, RANode *a, RANode *b, int nth);
 R_API void r_agraph_del_edge(const RAGraph *g, RANode *a, RANode *b);
 R_API void r_agraph_print(RAGraph *g, void *core);
+R_API char *r_agraph_tostring(RAGraph *g, void *core);
 R_API void r_agraph_print_json(RAGraph *g, PJ *pj);
 R_API Sdb *r_agraph_get_sdb(RAGraph *g);
 R_API void r_agraph_foreach(RAGraph *g, RANodeCallback cb, void *user);

@@ -197,6 +197,7 @@ R_API bool r_print_section_strbuf(RPrint *p, RStrBuf *sb, ut64 at);
 R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height);
 R_API void r_print_hexii(RPrint *p, ut64 addr, const ut8 *buf, int len, int step);
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz);
+R_API void r_print_hexdump_strbuf(RPrint *p, RStrBuf *sb, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz);
 R_API void r_print_hexdump_simple(const ut8 *buf, int len);
 R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize);
 R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* a, ut64 ba, const ut8 *b, int len, int scndcol);
