@@ -7,8 +7,8 @@
 
 #include "../bin/format/pdb/pdb_downloader.h"
 
-R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count);
-R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count);
+R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count, const char *enc);
+R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count, const char *enc);
 
 // clang-format off
 static RCoreHelpMessage help_msg_ih = {
@@ -143,6 +143,7 @@ static RCoreHelpMessage help_msg_iy = {
 static RCoreHelpMessage help_msg_iz = {
 	"Usage: iz", "[?jq*] ([skip] [count])", "List strings",
 	"iz", " ([skip]) ([count])", "strings in data sections (skip N strings, show count)",
+	"iz:", "[enc]", "only list strings of the given encoding (a/u/w/W or ascii/utf8/wide..)",
 	"iz.", "", "show string at current address",
 	"iz,", "[:help]", "perform a table query on strings listing",
 	"iz-", " ([addr]) ([len]) ([type])", "delete string at address (uses current seek if addr not specified, len/type for matching)",
@@ -1919,6 +1920,20 @@ static void cmd_izminus(RCore *core, const char *input) {
 	r_bin_file_string_delete (bf, args.addr, args.len, args.type);
 }
 
+// Parse an optional ":encoding" filter (as in "iz:utf8") at *p, advancing *p
+// past it. Returns a newly allocated encoding name, or NULL when absent.
+static char *iz_parse_enc(const char **p) {
+	if (**p != ':') {
+		return NULL;
+	}
+	(*p)++;
+	const char *s = *p;
+	while (**p && **p != ' ') {
+		(*p)++;
+	}
+	return r_str_ndup (s, *p - s);
+}
+
 static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const char *input) {
 	switch (input[1]) {
 	case '+': // "iz+"
@@ -1948,6 +1963,7 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 	bool rdump = false; // izzz = dump mode
 	ut64 skip = 0;
 	ut64 count = 0;
+	char *enc = NULL; // "iz:utf8" -> only list strings of that encoding
 	// Count 'z' characters
 	while (*p == 'z') {
 		if (!raw) {
@@ -1967,6 +1983,8 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		}
 		return;
 	}
+	// Encoding filter can come right after the z's: "iz:utf8", "izz:ascii"
+	enc = iz_parse_enc (&p);
 	// Parse suffix (j, jq, qj, q, qq, *, ,)
 	bool local_pj = false;
 	bool dotmode = false;
@@ -2004,6 +2022,10 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		core->table_query = strdup (p + 1);
 		p = ""; // consume rest
 	}
+	// Also accept the filter after a mode char: "izj:utf8", "izq:ascii"
+	if (!enc) {
+		enc = iz_parse_enc (&p);
+	}
 	// Check for '.' suffix after mode specifier
 	if (*p == '.') {
 		dotmode = true;
@@ -2011,6 +2033,7 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 	}
 	// Handle "iz.", "izj.", "izq." - show string at current address
 	if (dotmode) {
+		R_FREE (enc); // filtering by encoding does not apply to the "." lookup
 		RVecRBinString *list = r_bin_get_strings (core->bin);
 		if (list) {
 			ut64 addr = core->addr;
@@ -2070,7 +2093,7 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 			RVecRBinString_free (res);
 		}
 	} else if (raw) {
-		bin_raw_strings (core, pj, mode, va, skip, count);
+		bin_raw_strings (core, pj, mode, va, skip, count, enc);
 	} else {
 		RList *bfiles = r_core_bin_files (core);
 		RListIter *iter;
@@ -2078,11 +2101,12 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		RBinFile *cur = core->bin->cur;
 		r_list_foreach (bfiles, iter, bf) {
 			core->bin->cur = bf;
-			bin_strings (core, pj, mode, va, skip, count);
+			bin_strings (core, pj, mode, va, skip, count, enc);
 		}
 		core->bin->cur = cur;
 		r_list_free (bfiles);
 	}
+	free (enc);
 	if (local_pj) {
 		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
