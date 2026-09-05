@@ -1,4 +1,6 @@
-/* radare2 - LGPL - Copyright 2016-2025 - n4x0r, soez, pancake */
+/* radare2 - LGPL - Copyright 2016-2026 - n4x0r, soez, pancake */
+
+#include "dmh_output.h"
 
 #if R_INCLUDE_BEGIN
 // https://levelup.gitconnected.com/understand-heap-memory-allocation-a-hands-on-approach-775151caf2ea
@@ -396,11 +398,10 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 	}
 }
 
-static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, int format) {
+static void GH(print_arena_stats)(RCore *core, RStrBuf *sb, GHT m_arena, MallocState *main_arena, GHT global_max_fast, int format) {
 	size_t i, j, k, start;
 	GHT align = 12 * SZ + sizeof (int) * 2;
 	const bool tcache = r_config_get_b (core->config, "dbg.glibc.tcache");
-	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (tcache) {
 		align = 16;
@@ -411,59 +412,59 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 		for (i = 0; i < NBINS * 2 - 2; i += 2) {
 			GHT addr = m_arena + align + SZ * i - SZ * 2;
 			GHT bina = main_arena->GH(bins)[i];
-			r_cons_printf (core->cons, "f chunk.%zu.bin=0x%"PFMT64x"\n", i, (ut64)addr);
-			r_cons_printf (core->cons, "f chunk.%zu.fd=0x%"PFMT64x"\n", i, (ut64)bina);
+			hprint (sb, "f chunk.%zu.bin=0x%"PFMT64x"\n", i, (ut64)addr);
+			hprint (sb, "f chunk.%zu.fd=0x%"PFMT64x"\n", i, (ut64)bina);
 			bina = main_arena->GH(bins)[i + 1];
-			r_cons_printf (core->cons, "f chunk.%zu.bk=0x%"PFMT64x"\n", i, (ut64)bina);
+			hprint (sb, "f chunk.%zu.bk=0x%"PFMT64x"\n", i, (ut64)bina);
 		}
 		for (i = 0; i < BINMAPSIZE; i++) {
-			r_cons_printf (core->cons, "f binmap.%zu=0x%"PFMT64x, i, (ut64)main_arena->binmap[i]);
+			hprint (sb, "f binmap.%zu=0x%"PFMT64x, i, (ut64)main_arena->binmap[i]);
 		}
 		{	/* maybe use SDB instead of flags for this? */
 			char units[8];
 			r_num_units (units, sizeof (units), main_arena->GH(max_system_mem));
-			r_cons_printf (core->cons, "f heap.maxmem=%s\n", units);
+			hprint (sb, "f heap.maxmem=%s\n", units);
 
 			r_num_units (units, sizeof (units), main_arena->GH(system_mem));
-			r_cons_printf (core->cons, "f heap.sysmem=%s\n", units);
+			hprint (sb, "f heap.sysmem=%s\n", units);
 
 			r_num_units (units, sizeof (units), main_arena->GH(next_free));
-			r_cons_printf (core->cons, "f heap.nextfree=%s\n", units);
+			hprint (sb, "f heap.nextfree=%s\n", units);
 
 			r_num_units (units, sizeof (units), main_arena->GH(next));
-			r_cons_printf (core->cons, "f heap.next=%s\n", units);
+			hprint (sb, "f heap.next=%s\n", units);
 		}
 		return;
 	}
 
-	PRINT_GA ("malloc_state @ ");
-	PRINTF_BA ("0x%"PFMT64x"\n\n", (ut64)m_arena);
-	PRINT_GA ("struct malloc_state main_arena {\n");
-	PRINT_GA ("  mutex = ");
-	PRINTF_BA ("0x%08x\n", (ut32)main_arena->mutex);
-	PRINT_GA ("  flags = ");
-	PRINTF_BA ("0x%08x\n", (ut32)main_arena->flags);
-	PRINT_GA ("  fastbinsY = {\n");
+	hprint (sb, "malloc_state @ ");
+	hprint (sb, "0x%"PFMT64x"\n\n", (ut64)m_arena);
+	hprint (sb, "struct malloc_state main_arena {\n");
+	hprint (sb, "  mutex = ");
+	hprint (sb, "0x%08x\n", (ut32)main_arena->mutex);
+	hprint (sb, "  flags = ");
+	hprint (sb, "0x%08x\n", (ut32)main_arena->flags);
+	hprint (sb, "  fastbinsY = {\n");
 
 	for (i = 0, j = 1, k = SZ * 4; i < NFASTBINS; i++, j++, k += SZ * 2) {
 		if (FASTBIN_IDX_TO_SIZE (j) <= global_max_fast) {
-			PRINTF_YA (" Fastbin %02zu\n", j);
+			hprint (sb, " Fastbin %02zu\n", j);
 		} else {
-			PRINTF_RA (" Fastbin %02zu\n", j);
+			hprint (sb, " Fastbin %02zu\n", j);
 		}
-		PRINT_GA (" chunksize:");
-		PRINTF_BA (" == %04zu ", k);
-		PRINTF_GA ("0x%"PFMT64x, (ut64)main_arena->GH(fastbinsY)[i]);
-		PRINT_GA (",\n");
+		hprint (sb, " chunksize:");
+		hprint (sb, " == %04zu ", k);
+		hprint (sb, "0x%"PFMT64x, (ut64)main_arena->GH(fastbinsY)[i]);
+		hprint (sb, ",\n");
 	}
-	PRINT_GA ("}\n");
-	PRINT_GA ("  top = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(top));
-	PRINT_GA (",\n");
-	PRINT_GA ("  last_remainder = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(last_remainder));
-	PRINT_GA (",\n");
-	PRINT_GA ("  bins {\n");
+	hprint (sb, "}\n");
+	hprint (sb, "  top = ");
+	hprint (sb, "0x%"PFMT64x, (ut64)main_arena->GH(top));
+	hprint (sb, ",\n");
+	hprint (sb, "  last_remainder = ");
+	hprint (sb, "0x%"PFMT64x, (ut64)main_arena->GH(last_remainder));
+	hprint (sb, ",\n");
+	hprint (sb, "  bins {\n");
 
 	/* Index & size for largebins */
 	start = SZ * 128;
@@ -474,77 +475,77 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 		}
 	}
 	for (i = 0, j = 1, k = SZ * 4; i < NBINS * 2 - 2; i += 2, j++) {
-		PRINTF_YA (" Bin %03zu: ", j);
+		hprint (sb, " Bin %03zu: ", j);
 		if (j == 1) {
-			PRINT_GA ("Unsorted Bin");
-			PRINT_GA (" [");
-			PRINT_GA (" chunksize:");
-			PRINT_BA (" undefined ");
+			hprint (sb, "Unsorted Bin");
+			hprint (sb, " [");
+			hprint (sb, " chunksize:");
+			hprint (sb, " undefined ");
 		} else if (j > 1 && j <= NSMALLBINS) {
 			if (j == 2) {
-				PRINT_GA ("             ┌");
+				hprint (sb, "             ┌");
 			} else if (j == (NSMALLBINS / 2)) {
-				PRINT_GA ("  Small Bins │");
+				hprint (sb, "  Small Bins │");
 			} else if (j != 2 && j != (NSMALLBINS / 2) && j != NSMALLBINS) {
-				PRINT_GA ("             │");
+				hprint (sb, "             │");
 			} else {
-				PRINT_GA ("             └");
+				hprint (sb, "             └");
 			}
-			PRINT_GA (" chunksize:");
-			PRINTF_BA (" == %06zu  ", k);
+			hprint (sb, " chunksize:");
+			hprint (sb, " == %06zu  ", k);
 			if (j < NSMALLBINS) {
 				k += SZ * 2;
 			}
 		} else {
 			if (j == NSMALLBINS + 1) {
-				PRINT_GA ("             ┌");
+				hprint (sb, "             ┌");
 			} else if (j == (NSMALLBINS / 2) * 3) {
-				PRINT_GA ("  Large Bins │");
+				hprint (sb, "  Large Bins │");
 			} else if (j != NSMALLBINS + 1 && j != (NSMALLBINS / 2) * 3 && j != NBINS - 1) {
-				PRINT_GA ("             │");
+				hprint (sb, "             │");
 			} else {
-				PRINT_GA ("             └");
+				hprint (sb, "             └");
 			}
-			PRINT_GA (" chunksize:");
+			hprint (sb, " chunksize:");
 			if (j != NBINS - 1) {
-				PRINTF_BA (" >= %06"PFMT64d"  ", (ut64)apart[j - NSMALLBINS - 1]);
+				hprint (sb, " >= %06"PFMT64d"  ", (ut64)apart[j - NSMALLBINS - 1]);
 			} else {
-				PRINT_BA (" remaining ");
+				hprint (sb, " remaining ");
 			}
 		}
 		GHT bin = m_arena + align + SZ * i - SZ * 2;
-		PRINTF_GA ("0x%"PFMT64x"->fd = ", (ut64)bin);
-		PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(bins)[i]);
-		PRINT_GA (", ");
-		PRINTF_GA ("0x%"PFMT64x"->bk = ", (ut64)bin);
-		PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(bins)[i + 1] );
-		PRINT_GA (", ");
-		r_cons_newline (core->cons);
+		hprint (sb, "0x%"PFMT64x"->fd = ", (ut64)bin);
+		hprint (sb, "0x%"PFMT64x, (ut64)main_arena->GH(bins)[i]);
+		hprint (sb, ", ");
+		hprint (sb, "0x%"PFMT64x"->bk = ", (ut64)bin);
+		hprint (sb, "0x%"PFMT64x, (ut64)main_arena->GH(bins)[i + 1] );
+		hprint (sb, ", ");
+		hprint (sb, "\n");
 	}
 
-	PRINT_GA ("}\n");
-	PRINT_GA (" binmap = { ");
+	hprint (sb, "}\n");
+	hprint (sb, " binmap = { ");
 
 	for (i = 0; i < BINMAPSIZE; i++) {
 		if (i) {
-			PRINT_GA (",");
+			hprint (sb, ",");
 		}
-		PRINTF_BA ("0x%x", (ut32)main_arena->binmap[i]);
+		hprint (sb, "0x%x", (ut32)main_arena->binmap[i]);
 	}
-	PRINT_GA ("}\n");
-	PRINT_GA ("  next = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(next));
-	PRINT_GA (",\n");
-	PRINT_GA ("  next_free = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(next_free));
-	PRINT_GA (",\n");
-	PRINT_GA ("  system_mem = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(system_mem));
-	PRINT_GA (",\n");
-	PRINT_GA ("  max_system_mem = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(max_system_mem));
-	PRINT_GA (",\n");
-	PRINT_GA ("}\n\n");
+	hprint (sb, "}\n");
+	hprint (sb, "  next = ");
+	hprint (sb, "0x%"PFMT64x, (ut64)main_arena->GH(next));
+	hprint (sb, ",\n");
+	hprint (sb, "  next_free = ");
+	hprint (sb, "0x%"PFMT64x, (ut64)main_arena->GH(next_free));
+	hprint (sb, ",\n");
+	hprint (sb, "  system_mem = ");
+	hprint (sb, "0x%"PFMT64x, (ut64)main_arena->GH(system_mem));
+	hprint (sb, ",\n");
+	hprint (sb, "  max_system_mem = ");
+	hprint (sb, "0x%"PFMT64x, (ut64)main_arena->GH(max_system_mem));
+	hprint (sb, ",\n");
+	hprint (sb, "}\n\n");
 }
 
 typedef struct GH(expected_arenas) {
@@ -780,50 +781,49 @@ static bool GH(resolve_main_arena)(RCore *core, GHT *m_arena) {
 	return false;
 }
 
-void GH(print_heap_chunk)(RCore *core) {
+static void GH(print_heap_chunk)(RCore *core, RStrBuf *sb) {
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
 	GHT chunk = core->addr;
-	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	(void) r_io_read_at (core->io, chunk, (ut8 *)cnk, sizeof (*cnk));
 
-	PRINT_GA ("struct malloc_chunk @ ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)chunk);
-	PRINT_GA (" {\n  prev_size = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->prev_size);
-	PRINT_GA (",\n  size = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
-	PRINT_GA(",\n  flags: |N:");
-	PRINTF_BA("%1"PFMT64u, (ut64)(cnk->size & NON_MAIN_ARENA ) >> 2);
-	PRINT_GA(" |M:");
-	PRINTF_BA("%1"PFMT64u, (ut64)(cnk->size & IS_MMAPPED) >> 1);
-	PRINT_GA(" |P:");
-	PRINTF_BA("%1"PFMT64u, (ut64)cnk->size & PREV_INUSE);
+	hprint (sb, "struct malloc_chunk @ ");
+	hprint (sb, "0x%"PFMT64x, (ut64)chunk);
+	hprint (sb, " {\n  prev_size = ");
+	hprint (sb, "0x%"PFMT64x, (ut64)cnk->prev_size);
+	hprint (sb, ",\n  size = ");
+	hprint (sb, "0x%"PFMT64x, (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
+	hprint (sb, ",\n  flags: |N:");
+	hprint (sb, "%1"PFMT64u, (ut64)(cnk->size & NON_MAIN_ARENA ) >> 2);
+	hprint (sb, " |M:");
+	hprint (sb, "%1"PFMT64u, (ut64)(cnk->size & IS_MMAPPED) >> 1);
+	hprint (sb, " |P:");
+	hprint (sb, "%1"PFMT64u, (ut64)cnk->size & PREV_INUSE);
 
-	PRINT_GA (",\n  fd = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->fd);
+	hprint (sb, ",\n  fd = ");
+	hprint (sb, "0x%"PFMT64x, (ut64)cnk->fd);
 
-	PRINT_GA (",\n  bk = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->bk);
+	hprint (sb, ",\n  bk = ");
+	hprint (sb, "0x%"PFMT64x, (ut64)cnk->bk);
 
 	if (cnk->size  > SZ * 128) {
-		PRINT_GA (",\n  fd-nextsize = ");
-		PRINTF_BA ("0x%"PFMT64x, (ut64) cnk->fd_nextsize);
-		PRINT_GA (",\n  bk-nextsize = ");
-		PRINTF_BA ("0x%"PFMT64x, (ut64) cnk->bk_nextsize);
+		hprint (sb, ",\n  fd-nextsize = ");
+		hprint (sb, "0x%"PFMT64x, (ut64) cnk->fd_nextsize);
+		hprint (sb, ",\n  bk-nextsize = ");
+		hprint (sb, "0x%"PFMT64x, (ut64) cnk->bk_nextsize);
 	}
 
-	PRINT_GA (",\n}\n");
+	hprint (sb, ",\n}\n");
 	GHT size = ((cnk->size >> 3) << 3) - SZ * 2;
 	if (size > SZ * 128) {
-		PRINT_GA ("chunk too big to be displayed\n");
+		hprint (sb, "chunk too big to be displayed\n");
 		size = SZ * 128;
 	}
 
 	char *data = calloc (1, size);
 	if (data) {
 		r_io_read_at (core->io, chunk + SZ * 2, (ut8 *)data, size);
-		PRINT_GA ("chunk data = \n");
+		hprint (sb, "chunk data = \n");
 		r_print_hexdump (core->print, chunk + SZ * 2, (ut8 *)data, size, SZ * 8, SZ, 1);
 		free (data);
 	}
@@ -857,11 +857,10 @@ static bool GH(is_arena)(RCore *core, GHT m_arena, GHT m_state) {
 	return false;
 }
 
-static int GH(print_double_linked_list_bin_simple)(RCore *core, GHT bin, MallocState *main_arena, GHT brk_start) {
+static int GH(print_double_linked_list_bin_simple)(RCore *core, RStrBuf *sb, GHT bin, MallocState *main_arena, GHT brk_start) {
 	GHT next = GHT_MAX;
 	int ret = 1;
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
-	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (!cnk) {
 		return -1;
@@ -869,55 +868,54 @@ static int GH(print_double_linked_list_bin_simple)(RCore *core, GHT bin, MallocS
 
 	r_io_read_at (core->io, bin, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 
-	PRINTF_GA ("    0x%"PFMT64x, (ut64)bin);
+	hprint (sb, "    0x%"PFMT64x, (ut64)bin);
 	if (cnk->fd != bin) {
 		ret = 0;
 	}
 	while (cnk->fd != bin) {
-		PRINTF_BA ("->fd = 0x%"PFMT64x, (ut64)cnk->fd);
+		hprint (sb, "->fd = 0x%"PFMT64x, (ut64)cnk->fd);
 		next = cnk->fd;
 		if (next < brk_start || next > main_arena->GH(top)) {
-			PRINT_RA ("Double linked list corrupted\n");
+			hprint (sb, "Double linked list corrupted\n");
 			free (cnk);
 			return -1;
 		}
 		r_io_read_at (core->io, next, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 	}
 
-	PRINTF_GA ("->fd = 0x%"PFMT64x, (ut64)cnk->fd);
+	hprint (sb, "->fd = 0x%"PFMT64x, (ut64)cnk->fd);
 	next = cnk->fd;
 
 	if (next != bin) {
-		PRINT_RA ("Double linked list corrupted\n");
+		hprint (sb, "Double linked list corrupted\n");
 		free (cnk);
 		return -1;
 	}
 	(void)r_io_read_at (core->io, next, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
-	PRINTF_GA ("\n    0x%"PFMT64x, (ut64)bin);
+	hprint (sb, "\n    0x%"PFMT64x, (ut64)bin);
 
 	while (cnk->bk != bin) {
-		PRINTF_BA ("->bk = 0x%"PFMT64x, (ut64) cnk->bk);
+		hprint (sb, "->bk = 0x%"PFMT64x, (ut64) cnk->bk);
 		next = cnk->bk;
 		if (next < brk_start || next > main_arena->GH(top)) {
-			PRINT_RA ("Double linked list corrupted.\n");
+			hprint (sb, "Double linked list corrupted.\n");
 			free (cnk);
 			return -1;
 		}
 		(void)r_io_read_at (core->io, next, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 	}
 
-	PRINTF_GA ("->bk = 0x%"PFMT64x, (ut64)cnk->bk);
+	hprint (sb, "->bk = 0x%"PFMT64x, (ut64)cnk->bk);
 	free (cnk);
 	return ret;
 }
 
-static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocState *main_arena, GHT brk_start) {
+static int GH(print_double_linked_list_bin_graph)(RCore *core, RStrBuf *sb, GHT bin, MallocState *main_arena, GHT brk_start) {
 	int flags = r_cons_canvas_flags (core->cons);
 	RAGraph *g = r_agraph_new (r_cons_canvas_new (core->cons, 1, 1, flags));
 	GHT next = GHT_MAX;
 	char title[256], chunk[256];
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
-	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (!cnk || !g) {
 		free (cnk);
@@ -936,7 +934,7 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 	while (cnk->bk != bin) {
 		next = cnk->bk;
 		if (next < brk_start || next > main_arena->GH (top)) {
-			PRINT_RA ("Double linked list corrupted\n");
+			hprint (sb, "Double linked list corrupted\n");
 			free (cnk);
 			free (g);
 			return -1;
@@ -964,14 +962,13 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 	return 0;
 }
 
-static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT num_bin, int graph) {
+static int GH(print_double_linked_list_bin)(RCore *core, RStrBuf *sb, MallocState *main_arena, GHT m_arena, GHT offset, GHT num_bin, int graph) {
 	R_RETURN_VAL_IF_FAIL (core && core->dbg, -1);
 	if (!core->dbg->maps) {
 		return -1;
 	}
 	int ret = 0;
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
-	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (num_bin > 126) {
 		return -1;
@@ -999,41 +996,40 @@ static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena
 	}
 
 	if (num_bin == 0) {
-		PRINT_GA ("  double linked list unsorted bin {\n");
+		hprint (sb, "  double linked list unsorted bin {\n");
 	} else if (num_bin > 0 && num_bin < NSMALLBINS) {
-		PRINT_GA ("  double linked list small bin {\n");
+		hprint (sb, "  double linked list small bin {\n");
 	} else if (num_bin >= NSMALLBINS && num_bin < NBINS - 2) {
-		PRINT_GA ("  double linked list large bin {\n");
+		hprint (sb, "  double linked list large bin {\n");
 	} else {
 		// ???
 	}
 #if 0
 	switch (num_bin) {
 	case 0:
-		PRINT_GA ("  double linked list unsorted bin {\n");
+		hprint (sb, "  double linked list unsorted bin {\n");
 		break;
 	case 1 ... NSMALLBINS - 1:
-		PRINT_GA ("  double linked list small bin {\n");
+		hprint (sb, "  double linked list small bin {\n");
 		break;
 	case NSMALLBINS ... NBINS - 2:
-		PRINT_GA ("  double linked list large bin {\n");
+		hprint (sb, "  double linked list large bin {\n");
 		break;
 	}
 #endif
 	if (graph < 2) {
-		ret = GH(print_double_linked_list_bin_simple)(core, bin, main_arena, initial_brk);
+		ret = GH(print_double_linked_list_bin_simple)(core, sb, bin, main_arena, initial_brk);
 	} else {
-		ret = GH(print_double_linked_list_bin_graph)(core, bin,  main_arena, initial_brk);
+		ret = GH(print_double_linked_list_bin_graph)(core, sb, bin, main_arena, initial_brk);
 	}
-	PRINT_GA ("\n  }\n");
+	hprint (sb, "\n  }\n");
 	return ret;
 }
 
-static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena, const char *input) {
+static void GH(print_heap_bin)(RCore *core, RStrBuf *sb, GHT m_arena, MallocState *main_arena, const char *input) {
 	int i, j = 2;
 	GHT num_bin = GHT_MAX;
 	GHT offset;
-	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	const bool tcache = r_config_get_b (core->config, "dbg.glibc.tcache");
 	if (tcache) {
@@ -1044,12 +1040,12 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 
 	switch (input[0]) {
 	case '\0': // dmhb
-		PRINT_YA ("Bins {\n");
+		hprint (sb, "Bins {\n");
 		for (i = 0; i < NBINS - 1; i++) {
-			PRINTF_YA (" Bin %03d:\n", i + 1);
-			GH(print_double_linked_list_bin) (core, main_arena, m_arena, offset, i, 0);
+			hprint (sb, " Bin %03d:\n", i + 1);
+			GH(print_double_linked_list_bin) (core, sb, main_arena, m_arena, offset, i, 0);
 		}
-		PRINT_YA ("\n}\n");
+		hprint (sb, "\n}\n");
 		break;
 	case ' ': // dmhb [bin_num]
 		j--; // for spaces after input
@@ -1060,8 +1056,8 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 			R_LOG_ERROR ("0 < bin <= %d", NBINS - 1);
 			break;
 		}
-		PRINTF_YA ("  Bin %03"PFMT64u":\n", (ut64)num_bin + 1);
-		GH(print_double_linked_list_bin) (core, main_arena, m_arena, offset, num_bin, j);
+		hprint (sb, "  Bin %03"PFMT64u":\n", (ut64)num_bin + 1);
+		GH(print_double_linked_list_bin) (core, sb, main_arena, m_arena, offset, num_bin, j);
 		break;
 	case 'j':
 	default:
@@ -1072,13 +1068,12 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 }
 
 // Returns true if the requested bin is empty, false otherwise.
-static bool GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num, bool demangle) {
+static bool GH(print_single_linked_list_bin)(RCore *core, RStrBuf *sb, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num, bool demangle) {
 	R_RETURN_VAL_IF_FAIL (core && core->dbg, false);
 	if (!core->dbg->maps) {
 		return false;
 	}
 	GHT next = GHT_MAX, brk_start = GHT_MAX, brk_end = GHT_MAX;
-	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
 	if (!cnk) {
@@ -1107,14 +1102,14 @@ static bool GH(print_single_linked_list_bin)(RCore *core, MallocState *main_aren
 		return false;
 	}
 
-	PRINTF_GA ("  fastbin %"PFMT64d" @ ", (ut64)bin_num + 1);
-	PRINTF_GA ("0x%"PFMT64x" {\n   ", (ut64)bin);
+	hprint (sb, "  fastbin %"PFMT64d" @ ", (ut64)bin_num + 1);
+	hprint (sb, "0x%"PFMT64x" {\n   ", (ut64)bin);
 
 	GHT size = main_arena->GH(top) - brk_start;
 
 	GHT next_root = next, next_tmp = next, double_free = GHT_MAX;
 	while (next && next >= brk_start && next < main_arena->GH(top)) {
-		PRINTF_BA ("0x%"PFMT64x, (ut64)next);
+		hprint (sb, "0x%"PFMT64x, (ut64)next);
 		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->GH(top)) {
 			r_io_read_at (core->io, next_tmp, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 			next_tmp = (!demangle) ? cnk->fd : PROTECT_PTR (next_tmp, cnk->fd);
@@ -1128,43 +1123,42 @@ static bool GH(print_single_linked_list_bin)(RCore *core, MallocState *main_aren
 		}
 		r_io_read_at (core->io, next, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 		next = (!demangle) ? cnk->fd : PROTECT_PTR (next, cnk->fd);
-		PRINTF_BA ("%s", next ? "->fd = " : "");
+		hprint (sb, "%s", next ? "->fd = " : "");
 		if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
-			PRINTF_RA (" 0x%"PFMT64x, (ut64)next);
-			PRINT_RA (" Linked list corrupted\n");
-			PRINT_GA ("\n  }\n");
+			hprint (sb, " 0x%"PFMT64x, (ut64)next);
+			hprint (sb, " Linked list corrupted\n");
+			hprint (sb, "\n  }\n");
 			free (cnk);
 			return false;
 		}
 
 		next_root = next_tmp = next;
 		if (double_free == next) {
-			PRINTF_RA ("0x%"PFMT64x, (ut64)next);
-			PRINT_RA (" Double free detected\n");
-			PRINT_GA ("\n  }\n");
+			hprint (sb, "0x%"PFMT64x, (ut64)next);
+			hprint (sb, " Double free detected\n");
+			hprint (sb, "\n  }\n");
 			free (cnk);
 			return false;
 		}
 	}
 
 	if (next && (next < brk_start || next >= main_arena->GH(top))) {
-		PRINTF_RA ("0x%"PFMT64x, (ut64)next);
-		PRINT_RA (" Linked list corrupted\n");
-		PRINT_GA ("\n  }\n");
+		hprint (sb, "0x%"PFMT64x, (ut64)next);
+		hprint (sb, " Linked list corrupted\n");
+		hprint (sb, "\n  }\n");
 		free (cnk);
 		return false;
 	}
 
-	PRINT_GA ("\n  }\n");
+	hprint (sb, "\n  }\n");
 	free (cnk);
 	return false;
 }
 
-void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input, bool demangle) {
+static void GH(print_heap_fastbin)(RCore *core, RStrBuf *sb, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input, bool demangle) {
 	int i;
 	GHT num_bin = GHT_MAX, offset = sizeof (int) * 2;
 	const bool tcache = r_config_get_b (core->config, "dbg.glibc.tcache");
-	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (tcache) {
 		offset = 16;
@@ -1175,19 +1169,19 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 		if (core->addr != core->prompt_addr) {
 			m_arena = core->addr;
 		}
-		PRINT_YA ("fastbinY {\n");
+		hprint (sb, "fastbinY {\n");
 		for (i = 1; i <= NFASTBINS; i++) {
 			if (FASTBIN_IDX_TO_SIZE(i) <= global_max_fast) {
-				PRINTF_YA (" Fastbin %02d\n", i);
+				hprint (sb, " Fastbin %02d\n", i);
 			} else {
-				PRINTF_RA (" Fastbin %02d\n", i);
+				hprint (sb, " Fastbin %02d\n", i);
 			}
-			if (GH(print_single_linked_list_bin) (core, main_arena, m_arena, offset, i - 1, demangle)) {
-				PRINT_GA ("  Empty bin");
-				PRINT_BA ("  0x0\n");
+			if (GH(print_single_linked_list_bin) (core, sb, main_arena, m_arena, offset, i - 1, demangle)) {
+				hprint (sb, "  Empty bin");
+				hprint (sb, "  0x0\n");
 			}
 		}
-		PRINT_YA ("}\n");
+		hprint (sb, "}\n");
 		break;
 	case ' ': // dmhf [bin_num]
 		num_bin = r_num_get (core->num, input) - 1;
@@ -1195,9 +1189,9 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 			R_LOG_ERROR ("0 < bin <= %d", NFASTBINS);
 			break;
 		}
-		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin, demangle)) {
-			PRINT_GA (" Empty bin");
-			PRINT_BA (" 0x0\n");
+		if (GH(print_single_linked_list_bin)(core, sb, main_arena, m_arena, offset, num_bin, demangle)) {
+			hprint (sb, " Empty bin");
+			hprint (sb, " 0x0\n");
 		}
 		break;
 	case 'j': // TODO implement json listing with PJ
@@ -1259,11 +1253,10 @@ static GHT GH (tcache_get_entry) (GH (RTcache)* tcache, int index) {
 		: tcache->RHeapTcache.heap_tcache_pre_230->entries[index];
 }
 
-static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool demangle) {
+static void GH (tcache_print) (RCore *core, RStrBuf *sb, GH (RTcache)* tcache, bool demangle) {
 	R_RETURN_IF_FAIL (core && tcache);
 	GHT tcache_fd = GHT_MAX;
 	GHT tcache_tmp = GHT_MAX;
-	RConsPrintablePalette *pal = &core->cons->context->pal;
 	size_t i;
 	for (i = 0; i < TCACHE_MAX_BINS; i++) {
 		int count = GH (tcache_get_count) (tcache, i);
@@ -1272,13 +1265,13 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool demangle)
 			break;
 		}
 		if (count > 0) {
-			PRINT_GA ("bin :");
-			PRINTF_BA ("%2zu", i);
-			PRINT_GA (", items :");
-			PRINTF_BA ("%2d", count);
-			PRINT_GA (", fd :");
+			hprint (sb, "bin :");
+			hprint (sb, "%2zu", i);
+			hprint (sb, ", items :");
+			hprint (sb, "%2d", count);
+			hprint (sb, ", fd :");
 
-			PRINTF_BA ("0x%"PFMT64x, (ut64)(entry - GH (HDR_SZ)));
+			hprint (sb, "0x%"PFMT64x, (ut64)(entry - GH (HDR_SZ)));
 			if (count > 1) {
 				tcache_fd = entry;
 				size_t n;
@@ -1290,16 +1283,16 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool demangle)
 					tcache_tmp = (!demangle)
 						? read_le (&tcache_tmp)
 						: PROTECT_PTR (tcache_fd, read_le (&tcache_tmp));
-					PRINTF_BA ("->0x%"PFMT64x, (ut64)(tcache_tmp - TC_HDR_SZ));
+					hprint (sb, "->0x%"PFMT64x, (ut64)(tcache_tmp - TC_HDR_SZ));
 					tcache_fd = tcache_tmp;
 				}
 			}
-			PRINT_BA ("\n");
+			hprint (sb, "\n");
 		}
 	}
 }
 
-static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *main_arena, bool demangle) {
+static void GH (print_tcache_instance)(RCore *core, RStrBuf *sb, GHT m_arena, MallocState *main_arena, bool demangle) {
 	R_RETURN_IF_FAIL (core && core->dbg && core->dbg->maps);
 
 	const bool tcache = r_config_get_b (core->config, "dbg.glibc.tcache");
@@ -1309,7 +1302,6 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
 	GH (get_brks) (core, &brk_start, &brk_end);
 	GHT tcache_start = GHT_MAX;
-	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	tcache_start = brk_start + 0x10;
 	GHT fc_offset = GH (tcache_chunk_size) (core, brk_start);
@@ -1327,9 +1319,9 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 		return;
 	}
 
-	PRINT_GA ("Tcache main arena @");
-	PRINTF_BA (" 0x%"PFMT64x"\n", (ut64)m_arena);
-	GH (tcache_print) (core, r_tcache, demangle);
+	hprint (sb, "Tcache main arena @");
+	hprint (sb, " 0x%"PFMT64x"\n", (ut64)m_arena);
+	GH (tcache_print) (core, sb, r_tcache, demangle);
 
 	if (main_arena->GH (next) != m_arena) {
 		GHT mmap_start = GHT_MAX, tcache_start = GHT_MAX;
@@ -1341,8 +1333,8 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 		}
 		ta->GH (next) = main_arena->GH (next);
 		while (GH (is_arena) (core, m_arena, ta->GH (next)) && ta->GH (next) != m_arena) {
-			PRINT_YA ("Tcache thread arena @ ");
-			PRINTF_BA (" 0x%"PFMT64x, (ut64)ta->GH (next));
+			hprint (sb, "Tcache thread arena @ ");
+			hprint (sb, " 0x%"PFMT64x, (ut64)ta->GH (next));
 			mmap_start = ((ta->GH (next) >> 16) << 16);
 			tcache_start = mmap_start + sizeof (GH (RHeapInfo)) + sizeof (GH (RHeap_MallocState_227)) + GH (MMAP_ALIGN);
 
@@ -1353,20 +1345,20 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 			}
 
 			if (ta->attached_threads) {
-				PRINT_BA ("\n");
+				hprint (sb, "\n");
 				if (!GH (tcache_read) (core, tcache_start, r_tcache)) {
 					break;
 				}
-				GH (tcache_print) (core, r_tcache, demangle);
+				GH (tcache_print) (core, sb, r_tcache, demangle);
 			} else {
-				PRINT_GA (" free\n");
+				hprint (sb, " free\n");
 			}
 		}
 	}
 	GH (tcache_free) (r_tcache);
 }
 
-static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
+static void GH(print_heap_segment)(RCore *core, RStrBuf *sb, MallocState *main_arena,
 		GHT m_arena, GHT m_state, GHT global_max_fast, int format_out) {
 	R_RETURN_IF_FAIL (core && main_arena);
 	if (!core->dbg || !core->dbg->maps) {
@@ -1380,7 +1372,6 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 
 	const bool tcache = r_config_get_b (core->config, "dbg.glibc.tcache");
 	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
-	RConsPrintablePalette *pal = &core->cons->context->pal;
 	int glibc_version = core->dbg->glibc_version;
 
 	if (m_arena == m_state) {
@@ -1481,7 +1472,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		pj_ka (pj, "chunks");
 		break;
 	case '*':
-		r_cons_printf (core->cons, "fs+heap.allocated\n");
+		hprint (sb, "fs+heap.allocated\n");
 		break;
 	case 'g':
 		can->linemode = r_config_get_i (core->config, "graph.linemode");
@@ -1497,10 +1488,10 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			const char *status = "corrupted";
 			switch (format_out) {
 			case 'c':
-				PRINT_YA ("\n  Malloc chunk @ ");
-				PRINTF_BA ("0x%"PFMT64x" ", (ut64)next_chunk);
-				PRINTF_RA ("[%s]\n",status);
-				PRINTF_RA ("   size: 0x%"PFMT64x"\n   fd: 0x%"PFMT64x", bk: 0x%"PFMT64x"\n",
+				hprint (sb, "\n  Malloc chunk @ ");
+				hprint (sb, "0x%"PFMT64x" ", (ut64)next_chunk);
+				hprint (sb, "[%s]\n",status);
+				hprint (sb, "   size: 0x%"PFMT64x"\n   fd: 0x%"PFMT64x", bk: 0x%"PFMT64x"\n",
 				(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
 				break;
 			case 'j':
@@ -1513,9 +1504,9 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 				pj_end (pj);
 				break;
 			case '*':
-				r_cons_printf (core->cons, "fs heap.corrupted\n");
+				hprint (sb, "fs heap.corrupted\n");
 				ut64 chunkflag = (ut64)((prev_chunk >> 4) & 0xffffULL);
-				r_cons_printf (core->cons, "f chunk.corrupted.%06"PFMT64x" %d 0x%"PFMT64x"\n",
+				hprint (sb, "f chunk.corrupted.%06"PFMT64x" %d 0x%"PFMT64x"\n",
 					chunkflag, (int)cnk->size, (ut64)prev_chunk);
 				break;
 			case 'g':
@@ -1571,7 +1562,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 				next = GH (get_next_pointer) (core, next, cnk->fd);
 			}
 			if (double_free) {
-				PRINT_RA (" Double free in simple-linked list detected ");
+				hprint (sb, " Double free in simple-linked list detected ");
 				break;
 			}
 			prev_chunk_size = ((i + 1) * GH(HDR_SZ)) + GH(HDR_SZ);
@@ -1641,11 +1632,11 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 
 		switch (format_out) {
 		case 'c':
-			PRINT_YA ("\n  Malloc chunk @ ");
-			PRINTF_BA ("0x%"PFMT64x" ", prev_chunk_addr);
-			PRINT_GA ("[size: ");
-			PRINTF_BA ("0x%"PFMT64x, prev_chunk_size);
-			PRINTF_GA ("][%s]",status);
+			hprint (sb, "\n  Malloc chunk @ ");
+			hprint (sb, "0x%"PFMT64x" ", prev_chunk_addr);
+			hprint (sb, "[size: ");
+			hprint (sb, "0x%"PFMT64x, prev_chunk_size);
+			hprint (sb, "][%s]",status);
 			break;
 		case 'j':
 			pj_o (pj);
@@ -1655,9 +1646,9 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			pj_end (pj);
 			break;
 		case '*':
-			r_cons_printf (core->cons, "fs heap.%s\n", status);
+			hprint (sb, "fs heap.%s\n", status);
 			ut64 chunkat = (prev_chunk_addr>>4) & 0xffff;
-			r_cons_printf (core->cons, "f chunk.%06"PFMT64x" %d 0x%"PFMT64x"\n", chunkat, (int)prev_chunk_size, (ut64)prev_chunk_addr);
+			hprint (sb, "f chunk.%06"PFMT64x" %d 0x%"PFMT64x"\n", chunkat, (int)prev_chunk_size, (ut64)prev_chunk_addr);
 			break;
 		case 'g':
 			node_title = r_str_newf ("  Malloc chunk @ 0x%"PFMT64x" ", (ut64)prev_chunk_addr);
@@ -1675,13 +1666,13 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 
 	switch (format_out) {
 	case 'c':
-		PRINT_YA ("\n  Top chunk @ ");
-		PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH (top));
-		PRINT_GA (" - [brk_start: ");
-		PRINTF_BA ("0x%"PFMT64x, (ut64)brk_start);
-		PRINT_GA (", brk_end: ");
-		PRINTF_BA ("0x%"PFMT64x, (ut64)brk_end);
-		PRINT_GA ("]\n");
+		hprint (sb, "\n  Top chunk @ ");
+		hprint (sb, "0x%"PFMT64x, (ut64)main_arena->GH (top));
+		hprint (sb, " - [brk_start: ");
+		hprint (sb, "0x%"PFMT64x, (ut64)brk_start);
+		hprint (sb, ", brk_end: ");
+		hprint (sb, "0x%"PFMT64x, (ut64)brk_end);
+		hprint (sb, "]\n");
 		break;
 	case 'j':
 		pj_end (pj);
@@ -1689,14 +1680,14 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		pj_kn (pj, "brk", brk_start);
 		pj_kn (pj, "end", brk_end);
 		pj_end (pj);
-		r_cons_print (core->cons, pj_string (pj));
+		hprint (sb, "%s", pj_string (pj));
 		pj_free (pj);
 		break;
 	case '*':
-		r_cons_printf (core->cons, "fs-\n");
-		r_cons_printf (core->cons, "f heap.top = 0x%08"PFMT64x"\n", (ut64)main_arena->GH (top));
-		r_cons_printf (core->cons, "f heap.brk = 0x%08"PFMT64x"\n", (ut64)brk_start);
-		r_cons_printf (core->cons, "f heap.end = 0x%08"PFMT64x"\n", (ut64)brk_end);
+		hprint (sb, "fs-\n");
+		hprint (sb, "f heap.top = 0x%08"PFMT64x"\n", (ut64)main_arena->GH (top));
+		hprint (sb, "f heap.brk = 0x%08"PFMT64x"\n", (ut64)brk_start);
+		hprint (sb, "f heap.end = 0x%08"PFMT64x"\n", (ut64)brk_end);
 		break;
 	case 'g':
 		top = r_agraph_add_node (g, top_title, top_data, NULL);
@@ -1712,7 +1703,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		break;
 	}
 
-	r_cons_newline (core->cons);
+	hprint (sb, "\n");
 	free (g);
 	free (top_data);
 	free (top_title);
@@ -1720,17 +1711,16 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	free (cnk_next);
 }
 
-static void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena) {
+static void GH(print_malloc_states)(RCore *core, RStrBuf *sb, GHT m_arena, MallocState *main_arena) {
 	MallocState *ta = R_NEW0 (MallocState);
-	RConsPrintablePalette *pal = &core->cons->context->pal;
 
-	PRINT_YA ("main_arena @ ");
-	PRINTF_BA ("0x%"PFMT64x"\n", (ut64)m_arena);
+	hprint (sb, "main_arena @ ");
+	hprint (sb, "0x%"PFMT64x"\n", (ut64)m_arena);
 	if (main_arena->GH(next) != m_arena) {
 		ta->GH(next) = main_arena->GH(next);
 		while (GH(is_arena) (core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
-			PRINT_YA ("thread arena @ ");
-			PRINTF_BA ("0x%"PFMT64x, (ut64)ta->GH(next));
+			hprint (sb, "thread arena @ ");
+			hprint (sb, "0x%"PFMT64x, (ut64)ta->GH(next));
 			// if the next pointer is equal to unsigned -1 we assume its invalid
 			// and return. otherwise we get undefined behavior and weird output offten
 			// times with thousands of lines in the output
@@ -1744,32 +1734,31 @@ static void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main
 				return;
 			}
 			if (ta->attached_threads) {
-				PRINT_BA ("\n");
+				hprint (sb, "\n");
 			} else {
-				PRINT_GA (" free\n");
+				hprint (sb, " free\n");
 			}
 		}
 	}
 	free (ta);
 }
 
-static void GH(print_inst_minfo)(RCore *core, GH(RHeapInfo) *heap_info, GHT hinfo) {
-	RConsPrintablePalette *pal = &core->cons->context->pal;
+static void GH(print_inst_minfo)(RStrBuf *sb, GH(RHeapInfo) *heap_info, GHT hinfo) {
 
-	PRINT_YA ("malloc_info @ ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)hinfo);
-	PRINT_YA (" {\n  ar_ptr = " );
-	PRINTF_BA ("0x%"PFMT64x"\n", (ut64)heap_info->ar_ptr);
-	PRINT_YA ("  prev = ");
-	PRINTF_BA ("0x%"PFMT64x"\n", (ut64)heap_info->prev);
-	PRINT_YA ("  size = ");
-	PRINTF_BA ("0x%"PFMT64x"\n", (ut64)heap_info->size);
-	PRINT_YA ("  mprotect_size = ");
-	PRINTF_BA ("0x%"PFMT64x"\n", (ut64)heap_info->mprotect_size);
-	PRINT_YA ("}\n\n");
+	hprint (sb, "malloc_info @ ");
+	hprint (sb, "0x%"PFMT64x, (ut64)hinfo);
+	hprint (sb, " {\n  ar_ptr = " );
+	hprint (sb, "0x%"PFMT64x"\n", (ut64)heap_info->ar_ptr);
+	hprint (sb, "  prev = ");
+	hprint (sb, "0x%"PFMT64x"\n", (ut64)heap_info->prev);
+	hprint (sb, "  size = ");
+	hprint (sb, "0x%"PFMT64x"\n", (ut64)heap_info->size);
+	hprint (sb, "  mprotect_size = ");
+	hprint (sb, "0x%"PFMT64x"\n", (ut64)heap_info->mprotect_size);
+	hprint (sb, "}\n\n");
 }
 
-static void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
+static void GH(print_malloc_info)(RCore *core, RStrBuf *sb, GHT m_state, GHT malloc_state) {
 	GHT h_info;
 
 	if (malloc_state == m_state) {
@@ -1778,7 +1767,7 @@ static void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 		h_info = (malloc_state >> 16) << 16;
 		GH(RHeapInfo) *heap_info = R_NEW0 (GH(RHeapInfo));
 		r_io_read_at (core->io, h_info, (ut8*)heap_info, sizeof (GH(RHeapInfo)));
-		GH(print_inst_minfo) (core, heap_info, h_info);
+		GH(print_inst_minfo) (sb, heap_info, h_info);
 		MallocState *ms = R_NEW0 (MallocState);
 
 		while (heap_info->prev != 0x0 && heap_info->prev != GHT_MAX) {
@@ -1790,7 +1779,7 @@ static void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 			if ((ms->GH(top) >> 16) << 16 != h_info) {
 				h_info = (ms->GH(top) >> 16) << 16;
 				r_io_read_at (core->io, h_info, (ut8*)heap_info, sizeof (GH(RHeapInfo)));
-				GH(print_inst_minfo) (core, heap_info, h_info);
+				GH(print_inst_minfo) (sb, heap_info, h_info);
 			}
 		}
 		free (heap_info);
@@ -1801,7 +1790,7 @@ static void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 }
 
 // XXX. refactor to pass all those vars all together into a single struct
-static void GH(dmhg)(RCore *core, const char *input, MallocState *main_arena, GHT global_max_fast, int format) {
+static void GH(dmhg)(RCore *core, RStrBuf *sb, const char *input, MallocState *main_arena, GHT global_max_fast, int format) {
 	GHT m_state = GHT_MAX;
 	GHT m_arena = GHT_MAX;
 	if (!GH(resolve_main_arena) (core, &m_arena)) {
@@ -1826,46 +1815,22 @@ static void GH(dmhg)(RCore *core, const char *input, MallocState *main_arena, GH
 		if (!GH(update_main_arena) (core, m_state, main_arena)) {
 			return;
 		}
-		GH(print_heap_segment) (core, main_arena, m_arena, m_state, global_max_fast, format);
+		GH(print_heap_segment) (core, sb, main_arena, m_arena, m_state, global_max_fast, format);
 	} else {
 		R_LOG_ERROR ("This address is not part of the arenas");
 	}
 }
 
-static const char* GH(help_msg)[] = {
-	"Usage:", " dmh", " # Memory map heap",
-	"dmh", " @[malloc_state]", "List heap chunks of a particular arena",
-	"dmh", "", "List the chunks inside the heap segment",
-	"dmh*", "", "Display heap details as radare2 commands",
-	"dmha", "", "List all malloc_state instances in application",
-	"dmhb", " @[malloc_state]", "Display all parsed Double linked list of main_arena's or a particular arena bins instance",
-	"dmhb", " [bin_num|bin_num:malloc_state]", "Display parsed double linked list of bins instance from a particular arena",
-	"dmhbg", " [bin_num]", "Display double linked list graph of main_arena's bin [Under developemnt]",
-	"dmhc", " @[chunk_addr]", "Display malloc_chunk struct for a given malloc chunk",
-	"dmhf", " @[malloc_state]", "Display all parsed fastbins of main_arena's or a particular arena fastbinY instance",
-	"dmhf", " [fastbin_num(:malloc_state)]", "Display single linked list in fastbinY instance from a particular arena",
-	"dmhg", " [malloc_state]", "Display heap graph of a particular arena",
-	"dmhg", "", "Display heap graph of heap segment",
-	"dmhi", " @[malloc_state]", "Display heap_info structure/structures for a given arena",
-	"dmhj", "", "List the chunks inside the heap segment in JSON format",
-	"dmhm", "[*j]", "List all malloc_state instance of a particular arena (@ malloc_state#addr)",
-	"dmht", "", "Display all parsed thread cache bins of all arena's tcache instance",
-	NULL
-};
-
-static int GH(dmh_glibc)(RCore *core, const char *input) {
+static char *GH(dmh_glibc)(RCore *core, const char *input) {
 	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	GHT global_max_fast = (64 * SZ / 4);
-
 	MallocState *main_arena = R_NEW0 (MallocState);
-
+	RStrBuf sb;
+	r_strbuf_init (&sb);
 	int format = 'c';
 	bool get_state = false;
 
-	if (input[0] != '?') {
-		// fixes d?* glitch
-		r_config_set_b (core->config, "dbg.glibc.tcache", GH(is_tcache) (core));
-	}
+	r_config_set_b (core->config, "dbg.glibc.tcache", GH(is_tcache) (core));
 	switch (input[0]) {
 	case ' ' : // dmh [malloc_state]
 		m_state = r_num_get (core->num, input);
@@ -1884,7 +1849,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 				if (!GH(update_main_arena) (core, m_state, main_arena)) {
 					break;
 				}
-				GH(print_heap_segment) (core, main_arena, m_arena, m_state, global_max_fast, format);
+				GH(print_heap_segment) (core, &sb, main_arena, m_arena, m_state, global_max_fast, format);
 				break;
 			} else {
 				R_LOG_ERROR ("This address is not part of any arena");
@@ -1897,7 +1862,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 			if (!GH(update_main_arena) (core, m_arena, main_arena)) {
 				break;
 			}
-			GH(print_malloc_states) (core, m_arena, main_arena);
+			GH(print_malloc_states) (core, &sb, m_arena, main_arena);
 		}
 		break;
 	case 'i': // dmhi
@@ -1913,7 +1878,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 			} else {
 				m_state = r_num_get (core->num, input);
 			}
-			GH(print_malloc_info) (core, m_arena, m_state);
+			GH(print_malloc_info) (core, &sb, m_arena, m_state);
 		}
 		break;
 	case 'm': // "dmhm"
@@ -1946,7 +1911,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 					break;
 				}
 			}
-			GH(print_arena_stats) (core, m_arena, main_arena, global_max_fast, format);
+			GH(print_arena_stats) (core, &sb, m_arena, main_arena, global_max_fast, format);
 		}
 		break;
 	case 'b': // "dmhb"
@@ -1968,7 +1933,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 				if (!GH(update_main_arena) (core, m_state, main_arena)) {
 					break;
 				}
-				GH(print_heap_bin) (core, m_state, main_arena, arg);
+				GH(print_heap_bin) (core, &sb, m_state, main_arena, arg);
 			} else {
 				R_LOG_ERROR ("This address is not part of the arenas");
 				break;
@@ -1977,7 +1942,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 		break;
 	case 'c': // "dmhc"
 		if (GH(resolve_main_arena)(core, &m_arena)) {
-			GH(print_heap_chunk) (core);
+			GH(print_heap_chunk) (core, &sb);
 		}
 		break;
 	case 'f': // "dmhf"
@@ -2003,7 +1968,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 				if (!GH(update_main_arena) (core, m_state, main_arena)) {
 					break;
 				}
-				GH(print_heap_fastbin) (core, m_state, main_arena, global_max_fast, arg, demangle);
+				GH(print_heap_fastbin) (core, &sb, m_state, main_arena, global_max_fast, arg, demangle);
 			} else {
 				R_LOG_ERROR ("This address is not part of the arenas");
 				break;
@@ -2013,7 +1978,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 	case 'g': // "dmhg"
 	case '*': // "dmh*"
 	case 'j': // "dmhj"
-		GH (dmhg) (core, input, main_arena, global_max_fast, input[0]);
+		GH (dmhg) (core, &sb, input, main_arena, global_max_fast, input[0]);
 		break;
 	case 't':
 		if (GH(resolve_main_arena) (core, &m_arena)) {
@@ -2021,15 +1986,12 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 				break;
 			}
 			bool demangle = r_config_get_i (core->config, "dbg.glibc.demangle");
-			GH(print_tcache_instance) (core, m_arena, main_arena, demangle);
+			GH(print_tcache_instance) (core, &sb, m_arena, main_arena, demangle);
 		}
-		break;
-	case '?':
-		r_cons_cmd_help (core->cons, GH(help_msg));
 		break;
 	}
 	free (main_arena);
-	return true;
+	return r_strbuf_drain_nofree (&sb);
 }
 
 #endif

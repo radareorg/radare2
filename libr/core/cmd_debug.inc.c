@@ -16,6 +16,15 @@
 #if HAVE_JEMALLOC
 #include "r_heap_jemalloc.h"
 #include "dmh_jemalloc.inc.c"
+
+static RCoreHelpMessage help_msg_dmh_jemalloc = {
+	"Usage:", "dmh", " # Memory map heap",
+	"dmha", "[arena_t]", "show all arenas created, or print arena_t structure for given arena",
+	"dmhb", "[arena_t]", "show all bins created for given arena",
+	"dmhc", "*|[arena_t]", "show all chunks created in all arenas, or show all chunks created for a given arena_t instance",
+	"dmh?", "", "Show map heap help",
+	NULL
+};
 #endif
 
 void cmd_anal_reg (RCore *core, const char *str);
@@ -1974,8 +1983,29 @@ beach:
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 
-static int dmh_glibc_32(RCore *core, const char *input);
-static int dmh_glibc_64(RCore *core, const char *input);
+static char *dmh_glibc_32(RCore *core, const char *input);
+static char *dmh_glibc_64(RCore *core, const char *input);
+
+static RCoreHelpMessage help_msg_dmh_glibc = {
+	"Usage:", " dmh", " # Memory map heap",
+	"dmh", " @[malloc_state]", "List heap chunks of a particular arena",
+	"dmh", "", "List the chunks inside the heap segment",
+	"dmh*", "", "Display heap details as radare2 commands",
+	"dmha", "", "List all malloc_state instances in application",
+	"dmhb", " @[malloc_state]", "Display all parsed Double linked list of main_arena's or a particular arena bins instance",
+	"dmhb", " [bin_num|bin_num:malloc_state]", "Display parsed double linked list of bins instance from a particular arena",
+	"dmhbg", " [bin_num]", "Display double linked list graph of main_arena's bin [Under developemnt]",
+	"dmhc", " @[chunk_addr]", "Display malloc_chunk struct for a given malloc chunk",
+	"dmhf", " @[malloc_state]", "Display all parsed fastbins of main_arena's or a particular arena fastbinY instance",
+	"dmhf", " [fastbin_num(:malloc_state)]", "Display single linked list in fastbinY instance from a particular arena",
+	"dmhg", " [malloc_state]", "Display heap graph of a particular arena",
+	"dmhg", "", "Display heap graph of heap segment",
+	"dmhi", " @[malloc_state]", "Display heap_info structure/structures for a given arena",
+	"dmhj", "", "List the chunks inside the heap segment in JSON format",
+	"dmhm", "[*j]", "List all malloc_state instance of a particular arena (@ malloc_state#addr)",
+	"dmht", "", "Display all parsed thread cache bins of all arena's tcache instance",
+	NULL
+};
 #endif // __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 #if R2__WINDOWS__
 static int dmh_windows(RCore *core, const char *input);
@@ -2040,19 +2070,29 @@ static bool cmd_dmh(RCore *core, const char *input) {
 	}
 	if (!strcmp ("glibc", m)) {
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
-		if (core->rasm->config->bits == 64) {
-			return dmh_glibc_64 (core, input + 1);
+		if (input[1] == '?') {
+			r_cons_cmd_help (core->cons, help_msg_dmh_glibc);
+			return true;
 		}
-		return dmh_glibc_32 (core, input + 1);
+		char *output = core->rasm->config->bits == 64
+			? dmh_glibc_64 (core, input + 1)
+			: dmh_glibc_32 (core, input + 1);
+		r_cons_print (core->cons, output);
+		free (output);
+		return true;
 #else
 		R_LOG_WARN ("glibc is not supported for this platform");
 #endif
 #if HAVE_JEMALLOC
 	} else if (!strcmp ("jemalloc", m)) {
-		if (core->rasm->config->bits == 64) {
-			dmh_jemalloc_64 (core, input + 1);
+		if (input[1] == '?') {
+			r_cons_cmd_help (core->cons, help_msg_dmh_jemalloc);
 		} else {
-			dmh_jemalloc_32 (core, input + 1);
+			char *output = core->rasm->config->bits == 64
+				? dmh_jemalloc_64 (core, input + 1)
+				: dmh_jemalloc_32 (core, input + 1);
+			r_cons_print (core->cons, output);
+			free (output);
 		}
 #endif
 	} else {
