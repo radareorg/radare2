@@ -1956,12 +1956,25 @@ static void assign_reg_argnums(RAnal *anal, RAnalFunction *fcn, RVecAnalVarPtr *
 			continue;
 		}
 		var->argnum = dense++;
-		if (r_anal_var_is_default_argname (var->name)) {
+	}
+}
+
+// Name the register arguments after their convention order; runs once when recovery is done
+R_API void r_anal_function_rename_default_args(RAnalFunction *fcn) {
+	R_RETURN_IF_FAIL (fcn && fcn->anal);
+	RAnal *anal = fcn->anal;
+	RVecAnalVarPtr *rvars = r_anal_var_vec (anal, fcn, R_ANAL_VAR_KIND_REG);
+	assign_reg_argnums (anal, fcn, rvars);
+	RAnalVar **it;
+	R_VEC_FOREACH (rvars, it) {
+		RAnalVar *var = *it;
+		if (var->argnum >= 0 && r_anal_var_is_default_argname (var->name)) {
 			char *newname = r_str_newf ("arg%d", var->argnum + 1);
 			r_anal_var_rename (anal, var, newname);
 			free (newname);
 		}
 	}
+	RVecAnalVarPtr_free (rvars);
 }
 
 static void anal_var_ptr_append_kind(RVecAnalVarPtr *dst, RAnalFunction *fcn, int kind) {

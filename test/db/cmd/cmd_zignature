@@ -1953,7 +1953,7 @@ _start:
   next: deregister_tm_clones
   types: void entry0 (int64_t arg1)
   refs: sym.__libc_csu_fini, sym.__libc_csu_init, sym.main
-  vars: tr73:arg3:int64_t
+  vars: tr73:arg1:int64_t
   bbhash: 77ece050bbc234ae3b587a8ef8da536b640f0b000414d63490214c47b18021d2
 18
 EOF
