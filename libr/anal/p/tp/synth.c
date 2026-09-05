@@ -832,7 +832,7 @@ void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec *recs)
 			char *croot = synth_root_name (fname, clabel);
 			cbt->name = r_str_newf ("%s_0x%" PFMT64x, croot, coff);
 			free (croot);
-			cbt->size = ccur;
+			cbt->size = ccur * 8; // the base type holds bits
 			SynthRec *rec = RVecSynthRec_emplace_back (recs);
 			if (rec) {
 				*rec = (SynthRec){ .arg = carg, .argno = clabel, .child = true, .off = coff, .bt = cbt };
@@ -931,7 +931,7 @@ void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec *recs)
 		if (emit) {
 			cur = synth_pad_tail (bt, &arrs, cur, aw->size);
 			bt->name = synth_root_name (fname, label);
-			bt->size = cur;
+			bt->size = cur * 8; // the base type holds bits
 			rec = RVecSynthRec_emplace_back (recs);
 		}
 		if (rec) {
@@ -1045,7 +1045,7 @@ char *synth_json(RVecSynthRec *recs) {
 		if (rec->var) {
 			pj_ks (pj, "var", rec->var);
 		}
-		pj_kn (pj, "size", rec->bt->size);
+		pj_kn (pj, "size", rec->bt->size / 8); // bytes, like the offsets
 		if (rec->hint_fn) {
 			// the size came from a size function, so scripts can match it against a known type
 			pj_ko (pj, "sizehint");

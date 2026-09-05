@@ -372,6 +372,7 @@ static RAnalBaseType *get_composite_type(RAnal *anal, const char *sname, RAnalBa
 		sdb_aforeach_next (cur);
 	}
 	free (sdb_members);
+	base_type->size = sdb_num_getf (anal->sdb_types, NULL, "type.%s.size", sname);
 
 	return base_type;
 
@@ -574,6 +575,12 @@ static void save_composite(const RAnal *anal, const RAnalBaseType *type) {
 	}
 	// name=struct
 	sdb_set (db, sname, kind, 0);
+	// a DWARF definition carries its width; a C one is measured by walking the members
+	if (type->size) {
+		sdb_num_setf (db, type->size, 0, "type.%s.size", sname);
+	} else {
+		sdb_unsetf (db, 0, "type.%s.size", sname);
+	}
 
 	RStrBuf *arglist = r_strbuf_new ("");
 
