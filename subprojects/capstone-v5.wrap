@@ -1,6 +1,6 @@
 [wrap-git]
 url = https://github.com/capstone-engine/capstone.git
-revision = cc6f8e0767738fc51c12eda6492d420e5db2c7a2
+revision = 51360daf925e50d4da383cff2278107e6ffd8074
 patch_directory = capstone-v5
 directory = capstone-v5
 diff_files = capstone-v5/capstone-patches/fix-x86-16.patch, capstone-v5/capstone-patches/fix-arm-post-index.patch, capstone-v5/capstone-patches/fix-x86-att-detail.patch, capstone-v5/capstone-patches/fix-sh-unistd-collision.patch
