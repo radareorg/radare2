@@ -11,7 +11,8 @@ clean:
 
 install:
 	mkdir -p "${OPDIR}"
-	cp -f *.r2 "${OPDIR}"
+	# symstall leaves symlinks here; cp refuses to copy a file onto itself
+	for f in *.r2 ; do rm -f "${OPDIR}/$$f" ; cp -f "$$f" "${OPDIR}" ; done
 
 # that sed is a workaround for mingw's pwd
 CWD=$(shell pwd)
