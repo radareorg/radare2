@@ -1983,8 +1983,8 @@ beach:
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 
-static char *dmh_glibc_32(RCore *core, const char *input);
-static char *dmh_glibc_64(RCore *core, const char *input);
+static char *dmh_glibc_32(RCore *core, RAGraph *graph, const char *input);
+static char *dmh_glibc_64(RCore *core, RAGraph *graph, const char *input);
 
 static RCoreHelpMessage help_msg_dmh_glibc = {
 	"Usage:", " dmh", " # Memory map heap",
@@ -2063,6 +2063,20 @@ static RDebugMap *get_closest_map(RCore *core, ut64 addr) {
 #define R_LOG_ORIGIN "cmd.debug"
 #endif
 
+#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
+static RAGraph *dmh_graph_new(RCons *cons) {
+	int h;
+	int w = r_cons_get_size (cons, &h);
+	if (w < 1 || h < 1) {
+		w = 80;
+		h = 24;
+	}
+	int flags = r_cons_canvas_flags (cons);
+	RConsCanvas *canvas = r_cons_canvas_new (cons, w, h, flags);
+	return canvas? r_agraph_new (canvas): NULL;
+}
+#endif
+
 static bool cmd_dmh(RCore *core, const char *input) {
 	const char *m = r_config_get (core->config, "dbg.malloc");
 	if (!m || R_STR_ISEMPTY (input)) {
@@ -2074,11 +2088,16 @@ static bool cmd_dmh(RCore *core, const char *input) {
 			r_cons_cmd_help (core->cons, help_msg_dmh_glibc);
 			return true;
 		}
+		bool graph_mode = input[1] == 'g' || (input[1] == 'b' && input[2] == 'g');
+		RAGraph *graph = graph_mode? dmh_graph_new (core->cons): NULL;
 		char *output = core->rasm->config->bits == 64
-			? dmh_glibc_64 (core, input + 1)
-			: dmh_glibc_32 (core, input + 1);
-		r_cons_print (core->cons, output);
+			? dmh_glibc_64 (core, graph, input + 1)
+			: dmh_glibc_32 (core, graph, input + 1);
+		if (output) {
+			r_cons_print (core->cons, output);
+		}
 		free (output);
+		r_agraph_free (graph);
 		return true;
 #else
 		R_LOG_WARN ("glibc is not supported for this platform");
@@ -2091,7 +2110,9 @@ static bool cmd_dmh(RCore *core, const char *input) {
 			char *output = core->rasm->config->bits == 64
 				? dmh_jemalloc_64 (core, input + 1)
 				: dmh_jemalloc_32 (core, input + 1);
-			r_cons_print (core->cons, output);
+			if (output) {
+				r_cons_print (core->cons, output);
+			}
 			free (output);
 		}
 #endif

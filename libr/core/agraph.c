@@ -3611,9 +3611,10 @@ static bool check_changes(RAGraph *g, bool is_interactive, RCore *core, RAnalFun
 	return true;
 }
 
-static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunction *fcn) {
+static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, bool do_print, RAnalFunction *fcn) {
 	RCons *cons = g->can->cons;
-	int h, w = r_cons_get_size (cons, &h);
+	int h = 24;
+	int w = do_print? r_cons_get_size (cons, &h): 80;
 	if (w < 1 || h < 1) {
 		// we cannot determine terminal size, lets use some default values
 		w = 80;
@@ -3674,7 +3675,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 			rendered_title = agraph_font_render_cfg (core, "scr.font.prompt", g->title);
 			title = rendered_title? rendered_title: g->title;
 			int color = core? r_config_get_i (core->config, "scr.color"): 0;
-			if (color > 0) {
+			if (do_print && color > 0) {
 				const char *kolor = cons->context->pal.prompt;
 				r_cons_gotoxy (cons, 0, 0);
 				r_cons_print (cons, kolor? kolor: Color_WHITE);
@@ -3693,7 +3694,9 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 	}
 
 	g->can->flags = r_cons_canvas_flags (cons);
-	r_cons_canvas_print_region (g->can);
+	if (do_print) {
+		r_cons_canvas_print_region (g->can);
+	}
 
 	if (is_interactive) {
 		r_cons_newline (cons);
@@ -3760,7 +3763,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	RAnalFunction *f = NULL;
 	RAnalFunction **fcn = grd->fcn;
 	if (!fcn) {
-		return agraph_print (core, g, grd->fs, NULL);
+		return agraph_print (core, g, grd->fs, true, NULL);
 	}
 	// allow to change the current function during debugging
 	if (g->is_instep && r_config_get_b (core->config, "cfg.debug")) {
@@ -3807,7 +3810,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		}
 	}
 
-	int res = agraph_print (core, g, grd->fs, *fcn);
+	int res = agraph_print (core, g, grd->fs, true, *fcn);
 
 	if (r_config_get_b (core->config, "scr.scrollbar")) {
 		r_core_print_scrollbar (core);
@@ -3915,10 +3918,20 @@ R_API Sdb *r_agraph_get_sdb(RAGraph *g) {
 R_API void r_agraph_print(RAGraph *g, void *_core) {
 	RCore *core = (RCore *)_core;
 	g->can->flags = 0;
-	agraph_print (core, g, false, NULL);
+	agraph_print (core, g, false, true, NULL);
 	if (g->graph->n_nodes > 0) {
 		r_cons_newline (g->can->cons);
 	}
+}
+
+R_API char *r_agraph_tostring(RAGraph *g, void *_core) {
+	R_RETURN_VAL_IF_FAIL (g && g->can, NULL);
+	RCore *core = (RCore *)_core;
+	g->can->flags = 0;
+	if (!agraph_print (core, g, false, false, NULL)) {
+		return NULL;
+	}
+	return r_cons_canvas_tostring (g->can);
 }
 
 R_API void r_agraph_print_json(RAGraph *g, PJ *pj) {

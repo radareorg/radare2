@@ -110,6 +110,10 @@ bool test_graph_to_agraph(void) {
 			break;
 		}
 	}
+	char *rendered = r_agraph_tostring (agraph, core);
+	mu_assert_notnull (rendered, "Couldn't render the graph");
+	mu_assert_notnull (strstr (rendered, "A"), "Missing rendered node");
+	free (rendered);
 	r_core_free (core);
 	r_graph_free (graph);
 	r_agraph_free (agraph);

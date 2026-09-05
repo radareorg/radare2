@@ -141,20 +141,12 @@ static void GH(jemalloc_get_chunks)(RCore *core, RStrBuf *sb, const char *input)
 				r_io_read_at (core->io, arena, (ut8 *)ar, sizeof (arena_t));
 				r_io_read_at (core->io, (GHT)(size_t)ar->achunks.qlh_first, (ut8 *)head, sizeof (extent_node_t));
 				if (head->en_addr) {
-					hprint (sb, "   Chunk - start: ");
-					hprint (sb, "0x%08"PFMT64x, (ut64)(size_t)head->en_addr);
-					hprint (sb, ", end: ");
-					hprint (sb, "0x%08"PFMT64x, (ut64)(size_t)((char *)head->en_addr + cnksz));
-					hprint (sb, ", size: ");
-					hprint (sb, "0x%08"PFMT64x"\n", (ut64)cnksz);
+					hprint (sb, "   Chunk - start: 0x%08"PFMT64x", end: 0x%08"PFMT64x", size: 0x%08"PFMT64x"\n",
+						(ut64)(size_t)head->en_addr, (ut64)(size_t)((char *)head->en_addr + cnksz), (ut64)cnksz);
 					r_io_read_at (core->io, (ut64)(size_t)head->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
 					while (node && node->en_addr != head->en_addr) {
-						hprint (sb, "   Chunk - start: ");
-						hprint (sb, "0x%08"PFMT64x, (ut64)(size_t)node->en_addr);
-						hprint (sb, ", end: ");
-						hprint (sb, "0x%"PFMT64x, (ut64)(size_t)((char *)node->en_addr + cnksz));
-						hprint (sb, ", size: ");
-						hprint (sb, "0x%08"PFMT64x"\n", cnksz);
+						hprint (sb, "   Chunk - start: 0x%08"PFMT64x", end: 0x%"PFMT64x", size: 0x%08"PFMT64x"\n",
+							(ut64)(size_t)node->en_addr, (ut64)(size_t)((char *)node->en_addr + cnksz), cnksz);
 						r_io_read_at (core->io, (ut64)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
 					}
 				}
@@ -184,21 +176,13 @@ static void GH(jemalloc_get_chunks)(RCore *core, RStrBuf *sb, const char *input)
 					r_io_read_at (core->io, arena, (ut8 *)ar, sizeof (arena_t));
 					r_io_read_at (core->io, (GHT)(size_t)ar->achunks.qlh_first, (ut8 *)head, sizeof (extent_node_t));
 					if (head->en_addr != 0) {
-						hprint (sb, "   Chunk - start: ");
-						hprint (sb, "0x%08"PFMT64x, (ut64)(size_t)head->en_addr);
-						hprint (sb, ", end: ");
-						hprint (sb, "0x%"PFMT64x, (ut64)(size_t)((char *)head->en_addr + cnksz));
-						hprint (sb, ", size: ");
-						hprint (sb, "0x%08"PFMT64x"\n", (ut64)cnksz);
+						hprint (sb, "   Chunk - start: 0x%08"PFMT64x", end: 0x%"PFMT64x", size: 0x%08"PFMT64x"\n",
+							(ut64)(size_t)head->en_addr, (ut64)(size_t)((char *)head->en_addr + cnksz), (ut64)cnksz);
 						ut64 addr = (ut64) (size_t)head->ql_link.qre_next;
 						r_io_read_at (core->io, addr, (ut8 *)node, sizeof (extent_node_t));
 						while (node && head && node->en_addr != head->en_addr) {
-							hprint (sb, "   Chunk - start: ");
-							hprint (sb, "0x%08"PFMT64x, (ut64)(size_t)node->en_addr);
-							hprint (sb, ", end: ");
-							hprint (sb, "0x%"PFMT64x, (ut64)(size_t)((char *)node->en_addr + cnksz));
-							hprint (sb, ", size: ");
-							hprint (sb, "0x%"PFMT64x"\n", cnksz);
+							hprint (sb, "   Chunk - start: 0x%08"PFMT64x", end: 0x%"PFMT64x", size: 0x%"PFMT64x"\n",
+								(ut64)(size_t)node->en_addr, (ut64)(size_t)((char *)node->en_addr + cnksz), cnksz);
 							r_io_read_at (core->io, (GHT)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
 						}
 					}
@@ -248,8 +232,7 @@ static void GH(jemalloc_print_narenas)(RCore *core, RStrBuf *sb, const char *inp
 					hprint (sb, "  arenas[%d]: (empty)\n", i);
 					continue;
 				}
-				hprint (sb, "  arenas[%d]: ", i);
-				hprint (sb, "@ 0x%"PFMT64x"\n", at);
+				hprint (sb, "  arenas[%d]: @ 0x%"PFMT64x"\n", i, at);
 			}
 		}
 		hprint (sb, " }\n");
@@ -325,29 +308,22 @@ static void GH(jemalloc_get_bins)(RCore *core, RStrBuf *sb, const char *input) {
 					R_FREE (b);
 					break;
 				}
-				hprint (sb, "   arenas[%d]: ", i++);
-				hprint (sb, "@ 0x%"PFMTx, (GHT)arena);
-				hprint (sb, " {\n");
+				hprint (sb, "   arenas[%d]: @ 0x%"PFMTx" {\n", i++, (GHT)arena);
 				r_io_read_at (core->io, arena, (ut8 *)ar, sizeof (arena_t));
 				for (j = 0; j < JM_NBINS; j++) {
 					r_io_read_at (core->io, (GHT)(bin_info + j * sizeof (arena_bin_info_t)),
 						(ut8*)b, sizeof (arena_bin_info_t));
-					hprint (sb, "    {\n");
-					hprint (sb, "       regsize : ");
-					hprint (sb, "0x%zx\n", b->reg_size);
-					hprint (sb, "       redzone size ");
-					hprint (sb, "0x%zx\n", b->redzone_size);
-					hprint (sb, "       reg_interval : ");
-					hprint (sb, "0x%zx\n", b->reg_interval);
-					hprint (sb, "       run_size : ");
-					hprint (sb, "0x%zx\n", b->run_size);
-					hprint (sb, "       nregs : ");
-					hprint (sb, "0x%x\n", b->nregs);
+					hprint (sb, "    {\n"
+						"       regsize : 0x%zx\n"
+						"       redzone size 0x%zx\n"
+						"       reg_interval : 0x%zx\n"
+						"       run_size : 0x%zx\n"
+						"       nregs : 0x%x\n",
+						b->reg_size, b->redzone_size, b->reg_interval, b->run_size, b->nregs);
 					// FIXME: It's a structure of bitmap_info_t
 					// hprint (sb, "       bitmap_info : ");
 					// hprint (sb, "0x%"PFMT64x"\n", b->bitmap_info);
-					hprint (sb, "       reg0_offset : ");
-					hprint (sb, "0x%"PFMT64x"\n\n", (ut64)b->reg0_offset);
+					hprint (sb, "       reg0_offset : 0x%"PFMT64x"\n\n", (ut64)b->reg0_offset);
 					// FIXME: It's a structure of malloc_mutex_t
 					// hprint (sb, "       bins[%d]->lock ", j);
 					// hprint (sb, "= 0x%"PFMT64x"\n", ar->bins[j].lock);
