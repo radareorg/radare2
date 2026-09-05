@@ -5331,3 +5331,15 @@ addr: 0x08003797
 --
 EOF
 RUN
+
+NAME=a struct that names itself measures 0 instead of recursing
+FILE=bins/elf/dwarf_rust_bubble
+CMDS=<<EOF
+k anal/types/struct.ExitCode.__0
+tss ExitCode
+EOF
+EXPECT=<<EOF
+ExitCode,0,0
+0
+EOF
+RUN
