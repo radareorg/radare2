@@ -26,7 +26,7 @@ typedef struct {
 	Sdb *db;
 	RBitset *marked;
 	RBitset *switch_addrs;
-	RBitset *labelable; // addrs this rendering can label, NULL when it cannot
+	bool named_gotos; // structured walk done: a goto out of the function reads as its name
 	RAnalFunction *fcn;
 	ut64 bb_jump; // edges of the block being rendered, owned by its region in structured mode
 	ut64 bb_fail;
@@ -869,10 +869,14 @@ static bool pdc_is_ret_only_bb(RCore *core, ut64 addr) {
 	return t == R_ANAL_OP_TYPE_RET || t == R_ANAL_OP_TYPE_CRET;
 }
 
-// a target this rendering prints no label for reads as its function
+// a target this rendering prints no label for reads as its function; both label
+// emitters (regions and the orphan pass) label block starts the function contains
 static char *goto_str(PDCState *state, ut64 addr) {
-	if (valid_addr (addr) && state->labelable && !r_bitset_test (state->labelable, addr)) {
-		RAnalFunction *f = r_anal_get_function_at (state->core->anal, addr);
+	RAnal *anal = state->core->anal;
+	const bool labeled = r_anal_get_block_at (anal, addr)
+		&& r_anal_function_contains (state->fcn, addr);
+	if (state->named_gotos && valid_addr (addr) && !labeled) {
+		RAnalFunction *f = r_anal_get_function_at (anal, addr);
 		// a loc is a jump table case body, named by its case label
 		if (f && f->type != R_ANAL_FCN_TYPE_LOC) {
 			return r_str_newf ("goto %s;", f->name);
@@ -1966,8 +1970,6 @@ static bool case_table_has(const PDCSwCase *arr, int n, ut64 target) {
 static void collect_goto_targets(PDCState *state, PdcRegion *r, RBitset *gotos) {
 	if (r->type == PDC_R_GOTO) {
 		r_bitset_set (gotos, r->addr);
-	} else if (r->type != PDC_R_BREAK && r->type != PDC_R_CONTINUE) {
-		r_bitset_set (state->labelable, r->addr);
 	}
 	if (r->type == PDC_R_SWITCH) {
 		RAnalBlock *bb = r_anal_get_block_at (state->core->anal, r->addr);
@@ -2364,14 +2366,8 @@ static bool pdc_structured_body(PDCState *state, int indent) {
 		const bool was_structured = state->structured;
 		state->structured = true;
 		RBitset *gotos = r_bitset_new ();
-		// both label emitters: regions here, blocks for the orphan pass
-		state->labelable = r_bitset_new ();
+		state->named_gotos = true;
 		collect_goto_targets (state, root, gotos);
-		RListIter *bit;
-		RAnalBlock *b;
-		r_list_foreach (state->fcn->bbs, bit, b) {
-			r_bitset_set (state->labelable, b->addr);
-		}
 		render_region (state, root, indent, gotos, UT64_MAX);
 		r_bitset_free (gotos);
 		state->structured = was_structured;
@@ -2953,7 +2949,6 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	free (state.transfer);
 	sdb_free (state.db);
 	sdb_free (state.goto_cache);
-	r_bitset_free (state.labelable);
 	r_bitset_free (state.marked);
 	if (state.switch_addrs) {
 		r_bitset_free (state.switch_addrs);
