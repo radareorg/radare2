@@ -44,6 +44,8 @@ R_API R_OWNED char *r_type_resolve_typedef(Sdb * R_NONNULL TDB, const char * R_N
 
 // Function prototypes api
 R_API int r_type_func_exist(Sdb *TDB, const char *func_name);
+// whether a prototype is recorded under func.NAME.*, whatever the kind key says
+R_API bool r_type_func_prototype_exist(Sdb *TDB, const char *func_name);
 R_API const char *r_type_func_cc(Sdb *TDB, const char *func_name);
 R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name);
 R_API int r_type_func_args_count(Sdb *TDB, const char * R_NONNULL func_name);

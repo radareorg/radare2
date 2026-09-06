@@ -4079,3 +4079,22 @@ func.fprintf_chk.arg.3=,...
 func.longjmp_chk.noreturn=true
 EOF
 RUN
+
+NAME=a function keeps its prototype when a struct tag shares its name
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+tk func.stat.ret=int
+tk func.stat.args=2
+tk func.stat.arg.0=const char *,path
+tk func.stat.arg.1=void *,buf
+tk stat=struct
+tk struct.stat=st_dev,st_ino
+af+ 0 sym.imp.stat
+afb+ 0 0 10
+afsq @ 0
+EOF
+EXPECT=<<EOF
+int sym.imp.stat (const char *path, void *buf);
+EOF
+RUN

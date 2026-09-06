@@ -957,6 +957,12 @@ R_API int r_type_func_exist(Sdb *TDB, const char *func_name) {
 	return fcn && !strcmp (fcn, "func");
 }
 
+R_API bool r_type_func_prototype_exist(Sdb *TDB, const char *func_name) {
+	R_RETURN_VAL_IF_FAIL (TDB && func_name, false);
+	// struct stat overwrites stat=func, but the prototype under func.stat.* is still there
+	return sdb_const_getf (TDB, NULL, "func.%s.ret", trim_lodashes (TDB, func_name)) != NULL;
+}
+
 R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
 	return sdb_const_getf (TDB, NULL, "func.%s.ret", trim_lodashes (TDB, func_name));
 }
@@ -1131,20 +1137,18 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name)
 	return result;
 }
 
-// walks name, then the last dotted component, then the fuzzy guesser. When
-// `key` is set the db key the match went through is returned instead of the
-// name that was matched, because r_type_func_exist trims leading lodashes
+// walks name, then the last dotted component, then the fuzzy guesser; `key` returns the db key matched
 static char *type_func_lookup(Sdb *types, const char *fname, bool key) {
 	const char *str = fname;
 	const char *name = fname;
-	if (r_type_func_exist (types, fname)) {
+	if (r_type_func_prototype_exist (types, fname)) {
 		return strdup (key? trim_lodashes (types, fname): fname);
 	}
 	while ( (str = strchr (str, '.'))) {
 		str++;
 		name = str;
 	}
-	if (r_type_func_exist (types, name)) {
+	if (r_type_func_prototype_exist (types, name)) {
 		return strdup (key? trim_lodashes (types, name): name);
 	}
 	return r_type_func_guess (types, fname);
