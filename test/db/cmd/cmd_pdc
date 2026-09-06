@@ -1237,7 +1237,7 @@ EXPECT=<<EOF
 // callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
 void fcn.caller (void) {
     eax = 1
-    goto loc_0x00000010;
+    goto fcn.00000010;
 }
 
 EOF
@@ -1781,4 +1781,241 @@ EXPECT=<<EOF2
         rdi = rbp     // rsp
         rdi = rbp     // rsp
 EOF2
+RUN
+
+NAME=pdc structured names a goto leaving the function
+FILE=malloc://128
+ARGS=-a arm -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wa cbz x0, 0x20
+wa mov x0, 1 @ 4
+wa ret @ 8
+wa mov x0, 2 @ 0x20
+wa ret @ 0x24
+af+ 0 wrapper
+afb+ 0 0 4 0x20 0x4
+afb+ 0 0x4 8
+af+ 0x20 helper
+afb+ 0x20 0x20 8
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: x0 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
+void wrapper (void) {
+    if (!x0) {
+        goto helper;
+    }
+    x0 = 1
+    return x0;
+}
+
+EOF
+RUN
+
+NAME=pdc structured names a foreign switch target the same in every arm
+FILE=malloc://0x200
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx 4883f8027700ff24c50001000000 @ 0
+wx 770a @ 4
+wx c3 @ 0x10
+wx b805000000c3 @ 0x20
+wx b807000000eb0e @ 0x40
+wx c3 @ 0x50
+wv8 0x40 @ 0x100
+wv8 0x20 @ 0x108
+wv8 0x40 @ 0x110
+af @ 0
+afb- 0x40
+af+ 0x40 helper
+afb+ 0x40 0x40 7 0x50
+afb+ 0x40 0x50 1
+pdc @ 0~goto,loc_0x00000010:
+EOF
+EXPECT=<<EOF
+                goto helper;
+                goto helper;
+                goto loc_0x00000010;
+        loc_0x00000010:
+EOF
+RUN
+
+NAME=pdc structured keeps loc for a jump table case body
+FILE=malloc://0x200
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx 4883f8027700ff24c50001000000 @ 0
+wx 770a @ 4
+wx c3 @ 0x10
+wx b805000000c3 @ 0x20
+wx b807000000eb0e @ 0x40
+wx c3 @ 0x50
+wv8 0x40 @ 0x100
+wv8 0x20 @ 0x108
+wv8 0x40 @ 0x110
+af @ 0
+afb- 0x40
+af+ 0x40 case.0x0.2 l
+afb+ 0x40 0x40 7 0x50
+afb+ 0x40 0x50 1
+pdc @ 0~goto,loc_0x00000010:
+wx 83ff0190c3 @ 0x180
+wx b82a000000c3 @ 0x190
+af+ 0x180 wfun
+afb+ 0x180 0x180 3 0x190 0x183
+afb+ 0x180 0x183 2
+af+ 0x190 hfun
+afb+ 0x190 0x190 6
+pdc @ 0x180~goto
+EOF
+EXPECT=<<EOF
+                goto loc_0x00000040;
+                goto loc_0x00000040;
+                goto loc_0x00000010;
+        loc_0x00000010:
+        goto hfun;
+EOF
+RUN
+
+NAME=pdc structured keeps loc where the same rendering prints the label
+FILE=malloc://0x200
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx 83ff01 @ 0
+wx 89f8 @ 8
+wx b82a00000090c3 @ 0x40
+af+ 0x40 gfunc
+afb+ 0x40 0x40 8 0x48
+afb+ 0x40 0x48 8
+af+ 0x0 ffunc
+afb+ 0x0 0x0 8 0x40 8
+afb+ 0x0 0x8 8 0x40
+afb+ 0x0 0x30 0x20
+pdc @ 0~goto,loc_0x00000040:
+wx 83ff0190c3 @ 0x180
+wx b82a000000c3 @ 0x190
+af+ 0x180 wfun
+afb+ 0x180 0x180 3 0x190 0x183
+afb+ 0x180 0x183 2
+af+ 0x190 hfun
+afb+ 0x190 0x190 6
+pdc @ 0x180~goto
+EOF
+EXPECT=<<EOF
+        goto loc_0x00000040;
+        loc_0x00000040:
+        goto hfun;
+EOF
+RUN
+
+NAME=pdc structured keeps loc for an orphan labelled block
+FILE=malloc://0x2000
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+af+ 0 F
+afb+ 0 0 0x10 0x10
+afb+ 0 0x10 0x10
+afbe 0 $$ @@s:0x1000 0x1490 0x10
+af+ 0x10 helper
+pdc @ 0~loc_0x00000010
+wx 83ff0190c3 @ 0x1500
+wx b82a000000c3 @ 0x1510
+af+ 0x1500 wfun
+afb+ 0x1500 0x1500 3 0x1510 0x1503
+afb+ 0x1500 0x1503 2
+af+ 0x1510 hfun
+afb+ 0x1510 0x1510 6
+pdc @ 0x1500~goto
+EOF
+EXPECT=<<EOF
+    goto loc_0x00000010;
+    loc_0x00000010: // orphan
+        goto hfun;
+EOF
+RUN
+
+NAME=pdc structured names a hoisted switch arm like the rest of the rendering
+FILE=malloc://0x2000
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+af+ 0 F
+afb+ 0 0 0x10 0x10
+afb+ 0 0x10 0x10
+afbe 0 $$ @@s:0x1000 0x1490 0x10
+afbe 0x10 0x1000
+af+ 0x1000 helper2
+pdc @ 0~helper2
+EOF
+EXPECT=<<EOF
+            goto helper2;
+                goto helper2;
+EOF
+RUN
+
+NAME=pdc structured never names a goto to address zero
+FILE=bins/elf/ppc64v1-libz.so
+ARGS=-e pdc.structured=1
+CMDS=<<EOF
+aaa
+af+ 0 zerofn
+af+ 0x194a0 named_target
+s sym.plt.crc32_combine_gen64
+pdc~goto
+EOF
+EXPECT=<<EOF
+        goto named_target;
+        goto loc_0x00000000;
+EOF
+RUN
+
+NAME=pdc structured keeps a loop exit out of the labels it prints
+FILE=malloc://0x100
+ARGS=-a x86 -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wx 85c07510 @ 0
+wx 85c074ec @ 0x10
+wx eb0e @ 0x30
+wx b82a000000c3 @ 0x40
+af+ 0 F
+afb+ 0 0 4 0x10 0x30
+afb+ 0 0x10 4 0 0x40
+afb+ 0 0x30 2 0x40
+af+ 0x40 helper
+afb+ 0x40 0x40 6
+pdc @ 0~goto,break,continue
+EOF
+EXPECT=<<EOF
+        if (v) goto loc_0x14 // unlikely
+            break;
+            goto helper;
+            continue;
+    goto helper;
+EOF
+RUN
+
+NAME=pdc structured keeps loc where no function starts at the target
+FILE=malloc://128
+ARGS=-a arm -b 64 -e pdc.structured=1
+CMDS=<<EOF
+wa cbz x0, 0x24
+wa cbz x1, 0x40 @ 4
+wa cbz x2, 0x20 @ 8
+wa mov x0, 1 @ 0xc
+wa ret @ 0x10
+wa mov x0, 2 @ 0x20
+wa ret @ 0x24
+af+ 0 wrapper
+afb+ 0 0 4 0x24 0x4
+afb+ 0 0x4 4 0x40 0x8
+afb+ 0 0x8 4 0x20 0xc
+afb+ 0 0xc 8
+af+ 0x20 helper
+afb+ 0x20 0x20 8
+pdc~goto loc_0x,goto helper
+EOF
+EXPECT=<<EOF
+        goto loc_0x00000024;
+        goto loc_0x00000040;
+        goto helper;
+EOF
 RUN

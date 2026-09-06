@@ -26,6 +26,7 @@ typedef struct {
 	Sdb *db;
 	RBitset *marked;
 	RBitset *switch_addrs;
+	RBitset *labelable; // addrs this rendering can label, NULL when it cannot
 	RAnalFunction *fcn;
 	ut64 bb_jump; // edges of the block being rendered, owned by its region in structured mode
 	ut64 bb_fail;
@@ -868,9 +869,21 @@ static bool pdc_is_ret_only_bb(RCore *core, ut64 addr) {
 	return t == R_ANAL_OP_TYPE_RET || t == R_ANAL_OP_TYPE_CRET;
 }
 
+// a target this rendering prints no label for reads as its function
+static char *goto_str(PDCState *state, ut64 addr) {
+	if (valid_addr (addr) && state->labelable && !r_bitset_test (state->labelable, addr)) {
+		RAnalFunction *f = r_anal_get_function_at (state->core->anal, addr);
+		// a loc is a jump table case body, named by its case label
+		if (f && f->type != R_ANAL_FCN_TYPE_LOC) {
+			return r_str_newf ("goto %s;", f->name);
+		}
+	}
+	return r_str_newf ("goto loc_0x%08" PFMT64x ";", addr);
+}
+
 static char *goto_or_return(PDCState *state, ut64 dst_addr) {
 	if (!pdc_is_ret_only_bb (state->core, dst_addr)) {
-		return r_str_newf ("goto loc_0x%08" PFMT64x ";", dst_addr);
+		return goto_str (state, dst_addr);
 	}
 	return state->r0? r_str_newf ("return %s;", state->r0): strdup ("return;");
 }
@@ -1953,6 +1966,8 @@ static bool case_table_has(const PDCSwCase *arr, int n, ut64 target) {
 static void collect_goto_targets(PDCState *state, PdcRegion *r, RBitset *gotos) {
 	if (r->type == PDC_R_GOTO) {
 		r_bitset_set (gotos, r->addr);
+	} else if (r->type != PDC_R_BREAK && r->type != PDC_R_CONTINUE) {
+		r_bitset_set (state->labelable, r->addr);
 	}
 	if (r->type == PDC_R_SWITCH) {
 		RAnalBlock *bb = r_anal_get_block_at (state->core->anal, r->addr);
@@ -2241,14 +2256,14 @@ static bool region_is_transfer(PdcRegion *r) {
 	return r->type == PDC_R_BREAK || r->type == PDC_R_CONTINUE || r->type == PDC_R_GOTO;
 }
 
-static char *transfer_str(PdcRegion *r) {
+static char *transfer_str(PDCState *state, PdcRegion *r) {
 	switch (r->type) {
 	case PDC_R_BREAK:
 		return strdup ("break;");
 	case PDC_R_CONTINUE:
 		return strdup ("continue;");
 	case PDC_R_GOTO:
-		return r_str_newf ("goto loc_0x%08" PFMT64x ";", r->addr);
+		return goto_str (state, r->addr);
 	default:
 		return NULL;
 	}
@@ -2265,7 +2280,7 @@ static void render_seq(PDCState *state, PdcRegion *r, int indent, RBitset *gotos
 			continue;
 		}
 		if (c->type == PDC_R_BB && i + 1 < n) {
-			state->transfer = transfer_str (*RVecPdcRegionPtr_at (&r->children, i + 1));
+			state->transfer = transfer_str (state, *RVecPdcRegionPtr_at (&r->children, i + 1));
 		}
 		const bool handoff = state->transfer != NULL;
 		render_region (state, c, indent, gotos, from);
@@ -2286,7 +2301,7 @@ static void render_region(PDCState *state, PdcRegion *r, int indent, RBitset *go
 		return;
 	}
 	if (region_is_transfer (r)) {
-		char *s = transfer_str (r);
+		char *s = transfer_str (state, r);
 		print_line (state, (from == UT64_MAX)? state->last_addr: from, indent, "%s", s);
 		free (s);
 		return;
@@ -2349,7 +2364,14 @@ static bool pdc_structured_body(PDCState *state, int indent) {
 		const bool was_structured = state->structured;
 		state->structured = true;
 		RBitset *gotos = r_bitset_new ();
+		// both label emitters: regions here, blocks for the orphan pass
+		state->labelable = r_bitset_new ();
 		collect_goto_targets (state, root, gotos);
+		RListIter *bit;
+		RAnalBlock *b;
+		r_list_foreach (state->fcn->bbs, bit, b) {
+			r_bitset_set (state->labelable, b->addr);
+		}
 		render_region (state, root, indent, gotos, UT64_MAX);
 		r_bitset_free (gotos);
 		state->structured = was_structured;
@@ -2421,6 +2443,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 			R_LOG_ERROR ("Cannot find function in 0x%08" PFMT64x, core->addr);
 		}
 		r_config_hold_free (hc);
+		pj_free (state.pj);
 		sdb_free (state.db);
 		sdb_free (state.goto_cache);
 		r_bitset_free (state.marked);
@@ -2759,7 +2782,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 				}
 				bb = r_anal_bb_from_offset (core->anal, addr);
 				nindent = sdb_num_getf (state.db, NULL, "loc.%" PFMT64x, addr);
-				if (indent > nindent) {
+				if (bb && indent > nindent) {
 					emit_close_braces (&state, bb->addr, indent, nindent);
 				}
 				print_newline (&state, addr, nindent, true);
@@ -2930,6 +2953,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	free (state.transfer);
 	sdb_free (state.db);
 	sdb_free (state.goto_cache);
+	r_bitset_free (state.labelable);
 	r_bitset_free (state.marked);
 	if (state.switch_addrs) {
 		r_bitset_free (state.switch_addrs);
