@@ -568,8 +568,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdc emits goto on its own line
+NAME=pdc linear emits goto on its own line
 FILE=malloc://0x20
+ARGS=-e pdc.structured=0
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -824,9 +825,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdc structured default off keeps gotos
+NAME=pdc linear keeps gotos with the structured renderer off
 FILE=malloc://64
-ARGS=-a x86 -b 64
+ARGS=-a x86 -b 64 -e pdc.structured=0
 CMDS=<<EOF
 wx 83ff01 7507 b801000000 eb05 b802000000 c3 @ 0
 af @ 0
@@ -924,9 +925,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdcj orphan annotations use the block address
+NAME=pdcj linear orphan annotations use the block address
 FILE=bins/mach0/ls-m1
-ARGS=-a arm -b64
+ARGS=-a arm -b64 -e pdc.structured=0
 CMDS=<<EOF
 s 0x100003a54
 af
@@ -941,9 +942,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdc keeps a function's only orphan block
+NAME=pdc linear keeps a function's only orphan block
 FILE=malloc://32
-ARGS=-a x86 -b64
+ARGS=-a x86 -b64 -e pdc.structured=0
 CMDS=<<EOF
 wx 31c0c390b801000000c3
 af
@@ -963,9 +964,9 @@ void fcn.00000000 (void) {
 EOF
 RUN
 
-NAME=pdca renders an orphan block in the asm column layout
+NAME=pdca linear renders an orphan block in the asm column layout
 FILE=malloc://32
-ARGS=-a x86 -b64
+ARGS=-a x86 -b64 -e pdc.structured=0
 CMDS=<<EOF
 wx 31c0c390b801000000c3
 af
@@ -1003,9 +1004,9 @@ void fcn.00000000 (void) {
 EOF
 RUN
 
-NAME=pdc keeps a renamed case tag on an orphan block untruncated
+NAME=pdc linear keeps a renamed case tag on an orphan block untruncated
 FILE=bins/mach0/ls-m1
-ARGS=-a arm -b64
+ARGS=-a arm -b64 -e pdc.structured=0
 CMDS=<<EOF
 s 0x100003a54
 af
@@ -1018,9 +1019,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdc reads the case value of an orphan tag in decimal like the jmptbl writer
+NAME=pdc linear reads the case value of an orphan tag in decimal like the jmptbl writer
 FILE=bins/mach0/ls-m1
-ARGS=-a arm -b64
+ARGS=-a arm -b64 -e pdc.structured=0
 CMDS=<<EOF
 s 0x100003a54
 af
@@ -1460,9 +1461,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdc* keeps one comment per line without the structured renderer
+NAME=pdc* linear keeps one comment per line
 FILE=malloc://64
-ARGS=-a x86 -b 64
+ARGS=-a x86 -b 64 -e pdc.structured=0
 CMDS=<<EOF
 wx 83c701 83ff05 7d0e 83ff09 7407 b801000000 ebec c3 90 b802000000 c3 @ 0
 af @ 0

@@ -1,5 +1,6 @@
-NAME=arm64 pdc stays inside current function after chop
+NAME=arm64 pdc linear stays inside current function after chop
 FILE=malloc://128
+ARGS=-e pdc.structured=0
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
