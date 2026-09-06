@@ -190,6 +190,11 @@ static bool anal_esil_set_bits(void *user, int bits) {
 }
 
 // Take nullable RArchConfig as argument?
+// a k= write into anal/cc bypasses the cc api, so drop the memoized lookups here too
+static void cc_sdb_changed(Sdb *s, void *user, const char *k, const char *v) {
+	r_anal_cc_cache_reset ((RAnal *)user);
+}
+
 R_API RAnal *r_anal_new(void) {
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!r_str_constpool_init (&anal->constpool)) {
@@ -232,6 +237,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->sdb_fmts = sdb_ns (anal->sdb, "spec", 1);
 	anal->sdb_cc = sdb_ns (anal->sdb, "cc", 1);
+	sdb_hook (anal->sdb_cc, cc_sdb_changed, anal);
 	anal->sdb_zigns = sdb_ns (anal->sdb, "zigns", 1);
 	anal->sdb_classes = sdb_ns (anal->sdb, "classes", 1);
 	anal->sdb_classes_attrs = sdb_ns (anal->sdb_classes, "attrs", 1);
@@ -284,6 +290,7 @@ R_API void r_anal_plugin_free(RAnalPlugin *p) {
 void __block_free_rb(RBNode *node, void *user);
 
 static void anal_priv_free(RAnal * R_NONNULL a) {
+	r_anal_cc_cache_reset (a);
 	free (R_ANAL_PRIV (a)->dir_prefix);
 	free (a->priv);
 }
@@ -532,6 +539,7 @@ R_API void r_anal_purge(RAnal *anal) {
 	r_anal_pin_fini (anal);
 	r_anal_pin_init (anal);
 	sdb_reset (anal->sdb_cc);
+	r_anal_cc_cache_reset (anal);
 	r_list_free (anal->fcns);
 	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
 	(void)r_anal_xrefs_init (anal);

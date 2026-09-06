@@ -13,6 +13,7 @@ typedef struct r_anal_priv_t {
 	bool types_dirty;
 	int types_loaded_bits;
 	char *dir_prefix;
+	HtPP *cc_cache; // convention name -> RAnalCCInfo, dropped on every write to the cc sdb
 } RAnalPriv;
 
 // Recorded adrp/add (or lea) target for a register. Populated by the
@@ -30,6 +31,7 @@ typedef struct r_leaddr_pair_t {
 R_IPI void r_anal_types_ensure_loaded(RAnal *anal);
 R_IPI bool r_anal_var_is_default_argname(const char *name);
 R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth);
+R_IPI void r_anal_cc_cache_reset(RAnal *anal);
 R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention);
 R_IPI int r_anal_cc_shadow(RAnal *anal, const char *convention);
 R_IPI bool r_anal_cc_stack_rev(RAnal *anal, const char *cc);
