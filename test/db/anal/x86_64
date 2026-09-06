@@ -2863,6 +2863,7 @@ RUN
 NAME=no function split without overlapping blocks
 FILE=bins/elf/libc.so.6
 CMDS=<<EOF
+e anal.vars=false
 aac
 s 0x2254d
 agf~invalid
