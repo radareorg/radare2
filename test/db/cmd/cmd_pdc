@@ -7,9 +7,9 @@ pdc @ main~250382
 pdc @ main~strcmp
 EOF
 EXPECT=<<EOF
-        dword [s2] = str.250382 // [0x804858f:4]=0x33303532 // "250382" // const char *s2
-        sym.imp.strcmp () // int strcmp("", "250382")
-        sym.imp.strcmp () // int strcmp("", "250382")
+    dword [s2] = str.250382 // [0x804858f:4]=0x33303532 // "250382" // const char *s2
+    sym.imp.strcmp () // int strcmp("", "250382")
+    sym.imp.strcmp () // int strcmp("", "250382")
 EOF
 RUN
 
@@ -22,8 +22,8 @@ pdc~println
 pdc~LHello.foo
 EOF
 EXPECT=<<EOF
-        call Ljava/io/PrintStream.println(Ljava/lang/String;)V // 0x5 {v0, v1} // sym.imp.Ljava_io_PrintStream.method.println_Ljava_lang_String__V(0x0, 0x0, 0x0, 0x0)
-        call LHello.foo(I)V // 0x1 {v0, v1} // method.public.LHello.LHello.method.foo_I_V(0x0, 0x0)
+    call Ljava/io/PrintStream.println(Ljava/lang/String;)V // 0x5 {v0, v1} // sym.imp.Ljava_io_PrintStream.method.println_Ljava_lang_String__V(0x0, 0x0, 0x0, 0x0)
+    call LHello.foo(I)V // 0x1 {v0, v1} // method.public.LHello.LHello.method.foo_I_V(0x0, 0x0)
 EOF
 RUN
 
@@ -117,9 +117,8 @@ EXPECT=<<EOF
 \           0x00402076      ff1584304000   call dword [ExitProcess]    ; 0x403084 ; VOID ExitProcess(UINT uExitCode)
 // callconv: eax cdecl (stack);
 void entry0 (void) {
-        si = 3
-        fcn.00402000 ()
-        
+    si = 3
+    fcn.00402000 ()
     do {
         push (0)
         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
@@ -132,28 +131,27 @@ void entry0 (void) {
         si--
         v = si - 0
     } while (si > 0);
-    loc_0x00402042:
-        eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
-        push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
-        eax ()        // reloc.crtdll.dll_puts // int puts("Hello, World!")
-        dword [GetProcessHeap] () // 0x403088 // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
-        push (eax)
-        push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
-        dword [printf] () // 0x4030e0 // reloc.crtdll.dll_printf // int printf(">%p\n", 0x30e8)
-        push (0)
-        push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
-        push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
-        push (0)
-        dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x401000, 0)
-        push (0)
-        dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(0)
+    eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
+    push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
+    eax ()        // reloc.crtdll.dll_puts // int puts("Hello, World!")
+    dword [GetProcessHeap] () // 0x403088 // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
+    push (eax)
+    push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
+    dword [printf] () // 0x4030e0 // reloc.crtdll.dll_printf // int printf(">%p\n", 0x30e8)
+    push (0)
+    push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
+    push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
+    push (0)
+    dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x401000, 0)
+    push (0)
+    dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(0)
+    return eax;
 }
 
  0x0040200f |                                | // callconv: eax cdecl (stack);
  0x0040200f |                                | void entry0 (void) {
- 0x0040200f |         si = 3
- 0x00402013 |         fcn.00402000 ()
- 0x00402018 |         
+ 0x0040200f |     si = 3
+ 0x00402013 |     fcn.00402000 ()
  0x00402018 |     do {
  0x00402018 |         push (0)
  0x0040201a |         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
@@ -165,22 +163,22 @@ void entry0 (void) {
  0x00402037 |         esp += 4      // (pstr 0x0040100e) "LABEL"
  0x0040203a |         si--
  0x0040203c |         v = si - 0
- 0x00402018 |     } while (si > 0);
- 0x00402042 |     loc_0x00402042:
- 0x00402042 |         eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
- 0x00402047 |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
- 0x0040204c |         eax ()        // reloc.crtdll.dll_puts // int puts("Hello, World!")
- 0x0040204e |         dword [GetProcessHeap] () // 0x403088 // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
- 0x00402054 |         push (eax)
- 0x00402055 |         push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
- 0x0040205a |         dword [printf] () // 0x4030e0 // reloc.crtdll.dll_printf // int printf(">%p\n", 0x30e8)
- 0x00402060 |         push (0)
- 0x00402062 |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
- 0x00402067 |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
- 0x0040206c |         push (0)
- 0x0040206e |         dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x401000, 0)
- 0x00402074 |         push (0)
- 0x00402076 |         dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(0)
+ 0x00402040 |     } while (si > 0);
+ 0x00402042 |     eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
+ 0x00402047 |     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
+ 0x0040204c |     eax ()        // reloc.crtdll.dll_puts // int puts("Hello, World!")
+ 0x0040204e |     dword [GetProcessHeap] () // 0x403088 // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
+ 0x00402054 |     push (eax)
+ 0x00402055 |     push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
+ 0x0040205a |     dword [printf] () // 0x4030e0 // reloc.crtdll.dll_printf // int printf(">%p\n", 0x30e8)
+ 0x00402060 |     push (0)
+ 0x00402062 |     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
+ 0x00402067 |     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
+ 0x0040206c |     push (0)
+ 0x0040206e |     dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x401000, 0)
+ 0x00402074 |     push (0)
+ 0x00402076 |     dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(0)
+ 0x00402076 |     return eax;
  0x00402076 | }
 
 EOF
@@ -197,27 +195,23 @@ EOF
 EXPECT=<<EOF
 // callconv: x0 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
 void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
-        x8 = [x0 + 0x60] // arg1
-        x8 = [x8 + 0x60]
-        x9 = [x1 + 0x60] // arg2
-        x9 = [x9 + 0x60]
-        v = x8 - x9
-        if (v <= 0) goto 0x100003a74 // likely
-        return x0;
-    loc_0x100003a74:
-        if (v >= 0) goto 0x100003a80 // likely
-        return x0;
-    loc_0x100003a80:
-        x8 = x1 + 0x68 // arg2
-        x1 = x0 + 0x68 // arg1
-        x0 = x8
-        goto sym.imp.strcoll // int strcoll("", "")
-    loc_0x100003a78: // orphan
-        w0 = -1
-
-    loc_0x100003a6c: // orphan
+    x8 = [x0 + 0x60] // arg1
+    x8 = [x8 + 0x60]
+    x9 = [x1 + 0x60] // arg2
+    x9 = [x9 + 0x60]
+    v = x8 - x9
+    if (x8 > x9) {
         w0 = 1
-
+    } else {
+        if (v < 0) {
+            w0 = -1
+        } else {
+            x8 = x1 + 0x68 // arg2
+            x1 = x0 + 0x68 // arg1
+            x0 = x8
+            goto sym.imp.strcoll // int strcoll("", "")
+        }
+    }
 }
 
 EOF
@@ -276,28 +270,24 @@ EOF
 EXPECT=<<EOF
  0x100003a54 |                                | // callconv: x0 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
  0x100003a54 |                                | void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
- 0x100003a54 |         x8 = [x0 + 0x60] // arg1
- 0x100003a58 |         x8 = [x8 + 0x60]
- 0x100003a5c |         x9 = [x1 + 0x60] // arg2
- 0x100003a60 |         x9 = [x9 + 0x60]
- 0x100003a64 |         v = x8 - x9
- 0x100003a68 |         if (v <= 0) goto 0x100003a74 // likely
- 0x100003a54 |         return x0;
- 0x100003a74 |     loc_0x100003a74:
- 0x100003a74 |         if (v >= 0) goto 0x100003a80 // likely
- 0x100003a74 |         return x0;
- 0x100003a80 |     loc_0x100003a80:
- 0x100003a80 |         x8 = x1 + 0x68 // arg2
- 0x100003a84 |         x1 = x0 + 0x68 // arg1
- 0x100003a88 |         x0 = x8
- 0x100003a8c |         goto sym.imp.strcoll // int strcoll("", "")
- 0x100003a78 | loc_0x100003a78: // orphan
- 0x100003a78 |      w0 = -1
-
- 0x100003a6c | loc_0x100003a6c: // orphan
- 0x100003a6c |      w0 = 1
-
- 0x100003a6c | }
+ 0x100003a54 |     x8 = [x0 + 0x60] // arg1
+ 0x100003a58 |     x8 = [x8 + 0x60]
+ 0x100003a5c |     x9 = [x1 + 0x60] // arg2
+ 0x100003a60 |     x9 = [x9 + 0x60]
+ 0x100003a64 |     v = x8 - x9
+ 0x100003a68 |     if (x8 > x9) {
+ 0x100003a6c |         w0 = 1
+ 0x100003a68 |     } else {
+ 0x100003a74 |         if (v < 0) {
+ 0x100003a78 |             w0 = -1
+ 0x100003a74 |         } else {
+ 0x100003a80 |             x8 = x1 + 0x68 // arg2
+ 0x100003a84 |             x1 = x0 + 0x68 // arg1
+ 0x100003a88 |             x0 = x8
+ 0x100003a8c |             goto sym.imp.strcoll // int strcoll("", "")
+ 0x100003a74 |         }
+ 0x100003a68 |     }
+ 0x100003a8c | }
 
 EOF
 RUN
@@ -315,16 +305,14 @@ EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (int64_t arg1) {
-        cr0 = (r3 == 0) // arg1
-        if (cr0 & FLG_EQ) goto 0x10 // likely
-        return r3;
-    loc_0x00000010:
-        r3 = 0
-        return
-    loc_0x00000008: // orphan
+    cr0 = (r3 == 0) // arg1
+    if (!(cr0 & FLG_EQ)) {
         r3 = 1        // "#"
         return
-
+    } else {
+        r3 = 0
+        return
+    }
 }
 
 EOF
@@ -346,9 +334,9 @@ EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
-        // ICOD XREF from fcn.00000000 @ 0x4(x)
-        r3 = [obj.myglobal]
-        return
+    // ICOD XREF from fcn.00000000 @ 0x4(x)
+    r3 = [obj.myglobal]
+    return
 }
 
 EOF
@@ -372,8 +360,8 @@ EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
-        r3 = "hello"
-        return
+    r3 = "hello"
+    return
 }
 
 EOF
@@ -394,8 +382,8 @@ EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (int64_t arg1) {
-        [obj.myglobal] = r5
-        return
+    [obj.myglobal] = r5
+    return
 }
 
 EOF
@@ -416,11 +404,11 @@ EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
-        // ICOD XREF from fcn.00000000 @ 0x4(x)
-        r9 = r2 + (0 << 16)
-        r3 = [obj.myglobal]
-        r4 = r9 + r9
-        return
+    // ICOD XREF from fcn.00000000 @ 0x4(x)
+    r9 = r2 + (0 << 16)
+    r3 = [obj.myglobal]
+    r4 = r9 + r9
+    return
 }
 
 EOF
@@ -440,10 +428,10 @@ EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
-        // ICOD XREF from fcn.00000000 @ 0x4(x)
-        r9 = r2 + (0 << 16)
-        r3 = [r9 - 0x7ff8] // 0x8008
-        return
+    // ICOD XREF from fcn.00000000 @ 0x4(x)
+    r9 = r2 + (0 << 16)
+    r3 = [r9 - 0x7ff8] // 0x8008
+    return
 }
 
 EOF
@@ -464,10 +452,10 @@ EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
-        // ICOD XREF from fcn.00000000 @ 0x4(x)
-        r3 = [obj.myglobal]
-        r9 = 0
-        return
+    // ICOD XREF from fcn.00000000 @ 0x4(x)
+    r3 = [obj.myglobal]
+    r9 = 0
+    return
 }
 
 EOF
@@ -489,10 +477,10 @@ EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
-        // ICOD XREFS from fcn.00000000 @ 0x4(x), 0x8(x)
-        r3 = [obj.first]
-        r4 = [obj.second]
-        return
+    // ICOD XREFS from fcn.00000000 @ 0x4(x), 0x8(x)
+    r3 = [obj.first]
+    r4 = [obj.second]
+    return
 }
 
 EOF
@@ -513,9 +501,9 @@ EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
-        // ICOD XREF from fcn.00000000 @ 0x4(x)
-        r9 = [obj.myglobal]
-        return
+    // ICOD XREF from fcn.00000000 @ 0x4(x)
+    r9 = [obj.myglobal]
+    return
 }
 
 EOF
@@ -536,10 +524,10 @@ EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
-        // ICOD XREF from fcn.00000000 @ 0x4(x)
-        r3 = [obj.myglobal]
-        r4 = r19 + r19
-        return
+    // ICOD XREF from fcn.00000000 @ 0x4(x)
+    r3 = [obj.myglobal]
+    r4 = r19 + r19
+    return
 }
 
 EOF
@@ -560,9 +548,9 @@ EOF
 EXPECT=<<EOF
  0x00000000 |                                | // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
  0x00000000 |                                | void fcn.00000000 (void) {
- 0x00000000 |         // ICOD XREF from fcn.00000000 @ 0x4(x)
- 0x00000004 |         r3 = [obj.myglobal]
- 0x00000008 |         return
+ 0x00000000 |     // ICOD XREF from fcn.00000000 @ 0x4(x)
+ 0x00000004 |     r3 = [obj.myglobal]
+ 0x00000008 |     return
  0x00000008 | }
 
 EOF
@@ -608,7 +596,7 @@ pdc~return
 e asm.addr.relto
 EOF
 EXPECT=<<EOF
-        return
+    return
 func
 EOF
 RUN
@@ -622,8 +610,7 @@ af
 pdc*
 EOF
 EXPECT=<<EOF
-CCu base64:dm9pZCBmY24uMDAwMDAwMDAgKHZvaWQpIHs= @ 0x00000000
-CCu base64:ZWF4ID0gMA== @ 0x00000000
+CCu base64:dm9pZCBmY24uMDAwMDAwMDAgKHZvaWQpIHsKZWF4ID0gMA== @ 0x00000000
 CCu base64:cmV0dXJuIGVheA== @ 0x00000002
 EOF
 RUN
@@ -639,9 +626,9 @@ EOF
 EXPECT=<<EOF
 // callconv: v0 n32 (a0, a1, a2, a3, a4, a5, a6, a7, stack);
 void fcn.00000000 (int32_t arg1, int32_t arg2, int32_t arg3) {
-        v0 = a0 + a1  // arg2
-        v0 += a2      // arg3
-        ret
+    v0 = a0 + a1  // arg2
+    v0 += a2      // arg3
+    ret
 }
 
 EOF
@@ -659,8 +646,8 @@ EOF
 EXPECT=<<EOF
 // callconv: v0 n32 (a0, a1, a2, a3, a4, a5, a6, a7, stack);
 void fcn.00000000 (void) {
-        a0 = [obj.myglobal]
-        ret
+    a0 = [obj.myglobal]
+    ret
 }
 
 EOF
@@ -675,7 +662,7 @@ af
 pdc~a0 =
 EOF
 EXPECT=<<EOF
-        a0 = [gp - 0x7ff0] // [0x88010:4]=-1
+    a0 = [gp - 0x7ff0] // [0x88010:4]=-1
 EOF
 RUN
 
@@ -686,7 +673,7 @@ aaa
 pdc @ sym.updateCurNetworkSpeed~v0 = [obj
 EOF
 EXPECT=<<EOF
-        v0 = [obj.tc_meter_enable]
+    v0 = [obj.tc_meter_enable]
 EOF
 RUN
 
@@ -699,8 +686,8 @@ pdc~printf("Results
 pdc~printf("msg
 EOF2
 EXPECT=<<EOF2
-        sym.imp.printf () // int printf("Results : a : %u , b: %ld\n", 30, 0x2710)
-        sym.imp.printf () // int printf("msg : %s\n", "")
+    sym.imp.printf () // int printf("Results : a : %u , b: %ld\n", 30, 0x2710)
+    sym.imp.printf () // int printf("msg : %s\n", "")
 EOF2
 RUN
 
@@ -712,7 +699,7 @@ s main
 pdc~printf("IOLI
 EOF2
 EXPECT=<<EOF2
-        sym.imp.printf () // int printf("IOLI Crackme Level 0x00\n")
+    sym.imp.printf () // int printf("IOLI Crackme Level 0x00\n")
 EOF2
 RUN
 
@@ -770,7 +757,7 @@ EOF
 EXPECT=<<EOF
 // callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
 void fcn.00000000 (void) {
-        return
+    return
 }
 
 decompile-ok
@@ -797,7 +784,6 @@ ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 83ff01 7507 b801000000 eb05 b802000000 c3 @ 0
 af @ 0
-e pdc.structured=1
 pdc~if (,eax,else
 EOF
 EXPECT=<<EOF
@@ -898,7 +884,6 @@ RUN
 
 NAME=pdc structured renders each jump table case with its own body
 FILE=bins/elf/ls
-ARGS=-e pdc.structured=1
 CMDS=<<EOF
 aaa
 s 0x145b0
@@ -920,8 +905,8 @@ pdcj~{annotations[0]}
 pdcj~{annotations[1]}
 EOF
 EXPECT=<<EOF
-{"start":52,"end":116,"offset":134513504,"type":"offset"}
-{"start":116,"end":137,"offset":134513506,"type":"offset"}
+{"start":52,"end":112,"offset":134513504,"type":"offset"}
+{"start":112,"end":129,"offset":134513506,"type":"offset"}
 EOF
 RUN
 
@@ -997,8 +982,8 @@ EOF
 EXPECT=<<EOF
 // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
 void fcn.00000000 (void) {
-        if (f0 >= 0.0) f1 = f0; else f1 = f2
-        return
+    if (f0 >= 0.0) f1 = f0; else f1 = f2
+    return
 }
 
 EOF
@@ -1043,7 +1028,7 @@ s 0x415694
 pdc~switch (,default:
 EOF
 EXPECT=<<EOF
-    switch (switch_var) { // jump table of 1 cases at 0x004156b8
+        switch (switch_var) { // jump table of 1 cases at 0x004156b8
 EOF
 RUN
 
@@ -1142,7 +1127,6 @@ RUN
 
 NAME=pdc structured labels no arm for an adjacent only case run
 FILE=bins/elf/ls
-ARGS=-e pdc.structured=1
 CMDS=<<EOF
 aaa
 s 0x5c40
@@ -1225,7 +1209,7 @@ RUN
 
 NAME=pdc structured keeps a jump into another function as a transfer
 FILE=malloc://64
-ARGS=-a x86 -b 64 -e pdc.structured=1
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx b801000000eb09 @ 0
 wx b802000000c3 @ 0x10
@@ -1278,7 +1262,7 @@ RUN
 
 NAME=pdc structured recovers riscv unsigned branch operands
 FILE=malloc://64
-ARGS=-a riscv -b 64 -e pdc.structured=1
+ARGS=-a riscv -b 64
 CMDS=<<EOF
 wx 6366b500 13051000 67800000 13052000 67800000 @ 0
 af @ 0
@@ -1296,7 +1280,7 @@ RUN
 
 NAME=pdc structured recovers sparc b<cc> operands from the cmp
 FILE=malloc://64
-ARGS=-a sparc -b 32 -e cfg.bigendian=true -e pdc.structured=1
+ARGS=-a sparc -b 32 -e cfg.bigendian=true
 CMDS=<<EOF
 wx 80a20009 04800005 01000000 90102001 81c3e008 01000000 90102002 81c3e008 01000000 @ 0
 af @ 0
@@ -1309,6 +1293,20 @@ EXPECT=<<EOF
     } else {
         o0 = 2
 0
+EOF
+RUN
+
+NAME=pdc structured renders an s390 diamond
+FILE=bins/elf/ls-s390x
+CMDS=<<EOF
+af @ 0x176d8
+pdc @ 0x176d8~if (cc,} else {,r3 = 0x38
+EOF
+EXPECT=<<EOF
+    if (cc != 0) {
+        r3 = 0x38
+    } else {
+        r3 = 0x38
 EOF
 RUN
 
@@ -1522,7 +1520,7 @@ pdc~end try
 pdc~// try 0x
 EOF
 EXPECT=<<EOF
-        try { // cleanup at 0x1000029f8
+    try { // cleanup at 0x1000029f8
     } // end try
     catch (...) { // try 0x100002a04..0x100002a0c
 EOF
@@ -1556,8 +1554,8 @@ pdc~try { // catch
 pdc~// try 0x
 EOF
 EXPECT=<<EOF
-        try { // catch at 0x004779d8
-        } catch (std::exception) { // try 0x004779d0..0x004779d3
+    try { // catch at 0x004779d8
+    } catch (std::exception) { // try 0x004779d0..0x004779d3
 EOF
 RUN
 
@@ -1572,9 +1570,8 @@ pdc~end try
 pdc~// try 0x
 EOF
 EXPECT=<<EOF
-    try { // catch at 0x7ff5d426eb2
-    } // end try
-    catch { // try 0x7ff5d426e95..0x7ff5d426ea3
+                                try { // catch at 0x7ff5d426eb2
+                                } catch { // try 0x7ff5d426e95..0x7ff5d426ea3
 EOF
 RUN
 
@@ -1588,7 +1585,7 @@ pdc~try { //
 pdc~end try
 EOF
 EXPECT=<<EOF
-        try { // cleanup at 0x100021eb
+    try { // cleanup at 0x100021eb
     } // end try
 EOF
 RUN
@@ -1604,9 +1601,9 @@ pdc~// try 0x
 pdc~v0 = exception
 EOF
 EXPECT=<<EOF
-        try { // catch at 0x000013d8
-        } catch (Ljava/lang/Throwable;) { // try 0x00001384..0x000013b2
-            v0 = exception
+    try { // catch at 0x000013d8
+    } catch (Ljava/lang/Throwable;) { // try 0x00001384..0x000013b2
+        v0 = exception
 EOF
 RUN
 
@@ -1710,12 +1707,14 @@ NAME=pdc renders a landing pad no edge reaches
 FILE=bins/elf/demangle-test-cpp
 CMDS=<<EOF
 aaa
-pdco @ 0x15aa~__cxa_begin_catch,loc_0x000017d8:,loc_0x000017b6:
+pdco @ 0x15aa~?0x000017b6
+pdco @ 0x15aa~?0x000017d8
+pdc @ 0x15aa~?_Unwind_Resume
 EOF
 EXPECT=<<EOF
- 0x00001786 |             sym.imp.__cxa_begin_catch ()
- 0x000017b6 |     loc_0x000017b6: // orphan
- 0x000017d8 |     loc_0x000017d8: // orphan
+2
+2
+1
 EOF
 RUN
 
@@ -1746,7 +1745,7 @@ af @ 0
 pdc @ 0~eax =
 EOF2
 EXPECT=<<EOF2
-        eax = 1
+    eax = 1
 EOF2
 RUN
 
@@ -1759,8 +1758,8 @@ af @ 0
 pdc @ 0~0x800]
 EOF2
 EXPECT=<<EOF2
-        qword [0x800] = 1
         rbx = qword [0x800] // [0x800:8]=0
+        qword [0x800] = 1
 EOF2
 RUN
 
@@ -1774,12 +1773,12 @@ agf~zzznomatch
 pdc~rdi = rbp
 EOF2
 EXPECT=<<EOF2
+    rdi = rbp     // rsp
                 rdi = rbp     // rsp
                 rdi = rbp     // rsp
                 rdi = rbp     // rsp
-        rdi = rbp     // rsp
-        rdi = rbp     // rsp
-        rdi = rbp     // rsp
+                rdi = rbp     // rsp
+                rdi = rbp     // rsp
         rdi = rbp     // rsp
 EOF2
 RUN

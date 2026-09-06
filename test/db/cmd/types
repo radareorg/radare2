@@ -4,7 +4,7 @@ CMDS=<<EOF
 af;pdc~strcp
 EOF
 EXPECT=<<EOF
-        sym.imp.__strcpy_chk () // char *__strcpy_chk("", -1, -1)
+    sym.imp.__strcpy_chk () // char *__strcpy_chk("", -1, -1)
 EOF
 RUN
 

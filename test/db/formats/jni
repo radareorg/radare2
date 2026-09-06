@@ -221,7 +221,7 @@ ah. @ 0x1a24~offset
 s sym.Java_JNISlots_variadic
 pdf~CallIntMethod
 s sym.Java_JNISlots_buffers
-pdc~^        JNI
+pdc~&JNINativeInterface.,//
 a:callargs-q 0x1a78
 EOF
 EXPECT=<<EOF
@@ -237,9 +237,9 @@ JNINativeInterface.GetDirectBufferAddress
  0x00001a24 => offset='JNINativeInterface.CallIntMethodA'
 |           0x00001908      08c540f9       ldr x8, [x8, JNINativeInterface.CallIntMethod]
 |           0x0000191c      00013fd6       blr x8                      ; jint JNINativeInterface.CallIntMethod(JNIEnv *env, jobject object, jmethodID methodID, ...)
-        JNINativeInterface.GetDirectBufferAddress (x0, x1) // void *JNINativeInterface.GetDirectBufferAddress(0, 0)
-        JNINativeInterface.GetDirectBufferAddress (x0, x1) // void *JNINativeInterface.GetDirectBufferAddress(0, 0)
-        JNINativeInterface.GetDirectBufferAddress (x0, x1) // void *JNINativeInterface.GetDirectBufferAddress(0, 0)
+    JNINativeInterface.GetDirectBufferAddress (x0, x1) // void *JNINativeInterface.GetDirectBufferAddress(0, 0)
+    JNINativeInterface.GetDirectBufferAddress (x0, x1) // void *JNINativeInterface.GetDirectBufferAddress(0, 0)
+    JNINativeInterface.GetDirectBufferAddress (x0, x1) // void *JNINativeInterface.GetDirectBufferAddress(0, 0)
 void *JNINativeInterface.GetDirectBufferAddress(?, ?)
 EOF
 RUN
@@ -254,15 +254,15 @@ tk calllink.000005d0
 ah. @ 0x5b8~offset
 ah. @ 0x5cc~offset
 s sym.Java_JNIFoo_apiTest
-pdc~^        JNI
+pdc~&JNINativeInterface.,//
 EOF
 EXPECT=<<EOF
 JNINativeInterface.NewStringUTF
 JNINativeInterface.GetVersion
  0x000005b8 => offset='JNINativeInterface.NewStringUTF'
  0x000005cc => offset='JNINativeInterface.GetVersion'
-        JNINativeInterface.NewStringUTF (x0, x1) // jstring JNINativeInterface.NewStringUTF(0, "test")
-        JNINativeInterface.GetVersion (x0) // jint JNINativeInterface.GetVersion(0)
+    JNINativeInterface.NewStringUTF (x0, x1) // jstring JNINativeInterface.NewStringUTF(0, "test")
+    JNINativeInterface.GetVersion (x0) // jint JNINativeInterface.GetVersion(0)
 EOF
 RUN
 
@@ -339,7 +339,7 @@ ah. @ 0x244~offset
 ah. @ 0x270~offset
 ah. @ 0x294~offset
 s sym.JNI_OnLoad
-pdc~^        JNI
+pdc~&JNINativeInterface.,//
 a:callargs-q 0x274
 a:callargs-q 0x298
 EOF
@@ -350,8 +350,8 @@ JNINativeInterface.RegisterNatives
  0x00000244 => offset='JNIInvokeInterface.GetEnv'
  0x00000270 => offset='JNINativeInterface.FindClass'
  0x00000294 => offset='JNINativeInterface.RegisterNatives'
-        JNINativeInterface.FindClass (x0, x1) // jclass JNINativeInterface.FindClass(0xffffffff, "BD.\x91\xeb")
-        JNINativeInterface.RegisterNatives (x0, x1, x2, x3) // jint JNINativeInterface.RegisterNatives(0, 0xffffffff, 0xd008, 0x5d)
+            JNINativeInterface.FindClass (x0, x1) // jclass JNINativeInterface.FindClass(0xffffffff, "BD.\x91\xeb")
+                JNINativeInterface.RegisterNatives (x0, x1, x2, x3) // jint JNINativeInterface.RegisterNatives(0, 0xffffffff, 0xd008, 0x5d)
 jclass JNINativeInterface.FindClass(0x0, "androidx/renderscript/RenderScript")
 jint JNINativeInterface.RegisterNatives(0x0, 0x0, 0xd008, 0x5d)
 EOF

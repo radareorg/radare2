@@ -172,8 +172,8 @@ static bool plugin_init(RCorePluginSession *cps) {
 	RCore *core = cps->core;
 	RConfig *cfg = core->config;
 	r_config_lock (cfg, false);
-	RConfigNode *node = r_config_set_b (cfg, "pdc.structured", false);
-	r_config_node_desc (node, "emit structured if/else instead of goto in pdc (experimental)");
+	RConfigNode *node = r_config_set_b (cfg, "pdc.structured", true);
+	r_config_node_desc (node, "emit structured if/else instead of goto in pdc");
 	node = r_config_set_b (cfg, "pdc.trycatch", true);
 	r_config_node_desc (node, "render the exception regions of the bin as try/catch blocks");
 	r_config_lock (cfg, true);
