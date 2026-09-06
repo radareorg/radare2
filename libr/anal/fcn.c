@@ -3025,7 +3025,7 @@ R_API bool r_anal_function_has_address_linked_signature_current(RAnalFunction *f
 		&& r_anal_dwarf_function_link_is_current (anal, function->addr, linked)
 		? function_signature_address_type_name (anal, function): NULL;
 	bool exists = R_STR_ISNOTEMPTY (type_name)
-		&& r_type_func_exist (anal->sdb_types, type_name);
+		&& r_type_func_prototype_exist (anal->sdb_types, type_name);
 	free (type_name);
 	r_th_lock_leave (anal->lock);
 	return exists;

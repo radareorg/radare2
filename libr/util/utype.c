@@ -971,17 +971,7 @@ static inline const char *trim_lodashes(Sdb *TDB, const char *name) {
 
 // Function prototypes api
 R_API int r_type_func_exist(Sdb *TDB, const char *func_name) {
-	// A prototype lives in its own namespace, `func.NAME.*`. The kind key
-	// `NAME=func` shares its name with struct, union and enum tags, which C
-	// keeps apart from ordinary identifiers: a program that both declares
-	// `struct stat` and calls `stat()` -- every program that calls stat --
-	// writes `stat=struct` over `stat=func` once its DWARF is read, and the
-	// prototype that is still there under `func.stat.*` went unfound.
-	const char *name = trim_lodashes (TDB, func_name);
-	if (sdb_const_getf (TDB, NULL, "func.%s.ret", name)) {
-		return true;
-	}
-	const char *fcn = sdb_const_get (TDB, name, 0);
+	const char *fcn = sdb_const_get (TDB, trim_lodashes (TDB, func_name), 0);
 	return fcn && !strcmp (fcn, "func");
 }
 
