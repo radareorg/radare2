@@ -47,6 +47,9 @@ typedef struct {
 	char *delayed_call_cc;
 	int delayed_call_slots;
 	int delayed_taint_clear_slots;
+	// gpr items clobbered by the last convention seen, resolved once per cc
+	char *havoc_cc;
+	RList *havoc_items;
 } EsilClobCtx;
 
 typedef struct {
@@ -190,6 +193,8 @@ static void esilbreak_ctx_fini(REsil *esil, EsilBreakCtx *ctx) {
 	esil->user = NULL;
 	RVecEsilRegTaint_fini (&ctx->clob.reg_taints);
 	free (ctx->clob.delayed_call_cc);
+	free (ctx->clob.havoc_cc);
+	r_list_free (ctx->clob.havoc_items);
 	free (ctx->spname);
 }
 
@@ -202,13 +207,23 @@ static void esil_havoc_clobbers_by_cc(RAnal *anal, EsilBreakCtx *ctx, const char
 	if (!anal || !anal->reg || !cc) {
 		return;
 	}
-	RRegSet *rs = &anal->reg->regset[R_REG_TYPE_GPR];
+	EsilClobCtx *clob = &ctx->clob;
 	RRegItem *item;
 	RListIter *iter;
-	r_list_foreach (rs->regs, iter, item) {
-		if (r_anal_cc_isclobber (anal, cc, item->name)) {
-			esil_reg_taint_add_item (ctx, item);
+	if (!clob->havoc_cc || strcmp (clob->havoc_cc, cc)) {
+		free (clob->havoc_cc);
+		clob->havoc_cc = strdup (cc);
+		r_list_free (clob->havoc_items);
+		clob->havoc_items = r_list_new ();
+		RRegSet *rs = &anal->reg->regset[R_REG_TYPE_GPR];
+		r_list_foreach (rs->regs, iter, item) {
+			if (r_anal_cc_isclobber (anal, cc, item->name)) {
+				r_list_append (clob->havoc_items, item);
+			}
 		}
+	}
+	r_list_foreach (clob->havoc_items, iter, item) {
+		esil_reg_taint_add_item (ctx, item);
 	}
 }
 
