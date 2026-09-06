@@ -1707,13 +1707,13 @@ NAME=pdc renders a landing pad no edge reaches
 FILE=bins/elf/demangle-test-cpp
 CMDS=<<EOF
 aaa
-pdco @ 0x15aa~?0x000017b6
-pdco @ 0x15aa~?0x000017d8
+pdco @ 0x15aa~&0x000017b6,rax = qword
+pdco @ 0x15aa~&0x000017d8,rax = qword
 pdc @ 0x15aa~?_Unwind_Resume
 EOF
 EXPECT=<<EOF
-2
-2
+ 0x000017b6 |             rax = qword [rbp - 0x58]
+ 0x000017d8 |         rax = qword [rbp - 0x58]
 1
 EOF
 RUN

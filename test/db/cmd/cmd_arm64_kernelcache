@@ -27,6 +27,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=arm64 pdc keeps a callee's body out of the caller
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wa cbz x0, 0x20
+wa mov x0, 1 @ 4
+wa ret @ 8
+wa mov x0, 2 @ 0x20
+wa ret @ 0x24
+af+ 0 wrapper
+afb+ 0 0 4 0x20 0x4
+afb+ 0 0x4 8
+af+ 0x20 helper
+afb+ 0x20 0x20 8
+pdc~?x0 = 1
+pdc~?x0 = 2
+EOF
+EXPECT=<<EOF
+1
+0
+EOF
+RUN
+
 NAME=arm64 aac keeps wrapper stable with exact target function
 FILE=malloc://128
 CMDS=<<EOF
