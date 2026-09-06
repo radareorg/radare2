@@ -4335,3 +4335,22 @@ ptr: 0x00000007
 ptr: 0x0000000f
 EOF
 RUN
+
+NAME=trycatch index follows flag changes
+FILE=malloc://32
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3 @ 0
+wx c3 @ 0x10
+f owner=0
+af @ 0
+f try.0.0.catch=0x10
+af-*
+af @ 0
+afbq @ 0
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000010
+EOF
+RUN
