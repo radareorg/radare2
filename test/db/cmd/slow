@@ -46,6 +46,7 @@ RUN
 NAME=unique function names
 FILE=bins/elf/bash
 CMDS=<<EOF
+e anal.vars=false
 aaa
 f~strlen~390
 EOF

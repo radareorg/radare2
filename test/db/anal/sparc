@@ -131,18 +131,7 @@ RUN
 NAME=af anal sparc
 FILE=bins/elf/elf-Linux-SparcV8-bash
 CMDS=<<EOF
-aaa
-s 0x0002bca0
-afi~name
-EOF
-EXPECT=<<EOF
-name: main
-EOF
-RUN
-
-NAME=af anal sparc
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
+e anal.vars=false
 aaa
 s 0x0002bca0
 afi~name
@@ -598,18 +587,6 @@ EXPECT=<<EOF
 0x0002d45c 0x0002d470 00:0000 20 j 0x0002d16c f 0x0002d470
 0x0002d470 0x0002d490 00:0000 32 j 0x0002d16c f 0x0002d490
 0x0002d490 0x0002d494 00:0000 4 j 0x0002d180
-EOF
-RUN
-
-NAME=af anal sparc
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-aaa
-s 0x0002bca0
-afi~name
-EOF
-EXPECT=<<EOF
-name: main
 EOF
 RUN
 
