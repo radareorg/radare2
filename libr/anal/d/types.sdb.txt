@@ -2605,7 +2605,7 @@ lstat=func
 func.lstat.args=2
 func.lstat.arg.0=const char *,path
 func.lstat.arg.1=void *,buf
-func.lstat.ret=void
+func.lstat.ret=int
 
 scanf=func
 func.scanf.args=2
