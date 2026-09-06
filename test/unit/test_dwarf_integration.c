@@ -505,6 +505,68 @@ static bool test_dwarf5_named_typedef_to_anonymous_aggregate(void) {
 
 
 
+static bool test_dwarf5_typedef_of_void_parameter_is_exact(void) {
+	// `typedef void BZFILE;` is a complete type DWARF spells with no
+	// DW_AT_type on the typedef, and a pointer to it is exact: every bzip2
+	// entry point takes or returns one, and each was left without a linked
+	// prototype for it.
+	mu_assert_true (r_anal_use (anal, "x86"), "Couldn't load x86 analysis profile");
+	mu_assert_true (r_anal_set_bits (anal, 64), "Couldn't select x86-64 analysis");
+	mu_assert_true (r_anal_cc_set (anal, "rax amd64(rdi,rsi,rdx,rcx,r8,r9)"),
+		"Couldn't seed the fixture calling convention");
+	sdb_reset (anal->sdb_types);
+
+	RBinFileOptions opt = {
+		.baseaddr = 0x400000,
+	};
+	mu_assert_true (r_bin_open (bin, "bins/elf/dwarf5_line_cl", &opt),
+		"dwarf5_line_cl binary could not be opened");
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Couldn't get current bin file");
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	mu_assert_notnull (abbrevs, "Couldn't parse DWARF5 abbreviations");
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	mu_assert_notnull (info, "Couldn't parse DWARF5 indexed info");
+	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
+	RBinDwarfDie *foo_pointer = test_find_die_at (unit, 0xc9);
+	RBinDwarfDie *typedef_die = test_find_die_at (unit, 0xd3);
+	mu_assert_notnull (foo_pointer, "Missing Foo pointer DIE");
+	mu_assert_notnull (typedef_die, "Missing typedef candidate DIE");
+	RBinDwarfAttrValue *foo_type = test_find_attr (foo_pointer, DW_AT_type);
+	mu_assert_notnull (foo_type, "Missing Foo pointee type");
+	foo_type->reference = typedef_die->offset;
+	typedef_die->tag = DW_TAG_typedef;
+	// The typedef of void: named, and with no type of its own.
+	RBinDwarfAttrValue *typedef_type = test_find_attr (typedef_die, DW_AT_type);
+	if (typedef_type) {
+		typedef_type->attr_name = DW_AT_linkage_name;
+	}
+	RBinDwarfAttrValue typedef_name = {
+		.attr_name = DW_AT_name,
+		.kind = DW_AT_KIND_STRING,
+		.string.content = "Handle",
+	};
+	RVecDwarfAttrValue_push_back (typedef_die->attr_values, &typedef_name);
+
+	RAnalDwarfContext ctx = {
+		.info = info,
+		.loc = NULL,
+	};
+	r_anal_dwarf_process_info (anal, &ctx);
+	const ut64 new_foo_addr = 0x1170 + (ut64)bf->bo->baddr_shift;
+	char *link = test_function_type_link_at (anal->sdb_types, new_foo_addr);
+	mu_assert_notnull (link,
+		"A pointer to a typedef of void keeps exact function authority");
+	const char *ret_type = r_type_func_ret (anal->sdb_types, link);
+	mu_assert_streq (ret_type, "Handle *",
+		"Exact linked prototype spells the typedef of void by its name");
+	free (link);
+
+	r_bin_dwarf_free_debug_info (info);
+	RVecDwarfAbbrevDecl_free (abbrevs);
+	mu_end;
+}
+
 static bool test_dwarf5_malformed_prototypes_do_not_link(void) {
 	r_str_ncpy (anal->config->arch, "x86", sizeof (anal->config->arch));
 	anal->config->bits = 64;
@@ -763,6 +825,7 @@ int all_tests(void) {
 	run_test_with_setup (test_dwarf_function_parsing_rust);
 	run_test_with_setup (test_dwarf_function_parsing_go);
 	run_test_with_setup (test_dwarf5_named_typedef_to_anonymous_aggregate);
+	run_test_with_setup (test_dwarf5_typedef_of_void_parameter_is_exact);
 	run_test_with_setup (test_dwarf5_malformed_prototypes_do_not_link);
 	return tests_passed != tests_run;
 }

@@ -1488,7 +1488,14 @@ static bool dwarf_type_reference_is_exact(Context *ctx, ut64 offset) {
 				&& (named_typedef || dwarf_exact_named_type (die));
 			goto beach;
 		case DW_TAG_typedef:
-			if (!type_attr || !dwarf_exact_named_type (die)) {
+			if (!dwarf_exact_named_type (die)) {
+				goto beach;
+			}
+			if (!type_attr) {
+				// A named typedef with no type is a typedef of `void`,
+				// which DWARF spells by omission: `typedef void BZFILE;`
+				// names a complete type, and a pointer to it is exact.
+				exact = true;
 				goto beach;
 			}
 			named_typedef = true;
