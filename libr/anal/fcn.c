@@ -2563,28 +2563,20 @@ static const char *function_signature_lookup_name(RAnal *anal, RAnalFunction *fc
 
 static char *function_signature_try_type_name(Sdb *types, const char *candidate) {
 	R_RETURN_VAL_IF_FAIL (types && candidate && *candidate, NULL);
-	// The prototype namespace decides; the kind key shares its name with
-	// struct tags, and `struct stat` overwrites `stat=func`.
-	char *name = r_type_func_key (types, candidate);
-	if (name) {
-		if (r_type_func_exist (types, name)) {
-			return name;
-		}
-		free (name);
-	}
-	return r_type_func_exist (types, candidate)? strdup (candidate): NULL;
+	// r_type_func_key only hands back names that pass r_type_func_exist
+	return r_type_func_key (types, candidate);
 }
 
 static char *function_signature_address_type_name(Sdb *types, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (types, NULL);
 	char *name = r_type_link_at (types, addr);
-	if (name && r_type_kind (types, name) == R_TYPE_FUNCTION) {
+	if (name && r_type_func_exist (types, name)) {
 		return name;
 	}
 	free (name);
 	const char *dwarf_name = sdb_const_getf (types, NULL,
 		"fcnlink.%08" PFMT64x, addr);
-	if (dwarf_name && r_type_kind (types, dwarf_name) == R_TYPE_FUNCTION) {
+	if (dwarf_name && r_type_func_exist (types, dwarf_name)) {
 		return strdup (dwarf_name);
 	}
 	return NULL;

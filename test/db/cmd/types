@@ -146,6 +146,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=function prototype survives a struct with the same name
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx c3
+af
+afn sym.imp.stat
+'td int stat(const char *path, void *buf);
+k anal/types/stat=struct
+k anal/types/struct.stat=st_dev,st_ino
+afs
+afcf
+afcf sym.imp.stat
+afcfj
+EOF
+EXPECT=<<EOF
+int sym.imp.stat (const char *path, void *buf);
+int sym.imp.stat (const char *path, void *buf);
+int sym.imp.stat (const char *path, void *buf);
+[{"name":"stat","return":"int","args":[{"name":"path","type":"const char *"},{"name":"buf","type":"void *"}],"count":2}]
+EOF
+RUN
+
 NAME=exact function type link overrides name lookup
 FILE=-
 CMDS=<<EOF

@@ -86,24 +86,23 @@ FutureType *
 EOF
 RUN
 
-NAME="DWARF function typed name moves off a colliding struct on reimport"
+NAME="DWARF function keeps its prototype beside a struct of the same name"
 FILE=bins/elf/dwarf4_many_comp_units.elf
 CMDS=<<EOF
-k anal/dwarf/fcn.Mammal.typed_name
-iddi
 k anal/dwarf/fcn.Mammal.typed_name
 k anal/types/Mammal
 af @ 0x401300
 afs @ 0x401300
 iddi
 k anal/dwarf/fcn.Mammal.typed_name
+afs @ 0x401300
 EOF
 EXPECT=<<EOF
 Mammal
-Mammal_401300
 struct
 void method.constructor.Mammal.Mammal__ (Mammal *this);
-Mammal_401300
+Mammal
+void method.constructor.Mammal.Mammal__ (Mammal *this);
 EOF
 RUN
 

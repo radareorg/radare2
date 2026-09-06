@@ -953,12 +953,7 @@ static inline const char *trim_lodashes(Sdb *TDB, const char *name) {
 
 // Function prototypes api
 R_API int r_type_func_exist(Sdb *TDB, const char *func_name) {
-	// A prototype lives in its own namespace, `func.NAME.*`. The kind key
-	// `NAME=func` shares its name with struct, union and enum tags, which C
-	// keeps apart from ordinary identifiers: a program that both declares
-	// `struct stat` and calls `stat()` -- every program that calls stat --
-	// writes `stat=struct` over `stat=func` once its DWARF is read, and the
-	// prototype that is still there under `func.stat.*` went unfound.
+	// the kind key is shared with struct tags (struct stat vs stat()), so trust the func.NAME namespace first
 	const char *name = trim_lodashes (TDB, func_name);
 	if (sdb_const_getf (TDB, NULL, "func.%s.ret", name)) {
 		return true;
@@ -1017,16 +1012,11 @@ R_API bool r_type_func_is_variadic(Sdb *TDB, const char *R_NONNULL func_name) {
 
 #define MIN_MATCH_LEN 4
 
-static inline bool is_function(const char *name) {
-	return name && !strcmp ("func", name);
-}
-
 static R_OWNED char *type_func_try_guess(Sdb *TDB, const char *name) {
 	if (strlen (name) < MIN_MATCH_LEN) {
 		return NULL;
 	}
-	const char *res = sdb_const_get (TDB, name, NULL);
-	if (is_function (res)) {
+	if (r_type_func_exist (TDB, name)) {
 		return strdup (name);
 	}
 	// strip leading underscores (e.g., __libc_start_main -> libc_start_main)
@@ -1035,8 +1025,7 @@ static R_OWNED char *type_func_try_guess(Sdb *TDB, const char *name) {
 		while (*stripped == '_') {
 			stripped++;
 		}
-		res = sdb_const_get (TDB, stripped, NULL);
-		if (is_function (res)) {
+		if (r_type_func_exist (TDB, stripped)) {
 			return strdup (stripped);
 		}
 	}

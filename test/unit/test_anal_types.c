@@ -828,40 +828,7 @@ static bool test_anal_type_bitsize_struct_cycle(void) {
 	mu_end;
 }
 
-static bool test_anal_function_prototype_survives_a_struct_tag_of_the_same_name(void) {
-	// C keeps struct tags apart from ordinary identifiers: a program that
-	// declares `struct stat` and calls `stat()` has both, and the DWARF
-	// pass writes the tag over the one kind key the two names share.
-	RAnal *anal = r_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RAnal");
-	Sdb *types = anal->sdb_types;
-	sdb_set (types, "func.stat.ret", "int", 0);
-	sdb_set (types, "func.stat.args", "2", 0);
-	sdb_set (types, "func.stat.arg.0", "const char *,path", 0);
-	sdb_set (types, "func.stat.arg.1", "void *,buf", 0);
-	sdb_set (types, "stat", "struct", 0);
-	sdb_set (types, "struct.stat", "st_dev,st_ino", 0);
-
-	mu_assert_true (r_type_func_exist (types, "stat"),
-		"a prototype in its own namespace exists whatever the kind key says");
-	char *key = r_type_func_key (types, "sym.imp.stat");
-	mu_assert_streq (key, "stat", "the import resolves to the prototype");
-	free (key);
-	mu_assert_false (r_type_func_exist (types, "st_dev"),
-		"a name with no prototype and no func kind still does not exist");
-
-	RAnalFunction *fcn = r_anal_create_function (anal, "sym.imp.stat", 0x1000, R_ANAL_FCN_TYPE_FCN, NULL);
-	mu_assert_notnull (fcn, "Couldn't create the import function");
-	char *sig = r_anal_function_get_signature_string (fcn);
-	mu_assert_notnull (sig, "the import keeps its prototype beside the struct tag");
-	mu_assert_true (strstr (sig, "path") && strstr (sig, "buf"), "the prototype names both parameters");
-	free (sig);
-	r_anal_free (anal);
-	mu_end;
-}
-
 int all_tests(void) {
-	mu_run_test (test_anal_function_prototype_survives_a_struct_tag_of_the_same_name);
 	mu_run_test (test_anal_get_base_type_struct);
 	mu_run_test (test_anal_save_base_type_struct);
 	mu_run_test (test_anal_base_type_struct_array_roundtrip);
