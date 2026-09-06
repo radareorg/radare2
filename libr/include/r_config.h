@@ -49,6 +49,7 @@ typedef struct r_config_t {
 	RList *nodes;
 	HtPP *ht;
 	bool lock;
+	bool sorted; // nodes list is sorted by name, cleared by every insertion
 	/*was the struct modified after the last project save*/
 	R_DIRTY_VAR;
 } RConfig;
