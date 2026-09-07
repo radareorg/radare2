@@ -609,109 +609,11 @@ R_API ut64 r_anal_types_bump_dirty_epoch(RAnal *anal) {
 	return anal->type_dirty_epoch;
 }
 
-static ut64 type_context_hash_mix(ut64 hash, ut64 value) {
-	hash ^= value + 0x9e3779b97f4a7c15ULL + (hash << 6) + (hash >> 2);
-	return hash;
-}
-
-static ut64 type_context_hash_string(ut64 hash, const char *value) {
-	return type_context_hash_mix (hash, R_STR_ISNOTEMPTY (value)? r_str_hash64 (value): 0);
-}
-
-static bool type_context_hash_should_include_sdb_key(const char *key) {
-	return r_str_startswith (key, "link.")
-		|| r_str_startswith (key, "offset.")
-		|| r_str_startswith (key, "fcnlink.");
-}
-
 typedef struct {
 	ut64 xor_hash;
 	ut64 sum_hash;
 	ut64 count;
 } TypeContextLinkHash;
-
-static bool type_context_hash_link_cb(void *user, const char *key, const char *value) {
-	TypeContextLinkHash *links = user;
-	if (type_context_hash_should_include_sdb_key (key)) {
-		ut64 item = type_context_hash_string (0xcbf29ce484222325ULL, key);
-		item = type_context_hash_string (item, value);
-		links->xor_hash ^= item;
-		links->sum_hash += item;
-		links->count++;
-	}
-	return true;
-}
-
-static ut64 types_context_hash_from_snapshot(RAnal *anal, const RList *types, ut64 type_dirty_epoch) {
-	if (type_dirty_epoch == r_anal_types_dirty_epoch (anal)
-		&& anal->type_context_hash_cache
-		&& anal->type_context_hash_epoch == type_dirty_epoch) {
-		return anal->type_context_hash_cache;
-	}
-	ut64 hash = 0xcbf29ce484222325ULL;
-	hash = type_context_hash_mix (hash, type_dirty_epoch);
-	RListIter *iter;
-	RAnalBaseType *type;
-	r_list_foreach (types, iter, type) {
-		if (!type) {
-			continue;
-		}
-		hash = type_context_hash_string (hash, type->name);
-		hash = type_context_hash_string (hash, type->type);
-		hash = type_context_hash_mix (hash, (ut64)type->size);
-		hash = type_context_hash_mix (hash, (ut64)type->kind);
-		switch (type->kind) {
-		case R_ANAL_BASE_TYPE_KIND_STRUCT: {
-			RAnalStructMember *member;
-			R_VEC_FOREACH (&type->struct_data.members, member) {
-				hash = type_context_hash_string (hash, member->name);
-				hash = type_context_hash_string (hash, member->type);
-				hash = type_context_hash_mix (hash, (ut64)member->offset);
-				hash = type_context_hash_mix (hash, (ut64)member->bitsize);
-				hash = type_context_hash_mix (hash, (ut64)member->count);
-			}
-			break;
-		}
-		case R_ANAL_BASE_TYPE_KIND_UNION: {
-			RAnalUnionMember *member;
-			R_VEC_FOREACH (&type->union_data.members, member) {
-				hash = type_context_hash_string (hash, member->name);
-				hash = type_context_hash_string (hash, member->type);
-				hash = type_context_hash_mix (hash, (ut64)member->offset);
-				hash = type_context_hash_mix (hash, (ut64)member->bitsize);
-				hash = type_context_hash_mix (hash, (ut64)member->count);
-			}
-			break;
-		}
-		case R_ANAL_BASE_TYPE_KIND_ENUM: {
-			RAnalEnumCase *cas;
-			R_VEC_FOREACH (&type->enum_data.cases, cas) {
-				hash = type_context_hash_string (hash, cas->name);
-				hash = type_context_hash_mix (hash, (ut64)(st64)cas->val);
-			}
-			break;
-		}
-		default:
-			break;
-		}
-	}
-	TypeContextLinkHash links = {0};
-	(void)sdb_foreach (anal->sdb_types, type_context_hash_link_cb, &links);
-	if (links.count) {
-		hash = type_context_hash_mix (hash, links.xor_hash);
-		hash = type_context_hash_mix (hash, links.sum_hash);
-		hash = type_context_hash_mix (hash, links.count);
-	}
-	if (!hash) {
-		hash = 1;
-	}
-	if (type_dirty_epoch == r_anal_types_dirty_epoch (anal)) {
-		anal->type_context_hash_cache = hash;
-		anal->type_context_hash_epoch = type_dirty_epoch;
-	}
-	return hash;
-}
-
 
 R_API bool r_anal_types_set_link(RAnal *anal, const char *type, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && R_STR_ISNOTEMPTY (type), false);
