@@ -829,64 +829,6 @@ typedef struct r_anal_ref_t {
 
 R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
-typedef enum {
-	R_ANAL_MUTATION_SIGNATURE = 0,
-	R_ANAL_MUTATION_CALLCONV,
-	R_ANAL_MUTATION_VAR,
-	R_ANAL_MUTATION_VAR_RENAME,
-	R_ANAL_MUTATION_VAR_TYPE,
-	R_ANAL_MUTATION_XREF,
-	R_ANAL_MUTATION_COMMENT,
-	R_ANAL_MUTATION_FLAG,
-	R_ANAL_MUTATION_TYPE_DECL,
-	R_ANAL_MUTATION_TYPE_LINK
-} RAnalMutationKind;
-
-typedef struct r_anal_mutation_t {
-	RAnalMutationKind kind;
-	RAnalFunction *fcn;
-	RAnalFunctionSignature *signature;
-	const char *signature_string;
-	const char *callconv;
-	RAnalVar *var;
-	const char *old_name;
-	const char *name;
-	const char *type;
-	const char *text;
-	ut64 addr;
-	ut64 from;
-	ut64 to;
-	ut64 size;
-	int delta;
-	char var_kind;
-	bool is_arg;
-	RAnalRefType ref_type;
-} RAnalMutation;
-
-typedef struct r_anal_mutation_result_t {
-	size_t attempted;
-	size_t applied;
-	size_t failed;
-} RAnalMutationResult;
-
-typedef enum {
-	R_ANAL_MUTATION_ATOMIC_STATUS_OK = 0,
-	R_ANAL_MUTATION_ATOMIC_STATUS_INVALID_ARGUMENT,
-	R_ANAL_MUTATION_ATOMIC_STATUS_UNSUPPORTED,
-	R_ANAL_MUTATION_ATOMIC_STATUS_VALIDATION_FAILED,
-	R_ANAL_MUTATION_ATOMIC_STATUS_PREPARATION_FAILED,
-	R_ANAL_MUTATION_ATOMIC_STATUS_COMMIT_FAILED,
-} RAnalMutationAtomicStatus;
-
-#define R_ANAL_MUTATION_ATOMIC_INDEX_NONE ((size_t)-1)
-
-typedef struct r_anal_mutation_atomic_result_t {
-	RAnalMutationAtomicStatus status;
-	size_t failed_index; // R_ANAL_MUTATION_ATOMIC_INDEX_NONE when no record failed
-	size_t validated; // records validated against transaction-entry state
-	size_t committed; // records in the final committed state; zero after rollback
-} RAnalMutationAtomicResult;
-
 /* represents a reference line from one address (from) to another (to) */
 typedef struct r_anal_refline_t {
 	ut64 from;
@@ -1296,7 +1238,6 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
  * convention onto the registers a function actually touches, and cannot
  * reimplement the convention database without duplicating it. */
 R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg);
-R_API bool r_anal_var_exact_formal_get(RAnal *anal, const RAnalVar *var, R_OUT int *ordinal);
 R_API bool r_anal_dwarf_function_link_is_current(const RAnal *anal, ut64 function_addr, const char *type_name);
 R_API bool r_anal_function_has_address_linked_signature_current(RAnalFunction *function);
 R_API R_UNOWNED RAnalPlugin *r_anal_decompiler_provider(RAnal *anal);
@@ -1406,16 +1347,6 @@ R_API ut64 r_anal_function_dirty_epoch(const RAnalFunction *fcn);
 R_API ut64 r_anal_function_bump_dirty_epoch(RAnalFunction *fcn);
 R_API ut64 r_anal_function_context_hash(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv);
-R_API bool r_anal_apply_mutations(RAnal *anal, const RAnalMutation *mutations, size_t mutation_count, RAnalMutationResult *result);
-/*
- * The atomic Stage-1 API accepts only CALLCONV and VAR_RENAME. Every record is
- * validated against the state at transaction entry and all owned replacements
- * are prepared before commit. On success, each changed function epoch is
- * bumped once and VARIABLE_NAME_CHANGED events are sent after the complete
- * batch is visible. CALLCONV does not publish an event. A write conflict during
- * guarded commit rolls every pointer swap back before any epoch or event.
- */
-R_API RAnalMutationAtomicResult r_anal_apply_mutations_atomic(RAnal *anal, const RAnalMutation *mutations, size_t mutation_count);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
 R_API int r_anal_function_count(RAnal *a, ut64 from, ut64 to);
 R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64 addr);
@@ -1604,8 +1535,6 @@ typedef struct r_anal_cc_argslot_t {
 	bool fixed; // the convention pins this slot, so it does not follow the previous arg
 } RAnalCCArgSlot;
 R_API bool r_anal_cc_argslot(RAnal *anal, const char *convention, int argno, int argc, bool incall, RAnalCCArgSlot *out);
-// a convention draws integer and floating-point arguments from separate sequences, so each is counted on its own
-R_API const char *r_anal_cc_fparg(RAnal *anal, const char *convention, int n);
 R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int argno, int argc, bool incall, int width, ut64 *out);
 R_API ut64 r_anal_cc_argaddr(RAnal *anal, RReg *reg, const RAnalCCArgSlot *slot);
 R_API int r_anal_cc_wordsize(RAnal *anal, const char *convention);
@@ -1971,7 +1900,6 @@ R_API ut64 r_anal_types_dirty_epoch(const RAnal *anal);
 R_API ut64 r_anal_types_bump_dirty_epoch(RAnal *anal);
 R_API ut64 r_anal_types_context_hash(RAnal *anal);
 R_API bool r_anal_types_set_link(RAnal *anal, const char *type, ut64 addr);
-R_API bool r_anal_types_set_link_expression(RAnal *anal, const char *type, ut64 addr);
 R_API bool r_anal_types_set_link_offset(RAnal *anal, const char *type, ut64 addr);
 R_API bool r_anal_types_unlink(RAnal *anal, ut64 addr);
 R_API void r_parse_pdb_types(const RAnal *anal, const RBinPdb *pdb);

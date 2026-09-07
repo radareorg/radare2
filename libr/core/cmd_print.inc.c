@@ -6831,7 +6831,9 @@ static bool core_print_provider_decompile_locked(RCore *core, const char *input)
 		r_core_return_code (core, 1);
 		return true;
 	}
-	RCodeMeta *meta = provider->decompile (core->anal, fcn);
+	// The wrapper is the API a consumer outside radare2 would call; using it
+	// here keeps one path rather than two, and keeps it exercised.
+	RCodeMeta *meta = r_anal_decompile (core->anal, fcn);
 	if (!meta) {
 		R_LOG_ERROR ("Decompiler provider failed for function '%s'", fcn->name? fcn->name: "?");
 		r_core_return_code (core, 1);

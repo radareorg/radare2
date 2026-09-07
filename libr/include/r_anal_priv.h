@@ -30,11 +30,6 @@ typedef struct r_anal_dwarf_function_link_authority_t {
 
 typedef struct r_anal_function_snapshot_limits_t RAnalFunctionSnapshotLimits;
 
-typedef struct r_anal_plugin_data_refs_batch_t {
-	char *provider_id; // Owned by the batch list.
-	bool success; // True makes refs authoritative; false preserves prior output.
-	RVecAnalRef *refs; // Owned by the batch list; NULL is authoritative empty on success.
-} RAnalPluginDataRefsBatch;
 
 typedef enum {
 	R_ANAL_CC_RETURN_MECHANISM_NONE = 0,
@@ -63,8 +58,6 @@ typedef struct r_anal_cc_stack_allocation_contract_t {
 	ut32 red_zone_bytes;
 } RAnalCCStackAllocationContract;
 
-// Returns an owned RList<RAnalPluginDataRefsBatch *>; r_list_free releases it.
-R_API bool r_anal_plugin_data_refs_collect(RAnal *anal, RAnalFunction *fcn, R_OUT RList **batches);
 
 // Recorded adrp/add (or lea) target for a register. Populated by the
 // function recurser as it walks a basic block and consumed by the jmptbl
@@ -102,7 +95,6 @@ R_IPI void r_anal_dwarf_function_link_mark_unowned(RAnal *anal, ut64 function_ad
 R_IPI void r_anal_dwarf_function_link_authority_clear(RAnal *anal);
 R_IPI void r_anal_function_vars_cache_init_readonly(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn);
 R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth);
-R_API const char *r_meta_get_string_in_space(RAnal *anal, RAnalMetaType type, const RSpace *space, ut64 addr);
 R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention);
 R_IPI int r_anal_cc_shadow(RAnal *anal, const char *convention);
 R_IPI bool r_anal_cc_stack_rev(RAnal *anal, const char *cc);
