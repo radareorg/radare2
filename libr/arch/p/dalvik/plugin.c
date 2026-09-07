@@ -1370,16 +1370,27 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format23x(len, data, &vA, &vB, &vC);
-			esilprintf (op, "32,v%u,F2D,32,v%u,F2D,F<=,?{,32,v%u,F2D,32,v%u,F2D,F==,!,-1,*,}{,1,},v%u,=", vC, vB, vC, vB, vA);
+			// cmpl yields -1 for an unordered compare, cmpg yields 1
+			if (data[0] == 0x2d) {
+				esilprintf (op, "32,v%u,F2D,32,v%u,F2D,F<=,?{,32,v%u,F2D,32,v%u,F2D,F==,!,}{,-1,},v%u,=", vB, vC, vC, vB, vA);
+			} else {
+				esilprintf (op, "32,v%u,F2D,32,v%u,F2D,F<=,?{,32,v%u,F2D,32,v%u,F2D,F==,!,-1,*,}{,1,},v%u,=", vC, vB, vC, vB, vA);
+			}
 		}
 		break;
 	case 0x2f: // cmpl-double
-	case 0x30: // cmlg-double
+	case 0x30: // cmpg-double
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format23x(len, data, &vA, &vB, &vC);
-			esilprintf (op, "v%u,v%u,F<=,?{,v%u,v%u,F==,!,-1,*,}{,1,},v%u,=", vC, vB, vC, vB, vA);
+			if (data[0] == 0x2f) {
+				esilprintf (op, GETWIDE "," GETWIDE ",F<=,?{," GETWIDE "," GETWIDE ",F==,!,}{,-1,},v%u,=",
+					vB+1, vB, vC+1, vC, vC+1, vC, vB+1, vB, vA);
+			} else {
+				esilprintf (op, GETWIDE "," GETWIDE ",F<=,?{," GETWIDE "," GETWIDE ",F==,!,-1,*,}{,1,},v%u,=",
+					vC+1, vC, vB+1, vB, vC+1, vC, vB+1, vB, vA);
+			}
 		}
 		break;
 	case 0x31: // cmp-long
