@@ -290,26 +290,30 @@ static void ref_manager_free(RefManager *rm) {
 	free (rm);
 }
 
+static void invalidate_function_counts(RAnalFunction *fcn, ut8 roles) {
+	if (roles & AFFECTED_XREF_SOURCE) {
+		fcn->meta.numcallrefs = -1;
+	}
+	if (roles & AFFECTED_XREF_TARGET) {
+		fcn->meta.numrefs = -1;
+	}
+}
+
+// only the functions at or around each address are touched; a scan of every function per xref made aar quadratic
 static void invalidate_affected_functions(RAnal *anal, const AffectedXrefAddress *affected_addresses, size_t affected_count) {
-	RListIter *iter;
-	RAnalFunction *fcn;
-	r_list_foreach (anal->fcns, iter, fcn) {
-		ut8 roles = 0;
-		size_t i;
-		for (i = 0; i < affected_count; i++) {
-			const AffectedXrefAddress *affected = &affected_addresses[i];
-			if (fcn->addr == affected->addr || r_anal_function_contains (fcn, affected->addr)) {
-				roles |= affected->roles;
-				if (roles == (AFFECTED_XREF_SOURCE | AFFECTED_XREF_TARGET)) {
-					break;
-				}
-			}
+	size_t i;
+	for (i = 0; i < affected_count; i++) {
+		const AffectedXrefAddress *affected = &affected_addresses[i];
+		RList *fcns = r_anal_get_functions_in (anal, affected->addr);
+		RListIter *iter;
+		RAnalFunction *fcn;
+		r_list_foreach (fcns, iter, fcn) {
+			invalidate_function_counts (fcn, affected->roles);
 		}
-		if (roles & AFFECTED_XREF_SOURCE) {
-			fcn->meta.numcallrefs = -1;
-		}
-		if (roles & AFFECTED_XREF_TARGET) {
-			fcn->meta.numrefs = -1;
+		r_list_free (fcns);
+		RAnalFunction *at = r_anal_get_function_at (anal, affected->addr);
+		if (at) {
+			invalidate_function_counts (at, affected->roles);
 		}
 	}
 }
