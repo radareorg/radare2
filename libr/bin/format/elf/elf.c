@@ -681,7 +681,11 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 			RVecElfOff_push_back (&di->dt_needed, &d.d_un.d_val);
 			break;
 		case DT_INIT:
+			di->dt_init = d.d_un.d_ptr;
+			break;
 		case DT_FINI:
+			di->dt_fini = d.d_un.d_ptr;
+			break;
 		case DT_DEBUG:
 		case DT_INIT_ARRAY:
 		case DT_FINI_ARRAY:
@@ -1926,6 +1930,14 @@ ut64 Elf_(get_boffset)(ELFOBJ *eo) {
 
 ut64 Elf_(get_init_offset)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
+	// DT_INIT names the initialization hook outright, on every architecture.
+	// The scan below only recognizes a 32-bit x86 startup idiom.
+	if (eo->dyn_info.dt_init) {
+		ut64 offset = Elf_(v2p) (eo, eo->dyn_info.dt_init);
+		if (offset != UT64_MAX) {
+			return offset;
+		}
+	}
 	if (is_intel (eo)) { // push // x86 only
 		ut64 entry = Elf_(get_entry_offset) (eo);
 		if (entry == UT64_MAX) {
@@ -1945,6 +1957,13 @@ ut64 Elf_(get_init_offset)(ELFOBJ *eo) {
 
 ut64 Elf_(get_fini_offset)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
+	// DT_FINI is the finalization hook the loader itself uses.
+	if (eo->dyn_info.dt_fini) {
+		ut64 offset = Elf_(v2p) (eo, eo->dyn_info.dt_fini);
+		if (offset != UT64_MAX) {
+			return offset;
+		}
+	}
 	if (is_intel (eo)) { // push // x86 only
 		ut64 entry = Elf_(get_entry_offset) (eo);
 		if (entry == UT64_MAX) {
