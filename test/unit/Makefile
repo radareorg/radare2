@@ -16,7 +16,6 @@ LDLIBS+=-lr_core -lr_main -lm -lr_config -lr_debug -lr_bin -lr_lang -lr_anal -lr
 # anal objects directly so those symbols do not become part of the public ABI.
 ANAL_INTERNAL_TEST_OBJS=$(shell find ../../libr/anal -name '*.o')
 $(UNITS_BINDIR)/test_anal_function: LDLIBS := $(ANAL_INTERNAL_TEST_OBJS) $(filter-out -lr_anal,$(LDLIBS))
-$(UNITS_BINDIR)/test_anal_artifacts: LDLIBS := ../../libr/core/p/core_prj.o $(LDLIBS)
 ifeq ($(ASAN),1)
 	ASAN_LD_PRELOAD=LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
 else

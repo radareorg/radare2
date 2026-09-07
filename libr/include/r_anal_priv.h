@@ -29,8 +29,6 @@ typedef struct r_anal_dwarf_function_link_authority_t {
 } RAnalDwarfFunctionLinkAuthority;
 
 typedef struct r_anal_function_snapshot_limits_t RAnalFunctionSnapshotLimits;
-typedef struct r_anal_meta_store_shadow_t RAnalMetaStoreShadow;
-typedef struct r_anal_owned_xref_prepared_t RAnalOwnedXrefPrepared;
 
 typedef struct r_anal_plugin_data_refs_batch_t {
 	char *provider_id; // Owned by the batch list.
@@ -65,19 +63,8 @@ typedef struct r_anal_cc_stack_allocation_contract_t {
 	ut32 red_zone_bytes;
 } RAnalCCStackAllocationContract;
 
-// Internal cross-library bridge. It provides bounded immutable data only; it
-// does not establish core-lock, IO-trust, CFG, or semantic authority.
-R_API R_OWNED RVecAnalRef *r_anal_refs_get_unowned(RAnal *anal, ut64 from);
 // Returns an owned RList<RAnalPluginDataRefsBatch *>; r_list_free releases it.
 R_API bool r_anal_plugin_data_refs_collect(RAnal *anal, RAnalFunction *fcn, R_OUT RList **batches);
-// Internal cross-library transaction bridge. The caller must hold anal->lock
-// continuously across prepare, coordinated swaps, and publish. Swap is
-// reversible until publish; prepared_free may run after releasing the lock.
-R_API RAnalOwnedXrefStatus r_anal_xrefs_owned_prepare_many(RAnal *anal, const RAnalOwnedXrefSet *sets, size_t set_count, R_OUT RAnalOwnedXrefPrepared **prepared);
-R_API bool r_anal_xrefs_owned_changed(const RAnalOwnedXrefPrepared *prepared);
-R_API void r_anal_xrefs_owned_swap(RAnal *anal, RAnalOwnedXrefPrepared *prepared);
-R_API void r_anal_xrefs_owned_publish(RAnal *anal, const RAnalOwnedXrefPrepared *prepared);
-R_API void r_anal_xrefs_owned_prepared_free(RAnalOwnedXrefPrepared *prepared);
 
 // Recorded adrp/add (or lea) target for a register. Populated by the
 // function recurser as it walks a basic block and consumed by the jmptbl
@@ -115,12 +102,7 @@ R_IPI void r_anal_dwarf_function_link_mark_unowned(RAnal *anal, ut64 function_ad
 R_IPI void r_anal_dwarf_function_link_authority_clear(RAnal *anal);
 R_IPI void r_anal_function_vars_cache_init_readonly(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn);
 R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth);
-R_API RAnalMetaStoreShadow *r_meta_store_shadow_prepare(RAnal *anal);
 R_API const char *r_meta_get_string_in_space(RAnal *anal, RAnalMetaType type, const RSpace *space, ut64 addr);
-R_API bool r_meta_store_shadow_set_comment(RAnalMetaStoreShadow *shadow, const RSpace *space, ut64 addr, const char *text);
-R_API void r_meta_store_shadow_del_comment(RAnalMetaStoreShadow *shadow, const RSpace *space, ut64 addr);
-R_API void r_meta_store_shadow_swap(RAnal *anal, RAnalMetaStoreShadow *shadow);
-R_API void r_meta_store_shadow_free(RAnalMetaStoreShadow *shadow);
 R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention);
 R_IPI int r_anal_cc_shadow(RAnal *anal, const char *convention);
 R_IPI bool r_anal_cc_stack_rev(RAnal *anal, const char *cc);

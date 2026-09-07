@@ -829,23 +829,6 @@ typedef struct r_anal_ref_t {
 
 R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
-#define R_ANAL_OWNED_XREF_NAMESPACE_MAX 128
-
-// Desired xrefs owned by one producer for one address. In refs, at is the
-// source address and addr is the target address. The callee copies all data.
-typedef struct r_anal_owned_xref_set_t {
-	const char * R_NONNULL producer_namespace;
-	ut64 owner_addr;
-	const RAnalRef *refs;
-	size_t ref_count;
-} RAnalOwnedXrefSet;
-
-typedef enum {
-	R_ANAL_OWNED_XREF_STATUS_OK = 0,
-	R_ANAL_OWNED_XREF_STATUS_INVALID,
-	R_ANAL_OWNED_XREF_STATUS_NOMEM,
-} RAnalOwnedXrefStatus;
-
 typedef enum {
 	R_ANAL_MUTATION_SIGNATURE = 0,
 	R_ANAL_MUTATION_CALLCONV,
