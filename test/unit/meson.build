@@ -32,7 +32,6 @@ if get_option('enable_tests')
     'diff',
     'dwarf',
     'dwarf_info',
-    'dwarf_integration',
     'esil',
     'esil_dfg_filter',
     'egg_lang',
