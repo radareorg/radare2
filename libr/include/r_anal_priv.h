@@ -13,20 +13,7 @@ typedef struct r_anal_priv_t {
 	bool types_dirty;
 	int types_loaded_bits;
 	char *dir_prefix;
-	HtUP *dwarf_function_link_authority; // function address => RAnalDwarfFunctionLinkAuthority *
-	ut64 dwarf_function_link_generation;
 } RAnalPriv;
-
-typedef enum {
-	R_ANAL_DWARF_FUNCTION_LINK_POISONED = 0,
-	R_ANAL_DWARF_FUNCTION_LINK_OWNED,
-} RAnalDwarfFunctionLinkState;
-
-typedef struct r_anal_dwarf_function_link_authority_t {
-	char *type_name;
-	ut64 generation;
-	RAnalDwarfFunctionLinkState state;
-} RAnalDwarfFunctionLinkAuthority;
 
 typedef struct r_anal_function_snapshot_limits_t RAnalFunctionSnapshotLimits;
 
@@ -77,22 +64,6 @@ R_IPI const char *r_anal_function_type_link_at(RAnal *anal, ut64 addr);
 R_IPI bool r_anal_function_type_link_set(RAnal *anal, const char *type_name, ut64 addr);
 R_IPI bool r_anal_function_type_link_set_owned(RAnal *anal, const char *type_name, ut64 addr);
 R_IPI bool r_anal_var_is_default_argname(const char *name);
-// A reset logically poisons every previously owned link in O(1). The parser
-// must prepare an exact address/type with mark_poisoned before changing the
-// live fcnlink, then publish_owned only after the complete generation commits.
-R_IPI bool r_anal_dwarf_function_link_mark_poisoned(RAnal *anal, ut64 function_addr, const char *type_name);
-R_IPI bool r_anal_dwarf_function_link_poisoned_matches(const RAnal *anal, ut64 function_addr, const char *type_name);
-// Resolves all prior-generation/poisoned records without mutating the private
-// table during iteration. Exact owned live links are removed; absent or
-// differing foreign links are preserved. Failed deletes retain poison.
-R_IPI bool r_anal_dwarf_function_links_revoke_owned(RAnal *anal);
-R_IPI bool r_anal_dwarf_function_link_publish_owned(RAnal *anal, ut64 function_addr, const char *type_name);
-// Every non-DWARF fcnlink mutation, including an identical-value write, must
-// call mark_unowned so ownership cannot survive a user replacement.
-R_IPI void r_anal_dwarf_function_link_mark_unowned(RAnal *anal, ut64 function_addr);
-// Returns true for no private state (an ordinary user link) or an exact live
-// owned match; poisoned and mismatched owned records fail closed.
-R_IPI void r_anal_dwarf_function_link_authority_clear(RAnal *anal);
 R_IPI void r_anal_function_vars_cache_init_readonly(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn);
 R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth);
 R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention);

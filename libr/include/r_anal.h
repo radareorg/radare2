@@ -975,7 +975,6 @@ typedef RList *(*RAnalRecoverVarsCallback)(RAnal *a, RAnalFunction *fcn);
 // Data flow refs callback (called during aar). A true result makes `*refs`
 // authoritative, including NULL/empty; false preserves the producer's old refs.
 // A non-empty output vector is transferred to the caller.
-typedef bool (*RAnalDataRefsCallback)(RAnal *a, RAnalFunction *fcn, R_OUT RVecAnalRef **refs);
 
 // Pre-analysis callback (called early in aaa, after aa, before per-function work)
 typedef bool (*RAnalPreAnalysisCallback)(RAnal *a);
@@ -1016,7 +1015,6 @@ typedef struct r_anal_plugin_t {
 	// Per-function analysis hooks
 	RAnalFcnAnalyzeCallback analyze_fcn;      // Called after af completes
 	RAnalRecoverVarsCallback recover_vars;    // Called during afva, returns vars
-	RAnalDataRefsCallback get_data_refs;      // Called during aar, produces authoritative refs
 
 	// Pre-analysis hook (called early in aaa, filtered by eligible)
 	RAnalPreAnalysisCallback pre_analysis;
@@ -1227,7 +1225,6 @@ typedef enum {
 	R_ANAL_PLUGIN_ACTION_PRE_ANALYSIS,   // aaa hook: call pre_analysis on all eligible plugins
 	R_ANAL_PLUGIN_ACTION_ANALYZE_FCN,   // af hook: call analyze_fcn on all eligible plugins
 	R_ANAL_PLUGIN_ACTION_RECOVER_VARS,  // afva hook: first plugin returning vars wins
-	R_ANAL_PLUGIN_ACTION_GET_DATA_REFS, // aar hook selector used by the typed collector
 	R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, // aa/aaa/aaaa hook: call post_analysis on all eligible plugins
 } RAnalPluginAction;
 
@@ -1238,7 +1235,6 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
  * convention onto the registers a function actually touches, and cannot
  * reimplement the convention database without duplicating it. */
 R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg);
-R_API bool r_anal_dwarf_function_link_is_current(const RAnal *anal, ut64 function_addr, const char *type_name);
 R_API bool r_anal_function_has_address_linked_signature_current(RAnalFunction *function);
 R_API R_UNOWNED RAnalPlugin *r_anal_decompiler_provider(RAnal *anal);
 R_API R_OWNED RCodeMeta *r_anal_decompile(RAnal *anal, RAnalFunction *fcn);

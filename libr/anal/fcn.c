@@ -2600,9 +2600,6 @@ static bool function_type_link_set(RAnal *anal, const char *type_name, ut64 addr
 		r_th_lock_leave (anal->lock);
 		return false;
 	}
-	if (!owned) {
-		r_anal_dwarf_function_link_mark_unowned (anal, addr);
-	}
 	r_anal_types_bump_dirty_epoch (anal);
 	r_th_lock_leave (anal->lock);
 	return true;
@@ -3022,7 +3019,6 @@ R_API bool r_anal_function_has_address_linked_signature_current(RAnalFunction *f
 	r_th_lock_enter (anal->lock);
 	const char *linked = r_anal_function_type_link_at (anal, function->addr);
 	char *type_name = R_STR_ISNOTEMPTY (linked)
-		&& r_anal_dwarf_function_link_is_current (anal, function->addr, linked)
 		? function_signature_address_type_name (anal, function): NULL;
 	bool exists = R_STR_ISNOTEMPTY (type_name)
 		&& r_type_func_prototype_exist (anal->sdb_types, type_name);

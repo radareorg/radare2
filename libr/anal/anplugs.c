@@ -146,8 +146,6 @@ static bool plugin_has_callback(RAnalPlugin *p, RAnalPluginAction action) {
 		return p->analyze_fcn != NULL;
 	case R_ANAL_PLUGIN_ACTION_RECOVER_VARS:
 		return p->recover_vars != NULL;
-	case R_ANAL_PLUGIN_ACTION_GET_DATA_REFS:
-		return p->get_data_refs != NULL;
 	case R_ANAL_PLUGIN_ACTION_POST_ANALYSIS:
 		return p->post_analysis != NULL;
 	}
@@ -229,8 +227,6 @@ static const char *plugin_action_config_key(RAnalPluginAction action) {
 		return "anal.plugins.fcn";
 	case R_ANAL_PLUGIN_ACTION_RECOVER_VARS:
 		return "anal.plugins.vars";
-	case R_ANAL_PLUGIN_ACTION_GET_DATA_REFS:
-		return "anal.plugins.datarefs";
 	case R_ANAL_PLUGIN_ACTION_POST_ANALYSIS:
 		return "anal.plugins.post";
 	}
@@ -280,9 +276,6 @@ static bool plugin_order_list(RAnal *anal, RAnalPluginAction action, RList **res
 // For RECOVER_VARS: returns first non-NULL RList* of vars from an eligible plugin.
 R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
-	if (action == R_ANAL_PLUGIN_ACTION_GET_DATA_REFS) {
-		return NULL;
-	}
 	RList *ordered = NULL;
 	if (!plugin_order_list (anal, action, &ordered)) {
 		return NULL;
@@ -307,8 +300,6 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
 						return vars;
 					}
 				}
-				break;
-			case R_ANAL_PLUGIN_ACTION_GET_DATA_REFS:
 				break;
 			case R_ANAL_PLUGIN_ACTION_POST_ANALYSIS:
 				p->post_analysis (anal);
@@ -338,8 +329,6 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
 					return vars;
 				}
 			}
-			break;
-		case R_ANAL_PLUGIN_ACTION_GET_DATA_REFS:
 			break;
 		case R_ANAL_PLUGIN_ACTION_POST_ANALYSIS:
 			p->post_analysis (anal);
