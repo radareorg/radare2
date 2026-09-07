@@ -680,6 +680,9 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 		case DT_NEEDED:
 			RVecElfOff_push_back (&di->dt_needed, &d.d_un.d_val);
 			break;
+		case DT_INIT:
+			di->dt_init = d.d_un.d_ptr;
+			break;
 		case DT_FINI:
 			di->dt_fini = d.d_un.d_ptr;
 			break;
