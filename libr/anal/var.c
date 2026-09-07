@@ -2248,14 +2248,6 @@ R_API void r_anal_function_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache
 	RVecAnalVarPtr_sort (cache->svars, var_ptr_comparator);
 }
 
-R_IPI void r_anal_function_vars_cache_init_readonly(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn) {
-	cache->bvars = r_anal_var_vec (anal, fcn, R_ANAL_VAR_KIND_BPV);
-	cache->rvars = r_anal_var_vec (anal, fcn, R_ANAL_VAR_KIND_REG);
-	cache->svars = r_anal_var_vec (anal, fcn, R_ANAL_VAR_KIND_SPV);
-	RVecAnalVarPtr_sort (cache->bvars, var_ptr_comparator);
-	RVecAnalVarPtr_sort (cache->svars, var_ptr_comparator);
-}
-
 R_API void r_anal_function_vars_cache_fini(RAnalFcnVarsCache *cache) {
 	if (!cache) {
 		return;

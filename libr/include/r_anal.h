@@ -1889,11 +1889,8 @@ R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
-R_API RList *r_anal_types_snapshot(RAnal *anal);
-R_API void r_anal_types_snapshot_free(RList *snapshot);
 R_API ut64 r_anal_types_dirty_epoch(const RAnal *anal);
 R_API ut64 r_anal_types_bump_dirty_epoch(RAnal *anal);
-R_API ut64 r_anal_types_context_hash(RAnal *anal);
 R_API bool r_anal_types_set_link(RAnal *anal, const char *type, ut64 addr);
 R_API bool r_anal_types_set_link_offset(RAnal *anal, const char *type, ut64 addr);
 R_API bool r_anal_types_unlink(RAnal *anal, ut64 addr);

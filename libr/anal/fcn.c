@@ -2609,10 +2609,6 @@ R_IPI bool r_anal_function_type_link_set(RAnal *anal, const char *type_name, ut6
 	return function_type_link_set (anal, type_name, addr, false);
 }
 
-R_IPI bool r_anal_function_type_link_set_owned(RAnal *anal, const char *type_name, ut64 addr) {
-	return function_type_link_set (anal, type_name, addr, true);
-}
-
 static char *function_signature_address_type_name(RAnal *anal, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn, NULL);
 	char *typelinked = r_type_link_at (anal->sdb_types, fcn->addr);
@@ -2993,15 +2989,6 @@ static RAnalFunctionSignature *function_get_signature(RAnalFunction *function, b
 		return NULL;
 	}
 	return function_signature_build (anal, function, type_name, load_types);
-}
-
-R_IPI RAnalFunctionSignature *r_anal_function_signature_from_type_name(RAnal *anal, const char *name) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && name, NULL);
-	char *type_name = function_signature_try_type_name (anal->sdb_types, name);
-	if (!type_name) {
-		return NULL;
-	}
-	return function_signature_build (anal, NULL, type_name, false);
 }
 
 R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *function) {
