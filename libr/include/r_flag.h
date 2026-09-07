@@ -47,9 +47,14 @@ static inline size_t r_flag_item_vec_length(const RVecFlagItemPtr *list) {
 	return list? RVecFlagItemPtr_length (list): 0;
 }
 
+/* All the flags stored at one address. Only flag.c may mutate `flags`: while
+ * it holds a single item its storage is `inline_flag`, which lives inside
+ * this struct, so most addresses need no second allocation. The vector goes
+ * first so it keeps the 16-byte alignment of the allocation it lives in */
 typedef struct r_flags_at_addr_t {
+	RVecFlagItemPtr flags; /* RFlagItem at addr, read-only outside flag.c */
 	ut64 addr;
-	RVecFlagItemPtr flags; /* RFlagItem at addr */
+	RFlagItem *inline_flag;
 } RFlagsAtOffset;
 
 typedef struct r_flag_item_meta_t {

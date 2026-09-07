@@ -39,10 +39,61 @@ static const char *str_callback(RNum *user, ut64 addr, bool *ok) {
 	return NULL;
 }
 
+/* RFlagsAtOffset.flags starts out backed by the inline_flag slot inside the
+ * struct, so an address holding a single flag costs no extra allocation and
+ * no extra pointer hop. The vector only moves to the heap when a second flag
+ * lands on the same address, and it never moves back. These helpers are the
+ * only code allowed to touch the storage of that vector */
+static inline bool flags_at_is_inline(const RFlagsAtOffset *fa) {
+	return fa->flags._start == &fa->inline_flag;
+}
+
+static void flags_at_init(RFlagsAtOffset *fa, ut64 addr) {
+	fa->addr = addr;
+	fa->inline_flag = NULL;
+	fa->flags._start = &fa->inline_flag;
+	fa->flags._end = fa->flags._start;
+	fa->flags._capacity = 1;
+}
+
+static void flags_at_fini(RFlagsAtOffset *fa) {
+	if (!flags_at_is_inline (fa)) {
+		RVecFlagItemPtr_fini (&fa->flags);
+	}
+}
+
+static bool flags_at_push(RFlagsAtOffset *fa, RFlagItem *fi) {
+	if (flags_at_is_inline (fa)) {
+		if (fa->flags._start == fa->flags._end) {
+			fa->inline_flag = fi;
+			fa->flags._end = fa->flags._start + 1;
+			return true;
+		}
+		// second flag at this address: move the vector to the heap. Two
+		// slots cover the common symbol plus function pair, and a third
+		// flag grows the vector as usual
+		RFlagItem **buf = R_NEWS (RFlagItem *, 2);
+		if (!buf) {
+			return false;
+		}
+		buf[0] = fa->inline_flag;
+		buf[1] = fi;
+		fa->flags._start = buf;
+		fa->flags._end = buf + 2;
+		fa->flags._capacity = 2;
+		return true;
+	}
+	RFlagItem **slot = RVecFlagItemPtr_emplace_back (&fa->flags);
+	if (slot) {
+		*slot = fi;
+		return true;
+	}
+	return false;
+}
+
 static void flag_skiplist_free(void *data) {
 	if (data) {
-		RFlagsAtOffset *item = (RFlagsAtOffset *)data;
-		RVecFlagItemPtr_fini (&item->flags);
+		flags_at_fini ((RFlagsAtOffset *)data);
 		free (data);
 	}
 }
@@ -138,20 +189,23 @@ static RFlagsAtOffset *flags_at_addr(RFlag *f, ut64 addr) {
 	if (f->mask) {
 		addr &= f->mask;
 	}
-	RFlagsAtOffset *res = r_flag_get_nearest_list (f, addr, 0);
-	if (res) {
-		return res;
-	}
-	// there is no existing flagsAtOffset, we create one now
-	res = R_NEW0 (RFlagsAtOffset);
+	// a single skiplist traversal: insert a fresh element and let the
+	// skiplist hand back the existing one when the address is taken.
+	// The element is cheap to build because it needs no allocation
+	RFlagsAtOffset *res = R_NEW (RFlagsAtOffset);
 	if (!res) {
 		return NULL;
 	}
-	RVecFlagItemPtr_init (&res->flags);
-	// most addresses hold a single flag, dont let the vector grow to 8
-	RVecFlagItemPtr_reserve (&res->flags, 2);
-	res->addr = addr;
-	r_skiplist_insert (f->by_addr, res);
+	flags_at_init (res, addr);
+	RSkipListNode *node = r_skiplist_insert (f->by_addr, res);
+	if (!node) {
+		free (res);
+		return NULL;
+	}
+	if (node->data != res) {
+		free (res);
+		return (RFlagsAtOffset *)node->data;
+	}
 	return res;
 }
 
@@ -213,13 +267,9 @@ static bool update_flag_item_addr(RFlag *f, RFlagItem *fi, ut64 newaddr, bool is
 		}
 		fi->addr = newaddr;
 		RFlagsAtOffset *flagsAtOffset = flags_at_addr (f, newaddr);
-		if (flagsAtOffset) {
-			RFlagItem **slot = RVecFlagItemPtr_emplace_back (&flagsAtOffset->flags);
-			if (slot) {
-				*slot = fi;
-				R_DIRTY_SET (f);
-				return true;
-			}
+		if (flagsAtOffset && flags_at_push (flagsAtOffset, fi)) {
+			R_DIRTY_SET (f);
+			return true;
 		}
 	}
 	return false;
@@ -1338,28 +1388,35 @@ R_API int r_flag_count(RFlag *f, const char * R_NULLABLE glob) {
 	return count;
 }
 
+/* The callback may unset the flag it is given, and nothing else at that
+ * address. Removing it shifts the following flags down by one, so the same
+ * index is visited again, and removing the last one frees the whole
+ * RFlagsAtOffset, which is why it is never read after the last callback */
 #define FOREACH_BODY(condition) \
 	RSkipListNode *it, *tmp; \
 	RFlagsAtOffset *flags_at; \
-	RVecFlagItemPtr items; \
-	RVecFlagItemPtr_init (&items); \
 	r_skiplist_foreach_safe (f->by_addr, it, tmp, flags_at) { \
-		if (flags_at) { \
-			RVecFlagItemPtr_clear (&items); \
-			RVecFlagItemPtr_append (&items, &flags_at->flags, NULL); \
-			RFlagItem **it2; \
-			R_VEC_FOREACH (&items, it2) { \
-				RFlagItem *fi = *it2; \
-				if (condition) { \
-					if (!cb (fi, user)) { \
-						RVecFlagItemPtr_fini (&items); \
-						return; \
-					} \
+		size_t i = 0; \
+		size_t len = RVecFlagItemPtr_length (&flags_at->flags); \
+		while (i < len) { \
+			RFlagItem *fi = R_VEC_START_ITER (&flags_at->flags)[i]; \
+			const bool last = i + 1 == len; \
+			if (condition) { \
+				if (!cb (fi, user)) { \
+					return; \
 				} \
 			} \
+			if (last) { \
+				break; \
+			} \
+			const size_t now = RVecFlagItemPtr_length (&flags_at->flags); \
+			if (now < len) { \
+				len = now; \
+			} else { \
+				i++; \
+			} \
 		} \
-	} \
-	RVecFlagItemPtr_fini (&items);
+	}
 
 R_API void r_flag_foreach(RFlag *f, RFlagItemCb cb, void *user) {
 	FOREACH_BODY (true);
