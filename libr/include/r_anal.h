@@ -1341,7 +1341,6 @@ R_API bool r_anal_function_set_assumptions_json(RAnal *anal, RAnalFunction *fcn,
 R_API bool r_anal_function_clear_assumptions(RAnal *anal, RAnalFunction *fcn);
 R_API ut64 r_anal_function_dirty_epoch(const RAnalFunction *fcn);
 R_API ut64 r_anal_function_bump_dirty_epoch(RAnalFunction *fcn);
-R_API ut64 r_anal_function_context_hash(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
 R_API int r_anal_function_count(RAnal *a, ut64 from, ut64 to);
