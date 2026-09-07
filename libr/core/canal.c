@@ -3241,6 +3241,9 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	if (fcn->bits != 0) {
 		r_cons_printf (cons, "'@0x%08"PFMT64x"'afB %d\n", fcn->addr, fcn->bits);
 	}
+	if (R_STR_ISNOTEMPTY (fcn->assumptions_json) && strcmp (fcn->assumptions_json, "[]")) {
+		r_cons_printf (cons, "'@0x%08"PFMT64x"'afAj %s\n", fcn->addr, fcn->assumptions_json);
+	}
 	if (fcn->callconv || defaultCC) {
 		char *cc = r_str_sanitize_r2 (fcn->callconv? fcn->callconv: defaultCC);
 		if (cc) {

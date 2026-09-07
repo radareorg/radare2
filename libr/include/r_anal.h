@@ -348,6 +348,9 @@ R_VEC_TYPE (RVecAnalVarPtr, RAnalVar *);
 typedef struct r_anal_function_t {
 	// TODO R2_600 Use RBinName here
 	char *name;
+	// JSON array of user- or plugin-owned analysis assumptions for this
+	// function; empty or absent means none. Saved with the project.
+	char *assumptions_json;
 	char *realname; // R2_590: add realname for the mangled one
 	char *pin; // user-defined pin string (emoji or any utf-8) to mark this function; NULL if not pinned
 	int bits; // ((> bits 0) (set-bits bits))
@@ -1120,6 +1123,9 @@ R_API bool r_anal_function_delete(RAnal *anal, RAnalFunction *fcn);
 
 // rhange the entrypoint of fcn
 // This can fail (and return false) if there is already another function at the new address
+R_API char *r_anal_function_get_assumptions_json(RAnal *anal, RAnalFunction *fcn);
+R_API bool r_anal_function_set_assumptions_json(RAnal *anal, RAnalFunction *fcn, const char *json);
+R_API bool r_anal_function_clear_assumptions(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr);
 
 // rename the given function

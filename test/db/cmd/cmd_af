@@ -699,3 +699,43 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=afA user-owned function assumptions
+FILE=malloc://32
+ARGS=-a x86 -b 64
+CMDS=<<EXPECT_EOF
+wx 554889e5c3
+af
+afAj
+afAj [{"reg":"rdi","value":4}]
+afAj
+afl*~afAj
+afA-
+afAj
+EXPECT_EOF
+EXPECT=<<EXPECT_EOF
+[]
+[{"reg":"rdi","value":4}]
+'@0x00000000'afAj [{"reg":"rdi","value":4}]
+[]
+EXPECT_EOF
+RUN
+
+NAME=afA refuses anything that is not a JSON array of objects
+FILE=malloc://32
+ARGS=-a x86 -b 64
+CMDS=<<EXPECT_EOF
+wx 554889e5c3
+af
+afAj {"reg":"rdi"}
+afAj [1,2]
+afAj
+EXPECT_EOF
+EXPECT=<<EXPECT_EOF
+[]
+EXPECT_EOF
+EXPECT_ERR=<<EXPECT_EOF
+ERROR: Invalid function assumptions; expected a JSON array
+ERROR: Invalid function assumptions; expected a JSON array
+EXPECT_EOF
+RUN

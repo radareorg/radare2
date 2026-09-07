@@ -577,6 +577,8 @@ static RCoreHelpMessage help_msg_af = {
 	"af-", " [addr]", "clean all function analysis data (or function at addr)",
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
 	"afB", " 16", "set current function as thumb (change asm.bits)",
+	"afAj", " [json-array]", "get or set user-owned function analysis assumptions",
+	"afA-", "", "clear user-owned function analysis assumptions",
 	"afb", "[?] [addr]", "List basic blocks of given function",
 	"afc", "[?] type @[addr]", "set calling convention for function",
 	"afC", "[?] ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
@@ -6209,6 +6211,44 @@ static void cmd_afla(RCore *core, const char *input) {
 	ht_up_free (ht);
 }
 
+static void cmd_af_assumptions(RCore *core, const char *input) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
+	if (!fcn) {
+		R_LOG_ERROR ("No function at current address");
+		return;
+	}
+	if (input[2] == '?') {
+		r_cons_cmd_help_match (core->cons, help_msg_af, "afA", 0, true);
+		return;
+	}
+	if (input[2] == '-') {
+		if (!r_anal_function_clear_assumptions (core->anal, fcn)) {
+			R_LOG_ERROR ("Failed to clear function assumptions");
+		}
+		return;
+	}
+	if (input[2] != 'j') {
+		r_cons_cmd_help_match (core->cons, help_msg_af, "afA", 0, true);
+		return;
+	}
+	const char *arg = r_str_trim_head_ro (input + 3);
+	if (R_STR_ISEMPTY (arg)) {
+		char *assumptions = r_anal_function_get_assumptions_json (core->anal, fcn);
+		r_cons_println (core->cons, assumptions? assumptions: "[]");
+		free (assumptions);
+		return;
+	}
+	char *json = strdup (arg);
+	if (!json) {
+		R_LOG_ERROR ("Failed to allocate assumptions payload");
+		return;
+	}
+	if (!r_anal_function_set_assumptions_json (core->anal, fcn, json)) {
+		R_LOG_ERROR ("Invalid function assumptions; expected a JSON array");
+	}
+	free (json);
+}
+
 static int cmd_af(RCore *core, const char *input) {
 	r_cons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
@@ -7049,6 +7089,9 @@ static int cmd_af(RCore *core, const char *input) {
 		} else {
 			r_cons_cmd_help_match (core->cons, help_msg_af, "afB", 0, true);
 		}
+		break;
+	case 'A': // "afA"
+		cmd_af_assumptions (core, input);
 		break;
 	case 'b': // "afb"
 		switch (input[2]) {

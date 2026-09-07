@@ -131,6 +131,7 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 
 	free (fcn->name);
 	free (fcn->realname);
+	free (fcn->assumptions_json);
 	free (fcn->pin);
 	fcn->bbs = NULL;
 	free (fcn->fingerprint);
@@ -224,6 +225,52 @@ R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr) {
 		return f;
 	}
 	return NULL;
+}
+
+R_API char *r_anal_function_get_assumptions_json(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
+	return strdup (R_STR_ISNOTEMPTY (fcn->assumptions_json)? fcn->assumptions_json: "[]");
+}
+
+R_API bool r_anal_function_set_assumptions_json(RAnal *anal, RAnalFunction *fcn, const char *json) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn && json, false);
+	char *trimmed = r_str_trim_dup (json);
+	if (!trimmed) {
+		return false;
+	}
+	if (R_STR_ISEMPTY (trimmed)) {
+		free (trimmed);
+		trimmed = strdup ("[]");
+		if (!trimmed) {
+			return false;
+		}
+	}
+	RJson *parsed = r_json_parsedup (trimmed);
+	if (!parsed || parsed->type != R_JSON_ARRAY) {
+		r_json_free (parsed);
+		free (trimmed);
+		return false;
+	}
+	const RJson *child;
+	for (child = parsed->children.first; child; child = child->next) {
+		if (child->type != R_JSON_OBJECT) {
+			r_json_free (parsed);
+			free (trimmed);
+			return false;
+		}
+	}
+	r_json_free (parsed);
+	free (fcn->assumptions_json);
+	fcn->assumptions_json = trimmed;
+	R_DIRTY_SET (anal);
+	return true;
+}
+
+R_API bool r_anal_function_clear_assumptions(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, false);
+	R_FREE (fcn->assumptions_json);
+	R_DIRTY_SET (anal);
+	return true;
 }
 
 R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
