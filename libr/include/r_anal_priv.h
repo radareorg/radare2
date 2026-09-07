@@ -13,29 +13,9 @@ typedef struct r_anal_priv_t {
 	bool types_dirty;
 	int types_loaded_bits;
 	char *dir_prefix;
-	HtUP *exact_formal_proofs; // RAnalVar * => RAnalExactFormalProof *
-	HtUP *dwarf_exact_formal_records; // function address => HtUP<arg index, RAnalDwarfExactFormalRecord *>
 	HtUP *dwarf_function_link_authority; // function address => RAnalDwarfFunctionLinkAuthority *
-	HtUP *dwarf_frame_pointer_proofs; // function address => RAnalDwarfFramePointerProof *
 	ut64 dwarf_function_link_generation;
 } RAnalPriv;
-
-typedef struct r_anal_exact_formal_proof_t {
-	RAnalFunction *fcn;
-	ut64 function_addr;
-	int ordinal;
-	RAnalVarKind kind;
-	int delta;
-	st64 source_offset;
-	st64 bp_off;
-	int maxstack;
-	char *type;
-} RAnalExactFormalProof;
-
-typedef struct r_anal_dwarf_exact_formal_record_t {
-	int arg_index;
-	char *serialized;
-} RAnalDwarfExactFormalRecord;
 
 typedef enum {
 	R_ANAL_DWARF_FUNCTION_LINK_POISONED = 0,
@@ -47,18 +27,6 @@ typedef struct r_anal_dwarf_function_link_authority_t {
 	ut64 generation;
 	RAnalDwarfFunctionLinkState state;
 } RAnalDwarfFunctionLinkAuthority;
-
-typedef struct r_anal_dwarf_frame_pointer_proof_t {
-	char *type_name;
-	char *arch;
-	char *reg_name;
-	ut64 generation;
-	ut64 offset;
-	ut32 size;
-	int dwarf_reg_num;
-	int bits;
-} RAnalDwarfFramePointerProof;
-
 
 typedef struct r_anal_function_snapshot_limits_t RAnalFunctionSnapshotLimits;
 typedef struct r_anal_meta_store_shadow_t RAnalMetaStoreShadow;
@@ -129,14 +97,6 @@ R_IPI const char *r_anal_function_type_link_at(RAnal *anal, ut64 addr);
 R_IPI bool r_anal_function_type_link_set(RAnal *anal, const char *type_name, ut64 addr);
 R_IPI bool r_anal_function_type_link_set_owned(RAnal *anal, const char *type_name, ut64 addr);
 R_IPI bool r_anal_var_is_default_argname(const char *name);
-R_IPI bool r_anal_var_exact_formal_set(RAnal *anal, RAnalVar *var, ut64 function_addr, int ordinal, RAnalVarKind kind, int delta, st64 source_offset, const char *type);
-R_IPI void r_anal_var_exact_formal_clear(RAnal *anal, const RAnalVar *var);
-R_IPI HtUP *r_anal_dwarf_exact_formal_records_new(void);
-R_IPI void r_anal_dwarf_exact_formal_records_free(HtUP *records);
-R_IPI bool r_anal_dwarf_exact_formal_record_add(HtUP *records, ut64 function_addr, int arg_index, const char *serialized);
-R_IPI bool r_anal_dwarf_exact_formal_record_matches(const RAnal *anal, ut64 function_addr, int arg_index, const char *serialized);
-R_IPI void r_anal_dwarf_exact_formal_records_publish(RAnal *anal, HtUP *records);
-R_IPI void r_anal_dwarf_exact_formal_authority_reset(RAnal *anal);
 // A reset logically poisons every previously owned link in O(1). The parser
 // must prepare an exact address/type with mark_poisoned before changing the
 // live fcnlink, then publish_owned only after the complete generation commits.
@@ -153,11 +113,6 @@ R_IPI void r_anal_dwarf_function_link_mark_unowned(RAnal *anal, ut64 function_ad
 // Returns true for no private state (an ordinary user link) or an exact live
 // owned match; poisoned and mismatched owned records fail closed.
 R_IPI void r_anal_dwarf_function_link_authority_clear(RAnal *anal);
-R_IPI HtUP *r_anal_dwarf_frame_pointer_proofs_new(void);
-R_IPI void r_anal_dwarf_frame_pointer_proofs_free(HtUP *proofs);
-R_IPI bool r_anal_dwarf_frame_pointer_proof_add(HtUP *proofs, ut64 function_addr, const char *type_name, const char *arch, int bits, int dwarf_reg_num, const char *reg_name, ut64 offset, ut32 size);
-R_IPI bool r_anal_dwarf_frame_pointer_proofs_publish(RAnal *anal, HtUP *proofs);
-R_IPI bool r_anal_dwarf_frame_pointer_proofs_rebind_current(RAnal *anal);
 R_IPI void r_anal_function_vars_cache_init_readonly(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn);
 R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth);
 R_API RAnalMetaStoreShadow *r_meta_store_shadow_prepare(RAnal *anal);

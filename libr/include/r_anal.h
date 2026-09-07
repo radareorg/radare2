@@ -1315,13 +1315,6 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
 R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg);
 R_API bool r_anal_var_exact_formal_get(RAnal *anal, const RAnalVar *var, R_OUT int *ordinal);
 R_API bool r_anal_dwarf_function_link_is_current(const RAnal *anal, ut64 function_addr, const char *type_name);
-typedef struct r_anal_dwarf_frame_pointer_storage_t {
-	char *name;
-	ut64 offset;
-	ut32 size;
-} RAnalDwarfFramePointerStorage;
-R_API bool r_anal_dwarf_function_frame_pointer_get(const RAnal *anal, ut64 function_addr, R_OUT RAnalDwarfFramePointerStorage *storage);
-R_API void r_anal_dwarf_frame_pointer_storage_fini(RAnalDwarfFramePointerStorage *storage);
 R_API bool r_anal_function_has_address_linked_signature_current(RAnalFunction *function);
 R_API R_UNOWNED RAnalPlugin *r_anal_decompiler_provider(RAnal *anal);
 R_API R_OWNED RCodeMeta *r_anal_decompile(RAnal *anal, RAnalFunction *fcn);
