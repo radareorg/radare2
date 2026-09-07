@@ -12,14 +12,13 @@
 
 #define SKIPLIST_MAX_DEPTH 31
 
+// The forward pointers follow the node in the same allocation. The caller
+// fills all level + 1 of them before the node becomes reachable.
 static RSkipListNode *r_skiplist_node_new(void *data, int level, ut64 key) {
-	RSkipListNode *res = R_NEW0 (RSkipListNode);
-	res->forward = R_NEWS0 (RSkipListNode *, level + 1);
-	if (R_LIKELY (res->forward))  {
+	RSkipListNode *res = malloc (sizeof (RSkipListNode) + (level + 1) * sizeof (RSkipListNode *));
+	if (R_LIKELY (res)) {
 		res->data = data;
 		res->key = key;
-	} else {
-		R_FREE (res);
 	}
 	return res;
 }
@@ -43,7 +42,6 @@ static void r_skiplist_node_free(RSkipList *list, RSkipListNode *node) {
 		if (list->freefn && node->data) {
 			list->freefn (node->data);
 		}
-		free (node->forward);
 		free (node);
 	}
 }

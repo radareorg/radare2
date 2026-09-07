@@ -24,8 +24,10 @@ typedef ut64 (*RSkipListKey)(const void *data);
 
 typedef struct r_skiplist_node_t {
 	void *data;	// pointer to the value
-	struct r_skiplist_node_t **forward; // forward pointer
 	ut64 key;	// cached sort key, only meaningful when the list has a keyfn
+	// level + 1 forward pointers, stored in the same allocation as the
+	// node so every hop of a traversal costs one load instead of two
+	struct r_skiplist_node_t *forward[];
 } RSkipListNode;
 
 typedef struct r_skiplist_t {
