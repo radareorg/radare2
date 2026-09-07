@@ -876,7 +876,7 @@ static bool load_mach0_dsym_file(RCore *core, RBinFile *main_bf, const char *dsy
 		return false;
 	}
 	RBinFileOptions opt;
-	r_bin_file_options_init (&opt, dsym_fd, r_bin_file_get_baddr (main_bf), 0, core->bin->options.rawstr);
+	r_bin_file_options_init (&opt, dsym_fd, UT64_MAX, 0, core->bin->options.rawstr);
 	bool old_skip_symbols = core->bin->options.skip_symbols;
 	core->bin->options.skip_symbols = true;
 	bool opened = r_bin_open_io (core->bin, &opt);

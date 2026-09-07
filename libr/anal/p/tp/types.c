@@ -22,6 +22,9 @@ void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 		return;
 	}
 	bool is_default = (r_str_startswith (v->name, VARPREFIX) || r_str_startswith (v->name, ARGPREFIX));
+	if (!is_default && r_anal_var_is_default_argname (name)) {
+		return;
+	}
 	if (*name == '*') {
 		name++;
 	}

@@ -10,7 +10,7 @@ EXPECT=<<EOF
   ;-- section.0.__TEXT.__text:
   ; DATA XREF from sym.func.100004000 @ 0x100004040(r)
 276: sym.func.100004000 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6);
-`- args(x0, x1, x3, x4, x5, x6) vars(8:sp[0x10..0x80])
+`- args(x0, x1, x3, x4, x5, x6) vars(13:sp[0x8..0x80])
 0x100004000      sub sp, sp, 0x80                                      ; [00] -r-x section size 13240 named 0.__TEXT.__text
 0x100004004      str x28, [var_20h]
 0x100004008      stp x27, x26, [var_30h]
@@ -383,7 +383,7 @@ pdr
 EOF
 EXPECT=<<EOF
 904: sym.func.100004124 (int64_t arg1, int64_t arg2);
-`- args(x0, x1) vars(29:sp[0x10..0x140])
+`- args(x0, x1) vars(35:sp[0x8..0x140])
 0x100004124      sub sp, sp, 0x140
 0x100004128      str x28, [var_e0h]
 0x10000412c      stp x27, x26, [var_f0h]

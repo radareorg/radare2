@@ -64,20 +64,41 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=swift-x86-64 calling convention json
+NAME=swift default calling conventions and overrides
 ARGS=-e bin.demangle=false
 FILE=bins/mach0/swift5.1-throwError
 CMDS=<<EOF
+e bin.lang
+e anal.cc
 s sym.__s10throwError7ThrowerC0a2MyB0yyKF
 af
-afc swift
 afva
+aft
 afcrj
 afvj
+o bins/mach0/swift-main3
+e bin.lang
+e anal.cc
+o bins/mach0/hello-macos-arm64-chained
+e bin.lang
+e anal.cc
+o bins/mach0/swift-main3
+e anal.cc=swift
+o bins/mach0/hello-macos-arm64-chained
+e bin.lang
+e anal.cc
 EOF
 EXPECT=<<EOF
+swift
+swift
 {"ret":"rax","args":["rdi","rsi","rdx","rcx","r8","r9"],"self":"r13","error":"r12"}
 {"reg":[{"name":"self","kind":"reg","type":"int64_t","ref":"r13"},{"name":"error","kind":"reg","type":"int64_t","ref":"r12"}],"sp":[],"bp":[{"name":"var_10h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-16}},{"name":"var_18h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-24}},{"name":"var_20h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-32}},{"name":"var_28h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-40}}]}
+swift
+swift
+objc
+arm64
+objc
+swift
 EOF
 RUN
 

@@ -10,7 +10,6 @@ cc.arm64.arg5=x5
 cc.arm64.arg6=x6
 cc.arm64.arg7=x7
 cc.arm64.argn=stack
-# an fp arg slot is one v register, spelled s/d/v/q by operand width
 cc.arm64.fparg0={d0,s0,v0,q0}
 cc.arm64.fparg1={d1,s1,v1,q1}
 cc.arm64.fparg2={d2,s2,v2,q2}
