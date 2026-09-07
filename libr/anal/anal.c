@@ -231,18 +231,6 @@ R_IPI bool r_anal_dwarf_function_link_is_current(const RAnal *anal, ut64 functio
 	return current;
 }
 
-static bool dwarf_function_link_owned_current(RAnal *anal, ut64 function_addr, const char *type_name) {
-	HtUP *authorities = R_ANAL_PRIV (anal)->dwarf_function_link_authority;
-	RAnalDwarfFunctionLinkAuthority *authority = authorities
-		? ht_up_find (authorities, function_addr, NULL): NULL;
-	const char *linked = r_anal_function_type_link_at (anal, function_addr);
-	return authority && linked
-		&& authority->generation == R_ANAL_PRIV (anal)->dwarf_function_link_generation
-		&& authority->state == R_ANAL_DWARF_FUNCTION_LINK_OWNED
-		&& !strcmp (r_str_get (authority->type_name), type_name)
-		&& !strcmp (linked, type_name);
-}
-
 R_IPI void r_anal_dwarf_function_link_authority_clear(RAnal *anal) {
 	if (!anal || !anal->priv || !anal->lock) {
 		return;
@@ -253,16 +241,6 @@ R_IPI void r_anal_dwarf_function_link_authority_clear(RAnal *anal) {
 	R_ANAL_PRIV (anal)->dwarf_function_link_generation = 1;
 	r_th_lock_leave (anal->lock);
 	ht_up_free (old_authorities);
-}
-
-static bool dwarf_function_link_poison_on_generation_wrap(void *user, ut64 function_addr, const void *value) {
-	(void)user;
-	(void)function_addr;
-	RAnalDwarfFunctionLinkAuthority *authority = (RAnalDwarfFunctionLinkAuthority *)value;
-	if (authority) {
-		authority->state = R_ANAL_DWARF_FUNCTION_LINK_POISONED;
-	}
-	return true;
 }
 
 static const char *r_anal_choose_fcnprefix(RAnal *anal, ut64 addr) {

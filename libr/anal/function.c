@@ -683,15 +683,6 @@ R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const c
 	return true;
 }
 
-static bool r_anal_function_set_signature_string(RAnal *anal, RAnalFunction *fcn, const char *signature) {
-	R_RETURN_VAL_IF_FAIL (anal && fcn && R_STR_ISNOTEMPTY (signature), false);
-	if (!r_anal_str_to_fcn (anal, fcn, signature)) {
-		return false;
-	}
-	r_anal_function_bump_dirty_epoch (fcn);
-	return true;
-}
-
 /* Record where the calling convention would place arguments and the result.
  *
  * These slots describe the convention, not the function: they are collected even
@@ -858,18 +849,3 @@ R_API bool r_anal_function_switches_foreach(RAnalFunction *fcn, RAnalFunctionSwi
  * recapture after the hashed inputs change. */
 #define FUNCTION_CONTEXT_HASH_SALT 2ULL
 
-static ut64 context_hash_mix(ut64 hash, ut64 value) {
-	hash ^= value;
-	return hash * 0x100000001b3ULL;
-}
-
-static ut64 context_hash_string(ut64 hash, const char *string) {
-	if (!string) {
-		return context_hash_mix (hash, 0xffffffffffffffffULL);
-	}
-	const unsigned char *p = (const unsigned char *)string;
-	while (*p) {
-		hash = context_hash_mix (hash, (ut64)*p++);
-	}
-	return context_hash_mix (hash, 0);
-}

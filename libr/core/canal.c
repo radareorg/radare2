@@ -12,20 +12,6 @@ HEAPTYPE (ut64);
 R_VEC_TYPE(RVecIntPtr, int *);
 R_VEC_TYPE(RVecUT64, ut64);
 
-static bool core_snapshot_io_is_debug(RIO *io) {
-	if (!io) {
-		return false;
-	}
-	RIODesc *desc = r_io_desc_get_lowest (io);
-	while (desc) {
-		if (r_io_desc_is_dbg (desc)) {
-			return true;
-		}
-		desc = r_io_desc_get_next (io, desc);
-	}
-	return false;
-}
-
 // used to speedup strcmp with rconfig.get in loops
 enum {
 	R2_ARCH_THUMB,
