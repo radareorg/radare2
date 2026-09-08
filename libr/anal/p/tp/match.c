@@ -412,6 +412,31 @@ static bool tp_canary_from_guard(TPState *tps, RAnalBlock *guard, ut64 addr) {
 	return false;
 }
 
+// `int *ret; *ret = strlen (s);` makes the variable a pointer only when the
+// next instruction stores through a register this one wrote.
+static bool esil_stores_through(const char *esil, const char *regs) {
+	if (!esil || R_STR_ISEMPTY (regs)) {
+		return false;
+	}
+	const char *p = regs;
+	while (*p) {
+		const char *end = strchr (p, ',');
+		const size_t len = end? (size_t)(end - p): strlen (p);
+		char needle[40];
+		if (len > 0 && len < sizeof (needle) - 4) {
+			snprintf (needle, sizeof (needle), ",%.*s,=[", (int)len, p);
+			if (strstr (esil, needle)) {
+				return true;
+			}
+		}
+		if (!end) {
+			break;
+		}
+		p = end + 1;
+	}
+	return false;
+}
+
 // every conditional predecessor is a candidate: one failure block can guard several checks
 static void tp_canary_rename(TPState *tps, RAnalFunction *fcn, ut64 bb_addr, ut64 addr) {
 	RListIter *iter;
@@ -528,12 +553,12 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 				|| reg_token_contains (c->tp.ret_reg, tmp? tmp + 1: NULL)) {
 				c->tp.resolved = true;
 			} else if (type == R_ANAL_OP_TYPE_MOV && (next_op && next_op->type == R_ANAL_OP_TYPE_MOV)) {
-				// Progate return type passed using pointer
-				// int *ret; *ret = strlen (s);
-				// TODO: memref check , dest and next src match
+				// return type propagated through a pointer the variable holds
 				char nsrc[REGNAME_SIZE] = { 0 };
 				get_src_regname_from_esil (anal, r_strbuf_get (&next_op->esil), next_op->addr, nsrc, sizeof (nsrc));
-				if (reg_token_contains (c->tp.ret_reg, nsrc) && var && aop->direction == R_ANAL_OP_DIR_READ) {
+				if (reg_token_contains (c->tp.ret_reg, nsrc) && var
+						&& aop->direction == R_ANAL_OP_DIR_READ
+						&& esil_stores_through (r_strbuf_get (&next_op->esil), cur_dest)) {
 					tp_var_retype (tps, bb_addr, var, NULL, c->tp.ret_type, true, false);
 				}
 			}
