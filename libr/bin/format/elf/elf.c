@@ -3780,18 +3780,11 @@ done:
 	return pos;
 }
 
-// DT_JMPREL often lies inside DT_RELA, so one entry is reachable from two tags
-static bool reloc_read_twice(HtUU *seen, ut64 addr, Elf_(Xword) mode) {
-	if (!seen) {
-		return false;
-	}
-	const ut64 bit = (mode == DT_RELA)? 2: 1;
-	const ut64 mask = ht_uu_find (seen, addr, NULL);
-	if (mask & bit) {
-		return true;
-	}
-	ht_uu_update (seen, addr, mask | bit);
-	return false;
+// DT_JMPREL usually points inside DT_RELA/DT_REL, so the same entry would be
+// recorded once per tag
+static inline bool in_pltrel_range(const RBinElfDynamicInfo *di, ut64 addr) {
+	return di->dt_jmprel != R_BIN_ELF_ADDR_MAX && di->dt_pltrelsz
+		&& addr >= di->dt_jmprel && addr < di->dt_jmprel + di->dt_pltrelsz;
 }
 
 static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t num_relocs) {
@@ -3799,13 +3792,9 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	const size_t size = get_size_rel_mode (di->dt_pltrel);
 	ut64 offset;
 	const ut64 offset_end = di->dt_pltrelsz;
-	HtUU *seen = ht_uu_new0 ();
 	// order matters
 	// parse pltrel
 	for (offset = 0; offset < offset_end && pos < num_relocs; offset += size, pos++) {
-		if (reloc_read_twice (seen, di->dt_jmprel + offset, di->dt_pltrel)) {
-			continue;
-		}
 		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, di->dt_pltrel, di->dt_jmprel + offset)) {
 			RVecRBinElfReloc_pop_back (&eo->g_relocs);
@@ -3823,7 +3812,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	}
 	// parse rela
 	for (offset = 0; offset < di->dt_relasz && pos < num_relocs; offset += di->dt_relaent, pos++) {
-		if (reloc_read_twice (seen, di->dt_rela + offset, DT_RELA)) {
+		if (in_pltrel_range (di, di->dt_rela + offset)) {
 			continue;
 		}
 		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
@@ -3837,7 +3826,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	}
 
 	for (offset = 0; offset < di->dt_relsz && pos < num_relocs; offset += di->dt_relent, pos++) {
-		if (reloc_read_twice (seen, di->dt_rel + offset, DT_REL)) {
+		if (in_pltrel_range (di, di->dt_rel + offset)) {
 			continue;
 		}
 		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
@@ -3870,7 +3859,6 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 			pos++;
 		}
 	}
-	ht_uu_free (seen);
 	return pos;
 }
 
