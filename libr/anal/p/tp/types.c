@@ -150,7 +150,13 @@ static char *tp_built_type(RAnalVar *var, const char *vname, const char *type, i
 	r_strbuf_init (&sb);
 	if (pfx) {
 		if (tmp && !r_str_startswith (var->type, "signed")) {
-			r_strbuf_setf (&sb, "%s %s", type, tmp);
+			if (isdigit ((ut8)tmp[3])) {
+				// intN_t spells its signedness with a leading u, so
+				// prefixing a word here would build "unsigned int64_t"
+				r_strbuf_setf (&sb, "%s%s", (*type == 'u')? "u": "", tmp);
+			} else {
+				r_strbuf_setf (&sb, "%s %s", type, tmp);
+			}
 		} else {
 			r_strbuf_fini (&sb);
 			return NULL;
