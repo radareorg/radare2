@@ -3799,6 +3799,12 @@ done:
 	return pos;
 }
 
+// JMPREL usually points inside RELA/REL, so its entries reparse in that pass
+static inline bool in_pltrel_range(const RBinElfDynamicInfo *di, ut64 addr) {
+	return di->dt_jmprel != R_BIN_ELF_ADDR_MAX && di->dt_pltrelsz
+		&& addr >= di->dt_jmprel && addr < di->dt_jmprel + di->dt_pltrelsz;
+}
+
 static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t num_relocs) {
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
 	const size_t size = get_size_rel_mode (di->dt_pltrel);
@@ -3824,6 +3830,10 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	}
 	// parse rela
 	for (offset = 0; offset < di->dt_relasz && pos < num_relocs; offset += di->dt_relaent, pos++) {
+		// skip re-read but keep pos++ so the num_relocs budget stays intact
+		if (in_pltrel_range (di, di->dt_rela + offset)) {
+			continue;
+		}
 		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, DT_RELA, di->dt_rela + offset)) {
 			RVecRBinElfReloc_pop_back (&eo->g_relocs);
@@ -3835,6 +3845,9 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	}
 
 	for (offset = 0; offset < di->dt_relsz && pos < num_relocs; offset += di->dt_relent, pos++) {
+		if (in_pltrel_range (di, di->dt_rel + offset)) {
+			continue;
+		}
 		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, DT_REL, di->dt_rel + offset)) {
 			RVecRBinElfReloc_pop_back (&eo->g_relocs);
@@ -4080,7 +4093,7 @@ static bool populate_relocs_record(ELFOBJ *eo) {
 	i = populate_relocs_record_from_dynamic (eo, i, num_relocs);
 	i = populate_relocs_record_from_mips_got (eo, i, num_relocs);
 	i = populate_relocs_record_from_section (eo, i, num_relocs);
-	eo->g_reloc_num = i;
+	eo->g_reloc_num = RVecRBinElfReloc_length (&eo->g_relocs);
 	return true;
 }
 

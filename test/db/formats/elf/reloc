@@ -1028,3 +1028,56 @@ EXPECT=<<EOF
 0x08008703 0x080090be
 EOF
 RUN
+
+NAME=ELF: JMPREL aliased over RELA reads each entry once
+FILE=bins/elf/pltrel/ppc32be.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir
+om~.got.r2
+EOF
+EXPECT=<<EOF
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x00002000 0x00001000 ADD_32 21    mul2
+0x00002004 0x00001004 ADD_32 21    sub2
+0x00002008 0x00001008 ADD_32 21    add2
+- 3 fd: 4 +0x00000000 0x0000200c - 0x00002017 rw- rw- .got.r2
+EOF
+RUN
+
+NAME=ELF: JMPREL nested in RELA keeps the entries outside the plt range
+FILE=bins/elf/pltrel/ppc32be-align-tls.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir
+om~.got.r2
+EOF
+EXPECT=<<EOF
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x00002000 0x00001000 ADD_32 21    mul2
+0x00002004 0x00001004 ADD_32 21    sub2
+0x00002008 0x00001008 ADD_32 21    __tls_get_addr_opt
+0x0000200c 0x0000100c ADD_32 21    add2
+- 3 fd: 4 +0x00000000 0x00002010 - 0x00002023 rw- rw- .got.r2
+EOF
+RUN
+
+NAME=ELF: applied relocs match the unapplied ones
+FILE=bins/elf/rv64/ls
+ARGS=-e bin.relocs.apply=true
+CMDS=ir~ADD_64?
+EXPECT=<<EOF
+349
+EOF
+RUN
+
+NAME=ELF: unapplied relocs match the applied ones
+FILE=bins/elf/rv64/ls
+ARGS=-e bin.relocs.apply=false
+CMDS=ir~ADD_64?
+EXPECT=<<EOF
+349
+EOF
+RUN
