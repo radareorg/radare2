@@ -1156,7 +1156,18 @@ R_API R_OWNED char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, 
 	return varname;
 }
 
-static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta, int access_size, int var_size, bool fuzzy) {
+// Whether an access ever stored to this variable, which is what fixes its extent.
+static bool var_is_written(const RAnalVar *var) {
+	RAnalVarAccess *acc;
+	R_VEC_FOREACH ((RVecAnalVarAccess *)&var->accesses, acc) {
+		if (acc->type & R_PERM_W) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static RAnalVar *get_stack_var(RAnal *anal, RAnalFunction *fcn, int delta, int access_size, int var_size, bool fuzzy, bool addr_taken) {
 	RAnalVar **it;
 	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
@@ -1166,6 +1177,15 @@ static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta, int access_size, i
 		}
 		if (fuzzy && is_stack && access_size > 0 && access_size < var_size && delta > var->delta && delta < var->delta + var_size) {
 			return var;
+		}
+		// An address taken inside a variable the function stores to belongs to
+		// that variable: the store fixed the extent, and lea establishes none.
+		if (is_stack && addr_taken && delta > var->delta
+			&& R_STR_ISNOTEMPTY (var->type) && var_is_written (var)) {
+			const int extent = (int)(r_anal_type_bitsize (anal, var->type) / 8);
+			if (extent > 0 && delta < var->delta + extent) {
+				return var;
+			}
 		}
 	}
 	return NULL;
@@ -1360,6 +1380,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 
 	const int maxarg = 32; // TODO: use maxarg ?
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_PERM_W : R_PERM_R;
+	const bool addr_taken = op->direction == R_ANAL_OP_DIR_REF;
 	// fcn->stack already incorporates this op's stackptr; for stack-adjusting
 	// ops the access happens before the adjustment, so undo it locally.
 	const st64 fcn_stack = (op->stackop == R_ANAL_STACK_INC)
@@ -1378,14 +1399,14 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		const int var_size = anal->config->bits / 8;
 		const bool fuzzy = !strcmp (anal->config->arch, "arm");
-		RAnalVar *var = get_stack_var (fcn, frame_off, access_size, var_size, fuzzy);
+		RAnalVar *var = get_stack_var (anal, fcn, frame_off, access_size, var_size, fuzzy, addr_taken);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
 			return;
 		}
 		if (isarg && type == R_ANAL_VAR_KIND_SPV && fcn->maxstack > fcn->stack && ptr < fcn->maxstack) {
 			const st64 local_frame_off = ptr - fcn->maxstack;
-			var = get_stack_var (fcn, local_frame_off, access_size, var_size, fuzzy);
+			var = get_stack_var (anal, fcn, local_frame_off, access_size, var_size, fuzzy, addr_taken);
 			if (var && !var->isarg) {
 				r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
 				return;
@@ -1449,7 +1470,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		const int var_size = anal->config->bits / 8;
 		const bool fuzzy = !strcmp (anal->config->arch, "arm");
-		RAnalVar *var = get_stack_var (fcn, frame_off, access_size, var_size, fuzzy);
+		RAnalVar *var = get_stack_var (anal, fcn, frame_off, access_size, var_size, fuzzy, addr_taken);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, -ptr);
 			return;
