@@ -203,17 +203,15 @@ aaa
 pdct @ 0x400f43
 EOF
 EXPECT=<<EOF
-seq 0x00400f43
-  if 0x00400f43
-    bb 0x00400f65
+if-else 0x00400f43
   if-else 0x00400f6a
     bb 0x00400fad
     switch 0x00400f71
       seq 0x00400f7c
         bb 0x00400f7c
-        if 0x00400fbe
+        if-else 0x00400fbe
+          bb 0x00400fc9
           bb 0x00400fc4
-        bb 0x00400fc9
       seq 0x00400fb9
         bb 0x00400fb9
         goto 0x00400fbe
@@ -236,6 +234,7 @@ seq 0x00400f43
         bb 0x00400fa6
         goto 0x00400fbe
       goto 0x00400fad
+  bb 0x00400f65
 EOF
 RUN
 

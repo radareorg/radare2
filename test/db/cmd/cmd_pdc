@@ -1058,21 +1058,21 @@ s 0x400f43
 pdc~case ,goto loc_0x00400fbe
 EOF
 EXPECT=<<EOF
-            case 0: // 0x00400f7c
-            case 1: // 0x00400fb9
-                goto loc_0x00400fbe;
-            case 2: // 0x00400f83
-                goto loc_0x00400fbe;
-            case 3: // 0x00400f8a
-                goto loc_0x00400fbe;
-            case 4: // 0x00400f91
-                goto loc_0x00400fbe;
-            case 5: // 0x00400f98
-                goto loc_0x00400fbe;
-            case 6: // 0x00400f9f
-                goto loc_0x00400fbe;
-            case 7: // 0x00400fa6
-                goto loc_0x00400fbe;
+                case 0: // 0x00400f7c
+                case 1: // 0x00400fb9
+                    goto loc_0x00400fbe;
+                case 2: // 0x00400f83
+                    goto loc_0x00400fbe;
+                case 3: // 0x00400f8a
+                    goto loc_0x00400fbe;
+                case 4: // 0x00400f91
+                    goto loc_0x00400fbe;
+                case 5: // 0x00400f98
+                    goto loc_0x00400fbe;
+                case 6: // 0x00400f9f
+                    goto loc_0x00400fbe;
+                case 7: // 0x00400fa6
+                    goto loc_0x00400fbe;
 EOF
 RUN
 

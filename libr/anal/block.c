@@ -951,7 +951,12 @@ static bool noreturn_get_blocks_cb(void *user, const ut64 k, const void *v) {
 
 R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (block, NULL);
-	if (!r_anal_block_contains (block, addr) || addr == block->addr) {
+	// A noreturn call that is the block's last instruction chops at the block
+	// end, which is not "contained". The size is already right; the edges out
+	// of it are not, and control does not reach them.
+	const bool ends_the_block = addr == block->addr + block->size;
+	if ((!r_anal_block_contains (block, addr) && !ends_the_block)
+			|| addr == block->addr) {
 		return block;
 	}
 	block = r_ref (block);
