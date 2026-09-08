@@ -6929,7 +6929,7 @@ static int cmd_af(RCore *core, const char *input) {
 				  if (R_STR_ISNOTEMPTY (dbpath) && r_file_exists (dbpath)) {
 					  Sdb *db = sdb_new (0, dbpath, 0);
 					  if (db) {
-						  sdb_merge (core->anal->sdb_cc, db);
+						  r_anal_cc_merge (core->anal, db);
 						  sdb_close (db);
 						  sdb_free (db);
 					  }

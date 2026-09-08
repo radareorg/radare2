@@ -560,6 +560,8 @@ typedef struct r_anal_t {
 	RIntervalTree meta;
 	RSpaces meta_spaces;
 	Sdb *sdb_cc; // calling conventions
+	ut64 cc_generation; // bumped by every write to sdb_cc
+	void *argseq; // argument locations resolved once per function
 	Sdb *sdb_classes;
 	Sdb *sdb_classes_attrs;
 	RAnalCallbacks cb;
@@ -1446,6 +1448,7 @@ R_API R_OWNED RVecAnalVarPtr *r_anal_var_vec(RAnal *anal, RAnalFunction *fcn, in
 // calling conventions API
 R_API bool r_anal_cc_exist(RAnal *anal, const char *convention);
 R_API void r_anal_cc_reset(RAnal *anal);
+R_API void r_anal_cc_merge(RAnal *anal, Sdb *db);
 R_API void r_anal_cc_del(RAnal *anal, const char *name);
 R_API bool r_anal_cc_set(RAnal *anal, const char *expr);
 R_API char *r_anal_cc_get(RAnal *anal, const char *name);

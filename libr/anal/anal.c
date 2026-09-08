@@ -293,6 +293,7 @@ R_API void r_anal_free(RAnal *a) {
 		return;
 	}
 	/* TODO: Free anals here */
+	R_FREE (a->argseq);
 	free (a->pincmd);
 	r_list_free (a->fcns);
 	ht_up_free (a->ht_addr_fun);
@@ -531,7 +532,7 @@ R_API void r_anal_purge(RAnal *anal) {
 	sdb_reset (anal->sdb_classes_attrs);
 	r_anal_pin_fini (anal);
 	r_anal_pin_init (anal);
-	sdb_reset (anal->sdb_cc);
+	r_anal_cc_reset (anal);
 	r_list_free (anal->fcns);
 	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
 	(void)r_anal_xrefs_init (anal);
