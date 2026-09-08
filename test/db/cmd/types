@@ -1672,7 +1672,7 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-var uint32_t canary @ rbp-0x8
+var uint64_t canary @ rbp-0x8
 EOF
 RUN
 
@@ -1757,7 +1757,7 @@ var char * var_20h @ rbp-0x20
 var char * var_28h @ rbp-0x28
 var char * s @ rbp-0x30
 var char * s1 @ rbp-0x38
-var uint32_t var_40h @ rbp-0x40
+var uint64_t var_40h @ rbp-0x40
 var char * var_48h @ rbp-0x48
 var char * var_50h @ rbp-0x50
 var char * var_58h @ rbp-0x58
@@ -2157,7 +2157,7 @@ txt mbstate_t *
 EOF
 EXPECT=<<EOF
 int64_t
-uint32_t
+uint8_t
 char *
 int16_t
 int8_t
@@ -2168,6 +2168,8 @@ int64_t
 char *
 uint32_t
 int32_t
+uint64_t
+uint8_t
 size_t
 void *
 mbstate_t *
@@ -2489,7 +2491,7 @@ a:tp
 afv~var_18h
 EOF
 EXPECT=<<EOF
-var uint32_t var_18h @ rbp-0x18
+var uint64_t var_18h @ rbp-0x18
 EOF
 RUN
 
@@ -3284,7 +3286,7 @@ aaft
 afv @ 0
 EOF2
 EXPECT=<<EOF2
-arg uint32_t arg1 @ rdi
+arg uint64_t arg1 @ rdi
 var void * p @ rbp-0x8
 EOF2
 RUN
@@ -3311,7 +3313,7 @@ aaft
 afv @ 0
 EOF2
 EXPECT=<<EOF2
-arg uint32_t arg1 @ rdi
+arg uint64_t arg1 @ rdi
 var void * f @ rbp-0x8
 EOF2
 RUN
