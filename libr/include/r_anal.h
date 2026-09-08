@@ -386,7 +386,6 @@ typedef struct r_anal_function_t {
 	char *name;
 	char *realname; // R2_590: add realname for the mangled one
 	char *pin; // user-defined pin string (emoji or any utf-8) to mark this function; NULL if not pinned
-	char *assumptions_json; // typed external-analysis assumptions owned by the user/project
 	int bits; // ((> bits 0) (set-bits bits))
 	int type;
 	const char *callconv; // calling convention (RAnal.constpool string). May hold the bare "dyncc" marker until r_anal_function_cc() resolves it
@@ -1336,9 +1335,6 @@ R_API void r_anal_function_signature_free(RAnalFunctionSignature *signature);
 R_API char *r_anal_function_get_signature_string(RAnalFunction *function);
 R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSignature *signature);
 R_API bool r_anal_function_del_signature(RAnal *a, const char *name);
-R_API char *r_anal_function_get_assumptions_json(RAnal *anal, RAnalFunction *fcn);
-R_API bool r_anal_function_set_assumptions_json(RAnal *anal, RAnalFunction *fcn, const char *json);
-R_API bool r_anal_function_clear_assumptions(RAnal *anal, RAnalFunction *fcn);
 R_API ut64 r_anal_function_dirty_epoch(const RAnalFunction *fcn);
 R_API ut64 r_anal_function_bump_dirty_epoch(RAnalFunction *fcn);
 R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv);
