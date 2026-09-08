@@ -1028,3 +1028,16 @@ EXPECT=<<EOF
 0x08008703 0x080090be
 EOF
 RUN
+
+NAME=ELF: JMPREL inside RELA lists each reloc once
+FILE=bins/elf/pltrel/ppc32be.so
+ARGS=-e bin.relocs.apply=true
+CMDS=ir
+EXPECT=<<EOF
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x00002000 0x00001000 ADD_32 21    mul2
+0x00002004 0x00001004 ADD_32 21    sub2
+0x00002008 0x00001008 ADD_32 21    add2
+EOF
+RUN

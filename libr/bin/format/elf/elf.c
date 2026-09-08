@@ -3780,14 +3780,32 @@ done:
 	return pos;
 }
 
+// DT_JMPREL often lies inside DT_RELA, so one entry is reachable from two tags
+static bool reloc_read_twice(HtUU *seen, ut64 addr, Elf_(Xword) mode) {
+	if (!seen) {
+		return false;
+	}
+	const ut64 bit = (mode == DT_RELA)? 2: 1;
+	const ut64 mask = ht_uu_find (seen, addr, NULL);
+	if (mask & bit) {
+		return true;
+	}
+	ht_uu_update (seen, addr, mask | bit);
+	return false;
+}
+
 static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t num_relocs) {
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
 	const size_t size = get_size_rel_mode (di->dt_pltrel);
 	ut64 offset;
 	const ut64 offset_end = di->dt_pltrelsz;
+	HtUU *seen = ht_uu_new0 ();
 	// order matters
 	// parse pltrel
 	for (offset = 0; offset < offset_end && pos < num_relocs; offset += size, pos++) {
+		if (reloc_read_twice (seen, di->dt_jmprel + offset, di->dt_pltrel)) {
+			continue;
+		}
 		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, di->dt_pltrel, di->dt_jmprel + offset)) {
 			RVecRBinElfReloc_pop_back (&eo->g_relocs);
@@ -3805,6 +3823,9 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	}
 	// parse rela
 	for (offset = 0; offset < di->dt_relasz && pos < num_relocs; offset += di->dt_relaent, pos++) {
+		if (reloc_read_twice (seen, di->dt_rela + offset, DT_RELA)) {
+			continue;
+		}
 		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, DT_RELA, di->dt_rela + offset)) {
 			RVecRBinElfReloc_pop_back (&eo->g_relocs);
@@ -3816,6 +3837,9 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	}
 
 	for (offset = 0; offset < di->dt_relsz && pos < num_relocs; offset += di->dt_relent, pos++) {
+		if (reloc_read_twice (seen, di->dt_rel + offset, DT_REL)) {
+			continue;
+		}
 		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, DT_REL, di->dt_rel + offset)) {
 			RVecRBinElfReloc_pop_back (&eo->g_relocs);
@@ -3846,6 +3870,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 			pos++;
 		}
 	}
+	ht_uu_free (seen);
 	return pos;
 }
 
@@ -4061,7 +4086,7 @@ static bool populate_relocs_record(ELFOBJ *eo) {
 	i = populate_relocs_record_from_dynamic (eo, i, num_relocs);
 	i = populate_relocs_record_from_mips_got (eo, i, num_relocs);
 	i = populate_relocs_record_from_section (eo, i, num_relocs);
-	eo->g_reloc_num = i;
+	eo->g_reloc_num = RVecRBinElfReloc_length (&eo->g_relocs);
 	return true;
 }
 
