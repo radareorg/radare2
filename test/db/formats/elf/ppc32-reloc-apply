@@ -1,0 +1,64 @@
+NAME=ELF PPC32: RELA RELATIVE addend rebased into the slot
+FILE=bins/elf/dropbear_powerpc-linux-gnu_gcc_-O2
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv4 @ 0x4eb14
+pv4 @ 0x502bc
+EOF
+EXPECT=<<EOF
+0x0002f6e2
+0x00004ad8
+EOF
+RUN
+
+NAME=ELF PPC32: REL RELATIVE slot word rebased by the load bias
+FILE=bins/elf/ppc32-relative-nonzero-base.so
+ARGS=-B 0x10000000 -e bin.relocs.apply=true
+CMDS=pv4 @ 0x10020184
+EXPECT=<<EOF
+0x10020180
+EOF
+RUN
+
+NAME=ELF PPC32: GLOB_DAT and JMP_SLOT slots are left unpatched
+FILE=bins/elf/hello.ppc
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv4 @ 0x10020008
+pv4 @ 0x10020064
+pv4 @ 0x1002006c
+pv4 @ 0x10020074
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000000
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=ELF PPC32: ADDR32 slot holds symbol value plus addend
+FILE=bins/elf/dropbear_powerpc-linux-gnu_gcc_-O2
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv4 @ 0x4f210
+pv4 @ 0x4f538
+EOF
+EXPECT=<<EOF
+0x00051bec
+0x00050bb4
+EOF
+RUN
+
+NAME=ELF PPC32: JMP_SLOT plt slots keep their nonzero stub words unpatched
+FILE=bins/elf/dropbear_powerpc-linux-gnu_gcc_-O2
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv4 @ 0x4fe00
+pv4 @ 0x4fe04
+EOF
+EXPECT=<<EOF
+0x0002f1b0
+0x0002f1b4
+EOF
+RUN

@@ -1506,6 +1506,32 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		r_write_ble32 (buf, V, bo->endian);
 		iob->overlay_write_at (iob->io, P, buf, 4);
 		break;
+	case EM_PPC: {
+		// R_PPC_RELATIVE addend: RELA field, else the in-place REL word
+		ut64 pA = A;
+		if (rel->implicit_addend) {
+			if (iob->read_at (iob->io, P, buf, 4) != 4) {
+				return;
+			}
+			pA = r_read_ble32 (buf, bo->endian);
+		}
+		switch (rel->type) {
+		case R_PPC_ADDR32:
+			V = S + pA;
+			break;
+		case R_PPC_RELATIVE:
+			V = pA + (B - bo->baddr);
+			break;
+		case R_PPC_DTPMOD32:
+		case R_PPC_DTPREL32:
+			return; // tls slots are the runtime linker's to fill
+		default:
+			return; // GLOB_DAT/JMP_SLOT need weak/plt rules first
+		}
+		r_write_ble32 (buf, V, bo->endian);
+		iob->overlay_write_at (iob->io, P, buf, 4);
+		}
+		break;
 	case EM_X86_64: {
 		int word = 0;
 		switch (rel->type) {
