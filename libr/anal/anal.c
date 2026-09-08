@@ -336,7 +336,7 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
 R_API bool r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
 	R_RETURN_VAL_IF_FAIL (anal && foo, false);
 	if (foo->init) {
-		foo->init (anal->user);
+		foo->init (anal);
 	}
 	r_list_append (anal->libstore->plugins, foo);
 	return true;
