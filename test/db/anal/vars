@@ -795,6 +795,84 @@ afvW
 EOF
 RUN
 
+NAME=a struct spelled with its keyword takes over the recovered var inside it
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"td struct pair {short lo; short hi;};"
+wx 8845ed897decc3
+af
+afvt var_14h "struct pair"
+afvb
+EOF
+EXPECT=<<EOF
+var struct pair var_14h @ rbp-0x14
+EOF
+RUN
+
+NAME=a typedef of a struct takes over the recovered var inside it
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"td struct pair {short lo; short hi;};"
+"td typedef struct pair pair_t;"
+wx 8845ed897decc3
+af
+afvt var_14h pair_t
+afvb
+EOF
+EXPECT=<<EOF
+var pair_t var_14h @ rbp-0x14
+EOF
+RUN
+
+NAME=a qualified struct spelling takes over the recovered var inside it
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"td struct pair {short lo; short hi;};"
+wx 8845ed897decc3
+af
+afvt var_14h "const struct pair"
+afvb
+EOF
+EXPECT=<<EOF
+var const struct pair var_14h @ rbp-0x14
+EOF
+RUN
+
+NAME=a qualified typedef of a struct takes over the recovered var inside it
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"td struct pair {short lo; short hi;};"
+"td typedef struct pair pair_t;"
+wx 8845ed897decc3
+af
+afvt var_14h "const pair_t"
+afvb
+EOF
+EXPECT=<<EOF
+var const pair_t var_14h @ rbp-0x14
+EOF
+RUN
+
+NAME=a pointer to a struct does not take over the recovered var beside it
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"td struct pair {short lo; short hi;};"
+wx 8845ed897decc3
+af
+afvt var_14h "struct pair *"
+afvb
+EOF
+EXPECT=<<EOF
+var int8_t var_13h @ rbp-0x13
+var struct pair * var_14h @ rbp-0x14
+EOF
+RUN
+
 NAME=a declared scalar leaves its neighbours alone
 FILE=malloc://64
 ARGS=-a x86 -b 64

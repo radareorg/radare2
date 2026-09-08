@@ -22,9 +22,49 @@ R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	return false;
 }
 
+static const char *const type_qualifiers[] = {
+	"const", "volatile", "restrict", "atomic", "_Atomic", NULL
+};
+
+static const char *type_skip_qualifiers(const char *R_NONNULL type) {
+	int i;
+	do {
+		type = r_str_trim_head_ro (type);
+		for (i = 0; type_qualifiers[i]; i++) {
+			size_t qlen = strlen (type_qualifiers[i]);
+			if (r_str_startswith (type, type_qualifiers[i]) && (!type[qlen] || IS_WHITESPACE (type[qlen]))) {
+				type += qlen;
+				break;
+			}
+		}
+	} while (type_qualifiers[i]);
+	return type;
+}
+
+static const char *type_aggregate_prefixed(const char *R_NONNULL type, const char **R_NONNULL name) {
+	const char *kind = r_str_startswith (type, "struct")? "struct": r_str_startswith (type, "union")? "union": NULL;
+	if (kind) {
+		size_t klen = strlen (kind);
+		if (IS_WHITESPACE (type[klen])) {
+			*name = r_str_trim_head_ro (type + klen);
+			return R_STR_ISNOTEMPTY (*name)? kind: NULL;
+		}
+	}
+	return NULL;
+}
+
 R_API RTypeKind r_type_kind(Sdb *TDB, const char *name) {
 	R_RETURN_VAL_IF_FAIL (TDB && R_STR_ISNOTEMPTY (name), -1);
-	const char *type = sdb_const_get (TDB, name, 0);
+	// a type may be spelled with qualifiers and its aggregate keyword; the sdb keys it bare
+	const char *bare = type_skip_qualifiers (name);
+	const char *inner = NULL;
+	if (type_aggregate_prefixed (bare, &inner)) {
+		bare = inner;
+	}
+	if (R_STR_ISEMPTY (bare)) {
+		return R_TYPE_INVALID;
+	}
+	const char *type = sdb_const_get (TDB, bare, 0);
 	if (type) {
 		if (!strcmp (type, "enum")) {
 			return R_TYPE_ENUM;
@@ -164,24 +204,6 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 	return r_strbuf_drain (sb);
 }
 
-static const char *const type_qualifiers[] = {
-	"const", "volatile", "restrict", "atomic", "_Atomic", NULL
-};
-
-static const char *type_skip_qualifiers(const char *R_NONNULL type) {
-	int i;
-	do {
-		type = r_str_trim_head_ro (type);
-		for (i = 0; type_qualifiers[i]; i++) {
-			size_t qlen = strlen (type_qualifiers[i]);
-			if (r_str_startswith (type, type_qualifiers[i]) && (!type[qlen] || IS_WHITESPACE (type[qlen]))) {
-				type += qlen;
-				break;
-			}
-		}
-	} while (type_qualifiers[i]);
-	return type;
-}
 
 static bool type_ident_char(char c) {
 	return c == '_' || isalnum ((ut8)c);
@@ -217,8 +239,10 @@ R_API R_OWNED char *r_type_resolve_typedef(Sdb *R_NONNULL TDB, const char *R_NON
 	R_RETURN_VAL_IF_FAIL (TDB && type, NULL);
 	char *ret = NULL;
 	int depth;
+	// a typedef may be spelled with qualifiers; the sdb keys it bare
+	const char *bare = type_skip_qualifiers (type);
 	for (depth = 0; depth < TYPEDEF_MAX_DEPTH; depth++) {
-		const char *next = sdb_const_getf (TDB, NULL, "typedef.%s", ret? ret: type);
+		const char *next = sdb_const_getf (TDB, NULL, "typedef.%s", ret? ret: bare);
 		if (!next) {
 			break;
 		}
@@ -259,18 +283,6 @@ R_API bool r_type_is_signed(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
 
 static bool type_kind_is_aggregate(const char *R_NONNULL kind) {
 	return !strcmp (kind, "struct") || !strcmp (kind, "union");
-}
-
-static const char *type_aggregate_prefixed(const char *R_NONNULL type, const char **R_NONNULL name) {
-	const char *kind = r_str_startswith (type, "struct")? "struct": r_str_startswith (type, "union")? "union": NULL;
-	if (kind) {
-		size_t klen = strlen (kind);
-		if (IS_WHITESPACE (type[klen])) {
-			*name = r_str_trim_head_ro (type + klen);
-			return R_STR_ISNOTEMPTY (*name)? kind: NULL;
-		}
-	}
-	return NULL;
 }
 
 // the per-target type dbs carry the pointer width as the size of "char *"

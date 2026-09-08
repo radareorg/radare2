@@ -217,6 +217,7 @@ static int aggregate_extent(RAnal *anal, const RAnalVar *var) {
 }
 
 // An aggregate owns its whole extent: drop the stack vars recovery had named inside it
+// their accesses are not moved over: disassembly derives name[i] and name.field from the operand
 static void shadow_interior_vars(RAnal *anal, RAnalVar *var) {
 	if (var->kind != R_ANAL_VAR_KIND_SPV && var->kind != R_ANAL_VAR_KIND_BPV) {
 		return;
