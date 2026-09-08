@@ -187,13 +187,17 @@ static char *tp_built_type(RAnalVar *var, const char *vname, const char *type, i
 		ref++;
 	}
 
+	// A pointer is not an integer, so it keeps its spelling: collapsing it
+	// loses the pointee and, on a 64-bit target, half of the variable's width.
 	char *tmp1 = r_strbuf_get (&sb);
-	if (r_str_startswith (tmp1, "unsigned long long")) {
-		r_strbuf_set (&sb, "uint64_t");
-	} else if (r_str_startswith (tmp1, "unsigned")) {
-		r_strbuf_set (&sb, "uint32_t");
-	} else if (r_str_startswith (tmp1, "int")) {
-		r_strbuf_set (&sb, "int32_t");
+	if (tmp1 && !strchr (tmp1, '*')) {
+		if (r_str_startswith (tmp1, "unsigned long long")) {
+			r_strbuf_set (&sb, "uint64_t");
+		} else if (r_str_startswith (tmp1, "unsigned")) {
+			r_strbuf_set (&sb, "uint32_t");
+		} else if (r_str_startswith (tmp1, "int")) {
+			r_strbuf_set (&sb, "int32_t");
+		}
 	}
 	r_strbuf_trim (&sb);
 	// a dereferenced void pointer carries no fact, and a void variable is unusable
