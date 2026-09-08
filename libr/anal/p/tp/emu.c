@@ -15,6 +15,10 @@ static void tp_reach_kv_free(HtUPKv *kv) {
 	set_u_free (kv->value);
 }
 
+static void tp_op_kv_free(HtUPKv *kv) {
+	r_anal_op_free (kv->value);
+}
+
 static void tp_mem_type_kv_free(HtUPKv *kv) {
 	free (kv->value);
 }
@@ -98,6 +102,7 @@ void tps_fini(TPState *tps) {
 	ht_up_free (tps->var_facts);
 	ht_up_free (tps->reach_cache);
 	ht_up_free (tps->mem_types);
+	ht_up_free (tps->op_cache);
 	tp_flush_pending_const (tps);
 	RVecTPPendingConst_fini (&tps->pending_const);
 	type_trace_fini (&tps->tt, &tps->esil);
@@ -301,6 +306,7 @@ TPState *tps_init(RAnal *anal) {
 	tps->var_facts = ht_up_new (NULL, tp_var_fact_kv_free, NULL);
 	tps->reach_cache = ht_up_new (NULL, tp_reach_kv_free, NULL);
 	tps->mem_types = ht_up_new (NULL, tp_mem_type_kv_free, NULL);
+	tps->op_cache = ht_up_new (NULL, tp_op_kv_free, NULL);
 	int align = r_arch_info (anal->arch, R_ARCH_INFO_DATA_ALIGN);
 	align = R_MAX (r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN), align);
 	align = R_MAX (align, 1);

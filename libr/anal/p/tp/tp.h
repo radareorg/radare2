@@ -156,6 +156,7 @@ typedef struct tp_state_t {
 	HtUP *var_facts; // RAnalVar * => TPVarFact *
 	HtUP *reach_cache; // block addr => SetU of reachable block addrs
 	HtUP *mem_types; // emulated address => pointer type written by a call
+	HtUP *op_cache; // address => RAnalOp decoded once for every backtrace that crosses it
 } TPState;
 
 typedef bool (*AccessPredicate)(const TypeTraceAccess *access, void *user);

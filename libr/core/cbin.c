@@ -3567,6 +3567,31 @@ static bool bin_map_sections_to_segments(RCore *core, PJ *pj, int mode) {
 	return true;
 }
 
+// the elf plugin describes its pointer arrays as "Cd <size>[<count>]", set
+// those metas here like the command would instead of parsing and seeking it
+// once per element
+static bool bin_section_word_meta(RCore *core, RBinSection *section) {
+	const char *fmt = section->format;
+	if (!r_str_startswith (fmt, "Cd ")) {
+		return false;
+	}
+	char *end = NULL;
+	const ut64 size = strtoull (fmt + 3, &end, 10);
+	if (!end || *end != '[' || size < 1) {
+		return false;
+	}
+	const ut64 count = strtoull (end + 1, &end, 10);
+	if (!end || *end != ']' || end[1]) {
+		return false;
+	}
+	ut64 i, addr = section->vaddr;
+	for (i = 0; i < count; i++, addr += size) {
+		RFlagItem *fi = r_flag_get_in (core->flags, addr);
+		r_meta_set (core->anal, R_META_TYPE_DATA, addr, size, fi? fi->name: fmt + 3);
+	}
+	return true;
+}
+
 static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	char *str = NULL;
 	RBinSection *section;
@@ -3868,7 +3893,9 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 				// This is damn slow if section vsize is HUGE
 				if (section->vsize < 1024 * 1024 * 2) {
 					R_LOG_DEBUG ("(section %s) %s @ 0x%" PFMT64x, section->name, section->format, section->vaddr);
-					r_core_call_at (core, section->vaddr, section->format);
+					if (!bin_section_word_meta (core, section)) {
+						r_core_call_at (core, section->vaddr, section->format);
+					}
 				}
 			}
 		}
@@ -4075,6 +4102,7 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 	}
 	if (IS_MODE_SET (mode)) {
 		r_flag_space_pop (core->flags);
+		r_core_anal_trycatch_index_reset (core);
 	}
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);

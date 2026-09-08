@@ -607,8 +607,8 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 				R_LOG_WARN ("Skipping %s" R_SYS_DIR "%s because it requires additional dependencies", shortpath (path), subname);
 				continue;
 			}
-			if (skip_asm && test_from.type == R2R_TEST_TYPE_ASM) {
-				R_LOG_INFO ("R2R_SKIP_ASM: Skipping %s", shortpath (path));
+			if (skip_asm && (test_from.type == R2R_TEST_TYPE_ASM || !strcmp (subname, "asm"))) {
+				R_LOG_INFO ("R2R_SKIP_ASM: Skipping %s" R_SYS_DIR "%s", shortpath (path), subname);
 				continue;
 			}
 			if (test_from.archos && (skip_archos || strcmp (subname, R_SYS_ARCHOSBITS))) {
@@ -638,6 +638,9 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 		return true;
 	}
 	if (skip_leak_tests && tff.type == R2R_TEST_TYPE_LEAK) {
+		return true;
+	}
+	if (tff.type == R2R_TEST_TYPE_ASM && r_sys_getenv_asbool ("R2R_SKIP_ASM")) {
 		return true;
 	}
 	if (strstr (path, R_SYS_DIR "archos" R_SYS_DIR) && (r_sys_getenv_asbool ("R2R_SKIP_ARCHOS") || tff.archos)) {

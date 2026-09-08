@@ -676,24 +676,73 @@ static void warn_nonexec_map(RCore *core, ut64 at) {
 	}
 }
 
-typedef struct {
-	const char *suffix;
-	RVecUT64 handlers;
-} TrycatchHandlerCollector;
+static void trycatch_handlers_free(HtUPKv *kv) {
+	RVecUT64 *handlers = kv->value;
+	if (handlers) {
+		RVecUT64_free (handlers);
+	}
+}
 
+/* The try.* flags are named try.<idx>.<source>.<kind>, collect the catch and
+ * filter handlers of every source address in a single pass over the flags.
+ * Cleanup handlers only run while unwinding, so they are left out on purpose. */
 static bool collect_trycatch_handler(RFlagItem *flag, void *user) {
-	TrycatchHandlerCollector *ctx = user;
-	if (!r_str_endswith (flag->name, ctx->suffix)) {
+	HtUP *by_source = user;
+	const char *p = flag->name + strlen ("try.");
+	p = strchr (p, '.');
+	if (!p) {
 		return true;
 	}
+	p++;
+	char *end = NULL;
+	ut64 source = strtoull (p, &end, 16);
+	if (!end || *end != '.') {
+		return true;
+	}
+	const char *kind = end + 1;
+	if (strcmp (kind, "catch") && strcmp (kind, "filter")) {
+		return true;
+	}
+	RVecUT64 *handlers = ht_up_find (by_source, source, NULL);
+	if (!handlers) {
+		handlers = RVecUT64_new ();
+		if (!handlers || !ht_up_insert (by_source, source, handlers)) {
+			RVecUT64_free (handlers);
+			return true;
+		}
+	}
 	ut64 *handler;
-	R_VEC_FOREACH (&ctx->handlers, handler) {
+	R_VEC_FOREACH (handlers, handler) {
 		if (*handler == flag->addr) {
 			return true;
 		}
 	}
-	RVecUT64_push_back (&ctx->handlers, &flag->addr);
+	RVecUT64_push_back (handlers, &flag->addr);
 	return true;
+}
+
+R_API void r_core_anal_trycatch_index_reset(RCore *core) {
+	R_RETURN_IF_FAIL (core);
+	RCoreTrycatchIndex *idx = &core->trycatch_index;
+	ht_up_free (idx->by_source);
+	idx->by_source = NULL;
+	idx->bf = NULL;
+}
+
+static HtUP *trycatch_index_get(RCore *core) {
+	RCoreTrycatchIndex *idx = &core->trycatch_index;
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (idx->by_source && idx->bf == bf) {
+		return idx->by_source;
+	}
+	r_core_anal_trycatch_index_reset (core);
+	idx->by_source = ht_up_new (NULL, trycatch_handlers_free, NULL);
+	if (!idx->by_source) {
+		return NULL;
+	}
+	idx->bf = bf;
+	r_flag_foreach_prefix (core->flags, "try.", 4, collect_trycatch_handler, idx->by_source);
+	return idx->by_source;
 }
 
 /* Exception handlers are not ordinary CFG successors. Analyze their entry
@@ -702,23 +751,16 @@ static void core_anal_fcn_trycatch(RCore *core, RAnalFunction *fcn) {
 	if (!core->anal->opt.trycatch) {
 		return;
 	}
-	// catch and filter handlers are entrypoints of the owning function, the
-	// cleanup ones only run while unwinding so they are left out on purpose
-	const char *kinds[] = { "catch", "filter" };
-	TrycatchHandlerCollector ctx = { 0 };
-	RVecUT64_init (&ctx.handlers);
-	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (kinds); i++) {
-		char *suffix = r_str_newf (".%"PFMT64x".%s", fcn->addr, kinds[i]);
-		if (!suffix) {
-			break;
-		}
-		ctx.suffix = suffix;
-		r_flag_foreach_prefix (core->flags, "try.", 4, collect_trycatch_handler, &ctx);
-		free (suffix);
+	HtUP *by_source = trycatch_index_get (core);
+	if (!by_source) {
+		return;
+	}
+	RVecUT64 *handlers = ht_up_find (by_source, fcn->addr, NULL);
+	if (!handlers) {
+		return;
 	}
 	ut64 *handler;
-	R_VEC_FOREACH (&ctx.handlers, handler) {
+	R_VEC_FOREACH (handlers, handler) {
 		if (*handler == fcn->addr || r_anal_function_contains (fcn, *handler)) {
 			continue;
 		}
@@ -727,7 +769,6 @@ static void core_anal_fcn_trycatch(RCore *core, RAnalFunction *fcn) {
 			R_LOG_DEBUG ("Cannot analyze exception handler at 0x%08"PFMT64x, *handler);
 		}
 	}
-	RVecUT64_fini (&ctx.handlers);
 }
 
 static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {

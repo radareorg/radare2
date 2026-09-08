@@ -3215,12 +3215,21 @@ static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
  * This function checks whether any operation in a given function may change bp (excluding "mov bp, sp"
  * and "pop bp" at the end).
  */
+// the opex json is only needed for the few op types that hide bp as a destination
+static bool opex_writes_bp(RAnal *anal, ut64 at, const ut8 *buf, int len, const char *needle, int maxpos) {
+	RAnalOp op;
+	r_anal_op (anal, &op, at, buf, len, R_ARCH_OP_MASK_OPEX);
+	const char *pos = op.opex.ptr? strstr (op.opex.ptr, needle): NULL;
+	const bool res = pos && (maxpos < 0 || pos - op.opex.ptr < maxpos);
+	r_anal_op_fini (&op);
+	return res;
+}
+
 R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 	R_RETURN_IF_FAIL (fcn);
 	RAnal *anal = fcn->anal;
 	RListIter *iter;
 	RAnalBlock *bb;
-	char *pos;
 	// XXX omg this is one of the most awful things ive seen lately
 	char str_to_find[40] = {0};
 	const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
@@ -3242,7 +3251,7 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 		}
 		int idx = 0;
 		for (at = bb->addr; at < end;) {
-			r_anal_op (anal, &op, at, buf + idx, bb->size - idx, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_OPEX);
+			r_anal_op (anal, &op, at, buf + idx, bb->size - idx, R_ARCH_OP_MASK_VAL);
 			if (op.size < 1) {
 				op.size = 1;
 			}
@@ -3277,8 +3286,7 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 				// check for bp as dst looks like this; in the future
 				// it may be just replaced with call to can_affect_bp
 				if (*str_to_find) {
-					pos = op.opex.ptr ? strstr (op.opex.ptr, str_to_find) : NULL;
-					if (pos && pos - op.opex.ptr < 60) {
+					if (opex_writes_bp (anal, at, buf + idx, bb->size - idx, str_to_find, 60)) {
 						fcn->bp_frame = false;
 						r_anal_op_fini (&op);
 						free (buf);
@@ -3290,7 +3298,7 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 				break;
 			case R_ANAL_OP_TYPE_XCHG:
 				if (*str_to_find) {
-					if (op.opex.ptr && strstr (op.opex.ptr, str_to_find)) {
+					if (opex_writes_bp (anal, at, buf + idx, bb->size - idx, str_to_find, -1)) {
 						fcn->bp_frame = false;
 						r_anal_op_fini (&op);
 						free (buf);
