@@ -142,6 +142,21 @@ static const char *tp_expand_int(const char *t) {
 	return t;
 }
 
+// the same-width alias with the other signedness, NULL when t is not a sized alias
+static const char *tp_sized_twin(const char *t, bool uns) {
+	static const char *const pairs[][2] = {
+		{ "int8_t", "uint8_t" }, { "int16_t", "uint16_t" },
+		{ "int32_t", "uint32_t" }, { "int64_t", "uint64_t" },
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (pairs); i++) {
+		if (!strcmp (t, pairs[i][0]) || !strcmp (t, pairs[i][1])) {
+			return pairs[i][uns? 1: 0];
+		}
+	}
+	return NULL;
+}
+
 // canonical spelling as the retype applies it; NULL when a prefix form cannot attach to the var's current type
 static char *tp_built_type(RAnalVar *var, const char *vname, const char *type, int ref, bool pfx) {
 	bool is_ptr = (vname && *vname == '*');
