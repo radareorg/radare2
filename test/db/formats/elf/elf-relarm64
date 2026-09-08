@@ -126,3 +126,14 @@ EXPECT=<<EOF
             0x08000084      00a842f9       ldr x0, [x0, 0x550]
 EOF
 RUN
+
+NAME=ELF: aarch64 ET_REL GOT relocs ignore the addend
+FILE=bins/elf/aarch64-got-etrel-addend.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+p8 24 @ 0x08000040
+EOF
+EXPECT=<<EOF
+0100009021ac40f90200009042ac40f943080058c0035fd6
+EOF
+RUN
