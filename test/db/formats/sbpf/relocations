@@ -34,3 +34,69 @@ vaddr      paddr      type   ntype name
 0x10000cd8 0x00000cd8 SET_64 8
 EOF
 RUN
+
+NAME=sBPF: imports resolve to their own first reloc site via the section pass
+FILE=bins/elf/sbpf_example.so
+ARGS=-B 0x10000000
+CMDS=<<EOF
+ii
+EOF
+EXPECT=<<EOF
+nth vaddr      bind   type   lib name
+-------------------------------------
+3   0x10002888 GLOBAL NOTYPE     abort
+4   0x10004ca8 GLOBAL NOTYPE     sol_log_
+5   0x10012b48 GLOBAL NOTYPE     sol_memcpy_
+6   0x10017288 GLOBAL NOTYPE     sol_get_rent_sysvar
+7   0x10018968 GLOBAL NOTYPE     sol_invoke_signed_rust
+8   0x10018f88 GLOBAL NOTYPE     sol_memset_
+9   0x1001db30 GLOBAL NOTYPE     sol_try_find_program_address
+10  0x1001dbf8 GLOBAL NOTYPE     sol_log_pubkey
+11  0x10020158 GLOBAL NOTYPE     sol_sha256
+12  0x10028ba0 GLOBAL NOTYPE     sol_memcmp_
+EOF
+RUN
+
+NAME=sBPF: v1 imports resolve to their own first reloc site via the section pass
+FILE=bins/elf/sbpf_example_v1.so
+ARGS=-B 0x10000000
+CMDS=<<EOF
+ii
+EOF
+EXPECT=<<EOF
+nth vaddr      bind   type   lib name
+-------------------------------------
+3   0x10002918 GLOBAL NOTYPE     abort
+4   0x10004d10 GLOBAL NOTYPE     sol_log_
+5   0x10012d68 GLOBAL NOTYPE     sol_memcpy_
+6   0x10017508 GLOBAL NOTYPE     sol_get_rent_sysvar
+7   0x10018c30 GLOBAL NOTYPE     sol_invoke_signed_rust
+8   0x10019268 GLOBAL NOTYPE     sol_memset_
+9   0x1001de98 GLOBAL NOTYPE     sol_try_find_program_address
+10  0x1001df68 GLOBAL NOTYPE     sol_log_pubkey
+11  0x100204e0 GLOBAL NOTYPE     sol_sha256
+12  0x10029178 GLOBAL NOTYPE     sol_memcmp_
+EOF
+RUN
+
+NAME=sBPF: v2 imports resolve to their own first reloc site via the section pass
+FILE=bins/elf/sbpf_example_v2.so
+ARGS=-B 0x10000000
+CMDS=<<EOF
+ii
+EOF
+EXPECT=<<EOF
+nth vaddr      bind   type   lib name
+-------------------------------------
+3   0x100028c0 GLOBAL NOTYPE     abort
+4   0x10004c58 GLOBAL NOTYPE     sol_log_
+5   0x10012f10 GLOBAL NOTYPE     sol_memcpy_
+6   0x100176f0 GLOBAL NOTYPE     sol_get_rent_sysvar
+7   0x10018dd8 GLOBAL NOTYPE     sol_invoke_signed_rust
+8   0x10019418 GLOBAL NOTYPE     sol_memset_
+9   0x1001e008 GLOBAL NOTYPE     sol_try_find_program_address
+10  0x1001e0d8 GLOBAL NOTYPE     sol_log_pubkey
+11  0x10020580 GLOBAL NOTYPE     sol_sha256
+12  0x10029130 GLOBAL NOTYPE     sol_memcmp_
+EOF
+RUN

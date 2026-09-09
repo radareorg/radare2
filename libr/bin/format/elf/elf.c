@@ -3495,16 +3495,19 @@ static int relr_reloc_type(ut16 machine) {
 	return 0;
 }
 
+static void rel_cache_add(ELFOBJ *eo, const RBinElfReloc *reloc) {
+	// sym is unvalidated file data, widen before +1 to avoid overflow
+	ht_uu_insert (eo->rel_cache, (ut64)reloc->sym + 1, RVecRBinElfReloc_length (&eo->g_relocs));
+}
+
 static size_t add_relr_reloc(ELFOBJ *eo, ut64 vaddr, int type, size_t pos) {
 	RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
-	memset (reloc, 0, sizeof (*reloc));
 	reloc->mode = DT_RELR;
 	reloc->implicit_addend = true;
 	reloc->type = type;
 	reloc->offset = vaddr;
 	reloc->rva = vaddr;
-	int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
-	ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
+	rel_cache_add (eo, reloc);
 	fix_rva_and_offset_exec_file (eo, reloc);
 	return pos + 1;
 }
@@ -3780,15 +3783,13 @@ static size_t populate_relocs_record_from_android(ELFOBJ *eo, size_t pos, size_t
 				r_addend = 0;
 			}
 			RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
-			memset (reloc, 0, sizeof (*reloc));
 			reloc->mode = is_rela? DT_RELA: DT_REL;
 			reloc->offset = r_offset;
 			reloc->rva = r_offset;
 			reloc->sym = ELF_R_SYM ((Elf_(Xword))info);
 			reloc->type = ELF_R_TYPE ((Elf_(Xword))info);
 			reloc->addend = is_rela? r_addend: 0;
-			int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
-			ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
+			rel_cache_add (eo, reloc);
 			fix_rva_and_offset_exec_file (eo, reloc);
 			pos++;
 		}
@@ -3820,8 +3821,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 		}
 
 		// XXX reloc is a weak pointer we can't own it!
-		int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
-		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
+		rel_cache_add (eo, reloc);
 		fix_rva_and_offset_exec_file (eo, reloc);
 	}
 	// parse relr - Relative relocations
@@ -3839,8 +3839,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 			RVecRBinElfReloc_pop_back (&eo->g_relocs);
 			break;
 		}
-		int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
-		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
+		rel_cache_add (eo, reloc);
 		fix_rva_and_offset_exec_file (eo, reloc);
 	}
 
@@ -3853,8 +3852,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 			RVecRBinElfReloc_pop_back (&eo->g_relocs);
 			break;
 		}
-		int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
-		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
+		rel_cache_add (eo, reloc);
 		fix_rva_and_offset_exec_file (eo, reloc);
 	}
 	// parse crel - Compact Relocations
@@ -3867,8 +3865,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 				RVecRBinElfReloc_pop_back (&eo->g_relocs);
 				break;
 			}
-			int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
-			ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
+			rel_cache_add (eo, reloc);
 			// For CREL relocations from dynamic table, we need to convert offset to address
 			ut64 vaddr = Elf_(p2v) (eo, reloc->offset);
 			if (vaddr != UT64_MAX) {
@@ -3901,15 +3898,13 @@ static size_t populate_relocs_record_from_mips_got(ELFOBJ *eo, size_t pos, size_
 		if (!reloc) {
 			break;
 		}
-		memset (reloc, 0, sizeof (*reloc));
 		reloc->sym = (int)i;
 		reloc->type = R_MIPS_REL32;
 		reloc->mode = DT_REL;
 		reloc->implicit_addend = true;
 		reloc->offset = global_got + (i - gotsym) * wordsize;
 		fix_rva_and_offset_exec_file (eo, reloc);
-		int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
-		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
+		rel_cache_add (eo, reloc);
 		pos++;
 	}
 	return pos;
@@ -4015,8 +4010,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 					break;
 				}
 
-				int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
-				ht_uu_insert (eo->rel_cache, reloc->sym, index);
+				rel_cache_add (eo, reloc);
 				// For CREL relocations from sections, make sure rva is properly set
 				if (is_bin_etrel (eo)) {
 					// For relocatable files, find target section
@@ -4060,8 +4054,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 					break;
 				}
 
-				int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
-				ht_uu_insert (eo->rel_cache, reloc->sym, index);
+				rel_cache_add (eo, reloc);
 				fix_rva_and_offset (eo, reloc, i);
 				scount++;
 				pos++;
