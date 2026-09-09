@@ -125,7 +125,7 @@ static RVecRBinReloc *relocs(RBinFile *bf) {
 	return r_bin_le_get_relocs (bf->bo->bin_obj);
 }
 
-static RVecRBinReloc *patch_relocs(RBinFile * bf) {
+static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	RBin *b = bf->rbin;
 	RBinLEObj *bin = bf->bo->bin_obj;
 	LE_image_header *h = bin->header;
@@ -134,15 +134,12 @@ static RVecRBinReloc *patch_relocs(RBinFile * bf) {
 	if (!all_relocs) {
 		return NULL;
 	}
-	RVecRBinReloc *ret = RVecRBinReloc_new ();
-	RBinReloc *original;
-	R_VEC_FOREACH (all_relocs, original) {
-		if (original->import || original->symbol) {
+	RBinReloc *r;
+	R_VEC_FOREACH (all_relocs, r) {
+		// imports have nothing to patch, but must stay in the table
+		if (r->import || r->symbol) {
 			continue;
 		}
-		RBinReloc *r = RVecRBinReloc_emplace_back (ret);
-		*r = *original;
-
 		int size = 0, offset = 0;
 		ut8 buf[8] = {0};
 		switch (r->type) {
@@ -174,8 +171,7 @@ static RVecRBinReloc *patch_relocs(RBinFile * bf) {
 			}
 		}
 	}
-	RVecRBinReloc_free (all_relocs);
-	return ret;
+	return all_relocs;
 }
 
 static RBinInfo *info(RBinFile *bf) {

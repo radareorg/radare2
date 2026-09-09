@@ -458,3 +458,75 @@ mov ecx, dword [0x2eb534]
 1
 EOF
 RUN
+
+NAME=LE GCC.EXE relocs survive relocs.apply and the import site is untouched
+FILE=bins/le/GCC.EXE
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir
+p8 8 @ 0x1d210
+pd 1 @ 0x1d20f
+EOF
+EXPECT=<<EOF
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x00010006 0x00001006 SET_32 8     emx.1
+0x0001000d 0x0000100d SET_32 8     emx.2
+0x0001d210 0x0000e210 SET_32 8     doscalls.273
+0x0001d234 0x0000e234 SET_32 8     doscalls.253
+0x0001d266 0x0000e266 SET_32 8     doscalls.283
+0x0001d282 0x0000e282 SET_32 8     doscalls.229
+0x0001d2f2 0x0000e2f2 SET_32 8     doscalls.257
+0x0001d389 0x0000e389 SET_32 8     doscalls.282
+0x0001d39f 0x0000e39f SET_32 8     doscalls.257
+0x0001d3d9 0x0000e3d9 SET_32 8     doscalls.281
+0x0001d3f4 0x0000e3f4 SET_32 8     doscalls.257
+ec2dfeff89c283c4
+            0x0001d20f      e8ec2dfeff     call 0                      ; RELOC 32 doscalls.273
+EOF
+RUN
+
+NAME=LE GNUGREP.DLL relocs survive relocs.apply and analysis stops inventing functions
+FILE=bins/le/GNUGREP.DLL
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~?
+f~reloc.?
+aaa
+afl~?
+EOF
+EXPECT=<<EOF
+1168
+64
+90
+EOF
+RUN
+
+NAME=LE cdogs.exe reloc table unchanged, internal fixups patched
+FILE=bins/le/cdogs.exe
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~?
+f~reloc.?
+p8 8 @ 0x10010
+EOF
+EXPECT=<<EOF
+5237
+410
+5500010018010100
+EOF
+RUN
+
+NAME=LE GNUGREP.DLL bin.limit clamps a mix of import and internal fixups
+FILE=bins/le/GNUGREP.DLL
+ARGS=-e bin.limit=4 -e bin.relocs.apply=true
+CMDS=ir
+EXPECT=<<EOF
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x0001000d 0x0000160d SET_32 8     emx.2
+0x0001038e 0x0000198e SET_32 8     EMXLIBC.513
+0x0001039f 0x0000199f SET_32 8     EMXLIBC.770
+0x00010666 0x00001c66 SET_32 8     EMXLIBC.770
+EOF
+RUN
