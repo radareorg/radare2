@@ -3682,14 +3682,16 @@ static size_t get_num_relocs_approx(ELFOBJ *eo) {
 
 static size_t populate_relocs_record_from_android(ELFOBJ *eo, size_t pos, size_t num_relocs) {
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
-	if (di->dt_android_rel == R_BIN_ELF_ADDR_MAX || di->dt_android_relsz < 5) {
+	const ut64 relsz = di->dt_android_relsz;
+	// relsz is unvalidated file data, cap it before it narrows to int
+	if (di->dt_android_rel == R_BIN_ELF_ADDR_MAX || relsz < 5 || relsz > r_buf_size (eo->b)) {
 		return pos;
 	}
 	ut64 paddr = Elf_(v2p) (eo, di->dt_android_rel);
 	if (paddr == UT64_MAX) {
 		return pos;
 	}
-	const int size = (int)di->dt_android_relsz;
+	const int size = (int)relsz;
 	ut8 *buf = malloc (size);
 	if (!buf) {
 		return pos;
