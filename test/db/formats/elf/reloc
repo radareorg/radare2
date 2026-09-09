@@ -1081,3 +1081,21 @@ EXPECT=<<EOF
 349
 EOF
 RUN
+
+NAME=ELF: .rela.plt reached only through the section pass keys imports by own symbol
+FILE=bins/fuzzed/elf8
+CMDS=<<EOF
+ii~raise,strncmp,sigemptyset,wcwidth,__fprintf_chk,__ctype_tolower_loc,_ITM_deregisterTMCloneTable,__gmon_start__,_ITM_registerTMCloneTable
+EOF
+EXPECT=<<EOF
+5   0x004021e0       GLOBAL FUNC       raise
+10  0x00402240       GLOBAL FUNC       strncmp
+11  ----------       WEAK   NOTYPE     _ITM_deregisterTMCloneTable
+65  0x004025a0       GLOBAL FUNC       sigemptyset
+66  ----------       WEAK   NOTYPE     __gmon_start__
+74  0x00402630       GLOBAL FUNC       wcwidth
+104 0x00402810       GLOBAL FUNC       __fprintf_chk
+105 ----------       WEAK   NOTYPE     _ITM_registerTMCloneTable
+111 0x00402870       GLOBAL FUNC       __ctype_tolower_loc
+EOF
+RUN
