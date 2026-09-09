@@ -611,7 +611,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_X86_64_COPY:      ADD(64, 0); break; // XXX: copy symbol at runtime
 		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64); break;
 		case R_X86_64_TPOFF64:   ADD(64, 0); break;
-		case R_X86_64_DTPMOD64:  break; // id of module containing symbol (keep it as zero)
+		case R_X86_64_DTPMOD64:  ADD(64, 0); break; // id of module containing symbol (keep it as zero)
 		case R_X86_64_DTPOFF64:  ADD(64, 0); break; // offset inside module's tls
 		// case 1027: // this is aarc64_relative, if this appears here we are mixing x64 and arm64 reloc types
 		default:
@@ -779,6 +779,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_PPC_ADDR16_LO: ADD(16, 0); break;  // XXX extract lower 16 bits of (target - vaddr - addend)
 		case R_PPC_ADDR16_HI: ADD(16, 0); break;  // XXX extract upper 16 bits of (target - vaddr - addend)
 		case R_PPC_ADDR16_HA: ADD(16, 0); break;  // XXX extract high adjusted 16 bits of (target - vaddr - addend)
+		case R_PPC_DTPMOD32: ADD(32, 0); break;
 		default:
 			R_LOG_DEBUG ("unimplemented ELF/PPC reloc type %d", rel->type);
 		}
@@ -1905,9 +1906,12 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		if (!ptr) {
 			continue;
 		}
+		// the loader fills a module id; it has no slot
+		const bool tls_module = (eo->ehdr.e_machine == EM_X86_64 && reloc->type == R_X86_64_DTPMOD64)
+			|| (eo->ehdr.e_machine == EM_PPC && reloc->type == R_PPC_DTPMOD32);
 		// a patched code site branches to the slot, so the slot is what the
 		// reloc describes; a data site holds the value and keeps its own vaddr
-		if (is_import) {
+		if (is_import && !tls_module) {
 			const st64 shift = bf->bo->baddr_shift;
 			RBinSection *s = r_bin_get_section_at (bf->bo, ptr->vaddr + shift, true);
 			if (s && (s->perm & R_PERM_X)) {
@@ -1918,7 +1922,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 				}
 			}
 		}
-		if (!resolved && eo->ehdr.e_machine != EM_SBPF) {
+		if (!resolved && eo->ehdr.e_machine != EM_SBPF && !tls_module) {
 			ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
 			vaddr += cdsz;
 		}

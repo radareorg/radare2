@@ -1286,11 +1286,38 @@ EOF
 EXPECT=<<EOF
 vaddr      paddr      type   ntype name
 ---------------------------------------
+0x00001fec 0x00000fec ADD_32 68
 0x00002000 0x00001000 ADD_32 21    mul2
 0x00002004 0x00001004 ADD_32 21    sub2
 0x00002008 0x00001008 ADD_32 21    __tls_get_addr_opt
 0x0000200c 0x0000100c ADD_32 21    add2
 - 3 fd: 4 +0x00000000 0x00002010 - 0x00002023 rw- rw- .got.r2
+EOF
+RUN
+
+NAME=ELF: x86-64 DTPMOD64 relocs are listed and take no got.r2 slot
+FILE=bins/elf/libstdc++.so.6
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~ADD_64 16
+pv8 @ 0x1885a8
+EOF
+EXPECT=<<EOF
+0x00188588 0x00187588 ADD_64 16
+0x00188be0 0x00187be0 ADD_64 16    std::__once_callable
+0x00189bb8 0x00188bb8 ADD_64 16    std::__once_call
+0x000000000018fe30
+EOF
+RUN
+
+NAME=ELF: a ppc32 DTPMOD32 in an executable .got keeps its own address
+FILE=bins/elf/tls/ppc32-bssplt-tls.so
+ARGS=-e bin.relocs.apply=true
+CMDS=ir~ADD_
+EXPECT=<<EOF
+0x000011fc 0x000001fc ADD_32 68    tv
+0x00001214 0x00000170 ADD_24 10    __tls_get_addr - 0x00000170
+0x00001218 0x00000174 ADD_24 10    puts - 0x00000174
 EOF
 RUN
 
