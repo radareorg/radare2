@@ -1359,11 +1359,17 @@ R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
 #define JQ_CMD "jq"
 
 R_API bool r2r_check_jq_available(void) {
+	char *jq_bin = r_file_path (JQ_CMD);
+	if (!jq_bin) {
+		return false;
+	}
+	free (jq_bin);
+
 	const char *args[] = { "." };
 	const char *invalid_json = "this is not json lol";
 	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
 	if (!proc) {
-		R_LOG_ERROR ("Cannot start subprocess");
+		R_LOG_ERROR ("Cannot start jq subprocess");
 		return false;
 	}
 	r2r_subprocess_stdin_write (proc, (const ut8 *)invalid_json, strlen (invalid_json));
@@ -1431,12 +1437,14 @@ R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test) {
 	bool ret = false;
 	if (r2r_empty_json_check (out)) {
 		R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
+		if (!proc) {
+			return false;
+		}
 		r2r_subprocess_stdin_write (proc, (const ut8 *)out->out, strlen (out->out));
 		r2r_subprocess_wait (proc, UT64_MAX);
 		ret = proc->ret == 0;
 		r2r_subprocess_free (proc);
 	} else {
-		eprintf ("\n");
 		R_LOG_ERROR ("[XX] Empty json for %s", test->cmd);
 	}
 	return ret;
