@@ -1483,10 +1483,9 @@ static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
 static bool is_reg_in_src(const char *regname, RAnal *anal, const char *const *srcregs) {
 	int i;
 	for (i = 0; i < 3; i++) {
-		if (!srcregs[i]) {
-			return false;
-		}
-		if (r_anal_cc_location_uses (anal, regname, srcregs[i])) {
+		// an operand can occupy a slot without naming a register, an immediate
+		// for one, so a null name is not the end of the source list
+		if (srcregs[i] && r_anal_cc_location_uses (anal, regname, srcregs[i])) {
 			return true;
 		}
 	}
@@ -1677,12 +1676,12 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments", fcn->name);
 		return;
 	}
-	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
-	Sdb *TDB = anal->sdb_types;
 	const ArgSeqCache *seq = argseq_of (anal, fcn);
 	if (!seq) {
 		return;
 	}
+	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
+	Sdb *TDB = anal->sdb_types;
 	const int max_count = seq->max_arg;
 	const bool scan_args = max_count > 0 && *count < max_count;
 	if (fname) {
