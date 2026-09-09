@@ -57,8 +57,8 @@ static RCoreHelpMessage help_msg_a = {
 };
 
 static RCoreHelpMessage help_msg_afna = {
-	"Usage:", "afna", " # construct a function name and rename the function for the current offset.",
-	"", "", "Based on flags or methods calls found inside that function.",
+	"Usage:", "afna", " # auto-rename function at current offset",
+	"", "", "based on flags or method calls found",
 	NULL
 };
 
@@ -304,7 +304,7 @@ static RCoreHelpMessage help_msg_abl = {
 static RCoreHelpMessage help_msg_abp = {
 	"Usage:", "abp", "[addr] [num] # find num paths from current offset to addr",
 	"abp", " [addr] [num]", "find num paths from current offset to addr",
-	"abpf", " [addr]", "same as /agg find the path between two addresses across functions and basic blocks",
+	"abpf", " [addr]", "find path between two addresses across functions",
 	"abpe", " [addr]", "emulate from function start to the given address",
 	"abpe*", " [addr]", "show commands to emulate from function start to the given address",
 	"abpj", " [addr] [num]", "display paths in JSON",
@@ -619,7 +619,7 @@ static RCoreHelpMessage help_msg_afb = {
 	//"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb+", " fcn_at bbat bbsz [J] [F] ([D])", "add basic block by hand (jump, fail, diff)",
 	"afba", "[!]", "list basic blocks of current offset in analysis order, see afla (EXPERIMENTAL)",
-	"afbt", " [tableaddr] [elem_sz] [count] [seg]", "analyze function jumptable (adding seg to each elem)",
+	"afbt", " [addr] [esz] [cnt] [seg]", "analyze function jumptable",
 	"afbc", "[-] [color] ([addr])", "colorize basic block (same as 'abc', afbc- to unset)",
 	"afbd", "", "list function basic block dependency list in order and set abe values",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
@@ -681,10 +681,10 @@ static RCoreHelpMessage help_msg_afc = {
 };
 
 static RCoreHelpMessage help_msg_afch = {
-	"Usage:", "afch[j]", "# dynamic calling convention (dyncc) help and inspector",
-	"afch", "", "print the dyncc syntax reference; if the current function uses dyncc, also show its resolved expression and arg/ret homes",
-	"afchj", "", "JSON: resolved dyncc info (ret, rets, args, arg_homes, argn) for the current function",
-	"", "", "see doc/dyncc.md for the full specification",
+	"Usage:", "afch[j]", "# dynamic calling convention help",
+	"afch", "", "print dyncc syntax and resolved expression",
+	"afchj", "", "JSON: resolved dyncc info for current func",
+	"", "", "see doc/dyncc.md for full specification",
 	NULL
 };
 
@@ -815,7 +815,7 @@ static RCoreHelpMessage help_msg_aflt = {
 };
 
 static RCoreHelpMessage help_msg_afii = {
-	"Usage:", "afii", " Manage imports used in current functions (see aii for globals). trims down those strings from disasm",
+	"Usage:", "afii", " Manage imports in current functions (see aii)",
 	"afii", "", "list imports used by current function",
 	"afii", " sym.imp", "trim out the 'sym.imp' prefix from all calls",
 	"afii", "-sym.imp", "remove this import from current function",
@@ -871,7 +871,7 @@ static RCoreHelpMessage help_msg_afs = {
 static RCoreHelpMessage help_msg_aft = {
 	"Usage:", "aft", "",
 	"aft", "", "type matching analysis for current function",
-	"afts", "", "synthesize struct types from pointer-argument and allocator-return access patterns",
+	"afts", "", "synthesize struct types from pointer access patterns",
 	"afts*", "", "show the synthesis as r2 commands without applying anything",
 	"aftsj", "", "apply the synthesis and report it in json",
 	NULL
@@ -910,7 +910,7 @@ static RCoreHelpMessage help_msg_afvb = {
 	"afvb*", "", "same as afvb but in r2 commands",
 	"afvb", " [idx] [name] ([type])", "define base pointer based arguments, locals",
 	"afvbj", "", "return list of base pointer based arguments, locals in JSON format",
-	"afvb-", " [name|idx]", "delete the argument/local with that name or frame offset (--N for negative)",
+	"afvb-", " [name|idx]", "delete argument/local by name or idx",
 	"afvbg", " [idx] [addr]", "define var get reference",
 	"afvbs", " [idx] [addr]", "define var set reference",
 	NULL
@@ -934,7 +934,7 @@ static RCoreHelpMessage help_msg_afvs = {
 	"afvs*", "", "same as afvs but in r2 commands",
 	"afvs", " [idx] [name] [type]", "define stack based arguments,locals",
 	"afvsj", "", "return list of stack based arguments and locals in JSON format",
-	"afvs-", " [name|idx]", "delete the stack argument/local with that name or frame offset (--N for negative)",
+	"afvs-", " [name|idx]", "delete stack argument/local by name or idx",
 	"afvsg", " [idx] [addr]", "define var get reference",
 	"afvss", " [idx] [addr]", "define var set reference",
 	NULL

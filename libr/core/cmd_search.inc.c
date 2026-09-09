@@ -172,7 +172,7 @@ static RCoreHelpMessage help_msg_slash_a = {
 static RCoreHelpMessage help_msg_slash_c = {
 	"Usage: /c", "", "Search for crypto materials",
 	"/ca", "[?] [algo]", "search for keys expanded in memory (algo can be 'aes' or 'sm4')",
-	"/cc", "[?] [algo] [digest]", "find collisions (bruteforce block length values until given checksum is found)",
+	"/cc", "[?] [algo] [digest]", "find collisions by bruteforce",
 	"/cd", "", "search for ASN1/DER certificates",
 	"/cg", "", "search for GPG/PGP keys and signatures (Plaintext and binary form)",
 	"/ck", "", "find well known constant tables from different hash and crypto algorithms",

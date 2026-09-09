@@ -62,7 +62,7 @@ static RCoreHelpMessage help_msg_wao = {
 };
 
 static RCoreHelpMessage help_msg_ws = {
-	"Usage:", "ws[124?] [string]", "Pascal strings are not null terminated and store the length in binary at the beginning",
+	"Usage:", "ws[124?] [string]", "write pascal strings (length-prefixed)",
 	"ws", " str", "write pascal string using first byte as length",
 	"ws1", " str", "same as above",
 	"ws2", " str", "same as above but using ut16 as length (honors cfg.bigendian)",
@@ -72,7 +72,7 @@ static RCoreHelpMessage help_msg_ws = {
 
 static RCoreHelpMessage help_msg_wa = {
 	"Usage:", "wa[of*] [arg]", "",
-	"wa", " nop", "write nopcode using asm.arch and asm.bits",
+	"wa", " nop", "write nopcode (using arch/bits)",
 	"wai", " jmp 0x8080", "write inside this op (fill with nops or error if doesnt fit)",
 	"wan", " jmp 0x8080", "write instruction(s) nopping the trailing bytes",
 	"wa+", " nop", "write a nop and seek after it (use 7wa+nop to write 7 consecutive nops)",
@@ -173,8 +173,8 @@ static RCoreHelpMessage help_msg_wt = {
 	"wtf", " [filename] [size]", "write to file (see also 'wxf' and 'wf?')",
 	"wtf!", " [filename]", "write to file from current address to eof (ignores given size)",
 	"wtff", " [prefix] [size]", "write block from current seek to \"<prefix>-<offset>\"",
-	"wts", " host:port [size]", "send data to remote socket at tcp://host:port",
-	"NOTE:", "", "filename defaults to \"<cfg.prefixdump>.<offset>\"",
+	"wts", " host:port [size]", "send data to remote tcp socket",
+	"NOTE:", "", "filename defaults to cfg.prefixdump offset",
 	NULL
 };
 
