@@ -1,3 +1,4 @@
+# merged: CCf-*
 NAME=CC-*
 FILE=bins/mach0/FileDP
 CMDS=<<EOF
@@ -6,12 +7,24 @@ CC~?
 CC-*
 CC~?
 C*~?
+?e --
+af
+CCf-*~?
+CC hello
+CC world @ $$+32
+CCf~?
+CCf-*
+CCf~?
 EOF
 EXPECT=<<EOF
 39
 13
 0
 26
+--
+0
+2
+0
 EOF
 RUN
 
@@ -77,24 +90,6 @@ EXPECT=<<EOF
 0x00000002 ; (Cr 2 pd 1)
             0x00000004      c3             ret
             0x00000005      c3             ret
-EOF
-RUN
-
-NAME=CCf-*
-FILE=bins/mach0/FileDP
-CMDS=<<EOF
-af
-CCf-*~?
-CC hello
-CC world @ $$+32
-CCf~?
-CCf-*
-CCf~?
-EOF
-EXPECT=<<EOF
-0
-2
-0
 EOF
 RUN
 
@@ -367,6 +362,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: C.
 NAME=arm1.bin dword pointers with Cd and ahi 16
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
@@ -374,11 +370,20 @@ s 0xdb98
 Cd 4[3]
 ahi 16
 pd 3
+?e --
+s 0x0007a23c
+C.
+s 0x00083fc4 
+C.
 EOF
 EXPECT=<<EOF
             0x0000db98      .dword 0x00085038 ; obj.main_arena
             0x0000db9c      .dword 0x000844ac ; obj.check_action
             0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
+--
+0x0007a23c ascii[13] "match_symbol"
+0x00083fc4 data Cd 4
+0x00083fc4 CCu "[14] -rw- section size 4 named .init_array"
 EOF
 RUN
 
@@ -513,36 +518,14 @@ Ch 2 @ 0x00000200
 EOF
 RUN
 
+# merged: Csg, Csa, Cs. and Cs..
 NAME=Cs ascii/latin1
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 Csa @ 0x1400160a0
 Cs~gate
 Cs~ANSI
-EOF
-EXPECT=<<EOF
-0x1400160a0 latin1[18] "latin1 gate: \xce\xbb\xab\xce"
-0x1400160b8 ascii[50] "  -- in ConEmu, run `chcp 28591` to see the gate."
-0x140016000 ascii[19] "\tANSI\\esc: \e[33m\r\n"
-EOF
-RUN
-
-NAME=Csj ascii/latin1
-FILE=bins/pe/testapp-msvc64.exe
-ARGS=-z
-CMDS=<<EOF
-Csa @ 0x1400160a0
-Csg @ 0x1400160b8
-Csj
-EOF
-EXPECT=<<EOF
-[{"offset":5368799392,"type":"Cs","name":"bGF0aW4xIGdhdGU6IM67q84=","enc":"latin1","ascii":false},{"offset":5368799416,"type":"Cs","name":"ICAtLSBpbiBDb25FbXUsIHJ1biBgY2hjcCAyODU5MWAgdG8gc2VlIHRoZSBnYXRlLg==","enc":"latin1","ascii":true}]
-EOF
-RUN
-
-NAME=Csg, Csa, Cs. and Cs..
-FILE=bins/pe/testapp-msvc64.exe
-CMDS=<<EOF
+?e --
 e str.escbslash=true
 s 0x140016018
 Csa
@@ -563,6 +546,10 @@ Cs..
 Cs.. @ 0x14001601c  # should print nothing
 EOF
 EXPECT=<<EOF
+0x1400160a0 latin1[18] "latin1 gate: \xce\xbb\xab\xce"
+0x1400160b8 ascii[50] "  -- in ConEmu, run `chcp 28591` to see the gate."
+0x140016000 ascii[19] "\tANSI\\esc: \e[33m\r\n"
+--
 '@0x140016018'Csa 2
 "\t"
 ascii[2] "\t"
@@ -575,6 +562,19 @@ latin1[19] "\twide\\esc: \x1b[0m\xa1\r\n"
             0x140016018     .string "\twide\\esc: \x1b[0m\xa1\r\n" ; len=19
 ascii[4] "\t"
 ascii[4] "\twid"
+EOF
+RUN
+
+NAME=Csj ascii/latin1
+FILE=bins/pe/testapp-msvc64.exe
+ARGS=-z
+CMDS=<<EOF
+Csa @ 0x1400160a0
+Csg @ 0x1400160b8
+Csj
+EOF
+EXPECT=<<EOF
+[{"offset":5368799392,"type":"Cs","name":"bGF0aW4xIGdhdGU6IM67q84=","enc":"latin1","ascii":false},{"offset":5368799416,"type":"Cs","name":"ICAtLSBpbiBDb25FbXUsIHJ1biBgY2hjcCAyODU5MWAgdG8gc2VlIHRoZSBnYXRlLg==","enc":"latin1","ascii":true}]
 EOF
 RUN
 
@@ -785,21 +785,6 @@ EOF
 EXPECT=<<EOF
 4
 4
-EOF
-RUN
-
-NAME=C.
-FILE=bins/elf/arm1.bin
-CMDS=<<EOF
-s 0x0007a23c
-C.
-s 0x00083fc4 
-C.
-EOF
-EXPECT=<<EOF
-0x0007a23c ascii[13] "match_symbol"
-0x00083fc4 data Cd 4
-0x00083fc4 CCu "[14] -rw- section size 4 named .init_array"
 EOF
 RUN
 

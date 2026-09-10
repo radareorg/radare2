@@ -17,6 +17,7 @@ method.GADDevice.jailbroken
 EOF
 RUN
 
+# merged: icqq swift; icq swift
 NAME=ic swift
 FILE=bins/mach0/main-inherit
 CMDS=<<EOF
@@ -25,6 +26,10 @@ ic
 icc
 ?e ---
 icj~{}
+?e --
+icqq
+?e --
+icq
 EOF
 EXPECT=<<EOF
 0x100003e44 [0x10000366c - 0x1000039bc]    848 swift class 0 main.Employee
@@ -329,15 +334,7 @@ class Employer {
     ]
   }
 ]
-EOF
-RUN
-
-NAME=icqq swift
-FILE=bins/mach0/main-inherit
-CMDS=<<EOF
-icqq
-EOF
-EXPECT=<<EOF
+--
 main.Employee
 main.Employer
 main.Greet
@@ -346,15 +343,7 @@ main.Employer
 Greet
 Employee
 Employer
-EOF
-RUN
-
-NAME=icq swift
-FILE=bins/mach0/main-inherit
-CMDS=<<EOF
-icq
-EOF
-EXPECT=<<EOF
+--
 0x100003e44 [0x10000366c - 0x1000039bc] swift main.Employee
 0x100003eac [0x100003a5c - 0x100003bec] swift main.Employer main.Employee
 0x100003e04 [0x100003e04 - 0x100003e04] swift main.Greet

@@ -1,8 +1,34 @@
+# merged: ic?; icg; icl; icj; ic*; icc; ic+ fields and inheritance
 NAME=ic cpp classes
 FILE=bins/elf/libmagic.so
 CMDS=<<EOF
 ic~_JNIEnv
 ic~FindClass
+?e --
+ic?~?Usage
+?e --
+icg
+?e
+icg _JNIEnv
+?e
+icg System
+?e --
+icl
+?e --
+icj~{}
+?e --
+ic*
+?e --
+icc
+?e --
+s 0x456
+ic+UserKlass
+ic+UserKlass:UserBase
+ic+UserKlass.doThing
+s 0x20
+ic+UserKlass..count int
+ic*~UserKlass
+icg User
 EOF
 EXPECT=<<EOF
 0x00006060 [0x00006060 - 0x0000699a]   2362 jni class 0 _JNIEnv
@@ -18,27 +44,9 @@ EXPECT=<<EOF
 0x00006f68 jni   method   9      injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*)
 0x0000720c jni   method  10      injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
 0x00006060 jni   method   0      FindClass(char const*)
-EOF
-RUN
-
-NAME=ic?
-FILE=bins/elf/libmagic.so
-CMDS=ic?~?Usage
-EXPECT=<<EOF
+--
 1
-EOF
-RUN
-
-NAME=icg
-FILE=bins/elf/libmagic.so
-CMDS=<<EOF
-icg
-?e
-icg _JNIEnv
-?e
-icg System
-EOF
-EXPECT=<<EOF
+--
 'agn _JNIEnv
 'agn SystemClassLoaderInjector
 'agn std::exception
@@ -60,13 +68,7 @@ EXPECT=<<EOF
 'agn _JNIEnv
 
 'agn SystemClassLoaderInjector
-EOF
-RUN
-
-NAME=icl
-FILE=bins/elf/libmagic.so
-CMDS=icl
-EXPECT=<<EOF
+--
 0x6060 0x606a 0x6074 0x608e 0x6098 0x60a4 0x60c0 0x60dc 0x60ea 0x695e 0x697c
 0x74f8 0x699c 0x6a2c 0x6abc 0x6af4 0x6b1c 0x6bb0 0x6d00 0x6e5c 0x6f68 0x720c
 0x8884 0x88f4 0x8914
@@ -84,13 +86,7 @@ EXPECT=<<EOF
 0x126c0 0x126d0 0x12720
 0x12bd8 0x12bc8 0x12c00
 0x12c2c 0x12c1c 0x12c54
-EOF
-RUN
-
-NAME=icj
-FILE=bins/elf/libmagic.so
-CMDS=icj~{}
-EXPECT=<<EOF
+--
 [
   {
     "classname": "_JNIEnv",
@@ -903,13 +899,7 @@ EXPECT=<<EOF
     ]
   }
 ]
-EOF
-RUN
-
-NAME=ic*
-FILE=bins/elf/libmagic.so
-CMDS=ic*
-EXPECT=<<EOF
+--
 fs classes
 'f class._JNIEnv = 0x6060
 'f method._JNIEnv.FindClass(char_const*) = 0x6060
@@ -1019,13 +1009,7 @@ fs classes
 'f method.std::bad_typeid.const.what()_const = 0x12c1c
 'f method.std::bad_typeid.destructor.~bad_typeid() = 0x12c54
 'td struct std::bad_typeid { char empty[0];};
-EOF
-RUN
-
-NAME=icc
-FILE=bins/elf/libmagic.so
-CMDS=icc
-EXPECT=<<EOF
+--
 typedef struct {
 } class__JNIEnv;
 typedef struct {
@@ -1060,6 +1044,15 @@ typedef struct {
 } class_std::bad_cast;
 typedef struct {
 } class_std::bad_typeid;
+--
+'f class.UserKlass = 0x456
+'f super.UserKlass.UserBase = 17
+'f method.UserKlass.doThing = 0x456
+'f field.UserKlass.field.count = 0x00000020
+'td struct UserKlass { int count;};
+'agn UserKlass
+'agn UserBase
+'age UserBase UserKlass
 EOF
 RUN
 
@@ -1142,30 +1135,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ic+ fields and inheritance
-FILE=bins/elf/libmagic.so
-CMDS=<<EOF
-s 0x456
-ic+UserKlass
-ic+UserKlass:UserBase
-ic+UserKlass.doThing
-s 0x20
-ic+UserKlass..count int
-ic*~UserKlass
-icg User
-EOF
-EXPECT=<<EOF
-'f class.UserKlass = 0x456
-'f super.UserKlass.UserBase = 17
-'f method.UserKlass.doThing = 0x456
-'f field.UserKlass.field.count = 0x00000020
-'td struct UserKlass { int count;};
-'agn UserKlass
-'agn UserBase
-'age UserBase UserKlass
-EOF
-RUN
-
 NAME=icc dart
 FILE=bins/elf/libmagic.so
 CMDS=<<EOF
@@ -1209,45 +1178,34 @@ EOF
 RUN
 
 
+# merged: ic (file Java); icq (file Java); icqq (file Java)
 NAME=ic (file Java)
 FILE=bins/java/Hello.class
-CMDS=ic
+CMDS=<<EOF
+ic
+?e --
+icg
+icg Hello
+icg no_match
+?e --
+icq
+?e --
+icqq
+EOF
 EXPECT=<<EOF
 0x00000000 [0x0000022b - 0x000002b7]    140 java class 0 Hello :: java/lang/Object
 0x0000022b java   method   0 pC   <init>
 0x00000263 java   method   1 p    say
 0x000002aa java   method   2 ps   main
 0x0000020b java    field   0 P    who
-EOF
-RUN
-
-NAME=ic (file Java)
-FILE=bins/java/Hello.class
-CMDS=<<EOF
-icg
-icg Hello
-icg no_match
-EOF
-EXPECT=<<EOF
+--
 'agn Hello
 'agn java/lang/Object
 'age java/lang/Object Hello
 'agn Hello
-EOF
-RUN
-
-NAME=icq (file Java)
-FILE=bins/java/Hello.class
-CMDS=icq
-EXPECT=<<EOF
+--
 0x00000000 [0x0000022b - 0x000002b7] java Hello java/lang/Object
-EOF
-RUN
-
-NAME=icqq (file Java)
-FILE=bins/java/Hello.class
-CMDS=icqq
-EXPECT=<<EOF
+--
 Hello
 EOF
 RUN

@@ -81,6 +81,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: aes delay slot2
 NAME=aes delay slot
 FILE=bins/elf/mipsloop
 CMDS=<<EOF
@@ -91,18 +92,7 @@ ar?v0
 ar?a1
 sr PC
 pi 2
-EOF
-EXPECT=<<EOF
-0x0000000a
-0x00007a68
-lw t9, -sym.imp.printf(gp)
-jr t9
-EOF
-RUN
-
-NAME=aes delay slot2
-FILE=bins/elf/mipsloop
-CMDS=<<EOF
+?e --
 s main
 aeim
 aesu 0x000804d8
@@ -112,6 +102,11 @@ sr PC
 pi 2
 EOF
 EXPECT=<<EOF
+0x0000000a
+0x00007a68
+lw t9, -sym.imp.printf(gp)
+jr t9
+--
 0x0000000a
 0x00007a68
 lw a0, -segment.LOAD0(gp)

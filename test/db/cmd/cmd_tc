@@ -1,16 +1,15 @@
+# merged: tc2
 NAME=tc
 FILE=bins/mach0/objc-employee
-CMDS=.ic*;ts
+CMDS=<<EOF
+.ic*;ts
+?e --
+icc*
+EOF
 EXPECT=<<EOF
 Employee
 NSString
-EOF
-RUN
-
-NAME=tc2
-FILE=bins/mach0/objc-employee
-CMDS=icc*
-EXPECT=<<EOF
+--
 @interface Employee : NSObject
 {
 	short _shortWord;
@@ -40,10 +39,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: tc4
 NAME=tc3
 FILE=bins/mach0/objc-employee
 ARGS=-e bin.types=true
-CMDS=ic*
+CMDS=<<EOF
+ic*
+?e --
+.ic*;tsc;tec
+EOF
 EXPECT=<<EOF
 fs classes
 'f class.Employee = 0x100001ae0
@@ -72,14 +76,7 @@ fs classes
 'f field.Employee.property.shortWord = 0x00000000
 'f field.Employee.property.wideWord = 0x00000000
 'td struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};
-EOF
-RUN
-
-NAME=tc4
-FILE=bins/mach0/objc-employee
-ARGS=-e bin.types=true
-CMDS=.ic*;tsc;tec
-EXPECT=<<EOF
+--
 struct Employee {
   struct objc_class *isa;
   short _shortWord;
@@ -268,19 +265,20 @@ enum mach0_section_types {
 EOF
 RUN
 
+# merged: tc2 iOS14 arm64; tc3 iOS14 arm64
 NAME=tc iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
-CMDS=.ic*;ts
+CMDS=<<EOF
+.ic*;ts
+?e --
+icc*
+?e --
+ic*
+EOF
 EXPECT=<<EOF
 Employee
 NSString
-EOF
-RUN
-
-NAME=tc2 iOS14 arm64
-FILE=bins/mach0/objc-employee-ios14-arm64
-CMDS=icc*
-EXPECT=<<EOF
+--
 @interface Employee : NSObject
 {
 	short _shortWord;
@@ -308,13 +306,7 @@ EXPECT=<<EOF
 // - (void).cxx_destruct;
 + (void)sayHello;
 @end
-EOF
-RUN
-
-NAME=tc3 iOS14 arm64
-FILE=bins/mach0/objc-employee-ios14-arm64
-CMDS=ic*
-EXPECT=<<EOF
+--
 fs classes
 'f class.Employee = 0x100007958
 'f super.Employee.NSObject = 0
@@ -541,19 +533,20 @@ enum mach0_section_types {
 EOF
 RUN
 
+# merged: tc2 iOS14 arm64e; tc3 iOS14 arm64e
 NAME=tc iOS14 arm64e
 FILE=bins/mach0/objc-employee-ios14-arm64e
-CMDS=.ic*;ts
+CMDS=<<EOF
+.ic*;ts
+?e --
+icc*
+?e --
+ic*
+EOF
 EXPECT=<<EOF
 Employee
 NSString
-EOF
-RUN
-
-NAME=tc2 iOS14 arm64e
-FILE=bins/mach0/objc-employee-ios14-arm64e
-CMDS=icc*
-EXPECT=<<EOF
+--
 @interface Employee : NSObject
 {
 	short _shortWord;
@@ -581,13 +574,7 @@ EXPECT=<<EOF
 // - (void).cxx_destruct;
 + (void)sayHello;
 @end
-EOF
-RUN
-
-NAME=tc3 iOS14 arm64e
-FILE=bins/mach0/objc-employee-ios14-arm64e
-CMDS=ic*
-EXPECT=<<EOF
+--
 fs classes
 'f class.Employee = 0x1000079a8
 'f super.Employee.NSObject = 0

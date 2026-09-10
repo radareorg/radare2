@@ -15,6 +15,7 @@ r     154624  ls
 EOF
 RUN
 
+# merged: md apfs cat
 NAME=md apfs mounts
 FILE=bins/fs/apfs.img
 CMDS=<<EOF
@@ -23,6 +24,8 @@ echo ---
 md /root
 echo ---
 md /root/bin
+?e --
+mc /root/hello.txt
 EOF
 EXPECT=<<EOF
 Type: APFS (Apple File System)
@@ -36,15 +39,7 @@ d bin
 r hello.txt
 ---
 r ls
-EOF
-RUN
-
-NAME=md apfs cat
-FILE=bins/fs/apfs.img
-CMDS=<<EOF
-mc /root/hello.txt
-EOF
-EXPECT=<<EOF
+--
 hello world
 
 EOF

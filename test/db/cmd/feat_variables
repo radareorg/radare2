@@ -301,6 +301,7 @@ ternary 0t0
 EOF
 RUN
 
+# merged: $o (x86-simple); $b (x86-simple)
 NAME=$$ (x86-simple)
 FILE=bins/elf/analysis/x86-simple
 CMDS=<<EOF
@@ -309,33 +310,13 @@ s 42
 ?v $$
 s-
 ?v $$
-EOF
-EXPECT=<<EOF
-0x8048060
-0x2a
-0x8048060
-EOF
-RUN
-
-NAME=$o (x86-simple)
-FILE=bins/elf/analysis/x86-simple
-CMDS=<<EOF
+?e --
 ?v $o
 s 42
 ?v $o
 s-
 ?v $o
-EOF
-EXPECT=<<EOF
-0x60
-0x2a
-0x60
-EOF
-RUN
-
-NAME=$b (x86-simple)
-FILE=bins/elf/analysis/x86-simple
-CMDS=<<EOF
+?e --
 e asm.bits=32
 e asm.arch = x86
 e anal.arch = x86
@@ -344,6 +325,14 @@ b 123
 ? $b
 EOF
 EXPECT=<<EOF
+0x8048060
+0x2a
+0x8048060
+--
+0x60
+0x2a
+0x60
+--
 0x7b
 int32   123
 uint32  123
@@ -369,25 +358,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: ?p and ?P
 NAME=?p and ?P
 FILE=bins/elf/analysis/simple.elf
 CMDS=<<EOF
 ?p 0x08000060
 ?P 0x00000060
-EOF
-EXPECT=<<EOF
-0x00000060
-0x08000060
-EOF
-RUN
-
-NAME=?p and ?P
-FILE=bins/elf/analysis/simple.elf
-CMDS=<<EOF
+?e --
 ?p 0xdeadbeef
 ?P 0xdeadbeef
 EOF
 EXPECT=<<EOF
+0x00000060
+0x08000060
+--
 no map at 0xdeadbeef
 no map at 0xdeadbeef
 EOF

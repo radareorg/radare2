@@ -215,13 +215,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: pxa test
 NAME=pri cows
 FILE=bins/other/cows128.data
-CMDS=pri
+CMDS=<<EOF
+pri
+?e --
+f test=$$
+f win=$$+7
+f oops=$$+22
+pxa 32
+e hex.compact=true
+pxa 32
+EOF
 EXPECT=<<EOF
 ::::::::::++++++
 ++**++**********
 **%%%
+--
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+            /test            /win                                  
+0x00000000  3758 8634 5586 2c4f 8029 4c7e 2d4b 7f3c  7X.4U.,O.)L~-K.<
+                           /oops                                   
+0x00000010  4c7f 4d51 8156 5e8a 5261 8d4f 6a91 6884  L.MQ.V^.Ra.Oj.h.
+- offset -   0 1 2 3 4 5 6 7 8 9 A B C D E F  0123456789ABCDEF
+            /test          /win                                    
+0x00000000  3758863455862c4f80294c7e2d4b7f3c  7X.4U.,O.)L~-K.<
+                        /oops                                      
+0x00000010  4c7f4d5181565e8a52618d4f6a916884  L.MQ.V^.Ra.Oj.h.
 EOF
 RUN
 
@@ -322,25 +343,14 @@ jg 0x14
 EOF
 RUN
 
+# merged: pi -5 @ 0x0040050f (anal)
 NAME=pi -5 @ 0x0040050f
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 pi -5 @ 0x0040050f
-EOF
-EXPECT=<<EOF
-pop rbp
-jmp sym.register_tm_clones
-push rbp
-mov rbp, rsp
-mov edi, str.Hello_World
-EOF
-RUN
-
-NAME=pi -5 @ 0x0040050f (anal)
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
+?e --
 e asm.arch=x86
 e asm.bits=64
 aaa
@@ -352,30 +362,31 @@ jmp sym.register_tm_clones
 push rbp
 mov rbp, rsp
 mov edi, str.Hello_World
+--
+pop rbp
+jmp sym.register_tm_clones
+push rbp
+mov rbp, rsp
+mov edi, str.Hello_World
 EOF
 RUN
 
+# merged: pi -5
 NAME=pij -5 @ 0x0040050f
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 pij -3 @ 0x0040050f
-EOF
-EXPECT=<<EOF
-[{"addr":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"addr":4195591,"esil":"rsp,rbp,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"addr":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
-EOF
-RUN
-
-NAME=pi -5
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
+?e --
 e asm.arch=x86
 e asm.bits=64
 s 0x0040050f
 pi -5
 EOF
 EXPECT=<<EOF
+[{"addr":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"addr":4195591,"esil":"rsp,rbp,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"addr":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
+--
 pop rbp
 jmp sym.register_tm_clones
 push rbp
@@ -788,18 +799,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: psW 32 widestring leading zeros
 NAME=psW 32 widestring
 FILE=bins/elf/crackme0x00b
-CMDS=psW @ obj.pass.1964
+CMDS=<<EOF
+psW @ obj.pass.1964
+?e --
+psW @ 0x0804a03e
+EOF
 EXPECT=<<EOF
 w0wgreat
-EOF
-RUN
-
-NAME=psW 32 widestring leading zeros
-FILE=bins/elf/crackme0x00b
-CMDS=psW @ 0x0804a03e
-EXPECT=<<EOF
+--
 w0wgreat
 EOF
 RUN
@@ -843,30 +853,6 @@ EXPECT=<<EOF
 [38;2;19;161;14m0x0001000a[0m [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;86;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;100;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;117;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;76;57;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;86;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;76;57;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [0m
 [38;2;19;161;14m0x0001001a[0m [38;2;240;240;240m[48;2;86;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;135;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;29;117m[38;2;240;240;240men[38;2;0;0;0m[48;2;255;195;15m[38;2;0;0;0m  [38;2;240;240;240m[48;2;86;86;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;25;0;76m[38;2;240;240;240m  [38;2;240;240;240m[48;2;50;76;0m[38;2;240;240;240m  [38;2;0;0;0m[48;2;147;94;255m[38;2;0;0;0m  [38;2;240;240;240m[48;2;0;76;76m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;0;0;0m[48;2;135;135;0m[38;2;0;0;0m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [0m
 [38;2;19;161;14m0x0001002a[0m [38;2;240;240;240m[48;2;76;57;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;86;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [38;2;240;240;240m[48;2;0;0;0m[38;2;240;240;240m  [0m
-EOF
-RUN
-
-NAME=pxa test
-FILE=bins/other/cows128.data
-CMDS=<<EOF
-f test=$$
-f win=$$+7
-f oops=$$+22
-pxa 32
-e hex.compact=true
-pxa 32
-EOF
-EXPECT=<<EOF
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-            /test            /win                                  
-0x00000000  3758 8634 5586 2c4f 8029 4c7e 2d4b 7f3c  7X.4U.,O.)L~-K.<
-                           /oops                                   
-0x00000010  4c7f 4d51 8156 5e8a 5261 8d4f 6a91 6884  L.MQ.V^.Ra.Oj.h.
-- offset -   0 1 2 3 4 5 6 7 8 9 A B C D E F  0123456789ABCDEF
-            /test          /win                                    
-0x00000000  3758863455862c4f80294c7e2d4b7f3c  7X.4U.,O.)L~-K.<
-                        /oops                                      
-0x00000010  4c7f4d5181565e8a52618d4f6a916884  L.MQ.V^.Ra.Oj.h.
 EOF
 RUN
 

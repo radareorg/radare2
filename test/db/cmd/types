@@ -1310,6 +1310,7 @@ var size_t var_1ch @ rbp-0x1c
 EOF
 RUN
 
+# merged: types afs [before]
 NAME=General type propgation
 FILE=bins/elf/hello_world
 CMDS=<<EOF
@@ -1317,6 +1318,10 @@ aa
 s main
 aaft
 afv
+?e --
+s main
+af
+tk~func.main
 EOF
 EXPECT=<<EOF
 var char * dest @ rbp-0x8
@@ -1324,6 +1329,12 @@ var char * s2 @ rbp-0x10
 var char * src @ rbp-0x18
 var size_t size @ rbp-0x1c
 var size_t var_20h @ rbp-0x20
+--
+func.main.arg.0=int,argc
+func.main.arg.1=char **,argv
+func.main.arg.2=char **,envp
+func.main.args=3
+func.main.ret=int
 EOF
 RUN
 
@@ -1962,22 +1973,6 @@ struct.s1.size=int,4,0
 EOF
 RUN
 
-NAME=types afs [before]
-FILE=bins/elf/hello_world
-CMDS=<<EOF
-s main
-af
-tk~func.main
-EOF
-EXPECT=<<EOF
-func.main.arg.0=int,argc
-func.main.arg.1=char **,argv
-func.main.arg.2=char **,envp
-func.main.args=3
-func.main.ret=int
-EOF
-RUN
-
 NAME=types afs [after]
 FILE=bins/elf/hello_world
 CMDS=<<EOF
@@ -2014,6 +2009,7 @@ char type (int a, char **b);
 EOF
 RUN
 
+# merged: afs sym.imp.*; types afs [before] 2
 NAME=afs fcnname with dots
 FILE=bins/elf/hello_world
 CMDS=<<EOF
@@ -2023,23 +2019,71 @@ afs
 afs
 'afs char foo.bar(int a, ...);
 afs
+?e --
+s sym.imp.strlen
+af
+afs
+?e --
+aaa
+s main
+afs
+afsj~{}
+s sym.imp.strcpy
+afs
+afsj~{}
 EOF
 EXPECT=<<EOF
 void entry0 (int64_t arg1);
 void foo.bar ();
 char foo.bar (int a, ...);
-EOF
-RUN
-
-NAME=afs sym.imp.*
-FILE=bins/elf/hello_world
-CMDS=<<EOF
-s sym.imp.strlen
-af
-afs
-EOF
-EXPECT=<<EOF
+--
 size_t sym.imp.strlen (const char *s);
+--
+int main (int argc, char **argv, char **envp);
+{
+  "name": "main",
+  "noreturn": false,
+  "ret": "int",
+  "callconv": "amd64",
+  "argc": 3,
+  "args": [
+    {
+      "name": "argc",
+      "type": "int",
+      "cc": "rdi"
+    },
+    {
+      "name": "argv",
+      "type": "char **",
+      "cc": "rsi"
+    },
+    {
+      "name": "envp",
+      "type": "char **",
+      "cc": "rdx"
+    }
+  ]
+}
+char * sym.imp.strcpy (char *dest, const char *src);
+{
+  "name": "sym.imp.strcpy",
+  "noreturn": false,
+  "ret": "char *",
+  "callconv": "amd64",
+  "argc": 2,
+  "args": [
+    {
+      "name": "dest",
+      "type": "char *",
+      "cc": "rdi"
+    },
+    {
+      "name": "src",
+      "type": "const char *",
+      "cc": "rsi"
+    }
+  ]
+}
 EOF
 RUN
 
@@ -2252,66 +2296,6 @@ false
 EOF
 RUN
 
-NAME=types afs [before] 2
-FILE=bins/elf/hello_world
-CMDS=<<EOF
-aaa
-s main
-afs
-afsj~{}
-s sym.imp.strcpy
-afs
-afsj~{}
-EOF
-EXPECT=<<EOF
-int main (int argc, char **argv, char **envp);
-{
-  "name": "main",
-  "noreturn": false,
-  "ret": "int",
-  "callconv": "amd64",
-  "argc": 3,
-  "args": [
-    {
-      "name": "argc",
-      "type": "int",
-      "cc": "rdi"
-    },
-    {
-      "name": "argv",
-      "type": "char **",
-      "cc": "rsi"
-    },
-    {
-      "name": "envp",
-      "type": "char **",
-      "cc": "rdx"
-    }
-  ]
-}
-char * sym.imp.strcpy (char *dest, const char *src);
-{
-  "name": "sym.imp.strcpy",
-  "noreturn": false,
-  "ret": "char *",
-  "callconv": "amd64",
-  "argc": 2,
-  "args": [
-    {
-      "name": "dest",
-      "type": "char *",
-      "cc": "rdi"
-    },
-    {
-      "name": "src",
-      "type": "const char *",
-      "cc": "rsi"
-    }
-  ]
-}
-EOF
-RUN
-
 NAME=typedef stuff
 FILE=--
 CMDS=<<EOF
@@ -2414,30 +2398,15 @@ var char ** ptr @ rbp-0x18
 EOF
 RUN
 
+# merged: a:tp config rollback can be enabled; a:tp preserves variable after rollback
 NAME=a:tp config rollback default off
 FILE=bins/elf/double_ptr
 CMDS=<<EOF
 e types.rollback
-EOF
-EXPECT=<<EOF
-false
-EOF
-RUN
-
-NAME=a:tp config rollback can be enabled
-FILE=bins/elf/double_ptr
-CMDS=<<EOF
+?e --
 e types.rollback=true
 e types.rollback
-EOF
-EXPECT=<<EOF
-true
-EOF
-RUN
-
-NAME=a:tp preserves variable after rollback
-FILE=bins/elf/double_ptr
-CMDS=<<EOF
+?e --
 aa
 e types.rollback=true
 s main
@@ -2445,6 +2414,10 @@ a:tp
 afv~ptr
 EOF
 EXPECT=<<EOF
+false
+--
+true
+--
 var char ** ptr @ rbp-0x18
 EOF
 RUN

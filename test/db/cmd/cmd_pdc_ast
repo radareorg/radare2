@@ -32,10 +32,15 @@ seq 0x00000000
 EOF
 RUN
 
+# merged: pdct region ast single-armed if on ppc64
 NAME=pdct region ast sequential fall-through blocks
 FILE=bins/elf/ppc64v1-more
 CMDS=<<EOF
 s 0x4bf8
+af
+pdct
+?e --
+s 0xd500
 af
 pdct
 EOF
@@ -44,17 +49,7 @@ seq 0x00004bf8
   bb 0x00004bf8
   bb 0x00004c08
   bb 0x00004c18
-EOF
-RUN
-
-NAME=pdct region ast single-armed if on ppc64
-FILE=bins/elf/ppc64v1-more
-CMDS=<<EOF
-s 0xd500
-af
-pdct
-EOF
-EXPECT=<<EOF
+--
 seq 0x0000d500
   if 0x0000d500
     bb 0x0000d588
@@ -88,15 +83,30 @@ seq 0x00000580
 EOF
 RUN
 
+# merged: pdct region ast owns a second loop exit target and jumps to it
 NAME=pdct region ast single block
 FILE=bins/elf/ls
 CMDS=<<EOF
 s sym.main
 af
 pdct
+?e --
+aaa
+pdct @ 0xd350
 EOF
 EXPECT=<<EOF
 bb 0x00005ae0
+--
+seq 0x0000d350
+  if-else 0x0000d350
+    bb 0x0000d36b
+    seq 0x0000d360
+      while 0x0000d360
+        if-else 0x0000d370
+          continue 0x0000d360
+          goto 0x0000d379
+      goto 0x0000d36b
+  bb 0x0000d379
 EOF
 RUN
 
@@ -137,26 +147,6 @@ seq 0x00000000
         continue 0x00000010
       break 0x0000000c
   bb 0x0000000c
-EOF
-RUN
-
-NAME=pdct region ast owns a second loop exit target and jumps to it
-FILE=bins/elf/ls
-CMDS=<<EOF
-aaa
-pdct @ 0xd350
-EOF
-EXPECT=<<EOF
-seq 0x0000d350
-  if-else 0x0000d350
-    bb 0x0000d36b
-    seq 0x0000d360
-      while 0x0000d360
-        if-else 0x0000d370
-          continue 0x0000d360
-          goto 0x0000d379
-      goto 0x0000d36b
-  bb 0x0000d379
 EOF
 RUN
 

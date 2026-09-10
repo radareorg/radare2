@@ -204,25 +204,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: "Mach-O dSYM symbols (armv7)"
 NAME="Mach-O dSYM lines (armv7)"
 FILE=bins/mach0/TestRTTI-armv7-dSYM
 CMDS=<<EOF
 CL 0x0000a24e
+?e --
+is~main[1]
 EOF
 EXPECT=<<EOF
 file: /Users/ftamagni/src/TestRTTI/TestRTTI/TestRTTI.cpp
 line: 18
 colu: 0
 addr: 0x0000a24e
-EOF
-RUN
-
-NAME="Mach-O dSYM symbols (armv7)"
-FILE=bins/mach0/TestRTTI-armv7-dSYM
-CMDS=<<EOF
-is~main[1]
-EOF
-EXPECT=<<EOF
+--
 0x00006376
 EOF
 RUN

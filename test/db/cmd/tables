@@ -1,13 +1,71 @@
+# merged: tables csv
 NAME=tables sum
 FILE=bins/elf/analysis/elf-virtualtable
 ARGS=-e bin.types=true
 CMDS=<<EOF
 f, size/sum
+?e --
+f, size/ne/0,addr/ne/0x00000000,/head/10,:csv~:..20
+f, space/eq/relocs,addr/cols/name,/head/3,:json~{}
+f, /head/10,/tail/4,space/cols/name
+f, /page/2/10,sort/cols/space/size/name,size/sort/inc,:fancy
 EOF
 EXPECT=<<EOF
 size
 ----
 18.2K
+
+--
+addr,size,space,name
+0x00000040,56,format,elf_phdr
+0x00000448,497,format,elf_strtab
+0x0000213f,268,format,elf_shstrtab
+0x00002250,64,format,elf_shdr
+0x00400000,4132,segments,segment.LOAD0
+0x00400000,64,segments,segment.ehdr
+0x00400040,448,segments,segment.PHDR
+0x00400200,28,sections,section..interp
+0x00400200,28,segments,segment.INTERP
+0x0040021c,32,sections,section..note.ABI_tag
+
+[
+  {
+    "addr": 6296136,
+    "name": "reloc.__gmon_start__"
+  },
+  {
+    "addr": 6296168,
+    "name": "reloc.std::ostream::operator___int_"
+  },
+  {
+    "addr": 6296176,
+    "name": "reloc.operator_delete_void_"
+  }
+]
+
+space    name
+-------------
+segments segment.GNU_STACK
+format   elf_header
+format   elf_phdr
+format   elf_strtab
+format   elf_shstrtab
+
+.-------------------------------------------------.
+| space     | size  | name                        |
+)-------------------------------------------------(
+| sections  | 28    | section..interp             |
+| segments  | 28    | segment.INTERP              |
+| sections  | 32    | section..note.ABI_tag       |
+| sections  | 36    | section..note.gnu.build_id  |
+| sections  | 56    | section..gnu.hash           |
+| segments  | 64    | segment.ehdr                |
+| format    | 64    | elf_shdr                    |
+| segments  | 68    | segment.NOTE                |
+| format    | 268   | elf_shstrtab                |
+| segments  | 448   | segment.PHDR                |
+| segments  | 4132  | segment.LOAD0               |
+`-------------------------------------------------'
 
 EOF
 RUN
@@ -70,70 +128,6 @@ size
 1255
 2424
 4132
-
-EOF
-RUN
-
-NAME=tables csv
-FILE=bins/elf/analysis/elf-virtualtable
-ARGS=-e bin.types=true
-CMDS=<<EOF
-f, size/ne/0,addr/ne/0x00000000,/head/10,:csv~:..20
-f, space/eq/relocs,addr/cols/name,/head/3,:json~{}
-f, /head/10,/tail/4,space/cols/name
-f, /page/2/10,sort/cols/space/size/name,size/sort/inc,:fancy
-EOF
-EXPECT=<<EOF
-addr,size,space,name
-0x00000040,56,format,elf_phdr
-0x00000448,497,format,elf_strtab
-0x0000213f,268,format,elf_shstrtab
-0x00002250,64,format,elf_shdr
-0x00400000,4132,segments,segment.LOAD0
-0x00400000,64,segments,segment.ehdr
-0x00400040,448,segments,segment.PHDR
-0x00400200,28,sections,section..interp
-0x00400200,28,segments,segment.INTERP
-0x0040021c,32,sections,section..note.ABI_tag
-
-[
-  {
-    "addr": 6296136,
-    "name": "reloc.__gmon_start__"
-  },
-  {
-    "addr": 6296168,
-    "name": "reloc.std::ostream::operator___int_"
-  },
-  {
-    "addr": 6296176,
-    "name": "reloc.operator_delete_void_"
-  }
-]
-
-space    name
--------------
-segments segment.GNU_STACK
-format   elf_header
-format   elf_phdr
-format   elf_strtab
-format   elf_shstrtab
-
-.-------------------------------------------------.
-| space     | size  | name                        |
-)-------------------------------------------------(
-| sections  | 28    | section..interp             |
-| segments  | 28    | segment.INTERP              |
-| sections  | 32    | section..note.ABI_tag       |
-| sections  | 36    | section..note.gnu.build_id  |
-| sections  | 56    | section..gnu.hash           |
-| segments  | 64    | segment.ehdr                |
-| format    | 64    | elf_shdr                    |
-| segments  | 68    | segment.NOTE                |
-| format    | 268   | elf_shstrtab                |
-| segments  | 448   | segment.PHDR                |
-| segments  | 4132  | segment.LOAD0               |
-`-------------------------------------------------'
 
 EOF
 RUN
