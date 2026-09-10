@@ -276,80 +276,6 @@ typedef struct r_anal_function_signature_t {
 	bool noreturn;
 } RAnalFunctionSignature;
 
-typedef enum {
-	R_ANAL_FCN_BASE_BP = 0,
-	R_ANAL_FCN_BASE_SP,
-	R_ANAL_FCN_BASE_NAMED
-} RAnalFcnSlotBase;
-
-typedef enum {
-	R_ANAL_FCN_SLOT_LOCAL = 0,
-	R_ANAL_FCN_SLOT_ARG,
-	R_ANAL_FCN_SLOT_HOME,
-	R_ANAL_FCN_SLOT_UNKNOWN
-} RAnalFcnSlotRole;
-
-
-typedef enum {
-	R_ANAL_FCN_CALLEE_UNKNOWN = 0,
-	R_ANAL_FCN_CALLEE_INTERNAL = 1,
-	R_ANAL_FCN_CALLEE_IMPORTED = 2,
-} RAnalFcnCalleeLinkage;
-
-// How control reaches a callee. A call comes back; a tail transfer does not,
-// and the callee's return is the caller's. The two tail forms differ in what
-// names the callee: a jump names its target directly, and a jump through a
-// loaded value is licensed by the relocation on the slot the value was loaded
-// from, so `addr` is then that slot rather than any code address.
-typedef enum {
-	R_ANAL_CALL_TRANSFER_CALL = 0,
-	R_ANAL_CALL_TRANSFER_TAIL_JUMP = 1,
-	R_ANAL_CALL_TRANSFER_TAIL_SLOT = 2,
-} RAnalCallTransfer;
-
-
-
-// Opaque immutable snapshot borrowed by decompiler providers.
-
-// Immutable snapshot data supplied to decompiler providers.
-// Capability bits describe fields captured, not semantic completeness. Schema
-// 12 adds source-owned parameter presentation names without making names part
-// of semantic identity or revision hashing; the public ABI is 139.
-// Presence says this radare2 exposes the immutable function-snapshot API. A
-// consumer asks whether the capability is here, never which number it sits at:
-// the numbers move for reasons that have nothing to do with whether the API a
-// provider needs is present.
-// A string literal the function refers to, and where it lives.
-//
-// A consumer holding only the snapshot can see the address a constant carries
-// but not what is stored there, so a rendered call could name its callee and
-// still spell its argument as an address. This is the same fact radare2
-// already keeps as `Cs` metadata, travelling with the function that reads it.
-// A call through a table of function pointers reaches every entry the index can
-// select, and a consumer holding only the function's own bytes cannot read the
-// table to find out which. These are the words themselves, carried as fact:
-// which addresses the table holds, not which of them a given call reaches. That
-// second question is the caller's to answer, from the range it can prove for
-// the index, and answering it by reading the table alone would be a guess.
-// A named data object the function refers to, and where it lives.
-//
-// The same argument as the string literal beside it: a consumer holding only
-// the snapshot sees the address a constant carries, so a global renders as its
-// address rather than as its name. This is radare2's own flag for that address,
-// travelling with the function that reads it. When radare2 has an address type
-// link for the same object, that exact spelling travels beside the display name
-// as an optional, source-owned type fact.
-
-// Transitively const scalar projections. Owned strings are available only
-// through caller-buffer copy accessors while the callback is active.
-
-
-
-// The signature radare2 recovered, spelled the way the source spells it. The
-// interface describes where values live; this says what they are called.
-
-
-
 typedef struct r_anal_diff_t {
 	int type;
 	ut32 size;
@@ -970,10 +896,6 @@ typedef bool (*RAnalFcnAnalyzeCallback)(RAnal *a, RAnalFunction *fcn);
 // Variable recovery callback (called during afva)
 // Returns list of RAnalVarProt or NULL to use default ESIL recovery
 typedef RList *(*RAnalRecoverVarsCallback)(RAnal *a, RAnalFunction *fcn);
-
-// Data flow refs callback (called during aar). A true result makes `*refs`
-// authoritative, including NULL/empty; false preserves the producer's old refs.
-// A non-empty output vector is transferred to the caller.
 
 // Pre-analysis callback (called early in aaa, after aa, before per-function work)
 typedef bool (*RAnalPreAnalysisCallback)(RAnal *a);

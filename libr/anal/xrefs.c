@@ -2,7 +2,7 @@
 
 // R2R db/cmd/cmd_aflxj db/cmd/cmd_aflxv db/cmd/cmd_ax
 
-#include <r_anal_priv.h>
+#include <r_anal.h>
 #include <r_core.h>
 #include <r_cons.h>
 #include <r_vec.h>
@@ -29,27 +29,6 @@ typedef struct r_ref_manager_t {
 	R_ALIGNED(16) AdjacencyList xrefs;  // backward refs
 } RefManager;
 
-static RefManager *ref_manager_new(void);
-static void ref_manager_free(RefManager *rm);
-
-typedef struct r_affected_xref_address_t {
-	ut64 addr;
-	ut8 roles;
-} AffectedXrefAddress;
-
-struct r_anal_owned_xref_prepared_t {
-	RAnal *source_anal;
-	RefManager *rm;
-	AffectedXrefAddress *affected;
-	size_t affected_count;
-	bool changed;
-};
-
-enum {
-	AFFECTED_XREF_SOURCE = 1,
-	AFFECTED_XREF_TARGET = 2,
-};
-
 static inline int compare_ref(const RAnalRef *a, const RAnalRef *b) {
 	if (a->at < b->at) {
 		return -1;
@@ -66,6 +45,13 @@ static inline int compare_ref(const RAnalRef *a, const RAnalRef *b) {
 	return 0;
 }
 
+static RefManager *ref_manager_new(void) {
+	RefManager *rm = R_NEW0 (RefManager);
+	rm->refs = AdjacencyList_new (INITIAL_CAPACITY);
+	rm->xrefs = AdjacencyList_new (INITIAL_CAPACITY);
+	return rm;
+}
+
 static inline void adjacency_list_fini(AdjacencyList *adj_list) {
 	const AdjacencyList_Entry *entry;
 	R_ADJACENCY_LIST_FOREACH (adj_list, entry) {
@@ -76,7 +62,15 @@ static inline void adjacency_list_fini(AdjacencyList *adj_list) {
 	AdjacencyList_destroy (adj_list);
 }
 
-static bool _add_ref(AdjacencyList *adj_list, ut64 from, ut64 to, RAnalRefType type) {
+static void ref_manager_free(RefManager *rm) {
+	if (R_LIKELY (rm)) {
+		adjacency_list_fini (&rm->refs);
+		adjacency_list_fini (&rm->xrefs);
+	}
+	free (rm);
+}
+
+static void _add_ref(AdjacencyList *adj_list, ut64 from, ut64 to, RAnalRefType type) {
 	AdjacencyList_Iter iter = AdjacencyList_find (adj_list, &from);
 	AdjacencyList_Entry *entry = AdjacencyList_Iter_get (&iter);
 	Edges *edges = entry ? entry->val : NULL;
@@ -85,7 +79,7 @@ static bool _add_ref(AdjacencyList *adj_list, ut64 from, ut64 to, RAnalRefType t
 		edges = R_NEW0 (Edges);
 		if (!edges) {
 			R_LOG_WARN ("failed to allocate hashtable for xrefs");
-			return false;
+			return;
 		}
 
 		*edges = Edges_new (INITIAL_CAPACITY);
@@ -98,20 +92,11 @@ static bool _add_ref(AdjacencyList *adj_list, ut64 from, ut64 to, RAnalRefType t
 		Edges_Entry *existing_entry = Edges_Iter_get (&result.iter);
 		existing_entry->val = type;
 	}
-	return true;
 }
 
-static void _delete_ref(AdjacencyList *adj_list, ut64 from, ut64 to);
-
-static bool ref_manager_add_entry(RefManager *rm, ut64 from, ut64 to, RAnalRefType type) {
-	if (!_add_ref (&rm->refs, from, to, type)) {
-		return false;
-	}
-	if (!_add_ref (&rm->xrefs, to, from, type)) {
-		_delete_ref (&rm->refs, from, to);
-		return false;
-	}
-	return true;
+static void ref_manager_add_entry(RefManager *rm, ut64 from, ut64 to, RAnalRefType type) {
+	_add_ref (&rm->refs, from, to, type);
+	_add_ref (&rm->xrefs, to, from, type);
 }
 
 static void _delete_ref(AdjacencyList *adj_list, ut64 from, ut64 to) {
@@ -119,14 +104,8 @@ static void _delete_ref(AdjacencyList *adj_list, ut64 from, ut64 to) {
 	AdjacencyList_Entry *entry = AdjacencyList_Iter_get (&iter);
 	Edges *edges = entry ? entry->val : NULL;
 	if (edges) {
-		Edges_CIter edge_iter = Edges_cfind (edges, &to);
-		if (!Edges_CIter_get (&edge_iter)) {
-			return;
-		}
 		if (Edges_size (edges) == 1) {
 			AdjacencyList_erase_at (iter); // delete rest of hashtable
-			Edges_destroy (edges);
-			free (edges);
 		} else {
 			Edges_erase (edges, &to); // delete only a reference
 		}
@@ -239,23 +218,16 @@ static inline RVecAnalRef *ref_manager_get_xrefs(RefManager *rm, ut64 to) {
 }
 
 R_API bool r_anal_xrefs_init(RAnal *anal) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->lock, false);
-	RefManager *replacement = ref_manager_new ();
-	r_th_lock_enter (anal->lock);
-	RefManager *old = anal->rm;
-	anal->rm = replacement;
-	ref_manager_free (old);
-	r_th_lock_leave (anal->lock);
-	return true;
+	R_RETURN_VAL_IF_FAIL (anal, false);
+
+	r_anal_xrefs_free (anal);
+	anal->rm = ref_manager_new ();
+	return !!anal->rm;
 }
 
 R_API void r_anal_xrefs_free(RAnal *anal) {
-	R_RETURN_IF_FAIL (anal && anal->lock);
-	r_th_lock_enter (anal->lock);
-	RefManager *rm = anal->rm;
-	anal->rm = NULL;
-	ref_manager_free (rm);
-	r_th_lock_leave (anal->lock);
+	R_RETURN_IF_FAIL (anal);
+	ref_manager_free (anal->rm);
 }
 
 static inline RAnalRefType xref_resolve_type(const RAnalRefType _type) {
@@ -275,62 +247,10 @@ static inline RAnalRefType xref_resolve_type(const RAnalRefType _type) {
 	return type;
 }
 
-static RefManager *ref_manager_new(void) {
-	RefManager *rm = R_NEW0 (RefManager);
-	rm->refs = AdjacencyList_new (INITIAL_CAPACITY);
-	rm->xrefs = AdjacencyList_new (INITIAL_CAPACITY);
-	return rm;
-}
-
-static void ref_manager_free(RefManager *rm) {
-	if (R_LIKELY (rm)) {
-		adjacency_list_fini (&rm->refs);
-		adjacency_list_fini (&rm->xrefs);
-	}
-	free (rm);
-}
-
-static void invalidate_affected_functions(RAnal *anal, const AffectedXrefAddress *affected_addresses, size_t affected_count) {
-	RListIter *iter;
-	RAnalFunction *fcn;
-	r_list_foreach (anal->fcns, iter, fcn) {
-		ut8 roles = 0;
-		size_t i;
-		for (i = 0; i < affected_count; i++) {
-			const AffectedXrefAddress *affected = &affected_addresses[i];
-			if (fcn->addr == affected->addr || r_anal_function_contains (fcn, affected->addr)) {
-				roles |= affected->roles;
-				if (roles == (AFFECTED_XREF_SOURCE | AFFECTED_XREF_TARGET)) {
-					break;
-				}
-			}
-		}
-		if (roles & AFFECTED_XREF_SOURCE) {
-			fcn->meta.numcallrefs = -1;
-		}
-		if (roles & AFFECTED_XREF_TARGET) {
-			fcn->meta.numrefs = -1;
-		}
-	}
-}
-
-static bool xref_del_locked(RAnal *anal, ut64 from, ut64 to) {
+// set a reference from FROM to TO and a cross-reference(xref) from TO to FROM.
+// when fcn is known (the function containing FROM), pass it to skip hash lookups.
+R_API bool r_anal_xrefs_setf(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to, const RAnalRefType _type) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->rm, false);
-	ref_manager_remove_entry (anal->rm, from, to);
-	R_DIRTY_SET (anal);
-
-	AffectedXrefAddress affected[] = {
-		{ .addr = from, .roles = AFFECTED_XREF_SOURCE },
-		{ .addr = to, .roles = AFFECTED_XREF_TARGET },
-	};
-	invalidate_affected_functions (anal, affected, R_ARRAY_SIZE (affected));
-
-	return true;
-}
-
-static bool xrefs_setf_locked(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to, const RAnalRefType _type) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->rm, false);
-	(void)fcn;
 
 	if (from == to || from == UT64_MAX || to == UT64_MAX) {
 		return false;
@@ -345,26 +265,25 @@ static bool xrefs_setf_locked(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 t
 	}
 
 	const RAnalRefType type = xref_resolve_type (_type);
-	if (!ref_manager_add_entry (anal->rm, from, to, type)) {
-		return false;
-	}
+	ref_manager_add_entry (anal->rm, from, to, type);
 	R_DIRTY_SET (anal);
 
-	AffectedXrefAddress affected[] = {
-		{ .addr = from, .roles = AFFECTED_XREF_SOURCE },
-		{ .addr = to, .roles = AFFECTED_XREF_TARGET },
-	};
-	invalidate_affected_functions (anal, affected, R_ARRAY_SIZE (affected));
+	// Invalidate function ref counts
+	if (fcn) {
+		fcn->meta.numcallrefs = -1;
+		fcn->meta.numrefs = -1;
+	} else {
+		RAnalFunction *fcn_from = r_anal_get_function_at (anal, from);
+		if (fcn_from) {
+			fcn_from->meta.numcallrefs = -1;
+		}
+		RAnalFunction *fcn_to = r_anal_get_function_at (anal, to);
+		if (fcn_to) {
+			fcn_to->meta.numrefs = -1;
+		}
+	}
 
 	return true;
-}
-
-R_API bool r_anal_xrefs_setf(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to, const RAnalRefType type) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->lock, false);
-	r_th_lock_enter (anal->lock);
-	bool result = xrefs_setf_locked (anal, fcn, from, to, type);
-	r_th_lock_leave (anal->lock);
-	return result;
 }
 
 R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type) {
@@ -372,67 +291,68 @@ R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType 
 }
 
 R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->lock, false);
-	r_th_lock_enter (anal->lock);
-	bool result = xref_del_locked (anal, from, to);
-	r_th_lock_leave (anal->lock);
-	return result;
+	R_RETURN_VAL_IF_FAIL (anal, false);
+	ref_manager_remove_entry (anal->rm, from, to);
+	R_DIRTY_SET (anal);
+
+	// Invalidate function ref counts
+	RAnalFunction *fcn_from = r_anal_get_function_at (anal, from);
+	if (fcn_from) {
+		fcn_from->meta.numcallrefs = -1;
+	}
+	RAnalFunction *fcn_to = r_anal_get_function_at (anal, to);
+	if (fcn_to) {
+		fcn_to->meta.numrefs = -1;
+	}
+
+	return true;
 }
 
 R_API RVecAnalRef *r_anal_refs_get(RAnal *anal, ut64 from) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->lock, NULL);
-	r_th_lock_enter (anal->lock);
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, NULL);
+
 	RVecAnalRef *anal_refs = ref_manager_get_refs (anal->rm, from);
 	if (!anal_refs || RVecAnalRef_empty (anal_refs)) {
 		RVecAnalRef_free (anal_refs);
-		anal_refs = NULL;
-	} else {
-		RVecAnalRef_sort (anal_refs, compare_ref); // XXX not needed?
+		return NULL;
 	}
-	r_th_lock_leave (anal->lock);
+
+	RVecAnalRef_sort (anal_refs, compare_ref); // XXX not needed?
 	return anal_refs;
 }
 
 R_API RVecAnalRef *r_anal_xrefs_get(RAnal *anal, ut64 to) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->lock, NULL);
-	r_th_lock_enter (anal->lock);
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, NULL);
+
 	RVecAnalRef *anal_refs = ref_manager_get_xrefs (anal->rm, to);
 	if (!anal_refs || RVecAnalRef_empty (anal_refs)) {
 		RVecAnalRef_free (anal_refs);
-		anal_refs = NULL;
-	} else {
-		RVecAnalRef_sort (anal_refs, compare_ref); // XXX not needed?
+		return NULL;
 	}
-	r_th_lock_leave (anal->lock);
+
+	RVecAnalRef_sort (anal_refs, compare_ref); // XXX not needed?
 	return anal_refs;
 }
 
 R_API RVecAnalRef *r_anal_xrefs_get_from(RAnal *anal, ut64 to) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->lock, NULL);
-	r_th_lock_enter (anal->lock);
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, NULL);
+
 	RVecAnalRef *anal_refs = ref_manager_get_refs (anal->rm, to);
 	if (!anal_refs || RVecAnalRef_empty (anal_refs)) {
 		RVecAnalRef_free (anal_refs);
-		anal_refs = NULL;
-	} else {
-		RVecAnalRef_sort (anal_refs, compare_ref); // XXX not needed?
+		return NULL;
 	}
-	r_th_lock_leave (anal->lock);
+
+	RVecAnalRef_sort (anal_refs, compare_ref); // XXX not needed?
 	return anal_refs;
 }
 
 R_API bool r_anal_xrefs_has_xrefs_at(RAnal *anal, ut64 at) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->lock, false);
-	r_th_lock_enter (anal->lock);
-	if (!anal->rm) {
-		r_th_lock_leave (anal->lock);
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, false);
+
 	AdjacencyList_CIter iter = AdjacencyList_cfind (&anal->rm->xrefs, &at);
 	const AdjacencyList_Entry *entry = AdjacencyList_CIter_get (&iter);
-	bool result = !!entry;
-	r_th_lock_leave (anal->lock);
-	return result;
+	return !!entry;
 }
 
 static void r_anal_xrefs_list_table(RAnal *anal, RVecAnalRef *anal_refs, const char *arg, RTable *table) {
@@ -566,10 +486,9 @@ static void r_anal_xrefs_list_plaintext(RAnal *anal, RVecAnalRef *anal_refs) {
 }
 
 R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg, RTable *t) {
-	R_RETURN_IF_FAIL (anal && anal->lock);
-	r_th_lock_enter (anal->lock);
+	R_RETURN_IF_FAIL (anal && anal->rm);
+
 	RVecAnalRef *anal_refs = ref_manager_get_refs (anal->rm, UT64_MAX);
-	r_th_lock_leave (anal->lock);
 	if (!anal_refs) {
 		R_LOG_DEBUG ("Could not list xrefs");
 		return;
@@ -602,31 +521,24 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg, RTable *t) {
 }
 
 R_API ut64 r_anal_xrefs_count(RAnal *anal) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->lock, 0);
-	r_th_lock_enter (anal->lock);
-	ut64 count = ref_manager_count_xrefs (anal->rm);
-	r_th_lock_leave (anal->lock);
-	return count;
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, 0);
+	return ref_manager_count_xrefs (anal->rm);
 }
 
 R_API ut64 r_anal_xrefs_count_at(RAnal *anal, ut64 to) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->lock, 0);
-	r_th_lock_enter (anal->lock);
-	ut64 count = ref_manager_count_xrefs_at (anal->rm, to);
-	r_th_lock_leave (anal->lock);
-	return count;
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, 0);
+	return ref_manager_count_xrefs_at (anal->rm, to);
 }
 
 R_API RVecAnalRef *r_anal_function_get_xrefs(RAnalFunction *fcn) {
-	R_RETURN_VAL_IF_FAIL (fcn && fcn->anal && fcn->anal->lock, NULL);
-	RAnal *anal = fcn->anal;
-	r_th_lock_enter (anal->lock);
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
+
+	RefManager *rm = fcn->anal->rm;
 	// XXX assume first basic block is the entrypoint
-	RVecAnalRef *anal_refs = ref_manager_get_xrefs (anal->rm, fcn->addr);
+	RVecAnalRef *anal_refs = ref_manager_get_xrefs (rm, fcn->addr);
 	if (anal_refs) {
 		RVecAnalRef_sort (anal_refs, compare_ref); // XXX not needed?
 	}
-	r_th_lock_leave (anal->lock);
 	return anal_refs;
 }
 
@@ -686,21 +598,13 @@ static RVecAnalRef *fcn_get_all_refs(RAnalFunction *fcn, RefManager *rm, Collect
 
 // XXX rename to r_anal_function_get_all_refs?
 R_API RVecAnalRef *r_anal_function_get_refs(RAnalFunction *fcn) {
-	R_RETURN_VAL_IF_FAIL (fcn && fcn->anal && fcn->anal->lock, NULL);
-	RAnal *anal = fcn->anal;
-	r_th_lock_enter (anal->lock);
-	RVecAnalRef *refs = fcn_get_all_refs (fcn, anal->rm, ref_manager_get_refs);
-	r_th_lock_leave (anal->lock);
-	return refs;
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
+	return fcn_get_all_refs (fcn, fcn->anal->rm, ref_manager_get_refs);
 }
 
 R_API RVecAnalRef *r_anal_function_get_all_xrefs(RAnalFunction *fcn) {
-	R_RETURN_VAL_IF_FAIL (fcn && fcn->anal && fcn->anal->lock, NULL);
-	RAnal *anal = fcn->anal;
-	r_th_lock_enter (anal->lock);
-	RVecAnalRef *refs = fcn_get_all_refs (fcn, anal->rm, ref_manager_get_xrefs);
-	r_th_lock_leave (anal->lock);
-	return refs;
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
+	return fcn_get_all_refs (fcn, fcn->anal->rm, ref_manager_get_xrefs);
 }
 
 // Helper function to count refs without allocating
@@ -758,38 +662,28 @@ static ut64 fcn_count_refs(RAnalFunction *fcn, RefManager *rm, CountFn count_ref
 
 // Count refs of a specific type from a function (use R_ANAL_REF_TYPE_ANY to count all)
 R_API ut64 r_anal_function_count_refs(RAnalFunction *fcn, RAnalRefType type) {
-	R_RETURN_VAL_IF_FAIL (fcn && fcn->anal && fcn->anal->lock, 0);
-	RAnal *anal = fcn->anal;
-	r_th_lock_enter (anal->lock);
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
 	if (type == R_ANAL_REF_TYPE_CALL && fcn->meta.numcallrefs != -1) {
-		ut64 cached = fcn->meta.numcallrefs;
-		r_th_lock_leave (anal->lock);
-		return cached;
+		return fcn->meta.numcallrefs;
 	}
-	ut64 count = fcn_count_refs (fcn, anal->rm, ref_manager_count_refs_filtered, type);
+	ut64 count = fcn_count_refs (fcn, fcn->anal->rm, ref_manager_count_refs_filtered, type);
 	if (type == R_ANAL_REF_TYPE_CALL) {
 		fcn->meta.numcallrefs = count;
 	}
-	r_th_lock_leave (anal->lock);
 	return count;
 }
 
 // Count xrefs to a function (optionally filtered by type)
 R_API ut64 r_anal_function_count_xrefs(RAnalFunction *fcn, RAnalRefType type) {
-	R_RETURN_VAL_IF_FAIL (fcn && fcn->anal && fcn->anal->lock, 0);
-	RAnal *anal = fcn->anal;
-	r_th_lock_enter (anal->lock);
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
 	if (type == R_ANAL_REF_TYPE_ANY && fcn->meta.numrefs != -1) {
-		ut64 cached = fcn->meta.numrefs;
-		r_th_lock_leave (anal->lock);
-		return cached;
+		return fcn->meta.numrefs;
 	}
 	// For xrefs, we only need to check the function entry point
-	ut64 count = ref_manager_count_xrefs_filtered (anal->rm, fcn->addr, type);
+	ut64 count = ref_manager_count_xrefs_filtered (fcn->anal->rm, fcn->addr, type);
 	if (type == R_ANAL_REF_TYPE_ANY) {
 		fcn->meta.numrefs = count;
 	}
-	r_th_lock_leave (anal->lock);
 	return count;
 }
 

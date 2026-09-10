@@ -189,25 +189,7 @@ static bool anal_esil_set_bits(void *user, int bits) {
 	return r_anal_set_triplet (anal, NULL, NULL, bits);
 }
 
-R_API bool r_anal_plugin_remove(RAnal *anal, RAnalPlugin *plugin) {
-	R_RETURN_VAL_IF_FAIL (anal && plugin, false);
-	// XXX TODO
-	return true;
-}
-
-R_API void r_anal_plugin_free(RAnalPlugin *p) {
-	if (p && p->fini) {
-		p->fini (NULL);
-	}
-}
-
-void __block_free_rb(RBNode *node, void *user);
-
-static void anal_priv_free(RAnal * R_NONNULL a) {
-	free (R_ANAL_PRIV (a)->dir_prefix);
-	free (a->priv);
-}
-
+// Take nullable RArchConfig as argument?
 R_API RAnal *r_anal_new(void) {
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!r_str_constpool_init (&anal->constpool)) {
@@ -287,29 +269,29 @@ R_API RAnal *r_anal_new(void) {
 	return anal;
 }
 
-R_API void r_anal_purge(RAnal *anal) {
-	R_RETURN_IF_FAIL (anal);
-	r_anal_hint_clear (anal);
-	r_interval_tree_fini (&anal->meta);
-	r_interval_tree_init (&anal->meta, r_meta_item_free);
-	sdb_reset (anal->sdb_types);
-	sdb_reset (anal->sdb_zigns);
-	sdb_reset (anal->sdb_classes);
-	sdb_reset (anal->sdb_classes_attrs);
-	r_anal_pin_fini (anal);
-	r_anal_pin_init (anal);
-	sdb_reset (anal->sdb_cc);
-	r_list_free (anal->fcns);
-	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
-	(void)r_anal_xrefs_init (anal);
-	r_anal_purge_imports (anal);
+R_API bool r_anal_plugin_remove(RAnal *anal, RAnalPlugin *plugin) {
+	R_RETURN_VAL_IF_FAIL (anal && plugin, false);
+	// XXX TODO
+	return true;
+}
+
+R_API void r_anal_plugin_free(RAnalPlugin *p) {
+	if (p && p->fini) {
+		p->fini (NULL);
+	}
+}
+
+void __block_free_rb(RBNode *node, void *user);
+
+static void anal_priv_free(RAnal * R_NONNULL a) {
+	free (R_ANAL_PRIV (a)->dir_prefix);
+	free (a->priv);
 }
 
 R_API void r_anal_free(RAnal *a) {
 	if (!a) {
 		return;
 	}
-	r_anal_xrefs_free (a);
 	/* TODO: Free anals here */
 	free (a->pincmd);
 	r_list_free (a->fcns);
@@ -536,6 +518,24 @@ R_API bool r_anal_op_is_eob(RAnalOp *op) {
 	default:
 		return false;
 	}
+}
+
+R_API void r_anal_purge(RAnal *anal) {
+	R_RETURN_IF_FAIL (anal);
+	r_anal_hint_clear (anal);
+	r_interval_tree_fini (&anal->meta);
+	r_interval_tree_init (&anal->meta, r_meta_item_free);
+	sdb_reset (anal->sdb_types);
+	sdb_reset (anal->sdb_zigns);
+	sdb_reset (anal->sdb_classes);
+	sdb_reset (anal->sdb_classes_attrs);
+	r_anal_pin_fini (anal);
+	r_anal_pin_init (anal);
+	sdb_reset (anal->sdb_cc);
+	r_list_free (anal->fcns);
+	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
+	(void)r_anal_xrefs_init (anal);
+	r_anal_purge_imports (anal);
 }
 
 R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr) {

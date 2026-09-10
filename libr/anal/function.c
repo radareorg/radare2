@@ -2,7 +2,6 @@
 
 #include <r_anal_priv.h>
 #include <r_util/r_json.h>
-#include "function_snapshot.h"
 
 static bool get_functions_block_cb(RAnalBlock *block, void *user) {
 	RList *list = user;

@@ -7,6 +7,7 @@ if get_option('enable_tests')
     'anal_cc',
     'anal_class_graph',
     'anal_decompiler',
+    'dwarf_integration',
     'anal_function',
     'anal_hints',
     'anal_meta',

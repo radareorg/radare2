@@ -15349,19 +15349,6 @@ static bool is_swift(RCore *core) {
 	return false;
 }
 
-static void recover_function_vars_for_analysis(RCore *core, RAnalFunction *fcn) {
-	if (!core || !core->anal || !fcn) {
-		return;
-	}
-	char *type = r_str_newf ("func.%s.ret", fcn->name);
-	if (type && sdb_exists (core->anal->sdb_types, type)) {
-		free (type);
-		return;
-	}
-	free (type);
-	r_anal_function_delete_all_vars (fcn);
-	r_core_recover_vars (core, fcn, false);
-}
 
 static void cmd_aaa(RCore *core, const char *input) {
 	if (strchr (input, '?')) {
@@ -15419,15 +15406,8 @@ static void cmd_aaa(RCore *core, const char *input) {
 	// Run afvn in all fcns
 	if (r_config_get_b (core->config, "anal.vars")) {
 		logline (core, 15, "Analyze all functions arguments/locals (afva@@F)");
-		RAnalFunction *fcni;
-		RListIter *iter;
-		r_list_foreach (core->anal->fcns, iter, fcni) {
-			if (r_cons_is_breaked (core->cons)) {
-				break;
-			}
-			recover_function_vars_for_analysis (core, fcni);
-			r_core_task_yield (&core->tasks);
-		}
+		// r_core_cmd0 (core, "afva@@f");
+		r_core_cmd0 (core, "afva@@F");
 	}
 #endif
 	// Run pending analysis immediately after analysis

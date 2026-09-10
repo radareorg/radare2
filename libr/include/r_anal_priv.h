@@ -15,17 +15,6 @@ typedef struct r_anal_priv_t {
 	char *dir_prefix;
 } RAnalPriv;
 
-typedef struct r_anal_function_snapshot_limits_t RAnalFunctionSnapshotLimits;
-
-
-typedef enum {
-	R_ANAL_CC_STACK_GROWTH_NONE = 0,
-	R_ANAL_CC_STACK_GROWTH_LOWER,
-	R_ANAL_CC_STACK_GROWTH_HIGHER,
-} RAnalCCStackGrowth;
-
-
-
 // Recorded adrp/add (or lea) target for a register. Populated by the
 // function recurser as it walks a basic block and consumed by the jmptbl
 // dispatcher resolver.
