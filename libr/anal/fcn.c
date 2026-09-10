@@ -2581,34 +2581,6 @@ R_IPI const char *r_anal_function_type_link_at(RAnal *anal, ut64 addr) {
 	return sdb_const_getf (anal->sdb_types, NULL, "fcnlink.%08" PFMT64x, addr);
 }
 
-static bool function_type_link_set(RAnal *anal, const char *type_name, ut64 addr, bool owned) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->lock && anal->sdb_types && type_name, false);
-	r_th_lock_enter (anal->lock);
-	const char *kind = sdb_const_get (anal->sdb_types, type_name, 0);
-	if (!kind || strcmp (kind, "func")) {
-		r_th_lock_leave (anal->lock);
-		return false;
-	}
-	const char *linked = r_anal_function_type_link_at (anal, addr);
-	if (linked) {
-		if (strcmp (linked, type_name)) {
-			r_th_lock_leave (anal->lock);
-			return false;
-		}
-	} else if (!sdb_setf (anal->sdb_types, type_name, 0,
-		"fcnlink.%08" PFMT64x, addr)) {
-		r_th_lock_leave (anal->lock);
-		return false;
-	}
-	r_anal_types_bump_dirty_epoch (anal);
-	r_th_lock_leave (anal->lock);
-	return true;
-}
-
-R_IPI bool r_anal_function_type_link_set(RAnal *anal, const char *type_name, ut64 addr) {
-	return function_type_link_set (anal, type_name, addr, false);
-}
-
 static char *function_signature_address_type_name(RAnal *anal, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn, NULL);
 	char *typelinked = r_type_link_at (anal->sdb_types, fcn->addr);

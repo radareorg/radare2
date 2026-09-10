@@ -603,16 +603,8 @@ R_API ut64 r_anal_types_bump_dirty_epoch(RAnal *anal) {
 	if (!anal->type_dirty_epoch) {
 		anal->type_dirty_epoch++;
 	}
-	anal->type_context_hash_cache = 0;
-	anal->type_context_hash_epoch = 0;
 	return anal->type_dirty_epoch;
 }
-
-typedef struct {
-	ut64 xor_hash;
-	ut64 sum_hash;
-	ut64 count;
-} TypeContextLinkHash;
 
 R_API bool r_anal_types_set_link(RAnal *anal, const char *type, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && R_STR_ISNOTEMPTY (type), false);

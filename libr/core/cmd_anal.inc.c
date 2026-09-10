@@ -15349,7 +15349,6 @@ static bool is_swift(RCore *core) {
 	return false;
 }
 
-
 static void cmd_aaa(RCore *core, const char *input) {
 	if (strchr (input, '?')) {
 		r_cons_cmd_help (core->cons, help_msg_aaa);

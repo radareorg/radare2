@@ -6820,7 +6820,6 @@ static RAnalFunction *core_decompiler_target(RCore *core, const char *input) {
 	return fcn;
 }
 
-
 static bool core_print_provider_decompile_locked(RCore *core, const char *input) {
 	RAnalPlugin *provider = r_anal_decompiler_provider (core->anal);
 	if (!provider) {

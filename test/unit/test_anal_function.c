@@ -1,10 +1,7 @@
 #include <r_anal.h>
-#include <r_anal_priv.h>
 #include <r_core.h>
 #include "minunit.h"
 #include <string.h>
-
-#include "../../libr/anal/function_snapshot.h"
 
 #include "test_anal_block_invars.inl"
 
@@ -17,109 +14,6 @@ bool ht_up_count(void *user, const ut64 k, const void *v) {
 bool ht_pp_count(void *user, const void *k, const void *v) {
 	size_t *count = user;
 	(*count)++;
-	return true;
-}
-
-static int reg_index(RAnal *anal, const char *name) {
-	RRegItem *ri = r_reg_get (anal->reg, name, -1);
-	int index = ri? ri->index: -1;
-	r_unref (ri);
-	return index;
-}
-
-
-
-static RBinAddr snapshot_test_loader_init;
-
-
-
-
-
-static int snapshot_lazy_cc_calls;
-
-static const char *snapshot_lazy_cc(RBin *bin, ut64 addr) {
-	(void)bin;
-	(void)addr;
-	snapshot_lazy_cc_calls++;
-	return "cdecl";
-}
-
-
-static bool save_snapshot_demo_struct_type(
-	RAnal *anal, size_t fourteenth_offset, size_t fourteenth_count) {
-	static const char *names[] = {
-		"first", "second", "third", "fourth", "fifth", "sixth", "seventh",
-		"eighth", "ninth", "tenth", "eleventh", "twelfth", "thirteenth",
-		"fourteenth",
-	};
-	RAnalBaseType *type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
-	if (!type) {
-		return false;
-	}
-	type->name = strdup ("DemoStruct");
-	type->size = R_ARRAY_SIZE (names) * 32;
-	if (!type->name) {
-		r_anal_base_type_free (type);
-		return false;
-	}
-	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
-		RAnalStructMember member = {
-			.name = strdup (names[i]),
-			.type = strdup ("int32_t"),
-			.offset = i == R_ARRAY_SIZE (names) - 1? fourteenth_offset: i * 4,
-			.count = i == R_ARRAY_SIZE (names) - 1? fourteenth_count: 0,
-		};
-		if (!member.name || !member.type) {
-			anal_type_member_fini (&member);
-			r_anal_base_type_free (type);
-			return false;
-		}
-		RAnalStructMember *element = RVecAnalTypeMember_emplace_back (
-			&type->struct_data.members);
-		if (!element) {
-			anal_type_member_fini (&member);
-			r_anal_base_type_free (type);
-			return false;
-		}
-		*element = member;
-	}
-	r_anal_save_base_type (anal, type);
-	r_anal_base_type_free (type);
-	return true;
-}
-
-static bool save_snapshot_atomic_type(
-	RAnal *anal, const char *name, const char *encoding, ut64 size) {
-	RAnalBaseType *type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ATOMIC);
-	if (!type) {
-		return false;
-	}
-	type->name = strdup (name);
-	type->type = strdup (encoding);
-	type->size = size;
-	if (!type->name || !type->type) {
-		r_anal_base_type_free (type);
-		return false;
-	}
-	r_anal_save_base_type (anal, type);
-	r_anal_base_type_free (type);
-	return true;
-}
-
-static bool save_snapshot_typedef_type(RAnal *anal, const char *name, const char *target) {
-	RAnalBaseType *type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_TYPEDEF);
-	if (!type) {
-		return false;
-	}
-	type->name = strdup (name);
-	type->type = strdup (target);
-	if (!type->name || !type->type) {
-		r_anal_base_type_free (type);
-		return false;
-	}
-	r_anal_save_base_type (anal, type);
-	r_anal_base_type_free (type);
 	return true;
 }
 
@@ -210,9 +104,6 @@ bool test_r_anal_function_relocate(void) {
 	r_anal_free (anal);
 	mu_end;
 }
-
-
-
 
 bool test_r_anal_function_labels(void) {
 	RAnal *anal = r_anal_new ();
@@ -666,31 +557,6 @@ bool test_r_anal_function_get_signature_falls_back_to_valid_callconv(void) {
 	mu_end;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef struct {
-	RAnalFunction *fcn;
-	RAnalVar *first;
-	RAnalVar *second;
-	const char *callconv;
-	const char *first_name;
-	const char *second_name;
-	ut64 expected_epoch;
-	int count;
-	bool saw_complete_state;
-} AtomicMutationEventState;
-
 typedef struct {
 	size_t count;
 	ut64 owner_addr;
@@ -708,7 +574,6 @@ static bool switch_ownership_probe(RAnalFunction *fcn, RAnalBlock *block,
 }
 
 // the walk reaches the indirect jump twice; the second arrival must not publish the switch on the start block
-
 bool test_r_anal_function_overlapped_walk_keeps_one_switch_owner(void) {
 	const ut64 addr = 0x1000;
 	const char *hex =

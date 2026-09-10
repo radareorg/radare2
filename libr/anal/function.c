@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2019-2025 - pancake, thestr4ng3r */
 
 #include <r_anal_priv.h>
-#include <r_util/r_json.h>
 
 static bool get_functions_block_cb(RAnalBlock *block, void *user) {
 	RList *list = user;
@@ -424,172 +423,6 @@ R_API int r_anal_function_coverage(RAnalFunction *fcn) {
 	return (traced * 100) / total;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// A callee reached by jumping through a value loaded from a relocated slot.
-// The relocation is what names it: nothing at the slot address is code, so
-// the name, the linkage and the prototype all come from the relocation record
-// rather than from a function at `addr`. A relocation with no name offers
-// nothing, because a prototype cannot be looked up for it.
-
-
-
-// How the instruction at transfer_addr, the last one of its block, leaves.
-//
-// The block itself cannot answer this. A tail jump records no successor at
-// all: the function walk stops at a jump whose target is a named function or
-// an import, and it stops before it stores the edge, so a return, a trap and
-// a jump out of the function are indistinguishable from the block record.
-// Only the instruction tells them apart, so it is decoded here.
-//
-// `target` receives the address a direct jump names. `memory_operand` receives
-// the address a value jump reads its target from, when the instruction names
-// one; a jump through a register names none and leaves it absent.
-
-
-// A block that ends in a jump through a value may be a tail transfer to the
-// function a relocated slot names. Every relocated slot the block refers to is
-// offered: the jump's own memory operand where it has one, and the target of
-// every data reference the block makes. Which of them the jump actually reads
-// is machine evidence the consumer holds and this side does not, so this
-// offers rather than decides, and an offer the machine cannot confirm is
-// simply unmatched.
-
-// The jumps that leave the function for another one. A jump whose target is
-// exactly where a function starts is a tail transfer: the jump is the call,
-// and the callee's return is this function's. The function map decides it,
-// not the shape of the jump, so a jump into the middle of another function
-// stays what it is. The transfer is recorded at the block's last instruction,
-// which is the one that performs it.
-
-
-
-
-
-
-
-
-
-
-
-// Returns one for an exact block start, zero outside the image, and -1 for
-// an address inside a block which is not a valid basic-block destination.
-
-#define IMAGE_REFUSE(why) do { refusal = (why); goto fail; } while (0)
-
-/* String literals the function refers to, taken from the `Cs` metadata radare2
- * already keeps. A consumer holding only the snapshot can read the address a
- * constant carries but not what is stored there, so without this a call can be
- * named and still have to spell its argument as a number. */
-// A word counts as a code pointer when a function starts there. Anything looser
-// -- inside a function, or merely in an executable map -- admits alignment
-// padding and offsets into the middle of instructions, and a table that carries
-// those is worse than no table at all.
-
-#define SNAPSHOT_MAX_CODE_POINTER_TABLES 16
-#define SNAPSHOT_MAX_CODE_POINTER_TABLE_ENTRIES 256
-
-// The table is read until it stops looking like one. A run of code pointers
-// ends at the first word that does not begin a function, which is where the
-// next datum starts; carrying past it would report neighbouring data as
-// reachable code.
-
-
-
-// The names radare2 already has for the data this function points at.
-//
-// Mirrors the string-literal collector exactly: walk every reference out of the
-// function's own bytes, and where radare2 has a flag for the address, keep the
-// name beside it. A consumer holding only the snapshot otherwise renders a
-// global as its address, which is the difference between `progName` and
-// `0x6000`.
-//
-// Only flags that name data. A reference to another function is already carried
-// as a successor or a callee, and repeating it here would let a call render its
-// target twice under two different authorities.
-
-
-#undef IMAGE_REFUSE
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// The signature is only offered when the capability says it was recovered, so
-// an absent one reads as absent rather than as an empty prototype.
-
-
-
-
-
-
-
-// The prototype of the function a call site targets, which is where a spelling
-// like `size_t` for an argument comes from.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 R_API ut64 r_anal_function_dirty_epoch(const RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, 0);
 	return fcn->dirty_epoch;
@@ -604,19 +437,6 @@ R_API ut64 r_anal_function_bump_dirty_epoch(RAnalFunction *fcn) {
 	fcn->has_changed = true;
 	return fcn->dirty_epoch;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn && R_STR_ISNOTEMPTY (callconv), false);
@@ -634,99 +454,6 @@ R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const c
 	r_anal_function_bump_dirty_epoch (fcn);
 	return true;
 }
-
-/* Record where the calling convention would place arguments and the result.
- *
- * These slots describe the convention, not the function: they are collected even
- * when no signature was recovered, and they say where a caller would leave a
- * value rather than that this function takes one. A consumer that recovers
- * parameters from the machine code needs the candidate list to intersect
- * against, and importing a guessed prototype instead would defeat the point. */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* Signedness of plain `char` for one target.
- *
- * C leaves it implementation-defined and the ABIs disagree: x86 and MIPS make
- * it signed, while AArch64, ARM, PowerPC, RISC-V and s390 make it unsigned.
- * Returns false for a target whose choice is not recorded here, so callers can
- * decline instead of assuming one.
- */
-
-
-
-
-/* Remove cv-qualifier keywords from a type spec, in place.
- *
- * A qualifier changes none of what the type graph records: size, alignment,
- * signedness and storage are identical with or without it. Matching them as
- * substrings would also strike legitimate identifiers such as `atomic_t` or
- * `const_iterator`, so only whole words are removed.
- */
-
-// A member spec carries its own extent, as `int32_t[8]`, because that is how the
-// type importer records an array; the count field beside it stays zero. Returns
-// the element spec with the extent removed, and the extent through `count`.
-// NULL when the spec has brackets that do not spell one plain extent.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Refusals are reported through `reason` so a caller can say why a function
-// could not be captured. Every refusal below names one cause.
-
-
-
-
-// A consumer that reasons across a call needs the callee's body. Four is the
-// bound because the cost is a full capture each and the reach a caller actually
-// uses is its direct calls, not its transitive closure; recursion is refused
-// outright rather than unrolled.
-
-
-
-
 
 typedef struct {
 	RGraph *graph;
@@ -786,18 +513,4 @@ R_API bool r_anal_function_switches_foreach(RAnalFunction *fcn, RAnalFunctionSwi
 	}
 	return true;
 }
-
-/* Content hash of one function's analysis, for artifact staleness.
- *
- * This used to build a whole function snapshot and read its revision
- * identity back out, which meant radare2 depended on r2sleigh's capture to
- * answer a question about its own stored artifacts. It hashes radare2's state
- * directly instead. Every input the old hash folded in was derived from these
- * same facts, so a change that mattered still changes the hash; hashing the
- * inputs rather than the derivations is the more conservative direction.
- *
- * The value is not stable across versions. Bumping the salt below invalidates
- * every stored artifact revision once, which is the intended way to force a
- * recapture after the hashed inputs change. */
-#define FUNCTION_CONTEXT_HASH_SALT 2ULL
 

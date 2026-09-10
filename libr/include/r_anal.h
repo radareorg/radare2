@@ -534,8 +534,6 @@ typedef struct r_anal_t {
 	Sdb *sdb_classes;
 	Sdb *sdb_classes_attrs;
 	ut64 type_dirty_epoch; // incremented when global typed metadata changes
-	ut64 type_context_hash_cache;
-	ut64 type_context_hash_epoch;
 	RAnalCallbacks cb;
 	RAnalOptions opt;
 	RAnalPluginAnalysisDepth plugin_analysis_depth;
@@ -903,7 +901,7 @@ typedef bool (*RAnalPreAnalysisCallback)(RAnal *a);
 // Post-analysis callback (called at end of aa/aaa/aaaa)
 typedef bool (*RAnalPostAnalysisCallback)(RAnal *a);
 
-// Decompiler callback. The snapshot is borrowed only for the callback duration.
+// Decompiler callback: renders one function, or returns NULL when it cannot.
 typedef RCodeMeta *(*RAnalDecompilerCallback)(RAnal *anal, RAnalFunction *fcn);
 
 typedef struct r_anal_plugin_t {
@@ -1159,8 +1157,6 @@ R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg
 R_API bool r_anal_function_has_address_linked_signature_current(RAnalFunction *function);
 R_API R_UNOWNED RAnalPlugin *r_anal_decompiler_provider(RAnal *anal);
 R_API R_OWNED RCodeMeta *r_anal_decompile(RAnal *anal, RAnalFunction *fcn);
-// One directly-called function, snapshotted in the same transaction as its
-// caller. Borrowed for exactly as long as the caller's snapshot lives.
 R_API bool r_anal_function_recover_vars_plugin(RAnal *anal, RAnalFunction *fcn);
 // Stack-VM helper: create register-kind argument vars named "<prefix><first+i>"
 // for i in [0, count). Used for JVM/Dalvik-style per-method arg recovery driven
@@ -1251,8 +1247,6 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API RAnalFunction *r_anal_function_next(RAnal *anal, ut64 addr);
 R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *function);
 R_API RAnalFunctionSignature *r_anal_function_get_signature_current(RAnalFunction *function);
-// The prototype the type database holds under a bare name, for a callee that
-// is not a function of this binary: an import named by a relocation.
 R_API void r_anal_function_signature_free(RAnalFunctionSignature *signature);
 R_API char *r_anal_function_get_signature_string(RAnalFunction *function);
 R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSignature *signature);
@@ -1303,8 +1297,6 @@ R_API ut64 r_anal_function_count_xrefs(RAnalFunction *fcn, RAnalRefType type);
 R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
 R_API bool r_anal_xrefs_setf(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to, const RAnalRefType type);
 R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to);
-// Replaces the complete contribution for one owner key atomically. An empty set
-// clears that owner while preserving overlapping owners and legacy refs.
 
 R_API RList *r_anal_get_fcns(RAnal *anal);
 
@@ -1332,7 +1324,6 @@ R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, u
 R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr);
 R_API R_UNOWNED RVecAnalVarPtr *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr);
 
-R_API bool r_anal_var_check_name(const char *name);
 R_API bool r_anal_var_rename(RAnal *anal, RAnalVar *var, const char *new_name);
 R_API void r_anal_var_set_type(RAnal *anal, RAnalVar *var, const char *type);
 R_API bool r_anal_var_delete(RAnal *anal, RAnalVar *var);

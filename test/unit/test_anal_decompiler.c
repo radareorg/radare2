@@ -20,92 +20,8 @@ typedef struct {
 	char *last_function_name;
 } CoreDecompilerTestContext;
 
-typedef struct {
-	int calls;
-	bool view_ok;
-	bool image_view_ok;
-	bool advisory_edge_ok;
-	bool owned_bounded_image;
-	bool exact_string_copy_ok;
-	bool truncation_refused;
-	ut64 function_addr;
-	ut64 revision_identity;
-	int bits;
-	ut32 endian;
-	ut8 first_byte;
-	char *arch_id;
-	char *cpu_id;
-	char *calling_convention;
-	char *function_name;
-} SnapshotProbe;
-
-typedef struct {
-	int calls;
-	bool copied_decoder_block;
-	bool decoder_topology_ok;
-	ut8 first_byte;
-} AnalyzedSnapshotProbe;
-
-typedef struct {
-	size_t count;
-	ut64 owner_addr;
-	ut64 switch_addr;
-} SwitchOwnershipProbe;
-
 static DecompilerTestContext *decompiler_ctx;
 static CoreDecompilerTestContext *core_decompiler_ctx;
-
-
-
-
-static bool switch_ownership_probe(RAnalFunction *fcn, RAnalBlock *block,
-		RAnalSwitchOp *switch_op, void *user) {
-	(void)fcn;
-	SwitchOwnershipProbe *probe = user;
-	probe->count++;
-	probe->owner_addr = block->addr;
-	probe->switch_addr = switch_op->jump_addr;
-	return true;
-}
-
-
-static void snapshot_probe_fini(SnapshotProbe *probe) {
-	free (probe->arch_id);
-	free (probe->cpu_id);
-	free (probe->calling_convention);
-	free (probe->function_name);
-	memset (probe, 0, sizeof (*probe));
-}
-
-static RCore *snapshot_core_new(size_t bytes) {
-	RCore *core = r_core_new ();
-	if (!core) {
-		return NULL;
-	}
-	char *uri = r_str_newf ("malloc://%zu", bytes);
-	RIODesc *desc = uri? r_io_open_at (core->io, uri, R_PERM_RWX, 0, 0): NULL;
-	free (uri);
-	if (!desc) {
-		r_core_free (core);
-		return NULL;
-	}
-	return core;
-}
-
-static RAnalFunction *snapshot_function_new(RCore *core, const char *name, ut64 addr, ut64 size) {
-	RAnalFunction *fcn = r_anal_create_function (
-		core->anal, name, addr, R_ANAL_FCN_TYPE_FCN, NULL);
-	if (!fcn) {
-		return NULL;
-	}
-	RAnalBlock *block = r_anal_create_block (core->anal, addr, size);
-	if (!block) {
-		return NULL;
-	}
-	r_anal_function_add_block (fcn, block);
-	r_unref (block);
-	return fcn;
-}
 
 static int missing_score(RAnal *anal) {
 	DecompilerTestContext *ctx = anal->user;
@@ -322,25 +238,25 @@ static bool test_core_pdd_routes_analysis_decompiler(void) {
 	out = r_core_cmd_str (core, "pdd");
 	mu_assert_streq (out, "current\n", "pdd resolves current function");
 	mu_assert_eq (ctx.decompile_calls, 1, "current function invokes provider once");
-	mu_assert_true (ctx.view_ok, "provider opens borrowed snapshot view");
-	mu_assert_eq (ctx.last_function_addr, current->addr, "current snapshot address");
-	mu_assert_streq (ctx.last_function_name, "current", "current snapshot name");
+	mu_assert_true (ctx.view_ok, "provider receives the function");
+	mu_assert_eq (ctx.last_function_addr, current->addr, "current function address");
+	mu_assert_streq (ctx.last_function_name, "current", "current function name");
 	mu_assert_eq (core->rc, 0, "current function decompilation succeeds");
 	free (out);
 
 	out = r_core_cmd_str (core, "pdd named");
 	mu_assert_streq (out, "named\n", "pdd resolves function name");
 	mu_assert_eq (ctx.decompile_calls, 2, "named function invokes provider once");
-	mu_assert_eq (ctx.last_function_addr, named->addr, "named snapshot address");
-	mu_assert_streq (ctx.last_function_name, "named", "named snapshot name");
+	mu_assert_eq (ctx.last_function_addr, named->addr, "named function address");
+	mu_assert_streq (ctx.last_function_name, "named", "named function name");
 	mu_assert_eq (core->rc, 0, "named function decompilation succeeds");
 	free (out);
 
 	out = r_core_cmd_str (core, "pdd 0x3000");
 	mu_assert_streq (out, "addressed\n", "pdd resolves function address");
 	mu_assert_eq (ctx.decompile_calls, 3, "addressed function invokes provider once");
-	mu_assert_eq (ctx.last_function_addr, addressed->addr, "addressed snapshot address");
-	mu_assert_streq (ctx.last_function_name, "addressed", "addressed snapshot name");
+	mu_assert_eq (ctx.last_function_addr, addressed->addr, "addressed function address");
+	mu_assert_streq (ctx.last_function_name, "addressed", "addressed function name");
 	mu_assert_eq (core->rc, 0, "addressed function decompilation succeeds");
 	free (out);
 
@@ -377,9 +293,6 @@ static bool test_core_pdd_routes_analysis_decompiler(void) {
 	r_core_free (core);
 	mu_end;
 }
-
-
-
 
 static int all_tests(void) {
 	mu_run_test (test_decompiler_provider_filters_plugins);
