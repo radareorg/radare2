@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2021-2026 - pancake */
 
-#include <r_anal.h>
+#include <r_anal_priv.h>
+#include <ctype.h>
 
 #if HAVE_GPERF
 extern SdbGperf gperf_cc_arm_16;
@@ -236,21 +237,22 @@ static const char *plugin_action_config_key(RAnalPluginAction action) {
 	return NULL;
 }
 
-// Build ordered plugin list from config or fall back to NULL (= use registration order).
+// Build ordered plugin list from config or return NULL in `result` for registration order.
 // Order: explicit config names first, then '*' expands to remaining eligible sorted by score.
-static RList *plugin_order_list(RAnal *anal, RAnalPluginAction action) {
-	R_RETURN_VAL_IF_FAIL (anal, NULL);
+static bool plugin_order_list(RAnal *anal, RAnalPluginAction action, RList **result) {
+	R_RETURN_VAL_IF_FAIL (anal && result, false);
+	*result = NULL;
 	const char *cfg = NULL;
 	const char *cfgkey = plugin_action_config_key (action);
 	if (cfgkey && anal->coreb.cfgGet && anal->coreb.core) {
 		cfg = anal->coreb.cfgGet (anal->coreb.core, cfgkey);
 	}
 	if (R_STR_ISEMPTY (cfg)) {
-		return NULL;
+		return true;
 	}
 	RList *names = r_str_split_duplist (cfg, ",", true);
 	if (!names) {
-		return NULL;
+		return false;
 	}
 	RList *plugins = r_list_new ();
 	RListIter *iter;
@@ -269,7 +271,8 @@ static RList *plugin_order_list(RAnal *anal, RAnalPluginAction action) {
 		}
 	}
 	r_list_free (names);
-	return plugins;
+	*result = plugins;
+	return true;
 }
 
 static void merge_refs(RVecAnalRef **all_refs, RVecAnalRef *refs) {
@@ -292,7 +295,10 @@ static void merge_refs(RVecAnalRef **all_refs, RVecAnalRef *refs) {
 // For GET_DATA_REFS: returns merged RVecAnalRef* from all eligible plugins.
 R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
-	RList *ordered = plugin_order_list (anal, action);
+	RList *ordered = NULL;
+	if (!plugin_order_list (anal, action, &ordered)) {
+		return NULL;
+	}
 	RListIter *iter;
 	RAnalPlugin *p;
 	RVecAnalRef *all_refs = NULL;
@@ -358,6 +364,37 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
 	return all_refs; // non-NULL only for GET_DATA_REFS
 }
 
+R_API RAnalPlugin *r_anal_decompiler_provider(RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->libstore && anal->libstore->plugins, NULL);
+	RAnalPlugin *provider = NULL;
+	int provider_score = -1;
+	RListIter *iter;
+	RAnalPlugin *p;
+	r_list_foreach (anal->libstore->plugins, iter, p) {
+		if (!p->decompile) {
+			continue;
+		}
+		int score = plugin_score (anal, p);
+		if (score > provider_score) {
+			provider = p;
+			provider_score = score;
+		}
+	}
+	return provider;
+}
+
+/* Decompile one function with the best-scoring provider.
+ *
+ * The provider is handed the function rather than a prebuilt snapshot of it.
+ * What a decompiler needs to know about a function is the decompiler's
+ * business, and shaping radare2's plugin ABI around one plugin's capture
+ * format made every other caller carry that format too. */
+R_API RCodeMeta *r_anal_decompile(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
+	RAnalPlugin *provider = r_anal_decompiler_provider (anal);
+	return provider? provider->decompile (anal, fcn): NULL;
+}
+
 // For stack-VM archs (JVM, Dalvik, ...) bin parses each method's frame header
 // and attaches (arg_first, arg_count, arg_prefix) to its RBinSymbol. Anal turns
 // that into register-kind argument variables, named "<prefix><first + i>", with
@@ -407,13 +444,54 @@ R_API bool r_anal_function_recover_vars_plugin(RAnal *anal, RAnalFunction *fcn) 
 	if (!plugin_vars) {
 		return false;
 	}
+	// Validate the whole batch before touching the function, then apply it and
+	// restore the previous variables if any write fails. Applying entry by entry
+	// as they are read would leave the function holding half of a batch that was
+	// never valid, with no way to tell which half.
 	RListIter *iter;
 	RAnalVarProt *prot;
+	bool valid = true;
 	r_list_foreach (plugin_vars, iter, prot) {
-		if (prot && prot->name) {
-			r_anal_function_set_var (fcn, prot->delta, prot->kind, prot->type, 0, prot->isarg, prot->name);
+		if (!prot || R_STR_ISEMPTY (prot->name) || R_STR_ISEMPTY (prot->type)) {
+			valid = false;
+			break;
+		}
+		RListIter *other_iter;
+		RAnalVarProt *other;
+		r_list_foreach (plugin_vars, other_iter, other) {
+			if (other == prot) {
+				break;
+			}
+			if (other->kind == prot->kind && other->delta == prot->delta) {
+				valid = false;
+				break;
+			}
+		}
+		if (!valid) {
+			break;
 		}
 	}
+	if (!valid) {
+		R_LOG_DEBUG ("plugin variable batch for 0x%08" PFMT64x " is malformed, ignoring it", fcn->addr);
+		r_list_free (plugin_vars);
+		return false;
+	}
+	RList *previous = r_anal_var_get_prots (fcn);
+	bool applied = true;
+	r_list_foreach (plugin_vars, iter, prot) {
+		if (!r_anal_function_set_var (fcn, prot->delta, prot->kind, prot->type, 0, prot->isarg, prot->name)) {
+			applied = false;
+			break;
+		}
+	}
+	if (!applied) {
+		R_LOG_DEBUG ("plugin variable batch for 0x%08" PFMT64x " failed to apply, rolling back", fcn->addr);
+		r_anal_function_delete_all_vars (fcn);
+		if (previous) {
+			r_anal_function_set_var_prot (fcn, previous);
+		}
+	}
+	r_list_free (previous);
 	r_list_free (plugin_vars);
-	return true;
+	return applied;
 }

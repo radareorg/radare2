@@ -677,7 +677,7 @@ static bool dyncc_refs_exist(RAnal *anal, const RAnalDynCC *d) {
 }
 
 // the keys spelling a cc's argument and return layout, all invalidated by a redefinition
-static const char *cc_layout_keys[] = { "ret", "retn", "argn", "revarg", "pop", "shadow", NULL };
+static const char *cc_layout_keys[] = { "ret", "retn", "argn", "revarg", "pop", "shadow", "retmech", "stackalloc", "redzone", NULL };
 
 static void cc_unset_keys(Sdb *db, const char *name, const char **keys) {
 	RStrBuf sb;
@@ -710,15 +710,18 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	if (dyncc_parse (name, &d)) {
 		return;
 	}
+	R_CRITICAL_ENTER (anal);
 	static const char *keys[] = { "self", "error", "clobber", "preserve", NULL };
 	sdb_unset (DB, name, 0);
 	cc_unset_keys (DB, name, cc_layout_keys);
 	cc_unset_keys (DB, name, keys);
 	cc_unset_slots (DB, name);
+	R_CRITICAL_LEAVE (anal);
 }
 
 R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 	R_RETURN_VAL_IF_FAIL (anal && expr, false);
+	R_CRITICAL_ENTER (anal);
 	bool ret = false;
 	char *args = NULL;
 	char *e = strdup (expr);
@@ -782,6 +785,7 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 beach:
 	free (e);
 	free (args);
+	R_CRITICAL_LEAVE (anal);
 	return ret;
 }
 
@@ -1197,12 +1201,16 @@ static void cc_set_roleloc(RAnal *anal, const char *convention, const char *role
 
 R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self) {
 	R_RETURN_IF_FAIL (anal && convention && self);
+	R_CRITICAL_ENTER (anal);
 	cc_set_roleloc (anal, convention, "self", self);
+	R_CRITICAL_LEAVE (anal);
 }
 
 R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error) {
 	R_RETURN_IF_FAIL (anal && convention && error);
+	R_CRITICAL_ENTER (anal);
 	cc_set_roleloc (anal, convention, "error", error);
+	R_CRITICAL_LEAVE (anal);
 }
 
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
@@ -1329,10 +1337,11 @@ static bool cc_location_range(const char *loc, const char **s, const char **end)
 	return true;
 }
 
-R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
+R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (anal && loc && reg, false);
+	// profiles and convention tables can disagree on case
 	if (*loc && *loc != '{') {
-		return !strcmp (loc, reg);
+		return !r_str_casecmp (loc, reg);
 	}
 	const char *s, *end;
 	if (!cc_location_range (loc, &s, &end)) {
@@ -1343,7 +1352,7 @@ R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg
 		if (!name) {
 			return false;
 		}
-		if (!strcmp (name, reg)) {
+		if (!r_str_casecmp (name, reg)) {
 			return true;
 		}
 	}
@@ -1445,7 +1454,9 @@ R_API const char *r_anal_cc_default(RAnal *anal) {
 
 R_API void r_anal_set_cc_default(RAnal *anal, const char *cc) {
 	R_RETURN_IF_FAIL (anal && cc);
+	R_CRITICAL_ENTER (anal);
 	sdb_set (DB, "default.cc", cc, 0);
+	R_CRITICAL_LEAVE (anal);
 }
 
 R_API const char *r_anal_syscc_default(RAnal *anal) {
@@ -1455,7 +1466,9 @@ R_API const char *r_anal_syscc_default(RAnal *anal) {
 
 R_API void r_anal_set_syscc_default(RAnal *anal, const char *cc) {
 	R_RETURN_IF_FAIL (anal && cc);
+	R_CRITICAL_ENTER (anal);
 	sdb_set (DB, "default.syscc", cc, 0);
+	R_CRITICAL_LEAVE (anal);
 }
 
 R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name) {

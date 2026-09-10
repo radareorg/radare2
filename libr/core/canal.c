@@ -3,6 +3,8 @@
 #define R_LOG_ORIGIN "core.anal"
 
 #include <r_core.h>
+#include <r_core_priv.h>
+#include <r_anal_priv.h>
 #include <r_vec.h>
 #include <sdb/ht_uu.h>
 
@@ -2090,10 +2092,16 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 	RListIter *iter, *iter_tmp;
 
 	if (!addr) {
+		r_th_lock_enter (core->lock);
+		r_th_lock_enter (core->anal->lock);
 		r_list_purge (core->anal->fcns);
 		if (!(core->anal->fcns = r_list_new ())) {
+			r_th_lock_leave (core->anal->lock);
+			r_th_lock_leave (core->lock);
 			return false;
 		}
+		r_th_lock_leave (core->anal->lock);
+		r_th_lock_leave (core->lock);
 	} else {
 		r_list_foreach_safe (core->anal->fcns, iter, iter_tmp, fcni) {
 			if (r_anal_function_contains (fcni, addr)) {

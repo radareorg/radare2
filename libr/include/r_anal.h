@@ -359,6 +359,7 @@ typedef struct r_anal_function_t {
 	RVecAnalVarPtr vars;
 	HtUP/*<st64, RVecAnalVarPtr *>*/ *inst_vars; // offset of instructions => the variables they access
 	ut64 reg_save_area; // size of stack area pre-reserved for saving registers
+	ut64 dirty_epoch; // incremented when typed function metadata changes
 	st64 bp_off; // offset of bp inside owned stack frame
 	st64 stack;  // stack frame size
 	int maxstack;
@@ -425,6 +426,7 @@ typedef struct r_anal_meta_item_t {
 
 struct r_anal_t;
 struct r_anal_bb_t;
+#define R_ANAL_FUNCTION_DELETE_REFUSE (-0x7fffffff - 1)
 typedef struct r_anal_callbacks_t {
 	int (*on_fcn_new) (struct r_anal_t *, void *user, RAnalFunction *fcn);
 	int (*on_fcn_delete) (struct r_anal_t *, void *user, RAnalFunction *fcn);
@@ -511,6 +513,13 @@ typedef struct {
 
 typedef struct r_ref_manager_t RefManager;
 
+typedef enum {
+	R_ANAL_PLUGIN_ANALYSIS_DEPTH_UNSPECIFIED = 0,
+	R_ANAL_PLUGIN_ANALYSIS_DEPTH_BASIC,
+	R_ANAL_PLUGIN_ANALYSIS_DEPTH_BALANCED,
+	R_ANAL_PLUGIN_ANALYSIS_DEPTH_AGGRESSIVE,
+} RAnalPluginAnalysisDepth;
+
 typedef struct r_anal_t {
 	RArchConfig *config;
 	int lineswidth; // asm.lines.width
@@ -562,8 +571,10 @@ typedef struct r_anal_t {
 	Sdb *sdb_cc; // calling conventions
 	Sdb *sdb_classes;
 	Sdb *sdb_classes_attrs;
+	ut64 type_dirty_epoch; // incremented when global typed metadata changes
 	RAnalCallbacks cb;
 	RAnalOptions opt;
+	RAnalPluginAnalysisDepth plugin_analysis_depth;
 	RList *reflines;
 	RList *reflines2;
 	RListComparator columnSort;
@@ -929,8 +940,11 @@ typedef RVecAnalRef *(*RAnalDataRefsCallback)(RAnal *a, RAnalFunction *fcn);
 // Pre-analysis callback (called early in aaa, after aa, before per-function work)
 typedef bool (*RAnalPreAnalysisCallback)(RAnal *a);
 
-// Post-analysis callback (called at end of aaaa)
+// Post-analysis callback (called at end of aa/aaa/aaaa)
 typedef bool (*RAnalPostAnalysisCallback)(RAnal *a);
+
+// Decompiler callback: renders one function, or returns NULL when it cannot.
+typedef RCodeMeta *(*RAnalDecompilerCallback)(RAnal *anal, RAnalFunction *fcn);
 
 typedef struct r_anal_plugin_t {
 	RPluginMeta meta;
@@ -966,8 +980,9 @@ typedef struct r_anal_plugin_t {
 
 	// Pre-analysis hook (called early in aaa, filtered by eligible)
 	RAnalPreAnalysisCallback pre_analysis;
-	// Post-analysis hook (for aaaa)
+	// Post-analysis hook (for aa/aaa/aaaa)
 	RAnalPostAnalysisCallback post_analysis;
+	RAnalDecompilerCallback decompile;
 } RAnalPlugin;
 
 /*----------------------------------------------------------------------------------------------*/
@@ -1173,11 +1188,19 @@ typedef enum {
 	R_ANAL_PLUGIN_ACTION_ANALYZE_FCN,   // af hook: call analyze_fcn on all eligible plugins
 	R_ANAL_PLUGIN_ACTION_RECOVER_VARS,  // afva hook: first plugin returning vars wins
 	R_ANAL_PLUGIN_ACTION_GET_DATA_REFS, // aar hook: merge data refs from all eligible plugins
-	R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, // aaaa hook: call post_analysis on all eligible plugins
+	R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, // aa/aaa/aaaa hook: call post_analysis on all eligible plugins
 } RAnalPluginAction;
 
 // Unified plugin action dispatcher (replaces per-action APIs)
 R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFunction *fcn);
+/* True when calling convention `cc` uses register `reg` for the location
+ * class `loc`. Exported because a decompiler plugin has to ask this to map a
+ * convention onto the registers a function actually touches, and cannot
+ * reimplement the convention database without duplicating it. */
+R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg);
+R_API bool r_anal_function_has_address_linked_signature_current(RAnalFunction *function);
+R_API R_UNOWNED RAnalPlugin *r_anal_decompiler_provider(RAnal *anal);
+R_API R_OWNED RCodeMeta *r_anal_decompile(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_function_recover_vars_plugin(RAnal *anal, RAnalFunction *fcn);
 // Stack-VM helper: create register-kind argument vars named "<prefix><first+i>"
 // for i in [0, count). Used for JVM/Dalvik-style per-method arg recovery driven
@@ -1267,10 +1290,14 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API RAnalFunction *r_anal_function_next(RAnal *anal, ut64 addr);
 R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *function);
+R_API RAnalFunctionSignature *r_anal_function_get_signature_current(RAnalFunction *function);
 R_API void r_anal_function_signature_free(RAnalFunctionSignature *signature);
 R_API char *r_anal_function_get_signature_string(RAnalFunction *function);
 R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSignature *signature);
 R_API bool r_anal_function_del_signature(RAnal *a, const char *name);
+R_API ut64 r_anal_function_dirty_epoch(const RAnalFunction *fcn);
+R_API ut64 r_anal_function_bump_dirty_epoch(RAnalFunction *fcn);
+R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv);
 R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_function_context_free(RAnalFcnContext *ctx);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
@@ -1817,6 +1844,11 @@ R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
+R_API ut64 r_anal_types_dirty_epoch(const RAnal *anal);
+R_API ut64 r_anal_types_bump_dirty_epoch(RAnal *anal);
+R_API bool r_anal_types_set_link(RAnal *anal, const char *type, ut64 addr);
+R_API bool r_anal_types_set_link_offset(RAnal *anal, const char *type, ut64 addr);
+R_API bool r_anal_types_unlink(RAnal *anal, ut64 addr);
 R_API RList *r_anal_types_baselist(RAnal *anal);
 R_API void r_parse_pdb_types(const RAnal *anal, const RBinPdb *pdb);
 R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);

@@ -170,7 +170,7 @@ static RCoreHelpMessage help_msg_aaf = {
 static RCoreHelpMessage help_msg_aaa = {
 	"Usage:", "aaa[a[a]]", " # automatically analyze the whole program",
 	"aaa", "", "perform deeper analysis, most common use",
-	"aaaa", "", "same as aaa but adds a bunch of experimental iterations",
+	"aaaa", "", "same as aaa plus aggressive plugin/native analysis",
 	"aaaaa", "", "refine the analysis to find more functions after aaaa",
 	NULL
 };
@@ -4627,7 +4627,17 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 		}
 		pj_free (j);
 	} else {
-		char *sig = r_anal_function_format_sig (core->anal, fcn, fcn_name, NULL, NULL, NULL);
+		char *sig = NULL;
+		RAnalFunctionSignature *signature = r_anal_function_get_signature (fcn);
+		if (signature) {
+			if (R_STR_ISNOTEMPTY (signature->ret_type) && signature->signature) {
+				sig = strdup (signature->signature);
+			}
+			r_anal_function_signature_free (signature);
+		}
+		if (!sig) {
+			sig = r_anal_function_format_sig (core->anal, fcn, fcn_name, NULL, NULL, NULL);
+		}
 		if (sig) {
 			r_cons_printf (core->cons, "%s\n", sig);
 			free (sig);
@@ -6878,15 +6888,13 @@ static int cmd_af(RCore *core, const char *input) {
 			r_cons_println (core->cons, r_anal_function_cc (fcn));
 			break;
 		case ' ': { // "afc "
-				  char *cc = r_str_trim_dup (input + 3);
-				  if (!r_anal_cc_exist (core->anal, cc)) {
-					  const char *asmOs = r_config_get (core->config, "asm.os");
-					  R_LOG_ERROR ("afc: Unknown calling convention '%s' for '%s'. See afcl for available types", cc, asmOs);
-				  } else {
-					  fcn->callconv = r_str_constpool_get (&core->anal->constpool, cc);
-				  }
-				  free (cc);
-			  }
+			char *cc = r_str_trim_dup (input + 3);
+			if (!r_anal_function_set_callconv (core->anal, fcn, cc)) {
+				const char *asmOs = r_config_get (core->config, "asm.os");
+				R_LOG_ERROR ("afc: Unknown calling convention '%s' for '%s'. See afcl for available types", cc, asmOs);
+			}
+			free (cc);
+		}
 			break;
 		case 'i':
 			if (input[3] == 'j') {
@@ -7035,6 +7043,7 @@ static int cmd_af(RCore *core, const char *input) {
 			if (fcn) { // bits = 0 means unset
 				int nbits = atoi (input + 3);
 				int obits = core->anal->config->bits;
+				int oldbits = fcn->bits;
 				if (nbits > 0) {
 					r_anal_hint_set_bits (core->anal, r_anal_function_min_addr (fcn), nbits);
 					r_anal_hint_set_bits (core->anal, r_anal_function_max_addr (fcn), obits);
@@ -7042,6 +7051,9 @@ static int cmd_af(RCore *core, const char *input) {
 				} else {
 					r_anal_hint_unset_bits (core->anal, r_anal_function_min_addr (fcn));
 					fcn->bits = 0;
+				}
+				if (oldbits != fcn->bits) {
+					r_anal_function_bump_dirty_epoch (fcn);
 				}
 			} else {
 				R_LOG_ERROR ("afB: Cannot find function to set bits at 0x%08"PFMT64x, core->addr);
@@ -7138,7 +7150,11 @@ static int cmd_af(RCore *core, const char *input) {
 		{
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, -1);
 			if (fcn) {
-				fcn->maxstack = r_num_math (core->num, input + 3);
+				st64 maxstack = r_num_math (core->num, input + 3);
+				if (fcn->maxstack != maxstack) {
+					fcn->maxstack = maxstack;
+					r_anal_function_bump_dirty_epoch (fcn);
+				}
 			} else {
 				R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, core->addr);
 			}
@@ -12725,7 +12741,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 						// TODO: I don't think we should silently error, it is confusing
 						if (!strcmp (type, otype)) {
 							//eprintf ("Adding type offset %s\n", type);
-							r_type_link_offset (a->sdb_types, type, addr);
+							r_anal_types_set_link_offset (a, type, addr);
 							r_anal_hint_set_offset (a, addr, otype);
 							break;
 						}
@@ -15176,6 +15192,16 @@ static int cmpfn_bw(const void *a, const void *b) {
 	return 0;
 }
 
+static void r_core_anal_plugin_post_analysis_depth(RCore *core, RAnalPluginAnalysisDepth depth) {
+	if (!core || !core->anal) {
+		return;
+	}
+	RAnalPluginAnalysisDepth saved_depth = core->anal->plugin_analysis_depth;
+	core->anal->plugin_analysis_depth = depth;
+	r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, NULL);
+	core->anal->plugin_analysis_depth = saved_depth;
+}
+
 static bool cmd_aa(RCore *core, bool aaa) {
 	const RList *list;
 	RListIter *iter;
@@ -15303,6 +15329,10 @@ static bool cmd_aa(RCore *core, bool aaa) {
 					fcni->type = R_ANAL_FCN_TYPE_SYM;
 				}
 			}
+		}
+		if (!r_cons_is_breaked (core->cons)) {
+			logline (core, 24, "Running basic analysis plugin post-analysis hooks");
+			r_core_anal_plugin_post_analysis_depth (core, R_ANAL_PLUGIN_ANALYSIS_DEPTH_BASIC);
 		}
 	}
 	r_config_set_b (core->config, "log.hints", log_hints);
@@ -15546,15 +15576,13 @@ static void cmd_aaa(RCore *core, const char *input) {
 		r_core_anal_propagate_noreturn (core, UT64_MAX);
 		r_core_task_yield (&core->tasks);
 
-		// Ensure DWARF metadata is loaded before integration.
+		// Apply the debug information the bin layer loaded. Analysis does not
+		// import it itself: bin load already does that when bin.dbginfo is set,
+		// and it deliberately declines for binaries past its size limit, so
+		// re-importing here would defeat that limit on exactly the binaries it
+		// protects.
 		Sdb *dwarf_sdb = sdb_ns (core->anal->sdb, "dwarf", 0);
-		if (!dwarf_sdb || sdb_isempty (dwarf_sdb)) {
-			int io_va = r_config_get_b (core->config, "io.va");
-			(void)r_core_bin_info (core, R_CORE_BIN_ACC_ADDRLINE, NULL, R_MODE_SET, io_va, NULL, NULL);
-			dwarf_sdb = sdb_ns (core->anal->sdb, "dwarf", 0);
-		}
-		// apply dwarf function information
-		if (dwarf_sdb) {
+		if (dwarf_sdb && !sdb_isempty (dwarf_sdb)) {
 			logline (core, 95, "Integrate dwarf function information");
 			r_anal_dwarf_integrate_functions (core->anal, core->flags, dwarf_sdb);
 		}
@@ -15571,8 +15599,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 			logline (core, 96, "Enable types.constraint for experimental type propagation");
 			r_config_set_b (core->config, "types.constraint", true);
 			// Plugin post-analysis hooks (for advanced analysis like taint, symbolic)
-			logline (core, 97, "Running plugin post-analysis hooks");
-			r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, NULL);
+			r_core_anal_plugin_post_analysis_depth (core, R_ANAL_PLUGIN_ANALYSIS_DEPTH_AGGRESSIVE);
 			if (input[2] == 'a') { // "aaaaa"
 				logline (core, 97, "Reanalyzing graph references to adjust functions count (aarr)");
 				r_core_call (core, "aarr");
@@ -15581,6 +15608,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 				r_core_cmd0 (core, ".afna@@c:afla");
 			}
 		} else {
+			r_core_anal_plugin_post_analysis_depth (core, R_ANAL_PLUGIN_ANALYSIS_DEPTH_BALANCED);
 			R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
 		}
 		if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {
