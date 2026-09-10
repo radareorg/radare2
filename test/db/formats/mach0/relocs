@@ -1,0 +1,85 @@
+NAME=mach0 relocs apply keeps the load-time table, its flags and the slot writes
+FILE=bins/mach0/FileDP
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~0x[0,1,2,3,4]
+f~reloc.[0,2]
+p8 4 @ 0x4074
+p8 4 @ 0x4084
+p8 4 @ 0x40a4
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000000 SET_32 6 NSAutoreleasePool
+0x00003020 0x00002020 SET_32 6 exit
+0x00003024 0x00002024 SET_32 6 NSFileProtectionKey
+0x00003028 0x00002028 SET_32 6 NSLog
+0x0000302c 0x0000202c SET_32 6 objc_enumerationMutation
+0x00003030 0x00002030 SET_32 6 objc_msgSend
+0x00003034 0x00002034 SET_32 6 puts
+0x00003038 0x00002038 SET_32 6 strcmp
+0x00006000 0x00000000 UNKNOWN 0 NSAutoreleasePool
+0x00006004 0x00000000 UNKNOWN 0 NSFileManager
+0x00006008 0x00000000 UNKNOWN 0 NSString
+0x0000600c 0x00000000 UNKNOWN 0 __CFConstantStringClassReference
+0x0000600c 0x00000000 UNKNOWN 0 __CFConstantStringClassReference
+0x0000600c 0x00000000 UNKNOWN 0 __CFConstantStringClassReference
+0x00003020 reloc.exit
+0x00003024 reloc.NSFileProtectionKey
+0x00003028 reloc.NSLog
+0x0000302c reloc.objc_enumerationMutation
+0x00003030 reloc.objc_msgSend
+0x00003034 reloc.puts
+0x00003038 reloc.strcmp
+0x00006000 reloc.NSAutoreleasePool
+0x00006004 reloc.NSFileManager
+0x00006008 reloc.NSString
+0x0000600c reloc.__CFConstantStringClassReference
+00600000
+0c604002
+0c600000
+EOF
+RUN
+
+NAME=mach0 relocs apply bin.limit truncates the combined table, slots first
+FILE=bins/mach0/FileDP
+ARGS=-e bin.relocs.apply=true -e bin.limit=8
+CMDS=ir~0x[0,1,2,3,4]
+EXPECT=<<EOF
+0x00000000 0x00000000 SET_32 6 NSAutoreleasePool
+0x00003020 0x00002020 SET_32 6 exit
+0x00006030 0x00000000 UNKNOWN 0 NSAutoreleasePool
+0x00006034 0x00000000 UNKNOWN 0 NSFileManager
+0x00006038 0x00000000 UNKNOWN 0 NSString
+0x0000603c 0x00000000 UNKNOWN 0 __CFConstantStringClassReference
+0x0000603c 0x00000000 UNKNOWN 0 __CFConstantStringClassReference
+0x0000603c 0x00000000 UNKNOWN 0 __CFConstantStringClassReference
+EOF
+RUN
+
+NAME=mach0 relocs apply with no io bank
+FILE=bins/mach0/FileDP
+CMDS=<<EOF
+omb-0
+e bin.relocs.apply=true
+ir~0x[0,1,2,3,4]
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000000 SET_32 6 NSAutoreleasePool
+0x00003020 0x00002020 SET_32 6 exit
+0x00003024 0x00002024 SET_32 6 NSFileProtectionKey
+0x00003028 0x00002028 SET_32 6 NSLog
+0x0000302c 0x0000202c SET_32 6 objc_enumerationMutation
+0x00003030 0x00002030 SET_32 6 objc_msgSend
+0x00003034 0x00002034 SET_32 6 puts
+0x00003038 0x00002038 SET_32 6 strcmp
+EOF
+RUN
+
+NAME=mach0 relocs apply is inert without external relocs
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64 -e bin.relocs.apply=true
+CMDS=ir~?
+EXPECT=<<EOF
+201
+EOF
+RUN

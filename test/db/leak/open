@@ -64,6 +64,19 @@ hello
 EOF
 RUN
 
+NAME=leak macho patched relocs
+FILE=bins/mach0/FileDP
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+?e hello
+EOF
+EXPECT=<<EOF
+hello
+EOF
+# the harness only parses LEAK SUMMARY, so an invalid free needs its own check
+REGEXP_ERR=ERROR SUMMARY: 0 errors
+RUN
+
 NAME=leak opening java class
 FILE=bins/java/Hello.class
 CMDS=<<EOF

@@ -559,6 +559,9 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 
 	ut64 offset = 0;
 	RIOBank *bank = iob->bank_get (io, io->bank);
+	if (!bank) {
+		goto beach;
+	}
 	RListIter *iter;
 	RIOMapRef *mapref;
 	r_list_foreach (bank->maprefs, iter, mapref) {
@@ -619,6 +622,16 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	}
 	if (RVecRBinReloc_empty (ret)) {
 		goto beach;
+	}
+	// this vector replaces the whole table, so move the load-time rows in
+	RVecRBinReloc *loaded = relocs (bf);
+	if (loaded) {
+		RBinReloc *r;
+		R_VEC_FOREACH (loaded, r) {
+			RVecRBinReloc_push_back (ret, r);
+			r->import = NULL;
+		}
+		RVecRBinReloc_free (loaded);
 	}
 	ht_uu_free (relocs_by_sym);
 	RVecExtReloc_fini (&ext_relocs);
