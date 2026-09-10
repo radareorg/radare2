@@ -1066,10 +1066,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: arm s110 syscalls /as; arm s110 syscalls /as twice
 NAME=arm s110 syscalls /ad svc
 FILE=bins/elf/BLE_Beacon2.NRF51822_OTA.bin
 ARGS=-aarm -b16 -easm.os=s110 -m 0x16000
-CMDS=/ad svc
+CMDS=<<EOF
+/ad svc
+?e --
+/as
+?e --
+/as
+?e --
+/as
+EOF
 EXPECT=<<EOF
 0x000168d0                 51df  svc 0x51
 0x000168f2                 61df  svc 0x61
@@ -1096,14 +1105,7 @@ EXPECT=<<EOF
 0x00017d5e                 10df  svc 0x10
 0x00017d6a                 26df  svc 0x26
 0x00018660                 a4df  svc 0xa4
-EOF
-RUN
-
-NAME=arm s110 syscalls /as
-FILE=bins/elf/BLE_Beacon2.NRF51822_OTA.bin
-ARGS=-aarm -b16 -easm.os=s110 -m 0x16000
-CMDS=/as
-EXPECT=<<EOF
+--
 0x000168d0 sd_evt_get
 0x000168f2 sd_ble_evt_get
 0x00016b42 sd_ble_gap_sec_params_reply
@@ -1129,18 +1131,7 @@ EXPECT=<<EOF
 0x00017d5e sd_softdevice_enable
 0x00017d6a sd_ppi_group_assign
 0x00018660 sd_ble_gatts_value_set
-EOF
-RUN
-
-NAME=arm s110 syscalls /as twice
-FILE=bins/elf/BLE_Beacon2.NRF51822_OTA.bin
-ARGS=-aarm -b16 -easm.os=s110 -m 0x16000
-CMDS=<<EOF
-/as
-?e --
-/as
-EOF
-EXPECT=<<EOF
+--
 0x000168d0 sd_evt_get
 0x000168f2 sd_ble_evt_get
 0x00016b42 sd_ble_gap_sec_params_reply
