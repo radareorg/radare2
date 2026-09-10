@@ -315,18 +315,12 @@ static bool imports_vec(RBinFile *bf) {
 	return true;
 }
 
-static RVecRBinReloc *relocs(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
-	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
-	const RSkipList *relocs = MACH0_(load_relocs) (mo);
-	if (!relocs) {
-		return NULL;
-	}
-	RVecRBinReloc *ret = RVecRBinReloc_new ();
-
+// the load-time rows: every non-external reloc, then the chained fixups
+static void append_load_relocs(RBinFile *bf, RBinObject *bo, const RSkipList *relocs, RVecRBinReloc *ret) {
+	struct MACH0_(obj_t) *mo = bo->bin_obj;
 	RVecRBinImport *imports = mo->imports_loaded
 		? &mo->imports_cache
-		: &bf->bo->imports_vec;
+		: &bo->imports_vec;
 	RSkipListNode *it;
 	struct reloc_t *reloc;
 	r_skiplist_foreach (relocs, it, reloc) {
@@ -358,6 +352,17 @@ static RVecRBinReloc *relocs(RBinFile *bf) {
 		ptr->paddr = r->vaddr;
 		ptr->addend = r->vaddr;
 	}
+}
+
+static RVecRBinReloc *relocs(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
+	const RSkipList *relocs = MACH0_(load_relocs) (mo);
+	if (!relocs) {
+		return NULL;
+	}
+	RVecRBinReloc *ret = RVecRBinReloc_new ();
+	append_load_relocs (bf, bf->bo, relocs, ret);
 	return ret;
 }
 
@@ -623,19 +628,11 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	if (RVecRBinReloc_empty (ret)) {
 		goto beach;
 	}
-	// this vector replaces the whole table, so move the load-time rows in
-	RVecRBinReloc *loaded = relocs (bf);
-	if (loaded) {
-		RBinReloc *r;
-		R_VEC_FOREACH (loaded, r) {
-			RVecRBinReloc_push_back (ret, r);
-			r->import = NULL;
-		}
-		RVecRBinReloc_free (loaded);
-	}
+	// this vector replaces the whole table, so it carries the load-time rows
+	append_load_relocs (bf, obj, all_relocs, ret);
 	ht_uu_free (relocs_by_sym);
 	RVecExtReloc_fini (&ext_relocs);
-	// XXX r_io_desc_free (gotr2desc);
+	// io owns gotr2desc from here: its map serves the patched slots
 	return ret;
 
 beach:
