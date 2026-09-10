@@ -6,18 +6,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: PE: corkami winver.exe - linked libraries
 NAME=PE: corkami winver.exe - entrypoint
 FILE=bins/pe/winver.exe
-CMDS=s
+CMDS=<<EOF
+s
+?e --
+il
+EOF
 EXPECT=<<EOF
 0x401000
-EOF
-RUN
-
-NAME=PE: corkami winver.exe - linked libraries
-FILE=bins/pe/winver.exe
-CMDS=il
-EXPECT=<<EOF
+--
 kernel32.dll
 msvcrt.dll
 EOF

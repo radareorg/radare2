@@ -6,18 +6,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: MZ: chkdsk.exe - pi 1
 NAME=MZ: chkdsk.exe - entrypoint
 FILE=bins/mz/chkdsk.exe
-CMDS=s
+CMDS=<<EOF
+s
+?e --
+pi 1
+EOF
 EXPECT=<<EOF
 0x0
-EOF
-RUN
-
-NAME=MZ: chkdsk.exe - pi 1
-FILE=bins/mz/chkdsk.exe
-CMDS=pi 1
-EXPECT=<<EOF
+--
 mov cx, 0x515e
 EOF
 RUN

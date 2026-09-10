@@ -5,26 +5,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: PE: seh_x64.exe - __except with a filter function; PE: seh_x64.exe - Get trycatchs
 NAME=PE: seh_x64.exe - Get trycatchs as JSON
 FILE=bins/pe/seh_x64.exe
-CMDS=iwj~{[0]}
+CMDS=<<EOF
+iwj~{[0]}
+?e --
+iwj~{[2]}
+?e --
+iw
+EOF
 EXPECT=<<EOF
 {"index":0,"source":5368713232,"from":5368713292,"to":5368713318,"handler":5368713318,"filter":0,"kind":"catch","typeFilter":0}
-EOF
-RUN
-
-NAME=PE: seh_x64.exe - __except with a filter function
-FILE=bins/pe/seh_x64.exe
-CMDS=iwj~{[2]}
-EXPECT=<<EOF
+--
 {"index":2,"source":5368713232,"from":5368713348,"to":5368713364,"handler":5368713364,"filter":5368716592,"kind":"filter","typeFilter":0}
-EOF
-RUN
-
-NAME=PE: seh_x64.exe - Get trycatchs
-FILE=bins/pe/seh_x64.exe
-CMDS=iw
-EXPECT=<<EOF
+--
 f try.0.140001010.from=0x14000104c
 f try.0.140001010.to=0x140001066
 f try.0.140001010.catch=0x140001066

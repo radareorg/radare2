@@ -26,22 +26,20 @@ paddr      vaddr      phaddr     vhaddr     type
 EOF
 RUN
 
+# merged: 2: PE: tls 3
 NAME=1: PE: tls 3
 FILE=bins/pe/tls_obfuscation.exe
 ARGS=-A
-CMDS=ie
+CMDS=<<EOF
+ie
+?e --
+iee
+EOF
 EXPECT=<<EOF
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
 0x00000200 0x00401000 0x00000068 ---------- program
-EOF
-RUN
-
-NAME=2: PE: tls 3
-FILE=bins/pe/tls_obfuscation.exe
-ARGS=-A
-CMDS=iee
-EXPECT=<<EOF
+--
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
 0x00000216 0x00401016 0x00000330 ---------- tls

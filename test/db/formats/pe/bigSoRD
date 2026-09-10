@@ -5,21 +5,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: PE: corkami bigSoRD.exe - pi 1
 NAME=PE: corkami bigSoRD.exe - entrypoint
 FILE=bins/pe/bigSoRD.exe
-CMDS=s
-EXPECT=<<EOF
-0x401000
-EOF
-RUN
-
-NAME=PE: corkami bigSoRD.exe - pi 1
-FILE=bins/pe/bigSoRD.exe
 CMDS=<<EOF
+s
+?e --
 e asm.sub.names=false
 pi 1
 EOF
 EXPECT=<<EOF
+0x401000
+--
 push 0x402000
 EOF
 RUN

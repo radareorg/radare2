@@ -1,13 +1,26 @@
+# merged: ELF PPC32: ADDR32 slot holds symbol value plus addend; ELF PPC32: JMP_SLOT plt slots keep their nonzero stub words unpatched
 NAME=ELF PPC32: RELA RELATIVE addend rebased into the slot
 FILE=bins/elf/dropbear_powerpc-linux-gnu_gcc_-O2
 ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
 pv4 @ 0x4eb14
 pv4 @ 0x502bc
+?e --
+pv4 @ 0x4f210
+pv4 @ 0x4f538
+?e --
+pv4 @ 0x4fe00
+pv4 @ 0x4fe04
 EOF
 EXPECT=<<EOF
 0x0002f6e2
 0x00004ad8
+--
+0x00051bec
+0x00050bb4
+--
+0x0002f1b0
+0x0002f1b4
 EOF
 RUN
 
@@ -34,31 +47,5 @@ EXPECT=<<EOF
 0x00000000
 0x00000000
 0x00000000
-EOF
-RUN
-
-NAME=ELF PPC32: ADDR32 slot holds symbol value plus addend
-FILE=bins/elf/dropbear_powerpc-linux-gnu_gcc_-O2
-ARGS=-e bin.relocs.apply=true
-CMDS=<<EOF
-pv4 @ 0x4f210
-pv4 @ 0x4f538
-EOF
-EXPECT=<<EOF
-0x00051bec
-0x00050bb4
-EOF
-RUN
-
-NAME=ELF PPC32: JMP_SLOT plt slots keep their nonzero stub words unpatched
-FILE=bins/elf/dropbear_powerpc-linux-gnu_gcc_-O2
-ARGS=-e bin.relocs.apply=true
-CMDS=<<EOF
-pv4 @ 0x4fe00
-pv4 @ 0x4fe04
-EOF
-EXPECT=<<EOF
-0x0002f1b0
-0x0002f1b4
 EOF
 RUN

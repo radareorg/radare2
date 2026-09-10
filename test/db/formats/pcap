@@ -14,6 +14,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: pcap tcp stream reassembly; pcap stream navigation; pcap transport symbols
 NAME=pcap udp stream dump
 FILE=bins/pcap/udp6.pcap
 CMDS=<<EOF
@@ -22,40 +23,12 @@ i:sa
 i:sb
 ?e
 i:sp
-EOF
-EXPECT=<<EOF
-query?again
-answer!
-0x00000052 > 6
-0x00000092 < 7
-0x00000276 > 5
-EOF
-RUN
-
-NAME=pcap tcp stream reassembly
-FILE=bins/pcap/udp6.pcap
-CMDS=<<EOF
+?e --
 i:s 1~?
 i:sa
 i:sb
 i:sp
-EOF
-EXPECT=<<EOF
-1
-GET / HTTP/1.0
-
-extra
-HTTP/1.0 200 OK
-0x000000f3 > 16
-0x0000015d > 16
-0x000001c7 < 16
-0x00000231 > 11
-EOF
-RUN
-
-NAME=pcap stream navigation
-FILE=bins/pcap/udp6.pcap
-CMDS=<<EOF
+?e --
 s 0x99
 i:n
 ?v $$
@@ -67,24 +40,34 @@ i:p
 ?v $$
 i:s.~?
 i:s~*
+?e --
+isq~Protocol
+isq~IPV6
 EOF
 EXPECT=<<EOF
+query?again
+answer!
+0x00000052 > 6
+0x00000092 < 7
+0x00000276 > 5
+--
+1
+GET / HTTP/1.0
+
+extra
+HTTP/1.0 200 OK
+0x000000f3 > 16
+0x0000015d > 16
+0x000001c7 < 16
+0x00000231 > 11
+--
 0x15d
 0x1c7
 0x231
 0x1c7
 1
 * 1 tcp [fe80::1]:4000 -> [2001:db8::]:80 pkts=4 a=43 b=16
-EOF
-RUN
-
-NAME=pcap transport symbols
-FILE=bins/pcap/udp6.pcap
-CMDS=<<EOF
-isq~Protocol
-isq~IPV6
-EOF
-EXPECT=<<EOF
+--
 0x0000004a 0 0x4a: User Datagram Protocol, Src Port: 5353, Dst port: 53, Len: 6
 0x0000008a 0 0x8a: User Datagram Protocol, Src Port: 53, Dst port: 5353, Len: 7
 0x000000df 0 0xdf: Transmission Control Protocol, Src Port: 4000, Dst port: 80, Len: 16

@@ -1,3 +1,4 @@
+# merged: PE64: kernel32.dll - __except and __finally regions
 NAME=PE64: kernel32.dll - SEH scope table kinds
 FILE=bins/pe/kernel32.dll
 CMDS=<<EOF
@@ -5,12 +6,20 @@ iw~from~?
 iw~catch=~?
 iw~filter=~?
 iw~cleanup=~?
+?e --
+iwj~{[0]}
+iwj~{[3]}
+iwj~{[6]}
 EOF
 EXPECT=<<EOF
 148
 7
 52
 89
+--
+{"index":0,"source":6442456588,"from":6442456666,"to":6442456816,"handler":6442605238,"filter":0,"kind":"cleanup"}
+{"index":3,"source":6442461416,"from":6442461499,"to":6442461725,"handler":6442605354,"filter":0,"kind":"cleanup"}
+{"index":6,"source":6442464484,"from":6442464538,"to":6442464679,"handler":6442464679,"filter":6442605461,"kind":"filter","typeFilter":0}
 EOF
 RUN
 
@@ -27,20 +36,6 @@ EXPECT=<<EOF
 46
 9
 11
-EOF
-RUN
-
-NAME=PE64: kernel32.dll - __except and __finally regions
-FILE=bins/pe/kernel32.dll
-CMDS=<<EOF
-iwj~{[0]}
-iwj~{[3]}
-iwj~{[6]}
-EOF
-EXPECT=<<EOF
-{"index":0,"source":6442456588,"from":6442456666,"to":6442456816,"handler":6442605238,"filter":0,"kind":"cleanup"}
-{"index":3,"source":6442461416,"from":6442461499,"to":6442461725,"handler":6442605354,"filter":0,"kind":"cleanup"}
-{"index":6,"source":6442464484,"from":6442464538,"to":6442464679,"handler":6442464679,"filter":6442605461,"kind":"filter","typeFilter":0}
 EOF
 RUN
 

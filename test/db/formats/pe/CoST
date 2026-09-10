@@ -6,41 +6,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: PE: corkami CoST.exe - tls VA; PE: corkami CoST.exe - sections list; PE: corkami CoST.exe - pi 1
 NAME=PE: corkami CoST.exe - entrypoint VA
 FILE=bins/pe/CoST.exe
-CMDS=ie
-EXPECT=<<EOF
-paddr      vaddr      phaddr     vhaddr     type
-------------------------------------------------
-0x00000000 0x7efd0000 0x0000506c ---------- program
-EOF
-RUN
-
-NAME=PE: corkami CoST.exe - tls VA
-FILE=bins/pe/CoST.exe
-CMDS=iee
-EXPECT=<<EOF
-paddr      vaddr      phaddr     vhaddr     type
-------------------------------------------------
-0x00000148 0x7efd0148 0x000001cc ---------- tls
-EOF
-RUN
-
-NAME=PE: corkami CoST.exe - sections list
-FILE=bins/pe/CoST.exe
-CMDS=om
-EXPECT=<<EOF
-* 1 fd: 3 +0x00000000 0x7efd0000 - 0x7efd5169 r-x rwx fmap.blob
-EOF
-RUN
-
-NAME=PE: corkami CoST.exe - pi 1
-FILE=bins/pe/CoST.exe
 CMDS=<<EOF
+ie
+?e --
+iee
+?e --
+om
+?e --
 e asm.sub.names=false
 pi 1
 EOF
 EXPECT=<<EOF
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000000 0x7efd0000 0x0000506c ---------- program
+--
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000148 0x7efd0148 0x000001cc ---------- tls
+--
+* 1 fd: 3 +0x00000000 0x7efd0000 - 0x7efd5169 r-x rwx fmap.blob
+--
 dec ebp
 EOF
 RUN

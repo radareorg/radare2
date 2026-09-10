@@ -16,18 +16,17 @@ pic      true
 EOF
 RUN
 
+# merged: PE: corkami aslr.dll - pi 1
 NAME=PE: corkami aslr.dll - entrypoint
 FILE=bins/pe/aslr.dll
-CMDS=s
+CMDS=<<EOF
+s
+?e --
+pi 1
+EOF
 EXPECT=<<EOF
 0x1001000
-EOF
-RUN
-
-NAME=PE: corkami aslr.dll - pi 1
-FILE=bins/pe/aslr.dll
-CMDS=pi 1
-EXPECT=<<EOF
+--
 mov eax, 1
 EOF
 RUN

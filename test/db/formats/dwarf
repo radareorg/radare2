@@ -123,6 +123,7 @@ __adddf3
 EOF
 RUN
 
+# merged: a struct that names itself keeps the width DWARF declared
 NAME="DWARF prototype with commas in argument types is linked"
 FILE=bins/elf/dwarf_rust_bubble
 CMDS=<<EOF
@@ -132,12 +133,20 @@ afs @ 0x25ad0
 iddi
 k anal/dwarf/fcn.check.typed_name
 k anal/types/fcnlink.00025ad0
+?e --
+k anal/types/struct.ExitCode.__0
+k anal/types/type.ExitCode.size
+tss ExitCode
 EOF
 EXPECT=<<EOF
 check
 bool sym.core__unicode__printable__check__h1d9e8c426a95acd5__clone_llvm3277309261110959063_ (u16 x, &[(u8, u8)] singletonuppers, &[u8] singletonlowers, &[u8] normal);
 check
 check
+--
+ExitCode,0,0
+0x8
+1
 EOF
 RUN
 
@@ -886,9 +895,21 @@ DEBUG: Cannot resolve symbol address __cxa_finalize
 EOF
 RUN
 
+# merged: test dwarf basic block code listing
 NAME=test dwarf5 md5
 FILE=bins/elf/dwarf5_line_cl
-CMDS=id
+CMDS=<<EOF
+id
+?e --
+e dir.source=./bins/src
+s main
+af
+s 0x11d9
+CLLb
+?e --
+s 0x11ed
+CLLb
+EOF
 EXPECT=<<EOF
    1      DW_TAG_compile_unit       [has children] (0x0)
     DW_AT_producer                 DW_FORM_strx1                 
@@ -1268,22 +1289,7 @@ Raw dump of debug contents of section .debug_line:
 0x0000120a	/usr/w/g/radare2/test/bins/src/dwarf-line.c	26
 0x0000120c	/usr/w/g/radare2/test/bins/src/dwarf-line.c	26
 0x00001212	/usr/w/g/radare2/test/bins/src/dwarf-line.c	26
-EOF
-RUN
-
-NAME=test dwarf basic block code listing
-FILE=bins/elf/dwarf5_line_cl
-CMDS=<<EOF
-e dir.source=./bins/src
-s main
-af
-s 0x11d9
-CLLb
-?e --
-s 0x11ed
-CLLb
-EOF
-EXPECT=<<EOF
+--
 0x000011d6  	while (a-- > 0) {
 0x000011e1  	while (a-- > 0) {
 0x000011e4  	while (a-- > 0) {
@@ -5329,19 +5335,5 @@ line: 953
 colu: 1
 addr: 0x08003797
 --
-EOF
-RUN
-
-NAME=a struct that names itself keeps the width DWARF declared
-FILE=bins/elf/dwarf_rust_bubble
-CMDS=<<EOF
-k anal/types/struct.ExitCode.__0
-k anal/types/type.ExitCode.size
-tss ExitCode
-EOF
-EXPECT=<<EOF
-ExitCode,0,0
-0x8
-1
 EOF
 RUN

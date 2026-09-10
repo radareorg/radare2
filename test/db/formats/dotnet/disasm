@@ -1,7 +1,12 @@
+# merged: .NET HelloWorld.dll RunAnalysis method metadata; .NET HelloWorld.dll AnalyzeMetadata strings and members
 NAME=.NET HelloWorld.dll ProcessSections body and tokens
 FILE=bins/dotnet/HelloWorld.dll
 CMDS=<<EOF
 pdi 12 @ 0x10002130
+?e --
+pdi 18 @ 0x10002300
+?e --
+pdi 18 @ 0x10002224
 EOF
 EXPECT=<<EOF
 0x10002130   method.public.BinaryParserLibrary.BinaryParser.ProcessSections:
@@ -17,15 +22,7 @@ EXPECT=<<EOF
 0x10002142                 1f10  ldc.i4.s 16
 0x10002144           280200002b  call System.Linq.Enumerable.Take<byte>(System.Collections.Generic.IEnumerable`1<M0>,int):System.Collections.Generic.IEnumerable`1<M0>
 0x10002149           280300002b  call System.Linq.Enumerable.ToArray<byte>(System.Collections.Generic.IEnumerable`1<M0>):M0[]
-EOF
-RUN
-
-NAME=.NET HelloWorld.dll RunAnalysis method metadata
-FILE=bins/dotnet/HelloWorld.dll
-CMDS=<<EOF
-pdi 18 @ 0x10002300
-EOF
-EXPECT=<<EOF
+--
 0x10002300   method.public.BinaryParserLibrary.BinaryParser.RunAnalysis:
 0x10002300                   00  nop
 0x10002301                   02  ldarg.0
@@ -45,15 +42,7 @@ EXPECT=<<EOF
 0x1000231e           282600000a  call System.Runtime.CompilerServices.RuntimeHelpers.InitializeArray(System.Array,System.RuntimeFieldHandle):void
 0x10002323           2802000006  call BinaryParserLibrary.BinaryParser.LoadData(this;byte[]:inputData):void
 0x10002328                   00  nop
-EOF
-RUN
-
-NAME=.NET HelloWorld.dll AnalyzeMetadata strings and members
-FILE=bins/dotnet/HelloWorld.dll
-CMDS=<<EOF
-pdi 18 @ 0x10002224
-EOF
-EXPECT=<<EOF
+--
 0x10002224   method.public.BinaryParserLibrary.BinaryParser.AnalyzeMetadata:
 0x10002224                   00  nop
 0x10002225           731f00000a  newobj System.Collections.Generic.Dictionary`2<string,object>..ctor(this;):void

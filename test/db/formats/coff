@@ -96,23 +96,20 @@ vaddr      paddr      type   ntype name
 EOF
 RUN
 
+# merged: tiny coff2
 NAME=tiny coff2 symbol language
 FILE=bins/coff/coff2.obj
-CMDS=e bin.lang
-EXPECT=<<EOF
-msvc
-EOF
-RUN
-
-NAME=tiny coff2
-FILE=bins/coff/coff2.obj
 CMDS=<<EOF
+e bin.lang
+?e --
 om
 is~text
 s sym.__1FooBar__QAE_XZ
 pd 2
 EOF
 EXPECT=<<EOF
+msvc
+--
 - 9 fd: 3 +0x0000017c 0x00000000 - 0x000000ee --- --- fmap..drectve_0
 - 8 fd: 3 +0x0000026b 0x000000f0 - 0x00000b9f r-- r-- fmap..debug_S_1
 - 7 fd: 3 +0x00000d1b 0x00000ba0 - 0x00000c13 r-- r-- fmap..debug_T_2

@@ -1,104 +1,74 @@
+# merged: entry point 16 bits omf; symbols 16 bits omf; sections 16 bits omf; sections 16 bits omf - content; virtual address 16 bits omf
 NAME=load 16 bits omf
 FILE=bins/omf/hello_world
-CMDS=iI~bits
+CMDS=<<EOF
+iI~bits
+?e --
+ie
+?e --
+is
+?e --
+iS
+?e --
+px 16 @ section.text_1; px 16 @ section.data_1
+?e --
+pid 1~mov[1]
+EOF
 EXPECT=<<EOF
 bits     16
-EOF
-RUN
-
-NAME=entry point 16 bits omf
-FILE=bins/omf/hello_world
-CMDS=ie
-EXPECT=<<EOF
+--
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
 0x00000073 0x00001000 ---------- ---------- program
-EOF
-RUN
-
-NAME=symbols 16 bits omf
-FILE=bins/omf/hello_world
-CMDS=is
-EXPECT=<<EOF
+--
 nth paddr      vaddr      bind type size lib name   demangled
 -------------------------------------------------------------
 1   0x00000073 0x00001000 NONE NONE 0        _start
-EOF
-RUN
-
-NAME=sections 16 bits omf
-FILE=bins/omf/hello_world
-CMDS=iS
-EXPECT=<<EOF
+--
 nth paddr       size vaddr       vsize perm flags type name
 -----------------------------------------------------------
 0   0x00000073  0x13 0x00001000   0x13 -rwx 0x0   ---- text_1
 1   0x00000095   0xe 0x00001013    0xe -rwx 0x0   ---- data_1
-EOF
-RUN
-
-NAME=sections 16 bits omf - content
-FILE=bins/omf/hello_world
-CMDS=px 16 @ section.text_1; px 16 @ section.data_1
-EXPECT=<<EOF
+--
 - offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0000:1000  ba0e 00b9 0000 bb01 00b8 0400 cd80 b801  ................
 - offset - 1314 1516 1718 191A 1B1C 1D1E 1F20 2122  3456789ABCDEF012
 0000:1013  4865 6c6c 6f2c 2077 6f72 6c64 210a ffff  Hello, world!...
-EOF
-RUN
-
-NAME=virtual address 16 bits omf
-FILE=bins/omf/hello_world
-CMDS=pid 1~mov[1]
-EXPECT=<<EOF
+--
 ba0e00
 EOF
 RUN
 
+# merged: entry point 32 bits omf; symbols 32 bits omf; sections 32 bits omf; virtual address 32 bits omf
 NAME=load 32 bits omf
 FILE=bins/omf/hello_world32
-CMDS=iI~bits
+CMDS=<<EOF
+iI~bits
+?e --
+ie
+?e --
+is
+?e --
+iS
+?e --
+pid 1~mov[1]
+EOF
 EXPECT=<<EOF
 bits     32
-EOF
-RUN
-
-NAME=entry point 32 bits omf
-FILE=bins/omf/hello_world32
-CMDS=ie
-EXPECT=<<EOF
+--
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
 0x00000074 0x00001000 ---------- ---------- program
-EOF
-RUN
-
-NAME=symbols 32 bits omf
-FILE=bins/omf/hello_world32
-CMDS=is
-EXPECT=<<EOF
+--
 nth paddr      vaddr      bind type size lib name   demangled
 -------------------------------------------------------------
 1   0x00000074 0x00001000 NONE NONE 0        _start
-EOF
-RUN
-
-NAME=sections 32 bits omf
-FILE=bins/omf/hello_world32
-CMDS=iS
-EXPECT=<<EOF
+--
 nth paddr       size vaddr       vsize perm flags type name
 -----------------------------------------------------------
 0   0x00000074  0x1d 0x00001000   0x1d -rwx 0x0   ---- .text_1
 1   0x000000a3   0xe 0x0000101d    0xe -rwx 0x0   ---- .data_1
-EOF
-RUN
-
-NAME=virtual address 32 bits omf
-FILE=bins/omf/hello_world32
-CMDS=pid 1~mov[1]
-EXPECT=<<EOF
+--
 ba0e000000
 EOF
 RUN

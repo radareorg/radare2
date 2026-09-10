@@ -5,28 +5,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: 2: PE: nosectionW7 - entrypoint; 3: PE: nosectionW7 - entrypoint
 NAME=1: PE: nosectionW7 - entrypoint
 FILE=bins/pe/nosectionW7.exe
-CMDS=om
+CMDS=<<EOF
+om
+?e --
+ie
+?e --
+pi 5
+EOF
 EXPECT=<<EOF
 * 1 fd: 3 +0x00000138 0x00400138 - 0x0040023f r-x rwx fmap.blob
-EOF
-RUN
-
-NAME=2: PE: nosectionW7 - entrypoint
-FILE=bins/pe/nosectionW7.exe
-CMDS=ie
-EXPECT=<<EOF
+--
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
 0x00000138 0x00400138 0x00000068 ---------- program
-EOF
-RUN
-
-NAME=3: PE: nosectionW7 - entrypoint
-FILE=bins/pe/nosectionW7.exe
-CMDS=pi 5
-EXPECT=<<EOF
+--
 push 0x400150
 call dword [sym.imp.msvcrt.dll_printf]
 add esp, 4

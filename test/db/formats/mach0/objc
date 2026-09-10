@@ -1,6 +1,15 @@
+# merged: aao hello-objc selrefs; aao hello-objc methods references
 NAME=objc hello-objc not encrypted
 FILE=bins/mach0/hello-objc
-CMDS=ic
+CMDS=<<EOF
+ic
+?e --
+aao
+ax~?
+ax~selref
+?e --
+aao;ax~method
+EOF
 EXPECT=<<EOF
 0x100001180 [0x100000da0 - 0x100000e20]    128 objc class 0 Person :: NSObject
 0x100000da0 objc   method   0      sayHello
@@ -9,6 +18,21 @@ EXPECT=<<EOF
 0x00000000 objc      var   0      isa
 0x100001178 objc      var   1      name
 0x00000000 objc property   2      name
+--
+83
+              section.0.__TEXT.__text+20 0x100000db4 > DATA:r-- > 0x100001150 section.14.__DATA.__objc_selrefs
+                                 main+15 0x100000e5f > DATA:r-- > 0x100001158 section.14.__DATA.__objc_selrefs+8
+                                 main+45 0x100000e7d > DATA:r-- > 0x100001160 section.14.__DATA.__objc_selrefs+16
+                                 main+64 0x100000e90 > DATA:r-- > 0x100001168 section.14.__DATA.__objc_selrefs+24
+                                 main+86 0x100000ea6 > DATA:r-- > 0x100001158 section.14.__DATA.__objc_selrefs+8
+                                main+116 0x100000ec4 > DATA:r-- > 0x100001160 section.14.__DATA.__objc_selrefs+16
+                                main+135 0x100000ed7 > DATA:r-- > 0x100001168 section.14.__DATA.__objc_selrefs+24
+--
+              section.0.__TEXT.__text+20 0x100000db4 > CODE:--x > 0x100000df0 method.Person.name
+                                 main+45 0x100000e7d > CODE:--x > 0x100000e20 method.Person.setName:
+                                 main+64 0x100000e90 > CODE:--x > 0x100000da0 method.Person.sayHello
+                                main+116 0x100000ec4 > CODE:--x > 0x100000e20 method.Person.setName:
+                                main+135 0x100000ed7 > CODE:--x > 0x100000da0 method.Person.sayHello
 EOF
 RUN
 
@@ -21,30 +45,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: objc method flags (icj); objc method flags (ic*)
 NAME=objc method flags (ic ViewController)
 FILE=bins/mach0/TestMethods
-CMDS=ic ViewController
+CMDS=<<EOF
+ic ViewController
+?e --
+icj~{[0].methods[2].flags[0]}
+?e --
+ic*~thisIsAClassMethod
+EOF
 EXPECT=<<EOF
 class ViewController
 0x10000676c method ViewController      viewDidLoad
 0x1000067d0 method ViewController      didReceiveMemoryWarning
 0x1000067bc method ViewController c    thisIsAClassMethod
 0x100006820 method ViewController c    andAnotherOne
-EOF
-RUN
-
-NAME=objc method flags (icj)
-FILE=bins/mach0/TestMethods
-CMDS=icj~{[0].methods[2].flags[0]}
-EXPECT=<<EOF
+--
 class
-EOF
-RUN
-
-NAME=objc method flags (ic*)
-FILE=bins/mach0/TestMethods
-CMDS=ic*~thisIsAClassMethod
-EXPECT=<<EOF
+--
 'f method.ViewController.class.thisIsAClassMethod = 0x1000067bc
 EOF
 RUN
@@ -94,37 +113,6 @@ EXPECT=<<EOF
 0x100001f34 [0x100001b50 - 0x100001d00]    432 swift class 1 TestSwiftObjc.ThisIsASwiftClass :: __C.NSObject
 0x1000031e8 [0x100001d80 - 0x100001d80]      0 objc class 2 TestSwiftObjc.ThisIsASwiftClass :: NSObject
 0x00000000 [0x100001f80 - 0x100001f80]      0 ? class 3 ThisIsASwiftClass
-EOF
-RUN
-
-NAME=aao hello-objc selrefs
-FILE=bins/mach0/hello-objc
-CMDS=<<EOF
-aao
-ax~?
-ax~selref
-EOF
-EXPECT=<<EOF
-83
-              section.0.__TEXT.__text+20 0x100000db4 > DATA:r-- > 0x100001150 section.14.__DATA.__objc_selrefs
-                                 main+15 0x100000e5f > DATA:r-- > 0x100001158 section.14.__DATA.__objc_selrefs+8
-                                 main+45 0x100000e7d > DATA:r-- > 0x100001160 section.14.__DATA.__objc_selrefs+16
-                                 main+64 0x100000e90 > DATA:r-- > 0x100001168 section.14.__DATA.__objc_selrefs+24
-                                 main+86 0x100000ea6 > DATA:r-- > 0x100001158 section.14.__DATA.__objc_selrefs+8
-                                main+116 0x100000ec4 > DATA:r-- > 0x100001160 section.14.__DATA.__objc_selrefs+16
-                                main+135 0x100000ed7 > DATA:r-- > 0x100001168 section.14.__DATA.__objc_selrefs+24
-EOF
-RUN
-
-NAME=aao hello-objc methods references
-FILE=bins/mach0/hello-objc
-CMDS=aao;ax~method
-EXPECT=<<EOF
-              section.0.__TEXT.__text+20 0x100000db4 > CODE:--x > 0x100000df0 method.Person.name
-                                 main+45 0x100000e7d > CODE:--x > 0x100000e20 method.Person.setName:
-                                 main+64 0x100000e90 > CODE:--x > 0x100000da0 method.Person.sayHello
-                                main+116 0x100000ec4 > CODE:--x > 0x100000e20 method.Person.setName:
-                                main+135 0x100000ed7 > CODE:--x > 0x100000da0 method.Person.sayHello
 EOF
 RUN
 

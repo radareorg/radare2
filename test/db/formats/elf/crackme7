@@ -1,26 +1,15 @@
+# merged: ELF: IOLI - crackme7 - Local variables analysis
 NAME=ELF: IOLI - crackme7 - with -A
 FILE=bins/elf/ioli/crackme0x07
 ARGS=-A
-CMDS=afi 0x804867d~size
+CMDS=<<EOF
+afi 0x804867d~size
+?e --
+afv @ fcn.080485b9
+EOF
 EXPECT=<<EOF
 size: 92
-EOF
-RUN
-
-NAME=ELF: IOLI - crackme7 - with aa
-FILE=bins/elf/ioli/crackme0x07
-CMDS=aa;afi 0x804867d~size
-EXPECT=<<EOF
-size: 99
-EOF
-RUN
-
-
-NAME=ELF: IOLI - crackme7 - Local variables analysis
-FILE=bins/elf/ioli/crackme0x07
-ARGS=-A
-CMDS=afv @ fcn.080485b9
-EXPECT=<<EOF
+--
 var char * format @ esp+0x4
 var int32_t var_sp_8h @ esp+0x8
 arg char * s @ ebp+0x8
@@ -29,5 +18,13 @@ var int32_t var_bp_4h @ ebp-0x4
 var uint32_t var_8h @ ebp-0x8
 var signed int var_ch @ ebp-0xc
 var char * var_dh @ ebp-0xd
+EOF
+RUN
+
+NAME=ELF: IOLI - crackme7 - with aa
+FILE=bins/elf/ioli/crackme0x07
+CMDS=aa;afi 0x804867d~size
+EXPECT=<<EOF
+size: 99
 EOF
 RUN

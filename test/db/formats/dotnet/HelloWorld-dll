@@ -85,10 +85,22 @@ mscoree.dll
 EOF
 RUN
 
+# merged: .NET HelloWorld.dll classes; .NET HelloWorld.dll csharp classdump; .NET HelloWorld.dll types
 NAME=.NET HelloWorld.dll symbols
 FILE=bins/dotnet/HelloWorld.dll
 CMDS=<<EOF
 is~GLOBAL
+?e --
+ic~class
+ic~method
+ic~field
+?e --
+icc csharp~BinaryParser
+icc csharp~filePath
+icc csharp~LoadData
+icc csharp~BinaryParser();
+?e --
+rabin2 -y bins/dotnet/HelloWorld.dll
 EOF
 EXPECT=<<EOF
 0   0x00000251 0x10002051 GLOBAL FUNC 34               BinaryParserLibrary.BinaryParser..ctor(this;string:path):void
@@ -99,17 +111,7 @@ EXPECT=<<EOF
 0   0x000003c0 0x100021c0 GLOBAL FUNC 70               BinaryParserLibrary.BinaryParser.CalculateChecksum(this;):int
 0   0x00000424 0x10002224 GLOBAL FUNC 192              BinaryParserLibrary.BinaryParser.AnalyzeMetadata(this;):void
 0   0x00000500 0x10002300 GLOBAL FUNC 63               BinaryParserLibrary.BinaryParser.RunAnalysis(this;string[]:args):void
-EOF
-RUN
-
-NAME=.NET HelloWorld.dll classes
-FILE=bins/dotnet/HelloWorld.dll
-CMDS=<<EOF
-ic~class
-ic~method
-ic~field
-EOF
-EXPECT=<<EOF
+--
 0x00000000 [0x00000000 - 0x00000000]      0 cil class 0 <Module>
 0x00000000 [0x10002051 - 0x1000233f]    750 cil class 1 BinaryParserLibrary.BinaryParser :: System.Object
 0x00000000 [0x00000000 - 0x00000000]      0 cil class 2 <PrivateImplementationDetails> :: System.Object
@@ -125,33 +127,14 @@ EXPECT=<<EOF
 0x00000000 cil    field   1 P    data
 0x00000000 cil    field   2 P    offset
 0x00000000 cil    field   0 is   2E383FDDF78D1ACC795830F56B4EC6464E408C418E67ADD6FA4C017AFA618963
-EOF
-RUN
-
-NAME=.NET HelloWorld.dll csharp classdump
-FILE=bins/dotnet/HelloWorld.dll
-CMDS=<<EOF
-icc csharp~BinaryParser
-icc csharp~filePath
-icc csharp~LoadData
-icc csharp~BinaryParser();
-EOF
-EXPECT=<<EOF
+--
 namespace BinaryParserLibrary {
 public class BinaryParser : System.Object {
 	public BinaryParser(); // 0x10002051
 	private string filePath;
 	public dynamic LoadData() {} // 0x10002074
 	public BinaryParser(); // 0x10002051
-EOF
-RUN
-
-NAME=.NET HelloWorld.dll types
-FILE=bins/dotnet/HelloWorld.dll
-CMDS=<<EOF
-rabin2 -y bins/dotnet/HelloWorld.dll
-EOF
-EXPECT=<<EOF
+--
 struct <Module> {
 };
 

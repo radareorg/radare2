@@ -1,23 +1,18 @@
+# merged: armr - functions bits
 NAME=arm - elf - main detection
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
 ?v main
 ?v sym.main
-EOF
-EXPECT=<<EOF
-0x50c
-0x50c
-EOF
-RUN
-
-NAME=armr - functions bits
-FILE=bins/arm/elf/hello_world
-CMDS=<<EOF
+?e --
 e anal.emu=true
 aaa
 pid 1@@f
 EOF
 EXPECT=<<EOF
+0x50c
+0x50c
+--
 0x000003c0   sym.imp.__cxa_finalize:
 0x000003c0             00c68fe2  add ip, pc, 0, 12
 0x000003cc   sym.imp.puts:
@@ -53,26 +48,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: x86 - init_array detection2; metadata; base64 metadata commands; pb 4; pxW 10
 NAME=x86 - init_array detection
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=aa;afl~0x080482e0[3]
+CMDS=<<EOF
+aa;afl~0x080482e0[3]
+?e --
+iS~init_array
+?e --
+C
+?e --
+C*
+?e --
+pb 4
+?e --
+pxW 10
+EOF
 EXPECT=<<EOF
 loc.imp.__gmon_start__
-EOF
-RUN
-
-NAME=x86 - init_array detection2
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=iS~init_array
-EXPECT=<<EOF
+--
 18  0x0000059c    0x4 0x0804959c    0x4 -rw- 0x3   INIT_ARRAY  .init_array
-EOF
-RUN
-
-NAME=metadata
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=C
-EXPECT=<<EOF
+--
 0x00000000 CCu "[29] ---- section size 599 named .strtab"
 0x08048134 CCu "[01] -r-- section size 19 named .interp"
 0x08048148 CCu "[02] -r-- section size 32 named .note.ABI-tag"
@@ -196,13 +192,7 @@ EXPECT=<<EOF
 0x080496a8 data Cd 4
 0x080496ac CCu "[24] -rw- section size 8 named .data"
 0x080496b4 CCu "[25] -rw- section size 4 named .bss"
-EOF
-RUN
-
-NAME=base64 metadata commands
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=C*
-EXPECT=<<EOF
+--
 CCu base64:WzI5XSAtLS0tIHNlY3Rpb24gc2l6ZSA1OTkgbmFtZWQgLnN0cnRhYg== @ 0x00000000
 CCu base64:WzAxXSAtci0tIHNlY3Rpb24gc2l6ZSAxOSBuYW1lZCAuaW50ZXJw @ 0x08048134
 CCu base64:WzAyXSAtci0tIHNlY3Rpb24gc2l6ZSAzMiBuYW1lZCAubm90ZS5BQkktdGFn @ 0x08048148
@@ -326,14 +316,23 @@ Cd 4 @ 0x080496a4
 Cd 4 @ 0x080496a8
 CCu base64:WzI0XSAtcnctIHNlY3Rpb24gc2l6ZSA4IG5hbWVkIC5kYXRh @ 0x080496ac
 CCu base64:WzI1XSAtcnctIHNlY3Rpb24gc2l6ZSA0IG5hbWVkIC5ic3M= @ 0x080496b4
+--
+0011
+--
+0x08048300 0x895eed31
+0x08048304 0xf0e483e1
 EOF
 RUN
 
+# merged: flags spaces after analysis
 NAME=flags spaces
 FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-e bin.types=true
 CMDS=<<EOF
 fs
+?e --
+aa;fs *;fs
+afl~?
 EOF
 EXPECT=<<EOF
     0 * classes
@@ -345,17 +344,7 @@ EXPECT=<<EOF
     1 * strings
    34 * symbols
     0 * trycatch
-EOF
-RUN
-
-NAME=flags spaces after analysis
-FILE=bins/elf/analysis/x86-helloworld-gcc
-ARGS=-e bin.types=true
-CMDS=<<EOF
-aa;fs *;fs
-afl~?
-EOF
-EXPECT=<<EOF
+--
     0 * classes
     5 * format
     0 * functions
@@ -390,23 +379,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pb 4
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=pb 4
-EXPECT=<<EOF
-0011
-EOF
-RUN
-
-NAME=pxW 10
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=pxW 10
-EXPECT=<<EOF
-0x08048300 0x895eed31
-0x08048304 0xf0e483e1
-EOF
-RUN
-
 NAME=p-
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
@@ -422,21 +394,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: pdn 10
 NAME=pu 10
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=pu 10
-EXPECT=<<EOF
-%31%ed%5e%89%e1%83%e4%f0%50%54
-EOF
-RUN
-
-NAME=pdn 10
-FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
+pu 10
+?e --
 e scr.color = 0
 pDi 10
 EOF
 EXPECT=<<EOF
+%31%ed%5e%89%e1%83%e4%f0%50%54
+--
 0x08048300   sym._start:
 0x08048300                 31ed  xor ebp, ebp
 0x08048302                   5e  pop esi
@@ -447,9 +416,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: x86 - pdj 4
 NAME=pi 12
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=pi 12
+CMDS=<<EOF
+pi 12
+?e --
+pdj 4~{}
+?e
+EOF
 EXPECT=<<EOF
 xor ebp, ebp
 pop esi
@@ -463,6 +438,81 @@ push sym.__libc_csu_init
 push ecx
 push esi
 push main
+--
+[
+  {
+    "addr": 134513408,
+    "esil": "ebp,ebp,^=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
+    "refptr": 0,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "xor ebp, ebp",
+    "disasm": "xor ebp, ebp",
+    "bytes": "31ed",
+    "family": "cpu",
+    "type": "xor",
+    "reloc": false,
+    "type_num": 28,
+    "type2_num": 0,
+    "flags": [
+      "entry0",
+      "section..text",
+      "sym._start"
+    ],
+    "comment": "WzEzXSAtci14IHNlY3Rpb24gc2l6ZSA0MDQgbmFtZWQgLnRleHQ="
+  },
+  {
+    "addr": 134513410,
+    "esil": "esp,[4],4,esp,+=,esi,=",
+    "refptr": 0,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 1,
+    "opcode": "pop esi",
+    "disasm": "pop esi",
+    "bytes": "5e",
+    "family": "cpu",
+    "type": "pop",
+    "reloc": false,
+    "type_num": 14,
+    "type2_num": 0
+  },
+  {
+    "addr": 134513411,
+    "esil": "esp,ecx,=",
+    "refptr": 0,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "mov ecx, esp",
+    "disasm": "mov ecx, esp",
+    "bytes": "89e1",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "addr": 134513413,
+    "val": 4294967280,
+    "esil": "4294967280,esp,&=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
+    "refptr": 0,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 3,
+    "opcode": "and esp, 0xfffffff0",
+    "disasm": "and esp, 0xfffffff0",
+    "bytes": "83e4f0",
+    "family": "cpu",
+    "type": "and",
+    "reloc": false,
+    "type_num": 27,
+    "type2_num": 0
+  }
+]
+
 EOF
 RUN
 
@@ -502,24 +552,18 @@ const uint8_t buffer[_BUFFER_SIZE] = {
 EOF
 RUN
 
+# merged: flags
 NAME=flags (total)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-e bin.types=true
 CMDS=<<EOF
 f~?
-EOF
-EXPECT=<<EOF
-85
-EOF
-RUN
-
-NAME=flags
-FILE=bins/elf/analysis/x86-helloworld-gcc
-ARGS=-e bin.types=true
-CMDS=<<EOF
+?e --
 f
 EOF
 EXPECT=<<EOF
+85
+--
 0x00000000 0 section.
 0x00000000 17 section..comment
 0x00000000 262 section..shstrtab
@@ -605,89 +649,5 @@ EXPECT=<<EOF
 0x080496b4 0 loc.__bss_start
 0x080496b4 0 obj.__TMC_END__
 0x080496b8 0 loc._end
-EOF
-RUN
-
-NAME=x86 - pdj 4
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EOF
-pdj 4~{}
-?e
-EOF
-EXPECT=<<EOF
-[
-  {
-    "addr": 134513408,
-    "esil": "ebp,ebp,^=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
-    "refptr": 0,
-    "fcn_addr": 0,
-    "fcn_last": 0,
-    "size": 2,
-    "opcode": "xor ebp, ebp",
-    "disasm": "xor ebp, ebp",
-    "bytes": "31ed",
-    "family": "cpu",
-    "type": "xor",
-    "reloc": false,
-    "type_num": 28,
-    "type2_num": 0,
-    "flags": [
-      "entry0",
-      "section..text",
-      "sym._start"
-    ],
-    "comment": "WzEzXSAtci14IHNlY3Rpb24gc2l6ZSA0MDQgbmFtZWQgLnRleHQ="
-  },
-  {
-    "addr": 134513410,
-    "esil": "esp,[4],4,esp,+=,esi,=",
-    "refptr": 0,
-    "fcn_addr": 0,
-    "fcn_last": 0,
-    "size": 1,
-    "opcode": "pop esi",
-    "disasm": "pop esi",
-    "bytes": "5e",
-    "family": "cpu",
-    "type": "pop",
-    "reloc": false,
-    "type_num": 14,
-    "type2_num": 0
-  },
-  {
-    "addr": 134513411,
-    "esil": "esp,ecx,=",
-    "refptr": 0,
-    "fcn_addr": 0,
-    "fcn_last": 0,
-    "size": 2,
-    "opcode": "mov ecx, esp",
-    "disasm": "mov ecx, esp",
-    "bytes": "89e1",
-    "family": "cpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
-  },
-  {
-    "addr": 134513413,
-    "val": 4294967280,
-    "esil": "4294967280,esp,&=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
-    "refptr": 0,
-    "fcn_addr": 0,
-    "fcn_last": 0,
-    "size": 3,
-    "opcode": "and esp, 0xfffffff0",
-    "disasm": "and esp, 0xfffffff0",
-    "bytes": "83e4f0",
-    "family": "cpu",
-    "type": "and",
-    "reloc": false,
-    "type_num": 27,
-    "type2_num": 0
-  }
-]
-
 EOF
 RUN

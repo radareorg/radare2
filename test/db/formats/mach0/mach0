@@ -1,6 +1,13 @@
+# merged: mach0 entrypoint; mach0 entry0 data
 NAME=mach0 headers
 FILE=bins/mach0/hello-osx-i386
-CMDS=iH
+CMDS=<<EOF
+iH
+?e --
+ie=~addr
+?e --
+p8 10 @ entry0
+EOF
 EXPECT=<<EOF
 pf.mach0_header @ 0x00001000
 0x00001000  Magic       0xfeedface
@@ -60,6 +67,10 @@ pf.mach0_dylib_command @ 0x0000147c
 0x0000148c  current     125.2.10
 0x00001490  compat      1.0.0
 0x00001494  load_dylib  /usr/lib/libSystem.B.dylib
+--
+paddr=0x00000f14 vaddr=0x00001f14 haddr=0x00000464 type=program
+--
+6a0089e583e4f083ec10
 EOF
 RUN
 
@@ -239,22 +250,6 @@ pf.mach0_data_in_code_command @ 0x00004478
 EOF
 RUN
 
-NAME=mach0 entrypoint
-FILE=bins/mach0/hello-osx-i386
-CMDS=ie=~addr
-EXPECT=<<EOF
-paddr=0x00000f14 vaddr=0x00001f14 haddr=0x00000464 type=program
-EOF
-RUN
-
-NAME=mach0 entry0 data
-FILE=bins/mach0/hello-osx-i386
-CMDS=p8 10 @ entry0
-EXPECT=<<EOF
-6a0089e583e4f083ec10
-EOF
-RUN
-
 NAME=mach0 entrypoint i386 LC_MAIN
 FILE=bins/mach0/mach0-i386
 CMDS=ie=~addr
@@ -271,18 +266,17 @@ paddr=0x00000f70 vaddr=0x100000f70 haddr=0x000002e0 type=program
 EOF
 RUN
 
+# merged: osx mach0 ik
 NAME=osx mach0 entrypoint
 FILE=bins/mach0/ls-osx-x86_64
-CMDS=ie=~addr
+CMDS=<<EOF
+ie=~addr
+?e --
+ik ***~uuid
+EOF
 EXPECT=<<EOF
 paddr=0x000013d8 vaddr=0x1000013d8 haddr=0x00000648 type=program
-EOF
-RUN
-
-NAME=osx mach0 ik
-FILE=bins/mach0/ls-osx-x86_64
-CMDS=ik ***~uuid
-EXPECT=<<EOF
+--
 info/mach0_uuid_command.format=[4]Ed[16]b (mach0_load_command_type)cmd cmdsize uuid
 info/mach0_cmd_8.format=mach0_uuid_command
 info/uuid.0=ff4d6c2e1dc0369d98d0d3040a8049e8

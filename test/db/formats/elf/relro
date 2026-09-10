@@ -14,18 +14,17 @@ no
 EOF
 RUN
 
+# merged: arm defined global gets named reloc in section-less elf
 NAME=relro full
 FILE=bins/elf/relro/netifd
-CMDS=ij~{bin.relro}
+CMDS=<<EOF
+ij~{bin.relro}
+?e --
+ir~in6addr_any[0,4]
+EOF
 EXPECT=<<EOF
 full
-EOF
-RUN
-
-NAME=arm defined global gets named reloc in section-less elf
-FILE=bins/elf/relro/netifd
-CMDS=ir~in6addr_any[0,4]
-EXPECT=<<EOF
+--
 0x0003b5d4 in6addr_any
 EOF
 RUN

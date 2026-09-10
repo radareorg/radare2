@@ -1,30 +1,34 @@
+# merged: ELF v1: entry0 points to real code not .opd data
 NAME=ELF v1: entry point dereferenced through .opd to .text
 FILE=bins/elf/ppc64v1-more
-CMDS=ie~program[1]
-EXPECT=<<EOF
-0x00004bac
-EOF
-RUN
-
-NAME=ELF v1: entry0 points to real code not .opd data
-FILE=bins/elf/ppc64v1-more
 CMDS=<<EOF
+ie~program[1]
+?e --
 e asm.arch=ppc
 e asm.bits=64
 e cfg.bigendian=true
 pi 2 @ entry0
 EOF
 EXPECT=<<EOF
+0x00004bac
+--
 mr r9, r1
 rldicr r1, r1, 0, 0x3b
 EOF
 RUN
 
+# merged: ELF v2: TOC base taken from .got + 0x8000 when there is no .opd
 NAME=ELF v2: entry point already in .text, unaffected by opd deref (regression)
 FILE=bins/elf/ppc64_sudoku_dwarf
-CMDS=ie~program[1]
+CMDS=<<EOF
+ie~program[1]
+?e --
+ar r2
+EOF
 EXPECT=<<EOF
 0x10000c20
+--
+0x10027f00
 EOF
 RUN
 
@@ -36,26 +40,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: ppc64le: TOC base auto-load skipped on little-endian despite .got present
 NAME=ELF v1: ppc64le entry point unaffected by opd deref (regression)
 FILE=bins/elf/mosquito-ppc64le
-CMDS=ie~program[1]
+CMDS=<<EOF
+ie~program[1]
+?e --
+ar r2
+EOF
 EXPECT=<<EOF
 0x10001854
-EOF
-RUN
-
-NAME=ELF v2: TOC base taken from .got + 0x8000 when there is no .opd
-FILE=bins/elf/ppc64_sudoku_dwarf
-CMDS=ar r2
-EXPECT=<<EOF
-0x10027f00
-EOF
-RUN
-
-NAME=ppc64le: TOC base auto-load skipped on little-endian despite .got present
-FILE=bins/elf/mosquito-ppc64le
-CMDS=ar r2
-EXPECT=<<EOF
+--
 0x00000000
 EOF
 RUN

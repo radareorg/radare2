@@ -1,21 +1,20 @@
+# merged: xcoff64 sections; xcoff64 dwarf line numbers
 NAME=ppc xcoff64
 FILE=bins/xcoff/gcc-ppc64-aix-dwarf2-exec
 CMDS=<<EOF
 i~^format
 e asm.arch
 e asm.bits
+?e --
+iS
+?e --
+CL
 EOF
 EXPECT=<<EOF
 format   xcoff64
 ppc
 64
-EOF
-RUN
-
-NAME=xcoff64 sections
-FILE=bins/xcoff/gcc-ppc64-aix-dwarf2-exec
-CMDS=iS
-EXPECT=<<EOF
+--
 nth paddr         size vaddr        vsize perm flags type   name
 ----------------------------------------------------------------
 0   0x00000480   0xafd 0x10000480   0xafd -r-x 0x0   TEXT   .text
@@ -28,13 +27,7 @@ nth paddr         size vaddr        vsize perm flags type   name
 7   0x00001c7a    0x40 0x20002160    0x40 ---- 0x0   DWARF  .dwarnge
 8   0x00001cba    0x62 0x200021a0    0x62 ---- 0x0   DWARF  .dwloc
 9   0x00001d1c  0x6605 0x20002210  0x6605 ---- 0x0   DEBUG  .debug
-EOF
-RUN
-
-NAME=xcoff64 dwarf line numbers
-FILE=bins/xcoff/gcc-ppc64-aix-dwarf2-exec
-CMDS=CL
-EXPECT=<<EOF
+--
 file: .//hello.c
 line: 5
 colu: 0

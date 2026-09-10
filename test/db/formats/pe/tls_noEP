@@ -6,9 +6,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: 2: PE: tls_noEP - entrypoint
 NAME=1: PE: tls_noEP - entrypoint
 FILE=bins/pe/tls_noEP.exe
-CMDS=ie;iee
+CMDS=<<EOF
+ie;iee
+?e --
+pi 5
+EOF
 EXPECT=<<EOF
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
@@ -16,13 +21,7 @@ paddr      vaddr      phaddr     vhaddr     type
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
 0x00000200 0x00401000 0x00000384 ---------- tls
-EOF
-RUN
-
-NAME=2: PE: tls_noEP - entrypoint
-FILE=bins/pe/tls_noEP.exe
-CMDS=pi 5
-EXPECT=<<EOF
+--
 push 0x401024
 call dword [sym.imp.msvcrt.dll_printf]
 add esp, 4

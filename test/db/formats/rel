@@ -9,10 +9,19 @@ WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e 
 EOF
 RUN
 
+# merged: R_PPC_ADDR16; R_PPC_REL24; R_PPC_ADDR32
 NAME=sections
 FILE=bins/rel/d_profileNP.rel
 ARGS=-e bin.relocs.apply=true -B 0x80500000
-CMDS=iS
+CMDS=<<EOF
+iS
+?e --
+pd 3 @0x80500144
+?e --
+pd 1 @0x805000e4
+?e --
+pxW 16 @0x80500180
+EOF
 EXPECT=<<EOF
 nth paddr       size vaddr       vsize perm flags type name
 -----------------------------------------------------------
@@ -21,6 +30,17 @@ nth paddr       size vaddr       vsize perm flags type name
 2   0x00000174   0x4 0x80500174    0x4 -rw- 0x0   ---- data_3
 3   0x00000178  0x34 0x80500178   0x34 -rw- 0x0   ---- data_4
 4   0x00000000   0x4 0x80500380    0x4 -rw- 0x0   ---- bss
+--
+            0x80500144      3c608024       lis r3, -0x7fdc             ; RELOC 16 
+            0x80500148      38840178       addi r4, r4, 0x178          ; RELOC 16 
+            0x8050014c      9083ae10       stw r4, -0x51f0(r3)         ; RELOC 16 
+--
+            0x805000e4      4bb1acbd       bl 0x8001ada0               ; RELOC 32 
+--
+0x80500180 0x8023a588
+0x80500184 0x8023a590
+0x80500188 0x8023a598
+0x8050018c 0x8023a5b0
 EOF
 RUN
 
@@ -49,37 +69,5 @@ ERROR: Imports from other REL (00000006) not yet implemented
 ERROR: Imports from other REL (00000007) not yet implemented
 DEBUG: RCoreCmd: =!
 DEBUG: RCoreCmd: ieq
-EOF
-RUN
-
-NAME=R_PPC_ADDR16
-FILE=bins/rel/d_profileNP.rel
-ARGS=-e bin.relocs.apply=true -B 0x80500000
-CMDS=pd 3 @0x80500144
-EXPECT=<<EOF
-            0x80500144      3c608024       lis r3, -0x7fdc             ; RELOC 16 
-            0x80500148      38840178       addi r4, r4, 0x178          ; RELOC 16 
-            0x8050014c      9083ae10       stw r4, -0x51f0(r3)         ; RELOC 16 
-EOF
-RUN
-
-NAME=R_PPC_REL24
-FILE=bins/rel/d_profileNP.rel
-ARGS=-e bin.relocs.apply=true -B 0x80500000
-CMDS=pd 1 @0x805000e4
-EXPECT=<<EOF
-            0x805000e4      4bb1acbd       bl 0x8001ada0               ; RELOC 32 
-EOF
-RUN
-
-NAME=R_PPC_ADDR32
-FILE=bins/rel/d_profileNP.rel
-ARGS=-e bin.relocs.apply=true -B 0x80500000
-CMDS=pxW 16 @0x80500180
-EXPECT=<<EOF
-0x80500180 0x8023a588
-0x80500184 0x8023a590
-0x80500188 0x8023a598
-0x8050018c 0x8023a5b0
 EOF
 RUN

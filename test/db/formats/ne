@@ -12,9 +12,23 @@ hdr.csum c258016a
 0
 EOF
 RUN
+# merged: NE Segments; NE Resources JSON; NE Module imports; NE Relocs; NE Relocs and resolve function ordinal names
 NAME=NE Symbols
 FILE=bins/ne/anim8.exe
-CMDS=is
+CMDS=<<EOF
+is
+?e --
+iSS
+?e --
+iuj~{}~"name":
+?e --
+ii
+?e --
+ir~0x?
+?e --
+ir~WIN87EM
+ir~:0..11
+EOF
 EXPECT=<<EOF
 nth paddr      vaddr      bind   type size lib name       demangled
 -------------------------------------------------------------------
@@ -22,63 +36,12 @@ nth paddr      vaddr      bind   type size lib name       demangled
 1   0x00000d8e 0x00000d8e GLOBAL NONE 0        WNDPROC
 2   0x00002b5a 0x00002b5a GLOBAL NONE 0        DIAL_ABOUT
 0   0x00000a00 0x00000a00 NONE   NONE 0        ANIM8
-EOF
-RUN
-
-NAME=NE preserve unnamed entry symbols
-ARGS=-e bin.unnamed=false
-FILE=bins/fuzzed/nepocaligns-17
-CMDS=<<EOF
-is~entry~?
-EOF
-EXPECT=<<EOF
-40
-EOF
-RUN
-
-NAME=NE detect minimal low-offset header
-FILE=bins/fuzzed/nepoc00
-CMDS=i~format
-EXPECT=<<EOF
-format   ne
-EOF
-RUN
-
-NAME=NE recover low header offset with poisoned high word
-FILE=bins/fuzzed/nepocaligns-06
-CMDS=i~format
-EXPECT=<<EOF
-format   ne
-EOF
-RUN
-
-NAME=NE preserve entries with zero-extended header offset
-FILE=bins/fuzzed/nepocaligns-09
-CMDS=<<EOF
-i~format
-is~entry~?
-EOF
-EXPECT=<<EOF
-format   ne
-8
-EOF
-RUN
-
-NAME=NE Segments
-FILE=bins/ne/anim8.exe
-CMDS=iSS
-EXPECT=<<EOF
+--
 nth paddr         size vaddr        vsize perm flags type name
 --------------------------------------------------------------
 0   0x00000a00  0x54ee 0x00000a00  0x54ee ---x 0x0   MAP  MOVEABLE.2560
 1   0x00007600  0x3ec4 0x00007600  0x3ec4 -rwx 0x0   MAP  MOVEABLE.30208
-EOF
-RUN
-
-NAME=NE Resources JSON
-FILE=bins/ne/anim8.exe
-CMDS=iuj~{}~"name":
-EXPECT=<<EOF
+--
     "name": "ICONX",
     "name": "FRAME_1",
     "name": "FRAME_10",
@@ -118,37 +81,16 @@ EXPECT=<<EOF
     "name": "626",
     "name": "ACCELS",
     "name": "1",
-EOF
-RUN
-
-NAME=NE Module imports
-FILE=bins/ne/anim8.exe
-CMDS=ii
-EXPECT=<<EOF
+--
 nth vaddr      bind type lib name
 ---------------------------------
 1   0x00000000 NONE NONE     KERNEL
 2   0x00000000 NONE NONE     USER
 3   0x00000000 NONE NONE     GDI
 4   0x00000000 NONE NONE     WIN87EM
-EOF
-RUN
-
-NAME=NE Relocs
-FILE=bins/ne/anim8.exe
-CMDS=ir~0x?
-EXPECT=<<EOF
+--
 718
-EOF
-RUN
-
-NAME=NE Relocs and resolve function ordinal names
-FILE=bins/ne/anim8.exe
-CMDS=<<EOF
-ir~WIN87EM
-ir~:0..11
-EOF
-EXPECT=<<EOF
+--
 0x00004c98 0x00004c98 SET_32 3     WIN87EM.__FPMATH
 0x00004cb2 0x00004cb2 SET_16 5     WIN87EM.__FPMATH
 0x00004cb8 0x00004cb8 SET_16 2     WIN87EM.__FPMATH
@@ -169,5 +111,44 @@ vaddr      paddr      type   ntype name
 0x00000f5e 0x00000f5e SET_32 3     USER.SETTIMER
 0x00000f4d 0x00000f4d SET_32 3     USER.KILLTIMER
 0x00000f13 0x00000f13 SET_32 3     USER.SETTIMER
+EOF
+RUN
+
+NAME=NE preserve unnamed entry symbols
+ARGS=-e bin.unnamed=false
+FILE=bins/fuzzed/nepocaligns-17
+CMDS=<<EOF
+is~entry~?
+EOF
+EXPECT=<<EOF
+40
+EOF
+RUN
+
+NAME=NE detect minimal low-offset header
+FILE=bins/fuzzed/nepoc00
+CMDS=i~format
+EXPECT=<<EOF
+format   ne
+EOF
+RUN
+
+NAME=NE recover low header offset with poisoned high word
+FILE=bins/fuzzed/nepocaligns-06
+CMDS=i~format
+EXPECT=<<EOF
+format   ne
+EOF
+RUN
+
+NAME=NE preserve entries with zero-extended header offset
+FILE=bins/fuzzed/nepocaligns-09
+CMDS=<<EOF
+i~format
+is~entry~?
+EOF
+EXPECT=<<EOF
+format   ne
+8
 EOF
 RUN

@@ -1,42 +1,30 @@
+# merged: nso sections; nso entry; nso data
 NAME=nso detection
 FILE=bins/nso/application.nso
 ARGS=-e io.cache=true
-CMDS=iI~?switch
+CMDS=<<EOF
+iI~?switch
+?e --
+iS
+?e --
+ie
+?e --
+p8 0x30 @ 0x08000080
+EOF
 EXPECT=<<EOF
 1
-EOF
-RUN
-
-NAME=nso sections
-FILE=bins/nso/application.nso
-ARGS=-e io.cache=true
-CMDS=iS
-EXPECT=<<EOF
+--
 nth paddr          size vaddr         vsize perm flags type name
 ----------------------------------------------------------------
 0   0x00000000    0x100 0x00000000    0x100 -r-- 0x0   ---- header
 1   0x00000100  0x20e18 0x08000000  0x20e18 -r-x 0x0   ---- text
 2   0x0001718f   0xdb0c 0x08021000   0xdb0c -r-- 0x0   ---- ro
 3   0x0001f856   0x4218 0x0802f000   0x4218 -rw- 0x0   ---- data
-EOF
-RUN
-
-NAME=nso entry
-FILE=bins/nso/application.nso
-ARGS=-e io.cache=true
-CMDS=ie
-EXPECT=<<EOF
+--
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
 0x00000100 0x08000000 ---------- ---------- program
-EOF
-RUN
-
-NAME=nso data
-FILE=bins/nso/application.nso
-ARGS=-e io.cache=true
-CMDS=p8 0x30 @ 0x08000080
-EXPECT=<<EOF
+--
 e7031eaa01000094c62302d1e50300aae40301aabf0000f1841841ba400000544a240014fb0307aaf90305aafa0304aa
 EOF
 RUN

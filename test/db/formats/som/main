@@ -1,6 +1,13 @@
+# merged: SOM: sections; SOM: entrypoint
 NAME=SOM: info
 FILE=bins/som/bigram
-CMDS=i;il
+CMDS=<<EOF
+i;il
+?e --
+iS
+?e --
+ieq
+EOF
 EXPECT=<<EOF
 fd       3
 file     som
@@ -35,13 +42,7 @@ stripped false
 uncaps   false
 va       true
 /usr/lib/libc.2
-EOF
-RUN
-
-NAME=SOM: sections
-FILE=bins/som/bigram
-CMDS=iS
-EXPECT=<<EOF
+--
 nth paddr         size vaddr         vsize perm flags type name
 ---------------------------------------------------------------
 0   0x00001000   0x94b 0xc0001000    0x94b -rwx 0x0   ---- $SHLIB_INFO$
@@ -61,13 +62,7 @@ nth paddr         size vaddr         vsize perm flags type name
 14  0x00006228    0x84 0x100001228    0x84 -r-x 0x0   ---- $DLT$
 15  0x000062b0    0x10 0x1000012b0    0x10 -r-x 0x0   ---- $GLOBAL$
 16  0x00000000   0x1a0 0x1000012c0   0x1a0 -r-x 0x0   ---- $BSS$
-EOF
-RUN
-
-NAME=SOM: entrypoint
-FILE=bins/som/bigram
-CMDS=ieq
-EXPECT=<<EOF
+--
 0xc0001000
 EOF
 RUN

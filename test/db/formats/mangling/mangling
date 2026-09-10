@@ -145,18 +145,17 @@ AAAAAAAAA...
 EOF
 RUN
 
+# merged: bin freepascal detection
 NAME=freepascal detection
 FILE=bins/efi/freepascal_test_dwarf
-CMDS=i~lang
+CMDS=<<EOF
+i~lang
+?e --
+isq
+EOF
 EXPECT=<<EOF
 lang     pascal
-EOF
-RUN
-
-NAME=bin freepascal detection
-FILE=bins/efi/freepascal_test_dwarf
-CMDS=isq
-EXPECT=<<EOF
+--
 0x00400190 0 .note.abi-tag()
 0x00401000 0 .text()
 0x00434000 0 .rodata()

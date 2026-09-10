@@ -1,22 +1,17 @@
+# merged: Mach-O exception regions in disassembly
 NAME=Mach-O compact unwind exception regions
 FILE=bins/mach0/ClassCpp.out
 CMDS=<<EOF
 iwj~{[0]}
 iwj~{[1]}
-EOF
-EXPECT=<<EOF
-{"index":0,"source":4294977836,"from":4294977888,"to":4294978008,"handler":4294978040,"filter":0,"kind":"cleanup"}
-{"index":1,"source":4294977836,"from":4294978052,"to":4294978060,"handler":4294978076,"filter":0,"kind":"catch","typeFilter":1,"catchAll":true}
-EOF
-RUN
-
-NAME=Mach-O exception regions in disassembly
-FILE=bins/mach0/ClassCpp.out
-CMDS=<<EOF
+?e --
 e scr.utf8=false
 pd 11 @ 0x1000029f4
 EOF
 EXPECT=<<EOF
+{"index":0,"source":4294977836,"from":4294977888,"to":4294978008,"handler":4294978040,"filter":0,"kind":"cleanup"}
+{"index":1,"source":4294977836,"from":4294978052,"to":4294978060,"handler":4294978076,"filter":0,"kind":"catch","typeFilter":1,"catchAll":true}
+--
             0x1000029f4      c0035fd6       ret
             ;-- try.0.10000292c.cleanup:
             0x1000029f8      e01b00f9       str x0, [sp, 0x30]

@@ -1,19 +1,16 @@
+# merged: Pebble: page perms
 NAME=Pebble: Open/iI
 FILE=bins/pebble/pebble-app.bin
-CMDS=iI~os,subsys
-EXPECT=<<EOF
-os       pebble
-subsys   pebble
-EOF
-RUN
-
-NAME=Pebble: page perms
-FILE=bins/pebble/pebble-app.bin
 CMDS=<<EOF
+iI~os,subsys
+?e --
 aaa
 aflc
 EOF
 EXPECT=<<EOF
+os       pebble
+subsys   pebble
+--
 65
 EOF
 RUN

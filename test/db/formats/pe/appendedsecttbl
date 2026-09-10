@@ -6,18 +6,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: PE: corkami appendedsecttbl.exe - pi 1
 NAME=PE: corkami appendedsecttbl.exe - entrypoint
 FILE=bins/pe/appendedsecttbl.exe
-CMDS=s
+CMDS=<<EOF
+s
+?e --
+pi 1
+EOF
 EXPECT=<<EOF
 0x401000
-EOF
-RUN
-
-NAME=PE: corkami appendedsecttbl.exe - pi 1
-FILE=bins/pe/appendedsecttbl.exe
-CMDS=pi 1
-EXPECT=<<EOF
+--
 push 0x401018
 EOF
 RUN
