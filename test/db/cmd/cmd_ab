@@ -275,26 +275,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: abp unreachable address
 NAME=abp json output
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
 aa
 s 0x1000011e8
 abpj 0x100001216
-EOF
-EXPECT=<<EOF
-[4294971880,4294971926]
-EOF
-RUN
-
-NAME=abp unreachable address
-FILE=bins/mach0/mac-ls2
-CMDS=<<EOF
+?e --
 aa
 s 0x1000011e8
 abp 0x999999
 EOF
 EXPECT=<<EOF
+[4294971880,4294971926]
+--
 EOF
 RUN
 

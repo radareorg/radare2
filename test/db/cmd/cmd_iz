@@ -13,19 +13,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: iz (file x86) 2
 NAME=iz (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=iz
-EXPECT=<<EOF
-nth paddr      vaddr      len size section type  string
--------------------------------------------------------
-0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
-EOF
-RUN
-
-NAME=iz (file x86) 2
-FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
+iz
+?e --
 ?e -- default --
 iz
 ?e -- geq 12 --
@@ -48,6 +41,10 @@ e bin.str.max=0
 iz
 EOF
 EXPECT=<<EOF
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+--
 -- default --
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
@@ -78,48 +75,68 @@ nth paddr      vaddr      len size section type  string
 EOF
 RUN
 
+# merged: izq (file x86_64); izqq (file x86_64); izzq (file x86_64); izzqq (file x86_64); izzz (file x86_64); izzzq (file x86_64); izzz* (file x86_64)
 NAME=iz (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=iz
+CMDS=<<EOF
+iz
+?e --
+izq
+?e --
+izqq
+?e --
+izzq~puts
+?e --
+izzqq~puts
+?e --
+izzz~?
+?e --
+izzzq~puts
+?e --
+izzz*~:0
+izzz*~:1
+EOF
 EXPECT=<<EOF
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000005c4 0x004005c4 11  12   .rodata ascii Hello World
-EOF
-RUN
-
-NAME=izq (file x86_64)
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=izq
-EXPECT=<<EOF
+--
 0x4005c4 12 11 Hello World
-EOF
-RUN
-
-NAME=izqq (file x86_64)
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=izqq
-EXPECT=<<EOF
+--
 Hello World
-EOF
-RUN
-
-NAME=izzq (file x86_64)
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=izzq~puts
-EXPECT=<<EOF
+--
 0x4002fa 5 4 puts
 0x15b 18 17 puts@@GLIBC_2.2.5
+--
+puts
+puts@@GLIBC_2.2.5
+--
+82
+--
+0x004002fa puts
+0x0000015b puts@@GLIBC_2.2.5
+--
+'0x00000034'f str._8_b_ 10
+'0x00000034'Cs 10
 EOF
 RUN
 
+# merged: izzzq physical rebased strings (file x86_64)
 NAME=izzq rebased strings (file x86_64)
 ARGS=-B 0x1000
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=izzq~puts
+CMDS=<<EOF
+izzq~puts
+?e --
+e io.va=0
+izzzq~puts
+EOF
 EXPECT=<<EOF
 0x12fa 5 4 puts
 0x1953 18 17 puts@@GLIBC_2.2.5
+--
+0x000002fa puts
+0x00001953 puts@@GLIBC_2.2.5
 EOF
 RUN
 
@@ -135,15 +152,6 @@ EXPECT=<<EOF
 0x1953 18 17 puts@@GLIBC_2.2.5
 0x000002fa puts
 0x00001953 puts@@GLIBC_2.2.5
-EOF
-RUN
-
-NAME=izzqq (file x86_64)
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=izzqq~puts
-EXPECT=<<EOF
-puts
-puts@@GLIBC_2.2.5
 EOF
 RUN
 
@@ -178,66 +186,20 @@ WARN: Don't use -B on unknown files. Consider using -m
 EOF
 RUN
 
-NAME=izzz (file x86_64)
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=izzz~?
-EXPECT=<<EOF
-82
-EOF
-RUN
-
-NAME=izzzq (file x86_64)
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=izzzq~puts
-EXPECT=<<EOF
-0x004002fa puts
-0x0000015b puts@@GLIBC_2.2.5
-EOF
-RUN
-
-NAME=izzzq physical rebased strings (file x86_64)
-ARGS=-B 0x1000
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=<<EOF
-e io.va=0
-izzzq~puts
-EOF
-EXPECT=<<EOF
-0x000002fa puts
-0x00001953 puts@@GLIBC_2.2.5
-EOF
-RUN
-
-NAME=izzz* (file x86_64)
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=<<EOF
-izzz*~:0
-izzz*~:1
-EOF
-EXPECT=<<EOF
-'0x00000034'f str._8_b_ 10
-'0x00000034'Cs 10
-EOF
-RUN
-
+# merged: izzj (no rbin - file x86_64)
 NAME=izz (no rbin - file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 ARGS=-n
-CMDS=izz~puts
-EXPECT=<<EOF
-4   0x000002fa 0x000002fa 4   5            ascii   puts
-65  0x00001953 0x00001953 17  18           ascii   puts@@GLIBC_2.2.5
-EOF
-RUN
-
-NAME=izzj (no rbin - file x86_64)
-FILE=bins/elf/analysis/hello-linux-x86_64
-ARGS=-n
 CMDS=<<EOF
+izz~puts
+?e --
 e bin.str.purge=all,!0x2fa,!0x1953
 izzj
 EOF
 EXPECT=<<EOF
+4   0x000002fa 0x000002fa 4   5            ascii   puts
+65  0x00001953 0x00001953 17  18           ascii   puts@@GLIBC_2.2.5
+--
 [{"vaddr":762,"paddr":762,"ordinal":4,"size":5,"length":4,"section":"","type":"ascii","string":"puts"},{"vaddr":6483,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":"","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
 EOF
 RUN
@@ -307,17 +269,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: izzj unicode blocks
 NAME=iz utf32le partial
 FILE=bins/elf/strenc-guess-utf32le
 CMDS=<<EOF
 iz~ABCDEF
 iz~abcdef
 iz~123456
+?e --
+e bin.str.purge=all,!4195920
+izzj
 EOF
 EXPECT=<<EOF
 1   0x0000060c 0x0040060c 6   28   .rodata utf32le ABCDEF
 2   0x00000650 0x00400650 10  44   .rodata utf32le abcdef𐍈  g
 3   0x00000694 0x00400694 6   28   .rodata utf32le 123456
+--
+[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":44,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
 EOF
 RUN
 
@@ -411,17 +379,6 @@ izj
 EOF
 EXPECT=<<EOF
 [{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":8,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]
-EOF
-RUN
-
-NAME=izzj unicode blocks
-FILE=bins/elf/strenc-guess-utf32le
-CMDS=<<EOF
-e bin.str.purge=all,!4195920
-izzj
-EOF
-EXPECT=<<EOF
-[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":44,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
 EOF
 RUN
 
@@ -568,6 +525,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: izjencoding; izjencodinghex; izjencodingarray
 NAME=iz+
 FILE=bins/elf/analysis/hello-utf-16
 CMDS=<<EOF
@@ -576,11 +534,26 @@ iz+ 0x004005e8
 iz~Hello
 iz+ 0x004005e8 20 a
 iz~Hello
+?e --
+e cfg.json.str = base64
+izj~{[0].section}
+?e --
+e cfg.json.str = hex
+izj~{[0].string}
+?e --
+e cfg.json.str = array
+izj~{[0].type}
 EOF
 EXPECT=<<EOF
 0   0x000005e8 0x004005e8 11  24   .rodata utf16le Hello World
 0   0x000005e8 0x004005e8 11  24   .rodata utf16le Hello World
 0   0x000005e8 0x004005e8 11  24   .rodata utf16le Hello World
+--
+LnJvZGF0YQ==
+--
+48656C6C6F20576F726C64
+--
+[117,116,102,049,054,108,101]
 EOF
 RUN
 
@@ -606,41 +579,6 @@ ARGS=-m 0x10000
 CMDS=izz~Hello
 EXPECT=<<EOF
 6   0x00000200 0x00010200 11  12   .rodata         ascii   Hello World
-EOF
-RUN
-
-
-
-NAME=izjencoding
-FILE=bins/elf/analysis/hello-utf-16
-CMDS=<<EOF
-e cfg.json.str = base64
-izj~{[0].section}
-EOF
-EXPECT=<<EOF
-LnJvZGF0YQ==
-EOF
-RUN
-
-NAME=izjencodinghex
-FILE=bins/elf/analysis/hello-utf-16
-CMDS=<<EOF
-e cfg.json.str = hex
-izj~{[0].string}
-EOF
-EXPECT=<<EOF
-48656C6C6F20576F726C64
-EOF
-RUN
-
-NAME=izjencodingarray
-FILE=bins/elf/analysis/hello-utf-16
-CMDS=<<EOF
-e cfg.json.str = array
-izj~{[0].type}
-EOF
-EXPECT=<<EOF
-[117,116,102,049,054,108,101]
 EOF
 RUN
 
@@ -735,105 +673,69 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: iz pagination first 3; iz pagination skip 2 and count 1; izj pagination skip 2 and count 1
 NAME=izc string count
 FILE=bins/elf/ls-toybox
 CMDS=<<EOF
 izq~?
 izc
-EOF
-EXPECT=<<EOF
-3343
-3343
-EOF
-RUN
-
-NAME=iz pagination first 3
-FILE=bins/elf/ls-toybox
-CMDS=<<EOF
+?e --
 iz 0 3
+?e --
+iz 2 1
+?e --
+izj 2 1
 EOF
 EXPECT=<<EOF
+3343
+3343
+--
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x0000596e 0x0000596e 13  14   .rodata ascii lskip to %lld
 1   0x0000597c 0x0000597c 6   7    .rodata ascii parisc
 2   0x00005983 0x00005983 12  13   .rodata ascii socket %x %x
-EOF
-RUN
-
-NAME=iz pagination skip 2 and count 1
-FILE=bins/elf/ls-toybox
-CMDS=<<EOF
-iz 2 1
-EOF
-EXPECT=<<EOF
+--
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 2   0x00005983 0x00005983 12  13   .rodata ascii socket %x %x
-EOF
-RUN
-
-NAME=izj pagination skip 2 and count 1
-FILE=bins/elf/ls-toybox
-CMDS=<<EOF
-izj 2 1
-EOF
-EXPECT=<<EOF
+--
 [{"vaddr":22915,"paddr":22915,"ordinal":2,"size":13,"length":12,"section":".rodata","type":"ascii","string":"socket %x %x"}]
 EOF
 RUN
 
+# merged: izu (utf8 only) - ascii string excluded; izw (wide/utf16 only) - no wide strings in this binary; izW (wide32/utf32 only) - no wide32 strings in this binary; izza (ascii only, whole binary); izaj (ascii only, JSON)
 NAME=iza (ascii only)
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=iza
+CMDS=<<EOF
+iza
+?e --
+izu
+?e --
+izw
+?e --
+izW
+?e --
+izza~Hello
+?e --
+izaj~Hello
+EOF
 EXPECT=<<EOF
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
-EOF
-RUN
-
-NAME=izu (utf8 only) - ascii string excluded
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EOF
-izu
-EOF
-EXPECT=<<EOF
+--
 nth paddr vaddr len size section type string
 --------------------------------------------
-EOF
-RUN
-
-NAME=izw (wide/utf16 only) - no wide strings in this binary
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=izw
-EXPECT=<<EOF
+--
 nth paddr vaddr len size section type string
 --------------------------------------------
-EOF
-RUN
-
-NAME=izW (wide32/utf32 only) - no wide32 strings in this binary
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=izW
-EXPECT=<<EOF
+--
 nth paddr vaddr len size section type string
 --------------------------------------------
-EOF
-RUN
-
-NAME=izza (ascii only, whole binary)
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=izza~Hello
-EXPECT=<<EOF
+--
 11  0x000004b0 0x080484b0 12  13   .rodata   ascii Hello world!
-EOF
-RUN
-
-NAME=izaj (ascii only, JSON)
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=izaj~Hello
-EXPECT=<<EOF
+--
 [{"vaddr":134513840,"paddr":1200,"ordinal":0,"size":13,"length":12,"section":".rodata","type":"ascii","string":"Hello world!"}]
 EOF
 RUN

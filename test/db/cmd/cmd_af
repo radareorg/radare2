@@ -1,3 +1,4 @@
+# merged: af import; afll
 NAME=afcf ls
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
@@ -5,11 +6,23 @@ af@main
 afcf main @ 0
 afcf @ main
 afcfj @ main
+?e --
+s sym.imp.write
+af
+afi~realsz
+?v $FS
+?e --
+aa ; afll~?main
 EOF
 EXPECT=<<EOF
 int main (int argc, char **argv);
 int main (int argc, char **argv);
 [{"name":"main","return":"int","args":[{"name":"argc","type":"int"},{"name":"argv","type":"char **"}],"count":2}]
+--
+realsz: 6
+0x6
+--
+1
 EOF
 RUN
 
@@ -74,28 +87,6 @@ CODE 0x100001636 case.0x100001308.101
 CODE 0x100001645 case.0x100001308.109
 CODE 0x100001665 case.0x100001308.117
 CODE 0x100001682 case.default.0x100001308
-EOF
-RUN
-
-NAME=af import
-FILE=bins/mach0/ls-osx-x86_64
-CMDS=<<EOF
-s sym.imp.write
-af
-afi~realsz
-?v $FS
-EOF
-EXPECT=<<EOF
-realsz: 6
-0x6
-EOF
-RUN
-
-NAME=afll
-FILE=bins/mach0/ls-osx-x86_64
-CMDS=aa ; afll~?main
-EXPECT=<<EOF
-1
 EOF
 RUN
 

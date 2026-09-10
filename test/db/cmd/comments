@@ -11,16 +11,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: cmtrefs
 NAME=#3829 remove comment where another meta is already defined
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 CCu lol @ str.Hello_World
 CC- @ str.Hello_World
 pd 1 @ str.Hello_World
+?e --
+aaa
+e asm.cmt.refs = true
+f test.flag @ 0x004003e0
+CC test comment @ 0x004003e0
+pd 1 @ 0x0040050f
 EOF
 EXPECT=<<EOF
             ;-- str.Hello_World:
             0x004005c4     .string "Hello World" ; len=12
+--
+|           0x0040050f      e8ccfeffff     call sym.imp.puts           ; int puts(const char *s) ; (sym.imp.puts) ; (test.flag) ; (test comment)
 EOF
 RUN
 
@@ -136,19 +145,5 @@ EXPECT=<<EOF
             0x00000000      90             nop                         ; hello
             ; hello
             0x00000000      90             nop
-EOF
-RUN
-
-NAME=cmtrefs
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-aaa
-e asm.cmt.refs = true
-f test.flag @ 0x004003e0
-CC test comment @ 0x004003e0
-pd 1 @ 0x0040050f
-EOF
-EXPECT=<<EOF
-|           0x0040050f      e8ccfeffff     call sym.imp.puts           ; int puts(const char *s) ; (sym.imp.puts) ; (test.flag) ; (test comment)
 EOF
 RUN

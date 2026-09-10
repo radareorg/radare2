@@ -232,24 +232,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: oo+ 10
 NAME=oob 10
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=<<EOF
 10oob
 pi 1
-EOF
-EXPECT=<<EOF
-xor ebp, ebp
-EOF
-RUN
-
-NAME=oo+ 10
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=<<EOF
+?e --
 10oo+
 pi 1
 EOF
 EXPECT=<<EOF
+xor ebp, ebp
+--
 xor ebp, ebp
 EOF
 RUN

@@ -119,11 +119,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: mac ls pfc.fmt
 NAME=mac ls pdsf
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 af
 pdsf @ entry0
+?e --
+pf.fmt bcFiuf foo bar baz cow one two
+pfc.fmt
 EOF
 EXPECT=<<EOF
 ;-- entry0:
@@ -230,6 +234,15 @@ EXPECT=<<EOF
 0x1000018e3 sym.func.1000035d0
 0x10000191a call sym.func.100001a4c
 0x100001926 call sym.imp.exit
+--
+struct fmt {
+    uint8_t foo; // 85
+    int8_t bar; // 'H'
+    double baz; // 4.8537884927073429e+102
+    int32_t cow; // 0x48535441
+    uleb128_t one; // 1193473
+    float two; // 131072.094
+}
 EOF
 RUN
 
@@ -242,24 +255,6 @@ struct {
     char* foo; // "UH..AWAVAUATSH..H."
     int32_t bar; // 0xf3894800
     uint64_t cow; // 0xf9c0858d48fe8941
-}
-EOF
-RUN
-
-NAME=mac ls pfc.fmt
-FILE=bins/mach0/mac-ls
-CMDS=<<EOF
-pf.fmt bcFiuf foo bar baz cow one two
-pfc.fmt
-EOF
-EXPECT=<<EOF
-struct fmt {
-    uint8_t foo; // 85
-    int8_t bar; // 'H'
-    double baz; // 4.8537884927073429e+102
-    int32_t cow; // 0x48535441
-    uleb128_t one; // 1193473
-    float two; // 131072.094
 }
 EOF
 RUN

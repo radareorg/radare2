@@ -838,6 +838,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: pdc structured keeps the loop header body inside the loop
 NAME=pdc structured renders a self loop as do while
 FILE=bins/elf/ls
 ARGS=-e pdc.structured=1
@@ -845,10 +846,18 @@ CMDS=<<EOF
 aa
 s 0x15e70
 pdc~do {,} while
+?e --
+aaa
+s 0x102b0
+pdc~while (true),eax += 0x30,break
 EOF
 EXPECT=<<EOF
         do {
         } while (rdx & rdx);
+--
+    while (true) {
+        eax += 0x30
+            break;
 EOF
 RUN
 
@@ -864,21 +873,6 @@ EXPECT=<<EOF
     while (true) {
             continue;
         break;
-EOF
-RUN
-
-NAME=pdc structured keeps the loop header body inside the loop
-FILE=bins/elf/ls
-ARGS=-e pdc.structured=1
-CMDS=<<EOF
-aaa
-s 0x102b0
-pdc~while (true),eax += 0x30,break
-EOF
-EXPECT=<<EOF
-    while (true) {
-        eax += 0x30
-            break;
 EOF
 RUN
 
@@ -1590,6 +1584,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: pdc trycatch disabled with pdc.trycatch=false
 NAME=pdc trycatch blocks dex attached catch
 FILE=bins/dex/dex38.dex
 CMDS=<<EOF
@@ -1599,11 +1594,20 @@ s 0x1378
 pdc~try { //
 pdc~// try 0x
 pdc~v0 = exception
+?e --
+e scr.color=0
+e pdc.trycatch=false
+af @ 0x1378
+s 0x1378
+pdc~try { //
+pdc~catch (
+pdc~end try
 EOF
 EXPECT=<<EOF
     try { // catch at 0x000013d8
     } catch (Ljava/lang/Throwable;) { // try 0x00001384..0x000013b2
         v0 = exception
+--
 EOF
 RUN
 
@@ -1620,21 +1624,6 @@ EOF
 EXPECT=<<EOF
     try { // catch at 0x000013d8
     } catch (Ljava/lang/Throwable;) { // try 0x00001384..0x000013b2
-EOF
-RUN
-
-NAME=pdc trycatch disabled with pdc.trycatch=false
-FILE=bins/dex/dex38.dex
-CMDS=<<EOF
-e scr.color=0
-e pdc.trycatch=false
-af @ 0x1378
-s 0x1378
-pdc~try { //
-pdc~catch (
-pdc~end try
-EOF
-EXPECT=<<EOF
 EOF
 RUN
 

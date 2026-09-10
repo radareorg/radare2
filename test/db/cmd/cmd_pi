@@ -1,12 +1,23 @@
+# merged: pi1pd1
 NAME=tbz
 FILE=bins/other/tbz.arm64
 ARGS=-a arm -b64 -m 0x100000000
-CMDS=pi 4
+CMDS=<<EOF
+pi 4
+?e --
+e asm.lines=0
+e asm.bytes=0
+pi1
+pd1
+EOF
 EXPECT=<<EOF
 tbz x0, 0x20, 0x100004000
 tbz x0, 0x20, 0xffff8004
 tbnz x0, 0x20, 0x100004008
 tbnz x0, 0x20, 0xffff800c
+--
+tbz x0, 0x20, 0x100004000
+0x100000000      tbz x0, 0x20, 0x100004000
 EOF
 RUN
 
@@ -28,20 +39,5 @@ mov r9, rdx
 pop rsi
 mov r9, rdx
 pop rsi
-EOF
-RUN
-
-NAME=pi1pd1
-FILE=bins/other/tbz.arm64
-ARGS=-a arm -b64 -m 0x100000000
-CMDS=<<EOF
-e asm.lines=0
-e asm.bytes=0
-pi1
-pd1
-EOF
-EXPECT=<<EOF
-tbz x0, 0x20, 0x100004000
-0x100000000      tbz x0, 0x20, 0x100004000
 EOF
 RUN

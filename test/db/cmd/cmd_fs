@@ -78,15 +78,22 @@ f bar.c
 EOF
 RUN
 
+# merged: m iso9660 auto
 NAME=md iso
 FILE=bins/fs/iso.img
-CMDS=md /root
+CMDS=<<EOF
+md /root
+?e --
+m
+EOF
 EXPECT=<<EOF
 d .
 d ..
 f LS.
 f README.MD
 f SERVICES.
+--
+iso9660	0x0	/root
 EOF
 RUN
 
@@ -109,14 +116,6 @@ EXPECT=<<EOF
 0 00 0x0000100000 0x0020100000
 1 00 0x0020100000 0x1b24700000
 2 00 0x1b24700000 0x1d1eb00000
-EOF
-RUN
-
-NAME=m iso9660 auto
-FILE=bins/fs/iso.img
-CMDS=m
-EXPECT=<<EOF
-iso9660	0x0	/root
 EOF
 RUN
 

@@ -346,33 +346,40 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: pd -3 @ 0x0040050f; pdj 3 @ main; pdj -3 @ 0x0040050f
 NAME=pD -9 @ 0x0040050f
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 pD -9 @ 0x0040050f
-EOF
-EXPECT=<<EOF
-            ;-- main:
-            0x00400506      55             push rbp
-            0x00400507      4889e5         mov rbp, rsp
-            0x0040050a      bfc4054000     mov edi, str.Hello_World    ; 0x4005c4 ; "Hello World"
-EOF
-RUN
-
-NAME=pd -3 @ 0x0040050f
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
+?e --
 e asm.arch=x86
 e asm.bits=64
 pd -3 @ 0x0040050f
+?e --
+e asm.arch=x86
+e asm.bits=64
+pdj 3 @ main
+?e --
+e asm.arch=x86
+e asm.bits=64
+pdj -3 @ 0x0040050f
 EOF
 EXPECT=<<EOF
             ;-- main:
             0x00400506      55             push rbp
             0x00400507      4889e5         mov rbp, rsp
             0x0040050a      bfc4054000     mov edi, str.Hello_World    ; 0x4005c4 ; "Hello World"
+--
+            ;-- main:
+            0x00400506      55             push rbp
+            0x00400507      4889e5         mov rbp, rsp
+            0x0040050a      bfc4054000     mov edi, str.Hello_World    ; 0x4005c4 ; "Hello World"
+--
+[{"addr":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"addr":4195591,"esil":"rsp,rbp,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"addr":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
+--
+[{"addr":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"addr":4195591,"esil":"rsp,rbp,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"addr":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
 EOF
 RUN
 
@@ -440,35 +447,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdj 3 @ main
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
-pdj 3 @ main
-EOF
-EXPECT=<<EOF
-[{"addr":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"addr":4195591,"esil":"rsp,rbp,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"addr":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
-EOF
-RUN
-
-NAME=pdj -3 @ 0x0040050f
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
-pdj -3 @ 0x0040050f
-EOF
-EXPECT=<<EOF
-[{"addr":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"addr":4195591,"esil":"rsp,rbp,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"addr":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
-EOF
-RUN
-
+# merged: pdJ str in opcode
 NAME=pdj str in opcode
 FILE=bins/java/Hello.class
-CMDS=pdj 1 @ 0x000002ae
+CMDS=<<EOF
+pdj 1 @ 0x000002ae
+?e --
+pdJ 1 @ 0x000002ae
+EOF
 EXPECT=<<EOF
 [{"addr":686,"esil":"","refptr":0,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"ldc \"World\"","disasm":"ldc \"World\"","bytes":"120b","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":2138640}]
+--
+[{"addr":686,"text":"            0x000002ae      120b           ldc \"World\""}]
 EOF
 RUN
 
@@ -679,15 +669,41 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: ANSI and wide string flag cmts
 NAME=r_str_escape io + no 'u' prefix for single-char strings
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 pd 1 @ 0x140001034
 pd 1 @ 0x140001070
+?e --
+e str.escbslash=false
+e asm.cmt.right=true
+pd 1 @ 0x140001004
+pd 1 @ 0x140001010
+pd 1 @ 0x14000101c
+e asm.cmt.right=false
+pd 1 @ 0x140001004
+pd 1 @ 0x140001010
+pd 1 @ 0x14000101c
 EOF
 EXPECT=<<EOF
             0x140001034      488d054950..   lea rax, [0x140016084]     ; "\r"
             0x140001070      488d053d50..   lea rax, [0x1400160b4]     ; "a"
+--
+            0x140001004      488d05f54f..   lea rax, str._tANSIesc:_e_33m_r_n ; section..data
+                                                                       ; 0x140016000 ; "\tANSI\\esc: \e[33m\r\n"
+            0x140001010      488d050150..   lea rax, str._twideesc:_e_0m ; 0x140016018 ; "\twide\\esc: \e[0m"
+            0x14000101c      488d051d50..   lea rax, str._wide__in_Arabic: ; 0x140016040 ; ""wide" in Arabic:"
+            ; section..data
+            ; 0x140016000
+            ; "\tANSI\\esc: \e[33m\r\n"
+            0x140001004      488d05f54f..   lea rax, str._tANSIesc:_e_33m_r_n
+            ; 0x140016018
+            ; "\twide\\esc: \e[0m"
+            0x140001010      488d050150..   lea rax, str._twideesc:_e_0m
+            ; 0x140016040
+            ; ""wide" in Arabic:"
+            0x14000101c      488d051d50..   lea rax, str._wide__in_Arabic:
 EOF
 RUN
 
@@ -699,9 +715,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: flag in cmt with manual flag (lea)
 NAME=no rep flag in cmt with gen str flag (lea)
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
+e asm.cmt.right=true
+pd 1 @ 0x0001145f
+e asm.cmt.right=false
+pd 1 @ 0x0001145f
+?e --
+f- @ 0x1b5d8
+f NULL_error 56 @ 0x1b5d8
 e asm.cmt.right=true
 pd 1 @ 0x0001145f
 e asm.cmt.right=false
@@ -712,20 +736,7 @@ EXPECT=<<EOF
             ; 0x1b5d8
             ; "A NULL argv[0] was passed through an exec system call.\n"
             0x0001145f      488d3d72a1..   lea rdi, str.A_NULL_argv_0__was_passed_through_an_exec_system_call._n
-EOF
-RUN
-
-NAME=flag in cmt with manual flag (lea)
-FILE=bins/elf/analysis/ls-alxchk
-CMDS=<<EOF
-f- @ 0x1b5d8
-f NULL_error 56 @ 0x1b5d8
-e asm.cmt.right=true
-pd 1 @ 0x0001145f
-e asm.cmt.right=false
-pd 1 @ 0x0001145f
-EOF
-EXPECT=<<EOF
+--
             0x0001145f      488d3d72a1..   lea rdi, [NULL_error]       ; 0x1b5d8 ; "A NULL argv[0] was passed through an exec system call.\n"
             ; 0x1b5d8
             ; "A NULL argv[0] was passed through an exec system call.\n"
@@ -733,6 +744,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: flag in cmt with manual flag (push); no rep flag in cmt with gen sym flag (mov); flag in cmt with manual flag (mov)
 NAME=no rep flag in cmt with gen str flag (push)
 FILE=bins/pe/ConsoleApplication1.exe
 CMDS=<<EOF
@@ -740,51 +752,19 @@ e asm.cmt.right=true
 pd 1 @ 0x004010f0
 e asm.cmt.right=false
 pd 1 @ 0x004010f0
-EOF
-EXPECT=<<EOF
-            0x004010f0      68b8214000     push str.Number_of_CPU__d_n ; 0x4021b8 ; "Number of CPU %d\n"
-            ; 0x4021b8
-            ; "Number of CPU %d\n"
-            0x004010f0      68b8214000     push str.Number_of_CPU__d_n
-EOF
-RUN
-
-NAME=flag in cmt with manual flag (push)
-FILE=bins/pe/ConsoleApplication1.exe
-CMDS=<<EOF
+?e --
 f- @ 0x4021b8
 f num_cpu 36 @ 0x4021b8
 e asm.cmt.right=true
 pd 1 @ 0x004010f0
 e asm.cmt.right=false
 pd 1 @ 0x004010f0
-EOF
-EXPECT=<<EOF
-            0x004010f0      68b8214000     push num_cpu                ; 0x4021b8 ; "Number of CPU %d\n"
-            ; 0x4021b8
-            ; "Number of CPU %d\n"
-            0x004010f0      68b8214000     push num_cpu
-EOF
-RUN
-
-NAME=no rep flag in cmt with gen sym flag (mov)
-FILE=bins/pe/ConsoleApplication1.exe
-CMDS=<<EOF
+?e --
 e asm.cmt.right=true
 pd 1 @ 0x004010fa
 e asm.cmt.right=false
 pd 1 @ 0x004010fa
-EOF
-EXPECT=<<EOF
-            0x004010fa      8b3500204000   mov esi, dword [sym.imp.KERNEL32.dll_GetLastError] ; [0x402000:4]=0x29f4 reloc.KERNEL32.dll_GetLastError
-            ; [0x402000:4]=0x29f4 reloc.KERNEL32.dll_GetLastError
-            0x004010fa      8b3500204000   mov esi, dword [sym.imp.KERNEL32.dll_GetLastError]
-EOF
-RUN
-
-NAME=flag in cmt with manual flag (mov)
-FILE=bins/pe/ConsoleApplication1.exe
-CMDS=<<EOF
+?e --
 f- @ 0x402000
 f ptr_GetLastError 0 @ 0x402000
 e asm.cmt.right=true
@@ -793,6 +773,20 @@ e asm.cmt.right=false
 pd 1 @ 0x004010fa
 EOF
 EXPECT=<<EOF
+            0x004010f0      68b8214000     push str.Number_of_CPU__d_n ; 0x4021b8 ; "Number of CPU %d\n"
+            ; 0x4021b8
+            ; "Number of CPU %d\n"
+            0x004010f0      68b8214000     push str.Number_of_CPU__d_n
+--
+            0x004010f0      68b8214000     push num_cpu                ; 0x4021b8 ; "Number of CPU %d\n"
+            ; 0x4021b8
+            ; "Number of CPU %d\n"
+            0x004010f0      68b8214000     push num_cpu
+--
+            0x004010fa      8b3500204000   mov esi, dword [sym.imp.KERNEL32.dll_GetLastError] ; [0x402000:4]=0x29f4 reloc.KERNEL32.dll_GetLastError
+            ; [0x402000:4]=0x29f4 reloc.KERNEL32.dll_GetLastError
+            0x004010fa      8b3500204000   mov esi, dword [sym.imp.KERNEL32.dll_GetLastError]
+--
             0x004010fa      8b3500204000   mov esi, dword [ptr_GetLastError] ; [0x402000:4]=0x29f4 reloc.KERNEL32.dll_GetLastError
             ; [0x402000:4]=0x29f4 reloc.KERNEL32.dll_GetLastError
             0x004010fa      8b3500204000   mov esi, dword [ptr_GetLastError]
@@ -816,42 +810,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ANSI and wide string flag cmts
-FILE=bins/pe/testapp-msvc64.exe
-CMDS=<<EOF
-e str.escbslash=false
-e asm.cmt.right=true
-pd 1 @ 0x140001004
-pd 1 @ 0x140001010
-pd 1 @ 0x14000101c
-e asm.cmt.right=false
-pd 1 @ 0x140001004
-pd 1 @ 0x140001010
-pd 1 @ 0x14000101c
-EOF
-EXPECT=<<EOF
-            0x140001004      488d05f54f..   lea rax, str._tANSIesc:_e_33m_r_n ; section..data
-                                                                       ; 0x140016000 ; "\tANSI\\esc: \e[33m\r\n"
-            0x140001010      488d050150..   lea rax, str._twideesc:_e_0m ; 0x140016018 ; "\twide\\esc: \e[0m"
-            0x14000101c      488d051d50..   lea rax, str._wide__in_Arabic: ; 0x140016040 ; ""wide" in Arabic:"
-            ; section..data
-            ; 0x140016000
-            ; "\tANSI\\esc: \e[33m\r\n"
-            0x140001004      488d05f54f..   lea rax, str._tANSIesc:_e_33m_r_n
-            ; 0x140016018
-            ; "\twide\\esc: \e[0m"
-            0x140001010      488d050150..   lea rax, str._twideesc:_e_0m
-            ; 0x140016040
-            ; ""wide" in Arabic:"
-            0x14000101c      488d051d50..   lea rax, str._wide__in_Arabic:
-EOF
-RUN
-
+# merged: bin.str.enc latin1; bin.str.enc guess utf16le
 NAME=no ffffff test for issue #7755
 FILE=bins/pe/testapp-msvc64.exe
-CMDS=pd 1 @ 0x140001040
+CMDS=<<EOF
+pd 1 @ 0x140001040
+?e --
+e asm.sub.names=false
+e asm.noisy=false
+e bin.str.enc=latin1
+pd 1 @ 0x140001058
+e bin.str.enc=utf8
+pd 1 @ 0x140001058
+?e --
+e asm.sub.names=false
+e asm.noisy=false
+e bin.str.enc=guess
+pd 1 @ 0x14000104c
+e bin.str.enc=utf16le
+pd 1 @ 0x14000104c
+EOF
 EXPECT=<<EOF
             0x140001040      488d054150..   lea rax, [0x140016088]     ; u"r2 \u1308\u23f4\u23f4"
+--
+            0x140001058      488d054150..   lea rax, [0x1400160a0]     ; "latin1 gate: \xce\xbb\xab\xce"
+            0x140001058      488d054150..   lea rax, [0x1400160a0]     ; "latin1 gate: \u03bb\xab\xce"
+--
+            0x14000104c      488d054550..   lea rax, [0x140016098]     ; "@"
+            0x14000104c      488d054550..   lea rax, [0x140016098]     ; u"@\ufffd\ud801"
 EOF
 RUN
 
@@ -944,22 +930,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bin.str.enc latin1
-FILE=bins/pe/testapp-msvc64.exe
-CMDS=<<EOF
-e asm.sub.names=false
-e asm.noisy=false
-e bin.str.enc=latin1
-pd 1 @ 0x140001058
-e bin.str.enc=utf8
-pd 1 @ 0x140001058
-EOF
-EXPECT=<<EOF
-            0x140001058      488d054150..   lea rax, [0x1400160a0]     ; "latin1 gate: \xce\xbb\xab\xce"
-            0x140001058      488d054150..   lea rax, [0x1400160a0]     ; "latin1 gate: \u03bb\xab\xce"
-EOF
-RUN
-
 NAME=bin.str.enc utf16le
 FILE=bins/elf/strenc
 CMDS=<<EOF
@@ -1019,22 +989,6 @@ EXPECT=<<EOF
             0x004016f7      mov edi, str.Mountain_range_with_embedded_quad_zeros:_AAA_n ; "Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n"
             0x00401701      mov edi, 0x402730                          ; '0\'@' ; "e%"
             0x00401701      mov edi, 0x402730                          ; '0\'@' ; U"\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565"
-EOF
-RUN
-
-NAME=bin.str.enc guess utf16le
-FILE=bins/pe/testapp-msvc64.exe
-CMDS=<<EOF
-e asm.sub.names=false
-e asm.noisy=false
-e bin.str.enc=guess
-pd 1 @ 0x14000104c
-e bin.str.enc=utf16le
-pd 1 @ 0x14000104c
-EOF
-EXPECT=<<EOF
-            0x14000104c      488d054550..   lea rax, [0x140016098]     ; "@"
-            0x14000104c      488d054550..   lea rax, [0x140016098]     ; u"@\ufffd\ud801"
 EOF
 RUN
 
@@ -1375,14 +1329,6 @@ pdJ 1
 EOF
 EXPECT=<<EOF
 [{"addr":0,"text":"            0x00000000     .string \"Snoo\\\"ping as\\\" usual,\" ; len=30"}]
-EOF
-RUN
-
-NAME=pdJ str in opcode
-FILE=bins/java/Hello.class
-CMDS=pdJ 1 @ 0x000002ae
-EXPECT=<<EOF
-[{"addr":686,"text":"            0x000002ae      120b           ldc \"World\""}]
 EOF
 RUN
 
@@ -1839,39 +1785,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: ahb should not be deleted with @b (#9751); ahb should not override @b
 NAME=@b and @addr should coexist
 FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
-CMDS=pd 1 @b:32 @0xc
-EXPECT=<<EOF
-            0x0000000c      01207047       ldrbmi r2, [r0, -r1]!
-EOF
-RUN
-
-NAME=ahb should not be deleted with @b (#9751)
-FILE=bins/firmware/armthumb.bin
-ARGS=-aarm -b32
 CMDS=<<EOF
+pd 1 @b:32 @0xc
+?e --
 ahb 16 @0xc
 ah*
 pd 1 @b:32 @0xc
 ah*
-EOF
-EXPECT=<<EOF
-'@0xc'ahb 16
-            0x0000000c      01207047       ldrbmi r2, [r0, -r1]!
-'@0xc'ahb 16
-EOF
-RUN
-
-NAME=ahb should not override @b
-FILE=bins/firmware/armthumb.bin
-ARGS=-aarm -b32
-CMDS=<<EOF
+?e --
 ahb 16 @0xc
 pd 5 @b:32
 EOF
 EXPECT=<<EOF
+            0x0000000c      01207047       ldrbmi r2, [r0, -r1]!
+--
+'@0xc'ahb 16
+            0x0000000c      01207047       ldrbmi r2, [r0, -r1]!
+'@0xc'ahb 16
+--
             0x00000000      0000a0e1       mov r0, r0
             0x00000004      010000eb       bl 0x10
         @-> 0x00000008      feffffea       b 8

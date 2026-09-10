@@ -1,29 +1,25 @@
+# merged: zfd libc-v7.sig; af ; af ; zfs libc-v7.sig oneliner
 NAME=aa ; zfs libc-v7.sig
 FILE=bins/elf/analysis/pid_stripped
-CMDS=aa ; zfs bins/other/sigs/libc-v7.sig
+CMDS=<<EOF
+aa ; zfs bins/other/sigs/libc-v7.sig
+?e --
+zfd bins/other/sigs/libc-v7.sig
+?e --
+s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs bins/other/sigs/libc-v7.sig ; afl~4e2420
+EOF
 EXPECT=<<EOF
 Found flirt.__libc_start_main
-EOF
-RUN
-
-NAME=zfd libc-v7.sig
-FILE=bins/elf/analysis/pid_stripped
-CMDS=zfd bins/other/sigs/libc-v7.sig
-EXPECT=<<EOF
+--
 41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
  0. 16 D2A2 0298 0000:__libc_start_main
-EOF
-RUN
-
-NAME=af ; af ; zfs libc-v7.sig oneliner
-FILE=bins/elf/analysis/pid_stripped
-CMDS=s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs bins/other/sigs/libc-v7.sig ; afl~4e2420
-EXPECT=<<EOF
+--
 Found flirt.__libc_start_main
 0x004e2420   40    664 flirt.__libc_start_main
 EOF
 RUN
 
+# merged: aa ; zfs libc-v10.sig; zfd libc-v10.sig; af ; af ; zfs libc-v10.sig - oneliner
 NAME=af ; af ; zfs libc-v7.sig
 FILE=bins/elf/analysis/pid_stripped
 CMDS=<<EOF
@@ -33,34 +29,22 @@ s 0x4e25c7
 af
 zfs bins/other/sigs/libc-v7.sig
 afl~4e2420
+?e --
+aa ; zfs bins/other/sigs/libc-v10.sig
+?e --
+zfd bins/other/sigs/libc-v10.sig
+?e --
+s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs bins/other/sigs/libc-v10.sig ; afl~4e2420
 EOF
 EXPECT=<<EOF
 Found flirt.__libc_start_main
 0x004e2420   40    664 flirt.__libc_start_main
-EOF
-RUN
-
-NAME=aa ; zfs libc-v10.sig
-FILE=bins/elf/analysis/pid_stripped
-CMDS=aa ; zfs bins/other/sigs/libc-v10.sig
-EXPECT=<<EOF
+--
 Found flirt.__libc_start_main
-EOF
-RUN
-
-NAME=zfd libc-v10.sig
-FILE=bins/elf/analysis/pid_stripped
-CMDS=zfd bins/other/sigs/libc-v10.sig
-EXPECT=<<EOF
+--
 41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
  0. 16 D2A2 0298 0000:__libc_start_main
-EOF
-RUN
-
-NAME=af ; af ; zfs libc-v10.sig - oneliner
-FILE=bins/elf/analysis/pid_stripped
-CMDS=s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs bins/other/sigs/libc-v10.sig ; afl~4e2420
-EXPECT=<<EOF
+--
 Found flirt.__libc_start_main
 0x004e2420   40    664 flirt.__libc_start_main
 EOF
@@ -82,12 +66,20 @@ Found flirt.__libc_start_main
 EOF
 RUN
 
+# merged: zb bad count
 NAME=zfs on static glibc
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 aac
 zfs bins/other/sigs/libc6_2.27-3ubuntu1_amd64.sig~silence
 f@F:flirt
+?e --
+s 0x00410210
+e zign.maxsz = 32
+af
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zb NOTANUMBER
 EOF
 EXPECT=<<EOF
 0x004004d1 86 flirt.__malloc_assert.constprop.13
@@ -334,19 +326,6 @@ EXPECT=<<EOF
 0x0048fbf0 73 flirt._nl_finddomain_subfreeres
 0x0048fc40 247 flirt._nl_unload_domain
 0x00490bb0 218 flirt.free_slotinfo
-EOF
-RUN
-
-NAME=zb bad count
-FILE=bins/elf/static-glibc-2.27
-CMDS=<<EOF
-s 0x00410210
-e zign.maxsz = 32
-af
-za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
-zb NOTANUMBER
-EOF
-EXPECT=<<EOF
+--
 EOF
 RUN

@@ -61,23 +61,41 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: / search from/to (seek 0)
 NAME=search esil json
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 /Ej $$,[1],0xe1,-,!
 s@hit0_0
+?e --
+e io.va = false
+s 0
+e search.from = 0
+e search.to = 0x00000050
+/ ELF
 EOF
 EXPECT=<<EOF
 [{"addr":134513508,"value":1}]
+--
+0x00000001 hit0_0 "ELF"
 EOF
 RUN
 
+# merged: /x search hexpairs ignoring spaces
 NAME=pm olf
 FILE=bins/elf/ioli/crackme0x00
 ARGS=-n
-CMDS=pm bins/src/olf.magic
+CMDS=<<EOF
+pm bins/src/olf.magic
+?e --
+/x 5061 73 73  776F  72 64 # Password
+EOF
 EXPECT=<<EOF
 0x00000000 0 OLF 32-bit LSB
+--
+0x00000581 hit0_0 50617373776f7264
+0x0000059e hit0_1 50617373776f7264
+0x000005a9 hit0_2 50617373776f7264
 EOF
 RUN
 
@@ -92,22 +110,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: /ai finding immediates
 NAME=/aI infinite loop instructions
 FILE=bins/mach0/ls-osx-x86_64
-CMDS=/aI
+CMDS=<<EOF
+/aI
+?e --
+/ai 0x648
+EOF
 EXPECT=<<EOF
 0x10000166f
 0x10000221d
 0x1000047ca
 0x10000482e
 0x100004838
-EOF
-RUN
-
-NAME=/ai finding immediates
-FILE=bins/mach0/ls-osx-x86_64
-CMDS=/ai 0x648
-EXPECT=<<EOF
+--
 0x1000013e5       4881ec48060000  sub rsp, 0x648
 0x1000013e6         81ec48060000  sub esp, 0x648
 EOF
@@ -419,20 +436,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/ search from/to (seek 0)
-FILE=bins/elf/ioli/crackme0x00
-CMDS=<<EOF
-e io.va = false
-s 0
-e search.from = 0
-e search.to = 0x00000050
-/ ELF
-EOF
-EXPECT=<<EOF
-0x00000001 hit0_0 "ELF"
-EOF
-RUN
-
 NAME=/ search from/to (seek beyond data)
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
@@ -576,20 +579,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: /ac mov ebx; /aa mov ebx
 NAME=/a push esp
 FILE=bins/elf/ioli/crackme0x00
-CMDS=/a push esp
-EXPECT=<<EOF
-0x08048058 hit0_0 54
-0x0804805c hit0_1 54
-0x08048060 hit0_2 54
-0x08048369 hit0_3 54
-EOF
-RUN
-
-NAME=/ac mov ebx
-FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
+/a push esp
+?e --
 /ac mov ebx
 ?e --
 /ac MoV ebX
@@ -597,21 +592,7 @@ CMDS=<<EOF
 /acj mov ebx
 ?e --
 /acj MoV ebX
-EOF
-EXPECT=<<EOF
-0x08048515               8b1c24  mov ebx, dword [esp]
-0x08048527           bb0c9f0408  mov ebx, obj.__CTOR_LIST__
---
---
-[{"addr":134513941,"len":3,"code":"mov ebx, dword [esp]"},{"addr":134513959,"len":5,"code":"mov ebx, 0x8049f0c"}]
---
-[]
-EOF
-RUN
-
-NAME=/aa mov ebx
-FILE=bins/elf/ioli/crackme0x00
-CMDS=<<EOF
+?e --
 /aa mov ebx
 ?e --
 /aa MoV ebX
@@ -621,6 +602,19 @@ CMDS=<<EOF
 /aaj MoV ebX
 EOF
 EXPECT=<<EOF
+0x08048058 hit0_0 54
+0x0804805c hit0_1 54
+0x08048060 hit0_2 54
+0x08048369 hit0_3 54
+--
+0x08048515               8b1c24  mov ebx, dword [esp]
+0x08048527           bb0c9f0408  mov ebx, obj.__CTOR_LIST__
+--
+--
+[{"addr":134513941,"len":3,"code":"mov ebx, dword [esp]"},{"addr":134513959,"len":5,"code":"mov ebx, 0x8049f0c"}]
+--
+[]
+--
 0x08048515               8b1c24  mov ebx, dword [esp]
 0x08048527           bb0c9f0408  mov ebx, obj.__CTOR_LIST__
 --
@@ -868,23 +862,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: /as search syscall; search.from/to for /s
 NAME=/mj test json output
 FILE=bins/elf/analysis/x86-simple
-CMDS=/mj
-EXPECT=<<EOF
-[{"offset":134512640,"depth":0,"info":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
-EOF
-RUN
-
-NAME=/as search syscall
-FILE=bins/elf/analysis/x86-simple
 CMDS=<<EOF
+/mj
+?e --
 aeim
 aeip
 /as
+?e --
+aeim
+aeip
+e search.in = raw
+e search.from = 0x08048060
+e search.to = 0x0804806b
+/s
 EOF
 EXPECT=<<EOF
+[{"offset":134512640,"depth":0,"info":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
+--
 0x08048070 exit
+--
 EOF
 RUN
 
@@ -960,20 +959,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search.from/to for /s
-FILE=bins/elf/analysis/x86-simple
-CMDS=<<EOF
-aeim
-aeip
-e search.in = raw
-e search.from = 0x08048060
-e search.to = 0x0804806b
-/s
-EOF
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=/v4 search 4 byte
 FILE=-
 CMDS=<<EOF
@@ -1044,11 +1029,37 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: /agg search path from main; search entropy; search entropy r2mode; search entropy json
 NAME=/x hit in the second map
 FILE=bins/elf/ioli/crackme0x00
-CMDS=/x f8820408
+CMDS=<<EOF
+/x f8820408
+?e --
+aa
+/agg main @ 0x804848c
+?e --
+/s
+?e --
+/s*
+?e --
+/sj
+EOF
 EXPECT=<<EOF
 0x08049f2c hit0_0 f8820408
+--
+pdb @@= 0x08048414 0x08048480 0x0804848c
+--
+0x08049f0c - 0x0804a00c ~ 2.876932
+0x0804a00c - 0x0804a10c ~ 0.549518
+0x08048000 - 0x08048100 ~ 3.073115
+0x08048100 - 0x08048300 ~ 4.166293
+--
+'f entropy_section_0 0x00000100 0x08049f0c
+'f entropy_section_1 0x00000100 0x0804a00c
+'f entropy_section_2 0x00000100 0x08048000
+'f entropy_section_3 0x00000200 0x08048100
+--
+[{"start":134520588,"end":134520844,"entropy":2.877},{"start":134520844,"end":134521100,"entropy":0.550},{"start":134512640,"end":134512896,"entropy":3.073},{"start":134512896,"end":134513408,"entropy":4.166}]
 EOF
 RUN
 
@@ -1339,17 +1350,6 @@ CMDS=<<EOF
 # Password
 /x 50 61 73 73 77 6F 72 64
 EOF
-EXPECT=<<EOF
-0x00000581 hit0_0 50617373776f7264
-0x0000059e hit0_1 50617373776f7264
-0x000005a9 hit0_2 50617373776f7264
-EOF
-RUN
-
-NAME=/x search hexpairs ignoring spaces
-FILE=bins/elf/ioli/crackme0x00
-ARGS=-n
-CMDS=/x 5061 73 73  776F  72 64 # Password
 EXPECT=<<EOF
 0x00000581 hit0_0 50617373776f7264
 0x0000059e hit0_1 50617373776f7264
@@ -1987,17 +1987,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/agg search path from main
-FILE=bins/elf/ioli/crackme0x00
-CMDS=<<EOF
-aa
-/agg main @ 0x804848c
-EOF
-EXPECT=<<EOF
-pdb @@= 0x08048414 0x08048480 0x0804848c
-EOF
-RUN
-
 NAME=/agg search path from main #2
 FILE=bins/elf/redpill
 CMDS=<<EOF
@@ -2006,42 +1995,6 @@ aa
 EOF
 EXPECT=<<EOF
 pdb @@= 0x0000142e 0x000014c7 0x0000161a 0x00001655
-EOF
-RUN
-
-NAME=search entropy
-FILE=bins/elf/ioli/crackme0x00
-CMDS=<<EOF
-/s
-EOF
-EXPECT=<<EOF
-0x08049f0c - 0x0804a00c ~ 2.876932
-0x0804a00c - 0x0804a10c ~ 0.549518
-0x08048000 - 0x08048100 ~ 3.073115
-0x08048100 - 0x08048300 ~ 4.166293
-EOF
-RUN
-
-NAME=search entropy r2mode
-FILE=bins/elf/ioli/crackme0x00
-CMDS=<<EOF
-/s*
-EOF
-EXPECT=<<EOF
-'f entropy_section_0 0x00000100 0x08049f0c
-'f entropy_section_1 0x00000100 0x0804a00c
-'f entropy_section_2 0x00000100 0x08048000
-'f entropy_section_3 0x00000200 0x08048100
-EOF
-RUN
-
-NAME=search entropy json
-FILE=bins/elf/ioli/crackme0x00
-CMDS=<<EOF
-/sj
-EOF
-EXPECT=<<EOF
-[{"start":134520588,"end":134520844,"entropy":2.877},{"start":134520844,"end":134521100,"entropy":0.550},{"start":134512640,"end":134512896,"entropy":3.073},{"start":134512896,"end":134513408,"entropy":4.166}]
 EOF
 RUN
 

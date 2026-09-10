@@ -6,11 +6,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: cmd.hit for /caj
 NAME=cmd.hit for /ca
 FILE=bins/other/aes_192.dump
-CMDS=/ca aes
+CMDS=<<EOF
+/ca aes
+?e --
+/caj aes
+EOF
 EXPECT=<<EOF
 0x000000fa hit0_0 000102030405060708090a0b0c0d0e0f1011121314151617
+--
+[{"addr":250,"type":"hexpair","data":"000102030405060708090a0b0c0d0e0f1011121314151617"}]
 EOF
 RUN
 
@@ -19,14 +26,6 @@ FILE=bins/other/sm4_key_schedule.bin
 CMDS=/ca sm4
 EXPECT=<<EOF
 0x000000ff hit0_0 f98621f1612b6641db28e44757dbe32c
-EOF
-RUN
-
-NAME=cmd.hit for /caj
-FILE=bins/other/aes_192.dump
-CMDS=/caj aes
-EXPECT=<<EOF
-[{"addr":250,"type":"hexpair","data":"000102030405060708090a0b0c0d0e0f1011121314151617"}]
 EOF
 RUN
 

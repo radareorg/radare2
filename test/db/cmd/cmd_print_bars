@@ -112,16 +112,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: p=e 5 0x100
 NAME=p=d
 FILE=bins/elf/arm1.bin
 ARGS=-n
-CMDS=p=d 10 @ 0
+CMDS=<<EOF
+p=d 10 @ 0
+?e --
+e zoom.in = block
+p=e 5 0x100
+EOF
 EXPECT=<<EOF
 min:              0  0x0
 max:              127  0x7f
 unique (count):   6  0x6
 range (max-min):  127  0x7f
 size (of block):  10  0xa
+--
+0x00000000 000 007f |#########################
+0x00000033 001 006b |#####################
+0x00000066 002 007a |########################
+0x00000099 003 006a |#####################
+0x000000cc 004 005f |###################
 EOF
 RUN
 
@@ -134,22 +146,6 @@ EXPECT=<<EOF
 0x00037d82 002 00c3 |#######################################
 0x00053c43 003 00c3 |#######################################
 0x0006fb04 004 0051 |################
-EOF
-RUN
-
-NAME=p=e 5 0x100
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-e zoom.in = block
-p=e 5 0x100
-EOF
-EXPECT=<<EOF
-0x00000000 000 007f |#########################
-0x00000033 001 006b |#####################
-0x00000066 002 007a |########################
-0x00000099 003 006a |#####################
-0x000000cc 004 005f |###################
 EOF
 RUN
 
@@ -169,27 +165,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: p=p 5 0x100
 NAME=p=p 5
 FILE=bins/elf/arm1.bin
 ARGS=-n
-CMDS=p=p 5@0
+CMDS=<<EOF
+p=p 5@0
+?e --
+e zoom.in = block
+p=p 5 0x100
+EOF
 EXPECT=<<EOF
 0x00000000 000 0032 |##########
 0x0001bec1 001 0031 |#########
 0x00037d82 002 0035 |##########
 0x00053c43 003 0040 |############
 0x0006fb04 004 0076 |#######################
-EOF
-RUN
-
-NAME=p=p 5 0x100
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-e zoom.in = block
-p=p 5 0x100
-EOF
-EXPECT=<<EOF
+--
 0x00000000 000 0032 |##########
 0x00000033 001 0019 |#####
 0x00000066 002 001e |######
@@ -236,9 +228,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: p-j analysis metadata after aa
 NAME=p=F hello-linux-x86_64
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=p=F
+CMDS=<<EOF
+p=F
+?e --
+aa;s main;e search.in=anal.fcn;p-j 4~{ranges[0]};p-j 4~{blocks[0].symbols};p-j 4~{blocks[20].perm}
+EOF
 EXPECT=<<EOF
 0x00400000 000 0000 |
 0x00400100 001 0000 |
@@ -246,6 +243,10 @@ EXPECT=<<EOF
 0x00400300 003 000a |##
 0x00400400 004 0013 |###
 0x00400500 005 0014 |####
+--
+{"from":4195580,"to":4195601}
+1
+r-x
 EOF
 RUN
 
@@ -288,16 +289,6 @@ EXPECT=<<EOF
 35184372087812
 {"addr":105553116267532,"value":0}
 {"addr":105553116267532,"value":0}
-EOF
-RUN
-
-NAME=p-j analysis metadata after aa
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=aa;s main;e search.in=anal.fcn;p-j 4~{ranges[0]};p-j 4~{blocks[0].symbols};p-j 4~{blocks[20].perm}
-EXPECT=<<EOF
-{"from":4195580,"to":4195601}
-1
-r-x
 EOF
 RUN
 

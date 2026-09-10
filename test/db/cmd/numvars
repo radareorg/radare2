@@ -175,6 +175,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: num vars fcn bbs
 NAME=num vars sections
 FILE=bins/elf/analysis/arm-ls
 CMDS=<<EOF
@@ -192,6 +193,17 @@ s+32
 ?v $SE{rodata}
 s $S{rodata}
 iS.
+?e --
+s main
+af
+afl
+?vi $Fs
+?vi $FS
+?vi $FE-$FB
+?e bbs
+?vi $BS
+?vi $Bj
+?vi $BF
 EOF
 EXPECT=<<EOF
 0x11e90
@@ -209,24 +221,7 @@ Current section
 nth paddr         size vaddr        vsize perm flags type     name
 ------------------------------------------------------------------
 0   0x000125c0  0x45e0 0x000225c0  0x45e0 -r-- 0x2   PROGBITS .rodata
-EOF
-RUN
-
-NAME=num vars fcn bbs
-FILE=bins/elf/analysis/arm-ls
-CMDS=<<EOF
-s main
-af
-afl
-?vi $Fs
-?vi $FS
-?vi $FE-$FB
-?e bbs
-?vi $BS
-?vi $Bj
-?vi $BF
-EOF
-EXPECT=<<EOF
+--
 0x00011e90  286   7152 main
 9320
 7152

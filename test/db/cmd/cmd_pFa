@@ -1,7 +1,10 @@
+# merged: pFa der json decoding
 NAME=pFa der decoding
 FILE=bins/cert/der
 CMDS=<<EOF
 pFa
+?e --
+pFaj~{}
 EOF
 EXPECT=<<EOF
   OFFSET  HDR +    OBJ DEPTH FORM NAME                : VALUE
@@ -10,15 +13,7 @@ EXPECT=<<EOF
      0x5  0x2 +    0x9     2 prim OBJECT_IDENTIFIER   : rsaEncryption
     0x12  0x3 +   0x8d     1 prim BIT_STRING          : 30818902818100cc61f9ef5ad0bc21de5b3ca69ee725d2c504edf99a6e97a0279d959f2364ed21aaef8c704552d5d1a3deb2... (1120 bits)
 
-EOF
-RUN
-
-NAME=pFa der json decoding
-FILE=bins/cert/der
-CMDS=<<EOF
-pFaj~{}
-EOF
-EXPECT=<<EOF
+--
 {
   "offset": 0,
   "length": 159,

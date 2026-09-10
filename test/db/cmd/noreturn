@@ -50,37 +50,26 @@ size: 34
 EOF
 RUN
 
+# merged: no no return; no no return 2
 NAME=without noreturn
 FILE=bins/elf/analysis/hello-objc-linux
 CMDS=<<EOF
 tn-*
 af
 afi~size
-EOF
-EXPECT=<<EOF
-size: 34
-EOF
-RUN
-
-NAME=no no return
-FILE=bins/elf/analysis/hello-objc-linux
-CMDS=<<EOF
+?e --
 af
 af-
 afi~size
-EOF
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=no no return 2
-FILE=bins/elf/analysis/hello-objc-linux
-CMDS=<<EOF
+?e --
 af
 af-*
 afi~size
 EOF
 EXPECT=<<EOF
+size: 34
+--
+--
 EOF
 RUN
 

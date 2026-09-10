@@ -80,11 +80,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: pdeqq arm
 NAME=pdeq arm
 FILE=bins/elf/analysis/hello-arm32
 CMDS=<<EOF
 e asm.bytes = false
 pdeq
+?e --
+e asm.bytes = false
+pdeqq
 EOF
 EXPECT=<<EOF
 0x000101c0   r15:
@@ -104,16 +108,7 @@ EXPECT=<<EOF
 0x00010194 ldr pc, [lr, 8]!
 0x00000000   cpsr:
 0x00000000 invalid
-EOF
-RUN
-
-NAME=pdeqq arm
-FILE=bins/elf/analysis/hello-arm32
-CMDS=<<EOF
-e asm.bytes = false
-pdeqq
-EOF
-EXPECT=<<EOF
+--
 push {r7, lr}
 add r7, sp, 0
 movw r0, 0x200

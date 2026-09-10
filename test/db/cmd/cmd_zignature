@@ -323,26 +323,21 @@ test:
 EOF
 RUN
 
+# merged: za a + z/
 NAME=za b + z/
 FILE=bins/elf/analysis/go_stripped
 CMDS=<<EOF
 za sym.fmt.Println b 653b2530000000724b53b834e7150883ec188b15401c22088d4c24048b5c242083ec08ff742434ff742434ff742434525051e829ffffff8b44242089038b4424248943048b44242889430889d883c4345bc204006a106a1ce85e350700c20400
 z/
 ?v sign.bytes.sym.fmt.Println_0
-EOF
-EXPECT=<<EOF
-0x805b030
-EOF
-RUN
-
-NAME=za a + z/
-FILE=bins/elf/analysis/go_stripped
-CMDS=<<EOF
+?e --
 za sym.fmt.Println a 653b2530000000724b53b834e7150883ec188b15401c22088d4c24048b5c242083ec08ff742434ff742434ff742434525051e829ffffff8b44242089038b4424248943048b44242889430889d883c4345bc204006a106a1ce85e350700c20400
 z/
 ?v sign.bytes.sym.fmt.Println_1
 EOF
 EXPECT=<<EOF
+0x805b030
+--
 0x805b030
 EOF
 RUN
@@ -652,6 +647,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: zaF vs zaM
 NAME=zs * searches all zignspaces
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
@@ -661,9 +657,20 @@ zaf main foobar
 zs *
 z/
 ?v sign.bytes.foobar_0
+?e --
+aa
+zg
+f test_orig_size = `z~?`
+zaM
+?v test_orig_size - `z~?`
+zaF
+?v test_orig_size - `z~?`~0x0?
 EOF
 EXPECT=<<EOF
 0x40055b
+--
+0x0
+1
 EOF
 RUN
 
@@ -953,6 +960,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: zj producing valid types; zbr bad count; zbr negative count; zbr zero count
 NAME=zb duplicate zigs match
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
@@ -973,21 +981,36 @@ za sym.duplicate5 b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b45
 za sym.duplicate6 g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.duplicate6 b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 zb ~sym.duplicate?
-EOF
-EXPECT=<<EOF
-4
-EOF
-RUN
-
-NAME=zj producing valid types
-FILE=bins/elf/static-glibc-2.27
-CMDS=<<EOF
+?e --
 af @0x00484d40
 zaf fcn.00484d40 fcn.00484d40
 zj~{[0][types]}
+?e --
+aa
+e zign.maxsz = 32
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zbr sym.exact NOTNUMBER
+?e --
+aa
+e zign.maxsz = 32
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zbr sym.exact -3
+?e --
+aa
+e zign.maxsz = 32
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zbr sym.exact 0
 EOF
 EXPECT=<<EOF
+4
+--
 void fcn.00484d40 (int64_t arg1)
+--
+--
+--
 EOF
 RUN
 
@@ -1012,6 +1035,7 @@ za sym.__write h 4f2d194bae72345352b26e0a36531e7d6ff6cb5d6b50b92487246507b8dafdc
 EOF
 RUN
 
+# merged: x86-64 r_sign_fcn_bytes bounds check
 NAME=x86-64 function with jumpback
 FILE=bins/elf/libc.so.6
 CMDS=<<EOF
@@ -1019,6 +1043,12 @@ s 0x8a900
 af
 zaf
 z*
+?e --
+s 0x0593a0
+e zign.maxsz = 41
+af
+zaf
+z* ~za sym._IO_printf b
 EOF
 EXPECT=<<EOF
 zs *
@@ -1029,19 +1059,7 @@ za sym.bcopy R YmNvcHk=
 za sym.bcopy t void sym.bcopy (int64_t arg1)
 za sym.bcopy v tr83:arg1:int64_t
 za sym.bcopy h 6f9938a0cb75b842a94a45bfe2f8c83832359627e228926dc396950b678fb5df
-EOF
-RUN
-
-NAME=x86-64 r_sign_fcn_bytes bounds check
-FILE=bins/elf/libc.so.6
-CMDS=<<EOF
-s 0x0593a0
-e zign.maxsz = 41
-af
-zaf
-z* ~za sym._IO_printf b
-EOF
-EXPECT=<<EOF
+--
 za sym._IO_printf b f30f1efa4881ecd80000004889742428488954243048894c24384c894424404c894c244884c074370f:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ff
 EOF
 RUN
@@ -1066,6 +1084,7 @@ za sym.deregister_tm_clones h 903d0936e77ecc1f2e91f7b2eb2476fdc06d7f2ba9501b1436
 EOF
 RUN
 
+# merged: 80386 r_sign_fcn_bytes bounds check
 NAME=80386 function with jumpback
 FILE=bins/elf/fcn_in_test.elf
 CMDS=<<EOF
@@ -1073,6 +1092,12 @@ s 0x1184
 af
 zaf
 z*
+?e --
+s 0x00001120
+e zign.maxsz = 32
+af
+zaf
+z* ~za entry.fini0 b
 EOF
 EXPECT=<<EOF
 zs *
@@ -1082,19 +1107,7 @@ za main o 0x00001184
 za main R bWFpbg==
 za main t int main (int argc, char **argv, char **envp)
 za main h a9f218a725149b64061b9064406b46abe5653b97eb0f88a3e3e0086d1532c898
-EOF
-RUN
-
-NAME=80386 r_sign_fcn_bytes bounds check
-FILE=bins/elf/fcn_in_test.elf
-CMDS=<<EOF
-s 0x00001120
-e zign.maxsz = 32
-af
-zaf
-z* ~za entry.fini0 b
-EOF
-EXPECT=<<EOF
+--
 za entry.fini0 b f30f1efb5589e553e853ffffff81c3d32e000083ec0480bb180000000075288b:ffffffffffffffffff00000000ff0000000000ffffffffffffffffffffff00ff
 EOF
 RUN
@@ -1155,6 +1168,7 @@ za sym.fpathconf b 3c1c0005279c11200399e02127bdfef8afbf0100afb100fcafb000f8afbc0
 EOF
 RUN
 
+# merged: PowerPC r_sign_fcn_bytes bounds check
 NAME=PowerPC function with hole
 FILE=bins/elf/busybox-powerpc
 CMDS=<<EOF
@@ -1162,6 +1176,12 @@ s 0x100e2b0c
 af
 zaf
 z*
+?e --
+s 0x1000016c
+af
+e zign.maxsz = 30
+zaf
+z* ~za fcn.1000016c b
 EOF
 EXPECT=<<EOF
 zs *
@@ -1172,6 +1192,8 @@ za fcn.100e2b0c R ZmNuLjEwMGUyYjBj
 za fcn.100e2b0c t void fcn.100e2b0c (int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg_1h)
 za fcn.100e2b0c v fs-36:var_14h:int32_t, fs-4:var_34h:int32_t, tb1:arg_1h:int32_t, tr6:arg2:int32_t, tr7:arg3:int32_t, tr5:arg1:int32_t
 za fcn.100e2b0c h 3b28d8f368cb414615bda7313fc4cdc24096498e7183cc05165607770be26928
+--
+za fcn.1000016c b 3d2000007c0802a6392900009421fff02f89000090010014419e001c3c80:ffffffffffffffffffffffffffffffffffffffffffffffffff000000ffff
 EOF
 RUN
 
@@ -1196,20 +1218,6 @@ za fcn.10002d70 h 5f59f157d9e3548e81fed794bff828e7fc6ab90932a879b643d6d2a30c20c3
 EOF
 RUN
 
-NAME=PowerPC r_sign_fcn_bytes bounds check
-FILE=bins/elf/busybox-powerpc
-CMDS=<<EOF
-s 0x1000016c
-af
-e zign.maxsz = 30
-zaf
-z* ~za fcn.1000016c b
-EOF
-EXPECT=<<EOF
-za fcn.1000016c b 3d2000007c0802a6392900009421fff02f89000090010014419e001c3c80:ffffffffffffffffffffffffffffffffffffffffffffffffff000000ffff
-EOF
-RUN
-
 NAME=ARM function with hole
 FILE=bins/elf/libmagic.so
 CMDS=<<EOF
@@ -1231,6 +1239,7 @@ za sym._Unwind_VRS_Get h 3132d0ebfa3b792867a4ffc36455e088bf3fcffc7627bd48c64bf90
 EOF
 RUN
 
+# merged: ARM r_sign_fcn_bytes bounds check
 NAME=ARM function with jumpback
 FILE=bins/elf/libverifyPass.so
 CMDS=<<EOF
@@ -1238,15 +1247,7 @@ s 0x0000183c
 af
 zaf
 z* ~sym.__aeabi_unwind_cpp_pr0 b
-EOF
-EXPECT=<<EOF
-za sym.__aeabi_unwind_cpp_pr0 b 0030a0e3d4feffea:ffffffffff000000
-EOF
-RUN
-
-NAME=ARM r_sign_fcn_bytes bounds check
-FILE=bins/elf/libverifyPass.so
-CMDS=<<EOF
+?e --
 s 0x00001844
 af
 e zign.maxsz = 42
@@ -1254,6 +1255,8 @@ zaf
 z* ~za fcn.00001844 b
 EOF
 EXPECT=<<EOF
+za sym.__aeabi_unwind_cpp_pr0 b 0030a0e3d4feffea:ffffffffff000000
+--
 za fcn.00001844 b f04f2de9a8519fe5a8319fe505508fe0033095e714d04de2000053e30040a0e1026041e20800000a0600:ffffffffff000000ff000000ffffffffffffffffffffffffffffffffffffffffffffffffff000000ffff
 EOF
 RUN
@@ -1278,6 +1281,7 @@ za sym.memset h 82e8b18bbf263f9ed0e31d6b68099efe6eb8805a429444f8aa119af00c47369c
 EOF
 RUN
 
+# merged: ARM aarch64 r_sign_fcn_bytes bounds check
 NAME=ARM aarch64 function with jmpback
 FILE=bins/elf/switch-hello-world.elf
 CMDS=<<EOF
@@ -1285,6 +1289,12 @@ s 0x131a4
 af
 zaf
 z*
+?e --
+s 0x00016e9c
+e zign.maxsz = 94
+af
+zaf
+z* ~za sym._vfprintf_r b
 EOF
 EXPECT=<<EOF
 zs *
@@ -1295,59 +1305,8 @@ za sym.strnlen R c3Rybmxlbg==
 za sym.strnlen t void sym.strnlen (int64_t arg1, int64_t arg2, int64_t arg3)
 za sym.strnlen v tr10:arg2:int64_t, tr6:arg1:int64_t, tr22:arg3:int64_t
 za sym.strnlen h c573e9053dfa735f51cca8aea51eda71ca46fd402d11feb4d7f8ccf1b3b46d72
-EOF
-RUN
-
-NAME=ARM aarch64 r_sign_fcn_bytes bounds check
-FILE=bins/elf/switch-hello-world.elf
-CMDS=<<EOF
-s 0x00016e9c
-e zign.maxsz = 94
-af
-zaf
-z* ~za sym._vfprintf_r b
-EOF
-EXPECT=<<EOF
+--
 za sym._vfprintf_r b ff0314d1fd7b00a9fd030091f35301a9f30302aaf55b02a9f76303a9f70300aaf80303aaf96b04a9fa0301aafb7305a9e827066d6a170094000040f9e06700f989efff97e05700f9020180d2e0a3059101008052a4ecff97b70000b4e052:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ffffffffffffffffff000000ffffffffffffffffffffffffffffffffff000000ff000000ffff
-EOF
-RUN
-
-NAME=zbr bad count
-FILE=bins/elf/static-glibc-2.27
-CMDS=<<EOF
-aa
-e zign.maxsz = 32
-za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
-zbr sym.exact NOTNUMBER
-EOF
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=zbr negative count
-FILE=bins/elf/static-glibc-2.27
-CMDS=<<EOF
-aa
-e zign.maxsz = 32
-za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
-zbr sym.exact -3
-EOF
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=zbr zero count
-FILE=bins/elf/static-glibc-2.27
-CMDS=<<EOF
-aa
-e zign.maxsz = 32
-za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
-zbr sym.exact 0
-EOF
-EXPECT=<<EOF
 EOF
 RUN
 
@@ -1744,23 +1703,6 @@ z/
 afl~newname?
 EOF
 EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=zaF vs zaM
-FILE=bins/elf/analysis/zigs
-CMDS=<<EOF
-aa
-zg
-f test_orig_size = `z~?`
-zaM
-?v test_orig_size - `z~?`
-zaF
-?v test_orig_size - `z~?`~0x0?
-EOF
-EXPECT=<<EOF
-0x0
 1
 EOF
 RUN

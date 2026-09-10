@@ -1,6 +1,16 @@
+# merged: CL file; CLd decompile from dwarf line info
 NAME=CL address
 FILE=bins/elf/dwarf3_line
-CMDS=CL~$$addr
+CMDS=<<EOF
+CL~$$addr
+?e --
+CL~$$file
+?e --
+e bin.dbginfo=true
+af @ main
+s main
+CLd
+EOF
 EXPECT=<<EOF
 addr: 0x00001139
 addr: 0x00001141
@@ -26,12 +36,30 @@ addr: 0x000011ee
 addr: 0x000011f8
 addr: 0x000011fd
 addr: 0x000011ff
+--
+file: /tmp/dwarf-line-foo.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line//bar.c
+--
+// /usr/w/g/radare2/test/bins/src/dwarf-line.c:20 @ 0x000011ad main
+// dwarf-line.c:20
+// dwarf-line.c:21
+// dwarf-line.c:22
+// dwarf-line.c:24
+// dwarf-line.c:25
+// dwarf-line.c:26
+// dwarf-line.c:27
 EOF
 RUN
 
+# merged: CL dwarf5 file
 NAME=CL dwarf5 address
 FILE=bins/elf/dwarf5_line
-CMDS=CL~$$addr
+CMDS=<<EOF
+CL~$$addr
+?e --
+CL~$$file
+EOF
 EXPECT=<<EOF
 addr: 0x00001139
 addr: 0x00001141
@@ -57,12 +85,21 @@ addr: 0x000011ee
 addr: 0x000011f8
 addr: 0x000011fd
 addr: 0x000011ff
+--
+file: /tmp/dwarf-line-foo.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line//bar.c
 EOF
 RUN
 
+# merged: CL clang file
 NAME=CL clang address
 FILE=bins/elf/dwarf3_line_cl
-CMDS=CL~$$addr
+CMDS=<<EOF
+CL~$$addr
+?e --
+CL~$$file
+EOF
 EXPECT=<<EOF
 addr: 0x00001140
 addr: 0x00001148
@@ -94,12 +131,21 @@ addr: 0x00001205
 addr: 0x0000120a
 addr: 0x0000120c
 addr: 0x00001212
+--
+file: /tmp/dwarf-line-foo.c
+file: /usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
 EOF
 RUN
 
+# merged: CL dwarf5 clang file
 NAME=CL dwarf5 clang address
 FILE=bins/elf/dwarf5_line_cl
-CMDS=CL~$$addr
+CMDS=<<EOF
+CL~$$addr
+?e --
+CL~$$file
+EOF
 EXPECT=<<EOF
 addr: 0x00001140
 addr: 0x00001148
@@ -131,26 +177,10 @@ addr: 0x00001205
 addr: 0x0000120a
 addr: 0x0000120c
 addr: 0x00001212
-EOF
-RUN
-
-NAME=CL file
-FILE=bins/elf/dwarf3_line
-CMDS=CL~$$file
-EXPECT=<<EOF
+--
 file: /tmp/dwarf-line-foo.c
+file: /usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
-file: /usr/w/g/radare2/test/bins/src/dwarf-line//bar.c
-EOF
-RUN
-
-NAME=CL dwarf5 file
-FILE=bins/elf/dwarf5_line
-CMDS=CL~$$file
-EXPECT=<<EOF
-file: /tmp/dwarf-line-foo.c
-file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
-file: /usr/w/g/radare2/test/bins/src/dwarf-line//bar.c
 EOF
 RUN
 
@@ -174,26 +204,6 @@ file: /usr/w/g/radare2/test/bins/src/dwarf-line//bar.c
 EOF
 RUN
 
-NAME=CL clang file
-FILE=bins/elf/dwarf3_line_cl
-CMDS=CL~$$file
-EXPECT=<<EOF
-file: /tmp/dwarf-line-foo.c
-file: /usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c
-file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
-EOF
-RUN
-
-NAME=CL dwarf5 clang file
-FILE=bins/elf/dwarf5_line_cl
-CMDS=CL~$$file
-EXPECT=<<EOF
-file: /tmp/dwarf-line-foo.c
-file: /usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c
-file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
-EOF
-RUN
-
 NAME=CL rel clang file
 FILE=bins/elf/dwarf3_line_rel_cl
 CMDS=CL~$$file
@@ -211,26 +221,6 @@ EXPECT=<<EOF
 file: /tmp/dwarf-line-foo.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line/bar.c
-EOF
-RUN
-
-NAME=CLd decompile from dwarf line info
-FILE=bins/elf/dwarf3_line
-CMDS=<<EOF
-e bin.dbginfo=true
-af @ main
-s main
-CLd
-EOF
-EXPECT=<<EOF
-// /usr/w/g/radare2/test/bins/src/dwarf-line.c:20 @ 0x000011ad main
-// dwarf-line.c:20
-// dwarf-line.c:21
-// dwarf-line.c:22
-// dwarf-line.c:24
-// dwarf-line.c:25
-// dwarf-line.c:26
-// dwarf-line.c:27
 EOF
 RUN
 

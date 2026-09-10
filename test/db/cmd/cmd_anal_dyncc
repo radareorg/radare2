@@ -19,6 +19,7 @@ arg int v0 @ v0
 EOF
 RUN
 
+# merged: dyncc zero-rets renders as void
 NAME=Java dyncc resolves descriptor-driven slots
 FILE=bins/java/Hello.class
 CMDS=<<EOF
@@ -27,12 +28,16 @@ afi @ main~callconv
 afv @ main
 afi @ method.public.Hello.say~callconv
 afv @ method.public.Hello.say
+?e --
+tcc dyncc:l0+1:
 EOF
 EXPECT=<<EOF
 callconv: dyncc:l0+1:
 arg int l0 @ l0
 callconv: dyncc:l0+1:!T0
 arg int l0 @ l0
+--
+void dyncc:l0+1: (l0);
 EOF
 RUN
 
@@ -57,6 +62,7 @@ arg int l3 @ l3
 EOF
 RUN
 
+# merged: dyncc accepts well-formed names; dyncc concrete names stay virtual
 NAME=DEX dyncc direct af uses ins slots
 FILE=bins/java/Main.dex
 CMDS=<<EOF
@@ -67,6 +73,12 @@ afi @ 0x23c~callconv,args
 afv @ 0x23c
 afi @ 0x224~callconv,args
 afv @ 0x224
+?e --
+tcc dyncc:v6+1:v0+1
+tcc dyncc:v0+1:v0+1!T0
+?e --
+tcc dyncc:v6+1:v0+1
+tcck~dyncc
 EOF
 EXPECT=<<EOF
 dyncc
@@ -76,9 +88,16 @@ arg int v6 @ v6
 callconv: dyncc:v0+1:!T0
 args: 1
 arg int v0 @ v0
+--
+v0 dyncc:v6+1:v0+1 (v6);
+v0 v0.dyncc:v0+1:v0+1!T0 (v0);
+--
+v0 dyncc:v6+1:v0+1 (v6);
+default.cc=dyncc
 EOF
 RUN
 
+# merged: WASM reg profile covers dyncc return slots; isj exposes bytecode symbol slot metadata
 NAME=WASM dyncc direct af uses type params
 FILE=bins/wasm/multiret3.wasm
 CMDS=<<EOF
@@ -86,6 +105,16 @@ e anal.cc
 af @ entry0
 afi @ entry0~callconv,args
 afv @ entry0
+?e --
+dr r3
+dr r12
+dr l0
+?e --
+isj~{[0].arg_first}
+isj~{[0].arg_count}
+isj~{[0].cc_arg_count}
+isj~{[0].ret_count}
+isj~{[0].arg_prefix}
 EOF
 EXPECT=<<EOF
 dyncc
@@ -94,33 +123,11 @@ args: 3
 arg int l0 @ l0
 arg int l1 @ l1
 arg int l2 @ l2
-EOF
-RUN
-
-NAME=WASM reg profile covers dyncc return slots
-FILE=bins/wasm/multiret3.wasm
-CMDS=<<EOF
-dr r3
-dr r12
-dr l0
-EOF
-EXPECT=<<EOF
+--
 0x00000000
 0x00000000
 0x00000000
-EOF
-RUN
-
-NAME=isj exposes bytecode symbol slot metadata
-FILE=bins/wasm/multiret3.wasm
-CMDS=<<EOF
-isj~{[0].arg_first}
-isj~{[0].arg_count}
-isj~{[0].cc_arg_count}
-isj~{[0].ret_count}
-isj~{[0].arg_prefix}
-EOF
-EXPECT=<<EOF
+--
 0
 3
 0
@@ -129,6 +136,7 @@ l
 EOF
 RUN
 
+# merged: Pyc dyncc keeps zero-arg return metadata
 NAME=Pyc dyncc direct af uses code args
 FILE=bins/pyc/py38.pyc
 CMDS=<<EOF
@@ -136,23 +144,17 @@ e anal.cc
 af @ sym._module_.Batman.__init__
 afi @ sym._module_.Batman.__init__~callconv,args
 afv @ sym._module_.Batman.__init__
+?e --
+e anal.cc
+af @ sym._module_.varargs
+afi @ sym._module_.varargs~name,callconv,args
 EOF
 EXPECT=<<EOF
 dyncc
 callconv: dyncc:l0+1:r0+1
 args: 1
 arg int l0 @ l0
-EOF
-RUN
-
-NAME=Pyc dyncc keeps zero-arg return metadata
-FILE=bins/pyc/py38.pyc
-CMDS=<<EOF
-e anal.cc
-af @ sym._module_.varargs
-afi @ sym._module_.varargs~name,callconv,args
-EOF
-EXPECT=<<EOF
+--
 dyncc
 name: sym._module_.varargs
 callconv: dyncc::r0+1
@@ -210,18 +212,23 @@ args: 0
 EOF
 RUN
 
+# merged: dyncc multi-return signature
 NAME=WASM multi-return + var recovery
 FILE=bins/wasm/multiret3.wasm
 CMDS=<<EOF
 aaa
 afi @ entry0~callconv
 afv @ entry0
+?e --
+tcc dyncc:l0+2:r0+3
 EOF
 EXPECT=<<EOF
 callconv: dyncc:l0+3:r0+3
 arg int l0 @ l0
 arg int l1 @ l1
 arg int l2 @ l2
+--
+r0:r1:r2 dyncc:l0+2:r0+3 (l0, l1);
 EOF
 RUN
 
@@ -265,60 +272,21 @@ arg int a0 @ a0
 EOF
 RUN
 
+# merged: tcck shows static CCs not dyncc sentinels
 NAME=x86-64 native cc unchanged (no dyncc regression)
 FILE=bins/elf/ls
 CMDS=<<EOF
 aaa
 e anal.cc
 afi @ main~callconv
+?e --
+tcck~default.cc=
 EOF
 EXPECT=<<EOF
 amd64
 callconv: amd64
-EOF
-RUN
-
-NAME=dyncc accepts well-formed names
-FILE=bins/java/Main.dex
-CMDS=<<EOF
-tcc dyncc:v6+1:v0+1
-tcc dyncc:v0+1:v0+1!T0
-EOF
-EXPECT=<<EOF
-v0 dyncc:v6+1:v0+1 (v6);
-v0 v0.dyncc:v0+1:v0+1!T0 (v0);
-EOF
-RUN
-
-NAME=dyncc concrete names stay virtual
-FILE=bins/java/Main.dex
-CMDS=<<EOF
-tcc dyncc:v6+1:v0+1
-tcck~dyncc
-EOF
-EXPECT=<<EOF
-v0 dyncc:v6+1:v0+1 (v6);
-default.cc=dyncc
-EOF
-RUN
-
-NAME=dyncc zero-rets renders as void
-FILE=bins/java/Hello.class
-CMDS=<<EOF
-tcc dyncc:l0+1:
-EOF
-EXPECT=<<EOF
-void dyncc:l0+1: (l0);
-EOF
-RUN
-
-NAME=dyncc multi-return signature
-FILE=bins/wasm/multiret3.wasm
-CMDS=<<EOF
-tcc dyncc:l0+2:r0+3
-EOF
-EXPECT=<<EOF
-r0:r1:r2 dyncc:l0+2:r0+3 (l0, l1);
+--
+default.cc=amd64
 EOF
 RUN
 
@@ -345,16 +313,6 @@ EOF
 EXPECT=<<EOF
 arg double arg1 @ xmm0
 arg double arg2 @ xmm1
-EOF
-RUN
-
-NAME=tcck shows static CCs not dyncc sentinels
-FILE=bins/elf/ls
-CMDS=<<EOF
-tcck~default.cc=
-EOF
-EXPECT=<<EOF
-default.cc=amd64
 EOF
 RUN
 

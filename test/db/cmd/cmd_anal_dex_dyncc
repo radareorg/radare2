@@ -1,3 +1,4 @@
+# merged: dex dyncc resolves args and self via unified cc API
 NAME=dex auto-enables dyncc and resolves per-method
 FILE=bins/java/Main.dex
 CMDS=<<EOF
@@ -5,11 +6,19 @@ e anal.cc
 aaa
 afi @ 0x23c~callconv
 afi @ 0x224~callconv
+?e --
+tcc dyncc:v6+1:v0+1
+tcc dyncc:v0+1:v0+1!T0
+tcc dyncc:v0+1:!T0
 EOF
 EXPECT=<<EOF
 dyncc
 callconv: dyncc:v6+1:
 callconv: dyncc:v0+1:!T0
+--
+v0 dyncc:v6+1:v0+1 (v6);
+v0 v0.dyncc:v0+1:v0+1!T0 (v0);
+void v0.dyncc:v0+1:!T0 (v0);
 EOF
 RUN
 
@@ -24,19 +33,5 @@ EXPECT=<<EOF
 dyncc
 callconv: dyncc::result
 args: 0
-EOF
-RUN
-
-NAME=dex dyncc resolves args and self via unified cc API
-FILE=bins/java/Main.dex
-CMDS=<<EOF
-tcc dyncc:v6+1:v0+1
-tcc dyncc:v0+1:v0+1!T0
-tcc dyncc:v0+1:!T0
-EOF
-EXPECT=<<EOF
-v0 dyncc:v6+1:v0+1 (v6);
-v0 v0.dyncc:v0+1:v0+1!T0 (v0);
-void v0.dyncc:v0+1:!T0 (v0);
 EOF
 RUN
