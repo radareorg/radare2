@@ -1,3 +1,4 @@
+# merged: pd 10 align
 NAME=offs390 bininfo
 FILE=bins/s390/zos/prueba/prueba
 CMDS=<<EOF
@@ -5,6 +6,13 @@ CMDS=<<EOF
 aia
 ?e --
 i
+?e --
+/x 47F0F024
+s hit0_0
+e asm.arch=s390
+pd 10
+e asm.arch=s390.gnu
+pd 10
 EOF
 EXPECT=<<EOF
 s390
@@ -47,20 +55,7 @@ static   true
 stripped false
 uncaps   false
 va       false
-EOF
-RUN
-
-NAME=pd 10 align
-FILE=bins/s390/zos/prueba/prueba
-CMDS=<<EOF
-/x 47F0F024
-s hit0_0
-e asm.arch=s390
-pd 10
-e asm.arch=s390.gnu
-pd 10
-EOF
-EXPECT=<<EOF
+--
 0x00001928 hit0_0 47f0f024
             ;-- entry0:
             ;-- hit0_0:

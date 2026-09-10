@@ -10,12 +10,22 @@ done
 EOF
 RUN
 
+# merged: ppc-elf; ppc-elf entry0 name issue
 NAME=ppc-aflm
 FILE=bins/elf/analysis/elf-ppc-execstack
 CMDS=<<EOF
 aac
 aflsa
 aflm
+?e --
+e asm.flags=false
+pid 4
+?e --
+?e
+e asm.flags=true
+pid 1
+af
+afi~name[1]
 EOF
 EXPECT=<<EOF
 sym._init:
@@ -588,33 +598,12 @@ fcn.1001d690:
     fcn.100033b0
     sym.imp.__assert_fail
 
-EOF
-RUN
-
-NAME=ppc-elf
-FILE=bins/elf/analysis/elf-ppc-execstack
-CMDS=<<EOF
-e asm.flags=false
-pid 4
-EOF
-EXPECT=<<EOF
+--
 0x100014e0             7c290b78  mr r9, r1
 0x100014e4             54210036  rlwinm r1, r1, 0, 0, 0x1b
 0x100014e8             38000000  li r0, 0
 0x100014ec             9421fff0  stwu r1, -0x10(r1)
-EOF
-RUN
-
-NAME=ppc-elf entry0 name issue
-FILE=bins/elf/analysis/elf-ppc-execstack
-CMDS=<<EOF
-?e
-e asm.flags=true
-pid 1
-af
-afi~name[1]
-EOF
-EXPECT=<<EOF
+--
 
 0x100014e0   section..text:
 0x100014e0             7c290b78  mr r9, r1
@@ -1183,29 +1172,24 @@ arg int64_t arg_90h @ r1+0x90
 EOF
 RUN
 
+# merged: esil keeps real strings in data sections
 NAME=esil does not turn analysed code into a string
 FILE=bins/elf/ppc64_sudoku_dwarf
-CMDS=<<EOF2
+CMDS=<<EOF
 e bin.relocs.apply=true
 aaa
 Cs. @ 0x10001d68
 pi 1 @ 0x10001d68
-EOF2
-EXPECT=<<EOF2
-addi r1, r1, 0x20
-EOF2
-RUN
-
-NAME=esil keeps real strings in data sections
-FILE=bins/elf/ppc64_sudoku_dwarf
-CMDS=<<EOF2
+?e --
 e bin.relocs.apply=true
 aaa
 Cs. @ 0x10001d78
-EOF2
-EXPECT=<<EOF2
+EOF
+EXPECT=<<EOF
+addi r1, r1, 0x20
+--
 "sh -c clear"
-EOF2
+EOF
 RUN
 
 NAME=ppc plt-call stub toc save is not recovered as an argument

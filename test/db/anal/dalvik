@@ -93,18 +93,17 @@ v0,result,=,sp,[4],ip,=,4,sp,+=
 EOF
 RUN
 
+# merged: Dalvik HelloWorld func xref
 NAME=Dalvik HelloWorld string xref
 FILE=bins/dex/HelloWorld.dex
-CMDS=aa; axt @ str.Findus
+CMDS=<<EOF
+aa; axt @ str.Findus
+?e --
+e io.va=0; aa; axt @ sym.LHello.method._init___V
+EOF
 EXPECT=<<EOF
 entry0 0x260 [DATA:r--] const-string v1, str.Findus
-EOF
-RUN
-
-NAME=Dalvik HelloWorld func xref
-FILE=bins/dex/HelloWorld.dex
-CMDS=e io.va=0; aa; axt @ sym.LHello.method._init___V
-EXPECT=<<EOF
+--
 entry0 0x26e [CALL:--x] invoke-direct {v0}, LHello.<init>()V ; 0x0
 EOF
 RUN

@@ -21,25 +21,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: x86_64 shared lib: a locally defined stub target is not an import
 NAME=x86_64 shared lib: the stub function takes the flag name
 FILE=bins/elf/pltrel/add.so
 CMDS=<<EOF
 aa
 s 0x1050
 afn
-EOF
-EXPECT=<<EOF
-sym.plt.add2
-EOF
-RUN
-
-NAME=x86_64 shared lib: a locally defined stub target is not an import
-FILE=bins/elf/pltrel/add.so
-CMDS=<<EOF
+?e --
 aa
 ii~add2
 EOF
 EXPECT=<<EOF
+sym.plt.add2
+--
 EOF
 RUN
 

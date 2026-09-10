@@ -1,6 +1,27 @@
+# merged: print sparc disassembly ld; cyclomatic sparc; afb sparc
 NAME=disass_Linux_sparc
 FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=pi 10 @ entry0
+CMDS=<<EOF
+pi 10 @ entry0
+?e --
+pad d0006354
+pad bc100000
+pad 9c23a018
+pad 9403a05c
+pad 110000af
+?e --
+s main
+af
+afi~complex[1]
+afb.@main
+?e --
+e asm.var.summary=0
+s sym.zwrite
+af
+afb
+?e
+pdf
+EOF
 EXPECT=<<EOF
 mov g0, fp
 sub sp, 0x18, sp
@@ -12,69 +33,16 @@ sethi 0x30b, o4
 or o0, 0xa0, o0
 or o3, 0x80, o3
 or o4, 0x60, o4
-EOF
-RUN
-
-NAME=disass_Solaris_sparc
-FILE=bins/elf/elf-solaris-sparc-ls
-CMDS=pi 10 @ entry0
-EXPECT=<<EOF
-mov 0, fp
-ld [sp+0x40], l0
-add sp, 0x44, l1
-sub sp, 0x20, sp
-orcc g0, g1, g0
-be loc..nope
-mov g1, o0
-call sym.imp.atexit
-nop
-sethi 0xb0, o0
-EOF
-RUN
-
-NAME=print sparc disassembly ld
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-pad d0006354
-pad bc100000
-pad 9c23a018
-pad 9403a05c
-pad 110000af
-EOF
-EXPECT=<<EOF
+--
 ld [g1+0x354], o0
 mov g0, fp
 sub sp, 0x18, sp
 add sp, 0x5c, o2
 sethi 0xaf, o0
-EOF
-RUN
-
-NAME=cyclomatic sparc
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-s main
-af
-afi~complex[1]
-afb.@main
-EOF
-EXPECT=<<EOF
+--
 167
 0x0002bca0 0x0002bccc 00:0000 44 j 0x0002c534 f 0x0002bccc
-EOF
-RUN
-
-NAME=afb sparc
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-e asm.var.summary=0
-s sym.zwrite
-af
-afb
-?e
-pdf
-EOF
-EXPECT=<<EOF
+--
 0x000a0d80 0x000a0d94 00:0000 20 j 0x000a0d94
 0x000a0d94 0x000a0d98 00:0000 4 j 0x000a0d98
 0x000a0d98 0x000a0db0 00:0000 24 j 0x000a0dc8 f 0x000a0db0
@@ -128,33 +96,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=af anal sparc
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-aaa
-s 0x0002bca0
-afi~name
-EOF
-EXPECT=<<EOF
-name: main
-EOF
-RUN
-
-NAME=af anal sparc
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-aaa
-s 0x0002bca0
-afi~name
-EOF
-EXPECT=<<EOF
-name: main
-EOF
-RUN
-
-NAME=anal.prefix.default sparc
+# merged: anal.prefix.default sparc
+NAME=disass_Solaris_sparc
 FILE=bins/elf/elf-solaris-sparc-ls
 CMDS=<<EOF
+pi 10 @ entry0
+?e --
 s 0x00018c08
 e anal.prefix.default=root
 af
@@ -165,6 +112,17 @@ afr
 afl
 EOF
 EXPECT=<<EOF
+mov 0, fp
+ld [sp+0x40], l0
+add sp, 0x44, l1
+sub sp, 0x20, sp
+orcc g0, g1, g0
+be loc..nope
+mov g1, o0
+call sym.imp.atexit
+nop
+sethi 0xb0, o0
+--
 0x00018c08  357   7304 main
 --
 0x00018c08  357   7304 main
@@ -303,6 +261,30 @@ EXPECT=<<EOF
 0x00013620   12    240 sym.dired_dump_obstack
 0x00025758   12    148 sym.xstrtol_fatal
 0x00013948    1     64 sym.get_funky_string
+EOF
+RUN
+
+NAME=af anal sparc
+FILE=bins/elf/elf-Linux-SparcV8-bash
+CMDS=<<EOF
+aaa
+s 0x0002bca0
+afi~name
+EOF
+EXPECT=<<EOF
+name: main
+EOF
+RUN
+
+NAME=af anal sparc
+FILE=bins/elf/elf-Linux-SparcV8-bash
+CMDS=<<EOF
+aaa
+s 0x0002bca0
+afi~name
+EOF
+EXPECT=<<EOF
+name: main
 EOF
 RUN
 
