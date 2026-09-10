@@ -6,18 +6,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: VSF: Rocky Horror Picture Show- ROMs
 NAME=VSF: Rocky Horror Picture Show- detection
 FILE=bins/vsf/c128-rhps-rom.vsf
-CMDS=iI~os
+CMDS=<<EOF
+iI~os
+?e --
+om
+EOF
 EXPECT=<<EOF
 os       C128
-EOF
-RUN
-
-NAME=VSF: Rocky Horror Picture Show- ROMs
-FILE=bins/vsf/c128-rhps-rom.vsf
-CMDS=om
-EXPECT=<<EOF
+--
 * 6 fd: 3 +0x000420a1 0x00004000 - 0x0000afff r-x r-x fmap.BASIC
 - 5 fd: 3 +0x000490a1 0x0000b000 - 0x0000bfff r-x r-x fmap.MONITOR
 - 4 fd: 3 +0x0004a0a1 0x0000c000 - 0x0000cfff r-x r-x fmap.EDITOR

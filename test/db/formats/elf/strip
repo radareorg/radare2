@@ -22,27 +22,22 @@ uncaps   true
 EOF
 RUN
 
+# merged: ELF: weak undefined imports do not trigger uncaps
 NAME=ELF: stripped pie with linker exports only
 FILE=bins/elf/analysis/candypop
 CMDS=<<EOF
 i~^stripp
 i~^uncaps
-EOF
-EXPECT=<<EOF
-stripped true
-uncaps   false
-EOF
-RUN
-
-NAME=ELF: weak undefined imports do not trigger uncaps
-FILE=bins/elf/analysis/candypop
-CMDS=<<EOF
+?e --
 e bin.relocs.apply=true
 ii~__gmon_start__[2]
 ii~__gmon_start__[4]
 i~^uncaps
 EOF
 EXPECT=<<EOF
+stripped true
+uncaps   false
+--
 WEAK
 __gmon_start__
 uncaps   false

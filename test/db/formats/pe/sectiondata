@@ -21,80 +21,45 @@ nth paddr         size vaddr        vsize perm flags      type name
 EOF
 RUN
 
+# merged: PE: corkami cm01.exe - section seek 2; PE: corkami cm01.exe - section seek 3; PE: corkami cm01.exe - section seek 4; PE: corkami cm01.exe - section seek 5; PE: corkami cm01.exe - section seek 6; PE: corkami cm01.exe - section refs 1
 NAME=PE: corkami cm01.exe - section seek 1
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
 s 0x00401000
 om.~[9]
-EOF
-EXPECT=<<EOF
-fmap.CODE
-EOF
-RUN
-
-NAME=PE: corkami cm01.exe - section seek 2
-FILE=bins/pe/cm01.exe
-CMDS=<<EOF
+?e --
 s 0x00402000
 om.~[9]
-EOF
-EXPECT=<<EOF
-fmap.DATA
-EOF
-RUN
-
-NAME=PE: corkami cm01.exe - section seek 3
-FILE=bins/pe/cm01.exe
-CMDS=<<EOF
+?e --
 s 0x00403000
 om.~[9]
-EOF
-EXPECT=<<EOF
-fmap..idata
-EOF
-RUN
-
-NAME=PE: corkami cm01.exe - section seek 4
-FILE=bins/pe/cm01.exe
-CMDS=<<EOF
+?e --
 s 0x00404000
 om.~[9]
-EOF
-EXPECT=<<EOF
-fmap..edata
-EOF
-RUN
-
-NAME=PE: corkami cm01.exe - section seek 5
-FILE=bins/pe/cm01.exe
-CMDS=<<EOF
+?e --
 s 0x00405000
 om.~[9]
-EOF
-EXPECT=<<EOF
-fmap..reloc
-EOF
-RUN
-
-NAME=PE: corkami cm01.exe - section seek 6
-FILE=bins/pe/cm01.exe
-CMDS=<<EOF
+?e --
 s 0x00406000
 om.~[9]
-EOF
-EXPECT=<<EOF
-fmap..rsrc
-EOF
-RUN
-
-NAME=PE: corkami cm01.exe - section refs 1
-FILE=bins/pe/cm01.exe
-CMDS=<<EOF
+?e --
 e anal.strings = true
 aaa
 pi 2 @ 0x004010b7
 EOF
 EXPECT=<<EOF
+fmap.CODE
+--
+fmap.DATA
+--
+fmap..idata
+--
+fmap..edata
+--
+fmap..reloc
+--
+fmap..rsrc
+--
 push str.CrackMe_v1.0
 push str.No_need_to_disasm_the_code_
 EOF

@@ -106,18 +106,17 @@ sym.imp.MSVCP100.dll___Osfx___basic_ostream_DU__char_traits_D_std___std__QAEXXZ
 EOF
 RUN
 
+# merged: C++ demangle exported GLIBCXX symbols
 NAME=C++ demangle relocs
 FILE=bins/elf/libstdc++.so.6
-CMDS=pd 1 @0x00091004
+CMDS=<<EOF
+pd 1 @0x00091004
+?e --
+iE~0x0008ce50
+EOF
 EXPECT=<<EOF
             0x00091004      488b159d88..   mov rdx, qword [reloc.vtable_for_std::bad_alloc] ; new:57:5 ; [0x1898a8:8]=0
-EOF
-RUN
-
-NAME=C++ demangle exported GLIBCXX symbols
-FILE=bins/elf/libstdc++.so.6
-CMDS=iE~0x0008ce50
-EXPECT=<<EOF
+--
 3770 0x0008ce50 0x0008ce50 GLOBAL FUNC 609      _ZNSi6ignoreEl                                                                                                                       std::istream::ignore(long)
 3771 0x0008ce50 0x0008ce50 GLOBAL FUNC 609      _ZNSi6ignoreEl                                                                                                                       std::istream::ignore(long)
 5087 0x0008ce50 0x0008ce50 GLOBAL FUNC 609      _ZNSi6ignoreEl@@GLIBCXX_3.4.5                                                                                                        std::istream::ignore(long)

@@ -7,10 +7,17 @@ EOF
 RUN
 
 
+# merged: nro entry; nro data
 NAME=nro sections
 FILE=bins/nro/appstore.nro
 ARGS=-e io.cache=true
-CMDS=iS
+CMDS=<<EOF
+iS
+?e --
+ie
+?e --
+p8 0x30 @ 0x80
+EOF
 EXPECT=<<EOF
 nth paddr           size vaddr          vsize perm flags type name
 ------------------------------------------------------------------
@@ -19,25 +26,11 @@ nth paddr           size vaddr          vsize perm flags type name
 2   0x00000000  0x1b4000 0x00000000  0x1b4000 -r-x 0x0   ---- text
 3   0x001b4000   0x5a000 0x001b4000   0x5a000 -r-- 0x0   ---- ro
 4   0x0020e000    0xf000 0x0020e000    0xf000 -rw- 0x0   ---- data
-EOF
-RUN
-
-NAME=nro entry
-FILE=bins/nro/appstore.nro
-ARGS=-e io.cache=true
-CMDS=ie
-EXPECT=<<EOF
+--
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
 0x00000080 0x00000080 ---------- ---------- program
-EOF
-RUN
-
-NAME=nro data
-FILE=bins/nro/appstore.nro
-ARGS=-e io.cache=true
-CMDS=p8 0x30 @ 0x80
-EXPECT=<<EOF
+--
 fb031eaa01000094dc2302d1f90300aafa0301aae0100090c11100d00000199121e02191210000cb211c009121f07d92
 EOF
 RUN

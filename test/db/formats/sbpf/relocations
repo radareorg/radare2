@@ -1,8 +1,13 @@
+# merged: sBPF: Verify relocations are present; sBPF: imports resolve to their own first reloc site via the section pass
 NAME=sBPF: Segments with custom base address 0x10000000
 FILE=bins/elf/sbpf_example.so
 ARGS=-B 0x10000000
 CMDS=<<EOF
 iSS
+?e --
+ir | head -10
+?e --
+ii
 EOF
 EXPECT=<<EOF
 nth paddr          size vaddr         vsize perm flags type name
@@ -12,16 +17,7 @@ nth paddr          size vaddr         vsize perm flags type name
 2   0x0002e930   0x44a8 0x1002e930   0x44a8 -r-- 0x0   MAP  LOAD2
 3   0x0002e880     0xb0 0x1002e880     0xb0 -rw- 0x0   MAP  DYNAMIC
 4   0x00000000     0x40 0x10000000     0x40 -rw- 0x0   MAP  ehdr
-EOF
-RUN
-
-NAME=sBPF: Verify relocations are present
-FILE=bins/elf/sbpf_example.so
-ARGS=-B 0x10000000
-CMDS=<<EOF
-ir | head -10
-EOF
-EXPECT=<<EOF
+--
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x100003d0 0x000003d0 SET_64 8
@@ -32,16 +28,7 @@ vaddr      paddr      type   ntype name
 0x10000838 0x00000838 SET_64 8
 0x10000890 0x00000890 SET_64 8
 0x10000cd8 0x00000cd8 SET_64 8
-EOF
-RUN
-
-NAME=sBPF: imports resolve to their own first reloc site via the section pass
-FILE=bins/elf/sbpf_example.so
-ARGS=-B 0x10000000
-CMDS=<<EOF
-ii
-EOF
-EXPECT=<<EOF
+--
 nth vaddr      bind   type   lib name
 -------------------------------------
 3   0x10002888 GLOBAL NOTYPE     abort

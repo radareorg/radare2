@@ -85,27 +85,22 @@ mscoree.dll
 EOF
 RUN
 
+# merged: .NET hellocd dll classes
 NAME=.NET hellocd dll symbols
 FILE=bins/dotnet/hellocd.dll
 CMDS=<<EOF
 is~GLOBAL
+?e --
+ic~class
+ic~method
+ic~field
 EOF
 EXPECT=<<EOF
 0   0x00000251 0x00402051 GLOBAL FUNC 7                Microsoft.CodeAnalysis.EmbeddedAttribute..ctor(this;):void
 0   0x00000259 0x00402059 GLOBAL FUNC 14               System.Runtime.CompilerServices.RefSafetyRulesAttribute..ctor(this;int):void
 0   0x00000268 0x00402068 GLOBAL FUNC 11               Program.<Main>$(string[]:args):void
 0   0x00000274 0x00402074 GLOBAL FUNC 7                Program..ctor(this;):void
-EOF
-RUN
-
-NAME=.NET hellocd dll classes
-FILE=bins/dotnet/hellocd.dll
-CMDS=<<EOF
-ic~class
-ic~method
-ic~field
-EOF
-EXPECT=<<EOF
+--
 0x00000000 [0x00000000 - 0x00000000]      0 cil class 0 <Module>
 0x00000000 [0x00402051 - 0x00402058]      7 cil class 1 Microsoft.CodeAnalysis.EmbeddedAttribute :: System.Attribute
 0x00000000 [0x00402059 - 0x00402067]     14 cil class 2 System.Runtime.CompilerServices.RefSafetyRulesAttribute :: System.Attribute

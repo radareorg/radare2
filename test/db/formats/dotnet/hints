@@ -1,3 +1,4 @@
+# merged: agfj honors CIL architecture hints on first use
 NAME=dotnet hello world program
 FILE=bins/dotnet/HelloWorld.dll
 CMDS=<<EOF
@@ -5,6 +6,12 @@ ah*~aha cil
 pdi 2 @ entry0
 pdi 2 @ 0x1000209c
 il
+?e --
+aaa
+s 0x10002224
+agfj > $graph
+$graph~{[0].blocks[0].ops[0].opcode}
+$graph~{[0].blocks[0].ops[1].opcode}
 EOF
 EXPECT=<<EOF
 '@0x10002051'aha cil
@@ -21,19 +28,7 @@ EXPECT=<<EOF
 0x1000209c           7201000070  ldstr "Error: No file path provided."
 0x100020a1           280f00000a  call System.Console.WriteLine(string):void
 mscoree.dll
-EOF
-RUN
-
-NAME=agfj honors CIL architecture hints on first use
-FILE=bins/dotnet/HelloWorld.dll
-CMDS=<<EOF
-aaa
-s 0x10002224
-agfj > $graph
-$graph~{[0].blocks[0].ops[0].opcode}
-$graph~{[0].blocks[0].ops[1].opcode}
-EOF
-EXPECT=<<EOF
+--
 nop
 newobj System.Collections.Generic.Dictionary`2<string,object>..ctor(this;):void
 EOF

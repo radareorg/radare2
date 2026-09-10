@@ -1,7 +1,10 @@
+# merged: dotnet: HelloWorld.dll - trycatch flags
 NAME=dotnet: HelloWorld.dll - IL finally clauses
 FILE=bins/dotnet/HelloWorld.dll
 CMDS=<<EOF
 iwj~{}
+?e --
+iw
 EOF
 EXPECT=<<EOF
 [
@@ -24,15 +27,7 @@ EXPECT=<<EOF
     "kind": "cleanup"
   }
 ]
-EOF
-RUN
-
-NAME=dotnet: HelloWorld.dll - trycatch flags
-FILE=bins/dotnet/HelloWorld.dll
-CMDS=<<EOF
-iw
-EOF
-EXPECT=<<EOF
+--
 f try.0.100021c0.from=0x100021d0
 f try.0.100021c0.to=0x100021eb
 f try.0.100021c0.cleanup=0x100021eb
@@ -145,6 +140,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: dotnet: mscorlib.dll - catch all and typed clauses
 NAME=dotnet: mscorlib.dll - IL exception clause kinds
 FILE=bins/pe/mscorlib.dll
 CMDS=<<EOF
@@ -152,22 +148,16 @@ iw~from~?
 iw~catch=~?
 iw~filter=~?
 iw~cleanup=~?
+?e --
+iwj~{[3]}
+iwj~{[18]}
 EOF
 EXPECT=<<EOF
 835
 323
 0
 512
-EOF
-RUN
-
-NAME=dotnet: mscorlib.dll - catch all and typed clauses
-FILE=bins/pe/mscorlib.dll
-CMDS=<<EOF
-iwj~{[3]}
-iwj~{[18]}
-EOF
-EXPECT=<<EOF
+--
 {"index":3,"source":4204700,"from":4204728,"to":4204744,"handler":4204744,"filter":0,"kind":"catch","typeFilter":33554659,"type":"System.NullReferenceException"}
 {"index":18,"source":4240192,"from":4240206,"to":4240617,"handler":4240617,"filter":0,"kind":"catch","typeFilter":33554822,"type":"System.Object","catchAll":true}
 EOF

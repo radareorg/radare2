@@ -151,20 +151,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: fatmach0 entry1 data
 NAME=fatmach0 entry1
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b 32
-CMDS=?v entry0
+CMDS=<<EOF
+?v entry0
+?e --
+p8 16 @ entry0
+EOF
 EXPECT=<<EOF
 0x1f44
-EOF
-RUN
-
-NAME=fatmach0 entry1 data
-FILE=bins/mach0/fatmach0-3true
-ARGS=-a x86 -b 32
-CMDS=p8 16 @ entry0
-EXPECT=<<EOF
+--
 6a0089e583e4f083ec108b5d04891c24
 EOF
 RUN
@@ -198,20 +196,18 @@ paddr      vaddr      phaddr     vhaddr     type
 EOF
 RUN
 
+# merged: fatmach0 entry2 data
 NAME=fatmach0 entry2
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a ppc -b 32
-CMDS=?v entry0
+CMDS=<<EOF
+?v entry0
+?e --
+p8 16 @ entry0
+EOF
 EXPECT=<<EOF
 0x1f64
-EOF
-RUN
-
-NAME=fatmach0 entry2 data
-FILE=bins/mach0/fatmach0-3true
-ARGS=-a ppc -b 32
-CMDS=p8 16 @ entry0
-EXPECT=<<EOF
+--
 7c3a0b783821fffc5421003438000000
 EOF
 RUN

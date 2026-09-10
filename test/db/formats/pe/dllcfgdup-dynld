@@ -5,21 +5,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: PE: corkami dllcfgdup-dynld.exe - pi 1
 NAME=PE: corkami dllcfgdup-dynld.exe - entrypoint
 FILE=bins/pe/dllcfgdup-dynld.exe
-CMDS=s
-EXPECT=<<EOF
-0x401000
-EOF
-RUN
-
-NAME=PE: corkami dllcfgdup-dynld.exe - pi 1
-FILE=bins/pe/dllcfgdup-dynld.exe
 CMDS=<<EOF
+s
+?e --
 e asm.sub.names=false
 pi 1
 EOF
 EXPECT=<<EOF
+0x401000
+--
 push 0x401064
 EOF
 RUN

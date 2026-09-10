@@ -6,18 +6,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: VSF: Rambo II- ROMs
 NAME=VSF: Rambo II- detection
 FILE=bins/vsf/c64-rambo2-norom.vsf
-CMDS=iI~os
+CMDS=<<EOF
+iI~os
+?e --
+om
+EOF
 EXPECT=<<EOF
 os       C64
-EOF
-RUN
-
-NAME=VSF: Rambo II- ROMs
-FILE=bins/vsf/c64-rambo2-norom.vsf
-CMDS=om
-EXPECT=<<EOF
+--
 * 1 fd: 3 +0x00000084 0x00000000 - 0x0000ffff r-x rwx fmap.RAM
 EOF
 RUN

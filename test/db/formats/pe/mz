@@ -5,25 +5,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: PE: corkami mz.exe - dis asm.flags.real
 NAME=PE: corkami mz.exe - dis
 FILE=bins/pe/mz.exe
-CMDS=pid 4
+CMDS=<<EOF
+pid 4
+?e --
+e asm.flags.real=true
+pi 6
+EOF
 EXPECT=<<EOF
 0x00401000   section.sect_0:
 0x00401000           6818104000  push 0x401018
 0x00401005         ff15c8104000  call dword [sym.imp.msvcrt.dll_printf]
 0x0040100b               83c404  add esp, 4
 0x0040100e                   90  nop
-EOF
-RUN
-
-NAME=PE: corkami mz.exe - dis asm.flags.real
-FILE=bins/pe/mz.exe
-CMDS=<<EOF
-e asm.flags.real=true
-pi 6
-EOF
-EXPECT=<<EOF
+--
 push 0x401018
 call dword [printf]
 add esp, 4

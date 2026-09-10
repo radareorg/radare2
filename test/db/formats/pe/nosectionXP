@@ -5,18 +5,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: PE: nosectionXP - entrypoint 2
 NAME=PE: nosectionXP - section
 FILE=bins/pe/nosectionXP.exe
-CMDS=om
+CMDS=<<EOF
+om
+?e --
+pi 5
+EOF
 EXPECT=<<EOF
 * 1 fd: 3 +0x00000138 0x00400138 - 0x00400236 r-x rwx fmap.blob
-EOF
-RUN
-
-NAME=PE: nosectionXP - entrypoint 2
-FILE=bins/pe/nosectionXP.exe
-CMDS=pi 5
-EXPECT=<<EOF
+--
 push 0x400150
 call dword [sym.imp.msvcrt.dll_printf]
 add esp, 4

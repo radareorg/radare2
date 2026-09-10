@@ -1,10 +1,18 @@
+# merged: pe relocs [r2]
 NAME=pe entrypoint
 FILE=bins/pe/base.exe
-CMDS=ie
+CMDS=<<EOF
+ie
+?e --
+e asm.functions = false
+e asm.flags = false
+pd 1@0x401820~!imp
+EOF
 EXPECT=<<EOF
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
 0x00000680 0x00401280 0x000000a8 ---------- program
+--
 EOF
 RUN
 
@@ -22,17 +30,6 @@ FILE=bins/pe/normal.exe
 CMDS=iI~overlay
 EXPECT=<<EOF
 overlay  false
-EOF
-RUN
-
-NAME=pe relocs [r2]
-FILE=bins/pe/base.exe
-CMDS=<<EOF
-e asm.functions = false
-e asm.flags = false
-pd 1@0x401820~!imp
-EOF
-EXPECT=<<EOF
 EOF
 RUN
 
@@ -107,9 +104,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: pe32 imported functions (ii); pe32 stdcall import ucall stack pop vars
 NAME=pe32 imported libs (il)
 FILE=bins/pe/imports_1210.exe
-CMDS=il
+CMDS=<<EOF
+il
+?e --
+ii
+?e --
+e scr.color=0
+e bin.cache=true
+e io.cache=true
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=32
+wx 6a046a036a026a01ff15e42141008b442404c3 @ 0x40f000
+af+ 0x40f000 pe_import_pop
+afb+ 0x40f000 0x40f000 0x13
+s 0x40f000
+afva
+afvs~arg_4h
+EOF
 EXPECT=<<EOF
 kernel32.dll
 user32.dll
@@ -120,13 +135,7 @@ pstorec.dll
 rasapi32.dll
 shell32.dll
 crypt32.dll
-EOF
-RUN
-
-NAME=pe32 imported functions (ii)
-FILE=bins/pe/imports_1210.exe
-CMDS=ii
-EXPECT=<<EOF
+--
 nth vaddr      bind type lib          name
 ------------------------------------------
 1   0x0041217c NONE FUNC kernel32.dll DeleteCriticalSection
@@ -255,26 +264,7 @@ nth vaddr      bind type lib          name
 4   0x004123ac NONE FUNC advapi32.dll CryptGetHashParam
 5   0x004123b0 NONE FUNC advapi32.dll CryptReleaseContext
 6   0x004123b4 NONE FUNC advapi32.dll CryptAcquireContextA
-EOF
-RUN
-
-NAME=pe32 stdcall import ucall stack pop vars
-FILE=bins/pe/imports_1210.exe
-CMDS=<<EOF
-e scr.color=0
-e bin.cache=true
-e io.cache=true
-e asm.arch=x86
-e anal.arch=x86
-e asm.bits=32
-wx 6a046a036a026a01ff15e42141008b442404c3 @ 0x40f000
-af+ 0x40f000 pe_import_pop
-afb+ 0x40f000 0x40f000 0x13
-s 0x40f000
-afva
-afvs~arg_4h
-EOF
-EXPECT=<<EOF
+--
 arg int32_t arg_4h @ esp+0x14
 EOF
 RUN
@@ -414,18 +404,17 @@ vaddr      paddr      type   ntype name
 EOF
 RUN
 
+# merged: pe32 header
 NAME=pe32 imported libs (il)
 FILE=bins/pe/single_import.exe
-CMDS=il
+CMDS=<<EOF
+il
+?e --
+ih~?Signature
+EOF
 EXPECT=<<EOF
 comctl32.dll
-EOF
-RUN
-
-NAME=pe32 header
-FILE=bins/pe/single_import.exe
-CMDS=ih~?Signature
-EXPECT=<<EOF
+--
 1
 EOF
 RUN

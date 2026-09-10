@@ -22,10 +22,17 @@ DEBUG: [core.bin] Cannot resolve symbol address __gmon_start__
 EOF
 RUN
 
+# merged: ELF: sym.main
 NAME=ELF: main
 FILE=bins/elf/analysis/main
-CMDS=?v main
+CMDS=<<EOF
+?v main
+?e --
+?v sym.main
+EOF
 EXPECT=<<EOF
+0x400506
+--
 0x400506
 EOF
 RUN
@@ -62,14 +69,6 @@ FILE=-
 ARGS=-B 0x200000
 CMDS=!rabin2 -qMB 0x200000 bins/elf/analysis/main
 EXPECT=2098438
-RUN
-
-NAME=ELF: sym.main
-FILE=bins/elf/analysis/main
-CMDS=?v sym.main
-EXPECT=<<EOF
-0x400506
-EOF
 RUN
 
 NAME=ELF: pie main

@@ -1,31 +1,29 @@
+# merged: PE: strip check keeps uncaps clear
 NAME=PE: strip check
 FILE=bins/pe/hello_world_stripped.exe
-CMDS=i~^strip
+CMDS=<<EOF
+i~^strip
+?e --
+i~^uncaps
+EOF
 EXPECT=<<EOF
 stripped true
-EOF
-RUN
-
-NAME=PE: strip check keeps uncaps clear
-FILE=bins/pe/hello_world_stripped.exe
-CMDS=i~^uncaps
-EXPECT=<<EOF
+--
 uncaps   false
 EOF
 RUN
 
+# merged: PE: executable exports mark uncaps
 NAME=PE: non strip check
 FILE=bins/pe/hello_world_not_stripped.exe
-CMDS=i~^strip
+CMDS=<<EOF
+i~^strip
+?e --
+i~^uncaps
+EOF
 EXPECT=<<EOF
 stripped false
-EOF
-RUN
-
-NAME=PE: executable exports mark uncaps
-FILE=bins/pe/hello_world_not_stripped.exe
-CMDS=i~^uncaps
-EXPECT=<<EOF
+--
 uncaps   true
 EOF
 RUN

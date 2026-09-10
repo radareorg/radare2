@@ -1,34 +1,33 @@
+# merged: PPC64 ELFv1 ET_REL: R_PPC64_REL24 maps to ADD_24; PPC64 ELFv1 ET_REL: REL24 reloc encodes -(st64)P addend (S - P + A convention); PPC64 ELFv1 ET_REL: REL24 unique target imports; PPC64 ELFv1 ET_REL: R_PPC64_TOC/TOC16 map to ADD_16 (incl. .rela.init.text TOC16_HA/LO_DS); PPC64 ELFv1 ET_REL: R_PPC64_ADDR64 in .opd produces SET_64 entries; PPC64 ELFv1 ET_REL: all .rela.* sections loaded (per-section cap fix, was 23); PPC64 ELFv1 ET_REL: imports include _mcount and crc32_le
 NAME=PPC64 ELFv1 ET_REL kernel module recognized as ppc64 big-endian
 FILE=bins/elf/ppc64v1-crc32_generic.ko
-CMDS=iI~arch ;iI~bits ;iI~class ;iI~endian
+CMDS=<<EOF
+iI~arch ;iI~bits ;iI~class ;iI~endian
+?e --
+ir~?ADD_24
+?e --
+ir~ADD_24:0
+?e --
+ir~ADD_24[4]
+?e --
+ir~?ADD_16
+?e --
+ir~?SET_64
+?e --
+ir~?
+?e --
+ii~mcount,crc32[4]
+EOF
 EXPECT=<<EOF
 arch     ppc
 bits     64
 class    ELF64
 endian   big
-EOF
-RUN
-
-NAME=PPC64 ELFv1 ET_REL: R_PPC64_REL24 maps to ADD_24
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-CMDS=ir~?ADD_24
-EXPECT=<<EOF
+--
 13
-EOF
-RUN
-
-NAME=PPC64 ELFv1 ET_REL: REL24 reloc encodes -(st64)P addend (S - P + A convention)
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-CMDS=ir~ADD_24:0
-EXPECT=<<EOF
+--
 0x080000c4 0x000000c4 ADD_24 10    ._mcount - 0x080000c4
-EOF
-RUN
-
-NAME=PPC64 ELFv1 ET_REL: REL24 unique target imports
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-CMDS=ir~ADD_24[4]
-EXPECT=<<EOF
+--
 ._mcount
 ._mcount
 ._mcount
@@ -42,37 +41,40 @@ EXPECT=<<EOF
 ._mcount
 .crypto_register_shash
 .crypto_unregister_shash
-EOF
-RUN
-
-NAME=PPC64 ELFv1 ET_REL: R_PPC64_TOC/TOC16 map to ADD_16 (incl. .rela.init.text TOC16_HA/LO_DS)
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-CMDS=ir~?ADD_16
-EXPECT=<<EOF
+--
 13
-EOF
-RUN
-
-NAME=PPC64 ELFv1 ET_REL: R_PPC64_ADDR64 in .opd produces SET_64 entries
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-CMDS=ir~?SET_64
-EXPECT=<<EOF
+--
 22
-EOF
-RUN
-
-NAME=PPC64 ELFv1 ET_REL: all .rela.* sections loaded (per-section cap fix, was 23)
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-CMDS=ir~?
-EXPECT=<<EOF
+--
 50
+--
+._mcount
+.crc32_le
+_mcount
 EOF
 RUN
 
+# merged: PPC64 ELFv1 ET_REL: .rela.init.text REL24 now applied (2nd section no longer capped); PPC64 ELFv1 ET_REL: applied REL24 bl lands exactly on its reloc target flag; PPC64 ELFv1 ET_REL: REL24 patched bytes are big-endian (high byte first); PPC64 ELFv1 ET_REL: applied REL24 branch target is 4-byte aligned; PPC64 ELFv1 ET_REL: reloc flag sits exactly on the aligned REL24 branch target; PPC64 ELFv1 ET_REL: applied REL24 calls produce CALL xrefs to the named target; PPC64 ELFv1 ET_REL: TOC16_LO_DS reloc applied to ld immediate
 NAME=PPC64 ELFv1 ET_REL: .opd ADDR64 relocs are reported at their .opd slot
 FILE=bins/elf/ppc64v1-crc32_generic.ko
 ARGS=-e bin.relocs.apply=true
-CMDS=ir~SET_64[0]
+CMDS=<<EOF
+ir~SET_64[0]
+?e --
+pi 1 @ section..init.text+0x1c
+?e --
+pi 1 @ 0x080000c4;pi 1 @ 0x08000234;s 0x080000c4;fd `ao~jump[1]`;s 0x08000234;fd `ao~jump[1]`
+?e --
+p8 4 @ 0x080000c4
+?e --
+s 0x08000154;ao~jump
+?e --
+fd 0x08001c30
+?e --
+aaa;axt @ 0x08001c30~?
+?e --
+pi 2 @ 0x0800036c
+EOF
 EXPECT=<<EOF
 0x08000700
 0x08000708
@@ -96,54 +98,39 @@ EXPECT=<<EOF
 0x080009c8
 0x08000b38
 0x08000db0
-EOF
-RUN
-
-NAME=PPC64 ELFv1 ET_REL: .rela.init.text REL24 now applied (2nd section no longer capped)
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-ARGS=-e bin.relocs.apply=true
-CMDS=pi 1 @ section..init.text+0x1c
-EXPECT=<<EOF
+--
 bl reloc..crypto_register_shash
-EOF
-RUN
-
-NAME=PPC64 ELFv1 ET_REL: applied REL24 bl lands exactly on its reloc target flag
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-ARGS=-e bin.relocs.apply=true
-CMDS=pi 1 @ 0x080000c4;pi 1 @ 0x08000234;s 0x080000c4;fd `ao~jump[1]`;s 0x08000234;fd `ao~jump[1]`
-EXPECT=<<EOF
+--
 bl reloc.._mcount
 bl reloc..crc32_le
 reloc.._mcount
 reloc..crc32_le
-EOF
-RUN
-
-NAME=PPC64 ELFv1 ET_REL: REL24 patched bytes are big-endian (high byte first)
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-ARGS=-e bin.relocs.apply=true
-CMDS=p8 4 @ 0x080000c4
-EXPECT=<<EOF
+--
 48001b6d
+--
+jump: 0x08001c30
+--
+reloc.._mcount
+--
+8
+--
+addis r9, r2, 0
+ld r3, -0x8000(r9)
 EOF
 RUN
 
-NAME=PPC64 ELFv1 ET_REL: imports include _mcount and crc32_le
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-CMDS=ii~mcount,crc32[4]
-EXPECT=<<EOF
-._mcount
-.crc32_le
-_mcount
-EOF
-RUN
-
+# merged: PPC64 ELFv1 ET_REL: TOC base auto-resolved from .toc + 0x8000 when .opd descriptor is unfilled
 NAME=PPC64 ELFv1 ET_REL: 10 .rela sections present
 FILE=bins/elf/ppc64v1-crc32_generic.ko
-CMDS=iS~?RELA
+CMDS=<<EOF
+iS~?RELA
+?e --
+ar r2
+EOF
 EXPECT=<<EOF
 10
+--
+0x08008700
 EOF
 RUN
 
@@ -173,65 +160,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=PPC64 ELFv1 ET_REL: applied REL24 branch target is 4-byte aligned
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-ARGS=-e bin.relocs.apply=true
-CMDS=s 0x08000154;ao~jump
-EXPECT=<<EOF
-jump: 0x08001c30
-EOF
-RUN
-
-NAME=PPC64 ELFv1 ET_REL: reloc flag sits exactly on the aligned REL24 branch target
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-ARGS=-e bin.relocs.apply=true
-CMDS=fd 0x08001c30
-EXPECT=<<EOF
-reloc.._mcount
-EOF
-RUN
-
-NAME=PPC64 ELFv1 ET_REL: applied REL24 calls produce CALL xrefs to the named target
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-ARGS=-e bin.relocs.apply=true
-CMDS=aaa;axt @ 0x08001c30~?
-EXPECT=<<EOF
-8
-EOF
-RUN
-
-NAME=PPC64 ELFv1 ET_REL: TOC16_LO_DS reloc applied to ld immediate
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-ARGS=-e bin.relocs.apply=true
-CMDS=pi 2 @ 0x0800036c
-EXPECT=<<EOF
-addis r9, r2, 0
-ld r3, -0x8000(r9)
-EOF
-RUN
-
+# merged: PPC64 ELFv1 ET_REL: auto TOC base resolves addis+ld pair to a concrete data pointer
 NAME=PPC64 ELFv1 ET_REL: TOC16_LO_DS patches the DS halfword keeping the ld sub-opcode
 FILE=bins/elf/ppc64v1-crc32_generic.ko
 ARGS=-e bin.relocs.apply=true
-CMDS=p8 4 @ 0x08000370
+CMDS=<<EOF
+p8 4 @ 0x08000370
+?e --
+ao 2 @ 0x0800036c~ptr
+EOF
 EXPECT=<<EOF
 e8698000
-EOF
-RUN
-
-NAME=PPC64 ELFv1 ET_REL: TOC base auto-resolved from .toc + 0x8000 when .opd descriptor is unfilled
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-CMDS=ar r2
-EXPECT=<<EOF
-0x08008700
-EOF
-RUN
-
-NAME=PPC64 ELFv1 ET_REL: auto TOC base resolves addis+ld pair to a concrete data pointer
-FILE=bins/elf/ppc64v1-crc32_generic.ko
-ARGS=-e bin.relocs.apply=true
-CMDS=ao 2 @ 0x0800036c~ptr
-EXPECT=<<EOF
+--
 ptr: 0x08000700
 EOF
 RUN

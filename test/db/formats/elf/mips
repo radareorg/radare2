@@ -65,18 +65,17 @@ sw sp, 0x18(sp)
 EOF
 RUN
 
+# merged: mips defined global GOT slot gets named reloc in section-less elf
 NAME=mips implicit global GOT slots get named relocs
 FILE=bins/elf/boa-mips
-CMDS=ir~strftime[0,4]
+CMDS=<<EOF
+ir~strftime[0,4]
+?e --
+ir~tc_meter_enable[0,4]
+EOF
 EXPECT=<<EOF
 0x004f4ac0 strftime
-EOF
-RUN
-
-NAME=mips defined global GOT slot gets named reloc in section-less elf
-FILE=bins/elf/boa-mips
-CMDS=ir~tc_meter_enable[0,4]
-EXPECT=<<EOF
+--
 0x004f50ac tc_meter_enable
 EOF
 RUN

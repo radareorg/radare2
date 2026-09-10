@@ -1,161 +1,104 @@
+# merged: ELF v1 exec: import getopt_long resolves to GLINK lazy PLT stub; ELF v1 exec: no bogus 0xffffff import addresses; ELF v1 exec: FUNC import count matches JMP_SLOT reloc count; ELF v1 exec: first GLINK stub address (feof, index 0); ELF v1 exec: last GLINK stub address (kill, last index); ELF v1 exec: __gmon_start__ NOTYPE import gets GLINK stub address; ELF v1 exec: direct-PLT imports yield no spurious stub names
 NAME=ELF v1 exec: import fileno resolves to GLINK lazy PLT stub not PLT slot
 FILE=bins/elf/ppc64v1-more
-CMDS=ii~fileno[1]
+CMDS=<<EOF
+ii~fileno[1]
+?e --
+ii~getopt_long[1]
+?e --
+ii~0xffffff
+?e --
+ii~FUNC~?
+?e --
+ii~feof[1]
+?e --
+ii~kill[1]
+?e --
+ii~__gmon_start__[1]
+?e --
+e bin.relocs.apply=true
+aa
+afl~sub.?
+EOF
 EXPECT=<<EOF
 0x0000db7c
-EOF
-RUN
-
-NAME=ELF v1 exec: import getopt_long resolves to GLINK lazy PLT stub
-FILE=bins/elf/ppc64v1-more
-CMDS=ii~getopt_long[1]
-EXPECT=<<EOF
+--
 0x0000db0c
+--
+--
+112
+--
+0x0000db04
+--
+0x0000de84
+--
+0x0000dc94
+--
+0
 EOF
 RUN
 
-NAME=ELF v1 exec: no bogus 0xffffff import addresses
-FILE=bins/elf/ppc64v1-more
-CMDS=ii~0xffffff
-EXPECT=<<EOF
-EOF
-RUN
-
+# merged: ELF v1 shared lib: import write stub address is in .text range; ELF v1 shared lib: no bogus 0xffffff import addresses; ELF v1 shared lib: R_PPC64_RELATIVE reloc at 0x2efb8 appears as ADD_64 not conversion error; ELF v1 shared lib: R_PPC64_ADDR64 reloc for __gmon_start__ appears as SET_64; ELF v1 shared lib: FUNC import count; ELF v1 shared lib: import call stub named after the import; ELF v1 shared lib: import stub call site renders the import name
 NAME=ELF v1 shared lib: import strlen resolves to lazy PLT stub in .text
 FILE=bins/elf/ppc64v1-libz.so
-CMDS=ii~strlen[1]
-EXPECT=<<EOF
-0x000194dc
-EOF
-RUN
-
-NAME=ELF v1 shared lib: import write stub address is in .text range
-FILE=bins/elf/ppc64v1-libz.so
-CMDS=ii~write[1]
-EXPECT=<<EOF
-0x000194ec
-EOF
-RUN
-
-NAME=ELF v1 shared lib: no bogus 0xffffff import addresses
-FILE=bins/elf/ppc64v1-libz.so
-CMDS=ii~0xffffff
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=ELF v1 shared lib: R_PPC64_RELATIVE reloc at 0x2efb8 appears as ADD_64 not conversion error
-FILE=bins/elf/ppc64v1-libz.so
-CMDS=ir~0x0002efb8[2]
-EXPECT=<<EOF
-ADD_64
-EOF
-RUN
-
-NAME=ELF v1 shared lib: R_PPC64_ADDR64 reloc for __gmon_start__ appears as SET_64
-FILE=bins/elf/ppc64v1-libz.so
-CMDS=ir~__gmon_start__[2]
-EXPECT=<<EOF
-SET_64
-SET_64
-EOF
-RUN
-
-NAME=ELF v1 exec: FUNC import count matches JMP_SLOT reloc count
-FILE=bins/elf/ppc64v1-more
-CMDS=ii~FUNC~?
-EXPECT=<<EOF
-112
-EOF
-RUN
-
-NAME=ELF v1 shared lib: FUNC import count
-FILE=bins/elf/ppc64v1-libz.so
-CMDS=ii~FUNC~?
-EXPECT=<<EOF
-19
-EOF
-RUN
-
-NAME=ELF v1 exec: first GLINK stub address (feof, index 0)
-FILE=bins/elf/ppc64v1-more
-CMDS=ii~feof[1]
-EXPECT=<<EOF
-0x0000db04
-EOF
-RUN
-
-NAME=ELF v1 exec: last GLINK stub address (kill, last index)
-FILE=bins/elf/ppc64v1-more
-CMDS=ii~kill[1]
-EXPECT=<<EOF
-0x0000de84
-EOF
-RUN
-
-NAME=ELF v1 exec: __gmon_start__ NOTYPE import gets GLINK stub address
-FILE=bins/elf/ppc64v1-more
-CMDS=ii~__gmon_start__[1]
-EXPECT=<<EOF
-0x0000dc94
-EOF
-RUN
-
-NAME=ELF v2: imports still work with GLINK path (system)
-FILE=bins/elf/ppc64_sudoku_dwarf
-CMDS=ii~system[1]
-EXPECT=<<EOF
-0x10001d1c
-EOF
-RUN
-
-NAME=ELF v2: no bogus 0xffffff import addresses
-FILE=bins/elf/ppc64_sudoku_dwarf
-CMDS=ii~0xffffff
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=ELF v1 shared lib: import call stub named after the import
-FILE=bins/elf/ppc64v1-libz.so
-CMDS=<<EOF2
+CMDS=<<EOF
+ii~strlen[1]
+?e --
+ii~write[1]
+?e --
+ii~0xffffff
+?e --
+ir~0x0002efb8[2]
+?e --
+ir~__gmon_start__[2]
+?e --
+ii~FUNC~?
+?e --
 e bin.relocs.apply=true
 aa
 afi @ 0x3c60 ~name[1]
 afi @ 0x3d00 ~name[1]
-EOF2
-EXPECT=<<EOF2
-sym.plt.memcpy
-sym.plt.malloc
-EOF2
-RUN
-
-NAME=ELF v1 shared lib: import stub call site renders the import name
-FILE=bins/elf/ppc64v1-libz.so
-CMDS=<<EOF2
+?e --
 e bin.relocs.apply=true
 aa
 pi 1 @ 0x7be8
-EOF2
-EXPECT=<<EOF2
+EOF
+EXPECT=<<EOF
+0x000194dc
+--
+0x000194ec
+--
+--
+ADD_64
+--
+SET_64
+SET_64
+--
+19
+--
+sym.plt.memcpy
+sym.plt.malloc
+--
 bl sym.plt.memcpy
-EOF2
+EOF
+RUN
+
+# merged: ELF v2: no bogus 0xffffff import addresses
+NAME=ELF v2: imports still work with GLINK path (system)
+FILE=bins/elf/ppc64_sudoku_dwarf
+CMDS=<<EOF
+ii~system[1]
+?e --
+ii~0xffffff
+EOF
+EXPECT=<<EOF
+0x10001d1c
+--
+EOF
 RUN
 
 NAME=ELF v1 shared lib: text stubs are bin-named so autoname has none left
 FILE=bins/elf/ppc64v1-libz.so
-CMDS=<<EOF2
-e bin.relocs.apply=true
-aa
-afl~sub.?
-EOF2
-EXPECT=<<EOF2
-0
-EOF2
-RUN
-
-NAME=ELF v1 exec: direct-PLT imports yield no spurious stub names
-FILE=bins/elf/ppc64v1-more
 CMDS=<<EOF2
 e bin.relocs.apply=true
 aa

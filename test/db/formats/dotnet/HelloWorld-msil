@@ -96,6 +96,7 @@ api-ms-win-crt-math-l1-1-0.dll
 EOF
 RUN
 
+# merged: .NET HelloWorld.msil.exe classes
 NAME=.NET HelloWorld.msil.exe symbols
 FILE=bins/dotnet/HelloWorld.msil.exe
 CMDS=<<EOF
@@ -103,6 +104,8 @@ echo imports
 ii
 echo symbols
 is
+?e --
+ic
 EOF
 EXPECT=<<EOF
 imports
@@ -355,13 +358,6 @@ nth paddr      vaddr       bind type size lib                               name
 1   0x00017028 0x140018228 NONE FUNC 0    api-ms-win-crt-convert-l1-1-0.dll imp.wcstoul
 2   0x00017030 0x140018230 NONE FUNC 0    api-ms-win-crt-convert-l1-1-0.dll imp._wtoi
 1   0x000170c8 0x1400182c8 NONE FUNC 0    api-ms-win-crt-math-l1-1-0.dll    imp.__setusermatherr
+--
 EOF
-RUN
-
-NAME=.NET HelloWorld.msil.exe classes
-FILE=bins/dotnet/HelloWorld.msil.exe
-CMDS=<<EOF
-ic
-EOF
-EXPECT=
 RUN

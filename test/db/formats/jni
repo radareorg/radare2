@@ -23,23 +23,18 @@ struct
 EOF
 RUN
 
+# merged: jni jobjectRefType enum
 NAME=jni types not loaded without android
 FILE=bins/elf/jni/jniO0-arm64
 CMDS=<<EOF
 tk jboolean
 tk JNINativeInterface
-EOF
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=jni jobjectRefType enum
-FILE=bins/elf/jni/jniO0-arm64
-CMDS=<<EOF
+?e --
 e asm.os=android
 te jobjectRefType
 EOF
 EXPECT=<<EOF
+--
 JNIInvalidRefType = 0x0
 JNILocalRefType = 0x1
 JNIGlobalRefType = 0x2

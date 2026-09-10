@@ -5,21 +5,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: ELF: bomb - pi 1
 NAME=ELF: bomb - entrypoint
 FILE=bins/elf/bomb
-CMDS=s
-EXPECT=<<EOF
-0x400c90
-EOF
-RUN
-
-NAME=ELF: bomb - pi 1
-FILE=bins/elf/bomb
 CMDS=<<EOF
+s
+?e --
 e asm.sub.names=false
 pi 1
 EOF
 EXPECT=<<EOF
+0x400c90
+--
 xor ebp, ebp
 EOF
 RUN

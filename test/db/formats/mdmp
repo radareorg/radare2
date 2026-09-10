@@ -1,15 +1,20 @@
+# merged: : info; : version info; : sections; : entrypoints nomem .dmp
 NAME=: open
 FILE=bins/mdmp/calc.dmp
-CMDS=i~format
+CMDS=<<EOF
+i~format
+?e --
+iI
+?e --
+iV
+?e --
+iS~calc
+?e --
+ie
+EOF
 EXPECT=<<EOF
 format   mdmp
-EOF
-RUN
-
-NAME=: info
-FILE=bins/mdmp/calc.dmp
-CMDS=iI
-EXPECT=<<EOF
+--
 arch     x86
 binsz    36724
 bintype  mdmp
@@ -37,64 +42,51 @@ streams  13
 stripped false
 uncaps   false
 va       true
-EOF
-RUN
-
-NAME=: embedded symbol language
-FILE=bins/mdmp/hello.dmp
-CMDS=e bin.lang
-EXPECT=<<EOF
-msvc
-EOF
-RUN
-
-NAME=: version info
-FILE=bins/mdmp/calc.dmp
-CMDS=iV
-EXPECT=<<EOF
+--
   Windows NT Workstation 6.1.7601.23543
   Major: 6
   Minor: 1
   Build: 7601
   Revision: 23543
   Product Type: Workstation
-EOF
-RUN
-
-NAME=: sections
-FILE=bins/mdmp/calc.dmp
-CMDS=iS~calc
-EXPECT=<<EOF
+--
 9   0x00000000   0xe3000 0xfffe0000      0xe3000 ---- 0x0   ---- C:\Windows\System32\calc.exe
+--
 EOF
 RUN
 
-NAME=: entrypoints nomem .dmp
-FILE=bins/mdmp/calc.dmp
-CMDS=ie
-EXPECT=
-RUN
-
-NAME=: resolve vaddr to paddr
+# merged: : resolve vaddr to paddr; : 32bit - resources; : 32bit - libraries count; : 32bit - libraries resolving; : 32bit - entrypoints count; : 32bit - entrypoints resolving; : 32bit - symbols count
+NAME=: embedded symbol language
 FILE=bins/mdmp/hello.dmp
-CMDS=px 64 @ 0x00400000
+CMDS=<<EOF
+e bin.lang
+?e --
+px 64 @ 0x00400000
+?e --
+iuq
+iuj~{}~origin~hello.exe
+iuj~{}~origin~ntdll.dll
+?e --
+il~?
+?e --
+il~kernel32.dll
+?e --
+ie~?
+iee~?
+?e --
+ie~0x004014e0
+?e --
+is~?
+EOF
 EXPECT=<<EOF
+msvc
+--
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00400000  4d5a 9000 0300 0000 0400 0000 ffff 0000  MZ..............
 0x00400010  b800 0000 0000 0000 4000 0000 0000 0000  ........@.......
 0x00400020  0000 0000 0000 0000 0000 0000 0000 0000  ................
 0x00400030  0000 0000 0000 0000 0000 0000 8000 0000  ................
-EOF
-RUN
-
-NAME=: 32bit - resources
-FILE=bins/mdmp/hello.dmp
-CMDS=<<EOF
-iuq
-iuj~{}~origin~hello.exe
-iuj~{}~origin~ntdll.dll
-EOF
-EXPECT=<<EOF
+--
 0x00409058 1167 MANIFEST 1
 0x75d93460 208 UNKNOWN (160) 1
 0x75d930b0 940 VERSION 1
@@ -109,6 +101,17 @@ EXPECT=<<EOF
     "origin": "ntdll.dll"
     "origin": "ntdll.dll"
     "origin": "ntdll.dll"
+--
+57
+--
+[0x00400000] - kernel32.dll
+--
+11
+4
+--
+0x000990b2 0x004014e0 0x00097c7a ---------- program
+--
+7468
 EOF
 RUN
 
@@ -156,110 +159,41 @@ pf.mdmp_vs_fixedfileinfo ddddddddddddd dwSignature dwStrucVersion dwFileVersionM
 EOF
 RUN
 
-NAME=: 32bit - libraries count
-FILE=bins/mdmp/hello.dmp
-CMDS=il~?
-EXPECT=<<EOF
-57
-EOF
-RUN
-
-NAME=: 32bit - libraries resolving
-FILE=bins/mdmp/hello.dmp
-CMDS=il~kernel32.dll
-EXPECT=<<EOF
-[0x00400000] - kernel32.dll
-EOF
-RUN
-
-NAME=: 32bit - entrypoints count
-FILE=bins/mdmp/hello.dmp
-CMDS=<<EOF
-ie~?
-iee~?
-EOF
-EXPECT=<<EOF
-11
-4
-EOF
-RUN
-
-NAME=: 32bit - entrypoints resolving
-FILE=bins/mdmp/hello.dmp
-CMDS=ie~0x004014e0
-EXPECT=<<EOF
-0x000990b2 0x004014e0 0x00097c7a ---------- program
-EOF
-RUN
-
-NAME=: 32bit - symbols count
-FILE=bins/mdmp/hello.dmp
-CMDS=is~?
-EXPECT=<<EOF
-7468
-EOF
-RUN
-
+# merged: : 32bit - symbols resolving 2; : 32bit - imports count; : 32bit - imports resolving; : 32bit - exports count; : 32bit - exports resolving; : 32bit - relocs count; : 32bit - relocs resolving
 NAME=: 32bit - symbols resolving 1
 FILE=bins/mdmp/hello.dmp
-CMDS=is~DeleteCriticalSection:0
+CMDS=<<EOF
+is~DeleteCriticalSection:0
+?e --
+is~RtlDeleteCriticalSection:0
+?e --
+ii~?
+?e --
+ii~TerminateProcess~KERNEL32.dll
+?e --
+iE~?
+?e --
+iE~Ordinal_1
+?e --
+ir~?
+?e --
+ir~__dllonexit
+EOF
 EXPECT=<<EOF
 1    0x0009dcda 0x00406108 NONE   FUNC 0    KERNEL32.dll                                  imp.DeleteCriticalSection
-EOF
-RUN
-
-NAME=: 32bit - symbols resolving 2
-FILE=bins/mdmp/hello.dmp
-CMDS=is~RtlDeleteCriticalSection:0
-EXPECT=<<EOF
+--
 358  0x001c2176 0x76fb05a4 NONE   FUNC 0    ntdll.dll                                     imp.RtlDeleteCriticalSection
-EOF
-RUN
-
-NAME=: 32bit - imports count
-FILE=bins/mdmp/hello.dmp
-CMDS=ii~?
-EXPECT=<<EOF
+--
 2030
-EOF
-RUN
-
-NAME=: 32bit - imports resolving
-FILE=bins/mdmp/hello.dmp
-CMDS=ii~TerminateProcess~KERNEL32.dll
-EXPECT=<<EOF
+--
 17  0x00406148 NONE FUNC KERNEL32.dll                                  TerminateProcess
-EOF
-RUN
-
-NAME=: 32bit - exports count
-FILE=bins/mdmp/hello.dmp
-CMDS=iE~?
-EXPECT=<<EOF
+--
 5440
-EOF
-RUN
-
-NAME=: 32bit - exports resolving
-FILE=bins/mdmp/hello.dmp
-CMDS=iE~Ordinal_1
-EXPECT=<<EOF
+--
 1    0x0041f1f2 0x77802620 GLOBAL FUNC 0    ntdll.dll      Ordinal_1
-EOF
-RUN
-
-NAME=: 32bit - relocs count
-FILE=bins/mdmp/hello.dmp
-CMDS=ir~?
-EXPECT=<<EOF
+--
 2030
-EOF
-RUN
-
-NAME=: 32bit - relocs resolving
-FILE=bins/mdmp/hello.dmp
-CMDS=ir~__dllonexit
-EXPECT=<<EOF
+--
 0x00406160 0x0009dd32 SET_32 0     msvcrt.dll___dllonexit
 EOF
 RUN
@@ -293,21 +227,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: : 64bit - resources; : 64bit - libraries resolving; : 64bit - entrypoints count; : 64bit - entrypoints resolving; : 64bit - symbols count; : 64bit - symbols resolving 1; : 64bit - symbols resolving 2
 NAME=: 64bit - libraries count
 FILE=bins/mdmp/hello64.dmp
-CMDS=il~?
-EXPECT=<<EOF
-49
-EOF
-RUN
-
-NAME=: 64bit - resources
-FILE=bins/mdmp/hello64.dmp
 CMDS=<<EOF
+il~?
+?e --
 iuq
 iuj~{}~origin~hello64.exe
+?e --
+il~kernel32.dll
+?e --
+ie~?
+?e --
+ie=~0x00401500
+?e --
+is~?
+?e --
+is~imp.DeleteCriticalSection~KERNEL32.dll
+?e --
+is~A_SHAFinal
 EOF
 EXPECT=<<EOF
+49
+--
 0x0040b058 1167 MANIFEST 1
 0x778c7f60 200 UNKNOWN (232) 1
 0x7786e470 367340 MESSAGETABLE 1
@@ -318,131 +261,54 @@ EXPECT=<<EOF
 0x7fefd5080b0 940 VERSION 1
 0x7fefdb4d060 916 VERSION 1
     "origin": "hello64.exe"
-EOF
-RUN
-
-NAME=: 64bit - libraries resolving
-FILE=bins/mdmp/hello64.dmp
-CMDS=il~kernel32.dll
-EXPECT=<<EOF
+--
 [0x00400000] - kernel32.dll
-EOF
-RUN
-
-NAME=: 64bit - entrypoints count
-FILE=bins/mdmp/hello64.dmp
-CMDS=ie~?
-EXPECT=<<EOF
+--
 7
-EOF
-RUN
-
-NAME=: 64bit - entrypoints resolving
-FILE=bins/mdmp/hello64.dmp
-CMDS=ie=~0x00401500
-EXPECT=<<EOF
+--
 paddr=0x0009418f vaddr=0x00401500 haddr=0x00092d37 type=program
-EOF
-RUN
-
-NAME=: 64bit - symbols count
-FILE=bins/mdmp/hello64.dmp
-CMDS=is~?
-EXPECT=<<EOF
+--
 6826
-EOF
-RUN
-
-NAME=: 64bit - symbols resolving 1
-FILE=bins/mdmp/hello64.dmp
-CMDS=is~imp.DeleteCriticalSection~KERNEL32.dll
-EXPECT=<<EOF
+--
 1    0x0009ae8b 0x004081fc    NONE   FUNC 0    KERNEL32.dll                                  imp.DeleteCriticalSection
-EOF
-RUN
-
-NAME=: 64bit - symbols resolving 2
-FILE=bins/mdmp/hello64.dmp
-CMDS=is~A_SHAFinal
-EXPECT=<<EOF
+--
 9    0x001eb87f 0x77728bf0    GLOBAL FUNC 0    ntdll.dll                                     A_SHAFinal
 EOF
 RUN
 
+# merged: : 64bit - imports resolving; : 64bit - exports count; : 64bit - exports resolving; : 64bit - relocs count; : 64bit - relocs resolving; : 64bit - strings count
 NAME=: 64bit - imports count
 FILE=bins/mdmp/hello64.dmp
-CMDS=ii~?
-EXPECT=<<EOF
-1511
-EOF
-RUN
-
-NAME=: 64bit - imports resolving
-FILE=bins/mdmp/hello64.dmp
-CMDS=ii~KERNEL32.dll~GetCurrentProcessId
-EXPECT=<<EOF
-4   0x00408214    NONE FUNC KERNEL32.dll                                  GetCurrentProcessId
-EOF
-RUN
-
-NAME=: 64bit - exports count
-FILE=bins/mdmp/hello64.dmp
-CMDS=iE~?
-EXPECT=<<EOF
-5317
-EOF
-RUN
-
-NAME=: 64bit - exports resolving
-FILE=bins/mdmp/hello64.dmp
-CMDS=iE~CsrVerifyRegion
-EXPECT=<<EOF
-39   0x0029513f 0x777d24b0    GLOBAL FUNC 0    ntdll.dll      CsrVerifyRegion
-EOF
-RUN
-
-NAME=: 64bit - relocs count
-FILE=bins/mdmp/hello64.dmp
-CMDS=ir~?
-EXPECT=<<EOF
-1511
-EOF
-RUN
-
-NAME=: 64bit - relocs resolving
-FILE=bins/mdmp/hello64.dmp
-CMDS=ir~KERNEL32.dll_DeleteCriticalSection
-EXPECT=<<EOF
-0x004081fc    0x0009ae8b SET_64 0     KERNEL32.dll_DeleteCriticalSection
-EOF
-RUN
-
-NAME=: 64bit - relocs following
-REQUIRE=network
-FILE=bins/mdmp/hello64.dmp
-CMDS=pd 9 @[0x004083ac]
-EXPECT=<<EOF
-            ;-- vfprintf:
-            0x7fefdb0a1a4      4883ec38       sub rsp, 0x38
-            0x7fefdb0a1a8      4c89442420     mov qword [rsp + 0x20], r8
-            0x7fefdb0a1ad      4c8bc2         mov r8, rdx
-            0x7fefdb0a1b0      488bd1         mov rdx, rcx
-            0x7fefdb0a1b3      488d0dea7f..   lea rcx, [0x7fefdab21a4]
-            0x7fefdb0a1ba      4533c9         xor r9d, r9d
-            0x7fefdb0a1bd      e87efdffff     call 0x7fefdb09f40
-            0x7fefdb0a1c2      4883c438       add rsp, 0x38
-            0x7fefdb0a1c6      c3             ret
-EOF
-RUN
-
-NAME=: 64bit - strings count
-FILE=bins/mdmp/hello64.dmp
 CMDS=<<EOF
+ii~?
+?e --
+ii~KERNEL32.dll~GetCurrentProcessId
+?e --
+iE~?
+?e --
+iE~CsrVerifyRegion
+?e --
+ir~?
+?e --
+ir~KERNEL32.dll_DeleteCriticalSection
+?e --
 iz~?
 izq~Alpc
 izq~Timer
 EOF
 EXPECT=<<EOF
+1511
+--
+4   0x00408214    NONE FUNC KERNEL32.dll                                  GetCurrentProcessId
+--
+5317
+--
+39   0x0029513f 0x777d24b0    GLOBAL FUNC 0    ntdll.dll      CsrVerifyRegion
+--
+1511
+--
+0x004081fc    0x0009ae8b SET_64 0     KERNEL32.dll_DeleteCriticalSection
+--
 22877
 0x77820352 10 4 Alpc
 0x77825ffd 41 40 AlpcAdjustCompletionListConcurrencyCount
@@ -671,6 +537,24 @@ EXPECT=<<EOF
 0x7fefd4f6ff0 13 12 NtSetTimerEx
 0x7fefd4f7000 14 13 NtCancelTimer
 0x7fefd4f871c 13 12 TpAllocTimer
+EOF
+RUN
+
+NAME=: 64bit - relocs following
+REQUIRE=network
+FILE=bins/mdmp/hello64.dmp
+CMDS=pd 9 @[0x004083ac]
+EXPECT=<<EOF
+            ;-- vfprintf:
+            0x7fefdb0a1a4      4883ec38       sub rsp, 0x38
+            0x7fefdb0a1a8      4c89442420     mov qword [rsp + 0x20], r8
+            0x7fefdb0a1ad      4c8bc2         mov r8, rdx
+            0x7fefdb0a1b0      488bd1         mov rdx, rcx
+            0x7fefdb0a1b3      488d0dea7f..   lea rcx, [0x7fefdab21a4]
+            0x7fefdb0a1ba      4533c9         xor r9d, r9d
+            0x7fefdb0a1bd      e87efdffff     call 0x7fefdb09f40
+            0x7fefdb0a1c2      4883c438       add rsp, 0x38
+            0x7fefdb0a1c6      c3             ret
 EOF
 RUN
 

@@ -1,8 +1,15 @@
+# merged: ELF: sym.main
 NAME=ELF: entrypoint
 FILE=bins/elf/analysis/pie
-CMDS=ie=~addr
+CMDS=<<EOF
+ie=~addr
+?e --
+?v sym.main
+EOF
 EXPECT=<<EOF
 paddr=0x00000450 vaddr=0x00000450 haddr=0x00000018 vhaddr=0x00000018 type=program
+--
+0x5c5
 EOF
 RUN
 
@@ -30,14 +37,6 @@ baddr    0x300000
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
 0x00000450 0x00300450 0x00000018 0x00300018 program
-EOF
-RUN
-
-NAME=ELF: sym.main
-FILE=bins/elf/analysis/pie
-CMDS=?v sym.main
-EXPECT=<<EOF
-0x5c5
 EOF
 RUN
 

@@ -700,13 +700,21 @@ vaddr      paddr      type   ntype name
 EOF
 RUN
 
+# merged: ELF: call graph names an import called through its GOT slot under bin.relocs.apply
 NAME=ELF: relocs.apply keeps symbol-less relocs at their site
 FILE=bins/elf/ls
 ARGS=-e bin.relocs.apply=true
-CMDS=ir~ADD_64:0..2
+CMDS=<<EOF
+ir~ADD_64:0..2
+?e --
+af @ entry0
+agcj~{[0].imports}
+EOF
 EXPECT=<<EOF
 0x00021050 0x00020050 ADD_64 8      0x00005bd0
 0x00021058 0x00020058 ADD_64 8      0x00005b80
+--
+["reloc.__libc_start_main"]
 EOF
 RUN
 
@@ -742,18 +750,6 @@ EXPECT=<<EOF
 0x0021cf88 0x0001cf88 SET_64 6     _ITM_deregisterTMCloneTable
 reloc._ITM_deregisterTMCloneTable
 mov rax, qword [reloc._ITM_deregisterTMCloneTable]
-EOF
-RUN
-
-NAME=ELF: call graph names an import called through its GOT slot under bin.relocs.apply
-FILE=bins/elf/ls
-ARGS=-e bin.relocs.apply=true
-CMDS=<<EOF
-af @ entry0
-agcj~{[0].imports}
-EOF
-EXPECT=<<EOF
-["reloc.__libc_start_main"]
 EOF
 RUN
 
@@ -865,14 +861,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: ELF: ET_REL import slots sit below the .bss flag under a custom base
 NAME=ELF: import at a code site keeps its got.r2 slot under a custom base
 FILE=bins/elf/test.ko
 ARGS=-B 0x100000000 -e bin.relocs.apply=true
 CMDS=<<EOF
 ir~__fentry__
+?e --
+om~.got.r2[4,6]
+f~section..bss
 EOF
 EXPECT=<<EOF
 0x100000b0f 0x0000007d ADD_32 4     __fentry__ - 0x08000081
+--
+0x100000b0f 0x100000b5e
+0x100001050 0 section..bss
 EOF
 RUN
 
@@ -998,19 +1001,6 @@ EXPECT=<<EOF
 0x080384db 0x08040e2a
 4   0x00040e40      0x0 0x08040e40  0x618a0 -rw- 0x3   NOBITS   .bss
 8   0x00040e40 0x08040e40 LOCAL  OBJ    8          rabin_cmd
-EOF
-RUN
-
-NAME=ELF: ET_REL import slots sit below the .bss flag under a custom base
-FILE=bins/elf/test.ko
-ARGS=-B 0x100000000 -e bin.relocs.apply=true
-CMDS=<<EOF
-om~.got.r2[4,6]
-f~section..bss
-EOF
-EXPECT=<<EOF
-0x100000b0f 0x100000b5e
-0x100001050 0 section..bss
 EOF
 RUN
 

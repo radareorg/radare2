@@ -5,26 +5,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: corrupted section data; decoding the thunk table
 NAME=entrypoint decoding
 FILE=bins/xbe/default.xbe
-CMDS=ie=~addr
+CMDS=<<EOF
+ie=~addr
+?e --
+p8 16
+?e --
+is
+EOF
 EXPECT=<<EOF
 paddr=0x00001000 vaddr=0x00011000 haddr=-1 type=program
-EOF
-RUN
-
-NAME=corrupted section data
-FILE=bins/xbe/default.xbe
-CMDS=p8 16
-EXPECT=<<EOF
+--
 81ec08040000535556576a01e88f0100
-EOF
-RUN
-
-NAME=decoding the thunk table
-FILE=bins/xbe/default.xbe
-CMDS=is
-EXPECT=<<EOF
+--
 nth paddr      vaddr      bind type size lib name       demangled
 -----------------------------------------------------------------
 0   0x000016c0 0x000116c0 NONE NONE 4        kt.sprintf
