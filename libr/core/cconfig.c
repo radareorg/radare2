@@ -4173,7 +4173,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETS ("anal.plugins.pre", "", "ordered comma-separated list of analysis plugins for pre_analysis callbacks");
 	SETS ("anal.plugins.fcn", "", "ordered comma-separated list of analysis plugins for analyze_fcn callbacks");
 	SETS ("anal.plugins.vars", "", "ordered comma-separated list of analysis plugins for recover_vars callbacks");
-	SETS ("anal.plugins.datarefs", "", "ordered comma-separated list of analysis plugins for get_data_refs callbacks");
 	SETS ("anal.plugins.post", "", "ordered comma-separated list of analysis plugins for post_analysis callbacks");
 
 	n = NODECB ("anal.cxxabi", "itanium", &cb_anal_cxxabi);

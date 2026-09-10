@@ -495,7 +495,6 @@ static int cmd_plugins(void *data, const char *input) {
 				}
 				pj_kb (pj, "analyze_fcn", item->analyze_fcn != NULL);
 				pj_kb (pj, "recover_vars", item->recover_vars != NULL);
-				pj_kb (pj, "get_data_refs", item->get_data_refs != NULL);
 				pj_kb (pj, "post_analysis", item->post_analysis != NULL);
 				pj_end (pj);
 					break;
