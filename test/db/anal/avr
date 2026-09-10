@@ -63,11 +63,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: avr functions 1
 NAME=avr DISasm: IO-Ports
 FILE=bins/firmware/arduino_avr.bin
-CMDS=pd 1 @ 0x00000170~?IO
+CMDS=<<EOF
+pd 1 @ 0x00000170~?IO
+?e --
+aeim
+e asm.arch=avr
+aaa
+axt 0x28a
+EOF
 EXPECT=<<EOF
 1
+--
+fcn.0000029e 0x328 [CODE:--x] jmp 0x28a
 EOF
 RUN
 
@@ -365,19 +375,6 @@ fcn.0000029e 0x328 [CODE] jmp 0x28a
 EOF
 RUN
 
-NAME=avr functions 1
-FILE=bins/firmware/arduino_avr.bin
-CMDS=<<EOF
-aeim
-e asm.arch=avr
-aaa
-axt 0x28a
-EOF
-EXPECT=<<EOF
-fcn.0000029e 0x328 [CODE:--x] jmp 0x28a
-EOF
-RUN
-
 NAME=avr functions 2
 FILE=-
 CMDS=<<EOF
@@ -395,46 +392,34 @@ int.00000000
 EOF
 RUN
 
+# merged: search asm commands with filter; search asm commands with filter and align = 2; Search rop gadgets for in command; Search rop gadgets for IN command with align=2
 NAME=search asm commands with internal grep
 FILE=bins/firmware/arduino_avr.bin
 ARGS=-a avr
-CMDS=/ad ldi~0x6d
-EXPECT=<<EOF
-0x00000276                 6de6  ldi r22, 0x6d
-EOF
-RUN
-
-NAME=search asm commands with filter
-FILE=bins/firmware/arduino_avr.bin
-ARGS=-a avr
-CMDS=/ad ldi ~ 0x18
-EXPECT=<<EOF
-0x00001672                 88e1  ldi r24, 0x18
-0x000019a4                 28e1  ldi r18, 0x18
-EOF
-RUN
-
-NAME=search asm commands with filter and align = 2
-FILE=bins/firmware/arduino_avr.bin
-ARGS=-a avr
 CMDS=<<EOF
+/ad ldi~0x6d
+?e --
+/ad ldi ~ 0x18
+?e --
 e search.align=2
 /ad in ~ 0x12
-EOF
-EXPECT=<<EOF
-0x00000282                 82b3  in r24, 0x12
-EOF
-RUN
-
-NAME=Search rop gadgets for in command
-FILE=bins/firmware/arduino_avr.bin
-ARGS=-a avr
-CMDS=<<EOF
+?e --
+aeim
+e search.align=2
+/g in r24
+?e --
 aeim
 e search.align=2
 /g in r24
 EOF
 EXPECT=<<EOF
+0x00000276                 6de6  ldi r22, 0x6d
+--
+0x00001672                 88e1  ldi r24, 0x18
+0x000019a4                 28e1  ldi r18, 0x18
+--
+0x00000282                 82b3  in r24, 0x12
+--
   0x00000280               7304  cpc r7, r3
   0x00000282               82b3  in r24, 0x12
   0x00000284               8058  subi r24, 0x80
@@ -461,18 +446,7 @@ EXPECT=<<EOF
   0x000005d8               85bd  out 0x25, r24
   0x000005da               0895  ret
 
-EOF
-RUN
-
-NAME=Search rop gadgets for IN command with align=2
-FILE=bins/firmware/arduino_avr.bin
-ARGS=-a avr
-CMDS=<<EOF
-aeim
-e search.align=2
-/g in r24
-EOF
-EXPECT=<<EOF
+--
   0x00000280               7304  cpc r7, r3
   0x00000282               82b3  in r24, 0x12
   0x00000284               8058  subi r24, 0x80
@@ -520,15 +494,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: avr search
 NAME=entry point and bin format - arduino
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 ?v $$
 i~arch[1]
+?e --
+aeim
+e asm.arch=avr
+aaa
+/ad call 0x4ec
 EOF
 EXPECT=<<EOF
 0x158
 avr
+--
+0x000003e2             0e947602  call fcn.000004ec
 EOF
 RUN
 
@@ -541,19 +523,6 @@ EOF
 EXPECT=<<EOF
 0x8a
 avr
-EOF
-RUN
-
-NAME=avr search
-FILE=bins/firmware/arduino_avr.bin
-CMDS=<<EOF
-aeim
-e asm.arch=avr
-aaa
-/ad call 0x4ec
-EOF
-EXPECT=<<EOF
-0x000003e2             0e947602  call fcn.000004ec
 EOF
 RUN
 
@@ -583,6 +552,7 @@ fcn.00000360 0x3e2 [CALL:--x] call fcn.000004ec
 EOF
 RUN
 
+# merged: detect false xrefs
 NAME=avr search 3
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
@@ -590,15 +560,7 @@ aeim
 e asm.arch=avr
 aaa
 axt 0x4ec
-EOF
-EXPECT=<<EOF
-fcn.00000360 0x3e2 [CALL:--x] call fcn.000004ec
-EOF
-RUN
-
-NAME=detect false xrefs
-FILE=bins/firmware/arduino_avr.bin
-CMDS=<<EOF
+?e --
 aeim
 e asm.arch=avr
 e asm.lines=false
@@ -606,6 +568,8 @@ aar
 pd 4 @ 4
 EOF
 EXPECT=<<EOF
+fcn.00000360 0x3e2 [CALL:--x] call fcn.000004ec
+--
 0x00000004      0c94db00       jmp 0x1b6
 0x00000008      0c94db00       jmp 0x1b6
 0x0000000c      0c94db00       jmp 0x1b6

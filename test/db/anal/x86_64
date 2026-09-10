@@ -955,14 +955,24 @@ EOF
 RUN
 
 
+# merged: axt capstone x86
 NAME=af-*
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 aa
 af-*
 afl
+?e --
+e asm.arch = x86
+e anal.arch = x86
+e scr.color=false
+e scr.wheel = false
+aa
+axt @ str.Hello_World
 EOF
 EXPECT=<<EOF
+--
+main 0x40050a [DATA:r--] mov edi, str.Hello_World
 EOF
 RUN
 
@@ -998,10 +1008,17 @@ nth paddr       size vaddr       vsize perm flags type name
 EOF
 RUN
 
+# merged: iE and iE. implementation
 NAME=iSj entropy
 FILE=bins/elf/lab1B
 CMDS=<<EOF
 iSj entropy~{}
+?e --
+s 0x080489b9
+iE.
+s 0x080489a6
+s+5
+isj.
 EOF
 EXPECT=<<EOF
 [
@@ -1312,19 +1329,7 @@ EXPECT=<<EOF
     "vaddr": 0
   }
 ]
-EOF
-RUN
-
-NAME=iE and iE. implementation
-FILE=bins/elf/lab1B
-CMDS=<<EOF
-s 0x080489b9
-iE.
-s 0x080489a6
-s+5
-isj.
-EOF
-EXPECT=<<EOF
+--
 nth paddr      vaddr      bind   type size lib name    demangled
 ----------------------------------------------------------------
 22  0x000009b7 0x080489b7 GLOBAL FUNC 189      decrypt
@@ -1389,14 +1394,26 @@ name: sym.call_gmon_start
 EOF
 RUN
 
+# merged: 2: Wrong calling convention
 NAME=anal/name
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 af
 afi~name
+?e --
+s entry0
+aaa
+afta
+Ct. @ 0x100001413
+Ct. @ 0x10000145b
+Ct. @ 0x100001460
 EOF
 EXPECT=<<EOF
 name: main
+--
+int category
+int fd
+unsigned long request
 EOF
 RUN
 
@@ -1828,6 +1845,7 @@ EOF
 BROKEN=1
 RUN
 
+# merged: 1: Wrong calling convention
 NAME=call not function
 FILE=bins/pe/crackme0x00.exe
 CMDS=<<EOF
@@ -1842,28 +1860,7 @@ s 0x00401370
 pd 1~char *s1?
 s 0x00401368
 pd 1~char *s2?
-EOF
-EXPECT=<<EOF
-1
-1
-EOF
-RUN
-
-NAME=Settings global calling convention
-FILE=bins/pe/msvcfindmain.exe
-CMDS=<<EOF
-e anal.cc=pascal
-aaa
-afi @@@F~?pascal
-EOF
-EXPECT=<<EOF
-65
-EOF
-RUN
-
-NAME=1: Wrong calling convention
-FILE=bins/pe/crackme0x00.exe
-CMDS=<<EOF
+?e --
 s entry0
 af
 tk CRTStartup=func
@@ -1876,23 +1873,21 @@ aeim
 aftm
 EOF
 EXPECT=<<EOF
+1
+1
+--
 EOF
 RUN
 
-NAME=2: Wrong calling convention
-FILE=bins/mach0/ls-osx-x86_64
+NAME=Settings global calling convention
+FILE=bins/pe/msvcfindmain.exe
 CMDS=<<EOF
-s entry0
+e anal.cc=pascal
 aaa
-afta
-Ct. @ 0x100001413
-Ct. @ 0x10000145b
-Ct. @ 0x100001460
+afi @@@F~?pascal
 EOF
 EXPECT=<<EOF
-int category
-int fd
-unsigned long request
+65
 EOF
 RUN
 
@@ -2218,27 +2213,22 @@ s 0x10002d8d
 EOF
 RUN
 
+# merged: afvb-ArgName
 NAME=afvbj
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
 af
 afvb 8 ImageHandle blah @ 0x10002d8d
 afvbj~?ImageHandle
-EOF
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=afvb-ArgName
-FILE=bins/efi/bootia32.efi
-CMDS=<<EOF
+?e --
 af
 afvb 8 ImageHandle blah @ 0x10002d8d
 afvb-ImageHandle
 afvb~?ImageHandle
 EOF
 EXPECT=<<EOF
+1
+--
 0
 EOF
 RUN
@@ -2258,6 +2248,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: afvr-name; afvb-* afvr-*
 NAME=afvr idx & afvr*
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
@@ -2265,29 +2256,12 @@ af
 afvr esi myreg int @ 0x10002d8d
 afvr*~?myreg
 afvr*~?int
-EOF
-EXPECT=<<EOF
-1
-1
-EOF
-RUN
-
-NAME=afvr-name
-FILE=bins/efi/bootia32.efi
-CMDS=<<EOF
+?e --
 af
 afvr esi myreg int @ 0x10002d8d
 afvr-myreg
 afvr~?myreg
-EOF
-EXPECT=<<EOF
-0
-EOF
-RUN
-
-NAME=afvb-* afvr-*
-FILE=bins/efi/bootia32.efi
-CMDS=<<EOF
+?e --
 af
 afvb-*
 afvr-*
@@ -2295,6 +2269,11 @@ afvb~?
 afvr~?
 EOF
 EXPECT=<<EOF
+1
+1
+--
+0
+--
 0
 0
 EOF
@@ -2323,15 +2302,23 @@ var char var_30h @ rbp-0x30
 EOF
 RUN
 
+# merged: t.anal/x86/aap
 NAME=anal vars rename
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 af
 afvn newname var_30h
 afvb~newname
+?e --
+f-sym.func.*
+aap
+pi 2 @ sub.strcoll
 EOF
 EXPECT=<<EOF
 var int64_t newname @ rbp-0x30
+--
+push rbp
+mov rbp, rsp
 EOF
 RUN
 
@@ -2382,21 +2369,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=axt capstone x86
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-e asm.arch = x86
-e anal.arch = x86
-e scr.color=false
-e scr.wheel = false
-aa
-axt @ str.Hello_World
-EOF
-EXPECT=<<EOF
-main 0x40050a [DATA:r--] mov edi, str.Hello_World
-EOF
-RUN
-
 # for some reason this test fails in the CI, but runs fine in mac/arm
 NAME=axt capstone x86: IOLI0
 FILE=bins/elf/ioli/crackme0x00
@@ -2414,6 +2386,7 @@ main 0x804843c [DATA:r--] mov dword [esp], str.Password:
 EOF
 RUN
 
+# merged: axt capstone x86: IOLI0 aaa vs aa
 NAME=axt capstone x86: IOLI0 aar vs aa
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
@@ -2423,15 +2396,7 @@ e scr.color=false
 e scr.wheel = false
 aar
 axt str.Password:
-EOF
-EXPECT=<<EOF
-(nofunc) 0x804843c [STRN:r--] mov dword [esp], str.Password:
-EOF
-RUN
-
-NAME=axt capstone x86: IOLI0 aaa vs aa
-FILE=bins/elf/ioli/crackme0x00
-CMDS=<<EOF
+?e --
 e asm.arch = x86
 e anal.arch = x86
 e scr.color=false
@@ -2440,6 +2405,8 @@ aaa
 axt str.Password:
 EOF
 EXPECT=<<EOF
+(nofunc) 0x804843c [STRN:r--] mov dword [esp], str.Password:
+--
 main 0x804843c [STRN:r--] mov dword [esp], str.Password:
 EOF
 RUN
@@ -3536,19 +3503,6 @@ ret
 EOF
 RUN
 
-NAME=t.anal/x86/aap
-FILE=bins/mach0/ls-osx-x86_64
-CMDS=<<EOF
-f-sym.func.*
-aap
-pi 2 @ sub.strcoll
-EOF
-EXPECT=<<EOF
-push rbp
-mov rbp, rsp
-EOF
-RUN
-
 NAME=mac-ls switch count
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
@@ -3952,27 +3906,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: ./noncode 2
 NAME=./noncode
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 e anal.in=io.maps.x
 afr
 afl~?str.
-EOF
-EXPECT=<<EOF
-0
-EOF
-RUN
-
-NAME=./noncode 2
-FILE=bins/mach0/ls-osx-x86_64
-CMDS=<<EOF
+?e --
 e anal.in=io.maps
 e anal.calls=true
 af
 afl~?str.
 EOF
 EXPECT=<<EOF
+0
+--
 0
 EOF
 RUN

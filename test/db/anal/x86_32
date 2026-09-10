@@ -1,6 +1,14 @@
+# merged: hang-on-aa/-aac fix (#15004)
 NAME=ao 10~bytes
 FILE=bins/pe/15004.file
-CMDS=ao 10~bytes
+CMDS=<<EOF
+ao 10~bytes
+?e --
+e anal.vars.stackname=true
+aa
+e asm.var=false
+pdb
+EOF
 EXPECT=<<EOF
 bytes: e8d8170000
 bytes: 8d642444
@@ -12,6 +20,11 @@ bytes: 8d81c6140e8f
 bytes: 50
 bytes: 891c24
 bytes: 9c
+--
+/ 337: entry0 (int32_t arg_0h, int32_t arg_4h, int32_t arg_18h, int32_t arg_1ch, int32_t arg_28h, int32_t arg_2ch, int32_t arg_30h, int32_t arg_44h, int32_t arg_50h, int32_t arg_78h, int32_t arg_7ch, int32_t arg_80h, int32_t arg_84h, int32_t arg_c8h);
+|           0x006453a1      e8d8170000     call fcn.00646b7e
+|           0x006453a6      8d642444       lea esp, [arg_44h]
+|       ,=< 0x006453aa      0f85a6300000   jne 0x648456
 EOF
 RUN
 
@@ -84,22 +97,6 @@ afvR @ 0
 EOF
 EXPECT=<<EOF
       arg1  0x0
-EOF
-RUN
-
-NAME=hang-on-aa/-aac fix (#15004)
-FILE=bins/pe/15004.file
-CMDS=<<EOF
-e anal.vars.stackname=true
-aa
-e asm.var=false
-pdb
-EOF
-EXPECT=<<EOF
-/ 337: entry0 (int32_t arg_0h, int32_t arg_4h, int32_t arg_18h, int32_t arg_1ch, int32_t arg_28h, int32_t arg_2ch, int32_t arg_30h, int32_t arg_44h, int32_t arg_50h, int32_t arg_78h, int32_t arg_7ch, int32_t arg_80h, int32_t arg_84h, int32_t arg_c8h);
-|           0x006453a1      e8d8170000     call fcn.00646b7e
-|           0x006453a6      8d642444       lea esp, [arg_44h]
-|       ,=< 0x006453aa      0f85a6300000   jne 0x648456
 EOF
 RUN
 
@@ -759,26 +756,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: mac-ls switch count2
 NAME=mac-ls main switch
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 s main;af
 f~switch
 f~?case
-EOF
-EXPECT=<<EOF
-0x1000011b5 1 switch.0x1000011b5
-73
-EOF
-RUN
-
-NAME=mac-ls switch count2
-FILE=bins/mach0/mac-ls
-CMDS=<<EOF
+?e --
 aaa
 f~?case
 EOF
 EXPECT=<<EOF
+0x1000011b5 1 switch.0x1000011b5
+73
+--
 91
 EOF
 RUN
@@ -1562,21 +1554,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: resolve reloc symbols 2
 NAME=resolve reloc symbols 1
 FILE=bins/elf/libc.so.6
 CMDS=<<EOF
 s 0x0003a4af
 pd 1
+?e --
+ir~0x[4]
 EOF
 EXPECT=<<EOF
             0x0003a4af      ff15f33a1800   call qword [reloc.free]     ; [0x1bdfa8:8]=0
-EOF
-RUN
-
-NAME=resolve reloc symbols 2
-FILE=bins/elf/libc.so.6
-CMDS=ir~0x[4]
-EXPECT=<<EOF
+--
 0x001bf3c0
 _res
 0x00023a90

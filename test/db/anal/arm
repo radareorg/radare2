@@ -594,25 +594,20 @@ jump: 0x80000000
 EOF
 RUN
 
+# merged: ELF ARM: function names 2
 NAME=ELF ARM: function names
 FILE=bins/elf/analysis/arm_32_flags0
 CMDS=<<EOF
 s sym.call_weak_fn
 af
 afi~name
-EOF
-EXPECT=<<EOF
-name: sym.call_weak_fn
-EOF
-RUN
-
-NAME=ELF ARM: function names 2
-FILE=bins/elf/analysis/arm_32_flags0
-CMDS=<<EOF
+?e --
 aa
 afl~abort
 EOF
 EXPECT=<<EOF
+name: sym.call_weak_fn
+--
 0x000102bc    1     12 sym.imp.abort
 EOF
 RUN
@@ -950,6 +945,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: arm aae with bit switch
 NAME=ao 16 after ao 32
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
@@ -957,6 +953,11 @@ e asm.bits=16
 ao@0x568
 ?e --
 ao@0x50e
+?e --
+aei
+e asm.bits=32
+aae 20 @ main
+pd 9 @ main
 EOF
 EXPECT=<<EOF
 address: 0x568
@@ -993,18 +994,7 @@ type: add
 cycles: 1
 esil: 0,sp,+,0xffffffff,&,r7,=
 family: cpu
-EOF
-RUN
-
-NAME=arm aae with bit switch
-FILE=bins/arm/elf/hello_world
-CMDS=<<EOF
-aei
-e asm.bits=32
-aae 20 @ main
-pd 9 @ main
-EOF
-EXPECT=<<EOF
+--
             ;-- main:
             0x0000050c      80b5           push {r7, lr}
             0x0000050e      00af           add r7, sp, 0
@@ -1035,12 +1025,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: Function definition
 NAME=arm jmptbl flags and comments
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 af@sym.__gcc_personality_v0
 f~switch.,case.
 CC~switch
+?e --
+afr @ main
+s 0x000082cc
+pd 1~?*xmalloc
 EOF
 EXPECT=<<EOF
 0x00064c7c 1 switch.0x00064c7c
@@ -1107,6 +1102,8 @@ EXPECT=<<EOF
 0x00064df0 CCu "switch table (13 cases) at 0x64df8"
 0x00064f94 CCu "switch table (13 cases) at 0x64f9c"
 0x0006506c CCu "switch table (13 cases) at 0x65074"
+--
+1
 EOF
 RUN
 
@@ -1174,18 +1171,6 @@ f
 EOF
 EXPECT=<<EOF
 0x0000000d 4 aav.0x0000000d
-EOF
-RUN
-
-NAME=Function definition
-FILE=bins/elf/arm1.bin
-CMDS=<<EOF
-afr @ main
-s 0x000082cc
-pd 1~?*xmalloc
-EOF
-EXPECT=<<EOF
-1
 EOF
 RUN
 

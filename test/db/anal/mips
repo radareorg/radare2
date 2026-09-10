@@ -1,12 +1,18 @@
+# merged: gp-based ref
 NAME=mips hello ref anal
 FILE=bins/elf/analysis/mips-hello
 CMDS=<<EOF
 s sym.main
 aac
 afl~?
+?e --
+aae @entry0
+axt str.Hello_World
 EOF
 EXPECT=<<EOF
 1
+--
+(nofunc); str.Hello_World 0x805c4 [DATA:r--] addiu a0, v0, str.Hello_World
 EOF
 RUN
 
@@ -91,17 +97,6 @@ EOF
 EXPECT=<<EOF
 sym._dl_malloc (int32_t arg1);
 sym._dl_calloc (int32_t arg1, int32_t arg2);
-EOF
-RUN
-
-NAME=gp-based ref
-FILE=bins/elf/analysis/mips-hello
-CMDS=<<EOF
-aae @entry0
-axt str.Hello_World
-EOF
-EXPECT=<<EOF
-(nofunc); str.Hello_World 0x805c4 [DATA:r--] addiu a0, v0, str.Hello_World
 EOF
 RUN
 
@@ -828,14 +823,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# merged: aav without vinfun
 NAME=aac on mips be
 FILE=bins/elf/analysis/mipsbe-busybox
 CMDS=<<EOF
 aac
 afl~?
+?e --
+af @ 0x0040dea4
+e anal.vinfun=false
+aav
+pd 1 @ 0x0040decc~?andi
 EOF
 EXPECT=<<EOF
 1274
+--
+1
 EOF
 RUN
 
@@ -848,19 +851,6 @@ afl~?
 EOF
 EXPECT=<<EOF
 10
-EOF
-RUN
-
-NAME=aav without vinfun
-FILE=bins/elf/analysis/mipsbe-busybox
-CMDS=<<EOF
-af @ 0x0040dea4
-e anal.vinfun=false
-aav
-pd 1 @ 0x0040decc~?andi
-EOF
-EXPECT=<<EOF
-1
 EOF
 RUN
 
