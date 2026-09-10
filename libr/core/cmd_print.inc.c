@@ -43,12 +43,12 @@ static RCoreHelpMessage help_msg_psp = {
 	"psp2", "", "same as psp, but taking 2 byte for length",
 	"psp4", "", "same as psp, but using 4 byte dword (honoring cfg.bigendian) for length",
 	"pspj", "", "print pascal string in JSON",
-	"pspw", "", "print zero-terminated 16bit wide string, taking length in bytes defined by the first byte (pspw1)",
+	"pspw", "", "print zero-terminated 16bit wide string (pspw1)",
 	"pspw1", "", "same as pspw",
 	"pspw2", "", "same as pspw, but taking 2 byte for length",
 	"pspw4", "", "same as pspW, but using 4 byte dword (honoring cfg.bigendian) for length",
 	"pspwj", "", "print pascal 16bit wide string in JSON",
-	"pspW", "", "print zero-terminated 32bit wide string, taking length in bytes defined by the first byte (pspW1)",
+	"pspW", "", "print zero-terminated 32bit wide string (pspW1)",
 	"pspW1", "", "same as pspW",
 	"pspW2", "", "same as pspW, but taking 2 byte for length",
 	"pspW4", "", "same as pspW, but using 4 byte dword (honoring cfg.bigendian) for length",
@@ -81,7 +81,7 @@ static RCoreHelpMessage help_msg_pm = {
 static RCoreHelpMessage help_msg_pp = {
 	"Usage: pp[0|1|2|4|8|a|d|f|n] [len]", "", "print patterns",
 	"pp0", " [len]", "print buffer filled with zeros",
-	"pp1", " [len]", "print incremental byte pattern (honors lower bits of current address and block size)",
+	"pp1", " [len]", "print incremental byte pattern",
 	"pp2", " [len]", "print incremental word pattern",
 	"pp4", " [len]", "print incremental dword pattern",
 	"pp8", " [len]", "print incremental qword pattern",
@@ -220,7 +220,7 @@ static RCoreHelpMessage help_msg_p = {
 	"pv", "[?][ejh] [mode]", "show value of given size (1, 2, 4, 8)",
 	"pwd", "", "display current working directory",
 	"px", "[?][owq] [len]", "hexdump of N bytes (o=octal, w=32bit, q=64bit)",
-	"py", "([-:file]) [expr]", "print clipboard (yp) run python script (py:file) oneliner `py print(1)` or stdin slurp `py-`",
+	"py", "([-:file]) [expr]", "print clipboard or run python script (py- for stdin)",
 	"pz", "[?] [len]", "print zoom view (see pz?)",
 	"pkill", " [process-name]", "kill all processes with the given name",
 	"pushd", " [dir]", "cd to dir and push current directory to stack",
@@ -602,7 +602,7 @@ static RCoreHelpMessage help_msg_pt = {
 };
 
 static RCoreHelpMessage help_msg_pv = {
-	"Usage: pv[1248z][udj]", "", "Print value(s) given size and endian (u for unsigned, d for signed decimal, j for json)",
+	"Usage: pv[1248z][udj]", "", "print value(s) by size and endian",
 	"pv", "", "print bytes based on asm.bits",
 	"pv1", "[udj]", "print 1 byte in memory",
 	"pv2", "[udj]", "print 2 bytes in memory",

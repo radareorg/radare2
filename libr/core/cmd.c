@@ -240,8 +240,7 @@ static RCoreHelpMessage help_msg_comma = {
 };
 
 static RCoreHelpMessage help_msg_dot = {
-	"Usage:", ".[r2cmd] | [file] | [!command] | [(macro)]", "# define macro or interpret r2, r_lang,\n"
-	"    cparse, d, es6, exe, go, js, lsp, pl, py, rb, sh, vala or zig file",
+	"Usage:", ".[r2cmd] | [file] | [!command] | [(macro)]", "# define macro or run r2/rlang scripts",
 	".", "", "repeat last command backward",
 	".", "C*", "run 'C*' command and interpret the printed commands",
 	"..", "123", "alias for s..123 (notice the lack of space)",
@@ -261,7 +260,7 @@ static RCoreHelpMessage help_msg_dot = {
 };
 
 static RCoreHelpMessage help_msg_equal = {
-	"Usage:", " =[:!+-=ghH] [...]", " # connect with other instances of r2",
+	"Usage:", " =[:!+-=ghH] [...]", # connect to other r2 instances,
 	"\nremote commands:", "", "",
 	"=", "[*j]", "list all open connections",
 	"=<", "[fd] cmd", "send output of local command to remote fd", // XXX may not be a special char
