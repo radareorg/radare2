@@ -96,6 +96,8 @@ jobs:
           make -j
           sudo make install
 
+    # ubuntu-tcc-test already runs all of db on a tcc build; what this job adds
+    # is that a tcc configured --without-debugger still builds a working r2
     - name: Run tests
       env:
         PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
@@ -104,7 +106,7 @@ jobs:
         r2r -v
         export R2R_SKIP_ASM=1
         export R2R_SKIP_ARCHOS=1
-        make -j -C test
+        cd test && r2r -L db/cmd
   r2pm:
     name: r2pm-tcc
     runs-on: ubuntu-24.04
