@@ -1025,7 +1025,7 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 typedef struct {
 	HtUP *predecessors; // maps a block to its predecessor if it has exactly one, or NULL if there are multiple or the predecessor has multiple successors
 	HtUP *visited_blocks; // during predecessor search, mark blocks whose successors we already checked. Value is void *-casted count of successors
-	HtUP *blocks; // adresses of the blocks we might want to merge with their predecessors => RAnalBlock *
+	HtUP *blocks; // addresses of the blocks we might want to merge with their predecessors => RAnalBlock *
 
 	RAnalBlock *cur_pred;
 	size_t cur_succ_count;

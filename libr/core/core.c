@@ -1841,7 +1841,7 @@ static char *getvalue(ut64 value, int bits) {
 }
 
 /*
-pxr logic is dupplicated in other places
+pxr logic is duplicated in other places
  * ai, ad
  * no json support
  */

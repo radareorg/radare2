@@ -488,7 +488,7 @@ typedef struct r_debug_pid_t {
 /*
  * Radare's debugger has both an external and internal API.
  *
- * TODO(jjd): reconcile external API and extend it for better funcitonality
+ * TODO(jjd): reconcile external API and extend it for better functionality
  * when using R2 as a library.
  */
 #ifdef R_API

@@ -1779,7 +1779,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				R_LOG_ERROR ("Cannot mount /root");
 			}
 		}
-		r_core_cmd0 (r, "=!"); // initalize io subsystem
+		r_core_cmd0 (r, "=!"); // initialize io subsystem
 		mr.iod = r_io_desc_get (r->io, mr.fh->fd);
 		if (mr.mapaddr) {
 			r_core_seek (r, mr.mapaddr, true);
