@@ -117,11 +117,19 @@ bool test_r_anal_function_relocate(void) {
 	assert_invariants (anal);
 	mu_assert_false (success, "failed relocate");
 	mu_assert_eq (fa->addr, 0x1337, "failed relocate addr");
+	ut64 revision_epoch = r_anal_function_dirty_epoch (fa);
 
 	success = r_anal_function_relocate (fa, 0x1234);
 	assert_invariants (anal);
 	mu_assert_true (success, "successful relocate");
 	mu_assert_eq (fa->addr, 0x1234, "successful relocate addr");
+	mu_assert_neq (r_anal_function_dirty_epoch (fa), revision_epoch,
+		"relocation bumps the function revision epoch");
+	revision_epoch = r_anal_function_dirty_epoch (fa);
+	mu_assert_true (r_anal_function_rename (fa, "relocated_function"),
+		"rename relocated function");
+	mu_assert_neq (r_anal_function_dirty_epoch (fa), revision_epoch,
+		"rename bumps the function revision epoch");
 
 	assert_leaks (anal);
 	r_anal_free (anal);

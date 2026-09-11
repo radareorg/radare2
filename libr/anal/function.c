@@ -237,6 +237,7 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 	ht_up_delete (fcn->anal->ht_addr_fun, fcn->addr);
 	fcn->addr = addr;
 	ht_up_insert (fcn->anal->ht_addr_fun, addr, fcn);
+	r_anal_function_bump_dirty_epoch (fcn);
 	return true;
 }
 
@@ -265,6 +266,7 @@ R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
 			REventFunction event = { .addr = fcn->addr, .fcn = fcn };
 			r_event_send (anal->ev, R_EVENT_FUNCTION_RENAMED, &event);
 		}
+		r_anal_function_bump_dirty_epoch (fcn);
 		return true;
 	}
 	return false;
@@ -410,6 +412,38 @@ R_API int r_anal_function_coverage(RAnalFunction *fcn) {
 		}
 	}
 	return (traced * 100) / total;
+}
+
+R_API ut64 r_anal_function_dirty_epoch(const RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
+	return fcn->dirty_epoch;
+}
+
+R_API ut64 r_anal_function_bump_dirty_epoch(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
+	fcn->dirty_epoch++;
+	if (!fcn->dirty_epoch) {
+		fcn->dirty_epoch++;
+	}
+	fcn->has_changed = true;
+	return fcn->dirty_epoch;
+}
+
+R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn && R_STR_ISNOTEMPTY (callconv), false);
+	if (!r_anal_cc_exist (anal, callconv)) {
+		return false;
+	}
+	const char *pooled = r_str_constpool_get (&anal->constpool, callconv);
+	if (!pooled) {
+		return false;
+	}
+	if (fcn->callconv && !strcmp (fcn->callconv, pooled)) {
+		return true;
+	}
+	fcn->callconv = pooled;
+	r_anal_function_bump_dirty_epoch (fcn);
+	return true;
 }
 
 static void fcn_context_reg_arg_free(RAnalFcnRegArg *arg) {
