@@ -3458,6 +3458,7 @@ RUN
 
 NAME=ik-macho
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 64
 CMDS=ik info/mach0.entry.vaddr~?0x100000ef8
 EXPECT=<<EOF
 1
@@ -3466,6 +3467,7 @@ RUN
 
 NAME=ikv
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 64
 CMDS=ikv info/mach0.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
@@ -3474,6 +3476,7 @@ RUN
 
 NAME=ik.
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 64
 CMDS=ik. info/mach0.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
@@ -3482,7 +3485,7 @@ RUN
 
 NAME=ik*
 FILE=bins/mach0/fatmach0-3true
-ARGS=-e bin.types=true
+ARGS=-e bin.types=true -a x86 -b 64
 CMDS=ik*~?mach0_segment64_0
 EXPECT=<<EOF
 1
@@ -3500,6 +3503,7 @@ RUN
 
 NAME=iS=
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 64
 CMDS=iS=
 EXPECT=<<EOF
 0*  0x100000ef8 ######------------------------ 0x100000f3f r-x   71    0.__TEXT.__text
@@ -3517,6 +3521,7 @@ RUN
 
 NAME=iSq.
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 64
 CMDS=iSq.
 EXPECT=<<EOF
 0x100000ef8 0x100000f3f -r-x 0.__TEXT.__text

@@ -369,8 +369,10 @@ paddr      vaddr      phaddr     vhaddr     type
 EOF
 RUN
 
+# rabin2 reads x86_32 here, r2 x86_64: the two tables differ on purpose
 NAME=rabin2 -a x86 -b 32 -i fatmach0
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 !rabin2 -a x86 -b 32 -i ${R2_FILE}
 ii
