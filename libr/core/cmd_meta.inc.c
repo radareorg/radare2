@@ -68,11 +68,11 @@ static RCoreHelpMessage help_msg_CC = {
 
 // IMHO 'code-line' should be universal concept, instead of dbginfo/dwarf/...
 static RCoreHelpMessage help_msg_CL = {
-	"Usage: CL", ".j-", "@addr - manage code-line references (loaded via bin.dbginfo and shown when asm.dwarf)",
+	"Usage: CL", ".j-", "@addr - manage code-line references (bin.dbginfo, asm.dwarf)",
 	"CL", "", "list all code line information (virtual address <-> source file:line)",
 	"CLd", "[aoj*]", "decompile current function from dwarf line info (usable via cmd.pdc)",
 	"CLf", " [addr]", "show filename for current or given offset",
-	"CLj", "", "same as above but in JSON format (See dir.source to change the path to find the referenced lines)",
+	"CLj", "", "same as above but in JSON format (see dir.source for referenced lines path)",
 	"CL*", "", "same as above but in r2 commands format",
 	"CL.", "", "show list all code line information (virtual address <-> source file:line)",
 	"CL-", "*", "remove all the cached codeline information",

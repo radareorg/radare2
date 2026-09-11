@@ -44,7 +44,7 @@ static RCoreHelpMessage help_msg_a = {
 	"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 	"aj", "", "same as a* but in json (aflj)",
 	"aL", "[jqf]", "list all asm/anal plugins (See `e asm.arch=?` and `La[jqf]`)",
-	"an", "[?] [name]", "show/rename/create whatever var/flag/function used in current instruction",
+	"an", "[?] [name]", "show/rename var/flag/function used in current instruction",
 	"ao", "[?] [len]", "analyze Opcodes (or emulate it)",
 	"aO", "[?] [len]", "analyze N instructions in M bytes",
 	"ap", "", "find prelude for current offset",
@@ -57,7 +57,7 @@ static RCoreHelpMessage help_msg_a = {
 };
 
 static RCoreHelpMessage help_msg_afna = {
-	"Usage:", "afna", " # construct a function name and rename the function for the current offset.",
+	"Usage:", "afna", " # construct function name and rename function at current offset",
 	"", "", "Based on flags or methods calls found inside that function.",
 	NULL
 };
@@ -72,9 +72,9 @@ static RCoreHelpMessage help_msg_aae = {
 	"Usage:", "aae", "[pf] ([addr]) # analyze all kind of stuff using esil",
 	"aae", " [size] ([addr])", "same as aepa@@@i - define anal pins by import flag names",
 	"aae", "", "honor anal.{in,from,to} and emulate all executable regions",
-	"aaef", "", "emulate all functions using esil to find out computed references (same as aef@@@F)",
+	"aaef", "", "emulate all functions using esil to find computed references",
 	"aaep", "", "same as aepa@@@i - define anal pins by import flag names",
-	"aaep", "a", "run 'aep ret0@@@i' and then 'aaep' - all unknown imports are faked to return 0",
+	"aaep", "a", "fake all unknown imports to return 0 (ret0@@@i then aaep)",
 	"aaex", "", "emulate all code linearly and register only the computed xrefs",
 	NULL
 };
@@ -84,7 +84,7 @@ static RCoreHelpMessage help_msg_aav = {
 	"aav", "", "find absolute reference values (see aav0)",
 	"aavq", "", "same as aav, but in quiet mode",
 	"aav0", "", "find absolute reference values (accept maps at address zero)",
-	"aavr", "[q0]", "find relative reference values (address + 4 byte signed int, q for quiet)",
+	"aavr", "[q0]", "find relative reference values (addr + 4 byte signed int, q=quiet)",
 	NULL
 };
 
@@ -185,18 +185,18 @@ static RCoreHelpMessage help_msg_aa = {
 	"aad", " [len]", "analyze data references to code",
 	"aae", "[?] [len] ([addr])", "analyze references with ESIL (optionally to address)",
 	"aaef", "", "analyze references with ESIL in all functions",
-	"aaf", "[?][efrt] ", "analyze all functions relationships with flags, type matching and consecutive",
+	"aaf", "[?][efrt] ", "analyze all functions relationships with flags and type matching",
 	"aaF", " [sym*]", "set anal.in=block for all the spaces between flags matching glob",
-	"aaFa", " [sym*]", "same as aaF but uses af instead of af+/afb+ (slower but more accurate)",
+	"aaFa", " [sym*]", "same as aaF but uses af instead of af+/afb+ (slower, more accurate)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aaj", " ", "analyze all jumps",
-	"aan", "[?][fgr]", "autoname functions (aang = golang, aanr = noreturn propagation, aanf = afna@@F)",
+	"aan", "[?][fgr]", "autoname functions (golang, noreturn propagation)",
 	"aao", "", "analyze all objc references",
 	"aap", "", "find and analyze function preludes",
 	"aar", "[?] [len]", "analyze len bytes of instructions for references",
 	"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
 	"aaS", "", "analyze all flags starting with sym. (af @@ sym.*)",
-	"aat", " [fcn]", "analyze all/given function to convert immediate to linked structure offsets (see tl?)",
+	"aat", " [fcn]", "convert immediates to linked structure offsets (see tl? for type link)",
 	"aaT", " [len]", "analyze code after trap-sleds",
 	"aau", " [len]", "list mem areas (larger than len bytes) not covered by functions",
 	"aav", "[?] [sat]", "find values referencing a specific section or map",
@@ -243,7 +243,7 @@ static RCoreHelpMessage help_msg_aflx = {
 static RCoreHelpMessage help_msg_ai = {
 	"Usage:", "ai", "[j*] [sz] # analysis/address information/imports",
 	"ai", " @addr", "show address information",
-	"aia", "", "show architecture specific information instruction size and alignment details",
+	"aia", "", "show arch specific info, instruction size and alignment details",
 	"aii", " [namespace]", "global import (like afii, but global)",
 	"aii", "-", "delete all global imports",
 	"aij", " @addr", "show address information in JSON format",
@@ -268,7 +268,7 @@ static RCoreHelpMessage help_msg_ab = {
 	"abi", "[?]", "alias for afbi",
 	"aba", "[j] [addr]", "analyze esil accesses in basic block (see aea?)",
 
-	"abc", "[-] [color]", "change color of the current basic block (same as afbc, abc- to unset)",
+	"abc", "[-] [color]", "change color of current basic block (same as afbc, abc- unset)",
 	"abe", " [esil-expr]", "assign esil expression to basic block (see: aeb, dre, afbd)",
 	"abf", " [addr]", "address of incoming (from) basic blocks",
 	"abj", " [addr]", "display basic block information in JSON",
@@ -304,7 +304,7 @@ static RCoreHelpMessage help_msg_abl = {
 static RCoreHelpMessage help_msg_abp = {
 	"Usage:", "abp", "[addr] [num] # find num paths from current offset to addr",
 	"abp", " [addr] [num]", "find num paths from current offset to addr",
-	"abpf", " [addr]", "same as /agg find the path between two addresses across functions and basic blocks",
+	"abpf", " [addr]", "same as /agg, find path between addresses across functions",
 	"abpe", " [addr]", "emulate from function start to the given address",
 	"abpe*", " [addr]", "show commands to emulate from function start to the given address",
 	"abpj", " [addr] [num]", "display paths in JSON",
@@ -391,7 +391,7 @@ static RCoreHelpMessage help_msg_ae = {
 	"aer", "[?] [..]", "handle ESIL registers like 'ar' or 'dr' does",
 	"aes", "[?]", "perform emulated debugger step",
 	"aet", "[?][s]", "esil trace listing and session management (requires aeim)",
-	"aev", " [esil]", "visual esil debugger for the given expression or current instruction",
+	"aev", " [esil]", "visual esil debugger for expression or current instruction",
 	"aex", " [hex]", "evaluate opcode expression",
 	NULL
 };
@@ -619,7 +619,7 @@ static RCoreHelpMessage help_msg_afb = {
 	//"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb+", " fcn_at bbat bbsz [J] [F] ([D])", "add basic block by hand (jump, fail, diff)",
 	"afba", "[!]", "list basic blocks of current offset in analysis order, see afla (EXPERIMENTAL)",
-	"afbt", " [tableaddr] [elem_sz] [count] [seg]", "analyze function jumptable (adding seg to each elem)",
+	"afbt", " [tableaddr] [elem_sz] [count] [seg]", "analyze function jumptable",
 	"afbc", "[-] [color] ([addr])", "colorize basic block (same as 'abc', afbc- to unset)",
 	"afbd", "", "list function basic block dependency list in order and set abe values",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
@@ -682,8 +682,8 @@ static RCoreHelpMessage help_msg_afc = {
 
 static RCoreHelpMessage help_msg_afch = {
 	"Usage:", "afch[j]", "# dynamic calling convention (dyncc) help and inspector",
-	"afch", "", "print the dyncc syntax reference; if the current function uses dyncc, also show its resolved expression and arg/ret homes",
-	"afchj", "", "JSON: resolved dyncc info (ret, rets, args, arg_homes, argn) for the current function",
+	"afch", "", "print dyncc syntax reference and resolved info for current function",
+	"afchj", "", "JSON: resolved dyncc info for current function",
 	"", "", "see doc/dyncc.md for the full specification",
 	NULL
 };
@@ -815,7 +815,7 @@ static RCoreHelpMessage help_msg_aflt = {
 };
 
 static RCoreHelpMessage help_msg_afii = {
-	"Usage:", "afii", " Manage imports used in current functions (see aii for globals). trims down those strings from disasm",
+	"Usage:", "afii", " Manage imports used in current functions (see aii for globals)",
 	"afii", "", "list imports used by current function",
 	"afii", " sym.imp", "trim out the 'sym.imp' prefix from all calls",
 	"afii", "-sym.imp", "remove this import from current function",
@@ -910,7 +910,7 @@ static RCoreHelpMessage help_msg_afvb = {
 	"afvb*", "", "same as afvb but in r2 commands",
 	"afvb", " [idx] [name] ([type])", "define base pointer based arguments, locals",
 	"afvbj", "", "return list of base pointer based arguments, locals in JSON format",
-	"afvb-", " [name|idx]", "delete the argument/local with that name or frame offset (--N for negative)",
+	"afvb-", " [name|idx]", "delete argument/local by name or frame offset (--N for neg)",
 	"afvbg", " [idx] [addr]", "define var get reference",
 	"afvbs", " [idx] [addr]", "define var set reference",
 	NULL
@@ -934,7 +934,7 @@ static RCoreHelpMessage help_msg_afvs = {
 	"afvs*", "", "same as afvs but in r2 commands",
 	"afvs", " [idx] [name] [type]", "define stack based arguments,locals",
 	"afvsj", "", "return list of stack based arguments and locals in JSON format",
-	"afvs-", " [name|idx]", "delete the stack argument/local with that name or frame offset (--N for negative)",
+	"afvs-", " [name|idx]", "delete stack arg/local by name or offset (--N)",
 	"afvsg", " [idx] [addr]", "define var get reference",
 	"afvss", " [idx] [addr]", "define var set reference",
 	NULL
