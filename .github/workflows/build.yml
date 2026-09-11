@@ -270,12 +270,6 @@ jobs:
       with:
         name: linux-acr-deb-${{ matrix.arch }}
         path: radare2*.deb
-    - name: Pub i386 test results
-      if: matrix.arch == 'i386'
-      uses: actions/upload-artifact@v7
-      with:
-        name: linux-acr-deb-i386-tests
-        path: test/results-i386.json
 
 ## RPM PACKAGES DISABLED
 #  linux-meson-rpm:
