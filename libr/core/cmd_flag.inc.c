@@ -5,7 +5,7 @@
 // R2R  db/cmd/cmd_flags_graph
 
 static RCoreHelpMessage help_msg_fR = {
-	"Usage: fR", " [from] [to] ([mask])", " # Relocate flags matching a mask asuming old and new base addresses",
+	"Usage: fR", " [from] [to] ([mask])", " # Relocate flags matching mask between bases",
 	"fR", " entry0 `dm~:1[1]`", "rebase entrypoint",
 	NULL
 };
@@ -59,7 +59,7 @@ static RCoreHelpMessage help_msg_f = {
 	"fn", "", "list flags displaying the real name (demangled)",
 	"fnj", "", "list flags displaying the real name (demangled) in JSON format",
 	"fN", "", "show real name of flag at current address",
-	"fN", " [[name]] [realname]", "set flag real name (if no flag name current seek one is used)",
+	"fN", " [[name]] [realname]", "set flag real name (uses current seek if none given)",
 	"fo", "", "show fortunes",
 	"fO", " [glob]", "flag as ordinals (sym.* func.* method.*)",
 	//" fc [name] [cmt]  ; set execution command for a specific flag"
@@ -108,7 +108,7 @@ static RCoreHelpMessage help_msg_ft = {
 
 static RCoreHelpMessage help_msg_fD = {
 	"Usage: fD[*.j]", " [rawname]", " # filter/mangle raw symbol name to be valid flag name",
-	"fD", " rawname" , "print the mangled flag name using the raw name, see the ' command prefix",
+	"fD", " rawname" , "print mangled flag name from raw name (see ' prefix)",
  	"fD.", " rawname", "set a flag using the orig raw name in the current offset",
 	"fDj", " rawname", "same as fD but output is in json",
 	"fD*", " rawname", "filter raw name to be a valid flag and output in r2 commands",

@@ -158,7 +158,7 @@ static RCoreHelpMessage help_msg_slash_a = {
 	"/ae", " esil", "search for esil expressions matching substring",
 	"/af", "[l] family", "search for instruction of specific family (afl=list)",
 	"/aF", "[d] opstr", "find instructions matching given opstr only in analyzed code",
-	"/ag", "[g] [from]", "find all graph paths A to B (/agg follow jumps, see search.count and anal.depth)",
+	"/ag", "[g] [from]", "find all graph paths A to B (/agg follows jumps, see search.count)",
 	"/ai", "[j] 0x300 [0x500]", "find all the instructions using that immediate (in range)",
 	"/al", "", "same as aoml, list all opcodes",
 	"/am", " opcode", "search for specific instructions of specific mnemonic",
@@ -172,7 +172,7 @@ static RCoreHelpMessage help_msg_slash_a = {
 static RCoreHelpMessage help_msg_slash_c = {
 	"Usage: /c", "", "Search for crypto materials",
 	"/ca", "[?] [algo]", "search for keys expanded in memory (algo can be 'aes' or 'sm4')",
-	"/cc", "[?] [algo] [digest]", "find collisions (bruteforce block length values until given checksum is found)",
+	"/cc", "[?] [algo] [digest]", "find collisions (bruteforce until checksum found)",
 	"/cd", "", "search for ASN1/DER certificates",
 	"/cg", "", "search for GPG/PGP keys and signatures (Plaintext and binary form)",
 	"/ck", "", "find well known constant tables from different hash and crypto algorithms",
