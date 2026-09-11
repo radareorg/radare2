@@ -847,6 +847,26 @@ jobs:
         name: macos-xcframework
         path: dist/sdk/Radare2.xcframework.zip
 
+  # UEFI release binary
+  linux-uefi:
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+    - name: Install the UEFI toolchain
+      run: |
+        sudo apt-get update --assume-yes
+        sudo apt-get --assume-yes install binutils clang lld gnu-efi musl-dev
+    - name: Build radare2 for UEFI
+      run: make -C dist/uefi
+    - name: Name the release asset
+      run: mv build-uefi/BOOTX64.EFI radare2-`./configure -qV`-uefi-x86_64.efi
+    - uses: actions/upload-artifact@v7
+      with:
+        name: linux-uefi
+        path: radare2-*-uefi-x86_64.efi
+
   # Release creation
   check_release:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
@@ -873,6 +893,7 @@ jobs:
       - w64-static
       - w64-arm-meson
       - msys2-w64-arm-meson
+      - linux-uefi
 #      - freebsd
     runs-on: ubuntu-24.04
     steps:
@@ -916,6 +937,7 @@ jobs:
         dist/artifacts/linux-wasi-api/*.zip
         dist/artifacts/w64-static/*.zip
         dist/artifacts/w64-arm-meson/*.zip
+        dist/artifacts/linux-uefi/*.efi
 #       dist/artifacts/linux-static-*/*.tar.xz
 #       dist/artifacts/msys2-w64-arm-meson/*.zip
     steps:
