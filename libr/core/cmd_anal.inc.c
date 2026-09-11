@@ -170,7 +170,7 @@ static RCoreHelpMessage help_msg_aaf = {
 static RCoreHelpMessage help_msg_aaa = {
 	"Usage:", "aaa[a[a]]", " # automatically analyze the whole program",
 	"aaa", "", "perform deeper analysis, most common use",
-	"aaaa", "", "same as aaa but adds a bunch of experimental iterations",
+	"aaaa", "", "same as aaa plus aggressive plugin post-analysis",
 	"aaaaa", "", "refine the analysis to find more functions after aaaa",
 	NULL
 };
@@ -15176,6 +15176,13 @@ static int cmpfn_bw(const void *a, const void *b) {
 	return 0;
 }
 
+static void core_anal_plugin_post_analysis(RCore *core, RAnalPluginAnalysisDepth depth) {
+	RAnalPluginAnalysisDepth saved_depth = core->anal->plugin_analysis_depth;
+	core->anal->plugin_analysis_depth = depth;
+	r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, NULL);
+	core->anal->plugin_analysis_depth = saved_depth;
+}
+
 static bool cmd_aa(RCore *core, bool aaa) {
 	const RList *list;
 	RListIter *iter;
@@ -15303,6 +15310,10 @@ static bool cmd_aa(RCore *core, bool aaa) {
 					fcni->type = R_ANAL_FCN_TYPE_SYM;
 				}
 			}
+		}
+		if (!r_cons_is_breaked (core->cons)) {
+			logline (core, 24, "Running basic plugin post-analysis hooks");
+			core_anal_plugin_post_analysis (core, R_ANAL_PLUGIN_ANALYSIS_DEPTH_BASIC);
 		}
 	}
 	r_config_set_b (core->config, "log.hints", log_hints);
@@ -15571,8 +15582,8 @@ static void cmd_aaa(RCore *core, const char *input) {
 			logline (core, 96, "Enable types.constraint for experimental type propagation");
 			r_config_set_b (core->config, "types.constraint", true);
 			// Plugin post-analysis hooks (for advanced analysis like taint, symbolic)
-			logline (core, 97, "Running plugin post-analysis hooks");
-			r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, NULL);
+			logline (core, 97, "Running aggressive plugin post-analysis hooks");
+			core_anal_plugin_post_analysis (core, R_ANAL_PLUGIN_ANALYSIS_DEPTH_AGGRESSIVE);
 			if (input[2] == 'a') { // "aaaaa"
 				logline (core, 97, "Reanalyzing graph references to adjust functions count (aarr)");
 				r_core_call (core, "aarr");
@@ -15581,6 +15592,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 				r_core_cmd0 (core, ".afna@@c:afla");
 			}
 		} else {
+			core_anal_plugin_post_analysis (core, R_ANAL_PLUGIN_ANALYSIS_DEPTH_BALANCED);
 			R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
 		}
 		if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {
