@@ -1178,6 +1178,8 @@ typedef enum {
 
 // Unified plugin action dispatcher (replaces per-action APIs)
 R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFunction *fcn);
+// true when location `loc` of a convention names register `reg`
+R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg);
 R_API bool r_anal_function_recover_vars_plugin(RAnal *anal, RAnalFunction *fcn);
 // Stack-VM helper: create register-kind argument vars named "<prefix><first+i>"
 // for i in [0, count). Used for JVM/Dalvik-style per-method arg recovery driven

@@ -677,7 +677,7 @@ static bool dyncc_refs_exist(RAnal *anal, const RAnalDynCC *d) {
 }
 
 // the keys spelling a cc's argument and return layout, all invalidated by a redefinition
-static const char *cc_layout_keys[] = { "ret", "retn", "argn", "revarg", "pop", "shadow", NULL };
+static const char *cc_layout_keys[] = { "ret", "retn", "argn", "revarg", "pop", "shadow", "retmech", "stackalloc", "redzone", NULL };
 
 static void cc_unset_keys(Sdb *db, const char *name, const char **keys) {
 	RStrBuf sb;
@@ -1329,10 +1329,11 @@ static bool cc_location_range(const char *loc, const char **s, const char **end)
 	return true;
 }
 
-R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
+R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (anal && loc && reg, false);
+	// profiles and convention tables can disagree on case
 	if (*loc && *loc != '{') {
-		return !strcmp (loc, reg);
+		return !r_str_casecmp (loc, reg);
 	}
 	const char *s, *end;
 	if (!cc_location_range (loc, &s, &end)) {
@@ -1343,7 +1344,7 @@ R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg
 		if (!name) {
 			return false;
 		}
-		if (!strcmp (name, reg)) {
+		if (!r_str_casecmp (name, reg)) {
 			return true;
 		}
 	}
