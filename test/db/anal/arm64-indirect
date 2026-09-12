@@ -1,0 +1,75 @@
+NAME=arm64 computed BR keeps reachable epilogue and returning callers
+FILE=bins/mach0/BatteryLife.arm_64.1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aaaa
+afij @ 0x100013adc~{0.noreturn}
+abj @ 0x100013f88~{0.jump}
+afij @ 0x100013fe0~{0.realsz}
+afij @ 0x100013fe0~{0.ninstrs}
+afij @ 0x1000149d4~{0.realsz}
+afij @ 0x1000149d4~{0.ninstrs}
+EOF
+EXPECT=<<EOF
+false
+4295049116
+120
+30
+344
+86
+EOF
+RUN
+
+NAME=arm64 spilled table address and SXTH dispatch keep the full switch
+FILE=bins/elf/switch-hello-world.elf
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af @ 0x16e9c
+CC. @ 0x17174
+?v case.0x17174.7
+abj @ 0x17178~{0.size}
+EOF
+EXPECT=<<EOF
+switch table (91 cases) at 0x2a55c
+0x17178
+60
+EOF
+RUN
+
+NAME=arm64 selected index is not bounded by an unrelated CMP
+FILE=bins/mach0/SwiftAsynciOS
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af @ 0x1000069e4
+afij @ 0x1000069e4~{0.realsz}
+ab @ 0x100006a0c~cases
+ab @ 0x100006a2c~cases
+?v case.0x100006a20.1
+?v case.0x100006a40.1
+EOF
+EXPECT=<<EOF
+140
+cases: 5
+cases: 5
+0x100006a24
+0x100006a44
+EOF
+RUN
+
+NAME=arm64 switch keeps case0 after BR and its inclusive last case
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af
+ab @ 0x100003c44~cases
+?v case.0x100003c60.0
+?v case.0x100003c60.91
+abj @ 0x100003c64~{0.size}
+EOF
+EXPECT=<<EOF
+cases: 92
+0x100003c64
+0x100003cf4
+16
+EOF
+RUN

@@ -3,6 +3,7 @@ if get_option('enable_tests')
   tests = [
     'addr_interval',
     'agraph',
+    'anal_arm64',
     'anal_block',
     'anal_cc',
     'anal_class_graph',

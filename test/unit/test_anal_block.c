@@ -712,7 +712,39 @@ bool test_r_anal_block_chop_noreturn(void) {
 	mu_end;
 }
 
+bool test_r_anal_block_chop_noreturn_instrs(void) {
+	RAnal *anal = r_anal_new ();
+	RAnalBlock *bb = r_anal_create_block (anal, 0x100, 12);
+	bb->ninstr = 4;
+	r_anal_bb_set_offset (bb, 1, 1);
+	r_anal_bb_set_offset (bb, 2, 6);
+	r_anal_bb_set_offset (bb, 3, 10);
+	RAnalFunction *a = r_anal_create_function (anal, "a", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
+	RAnalFunction *b = r_anal_create_function (anal, "b", 0x200, R_ANAL_FCN_TYPE_FCN, NULL);
+	RAnalBlock *entry = r_anal_create_block (anal, 0x200, 4);
+	entry->jump = bb->addr;
+	entry->ninstr = 1;
+	r_anal_function_add_block (b, entry);
+	r_anal_function_add_block (a, bb);
+	r_anal_function_add_block (b, bb);
+	a->ninstr = 4;
+	b->ninstr = 5;
+	r_anal_block_chop_noreturn (bb, 0x106);
+	mu_assert_eq (bb->size, 6, "chopped size");
+	mu_assert_eq (bb->ninstr, 2, "variable-width instruction count");
+	mu_assert_eq (r_anal_bb_opaddr_i (bb, 1), 0x101, "last retained instruction");
+	mu_assert_eq (r_anal_bb_opaddr_i (bb, 2), UT64_MAX, "removed instruction is inaccessible");
+	mu_assert_eq (a->ninstr, 2, "first owner instruction count");
+	mu_assert_eq (b->ninstr, 3, "second owner instruction count");
+	assert_invariants (anal);
+	r_unref (bb);
+	r_unref (entry);
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
+	mu_run_test (test_r_anal_block_chop_noreturn_instrs);
 	mu_run_test (test_r_anal_block_chop_noreturn);
 	mu_run_test (test_r_anal_block_create);
 	mu_run_test (test_r_anal_block_contains);
