@@ -76,3 +76,103 @@ EXPECT=<<EOF
 br x16
 EOF
 RUN
+
+NAME=arm64 switch keeps case0 after BR and its inclusive last case
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af
+ab @ 0x100003c44~cases
+?v case.0x100003c60.0
+?v case.0x100003c60.91
+abj @ 0x100003c64~{0.size}
+EOF
+EXPECT=<<EOF
+cases: 92
+0x100003c64
+0x100003cf4
+16
+EOF
+RUN
+
+NAME=arm64 later LDP does not change the table element width
+FILE=bins/mach0/Alamofire-stripped
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af @ 0xf93c
+afij @ 0xf93c~{0.realsz}
+CC. @ 0xfa80
+?v case.0xfa80.0
+abj @ 0xfa84~{0.size}
+pi 2 @ 0xfa7c
+EOF
+EXPECT=<<EOF
+1068
+switch table (8 cases) at 0xfd68
+0xfa84
+16
+ldp x24, x23, [x29, -0x80]
+br x8
+EOF
+RUN
+
+NAME=arm64 unsigned byte table entries are scaled without sign extension
+FILE=bins/elf/ls-toybox
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af @ 0x3e168
+CC. @ 0x3e278
+p8 5 @ 0x23c50
+?v case.0x3e278.0
+?v case.0x3e278.2
+pi 3 @ 0x3e270
+EOF
+EXPECT=<<EOF
+switch table (5 cases) at 0x23c50
+009195998a
+0x3e27c
+0x3e4d0
+ldrb w11, [x9, x8]
+add x10, x10, x11, lsl 2
+br x10
+EOF
+RUN
+
+# Mutations below use the write cache, never modifying the testbins fixture.
+NAME=arm64 partial table retains the expected bound
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e io.cache=true
+wx 01000000 @ 0x1000047a4
+af
+abj @ 0x100003c44~{0.switch_op.amount}
+ab @ 0x100003c44~cases
+?v case.0x100003c60.0
+EOF
+EXPECT=<<EOF
+92
+cases: 91
+0x100003c64
+EOF
+RUN
+
+NAME=arm64 shared switch destination keeps every case label
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e io.cache=true
+wx 0c0000000c000000 @ 0x100004638
+af
+abj @ 0x100003c44~{0.switch_op.amount}
+ab @ 0x100003c44~cases
+?v case.0x100003c60.0
+?v case.0x100003c60.1
+EOF
+EXPECT=<<EOF
+92
+cases: 92
+0x100003c64
+0x100003c64
+EOF
+RUN

@@ -1443,7 +1443,9 @@ noskip:
 					gotoBeach (R_ANAL_RET_END);
 				}
 			}
-			if (anal->opt.jmptbl) {
+			// AArch64 tables can have separate table and case bases. Resolve
+			// them at BR instead of treating this ADR as both bases.
+			if (anal->opt.jmptbl && !(is_arm && anal->config->bits == 64)) {
 				RAnalOp jmp_aop = {0};
 				ut64 jmptbl_addr = op->ptr;
 				ut64 casetbl_addr = op->ptr;
