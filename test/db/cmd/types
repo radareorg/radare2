@@ -3291,12 +3291,202 @@ var void * f @ rbp-0x8
 EOF2
 RUN
 
+NAME=aaft homes leading float-class parameters on the float registers
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x20 @ 4
+wx f20f1045f8 @ 8
+wx f20f104df0 @ 13
+wa call 0x100 @ 18
+wa leave @ 23
+wa ret @ 24
+wa ret @ 0x100
+af+ 0x100 sq
+afb+ 0x100 0x100 1
+af @ 0
+td typedef double mydouble;
+td double sq(const double a, mydouble b);
+tk func.sq.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double a @ rbp-0x8
+var mydouble b @ rbp-0x10
+EOF2
+RUN
+
+NAME=aaft homes a float parameter declared without an arity key
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x20 @ 4
+wa mov rdi, qword [rbp - 8] @ 8
+wx f20f1045f0 @ 12
+wa call 0x100 @ 17
+wa leave @ 22
+wa ret @ 23
+wa ret @ 0x100
+af+ 0x100 sq
+afb+ 0x100 0x100 1
+af @ 0
+tk sq=func
+tk func.sq.arg.0=double,x
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var int64_t var_8h @ rbp-0x8
+var double x @ rbp-0x10
+EOF2
+RUN
+
+NAME=aaft keeps the integer index of an argument after a float one
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x20 @ 4
+wx f20f1045f8 @ 8
+wa mov rsi, qword [rbp - 0x10] @ 13
+wa mov rdi, qword [rbp - 0x18] @ 17
+wa call 0x100 @ 21
+wa leave @ 26
+wa ret @ 27
+wa ret @ 0x100
+af+ 0x100 f3
+afb+ 0x100 0x100 1
+af @ 0
+td int f3(double a, int b);
+tk func.f3.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double a @ rbp-0x8
+var int64_t b @ rbp-0x10
+var int64_t var_18h @ rbp-0x18
+EOF2
+RUN
+
+NAME=aaft leaves a long double parameter on the integer sequence
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x20 @ 4
+wa mov rdi, qword [rbp - 8] @ 8
+wx f20f1045f0 @ 12
+wa call 0x100 @ 17
+wa leave @ 22
+wa ret @ 23
+wa ret @ 0x100
+af+ 0x100 sq
+afb+ 0x100 0x100 1
+af @ 0
+td double sq(long double x);
+tk func.sq.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var long double x @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+EOF2
+RUN
+
+NAME=aaft keeps the integer sequence for a cc with no float sequence
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=ms
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x20 @ 4
+wa mov rcx, qword [rbp - 8] @ 8
+wx f20f1045f0 @ 12
+wa call 0x100 @ 17
+wa leave @ 22
+wa ret @ 23
+wa ret @ 0x100
+af+ 0x100 sq
+afb+ 0x100 0x100 1
+af @ 0
+td double sq(double x);
+tk func.sq.cc=ms
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double x @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+EOF2
+RUN
+
+NAME=aaft keeps the integer sequence for a grouped float location
+FILE=malloc://512
+ARGS=-a arm -b 64 -e anal.cc=arm64
+CMDS=<<EOF2
+wa sub sp, sp, 0x20 @ 0
+wa ldr x0, [sp, 8] @ 4
+wx e00b40fd @ 8
+wa bl 0x100 @ 12
+wx ff830091 @ 16
+wa ret @ 20
+wa ret @ 0x100
+af+ 0x100 sq
+afb+ 0x100 0x100 4
+af @ 0
+td double sq(double x);
+tk func.sq.cc=arm64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double x @ sp+0x8
+var int64_t var_10h @ sp+0x10
+EOF2
+RUN
+
+NAME=aaft keeps the integer sequence for a stack-spelled float location
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x20 @ 4
+wa mov rdi, qword [rbp - 8] @ 8
+wx f20f1045f0 @ 12
+wa call 0x100 @ 17
+wa leave @ 22
+wa ret @ 23
+wa ret @ 0x100
+af+ 0x100 sq
+afb+ 0x100 0x100 1
+afc dyncc:rdi,rsi:rax!F^0 @ 0x100
+af @ 0
+td double sq(double x);
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double x @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+EOF2
+RUN
+
 NAME=aaft float and double facts from parallel branches meet to double
 FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF2
-wx 554889e54883ec2085ff7424488b7df8e84b000000eb39 @ 0
-wx 488b7df8e837000000eb15 @ 0x30
+wx 554889e54883ec2085ff74240f1245f8e84b000000eb39 @ 0
+wx 0f1245f8e837000000eb15 @ 0x30
 wx c9c3 @ 0x50
 wx c3 @ 0x60
 wx c3 @ 0x70
@@ -3312,6 +3502,71 @@ EOF2
 EXPECT=<<EOF2
 arg int64_t arg1 @ rdi
 var double v @ rbp-0x8
+EOF2
+RUN
+
+NAME=aft frees the first integer register for a caller's leading double
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa mov rax, qword [rdi + 8] @ 4
+wa call rax @ 8
+wa leave @ 10
+wa ret @ 11
+af @ 0
+afn c @ 0
+afvt arg1 "struct S *" @ 0
+td int cb(int v);
+tk S=struct
+tk struct.S=x,fp
+tk struct.S.x=int,0,0
+tk struct.S.fp=cb,8,0
+td void c(double a, struct S *p);
+aei
+aeim
+aft @ 0
+afv @ 0
+?e calllink
+tk calllink.00000008
+EOF2
+EXPECT=<<EOF2
+arg struct S * arg1 @ rdi
+calllink
+cb
+EOF2
+RUN
+
+NAME=aft keeps the first integer register for a caller's leading long
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa mov rax, qword [rdi + 8] @ 4
+wa call rax @ 8
+wa leave @ 10
+wa ret @ 11
+af @ 0
+afn c @ 0
+afvt arg1 "struct S *" @ 0
+td int cb(int v);
+tk S=struct
+tk struct.S=x,fp
+tk struct.S.x=int,0,0
+tk struct.S.fp=cb,8,0
+td void c(long a, struct S *p);
+aei
+aeim
+aft @ 0
+afv @ 0
+?e calllink
+tk calllink.00000008
+EOF2
+EXPECT=<<EOF2
+arg struct S * arg1 @ rdi
+calllink
 EOF2
 RUN
 
