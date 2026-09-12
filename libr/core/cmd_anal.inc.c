@@ -6878,15 +6878,13 @@ static int cmd_af(RCore *core, const char *input) {
 			r_cons_println (core->cons, r_anal_function_cc (fcn));
 			break;
 		case ' ': { // "afc "
-				  char *cc = r_str_trim_dup (input + 3);
-				  if (!r_anal_cc_exist (core->anal, cc)) {
-					  const char *asmOs = r_config_get (core->config, "asm.os");
-					  R_LOG_ERROR ("afc: Unknown calling convention '%s' for '%s'. See afcl for available types", cc, asmOs);
-				  } else {
-					  fcn->callconv = r_str_constpool_get (&core->anal->constpool, cc);
-				  }
-				  free (cc);
-			  }
+			char *cc = r_str_trim_dup (input + 3);
+			if (!r_anal_function_set_callconv (core->anal, fcn, cc)) {
+				const char *asmOs = r_config_get (core->config, "asm.os");
+				R_LOG_ERROR ("afc: Unknown calling convention '%s' for '%s'. See afcl for available types", cc, asmOs);
+			}
+			free (cc);
+		}
 			break;
 		case 'i':
 			if (input[3] == 'j') {
@@ -7035,6 +7033,7 @@ static int cmd_af(RCore *core, const char *input) {
 			if (fcn) { // bits = 0 means unset
 				int nbits = atoi (input + 3);
 				int obits = core->anal->config->bits;
+				int oldbits = fcn->bits;
 				if (nbits > 0) {
 					r_anal_hint_set_bits (core->anal, r_anal_function_min_addr (fcn), nbits);
 					r_anal_hint_set_bits (core->anal, r_anal_function_max_addr (fcn), obits);
@@ -7042,6 +7041,9 @@ static int cmd_af(RCore *core, const char *input) {
 				} else {
 					r_anal_hint_unset_bits (core->anal, r_anal_function_min_addr (fcn));
 					fcn->bits = 0;
+				}
+				if (oldbits != fcn->bits) {
+					r_anal_function_bump_dirty_epoch (fcn);
 				}
 			} else {
 				R_LOG_ERROR ("afB: Cannot find function to set bits at 0x%08"PFMT64x, core->addr);
@@ -7138,7 +7140,11 @@ static int cmd_af(RCore *core, const char *input) {
 		{
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, -1);
 			if (fcn) {
-				fcn->maxstack = r_num_math (core->num, input + 3);
+				st64 maxstack = r_num_math (core->num, input + 3);
+				if (fcn->maxstack != maxstack) {
+					fcn->maxstack = maxstack;
+					r_anal_function_bump_dirty_epoch (fcn);
+				}
 			} else {
 				R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, core->addr);
 			}
@@ -12725,7 +12731,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 						// TODO: I don't think we should silently error, it is confusing
 						if (!strcmp (type, otype)) {
 							//eprintf ("Adding type offset %s\n", type);
-							r_type_link_offset (a->sdb_types, type, addr);
+							r_anal_types_set_link_offset (a, type, addr);
 							r_anal_hint_set_offset (a, addr, otype);
 							break;
 						}

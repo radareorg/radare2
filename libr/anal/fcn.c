@@ -122,6 +122,7 @@ R_API const char *r_anal_function_cc(RAnalFunction *fcn) {
 		resolved = "reg";
 	}
 	fcn->callconv = r_str_constpool_get (&anal->constpool, resolved);
+	r_anal_function_bump_dirty_epoch (fcn);
 	return fcn->callconv;
 }
 
@@ -2545,6 +2546,7 @@ R_API bool r_anal_function_del_signature(RAnal *a, const char *name) {
 	free (sdb_noreturn);
 	free (sdb_args);
 	free (sdb_func);
+	r_anal_types_bump_dirty_epoch (a);
 	return true;
 }
 
@@ -2991,6 +2993,8 @@ R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const 
 			function_signature_sync (fcn, signature);
 			r_anal_function_signature_free (signature);
 		}
+		r_anal_types_bump_dirty_epoch (anal);
+		r_anal_function_bump_dirty_epoch (fcn);
 	}
 	return ok;
 }
