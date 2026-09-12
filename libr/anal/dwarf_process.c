@@ -2,6 +2,7 @@
 
 #include <ctype.h>
 #include <r_anal.h>
+#include <r_anal_priv.h>
 #include <r_bin_dwarf.h>
 
 typedef struct dwarf_parse_context_t {
@@ -35,6 +36,7 @@ typedef enum dwarf_location_kind {
 	LOCATION_BP = 2,
 	LOCATION_SP = 3,
 	LOCATION_REGISTER = 4,
+	LOCATION_CFA = 5,
 } VariableLocationKind;
 
 typedef struct dwarf_var_location_t {
@@ -1452,12 +1454,9 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			kind = LOCATION_GLOBAL; // address
 			break;
 		}
-		case DW_OP_call_frame_cfa: {
-			// REMOVE XXX
-			kind = LOCATION_BP;
-			offset += 16;
+		case DW_OP_call_frame_cfa:
+			kind = LOCATION_CFA;
 			break;
-		}
 		default:
 			break;
 		}
@@ -1683,6 +1682,8 @@ static char *sdb_variable_data(const Variable *var) {
 		return r_str_newf ("b,%" PFMT64d ",%s", var->location->offset, var->type);
 	case LOCATION_SP:
 		return r_str_newf ("s,%" PFMT64d ",%s", var->location->offset, var->type);
+	case LOCATION_CFA:
+		return r_str_newf ("c,%" PFMT64d ",%s", var->location->offset, var->type);
 	case LOCATION_GLOBAL:
 		return r_str_newf ("g,%" PFMT64u ",%s", var->location->address, var->type);
 	case LOCATION_REGISTER:
@@ -2244,6 +2245,18 @@ static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, c
 	}
 	if (*kind == 's') {
 		r_anal_function_set_var (fcn, offset - fcn->maxstack, *kind, type, 4, is_arg, var_name);
+		return true;
+	}
+	if (*kind == 'c') {
+		// the CFA sits one return slot above the entry stack pointer, which is where stack deltas count from
+		const int delta = offset + r_anal_cc_raslot (anal, r_anal_cc_wordsize (anal, fcn->callconv));
+		// a slot recovery already named keeps its kind so the declaration takes it over instead of doubling it
+		RAnalVar *found = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_BPV, delta);
+		if (!found) {
+			found = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_SPV, delta);
+		}
+		const char frame_kind = fcn->bp_off? R_ANAL_VAR_KIND_BPV: R_ANAL_VAR_KIND_SPV;
+		r_anal_function_set_var (fcn, delta, found? found->kind: frame_kind, type, 4, is_arg, var_name);
 		return true;
 	}
 	if (*kind == 'r') {
