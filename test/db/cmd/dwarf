@@ -326,10 +326,10 @@ EXPECT=<<EOF
 |           ; var int64_t var_200h @ rsp+0x200
 |           ; var int64_t var_208h @ rsp+0x208
 |           ; var int64_t var_210h @ rsp+0x210
-|           ; var int64_t var_218h @ rsp+0x218
-|           ; var int64_t var_220h @ rsp+0x220
-|           ; var int64_t var_228h @ rsp+0x228
-|           ; var &str[5] *arg0 @ rsp+0x230
+|           ; var i32[10] *arg0 @ rsp+0x218
+|           ; var i32[10] *arg0_1 @ rsp+0x220
+|           ; var &str[5] *arg0_2 @ rsp+0x228
+|           ; var &str[5] *arg0_3 @ rsp+0x230
 |           0x00005750      4881ec3802..   sub rsp, 0x238              ; void main();
 |           0x00005757      c784248000..   mov dword [numbers], 8
 |           0x00005762      c784248400..   mov dword [numbers[1]], 7
@@ -345,7 +345,7 @@ EXPECT=<<EOF
 |           0x000057cc      488d8c2480..   lea rcx, [numbers]
 |           0x000057d4      48898c24e8..   mov qword [var_e8h], rcx
 |           0x000057dc      488b8c24e8..   mov rcx, qword [var_e8h]
-|           0x000057e4      48898c2418..   mov qword [var_218h], rcx
+|           0x000057e4      48898c2418..   mov qword [arg0], rcx
 |           0x000057ec      4889cf         mov rdi, rcx                ; int64_t arg1
 |           0x000057ef      488d35da0f..   lea rsi, [sym.core::array::__impl_core::fmt::Debug_for__T_____::fmt::h894a83bd2e78b654] ; 0x67d0 ; "H\x83\xecHH\x89|$8H\x89t$@\xb8\n" ; int64_t arg2
 |           0x000057f6      4889442478     mov qword [var_78h], rax
@@ -375,7 +375,7 @@ EXPECT=<<EOF
 |           0x00005881      488d8c2480..   lea rcx, [numbers]
 |           0x00005889      48898c2430..   mov qword [var_130h], rcx
 |           0x00005891      488b8c2430..   mov rcx, qword [var_130h]
-|           0x00005899      48898c2420..   mov qword [var_220h], rcx
+|           0x00005899      48898c2420..   mov qword [arg0[2]], rcx
 |           0x000058a1      4889cf         mov rdi, rcx                ; int64_t arg1
 |           0x000058a4      488d35250f..   lea rsi, [sym.core::array::__impl_core::fmt::Debug_for__T_____::fmt::h894a83bd2e78b654] ; 0x67d0 ; "H\x83\xecHH\x89|$8H\x89t$@\xb8\n" ; int64_t arg2
 |           0x000058ab      4889442458     mov qword [var_58h], rax
