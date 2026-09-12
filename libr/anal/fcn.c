@@ -1281,7 +1281,8 @@ noskip:
 					last_is_mov_lr_pc = true;
 				}
 			}
-			if (has_stack_regs && op_is_set_bp (op_dst, op_src, bp_reg, sp_reg)) {
+			// a load or store through sp names sp as a base; only a register move makes bp the frame pointer
+			if (has_stack_regs && op_is_set_bp (op_dst, op_src, bp_reg, sp_reg) && !dst->memref && !src0->memref) {
 				fcn->bp_off = fcn->stack;
 			}
 			// Is this a mov of immediate value into a register?
@@ -2088,7 +2089,7 @@ analopfinish:
 			break;
 		}
 		if (has_stack_regs && op_dst_writeonly) {
-			if (op_is_set_bp (op_dst, op_src, bp_reg, sp_reg) && src1) {
+			if (op_is_set_bp (op_dst, op_src, bp_reg, sp_reg) && !dst->memref && !src0->memref && src1) {
 				switch (op->type & R_ANAL_OP_TYPE_MASK) {
 				case R_ANAL_OP_TYPE_ADD:
 					fcn->bp_off = fcn->stack - src1->imm;

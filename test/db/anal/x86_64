@@ -4281,3 +4281,17 @@ ptr: 0x00000007
 ptr: 0x0000000f
 EOF
 RUN
+
+NAME=a load through sp does not make bp a frame pointer
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 554889e54883ec20c745f801000000488b6c2418448b45f8c9c3
+af
+afv
+EOF
+EXPECT=<<EOF
+var int32_t var_8h @ rbp-0x8
+EOF
+RUN
