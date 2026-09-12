@@ -1886,6 +1886,12 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 	int formal_index = 0;
 	RListIter *iter;
 	Variable *var;
+	HtPP *taken = ht_pp_new0 ();
+	r_list_foreach (variables, iter, var) {
+		if (var->name && var->kind == VARIABLE_KIND_FORMAL_PARAMETER) {
+			ht_pp_insert (taken, var->name, var);
+		}
+	}
 	r_list_foreach (variables, iter, var) {
 		const bool is_formal = var->kind == VARIABLE_KIND_FORMAL_PARAMETER
 			&& !var->is_result;
@@ -1908,11 +1914,25 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 			free (arg_val);
 			arg_index++;
 		} else if (var->kind == VARIABLE_KIND_LOCAL) {
+			// the function has one namespace while DWARF scopes each inlined
+			// call and lexical block, so a local that repeats a name is numbered
+			char *numbered = NULL;
+			int n = 1;
+			while (ht_pp_find (taken, numbered? numbered: var->name, NULL)) {
+				free (numbered);
+				numbered = r_str_newf ("%s_%d", var->name, n++);
+			}
+			if (numbered) {
+				free (var->name);
+				var->name = numbered;
+			}
+			ht_pp_insert (taken, var->name, var);
 			sdb_setf (sdb, meta, 0, "fcn.%s.var.%s", sname, var->name);
 			r_strbuf_appendf (&vars_buf, "%s,", var->name);
 		}
 		free (meta);
 	}
+	ht_pp_free (taken);
 	if (vars_buf.len > 0) {
 		r_strbuf_slice (&vars_buf, 0, vars_buf.len - 1);
 	}
