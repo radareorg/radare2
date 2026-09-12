@@ -117,7 +117,7 @@ EXPECT=<<EOF
 0x100007920    1     16 sym.imp.warn
 0x100007930    1     16 sym.imp.warnx
 0x100007940    1     16 sym.imp.wcwidth
-0x100007950    1     24 sym.imp.write
+0x100007950    1     16 sym.imp.write
 0x100003a90  182   2972 main
 0x100003830    1     12 sym.func.100003830
 0x10000383c    1     16 sym.func.10000383c
@@ -142,11 +142,8 @@ EXPECT=<<EOF
 0x100005638   82   1840 sub.printf_100005638
 0x100005d68    6    156 sub.printf_100005d68
 0x100005e04   34    740 sub.mbrtowc_100005e04
-0x100006184    1      4 fcn.100006184
-0x1000060e8   13    168 sym.func.1000060e8
-0x100006188    1      4 case.0x100006120.11
-0x10000618c    1     24 case.0x100006120.9
-0x1000069ec   21    456 sub.printf_1000069ec
+0x100006184    3     32 fcn.100006184
+0x1000060e8   15    196 sym.func.1000060e8
 0x1000061dc    7    180 sub.tputs_1000061dc
 0x100006290   16    176 sub.putchar_100006290
 0x10000636c   13    232 sub.printf_10000636c
@@ -156,6 +153,7 @@ EXPECT=<<EOF
 0x100006970    5     44 sub.abort_100006970
 0x10000699c    1     52 sub.write_10000699c
 0x1000069d0    1     28 sub.putchar_1000069d0
+0x1000069ec   21    456 sub.printf_1000069ec
 0x100006bb4   17    332 sub.putchar_100006bb4
 0x100006d00   17    348 sub.putchar_100006d00
 0x100006e5c   16    308 sub.mbrtowc_100006e5c
@@ -265,7 +263,7 @@ EXPECT=<<EOF
 0x100007920    1     16 sym.imp.warn
 0x100007930    1     16 sym.imp.warnx
 0x100007940    1     16 sym.imp.wcwidth
-0x100007950    1     24 sym.imp.write
+0x100007950    1     16 sym.imp.write
 0x100003a90  182   2972 main
 0x100003830    1     12 sym.func.100003830
 0x10000383c    1     16 sym.func.10000383c
@@ -290,11 +288,8 @@ EXPECT=<<EOF
 0x100005638   82   1840 sub.printf_100005638
 0x100005d68    6    156 sub.printf_100005d68
 0x100005e04   34    740 sub.mbrtowc_100005e04
-0x100006184    1      4 fcn.100006184
-0x1000060e8   13    168 sym.func.1000060e8
-0x100006188    1      4 case.0x100006120.11
-0x10000618c    1     24 case.0x100006120.9
-0x1000069ec   21    456 sub.printf_1000069ec
+0x100006184    3     32 sub.printf_100006184
+0x1000060e8   15    196 sub.printf_1000060e8
 0x1000061dc    7    180 sub.tputs_1000061dc
 0x100006290   16    176 sub.putchar_100006290
 0x10000636c   13    232 sub.printf_10000636c
@@ -304,6 +299,7 @@ EXPECT=<<EOF
 0x100006970    5     44 sub.abort_100006970
 0x10000699c    1     52 sub.write_10000699c
 0x1000069d0    1     28 sub.putchar_1000069d0
+0x1000069ec   21    456 sub.printf_1000069ec
 0x100006bb4   17    332 sub.putchar_100006bb4
 0x100006d00   17    348 sub.putchar_100006d00
 0x100006e5c   16    308 sub.mbrtowc_100006e5c
