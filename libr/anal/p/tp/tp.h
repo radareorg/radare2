@@ -274,6 +274,7 @@ R_VEC_TYPE (RVecSynthField, SynthField);
 R_VEC_TYPE_WITH_FINI (RVecSynthRec, SynthRec, synth_rec_fini);
 
 bool tp_argloc_val(TPState *tps, const char *cc, int argno, int argc, ut64 *val);
+int tp_fparg_prefix(RAnal *anal, const char *cc, const char *fcn_name, int max);
 
 ut64 etrace_addrof(TypeTrace *etrace, ut32 idx);
 const TypeTraceAccess *etrace_find_access(TypeTrace *etrace, ut32 idx, AccessPredicate pred, void *user);

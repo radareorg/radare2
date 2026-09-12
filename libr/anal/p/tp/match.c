@@ -46,12 +46,16 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 
 	RVecString types;
 	RVecString_init (&types);
+	const int fp_prefix = tp_fparg_prefix (anal, cc, fcn_name, max);
 	const ut32 opmask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL;
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev? (max - 1 - i): i;
+		// fp_prefix counted declared types, not ones a format yields
+		const bool fp_home = !format && arg_num < fp_prefix;
 		// one lookup answers both where the arg lives and its slot offset, so the two cannot disagree
 		RAnalCCArgSlot slot;
-		const bool resolved = r_anal_cc_argslot (anal, cc, arg_num, max, false, &slot);
+		const bool resolved = r_anal_cc_argslot (anal, cc,
+			fp_home? R_ANAL_CC_MAXARG + arg_num: arg_num, max, false, &slot);
 		const bool in_stack = resolved && !slot.reg;
 		const st64 soff = in_stack? slot.off: -1; // a register-homed arg occupies no stack slot
 		const char *place = resolved? slot.reg: NULL;

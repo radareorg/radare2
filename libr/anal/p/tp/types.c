@@ -610,6 +610,42 @@ static char *tp_unwrap_typedef(RAnal *anal, const char *name) {
 	return cur;
 }
 
+// not tp_is_float_type: long double's fparg slot cost varies by abi
+static bool tp_fparg_scalar(RAnal *anal, const char *type) {
+	if (R_STR_ISEMPTY (type)) {
+		return false;
+	}
+	char *name = tp_unwrap_typedef (anal, tp_skip_kind_prefix (type));
+	if (!name) {
+		return false;
+	}
+	const bool fp = !strcmp (name, "float") || !strcmp (name, "double");
+	free (name);
+	return fp;
+}
+
+// NULL unless the cc spells parameter n's fp home as a single register
+static const char *tp_fparg_loc(RAnal *anal, const char *cc, int n) {
+	const char *loc = r_anal_cc_argloc (anal, cc, R_ANAL_CC_MAXARG + n, 0, -1);
+	return (R_STR_ISEMPTY (loc) || *loc == '{' || *loc == '^')? NULL: loc;
+}
+
+int tp_fparg_prefix(RAnal *anal, const char *cc, const char *fcn_name, int max) {
+	int n;
+	for (n = 0; n < max; n++) {
+		if (!tp_fparg_loc (anal, cc, n)) {
+			break;
+		}
+		char *type = r_type_func_args_type (anal->sdb_types, fcn_name, n);
+		const bool fp = tp_fparg_scalar (anal, type);
+		free (type);
+		if (!fp) {
+			break;
+		}
+	}
+	return n;
+}
+
 // r_anal_type_bitsize handles the pointer width, this adds the typedef unwrap
 static ut64 tp_type_bits(RAnal *anal, const char *t) {
 	if (R_STR_ISEMPTY (t)) {
@@ -951,12 +987,16 @@ static char *tp_fcn_reg_type(RAnal *anal, RAnalFunction *fcn, const char *reg) {
 	RAnalFunctionSignature *sig = r_anal_function_get_signature (fcn);
 	if (sig && R_STR_ISNOTEMPTY (sig->callconv)) {
 		const int argc = r_list_length (sig->params);
+		bool fp_home = true;
 		int i;
 		for (i = 0; i < argc; i++) {
-			const char *loc = r_anal_cc_argloc (anal,
-				sig->callconv, i, 0, argc);
+			RAnalFunctionParam *param = r_list_get_n (sig->params, i);
+			// the fp run is a prefix: one non-fp arg ends it
+			const char *fploc = fp_home? tp_fparg_loc (anal, sig->callconv, i): NULL;
+			fp_home = fploc && param && tp_fparg_scalar (anal, param->type);
+			const char *loc = fp_home? fploc
+				: r_anal_cc_argloc (anal, sig->callconv, i, 0, argc);
 			if (loc && r_anal_cc_location_uses (anal, loc, reg)) {
-				RAnalFunctionParam *param = r_list_get_n (sig->params, i);
 				char *type = param && R_STR_ISNOTEMPTY (param->type)
 					? strdup (param->type): NULL;
 				r_anal_function_signature_free (sig);
