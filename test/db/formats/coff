@@ -76,7 +76,7 @@ RUN
 
 NAME=tiny coff
 FILE=bins/coff/coff.obj
-CMDS=om;is;ir
+CMDS=om;is;ir;e anal.cc;afci
 EXPECT=<<EOF
 * 2 fd: 3 +0x00000064 0x00000000 - 0x00000026 r-x r-x fmap..text_0
 - 1 fd: 3 +0x0000008b 0x00000030 - 0x0000004b r-- rw- fmap..data_1
@@ -93,6 +93,8 @@ vaddr      paddr      type   ntype name
 0x00000010 0x00000074 ADD_32 4     .data
 0x0000001c 0x00000080 ADD_32 4     MessageBoxA
 0x00000023 0x00000087 ADD_32 4     ExitProcess
+ms
+rax ms (rcx, rdx, r8, r9, stack);
 EOF
 RUN
 
@@ -101,6 +103,7 @@ NAME=tiny coff2 symbol language
 FILE=bins/coff/coff2.obj
 CMDS=<<EOF
 e bin.lang
+e anal.cc
 ?e --
 om
 is~text
@@ -109,6 +112,7 @@ pd 2
 EOF
 EXPECT=<<EOF
 msvc
+cdecl
 --
 - 9 fd: 3 +0x0000017c 0x00000000 - 0x000000ee --- --- fmap..drectve_0
 - 8 fd: 3 +0x0000026b 0x000000f0 - 0x00000b9f r-- r-- fmap..debug_S_1
@@ -189,6 +193,8 @@ i~^format
 e asm.arch
 e asm.bits
 pi 7 @ 0
+e anal.cc
+afci
 EOF
 EXPECT=<<EOF
 format   coff
@@ -201,6 +207,8 @@ nop
 lw ra, 0x14(sp)
 jr ra
 addiu sp, sp, 0x18
+o32
+v0 o32 (a0, a1, a2, a3, stack);
 EOF
 RUN
 
@@ -211,12 +219,14 @@ CMDS=<<EOF
 i~^format
 e asm.arch
 e asm.bits
+e anal.cc
 pi 9 @ 0
 EOF
 EXPECT=<<EOF
 format   coff
 ppc
 32
+ppc-32
 stw r31, -4(r1)
 stwu r1, -0x40(r1)
 mflr r31
