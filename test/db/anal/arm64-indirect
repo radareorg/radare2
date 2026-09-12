@@ -17,3 +17,62 @@ false
 br x2
 EOF
 RUN
+
+NAME=arm64 computed BR keeps reachable epilogue and returning callers
+FILE=bins/mach0/BatteryLife.arm_64.1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aaaa
+afij @ 0x100013adc~{0.noreturn}
+abj @ 0x100013f88~{0.jump}
+afij @ 0x100013fe0~{0.realsz}
+afij @ 0x100013fe0~{0.ninstrs}
+afij @ 0x1000149d4~{0.realsz}
+afij @ 0x1000149d4~{0.ninstrs}
+EOF
+EXPECT=<<EOF
+false
+4295049116
+120
+30
+344
+86
+EOF
+RUN
+
+NAME=arm64 computed BR recovery does not depend on anal.jmptbl
+FILE=bins/mach0/BatteryLife.arm_64.1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e anal.jmptbl=false
+af @ 0x100013adc
+afij @ 0x100013adc~{0.realsz}
+abj @ 0x100013f88~{0.size}
+abj @ 0x100013f88~{0.jump}
+pi 1 @ 0x100013f98
+EOF
+EXPECT=<<EOF
+1236
+36
+4295049116
+br x4
+EOF
+RUN
+
+NAME=arm64 unresolved BR still terminates with anal.jmptbl disabled
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e anal.jmptbl=false
+af
+abj @ 0x100003c44~{0.size}
+abj @ 0x100003c44~{0.ninstr}
+ab @ 0x100003c44~jump
+pi 1 @ 0x100003c60
+EOF
+EXPECT=<<EOF
+32
+8
+br x16
+EOF
+RUN
