@@ -3319,6 +3319,33 @@ var mydouble b @ rbp-0x10
 EOF2
 RUN
 
+NAME=aaft homes a float parameter declared without an arity key
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x20 @ 4
+wa mov rdi, qword [rbp - 8] @ 8
+wx f20f1045f0 @ 12
+wa call 0x100 @ 17
+wa leave @ 22
+wa ret @ 23
+wa ret @ 0x100
+af+ 0x100 sq
+afb+ 0x100 0x100 1
+af @ 0
+tk sq=func
+tk func.sq.arg.0=double,x
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var int64_t var_8h @ rbp-0x8
+var double x @ rbp-0x10
+EOF2
+RUN
+
 NAME=aaft keeps the integer index of an argument after a float one
 FILE=malloc://512
 ARGS=-a x86 -b 64 -e anal.cc=amd64
