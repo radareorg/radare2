@@ -723,3 +723,22 @@ type
 8
 EOF
 RUN
+
+NAME=dwarf cfa frame base places locals against the entry stack pointer
+FILE=bins/elf/pigz
+CMDS=<<EOF
+e asm.dwarf=false
+aaa
+afv @ dbg.ZopfliLZ77GetHistogram
+EOF
+EXPECT=<<EOF
+arg ZopfliLZ77Store const * lz77 @ rdi
+arg size_t lstart @ rsi
+arg size_t lend @ rdx
+arg size_t * ll_counts @ rcx
+arg size_t * d_counts @ r8
+var size_t[32] d_counts2 @ rsp+0x0
+var size_t[288] ll_counts2 @ rsp+0x100
+var int64_t var_a00h @ rsp+0xa00
+EOF
+RUN
