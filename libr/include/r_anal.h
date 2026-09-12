@@ -1267,6 +1267,9 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API RAnalFunction *r_anal_function_next(RAnal *anal, ut64 addr);
 R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *function);
+// same, without loading type databases; for callers that already hold the analysis lock
+R_API RAnalFunctionSignature *r_anal_function_get_signature_current(RAnalFunction *function);
+R_API bool r_anal_function_has_address_linked_signature_current(RAnalFunction *function);
 R_API void r_anal_function_signature_free(RAnalFunctionSignature *signature);
 R_API char *r_anal_function_get_signature_string(RAnalFunction *function);
 R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSignature *signature);

@@ -2575,17 +2575,21 @@ static char *function_signature_try_type_name(Sdb *types, const char *candidate)
 	return r_type_func_prototype_exist (types, candidate)? strdup (candidate): NULL;
 }
 
-static char *function_signature_address_type_name(Sdb *types, ut64 addr) {
-	R_RETURN_VAL_IF_FAIL (types, NULL);
-	char *name = r_type_link_at (types, addr);
-	if (name && r_type_kind (types, name) == R_TYPE_FUNCTION) {
-		return name;
+R_IPI const char *r_anal_function_type_link_at(RAnal *anal, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types, NULL);
+	return sdb_const_getf (anal->sdb_types, NULL, "fcnlink.%08" PFMT64x, addr);
+}
+
+static char *function_signature_address_type_name(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn, NULL);
+	char *typelinked = r_type_link_at (anal->sdb_types, fcn->addr);
+	if (typelinked && r_type_kind (anal->sdb_types, typelinked) == R_TYPE_FUNCTION) {
+		return typelinked;
 	}
-	free (name);
-	const char *dwarf_name = sdb_const_getf (types, NULL,
-		"fcnlink.%08" PFMT64x, addr);
-	if (dwarf_name && r_type_kind (types, dwarf_name) == R_TYPE_FUNCTION) {
-		return strdup (dwarf_name);
+	free (typelinked);
+	const char *linked = r_anal_function_type_link_at (anal, fcn->addr);
+	if (linked && r_type_kind (anal->sdb_types, linked) == R_TYPE_FUNCTION) {
+		return strdup (linked);
 	}
 	return NULL;
 }
@@ -2594,7 +2598,7 @@ static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
 	const char *basename;
 
 	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn && fcn->name, NULL);
-	char *name = function_signature_address_type_name (anal->sdb_types, fcn->addr);
+	char *name = function_signature_address_type_name (anal, fcn);
 	if (name) {
 		return name;
 	}
@@ -2642,7 +2646,8 @@ static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
 	return strdup (lookup_name);
 }
 
-static const char *function_signature_callconv(RAnal *anal, RAnalFunction *fcn, const char *type_name) {
+// resolve_dynamic lets a lazy dyncc marker be resolved, which writes the function
+static const char *function_signature_callconv(RAnal *anal, RAnalFunction *fcn, const char *type_name, bool resolve_dynamic) {
 	const char *callconv = NULL;
 
 	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
@@ -2652,7 +2657,7 @@ static const char *function_signature_callconv(RAnal *anal, RAnalFunction *fcn, 
 	if (R_STR_ISNOTEMPTY (callconv) && r_anal_cc_exist (anal, callconv)) {
 		return callconv;
 	}
-	const char *fcncc = r_anal_function_cc (fcn);
+	const char *fcncc = resolve_dynamic? r_anal_function_cc (fcn): fcn->callconv;
 	if (R_STR_ISNOTEMPTY (fcncc) && r_anal_cc_exist (anal, fcncc)) {
 		callconv = fcncc;
 	}
@@ -2873,7 +2878,7 @@ R_API void r_anal_function_signature_free(RAnalFunctionSignature *signature) {
 	}
 }
 
-R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *function) {
+static RAnalFunctionSignature *function_get_signature(RAnalFunction *function, bool load_types) {
 	char *type_name;
 	int i;
 	RAnal *anal;
@@ -2881,7 +2886,9 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *funct
 
 	R_RETURN_VAL_IF_FAIL (function && function->anal && function->anal->sdb_types, NULL);
 	anal = function->anal;
-	r_anal_types_ensure_loaded (anal);
+	if (load_types) {
+		r_anal_types_ensure_loaded (anal);
+	}
 	type_name = function_signature_type_name (anal, function);
 	if (!type_name) {
 		return NULL;
@@ -2918,7 +2925,7 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *funct
 	if (!signature->signature) {
 		goto beach;
 	}
-	const char *callconv = function_signature_callconv (anal, function, type_name);
+	const char *callconv = function_signature_callconv (anal, function, type_name, load_types);
 	if (callconv) {
 		signature->callconv = strdup (callconv);
 		if (!signature->callconv) {
@@ -2933,6 +2940,29 @@ beach:
 	free (type_name);
 	r_anal_function_signature_free (signature);
 	return NULL;
+}
+
+R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *function) {
+	return function_get_signature (function, true);
+}
+
+R_API RAnalFunctionSignature *r_anal_function_get_signature_current(RAnalFunction *function) {
+	return function_get_signature (function, false);
+}
+
+R_API bool r_anal_function_has_address_linked_signature_current(RAnalFunction *function) {
+	R_RETURN_VAL_IF_FAIL (function && function->anal && function->anal->lock
+		&& function->anal->sdb_types, false);
+	RAnal *anal = function->anal;
+	r_th_lock_enter (anal->lock);
+	const char *linked = r_anal_function_type_link_at (anal, function->addr);
+	char *type_name = R_STR_ISNOTEMPTY (linked)
+		? function_signature_address_type_name (anal, function): NULL;
+	bool exists = R_STR_ISNOTEMPTY (type_name)
+		&& r_type_func_prototype_exist (anal->sdb_types, type_name);
+	free (type_name);
+	r_th_lock_leave (anal->lock);
+	return exists;
 }
 
 R_API char *r_anal_function_get_signature_string(RAnalFunction *fcn) {
@@ -2971,7 +3001,7 @@ R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const 
 	resolved_ret_type = R_STR_ISNOTEMPTY (signature->ret_type)? signature->ret_type: "void";
 	const char *callconv = R_STR_ISNOTEMPTY (signature->callconv)
 		? signature->callconv
-		: function_signature_callconv (anal, fcn, type_name);
+		: function_signature_callconv (anal, fcn, type_name, true);
 	if (callconv) {
 		resolved_callconv = strdup (callconv);
 	}
