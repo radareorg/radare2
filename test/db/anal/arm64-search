@@ -295,12 +295,11 @@ outputs: 2
 ninstr: 9
 traced: 0x0
 ---
-jump: 0x100003c64
 opaddr: 0x100003c44
 addr: 0x100003c44
 size: 32
 inputs: 1
-outputs: 90
+outputs: 89
 ninstr: 8
 traced: 0x0
 cases: 137

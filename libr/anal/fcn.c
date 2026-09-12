@@ -1790,10 +1790,12 @@ noskip:
 				}
 			} else if (is_arm && anal->config->bits == 64 && anal->opt.jmptbl) {
 				// arm64 jmptbl dispatcher resolved in libr/anal/jmptbl.c.
+				// Resolved or not, the br ends the block: nothing after it is
+				// reached by falling through.
 				r_anal_jmptbl_arm64_from_br (anal, fcn, bb, depth, op, loadsize);
 				anal->cmpval = 0;
 				loadsize = 0;
-				break;
+				gotoBeach (R_ANAL_RET_NOP);
 			} else if (is_mips && anal->opt.jmptbl) {
 				// lw v1, -0x7fc4(gp) ; gp = 0x684c00 - 0x7fc4 // read 4 bytes at gp-0x7fc4
 				// sll v0, s0, 2   // select the case from the pointer table * 4
