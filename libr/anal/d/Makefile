@@ -12,7 +12,7 @@ linux-x86-32.sdb: linux-x86-32
 
 %.sdb:%.sdb.txt $(EXTRA_FILES)
 
-types-windows.sdb.txt:
+types-windows.sdb.txt: $(wildcard windows/*.txt)
 	cat windows/*.txt > types-windows.sdb.txt
 
 clean:
