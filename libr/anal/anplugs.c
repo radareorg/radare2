@@ -145,8 +145,6 @@ static bool plugin_has_callback(RAnalPlugin *p, RAnalPluginAction action) {
 		return p->analyze_fcn != NULL;
 	case R_ANAL_PLUGIN_ACTION_RECOVER_VARS:
 		return p->recover_vars != NULL;
-	case R_ANAL_PLUGIN_ACTION_GET_DATA_REFS:
-		return p->get_data_refs != NULL;
 	case R_ANAL_PLUGIN_ACTION_POST_ANALYSIS:
 		return p->post_analysis != NULL;
 	}
@@ -228,8 +226,6 @@ static const char *plugin_action_config_key(RAnalPluginAction action) {
 		return "anal.plugins.fcn";
 	case R_ANAL_PLUGIN_ACTION_RECOVER_VARS:
 		return "anal.plugins.vars";
-	case R_ANAL_PLUGIN_ACTION_GET_DATA_REFS:
-		return "anal.plugins.datarefs";
 	case R_ANAL_PLUGIN_ACTION_POST_ANALYSIS:
 		return "anal.plugins.post";
 	}
@@ -272,30 +268,14 @@ static RList *plugin_order_list(RAnal *anal, RAnalPluginAction action) {
 	return plugins;
 }
 
-static void merge_refs(RVecAnalRef **all_refs, RVecAnalRef *refs) {
-	if (all_refs && refs) {
-		if (*all_refs) {
-			RAnalRef *ref;
-			R_VEC_FOREACH (refs, ref) {
-				RVecAnalRef_push_back (*all_refs, ref);
-			}
-			RVecAnalRef_free (refs);
-		} else {
-			*all_refs = refs;
-		}
-	}
-}
-
 // Unified plugin action dispatcher.
 // For ANALYZE_FCN and POST_ANALYSIS: calls all eligible plugins (returns NULL).
 // For RECOVER_VARS: returns first non-NULL RList* of vars from an eligible plugin.
-// For GET_DATA_REFS: returns merged RVecAnalRef* from all eligible plugins.
 R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RList *ordered = plugin_order_list (anal, action);
 	RListIter *iter;
 	RAnalPlugin *p;
-	RVecAnalRef *all_refs = NULL;
 
 	if (ordered) {
 		r_list_foreach (ordered, iter, p) {
@@ -315,16 +295,13 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
 					}
 				}
 				break;
-			case R_ANAL_PLUGIN_ACTION_GET_DATA_REFS:
-				merge_refs (&all_refs, p->get_data_refs (anal, fcn));
-				break;
 			case R_ANAL_PLUGIN_ACTION_POST_ANALYSIS:
 				p->post_analysis (anal);
 				break;
 			}
 		}
 		r_list_free (ordered);
-		return all_refs; // non-NULL only for GET_DATA_REFS
+		return NULL;
 	}
 
 	// Fallback: iterate all plugins in registration order with eligibility check
@@ -347,15 +324,12 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
 				}
 			}
 			break;
-		case R_ANAL_PLUGIN_ACTION_GET_DATA_REFS:
-			merge_refs (&all_refs, p->get_data_refs (anal, fcn));
-			break;
 		case R_ANAL_PLUGIN_ACTION_POST_ANALYSIS:
 			p->post_analysis (anal);
 			break;
 		}
 	}
-	return all_refs; // non-NULL only for GET_DATA_REFS
+	return NULL;
 }
 
 // For stack-VM archs (JVM, Dalvik, ...) bin parses each method's frame header
