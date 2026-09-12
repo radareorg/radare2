@@ -120,6 +120,27 @@ EOF
 RUN
 
 # merged: mac ls pfc.fmt
+NAME=ps with a zero length
+FILE=malloc://64
+CMDS=<<EOF
+wx 41424344
+?e --
+ps 0
+?e --
+psj 0
+?e --
+ps 4
+EOF
+EXPECT=<<EOF
+--
+
+--
+{"string":"","offset":0,"section":"unknown","length":0,"type":"unknown"}
+--
+ABCD
+EOF
+RUN
+
 NAME=mac ls pdsf
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
