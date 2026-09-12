@@ -511,6 +511,14 @@ typedef struct {
 
 typedef struct r_ref_manager_t RefManager;
 
+// how much work a post-analysis hook should do, set by aa, aaa and aaaa
+typedef enum {
+	R_ANAL_PLUGIN_ANALYSIS_DEPTH_UNSPECIFIED = 0,
+	R_ANAL_PLUGIN_ANALYSIS_DEPTH_BASIC,
+	R_ANAL_PLUGIN_ANALYSIS_DEPTH_BALANCED,
+	R_ANAL_PLUGIN_ANALYSIS_DEPTH_AGGRESSIVE,
+} RAnalPluginAnalysisDepth;
+
 typedef struct r_anal_t {
 	RArchConfig *config;
 	int lineswidth; // asm.lines.width
@@ -564,6 +572,7 @@ typedef struct r_anal_t {
 	Sdb *sdb_classes_attrs;
 	RAnalCallbacks cb;
 	RAnalOptions opt;
+	RAnalPluginAnalysisDepth plugin_analysis_depth;
 	RList *reflines;
 	RList *reflines2;
 	RListComparator columnSort;
@@ -929,7 +938,7 @@ typedef RVecAnalRef *(*RAnalDataRefsCallback)(RAnal *a, RAnalFunction *fcn);
 // Pre-analysis callback (called early in aaa, after aa, before per-function work)
 typedef bool (*RAnalPreAnalysisCallback)(RAnal *a);
 
-// Post-analysis callback (called at end of aaaa)
+// Post-analysis callback (called at end of aa, aaa and aaaa)
 typedef bool (*RAnalPostAnalysisCallback)(RAnal *a);
 
 typedef struct r_anal_plugin_t {
@@ -966,7 +975,7 @@ typedef struct r_anal_plugin_t {
 
 	// Pre-analysis hook (called early in aaa, filtered by eligible)
 	RAnalPreAnalysisCallback pre_analysis;
-	// Post-analysis hook (for aaaa)
+	// Post-analysis hook (for aa, aaa and aaaa; see RAnal.plugin_analysis_depth)
 	RAnalPostAnalysisCallback post_analysis;
 } RAnalPlugin;
 
@@ -1173,7 +1182,7 @@ typedef enum {
 	R_ANAL_PLUGIN_ACTION_ANALYZE_FCN,   // af hook: call analyze_fcn on all eligible plugins
 	R_ANAL_PLUGIN_ACTION_RECOVER_VARS,  // afva hook: first plugin returning vars wins
 	R_ANAL_PLUGIN_ACTION_GET_DATA_REFS, // aar hook: merge data refs from all eligible plugins
-	R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, // aaaa hook: call post_analysis on all eligible plugins
+	R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, // aa/aaa/aaaa hook: call post_analysis on all eligible plugins
 } RAnalPluginAction;
 
 // Unified plugin action dispatcher (replaces per-action APIs)
