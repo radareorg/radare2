@@ -4515,7 +4515,7 @@ static char *get_reg_profile(RArchSession *as) {
 		"=A4	si\n"
 		"=A5	di\n"
 		"=SN	ah\n"
-		"=TR	fs\n" // can be %gs too, but well thats can be overriden with the cc abi scripts
+		"=TR	fs\n" // can be %gs too, but well that can be overridden with the cc abi scripts
 		"gpr	ip	.16	48	0\n"
 		"gpr	ax	.16	24	0\n"
 		"gpr	ah	.8	25	0\n"

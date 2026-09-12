@@ -42,7 +42,7 @@ static RCoreHelpMessage help_msg_on = {
 	"Usage: on[n+*]", "[file] ([addr] [rwx])", "Open file without parsing headers",
 	"on", " /bin/ls [addr] [perm] [vsize]", "map raw file at addr with vsize (no r_bin involved)",
 	"onn", " [file] ([rwx])", "open file without creating any map or parsing headers with rbin)",
-	"onnu", " [file] ([rwx])", "same as onn, but unique, will return previos fd if already opened",
+	"onnu", " [file] ([rwx])", "same as onn, but unique, will return previous fd if already opened",
 	"on+", " [file] ([rwx])", "open file in rw mode without parsing headers",
 	"on*", "", "list open files as r2 commands",
 	NULL
@@ -164,7 +164,7 @@ static RCoreHelpMessage help_msg_om = {
 	"omr", "[?]", "reorder map priority",
 	"oms", " [mapid] [newsize]", "show or change size map with corresponding id, map size cannot be 0",
 	"omt", "[?]", "toggle map ties backward or forward",
-	"omu", " fd va sz pa rwx name", "same as `om` but checks for existance (u stands for uniq)",
+	"omu", " fd va sz pa rwx name", "same as `om` but checks for existence (u stands for uniq)",
 	"omv", "[?]", "move map to the given address",
 	// "om*", "", "list all maps in r2 commands format",
 	// "om,", " [query]", "list maps using table api",

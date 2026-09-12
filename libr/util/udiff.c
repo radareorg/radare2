@@ -846,7 +846,7 @@ static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst,
 
 /**
  ** \brief Return Levenshtein distance and put array of changes, of unknown
- ** lenght, in chgs
+ ** length, in chgs
  ** \param bufa Structure to represent starting buffer
  ** \param bufb Structure to represent the buffer to reach
  ** \param maxdst Max Levenshtein distance need, send UT32_MAX if unknown.
@@ -864,7 +864,7 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 	R_RETURN_VAL_IF_FAIL (bufa && bufb && bufa->buf && bufb->buf, -1);
 	R_RETURN_VAL_IF_FAIL (!chgs || !*chgs, -1); // if chgs then it must point at NULL
 
-	// force buffer b to be longer, this will invert add/del resulsts
+	// force buffer b to be longer, this will invert add/del results
 	bool invert = false;
 	if (bufb->len < bufa->len) {
 		invert = true;

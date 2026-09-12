@@ -1136,7 +1136,7 @@ static inline bool r_bin_wasm_get_custom_name_entries(RBinWasmObj *bin, RBinWasm
 
 static bool parse_import_sec(RBinWasmObj *bin) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->g_sections, false);
-	// each import type has seperate index space, so we parse them into 4 vecs
+	// each import type has separate index space, so we parse them into 4 vecs
 	free_all_imports (bin); // ensure all are empty
 
 	int i;

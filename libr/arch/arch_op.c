@@ -272,7 +272,7 @@ repeat:
 	case R_ANAL_OP_TYPE_CASE: return "case";
 	case R_ANAL_OP_TYPE_CPL: return "cpl";
 	case R_ANAL_OP_TYPE_CRYPTO: return "crypto";
-	case R_ANAL_OP_TYPE_LENGTH: return "lenght";
+	case R_ANAL_OP_TYPE_LENGTH: return "length";
 	case R_ANAL_OP_TYPE_ABS: return "abs";
 	}
 	if (once) {
