@@ -722,7 +722,7 @@ static void core_anal_fcn_trycatch(RCore *core, RAnalFunction *fcn) {
 		if (*handler == fcn->addr || r_anal_function_contains (fcn, *handler)) {
 			continue;
 		}
-		int ret = r_anal_function_bb (core->anal, fcn, *handler, core->anal->opt.depth);
+		int ret = r_anal_function_bb (core->anal, fcn, *handler);
 		if (ret < 0 && ret != R_ANAL_RET_END) {
 			R_LOG_DEBUG ("Cannot analyze exception handler at 0x%08"PFMT64x, *handler);
 		}
