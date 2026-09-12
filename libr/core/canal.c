@@ -5725,6 +5725,27 @@ R_API void r_core_anal_inflags(RCore *core, const char * R_NULLABLE glob) {
 	free (anal_in);
 }
 
+static bool indirect_exit_is_internal(RAnalFunction *fcn, RAnalBlock *bb) {
+	if (bb->jump != UT64_MAX) {
+		return r_anal_function_contains (fcn, bb->jump);
+	}
+	RAnalSwitchOp *sw = bb->switch_op;
+	if (!sw || !sw->amount || sw->amount != r_list_length (sw->cases)) {
+		return false;
+	}
+	if (sw->def_val != UT64_MAX && !r_anal_function_contains (fcn, sw->def_val)) {
+		return false;
+	}
+	RListIter *iter;
+	RAnalCaseOp *kase;
+	r_list_foreach (sw->cases, iter, kase) {
+		if (!r_anal_function_contains (fcn, kase->jump)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static bool analyze_noreturn_function(RCore *core, RAnalFunction *f) {
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -5744,8 +5765,19 @@ static bool analyze_noreturn_function(RCore *core, RAnalFunction *f) {
 		switch (op->type & R_ANAL_OP_TYPE_MASK) {
 		case R_ANAL_OP_TYPE_ILL:
 		case R_ANAL_OP_TYPE_RET:
+		case R_ANAL_OP_TYPE_CRET:
 			r_anal_op_free (op);
 			return false;
+		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_UCJMP:
+			// MASK removes REG/IND, so this also covers RJMP/IJMP/IRJMP.
+			// An indirect exit can reach a return outside the recovered CFG.
+			// A complete internal switch still permits noreturn propagation.
+			if (!indirect_exit_is_internal (f, bb)) {
+				r_anal_op_free (op);
+				return false;
+			}
+			break;
 		case R_ANAL_OP_TYPE_JMP:
 			if (!r_anal_function_contains (f, op->jump)) {
 				r_anal_op_free (op);

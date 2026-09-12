@@ -1,0 +1,19 @@
+NAME=arm64 unknown indirect exit is not proof of noreturn
+FILE=bins/mach0/WheresMyBrowser
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aaaa
+afij @ 0x100023174~{0.noreturn}
+abj @ 0x1000231a4~{0.size}
+afij @ 0x100022ae0~{0.realsz}
+afij @ 0x100022ae0~{0.ninstrs}
+pi 1 @ 0x1000231b4
+EOF
+EXPECT=<<EOF
+false
+20
+496
+124
+br x2
+EOF
+RUN
