@@ -6454,7 +6454,8 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 
 #define USE_PREAD 0
 static ut8 *R_NULLABLE decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
-	ut8 *out = calloc (len, 10);
+	// out[len] is always written, so len 0 still needs a byte for it
+	ut8 *out = calloc (len + 1, 10);
 	if (!out) {
 		return NULL;
 	}
