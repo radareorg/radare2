@@ -3,7 +3,7 @@
 #include <r_anal.h>
 #include <r_anal_priv.h>
 
-#define JMPTBL_DISPATCH_LOOKBACK 16
+#define JMPTBL_DISPATCH_LOOKBACK 32
 #define JMPTBL_TARGET_MAX_OPS 6
 #define JMPTBL_TARGET_PROBE_CAP 128
 #define SWITCH_SDB_NS "switches"
@@ -42,6 +42,62 @@ static bool arm64_same_reg(const char *a, const char *b) {
 		&& (b[0] == 'w' || b[0] == 'x') && !strcmp (a + 1, b + 1)));
 }
 
+static bool arm64_leaddr_before(RAnal *anal, RList *leaddrs, const char *reg, ut64 before, ut64 scan_base, const ut8 *buf, RLeaddrPair *result) {
+	char source[32];
+	r_str_ncpy (source, reg, sizeof (source));
+	RLeaddrPair *la = leaddrs_find_before (leaddrs, source, before);
+	ut64 delta = 0;
+	int stack_slot = -1;
+	// Prefer the local producer over cached register values. A register can
+	// be copied, spilled, then reused for a different address before BR.
+	int i;
+	for (i = (before - scan_base) / 4 - 1; i >= 0; i--) {
+		const ut64 addr = scan_base + i * 4;
+		const ut32 insn = r_read_ble32 (buf + i * 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+		if (stack_slot >= 0) {
+			if ((insn & 0xffc003e0) == 0xf90003e0 && (int)((insn >> 10 & 0xfff) * 8) == stack_slot) {
+				snprintf (source, sizeof (source), "x%u", insn & 31);
+				la = leaddrs_find_before (leaddrs, source, addr);
+				stack_slot = -1;
+			} else if ((insn & 0xbf8003ff) == 0x910003ff) {
+				// Do not cross a stack adjustment with an unresolved spill.
+				return false;
+			}
+			continue;
+		}
+		RAnalOp op = { 0 };
+		r_anal_op (anal, &op, addr, buf + i * 4, 4, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL);
+		RAnalValue *dst = RVecRArchValue_at (&op.dsts, 0);
+		RAnalValue *src = RVecRArchValue_at (&op.srcs, 0);
+		if (dst && !dst->memref && arm64_same_reg (dst->reg, source)) {
+			if ((insn & 0x1f000000) == 0x10000000 && op.ptr != UT64_MAX) {
+				result->op_addr = addr;
+				result->leaddr = op.ptr + delta;
+				r_anal_op_fini (&op);
+				return true;
+			}
+			if ((insn & 0xffe0ffe0) == 0xaa0003e0 && src && src->reg) {
+				r_str_ncpy (source, src->reg, sizeof (source));
+				la = leaddrs_find_before (leaddrs, source, addr);
+			} else if ((insn & 0xbf800000) == 0x91000000 && src && arm64_same_reg (src->reg, source)) {
+				const ut64 imm = (ut64)(insn >> 10 & 0xfff) << ((insn >> 22 & 1) * 12);
+				delta += insn & 0x40000000? -imm: imm;
+			} else if ((insn & 0xffc003e0) == 0xf94003e0) {
+				stack_slot = (insn >> 10 & 0xfff) * 8;
+			} else {
+				r_anal_op_fini (&op);
+				return false;
+			}
+		}
+		r_anal_op_fini (&op);
+	}
+	if (stack_slot < 0 && la) {
+		*result = *la;
+		return true;
+	}
+	return false;
+}
+
 typedef struct {
 	ut64 loadaddr;
 	ut64 depaddr;
@@ -50,6 +106,7 @@ typedef struct {
 	ut64 scale;
 	int loadsize;
 	int extend;
+	int index_reg;
 	bool signed_entries;
 	bool word_load;
 } Arm64Dispatch;
@@ -68,25 +125,27 @@ static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs, ut64 br_addr, co
 	char table_reg[32] = { 0 };
 	char load_reg[32] = { 0 };
 	ut64 add_addr = UT64_MAX;
-	ut64 load_addr = UT64_MAX;
-	bool found_add = false;
 	unsigned shift = 0;
 	dispatch->extend = -1;
+	dispatch->index_reg = -1;
 	int i;
 	for (i = scan_size / 4 - 1; i >= 0; i--) {
 		RAnalOp op = { 0 };
 		bool stop = false;
 		if (r_anal_op (anal, &op, scan_base + i * 4, buf + i * 4, 4, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL) > 0) {
 			const ut32 type = op.type & R_ANAL_OP_TYPE_MASK;
-			if (found_add) {
+			if (add_addr != UT64_MAX) {
 				if (type == R_ANAL_OP_TYPE_LOAD) {
 					RAnalValue *ld = RVecRArchValue_at (&op.dsts, 0);
 					RAnalValue *ls = RVecRArchValue_at (&op.srcs, 0);
 					if (ld && ld->reg && ls && ls->reg && (arm64_same_reg (add_s0, ld->reg) || arm64_same_reg (add_s1, ld->reg))) {
 						r_str_ncpy (load_reg, ld->reg, sizeof (load_reg));
 						r_str_ncpy (table_reg, ls->reg, sizeof (table_reg));
-						load_addr = scan_base + i * 4;
-						dispatch->loadaddr = load_addr;
+						dispatch->loadaddr = scan_base + i * 4;
+						const ut32 insn = r_read_ble32 (buf + i * 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+						if ((insn & 0x3b200c00) == 0x38200800) {
+							dispatch->index_reg = insn >> 16 & 31;
+						}
 						dispatch->signed_entries = op.sign;
 						dispatch->word_load = ld->reg[0] == 'w';
 						dispatch->loadsize = op.ptrsize;
@@ -120,7 +179,6 @@ static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs, ut64 br_addr, co
 						r_str_ncpy (add_s1, s1->reg, sizeof (add_s1));
 					}
 					add_addr = scan_base + i * 4;
-					found_add = true;
 					stop = !*add_s0 && !*add_s1;
 				}
 			}
@@ -129,9 +187,6 @@ static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs, ut64 br_addr, co
 		if (stop) {
 			break;
 		}
-	}
-	if (!found_add || (!*add_s0 && !*add_s1)) {
-		return false;
 	}
 	if (!*load_reg || !*table_reg) {
 		return false;
@@ -147,15 +202,82 @@ static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs, ut64 br_addr, co
 		return false;
 	}
 	dispatch->scale = (ut64)1 << shift;
-	RLeaddrPair *bp = leaddrs_find_before (leaddrs, base_reg, add_addr);
-	RLeaddrPair *tp = leaddrs_find_before (leaddrs, table_reg, load_addr);
-	if (!bp || !tp) {
+	RLeaddrPair bp = { 0 }, tp = { 0 };
+	if (!arm64_leaddr_before (anal, leaddrs, base_reg, add_addr, scan_base, buf, &bp)
+			|| !arm64_leaddr_before (anal, leaddrs, table_reg, dispatch->loadaddr, scan_base, buf, &tp)) {
 		return false;
 	}
-	dispatch->depaddr = R_MIN (bp->op_addr, tp->op_addr);
-	dispatch->basptr = bp->leaddr;
-	dispatch->tblptr = tp->leaddr;
+	dispatch->depaddr = R_MIN (bp.op_addr, tp.op_addr);
+	dispatch->basptr = bp.leaddr;
+	dispatch->tblptr = tp.leaddr;
 	return true;
+}
+
+// Swift enum dispatchers select an index from small constants instead of
+// comparing that index against a bound. A nearby CMP can concern another arg.
+static ut64 arm64_index_bound(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, const Arm64Dispatch *dispatch) {
+	if (dispatch->index_reg < 0) {
+		return UT64_MAX;
+	}
+	RAnalBlock *pred = NULL, *block;
+	RListIter *iter;
+	r_list_foreach (fcn->bbs, iter, block) {
+		if (block->jump == bb->addr || block->fail == bb->addr) {
+			if (pred) {
+				return UT64_MAX;
+			}
+			pred = block;
+		}
+	}
+	ut64 bounds[32];
+	memset (bounds, 0xff, sizeof (bounds));
+	ut8 buf[JMPTBL_DISPATCH_LOOKBACK * 4];
+	RAnalBlock *blocks[] = { pred, bb };
+	int pass;
+	for (pass = pred? 0: 1; pass < 2; pass++) {
+		block = blocks[pass];
+		const ut64 end = pass? dispatch->loadaddr: block->addr + block->size;
+		const ut64 size = end - block->addr;
+		if (end < block->addr || size > sizeof (buf)
+				|| anal->iob.read_at (anal->iob.io, block->addr, buf, size) != size) {
+			return UT64_MAX;
+		}
+		size_t i;
+		for (i = 0; i + 4 <= size; i += 4) {
+			const ut32 insn = r_read_ble32 (buf + i, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+			const unsigned rd = insn & 31, rn = insn >> 5 & 31, rm = insn >> 16 & 31;
+			bounds[31] = 0; // WZR / XZR in the supported instructions
+			if ((insn & 0x7f800000) == 0x52800000) { // MOVZ Wd / Xd
+				bounds[rd] = (ut64)(insn >> 5 & 0xffff) << ((insn >> 21 & 3) * 16);
+			} else if ((insn & 0x7fe0ffe0) == 0x2a0003e0) { // MOV register
+				bounds[rd] = bounds[rm];
+			} else if ((insn & 0x7fe00800) == 0x1a800000) { // CSEL / CSINC
+				const ut64 a = bounds[rn], b = bounds[rm];
+				bounds[rd] = a < 4096 && b < 4096? R_MAX (a, b + (insn >> 10 & 1)): UT64_MAX;
+			} else {
+				RAnalOp op = { 0 };
+				const int len = r_anal_op (anal, &op, block->addr + i, buf + i, 4, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL);
+				const ut32 type = op.type & R_ANAL_OP_TYPE_MASK;
+				if (len < 1 || type == R_ANAL_OP_TYPE_CALL || type == R_ANAL_OP_TYPE_UCALL) {
+					memset (bounds, 0xff, sizeof (bounds));
+				} else if (type != R_ANAL_OP_TYPE_CMP) {
+					RAnalValue *dst;
+					R_VEC_FOREACH (&op.dsts, dst) {
+						const char *reg = dst->reg;
+						if (!dst->memref && reg && (reg[0] == 'w' || reg[0] == 'x') && reg[1] >= '0' && reg[1] <= '9') {
+							const unsigned n = atoi (reg + 1);
+							if (n < 32) {
+								bounds[n] = UT64_MAX;
+							}
+						}
+					}
+				}
+				r_anal_op_fini (&op);
+			}
+		}
+	}
+	const ut64 bound = bounds[dispatch->index_reg];
+	return bound < 4096? bound: UT64_MAX;
 }
 
 static inline ut64 get_mips_gp_base(RAnal *anal, ut64 ip) {
@@ -1477,6 +1599,12 @@ R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 			}
 		}
 		table_size = alt_size;
+	}
+	const ut64 index_bound = arm64_index_bound (anal, fcn, bb, &dispatch);
+	if (index_bound != UT64_MAX) {
+		table_size = index_bound + 1;
+		alt_default = UT64_MAX;
+		bounded = true;
 	}
 	if (table_size == 0 || table_size == UT64_MAX) {
 		return false;

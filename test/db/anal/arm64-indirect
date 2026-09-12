@@ -157,6 +157,65 @@ cases: 91
 EOF
 RUN
 
+NAME=arm64 MOV aliases and reused table registers retain switch cases
+FILE=bins/mach0/ired-arm64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af @ 0x100005864
+af @ 0x100006400
+afij @ 0x100005864~{0.realsz}
+CC. @ 0x100005934
+?v case.0x100005934.0
+afij @ 0x100006400~{0.realsz}
+CC. @ 0x10000687c
+?v case.0x10000687c.0
+EOF
+EXPECT=<<EOF
+1328
+switch table (20 cases) at 0x100005d94
+0x100005938
+3532
+switch table (81 cases) at 0x10000732c
+0x100006880
+EOF
+RUN
+
+NAME=arm64 spilled table address and SXTH dispatch keep the full switch
+FILE=bins/elf/switch-hello-world.elf
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af @ 0x16e9c
+CC. @ 0x17174
+?v case.0x17174.7
+abj @ 0x17178~{0.size}
+EOF
+EXPECT=<<EOF
+switch table (91 cases) at 0x2a55c
+0x17178
+60
+EOF
+RUN
+
+NAME=arm64 selected index is not bounded by an unrelated CMP
+FILE=bins/mach0/SwiftAsynciOS
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af @ 0x1000069e4
+afij @ 0x1000069e4~{0.realsz}
+ab @ 0x100006a0c~cases
+ab @ 0x100006a2c~cases
+?v case.0x100006a20.1
+?v case.0x100006a40.1
+EOF
+EXPECT=<<EOF
+140
+cases: 5
+cases: 5
+0x100006a24
+0x100006a44
+EOF
+RUN
+
 NAME=arm64 shared switch destination keeps every case label
 FILE=bins/mach0/ls-m1
 ARGS=-a arm -b 64
