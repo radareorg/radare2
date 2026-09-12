@@ -1,3 +1,27 @@
+NAME=noreturn propagation updates block and function instruction counts
+FILE=bins/elf/noreturn
+CMDS=<<EOF
+e anal.imports=false
+aa
+afij @ sym.might_not_return~{0.ninstrs}
+abj @ 0x1181~{0.ninstr}
+abj @ 0x1181~{0.size}
+tn 0x1050
+aanr
+afij @ sym.might_not_return~{0.ninstrs}
+abj @ 0x1181~{0.ninstr}
+abj @ 0x1181~{0.size}
+EOF
+EXPECT=<<EOF
+93
+9
+45
+48
+2
+10
+EOF
+RUN
+
 NAME=tn symbol
 FILE=bins/elf/analysis/hello-objc-linux
 CMDS=<<EOF
