@@ -711,6 +711,7 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 		return;
 	}
 	static const char *keys[] = { "self", "error", "clobber", "preserve", NULL };
+	anal->cc_generation++;
 	sdb_unset (DB, name, 0);
 	cc_unset_keys (DB, name, cc_layout_keys);
 	cc_unset_keys (DB, name, keys);
@@ -719,6 +720,7 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 
 R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 	R_RETURN_VAL_IF_FAIL (anal && expr, false);
+	anal->cc_generation++;
 	bool ret = false;
 	char *args = NULL;
 	char *e = strdup (expr);
@@ -793,8 +795,19 @@ R_API bool r_anal_cc_once(RAnal *anal) {
 }
 
 R_API void r_anal_cc_reset(RAnal *anal) {
+	R_RETURN_IF_FAIL (anal);
 	R_CRITICAL_ENTER (anal);
+	anal->cc_generation++;
 	sdb_reset (DB);
+	R_CRITICAL_LEAVE (anal);
+}
+
+// the one way a caller folds a convention database into the analysis one
+R_API void r_anal_cc_merge(RAnal *anal, Sdb *db) {
+	R_RETURN_IF_FAIL (anal && db);
+	R_CRITICAL_ENTER (anal);
+	anal->cc_generation++;
+	sdb_merge (DB, db);
 	R_CRITICAL_LEAVE (anal);
 }
 
@@ -1191,6 +1204,7 @@ static void cc_set_roleloc(RAnal *anal, const char *convention, const char *role
 		return;
 	}
 	RStrBuf sb;
+	anal->cc_generation++;
 	sdb_set (DB, r_strbuf_initf (&sb, "cc.%s.%s", convention, role), loc, 0);
 	r_strbuf_fini (&sb);
 }
@@ -1445,6 +1459,7 @@ R_API const char *r_anal_cc_default(RAnal *anal) {
 
 R_API void r_anal_set_cc_default(RAnal *anal, const char *cc) {
 	R_RETURN_IF_FAIL (anal && cc);
+	anal->cc_generation++;
 	sdb_set (DB, "default.cc", cc, 0);
 }
 
@@ -1455,6 +1470,7 @@ R_API const char *r_anal_syscc_default(RAnal *anal) {
 
 R_API void r_anal_set_syscc_default(RAnal *anal, const char *cc) {
 	R_RETURN_IF_FAIL (anal && cc);
+	anal->cc_generation++;
 	sdb_set (DB, "default.syscc", cc, 0);
 }
 
