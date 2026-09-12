@@ -4204,8 +4204,7 @@ static void cmd_afbt(RCore *core, const char *input) {
 		r_list_free (blocks);
 		return;
 	}
-	const int depth = 50;
-	const bool applied = r_anal_switch_apply (core->anal, fcn, block, depth, &spec);
+	const bool applied = r_anal_switch_apply (core->anal, fcn, block, &spec);
 	if (applied && (spec.flags & R_ANAL_SWITCH_F_USER)) {
 		r_anal_switch_set (core->anal, spec.startea, &spec);
 	}

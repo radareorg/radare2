@@ -214,7 +214,6 @@ R_API RAnal *r_anal_new(void) {
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
 	anal->cxxabi = R_ANAL_CPP_ABI_ITANIUM;
-	anal->opt.depth = 32;
 	anal->opt.noncode = false; // do not analyze data by default
 	anal->lock = r_th_lock_new (true);
 	r_anal_backtrace_init (anal);
