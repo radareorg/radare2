@@ -971,6 +971,9 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 
 	// Chop the block. Resize and remove all destination addrs
 	r_anal_block_set_size (block, addr - block->addr);
+	while (block->ninstr > 0 && r_anal_bb_offset_inst (block, block->ninstr - 1) >= block->size) {
+		block->ninstr--;
+	}
 	r_anal_block_update_hash (block);
 	block->jump = UT64_MAX;
 	block->fail = UT64_MAX;
@@ -988,6 +991,7 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 			r_anal_block_recurse (entry, noreturn_successors_reachable_cb, succs);
 		}
 		ht_up_foreach (succs, noreturn_remove_unreachable_cb, fcn);
+		fcn->ninstr = r_anal_function_instrcount (fcn);
 	}
 	r_list_free (fcns_cpy);
 

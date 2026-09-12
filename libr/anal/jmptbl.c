@@ -3,7 +3,7 @@
 #include <r_anal.h>
 #include <r_anal_priv.h>
 
-#define JMPTBL_DISPATCH_LOOKBACK 16
+#define JMPTBL_DISPATCH_LOOKBACK 32
 #define JMPTBL_TARGET_MAX_OPS 6
 #define JMPTBL_TARGET_PROBE_CAP 128
 #define SWITCH_SDB_NS "switches"
@@ -37,15 +37,87 @@ static RLeaddrPair *leaddrs_find_before(RList *leaddrs, const char *reg, ut64 be
 	return NULL;
 }
 
-static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs, ut64 br_addr, const char *target_reg, ut64 *opaddr, ut64 *depaddr, ut64 *basptr, ut64 *tblptr) {
-	R_RETURN_VAL_IF_FAIL (anal && leaddrs && target_reg && opaddr && depaddr && basptr && tblptr, false);
-	const ut64 lookback_bytes = JMPTBL_DISPATCH_LOOKBACK * 4;
-	if (br_addr < lookback_bytes) {
-		return false;
+static bool arm64_same_reg(const char *a, const char *b) {
+	return a && b && (!strcmp (a, b) || ((a[0] == 'w' || a[0] == 'x')
+		&& (b[0] == 'w' || b[0] == 'x') && !strcmp (a + 1, b + 1)));
+}
+
+static bool arm64_leaddr_before(RAnal *anal, RList *leaddrs, const char *reg, ut64 before, ut64 scan_base, const ut8 *buf, RLeaddrPair *result) {
+	char source[32];
+	r_str_ncpy (source, reg, sizeof (source));
+	RLeaddrPair *la = leaddrs_find_before (leaddrs, source, before);
+	ut64 delta = 0;
+	int stack_slot = -1;
+	// Prefer the local producer over cached register values. A register can
+	// be copied, spilled, then reused for a different address before BR.
+	int i;
+	for (i = (before - scan_base) / 4 - 1; i >= 0; i--) {
+		const ut64 addr = scan_base + i * 4;
+		const ut32 insn = r_read_ble32 (buf + i * 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+		if (stack_slot >= 0) {
+			if ((insn & 0xffc003e0) == 0xf90003e0 && (int)((insn >> 10 & 0xfff) * 8) == stack_slot) {
+				snprintf (source, sizeof (source), "x%u", insn & 31);
+				la = leaddrs_find_before (leaddrs, source, addr);
+				stack_slot = -1;
+			} else if ((insn & 0xbf8003ff) == 0x910003ff) {
+				// Do not cross a stack adjustment with an unresolved spill.
+				return false;
+			}
+			continue;
+		}
+		RAnalOp op = { 0 };
+		r_anal_op (anal, &op, addr, buf + i * 4, 4, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL);
+		RAnalValue *dst = RVecRArchValue_at (&op.dsts, 0);
+		RAnalValue *src = RVecRArchValue_at (&op.srcs, 0);
+		if (dst && !dst->memref && arm64_same_reg (dst->reg, source)) {
+			if ((insn & 0x1f000000) == 0x10000000 && op.ptr != UT64_MAX) {
+				result->op_addr = addr;
+				result->leaddr = op.ptr + delta;
+				r_anal_op_fini (&op);
+				return true;
+			}
+			if ((insn & 0xffe0ffe0) == 0xaa0003e0 && src && src->reg) {
+				r_str_ncpy (source, src->reg, sizeof (source));
+				la = leaddrs_find_before (leaddrs, source, addr);
+			} else if ((insn & 0xbf800000) == 0x91000000 && src && arm64_same_reg (src->reg, source)) {
+				const ut64 imm = (ut64)(insn >> 10 & 0xfff) << ((insn >> 22 & 1) * 12);
+				delta += insn & 0x40000000? -imm: imm;
+			} else if ((insn & 0xffc003e0) == 0xf94003e0) {
+				stack_slot = (insn >> 10 & 0xfff) * 8;
+			} else {
+				r_anal_op_fini (&op);
+				return false;
+			}
+		}
+		r_anal_op_fini (&op);
 	}
+	if (stack_slot < 0 && la) {
+		*result = *la;
+		return true;
+	}
+	return false;
+}
+
+typedef struct {
+	ut64 loadaddr;
+	ut64 depaddr;
+	ut64 basptr;
+	ut64 tblptr;
+	ut64 scale;
+	int loadsize;
+	int extend;
+	int index_reg;
+	bool signed_entries;
+	bool word_load;
+} Arm64Dispatch;
+
+static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs, ut64 br_addr, const char *target_reg, Arm64Dispatch *dispatch) {
+	R_RETURN_VAL_IF_FAIL (anal && leaddrs && target_reg && dispatch, false);
+	const ut64 lookback_bytes = JMPTBL_DISPATCH_LOOKBACK * 4;
 	ut8 buf[JMPTBL_DISPATCH_LOOKBACK * 4];
-	const ut64 scan_base = br_addr - lookback_bytes;
-	if (anal->iob.read_at (anal->iob.io, scan_base, buf, sizeof (buf)) != sizeof (buf)) {
+	const ut64 scan_size = R_MIN (br_addr, lookback_bytes);
+	const ut64 scan_base = br_addr - scan_size;
+	if (!scan_size || anal->iob.read_at (anal->iob.io, scan_base, buf, scan_size) != scan_size) {
 		return false;
 	}
 	char add_s0[32] = { 0 };
@@ -55,8 +127,11 @@ static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs, ut64 br_addr, co
 	ut64 add_addr = UT64_MAX;
 	ut64 load_addr = UT64_MAX;
 	bool found_add = false;
+	unsigned shift = 0;
+	dispatch->extend = -1;
+	dispatch->index_reg = -1;
 	int i;
-	for (i = JMPTBL_DISPATCH_LOOKBACK - 1; i >= 0; i--) {
+	for (i = scan_size / 4 - 1; i >= 0; i--) {
 		RAnalOp op = { 0 };
 		bool stop = false;
 		if (r_anal_op (anal, &op, scan_base + i * 4, buf + i * 4, 4, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL) > 0) {
@@ -65,16 +140,39 @@ static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs, ut64 br_addr, co
 				if (type == R_ANAL_OP_TYPE_LOAD) {
 					RAnalValue *ld = RVecRArchValue_at (&op.dsts, 0);
 					RAnalValue *ls = RVecRArchValue_at (&op.srcs, 0);
-					if (ld && ld->reg && ls && ls->reg && ((*add_s0 && !strcmp (add_s0, ld->reg)) || (*add_s1 && !strcmp (add_s1, ld->reg)))) {
+					if (ld && ld->reg && ls && ls->reg && (arm64_same_reg (add_s0, ld->reg) || arm64_same_reg (add_s1, ld->reg))) {
 						r_str_ncpy (load_reg, ld->reg, sizeof (load_reg));
 						r_str_ncpy (table_reg, ls->reg, sizeof (table_reg));
 						load_addr = scan_base + i * 4;
+						dispatch->loadaddr = load_addr;
+						const ut32 insn = r_read_ble32 (buf + i * 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+						if ((insn & 0x3b200c00) == 0x38200800) {
+							dispatch->index_reg = insn >> 16 & 31;
+						}
+						dispatch->signed_entries = op.sign;
+						dispatch->word_load = ld->reg[0] == 'w';
+						dispatch->loadsize = op.ptrsize;
 						stop = true;
 					}
 				}
 			} else if (type == R_ANAL_OP_TYPE_ADD) {
 				RAnalValue *d = RVecRArchValue_at (&op.dsts, 0);
 				if (d && d->reg && !strcmp (d->reg, target_reg)) {
+					const ut32 insn = r_read_ble32 (buf + i * 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+					// Decode the scale and optional extension on ADD itself.
+					if ((insn & 0xffe00000) == 0x8b200000) {
+						dispatch->extend = insn >> 13 & 7;
+						shift = insn >> 10 & 7;
+						if (shift > 4) {
+							r_anal_op_fini (&op);
+							return false;
+						}
+					} else if ((insn & 0xffe00000) == 0x8b000000) {
+						shift = insn >> 10 & 63;
+					} else {
+						r_anal_op_fini (&op);
+						return false;
+					}
 					RAnalValue *s0 = RVecRArchValue_at (&op.srcs, 0);
 					RAnalValue *s1 = RVecRArchValue_at (&op.srcs, 1);
 					if (s0 && s0->reg) {
@@ -101,22 +199,96 @@ static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs, ut64 br_addr, co
 		return false;
 	}
 	// The dispatch base is the add source that is not the loaded value.
-	const char *base_reg = (*add_s0 && strcmp (add_s0, load_reg))? add_s0
-		: (*add_s1 && strcmp (add_s1, load_reg))? add_s1
+	const char *base_reg = (*add_s0 && !arm64_same_reg (add_s0, load_reg))? add_s0
+		: (*add_s1 && !arm64_same_reg (add_s1, load_reg))? add_s1
 								: NULL;
 	if (!base_reg) {
 		return false;
 	}
-	RLeaddrPair *bp = leaddrs_find_before (leaddrs, base_reg, add_addr);
-	RLeaddrPair *tp = leaddrs_find_before (leaddrs, table_reg, load_addr);
-	if (!bp || !tp) {
+	if ((shift || dispatch->extend >= 0) && !arm64_same_reg (add_s1, load_reg)) {
 		return false;
 	}
-	*opaddr = bp->op_addr;
-	*depaddr = R_MIN (bp->op_addr, tp->op_addr);
-	*basptr = bp->leaddr;
-	*tblptr = tp->leaddr;
+	dispatch->scale = (ut64)1 << shift;
+	RLeaddrPair bp = { 0 }, tp = { 0 };
+	if (!arm64_leaddr_before (anal, leaddrs, base_reg, add_addr, scan_base, buf, &bp)
+			|| !arm64_leaddr_before (anal, leaddrs, table_reg, load_addr, scan_base, buf, &tp)) {
+		return false;
+	}
+	dispatch->depaddr = R_MIN (bp.op_addr, tp.op_addr);
+	dispatch->basptr = bp.leaddr;
+	dispatch->tblptr = tp.leaddr;
 	return true;
+}
+
+// Swift enum dispatchers select an index from small constants instead of
+// comparing that index against a bound. A nearby CMP can concern another arg.
+static ut64 arm64_index_bound(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, const Arm64Dispatch *dispatch) {
+	if (dispatch->index_reg < 0) {
+		return UT64_MAX;
+	}
+	RAnalBlock *pred = NULL, *block;
+	RListIter *iter;
+	r_list_foreach (fcn->bbs, iter, block) {
+		if (block->jump == bb->addr || block->fail == bb->addr) {
+			if (pred) {
+				return UT64_MAX;
+			}
+			pred = block;
+		}
+	}
+	ut64 bounds[32];
+	memset (bounds, 0xff, sizeof (bounds));
+	ut8 buf[JMPTBL_DISPATCH_LOOKBACK * 4];
+	int pass;
+	for (pass = 0; pass < 2; pass++) {
+		block = pass? bb: pred;
+		if (!block) {
+			continue;
+		}
+		const ut64 end = pass? dispatch->loadaddr: block->addr + block->size;
+		if (end < block->addr || end - block->addr > sizeof (buf)) {
+			return UT64_MAX;
+		}
+		const size_t size = end - block->addr;
+		if (anal->iob.read_at (anal->iob.io, block->addr, buf, size) != size) {
+			return UT64_MAX;
+		}
+		size_t i;
+		for (i = 0; i + 4 <= size; i += 4) {
+			const ut32 insn = r_read_ble32 (buf + i, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+			const unsigned rd = insn & 31, rn = insn >> 5 & 31, rm = insn >> 16 & 31;
+			bounds[31] = 0; // WZR / XZR in the supported instructions
+			if ((insn & 0x7f800000) == 0x52800000) { // MOVZ Wd / Xd
+				bounds[rd] = (ut64)(insn >> 5 & 0xffff) << ((insn >> 21 & 3) * 16);
+			} else if ((insn & 0x7fe0ffe0) == 0x2a0003e0) { // MOV register
+				bounds[rd] = bounds[rm];
+			} else if ((insn & 0x7fe00800) == 0x1a800000) { // CSEL / CSINC
+				const ut64 a = bounds[rn], b = bounds[rm];
+				bounds[rd] = a < 4096 && b < 4096? R_MAX (a, b + (insn >> 10 & 1)): UT64_MAX;
+			} else {
+				RAnalOp op = { 0 };
+				const int len = r_anal_op (anal, &op, block->addr + i, buf + i, 4, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL);
+				const ut32 type = op.type & R_ANAL_OP_TYPE_MASK;
+				if (len < 1 || type == R_ANAL_OP_TYPE_CALL || type == R_ANAL_OP_TYPE_UCALL) {
+					memset (bounds, 0xff, sizeof (bounds));
+				} else if (type != R_ANAL_OP_TYPE_CMP) {
+					RAnalValue *dst;
+					R_VEC_FOREACH (&op.dsts, dst) {
+						const char *reg = dst->reg;
+						if (!dst->memref && reg && (reg[0] == 'w' || reg[0] == 'x') && reg[1] >= '0' && reg[1] <= '9') {
+							const unsigned n = atoi (reg + 1);
+							if (n < 32) {
+								bounds[n] = UT64_MAX;
+							}
+						}
+					}
+				}
+				r_anal_op_fini (&op);
+			}
+		}
+	}
+	const ut64 bound = bounds[dispatch->index_reg];
+	return bound < 4096? bound: UT64_MAX;
 }
 
 static inline ut64 get_mips_gp_base(RAnal *anal, ut64 ip) {
@@ -1382,12 +1554,12 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 	return isValid;
 }
 
-static void jmptbl_apply_caseop(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, RBitset *s, ut64 saddr, int loadsz, const RAnalCaseOp *kase) {
+static void jmptbl_apply_caseop(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, RBitset *s, ut64 saddr, int loadsz, const RAnalCaseOp *kase, int depth) {
+	apply_case (anal, fcn, bb, saddr, loadsz, kase->jump, kase->value, kase->jump, true);
 	if (!r_bitset_set (s, kase->jump)) {
 		return;
 	}
-	apply_case (anal, fcn, bb, saddr, loadsz, kase->jump, kase->value, kase->jump, true);
-	analyze_new_case (anal, fcn, bb, saddr, kase->jump, 999);
+	analyze_new_case (anal, fcn, bb, saddr, kase->jump, depth);
 }
 
 R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 saddr, ut64 jaddr, RList *cases, int loadsz) {
@@ -1395,7 +1567,7 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 	RAnalCaseOp *kase;
 	RListIter *iter;
 	r_list_foreach (cases, iter, kase) {
-		jmptbl_apply_caseop (anal, fcn, bb, s, saddr, loadsz, kase);
+		jmptbl_apply_caseop (anal, fcn, bb, s, saddr, loadsz, kase, 999);
 	}
 	apply_switch (anal, fcn, bb, saddr, saddr, jaddr, UT64_MAX,
 		r_list_length (cases), UT64_MAX, loadsz);
@@ -1403,55 +1575,101 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 }
 
 R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, int depth, RAnalOp *op, int loadsize) {
-	if (!op || !op->reg || !anal->leaddrs) {
+	if (!op || !op->reg || op->ireg || !anal->leaddrs) {
 		return false;
 	}
+	Arm64Dispatch dispatch = { 0 };
+	if (!arm64_resolve_dispatch (anal, anal->leaddrs, op->addr, op->reg, &dispatch)) {
+		return false;
+	}
+	// A later unrelated load must not change the table's element width.
+	loadsize = dispatch.loadsize;
 	if (loadsize != 1 && loadsize != 2 && loadsize != 4) {
 		return false;
 	}
-	ut64 opaddr = UT64_MAX, depaddr = UT64_MAX, basptr = UT64_MAX, tblptr = UT64_MAX;
-	if (!arm64_resolve_dispatch (anal, anal->leaddrs, op->addr, op->reg, &opaddr, &depaddr, &basptr, &tblptr)) {
-		return false;
-	}
-	// anal->cmpval can be stale (clobbered by another branch of the
-	// function that was analysed first); when the predecessor-bb walker
-	// yields a clearly larger count, trust that one instead.
+	// The predecessor bound is a case count; cmpval is the raw immediate
+	// and can also be stale after recursively analysing another successor.
 	ut64 table_size = anal->cmpval;
 	ut64 alt_size = 0, alt_default = 0;
 	st64 alt_shift = 0;
-	if (try_get_jmptbl_info (anal, fcn, op->addr, bb, &alt_size, &alt_default, &alt_shift) && alt_size > anal->cmpval + 1) {
+	bool bounded = try_get_jmptbl_info (anal, fcn, op->addr, bb, &alt_size, &alt_default, &alt_shift) && alt_size;
+	if (bounded) {
+		RListIter *iter;
+		RAnalBlock *pred;
+		r_list_foreach (fcn->bbs, iter, pred) {
+			if ((pred->jump == bb->addr || pred->fail == bb->addr) && pred->cond) {
+				const bool on_jump = pred->jump == bb->addr;
+				const int cond = pred->cond->type;
+				const bool excludes_equal = on_jump
+					? cond == R_ANAL_CONDTYPE_LO || cond == R_ANAL_CONDTYPE_NE
+					: cond == R_ANAL_CONDTYPE_HS || cond == R_ANAL_CONDTYPE_EQ;
+				if (excludes_equal && pred->cmpval != UT64_MAX && alt_size == pred->cmpval + 1) {
+					alt_size--;
+				}
+				break;
+			}
+		}
 		table_size = alt_size;
+	}
+	const ut64 index_bound = arm64_index_bound (anal, fcn, bb, &dispatch);
+	if (index_bound != UT64_MAX) {
+		table_size = index_bound + 1;
+		alt_default = UT64_MAX;
+		bounded = true;
 	}
 	if (table_size == 0 || table_size == UT64_MAX) {
 		return false;
 	}
 	ut64 max = R_MIN (table_size, (ut64)(4096 / loadsize));
-	ut8 *table = jmptbl_read_table (anal, tblptr, &max, loadsize);
+	ut8 *table = jmptbl_read_table (anal, dispatch.tblptr, &max, loadsize);
 	if (!table) {
 		return false;
 	}
 	const ut8 esize = (ut8)loadsize;
-	const st64 delta_scale = loadsize == 1? 4: loadsize == 2? 2: 1;
+	RIOMap *map = anal->iob.map_get_at (anal->iob.io, op->addr);
 	RBitset *s = r_bitset_new ();
 	size_t valid_cases = 0;
 	size_t i;
 	for (i = 0; i < max; i++) {
-		const st64 delta = (st64)switch_read_entry (table + i * esize, esize, true);
-		const ut64 caseaddr = basptr + (ut64)(delta * delta_scale);
-		if (!anal->iob.is_valid_offset (anal->iob.io, caseaddr, 0)) {
+		ut64 delta = switch_read_entry (table + i * esize, esize, dispatch.signed_entries);
+		if (dispatch.word_load) {
+			delta &= UT32_MAX;
+		}
+		if (dispatch.extend >= 0) {
+			const unsigned bits = 8U << (dispatch.extend & 3);
+			if (bits < 64) {
+				const ut64 mask = ((ut64)1 << bits) - 1;
+				delta &= mask;
+				if ((dispatch.extend & 4) && (delta & ((ut64)1 << (bits - 1)))) {
+					delta |= ~mask;
+				}
+			}
+		}
+		const ut64 caseaddr = dispatch.basptr + delta * dispatch.scale;
+		if ((caseaddr & 3) || !anal->iob.is_valid_offset (anal->iob.io, caseaddr, 0)
+				|| (map && !r_io_map_contain (map, caseaddr))) {
 			continue;
 		}
+		const ut64 entry_addr = dispatch.tblptr + i * esize;
+		r_meta_set_data_at (anal, entry_addr, esize);
+		r_anal_hint_set_immbase (anal, entry_addr, 10);
 		RAnalCaseOp kase = { 0 };
 		kase.addr = caseaddr;
 		kase.jump = caseaddr;
 		kase.value = i;
-		jmptbl_apply_caseop (anal, fcn, bb, s, opaddr, loadsize, &kase);
+		jmptbl_apply_caseop (anal, fcn, bb, s, op->addr, loadsize, &kase, depth);
 		valid_cases++;
 	}
-	apply_switch (anal, fcn, bb, opaddr, op->addr, tblptr, UT64_MAX,
-		valid_cases, UT64_MAX, loadsize);
-	r_anal_switch_op_add_deps (anal, op->addr, depaddr, op->addr);
+	if (valid_cases) {
+		apply_switch (anal, fcn, bb, op->addr, op->addr, dispatch.tblptr, UT64_MAX,
+			valid_cases, bounded? alt_default: UT64_MAX, loadsize);
+		// Do not mistake a partial or unbounded table for a complete CFG.
+		if (bb->switch_op) {
+			bb->switch_op->amount = bounded? table_size: 0;
+		}
+		r_anal_switch_op_add_deps (anal, op->addr, dispatch.depaddr, op->addr);
+	}
 	r_bitset_free (s);
 	free (table);
-	return true;
+	return valid_cases > 0;
 }

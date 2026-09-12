@@ -854,6 +854,73 @@ static void fcn_rename_readdr(RAnalFunction *fcn, ut64 to) {
 	fcn->addr = to;
 }
 
+// Resolve short, local constant constructions without carrying values across
+// calls, loads, unknown writes or basic-block boundaries. This is deliberately
+// not a fallthrough heuristic: a BR may target the next instruction or skip it.
+static ut64 arm64_branch_target(RAnal *anal, RAnalBlock *bb, RAnalOp *op) {
+	ut8 buf[64];
+	if (op->addr < bb->addr || !op->bytes || op->size != 4) {
+		return UT64_MAX;
+	}
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
+	const ut32 branch = r_read_ble32 (op->bytes, be);
+	if ((branch & 0xfffffc1f) != 0xd61f0000) { // BR Xn, not an authenticated branch
+		return UT64_MAX;
+	}
+	const ut64 size = R_MIN (op->addr - bb->addr, sizeof (buf));
+	const ut64 start = op->addr - size;
+	if (!size || anal->iob.read_at (anal->iob.io, start, buf, size) != size) {
+		return UT64_MAX;
+	}
+	ut64 values[32] = { 0 };
+	ut32 known = 0;
+	size_t i;
+	for (i = 0; i + 4 <= size; i += 4) {
+		const ut32 insn = r_read_ble32 (buf + i, be);
+		const unsigned rd = insn & 31, rn = (insn >> 5) & 31, rm = (insn >> 16) & 31;
+		const ut32 bit = 1U << rd;
+		ut64 value = 0;
+		bool valid = false;
+		if ((insn & 0x1f000000) == 0x10000000) { // ADR / ADRP
+			const st64 delta = (st64)((((ut64)(insn >> 5) & 0x7ffff) << 2 | (insn >> 29 & 3)) ^ 0x100000) - 0x100000;
+			value = insn & 0x80000000? ((start + i) & ~0xfffULL) + delta * 4096: start + i + delta;
+			valid = true;
+		} else if ((insn & 0x9f800000) == 0x92800000) { // 64-bit MOVN / MOVZ / MOVK
+			const unsigned shift = (insn >> 21 & 3) * 16, opc = insn >> 29 & 3;
+			value = (ut64)(insn >> 5 & 0xffff) << shift;
+			valid = opc == 0 || opc == 2 || (opc == 3 && (known & bit));
+			if (opc == 0) {
+				value = ~value;
+			} else if (opc == 3) {
+				value |= values[rd] & ~((ut64)0xffff << shift);
+			}
+		} else if ((insn & 0xbf800000) == 0x91000000) { // ADD / SUB immediate, no SP
+			const ut64 imm = (ut64)(insn >> 10 & 0xfff) << ((insn >> 22 & 1) * 12);
+			valid = rn != 31 && (known & (1U << rn));
+			value = insn & 0x40000000? values[rn] - imm: values[rn] + imm;
+		} else if ((insn & 0xbfe00000) == 0x8b000000) { // ADD / SUB shifted register (LSL)
+			valid = rn != 31 && rm != 31 && (known & (1U << rn)) && (known & (1U << rm));
+			const ut64 rhs = values[rm] << (insn >> 10 & 63);
+			value = insn & 0x40000000? values[rn] - rhs: values[rn] + rhs;
+		} else if ((insn & 0xffe0ffe0) == 0xaa0003e0) { // MOV Xd, Xm
+			valid = rm == 31 || (known & (1U << rm));
+			value = rm == 31? 0: values[rm];
+		} else if (insn == 0xd503201f) { // NOP
+			continue;
+		} else {
+			known = 0;
+			continue;
+		}
+		known &= ~bit;
+		if (valid && rd != 31) {
+			values[rd] = value;
+			known |= bit;
+		}
+	}
+	const unsigned reg = branch >> 5 & 31;
+	return known & (1U << reg)? values[reg]: UT64_MAX;
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	const char *variadic_reg = NULL;
 	ReadAhead ra_storage;
@@ -1377,7 +1444,9 @@ noskip:
 					gotoBeach (R_ANAL_RET_END);
 				}
 			}
-			if (anal->opt.jmptbl) {
+			// AArch64 tables can have separate table and case bases. Resolve
+			// them at BR instead of treating this ADR as both bases.
+			if (anal->opt.jmptbl && !(is_arm && anal->config->bits == 64)) {
 				RAnalOp jmp_aop = {0};
 				ut64 jmptbl_addr = op->ptr;
 				ut64 casetbl_addr = op->ptr;
@@ -1789,11 +1858,25 @@ noskip:
 					op->fail = op->addr + 4;
 					break;
 				}
-			} else if (is_arm && anal->config->bits == 64 && anal->opt.jmptbl) {
+			} else if (is_arm && anal->config->bits == 64) {
 				// arm64 jmptbl dispatcher resolved in libr/anal/jmptbl.c.
 				// Resolved or not, the br ends the block: nothing after it is
 				// reached by falling through.
-				r_anal_jmptbl_arm64_from_br (anal, fcn, bb, depth, op, loadsize);
+				const ut64 target = arm64_branch_target (anal, bb, op);
+				RIOMap *map = anal->iob.map_get_at (anal->iob.io, op->addr);
+				if (target != UT64_MAX && !(target & 3) && map && r_io_map_contain (map, target)
+						&& (anal->opt.jmpabove || target >= fcn->addr)) {
+					if (!overlapped) {
+						bb->jump = target;
+						bb->fail = UT64_MAX;
+					}
+					if (anal->opt.jmpref) {
+						r_anal_xrefs_setf (anal, fcn, op->addr, target, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
+					}
+					r_anal_function_bb (anal, fcn, target, depth);
+				} else if (anal->opt.jmptbl) {
+					r_anal_jmptbl_arm64_from_br (anal, fcn, bb, depth, op, loadsize);
+				}
 				anal->cmpval = 0;
 				loadsize = 0;
 				gotoBeach (R_ANAL_RET_NOP);
