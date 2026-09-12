@@ -90,6 +90,10 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		}
 		R_FREE (bin->reloc_table);
 	}
+	if (RVecRBinReloc_empty (list)) {
+		RVecRBinReloc_free (list);
+		return NULL;
+	}
 	return list;
 }
 
@@ -217,6 +221,9 @@ static RVecRBinReloc *relocs(RBinFile *bf) {
 	}
 	return list;
 out_error:
+	// patch_relocs lists whatever survives here, so a failed listing leaves none
+	R_FREE (obj->got_table);
+	obj->n_got = 0;
 	RVecRBinReloc_free (list);
 	return NULL;
 }
