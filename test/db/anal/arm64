@@ -56369,3 +56369,23 @@ EXPECT=<<EOF
 =SN	x16
 EOF
 RUN
+
+NAME=af ends a block at the edge of executable memory
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+o malloc://64 0x40 rw-
+b 64
+wow 200080d2 @ 0
+b 60
+wow 1f2003d5 @ 0x40
+wx c0035fd6 @ 0x7c
+s 0
+af
+afb
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000040 00:0000 64
+EOF
+RUN

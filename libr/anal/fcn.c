@@ -922,8 +922,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		r_sys_usleep (anal->sleep);
 	}
 
-	// check if address is readable //:
-	if (anal->iob.io && !anal->iob.is_valid_offset (anal->iob.io, addr, 0)) {
+	// code lives in executable memory unless anal.in says data is fair game too
+	const int code_perm = anal->opt.noncode? 0: R_PERM_X;
+	if (anal->iob.io && !anal->iob.is_valid_offset (anal->iob.io, addr, code_perm)) {
 		if (addr != UT64_MAX && !anal->iob.io->va) {
 			R_LOG_DEBUG ("Invalid address 0x%"PFMT64x ". Try with io.va=true", addr);
 		}
@@ -1060,7 +1061,7 @@ repeat:
 		if (flagbounds && bb->size > 0 && anal->flb.get_at && anal->flb.get_at (anal->flb.f, at, false)) {
 			gotoBeach (R_ANAL_RET_END);
 		}
-		if (!anal->iob.is_valid_offset (anal->iob.io, at, 0)) {
+		if (!anal->iob.is_valid_offset (anal->iob.io, at, code_perm)) {
 			gotoBeach (R_ANAL_RET_END);
 		}
 		ut64 bytes_read = R_MIN (len - at_delta, sizeof (buf));
