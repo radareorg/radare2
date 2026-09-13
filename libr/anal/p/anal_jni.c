@@ -114,7 +114,7 @@ static void jni_function_rename(RAnal *anal, RAnalFunction *fcn, const char *nam
 }
 
 static bool jni_function_has_prototype(RAnal *anal, RAnalFunction *fcn) {
-	r_anal_types_ensure_loaded (anal);
+	r_anal_types_prepare (anal);
 	char *linked_name = r_type_link_at (anal->sdb_types, fcn->addr);
 	if (linked_name) {
 		const bool is_function = r_type_kind (anal->sdb_types, linked_name)

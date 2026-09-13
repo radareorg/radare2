@@ -6943,7 +6943,6 @@ static int cmd_af(RCore *core, const char *input) {
 			int i;
 			PJ *pj = NULL;
 			bool json = input[3] == 'j';
-			r_anal_function_cc (fcn); // resolve a lazy dyncc marker
 			if (json) {
 				pj = r_core_pj_new (core);
 				if (!pj) {

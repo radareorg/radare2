@@ -63,6 +63,23 @@ EOF
 RUN
 
 # merged: dyncc accepts well-formed names; dyncc concrete names stay virtual
+NAME=dyncc resolves when the convention is assigned
+FILE=bins/java/Main.dex
+CMDS=<<EOF
+af @ 0x23c
+afc @ 0x23c
+afc dyncc @ 0x23c
+afc @ 0x23c
+afc dyncc:v0+1: @ 0x23c
+afc @ 0x23c
+EOF
+EXPECT=<<EOF
+dyncc:v6+1:
+dyncc:v6+1:
+dyncc:v0+1:
+EOF
+RUN
+
 NAME=DEX dyncc direct af uses ins slots
 FILE=bins/java/Main.dex
 CMDS=<<EOF
@@ -389,5 +406,20 @@ afch~not a dyncc
 EOF
 EXPECT=<<EOF
 # current function uses 'amd64' (not a dyncc expression)
+EOF
+RUN
+
+NAME=a signature reads the prototypes the configured os selects
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=windows
+af+ 0 sym.imp.Sleep
+afb+ 0 0 10
+afsq
+EOF
+EXPECT=<<EOF
+VOID sym.imp.Sleep (DWORD dwMilliseconds);
 EOF
 RUN
