@@ -29,7 +29,7 @@ typedef struct r_leaddr_pair_t {
 
 R_IPI void r_anal_types_ensure_loaded(RAnal *anal);
 R_IPI bool r_anal_var_is_default_argname(const char *name);
-R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth);
+R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr);
 R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention);
 R_IPI int r_anal_cc_shadow(RAnal *anal, const char *convention);
 R_IPI bool r_anal_cc_stack_rev(RAnal *anal, const char *cc);
@@ -48,7 +48,7 @@ R_IPI void r_anal_jmptbl_leaddrs_bump(RList *leaddrs, const char *reg, ut64 delt
 // Scans the preceding add/load pair, resolves the base/table lea pairs
 // via the recorded `leaddrs`, reads the table and registers each case.
 // Returns true when a jmptbl was successfully resolved and applied.
-R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, int depth, RAnalOp *op, int loadsize);
+R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, RAnalOp *op, int loadsize);
 
 #ifdef __cplusplus
 }

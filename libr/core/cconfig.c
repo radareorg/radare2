@@ -200,13 +200,6 @@ static bool cb_anal_jmptailcall_delta(void *user, void *data) {
 	return true;
 }
 
-static bool cb_analdepth(void *user, void *data) {
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
-	core->anal->opt.depth = node->i_value;
-	return true;
-}
-
 static bool cb_analgraphdepth(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -4094,9 +4087,9 @@ R_API int r_core_config_init(RCore *core) {
 
 	SETCB ("anal.delay", "true", &cb_anal_delay, "enable delay slot analysis if supported by the architecture");
 #if __wasi__
-	SETICB ("anal.depth", 32, &cb_analdepth, "max depth at code analysis");
+	SETI ("anal.depth", 32, "max depth of the callee recursion in af and of graph path searches");
 #else
-	SETICB ("anal.depth", 128, &cb_analdepth, "max depth at code analysis");
+	SETI ("anal.depth", 128, "max depth of the callee recursion in af and of graph path searches");
 #endif
 	SETICB ("anal.graph_depth", 256, &cb_analgraphdepth, "max depth for path search");
 	SETICB ("anal.sleep", 0, &cb_analsleep, "sleep N usecs every so often during analysis. Avoid 100% CPU usage");
