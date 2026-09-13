@@ -362,6 +362,7 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 			r_anal_set_reg_profile (anal, NULL);
 			if (!old_arch || !new_arch || strcmp (old_arch, new_arch)) {
 				R_ANAL_PRIV (anal)->types_dirty = true;
+				r_anal_types_prepare (anal);
 			}
 			free (old_arch);
 			return true;
@@ -431,6 +432,7 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 	if (res && changed) {
 		// os-dependent register aliases (e.g. arm64 =SN) must follow
 		r_anal_set_reg_profile (anal, NULL);
+		r_anal_types_prepare (anal);
 	}
 	return res;
 }
@@ -443,6 +445,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	if (bits != obits) {
 		R_ANAL_PRIV (anal)->types_dirty = true;
 		r_anal_set_reg_profile (anal, NULL);
+		r_anal_types_prepare (anal);
 	}
 	return true;
 }

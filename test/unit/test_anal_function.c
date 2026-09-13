@@ -588,6 +588,125 @@ bool test_r_anal_function_get_signature_falls_back_to_valid_callconv(void) {
 	mu_end;
 }
 
+static const char *test_bin_get_cc(RBin *bin, ut64 vaddr) {
+	return vaddr == 0x2000? "amd64": NULL;
+}
+
+bool test_r_anal_function_callconv_resolves_when_assigned(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+	mu_assert_true (r_anal_cc_set (anal, "void amd64 (rdi, rsi, rdx, rcx, r8, r9, stack)"),
+		"must seed amd64 calling convention");
+	mu_assert_true (r_anal_cc_set (anal, "void reg (rdi)"), "must seed the reg fallback");
+	r_anal_set_cc_default (anal, "dyncc");
+	anal->binb.get_cc = test_bin_get_cc;
+
+	RAnalFunction *known = r_anal_create_function (anal, "known", 0x2000, 0, NULL);
+	mu_assert_notnull (known, "Couldn't create function with a per-function convention");
+	mu_assert_streq (r_anal_function_cc (known), "amd64",
+		"a dyncc default resolves when the function is created");
+	ut64 epoch = r_anal_function_dirty_epoch (known);
+	mu_assert_streq (r_anal_function_cc (known), "amd64", "reading the convention again returns the same");
+	mu_assert_eq (r_anal_function_dirty_epoch (known), epoch, "reading the convention changes nothing");
+
+	RAnalFunction *unknown = r_anal_create_function (anal, "unknown", 0x3000, 0, NULL);
+	mu_assert_notnull (unknown, "Couldn't create function without a per-function convention");
+	mu_assert_streq (r_anal_function_cc (unknown), "reg", "no per-function convention falls back to reg");
+
+	mu_assert_true (r_anal_function_set_callconv (anal, unknown, "amd64"), "an explicit convention is accepted");
+	mu_assert_streq (r_anal_function_cc (unknown), "amd64", "an explicit convention is kept");
+	mu_assert_true (r_anal_function_set_callconv (anal, known, "dyncc"), "reassigning dyncc is accepted");
+	mu_assert_streq (r_anal_function_cc (known), "amd64", "reassigning dyncc resolves it again");
+
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_function_get_signature_reports_origin_and_only_reads(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+	bool ok = r_anal_import_c_decls (anal,
+		"int by_name (int a);"
+		"char by_link (char c);", NULL);
+	mu_assert_true (ok, "seed name and link prototypes");
+
+	RAnalFunction *f = r_anal_create_function (anal, "by_name", 0x2800, 0, NULL);
+	mu_assert_notnull (f, "Couldn't create function for origin test");
+	RAnalFunctionSignature *signature = r_anal_function_get_signature (f);
+	mu_assert_notnull (signature, "name-based signature must be readable");
+	mu_assert_eq (signature->origin, R_ANAL_FUNCTION_SIGNATURE_ORIGIN_NAME, "a prototype found by name");
+	r_anal_function_signature_free (signature);
+
+	mu_assert_true (r_type_set_link (anal->sdb_types, "by_link", f->addr), "link a prototype to the address");
+	ut64 function_epoch = r_anal_function_dirty_epoch (f);
+	ut64 types_epoch = r_anal_types_dirty_epoch (anal);
+	signature = r_anal_function_get_signature (f);
+	mu_assert_notnull (signature, "address-linked signature must be readable");
+	mu_assert_eq (signature->origin, R_ANAL_FUNCTION_SIGNATURE_ORIGIN_ADDRESS, "a prototype linked to the address");
+	mu_assert_streq (signature->ret_type, "char", "the linked prototype wins");
+	r_anal_function_signature_free (signature);
+	signature = r_anal_function_get_signature (f);
+	mu_assert_notnull (signature, "the signature reads again");
+	r_anal_function_signature_free (signature);
+	mu_assert_eq (r_anal_function_dirty_epoch (f), function_epoch, "reading a signature leaves the function epoch alone");
+	mu_assert_eq (r_anal_types_dirty_epoch (anal), types_epoch, "reading a signature leaves the type epoch alone");
+
+	RAnalFunction *vars = r_anal_create_function (anal, "from_vars", 0x4000, 0, NULL);
+	mu_assert_notnull (vars, "Couldn't create function for variable origin");
+	mu_assert_notnull (
+		r_anal_function_set_var (vars, 8, R_ANAL_VAR_KIND_BPV, "int32_t", 4, true, "arg_8h"),
+		"Couldn't add arg var");
+	signature = r_anal_function_get_signature (vars);
+	mu_assert_notnull (signature, "variable-built signature must be readable");
+	mu_assert_eq (signature->origin, R_ANAL_FUNCTION_SIGNATURE_ORIGIN_VARIABLES, "no prototype; built from variables");
+	r_anal_function_signature_free (signature);
+
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_function_get_signature_origin_of_a_zero_argument_prototype(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+	// the struct tag takes the shared kind key; the prototype is still there
+	bool ok = r_anal_import_c_decls (anal,
+		"int foo (void);"
+		"struct foo { int x; };", NULL);
+	mu_assert_true (ok, "seed a prototype whose name a struct also uses");
+
+	RAnalFunction *f = r_anal_create_function (anal, "foo", 0x5000, 0, NULL);
+	mu_assert_notnull (f, "Couldn't create function for the zero-argument test");
+	RAnalFunctionSignature *signature = r_anal_function_get_signature (f);
+	mu_assert_notnull (signature, "zero-argument signature must be readable");
+	mu_assert_eq (signature->origin, R_ANAL_FUNCTION_SIGNATURE_ORIGIN_NAME,
+		"no arguments does not mean no prototype");
+	mu_assert_streq (signature->ret_type, "int", "the prototype's return type is read");
+	r_anal_function_signature_free (signature);
+
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_function_callconv_store_keeps_an_undefined_name(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+	RAnalFunction *fcn = r_anal_create_function (anal, "restored", 0x6000, 0, NULL);
+	mu_assert_notnull (fcn, "Couldn't create function for the store test");
+
+	// a project restores a name whose definition it did not save
+	mu_assert_true (r_anal_function_store_callconv (anal, fcn, "savedcc"),
+		"storing a convention the target does not define succeeds");
+	mu_assert_streq (r_anal_function_cc (fcn), "savedcc", "the stored name is kept");
+	mu_assert_false (r_anal_function_set_callconv (anal, fcn, "savedcc"),
+		"the validating setter still refuses an undefined convention");
+	mu_assert_streq (r_anal_function_cc (fcn), "savedcc", "a refused assignment changes nothing");
+	mu_assert_true (r_anal_function_store_callconv (anal, fcn, NULL), "an empty name clears the convention");
+	mu_assert_null (r_anal_function_cc (fcn), "the convention is cleared");
+
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool test_r_anal_function_context_collect_is_conservative_for_stack_slots(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
@@ -777,6 +896,10 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_get_signature_string_falls_back_to_vars);
 	mu_run_test (test_r_anal_function_get_signature_string_hides_variadic_placeholder);
 	mu_run_test (test_r_anal_function_get_signature_falls_back_to_valid_callconv);
+	mu_run_test (test_r_anal_function_callconv_resolves_when_assigned);
+	mu_run_test (test_r_anal_function_get_signature_reports_origin_and_only_reads);
+	mu_run_test (test_r_anal_function_get_signature_origin_of_a_zero_argument_prototype);
+	mu_run_test (test_r_anal_function_callconv_store_keeps_an_undefined_name);
 	mu_run_test (test_r_anal_function_context_collect_is_conservative_for_stack_slots);
 	mu_run_test (test_r_anal_function_switches_foreach);
 	mu_run_test (test_r_anal_function_overlapped_walk_keeps_one_switch_owner);
