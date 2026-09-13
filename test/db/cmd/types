@@ -3346,13 +3346,13 @@ var double x @ rbp-0x10
 EOF2
 RUN
 
-NAME=aaft keeps the integer index of an argument after a float one
+NAME=aaft homes an integer after a float on the first integer register
 FILE=malloc://512
 ARGS=-a x86 -b 64 -e anal.cc=amd64
 CMDS=<<EOF2
 wa push rbp @ 0
 wa mov rbp, rsp @ 1
-wa sub rsp, 0x20 @ 4
+wa sub rsp, 0x30 @ 4
 wx f20f1045f8 @ 8
 wa mov rsi, qword [rbp - 0x10] @ 13
 wa mov rdi, qword [rbp - 0x18] @ 17
@@ -3370,8 +3370,254 @@ afv @ 0
 EOF2
 EXPECT=<<EOF2
 var double a @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+var int64_t b @ rbp-0x18
+EOF2
+RUN
+
+NAME=aaft counts a pointer on the integer sequence before a float
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+wa mov rdi, qword [rbp - 8] @ 8
+wx f20f1045f0 @ 12
+wa mov rsi, qword [rbp - 0x18] @ 17
+wa call 0x100 @ 21
+wa leave @ 26
+wa ret @ 27
+wa ret @ 0x100
+af+ 0x100 f4
+afb+ 0x100 0x100 1
+af @ 0
+"td struct S {long x;};"
+td int f4(struct S *p, double b);
+tk func.f4.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var struct S * p @ rbp-0x8
+var double b @ rbp-0x10
+var int64_t var_18h @ rbp-0x18
+EOF2
+RUN
+
+NAME=aaft homes a format string float vararg on the first float register
+FILE=malloc://1024
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+wz %f %s @ 0x200
+fs strings
+f str.fmt 6 @ 0x200
+fs *
+wa lea rdi, [rip + 0x1f1] @ 8
+wx f20f1045f8 @ 15
+wa mov rsi, qword [rbp - 0x10] @ 20
+wa call 0x100 @ 24
+wa leave @ 29
+wa ret @ 30
+wa ret @ 0x100
+af+ 0x100 printf
+afb+ 0x100 0x100 1
+af @ 0
+tk func.printf.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var float var_8h @ rbp-0x8
+var char * var_10h @ rbp-0x10
+EOF2
+RUN
+
+NAME=aaft counts integer and float registers apart in an interleaved prototype
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+wx f20f1045f8 @ 8
+wa mov rdi, qword [rbp - 0x10] @ 13
+wx f20f104de8 @ 17
+wa mov rsi, qword [rbp - 0x20] @ 22
+wa mov rdx, qword [rbp - 0x28] @ 26
+wa call 0x100 @ 30
+wa leave @ 35
+wa ret @ 36
+wa ret @ 0x100
+af+ 0x100 f5
+afb+ 0x100 0x100 1
+af @ 0
+td int f5(double a, int b, double c);
+tk func.f5.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double a @ rbp-0x8
+var int64_t b @ rbp-0x10
+var double c @ rbp-0x18
+var int64_t var_20h @ rbp-0x20
+var int64_t var_28h @ rbp-0x28
+EOF2
+RUN
+
+NAME=aaft keeps the positional homes for a struct returned by value
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+wx f20f1045f8 @ 8
+wa mov rsi, qword [rbp - 0x10] @ 13
+wa mov rdi, qword [rbp - 0x18] @ 17
+wa call 0x100 @ 21
+wa leave @ 26
+wa ret @ 27
+wa ret @ 0x100
+af+ 0x100 f6
+afb+ 0x100 0x100 1
+af @ 0
+"td struct R {long x; long y; long z;};"
+td int f6(double a, int b);
+tk func.f6.ret=struct R
+tk func.f6.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double a @ rbp-0x8
 var int64_t b @ rbp-0x10
 var int64_t var_18h @ rbp-0x18
+EOF2
+RUN
+
+NAME=aaft stops counting at an enum wider than a word
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+wx f20f1045f8 @ 8
+wa mov rdi, qword [rbp - 0x10] @ 13
+wa mov rsi, qword [rbp - 0x18] @ 17
+wa mov rdx, qword [rbp - 0x20] @ 21
+wa call 0x100 @ 25
+wa leave @ 30
+wa ret @ 31
+wa ret @ 0x100
+af+ 0x100 f7
+afb+ 0x100 0x100 1
+af @ 0
+"td enum wide { W_A = 1 };"
+tk type.wide.size=128
+td int f7(double a, enum wide e, long c);
+tk func.f7.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double a @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+var enum wide e @ rbp-0x18
+var long c @ rbp-0x20
+EOF2
+RUN
+
+NAME=aaft homes an integer after a float for a void prototype
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+wx f20f1045f8 @ 8
+wa mov rsi, qword [rbp - 0x10] @ 13
+wa mov rdi, qword [rbp - 0x18] @ 17
+wa call 0x100 @ 21
+wa leave @ 26
+wa ret @ 27
+wa ret @ 0x100
+af+ 0x100 f8
+afb+ 0x100 0x100 1
+af @ 0
+td void f8(double a, int b);
+tk func.f8.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double a @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+var int64_t b @ rbp-0x18
+EOF2
+RUN
+
+NAME=aaft counts a word-sized enum on the integer sequence
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+wx f20f1045f8 @ 8
+wa mov rsi, qword [rbp - 0x10] @ 13
+wa mov rdi, qword [rbp - 0x18] @ 17
+wa call 0x100 @ 21
+wa leave @ 26
+wa ret @ 27
+wa ret @ 0x100
+af+ 0x100 f9
+afb+ 0x100 0x100 1
+af @ 0
+"td enum nar { N_A = 1 };"
+td int f9(double a, enum nar b);
+tk func.f9.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double a @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+var enum nar b @ rbp-0x18
+EOF2
+RUN
+
+NAME=aaft counts an integer type with no format key by its C spelling
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+wx f20f1045f8 @ 8
+wa mov rsi, qword [rbp - 0x10] @ 13
+wa mov rdi, qword [rbp - 0x18] @ 17
+wa call 0x100 @ 21
+wa leave @ 26
+wa ret @ 27
+wa ret @ 0x100
+af+ 0x100 f10
+afb+ 0x100 0x100 1
+af @ 0
+td int f10(double a, unsigned long b);
+tk func.f10.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double a @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+var uint32_t b @ rbp-0x18
 EOF2
 RUN
 
@@ -3533,6 +3779,38 @@ tk calllink.00000008
 EOF2
 EXPECT=<<EOF2
 arg struct S * arg1 @ rdi
+calllink
+cb
+EOF2
+RUN
+
+NAME=aft frees the first integer register for a leading double without afvt
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa mov rax, qword [rdi + 8] @ 4
+wa call rax @ 8
+wa leave @ 10
+wa ret @ 11
+af @ 0
+afn c @ 0
+td int cb(int v);
+tk S=struct
+tk struct.S=x,fp
+tk struct.S.x=int,0,0
+tk struct.S.fp=cb,8,0
+td void c(double a, struct S *p);
+aei
+aeim
+aft @ 0
+afv @ 0
+?e calllink
+tk calllink.00000008
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
 calllink
 cb
 EOF2

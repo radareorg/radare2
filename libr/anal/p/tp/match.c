@@ -46,21 +46,11 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 
 	RVecString types;
 	RVecString_init (&types);
-	const int fp_prefix = tp_fparg_prefix (anal, cc, fcn_name, max);
+	TPArgSeq seq;
+	tp_argseq_init (anal, cc, r_type_func_ret (TDB, fcn_name), &seq);
 	const ut32 opmask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL;
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev? (max - 1 - i): i;
-		// fp_prefix counted declared types, not ones a format yields
-		const bool fp_home = !format && arg_num < fp_prefix;
-		// one lookup answers both where the arg lives and its slot offset, so the two cannot disagree
-		RAnalCCArgSlot slot;
-		const bool resolved = r_anal_cc_argslot (anal, cc,
-			fp_home? R_ANAL_CC_MAXARG + arg_num: arg_num, max, false, &slot);
-		const bool in_stack = resolved && !slot.reg;
-		const st64 soff = in_stack? slot.off: -1; // a register-homed arg occupies no stack slot
-		const char *place = resolved? slot.reg: NULL;
-		ut64 selfptr = 0;
-		const ut64 selfsize = tp_sizefn_arg_stacksize (tps, cc, fcn_name, arg_num, max, &selfptr);
 		char *owned_type = NULL;
 		const char *type = NULL;
 		const char *name = NULL;
@@ -77,6 +67,17 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 			type = owned_type;
 			name = r_type_func_args_name (TDB, fcn_name, arg_num);
 		}
+		// varargs continue the count the declared args started
+		const int argno = tp_argseq_next (anal, cc, &seq, type, arg_num);
+		// one lookup yields home and offset, so they cannot disagree
+		RAnalCCArgSlot slot;
+		const bool resolved = r_anal_cc_argslot (anal, cc, argno, max, false, &slot);
+		const bool in_stack = resolved && !slot.reg;
+		// a register-homed arg occupies no stack slot
+		const st64 soff = in_stack? slot.off: -1;
+		const char *place = resolved? slot.reg: NULL;
+		ut64 selfptr = 0;
+		const ut64 selfsize = tp_sizefn_arg_stacksize (tps, cc, fcn_name, arg_num, max, &selfptr);
 		if (!type && !userfnc) {
 			R_LOG_DEBUG ("NO TYPE AND NO USER FUNK");
 			continue;

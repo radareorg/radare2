@@ -627,26 +627,79 @@ static bool tp_fparg_scalar(RAnal *anal, const char *type) {
 	return fp;
 }
 
-// NULL unless the cc spells parameter n's fp home as a single register
-static const char *tp_fparg_loc(RAnal *anal, const char *cc, int n) {
-	const char *loc = r_anal_cc_argloc (anal, cc, R_ANAL_CC_MAXARG + n, 0, -1);
+// NULL unless loc spells a single register
+static const char *tp_reg_loc(const char *loc) {
 	return (R_STR_ISEMPTY (loc) || *loc == '{' || *loc == '^')? NULL: loc;
 }
 
-int tp_fparg_prefix(RAnal *anal, const char *cc, const char *fcn_name, int max) {
-	int n;
-	for (n = 0; n < max; n++) {
-		if (!tp_fparg_loc (anal, cc, n)) {
-			break;
+static const char *tp_fparg_loc(RAnal *anal, const char *cc, int n) {
+	return tp_reg_loc (r_anal_cc_argloc (anal, cc, R_ANAL_CC_MAXARG + n, 0, -1));
+}
+
+enum { TP_CLASS_NONE, TP_CLASS_INT, TP_CLASS_FP };
+
+static bool tp_c_int_spelling(const char *name) {
+	static const char * const words[] = { "signed", "unsigned", "char", "short", "int", "long", "_Bool", "bool", NULL };
+	RList *toks = r_str_split_duplist (name, " ", true);
+	bool ok = !r_list_empty (toks);
+	RListIter *it;
+	char *w;
+	r_list_foreach (toks, it, w) {
+		size_t i;
+		for (i = 0; words[i] && strcmp (w, words[i]); i++) {
 		}
-		char *type = r_type_func_args_type (anal->sdb_types, fcn_name, n);
-		const bool fp = tp_fparg_scalar (anal, type);
-		free (type);
-		if (!fp) {
-			break;
+		ok = ok && words[i];
+	}
+	r_list_free (toks);
+	return ok;
+}
+
+// the db kind decides: an import keeps a builtin's pf letter beside its struct
+static int tp_param_class(RAnal *anal, const char *type) {
+	char *name = R_STR_ISEMPTY (type)? NULL: tp_unwrap_typedef (anal, r_str_skip_prefix (tp_skip_kind_prefix (type), "enum "));
+	if (R_STR_ISEMPTY (name)) {
+		free (name);
+		return TP_CLASS_NONE;
+	}
+	const RTypeKind kind = r_type_kind (anal->sdb_types, name);
+	const bool word = r_anal_type_bitsize (anal, name) <= anal->config->bits;
+	int cls = TP_CLASS_NONE;
+	if (strchr (name, '*') || (kind == R_TYPE_ENUM && word)) {
+		cls = TP_CLASS_INT;
+	} else if (kind == R_TYPE_INVALID && tp_c_int_spelling (name)) {
+		// bool, _Bool and most signed/unsigned spellings have no db key
+		cls = TP_CLASS_INT;
+	} else if (kind == R_TYPE_BASIC && word) {
+		const char *fmt = sdb_const_getf (anal->sdb_types, NULL, "type.%s", name);
+		if (tp_fparg_scalar (anal, name) || (fmt && (!strcmp (fmt, "f") || !strcmp (fmt, "F")))) {
+			cls = TP_CLASS_FP;
+		} else if (R_STR_ISEMPTY (fmt)? tp_c_int_spelling (name)
+				: ((!fmt[1] && strchr ("bcwdixqpsz", *fmt)) || !strcmp (fmt, "*z"))) {
+			cls = TP_CLASS_INT;
 		}
 	}
-	return n;
+	free (name);
+	return cls;
+}
+
+void tp_argseq_init(RAnal *anal, const char *cc, const char *ret, TPArgSeq *seq) {
+	const bool plain = ret && (!strcmp (ret, "void") || tp_param_class (anal, ret));
+	const bool on = plain && !r_anal_cc_stack_rev (anal, cc) && tp_fparg_loc (anal, cc, 0);
+	*seq = (TPArgSeq){ .on = on, .lead = true };
+}
+
+// an unknown class ends counting: its register cost is not known
+int tp_argseq_next(RAnal *anal, const char *cc, TPArgSeq *seq, const char *type, int n) {
+	seq->lead = seq->lead && tp_fparg_scalar (anal, type) && tp_fparg_loc (anal, cc, n);
+	const int cls = seq->on? tp_param_class (anal, type): TP_CLASS_NONE;
+	if (cls == TP_CLASS_FP && tp_fparg_loc (anal, cc, seq->fps)) {
+		return R_ANAL_CC_MAXARG + seq->fps++;
+	}
+	if (cls == TP_CLASS_INT && tp_reg_loc (r_anal_cc_argloc (anal, cc, seq->ints, 0, -1))) {
+		return seq->ints++;
+	}
+	seq->on = false;
+	return seq->lead? R_ANAL_CC_MAXARG + n: n;
 }
 
 // r_anal_type_bitsize handles the pointer width, this adds the typedef unwrap
@@ -989,16 +1042,15 @@ void tp_flush_pending_const(TPState *tps) {
 static char *tp_fcn_reg_type(RAnal *anal, RAnalFunction *fcn, const char *reg) {
 	RAnalFunctionSignature *sig = r_anal_function_get_signature (fcn);
 	if (sig && R_STR_ISNOTEMPTY (sig->callconv)) {
+		const char *cc = sig->callconv;
 		const int argc = r_list_length (sig->params);
-		bool fp_home = true;
+		TPArgSeq seq;
+		tp_argseq_init (anal, cc, sig->ret_type, &seq);
 		int i;
 		for (i = 0; i < argc; i++) {
 			RAnalFunctionParam *param = r_list_get_n (sig->params, i);
-			// the fp run is a prefix: one non-fp arg ends it
-			const char *fploc = fp_home? tp_fparg_loc (anal, sig->callconv, i): NULL;
-			fp_home = fploc && param && tp_fparg_scalar (anal, param->type);
-			const char *loc = fp_home? fploc
-				: r_anal_cc_argloc (anal, sig->callconv, i, 0, argc);
+			const int argno = tp_argseq_next (anal, cc, &seq, param? param->type: NULL, i);
+			const char *loc = r_anal_cc_argloc (anal, cc, argno, 0, argc);
 			if (loc && r_anal_cc_location_uses (anal, loc, reg)) {
 				char *type = param && R_STR_ISNOTEMPTY (param->type)
 					? strdup (param->type): NULL;
