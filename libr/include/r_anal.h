@@ -1430,14 +1430,26 @@ R_API bool r_anal_switch_get(RAnal *anal, ut64 startea, RAnalSwitchSpec *out);
 R_API void r_anal_switch_unset(RAnal *anal, ut64 startea);
 
 R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr);
+/* How a jump-table walker hands its case targets to the walk that found the
+ * switch, so that walk stays the only scheduler and no switch starts a second
+ * walk on the C stack. NULL scans synchronously, for callers outside a walk. */
+struct r_anal_switch_cursor_t;
+typedef struct r_anal_scan_sink_t {
+	/* The walker applied a case whose target must be scanned, and holds the rest
+	 * of the table in `cursor`. The walk scans the target and then resumes the
+	 * cursor, so each later entry is judged against the blocks the earlier
+	 * cases produced -- the order the recursion this replaces guaranteed. */
+	void (*suspend)(void *user, struct r_anal_switch_cursor_t *cursor, ut64 target);
+	void *user;
+} RAnalScanSink;
 R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 saddr, ut64 jaddr, RList *cases, int loadsz);
 
 // TODO: should be renamed
 R_API bool try_get_delta_jmptbl_info(RAnal *a, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift);
-R_API bool r_anal_jmptbl_walk(RAnal *analysis, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0);
-R_API bool try_walkthrough_casetbl(RAnal *analysis, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 casetbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0);
+R_API bool r_anal_jmptbl_walk(RAnal *analysis, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0, const RAnalScanSink *sink);
+R_API bool try_walkthrough_casetbl(RAnal *analysis, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 casetbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0, const RAnalScanSink *sink);
 R_API bool try_get_jmptbl_info(RAnal *analysis, RAnalFunction *fcn, ut64 addr, RAnalBlock *my_bb, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift);
-R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0);
+R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0, const RAnalScanSink *sink);
 
 /* reflines.c */
 R_API RList* /*<RAnalRefline>*/ r_anal_reflines_get(RAnal *anal,

@@ -686,15 +686,19 @@ R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *f
 			return true;
 		}
 	}
-	if (add_switch_case_block (anal, fcn, case_addr)) {
-		return true;
-	}
-	(void)r_anal_function_bb (anal, fcn, case_addr);
-	block = r_anal_get_block_at (anal, case_addr);
-	if (block && block->ninstr < 1) {
-		return false;
-	}
+	// no block covers the case yet: it has to be scanned, and the walker that
+	// found the switch decides where, so that a nested switch never starts a
+	// second walk on the C stack
 	return add_switch_case_block (anal, fcn, case_addr);
+}
+
+R_IPI void r_anal_function_scan_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr) {
+	R_RETURN_IF_FAIL (anal && fcn);
+	(void)r_anal_function_bb (anal, fcn, case_addr);
+	RAnalBlock *block = r_anal_get_block_at (anal, case_addr);
+	if (!block || block->ninstr > 0) {
+		(void)add_switch_case_block (anal, fcn, case_addr);
+	}
 }
 
 typedef struct {
@@ -926,19 +930,35 @@ enum {
 	WALK_CASE_DEFAULT,
 };
 
+enum {
+	WALK_ENTER = 0, // scan the block at addr
+	WALK_EXIT, // run the epilogue of a scanned block
+	WALK_TABLE, // resume a switch table once the case it scheduled has finished
+};
+
 // One deferred step of the walk: an Enter scans the block at addr, an Exit runs the
-// epilogue of a scanned block once every block it deferred has finished.
+// epilogue of a scanned block once every block it deferred has finished, and a
+// Table resumes a switch whose last case has finished.
 typedef struct {
-	RAnalBlock *bb; // NULL on an Enter frame
-	ut64 addr; // Enter: block to scan
-	ut64 from; // Enter: switch instruction that names the case flag, UT64_MAX otherwise
+	union {
+		struct {
+			ut64 addr; // block to scan
+			ut64 from; // switch instruction that names the case flag, UT64_MAX otherwise
+			ut64 cmpval; // anal->cmpval the block sees: what it saw when the scan was a call
+			int case_value; // switch case value, part of the flag name
+			ut8 case_kind; // WALK_CASE_NONE, WALK_CASE or WALK_CASE_DEFAULT
+		} enter;
+		struct {
+			RAnalBlock *bb; // the scanned block
+			int ret; // the block's own return value
+			int lea_cnt; // leaddr entries the block pushed
+			bool inherit; // return the value of the last finished successor instead of ret
+			bool restore; // reinstall stack after the successors
+		} exit;
+		RAnalSwitchCursor *table; // the suspended table
+	};
 	int stack; // Enter: fcn->stack on entry. Exit: fcn->stack to reinstall when restore is set
-	int ret; // Exit: the block's own return value
-	int lea_cnt; // Exit: leaddr entries the block pushed
-	int case_value; // Enter: switch case value, part of the flag name
-	ut8 case_kind; // Enter: WALK_CASE_NONE, WALK_CASE or WALK_CASE_DEFAULT
-	bool inherit; // Exit: return the value of the last finished successor instead of ret
-	bool restore; // Exit: reinstall stack after the successors
+	ut8 kind; // WALK_ENTER, WALK_EXIT or WALK_TABLE
 } WalkFrame;
 
 R_VEC_TYPE (RVecWalkFrame, WalkFrame);
@@ -951,7 +971,7 @@ typedef struct {
 	RVecWalkFrame frames;
 	ut64 len;
 	int last_ret; // return value of the most recently finished block
-	bool follow; // false scans a single block and walks none of its successors
+	bool failed; // the walk could not grow; nothing more is scheduled and the result is an error
 	int addrbytes;
 	int codealign;
 	ut32 opflags;
@@ -969,29 +989,76 @@ typedef struct {
 	bool is_stm8;
 } FcnWalk;
 
-static void walk_defer(FcnWalk *w, ut64 addr, int stack, ut8 case_kind, ut64 from, int case_value) {
+// Schedule a block to be scanned once the current one finishes. False means the
+// walk can no longer grow: the failure sticks, so no later successor is scheduled
+// either, and the driver drains the epilogues already queued and reports an error
+// rather than returning an ordinary result over incomplete work.
+static bool walk_defer(FcnWalk *w, ut64 addr, int stack, ut8 case_kind, ut64 from, int case_value) {
+	if (w->failed) {
+		return false;
+	}
 	WalkFrame *f = RVecWalkFrame_emplace_back (&w->frames);
 	if (R_UNLIKELY (!f)) {
 		R_LOG_ERROR ("Cannot defer the block at 0x%08"PFMT64x, addr);
+		w->failed = true;
+		return false;
+	}
+	*f = (WalkFrame){ .kind = WALK_ENTER, .stack = stack };
+	f->enter.addr = addr;
+	f->enter.from = from;
+	f->enter.cmpval = w->anal->cmpval;
+	f->enter.case_value = case_value;
+	f->enter.case_kind = case_kind;
+	return true;
+}
+
+// A jump-table walker applied a case and holds the rest of its table. The case
+// is scheduled first and the table above it -- the epilogue reverses this run of
+// frames, so the case then pops before the table, its subtree completes, and the
+// table resumes to size its next entry against the blocks that subtree made.
+static void walk_sink_suspend(void *user, RAnalSwitchCursor *cursor, ut64 target) {
+	FcnWalk *w = user;
+	WalkFrame *f = walk_defer (w, target, w->fcn->stack, WALK_CASE_NONE, UT64_MAX, 0)
+		? RVecWalkFrame_emplace_back (&w->frames)
+		: NULL;
+	if (R_UNLIKELY (!f)) {
+		if (!w->failed) {
+			R_LOG_ERROR ("Cannot defer the switch table at 0x%08"PFMT64x, target);
+			w->failed = true;
+		}
+		r_anal_switch_cursor_finish (cursor);
 		return;
 	}
-	f->bb = NULL;
-	f->addr = addr;
-	f->from = from;
-	f->stack = stack;
-	f->ret = R_ANAL_RET_END;
-	f->lea_cnt = 0;
-	f->case_value = case_value;
-	f->case_kind = case_kind;
-	f->inherit = false;
-	f->restore = false;
+	*f = (WalkFrame){ .kind = WALK_TABLE };
+	f->table = cursor;
+}
+
+// Resume a suspended table once the case it last scheduled has finished. The next
+// case it applies goes above the table again, so it too is scanned before the
+// table judges the entry after it.
+static void walk_table(FcnWalk *w, RAnalSwitchCursor *cursor) {
+	ut64 target;
+	if (!r_anal_switch_cursor_step (cursor, &target)) {
+		r_anal_switch_cursor_finish (cursor);
+		return;
+	}
+	WalkFrame *f = RVecWalkFrame_emplace_back (&w->frames);
+	if (R_UNLIKELY (!f)) {
+		R_LOG_ERROR ("Cannot resume the switch table for 0x%08"PFMT64x, target);
+		w->failed = true;
+		r_anal_switch_cursor_finish (cursor);
+		return;
+	}
+	*f = (WalkFrame){ .kind = WALK_TABLE };
+	f->table = cursor;
+	(void) walk_defer (w, target, w->fcn->stack, WALK_CASE_NONE, UT64_MAX, 0);
 }
 
 // Epilogue of a scanned block. Its successors have finished, so their leaddrs are
 // gone again and the block may have been split by one of them.
 static void walk_exit(FcnWalk *w, const WalkFrame *f) {
 	RAnal *anal = w->anal;
-	int lea_cnt = f->lea_cnt;
+	int lea_cnt = f->exit.lea_cnt;
 	while (lea_cnt > 0) {
 		RLeaddrPair *lea = r_list_pop (anal->leaddrs);
 		if (!lea) {
@@ -1000,17 +1067,17 @@ static void walk_exit(FcnWalk *w, const WalkFrame *f) {
 		leaddr_free (lea);
 		lea_cnt--;
 	}
-	RAnalBlock *bb = f->bb;
+	RAnalBlock *bb = f->exit.bb;
 	if (bb->size == 0) {
 		r_anal_function_remove_block (w->fcn, bb);
 	}
 	r_anal_block_update_hash (bb);
 	r_unref (bb);
-	if (f->restore) {
+	if (f->exit.restore) {
 		w->fcn->stack = f->stack;
 	}
-	if (!f->inherit) {
-		w->last_ret = f->ret;
+	if (!f->exit.inherit) {
+		w->last_ret = f->exit.ret;
 	}
 }
 
@@ -1129,7 +1196,16 @@ static void fcn_scan(FcnWalk *w, ut64 addr) {
 		w->last_ret = R_ANAL_RET_ERROR;
 		return;
 	}
-	const size_t first_deferred = RVecWalkFrame_length (&w->frames);
+	// The epilogue frame is reserved now, by index so it survives reallocation,
+	// so that scheduling a successor can never leave the epilogue unschedulable
+	// after it: that ran the epilogue at once, beneath successors already queued.
+	const size_t exit_idx = RVecWalkFrame_length (&w->frames);
+	const bool exit_reserved = RVecWalkFrame_emplace_back (&w->frames) != NULL;
+	if (R_UNLIKELY (!exit_reserved)) {
+		R_LOG_ERROR ("Cannot defer the epilogue of the block at 0x%08"PFMT64x, addr);
+		w->failed = true;
+	}
+	const RAnalScanSink sink = { .suspend = walk_sink_suspend, .user = w };
 	if (anal->flb.get_at) {
 		RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
 		is_import_stub = fi && fi->name && strstr (fi->name, "imp.");
@@ -1559,8 +1635,8 @@ noskip:
 					// TODO: -1-
 					if (ready) {
 						const bool has_jmptbl = casetbl_addr == op->ptr
-							? r_anal_jmptbl_walk (anal, fcn, bb, addr, case_shift, jmptbl_addr, op->ptr, 4, table_size, default_case, 4)
-							: try_walkthrough_casetbl (anal, fcn, bb, addr, case_shift, jmptbl_addr, casetbl_addr, op->ptr, 4, table_size, default_case, 4);
+							? r_anal_jmptbl_walk (anal, fcn, bb, addr, case_shift, jmptbl_addr, op->ptr, 4, table_size, default_case, 4, &sink)
+							: try_walkthrough_casetbl (anal, fcn, bb, addr, case_shift, jmptbl_addr, casetbl_addr, op->ptr, 4, table_size, default_case, 4, &sink);
 						if (has_jmptbl) {
 							r_anal_switch_op_add_deps (anal, addr, op->addr, addr);
 							anal->lea_jmptbl_ip = addr;
@@ -1835,9 +1911,9 @@ noskip:
 					if (anal->cmpval != UT64_MAX && default_case != UT64_MAX && (op->reg || op->ireg)) {
 						// TODO -1
 						if (op->ireg) {
-							ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, 0, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+							ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, 0, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret, &sink);
 						} else { // op->reg
-							ret = walkthrough_arm_jmptbl_style (anal, fcn, bb, op->addr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+							ret = walkthrough_arm_jmptbl_style (anal, fcn, bb, op->addr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret, &sink);
 						}
 						// check if op->jump and op->fail contain jump table location
 						// clear jump address, because it's jump table location
@@ -1952,7 +2028,7 @@ noskip:
 					}
 					walk_defer (w, target, fcn->stack, WALK_CASE_NONE, UT64_MAX, 0);
 				} else if (anal->opt.jmptbl) {
-					r_anal_jmptbl_arm64_from_br (anal, fcn, bb, op, loadsize);
+					r_anal_jmptbl_arm64_from_br (anal, fcn, bb, op, loadsize, &sink);
 				}
 				anal->cmpval = 0;
 				loadsize = 0;
@@ -1984,12 +2060,12 @@ noskip:
 				ut64 tblloc = jmptbl_ptr_addr;
 				int sz = 4;
 				ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, 0,
-						tblloc, jmptbl_ptr_addr, sz, tablesize, default_case, ret);
+						tblloc, jmptbl_ptr_addr, sz, tablesize, default_case, ret, &sink);
 			} else if (is_v850 && anal->opt.jmptbl) {
 				int ptsz = (anal->cmpval && anal->cmpval != UT64_MAX)? anal->cmpval + 1: 4;
 				if ((int)anal->cmpval > 0) {
 					ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr,
-							0, op->addr + 2, op->addr + 2, 2, ptsz, 0, ret);
+							0, op->addr + 2, op->addr + 2, 2, ptsz, 0, ret, &sink);
 				}
 				gotoBeach (R_ANAL_RET_END);
 				break;
@@ -2028,7 +2104,7 @@ noskip:
 							if (prev_op_storage.type == R_ANAL_OP_TYPE_MOV && prev_op_storage.disp && prev_op_storage.disp != UT64_MAX && same_reg) {
 								//	movzx reg, byte [reg + case_table]
 								//	jmp dword [reg*4 + jump_table]
-								if (try_walkthrough_casetbl (anal, fcn, bb, op->addr, case_shift, op->ptr, prev_op_storage.disp, op->ptr, anal->config->bits >> 3, table_size, default_case, ret)) {
+								if (try_walkthrough_casetbl (anal, fcn, bb, op->addr, case_shift, op->ptr, prev_op_storage.disp, op->ptr, anal->config->bits >> 3, table_size, default_case, ret, &sink)) {
 									r_anal_switch_op_add_deps (anal, op->addr, prev_op_storage.addr, op->addr);
 									ret = case_table = true;
 								}
@@ -2036,14 +2112,14 @@ noskip:
 						}
 						r_anal_op_fini (&prev_op_storage);
 						if (!case_table) {
-							ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+							ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret, &sink);
 						}
 					}
 				} else if (op->ptr != UT64_MAX && op->reg) { // direct jump
 					ut64 table_size, default_case;
 					st64 case_shift = 0;
 					if (try_get_jmptbl_info (anal, fcn, op->addr, bb, &table_size, &default_case, &case_shift)) {
-						ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+						ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret, &sink);
 					}
 				} else if (movdisp != UT64_MAX) {
 					st64 case_shift = 0;
@@ -2070,7 +2146,7 @@ noskip:
 						table_size = 0;
 						default_case = UT64_MAX;
 					}
-					ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, case_shift, jmptbl_base + movdisp, jmptbl_base, movscale, table_size, default_case, ret);
+					ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, case_shift, jmptbl_base + movdisp, jmptbl_base, movscale, table_size, default_case, ret, &sink);
 					r_anal_switch_op_add_deps (anal, op->addr, dep_from, op->addr);
 					anal->cmpval = UT64_MAX;
 #if 0
@@ -2079,7 +2155,7 @@ noskip:
 					st64 case_shift;
 					if (try_get_jmptbl_info (anal, fcn, op->addr, bb, &table_size, &default_case, &case_shift)) {
 						op->ptr = movdisp;
-						ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+						ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret, &sink);
 					}
 					movdisp = UT64_MAX;
 #endif
@@ -2131,14 +2207,14 @@ noskip:
 #if 0
 						table_addr = 0x183997048;
 						eprintf ("IFSIH 0x%llx\n", table_addr);
-						// try_walkthrough_casetbl (anal, fcn, bb, op->addr, case_shift, op->ptr, prev_op->disp, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+						// try_walkthrough_casetbl (anal, fcn, bb, op->addr, case_shift, op->ptr, prev_op->disp, op->ptr, anal->config->bits >> 3, table_size, default_case, ret, &sink);
 						ret = r_anal_jmptbl_walk (anal,
 								fcn, bb,
 								op->addr + 8, 0,
 								table_addr,
 								op->addr + 4, 1,
 								6, // table size is autodetected
-								UT64_MAX, ret);
+								UT64_MAX, ret, &sink);
 #else
 						const bool has_jmptbl = r_anal_jmptbl_walk (anal,
 								fcn, bb,
@@ -2146,7 +2222,7 @@ noskip:
 								table_addr,
 								op->addr + 4, 4,
 								0, // table size is autodetected
-								UT64_MAX, ret);
+								UT64_MAX, ret, &sink);
 						if (has_jmptbl) {
 							r_anal_switch_op_add_deps (anal, op->addr - 12, op->addr - 12, op->addr);
 							ret = true;
@@ -2163,7 +2239,7 @@ noskip:
 							table_size += anal->cmpval;
 						}
 						ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, 0, op->addr + op->size,
-								op->addr + 4, 1, table_size, UT64_MAX, ret);
+								op->addr + 4, 1, table_size, UT64_MAX, ret, &sink);
 						// skip inlined jumptable
 						idx += table_size;
 					} else if (op->ptrsize == 2) { // LDRH on thumb/arm
@@ -2175,7 +2251,7 @@ noskip:
 							tablesize += anal->cmpval;
 						}
 						ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, 0, op->addr + op->size,
-								op->addr + 4, 2, tablesize, UT64_MAX, ret);
+								op->addr + 4, 2, tablesize, UT64_MAX, ret, &sink);
 						// skip inlined jumptable
 						idx += (tablesize * 2);
 					}
@@ -2325,16 +2401,26 @@ analopfinish:
 beach:
 	r_anal_op_fini (op);
 	{
-		WalkFrame *exit = RVecWalkFrame_emplace_back (&w->frames);
-		if (R_UNLIKELY (!exit)) {
-			const WalkFrame now = { .bb = bb, .stack = saved_stack, .ret = ret, .lea_cnt = lea_cnt, .inherit = inherit, .restore = restore };
-			R_LOG_ERROR ("Cannot defer the epilogue of the block at 0x%08"PFMT64x, addr);
-			walk_exit (w, &now);
+		WalkFrame done = { .kind = WALK_EXIT, .stack = saved_stack };
+		done.exit.bb = bb;
+		done.exit.ret = ret;
+		done.exit.lea_cnt = lea_cnt;
+		done.exit.inherit = inherit;
+		done.exit.restore = restore;
+		if (R_UNLIKELY (!exit_reserved)) {
+			// nothing could be scheduled above a frame that does not exist
+			walk_exit (w, &done);
 			return;
 		}
-		*exit = (WalkFrame){ .bb = bb, .addr = addr, .from = UT64_MAX, .stack = saved_stack, .ret = ret, .lea_cnt = lea_cnt, .inherit = inherit, .restore = restore };
+		*RVecWalkFrame_at (&w->frames, exit_idx) = done;
+		if (RVecWalkFrame_length (&w->frames) == exit_idx + 1) {
+			// a leaf: no successor to wait for, so the epilogue runs now
+			RVecWalkFrame_pop_back (&w->frames);
+			walk_exit (w, &done);
+			return;
+		}
 		// successors were deferred in program order; reverse them so the first one pops first
-		size_t lo = first_deferred;
+		size_t lo = exit_idx + 1;
 		size_t hi = RVecWalkFrame_length (&w->frames) - 1;
 		while (lo < hi) {
 			WalkFrame *a = RVecWalkFrame_at (&w->frames, lo);
@@ -2359,7 +2445,6 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 		.cons = core->cons,
 		.len = len,
 		.last_ret = R_ANAL_RET_END,
-		.follow = follow,
 		.addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1,
 		.codealign = R_MAX (1, r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN)),
 		.opflags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT
@@ -2382,29 +2467,41 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 	while (!RVecWalkFrame_empty (&w.frames)) {
 		const WalkFrame f = *RVecWalkFrame_last (&w.frames);
 		RVecWalkFrame_pop_back (&w.frames);
-		if (f.bb) {
+		if (f.kind == WALK_EXIT) {
 			walk_exit (&w, &f);
 			continue;
 		}
-		if (f.case_kind == WALK_CASE) {
-			(void) r_anal_xrefs_setf (anal, fcn, f.from, f.addr, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
-			if (anal->flb.set) {
-				r_strf_var (flagname, 64, "case.0x%"PFMT64x".%d", f.from, R_ABS (f.case_value));
-				anal->flb.set (anal->flb.f, flagname, f.addr, 1);
+		if (w.failed) {
+			// drain the epilogues in order; schedule nothing new
+			if (f.kind == WALK_TABLE) {
+				r_anal_switch_cursor_finish (f.table);
 			}
-		} else if (f.case_kind == WALK_CASE_DEFAULT && anal->flb.set) {
-			r_strf_var (flagname, 64, "case.default.0x%"PFMT64x, f.from);
-			anal->flb.set (anal->flb.f, flagname, f.addr, 1);
+			continue;
+		}
+		if (f.kind == WALK_TABLE) {
+			walk_table (&w, f.table);
+			continue;
+		}
+		if (f.enter.case_kind == WALK_CASE) {
+			(void) r_anal_xrefs_setf (anal, fcn, f.enter.from, f.enter.addr, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
+			if (anal->flb.set) {
+				r_strf_var (flagname, 64, "case.0x%"PFMT64x".%d", f.enter.from, R_ABS (f.enter.case_value));
+				anal->flb.set (anal->flb.f, flagname, f.enter.addr, 1);
+			}
+		} else if (f.enter.case_kind == WALK_CASE_DEFAULT && anal->flb.set) {
+			r_strf_var (flagname, 64, "case.default.0x%"PFMT64x, f.enter.from);
+			anal->flb.set (anal->flb.f, flagname, f.enter.addr, 1);
 		}
 		if (!follow) {
 			w.last_ret = R_ANAL_RET_ERROR;
 			continue;
 		}
 		fcn->stack = f.stack;
-		fcn_scan (&w, f.addr);
+		anal->cmpval = f.enter.cmpval;
+		fcn_scan (&w, f.enter.addr);
 	}
 	RVecWalkFrame_fini (&w.frames);
-	return w.last_ret;
+	return w.failed? R_ANAL_RET_ERROR: w.last_ret;
 }
 
 R_API int r_anal_function_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
