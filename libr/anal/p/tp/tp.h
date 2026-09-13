@@ -277,9 +277,11 @@ bool tp_argloc_val(TPState *tps, const char *cc, int argno, int argc, ut64 *val)
 typedef struct {
 	int ints;
 	int fps;
-	bool on;
-	bool lead;
+	int spills;
+	int leading_fp;
+	bool counting;
 } TPArgSeq;
+int tp_fparg_prefix(RAnal *anal, const char *cc, const char *fcn_name, int max);
 void tp_argseq_init(RAnal *anal, const char *cc, const char *ret, TPArgSeq *seq);
 int tp_argseq_next(RAnal *anal, const char *cc, TPArgSeq *seq, const char *type, int n);
 
