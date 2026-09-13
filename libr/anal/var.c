@@ -1694,8 +1694,9 @@ typedef struct {
 	const RAnalFunction *fcn;
 	const char *cc;
 	ut64 generation;
-	// borrowed: every write to the cc db bumps the generation, so a stale
-	// entry is replaced before it is read rather than dereferenced
+	// interned in anal->constpool, whose lifetime is the analysis: a write to
+	// the cc db can make an entry stale, and the generation catches that, but
+	// it can never make one dangle. Freshness by epoch, safety by ownership.
 	const char *loc[ARGSEQ_SLOTS];
 	int max_arg;
 } ArgSeqCache;
@@ -1718,7 +1719,8 @@ static const ArgSeqCache *argseq_of(RAnal *anal, RAnalFunction *fcn) {
 	seq->max_arg = r_anal_cc_max_arg (anal, fcn->callconv);
 	int i;
 	for (i = 0; i < ARGSEQ_SLOTS; i++) {
-		seq->loc[i] = r_anal_cc_argloc (anal, fcn->callconv, i, 0, 0); // TODO: pass argn
+		const char *loc = r_anal_cc_argloc (anal, fcn->callconv, i, 0, 0); // TODO: pass argn
+		seq->loc[i] = loc? r_str_constpool_get (&anal->constpool, loc): NULL;
 	}
 	return seq;
 }
