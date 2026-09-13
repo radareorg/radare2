@@ -436,7 +436,6 @@ typedef struct r_anal_callbacks_t {
 #define R_ESIL_GOTO_LIMIT 4096
 
 typedef struct r_anal_options_t {
-	int depth;
 	int graph_depth;
 	bool vars; //analyze local var and arguments
 	int vars_maxbbsize; // skip variable analysis on blocks larger than this size (0 = unlimited)
@@ -1198,7 +1197,7 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API const char *r_anal_functiontype_tostring(int type);
 R_API int r_anal_function_coverage(RAnalFunction *fcn);
-R_API int r_anal_function_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth);
+R_API int r_anal_function_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr);
 R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
 R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);
@@ -1423,7 +1422,7 @@ R_API const char *r_anal_cond_typeexpr_tostring(int cc);
 // Unified entry point for switch/jump-table analysis. Builds an
 // RAnalSwitchOp on `block` and recursively analyses every case.
 // All other r_anal_jmptbl* functions are thin shims around this one.
-R_API bool r_anal_switch_apply(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, const RAnalSwitchSpec *spec);
+R_API bool r_anal_switch_apply(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, const RAnalSwitchSpec *spec);
 
 // User-pinned switch overrides, keyed on the dispatching insn address.
 R_API bool r_anal_switch_set(RAnal *anal, ut64 startea, const RAnalSwitchSpec *spec);
@@ -1435,10 +1434,10 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 
 // TODO: should be renamed
 R_API bool try_get_delta_jmptbl_info(RAnal *a, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift);
-R_API bool r_anal_jmptbl_walk(RAnal *analysis, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0);
-R_API bool try_walkthrough_casetbl(RAnal *analysis, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 casetbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0);
+R_API bool r_anal_jmptbl_walk(RAnal *analysis, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0);
+R_API bool try_walkthrough_casetbl(RAnal *analysis, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 casetbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0);
 R_API bool try_get_jmptbl_info(RAnal *analysis, RAnalFunction *fcn, ut64 addr, RAnalBlock *my_bb, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift);
-R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0);
+R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0);
 
 /* reflines.c */
 R_API RList* /*<RAnalRefline>*/ r_anal_reflines_get(RAnal *anal,

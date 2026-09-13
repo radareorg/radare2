@@ -4295,3 +4295,20 @@ EXPECT=<<EOF
 var int32_t var_8h @ rbp-0x8
 EOF
 RUN
+
+NAME=af walks a block chain longer than any depth
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+b 4000
+wow 85c07400
+wx c3 @ 4000
+s 0
+af
+afl
+EOF
+EXPECT=<<EOF
+0x00000000 1001   4001 fcn.00000000
+EOF
+RUN
