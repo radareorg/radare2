@@ -27,7 +27,7 @@ typedef struct r_leaddr_pair_t {
 #define R_ANAL_PRIV(x) ((RAnalPriv*)(x)->priv)
 #define R_ANAL_CC_STACK_POP_UNKNOWN (-1)
 
-R_IPI void r_anal_types_ensure_loaded(RAnal *anal);
+/* Store a function's calling convention, resolving a bare dyncc marker. */
 R_IPI bool r_anal_var_is_default_argname(const char *name);
 /* Adopt the block a switch case targets. False when no block covers it, in
  * which case the case needs scanning; the walker decides where. */

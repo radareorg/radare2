@@ -155,6 +155,8 @@ R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 	if (__fcn_exists (anal, fcn->name, fcn->addr)) {
 		return false;
 	}
+	// The address is final here, so a bare dyncc marker resolves against it.
+	r_anal_function_store_callconv (anal, fcn, fcn->callconv);
 	if (anal->cb.on_fcn_new) {
 		anal->cb.on_fcn_new (anal, anal->user, fcn);
 	}
@@ -429,21 +431,43 @@ R_API ut64 r_anal_function_bump_dirty_epoch(RAnalFunction *fcn) {
 	return fcn->dirty_epoch;
 }
 
-R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv) {
-	R_RETURN_VAL_IF_FAIL (anal && fcn && R_STR_ISNOTEMPTY (callconv), false);
-	if (!r_anal_cc_exist (anal, callconv)) {
-		return false;
+// The convention a bare "dyncc" stands for: what the bin plugin says about the
+// function's address, or "reg" when nothing does. Only once the address is known.
+static const char *resolved_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv) {
+	if (strcmp (callconv, "dyncc") || fcn->addr == UT64_MAX) {
+		return callconv;
 	}
-	const char *pooled = r_str_constpool_get (&anal->constpool, callconv);
-	if (!pooled) {
-		return false;
+	const char *resolved = anal->binb.get_cc? anal->binb.get_cc (anal->binb.bin, fcn->addr): NULL;
+	return resolved? resolved: "reg";
+}
+
+// Store the convention a caller decided on, resolved. The one writer; a
+// NULL or empty name clears the convention, and interning a name that fails
+// leaves the function as it was.
+R_API bool r_anal_function_store_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, false);
+	const char *pooled = NULL;
+	if (R_STR_ISNOTEMPTY (callconv)) {
+		pooled = r_str_constpool_get (&anal->constpool, resolved_callconv (anal, fcn, callconv));
+		if (!pooled) {
+			return false;
+		}
 	}
-	if (fcn->callconv && !strcmp (fcn->callconv, pooled)) {
+	if (fcn->callconv == pooled) {
 		return true;
 	}
 	fcn->callconv = pooled;
 	r_anal_function_bump_dirty_epoch (fcn);
 	return true;
+}
+
+// The convention a user named, which has to be one the target defines.
+R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn && R_STR_ISNOTEMPTY (callconv), false);
+	if (!r_anal_cc_exist (anal, callconv)) {
+		return false;
+	}
+	return r_anal_function_store_callconv (anal, fcn, callconv);
 }
 
 static void fcn_context_reg_arg_free(RAnalFcnRegArg *arg) {
@@ -618,6 +642,7 @@ static RAnalFunctionSignature *fcn_context_collect_signature(RAnalFunction *fcn)
 		return signature;
 	}
 	signature = R_NEW0 (RAnalFunctionSignature);
+	signature->origin = R_ANAL_FUNCTION_SIGNATURE_ORIGIN_UNKNOWN;
 	signature->params = r_list_new ();
 	if (!signature->params) {
 		r_anal_function_signature_free (signature);
@@ -649,7 +674,7 @@ R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunctio
 	RAnalFcnVarsCache cache = {0};
 
 	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
-	r_anal_types_ensure_loaded (anal);
+	r_anal_types_prepare (anal);
 
 	ctx = R_NEW0 (RAnalFcnContext);
 	ctx->signature = fcn_context_collect_signature (fcn);

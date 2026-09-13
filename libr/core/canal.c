@@ -752,20 +752,13 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	}
 #endif
 	const char *cc = r_anal_cc_default (core->anal);
-	if (cc && !strcmp (cc, "dyncc")) {
-		// Keep the bare "dyncc" marker; r_anal_function_cc () resolves it
-		// lazily via RBinPlugin.get_cc the first time it is actually needed.
-		if (!core->anal->binb.get_cc) {
-			cc = "reg"; // no per-function cc provider available
-		}
-	} else if (!cc) {
+	if (!cc) {
 		const bool isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
 		if (!isvm && r_anal_cc_once (core->anal)) {
 			R_LOG_WARN ("select the calling convention with `e anal.cc=?`");
 		}
 		cc = "reg";
 	}
-	fcn->callconv = r_str_constpool_get (&core->anal->constpool, cc);
 
 	RAnalHint *hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
@@ -775,6 +768,9 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		fcn->bits = core->anal->config->bits;
 	}
 	fcn->addr = at;
+	// the address is set, so a bare dyncc resolves against it before analysis
+	// reads the convention
+	r_anal_function_store_callconv (core->anal, fcn, cc);
 	fcn->name = get_function_name (core, fcnpfx, at);
 	RIORegion region;
 	if (!r_io_get_region_at (core->io, &region, at + r_anal_function_linear_size (fcn))) {
@@ -2027,6 +2023,8 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	const bool use_esil = r_config_get_b (core->config, "anal.esil");
 
 	r_core_seek_arch_bits (core, at);
+	// signatures are read during analysis; the type databases load once here
+	r_anal_types_prepare (core->anal);
 	if (!core->anal->arch->session) {
 		R_LOG_DEBUG ("Cannot analyze 0x%08"PFMT64x" without an architecture session", at);
 		return false;

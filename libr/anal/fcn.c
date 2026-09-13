@@ -96,31 +96,10 @@ static void fcn_stack_delta(RAnalFunction *fcn, RAnalBlock *bb, st64 delta) {
 	bb->stackptr += delta;
 }
 
-// Resolve a function's concrete calling convention. When fcn->callconv still
-// holds the bare "dyncc" marker, query the bin plugin (RBinPlugin.get_cc) once
-// and cache the resulting interned string back into fcn->callconv.
+// The function's calling convention. A bare "dyncc" is resolved when the
+// convention is assigned (r_anal_function_set_callconv), so this only reads.
 R_API const char *r_anal_function_cc(RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, NULL);
-	const char *cc = fcn->callconv;
-	if (!cc || strcmp (cc, "dyncc")) {
-		// already concrete (dyncc:... or a static cc), or unset
-		return cc;
-	}
-	RAnal *anal = fcn->anal;
-	if (!anal) {
-		return cc;
-	}
-	const char *resolved = NULL;
-	if (anal->binb.get_cc) {
-		resolved = anal->binb.get_cc (anal->binb.bin, fcn->addr);
-	}
-	if (!resolved) {
-		// no per-function metadata: pin to a stable fallback so we do not
-		// re-query the bin plugin on every access
-		resolved = "reg";
-	}
-	fcn->callconv = r_str_constpool_get (&anal->constpool, resolved);
-	r_anal_function_bump_dirty_epoch (fcn);
 	return fcn->callconv;
 }
 
@@ -2913,12 +2892,15 @@ static char *function_signature_address_type_name(Sdb *types, ut64 addr) {
 	return NULL;
 }
 
-static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
+// The prototype's key, and whether the address or the name selected it.
+static char *function_signature_type_name_origin(RAnal *anal, RAnalFunction *fcn, RAnalFunctionSignatureOrigin *origin) {
 	const char *basename;
 
 	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn && fcn->name, NULL);
+	*origin = R_ANAL_FUNCTION_SIGNATURE_ORIGIN_NAME;
 	char *name = function_signature_address_type_name (anal->sdb_types, fcn->addr);
 	if (name) {
+		*origin = R_ANAL_FUNCTION_SIGNATURE_ORIGIN_ADDRESS;
 		return name;
 	}
 	const char *lookup_name = function_signature_lookup_name (anal, fcn);
@@ -2963,6 +2945,11 @@ static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
 		}
 	}
 	return strdup (lookup_name);
+}
+
+static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
+	RAnalFunctionSignatureOrigin origin;
+	return function_signature_type_name_origin (anal, fcn, &origin);
 }
 
 static const char *function_signature_callconv(RAnal *anal, RAnalFunction *fcn, const char *type_name) {
@@ -3150,7 +3137,7 @@ static void function_signature_sync(RAnalFunction *fcn, const RAnalFunctionSigna
 
 	R_RETURN_IF_FAIL (fcn && fcn->anal && signature);
 	callconv = signature->callconv? signature->callconv: r_anal_cc_default (fcn->anal);
-	fcn->callconv = callconv? r_str_constpool_get (&fcn->anal->constpool, callconv): NULL;
+	r_anal_function_store_callconv (fcn->anal, fcn, callconv);
 	fcn->is_noreturn = signature->noreturn;
 }
 
@@ -3197,14 +3184,16 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *funct
 	RAnal *anal;
 	RAnalFunctionSignature *signature = NULL;
 
+	// reads what the type database holds; r_anal_types_prepare loads it
 	R_RETURN_VAL_IF_FAIL (function && function->anal && function->anal->sdb_types, NULL);
 	anal = function->anal;
-	r_anal_types_ensure_loaded (anal);
-	type_name = function_signature_type_name (anal, function);
+	RAnalFunctionSignatureOrigin origin;
+	type_name = function_signature_type_name_origin (anal, function, &origin);
 	if (!type_name) {
 		return NULL;
 	}
 	signature = R_NEW0 (RAnalFunctionSignature);
+	signature->origin = origin;
 	signature->params = r_list_newf ((RListFree)function_param_free);
 	const char *ret_type = r_type_func_ret (anal->sdb_types, type_name);
 	if (ret_type) {
@@ -3225,8 +3214,11 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *funct
 			break;
 		}
 	}
-	if (argc < 0 && !function_signature_fallback_to_vars (anal, function, signature)) {
-		goto beach;
+	if (argc < 0) {
+		if (!function_signature_fallback_to_vars (anal, function, signature)) {
+			goto beach;
+		}
+		signature->origin = R_ANAL_FUNCTION_SIGNATURE_ORIGIN_VARIABLES;
 	}
 	// the declaration carries the function's own name; the key is only a lookup handle
 	signature->signature = function_signature_string (
