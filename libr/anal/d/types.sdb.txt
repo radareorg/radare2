@@ -2671,12 +2671,13 @@ func.snprintf.arg.3=,...
 func.snprintf.ret=int
 
 snprintf_chk=func
-func.snprintf_chk.args=5
+func.snprintf_chk.args=6
 func.snprintf_chk.arg.0=char *,s
 func.snprintf_chk.arg.1=size_t,maxlen
 func.snprintf_chk.arg.2=int,flag
 func.snprintf_chk.arg.3=size_t,slen
 func.snprintf_chk.arg.4=const char *,format
+func.snprintf_chk.arg.5=,...
 func.snprintf_chk.ret=int
 
 sprintf=func
@@ -2687,11 +2688,12 @@ func.sprintf.arg.2=,...
 func.sprintf.ret=int
 
 sprintf_chk=func
-func.sprintf_chk.args=4
+func.sprintf_chk.args=5
 func.sprintf_chk.arg.0=char *,s
 func.sprintf_chk.arg.1=int,flag
 func.sprintf_chk.arg.2=size_t,slen
 func.sprintf_chk.arg.3=const char *,format
+func.sprintf_chk.arg.4=,...
 func.sprintf_chk.ret=int
 
 sscanf=func
