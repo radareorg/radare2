@@ -2662,6 +2662,20 @@ func.scanf.arg.0=const char *,format
 func.scanf.arg.1=,...
 func.scanf.ret=int
 
+asprintf=func
+func.asprintf.args=3
+func.asprintf.arg.0=char **,ptr
+func.asprintf.arg.1=const char *,format
+func.asprintf.arg.2=,...
+func.asprintf.ret=int
+
+dprintf=func
+func.dprintf.args=3
+func.dprintf.arg.0=int,fd
+func.dprintf.arg.1=const char *,format
+func.dprintf.arg.2=,...
+func.dprintf.ret=int
+
 snprintf=func
 func.snprintf.args=4
 func.snprintf.arg.0=char *,s
@@ -2728,6 +2742,20 @@ func.vscanf.args=2
 func.vscanf.arg.0=const char *,format
 func.vscanf.arg.1=va_list,ap
 func.vscanf.ret=int
+
+vasprintf=func
+func.vasprintf.args=3
+func.vasprintf.arg.0=char **,ptr
+func.vasprintf.arg.1=const char *,format
+func.vasprintf.arg.2=va_list,ap
+func.vasprintf.ret=int
+
+vdprintf=func
+func.vdprintf.args=3
+func.vdprintf.arg.0=int,fd
+func.vdprintf.arg.1=const char *,format
+func.vdprintf.arg.2=va_list,ap
+func.vdprintf.ret=int
 
 vsnprintf=func
 func.vsnprintf.args=4
