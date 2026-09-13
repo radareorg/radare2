@@ -48,6 +48,10 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	RVecString_init (&types);
 	TPArgSeq seq;
 	tp_argseq_init (anal, cc, r_type_func_ret (TDB, fcn_name), &seq);
+	// a prefix is a declaration-order run, which a reverse-stack cc does not walk in
+	seq.leading_fp = tp_fparg_prefix (anal, cc, fcn_name, max);
+	// an input conversion takes a pointer to its type, so %f is not an fp argument
+	const bool fmt_ptr = strstr (fcn_name, "scanf") != NULL;
 	const ut32 opmask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL;
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev? (max - 1 - i): i;
@@ -68,7 +72,8 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 			name = r_type_func_args_name (TDB, fcn_name, arg_num);
 		}
 		// varargs continue the count the declared args started
-		const int argno = tp_argseq_next (anal, cc, &seq, type, arg_num);
+		const int argno = tp_argseq_next (anal, cc, &seq,
+			(format && fmt_ptr)? "void *": type, arg_num);
 		// one lookup yields home and offset, so they cannot disagree
 		RAnalCCArgSlot slot;
 		const bool resolved = r_anal_cc_argslot (anal, cc, argno, max, false, &slot);

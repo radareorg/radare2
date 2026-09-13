@@ -594,7 +594,8 @@ static const char *tp_skip_kind_prefix(const char *t) {
 		}
 	}
 	t = r_str_skip_prefix (t, "struct ");
-	return r_str_skip_prefix (t, "union ");
+	t = r_str_skip_prefix (t, "union ");
+	return r_str_skip_prefix (t, "enum ");
 }
 
 // follow typedef aliases to the underlying type name; the bound keeps cycles from hanging
@@ -636,46 +637,82 @@ static const char *tp_fparg_loc(RAnal *anal, const char *cc, int n) {
 	return tp_reg_loc (r_anal_cc_argloc (anal, cc, R_ANAL_CC_MAXARG + n, 0, -1));
 }
 
+static bool tp_fparg_home(RAnal *anal, const char *cc, const char *type, int n) {
+	return tp_fparg_scalar (anal, type) && tp_fparg_loc (anal, cc, n);
+}
+
+// how many leading args the legacy rule homes on the fp registers
+int tp_fparg_prefix(RAnal *anal, const char *cc, const char *fcn_name, int max) {
+	int n;
+	for (n = 0; n < max; n++) {
+		char *type = r_type_func_args_type (anal->sdb_types, fcn_name, n);
+		const bool fp = tp_fparg_home (anal, cc, type, n);
+		free (type);
+		if (!fp) {
+			break;
+		}
+	}
+	return n;
+}
+
 enum { TP_CLASS_NONE, TP_CLASS_INT, TP_CLASS_FP };
 
-static bool tp_c_int_spelling(const char *name) {
-	static const char * const words[] = { "signed", "unsigned", "char", "short", "int", "long", "_Bool", "bool", NULL };
-	RList *toks = r_str_split_duplist (name, " ", true);
-	bool ok = !r_list_empty (toks);
-	RListIter *it;
-	char *w;
-	r_list_foreach (toks, it, w) {
-		size_t i;
-		for (i = 0; words[i] && strcmp (w, words[i]); i++) {
+// bool, _Bool and most signed/unsigned spellings have no db key to size them by
+static bool tp_c_int_spelling(const char *name, int bits) {
+	static const char words[] = "signed\0unsigned\0char\0short\0int\0long\0_Bool\0bool";
+	const char *end = words + sizeof (words);
+	int longs = 0, count = 0;
+	const char *p = name;
+	while (*p) {
+		if (*p == ' ') {
+			p++;
+			continue;
 		}
-		ok = ok && words[i];
+		const size_t len = strcspn (p, " ");
+		const char *w = words;
+		while (w < end && (strncmp (w, p, len) || w[len])) {
+			w += strlen (w) + 1;
+		}
+		if (w >= end) {
+			return false;
+		}
+		longs += !strcmp (w, "long");
+		count++;
+		p += len;
 	}
-	r_list_free (toks);
-	return ok;
+	// long long spans two 32-bit registers, and long is already wider than a 16-bit one
+	return count > 0 && (longs > 1? 64: longs? 32: 0) <= bits;
 }
 
 // the db kind decides: an import keeps a builtin's pf letter beside its struct
 static int tp_param_class(RAnal *anal, const char *type) {
-	char *name = R_STR_ISEMPTY (type)? NULL: tp_unwrap_typedef (anal, r_str_skip_prefix (tp_skip_kind_prefix (type), "enum "));
+	char *name = R_STR_ISEMPTY (type)? NULL: tp_unwrap_typedef (anal, tp_skip_kind_prefix (type));
 	if (R_STR_ISEMPTY (name)) {
 		free (name);
 		return TP_CLASS_NONE;
 	}
-	const RTypeKind kind = r_type_kind (anal->sdb_types, name);
-	const bool word = r_anal_type_bitsize (anal, name) <= anal->config->bits;
+	const int bits = anal->config->bits;
 	int cls = TP_CLASS_NONE;
-	if (strchr (name, '*') || (kind == R_TYPE_ENUM && word)) {
+	if (strchr (name, '*')) {
 		cls = TP_CLASS_INT;
-	} else if (kind == R_TYPE_INVALID && tp_c_int_spelling (name)) {
-		// bool, _Bool and most signed/unsigned spellings have no db key
-		cls = TP_CLASS_INT;
-	} else if (kind == R_TYPE_BASIC && word) {
-		const char *fmt = sdb_const_getf (anal->sdb_types, NULL, "type.%s", name);
-		if (tp_fparg_scalar (anal, name) || (fmt && (!strcmp (fmt, "f") || !strcmp (fmt, "F")))) {
-			cls = TP_CLASS_FP;
-		} else if (R_STR_ISEMPTY (fmt)? tp_c_int_spelling (name)
-				: ((!fmt[1] && strchr ("bcwdixqpsz", *fmt)) || !strcmp (fmt, "*z"))) {
+	} else {
+		const RTypeKind kind = r_type_kind (anal->sdb_types, name);
+		// an aggregate never homes on one register, so its size is never asked for
+		const bool word = (kind == R_TYPE_ENUM || kind == R_TYPE_BASIC)
+			&& r_anal_type_bitsize (anal, name) <= bits;
+		if (kind == R_TYPE_INVALID) {
+			cls = tp_c_int_spelling (name, bits)? TP_CLASS_INT: TP_CLASS_NONE;
+		} else if (kind == R_TYPE_ENUM && word) {
 			cls = TP_CLASS_INT;
+		} else if (kind == R_TYPE_BASIC && word) {
+			const char *fmt = sdb_const_getf (anal->sdb_types, NULL, "type.%s", name);
+			const bool fp = !strcmp (name, "float") || !strcmp (name, "double");
+			if (fp || (fmt && (!strcmp (fmt, "f") || !strcmp (fmt, "F")))) {
+				cls = TP_CLASS_FP;
+			} else if (R_STR_ISEMPTY (fmt)? tp_c_int_spelling (name, bits)
+					: ((!fmt[1] && strchr ("bcwdixqpsz", *fmt)) || !strcmp (fmt, "*z"))) {
+				cls = TP_CLASS_INT;
+			}
 		}
 	}
 	free (name);
@@ -683,23 +720,38 @@ static int tp_param_class(RAnal *anal, const char *type) {
 }
 
 void tp_argseq_init(RAnal *anal, const char *cc, const char *ret, TPArgSeq *seq) {
-	const bool plain = ret && (!strcmp (ret, "void") || tp_param_class (anal, ret));
-	const bool on = plain && !r_anal_cc_stack_rev (anal, cc) && tp_fparg_loc (anal, cc, 0);
-	*seq = (TPArgSeq){ .on = on, .lead = true };
+	*seq = (TPArgSeq){ 0 };
+	if (!tp_fparg_loc (anal, cc, 0) || r_anal_cc_stack_rev (anal, cc)) {
+		return;
+	}
+	// a returned aggregate takes an argument register of its own, unmodelled here
+	seq->counting = ret && (!strcmp (ret, "void") || tp_param_class (anal, ret));
+}
+
+// index of the next stack home, past the register args; -1 when the cc has no tail
+static int tp_spill_argno(RAnal *anal, const char *cc, TPArgSeq *seq) {
+	int n;
+	for (n = 0; n < R_ANAL_CC_MAXARG && tp_reg_loc (r_anal_cc_argloc (anal, cc, n, 0, -1)); n++) {
+	}
+	return (n < R_ANAL_CC_MAXARG)? n + seq->spills++: -1;
 }
 
 // an unknown class ends counting: its register cost is not known
 int tp_argseq_next(RAnal *anal, const char *cc, TPArgSeq *seq, const char *type, int n) {
-	seq->lead = seq->lead && tp_fparg_scalar (anal, type) && tp_fparg_loc (anal, cc, n);
-	const int cls = seq->on? tp_param_class (anal, type): TP_CLASS_NONE;
+	const int cls = seq->counting? tp_param_class (anal, type): TP_CLASS_NONE;
 	if (cls == TP_CLASS_FP && tp_fparg_loc (anal, cc, seq->fps)) {
 		return R_ANAL_CC_MAXARG + seq->fps++;
 	}
 	if (cls == TP_CLASS_INT && tp_reg_loc (r_anal_cc_argloc (anal, cc, seq->ints, 0, -1))) {
 		return seq->ints++;
 	}
-	seq->on = false;
-	return seq->lead? R_ANAL_CC_MAXARG + n: n;
+	// a full bank spills to the stack, the other one keeps handing out registers
+	const int spill = (cls == TP_CLASS_NONE)? -1: tp_spill_argno (anal, cc, seq);
+	if (spill >= 0) {
+		return spill;
+	}
+	seq->counting = false;
+	return n < seq->leading_fp? R_ANAL_CC_MAXARG + n: n;
 }
 
 // r_anal_type_bitsize handles the pointer width, this adds the typedef unwrap
@@ -1046,9 +1098,16 @@ static char *tp_fcn_reg_type(RAnal *anal, RAnalFunction *fcn, const char *reg) {
 		const int argc = r_list_length (sig->params);
 		TPArgSeq seq;
 		tp_argseq_init (anal, cc, sig->ret_type, &seq);
-		int i;
-		for (i = 0; i < argc; i++) {
-			RAnalFunctionParam *param = r_list_get_n (sig->params, i);
+		RListIter *iter;
+		RAnalFunctionParam *param;
+		r_list_foreach (sig->params, iter, param) {
+			if (!param || !tp_fparg_home (anal, cc, param->type, seq.leading_fp)) {
+				break;
+			}
+			seq.leading_fp++;
+		}
+		int i = 0;
+		r_list_foreach (sig->params, iter, param) {
 			const int argno = tp_argseq_next (anal, cc, &seq, param? param->type: NULL, i);
 			const char *loc = r_anal_cc_argloc (anal, cc, argno, 0, argc);
 			if (loc && r_anal_cc_location_uses (anal, loc, reg)) {
@@ -1057,6 +1116,7 @@ static char *tp_fcn_reg_type(RAnal *anal, RAnalFunction *fcn, const char *reg) {
 				r_anal_function_signature_free (sig);
 				return type;
 			}
+			i++;
 		}
 	}
 	r_anal_function_signature_free (sig);
