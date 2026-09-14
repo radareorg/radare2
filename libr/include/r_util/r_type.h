@@ -48,15 +48,13 @@ R_API int r_type_func_exist(Sdb *TDB, const char *func_name);
 R_API bool r_type_func_prototype_exist(Sdb *TDB, const char *func_name);
 R_API const char *r_type_func_cc(Sdb *TDB, const char *func_name);
 R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name);
-// Count for a resolved prototype key, including the variadic slot; -1 if absent or invalid.
-#define R_TYPE_FUNC_ARGC 1
-R_API int r_type_func_argc(Sdb *TDB, const char * R_NONNULL func_name);
 R_API R_OWNED char *r_type_func_args_type(Sdb *TDB, const char * R_NONNULL func_name, int i);
 R_API const char *r_type_func_args_name(Sdb *TDB, const char * R_NONNULL func_name, int i);
 R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char * R_NONNULL func_name);
 R_API R_OWNED char *r_type_func_name(Sdb *types, const char *fname);
 R_API R_OWNED char *r_type_func_key(Sdb *types, const char *fname);
-R_API bool r_type_func_is_variadic(Sdb *TDB, const char * R_NONNULL func_name);
+// argc is the known prototype count, including the variadic slot.
+R_API bool r_type_func_is_variadic(Sdb *TDB, const char * R_NONNULL func_name, int argc);
 
 // the variadic slot is named "..." (r2 <= 6.1.8 stored it in the type half instead)
 static inline bool r_type_arg_is_vararg(const char *type, const char *name) {
@@ -68,4 +66,3 @@ static inline bool r_type_arg_is_vararg(const char *type, const char *name) {
 #endif
 
 #endif //  R_TYPE_H
-

@@ -128,8 +128,8 @@ static int fcn_type_stack_pop(RAnal *anal, const char *cc, const char *callee, i
 	if (!callee) {
 		return 0;
 	}
-	const int argc = r_type_func_argc (anal->sdb_types, callee);
-	if (argc < 1) {
+	int argc;
+	if (!r_anal_type_func_args_count (anal, callee, &argc) || argc < 1) {
 		return 0;
 	}
 	const int word = R_MAX (1, bits / 8);
@@ -3218,7 +3218,8 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *funct
 			goto beach;
 		}
 	}
-	int argc = r_type_func_argc (anal->sdb_types, type_name);
+	int argc = -1;
+	r_anal_type_func_args_count (anal, type_name, &argc);
 	for (i = 0; i < argc; i++) {
 		const char *param_name = r_type_func_args_name (anal->sdb_types, type_name, i);
 		RAnalFunctionParam *param = R_NEW0 (RAnalFunctionParam);

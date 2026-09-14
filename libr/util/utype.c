@@ -983,17 +983,6 @@ R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
 	return sdb_const_getf (TDB, NULL, "func.%s.ret", trim_lodashes (TDB, func_name));
 }
 
-R_API int r_type_func_argc(Sdb *TDB, const char *R_NONNULL func_name) {
-	R_RETURN_VAL_IF_FAIL (TDB && func_name, -1);
-	const char *value = sdb_const_getf (TDB, NULL, "func.%s.args", trim_lodashes (TDB, func_name));
-	if (!value || *value < '0' || *value > '9') {
-		return -1;
-	}
-	char *end;
-	ut64 argc = strtoull (value, &end, 0);
-	return *end || argc > ST32_MAX? -1: (int)argc;
-}
-
 R_API R_OWNED char *r_type_func_args_type(Sdb *TDB, const char *R_NONNULL func_name, int i) {
 	const char *value = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", trim_lodashes (TDB, func_name), i);
 	char *ret = value? strdup (value): NULL;
@@ -1022,16 +1011,18 @@ R_API const char *r_type_func_args_name(Sdb *TDB, const char *R_NONNULL func_nam
 	return (i >= 0 && i < 10)? argnames[i]: "arg";
 }
 
-R_API bool r_type_func_is_variadic(Sdb *TDB, const char *R_NONNULL func_name) {
+R_API bool r_type_func_is_variadic(Sdb *TDB, const char *R_NONNULL func_name, int argc) {
 	R_RETURN_VAL_IF_FAIL (TDB && func_name, false);
-	const int argc = r_type_func_argc (TDB, func_name);
 	if (argc < 1) {
 		return false;
 	}
-	char *type = r_type_func_args_type (TDB, func_name, argc - 1);
-	const bool res = r_type_arg_is_vararg (type, r_type_func_args_name (TDB, func_name, argc - 1));
-	free (type);
-	return res;
+	const char *row = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", trim_lodashes (TDB, func_name), argc - 1);
+	if (!row) {
+		return false;
+	}
+	const char *comma = strrchr (row, ',');
+	// Current declarations store "..." in the name; older ones used the type.
+	return comma? !strcmp (comma + 1, "...") || (comma - row == 3 && !strncmp (row, "...", 3)): !strcmp (row, "...");
 }
 
 #define MIN_MATCH_LEN 4

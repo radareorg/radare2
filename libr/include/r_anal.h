@@ -1823,6 +1823,9 @@ R_API SdbGperf *r_anal_get_gperf_types(const char *k);
 R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *os, const char *subsystem);
 R_API void r_anal_types_load_sdb(RAnal *anal, const char *name);
 R_API ut64 r_anal_type_bitsize(RAnal *anal, const char *type);
+// Count for a resolved prototype name, including the variadic slot.
+// Returns false for a missing prototype or invalid count, leaving argc unchanged.
+R_API bool r_anal_type_func_args_count(const RAnal *anal, const char * R_NONNULL name, R_OUT int * R_NONNULL argc);
 
 R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, const char *c);
 R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal *anal, bool use_map_info, bool use_maps);

@@ -4548,8 +4548,8 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 		}
 		pj_a (j);
 		char *key = fcn_name? r_type_func_name (core->anal->sdb_types, fcn_name): NULL;
-		const int nargs = key? r_type_func_argc (core->anal->sdb_types, key): -1;
-		if (nargs >= 0) {
+		int nargs;
+		if (key && r_anal_type_func_args_count (core->anal, key, &nargs)) {
 			const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
 			if (fcn_type) {
 				pj_o (j);
@@ -5854,10 +5854,9 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 	}
 	char *key = fcn_name? r_type_func_name (core->anal->sdb_types, fcn_name): NULL;
 	RStrBuf *sb = r_strbuf_new ("");
-	int nargs = key? r_type_func_argc (core->anal->sdb_types, key): DEFAULT_NARGS;
-	if (nargs < 0) {
+	int nargs = DEFAULT_NARGS;
+	if (key && !r_anal_type_func_args_count (core->anal, key, &nargs)) {
 		R_FREE (key);
-		nargs = DEFAULT_NARGS;
 	}
 	if (pj) {
 		pj_ks (pj, "fname", key? key: fcn_name);
@@ -6536,8 +6535,8 @@ static int cmd_af(RCore *core, const char *input) {
 				RCons *cons = core->cons;
 				if (fcn) {
 					// TODO: add info about xrefs and call counts
-					int nargs = r_type_func_argc (core->anal->sdb_types, fcn->name);
-					if (nargs < 0) {
+					int nargs;
+					if (!r_anal_type_func_args_count (core->anal, fcn->name, &nargs)) {
 						nargs = r_anal_var_count_args (fcn);
 					}
 					int nvars = r_anal_var_count_locals (fcn);

@@ -6,6 +6,9 @@ af+ 0 custom_fatal
 afb+ 0 0 10
 afvr rdi status int
 afcf
+tk func.custom_fatal.args=0
+afiq~stack:
+tk func.custom_fatal.args=
 tk custom_fatal=func
 afcf
 afs
@@ -24,6 +27,7 @@ afcf
 EOF
 EXPECT=<<EOF
 custom_fatal (int status);
+  stack: 0x00000000 (vars:0 args:1)
 custom_fatal (int status);
 void custom_fatal (int status);
 void custom_fatal (int status);

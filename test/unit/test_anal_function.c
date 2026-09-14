@@ -203,7 +203,8 @@ bool test_r_anal_str_to_fcn_returns_status(void) {
 	mu_assert_notnull (typed_name, "valid signature must create a type entry");
 
 	const char *ret = r_type_func_ret (anal->sdb_types, typed_name);
-	int argc = r_type_func_argc (anal->sdb_types, typed_name);
+	int argc;
+	mu_assert_true (r_anal_type_func_args_count (anal, typed_name, &argc), "valid prototype count");
 	char *arg0 = r_type_func_args_type (anal->sdb_types, typed_name, 0);
 	mu_assert_true (ret && (!strcmp (ret, "int") || !strcmp (ret, "int32_t")),
 		"valid signature should set integer return type");
@@ -216,7 +217,7 @@ bool test_r_anal_str_to_fcn_returns_status(void) {
 	mu_assert_false (ok, "invalid signature must return failure");
 
 	ret = r_type_func_ret (anal->sdb_types, typed_name);
-	argc = r_type_func_argc (anal->sdb_types, typed_name);
+	mu_assert_true (r_anal_type_func_args_count (anal, typed_name, &argc), "existing prototype count");
 	arg0 = r_type_func_args_type (anal->sdb_types, typed_name, 0);
 	mu_assert_true (ret && (!strcmp (ret, "int") || !strcmp (ret, "int32_t")),
 		"invalid signature must not clobber existing return type");
@@ -225,6 +226,36 @@ bool test_r_anal_str_to_fcn_returns_status(void) {
 		"invalid signature must not clobber existing argument type");
 	free (arg0);
 	free (typed_name);
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_type_func_args_count(void) {
+	RAnal *anal = r_anal_new ();
+	int argc = 42;
+	mu_assert_false (r_anal_type_func_args_count (anal, "counttest", &argc), "missing prototype");
+	mu_assert_eq (argc, 42, "missing prototype preserves fallback");
+	sdb_set (anal->sdb_types, "func.counttest.args", "0", 0);
+	mu_assert_false (r_anal_type_func_args_count (anal, "counttest", &argc), "orphan count is not a prototype");
+	mu_assert_eq (argc, 42, "orphan count preserves fallback");
+	sdb_set (anal->sdb_types, "counttest", "func", 0);
+	mu_assert_true (r_anal_type_func_args_count (anal, "counttest", &argc), "explicit zero count succeeds");
+	mu_assert_eq (argc, 0, "explicit zero count");
+	sdb_unset (anal->sdb_types, "func.counttest.args", 0);
+	mu_assert_false (r_anal_type_func_args_count (anal, "counttest", &argc), "missing count fails");
+	mu_assert_eq (argc, 0, "missing count preserves output");
+	sdb_set (anal->sdb_types, "func.counttest.args", "2147483648", 0);
+	mu_assert_false (r_anal_type_func_args_count (anal, "counttest", &argc), "invalid count fails");
+	mu_assert_eq (argc, 0, "invalid count preserves output");
+	sdb_set (anal->sdb_types, "func.counttest.args", "2", 0);
+	sdb_set (anal->sdb_types, "func.counttest.arg.1", "void *,...", 0);
+	mu_assert_true (r_anal_type_func_args_count (anal, "__counttest", &argc), "leading underscores resolve");
+	mu_assert_eq (argc, 2, "variadic slot is counted");
+	mu_assert_true (r_type_func_is_variadic (anal->sdb_types, "counttest", argc), "variadic name marker");
+	sdb_set (anal->sdb_types, "func.counttest.arg.1", "...,arg1", 0);
+	mu_assert_true (r_type_func_is_variadic (anal->sdb_types, "counttest", argc), "legacy variadic type marker");
+	sdb_set (anal->sdb_types, "func.counttest.arg.1", "int,arg1", 0);
+	mu_assert_false (r_type_func_is_variadic (anal->sdb_types, "counttest", argc), "fixed argument");
 	r_anal_free (anal);
 	mu_end;
 }
@@ -428,7 +459,9 @@ bool test_r_anal_function_set_signature_uses_canonical_type_name(void) {
 	char *typed_name = r_type_func_name (anal->sdb_types, f->name);
 	mu_assert_notnull (typed_name, "canonical typed name");
 	mu_assert_streq (typed_name, "scanf", "apply must reuse canonical type name");
-	mu_assert_eq (r_type_func_argc (anal->sdb_types, typed_name), 2, "typed apply param count");
+	int argc;
+	mu_assert_true (r_anal_type_func_args_count (anal, typed_name, &argc), "typed apply count succeeds");
+	mu_assert_eq (argc, 2, "typed apply param count");
 	mu_assert_null (sdb_const_get (anal->sdb_types, f->name, 0), "apply must not create duplicate import-scoped signature");
 
 	signature = r_anal_function_get_signature (f);
@@ -463,7 +496,8 @@ bool test_r_anal_function_set_signature_uses_canonical_type_name(void) {
 	mu_assert_eq ((int)r_list_length (signature->params), 0, "typed overwrite clears params");
 	r_anal_function_signature_free (signature);
 
-	mu_assert_eq (r_type_func_argc (anal->sdb_types, typed_name), 0, "typed overwrite argc");
+	mu_assert_true (r_anal_type_func_args_count (anal, typed_name, &argc), "typed overwrite count succeeds");
+	mu_assert_eq (argc, 0, "typed overwrite argc");
 	signature = r_anal_function_get_signature (alias);
 	mu_assert_notnull (signature, "alias signature must refresh after overwrite");
 	mu_assert_streq (signature->ret_type, "void", "alias return type must refresh after overwrite");
@@ -767,6 +801,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_relocate);
 	mu_run_test (test_r_anal_function_labels);
 	mu_run_test (test_r_anal_str_to_fcn_returns_status);
+	mu_run_test (test_r_anal_type_func_args_count);
 	mu_run_test (test_r_core_anal_fcn_prefers_exact_start_match);
 	mu_run_test (test_r_core_anal_fcn_variadic_marker_requires_unclobbered_al);
 	mu_run_test (test_r_anal_function_get_signature);
