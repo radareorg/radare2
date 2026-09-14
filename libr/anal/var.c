@@ -2271,8 +2271,8 @@ R_API char *r_anal_function_format_sig(RAnal * R_NONNULL anal, RAnalFunction * R
 
 	RStrBuf *buf = r_strbuf_new (NULL);
 	Sdb *TDB = anal->sdb_types;
-	char *type_fcn_name = r_type_func_guess (TDB, fcn_name);
-	if (type_fcn_name && r_type_func_exist (TDB, type_fcn_name)) {
+	char *type_fcn_name = r_type_func_key (TDB, fcn_name);
+	if (type_fcn_name) {
 		const char *fcn_type = r_type_func_ret (anal->sdb_types, type_fcn_name);
 		if (R_STR_ISNOTEMPTY (fcn_type)) {
 			const char *sp = " ";
@@ -2292,8 +2292,9 @@ R_API char *r_anal_function_format_sig(RAnal * R_NONNULL anal, RAnalFunction * R
 	}
 	r_strbuf_append (buf, " (");
 
-	if (type_fcn_name && r_type_func_exist (TDB, type_fcn_name)) {
-		int i, argc = r_type_func_args_count (TDB, type_fcn_name);
+	const int argc = type_fcn_name? r_type_func_argc (TDB, type_fcn_name): -1;
+	if (argc >= 0) {
+		int i;
 		// This avoids false positives present in argument recovery
 		// and straight away print arguments fetched from types db
 #if 1

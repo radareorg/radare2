@@ -1,0 +1,143 @@
+NAME=afcf preserves recovered arguments until a count is declared
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+af+ 0 custom_fatal
+afb+ 0 0 10
+afvr rdi status int
+afcf
+tk custom_fatal=func
+afcf
+tk func.custom_fatal.ret=void
+afcf
+tk func.custom_fatal.args=0
+afcf
+tk func.custom_fatal.args=1
+tk func.custom_fatal.arg.0=long,declared
+afcf
+EOF
+EXPECT=<<EOF
+custom_fatal (int status);
+custom_fatal (int status);
+void custom_fatal (int status);
+void custom_fatal ();
+void custom_fatal (long declared);
+EOF
+RUN
+
+NAME=afcf resolves short names and relocated imports
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+td int f(int value);
+af+ 0 f
+afb+ 0 0 10
+afcf
+af+ 0x10 sym.imp.f
+afb+ 0x10 0x10 10
+afcf @ 0x10
+af+ 0x20 reloc.f
+afb+ 0x20 0x20 10
+afcf @ 0x20
+EOF
+EXPECT=<<EOF
+int f (int value);
+int sym.imp.f (int value);
+int reloc.f (int value);
+EOF
+RUN
+
+NAME=afcf prefers an exact argument-only prototype to its unprefixed alias
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+td void fatal(void);
+tk func.reloc.fatal.args=1
+tk func.reloc.fatal.arg.0=int,status
+af+ 0 reloc.fatal
+afb+ 0 0 10
+afcf
+af+ 0x10 fatal
+afb+ 0x10 0x10 10
+afcf @ 0x10
+EOF
+EXPECT=<<EOF
+reloc.fatal (int status);
+void fatal ();
+EOF
+RUN
+
+NAME=afcf preserves exact underscore prototypes without a kind key
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+td void fatal(void);
+tk func.__fatal.ret=int
+tk func.__fatal.args=1
+tk func.__fatal.arg.0=int,status
+af+ 0 sym.imp.__fatal
+afb+ 0 0 10
+afcf
+af+ 0x10 sym.imp.____fatal
+afb+ 0x10 0x10 10
+afcf @ 0x10
+EOF
+EXPECT=<<EOF
+int sym.imp.__fatal (int status);
+int sym.imp.____fatal (int status);
+EOF
+RUN
+
+NAME=afcf reads prototypes whose kind key names a struct
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+tk func.stat.ret=int
+tk func.stat.args=2
+tk func.stat.arg.0=const char *,path
+tk func.stat.arg.1=void *,buf
+tk stat=struct
+af+ 0 sym.imp.stat
+afb+ 0 0 10
+afcf
+EOF
+EXPECT=<<EOF
+int sym.imp.stat (const char *path, void *buf);
+EOF
+RUN
+
+NAME=afcf treats invalid counts as unknown and accepts Sdb numeric counts
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+af+ 0 custom_fatal
+afb+ 0 0 10
+afvr rdi status int
+tk func.custom_fatal.ret=void
+tk custom_fatal=func
+tk func.custom_fatal.args=invalid
+afcf
+tk func.custom_fatal.args=-1
+afcf
+tk func.custom_fatal.args=4294967296
+afcf
+tk func.custom_fatal.args=18446744073709551616
+afcf
+tk func.custom_fatal.args=0junk
+afcf
+tk func.custom_fatal.args=0x0
+afcf
+tk func.custom_fatal.args=0x1
+tk func.custom_fatal.arg.0=long,declared
+afcf
+EOF
+EXPECT=<<EOF
+void custom_fatal (int status);
+void custom_fatal (int status);
+void custom_fatal (int status);
+void custom_fatal (int status);
+void custom_fatal (int status);
+void custom_fatal ();
+void custom_fatal (long declared);
+EOF
+RUN

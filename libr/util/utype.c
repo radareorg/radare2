@@ -954,10 +954,16 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 	}
 }
 
+static bool type_func_has_proto(Sdb *TDB, const char *name) {
+	return sdb_const_getf (TDB, NULL, "func.%s.ret", name)
+		|| sdb_const_getf (TDB, NULL, "func.%s.args", name);
+}
+
 // Strip leading __ prefix for type database lookup when the exact name
 // is not registered. This allows __strcpy_chk to match strcpy_chk
 static inline const char *trim_lodashes(Sdb *TDB, const char *name) {
-	while (!sdb_const_get (TDB, name, 0) && r_str_startswith (name, "__")) {
+	while (r_str_startswith (name, "__") && !sdb_const_get (TDB, name, 0)
+		&& !type_func_has_proto (TDB, name)) {
 		name += 2;
 	}
 	return name;
@@ -972,7 +978,7 @@ R_API int r_type_func_exist(Sdb *TDB, const char *func_name) {
 R_API bool r_type_func_prototype_exist(Sdb *TDB, const char *func_name) {
 	R_RETURN_VAL_IF_FAIL (TDB && func_name, false);
 	// struct stat overwrites stat=func, but the prototype under func.stat.* is still there
-	return sdb_const_getf (TDB, NULL, "func.%s.ret", trim_lodashes (TDB, func_name)) != NULL;
+	return type_func_has_proto (TDB, trim_lodashes (TDB, func_name));
 }
 
 R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
@@ -981,6 +987,17 @@ R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
 
 R_API int r_type_func_args_count(Sdb *TDB, const char *R_NONNULL func_name) {
 	return sdb_num_getf (TDB, NULL, "func.%s.args", trim_lodashes (TDB, func_name));
+}
+
+R_API int r_type_func_argc(Sdb *TDB, const char *R_NONNULL func_name) {
+	R_RETURN_VAL_IF_FAIL (TDB && func_name, -1);
+	const char *value = sdb_const_getf (TDB, NULL, "func.%s.args", trim_lodashes (TDB, func_name));
+	if (!value || *value < '0' || *value > '9') {
+		return -1;
+	}
+	char *end;
+	ut64 argc = strtoull (value, &end, 0);
+	return *end || argc > ST32_MAX? -1: (int)argc;
 }
 
 R_API R_OWNED char *r_type_func_args_type(Sdb *TDB, const char *R_NONNULL func_name, int i) {
@@ -1151,6 +1168,7 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name)
 
 // walks name, then the last dotted component, then the fuzzy guesser; `key` returns the db key matched
 static char *type_func_lookup(Sdb *types, const char *fname, bool key) {
+	R_RETURN_VAL_IF_FAIL (types && fname, NULL);
 	const char *str = fname;
 	const char *name = fname;
 	if (r_type_func_prototype_exist (types, fname)) {

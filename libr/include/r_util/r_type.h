@@ -49,6 +49,9 @@ R_API bool r_type_func_prototype_exist(Sdb *TDB, const char *func_name);
 R_API const char *r_type_func_cc(Sdb *TDB, const char *func_name);
 R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name);
 R_API int r_type_func_args_count(Sdb *TDB, const char * R_NONNULL func_name);
+// Count for a resolved prototype key, including the variadic slot; -1 if absent or invalid.
+#define R_TYPE_FUNC_ARGC 1
+R_API int r_type_func_argc(Sdb *TDB, const char * R_NONNULL func_name);
 R_API R_OWNED char *r_type_func_args_type(Sdb *TDB, const char * R_NONNULL func_name, int i);
 R_API const char *r_type_func_args_name(Sdb *TDB, const char * R_NONNULL func_name, int i);
 R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char * R_NONNULL func_name);
