@@ -41,6 +41,52 @@ void custom_fatal (long declared);
 EOF
 RUN
 
+NAME=recovered signatures keep register arguments before sorted stack arguments
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3
+af+ 0 fallback
+afb+ 0 0 1
+afvr rsi second int
+afvb 16 last int
+afvb 8 third int
+afvr rdi first int
+afcf
+afs
+zaf
+z*~za fallback t
+EOF
+EXPECT=<<EOF
+fallback (int first, int second, int third, int last);
+void fallback (int first, int second, int third, int last);
+za fallback t void fallback (int first, int second, int third, int last)
+EOF
+RUN
+
+NAME=recovered PowerPC signatures keep register arguments before stack arguments
+FILE=malloc://64
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 4e800020
+af+ 0 fallback
+afb+ 0 0 4
+afvr r7 third int32_t
+afvb 1 stack_arg int32_t
+afvr r5 first int32_t
+afvr r6 second int32_t
+afcf
+afs
+zaf
+z*~za fallback t
+EOF
+EXPECT=<<EOF
+fallback (int32_t first, int32_t second, int32_t third, int32_t stack_arg);
+void fallback (int32_t first, int32_t second, int32_t third, int32_t stack_arg);
+za fallback t void fallback (int32_t first, int32_t second, int32_t third, int32_t stack_arg)
+EOF
+RUN
+
 NAME=afcf resolves short names and relocated imports
 FILE=malloc://64
 ARGS=-a x86 -b 64

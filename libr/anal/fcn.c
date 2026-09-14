@@ -3092,20 +3092,15 @@ static int function_arg_var_cmp(const RAnalVar *a, const RAnalVar *b) {
 		if (!a->isarg && b->isarg) {
 			return 1;
 		}
-		if (a->kind == R_ANAL_VAR_KIND_REG && a->kind == b->kind) {
+		// Register deltas are register indexes, not stack offsets.
+		if ((a->kind == R_ANAL_VAR_KIND_REG) != (b->kind == R_ANAL_VAR_KIND_REG)) {
+			return a->kind == R_ANAL_VAR_KIND_REG? -1: 1;
+		}
+		if (a->kind == R_ANAL_VAR_KIND_REG) {
 			if (a->argnum > b->argnum) {
 				return 1;
 			}
 			if (a->argnum < b->argnum) {
-				return -1;
-			}
-			return 0;
-		}
-		if (a->kind == b->kind && a->kind == R_ANAL_VAR_KIND_BPV && a->isarg && b->isarg) {
-			if (a->delta > b->delta) {
-				return 1;
-			}
-			if (a->delta < b->delta) {
 				return -1;
 			}
 			return 0;
