@@ -203,7 +203,7 @@ bool test_r_anal_str_to_fcn_returns_status(void) {
 	mu_assert_notnull (typed_name, "valid signature must create a type entry");
 
 	const char *ret = r_type_func_ret (anal->sdb_types, typed_name);
-	int argc = r_type_func_args_count (anal->sdb_types, typed_name);
+	int argc = r_type_func_argc (anal->sdb_types, typed_name);
 	char *arg0 = r_type_func_args_type (anal->sdb_types, typed_name, 0);
 	mu_assert_true (ret && (!strcmp (ret, "int") || !strcmp (ret, "int32_t")),
 		"valid signature should set integer return type");
@@ -216,7 +216,7 @@ bool test_r_anal_str_to_fcn_returns_status(void) {
 	mu_assert_false (ok, "invalid signature must return failure");
 
 	ret = r_type_func_ret (anal->sdb_types, typed_name);
-	argc = r_type_func_args_count (anal->sdb_types, typed_name);
+	argc = r_type_func_argc (anal->sdb_types, typed_name);
 	arg0 = r_type_func_args_type (anal->sdb_types, typed_name, 0);
 	mu_assert_true (ret && (!strcmp (ret, "int") || !strcmp (ret, "int32_t")),
 		"invalid signature must not clobber existing return type");
@@ -428,7 +428,7 @@ bool test_r_anal_function_set_signature_uses_canonical_type_name(void) {
 	char *typed_name = r_type_func_name (anal->sdb_types, f->name);
 	mu_assert_notnull (typed_name, "canonical typed name");
 	mu_assert_streq (typed_name, "scanf", "apply must reuse canonical type name");
-	mu_assert_eq (r_type_func_args_count (anal->sdb_types, typed_name), 2, "typed apply param count");
+	mu_assert_eq (r_type_func_argc (anal->sdb_types, typed_name), 2, "typed apply param count");
 	mu_assert_null (sdb_const_get (anal->sdb_types, f->name, 0), "apply must not create duplicate import-scoped signature");
 
 	signature = r_anal_function_get_signature (f);
@@ -463,7 +463,7 @@ bool test_r_anal_function_set_signature_uses_canonical_type_name(void) {
 	mu_assert_eq ((int)r_list_length (signature->params), 0, "typed overwrite clears params");
 	r_anal_function_signature_free (signature);
 
-	mu_assert_eq (r_type_func_args_count (anal->sdb_types, typed_name), 0, "typed overwrite argc");
+	mu_assert_eq (r_type_func_argc (anal->sdb_types, typed_name), 0, "typed overwrite argc");
 	signature = r_anal_function_get_signature (alias);
 	mu_assert_notnull (signature, "alias signature must refresh after overwrite");
 	mu_assert_streq (signature->ret_type, "void", "alias return type must refresh after overwrite");

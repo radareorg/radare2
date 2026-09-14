@@ -983,10 +983,6 @@ R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
 	return sdb_const_getf (TDB, NULL, "func.%s.ret", trim_lodashes (TDB, func_name));
 }
 
-R_API int r_type_func_args_count(Sdb *TDB, const char *R_NONNULL func_name) {
-	return sdb_num_getf (TDB, NULL, "func.%s.args", trim_lodashes (TDB, func_name));
-}
-
 R_API int r_type_func_argc(Sdb *TDB, const char *R_NONNULL func_name) {
 	R_RETURN_VAL_IF_FAIL (TDB && func_name, -1);
 	const char *value = sdb_const_getf (TDB, NULL, "func.%s.args", trim_lodashes (TDB, func_name));
@@ -1028,7 +1024,7 @@ R_API const char *r_type_func_args_name(Sdb *TDB, const char *R_NONNULL func_nam
 
 R_API bool r_type_func_is_variadic(Sdb *TDB, const char *R_NONNULL func_name) {
 	R_RETURN_VAL_IF_FAIL (TDB && func_name, false);
-	const int argc = r_type_func_args_count (TDB, func_name);
+	const int argc = r_type_func_argc (TDB, func_name);
 	if (argc < 1) {
 		return false;
 	}

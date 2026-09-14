@@ -4548,9 +4548,9 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 		}
 		pj_a (j);
 		char *key = fcn_name? r_type_func_name (core->anal->sdb_types, fcn_name): NULL;
-		if (key) {
+		const int nargs = key? r_type_func_argc (core->anal->sdb_types, key): -1;
+		if (nargs >= 0) {
 			const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
-			int nargs = r_type_func_args_count (core->anal->sdb_types, key);
 			if (fcn_type) {
 				pj_o (j);
 				pj_ks (j, "name", r_str_getf (key));
@@ -4572,7 +4572,6 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 				pj_ki (j, "count", nargs);
 				pj_end (j);
 			}
-			free (key);
 		} else {
 			pj_o (j);
 			pj_ks (j, "name", r_str_getf (fcn_name));
@@ -4619,6 +4618,7 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 			pj_ki (j, "count", nargs);
 			pj_end (j);
 		}
+		free (key);
 		pj_end (j);
 		const char *s = pj_string (j);
 		if (s) {
@@ -5854,13 +5854,16 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 	}
 	char *key = fcn_name? r_type_func_name (core->anal->sdb_types, fcn_name): NULL;
 	RStrBuf *sb = r_strbuf_new ("");
-	int nargs = DEFAULT_NARGS;
+	int nargs = key? r_type_func_argc (core->anal->sdb_types, key): DEFAULT_NARGS;
+	if (nargs < 0) {
+		R_FREE (key);
+		nargs = DEFAULT_NARGS;
+	}
 	if (pj) {
 		pj_ks (pj, "fname", key? key: fcn_name);
 	}
 	if (key) {
 		const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
-		nargs = r_type_func_args_count (core->anal->sdb_types, key);
 		if (fcn_type) {
 			r_strbuf_appendf (sb, "%s(", r_str_getf (key));
 #if 0
@@ -6533,7 +6536,10 @@ static int cmd_af(RCore *core, const char *input) {
 				RCons *cons = core->cons;
 				if (fcn) {
 					// TODO: add info about xrefs and call counts
-					int nargs = r_type_func_args_count (core->anal->sdb_types, fcn->name);
+					int nargs = r_type_func_argc (core->anal->sdb_types, fcn->name);
+					if (nargs < 0) {
+						nargs = r_anal_var_count_args (fcn);
+					}
 					int nvars = r_anal_var_count_locals (fcn);
 					int nins = r_anal_function_instrcount (fcn);
 					int ebbs = 0;
@@ -9134,7 +9140,7 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 	if (!r_list_empty (list)) {
 		eprintf ("HAS signature\n");
 	}
-	int i, nargs = 3; // r_type_func_args_count (core->anal->sdb_types, fcn->name);
+	int i, nargs = 3;
 	if (nargs > 0) {
 		int i;
 		eprintf ("NARGS %d (%s)\n", nargs, key);

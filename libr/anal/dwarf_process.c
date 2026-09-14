@@ -1627,7 +1627,7 @@ static bool dwarf_function_type_matches(Sdb *types, const char *name, const char
 			expected_args++;
 		}
 	}
-	if (r_type_func_args_count (types, name) != expected_args) {
+	if (r_type_func_argc (types, name) != expected_args) {
 		return false;
 	}
 	int arg_index = 0;

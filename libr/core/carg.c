@@ -329,7 +329,11 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name, bool incall
 	if (!key) {
 		return NULL;
 	}
-	int nargs = r_type_func_args_count (TDB, key);
+	int nargs = r_type_func_argc (TDB, key);
+	if (nargs < 0) {
+		free (key);
+		return NULL;
+	}
 	const char *cc = r_anal_cc_func (core->anal, key);
 	if (!cc) {
 		free (key);

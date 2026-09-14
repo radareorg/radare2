@@ -8,10 +8,16 @@ afvr rdi status int
 afcf
 tk custom_fatal=func
 afcf
+afs
 tk func.custom_fatal.ret=void
 afcf
+afcfj
+afiq~stack:
 tk func.custom_fatal.args=0
 afcf
+afs
+afcfj
+afiq~stack:
 tk func.custom_fatal.args=1
 tk func.custom_fatal.arg.0=long,declared
 afcf
@@ -20,7 +26,13 @@ EXPECT=<<EOF
 custom_fatal (int status);
 custom_fatal (int status);
 void custom_fatal (int status);
+void custom_fatal (int status);
+[{"name":"custom_fatal","args":[{"name":"status","type":"int"}],"count":1}]
+  stack: 0x00000000 (vars:0 args:1)
 void custom_fatal ();
+void custom_fatal ();
+[{"name":"custom_fatal","return":"void","args":[],"count":0}]
+  stack: 0x00000000 (vars:0 args:0)
 void custom_fatal (long declared);
 EOF
 RUN
