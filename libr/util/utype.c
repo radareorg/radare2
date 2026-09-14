@@ -954,16 +954,11 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 	}
 }
 
-static bool type_func_has_proto(Sdb *TDB, const char *name) {
-	return sdb_const_getf (TDB, NULL, "func.%s.ret", name)
-		|| sdb_const_getf (TDB, NULL, "func.%s.args", name);
-}
-
 // Strip leading __ prefix for type database lookup when the exact name
 // is not registered. This allows __strcpy_chk to match strcpy_chk
 static inline const char *trim_lodashes(Sdb *TDB, const char *name) {
 	while (r_str_startswith (name, "__") && !sdb_const_get (TDB, name, 0)
-		&& !type_func_has_proto (TDB, name)) {
+		&& !sdb_const_getf (TDB, NULL, "func.%s.ret", name)) {
 		name += 2;
 	}
 	return name;
@@ -977,8 +972,11 @@ R_API int r_type_func_exist(Sdb *TDB, const char *func_name) {
 
 R_API bool r_type_func_prototype_exist(Sdb *TDB, const char *func_name) {
 	R_RETURN_VAL_IF_FAIL (TDB && func_name, false);
+	const char *name = trim_lodashes (TDB, func_name);
+	const char *kind = sdb_const_get (TDB, name, 0);
+	// Argument recovery also writes func.*.args; only declarations have a kind or return type.
 	// struct stat overwrites stat=func, but the prototype under func.stat.* is still there
-	return type_func_has_proto (TDB, trim_lodashes (TDB, func_name));
+	return (kind && !strcmp (kind, "func")) || sdb_const_getf (TDB, NULL, "func.%s.ret", name);
 }
 
 R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
@@ -1169,17 +1167,12 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name)
 // walks name, then the last dotted component, then the fuzzy guesser; `key` returns the db key matched
 static char *type_func_lookup(Sdb *types, const char *fname, bool key) {
 	R_RETURN_VAL_IF_FAIL (types && fname, NULL);
-	const char *str = fname;
-	const char *name = fname;
 	if (r_type_func_prototype_exist (types, fname)) {
 		return strdup (key? trim_lodashes (types, fname): fname);
 	}
-	while ( (str = strchr (str, '.'))) {
-		str++;
-		name = str;
-	}
-	if (r_type_func_prototype_exist (types, name)) {
-		return strdup (key? trim_lodashes (types, name): name);
+	const char *dot = strrchr (fname, '.');
+	if (dot && r_type_func_prototype_exist (types, dot + 1)) {
+		return strdup (key? trim_lodashes (types, dot + 1): dot + 1);
 	}
 	return r_type_func_guess (types, fname);
 }

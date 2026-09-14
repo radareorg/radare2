@@ -47,7 +47,7 @@ int reloc.f (int value);
 EOF
 RUN
 
-NAME=afcf prefers an exact argument-only prototype to its unprefixed alias
+NAME=afcf distinguishes recovered arguments from an explicit prototype
 FILE=malloc://64
 ARGS=-a x86 -b 64
 CMDS=<<EOF
@@ -57,11 +57,14 @@ tk func.reloc.fatal.arg.0=int,status
 af+ 0 reloc.fatal
 afb+ 0 0 10
 afcf
+tk reloc.fatal=func
+afcf
 af+ 0x10 fatal
 afb+ 0x10 0x10 10
 afcf @ 0x10
 EOF
 EXPECT=<<EOF
+void reloc.fatal ();
 reloc.fatal (int status);
 void fatal ();
 EOF
