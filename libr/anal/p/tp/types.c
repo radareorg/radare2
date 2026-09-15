@@ -270,8 +270,11 @@ static void tp_fact_retype(TPState *tps, ut64 baddr, TPVarFact *fact, RAnalVar *
 
 // declared arg count of a callee, or -1 when undeclared so reverse-stack layouts stay unresolved
 int tp_callee_argc(RAnal *anal, const char *name) {
-	const int n = name? r_type_func_args_count (anal->sdb_types, name): 0;
-	return n > 0? n: -1;
+	int argc = -1;
+	if (name) {
+		r_type_func_args_count (anal->sdb_types, name, &argc);
+	}
+	return argc;
 }
 
 // concrete argloc value at the current emulated call site; stack slots read from the ESIL map
