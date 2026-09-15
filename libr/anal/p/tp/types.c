@@ -272,7 +272,7 @@ static void tp_fact_retype(TPState *tps, ut64 baddr, TPVarFact *fact, RAnalVar *
 int tp_callee_argc(RAnal *anal, const char *name) {
 	int argc = -1;
 	if (name) {
-		r_anal_type_func_args_count (anal, name, &argc);
+		r_type_func_args_count (anal->sdb_types, name, &argc);
 	}
 	return argc;
 }

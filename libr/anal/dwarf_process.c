@@ -1610,11 +1610,10 @@ static char *sanitize_c_identifier(const char *name) {
 	return out;
 }
 
-static bool dwarf_function_type_matches(const RAnal *anal, const char *name, const char *ret_type, RList/*<Variable*>*/ *variables, bool has_unspecified_parameters) {
-	Sdb *types = anal->sdb_types;
+static bool dwarf_function_type_matches(Sdb *types, const char *name, const char *ret_type, RList/*<Variable*>*/ *variables, bool has_unspecified_parameters) {
 	int argc;
 	if (!r_type_func_exist (types, name)
-		|| !r_anal_type_func_args_count (anal, name, &argc)
+		|| !r_type_func_args_count (types, name, &argc)
 		|| has_unspecified_parameters != r_type_func_is_variadic (types, name, argc)) {
 		return false;
 	}
@@ -1660,14 +1659,14 @@ static char *dwarf_function_type_name(Context *ctx, const char *sname, const Fun
 	}
 	char *name = sanitize_c_identifier (dwarf_fcn->name);
 	if (!name || !sdb_const_get (types, name, 0)
-		|| dwarf_function_type_matches (ctx->anal, name, ret_type,
+		|| dwarf_function_type_matches (types, name, ret_type,
 			variables, has_unspecified_parameters)) {
 		return name;
 	}
 	char *candidate = r_str_newf ("%s_%" PFMT64x, name, dwarf_fcn->addr);
 	int suffix = 2;
 	while (candidate && sdb_const_get (types, candidate, 0)
-		&& !dwarf_function_type_matches (ctx->anal, candidate, ret_type,
+		&& !dwarf_function_type_matches (types, candidate, ret_type,
 			variables, has_unspecified_parameters)) {
 		free (candidate);
 		candidate = r_str_newf ("%s_%" PFMT64x "_%d", name, dwarf_fcn->addr, suffix++);
@@ -1781,7 +1780,7 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, const ch
 			}
 			free (errmsg);
 		}
-		if (!dwarf_function_type_matches (anal, typed_name,
+		if (!dwarf_function_type_matches (anal->sdb_types, typed_name,
 				ret_type, variables, has_unspecified_parameters)) {
 			/* The C importer can fail or normalize the declaration into a
 			   different prototype. Replace only the function record; the
@@ -1790,7 +1789,7 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, const ch
 			import_dwarf_function_fallback (anal, typed_name, ret_type, variables, has_unspecified_parameters);
 		}
 	}
-	if (dwarf_fcn->prototype_complete && dwarf_function_type_matches (anal,
+	if (dwarf_fcn->prototype_complete && dwarf_function_type_matches (anal->sdb_types,
 			typed_name, ret_type, variables, has_unspecified_parameters)) {
 		sdb_setf (anal->sdb_types, typed_name, 0, "fcnlink.%08" PFMT64x, dwarf_fcn->addr);
 	}

@@ -208,7 +208,7 @@ static int emit_signature(RAnal *a, const char *fcn_name, bool quiet, PJ *pj, RS
 		cc = r_anal_cc_default (a);
 	}
 	int nargs;
-	if (!cc || !r_anal_type_func_args_count (a, key, &nargs) || nargs <= 0) {
+	if (!cc || !r_type_func_args_count (a->sdb_types, key, &nargs) || nargs <= 0) {
 		free (key);
 		return -1;
 	}

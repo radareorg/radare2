@@ -330,7 +330,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name, bool incall
 		return NULL;
 	}
 	int nargs;
-	if (!r_anal_type_func_args_count (core->anal, key, &nargs)) {
+	if (!r_type_func_args_count (TDB, key, &nargs)) {
 		free (key);
 		return NULL;
 	}

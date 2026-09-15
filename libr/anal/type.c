@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2026 - pancake, oddcoder, Anton Kochkov */
+/* radare - LGPL - Copyright 2019-2023 - pancake, oddcoder, Anton Kochkov */
 
 #include <r_anal.h>
 #include <r_anal_priv.h>
@@ -171,33 +171,6 @@ R_API ut64 r_anal_type_bitsize(RAnal *anal, const char *type) {
 		: r_type_get_bitsize (anal->sdb_types, type);
 	free (resolved);
 	return bits;
-}
-
-R_API bool r_anal_type_func_args_count(const RAnal *anal, const char *name, int *argc) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && name && argc, false);
-	Sdb *types = anal->sdb_types;
-	while (true) {
-		const char *kind = sdb_const_get (types, name, 0);
-		// Recovered arguments alone do not declare a prototype; a struct may overwrite its kind.
-		if ((kind && !strcmp (kind, "func")) || sdb_const_getf (types, NULL, "func.%s.ret", name)) {
-			break;
-		}
-		if (kind || !r_str_startswith (name, "__")) {
-			return false;
-		}
-		name += 2;
-	}
-	const char *value = sdb_const_getf (types, NULL, "func.%s.args", name);
-	if (!value || *value < '0' || *value > '9') {
-		return false;
-	}
-	char *end;
-	ut64 count = strtoull (value, &end, 0);
-	if (*end || count > ST32_MAX) {
-		return false;
-	}
-	*argc = (int)count;
-	return true;
 }
 
 R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {

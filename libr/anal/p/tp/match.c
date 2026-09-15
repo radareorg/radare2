@@ -36,7 +36,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	if (verbose && r_str_startswith (fcn_name, "sym.imp.")) {
 		R_LOG_WARN ("Missing function definition for '%s'", fcn_name + 8);
 	}
-	if (!r_anal_type_func_args_count (anal, fcn_name, &max)) {
+	if (!r_type_func_args_count (TDB, fcn_name, &max)) {
 		max = stack_cc? DEFAULT_MAX: r_anal_cc_max_arg (anal, cc);
 	}
 	// TODO: if function takes more than 7 args is usually bad analysis
@@ -282,7 +282,7 @@ static void tp_call_effect(TPState *tps, const char *name, const char *cc) {
 		return;
 	}
 	int argc = -1;
-	r_anal_type_func_args_count (tps->anal, name, &argc);
+	r_type_func_args_count (tps->anal->sdb_types, name, &argc);
 	const char *loc = r_anal_cc_argloc (
 		tps->anal, cc, 1, 0, argc);
 	RRegItem *item = loc? r_reg_get (tps->tt.reg, loc, -1): NULL;

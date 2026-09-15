@@ -1255,7 +1255,7 @@ static char *ds_typed_call_pseudo(RDisasmState *ds) {
 	Sdb *TDB = ds->core->anal->sdb_types;
 	const char *cc = r_anal_cc_func (ds->core->anal, name);
 	int argc;
-	if (!cc || !r_anal_type_func_args_count (ds->core->anal, name, &argc)) {
+	if (!cc || !r_type_func_args_count (TDB, name, &argc)) {
 		return NULL;
 	}
 	RStrBuf *sb = r_strbuf_new (name);
@@ -6213,7 +6213,7 @@ static void ds_comment_call(RDisasmState *ds) {
 		key = r_type_func_name (core->anal->sdb_types, fcn_name);
 	}
 	int nargs = DEFAULT_NARGS;
-	if (key && !r_anal_type_func_args_count (core->anal, key, &nargs)) {
+	if (key && !r_type_func_args_count (core->anal->sdb_types, key, &nargs)) {
 		R_FREE (key);
 	}
 	if (key) {
@@ -6434,7 +6434,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	}
 	const char *fcn_type = r_type_func_ret (TDB, name);
 	int arg_max;
-	if (R_STR_ISEMPTY (fcn_type) || !r_anal_type_func_args_count (ds->core->anal, name, &arg_max)) {
+	if (R_STR_ISEMPTY (fcn_type) || !r_type_func_args_count (TDB, name, &arg_max)) {
 		free (name);
 		return;
 	}

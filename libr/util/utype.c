@@ -983,6 +983,32 @@ R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
 	return sdb_const_getf (TDB, NULL, "func.%s.ret", trim_lodashes (TDB, func_name));
 }
 
+R_API bool r_type_func_args_count(Sdb *TDB, const char *name, int *argc) {
+	R_RETURN_VAL_IF_FAIL (TDB && name && argc, false);
+	while (true) {
+		const char *kind = sdb_const_get (TDB, name, 0);
+		// Recovered arguments alone do not declare a prototype; a struct may overwrite its kind.
+		if ((kind && !strcmp (kind, "func")) || sdb_const_getf (TDB, NULL, "func.%s.ret", name)) {
+			break;
+		}
+		if (kind || !r_str_startswith (name, "__")) {
+			return false;
+		}
+		name += 2;
+	}
+	const char *value = sdb_const_getf (TDB, NULL, "func.%s.args", name);
+	if (!value || !isdigit ((ut8)*value)) {
+		return false;
+	}
+	char *end;
+	ut64 count = strtoull (value, &end, 0);
+	if (*end || count > ST32_MAX) {
+		return false;
+	}
+	*argc = (int)count;
+	return true;
+}
+
 R_API R_OWNED char *r_type_func_args_type(Sdb *TDB, const char *R_NONNULL func_name, int i) {
 	const char *value = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", trim_lodashes (TDB, func_name), i);
 	char *ret = value? strdup (value): NULL;

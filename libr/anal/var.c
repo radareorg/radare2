@@ -1423,7 +1423,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			if (fname) {
 				ut64 sum_sz = 0;
 				int argc = 0;
-				r_anal_type_func_args_count (anal, fname, &argc);
+				r_type_func_args_count (anal->sdb_types, fname, &argc);
 				const int regargs = fcn->callconv? r_anal_cc_max_arg (anal, fcn->callconv): 0;
 				const int from = stack_rev? argc - 1: regargs;
 				const int to = stack_rev? regargs: argc;
@@ -1636,12 +1636,12 @@ static bool op_forwards_args(RAnalFunction *fcn, RAnalOp *op) {
 }
 
 // arg count excluding the trailing "..." slot, which is no real caller arg register
-static int func_fixed_args(RAnal *anal, const char *name) {
+static int func_fixed_args(Sdb *TDB, const char *name) {
 	int argc;
-	if (!r_anal_type_func_args_count (anal, name, &argc) || argc < 1) {
+	if (!r_type_func_args_count (TDB, name, &argc) || argc < 1) {
 		return 0;
 	}
-	return r_type_func_is_variadic (anal->sdb_types, name, argc)? argc - 1: argc;
+	return r_type_func_is_variadic (TDB, name, argc)? argc - 1: argc;
 }
 
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
@@ -1663,7 +1663,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	const int max_count = r_anal_cc_max_arg (anal, fcn->callconv);
 	const bool scan_args = max_count > 0 && *count < max_count;
 	if (fname) {
-		argc = func_fixed_args (anal, fname);
+		argc = func_fixed_args (TDB, fname);
 	}
 
 	if (scan_args && op_forwards_args (fcn, op)) {
@@ -1692,14 +1692,14 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				if (callee) {
 					const char *cc = r_anal_cc_func (anal, callee);
 					if (cc && !strcmp (fcn->callconv, cc)) {
-						callee_rargs = R_MIN (max_count, func_fixed_args (anal, callee));
+						callee_rargs = R_MIN (max_count, func_fixed_args (TDB, callee));
 					}
 				}
 			}
 		} else if (!f->is_variadic && fcn->callconv && f->callconv && !strcmp (fcn->callconv, f->callconv)) {
 			callee = r_type_func_guess (TDB, f->name);
 			if (callee) {
-				callee_rargs = R_MIN (max_count, func_fixed_args (anal, callee));
+				callee_rargs = R_MIN (max_count, func_fixed_args (TDB, callee));
 			}
 			callee_rargs = callee_rargs
 				? callee_rargs
@@ -2293,7 +2293,7 @@ R_API char *r_anal_function_format_sig(RAnal * R_NONNULL anal, RAnalFunction * R
 	r_strbuf_append (buf, " (");
 
 	int argc;
-	if (type_fcn_name && r_anal_type_func_args_count (anal, type_fcn_name, &argc)) {
+	if (type_fcn_name && r_type_func_args_count (TDB, type_fcn_name, &argc)) {
 		int i;
 		// This avoids false positives present in argument recovery
 		// and straight away print arguments fetched from types db

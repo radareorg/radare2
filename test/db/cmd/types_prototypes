@@ -184,6 +184,8 @@ tk func.custom_fatal.args=invalid
 afcf
 tk func.custom_fatal.args=-1
 afcf
+tk func.custom_fatal.args=2147483648
+afcf
 tk func.custom_fatal.args=4294967296
 afcf
 tk func.custom_fatal.args=18446744073709551616
@@ -202,7 +204,32 @@ void custom_fatal (int status);
 void custom_fatal (int status);
 void custom_fatal (int status);
 void custom_fatal (int status);
+void custom_fatal (int status);
 void custom_fatal ();
 void custom_fatal (long declared);
+EOF
+RUN
+
+NAME=pd emu recognizes current and legacy variadic prototype slots
+FILE=malloc://0x1000
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+e asm.emu=true
+wx bc00080000 @ 0
+wx e8f6020000 @ 5
+w %d %d @ 0x100
+wx 000100002a00000007000000 @ 0x800
+f printf @ 0x300
+aei
+pd 2 @ 0~printf("
+tk func.printf.arg.1=...,arg1
+pd 2 @ 0~printf("
+tk func.printf.arg.1=int,count
+pd 2 @ 0~printf("
+EOF
+EXPECT=<<EOF
+                                                                       ; int printf("%d %d", 42, 7)
+                                                                       ; int printf("%d %d", 42, 7)
+                                                                       ; int printf("%d %d", 42)
 EOF
 RUN
