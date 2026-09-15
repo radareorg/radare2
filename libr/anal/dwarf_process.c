@@ -1027,9 +1027,15 @@ static const char *map_dwarf_reg_to_arm64_reg(ut64 reg_num, VariableLocationKind
 	case 26: return "x26";
 	case 27: return "x27";
 	case 28: return "x28";
-	case 29: return "x29";
+	case 29:
+		// the frame pointer, so a location against it is a frame variable not a register
+		*kind = LOCATION_BP;
+		return "x29";
 	case 30: return "x30";
-	case 31: return "sp";
+	case 31:
+		// the stack pointer, so a location against it is a frame variable not a register
+		*kind = LOCATION_SP;
+		return "sp";
 	case 32: return "pc";
 	case 33: return "elr_mode";
 	case 34: return "rasign_state";
@@ -2264,7 +2270,9 @@ static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, c
 		return false;
 	}
 	if (*kind == 's') {
-		r_anal_function_set_var (fcn, offset - fcn->maxstack, *kind, type, 4, is_arg, var_name);
+		// the declared offset counts from the frame base, stored deltas count from entry
+		const st64 delta = r_anal_var_raw_delta (anal, fcn, R_ANAL_VAR_KIND_SPV, offset);
+		r_anal_function_set_var (fcn, delta, *kind, type, 4, is_arg, var_name);
 		return true;
 	}
 	if (*kind == 'c') {
