@@ -1,0 +1,54 @@
+NAME=ARM64 DWARF frame offsets replace recovered locals
+FILE=bins/elf/dwarf/arm64-locations
+ARGS=-e asm.dwarf=false -e anal.vars.newstack=false
+CMDS=<<EOF2
+aaa
+afvs @ dbg.sp_slots
+afvb @ dbg.bp_slot
+afvs @ dbg.fb_sp
+afvb @ dbg.fb_bp
+afvs @ dbg.bregx_sp
+afvR @ dbg.sp_slots~first[1]
+afvR @ dbg.sp_slots~second[1]
+EOF2
+EXPECT=<<EOF2
+var uint64_t first @ sp+0x8
+var uint64_t second @ sp+0x10
+var uint64_t local @ x29-0x8
+var uint64_t local @ sp+0x8
+var uint64_t local @ x29-0x8
+var uint64_t local @ sp+0x8
+0x40000c
+0x400010
+EOF2
+RUN
+
+NAME=ARM64 DWARF register values remain register variables
+FILE=bins/elf/dwarf/arm64-locations
+ARGS=-e asm.dwarf=false -e anal.vars.newstack=false
+CMDS=<<EOF2
+aaa
+afv @ dbg.reg_values
+EOF2
+EXPECT=<<EOF2
+var uint64_t in_x29 @ x29
+var uint64_t in_sp @ sp
+var uint64_t in_x0 @ x0
+EOF2
+RUN
+
+NAME=ARM64 DWARF newstack preserves variable identity and accesses
+FILE=bins/elf/dwarf/arm64-locations
+ARGS=-e asm.dwarf=false -e anal.vars.newstack=true
+CMDS=<<EOF2
+aaa
+afvs @ dbg.sp_slots~?
+afvR @ dbg.sp_slots~first[1]
+afvR @ dbg.sp_slots~second[1]
+EOF2
+EXPECT=<<EOF2
+2
+0x40000c
+0x400010
+EOF2
+RUN
