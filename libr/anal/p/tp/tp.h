@@ -274,7 +274,16 @@ R_VEC_TYPE (RVecSynthField, SynthField);
 R_VEC_TYPE_WITH_FINI (RVecSynthRec, SynthRec, synth_rec_fini);
 
 bool tp_argloc_val(TPState *tps, const char *cc, int argno, int argc, ut64 *val);
+typedef struct {
+	int ints;
+	int fps;
+	int spills;
+	int leading_fp;
+	bool counting;
+} TPArgSeq;
 int tp_fparg_prefix(RAnal *anal, const char *cc, const char *fcn_name, int max);
+void tp_argseq_init(RAnal *anal, const char *cc, const char *ret, TPArgSeq *seq);
+int tp_argseq_next(RAnal *anal, const char *cc, TPArgSeq *seq, const char *type, int n);
 
 ut64 etrace_addrof(TypeTrace *etrace, ut32 idx);
 const TypeTraceAccess *etrace_find_access(TypeTrace *etrace, ut32 idx, AccessPredicate pred, void *user);
