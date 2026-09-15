@@ -1027,9 +1027,15 @@ static const char *map_dwarf_reg_to_arm64_reg(ut64 reg_num, VariableLocationKind
 	case 26: return "x26";
 	case 27: return "x27";
 	case 28: return "x28";
-	case 29: return "x29";
+	case 29:
+		// the frame pointer, so a location against it is a frame variable not a register
+		*kind = LOCATION_BP;
+		return "x29";
 	case 30: return "x30";
-	case 31: return "sp";
+	case 31:
+		// the stack pointer, so a location against it is a frame variable not a register
+		*kind = LOCATION_SP;
+		return "sp";
 	case 32: return "pc";
 	case 33: return "elr_mode";
 	case 34: return "rasign_state";
@@ -1260,7 +1266,7 @@ static RBinDwarfLocRange *find_largest_loc_range(RList *loc_list) {
 }
 
 /* TODO move a lot of the parsing here into dwarf.c and do only processing here */
-static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrValue *loc, const RBinDwarfAttrValue *frame_base) {
+static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrValue *loc, const RBinDwarfAttrValue *frame_base, bool is_frame_base) {
 	/* reg5 - val is in register 5
 	fbreg <leb> - offset from frame base
 	regx <leb> - contents is in register X
@@ -1316,7 +1322,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			if (frame_base) {
 				/* recursive parsing, but frame_base should be only one, but someone
 				   could make malicious resource exhaustion attack, so a depth counter might be cool? */
-				VariableLocation *location = parse_dwarf_location (ctx, frame_base, NULL);
+				VariableLocation *location = parse_dwarf_location (ctx, frame_base, NULL, true);
 				if (location) {
 					location->offset += offset;
 					return location;
@@ -1362,6 +1368,12 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			/* TODO I need to find binaries that uses this so I can test it out*/
 			reg_num = block.data[i] - DW_OP_reg0; // get the reg number
 			reg_name = get_dwarf_reg_name (arch, reg_num, &kind, bits);
+			/* The value is in the register, not at it. A frame base is the
+			   one exception: there the register is the address a variable's
+			   own offset counts from. */
+			if (!is_frame_base && kind != LOCATION_UNKNOWN) {
+				kind = LOCATION_REGISTER;
+			}
 			break;
 		}
 		case DW_OP_breg0:
@@ -1526,7 +1538,7 @@ static bool parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 						parse_abstract_origin (ctx, val->reference, &type, &name);
 						break;
 					case DW_AT_location:
-						var->location = parse_dwarf_location (ctx, val, frame_base);
+						var->location = parse_dwarf_location (ctx, val, frame_base, false);
 						break;
 					case DW_AT_variable_parameter:
 						// go marks a result slot as a formal parameter with this flag set
