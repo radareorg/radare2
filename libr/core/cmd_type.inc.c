@@ -23,7 +23,7 @@ static RCoreHelpMessage help_msg_t = {
 	"tl", "[?]", "show/Link type to an address",
 	"tn", "[?] [-][addr]", "manage noreturn function attributes and marks",
 	"to", "[?] <path>", "load types from C header file",
-	"tp", "[?]  <type> [addr|varname]", "cast data at <address> to <type> and print it (XXX: type can contain spaces)",
+	"tp", "[?]  <type> [addr|varname]", "cast data at address to type (may have spaces)",
 	"ts", "[?]", "print loaded struct types",
 	"tt", "[?]", "list all loaded typedefs",
 	"tu", "[?]", "print loaded union types",
@@ -92,9 +92,9 @@ static RCoreHelpMessage help_msg_to = {
 
 static RCoreHelpMessage help_msg_tp = {
 	"Usage: tp[vx]", " <type> [...]", "Print type",
-	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it (XXX: type can contain spaces)",
+	"tp", "  <type> [addr|varname]", "cast data at address to type (may have spaces)",
 	"tpv", " <type> [@addr]", "show offset formatted for given type",
-	"tpx", " <type> <hexpairs>", "show value for type with specified byte sequence (XXX: type can contain spaces)",
+	"tpx", " <type> <hexpairs>", "show value for type with byte sequence (may have spaces)",
 	NULL
 };
 
