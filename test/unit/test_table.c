@@ -546,6 +546,27 @@ bool test_r_table_trim_utf8_fancy(void) {
 	mu_end;
 }
 
+bool test_r_table_per_column_maxwidth(void) {
+	RTable *t = r_table_new ("percolmax", NULL);
+	RTableColumnType *typeString = r_table_type ("string");
+	// col "name" has maxWidth=5, col "value" has no limit (0)
+	r_table_add_column (t, typeString, "name", 5);
+	r_table_add_column (t, typeString, "value", 0);
+	r_table_add_row (t, "hello", "short", NULL);
+	r_table_add_row (t, "toolongname", "anotherlongvalue", NULL);
+	char *s = r_table_tostring (t);
+	mu_assert_notnull (s, "per-column maxwidth tostring");
+	// "name" column width should be clamped to 5
+	RTableColumn *c = r_list_get_n (t->cols, 0);
+	mu_assert_eq (c->width, 5, "name column clamped to maxWidth=5");
+	// "value" column should be unconstrained
+	RTableColumn *c2 = r_list_get_n (t->cols, 1);
+	mu_assert ("value column wider than 5", c2->width > 5);
+	free (s);
+	r_table_free (t);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test(test_r_table);
 	mu_run_test(test_r_table_column_type);
@@ -559,6 +580,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_table_fancy_wrap);
 	mu_run_test (test_r_table_trim_ascii);
 	mu_run_test (test_r_table_trim_utf8_fancy);
+	mu_run_test (test_r_table_per_column_maxwidth);
 	return tests_passed != tests_run;
 }
 

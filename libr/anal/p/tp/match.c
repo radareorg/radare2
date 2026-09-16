@@ -26,7 +26,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	if (!fcn_name || !cc) {
 		return;
 	}
-	int i, j, pos = 0, max = r_type_func_args_count (TDB, fcn_name);
+	int i, j, pos = 0, max;
 	const bool stack_rev = r_anal_cc_stack_rev (anal, cc);
 	r_cons_break_push (r_cons_singleton (), NULL, NULL);
 
@@ -36,7 +36,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	if (verbose && r_str_startswith (fcn_name, "sym.imp.")) {
 		R_LOG_WARN ("Missing function definition for '%s'", fcn_name + 8);
 	}
-	if (!max) {
+	if (!r_type_func_args_count (TDB, fcn_name, &max)) {
 		max = stack_cc? DEFAULT_MAX: r_anal_cc_max_arg (anal, cc);
 	}
 	// TODO: if function takes more than 7 args is usually bad analysis
@@ -281,8 +281,8 @@ static void tp_call_effect(TPState *tps, const char *name, const char *cc) {
 				"JNIInvokeInterface.AttachCurrentThreadAsDaemon")) {
 		return;
 	}
-	const int argc = r_type_func_args_count (
-		tps->anal->sdb_types, name);
+	int argc = -1;
+	r_type_func_args_count (tps->anal->sdb_types, name, &argc);
 	const char *loc = r_anal_cc_argloc (
 		tps->anal, cc, 1, 0, argc);
 	RRegItem *item = loc? r_reg_get (tps->tt.reg, loc, -1): NULL;

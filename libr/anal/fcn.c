@@ -128,8 +128,8 @@ static int fcn_type_stack_pop(RAnal *anal, const char *cc, const char *callee, i
 	if (!callee) {
 		return 0;
 	}
-	const int argc = r_type_func_args_count (anal->sdb_types, callee);
-	if (argc < 1) {
+	int argc;
+	if (!r_type_func_args_count (anal->sdb_types, callee, &argc) || argc < 1) {
 		return 0;
 	}
 	const int word = R_MAX (1, bits / 8);
@@ -3092,20 +3092,15 @@ static int function_arg_var_cmp(const RAnalVar *a, const RAnalVar *b) {
 		if (!a->isarg && b->isarg) {
 			return 1;
 		}
-		if (a->kind == R_ANAL_VAR_KIND_REG && a->kind == b->kind) {
+		// Register deltas are register indexes, not stack offsets.
+		if ((a->kind == R_ANAL_VAR_KIND_REG) != (b->kind == R_ANAL_VAR_KIND_REG)) {
+			return a->kind == R_ANAL_VAR_KIND_REG? -1: 1;
+		}
+		if (a->kind == R_ANAL_VAR_KIND_REG) {
 			if (a->argnum > b->argnum) {
 				return 1;
 			}
 			if (a->argnum < b->argnum) {
-				return -1;
-			}
-			return 0;
-		}
-		if (a->kind == b->kind && a->kind == R_ANAL_VAR_KIND_BPV && a->isarg && b->isarg) {
-			if (a->delta > b->delta) {
-				return 1;
-			}
-			if (a->delta < b->delta) {
 				return -1;
 			}
 			return 0;
@@ -3211,7 +3206,6 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *funct
 	}
 	signature = R_NEW0 (RAnalFunctionSignature);
 	signature->params = r_list_newf ((RListFree)function_param_free);
-	const char *type_kind = sdb_const_get (anal->sdb_types, type_name, 0);
 	const char *ret_type = r_type_func_ret (anal->sdb_types, type_name);
 	if (ret_type) {
 		signature->ret_type = strdup (ret_type);
@@ -3219,7 +3213,8 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *funct
 			goto beach;
 		}
 	}
-	int argc = r_type_func_args_count (anal->sdb_types, type_name);
+	int argc = -1;
+	r_type_func_args_count (anal->sdb_types, type_name, &argc);
 	for (i = 0; i < argc; i++) {
 		const char *param_name = r_type_func_args_name (anal->sdb_types, type_name, i);
 		RAnalFunctionParam *param = R_NEW0 (RAnalFunctionParam);
@@ -3230,8 +3225,7 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *funct
 			break;
 		}
 	}
-	if ((!type_kind || strcmp (type_kind, "func")) && r_list_empty (signature->params)
-		&& !function_signature_fallback_to_vars (anal, function, signature)) {
+	if (argc < 0 && !function_signature_fallback_to_vars (anal, function, signature)) {
 		goto beach;
 	}
 	// the declaration carries the function's own name; the key is only a lookup handle

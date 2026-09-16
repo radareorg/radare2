@@ -1422,16 +1422,13 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
 			if (fname) {
 				ut64 sum_sz = 0;
-				size_t from, to, i;
-				if (stack_rev) {
-					const size_t cnt = r_type_func_args_count (anal->sdb_types, fname);
-					from = cnt ? cnt - 1 : cnt;
-					to = fcn->callconv ? r_anal_cc_max_arg (anal, fcn->callconv) : 0;
-				} else {
-					from = fcn->callconv ? r_anal_cc_max_arg (anal, fcn->callconv) : 0;
-					to = r_type_func_args_count (anal->sdb_types, fname);
-				}
+				int argc = 0;
+				r_type_func_args_count (anal->sdb_types, fname, &argc);
+				const int regargs = fcn->callconv? r_anal_cc_max_arg (anal, fcn->callconv): 0;
+				const int from = stack_rev? argc - 1: regargs;
+				const int to = stack_rev? regargs: argc;
 				const int bytes = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
+				int i;
 				for (i = from; stack_rev ? i >= to : i < to; stack_rev ? i-- : i++) {
 					char *tp = r_type_func_args_type (anal->sdb_types, fname, i);
 					if (!tp) {
@@ -1640,8 +1637,11 @@ static bool op_forwards_args(RAnalFunction *fcn, RAnalOp *op) {
 
 // arg count excluding the trailing "..." slot, which is no real caller arg register
 static int func_fixed_args(Sdb *TDB, const char *name) {
-	const int argc = r_type_func_args_count (TDB, name);
-	return r_type_func_is_variadic (TDB, name)? argc - 1: argc;
+	int argc;
+	if (!r_type_func_args_count (TDB, name, &argc) || argc < 1) {
+		return 0;
+	}
+	return r_type_func_is_variadic (TDB, name, argc)? argc - 1: argc;
 }
 
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
@@ -2271,8 +2271,8 @@ R_API char *r_anal_function_format_sig(RAnal * R_NONNULL anal, RAnalFunction * R
 
 	RStrBuf *buf = r_strbuf_new (NULL);
 	Sdb *TDB = anal->sdb_types;
-	char *type_fcn_name = r_type_func_guess (TDB, fcn_name);
-	if (type_fcn_name && r_type_func_exist (TDB, type_fcn_name)) {
+	char *type_fcn_name = r_type_func_key (TDB, fcn_name);
+	if (type_fcn_name) {
 		const char *fcn_type = r_type_func_ret (anal->sdb_types, type_fcn_name);
 		if (R_STR_ISNOTEMPTY (fcn_type)) {
 			const char *sp = " ";
@@ -2292,8 +2292,9 @@ R_API char *r_anal_function_format_sig(RAnal * R_NONNULL anal, RAnalFunction * R
 	}
 	r_strbuf_append (buf, " (");
 
-	if (type_fcn_name && r_type_func_exist (TDB, type_fcn_name)) {
-		int i, argc = r_type_func_args_count (TDB, type_fcn_name);
+	int argc;
+	if (type_fcn_name && r_type_func_args_count (TDB, type_fcn_name, &argc)) {
+		int i;
 		// This avoids false positives present in argument recovery
 		// and straight away print arguments fetched from types db
 #if 1

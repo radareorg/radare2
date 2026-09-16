@@ -1611,8 +1611,10 @@ static char *sanitize_c_identifier(const char *name) {
 }
 
 static bool dwarf_function_type_matches(Sdb *types, const char *name, const char *ret_type, RList/*<Variable*>*/ *variables, bool has_unspecified_parameters) {
+	int argc;
 	if (!r_type_func_exist (types, name)
-		|| has_unspecified_parameters != r_type_func_is_variadic (types, name)) {
+		|| !r_type_func_args_count (types, name, &argc)
+		|| has_unspecified_parameters != r_type_func_is_variadic (types, name, argc)) {
 		return false;
 	}
 	const char *existing_ret = r_type_func_ret (types, name);
@@ -1627,7 +1629,7 @@ static bool dwarf_function_type_matches(Sdb *types, const char *name, const char
 			expected_args++;
 		}
 	}
-	if (r_type_func_args_count (types, name) != expected_args) {
+	if (argc != expected_args) {
 		return false;
 	}
 	int arg_index = 0;

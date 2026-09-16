@@ -1254,8 +1254,8 @@ static char *ds_typed_call_pseudo(RDisasmState *ds) {
 	}
 	Sdb *TDB = ds->core->anal->sdb_types;
 	const char *cc = r_anal_cc_func (ds->core->anal, name);
-	const int argc = r_type_func_args_count (TDB, name);
-	if (!cc || argc < 0) {
+	int argc;
+	if (!cc || !r_type_func_args_count (TDB, name, &argc)) {
 		return NULL;
 	}
 	RStrBuf *sb = r_strbuf_new (name);
@@ -6213,13 +6213,15 @@ static void ds_comment_call(RDisasmState *ds) {
 		key = r_type_func_name (core->anal->sdb_types, fcn_name);
 	}
 	int nargs = DEFAULT_NARGS;
+	if (key && !r_type_func_args_count (core->anal->sdb_types, key, &nargs)) {
+		R_FREE (key);
+	}
 	if (key) {
 		if (ds->asm_types < 1) {
 			free (key);
 			return;
 		}
 		const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
-		nargs = r_type_func_args_count (core->anal->sdb_types, key);
 		// remove other comments
 		delete_last_comment (ds);
 		// ds_comment_start (ds, "");
@@ -6430,16 +6432,17 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	} else if (!(name = r_type_func_guess (TDB, full_name))) {
 		return;
 	}
-	ds_begin_comment (ds);
 	const char *fcn_type = r_type_func_ret (TDB, name);
-	if (!fcn_type || !*fcn_type) {
+	int arg_max;
+	if (R_STR_ISEMPTY (fcn_type) || !r_type_func_args_count (TDB, name, &arg_max)) {
 		free (name);
 		return;
 	}
+	ds_begin_comment (ds);
 	char *cmt = r_str_newf ("%s %s%s%s(", ds->cmtoken, fcn_type,
 		fcn_type[strlen (fcn_type) - 1] == '*' ? "" : " ",
 		name);
-	int i, arg_max = r_type_func_args_count (TDB, name);
+	int i;
 	if (!arg_max) {
 		cmt = r_str_append (cmt, "void)");
 	} else {
