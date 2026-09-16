@@ -376,7 +376,7 @@ static void cmd_tcc(RCore *core, const char *input) {
 			if (input[2] == '?') {
 				r_cons_cmd_help_match (core->cons, help_msg_tcc, "tcc-*", 0, true);
 			} else {
-				sdb_reset (core->anal->sdb_cc);
+				r_anal_cc_reset (core->anal);
 			}
 		} else if (input[1] == '?') {
 			r_cons_cmd_help_match (core->cons, help_msg_tcc, "tcc-", 0, false);
