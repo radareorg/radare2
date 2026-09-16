@@ -70,7 +70,10 @@ static void load_types_from(RAnal *anal, const char *fmt, ...) {
 	free (s);
 }
 
-R_IPI void r_anal_types_ensure_loaded(RAnal *anal) {
+// Load the type databases the current arch, os and bits select, once. The
+// configuration setters call this when they change what is selected, so a
+// reader never loads; a standalone RAnal user calls it after configuring.
+R_API void r_anal_types_prepare(RAnal *anal) {
 	R_RETURN_IF_FAIL (anal && anal->config && anal->sdb_types);
 	RAnalPriv *priv = R_ANAL_PRIV (anal);
 	const char *arch = anal->config->arch;
@@ -204,7 +207,7 @@ R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {
 // RENAME TO r_anal_types_save(); // parses the string and imports the types
 R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 	R_RETURN_IF_FAIL (anal && parsed);
-	r_anal_types_ensure_loaded (anal);
+	r_anal_types_prepare (anal);
 
 	// First, if any parsed types exist, let's remove them.
 	char *type = strdup (parsed);

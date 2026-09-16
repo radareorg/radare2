@@ -847,3 +847,28 @@ EXPECT=<<EOF
 '@0x20'ahi 10
 EOF
 RUN
+
+NAME=newprj keeps a custom calling convention whose definition is gone
+FILE=malloc://0x1000
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/newprj-cc.prj
+e asm.arch=x86
+e asm.bits=64
+tcc void reviewcc (rdi)
+af+ 0 reviewf
+afb+ 0 0 10
+afc reviewcc
+afc
+prj save .tmp/newprj-cc.prj > /dev/null
+tcc- reviewcc
+af-*
+prj load .tmp/newprj-cc.prj > /dev/null
+afc
+rm .tmp/newprj-cc.prj
+EOF
+EXPECT=<<EOF
+reviewcc
+reviewcc
+EOF
+RUN

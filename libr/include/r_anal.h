@@ -268,12 +268,21 @@ typedef struct r_anal_function_param_t {
 
 typedef RAnalFunctionParam RAnalFunctionSignatureParam;
 
+// What selected the prototype a signature was read from.
+typedef enum {
+	R_ANAL_FUNCTION_SIGNATURE_ORIGIN_UNKNOWN = 0, // not read from a prototype lookup
+	R_ANAL_FUNCTION_SIGNATURE_ORIGIN_ADDRESS, // a prototype linked to the address (tl or a DWARF fcnlink)
+	R_ANAL_FUNCTION_SIGNATURE_ORIGIN_NAME, // a prototype found by the function's name
+	R_ANAL_FUNCTION_SIGNATURE_ORIGIN_VARIABLES, // no prototype; built from the argument variables
+} RAnalFunctionSignatureOrigin;
+
 typedef struct r_anal_function_signature_t {
 	char *signature;
 	char *ret_type;
 	char *callconv;
 	RList *params; // RList<RAnalFunctionParam *>
 	bool noreturn;
+	RAnalFunctionSignatureOrigin origin;
 } RAnalFunctionSignature;
 
 typedef enum {
@@ -1276,7 +1285,11 @@ R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const 
 R_API bool r_anal_function_del_signature(RAnal *a, const char *name);
 R_API ut64 r_anal_function_dirty_epoch(const RAnalFunction *fcn);
 R_API ut64 r_anal_function_bump_dirty_epoch(RAnalFunction *fcn);
+// The convention a user named; it must be one the target defines.
 R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv);
+// The convention the analysis or a project decided on, kept as given. A bare
+// "dyncc" resolves against the function's address; NULL or empty clears it.
+R_API bool r_anal_function_store_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv);
 R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_function_context_free(RAnalFcnContext *ctx);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
@@ -1820,6 +1833,10 @@ R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg);
 R_API void r_anal_esil_cfg_free(RAnalEsilCFG *cfg);
 R_API SdbGperf *r_anal_get_gperf_cc(const char *k);
 R_API SdbGperf *r_anal_get_gperf_types(const char *k);
+// Load the type databases the current arch, os and bits select. The
+// configuration setters call it when they change what is selected, so every
+// reader below is pure; call it after configuring a standalone RAnal.
+R_API void r_anal_types_prepare(RAnal *anal);
 R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *os, const char *subsystem);
 R_API void r_anal_types_load_sdb(RAnal *anal, const char *name);
 R_API ut64 r_anal_type_bitsize(RAnal *anal, const char *type);
