@@ -459,43 +459,6 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 	return base_type;
 }
 
-R_API RList *r_anal_types_baselist(RAnal *anal) {
-	R_RETURN_VAL_IF_FAIL (anal, NULL);
-	RList *types = r_list_newf ((RListFree)r_anal_base_type_free);
-	if (!types) {
-		return NULL;
-	}
-
-	SdbList *keys = sdb_foreach_list (anal->sdb_types, true);
-	if (!keys) {
-		return types;
-	}
-
-	SdbKv *kv;
-	SdbListIter *iter;
-	ls_foreach (keys, iter, kv) {
-		const char *name = sdbkv_key (kv);
-		const char *kind = sdbkv_value (kv);
-		if (R_STR_ISEMPTY (name) || R_STR_ISEMPTY (kind)) {
-			continue;
-		}
-		if (strchr (name, '.')) {
-			continue;
-		}
-		if (strcmp (kind, "struct") && strcmp (kind, "union")
-			&& strcmp (kind, "enum") && strcmp (kind, "typedef")
-			&& strcmp (kind, "type")) {
-			continue;
-		}
-		RAnalBaseType *base_type = r_anal_get_base_type (anal, name);
-		if (base_type) {
-			r_list_append (types, base_type);
-		}
-	}
-	ls_free (keys);
-	return types;
-}
-
 // canonical serialization of a struct/union member value: "type,offset,arraycount"
 static char *member_value_kv(const char *type, size_t offset, size_t count) {
 	return r_str_newf ("%s,%u,%u", type, (unsigned int)offset, (unsigned int)count);
