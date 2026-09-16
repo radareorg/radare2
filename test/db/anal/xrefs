@@ -122,3 +122,71 @@ EXPECT=<<EOF
                sym.doEventInternal+38908 0x4a102c > CALL:--x > 0x523760 sym.readInfo_log
 EOF
 RUN
+
+NAME=cached ref counts see an xref added or removed inside a function
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e5e800000000c3
+af
+afll~^0x[10]
+axC 0x20 @ 0x1
+afll~^0x[10]
+ax- 0x20 @ 0x1
+afll~^0x[10]
+EOF
+EXPECT=<<EOF
+1
+2
+1
+EOF
+RUN
+
+NAME=cached xref counts see an xref to a function with no blocks
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+af+ 0x20 foo
+afll~^0x[13]
+axC 0x20 @ 0x1
+afll~^0x[13]
+EOF
+EXPECT=<<EOF
+0
+1
+EOF
+RUN
+
+NAME=cached xref counts see the call a later analysis discovers
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3 @ 0
+wx e8ebffffffc3 @ 0x10
+af @ 0
+afll~^0x0000000000000000[13]
+af @ 0x10
+afll~^0x0000000000000000[13]
+EOF
+EXPECT=<<EOF
+0
+1
+EOF
+RUN
+
+NAME=xrefs: cached counts stay stale across an xref manager reset
+FILE=malloc://64
+CMDS=<<EOF
+wx 554889e5e800000000c3
+af
+afll~^0x[10]
+ax-*
+axd 0x21 @ 0x1
+axd 0x22 @ 0x1
+afll~^0x[10]
+EOF
+EXPECT=<<EOF
+1
+0
+EOF
+RUN
