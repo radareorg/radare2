@@ -1165,8 +1165,13 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name)
 		result = type_func_try_guess (TDB, str_copy);
 	}
 	if (!result && *str_copy == '_') {
-		// Also try without leading underscore
-		result = type_func_try_guess (TDB, str_copy + 1);
+		// Also try without the leading underscores: Darwin spells a
+		// fortified libc call as __memcpy_chk once the symbol's own is gone
+		const char *bare = str_copy;
+		while (*bare == '_' && !result) {
+			bare++;
+			result = type_func_try_guess (TDB, bare);
+		}
 	}
 
 	// auto-detect JNI native functions and callbacks
