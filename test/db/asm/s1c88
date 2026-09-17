@@ -1,7 +1,3 @@
-# Seiko Epson S1C88
-# encodings verified against the Epson S1C88 toolchain assembler (as88 v1.2)
-# lines with an address are pc-relative branches, the target depends on it
-
 # base page
 ad "add a, a" 00
 ad "add a, b" 01
@@ -625,22 +621,36 @@ ad "add a, [0xffff]" 05ffff 0x1000
 ad "ld [br+0x00], 0xff" dd00ff 0x1000
 ad "ld [br+0xff], 0x00" ddff00 0x1000
 
-# relative branches: displacement limits and bank wrapping
+# indexed displacements are signed
+ad "ld a, [ix-0x80]" ce4080
+ad "ld a, [ix-0x01]" ce40ff
+ad "ld a, [ix+0x00]" ce4000
+ad "ld a, [ix+0x7f]" ce407f
+ad "ld [iy-0x80], a" ce4580
+ad "ld [iy+0x7f], a" ce457f
+ad "ld ba, [sp-0x80]" cf7080
+ad "ld ba, [sp+0x7f]" cf707f
+
+# relative branches: displacement limits
 ad "jrs 0x001080" f17f 0x1000
 ad "jrs 0x000f81" f180 0x1000
 ad "jrs 0x000fff" f1fe 0x1000
 ad "jrl 0x000f81" f37fff 0x1000
-ad "jrl 0x009002" f30080 0x1000
 ad "djr nz, 0x001080" f57f 0x1000
 ad "djr nz, 0x000f81" f580 0x1000
 ad "jrs nz, 0x001080" e77f 0x1000
 ad "jrs nz, 0x000f81" e780 0x1000
 ad "cars 0x000f81" f080 0x1000
-ad "carl 0x009001" f2ff7f 0x1000
 ad "jrs 0x12000f" f1fe 0x120010
-ad "jrl 0x12f0f4" f302f0 0x1200f0
-ad "jrs 0x120001" f102 0x12fffe
-ad "jrs 0x00ff81" f180 0x0000
+
+# the logical pc wraps inside the 32k bank window, below 0x8000 it addresses
+# the common area, so a branch can leave the bank without changing cb
+ad "jrs 0x007fff" f1fe 0x018000
+ad "jrs 0x000001" f102 0x01fffe
+ad "jrs 0x007f81" f180 0x008000
+ad "jrl 0x0070f4" f302f0 0x1200f0
+ad "jrl 0x001002" f30080 0x011000
+ad "carl 0x001001" f2ff7f 0x011000
 
 # jr/car pick the short or long form depending on the target
 a "jr 0x1035" f134 0x1000

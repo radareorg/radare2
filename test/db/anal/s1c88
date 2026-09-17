@@ -22,16 +22,43 @@ fail: 0x00000107
 EOF
 RUN
 
-NAME=s1c88 relative branches wrap inside the code bank
+NAME=s1c88 relative branches map through the code bank
 FILE=malloc://0x130000
 CMDS=<<EOF
 e asm.arch=s1c88
-s 0x12fffe
+s 0x18000
+wx f1fe
+ao 1~jump:
+s 0x1fffe
 wx f102
 ao 1~jump:
+wx e700
+ao 1~jump:,fail:
 EOF
 EXPECT=<<EOF
-jump: 0x00120001
+jump: 0x00007fff
+jump: 0x00000001
+jump: 0x0001ffff
+fail: 0x00000000
+EOF
+RUN
+
+NAME=s1c88 indexed displacements are signed
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=s1c88
+pa ld a, [ix-1]
+pa ld a, [ix-128]
+pa ld a, [ix+127]
+pa ld ba, [sp-128]
+pa ld a, [ix+128]
+pa ld a, [ix-129]
+EOF
+EXPECT=<<EOF
+ce40ff
+ce4080
+ce407f
+cf7080
 EOF
 RUN
 
@@ -131,8 +158,8 @@ CMDS=<<EOF
 e asm.arch=s1c88
 e asm.pseudo=true
 s 0x100
-wx 0234e708f8f334120a34
-pi 5
+wx 0234e708f8f334120a34ced8ced9ce90ce94ce98ce9c
+pi 11
 EOF
 EXPECT=<<EOF
 a += 0x34
@@ -140,6 +167,12 @@ if (nz) goto 0x00010b
 return
 goto 0x00133b
 a += 0x34 + c
+hl = l * a
+l = hl / a; h = hl % a
+a = rotate_left_carry (a, 1)
+a = rotate_left (a, 1)
+a = rotate_right_carry (a, 1)
+a = rotate_right (a, 1)
 EOF
 RUN
 
@@ -149,10 +182,24 @@ CMDS=<<EOF
 e asm.arch=s1c88
 aod jrs
 aod djr
+aod pack
+aod upck
+aod slp
+aod rl
+aod rlc
+aod rr
+aod rrc
 EOF
 EXPECT=<<EOF
 jump to short relative address, optional condition
 decrement B and jump to short relative address if B is not zero
+replace A's high nibble with B's low nibble
+replace B's low nibble with A's high nibble
+go into sleep mode (exit with outside interrupt)
+rotate left one bit, C takes bit 7, bit 0 takes C
+rotate left one bit, bit 7 gives its value to C and bit 0
+rotate right one bit, C takes bit 0, bit 7 takes C
+rotate right one bit, bit 0 gives its value to C and bit 7
 EOF
 RUN
 

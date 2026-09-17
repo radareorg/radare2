@@ -25,6 +25,7 @@ sdb_files = [
   'ppc',
   'propeller',
   'riscv',
+  's1c88',
   's390',
   'sbpf',
   'sh',
