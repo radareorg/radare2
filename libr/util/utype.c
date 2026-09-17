@@ -1164,9 +1164,10 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name)
 	if (dll_stripped) {
 		result = type_func_try_guess (TDB, str_copy);
 	}
-	if (!result && *str_copy == '_') {
+	if (!result && *str_copy == '_' && !r_str_startswith (func_name, "sub.")) {
 		// Also try without the leading underscores: Darwin spells a
-		// fortified libc call as __memcpy_chk once the symbol's own is gone
+		// fortified libc call as __memcpy_chk once the symbol's own is gone.
+		// A sub. name is radare2's for a caller of the function, not the function
 		const char *bare = str_copy;
 		while (*bare == '_' && !result) {
 			bare++;

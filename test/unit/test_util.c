@@ -102,6 +102,10 @@ bool test_autonames(void) {
 	mu_assert_null (s, "initial _ should not confuse the api");
 	free (s);
 
+	s = r_type_func_guess (TDB, "sym.imp.__strchr");
+	mu_assert_streq (s, "strchr", "every leading _ of an import is stripped");
+	free (s);
+
 	s = r_type_func_guess (TDB, "sub.__stack_chk_fail_740");
 	mu_assert_null (s, "initial _ should not confuse the api");
 	free (s);
