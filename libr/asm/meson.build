@@ -38,6 +38,7 @@ r_asm_sources = [
   '../arch/p/x86_nz/pseudo.c',
   '../arch/p/x86_nz/att2intel.c',
   '../arch/p/avr/pseudo.c',
+  '../arch/p/s1c88/pseudo.c',
   '../arch/p/msp430/pseudo.c',
   '../arch/p/pickle/pseudo.c',
   '../arch/p/pyc/pseudo.c',
