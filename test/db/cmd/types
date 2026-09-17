@@ -2112,6 +2112,7 @@ EOF
 EXPECT=<<EOF
 err
 errc
+__longjmp_chk
 RtlRaiseException
 FreeLibraryAndExitThread
 ExitProcess
@@ -2123,6 +2124,7 @@ ExitThread
 0x8
 err
 errc
+__longjmp_chk
 RtlRaiseException
 FreeLibraryAndExitThread
 ExitProcess

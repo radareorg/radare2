@@ -3348,3 +3348,143 @@ func.utimes.args=2
 func.utimes.arg.0=const char *,filename
 func.utimes.arg.1=const void *,times
 func.utimes.ret=int
+
+__printf_chk=func
+func.__printf_chk.args=3
+func.__printf_chk.arg.0=int,flag
+func.__printf_chk.arg.1=const char *,format
+func.__printf_chk.arg.2=,...
+func.__printf_chk.ret=int
+
+__fprintf_chk=func
+func.__fprintf_chk.args=4
+func.__fprintf_chk.arg.0=FILE *,stream
+func.__fprintf_chk.arg.1=int,flag
+func.__fprintf_chk.arg.2=const char *,format
+func.__fprintf_chk.arg.3=,...
+func.__fprintf_chk.ret=int
+
+__vprintf_chk=func
+func.__vprintf_chk.args=3
+func.__vprintf_chk.arg.0=int,flag
+func.__vprintf_chk.arg.1=const char *,format
+func.__vprintf_chk.arg.2=va_list,ap
+func.__vprintf_chk.ret=int
+
+__vfprintf_chk=func
+func.__vfprintf_chk.args=4
+func.__vfprintf_chk.arg.0=FILE *,stream
+func.__vfprintf_chk.arg.1=int,flag
+func.__vfprintf_chk.arg.2=const char *,format
+func.__vfprintf_chk.arg.3=va_list,ap
+func.__vfprintf_chk.ret=int
+
+__vsprintf_chk=func
+func.__vsprintf_chk.args=5
+func.__vsprintf_chk.arg.0=char *,s
+func.__vsprintf_chk.arg.1=int,flag
+func.__vsprintf_chk.arg.2=size_t,slen
+func.__vsprintf_chk.arg.3=const char *,format
+func.__vsprintf_chk.arg.4=va_list,ap
+func.__vsprintf_chk.ret=int
+
+__vsnprintf_chk=func
+func.__vsnprintf_chk.args=6
+func.__vsnprintf_chk.arg.0=char *,s
+func.__vsnprintf_chk.arg.1=size_t,maxlen
+func.__vsnprintf_chk.arg.2=int,flag
+func.__vsnprintf_chk.arg.3=size_t,slen
+func.__vsnprintf_chk.arg.4=const char *,format
+func.__vsnprintf_chk.arg.5=va_list,ap
+func.__vsnprintf_chk.ret=int
+
+__memcpy_chk=func
+func.__memcpy_chk.args=4
+func.__memcpy_chk.arg.0=void *,dest
+func.__memcpy_chk.arg.1=const void *,src
+func.__memcpy_chk.arg.2=size_t,len
+func.__memcpy_chk.arg.3=size_t,destlen
+func.__memcpy_chk.ret=void *
+
+__memmove_chk=func
+func.__memmove_chk.args=4
+func.__memmove_chk.arg.0=void *,dest
+func.__memmove_chk.arg.1=const void *,src
+func.__memmove_chk.arg.2=size_t,len
+func.__memmove_chk.arg.3=size_t,destlen
+func.__memmove_chk.ret=void *
+
+__memset_chk=func
+func.__memset_chk.args=4
+func.__memset_chk.arg.0=void *,dest
+func.__memset_chk.arg.1=int,c
+func.__memset_chk.arg.2=size_t,len
+func.__memset_chk.arg.3=size_t,destlen
+func.__memset_chk.ret=void *
+
+__strncpy_chk=func
+func.__strncpy_chk.args=4
+func.__strncpy_chk.arg.0=char *,dest
+func.__strncpy_chk.arg.1=const char *,src
+func.__strncpy_chk.arg.2=size_t,len
+func.__strncpy_chk.arg.3=size_t,destlen
+func.__strncpy_chk.ret=char *
+
+__strcat_chk=func
+func.__strcat_chk.args=3
+func.__strcat_chk.arg.0=char *,dest
+func.__strcat_chk.arg.1=const char *,src
+func.__strcat_chk.arg.2=size_t,destlen
+func.__strcat_chk.ret=char *
+
+__strncat_chk=func
+func.__strncat_chk.args=4
+func.__strncat_chk.arg.0=char *,dest
+func.__strncat_chk.arg.1=const char *,src
+func.__strncat_chk.arg.2=size_t,len
+func.__strncat_chk.arg.3=size_t,destlen
+func.__strncat_chk.ret=char *
+
+__fgets_chk=func
+func.__fgets_chk.args=4
+func.__fgets_chk.arg.0=char *,s
+func.__fgets_chk.arg.1=size_t,size
+func.__fgets_chk.arg.2=int,n
+func.__fgets_chk.arg.3=FILE *,stream
+func.__fgets_chk.ret=char *
+
+__fread_chk=func
+func.__fread_chk.args=5
+func.__fread_chk.arg.0=void *,ptr
+func.__fread_chk.arg.1=size_t,ptrlen
+func.__fread_chk.arg.2=size_t,size
+func.__fread_chk.arg.3=size_t,n
+func.__fread_chk.arg.4=FILE *,stream
+func.__fread_chk.ret=size_t
+
+__read_chk=func
+func.__read_chk.args=4
+func.__read_chk.arg.0=int,fd
+func.__read_chk.arg.1=void *,buf
+func.__read_chk.arg.2=size_t,nbytes
+func.__read_chk.arg.3=size_t,buflen
+func.__read_chk.ret=ssize_t
+
+__realpath_chk=func
+func.__realpath_chk.args=3
+func.__realpath_chk.arg.0=const char *,name
+func.__realpath_chk.arg.1=char *,resolved
+func.__realpath_chk.arg.2=size_t,resolvedlen
+func.__realpath_chk.ret=char *
+
+__longjmp_chk=func
+func.__longjmp_chk.args=2
+func.__longjmp_chk.arg.0=void *,env
+func.__longjmp_chk.arg.1=int,val
+func.__longjmp_chk.noreturn=true
+func.__longjmp_chk.ret=void
+
+__fdelt_chk=func
+func.__fdelt_chk.args=1
+func.__fdelt_chk.arg.0=long,d
+func.__fdelt_chk.ret=long
