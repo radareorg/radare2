@@ -155,7 +155,7 @@ static const s1c88_opcode s1c88_op[256] = {
 	{ "ld [br+0x%02x], b",           S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_STORE },	// 0x79
 	{ "ld [br+0x%02x], l",           S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_STORE },	// 0x7a
 	{ "ld [br+0x%02x], h",           S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_STORE },	// 0x7b
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0x7c
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x7c
 	{ "ld [br+0x%02x], [hl]",        S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_STORE },	// 0x7d
 	{ "ld [br+0x%02x], [ix]",        S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_STORE },	// 0x7e
 	{ "ld [br+0x%02x], [iy]",        S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_STORE },	// 0x7f
@@ -390,34 +390,34 @@ static const s1c88_opcode s1c88_op_ce[256] = {
 	{ "ld [hl], [iy+0x%02x]",        S1C88_ARG_S8,                                 R_ANAL_OP_TYPE_STORE },	// 0x61
 	{ "ld [hl], [ix+l]",             S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_STORE },	// 0x62
 	{ "ld [hl], [iy+l]",             S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_STORE },	// 0x63
-	{ "adc ba, 0x%04x",              S1C88_ARG_I16,                                R_ANAL_OP_TYPE_ADD },	// 0x64
-	{ "adc hl, 0x%04x",              S1C88_ARG_I16,                                R_ANAL_OP_TYPE_ADD },	// 0x65
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x64
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x65
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x66
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x67
 	{ "ld [ix], [ix+0x%02x]",        S1C88_ARG_S8,                                 R_ANAL_OP_TYPE_STORE },	// 0x68
 	{ "ld [ix], [iy+0x%02x]",        S1C88_ARG_S8,                                 R_ANAL_OP_TYPE_STORE },	// 0x69
 	{ "ld [ix], [ix+l]",             S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_STORE },	// 0x6a
 	{ "ld [ix], [iy+l]",             S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_STORE },	// 0x6b
-	{ "add sp, 0x%02x",              S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_ADD },	// 0x6c undocumented
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x6c
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x6d
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x6e
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x6f
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0x70
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0x71
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0x72
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0x73
-	{ "ld a, [ix+0x%02x]",           S1C88_ARG_S8,                                 R_ANAL_OP_TYPE_LOAD },	// 0x74
-	{ "ld l, [iy+0x%02x]",           S1C88_ARG_S8,                                 R_ANAL_OP_TYPE_LOAD },	// 0x75
-	{ "ld a, [ix+l]",                S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_LOAD },	// 0x76
-	{ "ld l, [iy+l]",                S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_LOAD },	// 0x77
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x70
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x71
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x72
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x73
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x74
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x75
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x76
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x77
 	{ "ld [iy], [ix+0x%02x]",        S1C88_ARG_S8,                                 R_ANAL_OP_TYPE_STORE },	// 0x78
 	{ "ld [iy], [iy+0x%02x]",        S1C88_ARG_S8,                                 R_ANAL_OP_TYPE_STORE },	// 0x79
 	{ "ld [iy], [ix+l]",             S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_STORE },	// 0x7a
 	{ "ld [iy], [iy+l]",             S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_STORE },	// 0x7b
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0x7c
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0x7d
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0x7e
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0x7f
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x7c
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x7d
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x7e
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x7f
 	{ "sla a",                       S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SAL },	// 0x80
 	{ "sla b",                       S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SAL },	// 0x81
 	{ "sla [br+0x%02x]",             S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_SAL },	// 0x82
@@ -434,22 +434,22 @@ static const s1c88_opcode s1c88_op_ce[256] = {
 	{ "srl b",                       S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SHR },	// 0x8d
 	{ "srl [br+0x%02x]",             S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_SHR },	// 0x8e
 	{ "srl [hl]",                    S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SHR },	// 0x8f
-	{ "rlc a",                       S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROL },	// 0x90
-	{ "rlc b",                       S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROL },	// 0x91
-	{ "rlc [br+0x%02x]",             S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_ROL },	// 0x92
-	{ "rlc [hl]",                    S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROL },	// 0x93
-	{ "rl a",                        S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROL },	// 0x94
-	{ "rl b",                        S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROL },	// 0x95
-	{ "rl [br+0x%02x]",              S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_ROL },	// 0x96
-	{ "rl [hl]",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROL },	// 0x97
-	{ "rrc a",                       S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROR },	// 0x98
-	{ "rrc b",                       S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROR },	// 0x99
-	{ "rrc [br+0x%02x]",             S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_ROR },	// 0x9a
-	{ "rrc [hl]",                    S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROR },	// 0x9b
-	{ "rr a",                        S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROR },	// 0x9c
-	{ "rr b",                        S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROR },	// 0x9d
-	{ "rr [br+0x%02x]",              S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_ROR },	// 0x9e
-	{ "rr [hl]",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROR },	// 0x9f
+	{ "rl a",                        S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROL },	// 0x90
+	{ "rl b",                        S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROL },	// 0x91
+	{ "rl [br+0x%02x]",              S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_ROL },	// 0x92
+	{ "rl [hl]",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROL },	// 0x93
+	{ "rlc a",                       S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROL },	// 0x94
+	{ "rlc b",                       S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROL },	// 0x95
+	{ "rlc [br+0x%02x]",             S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_ROL },	// 0x96
+	{ "rlc [hl]",                    S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROL },	// 0x97
+	{ "rr a",                        S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROR },	// 0x98
+	{ "rr b",                        S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROR },	// 0x99
+	{ "rr [br+0x%02x]",              S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_ROR },	// 0x9a
+	{ "rr [hl]",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROR },	// 0x9b
+	{ "rrc a",                       S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROR },	// 0x9c
+	{ "rrc b",                       S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROR },	// 0x9d
+	{ "rrc [br+0x%02x]",             S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_ROR },	// 0x9e
+	{ "rrc [hl]",                    S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ROR },	// 0x9f
 	{ "cpl a",                       S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_CPL },	// 0xa0
 	{ "cpl b",                       S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_CPL },	// 0xa1
 	{ "cpl [br+0x%02x]",             S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_CPL },	// 0xa2
@@ -459,8 +459,8 @@ static const s1c88_opcode s1c88_op_ce[256] = {
 	{ "neg [br+0x%02x]",             S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_SUB },	// 0xa6
 	{ "neg [hl]",                    S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0xa7
 	{ "sep",                         S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_CAST },	// 0xa8
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0xa9
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0xaa
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xa9
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xaa
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xab
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xac
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xad
@@ -469,7 +469,7 @@ static const s1c88_opcode s1c88_op_ce[256] = {
 	{ "and b, 0x%02x",               S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_AND },	// 0xb0
 	{ "and l, 0x%02x",               S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_AND },	// 0xb1
 	{ "and h, 0x%02x",               S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_AND },	// 0xb2
-	{ "ld h, cb",                    S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_MOV },	// 0xb3 undocumented
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xb3
 	{ "or b, 0x%02x",                S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_OR },	// 0xb4
 	{ "or l, 0x%02x",                S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_OR },	// 0xb5
 	{ "or h, 0x%02x",                S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_OR },	// 0xb6
@@ -511,7 +511,7 @@ static const s1c88_opcode s1c88_op_ce[256] = {
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xda
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xdb
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xdc
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0xdd
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xdd
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xde
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xdf
 	{ "jrs lt, 0x%06x",              S1C88_ARG_S8 | S1C88_REL | S1C88_JUMP | S1C88_COND,R_ANAL_OP_TYPE_CJMP },	// 0xe0
@@ -565,22 +565,22 @@ static const s1c88_opcode s1c88_op_cf[256] = {
 	{ "sbc ba, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x0d
 	{ "sbc ba, ix",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x0e
 	{ "sbc ba, iy",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x0f
-	{ "add ba, ba",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x10
-	{ "add ba, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x11
-	{ "add ba, ix",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x12
-	{ "add ba, iy",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x13
-	{ "adc ba, ba",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x14
-	{ "adc ba, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x15
-	{ "adc ba, ix",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x16
-	{ "adc ba, iy",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x17
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x10
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x11
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x12
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x13
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x14
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x15
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x16
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x17
 	{ "cp ba, ba",                   S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_CMP },	// 0x18
 	{ "cp ba, hl",                   S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_CMP },	// 0x19
 	{ "cp ba, ix",                   S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_CMP },	// 0x1a
 	{ "cp ba, iy",                   S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_CMP },	// 0x1b
-	{ "sbc ba, ba",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x1c
-	{ "sbc ba, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x1d
-	{ "sbc ba, ix",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x1e
-	{ "sbc ba, iy",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x1f
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x1c
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x1d
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x1e
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x1f
 	{ "add hl, ba",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x20
 	{ "add hl, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x21
 	{ "add hl, ix",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x22
@@ -597,22 +597,22 @@ static const s1c88_opcode s1c88_op_cf[256] = {
 	{ "sbc hl, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x2d
 	{ "sbc hl, ix",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x2e
 	{ "sbc hl, iy",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x2f
-	{ "add hl, ba",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x30
-	{ "add ba, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x31
-	{ "add ba, ix",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x32
-	{ "add ba, iy",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x33
-	{ "adc hl, ba",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x34
-	{ "adc hl, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x35
-	{ "adc hl, ix",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x36
-	{ "adc hl, iy",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x37
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x30
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x31
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x32
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x33
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x34
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x35
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x36
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x37
 	{ "cp hl, ba",                   S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_CMP },	// 0x38
 	{ "cp hl, hl",                   S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_CMP },	// 0x39
 	{ "cp hl, ix",                   S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_CMP },	// 0x3a
 	{ "cp hl, iy",                   S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_CMP },	// 0x3b
-	{ "sbc ba, ba",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x3c
-	{ "sbc ba, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x3d
-	{ "sbc ba, ix",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x3e
-	{ "sbc ba, iy",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x3f
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x3c
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x3d
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x3e
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x3f
 	{ "add ix, ba",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x40
 	{ "add ix, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x41
 	{ "add iy, ba",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x42
@@ -629,18 +629,18 @@ static const s1c88_opcode s1c88_op_cf[256] = {
 	{ "sub sp, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x4d
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x4e
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x4f
-	{ "add ix, ba",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x50
-	{ "add ix, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x51
-	{ "add iy, ba",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x52
-	{ "add iy, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x53
-	{ "add sp, ba",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x54
-	{ "add sp, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ADD },	// 0x55
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x50
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x51
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x52
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x53
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x54
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x55
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x56
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x57
-	{ "sub ix, ba",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x58
-	{ "sub ix, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x59
-	{ "sub iy, ba",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x5a
-	{ "sub iy, hl",                  S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_SUB },	// 0x5b
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x58
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x59
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x5a
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x5b
 	{ "cp sp, ba",                   S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_CMP },	// 0x5c
 	{ "cp sp, hl",                   S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_CMP },	// 0x5d
 	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0x5e
@@ -800,11 +800,11 @@ static const s1c88_opcode s1c88_op_cf[256] = {
 	{ "ld ba, sp",                   S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_MOV },	// 0xf8
 	{ "ld ba, pc",                   S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_MOV },	// 0xf9
 	{ "ld ix, sp",                   S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_MOV },	// 0xfa
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0xfb
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0xfc
-	{ "ld a, e",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_MOV },	// 0xfd undocumented
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xfb
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xfc
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xfd
 	{ "ld iy, sp",                   S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_MOV },	// 0xfe
-	{ "nop",                         S1C88_ARG_I8,                                 R_ANAL_OP_TYPE_NOP },	// 0xff
+	{ "invalid",                     S1C88_ARG_NONE,                               R_ANAL_OP_TYPE_ILL },	// 0xff
 };
 
 #endif

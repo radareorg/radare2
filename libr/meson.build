@@ -456,6 +456,7 @@ io_plugins += [
     'pickle',
     'ppc',
     'riscv',
+    's1c88',
     's390',
     'sh',
     'stm8',

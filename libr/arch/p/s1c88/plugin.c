@@ -111,7 +111,7 @@ static bool s1c88_decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	}
 
 	if (e->type & S1C88_REL) {
-		const st64 disp = (arg == S1C88_ARG_S16) ? (st64)(st16)(a[0] | (a[1] << 8) : (st64)(st8)a[0];
+		const st64 disp = (arg == S1C88_ARG_S16) ? (st64)(st16)a[0] | (a[1] << 8) : (st64)(st8)a[0];
 		op->jump = (op->addr & 0xff0000ULL) | ((op->addr + size - 1 + disp) & 0xffff); /* calculated from the end of the opcode */
 		if (e->type & S1C88_COND) {
 			op->fail = op->addr + size;
