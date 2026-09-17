@@ -145,7 +145,7 @@ static RCoreHelpMessage help_msg_iz = {
 	"iz", " ([skip]) ([count])", "strings in data sections (skip N strings, show count)",
 	"iz.", "", "show string at current address",
 	"iz,", "[:help]", "perform a table query on strings listing",
-	"iz-", " ([addr]) ([len]) ([type])", "delete string at address (uses current seek if addr not specified, len/type for matching)",
+	"iz-", " ([addr]) ([len]) ([type])", "delete string at address (or current seek)",
 	"iz+", " [addr] ([len]) ([type])", "add string manually (len=auto, type=auto-detect)",
 	"iz*", "", "print flags and comments r2 commands for all the strings",
 	"iz[auwWb]", "", "filter by string type (ascii, utf8, utf16, utf32, base64)",
