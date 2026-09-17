@@ -122,3 +122,14 @@ EXPECT=<<EOF
                sym.doEventInternal+38908 0x4a102c > CALL:--x > 0x523760 sym.readInfo_log
 EOF
 RUN
+
+NAME=arm64 adrp ldr refers to the slot
+FILE=bins/mach0/hello-aae
+CMDS=<<EOF
+aaa
+axf @ 0x100000498
+EOF
+EXPECT=<<EOF
+DATA 0x100004000 segment.__DATA_CONST
+EOF
+RUN

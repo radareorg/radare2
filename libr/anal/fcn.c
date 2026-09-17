@@ -1627,6 +1627,12 @@ noskip:
 			}
 			break;
 		case R_ANAL_OP_TYPE_LOAD: ;
+			// An arm64 load whose base the last adrp wrote reads page plus displacement: the slot itself, not the page
+			if (is_arm && anal->config->bits == 64 && op->ptr == UT64_MAX && last_is_reg_mov_lea
+					&& last_reg_mov_lea_name && src0 && src0->reg && !strcmp (src0->reg, last_reg_mov_lea_name)) {
+				op->ptr = last_reg_mov_lea_val + src0->delta;
+				r_anal_xrefs_setf (anal, fcn, op->addr, op->ptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+			}
 			// R2R db/anal/arm db/esil/apple
 			//v1 = UT64_MAX; // reset v1 jmptable pointer value for mips only
 			// on stm8 this must be disabled.. but maybe we need a global option to disable icod refs
