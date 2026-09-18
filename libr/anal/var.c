@@ -1379,7 +1379,6 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		return;
 	}
 
-	const int maxarg = 32; // TODO: use maxarg ?
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_PERM_W : R_PERM_R;
 	const bool addr_taken = op->direction == R_ANAL_OP_DIR_REF;
 	// fcn->stack already incorporates this op's stackptr; for stack-adjusting
@@ -1415,31 +1414,34 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		char *varname = NULL, *vartype = NULL;
 		if (isarg) {
-			const char *place = fcn->callconv ? r_anal_cc_argloc (anal, fcn->callconv, maxarg, 0, -1) : NULL;
-			bool stack_rev = place ? !strcmp (place, "^-") : false;
-			char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
+			const bool stack_rev = r_anal_cc_stack_rev (anal, fcn->callconv);
+			char *fname = r_type_func_key (anal->sdb_types, fcn->name);
 			if (fname) {
-				ut64 sum_sz = 0;
+				st64 sum_sz = 0;
 				int argc = 0;
 				r_type_func_args_count (anal->sdb_types, fname, &argc);
-				const int regargs = fcn->callconv? r_anal_cc_max_arg (anal, fcn->callconv): 0;
-				const int from = stack_rev? argc - 1: regargs;
-				const int to = stack_rev? regargs: argc;
-				const int bytes = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
+				if (r_type_func_is_variadic (anal->sdb_types, fname, argc)) {
+					argc--;
+				}
 				int i;
-				for (i = from; stack_rev ? i >= to : i < to; stack_rev ? i-- : i++) {
-					char *tp = r_type_func_args_type (anal->sdb_types, fname, i);
+				for (i = 0; i < argc; i++) {
+					const int n = stack_rev? argc - i - 1: i;
+					RAnalCCArgSlot slot;
+					if (!r_anal_cc_argslot (anal, fcn->callconv, n, argc, true, &slot) || slot.reg) {
+						continue;
+					}
+					char *tp = r_type_func_args_type (anal->sdb_types, fname, n);
 					if (!tp) {
 						break;
 					}
+					sum_sz = slot.fixed? slot.off: R_MAX (sum_sz, slot.off);
 					if (sum_sz == frame_off) {
 						vartype = tp;
-						varname = strdup (r_type_func_args_name (anal->sdb_types, fname, i));
+						varname = strdup (r_type_func_args_name (anal->sdb_types, fname, n));
 						break;
 					}
 					ut64 bit_sz = r_anal_type_bitsize (anal, tp);
-					sum_sz += bit_sz ? bit_sz / 8 : bytes;
-					sum_sz = R_ROUND (sum_sz, bytes);
+					sum_sz += R_ROUND (R_MAX ((bit_sz + 7) / 8, slot.size), slot.size);
 					free (tp);
 				}
 				free (fname);
@@ -1655,7 +1657,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments", fcn->name);
 		return;
 	}
-	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
+	char *fname = r_type_func_key (anal->sdb_types, fcn->name);
 	Sdb *TDB = anal->sdb_types;
 	const int max_count = r_anal_cc_max_arg (anal, fcn->callconv);
 	const bool scan_args = max_count > 0 && *count < max_count;
@@ -1797,8 +1799,11 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				name = r_str_newf ("arg%d", fp? max_count + n + 1: n + 1);
 				vname = name;
 			}
-			var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG,
-				type? type: deftype, size, true, vname);
+			var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
+			if (!var) {
+				var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG,
+					type? type: deftype, size, true, vname);
+			}
 			if (var && var->argnum < 0) {
 				var->argnum = *count;
 			}

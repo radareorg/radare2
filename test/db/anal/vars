@@ -618,7 +618,7 @@ EXPECT=<<EOF
             ;-- section.0.__TEXT.__text:
             ;-- entry0:
             ;-- func.100003f64:
-/ 68: int main (int argc, char **argv);
+/ 68: int main (int argc, char **argv, char **envp);
 |           ; arg int argc @ x0
 |           ; arg char **argv @ x1
 |           ; var int64_t var_0h @ sp+0x0
@@ -646,7 +646,7 @@ EXPECT=<<EOF
             ;-- section.0.__TEXT.__text:
             ;-- entry0:
             ;-- func.100003f64:
-/ 68: int main (int argc, char **argv);
+/ 68: int main (int argc, char **argv, char **envp);
 |           ; arg int argc @ x0
 |           ; arg char **argv @ x1
 |           ; var int64_t var_0h @ sp+0x0

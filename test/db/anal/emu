@@ -190,7 +190,7 @@ EXPECT=<<EOF
   ;-- section.0.__TEXT.__text:
   ;-- entry0:
   ;-- func.100003f88:
-32: int main (int argc);
+32: int main (int argc, char **argv, char **envp);
 ; arg int argc @ x0
 ; var int32_t var_8h @ sp+0x8
 ; var int32_t var_ch @ sp+0xc

@@ -492,7 +492,7 @@ main:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   rawname: main
-  types: int main (int argc, char **argv)
+  types: int main (int argc, char **argv, char **envp)
   refs: sym.print
   xrefs: entry0
   vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
@@ -503,7 +503,7 @@ main:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   rawname: main
-  types: int main (int argc, char **argv)
+  types: int main (int argc, char **argv, char **envp)
   refs: sym.print
   xrefs: entry0
   vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
@@ -529,7 +529,7 @@ main:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   rawname: main
-  types: int main (int argc, char **argv)
+  types: int main (int argc, char **argv, char **envp)
   refs: sym.print
   xrefs: entry0
   vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
@@ -540,7 +540,7 @@ main:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   rawname: main
-  types: int main (int argc, char **argv)
+  types: int main (int argc, char **argv, char **envp)
   refs: sym.print
   xrefs: entry0
   vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
@@ -563,7 +563,7 @@ main:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   rawname: main
-  types: int main (int argc, char **argv)
+  types: int main (int argc, char **argv, char **envp)
   refs: sym.print
   xrefs: entry0
   vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
@@ -588,7 +588,7 @@ foobar:
   addr: 0x0040055b
   realname: foobar
   rawname: main
-  types: int main (int argc, char **argv)
+  types: int main (int argc, char **argv, char **envp)
   refs: sym.print
   xrefs: entry0
   vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
@@ -612,7 +612,7 @@ foobar:
   addr: 0x0040055b
   realname: foobar
   rawname: main
-  types: int main (int argc, char **argv)
+  types: int main (int argc, char **argv, char **envp)
   refs: sym.print
   xrefs: entry0
   vars: fb-12:var_4h:int32_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **

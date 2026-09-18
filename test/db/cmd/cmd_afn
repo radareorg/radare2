@@ -107,13 +107,15 @@ main
 --
 func.main.arg.0=int,argc
 func.main.arg.1=char **,argv
-func.main.args=2
+func.main.arg.2=char **,envp
+func.main.args=3
 func.main.ret=int
 --
 --
 func.mein.arg.0=int,argc
 func.mein.arg.1=char **,argv
-func.mein.args=2
+func.mein.arg.2=char **,envp
+func.mein.args=3
 func.mein.ret=int
 EOF
 RUN
