@@ -2,9 +2,11 @@
 
 // R2R db/formats/elf/versioninfo
 // R2R db/formats/elf/reloc
+// R2R db/formats/elf/gnu-debugdata
 #define R_LOG_ORIGIN "elf"
 #include <r_types.h>
 #include <r_util.h>
+#include <sdb/ht_su.h>
 #include "elf.h"
 #include "../../i/private.h"
 
@@ -5192,16 +5194,13 @@ static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 	}
 }
 
-static RBinElfSection *getsection_byname(ELFOBJ *eo, const char *name, size_t *_i) {
+static RBinElfSection *getsection_byname(ELFOBJ *eo, const char *name) {
 	RBinElfSection *s;
-	size_t i = 0;
 	R_VEC_FOREACH (&eo->g_sections, s) {
 		if (!strcmp (s->name, name)) {
 			return s;
 		}
-		i++;
 	}
-	*_i = i;
 	return NULL;
 }
 
@@ -5213,8 +5212,7 @@ static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 		// parse sections pls
 		_load_elf_sections (eo);
 	}
-	size_t rs = 0;
-	RBinElfSection *section = getsection_byname (eo, ".gnu_debugdata", &rs);
+	RBinElfSection *section = getsection_byname (eo, ".gnu_debugdata");
 	if (!section) {
 		return NULL;
 	}
@@ -5241,11 +5239,36 @@ static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 			if (Elf_(load_symbols) (newobj)) {
 				symbols = newobj->g_symbols_vec;
 				newobj->g_symbols_vec = NULL;
+				HtSU *seen = ht_su_new0 ();
+				RBinElfSymbol *symbol, *dst = symbols->_start;
+				R_VEC_FOREACH (symbols, symbol) {
+					// Debug ELF file offsets belong to its own section layout.
+					ut64 vaddr = symbol->is_vaddr? symbol->offset: Elf_(p2v) (newobj, symbol->offset);
+					if (vaddr == UT64_MAX) {
+						vaddr = symbol->offset;
+					}
+					ut64 paddr = Elf_(v2p) (eo, vaddr);
+					symbol->is_vaddr = paddr == UT64_MAX;
+					symbol->offset = symbol->is_vaddr? vaddr: paddr;
+					char *key = r_str_newf ("%"PFMT64x":%"PFMT64x":%d:%d:%s:%s:%s",
+						vaddr, symbol->size, symbol->is_imported, symbol->is_sht_null,
+						symbol->bind, symbol->type, symbol->name);
+					bool duplicate = seen && key && ht_su_find (seen, key, NULL);
+					if (!duplicate) {
+						if (seen && key) {
+							ht_su_insert (seen, key, 1);
+						}
+						*dst++ = *symbol;
+					}
+					free (key);
+				}
+				symbols->_end = dst;
+				ht_su_free (seen);
 			}
 			Elf_(free)(newobj);
 		}
-		if (ret_size) {
-			*ret_size = rs;
+		if (ret_size && symbols) {
+			*ret_size = RVecRBinElfSymbol_length (symbols);
 		}
 		r_unref (newelf);
 		free (odata);
@@ -5586,7 +5609,7 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 
 	size_t import_ret_ctr = 0;
 	size_t ret_ctr = 0; // amount of symbols stored in ret
-	RVecRBinElfSymbol *ret = parse_gnu_debugdata (eo, &ret_ctr);
+	RVecRBinElfSymbol *ret = type == R_BIN_ELF_ALL_SYMBOLS? parse_gnu_debugdata (eo, &ret_ctr): NULL;
 	int i;
 	size_t shnum = eo->ehdr.e_shnum;
 	for (i = 0; i < shnum; i++) {
