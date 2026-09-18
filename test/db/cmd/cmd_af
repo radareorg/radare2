@@ -15,9 +15,9 @@ afi~realsz
 aa ; afll~?main
 EOF
 EXPECT=<<EOF
-int main (int argc, char **argv);
-int main (int argc, char **argv);
-[{"name":"main","return":"int","args":[{"name":"argc","type":"int"},{"name":"argv","type":"char **"}],"count":2}]
+int main (int argc, char **argv, char **envp);
+int main (int argc, char **argv, char **envp);
+[{"name":"main","return":"int","args":[{"name":"argc","type":"int"},{"name":"argv","type":"char **"},{"name":"envp","type":"char **"}],"count":3}]
 --
 realsz: 6
 0x6

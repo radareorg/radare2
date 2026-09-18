@@ -1372,8 +1372,22 @@ static ut64 faddr(RCore *core, ut64 addr, bool *nr) {
 	return addr;
 }
 
+static bool has_function_signature(RAnalFunction *fcn) {
+	RAnalFunctionSignature *sig = r_anal_function_get_signature (fcn);
+	const bool declared = sig && (sig->origin == R_ANAL_FUNCTION_SIGNATURE_ORIGIN_NAME
+		|| sig->origin == R_ANAL_FUNCTION_SIGNATURE_ORIGIN_ADDRESS);
+	r_anal_function_signature_free (sig);
+	return declared;
+}
+
 // function argument types and names into anal/types
 static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
+	char *type_name = r_type_func_key (core->anal->sdb_types, fcn->name);
+	const bool declared = type_name != NULL;
+	free (type_name);
+	if (declared) {
+		return;
+	}
 	char *linked_type = r_type_link_at (core->anal->sdb_types, fcn->addr);
 	if (linked_type) {
 		const bool has_signature = r_type_kind (core->anal->sdb_types,
@@ -1432,10 +1446,10 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 		free (k);
 		arg_count++;
 	}
-	if (arg_count > 0) {
-		Sdb *TDB = core->anal->sdb_types;
+	Sdb *TDB = core->anal->sdb_types;
+	const int oargs = (int)sdb_num_getf (TDB, NULL, "func.%s.args", fcn->name);
+	if (arg_count > 0 || oargs > 0) {
 		r_strf_buffer (16);
-		const int oargs = (int)sdb_num_getf (TDB, NULL, "func.%s.args", fcn->name);
 		sdb_setf (TDB, r_strf ("%d", (int)arg_count), 0, "func.%s.args", fcn->name);
 		// a previous wider recovery leaves stale higher keys behind
 		int i;
@@ -2119,15 +2133,10 @@ static int cmd_afv(RCore *core, const char *str) {
 		}
 	case 'a': // "afva"
 		if (fcn) {
-			char *type = r_str_newf ("func.%s.ret", fcn->name);
-			if (type && sdb_exists (core->anal->sdb_types, type)) {
-				// if function type exists
-				// do not analize vars if function has a signature
-			} else {
+			if (!has_function_signature (fcn)) {
 				r_anal_function_delete_all_vars (fcn);
-				r_core_recover_vars (core, fcn, false);
 			}
-			free (type);
+			r_core_recover_vars (core, fcn, false);
 			free (p);
 			return true;
 		}
@@ -4342,6 +4351,12 @@ static void r_core_anal_fmap(RCore *core, const char *input) {
 
 static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
 #define DB anal->sdb_types
+	char *type_name = r_type_func_key (DB, nname);
+	const bool declared = type_name != NULL;
+	free (type_name);
+	if (!strcmp (oname, nname) || declared) {
+		return;
+	}
 	// rename type
 	const char *type = sdb_const_get (DB, oname, 0);
 	if (type && !strcmp (type, "func")) {

@@ -283,7 +283,7 @@ EOF
 EXPECT=<<EOF
             ;-- rust::main::h523dcf5432fcfd88:
             ; ICOD XREF from main @ 0x5b0d(r)
-/ 940: int dbg.main (int argc, char **argv);
+/ 940: int dbg.main (int argc, char **argv, char **envp);
 |           ; var int64_t var_8h @ rsp+0x8
 |           ; var int64_t var_10h @ rsp+0x10
 |           ; var int64_t var_18h @ rsp+0x18
