@@ -1115,6 +1115,7 @@ static void fcn_scan(FcnWalk *w, ut64 addr) {
 	const bool is_dalvik = w->is_dalvik;
 	const bool is_stm8 = w->is_stm8;
 	const bool propagate_noreturn = w->propagate_noreturn;
+	const int bits = anal->config->bits;
 	ut64 v1 = UT64_MAX;
 
 	if (r_cons_is_breaked (cons)) {
@@ -1290,7 +1291,7 @@ repeat:
 		bytes_read = ret;
 		// eprintf("%02x %02x\n", buf[0], buf[1]);
 		const bool check_invalid_fill = bb->size < sizeof (buf) || anal->opt.nonull > 0;
-		const bool bits_unknown = !anal->config->bits || anal->config->bits > 64 || !fcn->bits || fcn->bits > 64;
+		const bool bits_unknown = !bits || bits > 64 || !fcn->bits || fcn->bits > 64;
 		const bool check_zeros = anal->opt.nonull > 0 || is_x86 || bits_unknown;
 		if (!is_import_stub && check_invalid_fill && r_anal_is_invalid_code (anal, buf, bytes_read, check_zeros)) {
 			R_LOG_DEBUG ("Invalid code prefix at 0x%08"PFMT64x, at);
@@ -1300,7 +1301,7 @@ repeat:
 		oplen = r_anal_op (anal, op, at, buf, bytes_read, opflags);
 
 		if (oplen < 1) {
-			R_LOG_DEBUG ("Invalid instruction at 0x%"PFMT64x" with %d bits", at, anal->config->bits);
+			R_LOG_DEBUG ("Invalid instruction at 0x%"PFMT64x" with %d bits", at, bits);
 			// gotoBeach (R_ANAL_RET_ERROR);
 			// RET_END causes infinite loops somehow
 			gotoBeach (R_ANAL_RET_END);
@@ -1591,7 +1592,7 @@ noskip:
 			}
 			// AArch64 tables can have separate table and case bases. Resolve
 			// them at BR instead of treating this ADR as both bases.
-			if (anal->opt.jmptbl && !(is_arm && anal->config->bits == 64)) {
+			if (anal->opt.jmptbl && !(is_arm && bits == 64)) {
 				RAnalOp jmp_aop = {0};
 				ut64 jmptbl_addr = op->ptr;
 				ut64 casetbl_addr = op->ptr;
@@ -1628,7 +1629,7 @@ noskip:
 			break;
 		case R_ANAL_OP_TYPE_LOAD: ;
 			// An arm64 load whose base the last adrp wrote reads page plus displacement: the slot itself, not the page
-			if (is_arm && anal->config->bits == 64 && op->ptr == UT64_MAX && last_is_reg_mov_lea
+			if (is_arm && bits == 64 && op->ptr == UT64_MAX && last_is_reg_mov_lea
 					&& last_reg_mov_lea_name && src0 && src0->reg && !strcmp (src0->reg, last_reg_mov_lea_name)) {
 				op->ptr = last_reg_mov_lea_val + src0->delta;
 				r_anal_xrefs_setf (anal, fcn, op->addr, op->ptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
@@ -1688,7 +1689,7 @@ noskip:
 					R_LOG_DEBUG ("[0x%"PFMT64x"]============= 0x%"PFMT64x, op->addr, v1);
 				}
 			} else if (is_arm) {
-				const int bits = anal->config->bits;
+				// bits is already cached
 				if (bits == 64) {
 #if JTDBG
 					eprintf ("0x%08llx - ADD %lld\n", op->addr, op->val);
@@ -1896,9 +1897,9 @@ noskip:
 					if (anal->cmpval != UT64_MAX && default_case != UT64_MAX && (op->reg || op->ireg)) {
 						// TODO -1
 						if (op->ireg) {
-							ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, 0, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret, &sink);
+							ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, 0, op->ptr, op->ptr, bits >> 3, table_size, default_case, ret, &sink);
 						} else { // op->reg
-							ret = walkthrough_arm_jmptbl_style (anal, fcn, bb, op->addr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret, &sink);
+							ret = walkthrough_arm_jmptbl_style (anal, fcn, bb, op->addr, op->ptr, bits >> 3, table_size, default_case, ret, &sink);
 						}
 						// check if op->jump and op->fail contain jump table location
 						// clear jump address, because it's jump table location
@@ -1987,7 +1988,7 @@ noskip:
 			break;
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RJMP:
-			if (is_arm && anal->config->bits == 32) {
+			if (is_arm && bits == 32) {
 				if (last_is_mov_lr_pc) {
 					break;
 				}
@@ -1996,7 +1997,7 @@ noskip:
 					op->fail = op->addr + 4;
 					break;
 				}
-			} else if (is_arm && anal->config->bits == 64) {
+			} else if (is_arm && bits == 64) {
 				// arm64 jmptbl dispatcher resolved in libr/anal/jmptbl.c.
 				// Resolved or not, the br ends the block: nothing after it is
 				// reached by falling through.
@@ -2089,7 +2090,7 @@ noskip:
 							if (prev_op_storage.type == R_ANAL_OP_TYPE_MOV && prev_op_storage.disp && prev_op_storage.disp != UT64_MAX && same_reg) {
 								//	movzx reg, byte [reg + case_table]
 								//	jmp dword [reg*4 + jump_table]
-								if (try_walkthrough_casetbl (anal, fcn, bb, op->addr, case_shift, op->ptr, prev_op_storage.disp, op->ptr, anal->config->bits >> 3, table_size, default_case, ret, &sink)) {
+								if (try_walkthrough_casetbl (anal, fcn, bb, op->addr, case_shift, op->ptr, prev_op_storage.disp, op->ptr, bits >> 3, table_size, default_case, ret, &sink)) {
 									r_anal_switch_op_add_deps (anal, op->addr, prev_op_storage.addr, op->addr);
 									ret = case_table = true;
 								}
@@ -2097,14 +2098,14 @@ noskip:
 						}
 						r_anal_op_fini (&prev_op_storage);
 						if (!case_table) {
-							ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret, &sink);
+							ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, case_shift, op->ptr, op->ptr, bits >> 3, table_size, default_case, ret, &sink);
 						}
 					}
 				} else if (op->ptr != UT64_MAX && op->reg) { // direct jump
 					ut64 table_size, default_case;
 					st64 case_shift = 0;
 					if (try_get_jmptbl_info (anal, fcn, op->addr, bb, &table_size, &default_case, &case_shift)) {
-						ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret, &sink);
+						ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, case_shift, op->ptr, op->ptr, bits >> 3, table_size, default_case, ret, &sink);
 					}
 				} else if (movdisp != UT64_MAX) {
 					st64 case_shift = 0;
@@ -2140,7 +2141,7 @@ noskip:
 					st64 case_shift;
 					if (try_get_jmptbl_info (anal, fcn, op->addr, bb, &table_size, &default_case, &case_shift)) {
 						op->ptr = movdisp;
-						ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret, &sink);
+						ret = r_anal_jmptbl_walk (anal, fcn, bb, op->addr, case_shift, op->ptr, op->ptr, bits >> 3, table_size, default_case, ret, &sink);
 					}
 					movdisp = UT64_MAX;
 #endif
