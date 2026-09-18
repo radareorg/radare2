@@ -864,7 +864,7 @@ static Node *parse_function_type(CTX *c) {
 			noex = F_NOEXCEPT;
 		} else if (d == 'w') {
 			c->p += 2;
-			while (peek (c) && peek (c) != 'E') {
+			while (!c->fail && peek (c) && peek (c) != 'E') {
 				(void)parse_type (c);
 			}
 			(void)eat (c, 'E');
