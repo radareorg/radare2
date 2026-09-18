@@ -141,8 +141,8 @@ static const RDSCField dsc_header_fields[] = {
 	{ "l", "cacheAtlasSize" },
 	{ "l", "dynamicDataOffset" },
 	{ "l", "dynamicDataMaxSize" },
-	{ "i", "maybePointsToLinkeditMapAtTheEndOfSubCachesArray" },
-	{ "i", "previousPointerMakesSense" },
+	{ "i", "tproMappingsOffset" },
+	{ "i", "tproMappingsCount" },
 	{ NULL, NULL }
 };
 
