@@ -349,8 +349,8 @@ typedef struct r_anal_function_meta_t {
 
 	int numrefs;        // number of cross references
 	int numcallrefs;    // number of calls
-	ut64 refsgen;       // PRIVATE, xref generation numrefs/numcallrefs were computed at
 	int stack_pop;      // PRIVATE, inferred callee-popped argument bytes
+	ut64 refsgen;       // PRIVATE, xref generation numrefs/numcallrefs were computed at
 } RAnalFcnMeta;
 
 R_VEC_TYPE (RVecAnalVarPtr, RAnalVar *);
