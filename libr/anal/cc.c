@@ -700,6 +700,7 @@ static void cc_unset_slots(Sdb *db, const char *name) {
 	}
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.fparg%d", name, i), 0);
+		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.fpret%d", name, i), 0);
 	}
 	r_strbuf_fini (&sb);
 }
@@ -1243,6 +1244,15 @@ R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n) {
 		return sdb_const_getf (DB, NULL, "cc.%s.ret", convention);
 	}
 	return NULL;
+}
+
+// where a floating-point result comes back, beside the integer ret sequence
+R_API const char *r_anal_cc_fpret(RAnal *anal, const char *convention, int n) {
+	R_RETURN_VAL_IF_FAIL (anal && convention && n >= 0, NULL);
+	if (n >= R_ANAL_CC_MAXARG) {
+		return NULL;
+	}
+	return sdb_const_getf (DB, NULL, "cc.%s.fpret%d", convention, n);
 }
 
 R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention) {

@@ -344,6 +344,16 @@ static void cmd_afcl(RCore *core, const char *input) {
 			char *ccexpr = r_anal_cc_get (core->anal, cc);
 			r_cons_printf (core->cons, "tcc %s\n", ccexpr);
 			free (ccexpr);
+			// tcc redefines the convention, which clears its slots, and the
+			// signature cannot spell a floating return. Restoring the keys
+			// here is what makes the export a round trip.
+			int i;
+			for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
+				const char *fpret = r_anal_cc_fpret (core->anal, cc, i);
+				if (fpret) {
+					r_cons_printf (core->cons, "k anal/cc/cc.%s.fpret%d=%s\n", cc, i, fpret);
+				}
+			}
 		} else {
 			r_cons_println (core->cons, cc);
 		}

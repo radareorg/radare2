@@ -1498,6 +1498,7 @@ R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *s
 R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error);
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc);
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n);
+R_API const char *r_anal_cc_fpret(RAnal *anal, const char *convention, int n);
 R_API bool r_anal_cc_argclob(RAnal *anal, const char *caller_cc, int n, const char *callee_cc);
 R_API bool r_anal_cc_isclobber(RAnal *anal, const char *cc, const char *reg);
 R_API const char *r_anal_cc_default(RAnal *anal);
