@@ -115,17 +115,32 @@ RUN
 
 NAME=arcompact: [BRcc limm,reg] Cond Code and imm val
 FILE=malloc://512
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
 wx 410e4271 65872143 @ 0x0
 ao~cond
 ao~val
+wx 4108820f65872143
+ao~cond
+ao~val
+e cfg.bigendian=true
+wx 0e41714287654321
+ao~cond
+ao~val
+wx 0e4171d387654321
+ao~val,size,cond
 EOF
 EXPECT=<<EOF
 cond: lt
 val: 0x87654321
+cond: lt
+val: 0x87654321
+cond: lt
+val: 0x87654321
+val: 0x00000007
+size: 8
+cond: ge
 EOF
 RUN
 
@@ -135,7 +150,7 @@ CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
 s 0x40
-wx 430ed371
+wx 430ed301
 ao~type,jump,fail,delay
 EOF
 EXPECT=<<EOF
@@ -151,7 +166,7 @@ CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
 s 0x40
-wx 430ef371
+wx 430ef301
 ao~type,jump,fail,delay
 EOF
 EXPECT=<<EOF
@@ -164,18 +179,34 @@ RUN
 
 NAME=arcompact: [BRcc reg,imm] Cond Code and imm val
 FILE=malloc://512
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
-wx 430ed371 @ 0x40
+wx 430ed301 @ 0x40
 s 0x40
 ao~cond
 ao~val
+wx 4108d0014108d1014108d2014108d3014108d4014108d501
+ao 6~cond
+e cfg.bigendian=true
+wx 084101d0084101d1084101d2084101d3084101d4084101d5
+ao 6~cond
 EOF
 EXPECT=<<EOF
 cond: ge
 val: 0x00000007
+cond: eq
+cond: ne
+cond: lt
+cond: ge
+cond: lo
+cond: hs
+cond: eq
+cond: ne
+cond: lt
+cond: ge
+cond: lo
+cond: hs
 EOF
 RUN
 
@@ -418,23 +449,38 @@ ao~type,fail,cond
 EOF
 EXPECT=<<EOF
 type: cjmp
-fail: 0x00000044
+fail: 0x00000048
 cond: mi
 EOF
 RUN
 
 NAME=arcompact: [Jcc limm] limm val
 FILE=malloc://512
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
 s 0x40
 wx e020840f 34127856
 ao~jump
+ao~size,fail
+wx e020a40f34127856
+ao~size,jump,fail
+e cfg.bigendian=true
+wx 20e30f8412345678
+ao~size,type,jump,fail,delay
 EOF
 EXPECT=<<EOF
 jump: 0x12345678
+size: 8
+fail: 0x00000048
+size: 4
+jump: 0x0000003e
+fail: 0x00000044
+size: 8
+type: ccall
+jump: 0x12345678
+fail: 0x00000048
+delay: 1
 EOF
 RUN
 
@@ -583,15 +629,20 @@ RUN
 
 NAME=arcompact: [SUB_S.NE reg] Cond Code
 FILE=malloc://512
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
 s 0x40
 wx c079
 ao~cond
+aoj~{0.cond}
+e cfg.bigendian=true
+wx 79c0
+ao~cond
 EOF
 EXPECT=<<EOF
+cond: ne
+ne
 cond: ne
 EOF
 RUN
@@ -797,15 +848,36 @@ RUN
 
 NAME=arcompact: [Bcc_S imm] Cond Code
 FILE=malloc://512
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
 s 0x40
-wx 06f6
-ao~cond
+wx 06f646f686f6c6f606f746f786f7c6f7
+ao 8~cond
+e cfg.bigendian=true
+wx f606f646f686f6c6f706f746f786f7c6
+ao 8~cond
+wx f63f
+ao~jump,cond
 EOF
 EXPECT=<<EOF
+cond: gt
+cond: ge
+cond: lt
+cond: le
+cond: hi
+cond: hs
+cond: lo
+cond: ls
+cond: gt
+cond: ge
+cond: lt
+cond: le
+cond: hi
+cond: hs
+cond: lo
+cond: ls
+jump: 0x0000003e
 cond: gt
 EOF
 RUN
