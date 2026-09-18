@@ -554,9 +554,15 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 	case EM_S390:
 		switch (rel->type) {
 		case R_390_GLOB_DAT: // globals
+			if (sizeof (Elf_(Addr)) == 4) {
+				SET (32);
+			}
 			SET (64);
 			break;
 		case R_390_RELATIVE:
+			if (sizeof (Elf_(Addr)) == 4) {
+				ADD (32, 0);
+			}
 			ADD (64, 0);
 			break;
 		}
@@ -1109,16 +1115,22 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		}
 	}
 	switch (e_machine) {
-	case EM_S390:
+	case EM_S390: {
+		const int ws = sizeof (Elf_(Addr));
 		switch (rel->type) {
-		case R_390_GLOB_DAT: // globals
-			iob->overlay_write_at (iob->io, P, buf, 8);
+		case R_390_GLOB_DAT:
+			V = 0;
 			break;
 		case R_390_RELATIVE:
-			iob->overlay_write_at (iob->io, P, buf, 8);
+			V = A + (B - bo->baddr);
 			break;
+		default:
+			return;
 		}
+		r_write_ble (buf, V, bo->endian, 8 * ws);
+		iob->overlay_write_at (iob->io, P, buf, ws);
 		break;
+	}
 	case EM_ARM:
 	{
 		ut32 insn = 0;
