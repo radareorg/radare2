@@ -44,12 +44,15 @@ rax p9 (rbp, stack);
 rax reg (rdi, rsi, rdx, rcx);
 rax r13.swift (rdi, rsi, rdx, rcx, r8, r9, stack) r12;
 tcc rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+k anal/cc/cc.amd64.fpret0=xmm0
 tcc rax amd64syscall (rdi, rsi, rdx, r10, r8, r9);
 tcc rax:rdx dlang (rdi, rsi, rdx, rcx, r8d, r9d, stack);
 tcc rax ms (rcx, rdx, r8, r9, stack);
+k anal/cc/cc.ms.fpret0=xmm0
 tcc rax p9 (rbp, stack);
 tcc rax reg (rdi, rsi, rdx, rcx);
 tcc rax r13.swift (rdi, rsi, rdx, rcx, r8, r9, stack) r12;
+k anal/cc/cc.swift.fpret0=xmm0
 EOF
 RUN
 
@@ -108,10 +111,75 @@ k anal/cc/cc.swift.fpret0
 e asm.arch=x86
 e asm.bits=64
 k anal/cc/cc.amd64.fpret0
+k anal/cc/cc.swift.fpret0
+k anal/cc/cc.ms.fpret0
 EOF
 EXPECT=<<EOF
 {d0,s0,v0,q0}
 {d0,s0,v0,q0}
 xmm0
+xmm0
+xmm0
+EOF
+RUN
+
+NAME=tcc: redefining a convention clears its floating return
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+k anal/cc/cc.amd64.fpret0
+tcc rax amd64 (rdi, rsi);
+k anal/cc/cc.amd64.fpret0
+k anal/cc/cc.amd64.ret0
+EOF
+EXPECT=<<EOF
+xmm0
+rax
+EOF
+RUN
+
+NAME=tcc: deleting a convention clears its floating return
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+k anal/cc/cc.amd64.fpret0
+tcc-amd64
+k anal/cc/cc.amd64.fpret0
+k anal/cc/cc.amd64.ret0
+EOF
+EXPECT=<<EOF
+xmm0
+EOF
+RUN
+
+NAME=tcc: the export restores the floating return
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+k anal/cc/cc.amd64.fpret0
+tcc* > .fpret-roundtrip.r2
+. .fpret-roundtrip.r2
+k anal/cc/cc.amd64.fpret0
+rm .fpret-roundtrip.r2
+EOF
+EXPECT=<<EOF
+xmm0
+xmm0
+EOF
+RUN
+
+NAME=tcc: the export restores an alias-group floating return
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+k anal/cc/cc.arm64.fpret0
+tcc* > .fpret-roundtrip-arm.r2
+. .fpret-roundtrip-arm.r2
+k anal/cc/cc.arm64.fpret0
+rm .fpret-roundtrip-arm.r2
+EOF
+EXPECT=<<EOF
+{d0,s0,v0,q0}
+{d0,s0,v0,q0}
 EOF
 RUN
