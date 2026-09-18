@@ -291,11 +291,15 @@ R_API bool r_io_desc_is_blockdevice(RIODesc *desc) {
 	return desc->plugin->is_blockdevice (desc);
 }
 
-R_API bool r_io_desc_is_chardevice(RIODesc *desc) {
-	if (!desc || !desc->plugin || !desc->plugin->is_chardevice) {
-		return false;
+R_API RIODescInfo r_io_desc_info(RIODesc *desc) {
+	RIODescInfo di = {0};
+	if (desc && desc->plugin) {
+		if (desc->plugin->getinfo) {
+			di = desc->plugin->getinfo (desc);
+		}
+		di.isdbg = desc->plugin->isdbg;
 	}
-	return desc->plugin->is_chardevice (desc);
+	return di;
 }
 
 R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
