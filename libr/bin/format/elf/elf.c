@@ -713,40 +713,45 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 	}
 }
 
-static bool shdr_is_reloc(const Elf_(Shdr) *sh) {
-	const ut32 type = sh->sh_type;
-	return type == SHT_REL || type == SHT_RELA || type == SHT_RELR
-		|| (type & 0xff) == SHT_CREL;
+// the file-backed bytes of the PT_LOAD holding vaddr, from vaddr on
+static ut64 loaded_bytes_at(ELFOBJ *eo, ut64 vaddr) {
+	size_t i;
+	for (i = 0; i < eo->phnum; i++) {
+		const Elf_(Phdr) *p = &eo->phdr[i];
+		if (p->p_type != PT_LOAD || vaddr < p->p_vaddr || vaddr - p->p_vaddr >= p->p_filesz
+			|| p->p_offset >= eo->size) {
+			continue;
+		}
+		const ut64 end = R_MIN (p->p_filesz, eo->size - p->p_offset);
+		const ut64 at = vaddr - p->p_vaddr;
+		return at < end? end - at: 0;
+	}
+	return 0;
 }
 
-// the reloc sections tiling forward from vaddr describe the same bytes
-static ut64 reloc_run_end(ELFOBJ *eo, ut64 vaddr) {
-	ut64 end = vaddr;
-	bool grew = true;
-	while (grew) {
-		grew = false;
-		size_t i;
-		for (i = 0; i < eo->ehdr.e_shnum; i++) {
-			const Elf_(Shdr) *sh = &eo->shdr[i];
-			if (sh->sh_addr == end && sh->sh_size && shdr_is_reloc (sh)) {
-				end += sh->sh_size;
-				grew = true;
-				break;
-			}
+static ut64 reloc_section_size_at(ELFOBJ *eo, ut64 vaddr, ut32 sh_type) {
+	size_t i;
+	for (i = 0; eo->shdr && i < eo->ehdr.e_shnum; i++) {
+		const Elf_(Shdr) *sh = &eo->shdr[i];
+		if (sh->sh_type == sh_type && sh->sh_addr == vaddr && (sh->sh_flags & SHF_ALLOC)
+			&& Elf_(v2p) (eo, vaddr) == sh->sh_offset) {
+			return sh->sh_size;
 		}
 	}
-	return end;
+	return 0;
 }
 
-// no reloc header starting at vaddr means the headers bound nothing there
-static void clamp_at_run_end(ELFOBJ *eo, ut64 vaddr, Elf_(Xword) *size) {
-	if (!eo->shdr || !vaddr || vaddr == R_BIN_ELF_ADDR_MAX || !*size) {
-		return;
+// a header only speaks for a table whose declared size overruns its bytes
+static Elf_(Xword) reloc_read_size(ELFOBJ *eo, ut64 vaddr, Elf_(Xword) size, ut32 sh_type) {
+	if (vaddr == R_BIN_ELF_ADDR_MAX || !size) {
+		return size;
 	}
-	const ut64 end = reloc_run_end (eo, vaddr);
-	if (end > vaddr && end - vaddr < *size) {
-		*size = end - vaddr;
+	const ut64 loaded = loaded_bytes_at (eo, vaddr);
+	if (size <= loaded) {
+		return size;
 	}
+	const ut64 shsize = reloc_section_size_at (eo, vaddr, sh_type);
+	return (shsize && shsize < loaded)? shsize: loaded;
 }
 
 static int init_dynamic_section(ELFOBJ *eo) {
@@ -776,11 +781,11 @@ static int init_dynamic_section(ELFOBJ *eo) {
 	fill_dynamic_entries (eo, loaded_offset, dyn_size);
 
 	RBinElfDynamicInfo *di = &eo->dyn_info;
-	// a size the section headers contradict is corrupt. dt_pltrelsz is left
-	// alone: plt.c reads it as PLT geometry, not as a table length
-	clamp_at_run_end (eo, di->dt_rela, &di->dt_relasz);
-	clamp_at_run_end (eo, di->dt_rel, &di->dt_relsz);
-	clamp_at_run_end (eo, di->dt_relr, &di->dt_relrsz);
+	di->relasz_read = reloc_read_size (eo, di->dt_rela, di->dt_relasz, SHT_RELA);
+	di->relsz_read = reloc_read_size (eo, di->dt_rel, di->dt_relsz, SHT_REL);
+	di->relrsz_read = reloc_read_size (eo, di->dt_relr, di->dt_relrsz, SHT_RELR);
+	di->pltrelsz_read = reloc_read_size (eo, di->dt_jmprel, di->dt_pltrelsz,
+		di->dt_pltrel == DT_RELA? SHT_RELA: SHT_REL);
 	ut64 strtabaddr = 0;
 	if (di->dt_strtab != R_BIN_ELF_ADDR_MAX) {
 		strtabaddr = Elf_(v2p) (eo, di->dt_strtab);
@@ -3631,15 +3636,15 @@ static size_t get_num_relocs_dynamic(ELFOBJ *eo) {
 	size_t res = get_num_relocs_android (eo);
 
 	if (di->dt_relaent) {
-		res += di->dt_relasz / di->dt_relaent;
+		res += di->relasz_read / di->dt_relaent;
 	}
 	if (di->dt_relent) {
-		res += di->dt_relsz / di->dt_relent;
+		res += di->relsz_read / di->dt_relent;
 	}
 	// RELR bitmap words each encode up to wordsize*8-1 relocations, so scan the
 	// table for the exact count instead of assuming one reloc per entry
-	if (di->dt_relr != R_BIN_ELF_ADDR_MAX && di->dt_relrsz) {
-		res += get_num_relocs_relr_at (eo, di->dt_relr, di->dt_relrsz);
+	if (di->dt_relr != R_BIN_ELF_ADDR_MAX && di->relrsz_read) {
+		res += get_num_relocs_relr_at (eo, di->dt_relr, di->relrsz_read);
 	}
 	return res + get_num_relocs_dynamic_plt (eo) + get_num_relocs_mips_got (eo);
 }
@@ -3820,21 +3825,18 @@ done:
 }
 
 // JMPREL usually points inside RELA/REL, so its entries reparse in that pass
-static inline bool in_pltrel_range(const RBinElfDynamicInfo *di, ut64 pltrelsz, ut64 addr) {
-	return di->dt_jmprel != R_BIN_ELF_ADDR_MAX && pltrelsz
-		&& addr >= di->dt_jmprel && addr < di->dt_jmprel + pltrelsz;
+static inline bool in_pltrel_range(const RBinElfDynamicInfo *di, ut64 addr) {
+	return di->dt_jmprel != R_BIN_ELF_ADDR_MAX && di->pltrelsz_read
+		&& addr >= di->dt_jmprel && addr < di->dt_jmprel + di->pltrelsz_read;
 }
 
 static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t num_relocs) {
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
 	const size_t size = get_size_rel_mode (di->dt_pltrel);
 	ut64 offset;
-	Elf_(Xword) offset_end = di->dt_pltrelsz;
-	clamp_at_run_end (eo, di->dt_jmprel, &offset_end);
 	// order matters
 	// parse pltrel
-	// a clamped size need not be a multiple of the entry size: stop at the last whole one
-	for (offset = 0; size && offset + size <= offset_end && pos < num_relocs; offset += size, pos++) {
+	for (offset = 0; size && offset + size <= di->pltrelsz_read && pos < num_relocs; offset += size, pos++) {
 		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, di->dt_pltrel, di->dt_jmprel + offset)) {
 			RVecRBinElfReloc_pop_back (&eo->g_relocs);
@@ -3847,13 +3849,13 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	}
 	// parse relr - Relative relocations
 	if (di->dt_relr != R_BIN_ELF_ADDR_MAX) {
-		pos = populate_relr_at (eo, di->dt_relr, di->dt_relrsz, pos, num_relocs);
+		pos = populate_relr_at (eo, di->dt_relr, di->relrsz_read, pos, num_relocs);
 	}
 	// parse rela
-	for (offset = 0; offset + sizeof (Elf_(Rela)) <= di->dt_relasz && pos < num_relocs;
+	for (offset = 0; offset + sizeof (Elf_(Rela)) <= di->relasz_read && pos < num_relocs;
 		offset += di->dt_relaent, pos++) {
 		// skip re-read but keep pos++ so the num_relocs budget stays intact
-		if (in_pltrel_range (di, offset_end, di->dt_rela + offset)) {
+		if (in_pltrel_range (di, di->dt_rela + offset)) {
 			continue;
 		}
 		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
@@ -3865,9 +3867,9 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 		fix_rva_and_offset_exec_file (eo, reloc);
 	}
 
-	for (offset = 0; offset + sizeof (Elf_(Rel)) <= di->dt_relsz && pos < num_relocs;
+	for (offset = 0; offset + sizeof (Elf_(Rel)) <= di->relsz_read && pos < num_relocs;
 		offset += di->dt_relent, pos++) {
-		if (in_pltrel_range (di, offset_end, di->dt_rel + offset)) {
+		if (in_pltrel_range (di, di->dt_rel + offset)) {
 			continue;
 		}
 		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
@@ -3933,20 +3935,34 @@ static size_t populate_relocs_record_from_mips_got(ELFOBJ *eo, size_t pos, size_
 	return pos;
 }
 
-// an allocated section never begins inside another one, so its start bounds it
-static ut64 reloc_section_bound(ELFOBJ *eo, ut64 vaddr, ut64 size) {
-	if (!eo->shdr || !vaddr || is_bin_etrel (eo)) {
-		return size;
-	}
+R_VEC_TYPE (RVecElfAddr, Elf_(Addr));
+
+static int cmp_addr(const Elf_(Addr) *a, const Elf_(Addr) *b) {
+	return (*a > *b) - (*a < *b);
+}
+
+static void alloc_section_starts(ELFOBJ *eo, RVecElfAddr *starts) {
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_shnum; i++) {
+	for (i = 0; eo->shdr && i < eo->ehdr.e_shnum; i++) {
 		const Elf_(Shdr) *sh = &eo->shdr[i];
-		if ((sh->sh_flags & SHF_ALLOC) && sh->sh_size
-			&& sh->sh_addr > vaddr && sh->sh_addr - vaddr < size) {
-			size = sh->sh_addr - vaddr;
+		if ((sh->sh_flags & SHF_ALLOC) && sh->sh_size) {
+			RVecElfAddr_push_back (starts, &sh->sh_addr);
 		}
 	}
-	return size;
+	RVecElfAddr_sort (starts, cmp_addr);
+}
+
+// an allocated section never begins inside another one, so its start bounds it
+static ut64 reloc_section_bound(RVecElfAddr *starts, RBinElfSection *section) {
+	Elf_(Addr) vaddr = section->rva;
+	if (!vaddr || !(section->flags & SHF_ALLOC)) {
+		return section->size;
+	}
+	const size_t i = RVecElfAddr_upper_bound (starts, &vaddr, cmp_addr);
+	if (i == RVecElfAddr_length (starts)) {
+		return section->size;
+	}
+	return R_MIN (section->size, *RVecElfAddr_at (starts, i) - vaddr);
 }
 
 static ut64 get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, size_t offset) {
@@ -3954,16 +3970,16 @@ static ut64 get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, size_
 	const size_t gvaddr = section_vaddr + offset;
 
 	if (di->dt_rela != R_BIN_ELF_ADDR_MAX
-		&& gvaddr >= di->dt_rela && gvaddr < di->dt_rela + di->dt_relasz) {
-		return di->dt_rela + di->dt_relasz - section_vaddr;
+		&& gvaddr >= di->dt_rela && gvaddr < di->dt_rela + di->relasz_read) {
+		return di->dt_rela + di->relasz_read - section_vaddr;
 	}
 	if (di->dt_rel != R_BIN_ELF_ADDR_MAX
-		&& gvaddr >= di->dt_rel && gvaddr < di->dt_rel + di->dt_relsz) {
-		return di->dt_rel + di->dt_relsz - section_vaddr;
+		&& gvaddr >= di->dt_rel && gvaddr < di->dt_rel + di->relsz_read) {
+		return di->dt_rel + di->relsz_read - section_vaddr;
 	}
 	if (di->dt_jmprel != R_BIN_ELF_ADDR_MAX
-		&& gvaddr >= di->dt_jmprel && gvaddr < di->dt_jmprel + di->dt_pltrelsz) {
-		return di->dt_jmprel + di->dt_pltrelsz - section_vaddr;
+		&& gvaddr >= di->dt_jmprel && gvaddr < di->dt_jmprel + di->pltrelsz_read) {
+		return di->dt_jmprel + di->pltrelsz_read - section_vaddr;
 	}
 	// Add support for CREL sections
 	if (di->dt_crel != R_BIN_ELF_ADDR_MAX && gvaddr >= di->dt_crel) {
@@ -3973,8 +3989,8 @@ static ut64 get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, size_
 	}
 	// Add support for RELR sections
 	if (di->dt_relr != R_BIN_ELF_ADDR_MAX
-		&& gvaddr >= di->dt_relr && gvaddr < di->dt_relr + di->dt_relrsz) {
-		return di->dt_relr + di->dt_relrsz - section_vaddr;
+		&& gvaddr >= di->dt_relr && gvaddr < di->dt_relr + di->relrsz_read) {
+		return di->dt_relr + di->relrsz_read - section_vaddr;
 	}
 	// the APS2 packed stream is decoded from the dynamic pass, so a .rela.dyn
 	// section overlapping it must be skipped here or it reparses as raw RELA
@@ -4009,6 +4025,11 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 		return pos;
 	}
 
+	RVecElfAddr starts;
+	RVecElfAddr_init (&starts);
+	if (!is_bin_etrel (eo)) {
+		alloc_section_starts (eo, &starts);
+	}
 	size_t i = 0;
 	RBinElfSection *section;
 	R_VEC_FOREACH (&eo->g_sections, section) {
@@ -4028,7 +4049,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 			const RBinElfDynamicInfo *di = &eo->dyn_info;
 			bool aliases_dynamic = di->dt_relr != R_BIN_ELF_ADDR_MAX
 				&& section->rva >= di->dt_relr
-				&& section->rva < di->dt_relr + di->dt_relrsz;
+				&& section->rva < di->dt_relr + di->relrsz_read;
 			if (!aliases_dynamic) {
 				pos = populate_relr_at (eo, section->rva, section->size, pos, num_relocs);
 			}
@@ -4078,8 +4099,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 			if (!size) {
 				continue;
 			}
-			// a header claiming past the next section describes bytes that are not its own
-			const ut64 ssize = reloc_section_bound (eo, section->rva, section->size);
+			const ut64 ssize = reloc_section_bound (&starts, section);
 			ut64 dim_relocs = section->size / size;
 			dim_relocs = R_MIN (dim_relocs, num_relocs) + 2;
 			// ET_REL: cap per-section (scount), else cumulative pos (also dedups the dynamic pass)
@@ -4087,7 +4107,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 			ut64 scount = 0;
 			ut64 j;
 			for (j = get_next_not_analysed_offset (eo, section->rva, 0);
-				j + size <= ssize && (etrel? scount: pos) <= dim_relocs;
+				j < ssize && size <= ssize - j && (etrel? scount: pos) <= dim_relocs;
 				j = get_next_not_analysed_offset (eo, section->rva, j + size)) {
 
 				RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
@@ -4106,6 +4126,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 		i++;
 	}
 
+	RVecElfAddr_fini (&starts);
 	return pos;
 }
 
