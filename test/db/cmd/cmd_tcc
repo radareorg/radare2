@@ -98,3 +98,20 @@ eax jeje (ebx, ecx);
 eax jeje (ebx, ecx);
 EOF
 RUN
+
+NAME=tcc: floating return register per convention
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+k anal/cc/cc.arm64.fpret0
+k anal/cc/cc.swift.fpret0
+e asm.arch=x86
+e asm.bits=64
+k anal/cc/cc.amd64.fpret0
+EOF
+EXPECT=<<EOF
+{d0,s0,v0,q0}
+{d0,s0,v0,q0}
+xmm0
+EOF
+RUN

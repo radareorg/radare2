@@ -39,6 +39,7 @@ cc.amd64.pop=caller
 cc.amd64.clobber=rax,rcx,rdx,rsi,rdi,r8,r9,r10,r11,xmm0,xmm1,xmm2,xmm3,xmm4,xmm5,xmm6,xmm7,xmm8,xmm9,xmm10,xmm11,xmm12,xmm13,xmm14,xmm15
 cc.amd64.preserve=rbx,rbp,rsp,r12,r13,r14,r15
 cc.amd64.ret0=rax
+cc.amd64.fpret0=xmm0
 
 swift=cc
 cc.swift.arg0=rdi
@@ -61,6 +62,7 @@ cc.swift.self=r13
 cc.swift.error=r12
 cc.swift.pop=caller
 cc.swift.ret0=rax
+cc.swift.fpret0=xmm0
 
 amd64syscall=cc
 cc.amd64syscall.arg0=rdi
