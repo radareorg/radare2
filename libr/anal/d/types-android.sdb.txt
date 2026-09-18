@@ -47,10 +47,10 @@ func.android_log_assert.arg.1=const char *,tag
 func.android_log_assert.arg.2=const char *,fmt
 func.android_log_assert.ret=void
 
-stack_chk_fail=func
-func.stack_chk_fail.args=0
-func.stack_chk_fail.noreturn=true
-func.stack_chk_fail.ret=void
+__stack_chk_fail=func
+func.__stack_chk_fail.args=0
+func.__stack_chk_fail.noreturn=true
+func.__stack_chk_fail.ret=void
 
 xalloc_die=func
 func.xalloc_die.args=0
