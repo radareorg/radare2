@@ -327,6 +327,7 @@ extern const RArchPlugin r_arch_plugin_pyc;
 extern const RArchPlugin r_arch_plugin_riscv;
 extern const RArchPlugin r_arch_plugin_riscv_cs;
 extern const RArchPlugin r_arch_plugin_rsp;
+extern const RArchPlugin r_arch_plugin_s1c88;
 extern const RArchPlugin r_arch_plugin_s390_cs;
 extern const RArchPlugin r_arch_plugin_s390_gnu;
 extern const RArchPlugin r_arch_plugin_sh;
