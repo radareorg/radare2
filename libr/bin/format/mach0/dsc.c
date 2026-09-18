@@ -143,6 +143,10 @@ static const RDSCField dsc_header_fields[] = {
 	{ "l", "dynamicDataMaxSize" },
 	{ "i", "tproMappingsOffset" },
 	{ "i", "tproMappingsCount" },
+	{ "l", "functionVariantInfoAddr" },
+	{ "l", "functionVariantInfoSize" },
+	{ "l", "prewarmingDataOffset" },
+	{ "l", "prewarmingDataSize" },
 	{ NULL, NULL }
 };
 
