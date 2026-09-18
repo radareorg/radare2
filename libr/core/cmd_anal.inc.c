@@ -28,13 +28,13 @@ static RCoreHelpMessage help_msg_acolon = {
 static RCoreHelpMessage help_msg_a = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"a", "", "alias for aai - analysis information",
-	"a:", "[cmd]", "run a command implemented by an analysis plugin (like : for io)",
+	"a:", "[cmd]", "run command implemented by an analysis plugin (like : for io)",
 	"a*", "", "same as afl*;ah*;ax*",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 	"a8", " [hexpairs]", "analyze bytes",
 	"ab", "[?]", "analyze basic block",
 	"ac", "[?]", "manage classes",
-	"ad", "[?]", "analyze data trampoline (wip) (see 'aod' to describe mnemonics)", // XXX rename to at?
+	"ad", "[?]", "analyze data trampoline (see 'aod' to describe mnemonics)", // XXX rename to at?
 	"ad", " [from] [to]", "analyze data pointers to (from-to)",
 	"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",
 	"af", "[?]", "analyze functions",
@@ -269,12 +269,12 @@ static RCoreHelpMessage help_msg_ab = {
 	"aba", "[j] [addr]", "analyze esil accesses in basic block (see aea?)",
 
 	"abc", "[-] [color]", "change color of the current basic block (same as afbc, abc- to unset)",
-	"abe", " [esil-expr]", "assign esil expression to basic block (see: aeb, dre, afbd)",
+	"abe", " [esil-expr]", "assign esil expression to basic block (aeb, dre, afbd)",
 	"abf", " [addr]", "address of incoming (from) basic blocks",
 	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[?] [.-cqj]", "list all basic blocks",
 	"abo", "", "list opcode offsets of current basic block",
-	"abm", "[j]", "list instruction bytes and mask for the current basic block",
+	"abm", "[j]", "list instruction bytes and mask for current basic block",
 	"abp", "[?] [addr]", "follow basic blocks paths from $$ to `addr`",
 	"abt", "[tag] ([color])", "no args = show current trace tag, otherwise set the color",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
@@ -628,7 +628,7 @@ static RCoreHelpMessage help_msg_afb = {
 	"afbj", " [addr]", "show basic blocks information in json",
 	"afbr", "[?]", "show addresses of instructions which leave the function",
 	"afbo", "", "list addresses of each instruction for every basic block in function (see abo)",
-	"afB", " [bits]", "define asm.bits for the given function",
+	"afB", " [bits]", "define asm.bits for given function",
 	NULL
 };
 
@@ -860,7 +860,7 @@ static RCoreHelpMessage help_msg_afs = {
 	"afs", " ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
 	"afsq", "", "same as afs without the error message",
 	"afsQ", "", "same as afsq, silent at function entry",
-	"afs!", "", "edit current function signature with cfg.editor",
+	"afs!", "", "edit function signature with cfg.editor",
 	"afs*", " ([signame])", "get function signature in flags",
 	"afsj", " ([signame])", "get function signature in JSON",
 	"afsr", " [function_name] [new_type]", "change type for given function",
@@ -922,7 +922,7 @@ static RCoreHelpMessage help_msg_afvr = {
 	"afvr*", "", "same as afvr but in r2 commands",
 	"afvr", " [reg] [name] ([type])", "define register arguments",
 	"afvrj", "", "return list of register arguments in JSON format",
-	"afvr-", " [name|idx]", "delete the register argument with that name or index",
+	"afvr-", " [name|idx]", "delete register argument with that name or index",
 	"afvrg", " [reg] [addr]", "define argument get reference",
 	"afvrs", " [reg] [addr]", "define argument set reference",
 	NULL
