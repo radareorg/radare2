@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2026 - xXAbieGamingXx */
 
-#undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "arch.s1c88"
 
 #include <r_arch.h>
@@ -8,7 +7,7 @@
 #include "s1c88_tab.h"
 
 static char *s1c88_regs(RArchSession *as) {
-	const char *p =
+	const char p[] =
 		"=PC	pc\n"
 		"=SP	sp\n"
 		"=BP	ix\n"
@@ -55,17 +54,17 @@ static char *s1c88_regs(RArchSession *as) {
 /* start of variable bank area in logic space, 0x0-0x7fff is static */
 #define S1C88_BANK 0x8000
 
-static ut64 s1c88_phys(ut8 cb, ut16 pc) {
+static inline ut64 s1c88_phys(ut8 cb, ut16 pc) {
 	return (pc < S1C88_BANK)? pc: (((ut64)cb << 15) | (pc & (S1C88_BANK - 1)));
 }
 
 /* pc holds address in logic space */
-static ut16 s1c88_pc(ut64 addr) {
+static inline ut16 s1c88_pc(ut64 addr) {
 	return (addr < S1C88_BANK)? (ut16)addr: (ut16) (S1C88_BANK | (addr & (S1C88_BANK - 1)));
 }
 
-static ut8 s1c88_cb(ut64 addr) {
-	return (addr < S1C88_BANK)? 0: (ut8) (addr >> 15);
+static inline ut8 s1c88_cb(ut64 addr) {
+	return (addr < S1C88_BANK)? 1: (ut8) (addr >> 15);
 }
 
 static const s1c88_opcode *s1c88_lookup(const ut8 *b, int len, int *plen) {
@@ -173,28 +172,33 @@ static bool s1c88_decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	return true;
 }
 
+static inline char s1c88_tail(RStrBuf *sb) {
+	const int len = r_strbuf_length (sb);
+	return (len > 0)? r_strbuf_get (sb)[len - 1]: 0;
+}
+
 static char *s1c88_norm(const char *s, bool numbers) {
 	R_RETURN_VAL_IF_FAIL (s, NULL);
-	char *o = malloc (strlen (s) * 3 + 2);
-	if (!o) {
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
 		return NULL;
 	}
-	char *w = o;
 	const char *p = s;
 	while (*p) {
-		if (isspace ((unsigned char)*p)) {
-			while (isspace ((unsigned char)*p)) {
+		const char last = s1c88_tail (sb);
+		if (isspace ((ut8)*p)) {
+			while (isspace ((ut8)*p)) {
 				p++;
 			}
 
-			if (w == o || !*p || strchr (",][+-", *p) || strchr (",[+-", w[-1])) {
+			if (!last || !*p || strchr (",][+-", *p) || strchr (",[+-", last)) {
 				continue;
 			}
-			*w++ = ' ';
+			r_strbuf_append (sb, " ");
 			continue;
 		}
 
-		if (numbers && isdigit ((unsigned char)*p) && (w == o || !isalnum ((unsigned char)w[-1]))) {
+		if (numbers && isdigit ((ut8)*p) && !isalnum ((ut8)last)) {
 			ut64 v;
 			char *end = NULL;
 			if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
@@ -203,15 +207,14 @@ static char *s1c88_norm(const char *s, bool numbers) {
 				v = strtoull (p, &end, 10);
 			}
 			if (end && end != p) {
-				w += sprintf (w, "0x%" PFMT64x, v);
+				r_strbuf_appendf (sb, "0x%" PFMT64x, v);
 				p = end;
 				continue;
 			}
 		}
-		*w++ = *p++;
+		r_strbuf_append_n (sb, p++, 1);
 	}
-	*w = 0;
-	return o;
+	return r_strbuf_drain (sb);
 }
 
 static int s1c88_match(const char *fmt, const char *in, ut64 *vals) {
@@ -231,12 +234,12 @@ static int s1c88_match(const char *fmt, const char *in, ut64 *vals) {
 				return -1;
 			}
 			in += 2;
-			if (!isxdigit ((unsigned char)*in)) {
+			if (!isxdigit ((ut8)*in)) {
 				return -1;
 			}
 			ut64 v = 0;
-			while (isxdigit ((unsigned char)*in)) {
-				const int c = (unsigned char)*in++;
+			while (isxdigit ((ut8)*in)) {
+				const int c = (ut8)*in++;
 				v = (v << 4) | (ut64) (isdigit (c)? c - '0': (c | 32) - 'a' + 10);
 			}
 			vals[n++] = neg? 0 - v: v; /* two's complement, checked when emitted */
@@ -358,11 +361,11 @@ static int s1c88_asm(ut8 *out, const char *str, ut64 addr) {
 	int ret = s1c88_asm_exact (out, in, addr);
 	if (ret < 1) {
 		const char *rest = NULL, *sf = NULL, *lf = NULL;
-		if (!strncmp (in, "jr ", 3)) {
+		if (r_str_startswith (in, "jr ")) {
 			rest = in + 3;
 			sf = "jrs";
 			lf = "jrl";
-		} else if (!strncmp (in, "car ", 4)) {
+		} else if (r_str_startswith (in, "car ")) {
 			rest = in + 4;
 			sf = "cars";
 			lf = "carl";
@@ -397,14 +400,8 @@ static bool s1c88_encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 }
 
 static int s1c88_archinfo(RArchSession *as, ut32 q) {
-	switch (q) {
-	case R_ARCH_INFO_MAXOP_SIZE:
+	if (q == R_ARCH_INFO_MAXOP_SIZE) {
 		return 4;
-	case R_ARCH_INFO_INVOP_SIZE:
-	case R_ARCH_INFO_MINOP_SIZE:
-	case R_ARCH_INFO_CODE_ALIGN:
-	case R_ARCH_INFO_DATA_ALIGN:
-		return 1;
 	}
 	return 1;
 }

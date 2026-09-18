@@ -652,6 +652,11 @@ ad "jrl 0x0070f4" f302f0 0x1200f0
 ad "jrl 0x001002" f30080 0x011000
 ad "carl 0x001001" f2ff7f 0x011000
 
+# the common area is shared by every bank, cb keeps its reset value of 1 there
+# so a branch out of it lands in the first bank
+ad "jrs 0x008001" f102 0x007ffe
+ad "jrl 0x009002" f30080 0x001000
+
 # jr/car pick the short or long form depending on the target
 a "jr 0x1035" f134 0x1000
 a "jr 0x2236" f33412 0x1000

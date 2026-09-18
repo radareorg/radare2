@@ -34,12 +34,24 @@ wx f102
 ao 1~jump:
 wx e700
 ao 1~jump:,fail:
+s 0x7ffe
+wx f102
+ao 1~jump:
+wx e702
+ao 1~jump:,fail:
+s 0x1000
+wx f30080
+ao 1~jump:
 EOF
 EXPECT=<<EOF
 jump: 0x00007fff
 jump: 0x00000001
 jump: 0x0001ffff
 fail: 0x00000000
+jump: 0x00008001
+jump: 0x00008001
+fail: 0x00008000
+jump: 0x00009002
 EOF
 RUN
 
@@ -168,7 +180,7 @@ return
 goto 0x00133b
 a += 0x34 + c
 hl = l * a
-l = hl / a; h = hl % a
+(l, h) = divmod (hl, a)
 a = rotate_left_carry (a, 1)
 a = rotate_left (a, 1)
 a = rotate_right_carry (a, 1)
