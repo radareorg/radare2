@@ -157,9 +157,9 @@ static RCoreHelpMessage help_msg_dc = {
 	"dcp", "", "continue until program code (mapped io section)",
 	"dcr", "", "continue until ret (uses step over)",
 	"dcs", "[?] <num>", "continue until syscall",
-	"dct", " <len>", "traptrace from curseek to len, no argument to list",
+	"dct", " <len>", "traptrace from curseek to len, omit arg to list",
 	"dcu", "[?] [..end|addr] ([end])", "continue until address (or range)",
-	"dcut", " ([ms])", "continue and interrupt the child after 100ms (or the given ms)",
+	"dcut", " ([ms])", "continue and interrupt the child after 100ms",
 	/*"TODO: dcu/dcr needs dbg.untilover=true??",*/
 	/*"TODO: same for only user/libs side, to avoid steping into libs",*/
 	/*"TODO: support for threads?",*/
@@ -180,7 +180,7 @@ static RCoreHelpMessage help_msg_dcu = {
 	"dcu", " address", "continue until address",
 	"dcu", " [..tail]", "continue until the range",
 	"dcu", " [from] [to]", "continue until the range",
-	"dcut", " ([ms])", "continue and interrupt the child after 100ms (or the given ms)",
+	"dcut", " ([ms])", "continue and interrupt the child after 100ms",
 	NULL
 };
 
@@ -815,7 +815,7 @@ static RCoreHelpMessage help_msg_dtsw = {
 	"Usage:", "dtsw[acj]", "Checkpoint replay streams",
 	"dtsw", "", "list checkpoint replay streams",
 	"dtswa", " <id> <fd> <hex>", "append replay bytes to a checkpoint fd stream",
-	"dtswc", " <id> [fd]", "clear replay bytes for one fd or all fds on a checkpoint",
+	"dtswc", " <id> [fd]", "clear replay bytes for one/all fds on a checkpoint",
 	"dtswj", "", "list checkpoint replay streams in JSON",
 	NULL
 };

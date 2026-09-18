@@ -159,7 +159,7 @@ static RCoreHelpMessage help_msg_om = {
 	"omm", " [fd]", "create default map for given fd (omm `oq`)",
 	"omn", "[?] ([fd]) [name]", "manage map names",
 	"omo", "[j*]", "diff overlay map data (usually relocs)",
-	"omp", " [mapid] rwx", "change map rwx permissions (see dmp for debug)",
+	"omp", " [mapid] rwx", "change map rwx permissions (see dmp)",
 	"ompg", "[+-]rwx", "global change permissions for all maps",
 	"omr", "[?]", "reorder map priority",
 	"oms", " [mapid] [newsize]", "show or change size map with corresponding id, map size cannot be 0",

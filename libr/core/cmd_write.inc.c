@@ -102,7 +102,7 @@ static RCoreHelpMessage help_msg_wc = {
 	"wcj", "", "list all write changes in JSON",
 	"wcl", "", "list io cache layers",
 	"wcp", " [fd]", "list all cached write-operations on p-layer for specified fd or current fd",
-	"wcp*", " [fd]", "list all cached write-operations on p-layer in radare commands",
+	"wcp*", " [fd]", "list cached write-operations on p-layer in radare commands",
 	"wcpi", " [fd]", "commit and invalidate pcache for specified fd or current fd",
 	"wcr", "", "revert all writes in the cache",
 	"wcs", "", "squash the consecutive write ops",

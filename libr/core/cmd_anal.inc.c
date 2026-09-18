@@ -71,7 +71,7 @@ static RCoreHelpMessage help_msg_afu = {
 static RCoreHelpMessage help_msg_aae = {
 	"Usage:", "aae", "[pf] ([addr]) # analyze all kind of stuff using esil",
 	"aae", " [size] ([addr])", "same as aepa@@@i - define anal pins by import flag names",
-	"aae", "", "honor anal.{in,from,to} and emulate all executable regions",
+	"aae", "", "honor anal.{in,from,to} and emulate executable regions",
 	"aaef", "", "emulate all functions using esil to find out computed references (same as aef@@@F)",
 	"aaep", "", "same as aepa@@@i - define anal pins by import flag names",
 	"aaep", "a", "run 'aep ret0@@@i' and then 'aaep' - all unknown imports are faked to return 0",
@@ -253,7 +253,7 @@ static RCoreHelpMessage help_msg_ai = {
 static RCoreHelpMessage help_msg_aar = {
 	"Usage:", "aar", "[j*] [sz] # search and analyze xrefs",
 	"aar", "", "analyze xrefs in current section ",
-	"aar", " [sz]", "analyze xrefs starting in current offset until sz bytes are consumed",
+	"aar", " [sz]", "analyze xrefs starting in current offset until sz bytes consumed",
 	"aarr", "", "analyze all function reference graph to find more functions (EXPERIMENTAL)",
 	"aar*", " [sz]", "list found xrefs in radare commands format",
 	"aarj", " [sz]", "list found xrefs in JSON format",
@@ -622,10 +622,10 @@ static RCoreHelpMessage help_msg_afb = {
 	"afbt", " [tableaddr] [elem_sz] [count] [seg]", "analyze function jumptable (adding seg to each elem)",
 	"afbc", "[-] [color] ([addr])", "colorize basic block (same as 'abc', afbc- to unset)",
 	"afbd", "", "list function basic block dependency list in order and set abe values",
-	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
+	"afbe", " bbfrom bbto", "add basic-block edge for switch-case",
 	"afbF", "([0|1])", "Toggle the basic-block 'folded' attribute", // why not lowercase?
-	"afbi", "[j]", "print current basic block information",
-	"afbj", " [addr]", "show basic blocks information in json",
+	"afbi", "[j]", "print basic block information",
+	"afbj", " [addr]", "show basic blocks in json",
 	"afbr", "[?]", "show addresses of instructions which leave the function",
 	"afbo", "", "list addresses of each instruction for every basic block in function (see abo)",
 	"afB", " [bits]", "define asm.bits for the given function",
@@ -879,7 +879,7 @@ static RCoreHelpMessage help_msg_aft = {
 
 static RCoreHelpMessage help_msg_afv = {
 	"Usage:", "afv[rbs]", " Function variables manipulation",
-	"afv*", "", "output r2 command to add args/locals to flagspace",
+	"afv*", "", "output r2 command to add vars to flagspace",
 	"afv-", "([name])", "remove all or given var",
 	"afv=", "", "list function variables and arguments with disasm refs",
 	"afva", "", "analyze function arguments/locals",
