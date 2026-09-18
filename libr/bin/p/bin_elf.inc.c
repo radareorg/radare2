@@ -1181,6 +1181,10 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			V = S + addend - P;
 			r_write_ble32 (buf, V, bo->endian);
 			break;
+		case R_ARM_JUMP_SLOT:
+			// a lazy slot holds the plt0 address, not an addend
+			r_write_ble32 (buf, S, bo->endian);
+			break;
 		case R_ARM_CALL:
 		case R_ARM_JUMP24:
 		case R_ARM_PC24: {

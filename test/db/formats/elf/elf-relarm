@@ -49,6 +49,23 @@ bl reloc.r4
 EOF
 RUN
 
+NAME=ELF: arm lazy jump slots take the symbol, not the plt0 word
+FILE=bins/elf/libcurl.so.4.2.0
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv4 @ 0x4cb08
+pv4 @ 0x4cb0c
+pv4 @ 0x4c218
+pv4 @ 0x4c748
+EOF
+EXPECT=<<EOF
+0x0004d528
+0x00036d40
+0x000088b8
+0x0000f5f0
+EOF
+RUN
+
 NAME=ELF: ppc relocs
 FILE=bins/elf/hello.ppc
 CMDS=<<EOF
