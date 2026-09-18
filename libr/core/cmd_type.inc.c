@@ -70,7 +70,7 @@ static RCoreHelpMessage help_msg_tf = {
 	"tf", "", "list all function definitions loaded",
 	"tf", " <name>", "show function signature",
 	"tf-", "<name>", "delete function type (supports glob with *)",
-	"tfc", " [name]", "list all/given function signatures in C output format with newlines",
+	"tfc", " [name]", "list all/given function signatures in C format with newlines",
 	"tfcj", " <name>", "same as above but in JSON",
 	"tfe", " <name>", "edit function signature with cfg.editor",
 	"tfj", "", "list all function definitions in JSON",

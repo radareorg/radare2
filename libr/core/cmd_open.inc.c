@@ -15,7 +15,7 @@ static RCoreHelpMessage help_msg_o = {
 	"o", "-1", "close file descriptor 1",
 	"o*", "[*]", "list opened files in r2 commands, show r2 script to set flag for each fd",
 	"o+", " [file]", "open a file in read-write mode",
-	"o++", " [file]", "create and open file in read-write mode (see ot and omr)",
+	"o++", " [file]", "create and open file in read-write mode (see ot/omr)",
 	"o-", "[?][#!*$.]", "close opened files",
 	"o.", "", "show current filename (or o.q/oq to get the fd)",
 	"o:", " [len]", "open a malloc://[len] copying the bytes from current offset", // XXX R2_590 - should be an alias for ':' no need for a malloc:// wrapper imho

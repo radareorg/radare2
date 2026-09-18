@@ -265,7 +265,7 @@ static RCoreHelpMessage help_msg_equal = {
 	"\nremote commands:", "", "",
 	"=", "[*j]", "list all open connections",
 	"=<", "[fd] cmd", "send output of local command to remote fd", // XXX may not be a special char
-	"=", "[fd] cmd", "exec cmd at remote 'fd' (last open is default one)",
+	"=", "[fd] cmd", "exec cmd at remote 'fd' (last open is default)",
 	"=!", " cmd", "run command via r_io_system",
 	"=+", " [proto://]host:port", "connect to remote host:port (*rap://, raps://, tcp://, udp://, http://)",
 	"=-", "[fd]", "remove all hosts or host 'fd'",
