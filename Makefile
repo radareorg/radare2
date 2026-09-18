@@ -214,7 +214,7 @@ clean:
 distclean mrproper: clean
 	rm -rf libr/arch/p/arm/v35/arch-arm*
 	rm -rf shlr/*.a shlr/**/*.a
-	$(MAKE) -C subprojects clean 
+	$(MAKE) -C subprojects mrproper
 
 pkgcfg:
 	cd libr && ${MAKE} pkgcfg
