@@ -158,10 +158,10 @@ func.waitid.arg.2=siginfo_t *,infop
 func.waitid.arg.3=int,options
 func.waitid.ret=int
 
-stack_chk_fail=func
-func.stack_chk_fail.args=0
-func.stack_chk_fail.noreturn=true
-func.stack_chk_fail.ret=void
+__stack_chk_fail=func
+func.__stack_chk_fail.args=0
+func.__stack_chk_fail.noreturn=true
+func.__stack_chk_fail.ret=void
 
 cxa_throw=func
 func.cxa_throw.args=3
