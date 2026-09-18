@@ -121,6 +121,11 @@ typedef struct Elf_(dynamic_info) {
 	bool dt_aarch64_pac_plt; /* AArch64 -z pac-plt: 24 byte plt entries */
 	Elf_(Xword) dt_flags;
 	Elf_(Xword) dt_flags_1;
+	// the dt_*sz above as declared, these cut to the bytes that are loaded
+	Elf_(Xword) relasz_read;
+	Elf_(Xword) relsz_read;
+	Elf_(Xword) relrsz_read;
+	Elf_(Xword) pltrelsz_read;
 	Elf_(Xword) dt_rpath;
 	Elf_(Xword) dt_runpath;
 	RVecElfOff dt_needed;
