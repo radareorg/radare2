@@ -1778,7 +1778,8 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	   	return NULL;
 	}
 	ELFOBJ *eo = obj->bin_obj;
-	size_t cdsz = obj->info? (obj->info->bits / 8): 0;
+	// a slot holds a pointer; bits is the thumb-biased decode width on arm
+	const size_t cdsz = sizeof (Elf_(Addr));
 	// PPC64 ELFv1 executables (ET_EXEC) have JMP_SLOT/ADDR64 relocs that need
 	// patching at analysis time just like shared libs — the dynamic linker fills these
 	// at runtime but r2 must do it statically.
@@ -1815,8 +1816,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	if (eo->ehdr.e_type == ET_REL && (eo->ehdr.e_machine == EM_PPC64
 			|| eo->ehdr.e_machine == EM_PPC || eo->ehdr.e_machine == EM_AARCH64
 			|| eo->ehdr.e_machine == EM_ARM)) {
-		const ut64 slot = (cdsz > 0)? cdsz: 4;
-		n_vaddr = (n_vaddr + slot - 1) & ~(slot - 1);
+		n_vaddr = (n_vaddr + cdsz - 1) & ~(cdsz - 1);
 	}
 	// reserve at least that space
 	size = eo->g_reloc_num * cdsz;
