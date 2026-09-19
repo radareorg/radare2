@@ -169,13 +169,16 @@ R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *o
 			if (run == 15) {
 				for (; ip < ip_end;) {
 					const int c = g_buf[ip++];
+					if (run > maxLen || c > maxLen - run) {
+						return -1;
+					}
 					run += c;
 					if (c != 255) {
 						break;
 					}
 				}
 			}
-			if ((p + run) > maxLen || (ip + run) > ip_end) {
+			if ((p + run) > maxLen || run > ip_end - ip) {
 				return -1;
 			}
 
