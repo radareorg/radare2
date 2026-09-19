@@ -706,6 +706,13 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 			if (r_str_startswith (base_type, "type.")) {
 				base_type += 5;
 			}
+			// a member typed by a scalar typedef formats as the typedef's target
+			char *resolved_member = r_type_resolve_typedef (TDB, base_type);
+			if (resolved_member && !type_aggregate_kind (TDB, resolved_member, &(const char *){ NULL })) {
+				r_str_ncpy (type_name, resolved_member, sizeof (type_name));
+				base_type = type_name;
+			}
+			free (resolved_member);
 			// Handle general pointers except for char *
 			if ((strstr (base_type, "*(") || strstr (base_type, " *")) && !r_str_startswith (base_type, "char *")) {
 				isfp = true;
@@ -880,6 +887,11 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 			}
 			return NULL;
 		}
+		// a typedef of a scalar formats as its target: typedef.size_t=uint64_t is a q
+		char *target = r_type_resolve_typedef (TDB, t);
+		char *fmt = target? r_type_format (TDB, target): NULL;
+		free (target);
+		return fmt;
 	}
 	return NULL;
 }

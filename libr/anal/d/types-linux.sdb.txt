@@ -171,9 +171,8 @@ func.cxa_throw.arg.2=void *,dest
 func.cxa_throw.noreturn=true
 func.cxa_throw.ret=void
 
-off64_t=type
-type.off64_t=d
-type.off64_t.size=64
+off64_t=typedef
+typedef.off64_t=int64_t
 
 errno_location=func
 func.errno_location.args=0

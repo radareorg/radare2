@@ -4,7 +4,7 @@ CMDS=<<EOF
 af;pdc~strcp
 EOF
 EXPECT=<<EOF
-    sym.imp.__strcpy_chk () // char *__strcpy_chk("", -1, -1)
+    sym.imp.__strcpy_chk () // char *__strcpy_chk("", -1, 32)
 EOF
 RUN
 
@@ -264,9 +264,6 @@ int8_t
 long
 long long
 short
-size_t
-ssize_t
-uid_t
 uint16_t
 uint32_t
 uint64_t
@@ -484,9 +481,6 @@ int8_t
 long
 long long
 short
-size_t
-ssize_t
-uid_t
 uint16_t
 uint32_t
 uint64_t
@@ -520,9 +514,6 @@ int8_t
 long
 long long
 short
-size_t
-ssize_t
-uid_t
 uint16_t
 uint32_t
 uint64_t
@@ -2298,6 +2289,7 @@ RUN
 
 NAME=typedef stuff
 FILE=--
+ARGS=-e asm.os=linux
 CMDS=<<EOF
 'td typedef int Number;
 tt
@@ -2307,6 +2299,14 @@ t Number
 EOF
 EXPECT=<<EOF
 Number
+gid_t
+off64_t
+off_t
+pid_t
+size_t
+ssize_t
+time_t
+uid_t
 int
 Number=typedef
 typedef.Number=int
@@ -2500,7 +2500,7 @@ EOF
 EXPECT=<<EOF
 {
   "name": "NSString",
-  "format": "pxzd p0 p1 str len",
+  "format": "pqzd p0 p1 str len",
   "fields": [
     {
       "name": "p0",
