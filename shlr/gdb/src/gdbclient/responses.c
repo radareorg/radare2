@@ -93,7 +93,7 @@ int handle_removebp(libgdbr_t *g) {
 }
 
 int handle_attach(libgdbr_t *g) {
-	if (g->data_len == 3 && g->data[0] == 'E') {
+	if (g->data_len > 0 && g->data[0] == 'E') {
 		send_ack (g);
 		return -1;
 	}
@@ -331,29 +331,33 @@ int handle_lldb_read_reg(libgdbr_t *g) {
 
 	// Get maximum register number
 	for (regnum = 0; *g->registers[regnum].name; regnum++) {
-		if (g->registers[regnum].offset + g->registers[regnum].size > buflen) {
-			buflen = g->registers[regnum].offset + g->registers[regnum].size;
+		const size_t end = gdbr_reg_byte_end (&g->registers[regnum]);
+		if (end > buflen) {
+			buflen = end;
 		}
 	}
 	tot_regs = regnum;
-	if (buflen >= (size_t)g->read_max || buflen >= (size_t)g->data_max) {
-		R_LOG_ERROR ("%s: register buffer %zu exceeds io buffers", __func__, buflen);
+	if (!gdbr_ensure_data_capacity (g, buflen + 1)) {
+		R_LOG_ERROR ("%s: cannot allocate register buffer of size %zu", __func__, buflen);
 		return -1;
 	}
 
-	// We're not using the receive buffer till next packet anyway. Better use it
-	buf = g->read_buff;
+	buf = calloc (buflen? buflen: 1, 1);
+	if (!buf) {
+		return -1;
+	}
 	memset (buf, 0, buflen);
 
 	if (!(ptr = r_str_tok_r (g->data, ";", &save_ptr))) {
+		free (buf);
 		return -1;
 	}
 	while (ptr) {
 		if (isxdigit ((ut8)*ptr)) {
 			regnum = (int) strtoul (ptr, NULL, 16);
 			if (regnum < tot_regs && (ptr2 = strchr (ptr, ':'))) {
-				const size_t roff = g->registers[regnum].offset;
-				const size_t rsz = g->registers[regnum].size;
+				const size_t roff = gdbr_reg_byte_offset (&g->registers[regnum]);
+				const size_t rsz = gdbr_reg_byte_size (&g->registers[regnum]);
 				if (roff < buflen && rsz <= buflen - roff) {
 					size_t hexlen = strlen (ptr2 + 1);
 					if (hexlen / 2 > rsz) {
@@ -367,5 +371,7 @@ int handle_lldb_read_reg(libgdbr_t *g) {
 	}
 	memcpy (g->data, buf, buflen);
 	g->data_len = buflen;
+	g->data[buflen] = '\0';
+	free (buf);
 	return 0;
 }
