@@ -778,7 +778,8 @@ On Linux, set `LD_LIBRARY_PATH` to the absolute `libr/*/` library directories
 and `R2_LIBR_PLUGINS` to the checkout's absolute `libr` path.
 
 C unit tests live in `test/unit/`; `make -C test unit-tests` uses the configured
-installation prefix too. Prefer focused regressions for the behavior changed.
+installation prefix too. For new regressions, exercise the changed behavior
+through `r2` commands in `test/db/` using `r2r`, instead of adding C unit tests.
 
 r2r's source can be found in the `binr/r2r/` directory, while binaries used for
 tests are located in the following GitHub repository:
