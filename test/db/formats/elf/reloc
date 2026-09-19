@@ -1089,3 +1089,273 @@ EXPECT=<<EOF
 111 0x00402870       GLOBAL FUNC       __ctype_tolower_loc
 EOF
 RUN
+
+NAME=ELF: a DT_RELASZ past the loaded bytes falls back to the rela header
+FILE=bins/fuzzed/elf7
+CMDS=ir
+EXPECT=<<EOF
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x00619ff8 0x00019ff8 SET_64 6     __gmon_start__
+0x0061a600 0x0061a600 ADD_64 5     __progname
+0x0061a610 0x0061a610 ADD_64 5     stdout
+0x0061a620 0x0061a620 ADD_64 5     opvind
+0x0061a640 0x0061a640 ADD_64 5     optarg
+0x0061a648 0x0061a648 ADD_64 5     __progname_full
+0x0061a650 0x0061a650 ADD_64 5     stderr
+EOF
+RUN
+
+NAME=ELF: oversized rela.plt header stops at the next section
+FILE=bins/fuzzed/elf9
+CMDS=<<EOF
+ir~?
+ir~0xba,0xbe,0xbf
+EOF
+EXPECT=<<EOF
+103
+EOF
+RUN
+
+NAME=ELF: DT_RELA spanning three rela sections keeps every row
+FILE=bins/elf/elf-solaris-sparc-ls
+CMDS=<<EOF
+ir~?
+ir~atexit
+ir~_environ
+EOF
+EXPECT=<<EOF
+124
+0x0003f98c 0x0001f98c ADD_32 21    atexit
+0x000408e8 0x000408e8 ADD_32 19    _environ
+EOF
+RUN
+
+NAME=ELF: rel.dyn longer than DT_RELSZ keeps its trailing rows
+FILE=bins/elf/libc.so.0
+CMDS=<<EOF
+ir~?
+ir~__divdi3
+EOF
+EXPECT=<<EOF
+249
+0x0009af8c 0x0005af8c SET_32 3     __divdi3
+EOF
+RUN
+
+NAME=ELF: zeroed reloc section addresses leave dynamic relocs alone
+FILE=bins/elf/libshella-2.10.3.1.so
+CMDS=<<EOF
+ir~?
+ir~0x0000eff4
+EOF
+EXPECT=<<EOF
+61
+0x0000eff4 0x0000dff4 SET_32 22
+EOF
+RUN
+
+NAME=ELF: renamed rela sections keep their relocs
+FILE=bins/elf/simple-hello-world-with-wrong-rela-section-name
+CMDS=ir
+EXPECT=<<EOF
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x00003de8 0x00002de8 ADD_64 8      0x00001130
+0x00003df0 0x00002df0 ADD_64 8      0x000010e0
+0x00003fd8 0x00002fd8 SET_64 6     _ITM_deregisterTMCloneTable
+0x00003fe0 0x00002fe0 SET_64 6     __libc_start_main
+0x00003fe8 0x00002fe8 SET_64 6     __gmon_start__
+0x00003ff0 0x00002ff0 SET_64 6     _ITM_registerTMCloneTable
+0x00003ff8 0x00002ff8 SET_64 6     __cxa_finalize
+0x00004018 0x00003018 SET_64 7     printf
+0x00004028 0x00003028 ADD_64 8      0x00004028
+EOF
+RUN
+
+NAME=ELF: reloc tables are bounded by vaddr not by file offset
+FILE=bins/elf/switch-hello-world.elf
+CMDS=<<EOF
+ir~?
+ir~0x0003a000
+EOF
+EXPECT=<<EOF
+405
+0x0003a000 0x0004a000 ADD_64 1027   0x00000318
+0x0003a128 0x0004a128 ADD_64 1027   0x0003a000
+0x0003a1c8 0x0004a1c8 ADD_64 1027   0x0003a000
+0x0003a220 0x0004a220 ADD_64 1027   0x0003a000
+0x0003a258 0x0004a258 ADD_64 1027   0x0003a000
+0x0003a268 0x0004a268 ADD_64 1027   0x0003a000
+EOF
+RUN
+
+NAME=ELF: a rela.dyn table ending mid-entry drops the partial reloc
+FILE=malloc://0x1b000
+CMDS=<<EOF
+wff bins/fuzzed/elf7
+wx b0 @ 0x1a960
+oba 0
+ir~?
+ir~__ctype_toupper_loc
+?e --
+wx c0 @ 0x1a960
+oba 0
+ir~?
+ir~__ctype_toupper_loc
+EOF
+EXPECT=<<EOF
+9
+--
+10
+0x0021a018 0x0001a018 SET_64 7     __ctype_toupper_loc
+EOF
+RUN
+
+NAME=ELF: a rel.dyn table ending mid-entry drops the partial reloc
+FILE=malloc://0x4000
+CMDS=<<EOF
+wff bins/elf/libtest_32.so
+wx 3c @ 0xf98
+oba 0
+ir~_ITM_registerTMCloneTable
+?e --
+wx 40 @ 0xf98
+oba 0
+ir~_ITM_registerTMCloneTable
+EOF
+EXPECT=<<EOF
+--
+0x00001ffc 0x00000ffc SET_32 6     _ITM_registerTMCloneTable
+EOF
+RUN
+
+NAME=ELF: a rel.dyn section ending mid-entry drops the partial reloc
+FILE=malloc://0x4000
+CMDS=<<EOF
+wff bins/elf/libtest_32.so
+wx 10 @ 0xf98
+wx 3c @ 0x178c
+oba 0
+ir~_ITM_registerTMCloneTable
+?e --
+wx 40 @ 0x178c
+oba 0
+ir~_ITM_registerTMCloneTable
+EOF
+EXPECT=<<EOF
+--
+0x00001ffc 0x00000ffc SET_32 6     _ITM_registerTMCloneTable
+EOF
+RUN
+
+NAME=ELF: optional section sizes must not truncate valid dynamic relocations
+FILE=malloc://0x4000
+CMDS=<<EOF
+wff bins/elf/libtest_32.so
+oba 0
+ir~?
+?e --
+wx 08000000 @ 0x178c
+oba 0
+ir~?
+?e --
+wx 00000000 @ 0x20
+wx 00000000 @ 0x30
+oba 0
+ir~?
+EOF
+EXPECT=<<EOF
+11
+--
+11
+--
+11
+EOF
+RUN
+
+NAME=ELF: shortened rela headers leave DT_RELA and DT_JMPREL whole
+FILE=malloc://0x2100
+CMDS=<<EOF
+wff bins/elf/simple_malloc_x86_64
+wx 18 @ 0x1c20
+wx 18 @ 0x1c60
+oba 0
+ir~?
+?e --
+wx 0000 @ 0x3c
+oba 0
+ir~?
+EOF
+EXPECT=<<EOF
+14
+--
+14
+EOF
+RUN
+
+NAME=ELF: a shortened relr header leaves DT_RELR whole
+FILE=malloc://0x81000
+CMDS=<<EOF
+wff bins/elf/ls-toybox
+wx 0800 @ 0x80a08
+oba 0
+ir~?
+EOF
+EXPECT=<<EOF
+2124
+EOF
+RUN
+
+NAME=ELF: DT_RELSZ and DT_PLTRELSZ past the loaded bytes fall back to the headers
+FILE=malloc://0x4000
+CMDS=<<EOF
+wff bins/elf/libtest_32.so
+wx 00ff0000 @ 0xf98
+oba 0
+ir~?
+?e --
+wx 40000000 @ 0xf98
+wx 00ff0000 @ 0xf78
+oba 0
+ir~?
+?e --
+wx f0020000 @ 0xf88
+wx 48000000 @ 0xf98
+oba 0
+ir~printf
+?e --
+wff bins/elf/libtest_32.so
+wx 00000000 @ 0xf78
+wx 00ff0000 @ 0xf98
+wx 40 @ 0x17b4
+oba 0
+ir~printf
+EOF
+EXPECT=<<EOF
+11
+--
+11
+--
+0x0000200c 0x0000100c SET_32 7     printf
+--
+0x0000200c 0x0000100c SET_32 7     printf
+EOF
+RUN
+
+# DT_DEBUG becomes DT_CREL at a zero byte, a RELA entry sits at .rela.dyn - 1
+NAME=ELF: a rela section after a dynamic CREL stream is skipped
+FILE=malloc://0x2100
+CMDS=<<EOF
+wff bins/elf/simple_malloc_x86_64
+wx 00 @ 0xf18
+wx 101020000000000008000000000000003412000000000000 @ 0x47f
+wx 26 @ 0xeb0
+wx 7c04 @ 0xeb8
+oba 0
+ir~?
+EOF
+EXPECT=<<EOF
+5
+EOF
+RUN
