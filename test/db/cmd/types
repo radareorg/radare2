@@ -2289,6 +2289,7 @@ RUN
 
 NAME=typedef stuff
 FILE=--
+ARGS=-e asm.os=linux
 CMDS=<<EOF
 'td typedef int Number;
 tt
@@ -2299,6 +2300,7 @@ EOF
 EXPECT=<<EOF
 Number
 gid_t
+off64_t
 off_t
 pid_t
 size_t
