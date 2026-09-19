@@ -193,7 +193,7 @@ af
 pdc
 EOF
 EXPECT=<<EOF
-// callconv: x0 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
+// callconv: x0:x1 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
 void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
     x8 = [x0 + 0x60] // arg1
     x8 = [x8 + 0x60]
@@ -268,7 +268,7 @@ af
 pdco
 EOF
 EXPECT=<<EOF
- 0x100003a54 |                                | // callconv: x0 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
+ 0x100003a54 |                                | // callconv: x0:x1 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
  0x100003a54 |                                | void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
  0x100003a54 |     x8 = [x0 + 0x60] // arg1
  0x100003a58 |     x8 = [x8 + 0x60]
@@ -755,7 +755,7 @@ af
 pdc && ?e decompile-ok
 EOF
 EXPECT=<<EOF
-// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+// callconv: rax:rdx amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
 void fcn.00000000 (void) {
     return
 }
@@ -915,9 +915,9 @@ pdcj~{annotations[11]}
 pdcj~{annotations[12]}
 EOF
 EXPECT=<<EOF
-{"start":505,"end":557,"offset":4294982284,"type":"offset"}
-{"start":557,"end":605,"offset":4294982264,"type":"offset"}
-{"start":605,"end":652,"offset":4294982252,"type":"offset"}
+{"start":508,"end":560,"offset":4294982284,"type":"offset"}
+{"start":560,"end":608,"offset":4294982264,"type":"offset"}
+{"start":608,"end":655,"offset":4294982252,"type":"offset"}
 EOF
 RUN
 
@@ -931,7 +931,7 @@ afb+ 0 4 6
 pdc
 EOF
 EXPECT=<<EOF
-// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+// callconv: rax:rdx amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
 void fcn.00000000 (void) {
         eax = 0
         return eax
@@ -953,7 +953,7 @@ afb+ 0 4 6
 pdca
 EOF
 EXPECT=<<EOF
- 0x00000000 |                                | // callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+ 0x00000000 |                                | // callconv: rax:rdx amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
  0x00000000 |                                | void fcn.00000000 (void) {
  0x00000000 | xor eax, eax                   |         eax = 0
  0x00000002 | ret                            |         return eax
@@ -1213,7 +1213,7 @@ afb+ 0 0 7 0x10
 pdc @ 0
 EOF
 EXPECT=<<EOF
-// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+// callconv: rax:rdx amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
 void fcn.caller (void) {
     eax = 1
     goto fcn.00000010;
@@ -1236,7 +1236,7 @@ pdcj~{annotations[2].offset}
 CC
 EOF
 EXPECT=<<EOF
-// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+// callconv: rax:rdx amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
 void fcn.00000000 (void) {
     eax = 5
     hlt
@@ -1789,7 +1789,7 @@ afb+ 0x20 0x20 8
 pdc
 EOF
 EXPECT=<<EOF
-// callconv: x0 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
+// callconv: x0:x1 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
 void wrapper (void) {
     if (!x0) {
         goto helper;

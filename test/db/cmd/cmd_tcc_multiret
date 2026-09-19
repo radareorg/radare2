@@ -26,7 +26,7 @@ EOF
 EXPECT=<<EOF
 ["rax","rdx"]
 rax:rdx dlang (rdi, rsi, rdx, rcx, r8d, r9d, stack);
-["rax"]
+["rax","rdx"]
 --
 ["r0","r1","r2"]
 r0:r1:r2 wasm3ret (a0);
