@@ -26,7 +26,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF s390x: GLOB_DAT and JMP_SLOT slots unchanged under -B
+NAME=ELF s390x: GLOB_DAT and JMP_SLOT slots keep the file word under -B
 FILE=bins/elf/ls-s390x
 ARGS=-B 0x100000 -e bin.relocs.apply=true
 CMDS=<<EOF

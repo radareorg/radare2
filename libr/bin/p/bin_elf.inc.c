@@ -552,19 +552,14 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		}
 		break;
 	case EM_S390:
+		r->type = (sizeof (Elf_(Addr)) == 4)? R_BIN_RELOC_32: R_BIN_RELOC_64;
 		switch (rel->type) {
 		case R_390_GLOB_DAT: // globals
-			if (sizeof (Elf_(Addr)) == 4) {
-				SET (32);
-			}
-			SET (64);
-			break;
+			r->additive = 0;
+			return r;
 		case R_390_RELATIVE:
-			if (sizeof (Elf_(Addr)) == 4) {
-				ADD (32, 0);
-			}
-			ADD (64, 0);
-			break;
+			r->additive = !rel->implicit_addend;
+			return r;
 		}
 		break;
 	case EM_386: switch (rel->type) {
