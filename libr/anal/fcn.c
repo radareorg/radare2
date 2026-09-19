@@ -815,8 +815,8 @@ static void analyze_retpoline(RAnal *anal, RAnalOp *op) {
 	}
 }
 
-static inline bool op_is_set_bp(const char *op_dst, const char *op_src, const char *bp_reg, const char *sp_reg) {
-	return op_dst && op_src && !strcmp (bp_reg, op_dst) && !strcmp (sp_reg, op_src);
+static inline bool op_is_set_bp(RAnal *anal, const char *op_dst, const char *op_src, const char *bp_reg, const char *sp_reg) {
+	return op_src && !strcmp (sp_reg, op_src) && r_anal_reg_same (anal, bp_reg, op_dst);
 }
 
 static inline bool has_vars(RAnal *anal, ut64 addr) {
@@ -1496,7 +1496,7 @@ noskip:
 				}
 			}
 			// a load or store through sp names sp as a base; only a register move makes bp the frame pointer
-			if (has_stack_regs && op_is_set_bp (op_dst, op_src, bp_reg, sp_reg) && !dst->memref && !src0->memref) {
+			if (has_stack_regs && op_is_set_bp (anal, op_dst, op_src, bp_reg, sp_reg) && !dst->memref && !src0->memref) {
 				fcn->bp_off = fcn->stack;
 			}
 			// Is this a mov of immediate value into a register?
@@ -1564,7 +1564,7 @@ noskip:
 				lea_cnt++;
 				r_list_append (anal->leaddrs, pair);
 			}
-			if (has_stack_regs && op_is_set_bp (op_dst, op_src, bp_reg, sp_reg)) {
+			if (has_stack_regs && op_is_set_bp (anal, op_dst, op_src, bp_reg, sp_reg)) {
 				fcn->bp_off = fcn->stack - src0->delta;
 			}
 			if (dst && dst->reg && op->ptr > 0 && op->ptr != UT64_MAX) {
@@ -2316,7 +2316,7 @@ analopfinish:
 			break;
 		}
 		if (has_stack_regs && op_dst_writeonly) {
-			if (op_is_set_bp (op_dst, op_src, bp_reg, sp_reg) && !dst->memref && !src0->memref && src1) {
+			if (op_is_set_bp (anal, op_dst, op_src, bp_reg, sp_reg) && !dst->memref && !src0->memref && src1) {
 				switch (op->type & R_ANAL_OP_TYPE_MASK) {
 				case R_ANAL_OP_TYPE_ADD:
 					fcn->bp_off = fcn->stack - src1->imm;

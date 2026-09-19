@@ -1373,11 +1373,42 @@ static ut64 faddr(RCore *core, ut64 addr, bool *nr) {
 }
 
 static bool has_function_signature(RAnalFunction *fcn) {
-	RAnalFunctionSignature *sig = r_anal_function_get_signature (fcn);
-	const bool declared = sig && (sig->origin == R_ANAL_FUNCTION_SIGNATURE_ORIGIN_NAME
-		|| sig->origin == R_ANAL_FUNCTION_SIGNATURE_ORIGIN_ADDRESS);
-	r_anal_function_signature_free (sig);
+	Sdb *db = fcn->anal->sdb_types;
+	char *name = r_type_func_key (db, fcn->name);
+	if (!name) {
+		name = r_type_link_at (db, fcn->addr);
+	}
+	const char *linked = name? name: sdb_const_getf (db, NULL, "fcnlink.%08" PFMT64x, fcn->addr);
+	const bool declared = linked && r_type_func_prototype_exist (db, linked);
+	free (name);
 	return declared;
+}
+
+static bool is_default_local(RAnalVar *var, const char *type) {
+	if (var->isarg || strcmp (var->type, type) || var->comment || !RVecAnalVarConstraint_empty (&var->constraints)
+			|| !r_str_startswith (var->name, "var_")) {
+		return false;
+	}
+	const char *p = var->name + 4;
+	if (r_str_startswith (p, "bp_") || r_str_startswith (p, "sp_")) {
+		p += 3;
+	}
+	if (!isxdigit ((ut8)*p)) {
+		return false;
+	}
+	while (isxdigit ((ut8)*p)) {
+		p++;
+	}
+	if (*p++ != 'h') {
+		return false;
+	}
+	if (*p == '_' && isdigit ((ut8)p[1])) {
+		p++;
+		while (isdigit ((ut8)*p)) {
+			p++;
+		}
+	}
+	return !*p;
 }
 
 // function argument types and names into anal/types
@@ -2135,6 +2166,15 @@ static int cmd_afv(RCore *core, const char *str) {
 		if (fcn) {
 			if (!has_function_signature (fcn)) {
 				r_anal_function_delete_all_vars (fcn);
+			} else if (sdb_const_getf (core->anal->sdb_types, NULL, "fcnlink.%08" PFMT64x, fcn->addr)) {
+				r_strf_var (type, 16, "int%d_t", fcn->bits? fcn->bits: core->anal->config->bits);
+				size_t i = RVecAnalVarPtr_length (&fcn->vars);
+				while (i > 0) {
+					RAnalVar *var = *RVecAnalVarPtr_at (&fcn->vars, --i);
+					if (is_default_local (var, type)) {
+						r_anal_var_delete (core->anal, var);
+					}
+				}
 			}
 			r_core_recover_vars (core, fcn, false);
 			free (p);
@@ -4349,12 +4389,23 @@ static void r_core_anal_fmap(RCore *core, const char *input) {
 	free (bitmap);
 }
 
-static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
+static void rename_fcnsig(RAnalFunction *fcn, const char *oname, const char *nname) {
+	RAnal *anal = fcn->anal;
 #define DB anal->sdb_types
+	if (!strcmp (oname, nname)) {
+		return;
+	}
 	char *type_name = r_type_func_key (DB, nname);
 	const bool declared = type_name != NULL;
 	free (type_name);
-	if (!strcmp (oname, nname) || declared) {
+	if (declared) {
+		char *linked = r_type_link_at (DB, fcn->addr);
+		char *source = r_type_func_key (DB, oname);
+		if (!linked && source) {
+			r_type_set_link (DB, source, fcn->addr);
+		}
+		free (source);
+		free (linked);
 		return;
 	}
 	// rename type
@@ -4422,7 +4473,7 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 			r_flag_set (core->flags, name, fcn->addr, r_anal_function_size_from_entry (fcn));
 			r_flag_space_pop (core->flags);
 		}
-		rename_fcnsig (core->anal, oname, name);
+		rename_fcnsig (fcn, oname, name);
 		r_anal_function_rename (fcn, name);
 		if (core->anal->cb.on_fcn_rename) {
 			core->anal->cb.on_fcn_rename (core->anal, core->anal->user, fcn, name);
