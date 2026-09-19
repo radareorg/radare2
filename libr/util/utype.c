@@ -529,14 +529,9 @@ R_API RList *r_type_get_by_offset(Sdb *R_NONNULL TDB, ut64 offset) {
 #define TYPE_RANGE_BASE(x) ( (x) >> 16)
 
 static RList *types_range_list(Sdb *db, ut64 addr) {
-	RList *list = NULL;
 	ut64 base = TYPE_RANGE_BASE (addr);
 	const char *value = sdb_const_getf (db, NULL, "range.%" PFMT64x, base);
-	char *r = value? strdup (value): NULL;
-	if (r) {
-		list = r_str_split_list (r, " ", -1);
-	}
-	return list;
+	return value? r_str_split_duplist (value, " ", true): NULL;
 }
 
 static void types_range_del(Sdb *db, ut64 addr) {
@@ -573,12 +568,11 @@ R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
 			const char *link = sdb_const_getf (TDB, NULL, "link.%08" PFMT64x, laddr);
 			char *k = link? strdup (link): NULL;
 			if (k) {
-				char *res = r_type_get_struct_memb (TDB, k, delta);
-				if (res) {
-					free (k);
-					return res;
-				}
+				res = r_type_get_struct_memb (TDB, k, delta);
 				free (k);
+				if (res) {
+					break;
+				}
 			}
 		}
 	}
