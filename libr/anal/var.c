@@ -1203,12 +1203,8 @@ static bool ra_in_reg(RAnal *anal) {
 		|| r_reg_alias_getname (anal->reg, R_REG_ALIAS_RA);
 }
 
-// Two register names denote the same physical register when their storage
-// (arena/offset/size) matches. Needed because a base register can be spelled
-// differently by the disassembler and the register profile - arm64 stack
-// accesses report the frame pointer as "fp" while the BP alias resolves to
-// "x29" - so a plain strcmp would miss every frame-pointer stack access.
-static bool var_reg_same(RAnal *anal, const char *a, const char *b) {
+// Register aliases share the same arena, offset and size (e.g. arm64 fp/x29).
+R_IPI bool r_anal_reg_same(RAnal *anal, const char *a, const char *b) {
 	if (!a || !b) {
 		return false;
 	}
@@ -1225,7 +1221,7 @@ static bool var_reg_same(RAnal *anal, const char *a, const char *b) {
 }
 
 static bool extract_arg_from_value(RAnal *anal, RAnalValue *val, const char *reg, const char *sign, R_OUT st64 *ptr, R_OUT int *access_size) {
-	if (!val || !val->reg || !var_reg_same (anal, reg, val->reg)) {
+	if (!val || !val->reg || !r_anal_reg_same (anal, reg, val->reg)) {
 		return false;
 	}
 	st64 delta = val->delta;
@@ -1435,7 +1431,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 						break;
 					}
 					sum_sz = slot.fixed? slot.off: R_MAX (sum_sz, slot.off);
-					if (sum_sz == frame_off) {
+					if (sum_sz == frame_off + fcn->reg_save_area) {
 						vartype = tp;
 						varname = strdup (r_type_func_args_name (anal->sdb_types, fname, n));
 						break;

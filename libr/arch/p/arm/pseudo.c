@@ -734,7 +734,7 @@ static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen
 		// which must not be var-substituted.
 		const bool fp_access = bpbrk[0] && strstr (tstr, bpbrk);
 		// NOTE: on arm32 bp is fp
-		if ((is64 && strstr (tstr, "[bp")) || !is64) {
+		if ((is64 && (strstr (tstr, "[bp") || fp_access)) || !is64) {
 			r_list_foreach (bpargs, iter, var) {
 				st64 delta = p->get_ptr_at
 					? p->get_ptr_at (f, var->delta, addr)
