@@ -2890,6 +2890,21 @@ char* Elf_(get_elf_class)(ELFOBJ *eo) {
 	}
 }
 
+static bool is_arm_function_symbol(ELFOBJ *eo, const char *type) {
+	if (!type) {
+		return false;
+	}
+	if (!strcmp (type, R_BIN_TYPE_FUNC_STR) || !strcmp (type, R_BIN_TYPE_LOPROC_STR)) {
+		return true;
+	}
+	if (!strcmp (type, R_BIN_TYPE_LOOS_STR)) {
+		// LOOS is STT_GNU_IFUNC under these OSABIs
+		const ut8 osabi = eo->ehdr.e_ident[EI_OSABI];
+		return osabi == ELFOSABI_NONE || osabi == ELFOSABI_GNU || osabi == ELFOSABI_FREEBSD;
+	}
+	return false;
+}
+
 int Elf_(get_bits)(ELFOBJ *eo) {
 	if (eo->bits_cache) {
 		return eo->bits_cache;
@@ -2977,8 +2992,7 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 						thumb_count++;
 						continue;
 					}
-					ut64 paddr = symbol->offset;
-					if (paddr & 1) {
+					if ((symbol->offset & 1) && is_arm_function_symbol (eo, symbol->type)) {
 						thumb_count++;
 					}
 				}
@@ -5115,6 +5129,14 @@ static bool is_section_local_sym(ELFOBJ *eo, Elf_(Sym) *sym) {
 	return is_shidx_valid (eo, sym->st_shndx);
 }
 
+static bool clear_thumb_bit(ut64 *addr) {
+	if (*addr != UT64_MAX && (*addr & 1)) {
+		(*addr)--;
+		return true;
+	}
+	return false;
+}
+
 static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol *sym) {
 	int bin_bits = Elf_(get_bits) (eo);
 	const char *name = r_bin_name_tostring2 (sym->name, 'o');
@@ -5126,12 +5148,8 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol *sym) {
 			return;
 		case 't': // thumb
 			sym->bits = 16;
-			if (sym->vaddr & 1) {
-				sym->vaddr--;
-			}
-			if (sym->paddr & 1) {
-				sym->paddr--;
-			}
+			clear_thumb_bit (&sym->vaddr);
+			clear_thumb_bit (&sym->paddr);
 			return;
 		case 'd': // data
 			return;
@@ -5149,13 +5167,10 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol *sym) {
 		if (sym->type && !strcmp (sym->type, R_BIN_TYPE_LOPROC_STR)) {
 			sym->bits = 16;
 		}
-		if (sym->paddr != UT64_MAX) {
-			if (sym->vaddr & 1) {
-				sym->vaddr--;
-				sym->bits = 16;
-			}
-			if (sym->paddr & 1) {
-				sym->paddr--;
+		if (is_arm_function_symbol (eo, sym->type)) {
+			const bool thumb_vaddr = clear_thumb_bit (&sym->vaddr);
+			const bool thumb_paddr = clear_thumb_bit (&sym->paddr);
+			if (thumb_vaddr || thumb_paddr) {
 				sym->bits = 16;
 			}
 		}
