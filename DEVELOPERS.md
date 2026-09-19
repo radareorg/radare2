@@ -774,6 +774,8 @@ and plugins come from the same revision. For an uninstalled build,
 These overrides only select executables: also configure the platform library
 search path and `R2_LIBR_PLUGINS` for the checkout; otherwise installed
 libraries or plugins may be loaded silently.
+On Linux, set `LD_LIBRARY_PATH` to the absolute `libr/*/` library directories
+and `R2_LIBR_PLUGINS` to the checkout's absolute `libr` path.
 
 C unit tests live in `test/unit/`; `make -C test unit-tests` uses the configured
 installation prefix too. Prefer focused regressions for the behavior changed.
