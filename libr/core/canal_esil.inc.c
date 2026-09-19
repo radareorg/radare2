@@ -45,6 +45,8 @@ typedef struct {
 	bool read_clobbered;
 	bool read_clean_mem;
 	char *delayed_call_cc;
+	// How many registers the last call's result occupies.
+	int call_ret_lanes;
 	int delayed_call_slots;
 	int delayed_taint_clear_slots;
 } EsilClobCtx;
@@ -82,10 +84,23 @@ static bool esil_reg_taint_has_item(EsilBreakCtx *ctx, const RRegItem *item) {
 	return false;
 }
 
-static bool cc_retreg(RAnal *anal, const char *cc, const RRegItem *item) {
+// How many registers a callee's result occupies. A convention may declare a
+// second return register for a composite, but a call that returns a scalar
+// still leaves that register clobbered.
+static int cc_ret_lanes(RAnal *anal, ut64 callee) {
+	RAnalFunction *fcn = r_anal_get_function_at (anal, callee);
+	const char *name = (fcn && fcn->name)? fcn->name: NULL;
+	const char *type = name? r_type_func_ret (anal->sdb_types, name): NULL;
+	if (type && r_anal_type_bitsize (anal, type) > anal->config->bits) {
+		return 2;
+	}
+	return 1;
+}
+
+static bool cc_retreg(RAnal *anal, const char *cc, const RRegItem *item, int lanes) {
 	int i;
 	const char *ret;
-	for (i = 0; cc && (ret = r_anal_cc_ret (anal, cc, i)); i++) {
+	for (i = 0; cc && i < lanes && (ret = r_anal_cc_ret (anal, cc, i)); i++) {
 		RRegItem *retitem = r_reg_get (anal->reg, ret, -1);
 		if (retitem) {
 			EsilRegTaint rettaint = { retitem->arena, retitem->offset, retitem->size };
@@ -224,6 +239,7 @@ static bool esil_delay_call_clobbers(RAnal *anal, EsilBreakCtx *ctx, RAnalOp *op
 	if (!cc) {
 		return false;
 	}
+	ctx->clob.call_ret_lanes = cc_ret_lanes (anal, op->jump);
 	if (op->delay < 1) {
 		esil_havoc_clobbers_by_cc (anal, ctx, cc);
 		return false;
@@ -432,7 +448,8 @@ static bool clob_op_end(EsilBreakCtx *ctx, RAnalOp *op) {
 		cc = cc? cc: r_anal_cc_default (ctx->anal);
 		if (item && item->type != R_REG_TYPE_FLG && item->size > 1
 				&& strcmp (ctx->clob.read_tainted_reg, ctx->spname)
-				&& !esilbreak_erasing_write (ctx, op, item) && !cc_retreg (ctx->anal, cc, item)) {
+				&& !esilbreak_erasing_write (ctx, op, item)
+				&& !cc_retreg (ctx->anal, cc, item, ctx->clob.call_ret_lanes)) {
 			r_strf_var (text, 96, "%s is call-clobbered", ctx->clob.read_tainted_reg);
 			r_anal_hint_append_reguse (ctx->anal, op->addr, text);
 		}
