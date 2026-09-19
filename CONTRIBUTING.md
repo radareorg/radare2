@@ -160,25 +160,8 @@ destructive actions without confirmation.
 
 ## Commit message guidelines
 
-When committing changes, we ask that you follow some guidelines to keep the
-history readable and consistent:
-
-* Start the message capitalized (only the first character must be in uppercase)
-* Be concise. A descriptive message under 100 characters is preferred, but may
-  not be possible in all situations. For large commits, it is acceptable to use
-  a summary line, followed by an empty line, then an asterisk item list of
-  changes.
-* If a command is inlined, use backticks, e.g.:
-
-```sh
-git commit -m 'Modify output of `ls`'
-```
-
-* Add a tag if the change falls into a relevant category (see below)
-* If the commit fixes an issue, you may optionally start the message with
-  `Fix #number - `
-* Use present simple tense and avoid past tense. Use "add", "fix", or "change"
-  instead of "added", "fixed", or "changed".
+See [Commit messages in DEVELOPERS.md](DEVELOPERS.md#commit-messages) for
+subject style, issue references and changelog tags.
 
 ### Commit message tag list
 
@@ -191,6 +174,7 @@ git commit -m 'Modify output of `ls`'
 | `##build`        | Build system |
 | `##config`       | Configuration variables |
 | `##cons`         | Console/terminal |
+| `##crash`        | Security fixes and crashes |
 | `##crypto`       | Cryptography |
 | `##debug`        | Debugger |
 | `##diff`         | Diffing code, strings, basic blocks, etc. |
