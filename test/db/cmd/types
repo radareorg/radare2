@@ -4663,8 +4663,8 @@ tf fdopen~ret
 tf lseek64~ret
 tf errno_location~ret
 tf ctype_b_loc~ret
-tf fprintf_chk~func.fprintf_chk.arg.3
-tf longjmp_chk~noreturn
+tf __fprintf_chk~func.__fprintf_chk.arg.3
+tf __longjmp_chk~noreturn
 EOF
 EXPECT=<<EOF
 func.lseek.ret=off_t
@@ -4673,8 +4673,8 @@ func.fdopen.ret=file*
 func.lseek64.ret=off64_t
 func.errno_location.ret=int *
 func.ctype_b_loc.ret=const unsigned short **
-func.fprintf_chk.arg.3=,...
-func.longjmp_chk.noreturn=true
+func.__fprintf_chk.arg.3=,...
+func.__longjmp_chk.noreturn=true
 EOF
 RUN
 

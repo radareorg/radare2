@@ -286,142 +286,20 @@ func.mmap64.ret=void *
 
 
 
-printf_chk=func
-func.printf_chk.args=3
-func.printf_chk.arg.0=int,flag
-func.printf_chk.arg.1=const char *,format
-func.printf_chk.arg.2=,...
-func.printf_chk.ret=int
 
-fprintf_chk=func
-func.fprintf_chk.args=4
-func.fprintf_chk.arg.0=FILE *,stream
-func.fprintf_chk.arg.1=int,flag
-func.fprintf_chk.arg.2=const char *,format
-func.fprintf_chk.arg.3=,...
-func.fprintf_chk.ret=int
 
-vprintf_chk=func
-func.vprintf_chk.args=3
-func.vprintf_chk.arg.0=int,flag
-func.vprintf_chk.arg.1=const char *,format
-func.vprintf_chk.arg.2=va_list,ap
-func.vprintf_chk.ret=int
 
-vfprintf_chk=func
-func.vfprintf_chk.args=4
-func.vfprintf_chk.arg.0=FILE *,stream
-func.vfprintf_chk.arg.1=int,flag
-func.vfprintf_chk.arg.2=const char *,format
-func.vfprintf_chk.arg.3=va_list,ap
-func.vfprintf_chk.ret=int
 
-vsprintf_chk=func
-func.vsprintf_chk.args=5
-func.vsprintf_chk.arg.0=char *,s
-func.vsprintf_chk.arg.1=int,flag
-func.vsprintf_chk.arg.2=size_t,slen
-func.vsprintf_chk.arg.3=const char *,format
-func.vsprintf_chk.arg.4=va_list,ap
-func.vsprintf_chk.ret=int
 
-vsnprintf_chk=func
-func.vsnprintf_chk.args=6
-func.vsnprintf_chk.arg.0=char *,s
-func.vsnprintf_chk.arg.1=size_t,maxlen
-func.vsnprintf_chk.arg.2=int,flag
-func.vsnprintf_chk.arg.3=size_t,slen
-func.vsnprintf_chk.arg.4=const char *,format
-func.vsnprintf_chk.arg.5=va_list,ap
-func.vsnprintf_chk.ret=int
 
-memcpy_chk=func
-func.memcpy_chk.args=4
-func.memcpy_chk.arg.0=void *,dest
-func.memcpy_chk.arg.1=const void *,src
-func.memcpy_chk.arg.2=size_t,len
-func.memcpy_chk.arg.3=size_t,destlen
-func.memcpy_chk.ret=void *
 
-memmove_chk=func
-func.memmove_chk.args=4
-func.memmove_chk.arg.0=void *,dest
-func.memmove_chk.arg.1=const void *,src
-func.memmove_chk.arg.2=size_t,len
-func.memmove_chk.arg.3=size_t,destlen
-func.memmove_chk.ret=void *
 
-memset_chk=func
-func.memset_chk.args=4
-func.memset_chk.arg.0=void *,dest
-func.memset_chk.arg.1=int,c
-func.memset_chk.arg.2=size_t,len
-func.memset_chk.arg.3=size_t,destlen
-func.memset_chk.ret=void *
 
-strncpy_chk=func
-func.strncpy_chk.args=4
-func.strncpy_chk.arg.0=char *,dest
-func.strncpy_chk.arg.1=const char *,src
-func.strncpy_chk.arg.2=size_t,len
-func.strncpy_chk.arg.3=size_t,destlen
-func.strncpy_chk.ret=char *
 
-strcat_chk=func
-func.strcat_chk.args=3
-func.strcat_chk.arg.0=char *,dest
-func.strcat_chk.arg.1=const char *,src
-func.strcat_chk.arg.2=size_t,destlen
-func.strcat_chk.ret=char *
 
-strncat_chk=func
-func.strncat_chk.args=4
-func.strncat_chk.arg.0=char *,dest
-func.strncat_chk.arg.1=const char *,src
-func.strncat_chk.arg.2=size_t,len
-func.strncat_chk.arg.3=size_t,destlen
-func.strncat_chk.ret=char *
 
-fgets_chk=func
-func.fgets_chk.args=4
-func.fgets_chk.arg.0=char *,s
-func.fgets_chk.arg.1=size_t,size
-func.fgets_chk.arg.2=int,n
-func.fgets_chk.arg.3=FILE *,stream
-func.fgets_chk.ret=char *
 
-fread_chk=func
-func.fread_chk.args=5
-func.fread_chk.arg.0=void *,ptr
-func.fread_chk.arg.1=size_t,ptrlen
-func.fread_chk.arg.2=size_t,size
-func.fread_chk.arg.3=size_t,n
-func.fread_chk.arg.4=FILE *,stream
-func.fread_chk.ret=size_t
 
-read_chk=func
-func.read_chk.args=4
-func.read_chk.arg.0=int,fd
-func.read_chk.arg.1=void *,buf
-func.read_chk.arg.2=size_t,nbytes
-func.read_chk.arg.3=size_t,buflen
-func.read_chk.ret=ssize_t
 
-realpath_chk=func
-func.realpath_chk.args=3
-func.realpath_chk.arg.0=const char *,name
-func.realpath_chk.arg.1=char *,resolved
-func.realpath_chk.arg.2=size_t,resolvedlen
-func.realpath_chk.ret=char *
 
-longjmp_chk=func
-func.longjmp_chk.args=2
-func.longjmp_chk.arg.0=void *,env
-func.longjmp_chk.arg.1=int,val
-func.longjmp_chk.noreturn=true
-func.longjmp_chk.ret=void
 
-fdelt_chk=func
-func.fdelt_chk.args=1
-func.fdelt_chk.arg.0=long,d
-func.fdelt_chk.ret=long
