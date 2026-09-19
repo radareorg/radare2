@@ -49,6 +49,7 @@ if get_option('enable_tests')
     'kernelcache_cmdsize',
     'lang',
     'list',
+    'lz4',
     'ovf',
     'pdb',
     'pj',
