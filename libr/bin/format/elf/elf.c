@@ -5149,7 +5149,12 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol *sym) {
 		if (sym->type && !strcmp (sym->type, R_BIN_TYPE_LOPROC_STR)) {
 			sym->bits = 16;
 		}
-		if (sym->paddr != UT64_MAX) {
+		// The low bit selects Thumb on a function address only. A data object
+		// at an odd address is at an odd address, and clearing the bit moved
+		// it one byte earlier and called it code.
+		const bool is_code = sym->type && (!strcmp (sym->type, R_BIN_TYPE_FUNC_STR)
+			|| !strcmp (sym->type, R_BIN_TYPE_LOPROC_STR));
+		if (is_code && sym->paddr != UT64_MAX) {
 			if (sym->vaddr & 1) {
 				sym->vaddr--;
 				sym->bits = 16;

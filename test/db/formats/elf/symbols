@@ -1,3 +1,11 @@
+NAME=arm data symbol keeps its odd address
+FILE=bins/elf/arm32esilcrash
+CMDS=is~msg.8676
+EXPECT=<<EOF
+1146 0x00061a2d 0x00069a2d LOCAL  OBJ    64        msg.8676
+EOF
+RUN
+
 NAME=entrypoint on object
 FILE=bins/elf/pngrutil_o
 CMDS=ie
