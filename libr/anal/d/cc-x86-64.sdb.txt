@@ -40,6 +40,9 @@ cc.amd64.pop=caller
 cc.amd64.clobber=rax,rcx,rdx,rsi,rdi,r8,r9,r10,r11,xmm0,xmm1,xmm2,xmm3,xmm4,xmm5,xmm6,xmm7,xmm8,xmm9,xmm10,xmm11,xmm12,xmm13,xmm14,xmm15
 cc.amd64.preserve=rbx,rbp,rsp,r12,r13,r14,r15
 cc.amd64.ret0=rax
+# a sixteen byte INTEGER class composite comes back in rax:rdx
+cc.amd64.ret1=rdx
+cc.amd64.retn=2
 cc.amd64.fpret0=xmm0
 
 swift=cc
