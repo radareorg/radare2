@@ -1,0 +1,95 @@
+NAME=ELF s390x: RELATIVE slot keeps its addend when relocs are applied
+FILE=bins/elf/hello.sysz
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x1da8
+pv8 @ 0x1db0
+pv8 @ 0x1ff0
+EOF
+EXPECT=<<EOF
+0x0000000000000710
+0x00000000000006c8
+0x0000000000000718
+EOF
+RUN
+
+NAME=ELF s390x: every RELATIVE slot rebased under -B
+FILE=bins/elf/ls-s390x
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x126320
+pxQ 0x12d0 @ 0x126318~?0x00000000001
+EOF
+EXPECT=<<EOF
+0x0000000000106328
+228
+EOF
+RUN
+
+NAME=ELF s390x: GLOB_DAT and JMP_SLOT slots unchanged under -B
+FILE=bins/elf/ls-s390x
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x126f38
+pv8 @ 0x127018
+EOF
+EXPECT=<<EOF
+0x0000000000000000
+0x000000000000392e
+EOF
+RUN
+
+NAME=ELF s390x: RELATIVE with a non-zero link base adds only the bias
+FILE=bins/elf/s390x-relative-linkbase.so
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x103390
+pv8 @ 0x103398
+EOF
+EXPECT=<<EOF
+0x00000000001012c8
+0x0000000000103398
+EOF
+RUN
+
+NAME=ELF s390 31-bit: reloc writes are one 4-byte word
+FILE=bins/elf/s390-31-globdat.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv4 @ 0x30230
+pv4 @ 0x30234
+pv4 @ 0x30238
+ir~_32
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00030234
+0x11223344
+0x00030230 0x00000230 SET_32 10    f
+0x00030234 0x00000234 ADD_32 12     0x00030234
+EOF
+RUN
+
+NAME=ELF s390x: RELR entries rebased from their in-place addend
+FILE=bins/elf/s390x-relr.so
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x103370
+pv8 @ 0x103378
+pv8 @ 0x103380
+EOF
+EXPECT=<<EOF
+0x0000000000101298
+0x0000000000103378
+0x00000000001012a8
+EOF
+RUN
+
+NAME=ELF s390x: R_390_64 slot is left as the file wrote it
+FILE=bins/elf/s390x-relr.so
+ARGS=-e bin.relocs.apply=true
+CMDS=pv8 @ 0x3388
+EXPECT=<<EOF
+0x0000000000000004
+EOF
+RUN
