@@ -1,18 +1,14 @@
 type.void *.size=16
 type.char *.size=16
 
-size_t=type
-type.size_t=w
-type.size_t.size=16
+size_t=typedef
+typedef.size_t=uint16_t
 
-pid_t=type
-type.pid_t=w
-type.pid_t.pid=16
+pid_t=typedef
+typedef.pid_t=int16_t
 
-uid_t=type
-type.uid_t=w
-type.uid_t.uid=16
+uid_t=typedef
+typedef.uid_t=uint16_t
 
-gid_t=type
-type.gid_t=w
-type.gid_t.uid=16
+gid_t=typedef
+typedef.gid_t=uint16_t

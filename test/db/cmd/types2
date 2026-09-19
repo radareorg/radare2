@@ -115,8 +115,6 @@ EXPECT=<<EOF
 0x00000004
 0x00000000 type func; // size=1
 0x00000001
-0x00000000 type gid_t; // size=0
-0x00000000
              ; XREF[r] 0x0040114e main
 0x00000000 type int; // size=4
 0x00000004
@@ -139,22 +137,8 @@ EXPECT=<<EOF
 0x00000008
 0x00000000 type long long; // size=8
 0x00000008
-0x00000000 type off64_t; // size=8
-0x00000008
-0x00000000 type off_t; // size=8
-0x00000008
-0x00000000 type pid_t; // size=4
-0x00000004
 0x00000000 type short; // size=2
 0x00000002
-0x00000000 type size_t; // size=8
-0x00000008
-0x00000000 type ssize_t; // size=8
-0x00000008
-0x00000000 type time_t; // size=8
-0x00000008
-0x00000000 type uid_t; // size=8
-0x00000008
 0x00000000 type uint16_t; // size=2
 0x00000002
 0x00000000 type uint32_t; // size=4
