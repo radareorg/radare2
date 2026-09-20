@@ -1,0 +1,73 @@
+NAME=ELF s390x: every JMP_SLOT is a reloc row named by its import
+FILE=bins/elf/ls-s390x
+CMDS=<<EOF
+ir~?
+ir~SET_64 11?
+ir~getenv
+ir~__cxa_finalize
+EOF
+EXPECT=<<EOF
+346
+104
+0x00027170 0x00026170 SET_64 11    getenv
+0x00026f38 0x00025f38 SET_64 10    __cxa_finalize
+0x00027028 0x00026028 SET_64 11    __cxa_finalize
+EOF
+RUN
+
+NAME=ELF s390x: the reloc flag lands on the JMP_SLOT slot, not the GLOB_DAT one
+FILE=bins/elf/ls-s390x
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+fd 0x127170
+f~reloc.__cxa_finalize
+fd 0x126f38
+ii~?
+om~.got.r2
+EOF
+EXPECT=<<EOF
+reloc.getenv
+0x00127028 8 reloc.__cxa_finalize
+section..got + 24
+117
+- 4 fd: 5 +0x00000000 0x00128898 - 0x00129357 rw- rw- .got.r2
+EOF
+RUN
+
+NAME=ELF s390x: a file with no JMP_SLOT keeps its RELATIVE rows unchanged
+FILE=bins/elf/s390x-relr.so
+CMDS=<<EOF
+ir~SET_64 12
+EOF
+EXPECT=<<EOF
+0x00003370 0x00000370 SET_64 12
+0x00003378 0x00000378 SET_64 12
+0x00003380 0x00000380 SET_64 12
+EOF
+RUN
+
+NAME=ELF s390x: an unsupported s390 reloc type says so instead of vanishing
+FILE=bins/elf/s390x-relr.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~?
+EOF
+EXPECT=<<EOF
+5
+EOF
+EXPECT_ERR=<<EOF
+WARN: Unsupported reloc type 22 for s390
+WARN: Unsupported reloc type 22 for s390
+EOF
+RUN
+
+NAME=ELF i386: one reloc flag for a symbol with both GLOB_DAT and JUMP_SLOT
+FILE=bins/elf/before-after-main
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+f~reloc.__gmon_start__
+EOF
+EXPECT=<<EOF
+0x0804a014 4 reloc.__gmon_start__
+EOF
+RUN
