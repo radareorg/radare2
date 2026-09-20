@@ -1501,9 +1501,26 @@ static inline bool op_affect_dst(RAnalOp *op) {
 	}
 }
 
-static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal, bool op_dst_writeonly) {
+static bool op_zeroes_reg(RAnalOp *op) {
+	const int type = op->type & R_ANAL_OP_TYPE_MASK;
+	if (type != R_ANAL_OP_TYPE_XOR && type != R_ANAL_OP_TYPE_SUB) {
+		return false;
+	}
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
+	if (!src || !src->reg || !dst || !dst->reg || dst->memref) {
+		return false;
+	}
+	R_VEC_FOREACH (&op->srcs, src) {
+		if (src->memref || src->type == R_ANAL_VAL_IMM || (src->reg && strcmp (src->reg, dst->reg))) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool is_used_like_arg(const char *regname, const char *opdreg, RAnalOp *op, RAnal *anal, bool op_dst_writeonly) {
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	const bool in_src = is_reg_in_src (regname, anal, op);
 	const bool in_dst = opdreg && r_anal_cc_location_uses (anal, regname, opdreg);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
@@ -1517,7 +1534,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 	case R_ANAL_OP_TYPE_LOAD:
 		return in_src;
 	case R_ANAL_OP_TYPE_XOR:
-		if (STR_EQUAL (opsreg, opdreg) && !src->memref && !dst->memref) {
+		if (op_zeroes_reg (op)) {
 			return false;
 		}
 		//fallthrough
@@ -1529,51 +1546,64 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 	}
 }
 
-// Keep the usual 0/1/2 state in the low two bits and overwritten bits above it.
-// Writing AL must not hide an incoming AH, but writing both halves kills AX.
-static bool is_used_x86_16_arg(RAnal *anal, RAnalOp *op, const char *regname, int *state) {
-	if ((*state & 3) == 2) {
-		return false;
-	}
-	RRegItem *arg = r_reg_get (anal->reg, regname, R_REG_TYPE_GPR);
-	if (!arg) {
-		return false;
-	}
-	ut32 reads = 0, writes = 0;
-	RListIter *iter;
-	RAnalValue *value;
-	r_list_foreach (op->access, iter, value) {
-		if (value->type != R_ANAL_VAL_REG || !value->reg) {
-			continue;
+static ut32 reg_overlap_mask(RAnal *anal, const RRegItem *arg, const char *name) {
+	RRegItem *ri = name? r_reg_get (anal->reg, name, -1): NULL;
+	ut32 mask = 0;
+	if (ri && ri->arena == arg->arena && ri->offset >= 0) {
+		const int lo = R_MAX (ri->offset, arg->offset);
+		const int hi = R_MIN (ri->offset + ri->size, arg->offset + arg->size);
+		if (hi > lo) {
+			mask = ((1U << (hi - lo)) - 1) << (lo - arg->offset);
 		}
-		RRegItem *ri = r_reg_get (anal->reg, value->reg, R_REG_TYPE_GPR);
-		if (ri && ri->arena == arg->arena) {
-			const int lo = R_MAX (ri->offset, arg->offset);
-			const int hi = R_MIN (ri->offset + ri->size, arg->offset + 16);
-			if (hi > lo) {
-				const ut32 mask = ((1U << (hi - lo)) - 1) << (lo - arg->offset);
-				if (value->access & R_PERM_R) {
+	}
+	r_unref (ri);
+	return mask;
+}
+
+// The low two bits hold the argument state; higher bits track overwritten register bits.
+static bool is_used_small_reg_arg(RAnal *anal, RAnalOp *op, const RRegItem *arg, int *state, bool dst_writeonly) {
+	ut32 reads = 0, writes = 0;
+	RAnalValue *value;
+	const int type = op->type & R_ANAL_OP_TYPE_MASK;
+	if (op->access) {
+		RListIter *iter;
+		r_list_foreach (op->access, iter, value) {
+			if (value->type == R_ANAL_VAL_REG) {
+				const ut32 mask = reg_overlap_mask (anal, arg, value->reg);
+				reads |= (value->access & R_PERM_R)? mask: 0;
+				writes |= (value->access & R_PERM_W)? mask: 0;
+			} else if (value->type == R_ANAL_VAL_MEM) {
+				reads |= reg_overlap_mask (anal, arg, value->reg) | reg_overlap_mask (anal, arg, value->regdelta);
+			}
+		}
+	} else {
+		R_VEC_FOREACH (&op->srcs, value) {
+			reads |= reg_overlap_mask (anal, arg, value->reg) | reg_overlap_mask (anal, arg, value->regdelta);
+		}
+		R_VEC_FOREACH (&op->dsts, value) {
+			const ut32 mask = reg_overlap_mask (anal, arg, value->reg);
+			if (value->memref || type == R_ANAL_OP_TYPE_CMP || type == R_ANAL_OP_TYPE_ACMP) {
+				reads |= mask | reg_overlap_mask (anal, arg, value->regdelta);
+			} else {
+				writes |= mask;
+				if (!dst_writeonly && op_affect_dst (op)) {
 					reads |= mask;
-				}
-				if (value->access & R_PERM_W) {
-					writes |= mask;
 				}
 			}
 		}
-		r_unref (ri);
 	}
-	r_unref (arg);
-	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
-	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
-	if ((op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_XOR && src && dst
-			&& !src->memref && !dst->memref && STR_EQUAL (src->reg, dst->reg)) {
+	if (op_zeroes_reg (op)) {
 		reads = 0;
+	}
+	if (type == R_ANAL_OP_TYPE_CMOV) {
+		reads |= writes;
+		writes = 0;
 	}
 	ut32 written = (ut32)*state >> 2;
 	const bool used = (reads & ~written) != 0;
 	written |= writes;
 	*state = (*state & 3) | (written << 2);
-	if (!used && written == UT16_MAX) {
+	if (!used && written == (1U << arg->size) - 1) {
 		*state = 2;
 	}
 	return used;
@@ -1606,7 +1636,7 @@ static int cc_loc_delta(RAnal *anal, const char *loc) {
 	return delta;
 }
 
-static void extract_dyncc_reguse(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, int *reg_set, const char *opsreg, const char *opdreg, bool op_dst_writeonly) {
+static void extract_dyncc_reguse(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, int *reg_set, const char *opdreg, bool op_dst_writeonly) {
 	const char *p = fcn->callconv;
 	for (; (p = strchr (p, '!')); p++) {
 		const char tag = p[1];
@@ -1625,7 +1655,7 @@ static void extract_dyncc_reguse(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, i
 			continue;
 		}
 		const int slot = R_ANAL_CC_DYNSLOT_BASE + dynslot;
-		const bool is_arg = is_used_like_arg (loc, opsreg, opdreg, op, anal, op_dst_writeonly);
+		const bool is_arg = is_used_like_arg (loc, opdreg, op, anal, op_dst_writeonly);
 		if (is_arg && reg_set[slot] != 2) {
 			const char *regname = reguse_regname_for_loc (anal, op, loc, opdreg);
 			reguse_append_hint (anal, op->addr, regname, name);
@@ -1658,9 +1688,7 @@ static int func_fixed_args(Sdb *TDB, const char *name) {
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
 	int i = 0, argc = 0;
 	R_RETURN_IF_FAIL (anal && op && fcn);
-	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
-	const char *opsreg = src ? get_regname (anal, src) : NULL;
 	const char *opdreg = dst ? get_regname (anal, dst) : NULL;
 	const bool op_dst_writeonly = r_arch_info (anal->arch, R_ARCH_INFO_WODST) == 1;
 	const int size = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
@@ -1774,14 +1802,13 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		|| op->family == R_ANAL_OP_FAMILY_VEC
 		|| op->family == R_ANAL_OP_FAMILY_SIMD
 		|| op->family == R_ANAL_OP_FAMILY_UNKNOWN;
-	const bool x86_16 = anal->config->bits == 16 && !strcmp (anal->config->arch, "x86") && op->access;
 	// The fixed register-state array lets both sequences use one bounded walk.
 	for (i = 0; i < R_ANAL_CC_MAXARG * 2; i++) {
 		const bool fp = i >= R_ANAL_CC_MAXARG;
 		const int n = fp? i - R_ANAL_CC_MAXARG: i;
 		const int slot = fp? R_ANAL_CC_FPSLOT_BASE + n: n;
 		const char *deftype = fp? "double": NULL;
-		if ((fp && !scan_fpargs) || (!fp && (!scan_args || n >= max_count))) {
+		if ((reg_set[slot] & 3) == 2 || (fp && !scan_fpargs) || (!fp && (!scan_args || n >= max_count))) {
 			continue;
 		}
 		const char *regname = r_anal_cc_argloc (anal, fcn->callconv,
@@ -1791,16 +1818,18 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		}
 		int delta = 0;
 		RAnalVar *var = NULL;
-		const bool partial = x86_16 && !fp && strlen (regname) == 2
-			&& regname[1] == 'x' && strchr ("abcd", regname[0]);
-		bool is_arg = partial? is_used_x86_16_arg (anal, op, regname, &reg_set[slot])
-			: is_used_like_arg (regname, opsreg, opdreg, op, anal, op_dst_writeonly);
-		if (is_arg && (reg_set[slot] & 3) != 2) {
-			delta = cc_loc_delta (anal, regname);
+		RRegItem *reg = anal->config->bits <= 16? r_reg_get (anal->reg, regname, -1): NULL;
+		const bool partial = reg && reg->size > 0 && reg->size <= 16 && reg->offset >= 0;
+		const int regsize = partial? (reg->size + 7) / 8: size;
+		bool is_arg = partial? is_used_small_reg_arg (anal, op, reg, &reg_set[slot], op_dst_writeonly)
+			: is_used_like_arg (regname, opdreg, op, anal, op_dst_writeonly);
+		if (is_arg) {
+			delta = reg? reg->index: cc_loc_delta (anal, regname);
 		}
+		r_unref (reg);
 		if (is_arg && (reg_set[slot] & 3) == 1) {
 			var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
-		} else if (is_arg && (reg_set[slot] & 3) != 2) {
+		} else if (is_arg) {
 			const char *vname = NULL;
 			char *type = NULL;
 			char *name = NULL;
@@ -1817,7 +1846,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
 			if (!var) {
 				var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG,
-					type? type: deftype, size, true, vname);
+					type? type: deftype, regsize, true, vname);
 			}
 			if (var && var->argnum < 0) {
 				var->argnum = *count;
@@ -1848,7 +1877,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	const bool is_dyncc = r_str_startswith (fcn->callconv, "dyncc:");
 	const char *selfreg = r_anal_cc_roleloc (anal, fcn->callconv, is_dyncc? "T": "self");
 	if (selfreg) {
-		bool is_arg = is_used_like_arg (selfreg, opsreg, opdreg, op, anal, op_dst_writeonly);
+		bool is_arg = is_used_like_arg (selfreg, opdreg, op, anal, op_dst_writeonly);
 		if (is_arg && reg_set[i] != 2) {
 			int delta = cc_loc_delta (anal, selfreg);
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, "self");
@@ -1883,7 +1912,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		}
 	}
 	if (is_dyncc) {
-		extract_dyncc_reguse (anal, fcn, op, reg_set, opsreg, opdreg, op_dst_writeonly);
+		extract_dyncc_reguse (anal, fcn, op, reg_set, opdreg, op_dst_writeonly);
 	}
 	free (fname);
 }
