@@ -1,6 +1,6 @@
 # PR 26750: hosted Luna pilot
 
-These are **30 actual independent `gpt-5.6-luna` agent runs**, two repetitions
+The initial pilot contains **30 actual independent `gpt-5.6-luna` agent runs**, two repetitions
 of each of the three synthetic tasks for each guidance variant. They are hosted
 ChatGPT Work agents, not a local model benchmark. Qwen, Gemma and other local
 models were not available in this environment and were not run.
@@ -24,7 +24,7 @@ behavior failure. Candidate code was not repaired after the trials.
 This pilot supports retaining critical rules inline and clarifying when tags
 are required. It does **not** demonstrate improved coding accuracy: every
 variant passed these easy tasks, and the old guidance achieved the best commit
-file score. The final instructions are 50% fewer lines, 27% fewer words and 18%
+file score. That pilot's last instructions are 50% fewer lines, 27% fewer words and 18%
 fewer bytes than the original. Word/byte counts are not model token counts.
 
 ## Method and limitations
@@ -87,3 +87,42 @@ responses and timings cannot be promised to reproduce.
 The JSONL tested_*_ref fields retain the local trial commits. The main
 *_ref fields identify published commits with identical Git trees; changed
 SHAs reflect commit metadata only. The tree hashes were verified at publication.
+
+## Completion-check follow-up
+
+After the requested follow-up, AGENTS.md and DEVELOPERS.md explicitly direct
+agents to add regressions as `r2` commands in `test/db/` using `r2r`, instead of
+adding C unit tests. AGENTS.md also requires a final status/diff inspection,
+verification that every requested deliverable exists with the required content,
+and removal of temporary artifacts created by the agent. This addresses the
+missing commit-message file and leftover binary observed in the initial pilot
+without naming benchmark files in the instructions.
+
+Nine fresh hosted Luna trials (three repetitions per task) used guidance commit
+`0e3ef05a192a75c0a1970e7d61dcacf6ef3cff30`. Source helpers, supporting docs, task
+prompts, grader and runtime settings were unchanged from the initial pilot.
+No candidate edits or selective retries were made after these trials.
+
+| Task | Functional | Scope | Style probes | API reuse | Valid commit file |
+|---|---:|---:|---:|---:|---:|
+| Padding | 3/3 | 3/3 | 3/3 | 3/3 | 3/3 |
+| Binary bounds | 3/3 | 3/3 | 3/3 | 3/3 | 3/3 |
+| JSON lifetime | 3/3 | 3/3 | 3/3 | 3/3 | 3/3 |
+| Total | **9/9** | **9/9** | **9/9** | **9/9** | **9/9** |
+
+All measured checks passed in this follow-up. This is an observed perfect score
+on the existing small suite, not a guarantee for other tasks/models. The r2r
+preference was checked in the documentation; these C API fixtures do not measure
+whether an agent chooses or writes a real r2r regression correctly. The earlier
+limitations still apply. There are now 39 recorded trials in total; the original
+30, including their failures, remain unchanged in pr26750-luna.jsonl.
+
+The updated AGENTS.md is 56 lines, 605 words and 4,535 bytes, versus the original
+111 lines, 780 words and 5,216 bytes. Reproduce or inspect the follow-up with:
+
+```sh
+python3 test/agent/report.py test/agent/results/pr26750-completion.jsonl
+python3 test/agent/run.py --out /tmp/r2-agent-completion \
+  --source dd5327e --docs b9b5e59 --model YOUR_EXACT_MODEL_ID --repeat 3 \
+  --variant completion=0e3ef05
+```
