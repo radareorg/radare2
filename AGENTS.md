@@ -50,6 +50,6 @@ Search symbols and paths first; read only relevant sections:
 ## Commits
 
 Commit only when requested or needed for a requested PR; otherwise suggest a one-line message.
-Start with a capital letter. Changelog entries end with one existing `##tag`;
-security fixes use `##crash`. See [Commit messages](DEVELOPERS.md#commit-messages)
-for subject style, issue references and the tag list.
+Start with a capital letter. For user-visible changes, append one existing `##tag`
+as the final word; security fixes use `##crash`. See [Commit messages](DEVELOPERS.md#commit-messages)
+for details, issue references and the tag list.
