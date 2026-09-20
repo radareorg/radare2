@@ -27,7 +27,7 @@ Search symbols and paths first; read only relevant sections:
 - Check runtime-sized allocations for failure; guard size arithmetic with `r_mul_overflow_*`/`r_add_overflow_*` before allocating. Check bounds before buffer access; endian helpers do not.
 - Never use `alloca` or variable-length stack arrays. Avoid NULL guards around `free` and destructors that accept NULL.
 - Use `R_RETURN_*` for public API preconditions; ordinary `if` for runtime/input errors. Use `r_util/r_assert.h` instead of `<assert.h>`.
-- Prefer `!strcmp ()`, `r_str_newf`, `r_str_pad2` and endian helpers such as `r_read_le32`. Use `r_strbuf_*` for concatenation in loops to avoid repeated copying.
+- Prefer `!strcmp ()`, `r_str_newf`, `r_str_pad` and endian helpers such as `r_read_le32`. Use `r_strbuf_*` for concatenation in loops to avoid repeated copying.
 - Use annotations from `libr/include/r_types.h` and `libr/include/r_types_null.h`; ownership macros are `R_OWNED`/`R_UNOWNED`.
 - Prefer `r_json_parsedup`; when borrowing buffers, follow the lifetime rules in `libr/include/r_util/r_json.h`.
 - New commands need `?` help. Use `R_LOG_*` for diagnostics and the existing console APIs for command output; remove debugging `eprintf` calls.
@@ -41,7 +41,7 @@ Search symbols and paths first; read only relevant sections:
 ## Verify
 
 - Prefer focused `r2r` regressions in existing `test/db/` files, reusing fixtures. Cover the reported behavior and relevant edge cases; do not blindly accept changed expected output.
-- From the root, run `r2r -C test db/...` with the affected test path. Use this checkout's tools/libraries; `R2R_RADARE2` and `R2R_RASM2` override executable paths.
+- Build and install this checkout before running `r2r -C test db/...` from the root. See [Regression testing](DEVELOPERS.md#regression-testing) for library/plugin paths, absolute executable overrides and `test/unit/`.
 - Keep the filename last in `r2` invocations. Use `-n` only for raw input: it skips binary loading. `io.va=false` changes addressing, not binary loading.
 - Binary fixtures belong in `radare2-testbins` (`test/bins/`), not this repository. `// R2R` comments can link source files to tests.
 - For memory debugging, see `DEVELOPERS.md` (Error diagnosis): `R2_DEBUG=1` and `sys/sanitize.sh`.
@@ -50,5 +50,4 @@ Search symbols and paths first; read only relevant sections:
 ## Commits
 
 Commit only when requested or needed for a requested PR; otherwise suggest a one-line message.
-Start with a capital letter. For changelog-worthy changes, append one existing
-`##tag` as the last word; use `git log` for examples. Security fixes use `##crash`.
+Follow [Commit messages](DEVELOPERS.md#commit-messages) for subject style, issue references and changelog tags.

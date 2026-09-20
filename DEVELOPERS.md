@@ -10,6 +10,29 @@ place to start if you are looking to contribute.
 For information about the git process, see
 [CONTRIBUTING.md](CONTRIBUTING.md#How_to_contribute).
 
+## Commit messages
+
+- Start with a capital letter and a present-tense action: `Fix`, `Add`, `Remove`.
+- Describe the change, preferably in fewer than 100 characters. Put extra context
+  in a body separated from the subject by a blank line. Quote command names with
+  backticks.
+- For changelog-worthy changes, end the subject with exactly one existing
+  `##tag`, separated by a space. Choose from the
+  [tag list](CONTRIBUTING.md#commit-message-tag-list) or recent `git log` entries;
+  do not invent tags. Tags are lowercase; established names such as `r2js` and
+  `r2r` include digits. Changes that do not belong in the changelog need no tag.
+- Use `##crash` for security fixes, even when another subsystem tag also fits.
+- When fixing an issue, optionally start with `Fix #number - ` and describe the
+  fix before the final tag. Follow any specific message requested by the user.
+
+Examples:
+
+```text
+Fix #12345 - Reject truncated binary headers ##crash
+Add help for `aflj` ##analysis
+Clarify build instructions ##doc
+```
+
 ## IDE settings
 ### generate compile_commands.json
 compile_commands.json records the dependency relationship between `.c/.h` file.
@@ -85,9 +108,9 @@ r2 provides several empty macros to make function signatures more informative.
 
 * `R_OUT`: Parameter is output - written to instead of read.
 * `R_INOUT`: Parameter is read/write.
-* `R_OWN`: Pointer ownership is transferred from the caller.
-* `R_BORROW`: The caller retains ownership of the pointer - the reciever must
-  not free it.
+* `R_OWNED`: Pointer ownership is transferred; check the API contract for direction.
+* `R_UNOWNED`: Pointer ownership is not transferred; a borrowed return value
+  must not be freed by the caller.
 * `R_NONNULL`: Pointer must not be null.
 * `R_NULLABLE`: Pointer may ne null.
 * `R_DEPRECATE`: Do not use in new code and will be removed in the future.
@@ -742,10 +765,20 @@ Use `r2r` to run the radare2 regression test suite, e.g.:
 
 ```sh
 sys/install.sh
-r2r
+r2r -C test db/cmd/cmd_print
 ```
 
-r2r's source can be found in the `test/` directory, while binaries used for
+Build and install this checkout before testing so the executables, libraries
+and plugins come from the same revision. For an uninstalled build,
+`R2R_RADARE2` and `R2R_RASM2` must be absolute paths (`r2r -C` changes directory).
+These overrides only select executables: also configure the platform library
+search path and `R2_LIBR_PLUGINS` for the checkout; otherwise installed
+libraries or plugins may be loaded silently.
+
+C unit tests live in `test/unit/`; `make -C test unit-tests` uses the configured
+installation prefix too. Prefer focused regressions for the behavior changed.
+
+r2r's source can be found in the `binr/r2r/` directory, while binaries used for
 tests are located in the following GitHub repository:
 
 ```sh
