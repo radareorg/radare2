@@ -1398,13 +1398,21 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		RAnalVar *var = get_stack_var (anal, fcn, frame_off, access_size, var_size, fuzzy, addr_taken);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
-			return;
+			// Revisit inferred arguments after a CC change without replacing user edits.
+			if (!isarg || !var->isarg || var->delta != frame_off) {
+				return;
+			}
+			const char *deftype = int_type (inferred_var_size (anal, access_size));
+			r_strf_var (autoname, 32, "arg_%" PFMT64x "h", R_ABS (anal->opt.varname_stack? frame_off: ptr));
+			if (!deftype || strcmp (var->type, deftype) || strcmp (var->name, autoname)) {
+				return;
+			}
 		}
-		if (isarg && type == R_ANAL_VAR_KIND_SPV && fcn->maxstack > fcn->stack && ptr < fcn->maxstack) {
+		if (!var && isarg && type == R_ANAL_VAR_KIND_SPV && fcn->maxstack > fcn->stack && ptr < fcn->maxstack) {
 			const st64 local_frame_off = ptr - fcn->maxstack;
-			var = get_stack_var (anal, fcn, local_frame_off, access_size, var_size, fuzzy, addr_taken);
-			if (var && !var->isarg) {
-				r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
+			RAnalVar *local = get_stack_var (anal, fcn, local_frame_off, access_size, var_size, fuzzy, addr_taken);
+			if (local && !local->isarg) {
+				r_anal_var_set_access (anal, local, reg, op->addr, rw, ptr);
 				return;
 			}
 		}
@@ -1442,6 +1450,14 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 				}
 				free (fname);
 			}
+		}
+		if (var) {
+			if (varname && r_anal_var_rename (anal, var, varname)) {
+				r_anal_var_set_type (anal, var, vartype);
+			}
+			free (varname);
+			free (vartype);
+			return;
 		}
 		if (!varname) {
 			if (anal->opt.varname_stack) {
@@ -1562,6 +1578,56 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 		}
 		return in_dst || in_src;
 	}
+}
+
+// Keep the usual 0/1/2 state in the low two bits and overwritten bits above it.
+// Writing AL must not hide an incoming AH, but writing both halves kills AX.
+static bool is_used_x86_16_arg(RAnal *anal, RAnalOp *op, const char *regname, int *state) {
+	if ((*state & 3) == 2) {
+		return false;
+	}
+	RRegItem *arg = r_reg_get (anal->reg, regname, R_REG_TYPE_GPR);
+	if (!arg) {
+		return false;
+	}
+	ut32 reads = 0, writes = 0;
+	RListIter *iter;
+	RAnalValue *value;
+	r_list_foreach (op->access, iter, value) {
+		if (value->type != R_ANAL_VAL_REG || !value->reg) {
+			continue;
+		}
+		RRegItem *ri = r_reg_get (anal->reg, value->reg, R_REG_TYPE_GPR);
+		if (ri && ri->arena == arg->arena) {
+			const int lo = R_MAX (ri->offset, arg->offset);
+			const int hi = R_MIN (ri->offset + ri->size, arg->offset + 16);
+			if (hi > lo) {
+				const ut32 mask = ((1U << (hi - lo)) - 1) << (lo - arg->offset);
+				if (value->access & R_PERM_R) {
+					reads |= mask;
+				}
+				if (value->access & R_PERM_W) {
+					writes |= mask;
+				}
+			}
+		}
+		r_unref (ri);
+	}
+	r_unref (arg);
+	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	if ((op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_XOR && src && dst
+			&& !src->memref && !dst->memref && STR_EQUAL (src->reg, dst->reg)) {
+		reads = 0;
+	}
+	ut32 written = (ut32)*state >> 2;
+	const bool used = (reads & ~written) != 0;
+	written |= writes;
+	*state = (*state & 3) | (written << 2);
+	if (!used && written == UT16_MAX) {
+		*state = 2;
+	}
+	return used;
 }
 
 static void reguse_append_hint(RAnal *anal, ut64 addr, const char *regname, const char *usage) {
@@ -1712,7 +1778,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			if (old_var && !r_anal_var_is_default_argname (old_var->name)) {
 				continue;
 			}
-			if (reg_set[i] && (!old_var || !r_anal_var_is_default_argname (old_var->name)
+			if ((reg_set[i] & 3) && (!old_var || !r_anal_var_is_default_argname (old_var->name)
 					|| !RVecAnalVarAccess_empty (&old_var->accesses))) {
 				continue;
 			}
@@ -1759,6 +1825,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		|| op->family == R_ANAL_OP_FAMILY_VEC
 		|| op->family == R_ANAL_OP_FAMILY_SIMD
 		|| op->family == R_ANAL_OP_FAMILY_UNKNOWN;
+	const bool x86_16 = anal->config->bits == 16 && !strcmp (anal->config->arch, "x86") && op->access;
 	// The fixed register-state array lets both sequences use one bounded walk.
 	for (i = 0; i < R_ANAL_CC_MAXARG * 2; i++) {
 		const bool fp = i >= R_ANAL_CC_MAXARG;
@@ -1775,13 +1842,16 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		}
 		int delta = 0;
 		RAnalVar *var = NULL;
-		bool is_arg = is_used_like_arg (regname, opsreg, opdreg, op, anal, op_dst_writeonly);
-		if (is_arg && reg_set[slot] != 2) {
+		const bool partial = x86_16 && !fp && strlen (regname) == 2
+			&& regname[1] == 'x' && strchr ("abcd", regname[0]);
+		bool is_arg = partial? is_used_x86_16_arg (anal, op, regname, &reg_set[slot])
+			: is_used_like_arg (regname, opsreg, opdreg, op, anal, op_dst_writeonly);
+		if (is_arg && (reg_set[slot] & 3) != 2) {
 			delta = cc_loc_delta (anal, regname);
 		}
-		if (is_arg && reg_set[slot] == 1) {
+		if (is_arg && (reg_set[slot] & 3) == 1) {
 			var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
-		} else if (is_arg && reg_set[slot] != 2) {
+		} else if (is_arg && (reg_set[slot] & 3) != 2) {
 			const char *vname = NULL;
 			char *type = NULL;
 			char *name = NULL;
@@ -1807,14 +1877,12 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			free (type);
 			(*count)++;
 		} else {
-			if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
+			if (!partial && (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg)))) {
 				reg_set[slot] = 2;
 			}
 			continue;
 		}
-		if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
-			reg_set[slot] = 1;
-		}
+		reg_set[slot] = (reg_set[slot] & ~3) | 1;
 		if (var) {
 			r_anal_var_set_access (anal, var, var->regname, op->addr, R_PERM_R, 0);
 			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, var->name);

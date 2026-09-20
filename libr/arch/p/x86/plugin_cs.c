@@ -2884,24 +2884,31 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn, int mode) {
 	int i;
 	int regsz;
-	x86_reg sp;
+	x86_reg sp, pc;
 	switch (mode) {
 	case CS_MODE_64:
 		regsz = 8;
 		sp = X86_REG_RSP;
+		pc = X86_REG_RIP;
 		break;
 	case CS_MODE_32:
 		regsz = 4;
 		sp = X86_REG_ESP;
+		pc = X86_REG_EIP;
 		break;
 	case CS_MODE_16:
-		regsz = 4;
-		sp = X86_REG_ESP;
+		regsz = 2;
+		sp = X86_REG_SP;
+		pc = X86_REG_IP;
 		break;
 	default:
 		regsz = 4;
 		sp = X86_REG_ESP;
+		pc = X86_REG_EIP;
 		break;
+	}
+	if (mode != CS_MODE_64 && insn->detail->x86.prefix[2] == X86_PREFIX_OPSIZE) {
+		regsz = regsz == 2? 4: 2;
 	}
 	RList *ret = r_list_newf ((RListFree)r_anal_value_free);
 	if (!ret) {
@@ -2913,7 +2920,7 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 	if (val) {
 		val->type = R_ANAL_VAL_REG;
 		val->access = R_PERM_W;
-		val->reg = cs_reg_name (handle, X86_REG_RIP);
+		val->reg = cs_reg_name (handle, pc);
 		r_list_append (ret, val);
 	}
 
@@ -2964,6 +2971,9 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 		break;
 	case X86_INS_CALL:
 	case X86_INS_LCALL:
+		if (insn->id == X86_INS_LCALL) {
+			regsz *= 2; // far calls push both the code segment and return offset
+		}
 		val = r_anal_value_new ();
 		if (val) {
 			val->type = R_ANAL_VAL_MEM;
