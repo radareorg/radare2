@@ -22,17 +22,14 @@ int=type
 type.int=d
 type.int.size=32
 
-pid_t=type
-type.pid_t=d
-type.pid_t.size=32
+pid_t=typedef
+typedef.pid_t=int32_t
 
-size_t=type
-type.size_t=d
-type.size_t.size=32
+size_t=typedef
+typedef.size_t=uint32_t
 
-time_t=type
-type.time_t=x
-type.time_t.size=64
+time_t=typedef
+typedef.time_t=int64_t
 
 long=type
 type.long=x
@@ -95,9 +92,8 @@ int64_t=type
 type.int64_t=q
 type.int64_t.size=64
 
-uid_t=type
-type.uid_t=i
-type.uid_t.size=64
+uid_t=typedef
+typedef.uid_t=uint32_t
 
 arc4random=func
 func.arc4random.args=0
