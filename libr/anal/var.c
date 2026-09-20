@@ -1102,38 +1102,21 @@ static bool var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, RList *list
 	return false;
 }
 
-#if 0
 static const char *get_regname(RAnal *anal, RAnalValue *value) {
-	return value? value->reg: NULL;
-}
-#else
-static const char *get_regname(RAnal *anal, RAnalValue *value) {
-	// R2_590 - this is underperforming hard
-	const char *name = NULL;
-#if 0
-	if (value && value->reg) {
-		name = (const char *)value->reg;
-	}
-#else
-	if (value && value->reg) {
-		name = value->reg;
-		// only gprs have a wider twin: an fp reg like arm64 s0 must keep its name
-		RRegItem *ri = r_reg_get (anal->reg, value->reg, R_REG_TYPE_GPR);
-		if (ri) {
-			const int bits = anal->config->bits;
-			if (ri->type == R_REG_TYPE_GPR && ri->size < bits) {
-				RRegItem *parent = r_reg_get_at (anal->reg, R_REG_TYPE_GPR, bits, BITS2BYTES (ri->offset));
-				if (parent) {
-					name = parent->name;
-				}
+	const char *name = value? value->reg: NULL;
+	RRegItem *ri = name? r_reg_get (anal->reg, name, R_REG_TYPE_GPR): NULL;
+	if (ri) {
+		const int bits = anal->config->bits;
+		if (ri->type == R_REG_TYPE_GPR && ri->size < bits) {
+			RRegItem *parent = r_reg_get_at (anal->reg, R_REG_TYPE_GPR, bits, BITS2BYTES (ri->offset));
+			if (parent) {
+				name = parent->name;
 			}
-			r_unref (ri);
 		}
+		r_unref (ri);
 	}
-#endif
 	return name;
 }
-#endif
 
 R_API R_OWNED char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr) {
 	const ut32 uptr = R_ABS (ptr);
@@ -1381,137 +1364,104 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	// ops the access happens before the adjustment, so undo it locally.
 	const st64 fcn_stack = (op->stackop == R_ANAL_STACK_INC)
 		? fcn->stack - op->stackptr : fcn->stack;
-	if (*sign == '+') {
-		const bool isarg = type == R_ANAL_VAR_KIND_SPV ? ptr >= fcn_stack : ptr >= fcn->bp_off;
-		const char *pfx = isarg ? ARGPREFIX : VARPREFIX;
-		st64 frame_off;
-		if (type == R_ANAL_VAR_KIND_SPV) {
-			frame_off = ptr - fcn_stack;
-		} else {
-			frame_off = ptr - fcn->bp_off;
-		}
-		if (maxstackframe != 0 && (frame_off > maxstackframe || frame_off < -maxstackframe)) {
-			return;
-		}
-		const int var_size = anal->config->bits / 8;
-		const bool fuzzy = !strcmp (anal->config->arch, "arm");
-		RAnalVar *var = get_stack_var (anal, fcn, frame_off, access_size, var_size, fuzzy, addr_taken);
-		if (var) {
-			r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
-			// Revisit inferred arguments after a CC change without replacing user edits.
-			if (!isarg || !var->isarg || var->delta != frame_off) {
-				return;
-			}
-			const char *deftype = int_type (inferred_var_size (anal, access_size));
-			r_strf_var (autoname, 32, "arg_%" PFMT64x "h", R_ABS (anal->opt.varname_stack? frame_off: ptr));
-			if (!deftype || strcmp (var->type, deftype) || strcmp (var->name, autoname)) {
-				return;
-			}
-		}
-		if (!var && isarg && type == R_ANAL_VAR_KIND_SPV && fcn->maxstack > fcn->stack && ptr < fcn->maxstack) {
-			const st64 local_frame_off = ptr - fcn->maxstack;
-			RAnalVar *local = get_stack_var (anal, fcn, local_frame_off, access_size, var_size, fuzzy, addr_taken);
-			if (local && !local->isarg) {
-				r_anal_var_set_access (anal, local, reg, op->addr, rw, ptr);
-				return;
-			}
-		}
-		char *varname = NULL, *vartype = NULL;
-		if (isarg) {
-			const bool stack_rev = r_anal_cc_stack_rev (anal, fcn->callconv);
-			char *fname = r_type_func_key (anal->sdb_types, fcn->name);
-			if (fname) {
-				st64 sum_sz = 0;
-				int argc = 0;
-				r_type_func_args_count (anal->sdb_types, fname, &argc);
-				if (r_type_func_is_variadic (anal->sdb_types, fname, argc)) {
-					argc--;
-				}
-				int i;
-				for (i = 0; i < argc; i++) {
-					const int n = stack_rev? argc - i - 1: i;
-					RAnalCCArgSlot slot;
-					if (!r_anal_cc_argslot (anal, fcn->callconv, n, argc, true, &slot) || slot.reg) {
-						continue;
-					}
-					char *tp = r_type_func_args_type (anal->sdb_types, fname, n);
-					if (!tp) {
-						break;
-					}
-					sum_sz = slot.fixed? slot.off: R_MAX (sum_sz, slot.off);
-					if (sum_sz == frame_off + fcn->reg_save_area) {
-						vartype = tp;
-						varname = strdup (r_type_func_args_name (anal->sdb_types, fname, n));
-						break;
-					}
-					ut64 bit_sz = r_anal_type_bitsize (anal, tp);
-					sum_sz += R_ROUND (R_MAX ((bit_sz + 7) / 8, slot.size), slot.size);
-					free (tp);
-				}
-				free (fname);
-			}
-		}
-		if (var) {
-			if (varname && r_anal_var_rename (anal, var, varname)) {
-				r_anal_var_set_type (anal, var, vartype);
-			}
-			free (varname);
-			free (vartype);
-			return;
-		}
-		if (!varname) {
-			if (anal->opt.varname_stack) {
-				varname = r_str_newf ("%s_%" PFMT64x "h", pfx, R_ABS (frame_off));
-			} else {
-				varname = r_anal_function_autoname_var (fcn, type, pfx, ptr);
-			}
-		}
-		if (varname) {
-			const int size = inferred_var_size (anal, access_size);
-			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, vartype, size, isarg, varname);
-			if (var) {
-				r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
-			}
-			free (varname);
-		}
-		free (vartype);
+	if (*sign == '-') {
+		ptr = -ptr;
+	}
+	const bool isarg = *sign == '+' && (type == R_ANAL_VAR_KIND_SPV? ptr >= fcn_stack: ptr >= fcn->bp_off);
+	const char *pfx = isarg ? ARGPREFIX : VARPREFIX;
+	st64 frame_off;
+	if (type == R_ANAL_VAR_KIND_SPV) {
+		frame_off = ptr - fcn_stack;
 	} else {
-		st64 frame_off = -(ptr + fcn->bp_off);
-		if (maxstackframe > 0 && (frame_off > maxstackframe || frame_off < -maxstackframe)) {
+		frame_off = ptr - fcn->bp_off;
+	}
+	if (maxstackframe != 0 && (frame_off > maxstackframe || frame_off < -maxstackframe)) {
+		return;
+	}
+	const int var_size = anal->config->bits / 8;
+	const bool fuzzy = !strcmp (anal->config->arch, "arm");
+	RAnalVar *var = get_stack_var (anal, fcn, frame_off, access_size, var_size, fuzzy, addr_taken);
+	if (var) {
+		r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
+		// Revisit inferred arguments after a CC change without replacing user edits.
+		if (!isarg || !var->isarg || var->delta != frame_off) {
 			return;
 		}
-		const int var_size = anal->config->bits / 8;
-		const bool fuzzy = !strcmp (anal->config->arch, "arm");
-		RAnalVar *var = get_stack_var (anal, fcn, frame_off, access_size, var_size, fuzzy, addr_taken);
-		if (var) {
-			r_anal_var_set_access (anal, var, reg, op->addr, rw, -ptr);
+		const char *deftype = int_type (inferred_var_size (anal, access_size));
+		r_strf_var (autoname, 32, "arg_%" PFMT64x "h", R_ABS (anal->opt.varname_stack? frame_off: ptr));
+		if (!deftype || strcmp (var->type, deftype) || strcmp (var->name, autoname)) {
 			return;
-		}
-		char *varname = anal->opt.varname_stack
-			? r_str_newf ("%s_%" PFMT64x "h", VARPREFIX, R_ABS (frame_off))
-			: r_anal_function_autoname_var (fcn, type, VARPREFIX, -ptr);
-		if (varname) {
-			const int size = inferred_var_size (anal, access_size);
-			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, NULL, size, false, varname);
-			if (var) {
-				r_anal_var_set_access (anal, var, reg, op->addr, rw, -ptr);
-			}
-			free (varname);
 		}
 	}
+	if (!var && isarg && type == R_ANAL_VAR_KIND_SPV && fcn->maxstack > fcn->stack && ptr < fcn->maxstack) {
+		const st64 local_frame_off = ptr - fcn->maxstack;
+		RAnalVar *local = get_stack_var (anal, fcn, local_frame_off, access_size, var_size, fuzzy, addr_taken);
+		if (local && !local->isarg) {
+			r_anal_var_set_access (anal, local, reg, op->addr, rw, ptr);
+			return;
+		}
+	}
+	char *varname = NULL, *vartype = NULL;
+	if (isarg) {
+		const bool stack_rev = r_anal_cc_stack_rev (anal, fcn->callconv);
+		char *fname = r_type_func_key (anal->sdb_types, fcn->name);
+		if (fname) {
+			st64 sum_sz = 0;
+			int argc = 0;
+			r_type_func_args_count (anal->sdb_types, fname, &argc);
+			if (r_type_func_is_variadic (anal->sdb_types, fname, argc)) {
+				argc--;
+			}
+			int i;
+			for (i = 0; i < argc; i++) {
+				const int n = stack_rev? argc - i - 1: i;
+				RAnalCCArgSlot slot;
+				if (!r_anal_cc_argslot (anal, fcn->callconv, n, argc, true, &slot) || slot.reg) {
+					continue;
+				}
+				char *tp = r_type_func_args_type (anal->sdb_types, fname, n);
+				if (!tp) {
+					break;
+				}
+				sum_sz = slot.fixed? slot.off: R_MAX (sum_sz, slot.off);
+				if (sum_sz == frame_off + fcn->reg_save_area) {
+					vartype = tp;
+					varname = strdup (r_type_func_args_name (anal->sdb_types, fname, n));
+					break;
+				}
+				ut64 bit_sz = r_anal_type_bitsize (anal, tp);
+				sum_sz += R_ROUND (R_MAX ((bit_sz + 7) / 8, slot.size), slot.size);
+				free (tp);
+			}
+			free (fname);
+		}
+	}
+	if (var) {
+		if (varname && r_anal_var_rename (anal, var, varname)) {
+			r_anal_var_set_type (anal, var, vartype);
+		}
+		free (varname);
+		free (vartype);
+		return;
+	}
+	if (!varname) {
+		if (anal->opt.varname_stack) {
+			varname = r_str_newf ("%s_%" PFMT64x "h", pfx, R_ABS (frame_off));
+		} else {
+			varname = r_anal_function_autoname_var (fcn, type, pfx, ptr);
+		}
+	}
+	if (varname) {
+		const int size = inferred_var_size (anal, access_size);
+		RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, vartype, size, isarg, varname);
+		if (var) {
+			r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
+		}
+		free (varname);
+	}
+	free (vartype);
 }
 
-#if 0
-static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
-	RAnalValue *src0 = RVecRArchValue_at (&op->srcs, 0);
-	RAnalValue *src1 = RVecRArchValue_at (&op->srcs, 1);
-	RAnalValue *src2 = RVecRArchValue_at (&op->srcs, 2);
-	const char* opsreg0 = src0 ? get_regname (anal, src0) : NULL;
-	const char* opsreg1 = src1 ? get_regname (anal, src1) : NULL;
-	const char* opsreg2 = src2 ? get_regname (anal, src2) : NULL;
-	return (STR_EQUAL (regname, opsreg0)) || (STR_EQUAL (regname, opsreg1)) || (STR_EQUAL (regname, opsreg2));
-}
-#else
 static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
 	int i;
 	for (i = 0; i < 3; i++) {
@@ -1526,7 +1476,6 @@ static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
 	}
 	return false;
 }
-#endif
 
 static inline bool op_affect_dst(RAnalOp *op) {
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
