@@ -5,7 +5,7 @@
 // R2R  db/cmd/cmd_flags_graph
 
 static RCoreHelpMessage help_msg_fR = {
-	"Usage: fR", " [from] [to] ([mask])", " # Relocate flags matching mask between bases",
+	"Usage: fR", " [from] [to] ([mask])", " # Move flags by mask between bases",
 	"fR", " entry0 `dm~:1[1]`", "rebase entrypoint",
 	NULL
 };
@@ -59,7 +59,7 @@ static RCoreHelpMessage help_msg_f = {
 	"fn", "", "list flags displaying the real name (demangled)",
 	"fnj", "", "list flags displaying the real name (demangled) in JSON format",
 	"fN", "", "show real name of flag at current address",
-	"fN", " [[name]] [realname]", "set flag real name (uses current seek if none given)",
+	"fN", " [[name]] [realname]", "set flag real name (seek if none given)",
 	"fo", "", "show fortunes",
 	"fO", " [glob]", "flag as ordinals (sym.* func.* method.*)",
 	//" fc [name] [cmt]  ; set execution command for a specific flag"

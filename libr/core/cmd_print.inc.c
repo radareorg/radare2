@@ -81,7 +81,7 @@ static RCoreHelpMessage help_msg_pm = {
 static RCoreHelpMessage help_msg_pp = {
 	"Usage: pp[0|1|2|4|8|a|d|f|n] [len]", "", "print patterns",
 	"pp0", " [len]", "print buffer filled with zeros",
-	"pp1", " [len]", "print incremental byte pattern (honors address low bits and bsize)",
+	"pp1", " [len]", "incremental byte pattern (honors addr low bits, bsize)",
 	"pp2", " [len]", "print incremental word pattern",
 	"pp4", " [len]", "print incremental dword pattern",
 	"pp8", " [len]", "print incremental qword pattern",
@@ -475,7 +475,7 @@ static RCoreHelpMessage help_detail2_pf = {
 	"pf", " B (BitFldType)arg_name`", "bitfield type",
 	"pf", " E (EnumType)arg_name`", "enum type",
 	"pf", " *z*i*w nb name blob", "print the pointers with given labels",
-	"pf", " iwq foo bar troll", "print iwq format with foo, bar, troll as field names",
+	"pf", " iwq foo bar troll", "iwq format with foo, bar, troll as fields",
 	"pf", " 0iwq foo bar troll", "same as above, but considered as a union (all fields at offset 0)",
 	"pf.", "obj xxdz prev next size name", "define the obj format as xxdz",
 	"pf", " obj=xxdz prev next size name", "same as above",

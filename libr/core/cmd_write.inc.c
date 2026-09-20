@@ -80,7 +80,7 @@ static RCoreHelpMessage help_msg_wa = {
 	"'wa nop;nop", "" , "assemble more than one instruction (note the single quote)",
 	"waf", " f.asm" , "assemble file and write bytes",
 	"waF", " f.asm", "assemble file, write bytes and show wx with hexpair output",
-	"waF*", " f.asm", "assemble file and show wx with hexpair bytes of assembled code",
+	"waF*", " f.asm", "assemble file, show wx with hexpair bytes",
 	"wao?", "", "show help for assembler operation on current opcode (hack)",
 	NULL
 };

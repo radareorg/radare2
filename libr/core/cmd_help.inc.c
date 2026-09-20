@@ -302,7 +302,7 @@ static RCoreHelpMessage help_msg_question = {
 	"?_", " hudfile", "load hud menu with given file",
 	"??", "", "show help for ? commands",
 	"?'", "", "show help for single quote (no special char evaluation)",
-	"?(", "expr){cmd}[{else}]", "run command if condition matches, otherwise run else cmd",
+	"?(", "expr){cmd}[{else}]", "run cmd if condition matches, else run else cmd",
 	"?", " eip-0x804800", "show all representation result for this math expr",
 	"?=", " eip-0x804800", "update $? return code with result of operation",
 	"?==", " x86 `e asm.arch`", "strcmp two strings",
