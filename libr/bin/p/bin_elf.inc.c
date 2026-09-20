@@ -524,7 +524,10 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 	ut64 sym_vaddr = r->symbol ? r->symbol->vaddr : (rel->sym ? rel->rva : 0);
 
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
-	#define ADD(T, A) do { r->type = R_BIN_RELOC_ ## T; st32 _tmp; if (!r_add_overflow_st32 (r->addend, A, &_tmp)) { r->addend = _tmp; } r->additive = !rel->implicit_addend; return r; } while (0)
+	#define SETA(T) do { r->type = R_BIN_RELOC_ ## T; r->additive = !rel->implicit_addend; return r; } while (0)
+	#define ADD(T, A) do { st32 _tmp; if (!r_add_overflow_st32 (r->addend, A, &_tmp)) { r->addend = _tmp; } SETA (T); } while (0)
+	// only RELA rows carry a real addend; REL keeps the historic base fold
+	#define REL(T) do { if (rel->mode == DT_RELA) { SETA (T); } ADD (T, B); } while (0)
 
 	// Early return if it's a CREL relocation - it was already set up in the initialization above
 	if (rel->mode == DT_CREL) {
@@ -568,7 +571,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_386_PC32:     ADD(32,-(st64)P); break;
 		case R_386_GLOB_DAT: SET(32); break;
 		case R_386_JMP_SLOT: SET(32); break;
-		case R_386_RELATIVE: ADD(32, B); break;
+		case R_386_RELATIVE: REL(32); break;
 		case R_386_GOTOFF:   ADD(32, -(st64)got_addr); break;
 		case R_386_GOTPC:    ADD(32, got_addr - P); break;
 		case R_386_16:       ADD(16, 0); break;
@@ -593,7 +596,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_X86_64_PC32:      ADD(32,-(st64)P); break;
 		case R_X86_64_GLOB_DAT:  r->vaddr -= rel->sto; SET(64); break;
 		case R_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64); break;
-		case R_X86_64_RELATIVE:  ADD(64, B); break;
+		case R_X86_64_RELATIVE:  REL(64); break;
 		case R_X86_64_32:        ADD(32, 0); break;
 		case R_X86_64_32S:       ADD(32, 0); break;
 		case R_X86_64_16:        ADD(16, 0); break;
@@ -664,7 +667,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_AARCH64_GLOB_DAT: SET (64); break;
 		case R_AARCH64_JUMP_SLOT: SET (64); break;
 		case R_AARCH64_COPY: ADD (64, 0); break; // copy symbol at runtime
-		case R_AARCH64_RELATIVE: ADD (64, B); break;
+		case R_AARCH64_RELATIVE: REL (64); break;
 		case R_AARCH64_IRELATIVE: r->is_ifunc = true; SET (64); break;
 		// data references
 		case R_AARCH64_PREL16: ADD (16, B); break;
@@ -781,8 +784,8 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_PPC64_JMP_SLOT:  // PLT slot; vaddr = r_offset
 		case R_PPC64_ADDR64:
 			SET (64);
-		case R_PPC64_RELATIVE:  // B + A, filled by dynamic linker
-			ADD (64, B);
+		case R_PPC64_RELATIVE:  // A + load bias
+			REL (64);
 		case R_PPC64_ADDR32:
 			ADD (32, 0);
 		case R_PPC64_REL32:
@@ -903,6 +906,8 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		break;
 	}
 #undef SET
+#undef SETA
+#undef REL
 #undef ADD
 	RVecRBinReloc_pop_back (out);
 	return NULL;
@@ -1094,7 +1099,7 @@ static ut64 elf_io_addr(RBinFile *bf, ELFOBJ *eo, ut64 v) {
 	return (any && !disagree)? agreed: moved;
 }
 
-static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 B, ut64 L, ut64 toc) {
+static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 bias, ut64 L, ut64 toc) {
 	ut64 V = 0;
 	ut64 A = rel->addend;
 	ut8 buf[8] = {0};
@@ -1117,7 +1122,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			V = 0;
 			break;
 		case R_390_RELATIVE:
-			V = A + (B - bo->baddr);
+			V = A + bias;
 			break;
 		default:
 			return;
@@ -1177,7 +1182,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		}
 		switch (rel->type) {
 		case R_ARM_RELATIVE:
-			V = B + addend;
+			V = addend + bias;
 			r_write_ble32 (buf, V, bo->endian);
 			break;
 		case R_ARM_ABS32:
@@ -1365,8 +1370,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		case R_AARCH64_RELATIVE:
 		case R_AARCH64_IRELATIVE:
 			word = 8;
-			V = B + A;
-			break;
+			V = A + bias;
 			break;
 		case R_AARCH64_GLOB_DAT:
 		case R_AARCH64_JUMP_SLOT:
@@ -1417,9 +1421,9 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			word = 8;
 			V = S + A;
 			break;
-		case R_PPC64_RELATIVE: // 22 — B + A (base-relative, filled by dynamic linker)
+		case R_PPC64_RELATIVE: // 22 — A + load bias
 			word = 8;
-			V = B + A;
+			V = A + bias;
 			break;
 		case R_PPC64_TOC16_HA:
 			if (toc != UT64_MAX) {
@@ -1508,8 +1512,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			V = S;
 			break;
 		case R_386_RELATIVE:
-			// wants the load bias, which is 0 in an unrebased view
-			V = A;
+			V = A + bias;
 			break;
 		default:
 			return;
@@ -1531,7 +1534,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			V = S + pA;
 			break;
 		case R_PPC_RELATIVE:
-			V = pA + (B - bo->baddr);
+			V = pA + bias;
 			break;
 		case R_PPC_DTPMOD32:
 		case R_PPC_DTPREL32:
@@ -1602,7 +1605,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			break;
 		case R_X86_64_RELATIVE:
 			word = 8;
-			V = B + A;
+			V = A + bias;
 			break;
 		default:
 			//eprintf ("relocation %d not handle at this time\n", rel->type);
@@ -1632,7 +1635,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 	}
 	case EM_BPF: // CHECK: some older solana programs have set an ehdr.e_machine of EM_BPF
 	case EM_SBPF: {
-		B = bo->user_baddr != UINT64_MAX ? bo->user_baddr : bo->baddr;
+		const ut64 B = (bo->user_baddr != UT64_MAX)? bo->user_baddr: bo->baddr;
 		switch (rel->type) {
 		case R_BPF_64_64: { // 64-bit immediate for lddw instructions
 			// Read the current value from the immediate fields (addend)
@@ -1867,7 +1870,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			toc_base = elf_io_addr (bf, eo, t) + 0x8000;
 		}
 	}
-	const ut64 B = elf_io_addr (bf, eo, eo->baddr);
+	const ut64 bias = elf_io_addr (bf, eo, eo->baddr) - eo->baddr;
 	RBinElfReloc *reloc;
 	R_VEC_FOREACH (relocs, reloc) {
 		ut64 plt_entry_addr = vaddr;
@@ -1893,7 +1896,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		const bool resolved = sym_addr && sym_addr != UT64_MAX;
 		const ut64 raddr = resolved? sym_addr: vaddr;
 		_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
-			elf_io_addr (bf, eo, reloc->rva), raddr, B, plt_entry_addr, toc_base);
+			elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base);
 		ptr = reloc_convert (eo, reloc, n_vaddr - bf->bo->baddr_shift, ret);
 		if (!ptr) {
 			continue;
