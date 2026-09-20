@@ -17,7 +17,17 @@ bool test_x86_stack_access(void) {
 		{ 16, "669a000000000000", "ip", "sp", 8 },
 		{ 32, "e800000000", "eip", "esp", 4 },
 		{ 32, "66e80000", "eip", "esp", 2 },
+		{ 32, "9a000000000000", "eip", "esp", 8 },
+		{ 32, "669a00000000", "eip", "esp", 4 },
+		{ 32, "50", "eip", "esp", 4 },
+		{ 32, "6650", "eip", "esp", 2 },
 		{ 64, "e800000000", "rip", "rsp", 8 },
+		{ 64, "66e800000000", "rip", "rsp", 8 },
+		{ 64, "50", "rip", "rsp", 8 },
+		{ 64, "6650", "rip", "rsp", 2 },
+		{ 16, "b80000", "ip", "sp", 0 },
+		{ 32, "b800000000", "eip", "esp", 0 },
+		{ 64, "4889c3", "rip", "rsp", 0 },
 	};
 	RAnal *anal = r_anal_new ();
 	mu_assert_true (r_anal_use (anal, "x86"), "select x86");
@@ -42,7 +52,7 @@ bool test_x86_stack_access(void) {
 				found = true;
 			}
 		}
-		mu_assert_true (found, "instruction writes the stack");
+		mu_assert_eq (found, cases[i].width != 0, "only stack-writing instructions store through SP");
 		r_anal_op_fini (&op);
 	}
 	r_anal_free (anal);

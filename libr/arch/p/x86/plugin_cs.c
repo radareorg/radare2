@@ -2883,30 +2883,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 
 static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn, int mode) {
 	int i;
-	int regsz;
-	x86_reg sp, pc;
-	switch (mode) {
-	case CS_MODE_64:
-		regsz = 8;
-		sp = X86_REG_RSP;
-		pc = X86_REG_RIP;
-		break;
-	case CS_MODE_32:
-		regsz = 4;
-		sp = X86_REG_ESP;
-		pc = X86_REG_EIP;
-		break;
-	case CS_MODE_16:
-		regsz = 2;
-		sp = X86_REG_SP;
-		pc = X86_REG_IP;
-		break;
-	default:
-		regsz = 4;
-		sp = X86_REG_ESP;
-		pc = X86_REG_EIP;
-		break;
-	}
+	int regsz = mode == CS_MODE_64? 8: mode == CS_MODE_16? 2: 4;
+	const x86_reg sp = mode == CS_MODE_64? X86_REG_RSP: mode == CS_MODE_16? X86_REG_SP: X86_REG_ESP;
+	const x86_reg pc = mode == CS_MODE_64? X86_REG_RIP: mode == CS_MODE_16? X86_REG_IP: X86_REG_EIP;
 	if (mode != CS_MODE_64 && insn->detail->x86.prefix[2] == X86_PREFIX_OPSIZE) {
 		regsz = regsz == 2? 4: 2;
 	}
