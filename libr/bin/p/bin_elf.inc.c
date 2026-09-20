@@ -558,11 +558,15 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		r->type = (sizeof (Elf_(Addr)) == 4)? R_BIN_RELOC_32: R_BIN_RELOC_64;
 		switch (rel->type) {
 		case R_390_GLOB_DAT: // globals
+		case R_390_JMP_SLOT:
 			r->additive = 0;
 			return r;
 		case R_390_RELATIVE:
 			r->additive = !rel->implicit_addend;
 			return r;
+		default:
+			R_LOG_WARN ("Unsupported reloc type %d for s390", rel->type);
+			break;
 		}
 		break;
 	case EM_386: switch (rel->type) {
