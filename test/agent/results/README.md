@@ -117,12 +117,28 @@ whether an agent chooses or writes a real r2r regression correctly. The earlier
 limitations still apply. There are now 39 recorded trials in total; the original
 30, including their failures, remain unchanged in pr26750-luna.jsonl.
 
-The updated AGENTS.md is 56 lines, 605 words and 4,535 bytes, versus the original
-111 lines, 780 words and 5,216 bytes. Reproduce or inspect the follow-up with:
+The AGENTS.md used for this follow-up is 56 lines, 605 words and 4,535 bytes,
+versus the original 111 lines, 780 words and 5,216 bytes. Reproduce or inspect
+the follow-up with:
 
 ```sh
 python3 test/agent/report.py test/agent/results/pr26750-completion.jsonl
 python3 test/agent/run.py --out /tmp/r2-agent-completion \
   --source dd5327e --docs b9b5e59 --model YOUR_EXACT_MODEL_ID --repeat 3 \
   --variant completion=0e3ef05
+```
+
+## Later documentation updates
+
+After these trials, the PR was rebased onto `master` and the guidance was clarified
+to prohibit multiline comments, favor descriptive function and variable names,
+and require one-line commit subjects with optional short bullet-point bodies.
+These edits were checked as documentation only; no additional model trials were
+run. The scores above still describe the pinned revisions that were tested.
+
+The original revisions remain on `docs/pr26750-evaluation-history`. Fetch that
+branch if the commits are missing locally:
+
+```sh
+git fetch origin docs/pr26750-evaluation-history
 ```

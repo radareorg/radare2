@@ -4,7 +4,7 @@
 
 Make the smallest coherent fix. Reuse existing helpers; avoid unrelated cleanup,
 speculative abstractions and repeated scans in hot paths. Extract helpers when
-they simplify logic; comment on non-obvious intent.
+they simplify logic.
 
 Search symbols and paths first; read only relevant sections:
 
@@ -15,6 +15,7 @@ Search symbols and paths first; read only relevant sections:
 
 ## Style
 
+- Use descriptive function and variable names so code is readable without comments in most cases. Do not add multiline comments; use short single-line comments only for non-obvious intent.
 - Match nearby code: tabs, no trailing whitespace, braces even for single statements, and `case` labels aligned with `switch`.
 - Space before calls/control parentheses: `foo ()`, `if (x)`, `sizeof (int)`. Keep function signatures on one line without a space before `(`.
 - Initialize variables near first use; declare loop variables before `for`, not inside it.
@@ -51,6 +52,8 @@ Search symbols and paths first; read only relevant sections:
 ## Commits
 
 Commit only when requested or needed for a requested PR; otherwise suggest a one-line message.
-Start with a capital letter. For user-visible changes, append one existing `##tag`
-as the final word; security fixes use `##crash`. See [Commit messages](DEVELOPERS.md#commit-messages)
+Write a one-line subject starting with a capital letter. If a body is needed,
+separate it with a blank line and use only short bullet points.
+For user-visible changes, append one existing `##tag` as the final word of the
+subject; security fixes use `##crash`. See [Commit messages](DEVELOPERS.md#commit-messages)
 for details, issue references and the tag list.
