@@ -1,0 +1,172 @@
+NAME=x86-16 afva reconciles default stack arguments after changing the calling convention
+FILE=malloc://128
+ARGS=-a x86 -b 16
+CMDS=<<END
+wx 5589e583ec028b46048946fec9c3
+f typed16
+td int typed16(short value);
+af
+afc
+afc cdecl
+afva
+afcf
+afv
+afva
+afv
+s 32
+wx 5589e583ec028b46048b56068946fec9c3
+f custom16
+td int custom16(short first, short second);
+af
+afvn kept arg_4h
+afvt arg_6h uint16_t
+afvt var_2h uint16_t
+afc cdecl
+afva
+afv
+s 64
+e anal.vars.stackname=true
+wx 5589e583ec028b46048946fec9c3
+f stackname16
+td int stackname16(short value);
+af
+afc cdecl
+afva
+afv
+s 96
+e anal.vars.stackname=false
+wx 5589e583ec028b46048946fec9c3
+f collision16
+td int collision16(short value);
+af
+afvn value var_2h
+afc cdecl
+afva
+afv
+END
+EXPECT=<<END
+fastcall
+int typed16 (short value);
+arg short value @ bp+0x4
+var int16_t var_2h @ bp-0x2
+arg short value @ bp+0x4
+var int16_t var_2h @ bp-0x2
+arg int16_t kept @ bp+0x4
+arg uint16_t arg_6h @ bp+0x6
+var uint16_t var_2h @ bp-0x2
+arg short value @ bp+0x4
+var int16_t var_4h @ bp-0x2
+arg int16_t arg_4h @ bp+0x4
+var int16_t value @ bp-0x2
+END
+RUN
+
+NAME=x86-16 cdecl and pascal preserve two-byte slots around wide arguments
+FILE=malloc://64
+ARGS=-a x86 -b 16
+CMDS=<<END
+wx 5589e58a4604668b56068b4e0ac9c3
+f forward16
+td int forward16(char first, uint32_t wide, short last);
+af
+afc cdecl
+afva
+afvb
+s 32
+wx 5589e58a4604668b56068b4e0ac9c3
+f reverse16
+td int reverse16(short first, uint32_t wide, char last);
+af
+afc pascal
+afva
+afvb
+END
+EXPECT=<<END
+arg char first @ bp+0x4
+arg uint32_t wide @ bp+0x6
+arg short last @ bp+0xa
+arg char last @ bp+0x4
+arg uint32_t wide @ bp+0x6
+arg short first @ bp+0xa
+END
+RUN
+
+NAME=x86-16 register arguments respect reads and writes of both byte halves
+FILE=malloc://64
+ARGS=-a x86 -b 16
+CMDS=<<END
+wx 5589e58b560688d0b40089c3f6874141805dc3
+af original19595
+afvr~?
+af-
+wx b001b40289c3c3
+af lowhigh
+afvr~?
+af-
+wx b402b00189c3c3
+af highlow
+afvr~?
+af-
+wx 31c089c3c3
+af zeroax
+afvr~?
+af-
+wx b00188e3c3
+af readah
+afvr
+af-
+wx b40289c3c3
+af readal
+afvr
+af-
+wx b00189c3c3
+af readword
+afvr
+af-
+wx 88f3c3
+af readdh
+afvr
+af-
+wx 30c089c3c3
+af zeroal
+afvr
+af-
+wx 30e0c3
+af xorhalves
+afvr
+af-
+wx 89c3c3 @32
+af callee @32
+wx b001e81b00c3
+af forwardhalf
+afvr
+af-
+wx b001b402e81900c3
+af forwardwritten
+afvr~?
+af-
+wx b0017403b402c389c3c3
+af halfbranch
+afvr
+af-
+wx b00188e3740289c189c2c3
+af argbranch
+afvr
+END
+EXPECT=<<END
+0
+0
+0
+0
+arg int16_t arg1 @ ax
+arg int16_t arg1 @ ax
+arg int16_t arg1 @ ax
+arg int16_t arg1 @ dx
+arg int16_t arg1 @ ax
+arg int16_t arg1 @ ax
+arg int16_t arg1 @ ax
+0
+arg int16_t arg1 @ ax
+arg int16_t arg1 @ ax
+END
+RUN

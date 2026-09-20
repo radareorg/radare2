@@ -12,6 +12,7 @@ if get_option('enable_tests')
     'anal_types',
     'anal_var',
     'anal_xrefs',
+    'anal_x86',
     'arena',
     'codemeta',
     'base64',

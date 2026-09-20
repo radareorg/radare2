@@ -3809,8 +3809,8 @@ static bool anal_block_on_exit(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	int *prev_regset = *RVecIntPtr_at (&ctx->reg_set, RVecIntPtr_length (&ctx->reg_set) - 1);
 	size_t i;
 	for (i = 0; i < R_ANAL_CC_REGSET_SIZE; i++) {
-		if (!prev_regset[i] && cur_regset[i] == 1) {
-			prev_regset[i] = 1;
+		if (!(prev_regset[i] & 3) && (cur_regset[i] & 3) == 1) {
+			prev_regset[i] |= 1;
 		}
 	}
 	free (cur_regset);
