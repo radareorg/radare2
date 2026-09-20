@@ -40,12 +40,13 @@ Search symbols and paths first; read only relevant sections:
 
 ## Verify
 
-- Prefer focused `r2r` regressions in existing `test/db/` files, reusing fixtures. Cover the reported behavior and relevant edge cases; do not blindly accept changed expected output.
+- Add command-based `r2r` regressions using `r2` commands in existing `test/db/` files, reusing fixtures, instead of adding C unit tests. Cover the reported behavior and relevant edge cases; do not blindly accept changed expected output.
 - Build and install this checkout before running `r2r -C test db/...` from the root. See [Regression testing](DEVELOPERS.md#regression-testing) for library/plugin paths, absolute executable overrides and `test/unit/`.
 - Keep the filename last in `r2` invocations. Use `-n` only for raw input: it skips binary loading. `io.va=false` changes addressing, not binary loading.
 - Binary fixtures belong in `radare2-testbins` (`test/bins/`), not this repository. `// R2R` comments can link source files to tests.
 - For memory debugging, see `DEVELOPERS.md` (Error diagnosis): `R2_DEBUG=1` and `sys/sanitize.sh`.
 - Run `git diff --check`; report what was tested and any blockers. Documentation-only changes need reference checks, not a full build.
+- Before reporting completion, inspect `git status --short` and the diff. Verify every requested deliverable exists and contains the required content; remove temporary artifacts you created.
 
 ## Commits
 
