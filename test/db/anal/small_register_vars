@@ -1,0 +1,262 @@
+NAME=Game Boy byte and paired arguments preserve only incoming bits
+FILE=malloc://128
+ARGS=-a gb -b 16
+CMDS=<<END
+af-
+e anal.cc=dyncc:a:
+wx 47c9
+af
+?e byte input
+afvr
+af-
+e anal.cc=dyncc:a:
+wx af47c9
+af
+?e byte zeroed
+afvr
+af-
+e anal.cc=dyncc:a:
+wx 3e0147c9
+af
+?e byte written
+afvr
+af-
+e anal.cc=dyncc:a:
+wx 2fc9
+af
+?e byte complement
+afvr
+af-
+e anal.cc=dyncc:bc:
+wx 060179c9
+af
+?e high written low input
+afvr
+af-
+e anal.cc=dyncc:bc:
+wx 0e0178c9
+af
+?e low written high input
+afvr
+af-
+e anal.cc=dyncc:bc:
+wx 06010e0278c9
+af
+?e both written
+afvr
+af-
+e anal.cc=dyncc:bc:
+wx 0e01060279c9
+af
+?e both reversed
+afvr
+af-
+e anal.cc=dyncc:hl:
+wx 3601c9
+af
+?e memory write reads base
+afvr
+af-
+e anal.cc=dyncc:hl:
+wx 2100003601c9
+af
+?e written address
+afvr
+af-
+e anal.cc=dyncc:bc:
+wx b8c9
+af
+?e compare reads pair
+afvr
+af-
+e anal.cc=dyncc:a:
+wx 9747c9
+af
+?e subtract self
+afvr
+af-
+wx 47c9 @64
+af callee @64
+wx cd4000c9
+af forwarded
+?e forwarded byte
+afvr
+afva
+afvr
+af-
+wx 3e01cd4000c9
+af written
+?e written byte is not forwarded
+afvr
+af-
+e anal.cc=dyncc:bc:
+wx 060128040e02c90079c9
+af branch
+?e sibling write does not hide incoming bits
+afvr
+afva
+afvr
+END
+EXPECT=<<END
+byte input
+arg int8_t arg1 @ a
+byte zeroed
+byte written
+byte complement
+arg int8_t arg1 @ a
+high written low input
+arg int16_t arg1 @ bc
+low written high input
+arg int16_t arg1 @ bc
+both written
+both reversed
+memory write reads base
+arg int16_t arg1 @ hl
+written address
+compare reads pair
+arg int16_t arg1 @ bc
+subtract self
+forwarded byte
+arg int8_t arg1 @ a
+arg int8_t arg1 @ a
+written byte is not forwarded
+sibling write does not hide incoming bits
+arg int16_t arg1 @ bc
+arg int16_t arg1 @ bc
+END
+RUN
+
+NAME=x86 byte arguments distinguish overlapping reads, writes and conditional writes
+FILE=malloc://64
+ARGS=-a x86 -b 16
+CMDS=<<END
+af-
+e anal.cc=dyncc:al,ah,bx:
+wx b00188e3c3
+af
+?e low write high read
+afvr
+af-
+e anal.cc=dyncc:al,ah,bx:
+wx b40188c3c3
+af
+?e high write low read
+afvr
+af-
+e anal.cc=dyncc:al,ah,bx:
+wx b8010088e3c3
+af
+?e word overwrite
+afvr
+af-
+e anal.cc=dyncc:al,ah,bx:
+wx 30c088e3c3
+af
+?e byte zero unrelated
+afvr
+af-
+e anal.cc=dyncc:al,ah,bx:
+wx 31db0f44c388e3c3
+af
+?e conditional write
+afvr
+af-
+e anal.cc=dyncc:al,ah,bx:
+wx b00188c3c3
+af
+?e same byte written
+afvr
+af-
+e anal.cc=dyncc:al,ah,bx:
+wx 30e0c3
+af
+?e xor reads both
+afvr
+af-
+e anal.cc=dyncc:al,ah,bx:
+wx 8807c3
+af
+?e memory address
+afvr
+af-
+wx c60701c3
+af
+?e immediate store only reads its address
+afvr
+af-
+wx 29c0c3
+af
+?e subtract self
+afvr
+af-
+wx 28e0c3
+af
+?e subtract halves
+afvr
+END
+EXPECT=<<END
+low write high read
+arg int8_t arg1 @ ah
+high write low read
+arg int8_t arg1 @ al
+word overwrite
+byte zero unrelated
+arg int8_t arg1 @ ah
+conditional write
+arg int8_t arg1 @ al
+arg int8_t arg2 @ ah
+same byte written
+xor reads both
+arg int8_t arg1 @ al
+arg int8_t arg2 @ ah
+memory address
+arg int8_t arg1 @ al
+arg int16_t arg2 @ bx
+immediate store only reads its address
+arg int16_t arg1 @ bx
+subtract self
+subtract halves
+arg int8_t arg1 @ al
+arg int8_t arg2 @ ah
+END
+RUN
+
+NAME=x86 zydis operand lists preserve distinct sources and address registers
+FILE=malloc://64
+ARGS=-a x86.zydis -b 16
+CMDS=<<END
+wx 30e0c3
+af
+afvr
+af-
+wx 28e0c3
+af
+afvr
+af-
+wx c60701c3
+af
+afvr
+af-
+wx 31c0c3
+af
+afvr~?
+af-
+wx 29c0c3
+af
+afvr~?
+af-
+e anal.cc=dyncc:bx,si:
+wx c6400101c3
+af
+afvr
+END
+EXPECT=<<END
+arg int16_t arg1 @ ax
+arg int16_t arg1 @ ax
+arg int16_t arg1 @ bx
+0
+0
+arg int16_t arg1 @ bx
+arg int16_t arg2 @ si
+END
+RUN
