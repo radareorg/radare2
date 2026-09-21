@@ -34,6 +34,48 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: ir* prints a reloc slot shared by two relocs once
+FILE=bins/elf/analysis/arm-relocs
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir*
+ir~r0?
+f-*
+.ir*
+fs relocs
+f
+EOF
+EXPECT=<<EOF
+fs relocs
+'@0x8000060'wv8 0x8000358
+'f reloc.r0 4 0x08000358
+'@0x08000358'Cd 4
+'f reloc.r1 4 0x0800035c
+'@0x0800035c'Cd 4
+'f reloc.r2 4 0x08000360
+'@0x08000360'Cd 4
+'f reloc.r3 4 0x08000364
+'@0x08000364'Cd 4
+'f reloc.r4 4 0x08000368
+'@0x08000368'Cd 4
+2
+0x08000358 4 reloc.r0
+0x0800035c 4 reloc.r1
+0x08000360 4 reloc.r2
+0x08000364 4 reloc.r3
+0x08000368 4 reloc.r4
+EOF
+RUN
+
+NAME=ELF: arm relocs ir* shared slot under bin.cache
+FILE=bins/elf/analysis/arm-relocs
+ARGS=-e bin.cache=true -e bin.relocs.apply=false
+CMDS=ir*~reloc.r0?
+EXPECT=<<EOF
+1
+EOF
+RUN
+
 NAME=ELF: thumb-bits arm gets pointer-sized import slots
 FILE=bins/arm/elf/hello_world
 ARGS=-e bin.relocs.apply=true

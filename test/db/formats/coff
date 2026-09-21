@@ -153,6 +153,25 @@ sym._TIFFGetField 0x8dbd [CALL:--x] call sym._TIFFVGetField
 EOF
 RUN
 
+NAME=COFF: ir* prints a shared import slot once
+FILE=bins/coff/tif_dir.obj
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir*~reloc.?
+ir*~Cd?
+ir*~__TIFFfree?
+ir~__TIFFfree?
+ir~?
+EOF
+EXPECT=<<EOF
+1186
+973
+1
+25
+1269
+EOF
+RUN
+
 NAME=patching REL32 amd64
 ARGS=-e bin.relocs.apply=1
 FILE=bins/coff/coff.obj

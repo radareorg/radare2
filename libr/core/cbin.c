@@ -2165,6 +2165,8 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	}
 
 	RBinReloc *reloc;
+	const char *last_name = NULL;
+	ut64 last_addr = UT64_MAX;
 	RelocInfo ri = { 0 };
 	ri_init (core, &ri);
 	R_VEC_FOREACH (relocs, reloc) {
@@ -2187,10 +2189,17 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 				r_cons_printf (core->cons, "0x%08" PFMT64x "  %s\n", addr, name);
 			}
 		} else if (IS_MODE_RAD (mode)) {
-			char *name = reloc->import
-				? strdup (r_bin_name_tostring (reloc->import->name))
-				: (reloc->symbol? strdup (r_bin_name_tostring (reloc->symbol->name)): NULL);
+			const char *rname = reloc->import
+				? r_bin_name_tostring (reloc->import->name)
+				: (reloc->symbol? r_bin_name_tostring (reloc->symbol->name): NULL);
+			if (rname && last_name && addr == last_addr && !strcmp (rname, last_name)) {
+				// relocs sharing a slot would repeat the same flag and meta
+				continue;
+			}
+			char *name = rname? strdup (rname): NULL;
 			if (name) {
+				last_name = rname;
+				last_addr = addr;
 				if (bin_demangle) {
 					char *mn = r_bin_demangle (core->bin->cur, NULL, name, addr, keep_lib);
 					if (mn) {

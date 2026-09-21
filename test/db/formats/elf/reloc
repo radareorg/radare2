@@ -1229,6 +1229,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: x86-64 ET_REL ir* prints each of many shared import slots once
+FILE=bins/elf/radare2.c.obj
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir*~reloc.?
+ir*~r_list_free?
+ir~r_list_free?
+EOF
+EXPECT=<<EOF
+3905
+1
+78
+EOF
+RUN
+
 NAME=ELF: ELF32 ET_REL NOBITS section is laid out past the import slots
 FILE=bins/elf/pngrutil_o
 ARGS=-e bin.relocs.apply=true

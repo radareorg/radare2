@@ -114,6 +114,22 @@ vaddr      paddr      type   ntype name
 EOF
 RUN
 
+NAME=NE: ir* keeps one name at each printed address when every reloc vaddr is 0
+FILE=bins/ne/anim8.exe
+CMDS=<<EOF
+ir*~KILLTIMER
+ir*~reloc.?
+EOF
+EXPECT=<<EOF
+'f reloc.USER.KILLTIMER 4 0x00000f4d
+'f reloc.USER.KILLTIMER 4 0x00000f02
+'f reloc.USER.KILLTIMER 4 0x00000ef4
+'f reloc.USER.KILLTIMER 4 0x00001359
+'f reloc.USER.KILLTIMER 4 0x00002b14
+707
+EOF
+RUN
+
 NAME=NE preserve unnamed entry symbols
 ARGS=-e bin.unnamed=false
 FILE=bins/fuzzed/nepocaligns-17
