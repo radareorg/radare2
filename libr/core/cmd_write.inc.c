@@ -219,6 +219,17 @@ static void cmd_write_fail(RCore *core) {
 	r_core_return_value (core, R_CMD_RC_FAILURE);
 }
 
+static bool write_num(RCore *core, const char *s, ut64 *n, ut64 max) {
+	const char *err = NULL;
+	*n = r_num_math_err (core->num, s, &err);
+	if (err || *n > max) {
+		R_LOG_ERROR ("Invalid expression '%s'%s%s", s, err? ": ": "", err? err: "");
+		r_core_return_value (core, R_CMD_RC_FAILURE);
+		return false;
+	}
+	return true;
+}
+
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	R_RETURN_VAL_IF_FAIL (core && pairs, 0);
 
@@ -631,8 +642,8 @@ static void cmd_write_value(RCore *core, const char *input) {
 	char *cinp;
 	RListIter *iter;
 	r_list_foreach (list, iter, cinp) {
-		if (input[0] && input[1]) {
-			off = r_num_math (core->num, cinp);
+		if (input[0] && input[1] && !write_num (core, cinp, &off, UT64_MAX)) {
+			break;
 		}
 		if (core->io->desc) {
 			r_io_use_fd (core->io, core->io->desc->fd);
@@ -729,14 +740,16 @@ static bool cmd_wff(RCore *core, const char *input) {
 	if (size < 1) {
 		// nothing to write
 	} else if (buf) {
-		int u_offset = 0;
-		ut64 u_size = r_num_math (core->num, p);
-		if (u_size < 1) u_size = (ut64)size;
+		ut64 u_offset = 0;
+		ut64 u_size = size;
 		if (p) {
-			*p++ = 0;
-			u_offset = r_num_math (core->num, p);
-			if (u_offset > size) {
-				R_LOG_ERROR ("Invalid offset");
+			char *off = strchr (p, ' ');
+			if (off) {
+				*off++ = 0;
+			}
+			if (!write_num (core, p, &u_size, size)
+				|| (off && !write_num (core, off, &u_offset, size))
+				|| u_size > size - u_offset) {
 				free (a);
 				free (buf);
 				return false;
@@ -781,12 +794,20 @@ static bool cmd_wfx(RCore *core, const char *input) {
 	char *args = r_str_trim_dup (input);
 	char *arg = strchr (args, ' ');
 	int len = core->blocksize;
+	ut64 n, src;
 	if (arg) {
 		*arg = 0;
-		len = r_num_math (core->num, arg + 1);
+		if (!write_num (core, arg + 1, &n, INT_MAX)) {
+			free (args);
+			return false;
+		}
+		len = n;
 	}
 	ut64 dst = core->addr;
-	ut64 src = r_num_math (core->num, args);
+	if (!write_num (core, args, &src, UT64_MAX)) {
+		free (args);
+		return false;
+	}
 	if (len > 0) {
 		// cache dest, memcpy, write cache
 		ut8 *buf = calloc (1, len);
@@ -894,11 +915,19 @@ static int cmd_wf(void *data, const char *input) {
 	char *args = r_str_trim_dup (input);
 	char *arg = strchr (args, ' ');
 	int len = core->blocksize;
+	ut64 n, addr;
 	if (arg) {
 		*arg++ = 0;
-		len = r_num_math (core->num, arg);
+		if (!write_num (core, arg, &n, INT_MAX)) {
+			free (args);
+			return -1;
+		}
+		len = n;
 	}
-	ut64 addr = r_num_math (core->num, args);
+	if (!write_num (core, args, &addr, UT64_MAX)) {
+		free (args);
+		return -1;
+	}
 	ioMemcpy (core, core->addr, addr, len);
 	free (args);
 	r_core_block_read (core);
@@ -2451,15 +2480,11 @@ static int cmd_wd(void *data, const char *input) {
 		char *arg, *inp = strdup (input + 1);
 		arg = strchr (inp, ' ');
 		if (arg) {
-			*arg = 0;
-			ut64 addr = r_num_math (core->num, input + 1);
-			st64 len = r_num_math (core->num, arg + 1);
-			if (len < 1) {
-				R_LOG_ERROR ("Invalid length for wd");
-				return 0;
-			}
-			if (len > 0xfffff) {
-				R_LOG_TODO ("Region is too large for wd, implement block copy");
+			*arg++ = 0;
+			ut64 addr, len;
+			if (!write_num (core, inp, &addr, UT64_MAX)
+				|| !write_num (core, arg, &len, 0xfffff) || !len) {
+				free (inp);
 				return 0;
 			}
 			ut8 *data = malloc (len);
