@@ -129,6 +129,7 @@ RUN
 
 NAME=x86 32bit relocs in kernel module (bin.relocs.apply=false)
 FILE=bins/elf/linux-example-x86-32.ko
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 s 0x0800007c
 pi 15
