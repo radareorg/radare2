@@ -521,3 +521,55 @@ EXPECT=<<EOF
 00000000000000000000000000000000
 EOF
 RUN
+
+NAME=write commands reject invalid expressions
+FILE=malloc://64
+CMDS=<<EOF
+wx aabbccdd
+wv foo
+wf foo 4
+wd foo 4
+p8 4
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid expression 'foo': invalid octal number
+ERROR: Invalid expression 'foo': invalid octal number
+ERROR: Invalid expression 'foo': invalid octal number
+EOF
+EXPECT=<<EOF
+aabbccdd
+EOF
+RUN
+
+NAME=wff rejects invalid and out-of-range slices
+FILE=malloc://32
+CMDS=<<EOF
+echo '12345678' > .r2-wff-test.txt
+wx aabbccdd
+wff .r2-wff-test.txt foo
+wff .r2-wff-test.txt 8 4
+rm .r2-wff-test.txt
+p8 4
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid expression 'foo': invalid octal number
+EOF
+EXPECT=<<EOF
+aabbccdd
+EOF
+RUN
+
+NAME=wf rejects lengths wider than int
+FILE=malloc://32
+CMDS=<<EOF
+wx aabbccdd
+wf 0 0x80000000
+p8 4
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid expression '0x80000000'
+EOF
+EXPECT=<<EOF
+aabbccdd
+EOF
+RUN
