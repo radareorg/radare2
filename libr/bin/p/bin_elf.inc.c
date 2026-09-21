@@ -1580,7 +1580,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			break;
 		case R_X86_64_GLOB_DAT:
 		case R_X86_64_JUMP_SLOT:
-			word = 4;
+			word = sizeof (Elf_(Addr));
 			V = S;
 			break;
 		case R_X86_64_PC8:
