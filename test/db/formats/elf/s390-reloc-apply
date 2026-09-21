@@ -13,7 +13,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF s390x: every RELATIVE slot rebased under -B
+NAME=ELF s390x: every RELATIVE and GLOB_DAT slot rebased under -B
 FILE=bins/elf/ls-s390x
 ARGS=-B 0x100000 -e bin.relocs.apply=true
 CMDS=<<EOF
@@ -22,11 +22,11 @@ pxQ 0x12d0 @ 0x126318~?0x00000000001
 EOF
 EXPECT=<<EOF
 0x0000000000106328
-228
+240
 EOF
 RUN
 
-NAME=ELF s390x: GLOB_DAT and JMP_SLOT slots keep the file word under -B
+NAME=ELF s390x: an applied GLOB_DAT names its symbol, a JMP_SLOT still does not
 FILE=bins/elf/ls-s390x
 ARGS=-B 0x100000 -e bin.relocs.apply=true
 CMDS=<<EOF
@@ -34,8 +34,21 @@ pv8 @ 0x126f38
 pv8 @ 0x127018
 EOF
 EXPECT=<<EOF
-0x0000000000000000
+0x0000000000128fb8
 0x000000000000392e
+EOF
+RUN
+
+NAME=ELF s390x: an applied GLOB_DAT names its symbol unrebased too
+FILE=bins/elf/ls-s390x
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x26f38
+om~.got.r2
+EOF
+EXPECT=<<EOF
+0x0000000000028fb8
+- 4 fd: 5 +0x00000000 0x00028898 - 0x00029357 rw- rw- .got.r2
 EOF
 RUN
 
@@ -62,7 +75,7 @@ pv4 @ 0x30238
 ir~_32
 EOF
 EXPECT=<<EOF
-0x00000000
+0x000101c4
 0x00030234
 0x11223344
 0x00030230 0x00000230 SET_32 10    f

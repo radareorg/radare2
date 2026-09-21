@@ -1119,7 +1119,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		const int ws = sizeof (Elf_(Addr));
 		switch (rel->type) {
 		case R_390_GLOB_DAT:
-			V = 0;
+			V = S;
 			break;
 		case R_390_RELATIVE:
 			V = A + bias;
