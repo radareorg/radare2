@@ -1041,6 +1041,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: x86-64 GOT slot keeps the high half of a base above 4gb
+FILE=bins/elf/ls
+ARGS=-B 0x100000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x100021c78
+EOF
+EXPECT=<<EOF
+0x0000000100023b68
+EOF
+RUN
+
+NAME=ELF: x86-64 GOT slot write stays inside the slot at base 0
+FILE=bins/elf/ls
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+p8 8 @ 0x21c78
+EOF
+EXPECT=<<EOF
+683b020000000000
+EOF
+RUN
+
 NAME=ELF: ppc64 slot is patched at the mapped address under a custom base
 FILE=bins/elf/ppc64v1-libz.so
 ARGS=-B 0x100000000 -e bin.relocs.apply=true
