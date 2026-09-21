@@ -954,6 +954,26 @@ bool test_r_str_but_escape(void) {
 	mu_end;
 }
 
+bool test_r_str_unquote(void) {
+	const char *cases[][2] = {
+		{"", ""}, {"'", "'"}, {"\"", "\""}, {"''", ""}, {"\"\"", ""},
+		{"\"hook.js\"", "hook.js"}, {"'hook.js'", "hook.js"},
+		{"\"C:\\Program Files\\hook.js\"", "C:\\Program Files\\hook.js"},
+		{"'\\\\server\\share\\hook.js'", "\\\\server\\share\\hook.js"},
+		{"\"C:\\#tmp\\hook.js\"", "C:\\#tmp\\hook.js"},
+		{"\"C:\\tmp\\\"", "C:\\tmp\\"}, {"\" hook.js \"", " hook.js "},
+		{"\"\"hook.js\"\"", "\"hook.js\""}, {"my 'hook'.js", "my 'hook'.js"},
+		{"'hook.js\"", "'hook.js\""}, {"\"hook.js", "\"hook.js"}
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		char *s = strdup (cases[i][0]);
+		r_str_unquote (s);
+		mu_assert_streq_free (s, cases[i][1], cases[i][0]);
+	}
+	mu_end;
+}
+
 bool test_r_str_trim_args_quote_parity(void) {
 	char odd_single[] = "'pa\\'tata'";
 	r_str_trim_args (odd_single);
@@ -1028,6 +1048,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_printfmt_pf);
 	mu_run_test (test_r_str_but_escape);
 	mu_run_test (test_r_str_trim_args_quote_parity);
+	mu_run_test (test_r_str_unquote);
 	return tests_passed != tests_run;
 }
 
