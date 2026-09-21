@@ -1,0 +1,25 @@
+NAME=pFx signature and malformed certificate handling
+FILE=-
+CMDS=<<EOF
+wx 30653056020101300506032b6570300d310b300906035504030c027232301e170d3235303130313030303030305a170d3330303130313030303030305a300d310b300906035504030c027232300c300506032b6570030300aabb300506032b65700382000200ff
+pFx~Signature:
+pFxj~{Signature}
+wx 01 @ 100
+pFx
+pFxj
+wx 02 @ 100
+wx 04 @ 92
+pFx
+pFxj
+EOF
+EXPECT=<<EOF
+Signature: 1 bytes
+ff
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
