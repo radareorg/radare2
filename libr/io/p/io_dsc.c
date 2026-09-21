@@ -120,22 +120,12 @@ typedef struct {
 	ut64 last_seek;
 } RIODscObject;
 
-typedef enum {
-	SUBCACHE_FORMAT_UNDEFINED,
-	SUBCACHE_FORMAT_V1,
-	SUBCACHE_FORMAT_V2
-} RDscSubcacheFormat;
-
-typedef struct {
-	ut8 uuid[16];
-	ut64 cacheVMOffset;
-} RDscSubcacheEntryV1;
-
+// dyld_subcache_entry; caches predating cacheSubType (iOS 15) stop before suffix
 typedef struct {
 	ut8 uuid[16];
 	ut64 cacheVMOffset;
 	char suffix[32];
-} RDscSubcacheEntryV2;
+} RDscSubcacheEntry;
 
 #define R_IS_PTR_AUTHENTICATED(x) B_IS_SET(x, 63)
 #define URL_SCHEME "dsc://"
@@ -203,7 +193,6 @@ static int dsc_object_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
 static ut64 dsc_object_seek(RIO *io, RIODscObject *dsc, ut64 offset, int whence);
 
 static bool dsc_dig_slices(RIODscObject * dsc);
-static bool dsc_detect_subcache_format(int fd, ut32 sc_offset, ut32 sc_count, ut32 array_end, ut64 size, ut64 * out_entry_size, RDscSubcacheFormat * out_format);
 static bool dsc_dig_subcache(RIODscObject * dsc, const char * filename, ut64 start, ut8 * check_uuid, ut64 * out_size);
 static bool dsc_dig_one_slice(RIODscObject * dsc, int fd, const char * file_name, ut64 start, ut64 end, ut8 * check_uuid, RDSCHeader * header, bool walk_monocache);
 static RIODscSlice * dsc_get_slice(RIODscObject * dsc, ut64 off_global);
@@ -634,24 +623,14 @@ static bool dsc_dig_slices(RIODscObject * dsc) {
 			}
 		}
 
-		ut64 sc_entry_size;
-		RDscSubcacheFormat sc_format = SUBCACHE_FORMAT_UNDEFINED;
-
-		if (subCacheArrayCount) {
-			ut32 array_end = 0;
-
-			dsc_header_get_u32 (header, "maybePointsToLinkeditMapAtTheEndOfSubCachesArray", &array_end);
-
-			if (!dsc_detect_subcache_format(fd, subCacheArrayOffset, subCacheArrayCount, array_end, next_or_end, &sc_entry_size, &sc_format)) {
-				R_LOG_ERROR ("Could not detect subcache entry format");
-				goto error;
-			}
-			if (sc_format == SUBCACHE_FORMAT_UNDEFINED) {
-				R_LOG_ERROR ("Ambiguous or unsupported subcache entry format");
-				goto error;
-			}
-		} else {
-			sc_entry_size = 0;
+		// same rule as dyld (SharedCacheRuntime.cpp): entries carry a file
+		// suffix iff the header is large enough to contain cacheSubType
+		ut32 cache_sub_type;
+		const bool has_suffixes = dsc_header_get_u32 (header, "cacheSubType", &cache_sub_type);
+		const ut64 sc_entry_size = has_suffixes? sizeof (RDscSubcacheEntry): offsetof (RDscSubcacheEntry, suffix);
+		if (subCacheArrayCount && subCacheArrayOffset + sc_entry_size * subCacheArrayCount > next_or_end) {
+			R_LOG_ERROR ("Malformed subcache entries");
+			goto error;
 		}
 
 		ut64 cursor = 0;
@@ -663,51 +642,19 @@ static bool dsc_dig_slices(RIODscObject * dsc) {
 		ut64 sc_entry_cursor = subCacheArrayOffset;
 
 		for (i = 0; i != subCacheArrayCount; i++) {
-			char * suffix = NULL;
-			ut8 check_uuid[16];
+			RDscSubcacheEntry entry = {0};
 
-			if (lseek (fd, sc_entry_cursor, SEEK_SET) < 0) {
+			if (lseek (fd, sc_entry_cursor, SEEK_SET) < 0 || read (fd, &entry, sc_entry_size) != sc_entry_size) {
 				goto error;
 			}
-
-			switch (sc_format) {
-			case SUBCACHE_FORMAT_V1:
-			{
-				RDscSubcacheEntryV1 entry;
-
-				if (read (fd, &entry, sc_entry_size) != sc_entry_size) {
-					goto error;
-				}
-
-				suffix = r_str_newf (".%d", i + 1);
-				memcpy (check_uuid, entry.uuid, 16);
-				break;
-			}
-			case SUBCACHE_FORMAT_V2:
-			{
-				RDscSubcacheEntryV2 entry;
-				if (read (fd, &entry, sc_entry_size) != sc_entry_size) {
-					return false;
-				}
-				suffix = r_str_ndup (entry.suffix, 32);
-				memcpy (check_uuid, entry.uuid, 16);
-				break;
-			}
-#if 1
-			// its unreachable by coverity but reachable by gcc, so it cant be commented :D
-			case SUBCACHE_FORMAT_UNDEFINED:
-				suffix = NULL;
-				break;
-#endif
-			}
-
+			char * suffix = has_suffixes? r_str_ndup (entry.suffix, 32): r_str_newf (".%d", i + 1);
 			char * subcache_filename = r_str_newf ("%s%s", dsc->filename, suffix);
 			free (suffix);
 			if (!subcache_filename) {
 				goto error;
 			}
 			ut64 size;
-			bool success = dsc_dig_subcache (dsc, subcache_filename, cursor, check_uuid, &size);
+			bool success = dsc_dig_subcache (dsc, subcache_filename, cursor, entry.uuid, &size);
 			free (subcache_filename);
 			if (!success) {
 				goto error;
@@ -740,55 +687,6 @@ error:
 	dsc_header_free (header);
 	close (fd);
 	return false;
-}
-
-static bool dsc_detect_subcache_format(int fd, ut32 sc_offset, ut32 sc_count, ut32 array_end, ut64 size, ut64 * out_entry_size, RDscSubcacheFormat * out_format) {
-	RDscSubcacheFormat sc_format = SUBCACHE_FORMAT_UNDEFINED;
-	ut64 sc_entry_size = 0;
-	ut64 array_size_v2 = sizeof (RDscSubcacheEntryV2) * sc_count;
-
-	if (array_end) {
-		if (array_end == sc_offset + array_size_v2) {
-			sc_format = SUBCACHE_FORMAT_V2;
-			sc_entry_size = sizeof (RDscSubcacheEntryV2);
-			goto beach;
-		}
-	}
-
-	if (sc_count != 0) {
-		ut64 array_size_v1 = sizeof (RDscSubcacheEntryV1) * sc_count;
-		char test_v1, test_v2;
-
-		if (array_size_v1 + 1 >= size || array_size_v2 + 1 >= size) {
-			R_LOG_ERROR ("Malformed subcache entries");
-			return false;
-		}
-		if (lseek (fd, sc_offset + array_size_v1, SEEK_SET) < 0) {
-			return false;
-		}
-		if (read (fd, &test_v1, 1) != 1) {
-			return false;
-		}
-		if (lseek (fd, sc_offset + array_size_v2, SEEK_SET) < 0) {
-			return false;
-		}
-		if (read (fd, &test_v2, 1) != 1) {
-			return false;
-		}
-
-		if (test_v1 == '/' && test_v2 != '/') {
-			sc_format = SUBCACHE_FORMAT_V1;
-			sc_entry_size = sizeof (RDscSubcacheEntryV1);
-		} else if (test_v1 != '/' && test_v2 == '/') {
-			sc_format = SUBCACHE_FORMAT_V2;
-			sc_entry_size = sizeof (RDscSubcacheEntryV2);
-		}
-	}
-beach:
-	*out_entry_size = sc_entry_size;
-	*out_format = sc_format;
-
-	return true;
 }
 
 static bool dsc_dig_subcache(RIODscObject * dsc, const char * filename, ut64 start, ut8 * check_uuid, ut64 * out_size) {

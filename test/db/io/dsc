@@ -1,0 +1,70 @@
+NAME=dsc suffix entries with unused space after the array
+FILE=malloc://2048
+ARGS=-nw
+CMDS=<<EOF
+e log.level=1
+wx 64796c645f7631202061726d36346500
+wv4 0x208 @ 0x10
+wv8 0x800 @ 0x28
+wv4 0x240 @ 0x138
+wv4 1 @ 0x13c
+wv4 0x300 @ 0x188
+wv4 1 @ 0x18c
+wv4 0x680 @ 0x200
+wx 0102030405060708090a0b0c0d0e0f10 @ 0x300
+wx 2e6461746100 @ 0x318
+wx 756e73657400 @ 0x350
+wtf .tmp_dsc_suffix 2048
+wv8 0x400 @ 0x28
+wv4 0 @ 0x18c
+wx 0102030405060708090a0b0c0d0e0f10 @ 0x58
+wx 41424344 @ 0x380
+wtf .tmp_dsc_suffix.data 1024
+on dsc://.tmp_dsc_suffix
+p8 4 @ 0xb80
+o-*
+rm .tmp_dsc_suffix
+rm .tmp_dsc_suffix.data
+EOF
+EXPECT=<<EOF
+41424344
+EOF
+RUN
+
+NAME=dsc numbered subcaches with pre-cacheSubType header
+FILE=malloc://2048
+ARGS=-nw
+CMDS=<<EOF
+e log.level=1
+wx 64796c645f7631202061726d36346500
+wv4 0x1c8 @ 0x10
+wv8 0x800 @ 0x28
+wv4 0x240 @ 0x138
+wv4 1 @ 0x13c
+wv4 0x300 @ 0x188
+wv4 2 @ 0x18c
+wx 0102030405060708090a0b0c0d0e0f10 @ 0x300
+wx 1112131415161718191a1b1c1d1e1f20 @ 0x318
+wx 2f @ 0x330
+wtf .tmp_dsc_v1 2048
+wv8 0x400 @ 0x28
+wv4 0 @ 0x18c
+wx 0102030405060708090a0b0c0d0e0f10 @ 0x58
+wx 31313131 @ 0x380
+wtf .tmp_dsc_v1.1 1024
+wx 1112131415161718191a1b1c1d1e1f20 @ 0x58
+wx 32323232 @ 0x380
+wtf .tmp_dsc_v1.2 1024
+on dsc://.tmp_dsc_v1
+p8 4 @ 0xb80
+p8 4 @ 0xf80
+o-*
+rm .tmp_dsc_v1
+rm .tmp_dsc_v1.1
+rm .tmp_dsc_v1.2
+EOF
+EXPECT=<<EOF
+31313131
+32323232
+EOF
+RUN
