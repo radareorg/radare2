@@ -839,6 +839,208 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: x86-64 relative reloc keeps the link base out
+FILE=bins/elf/x86_64-relative-linkbase.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x43390
+pv8 @ 0x43398
+pv8 @ 0x433a0
+ir~ADD_64
+EOF
+EXPECT=<<EOF
+0x00000000000412c8
+0x0000000000043398
+0x0000000000001234
+0x00043390 0x00000390 ADD_64 8      0x000412c8
+0x00043398 0x00000398 ADD_64 8      0x00043398
+EOF
+RUN
+
+NAME=ELF: x86-64 relative reloc moves by the load bias under -B
+FILE=bins/elf/x86_64-relative-linkbase.so
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x103390
+pv8 @ 0x103398
+EOF
+EXPECT=<<EOF
+0x00000000001012c8
+0x0000000000103398
+EOF
+RUN
+
+NAME=ELF: aarch64 relative reloc keeps the link base out
+FILE=bins/elf/aarch64-relative-linkbase.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x70390
+pv8 @ 0x70398
+pv8 @ 0x703a0
+ir~ADD_64
+EOF
+EXPECT=<<EOF
+0x00000000000502c8
+0x0000000000070398
+0x0000000000001234
+0x00070390 0x00000390 ADD_64 1027   0x000502c8
+0x00070398 0x00000398 ADD_64 1027   0x00070398
+EOF
+RUN
+
+NAME=ELF: aarch64 relative reloc moves by the load bias under -B
+FILE=bins/elf/aarch64-relative-linkbase.so
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x130390
+pv8 @ 0x130398
+EOF
+EXPECT=<<EOF
+0x00000000001102c8
+0x0000000000130398
+EOF
+RUN
+
+NAME=ELF: ppc64 relative reloc keeps the link base out
+FILE=bins/elf/ppc64-relative-linkbase.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x703a0
+pv8 @ 0x703a8
+pv8 @ 0x703b0
+ir~ADD_64
+EOF
+EXPECT=<<EOF
+0x00000000000502c8
+0x00000000000703a8
+0x0000000000001234
+0x000703a0 0x000003a0 ADD_64 22     0x000502c8
+0x000703a8 0x000003a8 ADD_64 22     0x000703a8
+EOF
+RUN
+
+NAME=ELF: ppc64 relative reloc moves by the load bias under -B
+FILE=bins/elf/ppc64-relative-linkbase.so
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x1303a0
+pv8 @ 0x1303a8
+EOF
+EXPECT=<<EOF
+0x00000000001102c8
+0x00000000001303a8
+EOF
+RUN
+
+NAME=ELF: arm rel relative reloc keeps the link base out
+FILE=bins/elf/arm-relative-linkbase.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv4 @ 0x70220
+pv4 @ 0x70224
+pv4 @ 0x70228
+EOF
+EXPECT=<<EOF
+0x000501bc
+0x00070224
+0x00001234
+EOF
+RUN
+
+NAME=ELF: arm rel relative reloc moves by the load bias under -B
+FILE=bins/elf/arm-relative-linkbase.so
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv4 @ 0x130220
+pv4 @ 0x130224
+EOF
+EXPECT=<<EOF
+0x001101bc
+0x00130224
+EOF
+RUN
+
+NAME=ELF: arm rel relative reloc listing is unchanged
+FILE=bins/elf/arm-relative-linkbase.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~SET_32
+EOF
+EXPECT=<<EOF
+0x00070220 0x00000220 SET_32 23     0x00040000
+0x00070224 0x00000224 SET_32 23     0x00040000
+EOF
+RUN
+
+NAME=ELF: i386 relative reloc lists its addend
+FILE=bins/elf/i386-base10000-rela.so
+CMDS=<<EOF
+ir~ADD_32
+EOF
+EXPECT=<<EOF
+0x000132d0 0x000002d0 ADD_32 8      0x00011222
+EOF
+RUN
+
+NAME=ELF: i386 relative reloc moves by the load bias under -B
+FILE=bins/elf/i386-base10000-rela.so
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv4 @ 0x1032d0
+EOF
+EXPECT=<<EOF
+0x00101222
+EOF
+RUN
+
+NAME=ELF: i386 rel relative reloc moves by the load bias under -B
+FILE=bins/elf/i386-base10000-rel.so
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv4 @ 0x1032c0
+EOF
+EXPECT=<<EOF
+0x00101216
+EOF
+RUN
+
+NAME=ELF: i386 rel relative reloc listing is unchanged
+FILE=bins/elf/i386-base10000-rel.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~0x000132c0
+EOF
+EXPECT=<<EOF
+0x000132c0 0x000002c0 SET_32 8      0x00010000
+EOF
+RUN
+
+NAME=ELF: x86-64 relative reloc in a base-0 PIE is rebased once under -B
+FILE=bins/elf/varsub_2
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x300df0
+pv8 @ 0x301020
+EOF
+EXPECT=<<EOF
+0x0000000000100610
+0x0000000000301020
+EOF
+RUN
+
+NAME=ELF: relative reloc lists an addend wider than 32 bits
+# synthetic ET_DYN linked at 0x400000, one R_X86_64_RELATIVE, addend 0x100003368
+FILE=malloc://512
+CMDS=<<EOF
+wx 7f454c4602010100000000000000000003003e00010000000000000000000000400000000000000000000000000000000000000040003800020040000000000001000000050000000000000000000000000040000000000000004000000000000801000000000000080100000000000000100000000000000200000006000000b000000000000000b000400000000000b0004000000000004000000000000000400000000000000008000000000000000700000000000000f000400000000000080000000000000018000000000000000900000000000000180000000000000000000000000000000000000000000000000140000000000008000000000000006833000001000000
+oba
+ir~ADD_64
+EOF
+EXPECT=<<EOF
+0x00000100 0x00000100 ADD_64 8      0x100003368
+EOF
+RUN
+
 NAME=ELF: ppc64 slot is patched at the mapped address under a custom base
 FILE=bins/elf/ppc64v1-libz.so
 ARGS=-B 0x100000000 -e bin.relocs.apply=true
