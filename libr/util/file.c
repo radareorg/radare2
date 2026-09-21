@@ -228,8 +228,9 @@ R_API ut64 r_file_size(const char *str) {
 }
 
 R_API bool r_file_is_abspath(const char *file) {
-	R_RETURN_VAL_IF_FAIL (!R_STR_ISEMPTY (file), 0);
-	return ((*file && file[1] == ':') || *file == '/');
+	R_RETURN_VAL_IF_FAIL (file, false);
+	return *file == '/' || (*file == '\\' && file[1] == '\\')
+		|| (isalpha ((ut8)*file) && file[1] == ':' && (file[2] == '/' || file[2] == '\\'));
 }
 
 R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
