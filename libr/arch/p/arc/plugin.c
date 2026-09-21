@@ -319,7 +319,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 	} else if ((fields.format == 0) && (fields.c == ARC_REG_LIMM)) {
 		op->size = 8;
 		fields.limm = words[1];
-	} else if ((fields.format == 3) && ((fields.a & 0x20) == 0x20) && (fields.c == ARC_REG_LIMM)) {
+	} else if ((fields.format == 3) && !(fields.a & 0x20) && (fields.c == ARC_REG_LIMM)) {
 		op->size = 8;
 		fields.limm = words[1];
 	}
@@ -545,6 +545,14 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 }
 
 static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+	static const int br_conds[] = {
+		R_ANAL_CONDTYPE_EQ, R_ANAL_CONDTYPE_NE, R_ANAL_CONDTYPE_LT,
+		R_ANAL_CONDTYPE_GE, R_ANAL_CONDTYPE_LO, R_ANAL_CONDTYPE_HS
+	};
+	static const int bcc_s_conds[] = {
+		R_ANAL_CONDTYPE_GT, R_ANAL_CONDTYPE_GE, R_ANAL_CONDTYPE_LT, R_ANAL_CONDTYPE_LE,
+		R_ANAL_CONDTYPE_HI, R_ANAL_CONDTYPE_HS, R_ANAL_CONDTYPE_LO, R_ANAL_CONDTYPE_LS
+	};
 	ut32 words[2]; /* storage for the de-swizled opcode data */
 	arc_fields fields;
 
@@ -621,16 +629,15 @@ static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *dat
 			fields.imm = SEX_S9 ((words[0] & 0x00fe0000) >> 16 | (words[0] & 0x8000) >> 7);
 			op->type = R_ANAL_OP_TYPE_CJMP;
 
-			if (fields.format2 == 0) {
-				/* Branch on Compare Register-Register, 0x01, [0x1, 0x0] */
-				if (fields.b == ARC_REG_LIMM || fields.c == ARC_REG_LIMM) {
-					op->size = 8;
-					fields.limm = words[1];
-				}
-				/* TODO: cond codes (using the "br" mapping) */
-			} else {
-				/* Branch on Compare/Bit Test Register-Immediate, 0x01, [0x1, 0x1] */
-				/* TODO: cond codes and imm u6 (using the "br" mapping) */
+			if (fields.subopcode < R_ARRAY_SIZE (br_conds)) {
+				op->cond = br_conds[fields.subopcode];
+			}
+			if (fields.b == ARC_REG_LIMM || (!fields.format2 && fields.c == ARC_REG_LIMM)) {
+				op->size = 8;
+				op->val = words[1];
+			}
+			if (fields.format2) {
+				op->val = fields.c;
 			}
 			arcompact_branch (op, addr, fields.imm, fields.mode_n);
 		} else {
@@ -837,7 +844,7 @@ static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *dat
 				break;
 			case 6: /* SUB_S.NE [b] */
 				op->cond = R_ANAL_CONDTYPE_NE;
-				op->type = R_ANAL_OP_TYPE_SUB;
+				op->type = R_ANAL_OP_TYPE_SUB | R_ANAL_OP_TYPE_COND;
 				break;
 			case 7: /* Zero Operand Instructions, 0x0F, [0x00, 0x07, 0x00 - 0x07] */
 				switch (fields.b) {
@@ -1098,7 +1105,7 @@ static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *dat
 		case 3: /* Bcc_S */
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			fields.imm = SEX_S7 ((words[0] & 0x003f0000) >> (16 - 1));
-			/* TODO: cond codes (looks like it is the BR table again?) */
+			op->cond = bcc_s_conds[(words[0] >> 22) & 7];
 			break;
 		}
 		arcompact_branch (op, addr, fields.imm, 0);

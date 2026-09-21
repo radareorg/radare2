@@ -285,44 +285,6 @@ typedef struct r_anal_function_signature_t {
 	RAnalFunctionSignatureOrigin origin;
 } RAnalFunctionSignature;
 
-typedef enum {
-	R_ANAL_FCN_BASE_BP = 0,
-	R_ANAL_FCN_BASE_SP,
-	R_ANAL_FCN_BASE_NAMED
-} RAnalFcnSlotBase;
-
-typedef enum {
-	R_ANAL_FCN_SLOT_LOCAL = 0,
-	R_ANAL_FCN_SLOT_ARG,
-	R_ANAL_FCN_SLOT_HOME,
-	R_ANAL_FCN_SLOT_UNKNOWN
-} RAnalFcnSlotRole;
-
-typedef struct r_anal_fcn_reg_arg_t {
-	char *name;
-	char *type;
-	char *reg;
-	int arg_index;
-} RAnalFcnRegArg;
-
-typedef struct r_anal_fcn_slot_t {
-	char *name;
-	char *type;
-	RAnalFcnSlotBase base;
-	char *base_name;
-	st64 offset;
-	RAnalFcnSlotRole role;
-	int arg_index;
-	char *arg_name;
-	char *home_reg;
-} RAnalFcnSlot;
-
-typedef struct r_anal_fcn_context_t {
-	RAnalFunctionSignature *signature;
-	RList *reg_args; // RList<RAnalFcnRegArg *>
-	RList *fcn_slots; // RList<RAnalFcnSlot *>
-} RAnalFcnContext;
-
 typedef struct r_anal_diff_t {
 	int type;
 	ut32 size;
@@ -932,10 +894,6 @@ typedef bool (*RAnalFcnAnalyzeCallback)(RAnal *a, RAnalFunction *fcn);
 // Returns list of RAnalVarProt or NULL to use default ESIL recovery
 typedef RList *(*RAnalRecoverVarsCallback)(RAnal *a, RAnalFunction *fcn);
 
-// Data flow refs callback (called during aar)
-// Returns vector of RAnalRef for data flow xrefs
-typedef RVecAnalRef *(*RAnalDataRefsCallback)(RAnal *a, RAnalFunction *fcn);
-
 // Pre-analysis callback (called early in aaa, after aa, before per-function work)
 typedef bool (*RAnalPreAnalysisCallback)(RAnal *a);
 
@@ -972,7 +930,6 @@ typedef struct r_anal_plugin_t {
 	// Per-function analysis hooks
 	RAnalFcnAnalyzeCallback analyze_fcn;      // Called after af completes
 	RAnalRecoverVarsCallback recover_vars;    // Called during afva, returns vars
-	RAnalDataRefsCallback get_data_refs;      // Called during aar, returns refs
 
 	// Pre-analysis hook (called early in aaa, filtered by eligible)
 	RAnalPreAnalysisCallback pre_analysis;
@@ -1182,7 +1139,6 @@ typedef enum {
 	R_ANAL_PLUGIN_ACTION_PRE_ANALYSIS,   // aaa hook: call pre_analysis on all eligible plugins
 	R_ANAL_PLUGIN_ACTION_ANALYZE_FCN,   // af hook: call analyze_fcn on all eligible plugins
 	R_ANAL_PLUGIN_ACTION_RECOVER_VARS,  // afva hook: first plugin returning vars wins
-	R_ANAL_PLUGIN_ACTION_GET_DATA_REFS, // aar hook: merge data refs from all eligible plugins
 	R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, // aaaa hook: call post_analysis on all eligible plugins
 } RAnalPluginAction;
 
@@ -1290,8 +1246,6 @@ R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const c
 // The convention the analysis or a project decided on, kept as given. A bare
 // "dyncc" resolves against the function's address; NULL or empty clears it.
 R_API bool r_anal_function_store_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv);
-R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn);
-R_API void r_anal_function_context_free(RAnalFcnContext *ctx);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
 R_API int r_anal_function_count(RAnal *a, ut64 from, ut64 to);
 R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64 addr);
@@ -1498,6 +1452,7 @@ R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *s
 R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error);
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc);
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n);
+R_API const char *r_anal_cc_fpret(RAnal *anal, const char *convention, int n);
 R_API bool r_anal_cc_argclob(RAnal *anal, const char *caller_cc, int n, const char *callee_cc);
 R_API bool r_anal_cc_isclobber(RAnal *anal, const char *cc, const char *reg);
 R_API const char *r_anal_cc_default(RAnal *anal);
@@ -1857,7 +1812,6 @@ R_API ut64 r_anal_types_bump_dirty_epoch(RAnal *anal);
 R_API bool r_anal_types_set_link(RAnal *anal, const char *type, ut64 addr);
 R_API bool r_anal_types_set_link_offset(RAnal *anal, const char *type, ut64 addr);
 R_API bool r_anal_types_unlink(RAnal *anal, ut64 addr);
-R_API RList *r_anal_types_baselist(RAnal *anal);
 R_API void r_parse_pdb_types(const RAnal *anal, const RBinPdb *pdb);
 R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);
 R_API char *r_anal_base_type_to_kv(const RAnalBaseType *type);

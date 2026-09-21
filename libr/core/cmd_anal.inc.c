@@ -28,13 +28,13 @@ static RCoreHelpMessage help_msg_acolon = {
 static RCoreHelpMessage help_msg_a = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"a", "", "alias for aai - analysis information",
-	"a:", "[cmd]", "run a command implemented by an analysis plugin (like : for io)",
+	"a:", "[cmd]", "run command implemented by an analysis plugin (like : for io)",
 	"a*", "", "same as afl*;ah*;ax*",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 	"a8", " [hexpairs]", "analyze bytes",
 	"ab", "[?]", "analyze basic block",
 	"ac", "[?]", "manage classes",
-	"ad", "[?]", "analyze data trampoline (wip) (see 'aod' to describe mnemonics)", // XXX rename to at?
+	"ad", "[?]", "analyze data trampoline (see 'aod' to describe mnemonics)", // XXX rename to at?
 	"ad", " [from] [to]", "analyze data pointers to (from-to)",
 	"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",
 	"af", "[?]", "analyze functions",
@@ -71,7 +71,7 @@ static RCoreHelpMessage help_msg_afu = {
 static RCoreHelpMessage help_msg_aae = {
 	"Usage:", "aae", "[pf] ([addr]) # analyze all kind of stuff using esil",
 	"aae", " [size] ([addr])", "same as aepa@@@i - define anal pins by import flag names",
-	"aae", "", "honor anal.{in,from,to} and emulate all executable regions",
+	"aae", "", "honor anal.{in,from,to} and emulate executable regions",
 	"aaef", "", "emulate all functions using esil to find out computed references (same as aef@@@F)",
 	"aaep", "", "same as aepa@@@i - define anal pins by import flag names",
 	"aaep", "a", "run 'aep ret0@@@i' and then 'aaep' - all unknown imports are faked to return 0",
@@ -253,7 +253,7 @@ static RCoreHelpMessage help_msg_ai = {
 static RCoreHelpMessage help_msg_aar = {
 	"Usage:", "aar", "[j*] [sz] # search and analyze xrefs",
 	"aar", "", "analyze xrefs in current section ",
-	"aar", " [sz]", "analyze xrefs starting in current offset until sz bytes are consumed",
+	"aar", " [sz]", "analyze xrefs starting in current offset until sz bytes consumed",
 	"aarr", "", "analyze all function reference graph to find more functions (EXPERIMENTAL)",
 	"aar*", " [sz]", "list found xrefs in radare commands format",
 	"aarj", " [sz]", "list found xrefs in JSON format",
@@ -269,12 +269,12 @@ static RCoreHelpMessage help_msg_ab = {
 	"aba", "[j] [addr]", "analyze esil accesses in basic block (see aea?)",
 
 	"abc", "[-] [color]", "change color of the current basic block (same as afbc, abc- to unset)",
-	"abe", " [esil-expr]", "assign esil expression to basic block (see: aeb, dre, afbd)",
+	"abe", " [esil-expr]", "assign esil expression to basic block (aeb, dre, afbd)",
 	"abf", " [addr]", "address of incoming (from) basic blocks",
 	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[?] [.-cqj]", "list all basic blocks",
 	"abo", "", "list opcode offsets of current basic block",
-	"abm", "[j]", "list instruction bytes and mask for the current basic block",
+	"abm", "[j]", "list instruction bytes and mask for current basic block",
 	"abp", "[?] [addr]", "follow basic blocks paths from $$ to `addr`",
 	"abt", "[tag] ([color])", "no args = show current trace tag, otherwise set the color",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
@@ -622,13 +622,13 @@ static RCoreHelpMessage help_msg_afb = {
 	"afbt", " [tableaddr] [elem_sz] [count] [seg]", "analyze function jumptable (adding seg to each elem)",
 	"afbc", "[-] [color] ([addr])", "colorize basic block (same as 'abc', afbc- to unset)",
 	"afbd", "", "list function basic block dependency list in order and set abe values",
-	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
+	"afbe", " bbfrom bbto", "add basic-block edge for switch-case",
 	"afbF", "([0|1])", "Toggle the basic-block 'folded' attribute", // why not lowercase?
-	"afbi", "[j]", "print current basic block information",
-	"afbj", " [addr]", "show basic blocks information in json",
+	"afbi", "[j]", "print basic block information",
+	"afbj", " [addr]", "show basic blocks in json",
 	"afbr", "[?]", "show addresses of instructions which leave the function",
 	"afbo", "", "list addresses of each instruction for every basic block in function (see abo)",
-	"afB", " [bits]", "define asm.bits for the given function",
+	"afB", " [bits]", "define asm.bits for given function",
 	NULL
 };
 
@@ -860,7 +860,7 @@ static RCoreHelpMessage help_msg_afs = {
 	"afs", " ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
 	"afsq", "", "same as afs without the error message",
 	"afsQ", "", "same as afsq, silent at function entry",
-	"afs!", "", "edit current function signature with cfg.editor",
+	"afs!", "", "edit function signature with cfg.editor",
 	"afs*", " ([signame])", "get function signature in flags",
 	"afsj", " ([signame])", "get function signature in JSON",
 	"afsr", " [function_name] [new_type]", "change type for given function",
@@ -879,7 +879,7 @@ static RCoreHelpMessage help_msg_aft = {
 
 static RCoreHelpMessage help_msg_afv = {
 	"Usage:", "afv[rbs]", " Function variables manipulation",
-	"afv*", "", "output r2 command to add args/locals to flagspace",
+	"afv*", "", "output r2 command to add vars to flagspace",
 	"afv-", "([name])", "remove all or given var",
 	"afv=", "", "list function variables and arguments with disasm refs",
 	"afva", "", "analyze function arguments/locals",
@@ -922,7 +922,7 @@ static RCoreHelpMessage help_msg_afvr = {
 	"afvr*", "", "same as afvr but in r2 commands",
 	"afvr", " [reg] [name] ([type])", "define register arguments",
 	"afvrj", "", "return list of register arguments in JSON format",
-	"afvr-", " [name|idx]", "delete the register argument with that name or index",
+	"afvr-", " [name|idx]", "delete register argument with that name or index",
 	"afvrg", " [reg] [addr]", "define argument get reference",
 	"afvrs", " [reg] [addr]", "define argument set reference",
 	NULL
@@ -1372,8 +1372,53 @@ static ut64 faddr(RCore *core, ut64 addr, bool *nr) {
 	return addr;
 }
 
+static bool has_function_signature(RAnalFunction *fcn) {
+	Sdb *db = fcn->anal->sdb_types;
+	char *name = r_type_func_key (db, fcn->name);
+	if (!name) {
+		name = r_type_link_at (db, fcn->addr);
+	}
+	const char *linked = name? name: sdb_const_getf (db, NULL, "fcnlink.%08" PFMT64x, fcn->addr);
+	const bool declared = linked && r_type_func_prototype_exist (db, linked);
+	free (name);
+	return declared;
+}
+
+static bool is_default_local(RAnalVar *var, const char *type) {
+	if (var->isarg || strcmp (var->type, type) || var->comment || !RVecAnalVarConstraint_empty (&var->constraints)
+			|| !r_str_startswith (var->name, "var_")) {
+		return false;
+	}
+	const char *p = var->name + 4;
+	if (r_str_startswith (p, "bp_") || r_str_startswith (p, "sp_")) {
+		p += 3;
+	}
+	if (!isxdigit ((ut8)*p)) {
+		return false;
+	}
+	while (isxdigit ((ut8)*p)) {
+		p++;
+	}
+	if (*p++ != 'h') {
+		return false;
+	}
+	if (*p == '_' && isdigit ((ut8)p[1])) {
+		p++;
+		while (isdigit ((ut8)*p)) {
+			p++;
+		}
+	}
+	return !*p;
+}
+
 // function argument types and names into anal/types
 static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
+	char *type_name = r_type_func_key (core->anal->sdb_types, fcn->name);
+	const bool declared = type_name != NULL;
+	free (type_name);
+	if (declared) {
+		return;
+	}
 	char *linked_type = r_type_link_at (core->anal->sdb_types, fcn->addr);
 	if (linked_type) {
 		const bool has_signature = r_type_kind (core->anal->sdb_types,
@@ -1432,10 +1477,10 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 		free (k);
 		arg_count++;
 	}
-	if (arg_count > 0) {
-		Sdb *TDB = core->anal->sdb_types;
+	Sdb *TDB = core->anal->sdb_types;
+	const int oargs = (int)sdb_num_getf (TDB, NULL, "func.%s.args", fcn->name);
+	if (arg_count > 0 || oargs > 0) {
 		r_strf_buffer (16);
-		const int oargs = (int)sdb_num_getf (TDB, NULL, "func.%s.args", fcn->name);
 		sdb_setf (TDB, r_strf ("%d", (int)arg_count), 0, "func.%s.args", fcn->name);
 		// a previous wider recovery leaves stale higher keys behind
 		int i;
@@ -2119,15 +2164,19 @@ static int cmd_afv(RCore *core, const char *str) {
 		}
 	case 'a': // "afva"
 		if (fcn) {
-			char *type = r_str_newf ("func.%s.ret", fcn->name);
-			if (type && sdb_exists (core->anal->sdb_types, type)) {
-				// if function type exists
-				// do not analize vars if function has a signature
-			} else {
+			if (!has_function_signature (fcn)) {
 				r_anal_function_delete_all_vars (fcn);
-				r_core_recover_vars (core, fcn, false);
+			} else if (sdb_const_getf (core->anal->sdb_types, NULL, "fcnlink.%08" PFMT64x, fcn->addr)) {
+				r_strf_var (type, 16, "int%d_t", fcn->bits? fcn->bits: core->anal->config->bits);
+				size_t i = RVecAnalVarPtr_length (&fcn->vars);
+				while (i > 0) {
+					RAnalVar *var = *RVecAnalVarPtr_at (&fcn->vars, --i);
+					if (is_default_local (var, type)) {
+						r_anal_var_delete (core->anal, var);
+					}
+				}
 			}
-			free (type);
+			r_core_recover_vars (core, fcn, false);
 			free (p);
 			return true;
 		}
@@ -4340,8 +4389,25 @@ static void r_core_anal_fmap(RCore *core, const char *input) {
 	free (bitmap);
 }
 
-static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
+static void rename_fcnsig(RAnalFunction *fcn, const char *oname, const char *nname) {
+	RAnal *anal = fcn->anal;
 #define DB anal->sdb_types
+	if (!strcmp (oname, nname)) {
+		return;
+	}
+	char *type_name = r_type_func_key (DB, nname);
+	const bool declared = type_name != NULL;
+	free (type_name);
+	if (declared) {
+		char *linked = r_type_link_at (DB, fcn->addr);
+		char *source = r_type_func_key (DB, oname);
+		if (!linked && source) {
+			r_type_set_link (DB, source, fcn->addr);
+		}
+		free (source);
+		free (linked);
+		return;
+	}
 	// rename type
 	const char *type = sdb_const_get (DB, oname, 0);
 	if (type && !strcmp (type, "func")) {
@@ -4407,7 +4473,7 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 			r_flag_set (core->flags, name, fcn->addr, r_anal_function_size_from_entry (fcn));
 			r_flag_space_pop (core->flags);
 		}
-		rename_fcnsig (core->anal, oname, name);
+		rename_fcnsig (fcn, oname, name);
 		r_anal_function_rename (fcn, name);
 		if (core->anal->cb.on_fcn_rename) {
 			core->anal->cb.on_fcn_rename (core->anal, core->anal->user, fcn, name);
@@ -15450,9 +15516,6 @@ static void cmd_aaa(RCore *core, const char *input) {
 		logline (core, 40, "Analyze len bytes of instructions for references (aar)");
 		(void)r_core_anal_refs (core, ""); // "aar"
 		r_core_task_yield (&core->tasks);
-		// Add plugin-provided data flow refs
-		r_core_anal_plugin_data_refs (core);
-		r_core_task_yield (&core->tasks);
 		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;
 		}
@@ -15938,9 +16001,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		case 0:
 		case ' ':
 			(void)r_core_anal_refs (core, input + 1);
-			// Keep aar behavior consistent with aa* pipelines by inserting
-			// plugin-provided data-flow refs after reference analysis.
-			r_core_anal_plugin_data_refs (core);
 			break;
 		case '*':
 		case 'j':

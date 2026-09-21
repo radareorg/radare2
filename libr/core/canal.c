@@ -3809,8 +3809,8 @@ static bool anal_block_on_exit(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	int *prev_regset = *RVecIntPtr_at (&ctx->reg_set, RVecIntPtr_length (&ctx->reg_set) - 1);
 	size_t i;
 	for (i = 0; i < R_ANAL_CC_REGSET_SIZE; i++) {
-		if (!prev_regset[i] && cur_regset[i] == 1) {
-			prev_regset[i] = 1;
+		if (!(prev_regset[i] & 3) && (cur_regset[i] & 3) == 1) {
+			prev_regset[i] |= 1;
 		}
 	}
 	free (cur_regset);
@@ -3962,23 +3962,6 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	free (ctx.buf);
 	fcn->stack = saved_stack;
 	r_anal_function_rename_default_args (fcn);
-}
-
-// Collect plugin-provided data refs for all functions and add them as xrefs
-R_API void r_core_anal_plugin_data_refs(RCore *core) {
-	R_RETURN_IF_FAIL (core && core->anal);
-	RListIter *iter;
-	RAnalFunction *fcn;
-	r_list_foreach (core->anal->fcns, iter, fcn) {
-		RVecAnalRef *refs = r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_GET_DATA_REFS, fcn);
-		if (refs) {
-			RAnalRef *ref;
-			R_VEC_FOREACH (refs, ref) {
-				r_anal_xrefs_setf (core->anal, fcn, ref->at, ref->addr, ref->type);
-			}
-			RVecAnalRef_free (refs);
-		}
-	}
 }
 
 static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, HtUP *state, HtUP *avoid) {

@@ -23,7 +23,7 @@ static RCoreHelpMessage help_msg_m = {
 	"mi", " /foo/bar", "get offset and size of given file",
 	"mi", " 0x1234", "find filename by offset in current fs",
 	"mix", " 0x1234", "find deleted filename by offset (FAT)",
-	"mis", " /foo/bar", "get offset and size of given file and seek to it",
+	"mis", " /foo/bar", "get offset and size of file and seek to it",
 	"mj", "", "list mounted filesystems in JSON",
 	"mmc", "[left_path] [right_path]", "Mountpoint Miknight Commander (dual-panel file manager)",
 	"mn", " [mountpoint]", "show filesystem information details",

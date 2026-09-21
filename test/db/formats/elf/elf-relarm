@@ -28,9 +28,37 @@ pd 4
 EOF
 EXPECT=<<EOF
             0x0800004c      c10000eb       bl reloc.r0
-            0x08000050      c00000eb       bl reloc.r0
-            0x08000054      c00000eb       bl reloc.r2
-            0x08000058      bf0000eb       bl reloc.r2
+            0x08000050      c10000eb       bl reloc.r1
+            0x08000054      c10000eb       bl reloc.r2
+            0x08000058      c10000eb       bl reloc.r3
+EOF
+RUN
+
+NAME=ELF: thumb-bits arm gets pointer-sized import slots
+FILE=bins/arm/elf/hello_world
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+pv4 @ 0x11024
+pv4 @ 0x11028
+pv4 @ 0x1102c
+EOF
+EXPECT=<<EOF
+0x00011048 0x00011083
+0x00011048
+0x00011074
+0x00011054
+EOF
+RUN
+
+NAME=ELF: arm-mode import slots keep their stride
+FILE=bins/elf/libcurl.so.4.2.0
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+EOF
+EXPECT=<<EOF
+0x0004d528 0x0004e0a7
 EOF
 RUN
 
@@ -46,6 +74,23 @@ bl reloc.r1
 bl reloc.r2
 bl reloc.r3
 bl reloc.r4
+EOF
+RUN
+
+NAME=ELF: arm lazy jump slots take the symbol, not the plt0 word
+FILE=bins/elf/libcurl.so.4.2.0
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv4 @ 0x4cb08
+pv4 @ 0x4cb0c
+pv4 @ 0x4c218
+pv4 @ 0x4c748
+EOF
+EXPECT=<<EOF
+0x0004d528
+0x00036d40
+0x000088b8
+0x0000f5f0
 EOF
 RUN
 

@@ -195,6 +195,7 @@ extern RAsmPlugin r_asm_plugin_ppc;
 extern RAsmPlugin r_asm_plugin_ptx;
 extern RAsmPlugin r_asm_plugin_riscv;
 extern RAsmPlugin r_asm_plugin_sbpf;
+extern RAsmPlugin r_asm_plugin_s1c88;
 extern RAsmPlugin r_asm_plugin_s390;
 extern RAsmPlugin r_asm_plugin_sh;
 extern RAsmPlugin r_asm_plugin_sparc;

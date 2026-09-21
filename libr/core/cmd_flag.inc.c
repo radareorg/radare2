@@ -63,7 +63,7 @@ static RCoreHelpMessage help_msg_f = {
 	"fo", "", "show fortunes",
 	"fO", " [glob]", "flag as ordinals (sym.* func.* method.*)",
 	//" fc [name] [cmt]  ; set execution command for a specific flag"
-	"fr", " [[old]] [new]", "rename flag (if no new flag current seek one is used)",
+	"fr", " [[old]] [new]", "rename flag (if no new flag current seek is used)",
 	"fR", "[?] [from] [to] [mask]", "relocate all flags matching from&~m",
 	"fs", "[?]+-*", "manage flagspaces",
 	"ft", "[?]*", "flag tags, useful to find all flags matching some words",

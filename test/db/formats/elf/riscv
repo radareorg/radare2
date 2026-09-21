@@ -472,7 +472,7 @@ subsys   linux
 va       true
 --
 / (fcn) main 160
-// int main (int argc);
+// int main (int argc, char **argv, char **envp);
 |           ; arg int argc @ a0
 |           ; var int64_t var_18h @ s0-0x18
 |           0x00010150      130101fe       addi sp, sp, -32
@@ -529,7 +529,7 @@ af
 pdf
 EOF
 EXPECT=<<EOF
-/ 160: int main (int argc);
+/ 160: int main (int argc, char **argv, char **envp);
 |           ; arg int argc @ a0
 |           ; var int64_t var_18h @ s0-0x18
 |           0x00010150      130101fe       addi sp, sp, -32
@@ -655,7 +655,7 @@ pdf
 EOF
 EXPECT=<<EOF
 / (fcn) main 160
-// int main (int argc);
+// int main (int argc, char **argv, char **envp);
 |           ; arg int argc @ a0
 |           ; var int64_t var_18h @ s0-0x18
 |           0x00010150      130101fe       addi sp, sp, -32            ; sp=0x177fe0

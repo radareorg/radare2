@@ -4,7 +4,7 @@ CMDS=<<EOF
 af;pdc~strcp
 EOF
 EXPECT=<<EOF
-    sym.imp.__strcpy_chk () // char *__strcpy_chk("", -1, -1)
+    sym.imp.__strcpy_chk () // char *__strcpy_chk("", -1, 32)
 EOF
 RUN
 
@@ -264,9 +264,6 @@ int8_t
 long
 long long
 short
-size_t
-ssize_t
-uid_t
 uint16_t
 uint32_t
 uint64_t
@@ -484,9 +481,6 @@ int8_t
 long
 long long
 short
-size_t
-ssize_t
-uid_t
 uint16_t
 uint32_t
 uint64_t
@@ -520,9 +514,6 @@ int8_t
 long
 long long
 short
-size_t
-ssize_t
-uid_t
 uint16_t
 uint32_t
 uint64_t
@@ -731,11 +722,12 @@ afv~arg
 afv~arg
 EOF
 EXPECT=<<EOF
-int main (int argc, char **argv);
+int main (int argc, char **argv, char **envp);
 tn main
 afc amd64
 afvr rdi argc int
 afvr rsi argv char **
+afvr rdx envp char **
 
 original
 arg int argc @ rdi
@@ -744,6 +736,7 @@ deleted
 recovered from signature
 arg int argc @ rdi
 arg char ** argv @ rsi
+arg char ** envp @ rdx
 EOF
 RUN
 
@@ -1347,7 +1340,7 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-arg char ** argv @ esp+0x44
+arg int argc @ esp+0x44
 var int32_t var_8h @ ebp-0x8
 var char * dest @ ebp-0xc
 var size_t size @ ebp-0x10
@@ -2298,6 +2291,7 @@ RUN
 
 NAME=typedef stuff
 FILE=--
+ARGS=-e asm.os=linux
 CMDS=<<EOF
 'td typedef int Number;
 tt
@@ -2307,6 +2301,14 @@ t Number
 EOF
 EXPECT=<<EOF
 Number
+gid_t
+off64_t
+off_t
+pid_t
+size_t
+ssize_t
+time_t
+uid_t
 int
 Number=typedef
 typedef.Number=int
@@ -2500,7 +2502,7 @@ EOF
 EXPECT=<<EOF
 {
   "name": "NSString",
-  "format": "pxzd p0 p1 str len",
+  "format": "pqzd p0 p1 str len",
   "fields": [
     {
       "name": "p0",

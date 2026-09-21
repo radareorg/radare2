@@ -2883,61 +2883,26 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 
 static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn, int mode) {
 	int i;
-	int regsz;
-	x86_reg sp;
-	switch (mode) {
-	case CS_MODE_64:
-		regsz = 8;
-		sp = X86_REG_RSP;
-		break;
-	case CS_MODE_32:
-		regsz = 4;
-		sp = X86_REG_ESP;
-		break;
-	case CS_MODE_16:
-		regsz = 4;
-		sp = X86_REG_ESP;
-		break;
-	default:
-		regsz = 4;
-		sp = X86_REG_ESP;
-		break;
+	int regsz = mode == CS_MODE_64? 8: mode == CS_MODE_16? 2: 4;
+	const x86_reg sp = mode == CS_MODE_64? X86_REG_RSP: mode == CS_MODE_16? X86_REG_SP: X86_REG_ESP;
+	const x86_reg pc = mode == CS_MODE_64? X86_REG_RIP: mode == CS_MODE_16? X86_REG_IP: X86_REG_EIP;
+	if (mode != CS_MODE_64 && insn->detail->x86.prefix[2] == X86_PREFIX_OPSIZE) {
+		regsz = regsz == 2? 4: 2;
 	}
 	RList *ret = r_list_newf ((RListFree)r_anal_value_free);
 	if (!ret) {
 		return;
 	}
 
-	// PC register
-	RAnalValue *val = r_anal_value_new ();
-	if (val) {
-		val->type = R_ANAL_VAL_REG;
-		val->access = R_PERM_W;
-		val->reg = cs_reg_name (handle, X86_REG_RIP);
-		r_list_append (ret, val);
-	}
-
-	// Register access info
+	r_list_append (ret, newvalue (R_ANAL_VAL_REG, R_PERM_W, cs_reg_name (handle, pc), 0, 0));
 	cs_regs regs_read, regs_write;
 	ut8 read_count, write_count;
 	if (cs_regs_access (handle, insn, regs_read, &read_count, regs_write, &write_count) == 0) {
 		for (i = 0; i < read_count; i++) {
-			val = r_anal_value_new ();
-			if (val) {
-				val->type = R_ANAL_VAL_REG;
-				val->access = R_PERM_R;
-				val->reg = cs_reg_name (handle, regs_read[i]);
-				r_list_append (ret, val);
-			}
+			r_list_append (ret, newvalue (R_ANAL_VAL_REG, R_PERM_R, cs_reg_name (handle, regs_read[i]), 0, 0));
 		}
 		for (i = 0; i < write_count; i++) {
-			val = r_anal_value_new ();
-			if (val) {
-				val->type = R_ANAL_VAL_REG;
-				val->access = R_PERM_W;
-				val->reg = cs_reg_name (handle, regs_write[i]);
-				r_list_append (ret, val);
-			}
+			r_list_append (ret, newvalue (R_ANAL_VAL_REG, R_PERM_W, cs_reg_name (handle, regs_write[i]), 0, 0));
 		}
 	}
 
@@ -2964,15 +2929,10 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 		break;
 	case X86_INS_CALL:
 	case X86_INS_LCALL:
-		val = r_anal_value_new ();
-		if (val) {
-			val->type = R_ANAL_VAL_MEM;
-			val->access = R_PERM_W;
-			val->reg = cs_reg_name (handle, sp);
-			val->delta = -regsz;
-			val->memref = regsz;
-			r_list_append (ret, val);
+		if (insn->id == X86_INS_LCALL) {
+			regsz *= 2; // far calls push both the code segment and return offset
 		}
+		r_list_append (ret, newvalue (R_ANAL_VAL_MEM, R_PERM_W, cs_reg_name (handle, sp), -regsz, regsz));
 		break;
 	default:
 		break;
@@ -2981,7 +2941,7 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 	// Memory access info based on operands
 	for (i = 0; i < INSOPS; i++) {
 		if (INSOP (i).type == X86_OP_MEM) {
-			val = r_anal_value_new ();
+			RAnalValue *val = r_anal_value_new ();
 			if (val) {
 				val->type = R_ANAL_VAL_MEM;
 				switch (INSOP (i).access) {

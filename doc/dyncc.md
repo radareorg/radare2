@@ -219,7 +219,22 @@ cc.name.arg1=reg
 cc.name.argn=stack
 cc.name.fparg0=freg
 cc.name.ret0=reg
+cc.name.fpret0=freg
 ```
+
+`cc.name.fpret0` names the register a floating return arrives in, read with
+`r_anal_cc_fpret()`. Three things about it. The value can be an alias group such
+as `{d0,s0,v0,q0}`, because AArch64 spells one register four ways. The string is
+borrowed from SDB and must not be freed. Missing metadata returns `NULL`, which
+says only that the profile does not state a floating return register, never that
+the function does not return a float.
+
+The accessor is static-profile-only: `r_anal_cc_fpret (anal, "dyncc:rdi:xmm0", 0)`
+returns `NULL` where the integer return accessor resolves the same expression.
+
+Only slot 0 is populated today. This is primary float and double return
+metadata, not a model of aggregate returns: an AAPCS64 homogeneous
+floating-point aggregate can occupy several registers chosen by the result type.
 
 Stack locations in static profiles are canonicalized to the same call-frame
 locations used by dyncc:

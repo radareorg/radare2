@@ -24,7 +24,7 @@ CMDS=<<EOF
 LAj~{0}
 EOF
 EXPECT=<<EOF
-{"name":"a2f","desc":"The reworked analysis from scratch thing","license":"MIT","score":0,"eligible":true,"analyze_fcn":false,"recover_vars":false,"get_data_refs":false,"post_analysis":false}
+{"name":"a2f","desc":"The reworked analysis from scratch thing","license":"MIT","score":0,"eligible":true,"analyze_fcn":false,"recover_vars":false,"post_analysis":false}
 EOF
 RUN
 
@@ -67,16 +67,6 @@ NAME=anal.plugins.vars config exists
 FILE=-
 CMDS=<<EOF
 e anal.plugins.vars
-EOF
-EXPECT=<<EOF
-
-EOF
-RUN
-
-NAME=anal.plugins.datarefs config exists
-FILE=-
-CMDS=<<EOF
-e anal.plugins.datarefs
 EOF
 EXPECT=<<EOF
 

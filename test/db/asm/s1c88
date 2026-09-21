@@ -1,0 +1,665 @@
+# base page
+ad "add a, a" 00
+ad "add a, b" 01
+ad "add a, 0x34" 0234
+ad "add a, [hl]" 03
+ad "add a, [br+0x34]" 0434
+ad "add a, [0x1234]" 053412
+ad "add a, [ix]" 06
+ad "add a, [iy]" 07
+ad "adc a, a" 08
+ad "adc a, b" 09
+ad "adc a, 0x34" 0a34
+ad "adc a, [hl]" 0b
+ad "adc a, [br+0x34]" 0c34
+ad "adc a, [0x1234]" 0d3412
+ad "adc a, [ix]" 0e
+ad "adc a, [iy]" 0f
+ad "sub a, a" 10
+ad "sub a, b" 11
+ad "sub a, 0x34" 1234
+ad "sub a, [hl]" 13
+ad "sub a, [br+0x34]" 1434
+ad "sub a, [0x1234]" 153412
+ad "sub a, [ix]" 16
+ad "sub a, [iy]" 17
+ad "sbc a, a" 18
+ad "sbc a, b" 19
+ad "sbc a, 0x34" 1a34
+ad "sbc a, [hl]" 1b
+ad "sbc a, [br+0x34]" 1c34
+ad "sbc a, [0x1234]" 1d3412
+ad "sbc a, [ix]" 1e
+ad "sbc a, [iy]" 1f
+ad "and a, a" 20
+ad "and a, b" 21
+ad "and a, 0x34" 2234
+ad "and a, [hl]" 23
+ad "and a, [br+0x34]" 2434
+ad "and a, [0x1234]" 253412
+ad "and a, [ix]" 26
+ad "and a, [iy]" 27
+ad "or a, a" 28
+ad "or a, b" 29
+ad "or a, 0x34" 2a34
+ad "or a, [hl]" 2b
+ad "or a, [br+0x34]" 2c34
+ad "or a, [0x1234]" 2d3412
+ad "or a, [ix]" 2e
+ad "or a, [iy]" 2f
+ad "cp a, a" 30
+ad "cp a, b" 31
+ad "cp a, 0x34" 3234
+ad "cp a, [hl]" 33
+ad "cp a, [br+0x34]" 3434
+ad "cp a, [0x1234]" 353412
+ad "cp a, [ix]" 36
+ad "cp a, [iy]" 37
+ad "xor a, a" 38
+ad "xor a, b" 39
+ad "xor a, 0x34" 3a34
+ad "xor a, [hl]" 3b
+ad "xor a, [br+0x34]" 3c34
+ad "xor a, [0x1234]" 3d3412
+ad "xor a, [ix]" 3e
+ad "xor a, [iy]" 3f
+ad "ld a, a" 40
+ad "ld a, b" 41
+ad "ld a, l" 42
+ad "ld a, h" 43
+ad "ld a, [br+0x34]" 4434
+ad "ld a, [hl]" 45
+ad "ld a, [ix]" 46
+ad "ld a, [iy]" 47
+ad "ld b, a" 48
+ad "ld b, b" 49
+ad "ld b, l" 4a
+ad "ld b, h" 4b
+ad "ld b, [br+0x34]" 4c34
+ad "ld b, [hl]" 4d
+ad "ld b, [ix]" 4e
+ad "ld b, [iy]" 4f
+ad "ld l, a" 50
+ad "ld l, b" 51
+ad "ld l, l" 52
+ad "ld l, h" 53
+ad "ld l, [br+0x34]" 5434
+ad "ld l, [hl]" 55
+ad "ld l, [ix]" 56
+ad "ld l, [iy]" 57
+ad "ld h, a" 58
+ad "ld h, b" 59
+ad "ld h, l" 5a
+ad "ld h, h" 5b
+ad "ld h, [br+0x34]" 5c34
+ad "ld h, [hl]" 5d
+ad "ld h, [ix]" 5e
+ad "ld h, [iy]" 5f
+ad "ld [ix], a" 60
+ad "ld [ix], b" 61
+ad "ld [ix], l" 62
+ad "ld [ix], h" 63
+ad "ld [ix], [br+0x34]" 6434
+ad "ld [ix], [hl]" 65
+ad "ld [ix], [ix]" 66
+ad "ld [ix], [iy]" 67
+ad "ld [hl], a" 68
+ad "ld [hl], b" 69
+ad "ld [hl], l" 6a
+ad "ld [hl], h" 6b
+ad "ld [hl], [br+0x34]" 6c34
+ad "ld [hl], [hl]" 6d
+ad "ld [hl], [ix]" 6e
+ad "ld [hl], [iy]" 6f
+ad "ld [iy], a" 70
+ad "ld [iy], b" 71
+ad "ld [iy], l" 72
+ad "ld [iy], h" 73
+ad "ld [iy], [br+0x34]" 7434
+ad "ld [iy], [hl]" 75
+ad "ld [iy], [ix]" 76
+ad "ld [iy], [iy]" 77
+ad "ld [br+0x34], a" 7834
+ad "ld [br+0x34], b" 7934
+ad "ld [br+0x34], l" 7a34
+ad "ld [br+0x34], h" 7b34
+ad "ld [br+0x34], [hl]" 7d34
+ad "ld [br+0x34], [ix]" 7e34
+ad "ld [br+0x34], [iy]" 7f34
+ad "inc a" 80
+ad "inc b" 81
+ad "inc l" 82
+ad "inc h" 83
+ad "inc br" 84
+ad "inc [br+0x34]" 8534
+ad "inc [hl]" 86
+ad "inc sp" 87
+ad "dec a" 88
+ad "dec b" 89
+ad "dec l" 8a
+ad "dec h" 8b
+ad "dec br" 8c
+ad "dec [br+0x34]" 8d34
+ad "dec [hl]" 8e
+ad "dec sp" 8f
+ad "inc ba" 90
+ad "inc hl" 91
+ad "inc ix" 92
+ad "inc iy" 93
+ad "bit a, b" 94
+ad "bit [hl], 0x34" 9534
+ad "bit a, 0x34" 9634
+ad "bit b, 0x34" 9734
+ad "dec ba" 98
+ad "dec hl" 99
+ad "dec ix" 9a
+ad "dec iy" 9b
+ad "and sc, 0x34" 9c34
+ad "or sc, 0x34" 9d34
+ad "xor sc, 0x34" 9e34
+ad "ld sc, 0x34" 9f34
+ad "push ba" a0
+ad "push hl" a1
+ad "push ix" a2
+ad "push iy" a3
+ad "push br" a4
+ad "push ep" a5
+ad "push xp, yp" a6
+ad "push sc" a7
+ad "pop ba" a8
+ad "pop hl" a9
+ad "pop ix" aa
+ad "pop iy" ab
+ad "pop br" ac
+ad "pop ep" ad
+ad "pop xp, yp" ae
+ad "pop sc" af
+ad "ld a, 0x34" b034
+ad "ld b, 0x34" b134
+ad "ld l, 0x34" b234
+ad "ld h, 0x34" b334
+ad "ld br, 0x34" b434
+ad "ld [hl], 0x34" b534
+ad "ld [ix], 0x34" b634
+ad "ld [iy], 0x34" b734
+ad "ld ba, [0x1234]" b83412
+ad "ld hl, [0x1234]" b93412
+ad "ld ix, [0x1234]" ba3412
+ad "ld iy, [0x1234]" bb3412
+ad "ld [0x1234], ba" bc3412
+ad "ld [0x1234], hl" bd3412
+ad "ld [0x1234], ix" be3412
+ad "ld [0x1234], iy" bf3412
+ad "add ba, 0x1234" c03412
+ad "add hl, 0x1234" c13412
+ad "add ix, 0x1234" c23412
+ad "add iy, 0x1234" c33412
+ad "ld ba, 0x1234" c43412
+ad "ld hl, 0x1234" c53412
+ad "ld ix, 0x1234" c63412
+ad "ld iy, 0x1234" c73412
+ad "ex ba, hl" c8
+ad "ex ba, ix" c9
+ad "ex ba, iy" ca
+ad "ex ba, sp" cb
+ad "ex a, b" cc
+ad "ex a, [hl]" cd
+ad "cp [hl], a" ce34
+ad "sub ba, 0x1234" d03412
+ad "sub hl, 0x1234" d13412
+ad "sub ix, 0x1234" d23412
+ad "sub iy, 0x1234" d33412
+ad "cp ba, 0x1234" d43412
+ad "cp hl, 0x1234" d53412
+ad "cp ix, 0x1234" d63412
+ad "cp iy, 0x1234" d73412
+ad "and [br+0x34], 0x12" d83412
+ad "or [br+0x34], 0x12" d93412
+ad "xor [br+0x34], 0x12" da3412
+ad "cp [br+0x34], 0x12" db3412
+ad "bit [br+0x34], 0x12" dc3412
+ad "ld [br+0x34], 0x12" dd3412
+ad "pack" de
+ad "upck" df
+ad "cars c, 0x001035" e034 0x1000
+ad "cars nc, 0x001035" e134 0x1000
+ad "cars z, 0x001035" e234 0x1000
+ad "cars nz, 0x001035" e334 0x1000
+ad "jrs c, 0x001035" e434 0x1000
+ad "jrs nc, 0x001035" e534 0x1000
+ad "jrs z, 0x001035" e634 0x1000
+ad "jrs nz, 0x001035" e734 0x1000
+ad "carl c, 0x002236" e83412 0x1000
+ad "carl nc, 0x002236" e93412 0x1000
+ad "carl z, 0x002236" ea3412 0x1000
+ad "carl nz, 0x002236" eb3412 0x1000
+ad "jrl c, 0x002236" ec3412 0x1000
+ad "jrl nc, 0x002236" ed3412 0x1000
+ad "jrl z, 0x002236" ee3412 0x1000
+ad "jrl nz, 0x002236" ef3412 0x1000
+ad "cars 0x001035" f034 0x1000
+ad "jrs 0x001035" f134 0x1000
+ad "carl 0x002236" f23412 0x1000
+ad "jrl 0x002236" f33412 0x1000
+ad "jp hl" f4
+ad "djr nz, 0x001035" f534 0x1000
+ad "swap a" f6
+ad "swap [hl]" f7
+ad "ret" f8
+ad "rete" f9
+ad "rets" fa
+ad "call [0x1234]" fb3412
+ad "int [0x34]" fc34
+ad "jp [0x34]" fd34
+ad "nop" ff
+
+# 0xce prefix page
+ad "add a, [ix+0x34]" ce0034
+ad "add a, [iy+0x34]" ce0134
+ad "add a, [ix+l]" ce02
+ad "add a, [iy+l]" ce03
+ad "add [hl], a" ce04
+ad "add [hl], 0x34" ce0534
+ad "add [hl], [ix]" ce06
+ad "add [hl], [iy]" ce07
+ad "adc a, [ix+0x34]" ce0834
+ad "adc a, [iy+0x34]" ce0934
+ad "adc a, [ix+l]" ce0a
+ad "adc a, [iy+l]" ce0b
+ad "adc [hl], a" ce0c
+ad "adc [hl], 0x34" ce0d34
+ad "adc [hl], [ix]" ce0e
+ad "adc [hl], [iy]" ce0f
+ad "sub a, [ix+0x34]" ce1034
+ad "sub a, [iy+0x34]" ce1134
+ad "sub a, [ix+l]" ce12
+ad "sub a, [iy+l]" ce13
+ad "sub [hl], a" ce14
+ad "sub [hl], 0x34" ce1534
+ad "sub [hl], [ix]" ce16
+ad "sub [hl], [iy]" ce17
+ad "sbc a, [ix+0x34]" ce1834
+ad "sbc a, [iy+0x34]" ce1934
+ad "sbc a, [ix+l]" ce1a
+ad "sbc a, [iy+l]" ce1b
+ad "sbc [hl], a" ce1c
+ad "sbc [hl], 0x34" ce1d34
+ad "sbc [hl], [ix]" ce1e
+ad "sbc [hl], [iy]" ce1f
+ad "and a, [ix+0x34]" ce2034
+ad "and a, [iy+0x34]" ce2134
+ad "and a, [ix+l]" ce22
+ad "and a, [iy+l]" ce23
+ad "and [hl], a" ce24
+ad "and [hl], 0x34" ce2534
+ad "and [hl], [ix]" ce26
+ad "and [hl], [iy]" ce27
+ad "or a, [ix+0x34]" ce2834
+ad "or a, [iy+0x34]" ce2934
+ad "or a, [ix+l]" ce2a
+ad "or a, [iy+l]" ce2b
+ad "or [hl], a" ce2c
+ad "or [hl], 0x34" ce2d34
+ad "or [hl], [ix]" ce2e
+ad "or [hl], [iy]" ce2f
+ad "cp a, [ix+0x34]" ce3034
+ad "cp a, [iy+0x34]" ce3134
+ad "cp a, [ix+l]" ce32
+ad "cp a, [iy+l]" ce33
+ad "cp [hl], a" ce34
+ad "cp [hl], 0x34" ce3534
+ad "cp [hl], [ix]" ce36
+ad "cp [hl], [iy]" ce37
+ad "xor a, [ix+0x34]" ce3834
+ad "xor a, [iy+0x34]" ce3934
+ad "xor a, [ix+l]" ce3a
+ad "xor a, [iy+l]" ce3b
+ad "xor [hl], a" ce3c
+ad "xor [hl], 0x34" ce3d34
+ad "xor [hl], [ix]" ce3e
+ad "xor [hl], [iy]" ce3f
+ad "ld a, [ix+0x34]" ce4034
+ad "ld a, [iy+0x34]" ce4134
+ad "ld a, [ix+l]" ce42
+ad "ld a, [iy+l]" ce43
+ad "ld [ix+0x34], a" ce4434
+ad "ld [iy+0x34], a" ce4534
+ad "ld [ix+l], a" ce46
+ad "ld [iy+l], a" ce47
+ad "ld b, [ix+0x34]" ce4834
+ad "ld b, [iy+0x34]" ce4934
+ad "ld b, [ix+l]" ce4a
+ad "ld b, [iy+l]" ce4b
+ad "ld [ix+0x34], b" ce4c34
+ad "ld [iy+0x34], b" ce4d34
+ad "ld [ix+l], b" ce4e
+ad "ld [iy+l], b" ce4f
+ad "ld l, [ix+0x34]" ce5034
+ad "ld l, [iy+0x34]" ce5134
+ad "ld l, [ix+l]" ce52
+ad "ld l, [iy+l]" ce53
+ad "ld [ix+0x34], l" ce5434
+ad "ld [iy+0x34], l" ce5534
+ad "ld [ix+l], l" ce56
+ad "ld [iy+l], l" ce57
+ad "ld h, [ix+0x34]" ce5834
+ad "ld h, [iy+0x34]" ce5934
+ad "ld h, [ix+l]" ce5a
+ad "ld h, [iy+l]" ce5b
+ad "ld [ix+0x34], h" ce5c34
+ad "ld [iy+0x34], h" ce5d34
+ad "ld [ix+l], h" ce5e
+ad "ld [iy+l], h" ce5f
+ad "ld [hl], [ix+0x34]" ce6034
+ad "ld [hl], [iy+0x34]" ce6134
+ad "ld [hl], [ix+l]" ce62
+ad "ld [hl], [iy+l]" ce63
+ad "ld [ix], [ix+0x34]" ce6834
+ad "ld [ix], [iy+0x34]" ce6934
+ad "ld [ix], [ix+l]" ce6a
+ad "ld [ix], [iy+l]" ce6b
+ad "ld [iy], [ix+0x34]" ce7834
+ad "ld [iy], [iy+0x34]" ce7934
+ad "ld [iy], [ix+l]" ce7a
+ad "ld [iy], [iy+l]" ce7b
+ad "sla a" ce80
+ad "sla b" ce81
+ad "sla [br+0x34]" ce8234
+ad "sla [hl]" ce83
+ad "sll a" ce84
+ad "sll b" ce85
+ad "sll [br+0x34]" ce8634
+ad "sll [hl]" ce87
+ad "sra a" ce88
+ad "sra b" ce89
+ad "sra [br+0x34]" ce8a34
+ad "sra [hl]" ce8b
+ad "srl a" ce8c
+ad "srl b" ce8d
+ad "srl [br+0x34]" ce8e34
+ad "srl [hl]" ce8f
+ad "rl a" ce90
+ad "rl b" ce91
+ad "rl [br+0x34]" ce9234
+ad "rl [hl]" ce93
+ad "rlc a" ce94
+ad "rlc b" ce95
+ad "rlc [br+0x34]" ce9634
+ad "rlc [hl]" ce97
+ad "rr a" ce98
+ad "rr b" ce99
+ad "rr [br+0x34]" ce9a34
+ad "rr [hl]" ce9b
+ad "rrc a" ce9c
+ad "rrc b" ce9d
+ad "rrc [br+0x34]" ce9e34
+ad "rrc [hl]" ce9f
+ad "cpl a" cea0
+ad "cpl b" cea1
+ad "cpl [br+0x34]" cea234
+ad "cpl [hl]" cea3
+ad "neg a" cea4
+ad "neg b" cea5
+ad "neg [br+0x34]" cea634
+ad "neg [hl]" cea7
+ad "sep" cea8
+ad "halt" ceae
+ad "slp" ceaf
+ad "and b, 0x34" ceb034
+ad "and l, 0x34" ceb134
+ad "and h, 0x34" ceb234
+ad "or b, 0x34" ceb434
+ad "or l, 0x34" ceb534
+ad "or h, 0x34" ceb634
+ad "xor b, 0x34" ceb834
+ad "xor l, 0x34" ceb934
+ad "xor h, 0x34" ceba34
+ad "cp b, 0x34" cebc34
+ad "cp l, 0x34" cebd34
+ad "cp h, 0x34" cebe34
+ad "cp br, 0x34" cebf34
+ad "ld a, br" cec0
+ad "ld a, sc" cec1
+ad "ld br, a" cec2
+ad "ld sc, a" cec3
+ad "ld nb, 0x34" cec434
+ad "ld ep, 0x34" cec534
+ad "ld xp, 0x34" cec634
+ad "ld yp, 0x34" cec734
+ad "ld a, nb" cec8
+ad "ld a, ep" cec9
+ad "ld a, xp" ceca
+ad "ld a, yp" cecb
+ad "ld nb, a" cecc
+ad "ld ep, a" cecd
+ad "ld xp, a" cece
+ad "ld yp, a" cecf
+ad "ld a, [0x1234]" ced03412
+ad "ld b, [0x1234]" ced13412
+ad "ld l, [0x1234]" ced23412
+ad "ld h, [0x1234]" ced33412
+ad "ld [0x1234], a" ced43412
+ad "ld [0x1234], b" ced53412
+ad "ld [0x1234], l" ced63412
+ad "ld [0x1234], h" ced73412
+ad "mlt l, a" ced8
+ad "div hl, a" ced9
+ad "jrs lt, 0x001036" cee034 0x1000
+ad "jrs le, 0x001036" cee134 0x1000
+ad "jrs gt, 0x001036" cee234 0x1000
+ad "jrs ge, 0x001036" cee334 0x1000
+ad "jrs v, 0x001036" cee434 0x1000
+ad "jrs nv, 0x001036" cee534 0x1000
+ad "jrs p, 0x001036" cee634 0x1000
+ad "jrs m, 0x001036" cee734 0x1000
+ad "jrs f0, 0x001036" cee834 0x1000
+ad "jrs f1, 0x001036" cee934 0x1000
+ad "jrs f2, 0x001036" ceea34 0x1000
+ad "jrs f3, 0x001036" ceeb34 0x1000
+ad "jrs nf0, 0x001036" ceec34 0x1000
+ad "jrs nf1, 0x001036" ceed34 0x1000
+ad "jrs nf2, 0x001036" ceee34 0x1000
+ad "jrs nf3, 0x001036" ceef34 0x1000
+ad "cars lt, 0x001036" cef034 0x1000
+ad "cars le, 0x001036" cef134 0x1000
+ad "cars gt, 0x001036" cef234 0x1000
+ad "cars ge, 0x001036" cef334 0x1000
+ad "cars v, 0x001036" cef434 0x1000
+ad "cars nv, 0x001036" cef534 0x1000
+ad "cars p, 0x001036" cef634 0x1000
+ad "cars m, 0x001036" cef734 0x1000
+ad "cars f0, 0x001036" cef834 0x1000
+ad "cars f1, 0x001036" cef934 0x1000
+ad "cars f2, 0x001036" cefa34 0x1000
+ad "cars f3, 0x001036" cefb34 0x1000
+ad "cars nf0, 0x001036" cefc34 0x1000
+ad "cars nf1, 0x001036" cefd34 0x1000
+ad "cars nf2, 0x001036" cefe34 0x1000
+ad "cars nf3, 0x001036" ceff34 0x1000
+
+# 0xcf prefix page
+ad "add ba, ba" cf00
+ad "add ba, hl" cf01
+ad "add ba, ix" cf02
+ad "add ba, iy" cf03
+ad "adc ba, ba" cf04
+ad "adc ba, hl" cf05
+ad "adc ba, ix" cf06
+ad "adc ba, iy" cf07
+ad "sub ba, ba" cf08
+ad "sub ba, hl" cf09
+ad "sub ba, ix" cf0a
+ad "sub ba, iy" cf0b
+ad "sbc ba, ba" cf0c
+ad "sbc ba, hl" cf0d
+ad "sbc ba, ix" cf0e
+ad "sbc ba, iy" cf0f
+ad "cp ba, ba" cf18
+ad "cp ba, hl" cf19
+ad "cp ba, ix" cf1a
+ad "cp ba, iy" cf1b
+ad "add hl, ba" cf20
+ad "add hl, hl" cf21
+ad "add hl, ix" cf22
+ad "add hl, iy" cf23
+ad "adc hl, ba" cf24
+ad "adc hl, hl" cf25
+ad "adc hl, ix" cf26
+ad "adc hl, iy" cf27
+ad "sub hl, ba" cf28
+ad "sub hl, hl" cf29
+ad "sub hl, ix" cf2a
+ad "sub hl, iy" cf2b
+ad "sbc hl, ba" cf2c
+ad "sbc hl, hl" cf2d
+ad "sbc hl, ix" cf2e
+ad "sbc hl, iy" cf2f
+ad "cp hl, ba" cf38
+ad "cp hl, hl" cf39
+ad "cp hl, ix" cf3a
+ad "cp hl, iy" cf3b
+ad "add ix, ba" cf40
+ad "add ix, hl" cf41
+ad "add iy, ba" cf42
+ad "add iy, hl" cf43
+ad "add sp, ba" cf44
+ad "add sp, hl" cf45
+ad "sub ix, ba" cf48
+ad "sub ix, hl" cf49
+ad "sub iy, ba" cf4a
+ad "sub iy, hl" cf4b
+ad "sub sp, ba" cf4c
+ad "sub sp, hl" cf4d
+ad "cp sp, ba" cf5c
+ad "cp sp, hl" cf5d
+ad "adc ba, 0x1234" cf603412
+ad "adc hl, 0x1234" cf613412
+ad "sbc ba, 0x1234" cf623412
+ad "sbc hl, 0x1234" cf633412
+ad "add sp, 0x1234" cf683412
+ad "sub sp, 0x1234" cf6a3412
+ad "cp sp, 0x1234" cf6c3412
+ad "ld sp, 0x1234" cf6e3412
+ad "ld ba, [sp+0x34]" cf7034
+ad "ld hl, [sp+0x34]" cf7134
+ad "ld ix, [sp+0x34]" cf7234
+ad "ld iy, [sp+0x34]" cf7334
+ad "ld [sp+0x34], ba" cf7434
+ad "ld [sp+0x34], hl" cf7534
+ad "ld [sp+0x34], ix" cf7634
+ad "ld [sp+0x34], iy" cf7734
+ad "ld sp, [0x1234]" cf783412
+ad "ld [0x1234], sp" cf7c3412
+ad "push a" cfb0
+ad "push b" cfb1
+ad "push l" cfb2
+ad "push h" cfb3
+ad "pop a" cfb4
+ad "pop b" cfb5
+ad "pop l" cfb6
+ad "pop h" cfb7
+ad "push all" cfb8
+ad "push ale" cfb9
+ad "pop all" cfbc
+ad "pop ale" cfbd
+ad "ld ba, [hl]" cfc0
+ad "ld hl, [hl]" cfc1
+ad "ld ix, [hl]" cfc2
+ad "ld iy, [hl]" cfc3
+ad "ld [hl], ba" cfc4
+ad "ld [hl], hl" cfc5
+ad "ld [hl], ix" cfc6
+ad "ld [hl], iy" cfc7
+ad "ld ba, [ix]" cfd0
+ad "ld hl, [ix]" cfd1
+ad "ld ix, [ix]" cfd2
+ad "ld iy, [ix]" cfd3
+ad "ld [ix], ba" cfd4
+ad "ld [ix], hl" cfd5
+ad "ld [ix], ix" cfd6
+ad "ld [ix], iy" cfd7
+ad "ld ba, [iy]" cfd8
+ad "ld hl, [iy]" cfd9
+ad "ld ix, [iy]" cfda
+ad "ld iy, [iy]" cfdb
+ad "ld [iy], ba" cfdc
+ad "ld [iy], hl" cfdd
+ad "ld [iy], ix" cfde
+ad "ld [iy], iy" cfdf
+ad "ld ba, ba" cfe0
+ad "ld ba, hl" cfe1
+ad "ld ba, ix" cfe2
+ad "ld ba, iy" cfe3
+ad "ld hl, ba" cfe4
+ad "ld hl, hl" cfe5
+ad "ld hl, ix" cfe6
+ad "ld hl, iy" cfe7
+ad "ld ix, ba" cfe8
+ad "ld ix, hl" cfe9
+ad "ld ix, ix" cfea
+ad "ld ix, iy" cfeb
+ad "ld iy, ba" cfec
+ad "ld iy, hl" cfed
+ad "ld iy, ix" cfee
+ad "ld iy, iy" cfef
+ad "ld sp, ba" cff0
+ad "ld sp, hl" cff1
+ad "ld sp, ix" cff2
+ad "ld sp, iy" cff3
+ad "ld hl, sp" cff4
+ad "ld hl, pc" cff5
+ad "ld ba, sp" cff8
+ad "ld ba, pc" cff9
+ad "ld ix, sp" cffa
+ad "ld iy, sp" cffe
+
+# operand edge values
+ad "add a, 0x00" 0200 0x1000
+ad "add a, 0xff" 02ff 0x1000
+ad "add a, [0x0000]" 050000 0x1000
+ad "add a, [0xffff]" 05ffff 0x1000
+ad "ld [br+0x00], 0xff" dd00ff 0x1000
+ad "ld [br+0xff], 0x00" ddff00 0x1000
+
+# indexed displacements are signed
+ad "ld a, [ix-0x80]" ce4080
+ad "ld a, [ix-0x01]" ce40ff
+ad "ld a, [ix+0x00]" ce4000
+ad "ld a, [ix+0x7f]" ce407f
+ad "ld [iy-0x80], a" ce4580
+ad "ld [iy+0x7f], a" ce457f
+ad "ld ba, [sp-0x80]" cf7080
+ad "ld ba, [sp+0x7f]" cf707f
+
+# relative branches: displacement limits
+ad "jrs 0x001080" f17f 0x1000
+ad "jrs 0x000f81" f180 0x1000
+ad "jrs 0x000fff" f1fe 0x1000
+ad "jrl 0x000f81" f37fff 0x1000
+ad "djr nz, 0x001080" f57f 0x1000
+ad "djr nz, 0x000f81" f580 0x1000
+ad "jrs nz, 0x001080" e77f 0x1000
+ad "jrs nz, 0x000f81" e780 0x1000
+ad "cars 0x000f81" f080 0x1000
+ad "jrs 0x12000f" f1fe 0x120010
+
+# the logical pc wraps inside the 32k bank window, below 0x8000 it addresses
+# the common area, so a branch can leave the bank without changing cb
+ad "jrs 0x007fff" f1fe 0x018000
+ad "jrs 0x000001" f102 0x01fffe
+ad "jrs 0x007f81" f180 0x008000
+ad "jrl 0x0070f4" f302f0 0x1200f0
+ad "jrl 0x001002" f30080 0x011000
+ad "carl 0x001001" f2ff7f 0x011000
+
+# the common area is shared by every bank, cb keeps its reset value of 1 there
+# so a branch out of it lands in the first bank
+ad "jrs 0x008001" f102 0x007ffe
+ad "jrl 0x009002" f30080 0x001000
+
+# jr/car pick the short or long form depending on the target
+a "jr 0x1035" f134 0x1000
+a "jr 0x2236" f33412 0x1000
+a "car 0x1035" f034 0x1000
+a "car 0x2236" f23412 0x1000
+a "jr c, 0x1035" e434 0x1000

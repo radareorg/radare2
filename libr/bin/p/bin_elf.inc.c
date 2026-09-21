@@ -552,13 +552,14 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		}
 		break;
 	case EM_S390:
+		r->type = (sizeof (Elf_(Addr)) == 4)? R_BIN_RELOC_32: R_BIN_RELOC_64;
 		switch (rel->type) {
 		case R_390_GLOB_DAT: // globals
-			SET (64);
-			break;
+			r->additive = 0;
+			return r;
 		case R_390_RELATIVE:
-			ADD (64, 0);
-			break;
+			r->additive = !rel->implicit_addend;
+			return r;
 		}
 		break;
 	case EM_386: switch (rel->type) {
@@ -1109,16 +1110,22 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		}
 	}
 	switch (e_machine) {
-	case EM_S390:
+	case EM_S390: {
+		const int ws = sizeof (Elf_(Addr));
 		switch (rel->type) {
-		case R_390_GLOB_DAT: // globals
-			iob->overlay_write_at (iob->io, P, buf, 8);
+		case R_390_GLOB_DAT:
+			V = 0;
 			break;
 		case R_390_RELATIVE:
-			iob->overlay_write_at (iob->io, P, buf, 8);
+			V = A + (B - bo->baddr);
 			break;
+		default:
+			return;
 		}
+		r_write_ble (buf, V, bo->endian, 8 * ws);
+		iob->overlay_write_at (iob->io, P, buf, ws);
 		break;
+	}
 	case EM_ARM:
 	{
 		ut32 insn = 0;
@@ -1180,6 +1187,10 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		case R_ARM_REL32:
 			V = S + addend - P;
 			r_write_ble32 (buf, V, bo->endian);
+			break;
+		case R_ARM_JUMP_SLOT:
+			// a lazy slot holds the plt0 address, not an addend
+			r_write_ble32 (buf, S, bo->endian);
 			break;
 		case R_ARM_CALL:
 		case R_ARM_JUMP24:
@@ -1774,7 +1785,8 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	   	return NULL;
 	}
 	ELFOBJ *eo = obj->bin_obj;
-	size_t cdsz = obj->info? (obj->info->bits / 8): 0;
+	// a slot holds a pointer; bits is the thumb-biased decode width on arm
+	const size_t cdsz = sizeof (Elf_(Addr));
 	// PPC64 ELFv1 executables (ET_EXEC) have JMP_SLOT/ADDR64 relocs that need
 	// patching at analysis time just like shared libs — the dynamic linker fills these
 	// at runtime but r2 must do it statically.
@@ -1811,8 +1823,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	if (eo->ehdr.e_type == ET_REL && (eo->ehdr.e_machine == EM_PPC64
 			|| eo->ehdr.e_machine == EM_PPC || eo->ehdr.e_machine == EM_AARCH64
 			|| eo->ehdr.e_machine == EM_ARM)) {
-		const ut64 slot = (cdsz > 0)? cdsz: 4;
-		n_vaddr = (n_vaddr + slot - 1) & ~(slot - 1);
+		n_vaddr = (n_vaddr + cdsz - 1) & ~(cdsz - 1);
 	}
 	// reserve at least that space
 	size = eo->g_reloc_num * cdsz;

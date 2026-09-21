@@ -1,0 +1,239 @@
+NAME=s1c88 conditional branch targets
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=s1c88
+s 0x100
+wx e708f5fcec0010
+ao 3~address:,type:,jump:,fail:
+EOF
+EXPECT=<<EOF
+address: 0x100
+type: cjmp
+jump: 0x00000109
+fail: 0x00000102
+address: 0x102
+type: cjmp
+jump: 0x000000ff
+fail: 0x00000104
+address: 0x104
+type: cjmp
+jump: 0x00001106
+fail: 0x00000107
+EOF
+RUN
+
+NAME=s1c88 relative branches map through the code bank
+FILE=malloc://0x130000
+CMDS=<<EOF
+e asm.arch=s1c88
+s 0x18000
+wx f1fe
+ao 1~jump:
+s 0x1fffe
+wx f102
+ao 1~jump:
+wx e700
+ao 1~jump:,fail:
+s 0x7ffe
+wx f102
+ao 1~jump:
+wx e702
+ao 1~jump:,fail:
+s 0x1000
+wx f30080
+ao 1~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00007fff
+jump: 0x00000001
+jump: 0x0001ffff
+fail: 0x00000000
+jump: 0x00008001
+jump: 0x00008001
+fail: 0x00008000
+jump: 0x00009002
+EOF
+RUN
+
+NAME=s1c88 indexed displacements are signed
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=s1c88
+pa ld a, [ix-1]
+pa ld a, [ix-128]
+pa ld a, [ix+127]
+pa ld ba, [sp-128]
+pa ld a, [ix+128]
+pa ld a, [ix-129]
+EOF
+EXPECT=<<EOF
+ce40ff
+ce4080
+ce407f
+cf7080
+EOF
+RUN
+
+NAME=s1c88 op types
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=s1c88
+s 0x100
+wx 0234121623d83412fb3412f8f9f4f534
+pi 9
+?e --
+ao 9~type:
+EOF
+EXPECT=<<EOF
+add a, 0x34
+sub a, 0x16
+and a, [hl]
+and [br+0x34], 0x12
+call [0x1234]
+ret
+rete
+jp hl
+djr nz, 0x000143
+--
+type: add
+type: sub
+type: and
+type: and
+type: icall
+type: ret
+type: ret
+type: rjmp
+type: cjmp
+EOF
+RUN
+
+NAME=s1c88 invalid opcodes are one byte long
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=s1c88
+s 0x100
+wx fece6600
+pd 3
+?e --
+ao 1~size:,type:
+EOF
+EXPECT=<<EOF
+            0x00000100      fe             invalid
+            0x00000101      ce             invalid
+            0x00000102      66             ld [ix], [ix]
+--
+size: 1
+type: ill
+EOF
+RUN
+
+NAME=s1c88 undocumented prefixed opcodes are rejected
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=s1c88
+s 0x100
+wx cf10cf00ce7434
+pd 4
+EOF
+EXPECT=<<EOF
+            0x00000100      cf             invalid
+            0x00000101      10             sub a, a
+            0x00000102      cf00           add ba, ba
+            0x00000104      ce             invalid
+EOF
+RUN
+
+NAME=s1c88 register profile aliases
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=s1c88
+ar ba=0x1234
+ar hl=0xbeef
+ar a
+ar b
+ar l
+ar h
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000034
+0x00000012
+0x000000ef
+0x000000be
+0x00000000
+EOF
+RUN
+
+NAME=s1c88 pseudo syntax
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=s1c88
+e asm.pseudo=true
+s 0x100
+wx 0234e708f8f334120a34ced8ced9ce90ce94ce98ce9c
+pi 11
+EOF
+EXPECT=<<EOF
+a += 0x34
+if (nz) goto 0x00010b
+return
+goto 0x00133b
+a += 0x34 + c
+hl = l * a
+(l, h) = divmod (hl, a)
+a = rotate_left_carry (a, 1)
+a = rotate_left (a, 1)
+a = rotate_right_carry (a, 1)
+a = rotate_right (a, 1)
+EOF
+RUN
+
+NAME=s1c88 opcode descriptions
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=s1c88
+aod jrs
+aod djr
+aod pack
+aod upck
+aod slp
+aod rl
+aod rlc
+aod rr
+aod rrc
+EOF
+EXPECT=<<EOF
+jump to short relative address, optional condition
+decrement B and jump to short relative address if B is not zero
+replace A's high nibble with B's low nibble
+replace B's low nibble with A's high nibble
+go into sleep mode (exit with outside interrupt)
+rotate left one bit, C takes bit 7, bit 0 takes C
+rotate left one bit, bit 7 gives its value to C and bit 0
+rotate right one bit, C takes bit 0, bit 7 takes C
+rotate right one bit, bit 0 gives its value to C and bit 7
+EOF
+RUN
+
+NAME=s1c88 function analysis
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=s1c88
+s 0x100
+wx 0234f5fdf003f800f8
+af
+pdf
+?e --
+afl
+EOF
+EXPECT=<<EOF
+/ 7: fcn.00000100 ();
+|       .-> 0x00000100      0234           add a, 0x34
+|       `=< 0x00000102      f5fd           djr nz, fcn.00000100
+|           0x00000104      f003           cars fcn.00000108
+\           0x00000106      f8             ret
+--
+0x00000100    2      7 fcn.00000100
+0x00000108    1      1 fcn.00000108
+EOF
+RUN

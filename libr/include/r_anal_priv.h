@@ -29,6 +29,7 @@ typedef struct r_leaddr_pair_t {
 
 /* Store a function's calling convention, resolving a bare dyncc marker. */
 R_IPI bool r_anal_var_is_default_argname(const char *name);
+R_IPI bool r_anal_reg_same(RAnal *anal, const char *a, const char *b);
 /* Adopt the block a switch case targets. False when no block covers it, in
  * which case the case needs scanning; the walker decides where. */
 R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr);

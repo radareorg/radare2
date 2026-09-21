@@ -15,7 +15,7 @@ static RCoreHelpMessage help_msg_o = {
 	"o", "-1", "close file descriptor 1",
 	"o*", "[*]", "list opened files in r2 commands, show r2 script to set flag for each fd",
 	"o+", " [file]", "open a file in read-write mode",
-	"o++", " [file]", "create and open file in read-write mode (see ot and omr)",
+	"o++", " [file]", "create and open file in read-write mode (see ot/omr)",
 	"o-", "[?][#!*$.]", "close opened files",
 	"o.", "", "show current filename (or o.q/oq to get the fd)",
 	"o:", " [len]", "open a malloc://[len] copying the bytes from current offset", // XXX R2_590 - should be an alias for ':' no need for a malloc:// wrapper imho
@@ -159,7 +159,7 @@ static RCoreHelpMessage help_msg_om = {
 	"omm", " [fd]", "create default map for given fd (omm `oq`)",
 	"omn", "[?] ([fd]) [name]", "manage map names",
 	"omo", "[j*]", "diff overlay map data (usually relocs)",
-	"omp", " [mapid] rwx", "change map rwx permissions (see dmp for debug)",
+	"omp", " [mapid] rwx", "change map rwx permissions (see dmp)",
 	"ompg", "[+-]rwx", "global change permissions for all maps",
 	"omr", "[?]", "reorder map priority",
 	"oms", " [mapid] [newsize]", "show or change size map with corresponding id, map size cannot be 0",

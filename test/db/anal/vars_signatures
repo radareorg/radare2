@@ -1,0 +1,350 @@
+NAME=aa preserves declared x86-32 arguments and their frame offsets
+FILE=malloc://64
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e583ec108b45088b550c8955fc8b4d10c9c3
+f main
+td int main(int argc, char **argv, char **envp);
+aa
+afcf
+afvb
+tk func.main.args
+tk func.main.arg.0
+tk func.main.arg.1
+tk func.main.arg.2
+aa
+afva
+afcf
+afvb
+s 32
+wx 8b4424048b542408c3
+f frameless
+td int frameless(int first, char *second);
+af
+afcf
+afvs
+EOF
+EXPECT=<<EOF
+int main (int argc, char **argv, char **envp);
+arg int argc @ ebp+0x8
+arg char ** argv @ ebp+0xc
+arg char ** envp @ ebp+0x10
+var int32_t var_4h @ ebp-0x4
+3
+int,argc
+char **,argv
+char **,envp
+int main (int argc, char **argv, char **envp);
+arg int argc @ ebp+0x8
+arg char ** argv @ ebp+0xc
+arg char ** envp @ ebp+0x10
+var int32_t var_4h @ ebp-0x4
+int frameless (int first, char *second);
+arg int first @ esp+0x4
+arg char * second @ esp+0x8
+EOF
+RUN
+
+NAME=afva recovers typed locals and wide forward and reverse stack arguments
+FILE=malloc://64
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e583ec108b45088b550c8955fc8b4d14c9c3
+f sym.f
+td int f(char small, long long wide, int last);
+e anal.vars=false
+aa
+afvb
+e anal.vars=true
+afva
+afcf
+afvb
+afva
+afvb
+s 32
+wx 5589e583ec108b45088b550c8955fc8b4d14c9c3
+f reverse
+td int reverse(int first, long long wide, char last);
+e anal.vars=false
+af
+afc pascal
+e anal.vars=true
+afva
+afcf
+afvb
+EOF
+EXPECT=<<EOF
+int sym.f (char small, long long wide, int last);
+arg char small @ ebp+0x8
+arg long long wide @ ebp+0xc
+arg int last @ ebp+0x14
+var int32_t var_4h @ ebp-0x4
+arg char small @ ebp+0x8
+arg long long wide @ ebp+0xc
+arg int last @ ebp+0x14
+var int32_t var_4h @ ebp-0x4
+int reverse (int first, long long wide, char last);
+arg char last @ ebp+0x8
+arg long long wide @ ebp+0xc
+arg int first @ ebp+0x14
+var int32_t var_4h @ ebp-0x4
+EOF
+RUN
+
+NAME=partial register recovery preserves fixed zero and variadic prototypes
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 89f0c3
+f sym.sparse
+td int sparse(int first, int second, int third);
+af
+afcf
+afvr
+afvr rsi saved long
+aa
+aaft
+afva
+afcf
+afvr
+tk func.sparse.args
+tk func.sparse.arg.0
+tk func.sparse.arg.1
+tk func.sparse.arg.2
+s 16
+wx 89f8c3
+f zero
+td void zero(void);
+af
+afva
+afcf
+afvr
+tk func.zero.args
+s 32
+wx 4889f8c3
+f vari
+td int vari(const char *format, ...);
+af
+aaft
+afva
+afcf
+afvr
+tk func.vari.args
+tk func.vari.arg.1
+s 48
+wx 554889e58b45308b55385dc3
+f msargs
+td int msargs(int a, int b, int c, int d, int fifth, char *sixth);
+e anal.vars=false
+af
+afc ms
+e anal.vars=true
+afva
+afcf
+afvb
+EOF
+EXPECT=<<EOF
+int sym.sparse (int first, int second, int third);
+arg int second @ rsi
+int sym.sparse (int first, int second, int third);
+arg long saved @ rsi
+3
+int,first
+int,second
+int,third
+void zero ();
+arg int64_t arg1 @ rdi
+0
+int vari (const char *format, vararg ...);
+arg const char * format @ rdi
+2
+,...
+int msargs (int a, int b, int c, int d, int fifth, char *sixth);
+arg int fifth @ rbp+0x30
+arg char * sixth @ rbp+0x38
+EOF
+RUN
+
+NAME=analysis preserves linked signatures and declared rename destinations
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 89f0c3
+f linked
+td long declared(int first, int second, int third);
+af
+tl declared=0
+af
+afvr rsi kept long
+afva
+aaft
+afs
+afvr
+tk func.declared.args
+tk func.declared.arg.2
+s 16
+wx 89f8c3
+td int destination(int first, int second);
+af destination
+afcf
+tk func.destination.ret
+tk func.destination.args
+tk func.destination.arg.1
+s 32
+wx c3
+af
+afs int myproto(char *who);
+afn main
+afs
+tk func.main.args
+EOF
+EXPECT=<<EOF
+long linked (int first, int second, int third);
+arg long kept @ rsi
+3
+int,third
+int destination (int first, int second);
+int
+2
+int,second
+int main (char *who);
+3
+EOF
+RUN
+
+NAME=inferred signatures still update and discard stale argument keys
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4889f8c3
+af recovered
+afcf
+afvt arg1 char *
+aaft
+afcf
+tk func.recovered.arg.0
+wx 909090c3
+afva
+af
+afcf
+tk func.recovered.args
+tk func.recovered.arg.0
+EOF
+EXPECT=<<EOF
+recovered (int64_t arg1);
+recovered (char *arg1);
+char *,arg1
+recovered ();
+0
+EOF
+RUN
+
+NAME=ARM64 stack arguments do not reserve a return address slot
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx e80340b9e90740f9c0035fd6
+f armargs
+td int armargs(int a, int b, int c, int d, int e, int f, int g, int h, int ninth, char *tenth);
+af
+afcf
+afvs
+s 32
+wx ffc300d1fd7b02a9fd830091a01340b9a10f40f9fd7b42a9ffc30091c0035fd6
+f framed
+td int framed(int a, int b, int c, int d, int e, int f, int g, int h, int ninth, long tenth, int eleventh, long twelfth);
+af
+afvb
+afva
+afvb
+EOF
+EXPECT=<<EOF
+int armargs (int a, int b, int c, int d, int e, int f, int g, int h, int ninth, char *tenth);
+arg int ninth @ sp+0x0
+arg char * tenth @ sp+0x8
+arg int ninth @ x29+0x10
+arg long tenth @ x29+0x18
+arg int ninth @ x29+0x10
+arg long tenth @ x29+0x18
+EOF
+RUN
+
+NAME=stack argument types include the preset shadow area with and without BP
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e anal.cc=ms
+CMDS=<<EOF
+wx 4883ec488b4424708b5424784883c448c3
+f shadowsp
+td int shadowsp(int a, int b, int c, int d, int fifth, char *sixth);
+af
+afvs
+afva
+afvs
+s 32
+wx 554889e58b45308b55385dc3
+f shadowbp
+td int shadowbp(int a, int b, int c, int d, int fifth, char *sixth);
+af
+afvb
+EOF
+EXPECT=<<EOF
+arg int fifth @ rsp+0x70
+arg char * sixth @ rsp+0x78
+arg int fifth @ rsp+0x70
+arg char * sixth @ rsp+0x78
+arg int fifth @ rbp+0x30
+arg char * sixth @ rbp+0x38
+EOF
+RUN
+
+NAME=afva rebuilds stale autogenerated locals in DWARF-linked functions
+FILE=bins/pe/hello_world_not_stripped.exe
+CMDS=<<EOF
+aa
+s 0x401850
+afs
+afvs~^arg~?
+afvs~^var~?
+afva
+afvs~^arg~?
+afvs~^var~?
+EOF
+EXPECT=<<EOF
+BOOL entry2 (HANDLE hDllHandle, DWORD dwReason, LPVOID lpreserved);
+4
+0
+4
+0
+EOF
+RUN
+
+NAME=MIPS stack argument types include the caller home area
+FILE=malloc://32
+ARGS=-a mips -b 32 -e cfg.bigendian=true -e anal.cc=o32
+CMDS=<<EOF
+wx 27bdffe08fa200308fa3003403e0000827bd0020
+f mipshome
+td int mipshome(int a, int b, int c, int d, int fifth, char *sixth);
+af
+afvs
+EOF
+EXPECT=<<EOF
+arg int fifth @ sp+0x30
+arg char * sixth @ sp+0x34
+EOF
+RUN
+
+NAME=PPC64 stack argument types include the parameter save area
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx f821ffc1e86100b0382100404e800020
+f ppchome
+td int ppchome(int a, int b, int c, int d, int e, int f, int g, int h, long ninth);
+af
+afvs
+EOF
+EXPECT=<<EOF
+arg long ninth @ r1+0xb0
+EOF
+RUN

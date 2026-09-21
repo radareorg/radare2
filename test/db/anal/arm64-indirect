@@ -111,7 +111,7 @@ EXPECT=<<EOF
 switch table (8 cases) at 0xfd68
 0xfa84
 16
-ldp x24, x23, [x29, -0x80]
+ldp x24, x23, [var_80h]
 br x8
 EOF
 RUN

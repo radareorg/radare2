@@ -1,0 +1,49 @@
+NAME=ELF mini debug symbols keep distinct definitions at their original addresses
+FILE=bins/elf/ls-toybox
+CMDS=<<EOF
+is~_ZL8snprintf[1,2,5]
+is~_ZL7sprintf~?
+isq~same_
+is~ main$[1,2,5]
+iiq~android.symtab
+iiq~vsnprintf
+ir~vsnprintf
+EOF
+EXPECT=<<EOF
+0x00033410 0x00033410 144
+0x00038ba0 0x00038ba0 140
+0x00039718 0x00039718 144
+0x0003bfd4 0x0003bfd4 140
+0x00053034 0x00053034 144
+0x000588b4 0x000588b4 136
+0x0005d680 0x0005d680 144
+0x00063898 0x00063898 140
+0x00063ce8 0x00063ce8 140
+0x0006dd10 0x0006dd10 132
+0x0006f1e4 0x0006f1e4 132
+29
+0x00031da0 48 same_dev_ino
+0x00031da0 48 same_file
+0x000384a0 0x000384a0 100
+__vsnprintf_chk
+vsnprintf
+0x0007b658 0x0007b658 SET_64 1026  __vsnprintf_chk
+0x0007b840 0x0007b840 SET_64 1026  vsnprintf
+EOF
+RUN
+
+NAME=ELF mini debug symbols rebase without changing file offsets or relocation identities
+FILE=bins/elf/ls-toybox
+ARGS=-B 0x100000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+is~_ZL8snprintf[1,2,5]:0
+is~ main$[1,2,5]
+ir~vsnprintf
+EOF
+EXPECT=<<EOF
+0x00033410 0x100033410 144
+0x000384a0 0x1000384a0 100
+0x10007b658 0x0007b658 SET_64 1026  __vsnprintf_chk
+0x10007b840 0x0007b840 SET_64 1026  vsnprintf
+EOF
+RUN
