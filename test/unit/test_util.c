@@ -385,6 +385,26 @@ bool test_sandbox_localhost(void) {
 	mu_end;
 }
 
+bool test_file_is_abspath(void) {
+	const char *absolute[] = {
+		"/", "/bin/ls", "C:/", "z:\\", "C:/Windows/notepad.exe",
+		"z:\\Program Files\\tool.exe", "\\\\server\\share\\tool.exe",
+		"//server/share/tool.exe", "\\\\?\\C:\\tool.exe", "\\\\.\\C:\\tool.exe"
+	};
+	const char *relative[] = {
+		"", "a", ".", "./tool", "../tool", "C", "C:", "C:tool.exe",
+		"z:dir\\tool.exe", "1:/tool.exe", ":/tool.exe", "\\tool.exe", "\xff:/tool.exe"
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (absolute); i++) {
+		mu_assert_true (r_file_is_abspath (absolute[i]), absolute[i]);
+	}
+	for (i = 0; i < R_ARRAY_SIZE (relative); i++) {
+		mu_assert_false (r_file_is_abspath (relative[i]), relative[i]);
+	}
+	mu_end;
+}
+
 bool test_sys_executable_path(void) {
 	char *path = r_sys_exepath ();
 	char *pidpath = r_sys_pidpath (r_sys_getpid ());
@@ -443,6 +463,7 @@ int all_tests(void) {
 	mu_run_test (test_endian_fromstring);
 	mu_run_test (test_endian_is);
 	mu_run_test (test_endian_roundtrip);
+	mu_run_test (test_file_is_abspath);
 	mu_run_test (test_sys_executable_path);
 	mu_run_test (test_sandbox_localhost);
 	mu_run_test (test_sandbox_hidden_path);
