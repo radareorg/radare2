@@ -1327,8 +1327,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			free (count);
 			if (src && src2 && dst_w) {
 				// bmi2 shifts take the count from operand 3 and touch no flags
+				r_strf_var (sar, 32, "%u,SWAP,~,ASR", bitsize);
 				const char *shop = (insn->id == X86_INS_SHLX)? "<<":
-					(insn->id == X86_INS_SARX)? "ASR": ">>";
+					(insn->id == X86_INS_SARX)? sar: ">>";
 				esilprintf (op, "%s,%s,%s,%s", src2, src, shop, dst_w);
 			}
 			free (src);
@@ -1380,7 +1381,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			free (count);
 			if (src && dst_r && dst_w) {
 				// x86 leaves the destination and all flags alone on a 0 count
-				const char *shop = (insn->id == X86_INS_SAR)? "ASR": ">>";
+				r_strf_var (sar, 32, "%u,SWAP,~,ASR", bitsize);
+				const char *shop = (insn->id == X86_INS_SAR)? sar: ">>";
 				// of exists only at count 1: sar clears it, shr keeps old msb
 				char *ofx = (insn->id == X86_INS_SAR)? NULL:
 					r_str_newf ("%d,%s,>>,1,&", bitsize - 1, dst_r);

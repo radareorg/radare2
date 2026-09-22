@@ -46,7 +46,6 @@ EOF
 RUN
 
 NAME=sar keeps the sign of a negative dword memory operand
-BROKEN=1
 FILE=malloc://0x200
 ARGS=-a x86 -b 16
 CMDS=<<EOF
@@ -58,8 +57,48 @@ ar si=0
 wv4 0x80000000 @ 0x100
 aes
 pxw 4 @ 0x100
+ar sf
+ar cf
+ar of
 EOF
 EXPECT=<<EOF
 0000:0100  0xc0000000                                   ....
+0x00000001
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=sar memory uses the operand width for byte and word values
+FILE=malloc://0x200
+ARGS=-a x86 -b 16
+CMDS=<<EOF
+aei
+aeim
+ar bx=0x100
+ar si=0
+wx d038 @ 0
+wx 80 @ 0x100
+aes
+p8 1 @ 0x100
+ar sf
+wx d138 @ 0
+wv2 0x8000 @ 0x100
+ar ip=0
+aes
+p8 2 @ 0x100
+ar sf
+wx c03809 @ 0
+wx 80 @ 0x100
+ar ip=0
+aes
+p8 1 @ 0x100
+EOF
+EXPECT=<<EOF
+c0
+0x00000001
+00c0
+0x00000001
+ff
 EOF
 RUN
