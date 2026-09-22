@@ -127,7 +127,5 @@ EXPECT=<<EOF
 |           0x00000fe0      5f0000b9       str wzr, [x2]               ; arg3
 0x00005fb8  0x5a8a51be3e7c0a4f                       O.|>.Q.Z
 EOF
-EXPECT_ERR=<<EOF
-HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
-EOF
+EXPECT_ERR=
 RUN

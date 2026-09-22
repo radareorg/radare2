@@ -39,7 +39,6 @@ aeb
 psz@R0
 EOF
 EXPECT=<<EOF
-HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
 ret0
 0x00000000
 ---
@@ -75,7 +74,6 @@ afbe $$ 0x100007f10;aeb 0x100007f10;aeb final.block
 dr?R0
 EOF
 EXPECT=<<EOF
-HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
 ret paths
          .---------------------------------.
          |  0x100007ed8                    |
@@ -156,7 +154,6 @@ dr?R0
 dr?R0
 EOF
 EXPECT=<<EOF
-HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
 ret paths
 path
 0x100007ed8

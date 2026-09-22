@@ -12,7 +12,6 @@ id.compat=0.0.1
 EOF
 EXPECT_ERR=<<EOF
 ERROR: malformed uleb128
-HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
 EOF
 RUN
 
@@ -24,6 +23,5 @@ EOF
 EXPECT=
 EXPECT_ERR=<<EOF
 WARN: dyld export trie is out of bounds
-HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
 EOF
 RUN

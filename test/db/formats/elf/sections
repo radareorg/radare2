@@ -87,7 +87,6 @@ paddr      vaddr      phaddr     vhaddr     type
 0x00000660 0x00005660 0x00000018 0x00005018 program
 EOF
 EXPECT_ERR=<<EOF
-HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
 thur
 EOF
 RUN

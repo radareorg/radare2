@@ -1114,7 +1114,5 @@ EXPECT=<<EOF
   }
 ]
 EOF
-EXPECT_ERR=<<EOF
-HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
-EOF
+EXPECT_ERR=
 RUN

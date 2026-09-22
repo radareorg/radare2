@@ -14,7 +14,6 @@ DEBUG: [core.bin] (section .init_array) Cd 8[1] @ 0x403e10
 DEBUG: [core.bin] (section .fini_array) Cd 8[1] @ 0x403e18
 DEBUG: [core.bin] (section .dynamic) Cd 8[58] @ 0x403e20
 DEBUG: [core.bin] (section .got) Cd 8[2] @ 0x403ff0
-HINT: [core.bin] Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
 DEBUG: [core.bin] Cannot resolve symbol address __libc_start_main
 DEBUG: [core.bin] Cannot resolve symbol address __libc_start_main
 DEBUG: [core.bin] Cannot resolve symbol address __gmon_start__

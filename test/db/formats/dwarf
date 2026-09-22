@@ -881,7 +881,6 @@ DEBUG: (section .init_array) Cd 8[1] @ 0x3db8
 DEBUG: (section .fini_array) Cd 8[1] @ 0x3dc0
 DEBUG: (section .dynamic) Cd 8[62] @ 0x3dc8
 DEBUG: (section .got) Cd 8[9] @ 0x3fb8
-HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
 DEBUG: Cannot resolve symbol address __libc_start_main
 DEBUG: Cannot resolve symbol address __libc_start_main
 DEBUG: Cannot resolve symbol address _ITM_deregisterTMCloneTable

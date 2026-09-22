@@ -5,7 +5,6 @@ CMDS=
 EXPECT_ERR=<<EOF
 INFO: REL module ID 00000001
 INFO: REL version 3
-HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
 EOF
 RUN
 

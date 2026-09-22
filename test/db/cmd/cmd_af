@@ -179,9 +179,7 @@ size: 11
 |           0x004017c3      83c108         add ecx, 8
 \           0x004017c6      3d00100000     cmp eax, 0x1000
 EOF
-EXPECT_ERR=<<EOF
-HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=afbi lists every switch case and leaves them in the analysis
@@ -666,10 +664,7 @@ EXPECT=<<EOF
 0
 1
 EOF
-EXPECT_ERR=<<EOF
-HINT: Analysis skipped on non-executable map at 0x00010000
-HINT: Fix perms with 'ompg +x' or ignore them with 'e anal.in=io.maps'
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=af analyzes non-executable map with anal.in=io.maps

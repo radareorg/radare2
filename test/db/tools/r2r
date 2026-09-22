@@ -38,7 +38,5 @@ CMDS=i~^file
 EXPECT=<<EOF
 file     bins/elf/_Exit (42)
 EOF
-EXPECT_ERR=<<EOF
-HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
-EOF
+EXPECT_ERR=
 RUN
