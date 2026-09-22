@@ -345,6 +345,12 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 					} else {
 						r_cons_printf (core->cons, "f hash.%s.%s = 0x%" PFMT64x "\n", hashname, hashstr, from + i);
 					}
+					if (*param->cmd_hit) {
+						ut64 here = core->addr;
+						r_core_seek (core, from + i, true);
+						r_core_cmd0 (core, param->cmd_hit);
+						r_core_seek (core, here, true);
+					}
 
 					// The hex string is owned by the result, don't free separately
 					r_muta_result_free (&res);
