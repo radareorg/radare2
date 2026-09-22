@@ -1252,7 +1252,7 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 			goto beach;
 		}
 	}
-	if (r_io_is_listener (r->io)) {
+	if (r_io_desc_info (fd).listener) {
 		r_core_serve (r, fd);
 		r_io_desc_free (fd);
 		fd = NULL;

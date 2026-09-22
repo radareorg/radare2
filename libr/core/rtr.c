@@ -995,7 +995,7 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	RIODesc *fd = r_io_open_nomap (core->io, file, flags, 0644);
 	RConsContext *c = core->cons->context;
 	if (fd) {
-		if (r_io_is_listener (core->io)) {
+		if (r_io_desc_info (fd).listener) {
 			if (!r_core_serve (core, fd)) {
 				c->breaked = true;
 			}

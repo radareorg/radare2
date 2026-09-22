@@ -198,13 +198,13 @@ typedef struct r_io_desc_info_t {
 	bool blkdev;
 	bool chrdev;
 	bool isdbg;
+	bool listener;
 } RIODescInfo;
 
 typedef struct r_io_plugin_t {
 	const RPluginMeta meta;
 	void *data; // kind of globals, used by rlang-io in this case
 	const char *uris;
-	int (*listener)(RIODesc *io);
 	bool isdbg;
 	// int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
 	char *(*system)(RIO *io, RIODesc *fd, const char *); // Rename to call? or cmd? unify with anal and core
@@ -505,7 +505,6 @@ R_API bool r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_read(RIO *io, ut8 *buf, int len);
 R_API bool r_io_write(RIO *io, ut8 *buf, int len);
 R_API ut64 r_io_size(RIO *io);
-R_API bool r_io_is_listener(RIO *io);
 R_API char *r_io_system(RIO *io, const char* cmd);
 R_API bool r_io_resize(RIO *io, ut64 newsize);
 R_API bool r_io_extend_at(RIO *io, ut64 addr, ut64 size);

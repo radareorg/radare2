@@ -389,14 +389,6 @@ R_API ut64 r_io_size(RIO* io) {
 	return io? r_io_desc_size (io->desc): 0LL;
 }
 
-R_API bool r_io_is_listener(RIO* io) {
-	R_RETURN_VAL_IF_FAIL (io, false);
-	if (io->desc && io->desc->plugin && io->desc->plugin->listener) {
-		return io->desc->plugin->listener (io->desc);
-	}
-	return false;
-}
-
 R_API char *r_io_system(RIO* io, const char* cmd) {
 	R_RETURN_VAL_IF_FAIL (io && cmd, NULL);
 	return io->desc? r_io_desc_system (io->desc, cmd): NULL;
