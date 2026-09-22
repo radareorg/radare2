@@ -15459,7 +15459,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 	dh_orig = (core->dbg->current && core->dbg->current->plugin)
 		? strdup (core->dbg->current->plugin->meta.name)
 		: strdup ("esil");
-	if (core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
+	if (core->io->desc && core->io->desc->plugin && !r_io_desc_info (core->io->desc).isdbg) {
 		//use dh_origin if we are debugging
 		R_FREE (dh_orig);
 	}

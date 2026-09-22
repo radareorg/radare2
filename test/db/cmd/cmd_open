@@ -167,6 +167,51 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=oom preserves descriptor data and fd
+FILE=bins/elf/ls-focal
+ARGS=-n -e io.va=false
+CMDS=<<EOF
+p8 4
+op
+oom
+o~malloc?
+op
+p8 4
+wx 41424344
+p8 4
+oom
+o~malloc?
+p8 4
+EOF
+EXPECT=<<EOF
+7f454c46
+3
+1
+3
+7f454c46
+41424344
+1
+41424344
+EOF
+RUN
+
+NAME=oom preserves URI descriptors
+FILE=hex://01020304
+ARGS=-nw
+CMDS=<<EOF
+oom
+oj~{[0].uri}
+p8 4
+wx aabb @ 2
+p8 4
+EOF
+EXPECT=<<EOF
+hex://01020304
+01020304
+0102aabb
+EOF
+RUN
+
 NAME=o-[0]
 FILE=malloc://1024
 CMDS=o- `o~[0]`;o

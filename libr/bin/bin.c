@@ -487,7 +487,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 	RIOBind *iob = &(bin->iob);
 	RIO *io = iob? iob->io: NULL;
 
-	bool is_debugger = iob->fd_is_dbg (io, opt->fd);
+	bool is_debugger = iob->desc_info (iob->desc_get (io, opt->fd)).isdbg;
 	const char *fname = iob->fd_get_name (io, opt->fd);
 	if (opt->loadaddr == UT64_MAX) {
 		opt->loadaddr = 0;

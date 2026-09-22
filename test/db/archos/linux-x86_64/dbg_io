@@ -27,3 +27,20 @@ f30f
 9090
 EOF
 RUN
+
+NAME=oom preserves debugger descriptors
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+s entry0
+oom
+p8 2
+wx 9090
+p8 2
+dk 9
+EOF
+EXPECT=<<EOF
+f30f
+9090
+EOF
+RUN

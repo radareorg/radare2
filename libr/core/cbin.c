@@ -2082,7 +2082,7 @@ static bool warn_if_dbg(RCore *core) {
 			desc = r_io_desc_get (core->io, fd);
 		}
 	}
-	if (desc && r_io_desc_is_dbg (desc)) {
+	if (r_io_desc_info (desc).isdbg) {
 		R_LOG_ERROR ("bin.relocs and io.cache should not be used for %s", desc->uri);
 		return false;
 	}
@@ -2102,7 +2102,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	int fd = r_io_fd_get_current (core->io);
 	if (fd != -1) {
 		RIODesc *desc = r_io_desc_get (core->io, fd);
-		if (desc && r_io_desc_is_dbg (desc)) {
+		if (r_io_desc_info (desc).isdbg) {
 			R_LOG_DEBUG ("Ignoring reloc patching in debugger mode");
 			r_table_free (table);
 			return false;
@@ -3849,7 +3849,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 			break;
 		}
 	}
-	if (IS_MODE_SET (mode) && !r_io_desc_is_dbg (core->io->desc)) {
+	if (IS_MODE_SET (mode) && !r_io_desc_info (core->io->desc).isdbg) {
 		RListIter *it;
 		struct io_bin_section_info_t *ibs;
 		r_list_foreach_prev (io_section_info, it, ibs) {

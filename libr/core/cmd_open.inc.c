@@ -1699,8 +1699,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
 	RIO *io = (RIO *)user;
 	RIODesc *desc = (RIODesc *)data;
+	RIODescInfo di = r_io_desc_info (desc);
 
-	if (r_io_desc_is_blockdevice (desc) || r_io_desc_is_dbg (desc)) {
+	if (di.blkdev || di.chrdev || di.isdbg) {
 		return true;
 	}
 
@@ -1883,7 +1884,7 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 		// if no baddr is defined, use the one provided by the file
 		if (addr == 0) {
 			desc = r_io_desc_get (core->io, file->fd);
-			if (desc->plugin->isdbg) {
+			if (r_io_desc_info (desc).isdbg) {
 				addr = r_debug_get_baddr (core->dbg, desc->name);
 			} else {
 				addr = r_bin_get_baddr (core->bin);
@@ -1913,7 +1914,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 
 	// Reopen the original file as read only since we can't open native debug while the
 	// file is open with write permissions
-	if (!(desc->plugin && desc->plugin->isdbg) && (desc->perm & R_PERM_W)) {
+	if (!r_io_desc_info (desc).isdbg && (desc->perm & R_PERM_W)) {
 		R_LOG_ERROR ("Cannot debug file (%s) with permissions set to 0x%x"
 			"Reopening the original file in read-only mode.\n", desc->name, desc->perm);
 		int fd = desc->fd;
