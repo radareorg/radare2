@@ -413,7 +413,6 @@ all
 '@0x00400410'f.patata
 EOF
 EXPECT_ERR=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 ERROR: Cannot find function at 0x00000000
 EOF
 RUN
@@ -437,7 +436,6 @@ all
 {"entry0":{"patata":4195344}}
 EOF
 EXPECT_ERR=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 ERROR: Cannot find function at 0x00000000
 EOF
 RUN
@@ -454,9 +452,7 @@ EOF
 EXPECT=<<EOF
 0x00400410 patata   [entry0 + 0]
 EOF
-EXPECT_ERR=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=f-.
