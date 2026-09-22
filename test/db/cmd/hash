@@ -132,7 +132,6 @@ RUN
 
 NAME=cmd.hit for /h*
 FILE=malloc://1024
-BROKEN=1
 CMDS=<<EOF
 e cmd.hit=p8 1
 /h* md5 348a9791dc41b89796ec3808b5b5262f
@@ -150,6 +149,31 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 f hash.md5.348a9791dc41b89796ec3808b5b5262f = 0x0
+EOF
+RUN
+
+NAME=hash hit commands seek to the hit and restore the original address
+FILE=malloc://32
+CMDS=<<EOF
+wx 41424344 @ 8
+"e cmd.hit=p8 4;s 24"
+s 16
+/h* md5 cb08ca4a7bb5f9683c19133a84872ca7 4
+?v $$
+s 8
+/h md5 cb08ca4a7bb5f9683c19133a84872ca7 4
+?v $$
+/h* md5 d41d8cd98f00b204e9800998ecf8427e 4
+?v $$
+EOF
+EXPECT=<<EOF
+f hash.md5.cb08ca4a7bb5f9683c19133a84872ca7 = 0x8
+41424344
+0x10
+0x8: md5.cb08ca4a : cb08ca4a7bb5f9683c19133a84872ca7
+41424344
+0x8
+0x8
 EOF
 RUN
 
