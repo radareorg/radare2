@@ -35,25 +35,39 @@ R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value
 	ht_pp_insert (code->equs, key, (void *)value);
 }
 
-typedef struct {
-	RAsmCode *code;
-	char *str;
-} UserData;
-
 static bool replace_cb(void *user, const void *key, const void *value) {
-	UserData *data = user;
-	data->str = r_str_replace (data->str, key, value, true);
+	char **str = user;
+	char *p = *str;
+	const size_t keylen = strlen (key);
+	RStrBuf *sb = r_strbuf_new (NULL);
+	while (*p) {
+		char *start = p;
+		if (*p != ':' && r_name_validate_char (*p)) {
+			while (*p != ':' && r_name_validate_char (*p)) {
+				p++;
+			}
+		} else {
+			p++;
+		}
+		size_t len = p - start;
+		if (len == keylen && !strncmp (start, key, len)) {
+			r_strbuf_append (sb, value);
+		} else {
+			r_strbuf_append_n (sb, start, len);
+		}
+	}
+	free (*str);
+	*str = r_strbuf_drain (sb);
 	return true;
 }
 
 R_API char *r_asm_code_equ_replace(RAsmCode *code, const char *_str) {
 	R_RETURN_VAL_IF_FAIL (code && _str, NULL);
-	UserData data = {
-		.code = code,
-		.str = strdup (_str)
-	};
-	ht_pp_foreach (code->equs, replace_cb, &data);
-	return data.str;
+	char *str = strdup (_str);
+	if (str) {
+		ht_pp_foreach (code->equs, replace_cb, &str);
+	}
+	return str;
 }
 
 R_API char *r_asm_code_get_hex(RAsmCode *acode) {
