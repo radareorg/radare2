@@ -1213,6 +1213,7 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int 
 	r_list_append (args, (void *)"-escr.utf8=0");
 	r_list_append (args, (void *)"-escr.color=0");
 	r_list_append (args, (void *)"-escr.interactive=0");
+	r_list_append (args, (void *)"-elog.hints=0");
 
 	if (!load_plugins) {
 		r_list_append (args, (void *)"-NN");
