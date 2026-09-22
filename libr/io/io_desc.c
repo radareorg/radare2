@@ -284,18 +284,15 @@ R_API char *r_io_desc_system(RIODesc *desc, const char *cmd) {
 	return NULL;
 }
 
-R_API bool r_io_desc_is_blockdevice(RIODesc *desc) {
-	if (!desc || !desc->plugin || !desc->plugin->is_blockdevice) {
-		return false;
+R_API RIODescInfo r_io_desc_info(RIODesc *desc) {
+	RIODescInfo di = {0};
+	if (desc && desc->plugin) {
+		if (desc->plugin->getinfo) {
+			di = desc->plugin->getinfo (desc);
+		}
+		di.isdbg |= desc->plugin->isdbg;
 	}
-	return desc->plugin->is_blockdevice (desc);
-}
-
-R_API bool r_io_desc_is_chardevice(RIODesc *desc) {
-	if (!desc || !desc->plugin || !desc->plugin->is_chardevice) {
-		return false;
-	}
-	return desc->plugin->is_chardevice (desc);
+	return di;
 }
 
 R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
@@ -334,13 +331,6 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 	return true;
 }
 
-R_API bool r_io_desc_is_dbg(RIODesc *desc) {
-	if (desc && desc->plugin) {
-		return desc->plugin->isdbg;
-	}
-	return false;
-}
-
 R_API int r_io_desc_get_pid(RIODesc *desc) {
 	//-1 and -2 are reserved
 	if (!desc) {
@@ -349,7 +339,7 @@ R_API int r_io_desc_get_pid(RIODesc *desc) {
 	if (!desc->plugin) {
 		return -4;
 	}
-	if (!desc->plugin->isdbg) {
+	if (!r_io_desc_info (desc).isdbg) {
 		return -5;
 	}
 	if (!desc->plugin->getpid) {
@@ -366,7 +356,7 @@ R_API int r_io_desc_get_tid(RIODesc *desc) {
 	if (!desc->plugin) {
 		return -4;
 	}
-	if (!desc->plugin->isdbg) {
+	if (!r_io_desc_info (desc).isdbg) {
 		return -5;
 	}
 	if (!desc->plugin->gettid) {
@@ -376,7 +366,7 @@ R_API int r_io_desc_get_tid(RIODesc *desc) {
 }
 
 R_API bool r_io_desc_get_base(RIODesc *desc, ut64 *base) {
-	if (!base || !desc || !desc->plugin || !desc->plugin->isdbg || !desc->plugin->getbase) {
+	if (!base || !r_io_desc_info (desc).isdbg || !desc->plugin->getbase) {
 		return false;
 	}
 	return desc->plugin->getbase (desc, base);

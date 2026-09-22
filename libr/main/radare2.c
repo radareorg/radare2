@@ -1802,7 +1802,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set (r->config, "asm.os", mr.asmos);
 		}
 
-		mr.debug = r->io->desc && mr.iod && (r->io->desc->fd == mr.iod->fd) && mr.iod->plugin && mr.iod->plugin->isdbg;
+		mr.debug = r_io_desc_info (mr.iod).isdbg && r->io->desc && r->io->desc->fd == mr.iod->fd;
 		if (mr.debug) {
 			r_core_setup_debugger (r, mr.debugbackend, mr.baddr == UT64_MAX);
 		}

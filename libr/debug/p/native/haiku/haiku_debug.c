@@ -9,7 +9,7 @@
 static RIOHaikuDbg *haiku_dbg_get(RDebug *dbg) {
 	RIODesc *desc = (dbg->iob.io)? dbg->iob.io->desc: NULL;
 	// match by name: the plugin symbol itself is not exported by libr_io
-	if (desc && desc->data && desc->plugin && desc->plugin->isdbg
+	if (r_io_desc_info (desc).isdbg && desc->data
 			&& !strcmp (desc->plugin->meta.name, "haiku")) {
 		return (RIOHaikuDbg *)desc->data;
 	}

@@ -459,10 +459,11 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 	return mmap_truncate (fd, mmo, size);
 }
 
-static bool __is_blockdevice(RIODesc *desc) {
-	R_RETURN_VAL_IF_FAIL (desc && desc->data, false);
+static RIODescInfo __info(RIODesc *desc) {
+	RIODescInfo di = {0};
 	RIOMMapFileObj *mmo = desc->data;
-	return mmo? mmo->isblk == 1: false;
+	di.blkdev = (mmo && mmo->isblk == 1);
+	return di;
 }
 
 RIOPlugin r_io_plugin_default = {
@@ -480,9 +481,7 @@ RIOPlugin r_io_plugin_default = {
 	.seek = __lseek,
 	.write = __write,
 	.resize = __resize,
-#if R2__UNIX__ || R2__WINDOWS__
-	.is_blockdevice = __is_blockdevice,
-#endif
+	.getinfo = __info,
 };
 
 #ifndef R2_PLUGIN_INCORE
