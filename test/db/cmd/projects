@@ -924,7 +924,7 @@ Ps hello
 Ps world
 EOF
 EXPECT_ERR=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
 EOF
 EXPECT=
 RUN

@@ -6,7 +6,7 @@ ie
 EOF
 EXPECT=
 EXPECT_ERR=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
 EOF
 RUN
 
@@ -80,7 +80,7 @@ EXPECT=<<EOF
 paddr=0x00000f50 vaddr=0x00000f50 haddr=0x00000018 vhaddr=0x00000018 type=program
 EOF
 EXPECT_ERR=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
 EOF
 RUN
 
@@ -142,7 +142,7 @@ DEBUG: (cannot find opening [) in (48])
 DEBUG: (section .got) Cd 4[56] @ 0x2fdd8
 DEBUG: RCoreCallAt(0x0002fdd8): Cd 4[56]
 DEBUG: (cannot find opening [) in (56])
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
 DEBUG: RCoreCmd: =!
 DEBUG: RCoreCmd: ieq
 DEBUG: RCoreCmd: ie
@@ -162,7 +162,7 @@ paddr      vaddr      phaddr     vhaddr     type
 0x00000d28 0x00000d28 0x00000018 0x00000018 program
 EOF
 EXPECT_ERR=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+HINT: Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true
 EOF
 RUN
 
