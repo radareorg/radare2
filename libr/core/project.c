@@ -543,7 +543,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		r_cons_printf (cons, "# meta\n");
 		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 1, NULL, NULL);
 		flush (core, sb);
-		r_core_cmd (core, "fV*", 0);
+		r_core_cmd (core, "fv*", 0);
 		flush (core, sb);
 		r_core_cmd (core, "ano*@@@F", 0);
 		flush (core, sb);

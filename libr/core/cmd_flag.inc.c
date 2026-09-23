@@ -2,7 +2,7 @@
 
 #if R_INCLUDE_BEGIN
 
-// R2R  db/cmd/cmd_flags_graph
+// R2R db/cmd/cmd_flags_graph
 
 static RCoreHelpMessage help_msg_fR = {
 	"Usage: fR", " [from] [to] ([mask])", " # Relocate flags matching a mask asuming old and new base addresses",
@@ -10,12 +10,12 @@ static RCoreHelpMessage help_msg_fR = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_fV = {
-	"Usage: fV", "[*-] [nkey] [offset]", " # dump/restore visual marks (mK/'K)",
-	"fV", " a 33", "set visual mark 'a' to the offset 33",
-	"fV", "-", "delete all visual marks",
-	"fV", "*", "dump visual marks as r2 commands",
-	"fV", "", "list visual marks",
+static RCoreHelpMessage help_msg_fv = {
+	"Usage: fv", "[*-] [nkey] [offset]", " # dump/restore visual marks (vmarks / mK/'K)",
+	"fv", " a 33", "set visual mark 'a' to the offset 33 ('a' can be also in 0x41 hex)",
+	"fv", "-", "delete all visual marks",
+	"fv", "*", "dump visual marks as r2 commands",
+	"fv", "", "list visual marks",
 	NULL
 };
 
@@ -52,7 +52,6 @@ static RCoreHelpMessage help_msg_f = {
 	"fg", "", "bring coretasks jobs to the foreground (see '&' command)",
 	"fh", "[*] ([prefix])", "construct a graph hirearchy with the flag names",
 	"fj", "", "list flags in JSON format",
-	"fq", "", "list flags in quiet mode",
 	"fl", " (@[flag]) [size]", "show or set flag length (size)",
 	"fla", " [glob]", "automatically compute the size of all flags matching glob",
 	"fm", " addr", "move flag at current offset to new address",
@@ -62,12 +61,13 @@ static RCoreHelpMessage help_msg_f = {
 	"fN", " [[name]] [realname]", "set flag real name (if no flag name current seek one is used)",
 	"fo", "", "show fortunes",
 	"fO", " [glob]", "flag as ordinals (sym.* func.* method.*)",
+	"fq", "", "list flags in quiet mode",
 	//" fc [name] [cmt]  ; set execution command for a specific flag"
 	"fr", " [[old]] [new]", "rename flag (if no new flag current seek is used)",
 	"fR", "[?] [from] [to] [mask]", "relocate all flags matching from&~m",
 	"fs", "[?]+-*", "manage flagspaces",
 	"ft", "[?]*", "flag tags, useful to find all flags matching some words",
-	"fV", "[*-] [nkey] [offset]", "dump/restore visual marks (mK/'K)",
+	"fv", "[*-] [nkey] [offset]", "dump/restore vmarks visual mark flags (mK/'K)",
 	"fx", "[d]", "show hexdump (or disasm) of flag:flagsize",
 	"fu", " [name]", "show unreal flag information (yeah that names is pretty bad)",
 	"fz", "[?][name]", "show info about named flag zone. see fz?[name]",
@@ -1541,6 +1541,94 @@ static void cmd_fu(RCore *core, const char *input) {
 	}
 }
 
+static ut64 vmark_value(RCore *core, const char *input, ut8 *chref) {
+	const char *err = NULL;
+	char *kval = r_str_trim_dup (input);
+	ut64 addr = UT64_MAX;
+	*chref = 0;
+	char *sp = strchr (kval, ' ');
+	if (sp) {
+		*sp = 0;
+		addr = r_num_math_err (core->num, sp + 1, &err);
+		if (err) {
+			R_LOG_ERROR ("Invalid address: %s", err);
+			return UT64_MAX;
+		}
+	}
+	if (strlen (kval) > 1) {
+		const ut64 addr = r_num_math_err (core->num, kval, &err);
+		if (err) {
+			R_LOG_ERROR ("Invalid address: %s", err);
+		} else if (addr > 255) {
+			R_LOG_ERROR ("Invalid key value: %s", kval);
+		} else {
+			*chref = addr;
+		}
+	} else {
+		*chref = *kval;
+	}
+	free (kval);
+	return addr;
+}
+
+static void cmd_fv(RCore *core, const char *input) {
+	switch (input[1]) {
+	case '*':
+		r_core_vmark_dump (core, '*');
+		break;
+	case 'j':
+		r_core_vmark_dump (core, 'j');
+		break;
+	case 'v':
+		r_core_vmark_dump (core, 'v');
+		break;
+	case '-': // "fv-"
+		if (input[2] == '*') {
+			r_core_vmark_reset (core);
+		} else if (input[2]) {
+			ut8 ch = 0;
+			ut64 addr = vmark_value (core, input + 2, &ch);
+			if (addr != UT64_MAX) {
+				R_LOG_HINT ("Usage: fv-[key]");
+				break;
+			}
+			r_core_vmark_del (core, ch);
+		} else {
+			R_LOG_ERROR ("Give me a name or delete them all with fv-*");
+		}
+		break;
+	case ' ': // "fv "
+		if (input[2]) {
+			ut8 ch = 0;
+			ut64 addr = vmark_value (core, input + 2, &ch);
+			if (ch) {
+				if (addr != UT64_MAX) {
+					r_core_vmark_set (core, ch, addr, 0, 0);
+				} else {
+					ut64 addr = r_core_vmark_get (core, ch);
+					if (addr != UT64_MAX) {
+						r_cons_printf (core->cons, "0x%08"PFMT64x"\n", addr);
+					} else {
+						R_LOG_ERROR ("No mark for this key");
+					}
+				}
+			}
+		} else {
+			R_LOG_HINT ("Usage: fv [key] ([addr]) - get or set visual marks");
+		}
+		break;
+	case '?':
+		r_cons_cmd_help (core->cons, help_msg_fv);
+		break;
+	case 0:
+		r_core_vmark_dump (core, 0);
+		break;
+	default:
+		r_core_return_invalid_command (core, "fv", input[1]);
+		break;
+	}
+}
+
 static int cmd_flag(void *data, const char *input) {
 	static R_TH_LOCAL int flagenum = 0;
 	RCore *core = (RCore *)data;
@@ -1671,51 +1759,8 @@ static int cmd_flag(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'V': // "fV" visual marks
-		switch (input[1]) {
-		case '*':
-			r_core_vmark_dump (core, '*');
-			break;
-		case '-': // "fV-"
-			if (input[2] == '*') {
-				r_core_vmark_reset (core);
-			} else if (input[2]) {
-				r_core_vmark_del (core, input[2]);
-			} else {
-				R_LOG_ERROR ("Give me a name or delete them all with fV-*");
-			}
-			break;
-		case ' ': // "fV "
-			if (input[2] && input[3]) {
-				const char *arg = r_str_trim_head_ro (input + 1);
-				if (isdigit (*arg)) {
-					int n = atoi (arg);
-					if (n > 0 && n < UT8_MAX) {
-						while (*arg && *arg != ' ') {
-							arg++;
-						}
-						arg = r_str_trim_head_ro (arg);
-						ut64 addr = arg? r_num_math (core->num, arg): core->addr;
-						r_core_vmark_set (core, n, addr, 0, 0);
-					} else {
-						R_LOG_ERROR ("invalid argument for fV");
-					}
-				} else {
-					const char *arg = r_str_trim_head_ro (input + 3);
-					ut64 addr = arg? r_num_math (core->num, arg): core->addr;
-					r_core_vmark_set (core, input[2], addr, 0, 0);
-				}
-			} else {
-				// uh
-			}
-			break;
-		case '?':
-			r_cons_cmd_help (core->cons, help_msg_fV);
-			break;
-		default:
-			r_core_vmark_dump (core, 0);
-			break;
-		}
+	case 'v': // "fv" visual marks
+		cmd_fv (core, input);
 		break;
 	case 'm': // "fm"
 		if (input[1] == '?') {
