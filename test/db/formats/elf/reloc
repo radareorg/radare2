@@ -1599,3 +1599,47 @@ EXPECT=<<EOF
 5
 EOF
 RUN
+
+NAME=ELF: a section start inside a rela section bounds it by file offset only
+FILE=malloc://0x4000
+CMDS=<<EOF
+wff bins/elf/simple_malloc_x86_64
+wx 15 @ 0xf00
+wx 15 @ 0xf10
+wx 15 @ 0xf20
+wx 15000000 @ 0xf70
+oba 0
+ir~?
+?e --
+wx b004 @ 0x1c90
+wx b004000000000000 @ 0x1fd0
+oba 0
+ir~?
+?e --
+wx b004 @ 0x1c98
+oba 0
+ir~?
+EOF
+EXPECT=<<EOF
+14
+--
+14
+--
+7
+EOF
+RUN
+
+NAME=ELF: a negative DT_RELAENT reads no entry before the table
+FILE=malloc://0x4000
+CMDS=<<EOF
+wff bins/elf/simple_malloc_x86_64
+wx f0ffffffffffffff @ 0xf28
+oba 0
+ir~?
+EOF
+EXPECT=<<EOF
+6
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
