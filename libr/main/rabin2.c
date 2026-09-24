@@ -422,6 +422,23 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 			goto _rabin_do_operation_error;
 		}
 		break;
+	case 'w':
+		if (!ptr || !ptr2 || !*ptr2) {
+			goto _rabin_do_operation_error;
+		}
+		if (!strcmp (ptr, "weak")) {
+			rc = r_bin_wr_lib_weak (bin, ptr2, true);
+		} else if (!strcmp (ptr, "strong")) {
+			rc = r_bin_wr_lib_weak (bin, ptr2, false);
+		} else {
+			goto _rabin_do_operation_error;
+		}
+		if (rc) {
+			rc = r_bin_wr_output (bin, output);
+		} else {
+			R_LOG_ERROR ("Cannot change library load mode (unsupported, missing, or ambiguous library)");
+		}
+		break;
 	case 'R':
 		r_bin_wr_rpath_del (bin);
 		rc = r_bin_wr_output (bin, output);
@@ -500,10 +517,10 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 		goto error;
 	}
 	if (!rc) {
-		R_LOG_ERROR ("Cannot dump :(");
+		R_LOG_ERROR ("Cannot perform operation");
 	}
 	free (arg);
-	return true;
+	return rc;
 error:
 	free (arg);
 	return false;
@@ -892,6 +909,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				" r/.data/1024      resize section\n"
 				" R                 remove RPATH\n"
 				" a/l/libfoo.dylib  add library\n"
+				" w/weak//usr/lib/libfoo.dylib    make Mach-O dylib load weak\n"
+				" w/strong//usr/lib/libfoo.dylib  make Mach-O dylib load required\n"
 				" p/.data/rwx       change section permissions\n"
 				" P/LOAD0/rwx       change segment permissions (elf: LOAD0, GNU_STACK, PHDR, ...; mach-o: __TEXT, __DATA, ...)\n"
 				" c                 show Codesign data\n"
@@ -1373,7 +1392,9 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		}
 	}
 	if (op && action & R_BIN_REQ_OPERATION) {
-		rabin_do_operation (cons, bin, op, rad, output, file);
+		if (!rabin_do_operation (cons, bin, op, rad, output, file)) {
+			retval = 1;
+		}
 	}
 	if (pj) {
 		pj_end (pj);

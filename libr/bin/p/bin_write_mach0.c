@@ -75,6 +75,75 @@ static bool addlib(RBinFile *bf, const char *lib) {
 	return MACH0_(write_addlib) (bf, lib);
 }
 
+static bool lib_weak(RBinFile *bf, const char *lib, bool weak) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->buf || !R_STR_ISNOTEMPTY (lib)) {
+		return false;
+	}
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
+	ut64 size = r_buf_size (bf->buf);
+	ut64 off = mo->header_at + sizeof (struct MACH0_(mach_header));
+	if (off > size || mo->hdr.sizeofcmds > size - off) {
+		return false;
+	}
+	ut64 end = off + mo->hdr.sizeofcmds;
+	size_t liblen = strlen (lib);
+	ut64 found_at = UT64_MAX;
+	ut32 found_cmd = 0;
+	ut32 i;
+	for (i = 0; i < mo->hdr.ncmds; i++) {
+		ut8 lc[8];
+		if (off > end || end - off < sizeof (lc)
+			|| r_buf_read_at (bf->buf, off, lc, sizeof (lc)) != sizeof (lc)) {
+			return false;
+		}
+		ut32 cmd = r_read_ble32 (lc, mo->big_endian);
+		ut32 cmdsize = r_read_ble32 (lc + 4, mo->big_endian);
+		if (cmdsize < sizeof (lc) || cmdsize > end - off) {
+			return false;
+		}
+		if (cmd == LC_LOAD_DYLIB || cmd == LC_LOAD_WEAK_DYLIB) {
+			ut8 name_field[4];
+			if (cmdsize < sizeof (struct dylib_command)
+				|| r_buf_read_at (bf->buf, off + 8, name_field, sizeof (name_field)) != sizeof (name_field)) {
+				return false;
+			}
+			ut32 nameoff = r_read_ble32 (name_field, mo->big_endian);
+			if (nameoff < sizeof (struct dylib_command) || nameoff >= cmdsize) {
+				return false;
+			}
+			if (liblen < cmdsize - nameoff) {
+				char *name = malloc (liblen + 1);
+				if (!name) {
+					return false;
+				}
+				bool match = r_buf_read_at (bf->buf, off + nameoff, (ut8 *)name, liblen + 1) == liblen + 1
+					&& !memcmp (name, lib, liblen + 1);
+				free (name);
+				if (match) {
+					if (found_at != UT64_MAX) {
+						R_LOG_ERROR ("More than one Mach-O library load command matches %s", lib);
+						return false;
+					}
+					found_at = off;
+					found_cmd = cmd;
+				}
+			}
+		}
+		off += cmdsize;
+	}
+	if (found_at == UT64_MAX) {
+		R_LOG_ERROR ("Mach-O library load command not found: %s", lib);
+		return false;
+	}
+	ut32 new_cmd = weak? LC_LOAD_WEAK_DYLIB: LC_LOAD_DYLIB;
+	if (found_cmd == new_cmd) {
+		return true;
+	}
+	ut8 value[4];
+	r_write_ble32 (value, new_cmd, mo->big_endian);
+	return r_buf_write_at (bf->buf, found_at, value, sizeof (value)) == sizeof (value);
+}
+
 static bool seg_name_matches(const char *segname, const char *user) {
 	size_t nlen = strlen (user);
 	if (nlen > 16) {
@@ -152,5 +221,6 @@ RBinWrite r_bin_write_mach0 = {
 #endif
 	.seg_perms = &seg_perms,
 	.addlib = &addlib,
+	.lib_weak = &lib_weak,
 };
 #endif
