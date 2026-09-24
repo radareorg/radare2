@@ -966,14 +966,22 @@ x \xe5eadme.md
 EOF
 RUN
 
-NAME=mi fat find filename by offset
+NAME=mi fat finds the starting offset of a multi-cluster file
 FILE=bins/fs/fat_deleted/fat_deleted.img
 ARGS=-n
 CMDS=<<EOF
 m /mnt fat 0
-mi 0x29600~mnt
+mi /mnt/etc/services
+mis /mnt/etc/services
+s
+p8 7
+mi 0x24e00~mnt
 EOF
 EXPECT=<<EOF
+'f file 19605 0x00024e00
+'f file 19605 0x00024e00
+0x24e00
+23204e6574776f
 /mnt/etc/services
 EOF
 RUN

@@ -270,7 +270,7 @@ EOF2
 EXPECT_ERR=
 RUN
 
-NAME=mc and mg reject truncated FAT files without hanging
+NAME=mount reads reject truncated FAT files without changing the clipboard
 FILE=bins/fs/fat.img
 TIMEOUT=10
 CMDS=<<EOF2
@@ -278,10 +278,16 @@ e log.level=0
 e io.cache=true
 # Increase README.md's size beyond its allocated cluster chain.
 wx 00001000 @ 0x71c
+m /tmp tmp
+mw /tmp/original original
+my /tmp/original
 mkdir r2r-mg-truncated
 cd r2r-mg-truncated
 mc /root/README.md || echo read-failed
 mg /root/README.md || echo dump-failed
+my /root/README.md || echo yank-failed
+y8
+mo /root/README.md || echo open-failed
 rm README.md
 cd ..
 rm r2r-mg-truncated
@@ -289,6 +295,82 @@ EOF2
 EXPECT=<<EOF2
 read-failed
 dump-failed
+yank-failed
+6f726967696e616c
+open-failed
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount reads use cached filesystem content
+FILE=-
+CMDS=<<EOF2
+m /r2 r2
+s 0x1234
+mc /r2/seek
+my /r2/seek && echo yank-ok
+y8
+mo /r2/seek && echo open-ok
+p8 7 @ 0
+EOF2
+EXPECT=<<EOF2
+0x1234
+
+yank-ok
+3078313233340a
+open-ok
+3078313233340a
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount empty files do not read or replace the clipboard
+FILE=-
+CMDS=<<EOF2
+e log.level=0
+m /tmp tmp
+mw /tmp/original original
+mw /tmp/empty
+my /tmp/original
+mc /tmp/empty
+my /tmp/empty || echo yank-failed
+?v $?
+y8
+mo /tmp/empty || echo open-failed
+?v $?
+EOF2
+EXPECT=<<EOF2
+
+yank-failed
+0x1
+6f726967696e616c
+open-failed
+0x1
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount metadata handles large sizes without reading the whole file
+FILE=bins/fs/fat.img
+TIMEOUT=10
+CMDS=<<EOF2
+e log.level=0
+e io.cache=true
+wx ffffffff @ 0x71c
+mi /root/README.md
+mis /root/README.md
+s
+mc /root/README.md || echo read-failed
+my /root/README.md || echo yank-failed
+mo /root/README.md || echo open-failed
+EOF2
+EXPECT=<<EOF2
+'f file 4294967295 0x0002ae00
+'f file 4294967295 0x0002ae00
+0x2ae00
+read-failed
+yank-failed
+open-failed
 EOF2
 EXPECT_ERR=
 RUN
@@ -409,6 +491,85 @@ EXPECT=<<EOF2
 410042
 first
 second
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount host commands return consistent status
+FILE=-
+CMDS=<<EOF2
+e log.level=0
+mkdir r2r-mount-host-status && echo mkdir-ok
+?v $?
+echo data > r2r-mount-host-status/src
+mv r2r-mount-host-status/src r2r-mount-host-status/dst && echo move-ok
+?v $?
+mv r2r-mount-host-status/src r2r-mount-host-status/dst || echo move-failed
+?v $?
+mkdir r2r-mount-host-status/dst || echo mkdir-failed
+?v $?
+mkdir -p || echo mkdir-usage
+?v $?
+rm r2r-mount-host-status/dst
+rm r2r-mount-host-status
+EOF2
+EXPECT=<<EOF2
+mkdir-ok
+0x0
+move-ok
+0x0
+move-failed
+0x1
+mkdir-failed
+0x1
+mkdir-usage
+0x1
+EOF2
+RUN
+
+NAME=mktemp preserves literal arguments and returns the created path
+FILE=-
+REQUIRE=unix
+CMDS=<<EOF2
+m /host posix
+mktemp "r2r-mount-d name" > $temp
+?v $?
+mi "/host`$temp`"
+rm "`$temp`"
+mktemp -d "r2r-mount dir" > $temp
+?v $?
+mkdir "`$temp`/child" && echo directory-created
+rm "`$temp`/child"
+rm "`$temp`"
+EOF2
+EXPECT=<<EOF2
+0x0
+'f file 0 0x00000000
+0x0
+directory-created
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mktemp errors update status and take the failure branch
+FILE=-
+REQUIRE=unix
+CMDS=<<EOF2
+e log.level=0
+mktemp -d || echo missing-prefix
+?v $?
+mktemp "" || echo empty-prefix
+?v $?
+mktemp r2r-mount-missing-parent/file || echo create-failed
+?v $?
+EOF2
+EXPECT=<<EOF2
+missing-prefix
+0x1
+empty-prefix
+0x1
+create-failed
+0x1
 EOF2
 EXPECT_ERR=
 RUN

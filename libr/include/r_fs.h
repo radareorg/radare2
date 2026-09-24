@@ -35,7 +35,7 @@ typedef struct r_fs_partition_plugin_t {
 typedef struct r_fs_file_t {
 	char *name;
 	char *path;
-	ut64 off;
+	ut64 off; // File's starting offset, populated by open and stable across reads.
 	ut32 size;
 	char type;
 	ut8 *data;
