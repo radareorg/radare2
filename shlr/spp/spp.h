@@ -91,13 +91,19 @@ typedef struct s_strbuf_t {
 } SStrBuf;
 #endif
 
+struct Proc;
+
 typedef struct {
 	SStrBuf *cout;
 	FILE *fout;
+	struct Proc *proc;
 	int size;
 } Output;
 
 typedef struct SppState {
+	void *user;
+	FILE *pipe_fd;
+	char *switch_str;
 	int lineno;
 	int echo[MAXIFL];
 	int ifl;
@@ -157,6 +163,9 @@ S_API void spp_io(FILE *in, Output *out);
 S_API void spp_proc_list(void);
 S_API void spp_proc_list_kw(void);
 S_API void spp_proc_set(SppProc *p, const char *arg, int fail);
+S_API const SppProc *spp_default_proc(void);
+/* A NULL processor uses an isolated copy of the default spp processor. */
+S_API char *spp_eval_str(SppProc *p, const char *code);
 
 S_API Spp *spp_new(SppProc *proc);
 S_API char *spp_parse(Spp *s, const char *input);

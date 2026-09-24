@@ -190,13 +190,10 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
 	char *data = r_file_slurp (str, NULL);
 	free (str);
 	R_RETURN_IF_FAIL (data);
-	Output out = {0};
-	out.cout = r_strbuf_new (NULL);
-	struct Proc proc;
-	spp_proc_set (&proc, "spp", 1);
-	spp_eval (data, &out);
+	char *expanded = spp_eval_str (NULL, data);
 	free (data);
-	data = strdup (r_strbuf_get (out.cout));
+	R_RETURN_IF_FAIL (expanded);
+	data = expanded;
 	char *save_ptr = NULL;
 	char *bol = r_str_tok_r (data, "\n", &save_ptr);
 	while (bol) {
