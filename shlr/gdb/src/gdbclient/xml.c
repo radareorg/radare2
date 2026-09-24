@@ -440,6 +440,7 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 		// Unless pid 0 is requested, only add the requested pid and it's child processes
 		if (0 == pid || ipid == pid || pid_info->ppid == pid) {
 			r_list_append (list, pid_info);
+			pid_info = NULL;
 		} else {
 			if (pid_info) {
 				free (pid_info->path);
