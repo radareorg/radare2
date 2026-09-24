@@ -332,11 +332,14 @@ static RFSFile *fs_fatmacho_open(RFSRoot *root, const char *path, bool create) {
 // Reads via the cached fd so we bypass IO maps — the container file stays
 // reachable through the fd even after slice selection remaps IO.
 static bool fatmacho_slice_read(RFSRoot *root, ut64 offset, ut8 *data, ut64 size) {
+	if (size > INT_MAX) {
+		return false;
+	}
 	FatmachoCtx *ctx = root->ptr;
 	if (ctx && ctx->fd >= 0) {
-		return root->iob.fd_read_at (root->iob.io, ctx->fd, offset, data, size) == (int)size;
+		return root->iob.fd_read_at (root->iob.io, ctx->fd, offset, data, (int)size) == (int)size;
 	}
-	return root->iob.read_at (root->iob.io, offset, data, size) == (int)size;
+	return root->iob.read_at (root->iob.io, offset, data, (int)size) == (int)size;
 }
 
 static RFSFile *fs_fatmacho_slurp(RFSRoot *root, const char *path) {
@@ -345,6 +348,10 @@ static RFSFile *fs_fatmacho_slurp(RFSRoot *root, const char *path) {
 		return NULL;
 	}
 	FatmachoSlice *s = file->ptr;
+	if (s->size > INT_MAX) {
+		r_fs_file_free (file);
+		return NULL;
+	}
 	file->data = malloc (s->size);
 	if (!file->data) {
 		r_fs_file_free (file);
