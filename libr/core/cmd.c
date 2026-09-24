@@ -102,6 +102,7 @@ R_API ut8 *r_core_readblock(RCore *core, ut64 size) {
 #include "cmd_macro.inc.c"
 #include "cmd_magic.inc.c"
 #include "r/mount.inc.c"
+#include "r/man.inc.c"
 #include "cmd_seek.inc.c"
 #include "cmd_search.inc.c" // defines incDigitBuffer... used by cmd_print
 
@@ -7442,6 +7443,9 @@ R_API void r_core_cmd_init(RCore *core) {
 		core->rcmd->nullcallback = r_core_cmd_nullcallback;
 		if (!r_core_cmd_block_init (core->rcmd)) {
 			R_LOG_ERROR ("Cannot register block size command");
+		}
+		if (!r_core_cmd_man_init (core->rcmd)) {
+			R_LOG_ERROR ("Cannot register man commands");
 		}
 		if (!r_core_cmd_mount_init (core->rcmd)) {
 			R_LOG_ERROR ("Cannot register mount commands");

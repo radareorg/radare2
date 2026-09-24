@@ -55,208 +55,6 @@ static RCoreHelpMessage help_msg_mf = {
 	NULL
 };
 
-static bool is_document(const char *name) {
-	return r_str_endswith (name, ".r2.md") || r_str_endswith (name, ".md") || r_str_endswith (name, ".txt");
-}
-
-static char *readman(RCmdContext *ctx, const char *page) {
-	RCore *core = ctx->user;
-	const char *docdir = R2_DATDIR "/doc/radare2/";
-	if (!strcmp (page, "?")) {
-		RStrBuf *sb = r_strbuf_new ("");
-		RList *files = r_sys_dir (docdir);
-		RListIter *iter;
-		const char *name;
-		r_list_foreach (files, iter, name) {
-			if (*name == '.') {
-				continue;
-			}
-			if (is_document (name)) {
-				r_strbuf_appendf (sb, "%s\n", name);
-			}
-		}
-		r_list_free (files);
-		char *s = r_strbuf_drain (sb);
-		r_cons_print (ctx->cons, s);
-		free (s);
-		return NULL;
-	}
-	int cat = 1;
-	if (r_file_exists (page)) {
-		return r_file_slurp (page, NULL);
-	}
-	char *n = r_str_newf (R2_DATDIR "/doc/radare2/%s", page);
-	if (r_file_exists (n)) {
-		if (r_str_endswith (page, ".r2.md")) {
-			r_core_callf (core, ". %s", n);
-			free (n);
-			return NULL;
-		}
-		if (r_str_endswith (page, ".md")) {
-			char *md = r_file_slurp (n, NULL);
-			char *data = r_core_md2txt (core, md, false);
-			free (md);
-			free (n);
-			return data;
-		}
-		char *data = NULL;
-		data = r_file_slurp (n, NULL);
-		free (n);
-		return data;
-	}
-	free (n);
-	char *p = r_str_newf ("%s/man/man%d/%s.%d", R2_DATDIR, cat, page, cat);
-	char *res = r_file_slurp (p, NULL);
-	if (!res) {
-		free (p);
-		p = r_str_newf ("%s/man/man%d/%s.%d", "/usr/share", cat, page, cat);
-		res = r_file_slurp (p, NULL);
-	}
-	if (!res && cat == 1) {
-		// Try man3 if man1 not found
-		free (p);
-		cat = 3;
-		p = r_str_newf ("%s/man/man%d/%s.%d", R2_DATDIR, cat, page, cat);
-		res = r_file_slurp (p, NULL);
-		if (!res) {
-			free (p);
-			p = r_str_newf ("%s/man/man%d/%s.%d", "/usr/share", cat, page, cat);
-			res = r_file_slurp (p, NULL);
-		}
-	}
-	if (res) {
-		// Process man page macros to markdown
-		RStrBuf *sb = r_strbuf_new ("");
-		char *lines = res;
-		char *line = lines;
-		bool in_code_block = false;
-		bool in_list = false;
-
-		while (line && *line) {
-			char *next_line = strchr (line, '\n');
-			if (next_line) {
-				*next_line = '\0';
-				next_line++;
-			}
-
-			// Skip empty lines at the beginning
-			if (!*line) {
-				line = next_line;
-				continue;
-			}
-
-			// Check if this is a man macro line
-			if (*line == '.') {
-				char *macro = line + 1;
-				char *args_str = strchr (macro, ' ');
-				const char *args_trimmed = NULL;
-				if (args_str) {
-					*args_str = '\0';
-					args_trimmed = r_str_trim_head_ro (args_str + 1);
-				}
-
-				if (!strcmp (macro, "Sh")) {
-					// Section header
-					r_strbuf_appendf (sb, "\n## %s\n\n", args_trimmed? args_trimmed: "");
-					in_list = false;
-				} else if (!strcmp (macro, "Ss")) {
-					// Subsection header
-					r_strbuf_appendf (sb, "\n### %s\n\n", args_trimmed? args_trimmed: "");
-					in_list = false;
-				} else if (!strcmp (macro, "Pp")) {
-					// Paragraph break
-					r_strbuf_append (sb, "\n\n");
-				} else if (!strcmp (macro, "Bl")) {
-					// Begin list
-					in_list = true;
-				} else if (!strcmp (macro, "El")) {
-					// End list
-					in_list = false;
-					r_strbuf_append (sb, "\n");
-				} else if (!strcmp (macro, "It")) {
-					// List item
-					if (in_list) {
-						if (args_trimmed) {
-							// Handle tagged list items
-							if (!strcmp (args_trimmed, "Fl")) {
-								r_strbuf_append (sb, "\n- `-`: ");
-							} else if (r_str_startswith (args_trimmed, "Fl ")) {
-								const char *flag = args_trimmed + 3; // Skip "Fl "
-								r_strbuf_appendf (sb, "\n- `-%s`: ", flag);
-							} else if (!strcmp (args_trimmed, "Ar")) {
-								r_strbuf_append (sb, "\n- `<arg>`: ");
-							} else {
-								r_strbuf_appendf (sb, "\n- `%s`: ", args_trimmed);
-							}
-						} else {
-							r_strbuf_append (sb, "\n- ");
-						}
-					} else {
-						r_strbuf_appendf (sb, "\n   * %s", args_trimmed? args_trimmed: "");
-					}
-				} else if (!strcmp (macro, "Nm")) {
-					// Name
-					r_strbuf_appendf (sb, "%s", args_trimmed? args_trimmed: "");
-				} else if (!strcmp (macro, "Nd")) {
-					// Description
-					r_strbuf_appendf (sb, " - %s", args_trimmed? args_trimmed: "");
-				} else if (!strcmp (macro, "Ft")) {
-					// Function type
-					r_strbuf_appendf (sb, "\n**%s** ", args_trimmed? args_trimmed: "");
-				} else if (!strcmp (macro, "Fn")) {
-					// Function name
-					r_strbuf_appendf (sb, "`%s`", args_trimmed? args_trimmed: "");
-				} else if (!strcmp (macro, "Fl")) {
-					// Flag option
-					r_strbuf_appendf (sb, "`-%s`", args_trimmed? args_trimmed: "");
-				} else if (!strcmp (macro, "Ar")) {
-					// Argument
-					r_strbuf_appendf (sb, "`%s`", args_trimmed? args_trimmed: "");
-				} else if (!strcmp (macro, "Op")) {
-					// Optional argument - ignore for now
-				} else if (!strcmp (macro, "In")) {
-					// Include file
-					r_strbuf_appendf (sb, "\n`%s`", args_trimmed? args_trimmed: "");
-				} else if (!strcmp (macro, "Dl")) {
-					// Display literal
-					r_strbuf_appendf (sb, "\n```\n%s\n```\n", args_trimmed? args_trimmed: "");
-				} else if (!strcmp (macro, "Bd")) {
-					// Begin display
-					r_strbuf_append (sb, "\n```\n");
-					in_code_block = true;
-				} else if (!strcmp (macro, "Ed")) {
-					// End display
-					r_strbuf_append (sb, "\n```\n");
-					in_code_block = false;
-				}
-			} else {
-				// Regular text line
-				if (in_code_block) {
-					r_strbuf_appendf (sb, "%s\n", line);
-				} else {
-					// Clean up extra spaces and format text
-					char *trimmed = r_str_trim_dup (line);
-					if (*trimmed) {
-						r_strbuf_appendf (sb, "%s\n", trimmed);
-					}
-					free (trimmed);
-				}
-			}
-
-			line = next_line;
-		}
-
-		free (res);
-		res = r_strbuf_drain (sb);
-
-		// Clean up extra whitespace
-		res = r_str_replace_all (res, "\n\n\n", "\n\n");
-		res = r_str_replace_all (res, "\\-", "-");
-	}
-	free (p);
-	return res;
-}
-
 static const char *mount_file_type(const char ch) {
 	switch (ch) {
 	case 'f': return "file";
@@ -859,17 +657,6 @@ static int mount_shell(RCmdContext *ctx, const char **argv) {
 	return 0;
 }
 
-static int mount_man(RCmdContext *ctx, const char **argv) {
-	char *text = readman (ctx, r_strs_equals_str (ctx->subcmd, "al")? "?": argv[0]);
-	if (text) {
-		r_cons_less_str (ctx->cons, text, NULL);
-		free (text);
-	} else if (!r_strs_equals_str (ctx->subcmd, "al")) {
-		R_LOG_ERROR ("Cannot find manpage");
-	}
-	return 0;
-}
-
 static int mount_host_mkdir(RCmdContext *ctx, const char **argv) {
 	RCore *core = ctx->user;
 	const bool parents = !strcmp (argv[0], "-p");
@@ -931,8 +718,7 @@ static int mount_help(RCmdContext *ctx) {
 		r_cons_cmd_help (ctx->cons, help_msg_m);
 	} else {
 		char *name = r_str_newf ("m%.*s", (int)r_strs_len (sub), sub.a);
-		bool exact = !r_strs_equals_str (sub, "d") && !r_strs_equals_str (sub, "w")
-			&& !r_strs_equals_str (sub, "a");
+		bool exact = !r_strs_equals_str (sub, "d") && !r_strs_equals_str (sub, "w");
 		if (!r_cons_cmd_help_match (ctx->cons, help_msg_m, name, 0, exact)) {
 			r_cons_cmd_help (ctx->cons, help_msg_m);
 		}
@@ -1003,8 +789,6 @@ static int mount_dispatch(RCmdContext *ctx) {
 		{ "y", mount_yank, 1, 1, "my [file]" },
 		{ "s", mount_shell, 0, 1, "ms [path]" },
 		{ "mc", cmd_mmc, 0, 2, "mmc [left_path] [right_path]" },
-		{ "an", mount_man, 1, 1, "man [page]" },
-		{ "al", mount_man, 0, 0, "mal" },
 		{ "kdir", mount_host_mkdir, 1, 2, "mkdir [-p] [directory]" },
 		{ "ktemp", mount_host_mktemp, 1, 2, "mktemp [-d] [file|directory]" },
 		{ "v", mount_host_mv, 2, 2, "mv [src] [dst]" },

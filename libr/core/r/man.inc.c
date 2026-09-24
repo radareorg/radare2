@@ -1,0 +1,265 @@
+/* radare - LGPL - Copyright 2009-2026 // pancake */
+
+#if R_INCLUDE_BEGIN
+
+static RCoreHelpMessage help_msg_man = {
+	"Usage:", "man [page]", "Read documentation",
+	"mal", "", "list available r2 docs",
+	"man", " [page]", "man=manpage reading (see mal)",
+	NULL
+};
+
+static bool man_is_document(const char *name) {
+	return r_str_endswith (name, ".r2.md") || r_str_endswith (name, ".md") || r_str_endswith (name, ".txt");
+}
+
+static char *man_read(RCmdContext *ctx, const char *page) {
+	RCore *core = ctx->user;
+	const char *docdir = R2_DATDIR "/doc/radare2/";
+	if (!strcmp (page, "?")) {
+		RStrBuf *sb = r_strbuf_new ("");
+		RList *files = r_sys_dir (docdir);
+		RListIter *iter;
+		const char *name;
+		r_list_foreach (files, iter, name) {
+			if (*name == '.') {
+				continue;
+			}
+			if (man_is_document (name)) {
+				r_strbuf_appendf (sb, "%s\n", name);
+			}
+		}
+		r_list_free (files);
+		char *s = r_strbuf_drain (sb);
+		r_cons_print (ctx->cons, s);
+		free (s);
+		return NULL;
+	}
+	int cat = 1;
+	if (r_file_exists (page)) {
+		return r_file_slurp (page, NULL);
+	}
+	char *n = r_str_newf (R2_DATDIR "/doc/radare2/%s", page);
+	if (r_file_exists (n)) {
+		if (r_str_endswith (page, ".r2.md")) {
+			r_core_callf (core, ". %s", n);
+			free (n);
+			return NULL;
+		}
+		if (r_str_endswith (page, ".md")) {
+			char *md = r_file_slurp (n, NULL);
+			char *data = r_core_md2txt (core, md, false);
+			free (md);
+			free (n);
+			return data;
+		}
+		char *data = NULL;
+		data = r_file_slurp (n, NULL);
+		free (n);
+		return data;
+	}
+	free (n);
+	char *p = r_str_newf ("%s/man/man%d/%s.%d", R2_DATDIR, cat, page, cat);
+	char *res = r_file_slurp (p, NULL);
+	if (!res) {
+		free (p);
+		p = r_str_newf ("%s/man/man%d/%s.%d", "/usr/share", cat, page, cat);
+		res = r_file_slurp (p, NULL);
+	}
+	if (!res && cat == 1) {
+		// Try man3 if man1 not found
+		free (p);
+		cat = 3;
+		p = r_str_newf ("%s/man/man%d/%s.%d", R2_DATDIR, cat, page, cat);
+		res = r_file_slurp (p, NULL);
+		if (!res) {
+			free (p);
+			p = r_str_newf ("%s/man/man%d/%s.%d", "/usr/share", cat, page, cat);
+			res = r_file_slurp (p, NULL);
+		}
+	}
+	if (res) {
+		// Process man page macros to markdown
+		RStrBuf *sb = r_strbuf_new ("");
+		char *lines = res;
+		char *line = lines;
+		bool in_code_block = false;
+		bool in_list = false;
+
+		while (line && *line) {
+			char *next_line = strchr (line, '\n');
+			if (next_line) {
+				*next_line = '\0';
+				next_line++;
+			}
+
+			// Skip empty lines at the beginning
+			if (!*line) {
+				line = next_line;
+				continue;
+			}
+
+			// Check if this is a man macro line
+			if (*line == '.') {
+				char *macro = line + 1;
+				char *args_str = strchr (macro, ' ');
+				const char *args_trimmed = NULL;
+				if (args_str) {
+					*args_str = '\0';
+					args_trimmed = r_str_trim_head_ro (args_str + 1);
+				}
+
+				if (!strcmp (macro, "Sh")) {
+					// Section header
+					r_strbuf_appendf (sb, "\n## %s\n\n", args_trimmed? args_trimmed: "");
+					in_list = false;
+				} else if (!strcmp (macro, "Ss")) {
+					// Subsection header
+					r_strbuf_appendf (sb, "\n### %s\n\n", args_trimmed? args_trimmed: "");
+					in_list = false;
+				} else if (!strcmp (macro, "Pp")) {
+					// Paragraph break
+					r_strbuf_append (sb, "\n\n");
+				} else if (!strcmp (macro, "Bl")) {
+					// Begin list
+					in_list = true;
+				} else if (!strcmp (macro, "El")) {
+					// End list
+					in_list = false;
+					r_strbuf_append (sb, "\n");
+				} else if (!strcmp (macro, "It")) {
+					// List item
+					if (in_list) {
+						if (args_trimmed) {
+							// Handle tagged list items
+							if (!strcmp (args_trimmed, "Fl")) {
+								r_strbuf_append (sb, "\n- `-`: ");
+							} else if (r_str_startswith (args_trimmed, "Fl ")) {
+								const char *flag = args_trimmed + 3; // Skip "Fl "
+								r_strbuf_appendf (sb, "\n- `-%s`: ", flag);
+							} else if (!strcmp (args_trimmed, "Ar")) {
+								r_strbuf_append (sb, "\n- `<arg>`: ");
+							} else {
+								r_strbuf_appendf (sb, "\n- `%s`: ", args_trimmed);
+							}
+						} else {
+							r_strbuf_append (sb, "\n- ");
+						}
+					} else {
+						r_strbuf_appendf (sb, "\n   * %s", args_trimmed? args_trimmed: "");
+					}
+				} else if (!strcmp (macro, "Nm")) {
+					// Name
+					r_strbuf_appendf (sb, "%s", args_trimmed? args_trimmed: "");
+				} else if (!strcmp (macro, "Nd")) {
+					// Description
+					r_strbuf_appendf (sb, " - %s", args_trimmed? args_trimmed: "");
+				} else if (!strcmp (macro, "Ft")) {
+					// Function type
+					r_strbuf_appendf (sb, "\n**%s** ", args_trimmed? args_trimmed: "");
+				} else if (!strcmp (macro, "Fn")) {
+					// Function name
+					r_strbuf_appendf (sb, "`%s`", args_trimmed? args_trimmed: "");
+				} else if (!strcmp (macro, "Fl")) {
+					// Flag option
+					r_strbuf_appendf (sb, "`-%s`", args_trimmed? args_trimmed: "");
+				} else if (!strcmp (macro, "Ar")) {
+					// Argument
+					r_strbuf_appendf (sb, "`%s`", args_trimmed? args_trimmed: "");
+				} else if (!strcmp (macro, "Op")) {
+					// Optional argument - ignore for now
+				} else if (!strcmp (macro, "In")) {
+					// Include file
+					r_strbuf_appendf (sb, "\n`%s`", args_trimmed? args_trimmed: "");
+				} else if (!strcmp (macro, "Dl")) {
+					// Display literal
+					r_strbuf_appendf (sb, "\n```\n%s\n```\n", args_trimmed? args_trimmed: "");
+				} else if (!strcmp (macro, "Bd")) {
+					// Begin display
+					r_strbuf_append (sb, "\n```\n");
+					in_code_block = true;
+				} else if (!strcmp (macro, "Ed")) {
+					// End display
+					r_strbuf_append (sb, "\n```\n");
+					in_code_block = false;
+				}
+			} else {
+				// Regular text line
+				if (in_code_block) {
+					r_strbuf_appendf (sb, "%s\n", line);
+				} else {
+					// Clean up extra spaces and format text
+					char *trimmed = r_str_trim_dup (line);
+					if (*trimmed) {
+						r_strbuf_appendf (sb, "%s\n", trimmed);
+					}
+					free (trimmed);
+				}
+			}
+
+			line = next_line;
+		}
+
+		free (res);
+		res = r_strbuf_drain (sb);
+
+		// Clean up extra whitespace
+		res = r_str_replace_all (res, "\n\n\n", "\n\n");
+		res = r_str_replace_all (res, "\\-", "-");
+	}
+	free (p);
+	return res;
+}
+
+static RCmdResult man_callback(RCmdContext *ctx) {
+	const char *command = ctx->handler_user;
+	const bool group_help = !strcmp (command, "ma?");
+	if (group_help || r_cmd_ctx_help (ctx)) {
+		r_cons_cmd_help_match (ctx->cons, help_msg_man, group_help? "ma": command, 0, !group_help);
+		return (RCmdResult) { 0 };
+	}
+	if (!r_strs_empty (ctx->subcmd)) {
+		r_core_return_invalid_command (ctx->user, command, r_strs_at (ctx->subcmd, 0));
+		return (RCmdResult) { .status = 1 };
+	}
+	const bool list = !strcmp (command, "mal");
+	const size_t argc = RVecRStrs_length (&ctx->args);
+	RStrs *arg = RVecRStrs_at (&ctx->args, 0);
+	if (argc != (list? 0: 1) || (!list && !r_strs_at (*arg, 0))) {
+		R_LOG_ERROR ("Usage: %s%s", command, list? "": " [page]");
+		return (RCmdResult) { .status = 1 };
+	}
+	if (list) {
+		man_read (ctx, "?");
+		return (RCmdResult) { 0 };
+	}
+	char *page = r_strs_tostring (*arg);
+	if (!page) {
+		return (RCmdResult) { .status = 1 };
+	}
+	char *text = man_read (ctx, page);
+	free (page);
+	if (text) {
+		r_cons_less_str (ctx->cons, text, NULL);
+		free (text);
+	} else {
+		R_LOG_ERROR ("Cannot find manpage");
+	}
+	return (RCmdResult) { 0 };
+}
+
+static bool r_core_cmd_man_init(RCmd *cmd) {
+	static const char *commands[] = { "man", "mal", "ma?" };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (commands); i++) {
+		if (!r_cmd_register (cmd, commands[i], man_callback, (void *)commands[i])) {
+			while (i > 0) {
+				r_cmd_unregister (cmd, commands[--i]);
+			}
+			return false;
+		}
+	}
+	return true;
+}
+
+#endif
