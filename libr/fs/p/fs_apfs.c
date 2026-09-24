@@ -1076,8 +1076,14 @@ static bool apfs_parse_btree_node_from_data(ApfsFS *ctx, ut8 *header_data, ut64 
 			if (flags & APFS_BTNODE_ROOT) {
 				// Root nodes have a footer, so subtract footer size
 				// Footer is struct apfs_btree_info which we don't have defined, assume 40 bytes
+				if (val_off > ctx->block_size - APFS_BTREE_FOOTER_SIZE) {
+					continue;
+				}
 				actual_val_off = ctx->block_size - APFS_BTREE_FOOTER_SIZE - val_off;
 			} else {
+				if (val_off > ctx->block_size) {
+					continue;
+				}
 				actual_val_off = ctx->block_size - val_off;
 			}
 
