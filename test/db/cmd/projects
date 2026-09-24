@@ -322,12 +322,12 @@ e prj.vc=false
 fV 49 0x400410
 fV 50 0x400412
 P+ vmarks > /dev/null
-PS*vmarks~fV
+PS*vmarks~fv
 P- vmarks > /dev/null
 EOF
 EXPECT=<<EOF
-fV 49 0x400410
-fV 50 0x400412
+fv 0x31 0x400410
+fv 0x32 0x400412
 EOF
 RUN
 

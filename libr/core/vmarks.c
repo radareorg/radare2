@@ -1,11 +1,13 @@
 /* radare - LGPL - Copyright 2009-2026 - pancake */
 
+// R2R db/cmd/cmd_fv
+
 #include <r_core.h>
 
 R_API void r_core_vmark_reset(RCore *core) {
 	R_RETURN_IF_FAIL (core);
 	size_t i;
-	for (i = 0; i < UT8_MAX; i++) {
+	for (i = 0; i <= UT8_MAX; i++) {
 		core->marks[i].addr = UT64_MAX;
 	}
 }
@@ -20,25 +22,24 @@ R_API bool r_core_vmark_dump(RCore *core, int mode) {
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
+		if (!pj) {
+			return false;
+		}
 		pj_a (pj);
 	}
-	RStrBuf *sb = r_strbuf_new ("");
-	ut32 count = 0;
-	for (i = 0; i < UT8_MAX; i++) {
+	for (i = 0; i <= UT8_MAX; i++) {
 		const ut64 markaddr = core->marks[i].addr;
 		if (markaddr == UT64_MAX) {
 			continue;
 		}
-		count++;
 		if (mode == '*') {
-			r_strbuf_appendf (sb, "fv 0x%02x 0x%"PFMT64x"\n", (int)i, markaddr);
+			r_cons_printf (core->cons, "fv 0x%02x 0x%"PFMT64x"\n", (int)i, markaddr);
 		} else if (mode == 'j') {
 			pj_o (pj);
 			pj_kn (pj, "ord", i);
 			if (IS_PRINTABLE (i)) {
-				char *chstr = r_str_newf ("%c", i);
+				char chstr[2] = { (char)i, 0 };
 				pj_ks (pj, "key", chstr);
-				free (chstr);
 			}
 			pj_kn (pj, "addr", markaddr);
 			pj_end (pj);
@@ -47,60 +48,39 @@ R_API bool r_core_vmark_dump(RCore *core, int mode) {
 			char *z = r_core_cmd_strf (core, "CC.@0x%08"PFMT64x, markaddr);
 			r_str_trim (s);
 			r_str_trim (z);
-			char *r = NULL;
-			if (*z) {
-				// have comment
-				r = r_str_newf ("%s ; %s", s, z);
-				free (s);
-				free (z);
+			char key[8];
+			if (IS_PRINTABLE (i)) {
+				snprintf (key, sizeof (key), "'%c", (char)i);
 			} else {
-				r = s;
-				free (z);
+				snprintf (key, sizeof (key), "'\\x%02x", (int)i);
 			}
-
-			if (strlen (r) > 42) {
-				r[42] = 0;
-			}
-			char *msg;
-			if (i > ASCII_MAX) {
-				msg = r_str_newf ("  | ['\\x%02x] 0x%"PFMT64x, (int)(i - ASCII_MAX - 1), markaddr, r);
-			} else {
-				msg = r_str_newf ("  | ['%c]   0x%"PFMT64x, (char)i, markaddr, r);
-			}
-			r_strbuf_append (sb, msg);
-			int left = 67 - strlen (msg);
-			if (left > 0) {
-				r_strbuf_pad (sb, ' ', left);
-			}
-			r_strbuf_append (sb, "|\n");
-			free (r);
+			char *msg = r_str_newf ("[%s] 0x%08"PFMT64x"  %s%s%s", key, markaddr,
+				r_str_get (s), R_STR_ISNOTEMPTY (z)? " ; ": "", r_str_get (z));
+			r_cons_printf (core->cons, "  | %-62.62s |\n", r_str_get (msg));
+			free (msg);
+			free (s);
+			free (z);
 		} else {
-			if (i > ASCII_MAX) {
-				r_strbuf_appendf (sb, "- [m\\x%02x] 0x%"PFMT64x"\n", (int)(i - ASCII_MAX - 1), markaddr);
+			if (!IS_PRINTABLE (i)) {
+				r_cons_printf (core->cons, "- [m\\x%02x] 0x%"PFMT64x"\n", (int)i, markaddr);
 			} else {
-				r_strbuf_appendf (sb, "- [m%c]      0x%"PFMT64x"\n", (char)i, markaddr);
+				r_cons_printf (core->cons, "- [m%c]      0x%"PFMT64x"\n", (char)i, markaddr);
 			}
 		}
 		res = true;
 	}
 	if (pj) {
 		pj_end (pj);
-		char *s = pj_drain (pj);
-		r_cons_println (core->cons, s);
-		free (s);
+		r_cons_println (core->cons, pj_string (pj));
+		pj_free (pj);
 	} else if (mode == 'v') {
-		r_strbuf_appendf (sb, "  `----------------------------------------------------------------'\n");
-		if (count == 0) {
+		r_cons_printf (core->cons, "  `----------------------------------------------------------------'\n");
+		if (!res && r_cons_is_interactive (core->cons)) {
 			r_cons_clear00 (core->cons);
 			r_cons_printf (core->cons, "\nNo visual marks have been set.\n");
 			r_cons_printf (core->cons, "Use `m<KEY>` and then `'<KEY>` like in VIM\n");
 			r_cons_any_key (core->cons, NULL);
 		}
-	}
-	if (sb) {
-		char *s = r_strbuf_drain (sb);
-		r_cons_print (core->cons, s);
-		free (s);
 	}
 	return res;
 }
@@ -125,9 +105,6 @@ R_API ut64 r_core_vmark_get(RCore *core, ut8 ch) {
 
 R_API void r_core_vmark(RCore *core, ut8 ch) {
 	R_RETURN_IF_FAIL (core);
-	if (isdigit (ch)) {
-		ch += ASCII_MAX + 1;
-	}
 	r_core_vmark_set (core, ch, core->addr, 0, 0);
 }
 
