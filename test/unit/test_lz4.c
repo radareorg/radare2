@@ -68,10 +68,38 @@ bool test_lz4_match_copy_exact_end(void) {
 	mu_end;
 }
 
+bool test_lz4_decompress_short_input(void) {
+	const ut8 input[] = { 0x04, 0x22, 0x4d };
+	size_t output_size = 0;
+	size_t i;
+	for (i = 0; i <= sizeof (input); i++) {
+		ut8 *output = r_lz4_decompress (input, i, &output_size);
+		mu_assert_null (output, "reject short lz4 input");
+	}
+	mu_end;
+}
+
+bool test_lz4_decompress_uncompressed_block(void) {
+	const ut8 input[] = {
+		0x04, 0x22, 0x4d, 0x18, 0x60, 0x40, 0x00,
+		0x03, 0x00, 0x00, 0x80, 'r', '2', '!',
+		0x00, 0x00, 0x00, 0x00
+	};
+	size_t output_size = 0;
+	ut8 *output = r_lz4_decompress (input, sizeof (input), &output_size);
+	mu_assert_notnull (output, "decompress uncompressed block");
+	mu_assert_eq (output_size, 3, "uncompressed block size");
+	mu_assert_memeq (output, (const ut8 *)"r2!", 3, "uncompressed block bytes");
+	free (output);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_lz4_literal_lengths);
 	mu_run_test (test_lz4_literal_overflow);
 	mu_run_test (test_lz4_match_copy_exact_end);
+	mu_run_test (test_lz4_decompress_short_input);
+	mu_run_test (test_lz4_decompress_uncompressed_block);
 	return tests_passed != tests_run;
 }
 
