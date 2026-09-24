@@ -509,6 +509,112 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 	}
 }
 
+static int cmd_mc(RCore *core, const char *input) {
+	char ch0 = input[1];
+	if (ch0 == '?') { // "mc?"
+		r_cons_cmd_help_match (core->cons, help_msg_m, "mc", 0, true);
+		return 0;
+	}
+	if (ch0 != ' ') {
+		R_LOG_HINT ("Usage: mc [filename]");
+		r_core_return_value (core, 1);
+		return 1;
+	}
+	const char *fn = (char *)r_str_trim_head_ro (input);
+	RFSFile *file = r_fs_open (core->fs, fn, false);
+	if (!file) {
+		R_LOG_ERROR ("Cannot open %s", fn);
+		r_core_return_value (core, 1);
+		return 1;
+	}
+	r_fs_read (core->fs, file, 0, file->size);
+	r_cons_write (core->cons, (const char *)file->data, file->size);
+	r_fs_close (core->fs, file);
+	r_cons_write (core->cons, "\n", 1);
+	return 0;
+}
+
+static int cmd_mg(RCore *core, const char *input) {
+	if (input[1] == '?') { // "mg?"
+		r_cons_cmd_help_match (core->cons, help_msg_m, "mg", 0, true);
+		return 0;
+	}
+	input = (char *)r_str_trim_head_ro (input + 1);
+	int offset = 0;
+	int size = 0;
+	char *ptr = strchr (input, ' ');
+	if (ptr) {
+		*ptr++ = 0;
+		char *input2 = strdup (ptr++);
+		const char *args = r_str_trim_head_ro (input2);
+		if (args) {
+			ptr = strchr (args, ' ');
+			if (ptr) {
+				*ptr++ = 0;
+				size = r_num_math (core->num, ptr);
+			}
+			offset = r_num_math (core->num, args);
+		}
+	} else {
+		ptr = "./";
+	}
+	char *hfilename = NULL;
+	const char *filename = r_str_trim_head_ro (input);
+	if (R_STR_ISEMPTY (filename)) {
+		R_LOG_ERROR ("No filename given");
+		r_core_return_value (core, 1);
+		return 1;
+	}
+	if (r_str_startswith (filename, "base64:")) {
+		const char *encoded = filename + 7;
+		char *decoded = (char *)sdb_decode (encoded, NULL);
+		if (decoded) {
+			filename = decoded;
+			hfilename = decoded;
+		}
+	}
+	RFSFile *file = r_fs_open (core->fs, filename, false);
+	if (file) {
+		char *localFile = strdup (filename);
+		char *slash = (char *)r_str_rchr (localFile, NULL, '/');
+		if (slash) {
+			memmove (localFile, slash + 1, strlen (slash));
+		}
+		size_t ptr = offset;
+		int total_bytes_read = 0;
+		int blocksize = file->size < core->blocksize? file->size: core->blocksize;
+		size = size > 0? size: file->size;
+		if (r_file_exists (localFile) && !r_sys_truncate (localFile, 0)) {
+			R_LOG_ERROR ("Cannot create file %s", localFile);
+			free (hfilename);
+			return 1;
+		}
+		while (total_bytes_read < size && ptr < file->size) {
+			int left = (size - total_bytes_read < blocksize)? size - total_bytes_read: blocksize;
+			int bytes_read = r_fs_read (core->fs, file, ptr, left);
+			if (bytes_read > 0) {
+				r_file_dump (localFile, file->data, bytes_read, true);
+			}
+			ptr += bytes_read;
+			total_bytes_read += bytes_read;
+		}
+		r_fs_close (core->fs, file);
+		R_LOG_INFO ("File '%s' created. ", localFile);
+		if (offset) {
+			R_LOG_INFO ("(offset: 0x%" PFMT64x " size: %d bytes)", (ut64)offset, size);
+		} else {
+			R_LOG_INFO ("(size: %d bytes)", size);
+		}
+		free (localFile);
+	} else if (!r_fs_dir_dump (core->fs, filename, ptr)) {
+		R_LOG_ERROR ("Cannot open file (%s) (%s)", filename, ptr);
+		free (hfilename);
+		return 1;
+	}
+	free (hfilename);
+	return 0;
+}
+
 static int cmd_mount(void *data, const char *_input) {
 	ut64 off = 0;
 	char *input, *oinput, *ptr, *ptr2;
@@ -890,100 +996,9 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'c': // "mc"
-		if (input[1] == '?') { // "mc?"
-			r_cons_cmd_help_match (core->cons, help_msg_m, "mc", 0, true);
-		} else {
-			input = (char *)r_str_trim_head_ro (input + 1);
-			file = r_fs_open (core->fs, input, false);
-			if (file) {
-				r_fs_read (core->fs, file, 0, file->size);
-				r_cons_write (core->cons, (const char *)file->data, file->size);
-				r_fs_close (core->fs, file);
-				r_cons_write (core->cons, "\n", 1);
-#if 0
-			} else {
-				if (!r_fs_dir_dump (core->fs, input, "")) {
-					R_LOG_ERROR ("Cannot open file");
-				}
-#endif
-			}
-		}
-		break;
+		return cmd_mc (core, input + 1);
 	case 'g': // "mg"
-		if (input[1] == '?') { // "mg?"
-			r_cons_cmd_help_match (core->cons, help_msg_m, "mg", 0, true);
-			break;
-		}
-		input = (char *)r_str_trim_head_ro (input + 1);
-		int offset = 0;
-		int size = 0;
-		ptr = strchr (input, ' ');
-		if (ptr) {
-			*ptr++ = 0;
-			char *input2 = strdup (ptr++);
-			const char *args = r_str_trim_head_ro (input2);
-			if (args) {
-				ptr = strchr (args, ' ');
-				if (ptr) {
-					*ptr++ = 0;
-					size = r_num_math (core->num, ptr);
-				}
-				offset = r_num_math (core->num, args);
-			}
-		} else {
-			ptr = "./";
-		}
-		char *hfilename = NULL;
-		const char *filename = r_str_trim_head_ro (input);
-		if (R_STR_ISEMPTY (filename)) {
-			R_LOG_WARN ("No filename given");
-			break;
-		}
-		if (r_str_startswith (filename, "base64:")) {
-			const char *encoded = filename + 7;
-			char *decoded = (char *)sdb_decode (encoded, NULL);
-			if (decoded) {
-				filename = decoded;
-				hfilename = decoded;
-			}
-		}
-		file = r_fs_open (core->fs, filename, false);
-		if (file) {
-			char *localFile = strdup (filename);
-			char *slash = (char *)r_str_rchr (localFile, NULL, '/');
-			if (slash) {
-				memmove (localFile, slash + 1, strlen (slash));
-			}
-			size_t ptr = offset;
-			int total_bytes_read = 0;
-			int blocksize = file->size < core->blocksize? file->size: core->blocksize;
-			size = size > 0? size: file->size;
-			if (r_file_exists (localFile) && !r_sys_truncate (localFile, 0)) {
-				R_LOG_ERROR ("Cannot create file %s", localFile);
-				break;
-			}
-			while (total_bytes_read < size && ptr < file->size) {
-				int left = (size - total_bytes_read < blocksize)? size - total_bytes_read: blocksize;
-				int bytes_read = r_fs_read (core->fs, file, ptr, left);
-				if (bytes_read > 0) {
-					r_file_dump (localFile, file->data, bytes_read, true);
-				}
-				ptr += bytes_read;
-				total_bytes_read += bytes_read;
-			}
-			r_fs_close (core->fs, file);
-			R_LOG_INFO ("File '%s' created. ", localFile);
-			if (offset) {
-				R_LOG_INFO ("(offset: 0x%" PFMT64x " size: %d bytes)", (ut64)offset, size);
-			} else {
-				R_LOG_INFO ("(size: %d bytes)", size);
-			}
-			free (localFile);
-		} else if (!r_fs_dir_dump (core->fs, filename, ptr)) {
-			R_LOG_ERROR ("Cannot open file (%s) (%s)", filename, ptr);
-		}
-		free (hfilename);
-		break;
+		return cmd_mg (core, input);
 	case 'f':
 		input++;
 		switch (*input) {
