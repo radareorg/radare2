@@ -385,12 +385,31 @@ bool test_registered_echo_nested_task(void) {
 	mu_end;
 }
 
+bool test_registered_mount_task_output(void) {
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "create core");
+	mu_assert_eq (r_core_call (core, "m /tmp tmp"), 0, "mount temporary filesystem");
+	mu_assert_eq (r_core_call (core, "mw '/tmp/a b' 'a  b'"), 0, "write quoted path and data");
+	RCoreTask *task = r_core_task_new (core, R_CORE_TASK_MODE_THREAD, true,
+		"mc '/tmp/a b'; mfn /tmp 'a b'; mdq /tmp", NULL, NULL);
+	mu_assert_notnull (task, "create mount command task");
+	mu_assert_eq (r_core_task_run_threaded (&core->tasks, task), task->id, "run mount command task");
+	r_core_task_join (&core->tasks, core->tasks.main_task, task->id);
+	mu_assert_streq (task->res, "a  b\n/tmp/a b\na b\n", "mount output stays in the task console");
+	size_t len = 0;
+	r_cons_get_buffer (core->cons, &len);
+	mu_assert_eq (len, 0, "mount output does not leak to the main console");
+	r_core_free (core);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_task_join_uses_thread_identity);
 	mu_run_test (test_task_context_blocksize_snapshot);
 	mu_run_test (test_task_context_console_isolation);
 	mu_run_test (test_task_cancel_breaks_child_console);
 	mu_run_test (test_registered_echo_nested_task);
+	mu_run_test (test_registered_mount_task_output);
 	return tests_passed != tests_run;
 }
 

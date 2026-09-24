@@ -1833,11 +1833,11 @@ static bool mmc_handle_mouse_click(RCore *core, MMCState *state, int click_x, in
 	}
 }
 
-static int cmd_mmc(void *data, const char *input) {
-	RCore *core = (RCore *)data;
+static int cmd_mmc(RCmdContext *ctx, const char **argv) {
+	RCore *core = ctx->user;
 
-	if (*input == '?') {
-		r_cons_printf (core->cons,
+	if (r_cmd_ctx_help (ctx)) {
+		r_cons_printf (ctx->cons,
 			"Usage: mmc[?] [left_path] [right_path]\n"
 			"mmc  Mountpoint Miknight Commander\n"
 			"  Two-panel file manager interface\n"
@@ -1871,28 +1871,8 @@ static int cmd_mmc(void *data, const char *input) {
 		return 1;
 	}
 
-	char *left_path_arg = NULL;
-	char *right_path_arg = NULL;
-
-	while (*input == ' ') {
-		input++;
-	}
-
-	if (*input) {
-		const char *space = strchr (input, ' ');
-		if (space) {
-			left_path_arg = r_str_ndup (input, space - input);
-			input = space + 1;
-			while (*input == ' ') {
-				input++;
-			}
-			if (*input) {
-				right_path_arg = strdup (input);
-			}
-		} else {
-			left_path_arg = strdup (input);
-		}
-	}
+	char *left_path_arg = argv[0]? strdup (argv[0]): NULL;
+	char *right_path_arg = argv[1]? strdup (argv[1]): NULL;
 
 	MMCState state = { 0 };
 	state.core = core;

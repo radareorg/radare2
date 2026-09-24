@@ -292,3 +292,123 @@ dump-failed
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=mount context quoted paths, data and escaped spaces
+FILE=-
+CMDS=<<EOF2
+m "/tmp space" tmp
+md+ "/tmp space/dir name"
+mw "/tmp space/dir name/a b" "a  b"
+mc /tmp\ space/dir\ name/a\ b
+mw '/tmp space/empty file' ""
+mc "/tmp space/empty file"
+mdq "/tmp space"
+mdj "/tmp space/dir name"
+m- "/tmp space"
+m
+EOF2
+EXPECT=<<EOF2
+a  b
+
+dir name/
+empty file
+[{"type":"unknown","size":4,"name":"a b"}]
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount context quoted options and offset expression
+FILE=-
+CMDS=<<EOF2
+m tmp "/quoted mount" "1 + 2" "label=a  b"
+m
+m*
+m- /quoted\ mount
+m /opts tmp "label=c  d"
+m
+m-/opts
+m
+EOF2
+EXPECT=<<EOF2
+tmp	0x3	/quoted mount	label=a  b
+m /quoted\ mount tmp 0x3 label=a\ \ b
+tmp	0x0	/opts	label=c  d
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount context write requires quoting multiple words
+FILE=-
+CMDS=<<EOF2
+m /tmp tmp
+mw /tmp/file original
+mw /tmp/file a b || echo rejected
+mc /tmp/file
+mw /tmp/file "a  b  cd"
+mc /tmp/file
+EOF2
+EXPECT=<<EOF2
+rejected
+original
+a  b  cd
+EOF2
+EXPECT_ERR=<<EOF2
+ERROR: Usage: mw [file] [data]
+EOF2
+RUN
+
+NAME=mount context mg quoted filename and range
+FILE=-
+CMDS=<<EOF2
+m /tmp tmp
+mw "/tmp/r2r-mount space" 0123456789
+b 2
+mg "/tmp/r2r-mount space" "1 + 1" 5
+?v $?
+mwf "r2r-mount space" "/tmp/copied file"
+mc "/tmp/copied file"
+rm r2r-mount space
+EOF2
+EXPECT=<<EOF2
+0x0
+23456
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount context find captures quoted paths
+FILE=-
+CMDS=<<EOF2
+m /tmp tmp
+mw "/tmp/a b" abc
+mfn /tmp "a b" > $found
+$found
+my "/tmp/a b"
+y8
+mi "/tmp/a b"
+EOF2
+EXPECT=<<EOF2
+/tmp/a b
+616263
+'f file 3 0x00000000
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount context binary escapes retain argument length
+FILE=-
+CMDS=<<EOF2
+m /tmp tmp
+'mw /tmp/binary "A\x00B"
+my /tmp/binary
+y8
+mw /tmp/lines "first\nsecond"
+mc /tmp/lines
+EOF2
+EXPECT=<<EOF2
+410042
+first
+second
+EOF2
+EXPECT_ERR=
+RUN

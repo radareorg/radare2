@@ -1124,7 +1124,7 @@ m /mnt bfs 0
 mdd /mnt
 ?e --
 mdd /mnt/radare2_test
-mc /mnt/radare2_test/bfs image disk.md
+mc "/mnt/radare2_test/bfs image disk.md"
 EOF
 EXPECT=<<EOF
 d          0 trash
