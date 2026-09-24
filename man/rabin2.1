@@ -103,8 +103,8 @@ Perform binary operation on target binary (dump, resize, change sections, ...). 
  a/l/libfoo.dylib  add library
  w/weak//usr/lib/libfoo.dylib    make Mach-O dylib load weak
  w/strong//usr/lib/libfoo.dylib  make Mach-O dylib load required
- w/symweak/NAME    make an ELF dynamic import weak
- w/symstrong/NAME  make an ELF dynamic import global
+ w/symweak/NAME    make an ELF or Mach-O import weak
+ w/symstrong/NAME  restore a required ELF or Mach-O import
  p/.data/rwx       change section permissions
  c                 show Codesign data
  C                 show LDID entitlements
