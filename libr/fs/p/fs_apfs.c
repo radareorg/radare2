@@ -1121,14 +1121,9 @@ static bool apfs_parse_dir_record(ApfsFS *ctx, ut64 obj_id, ut8 *key_data, ut16 
 		return false;
 	}
 
-	// Debug: print raw key data
-	R_LOG_DEBUG ("DIR_REC key data: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
-		key_data[0], key_data[1], key_data[2], key_data[3], key_data[4], key_data[5], key_data[6], key_data[7],
-		key_data[8], key_data[9], key_data[10], key_data[11], key_data[12], key_data[13], key_data[14], key_data[15]);
-
 	// Try both hashed and unhashed key formats
 	// First try hashed format (name_len_and_hash as 4 bytes)
-	ut32 name_len_and_hash = apfs_read32 (ctx, key_data + 8);
+	ut32 name_len_and_hash = key_len >= 12 ? apfs_read32 (ctx, key_data + 8) : 0;
 	ut16 hashed_name_len = name_len_and_hash & APFS_DREC_LEN_MASK;
 
 	// Then try unhashed format (name_len as 2 bytes)
@@ -1138,7 +1133,7 @@ static bool apfs_parse_dir_record(ApfsFS *ctx, ut64 obj_id, ut8 *key_data, ut16 
 
 	// Calculate expected name start for each format
 	// APFS_DREC_KEY_HEADER_SIZE
-	ut8 *hashed_name = key_data + 12; // After 8-byte header + 4-byte name_len_and_hash
+	ut8 *hashed_name = key_len >= 12 ? key_data + 12 : NULL; // After 8-byte header + 4-byte name_len_and_hash
 	// APFS_DREC_KEY_HASHED_NAME_OFFSET
 	ut8 *unhashed_name = key_data + 10; // After 8-byte header + 2-byte name_len
 
