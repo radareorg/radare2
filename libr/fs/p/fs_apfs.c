@@ -401,7 +401,7 @@ static RFSFile *fs_apfs_open(RFSRoot *root, const char *path, bool create) {
 		return NULL;
 	}
 
-	file->ptr = (void *) (size_t)inode_num;
+	file->ptr = cache;
 
 	ut16 mode = apfs_read16 (ctx, (ut8 *)&cache->inode->mode);
 	if (apfs_is_directory (mode)) {
@@ -540,8 +540,7 @@ static int fs_apfs_read(RFSFile *file, ut64 addr, int len) {
 		return -1;
 	}
 
-	ut64 inode_num = (ut64) (size_t)file->ptr;
-	ApfsInodeCache *cache = apfs_get_inode (ctx, inode_num);
+	ApfsInodeCache *cache = file->ptr;
 	if (!cache || !cache->inode) {
 		return -1;
 	}
@@ -1356,7 +1355,7 @@ static bool apfs_dir_iter_cb(void *user, const ut64 key, const void *value) {
 	} else {
 		fsf->type = R_FS_FILE_TYPE_SPECIAL;
 	}
-	fsf->ptr = (void *) (size_t)cache->inode_num;
+	fsf->ptr = cache;
 	fsf->time = apfs_read64 (apfs_ctx, (ut8 *)&cache->inode->mod_time) / 1000000000;
 	r_list_append (list, fsf);
 	return true;
