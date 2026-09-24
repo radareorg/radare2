@@ -426,6 +426,9 @@ static bool apfs_read_file_extents(ApfsFS *ctx, ApfsInodeCache *cache, ut8 **dat
 		*data = NULL;
 		return true;
 	}
+	if (*size > SIZE_MAX) {
+		return false;
+	}
 
 	*data = calloc (*size, 1);
 	if (!*data) {
