@@ -994,7 +994,7 @@ static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode
 			ut16 val_off = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.off);
 			ut16 val_len = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.len);
 
-			if (val_len >= sizeof (ut64)) {
+			if (val_len >= sizeof (ut64) && val_off <= ctx->block_size && val_len <= ctx->block_size - val_off) {
 				ut8 *val_data = (ut8 *)node + val_off;
 				ut64 child_oid = apfs_read64 (ctx, val_data);
 
