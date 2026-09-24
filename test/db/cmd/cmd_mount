@@ -1,0 +1,294 @@
+NAME=mc missing arguments and malformed commands
+FILE=-
+CMDS=<<EOF2
+m /tmp tmp
+mc
+?v $?
+mcx /tmp/missing
+?v $?
+mc /tmp/missing
+?v $?
+EOF2
+EXPECT=<<EOF2
+0x1
+0x1
+0x1
+EOF2
+EXPECT_ERR=<<EOF2
+ERROR: Usage: mc [filename]
+ERROR: Usage: mc [filename]
+ERROR: Cannot open /tmp/missing
+EOF2
+RUN
+
+NAME=mc whitespace, empty files and return code reset
+FILE=-
+CMDS=<<EOF2
+m /tmp tmp
+mw /tmp/data hello
+mw /tmp/empty
+?=1
+mc   /tmp/data
+?v $?
+?=1
+mc	/tmp/data
+?v $?
+?=1
+mc /tmp/empty
+?v $?
+EOF2
+EXPECT=<<EOF2
+hello
+0x0
+hello
+0x0
+
+0x0
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mc and mg help reset return code
+FILE=-
+CMDS=<<EOF2
+?=1
+mc?
+?v $?
+?=1
+mg?
+?v $?
+EOF2
+EXPECT=<<EOF2
+| mc [file]  cat: Show the contents of the given file
+0x0
+| mg /foo [offset [size]]  dump to disk; size 0 reads to EOF (supports base64:)
+0x0
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mg multi-block ranges and overwrite
+FILE=-
+CMDS=<<EOF2
+m /tmp tmp
+mw /tmp/r2r-mg-range 0123456789
+b 3
+mg /tmp/r2r-mg-range
+?v $?
+cat r2r-mg-range
+?e
+mg /tmp/r2r-mg-range 1+1 5
+?v $?
+cat r2r-mg-range
+?e
+mg /tmp/r2r-mg-range 8 100
+?v $?
+cat r2r-mg-range
+?e
+mg /tmp/r2r-mg-range 9 0
+?v $?
+cat r2r-mg-range
+?e
+mg /tmp/r2r-mg-range 10
+?v $?
+o r2r-mg-range
+?vi $s
+rm r2r-mg-range
+EOF2
+EXPECT=<<EOF2
+0x0
+0123456789
+0x0
+23456
+0x0
+89
+0x0
+9
+0x0
+0
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mg rejects invalid arguments and preserves destination
+FILE=-
+CMDS=<<EOF2
+e log.level=0
+m /tmp tmp
+mw /tmp/r2r-mg-invalid original
+mg /tmp/r2r-mg-invalid
+mg
+?v $?
+mgx /tmp/r2r-mg-invalid
+?v $?
+mg /tmp/r2r-mg-invalid 0 1 extra
+?v $?
+mg /tmp/r2r-mg-invalid invalid
+?v $?
+mg /tmp/r2r-mg-invalid 1/0
+?v $?
+mg /tmp/r2r-mg-invalid -1
+?v $?
+mg /tmp/r2r-mg-invalid 0 -1
+?v $?
+mg /tmp/r2r-mg-invalid 0x100000000
+?v $?
+mg /tmp/missing
+?v $?
+mg base64:
+?v $?
+cat r2r-mg-invalid
+?e
+rm r2r-mg-invalid
+EOF2
+EXPECT=<<EOF2
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+original
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mg empty file and destination failure
+FILE=-
+CMDS=<<EOF2
+e log.level=0
+m /tmp tmp
+mw /tmp/r2r-mg-empty
+?=1
+mg /tmp/r2r-mg-empty
+?v $?
+o r2r-mg-empty
+?vi $s
+rm r2r-mg-empty
+mkdir r2r-mg-empty
+mg /tmp/r2r-mg-empty
+?v $?
+rm r2r-mg-empty
+EOF2
+EXPECT=<<EOF2
+0x0
+0
+0x1
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mg directory and base64 path
+FILE=-
+CMDS=<<EOF2
+m /tmp tmp
+md+ /tmp/dir
+mw /tmp/dir/r2r-mg-dir hello
+mg /tmp/dir
+?v $?
+cat r2r-mg-dir
+?e
+rm r2r-mg-dir
+mg base64:L3RtcC9kaXIvcjJyLW1nLWRpcg==
+?v $?
+cat r2r-mg-dir
+?e
+rm r2r-mg-dir
+EOF2
+EXPECT=<<EOF2
+0x0
+hello
+0x0
+hello
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mg GRUB range contents across blocks
+FILE=bins/fs/fat.img
+CMDS=<<EOF2
+mkdir r2r-mg-fat
+cd r2r-mg-fat
+b 3
+mg /root/README.md 2 7
+?v $?
+cat README.md
+?e
+rm README.md
+cd ..
+rm r2r-mg-fat
+EOF2
+EXPECT=<<EOF2
+0x0
+is is a
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mg POSIX range contents across blocks
+FILE=-
+CMDS=<<EOF2
+mkdir r2r-mg-posix-dir
+echo 0123456789 > r2r-mg-posix-dir/r2r-mg-posix
+m /host posix
+b 3
+mg /host`pwd`/r2r-mg-posix-dir/r2r-mg-posix 2 5
+?v $?
+cat r2r-mg-posix
+?e
+rm r2r-mg-posix
+rm r2r-mg-posix-dir/r2r-mg-posix
+rm r2r-mg-posix-dir
+EOF2
+EXPECT=<<EOF2
+0x0
+23456
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mg cached r2 filesystem contents
+FILE=-
+CMDS=<<EOF2
+m /r2 r2
+s 0x1234
+b 2
+mg /r2/seek 2 4
+?v $?
+cat seek
+?e
+rm seek
+EOF2
+EXPECT=<<EOF2
+0x0
+1234
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mc and mg reject truncated FAT files without hanging
+FILE=bins/fs/fat.img
+TIMEOUT=10
+CMDS=<<EOF2
+e log.level=0
+e io.cache=true
+# Increase README.md's size beyond its allocated cluster chain.
+wx 00001000 @ 0x71c
+mkdir r2r-mg-truncated
+cd r2r-mg-truncated
+mc /root/README.md || echo read-failed
+mg /root/README.md || echo dump-failed
+rm README.md
+cd ..
+rm r2r-mg-truncated
+EOF2
+EXPECT=<<EOF2
+read-failed
+dump-failed
+EOF2
+EXPECT_ERR=
+RUN
