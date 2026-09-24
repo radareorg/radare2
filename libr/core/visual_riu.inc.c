@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024-2025 - pancake */
+/* radare - LGPL - Copyright 2024-2026 - pancake */
 
 typedef struct {
 	char *name;
@@ -121,6 +121,25 @@ static void riu_render(RIU *riu) {
 	r_cons_flush (cons);
 }
 
+static void riu_activate(RIU *riu) {
+	RIUWidget *w = r_list_get_n (riu->items, riu->cur);
+	if (!w) {
+		return;
+	}
+	if (w->type[0] == 'b') {
+		r_core_cmd0 (riu->core, w->cmnd);
+		r_core_cmdf (riu->core, "'k riu=%s", w->name);
+	} else {
+		r_cons_set_raw (riu->core->cons, false);
+		char *res = r_core_cmd_str (riu->core, w->cmnd);
+		r_str_trim (res);
+		free (w->data);
+		w->data = res;
+		r_core_cmdf (riu->core, "'k riu.%s=%s", w->name, w->data);
+		r_cons_set_raw (riu->core->cons, true);
+	}
+}
+
 static bool riu_input(RIU *riu) {
 	int ch = r_cons_readchar (riu->core->cons);
 	ch = r_cons_arrow_to_hjkl (riu->core->cons, ch);
@@ -146,25 +165,7 @@ static bool riu_input(RIU *riu) {
 	case '\r':
 	case '\n':
 	case ' ':
-		// activate!
-		{
-			RIUWidget *w = r_list_get_n (riu->items, riu->cur);
-			if (!w) {
-				break;
-			}
-			if (w->type[0] == 'b') {
-				r_core_cmd0 (riu->core, w->cmnd);
-				r_core_cmdf (riu->core, "'k riu=%s", w->name);
-				return false;
-			}
-			r_cons_set_raw (riu->core->cons, false);
-			char *res = r_core_cmd_str (riu->core, w->cmnd);
-			r_str_trim (res);
-			free (w->data);
-			w->data = res;
-			r_core_cmdf (riu->core, "'k riu.%s=%s", w->name, w->data);
-			r_cons_set_raw (riu->core->cons, true);
-		}
+		riu_activate (riu);
 		break;
 	}
 	return true;

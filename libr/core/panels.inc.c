@@ -161,7 +161,8 @@ static const char *function_rotate[] = {
 
 static const char *cache_white_list_cmds[] = {
 	// "pdc", "pdco", "agf", "Help",
-	"agf", "Help"
+	"agf", "Help",
+	"is,vaddr/cols/size/name,vaddr/sort/inc,vaddr/nostr/--,:quiet"
 };
 
 typedef struct {
@@ -4844,7 +4845,7 @@ static const ModalEntryDef modal_entries_db[] = {
 	{ "Strings in data sections", "izq", NULL },
 	{ "Strings in the whole bin", "izzq", NULL },
 	{ "Summary", "pdsf", NULL },
-	{ "Symbols", "isq", NULL },
+	{ "Symbols", "is,vaddr/cols/size/name,vaddr/sort/inc,vaddr/nostr/--,:quiet", NULL }, // TODO: enable cache
 	{ "Tiny Graph", "agft", NULL },
 	{ "Var READ address", "afvR", NULL },
 	{ "Var WRITE address", "afvW", NULL },
@@ -4855,7 +4856,7 @@ static const ModalEntryDef modal_entries_db[] = {
 };
 
 static char *r_panels_search_db(RCore *core, const char *title) {
-	int i;
+	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (modal_entries_db); i++) {
 		const ModalEntryDef *entry = &modal_entries_db[i];
 		if (entry->cmd && !strcmp (entry->name, title)) {
@@ -4869,7 +4870,7 @@ static void init_modal_db(RCore *core) {
 	free (modal_entries);
 	modal_entries = R_NEWS0 (ModalEntry, R_ARRAY_SIZE (modal_entries_db));
 	n_modal_entries = 0;
-	int i;
+	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (modal_entries_db); i++) {
 		const ModalEntryDef *entry = &modal_entries_db[i];
 		modal_entries[n_modal_entries].name = strdup (entry->name);
@@ -5067,6 +5068,7 @@ static void r_panels_handle_tab(RCore *core) {
 		case 'p':
 			r_panels_handle_tab_prev (core);
 			break;
+		case 'x': // 'tx'
 		case '-':
 			r_panels_set_root_state (core, DEL);
 			break;
