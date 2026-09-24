@@ -98,6 +98,7 @@ static TAG_CALLBACK(spp_get) {
 	var = spp_var_get (buf);
 	if (var) {
 		out_printf (out, "%s", var);
+		free (var);
 	}
 	return 0;
 }
@@ -133,6 +134,7 @@ static TAG_CALLBACK(spp_add) {
 		var = spp_var_get (buf);
 		if (var) {
 			ret = atoi (var);
+			free (var);
 		}
 		ret += atoi (eq + 1);
 		snprintf (res, sizeof (res), "%d", ret);
@@ -231,6 +233,7 @@ static TAG_CALLBACK(spp_include) {
 static TAG_CALLBACK(spp_if) {
 	char *var = spp_var_get(buf);
 	state->echo[state->ifl + 1] = (var && *var != '0' && *var != '\0') ? 1 : 0;
+	free (var);
 	return 1;
 }
 
@@ -244,12 +247,14 @@ static TAG_CALLBACK(spp_ifeq) {
 		if (value && !strcmp(value, eq+1)) {
 			state->echo[state->ifl + 1] = 1;
 		} else state->echo[state->ifl + 1] = 0;
+		free (value);
 //fprintf(stderr, "IFEQ(%s)(%s)=%d\n", buf, eq+1, echo[ifl]);
 	} else {
 		value = spp_var_get(buf);
 		if (!value || *value=='\0')
 			state->echo[state->ifl + 1] = 1;
 		else state->echo[state->ifl + 1] = 0;
+		free (value);
 //fprintf(stderr, "IFEQ(%s)(%s)=%d\n", buf, value, echo[ifl]);
 	}
 	return 1;
@@ -320,7 +325,7 @@ static TAG_CALLBACK(spp_ifin) {
 	if (ptr) {
 		*ptr='\0';
 		var = getenv(buf);
-		if (strstr (ptr + 1, var)) {
+		if (var && strstr (ptr + 1, var)) {
 			state->echo[state->ifl + 1] = 1;
 		}
 	}
@@ -341,37 +346,32 @@ static TAG_CALLBACK(spp_default) {
 	return 0;
 }
 
-#if SPP_HAVE_SYSTEM
-static FILE *spp_pipe_fd = NULL;
-#endif
-
 static TAG_CALLBACK(spp_pipe) {
 #if SPP_HAVE_SYSTEM
-	spp_pipe_fd = popen (buf, "w");
+	state->pipe_fd = popen (buf, "w");
 #endif
 	return 0;
 }
-
-static char *spp_switch_str = NULL;
 
 static TAG_CALLBACK(spp_switch) {
 	char *var = spp_var_get (buf);
 	if (var) {
-		spp_switch_str = strdup (var);
+		state->switch_str = strdup (var);
 	} else {
-		spp_switch_str = strdup ("");
+		state->switch_str = strdup ("");
 	}
+	free (var);
 	return 1;
 }
 
 static TAG_CALLBACK(spp_case) {
-	state->echo[state->ifl] = strcmp (buf, spp_switch_str)?0:1;
+	state->echo[state->ifl] = state->switch_str && !strcmp (buf, state->switch_str);
 	return 0;
 }
 
 static TAG_CALLBACK(spp_endswitch) {
-	free (spp_switch_str);
-	spp_switch_str = NULL;
+	free (state->switch_str);
+	state->switch_str = NULL;
 	return -1;
 }
 
@@ -384,7 +384,7 @@ static TAG_CALLBACK(spp_endpipe) {
 	char *tstr;
 	do {
 		len += ret;
-		ret = fread (str + len, 1, 1023, spp_pipe_fd);
+		ret = fread (str + len, 1, 1023, state->pipe_fd);
 		if (ret + 1024 > outlen) {
 			outlen += 4096;
 			tstr = realloc (str, outlen);
@@ -397,10 +397,10 @@ static TAG_CALLBACK(spp_endpipe) {
 	} while (ret > 0);
 	str[len] = '\0';
 	out_printf (out, "%s", str);
-	if (spp_pipe_fd) {
-		pclose (spp_pipe_fd);
+	if (state->pipe_fd) {
+		pclose (state->pipe_fd);
 	}
-	spp_pipe_fd = NULL;
+	state->pipe_fd = NULL;
 	free (str);
 #endif
 	return 0;
@@ -408,8 +408,8 @@ static TAG_CALLBACK(spp_endpipe) {
 
 static PUT_CALLBACK(spp_fputs) {
 #if SPP_HAVE_SYSTEM
-	if (spp_pipe_fd) {
-		fprintf (spp_pipe_fd, "%s", buf);
+	if (out->proc->state.pipe_fd) {
+		fprintf (out->proc->state.pipe_fd, "%s", buf);
 	} else
 #endif
 	{

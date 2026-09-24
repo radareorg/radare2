@@ -1135,19 +1135,15 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 
 	char *lbuf = strdup (assembly);
 	if (a->use_spp) {
-		Output out = {
-			.fout = NULL,
-			.cout = r_strbuf_new ("")
-		};
-		r_strbuf_init (out.cout);
-		struct Proc proc;
-		spp_proc_set (&proc, "spp", 1);
-
 		lbuf = replace_directives (lbuf);
-		spp_eval (lbuf, &out);
+		char *expanded = spp_eval_str (NULL, lbuf);
 		free (lbuf);
-		lbuf = strdup (r_strbuf_get (out.cout));
-		r_strbuf_free (out.cout);
+		lbuf = expanded;
+		if (!lbuf) {
+			free (tokens);
+			r_asm_code_free (acode);
+			return NULL;
+		}
 	}
 	acode->code_align = 0;
 
