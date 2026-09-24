@@ -430,13 +430,17 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 			rc = r_bin_wr_lib_weak (bin, ptr2, true);
 		} else if (!strcmp (ptr, "strong")) {
 			rc = r_bin_wr_lib_weak (bin, ptr2, false);
+		} else if (!strcmp (ptr, "symweak")) {
+			rc = r_bin_wr_symbol_weak (bin, ptr2, true);
+		} else if (!strcmp (ptr, "symstrong")) {
+			rc = r_bin_wr_symbol_weak (bin, ptr2, false);
 		} else {
 			goto _rabin_do_operation_error;
 		}
 		if (rc) {
 			rc = r_bin_wr_output (bin, output);
 		} else {
-			R_LOG_ERROR ("Cannot change library load mode (unsupported, missing, or ambiguous library)");
+			R_LOG_ERROR ("Cannot change weak binding (unsupported, missing, or ambiguous name)");
 		}
 		break;
 	case 'R':
@@ -516,7 +520,7 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 		R_LOG_ERROR ("Unknown operation. use -O help");
 		goto error;
 	}
-	if (!rc) {
+	if (!rc && arg[0] != 'w') {
 		R_LOG_ERROR ("Cannot perform operation");
 	}
 	free (arg);
@@ -911,6 +915,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				" a/l/libfoo.dylib  add library\n"
 				" w/weak//usr/lib/libfoo.dylib    make Mach-O dylib load weak\n"
 				" w/strong//usr/lib/libfoo.dylib  make Mach-O dylib load required\n"
+				" w/symweak/NAME    make an ELF dynamic import weak\n"
+				" w/symstrong/NAME  make an ELF dynamic import global\n"
 				" p/.data/rwx       change section permissions\n"
 				" P/LOAD0/rwx       change segment permissions (elf: LOAD0, GNU_STACK, PHDR, ...; mach-o: __TEXT, __DATA, ...)\n"
 				" c                 show Codesign data\n"
