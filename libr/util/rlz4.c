@@ -151,9 +151,13 @@ static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 }
 
 R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *obuf, int osz) {
+	R_RETURN_VAL_IF_FAIL (g_buf && pp, -1);
+	if (comp_len < 0 || (obuf && osz < 0)) {
+		return -1;
+	}
 	int i, run;
 	int ip = obuf? 0: BLOCK_SIZE;
-	int maxLen = obuf? osz: BLOCK_SIZE;
+	size_t maxLen = obuf? osz: BLOCK_SIZE;
 	int ip_end = ip + comp_len;
 	ut8 *dst = obuf? obuf: g_buf;
 	ut16 tmp = 0;
@@ -178,7 +182,7 @@ R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *o
 					}
 				}
 			}
-			if ((p + run) > maxLen || run > ip_end - ip) {
+			if (p > maxLen || (size_t)run > maxLen - p || run > ip_end - ip) {
 				return -1;
 			}
 
@@ -204,16 +208,20 @@ R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *o
 		if (len == (15 + MIN_MATCH)) {
 			for (; ip < ip_end;) {
 				const int c = g_buf[ip++];
+				if (len > maxLen || (size_t)c > maxLen - len) {
+					return -1;
+				}
 				len += c;
 				if (c != 255) {
 					break;
 				}
 			}
 		}
-		if ((p + len) > maxLen) {
+		if (p > maxLen || len > maxLen - p) {
 			return -1;
 		}
-		if ((p - s) >= 4) {
+		const size_t fast_len = (len + 7) & ~(size_t)7;
+		if ((p - s) >= 4 && fast_len <= maxLen - p) {
 			COPY_32_TO (p, s, dst, dst);
 			COPY_32_TO (p + 4, s + 4, dst, dst);
 			for (i = 8; i < len; i += 8) {

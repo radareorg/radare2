@@ -49,9 +49,29 @@ bool test_lz4_literal_overflow(void) {
 	mu_end;
 }
 
+bool test_lz4_match_copy_exact_end(void) {
+	const ut8 input[] = {
+		0xe0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+		0x07, 0x08, 0x09, 0xad, 0xde, 0xef, 0xbe, 0x04,
+		0x00, 0x0f, 0x04, 0x00, 0x4f, 0x00, 0x04, 0x00
+	};
+	ut8 output[128];
+	int written = 0;
+	memset (output, 0xcc, sizeof (output));
+	mu_assert_eq (r_lz4_decompress_block ((ut8 *)input, sizeof (input), &written, output, 120), 0, "valid match copy");
+	mu_assert_eq (written, 120, "exact match output size");
+	size_t i;
+	for (i = 120; i < sizeof (output); i++) {
+		mu_assert_eq (output[i], 0xcc, "match copy stays inside output size");
+	}
+	mu_assert_eq (r_lz4_decompress_block ((ut8 *)input, sizeof (input), &written, output, 119), -1, "short output");
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_lz4_literal_lengths);
 	mu_run_test (test_lz4_literal_overflow);
+	mu_run_test (test_lz4_match_copy_exact_end);
 	return tests_passed != tests_run;
 }
 
