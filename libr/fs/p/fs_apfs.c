@@ -624,6 +624,22 @@ static bool apfs_parse_omap_btree(ApfsFS *ctx, ut64 omap_oid) {
 
 static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target_oid, ut64 target_xid, ut64 *paddr);
 
+static bool apfs_fixed_value_offset(ut32 block_size, ut32 nkeys, ut32 index, ut32 value_size, bool is_root, ut32 *offset) {
+	ut32 end = block_size;
+	if (is_root) {
+		if (end < APFS_BTREE_FOOTER_SIZE) {
+			return false;
+		}
+		end -= APFS_BTREE_FOOTER_SIZE;
+	}
+	ut32 bytes;
+	if (index >= nkeys || r_mul_overflow (nkeys - index, value_size, &bytes) || bytes > end) {
+		return false;
+	}
+	*offset = end - bytes;
+	return true;
+}
+
 static bool apfs_resolve_omap(ApfsFS *ctx, ut64 oid, ut64 *paddr) {
 	R_LOG_DEBUG ("apfs_resolve_omap: resolving OID %" PFMT64u ", omap_tree_oid=%" PFMT64u, oid, ctx->omap_tree_oid);
 
@@ -714,14 +730,7 @@ static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target
 				// Value is at the end of the block (reversed order)
 				// For root nodes, there's a 40-byte footer
 				ut32 val_offset;
-				if (is_root) {
-					val_offset = ctx->block_size - APFS_BTREE_FOOTER_SIZE - (nkeys - i) * val_size;
-				} else {
-					val_offset = ctx->block_size - (nkeys - i) * val_size;
-				}
-
-				if (val_offset + val_size > ctx->block_size) {
-					R_LOG_DEBUG ("omap leaf fixed: val_offset=%u out of bounds (block_size=%u)", val_offset, ctx->block_size);
+				if (!apfs_fixed_value_offset (ctx->block_size, nkeys, i, val_size, is_root, &val_offset)) {
 					continue;
 				}
 
@@ -789,10 +798,8 @@ static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target
 				ut64 key_oid = apfs_read64 (ctx, node_data + key_offset);
 
 				ut32 val_offset;
-				if (is_root) {
-					val_offset = ctx->block_size - APFS_BTREE_FOOTER_SIZE - (nkeys - i) * val_size;
-				} else {
-					val_offset = ctx->block_size - (nkeys - i) * val_size;
+				if (!apfs_fixed_value_offset (ctx->block_size, nkeys, i, val_size, is_root, &val_offset)) {
+					continue;
 				}
 
 				if (key_oid <= target_oid) {
