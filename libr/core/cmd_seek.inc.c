@@ -853,7 +853,7 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case 'j':  // "sj"
 		{
-			char *res = r_io_sundo_tostring (core->io, 'j');
+			char *res = r_io_sundo_list (core->io, 'j');
 			r_cons_printf (core->cons, "%s\n", res? res: "[]");
 			free (res);
 		}
@@ -868,7 +868,7 @@ static int cmd_seek(void *data, const char *input) {
 			} else if (input[1] == '*') {
 				mode = 'r';
 			}
-			char *res = r_io_sundo_tostring (core->io, mode);
+			char *res = r_io_sundo_list (core->io, mode);
 			if (res) {
 				r_cons_printf (core->cons, "%s", res);
 				free (res);

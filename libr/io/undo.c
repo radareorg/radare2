@@ -107,37 +107,7 @@ R_API void r_io_sundo_reset(RIO *io) {
 	io->undo.redos = 0;
 }
 
-R_API RList *r_io_sundo_list(RIO *io) {
-	if (!io || !io->undo.s_enable) {
-		return NULL;
-	}
-	RList* list = r_list_newf (free);
-	int undos = io->undo.undos;
-	int redos = io->undo.redos;
-
-	int idx = io->undo.idx;
-	int start = (idx - undos + R_IO_UNDOS) % R_IO_UNDOS;
-	int end = (idx + redos) % R_IO_UNDOS;
-
-	int i, j = 0;
-	for (i = start;/* condition at the end of loop */; i = (i + 1) % R_IO_UNDOS) {
-		RIOUndos *undo = &io->undo.seek[i];
-		RIOUndos *u = R_NEW0 (RIOUndos);
-		if (!(j == undos && redos == 0)) {
-			memcpy (u, undo, sizeof (RIOUndos));
-		} else {
-			u->off = io->off;
-		}
-		r_list_append (list, u);
-		j++;
-		if (i == end) {
-			break;
-		}
-	}
-	return list;
-}
-
-R_API char *r_io_sundo_tostring(RIO *io, int mode) {
+R_API char *r_io_sundo_list(RIO *io, int mode) {
 	R_RETURN_VAL_IF_FAIL (io, NULL);
 	if (!io->undo.s_enable) {
 		return NULL;
