@@ -468,15 +468,18 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 	R_RETURN_VAL_IF_FAIL (io && fd && fd->data && command, NULL);
 	RIODscObject *dsc = (RIODscObject*) fd->data;
 
+	RStrBuf *sb = NULL;
+
 	if (r_str_startswith (command, "iP")) {
 		ut64 size = 8;
 		switch (command[2]) {
 		case '?':
-			io->cb_printf ("Usage: :iP[j?] [size]\n");
-			io->cb_printf (" :iP?   get this help message\n");
-			io->cb_printf (" :iP    show pointer metadata\n");
-			io->cb_printf (" :iPj   show pointer metadata in json\n\n");
-			return NULL;
+			sb = r_strbuf_new ("");
+			r_strbuf_appendf (sb, "Usage: :iP[j?] [size]\n");
+			r_strbuf_appendf (sb, " :iP?   get this help message\n");
+			r_strbuf_appendf (sb, " :iP    show pointer metadata\n");
+			r_strbuf_appendf (sb, " :iPj   show pointer metadata in json\n\n");
+			return ret;
 		case 'j':
 			if (command[3] == ' ') {
 				size = r_num_math (NULL, command + 4);
@@ -491,10 +494,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 		ut64 size = 8;
 		switch (command[2]) {
 		case '?':
-			io->cb_printf ("Usage: :iF[j?] [size]\n");
-			io->cb_printf (" :iF?   get this help message\n");
-			io->cb_printf (" :iF    show info about (sub)cache file\n");
-			io->cb_printf (" :iF    show info about (sub)cache file in JSON\n\n");
+			sb = r_strbuf_new ("");
+			r_strbuf_appendf (sb, "Usage: :iF[j?] [size]\n");
+			r_strbuf_appendf (sb, " :iF?   get this help message\n");
+			r_strbuf_appendf (sb, " :iF    show info about (sub)cache file\n");
+			r_strbuf_appendf (sb, " :iF    show info about (sub)cache file in JSON\n\n");
 			return NULL;
 		case 'j':
 			if (command[3] == ' ') {
@@ -503,16 +507,17 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 			return __infoSubCache (dsc, size, R_MODE_JSON);
 		case ' ':
 			size = r_num_math (NULL, command + 3);
+			// fallthrough
 		case '\0':
 			return __infoSubCache (dsc, size, R_MODE_PRINT);
 		}
 	} else if (command && command[0] == '?') {
-		io->cb_printf ("DSC commands are prefixed with `:` (alias for `=!`).\n");
-		io->cb_printf (":iP[j?] [size]        show pointer metadata at current seek\n");
-		io->cb_printf (":iF[j?] [size]        show info about (sub)cache file at current seek\n\n");
+		sb = r_strbuf_new ("");
+		r_strbuf_appendf (sb, "DSC commands are prefixed with `:` (alias for `=!`).\n");
+		r_strbuf_appendf (sb, ":iP[j?] [size]        show pointer metadata at current seek\n");
+		r_strbuf_appendf (sb, ":iF[j?] [size]        show info about (sub)cache file at current seek\n\n");
 	}
-
-	return NULL;
+	return sb? r_strbuf_drain (sb): NULL;
 }
 
 static RIODscObject *dsc_object_new(RIO  *io, const char *filename, int perm, int mode) {
