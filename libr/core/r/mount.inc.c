@@ -35,8 +35,6 @@ static RCoreHelpMessage help_msg_m = {
 	"mw", " [file] [data]", "write data into file (quote filenames and data containing spaces)",
 	"mwf", " [diskfile] [r2filepath]", "write contents of local diskfile into r2fs mounted path",
 	"my", "", "yank contents of file into clipboard",
-	"mal", "", "list available r2 docs",
-	"man", " [page]", "man=manpage reading (see mal)",
 	NULL
 };
 
@@ -584,9 +582,9 @@ static int mount_write(RCmdContext *ctx) {
 	const bool from_file = r_strs_equals_str (ctx->subcmd, "wf");
 	const char *path = r_cmdctx_arg (ctx, from_file? 1: 0).a;
 	char *buffer = NULL;
-	RStrs *arg = RVecRStrs_at (&ctx->args, 1);
-	const char *data = arg? arg->a: "";
-	size_t size = arg? r_strs_len (*arg): 0;
+	RStrs arg = r_cmdctx_arg (ctx, 1);
+	const char *data = arg.a? arg.a: "";
+	size_t size = arg.a? r_strs_len (arg): 0;
 	if (from_file) {
 		data = buffer = r_file_slurp (r_cmdctx_arg (ctx, 0).a, &size);
 		if (!buffer) {
@@ -651,54 +649,6 @@ static int mount_shell(RCmdContext *ctx) {
 	return 0;
 }
 
-static int mount_host_mkdir(RCmdContext *ctx) {
-	const bool parents = !strcmp (r_cmdctx_arg (ctx, 0).a, "-p");
-	const char *path = r_cmdctx_arg (ctx, parents? 1: 0).a;
-	bool ok = false;
-	if (path && *path && (parents || !r_cmdctx_arg (ctx, 1).a)) {
-		ok = r_sys_mkdirp (path) && r_file_is_directory (path);
-		if (!ok) {
-			R_LOG_ERROR ("Cannot create '%s'", path);
-		}
-	} else {
-		R_LOG_INFO ("Usage: mkdir [-p] [directory]");
-	}
-	return ok? 0: 1;
-}
-
-static int mount_host_mktemp(RCmdContext *ctx) {
-	const bool dir = !strcmp (r_cmdctx_arg (ctx, 0).a, "-d");
-	const char *path = r_cmdctx_arg (ctx, dir? 1: 0).a;
-	if (R_STR_ISEMPTY (path) || (!dir && r_cmdctx_arg (ctx, 1).a)) {
-		R_LOG_INFO ("Usage: mktemp [-d] [file|directory]");
-		return 1;
-	}
-	char *name = NULL;
-	int fd = r_file_mkstemp (path, &name);
-	bool ok = fd != -1;
-	if (ok) {
-		close (fd);
-		if (dir) {
-			ok = r_file_rm (name) && r_sys_mkdir (name);
-		}
-	}
-	if (ok) {
-		r_cons_println (ctx->cons, name);
-	} else {
-		R_LOG_ERROR ("Cannot create '%s'", path);
-	}
-	free (name);
-	return ok? 0: 1;
-}
-
-static int mount_host_mv(RCmdContext *ctx) {
-	bool ok = r_file_move (r_cmdctx_arg (ctx, 0).a, r_cmdctx_arg (ctx, 1).a);
-	if (!ok) {
-		R_LOG_ERROR ("Cannot move file");
-	}
-	return ok? 0: 1;
-}
-
 static int mount_help(RCmdContext *ctx) {
 	RStrs sub = ctx->subcmd;
 	if (r_strs_lastch (sub) == '?') {
@@ -737,10 +687,6 @@ static int mount_dispatch(RCmdContext *ctx) {
 	}
 	if (r_cmdctx_help (ctx)) {
 		return mount_help (ctx);
-	}
-	if (r_strs_equals_str (sub, "ake")) {
-		// Pass shell syntax through to make.
-		return r_sys_cmdf ("make%s", sub.b);
 	}
 	if (r_strs_startswith (sub, "-/") && !argc) {
 		return mount_umount (ctx);
@@ -784,9 +730,6 @@ static int mount_dispatch(RCmdContext *ctx) {
 		{ "y", mount_yank, 1, 1, "my [file]" },
 		{ "s", mount_shell, 0, 1, "ms [path]" },
 		{ "mc", cmd_mmc, 0, 2, "mmc [left_path] [right_path]" },
-		{ "kdir", mount_host_mkdir, 1, 2, "mkdir [-p] [directory]" },
-		{ "ktemp", mount_host_mktemp, 1, 2, "mktemp [-d] [file|directory]" },
-		{ "v", mount_host_mv, 2, 2, "mv [src] [dst]" },
 	};
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (commands); i++) {

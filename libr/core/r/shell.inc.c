@@ -2,6 +2,102 @@
 
 #if R_INCLUDE_BEGIN
 
+static RCoreHelpMessage help_msg_mkdir = {
+	"Usage:", "mkdir [-p] [directory]", "Create a directory on the host filesystem",
+	"mkdir", " [directory]", "create a directory",
+	"mkdir -p", " [directory]", "create a directory and its parents",
+	NULL
+};
+
+// R2R test/db/cmd/posixshell
+static int mkdir_run(RCmdContext *ctx) {
+	if (r_strs_equals_str (ctx->subcmd, "?")) {
+		r_cons_cmd_help (ctx->cons, help_msg_mkdir);
+		return 0;
+	}
+	if (!r_strs_empty (ctx->subcmd)) {
+		r_core_return_invalid_command (ctx->user, "mkdir", r_strs_at (ctx->subcmd, 0));
+		return 1;
+	}
+	const size_t argc = r_cmdctx_argc (ctx);
+	if (argc < 1 || argc > 2 || !*r_cmdctx_arg (ctx, 0).a) {
+		R_LOG_ERROR ("Usage: mkdir [-p] [directory]");
+		return 1;
+	}
+	const bool parents = !strcmp (r_cmdctx_arg (ctx, 0).a, "-p");
+	const char *path = r_cmdctx_arg (ctx, parents? 1: 0).a;
+	bool ok = false;
+	if (path && *path && (parents || !r_cmdctx_arg (ctx, 1).a)) {
+		ok = r_sys_mkdirp (path) && r_file_is_directory (path);
+		if (!ok) {
+			R_LOG_ERROR ("Cannot create '%s'", path);
+		}
+	} else {
+		R_LOG_INFO ("Usage: mkdir [-p] [directory]");
+	}
+	return ok? 0: 1;
+}
+
+static RCmdResult mkdir_callback(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	int rc = mkdir_run (ctx);
+	r_core_return_value (core, rc);
+	return (RCmdResult) { .status = rc };
+}
+
+static RCoreHelpMessage help_msg_mktemp = {
+	"Usage:", "mktemp [-d] [file|directory]", "Create a temporary file or directory and print its path",
+	"mktemp", " [prefix]", "create a temporary file",
+	"mktemp -d", " [prefix]", "create a temporary directory",
+	NULL
+};
+
+// R2R test/db/cmd/cmd_mount
+static int mktemp_run(RCmdContext *ctx) {
+	if (r_strs_equals_str (ctx->subcmd, "?")) {
+		r_cons_cmd_help (ctx->cons, help_msg_mktemp);
+		return 0;
+	}
+	if (!r_strs_empty (ctx->subcmd)) {
+		r_core_return_invalid_command (ctx->user, "mktemp", r_strs_at (ctx->subcmd, 0));
+		return 1;
+	}
+	const size_t argc = r_cmdctx_argc (ctx);
+	if (argc < 1 || argc > 2 || !*r_cmdctx_arg (ctx, 0).a) {
+		R_LOG_ERROR ("Usage: mktemp [-d] [file|directory]");
+		return 1;
+	}
+	const bool dir = !strcmp (r_cmdctx_arg (ctx, 0).a, "-d");
+	const char *path = r_cmdctx_arg (ctx, dir? 1: 0).a;
+	if (R_STR_ISEMPTY (path) || (!dir && r_cmdctx_arg (ctx, 1).a)) {
+		R_LOG_INFO ("Usage: mktemp [-d] [file|directory]");
+		return 1;
+	}
+	char *name = NULL;
+	int fd = r_file_mkstemp (path, &name);
+	bool ok = fd != -1;
+	if (ok) {
+		close (fd);
+		if (dir) {
+			ok = r_file_rm (name) && r_sys_mkdir (name);
+		}
+	}
+	if (ok) {
+		r_cons_println (ctx->cons, name);
+	} else {
+		R_LOG_ERROR ("Cannot create '%s'", path);
+	}
+	free (name);
+	return ok? 0: 1;
+}
+
+static RCmdResult mktemp_callback(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	int rc = mktemp_run (ctx);
+	r_core_return_value (core, rc);
+	return (RCmdResult) { .status = rc };
+}
+
 static RCoreHelpMessage help_msg_man = {
 	"Usage:", "man [page]", "Read documentation",
 	"mal", "", "list available r2 docs",
@@ -206,8 +302,8 @@ static RCmdResult man_callback(RCmdContext *ctx) {
 	}
 	const bool list = !strcmp (command, "mal");
 	const size_t argc = r_cmdctx_argc (ctx);
-	RStrs *arg = RVecRStrs_at (&ctx->args, 0);
-	if (argc != (list? 0: 1) || (!list && !r_strs_at (*arg, 0))) {
+	RStrs arg = r_cmdctx_arg (ctx, 0);
+	if (argc != (list? 0: 1) || (!list && !r_strs_at (arg, 0))) {
 		R_LOG_ERROR ("Usage: %s%s", command, list? "": " [page]");
 		return (RCmdResult) { .status = 1 };
 	}
@@ -215,7 +311,7 @@ static RCmdResult man_callback(RCmdContext *ctx) {
 		man_read (ctx, "?");
 		return (RCmdResult) { 0 };
 	}
-	char *text = man_read (ctx, r_cmdctx_arg (ctx, 0).a);
+	char *text = man_read (ctx, arg.a);
 	if (text) {
 		r_cons_less_str (ctx->cons, text, NULL);
 		free (text);
@@ -225,13 +321,84 @@ static RCmdResult man_callback(RCmdContext *ctx) {
 	return (RCmdResult) { 0 };
 }
 
-static bool r_core_cmd_man_init(RCmd *cmd) {
-	static const char *commands[] = { "man", "mal", "ma?" };
+static RCoreHelpMessage help_msg_make = {
+	"Usage:", "make [arguments]", "Run the host make command",
+	"make", " [arguments]", "pass arguments to make using shell syntax",
+	NULL
+};
+
+static int make_run(RCmdContext *ctx) {
+	if (r_strs_equals_str (ctx->subcmd, "?")) {
+		r_cons_cmd_help (ctx->cons, help_msg_make);
+		return 0;
+	}
+	if (!r_strs_empty (ctx->subcmd)) {
+		r_core_return_invalid_command (ctx->user, "make", r_strs_at (ctx->subcmd, 0));
+		return 1;
+	}
+	// Pass shell syntax through to make.
+	return r_sys_cmdf ("make%s", ctx->subcmd.b);
+}
+
+static RCmdResult make_callback(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	int rc = make_run (ctx);
+	r_core_return_value (core, rc);
+	return (RCmdResult) { .status = rc };
+}
+
+static RCoreHelpMessage help_msg_mv = {
+	"Usage:", "mv [src] [dst]", "Move a file on the host filesystem",
+	"mv", " [src] [dst]", "move or rename a file",
+	NULL
+};
+
+// R2R test/db/cmd/cmd_mount
+static int mv_run(RCmdContext *ctx) {
+	if (r_strs_equals_str (ctx->subcmd, "?")) {
+		r_cons_cmd_help (ctx->cons, help_msg_mv);
+		return 0;
+	}
+	if (!r_strs_empty (ctx->subcmd)) {
+		r_core_return_invalid_command (ctx->user, "mv", r_strs_at (ctx->subcmd, 0));
+		return 1;
+	}
+	if (r_cmdctx_argc (ctx) != 2 || !*r_cmdctx_arg (ctx, 0).a) {
+		R_LOG_ERROR ("Usage: mv [src] [dst]");
+		return 1;
+	}
+	bool ok = r_file_move (r_cmdctx_arg (ctx, 0).a, r_cmdctx_arg (ctx, 1).a);
+	if (!ok) {
+		R_LOG_ERROR ("Cannot move file");
+	}
+	return ok? 0: 1;
+}
+
+static RCmdResult mv_callback(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	int rc = mv_run (ctx);
+	r_core_return_value (core, rc);
+	return (RCmdResult) { .status = rc };
+}
+
+static bool r_core_cmd_shell_init(RCmd *cmd) {
+	static const struct {
+		const char *name;
+		RCmdCtxCb callback;
+	} commands[] = {
+		{ "mkdir", mkdir_callback },
+		{ "mktemp", mktemp_callback },
+		{ "man", man_callback },
+		{ "mal", man_callback },
+		{ "ma?", man_callback },
+		{ "make", make_callback },
+		{ "mv", mv_callback },
+	};
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (commands); i++) {
-		if (!r_cmd_register (cmd, commands[i], man_callback, (void *)commands[i])) {
+		if (!r_cmd_register (cmd, commands[i].name, commands[i].callback, (void *)commands[i].name)) {
 			while (i > 0) {
-				r_cmd_unregister (cmd, commands[--i]);
+				r_cmd_unregister (cmd, commands[--i].name);
 			}
 			return false;
 		}
