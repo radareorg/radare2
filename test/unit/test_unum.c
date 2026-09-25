@@ -137,7 +137,37 @@ bool test_r_num_str_split_list(void) {
     mu_end;
 }
 
+bool test_r_num_hex_unsigned(void) {
+	const char *valid[] = {
+		"0xffffffffffffffffU", "0xFFFFFFFFFFFFFFFFu",
+		"0xffff_ffff_ffff_ffffU", "0Xffff_ffff_ffff_ffffu"
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (valid); i++) {
+		const char *err = NULL;
+		mu_assert_eq (r_num_get_err (num, valid[i], &err), UT64_MAX, valid[i]);
+		mu_assert_null (err, "unsigned hex literal is valid");
+		mu_assert_eq (r_num_math_err (num, valid[i], &err), UT64_MAX, valid[i]);
+		mu_assert_null (err, "unsigned hex expression is valid");
+	}
+	const char *invalid[] = {
+		"0xU", "0x1UU", "0x1Ujunk", "0x1junk", "0x1_00U",
+		"0x1_0000_U", "0x10000000000000000U",
+		"0x0x123", "0x0_x123U", "0x0X1u", "0x"
+	};
+	for (i = 0; i < R_ARRAY_SIZE (invalid); i++) {
+		const char *err = NULL;
+		r_num_get_err (num, invalid[i], &err);
+		mu_assert_notnull (err, invalid[i]);
+		err = NULL;
+		r_num_math_err (num, invalid[i], &err);
+		mu_assert_notnull (err, invalid[i]);
+	}
+	mu_end;
+}
+
 bool all_tests(void) {
+	mu_run_test (test_r_num_hex_unsigned);
 	mu_run_test (test_r_num_units);
 	mu_run_test (test_r_num_minmax_swap);
 	mu_run_test (test_r_num_between);

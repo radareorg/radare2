@@ -316,7 +316,7 @@ static bool cin_get(RNum *num, RNumCalc *nc, char *c) {
 }
 
 static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
-	double d;
+	double d = 0;
 	char str[R_NUMCALC_STRSZ + 1]; // TODO: move into the heap?
 	int i = 0;
 	char c;
@@ -331,20 +331,21 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 		}
 	}
 	str[i] = 0;
-#if 1
-	*n = Nset (calc_num_get (num, nc, str));
-#else
-	ut64 v = r_num_get (num, str);
-	if (num && num->nc.errors > 0) {
-		return 0;
-	}
-	*n = Nset (v);
-#endif
-
-	if (isdigit (*str) && strchr (str, '.')) {
-		if (sscanf (str, "%lf", &d) < 1) {
-			return 0;
+	bool floating = isdigit ((ut8)*str) && strchr (str, '.');
+	if (floating) {
+		char *end;
+		d = strtod (str, &end);
+		if (!*end) {
+			if (d >= (double)UT64_MAX) {
+				error (num, nc, "number won't fit into 64 bits");
+				d = 0;
+			}
+			*n = Nsetf (d);
+			return 1;
 		}
+	}
+	*n = Nset (calc_num_get (num, nc, str));
+	if (floating) {
 		if (n->n < d) {
 			*n = Nsetf (d);
 		}
