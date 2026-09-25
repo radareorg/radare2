@@ -136,7 +136,11 @@ R_API const char *r_num_get_name(RNum *num, ut64 n) {
 // check that underscores in "1000_f000" are every 4 hex digits from the right
 static bool validate_hex_underscores(const char *s) {
 	int i, n = 0;
-	for (i = strlen (s) - 1; i >= 0; i--) {
+	i = strlen (s) - 1;
+	if (i >= 0 && (s[i] == 'u' || s[i] == 'U')) {
+		i--;
+	}
+	for (; i >= 0; i--) {
 		if (s[i] == '_') {
 			if (n != 4) {
 				return false;
@@ -318,9 +322,10 @@ R_API ut64 r_num_get_err(RNum * R_NULLABLE num, const char *str, const char **er
 		char *end;
 		errno = 0;
 		ret = strtoull (digits, &end, 16);
+		const bool unsigned_suffix = (*end == 'u' || *end == 'U') && !end[1];
 		if (errno == ERANGE) {
 			error (num, "number won't fit into 64 bits");
-		} else if (!isxdigit ((ut8)*digits) || *end) {
+		} else if (!isxdigit ((ut8)*digits) || (*end && !unsigned_suffix)) {
 			error (num, "invalid hex number");
 		}
 		free (copy);
