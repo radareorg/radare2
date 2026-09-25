@@ -107,78 +107,103 @@ R_API void r_io_sundo_reset(RIO *io) {
 	io->undo.redos = 0;
 }
 
-R_API RList *r_io_sundo_list(RIO *io, int mode) {
-	RList* list = NULL;
-
-	if (mode == '!') {
-		mode = 0;
-	}
+R_API char *r_io_sundo_list(RIO *io, int mode) {
+	R_RETURN_VAL_IF_FAIL (io, NULL);
 	if (!io->undo.s_enable) {
+		return NULL;
+	}
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = io->coreb.pjWithEncoding? io->coreb.pjWithEncoding (io->coreb.core): pj_new ();
+	}
+	RStrBuf *buf = mode == 'j'? NULL: r_strbuf_new ("");
+	if (!pj && !buf) {
 		return NULL;
 	}
 	int undos = io->undo.undos;
 	int redos = io->undo.redos;
-
 	int idx = io->undo.idx;
 	int start = (idx - undos + R_IO_UNDOS) % R_IO_UNDOS;
 	int end = (idx + redos) % R_IO_UNDOS;
 
-	int i, j = 0;
-	switch (mode) {
-	case 'j':
-		io->cb_printf ("[");
-		break;
-	case 0:
-		list = r_list_newf (free);
-		break;
+	if (pj) {
+		pj_a (pj);
 	}
+
+	int i, j = 0;
 	for (i = start;/* condition at the end of loop */; i = (i + 1) % R_IO_UNDOS) {
-		int idx = (j < undos)? undos - j - 1: j - undos - 1;
-		RIOUndos *undo = &io->undo.seek[i];
-		ut64 addr = undo->off;
-		bool notLast = (j + 1 < undos);
+		int u_idx = (j < undos)? undos - j - 1: j - undos - 1;
+		ut64 addr = (j == undos && !redos)? io->off: io->undo.seek[i].off;
 		switch (mode) {
+		case 'j':
+			{
+				char *name = io->coreb.getNameDelta? io->coreb.getNameDelta (io->coreb.core, addr): NULL;
+				if (name) {
+					name = r_str_replace (name, " + ", "+", 0);
+				}
+				pj_o (pj);
+				pj_kn (pj, "offset", addr);
+				if (R_STR_ISNOTEMPTY (name)) {
+					pj_ks (pj, "name", name);
+				}
+				if (j == undos) {
+					pj_kb (pj, "current", true);
+				}
+				pj_end (pj);
+				free (name);
+			}
+			break;
 		case '=':
 			if (j < undos) {
-				io->cb_printf ("0x%"PFMT64x"%s", addr, notLast? " > ": "");
+				r_strbuf_appendf (buf, "0x%"PFMT64x"%s", addr, j + 1 < undos? " > ": "");
 			}
 			break;
 		case 'r':
 			{
-				char *cmt = io->coreb.cmdStrF (io->coreb.core, "fd 0x%08"PFMT64x, addr);
-				r_str_trim (cmt);
+				char *cmt = io->coreb.cmdStrF? io->coreb.cmdStrF (io->coreb.core, "fd 0x%08"PFMT64x, addr): NULL;
+				if (cmt) {
+					r_str_trim (cmt);
+				}
 				if (j < undos) {
-					io->cb_printf ("0x%08"PFMT64x" ; %ds- # %s\n", addr, idx + 1, cmt);
+					r_strbuf_appendf (buf, "0x%08"PFMT64x" ; %ds- # %s\n", addr, u_idx + 1, r_str_get (cmt));
 				} else if (j == undos && j != 0 && redos != 0) {
-					io->cb_printf ("0x%08"PFMT64x" ; # CUR %s\n", addr, cmt);
+					r_strbuf_appendf (buf, "0x%08"PFMT64x" ; # CUR %s\n", addr, r_str_get (cmt));
 				} else if (j != undos) {
-					io->cb_printf ("0x%08"PFMT64x" ; %ds+ # %s\n", addr, idx + 1, cmt);
+					r_strbuf_appendf (buf, "0x%08"PFMT64x" ; %ds+ # %s\n", addr, u_idx + 1, r_str_get (cmt));
 				} else if (addr != 0) {
-					io->cb_printf ("0x%08"PFMT64x" ; # CUR %s\n", addr, cmt);
+					r_strbuf_appendf (buf, "0x%08"PFMT64x" ; # CUR %s\n", addr, r_str_get (cmt));
 				}
 				free (cmt);
 			}
 			break;
 		case '*':
 			if (j < undos) {
-				io->cb_printf ("f undo_%d = 0x%"PFMT64x"\n", idx, addr);
+				r_strbuf_appendf (buf, "f undo_%d = 0x%"PFMT64x"\n", u_idx, addr);
 			} else if (j == undos && j != 0 && redos != 0) {
-				io->cb_printf ("# Current undo/redo position.\n");
+				r_strbuf_append (buf, "# Current undo/redo position.\n");
 			} else if (j != undos) {
-				io->cb_printf ("f redo_%d = 0x%"PFMT64x"\n", idx, addr);
+				r_strbuf_appendf (buf, "f redo_%d = 0x%"PFMT64x"\n", u_idx, addr);
+			}
+			break;
+		case '!':
+			{
+				char *name = io->coreb.getNameDelta? io->coreb.getNameDelta (io->coreb.core, addr): NULL;
+				r_strbuf_appendf (buf, "0x%"PFMT64x" %s\n", addr, r_str_get (name));
+				free (name);
 			}
 			break;
 		case 0:
-			if (list) {
-				RIOUndos *u = R_NEW0 (RIOUndos);
-				if (!(j == undos && redos == 0)) {
-					// Current position gets pushed before seek, so there
-					// is no valid offset when we are at the end of list.
-					memcpy (u, undo, sizeof (RIOUndos));
+			{
+				char *name = io->coreb.getNameDelta? io->coreb.getNameDelta (io->coreb.core, addr): NULL;
+				if (R_STR_ISNOTEMPTY (name)) {
+					r_strbuf_append (buf, name);
 				} else {
-					u->off = io->off;
+					r_strbuf_appendf (buf, "0x%"PFMT64x, addr);
 				}
-				r_list_append (list, u);
+				if (i != end) {
+					r_strbuf_append (buf, " > ");
+				}
+				free (name);
 			}
 			break;
 		}
@@ -187,12 +212,14 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 			break;
 		}
 	}
-	switch (mode) {
-	case '=':
-		io->cb_printf ("\n");
-		break;
+	if (mode == '=' || mode == 0) {
+		r_strbuf_append (buf, "\n");
 	}
-	return list;
+	if (pj) {
+		pj_end (pj);
+		return pj_drain (pj);
+	}
+	return r_strbuf_drain (buf);
 }
 
 /* undo writez */
