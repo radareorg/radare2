@@ -472,11 +472,10 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 		ut64 size = 8;
 		switch (command[2]) {
 		case '?':
-			io->cb_printf ("Usage: :iP[j?] [size]\n");
-			io->cb_printf (" :iP?   get this help message\n");
-			io->cb_printf (" :iP    show pointer metadata\n");
-			io->cb_printf (" :iPj   show pointer metadata in json\n\n");
-			return NULL;
+			return strdup ("Usage: :iP[j?] [size]\n"
+				" :iP?   get this help message\n"
+				" :iP    show pointer metadata\n"
+				" :iPj   show pointer metadata in json\n\n");
 		case 'j':
 			if (command[3] == ' ') {
 				size = r_num_math (NULL, command + 4);
@@ -491,11 +490,10 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 		ut64 size = 8;
 		switch (command[2]) {
 		case '?':
-			io->cb_printf ("Usage: :iF[j?] [size]\n");
-			io->cb_printf (" :iF?   get this help message\n");
-			io->cb_printf (" :iF    show info about (sub)cache file\n");
-			io->cb_printf (" :iF    show info about (sub)cache file in JSON\n\n");
-			return NULL;
+			return strdup ("Usage: :iF[j?] [size]\n"
+				" :iF?   get this help message\n"
+				" :iF    show info about (sub)cache file\n"
+				" :iFj   show info about (sub)cache file in JSON\n\n");
 		case 'j':
 			if (command[3] == ' ') {
 				size = r_num_math (NULL, command + 4);
@@ -503,15 +501,15 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 			return __infoSubCache (dsc, size, R_MODE_JSON);
 		case ' ':
 			size = r_num_math (NULL, command + 3);
+			// fallthrough
 		case '\0':
 			return __infoSubCache (dsc, size, R_MODE_PRINT);
 		}
-	} else if (command && command[0] == '?') {
-		io->cb_printf ("DSC commands are prefixed with `:` (alias for `=!`).\n");
-		io->cb_printf (":iP[j?] [size]        show pointer metadata at current seek\n");
-		io->cb_printf (":iF[j?] [size]        show info about (sub)cache file at current seek\n\n");
+	} else if (command[0] == '?') {
+		return strdup ("DSC commands are prefixed with `:` (alias for `=!`).\n"
+			":iP[j?] [size]        show pointer metadata at current seek\n"
+			":iF[j?] [size]        show info about (sub)cache file at current seek\n\n");
 	}
-
 	return NULL;
 }
 
