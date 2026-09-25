@@ -1451,6 +1451,38 @@ R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test) {
 	return ret;
 }
 
+static void append_shell_arg(RStrBuf *buf, const char *arg) {
+	if (*arg && strspn (arg, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_./:-") == strlen (arg)) {
+		r_strbuf_append (buf, arg);
+		return;
+	}
+#if R2__WINDOWS__
+	char *escaped = r_str_escape_sh (arg);
+	r_strbuf_appendf (buf, "\"%s\"", escaped);
+#else
+	char *escaped = r_str_replace (strdup (arg), "'", "'\\''", true);
+	r_strbuf_appendf (buf, "'%s'", escaped);
+#endif
+	free (escaped);
+}
+
+static R2RProcessOutput *run_asm(R2RRunConfig *config, RList *args, char **cmd) {
+	size_t args_size;
+	const char **argv = rlist_to_argv (args, &args_size);
+	RStrBuf buf;
+	r_strbuf_init (&buf);
+	append_shell_arg (&buf, config->rasm2_cmd);
+	size_t i;
+	for (i = 0; i < args_size; i++) {
+		r_strbuf_append (&buf, " ");
+		append_shell_arg (&buf, argv[i]);
+	}
+	*cmd = r_strbuf_drain_nofree (&buf);
+	R2RProcessOutput *out = subprocess_runner (config->rasm2_cmd, argv, args_size, NULL, NULL, 0, config->timeout_ms, NULL);
+	free (argv);
+	return out;
+}
+
 R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test) {
 	R2RAsmTestOutput *out = R_NEW0 (R2RAsmTestOutput);
 	RList *args = r_list_new ();
@@ -1483,16 +1515,11 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 		r_list_append (args, offset_str);
 	}
 
-	size_t args_size;
 	if (test->mode & R2R_ASM_TEST_MODE_ASSEMBLE) {
 		r_list_append (args, (void *)test->disasm);
-		const char **argv = rlist_to_argv (args, &args_size);
-		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, argv, args_size, NULL, NULL, 0);
-		if (!r2r_subprocess_wait (proc, config->timeout_ms)) {
-			r2r_subprocess_kill (proc);
-			out->as_timeout = true;
-		} else if (proc->ret == 0) {
-			char *hex = r_strbuf_get (&proc->out);
+		out->as = run_asm (config, args, &out->as_cmd);
+		if (out->as && !out->as->timeout && !out->as->ret) {
+			const char *hex = out->as->out;
 			size_t hexlen = strlen (hex);
 			if (hexlen > 0) {
 				ut8 *bytes = malloc (hexlen);
@@ -1507,8 +1534,6 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 				}
 			}
 		}
-		free (argv);
-		r2r_subprocess_free (proc);
 		r_list_pop (args);
 	}
 	if (test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE) {
@@ -1517,18 +1542,10 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 			if (hex) {
 				r_list_append (args, (void *)"-d");
 				r_list_append (args, hex);
-				const char **argv = rlist_to_argv (args, &args_size);
-				R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, argv, args_size, NULL, NULL, 0);
-				if (!r2r_subprocess_wait (proc, config->timeout_ms)) {
-					r2r_subprocess_kill (proc);
-					out->disas_timeout = true;
-				} else if (proc->ret == 0) {
-					char *disasm = r_strbuf_drain_nofree (&proc->out);
-					r_str_trim (disasm);
-					out->disasm = disasm;
+				out->disas = run_asm (config, args, &out->disas_cmd);
+				if (out->disas && !out->disas->timeout && !out->disas->ret) {
+					out->disasm = r_str_trim_dup (out->disas->out);
 				}
-				free (argv);
-				r2r_subprocess_free (proc);
 				free (hex);
 			}
 		}
@@ -1545,7 +1562,7 @@ R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test) {
 		return false;
 	}
 	if (test->mode & R2R_ASM_TEST_MODE_ASSEMBLE) {
-		if (!out->bytes || !test->bytes || out->bytes_size != test->bytes_size || out->as_timeout) {
+		if (!out->bytes || !test->bytes || out->bytes_size != test->bytes_size) {
 			return false;
 		}
 		if (memcmp (out->bytes, test->bytes, test->bytes_size)) {
@@ -1553,7 +1570,7 @@ R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test) {
 		}
 	}
 	if (test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE) {
-		if (!out->disasm || !test->disasm || out->disas_timeout) {
+		if (!out->disasm || !test->disasm) {
 			return false;
 		}
 		if (strcmp (out->disasm, test->disasm)) {
@@ -1567,6 +1584,10 @@ R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out) {
 	if (out) {
 		free (out->disasm);
 		free (out->bytes);
+		free (out->as_cmd);
+		free (out->disas_cmd);
+		r2r_process_output_free (out->as);
+		r2r_process_output_free (out->disas);
 		free (out);
 	}
 }
@@ -2055,23 +2076,8 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			}
 			R2RAsmTestOutput *out = r2r_run_asm_test (config, at);
 			success = r2r_check_asm_test (out, at);
-			const bool is_broken = at->mode & R2R_ASM_TEST_MODE_BROKEN;
-			if (!success && !is_broken) {
-				if (at->bytes_size < 1 || out->bytes_size < 1) {
-					eprintf ("\n" Color_RED "- %s" Color_RESET " # bytes_size = %d\n", at->disasm, (int)at->bytes_size);
-					eprintf (Color_GREEN "+ %s" Color_RESET " # bytes_size = %d\n", out->disasm, (int)out->bytes_size);
-				} else {
-					char *b0 = r_hex_bin2strdup (at->bytes, at->bytes_size);
-					char *b1 = r_hex_bin2strdup (out->bytes, out->bytes_size);
-					eprintf ("\n" Color_RED "- %s" Color_RESET " # %s\n", at->disasm, b0);
-					eprintf (Color_GREEN "+ %s" Color_RESET " # %s\n", out->disasm, b1);
-					free (b0);
-					free (b1);
-				}
-			}
-			// TODO: show more details of the failed assembled instruction
 			ret->asm_out = out;
-			ret->timeout = out->as_timeout || out->disas_timeout;
+			ret->timeout = (out->as && out->as->timeout) || (out->disas && out->disas->timeout);
 			ret->run_failed = !out;
 		}
 		break;
