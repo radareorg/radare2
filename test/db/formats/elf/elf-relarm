@@ -119,6 +119,72 @@ bl reloc.r4
 EOF
 RUN
 
+NAME=ELF: arm thumb movw, movt and beq.w relocs are applied
+FILE=bins/elf/arm-thumb-movw.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pi 5 @ sym.f
+p8 16 @ sym.f
+EOF
+EXPECT=<<EOF
+movw r0, 0xe0
+movt r0, 0x800
+beq.w reloc.ext2
+b.w reloc.ext2
+bx lr
+40f2e000c0f6000000f0528000f050b8
+EOF
+RUN
+
+NAME=ELF: arm thumb movw relocs keep their bytes when not applied
+FILE=bins/elf/arm-thumb-movw.o
+ARGS=-e bin.relocs.apply=false
+CMDS=<<EOF
+p8 16 @ sym.f
+EOF
+EXPECT=<<EOF
+40f20000c0f200003ff4feaffff7febf
+EOF
+RUN
+
+NAME=ELF: big-endian thumb movw/movt addend, rd and beq.w j1/j2 split
+FILE=bins/elf/arm-thumb-movw-be.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pi 5 @ sym.f
+p8 16 @ sym.f
+pi 2 @ sym.g
+p8 8 @ sym.g
+EOF
+EXPECT=<<EOF
+movw r0, 0x1c8
+movt r0, 0x800
+bne.w sym.back
+beq.w 0x80441d0
+bx lr
+f24010c8f6c00000f47faff9f004a0c5
+movw r3, 0x5a
+movt r3, 0x800
+f240035af6c00300
+EOF
+RUN
+
+NAME=ELF: thumb movw/movt sign-extend the rel addend, beq.w reaches 1MB only
+FILE=bins/elf/arm-thumb-movw-addend.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pi 2 @ sym.f
+pi 1 @ sym.f+12
+p8 16 @ sym.f
+EOF
+EXPECT=<<EOF
+movw r0, 0xffec
+movt r0, 0x7ff
+beq.w 0x80a00f4
+4ff6ec70c0f2ff703ff0ffaf20f05888
+EOF
+RUN
+
 NAME=ELF: arm lazy jump slots take the symbol, not the plt0 word
 FILE=bins/elf/libcurl.so.4.2.0
 ARGS=-e bin.relocs.apply=true
