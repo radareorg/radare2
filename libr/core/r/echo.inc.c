@@ -27,16 +27,16 @@ static void echo_print(RCmdContext *ctx, const char *input, bool newline) {
 static void echo_append_args(RCmdContext *ctx, size_t first, bool newline) {
 	RStrBuf output;
 	r_strbuf_init (&output);
-	const size_t argc = RVecRStrs_length (&ctx->args);
+	const size_t argc = r_cmdctx_argc (ctx);
 	size_t i;
 	for (i = first; i < argc; i++) {
-		RStrs *arg = RVecRStrs_at (&ctx->args, i);
-		const char *nul = memchr (arg->a, 0, r_strs_len (*arg));
-		const size_t length = nul? nul - arg->a: r_strs_len (*arg);
+		RStrs arg = r_cmdctx_arg (ctx, i);
+		const char *nul = memchr (arg.a, 0, r_strs_len (arg));
+		const size_t length = nul? nul - arg.a: r_strs_len (arg);
 		if (i > first) {
 			r_strbuf_append_n (&output, " ", 1);
 		}
-		r_strbuf_append_n (&output, arg->a, length);
+		r_strbuf_append_n (&output, arg.a, length);
 		if (nul) {
 			break;
 		}
@@ -46,11 +46,11 @@ static void echo_append_args(RCmdContext *ctx, size_t first, bool newline) {
 }
 
 static RCmdResult echo_base64(RCmdContext *ctx) {
-	RStrs *arg = RVecRStrs_at (&ctx->args, 0);
-	if (!arg || RVecRStrs_length (&ctx->args) != 1) {
+	RStrs arg = r_cmdctx_arg (ctx, 0);
+	if (!arg.a || r_cmdctx_argc (ctx) != 1) {
 		return (RCmdResult) { .status = 2 };
 	}
-	char *input = r_strs_tostring (*arg);
+	char *input = r_strs_tostring (arg);
 	int size = 0;
 	ut8 *decoded = input? r_base64_decode_dyn (input, -1, &size, true): NULL;
 	free (input);
@@ -67,10 +67,10 @@ static RCmdResult echo_base64(RCmdContext *ctx) {
 static RCmdResult echo_callback(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	const bool exact = r_strs_empty (ctx->subcmd);
-	const size_t argc = RVecRStrs_length (&ctx->args);
-	RStrs *arg = argc? RVecRStrs_at (&ctx->args, 0): NULL;
-	if (r_cmd_ctx_help (ctx)
-			|| (exact && argc == 1 && r_strs_equals_str (*arg, "-h"))) {
+	const size_t argc = r_cmdctx_argc (ctx);
+	RStrs arg = r_cmdctx_arg (ctx, 0);
+	if (r_cmdctx_help (ctx)
+			|| (exact && argc == 1 && r_strs_equals_str (arg, "-h"))) {
 		r_cons_cmd_help (ctx->cons, help_msg_echo);
 		return (RCmdResult) { 0 };
 	}
@@ -86,7 +86,7 @@ static RCmdResult echo_callback(RCmdContext *ctx) {
 	}
 	size_t i = 0;
 	bool newline = true;
-	if (r_strs_equals_str (*arg, "-n")) {
+	if (r_strs_equals_str (arg, "-n")) {
 		newline = false;
 		i++;
 	}

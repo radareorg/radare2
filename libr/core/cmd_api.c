@@ -521,8 +521,8 @@ static bool cmd_context_parse_args(RCmdContext *context, RStrs rest, bool raw) {
 			return false;
 		}
 		*arg = r_strs_new (begin, dst);
+		*dst++ = 0;
 	}
-	*dst = 0;
 	return true;
 }
 

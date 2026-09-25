@@ -84,9 +84,9 @@ static RCmdResult prj_invalid(RCmdContext *ctx) {
 }
 
 static RCmdResult prj_callback(RCmdContext *ctx) {
-	const size_t argc = RVecRStrs_length (&ctx->args);
+	const size_t argc = r_cmdctx_argc (ctx);
 	RStrs *args = R_VEC_START_ITER (&ctx->args);
-	const bool help = (!argc && (r_strs_empty (ctx->subcmd) || r_cmd_ctx_help (ctx)))
+	const bool help = (!argc && (r_strs_empty (ctx->subcmd) || r_cmdctx_help (ctx)))
 		|| (argc == 1 && r_strs_equals_str (args[0], "?"));
 	if (help) {
 		prj_help (ctx);
