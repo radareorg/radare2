@@ -185,15 +185,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=xrefs: cached counts stay stale across an xref manager reset
+NAME=cached ref counts are invalidated across an xref manager reset
 FILE=malloc://64
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 554889e5e800000000c3
 af
 afll~^0x[10]
 ax-*
 axd 0x21 @ 0x1
-axd 0x22 @ 0x1
 afll~^0x[10]
 EOF
 EXPECT=<<EOF

@@ -81,11 +81,34 @@ bool test_r_anal_xrefs_gen_follows_edge_set(void) {
 	mu_end;
 }
 
+bool test_r_anal_xrefs_init_keeps_counts_stale(void) {
+	RAnal *anal = r_anal_new ();
+	RAnalFunction *fcn = r_anal_create_function (anal, "f", 0x1000, 0, NULL);
+	mu_assert_notnull (fcn, "create function");
+
+	r_anal_xrefs_set (anal, 0x2000, 0x1000, R_ANAL_REF_TYPE_CALL);
+	mu_assert_eq (r_anal_function_count_xrefs (fcn, R_ANAL_REF_TYPE_ANY), 1, "one xref");
+	const ut64 gen = fcn->meta.refsgen;
+
+	// walk the new manager up to the generation the count was cached at: a
+	// manager that restarted its generation would now serve that stale count
+	r_anal_xrefs_init (anal);
+	ut64 i;
+	for (i = 1; i < gen; i++) {
+		r_anal_xrefs_set (anal, 0x3000 + i, 0x4000, R_ANAL_REF_TYPE_DATA);
+	}
+	mu_assert_eq (r_anal_function_count_xrefs (fcn, R_ANAL_REF_TYPE_ANY), 0, "the reset dropped the xref");
+
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_anal_xrefs_count);
 	mu_run_test (test_r_anal_purge_clears_xrefs);
 	mu_run_test (test_r_anal_xref_del_missing_edge);
 	mu_run_test (test_r_anal_xrefs_gen_follows_edge_set);
+	mu_run_test (test_r_anal_xrefs_init_keeps_counts_stale);
 	return tests_passed != tests_run;
 }
 
