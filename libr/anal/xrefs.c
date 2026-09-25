@@ -27,7 +27,7 @@ CWISS_DECLARE_FLAT_HASHMAP_DEFAULT(AdjacencyList, ut64, Edges*);
 typedef struct r_ref_manager_t {
 	R_ALIGNED(16) AdjacencyList refs;   // forward refs
 	R_ALIGNED(16) AdjacencyList xrefs;  // backward refs
-	ut64 gen; // bumped on every change, cached per-function counts compare against it
+	ut64 gen; // bumped when an edge is added, removed or retyped; cached per-function counts compare against it
 } RefManager;
 
 static inline int compare_ref(const RAnalRef *a, const RAnalRef *b) {
@@ -72,7 +72,8 @@ static void ref_manager_free(RefManager *rm) {
 	free (rm);
 }
 
-static void _add_ref(AdjacencyList *adj_list, ut64 from, ut64 to, RAnalRefType type) {
+// returns true when the edge is new or its type changed
+static bool _add_ref(AdjacencyList *adj_list, ut64 from, ut64 to, RAnalRefType type) {
 	AdjacencyList_Iter iter = AdjacencyList_find (adj_list, &from);
 	AdjacencyList_Entry *entry = AdjacencyList_Iter_get (&iter);
 	Edges *edges = entry ? entry->val : NULL;
@@ -81,7 +82,7 @@ static void _add_ref(AdjacencyList *adj_list, ut64 from, ut64 to, RAnalRefType t
 		edges = R_NEW0 (Edges);
 		if (!edges) {
 			R_LOG_WARN ("failed to allocate hashtable for xrefs");
-			return;
+			return false;
 		}
 
 		*edges = Edges_new (INITIAL_CAPACITY);
@@ -90,37 +91,48 @@ static void _add_ref(AdjacencyList *adj_list, ut64 from, ut64 to, RAnalRefType t
 	}
 	Edges_Entry edge_entry = { .key = to, .val = type };
 	Edges_Insert result = Edges_insert (edges, &edge_entry); // and adds the ref
-	if (!result.inserted) {
-		Edges_Entry *existing_entry = Edges_Iter_get (&result.iter);
-		existing_entry->val = type;
+	if (result.inserted) {
+		return true;
 	}
+	Edges_Entry *existing_entry = Edges_Iter_get (&result.iter);
+	if (existing_entry->val == type) {
+		return false;
+	}
+	existing_entry->val = type;
+	return true;
 }
 
 static void ref_manager_add_entry(RefManager *rm, ut64 from, ut64 to, RAnalRefType type) {
-	_add_ref (&rm->refs, from, to, type);
-	_add_ref (&rm->xrefs, to, from, type);
-	rm->gen++;
+	const bool fwd = _add_ref (&rm->refs, from, to, type);
+	const bool bwd = _add_ref (&rm->xrefs, to, from, type);
+	if (fwd || bwd) {
+		rm->gen++;
+	}
 }
 
-static void _delete_ref(AdjacencyList *adj_list, ut64 from, ut64 to) {
+// returns true when the edge existed
+static bool _delete_ref(AdjacencyList *adj_list, ut64 from, ut64 to) {
 	AdjacencyList_Iter iter = AdjacencyList_find (adj_list, &from);
 	AdjacencyList_Entry *entry = AdjacencyList_Iter_get (&iter);
 	Edges *edges = entry ? entry->val : NULL;
 	if (!edges || !Edges_erase (edges, &to)) {
-		return;
+		return false;
 	}
 	if (Edges_size (edges) == 0) {
 		Edges_destroy (edges);
 		free (edges);
 		AdjacencyList_erase_at (iter);
 	}
+	return true;
 }
 
 // TODO add extra R_API call for deleting all refs, can be implemented in a more performant way
 static void ref_manager_remove_entry(RefManager *rm, ut64 from, ut64 to) {
-	_delete_ref (&rm->refs, from, to);
-	_delete_ref (&rm->xrefs, to, from);
-	rm->gen++;
+	const bool fwd = _delete_ref (&rm->refs, from, to);
+	const bool bwd = _delete_ref (&rm->xrefs, to, from);
+	if (fwd || bwd) {
+		rm->gen++;
+	}
 }
 
 static ut64 ref_manager_count_xrefs(RefManager *rm) {
