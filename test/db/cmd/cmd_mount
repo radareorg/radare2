@@ -443,8 +443,58 @@ m
 EOF2
 EXPECT=<<EOF2
 tmp	0x3	/quoted mount	label=a  b
-m /quoted\ mount tmp 0x3 label=a\ \ b
+m '/quoted mount' tmp 0x3 'label=a  b'
 tmp	0x0	/opts	label=c  d
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount accepts backslash escapes and single-quoted arguments
+FILE=-
+CMDS=<<EOF2
+m /quoted\ mount tmp 0 label=a\ b
+m
+m- /quoted\ mount
+m '/quoted mount' tmp 0 'label=a b'
+m
+m- '/quoted mount'
+EOF2
+EXPECT=<<EOF2
+tmp	0x0	/quoted mount	label=a b
+tmp	0x0	/quoted mount	label=a b
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=m* replays paths and options with command syntax
+FILE=-
+CMDS=<<EOF2
+m "/r2r;mount\tsp\x27ace" tmp 0 "tag=a\x3bb\x60c\x24(d)\x7c\x26\x3e"
+m* > $mounts
+m- "/r2r;mount\tsp\x27ace"
+. $mounts
+?v $?
+m*
+EOF2
+EXPECT=<<EOF2
+0x0
+m '/r2r;mount\tsp\'ace' tmp 0x0 'tag=a;b`c$(d)|&>'
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=m* replays newlines in mountpoints
+FILE=-
+CMDS=<<EOF2
+m "/r2r\x0anewline" tmp
+m* > $mounts
+m- "/r2r\x0anewline"
+. $mounts
+m- "/r2r\x0anewline"
+?v $?
+EOF2
+EXPECT=<<EOF2
+0x0
 EOF2
 EXPECT_ERR=
 RUN

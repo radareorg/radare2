@@ -347,8 +347,13 @@ static bool mount_list(RCmdContext *ctx) {
 			}
 			pj_end (pj);
 		} else if (mode == '*') {
-			char *path = r_str_arg_escape (root->path);
-			char *options = root->options? r_str_arg_escape (root->options): NULL;
+			char *path = r_str_escape_quoted (root->path, '\'');
+			char *options = root->options? r_str_escape_quoted (root->options, '\''): NULL;
+			if (!path || (root->options && !options)) {
+				free (path);
+				free (options);
+				return false;
+			}
 			r_cons_printf (ctx->cons, "m %s %s 0x%" PFMT64x "%s%s\n",
 				path, root->p->meta.name, root->delta,
 				options? " ": "", options? options: "");

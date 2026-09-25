@@ -1432,24 +1432,44 @@ out:
 	return new_buf;
 }
 
-/* hex-escape unprintable characters in a raw buffer (null-safe) */
-R_API char *r_str_escape_raw(const ut8 *buf, int sz) {
-	R_RETURN_VAL_IF_FAIL (buf, NULL);
-	if (sz < 0) {
+static char *str_escape_raw(const ut8 *buf, size_t sz, char quote) {
+	size_t size;
+	if (r_mul_overflow_size_t (sz, 4, &size) || r_add_overflow_size_t (size, quote? 3: 1, &size)) {
 		return NULL;
 	}
-	/* Worst case scenario, we convert every byte to a \xhh escape */
-	char *new_buf = malloc (1 + (size_t) sz * 4);
+	char *new_buf = malloc (size);
 	if (!new_buf) {
 		return NULL;
 	}
 	char *q = new_buf;
-	int i;
+	if (quote) {
+		*q++ = quote;
+	}
+	size_t i;
 	for (i = 0; i < sz; i++) {
-		r_str_byte_escape ((char *)&buf[i], &q, false, false, true);
+		if (quote && buf[i] == (ut8)quote) {
+			*q++ = '\\';
+			*q++ = quote;
+		} else {
+			r_str_byte_escape ((const char *)buf + i, &q, false, false, true);
+		}
+	}
+	if (quote) {
+		*q++ = quote;
 	}
 	*q = '\0';
 	return new_buf;
+}
+
+/* hex-escape unprintable characters in a raw buffer (null-safe) */
+R_API char *r_str_escape_raw(const ut8 *buf, int sz) {
+	R_RETURN_VAL_IF_FAIL (buf, NULL);
+	return sz < 0? NULL: str_escape_raw (buf, sz, 0);
+}
+
+R_API char *r_str_escape_quoted(const char *str, char quote) {
+	R_RETURN_VAL_IF_FAIL (str && (quote == '\'' || quote == '"'), NULL);
+	return str_escape_raw ((const ut8 *)str, strlen (str), quote);
 }
 
 R_API char *r_str_escape(const char *buf) {
