@@ -309,6 +309,9 @@ typedef struct r_anal_function_meta_t {
 	ut64 _min;          // PRIVATE, min address, use r_anal_function_min_addr() to access
 	ut64 _max;          // PRIVATE, max address, use r_anal_function_max_addr() to access
 
+	// numrefs and numcallrefs are calculated lazily too, and are invalid iff -1
+	// or once an xref changed after refsgen. numcallrefs also reads the
+	// instructions of the blocks, numrefs the entry: changing those drops them.
 	int numrefs;        // number of cross references
 	int numcallrefs;    // number of calls
 	int stack_pop;      // PRIVATE, inferred callee-popped argument bytes

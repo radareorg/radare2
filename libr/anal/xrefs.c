@@ -658,6 +658,7 @@ static ut64 fcn_count_refs(RAnalFunction *fcn, RefManager *rm, CountFn count_ref
 }
 
 // Any xref added or removed since the counts were cached makes them stale.
+// The function's blocks and entry drop the counts where they change instead.
 static void fcn_sync_ref_counts(RAnalFunction *fcn, RefManager *rm) {
 	if (fcn->meta.refsgen != rm->gen) {
 		fcn->meta.numrefs = -1;

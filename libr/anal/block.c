@@ -296,10 +296,11 @@ R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 		return false;
 	}
 
-	// Update the block's function's cached ranges
+	// Update the block's function's cached ranges, and drop their call counts: the calls moved
 	RAnalFunction *fcn;
 	RListIter *iter;
 	r_list_foreach (block->fcns, iter, fcn) {
+		fcn->meta.numcallrefs = -1;
 		if (fcn->meta._min != UT64_MAX) {
 			if (addr + size > fcn->meta._max) {
 				// we extend after the maximum, so we are the maximum afterwards.
@@ -992,6 +993,7 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 		}
 		ht_up_foreach (succs, noreturn_remove_unreachable_cb, fcn);
 		fcn->ninstr = r_anal_function_instrcount (fcn);
+		fcn->meta.numcallrefs = -1;
 	}
 	r_list_free (fcns_cpy);
 

@@ -238,6 +238,7 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 	}
 	ht_up_delete (fcn->anal->ht_addr_fun, fcn->addr);
 	fcn->addr = addr;
+	fcn->meta.numrefs = -1;
 	ht_up_insert (fcn->anal->ht_addr_fun, addr, fcn);
 	r_anal_function_bump_dirty_epoch (fcn);
 	return true;
@@ -281,6 +282,7 @@ R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	}
 	r_list_append (bb->fcns, fcn);
 	r_list_append (fcn->bbs, r_ref (bb));
+	fcn->meta.numcallrefs = -1;
 
 	if (fcn->meta._min != UT64_MAX) {
 		if (bb->addr + bb->size > fcn->meta._max) {
@@ -307,6 +309,7 @@ R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	}
 
 	r_list_delete_data (fcn->bbs, bb);
+	fcn->meta.numcallrefs = -1;
 	r_unref (bb);
 }
 
