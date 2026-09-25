@@ -31,7 +31,7 @@ int handle_vFile_pread(libgdbr_t *g, ut8 *buf, size_t max_len);
 int handle_vFile_close(libgdbr_t *g);
 int handle_stop_reason(libgdbr_t *g);
 
-// Record the value a reply stated for register regnum, as hex in target byte order
+// Record the value a reply stated for the register the stub numbers regnum, as hex in target byte order
 bool gdbr_regs_store(libgdbr_t *g, ut64 regnum, const char *hex, size_t hexlen);
 
 #endif  // RESPONSES_H

@@ -133,29 +133,46 @@ static bool regs_span(libgdbr_t *g, const gdb_reg_t *reg, size_t *off, size_t *s
 	return true;
 }
 
-// Record the value the stub stated for register regnum, hex in target byte order.
+// Record the value the stub stated for the register at index, hex in target byte order.
 // A value wider than the register is refused: the stub and the profile disagree on the layout.
-bool gdbr_regs_store(libgdbr_t *g, ut64 regnum, const char *hex, size_t hexlen) {
-	size_t off, size;
-	if (!regs_prepare (g) || regnum >= g->regs.count || !regs_span (g, &g->registers[regnum], &off, &size)) {
+static bool regs_store_at(libgdbr_t *g, size_t index, const char *hex, size_t hexlen) {
+	size_t off, size, i;
+	if (!regs_span (g, &g->registers[index], &off, &size)) {
 		return false;
 	}
 	const size_t n = hexlen / 2;
 	if (!n || (hexlen & 1) || n > size) {
 		return false;
 	}
-	size_t i;
-	for (i = 0; i < n; i++) {
-		const int hi = hex2int (hex[2 * i]);
-		const int lo = hex2int (hex[2 * i + 1]);
-		if (hi < 0 || lo < 0) {
+	for (i = 0; i < hexlen; i++) {
+		if (hex2int (hex[i]) < 0) {
 			return false;
 		}
-		g->regs.buf[off + i] = (ut8)((hi << 4) | lo);
+	}
+	for (i = 0; i < n; i++) {
+		g->regs.buf[off + i] = (ut8)((hex2int (hex[2 * i]) << 4) | hex2int (hex[2 * i + 1]));
 	}
 	memset (g->regs.buf + off + n, 0, size - n);
 	memset (g->regs.known + off, 1, size);
 	return true;
+}
+
+// The index of the register the stub numbers regnum. The profile lists the registers in
+// the stub's order and may skip numbers, never repeat them, so the index is at most regnum
+static bool regs_index(libgdbr_t *g, ut64 regnum, size_t *index) {
+	size_t i = regnum < g->regs.count? (size_t)regnum + 1: g->regs.count;
+	while (i-- > 0) {
+		if (g->registers[i].regnum <= regnum) {
+			*index = i;
+			return g->registers[i].regnum == regnum;
+		}
+	}
+	return false;
+}
+
+bool gdbr_regs_store(libgdbr_t *g, ut64 regnum, const char *hex, size_t hexlen) {
+	size_t i;
+	return regs_prepare (g) && regs_index (g, regnum, &i) && regs_store_at (g, i, hex, hexlen);
 }
 
 static bool regs_known(libgdbr_t *g, const gdb_reg_t *reg) {
@@ -778,7 +795,7 @@ static int read_registers_p(libgdbr_t *g) {
 		if (regs_known (g, &g->registers[i])) {
 			continue;
 		}
-		r_strf_var (cmd, 32, "%s%x", CMD_READREG, (unsigned int)i);
+		r_strf_var (cmd, 32, "%s%x", CMD_READREG, (unsigned int)g->registers[i].regnum);
 		if (send_reg_msg (g, cmd) < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
 			return -1;
 		}
@@ -786,7 +803,7 @@ static int read_registers_p(libgdbr_t *g) {
 			g->caps.p = 0;
 			return 1;
 		}
-		if (reply_refused (g) || !gdbr_regs_store (g, i, g->data, g->data_len)) {
+		if (reply_refused (g) || !regs_store_at (g, i, g->data, g->data_len)) {
 			R_LOG_DEBUG ("%s: register %s: %s", __func__, g->registers[i].name, g->data);
 			return 1;
 		}
@@ -1120,7 +1137,7 @@ end:
 	return ret;
 }
 
-int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
+int gdbr_write_register(libgdbr_t *g, int regnum, char *value, int len) {
 	int ret = -1;
 	char command[255] = {0};
 	if (!g || !g->stub_features.P) {
@@ -1131,7 +1148,7 @@ int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
 	}
 
 	gdbr_regs_invalidate (g);
-	ret = snprintf (command, sizeof (command) - 1, "%s%x=", CMD_WRITEREG, index);
+	ret = snprintf (command, sizeof (command) - 1, "%s%x=", CMD_WRITEREG, regnum);
 	if (len + ret >= sizeof (command)) {
 		R_LOG_ERROR ("%s: command buffer is too small, expected: %d, actual: %d",
 		        __func__, len + ret, sizeof(command));
@@ -1184,7 +1201,7 @@ int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len) {
 		ret = -1;
 		goto end;
 	}
-	if (g->stub_features.P && (ret = gdbr_write_register (g, i, value, len)) == 0) {
+	if (g->stub_features.P && (ret = gdbr_write_register (g, g->registers[i].regnum, value, len)) == 0) {
 		goto end;
 	}
 

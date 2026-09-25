@@ -488,6 +488,48 @@ static bool test_gdb_target_xml_offsets(void) {
 	mu_end;
 }
 
+// target.xml may skip register numbers, as gdb's arm-core.xml does for cpsr
+static bool test_gdb_target_xml_regnums(void) {
+	RCons *cons = r_cons_new ();
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open session");
+	g.stub_features.qXfer_features_read = true;
+	g.stub_features.pkt_sz = 4096;
+	g.caps.g = 0;
+	const char *replies[] = {
+		"l<?xml version=\"1.0\"?><target version=\"1.0\"><architecture>arm</architecture><feature>"
+		"<reg name=\"r0\" bitsize=\"32\" regnum=\"0\" />"
+		"<reg name=\"cpsr\" bitsize=\"32\" regnum=\"25\" />"
+		"<reg name=\"d0\" bitsize=\"64\" />"
+		"</feature></target>",
+		"T05thread:1c03;18:55667788;19:11223344;",
+		"aabbccdd",
+		"0102030405060708",
+		"OK",
+		NULL
+	};
+	Stub stub;
+	RThread *th = stub_start (&stub, fds[1], -1, replies);
+	mu_assert_eq (gdbr_read_target_xml (&g), 0, "read target.xml");
+	// 0x18 is a number the stub skips, so its value belongs to no register
+	mu_assert_eq (gdbr_stop_reason (&g), 0, "a stop reply stating cpsr");
+	mu_assert_eq (gdbr_read_registers (&g), 0, "read registers");
+	mu_assert_memeq ((ut8 *)g.data, (ut8 *)"\xaa\xbb\xcc\xdd\x11\x22\x33\x44\x01\x02\x03\x04\x05\x06\x07\x08", 16, "r0, cpsr, d0");
+	// a value with unavailable bytes is refused, and leaves the register as it was
+	mu_assert_false (gdbr_regs_store (&g, 0x19, "5566xx88", 8), "unavailable bytes");
+	mu_assert_eq (gdbr_read_registers (&g), 0, "read cached registers");
+	mu_assert_memeq ((ut8 *)g.data + 4, (ut8 *)"\x11\x22\x33\x44", 4, "cpsr kept");
+	char value[] = { 0x11, 0x22, 0x33, 0x44 };
+	mu_assert_eq (gdbr_write_reg (&g, "cpsr", value, sizeof (value)), 0, "write cpsr");
+	char *sent = stub_finish (&stub, th, fds[0]);
+	// registers are named by the stub's numbers, not by their place in the profile
+	mu_assert_streq_free (sent, "qXfer:features:read:target.xml:0,ffe\n?\np0\np1a\nP19=11223344\n", "packets sent");
+	gdbr_cleanup (&g);
+	r_cons_free (cons);
+	mu_end;
+}
+
 // Connect over TCP to a stub that answers with transcript; return what the client sent
 static char *connect_transcript(libgdbr_t *g, const char **replies) {
 	struct sockaddr_in sa = { .sin_family = AF_INET, .sin_addr.s_addr = htonl (INADDR_LOOPBACK) };
@@ -556,6 +598,7 @@ int main(int argc, char **argv) {
 	mu_run_test (test_gdb_register_packets_name_thread);
 	mu_run_test (test_gdb_attach_stop_reply);
 	mu_run_test (test_gdb_target_xml_offsets);
+	mu_run_test (test_gdb_target_xml_regnums);
 	mu_run_test (test_gdb_connect_probes);
 #endif
 	return tests_passed != tests_run;

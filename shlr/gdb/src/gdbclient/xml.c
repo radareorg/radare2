@@ -195,6 +195,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	gdbr_xml_reg_t *tmpreg;
 	int packed_size = 0;
 	ut64 regnum = 0, regoff = 0;
+	ut32 stubnum = 0;
 	gdb_reg_t *arch_regs = NULL;
 	RStrBuf *profile_buf = r_strbuf_new ("");
 	RStrBuf *pc_alias = r_strbuf_new ("");
@@ -219,6 +220,8 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		goto exit_err;
 	}
 	r_list_foreach (regs, iter, tmpreg) {
+		// the list holds a register at each number the stub uses, and NULL at those it skips
+		const ut32 num = stubnum++;
 		if (!tmpreg) {
 			continue;
 		}
@@ -228,6 +231,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		r_str_ncpy (arch_regs[regnum].name, tmpreg->name, sizeof (arch_regs[regnum].name));
 		arch_regs[regnum].size = tmpreg->size;
 		arch_regs[regnum].offset = off;
+		arch_regs[regnum].regnum = num;
 		r_strbuf_set (flag_bits, "");
 		tmpflag = NULL;
 		if (tmpreg->flagnum < r_list_length (flags)) {

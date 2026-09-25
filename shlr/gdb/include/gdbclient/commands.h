@@ -96,7 +96,7 @@ int gdbr_read_registers(libgdbr_t *g);
  */
 int gdbr_write_bin_registers(libgdbr_t *g, const char *regs, int len);
 int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len);
-int gdbr_write_register(libgdbr_t *g, int index, char *value, int len);
+int gdbr_write_register(libgdbr_t *g, int regnum, char *value, int len);
 int gdbr_write_registers(libgdbr_t *g, char *registers);
 int gdbr_read_memory(libgdbr_t *g, ut64 address, ut8 *buf, int len);
 int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len);
