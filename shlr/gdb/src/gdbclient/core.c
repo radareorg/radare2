@@ -71,60 +71,150 @@ static int set_interface_attribs(int fd, int speed, int parity) {
 }
 #endif
 
-static struct {
-	ut8 *buf;
-	ut64 buflen, maxlen;
-	bool valid, init;
-	libgdbr_t *owner;
-} reg_cache;
-
-static bool reg_cache_ensure_size(size_t len) {
-	if ((ut64)len <= reg_cache.maxlen) {
-		reg_cache.init = reg_cache.buf != NULL;
-		return reg_cache.init;
+static bool regs_reserve(libgdbr_t *g, size_t len) {
+	if (len <= g->regs.cap) {
+		return true;
 	}
-	ut8 *buf = realloc (reg_cache.buf, len);
+	size_t cap;
+	if (!gdbr_grow_size (len, &cap)) {
+		return false;
+	}
+	ut8 *buf = realloc (g->regs.buf, cap);
 	if (!buf) {
 		return false;
 	}
-	reg_cache.buf = buf;
-	reg_cache.maxlen = (ut64)len;
-	reg_cache.init = true;
+	g->regs.buf = buf;
+	ut8 *known = realloc (g->regs.known, cap);
+	if (!known) {
+		return false;
+	}
+	g->regs.known = known;
+	g->regs.cap = cap;
 	return true;
 }
 
-static void reg_cache_fini(void) {
-	R_FREE (reg_cache.buf);
-	reg_cache.buflen = 0;
-	reg_cache.maxlen = 0;
-	reg_cache.valid = false;
-	reg_cache.init = false;
-	reg_cache.owner = NULL;
+// Lay the block out by the register profile, unless this stop already did.
+// A profile placing a register beyond GDBR_REGS_MAX is refused, so every register lies in the block.
+static bool regs_prepare(libgdbr_t *g) {
+	if (g->regs.len) {
+		return true;
+	}
+	if (!g->registers) {
+		return false;
+	}
+	size_t count, end, len = 0;
+	for (count = 0; *g->registers[count].name; count++) {
+		if (!gdbr_reg_byte_end (&g->registers[count], &end)) {
+			R_LOG_DEBUG ("%s: register %s lies beyond the register block", __func__, g->registers[count].name);
+			return false;
+		}
+		len = R_MAX (len, end);
+	}
+	if (!len || !regs_reserve (g, len)) {
+		return false;
+	}
+	memset (g->regs.buf, 0, len);
+	memset (g->regs.known, 0, len);
+	g->regs.len = len;
+	g->regs.count = count;
+	g->regs.valid = false;
+	return true;
 }
 
-static void reg_cache_update(libgdbr_t *g) {
-	reg_cache.valid = false;
-	if (!g || g->data_len < 0) {
-		return;
+// The bytes of the block a register occupies; false when they do not all lie in it
+static bool regs_span(libgdbr_t *g, const gdb_reg_t *reg, size_t *off, size_t *size) {
+	size_t end;
+	if (!gdbr_reg_byte_end (reg, &end) || end > g->regs.len) {
+		return false;
 	}
-	const size_t len = (size_t)g->data_len;
-	if (!reg_cache_ensure_size (len)) {
-		return;
-	}
-	memcpy (reg_cache.buf, g->data, len);
-	reg_cache.buflen = (ut64)len;
-	reg_cache.valid = true;
-	reg_cache.owner = g;
+	// offset / 8 + (size + 7) / 8 never exceeds (offset + size + 7) / 8
+	*off = gdbr_reg_byte_offset (reg);
+	*size = gdbr_reg_byte_size (reg);
+	return true;
 }
 
-static void reg_cache_init(libgdbr_t *g) {
-	reg_cache.buflen = 0;
-	reg_cache.valid = false;
-	reg_cache.init = false;
-	reg_cache.owner = NULL;
-	if (g && g->data_max > 0) {
-		reg_cache_ensure_size ((size_t)g->data_max);
+// Record the value the stub stated for the register at index, hex in target byte order.
+// A value wider than the register is refused: the stub and the profile disagree on the layout.
+static bool regs_store_at(libgdbr_t *g, size_t index, const char *hex, size_t hexlen) {
+	size_t off, size, i;
+	if (!regs_span (g, &g->registers[index], &off, &size)) {
+		return false;
 	}
+	const size_t n = hexlen / 2;
+	if (!n || (hexlen & 1) || n > size) {
+		return false;
+	}
+	for (i = 0; i < hexlen; i++) {
+		if (hex2int (hex[i]) < 0) {
+			return false;
+		}
+	}
+	for (i = 0; i < n; i++) {
+		g->regs.buf[off + i] = (ut8)((hex2int (hex[2 * i]) << 4) | hex2int (hex[2 * i + 1]));
+	}
+	memset (g->regs.buf + off + n, 0, size - n);
+	memset (g->regs.known + off, 1, size);
+	return true;
+}
+
+// The index of the register the stub numbers regnum. The profile lists the registers in
+// the stub's order and may skip numbers, never repeat them, so the index is at most regnum
+static bool regs_index(libgdbr_t *g, ut64 regnum, size_t *index) {
+	size_t i = regnum < g->regs.count? (size_t)regnum + 1: g->regs.count;
+	while (i-- > 0) {
+		if (g->registers[i].regnum <= regnum) {
+			*index = i;
+			return g->registers[i].regnum == regnum;
+		}
+	}
+	return false;
+}
+
+bool gdbr_regs_store(libgdbr_t *g, ut64 regnum, const char *hex, size_t hexlen) {
+	size_t i;
+	return regs_prepare (g) && regs_index (g, regnum, &i) && regs_store_at (g, i, hex, hexlen);
+}
+
+static bool regs_known(libgdbr_t *g, const gdb_reg_t *reg) {
+	size_t off, size, i;
+	if (!regs_span (g, reg, &off, &size)) {
+		return false;
+	}
+	for (i = 0; i < size; i++) {
+		if (!g->regs.known[off + i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool regs_load(libgdbr_t *g) {
+	if (!g->regs.valid || !gdbr_data_reserve (g, g->regs.len)) {
+		return false;
+	}
+	memcpy (g->data, g->regs.buf, g->regs.len);
+	g->data_len = g->regs.len;
+	g->data[g->data_len] = '\0';
+	return true;
+}
+
+// Send a register packet, naming its thread when the stub asked for that
+static int send_reg_msg(libgdbr_t *g, const char *cmd) {
+	const int tid = g->tid > 0? g->tid: g->stop_reason.thread.tid;
+	char thread[64];
+	if (!g->caps.thread_suffix || tid <= 0
+	    || write_thread_id (thread, sizeof (thread), g->pid, tid, g->stub_features.multiprocess) < 0) {
+		return send_msg (g, cmd);
+	}
+	char *msg = r_str_newf ("%s;thread:%s;", cmd, thread);
+	int ret = msg? send_msg (g, msg): -1;
+	free (msg);
+	return ret;
+}
+
+// An empty reply means the packet is unsupported; an odd-length one starting with E is an error
+static bool reply_refused(libgdbr_t *g) {
+	return !g->data_len || (g->data[0] == 'E' && (g->data_len & 1));
 }
 
 static void gdbr_break_process(void *arg) {
@@ -169,32 +259,6 @@ void gdbr_lock_leave(libgdbr_t *g) {
 	if (last_leave) {
 		g->isbreaked = false;
 	}
-}
-
-static int gdbr_connect_lldb(libgdbr_t *g) {
-	int ret = -1;
-	if (!gdbr_lock_enter (g)) {
-		goto end;
-	}
-	reg_cache_init (g);
-	if (g->stub_features.qXfer_features_read) {
-		gdbr_read_target_xml (g);
-	}
-	// Check if 'g' packet is supported
-	if (send_msg (g, "g") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
-		ret = -1;
-		goto end;
-	}
-	if (g->data_len == 0 || (g->data_len == 3 && g->data[0] == 'E')) {
-		ret = -1;
-		goto end;
-	}
-	g->stub_features.lldb.g = true;
-
-	ret = 0;
-end:
-	gdbr_lock_leave (g);
-	return ret;
 }
 
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
@@ -280,10 +344,11 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 			g->no_ack = true;
 		}
 	}
-	if (g->remote_type == GDB_REMOTE_TYPE_LLDB) {
-		if ((ret = gdbr_connect_lldb (g)) < 0) {
-			goto end;
-		}
+	// A stub advertising lldb's extensions takes the thread of a register packet in
+	// the packet once asked to, and from then on refuses a register packet without it
+	if (g->remote_type == GDB_REMOTE_TYPE_LLDB && send_msg (g, "QThreadSuffixSupported") >= 0
+	    && read_packet (g, false) >= 0 && send_ack (g) >= 0) {
+		g->caps.thread_suffix = !strcmp (g->data, "OK");
 	}
 	// Query the thread / process id
 	g->stub_features.qC = true;
@@ -313,10 +378,8 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (strcmp (g->data, "OK")) {
 		// return -1;
 	}
-	if (g->stub_features.qXfer_features_read) {
-		gdbr_read_target_xml (g);
-	}
-	reg_cache_init (g);
+	gdbr_read_target_xml (g);
+	gdbr_regs_invalidate (g);
 
 	ret = 0;
 end:
@@ -335,13 +398,13 @@ int gdbr_disconnect(libgdbr_t *g) {
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
-	reg_cache.valid = false;
+	gdbr_regs_invalidate (g);
 	gdbr_stop_reason_fini (&g->stop_reason);
 	g->stop_reason.is_valid = false;
-	reg_cache_fini ();
 	if (g->target.valid) {
-		free (g->target.regprofile);
-		free (g->registers);
+		R_FREE (g->target.regprofile);
+		R_FREE (g->registers);
+		g->target.valid = false;
 	}
 	g->connected = 0;
 end:
@@ -356,7 +419,9 @@ int gdbr_select(libgdbr_t *g, int pid, int tid) {
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
-	reg_cache.valid = false;
+	if (g->pid != pid || g->tid != tid) {
+		gdbr_regs_invalidate (g);
+	}
 	g->pid = pid;
 	g->tid = tid;
 	strcpy (cmd, "Hg");
@@ -459,7 +524,7 @@ int gdbr_check_extended_mode(libgdbr_t *g) {
 		goto end;
 	}
 	g->stop_reason.is_valid = false;
-	reg_cache.valid = false;
+	gdbr_regs_invalidate (g);
 	// Activate extended mode if possible.
 	ret = send_msg (g, "!");
 	if (ret < 0) {
@@ -498,16 +563,12 @@ int gdbr_attach(libgdbr_t *g, int pid) {
 		goto end;
 	}
 	g->stop_reason.is_valid = false;
-	reg_cache.valid = false;
+	gdbr_regs_invalidate (g);
 
+	// vAttach is specified for extended mode, but lldb's stubs answer it without '!':
+	// its own reply says whether attaching is supported
 	if (g->stub_features.extended_mode == -1) {
 		gdbr_check_extended_mode (g);
-	}
-
-	if (!g->stub_features.extended_mode) {
-		// vAttach needs extended mode to do anything.
-		ret = -2;
-		goto end;
 	}
 
 	buffer_size = strlen (CMD_ATTACH) + (sizeof (int) * 2) + 1;
@@ -531,8 +592,20 @@ int gdbr_attach(libgdbr_t *g, int pid) {
 		ret = -1;
 		goto end;
 	}
-
-	ret = handle_attach (g);
+	if (!g->data_len) {
+		send_ack (g);
+		ret = -2;
+		goto end;
+	}
+	ret = (g->data[0] == 'T')? handle_stop_reason (g): handle_attach (g);
+	if (!ret) {
+		g->pid = pid;
+		if (g->stop_reason.thread.present) {
+			g->tid = g->stop_reason.thread.tid;
+		}
+		// The attached process decides the register layout
+		gdbr_read_target_xml (g);
+	}
 end:
 	free (cmd);
 	gdbr_lock_leave (g);
@@ -550,7 +623,7 @@ int gdbr_detach(libgdbr_t *g) {
 		goto end;
 	}
 
-	reg_cache.valid = false;
+	gdbr_regs_invalidate (g);
 	g->stop_reason.is_valid = false;
 	ret = send_msg (g, "D");
 	if (ret < 0) {
@@ -577,7 +650,7 @@ int gdbr_detach_pid(libgdbr_t *g, int pid) {
 		goto end;
 	}
 
-	reg_cache.valid = false;
+	gdbr_regs_invalidate (g);
 	g->stop_reason.is_valid = false;
 
 	buffer_size = strlen (CMD_DETACH_MP) + (sizeof (pid) * 2) + 1;
@@ -625,7 +698,7 @@ int gdbr_kill(libgdbr_t *g) {
 		goto end;
 	}
 
-	reg_cache.valid = false;
+	gdbr_regs_invalidate (g);
 	g->stop_reason.is_valid = false;
 
 	if (g->stub_features.multiprocess) {
@@ -660,7 +733,7 @@ int gdbr_kill_pid(libgdbr_t *g, int pid) {
 		goto end;
 	}
 
-	reg_cache.valid = false;
+	gdbr_regs_invalidate (g);
 	g->stop_reason.is_valid = false;
 
 	buffer_size = strlen (CMD_KILL_MP) + (sizeof (pid) * 2) + 1;
@@ -693,44 +766,62 @@ end:
 	return ret;
 }
 
-static int gdbr_read_registers_lldb(libgdbr_t *g) {
-	// Send the stop reply query packet and get register info
-	// (this is what lldb does)
-	int ret = -1;
-
-	if (!g || !g->sock) {
+// 1 when the stub refused 'g', 0 once its block is cached
+static int read_registers_g(libgdbr_t *g) {
+	if (send_reg_msg (g, CMD_READREGS) < 0 || read_packet (g, false) < 0) {
 		return -1;
 	}
-
-	if (!gdbr_lock_enter (g)) {
-		goto end;
+	if (reply_refused (g)) {
+		send_ack (g);
+		return 1;
 	}
-
-	if (send_msg (g, "?") < 0 || read_packet (g, false) < 0) {
-		ret = -1;
-		goto end;
+	if (handle_g (g) < 0 || !regs_reserve (g, g->data_len)) {
+		return -1;
 	}
-	if ((ret = handle_lldb_read_reg (g)) < 0) {
-		goto end;
-	}
-	reg_cache_update (g);
+	memcpy (g->regs.buf, g->data, g->data_len);
+	g->regs.len = g->data_len;
+	g->regs.valid = true;
+	return 0;
+}
 
-	ret = 0;
-end:
-	gdbr_lock_leave (g);
-	return ret;
+// One 'p' per register the stub has not stated since the thread last ran.
+// 1 when the stub refused a register, 0 once every register is cached
+static int read_registers_p(libgdbr_t *g) {
+	if (!regs_prepare (g)) {
+		return -1;
+	}
+	size_t i;
+	for (i = 0; i < g->regs.count; i++) {
+		if (regs_known (g, &g->registers[i])) {
+			continue;
+		}
+		r_strf_var (cmd, 32, "%s%x", CMD_READREG, (unsigned int)g->registers[i].regnum);
+		if (send_reg_msg (g, cmd) < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
+			return -1;
+		}
+		if (!g->data_len) {
+			g->caps.p = 0;
+			return 1;
+		}
+		if (reply_refused (g) || !regs_store_at (g, i, g->data, g->data_len)) {
+			R_LOG_DEBUG ("%s: register %s: %s", __func__, g->registers[i].name, g->data);
+			return 1;
+		}
+	}
+	g->caps.p = 1;
+	g->regs.valid = true;
+	return 0;
 }
 
 int gdbr_read_registers(libgdbr_t *g) {
-	int ret = -1;
-
 	if (!g || !g->data) {
 		return -1;
 	}
-	if (reg_cache.init && reg_cache.valid && reg_cache.owner == g && reg_cache.buflen <= g->data_max) {
-		g->data_len = reg_cache.buflen;
-		memcpy (g->data, reg_cache.buf, reg_cache.buflen);
+	if (regs_load (g)) {
 		return 0;
+	}
+	if (g->regs.refused) {
+		return -1;
 	}
 	// Don't wait on the lock in read_registers since it's frequently called, including
 	// each time "enter" is pressed. Otherwise the user will be forced to interrupt exit
@@ -738,22 +829,25 @@ int gdbr_read_registers(libgdbr_t *g) {
 	if (!gdbr_lock_tryenter (g)) {
 		return -1;
 	}
-
-	if (g->remote_type == GDB_REMOTE_TYPE_LLDB && !g->stub_features.lldb.g) {
-		ret = gdbr_read_registers_lldb (g);
-		goto end;
+	int ret = g->caps.g? read_registers_g (g): 1;
+	if (!ret) {
+		g->caps.g = 1;
+	} else if (ret > 0 && g->caps.g != 1 && g->caps.p) {
+		// one register at a time, unless 'g' worked before: then its refusal is not a missing packet
+		ret = read_registers_p (g);
+		if (!ret) {
+			// the stub refused 'g' and answered 'p'
+			g->caps.g = 0;
+		}
 	}
-	if ((ret = send_msg (g, CMD_READREGS)) < 0) {
-		goto end;
-	}
-	if (read_packet (g, false) < 0 || handle_g (g) < 0) {
+	if (ret > 0) {
+		R_LOG_WARN ("The stub refused to read the registers");
+		g->regs.refused = true;
 		ret = -1;
-		goto end;
 	}
-	reg_cache_update (g);
-
-	ret = 0;
-end:
+	if (!ret && !regs_load (g)) {
+		ret = -1;
+	}
 	gdbr_lock_leave (g);
 	return ret;
 }
@@ -1016,7 +1110,7 @@ int gdbr_write_bin_registers(libgdbr_t *g, const char *regs, int len) {
 	}
 
 	buffer_size = len * 2 + 8;
-	reg_cache.valid = false;
+	gdbr_regs_invalidate (g);
 
 	command = calloc (buffer_size, sizeof (char));
 	if (!command) {
@@ -1025,7 +1119,7 @@ int gdbr_write_bin_registers(libgdbr_t *g, const char *regs, int len) {
 	}
 	snprintf (command, buffer_size, "%s", CMD_WRITEREGS);
 	pack_hex (regs, len, command + 1);
-	if (send_msg (g, command) < 0) {
+	if (send_reg_msg (g, command) < 0) {
 		ret = -1;
 		goto end;
 	}
@@ -1043,7 +1137,7 @@ end:
 	return ret;
 }
 
-int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
+int gdbr_write_register(libgdbr_t *g, int regnum, char *value, int len) {
 	int ret = -1;
 	char command[255] = {0};
 	if (!g || !g->stub_features.P) {
@@ -1053,8 +1147,8 @@ int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
 		goto end;
 	}
 
-	reg_cache.valid = false;
-	ret = snprintf (command, sizeof (command) - 1, "%s%x=", CMD_WRITEREG, index);
+	gdbr_regs_invalidate (g);
+	ret = snprintf (command, sizeof (command) - 1, "%s%x=", CMD_WRITEREG, regnum);
 	if (len + ret >= sizeof (command)) {
 		R_LOG_ERROR ("%s: command buffer is too small, expected: %d, actual: %d",
 		        __func__, len + ret, sizeof(command));
@@ -1064,7 +1158,7 @@ int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
 	// Pad with zeroes
 	memset (command + ret, atoi ("0"), len);
 	pack_hex (value, len, (command + ret));
-	if (send_msg (g, command) < 0) {
+	if (send_reg_msg (g, command) < 0) {
 		ret = -1;
 		goto end;
 	}
@@ -1095,7 +1189,7 @@ int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len) {
 		goto end;
 	}
 
-	reg_cache.valid = false;
+	gdbr_regs_invalidate (g);
 	while (g->registers[i].size > 0) {
 		if (!strcmp (g->registers[i].name, name)) {
 			break;
@@ -1107,22 +1201,23 @@ int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len) {
 		ret = -1;
 		goto end;
 	}
-	if (g->stub_features.P && (ret = gdbr_write_register (g, i, value, len)) == 0) {
+	if (g->stub_features.P && (ret = gdbr_write_register (g, g->registers[i].regnum, value, len)) == 0) {
 		goto end;
 	}
 
-	// Use 'G' if write_register failed/isn't supported
-	gdbr_read_registers (g);
-	const size_t roff = g->registers[i].offset / 8;
-	if (len < 0 || roff >= (size_t)g->data_max || (size_t)len > (size_t)g->data_max - roff) {
-		R_LOG_ERROR ("%s: register write overflows data buffer", __func__);
+	// Use 'G' if write_register failed/isn't supported: rewrite the block with this register changed
+	if (gdbr_read_registers (g) < 0) {
+		ret = -1;
+		goto end;
+	}
+	const ut64 roff = g->registers[i].offset / 8;
+	if (len < 0 || roff >= (ut64)g->data_len || (ut64)len > (ut64)g->data_len - roff) {
+		R_LOG_ERROR ("%s: register %s lies outside the register block", __func__, name);
 		ret = -1;
 		goto end;
 	}
 	memcpy (g->data + roff, value, len);
-	gdbr_write_bin_registers (g, g->data, g->data_len);
-
-	ret = 0;
+	ret = gdbr_write_bin_registers (g, g->data, g->data_len) < 0? -1: 0;
 end:
 	gdbr_lock_leave (g);
 	return ret;
@@ -1149,7 +1244,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 	if (gdbr_read_registers (g) < 0) {
 		goto end;
 	}
-	reg_cache.valid = false;
+	gdbr_regs_invalidate (g);
 	len = strlen (registers);
 	buff = calloc (len + 1, sizeof (char));
 	if (!buff) {
@@ -1218,7 +1313,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 	}
 	snprintf (command, buffer_size, "%s", CMD_WRITEREGS);
 	pack_hex (g->data, g->data_len, command + 1);
-	ret = send_msg (g, command);
+	ret = send_reg_msg (g, command);
 	if (ret < 0) {
 		goto end;
 	}
@@ -1297,7 +1392,7 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
-	reg_cache.valid = false;
+	gdbr_regs_invalidate (g);
 	g->stop_reason.is_valid = false;
 	ret = send_msg (g, tmp);
 	if (ret < 0) {
@@ -1587,8 +1682,9 @@ end:
 	return ret;
 }
 
-void gdbr_invalidate_reg_cache() {
-	reg_cache.valid = false;
+void gdbr_invalidate_reg_cache(libgdbr_t *g) {
+	R_RETURN_IF_FAIL (g);
+	gdbr_regs_invalidate (g);
 }
 
 int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf) {
@@ -1609,7 +1705,7 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf) {
 		goto end;
 	}
 	g->stop_reason.is_valid = false;
-	reg_cache.valid = false;
+	gdbr_regs_invalidate (g);
 	pack_hex (cmd, strlen (cmd), buf + 6);
 	if ((ret = send_msg (g, buf)) < 0) {
 		goto end;

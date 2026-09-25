@@ -2,6 +2,7 @@
 
 #include "libgdbr.h"
 #include "arch.h"
+#include "gdbr_common.h"
 #include <r_util.h>
 
 int gdbr_init(libgdbr_t *g, bool is_server) {
@@ -13,6 +14,8 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 	g->stub_features.extended_mode = -1;
 	g->stub_features.pkt_sz = 64;
 	g->stub_features.P = true;
+	g->caps.g = GDBR_CAP_UNKNOWN;
+	g->caps.p = GDBR_CAP_UNKNOWN;
 	g->remote_file_fd = -1;
 	g->is_server = is_server;
 	g->send_max = 2500;
@@ -126,6 +129,10 @@ int gdbr_set_reg_profile(libgdbr_t *g, const char *str) {
 	if (!g || !str) {
 		return -1;
 	}
+	if (g->registers && g->target.regprofile && !strcmp (g->target.regprofile, str)) {
+		// the same layout: the registers read since the thread last ran still hold
+		return 0;
+	}
 	gdb_reg_t *registers = arch_parse_reg_profile (str);
 	if (!registers) {
 		R_LOG_ERROR ("%s: cannot parse reg profile", __func__);
@@ -135,11 +142,9 @@ int gdbr_set_reg_profile(libgdbr_t *g, const char *str) {
 		free (g->target.regprofile);
 	}
 	g->target.regprofile = strdup (str);
-	if (g->registers) {
-		free (g->registers);
-	}
-	g->registers = arch_parse_reg_profile (str);
-
+	free (g->registers);
+	g->registers = registers;
+	gdbr_regs_invalidate (g);
 	return 0;
 }
 
@@ -164,6 +169,13 @@ int gdbr_cleanup(libgdbr_t *g) {
 		return -1;
 	}
 	gdbr_stop_reason_reset (&g->stop_reason);
+	R_FREE (g->regs.buf);
+	R_FREE (g->regs.known);
+	g->regs.cap = 0;
+	gdbr_regs_invalidate (g);
+	R_FREE (g->registers);
+	R_FREE (g->target.regprofile);
+	g->target.valid = false;
 	R_FREE (g->data);
 	g->send_len = 0;
 	R_FREE (g->send_buff);

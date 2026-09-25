@@ -534,12 +534,42 @@ EXPECT=<<EOF
 ---
 0x401000 entry0
 0x401007 entry0 + 7
-
 0x401012 entry0 + 18
-
 0x401000 entry0
 ---
 0x401012
+EOF
+RUN
+
+NAME=seek history string formats
+FILE=-
+CMDS=<<EOF
+f start @ 0
+f mark @ 0x10
+s 0x10
+s 0x20
+s-
+sj
+s==
+s=
+s*
+s=*
+s-*
+sj
+s==
+EOF
+EXPECT=<<EOF
+[{"offset":0,"name":"start"},{"offset":16,"name":"mark","current":true},{"offset":32,"name":"mark+16"}]
+start > mark > mark + 16
+0x0
+f undo_0 = 0x0
+# Current undo/redo position.
+f redo_0 = 0x20
+0x00000000 ; 1s- # start
+0x00000010 ; # CUR mark
+0x00000020 ; 1s+ # mark + 16
+[{"offset":16,"name":"mark","current":true}]
+mark
 EOF
 RUN
 

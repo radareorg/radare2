@@ -116,6 +116,8 @@ gdb_reg_t *arch_parse_reg_profile(const char *reg_profile) {
 	i = 0;
 	r_list_foreach (gdb_regs_list, iter, reg) {
 		memcpy (gdb_regs + i, reg, sizeof (gdb_reg_t));
+		// a profile states no register numbers: the stub is assumed to number them in profile order
+		gdb_regs[i].regnum = i;
 		i++;
 	}
 	r_list_free (gdb_regs_list);
