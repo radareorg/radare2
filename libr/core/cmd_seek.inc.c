@@ -853,63 +853,9 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case 'j':  // "sj"
 		{
-			RList /*<ut64 *>*/ *addrs = r_list_newf (free);
-			RList /*<char *>*/ *names = r_list_newf (free);
-			RList *list = r_io_sundo_list (core->io);
-			ut64 lsz = 0;
-			ut64 i;
-			RListIter *iter;
-			RIOUndos *undo;
-			if (list) {
-				r_list_foreach (list, iter, undo) {
-					char *name = NULL;
-
-					RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
-					if (f) {
-						if (f->addr != undo->off) {
-							name = r_str_newf ("%s+%d", f->name,
-									(int)(undo->off - f->addr));
-						} else {
-							name = strdup (f->name);
-						}
-					}
-					if (!name) {
-						name = strdup ("");
-					}
-					ut64 *val = malloc (sizeof (ut64));
-					if (!val) {
-						free (name);
-						break;
-					}
-					*val = undo->off;
-					r_list_append (addrs, val);
-					r_list_append (names, strdup (name));
-					lsz++;
-					free (name);
-				}
-				r_list_free (list);
-			}
-			PJ *pj = r_core_pj_new (core);
-			pj_a (pj);
-			for (i = 0; i < lsz; i++) {
-				ut64 *addr = r_list_get_n (addrs, i);
-				const char *name = r_list_get_n (names, i);
-				pj_o (pj);
-				pj_kn (pj, "offset", *addr);
-				if (name && *name) {
-					pj_ks (pj, "name", name);
-				}
-				if (core->io->undo.undos == i) {
-					pj_kb (pj, "current", true);
-				}
-				pj_end (pj);
-			}
-			pj_end (pj);
-			char *s = pj_drain (pj);
-			r_cons_printf (core->cons, "%s\n", s);
-			free (s);
-			r_list_free (addrs);
-			r_list_free (names);
+			char *res = r_io_sundo_tostring (core->io, 'j');
+			r_cons_printf (core->cons, "%s\n", res? res: "[]");
+			free (res);
 		}
 		break;
 	case '*': // "s*"
