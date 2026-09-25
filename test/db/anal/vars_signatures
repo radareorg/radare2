@@ -382,3 +382,30 @@ arg int64_t arg1 @ rcx
 arg int64_t arg1 @ rdi
 EOF
 RUN
+
+NAME=register arguments follow a convention written straight to the cc db
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 89f8c3
+af
+afva
+afv
+?e --
+k anal/cc/cc.amd64.arg0=r10
+afv-*
+afva
+afv
+?e --
+k anal/cc/cc.amd64.arg0=rdi
+afv-*
+afva
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+--
+--
+arg int64_t arg1 @ rdi
+EOF
+RUN
