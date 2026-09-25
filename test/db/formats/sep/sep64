@@ -87,14 +87,26 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=sep64 explicit mount fails on non-sep input
+NAME=sep64 rejects a malformed init slice in either argument order
 FILE=bins/fuzzed/sep.bin
-CMDS=m sep64 /sep 0
+CMDS=<<EOF
+m sep64 /sep 0 || echo rejected
+?v $?
+m /sep sep64 0 || echo rejected
+?v $?
+m
+EOF
 EXPECT=<<EOF
+rejected
+0x1
+rejected
+0x1
 EOF
 EXPECT_ERR=<<EOF
 WARN: fs_sep64: init mach-o parse failed at 0x0
-ERROR: Cannot mount sep64
+ERROR: Cannot mount sep64 at /sep (offset 0x0)
+WARN: fs_sep64: init mach-o parse failed at 0x0
+ERROR: Cannot mount sep64 at /sep (offset 0x0)
 EOF
 RUN
 

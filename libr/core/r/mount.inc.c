@@ -37,7 +37,6 @@ static RCoreHelpMessage help_msg_m = {
 	"my", "", "yank contents of file into clipboard",
 	"mal", "", "list available r2 docs",
 	"man", " [page]", "man=manpage reading (see mal)",
-	//"TODO: support multiple mountpoints and RFile IO's (need io+core refactorn",
 	NULL
 };
 
@@ -95,16 +94,17 @@ static char *mount_escape_name(const char *name) {
 	return escaped? escaped: strdup (name);
 }
 
-static int mount_ls(RCmdContext *ctx, const char **argv) {
+static int mount_ls(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	const bool isJSON = r_cmd_ctx_mode (ctx, "j") == 'j';
+	const bool isJSON = r_cmdctx_mode (ctx, "j") == 'j';
 	const bool minus_ele = r_strs_at (ctx->subcmd, 1) == 'd';
 	const bool deleted_only = r_strs_findc (ctx->subcmd, 'x') != NULL;
-	const bool minus_quiet = r_cmd_ctx_mode (ctx, "q") == 'q';
+	const bool minus_quiet = r_cmdctx_mode (ctx, "q") == 'q';
 	RListIter *iter;
 	RFSFile *file;
 	RFSRoot *root;
-	const char *input = argv[0]? argv[0]: "";
+	const char *input = r_cmdctx_arg (ctx, 0).a;
+	input = input? input: "";
 	char *decoded = NULL;
 	if (r_str_startswith (input, "base64:")) {
 		decoded = (char *)sdb_decode (input + 7, NULL);
@@ -125,75 +125,52 @@ static int mount_ls(RCmdContext *ctx, const char **argv) {
 		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
-	if (list) {
-		r_list_foreach (list, iter, file) {
-			bool is_deleted = false;
-			if (deleted_only) {
-				is_deleted = file->name && (ut8)file->name[0] == 0xe5;
-				if (!is_deleted) {
-					continue;
-				}
-			}
-			if (isJSON) {
-				pj_o (pj);
-				pj_ks (pj, "type", is_deleted? "deleted": mount_file_type (file->type));
-				pj_kn (pj, "size", file->size);
-				pj_ks (pj, "name", file->name);
-				pj_end (pj);
-			} else {
-				char ftype = is_deleted? R_FS_FILE_TYPE_DELETED: file->type;
-				char *dname = NULL;
-				const char *name = file->name;
-				if (is_deleted && file->name) {
-					dname = mount_escape_name (file->name);
-					if (dname) {
-						name = dname;
-					}
-				}
-				if (minus_quiet) {
-					if (ftype == 'd') {
-						r_cons_printf (ctx->cons, "%s/\n", name);
-					} else {
-						r_cons_printf (ctx->cons, "%s\n", name);
-					}
-				} else if (minus_ele) {
-					r_cons_printf (ctx->cons, "%c %10u %s\n", ftype, file->size, name);
-				} else {
-					r_cons_printf (ctx->cons, "%c %s\n", ftype, name);
-				}
-				free (dname);
-			}
+	bool ok = list || strlen (input) <= 1;
+	r_list_foreach (list, iter, file) {
+		bool is_deleted = deleted_only && file->name && (ut8)file->name[0] == 0xe5;
+		if (deleted_only && !is_deleted) {
+			continue;
 		}
-		r_list_free (list);
-	} else {
-		if (strlen (input) > 1) {
-			R_LOG_ERROR ("Invalid path");
+		if (isJSON) {
+			pj_o (pj);
+			pj_ks (pj, "type", is_deleted? "deleted": mount_file_type (file->type));
+			pj_kn (pj, "size", file->size);
+			pj_ks (pj, "name", file->name);
+			pj_end (pj);
+		} else {
+			char ftype = is_deleted? R_FS_FILE_TYPE_DELETED: file->type;
+			char *escaped = is_deleted? mount_escape_name (file->name): NULL;
+			const char *name = escaped? escaped: file->name;
+			if (minus_quiet) {
+				r_cons_printf (ctx->cons, "%s%s\n", name, ftype == 'd'? "/": "");
+			} else if (minus_ele) {
+				r_cons_printf (ctx->cons, "%c %10u %s\n", ftype, file->size, name);
+			} else {
+				r_cons_printf (ctx->cons, "%c %s\n", ftype, name);
+			}
+			free (escaped);
 		}
 	}
+	r_list_free (list);
 	const char *path = *input? input: "/";
 	r_list_foreach (core->fs->roots, iter, root) {
-		// TODO: adjust contents between //
-		if (!strncmp (path, root->path, strlen (path))) {
-			char *base = strdup (root->path);
-			char *ls = (char *)r_str_lchr (base, '/');
-			if (ls) {
-				ls++;
-				*ls = 0;
-			}
-			// TODO: adjust contents between //
-			if (!strcmp (path, base)) {
-				if (isJSON) {
-					pj_o (pj);
-					pj_ks (pj, "path", root->path);
-					pj_kn (pj, "delta", root->delta);
-					pj_ks (pj, "type", root->p->meta.name);
-					pj_end (pj);
-				} else {
-					r_cons_printf (ctx->cons, "m %s\n", root->path); // (root->path && root->path[0])? root->path + 1: "");
-				}
-			}
-			free (base);
+		const char *slash = r_str_lchr (root->path, '/');
+		if (!slash || !r_strs_equals_str (r_strs_new (root->path, slash + 1), path)) {
+			continue;
 		}
+		ok = true;
+		if (isJSON) {
+			pj_o (pj);
+			pj_ks (pj, "path", root->path);
+			pj_kn (pj, "delta", root->delta);
+			pj_ks (pj, "type", root->p->meta.name);
+			pj_end (pj);
+		} else {
+			r_cons_printf (ctx->cons, "m %s\n", root->path);
+		}
+	}
+	if (!ok) {
+		R_LOG_ERROR ("Invalid path");
 	}
 	if (isJSON) {
 		pj_end (pj);
@@ -201,7 +178,7 @@ static int mount_ls(RCmdContext *ctx, const char **argv) {
 		pj_free (pj);
 	}
 	free (decoded);
-	return 0;
+	return ok? 0: 1;
 }
 
 // R2R test/db/cmd/cmd_mount
@@ -224,9 +201,9 @@ static R_OWNED RFSFile *mount_read_file(RCore *core, const char *filename) {
 	return NULL;
 }
 
-static int mount_cat(RCmdContext *ctx, const char **argv) {
+static int mount_cat(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	RFSFile *file = mount_read_file (core, argv[0]);
+	RFSFile *file = mount_read_file (core, r_cmdctx_arg (ctx, 0).a);
 	if (!file) {
 		return 1;
 	}
@@ -239,22 +216,22 @@ static int mount_cat(RCmdContext *ctx, const char **argv) {
 	return 0;
 }
 
-static int mount_get(RCmdContext *ctx, const char **argv) {
+static int mount_get(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	const size_t argc = RVecRStrs_length (&ctx->args);
+	const size_t argc = r_cmdctx_argc (ctx);
 	ut64 range[2] = { 0, 0 };
 	char *decoded = NULL;
 	bool ok = false;
 	size_t i;
 	for (i = 1; i < argc; i++) {
 		const char *err = NULL;
-		range[i - 1] = r_num_math_err (core->num, argv[i], &err);
+		range[i - 1] = r_num_math_err (core->num, r_cmdctx_arg (ctx, i).a, &err);
 		if (err || core->num->dbz || (st64)range[i - 1] < 0) {
 			R_LOG_ERROR ("Invalid offset or size");
 			goto beach;
 		}
 	}
-	const char *filename = argv[0];
+	const char *filename = r_cmdctx_arg (ctx, 0).a;
 	if (r_str_startswith (filename, "base64:")) {
 		decoded = (char *)sdb_decode (filename + 7, NULL);
 		if (R_STR_ISEMPTY (decoded)) {
@@ -304,22 +281,27 @@ static bool mount_arg_is_offset(const char *arg) {
 	return isdigit ((ut8)*arg) || *arg == '$';
 }
 
-static int mount_add(RCmdContext *ctx, const char **argv) {
+static int mount_add(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	const char *path = argv[0];
-	const char *type = argv[1];
+	const char *path = r_cmdctx_arg (ctx, 0).a;
+	const char *type = r_cmdctx_arg (ctx, 1).a;
 	ut64 off = 0;
-	const char *options = argv[2];
+	const char *options = r_cmdctx_arg (ctx, 2).a;
 	if (options && mount_arg_is_offset (options)) {
-		off = r_num_math (core->num, options);
-		options = argv[3];
-	} else if (argv[3]) {
+		const char *err = NULL;
+		off = r_num_math_err (core->num, options, &err);
+		if (err || core->num->dbz || (st64)off < 0) {
+			R_LOG_ERROR ("Invalid mount offset");
+			return 1;
+		}
+		options = r_cmdctx_arg (ctx, 3).a;
+	} else if (r_cmdctx_arg (ctx, 3).a) {
 		R_LOG_ERROR ("Usage: m [mountpoint] [fstype] [offset] [options]");
 		return 1;
 	}
 	if (type && *path != '/') {
-		path = argv[1];
-		type = argv[0];
+		path = r_cmdctx_arg (ctx, 1).a;
+		type = r_cmdctx_arg (ctx, 0).a;
 	}
 	if (*path != '/') {
 		R_LOG_ERROR ("Invalid mountpoint");
@@ -336,20 +318,20 @@ static int mount_add(RCmdContext *ctx, const char **argv) {
 	}
 	bool ok = r_fs_mount_with_options (core->fs, type, path, off, options);
 	if (!ok) {
-		R_LOG_ERROR ("Cannot mount %s", path);
+		R_LOG_ERROR ("Cannot mount %s at %s (offset 0x%"PFMT64x")", type, path, off);
 	}
 	free (detected);
 	return ok? 0: 1;
 }
 
-static int mount_list(RCmdContext *ctx, const char **argv) {
-	if (argv[0]) {
-		return mount_add (ctx, argv);
+static int mount_list(RCmdContext *ctx) {
+	if (r_cmdctx_arg (ctx, 0).a) {
+		return mount_add (ctx);
 	}
 	RCore *core = ctx->user;
 	RListIter *iter;
 	RFSRoot *root;
-	const char mode = r_cmd_ctx_mode (ctx, "j*");
+	const char mode = r_cmdctx_mode (ctx, "j*");
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
@@ -398,9 +380,9 @@ static int mount_list(RCmdContext *ctx, const char **argv) {
 	return 0;
 }
 
-static int mount_plugins(RCmdContext *ctx, const char **argv) {
+static int mount_plugins(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	const char mode = r_cmd_ctx_mode (ctx, "jL");
+	const char mode = r_cmdctx_mode (ctx, "jL");
 	const bool names = r_strs_equals_str (ctx->subcmd, "LL") || *ctx->subcmd.a == ':';
 	PJ *pj = mode == 'j'? r_core_pj_new (core): NULL;
 	if (pj) {
@@ -427,29 +409,30 @@ static int mount_plugins(RCmdContext *ctx, const char **argv) {
 	return 0;
 }
 
-static int mount_umount(RCmdContext *ctx, const char **argv) {
+static int mount_umount(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	if (!r_fs_umount (core->fs, argv[0])) {
+	const char *path = r_strs_startswith (ctx->subcmd, "-/")? ctx->subcmd.a + 1: r_cmdctx_arg (ctx, 0).a;
+	if (!r_fs_umount (core->fs, path)) {
 		R_LOG_ERROR ("Nothing to unmount");
 		return 1;
 	}
 	return 0;
 }
 
-static int mount_details(RCmdContext *ctx, const char **argv) {
+static int mount_details(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	RFSRoot *root = NULL;
-	if (argv[0]) {
+	if (r_cmdctx_arg (ctx, 0).a) {
 		RFSRoot *candidate;
 		RListIter *iter;
 		r_list_foreach (core->fs->roots, iter, candidate) {
-			if (!strcmp (candidate->path, argv[0])) {
+			if (!strcmp (candidate->path, r_cmdctx_arg (ctx, 0).a)) {
 				root = candidate;
 				break;
 			}
 		}
 		if (!root) {
-			R_LOG_ERROR ("Mountpoint '%s' not found", argv[0]);
+			R_LOG_ERROR ("Mountpoint '%s' not found", r_cmdctx_arg (ctx, 0).a);
 			return 1;
 		}
 	} else {
@@ -470,10 +453,10 @@ static int mount_details(RCmdContext *ctx, const char **argv) {
 	return 0;
 }
 
-static int mount_mkdir(RCmdContext *ctx, const char **argv) {
+static int mount_mkdir(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	char *path = *argv[0] == '/'? strdup (argv[0])
-		: r_str_newf ("%s/%s", r_config_get (core->config, "fs.cwd"), argv[0]);
+	char *path = *r_cmdctx_arg (ctx, 0).a == '/'? strdup (r_cmdctx_arg (ctx, 0).a)
+		: r_str_newf ("%s/%s", r_config_get (core->config, "fs.cwd"), r_cmdctx_arg (ctx, 0).a);
 	if (!path) {
 		return 1;
 	}
@@ -486,9 +469,9 @@ static int mount_mkdir(RCmdContext *ctx, const char **argv) {
 	return ok? 0: 1;
 }
 
-static int mount_partitions(RCmdContext *ctx, const char **argv) {
+static int mount_partitions(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	if (!argv[0]) {
+	if (!r_cmdctx_arg (ctx, 0).a) {
 		int i;
 		for (i = 0;; i++) {
 			const char *name = r_fs_partition_type_get (i);
@@ -499,8 +482,8 @@ static int mount_partitions(RCmdContext *ctx, const char **argv) {
 		}
 		return 0;
 	}
-	ut64 off = argv[1]? r_num_math (core->num, argv[1]): 0;
-	RList *list = r_fs_partitions (core->fs, argv[0], off);
+	ut64 off = r_cmdctx_arg (ctx, 1).a? r_num_math (core->num, r_cmdctx_arg (ctx, 1).a): 0;
+	RList *list = r_fs_partitions (core->fs, r_cmdctx_arg (ctx, 0).a, off);
 	if (!list) {
 		R_LOG_ERROR ("Cannot read partition");
 		return 1;
@@ -528,10 +511,10 @@ static void mount_print_paths_and_free(RCmdContext *ctx, RList *R_OWNED list, bo
 	r_list_free (list);
 }
 
-static int mount_info(RCmdContext *ctx, const char **argv) {
+static int mount_info(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	const char *path = argv[0];
-	const char mode = r_cmd_ctx_mode (ctx, "sx");
+	const char *path = r_cmdctx_arg (ctx, 0).a;
+	const char mode = r_cmdctx_mode (ctx, "sx");
 	if (mode == 'x' || (!mode && (r_str_isnumber (path) || r_str_startswith (path, "0x")))) {
 		ut64 off = r_num_math (core->num, path);
 		const char *cwd = r_config_get (core->config, "fs.cwd");
@@ -558,18 +541,18 @@ static int mount_info(RCmdContext *ctx, const char **argv) {
 	return 0;
 }
 
-static int mount_find(RCmdContext *ctx, const char **argv) {
+static int mount_find(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	RList *list = r_cmd_ctx_mode (ctx, "no") == 'n'
-		? r_fs_find_name (core->fs, argv[0], argv[1])
-		: r_fs_find_off (core->fs, argv[0], r_num_math (core->num, argv[1]));
+	RList *list = r_cmdctx_mode (ctx, "no") == 'n'
+		? r_fs_find_name (core->fs, r_cmdctx_arg (ctx, 0).a, r_cmdctx_arg (ctx, 1).a)
+		: r_fs_find_off (core->fs, r_cmdctx_arg (ctx, 0).a, r_num_math (core->num, r_cmdctx_arg (ctx, 1).a));
 	mount_print_paths_and_free (ctx, list, false);
 	return 0;
 }
 
-static int mount_open(RCmdContext *ctx, const char **argv) {
+static int mount_open(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	RFSFile *file = mount_read_file (core, argv[0]);
+	RFSFile *file = mount_read_file (core, r_cmdctx_arg (ctx, 0).a);
 	if (!file) {
 		return 1;
 	}
@@ -589,25 +572,25 @@ static int mount_open(RCmdContext *ctx, const char **argv) {
 		}
 	}
 	if (rc) {
-		R_LOG_ERROR ("Cannot open %s into malloc://", argv[0]);
+		R_LOG_ERROR ("Cannot open %s into malloc://", r_cmdctx_arg (ctx, 0).a);
 	}
 	r_fs_close (core->fs, file);
 	r_fs_file_free (file);
 	return rc;
 }
 
-static int mount_write(RCmdContext *ctx, const char **argv) {
+static int mount_write(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	const bool from_file = r_strs_equals_str (ctx->subcmd, "wf");
-	const char *path = argv[from_file? 1: 0];
+	const char *path = r_cmdctx_arg (ctx, from_file? 1: 0).a;
 	char *buffer = NULL;
-	const char *data = argv[1]? argv[1]: "";
 	RStrs *arg = RVecRStrs_at (&ctx->args, 1);
+	const char *data = arg? arg->a: "";
 	size_t size = arg? r_strs_len (*arg): 0;
 	if (from_file) {
-		data = buffer = r_file_slurp (argv[0], &size);
+		data = buffer = r_file_slurp (r_cmdctx_arg (ctx, 0).a, &size);
 		if (!buffer) {
-			R_LOG_ERROR ("Cannot read %s", argv[0]);
+			R_LOG_ERROR ("Cannot read %s", r_cmdctx_arg (ctx, 0).a);
 			return 1;
 		}
 	}
@@ -627,22 +610,22 @@ static int mount_write(RCmdContext *ctx, const char **argv) {
 	return ok? 0: 1;
 }
 
-static int mount_yank(RCmdContext *ctx, const char **argv) {
+static int mount_yank(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	RFSFile *file = mount_read_file (core, argv[0]);
+	RFSFile *file = mount_read_file (core, r_cmdctx_arg (ctx, 0).a);
 	if (!file) {
 		return 1;
 	}
 	bool ok = r_core_yank_set (core, 0, file->data, file->size);
 	if (!ok) {
-		R_LOG_ERROR ("Cannot yank %s", argv[0]);
+		R_LOG_ERROR ("Cannot yank %s", r_cmdctx_arg (ctx, 0).a);
 	}
 	r_fs_close (core->fs, file);
 	r_fs_file_free (file);
 	return ok? 0: 1;
 }
 
-static int mount_shell(RCmdContext *ctx, const char **argv) {
+static int mount_shell(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	if (!r_config_get_b (core->config, "scr.interactive")) {
 		R_LOG_ERROR ("mount shell requires scr.interactive");
@@ -660,18 +643,19 @@ static int mount_shell(RCmdContext *ctx, const char **argv) {
 	core->rfs->hist_add = r_line_hist_add;
 	core->autocomplete_type = AUTOCOMPLETE_MS;
 	r_core_autocomplete_reload (core);
-	r_fs_shell (core->rfs, core->fs, argv[0]? argv[0]: "");
+	const char *path = r_cmdctx_arg (ctx, 0).a;
+	r_fs_shell (core->rfs, core->fs, path? path: "");
 	core->autocomplete_type = AUTOCOMPLETE_DEFAULT;
 	r_core_autocomplete_reload (core);
 	r_config_set (core->config, "fs.cwd", core->rfs->cwd);
 	return 0;
 }
 
-static int mount_host_mkdir(RCmdContext *ctx, const char **argv) {
-	const bool parents = !strcmp (argv[0], "-p");
-	const char *path = argv[parents? 1: 0];
+static int mount_host_mkdir(RCmdContext *ctx) {
+	const bool parents = !strcmp (r_cmdctx_arg (ctx, 0).a, "-p");
+	const char *path = r_cmdctx_arg (ctx, parents? 1: 0).a;
 	bool ok = false;
-	if (path && *path && (parents || !argv[1])) {
+	if (path && *path && (parents || !r_cmdctx_arg (ctx, 1).a)) {
 		ok = r_sys_mkdirp (path) && r_file_is_directory (path);
 		if (!ok) {
 			R_LOG_ERROR ("Cannot create '%s'", path);
@@ -682,10 +666,10 @@ static int mount_host_mkdir(RCmdContext *ctx, const char **argv) {
 	return ok? 0: 1;
 }
 
-static int mount_host_mktemp(RCmdContext *ctx, const char **argv) {
-	const bool dir = !strcmp (argv[0], "-d");
-	const char *path = argv[dir? 1: 0];
-	if (R_STR_ISEMPTY (path) || (!dir && argv[1])) {
+static int mount_host_mktemp(RCmdContext *ctx) {
+	const bool dir = !strcmp (r_cmdctx_arg (ctx, 0).a, "-d");
+	const char *path = r_cmdctx_arg (ctx, dir? 1: 0).a;
+	if (R_STR_ISEMPTY (path) || (!dir && r_cmdctx_arg (ctx, 1).a)) {
 		R_LOG_INFO ("Usage: mktemp [-d] [file|directory]");
 		return 1;
 	}
@@ -707,8 +691,8 @@ static int mount_host_mktemp(RCmdContext *ctx, const char **argv) {
 	return ok? 0: 1;
 }
 
-static int mount_host_mv(RCmdContext *ctx, const char **argv) {
-	bool ok = r_file_move (argv[0], argv[1]);
+static int mount_host_mv(RCmdContext *ctx) {
+	bool ok = r_file_move (r_cmdctx_arg (ctx, 0).a, r_cmdctx_arg (ctx, 1).a);
 	if (!ok) {
 		R_LOG_ERROR ("Cannot move file");
 	}
@@ -721,7 +705,7 @@ static int mount_help(RCmdContext *ctx) {
 		sub.b--;
 	}
 	if (r_strs_equals_str (sub, "mc")) {
-		return cmd_mmc (ctx, NULL);
+		return cmd_mmc (ctx);
 	}
 	if (r_strs_equals_str (sub, "f")) {
 		r_cons_cmd_help (ctx->cons, help_msg_mf);
@@ -741,18 +725,17 @@ static int mount_help(RCmdContext *ctx) {
 }
 
 static int mount_dispatch(RCmdContext *ctx) {
-	const size_t argc = RVecRStrs_length (&ctx->args);
+	const size_t argc = r_cmdctx_argc (ctx);
 	const RStrs sub = ctx->subcmd;
 	RCore *core = ctx->user;
 	if (r_strs_startswith (sub, ":") && !r_strs_equals_str (sub, ":?")) {
 		if (!argc && (r_strs_equals_str (sub, ":") || r_strs_equals_str (sub, ":l"))) {
-			return mount_plugins (ctx, NULL);
+			return mount_plugins (ctx);
 		}
 		// Filesystem plugins interpret their own command language.
-		r_fs_cmd (core->fs, r_str_trim_head_ro (sub.a + 1));
-		return 0;
+		return r_fs_cmd (core->fs, r_str_trim_head_ro (sub.a + 1))? 0: 1;
 	}
-	if (r_cmd_ctx_help (ctx)) {
+	if (r_cmdctx_help (ctx)) {
 		return mount_help (ctx);
 	}
 	if (r_strs_equals_str (sub, "ake")) {
@@ -760,12 +743,11 @@ static int mount_dispatch(RCmdContext *ctx) {
 		return r_sys_cmdf ("make%s", sub.b);
 	}
 	if (r_strs_startswith (sub, "-/") && !argc) {
-		const char *argv[] = { sub.a + 1 };
-		return mount_umount (ctx, argv);
+		return mount_umount (ctx);
 	}
 	static const struct {
 		const char *name;
-		int (*callback)(RCmdContext *ctx, const char **argv);
+		int (*callback)(RCmdContext *ctx);
 		size_t min_args;
 		size_t max_args;
 		const char *usage;
@@ -811,31 +793,12 @@ static int mount_dispatch(RCmdContext *ctx) {
 		if (!r_strs_equals_str (sub, commands[i].name)) {
 			continue;
 		}
-		if (argc < commands[i].min_args || argc > commands[i].max_args) {
+		if (argc < commands[i].min_args || argc > commands[i].max_args
+				|| (argc && !*r_cmdctx_arg (ctx, 0).a)) {
 			R_LOG_ERROR ("Usage: %s", commands[i].usage);
 			return 1;
 		}
-		// FS APIs take C strings; context arguments are length-delimited slices.
-		const char *argv[5] = { 0 };
-		size_t j;
-		int rc = 1;
-		for (j = 0; j < argc; j++) {
-			argv[j] = r_strs_tostring (*RVecRStrs_at (&ctx->args, j));
-			if (!argv[j]) {
-				break;
-			}
-		}
-		if (j == argc) {
-			if (argc && !*argv[0]) {
-				R_LOG_ERROR ("Usage: %s", commands[i].usage);
-			} else {
-				rc = commands[i].callback (ctx, argv);
-			}
-		}
-		for (j = 0; j < argc; j++) {
-			free ((char *)argv[j]);
-		}
-		return rc;
+		return commands[i].callback (ctx);
 	}
 	if (r_strs_at (sub, 0) == 'c' || r_strs_at (sub, 0) == 'g') {
 		R_LOG_ERROR ("Usage: %s", r_strs_at (sub, 0) == 'c'
@@ -849,15 +812,7 @@ static int mount_dispatch(RCmdContext *ctx) {
 static RCmdResult mount_callback(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	int rc = mount_dispatch (ctx);
-	char sub = r_strs_at (ctx->subcmd, 0);
-	if (sub == 'c' || sub == 'g' || sub == '-'
-			|| sub == 'o' || sub == 'y'
-			|| r_strs_equals_str (ctx->subcmd, "d+")
-			|| r_strs_equals_str (ctx->subcmd, "kdir")
-			|| r_strs_equals_str (ctx->subcmd, "ktemp")
-			|| r_strs_equals_str (ctx->subcmd, "v")) {
-		r_core_return_value (core, rc);
-	}
+	r_core_return_value (core, rc);
 	return (RCmdResult) { .status = rc };
 }
 

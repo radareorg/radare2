@@ -495,10 +495,30 @@ EOF2
 EXPECT_ERR=
 RUN
 
-NAME=mount host commands return consistent status
+NAME=mount and host commands return consistent status
 FILE=-
 CMDS=<<EOF2
 e log.level=0
+m /tmp tmp 0x1_0000 && echo mounted
+?v $?
+mi /tmp/missing || echo stat-failed
+?v $?
+md /tmp/missing || echo list-failed
+?v $?
+mw || echo write-usage
+?v $?
+m /bad tmp 1/0 || echo bad-offset
+?v $?
+m /bad tmp 0xinvalid || echo bad-offset
+m /bad tmp 0x1g || echo bad-offset
+m /bad tmp 0x1_000g || echo bad-offset
+m /bad tmp 1+missing || echo bad-offset
+m /bad tmp -1 || echo bad-offset
+m /bad tmp extra extra || echo bad-arity
+m:unknown-plugin || echo plugin-failed
+?v $?
+m-/tmp
+m
 mkdir r2r-mount-host-status && echo mkdir-ok
 ?v $?
 echo data > r2r-mount-host-status/src
@@ -514,6 +534,24 @@ rm r2r-mount-host-status/dst
 rm r2r-mount-host-status
 EOF2
 EXPECT=<<EOF2
+mounted
+0x0
+stat-failed
+0x1
+list-failed
+0x1
+write-usage
+0x1
+bad-offset
+0x1
+bad-offset
+bad-offset
+bad-offset
+bad-offset
+bad-offset
+bad-arity
+plugin-failed
+0x1
 mkdir-ok
 0x0
 move-ok

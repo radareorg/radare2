@@ -10,32 +10,24 @@ static RCoreHelpMessage help_msg_man = {
 };
 
 static bool man_is_document(const char *name) {
-	return r_str_endswith (name, ".r2.md") || r_str_endswith (name, ".md") || r_str_endswith (name, ".txt");
+	return r_str_endswith (name, ".md") || r_str_endswith (name, ".txt");
 }
 
 static char *man_read(RCmdContext *ctx, const char *page) {
 	RCore *core = ctx->user;
 	const char *docdir = R2_DATDIR "/doc/radare2/";
 	if (!strcmp (page, "?")) {
-		RStrBuf *sb = r_strbuf_new ("");
 		RList *files = r_sys_dir (docdir);
 		RListIter *iter;
 		const char *name;
 		r_list_foreach (files, iter, name) {
-			if (*name == '.') {
-				continue;
-			}
-			if (man_is_document (name)) {
-				r_strbuf_appendf (sb, "%s\n", name);
+			if (*name != '.' && man_is_document (name)) {
+				r_cons_println (ctx->cons, name);
 			}
 		}
 		r_list_free (files);
-		char *s = r_strbuf_drain (sb);
-		r_cons_print (ctx->cons, s);
-		free (s);
 		return NULL;
 	}
-	int cat = 1;
 	if (r_file_exists (page)) {
 		return r_file_slurp (page, NULL);
 	}
@@ -53,29 +45,20 @@ static char *man_read(RCmdContext *ctx, const char *page) {
 			free (n);
 			return data;
 		}
-		char *data = NULL;
-		data = r_file_slurp (n, NULL);
+		char *data = r_file_slurp (n, NULL);
 		free (n);
 		return data;
 	}
 	free (n);
-	char *p = r_str_newf ("%s/man/man%d/%s.%d", R2_DATDIR, cat, page, cat);
-	char *res = r_file_slurp (p, NULL);
-	if (!res) {
-		free (p);
-		p = r_str_newf ("%s/man/man%d/%s.%d", "/usr/share", cat, page, cat);
-		res = r_file_slurp (p, NULL);
-	}
-	if (!res && cat == 1) {
-		// Try man3 if man1 not found
-		free (p);
-		cat = 3;
-		p = r_str_newf ("%s/man/man%d/%s.%d", R2_DATDIR, cat, page, cat);
-		res = r_file_slurp (p, NULL);
-		if (!res) {
-			free (p);
-			p = r_str_newf ("%s/man/man%d/%s.%d", "/usr/share", cat, page, cat);
+	const char *dirs[] = { R2_DATDIR, "/usr/share" };
+	char *res = NULL;
+	int cat;
+	size_t i;
+	for (cat = 1; cat <= 3 && !res; cat += 2) {
+		for (i = 0; i < R_ARRAY_SIZE (dirs) && !res; i++) {
+			char *p = r_str_newf ("%s/man/man%d/%s.%d", dirs[i], cat, page, cat);
 			res = r_file_slurp (p, NULL);
+			free (p);
 		}
 	}
 	if (res) {
@@ -207,14 +190,13 @@ static char *man_read(RCmdContext *ctx, const char *page) {
 		res = r_str_replace_all (res, "\n\n\n", "\n\n");
 		res = r_str_replace_all (res, "\\-", "-");
 	}
-	free (p);
 	return res;
 }
 
 static RCmdResult man_callback(RCmdContext *ctx) {
 	const char *command = ctx->handler_user;
 	const bool group_help = !strcmp (command, "ma?");
-	if (group_help || r_cmd_ctx_help (ctx)) {
+	if (group_help || r_cmdctx_help (ctx)) {
 		r_cons_cmd_help_match (ctx->cons, help_msg_man, group_help? "ma": command, 0, !group_help);
 		return (RCmdResult) { 0 };
 	}
@@ -223,7 +205,7 @@ static RCmdResult man_callback(RCmdContext *ctx) {
 		return (RCmdResult) { .status = 1 };
 	}
 	const bool list = !strcmp (command, "mal");
-	const size_t argc = RVecRStrs_length (&ctx->args);
+	const size_t argc = r_cmdctx_argc (ctx);
 	RStrs *arg = RVecRStrs_at (&ctx->args, 0);
 	if (argc != (list? 0: 1) || (!list && !r_strs_at (*arg, 0))) {
 		R_LOG_ERROR ("Usage: %s%s", command, list? "": " [page]");
@@ -233,12 +215,7 @@ static RCmdResult man_callback(RCmdContext *ctx) {
 		man_read (ctx, "?");
 		return (RCmdResult) { 0 };
 	}
-	char *page = r_strs_tostring (*arg);
-	if (!page) {
-		return (RCmdResult) { .status = 1 };
-	}
-	char *text = man_read (ctx, page);
-	free (page);
+	char *text = man_read (ctx, r_cmdctx_arg (ctx, 0).a);
 	if (text) {
 		r_cons_less_str (ctx->cons, text, NULL);
 		free (text);
