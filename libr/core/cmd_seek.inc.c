@@ -855,7 +855,7 @@ static int cmd_seek(void *data, const char *input) {
 		{
 			RList /*<ut64 *>*/ *addrs = r_list_newf (free);
 			RList /*<char *>*/ *names = r_list_newf (free);
-			RList *list = r_io_sundo_list (core->io, '!');
+			RList *list = r_io_sundo_list (core->io);
 			ut64 lsz = 0;
 			ut64 i;
 			RListIter *iter;
@@ -922,36 +922,10 @@ static int cmd_seek(void *data, const char *input) {
 			} else if (input[1] == '*') {
 				mode = 'r';
 			}
-			RList *list = r_io_sundo_list (core->io, mode);
-			if (list) {
-				RListIter *iter;
-				RIOUndos *undo;
-				r_list_foreach (list, iter, undo) {
-					char *name = NULL;
-
-					RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
-					if (f) {
-						if (f->addr != undo->off) {
-							name = r_str_newf ("%s + %d\n", f->name,
-									(int)(undo->off - f->addr));
-						} else {
-							name = strdup (f->name);
-						}
-					}
-					if (mode) {
-						r_cons_printf (core->cons, "0x%"PFMT64x" %s\n", undo->off, r_str_get (name));
-					} else {
-						if (!name) {
-							name = r_str_newf ("0x%"PFMT64x, undo->off);
-						}
-						r_cons_printf (core->cons, "%s%s", name, iter->n? " > ":"");
-					}
-					free (name);
-				}
-				r_list_free (list);
-				if (!mode) {
-					r_cons_newline (core->cons);
-				}
+			char *res = r_io_sundo_tostring (core->io, mode);
+			if (res) {
+				r_cons_printf (core->cons, "%s", res);
+				free (res);
 			}
 		}
 		break;
