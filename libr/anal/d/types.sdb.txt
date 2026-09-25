@@ -3410,3 +3410,34 @@ func.strncat_chk.arg.1=const char *,src
 func.strncat_chk.arg.2=size_t,len
 func.strncat_chk.arg.3=size_t,destlen
 func.strncat_chk.ret=char *
+
+stpcpy_chk=func
+func.stpcpy_chk.args=3
+func.stpcpy_chk.arg.0=char *,dest
+func.stpcpy_chk.arg.1=const char *,src
+func.stpcpy_chk.arg.2=size_t,destlen
+func.stpcpy_chk.ret=char *
+
+stpncpy_chk=func
+func.stpncpy_chk.args=4
+func.stpncpy_chk.arg.0=char *,dest
+func.stpncpy_chk.arg.1=const char *,src
+func.stpncpy_chk.arg.2=size_t,len
+func.stpncpy_chk.arg.3=size_t,destlen
+func.stpncpy_chk.ret=char *
+
+strlcpy_chk=func
+func.strlcpy_chk.args=4
+func.strlcpy_chk.arg.0=char *,dest
+func.strlcpy_chk.arg.1=const char *,src
+func.strlcpy_chk.arg.2=size_t,len
+func.strlcpy_chk.arg.3=size_t,destlen
+func.strlcpy_chk.ret=size_t
+
+strlcat_chk=func
+func.strlcat_chk.args=4
+func.strlcat_chk.arg.0=char *,dest
+func.strlcat_chk.arg.1=const char *,src
+func.strlcat_chk.arg.2=size_t,len
+func.strlcat_chk.arg.3=size_t,destlen
+func.strlcat_chk.ret=size_t
