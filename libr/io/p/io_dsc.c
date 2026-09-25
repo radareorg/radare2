@@ -245,6 +245,91 @@ static ut64 __lseek_dsc(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return dsc_object_seek (io, (RIODscObject *)fd->data, offset, whence);
 }
 
+static void dsc_append_pointer_infos(RIODscTrimmedSlice *trimmed, RList *infos, PJ *pj, RStrBuf *sb) {
+	static const char *const keys_v3[] = { "ia", "ib", "da", "db" };
+	static const char *const keys_v5[] = { "ia", "da" };
+	RIODscSlice *slice = trimmed->slice;
+	RListIter *iter_info;
+	RIODscTrimmedRebaseInfo *trimmed_info;
+
+	r_list_foreach (infos, iter_info, trimmed_info) {
+		int version = trimmed_info->info->info->version;
+		ut64 remaining_size = trimmed_info->count;
+		ut64 cursor = 0;
+		while (remaining_size >= 8) {
+			ut8 raw_value_buf[8];
+			bool got_raw_value;
+			ut64 off_local = trimmed_info->off_local + cursor;
+			RIO_FREAD_AT_INTO_DIRECT (slice->fd, off_local, &raw_value_buf, 8, got_raw_value);
+			remaining_size -= 8;
+			cursor += 8;
+			if (!got_raw_value) {
+				R_LOG_ERROR ("reading raw pointer");
+				break;
+			}
+
+			ut64 raw_value = r_read_le64 (raw_value_buf);
+
+			if (pj) {
+				pj_o (pj);
+				char *tmp = r_str_newf ("0x%"PFMT64x, slice->start + off_local);
+				pj_ks (pj, "paddr", tmp);
+				free (tmp);
+
+				tmp = r_str_newf ("0x%"PFMT64x, raw_value);
+				pj_ks (pj, "raw", tmp);
+				free (tmp);
+
+				tmp = r_str_newf ("v%d", version);
+				pj_ks (pj, "format", tmp);
+				free (tmp);
+			} else {
+				r_strbuf_appendf (sb, "paddr: 0x%"PFMT64x"\nraw: 0x%"PFMT64x"\nformat: v%d\n",
+					slice->start + off_local, raw_value, version);
+			}
+
+			switch (version) {
+			case 1:
+			case 2:
+			case 4:
+				break;
+			case 3:
+			case 5:
+				if (R_IS_PTR_AUTHENTICATED (raw_value)) {
+					bool is_v5 = version == 5;
+					bool has_diversity = (raw_value & (1ULL << (is_v5 ? 50 : 48))) != 0;
+					if (pj) {
+						pj_kb (pj, "has_diversity", has_diversity);
+					}
+					if (has_diversity) {
+						ut64 diversity = (raw_value >> (is_v5 ? 34 : 32)) & 0xFFFF;
+						if (pj) {
+							pj_kn (pj, "diversity", diversity);
+						} else {
+							r_strbuf_appendf (sb, "diversity: 0x%"PFMT64x"\n", diversity);
+						}
+					}
+					ut64 key = (raw_value >> (is_v5 ? 51 : 49)) & (is_v5 ? 1 : 3);
+					const char *name = is_v5 ? keys_v5[key] : keys_v3[key];
+					if (pj) {
+						pj_ks (pj, "key", name);
+					} else {
+						r_strbuf_appendf (sb, "key: %s\n", name);
+					}
+				}
+				break;
+			default:
+				R_LOG_ERROR ("Unsupported rebase info version %d", version);
+			}
+			if (pj) {
+				pj_end (pj);
+			} else if (sb) {
+				r_strbuf_append (sb, "\n");
+			}
+		}
+	}
+}
+
 static char *__infoPointer(RIODscObject * dsc, ut64 size, int mode) {
 	PJ *pj = NULL;
 	RStrBuf *sb = NULL;
@@ -279,120 +364,12 @@ static char *__infoPointer(RIODscObject * dsc, ut64 size, int mode) {
 		RList * infos = dsc_slice_get_rebase_infos_by_range (trimmed->slice, trimmed->seek, trimmed->count);
 		if (!infos) {
 			pj_free (pj);
-			r_list_free (slices);
 			r_strbuf_free (sb);
+			r_list_free (slices);
 			return NULL;
 		}
 
-		RListIter * iter;
-		RIODscTrimmedRebaseInfo * trimmed_info;
-
-		r_list_foreach (infos, iter, trimmed_info) {
-			ut64 remaining_size = trimmed_info->count;
-			ut64 cursor = 0;
-			while (remaining_size >= 8) {
-				ut8 raw_value_buf[8];
-				bool got_raw_value;
-				ut64 off_local = trimmed_info->off_local + cursor;
-				RIO_FREAD_AT_INTO_DIRECT (trimmed->slice->fd, off_local, &raw_value_buf, 8, got_raw_value);
-				remaining_size -= 8;
-				cursor += 8;
-				if (!got_raw_value) {
-					R_LOG_ERROR ("reading raw pointer");
-					break;
-				}
-
-				ut64 raw_value = r_read_le64 (raw_value_buf);
-
-				if (pj) {
-					pj_o (pj);
-				}
-
-				char * tmp = r_str_newf ("0x%"PFMT64x, trimmed->slice->start + off_local);
-				if (pj) {
-					pj_ks (pj, "paddr", tmp);
-				} else if (sb) {
-					r_strbuf_appendf (sb, "paddr: %s\n", tmp);
-				}
-				free (tmp);
-
-				tmp = r_str_newf ("0x%"PFMT64x, raw_value);
-				if (pj) {
-					pj_ks (pj, "raw", tmp);
-				} else if (sb) {
-					r_strbuf_appendf (sb, "raw: %s\n", tmp);
-				}
-				free (tmp);
-
-				tmp = r_str_newf ("v%d", trimmed_info->info->info->version);
-				if (pj) {
-					pj_ks (pj, "format", tmp);
-				} else if (sb) {
-					r_strbuf_appendf (sb, "format: %s\n", tmp);
-				}
-				free (tmp);
-
-				switch (trimmed_info->info->info->version) {
-				case 1:
-				case 2:
-				case 4:
-					break;
-				case 3:
-					if (R_IS_PTR_AUTHENTICATED (raw_value)) {
-						bool has_diversity = (raw_value & (1ULL << 48)) != 0;
-						if (pj) {
-							pj_kb (pj, "has_diversity", has_diversity);
-						}
-						if (has_diversity) {
-							ut64 diversity = (raw_value >> 32) & 0xFFFF;
-							if (pj) {
-								pj_kn (pj, "diversity", diversity);
-							} else if (sb) {
-								r_strbuf_appendf (sb, "diversity: 0x%"PFMT64x"\n", diversity);
-							}
-						}
-						ut64 key = (raw_value >> 49) & 3;
-						const char * names[4] = { "ia", "ib", "da", "db" };
-						if (pj) {
-							pj_ks (pj, "key", names[key]);
-						} else if (sb) {
-							r_strbuf_appendf (sb, "key: %s\n", names[key]);
-						}
-					}
-					break;
-				case 5:
-					if (R_IS_PTR_AUTHENTICATED (raw_value)) {
-						bool has_diversity = (raw_value & (1ULL << 50)) != 0;
-						if (pj) {
-							pj_kb (pj, "has_diversity", has_diversity);
-						}
-						if (has_diversity) {
-							ut64 diversity = (raw_value >> 34) & 0xFFFF;
-							if (pj) {
-								pj_kn (pj, "diversity", diversity);
-							} else if (sb) {
-								r_strbuf_appendf (sb, "diversity: 0x%"PFMT64x"\n", diversity);
-							}
-						}
-						ut64 key = (raw_value >> 51) & 1;
-						const char * names[2] = { "ia", "da" };
-						if (pj) {
-							pj_ks (pj, "key", names[key]);
-						} else if (sb) {
-							r_strbuf_appendf (sb, "key: %s\n", names[key]);
-						}
-					}
-					break;
-				default:
-					R_LOG_ERROR ("Unsupported rebase info version %d", trimmed_info->info->info->version);
-				}
-				if (pj) {
-					pj_end (pj);
-				} else if (sb) {
-					r_strbuf_append (sb, "\n");
-				}
-			}
-		}
+		dsc_append_pointer_infos (trimmed, infos, pj, sb);
 		r_list_free (infos);
 	}
 
