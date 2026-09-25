@@ -298,6 +298,8 @@ R_API void r_anal_free(RAnal *a) {
 	if (!a) {
 		return;
 	}
+	// sdb_cc outlives anal when another sdb holds a reference to anal->sdb
+	sdb_unhook (a->sdb_cc, cc_changed);
 	/* TODO: Free anals here */
 	free (a->pincmd);
 	r_list_free (a->fcns);
