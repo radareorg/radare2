@@ -106,6 +106,10 @@ bool test_autonames(void) {
 	mu_assert_null (s, "initial _ should not confuse the api");
 	free (s);
 
+	s = r_type_func_guess (TDB, "sub.___strchr_123");
+	mu_assert_null (s, "a third _ should not confuse the api");
+	free (s);
+
 	s = r_type_func_guess (TDB, "sym.imp.strchr");
 	mu_assert_notnull (s, "sym.imp. should be ignored");
 	mu_assert_streq (s, "strchr", "strchr should be identified");
