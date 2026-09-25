@@ -67,6 +67,36 @@ EOF2
 EXPECT_ERR=
 RUN
 
+NAME=mount plugin listing and unmount aliases return correct status
+FILE=-
+CMDS=<<EOF2
+?=1
+m: > $plugins
+?v $?
+?=1
+m:l > $plugins
+?v $?
+m /tmp tmp
+?=1
+m-/tmp && echo unmounted
+?v $?
+?=0
+m-/tmp || echo unmount-failed
+?v $?
+EOF2
+EXPECT=<<EOF2
+0x0
+0x0
+unmounted
+0x0
+unmount-failed
+0x1
+EOF2
+EXPECT_ERR=<<EOF2
+ERROR: Nothing to unmount
+EOF2
+RUN
+
 NAME=mg multi-block ranges and overwrite
 FILE=-
 CMDS=<<EOF2

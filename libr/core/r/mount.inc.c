@@ -684,16 +684,16 @@ static int mount_dispatch(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	if (r_strs_startswith (sub, ":") && !r_strs_equals_str (sub, ":?")) {
 		if (!argc && (r_strs_equals_str (sub, ":") || r_strs_equals_str (sub, ":l"))) {
-			return mount_plugins (ctx);
+			return mount_plugins (ctx)? 0: 1;
 		}
 		// Filesystem plugins interpret their own command language.
 		return r_fs_cmd (core->fs, r_str_trim_head_ro (sub.a + 1))? 0: 1;
 	}
 	if (r_cmdctx_help (ctx)) {
-		return mount_help (ctx);
+		return mount_help (ctx)? 0: 1;
 	}
 	if (r_strs_startswith (sub, "-/") && !argc) {
-		return mount_umount (ctx);
+		return mount_umount (ctx)? 0: 1;
 	}
 	static const struct {
 		const char *name;
