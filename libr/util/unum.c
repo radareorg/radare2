@@ -302,27 +302,28 @@ R_API ut64 r_num_get_err(RNum * R_NULLABLE num, const char *str, const char **er
 		// base36 here
 		ret = b36_tonum (str + 2);
 	} else if (str[0] == '0' && tolower ((ut8)str[1]) == 'x') {
-		const char *lodash = strchr (str + 2, '_');
-		if (lodash) {
+		const char *digits = str + 2;
+		char *copy = NULL;
+		if (strchr (digits, '_')) {
 			// Support 0x1000_f000_4000
-			if (!validate_hex_underscores (str + 2)) {
+			if (!validate_hex_underscores (digits)) {
 				error (num, "misplaced underscore in hex literal");
 			}
-			char *s = strdup (str + 2);
-			if (s) {
-				r_str_replace_char (s, '_', 0);
-				errno = 0;
-				ret = strtoull (s, NULL, 16);
-				free (s);
+			copy = strdup (digits);
+			if (copy) {
+				r_str_replace_char (copy, '_', 0);
+				digits = copy;
 			}
-		} else {
-			errno = 0;
-			ret = strtoull (str + 2, NULL, 16);
-			// sscanf (str+2, "%"PFMT64x, &ret);
 		}
+		char *end;
+		errno = 0;
+		ret = strtoull (digits, &end, 16);
 		if (errno == ERANGE) {
 			error (num, "number won't fit into 64 bits");
+		} else if (!isxdigit ((ut8)*digits) || *end) {
+			error (num, "invalid hex number");
 		}
+		free (copy);
 	} else {
 		char *endptr;
 		int len_num = len > 0 ? len - 1 : 0;
