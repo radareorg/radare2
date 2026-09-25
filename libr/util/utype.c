@@ -1164,10 +1164,10 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name)
 	}
 
 	char *str_copy = strdup (str);
-	clean_function_name (str_copy);
 
 	// If we stripped dll_ prefix, try matching the cleaned name directly
 	if (dll_stripped) {
+		clean_function_name (str_copy);
 		result = type_func_try_guess (TDB, str_copy);
 	}
 	if (!result && *str_copy == '_') {
