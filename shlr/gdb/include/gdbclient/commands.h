@@ -31,9 +31,9 @@ int gdbr_connect(libgdbr_t *g, const char *server, int port);
 int gdbr_disconnect(libgdbr_t *g);
 
 /*!
- * \brief invalidates the reg cache
+ * \brief forgets the register values read since the thread last ran
  */
-void gdbr_invalidate_reg_cache(void);
+void gdbr_invalidate_reg_cache(libgdbr_t *g);
 
 /*!
  * \brief gets reason why remote target stopped
