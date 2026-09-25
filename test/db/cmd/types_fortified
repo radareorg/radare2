@@ -1,0 +1,140 @@
+NAME=Fortified shared prototypes on Linux Android macOS and iOS
+FILE=malloc://64
+ARGS=-a x86 -b 64 -k linux
+CMDS=<<EOF
+wx e81b000000c3
+af+ 0x20 sym.imp.__memcpy_chk
+pd 1~[2-]
+afn sym.imp.memcpy @ 0x20
+pd 1~[2-]
+e asm.arch=arm
+e asm.bits=64
+e asm.os=android
+wx 08000094c0035fd6
+afn sym.imp.__memcpy_chk @ 0x20
+pd 1~[2-]
+e asm.os=macos
+afn sym.imp.___memcpy_chk @ 0x20
+pd 1~[2-]
+e asm.os=ios
+afn sym.imp.__memcpy_chk @ 0x20
+pd 1~[2-]
+afn sym.imp.__strlcpy_chk @ 0x20
+pd 1~[2-]
+tfc stpcpy_chk
+tfc stpncpy_chk
+tfc strlcpy_chk
+tfc strlcat_chk
+EOF
+EXPECT=<<EOF
+call sym.imp.__memcpy_chk void *memcpy_chk(void *dest const void *src size_t len size_t destlen)
+call sym.imp.memcpy void *memcpy(void *s1 const void *s2 size_t n)
+bl sym.imp.__memcpy_chk void *memcpy_chk(void *dest const void *src size_t len size_t destlen)
+bl sym.imp.___memcpy_chk void *memcpy_chk(void *dest const void *src size_t len size_t destlen)
+bl sym.imp.__memcpy_chk void *memcpy_chk(void *dest const void *src size_t len size_t destlen)
+bl sym.imp.__strlcpy_chk size_t strlcpy_chk(char *dest const char *src size_t len size_t destlen)
+char * stpcpy_chk (char * dest, const char * src, size_t destlen);
+char * stpncpy_chk (char * dest, const char * src, size_t len, size_t destlen);
+size_t strlcpy_chk (char * dest, const char * src, size_t len, size_t destlen);
+size_t strlcat_chk (char * dest, const char * src, size_t len, size_t destlen);
+EOF
+RUN
+
+NAME=Fortified stdio ABI isolation and OS reload
+FILE=malloc://64
+ARGS=-a arm -b 64 -k linux
+CMDS=<<EOF
+k anal/types/func.longjmp_chk.noreturn
+wx 08000094c0035fd6
+af+ 0x20 sym.imp.__fgets_chk
+pd 1~[2-]
+afn sym.imp.__fread_chk @ 0x20
+pd 1~[2-]
+e asm.os=android
+pd 1~[2-]
+afn sym.imp.__fgets_chk @ 0x20
+pd 1~[2-]
+e asm.os=macos
+k anal/types/func.longjmp_chk.noreturn
+pd 1~[2-]
+afn sym.imp.__fread_chk @ 0x20
+pd 1~[2-]
+e asm.os=ios
+pd 1~[2-]
+afn sym.imp.__fgets_chk @ 0x20
+pd 1~[2-]
+e asm.os=linux
+k anal/types/func.longjmp_chk.noreturn
+pd 1~[2-]
+EOF
+EXPECT=<<EOF
+true
+bl sym.imp.__fgets_chk char *fgets_chk(char *s size_t size int n FILE *stream)
+bl sym.imp.__fread_chk size_t fread_chk(void *ptr size_t ptrlen size_t size size_t n FILE *stream)
+bl sym.imp.__fread_chk size_t fread_chk(void *ptr size_t size size_t n FILE *stream size_t ptrlen)
+bl sym.imp.__fgets_chk char *fgets_chk(char *s int n FILE *stream size_t size)
+bl sym.imp.__fgets_chk
+bl sym.imp.__fread_chk
+bl sym.imp.__fread_chk
+bl sym.imp.__fgets_chk
+true
+bl sym.imp.__fgets_chk char *fgets_chk(char *s size_t size int n FILE *stream)
+EOF
+RUN
+
+NAME=Fortified lookup leaves suffixed and unknown names untyped and respects exact prototypes
+FILE=malloc://64
+ARGS=-a x86 -b 64 -k linux
+CMDS=<<EOF
+wx e81b000000c3
+af+ 0x20 sub.___memcpy_chk_123
+pd 1~[2-]
+e asm.os=android
+pd 1~[2-]
+e asm.os=macos
+pd 1~[2-]
+e asm.os=ios
+pd 1~[2-]
+afn sub.__memcpy_chk_123 @ 0x20
+pd 1~[2-]
+afn fcn.__memcpy_chk @ 0x20
+pd 1~[2-]
+afn loc.__memcpy_chk @ 0x20
+pd 1~[2-]
+afn sym.imp.__memcpy_chk_extra @ 0x20
+pd 1~[2-]
+afn sym.imp.__unknown_chk @ 0x20
+pd 1~[2-]
+td int __memcpy_chk(int cookie);
+afn sym.imp.__memcpy_chk @ 0x20
+pd 1~[2-]
+td void ExitProcess(int code);
+afn sub.KERNEL32.dll_ExitProcess_32 @ 0x20
+pd 1~[2-]
+EOF
+EXPECT=<<EOF
+call sub.___memcpy_chk_123
+call sub.___memcpy_chk_123
+call sub.___memcpy_chk_123
+call sub.___memcpy_chk_123
+call sub.__memcpy_chk_123
+call fcn.__memcpy_chk
+call loc.__memcpy_chk
+call sym.imp.__memcpy_chk_extra
+call sym.imp.__unknown_chk
+call sym.imp.__memcpy_chk int __memcpy_chk(int cookie)
+call sub.KERNEL32.dll_ExitProcess_32 void ExitProcess(int code)
+EOF
+RUN
+
+NAME=Fortified strlcpy_chk call in the arm64 slice of cat
+FILE=bins/mach0/cat-macos-arm64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af @ sym.imp.__strlcpy_chk
+pd 1 @ 0x100003748~[2-]
+EOF
+EXPECT=<<EOF
+bl sym.imp.__strlcpy_chk size_t strlcpy_chk(char *dest const char *src size_t len size_t destlen)
+EOF
+RUN
