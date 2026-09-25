@@ -189,6 +189,12 @@ static bool anal_esil_set_bits(void *user, int bits) {
 	return r_anal_set_triplet (anal, NULL, NULL, bits);
 }
 
+// every key write to the convention db lands here, whichever caller made it
+static void cc_changed(Sdb *s, void *user, const char *k, const char *v) {
+	RAnal *anal = user;
+	R_ANAL_PRIV (anal)->cc_generation++;
+}
+
 // Take nullable RArchConfig as argument?
 R_API RAnal *r_anal_new(void) {
 	RAnal *anal = R_NEW0 (RAnal);
@@ -231,6 +237,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->sdb_fmts = sdb_ns (anal->sdb, "spec", 1);
 	anal->sdb_cc = sdb_ns (anal->sdb, "cc", 1);
+	sdb_hook (anal->sdb_cc, cc_changed, anal);
 	anal->sdb_zigns = sdb_ns (anal->sdb, "zigns", 1);
 	anal->sdb_classes = sdb_ns (anal->sdb, "classes", 1);
 	anal->sdb_classes_attrs = sdb_ns (anal->sdb_classes, "attrs", 1);
@@ -292,7 +299,6 @@ R_API void r_anal_free(RAnal *a) {
 		return;
 	}
 	/* TODO: Free anals here */
-	R_FREE (a->argseq);
 	free (a->pincmd);
 	r_list_free (a->fcns);
 	ht_up_free (a->ht_addr_fun);

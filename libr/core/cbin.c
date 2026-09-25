@@ -786,7 +786,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	if (gp) {
 		Sdb *gd = sdb_new0 ();
 		sdb_open_gperf (gd, gp);
-		r_anal_cc_merge (core->anal, gd);
+		sdb_merge (core->anal->sdb_cc, gd);
 		sdb_close (gd);
 		sdb_free (gd);
 	}
@@ -806,7 +806,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		free (dbhomepath);
 		return;
 	}
-	sdb_reset (cc);
+	r_anal_cc_reset (core->anal);
 	set_default_cc (core);
 	R_FREE (cc->path);
 	if (r_file_exists (dbhomepath)) {

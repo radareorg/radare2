@@ -9,10 +9,24 @@
 extern "C" {
 #endif
 
+// Argument locations are a property of the convention, not of the function
+#define R_ANAL_ARGSEQ_SLOTS (R_ANAL_CC_MAXARG * 2)
+
+typedef struct r_anal_argseq_t {
+	const char *cc; // fcn->callconv, interned in anal->constpool, so the pointer names the convention
+	ut64 generation; // cc_generation when loc and max_arg were read
+	const char *loc[R_ANAL_ARGSEQ_SLOTS]; // interned too: a cc db write can make them stale, never dangle
+	int max_arg;
+} RAnalArgSeq;
+
 typedef struct r_anal_priv_t {
 	bool types_dirty;
 	int types_loaded_bits;
 	char *dir_prefix;
+	// moves on every change to sdb_cc: the sdb hook set in r_anal_new sees
+	// each key write, and r_anal_cc_reset covers sdb_reset, which calls no hook
+	ut64 cc_generation;
+	RAnalArgSeq argseq; // single-threaded, like the rest of the analysis state
 } RAnalPriv;
 
 // Recorded adrp/add (or lea) target for a register. Populated by the

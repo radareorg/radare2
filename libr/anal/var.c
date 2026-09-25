@@ -1686,32 +1686,17 @@ static int func_fixed_args(Sdb *TDB, const char *name) {
 	return r_type_func_is_variadic (TDB, name, argc)? argc - 1: argc;
 }
 
-// Argument locations are a property of the convention, not of the function
-#define ARGSEQ_SLOTS (R_ANAL_CC_MAXARG * 2)
-
-typedef struct {
-	const char *cc; // fcn->callconv, interned in anal->constpool, so the pointer names the convention
-	ut64 generation;
-	const char *loc[ARGSEQ_SLOTS]; // interned too: a cc db write can make them stale, never dangle
-	int max_arg;
-} ArgSeqCache;
-
-static const ArgSeqCache *argseq_of(RAnal *anal, const char *cc) {
-	ArgSeqCache *seq = anal->argseq;
-	if (!seq) {
-		seq = R_NEW0 (ArgSeqCache);
-		if (!seq) {
-			return NULL;
-		}
-		anal->argseq = seq;
-	} else if (seq->cc == cc && seq->generation == anal->cc_generation) {
+static const RAnalArgSeq *argseq_of(RAnal *anal, const char *cc) {
+	RAnalPriv *priv = R_ANAL_PRIV (anal);
+	RAnalArgSeq *seq = &priv->argseq;
+	if (seq->cc == cc && seq->generation == priv->cc_generation) {
 		return seq;
 	}
 	seq->cc = cc;
-	seq->generation = anal->cc_generation;
+	seq->generation = priv->cc_generation;
 	seq->max_arg = r_anal_cc_max_arg (anal, cc);
 	int i;
-	for (i = 0; i < ARGSEQ_SLOTS; i++) {
+	for (i = 0; i < R_ANAL_ARGSEQ_SLOTS; i++) {
 		const char *loc = r_anal_cc_argloc (anal, cc, i, 0, 0); // TODO: pass argn
 		seq->loc[i] = loc? r_str_constpool_get (&anal->constpool, loc): NULL;
 	}
@@ -1735,10 +1720,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments", fcn->name);
 		return;
 	}
-	const ArgSeqCache *seq = argseq_of (anal, fcn->callconv);
-	if (!seq) {
-		return;
-	}
+	const RAnalArgSeq *seq = argseq_of (anal, fcn->callconv);
 	char *fname = r_type_func_key (anal->sdb_types, fcn->name);
 	Sdb *TDB = anal->sdb_types;
 	const int max_count = seq->max_arg;
@@ -1846,7 +1828,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		|| op->family == R_ANAL_OP_FAMILY_SIMD
 		|| op->family == R_ANAL_OP_FAMILY_UNKNOWN;
 	// The fixed register-state array lets both sequences use one bounded walk.
-	for (i = 0; i < ARGSEQ_SLOTS; i++) {
+	for (i = 0; i < R_ANAL_ARGSEQ_SLOTS; i++) {
 		const bool fp = i >= R_ANAL_CC_MAXARG;
 		const int n = fp? i - R_ANAL_CC_MAXARG: i;
 		const int slot = fp? R_ANAL_CC_FPSLOT_BASE + n: n;
