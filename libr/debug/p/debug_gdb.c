@@ -21,6 +21,19 @@ typedef struct plugin_data_t {
 	int support_hw_bp;
 } PluginData;
 
+// Take the arch, bits, pid and thread from the stub where it stated them
+static void sync_gdb_target(RDebug *dbg, libgdbr_t *desc) {
+	if (desc->target.valid && desc->target.arch != R_SYS_ARCH_NONE) {
+		r_debug_set_arch (dbg, r_sys_arch_str (desc->target.arch), desc->target.bits);
+	}
+	if (desc->pid > 0) {
+		dbg->pid = desc->pid;
+	}
+	if (desc->tid > 0) {
+		dbg->tid = desc->tid;
+	}
+}
+
 static bool r_debug_gdb_attach(RDebug *dbg, int pid);
 
 static void check_connection(RDebug *dbg) {
@@ -82,8 +95,8 @@ static bool gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	if (!pd->desc) {
 		return false;
 	}
-	gdbr_read_registers (pd->desc);
-	if (!pd->desc || !pd->desc->data) {
+	// after a failed read, desc->data holds the last reply rather than registers
+	if (gdbr_read_registers (pd->desc) < 0 || !pd->desc->data) {
 		return false;
 	}
 	// read the len of the current area
@@ -449,6 +462,7 @@ static bool r_debug_gdb_attach(RDebug *dbg, int pid) {
 			int arch = r_sys_arch_id (dbg->arch);
 			int bits = dbg->anal->config->bits;
 			gdbr_set_architecture (pd->desc, arch, bits);
+			sync_gdb_target (dbg, pd->desc);
 		} else {
 			R_LOG_ERROR ("Underlying IO descriptor is not a GDB one");
 		}
@@ -491,6 +505,7 @@ static char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	if (!pd->desc->target.valid) {
 		gdbr_set_architecture (pd->desc, arch, bits);
 	}
+	sync_gdb_target (dbg, pd->desc);
 	if (pd->desc->target.regprofile) {
 		return strdup (pd->desc->target.regprofile);
 	}

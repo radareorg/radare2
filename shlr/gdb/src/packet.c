@@ -2,6 +2,7 @@
 
 #include "packet.h"
 #include "utils.h"
+#include "gdbr_common.h"
 #include <r_util.h>
 
 #define READ_TIMEOUT (250 * 1000)
@@ -22,19 +23,9 @@ struct parse_ctx {
 
 static bool append(libgdbr_t *g, const char ch) {
 	R_RETURN_VAL_IF_FAIL (g, -1);
-	if (g->data_len == g->data_max - 1) {
-		int newsize = g->data_max * 2;
-		if (newsize < 1) {
-			return false;
-		}
-		char *ptr = realloc (g->data, newsize);
-		if (!ptr) {
-			R_LOG_ERROR ("%s: Failed to reallocate buffer",
-				 __func__);
-			return false;
-		}
-		g->data = ptr;
-		g->data_max = newsize;
+	if (!gdbr_data_reserve (g, g->data_len + 1)) {
+		R_LOG_ERROR ("%s: Failed to reallocate buffer", __func__);
+		return false;
 	}
 	g->data[g->data_len++] = ch;
 	return true;

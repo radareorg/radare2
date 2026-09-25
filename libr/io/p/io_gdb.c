@@ -288,7 +288,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 						desc->stop_reason.thread.tid, desc->stop_reason.reason);
 				}
 			}
-			gdbr_invalidate_reg_cache ();
+			gdbr_invalidate_reg_cache (desc);
 		}
 		gdbr_lock_leave (desc);
 		return NULL;
@@ -311,7 +311,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 						desc->stop_reason.thread.tid, desc->stop_reason.reason);
 				}
 			}
-			gdbr_invalidate_reg_cache ();
+			gdbr_invalidate_reg_cache (desc);
 		}
 		gdbr_lock_leave (desc);
 		return NULL;
@@ -335,7 +335,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "inv.reg")) {
-		gdbr_invalidate_reg_cache ();
+		gdbr_invalidate_reg_cache (desc);
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "exec_file")) {

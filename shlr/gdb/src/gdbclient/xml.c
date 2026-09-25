@@ -334,6 +334,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	g->target.valid = true;
 	free (g->registers);
 	g->registers = arch_regs;
+	gdbr_regs_invalidate (g);
 	return 0;
 
 exit_err:

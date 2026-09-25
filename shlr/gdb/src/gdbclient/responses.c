@@ -93,7 +93,7 @@ int handle_removebp(libgdbr_t *g) {
 }
 
 int handle_attach(libgdbr_t *g) {
-	if (g->data_len == 3 && g->data[0] == 'E') {
+	if (g->data_len > 0 && g->data[0] == 'E') {
 		send_ack (g);
 		return -1;
 	}
@@ -174,6 +174,22 @@ static bool parse_thread_stop(const char *data, const char *prefix, int *pid, in
 	return true;
 }
 
+// A stop reply pair "n:r" whose n is a hex number states register n.
+// Its value is kept unless 'g' is known to fetch the whole block anyway.
+static bool stop_reason_register(libgdbr_t *g, const char *tok) {
+	const char *colon = tok;
+	while (isxdigit ((ut8)*colon)) {
+		colon++;
+	}
+	if (colon == tok || *colon != ':') {
+		return false;
+	}
+	if (g->caps.g != 1) {
+		gdbr_regs_store (g, strtoull (tok, NULL, 16), colon + 1, strlen (colon + 1));
+	}
+	return true;
+}
+
 static int stop_reason_death(libgdbr_t *g, bool is_signal) {
 	int value = 0, pid = g->pid;
 	bool multi = g->stub_features.multiprocess && g->data_len > 3;
@@ -236,6 +252,9 @@ int handle_stop_reason(libgdbr_t *g) {
 	g->stop_reason.is_valid = true;
 	g->stop_reason.reason = R_DEBUG_REASON_SIGNAL;
 	for (ptr1 = r_str_tok_r (g->data + 3, ";", &save_ptr); ptr1; ptr1 = r_str_tok_r (NULL, ";", &save_ptr)) {
+		if (stop_reason_register (g, ptr1)) {
+			continue;
+		}
 		if (parse_thread_stop (ptr1, "thread", &g->stop_reason.thread.pid,
 				&g->stop_reason.thread.tid, g->stub_features.multiprocess,
 				&g->stop_reason.thread.present)) {
@@ -314,58 +333,13 @@ int handle_stop_reason(libgdbr_t *g) {
 	if (g->stop_reason.signum == 5) {
 		g->stop_reason.reason = R_DEBUG_REASON_BREAKPOINT;
 	}
+	// The registers a stop reply states are its thread's, not those of the thread register packets address
+	if (g->stop_reason.thread.present && g->tid > 0 && g->stop_reason.thread.tid != g->tid) {
+		gdbr_regs_invalidate (g);
+	}
 	return 0;
 }
 
 int handle_cont(libgdbr_t *g) {
 	return handle_stop_reason (g);
-}
-
-int handle_lldb_read_reg(libgdbr_t *g) {
-	if (send_ack (g) < 0) {
-		return -1;
-	}
-	char *ptr, *ptr2, *buf;
-	char *save_ptr = NULL;
-	size_t regnum, tot_regs, buflen = 0;
-
-	// Get maximum register number
-	for (regnum = 0; *g->registers[regnum].name; regnum++) {
-		if (g->registers[regnum].offset + g->registers[regnum].size > buflen) {
-			buflen = g->registers[regnum].offset + g->registers[regnum].size;
-		}
-	}
-	tot_regs = regnum;
-	if (buflen >= (size_t)g->read_max || buflen >= (size_t)g->data_max) {
-		R_LOG_ERROR ("%s: register buffer %zu exceeds io buffers", __func__, buflen);
-		return -1;
-	}
-
-	// We're not using the receive buffer till next packet anyway. Better use it
-	buf = g->read_buff;
-	memset (buf, 0, buflen);
-
-	if (!(ptr = r_str_tok_r (g->data, ";", &save_ptr))) {
-		return -1;
-	}
-	while (ptr) {
-		if (isxdigit ((ut8)*ptr)) {
-			regnum = (int) strtoul (ptr, NULL, 16);
-			if (regnum < tot_regs && (ptr2 = strchr (ptr, ':'))) {
-				const size_t roff = g->registers[regnum].offset;
-				const size_t rsz = g->registers[regnum].size;
-				if (roff < buflen && rsz <= buflen - roff) {
-					size_t hexlen = strlen (ptr2 + 1);
-					if (hexlen / 2 > rsz) {
-						hexlen = rsz * 2;
-					}
-					unpack_hex (ptr2 + 1, hexlen, buf + roff);
-				}
-			}
-		}
-		ptr = r_str_tok_r (NULL, ";", &save_ptr);
-	}
-	memcpy (g->data, buf, buflen);
-	g->data_len = buflen;
-	return 0;
 }
