@@ -1907,7 +1907,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			free (type);
 			(*count)++;
 		} else {
-			if (!partial && (is_reg_in_src (regname, anal, srcregs) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg)))) {
+			if (!partial && (in_src || in_dst)) {
 				reg_set[slot] = 2;
 			}
 			continue;
