@@ -1686,22 +1686,17 @@ static int func_fixed_args(Sdb *TDB, const char *name) {
 	return r_type_func_is_variadic (TDB, name, argc)? argc - 1: argc;
 }
 
-// Which registers a convention passes arguments in is a property of the
-// convention, so it is resolved once per function instead of per instruction.
+// Argument locations are a property of the convention, not of the function
 #define ARGSEQ_SLOTS (R_ANAL_CC_MAXARG * 2)
 
 typedef struct {
-	const RAnalFunction *fcn;
-	const char *cc;
+	const char *cc; // fcn->callconv, interned in anal->constpool, so the pointer names the convention
 	ut64 generation;
-	// interned in anal->constpool, whose lifetime is the analysis: a write to
-	// the cc db can make an entry stale, and the generation catches that, but
-	// it can never make one dangle. Freshness by epoch, safety by ownership.
-	const char *loc[ARGSEQ_SLOTS];
+	const char *loc[ARGSEQ_SLOTS]; // interned too: a cc db write can make them stale, never dangle
 	int max_arg;
 } ArgSeqCache;
 
-static const ArgSeqCache *argseq_of(RAnal *anal, RAnalFunction *fcn) {
+static const ArgSeqCache *argseq_of(RAnal *anal, const char *cc) {
 	ArgSeqCache *seq = anal->argseq;
 	if (!seq) {
 		seq = R_NEW0 (ArgSeqCache);
@@ -1709,17 +1704,15 @@ static const ArgSeqCache *argseq_of(RAnal *anal, RAnalFunction *fcn) {
 			return NULL;
 		}
 		anal->argseq = seq;
-	} else if (seq->fcn == fcn && seq->cc == fcn->callconv
-			&& seq->generation == anal->cc_generation) {
+	} else if (seq->cc == cc && seq->generation == anal->cc_generation) {
 		return seq;
 	}
-	seq->fcn = fcn;
-	seq->cc = fcn->callconv;
+	seq->cc = cc;
 	seq->generation = anal->cc_generation;
-	seq->max_arg = r_anal_cc_max_arg (anal, fcn->callconv);
+	seq->max_arg = r_anal_cc_max_arg (anal, cc);
 	int i;
 	for (i = 0; i < ARGSEQ_SLOTS; i++) {
-		const char *loc = r_anal_cc_argloc (anal, fcn->callconv, i, 0, 0); // TODO: pass argn
+		const char *loc = r_anal_cc_argloc (anal, cc, i, 0, 0); // TODO: pass argn
 		seq->loc[i] = loc? r_str_constpool_get (&anal->constpool, loc): NULL;
 	}
 	return seq;
@@ -1742,7 +1735,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments", fcn->name);
 		return;
 	}
-	const ArgSeqCache *seq = argseq_of (anal, fcn);
+	const ArgSeqCache *seq = argseq_of (anal, fcn->callconv);
 	if (!seq) {
 		return;
 	}

@@ -532,7 +532,7 @@ typedef struct r_anal_t {
 	RSpaces meta_spaces;
 	Sdb *sdb_cc; // calling conventions
 	ut64 cc_generation; // bumped by every write to sdb_cc
-	void *argseq; // argument locations resolved once per function
+	void *argseq; // argument locations resolved once per convention
 	Sdb *sdb_classes;
 	Sdb *sdb_classes_attrs;
 	ut64 type_dirty_epoch; // incremented when global typed metadata changes
