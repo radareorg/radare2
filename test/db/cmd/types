@@ -2316,6 +2316,55 @@ pf d
 EOF
 RUN
 
+NAME=ts stops at a typedef cycle
+FILE=--
+CMDS=<<EOF
+tk aa=typedef
+tk typedef.aa=bb
+tk bb=typedef
+tk typedef.bb=aa
+ts aa
+tss aa
+tk cc=typedef
+tk typedef.cc=cc
+ts cc
+tss cc
+'td typedef int t1;
+'td typedef t1 t2;
+ts t2
+EOF
+EXPECT=<<EOF
+0
+0
+pf d
+EOF
+RUN
+
+NAME=ts follows a typedef chain longer than any depth bound to its end
+FILE=--
+CMDS=<<EOF
+'td typedef int t0;
+'td typedef t0 t1;
+'td typedef t1 t2;
+'td typedef t2 t3;
+'td typedef t3 t4;
+'td typedef t4 t5;
+'td typedef t5 t6;
+'td typedef t6 t7;
+'td typedef t7 t8;
+'td typedef t8 t9;
+'td typedef t9 t10;
+ts t10
+ts t8
+tss t10
+EOF
+EXPECT=<<EOF
+pf d
+pf d
+4
+EOF
+RUN
+
 NAME=x86-32 type propagation (no double counting)
 FILE=bins/elf/ioli/crackme0x07
 CMDS=<<EOF
