@@ -1036,6 +1036,16 @@ static bool disp_fits(st64 x, int bits) {
 	return x >= -(1LL << (bits - 1)) && x < (1LL << (bits - 1));
 }
 
+// thumb2 movw/movt scatter their imm16 into imm4:i:imm3:imm8
+static ut32 thumb_mov_imm(ut32 hi, ut32 lo) {
+	return ((hi & 0xf) << 12) | (((hi >> 10) & 1) << 11) | (((lo >> 12) & 7) << 8) | (lo & 0xff);
+}
+
+static void thumb_mov_set_imm(ut32 *hi, ut32 *lo, ut32 v) {
+	*hi = (*hi & 0xfbf0) | ((v >> 12) & 0xf) | (((v >> 11) & 1) << 10);
+	*lo = (*lo & 0x8f00) | (((v >> 8) & 7) << 12) | (v & 0xff);
+}
+
 // adr and adrp scatter their 21 bit immediate into the immlo:immhi fields
 static void aarch64_patch_adr(RIOBind *iob, ut64 at, st64 imm) {
 	aarch64_patch_insn (iob, at, (0x3 << 29) | (0x7ffff << 5),
@@ -1138,12 +1148,13 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 	}
 	case EM_ARM:
 	{
-		ut32 insn = 0;
 		st64 addend = rel->addend;
 		if (iob->read_at (iob->io, P, buf, 4) != 4) {
 			return;
 		}
-		insn = r_read_ble32 (buf, bo->endian);
+		ut32 insn = r_read_ble32 (buf, bo->endian);
+		ut32 hi = r_read_ble16 (buf, bo->endian);
+		ut32 lo = r_read_ble16 (buf + 2, bo->endian);
 		if (rel->mode == DT_REL) {
 			switch (rel->type) {
 			case R_ARM_CALL:
@@ -1158,8 +1169,6 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			}
 			case R_ARM_THM_PC22:
 			case R_ARM_THM_JUMP24: {
-				const ut32 hi = r_read_ble16 (buf, bo->endian);
-				const ut32 lo = r_read_ble16 (buf + 2, bo->endian);
 				const ut32 sb = (hi >> 10) & 1;
 				// i1/i2 are stored inverted against the sign
 				const ut32 i1 = ((lo >> 13) & 1) ^ sb ^ 1;
@@ -1172,6 +1181,20 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 				addend = imm;
 				break;
 			}
+			case R_ARM_THM_JUMP19: {
+				// j1/j2 are not inverted here, unlike b.w T4
+				st32 imm = (((hi >> 10) & 1) << 20) | (((lo >> 11) & 1) << 19)
+					| (((lo >> 13) & 1) << 18) | ((hi & 0x3f) << 12) | ((lo & 0x7ff) << 1);
+				if (imm & 0x100000) {
+					imm |= ~0x1fffff;
+				}
+				addend = imm;
+				break;
+			}
+			case R_ARM_THM_MOVW_ABS_NC:
+			case R_ARM_THM_MOVT_ABS:
+				addend = (st16)thumb_mov_imm (hi, lo);
+				break;
 			case R_ARM_MOVW_ABS_NC:
 			case R_ARM_MOVW_PREL_NC:
 				addend = ((insn >> 4) & 0xf000) | (insn & 0x0fff);
@@ -1215,8 +1238,6 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		case R_ARM_THM_PC22:
 		case R_ARM_THM_JUMP24: {
 			const st64 target = S + addend - P;
-			ut32 hi = r_read_ble16 (buf, bo->endian);
-			ut32 lo = r_read_ble16 (buf + 2, bo->endian);
 			// blx switches to arm state, so it needs 4 alignment
 			const st64 amask = (lo & 0x1000)? 1: 3;
 			// a thumb branch reaches +-16MB, leave the rest alone
@@ -1227,6 +1248,27 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			hi = (hi & 0xf800) | (sb << 10) | ((target >> 12) & 0x3ff);
 			lo = (lo & 0xd000) | ((((target >> 23) & 1) ^ sb ^ 1) << 13)
 				| ((((target >> 22) & 1) ^ sb ^ 1) << 11) | ((target >> 1) & 0x7ff);
+			r_write_ble16 (buf, hi, bo->endian);
+			r_write_ble16 (buf + 2, lo, bo->endian);
+			break;
+		}
+		case R_ARM_THM_JUMP19: {
+			const st64 target = S + addend - P;
+			// the conditional b.w reaches only +-1MB
+			if (!disp_fits (target, 21)) {
+				return;
+			}
+			hi = (hi & 0xfbc0) | (((target >> 20) & 1) << 10) | ((target >> 12) & 0x3f);
+			lo = (lo & 0xd000) | (((target >> 18) & 1) << 13)
+				| (((target >> 19) & 1) << 11) | ((target >> 1) & 0x7ff);
+			r_write_ble16 (buf, hi, bo->endian);
+			r_write_ble16 (buf + 2, lo, bo->endian);
+			break;
+		}
+		case R_ARM_THM_MOVW_ABS_NC:
+		case R_ARM_THM_MOVT_ABS: {
+			const ut64 val = S + addend;
+			thumb_mov_set_imm (&hi, &lo, (rel->type == R_ARM_THM_MOVT_ABS)? val >> 16: val);
 			r_write_ble16 (buf, hi, bo->endian);
 			r_write_ble16 (buf + 2, lo, bo->endian);
 			break;
