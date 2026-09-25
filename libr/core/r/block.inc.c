@@ -150,12 +150,12 @@ static RCmdResult block_set_size(RCmdContext *ctx, ut64 blocksize) {
 }
 
 static RCmdResult block_flag_size(RCmdContext *ctx) {
-	if (!r_strs_equals_str (ctx->subcmd, "f") || RVecRStrs_length (&ctx->args) != 1) {
+	if (!r_strs_equals_str (ctx->subcmd, "f") || r_cmdctx_argc (ctx) != 1) {
 		r_cons_cmd_help_match (ctx->cons, help_msg_b, "bf", 0, true);
 		return (RCmdResult) { 0 };
 	}
 	RCore *core = ctx->user;
-	const char *name = RVecRStrs_at (&ctx->args, 0)->a;
+	const char *name = r_cmdctx_arg (ctx, 0).a;
 	const RFlagItem *flag = r_flag_get (core->flags, name);
 	if (!flag) {
 		R_LOG_ERROR ("bf: cannot find flag named '%s'", name);
@@ -182,11 +182,11 @@ static RCmdResult block_adjust_size(RCmdContext *ctx, char op) {
 
 static RCmdResult block_callback(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	const size_t argc = RVecRStrs_length (&ctx->args);
-	if (r_cmd_ctx_help (ctx)) {
+	const size_t argc = r_cmdctx_argc (ctx);
+	if (r_cmdctx_help (ctx)) {
 		return block_help (ctx);
 	}
-	const char mode = r_cmd_ctx_mode (ctx, "j*");
+	const char mode = r_cmdctx_mode (ctx, "j*");
 	if (!argc && r_strs_len (ctx->subcmd) == 1 && mode) {
 		if (mode == 'j') {
 			return block_json (ctx);

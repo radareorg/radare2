@@ -38,7 +38,7 @@ static RCmdResult dispatch_handler(RCmdContext *ctx) {
 		&& ctx->parent == state->expected_parent && ctx->cons == state->expected_cons
 		&& r_strs_equals_str (ctx->subcmd, state->expected_subcmd)
 		&& !*ctx->subcmd.b
-		&& r_cmd_ctx_help (ctx) && r_cmd_ctx_mode (ctx, "lx") == 'l';
+		&& r_cmdctx_help (ctx) && r_cmdctx_mode (ctx, "lx") == 'l';
 	RCmdResult result = {
 		.action = state->action,
 		.status = state->status
@@ -65,14 +65,17 @@ static RCmdResult args_handler(RCmdContext *ctx) {
 	state->calls++;
 	const size_t input_len = strlen (state->expected_input);
 	state->args_ok = r_strs_empty (ctx->subcmd)
-		&& !r_cmd_ctx_help (ctx) && !r_cmd_ctx_mode (ctx, "jq")
+		&& !r_cmdctx_help (ctx) && !r_cmdctx_mode (ctx, "jq")
 		&& !strcmp (ctx->subcmd.b, state->expected_input + strlen ("cmd"))
 		&& RVecRStrs_length (&ctx->args) == state->expected_argc;
+	RStrs missing = r_cmdctx_arg (ctx, state->expected_argc);
+	state->args_ok = state->args_ok && !missing.a && !missing.b;
 	size_t i;
 	for (i = 0; state->args_ok && i < state->expected_argc; i++) {
-		RStrs *arg = RVecRStrs_at (&ctx->args, i);
-		state->args_ok = arg && r_strs_equals (*arg, state->expected_args[i])
-			&& arg->a >= ctx->args_storage && arg->b <= ctx->args_storage + input_len;
+		RStrs arg = r_cmdctx_arg (ctx, i);
+		state->args_ok = arg.a && r_strs_equals (arg, state->expected_args[i])
+			&& arg.a >= ctx->args_storage && arg.b <= ctx->args_storage + input_len
+			&& !*arg.b;
 	}
 	RCmdResult result = { 0 };
 	return result;
