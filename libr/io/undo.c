@@ -107,15 +107,11 @@ R_API void r_io_sundo_reset(RIO *io) {
 	io->undo.redos = 0;
 }
 
-R_API RList *r_io_sundo_list(RIO *io, int mode) {
-	RList* list = NULL;
-
-	if (mode == '!') {
-		mode = 0;
-	}
-	if (!io->undo.s_enable) {
+R_API RList *r_io_sundo_list(RIO *io) {
+	if (!io || !io->undo.s_enable) {
 		return NULL;
 	}
+	RList* list = r_list_newf (free);
 	int undos = io->undo.undos;
 	int redos = io->undo.redos;
 
@@ -124,75 +120,79 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 	int end = (idx + redos) % R_IO_UNDOS;
 
 	int i, j = 0;
-	switch (mode) {
-	case 'j':
-		io->cb_printf ("[");
-		break;
-	case 0:
-		list = r_list_newf (free);
-		break;
-	}
 	for (i = start;/* condition at the end of loop */; i = (i + 1) % R_IO_UNDOS) {
-		int idx = (j < undos)? undos - j - 1: j - undos - 1;
+		RIOUndos *undo = &io->undo.seek[i];
+		RIOUndos *u = R_NEW0 (RIOUndos);
+		if (!(j == undos && redos == 0)) {
+			memcpy (u, undo, sizeof (RIOUndos));
+		} else {
+			u->off = io->off;
+		}
+		r_list_append (list, u);
+		j++;
+		if (i == end) {
+			break;
+		}
+	}
+	return list;
+}
+
+R_API char *r_io_sundo_tostring(RIO *io, int mode) {
+	if (!io || !io->undo.s_enable) return NULL;
+	RStrBuf *buf = RStrBuf_new ();
+	int undos = io->undo.undos;
+	int redos = io->undo.redos;
+	int idx = io->undo.idx;
+	int start = (idx - undos + R_IO_UNDOS) % R_IO_UNDOS;
+	int end = (idx + redos) % R_IO_UNDOS;
+
+	if (mode == 'j') RStrBuf_printf (buf, "[");
+
+	int i, j = 0;
+	for (i = start;/* condition at the end of loop */; i = (i + 1) % R_IO_UNDOS) {
+		int u_idx = (j < undos)? undos - j - 1: j - undos - 1;
 		RIOUndos *undo = &io->undo.seek[i];
 		ut64 addr = undo->off;
 		bool notLast = (j + 1 < undos);
 		switch (mode) {
 		case '=':
-			if (j < undos) {
-				io->cb_printf ("0x%"PFMT64x"%s", addr, notLast? " > ": "");
-			}
+			if (j < undos) RStrBuf_printf (buf, "0x%"PFMT64x"%s", addr, notLast? " > ": "");
 			break;
 		case 'r':
 			{
 				char *cmt = io->coreb.cmdStrF (io->coreb.core, "fd 0x%08"PFMT64x, addr);
 				r_str_trim (cmt);
 				if (j < undos) {
-					io->cb_printf ("0x%08"PFMT64x" ; %ds- # %s\n", addr, idx + 1, cmt);
+					RStrBuf_printf (buf, "0x%08"PFMT64x" ; %ds- # %s\n", addr, u_idx + 1, cmt);
 				} else if (j == undos && j != 0 && redos != 0) {
-					io->cb_printf ("0x%08"PFMT64x" ; # CUR %s\n", addr, cmt);
+					RStrBuf_printf (buf, "0x%08"PFMT64x" ; # CUR %s\n", addr, cmt);
 				} else if (j != undos) {
-					io->cb_printf ("0x%08"PFMT64x" ; %ds+ # %s\n", addr, idx + 1, cmt);
+					RStrBuf_printf (buf, "0x%08"PFMT64x" ; %ds+ # %s\n", addr, u_idx + 1, cmt);
 				} else if (addr != 0) {
-					io->cb_printf ("0x%08"PFMT64x" ; # CUR %s\n", addr, cmt);
+					RStrBuf_printf (buf, "0x%08"PFMT64x" ; # CUR %s\n", addr, cmt);
 				}
 				free (cmt);
 			}
 			break;
 		case '*':
 			if (j < undos) {
-				io->cb_printf ("f undo_%d = 0x%"PFMT64x"\n", idx, addr);
+				RStrBuf_printf (buf, "f undo_%d = 0x%"PFMT64x"\n", u_idx, addr);
 			} else if (j == undos && j != 0 && redos != 0) {
-				io->cb_printf ("# Current undo/redo position.\n");
+				RStrBuf_printf (buf, "# Current undo/redo position.\n");
 			} else if (j != undos) {
-				io->cb_printf ("f redo_%d = 0x%"PFMT64x"\n", idx, addr);
-			}
-			break;
-		case 0:
-			if (list) {
-				RIOUndos *u = R_NEW0 (RIOUndos);
-				if (!(j == undos && redos == 0)) {
-					// Current position gets pushed before seek, so there
-					// is no valid offset when we are at the end of list.
-					memcpy (u, undo, sizeof (RIOUndos));
-				} else {
-					u->off = io->off;
-				}
-				r_list_append (list, u);
+				RStrBuf_printf (buf, "f redo_%d = 0x%"PFMT64x"\n", u_idx, addr);
 			}
 			break;
 		}
 		j++;
-		if (i == end) {
-			break;
-		}
+		if (i == end) break;
 	}
-	switch (mode) {
-	case '=':
-		io->cb_printf ("\n");
-		break;
-	}
-	return list;
+	if (mode == '=') RStrBuf_printf (buf, "\n");
+	if (mode == 'j') RStrBuf_printf (buf, "]");
+
+	char *res = RStrBuf_get_string (buf);
+	RStrBuf_free (buf);
+	return res;
 }
 
 /* undo writez */
