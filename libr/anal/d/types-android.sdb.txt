@@ -68,3 +68,19 @@ func.abort.args=0
 func.abort.noreturn=true
 func.abort.ret=void
 
+fgets_chk=func
+func.fgets_chk.args=4
+func.fgets_chk.arg.0=char *,s
+func.fgets_chk.arg.1=int,n
+func.fgets_chk.arg.2=FILE *,stream
+func.fgets_chk.arg.3=size_t,size
+func.fgets_chk.ret=char *
+
+fread_chk=func
+func.fread_chk.args=5
+func.fread_chk.arg.0=void *,ptr
+func.fread_chk.arg.1=size_t,size
+func.fread_chk.arg.2=size_t,n
+func.fread_chk.arg.3=FILE *,stream
+func.fread_chk.arg.4=size_t,ptrlen
+func.fread_chk.ret=size_t
