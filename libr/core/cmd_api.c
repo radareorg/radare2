@@ -481,6 +481,7 @@ static bool cmd_context_parse_args(RCmdContext *context, RStrs rest, bool raw) {
 		return false;
 	}
 	context->args_storage = storage;
+	*storage = 0;
 	const char *src = rest.a;
 	char *dst = storage;
 	while (src < rest.b) {
@@ -521,8 +522,8 @@ static bool cmd_context_parse_args(RCmdContext *context, RStrs rest, bool raw) {
 			return false;
 		}
 		*arg = r_strs_new (begin, dst);
+		*dst++ = 0;
 	}
-	*dst = 0;
 	return true;
 }
 

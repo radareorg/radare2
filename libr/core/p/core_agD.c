@@ -47,12 +47,12 @@ static RCmdResult agD_invalid(RCmdContext *ctx) {
 
 static RCmdResult r_cmd_agD_call(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	const size_t argc = RVecRStrs_length (&ctx->args);
-	if (!argc && r_cmd_ctx_help (ctx)) {
+	const size_t argc = r_cmdctx_argc (ctx);
+	if (!argc && r_cmdctx_help (ctx)) {
 		agD_help (ctx);
 		return (RCmdResult) { 0 };
 	}
-	const char sub = r_cmd_ctx_mode (ctx, "dvj");
+	const char sub = r_cmdctx_mode (ctx, "dvj");
 	if (argc || r_strs_len (ctx->subcmd) > (sub? 1: 0)) {
 		return agD_invalid (ctx);
 	}

@@ -232,24 +232,44 @@ static bool type_has_any_word(const char *R_NONNULL type, const char *const *R_N
 	return false;
 }
 
-#define TYPEDEF_MAX_DEPTH 8
+// Bound on the typedef links one resolution follows. It is a work budget, not
+// the cycle test: a chain longer than this without a cycle is refused too.
+#define TYPEDEF_MAX_CHAIN 4096
 
-// the depth bound keeps a cyclic typedef from hanging
+static inline const char *typedef_target(Sdb *R_NONNULL TDB, const char *R_NONNULL name) {
+	return sdb_const_getf (TDB, NULL, "typedef.%s", name);
+}
+
+// Follow typedef.<name> to the first name that is not a typedef. The links form
+// a functional graph, so Brent's algorithm finds a cycle exactly in O(chain)
+// lookups and O(1) memory; a cycle has no end, and resolves to NULL.
 R_API R_OWNED char *r_type_resolve_typedef(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
 	R_RETURN_VAL_IF_FAIL (TDB && type, NULL);
-	char *ret = NULL;
-	int depth;
 	// a typedef may be spelled with qualifiers; the sdb keys it bare
-	const char *bare = type_skip_qualifiers (type);
-	for (depth = 0; depth < TYPEDEF_MAX_DEPTH; depth++) {
-		const char *next = sdb_const_getf (TDB, NULL, "typedef.%s", ret? ret: bare);
-		if (!next) {
-			break;
+	const char *tortoise = type_skip_qualifiers (type);
+	const char *hare = typedef_target (TDB, tortoise);
+	int power = 1, lam = 1, links;
+	for (links = 1; hare && links <= TYPEDEF_MAX_CHAIN; links++) {
+		if (!strcmp (tortoise, hare)) {
+			R_LOG_DEBUG ("typedef %s is cyclic", type);
+			return NULL;
 		}
-		free (ret);
-		ret = strdup (next);
+		const char *next = typedef_target (TDB, hare);
+		if (!next) {
+			return strdup (hare);
+		}
+		if (power == lam) {
+			tortoise = hare;
+			power *= 2;
+			lam = 0;
+		}
+		hare = next;
+		lam++;
 	}
-	return ret;
+	if (hare) {
+		R_LOG_DEBUG ("typedef %s is longer than %d links", type, TYPEDEF_MAX_CHAIN);
+	}
+	return NULL;
 }
 
 // floats are listed here because this answers "may i sign-extend a raw slot", not "may it be negative"
@@ -331,11 +351,7 @@ static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int dep
 		}
 		char *resolved = r_type_resolve_typedef (TDB, tmptype);
 		if (resolved) {
-			// still a typedef after the resolver bound means a cycle, so fail closed
-			const char *kind = sdb_const_get (TDB, resolved, 0);
-			if (!kind || strcmp (kind, "typedef")) {
-				size = type_bitsize (TDB, resolved, chain, depth);
-			}
+			size = type_bitsize (TDB, resolved, chain, depth);
 			free (resolved);
 		}
 		return size;
