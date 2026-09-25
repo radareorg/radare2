@@ -35,9 +35,29 @@ bool test_r_anal_purge_clears_xrefs(void) {
 	mu_end;
 }
 
+bool test_r_anal_xref_del_missing_edge(void) {
+	RAnal *anal = r_anal_new ();
+
+	r_anal_xrefs_set (anal, 0x1000, 0x2000, R_ANAL_REF_TYPE_CODE);
+	r_anal_xref_del (anal, 0x1000, 0x3000);
+	RVecAnalRef *refs = r_anal_refs_get (anal, 0x1000);
+	mu_assert_notnull (refs, "deleting a missing edge keeps the only edge of its source");
+	mu_assert_eq (RVecAnalRef_length (refs), 1, "one ref left");
+	mu_assert_eq (RVecAnalRef_at (refs, 0)->addr, 0x2000, "the ref still points at its target");
+	RVecAnalRef_free (refs);
+
+	r_anal_xref_del (anal, 0x1000, 0x2000);
+	mu_assert_null (r_anal_refs_get (anal, 0x1000), "deleting the edge removes it");
+	mu_assert_eq (r_anal_xrefs_count (anal), 0, "no xrefs left");
+
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_anal_xrefs_count);
 	mu_run_test (test_r_anal_purge_clears_xrefs);
+	mu_run_test (test_r_anal_xref_del_missing_edge);
 	return tests_passed != tests_run;
 }
 

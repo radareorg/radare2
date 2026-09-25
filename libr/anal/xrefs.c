@@ -106,12 +106,13 @@ static void _delete_ref(AdjacencyList *adj_list, ut64 from, ut64 to) {
 	AdjacencyList_Iter iter = AdjacencyList_find (adj_list, &from);
 	AdjacencyList_Entry *entry = AdjacencyList_Iter_get (&iter);
 	Edges *edges = entry ? entry->val : NULL;
-	if (edges) {
-		if (Edges_size (edges) == 1) {
-			AdjacencyList_erase_at (iter); // delete rest of hashtable
-		} else {
-			Edges_erase (edges, &to); // delete only a reference
-		}
+	if (!edges || !Edges_erase (edges, &to)) {
+		return;
+	}
+	if (Edges_size (edges) == 0) {
+		Edges_destroy (edges);
+		free (edges);
+		AdjacencyList_erase_at (iter);
 	}
 }
 
