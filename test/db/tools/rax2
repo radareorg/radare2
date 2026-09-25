@@ -632,3 +632,75 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=rax2 unsigned hex literals and expressions
+FILE=-
+CMDS=!rax2 0x0u 0X1U 0x1_0000U '0x1U+0x2u' 0xffff_ffff_ffff_ffffU 0xff..abcd
+EXPECT=<<EOF
+0
+1
+65536
+3
+-1
+-21555
+EOF
+RUN
+
+NAME=rax2 rejects malformed hex literals
+FILE=-
+CMDS=<<EOF
+!rax2 0x0x123
+!rax2 0x0_x123U
+!rax2 0x0X1u
+!rax2 0x
+!rax2 0xU
+!rax2 0x1UU
+!rax2 0x1Ujunk
+!rax2 0x1_00U
+!rax2 0x10000000000000000U
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: invalid hex number
+ERROR: invalid hex number
+ERROR: invalid hex number
+ERROR: invalid hex number
+ERROR: invalid hex number
+ERROR: invalid hex number
+ERROR: invalid hex number
+ERROR: misplaced underscore in hex literal
+ERROR: number won't fit into 64 bits
+EOF
+RUN
+
+NAME=rax2 hex float expressions
+FILE=-
+CMDS=!rax2 -b f 0x1.8 0X1.8P2 '0x1.8p2+0x1.8' 0.0 1.5 1.5K
+EXPECT=<<EOF
+1.5
+6.0
+7.5
+0.0
+1.5
+1.5
+EOF
+RUN
+
+NAME=rax2 rejects malformed and overflowing hex floats
+FILE=-
+CMDS=<<EOF
+!rax2 -b f 0x1.8p2junk
+!rax2 -b f 0x0x1.8
+!rax2 -b f 0x1.8U
+!rax2 -b f 0x1.0p64
+!rax2 -b f 0x1.0p9999
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: invalid hex number
+ERROR: invalid hex number
+ERROR: invalid hex number
+ERROR: number won't fit into 64 bits
+ERROR: number won't fit into 64 bits
+EOF
+RUN

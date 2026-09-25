@@ -152,11 +152,15 @@ bool test_r_num_hex_unsigned(void) {
 	}
 	const char *invalid[] = {
 		"0xU", "0x1UU", "0x1Ujunk", "0x1junk", "0x1_00U",
-		"0x1_0000_U", "0x10000000000000000U"
+		"0x1_0000_U", "0x10000000000000000U",
+		"0x0x123", "0x0_x123U", "0x0X1u", "0x"
 	};
 	for (i = 0; i < R_ARRAY_SIZE (invalid); i++) {
 		const char *err = NULL;
 		r_num_get_err (num, invalid[i], &err);
+		mu_assert_notnull (err, invalid[i]);
+		err = NULL;
+		r_num_math_err (num, invalid[i], &err);
 		mu_assert_notnull (err, invalid[i]);
 	}
 	mu_end;

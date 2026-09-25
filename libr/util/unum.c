@@ -135,8 +135,7 @@ R_API const char *r_num_get_name(RNum *num, ut64 n) {
 
 // check that underscores in "1000_f000" are every 4 hex digits from the right
 static bool validate_hex_underscores(const char *s) {
-	int i, n = 0;
-	i = strlen (s) - 1;
+	int i = strlen (s) - 1, n = 0;
 	if (i >= 0 && (s[i] == 'u' || s[i] == 'U')) {
 		i--;
 	}
@@ -306,26 +305,25 @@ R_API ut64 r_num_get_err(RNum * R_NULLABLE num, const char *str, const char **er
 		// base36 here
 		ret = b36_tonum (str + 2);
 	} else if (str[0] == '0' && tolower ((ut8)str[1]) == 'x') {
-		const char *digits = str + 2;
 		char *copy = NULL;
-		if (strchr (digits, '_')) {
+		if (strchr (str + 2, '_')) {
 			// Support 0x1000_f000_4000
-			if (!validate_hex_underscores (digits)) {
+			if (!validate_hex_underscores (str + 2)) {
 				error (num, "misplaced underscore in hex literal");
 			}
-			copy = strdup (digits);
+			copy = strdup (str);
 			if (copy) {
 				r_str_replace_char (copy, '_', 0);
-				digits = copy;
+				str = copy;
 			}
 		}
 		char *end;
 		errno = 0;
-		ret = strtoull (digits, &end, 16);
+		ret = strtoull (str, &end, 16);
 		const bool unsigned_suffix = (*end == 'u' || *end == 'U') && !end[1];
 		if (errno == ERANGE) {
 			error (num, "number won't fit into 64 bits");
-		} else if (!isxdigit ((ut8)*digits) || (*end && !unsigned_suffix)) {
+		} else if (*end && !unsigned_suffix) {
 			error (num, "invalid hex number");
 		}
 		free (copy);
