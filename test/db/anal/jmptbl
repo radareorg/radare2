@@ -779,17 +779,14 @@ RUN
 
 NAME=afbt keeps switch cases after dispatch block split
 FILE=malloc://1024
+ARGS=-a x86 -b 64
 CMDS=<<EOF
-e scr.color=false
-e scr.interactive=false
-e asm.arch=null
+e anal.nopskip=false
 wx 90909090909090909090909090909090909090909090909090909090909090c3 @ 0
 wx c3 @ 0x300
 wx 1000000000030000 @ 0x200
 af+ 0 split_switch
 afb+ 0 0 32
-e asm.arch=x86
-e asm.bits=64
 s 0x10
 afbt tbl=0x200 esz=4 n=2 base=0
 afbi @ 0x10~cases:,switch_at,case.
@@ -799,6 +796,55 @@ cases: 2
 switch_at: 0x00000010
 case.0: 0x00000010
 case.1: 0x00000300
+EOF
+RUN
+
+NAME=afbt legacy metadata follows dispatch block split
+FILE=malloc://1024
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e anal.nopskip=false
+wx 90909090909090909090909090909090909090909090909090909090909090c3 @ 0
+wx c3 @ 0x300
+wx 1000000000030000 @ 0x200
+af+ 0 split_switch
+afb+ 0 0 32
+s 0x10
+afbt tbl=0x200 esz=4 n=2 low=7 reg=rax
+afbi @ 0x10~cases:,switch_at,case.
+afbt*
+EOF
+EXPECT=<<EOF
+cases: 2
+switch_at: 0x00000010
+case.7: 0x00000010
+case.8: 0x00000300
+'0x00000010'afbt tbl=0x200 esz=4 n=2 low=7 reg=rax
+EOF
+RUN
+
+NAME=afbt indirect metadata follows dispatch block split
+FILE=malloc://1024
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e anal.nopskip=false
+wx 90909090909090909090909090909090909090909090909090909090909090c3 @ 0
+wx c3 @ 0x300
+wx 1000000000030000 @ 0x200
+wx 0001 @ 0x240
+af+ 0 split_switch
+afb+ 0 0 32
+s 0x10
+afbt tbl=0x200 esz=4 n=2 vtbl=0x240 vsz=1 indir=1 low=7 reg=rax
+afbi @ 0x10~cases:,switch_at,case.
+afbt*
+EOF
+EXPECT=<<EOF
+cases: 2
+switch_at: 0x00000010
+case.7: 0x00000010
+case.8: 0x00000300
+'0x00000010'afbt tbl=0x200 esz=4 n=2 vtbl=0x240 vsz=1 low=7 reg=rax indir=1
 EOF
 RUN
 

@@ -562,65 +562,6 @@ static ut64 case_target_to_scan(RAnal *anal, RAnalFunction *fcn, JmptblTargetCtx
 	return r_anal_function_materialize_switch_case (anal, fcn, jmpptr)? UT64_MAX: jmpptr;
 }
 
-static void switch_op_merge(RAnalSwitchOp *dst, RAnalSwitchOp *src) {
-	if (!dst || !src || dst == src) {
-		return;
-	}
-	if (src->addr != UT64_MAX) {
-		dst->addr = src->addr;
-	}
-	if (src->baddr) {
-		dst->baddr = src->baddr;
-	}
-	if (src->daddr && src->daddr != UT64_MAX) {
-		dst->daddr = src->daddr;
-	}
-	if (src->dsize > 0) {
-		dst->dsize = src->dsize;
-	}
-	if (src->amount > 0) {
-		dst->amount = src->amount;
-	}
-	if (src->cases && !r_list_empty (src->cases)) {
-		dst->min_val = src->min_val;
-		dst->max_val = src->max_val;
-	}
-	if (src->def_val || !dst->def_val) {
-		dst->def_val = src->def_val;
-	}
-	if (src->vtbl_addr != UT64_MAX) {
-		dst->vtbl_addr = src->vtbl_addr;
-	}
-	if (src->lowcase) {
-		dst->lowcase = src->lowcase;
-	}
-	if (src->flags) {
-		dst->flags = src->flags;
-	}
-	if (src->vsize) {
-		dst->vsize = src->vsize;
-	}
-	if (src->shift) {
-		dst->shift = src->shift;
-	}
-	if (src->reg) {
-		dst->reg = src->reg;
-	}
-	if (src->jump_addr != UT64_MAX) {
-		dst->jump_addr = src->jump_addr;
-	}
-	int i;
-	for (i = 0; i < src->deps_count; i++) {
-		(void)r_anal_switch_op_add_dep (dst, src->deps[i]);
-	}
-	if (!dst->cases) {
-		dst->cases = src->cases;
-		src->cases = NULL;
-	} else if (src->cases) {
-		r_list_join (dst->cases, src->cases);
-	}
-}
-
 // The dispatch block, found again if a case's scan split the switch instruction
 // away from it. The switch op is carried over: it belongs to the instruction.
 static RAnalBlock *switch_block_refetch(RAnal *anal, RAnalBlock *block, ut64 ip) {
@@ -646,17 +587,11 @@ static RAnalBlock *switch_block_refetch(RAnal *anal, RAnalBlock *block, ut64 ip)
 			}
 		}
 	}
-	if (block->switch_op) {
-		if (!found->switch_op) {
-			found->switch_op = block->switch_op;
-			block->switch_op = NULL;
-		} else if (found->switch_op == block->switch_op) {
-			block->switch_op = NULL;
-		} else {
-			switch_op_merge (found->switch_op, block->switch_op);
-			r_anal_switch_op_free (block->switch_op);
-			block->switch_op = NULL;
-		}
+	if (!found->switch_op) {
+		found->switch_op = block->switch_op;
+	}
+	if (found != block && found->switch_op == block->switch_op) {
+		block->switch_op = NULL;
 	}
 	return found;
 }
@@ -972,25 +907,17 @@ R_API bool r_anal_switch_apply(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bloc
 		// INDIRECT goes through the flag walker too (handles vsize > 1).
 		return switch_apply_flagged (anal, fcn, block, spec);
 	}
+	const ut64 default_case = (spec->defjump == UT64_MAX)? 0: spec->defjump;
+	bool ret;
 	if (spec->flags & R_ANAL_SWITCH_F_INDIRECT) {
 		// vsize == 1: the legacy 2-stage walker handles this.
-		const ut64 default_case = (spec->defjump == UT64_MAX)? 0: spec->defjump;
-		const bool ret = try_walkthrough_casetbl (anal, fcn, block, spec->startea, spec->lowcase, spec->jtbl_addr, spec->vtbl_addr, spec->jtbl_addr, spec->esize? spec->esize: 4, spec->ncases, default_case, false, NULL);
-		if (ret) {
-			switch_op_apply_spec (block, spec);
-		}
-		return ret;
+		ret = try_walkthrough_casetbl (anal, fcn, block, spec->startea, spec->lowcase, spec->jtbl_addr, spec->vtbl_addr, spec->jtbl_addr, spec->esize? spec->esize: 4, spec->ncases, default_case, false, NULL);
+	} else {
+		const ut64 jmptbl_off = (spec->flags & R_ANAL_SWITCH_F_BASE)? spec->base: spec->jtbl_addr;
+		ret = r_anal_jmptbl_walk (anal, fcn, block, spec->startea, spec->lowcase, spec->jtbl_addr, jmptbl_off, spec->esize? spec->esize: 4, spec->ncases, default_case, false, NULL);
 	}
-	// Default path: legacy single-table walker preserves all per-arch
-	// heuristics. Forward through r_anal_jmptbl_walk and then patch the
-	// switch_op with whatever extras the spec carries (lowcase, reg, etc).
-	const ut64 jmptbl_off = (spec->flags & R_ANAL_SWITCH_F_BASE)
-		? spec->base
-		: spec->jtbl_addr;
-	const ut64 default_case = (spec->defjump == UT64_MAX)? 0: spec->defjump;
-	const bool ret = r_anal_jmptbl_walk (anal, fcn, block, spec->startea, spec->lowcase, spec->jtbl_addr, jmptbl_off, spec->esize? spec->esize: 4, spec->ncases, default_case, false, NULL);
 	if (ret) {
-		switch_op_apply_spec (block, spec);
+		switch_op_apply_spec (r_anal_bb_from_offset (anal, spec->startea), spec);
 	}
 	return ret;
 }
