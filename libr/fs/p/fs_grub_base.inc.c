@@ -19,13 +19,26 @@ static RFSFile* FSP(_open)(RFSRoot *root, const char *path, bool create) {
 	file->ptr = gfs;
 	file->p = root->p;
 	grubfs_bind_io (NULL, file->root->delta);
-	if (gfs->file->fs->open (gfs->file, path)) {
+	bool ok = !gfs->file->fs->open (gfs->file, path);
+	if (ok) {
+		file->size = gfs->file->size;
+		// Resolve the starting offset without allocating or reading the whole file.
+		if (file->size) {
+			char byte;
+			grub_hack_lastoff = 0;
+			ok = gfs->file->fs->read (gfs->file, &byte, 1) == 1;
+			if (ok) {
+				file->off = grub_hack_lastoff;
+			} else {
+				gfs->file->fs->close (gfs->file);
+			}
+			gfs->file->offset = 0;
+		}
+	}
+	if (!ok) {
 		r_fs_file_free (file);
 		grubfs_free (gfs);
 		file = NULL;
-	} else {
-		file->size = gfs->file->size;
-		file->off = gfs->file->offset;
 	}
 	return file;
 }
@@ -34,9 +47,7 @@ static int FSP(_read)(RFSFile *file, ut64 addr, int len) {
 	GrubFS *gfs = file->ptr;
 	grubfs_bind_io (NULL, file->root->delta);
 	gfs->file->offset = addr;
-	int rc = gfs->file->fs->read (gfs->file, (char*)file->data, len);
-	file->off = grub_hack_lastoff; //gfs->file->offset;
-	return rc;
+	return gfs->file->fs->read (gfs->file, (char*)file->data, len);
 }
 
 static void FSP(_close)(RFSFile *file) {

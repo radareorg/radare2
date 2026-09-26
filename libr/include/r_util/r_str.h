@@ -251,6 +251,8 @@ R_API char *r_str_path_escape(const char *path);
 R_API int r_str_unescape(char *buf);
 R_API char *r_str_sanitize_r2(const char *buf);
 R_API char *r_str_escape_raw(const ut8 *buf, int sz);
+// Wrap in ' or ", escaping the delimiter, backslashes and control bytes.
+R_API char *r_str_escape_quoted(const char *str, char quote);
 R_API char *r_str_escape(const char *buf);
 R_API char *r_str_escape_sh(const char *buf);
 R_API char *r_str_escape_sql(const char *buf);

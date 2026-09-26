@@ -974,6 +974,28 @@ bool test_r_str_unquote(void) {
 	mu_end;
 }
 
+bool test_r_str_escape_quoted(void) {
+	const char *values[] = {
+		"", "plain", " two words\t\r\n ", "it's \"quoted\"", "\\n\\x41\\", "\x1b[31m"
+	};
+	const char quotes[] = { '\'', '"' };
+	size_t i, j;
+	for (i = 0; i < R_ARRAY_SIZE (values); i++) {
+		for (j = 0; j < R_ARRAY_SIZE (quotes); j++) {
+			char *quoted = r_str_escape_quoted (values[i], quotes[j]);
+			mu_assert_notnull (quoted, "quote string");
+			mu_assert_eq (quoted[0], quotes[j], "opening quote");
+			mu_assert_eq (quoted[strlen (quoted) - 1], quotes[j], "closing quote");
+			r_str_unquote (quoted);
+			mu_assert_eq (r_str_unescape (quoted), strlen (values[i]), "decoded length");
+			mu_assert_streq_free (quoted, values[i], "quoted string round trip");
+		}
+	}
+	const ut8 raw[] = { '\'', 0, '"', '\\', '\n', 0xff };
+	mu_assert_streq_free (r_str_escape_raw (raw, sizeof (raw)), "'\\x00\\\"\\\\\\n\\xff", "raw escaping keeps its existing format");
+	mu_end;
+}
+
 bool test_r_str_trim_args_quote_parity(void) {
 	char odd_single[] = "'pa\\'tata'";
 	r_str_trim_args (odd_single);
@@ -1049,6 +1071,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_but_escape);
 	mu_run_test (test_r_str_trim_args_quote_parity);
 	mu_run_test (test_r_str_unquote);
+	mu_run_test (test_r_str_escape_quoted);
 	return tests_passed != tests_run;
 }
 

@@ -286,6 +286,49 @@ static bool test_r_cmd_context_args(void) {
 	mu_end;
 }
 
+static bool test_r_cmd_quoted_args(void) {
+	char bytes[256];
+	size_t i;
+	for (i = 0; i < sizeof (bytes) - 1; i++) {
+		bytes[i] = (char)(i + 1);
+	}
+	bytes[sizeof (bytes) - 1] = 0;
+	RStrs expected[] = {
+		R_STRS_LIT (""),
+		R_STRS_LIT ("plain"),
+		R_STRS_LIT (" two words\t\r\n "),
+		R_STRS_LIT ("'\";`echo unexpected`$(echo unexpected)#|&&<>~@"),
+		R_STRS_LIT ("\\n\\x41\\377\\"),
+		r_strs_from (bytes)
+	};
+	RStrBuf input;
+	r_strbuf_init (&input);
+	mu_assert_true (r_strbuf_set (&input, "cmd"), "start command");
+	for (i = 0; i < R_ARRAY_SIZE (expected); i++) {
+		char *arg = r_str_escape_quoted (expected[i].a, '\'');
+		mu_assert_notnull (arg, "serialize argument");
+		bool ok = r_strbuf_appendf (&input, " %s", arg);
+		free (arg);
+		mu_assert_true (ok, "append serialized argument");
+	}
+	ArgsState state = {
+		.expected_input = r_strbuf_get (&input),
+		.expected_args = expected,
+		.expected_argc = R_ARRAY_SIZE (expected)
+	};
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "create core");
+	mu_assert_true (r_cmd_register (core->rcmd, "cmd", args_handler, &state), "register argument handler");
+	mu_assert_eq (r_cmd_call (core->rcmd, state.expected_input), 0, "dispatch serialized arguments");
+	mu_assert_true (state.args_ok, "decoder recovers every byte and empty arguments");
+	mu_assert_eq (r_core_cmd (core, state.expected_input, false), 0, "parse serialized command");
+	mu_assert_eq (state.calls, 2, "full parser dispatches the command exactly once");
+	mu_assert_true (state.args_ok, "full parser preserves literal arguments without substitution");
+	r_core_free (core);
+	r_strbuf_fini (&input);
+	mu_end;
+}
+
 static bool test_r_core_call_context_args(void) {
 	RStrs expected[] = {
 		R_STRS_LIT ("say\"hi"),
@@ -407,6 +450,7 @@ static int all_tests(void) {
 	mu_run_test (test_r_cmd_registry_dispatch);
 	mu_run_test (test_r_cmd_multiword_dispatch);
 	mu_run_test (test_r_cmd_context_args);
+	mu_run_test (test_r_cmd_quoted_args);
 	mu_run_test (test_r_core_call_context_args);
 	mu_run_test (test_r_cmd_unregister_current);
 	mu_run_test (test_r_core_plugin_context_callback);

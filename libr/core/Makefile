@@ -47,10 +47,10 @@ include $(LTOP)/rules.mk
 include $(STOP)/java/deps.mk
 
 cmd.o: cmd_hash.inc.c cmd_debug.inc.c cmd_zign.inc.c cmd_project.inc.c \
-	cmd_open.inc.c cmd_meta.inc.c cmd_macro.inc.c cmd_magic.inc.c cmd_mount.inc.c cmd_eval.inc.c \
+	cmd_open.inc.c cmd_meta.inc.c cmd_macro.inc.c cmd_magic.inc.c r/mount.inc.c cmd_mmc.inc.c cmd_eval.inc.c \
 	cmd_seek.inc.c cmd_print.inc.c cmd_help.inc.c cmd_anal.inc.c cmd_search.inc.c cmd_log.inc.c \
 	cmd_cmp.inc.c cmd_write.inc.c cmd_egg.inc.c cmd_info.inc.c cmd_type.inc.c cmd_flag.inc.c \
-	cmd_search_gadget.inc.c cmd_scsearch.inc.c cmd_meta_cld.inc.c r/block.inc.c r/echo.inc.c
+	cmd_search_gadget.inc.c cmd_scsearch.inc.c cmd_meta_cld.inc.c r/block.inc.c r/echo.inc.c r/shell.inc.c
 
 visual.o: visual_tabs.inc.c
 

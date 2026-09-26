@@ -1833,11 +1833,11 @@ static bool mmc_handle_mouse_click(RCore *core, MMCState *state, int click_x, in
 	}
 }
 
-static int cmd_mmc(void *data, const char *input) {
-	RCore *core = (RCore *)data;
+static int cmd_mmc(RCmdContext *ctx) {
+	RCore *core = ctx->user;
 
-	if (*input == '?') {
-		r_cons_printf (core->cons,
+	if (r_cmdctx_help (ctx)) {
+		r_cons_printf (ctx->cons,
 			"Usage: mmc[?] [left_path] [right_path]\n"
 			"mmc  Mountpoint Miknight Commander\n"
 			"  Two-panel file manager interface\n"
@@ -1871,28 +1871,8 @@ static int cmd_mmc(void *data, const char *input) {
 		return 1;
 	}
 
-	char *left_path_arg = NULL;
-	char *right_path_arg = NULL;
-
-	while (*input == ' ') {
-		input++;
-	}
-
-	if (*input) {
-		const char *space = strchr (input, ' ');
-		if (space) {
-			left_path_arg = r_str_ndup (input, space - input);
-			input = space + 1;
-			while (*input == ' ') {
-				input++;
-			}
-			if (*input) {
-				right_path_arg = strdup (input);
-			}
-		} else {
-			left_path_arg = strdup (input);
-		}
-	}
+	const char *left_path_arg = r_cmdctx_arg (ctx, 0).a;
+	const char *right_path_arg = r_cmdctx_arg (ctx, 1).a;
 
 	MMCState state = { 0 };
 	state.core = core;
@@ -1909,7 +1889,7 @@ static int cmd_mmc(void *data, const char *input) {
 
 	state.left.is_fs_panel = true;
 	if (left_path_arg) {
-		state.left.path = left_path_arg;
+		state.left.path = strdup (left_path_arg);
 	} else {
 		const char *fs_cwd = r_config_get (core->config, "fs.cwd");
 		if (fs_cwd && *fs_cwd) {
@@ -1927,7 +1907,7 @@ static int cmd_mmc(void *data, const char *input) {
 
 	state.right.is_fs_panel = false;
 	if (right_path_arg) {
-		state.right.path = right_path_arg;
+		state.right.path = strdup (right_path_arg);
 	} else {
 		state.right.path = r_sys_getdir ();
 		if (!state.right.path || !*state.right.path) {

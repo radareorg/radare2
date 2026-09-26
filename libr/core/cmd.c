@@ -101,7 +101,8 @@ R_API ut8 *r_core_readblock(RCore *core, ut64 size) {
 #include "cmd_info.inc.c"
 #include "cmd_macro.inc.c"
 #include "cmd_magic.inc.c"
-#include "cmd_mount.inc.c"
+#include "r/mount.inc.c"
+#include "r/shell.inc.c"
 #include "cmd_seek.inc.c"
 #include "cmd_search.inc.c" // defines incDigitBuffer... used by cmd_print
 
@@ -7411,7 +7412,6 @@ R_API void r_core_cmd_init(RCore *core) {
 		{ "j", "join the contents of the two files", cmd_j },
 		{ "h", "show the top n number of line in file", cmd_h },
 		{ "L", "manage dynamically loaded plugins", cmd_plugins },
-		{ "m", "mount filesystem", cmd_mount },
 		{ "o", "open or map file", cmd_open },
 		{ "p", "print current block", cmd_print },
 		{ "P", "project", cmd_project },
@@ -7443,6 +7443,12 @@ R_API void r_core_cmd_init(RCore *core) {
 		core->rcmd->nullcallback = r_core_cmd_nullcallback;
 		if (!r_core_cmd_block_init (core->rcmd)) {
 			R_LOG_ERROR ("Cannot register block size command");
+		}
+		if (!r_core_cmd_shell_init (core->rcmd)) {
+			R_LOG_ERROR ("Cannot register shell commands");
+		}
+		if (!r_core_cmd_mount_init (core->rcmd)) {
+			R_LOG_ERROR ("Cannot register mount commands");
 		}
 		if (!r_core_cmd_echo_init (core->rcmd)) {
 			R_LOG_ERROR ("Cannot register echo commands");
