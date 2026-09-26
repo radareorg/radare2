@@ -217,22 +217,18 @@ static bool parse_number(const char **args, size_t *value, size_t max) {
 }
 
 static void append_help(RStrBuf *sb, const char *cmd, bool p_usage) {
-	int i = 0;
-	int cmd_len = cmd ? strlen (cmd) : 0;
-	const char* usage = "Usage: :[MprRw][lpP] [args...]";
-	const char* help_msg[] = {
+	size_t i, cmd_len = cmd? strlen (cmd): 0;
+	const char *help[] = {
 		":dm [pid]        Print kernel memory map (or process if r2k.io==1)",
 		":dr              Print control registers",
 		":dR              Print control registers in detailed mode",
 		":dp [pid]        Print current selected pid or change it",
 		":e r2k.io=[012]  Read/Write from 0: Linear, 1: Process, 2: Physical addresses",
-		":e r2k.wp=[01]   Honor arch write protection (enabled by default)"
-	};
-	RCoreHelpMessage help_msg_old = {
+		":e r2k.wp=[01]   Honor arch write protection (enabled by default)",
 		":M                      Print kernel memory map",
 		":b      beid [pid]      Change r2k backend. pid is required when beid is 1.",
 		"                         0: linear address; 1: process address; 2: physical address",
-		":p      pid             Print process information",
+		":p[*]   pid             Print process information (or flags with *)",
 		":rl     addr len        Read from linear address",
 		":rp     pid addr len    Read from process address",
 		":rP     addr len        Read physical address",
@@ -243,17 +239,17 @@ static void append_help(RStrBuf *sb, const char *cmd, bool p_usage) {
 		":W      1|0             Honor arch write protect (1 enable WP, 0 disable WP)"
 	};
 	if (p_usage) {
-		r_strbuf_appendf (sb, "%s\n", usage);
+		r_strbuf_append (sb, "Usage: :command [args...]\n");
 	}
-	for (i = 0; i < (sizeof (help_msg) / sizeof (char*)); i++) {
-		if (!cmd || !strncmp (cmd, help_msg[i] + 1, cmd_len)) {
-			r_strbuf_appendf (sb, "%s\n", help_msg[i]);
-		}
+	if (cmd_len == 3 && cmd[0] == 'w' && cmd[2] == 'x') {
+		cmd_len = 2;
 	}
-	r_strbuf_append (sb, "\nOld Commands: (deprecated)\n");
-	for (i = 0; i < (sizeof (help_msg_old) / sizeof (char*)); i++) {
-		if (!cmd || !strncmp (cmd, help_msg_old[i] + 1, cmd_len)) {
-			r_strbuf_appendf (sb, "%s\n", help_msg_old[i]);
+	if (cmd_len == 2 && !strcmp (cmd, "p*")) {
+		cmd_len = 1;
+	}
+	for (i = 0; i < R_ARRAY_SIZE (help); i++) {
+		if (!cmd || !strncmp (cmd, help[i] + 1, cmd_len)) {
+			r_strbuf_appendf (sb, "%s\n", help[i]);
 		}
 	}
 }
