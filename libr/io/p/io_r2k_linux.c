@@ -220,15 +220,19 @@ static const char* getargpos(const char *buf, int pos) {
 	return buf;
 }
 
-static size_t getvalue(const char *buf, int pos) {
-	size_t ret;
-	buf = getargpos (buf, pos);
-	if (buf) {
-		ret = strtoul (buf, 0, 0);
-	} else {
-		ret = -1;
+// Parse a non-negative decimal/hex integer with full validation.
+// Returns true on success and writes the value to *out.
+static bool parse_nonneg_int(const char *s, int *out) {
+	if (R_STR_ISEMPTY (s)) {
+		return false;
 	}
-	return ret;
+	char *end;
+	const long long v = strtoll (s, &end, 0);
+	if (end == s || *end != '\0' || v < 0 || v > INT_MAX) {
+		return false;
+	}
+	*out = (int)v;
+	return true;
 }
 
 static void append_help(RStrBuf *sb, char *cmd, int p_usage) {
@@ -433,11 +437,87 @@ static char* print_proc_info(struct r2k_proc_info *pd, bool fflag) {
 	return r_strbuf_drain (sb);
 }
 
-static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
-	RStrBuf *sb = r_strbuf_new ("");
+static bool run_command(RIO *io, RIODesc *iodesc, RStrBuf *sb, const char *buf) {
 	int ret, inphex, ioctl_n;
 	size_t pid, addr, len;
 	ut8 *databuf = NULL;
+
+	// New (radare2-style) commands
+	if (r_str_startswith (buf, "dm")) { // "dm"
+		if (buf[2] == ' ') {
+			if (!parse_nonneg_int (buf + 3, (int *)&pid)) {
+				R_LOG_ERROR ("Invalid pid");
+				append_help (sb, "dm", 0);
+				return true;
+			}
+		} else if (r2k_struct.beid == 1) {
+			pid = r2k_struct.pid;
+		} else {
+			goto print_kernel_map;
+		}
+		goto print_process_info;
+	}
+	if (r_str_startswith (buf, "dR")) {
+		goto print_ctrl_regs_detailed;
+	}
+	if (r_str_startswith (buf, "dr")) {
+		goto print_ctrl_regs;
+	}
+	if (r_str_startswith (buf, "dp")) {
+		if (buf[2] == ' ') {
+			if (!parse_nonneg_int (buf + 3, (int *)&pid)) {
+				R_LOG_ERROR ("Invalid pid");
+				append_help (sb, "dp", 0);
+				return true;
+			}
+			r2k_struct.pid = pid;
+		}
+		r_strbuf_appendf (sb, "%d\n", r2k_struct.pid);
+		return true;
+	}
+	if (r_str_startswith (buf, "e r2k.io")) {
+		if (strchr (buf, '?')) {
+			r_strbuf_append (sb, "0: Linear memory\n");
+			r_strbuf_append (sb, "1: Process memory\n");
+			r_strbuf_append (sb, "2: Physical memory\n");
+			return true;
+		}
+		const char *eq = strchr (buf, '=');
+		if (eq) {
+			int v;
+			if (!parse_nonneg_int (eq + 1, &v) || v > 2) {
+				R_LOG_ERROR ("Invalid r2k.io value, must be 0, 1, or 2");
+				append_help (sb, "e r2k.io", 0);
+				return true;
+			}
+			r2k_struct.beid = v;
+			if (v != 1) {
+				r2k_struct.pid = 0;
+			}
+		}
+		r_strbuf_appendf (sb, "%d\n", r2k_struct.beid);
+		return true;
+	}
+	if (r_str_startswith (buf, "e r2k.wp")) {
+		if (strchr (buf, '?')) {
+			r_strbuf_append (sb, "<bool> enable write protection (disabled by default)\n");
+			return true;
+		}
+		const char *eq = strchr (buf, '=');
+		if (eq) {
+			int v;
+			if (!parse_nonneg_int (eq + 1, &v) || (v != 0 && v != 1)) {
+				R_LOG_ERROR ("Invalid r2k.wp value, must be 0 or 1");
+				append_help (sb, "e r2k.wp", 0);
+				return true;
+			}
+			r2k_struct.wp = (ut8)v;
+		}
+		r_strbuf_appendf (sb, "%s\n", r_str_bool (r2k_struct.wp));
+		return true;
+	}
+
+	// Legacy single-character commands
 	switch (*buf) {
 	case 'W':
 		if (buf[1] != ' ') {
@@ -445,13 +525,15 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			append_help (sb, "W", 0);
 			break;
 		}
-		int wp = getvalue (buf, 1);
-		if (wp < 0 || wp > 1) {
-			r_strbuf_append (sb, "Invalid usage of W\n");
-			append_help (sb, "W", 0);
-			break;
+		{
+			int wp;
+			if (!parse_nonneg_int (getargpos (buf, 1), &wp) || (wp != 0 && wp != 1)) {
+				R_LOG_ERROR ("Invalid usage of W");
+				append_help (sb, "W", 0);
+				break;
+			}
+			r2k_struct.wp = (ut8)wp;
 		}
-		r2k_struct.wp = (ut8)wp;
 		break;
 	case 'b': // ":b"
 		if (buf[1] != ' ') {
@@ -459,20 +541,25 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			append_help (sb, "b", 0);
 			goto end;
 		}
-		int beid = getvalue (buf, 1);
-		int pid_b = getvalue (buf, 2);
-		if (beid < 0 || beid > 2) {
-			R_LOG_ERROR ("Invalid beid value, must be: 0, 1, 2");
-			append_help (sb, "b", 0);
-			break;
+		{
+			int beid = 0, pid_b = 0;
+			const char *arg = getargpos (buf, 1);
+			const char *arg2 = getargpos (buf, 2);
+			if (!parse_nonneg_int (arg, &beid) || beid > 2) {
+				R_LOG_ERROR ("Invalid beid value, must be: 0, 1, 2");
+				append_help (sb, "b", 0);
+				break;
+			}
+			if (beid == 1) {
+				if (!arg2 || !parse_nonneg_int (arg2, &pid_b)) {
+					R_LOG_ERROR ("Invalid pid");
+					append_help (sb, "b", 0);
+					break;
+				}
+			}
+			r2k_struct.beid = beid;
+			r2k_struct.pid = (beid == 1) ? pid_b : 0;
 		}
-		if (beid == 1 && pid_b < 0) {
-			R_LOG_ERROR ("Invalid pid");
-			append_help (sb, "b", 0);
-			break;
-		}
-		r2k_struct.beid = beid;
-		r2k_struct.pid = (beid == 1) ? pid_b : 0;
 		io->coreb.cmdf (io->coreb.core, "s 0x%"PFMT64x, io->off);
 		break;
 	case 'r':
@@ -488,9 +575,8 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 					goto end;
 				}
 				pid = 0;
-				addr = getvalue (buf, 1);
-				len = getvalue (buf, 2);
-				if (addr == -1 || len == -1) {
+				if (!parse_nonneg_int (getargpos (buf, 1), (int *)&addr) ||
+					    !parse_nonneg_int (getargpos (buf, 2), (int *)&len)) {
 					R_LOG_ERROR ("Invalid number of arguments");
 					append_help (sb, "rl", 0);
 					r_print_free (print);
@@ -506,10 +592,9 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 					r_print_free (print);
 					goto end;
 				}
-				pid = getvalue (buf, 1);
-				addr = getvalue (buf, 2);
-				len = getvalue (buf, 3);
-				if (pid == -1 || addr == -1 || len == -1) {
+				if (!parse_nonneg_int (getargpos (buf, 1), (int *)&pid) ||
+					    !parse_nonneg_int (getargpos (buf, 2), (int *)&addr) ||
+					    !parse_nonneg_int (getargpos (buf, 3), (int *)&len)) {
 					R_LOG_ERROR ("Invalid number of arguments");
 					append_help (sb, "rp", 0);
 					r_print_free (print);
@@ -526,9 +611,8 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 					goto end;
 				}
 				pid = 0;
-				addr = getvalue (buf, 1);
-				len = getvalue (buf, 2);
-				if (addr == -1 || len == -1) {
+				if (!parse_nonneg_int (getargpos (buf, 1), (int *)&addr) ||
+					    !parse_nonneg_int (getargpos (buf, 2), (int *)&len)) {
 					R_LOG_ERROR ("Invalid number of arguments");
 					append_help (sb, "rP", 0);
 					r_print_free (print);
@@ -555,79 +639,80 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 		break;
 	case 'w': // ":w"
 		inphex = (buf[2] == 'x') ? 1 : 0;
-		switch (buf[1]) {
-		case 'l': // ":wl"
-			//write linear address
-			//: wl addr str
-			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
-				append_help (sb, "wl", 0);
+		{
+			const char *arg_str = NULL;
+			switch (buf[1]) {
+			case 'l': // ":wl"
+				//write linear address
+				//: wl addr str
+				if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
+					append_help (sb, "wl", 0);
+					goto end;
+				}
+				pid = 0;
+				if (!parse_nonneg_int (getargpos (buf, 1), (int *)&addr)) {
+					R_LOG_ERROR ("Invalid number of arguments");
+					append_help (sb, "wl", 0);
+					goto end;
+				}
+				arg_str = getargpos (buf, 2);
+				ioctl_n = IOCTL_WRITE_KERNEL_MEMORY;
+				break;
+			case 'p': // ":wp"
+				//write process address
+				//: wp pid address str
+				if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
+					append_help (sb, "wp", 0);
+					goto end;
+				}
+				if (!parse_nonneg_int (getargpos (buf, 1), (int *)&pid) ||
+					    !parse_nonneg_int (getargpos (buf, 2), (int *)&addr)) {
+					R_LOG_ERROR ("Invalid number of arguments");
+					append_help (sb, "wp", 0);
+					goto end;
+				}
+				arg_str = getargpos (buf, 3);
+				ioctl_n = IOCTL_WRITE_PROCESS_ADDR;
+				break;
+			case 'P': // ":wP"
+				// write physical address
+				// : wP address str
+				if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
+					append_help (sb, "wP", 0);
+					goto end;
+				}
+				pid = 0;
+				if (!parse_nonneg_int (getargpos (buf, 1), (int *)&addr)) {
+					R_LOG_ERROR ("Invalid number of arguments");
+					append_help (sb, "wP", 0);
+					goto end;
+				}
+				arg_str = getargpos (buf, 2);
+				ioctl_n = IOCTL_WRITE_PHYSICAL_ADDR;
+				break;
+			default:
+				append_help (sb, "w", 0);
 				goto end;
 			}
-			pid = 0;
-			addr = getvalue (buf, 1);
-			buf = getargpos (buf, 2);
-			if (addr == -1 || !buf) {
-				R_LOG_ERROR ("Invalid number of arguments");
-				append_help (sb, "wl", 0);
-				goto end;
+			if (!arg_str) {
+				break;
 			}
-			ioctl_n = IOCTL_WRITE_KERNEL_MEMORY;
-			break;
-		case 'p': // ":wp"
-			//write process address
-			//: wp pid address str
-			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
-				append_help (sb, "wp", 0);
-				goto end;
+			len = strlen (arg_str);
+			databuf = (ut8 *) calloc (len + 1, 1);
+			if (databuf) {
+				if (inphex) {
+					len = r_hex_str2bin (arg_str, databuf);
+				} else {
+					memcpy (databuf, arg_str, strlen (arg_str) + 1);
+					len = r_str_unescape ((char *) databuf);
+				}
+				ret = WriteMemory (io, iodesc, ioctl_n, pid, addr, (const ut8 *) databuf, len);
+				(void)ret;
 			}
-			pid = getvalue (buf, 1);
-			addr = getvalue (buf, 2);
-			buf = getargpos (buf, 3);
-			if (pid == -1 || addr == -1 || !buf) {
-				R_LOG_ERROR ("Invalid number of arguments");
-				append_help (sb, "wp", 0);
-				goto end;
-			}
-			ioctl_n = IOCTL_WRITE_PROCESS_ADDR;
-			break;
-		case 'P': // ":wP"
-			// write physical address
-			// : wP address str
-			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
-				append_help (sb, "wP", 0);
-				goto end;
-			}
-			pid = 0;
-			addr = getvalue (buf, 1);
-			buf = getargpos (buf, 2);
-			if (addr == -1 || !buf) {
-				R_LOG_ERROR ("Invalid number of arguments");
-				append_help (sb, "wP", 0);
-				goto end;
-			}
-			ioctl_n = IOCTL_WRITE_PHYSICAL_ADDR;
-			break;
-		default:
-			append_help (sb, "w", 0);
-			goto end;
-		}
-		// coverity says this cant happen, but it doesnt hurts to add a check
-		if (!buf) {
-			break;
-		}
-		len = strlen (buf);
-		databuf = (ut8 *) calloc (len + 1, 1);
-		if (databuf) {
-			if (inphex) {
-				len = r_hex_str2bin (buf, databuf);
-			} else {
-				memcpy (databuf, buf, strlen (buf) + 1);
-				len = r_str_unescape ((char *) databuf);
-			}
-			ret = WriteMemory (io, iodesc, ioctl_n, pid, addr, (const ut8 *) databuf, len);
 		}
 		break;
 	case 'M': // ":M" -- rename to ":dm"
+print_kernel_map:
 		{
 			// Print kernel memory map.
 			// : M
@@ -667,10 +752,13 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 		}
 		break;
 	case 'R':
+print_ctrl_regs_detailed:
+print_ctrl_regs:
 		{
 			//Read control registers
 			//: R[p]
 			struct r2k_control_reg reg_data;
+			bool pretty = buf[1] == 'p';
 			ioctl_n = IOCTL_READ_CONTROL_REG;
 			ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &reg_data);
 			if (ret) {
@@ -681,7 +769,7 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 #if __i386__ || __x86_64__
 			//Print cr1 as null instead of random value from kernel land.
 			reg_data.cr1 = 0;
-			if (buf[1] != 0 && buf[1] == 'p') {
+			if (pretty) {
 				char *pp = x86_ctrl_reg_pretty_print (reg_data);
 				if (pp) {
 					r_strbuf_append (sb, pp);
@@ -698,7 +786,7 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 #endif
 			}
 #elif __arm__
-			if (buf[1] != 0 && buf[1] == 'p') {
+			if (pretty) {
 				char *pp = arm_ctrl_reg_pretty_print (reg_data);
 				if (pp) {
 					r_strbuf_append (sb, pp);
@@ -712,7 +800,7 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				r_strbuf_appendf (sb, "c3    = 0x%"PFMT64x"\n", (ut64) reg_data.c3);
 			}
 #elif __arm64__ || __aarch64__
-			if (buf[1] != 0 && buf[1] == 'p') {
+			if (pretty) {
 				char *pp = arm64_ctrl_reg_pretty_print (reg_data);
 				if (pp) {
 					r_strbuf_append (sb, pp);
@@ -728,6 +816,7 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 		}
 		break;
 	case 'p':
+print_process_info:
 		{
 			//Print process info
 			//: p pid
@@ -749,8 +838,7 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				goto end;
 			}
 
-			pid = getvalue (buf, 1);
-			if (pid == -1) {
+			if (!parse_nonneg_int (getargpos (buf, 1), (int *)&pid)) {
 				R_LOG_ERROR ("Invalid number of arguments");
 				append_help (sb, "p", 0);
 				break;
@@ -774,109 +862,9 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 		append_help (sb, NULL, 1);
 		break;
 	}
- end:
+end:
 	free (databuf);
-	return r_strbuf_drain (sb);
-}
-
-static char* run_new_command(RIO *io, RIODesc *iodesc, const char *buf) {
-	RStrBuf *sb = r_strbuf_new ("");
-	if (r_str_startswith (buf, "dm")) { // "dm"
-		if (buf[2] == ' ') {
-			// use \p pid
-			char *cmd = r_str_newf ("p %d", atoi (buf + 2));
-			char *out = run_old_command (io, iodesc, cmd);
-			free (cmd);
-			if (out) {
-				r_strbuf_append (sb, out);
-				free (out);
-			}
-		} else if (r2k_struct.beid == 1) {
-			// use \p pid
-			char *cmd = r_str_newf ("p %d", r2k_struct.pid);
-			char *out = run_old_command (io, iodesc, cmd);
-			free (cmd);
-			if (out) {
-				r_strbuf_append (sb, out);
-				free (out);
-			}
-		} else {
-			// use \M
-			char *out = run_old_command (io, iodesc, "M");
-			if (out) {
-				r_strbuf_append (sb, out);
-				free (out);
-			}
-		}
-		return r_strbuf_drain (sb);
-	}
-	if (r_str_startswith (buf, "dr")) {
-		char *out = run_old_command (io, iodesc, "R");
-		if (out) {
-			r_strbuf_append (sb, out);
-			free (out);
-		}
-		return r_strbuf_drain (sb);
-	}
-	if (r_str_startswith (buf, "dR")) {
-		char *out = run_old_command (io, iodesc, "Rp");
-		if (out) {
-			r_strbuf_append (sb, out);
-			free (out);
-		}
-		return r_strbuf_drain (sb);
-	}
-	if (r_str_startswith (buf, "dp")) {
-		if (buf[2] == ' ') {
-			r2k_struct.pid = atoi (buf + 3);
-		} else {
-			r_strbuf_appendf (sb, "%d\n", r2k_struct.pid);
-		}
-		return r_strbuf_drain (sb);
-	}
-	if (r_str_startswith (buf, "e r2k.io")) {
-		if (strchr (buf, '?')) {
-			r_strbuf_append (sb, "0: Linear memory\n");
-			r_strbuf_append (sb, "1: Process memory\n");
-			r_strbuf_append (sb, "2: Physical memory\n");
-			return r_strbuf_drain (sb);
-		}
-		const char *eq = strchr (buf, '=');
-		if (eq) {
-			const int v = atoi (eq + 1);
-			const int p = r2k_struct.pid;
-			char *cmd = r_str_newf ("b %d %d", v, p);
-			char *out = run_old_command (io, iodesc, cmd);
-			free (cmd);
-			if (out) {
-				r_strbuf_append (sb, out);
-				free (out);
-			}
-		} else {
-			char *out = run_new_command (io, iodesc, "dp");
-			if (out) {
-				r_strbuf_append (sb, out);
-				free (out);
-			}
-		}
-		return r_strbuf_drain (sb);
-	}
-	if (r_str_startswith (buf, "e r2k.wp")) {
-		if (strchr (buf, '?')) {
-			r_strbuf_append (sb, "<bool> enable write protection (disabled by default)\n");
-			return r_strbuf_drain (sb);
-		}
-		const char *eq = strchr (buf, '=');
-		if (eq) {
-			int v = atoi (eq + 1);
-			r2k_struct.wp = (ut8)v;
-		} else {
-			r_strbuf_appendf (sb, "%s", r_str_bool (r2k_struct.wp));
-		}
-		return r_strbuf_drain (sb);
-	}
-	r_strbuf_free (sb);
-	return NULL;
+	return true;
 }
 
 char* run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
@@ -885,11 +873,12 @@ char* run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	if (!buf) {
 		return NULL;
 	}
-	char *out = run_new_command (io, iodesc, buf);
-	if (out) {
-		return out;
+	RStrBuf *sb = r_strbuf_new ("");
+	if (run_command (io, iodesc, sb, buf)) {
+		return r_strbuf_drain (sb);
 	}
-	return run_old_command (io, iodesc, buf);
+	r_strbuf_free (sb);
+	return NULL;
 }
 
-#endif
+#endif /* __GNU__ */
