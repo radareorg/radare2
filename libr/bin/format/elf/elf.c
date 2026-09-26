@@ -713,6 +713,47 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 	}
 }
 
+// the file-backed bytes of the PT_LOAD holding vaddr, from vaddr on
+static ut64 loaded_bytes_at(ELFOBJ *eo, ut64 vaddr) {
+	size_t i;
+	for (i = 0; i < eo->phnum; i++) {
+		const Elf_(Phdr) *p = &eo->phdr[i];
+		if (p->p_type != PT_LOAD || vaddr < p->p_vaddr || vaddr - p->p_vaddr >= p->p_filesz
+			|| p->p_filesz > UT64_MAX - p->p_vaddr || p->p_offset >= eo->size) {
+			continue;
+		}
+		const ut64 end = R_MIN (p->p_filesz, eo->size - p->p_offset);
+		const ut64 at = vaddr - p->p_vaddr;
+		return at < end? end - at: 0;
+	}
+	return 0;
+}
+
+static ut64 reloc_section_size_at(ELFOBJ *eo, ut64 vaddr, ut32 sh_type) {
+	size_t i;
+	for (i = 0; eo->shdr && i < eo->ehdr.e_shnum; i++) {
+		const Elf_(Shdr) *sh = &eo->shdr[i];
+		if (sh->sh_type == sh_type && sh->sh_addr == vaddr && (sh->sh_flags & SHF_ALLOC)
+			&& Elf_(v2p) (eo, vaddr) == sh->sh_offset) {
+			return sh->sh_size;
+		}
+	}
+	return 0;
+}
+
+// a header only speaks for a table whose declared size overruns its bytes
+static Elf_(Xword) reloc_read_size(ELFOBJ *eo, ut64 vaddr, Elf_(Xword) size, ut32 sh_type) {
+	if (vaddr == R_BIN_ELF_ADDR_MAX || !size) {
+		return size;
+	}
+	const ut64 loaded = loaded_bytes_at (eo, vaddr);
+	if (size <= loaded) {
+		return size;
+	}
+	const ut64 shsize = reloc_section_size_at (eo, vaddr, sh_type);
+	return (shsize && shsize < loaded)? shsize: loaded;
+}
+
 static int init_dynamic_section(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, false);
 
@@ -740,6 +781,11 @@ static int init_dynamic_section(ELFOBJ *eo) {
 	fill_dynamic_entries (eo, loaded_offset, dyn_size);
 
 	RBinElfDynamicInfo *di = &eo->dyn_info;
+	di->relasz_read = reloc_read_size (eo, di->dt_rela, di->dt_relasz, SHT_RELA);
+	di->relsz_read = reloc_read_size (eo, di->dt_rel, di->dt_relsz, SHT_REL);
+	di->relrsz_read = reloc_read_size (eo, di->dt_relr, di->dt_relrsz, SHT_RELR);
+	di->pltrelsz_read = reloc_read_size (eo, di->dt_jmprel, di->dt_pltrelsz,
+		di->dt_pltrel == DT_RELA? SHT_RELA: SHT_REL);
 	ut64 strtabaddr = 0;
 	if (di->dt_strtab != R_BIN_ELF_ADDR_MAX) {
 		strtabaddr = Elf_(v2p) (eo, di->dt_strtab);
@@ -3604,15 +3650,15 @@ static size_t get_num_relocs_dynamic(ELFOBJ *eo) {
 	size_t res = get_num_relocs_android (eo);
 
 	if (di->dt_relaent) {
-		res += di->dt_relasz / di->dt_relaent;
+		res += di->relasz_read / di->dt_relaent;
 	}
 	if (di->dt_relent) {
-		res += di->dt_relsz / di->dt_relent;
+		res += di->relsz_read / di->dt_relent;
 	}
 	// RELR bitmap words each encode up to wordsize*8-1 relocations, so scan the
 	// table for the exact count instead of assuming one reloc per entry
-	if (di->dt_relr != R_BIN_ELF_ADDR_MAX && di->dt_relrsz) {
-		res += get_num_relocs_relr_at (eo, di->dt_relr, di->dt_relrsz);
+	if (di->dt_relr != R_BIN_ELF_ADDR_MAX && di->relrsz_read) {
+		res += get_num_relocs_relr_at (eo, di->dt_relr, di->relrsz_read);
 	}
 	return res + get_num_relocs_dynamic_plt (eo) + get_num_relocs_mips_got (eo);
 }
@@ -3792,20 +3838,23 @@ done:
 	return pos;
 }
 
+static inline bool in_table(ut64 addr, ut64 base, ut64 size) {
+	return base != R_BIN_ELF_ADDR_MAX && addr >= base && addr - base < size;
+}
+
 // JMPREL usually points inside RELA/REL, so its entries reparse in that pass
 static inline bool in_pltrel_range(const RBinElfDynamicInfo *di, ut64 addr) {
-	return di->dt_jmprel != R_BIN_ELF_ADDR_MAX && di->dt_pltrelsz
-		&& addr >= di->dt_jmprel && addr < di->dt_jmprel + di->dt_pltrelsz;
+	return in_table (addr, di->dt_jmprel, di->pltrelsz_read);
 }
 
 static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t num_relocs) {
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
 	const size_t size = get_size_rel_mode (di->dt_pltrel);
 	ut64 offset;
-	const ut64 offset_end = di->dt_pltrelsz;
 	// order matters
 	// parse pltrel
-	for (offset = 0; offset < offset_end && pos < num_relocs; offset += size, pos++) {
+	for (offset = 0; size && offset <= di->pltrelsz_read && size <= di->pltrelsz_read - offset
+		&& pos < num_relocs; offset += size, pos++) {
 		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, di->dt_pltrel, di->dt_jmprel + offset)) {
 			RVecRBinElfReloc_pop_back (&eo->g_relocs);
@@ -3818,10 +3867,12 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	}
 	// parse relr - Relative relocations
 	if (di->dt_relr != R_BIN_ELF_ADDR_MAX) {
-		pos = populate_relr_at (eo, di->dt_relr, di->dt_relrsz, pos, num_relocs);
+		pos = populate_relr_at (eo, di->dt_relr, di->relrsz_read, pos, num_relocs);
 	}
 	// parse rela
-	for (offset = 0; offset < di->dt_relasz && pos < num_relocs; offset += di->dt_relaent, pos++) {
+	for (offset = 0; offset <= di->relasz_read && sizeof (Elf_(Rela)) <= di->relasz_read - offset
+		&& pos < num_relocs;
+		offset += di->dt_relaent, pos++) {
 		// skip re-read but keep pos++ so the num_relocs budget stays intact
 		if (in_pltrel_range (di, di->dt_rela + offset)) {
 			continue;
@@ -3835,7 +3886,9 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 		fix_rva_and_offset_exec_file (eo, reloc);
 	}
 
-	for (offset = 0; offset < di->dt_relsz && pos < num_relocs; offset += di->dt_relent, pos++) {
+	for (offset = 0; offset <= di->relsz_read && sizeof (Elf_(Rel)) <= di->relsz_read - offset
+		&& pos < num_relocs;
+		offset += di->dt_relent, pos++) {
 		if (in_pltrel_range (di, di->dt_rel + offset)) {
 			continue;
 		}
@@ -3902,21 +3955,46 @@ static size_t populate_relocs_record_from_mips_got(ELFOBJ *eo, size_t pos, size_
 	return pos;
 }
 
+static int cmp_off(const Elf_(Off) *a, const Elf_(Off) *b) {
+	return (*a > *b) - (*a < *b);
+}
+
+static void alloc_section_offsets(ELFOBJ *eo, RVecElfOff *starts) {
+	size_t i;
+	for (i = 0; eo->shdr && i < eo->ehdr.e_shnum; i++) {
+		const Elf_(Shdr) *sh = &eo->shdr[i];
+		if ((sh->sh_flags & SHF_ALLOC) && sh->sh_size && sh->sh_type != SHT_NOBITS) {
+			RVecElfOff_push_back (starts, &sh->sh_offset);
+		}
+	}
+	RVecElfOff_sort (starts, cmp_off);
+}
+
+// sections do not overlap in the file, so the next one bounds a corrupt size
+static ut64 reloc_section_bound(RVecElfOff *starts, RBinElfSection *section) {
+	Elf_(Off) off = section->offset;
+	if (!section->rva || !(section->flags & SHF_ALLOC)) {
+		return section->size;
+	}
+	const size_t i = RVecElfOff_upper_bound (starts, &off, cmp_off);
+	if (i == RVecElfOff_length (starts)) {
+		return section->size;
+	}
+	return R_MIN (section->size, *RVecElfOff_at (starts, i) - off);
+}
+
 static ut64 get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, size_t offset) {
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
 	const size_t gvaddr = section_vaddr + offset;
 
-	if (di->dt_rela != R_BIN_ELF_ADDR_MAX
-		&& gvaddr >= di->dt_rela && gvaddr < di->dt_rela + di->dt_relasz) {
-		return di->dt_rela + di->dt_relasz - section_vaddr;
+	if (in_table (gvaddr, di->dt_rela, di->relasz_read)) {
+		return di->dt_rela + di->relasz_read - section_vaddr;
 	}
-	if (di->dt_rel != R_BIN_ELF_ADDR_MAX
-		&& gvaddr >= di->dt_rel && gvaddr < di->dt_rel + di->dt_relsz) {
-		return di->dt_rel + di->dt_relsz - section_vaddr;
+	if (in_table (gvaddr, di->dt_rel, di->relsz_read)) {
+		return di->dt_rel + di->relsz_read - section_vaddr;
 	}
-	if (di->dt_jmprel != R_BIN_ELF_ADDR_MAX
-		&& gvaddr >= di->dt_jmprel && gvaddr < di->dt_jmprel + di->dt_pltrelsz) {
-		return di->dt_jmprel + di->dt_pltrelsz - section_vaddr;
+	if (in_table (gvaddr, di->dt_jmprel, di->pltrelsz_read)) {
+		return di->dt_jmprel + di->pltrelsz_read - section_vaddr;
 	}
 	// Add support for CREL sections
 	if (di->dt_crel != R_BIN_ELF_ADDR_MAX && gvaddr >= di->dt_crel) {
@@ -3925,9 +4003,8 @@ static ut64 get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, size_
 		return UT64_MAX;
 	}
 	// Add support for RELR sections
-	if (di->dt_relr != R_BIN_ELF_ADDR_MAX
-		&& gvaddr >= di->dt_relr && gvaddr < di->dt_relr + di->dt_relrsz) {
-		return di->dt_relr + di->dt_relrsz - section_vaddr;
+	if (in_table (gvaddr, di->dt_relr, di->relrsz_read)) {
+		return di->dt_relr + di->relrsz_read - section_vaddr;
 	}
 	// the APS2 packed stream is decoded from the dynamic pass, so a .rela.dyn
 	// section overlapping it must be skipped here or it reparses as raw RELA
@@ -3962,6 +4039,11 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 		return pos;
 	}
 
+	RVecElfOff starts;
+	RVecElfOff_init (&starts);
+	if (!is_bin_etrel (eo)) {
+		alloc_section_offsets (eo, &starts);
+	}
 	size_t i = 0;
 	RBinElfSection *section;
 	R_VEC_FOREACH (&eo->g_sections, section) {
@@ -3979,9 +4061,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 		// the dynamic dt_relr pass, otherwise expand them here
 		if (rel_mode == DT_RELR) {
 			const RBinElfDynamicInfo *di = &eo->dyn_info;
-			bool aliases_dynamic = di->dt_relr != R_BIN_ELF_ADDR_MAX
-				&& section->rva >= di->dt_relr
-				&& section->rva < di->dt_relr + di->dt_relrsz;
+			bool aliases_dynamic = in_table (section->rva, di->dt_relr, di->relrsz_read);
 			if (!aliases_dynamic) {
 				pos = populate_relr_at (eo, section->rva, section->size, pos, num_relocs);
 			}
@@ -4031,6 +4111,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 			if (!size) {
 				continue;
 			}
+			const ut64 ssize = reloc_section_bound (&starts, section);
 			ut64 dim_relocs = section->size / size;
 			dim_relocs = R_MIN (dim_relocs, num_relocs) + 2;
 			// ET_REL: cap per-section (scount), else cumulative pos (also dedups the dynamic pass)
@@ -4038,7 +4119,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 			ut64 scount = 0;
 			ut64 j;
 			for (j = get_next_not_analysed_offset (eo, section->rva, 0);
-				j < section->size && (etrel? scount: pos) <= dim_relocs;
+				j < ssize && size <= ssize - j && (etrel? scount: pos) <= dim_relocs;
 				j = get_next_not_analysed_offset (eo, section->rva, j + size)) {
 
 				RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
@@ -4057,6 +4138,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 		i++;
 	}
 
+	RVecElfOff_fini (&starts);
 	return pos;
 }
 
