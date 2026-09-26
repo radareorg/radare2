@@ -10,6 +10,31 @@ place to start if you are looking to contribute.
 For information about the git process, see
 [CONTRIBUTING.md](CONTRIBUTING.md#How_to_contribute).
 
+## Commit messages
+
+- Write the subject on one line. Start with a capital letter and a present-tense
+  action: `Fix`, `Add`, `Remove`.
+- Describe the change, preferably in fewer than 100 characters. Quote command
+  names with backticks.
+- Omit the body unless extra context is needed. If needed, separate it from the
+  subject with a blank line and use only short bullet points.
+- For changelog-worthy changes, end the subject with exactly one existing
+  `##tag`, separated by a space. Choose from the
+  [tag list](CONTRIBUTING.md#commit-message-tag-list) or recent `git log` entries;
+  do not invent tags. Tags are lowercase; established names such as `r2js` and
+  `r2r` include digits. Changes that do not belong in the changelog need no tag.
+- Use `##crash` for security fixes, even when another subsystem tag also fits.
+- When fixing an issue, optionally start with `Fix #number - ` and describe the
+  fix before the final tag. Follow any specific message requested by the user.
+
+Examples:
+
+```text
+Fix #12345 - Reject truncated binary headers ##crash
+Add help for `aflj` ##analysis
+Clarify build instructions ##doc
+```
+
 ## IDE settings
 ### generate compile_commands.json
 compile_commands.json records the dependency relationship between `.c/.h` file.
@@ -34,15 +59,11 @@ corresponding plugin for your IDE.
 
 ## Documentation
 
-Functions should have descriptive names and parameters. It should be clear what
-the function and its arguments do from the declaration. Comments should be used
-to explain purpose or clarify something that may not be immediately apparent or
-relatively complicated.
-
-```c
-/* Find the min and max addresses in an RList of maps. Returns (max-min)/width. */
-static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width);
-```
+Use descriptive function, parameter and variable names so the code is readable
+without comments in most cases. A declaration should make the function's purpose
+and its arguments clear. Do not add multiline comments. Use short single-line
+comments only to explain non-obvious intent or constraints; do not restate what
+the code already says.
 
 ## Error diagnosis
 
@@ -85,9 +106,9 @@ r2 provides several empty macros to make function signatures more informative.
 
 * `R_OUT`: Parameter is output - written to instead of read.
 * `R_INOUT`: Parameter is read/write.
-* `R_OWN`: Pointer ownership is transferred from the caller.
-* `R_BORROW`: The caller retains ownership of the pointer - the reciever must
-  not free it.
+* `R_OWNED`: Pointer ownership is transferred; check the API contract for direction.
+* `R_UNOWNED`: Pointer ownership is not transferred; a borrowed return value
+  must not be freed by the caller.
 * `R_NONNULL`: Pointer must not be null.
 * `R_NULLABLE`: Pointer may ne null.
 * `R_DEPRECATE`: Do not use in new code and will be removed in the future.
@@ -361,8 +382,8 @@ grep -R 'function_name(' libr
 grep -R 'function_name (' libr
 ```
 
-* Function names should be explicit enough to not require a comment explaining
-  what it does when seen elsewhere in code.
+* Function and variable names should make their purpose clear without explanatory
+  comments in most cases; see [Documentation](#documentation).
 
 * **Do not use global variables**. The only acceptable time to use them is for
   singletons and WIP code. Make a comment explaining why it is needed.
@@ -436,9 +457,7 @@ functions to interpret byte streams in a given endianness.
 ```c
 val32 = r_read_be32 (buffer)         // reads 4 bytes from a stream in BE
 val32 = r_read_le32 (buffer)         // reads 4 bytes from a stream in LE
-val32 = r_read_ble32 (buffer, isbig) // reads 4 bytes from a stream:
-                                     //   if isbig is true, reads in BE
-                                     //   otherwise reads in LE
+val32 = r_read_ble32 (buffer, isbig) // reads 4 bytes in BE if isbig, otherwise LE
 ```
 
 Such helper functions exist for 64, 32, 16, and 8 bit reads and writes.
@@ -742,10 +761,23 @@ Use `r2r` to run the radare2 regression test suite, e.g.:
 
 ```sh
 sys/install.sh
-r2r
+r2r -C test db/cmd/cmd_print
 ```
 
-r2r's source can be found in the `test/` directory, while binaries used for
+Build and install this checkout before testing so the executables, libraries
+and plugins come from the same revision. For an uninstalled build,
+`R2R_RADARE2` and `R2R_RASM2` must be absolute paths (`r2r -C` changes directory).
+These overrides only select executables: also configure the platform library
+search path and `R2_LIBR_PLUGINS` for the checkout; otherwise installed
+libraries or plugins may be loaded silently.
+On Linux, set `LD_LIBRARY_PATH` to the absolute `libr/*/` library directories
+and `R2_LIBR_PLUGINS` to the checkout's absolute `libr` path.
+
+C unit tests live in `test/unit/`; `make -C test unit-tests` uses the configured
+installation prefix too. For new regressions, exercise the changed behavior
+through `r2` commands in `test/db/` using `r2r`, instead of adding C unit tests.
+
+r2r's source can be found in the `binr/r2r/` directory, while binaries used for
 tests are located in the following GitHub repository:
 
 ```sh
