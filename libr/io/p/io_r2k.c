@@ -94,7 +94,7 @@ static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 #endif
 	} else {
 #if defined (__linux__) && !defined (__GNU__) && !R2_UEFI
-		(void)run_ioctl_command (io, fd, cmd);
+		return run_ioctl_command (io, fd, cmd);
 #else
 		R_LOG_WARN ("Try with: ':mod' or '.:mod'");
 #endif
