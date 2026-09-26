@@ -488,7 +488,7 @@ NAME=afbt help
 FILE=-
 CMDS=afbt?
 EXPECT=<<EOF
-| afbt [tableaddr] [elem_sz] [count] [seg]  analyze function jumptable (adding seg to each elem)
+| afbt [tableaddr] [elem_sz] [count] [seg]  analyze function jumptable
 EOF
 RUN
 
