@@ -562,19 +562,77 @@ static ut64 case_target_to_scan(RAnal *anal, RAnalFunction *fcn, JmptblTargetCtx
 	return r_anal_function_materialize_switch_case (anal, fcn, jmpptr)? UT64_MAX: jmpptr;
 }
 
+static void switch_op_merge(RAnalSwitchOp *dst, RAnalSwitchOp *src) {
+	if (!dst || !src || dst == src) {
+		return;
+	}
+	if (src->addr != UT64_MAX) {
+		dst->addr = src->addr;
+	}
+	if (src->baddr) {
+		dst->baddr = src->baddr;
+	}
+	if (src->daddr && src->daddr != UT64_MAX) {
+		dst->daddr = src->daddr;
+	}
+	if (src->dsize > 0) {
+		dst->dsize = src->dsize;
+	}
+	if (src->amount > 0) {
+		dst->amount = src->amount;
+	}
+	if (src->cases && !r_list_empty (src->cases)) {
+		dst->min_val = src->min_val;
+		dst->max_val = src->max_val;
+	}
+	if (src->def_val || !dst->def_val) {
+		dst->def_val = src->def_val;
+	}
+	if (src->vtbl_addr != UT64_MAX) {
+		dst->vtbl_addr = src->vtbl_addr;
+	}
+	if (src->lowcase) {
+		dst->lowcase = src->lowcase;
+	}
+	if (src->flags) {
+		dst->flags = src->flags;
+	}
+	if (src->vsize) {
+		dst->vsize = src->vsize;
+	}
+	if (src->shift) {
+		dst->shift = src->shift;
+	}
+	if (src->reg) {
+		dst->reg = src->reg;
+	}
+	if (src->jump_addr != UT64_MAX) {
+		dst->jump_addr = src->jump_addr;
+	}
+	int i;
+	for (i = 0; i < src->deps_count; i++) {
+		(void)r_anal_switch_op_add_dep (dst, src->deps[i]);
+	}
+	if (!dst->cases) {
+		dst->cases = src->cases;
+		src->cases = NULL;
+	} else if (src->cases) {
+		r_list_join (dst->cases, src->cases);
+	}
+}
+
 // The dispatch block, found again if a case's scan split the switch instruction
 // away from it. The switch op is carried over: it belongs to the instruction.
 static RAnalBlock *switch_block_refetch(RAnal *anal, RAnalBlock *block, ut64 ip) {
 	if (!block || r_anal_block_contains (block, ip)) {
 		return block;
 	}
-	RAnalSwitchOp *sop = block->switch_op;
 	RAnalBlock *found = r_anal_get_block_at (anal, ip);
 	if (!found) {
 		found = r_anal_bb_from_offset (anal, ip);
 		if (!found) {
-			R_LOG_ERROR ("Major disaster at 0x%08" PFMT64x, ip);
-			return NULL;
+			R_LOG_DEBUG ("Failed to refetch switch block at 0x%08" PFMT64x, ip);
+			return block;
 		}
 		if (found->addr != ip) {
 			RAnalBlock *newblock = r_anal_block_split (found, ip);
@@ -583,12 +641,23 @@ static RAnalBlock *switch_block_refetch(RAnal *anal, RAnalBlock *block, ut64 ip)
 				found = r_anal_get_block_at (anal, ip);
 			}
 			if (!found) {
-				R_LOG_ERROR ("Failed to split block for switch at 0x%08" PFMT64x, ip);
-				return NULL;
+				R_LOG_DEBUG ("Failed to split block for switch at 0x%08" PFMT64x, ip);
+				return block;
 			}
 		}
 	}
-	found->switch_op = sop;
+	if (block->switch_op) {
+		if (!found->switch_op) {
+			found->switch_op = block->switch_op;
+			block->switch_op = NULL;
+		} else if (found->switch_op == block->switch_op) {
+			block->switch_op = NULL;
+		} else {
+			switch_op_merge (found->switch_op, block->switch_op);
+			r_anal_switch_op_free (block->switch_op);
+			block->switch_op = NULL;
+		}
+	}
 	return found;
 }
 
@@ -847,8 +916,8 @@ static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bl
 		if (scan != UT64_MAX) {
 			// a command applies the switch outside any walk, so the case is scanned here
 			r_anal_function_scan_switch_case (anal, fcn, scan);
-			block = switch_block_refetch (anal, block, spec->startea);
 		}
+		block = switch_block_refetch (anal, block, spec->startea);
 		last_applied = i + 1;
 	}
 	if (last_applied > 0) {
@@ -1559,6 +1628,7 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 			// listing is not a walk, so the case is scanned here as it always was
 			r_anal_function_scan_switch_case (anal, fcn, scan);
 		}
+		bb = switch_block_refetch (anal, bb, saddr);
 	}
 	apply_switch (anal, fcn, bb, saddr, saddr, jaddr, UT64_MAX,
 		r_list_length (cases), UT64_MAX, loadsz);
@@ -1694,6 +1764,7 @@ static bool switch_cursor_legacy_next(RAnalSwitchCursor *c, ut64 *target) {
 		apply_case (anal, c->fcn, c->block, c->ip, case_sz, jmpptr, i + t->shift, case_loc, false);
 		c->applied = true;
 		*target = case_target_to_scan (anal, c->fcn, &c->ctx, jmpptr);
+		c->block = switch_block_refetch (anal, c->block, c->ip);
 		if (*target != UT64_MAX) {
 			c->idx++;
 			return true;
@@ -1708,6 +1779,7 @@ static bool switch_cursor_legacy_next(RAnalSwitchCursor *c, ut64 *target) {
 		}
 		apply_case (anal, c->fcn, c->block, c->ip, t->sz, t->default_case, -1, t->loc + c->idx * t->sz, false);
 		*target = case_target_to_scan (anal, c->fcn, &c->ctx, t->default_case);
+		c->block = switch_block_refetch (anal, c->block, c->ip);
 		return *target != UT64_MAX;
 	}
 	return false;
@@ -1722,6 +1794,7 @@ static bool switch_cursor_arm_next(RAnalSwitchCursor *c, ut64 *target) {
 		apply_case (c->anal, c->fcn, c->block, c->ip, c->arm.sz, jmpptr, c->idx, jmpptr, true);
 		c->applied = true;
 		*target = case_target_to_scan (c->anal, c->fcn, &c->ctx, jmpptr);
+		c->block = switch_block_refetch (c->anal, c->block, c->ip);
 		if (*target != UT64_MAX) {
 			c->idx++;
 			return true;
@@ -1764,6 +1837,7 @@ static bool switch_cursor_arm64_next(RAnalSwitchCursor *c, ut64 *target) {
 		kase.jump = caseaddr;
 		kase.value = i;
 		*target = jmptbl_apply_caseop (anal, c->fcn, c->block, t->seen, c->ip, t->loadsize, &kase);
+		c->block = switch_block_refetch (anal, c->block, c->ip);
 		t->valid_cases++;
 		c->applied = true;
 		if (*target != UT64_MAX) {
