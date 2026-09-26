@@ -14,3 +14,23 @@ true
 EOF
 RUN
 
+NAME=noreturn keeps pigz indirect tail call and caller CFG (#20961)
+FILE=bins/elf/pigz
+CMDS=<<EOF
+aaa
+afij @ sym.fail~{0.noreturn}
+afij @ sym.join_~{0.noreturn}
+abj @ 0x404bc5~{0.size}
+abj @ 0x404bca~{0.addr}
+afij @ sym.load.part.6~{0.realsz}
+afij @ sym.load.part.6~{0.ninstrs}
+EOF
+EXPECT=<<EOF
+true
+false
+65
+4213682
+491
+87
+EOF
+RUN
