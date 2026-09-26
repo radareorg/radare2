@@ -231,8 +231,7 @@ static size_t getvalue(const char *buf, int pos) {
 	return ret;
 }
 
-static char* print_help(char *cmd, int p_usage) {
-	RStrBuf *sb = r_strbuf_new ("");
+static void append_help(RStrBuf *sb, char *cmd, int p_usage) {
 	int i = 0;
 	int cmd_len = cmd ? strlen (cmd) : 0;
 	const char* usage = "Usage: :[MprRw][lpP] [args...]";
@@ -271,7 +270,6 @@ static char* print_help(char *cmd, int p_usage) {
 			r_strbuf_appendf (sb, "%s\n", help_msg_old[i]);
 		}
 	}
-	return r_strbuf_drain (sb);
 }
 
 int ReadMemory(RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t address, ut8 *buf, int len) {
@@ -443,58 +441,34 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	switch (*buf) {
 	case 'W':
 		if (buf[1] != ' ') {
-			r_strbuf_appendf (sb, "Write Protect: %d\n", r2k_struct.wp);
-			r_strbuf_appendf (sb, "Usage:\n");
-			char *help = print_help ("W", 0);
-			if (help) {
-				r_strbuf_appendf (sb, "%s", help);
-				free (help);
-			}
+			r_strbuf_appendf (sb, "Write Protect: %d\nUsage:\n", r2k_struct.wp);
+			append_help (sb, "W", 0);
 			break;
 		}
-
 		int wp = getvalue (buf, 1);
 		if (wp < 0 || wp > 1) {
-			r_strbuf_appendf (sb, "Invalid usage of W\n");
-			char *help = print_help ("W", 0);
-			if (help) {
-				r_strbuf_appendf (sb, "%s", help);
-				free (help);
-			}
+			r_strbuf_append (sb, "Invalid usage of W\n");
+			append_help (sb, "W", 0);
 			break;
 		}
 		r2k_struct.wp = (ut8)wp;
 		break;
 	case 'b': // ":b"
 		if (buf[1] != ' ') {
-			r_strbuf_appendf (sb, "beid: %d\n", r2k_struct.beid);
-			r_strbuf_appendf (sb, "pid:  %d\n", r2k_struct.pid);
-			r_strbuf_appendf (sb, "Usage:\n");
-			char *help = print_help ("b", 0);
-			if (help) {
-				r_strbuf_appendf (sb, "%s", help);
-				free (help);
-			}
+			r_strbuf_appendf (sb, "beid: %d\npid:  %d\nUsage:\n", r2k_struct.beid, r2k_struct.pid);
+			append_help (sb, "b", 0);
 			goto end;
 		}
 		int beid = getvalue (buf, 1);
 		int pid_b = getvalue (buf, 2);
 		if (beid < 0 || beid > 2) {
 			R_LOG_ERROR ("Invalid beid value, must be: 0, 1, 2");
-			char *help = print_help ("b", 0);
-			if (help) {
-				r_strbuf_appendf (sb, "%s", help);
-				free (help);
-			}
+			append_help (sb, "b", 0);
 			break;
 		}
 		if (beid == 1 && pid_b < 0) {
 			R_LOG_ERROR ("Invalid pid");
-			char *help = print_help ("b", 0);
-			if (help) {
-				r_strbuf_appendf (sb, "%s", help);
-				free (help);
-			}
+			append_help (sb, "b", 0);
 			break;
 		}
 		r2k_struct.beid = beid;
@@ -509,11 +483,8 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				//read linear address
 				//: rl addr len
 				if (buf[2] != ' ') {
-					char *help = print_help ("rl", 0);
-					if (help) {
-						r_strbuf_appendf (sb, "%s", help);
-						free (help);
-					}
+					append_help (sb, "rl", 0);
+					r_print_free (print);
 					goto end;
 				}
 				pid = 0;
@@ -521,11 +492,8 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				len = getvalue (buf, 2);
 				if (addr == -1 || len == -1) {
 					R_LOG_ERROR ("Invalid number of arguments");
-					char *help = print_help ("rl", 0);
-					if (help) {
-						r_strbuf_appendf (sb, "%s", help);
-						free (help);
-					}
+					append_help (sb, "rl", 0);
+					r_print_free (print);
 					goto end;
 				}
 				ioctl_n = IOCTL_READ_KERNEL_MEMORY;
@@ -534,11 +502,8 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				// read process address
 				// : rp pid address len
 				if (buf[2] != ' ') {
-					char *help = print_help ("rp", 0);
-					if (help) {
-						r_strbuf_appendf (sb, "%s", help);
-						free (help);
-					}
+					append_help (sb, "rp", 0);
+					r_print_free (print);
 					goto end;
 				}
 				pid = getvalue (buf, 1);
@@ -546,11 +511,8 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				len = getvalue (buf, 3);
 				if (pid == -1 || addr == -1 || len == -1) {
 					R_LOG_ERROR ("Invalid number of arguments");
-					char *help = print_help ("rp", 0);
-					if (help) {
-						r_strbuf_appendf (sb, "%s", help);
-						free (help);
-					}
+					append_help (sb, "rp", 0);
+					r_print_free (print);
 					goto end;
 				}
 				ioctl_n = IOCTL_READ_PROCESS_ADDR;
@@ -559,11 +521,8 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				//read physical address
 				//: rP address len
 				if (buf[2] != ' ') {
-					char *help = print_help ("rP", 0);
-					if (help) {
-						r_strbuf_appendf (sb, "%s", help);
-						free (help);
-					}
+					append_help (sb, "rP", 0);
+					r_print_free (print);
 					goto end;
 				}
 				pid = 0;
@@ -571,21 +530,14 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				len = getvalue (buf, 2);
 				if (addr == -1 || len == -1) {
 					R_LOG_ERROR ("Invalid number of arguments");
-					char *help = print_help ("rP", 0);
-					if (help) {
-						r_strbuf_appendf (sb, "%s", help);
-						free (help);
-					}
+					append_help (sb, "rP", 0);
+					r_print_free (print);
 					goto end;
 				}
 				ioctl_n = IOCTL_READ_PHYSICAL_ADDR;
 				break;
 			default:
-				char *help = print_help ("r", 0);
-				if (help) {
-					r_strbuf_appendf (sb, "%s", help);
-					free (help);
-				}
+				append_help (sb, "r", 0);
 				r_print_free (print);
 				goto end;
 			}
@@ -593,7 +545,6 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			if (databuf) {
 				ret = ReadMemory (io, iodesc, ioctl_n, pid, addr, databuf, len);
 				if (ret > 0) {
-					// Use r_print_hexdump_strbuf to append to RStrBuf instead of using cb_printf
 					r_print_hexdump_strbuf (print, sb, addr, (const ut8 *) databuf, ret, 16, 1, 1);
 				}
 			} else {
@@ -609,11 +560,7 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			//write linear address
 			//: wl addr str
 			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
-				char *help = print_help ("wl", 0);
-				if (help) {
-					r_strbuf_appendf (sb, "%s", help);
-					free (help);
-				}
+				append_help (sb, "wl", 0);
 				goto end;
 			}
 			pid = 0;
@@ -621,11 +568,7 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			buf = getargpos (buf, 2);
 			if (addr == -1 || !buf) {
 				R_LOG_ERROR ("Invalid number of arguments");
-				char *help = print_help ("wl", 0);
-				if (help) {
-					r_strbuf_appendf (sb, "%s", help);
-					free (help);
-				}
+				append_help (sb, "wl", 0);
 				goto end;
 			}
 			ioctl_n = IOCTL_WRITE_KERNEL_MEMORY;
@@ -634,11 +577,7 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			//write process address
 			//: wp pid address str
 			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
-				char *help = print_help ("wp", 0);
-				if (help) {
-					r_strbuf_appendf (sb, "%s", help);
-					free (help);
-				}
+				append_help (sb, "wp", 0);
 				goto end;
 			}
 			pid = getvalue (buf, 1);
@@ -646,11 +585,7 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			buf = getargpos (buf, 3);
 			if (pid == -1 || addr == -1 || !buf) {
 				R_LOG_ERROR ("Invalid number of arguments");
-				char *help = print_help ("wp", 0);
-				if (help) {
-					r_strbuf_appendf (sb, "%s", help);
-					free (help);
-				}
+				append_help (sb, "wp", 0);
 				goto end;
 			}
 			ioctl_n = IOCTL_WRITE_PROCESS_ADDR;
@@ -659,11 +594,7 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			// write physical address
 			// : wP address str
 			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
-				char *help = print_help ("wP", 0);
-				if (help) {
-					r_strbuf_appendf (sb, "%s", help);
-					free (help);
-				}
+				append_help (sb, "wP", 0);
 				goto end;
 			}
 			pid = 0;
@@ -671,21 +602,13 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			buf = getargpos (buf, 2);
 			if (addr == -1 || !buf) {
 				R_LOG_ERROR ("Invalid number of arguments");
-				char *help = print_help ("wP", 0);
-				if (help) {
-					r_strbuf_appendf (sb, "%s", help);
-					free (help);
-				}
+				append_help (sb, "wP", 0);
 				goto end;
 			}
 			ioctl_n = IOCTL_WRITE_PHYSICAL_ADDR;
 			break;
 		default:
-			char *help = print_help ("w", 0);
-			if (help) {
-				r_strbuf_appendf (sb, "%s", help);
-				free (help);
-			}
+			append_help (sb, "w", 0);
 			goto end;
 		}
 		// coverity says this cant happen, but it doesnt hurts to add a check
@@ -761,7 +684,7 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			if (buf[1] != 0 && buf[1] == 'p') {
 				char *pp = x86_ctrl_reg_pretty_print (reg_data);
 				if (pp) {
-					r_strbuf_appendf (sb, "%s", pp);
+					r_strbuf_append (sb, pp);
 					free (pp);
 				}
 			} else {
@@ -778,7 +701,7 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			if (buf[1] != 0 && buf[1] == 'p') {
 				char *pp = arm_ctrl_reg_pretty_print (reg_data);
 				if (pp) {
-					r_strbuf_appendf (sb, "%s", pp);
+					r_strbuf_append (sb, pp);
 					free (pp);
 				}
 			} else {
@@ -792,7 +715,7 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			if (buf[1] != 0 && buf[1] == 'p') {
 				char *pp = arm64_ctrl_reg_pretty_print (reg_data);
 				if (pp) {
-					r_strbuf_appendf (sb, "%s", pp);
+					r_strbuf_append (sb, pp);
 					free (pp);
 				}
 			} else {
@@ -815,33 +738,21 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			case '*':
 				fflag = true;
 				if (buf[2] != ' ') {
-					char *help = print_help ("p*", 0);
-					if (help) {
-						r_strbuf_appendf (sb, "%s", help);
-						free (help);
-					}
+					append_help (sb, "p*", 0);
 					goto end;
 				}
 				break;
 			case ' ':
 				break;
 			default:
-				char *help = print_help ("p", 0);
-				if (help) {
-					r_strbuf_appendf (sb, "%s", help);
-					free (help);
-				}
+				append_help (sb, "p", 0);
 				goto end;
 			}
 
 			pid = getvalue (buf, 1);
 			if (pid == -1) {
 				R_LOG_ERROR ("Invalid number of arguments");
-				char *help = print_help ("p", 0);
-				if (help) {
-					r_strbuf_appendf (sb, "%s", help);
-					free (help);
-				}
+				append_help (sb, "p", 0);
 				break;
 			}
 			proc_data.pid = pid;
@@ -854,17 +765,13 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			}
 			char *pi = print_proc_info (&proc_data, fflag);
 			if (pi) {
-				r_strbuf_appendf (sb, "%s", pi);
+				r_strbuf_append (sb, pi);
 				free (pi);
 			}
 		}
 		break;
 	default:
-		char *help = print_help (NULL, 1);
-		if (help) {
-			r_strbuf_appendf (sb, "%s", help);
-			free (help);
-		}
+		append_help (sb, NULL, 1);
 		break;
 	}
  end:
@@ -881,7 +788,7 @@ static char* run_new_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			char *out = run_old_command (io, iodesc, cmd);
 			free (cmd);
 			if (out) {
-				r_strbuf_appendf (sb, "%s", out);
+				r_strbuf_append (sb, out);
 				free (out);
 			}
 		} else if (r2k_struct.beid == 1) {
@@ -890,14 +797,14 @@ static char* run_new_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			char *out = run_old_command (io, iodesc, cmd);
 			free (cmd);
 			if (out) {
-				r_strbuf_appendf (sb, "%s", out);
+				r_strbuf_append (sb, out);
 				free (out);
 			}
 		} else {
 			// use \M
 			char *out = run_old_command (io, iodesc, "M");
 			if (out) {
-				r_strbuf_appendf (sb, "%s", out);
+				r_strbuf_append (sb, out);
 				free (out);
 			}
 		}
@@ -906,7 +813,7 @@ static char* run_new_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	if (r_str_startswith (buf, "dr")) {
 		char *out = run_old_command (io, iodesc, "R");
 		if (out) {
-			r_strbuf_appendf (sb, "%s", out);
+			r_strbuf_append (sb, out);
 			free (out);
 		}
 		return r_strbuf_drain (sb);
@@ -914,7 +821,7 @@ static char* run_new_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	if (r_str_startswith (buf, "dR")) {
 		char *out = run_old_command (io, iodesc, "Rp");
 		if (out) {
-			r_strbuf_appendf (sb, "%s", out);
+			r_strbuf_append (sb, out);
 			free (out);
 		}
 		return r_strbuf_drain (sb);
@@ -942,13 +849,13 @@ static char* run_new_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			char *out = run_old_command (io, iodesc, cmd);
 			free (cmd);
 			if (out) {
-				r_strbuf_appendf (sb, "%s", out);
+				r_strbuf_append (sb, out);
 				free (out);
 			}
 		} else {
 			char *out = run_new_command (io, iodesc, "dp");
 			if (out) {
-				r_strbuf_appendf (sb, "%s", out);
+				r_strbuf_append (sb, out);
 				free (out);
 			}
 		}
