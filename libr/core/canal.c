@@ -722,7 +722,7 @@ static void core_anal_fcn_trycatch(RCore *core, RAnalFunction *fcn) {
 		if (*handler == fcn->addr || r_anal_function_contains (fcn, *handler)) {
 			continue;
 		}
-		int ret = r_anal_function_bb (core->anal, fcn, *handler, core->anal->opt.depth);
+		int ret = r_anal_function_bb (core->anal, fcn, *handler);
 		if (ret < 0 && ret != R_ANAL_RET_END) {
 			R_LOG_DEBUG ("Cannot analyze exception handler at 0x%08"PFMT64x, *handler);
 		}
@@ -752,20 +752,13 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	}
 #endif
 	const char *cc = r_anal_cc_default (core->anal);
-	if (cc && !strcmp (cc, "dyncc")) {
-		// Keep the bare "dyncc" marker; r_anal_function_cc () resolves it
-		// lazily via RBinPlugin.get_cc the first time it is actually needed.
-		if (!core->anal->binb.get_cc) {
-			cc = "reg"; // no per-function cc provider available
-		}
-	} else if (!cc) {
+	if (!cc) {
 		const bool isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
 		if (!isvm && r_anal_cc_once (core->anal)) {
 			R_LOG_WARN ("select the calling convention with `e anal.cc=?`");
 		}
 		cc = "reg";
 	}
-	fcn->callconv = r_str_constpool_get (&core->anal->constpool, cc);
 
 	RAnalHint *hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
@@ -775,6 +768,9 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		fcn->bits = core->anal->config->bits;
 	}
 	fcn->addr = at;
+	// the address is set, so a bare dyncc resolves against it before analysis
+	// reads the convention
+	r_anal_function_store_callconv (core->anal, fcn, cc);
 	fcn->name = get_function_name (core, fcnpfx, at);
 	RIORegion region;
 	if (!r_io_get_region_at (core->io, &region, at + r_anal_function_linear_size (fcn))) {
@@ -2027,6 +2023,8 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	const bool use_esil = r_config_get_b (core->config, "anal.esil");
 
 	r_core_seek_arch_bits (core, at);
+	// signatures are read during analysis; the type databases load once here
+	r_anal_types_prepare (core->anal);
 	if (!core->anal->arch->session) {
 		R_LOG_DEBUG ("Cannot analyze 0x%08"PFMT64x" without an architecture session", at);
 		return false;
@@ -3811,8 +3809,8 @@ static bool anal_block_on_exit(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	int *prev_regset = *RVecIntPtr_at (&ctx->reg_set, RVecIntPtr_length (&ctx->reg_set) - 1);
 	size_t i;
 	for (i = 0; i < R_ANAL_CC_REGSET_SIZE; i++) {
-		if (!prev_regset[i] && cur_regset[i] == 1) {
-			prev_regset[i] = 1;
+		if (!(prev_regset[i] & 3) && (cur_regset[i] & 3) == 1) {
+			prev_regset[i] |= 1;
 		}
 	}
 	free (cur_regset);
@@ -3964,23 +3962,6 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	free (ctx.buf);
 	fcn->stack = saved_stack;
 	r_anal_function_rename_default_args (fcn);
-}
-
-// Collect plugin-provided data refs for all functions and add them as xrefs
-R_API void r_core_anal_plugin_data_refs(RCore *core) {
-	R_RETURN_IF_FAIL (core && core->anal);
-	RListIter *iter;
-	RAnalFunction *fcn;
-	r_list_foreach (core->anal->fcns, iter, fcn) {
-		RVecAnalRef *refs = r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_GET_DATA_REFS, fcn);
-		if (refs) {
-			RAnalRef *ref;
-			R_VEC_FOREACH (refs, ref) {
-				r_anal_xrefs_setf (core->anal, fcn, ref->at, ref->addr, ref->type);
-			}
-			RVecAnalRef_free (refs);
-		}
-	}
 }
 
 static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, HtUP *state, HtUP *avoid) {
@@ -5725,6 +5706,27 @@ R_API void r_core_anal_inflags(RCore *core, const char * R_NULLABLE glob) {
 	free (anal_in);
 }
 
+static bool indirect_exit_is_internal(RAnalFunction *fcn, RAnalBlock *bb) {
+	if (bb->jump != UT64_MAX) {
+		return r_anal_function_contains (fcn, bb->jump);
+	}
+	RAnalSwitchOp *sw = bb->switch_op;
+	if (!sw || !sw->amount || sw->amount != r_list_length (sw->cases)) {
+		return false;
+	}
+	if (sw->def_val != UT64_MAX && !r_anal_function_contains (fcn, sw->def_val)) {
+		return false;
+	}
+	RListIter *iter;
+	RAnalCaseOp *kase;
+	r_list_foreach (sw->cases, iter, kase) {
+		if (!r_anal_function_contains (fcn, kase->jump)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static bool analyze_noreturn_function(RCore *core, RAnalFunction *f) {
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -5744,8 +5746,19 @@ static bool analyze_noreturn_function(RCore *core, RAnalFunction *f) {
 		switch (op->type & R_ANAL_OP_TYPE_MASK) {
 		case R_ANAL_OP_TYPE_ILL:
 		case R_ANAL_OP_TYPE_RET:
+		case R_ANAL_OP_TYPE_CRET:
 			r_anal_op_free (op);
 			return false;
+		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_UCJMP:
+			// MASK removes REG/IND, so this also covers RJMP/IJMP/IRJMP.
+			// An indirect exit can reach a return outside the recovered CFG.
+			// A complete internal switch still permits noreturn propagation.
+			if (!indirect_exit_is_internal (f, bb)) {
+				r_anal_op_free (op);
+				return false;
+			}
+			break;
 		case R_ANAL_OP_TYPE_JMP:
 			if (!r_anal_function_contains (f, op->jump)) {
 				r_anal_op_free (op);

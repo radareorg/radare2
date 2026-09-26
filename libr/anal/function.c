@@ -155,6 +155,8 @@ R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 	if (__fcn_exists (anal, fcn->name, fcn->addr)) {
 		return false;
 	}
+	// The address is final here, so a bare dyncc marker resolves against it.
+	r_anal_function_store_callconv (anal, fcn, fcn->callconv);
 	if (anal->cb.on_fcn_new) {
 		anal->cb.on_fcn_new (anal, anal->user, fcn);
 	}
@@ -236,7 +238,9 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 	}
 	ht_up_delete (fcn->anal->ht_addr_fun, fcn->addr);
 	fcn->addr = addr;
+	fcn->meta.numrefs = -1;
 	ht_up_insert (fcn->anal->ht_addr_fun, addr, fcn);
+	r_anal_function_bump_dirty_epoch (fcn);
 	return true;
 }
 
@@ -265,6 +269,7 @@ R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
 			REventFunction event = { .addr = fcn->addr, .fcn = fcn };
 			r_event_send (anal->ev, R_EVENT_FUNCTION_RENAMED, &event);
 		}
+		r_anal_function_bump_dirty_epoch (fcn);
 		return true;
 	}
 	return false;
@@ -277,6 +282,7 @@ R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	}
 	r_list_append (bb->fcns, fcn);
 	r_list_append (fcn->bbs, r_ref (bb));
+	fcn->meta.numcallrefs = -1;
 
 	if (fcn->meta._min != UT64_MAX) {
 		if (bb->addr + bb->size > fcn->meta._max) {
@@ -303,6 +309,7 @@ R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	}
 
 	r_list_delete_data (fcn->bbs, bb);
+	fcn->meta.numcallrefs = -1;
 	r_unref (bb);
 }
 
@@ -412,266 +419,58 @@ R_API int r_anal_function_coverage(RAnalFunction *fcn) {
 	return (traced * 100) / total;
 }
 
-static void fcn_context_reg_arg_free(RAnalFcnRegArg *arg) {
-	if (!arg) {
-		return;
-	}
-	free (arg->name);
-	free (arg->type);
-	free (arg->reg);
-	free (arg);
+R_API ut64 r_anal_function_dirty_epoch(const RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
+	return fcn->dirty_epoch;
 }
 
-static void fcn_context_slot_free(RAnalFcnSlot *slot) {
-	if (!slot) {
-		return;
+R_API ut64 r_anal_function_bump_dirty_epoch(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
+	fcn->dirty_epoch++;
+	if (!fcn->dirty_epoch) {
+		fcn->dirty_epoch++;
 	}
-	free (slot->name);
-	free (slot->type);
-	free (slot->base_name);
-	free (slot->arg_name);
-	free (slot->home_reg);
-	free (slot);
+	fcn->has_changed = true;
+	return fcn->dirty_epoch;
 }
 
-static char *fcn_context_dup_var_regname(RAnal *anal, const RAnalVar *var) {
-	if (R_STR_ISNOTEMPTY (var->regname)) {
-		return strdup (var->regname);
+// The convention a bare "dyncc" stands for: what the bin plugin says about the
+// function's address, or "reg" when nothing does. Only once the address is known.
+static const char *resolved_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv) {
+	if (strcmp (callconv, "dyncc") || fcn->addr == UT64_MAX) {
+		return callconv;
 	}
-	if (var->kind == R_ANAL_VAR_KIND_REG) {
-		RRegItem *ri = r_reg_index_get (anal->reg, R_ABS (var->delta));
-		if (ri) {
-			char *name = strdup (ri->name);
-			r_unref (ri);
-			return name;
-		}
-	}
-	return NULL;
+	const char *resolved = anal->binb.get_cc? anal->binb.get_cc (anal->binb.bin, fcn->addr): NULL;
+	return resolved? resolved: "reg";
 }
 
-static st64 fcn_context_stack_offset(const RAnalFunction *fcn, const RAnalVar *var) {
-	R_RETURN_VAL_IF_FAIL (fcn && var, 0);
-	switch (var->kind) {
-	case R_ANAL_VAR_KIND_BPV:
-		return (st64)var->delta + fcn->bp_off;
-	case R_ANAL_VAR_KIND_SPV:
-		return var->delta;
-	default:
-		return var->delta;
+// Store the convention a caller decided on, resolved. The one writer; a
+// NULL or empty name clears the convention, and interning a name that fails
+// leaves the function as it was.
+R_API bool r_anal_function_store_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, false);
+	const char *pooled = NULL;
+	if (R_STR_ISNOTEMPTY (callconv)) {
+		pooled = r_str_constpool_get (&anal->constpool, resolved_callconv (anal, fcn, callconv));
+		if (!pooled) {
+			return false;
+		}
 	}
+	if (fcn->callconv == pooled) {
+		return true;
+	}
+	fcn->callconv = pooled;
+	r_anal_function_bump_dirty_epoch (fcn);
+	return true;
 }
 
-static RAnalVar *fcn_context_find_register_home_source(RVecAnalVarPtr *rvars, RAnalVar *slot) {
-	if (!rvars) {
-		return NULL;
+// The convention a user named, which has to be one the target defines.
+R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn && R_STR_ISNOTEMPTY (callconv), false);
+	if (!r_anal_cc_exist (anal, callconv)) {
+		return false;
 	}
-	RAnalVar **it;
-	R_VEC_FOREACH (rvars, it) {
-		RAnalVar *var = *it;
-		if (var && var->isarg && var->kind == R_ANAL_VAR_KIND_REG) {
-			RAnalVar *dst = r_anal_var_get_dst_var (var);
-			if (dst == slot) {
-				return var;
-			}
-		}
-	}
-	return NULL;
-}
-
-static RAnalFcnSlotRole fcn_context_classify_slot(const RAnalVar *var, RAnalVar *home_source) {
-	R_RETURN_VAL_IF_FAIL (var, R_ANAL_FCN_SLOT_UNKNOWN);
-	if (home_source) {
-		return R_ANAL_FCN_SLOT_HOME;
-	}
-	if (var->isarg) {
-		return R_ANAL_FCN_SLOT_ARG;
-	}
-	if (var->kind == R_ANAL_VAR_KIND_BPV || var->kind == R_ANAL_VAR_KIND_SPV) {
-		return R_ANAL_FCN_SLOT_LOCAL;
-	}
-	return R_ANAL_FCN_SLOT_UNKNOWN;
-}
-
-static RAnalFcnRegArg *fcn_context_collect_reg_arg(RAnal *anal, const RAnalFcnContext *ctx, RAnalVar *var) {
-	R_RETURN_VAL_IF_FAIL (anal && ctx && var, NULL);
-	RAnalFcnRegArg *arg = R_NEW0 (RAnalFcnRegArg);
-	const int arg_index = r_anal_var_get_argnum (var);
-	const RAnalFunctionParam *signature_param = (ctx->signature && arg_index >= 0)
-		? r_list_get_n (ctx->signature->params, arg_index)
-		: NULL;
-	arg->arg_index = arg_index;
-	if (signature_param && R_STR_ISNOTEMPTY (signature_param->name) && r_anal_var_is_default_argname (var->name)) {
-		arg->name = strdup (signature_param->name);
-	} else if (R_STR_ISNOTEMPTY (var->name)) {
-		arg->name = strdup (var->name);
-	}
-	if (R_STR_ISNOTEMPTY (var->type)) {
-		arg->type = strdup (var->type);
-	} else if (signature_param && R_STR_ISNOTEMPTY (signature_param->type)) {
-		arg->type = strdup (signature_param->type);
-	}
-	arg->reg = fcn_context_dup_var_regname (anal, var);
-	if ((R_STR_ISNOTEMPTY (var->name) && !arg->name)
-		|| (R_STR_ISNOTEMPTY (var->type) && !arg->type)
-		|| !arg->reg) {
-		fcn_context_reg_arg_free (arg);
-		return NULL;
-	}
-	return arg;
-}
-
-static RAnalFcnSlot *fcn_context_collect_slot(RAnal *anal, const RAnalFcnContext *ctx, RAnalFunction *fcn, RAnalVar *var, RAnalVar *home_source) {
-	const RAnalFunctionParam *signature_param = NULL;
-
-	R_RETURN_VAL_IF_FAIL (anal && ctx && fcn && var, NULL);
-	RAnalFcnSlot *slot = R_NEW0 (RAnalFcnSlot);
-	int arg_index = -1;
-	if (R_STR_ISNOTEMPTY (var->name)) {
-		slot->name = strdup (var->name);
-	}
-	if (R_STR_ISNOTEMPTY (var->type)) {
-		slot->type = strdup (var->type);
-	}
-	slot->base = (var->kind == R_ANAL_VAR_KIND_BPV)? R_ANAL_FCN_BASE_BP: R_ANAL_FCN_BASE_SP;
-	slot->offset = fcn_context_stack_offset (fcn, var);
-	slot->role = fcn_context_classify_slot (var, home_source);
-
-	if (home_source) {
-		arg_index = r_anal_var_get_argnum (home_source);
-		signature_param = (ctx->signature && arg_index >= 0)? r_list_get_n (ctx->signature->params, arg_index): NULL;
-		slot->arg_index = arg_index;
-		slot->home_reg = fcn_context_dup_var_regname (anal, home_source);
-		if (signature_param && R_STR_ISNOTEMPTY (signature_param->name)) {
-			slot->arg_name = strdup (signature_param->name);
-		} else if (R_STR_ISNOTEMPTY (home_source->name)) {
-			slot->arg_name = strdup (home_source->name);
-		}
-		if (!slot->type && signature_param && R_STR_ISNOTEMPTY (signature_param->type)) {
-			slot->type = strdup (signature_param->type);
-		}
-	} else if (var->isarg) {
-		arg_index = r_anal_var_get_argnum (var);
-		slot->arg_index = arg_index;
-		if (arg_index >= 0) {
-			signature_param = ctx->signature? r_list_get_n (ctx->signature->params, arg_index): NULL;
-			if (signature_param && R_STR_ISNOTEMPTY (signature_param->name)) {
-				slot->arg_name = strdup (signature_param->name);
-			} else if (R_STR_ISNOTEMPTY (var->name)) {
-				slot->arg_name = strdup (var->name);
-			}
-			if (!slot->type && signature_param && R_STR_ISNOTEMPTY (signature_param->type)) {
-				slot->type = strdup (signature_param->type);
-			}
-		}
-	} else {
-		slot->arg_index = -1;
-	}
-
-	if ((R_STR_ISNOTEMPTY (var->name) && !slot->name)
-		|| (R_STR_ISNOTEMPTY (var->type) && !slot->type)
-		|| (home_source && !slot->home_reg)) {
-		fcn_context_slot_free (slot);
-		return NULL;
-	}
-	return slot;
-}
-
-static RAnalFunctionSignature *fcn_context_collect_signature(RAnalFunction *fcn) {
-	R_RETURN_VAL_IF_FAIL (fcn, NULL);
-	RAnalFunctionSignature *signature = r_anal_function_get_signature (fcn);
-	const char *fcncc = r_anal_function_cc (fcn);
-	if (signature || (!R_STR_ISNOTEMPTY (fcncc) && !fcn->is_noreturn)) {
-		return signature;
-	}
-	signature = R_NEW0 (RAnalFunctionSignature);
-	signature->params = r_list_new ();
-	if (!signature->params) {
-		r_anal_function_signature_free (signature);
-		return NULL;
-	}
-	if (R_STR_ISNOTEMPTY (fcncc)) {
-		signature->callconv = strdup (fcncc);
-		if (!signature->callconv) {
-			r_anal_function_signature_free (signature);
-			return NULL;
-		}
-	}
-	signature->noreturn = fcn->is_noreturn;
-	return signature;
-}
-
-R_API void r_anal_function_context_free(RAnalFcnContext *ctx) {
-	if (!ctx) {
-		return;
-	}
-	r_anal_function_signature_free (ctx->signature);
-	r_list_free (ctx->reg_args);
-	r_list_free (ctx->fcn_slots);
-	free (ctx);
-}
-
-R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn) {
-	RAnalFcnContext *ctx;
-	RAnalFcnVarsCache cache = {0};
-
-	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
-	r_anal_types_ensure_loaded (anal);
-
-	ctx = R_NEW0 (RAnalFcnContext);
-	ctx->signature = fcn_context_collect_signature (fcn);
-	ctx->reg_args = r_list_newf ((RListFree)fcn_context_reg_arg_free);
-	ctx->fcn_slots = r_list_newf ((RListFree)fcn_context_slot_free);
-	if (!ctx->reg_args || !ctx->fcn_slots) {
-		r_anal_function_context_free (ctx);
-		return NULL;
-	}
-
-	r_anal_function_vars_cache_init (anal, &cache, fcn);
-	RAnalVar **it;
-	R_VEC_FOREACH (cache.rvars, it) {
-		RAnalVar *var = *it;
-		if (!var || !var->isarg || var->kind != R_ANAL_VAR_KIND_REG) {
-			continue;
-		}
-		RAnalFcnRegArg *arg = fcn_context_collect_reg_arg (anal, ctx, var);
-		if (!arg) {
-			r_anal_function_vars_cache_fini (&cache);
-			r_anal_function_context_free (ctx);
-			return NULL;
-		}
-		r_list_append (ctx->reg_args, arg);
-	}
-
-	R_VEC_FOREACH (cache.bvars, it) {
-		RAnalVar *var = *it;
-		if (!var) {
-			continue;
-		}
-		RAnalVar *home_source = fcn_context_find_register_home_source (cache.rvars, var);
-		RAnalFcnSlot *slot = fcn_context_collect_slot (anal, ctx, fcn, var, home_source);
-		if (!slot) {
-			r_anal_function_vars_cache_fini (&cache);
-			r_anal_function_context_free (ctx);
-			return NULL;
-		}
-		r_list_append (ctx->fcn_slots, slot);
-	}
-	R_VEC_FOREACH (cache.svars, it) {
-		RAnalVar *var = *it;
-		if (!var) {
-			continue;
-		}
-		RAnalVar *home_source = fcn_context_find_register_home_source (cache.rvars, var);
-		RAnalFcnSlot *slot = fcn_context_collect_slot (anal, ctx, fcn, var, home_source);
-		if (!slot) {
-			r_anal_function_vars_cache_fini (&cache);
-			r_anal_function_context_free (ctx);
-			return NULL;
-		}
-		r_list_append (ctx->fcn_slots, slot);
-	}
-	r_anal_function_vars_cache_fini (&cache);
-	return ctx;
+	return r_anal_function_store_callconv (anal, fcn, callconv);
 }
 
 typedef struct {

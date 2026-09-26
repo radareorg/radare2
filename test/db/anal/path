@@ -162,7 +162,7 @@ pdb @@= 0x000067d0 0x00004df0 0x000132d0 0x000132de 0x00004960
 |           0x000067f1      488d3df8e5..   lea rdi, [main]             ; 0x4df0
 \           0x000067f8      ff15d2c70100   call qword [reloc.__libc_start_main] ; [0x22fd0:8]=0
             ; DATA XREF from entry0 @ 0x67f1(r)
-/ 6603: int main (int argc, char **argv);
+/ 6603: int main (int argc, char **argv, char **envp);
 | `- args(rdi, rsi) vars(10:sp[0x40..0x74])
 |           0x00004df0      f30f1efa       endbr64
 |           0x00004df4      4157           push r15

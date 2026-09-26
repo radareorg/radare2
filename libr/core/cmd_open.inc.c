@@ -15,7 +15,7 @@ static RCoreHelpMessage help_msg_o = {
 	"o", "-1", "close file descriptor 1",
 	"o*", "[*]", "list opened files in r2 commands, show r2 script to set flag for each fd",
 	"o+", " [file]", "open a file in read-write mode",
-	"o++", " [file]", "create and open file in read-write mode (see ot and omr)",
+	"o++", " [file]", "create and open file in read-write mode (see ot/omr)",
 	"o-", "[?][#!*$.]", "close opened files",
 	"o.", "", "show current filename (or o.q/oq to get the fd)",
 	"o:", " [len]", "open a malloc://[len] copying the bytes from current offset", // XXX R2_590 - should be an alias for ':' no need for a malloc:// wrapper imho
@@ -42,7 +42,7 @@ static RCoreHelpMessage help_msg_on = {
 	"Usage: on[n+*]", "[file] ([addr] [rwx])", "Open file without parsing headers",
 	"on", " /bin/ls [addr] [perm] [vsize]", "map raw file at addr with vsize (no r_bin involved)",
 	"onn", " [file] ([rwx])", "open file without creating any map or parsing headers with rbin)",
-	"onnu", " [file] ([rwx])", "same as onn, but unique, will return previos fd if already opened",
+	"onnu", " [file] ([rwx])", "same as onn, but unique, will return previous fd if already opened",
 	"on+", " [file] ([rwx])", "open file in rw mode without parsing headers",
 	"on*", "", "list open files as r2 commands",
 	NULL
@@ -159,12 +159,12 @@ static RCoreHelpMessage help_msg_om = {
 	"omm", " [fd]", "create default map for given fd (omm `oq`)",
 	"omn", "[?] ([fd]) [name]", "manage map names",
 	"omo", "[j*]", "diff overlay map data (usually relocs)",
-	"omp", " [mapid] rwx", "change map rwx permissions (see dmp for debug)",
+	"omp", " [mapid] rwx", "change map rwx permissions (see dmp)",
 	"ompg", "[+-]rwx", "global change permissions for all maps",
 	"omr", "[?]", "reorder map priority",
 	"oms", " [mapid] [newsize]", "show or change size map with corresponding id, map size cannot be 0",
 	"omt", "[?]", "toggle map ties backward or forward",
-	"omu", " fd va sz pa rwx name", "same as `om` but checks for existance (u stands for uniq)",
+	"omu", " fd va sz pa rwx name", "same as `om` but checks for existence (u stands for uniq)",
 	"omv", "[?]", "move map to the given address",
 	// "om*", "", "list all maps in r2 commands format",
 	// "om,", " [query]", "list maps using table api",
@@ -1699,8 +1699,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
 	RIO *io = (RIO *)user;
 	RIODesc *desc = (RIODesc *)data;
+	RIODescInfo di = r_io_desc_info (desc);
 
-	if (r_io_desc_is_blockdevice (desc) || r_io_desc_is_dbg (desc)) {
+	if (di.blkdev || di.chrdev || di.isdbg) {
 		return true;
 	}
 
@@ -1883,7 +1884,7 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 		// if no baddr is defined, use the one provided by the file
 		if (addr == 0) {
 			desc = r_io_desc_get (core->io, file->fd);
-			if (desc->plugin->isdbg) {
+			if (r_io_desc_info (desc).isdbg) {
 				addr = r_debug_get_baddr (core->dbg, desc->name);
 			} else {
 				addr = r_bin_get_baddr (core->bin);
@@ -1913,7 +1914,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 
 	// Reopen the original file as read only since we can't open native debug while the
 	// file is open with write permissions
-	if (!(desc->plugin && desc->plugin->isdbg) && (desc->perm & R_PERM_W)) {
+	if (!r_io_desc_info (desc).isdbg && (desc->perm & R_PERM_W)) {
 		R_LOG_ERROR ("Cannot debug file (%s) with permissions set to 0x%x"
 			"Reopening the original file in read-only mode.\n", desc->name, desc->perm);
 		int fd = desc->fd;

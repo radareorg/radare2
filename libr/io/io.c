@@ -389,14 +389,6 @@ R_API ut64 r_io_size(RIO* io) {
 	return io? r_io_desc_size (io->desc): 0LL;
 }
 
-R_API bool r_io_is_listener(RIO* io) {
-	R_RETURN_VAL_IF_FAIL (io, false);
-	if (io->desc && io->desc->plugin && io->desc->plugin->listener) {
-		return io->desc->plugin->listener (io->desc);
-	}
-	return false;
-}
-
 R_API char *r_io_system(RIO* io, const char* cmd) {
 	R_RETURN_VAL_IF_FAIL (io && cmd, NULL);
 	return io->desc? r_io_desc_system (io->desc, cmd): NULL;
@@ -512,6 +504,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->init = true;
 	bnd->desc_use = r_io_use_fd;
 	bnd->desc_get = r_io_desc_get;
+	bnd->desc_info = r_io_desc_info;
 	bnd->desc_size = r_io_desc_size;
 	bnd->p2v = r_io_p2v;
 	bnd->v2p = r_io_v2p;
@@ -531,7 +524,6 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->fd_write = r_io_fd_write;
 	bnd->fd_read_at = r_io_fd_read_at;
 	bnd->fd_write_at = r_io_fd_write_at;
-	bnd->fd_is_dbg = r_io_fd_is_dbg;
 	bnd->fd_get_name = r_io_fd_get_name;
 	bnd->fd_get_map = r_io_map_get_by_fd;
 	bnd->fd_remap = r_io_map_remap_fd;

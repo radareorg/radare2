@@ -163,7 +163,12 @@ jobs:
       run: sys/mipsbe.sh build && sudo make install
     - name: Run mipsbe unit tests
       run: sys/mipsbe.sh unit
+    # the cross build and the unit tests run on every PR, the 1854-case r2r
+    # smoke run costs 20 minutes under qemu and only rarely says anything new.
+    # head_ref is the source branch on a pull_request, where github.ref is the
+    # merge ref and can never carry the branch name
     - name: Run mipsbe r2r smoke tests
+      if: contains(github.ref, 'master') || contains(github.head_ref, 'ci-')
       run: sys/mipsbe.sh smoke
   linux-uefi:
     name: linux-uefi
@@ -310,7 +315,7 @@ jobs:
         export R2R_TIMEOUT=3600
         export R2R_SKIP_ARCHOS=1
         export R2R_SHALLOW=25 # Run 3/4 of the test suite
-        export JOBS=4         # Limit to -j4
+        export R2R_JOBS=4     # r2r reads R2R_JOBS, not JOBS
         export LD_LIBRARY_PATH=/usr/local/lib
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
         status=0
@@ -349,7 +354,7 @@ jobs:
         export R2R_SKIP_ARCHOS=1
         export R2R_TIMEOUT=3600
         export R2R_SHALLOW=25 # Run 3/4 of the test suite
-        export JOBS=4         # Limit to -j4
+        export R2R_JOBS=4     # r2r reads R2R_JOBS, not JOBS
         export LD_LIBRARY_PATH=/usr/local/lib
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
         status=0

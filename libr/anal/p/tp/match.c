@@ -26,7 +26,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	if (!fcn_name || !cc) {
 		return;
 	}
-	int i, j, pos = 0, max = r_type_func_args_count (TDB, fcn_name);
+	int i, j, pos = 0, max;
 	const bool stack_rev = r_anal_cc_stack_rev (anal, cc);
 	r_cons_break_push (r_cons_singleton (), NULL, NULL);
 
@@ -36,7 +36,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	if (verbose && r_str_startswith (fcn_name, "sym.imp.")) {
 		R_LOG_WARN ("Missing function definition for '%s'", fcn_name + 8);
 	}
-	if (!max) {
+	if (!r_type_func_args_count (TDB, fcn_name, &max)) {
 		max = stack_cc? DEFAULT_MAX: r_anal_cc_max_arg (anal, cc);
 	}
 	// TODO: if function takes more than 7 args is usually bad analysis
@@ -46,17 +46,15 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 
 	RVecString types;
 	RVecString_init (&types);
+	TPArgSeq seq;
+	tp_argseq_init (anal, cc, r_type_func_ret (TDB, fcn_name), &seq);
+	// a prefix is a declaration-order run, which a reverse-stack cc does not walk in
+	seq.leading_fp = tp_fparg_prefix (anal, cc, fcn_name, max);
+	// an input conversion takes a pointer to its type, so %f is not an fp argument
+	const bool fmt_ptr = strstr (fcn_name, "scanf") != NULL;
 	const ut32 opmask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL;
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev? (max - 1 - i): i;
-		// one lookup answers both where the arg lives and its slot offset, so the two cannot disagree
-		RAnalCCArgSlot slot;
-		const bool resolved = r_anal_cc_argslot (anal, cc, arg_num, max, false, &slot);
-		const bool in_stack = resolved && !slot.reg;
-		const st64 soff = in_stack? slot.off: -1; // a register-homed arg occupies no stack slot
-		const char *place = resolved? slot.reg: NULL;
-		ut64 selfptr = 0;
-		const ut64 selfsize = tp_sizefn_arg_stacksize (tps, cc, fcn_name, arg_num, max, &selfptr);
 		char *owned_type = NULL;
 		const char *type = NULL;
 		const char *name = NULL;
@@ -73,6 +71,18 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 			type = owned_type;
 			name = r_type_func_args_name (TDB, fcn_name, arg_num);
 		}
+		// varargs continue the count the declared args started
+		const int argno = tp_argseq_next (anal, cc, &seq,
+			(format && fmt_ptr)? "void *": type, arg_num);
+		// one lookup yields home and offset, so they cannot disagree
+		RAnalCCArgSlot slot;
+		const bool resolved = r_anal_cc_argslot (anal, cc, argno, max, false, &slot);
+		const bool in_stack = resolved && !slot.reg;
+		// a register-homed arg occupies no stack slot
+		const st64 soff = in_stack? slot.off: -1;
+		const char *place = resolved? slot.reg: NULL;
+		ut64 selfptr = 0;
+		const ut64 selfsize = tp_sizefn_arg_stacksize (tps, cc, fcn_name, arg_num, max, &selfptr);
 		if (!type && !userfnc) {
 			R_LOG_DEBUG ("NO TYPE AND NO USER FUNK");
 			continue;
@@ -277,8 +287,8 @@ static void tp_call_effect(TPState *tps, const char *name, const char *cc) {
 				"JNIInvokeInterface.AttachCurrentThreadAsDaemon")) {
 		return;
 	}
-	const int argc = r_type_func_args_count (
-		tps->anal->sdb_types, name);
+	int argc = -1;
+	r_type_func_args_count (tps->anal->sdb_types, name, &argc);
 	const char *loc = r_anal_cc_argloc (
 		tps->anal, cc, 1, 0, argc);
 	RRegItem *item = loc? r_reg_get (tps->tt.reg, loc, -1): NULL;

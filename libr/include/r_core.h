@@ -678,6 +678,7 @@ R_API void r_core_vmark(RCore *core, ut8 ch);
 R_API void r_core_vmark_set(RCore *core, ut8 ch, ut64 addr, int x, int y);
 R_API void r_core_vmark_seek(RCore *core, ut8 ch, RAGraph *g);
 R_API void r_core_vmark_del(RCore *core, ut8 ch);
+R_API ut64 r_core_vmark_get(RCore *core, ut8 ch);
 R_API bool r_core_vmark_dump(RCore *core, int mode);
 R_API void r_core_vmark_reset(RCore *core);
 
@@ -892,7 +893,6 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd);
 R_API void r_core_sysenv_end(RCore *core, const char *cmd);
 
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly);
-R_API void r_core_anal_plugin_data_refs(RCore *core);
 // XXX dupe from r_bin.h
 /* bin.c */
 #define R_CORE_BIN_ACC_STRINGS	0x001

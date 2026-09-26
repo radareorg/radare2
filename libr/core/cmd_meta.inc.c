@@ -245,10 +245,10 @@ static bool print_addrinfo2_json(void *user, const RBinAddrline *item) {
 			pj_kn (pj, "column", item->column);
 		}
 		pj_kn (pj, "addr", item->addr);
-		const char *cached_existance = sdb_const_get (fs->fscache, file, NULL);
+		const char *cached_existence = sdb_const_get (fs->fscache, file, NULL);
 		bool file_exists = false;
-		if (cached_existance) {
-			file_exists = !strcmp (cached_existance, "1");
+		if (cached_existence) {
+			file_exists = !strcmp (cached_existence, "1");
 		} else {
 			if (r_file_exists (file)) {
 				sdb_set (fs->fscache, file, "1", 0);

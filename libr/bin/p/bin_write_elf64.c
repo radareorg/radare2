@@ -9,4 +9,5 @@ RBinWrite r_bin_write_elf64 = {
 	.seg_perms = &seg_perms,
 	.rpath_del = &rpath_del,
 	.entry = &chentry,
+	.symbol_weak = &symbol_weak,
 };

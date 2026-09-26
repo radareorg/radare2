@@ -926,6 +926,49 @@ static R2RProcessOutput *print_runner(const char *file, const char *args[], size
 	return NULL;
 }
 
+static void print_asm_process(R2RProcessOutput *proc) {
+	if (!proc) {
+		printf ("-- failed to start rasm2\n");
+		return;
+	}
+	if (proc->timeout) {
+		printf ("-- timeout\n");
+	} else if (proc->ret) {
+		printf ("-- exit status: %d\n", proc->ret);
+	}
+	if (R_STR_ISNOTEMPTY (proc->err)) {
+		printf ("-- stderr\n%s%s", proc->err, r_str_endswith (proc->err, "\n")? "": "\n");
+	}
+}
+
+static void print_asm_test_diff(R2RTestResultInfo *result) {
+	R2RAsmTest *test = result->test->asm_test;
+	R2RAsmTestOutput *out = result->asm_out;
+	printf ("-- %s:%" PFMT64u "\n", shortpath (result->test->path), test->line);
+	if ((test->mode & R2R_ASM_TEST_MODE_ASSEMBLE)
+			&& (!out->bytes || out->bytes_size != test->bytes_size
+				|| memcmp (out->bytes, test->bytes, test->bytes_size))) {
+		char *expected = r_hex_bin2strdup (test->bytes, test->bytes_size);
+		char *actual = out->bytes? r_hex_bin2strdup (out->bytes, out->bytes_size): NULL;
+		printf ("-- assembly\n%s\n", r_str_get (out->as_cmd));
+		printf (Color_RED "- expected bytes: %s (%" PFMT64u " bytes)" Color_RESET "\n",
+			r_str_get (expected), (ut64)test->bytes_size);
+		printf (Color_GREEN "+ actual bytes:   %s (%" PFMT64u " bytes)" Color_RESET "\n",
+			actual? actual: "<no output>", (ut64)out->bytes_size);
+		print_asm_process (out->as);
+		free (expected);
+		free (actual);
+	}
+	if ((test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE)
+			&& (!out->disasm || strcmp (out->disasm, test->disasm))) {
+		printf ("-- disassembly\n%s\n", r_str_get (out->disas_cmd));
+		printf (Color_RED "- expected: %s" Color_RESET "\n", test->disasm);
+		printf (Color_GREEN "+ actual:   %s" Color_RESET "\n",
+			R_STR_ISNOTEMPTY (out->disasm)? out->disasm: "<no output>");
+		print_asm_process (out->disas);
+	}
+}
+
 static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 	r_th_lock_enter (Glock);
 	if (result->run_failed) {
@@ -957,6 +1000,8 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 			}
 			break;
 		case R2R_TEST_TYPE_ASM:
+			print_asm_test_diff (result);
+			break;
 		case R2R_TEST_TYPE_JSON:
 			// diffing not yet implemented for those tests
 			break;

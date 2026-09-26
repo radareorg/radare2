@@ -1,4 +1,4 @@
-.PHONY: default distdeps all clean
+.PHONY: default distdeps all clean mrproper
 
 -include ../config-user.mk
 
@@ -65,5 +65,8 @@ all: $(ALLDEPS)
 
 clean:
 	rm -rf $(ALLDEPS)
+
+mrproper:
+	rm -rf $(shell grep -v '^#' .gitignore)
 
 include $(addsuffix .mk, $(ALLDEPS))

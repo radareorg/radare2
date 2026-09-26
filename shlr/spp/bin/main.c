@@ -35,7 +35,7 @@ static void spp_help(char *argv0) {
 int main(int argc, char **argv) {
 	int dostdin = 1;
 	int i, j;
-	Output out;
+	Output out = {0};
 	out.fout = stdout;
 	char *arg;
 

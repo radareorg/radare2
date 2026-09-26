@@ -22,17 +22,14 @@ int=type
 type.int=d
 type.int.size=32
 
-pid_t=type
-type.pid_t=d
-type.pid_t.size=32
+pid_t=typedef
+typedef.pid_t=int32_t
 
-size_t=type
-type.size_t=d
-type.size_t.size=32
+size_t=typedef
+typedef.size_t=uint32_t
 
-time_t=type
-type.time_t=x
-type.time_t.size=64
+time_t=typedef
+typedef.time_t=int64_t
 
 long=type
 type.long=x
@@ -95,9 +92,8 @@ int64_t=type
 type.int64_t=q
 type.int64_t.size=64
 
-uid_t=type
-type.uid_t=i
-type.uid_t.size=64
+uid_t=typedef
+typedef.uid_t=uint32_t
 
 arc4random=func
 func.arc4random.args=0
@@ -270,6 +266,55 @@ func.setlocale.args=2
 func.setlocale.arg.0=int,category
 func.setlocale.arg.1=const char *,locale
 func.setlocale.ret=char *
+
+
+dcgettext=func
+func.dcgettext.args=3
+func.dcgettext.arg.0=const char *,domainname
+func.dcgettext.arg.1=const char *,msgid
+func.dcgettext.arg.2=int,category
+func.dcgettext.ret=char *
+func.dcgettext.include=libintl.h
+
+dcngettext=func
+func.dcngettext.args=5
+func.dcngettext.arg.0=const char *,domainname
+func.dcngettext.arg.1=const char *,msgid1
+func.dcngettext.arg.2=const char *,msgid2
+func.dcngettext.arg.3=unsigned long int,n
+func.dcngettext.arg.4=int,category
+func.dcngettext.ret=char *
+func.dcngettext.include=libintl.h
+
+dgettext=func
+func.dgettext.args=2
+func.dgettext.arg.0=const char *,domainname
+func.dgettext.arg.1=const char *,msgid
+func.dgettext.ret=char *
+func.dgettext.include=libintl.h
+
+dngettext=func
+func.dngettext.args=4
+func.dngettext.arg.0=const char *,domainname
+func.dngettext.arg.1=const char *,msgid1
+func.dngettext.arg.2=const char *,msgid2
+func.dngettext.arg.3=unsigned long int,n
+func.dngettext.ret=char *
+func.dngettext.include=libintl.h
+
+gettext=func
+func.gettext.args=1
+func.gettext.arg.0=const char *,msgid
+func.gettext.ret=char *
+func.gettext.include=libintl.h
+
+ngettext=func
+func.ngettext.args=3
+func.ngettext.arg.0=const char *,msgid1
+func.ngettext.arg.1=const char *,msgid2
+func.ngettext.arg.2=unsigned long int,n
+func.ngettext.ret=char *
+func.ngettext.include=libintl.h
 
 strcpy=func
 func.strcpy.args=2
@@ -2613,6 +2658,20 @@ func.scanf.arg.0=const char *,format
 func.scanf.arg.1=,...
 func.scanf.ret=int
 
+asprintf=func
+func.asprintf.args=3
+func.asprintf.arg.0=char **,ptr
+func.asprintf.arg.1=const char *,format
+func.asprintf.arg.2=,...
+func.asprintf.ret=int
+
+dprintf=func
+func.dprintf.args=3
+func.dprintf.arg.0=int,fd
+func.dprintf.arg.1=const char *,format
+func.dprintf.arg.2=,...
+func.dprintf.ret=int
+
 snprintf=func
 func.snprintf.args=4
 func.snprintf.arg.0=char *,s
@@ -2622,12 +2681,13 @@ func.snprintf.arg.3=,...
 func.snprintf.ret=int
 
 snprintf_chk=func
-func.snprintf_chk.args=5
+func.snprintf_chk.args=6
 func.snprintf_chk.arg.0=char *,s
 func.snprintf_chk.arg.1=size_t,maxlen
 func.snprintf_chk.arg.2=int,flag
 func.snprintf_chk.arg.3=size_t,slen
 func.snprintf_chk.arg.4=const char *,format
+func.snprintf_chk.arg.5=,...
 func.snprintf_chk.ret=int
 
 sprintf=func
@@ -2638,11 +2698,12 @@ func.sprintf.arg.2=,...
 func.sprintf.ret=int
 
 sprintf_chk=func
-func.sprintf_chk.args=4
+func.sprintf_chk.args=5
 func.sprintf_chk.arg.0=char *,s
 func.sprintf_chk.arg.1=int,flag
 func.sprintf_chk.arg.2=size_t,slen
 func.sprintf_chk.arg.3=const char *,format
+func.sprintf_chk.arg.4=,...
 func.sprintf_chk.ret=int
 
 sscanf=func
@@ -2677,6 +2738,20 @@ func.vscanf.args=2
 func.vscanf.arg.0=const char *,format
 func.vscanf.arg.1=va_list,ap
 func.vscanf.ret=int
+
+vasprintf=func
+func.vasprintf.args=3
+func.vasprintf.arg.0=char **,ptr
+func.vasprintf.arg.1=const char *,format
+func.vasprintf.arg.2=va_list,ap
+func.vasprintf.ret=int
+
+vdprintf=func
+func.vdprintf.args=3
+func.vdprintf.arg.0=int,fd
+func.vdprintf.arg.1=const char *,format
+func.vdprintf.arg.2=va_list,ap
+func.vdprintf.ret=int
 
 vsnprintf=func
 func.vsnprintf.args=4

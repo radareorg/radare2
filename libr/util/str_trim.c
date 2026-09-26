@@ -164,6 +164,16 @@ static bool is_escapable(char ch) {
 	return false;
 }
 
+// Remove one matching pair of outer quotes, preserving the contents literally.
+R_API void r_str_unquote(char *str) {
+	R_RETURN_IF_FAIL (str);
+	size_t len = strlen (str);
+	if (len >= 2 && (*str == '"' || *str == '\'') && str[len - 1] == *str) {
+		str[len - 1] = 0;
+		memmove (str, str + 1, len - 1);
+	}
+}
+
 R_API void r_str_trim_args(char *str) {
 	R_RETURN_IF_FAIL (str);
 	char q = 0;

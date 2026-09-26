@@ -396,6 +396,9 @@ static RList *fs_sep64_bins(RBuffer *b) {
 		if (contiguous) {
 			sbuf = r_buf_new_slice (b, s->phys_text, s->size);
 		} else {
+			if (s->size > SIZE_MAX) {
+				continue;
+			}
 			ut8 *bytes = malloc (s->size);
 			if (!bytes || !slice_read (b, s, 0, bytes, s->size)) {
 				free (bytes);

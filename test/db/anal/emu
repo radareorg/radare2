@@ -39,7 +39,6 @@ aeb
 psz@R0
 EOF
 EXPECT=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 ret0
 0x00000000
 ---
@@ -75,51 +74,50 @@ afbe $$ 0x100007f10;aeb 0x100007f10;aeb final.block
 dr?R0
 EOF
 EXPECT=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 ret paths
-           .---------------------------------.
-           |  0x100007ed8                    |
-           | 92: sym._retbool ();            |
-           | ; var int8_t var_1h @ x29-0x1   |
-           | ; var int64_t var_10h @ sp+0x10 |
-           | sub sp, sp, 0x20                |
-           | stp x29, x30, [var_10h]         |
-           | add x29, sp, 0x10               |
-           | mov w8, 1                       |
-           | mov x0, x8                      |
-           | mov w9, 0                       |
-           | mov x1, x9                      |
-           | mov x2, x8                      |
-           | bl sym.imp.write;[oa]           |
-           | cbz w0, 0x100007f10             |
-           `---------------------------------'
-                   f t
-                   | |
-                   | '------------.
-    .--------------'              |
-    |                             |
-.------------------------.    .------------------------.
-|  0x100007f00           |    |  0x100007f10           |
-| mov w8, 1              |    | mov w8, 0              |
-| and w8, w8, 1          |    | and w8, w8, 1          |
-| sturb w8, [x29, -1]    |    | sturb w8, [x29, -1]    |
-| b 0x100007f1c          |    `------------------------'
-`------------------------'        v
-    v                             |
-    |                             |
-    '----.                        |
-         | .----------------------'
-         | |
-   .------------------------------------------------.
-   |  0x100007f1c                                   |
-   | ; CODE XREF from sym._retbool @ 0x100007f0c(x) |
-   | ldurb w8, [x29, -1]                            |
-   | and w8, w8, 1                                  |
-   | and w0, w8, 0xff                               |
-   | ldp x29, x30, [var_10h]                        |
-   | add sp, sp, 0x20                               |
-   | ret                                            |
-   `------------------------------------------------'
+         .---------------------------------.
+         |  0x100007ed8                    |
+         | 92: sym._retbool ();            |
+         | ; var int8_t var_1h @ x29-0x1   |
+         | ; var int64_t var_10h @ sp+0x10 |
+         | sub sp, sp, 0x20                |
+         | stp x29, x30, [var_10h]         |
+         | add x29, sp, 0x10               |
+         | mov w8, 1                       |
+         | mov x0, x8                      |
+         | mov w9, 0                       |
+         | mov x1, x9                      |
+         | mov x2, x8                      |
+         | bl sym.imp.write;[oa]           |
+         | cbz w0, 0x100007f10             |
+         `---------------------------------'
+                 f t
+                 | |
+                 | '------------.
+    .------------'              |
+    |                           |
+.-----------------------.   .-----------------------.
+|  0x100007f00          |   |  0x100007f10          |
+| mov w8, 1             |   | mov w8, 0             |
+| and w8, w8, 1         |   | and w8, w8, 1         |
+| sturb w8, [var_1h]    |   | sturb w8, [var_1h]    |
+| b 0x100007f1c         |   `-----------------------'
+`-----------------------'       v
+    v                           |
+    |                           |
+    '--.                        |
+       | .----------------------'
+       | |
+ .------------------------------------------------.
+ |  0x100007f1c                                   |
+ | ; CODE XREF from sym._retbool @ 0x100007f0c(x) |
+ | ldurb w8, [var_1h]                             |
+ | and w8, w8, 1                                  |
+ | and w0, w8, 0xff                               |
+ | ldp x29, x30, [var_10h]                        |
+ | add sp, sp, 0x20                               |
+ | ret                                            |
+ `------------------------------------------------'
 path
 0x100007ed8
 0x100007f10
@@ -156,7 +154,6 @@ dr?R0
 dr?R0
 EOF
 EXPECT=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 ret paths
 path
 0x100007ed8
@@ -190,7 +187,7 @@ EXPECT=<<EOF
   ;-- section.0.__TEXT.__text:
   ;-- entry0:
   ;-- func.100003f88:
-32: int main (int argc);
+32: int main (int argc, char **argv, char **envp);
 ; arg int argc @ x0
 ; var int32_t var_8h @ sp+0x8
 ; var int32_t var_ch @ sp+0xc

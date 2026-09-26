@@ -1516,6 +1516,43 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=sar and sarx sign-extend memory operands at their decoded width
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+ar rax=0x100
+wx d138 @ 0
+wv4 0x80000000 @ 0x100
+aes
+p8 4 @ 0x100
+ar sf
+wx c4e262f708 @ 0
+wv4 0x80000000 @ 0x100
+ar rbx=4
+ar cf=1
+ar rip=0
+aes
+ar rcx
+ar cf
+wx c4e2e2f708 @ 0
+wv8 0x8000000000000000 @ 0x100
+ar rip=0
+aes
+ar rcx
+ar cf
+EOF
+EXPECT=<<EOF
+000000c0
+0x00000001
+0xf8000000
+0x00000001
+0xf800000000000000
+0x00000001
+EOF
+RUN
+
 NAME=a single-bit shr keeps the old sign in of and sar clears it
 FILE=malloc://0x100
 ARGS=-a x86 -b 64

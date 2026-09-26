@@ -97,7 +97,6 @@ RUN
 
 NAME=labels replacements (common prefix)
 FILE=malloc://1024
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -106,6 +105,30 @@ p8 7@0
 EOF
 EXPECT=<<EOF
 9090e8fbffffff
+EOF
+RUN
+
+NAME=assembler equates match complete identifiers in expressions
+FILE=malloc://1024
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+"wa .equ value=1;.equ valueA=2;.equ Avalue=3;.equ value_=4;.equ value.part=5;.equ value1=6;mov eax,valueA;mov ebx,Avalue;mov ecx,value_;mov edx,value.part;mov esi,value1;mov edi,value+valueA"
+p8 30
+EOF
+EXPECT=<<EOF
+b802000000bb03000000b904000000ba05000000be06000000bf03000000
+EOF
+RUN
+
+NAME=assembler equates preserve alias expansion
+FILE=malloc://1024
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+"wa .equ foo=1+bar;.equ bar=2;mov eax,foo"
+p8 5
+EOF
+EXPECT=<<EOF
+b803000000
 EOF
 RUN
 

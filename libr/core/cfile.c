@@ -876,7 +876,15 @@ static bool load_mach0_dsym_file(RCore *core, RBinFile *main_bf, const char *dsy
 		return false;
 	}
 	RBinFileOptions opt;
-	r_bin_file_options_init (&opt, dsym_fd, r_bin_file_get_baddr (main_bf), 0, core->bin->options.rawstr);
+	// The companion is opened at its own base rather than the executable's.
+	// Its DWARF already records the executable's absolute addresses, and
+	// handing it the executable's base made baddr_shift the difference against
+	// the dSYM's own zero base -- one whole image base, which
+	// dwarf_relocate_address then added to every address the DWARF carries.
+	// Every DW_AT_low_pc landed an image base high, so a complete prototype
+	// wrote its fcnlink.<addr> at an address no function occupies and no
+	// function's prototype was ever linked to its address.
+	r_bin_file_options_init (&opt, dsym_fd, UT64_MAX, 0, core->bin->options.rawstr);
 	bool old_skip_symbols = core->bin->options.skip_symbols;
 	core->bin->options.skip_symbols = true;
 	bool opened = r_bin_open_io (core->bin, &opt);
@@ -953,7 +961,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		int desc_fd = desc->fd;
 		// TODO? necessary to restore the desc back?
 		// Fix to select pid before trying to load the binary
-		if ((desc->plugin && desc->plugin->isdbg) || r_config_get_b (r->config, "cfg.debug")) {
+		if (r_io_desc_info (desc).isdbg || r_config_get_b (r->config, "cfg.debug")) {
 			r_core_file_load_for_debug (r, baddr, filenameuri);
 		} else {
 			if (mustreopen (r, desc, filenameuri)) {
@@ -1015,7 +1023,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 					r_config_set_i (r->config, "io.va", 0);
 				}
 				// workaround to map correctly malloc:// and raw binaries
-				if (r_io_desc_is_dbg (desc) || (RVecRBinSection_empty (&obj->sections_vec) || !va)) {
+				if (r_io_desc_info (desc).isdbg || (RVecRBinSection_empty (&obj->sections_vec) || !va)) {
 					r_io_map_add (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
 				}
 				RBinInfo *info = obj->info;
@@ -1244,7 +1252,7 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 			goto beach;
 		}
 	}
-	if (r_io_is_listener (r->io)) {
+	if (r_io_desc_info (fd).listener) {
 		r_core_serve (r, fd);
 		r_io_desc_free (fd);
 		fd = NULL;
@@ -1265,7 +1273,7 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 		const bool swstep = (plugin && plugin->canstep)? false: true;
 		r_config_set_b (r->config, "dbg.swstep", swstep);
 		// Set the correct debug handle
-		if (fd->plugin && fd->plugin->isdbg) {
+		if (r_io_desc_info (fd).isdbg) {
 			char *dh = r_str_ndup (file, (strstr (file, "://") - file));
 			if (dh) {
 				r_debug_use (r->dbg, dh);

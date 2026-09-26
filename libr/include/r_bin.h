@@ -888,6 +888,8 @@ typedef struct r_bin_map_t {
 } RBinMap;
 
 typedef bool (*RBinWriteAddLib)(RBinFile *bf, const char *lib);
+typedef bool (*RBinWriteLibWeak)(RBinFile *bf, const char *lib, bool weak);
+typedef bool (*RBinWriteSymbolWeak)(RBinFile *bf, const char *symbol, bool weak);
 typedef ut64 (*RBinWriteScnResize)(RBinFile *bf, const char *name, ut64 newsize);
 typedef bool (*RBinWriteScnPerms)(RBinFile *bf, const char *name, int perms);
 typedef bool (*RBinWriteSegPerms)(RBinFile *bf, const char *name, int perms);
@@ -900,6 +902,8 @@ typedef struct r_bin_write_t {
 	RBinWriteRpathDel rpath_del;
 	RBinWriteEntry entry;
 	RBinWriteAddLib addlib;
+	RBinWriteLibWeak lib_weak;
+	RBinWriteSymbolWeak symbol_weak;
 } RBinWrite;
 
 typedef int (*RBinGetOffset)(RBin *bin, int type, int idx);
@@ -910,7 +914,9 @@ typedef char *(*RBinDemangle)(RBinFile *bf, const char *def, const char *str, ut
 typedef ut64 (*RBinBaddr)(RBinFile *bf, ut64 addr);
 typedef RVecRBinSymbol *(*RBinGetSymbolsVec)(RBin *bin);
 typedef RBinSymbol *(*RBinGetSymbolAt)(RBin *bin, ut64 addr);
+typedef RBinReloc *(*RBinGetRelocAt)(RBin *bin, ut64 vaddr);
 typedef const char *(*RBinGetCC)(RBin *bin, ut64 vaddr);
+typedef RBinAddr *(*RBinGetSym)(RBin *bin, int sym);
 
 typedef struct r_bin_bind_t {
 	RBin *bin;
@@ -921,11 +927,14 @@ typedef struct r_bin_bind_t {
 	RBinGetSectionAt get_vsect_at;
 	RBinGetSymbolsVec get_symbols_vec;
 	RBinGetSymbolAt get_symbol_at;
+	RBinGetSym get_sym;
 	RBinDemangle demangle;
 	RBinAddrLineAdd addrline_add;
 	RBinAddrLineGet addrline_get;
 	RBinBaddr baddr;
 	ut32 visibility;
+	// the relocation recorded against exactly this address, if any
+	RBinGetRelocAt get_reloc_at;
 } RBinBind;
 
 R_API void r_bin_info_free(RBinInfo *rb);
@@ -1112,6 +1121,8 @@ R_API char *r_bin_addrline_tostring(RBin *bin, ut64 addr, int origin);
 
 /* bin_write.c */
 R_API bool r_bin_wr_addlib(RBin *bin, const char *lib);
+R_API bool r_bin_wr_lib_weak(RBin *bin, const char *lib, bool weak);
+R_API bool r_bin_wr_symbol_weak(RBin *bin, const char *symbol, bool weak);
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API bool r_bin_wr_scn_perms(RBin *bin, const char *name, int perms);
 R_API bool r_bin_wr_seg_perms(RBin *bin, const char *name, int perms);

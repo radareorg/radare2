@@ -98,3 +98,25 @@ vaddr      paddr      type   ntype name
 0x00002fbc 0x00002fbc SET_32 0
 EOF
 RUN
+
+NAME=bflt relocs apply lists nothing when the listing bailed out
+FILE=bins/fuzzed/r2_hbo_relocs
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF2
+i~^format
+ir~?
+EOF2
+EXPECT=<<EOF2
+format   bflt
+0
+EOF2
+RUN
+
+NAME=bflt relocs apply keeps the table of a valid binary
+FILE=bins/bflt/bin.bflt
+ARGS=-e bin.relocs.apply=true
+CMDS=ir~?
+EXPECT=<<EOF2
+94
+EOF2
+RUN

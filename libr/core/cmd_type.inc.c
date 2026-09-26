@@ -70,7 +70,7 @@ static RCoreHelpMessage help_msg_tf = {
 	"tf", "", "list all function definitions loaded",
 	"tf", " <name>", "show function signature",
 	"tf-", "<name>", "delete function type (supports glob with *)",
-	"tfc", " [name]", "list all/given function signatures in C output format with newlines",
+	"tfc", " [name]", "list all/given function signatures in C format with newlines",
 	"tfcj", " <name>", "same as above but in JSON",
 	"tfe", " <name>", "edit function signature with cfg.editor",
 	"tfj", "", "list all function definitions in JSON",
@@ -344,6 +344,16 @@ static void cmd_afcl(RCore *core, const char *input) {
 			char *ccexpr = r_anal_cc_get (core->anal, cc);
 			r_cons_printf (core->cons, "tcc %s\n", ccexpr);
 			free (ccexpr);
+			// tcc redefines the convention, which clears its slots, and the
+			// signature cannot spell a floating return. Restoring the keys
+			// here is what makes the export a round trip.
+			int i;
+			for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
+				const char *fpret = r_anal_cc_fpret (core->anal, cc, i);
+				if (fpret) {
+					r_cons_printf (core->cons, "k anal/cc/cc.%s.fpret%d=%s\n", cc, i, fpret);
+				}
+			}
 		} else {
 			r_cons_println (core->cons, cc);
 		}
@@ -376,7 +386,7 @@ static void cmd_tcc(RCore *core, const char *input) {
 			if (input[2] == '?') {
 				r_cons_cmd_help_match (core->cons, help_msg_tcc, "tcc-*", 0, true);
 			} else {
-				sdb_reset (core->anal->sdb_cc);
+				r_anal_cc_reset (core->anal);
 			}
 		} else if (input[1] == '?') {
 			r_cons_cmd_help_match (core->cons, help_msg_tcc, "tcc-", 0, false);
@@ -2977,7 +2987,7 @@ static int cmd_type(void *data, const char *input) {
 			r_str_trim (type);
 			char *tmp = sdb_get (TDB, type, 0);
 			if (R_STR_ISNOTEMPTY (tmp)) {
-				r_type_set_link (TDB, type, addr);
+				r_anal_types_set_link (core->anal, type, addr);
 				RList *fcns = r_anal_get_functions_in (core->anal, core->addr);
 				if (r_list_length (fcns) > 1) {
 					R_LOG_ERROR ("Multiple functions found in here");
@@ -3015,7 +3025,7 @@ static int cmd_type(void *data, const char *input) {
 			case ' ': {
 				const char *ptr = input + 3;
 				ut64 addr = r_num_math (core->num, ptr);
-				r_type_unlink (TDB, addr);
+				r_anal_types_unlink (core->anal, addr);
 				break;
 			}
 			}

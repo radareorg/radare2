@@ -12,4 +12,6 @@ RBinWrite r_bin_write_mach064 = {
 #endif
 	.seg_perms = &seg_perms,
 	.addlib = &addlib,
+	.lib_weak = &lib_weak,
+	.symbol_weak = &symbol_weak,
 };

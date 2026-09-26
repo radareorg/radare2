@@ -544,6 +544,7 @@ static pyc_object *get_ascii_object_generic(PycUnmarshalCtx *ctx, RBuffer *buffe
 				R_FREE (ret);
 				return NULL;
 			}
+			ret->type = TYPE_INTERNED; // the table owns the bytes, not us
 		}
 		return ret;
 	}

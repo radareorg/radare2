@@ -206,7 +206,34 @@ bool test_registered_command_autocomplete(void) {
 	mu_end;
 }
 
+bool test_foreach_instruction_bounds(void) {
+	RCore *core = r_core_new ();
+	mu_assert_notnull (r_core_file_open (core, "malloc://512", R_PERM_RW, 0), "open test buffer");
+	RAnalFunction *fcn = r_anal_create_function (core->anal, "test", 0x100, 0, NULL);
+	RAnalBlock *bb = r_anal_create_block (core->anal, 0x100, 12);
+	r_anal_function_add_block (fcn, bb);
+	bb->ninstr = 3;
+	r_anal_bb_set_offset (bb, 1, 4);
+	r_anal_bb_set_offset (bb, 2, 8);
+	// Spare capacity is not a zero-terminated list of instruction offsets.
+	bb->op_pos[2] = 12;
+	r_core_seek (core, 0x100, true);
+
+	char *output = r_core_cmd_str (core, "?v $$ @@i; ?v $$ @@Fi");
+	ut64 addr = core->addr;
+	bb->ninstr = 0;
+	char *empty = r_core_cmd_str (core, "?v $$ @@i");
+	r_unref (bb);
+	r_core_free (core);
+	mu_assert_streq_free (output, "0x100\n0x104\n0x108\n0x100\n0x104\n0x108\n",
+		"both iterators visit only the recorded instructions");
+	mu_assert_streq_free (empty, "", "empty blocks have no instructions to visit");
+	mu_assert_eq (addr, 0x100, "iteration restores the seek");
+	mu_end;
+}
+
 int all_tests(void) {
+	mu_run_test (test_foreach_instruction_bounds);
 	mu_run_test (test_cmd_str_issue_18799);
 	mu_run_test (test_multiple_cores_share_terminal);
 	mu_run_test (test_echo_context_binding_and_depth);

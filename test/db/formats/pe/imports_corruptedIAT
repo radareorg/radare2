@@ -4,3 +4,13 @@ CMDS=q!
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=PE: ir* keeps two import names that share one address
+FILE=bins/pe/imports_corruptedIAT.exe
+CMDS=ir*
+EXPECT=<<EOF
+fs relocs
+'f reloc.ExitProcess 4 0xffffffff
+'f reloc.printf 4 0xffffffff
+EOF
+RUN

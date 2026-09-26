@@ -3244,7 +3244,6 @@ DEBUG: (section .fini_array) Cd 8[1] @ 0x21bfb0
 DEBUG: (section .data.rel.ro) Cd 8[329] @ 0x21bfc0
 DEBUG: (section .dynamic) Cd 8[64] @ 0x21ca08
 DEBUG: (section .got) Cd 8[124] @ 0x21cc08
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 DEBUG: Naming fixup reloc with string ATIUSH_H.
 DEBUG: Naming fixup reloc with string ATIUHI__S.
 DEBUG: Naming fixup reloc with string ATUISH_.
@@ -3458,6 +3457,7 @@ RUN
 
 NAME=ik-macho
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 64
 CMDS=ik info/mach0.entry.vaddr~?0x100000ef8
 EXPECT=<<EOF
 1
@@ -3466,6 +3466,7 @@ RUN
 
 NAME=ikv
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 64
 CMDS=ikv info/mach0.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
@@ -3474,6 +3475,7 @@ RUN
 
 NAME=ik.
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 64
 CMDS=ik. info/mach0.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
@@ -3482,7 +3484,7 @@ RUN
 
 NAME=ik*
 FILE=bins/mach0/fatmach0-3true
-ARGS=-e bin.types=true
+ARGS=-e bin.types=true -a x86 -b 64
 CMDS=ik*~?mach0_segment64_0
 EXPECT=<<EOF
 1
@@ -3500,6 +3502,7 @@ RUN
 
 NAME=iS=
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 64
 CMDS=iS=
 EXPECT=<<EOF
 0*  0x100000ef8 ######------------------------ 0x100000f3f r-x   71    0.__TEXT.__text
@@ -3517,6 +3520,7 @@ RUN
 
 NAME=iSq.
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 64
 CMDS=iSq.
 EXPECT=<<EOF
 0x100000ef8 0x100000f3f -r-x 0.__TEXT.__text
@@ -3782,7 +3786,6 @@ om
 rm .tmp/it2-modfile
 EOF
 EXPECT_ERR=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 INFO: File has been modified
 EOF
 EXPECT=<<EOF

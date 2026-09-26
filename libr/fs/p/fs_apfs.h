@@ -415,11 +415,15 @@ typedef struct ApfsFS {
 	bool is_le;
 } ApfsFS;
 
-static inline bool apfs_read_at(ApfsFS *ctx, ut64 offset, ut8 *buf, int len) {
-	if (!ctx || !ctx->iob || !ctx->iob->read_at) {
+static inline bool apfs_read_at(ApfsFS *ctx, ut64 offset, ut8 *buf, ut64 len) {
+	if (!ctx || !ctx->iob || !ctx->iob->read_at || len > INT_MAX) {
 		return false;
 	}
-	return ctx->iob->read_at (ctx->iob->io, ctx->delta + offset, buf, len) == len;
+	ut64 addr;
+	if (r_add_overflow_ut64 (ctx->delta, offset, &addr)) {
+		return false;
+	}
+	return ctx->iob->read_at (ctx->iob->io, addr, buf, (int)len) == len;
 }
 
 static inline ut32 apfs_read32(ApfsFS *ctx, ut8 *buf) {

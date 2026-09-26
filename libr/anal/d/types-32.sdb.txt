@@ -1,26 +1,20 @@
 type.void *.size=32
 type.char *.size=32
 
-size_t=type
-type.size_t=d
-type.size_t.size=32
+size_t=typedef
+typedef.size_t=uint32_t
 
-pid_t=type
-type.pid_t=d
-type.pid_t.pid=32
+pid_t=typedef
+typedef.pid_t=int32_t
 
-uid_t=type
-type.uid_t=d
-type.uid_t.uid=32
+uid_t=typedef
+typedef.uid_t=uint32_t
 
-gid_t=type
-type.gid_t=d
-type.gid_t.uid=32
+gid_t=typedef
+typedef.gid_t=uint32_t
 
-off_t=type
-type.off_t=d
-type.off_t.size=32
+off_t=typedef
+typedef.off_t=int32_t
 
-ssize_t=type
-type.ssize_t=d
-type.ssize_t.size=32
+ssize_t=typedef
+typedef.ssize_t=int32_t

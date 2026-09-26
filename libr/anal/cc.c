@@ -677,7 +677,7 @@ static bool dyncc_refs_exist(RAnal *anal, const RAnalDynCC *d) {
 }
 
 // the keys spelling a cc's argument and return layout, all invalidated by a redefinition
-static const char *cc_layout_keys[] = { "ret", "retn", "argn", "revarg", "pop", "shadow", NULL };
+static const char *cc_layout_keys[] = { "ret", "retn", "argn", "revarg", "pop", "shadow", "retmech", "stackalloc", "redzone", NULL };
 
 static void cc_unset_keys(Sdb *db, const char *name, const char **keys) {
 	RStrBuf sb;
@@ -700,6 +700,7 @@ static void cc_unset_slots(Sdb *db, const char *name) {
 	}
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.fparg%d", name, i), 0);
+		sdb_unset (db, r_strbuf_setf (&sb, "cc.%s.fpret%d", name, i), 0);
 	}
 	r_strbuf_fini (&sb);
 }
@@ -793,7 +794,10 @@ R_API bool r_anal_cc_once(RAnal *anal) {
 }
 
 R_API void r_anal_cc_reset(RAnal *anal) {
+	R_RETURN_IF_FAIL (anal);
 	R_CRITICAL_ENTER (anal);
+	// sdb_reset swaps the table without calling the hooks
+	R_ANAL_PRIV (anal)->cc_generation++;
 	sdb_reset (DB);
 	R_CRITICAL_LEAVE (anal);
 }
@@ -1245,6 +1249,15 @@ R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n) {
 	return NULL;
 }
 
+// where a floating-point result comes back, beside the integer ret sequence
+R_API const char *r_anal_cc_fpret(RAnal *anal, const char *convention, int n) {
+	R_RETURN_VAL_IF_FAIL (anal && convention && n >= 0, NULL);
+	if (n >= R_ANAL_CC_MAXARG) {
+		return NULL;
+	}
+	return sdb_const_getf (DB, NULL, "cc.%s.fpret%d", convention, n);
+}
+
 R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention) {
 	R_RETURN_VAL_IF_FAIL (anal && convention, 0);
 	RAnalDynCC d;
@@ -1329,10 +1342,11 @@ static bool cc_location_range(const char *loc, const char **s, const char **end)
 	return true;
 }
 
-R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
+R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (anal && loc && reg, false);
+	// profiles and convention tables can disagree on case
 	if (*loc && *loc != '{') {
-		return !strcmp (loc, reg);
+		return !r_str_casecmp (loc, reg);
 	}
 	const char *s, *end;
 	if (!cc_location_range (loc, &s, &end)) {
@@ -1343,7 +1357,7 @@ R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg
 		if (!name) {
 			return false;
 		}
-		if (!strcmp (name, reg)) {
+		if (!r_str_casecmp (name, reg)) {
 			return true;
 		}
 	}

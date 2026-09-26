@@ -1114,7 +1114,5 @@ EXPECT=<<EOF
   }
 ]
 EOF
-EXPECT_ERR=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
-EOF
+EXPECT_ERR=
 RUN

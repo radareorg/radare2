@@ -117,8 +117,8 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		if (pid > 0) {
 			iop->pid = pid;
 		}
-		io->cb_printf ("%d\n", iop->pid);
-	} else {
+		return r_str_newf ("%d\n", iop->pid);
+	} else if (R_STR_ISNOTEMPTY (cmd)) {
 		R_LOG_ERROR ("Try: ':pid'");
 	}
 	return NULL;

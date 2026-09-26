@@ -401,7 +401,7 @@ static RFSFile *fs_apfs_open(RFSRoot *root, const char *path, bool create) {
 		return NULL;
 	}
 
-	file->ptr = (void *) (size_t)inode_num;
+	file->ptr = cache;
 
 	ut16 mode = apfs_read16 (ctx, (ut8 *)&cache->inode->mode);
 	if (apfs_is_directory (mode)) {
@@ -425,6 +425,9 @@ static bool apfs_read_file_extents(ApfsFS *ctx, ApfsInodeCache *cache, ut8 **dat
 	if (*size == 0) {
 		*data = NULL;
 		return true;
+	}
+	if (*size > SIZE_MAX) {
+		return false;
 	}
 
 	*data = calloc (*size, 1);
@@ -537,8 +540,7 @@ static int fs_apfs_read(RFSFile *file, ut64 addr, int len) {
 		return -1;
 	}
 
-	ut64 inode_num = (ut64) (size_t)file->ptr;
-	ApfsInodeCache *cache = apfs_get_inode (ctx, inode_num);
+	ApfsInodeCache *cache = file->ptr;
 	if (!cache || !cache->inode) {
 		return -1;
 	}
@@ -621,6 +623,22 @@ static bool apfs_parse_omap_btree(ApfsFS *ctx, ut64 omap_oid) {
 }
 
 static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target_oid, ut64 target_xid, ut64 *paddr);
+
+static bool apfs_fixed_value_offset(ut32 block_size, ut32 nkeys, ut32 index, ut32 value_size, bool is_root, ut32 *offset) {
+	ut32 end = block_size;
+	if (is_root) {
+		if (end < APFS_BTREE_FOOTER_SIZE) {
+			return false;
+		}
+		end -= APFS_BTREE_FOOTER_SIZE;
+	}
+	ut32 bytes;
+	if (index >= nkeys || r_mul_overflow (nkeys - index, value_size, &bytes) || bytes > end) {
+		return false;
+	}
+	*offset = end - bytes;
+	return true;
+}
 
 static bool apfs_resolve_omap(ApfsFS *ctx, ut64 oid, ut64 *paddr) {
 	R_LOG_DEBUG ("apfs_resolve_omap: resolving OID %" PFMT64u ", omap_tree_oid=%" PFMT64u, oid, ctx->omap_tree_oid);
@@ -712,14 +730,7 @@ static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target
 				// Value is at the end of the block (reversed order)
 				// For root nodes, there's a 40-byte footer
 				ut32 val_offset;
-				if (is_root) {
-					val_offset = ctx->block_size - APFS_BTREE_FOOTER_SIZE - (nkeys - i) * val_size;
-				} else {
-					val_offset = ctx->block_size - (nkeys - i) * val_size;
-				}
-
-				if (val_offset + val_size > ctx->block_size) {
-					R_LOG_DEBUG ("omap leaf fixed: val_offset=%u out of bounds (block_size=%u)", val_offset, ctx->block_size);
+				if (!apfs_fixed_value_offset (ctx->block_size, nkeys, i, val_size, is_root, &val_offset)) {
 					continue;
 				}
 
@@ -787,10 +798,8 @@ static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target
 				ut64 key_oid = apfs_read64 (ctx, node_data + key_offset);
 
 				ut32 val_offset;
-				if (is_root) {
-					val_offset = ctx->block_size - APFS_BTREE_FOOTER_SIZE - (nkeys - i) * val_size;
-				} else {
-					val_offset = ctx->block_size - (nkeys - i) * val_size;
+				if (!apfs_fixed_value_offset (ctx->block_size, nkeys, i, val_size, is_root, &val_offset)) {
+					continue;
 				}
 
 				if (key_oid <= target_oid) {
@@ -985,7 +994,7 @@ static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode
 			ut16 val_off = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.off);
 			ut16 val_len = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.len);
 
-			if (val_len >= sizeof (ut64)) {
+			if (val_len >= sizeof (ut64) && val_off <= ctx->block_size && val_len <= ctx->block_size - val_off) {
 				ut8 *val_data = (ut8 *)node + val_off;
 				ut64 child_oid = apfs_read64 (ctx, val_data);
 
@@ -1067,8 +1076,14 @@ static bool apfs_parse_btree_node_from_data(ApfsFS *ctx, ut8 *header_data, ut64 
 			if (flags & APFS_BTNODE_ROOT) {
 				// Root nodes have a footer, so subtract footer size
 				// Footer is struct apfs_btree_info which we don't have defined, assume 40 bytes
+				if (val_off > ctx->block_size - APFS_BTREE_FOOTER_SIZE) {
+					continue;
+				}
 				actual_val_off = ctx->block_size - APFS_BTREE_FOOTER_SIZE - val_off;
 			} else {
+				if (val_off > ctx->block_size) {
+					continue;
+				}
 				actual_val_off = ctx->block_size - val_off;
 			}
 
@@ -1106,14 +1121,9 @@ static bool apfs_parse_dir_record(ApfsFS *ctx, ut64 obj_id, ut8 *key_data, ut16 
 		return false;
 	}
 
-	// Debug: print raw key data
-	R_LOG_DEBUG ("DIR_REC key data: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
-		key_data[0], key_data[1], key_data[2], key_data[3], key_data[4], key_data[5], key_data[6], key_data[7],
-		key_data[8], key_data[9], key_data[10], key_data[11], key_data[12], key_data[13], key_data[14], key_data[15]);
-
 	// Try both hashed and unhashed key formats
 	// First try hashed format (name_len_and_hash as 4 bytes)
-	ut32 name_len_and_hash = apfs_read32 (ctx, key_data + 8);
+	ut32 name_len_and_hash = key_len >= 12 ? apfs_read32 (ctx, key_data + 8) : 0;
 	ut16 hashed_name_len = name_len_and_hash & APFS_DREC_LEN_MASK;
 
 	// Then try unhashed format (name_len as 2 bytes)
@@ -1123,7 +1133,7 @@ static bool apfs_parse_dir_record(ApfsFS *ctx, ut64 obj_id, ut8 *key_data, ut16 
 
 	// Calculate expected name start for each format
 	// APFS_DREC_KEY_HEADER_SIZE
-	ut8 *hashed_name = key_data + 12; // After 8-byte header + 4-byte name_len_and_hash
+	ut8 *hashed_name = key_len >= 12 ? key_data + 12 : NULL; // After 8-byte header + 4-byte name_len_and_hash
 	// APFS_DREC_KEY_HASHED_NAME_OFFSET
 	ut8 *unhashed_name = key_data + 10; // After 8-byte header + 2-byte name_len
 
@@ -1353,7 +1363,7 @@ static bool apfs_dir_iter_cb(void *user, const ut64 key, const void *value) {
 	} else {
 		fsf->type = R_FS_FILE_TYPE_SPECIAL;
 	}
-	fsf->ptr = (void *) (size_t)cache->inode_num;
+	fsf->ptr = cache;
 	fsf->time = apfs_read64 (apfs_ctx, (ut8 *)&cache->inode->mod_time) / 1000000000;
 	r_list_append (list, fsf);
 	return true;

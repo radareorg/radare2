@@ -17,37 +17,6 @@ bool ht_pp_count(void *user, const void *k, const void *v) {
 	return true;
 }
 
-static int reg_index(RAnal *anal, const char *name) {
-	RRegItem *ri = r_reg_get (anal->reg, name, -1);
-	int index = ri? ri->index: -1;
-	r_unref (ri);
-	return index;
-}
-
-static RAnalFcnRegArg *find_register_param(RAnalFcnContext *ctx, const char *reg) {
-	RListIter *iter;
-	RAnalFcnRegArg *arg;
-
-	r_list_foreach (ctx->reg_args, iter, arg) {
-		if (arg && arg->reg && !strcmp (arg->reg, reg)) {
-			return arg;
-		}
-	}
-	return NULL;
-}
-
-static RAnalFcnSlot *find_stack_slot(RAnalFcnContext *ctx, const char *name) {
-	RListIter *iter;
-	RAnalFcnSlot *slot;
-
-	r_list_foreach (ctx->fcn_slots, iter, slot) {
-		if (slot && slot->name && !strcmp (slot->name, name)) {
-			return slot;
-		}
-	}
-	return NULL;
-}
-
 typedef struct {
 	int count;
 	ut64 block_addr;
@@ -117,11 +86,19 @@ bool test_r_anal_function_relocate(void) {
 	assert_invariants (anal);
 	mu_assert_false (success, "failed relocate");
 	mu_assert_eq (fa->addr, 0x1337, "failed relocate addr");
+	ut64 revision_epoch = r_anal_function_dirty_epoch (fa);
 
 	success = r_anal_function_relocate (fa, 0x1234);
 	assert_invariants (anal);
 	mu_assert_true (success, "successful relocate");
 	mu_assert_eq (fa->addr, 0x1234, "successful relocate addr");
+	mu_assert_neq (r_anal_function_dirty_epoch (fa), revision_epoch,
+		"relocation bumps the function revision epoch");
+	revision_epoch = r_anal_function_dirty_epoch (fa);
+	mu_assert_true (r_anal_function_rename (fa, "relocated_function"),
+		"rename relocated function");
+	mu_assert_neq (r_anal_function_dirty_epoch (fa), revision_epoch,
+		"rename bumps the function revision epoch");
 
 	assert_leaks (anal);
 	r_anal_free (anal);
@@ -195,7 +172,8 @@ bool test_r_anal_str_to_fcn_returns_status(void) {
 	mu_assert_notnull (typed_name, "valid signature must create a type entry");
 
 	const char *ret = r_type_func_ret (anal->sdb_types, typed_name);
-	int argc = r_type_func_args_count (anal->sdb_types, typed_name);
+	int argc;
+	mu_assert_true (r_type_func_args_count (anal->sdb_types, typed_name, &argc), "valid prototype count");
 	char *arg0 = r_type_func_args_type (anal->sdb_types, typed_name, 0);
 	mu_assert_true (ret && (!strcmp (ret, "int") || !strcmp (ret, "int32_t")),
 		"valid signature should set integer return type");
@@ -208,7 +186,7 @@ bool test_r_anal_str_to_fcn_returns_status(void) {
 	mu_assert_false (ok, "invalid signature must return failure");
 
 	ret = r_type_func_ret (anal->sdb_types, typed_name);
-	argc = r_type_func_args_count (anal->sdb_types, typed_name);
+	mu_assert_true (r_type_func_args_count (anal->sdb_types, typed_name, &argc), "existing prototype count");
 	arg0 = r_type_func_args_type (anal->sdb_types, typed_name, 0);
 	mu_assert_true (ret && (!strcmp (ret, "int") || !strcmp (ret, "int32_t")),
 		"invalid signature must not clobber existing return type");
@@ -420,7 +398,9 @@ bool test_r_anal_function_set_signature_uses_canonical_type_name(void) {
 	char *typed_name = r_type_func_name (anal->sdb_types, f->name);
 	mu_assert_notnull (typed_name, "canonical typed name");
 	mu_assert_streq (typed_name, "scanf", "apply must reuse canonical type name");
-	mu_assert_eq (r_type_func_args_count (anal->sdb_types, typed_name), 2, "typed apply param count");
+	int argc;
+	mu_assert_true (r_type_func_args_count (anal->sdb_types, typed_name, &argc), "typed apply count succeeds");
+	mu_assert_eq (argc, 2, "typed apply param count");
 	mu_assert_null (sdb_const_get (anal->sdb_types, f->name, 0), "apply must not create duplicate import-scoped signature");
 
 	signature = r_anal_function_get_signature (f);
@@ -455,7 +435,8 @@ bool test_r_anal_function_set_signature_uses_canonical_type_name(void) {
 	mu_assert_eq ((int)r_list_length (signature->params), 0, "typed overwrite clears params");
 	r_anal_function_signature_free (signature);
 
-	mu_assert_eq (r_type_func_args_count (anal->sdb_types, typed_name), 0, "typed overwrite argc");
+	mu_assert_true (r_type_func_args_count (anal->sdb_types, typed_name, &argc), "typed overwrite count succeeds");
+	mu_assert_eq (argc, 0, "typed overwrite argc");
 	signature = r_anal_function_get_signature (alias);
 	mu_assert_notnull (signature, "alias signature must refresh after overwrite");
 	mu_assert_streq (signature->ret_type, "void", "alias return type must refresh after overwrite");
@@ -580,91 +561,121 @@ bool test_r_anal_function_get_signature_falls_back_to_valid_callconv(void) {
 	mu_end;
 }
 
-bool test_r_anal_function_context_collect_is_conservative_for_stack_slots(void) {
+static const char *test_bin_get_cc(RBin *bin, ut64 vaddr) {
+	return vaddr == 0x2000? "amd64": NULL;
+}
+
+bool test_r_anal_function_callconv_resolves_when_assigned(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
-	r_anal_use (anal, "x86");
-	r_anal_set_bits (anal, 64);
-	mu_assert_true (r_anal_cc_set (anal, "rax ctxcall(rdi, rdx, stack)"), "Couldn't seed test-local calling convention");
+	mu_assert_true (r_anal_cc_set (anal, "void amd64 (rdi, rsi, rdx, rcx, r8, r9, stack)"),
+		"must seed amd64 calling convention");
+	mu_assert_true (r_anal_cc_set (anal, "void reg (rdi)"), "must seed the reg fallback");
+	r_anal_set_cc_default (anal, "dyncc");
+	anal->binb.get_cc = test_bin_get_cc;
 
-	RAnalFunction *fcn = r_anal_create_function (anal, "fcn_ctx", 0x1000, R_ANAL_FCN_TYPE_FCN, NULL);
-	mu_assert_notnull (fcn, "Couldn't create function for function-context test");
-	fcn->callconv = r_str_constpool_get (&anal->constpool, "ctxcall");
+	RAnalFunction *known = r_anal_create_function (anal, "known", 0x2000, 0, NULL);
+	mu_assert_notnull (known, "Couldn't create function with a per-function convention");
+	mu_assert_streq (r_anal_function_cc (known), "amd64",
+		"a dyncc default resolves when the function is created");
+	ut64 epoch = r_anal_function_dirty_epoch (known);
+	mu_assert_streq (r_anal_function_cc (known), "amd64", "reading the convention again returns the same");
+	mu_assert_eq (r_anal_function_dirty_epoch (known), epoch, "reading the convention changes nothing");
 
-	RAnalFunctionParam params_data[] = {
-		{ .name = "first", .type = "int" },
-		{ .name = "second", .type = "int" },
-		{ .name = "third", .type = "int" },
-		{ .name = "fourth", .type = "int" },
-	};
-	RList *params = r_list_new ();
-	mu_assert_notnull (params, "Couldn't create param list for function-context test");
-	r_list_append (params, &params_data[0]);
-	r_list_append (params, &params_data[1]);
-	r_list_append (params, &params_data[2]);
-	r_list_append (params, &params_data[3]);
-	RAnalFunctionSignature signature = {
-		.ret_type = "int",
-		.callconv = "ctxcall",
-		.params = params,
-		.noreturn = false,
-	};
-	mu_assert_true (r_anal_function_set_signature (anal, fcn, &signature), "typed signature apply for function-context test");
-	r_list_free (params);
+	RAnalFunction *unknown = r_anal_create_function (anal, "unknown", 0x3000, 0, NULL);
+	mu_assert_notnull (unknown, "Couldn't create function without a per-function convention");
+	mu_assert_streq (r_anal_function_cc (unknown), "reg", "no per-function convention falls back to reg");
 
-	const int rdi = reg_index (anal, "rdi");
-	const int rdx = reg_index (anal, "rdx");
-	mu_assert ("rdi register index must resolve", rdi >= 0);
-	mu_assert ("rdx register index must resolve", rdx >= 0);
+	mu_assert_true (r_anal_function_set_callconv (anal, unknown, "amd64"), "an explicit convention is accepted");
+	mu_assert_streq (r_anal_function_cc (unknown), "amd64", "an explicit convention is kept");
+	mu_assert_true (r_anal_function_set_callconv (anal, known, "dyncc"), "reassigning dyncc is accepted");
+	mu_assert_streq (r_anal_function_cc (known), "amd64", "reassigning dyncc resolves it again");
 
-	RAnalVar *home_source = r_anal_function_set_var (fcn, rdi, R_ANAL_VAR_KIND_REG, "int", 4, true, "arg1");
-	RAnalVar *sparse_reg = r_anal_function_set_var (fcn, rdx, R_ANAL_VAR_KIND_REG, "int", 4, true, "arg3");
-	RAnalVar *home_slot = r_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "int", 4, false, "arg1_home");
-	RAnalVar *stack_arg = r_anal_function_set_var (fcn, 0x28, R_ANAL_VAR_KIND_SPV, "int", 4, true, "stack_input");
-	RAnalVar *saved_named = r_anal_function_set_var (fcn, -0x10, R_ANAL_VAR_KIND_BPV, "int", 4, false, "saved_rbx");
-	RAnalVar *arg_named_local = r_anal_function_set_var (fcn, 0x30, R_ANAL_VAR_KIND_SPV, "int", 4, false, "arg2");
-	mu_assert_notnull (home_source, "create register home source");
-	mu_assert_notnull (sparse_reg, "create sparse register arg");
-	mu_assert_notnull (home_slot, "create home slot");
-	mu_assert_notnull (stack_arg, "create stack arg");
-	mu_assert_notnull (saved_named, "create saved-named local");
-	mu_assert_notnull (arg_named_local, "create arg-named local");
-	free (home_source->regname);
-	home_source->regname = strdup ("rdi");
-	free (sparse_reg->regname);
-	sparse_reg->regname = strdup ("rdx");
+	r_anal_free (anal);
+	mu_end;
+}
 
-	r_anal_var_set_access (anal, home_source, "rdi", 0x1010, R_PERM_R, 0);
-	r_anal_var_set_access (anal, home_slot, "rbp", 0x1010, R_PERM_W, -8);
+bool test_r_anal_function_get_signature_reports_origin_and_only_reads(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+	bool ok = r_anal_import_c_decls (anal,
+		"int by_name (int a);"
+		"char by_link (char c);", NULL);
+	mu_assert_true (ok, "seed name and link prototypes");
 
-	RAnalFcnContext *ctx = r_anal_function_context_collect (anal, fcn);
-	mu_assert_notnull (ctx, "collect typed function context");
+	RAnalFunction *f = r_anal_create_function (anal, "by_name", 0x2800, 0, NULL);
+	mu_assert_notnull (f, "Couldn't create function for origin test");
+	RAnalFunctionSignature *signature = r_anal_function_get_signature (f);
+	mu_assert_notnull (signature, "name-based signature must be readable");
+	mu_assert_eq (signature->origin, R_ANAL_FUNCTION_SIGNATURE_ORIGIN_NAME, "a prototype found by name");
+	r_anal_function_signature_free (signature);
 
-	RAnalFcnRegArg *rdx_param = find_register_param (ctx, "rdx");
-	mu_assert_notnull (rdx_param, "sparse register arg must be collected");
+	mu_assert_true (r_type_set_link (anal->sdb_types, "by_link", f->addr), "link a prototype to the address");
+	ut64 function_epoch = r_anal_function_dirty_epoch (f);
+	ut64 types_epoch = r_anal_types_dirty_epoch (anal);
+	signature = r_anal_function_get_signature (f);
+	mu_assert_notnull (signature, "address-linked signature must be readable");
+	mu_assert_eq (signature->origin, R_ANAL_FUNCTION_SIGNATURE_ORIGIN_ADDRESS, "a prototype linked to the address");
+	mu_assert_streq (signature->ret_type, "char", "the linked prototype wins");
+	r_anal_function_signature_free (signature);
+	signature = r_anal_function_get_signature (f);
+	mu_assert_notnull (signature, "the signature reads again");
+	r_anal_function_signature_free (signature);
+	mu_assert_eq (r_anal_function_dirty_epoch (f), function_epoch, "reading a signature leaves the function epoch alone");
+	mu_assert_eq (r_anal_types_dirty_epoch (anal), types_epoch, "reading a signature leaves the type epoch alone");
 
-	RAnalFcnSlot *home_ctx = find_stack_slot (ctx, "arg1_home");
-	RAnalFcnSlot *stack_arg_ctx = find_stack_slot (ctx, "stack_input");
-	RAnalFcnSlot *saved_ctx = find_stack_slot (ctx, "saved_rbx");
-	RAnalFcnSlot *arg_named_local_ctx = find_stack_slot (ctx, "arg2");
-	mu_assert_notnull (home_ctx, "home slot must be present in function context");
-	mu_assert_notnull (stack_arg_ctx, "stack arg slot must be present in function context");
-	mu_assert_notnull (saved_ctx, "saved-named slot must be present in function context");
-	mu_assert_notnull (arg_named_local_ctx, "arg-named local slot must be present in function context");
+	RAnalFunction *vars = r_anal_create_function (anal, "from_vars", 0x4000, 0, NULL);
+	mu_assert_notnull (vars, "Couldn't create function for variable origin");
+	mu_assert_notnull (
+		r_anal_function_set_var (vars, 8, R_ANAL_VAR_KIND_BPV, "int32_t", 4, true, "arg_8h"),
+		"Couldn't add arg var");
+	signature = r_anal_function_get_signature (vars);
+	mu_assert_notnull (signature, "variable-built signature must be readable");
+	mu_assert_eq (signature->origin, R_ANAL_FUNCTION_SIGNATURE_ORIGIN_VARIABLES, "no prototype; built from variables");
+	r_anal_function_signature_free (signature);
 
-	mu_assert_eq (home_ctx->role, R_ANAL_FCN_SLOT_HOME, "register-home stack slot must stay param-home");
-	mu_assert_eq (home_ctx->arg_index, 0, "param-home slot must use source register param index");
-	mu_assert_streq (home_ctx->arg_name, "first", "param-home slot must inherit canonical signature name");
-	mu_assert_streq (home_ctx->home_reg, "rdi", "param-home slot must keep source register");
+	r_anal_free (anal);
+	mu_end;
+}
 
-	mu_assert_eq (stack_arg_ctx->role, R_ANAL_FCN_SLOT_ARG, "stack arg slot must stay stack-arg");
-	mu_assert_eq (stack_arg_ctx->arg_index, -1, "stack arg slot must not synthesize param indexes from sparse register args");
-	mu_assert_null (stack_arg_ctx->arg_name, "stack arg slot must not synthesize a signature param name without a canonical index");
+bool test_r_anal_function_get_signature_origin_of_a_zero_argument_prototype(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+	// the struct tag takes the shared kind key; the prototype is still there
+	bool ok = r_anal_import_c_decls (anal,
+		"int foo (void);"
+		"struct foo { int x; };", NULL);
+	mu_assert_true (ok, "seed a prototype whose name a struct also uses");
 
-	mu_assert_eq (saved_ctx->role, R_ANAL_FCN_SLOT_LOCAL, "saved-named local must not be reclassified from its spelling");
-	mu_assert_eq (arg_named_local_ctx->role, R_ANAL_FCN_SLOT_LOCAL, "arg-named local must not become a param-home without a proven register home");
+	RAnalFunction *f = r_anal_create_function (anal, "foo", 0x5000, 0, NULL);
+	mu_assert_notnull (f, "Couldn't create function for the zero-argument test");
+	RAnalFunctionSignature *signature = r_anal_function_get_signature (f);
+	mu_assert_notnull (signature, "zero-argument signature must be readable");
+	mu_assert_eq (signature->origin, R_ANAL_FUNCTION_SIGNATURE_ORIGIN_NAME,
+		"no arguments does not mean no prototype");
+	mu_assert_streq (signature->ret_type, "int", "the prototype's return type is read");
+	r_anal_function_signature_free (signature);
 
-	r_anal_function_context_free (ctx);
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_function_callconv_store_keeps_an_undefined_name(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+	RAnalFunction *fcn = r_anal_create_function (anal, "restored", 0x6000, 0, NULL);
+	mu_assert_notnull (fcn, "Couldn't create function for the store test");
+
+	// a project restores a name whose definition it did not save
+	mu_assert_true (r_anal_function_store_callconv (anal, fcn, "savedcc"),
+		"storing a convention the target does not define succeeds");
+	mu_assert_streq (r_anal_function_cc (fcn), "savedcc", "the stored name is kept");
+	mu_assert_false (r_anal_function_set_callconv (anal, fcn, "savedcc"),
+		"the validating setter still refuses an undefined convention");
+	mu_assert_streq (r_anal_function_cc (fcn), "savedcc", "a refused assignment changes nothing");
+	mu_assert_true (r_anal_function_store_callconv (anal, fcn, NULL), "an empty name clears the convention");
+	mu_assert_null (r_anal_function_cc (fcn), "the convention is cleared");
+
 	r_anal_free (anal);
 	mu_end;
 }
@@ -769,7 +780,10 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_get_signature_string_falls_back_to_vars);
 	mu_run_test (test_r_anal_function_get_signature_string_hides_variadic_placeholder);
 	mu_run_test (test_r_anal_function_get_signature_falls_back_to_valid_callconv);
-	mu_run_test (test_r_anal_function_context_collect_is_conservative_for_stack_slots);
+	mu_run_test (test_r_anal_function_callconv_resolves_when_assigned);
+	mu_run_test (test_r_anal_function_get_signature_reports_origin_and_only_reads);
+	mu_run_test (test_r_anal_function_get_signature_origin_of_a_zero_argument_prototype);
+	mu_run_test (test_r_anal_function_callconv_store_keeps_an_undefined_name);
 	mu_run_test (test_r_anal_function_switches_foreach);
 	mu_run_test (test_r_anal_function_overlapped_walk_keeps_one_switch_owner);
 	return tests_passed != tests_run;

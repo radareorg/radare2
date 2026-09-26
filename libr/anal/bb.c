@@ -67,6 +67,12 @@ R_API ut64 r_anal_bb_opaddr_i(RAnalBlock *bb, int i) {
 /* set the offset of the i-th instruction in the basicblock bb */
 R_API bool r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v) {
 	R_RETURN_VAL_IF_FAIL (bb, false);
+	// callers add or move an instruction of bb with this: the calls its functions counted are stale
+	RAnalFunction *fcn;
+	RListIter *iter;
+	r_list_foreach (bb->fcns, iter, fcn) {
+		fcn->meta.numcallrefs = -1;
+	}
 	// the offset 0 of the instruction 0 is not stored because always 0
 	if (i > 0 && v > 0) {
 		if (i >= bb->op_pos_size) {

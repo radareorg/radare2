@@ -568,6 +568,19 @@ bool test_r_anal_cc_argslot_home_hole(void) {
 	mu_end;
 }
 
+bool test_r_anal_cc_free_unhooks(void) {
+	RAnal *anal = ref_anal ();
+	Sdb *keep = sdb_new0 ();
+	sdb_ns_set (keep, "anal", anal->sdb);
+	r_anal_free (anal);
+	Sdb *cc = sdb_ns_path (keep, "anal/cc", 0);
+	mu_assert_notnull (cc, "cc db outlives anal");
+	mu_assert_eq (sdb_hook_call (cc, "cc.sectarian.arg0", "rdi"), 0, "no hook left on a freed anal");
+	sdb_set (cc, "cc.sectarian.arg0", "rdi", 0);
+	sdb_free (keep);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_anal_cc_set);
 	mu_run_test (test_r_anal_cc_set_self_err);
@@ -589,6 +602,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_anal_cc_argslot_home_hole);
 	mu_run_test (test_r_anal_cc_argval);
 	mu_run_test (test_r_anal_cc_argval_stack);
+	mu_run_test (test_r_anal_cc_free_unhooks);
 	return tests_passed != tests_run;
 }
 

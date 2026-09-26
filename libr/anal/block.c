@@ -296,10 +296,11 @@ R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 		return false;
 	}
 
-	// Update the block's function's cached ranges
+	// Update the block's function's cached ranges, and drop their call counts: the calls moved
 	RAnalFunction *fcn;
 	RListIter *iter;
 	r_list_foreach (block->fcns, iter, fcn) {
+		fcn->meta.numcallrefs = -1;
 		if (fcn->meta._min != UT64_MAX) {
 			if (addr + size > fcn->meta._max) {
 				// we extend after the maximum, so we are the maximum afterwards.
@@ -971,6 +972,9 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 
 	// Chop the block. Resize and remove all destination addrs
 	r_anal_block_set_size (block, addr - block->addr);
+	while (block->ninstr > 0 && r_anal_bb_offset_inst (block, block->ninstr - 1) >= block->size) {
+		block->ninstr--;
+	}
 	r_anal_block_update_hash (block);
 	block->jump = UT64_MAX;
 	block->fail = UT64_MAX;
@@ -988,6 +992,8 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 			r_anal_block_recurse (entry, noreturn_successors_reachable_cb, succs);
 		}
 		ht_up_foreach (succs, noreturn_remove_unreachable_cb, fcn);
+		fcn->ninstr = r_anal_function_instrcount (fcn);
+		fcn->meta.numcallrefs = -1;
 	}
 	r_list_free (fcns_cpy);
 
@@ -1025,7 +1031,7 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 typedef struct {
 	HtUP *predecessors; // maps a block to its predecessor if it has exactly one, or NULL if there are multiple or the predecessor has multiple successors
 	HtUP *visited_blocks; // during predecessor search, mark blocks whose successors we already checked. Value is void *-casted count of successors
-	HtUP *blocks; // adresses of the blocks we might want to merge with their predecessors => RAnalBlock *
+	HtUP *blocks; // addresses of the blocks we might want to merge with their predecessors => RAnalBlock *
 
 	RAnalBlock *cur_pred;
 	size_t cur_succ_count;

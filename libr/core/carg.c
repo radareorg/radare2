@@ -329,7 +329,11 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name, bool incall
 	if (!key) {
 		return NULL;
 	}
-	int nargs = r_type_func_args_count (TDB, key);
+	int nargs;
+	if (!r_type_func_args_count (TDB, key, &nargs)) {
+		free (key);
+		return NULL;
+	}
 	const char *cc = r_anal_cc_func (core->anal, key);
 	if (!cc) {
 		free (key);
@@ -338,7 +342,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name, bool incall
 	RList *list = r_list_newf ((RListFree)r_anal_function_arg_free);
 	int i;
 	const int word = r_anal_cc_wordsize (core->anal, cc);
-	bool variadic = nargs > 1 && is_format_function (key) && r_type_func_is_variadic (TDB, key);
+	bool variadic = nargs > 1 && is_format_function (key) && r_type_func_is_variadic (TDB, key, nargs);
 	RAnalFuncArg **args = R_NEWS0 (RAnalFuncArg *, R_MAX (nargs, 1));
 	int *slot_at = R_NEWS0 (int, R_MAX (nargs, 1));
 	// wide values occupy several slots, so home lookups need physical slot indexes, not arg numbers

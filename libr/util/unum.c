@@ -135,8 +135,11 @@ R_API const char *r_num_get_name(RNum *num, ut64 n) {
 
 // check that underscores in "1000_f000" are every 4 hex digits from the right
 static bool validate_hex_underscores(const char *s) {
-	int i, n = 0;
-	for (i = strlen (s) - 1; i >= 0; i--) {
+	int i = strlen (s) - 1, n = 0;
+	if (i >= 0 && (s[i] == 'u' || s[i] == 'U')) {
+		i--;
+	}
+	for (; i >= 0; i--) {
 		if (s[i] == '_') {
 			if (n != 4) {
 				return false;
@@ -302,27 +305,28 @@ R_API ut64 r_num_get_err(RNum * R_NULLABLE num, const char *str, const char **er
 		// base36 here
 		ret = b36_tonum (str + 2);
 	} else if (str[0] == '0' && tolower ((ut8)str[1]) == 'x') {
-		const char *lodash = strchr (str + 2, '_');
-		if (lodash) {
+		char *copy = NULL;
+		if (strchr (str + 2, '_')) {
 			// Support 0x1000_f000_4000
 			if (!validate_hex_underscores (str + 2)) {
 				error (num, "misplaced underscore in hex literal");
 			}
-			char *s = strdup (str + 2);
-			if (s) {
-				r_str_replace_char (s, '_', 0);
-				errno = 0;
-				ret = strtoull (s, NULL, 16);
-				free (s);
+			copy = strdup (str);
+			if (copy) {
+				r_str_replace_char (copy, '_', 0);
+				str = copy;
 			}
-		} else {
-			errno = 0;
-			ret = strtoull (str + 2, NULL, 16);
-			// sscanf (str+2, "%"PFMT64x, &ret);
 		}
+		char *end;
+		errno = 0;
+		ret = strtoull (str, &end, 16);
+		const bool unsigned_suffix = (*end == 'u' || *end == 'U') && !end[1];
 		if (errno == ERANGE) {
 			error (num, "number won't fit into 64 bits");
+		} else if (*end && !unsigned_suffix) {
+			error (num, "invalid hex number");
 		}
+		free (copy);
 	} else {
 		char *endptr;
 		int len_num = len > 0 ? len - 1 : 0;

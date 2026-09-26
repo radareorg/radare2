@@ -28,11 +28,11 @@ func.exit.noreturn=true
 func.exit.ret=void
 func.exit.cc=amd64
 
-stack_chk_fail=func
-func.stack_chk_fail.args=0
-func.stack_chk_fail.noreturn=true
-func.stack_chk_fail.ret=void
-func.stack_chk_fail.cc=amd64
+__stack_chk_fail=func
+func.__stack_chk_fail.args=0
+func.__stack_chk_fail.noreturn=true
+func.__stack_chk_fail.ret=void
+func.__stack_chk_fail.cc=amd64
 
 CCAlgorithm=enum
 enum.CCAlgorithm=kCCAlgorithmAES,kCCAlgorithmDES,kCCAlgorithm3DES,kCCAlgorithmCAST,kCCAlgorithmRC4,kCCAlgorithmRC2

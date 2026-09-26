@@ -552,7 +552,7 @@ FMT(nfu_uspl, 16, 0x0c66, 0xbc7e,
 /* make up some fields to pretend to have s and z fields s for this format
    so as to fit in other predicated compact instruction to avoid special-
    casing this instruction in tic6x-dis.c
-   use op field as a predicate adress register selector (s field)
+   use op field as a predicate address register selector (s field)
    use the first zeroed bit as a z value as this insn only supports [a0]
    and [b0] predicate forms.
 */

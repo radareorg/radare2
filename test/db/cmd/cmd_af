@@ -15,9 +15,9 @@ afi~realsz
 aa ; afll~?main
 EOF
 EXPECT=<<EOF
-int main (int argc, char **argv);
-int main (int argc, char **argv);
-[{"name":"main","return":"int","args":[{"name":"argc","type":"int"},{"name":"argv","type":"char **"}],"count":2}]
+int main (int argc, char **argv, char **envp);
+int main (int argc, char **argv, char **envp);
+[{"name":"main","return":"int","args":[{"name":"argc","type":"int"},{"name":"argv","type":"char **"},{"name":"envp","type":"char **"}],"count":3}]
 --
 realsz: 6
 0x6
@@ -179,9 +179,7 @@ size: 11
 |           0x004017c3      83c108         add ecx, 8
 \           0x004017c6      3d00100000     cmp eax, 0x1000
 EOF
-EXPECT_ERR=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=afbi lists every switch case and leaves them in the analysis
@@ -666,10 +664,7 @@ EXPECT=<<EOF
 0
 1
 EOF
-EXPECT_ERR=<<EOF
-HINT: Analysis skipped on non-executable map at 0x00010000
-HINT: Fix perms with 'ompg +x' or ignore them with 'e anal.in=io.maps'
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=af analyzes non-executable map with anal.in=io.maps

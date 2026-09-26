@@ -190,8 +190,10 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 	return desc;
 }
 
-static int __rap_listener(RIODesc *fd) {
-	return (RIORAP_IS_VALID (fd))? RIORAP_IS_LISTEN (fd): 0; // -1 ?
+static RIODescInfo __rap_info(RIODesc *desc) {
+	RIODescInfo di = {0};
+	di.listener = RIORAP_IS_VALID (desc) && RIORAP_IS_LISTEN (desc);
+	return di;
 }
 
 static char *__rap_system(RIO *io, RIODesc *fd, const char *command) {
@@ -311,7 +313,7 @@ RIOPlugin r_io_plugin_rap = {
 		.license = "MIT",
 	},
 	.uris = "rap://,raps://",
-	.listener = __rap_listener,
+	.getinfo = __rap_info,
 	.open = __rap_open,
 	.close = __rap_close,
 	.read = __rap_read,

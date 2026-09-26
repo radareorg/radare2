@@ -1,0 +1,29 @@
+NAME=type link range lookup hit and miss cleanup
+FILE=malloc://32
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3
+wx c3 @4
+wx c3 @8
+af base
+af member @4
+af missing @8
+"td struct linked {int first;int second;};"
+tl linked=0
+afva @4
+afva @8
+afva @4
+afva @8
+afcf @4
+afcf @8
+tk range.0
+ts linked
+EOF
+EXPECT=<<EOF
+member ();
+missing ();
+0
+pf dd first second
+EOF
+REGEXP_ERR=ERROR SUMMARY: 0 errors
+RUN

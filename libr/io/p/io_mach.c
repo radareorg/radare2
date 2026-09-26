@@ -588,8 +588,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		char *tls_output = mach_get_tls (io, fd, tid);
 		if (tls_output) {
-			io->cb_printf ("%s", tls_output);
-			free (tls_output);
+			return tls_output;
 		} else {
 			R_LOG_ERROR ("Cannot find the tls for tid=%d", tid);
 		}
@@ -598,8 +597,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		RIOMach *riom = iodd->data;
 		const char *pidstr = r_str_trim_head_ro (cmd + 3);
 		if (R_STR_ISEMPTY (pidstr)) {
-			io->cb_printf ("%d\n", iodd->pid);
-			return NULL;
+			return r_str_newf ("%d\n", iodd->pid);
 		}
 		int pid = __get_pid (fd);
 		if (!strcmp (pidstr, "0")) {

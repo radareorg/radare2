@@ -207,27 +207,37 @@
 
 #if defined(_M_AMD64) || defined(__x86_64__)
 #   define ZYAN_X64
+#   define ZYAN_ARCHITECTURE_WIDTH 64
 #elif defined(_M_IX86) || defined(__i386__)
 #   define ZYAN_X86
+#   define ZYAN_ARCHITECTURE_WIDTH 32
 #elif defined(_M_ARM64) || defined(__aarch64__)
 #   define ZYAN_AARCH64
+#   define ZYAN_ARCHITECTURE_WIDTH 64
 #elif defined(_M_ARM) || defined(_M_ARMT) || defined(__arm__) || defined(__thumb__)
 #   define ZYAN_ARM
+#   define ZYAN_ARCHITECTURE_WIDTH 32
 #elif defined(__EMSCRIPTEN__) || defined(__wasm__) || defined(__WASM__)
 #   define ZYAN_WASM
+#   define ZYAN_ARCHITECTURE_WIDTH 32
 #elif defined(__loongarch__)
 #   define ZYAN_LOONGARCH
+#   define ZYAN_ARCHITECTURE_WIDTH 64
 #elif defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) || defined(__POWERPC64__) || \
     defined(_ARCH_PPC64)
 #   define ZYAN_PPC64
+#   define ZYAN_ARCHITECTURE_WIDTH 64
 #elif defined(__powerpc__) || defined(__powerpc) || defined(__ppc__) || defined(__PPC__) || \
     defined(__POWERPC__) || defined(_ARCH_PPC)
 #   define ZYAN_PPC
+#   define ZYAN_ARCHITECTURE_WIDTH 32
 #elif defined(__riscv) || defined(__riscv__)
 #   if __riscv_xlen == 64
 #       define ZYAN_RISCV64
+#       define ZYAN_ARCHITECTURE_WIDTH 64
 #   else
 #       define ZYAN_RISCV32
+#       define ZYAN_ARCHITECTURE_WIDTH 32
 #   endif
 #elif defined(__arc__)
 #   define ZYAN_ARC
@@ -239,6 +249,14 @@
 #   define ZYAN_MIPS
 #else
 #   error "Unsupported architecture detected"
+#endif
+
+#if !defined(ZYAN_ARCHITECTURE_WIDTH)
+#   if defined(__LP64__)
+#       define ZYAN_ARCHITECTURE_WIDTH 64
+#   else
+#       define ZYAN_ARCHITECTURE_WIDTH 32
+#   endif
 #endif
 
 /* ============================================================================================== */

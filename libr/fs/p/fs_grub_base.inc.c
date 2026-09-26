@@ -33,6 +33,7 @@ static RFSFile* FSP(_open)(RFSRoot *root, const char *path, bool create) {
 static int FSP(_read)(RFSFile *file, ut64 addr, int len) {
 	GrubFS *gfs = file->ptr;
 	grubfs_bind_io (NULL, file->root->delta);
+	gfs->file->offset = addr;
 	int rc = gfs->file->fs->read (gfs->file, (char*)file->data, len);
 	file->off = grub_hack_lastoff; //gfs->file->offset;
 	return rc;

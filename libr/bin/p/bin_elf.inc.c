@@ -524,7 +524,10 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 	ut64 sym_vaddr = r->symbol ? r->symbol->vaddr : (rel->sym ? rel->rva : 0);
 
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
-	#define ADD(T, A) do { r->type = R_BIN_RELOC_ ## T; st32 _tmp; if (!r_add_overflow_st32 (r->addend, A, &_tmp)) { r->addend = _tmp; } r->additive = !rel->implicit_addend; return r; } while (0)
+	#define SETA(T) do { r->type = R_BIN_RELOC_ ## T; r->additive = !rel->implicit_addend; return r; } while (0)
+	#define ADD(T, A) do { st32 _tmp; if (!r_add_overflow_st32 (r->addend, A, &_tmp)) { r->addend = _tmp; } SETA (T); } while (0)
+	// only RELA rows carry a real addend; REL keeps the historic base fold
+	#define REL(T) do { if (rel->mode == DT_RELA) { SETA (T); } ADD (T, B); } while (0)
 
 	// Early return if it's a CREL relocation - it was already set up in the initialization above
 	if (rel->mode == DT_CREL) {
@@ -552,12 +555,17 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		}
 		break;
 	case EM_S390:
+		r->type = (sizeof (Elf_(Addr)) == 4)? R_BIN_RELOC_32: R_BIN_RELOC_64;
 		switch (rel->type) {
 		case R_390_GLOB_DAT: // globals
-			SET (64);
-			break;
+		case R_390_JMP_SLOT:
+			r->additive = 0;
+			return r;
 		case R_390_RELATIVE:
-			ADD (64, 0);
+			r->additive = !rel->implicit_addend;
+			return r;
+		default:
+			R_LOG_WARN ("Unsupported reloc type %d for s390", rel->type);
 			break;
 		}
 		break;
@@ -567,7 +575,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_386_PC32:     ADD(32,-(st64)P); break;
 		case R_386_GLOB_DAT: SET(32); break;
 		case R_386_JMP_SLOT: SET(32); break;
-		case R_386_RELATIVE: ADD(32, B); break;
+		case R_386_RELATIVE: REL(32); break;
 		case R_386_GOTOFF:   ADD(32, -(st64)got_addr); break;
 		case R_386_GOTPC:    ADD(32, got_addr - P); break;
 		case R_386_16:       ADD(16, 0); break;
@@ -592,7 +600,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_X86_64_PC32:      ADD(32,-(st64)P); break;
 		case R_X86_64_GLOB_DAT:  r->vaddr -= rel->sto; SET(64); break;
 		case R_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64); break;
-		case R_X86_64_RELATIVE:  ADD(64, B); break;
+		case R_X86_64_RELATIVE:  REL(64); break;
 		case R_X86_64_32:        ADD(32, 0); break;
 		case R_X86_64_32S:       ADD(32, 0); break;
 		case R_X86_64_16:        ADD(16, 0); break;
@@ -603,7 +611,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_X86_64_COPY:      ADD(64, 0); break; // XXX: copy symbol at runtime
 		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64); break;
 		case R_X86_64_TPOFF64:   ADD(64, 0); break;
-		case R_X86_64_DTPMOD64:  break; // id of module containing symbol (keep it as zero)
+		case R_X86_64_DTPMOD64:  ADD(64, 0); break; // id of module containing symbol (keep it as zero)
 		case R_X86_64_DTPOFF64:  ADD(64, 0); break; // offset inside module's tls
 		// case 1027: // this is aarc64_relative, if this appears here we are mixing x64 and arm64 reloc types
 		default:
@@ -663,7 +671,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_AARCH64_GLOB_DAT: SET (64); break;
 		case R_AARCH64_JUMP_SLOT: SET (64); break;
 		case R_AARCH64_COPY: ADD (64, 0); break; // copy symbol at runtime
-		case R_AARCH64_RELATIVE: ADD (64, B); break;
+		case R_AARCH64_RELATIVE: REL (64); break;
 		case R_AARCH64_IRELATIVE: r->is_ifunc = true; SET (64); break;
 		// data references
 		case R_AARCH64_PREL16: ADD (16, B); break;
@@ -771,6 +779,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_PPC_ADDR16_LO: ADD(16, 0); break;  // XXX extract lower 16 bits of (target - vaddr - addend)
 		case R_PPC_ADDR16_HI: ADD(16, 0); break;  // XXX extract upper 16 bits of (target - vaddr - addend)
 		case R_PPC_ADDR16_HA: ADD(16, 0); break;  // XXX extract high adjusted 16 bits of (target - vaddr - addend)
+		case R_PPC_DTPMOD32: ADD(32, 0); break;
 		default:
 			R_LOG_DEBUG ("unimplemented ELF/PPC reloc type %d", rel->type);
 		}
@@ -780,8 +789,8 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_PPC64_JMP_SLOT:  // PLT slot; vaddr = r_offset
 		case R_PPC64_ADDR64:
 			SET (64);
-		case R_PPC64_RELATIVE:  // B + A, filled by dynamic linker
-			ADD (64, B);
+		case R_PPC64_RELATIVE:  // A + load bias
+			REL (64);
 		case R_PPC64_ADDR32:
 			ADD (32, 0);
 		case R_PPC64_REL32:
@@ -902,6 +911,8 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		break;
 	}
 #undef SET
+#undef SETA
+#undef REL
 #undef ADD
 	RVecRBinReloc_pop_back (out);
 	return NULL;
@@ -1025,6 +1036,16 @@ static bool disp_fits(st64 x, int bits) {
 	return x >= -(1LL << (bits - 1)) && x < (1LL << (bits - 1));
 }
 
+// thumb2 movw/movt scatter their imm16 into imm4:i:imm3:imm8
+static ut32 thumb_mov_imm(ut32 hi, ut32 lo) {
+	return ((hi & 0xf) << 12) | (((hi >> 10) & 1) << 11) | (((lo >> 12) & 7) << 8) | (lo & 0xff);
+}
+
+static void thumb_mov_set_imm(ut32 *hi, ut32 *lo, ut32 v) {
+	*hi = (*hi & 0xfbf0) | ((v >> 12) & 0xf) | (((v >> 11) & 1) << 10);
+	*lo = (*lo & 0x8f00) | (((v >> 8) & 7) << 12) | (v & 0xff);
+}
+
 // adr and adrp scatter their 21 bit immediate into the immlo:immhi fields
 static void aarch64_patch_adr(RIOBind *iob, ut64 at, st64 imm) {
 	aarch64_patch_insn (iob, at, (0x3 << 29) | (0x7ffff << 5),
@@ -1093,7 +1114,7 @@ static ut64 elf_io_addr(RBinFile *bf, ELFOBJ *eo, ut64 v) {
 	return (any && !disagree)? agreed: moved;
 }
 
-static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 B, ut64 L, ut64 toc) {
+static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 bias, ut64 L, ut64 toc) {
 	ut64 V = 0;
 	ut64 A = rel->addend;
 	ut8 buf[8] = {0};
@@ -1109,24 +1130,31 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		}
 	}
 	switch (e_machine) {
-	case EM_S390:
+	case EM_S390: {
+		const int ws = sizeof (Elf_(Addr));
 		switch (rel->type) {
-		case R_390_GLOB_DAT: // globals
-			iob->overlay_write_at (iob->io, P, buf, 8);
+		case R_390_GLOB_DAT:
+			V = S;
 			break;
 		case R_390_RELATIVE:
-			iob->overlay_write_at (iob->io, P, buf, 8);
+			V = A + bias;
 			break;
+		default:
+			return;
 		}
+		r_write_ble (buf, V, bo->endian, 8 * ws);
+		iob->overlay_write_at (iob->io, P, buf, ws);
 		break;
+	}
 	case EM_ARM:
 	{
-		ut32 insn = 0;
 		st64 addend = rel->addend;
 		if (iob->read_at (iob->io, P, buf, 4) != 4) {
 			return;
 		}
-		insn = r_read_ble32 (buf, bo->endian);
+		ut32 insn = r_read_ble32 (buf, bo->endian);
+		ut32 hi = r_read_ble16 (buf, bo->endian);
+		ut32 lo = r_read_ble16 (buf + 2, bo->endian);
 		if (rel->mode == DT_REL) {
 			switch (rel->type) {
 			case R_ARM_CALL:
@@ -1141,8 +1169,6 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			}
 			case R_ARM_THM_PC22:
 			case R_ARM_THM_JUMP24: {
-				const ut32 hi = r_read_ble16 (buf, bo->endian);
-				const ut32 lo = r_read_ble16 (buf + 2, bo->endian);
 				const ut32 sb = (hi >> 10) & 1;
 				// i1/i2 are stored inverted against the sign
 				const ut32 i1 = ((lo >> 13) & 1) ^ sb ^ 1;
@@ -1155,6 +1181,20 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 				addend = imm;
 				break;
 			}
+			case R_ARM_THM_JUMP19: {
+				// j1/j2 are not inverted here, unlike b.w T4
+				st32 imm = (((hi >> 10) & 1) << 20) | (((lo >> 11) & 1) << 19)
+					| (((lo >> 13) & 1) << 18) | ((hi & 0x3f) << 12) | ((lo & 0x7ff) << 1);
+				if (imm & 0x100000) {
+					imm |= ~0x1fffff;
+				}
+				addend = imm;
+				break;
+			}
+			case R_ARM_THM_MOVW_ABS_NC:
+			case R_ARM_THM_MOVT_ABS:
+				addend = (st16)thumb_mov_imm (hi, lo);
+				break;
 			case R_ARM_MOVW_ABS_NC:
 			case R_ARM_MOVW_PREL_NC:
 				addend = ((insn >> 4) & 0xf000) | (insn & 0x0fff);
@@ -1170,7 +1210,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		}
 		switch (rel->type) {
 		case R_ARM_RELATIVE:
-			V = B + addend;
+			V = addend + bias;
 			r_write_ble32 (buf, V, bo->endian);
 			break;
 		case R_ARM_ABS32:
@@ -1180,6 +1220,10 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		case R_ARM_REL32:
 			V = S + addend - P;
 			r_write_ble32 (buf, V, bo->endian);
+			break;
+		case R_ARM_JUMP_SLOT:
+			// a lazy slot holds the plt0 address, not an addend
+			r_write_ble32 (buf, S, bo->endian);
 			break;
 		case R_ARM_CALL:
 		case R_ARM_JUMP24:
@@ -1194,8 +1238,6 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		case R_ARM_THM_PC22:
 		case R_ARM_THM_JUMP24: {
 			const st64 target = S + addend - P;
-			ut32 hi = r_read_ble16 (buf, bo->endian);
-			ut32 lo = r_read_ble16 (buf + 2, bo->endian);
 			// blx switches to arm state, so it needs 4 alignment
 			const st64 amask = (lo & 0x1000)? 1: 3;
 			// a thumb branch reaches +-16MB, leave the rest alone
@@ -1206,6 +1248,27 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			hi = (hi & 0xf800) | (sb << 10) | ((target >> 12) & 0x3ff);
 			lo = (lo & 0xd000) | ((((target >> 23) & 1) ^ sb ^ 1) << 13)
 				| ((((target >> 22) & 1) ^ sb ^ 1) << 11) | ((target >> 1) & 0x7ff);
+			r_write_ble16 (buf, hi, bo->endian);
+			r_write_ble16 (buf + 2, lo, bo->endian);
+			break;
+		}
+		case R_ARM_THM_JUMP19: {
+			const st64 target = S + addend - P;
+			// the conditional b.w reaches only +-1MB
+			if (!disp_fits (target, 21)) {
+				return;
+			}
+			hi = (hi & 0xfbc0) | (((target >> 20) & 1) << 10) | ((target >> 12) & 0x3f);
+			lo = (lo & 0xd000) | (((target >> 18) & 1) << 13)
+				| (((target >> 19) & 1) << 11) | ((target >> 1) & 0x7ff);
+			r_write_ble16 (buf, hi, bo->endian);
+			r_write_ble16 (buf + 2, lo, bo->endian);
+			break;
+		}
+		case R_ARM_THM_MOVW_ABS_NC:
+		case R_ARM_THM_MOVT_ABS: {
+			const ut64 val = S + addend;
+			thumb_mov_set_imm (&hi, &lo, (rel->type == R_ARM_THM_MOVT_ABS)? val >> 16: val);
 			r_write_ble16 (buf, hi, bo->endian);
 			r_write_ble16 (buf + 2, lo, bo->endian);
 			break;
@@ -1354,8 +1417,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		case R_AARCH64_RELATIVE:
 		case R_AARCH64_IRELATIVE:
 			word = 8;
-			V = B + A;
-			break;
+			V = A + bias;
 			break;
 		case R_AARCH64_GLOB_DAT:
 		case R_AARCH64_JUMP_SLOT:
@@ -1406,9 +1468,9 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			word = 8;
 			V = S + A;
 			break;
-		case R_PPC64_RELATIVE: // 22 — B + A (base-relative, filled by dynamic linker)
+		case R_PPC64_RELATIVE: // 22 — A + load bias
 			word = 8;
-			V = B + A;
+			V = A + bias;
 			break;
 		case R_PPC64_TOC16_HA:
 			if (toc != UT64_MAX) {
@@ -1497,8 +1559,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			V = S;
 			break;
 		case R_386_RELATIVE:
-			// wants the load bias, which is 0 in an unrebased view
-			V = A;
+			V = A + bias;
 			break;
 		default:
 			return;
@@ -1520,7 +1581,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			V = S + pA;
 			break;
 		case R_PPC_RELATIVE:
-			V = pA + (B - bo->baddr);
+			V = pA + bias;
 			break;
 		case R_PPC_DTPMOD32:
 		case R_PPC_DTPREL32:
@@ -1566,7 +1627,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			break;
 		case R_X86_64_GLOB_DAT:
 		case R_X86_64_JUMP_SLOT:
-			word = 4;
+			word = sizeof (Elf_(Addr));
 			V = S;
 			break;
 		case R_X86_64_PC8:
@@ -1591,7 +1652,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			break;
 		case R_X86_64_RELATIVE:
 			word = 8;
-			V = B + A;
+			V = A + bias;
 			break;
 		default:
 			//eprintf ("relocation %d not handle at this time\n", rel->type);
@@ -1621,7 +1682,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 	}
 	case EM_BPF: // CHECK: some older solana programs have set an ehdr.e_machine of EM_BPF
 	case EM_SBPF: {
-		B = bo->user_baddr != UINT64_MAX ? bo->user_baddr : bo->baddr;
+		const ut64 B = (bo->user_baddr != UT64_MAX)? bo->user_baddr: bo->baddr;
 		switch (rel->type) {
 		case R_BPF_64_64: { // 64-bit immediate for lddw instructions
 			// Read the current value from the immediate fields (addend)
@@ -1774,7 +1835,8 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	   	return NULL;
 	}
 	ELFOBJ *eo = obj->bin_obj;
-	size_t cdsz = obj->info? (obj->info->bits / 8): 0;
+	// a slot holds a pointer; bits is the thumb-biased decode width on arm
+	const size_t cdsz = sizeof (Elf_(Addr));
 	// PPC64 ELFv1 executables (ET_EXEC) have JMP_SLOT/ADDR64 relocs that need
 	// patching at analysis time just like shared libs — the dynamic linker fills these
 	// at runtime but r2 must do it statically.
@@ -1811,8 +1873,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	if (eo->ehdr.e_type == ET_REL && (eo->ehdr.e_machine == EM_PPC64
 			|| eo->ehdr.e_machine == EM_PPC || eo->ehdr.e_machine == EM_AARCH64
 			|| eo->ehdr.e_machine == EM_ARM)) {
-		const ut64 slot = (cdsz > 0)? cdsz: 4;
-		n_vaddr = (n_vaddr + slot - 1) & ~(slot - 1);
+		n_vaddr = (n_vaddr + cdsz - 1) & ~(cdsz - 1);
 	}
 	// reserve at least that space
 	size = eo->g_reloc_num * cdsz;
@@ -1856,7 +1917,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			toc_base = elf_io_addr (bf, eo, t) + 0x8000;
 		}
 	}
-	const ut64 B = elf_io_addr (bf, eo, eo->baddr);
+	const ut64 bias = elf_io_addr (bf, eo, eo->baddr) - eo->baddr;
 	RBinElfReloc *reloc;
 	R_VEC_FOREACH (relocs, reloc) {
 		ut64 plt_entry_addr = vaddr;
@@ -1882,14 +1943,17 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		const bool resolved = sym_addr && sym_addr != UT64_MAX;
 		const ut64 raddr = resolved? sym_addr: vaddr;
 		_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
-			elf_io_addr (bf, eo, reloc->rva), raddr, B, plt_entry_addr, toc_base);
+			elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base);
 		ptr = reloc_convert (eo, reloc, n_vaddr - bf->bo->baddr_shift, ret);
 		if (!ptr) {
 			continue;
 		}
+		// the loader fills a module id; it has no slot
+		const bool tls_module = (eo->ehdr.e_machine == EM_X86_64 && reloc->type == R_X86_64_DTPMOD64)
+			|| (eo->ehdr.e_machine == EM_PPC && reloc->type == R_PPC_DTPMOD32);
 		// a patched code site branches to the slot, so the slot is what the
 		// reloc describes; a data site holds the value and keeps its own vaddr
-		if (is_import) {
+		if (is_import && !tls_module) {
 			const st64 shift = bf->bo->baddr_shift;
 			RBinSection *s = r_bin_get_section_at (bf->bo, ptr->vaddr + shift, true);
 			if (s && (s->perm & R_PERM_X)) {
@@ -1900,7 +1964,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 				}
 			}
 		}
-		if (!resolved && eo->ehdr.e_machine != EM_SBPF) {
+		if (!resolved && eo->ehdr.e_machine != EM_SBPF && !tls_module) {
 			ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
 			vaddr += cdsz;
 		}

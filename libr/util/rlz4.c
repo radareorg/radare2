@@ -28,6 +28,10 @@
 #define HASH_SIZE (1 << HASH_BITS)
 #define HASH_32(p) ((LOAD_32(p)*0x9E3779B9)>>(32-HASH_BITS))
 
+static bool lz4_has_input(const ut8 *input, const ut8 *input_last, size_t len) {
+	return input <= input_last && len <= (size_t)(input_last - input);
+}
+
 static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 	int i, dist, limit, run, j;
 	int len, chain_len, best_len, nib;
@@ -151,9 +155,13 @@ static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 }
 
 R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *obuf, int osz) {
+	R_RETURN_VAL_IF_FAIL (g_buf && pp, -1);
+	if (comp_len < 0 || (obuf && osz < 0)) {
+		return -1;
+	}
 	int i, run;
 	int ip = obuf? 0: BLOCK_SIZE;
-	int maxLen = obuf? osz: BLOCK_SIZE;
+	size_t maxLen = obuf? osz: BLOCK_SIZE;
 	int ip_end = ip + comp_len;
 	ut8 *dst = obuf? obuf: g_buf;
 	ut16 tmp = 0;
@@ -169,13 +177,16 @@ R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *o
 			if (run == 15) {
 				for (; ip < ip_end;) {
 					const int c = g_buf[ip++];
+					if (run > maxLen || c > maxLen - run) {
+						return -1;
+					}
 					run += c;
 					if (c != 255) {
 						break;
 					}
 				}
 			}
-			if ((p + run) > maxLen || (ip + run) > ip_end) {
+			if (p > maxLen || (size_t)run > maxLen - p || run > ip_end - ip) {
 				return -1;
 			}
 
@@ -201,16 +212,20 @@ R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *o
 		if (len == (15 + MIN_MATCH)) {
 			for (; ip < ip_end;) {
 				const int c = g_buf[ip++];
+				if (len > maxLen || (size_t)c > maxLen - len) {
+					return -1;
+				}
 				len += c;
 				if (c != 255) {
 					break;
 				}
 			}
 		}
-		if ((p + len) > maxLen) {
+		if (p > maxLen || len > maxLen - p) {
 			return -1;
 		}
-		if ((p - s) >= 4) {
+		const size_t fast_len = (len + 7) & ~(size_t)7;
+		if ((p - s) >= 4 && fast_len <= maxLen - p) {
 			COPY_32_TO (p, s, dst, dst);
 			COPY_32_TO (p + 4, s + 4, dst, dst);
 			for (i = 8; i < len; i += 8) {
@@ -230,6 +245,9 @@ R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *o
 
 R_API ut8 *r_lz4_decompress(const ut8* input, size_t input_size, size_t *output_size) {
 	R_RETURN_VAL_IF_FAIL (input && output_size, NULL);
+	if (input_size < 4) {
+		return NULL;
+	}
 	RBuffer *b = r_buf_new ();
 	ut8 g_buf[(BLOCK_SIZE + BLOCK_SIZE + EXCESS) * sizeof (ut8)];
 	bool is_legacy = true;
@@ -242,6 +260,10 @@ R_API ut8 *r_lz4_decompress(const ut8* input, size_t input_size, size_t *output_
 	} else if (!memcmp (input, "\x04\x22\x4d\x18", 4)) {
 		is_legacy = false;
 		input += 4;
+		if (!lz4_has_input (input, input_last, 3)) {
+			r_unref (b);
+			return NULL;
+		}
 		ut8 flag = r_read_le8 (input);
 		input += 2; // skip BD byte
 		has_block_checksum = flag & 16;
@@ -249,37 +271,64 @@ R_API ut8 *r_lz4_decompress(const ut8* input, size_t input_size, size_t *output_
 		has_content_checksum = flag & 4;
 		has_dictionary_id = flag & 1;
 		if (has_content_size) {
+			if (!lz4_has_input (input, input_last, 8)) {
+				r_unref (b);
+				return NULL;
+			}
 			input += 8;
 		}
 		if (has_dictionary_id) {
+			if (!lz4_has_input (input, input_last, 4)) {
+				r_unref (b);
+				return NULL;
+			}
 			input += 4;
+		}
+		if (!lz4_has_input (input, input_last, 1)) {
+			r_unref (b);
+			return NULL;
 		}
 		input += 1; // skip header checksum
 	}
 
-	const ut8 bytes_at_end_to_skip = has_content_checksum? 8: 4;
-	while (input + bytes_at_end_to_skip < input_last) {
+	const size_t bytes_at_end_to_skip = has_content_checksum? 8: 4;
+	while (lz4_has_input (input, input_last, bytes_at_end_to_skip + 1)) {
 		ut32 comp_len = r_read_le32 (input);
 		bool is_compressed = is_legacy || (comp_len & 0x80000000) == 0;
 		if (!is_legacy) {
 			comp_len &= 0x7FFFFFFF;
 		}
 		input += 4;
-		int p;
-		memcpy (g_buf + BLOCK_SIZE, input, comp_len);
+		if (comp_len == 0) {
+			break;
+		}
+		if (!lz4_has_input (input, input_last, comp_len)) {
+			r_unref (b);
+			return NULL;
+		}
 		if (is_compressed) {
+			if (comp_len > BLOCK_SIZE + EXCESS) {
+				r_unref (b);
+				return NULL;
+			}
+			int p;
+			memcpy (g_buf + BLOCK_SIZE, input, comp_len);
 			int error = r_lz4_decompress_block (g_buf, comp_len, &p, NULL, 0);
 			if (error != 0) {
 				r_unref (b);
 				return NULL;
 			}
+			r_buf_write (b, g_buf, p);
 		} else {
-			p = comp_len;
+			r_buf_write (b, input, comp_len);
 		}
-		r_buf_write (b, g_buf, p);
 		input += comp_len;
 
 		if (has_block_checksum) {
+			if (!lz4_has_input (input, input_last, 4)) {
+				r_unref (b);
+				return NULL;
+			}
 			input += 4;
 		}
 	}

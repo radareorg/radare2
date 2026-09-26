@@ -72,7 +72,7 @@ static RCoreHelpMessage help_msg_ec = {
 	"ec", " prompt red blue", "change color and background of prompt",
 	"Vars:", "", "",
 	"colors:", "", "rgb:000, red, green, blue, #ff0000, ...",
-	"e scr.color", "=0", "use more colors (0: no color 1: ansi 16, 2: 256, 3: 16M)",
+	"e scr.color", "=0", "use colors (0: no color 1: ansi 16, 2: 256, 3: 16M)",
 	"$DATADIR/radare2/cons", "", "~/.local/share/radare2/cons", // XXX should be themes
 	NULL
 };

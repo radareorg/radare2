@@ -71,3 +71,19 @@ R_API bool r_bin_wr_addlib(RBin *bin, const char *lib) {
 	RBinWriteAddLib addlib = R_UNWRAP3 (plugin, write, addlib);
 	return addlib? addlib (bin->cur, lib): false;
 }
+
+R_API bool r_bin_wr_lib_weak(RBin *bin, const char *lib, bool weak) {
+	R_RETURN_VAL_IF_FAIL (bin && lib, false);
+	RBinFile *bf = r_bin_cur (bin);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
+	RBinWriteLibWeak lib_weak = R_UNWRAP3 (plugin, write, lib_weak);
+	return lib_weak? lib_weak (bf, lib, weak): false;
+}
+
+R_API bool r_bin_wr_symbol_weak(RBin *bin, const char *symbol, bool weak) {
+	R_RETURN_VAL_IF_FAIL (bin && symbol, false);
+	RBinFile *bf = r_bin_cur (bin);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
+	RBinWriteSymbolWeak symbol_weak = R_UNWRAP3 (plugin, write, symbol_weak);
+	return symbol_weak? symbol_weak (bf, symbol, weak): false;
+}

@@ -322,12 +322,12 @@ e prj.vc=false
 fV 49 0x400410
 fV 50 0x400412
 P+ vmarks > /dev/null
-PS*vmarks~fV
+PS*vmarks~fv
 P- vmarks > /dev/null
 EOF
 EXPECT=<<EOF
-fV 49 0x400410
-fV 50 0x400412
+fv 0x31 0x400410
+fv 0x32 0x400412
 EOF
 RUN
 
@@ -347,8 +347,8 @@ PS* ctypes~?Foo
 P- ctypes > /dev/null
 EOF
 EXPECT=<<EOF
-12
-12
+14
+14
 5
 EOF
 RUN
@@ -923,9 +923,7 @@ e prj.vc = false
 Ps hello
 Ps world
 EOF
-EXPECT_ERR=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
-EOF
+EXPECT_ERR=
 EXPECT=
 RUN
 

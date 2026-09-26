@@ -56369,3 +56369,50 @@ EXPECT=<<EOF
 =SN	x16
 EOF
 RUN
+
+NAME=af ends a block at the edge of executable memory
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+o malloc://64 0x40 rw-
+b 64
+wow 200080d2 @ 0
+b 60
+wow 1f2003d5 @ 0x40
+wx c0035fd6 @ 0x7c
+s 0
+af
+afb
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000040 00:0000 64
+EOF
+RUN
+
+NAME=a resolved br target still sees the cmp before it
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e io.cache=true
+wx 1f080071e2030054c800001000011fd6 @ 0x100
+wx 08000014 @ 0x120
+wx 89020010ea0100102b6960384a090b8b40011fd6 @ 0x140
+wx c0035fd6c0035fd6 @ 0x180
+wx 0001 @ 0x190
+s 0x100
+af
+ab @ 0x140~cases
+afb
+EOF
+EXPECT=<<EOF
+cases: 2
+0x00000100 0x00000108 00:0000 8 j 0x00000180 f 0x00000108
+0x00000108 0x00000110 00:0000 8 j 0x00000120
+0x00000120 0x00000124 00:0000 4 j 0x00000140
+0x00000140 0x00000154 00:0000 20 s 0x00000180 s 0x00000184
+0x00000180 0x00000184 00:0000 4
+0x00000184 0x00000188 00:0000 4
+EOF
+RUN

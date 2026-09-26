@@ -1,0 +1,235 @@
+NAME=afcf preserves recovered arguments until a count is declared
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+af+ 0 custom_fatal
+afb+ 0 0 10
+afvr rdi status int
+afcf
+tk func.custom_fatal.args=0
+afiq~stack:
+tk func.custom_fatal.args=
+tk custom_fatal=func
+afcf
+afs
+tk func.custom_fatal.ret=void
+afcf
+afcfj
+afiq~stack:
+tk func.custom_fatal.args=0
+afcf
+afs
+afcfj
+afiq~stack:
+tk func.custom_fatal.args=1
+tk func.custom_fatal.arg.0=long,declared
+afcf
+EOF
+EXPECT=<<EOF
+custom_fatal (int status);
+  stack: 0x00000000 (vars:0 args:1)
+custom_fatal (int status);
+void custom_fatal (int status);
+void custom_fatal (int status);
+[{"name":"custom_fatal","args":[{"name":"status","type":"int"}],"count":1}]
+  stack: 0x00000000 (vars:0 args:1)
+void custom_fatal ();
+void custom_fatal ();
+[{"name":"custom_fatal","return":"void","args":[],"count":0}]
+  stack: 0x00000000 (vars:0 args:0)
+void custom_fatal (long declared);
+EOF
+RUN
+
+NAME=recovered signatures keep register arguments before sorted stack arguments
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3
+af+ 0 fallback
+afb+ 0 0 1
+afvr rsi second int
+afvb 16 last int
+afvb 8 third int
+afvr rdi first int
+afcf
+afs
+zaf
+z*~za fallback t
+EOF
+EXPECT=<<EOF
+fallback (int first, int second, int third, int last);
+void fallback (int first, int second, int third, int last);
+za fallback t void fallback (int first, int second, int third, int last)
+EOF
+RUN
+
+NAME=recovered PowerPC signatures keep register arguments before stack arguments
+FILE=malloc://64
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 4e800020
+af+ 0 fallback
+afb+ 0 0 4
+afvr r7 third int32_t
+afvb 1 stack_arg int32_t
+afvr r5 first int32_t
+afvr r6 second int32_t
+afcf
+afs
+zaf
+z*~za fallback t
+EOF
+EXPECT=<<EOF
+fallback (int32_t first, int32_t second, int32_t third, int32_t stack_arg);
+void fallback (int32_t first, int32_t second, int32_t third, int32_t stack_arg);
+za fallback t void fallback (int32_t first, int32_t second, int32_t third, int32_t stack_arg)
+EOF
+RUN
+
+NAME=afcf resolves short names and relocated imports
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+td int f(int value);
+af+ 0 f
+afb+ 0 0 10
+afcf
+af+ 0x10 sym.imp.f
+afb+ 0x10 0x10 10
+afcf @ 0x10
+af+ 0x20 reloc.f
+afb+ 0x20 0x20 10
+afcf @ 0x20
+EOF
+EXPECT=<<EOF
+int f (int value);
+int sym.imp.f (int value);
+int reloc.f (int value);
+EOF
+RUN
+
+NAME=afcf distinguishes recovered arguments from an explicit prototype
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+td void fatal(void);
+tk func.reloc.fatal.args=1
+tk func.reloc.fatal.arg.0=int,status
+af+ 0 reloc.fatal
+afb+ 0 0 10
+afcf
+tk reloc.fatal=func
+afcf
+af+ 0x10 fatal
+afb+ 0x10 0x10 10
+afcf @ 0x10
+EOF
+EXPECT=<<EOF
+void reloc.fatal ();
+reloc.fatal (int status);
+void fatal ();
+EOF
+RUN
+
+NAME=afcf preserves exact underscore prototypes without a kind key
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+td void fatal(void);
+tk func.__fatal.ret=int
+tk func.__fatal.args=1
+tk func.__fatal.arg.0=int,status
+af+ 0 sym.imp.__fatal
+afb+ 0 0 10
+afcf
+af+ 0x10 sym.imp.____fatal
+afb+ 0x10 0x10 10
+afcf @ 0x10
+EOF
+EXPECT=<<EOF
+int sym.imp.__fatal (int status);
+int sym.imp.____fatal (int status);
+EOF
+RUN
+
+NAME=afcf reads prototypes whose kind key names a struct
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+tk func.stat.ret=int
+tk func.stat.args=2
+tk func.stat.arg.0=const char *,path
+tk func.stat.arg.1=void *,buf
+tk stat=struct
+af+ 0 sym.imp.stat
+afb+ 0 0 10
+afcf
+EOF
+EXPECT=<<EOF
+int sym.imp.stat (const char *path, void *buf);
+EOF
+RUN
+
+NAME=afcf treats invalid counts as unknown and accepts Sdb numeric counts
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+af+ 0 custom_fatal
+afb+ 0 0 10
+afvr rdi status int
+tk func.custom_fatal.ret=void
+tk custom_fatal=func
+tk func.custom_fatal.args=invalid
+afcf
+tk func.custom_fatal.args=-1
+afcf
+tk func.custom_fatal.args=2147483648
+afcf
+tk func.custom_fatal.args=4294967296
+afcf
+tk func.custom_fatal.args=18446744073709551616
+afcf
+tk func.custom_fatal.args=0junk
+afcf
+tk func.custom_fatal.args=0x0
+afcf
+tk func.custom_fatal.args=0x1
+tk func.custom_fatal.arg.0=long,declared
+afcf
+EOF
+EXPECT=<<EOF
+void custom_fatal (int status);
+void custom_fatal (int status);
+void custom_fatal (int status);
+void custom_fatal (int status);
+void custom_fatal (int status);
+void custom_fatal (int status);
+void custom_fatal ();
+void custom_fatal (long declared);
+EOF
+RUN
+
+NAME=pd emu recognizes current and legacy variadic prototype slots
+FILE=malloc://0x1000
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+e asm.emu=true
+wx bc00080000 @ 0
+wx e8f6020000 @ 5
+w %d %d @ 0x100
+wx 000100002a00000007000000 @ 0x800
+f printf @ 0x300
+aei
+pd 2 @ 0~printf("
+tk func.printf.arg.1=...,arg1
+pd 2 @ 0~printf("
+tk func.printf.arg.1=int,count
+pd 2 @ 0~printf("
+EOF
+EXPECT=<<EOF
+                                                                       ; int printf("%d %d", 42, 7)
+                                                                       ; int printf("%d %d", 42, 7)
+                                                                       ; int printf("%d %d", 42)
+EOF
+RUN

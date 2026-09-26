@@ -120,22 +120,12 @@ typedef struct {
 	ut64 last_seek;
 } RIODscObject;
 
-typedef enum {
-	SUBCACHE_FORMAT_UNDEFINED,
-	SUBCACHE_FORMAT_V1,
-	SUBCACHE_FORMAT_V2
-} RDscSubcacheFormat;
-
-typedef struct {
-	ut8 uuid[16];
-	ut64 cacheVMOffset;
-} RDscSubcacheEntryV1;
-
+// dyld_subcache_entry; caches predating cacheSubType (iOS 15) stop before suffix
 typedef struct {
 	ut8 uuid[16];
 	ut64 cacheVMOffset;
 	char suffix[32];
-} RDscSubcacheEntryV2;
+} RDscSubcacheEntry;
 
 #define R_IS_PTR_AUTHENTICATED(x) B_IS_SET(x, 63)
 #define URL_SCHEME "dsc://"
@@ -203,7 +193,6 @@ static int dsc_object_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
 static ut64 dsc_object_seek(RIO *io, RIODscObject *dsc, ut64 offset, int whence);
 
 static bool dsc_dig_slices(RIODscObject * dsc);
-static bool dsc_detect_subcache_format(int fd, ut32 sc_offset, ut32 sc_count, ut32 array_end, ut64 size, ut64 * out_entry_size, RDscSubcacheFormat * out_format);
 static bool dsc_dig_subcache(RIODscObject * dsc, const char * filename, ut64 start, ut8 * check_uuid, ut64 * out_size);
 static bool dsc_dig_one_slice(RIODscObject * dsc, int fd, const char * file_name, ut64 start, ut64 end, ut8 * check_uuid, RDSCHeader * header, bool walk_monocache);
 static RIODscSlice * dsc_get_slice(RIODscObject * dsc, ut64 off_global);
@@ -256,6 +245,91 @@ static ut64 __lseek_dsc(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return dsc_object_seek (io, (RIODscObject *)fd->data, offset, whence);
 }
 
+static void dsc_append_pointer_infos(RIODscTrimmedSlice *trimmed, RList *infos, PJ *pj, RStrBuf *sb) {
+	static const char *const keys_v3[] = { "ia", "ib", "da", "db" };
+	static const char *const keys_v5[] = { "ia", "da" };
+	RIODscSlice *slice = trimmed->slice;
+	RListIter *iter_info;
+	RIODscTrimmedRebaseInfo *trimmed_info;
+
+	r_list_foreach (infos, iter_info, trimmed_info) {
+		int version = trimmed_info->info->info->version;
+		ut64 remaining_size = trimmed_info->count;
+		ut64 cursor = 0;
+		while (remaining_size >= 8) {
+			ut8 raw_value_buf[8];
+			bool got_raw_value;
+			ut64 off_local = trimmed_info->off_local + cursor;
+			RIO_FREAD_AT_INTO_DIRECT (slice->fd, off_local, &raw_value_buf, 8, got_raw_value);
+			remaining_size -= 8;
+			cursor += 8;
+			if (!got_raw_value) {
+				R_LOG_ERROR ("reading raw pointer");
+				break;
+			}
+
+			ut64 raw_value = r_read_le64 (raw_value_buf);
+
+			if (pj) {
+				pj_o (pj);
+				char *tmp = r_str_newf ("0x%"PFMT64x, slice->start + off_local);
+				pj_ks (pj, "paddr", tmp);
+				free (tmp);
+
+				tmp = r_str_newf ("0x%"PFMT64x, raw_value);
+				pj_ks (pj, "raw", tmp);
+				free (tmp);
+
+				tmp = r_str_newf ("v%d", version);
+				pj_ks (pj, "format", tmp);
+				free (tmp);
+			} else {
+				r_strbuf_appendf (sb, "paddr: 0x%"PFMT64x"\nraw: 0x%"PFMT64x"\nformat: v%d\n",
+					slice->start + off_local, raw_value, version);
+			}
+
+			switch (version) {
+			case 1:
+			case 2:
+			case 4:
+				break;
+			case 3:
+			case 5:
+				if (R_IS_PTR_AUTHENTICATED (raw_value)) {
+					bool is_v5 = version == 5;
+					bool has_diversity = (raw_value & (1ULL << (is_v5 ? 50 : 48))) != 0;
+					if (pj) {
+						pj_kb (pj, "has_diversity", has_diversity);
+					}
+					if (has_diversity) {
+						ut64 diversity = (raw_value >> (is_v5 ? 34 : 32)) & 0xFFFF;
+						if (pj) {
+							pj_kn (pj, "diversity", diversity);
+						} else {
+							r_strbuf_appendf (sb, "diversity: 0x%"PFMT64x"\n", diversity);
+						}
+					}
+					ut64 key = (raw_value >> (is_v5 ? 51 : 49)) & (is_v5 ? 1 : 3);
+					const char *name = is_v5 ? keys_v5[key] : keys_v3[key];
+					if (pj) {
+						pj_ks (pj, "key", name);
+					} else {
+						r_strbuf_appendf (sb, "key: %s\n", name);
+					}
+				}
+				break;
+			default:
+				R_LOG_ERROR ("Unsupported rebase info version %d", version);
+			}
+			if (pj) {
+				pj_end (pj);
+			} else if (sb) {
+				r_strbuf_append (sb, "\n");
+			}
+		}
+	}
+}
+
 static char *__infoPointer(RIODscObject * dsc, ut64 size, int mode) {
 	PJ *pj = NULL;
 	RStrBuf *sb = NULL;
@@ -290,120 +364,12 @@ static char *__infoPointer(RIODscObject * dsc, ut64 size, int mode) {
 		RList * infos = dsc_slice_get_rebase_infos_by_range (trimmed->slice, trimmed->seek, trimmed->count);
 		if (!infos) {
 			pj_free (pj);
-			r_list_free (slices);
 			r_strbuf_free (sb);
+			r_list_free (slices);
 			return NULL;
 		}
 
-		RListIter * iter;
-		RIODscTrimmedRebaseInfo * trimmed_info;
-
-		r_list_foreach (infos, iter, trimmed_info) {
-			ut64 remaining_size = trimmed_info->count;
-			ut64 cursor = 0;
-			while (remaining_size >= 8) {
-				ut8 raw_value_buf[8];
-				bool got_raw_value;
-				ut64 off_local = trimmed_info->off_local + cursor;
-				RIO_FREAD_AT_INTO_DIRECT (trimmed->slice->fd, off_local, &raw_value_buf, 8, got_raw_value);
-				remaining_size -= 8;
-				cursor += 8;
-				if (!got_raw_value) {
-					R_LOG_ERROR ("reading raw pointer");
-					break;
-				}
-
-				ut64 raw_value = r_read_le64 (raw_value_buf);
-
-				if (pj) {
-					pj_o (pj);
-				}
-
-				char * tmp = r_str_newf ("0x%"PFMT64x, trimmed->slice->start + off_local);
-				if (pj) {
-					pj_ks (pj, "paddr", tmp);
-				} else if (sb) {
-					r_strbuf_appendf (sb, "paddr: %s\n", tmp);
-				}
-				free (tmp);
-
-				tmp = r_str_newf ("0x%"PFMT64x, raw_value);
-				if (pj) {
-					pj_ks (pj, "raw", tmp);
-				} else if (sb) {
-					r_strbuf_appendf (sb, "raw: %s\n", tmp);
-				}
-				free (tmp);
-
-				tmp = r_str_newf ("v%d", trimmed_info->info->info->version);
-				if (pj) {
-					pj_ks (pj, "format", tmp);
-				} else if (sb) {
-					r_strbuf_appendf (sb, "format: %s\n", tmp);
-				}
-				free (tmp);
-
-				switch (trimmed_info->info->info->version) {
-				case 1:
-				case 2:
-				case 4:
-					break;
-				case 3:
-					if (R_IS_PTR_AUTHENTICATED (raw_value)) {
-						bool has_diversity = (raw_value & (1ULL << 48)) != 0;
-						if (pj) {
-							pj_kb (pj, "has_diversity", has_diversity);
-						}
-						if (has_diversity) {
-							ut64 diversity = (raw_value >> 32) & 0xFFFF;
-							if (pj) {
-								pj_kn (pj, "diversity", diversity);
-							} else if (sb) {
-								r_strbuf_appendf (sb, "diversity: 0x%"PFMT64x"\n", diversity);
-							}
-						}
-						ut64 key = (raw_value >> 49) & 3;
-						const char * names[4] = { "ia", "ib", "da", "db" };
-						if (pj) {
-							pj_ks (pj, "key", names[key]);
-						} else if (sb) {
-							r_strbuf_appendf (sb, "key: %s\n", names[key]);
-						}
-					}
-					break;
-				case 5:
-					if (R_IS_PTR_AUTHENTICATED (raw_value)) {
-						bool has_diversity = (raw_value & (1ULL << 50)) != 0;
-						if (pj) {
-							pj_kb (pj, "has_diversity", has_diversity);
-						}
-						if (has_diversity) {
-							ut64 diversity = (raw_value >> 34) & 0xFFFF;
-							if (pj) {
-								pj_kn (pj, "diversity", diversity);
-							} else if (sb) {
-								r_strbuf_appendf (sb, "diversity: 0x%"PFMT64x"\n", diversity);
-							}
-						}
-						ut64 key = (raw_value >> 51) & 1;
-						const char * names[2] = { "ia", "da" };
-						if (pj) {
-							pj_ks (pj, "key", names[key]);
-						} else if (sb) {
-							r_strbuf_appendf (sb, "key: %s\n", names[key]);
-						}
-					}
-					break;
-				default:
-					R_LOG_ERROR ("Unsupported rebase info version %d", trimmed_info->info->info->version);
-				}
-				if (pj) {
-					pj_end (pj);
-				} else if (sb) {
-					r_strbuf_append (sb, "\n");
-				}
-			}
-		}
+		dsc_append_pointer_infos (trimmed, infos, pj, sb);
 		r_list_free (infos);
 	}
 
@@ -506,11 +472,10 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 		ut64 size = 8;
 		switch (command[2]) {
 		case '?':
-			io->cb_printf ("Usage: :iP[j?] [size]\n");
-			io->cb_printf (" :iP?   get this help message\n");
-			io->cb_printf (" :iP    show pointer metadata\n");
-			io->cb_printf (" :iPj   show pointer metadata in json\n\n");
-			return NULL;
+			return strdup ("Usage: :iP[j?] [size]\n"
+				" :iP?   get this help message\n"
+				" :iP    show pointer metadata\n"
+				" :iPj   show pointer metadata in json\n\n");
 		case 'j':
 			if (command[3] == ' ') {
 				size = r_num_math (NULL, command + 4);
@@ -525,11 +490,10 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 		ut64 size = 8;
 		switch (command[2]) {
 		case '?':
-			io->cb_printf ("Usage: :iF[j?] [size]\n");
-			io->cb_printf (" :iF?   get this help message\n");
-			io->cb_printf (" :iF    show info about (sub)cache file\n");
-			io->cb_printf (" :iF    show info about (sub)cache file in JSON\n\n");
-			return NULL;
+			return strdup ("Usage: :iF[j?] [size]\n"
+				" :iF?   get this help message\n"
+				" :iF    show info about (sub)cache file\n"
+				" :iFj   show info about (sub)cache file in JSON\n\n");
 		case 'j':
 			if (command[3] == ' ') {
 				size = r_num_math (NULL, command + 4);
@@ -537,15 +501,15 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 			return __infoSubCache (dsc, size, R_MODE_JSON);
 		case ' ':
 			size = r_num_math (NULL, command + 3);
+			// fallthrough
 		case '\0':
 			return __infoSubCache (dsc, size, R_MODE_PRINT);
 		}
-	} else if (command && command[0] == '?') {
-		io->cb_printf ("DSC commands are prefixed with `:` (alias for `=!`).\n");
-		io->cb_printf (":iP[j?] [size]        show pointer metadata at current seek\n");
-		io->cb_printf (":iF[j?] [size]        show info about (sub)cache file at current seek\n\n");
+	} else if (command[0] == '?') {
+		return strdup ("DSC commands are prefixed with `:` (alias for `=!`).\n"
+			":iP[j?] [size]        show pointer metadata at current seek\n"
+			":iF[j?] [size]        show info about (sub)cache file at current seek\n\n");
 	}
-
 	return NULL;
 }
 
@@ -634,24 +598,14 @@ static bool dsc_dig_slices(RIODscObject * dsc) {
 			}
 		}
 
-		ut64 sc_entry_size;
-		RDscSubcacheFormat sc_format = SUBCACHE_FORMAT_UNDEFINED;
-
-		if (subCacheArrayCount) {
-			ut32 array_end = 0;
-
-			dsc_header_get_u32 (header, "maybePointsToLinkeditMapAtTheEndOfSubCachesArray", &array_end);
-
-			if (!dsc_detect_subcache_format(fd, subCacheArrayOffset, subCacheArrayCount, array_end, next_or_end, &sc_entry_size, &sc_format)) {
-				R_LOG_ERROR ("Could not detect subcache entry format");
-				goto error;
-			}
-			if (sc_format == SUBCACHE_FORMAT_UNDEFINED) {
-				R_LOG_ERROR ("Ambiguous or unsupported subcache entry format");
-				goto error;
-			}
-		} else {
-			sc_entry_size = 0;
+		// same rule as dyld (SharedCacheRuntime.cpp): entries carry a file
+		// suffix iff the header is large enough to contain cacheSubType
+		ut32 cache_sub_type;
+		const bool has_suffixes = dsc_header_get_u32 (header, "cacheSubType", &cache_sub_type);
+		const ut64 sc_entry_size = has_suffixes? sizeof (RDscSubcacheEntry): offsetof (RDscSubcacheEntry, suffix);
+		if (subCacheArrayCount && subCacheArrayOffset + sc_entry_size * subCacheArrayCount > next_or_end) {
+			R_LOG_ERROR ("Malformed subcache entries");
+			goto error;
 		}
 
 		ut64 cursor = 0;
@@ -663,51 +617,19 @@ static bool dsc_dig_slices(RIODscObject * dsc) {
 		ut64 sc_entry_cursor = subCacheArrayOffset;
 
 		for (i = 0; i != subCacheArrayCount; i++) {
-			char * suffix = NULL;
-			ut8 check_uuid[16];
+			RDscSubcacheEntry entry = {0};
 
-			if (lseek (fd, sc_entry_cursor, SEEK_SET) < 0) {
+			if (lseek (fd, sc_entry_cursor, SEEK_SET) < 0 || read (fd, &entry, sc_entry_size) != sc_entry_size) {
 				goto error;
 			}
-
-			switch (sc_format) {
-			case SUBCACHE_FORMAT_V1:
-			{
-				RDscSubcacheEntryV1 entry;
-
-				if (read (fd, &entry, sc_entry_size) != sc_entry_size) {
-					goto error;
-				}
-
-				suffix = r_str_newf (".%d", i + 1);
-				memcpy (check_uuid, entry.uuid, 16);
-				break;
-			}
-			case SUBCACHE_FORMAT_V2:
-			{
-				RDscSubcacheEntryV2 entry;
-				if (read (fd, &entry, sc_entry_size) != sc_entry_size) {
-					return false;
-				}
-				suffix = r_str_ndup (entry.suffix, 32);
-				memcpy (check_uuid, entry.uuid, 16);
-				break;
-			}
-#if 1
-			// its unreachable by coverity but reachable by gcc, so it cant be commented :D
-			case SUBCACHE_FORMAT_UNDEFINED:
-				suffix = NULL;
-				break;
-#endif
-			}
-
+			char * suffix = has_suffixes? r_str_ndup (entry.suffix, 32): r_str_newf (".%d", i + 1);
 			char * subcache_filename = r_str_newf ("%s%s", dsc->filename, suffix);
 			free (suffix);
 			if (!subcache_filename) {
 				goto error;
 			}
 			ut64 size;
-			bool success = dsc_dig_subcache (dsc, subcache_filename, cursor, check_uuid, &size);
+			bool success = dsc_dig_subcache (dsc, subcache_filename, cursor, entry.uuid, &size);
 			free (subcache_filename);
 			if (!success) {
 				goto error;
@@ -740,55 +662,6 @@ error:
 	dsc_header_free (header);
 	close (fd);
 	return false;
-}
-
-static bool dsc_detect_subcache_format(int fd, ut32 sc_offset, ut32 sc_count, ut32 array_end, ut64 size, ut64 * out_entry_size, RDscSubcacheFormat * out_format) {
-	RDscSubcacheFormat sc_format = SUBCACHE_FORMAT_UNDEFINED;
-	ut64 sc_entry_size = 0;
-	ut64 array_size_v2 = sizeof (RDscSubcacheEntryV2) * sc_count;
-
-	if (array_end) {
-		if (array_end == sc_offset + array_size_v2) {
-			sc_format = SUBCACHE_FORMAT_V2;
-			sc_entry_size = sizeof (RDscSubcacheEntryV2);
-			goto beach;
-		}
-	}
-
-	if (sc_count != 0) {
-		ut64 array_size_v1 = sizeof (RDscSubcacheEntryV1) * sc_count;
-		char test_v1, test_v2;
-
-		if (array_size_v1 + 1 >= size || array_size_v2 + 1 >= size) {
-			R_LOG_ERROR ("Malformed subcache entries");
-			return false;
-		}
-		if (lseek (fd, sc_offset + array_size_v1, SEEK_SET) < 0) {
-			return false;
-		}
-		if (read (fd, &test_v1, 1) != 1) {
-			return false;
-		}
-		if (lseek (fd, sc_offset + array_size_v2, SEEK_SET) < 0) {
-			return false;
-		}
-		if (read (fd, &test_v2, 1) != 1) {
-			return false;
-		}
-
-		if (test_v1 == '/' && test_v2 != '/') {
-			sc_format = SUBCACHE_FORMAT_V1;
-			sc_entry_size = sizeof (RDscSubcacheEntryV1);
-		} else if (test_v1 != '/' && test_v2 == '/') {
-			sc_format = SUBCACHE_FORMAT_V2;
-			sc_entry_size = sizeof (RDscSubcacheEntryV2);
-		}
-	}
-beach:
-	*out_entry_size = sc_entry_size;
-	*out_format = sc_format;
-
-	return true;
 }
 
 static bool dsc_dig_subcache(RIODscObject * dsc, const char * filename, ut64 start, ut8 * check_uuid, ut64 * out_size) {

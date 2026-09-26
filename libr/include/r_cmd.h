@@ -48,21 +48,32 @@ typedef struct r_cmd_context_t {
 	ut32 blocksize; // block size snapshot inherited by nested command contexts
 	bool raw; // command requested verbatim argument handling
 	char *args_storage; // private: owned buffer backing args, do not use
-	RVecRStrs args; // arguments after the matched name and subcmd
+	RVecRStrs args; // NUL-terminated arguments; slice lengths preserve embedded NULs
 	RStrs subcmd; // command-token remainder after the registered name; slices the
 	// NUL-terminated input line, so subcmd.b is the raw undecoded tail as C string
 } RCmdContext;
 
 typedef RCmdResult (*RCmdCtxCb) (RCmdContext *ctx);
 
+// Borrow an argument slice, or { NULL, NULL } when the index is out of range.
+// The storage belongs to ctx; arg.b points to a NUL terminator.
+static inline RStrs r_cmdctx_arg(RCmdContext *ctx, size_t index) {
+	RStrs *arg = RVecRStrs_at (&ctx->args, index);
+	return arg? *arg: (RStrs) { NULL, NULL };
+}
+
+static inline size_t r_cmdctx_argc(RCmdContext *ctx) {
+	return RVecRStrs_length (&ctx->args);
+}
+
 /* True when the command token requests help: "agD?", "agDj?", "prjs?" */
-static inline bool r_cmd_ctx_help(RCmdContext *ctx) {
+static inline bool r_cmdctx_help(RCmdContext *ctx) {
 	return r_strs_lastch (ctx->subcmd) == '?';
 }
 
 /* Trailing output-mode char from the given set, looking before any '?'.
- * r_cmd_ctx_mode (ctx, "jq") is 'j' for "agDj" and "agDj?", 0 for "agD" */
-static inline char r_cmd_ctx_mode(RCmdContext *ctx, const char *modes) {
+ * r_cmdctx_mode (ctx, "jq") is 'j' for "agDj" and "agDj?", 0 for "agD" */
+static inline char r_cmdctx_mode(RCmdContext *ctx, const char *modes) {
 	RStrs s = ctx->subcmd;
 	if (r_strs_lastch (s) == '?') {
 		s.b--;

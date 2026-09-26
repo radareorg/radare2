@@ -159,7 +159,7 @@ static RCoreHelpMessage help_msg_iz = {
 	"izz[auwWb]", "", "filter by string type (ascii, utf8, utf16, utf32, base64)",
 	"izzc", "", "count the strings in the whole binary",
 	"izzz", "[jq]", "dump strings from whole binary to r2 shell (for huge files)",
-	"izzzc", "", "count the strings dumped from the whole binary",
+	"izzzc", "", "count strings dumped from the whole binary",
 	NULL
 };
 

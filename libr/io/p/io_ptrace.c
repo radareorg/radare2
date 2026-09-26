@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2025 - pancake */
+/* radare - LGPL - Copyright 2008-2026 - pancake */
 
 #include <r_userconf.h>
 #include <r_util.h>
@@ -296,8 +296,8 @@ static bool __close(RIODesc *desc) {
 	return true;
 }
 
-static void show_help(void) {
-	eprintf ("Usage: :cmd args\n"
+static char *show_help(void) {
+	return strdup ("Usage: :cmd args\n"
 		" :ptrace   - use ptrace io\n"
 		" :mem      - use /proc/pid/mem io if possible\n"
 		" :tls      - find the thread local storage address\n"
@@ -307,13 +307,11 @@ static void show_help(void) {
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOPtrace *iop = (RIOPtrace*)fd->data;
-	//printf("ptrace io command (%s)\n", cmd);
-	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "")) {
 		return NULL;
 	}
 	if (!strcmp (cmd, "help")) {
-		show_help ();
+		return show_help ();
 	} else if (!strcmp (cmd, "tls")) {
 #if __x86_64__
 		RCore *core = io->coreb.core;
@@ -335,13 +333,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 					iop->pid = iop->tid = pid;
 				}
 				return NULL;
-			} else {
-				return r_str_newf ("%d", iop->pid);
-				// io->cb_printf ("%d\n", iop->pid);
 			}
+			return r_str_newf ("%d", iop->pid);
 		}
 	} else {
-		show_help ();
+		return show_help ();
 	}
 	return NULL;
 }
@@ -354,7 +350,6 @@ static int __getpid(RIODesc *fd) {
 	return iop->pid;
 }
 
-// TODO: rename ptrace to io_ptrace .. err io.ptrace ??
 RIOPlugin r_io_plugin_ptrace = {
 	.meta = {
 		.name = "ptrace",

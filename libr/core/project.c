@@ -190,13 +190,10 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
 	char *data = r_file_slurp (str, NULL);
 	free (str);
 	R_RETURN_IF_FAIL (data);
-	Output out = {0};
-	out.cout = r_strbuf_new (NULL);
-	struct Proc proc;
-	spp_proc_set (&proc, "spp", 1);
-	spp_eval (data, &out);
+	char *expanded = spp_eval_str (NULL, data);
 	free (data);
-	data = strdup (r_strbuf_get (out.cout));
+	R_RETURN_IF_FAIL (expanded);
+	data = expanded;
 	char *save_ptr = NULL;
 	char *bol = r_str_tok_r (data, "\n", &save_ptr);
 	while (bol) {
@@ -543,7 +540,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		r_cons_printf (cons, "# meta\n");
 		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 1, NULL, NULL);
 		flush (core, sb);
-		r_core_cmd (core, "fV*", 0);
+		r_core_cmd (core, "fv*", 0);
 		flush (core, sb);
 		r_core_cmd (core, "ano*@@@F", 0);
 		flush (core, sb);

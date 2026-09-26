@@ -27,6 +27,7 @@ CWISS_DECLARE_FLAT_HASHMAP_DEFAULT(AdjacencyList, ut64, Edges*);
 typedef struct r_ref_manager_t {
 	R_ALIGNED(16) AdjacencyList refs;   // forward refs
 	R_ALIGNED(16) AdjacencyList xrefs;  // backward refs
+	ut64 gen; // bumped when an edge is added, removed or retyped; cached per-function counts compare against it
 } RefManager;
 
 static inline int compare_ref(const RAnalRef *a, const RAnalRef *b) {
@@ -49,6 +50,7 @@ static RefManager *ref_manager_new(void) {
 	RefManager *rm = R_NEW0 (RefManager);
 	rm->refs = AdjacencyList_new (INITIAL_CAPACITY);
 	rm->xrefs = AdjacencyList_new (INITIAL_CAPACITY);
+	rm->gen = 1;
 	return rm;
 }
 
@@ -70,7 +72,8 @@ static void ref_manager_free(RefManager *rm) {
 	free (rm);
 }
 
-static void _add_ref(AdjacencyList *adj_list, ut64 from, ut64 to, RAnalRefType type) {
+// returns true when the edge is new or its type changed
+static bool _add_ref(AdjacencyList *adj_list, ut64 from, ut64 to, RAnalRefType type) {
 	AdjacencyList_Iter iter = AdjacencyList_find (adj_list, &from);
 	AdjacencyList_Entry *entry = AdjacencyList_Iter_get (&iter);
 	Edges *edges = entry ? entry->val : NULL;
@@ -79,7 +82,7 @@ static void _add_ref(AdjacencyList *adj_list, ut64 from, ut64 to, RAnalRefType t
 		edges = R_NEW0 (Edges);
 		if (!edges) {
 			R_LOG_WARN ("failed to allocate hashtable for xrefs");
-			return;
+			return false;
 		}
 
 		*edges = Edges_new (INITIAL_CAPACITY);
@@ -88,34 +91,48 @@ static void _add_ref(AdjacencyList *adj_list, ut64 from, ut64 to, RAnalRefType t
 	}
 	Edges_Entry edge_entry = { .key = to, .val = type };
 	Edges_Insert result = Edges_insert (edges, &edge_entry); // and adds the ref
-	if (!result.inserted) {
-		Edges_Entry *existing_entry = Edges_Iter_get (&result.iter);
-		existing_entry->val = type;
+	if (result.inserted) {
+		return true;
 	}
+	Edges_Entry *existing_entry = Edges_Iter_get (&result.iter);
+	if (existing_entry->val == type) {
+		return false;
+	}
+	existing_entry->val = type;
+	return true;
 }
 
 static void ref_manager_add_entry(RefManager *rm, ut64 from, ut64 to, RAnalRefType type) {
-	_add_ref (&rm->refs, from, to, type);
-	_add_ref (&rm->xrefs, to, from, type);
+	const bool fwd = _add_ref (&rm->refs, from, to, type);
+	const bool bwd = _add_ref (&rm->xrefs, to, from, type);
+	if (fwd || bwd) {
+		rm->gen++;
+	}
 }
 
-static void _delete_ref(AdjacencyList *adj_list, ut64 from, ut64 to) {
+// returns true when the edge existed
+static bool _delete_ref(AdjacencyList *adj_list, ut64 from, ut64 to) {
 	AdjacencyList_Iter iter = AdjacencyList_find (adj_list, &from);
 	AdjacencyList_Entry *entry = AdjacencyList_Iter_get (&iter);
 	Edges *edges = entry ? entry->val : NULL;
-	if (edges) {
-		if (Edges_size (edges) == 1) {
-			AdjacencyList_erase_at (iter); // delete rest of hashtable
-		} else {
-			Edges_erase (edges, &to); // delete only a reference
-		}
+	if (!edges || !Edges_erase (edges, &to)) {
+		return false;
 	}
+	if (Edges_size (edges) == 0) {
+		Edges_destroy (edges);
+		free (edges);
+		AdjacencyList_erase_at (iter);
+	}
+	return true;
 }
 
 // TODO add extra R_API call for deleting all refs, can be implemented in a more performant way
 static void ref_manager_remove_entry(RefManager *rm, ut64 from, ut64 to) {
-	_delete_ref (&rm->refs, from, to);
-	_delete_ref (&rm->xrefs, to, from);
+	const bool fwd = _delete_ref (&rm->refs, from, to);
+	const bool bwd = _delete_ref (&rm->xrefs, to, from);
+	if (fwd || bwd) {
+		rm->gen++;
+	}
 }
 
 static ut64 ref_manager_count_xrefs(RefManager *rm) {
@@ -220,8 +237,13 @@ static inline RVecAnalRef *ref_manager_get_xrefs(RefManager *rm, ut64 to) {
 R_API bool r_anal_xrefs_init(RAnal *anal) {
 	R_RETURN_VAL_IF_FAIL (anal, false);
 
+	// keep the generation moving so counts cached before the reset stay stale
+	const ut64 gen = anal->rm? anal->rm->gen + 1: 1;
 	r_anal_xrefs_free (anal);
 	anal->rm = ref_manager_new ();
+	if (anal->rm) {
+		anal->rm->gen = gen;
+	}
 	return !!anal->rm;
 }
 
@@ -248,7 +270,7 @@ static inline RAnalRefType xref_resolve_type(const RAnalRefType _type) {
 }
 
 // set a reference from FROM to TO and a cross-reference(xref) from TO to FROM.
-// when fcn is known (the function containing FROM), pass it to skip hash lookups.
+// fcn is kept for API compatibility and unused: invalidation is by generation.
 R_API bool r_anal_xrefs_setf(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to, const RAnalRefType _type) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->rm, false);
 
@@ -268,21 +290,6 @@ R_API bool r_anal_xrefs_setf(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to
 	ref_manager_add_entry (anal->rm, from, to, type);
 	R_DIRTY_SET (anal);
 
-	// Invalidate function ref counts
-	if (fcn) {
-		fcn->meta.numcallrefs = -1;
-		fcn->meta.numrefs = -1;
-	} else {
-		RAnalFunction *fcn_from = r_anal_get_function_at (anal, from);
-		if (fcn_from) {
-			fcn_from->meta.numcallrefs = -1;
-		}
-		RAnalFunction *fcn_to = r_anal_get_function_at (anal, to);
-		if (fcn_to) {
-			fcn_to->meta.numrefs = -1;
-		}
-	}
-
 	return true;
 }
 
@@ -294,16 +301,6 @@ R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {
 	R_RETURN_VAL_IF_FAIL (anal, false);
 	ref_manager_remove_entry (anal->rm, from, to);
 	R_DIRTY_SET (anal);
-
-	// Invalidate function ref counts
-	RAnalFunction *fcn_from = r_anal_get_function_at (anal, from);
-	if (fcn_from) {
-		fcn_from->meta.numcallrefs = -1;
-	}
-	RAnalFunction *fcn_to = r_anal_get_function_at (anal, to);
-	if (fcn_to) {
-		fcn_to->meta.numrefs = -1;
-	}
 
 	return true;
 }
@@ -660,9 +657,20 @@ static ut64 fcn_count_refs(RAnalFunction *fcn, RefManager *rm, CountFn count_ref
 	return total;
 }
 
+// Any xref added or removed since the counts were cached makes them stale.
+// The function's blocks and entry drop the counts where they change instead.
+static void fcn_sync_ref_counts(RAnalFunction *fcn, RefManager *rm) {
+	if (fcn->meta.refsgen != rm->gen) {
+		fcn->meta.numrefs = -1;
+		fcn->meta.numcallrefs = -1;
+		fcn->meta.refsgen = rm->gen;
+	}
+}
+
 // Count refs of a specific type from a function (use R_ANAL_REF_TYPE_ANY to count all)
 R_API ut64 r_anal_function_count_refs(RAnalFunction *fcn, RAnalRefType type) {
 	R_RETURN_VAL_IF_FAIL (fcn, 0);
+	fcn_sync_ref_counts (fcn, fcn->anal->rm);
 	if (type == R_ANAL_REF_TYPE_CALL && fcn->meta.numcallrefs != -1) {
 		return fcn->meta.numcallrefs;
 	}
@@ -676,6 +684,7 @@ R_API ut64 r_anal_function_count_refs(RAnalFunction *fcn, RAnalRefType type) {
 // Count xrefs to a function (optionally filtered by type)
 R_API ut64 r_anal_function_count_xrefs(RAnalFunction *fcn, RAnalRefType type) {
 	R_RETURN_VAL_IF_FAIL (fcn, 0);
+	fcn_sync_ref_counts (fcn, fcn->anal->rm);
 	if (type == R_ANAL_REF_TYPE_ANY && fcn->meta.numrefs != -1) {
 		return fcn->meta.numrefs;
 	}

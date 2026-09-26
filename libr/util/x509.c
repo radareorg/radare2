@@ -3,6 +3,8 @@
 #include <r_util.h>
 #include "x509.h"
 
+// R2R db/cmd/cmd_pFx
+
 static bool parse_validity(RX509Validity *validity, RASN1Object *object) {
 	R_RETURN_VAL_IF_FAIL (validity && object, false);
 	if (object->list.length != 2) {
@@ -330,28 +332,30 @@ R_API RX509Certificate *r_x509_certificate_parse(RASN1Object *object) {
 	R_RETURN_VAL_IF_FAIL (object, NULL);
 	RX509Certificate *cert = R_NEW0 (RX509Certificate);
 	if (object->klass != CLASS_UNIVERSAL || object->form != FORM_CONSTRUCTED || object->list.length != 3) {
-		R_FREE (cert);
 		goto fail;
 	}
 	RASN1Object *tmp = object->list.objects[2];
 	if (!tmp) {
-		R_FREE (cert);
 		goto fail;
 	}
 	if (tmp->klass != CLASS_UNIVERSAL || tmp->form != FORM_PRIMITIVE || tmp->tag != TAG_BITSTRING) {
-		R_FREE (cert);
 		goto fail;
 	}
-	cert->signature = r_asn1_binary_new (object->list.objects[2]->sector, object->list.objects[2]->length);
+	cert->signature = r_asn1_binary_new (tmp->sector, tmp->length);
+	if (!cert->signature) {
+		goto fail;
+	}
 	r_x509_tbscertificate_parse (&cert->tbsCertificate, object->list.objects[0]);
 
 	if (!r_x509_algorithmidentifier_parse (&cert->algorithmIdentifier, object->list.objects[1])) {
-		free (cert->signature);
-		R_FREE (cert);
+		goto fail;
 	}
-fail:
 	r_asn1_object_free (object);
 	return cert;
+fail:
+	r_x509_certificate_free (cert);
+	r_asn1_object_free (object);
+	return NULL;
 }
 
 R_API void r_x509_certificate_free(RX509Certificate * R_NULLABLE certificate) {
@@ -522,7 +526,7 @@ R_API void r_x509_certificate_dump(RX509Certificate *cert, const char *pad, RStr
 	//				pad, pad2, algo ? algo->string : "",
 	//				pad, certificate->signature->length, signature ? signature->string : "");
 	r_strbuf_appendf (sb, "%sAlgorithm:\n%s%s\n%sSignature: %u bytes\n",
-		pad, pad2, algo ? algo->string : "", pad, cert->signature->length);
+		pad, pad2, algo ? algo->string : "", pad, cert->signature ? cert->signature->length : 0);
 	free (pad2);
 	// r_asn1_string_free (signature);
 }

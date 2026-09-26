@@ -155,9 +155,9 @@ static RCmdResult pseudo_help(RCmdContext *ctx, char sub) {
 
 static RCmdResult pseudo_callback(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	if (r_cmd_ctx_help (ctx)) {
+	if (r_cmdctx_help (ctx)) {
 		const bool row = r_strs_len (ctx->subcmd) == 2;
-		return pseudo_help (ctx, row? r_cmd_ctx_mode (ctx, "acjlot*"): 0);
+		return pseudo_help (ctx, row? r_cmdctx_mode (ctx, "acjlot*"): 0);
 	}
 	const char *tail = ctx->subcmd.a;
 	if (r_strs_lastch (ctx->subcmd) == 'l') {

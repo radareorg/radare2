@@ -157,6 +157,7 @@ r_arch_sources = [
   'p/mips_gnu/micromips-opc.c',
   'p/mips_gnu/mips-opc.c',
   'p/sh_cs/plugin.c',
+  'p/s1c88/plugin.c',
   'p/sm5xx/plugin.c',
   'p/sm5xx/sm5xx.c',
   'p/ptx/plugin.c',

@@ -11,6 +11,7 @@ typedef struct gdb_reg {
 	char name[32]; /*! The Name of the current register */
 	uint64_t offset; /*! Offset in the data block */
 	uint64_t size;	/*! Size of the register */
+	uint32_t regnum; /*! The stub's number for it in p, P and stop replies */
 } gdb_reg_t;
 
 gdb_reg_t *arch_parse_reg_profile(const char * reg_profile);

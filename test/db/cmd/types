@@ -4,7 +4,7 @@ CMDS=<<EOF
 af;pdc~strcp
 EOF
 EXPECT=<<EOF
-    sym.imp.__strcpy_chk () // char *__strcpy_chk("", -1, -1)
+    sym.imp.__strcpy_chk () // char *__strcpy_chk("", -1, 32)
 EOF
 RUN
 
@@ -264,9 +264,6 @@ int8_t
 long
 long long
 short
-size_t
-ssize_t
-uid_t
 uint16_t
 uint32_t
 uint64_t
@@ -484,9 +481,6 @@ int8_t
 long
 long long
 short
-size_t
-ssize_t
-uid_t
 uint16_t
 uint32_t
 uint64_t
@@ -520,9 +514,6 @@ int8_t
 long
 long long
 short
-size_t
-ssize_t
-uid_t
 uint16_t
 uint32_t
 uint64_t
@@ -731,11 +722,12 @@ afv~arg
 afv~arg
 EOF
 EXPECT=<<EOF
-int main (int argc, char **argv);
+int main (int argc, char **argv, char **envp);
 tn main
 afc amd64
 afvr rdi argc int
 afvr rsi argv char **
+afvr rdx envp char **
 
 original
 arg int argc @ rdi
@@ -744,6 +736,7 @@ deleted
 recovered from signature
 arg int argc @ rdi
 arg char ** argv @ rsi
+arg char ** envp @ rdx
 EOF
 RUN
 
@@ -1347,7 +1340,7 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-arg char ** argv @ esp+0x44
+arg int argc @ esp+0x44
 var int32_t var_8h @ ebp-0x8
 var char * dest @ ebp-0xc
 var size_t size @ ebp-0x10
@@ -2298,6 +2291,7 @@ RUN
 
 NAME=typedef stuff
 FILE=--
+ARGS=-e asm.os=linux
 CMDS=<<EOF
 'td typedef int Number;
 tt
@@ -2307,10 +2301,67 @@ t Number
 EOF
 EXPECT=<<EOF
 Number
+gid_t
+off64_t
+off_t
+pid_t
+size_t
+ssize_t
+time_t
+uid_t
 int
 Number=typedef
 typedef.Number=int
 pf d
+EOF
+RUN
+
+NAME=ts stops at a typedef cycle
+FILE=--
+CMDS=<<EOF
+tk aa=typedef
+tk typedef.aa=bb
+tk bb=typedef
+tk typedef.bb=aa
+ts aa
+tss aa
+tk cc=typedef
+tk typedef.cc=cc
+ts cc
+tss cc
+'td typedef int t1;
+'td typedef t1 t2;
+ts t2
+EOF
+EXPECT=<<EOF
+0
+0
+pf d
+EOF
+RUN
+
+NAME=ts follows a typedef chain longer than any depth bound to its end
+FILE=--
+CMDS=<<EOF
+'td typedef int t0;
+'td typedef t0 t1;
+'td typedef t1 t2;
+'td typedef t2 t3;
+'td typedef t3 t4;
+'td typedef t4 t5;
+'td typedef t5 t6;
+'td typedef t6 t7;
+'td typedef t7 t8;
+'td typedef t8 t9;
+'td typedef t9 t10;
+ts t10
+ts t8
+tss t10
+EOF
+EXPECT=<<EOF
+pf d
+pf d
+4
 EOF
 RUN
 
@@ -2500,7 +2551,7 @@ EOF
 EXPECT=<<EOF
 {
   "name": "NSString",
-  "format": "pxzd p0 p1 str len",
+  "format": "pqzd p0 p1 str len",
   "fields": [
     {
       "name": "p0",
@@ -3291,12 +3342,536 @@ var void * f @ rbp-0x8
 EOF2
 RUN
 
+NAME=aaft homes leading float-class parameters on the float registers
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x20 @ 4
+wx f20f1045f8 @ 8
+wx f20f104df0 @ 13
+wa call 0x100 @ 18
+wa leave @ 23
+wa ret @ 24
+wa ret @ 0x100
+af+ 0x100 sq
+afb+ 0x100 0x100 1
+af @ 0
+td typedef double mydouble;
+td double sq(const double a, mydouble b);
+tk func.sq.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double a @ rbp-0x8
+var mydouble b @ rbp-0x10
+EOF2
+RUN
+
+NAME=aaft homes a float parameter declared without an arity key
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x20 @ 4
+wa mov rdi, qword [rbp - 8] @ 8
+wx f20f1045f0 @ 12
+wa call 0x100 @ 17
+wa leave @ 22
+wa ret @ 23
+wa ret @ 0x100
+af+ 0x100 sq
+afb+ 0x100 0x100 1
+af @ 0
+tk sq=func
+tk func.sq.arg.0=double,x
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var int64_t var_8h @ rbp-0x8
+var double x @ rbp-0x10
+EOF2
+RUN
+
+NAME=aaft homes an integer after a float on the first integer register
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+wx f20f1045f8 @ 8
+wa mov rsi, qword [rbp - 0x10] @ 13
+wa mov rdi, qword [rbp - 0x18] @ 17
+wa call 0x100 @ 21
+wa leave @ 26
+wa ret @ 27
+wa ret @ 0x100
+af+ 0x100 f3
+afb+ 0x100 0x100 1
+af @ 0
+td int f3(double a, int b);
+tk func.f3.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double a @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+var int64_t b @ rbp-0x18
+EOF2
+RUN
+
+NAME=aaft homes every argument of a mixed prototype on its own class
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+wa mov rdi, qword [rbp - 8] @ 8
+# movsd xmm0, qword [rbp - 0x10]
+wx f20f1045f0 @ 12
+wa mov rsi, qword [rbp - 0x18] @ 17
+wa mov rdx, qword [rbp - 0x20] @ 21
+wa call 0x100 @ 25
+wa leave @ 30
+wa ret @ 31
+wa ret @ 0x100
+af+ 0x100 mixed
+afb+ 0x100 0x100 1
+af @ 0
+"td struct S {long x;};"
+"td enum nar { N_A = 1 };"
+td typedef enum nar Nar;
+td void mixed(struct S *p, double d, bool flag, Nar e);
+tk func.mixed.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var struct S * p @ rbp-0x8
+var double d @ rbp-0x10
+var bool flag @ rbp-0x18
+var Nar e @ rbp-0x20
+EOF2
+RUN
+
+NAME=aaft counts integer and float registers apart in an interleaved prototype
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+# movsd xmm0, qword [rbp - 8]
+wx f20f1045f8 @ 8
+wa mov rdi, qword [rbp - 0x10] @ 13
+# movsd xmm1, qword [rbp - 0x18]
+wx f20f104de8 @ 17
+wa mov rsi, qword [rbp - 0x20] @ 22
+wa mov rdx, qword [rbp - 0x28] @ 26
+wa call 0x100 @ 30
+wa leave @ 35
+wa ret @ 36
+wa ret @ 0x100
+af+ 0x100 interleave
+afb+ 0x100 0x100 1
+af @ 0
+td int interleave(double a, int b, double c);
+tk func.interleave.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double a @ rbp-0x8
+var int64_t b @ rbp-0x10
+var double c @ rbp-0x18
+var int64_t var_20h @ rbp-0x20
+var int64_t var_28h @ rbp-0x28
+EOF2
+RUN
+
+NAME=aaft keeps the positional homes for a struct returned by value
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+# movsd xmm0, qword [rbp - 8]
+wx f20f1045f8 @ 8
+wa mov rsi, qword [rbp - 0x10] @ 13
+wa mov rdi, qword [rbp - 0x18] @ 17
+wa call 0x100 @ 21
+wa leave @ 26
+wa ret @ 27
+wa ret @ 0x100
+af+ 0x100 byval
+afb+ 0x100 0x100 1
+af @ 0
+"td struct R {long x; long y; long z;};"
+td int byval(double a, int b);
+tk func.byval.ret=struct R
+tk func.byval.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double a @ rbp-0x8
+var int64_t b @ rbp-0x10
+var int64_t var_18h @ rbp-0x18
+EOF2
+RUN
+
+NAME=aaft stops counting at an enum wider than a word
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+# movsd xmm0, qword [rbp - 8]
+wx f20f1045f8 @ 8
+wa mov rdi, qword [rbp - 0x10] @ 13
+wa mov rsi, qword [rbp - 0x18] @ 17
+wa mov rdx, qword [rbp - 0x20] @ 21
+wa call 0x100 @ 25
+wa leave @ 30
+wa ret @ 31
+wa ret @ 0x100
+af+ 0x100 wideenum
+afb+ 0x100 0x100 1
+af @ 0
+"td enum wide { W_A = 1 };"
+tk type.wide.size=128
+td int wideenum(double a, enum wide e, long c);
+tk func.wideenum.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double a @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+var enum wide e @ rbp-0x18
+var long c @ rbp-0x20
+EOF2
+RUN
+
+NAME=aaft homes a format string float vararg on the first float register
+FILE=malloc://1024
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wz %lf %s @ 0x200
+fs strings
+f str.fmt 7 @ 0x200
+fs *
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+wa lea rdi, [rip + 0x1f1] @ 8
+# movsd xmm0, qword [rbp - 8]
+wx f20f1045f8 @ 15
+wa mov rsi, qword [rbp - 0x10] @ 20
+wa mov al, 1 @ 24
+wa call 0x100 @ 26
+wa leave @ 31
+wa ret @ 32
+wa ret @ 0x100
+af+ 0x100 printf
+afb+ 0x100 0x100 1
+af @ 0
+tk func.printf.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double var_8h @ rbp-0x8
+var char * var_10h @ rbp-0x10
+EOF2
+RUN
+
+NAME=aaft keeps a scanf conversion on the integer registers
+FILE=malloc://1024
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wz %f %s @ 0x200
+fs strings
+f str.fmt 6 @ 0x200
+fs *
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+wa lea rdi, [rip + 0x1f1] @ 8
+wa mov rsi, qword [rbp - 8] @ 15
+wa mov rdx, qword [rbp - 0x10] @ 19
+wa call 0x100 @ 23
+wa leave @ 28
+wa ret @ 29
+wa ret @ 0x100
+af+ 0x100 scanf
+afb+ 0x100 0x100 1
+af @ 0
+tk func.scanf.cc=amd64
+aaft
+afv @ 0~var_10h
+EOF2
+EXPECT=<<EOF2
+var char * var_10h @ rbp-0x10
+EOF2
+RUN
+
+NAME=aaft spills a float vararg to the first stack slot and keeps the integer registers
+FILE=malloc://2048
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wz %f%f%f%f%f%f%f%f%f%s @ 0x300
+fs strings
+f str.fmt 21 @ 0x300
+fs *
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x40 @ 4
+wa lea rdi, [rip + 0x2f1] @ 8
+wa mov rsi, qword [rbp - 8] @ 15
+wa mov rax, qword [rbp - 0x20] @ 19
+wa mov qword [rsp], rax @ 23
+wa mov al, 8 @ 27
+wa call 0x100 @ 29
+wa leave @ 34
+wa ret @ 35
+wa ret @ 0x100
+af+ 0x100 printf
+afb+ 0x100 0x100 1
+af @ 0
+tk func.printf.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var char * var_8h @ rbp-0x8
+var float var_20h @ rbp-0x20
+EOF2
+RUN
+
+NAME=aaft keeps the float registers once the integer ones run out
+FILE=malloc://1024
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wz %d%d%d%d%d%d%lf @ 0x200
+fs strings
+f str.fmt 15 @ 0x200
+fs *
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x30 @ 4
+wa lea rdi, [rip + 0x1f1] @ 8
+# movsd xmm0, qword [rbp - 8]
+wx f20f1045f8 @ 15
+wa mov al, 1 @ 20
+wa call 0x100 @ 22
+wa leave @ 27
+wa ret @ 28
+wa ret @ 0x100
+af+ 0x100 printf
+afb+ 0x100 0x100 1
+af @ 0
+tk func.printf.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double var_8h @ rbp-0x8
+EOF2
+RUN
+
+NAME=aft homes a leading float on a reverse stack convention
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+k anal/cc/pasfp=cc
+k anal/cc/cc.pasfp.argn=stack_rev
+k anal/cc/cc.pasfp.fparg0=xmm0
+k anal/cc/cc.pasfp.ret0=rax
+e anal.cc=pasfp
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x20 @ 4
+# movsd xmm0, qword [rbp - 8]
+wx f20f1045f8 @ 8
+wa mov rax, qword [rbp - 0x10] @ 13
+wa mov qword [rsp], rax @ 17
+wa call 0x100 @ 21
+wa leave @ 26
+wa ret @ 27
+wa ret @ 0x100
+af+ 0x100 revstack
+afb+ 0x100 0x100 1
+af @ 0
+td void revstack(double a, int b);
+tk func.revstack.cc=pasfp
+aft @ 0
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double a @ rbp-0x8
+var int64_t b @ rbp-0x10
+EOF2
+RUN
+
+NAME=aft stops counting at an integer spelling wider than a register
+FILE=malloc://512
+ARGS=-a x86 -b 32
+CMDS=<<EOF2
+k anal/cc/hfcall=cc
+k anal/cc/cc.hfcall.arg0=ecx
+k anal/cc/cc.hfcall.arg1=edx
+k anal/cc/cc.hfcall.arg2=ebx
+k anal/cc/cc.hfcall.argn=stack
+k anal/cc/cc.hfcall.fparg0=xmm0
+k anal/cc/cc.hfcall.ret0=eax
+e anal.cc=hfcall
+wa push ebp @ 0
+wa mov ebp, esp @ 1
+wa sub esp, 0x20 @ 3
+wa mov ecx, dword [ebp - 8] @ 6
+wa mov edx, dword [ebp - 0xc] @ 9
+wa mov ebx, dword [ebp - 0x14] @ 12
+wa call 0x100 @ 15
+wa leave @ 20
+wa ret @ 21
+wa ret @ 0x100
+af+ 0x100 wideint
+afb+ 0x100 0x100 1
+af @ 0
+td void wideint(unsigned long long a, float b, int c);
+tk func.wideint.cc=hfcall
+aft @ 0
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var uint64_t a @ ebp-0x8
+var float b @ ebp-0xc
+var int32_t c @ ebp-0x14
+EOF2
+RUN
+
+NAME=aaft leaves a long double parameter on the integer sequence
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x20 @ 4
+wa mov rdi, qword [rbp - 8] @ 8
+wx f20f1045f0 @ 12
+wa call 0x100 @ 17
+wa leave @ 22
+wa ret @ 23
+wa ret @ 0x100
+af+ 0x100 sq
+afb+ 0x100 0x100 1
+af @ 0
+td double sq(long double x);
+tk func.sq.cc=amd64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var long double x @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+EOF2
+RUN
+
+NAME=aaft keeps the integer sequence for a cc with no float sequence
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=ms
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x20 @ 4
+wa mov rcx, qword [rbp - 8] @ 8
+wx f20f1045f0 @ 12
+wa call 0x100 @ 17
+wa leave @ 22
+wa ret @ 23
+wa ret @ 0x100
+af+ 0x100 sq
+afb+ 0x100 0x100 1
+af @ 0
+td double sq(double x);
+tk func.sq.cc=ms
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double x @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+EOF2
+RUN
+
+NAME=aaft keeps the integer sequence for a grouped float location
+FILE=malloc://512
+ARGS=-a arm -b 64 -e anal.cc=arm64
+CMDS=<<EOF2
+wa sub sp, sp, 0x20 @ 0
+wa ldr x0, [sp, 8] @ 4
+wx e00b40fd @ 8
+wa bl 0x100 @ 12
+wx ff830091 @ 16
+wa ret @ 20
+wa ret @ 0x100
+af+ 0x100 sq
+afb+ 0x100 0x100 4
+af @ 0
+td double sq(double x);
+tk func.sq.cc=arm64
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double x @ sp+0x8
+var int64_t var_10h @ sp+0x10
+EOF2
+RUN
+
+NAME=aaft keeps the integer sequence for a stack-spelled float location
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa sub rsp, 0x20 @ 4
+wa mov rdi, qword [rbp - 8] @ 8
+wx f20f1045f0 @ 12
+wa call 0x100 @ 17
+wa leave @ 22
+wa ret @ 23
+wa ret @ 0x100
+af+ 0x100 sq
+afb+ 0x100 0x100 1
+afc dyncc:rdi,rsi:rax!F^0 @ 0x100
+af @ 0
+td double sq(double x);
+aaft
+afv @ 0
+EOF2
+EXPECT=<<EOF2
+var double x @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+EOF2
+RUN
+
 NAME=aaft float and double facts from parallel branches meet to double
 FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF2
-wx 554889e54883ec2085ff7424488b7df8e84b000000eb39 @ 0
-wx 488b7df8e837000000eb15 @ 0x30
+wx 554889e54883ec2085ff74240f1245f8e84b000000eb39 @ 0
+wx 0f1245f8e837000000eb15 @ 0x30
 wx c9c3 @ 0x50
 wx c3 @ 0x60
 wx c3 @ 0x70
@@ -3312,6 +3887,103 @@ EOF2
 EXPECT=<<EOF2
 arg int64_t arg1 @ rdi
 var double v @ rbp-0x8
+EOF2
+RUN
+
+NAME=aft frees the first integer register for a caller's leading double
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa mov rax, qword [rdi + 8] @ 4
+wa call rax @ 8
+wa leave @ 10
+wa ret @ 11
+af @ 0
+afn c @ 0
+afvt arg1 "struct S *" @ 0
+td int cb(int v);
+tk S=struct
+tk struct.S=x,fp
+tk struct.S.x=int,0,0
+tk struct.S.fp=cb,8,0
+td void c(double a, struct S *p);
+aei
+aeim
+aft @ 0
+afv @ 0
+?e calllink
+tk calllink.00000008
+EOF2
+EXPECT=<<EOF2
+arg struct S * arg1 @ rdi
+calllink
+cb
+EOF2
+RUN
+
+NAME=aft frees the first integer register for a leading double without afvt
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa mov rax, qword [rdi + 8] @ 4
+wa call rax @ 8
+wa leave @ 10
+wa ret @ 11
+af @ 0
+afn c @ 0
+td int cb(int v);
+tk S=struct
+tk struct.S=x,fp
+tk struct.S.x=int,0,0
+tk struct.S.fp=cb,8,0
+td void c(double a, struct S *p);
+aei
+aeim
+aft @ 0
+afv @ 0
+?e calllink
+tk calllink.00000008
+EOF2
+EXPECT=<<EOF2
+arg int64_t arg1 @ rdi
+calllink
+cb
+EOF2
+RUN
+
+NAME=aft keeps the first integer register for a caller's leading long
+FILE=malloc://512
+ARGS=-a x86 -b 64 -e anal.cc=amd64
+CMDS=<<EOF2
+wa push rbp @ 0
+wa mov rbp, rsp @ 1
+wa mov rax, qword [rdi + 8] @ 4
+wa call rax @ 8
+wa leave @ 10
+wa ret @ 11
+af @ 0
+afn c @ 0
+afvt arg1 "struct S *" @ 0
+td int cb(int v);
+tk S=struct
+tk struct.S=x,fp
+tk struct.S.x=int,0,0
+tk struct.S.fp=cb,8,0
+td void c(long a, struct S *p);
+aei
+aeim
+aft @ 0
+afv @ 0
+?e calllink
+tk calllink.00000008
+EOF2
+EXPECT=<<EOF2
+arg struct S * arg1 @ rdi
+calllink
 EOF2
 RUN
 

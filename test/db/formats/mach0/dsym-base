@@ -1,0 +1,17 @@
+NAME=Mach-O dSYM prototypes retain executable addresses
+FILE=bins/mach0/twocall
+ARGS=-e asm.dwarf=false
+CMDS=<<EOF2
+aaa
+k anal/dwarf/fcn.main.addr
+k anal/types/fcnlink.100003f64
+k anal/types/fcnlink.200003f64~?
+afs @ 0x100003f64
+EOF2
+EXPECT=<<EOF2
+0x100003f64
+main_100003f64
+0
+int dbg.main ();
+EOF2
+RUN

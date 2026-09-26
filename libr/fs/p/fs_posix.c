@@ -36,9 +36,10 @@ static int fs_posix_read(RFSFile *file, ut64 addr, int len) {
 	R_FREE (file->data);
 	char *abspath = r_str_newf ("%s/%s", file->path, file->name);
 	if (abspath) {
-		file->data = (void*)r_file_slurp_range (abspath, 0, len, NULL);
+		int nread = 0;
+		file->data = (void*)r_file_slurp_range (abspath, addr, len, &nread);
 		free (abspath);
-		return len;
+		return file->data? nread: -1;
 	}
 	return 0;
 }

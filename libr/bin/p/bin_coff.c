@@ -811,6 +811,7 @@ static RBinInfo *info(RBinFile *bf) {
  		ret->machine = strdup ("mips");
  		ret->arch = strdup ("mips");
  		ret->bits = 32;
+		ret->default_cc = strdup ("o32"); // these words are NT, and NT mips is o32
  		break;
 	case COFF_FILE_MACHINE_I386:
 		ret->machine = strdup ("i386");
@@ -836,6 +837,7 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->machine = strdup ("AMD64");
 		ret->arch = strdup ("x86");
 		ret->bits = 64;
+		ret->default_cc = strdup ("ms"); // x86-64 coff is windows or uefi
 		break;
 	case COFF_FILE_MACHINE_H8300:
 		ret->machine = strdup ("H8300");

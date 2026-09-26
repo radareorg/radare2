@@ -114,6 +114,9 @@ static void __table_adjust(RTable *t) {
 			RTableColumn *c = r_list_get_n (t->cols, ncol);
 			if (c) {
 				c->width = R_MAX (c->width, itemLength);
+				if (c->maxWidth > 0) {
+					c->width = R_MIN (c->maxWidth, c->width);
+				}
 				if (t->maxColumnWidth > 0) {
 					c->width = R_MIN (t->maxColumnWidth, c->width);
 				}

@@ -178,6 +178,7 @@ typedef struct {
 	char type[8];
 	ut32 size;
 	ut32 flagnum;
+	ut64 offset; // in bits; UT64_MAX when the description does not state it
 } gdbr_xml_reg_t;
 
 static void _write_flag_bits(RStrBuf *buf, const gdbr_xml_flags_t *flags);
@@ -194,6 +195,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	gdbr_xml_reg_t *tmpreg;
 	int packed_size = 0;
 	ut64 regnum = 0, regoff = 0;
+	ut32 stubnum = 0;
 	gdb_reg_t *arch_regs = NULL;
 	RStrBuf *profile_buf = r_strbuf_new ("");
 	RStrBuf *pc_alias = r_strbuf_new ("");
@@ -218,12 +220,18 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		goto exit_err;
 	}
 	r_list_foreach (regs, iter, tmpreg) {
+		// the list holds a register at each number the stub uses, and NULL at those it skips
+		const ut32 num = stubnum++;
 		if (!tmpreg) {
 			continue;
 		}
+		// lldb's stubs state where a register sits in the 'g' block, which need not follow
+		// regnum order; gdb's convention is that the registers follow each other
+		const ut64 off = tmpreg->offset != UT64_MAX? tmpreg->offset: regoff;
 		r_str_ncpy (arch_regs[regnum].name, tmpreg->name, sizeof (arch_regs[regnum].name));
 		arch_regs[regnum].size = tmpreg->size;
-		arch_regs[regnum].offset = regoff;
+		arch_regs[regnum].offset = off;
+		arch_regs[regnum].regnum = num;
 		r_strbuf_set (flag_bits, "");
 		tmpflag = NULL;
 		if (tmpreg->flagnum < r_list_length (flags)) {
@@ -235,7 +243,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			packed_size = tmpreg->size / 8;
 		}
 		r_strbuf_appendf (profile_buf, "%s\t%s\t.%u\t.%" PFMT64d "\t%d\t%s\n", tmpreg->type,
-			tmpreg->name, tmpreg->size, regoff,
+			tmpreg->name, tmpreg->size, off,
 			packed_size,
 			r_strbuf_get (flag_bits));
 		// TODO write flag subregisters
@@ -244,11 +252,11 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			for (i = 0; i < tmpflag->num_fields; i++) {
 				r_strbuf_appendf (profile_buf, "gpr\t%s\t"
 							".%u\t.%"PFMT64d"\t0\n", tmpflag->fields[i].name,
-							tmpflag->fields[i].sz, tmpflag->fields[i].bit_num + regoff);
+							tmpflag->fields[i].sz, tmpflag->fields[i].bit_num + off);
 			}
 		}
 		regnum++;
-		regoff += tmpreg->size;
+		regoff = R_MAX (regoff, off + tmpreg->size);
 	}
 	// Difficult to parse these out from xml. So manually added from gdb's xml files
 	switch (g->target.arch) {
@@ -328,7 +336,9 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	r_strbuf_free (pc_alias);
 	r_strbuf_free (flag_bits);
 	g->target.valid = true;
+	free (g->registers);
 	g->registers = arch_regs;
+	gdbr_regs_invalidate (g);
 	return 0;
 
 exit_err:
@@ -440,6 +450,7 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 		// Unless pid 0 is requested, only add the requested pid and it's child processes
 		if (0 == pid || ipid == pid || pid_info->ppid == pid) {
 			r_list_append (list, pid_info);
+			pid_info = NULL;
 		} else {
 			if (pid_info) {
 				free (pid_info->path);
@@ -548,7 +559,11 @@ static int _resolve_arch(libgdbr_t *g, char *xml_data) {
 			if (r_str_startswith (arch, ":x86-64")) {
 				g->target.bits = 64;
 			}
-		} else if (r_str_startswith (arch, "aarch64")) {
+		} else if (r_str_startswith (arch, "x86_64")) {
+			// lldb-server
+			g->target.arch = R_SYS_ARCH_X86;
+			g->target.bits = 64;
+		} else if (r_str_startswith (arch, "aarch64") || r_str_startswith (arch, "arm64")) {
 			g->target.arch = R_SYS_ARCH_ARM;
 			g->target.bits = 64;
 		} else if (r_str_startswith (arch, "arm")) {
@@ -827,6 +842,20 @@ static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
 			}
 			regnum = (ut32)parsed_regnum;
 		}
+		// offset, in bytes
+		ut64 regoffset = UT64_MAX;
+		if ((tmp1 = strstr (regstr, " offset="))) {
+			tmp1 += 9;
+			if (!isdigit ((ut8)*tmp1)) {
+				goto exit_err;
+			}
+			char *end;
+			unsigned long parsed_offset = strtoul (tmp1, &end, 10);
+			if (*end != '"' || parsed_offset > UT32_MAX / 8) {
+				goto exit_err;
+			}
+			regoffset = (ut64)parsed_offset * 8;
+		}
 		flagnum = r_list_length (flags);
 		if ((tmp1 = strstr (regstr, "group="))) {
 			tmp1 += 7;
@@ -890,6 +919,7 @@ static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
 		r_str_ncpy (tmpreg->type, regtype, sizeof (tmpreg->type));
 		tmpreg->size = regsize;
 		tmpreg->flagnum = flagnum;
+		tmpreg->offset = regoffset;
 		if (code_ptr) {
 			r_strbuf_set (pc_alias, "=PC\t");
 			r_strbuf_append (pc_alias, tmpreg->name);

@@ -167,8 +167,10 @@ typedef struct r2r_asm_test_output_t {
 	char *disasm;
 	ut8 *bytes;
 	size_t bytes_size;
-	bool as_timeout;
-	bool disas_timeout;
+	char *as_cmd;
+	char *disas_cmd;
+	R2RProcessOutput *as;
+	R2RProcessOutput *disas;
 } R2RAsmTestOutput;
 
 typedef enum r2r_test_result_t {

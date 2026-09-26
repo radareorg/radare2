@@ -265,7 +265,7 @@ static RCoreHelpMessage help_msg_equal = {
 	"\nremote commands:", "", "",
 	"=", "[*j]", "list all open connections",
 	"=<", "[fd] cmd", "send output of local command to remote fd", // XXX may not be a special char
-	"=", "[fd] cmd", "exec cmd at remote 'fd' (last open is default one)",
+	"=", "[fd] cmd", "exec cmd at remote 'fd' (last open is default)",
 	"=!", " cmd", "run command via r_io_system",
 	"=+", " [proto://]host:port", "connect to remote host:port (rap/tcp/udp/http)",
 	"=-", "[fd]", "remove all hosts or host 'fd'",
@@ -6394,13 +6394,8 @@ static void atat_i(RCore *core, const char *cmd) {
 	if (fcn) {
 		r_list_sort (fcn->bbs, bb_cmp);
 		r_list_foreach (fcn->bbs, iter, bb) {
-			r_core_seek (core, bb->addr, true);
-			r_core_cmd (core, cmd, 0);
-			for (i = 0; i < bb->op_pos_size; i++) {
-				if (!bb->op_pos[i]) {
-					break;
-				}
-				ut64 addr = bb->addr + bb->op_pos[i];
+			for (i = 0; i < bb->ninstr; i++) {
+				ut64 addr = r_anal_block_ninstr (bb, i);
 				if (!r_bitset_set (seen, addr)) {
 					continue;
 				}

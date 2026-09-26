@@ -78,6 +78,19 @@ vaddr      paddr      type   ntype name
 EOF
 RUN
 
+NAME=ELF: aarch64 ET_REL ir* prints the shared import slot once
+FILE=bins/elf/aarch64-got-etrel.o
+ARGS=-e bin.relocs.apply=true
+CMDS=ir*
+EXPECT=<<EOF
+fs relocs
+'f reloc.gdef 4 0x08000040
+'f reloc.gdef 4 0x08000044
+'f reloc.gundef 4 0x08000188
+'@0x08000188'Cd 8
+EOF
+RUN
+
 NAME=ELF: aarch64 ET_REL ADR_GOT_PAGE encodes the page of the import slot
 FILE=bins/elf/ptx/ptx_ops.o
 ARGS=-e bin.relocs.apply=true

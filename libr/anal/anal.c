@@ -189,6 +189,12 @@ static bool anal_esil_set_bits(void *user, int bits) {
 	return r_anal_set_triplet (anal, NULL, NULL, bits);
 }
 
+// every key write to the convention db lands here, whichever caller made it
+static void cc_changed(Sdb *s, void *user, const char *k, const char *v) {
+	RAnal *anal = user;
+	R_ANAL_PRIV (anal)->cc_generation++;
+}
+
 // Take nullable RArchConfig as argument?
 R_API RAnal *r_anal_new(void) {
 	RAnal *anal = R_NEW0 (RAnal);
@@ -214,7 +220,6 @@ R_API RAnal *r_anal_new(void) {
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
 	anal->cxxabi = R_ANAL_CPP_ABI_ITANIUM;
-	anal->opt.depth = 32;
 	anal->opt.noncode = false; // do not analyze data by default
 	anal->lock = r_th_lock_new (true);
 	r_anal_backtrace_init (anal);
@@ -232,6 +237,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->sdb_fmts = sdb_ns (anal->sdb, "spec", 1);
 	anal->sdb_cc = sdb_ns (anal->sdb, "cc", 1);
+	sdb_hook (anal->sdb_cc, cc_changed, anal);
 	anal->sdb_zigns = sdb_ns (anal->sdb, "zigns", 1);
 	anal->sdb_classes = sdb_ns (anal->sdb, "classes", 1);
 	anal->sdb_classes_attrs = sdb_ns (anal->sdb_classes, "attrs", 1);
@@ -292,6 +298,8 @@ R_API void r_anal_free(RAnal *a) {
 	if (!a) {
 		return;
 	}
+	// sdb_cc outlives anal when another sdb holds a reference to anal->sdb
+	sdb_unhook (a->sdb_cc, cc_changed);
 	/* TODO: Free anals here */
 	free (a->pincmd);
 	r_list_free (a->fcns);
@@ -363,6 +371,7 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 			r_anal_set_reg_profile (anal, NULL);
 			if (!old_arch || !new_arch || strcmp (old_arch, new_arch)) {
 				R_ANAL_PRIV (anal)->types_dirty = true;
+				r_anal_types_prepare (anal);
 			}
 			free (old_arch);
 			return true;
@@ -432,6 +441,7 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 	if (res && changed) {
 		// os-dependent register aliases (e.g. arm64 =SN) must follow
 		r_anal_set_reg_profile (anal, NULL);
+		r_anal_types_prepare (anal);
 	}
 	return res;
 }
@@ -444,6 +454,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	if (bits != obits) {
 		R_ANAL_PRIV (anal)->types_dirty = true;
 		r_anal_set_reg_profile (anal, NULL);
+		r_anal_types_prepare (anal);
 	}
 	return true;
 }
@@ -531,7 +542,7 @@ R_API void r_anal_purge(RAnal *anal) {
 	sdb_reset (anal->sdb_classes_attrs);
 	r_anal_pin_fini (anal);
 	r_anal_pin_init (anal);
-	sdb_reset (anal->sdb_cc);
+	r_anal_cc_reset (anal);
 	r_list_free (anal->fcns);
 	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
 	(void)r_anal_xrefs_init (anal);

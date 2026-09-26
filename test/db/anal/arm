@@ -436,7 +436,7 @@ af
 afl~[2]
 EOF
 EXPECT=<<EOF
-20
+12
 EOF
 RUN
 
@@ -451,7 +451,7 @@ af
 afl~[2]
 EOF
 EXPECT=<<EOF
-16
+8
 EOF
 RUN
 
@@ -732,7 +732,7 @@ pdf@main
 EOF
 EXPECT=<<EOF
 / (fcn) main 44
-// int main (int argc, char **argv);
+// int main (int argc, char **argv, char **envp);
 |           ; arg int argc @ r0
 |           ; arg char **argv @ r1
 |           ; var int32_t var_8h @ fp-0x8

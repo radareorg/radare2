@@ -608,14 +608,17 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		reloc = *ext_reloc_iter;
 		bool found = false;
 		ut64 sym_addr = ht_uu_find (relocs_by_sym, reloc->ord, &found);
-		if (!found || !sym_addr) {
+		const bool own_slot = !found || !sym_addr;
+		if (own_slot) {
 			sym_addr = vaddr;
-			ht_uu_insert (relocs_by_sym, reloc->ord, vaddr);
-			vaddr += cdsz;
 		}
-		if (!_patch_reloc (mo, iob, reloc, sym_addr)) {
+		// every reloc of a symbol patches to its slot, which is listed once, and
+		// a failed patch leaves the slot unclaimed for the next reloc of it
+		if (!_patch_reloc (mo, iob, reloc, sym_addr) || !own_slot) {
 			continue;
 		}
+		ht_uu_insert (relocs_by_sym, reloc->ord, sym_addr);
+		vaddr += cdsz;
 		RBinImport *imp = import_from_name (b, (char*) reloc->name, mo->imports_by_name);
 		if (R_LIKELY (imp)) {
 			RBinReloc *ptr = RVecRBinReloc_emplace_back (ret);

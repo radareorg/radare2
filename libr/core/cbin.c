@@ -806,7 +806,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		free (dbhomepath);
 		return;
 	}
-	sdb_reset (cc);
+	r_anal_cc_reset (core->anal);
 	set_default_cc (core);
 	R_FREE (cc->path);
 	if (r_file_exists (dbhomepath)) {
@@ -2082,7 +2082,7 @@ static bool warn_if_dbg(RCore *core) {
 			desc = r_io_desc_get (core->io, fd);
 		}
 	}
-	if (desc && r_io_desc_is_dbg (desc)) {
+	if (r_io_desc_info (desc).isdbg) {
 		R_LOG_ERROR ("bin.relocs and io.cache should not be used for %s", desc->uri);
 		return false;
 	}
@@ -2102,7 +2102,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	int fd = r_io_fd_get_current (core->io);
 	if (fd != -1) {
 		RIODesc *desc = r_io_desc_get (core->io, fd);
-		if (desc && r_io_desc_is_dbg (desc)) {
+		if (r_io_desc_info (desc).isdbg) {
 			R_LOG_DEBUG ("Ignoring reloc patching in debugger mode");
 			r_table_free (table);
 			return false;
@@ -2142,7 +2142,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			core->bin->iob.overlay_write_at = r_io_write_at;
 			relocs = r_bin_patch_relocs (core->bin->cur); // XXX other way to get RBinFile?
 		} else if (relocs) {
-			R_LOG_WARN ("Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time");
+			R_LOG_HINT ("Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true");
 		}
 	}
 	if (!relocs) {
@@ -2165,6 +2165,8 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	}
 
 	RBinReloc *reloc;
+	const char *last_name = NULL;
+	ut64 last_addr = UT64_MAX;
 	RelocInfo ri = { 0 };
 	ri_init (core, &ri);
 	R_VEC_FOREACH (relocs, reloc) {
@@ -2187,10 +2189,17 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 				r_cons_printf (core->cons, "0x%08" PFMT64x "  %s\n", addr, name);
 			}
 		} else if (IS_MODE_RAD (mode)) {
-			char *name = reloc->import
-				? strdup (r_bin_name_tostring (reloc->import->name))
-				: (reloc->symbol? strdup (r_bin_name_tostring (reloc->symbol->name)): NULL);
+			const char *rname = reloc->import
+				? r_bin_name_tostring (reloc->import->name)
+				: (reloc->symbol? r_bin_name_tostring (reloc->symbol->name): NULL);
+			if (rname && last_name && addr == last_addr && !strcmp (rname, last_name)) {
+				// relocs sharing a slot would repeat the same flag and meta
+				continue;
+			}
+			char *name = rname? strdup (rname): NULL;
 			if (name) {
+				last_name = rname;
+				last_addr = addr;
 				if (bin_demangle) {
 					char *mn = r_bin_demangle (core->bin->cur, NULL, name, addr, keep_lib);
 					if (mn) {
@@ -3849,7 +3858,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 			break;
 		}
 	}
-	if (IS_MODE_SET (mode) && !r_io_desc_is_dbg (core->io->desc)) {
+	if (IS_MODE_SET (mode) && !r_io_desc_info (core->io->desc).isdbg) {
 		RListIter *it;
 		struct io_bin_section_info_t *ibs;
 		r_list_foreach_prev (io_section_info, it, ibs) {

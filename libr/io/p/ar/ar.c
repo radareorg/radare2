@@ -51,7 +51,7 @@ static char *name_from_table(ut64 off, filetable *tbl) {
 		R_LOG_ERROR ("Malformed ar: name lookup out of bounds for header at offset 0x%" PFMT64x, off);
 		return NULL;
 	}
-	// files are suppose to be line feed seperated but we also stop on invalid
+	// files are supposed to be line feed separated but we also stop on invalid
 	// chars, such as '/' or '\0'
 
 	char *buf = tbl->data;
@@ -262,7 +262,7 @@ static int __ar_open_list_cb(RArFp *arf, void *user) {
 /**
  * \brief Get a RList* of handles to every file in ar
  * \param arname the name of the .a file
- * \return RList* containg a RArFp* per file
+ * \return RList* containing a RArFp* per file
  *
  * Open an ar/lib file by name. If filename is NULL, then archive files will be
  * listed.
@@ -334,7 +334,7 @@ R_API int ar_open_all_cb(const char *arname, RArOpenManyCB cb, void *user) {
 		// the cb closed all the RArFp's, so we free these resources
 		r_unref (b);
 	} else {
-		// return recf to true value
+		// return refc to true value
 		refc--;
 	}
 

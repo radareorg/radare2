@@ -38,7 +38,7 @@ static RCoreHelpMessage help_msg_at = {
 	"~", "word[2]", "grep 3rd column of lines matching word",
 	"~", "word:3[0]", "grep 1st column from the 4th line matching word",
 	"@", " 0x1024", "temporary seek to this address (sym.main+3)",
-	"@addr@", "cmd", "prefix form of the temporary seek (@addr@'cmd for raw calls)",
+	"@addr@", "cmd", "prefix form of temporary seek (@addr@'cmd for raw calls)",
 	"@addr@", "cmd && cmd2", "the prefix seek spans the whole &&/|| chain, but not past ';'",
 	"@", " [addr]!blocksize", "temporary set a new blocksize",
 	"@..", "addr", "temporary partial address seek (see s..)",

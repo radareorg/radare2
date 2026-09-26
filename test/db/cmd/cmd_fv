@@ -1,0 +1,255 @@
+NAME=fv get set and delete character and numeric keys
+FILE=-
+CMDS=<<EOF
+fvj
+fv a 0x10
+?v $?
+fv a
+?v $?
+fv 97 0x20 + 1
+fv 0x61
+fvj
+fv-0x61
+?v $?
+fvj
+EOF
+EXPECT=<<EOF
+[]
+0x0
+0x00000010
+0x0
+0x00000021
+[{"ord":97,"key":"a","addr":33}]
+0x0
+[]
+EOF
+RUN
+
+NAME=fv byte boundaries and script roundtrip
+FILE=-
+CMDS=<<EOF
+fv 0x00 0
+fv 0x01 1
+fv 0xff 0xfffffffffffffffe
+fv 0x00
+fv 0xff
+fv*
+fvj
+fv* > $vmarks
+fv-*
+fvj
+.$vmarks
+fv*
+fv-0xff
+fv-0x00
+fv-0x01
+fvj
+EOF
+EXPECT=<<EOF
+0x00000000
+0xfffffffffffffffe
+fv 0x00 0x0
+fv 0x01 0x1
+fv 0xff 0xfffffffffffffffe
+[{"ord":0,"addr":0},{"ord":1,"addr":1},{"ord":255,"addr":18446744073709551614}]
+[]
+fv 0x00 0x0
+fv 0x01 0x1
+fv 0xff 0xfffffffffffffffe
+[]
+EOF
+RUN
+
+NAME=fv whitespace and literal digit keys
+FILE=-
+CMDS=<<EOF
+fv   a   0x10 + 2
+fv	b	0x20	+	2
+fv 1 0x30
+fv 0 0x40
+fvj
+fv- a
+fv-	b
+fv-1
+fv-0
+fvj
+EOF
+EXPECT=<<EOF
+[{"ord":48,"key":"0","addr":64},{"ord":49,"key":"1","addr":48},{"ord":97,"key":"a","addr":18},{"ord":98,"key":"b","addr":34}]
+[]
+EOF
+RUN
+
+NAME=fv JSON escaping
+FILE=-
+CMDS=<<EOF
+fv 0x22 1
+fv 0x5c 2
+fv 0x7f 3
+fvj
+EOF
+EXPECT=<<EOF
+[{"ord":34,"key":"\"","addr":1},{"ord":92,"key":"\\","addr":2},{"ord":127,"addr":3}]
+EOF
+RUN
+
+NAME=fv invalid commands do not alter marks
+FILE=-
+CMDS=<<EOF
+fv 0x00 7
+fv a 0x10
+fv 256 1
+?v $?
+fv -1 1
+?v $?
+fv missing_key 1
+?v $?
+fv a missing_addr
+?v $?
+fv a 1/0
+?v $?
+fv 1/0 1
+?v $?
+fv a 0xffffffffffffffff
+?v $?
+fv a 0x10 0x20
+?v $?
+fv-0x100
+?v $?
+fv-missing_key
+?v $?
+fv-a 0xffffffffffffffff
+?v $?
+fv-* extra
+?v $?
+fv-
+?v $?
+fvjunk
+?v $?
+fv*extra
+?v $?
+fvvextra
+?v $?
+fv z
+?v $?
+fv a
+?v $?
+fvj
+EOF
+EXPECT=<<EOF
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x1
+0x00000010
+0x0
+[{"ord":0,"addr":7},{"ord":97,"key":"a","addr":16}]
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid visual mark key
+ERROR: Invalid visual mark key
+ERROR: Invalid visual mark key
+ERROR: Invalid visual mark address
+ERROR: Invalid visual mark address
+ERROR: Invalid visual mark key
+ERROR: Invalid visual mark address
+ERROR: Invalid visual mark address
+ERROR: Invalid visual mark key
+ERROR: Invalid visual mark key
+ERROR: Usage: fv-[key]
+ERROR: Usage: fv-[key]
+ERROR: Invalid visual mark key
+ERROR: Unexpected argument, see fv?
+ERROR: Unexpected argument, see fv?
+ERROR: Unexpected argument, see fv?
+ERROR: No mark for this key
+EOF
+RUN
+
+NAME=fv legacy project commands remain readable
+FILE=-
+CMDS=<<EOF
+fV 49 0x400410
+fV 50 0x400412
+fv*
+fV-1
+fvj
+EOF
+EXPECT=<<EOF
+fv 0x31 0x400410
+fv 0x32 0x400412
+[{"ord":50,"key":"2","addr":4195346}]
+EOF
+RUN
+
+NAME=fv command return codes
+FILE=-
+CMDS=<<EOF
+fvj && ?e EMPTY
+fv a 0x10 && ?e SET
+fv a && ?e FOUND
+fv z || ?e MISSING
+fv-0x100 || ?e INVALID
+fv-a && ?e DELETED
+fvj && ?e EMPTY
+EOF
+EXPECT=<<EOF
+[]
+EMPTY
+SET
+0x00000010
+FOUND
+MISSING
+INVALID
+DELETED
+[]
+EMPTY
+EOF
+EXPECT_ERR=<<EOF
+ERROR: No mark for this key
+ERROR: Invalid visual mark key
+EOF
+RUN
+
+NAME=fvv empty listing is noninteractive
+FILE=-
+CMDS=fvv
+EXPECT=<<EOF
+  .-----[ vmarks ]-------------------------------------------------.
+  `----------------------------------------------------------------'
+EOF
+RUN
+
+NAME=fvv descriptions and fixed width for 64-bit addresses
+FILE=-
+CMDS=<<EOF
+f demo @ 0x10
+CC comment @ 0x10
+fv a 0x10
+f wide @ 0xfffffffffffffffe
+fv 0xff 0xfffffffffffffffe
+fvv
+fv
+EOF
+EXPECT=<<EOF
+  .-----[ vmarks ]-------------------------------------------------.
+  | ['a] 0x00000010  demo ; comment                                |
+  | ['\xff] 0xfffffffffffffffe  wide                               |
+  `----------------------------------------------------------------'
+- [ma]      0x10
+- [m\xff] 0xfffffffffffffffe
+EOF
+RUN

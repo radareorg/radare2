@@ -365,7 +365,7 @@ R_API const char *r_anal_optype_tostring(int t) {
 			return optypes[i].name;
 		}
 	}
-	return "undefined";
+	return (t & R_ANAL_OP_TYPE_COND)? r_anal_optype_tostring (t & ~R_ANAL_OP_TYPE_COND): "undefined";
 }
 
 R_API const char *r_anal_op_to_esil_string(RAnal *anal, RAnalOp *op) {
