@@ -7,8 +7,7 @@
 #define FSET(num, shift) ((((num) & (((ut64) 1) << (shift))) == 0) ? 0 : 1)
 
 #if __i386__ || __x86_64__
-static char* x86_ctrl_reg_pretty_print(struct r2k_control_reg ctrl) {
-	RStrBuf *sb = r_strbuf_new ("");
+static void append_ctrl_reg_details(RStrBuf *sb, struct r2k_control_reg ctrl) {
 	r_strbuf_appendf (sb, "CR0: 0x%"PFMT64x"\n", (ut64) ctrl.cr0);
 	r_strbuf_appendf (sb, " [*] PG:    %d\n"
 		       " [*] CD:    %d\n"
@@ -69,12 +68,10 @@ static char* x86_ctrl_reg_pretty_print(struct r2k_control_reg ctrl) {
 	r_strbuf_appendf (sb, "CR8: 0x%"PFMT64x"\n", (ut64) ctrl.cr8);
 	r_strbuf_appendf (sb, " [*] TPL:    %u\n", (ut32)(ctrl.cr8 & 0xf));
 #endif
-	return r_strbuf_drain (sb);
 }
 
 #elif __arm__
-static char* arm_ctrl_reg_pretty_print(struct r2k_control_reg ctrl) {
-	RStrBuf *sb = r_strbuf_new ("");
+static void append_ctrl_reg_details(RStrBuf *sb, struct r2k_control_reg ctrl) {
 	r_strbuf_appendf (sb, "TTBR0: 0x%"PFMT64x"\n", (ut64) ctrl.ttbr0);
 	r_strbuf_appendf (sb, " [*] Translation table base 0:  0x%"PFMT64x"\n"
 		       " [*] UNP/SBZ:                   0x%"PFMT64x"\n"
@@ -134,13 +131,11 @@ static char* arm_ctrl_reg_pretty_print(struct r2k_control_reg ctrl) {
 	r_strbuf_append (sb, "\n");
 
 	r_strbuf_appendf (sb, "C3: 0x%"PFMT64x"\n", (ut64) ctrl.c3);
-	return r_strbuf_drain (sb);
 }
 
 #elif __arm64__ || __aarch64__
 /*ARM Cortex-A57 and ARM Cortex-A72. This might show some wrong values for other processor.*/
-static char* arm64_ctrl_reg_pretty_print(struct r2k_control_reg ctrl) {
-	RStrBuf *sb = r_strbuf_new ("");
+static void append_ctrl_reg_details(RStrBuf *sb, struct r2k_control_reg ctrl) {
 	r_strbuf_appendf (sb, "SCTLR_EL1: 0x%"PFMTSZx"\n", ctrl.sctlr_el1);
 	r_strbuf_appendf (sb, " [*] UCI:     %d\n"
 		       " [*] EE:      %d\n"
@@ -204,47 +199,34 @@ static char* arm64_ctrl_reg_pretty_print(struct r2k_control_reg ctrl) {
 		       FSET (ctrl.tcr_el1, 22), (int)(ctrl.tcr_el1 >> 16) & 0x3f, FSET (ctrl.tcr_el1, 14),
 		       (int)(ctrl.tcr_el1 >> 12) & 0x3, (int)(ctrl.tcr_el1 >> 10) & 0x3, (int)(ctrl.tcr_el1 >> 8) & 0x3,
 		       FSET (ctrl.tcr_el1, 7), (int)ctrl.tcr_el1 & 0x3f);
-	return r_strbuf_drain (sb);
 }
 #endif
 
-static const char* getargpos(const char *buf, int pos) {
-	int i;
-	for (i = 0; buf && i < pos; i++) {
-		buf = strchr (buf, ' ');
-		if (!buf) {
-			break;
-		}
-		buf = r_str_ichr (buf, ' ');
-	}
-	return buf;
-}
-
-// Parse a non-negative decimal/hex integer with full validation.
-// Returns true on success and writes the value to *out.
-static bool parse_nonneg_int(const char *s, int *out) {
-	if (R_STR_ISEMPTY (s)) {
-		return false;
-	}
+// Consume one integer token without narrowing native-width kernel addresses.
+static bool parse_number(const char **args, size_t *value, size_t max) {
+	const char *str = r_str_trim_head_ro (*args);
 	char *end;
-	const long long v = strtoll (s, &end, 0);
-	if (end == s || *end != '\0' || v < 0 || v > INT_MAX) {
+	errno = 0;
+	ut64 number = strtoull (str, &end, 0);
+	if (!*str || *str == '-' || end == str || errno == ERANGE || number > max || (*end && !IS_WHITECHAR (*end))) {
 		return false;
 	}
-	*out = (int)v;
+	*value = number;
+	*args = r_str_trim_head_ro (end);
 	return true;
 }
 
-static void append_help(RStrBuf *sb, char *cmd, int p_usage) {
+static void append_help(RStrBuf *sb, const char *cmd, bool p_usage) {
 	int i = 0;
 	int cmd_len = cmd ? strlen (cmd) : 0;
 	const char* usage = "Usage: :[MprRw][lpP] [args...]";
 	const char* help_msg[] = {
-		":dm              Print kernel memory map (or process if r2k.io==1)",
+		":dm [pid]        Print kernel memory map (or process if r2k.io==1)",
 		":dr              Print control registers",
 		":dR              Print control registers in detailed mode",
 		":dp [pid]        Print current selected pid or change it",
-		":e r2k.io=[012]  Read/Write from 0: Linear, 1: Process, 2: Physical addresses"
+		":e r2k.io=[012]  Read/Write from 0: Linear, 1: Process, 2: Physical addresses",
+		":e r2k.wp=[01]   Honor arch write protection (enabled by default)"
 	};
 	RCoreHelpMessage help_msg_old = {
 		":M                      Print kernel memory map",
@@ -389,12 +371,17 @@ int WriteMemory(RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address,
 	return ret;
 }
 
-static char* print_proc_info(struct r2k_proc_info *pd, bool fflag) {
-	RStrBuf *sb = r_strbuf_new ("");
+static void append_process_info(int fd, RStrBuf *sb, int pid, bool fflag) {
+	struct r2k_proc_info data = { .pid = pid };
+	if (ioctl (fd, IOCTL_PRINT_PROC_INFO, &data)) {
+		R_LOG_ERROR ("ioctl: %s", strerror (errno));
+		return;
+	}
+	struct r2k_proc_info *pd = &data;
 	const ut64 count = R_ARRAY_SIZE (pd->vmareastruct);
 	if (!fflag) {
-		r_strbuf_appendf (sb, "pid = %d\nprocess name = %s\n", pd->pid, pd->comm);
-		r_strbuf_appendf (sb, "task_struct = 0x%08zu\n", pd->task);
+		r_strbuf_appendf (sb, "pid = %d\nprocess name = %.16s\n", pd->pid, pd->comm);
+		r_strbuf_appendf (sb, "task_struct = 0x%08"PFMT64x"\n", (ut64)pd->task);
 	}
 	ut64 i = 0;
 	int j = 0;
@@ -430,455 +417,250 @@ static char* print_proc_info(struct r2k_proc_info *pd, bool fflag) {
 		i = nextstart;
 	}
 	if (fflag) {
-		r_strbuf_appendf (sb, "'f pid.%d.task_struct = 0x%08zu\n", pd->pid, pd->task);
+		r_strbuf_appendf (sb, "'f pid.%d.task_struct = 0x%08"PFMT64x"\n", pd->pid, (ut64)pd->task);
 	} else {
-		r_strbuf_appendf (sb, "STACK BASE ADDRESS = 0x%p\n", (void*)pd->stack);
+		r_strbuf_appendf (sb, "STACK BASE ADDRESS = 0x%"PFMT64x"\n", (ut64)pd->stack);
 	}
-	return r_strbuf_drain (sb);
 }
 
-static bool run_command(RIO *io, RIODesc *iodesc, RStrBuf *sb, const char *buf) {
-	int ret, inphex, ioctl_n;
-	size_t pid, addr, len;
-	ut8 *databuf = NULL;
+static void append_kernel_map(int fd, RStrBuf *sb) {
+	int i, j;
+	struct r2k_kernel_maps map_data = {0};
+	struct r2k_kernel_map_info *info;
+	long page_size = sysconf (_SC_PAGESIZE);
 
-	// New (radare2-style) commands
-	if (r_str_startswith (buf, "dm")) { // "dm"
-		if (buf[2] == ' ') {
-			if (!parse_nonneg_int (buf + 3, (int *)&pid)) {
-				R_LOG_ERROR ("Invalid pid");
-				append_help (sb, "dm", 0);
-				return true;
-			}
-		} else if (r2k_struct.beid == 1) {
-			pid = r2k_struct.pid;
-		} else {
-			goto print_kernel_map;
+	int ret = ioctl (fd, IOCTL_GET_KERNEL_MAP, &map_data);
+	if (ret < 0) {
+		R_LOG_ERROR ("ioctl: %s", strerror (errno));
+		return;
+	}
+	r_strbuf_appendf (sb, "map_data.size: %d, map_data.n_entries: %d\n", map_data.size, map_data.n_entries);
+	if (map_data.size <= 0 || map_data.n_entries < 0 ||
+			(size_t)map_data.n_entries > (size_t)map_data.size / sizeof (*info)) {
+		R_LOG_ERROR ("Invalid kernel map size");
+		return;
+	}
+	info = mmap (0, map_data.size, PROT_READ, MAP_SHARED, fd, 0);
+	if (info == MAP_FAILED) {
+		R_LOG_ERROR ("mmap: %s", strerror (errno));
+		return;
+	}
+
+	for (i = 0; i < map_data.n_entries; i++) {
+		struct r2k_kernel_map_info *in = &info[i];
+		r_strbuf_appendf (sb, "start_addr: 0x%"PFMT64x"\n", (ut64) in->start_addr);
+		r_strbuf_appendf (sb, "end_addr: 0x%"PFMT64x"\n", (ut64) in->end_addr);
+		r_strbuf_appendf (sb, "n_pages: %d (%ld Kbytes)\n", in->n_pages, (in->n_pages * page_size) / 1024);
+		r_strbuf_appendf (sb, "n_phys_addr: %d\n", in->n_phys_addr);
+		for (j = 0; j < R_MIN (in->n_phys_addr, MAX_PHYS_ADDR); j++) {
+			r_strbuf_appendf (sb, "  phys_addr: 0x%"PFMT64x"\n", (ut64) in->phys_addr[j]);
 		}
-		goto print_process_info;
+		r_strbuf_append (sb, "\n");
 	}
-	if (r_str_startswith (buf, "dR")) {
-		goto print_ctrl_regs_detailed;
+
+	if (munmap (info, map_data.size) == -1) {
+		R_LOG_ERROR ("munmap failed");
 	}
-	if (r_str_startswith (buf, "dr")) {
-		goto print_ctrl_regs;
+}
+
+static void append_ctrl_regs(int fd, RStrBuf *sb, bool pretty) {
+	struct r2k_control_reg reg_data = {0};
+	int ret = ioctl (fd, IOCTL_READ_CONTROL_REG, &reg_data);
+	if (ret) {
+		R_LOG_ERROR ("ioctl err: %s", strerror (errno));
+		return;
 	}
-	if (r_str_startswith (buf, "dp")) {
-		if (buf[2] == ' ') {
-			if (!parse_nonneg_int (buf + 3, (int *)&pid)) {
-				R_LOG_ERROR ("Invalid pid");
-				append_help (sb, "dp", 0);
-				return true;
+
+#if __i386__ || __x86_64__
+	//Print cr1 as null instead of random value from kernel land.
+	reg_data.cr1 = 0;
+	if (pretty) {
+		append_ctrl_reg_details (sb, reg_data);
+	} else {
+		r_strbuf_appendf (sb, "cr0 = 0x%"PFMT64x"\n", (ut64) reg_data.cr0);
+		r_strbuf_appendf (sb, "cr1 = 0x%"PFMT64x"\n", (ut64) reg_data.cr1);
+		r_strbuf_appendf (sb, "cr2 = 0x%"PFMT64x"\n", (ut64) reg_data.cr2);
+		r_strbuf_appendf (sb, "cr3 = 0x%"PFMT64x"\n", (ut64) reg_data.cr3);
+		r_strbuf_appendf (sb, "cr4 = 0x%"PFMT64x"\n", (ut64) reg_data.cr4);
+#if __x86_64__
+		r_strbuf_appendf (sb, "cr8 = 0x%"PFMT64x"\n", (ut64) reg_data.cr8);
+#endif
+	}
+#elif __arm__
+	if (pretty) {
+		append_ctrl_reg_details (sb, reg_data);
+	} else {
+		r_strbuf_appendf (sb, "ttbr0 = 0x%"PFMT64x"\n", (ut64) reg_data.ttbr0);
+		r_strbuf_appendf (sb, "ttbr1 = 0x%"PFMT64x"\n", (ut64) reg_data.ttbr1);
+		r_strbuf_appendf (sb, "ttbcr = 0x%"PFMT64x"\n", (ut64) reg_data.ttbcr);
+		r_strbuf_appendf (sb, "c1    = 0x%"PFMT64x"\n", (ut64) reg_data.c1);
+		r_strbuf_appendf (sb, "c3    = 0x%"PFMT64x"\n", (ut64) reg_data.c3);
+	}
+#elif __arm64__ || __aarch64__
+	if (pretty) {
+		append_ctrl_reg_details (sb, reg_data);
+	} else {
+		r_strbuf_appendf (sb, "sctlr_el1 = 0x%"PFMT64x"\n", (ut64) reg_data.sctlr_el1);
+		r_strbuf_appendf (sb, "ttbr0_el1 = 0x%"PFMT64x"\n", (ut64) reg_data.ttbr0_el1);
+		r_strbuf_appendf (sb, "ttbr1_el1 = 0x%"PFMT64x"\n", (ut64) reg_data.ttbr1_el1);
+		r_strbuf_appendf (sb, "tcr_el1   = 0x%"PFMT64x"\n", (ut64) reg_data.tcr_el1);
+	}
+#endif
+}
+
+static void run_command(RIO *io, RIODesc *iodesc, RStrBuf *sb, const char *cmd, const char *args) {
+	int fd = (int)(size_t)iodesc->data;
+	size_t value, pid = r2k_struct.pid;
+	if (!strcmp (cmd, "M") || (!strcmp (cmd, "dm") && !*args && r2k_struct.beid != 1)) {
+		if (*args) {
+			goto invalid;
+		}
+		append_kernel_map (fd, sb);
+	} else if (!strcmp (cmd, "p") || !strcmp (cmd, "p*") || !strcmp (cmd, "dm")) {
+		if ((*args || strcmp (cmd, "dm")) && !parse_number (&args, &pid, INT_MAX)) {
+			goto invalid;
+		}
+		if (*args) {
+			goto invalid;
+		}
+		append_process_info (fd, sb, pid, !strcmp (cmd, "p*"));
+	} else if (!strcmp (cmd, "R") || !strcmp (cmd, "Rp") || !strcmp (cmd, "dr") || !strcmp (cmd, "dR")) {
+		if (*args) {
+			goto invalid;
+		}
+		append_ctrl_regs (fd, sb, !strcmp (cmd, "Rp") || !strcmp (cmd, "dR"));
+	} else if (!strcmp (cmd, "dp")) {
+		if (*args) {
+			if (!parse_number (&args, &pid, INT_MAX) || *args) {
+				goto invalid;
 			}
 			r2k_struct.pid = pid;
 		}
 		r_strbuf_appendf (sb, "%d\n", r2k_struct.pid);
-		return true;
-	}
-	if (r_str_startswith (buf, "e r2k.io")) {
-		if (strchr (buf, '?')) {
-			r_strbuf_append (sb, "0: Linear memory\n");
-			r_strbuf_append (sb, "1: Process memory\n");
-			r_strbuf_append (sb, "2: Physical memory\n");
-			return true;
-		}
-		const char *eq = strchr (buf, '=');
-		if (eq) {
-			int v;
-			if (!parse_nonneg_int (eq + 1, &v) || v > 2) {
-				R_LOG_ERROR ("Invalid r2k.io value, must be 0, 1, or 2");
-				append_help (sb, "e r2k.io", 0);
-				return true;
-			}
-			r2k_struct.beid = v;
-			if (v != 1) {
-				r2k_struct.pid = 0;
-			}
-		}
-		r_strbuf_appendf (sb, "%d\n", r2k_struct.beid);
-		return true;
-	}
-	if (r_str_startswith (buf, "e r2k.wp")) {
-		if (strchr (buf, '?')) {
-			r_strbuf_append (sb, "<bool> enable write protection (disabled by default)\n");
-			return true;
-		}
-		const char *eq = strchr (buf, '=');
-		if (eq) {
-			int v;
-			if (!parse_nonneg_int (eq + 1, &v) || (v != 0 && v != 1)) {
-				R_LOG_ERROR ("Invalid r2k.wp value, must be 0 or 1");
-				append_help (sb, "e r2k.wp", 0);
-				return true;
-			}
-			r2k_struct.wp = (ut8)v;
-		}
-		r_strbuf_appendf (sb, "%s\n", r_str_bool (r2k_struct.wp));
-		return true;
-	}
-
-	// Legacy single-character commands
-	switch (*buf) {
-	case 'W':
-		if (buf[1] != ' ') {
-			r_strbuf_appendf (sb, "Write Protect: %d\nUsage:\n", r2k_struct.wp);
-			append_help (sb, "W", 0);
-			break;
-		}
-		{
-			int wp;
-			if (!parse_nonneg_int (getargpos (buf, 1), &wp) || (wp != 0 && wp != 1)) {
-				R_LOG_ERROR ("Invalid usage of W");
-				append_help (sb, "W", 0);
-				break;
-			}
-			r2k_struct.wp = (ut8)wp;
-		}
-		break;
-	case 'b': // ":b"
-		if (buf[1] != ' ') {
+	} else if (!strcmp (cmd, "b")) {
+		if (!*args) {
 			r_strbuf_appendf (sb, "beid: %d\npid:  %d\nUsage:\n", r2k_struct.beid, r2k_struct.pid);
-			append_help (sb, "b", 0);
-			goto end;
+			append_help (sb, cmd, false);
+			return;
 		}
-		{
-			int beid = 0, pid_b = 0;
-			const char *arg = getargpos (buf, 1);
-			const char *arg2 = getargpos (buf, 2);
-			if (!parse_nonneg_int (arg, &beid) || beid > 2) {
-				R_LOG_ERROR ("Invalid beid value, must be: 0, 1, 2");
-				append_help (sb, "b", 0);
-				break;
-			}
-			if (beid == 1) {
-				if (!arg2 || !parse_nonneg_int (arg2, &pid_b)) {
-					R_LOG_ERROR ("Invalid pid");
-					append_help (sb, "b", 0);
-					break;
-				}
-			}
-			r2k_struct.beid = beid;
-			r2k_struct.pid = (beid == 1) ? pid_b : 0;
+		if (!parse_number (&args, &value, 2) ||
+				((value == 1 || *args) && !parse_number (&args, &pid, INT_MAX)) || *args) {
+			goto invalid;
 		}
+		r2k_struct.beid = value;
+		r2k_struct.pid = value == 1? pid: 0;
 		io->coreb.cmdf (io->coreb.core, "s 0x%"PFMT64x, io->off);
-		break;
-	case 'r':
-		{
-			RPrint *print = r_print_new ();
-			switch (buf[1]) {
-			case 'l': // ":rl"
-				//read linear address
-				//: rl addr len
-				if (buf[2] != ' ') {
-					append_help (sb, "rl", 0);
-					r_print_free (print);
-					goto end;
-				}
-				pid = 0;
-				if (!parse_nonneg_int (getargpos (buf, 1), (int *)&addr) ||
-					    !parse_nonneg_int (getargpos (buf, 2), (int *)&len)) {
-					R_LOG_ERROR ("Invalid number of arguments");
-					append_help (sb, "rl", 0);
-					r_print_free (print);
-					goto end;
-				}
-				ioctl_n = IOCTL_READ_KERNEL_MEMORY;
-				break;
-			case 'p': // ":rp"
-				// read process address
-				// : rp pid address len
-				if (buf[2] != ' ') {
-					append_help (sb, "rp", 0);
-					r_print_free (print);
-					goto end;
-				}
-				if (!parse_nonneg_int (getargpos (buf, 1), (int *)&pid) ||
-					    !parse_nonneg_int (getargpos (buf, 2), (int *)&addr) ||
-					    !parse_nonneg_int (getargpos (buf, 3), (int *)&len)) {
-					R_LOG_ERROR ("Invalid number of arguments");
-					append_help (sb, "rp", 0);
-					r_print_free (print);
-					goto end;
-				}
-				ioctl_n = IOCTL_READ_PROCESS_ADDR;
-				break;
-			case 'P': // ":rP"
-				//read physical address
-				//: rP address len
-				if (buf[2] != ' ') {
-					append_help (sb, "rP", 0);
-					r_print_free (print);
-					goto end;
-				}
-				pid = 0;
-				if (!parse_nonneg_int (getargpos (buf, 1), (int *)&addr) ||
-					    !parse_nonneg_int (getargpos (buf, 2), (int *)&len)) {
-					R_LOG_ERROR ("Invalid number of arguments");
-					append_help (sb, "rP", 0);
-					r_print_free (print);
-					goto end;
-				}
-				ioctl_n = IOCTL_READ_PHYSICAL_ADDR;
-				break;
-			default:
-				append_help (sb, "r", 0);
-				r_print_free (print);
-				goto end;
+	} else if (!strcmp (cmd, "W")) {
+		if (!*args) {
+			r_strbuf_appendf (sb, "Write Protect: %d\nUsage:\n", r2k_struct.wp);
+			append_help (sb, cmd, false);
+		} else if (parse_number (&args, &value, 1) && !*args) {
+			r2k_struct.wp = value;
+		} else {
+			goto invalid;
+		}
+	} else if (!strcmp (cmd, "e")) {
+		bool wp = r_str_startswith (args, "r2k.wp");
+		if (!wp && !r_str_startswith (args, "r2k.io")) {
+			goto invalid;
+		}
+		args = r_str_trim_head_ro (args + 6);
+		if (*args == '?' && !*r_str_trim_head_ro (args + 1)) {
+			r_strbuf_append (sb, wp
+				? "<bool> enable write protection (enabled by default)\n"
+				: "0: Linear memory\n1: Process memory\n2: Physical memory\n");
+			return;
+		}
+		if (*args) {
+			if (*args++ != '=' || !parse_number (&args, &value, wp? 1: 2) || *args) {
+				goto invalid;
 			}
-			databuf = (ut8 *) calloc (len + 1, 1);
-			if (databuf) {
-				ret = ReadMemory (io, iodesc, ioctl_n, pid, addr, databuf, len);
-				if (ret > 0) {
-					r_print_hexdump_strbuf (print, sb, addr, (const ut8 *) databuf, ret, 16, 1, 1);
-				}
+			if (wp) {
+				r2k_struct.wp = value;
 			} else {
+				r2k_struct.beid = value;
+				if (value != 1) {
+					r2k_struct.pid = 0;
+				}
+				io->coreb.cmdf (io->coreb.core, "s 0x%"PFMT64x, io->off);
+			}
+		}
+		if (wp) {
+			r_strbuf_appendf (sb, "%s\n", r_str_bool (r2k_struct.wp));
+		} else {
+			r_strbuf_appendf (sb, "%d\n", r2k_struct.beid);
+		}
+	} else if ((*cmd == 'r' || *cmd == 'w') && cmd[1]) {
+		bool write = *cmd == 'w';
+		bool hex = write && cmd[2] == 'x';
+		int request;
+		switch (cmd[1]) {
+		case 'l': request = write? IOCTL_WRITE_KERNEL_MEMORY: IOCTL_READ_KERNEL_MEMORY; break;
+		case 'p': request = write? IOCTL_WRITE_PROCESS_ADDR: IOCTL_READ_PROCESS_ADDR; break;
+		case 'P': request = write? IOCTL_WRITE_PHYSICAL_ADDR: IOCTL_READ_PHYSICAL_ADDR; break;
+		default: goto invalid;
+		}
+		size_t addr, len;
+		pid = 0;
+		if (cmd[hex? 3: 2] || (cmd[1] == 'p' && !parse_number (&args, &pid, INT_MAX)) ||
+				!parse_number (&args, &addr, SIZE_MAX) || !*args) {
+			goto invalid;
+		}
+		if (write) {
+			if (strlen (args) > INT_MAX) {
+				goto invalid;
+			}
+			ut8 *data = (ut8 *)strdup (args);
+			if (!data) {
+				return;
+			}
+			int count = hex? r_hex_str2bin (args, data): r_str_unescape ((char *)data);
+			if (count > 0) {
+				WriteMemory (io, iodesc, request, pid, addr, data, count);
+			}
+			free (data);
+			if (count <= 0) {
+				goto invalid;
+			}
+		} else {
+			if (!parse_number (&args, &len, INT_MAX) || !len || *args || len - 1 > SIZE_MAX - addr) {
+				goto invalid;
+			}
+			ut8 *data = malloc (len);
+			if (!data) {
 				R_LOG_ERROR ("Failed to allocate buffer");
+				return;
 			}
-			r_print_free (print);
+			int count = ReadMemory (io, iodesc, request, pid, addr, data, len);
+			if (count > 0) {
+				RPrint *print = r_print_new ();
+				r_print_hexdump_strbuf (print, sb, addr, data, count, 16, 1, 1);
+				r_print_free (print);
+			}
+			free (data);
 		}
-		break;
-	case 'w': // ":w"
-		inphex = (buf[2] == 'x') ? 1 : 0;
-		{
-			const char *arg_str = NULL;
-			switch (buf[1]) {
-			case 'l': // ":wl"
-				//write linear address
-				//: wl addr str
-				if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
-					append_help (sb, "wl", 0);
-					goto end;
-				}
-				pid = 0;
-				if (!parse_nonneg_int (getargpos (buf, 1), (int *)&addr)) {
-					R_LOG_ERROR ("Invalid number of arguments");
-					append_help (sb, "wl", 0);
-					goto end;
-				}
-				arg_str = getargpos (buf, 2);
-				ioctl_n = IOCTL_WRITE_KERNEL_MEMORY;
-				break;
-			case 'p': // ":wp"
-				//write process address
-				//: wp pid address str
-				if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
-					append_help (sb, "wp", 0);
-					goto end;
-				}
-				if (!parse_nonneg_int (getargpos (buf, 1), (int *)&pid) ||
-					    !parse_nonneg_int (getargpos (buf, 2), (int *)&addr)) {
-					R_LOG_ERROR ("Invalid number of arguments");
-					append_help (sb, "wp", 0);
-					goto end;
-				}
-				arg_str = getargpos (buf, 3);
-				ioctl_n = IOCTL_WRITE_PROCESS_ADDR;
-				break;
-			case 'P': // ":wP"
-				// write physical address
-				// : wP address str
-				if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
-					append_help (sb, "wP", 0);
-					goto end;
-				}
-				pid = 0;
-				if (!parse_nonneg_int (getargpos (buf, 1), (int *)&addr)) {
-					R_LOG_ERROR ("Invalid number of arguments");
-					append_help (sb, "wP", 0);
-					goto end;
-				}
-				arg_str = getargpos (buf, 2);
-				ioctl_n = IOCTL_WRITE_PHYSICAL_ADDR;
-				break;
-			default:
-				append_help (sb, "w", 0);
-				goto end;
-			}
-			if (!arg_str) {
-				break;
-			}
-			len = strlen (arg_str);
-			databuf = (ut8 *) calloc (len + 1, 1);
-			if (databuf) {
-				if (inphex) {
-					len = r_hex_str2bin (arg_str, databuf);
-				} else {
-					memcpy (databuf, arg_str, strlen (arg_str) + 1);
-					len = r_str_unescape ((char *) databuf);
-				}
-				ret = WriteMemory (io, iodesc, ioctl_n, pid, addr, (const ut8 *) databuf, len);
-				(void)ret;
-			}
-		}
-		break;
-	case 'M': // ":M" -- rename to ":dm"
-print_kernel_map:
-		{
-			// Print kernel memory map.
-			// : M
-			int i, j;
-			struct r2k_kernel_maps map_data;
-			struct r2k_kernel_map_info *info;
-			long page_size = sysconf (_SC_PAGESIZE);
-
-			ioctl_n = IOCTL_GET_KERNEL_MAP;
-			ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &map_data);
-			if (ret < 0) {
-				R_LOG_ERROR ("ioctl: %s", strerror (errno));
-				break;
-			}
-			r_strbuf_appendf (sb, "map_data.size: %d, map_data.n_entries: %d\n", map_data.size, map_data.n_entries);
-			info = mmap (0, map_data.size, PROT_READ, MAP_SHARED, (int)(size_t)iodesc->data, 0);
-			if (info == MAP_FAILED) {
-				R_LOG_ERROR ("mmap: %s", strerror (errno));
-				break;
-			}
-
-			for (i = 0; i < map_data.n_entries; i++) {
-				struct r2k_kernel_map_info *in = &info[i];
-				r_strbuf_appendf (sb, "start_addr: 0x%"PFMT64x"\n", (ut64) in->start_addr);
-				r_strbuf_appendf (sb, "end_addr: 0x%"PFMT64x"\n", (ut64) in->end_addr);
-				r_strbuf_appendf (sb, "n_pages: %d (%ld Kbytes)\n", in->n_pages, (in->n_pages * page_size) / 1024);
-				r_strbuf_appendf (sb, "n_phys_addr: %d\n", in->n_phys_addr);
-				for (j = 0; j < in->n_phys_addr; j++) {
-					r_strbuf_appendf (sb, "  phys_addr: 0x%"PFMT64x"\n", (ut64) in->phys_addr[j]);
-				}
-				r_strbuf_append (sb, "\n");
-			}
-
-			if (munmap (info, map_data.size) == -1) {
-				R_LOG_ERROR ("munmap failed");
-			}
-		}
-		break;
-	case 'R':
-print_ctrl_regs_detailed:
-print_ctrl_regs:
-		{
-			//Read control registers
-			//: R[p]
-			struct r2k_control_reg reg_data;
-			bool pretty = buf[1] == 'p';
-			ioctl_n = IOCTL_READ_CONTROL_REG;
-			ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &reg_data);
-			if (ret) {
-				R_LOG_ERROR ("ioctl err: %s", strerror (errno));
-				break;
-			}
-
-#if __i386__ || __x86_64__
-			//Print cr1 as null instead of random value from kernel land.
-			reg_data.cr1 = 0;
-			if (pretty) {
-				char *pp = x86_ctrl_reg_pretty_print (reg_data);
-				if (pp) {
-					r_strbuf_append (sb, pp);
-					free (pp);
-				}
-			} else {
-				r_strbuf_appendf (sb, "cr0 = 0x%"PFMT64x"\n", (ut64) reg_data.cr0);
-				r_strbuf_appendf (sb, "cr1 = 0x%"PFMT64x"\n", (ut64) reg_data.cr1);
-				r_strbuf_appendf (sb, "cr2 = 0x%"PFMT64x"\n", (ut64) reg_data.cr2);
-				r_strbuf_appendf (sb, "cr3 = 0x%"PFMT64x"\n", (ut64) reg_data.cr3);
-				r_strbuf_appendf (sb, "cr4 = 0x%"PFMT64x"\n", (ut64) reg_data.cr4);
-#if __x86_64__
-				r_strbuf_appendf (sb, "cr8 = 0x%"PFMT64x"\n", (ut64) reg_data.cr8);
-#endif
-			}
-#elif __arm__
-			if (pretty) {
-				char *pp = arm_ctrl_reg_pretty_print (reg_data);
-				if (pp) {
-					r_strbuf_append (sb, pp);
-					free (pp);
-				}
-			} else {
-				r_strbuf_appendf (sb, "ttbr0 = 0x%"PFMT64x"\n", (ut64) reg_data.ttbr0);
-				r_strbuf_appendf (sb, "ttbr1 = 0x%"PFMT64x"\n", (ut64) reg_data.ttbr1);
-				r_strbuf_appendf (sb, "ttbcr = 0x%"PFMT64x"\n", (ut64) reg_data.ttbcr);
-				r_strbuf_appendf (sb, "c1    = 0x%"PFMT64x"\n", (ut64) reg_data.c1);
-				r_strbuf_appendf (sb, "c3    = 0x%"PFMT64x"\n", (ut64) reg_data.c3);
-			}
-#elif __arm64__ || __aarch64__
-			if (pretty) {
-				char *pp = arm64_ctrl_reg_pretty_print (reg_data);
-				if (pp) {
-					r_strbuf_append (sb, pp);
-					free (pp);
-				}
-			} else {
-				r_strbuf_appendf (sb, "sctlr_el1 = 0x%"PFMT64x"\n", (ut64) reg_data.sctlr_el1);
-				r_strbuf_appendf (sb, "ttbr0_el1 = 0x%"PFMT64x"\n", (ut64) reg_data.ttbr0_el1);
-				r_strbuf_appendf (sb, "ttbr1_el1 = 0x%"PFMT64x"\n", (ut64) reg_data.ttbr1_el1);
-				r_strbuf_appendf (sb, "tcr_el1   = 0x%"PFMT64x"\n", (ut64) reg_data.tcr_el1);
-			}
-#endif
-		}
-		break;
-	case 'p':
-print_process_info:
-		{
-			//Print process info
-			//: p pid
-			bool fflag = false;
-			struct r2k_proc_info proc_data = {0};
-
-			switch (buf[1]) {
-			case '*':
-				fflag = true;
-				if (buf[2] != ' ') {
-					append_help (sb, "p*", 0);
-					goto end;
-				}
-				break;
-			case ' ':
-				break;
-			default:
-				append_help (sb, "p", 0);
-				goto end;
-			}
-
-			if (!parse_nonneg_int (getargpos (buf, 1), (int *)&pid)) {
-				R_LOG_ERROR ("Invalid number of arguments");
-				append_help (sb, "p", 0);
-				break;
-			}
-			proc_data.pid = pid;
-			ioctl_n = IOCTL_PRINT_PROC_INFO;
-
-			ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &proc_data);
-			if (ret) {
-				R_LOG_ERROR ("ioctl err: %s", strerror (errno));
-				break;
-			}
-			char *pi = print_proc_info (&proc_data, fflag);
-			if (pi) {
-				r_strbuf_append (sb, pi);
-				free (pi);
-			}
-		}
-		break;
-	default:
-		append_help (sb, NULL, 1);
-		break;
+	} else {
+		append_help (sb, NULL, true);
 	}
-end:
-	free (databuf);
-	return true;
+	return;
+invalid:
+	R_LOG_ERROR ("Invalid r2k command arguments");
+	append_help (sb, cmd, false);
 }
 
-char* run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
-	buf = r_str_ichr (buf, ' ');
-
-	if (!buf) {
+char *run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
+	char *cmd = strdup (r_str_trim_head_ro (buf));
+	if (!cmd) {
 		return NULL;
 	}
-	RStrBuf *sb = r_strbuf_new ("");
-	if (run_command (io, iodesc, sb, buf)) {
-		return r_strbuf_drain (sb);
+	char *args = cmd + strcspn (cmd, " \t\r\n");
+	if (*args) {
+		*args++ = 0;
 	}
-	r_strbuf_free (sb);
-	return NULL;
+	RStrBuf *sb = r_strbuf_new ("");
+	run_command (io, iodesc, sb, cmd, r_str_trim_head_ro (args));
+	free (cmd);
+	return r_strbuf_drain (sb);
 }
 
-#endif /* __GNU__ */
+#endif
