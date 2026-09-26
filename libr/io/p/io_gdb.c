@@ -222,8 +222,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (r_str_startswith (cmd, "pktsz")) {
 		const char *ptr = r_str_trim_head_ro (cmd + 5);
 		if (!isdigit ((ut8)*ptr)) {
-			io->cb_printf ("packet size: %u bytes\n", desc->stub_features.pkt_sz);
-			return NULL;
+			return r_str_newf ("packet size: %u bytes\n", desc->stub_features.pkt_sz);
 		}
 		ut64 pktsz = r_num_get (NULL, ptr);
 		if (pktsz) {
@@ -248,17 +247,18 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "pkt ")) {
+		char *res = NULL;
 		gdbr_lock_enter (desc);
 		if (send_msg (desc, cmd + 4) >= 0) {
 			(void)read_packet (desc, false);
 			desc->data[desc->data_len] = '\0';
-			io->cb_printf ("reply:\n%s\n", desc->data);
+			res = r_str_newf ("reply:\n%s\n", desc->data);
 			if (!desc->no_ack) {
 				R_LOG_INFO ("waiting for the ack");
 			}
 		}
 		gdbr_lock_leave (desc);
-		return NULL;
+		return res;
 	}
 	if (r_str_startswith (cmd, "rd")) {
 		PJ *pj = pj_new ();
@@ -266,9 +266,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		pj_kb (pj, "reverse-continue", desc->stub_features.ReverseStep);
 		pj_kb (pj, "reverse-step", desc->stub_features.ReverseContinue);
 		pj_end (pj);
-		io->cb_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
-		return NULL;
+		return pj_drain (pj);
 	}
 	if (r_str_startswith (cmd, "dsb")) {
 		if (!desc->stub_features.ReverseStep) {
@@ -317,11 +315,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "pid")) {
-		char *spid = r_str_newf ("%d", desc->pid);
-		if (!cmd[3]) {
-			io->cb_printf ("%s\n", spid);
-		}
-		return spid;
+		return r_str_newf ("%d\n", desc->pid);
 	}
 	if (r_str_startswith (cmd, "monitor")) {
 		const char *qrcmd = cmd + 8;
@@ -346,16 +340,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		} else {
 			ptr = r_str_trim_head_ro (ptr);
 			if (isdigit ((ut8)*ptr)) {
-				int pid = atoi (ptr);
-				file = gdbr_exec_file_read (desc, pid);
+				file = gdbr_exec_file_read (desc, atoi (ptr));
 			} else {
 				file = gdbr_exec_file_read (desc, 0);
 			}
 		}
-		if (!file) {
-			return NULL;
-		}
-		io->cb_printf ("%s\n", file);
 		return file;
 	}
 	// These are internal, not available to user directly
@@ -367,8 +356,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			}
 			return NULL;
 		}
-		io->cb_printf ("num_retries: %d byte(s)\n", desc->page_size);
-		return NULL;
+		return r_str_newf ("num_retries: %d byte(s)\n", desc->page_size);
 	}
 	if (r_str_startswith (cmd, "page_size")) {
 		int page_size;
@@ -378,8 +366,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			}
 			return NULL;
 		}
-		io->cb_printf ("page size: %d byte(s)\n", desc->page_size);
-		return NULL;
+		return r_str_newf ("page size: %d byte(s)\n", desc->page_size);
 	}
 	// Sets a flag that next call to get memmap will be for getting baddr
 	if (!strcmp (cmd, "baddr")) {

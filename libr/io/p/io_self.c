@@ -29,7 +29,9 @@ typedef struct {
 #include <mach/mach_error.h>
 #include <mach/task.h>
 #include <mach/task_info.h>
-static void macosx_debug_regions (SelfData *data, RIO *io, task_t task, mach_vm_address_t address, int max);
+
+static void macosx_debug_regions(SelfData *data, RIO *io, task_t task, mach_vm_address_t address, int max);
+
 #elif R2__BSD__
 #if __FreeBSD__
 #include <sys/sysctl.h>
@@ -699,7 +701,7 @@ static void macosx_debug_regions(SelfData *sd, RIO *io, task_t task, mach_vm_add
 			char *print_size_unit;
 			int perm = 0;
 
-			// io->cb_printf (num_printed? "   ... ": "Region ");
+			// eprintf (num_printed? "   ... ": "Region ");
 			//findListOfBinaries(task, prev_address, prev_size);
 			/* Quick hack to show size of segment, which GDB does not */
 			print_size = size;
@@ -737,9 +739,9 @@ static void macosx_debug_regions(SelfData *sd, RIO *io, task_t task, mach_vm_add
 			sd->self_sections_count++;
 #if 0
 			if (nsubregions > 1) {
-				io->cb_printf (" (%d sub-regions)", nsubregions);
+				eprintf (" (%d sub-regions)", nsubregions);
 			}
-			io->cb_printf ("\n");
+			eprintf ("\n");
 #endif
 			num_printed++;
 			address += size;
@@ -796,15 +798,15 @@ static bool bsd_proc_vmmaps(SelfData *sd, RIO *io, int pid) {
 			if (entry->kve_protection & KVME_PROT_EXEC) {
 				perm |= R_PERM_X;
 			}
-
+#if 0
 			if (entry->kve_path[0] != '\0') {
-				io->cb_printf (" %p - %p %s (%s)\n",
+				R_LOG_INFO (" %p - %p %s (%s)",
 						(void *)entry->kve_start,
 						(void *)entry->kve_end,
 						r_str_rwx_i (perm),
 						entry->kve_path);
 			}
-
+#endif
 			sd->self_sections[sd->self_sections_count].from = entry->kve_start;
 			sd->self_sections[sd->self_sections_count].to = entry->kve_end;
 			sd->self_sections[sd->self_sections_count].name = strdup (entry->kve_path);

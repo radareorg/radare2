@@ -8,6 +8,7 @@
 
 #if __i386__ || __x86_64__
 static void x86_ctrl_reg_pretty_print(RIO *io, struct r2k_control_reg ctrl) {
+// AITODO: use r_strbuf apis instead of io->cb_printf and return char* strbuf_drained
 	io->cb_printf ("CR0: 0x%"PFMT64x"\n", (ut64) ctrl.cr0);
 	io->cb_printf (" [*] PG:    %d\n"
 		       " [*] CD:    %d\n"
@@ -425,7 +426,7 @@ static void print_proc_info(RIO *io, struct r2k_proc_info *pd, bool fflag) {
 	}
 }
 
-int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
+static int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	int ret, inphex, ioctl_n;
 	size_t pid, addr, len;
 	ut8 *databuf = NULL;
@@ -666,7 +667,6 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			struct r2k_control_reg reg_data;
 			ioctl_n = IOCTL_READ_CONTROL_REG;
 			ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &reg_data);
-
 			if (ret) {
 				R_LOG_ERROR ("ioctl err: %s", strerror (errno));
 				break;
