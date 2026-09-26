@@ -24,18 +24,18 @@ static char* x86_ctrl_reg_pretty_print(struct r2k_control_reg ctrl) {
 		       FSET (ctrl.cr0, 31), FSET (ctrl.cr0, 30), FSET (ctrl.cr0, 29), FSET (ctrl.cr0, 18),
 		       FSET (ctrl.cr0, 16), FSET (ctrl.cr0, 5), FSET (ctrl.cr0, 4), FSET (ctrl.cr0, 3),
 		       FSET (ctrl.cr0, 2), FSET (ctrl.cr0, 1), FSET (ctrl.cr0, 1));
-	r_strbuf_appendf (sb, "\n");
+	r_strbuf_append (sb, "\n");
 
 	r_strbuf_appendf (sb, "CR2: 0x%"PFMT64x"\n", (ut64) ctrl.cr2);
 	r_strbuf_appendf (sb, "Page-Fault Linear Address: 0x%"PFMT64x"\n", (ut64) ctrl.cr2);
-	r_strbuf_appendf (sb, "\n");
+	r_strbuf_append (sb, "\n");
 
 	r_strbuf_appendf (sb, "CR3: 0x%"PFMT64x"\n", (ut64) ctrl.cr3);
 	r_strbuf_appendf (sb, " [*] Page-Directory Base:    0x%"PFMT64x"\n"
 		       " [*] PCD:                    %d\n"
 		       " [*] PWT:                    %d\n",
 		       (((ut64) ctrl.cr3) & 0xfffffffffffff000), FSET (ctrl.cr3, 4), FSET (ctrl.cr3, 3));
-	r_strbuf_appendf (sb, "\n");
+	r_strbuf_append (sb, "\n");
 
 	r_strbuf_appendf (sb, "CR4: 0x%"PFMT64x"\n", (ut64) ctrl.cr4);
 	r_strbuf_appendf (sb, " [*] PKE:         %d\n"
@@ -63,7 +63,7 @@ static char* x86_ctrl_reg_pretty_print(struct r2k_control_reg ctrl) {
 		       FSET (ctrl.cr4, 11), FSET (ctrl.cr4, 10), FSET (ctrl.cr4, 9), FSET (ctrl.cr4, 8),
 		       FSET (ctrl.cr4, 7), FSET (ctrl.cr4, 6), FSET (ctrl.cr4, 5), FSET (ctrl.cr4, 4),
 		       FSET (ctrl.cr4, 3), FSET (ctrl.cr4, 2), FSET (ctrl.cr4, 1), FSET (ctrl.cr4, 0));
-	r_strbuf_appendf (sb, "\n");
+	r_strbuf_append (sb, "\n");
 
 #if __x86_64__
 	r_strbuf_appendf (sb, "CR8: 0x%"PFMT64x"\n", (ut64) ctrl.cr8);
@@ -85,7 +85,7 @@ static char* arm_ctrl_reg_pretty_print(struct r2k_control_reg ctrl) {
 		       (ut64) ((ctrl.ttbr0 & (0xffffffff << (14 - (ctrl.ttbcr & 7)))) >> (14 - (ctrl.ttbcr & 7))),
 		       (ut64) ((ctrl.ttbr0 & ((1 << (13 - (ctrl.ttbcr & 7) + 1)) - (1 << 5))) >> 6),
 		       (ut64) ((ctrl.ttbr0 & 0x18) >> 3), FSET (ctrl.ttbr0, 2), FSET (ctrl.ttbr0, 1), FSET (ctrl.ttbr0, 0));
-	r_strbuf_appendf (sb, "\n");
+	r_strbuf_append (sb, "\n");
 
 	r_strbuf_appendf (sb, "TTBR1: 0x%"PFMT64x"\n", (ut64) ctrl.ttbr1);
 	r_strbuf_appendf (sb, " [*] Translation table base 1:  0x%"PFMT64x"\n"
@@ -96,11 +96,11 @@ static char* arm_ctrl_reg_pretty_print(struct r2k_control_reg ctrl) {
 		       " [*] C:                         %d\n",
 		       (ut64) ((ctrl.ttbr1 & (0xffffffff << 14)) >> 14), (ut64) ((ctrl.ttbr1 & ((1 << (13 + 1)) - (1 << 5))) >> 6),
 		       (ut64) ((ctrl.ttbr1 & 0x18) >> 3), FSET (ctrl.ttbr1, 2), FSET (ctrl.ttbr1, 1), FSET (ctrl.ttbr1, 0));
-	r_strbuf_appendf (sb, "\n");
+	r_strbuf_append (sb, "\n");
 
 	r_strbuf_appendf (sb, "TTBCR: 0x%"PFMT64x"\n", (ut64) ctrl.ttbcr);
 	r_strbuf_appendf (sb, " [*] N:    %d\n", ctrl.ttbcr & 7);
-	r_strbuf_appendf (sb, "\n");
+	r_strbuf_append (sb, "\n");
 
 	r_strbuf_appendf (sb, "C1: 0x%"PFMT64x"\n", (ut64) ctrl.c1);
 	r_strbuf_appendf (sb, " [*] AFE:    %d\n"
@@ -131,7 +131,7 @@ static char* arm_ctrl_reg_pretty_print(struct r2k_control_reg ctrl) {
 		       FSET (ctrl.c1, 12), FSET (ctrl.c1, 11), FSET (ctrl.c1, 10), FSET (ctrl.c1, 9),
 		       FSET (ctrl.c1, 8), FSET (ctrl.c1, 7), FSET (ctrl.c1, 3), FSET (ctrl.c1, 2),
 		       FSET (ctrl.c1, 1), FSET (ctrl.c1, 0));
-	r_strbuf_appendf (sb, "\n");
+	r_strbuf_append (sb, "\n");
 
 	r_strbuf_appendf (sb, "C3: 0x%"PFMT64x"\n", (ut64) ctrl.c3);
 	return r_strbuf_drain (sb);
@@ -166,19 +166,19 @@ static char* arm64_ctrl_reg_pretty_print(struct r2k_control_reg ctrl) {
 		       FSET (ctrl.sctlr_el1, 12), FSET (ctrl.sctlr_el1, 9), FSET (ctrl.sctlr_el1, 8), FSET (ctrl.sctlr_el1, 7),
 		       FSET (ctrl.sctlr_el1, 6), FSET (ctrl.sctlr_el1, 5), FSET (ctrl.sctlr_el1, 4), FSET (ctrl.sctlr_el1, 3),
 		       FSET (ctrl.sctlr_el1, 2), FSET (ctrl.sctlr_el1, 1), FSET (ctrl.sctlr_el1, 0));
-	r_strbuf_appendf (sb, "\n");
+	r_strbuf_append (sb, "\n");
 
 	r_strbuf_appendf (sb, "TTBR0_EL1: 0x%"PFMTSZx"\n", ctrl.ttbr0_el1);
 	r_strbuf_appendf (sb, " [*] ASID [63:48]:    0x%"PFMT64x"\n"
 		       " [*] BADDR [47:10]:   0x%"PFMT64x"\n",
 		       (ut64)(ctrl.ttbr0_el1 & 0xffff000000000000LLU) >> 48, (ctrl.ttbr0_el1 & ((((ut64) 1) << (47 + 1)) - (1 << 10))) >> 10);
-	r_strbuf_appendf (sb, "\n");
+	r_strbuf_append (sb, "\n");
 
 	r_strbuf_appendf (sb, "TTBR1_EL1: 0x%"PFMTSZx"\n", ctrl.ttbr1_el1);
 	r_strbuf_appendf (sb, " [*] ASID [63:48]:    0x%"PFMT64x"\n"
 		       " [*] BADDR [47:10]:   0x%"PFMT64x"\n",
 		       (ut64)(ctrl.ttbr1_el1 & 0xffff000000000000LLU) >> 48, (ctrl.ttbr1_el1 & ((((ut64) 1) << (47 + 1)) - (1 << 10))) >> 10);
-	r_strbuf_appendf (sb, "\n");
+	r_strbuf_append (sb, "\n");
 
 	r_strbuf_appendf (sb, "TCR_EL1: 0x%"PFMTSZx"\n", ctrl.tcr_el1);
 	r_strbuf_appendf (sb, " [*] TBI1:    %d\n"
@@ -264,7 +264,7 @@ static void append_help(RStrBuf *sb, char *cmd, int p_usage) {
 			r_strbuf_appendf (sb, "%s\n", help_msg[i]);
 		}
 	}
-	r_strbuf_appendf (sb, "\nOld Commands: (deprecated)\n");
+	r_strbuf_append (sb, "\nOld Commands: (deprecated)\n");
 	for (i = 0; i < (sizeof (help_msg_old) / sizeof (char*)); i++) {
 		if (!cmd || !strncmp (cmd, help_msg_old[i] + 1, cmd_len)) {
 			r_strbuf_appendf (sb, "%s\n", help_msg_old[i]);
@@ -658,7 +658,7 @@ static char* run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				for (j = 0; j < in->n_phys_addr; j++) {
 					r_strbuf_appendf (sb, "  phys_addr: 0x%"PFMT64x"\n", (ut64) in->phys_addr[j]);
 				}
-				r_strbuf_appendf (sb, "\n");
+				r_strbuf_append (sb, "\n");
 			}
 
 			if (munmap (info, map_data.size) == -1) {
@@ -836,9 +836,9 @@ static char* run_new_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	}
 	if (r_str_startswith (buf, "e r2k.io")) {
 		if (strchr (buf, '?')) {
-			r_strbuf_appendf (sb, "0: Linear memory\n");
-			r_strbuf_appendf (sb, "1: Process memory\n");
-			r_strbuf_appendf (sb, "2: Physical memory\n");
+			r_strbuf_append (sb, "0: Linear memory\n");
+			r_strbuf_append (sb, "1: Process memory\n");
+			r_strbuf_append (sb, "2: Physical memory\n");
 			return r_strbuf_drain (sb);
 		}
 		const char *eq = strchr (buf, '=');
@@ -863,7 +863,7 @@ static char* run_new_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	}
 	if (r_str_startswith (buf, "e r2k.wp")) {
 		if (strchr (buf, '?')) {
-			r_strbuf_appendf (sb, "<bool> enable write protection (disabled by default)\n");
+			r_strbuf_append (sb, "<bool> enable write protection (disabled by default)\n");
 			return r_strbuf_drain (sb);
 		}
 		const char *eq = strchr (buf, '=');
