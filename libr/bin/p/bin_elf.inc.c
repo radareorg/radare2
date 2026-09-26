@@ -1114,6 +1114,18 @@ static ut64 elf_io_addr(RBinFile *bf, ELFOBJ *eo, ut64 v) {
 	return (any && !disagree)? agreed: moved;
 }
 
+// AAELF's T: the reloc targets a defined thumb function; L is its io address
+static inline bool arm_reloc_thumb_bit(ELFOBJ *eo, const RBinElfReloc *rel, ut64 L) {
+	if (!L || L == UT64_MAX || !rel->sym || reloc_is_import (eo, rel) || rel->sym >= eo->symbols_by_ord_size) {
+		return false;
+	}
+	const RBinSymbol *sym = eo->symbols_by_ord[rel->sym];
+	if (!sym || sym->bits != 16 || !sym->type) {
+		return false;
+	}
+	return !strcmp (sym->type, R_BIN_TYPE_FUNC_STR) || !strcmp (sym->type, R_BIN_TYPE_LOPROC_STR);
+}
+
 static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 bias, ut64 L, ut64 toc) {
 	ut64 V = 0;
 	ut64 A = rel->addend;
@@ -1155,6 +1167,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		ut32 insn = r_read_ble32 (buf, bo->endian);
 		ut32 hi = r_read_ble16 (buf, bo->endian);
 		ut32 lo = r_read_ble16 (buf + 2, bo->endian);
+		const ut32 T = arm_reloc_thumb_bit (bo, rel, L);
 		if (rel->mode == DT_REL) {
 			switch (rel->type) {
 			case R_ARM_CALL:
@@ -1214,16 +1227,23 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			r_write_ble32 (buf, V, bo->endian);
 			break;
 		case R_ARM_ABS32:
-			V = S + addend;
+		case R_ARM_TARGET1:
+		case R_ARM_GLOB_DAT:
+			// symbol-less rel word: S is 0, the word is the value
+			if (!rel->sym && rel->mode == DT_REL) {
+				r_write_ble32 (buf, insn, bo->endian);
+				break;
+			}
+			V = (S + addend) | T;
 			r_write_ble32 (buf, V, bo->endian);
 			break;
 		case R_ARM_REL32:
-			V = S + addend - P;
+			V = ((S + addend) | T) - P;
 			r_write_ble32 (buf, V, bo->endian);
 			break;
 		case R_ARM_JUMP_SLOT:
 			// a lazy slot holds the plt0 address, not an addend
-			r_write_ble32 (buf, S, bo->endian);
+			r_write_ble32 (buf, S | T, bo->endian);
 			break;
 		case R_ARM_CALL:
 		case R_ARM_JUMP24:
@@ -1275,7 +1295,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		}
 		case R_ARM_MOVW_ABS_NC:
 		case R_ARM_MOVW_PREL_NC: {
-			ut64 val = S + addend;
+			ut64 val = (S + addend) | T;
 			if (rel->type == R_ARM_MOVW_PREL_NC) {
 				val -= P;
 			}
