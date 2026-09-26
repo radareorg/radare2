@@ -222,6 +222,13 @@ bool test_r_str_trim(void) {
 	//  2
 	mu_assert_streq (two, "hello", "three");
 	free (two);
+	// 3 - vertical tab and form feed are whitespace too
+	const char *four = r_str_trim_head_ro ("\v\f hello");
+	mu_assert_streq (four, "hello", "four");
+	char *five = strdup ("\t\r\n\v\fhello\v\f\r\n\t ");
+	r_str_trim (five);
+	mu_assert_streq (five, "hello", "five");
+	free (five);
 	mu_end;
 }
 

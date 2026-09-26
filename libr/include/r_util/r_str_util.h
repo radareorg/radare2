@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #define IS_NULLSTR(x) (!(x) || !*(x))
-#define IS_WHITECHAR(x) ((x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r')
+#define IS_WHITECHAR(x) ((x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\v' || (x) == '\f' || (x) == '\r')
 #define IS_SEPARATOR(x) ((x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || (x) == ' '|| \
 		(x) == ',' || (x) == ';' || (x) == ':' || (x) == '[' || (x) == ']' || \
 		(x) == '(' || (x) == ')' || (x) == '{' || (x) == '}')
