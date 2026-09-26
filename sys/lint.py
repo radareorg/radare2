@@ -591,7 +591,7 @@ def cxx_compat_lists(cplusplus):
 	guarded = sorted(name for name in cplusplus if not cxx_excluded(name))
 	headers = []
 	for top in sorted(os.listdir(incdir)):
-		if top.startswith("."):
+		if top.startswith(".") or top == "sdb":
 			continue
 		entries = [top]
 		fulltop = os.path.join(incdir, top)
