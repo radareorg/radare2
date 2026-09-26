@@ -121,6 +121,6 @@ extern struct io_r2k_linux r2k_struct;
 
 int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t address, ut8 *buf, int len);
 int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address, const ut8 *buf, int len);
-int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf);
+char* run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf);
 
 #endif
