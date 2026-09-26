@@ -271,7 +271,7 @@ int ReadMemory(RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t address
 		data.pid = pid;
 		data.addr = address;
 		data.len = len;
-		data.buff = (ut8 *) calloc (len + 1, 1);
+		data.buff = (ut8 *) calloc (len, 1);
 		if (!data.buff) {
 			return -1;
 		}
@@ -346,7 +346,7 @@ int WriteMemory(RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address,
 		data.pid = pid;
 		data.addr = address;
 		data.len = len;
-		data.buff = (ut8 *) calloc (len + 1, 1);
+		data.buff = (ut8 *) calloc (len, 1);
 		data.wp = r2k_struct.wp;
 
 		if (!data.buff) {
@@ -615,11 +615,12 @@ static void run_command(RIO *io, RIODesc *iodesc, RStrBuf *sb, const char *cmd, 
 				return;
 			}
 			int count = hex? r_hex_str2bin (args, data): r_str_unescape ((char *)data);
-			if (count > 0) {
+			bool valid = count > 0 && (size_t)count - 1 <= SIZE_MAX - addr;
+			if (valid) {
 				WriteMemory (io, iodesc, request, pid, addr, data, count);
 			}
 			free (data);
-			if (count <= 0) {
+			if (!valid) {
 				goto invalid;
 			}
 		} else {
