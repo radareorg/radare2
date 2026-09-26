@@ -806,7 +806,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		free (dbhomepath);
 		return;
 	}
-	sdb_reset (cc);
+	r_anal_cc_reset (core->anal);
 	set_default_cc (core);
 	R_FREE (cc->path);
 	if (r_file_exists (dbhomepath)) {

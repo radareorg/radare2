@@ -794,7 +794,10 @@ R_API bool r_anal_cc_once(RAnal *anal) {
 }
 
 R_API void r_anal_cc_reset(RAnal *anal) {
+	R_RETURN_IF_FAIL (anal);
 	R_CRITICAL_ENTER (anal);
+	// sdb_reset swaps the table without calling the hooks
+	R_ANAL_PRIV (anal)->cc_generation++;
 	sdb_reset (DB);
 	R_CRITICAL_LEAVE (anal);
 }

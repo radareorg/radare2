@@ -348,3 +348,64 @@ EXPECT=<<EOF
 arg long ninth @ r1+0xb0
 EOF
 RUN
+
+NAME=register arguments follow the convention of each function and its redefinition
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 89f8c3 @ 0
+wx 89c8c3 @ 0x10
+af @ 0
+af @ 0x10
+afc ms @ 0x10
+afva @ 0x10
+afva @ 0
+afv @ 0
+afv @ 0x10
+?e --
+tcc rax foo (rcx, rdx)
+afc foo @ 0
+afv-* @ 0
+afva @ 0
+afv @ 0
+?e --
+tcc rax foo (rdi, rdx)
+afv-* @ 0
+afva @ 0
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+arg int64_t arg1 @ rcx
+--
+--
+arg int64_t arg1 @ rdi
+EOF
+RUN
+
+NAME=register arguments follow a convention written straight to the cc db
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 89f8c3
+af
+afva
+afv
+?e --
+k anal/cc/cc.amd64.arg0=r10
+afv-*
+afva
+afv
+?e --
+k anal/cc/cc.amd64.arg0=rdi
+afv-*
+afva
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+--
+--
+arg int64_t arg1 @ rdi
+EOF
+RUN
