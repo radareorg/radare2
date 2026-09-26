@@ -631,6 +631,7 @@ static void run_command(RIO *io, RIODesc *iodesc, RStrBuf *sb, const char *cmd, 
 			int count = ReadMemory (io, iodesc, request, pid, addr, data, len);
 			if (count > 0) {
 				RPrint *print = r_print_new ();
+				print->flags &= ~R_PRINT_FLAGS_COLOR;
 				r_print_hexdump_strbuf (print, sb, addr, data, count, 16, 1, 1);
 				r_print_free (print);
 			}
