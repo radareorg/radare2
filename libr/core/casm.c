@@ -189,6 +189,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	r_cons_break_push (core->cons, NULL, NULL);
 	if (!tokcount) {
 		R_LOG_ERROR ("Too many instructions in search pattern (maximum %d)", (int)R_ARRAY_SIZE (tokens) - 1);
+		r_list_free (hits);
+		hits = NULL;
 		goto beach;
 	}
 	if (regexp) {
@@ -199,6 +201,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			regexes[i] = r_regex_new (tokens[i], "es");
 			if (!regexes[i]) {
 				R_LOG_ERROR ("Invalid regexp: %s", tokens[i]);
+				r_list_free (hits);
+				hits = NULL;
 				goto beach;
 			}
 		}

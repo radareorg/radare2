@@ -362,10 +362,12 @@ ARGS=-a x86 -b 64
 CMDS=<<EOF
 b 1024
 wox 90
-/ad/j "$(1023?en 'nop;')ret"
+/ad/j "$(1023?en 'nop;')ret" || ?e pattern rejected
+q
 EOF
 EXPECT=<<EOF
 []
+pattern rejected
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Too many instructions in search pattern (maximum 1023)
@@ -408,6 +410,39 @@ EXPECT=<<EOF
 [{"addr":0,"len":4,"code":"mov rax, qword [rax]; ret"}]
 EOF
 EXPECT_ERR=
+RUN
+
+NAME=/ad/ errors fail shell conditionals and stop at the first map
+FILE=malloc://1
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90
+om 3 0x1000 1 0 rwx map2
+e search.in=io.maps
+/ad/j "(" && ?e unexpected success
+/ad/j "(" || ?e invalid regex
+/ad/jq nop || ?e invalid modifiers
+/ad/j || ?e missing pattern
+/ad/j "" || ?e empty pattern
+/ad/j "ret" && ?e no hits is success
+EOF
+EXPECT=<<EOF
+[]
+[]
+invalid regex
+invalid modifiers
+missing pattern
+empty pattern
+[]
+no hits is success
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid regexp: (
+ERROR: Invalid regexp: (
+ERROR: Invalid `q` subcommand, try `/ad?`
+ERROR: Missing disassembly search pattern
+ERROR: Missing disassembly search pattern
+EOF
 RUN
 
 NAME=/ad glob search
