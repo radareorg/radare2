@@ -83,15 +83,6 @@ static int asm_search_split_tokens(char *str, char **tokens, int count) {
 	return n;
 }
 
-static int asm_search_retry_idx(bool bytewise, ut64 first, ut64 next, ut64 at, size_t bs, int fallback) {
-	ut64 addr = bytewise? first + 1: next;
-	if (addr >= at && addr - at < bs) {
-		return (int)(addr - at);
-	}
-	return fallback;
-}
-
-// TODO: add support for byte-per-byte opcode search
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
 	ut64 at, toff = core->addr;
 	const int align = core->search->align;
@@ -99,7 +90,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	RRegex *regexes[1024] = {0};
 	char *code = NULL, *ptr;
 	char *opst = NULL;
-	int i, idx, len = 0;
+	int i, len = 0;
 	int tokcount, matchcount = 0, count = 0;
 	int matches = 0;
 	const int addrbytes = core->io->addrbytes;
@@ -176,8 +167,9 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			}
 		}
 	}
-	int next_block_idx = 0;
-	for (at = from; at < to; at += bs) {
+	ut64 addr = from;
+	while (addr < to) {
+		at = addr;
 		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
@@ -191,13 +183,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			R_LOG_ERROR ("Reading at 0x%08"PFMT64x, at);
 			break;
 		}
-		idx = bytewise? 0: next_block_idx;
-		next_block_idx = 0;
-		while (addrbytes * (idx + 1) <= bs) {
-			ut64 addr = at + idx;
-			if (addr >= to) {
-				break;
-			}
+		while (addr >= at && addr - at < bs / addrbytes && addr < to) {
+			int idx = addr - at;
 			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
@@ -207,7 +194,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				ut64 len = R_MIN (15, bs - idx);
 				if (r_anal_op (core->anal, &analop, addr, buf + idx, len,
 						R_ARCH_OP_MASK_BASIC) < 1) {
-					idx += bytewise? 1: minopsz;
+					addr += bytewise? 1: minopsz;
 					continue;
 				}
 				const int opsz = R_MAX (minopsz, analop.size);
@@ -242,18 +229,18 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					}
 					hit->code = strdup (analop.mnemonic);
 					r_anal_op_fini (&analop);
-					idx += bytewise? 1: opsz;
+					addr += bytewise? 1: opsz;
 					matchcount = 0;
 					r_list_append (hits, hit);
 					continue;
 				}
 				r_anal_op_fini (&analop);
-				idx += bytewise? 1: opsz;
+				addr += bytewise? 1: opsz;
 				continue;
 			} else if (mode == 'e') {
 				RAnalOp analop = {0};
 				if (r_anal_op (core->anal, &analop, addr, buf + idx, 15, R_ARCH_OP_MASK_ESIL) < 1) {
-					idx += bytewise? 1: minopsz;
+					addr += bytewise? 1: minopsz;
 					continue;
 				}
 				// opsz = analop.size;
@@ -265,17 +252,12 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					      core->rasm, &op,
 					      buf + addrbytes * idx,
 					      request_size - addrbytes * idx))) {
-					idx = matchcount
-						? asm_search_retry_idx (bytewise, first_match_addr, next_match_addr, at, bs, idx + 1)
-						: idx + 1;
+					addr = matchcount? (bytewise? first_match_addr + 1: next_match_addr): addr + 1;
 					R_LOG_ERROR ("Failed to disassemble instruction at 0x%08"PFMT64x, op.addr);
 					matchcount = 0;
 					R_FREE (code);
 					r_anal_op_fini (&op);
 					continue;
-				}
-				if (!bytewise && idx + len > bs) {
-					next_block_idx = idx + len - bs;
 				}
 				if (op.mnemonic) {
 					//opsz = op.size;
@@ -336,7 +318,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					r_list_append (hits, hit);
 					R_FREE (code);
 					matchcount = 0;
-					idx = asm_search_retry_idx (bytewise, first_match_addr, next_match_addr, at, bs, idx + len);
+					addr = bytewise? first_match_addr + 1: next_match_addr;
 					if (maxhits) {
 						count++;
 						if (count >= maxhits) {
@@ -346,16 +328,15 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					}
 				} else {
 					matchcount++;
-					idx += len;
+					addr += len;
 				}
 			} else {
 				if (matchcount) {
-					int fallback = idx + (bytewise? 1: R_MAX (1, len));
-					idx = asm_search_retry_idx (bytewise, first_match_addr, next_match_addr, at, bs, fallback);
+					addr = bytewise? first_match_addr + 1: next_match_addr;
 				} else if (bytewise) {
-					idx++;
+					addr++;
 				} else {
-					idx += R_MAX (1, len);
+					addr += R_MAX (1, len);
 				}
 				R_FREE (code);
 				matchcount = 0;
