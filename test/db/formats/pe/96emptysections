@@ -15,7 +15,6 @@ EOF
 RUN
 
 NAME=PE: corkami 96emptysections.exe - entrypoint pif
-BROKEN=1
 FILE=bins/pe/96emptysections.exe
 CMDS=<<EOF
 aaa
@@ -23,10 +22,11 @@ pif @ entry0
 EOF
 EXPECT=<<EOF
 push 0x402028
-call sub.msvcrt.dll_printf_18
+call sub.msvcrt.dll_printf
 add esp, 4
 push 0
-call sub.kernel32.dll_ExitProcess_1e
+call sub.kernel32.dll_ExitProcess
+int3
 EOF
 RUN
 
