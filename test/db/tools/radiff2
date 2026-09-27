@@ -119,3 +119,29 @@ EXPECT_ERR=<<EOF
 ERROR: Cannot open empty path
 EOF
 RUN
+
+NAME=radiff2 compares saved project functions and virtual maps without analysis
+FILE=hex://b801000000c3b802000000c3
+ARGS=-a x86 -b 64 -m 0x1000
+CMDS=<<END
+mkdir .tmp
+af+ 0x1000 main
+afb+ 0x1000 0x1000 6
+af+ 0x1006 helper
+afb+ 0x1006 0x1006 6
+prj save .tmp/radiff-project-a.prj
+!r2 -Nq -a x86 -b 64 -m 0x2000 -c 'af+ 0x2000 main;afb+ 0x2000 0x2000 6;af+ 0x2006 helper;afb+ 0x2006 0x2006 6;prj save .tmp/radiff-project-b.prj' hex://b803000000c3b802000000c3
+!radiff2 -C .tmp/radiff-project-a.prj .tmp/radiff-project-a.prj
+!radiff2 -C .tmp/radiff-project-a.prj .tmp/radiff-project-b.prj
+!!radiff2 -g main -m j .tmp/radiff-project-a.prj .tmp/radiff-project-a.prj~{0.name}
+rm .tmp/radiff-project-a.prj
+rm .tmp/radiff-project-b.prj
+END
+EXPECT=<<END
+  main 6 0x1000 |   MATCH  (1.000000) | 0x1000  6 main
+helper 6 0x1006 |   MATCH  (1.000000) | 0x1006  6 helper
+  main 6 0x1000 |   MATCH  (0.833333) | 0x2000  6 main
+helper 6 0x1006 |   MATCH  (1.000000) | 0x2006  6 helper
+main
+END
+RUN

@@ -114,12 +114,15 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 			r_core_free (c);
 			return NULL;
 		}
-		(void)r_core_bin_load (c, NULL, baddr);
+		if (!r_core_bin_load (c, NULL, baddr)) {
+			r_core_free (c);
+			return NULL;
+		}
 		(void)r_core_bin_update_arch_bits (c);
 
 		// force PA mode when working with raw bins
 		RVecRBinSection *sections = r_bin_get_sections_vec (c->bin);
-		if (!sections || RVecRBinSection_empty (sections)) {
+		if (r_bin_cur (c->bin) && (!sections || RVecRBinSection_empty (sections))) {
 			r_config_set_i (c->config, "io.va", false);
 		}
 		if (ro->analysis_level) {

@@ -19,6 +19,10 @@ A utility for diffing binary code and data within the Radare2 suite, supporting 
 .Pp
 It supports a wide range of formats and features, including architecture and
 bits specification, delta diffing, graph diffing, and more.
+.Pp
+Code and graph comparisons also accept binary projects saved with 'prj save'.
+Use 'radiff2 -C before.prj after.prj' to compare saved analysis without -A.
+Byte comparisons still compare the project files themselves.
 .Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl a Ar arch
@@ -117,6 +121,8 @@ Interactive ASCII art.
 $ radiff2 bin1 bin2
 .It Using graph diffing to compare functions by name
 $ radiff2 -g main bin1 bin2
+.It Comparing saved project analysis without reanalyzing
+$ radiff2 -C before.prj after.prj
 .It Counting the number of changes between two binaries
 $ radiff2 -n bin1 bin2
 .It Outputting the diff in a unified format
