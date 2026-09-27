@@ -1159,3 +1159,52 @@ queries etc.
 
 EOF
 RUN
+
+NAME=mount searches traverse virtual roots and respect directory scope
+FILE=-
+CMDS=<<EOF2
+m /one tmp
+m /two tmp
+md+ /one/dir
+mw /one/dir/a one
+mw /two/b two
+mfn / a
+mfo / 0
+mi 0
+mfo /one/dir 0
+mfn /two *
+m-/one
+mfo / 0
+EOF2
+EXPECT=<<EOF2
+/one/dir/a
+/two/b
+/one/dir/a
+/two/b
+/one/dir/a
+/two/b
+/one/dir/a
+/two/b
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount filesystem at slash is searched once
+FILE=-
+CMDS=<<EOF2
+m / tmp
+mw /a hello
+md+ /dir
+mw /dir/b world
+mfn / *
+mfo / 0
+EOF2
+EXPECT=<<EOF2
+/a
+/dir/b
+/a
+/dir
+/dir/b
+EOF2
+EXPECT_ERR=
+RUN

@@ -513,85 +513,70 @@ R_API bool r_fs_dir_dump(RFS *fs, const char *path, const char *name) {
 	return true;
 }
 
-static void r_fs_find_off_aux(RFS *fs, const char *name, ut64 offset, RList *list) {
+static void fs_find(RFS *fs, const char *path, const char *glob, ut64 offset, RList *list) {
 	RListIter *iter;
-	RFSFile *item, *file;
-	RList *dirs = r_fs_dir (fs, name);
+	RFSFile *item;
+	RList *dirs = r_fs_dir (fs, path);
 	r_list_foreach (dirs, iter, item) {
 		if (!strcmp (item->name, ".") || !strcmp (item->name, "..")) {
 			continue;
 		}
-
-		char *found = r_str_newf ("%s/%s", name, item->name);
+		char *found = r_str_newf ("%s/%s", !strcmp (path, "/")? "": path, item->name);
 		if (!found) {
 			break;
 		}
-
-		if (item->type == R_FS_FILE_TYPE_DIRECTORY) {
-			r_fs_find_off_aux (fs, found, offset, list);
-		} else {
-			file = r_fs_open (fs, found, false);
+		bool matches = glob && r_str_glob (item->name, glob);
+		if (!glob && item->type != R_FS_FILE_TYPE_DIRECTORY) {
+			RFSFile *file = r_fs_open (fs, found, false);
 			if (file) {
-				if (file->size > 0) {
-					int rlen = file->size > ST32_MAX ? ST32_MAX : (int)file->size;
-					r_fs_read (fs, file, 0, rlen);
-				}
-				if (file->off == offset) {
-					r_list_append (list, found);
-					found = NULL;
-				}
+				matches = file->off == offset;
 				r_fs_close (fs, file);
+				r_fs_file_free (file);
 			}
 		}
-		free (found);
-	}
-}
-
-R_API RList *r_fs_find_off(RFS *fs, const char *name, ut64 off) {
-	RList *list = r_list_new ();
-	if (!list) {
-		return NULL;
-	}
-	list->free = free;
-	r_fs_find_off_aux (fs, name, off, list);
-	return list;
-}
-
-static void r_fs_find_name_aux(RFS *fs, const char *name, const char *glob, RList *list) {
-	RListIter *iter;
-	RFSFile *item;
-	char *found;
-
-	RList *dirs = r_fs_dir (fs, name);
-	r_list_foreach (dirs, iter, item) {
-		if (r_str_glob (item->name, glob)) {
-			found = r_str_newf ("%s/%s", name, item->name);
-			if (!found) {
-				break;
-			}
+		if (matches) {
 			r_list_append (list, found);
 		}
-		if (!strcmp (item->name, ".") || !strcmp (item->name, "..")) {
-			continue;
-		}
 		if (item->type == R_FS_FILE_TYPE_DIRECTORY) {
-			found = r_str_newf ("%s/%s", name, item->name);
-			if (!found) {
-				break;
-			}
-			r_fs_find_name_aux (fs, found, glob, list);
+			fs_find (fs, found, glob, offset, list);
+		}
+		if (!matches) {
 			free (found);
 		}
 	}
+	r_list_free (dirs);
+}
+
+static RList *fs_find_paths(RFS *fs, const char *name, const char *glob, ut64 offset) {
+	char *path = strdup (name);
+	if (!path) {
+		return NULL;
+	}
+	r_str_trim_path (path);
+	RList *list = r_list_newf (free);
+	if (list) {
+		if (!*path || !strcmp (path, "/")) {
+			RListIter *iter;
+			RFSRoot *root;
+			r_list_foreach (fs->roots, iter, root) {
+				fs_find (fs, root->path, glob, offset, list);
+			}
+		} else {
+			fs_find (fs, path, glob, offset, list);
+		}
+	}
+	free (path);
+	return list;
+}
+
+R_API RList *r_fs_find_off(RFS *fs, const char *name, ut64 off) {
+	R_RETURN_VAL_IF_FAIL (fs && name, NULL);
+	return fs_find_paths (fs, name, NULL, off);
 }
 
 R_API RList *r_fs_find_name(RFS *fs, const char *name, const char *glob) {
 	R_RETURN_VAL_IF_FAIL (fs && name && glob, NULL);
-	RList *list = r_list_newf (free);
-	if (list) {
-		r_fs_find_name_aux (fs, name, glob, list);
-	}
-	return list;
+	return fs_find_paths (fs, name, glob, 0);
 }
 
 R_API RFSFile *r_fs_slurp(RFS *fs, const char *path) {
