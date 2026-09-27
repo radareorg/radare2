@@ -730,6 +730,7 @@ R_API const char *r_debug_reason_tostring(int type) {
 	case R_DEBUG_REASON_SIGNAL: return "signal";
 	case R_DEBUG_REASON_STEP: return "step";
 	case R_DEBUG_REASON_STOPPED: return "stopped";
+	case R_DEBUG_REASON_TERMINATED: return "terminated";
 	case R_DEBUG_REASON_SWI: return "software-interrupt";
 	case R_DEBUG_REASON_TRACEPOINT: return "tracepoint";
 	case R_DEBUG_REASON_TRAP: return "trap";

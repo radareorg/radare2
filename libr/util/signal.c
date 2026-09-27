@@ -48,7 +48,7 @@ static struct {
 
 R_API int r_signal_from_string(const char *e) {
 	int i;
-	for (i = 1; signals[i].name; i++) {
+	for (i = 0; signals[i].name; i++) {
 		const char *str = signals[i].name;
 		if (!strcmp (e, str)) {
 			return signals[i].code;
@@ -59,7 +59,7 @@ R_API int r_signal_from_string(const char *e) {
 
 R_API const char* r_signal_tostring(int code) {
 	int i;
-	for (i = 1; signals[i].name; i++) {
+	for (i = 0; signals[i].name; i++) {
 		if (signals[i].code == code) {
 			return signals[i].name;
 		}
@@ -88,6 +88,7 @@ R_API const char *r_signal_to_human(int signum) {
 	case SIGFPE: return "Floating Point Exception";
 	case SIGHUP: return "Hangup";
 	case SIGILL: return "Illegal instruction";
+	case SIGINT: return "Interrupt";
 	case SIGABRT: return "Abort";
 	case SIGKILL: return "Killed";
 	case SIGPROF: return "Profiling Timer Expired";
