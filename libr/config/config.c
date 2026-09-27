@@ -495,6 +495,7 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 				}
 				ht_pp_insert (cfg->ht, node->name, node);
 				r_list_append (cfg->nodes, node);
+				cfg->sorted = false;
 			} else {
 				R_LOG_ERROR ("unable to create a new RConfigNode");
 			}
@@ -572,6 +573,7 @@ R_API RConfigNode* r_config_set_b(RConfig *cfg, const char *name, bool b) {
 			ht_pp_insert (cfg->ht, node->name, node);
 			if (cfg->nodes) {
 				r_list_append (cfg->nodes, node);
+				cfg->sorted = false;
 			}
 		}
 	}
@@ -609,6 +611,7 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 			ht_pp_insert (cfg->ht, node->name, node);
 			if (cfg->nodes) {
 				r_list_append (cfg->nodes, node);
+				cfg->sorted = false;
 			}
 		} else {
 			R_LOG_ERROR ("Cannot create a new '%s' key because config is locked", name);
@@ -713,7 +716,11 @@ static int cmp(RConfigNode *a, RConfigNode *b) {
 }
 
 R_API void r_config_lock(RConfig *cfg, bool lock) {
-	r_list_sort (cfg->nodes, (RListComparator) cmp);
+	// every plugin init locks the config, sorting the thousand nodes each time
+	if (!cfg->sorted) {
+		r_list_sort (cfg->nodes, (RListComparator) cmp);
+		cfg->sorted = true;
+	}
 	cfg->lock = lock;
 }
 
