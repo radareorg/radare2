@@ -42,8 +42,11 @@ jobs:
     - name: Configure, build and install
       env:
           CC: tcc
+      # tcc links the shared libs with every symbol exported and bound at load
+      # time, so a tcc r2 spends half its startup on relocations. The suite
+      # spawns r2 eight thousand times, link the tools against libr.a instead.
       run: |
-          ./configure --prefix=/usr --with-compiler=tcc
+          ./configure --prefix=/usr --with-compiler=tcc --with-libr
           make -j
           sudo make install
     - name: Run tests
