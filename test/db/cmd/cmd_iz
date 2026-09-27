@@ -1,6 +1,4 @@
-# XXX this test breaks other tests if fixed
 NAME=iz le32
-BROKEN=1
 FILE=-
 CMDS=<<EOF
 wx+6b00 0000 f500 0000 5500 0000 6401 0000
@@ -687,8 +685,8 @@ iz 2 1
 izj 2 1
 EOF
 EXPECT=<<EOF
-3343
-3343
+3342
+3342
 --
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------

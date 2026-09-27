@@ -361,7 +361,7 @@ static int string_scan_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_i
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
 				num_blocks = 0;
-				int *block_list = r_utf_block_list ((const ut8*)tmpstr, tmplen - 1,
+				int *block_list = r_utf_block_list ((const ut8*)tmpstr, tmplen,
 						str_type == R_STRING_TYPE_WIDE? &freq_list: NULL);
 				if (block_list) {
 					for (j = 0; block_list[j] != -1; j++) {
