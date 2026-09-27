@@ -1366,6 +1366,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	run_action ("size", R_BIN_REQ_SIZE, R_CORE_BIN_ACC_SIZE);
 	run_action ("versioninfo", R_BIN_REQ_VERSIONINFO, R_CORE_BIN_ACC_VERSIONINFO);
 	run_action ("signature", R_BIN_REQ_SIGNATURE, R_CORE_BIN_ACC_SIGNATURE);
+	run_action ("trycatch", R_BIN_REQ_TRYCATCH, R_CORE_BIN_ACC_TRYCATCH);
 	run_action ("types", R_BIN_REQ_TYPES, R_CORE_BIN_ACC_TYPES);
 	run_action ("hashes", R_BIN_REQ_HASHES, R_CORE_BIN_ACC_HASHES);
 	run_action ("sections mapping", R_BIN_REQ_SECTIONS_MAPPING, R_CORE_BIN_ACC_SECTIONS_MAPPING);
