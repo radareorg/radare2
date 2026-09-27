@@ -232,6 +232,65 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/ad/ quoted arguments and escaped separators agree
+FILE=malloc://8
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 618b4191219c46f9
+/ad/j "add .*, x27, 0x62, lsl 12;d38]"
+/ad/j 'add .*, x27, 0x62, lsl 12;d38]'
+"/ad/j add .*, x27, 0x62, lsl 12;d38]"
+'/ad/j add .*, x27, 0x62, lsl 12;d38]
+/ad/j add .*, x27, 0x62, lsl 12\;d38]
+EOF
+EXPECT=<<EOF
+[{"addr":0,"len":8,"code":"add x1, x27, 0x62, lsl 12; ldr x1, [x1, 0xd38]"}]
+[{"addr":0,"len":8,"code":"add x1, x27, 0x62, lsl 12; ldr x1, [x1, 0xd38]"}]
+[{"addr":0,"len":8,"code":"add x1, x27, 0x62, lsl 12; ldr x1, [x1, 0xd38]"}]
+[{"addr":0,"len":8,"code":"add x1, x27, 0x62, lsl 12; ldr x1, [x1, 0xd38]"}]
+[{"addr":0,"len":8,"code":"add x1, x27, 0x62, lsl 12; ldr x1, [x1, 0xd38]"}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=/ad/ quoted regex preserves escapes and shell metacharacters
+FILE=malloc://4
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488b00c3
+/ad/j "^mov rax, qword \[rax\]$;^(ret|nop)$"
+/ad/j '^mov rax, qword \[rax\]$;^(ret|nop)$'
+/ad/j "(nop|ret)"~{}
+/adj "mov;ret"
+EOF
+EXPECT=<<EOF
+[{"addr":0,"len":4,"code":"mov rax, qword [rax]; ret"}]
+[{"addr":0,"len":4,"code":"mov rax, qword [rax]; ret"}]
+[
+  {
+    "addr": 3,
+    "len": 1,
+    "code": "ret"
+  }
+]
+[{"addr":0,"len":4,"code":"mov rax, qword [rax]; ret"}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=/ad/ tab separates modifiers from the pattern
+FILE=malloc://2
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90c3
+/ad/j	"nop;ret"
+EOF
+EXPECT=<<EOF
+[{"addr":0,"len":2,"code":"nop; ret"}]
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=/ad glob search
 ARGS=-a arm -b64
 FILE=bins/mach0/ls-m1

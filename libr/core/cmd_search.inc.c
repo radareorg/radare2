@@ -67,13 +67,15 @@ static RCoreHelpMessage help_msg_slash_pattern = {
 };
 
 static RCoreHelpMessage help_msg_slash_ad = {
-	"Usage: /ad[/][a][j|q|*]", "[value]", "Backward search subcommands",
+	"Usage: /ad[/][a][j|q|*]", " [pattern]", "Search disassembled instructions",
 	"/ad", " rax", "search in plaintext disasm for matching instructions",
 	"/ad", " rax$", "search in plaintext disasm for instruction matchin given glob expression",
 	"/adj", " rax", "json output searching in disasm with plaintext",
 	"/adq", " rax", "quiet mode ideal for scripting",
-	"/ad/", " ins1;ins2", "search for regex instruction 'ins1' followed by regex 'ins2'",
+	"/ad/", " \"ins1;ins2\"", "search consecutive instructions with extended regexes",
 	"/ad/a", " instr", "search for every byte instruction that matches regexp 'instr'",
+	"/ad/", " \"nop;;ret\"", "empty expressions match any valid instruction",
+	"/ad/", " \"mov.*\\[rax\\]\"", "quote the pattern; preserve regex backslashes",
 	NULL
 };
 
@@ -3112,7 +3114,7 @@ static bool parse_ad_modifiers(RCore *core, const char *input, bool *regexp, boo
 		*regexp = true;
 		p++;
 	}
-	for (; *p && *p != ' '; p++) {
+	for (; *p && !isspace ((ut8)*p); p++) {
 		switch (*p) {
 		case 'a':
 			if (!*regexp || *every_byte) {
@@ -3182,6 +3184,15 @@ static void do_asm_search(RCore *core, RSearchParameters *param, const char *inp
 	if (mode == 'o') {
 		everyByte = true;
 	}
+	char *pattern = NULL;
+	if (mode == 0) {
+		pattern = r_str_trim_dup (end_cmd);
+		if (!pattern) {
+			return;
+		}
+		r_str_unquote (pattern);
+		end_cmd = pattern;
+	}
 
 	int maxhits = (int) r_config_get_i (core->config, "search.maxhits");
 	if (param->outmode == R_MODE_JSON) {
@@ -3220,6 +3231,7 @@ static void do_asm_search(RCore *core, RSearchParameters *param, const char *inp
 		pj_end (param->pj);
 	}
 	r_cons_break_pop (core->cons);
+	free (pattern);
 	// increment search index
 	r_config_set_i (core->config, "search.kwidx", ++core->search->n_kws);
 }
