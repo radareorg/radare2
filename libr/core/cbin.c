@@ -4042,6 +4042,7 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 		pj_a (pj);
 	}
 	R_VEC_FOREACH (trycatch, tc) {
+		const char *kind = trycatch_kind_name (tc->kind);
 		if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
 			pj_ki (pj, "index", idx);
@@ -4051,7 +4052,7 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 			pj_kn (pj, "handler", tc->handler);
 			pj_kn (pj, "filter", tc->filter);
 			if (tc->kind != R_BIN_TRYCATCH_UNSPECIFIED) {
-				pj_ks (pj, "kind", trycatch_kind_name (tc->kind));
+				pj_ks (pj, "kind", kind);
 				if (tc->kind != R_BIN_TRYCATCH_CLEANUP) {
 					pj_kN (pj, "typeFilter", tc->type_filter);
 				}
@@ -4064,7 +4065,6 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 			}
 			pj_end (pj);
 		} else if (IS_MODE_SET (mode)) {
-			const char *kind = trycatch_kind_name (tc->kind);
 			char *name = r_str_newf ("try.%d.%"PFMT64x".from", idx, tc->source);
 			r_flag_set (core->flags, name, tc->from, 1);
 			free (name);
@@ -4074,11 +4074,24 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 			name = r_str_newf ("try.%d.%"PFMT64x".%s", idx, tc->source, kind);
 			r_flag_set (core->flags, name, tc->handler, 1);
 			free (name);
-		} else {
-			const char *kind = trycatch_kind_name (tc->kind);
+		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf (core->cons, "f try.%d.%" PFMT64x ".from=0x%08" PFMT64x "\n", idx, tc->source, tc->from);
 			r_cons_printf (core->cons, "f try.%d.%" PFMT64x ".to=0x%08" PFMT64x "\n", idx, tc->source, tc->to);
 			r_cons_printf (core->cons, "f try.%d.%" PFMT64x ".%s=0x%08" PFMT64x "\n", idx, tc->source, kind, tc->handler);
+		} else if (IS_MODE_SIMPLE (mode) || IS_MODE_SIMPLEST (mode)) {
+			r_cons_printf (core->cons, "0x%08" PFMT64x " 0x%08" PFMT64x " 0x%08" PFMT64x "\n", tc->from, tc->to, tc->handler);
+		} else {
+			r_cons_printf (core->cons, "%d 0x%08" PFMT64x "-0x%08" PFMT64x " %s", idx, tc->from, tc->to, kind);
+			if (tc->type) {
+				r_cons_printf (core->cons, " (%s)", tc->type);
+			} else if (tc->catch_all) {
+				r_cons_print (core->cons, " (...)");
+			}
+			r_cons_printf (core->cons, " -> 0x%08" PFMT64x " (source 0x%08" PFMT64x, tc->handler, tc->source);
+			if (tc->filter) {
+				r_cons_printf (core->cons, ", filter 0x%08" PFMT64x, tc->filter);
+			}
+			r_cons_print (core->cons, ")\n");
 		}
 		idx++;
 	}

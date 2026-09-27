@@ -4,7 +4,7 @@ FILE=bins/dotnet/HelloWorld.dll
 CMDS=<<EOF
 iwj~{}
 ?e --
-iw
+iw*
 EOF
 EXPECT=<<EOF
 [
@@ -127,10 +127,10 @@ RUN
 NAME=dotnet: mitigation_nothing.exe - IL exception clause kinds
 FILE=bins/pe/mitigation_nothing.exe
 CMDS=<<EOF
-iw~from~?
-iw~catch=~?
-iw~filter=~?
-iw~cleanup=~?
+iw*~from~?
+iw*~catch=~?
+iw*~filter=~?
+iw*~cleanup=~?
 EOF
 EXPECT=<<EOF
 22
@@ -144,10 +144,10 @@ RUN
 NAME=dotnet: mscorlib.dll - IL exception clause kinds
 FILE=bins/pe/mscorlib.dll
 CMDS=<<EOF
-iw~from~?
-iw~catch=~?
-iw~filter=~?
-iw~cleanup=~?
+iw*~from~?
+iw*~catch=~?
+iw*~filter=~?
+iw*~cleanup=~?
 ?e --
 iwj~{[3]}
 iwj~{[18]}

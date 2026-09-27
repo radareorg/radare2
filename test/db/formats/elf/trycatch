@@ -8,11 +8,25 @@ RUN
 
 NAME=rabin2 lists exception regions
 FILE=bins/elf/ClassCpp.out
-CMDS=!!rabin2 -w ${R2_FILE}~try.0.
+CMDS=!!rabin2 -wr ${R2_FILE}~try.0.
 EXPECT=<<EOF
 f try.0.1269.from=0x000012aa
 f try.0.1269.to=0x00001308
 f try.0.1269.cleanup=0x0000132c
+EOF
+RUN
+
+NAME=exception regions readable and quiet output
+FILE=bins/elf/ClassCpp.out
+CMDS=<<EOF
+iw~0x000012aa
+iwq~0x000012aa
+!!rabin2 -w ${R2_FILE}~0x000012aa
+EOF
+EXPECT=<<EOF
+0 0x000012aa-0x00001308 cleanup -> 0x0000132c (source 0x00001269)
+0x000012aa 0x00001308 0x0000132c
+0 0x000012aa-0x00001308 cleanup -> 0x0000132c (source 0x00001269)
 EOF
 RUN
 
@@ -29,5 +43,13 @@ FILE=bins/elf/0pack
 CMDS=iwj~{[0]}
 EXPECT=<<EOF
 {"index":0,"source":4684212,"from":4684240,"to":4684243,"handler":4684248,"filter":0,"kind":"catch","typeFilter":1,"type":"std::exception"}
+EOF
+RUN
+
+NAME=ELF readable typed catch
+FILE=bins/elf/0pack
+CMDS=iw~^0 0x004779d0
+EXPECT=<<EOF
+0 0x004779d0-0x004779d3 catch (std::exception) -> 0x004779d8 (source 0x004779b4)
 EOF
 RUN

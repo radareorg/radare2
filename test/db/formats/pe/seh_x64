@@ -13,7 +13,7 @@ iwj~{[0]}
 ?e --
 iwj~{[2]}
 ?e --
-iw
+iw*
 EOF
 EXPECT=<<EOF
 {"index":0,"source":5368713232,"from":5368713292,"to":5368713318,"handler":5368713318,"filter":0,"kind":"catch","typeFilter":0}
@@ -41,5 +41,13 @@ f try.5.14000132c.filter=0x14000145a
 f try.6.1400015d0.from=0x1400015d7
 f try.6.1400015d0.to=0x140001661
 f try.6.1400015d0.filter=0x140001661
+EOF
+RUN
+
+NAME=PE: seh_x64.exe - readable exception filter
+FILE=bins/pe/seh_x64.exe
+CMDS=iw~0x140001084
+EXPECT=<<EOF
+2 0x140001084-0x140001094 filter -> 0x140001094 (source 0x140001010, filter 0x140001d30)
 EOF
 RUN
