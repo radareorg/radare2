@@ -301,14 +301,14 @@ RUN
 
 NAME=Breakpoints in project file
 FILE=bins/elf/analysis/main
-BROKEN=1
 CMDS=<<EOF
 e prj.vc=false
 e dbg.bpinmaps = false
 e dir.projects = .tmp/
-db 0x1234567
+db 0x400410
 P+ breakpoints > /dev/null
-Pc breakpoints~?0x1234567
+PS* breakpoints~?db 0x00400410
+P- breakpoints > /dev/null
 EOF
 EXPECT=<<EOF
 1
