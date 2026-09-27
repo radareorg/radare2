@@ -229,3 +229,18 @@ EXPECT=<<EOF
 0x00001844      ldr x0, [var_clob_78h]            ; int64_t arg1
 EOF
 RUN
+
+NAME=aae keeps Thumb syscall addresses aligned after invalid and null instructions
+FILE=malloc://0x200
+ARGS=-a arm -b 16 -e asm.os=s110
+CMDS=<<EOF
+wx ffff00bf7cdf @ 0x100
+aae 6 @ 0x100
+f~syscall
+pi 1 @@ syscall.*
+EOF
+EXPECT=<<EOF
+0x00000104 1 syscall.sd_ble_gap_device_name_set
+svc 0x7c
+EOF
+RUN
