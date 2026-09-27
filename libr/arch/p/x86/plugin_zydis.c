@@ -82,6 +82,7 @@ static bool zydis_configure(PluginData *pd, RArchConfig *cfg) {
 	ZydisFormatterSetProperty (&pd->formatter, ZYDIS_FORMATTER_PROP_FORCE_SIZE, ZYAN_TRUE);
 	ZydisFormatterSetProperty (&pd->formatter, ZYDIS_FORMATTER_PROP_HEX_UPPERCASE, ZYAN_FALSE);
 	ZydisFormatterSetProperty (&pd->formatter, ZYDIS_FORMATTER_PROP_ADDR_PADDING_ABSOLUTE, ZYDIS_PADDING_DISABLED);
+	ZydisFormatterSetProperty (&pd->formatter, ZYDIS_FORMATTER_PROP_DISP_PADDING, ZYDIS_PADDING_DISABLED);
 	ZydisFormatterSetProperty (&pd->formatter, ZYDIS_FORMATTER_PROP_FORCE_RELATIVE_RIPREL, ZYAN_TRUE);
 	return true;
 }

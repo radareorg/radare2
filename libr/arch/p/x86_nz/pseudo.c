@@ -621,7 +621,8 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 			// Try with no spaces
 			snprintf (oldstr, sizeof (oldstr) - 1, "[%s%c0x%x]", reg, sign, (int)delta);
 			if (strstr (tstr, oldstr)) {
-				tstr = r_str_replace (tstr, oldstr, newstr, 1);
+				r_strf_var (replacement, sizeof (newstr) + 2, "[%s]", newstr);
+				tstr = r_str_replace (tstr, oldstr, replacement, 1);
 				break;
 			}
 		}
