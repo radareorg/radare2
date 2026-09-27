@@ -292,3 +292,58 @@ dump-failed
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=host commands return consistent status
+FILE=-
+CMDS=<<EOF2
+e log.level=0
+mkdir r2r-mount-host-status && echo mkdir-ok
+?v $?
+echo data > r2r-mount-host-status/src
+mv r2r-mount-host-status/src r2r-mount-host-status/dst && echo move-ok
+?v $?
+mv r2r-mount-host-status/dst || echo move-usage
+?v $?
+mkdir r2r-mount-host-status/dst || echo mkdir-failed
+?v $?
+mkdir -p || echo mkdir-usage
+?v $?
+rm r2r-mount-host-status/dst
+rm r2r-mount-host-status
+EOF2
+EXPECT=<<EOF2
+mkdir-ok
+0x0
+move-ok
+0x0
+move-usage
+0x1
+mkdir-failed
+0x1
+mkdir-usage
+0x1
+EOF2
+RUN
+
+NAME=mktemp errors update status and take the failure branch
+FILE=-
+REQUIRE=unix
+CMDS=<<EOF2
+e log.level=0
+mktemp -d || echo missing-prefix
+?v $?
+mktemp "" || echo empty-prefix
+?v $?
+mktemp r2r-mount-missing-parent/file || echo create-failed
+?v $?
+EOF2
+EXPECT=<<EOF2
+missing-prefix
+0x1
+empty-prefix
+0x1
+create-failed
+0x1
+EOF2
+EXPECT_ERR=
+RUN
