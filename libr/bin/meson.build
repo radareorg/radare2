@@ -60,6 +60,7 @@ r_bin_sources = [
   'p/bin_pebble.c',
   'p/bin_pef.c',
   'p/bin_prg.c',
+  'p/bin_prj.c',
   'p/bin_psxexe.c',
   'p/bin_qnx.c',
   'p/bin_rel.c',

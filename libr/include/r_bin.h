@@ -1226,6 +1226,7 @@ extern RBinPlugin r_bin_plugin_pe64;
 extern RBinPlugin r_bin_plugin_pebble;
 extern RBinPlugin r_bin_plugin_pef;
 extern RBinPlugin r_bin_plugin_prg;
+extern RBinPlugin r_bin_plugin_prj;
 extern RBinPlugin r_bin_plugin_psxexe;
 extern RBinPlugin r_bin_plugin_pyc;
 extern RBinPlugin r_bin_plugin_qnx;
