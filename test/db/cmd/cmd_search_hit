@@ -326,18 +326,20 @@ RUN
 
 NAME=from/to /V
 FILE=-
-BROKEN=1
 CMDS=<<EOF
 wx 05
-e cmd.hit = pi 1
+e cmd.hit = ?e hit-command-ran
 e search.in =raw
 e search.from = 0x00000000
 e search.to = 0x00000004
 /V1 1 5
 EOF
 EXPECT=<<EOF
-0x00000000 hit0_0 05
-add dword [rax], eax
+0x0: 0x5
+hit-command-ran
+EOF
+EXPECT_ERR=<<EOF
+INFO: hits: 1
 EOF
 RUN
 
