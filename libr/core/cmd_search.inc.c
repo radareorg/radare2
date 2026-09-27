@@ -115,7 +115,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/p", "[?][p] patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
 	"/s", "[*] [threshold]", "find sections by grouping blocks with similar entropy",
-	"/r", "[?][aercwx] [addr ..]", "search for code references",
+	"/r", "[?][aerscwx] [addr ..]", "search for code references",
 	// moved into /as "/s", "", "search for all syscalls in a region (EXPERIMENTAL)",
 	"/v", "[1248] value", "look for an `cfg.bigendian` 32bit value",
 	"/V", "[1248] min max", "look for an `cfg.bigendian` 32bit value in range",
@@ -210,11 +210,12 @@ static RCoreHelpMessage help_msg_slash_k = {
 };
 
 static RCoreHelpMessage help_msg_slash_r = {
-	"Usage:", "/r[acerwx] [address]", " search references to one or more addresses",
+	"Usage:", "/r[acerswx] [address]", " search references to one or more addresses",
 	"/r", " [addr ..]", "search all references or limit them to the given addresses",
 	"/ra", " [addr ..]", "search all references or limit them to the given addresses",
 	"/rc", " [addr ..]", "search call references or limit them to the given addresses",
 	"/re", " [addr ..]", "search references using esil or limit them to given addresses",
+	"/rs", " [addr ..]", "find string references using esil (optional targets)",
 	"/rr", "", "find read references",
 	"/ru", "[*qj]", "search for UDS CAN database tables (binbloom)",
 	"/rw", "", "find write references",
@@ -2198,7 +2199,7 @@ static void refsearch_targets(RCore *core, int mode, bool print_hits, RSearchPar
 	}
 }
 
-static void esilsearch_targets(RCore *core, RSearchParameters *param, const RVecSearchAddr *targets) {
+static void esilsearch_targets(RCore *core, RSearchParameters *param, const RVecSearchAddr *targets, bool strings) {
 	const ut64 curseek = core->addr;
 	RListIter *iter;
 	RIOMap *map;
@@ -2211,7 +2212,7 @@ static void esilsearch_targets(RCore *core, RSearchParameters *param, const RVec
 		if (target_count > 0) {
 			ut64 *addr;
 			R_VEC_FOREACH (targets, addr) {
-				char *trg = r_str_newf (" %"PFMT64d, *addr);
+				char *trg = r_str_newf ("%s %"PFMT64u, strings? "+s": "", *addr);
 				r_core_anal_esil (core, arg, trg);
 				free (trg);
 				if (r_cons_is_breaked (core->cons)) {
@@ -2219,7 +2220,7 @@ static void esilsearch_targets(RCore *core, RSearchParameters *param, const RVec
 				}
 			}
 		} else {
-			r_core_anal_esil (core, arg, NULL);
+			r_core_anal_esil (core, arg, strings? "+s": NULL);
 		}
 		free (arg);
 		if (r_cons_is_breaked (core->cons)) {
@@ -4453,15 +4454,16 @@ reread:
 			}
 			break;
 		case 'e': // "/re"
+		case 's': // "/rs"
 			if (input[2] && input[2] != ' ') {
 				if (input[2] == '?') {
-					r_cons_cmd_help_match (core->cons, help_msg_slash_r, "/re", 0, true);
+					r_cons_cmd_help_match (core->cons, help_msg_slash_r, input[1] == 's'? "/rs": "/re", 0, true);
 					dosearch = false;
 				}
 				break;
 			}
 			if (parse_targets (core, args, &targets)) {
-				esilsearch_targets (core, &param, &targets);
+				esilsearch_targets (core, &param, &targets, input[1] == 's');
 				RVecSearchAddr_fini (&targets);
 			}
 			break;

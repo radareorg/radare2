@@ -42,3 +42,208 @@ EXPECT=<<EOFEXP
 0x10
 EOFEXP
 RUN
+
+NAME=ESIL /rs discovers strings without retaining other refs
+FILE=malloc://0x400
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488d3de9000000488d0502010000e8ce000000 @ 0x10
+wz hello @ 0x100
+wx 0102ff @ 0x120
+e search.from=0x10
+e search.to=0x22
+/rs
+axq
+f~str.
+aflq
+e anal.strings
+EOF
+EXPECT=<<EOF
+0x00000010 -> 0x00000100  STRN:r--
+0x00000100 5 str.hello
+false
+EOF
+RUN
+
+NAME=ESIL /rs computed arm64 pointer
+FILE=malloc://0x500
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wa adrp x0, 0 @ 0x100
+wa add x0, x0, 0x300 @ 0x104
+wz armstring @ 0x300
+e search.from=0x100
+e search.to=0x108
+/rs
+axq
+f~str.
+EOF
+EXPECT=<<EOF
+0x00000104 -> 0x00000300  STRN:r--
+0x00000300 9 str.armstring
+EOF
+RUN
+
+NAME=ESIL /rs indirect pointers and existing string flags
+FILE=malloc://0x500
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488b05f9000000bb20030000 @ 0x100
+wv8 0x300 @ 0x200
+wz indirect @ 0x300
+wx c3a900 @ 0x320
+f str.utf8 3 @ 0x320
+e search.from=0x100
+e search.to=0x10c
+/rs
+axq
+EOF
+EXPECT=<<EOF
+0x00000100 -> 0x00000300  STRN:r--
+0x00000107 -> 0x00000320  STRN:r--
+EOF
+RUN
+
+NAME=ESIL /rs optional targets filter string discovery and preserve existing refs
+FILE=malloc://0x500
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b800030000bb20030000b940030000 @ 0x100
+wz first @ 0x300
+wz second @ 0x320
+wx 0102ff @ 0x340
+axd 0x380 0x200
+e search.from=0x100
+e search.to=0x10f
+s 0x40
+/rs    0x320 0x340
+axq
+f~str.
+s
+ax-*
+/rs 0x300 0x320
+axq
+EOF
+EXPECT=<<EOF
+0x00000105 -> 0x00000320  STRN:r--
+0x00000200 -> 0x00000380  DATA:r--
+0x00000320 6 str.second
+0x40
+0x00000100 -> 0x00000300  STRN:r--
+0x00000105 -> 0x00000320  STRN:r--
+EOF
+RUN
+
+NAME=ESIL /rs restores registers between CFG branches
+FILE=malloc://0x500
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b8f002000083ff0074364883c010c3 @ 0x100
+wx 4883c030c3 @ 0x140
+wz first @ 0x300
+wz second @ 0x320
+af+ 0x100 test
+afb+ 0x100 0x100 10 0x140 0x10a
+afb+ 0x100 0x10a 5
+afb+ 0x100 0x140 5
+ax-*
+ar rax=0x123
+e search.from=0x100
+e search.to=0x145
+/rs
+axq
+ar rax
+EOF
+EXPECT=<<EOF
+0x0000010a -> 0x00000300  STRN:r--
+0x00000140 -> 0x00000320  STRN:r--
+0x00000123
+EOF
+RUN
+
+NAME=ESIL /rs source boundaries and read references
+FILE=malloc://0x500
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 803d6900000000 @ 0x10
+wx b820030000 @ 0x140
+wz inside @ 0x80
+wz outside @ 0x320
+e search.from=0x10
+e search.to=0x17
+/rs
+axq
+EOF
+EXPECT=<<EOF
+0x00000010 -> 0x00000080  STRN:r--
+EOF
+RUN
+
+NAME=ESIL /rs restores call clobber state between CFG branches
+FILE=malloc://0x500
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b8f002000083ff0074364883c010c3 @ 0x100
+wx e83b0000004883c010 @ 0x140
+wz clean @ 0x300
+af+ 0x100 test
+afb+ 0x100 0x100 10 0x140 0x10a
+afb+ 0x100 0x10a 5
+afb+ 0x100 0x140 9
+ax-*
+e anal.cc=amd64
+e anal.vars.clobber=true
+e search.from=0x100
+e search.to=0x149
+/rs
+axq
+EOF
+EXPECT=<<EOF
+0x0000010a -> 0x00000300  STRN:r--
+EOF
+RUN
+
+NAME=ESIL /rs sparse CFG follows backward edges across buffer boundaries
+FILE=malloc://0x40000
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b8f0030000e9f6fe0200 @ 0x100
+wx 4883c010c3 @ 0x200
+wx 4883c020e9f701fdff @ 0x30000
+wz backward @ 0x420
+af+ 0x100 sparse
+afb+ 0x100 0x100 10 0x30000
+afb+ 0x100 0x30000 9 0x200
+afb+ 0x100 0x200 5
+ax-*
+e search.from=0x100
+e search.to=0x30009
+/rs
+axq
+EOF
+EXPECT=<<EOF
+0x00000200 -> 0x00000420  STRN:r--
+EOF
+RUN
+
+NAME=ESIL /rs keeps call clobbers across CFG jumps
+FILE=malloc://0x500
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b8f0020000e876000000eb34 @ 0x100
+wx 4883c010c3 @ 0x140
+wz stale @ 0x300
+af+ 0x100 test
+afb+ 0x100 0x100 12 0x140
+afb+ 0x100 0x140 5
+ax-*
+e anal.cc=amd64
+e anal.vars.clobber=true
+e search.from=0x100
+e search.to=0x145
+/rs
+axq
+EOF
+EXPECT=<<EOF
+EOF
+RUN

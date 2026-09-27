@@ -4446,12 +4446,12 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	return count;
 }
 
-static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
+static bool add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 	const int reftype = R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
 	int len = 0;
 	char str[STRSZ] = {0};
 	if (xref_to == UT64_MAX || !xref_to || r_anal_get_fcn_in (core->anal, xref_to, 0)) {
-		return;
+		return false;
 	}
 	if (!xref_from || xref_from == UT64_MAX) {
 		xref_from = core->anal->esil->addr;
@@ -4474,7 +4474,9 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 		if (!mi || mi->type != R_META_TYPE_STRING) {
 			r_meta_set (core->anal, R_META_TYPE_STRING, xref_to, len, str);
 		}
+		return true;
 	}
+	return false;
 }
 
 typedef struct {
