@@ -1241,3 +1241,54 @@ EXPECT=<<EOF
 int five("AA", "BB", "CC", "DD", "EE")
 EOF
 RUN
+
+# Instruction sequences from libminiupnpd.so in issue #8245; gp is above the map.
+NAME=mips BE gp-relative string xrefs in call delay slots
+FILE=malloc://0x18c68
+ARGS=-a mips -b 32 -e cfg.bigendian=true -e anal.gp=0x20a40
+CMDS=<<EOF
+wx 8f858028240400038f9980c40320f80924a575d0 @ 0x22e8
+wx 8f8580288f9980c40320f80924a57618 @ 0x2350
+wx 8f858028240400038f9980c40320f80924a57604 @ 0x23d4
+wx 00007430 @ 0x18b04
+wx 03e0000800000000 @ 0x7430
+wz Failed to open socket for receiving SSDP. EXITING @ 0x75d0
+wz socket(http): %m @ 0x7604
+wz setsockopt(http, SO_REUSEADDR): %m @ 0x7618
+aae 20 @ 0x22e8
+aae 16 @ 0x2350
+aae 20 @ 0x23d4
+axtq 0x75d0
+axtq 0x7604
+axtq 0x7618
+ax-*
+wx 00010000 @ 0x18a68
+wz relocated string @ 0x175d0
+aae 20 @ 0x22e8
+axtq 0x75d0~?
+axtq 0x175d0
+EOF
+EXPECT=<<EOF
+0x22f8
+0x23e4
+0x235c
+0
+0x22f8
+EOF
+RUN
+
+# Instruction sequence from goahead in issue #8245.
+NAME=mips LE gp-relative string xref with a nonzero GOT base
+FILE=malloc://0x94000
+ARGS=-a mips -b 32 -m 0x400000 -e anal.gp=0x49a520
+CMDS=<<EOF
+wx 2480868fe483998f987ac624 @ 0x404c34
+wx 00004400 @ 0x492544
+wz Cant read %s @ 0x447a98
+aae 12 @ 0x404c34
+axtq 0x447a98
+EOF
+EXPECT=<<EOF
+0x404c3c
+EOF
+RUN
