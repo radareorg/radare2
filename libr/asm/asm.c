@@ -443,11 +443,11 @@ static void load_asm_descriptions(RAsm *a) {
 	if (!arch || !strcmp (arch, "any")) {
 		arch = a->config->cpu;
 	}
-	if (!strcmp (arch, "sbpf")) {
-		arch = "bpf";
-	}
 	if (!arch) {
 		return;
+	}
+	if (!strcmp (arch, "sbpf")) {
+		arch = "bpf";
 	}
 #if HAVE_GPERF
 	SdbGperf *gp = r_asm_get_gperf (arch);
