@@ -1,5 +1,7 @@
 # Should not be run on Windows
 NAME=utf8 (possibly malformed) filenames with non-printable chars
+# Backtick substitution doubles backslashes for legacy wtf/o argument parsing.
+BROKEN=1
 FILE=-
 CMDS=<<EOF
 cd `e dir.tmp`
