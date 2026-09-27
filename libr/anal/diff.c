@@ -192,7 +192,8 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 	if (anal->cur && anal->cur->diff_fcn) {
 		return anal->cur->diff_fcn (anal, fcns, fcns2);
 	}
-	if (fcns == fcns2 || (r_list_length (fcns) == 1 && 1 == r_list_length (fcns2))) {
+	if (fcns == fcns2 || (r_list_length (fcns) == 1 && r_list_length (fcns2) == 1
+			&& ((RAnalFunction *)r_list_first (fcns))->anal == ((RAnalFunction *)r_list_first (fcns2))->anal)) {
 		RCore *core = anal->coreb.core;
 		RCons *cons = core->cons;
 		double threshold = 0.8; // XXX make this configurable by the user

@@ -145,3 +145,23 @@ helper 6 0x1006 |   MATCH  (1.000000) | 0x2006  6 helper
 main
 END
 RUN
+
+NAME=radiff2 compares projects with one saved function per session
+FILE=hex://b801000000c3
+ARGS=-a x86 -b 64 -m 0x1000
+CMDS=<<END
+mkdir .tmp
+af+ 0x1000 main
+afb+ 0x1000 0x1000 6
+prj save .tmp/radiff-single-a.prj
+!r2 -Nq -a x86 -b 64 -m 0x2000 -c 'af+ 0x2000 main;afb+ 0x2000 0x2000 6;prj save .tmp/radiff-single-b.prj' hex://b802000000c3
+!radiff2 -C .tmp/radiff-single-a.prj .tmp/radiff-single-a.prj
+!radiff2 -C .tmp/radiff-single-a.prj .tmp/radiff-single-b.prj
+rm .tmp/radiff-single-a.prj
+rm .tmp/radiff-single-b.prj
+END
+EXPECT=<<END
+main 6 0x1000 |   MATCH  (1.000000) | 0x1000  6 main
+main 6 0x1000 |   MATCH  (0.833333) | 0x2000  6 main
+END
+RUN
