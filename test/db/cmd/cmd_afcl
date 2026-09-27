@@ -20,17 +20,20 @@ RUN
 NAME=afcl: x86-64-override
 FILE=bins/elf/true32
 ARGS=-a x86 -b 64
-BROKEN=1
 CMDS=afcl
 EXPECT=<<EOF
 amd64
+amd64syscall
+dlang
 ms
+p9
+reg
+swift
 EOF
 RUN
 
 NAME=afcl: x86-32
 FILE=--
-BROKEN=1
 CMDS=<<EOF
 e asm.bits = 64
 e asm.arch = x86
@@ -38,12 +41,15 @@ e asm.bits = 32
 afcl
 EOF
 EXPECT=<<EOF
-pascal
-optlink
-stdcall
-cdecl
-fastcall
 borland
+cdecl
+cdecl-fastcall-ms
+dlang
+fastcall
+optlink
+pascal
+reg
+stdcall
 watcom
 EOF
 RUN
@@ -51,15 +57,17 @@ RUN
 NAME=afcl: x86-32-override
 FILE=bins/elf/bomb
 ARGS=-a x86 -b 32
-BROKEN=1
 CMDS=afcl
 EXPECT=<<EOF
-pascal
-optlink
-stdcall
-cdecl
-fastcall
 borland
+cdecl
+cdecl-fastcall-ms
+dlang
+fastcall
+optlink
+pascal
+reg
+stdcall
 watcom
 EOF
 RUN
@@ -85,16 +93,18 @@ RUN
 NAME=afcl: arm-64-override
 FILE=bins/elf/libmagic.so
 ARGS=-a arm -b 64
-BROKEN=1
 CMDS=afcl
 EXPECT=<<EOF
 arm64
+dlang
+p9
+reg
+swift
 EOF
 RUN
 
 NAME=afcl: arm-32
 FILE=--
-BROKEN=1
 CMDS=<<EOF
 e asm.bits = 64
 e asm.arch = arm
@@ -102,23 +112,27 @@ e asm.bits = 32
 afcl
 EOF
 EXPECT=<<EOF
+arm16
 arm32
+reg
+swift
 EOF
 RUN
 
 NAME=afcl: arm-32-override
 FILE=bins/elf/libc.so.6
 ARGS=-a arm -b 32
-BROKEN=1
 CMDS=afcl
 EXPECT=<<EOF
+arm16
 arm32
+reg
+swift
 EOF
 RUN
 
 NAME=afcl: arm-16
 FILE=--
-BROKEN=1
 CMDS=<<EOF
 e asm.bits = 64
 e asm.arch = arm
@@ -126,17 +140,20 @@ e asm.bits = 16
 afcl
 EOF
 EXPECT=<<EOF
+arm16
 arm32
+reg
 EOF
 RUN
 
 NAME=afcl: arm-16-override
 FILE=bins/elf/libmagic.so
 ARGS=-a arm -b 16
-BROKEN=1
 CMDS=afcl
 EXPECT=<<EOF
+arm16
 arm32
+reg
 EOF
 RUN
 

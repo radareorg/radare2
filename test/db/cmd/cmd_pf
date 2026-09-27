@@ -840,7 +840,6 @@ EOF
 RUN
 
 NAME=One byte enum endianness
-BROKEN=1
 FILE=malloc://1024
 CMDS=<<EOF
 e cfg.bigendian=true

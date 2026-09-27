@@ -82,12 +82,11 @@ RUN
 NAME=num vars keys in echo
 FILE=malloc://0x4000
 ARGS=-1
-BROKEN=1
 CMDS=<<EOF
 ?e invalid $k
 EOF
 EXPECT=<<EOF
-invalid 0x0
+invalid $k
 EOF
 RUN
 

@@ -1,5 +1,4 @@
 NAME=comment spaces
-BROKEN=1
 FILE=--
 CMDS=<<EOF
 CS one
@@ -13,8 +12,8 @@ EOF
 EXPECT=<<EOF
 0x00000001 CCu "bar"
 0x00000002 CCu "cow"
-0    1 . one
-1    2 * two
+    1 . one
+    2 * two
 EOF
 RUN
 
