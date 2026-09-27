@@ -25,7 +25,6 @@ if get_option('enable_tests')
     'buf',
     'cmd_str',
     'cmd_api',
-    'config',
     'cons',
     'core_prompt',
     'core_task',
