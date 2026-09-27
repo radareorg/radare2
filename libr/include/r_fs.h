@@ -193,6 +193,7 @@ R_API bool r_fs_mkdir(RFS *fs, const char *path);
 /* Probe `buf` against container-capable fs plugins and return RFSFile entries from the first match. */
 R_API RList/*<RFSFile>*/ *r_fs_dir_bins(RFS *fs, RBuffer *buf);
 
+// Search all mounted roots for / or an empty path, otherwise stay below the given directory.
 R_API RList *r_fs_find_name(RFS* fs, const char *name, const char *glob);
 R_API RList *r_fs_find_off(RFS* fs, const char *name, ut64 off);
 R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
