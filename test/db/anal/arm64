@@ -240,11 +240,317 @@ NAME=siguzas arm64 six rejects command suffix
 FILE=-
 CMDS=<<EOF
 a:sixref
+a:sixisland
+a:sixi0
 EOF
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Invalid command 'a:sixref'. See 'a:six?' for help
+ERROR: Invalid command 'a:sixisland'. See 'a:six?' for help
+ERROR: Invalid command 'a:sixi0'. See 'a:six?' for help
+EOF
+RUN
+
+NAME=siguzas arm64 six keeps island hints and xrefs opt-in
+FILE=malloc://0x3000
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 10080010510080d21056118b00021fd6100000d010d2089100021fd6
+a:six
+ah
+axq
+a:six 0x400100
+a:six 0x2234 0x1c
+a:sixi
+wx 1001001000021fd6 @ 0x20
+a:six
+axfq @ 0x24
+s 0x24
+ao~type,jump
+EOF
+EXPECT=<<EOF
+0x00000000 -> 0x00000100  DATA:r--
+0x00000010 -> 0x00002000  DATA:r--
+0x10: adrp x16, 0x2000; add x16, x16, 0x234
+type: rjmp
+EOF
+RUN
+
+NAME=siguzas arm64 six stub island hints
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 10080010510080d21056118b00021fd6100000d010d2089100021fd6
+s 0xc
+ao~type,jump
+?e --
+a:sixi
+ao~type,jump
+?e --
+s 0x18
+ao~type,jump
+EOF
+EXPECT=<<EOF
+type: rjmp
+--
+type: jmp
+jump: 0x00400100
+--
+type: jmp
+jump: 0x00002234
+EOF
+RUN
+
+NAME=siguzas arm64 six stub island xrefs
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 1001001000021fd6
+a:sixi
+axq~CODE
+EOF
+EXPECT=<<EOF
+0x00000004 -> 0x00000020  CODE:--x
+EOF
+RUN
+
+NAME=siguzas arm64 six stub island variants
+FILE=malloc://128
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 100800101f2003d5118200911f2003d520021fd6
+wx 100000b000021fd6 @ 0x20
+wx 100000b0110a409120021fd6 @ 0x40
+wx 100800105100a0d21212118b40021fd6 @ 0x60
+a:sixi
+s 0x10
+ao~type,jump
+s 0x24
+ao~type,jump
+s 0x48
+ao~type,jump
+s 0x6c
+ao~type,jump
+EOF
+EXPECT=<<EOF
+type: jmp
+jump: 0x00000120
+type: jmp
+jump: 0x00001000
+type: jmp
+jump: 0x00003000
+type: jmp
+jump: 0x00200160
+EOF
+RUN
+
+NAME=siguzas arm64 six stub target search has no side effects
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 10080010510080d21056118b00021fd6100000d010d2089100021fd6
+a:sixi 0x400100
+a:sixi 0x2234 0x1c
+ah
+axq
+s 0xc
+ao~type,jump
+s 0x18
+ao~type,jump
+EOF
+EXPECT=<<EOF
+0xc: br x16; 0x400100
+0x18: br x16; 0x2234
+0x10: adrp x16, 0x2000; add x16, x16, 0x234
+type: rjmp
+type: rjmp
+EOF
+RUN
+
+NAME=siguzas arm64 six islands require explicit invocation
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e log.level=0
+wx 10080010510080d21056118b00021fd6
+aaa
+a:six
+ah
+s 0xc
+ao~type,jump
+a:sixi
+ao~type,jump
+EOF
+EXPECT=<<EOF
+type: rjmp
+type: jmp
+jump: 0x00400100
+EOF
+RUN
+
+NAME=siguzas arm64 six rejects clobbered and zero registers
+FILE=malloc://160
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 10080010500080d21056108b00021fd6
+wx 1f080010e0031fd6 @ 0x20
+wx 100800105f0080d210561f8b00021fd6 @ 0x40
+wx 100800101f820091e0031fd6 @ 0x60
+wx 10080010510080d21f56118be0031fd6 @ 0x80
+a:sixi
+ah
+axq~CODE
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=siguzas arm64 six rejects unsupported stub instructions
+FILE=malloc://160
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 10080010510080d21056518b00021fd6
+wx 10080010510080d21052318b00021fd6 @ 0x20
+wx 10080010100210ca00021fd6 @ 0x40
+wx 1008001020021fd6 @ 0x60
+wx 1008003000021fd6 @ 0x80
+a:sixi
+ah
+axq~CODE
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=siguzas arm64 six truncated stub
+FILE=malloc://15
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 10080010510080d21056118b00021f
+a:sixi
+ah
+axq~CODE
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=siguzas arm64 six stub across chunk boundary
+FILE=malloc://0x10100
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 1008001000021fd6 @ 0xfffc
+a:sixi
+axq~CODE
+s 0x10000
+ao~type,jump
+EOF
+EXPECT=<<EOF
+0x00010000 -> 0x000100fc  CODE:--x
+type: jmp
+jump: 0x000100fc
+EOF
+RUN
+
+NAME=siguzas arm64 six skips nonexecutable map
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 1001001000021fd6
+omp 1 rw
+a:sixi
+ah
+axq
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+WARN: Current section or map is not executable or has invalid boundaries
+EOF
+RUN
+
+NAME=siguzas arm64 six rejects interrupted island sequences
+FILE=malloc://128
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 100800100004009400021fd6
+wx 100800100004001400021fd6 @ 0x20
+wx 10080010100040f900021fd6 @ 0x40
+wx 10080010c0035fd600021fd6 @ 0x60
+a:sixi
+ah
+axfq @ 8
+axfq @ 0x28
+axfq @ 0x48
+axfq @ 0x68
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=siguzas arm64 six rejects narrow operands and non-BR branches
+FILE=malloc://128
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 10080010510080521056118b00021fd6
+wx 100800101082001100021fd6 @ 0x20
+wx 100800101f0a1fd6 @ 0x40
+wx 1008001000023fd6 @ 0x60
+a:sixi
+ah
+axq~CODE,CALL
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=siguzas arm64 six island search respects length
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 10080010510080d21056118b00021fd6
+a:sixi 0x400100 4
+a:sixi 0x400100 8
+a:sixi 0x400100 12
+a:sixi 0x400100 15
+a:sixi 0x400100 16
+ah
+axq
+EOF
+EXPECT=<<EOF
+0xc: br x16; 0x400100
+EOF
+RUN
+
+NAME=siguzas arm64 six islands do not cross map boundaries
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 10080010510080d21056118b00021fd6
+oms 1 12
+om 3 12 4 12 rx
+a:sixi
+ah
+axq~CODE
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=siguzas arm64 six aligns island scans inside unaligned maps
+FILE=malloc://0x2000
+ARGS=-a arm -b 64
+CMDS=<<EOF
+omv 1 1
+s 1
+wx 100000b000021fd6
+wx 100000b000021fd6 @ 0x10
+a:sixi
+axq~CODE
+EOF
+EXPECT=<<EOF
+0x00000014 -> 0x00001000  CODE:--x
 EOF
 RUN
 
