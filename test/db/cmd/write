@@ -343,9 +343,8 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=wx 0x should behave like wv? imho nope
+NAME=wx 0x writes hex bytes without endianness conversion
 FILE=malloc://1024
-BROKEN=1
 CMDS=<<EOF
 e cfg.bigendian=false
 wx 0x1234
@@ -354,8 +353,8 @@ wx 0x12345678
 p8 4
 EOF
 EXPECT=<<EOF
-3412
-78563412
+1234
+12345678
 EOF
 RUN
 
@@ -606,14 +605,18 @@ EOF
 RUN
 
 NAME=wao+3
-BROKEN=1
 FILE=-
 ARGS=-a x86 -b 32
 CMDS=<<EOF
-3wao+nop@0
-pi 3@0
+3wao+nop
+s
+pi 6@0
 EOF
 EXPECT=<<EOF
+0x6
+nop
+nop
+nop
 nop
 nop
 nop
