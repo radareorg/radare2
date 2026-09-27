@@ -74,12 +74,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-# Cf tests look malformed
-NAME=Cf main
-BROKEN=1
+# Cf without a format reports its usage
+NAME=Cf missing format
 FILE=-
 CMDS=Cf main;C*
 EXPECT=<<EOF
+| Cf[?][-] [sz] [0|cnt][fmt] [a0 a1...] [@addr]  format memory (see pf?)
 EOF
 RUN
 
