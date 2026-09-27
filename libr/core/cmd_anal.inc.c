@@ -14591,7 +14591,7 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 }
 
 static bool archIsThumbable(RCore *core) {
-	RArchConfig *ac = R_UNWRAP4 (core, anal, arch, cfg);
+	RArchConfig *ac = core->anal->config;
 	if (ac && ac->bits <= 32) {
 		// XXX for some reason this is null
 		if (!strcmp (ac->arch, "arm")) {

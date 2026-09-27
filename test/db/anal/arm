@@ -790,7 +790,6 @@ RUN
 
 NAME=ELF ARM: aav string
 FILE=bins/elf/arm1.bin
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -798,12 +797,13 @@ e asm.comments=false
 e asm.bytes=false
 e asm.addr=false
 e asm.flags=false
-af @ sym.deregister_tm_clones
+af @ sym.__libc_start_main
+e anal.in=io.maps
 aav
-pd 1 @ 0x0001037c
+pd 1 @ 0x000086e4
 EOF
 EXPECT=<<EOF
-            .dword 0x0002061f ; str.:__Raspbian_4.9.2_10__4.9.2
+                 .dword 0x000661bc ; str.FATAL:_kernel_too_old_n
 EOF
 RUN
 
@@ -1157,10 +1157,9 @@ RUN
 
 NAME=aav thumb detection
 FILE=bins/firmware/armthumb.bin
-BROKEN=1
 ARGS=-aarm -b32
 CMDS=<<EOF
-aav
+aav0
 f
 EOF
 EXPECT=<<EOF
