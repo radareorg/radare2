@@ -1218,7 +1218,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 				// list all the associated maps
 			} while (r_id_storage_get_next (&core->io->banks, &bank_id));
 		} else {
-			int id = r_num_get (NULL, argv[1]);
+			int id = r_num_math (core->num, argv[1]);
 			if (core->num->nc.errors == 0) {
 				if (!r_io_bank_use (core->io, id)) {
 					R_LOG_ERROR ("Cannot find bank by id %s", argv[1]);

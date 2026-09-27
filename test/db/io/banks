@@ -2,17 +2,18 @@ NAME=omb banks
 FILE=malloc://1024
 CMDS=<<EOF
 om
-omb+ map 1
+omb+ map
 omb+ nomap
-omb nomap
+omb=map
+ombg
+omb=nomap
 om
-omb map
+omb=map
 om
 omb-*
 omb -1
 EOF
 EXPECT=<<EOF
-* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx rwx
 * 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx rwx
 * 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx rwx
 EOF
@@ -35,20 +36,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=omb name deletes them all (BUG)
-BROKEN=1
+NAME=omb rejects names as ids without changing banks
 FILE=malloc://1024
 CMDS=<<EOF
 omb+ one
-omb
+omb=one
+ombq
 omb one
+ombq
 omb
 EOF
 EXPECT=<<EOF
-1: one 
-
-1: one 
-
+1
+1
+- 0 default [ 1 ]
+* 1 one [ ]
+EOF
+EXPECT_ERR=<<EOF
+ERROR: omb expects a number, not a string
 EOF
 RUN
 
