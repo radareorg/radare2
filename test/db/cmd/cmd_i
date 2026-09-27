@@ -3492,9 +3492,8 @@ EOF
 RUN
 
 NAME=ik?
-BROKEN=1
 FILE=bins/mach0/fatmach0-3true
-CMDS=ik?~?Usage
+CMDS=ik?~?key-value database
 EXPECT=<<EOF
 1
 EOF
