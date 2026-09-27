@@ -108,6 +108,8 @@ typedef struct r_disasm_state_t {
 	bool show_lines_ret;
 	bool show_lines_call;
 	bool show_lines_fcn;
+	RList *trycatches;
+	bool in_try;
 	bool linesright;
 	int tracespace;
 	int cyclespace;
@@ -1120,6 +1122,7 @@ static void ds_free(RDisasmState *ds) {
 	r_anal_hint_free (ds->hint);
 	ds_reflines_fini (ds);
 	ds_print_esil_anal_fini (ds);
+	r_list_free (ds->trycatches);
 	sdb_free (ds->ssa);
 	free (ds->comment);
 	free (ds->line);
@@ -6866,7 +6869,65 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	return NULL;
 }
 
+static void ds_trycatch_init(RDisasmState *ds) {
+	r_list_free (ds->trycatches);
+	ds->trycatches = NULL;
+	if (!ds->show_lines || ds->pj || !r_config_get_b (ds->core->config, "asm.trycatch")) {
+		return;
+	}
+	RBinFile *bf = r_bin_cur (ds->core->bin);
+	RVecRBinTrycatch *regions = bf? r_bin_file_get_trycatch (bf): NULL;
+	if (!regions) {
+		return;
+	}
+	ds->trycatches = r_list_new ();
+	ut64 start = r_core_pava (ds->core, ds->addr);
+	RBinTrycatch *tc;
+	R_VEC_FOREACH (regions, tc) {
+		if (tc->from < tc->to && tc->to > start
+				&& (tc->from <= start || tc->from - start < ds->len)) {
+			r_list_append (ds->trycatches, tc);
+		}
+	}
+}
+
+static void ds_print_trycatch(RDisasmState *ds) {
+	RCons *cons = ds->core->cons;
+	RListIter *iter;
+	RBinTrycatch *tc;
+	r_list_foreach (ds->trycatches, iter, tc) {
+		bool inside = ds->vat >= tc->from && ds->vat < tc->to;
+		ds->in_try |= inside;
+		if (!inside || !ds->show_comments || (ds->vat != tc->from && ds->lines)) {
+			continue;
+		}
+		ds_begin_line (ds);
+		ds_pre_line (ds);
+		if (ds->show_color) {
+			r_cons_print (cons, ds->pal_comment);
+		}
+		const char *kind = tc->kind == R_BIN_TRYCATCH_CLEANUP? "cleanup":
+			tc->kind == R_BIN_TRYCATCH_FILTER? "filter": "catch";
+		r_cons_printf (cons, "; try 0x%08" PFMT64x "-0x%08" PFMT64x " %s", tc->from, tc->to, kind);
+		if (tc->type || tc->catch_all) {
+			r_cons_printf (cons, " (%s)", tc->type? tc->type: "...");
+		}
+		r_cons_printf (cons, " -> 0x%08" PFMT64x, tc->handler);
+		if (ds->core->vmode && ds->asm_hints && ds->asm_hint_jmp) {
+			r_cons_print (cons, " ");
+			ds_print_shortcut (ds, tc->handler, 0);
+		}
+		if (ds->show_color) {
+			r_cons_print (cons, Color_RESET);
+		}
+		ds_newline (ds);
+	}
+}
+
 static bool line_highlighted(RDisasmState *ds) {
+	if (ds->in_try) {
+		return true;
+	}
 	if (ds->asm_highlight != UT64_MAX && ds->vat == ds->asm_highlight) {
 		return true;
 	}
@@ -7002,6 +7063,7 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 		pj_a (ds->pj);
 	}
 toro:
+	ds_trycatch_init (ds);
 	// uhm... is this necessary? imho can be removed
 	r_asm_set_pc (core->rasm, r_core_pava (core, ds->addr));
 	core->cons->vline = r_config_get_b (core->config, "scr.utf8")
@@ -7085,6 +7147,7 @@ toro:
 			ds->index += inc, count_bytes? ds->lines += inc: ds->lines++) {
 		ds->at = ds->addr + ds->index;
 		ds->vat = r_core_pava (core, ds->at);
+		ds->in_try = false;
 
 		if (r_cons_is_breaked (cons) || r_cons_was_breaked (cons)) {
 			R_FREE (nbuf);
@@ -7308,6 +7371,7 @@ toro:
 		ds_adistrick_comments (ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		ds_show_functions (ds);
+		ds_print_trycatch (ds);
 		if (ds->cmt_wrap && ds->comment) {
 			const int maxcols = 70; // XXX maybe configurable?
 			size_t clen = strlen (ds->comment);
@@ -7364,7 +7428,7 @@ toro:
 		ds_print_labels (ds, f);
 		ds_setup_print_pre (ds, false, false);
 		ds_print_lines_left (ds);
-		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
+		core->print->resetbg = (ds->asm_highlight == UT64_MAX) && !ds->in_try;
 		ds_start_line_highlight (ds);
 		if (ds->show_offseg) {
 			core->print->flags |= R_PRINT_FLAGS_SEGOFF;
