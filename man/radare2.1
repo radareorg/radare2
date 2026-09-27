@@ -26,6 +26,10 @@ An advanced command-line hex editor, disassembler, and debugger, providing inter
 .Pp
 The alias 'r2' may be used as a shorthand for radare2.
 .Pp
+Binary projects are detected by their RPRJ header. Opening one as a file
+(for example, 'r2 session.prj') restores it using 'prj open', including its
+maps, analysis and saved commands. Use -n to inspect the project bytes instead.
+.Pp
 The options are:
 .Bl -tag -width Fl
 .It Fl Fl
