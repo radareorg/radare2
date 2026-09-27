@@ -1369,6 +1369,20 @@ static void r_print_format_bitfield(RPrintFormat *pf, ut64 seeki, char *fmtname,
 	if (R_STR_ISNOTEMPTY (bitfield)) {
 		if (MUSTSEEJSON) {
 			pj_ks (pf->pj, "value", bitfield);
+		} else if (mode & R_PRINT_DOT) {
+			const char *member = strchr (bitfield, ':');
+			if (member) {
+				member = r_str_trim_head_ro (member + 1);
+				while (*member) {
+					const char *end = strchr (member, '|');
+					int len = end? end - member: strlen (member);
+					while (len && isspace ((ut8)member[len - 1])) {
+						len--;
+					}
+					r_print_printf (p, "%s.%.*s%s", fmtname, len, member, end? ", ": "");
+					member = end? r_str_trim_head_ro (end + 1): member + strlen (member);
+				}
+			}
 		} else if (MUSTSEE) {
 			r_print_printf (p, "%s (bitfield) = %s\n", fieldname, bitfield);
 		}
