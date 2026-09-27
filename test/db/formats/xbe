@@ -27,29 +27,29 @@ EOF
 RUN
 
 NAME=section header decoding
-BROKEN=1
 FILE=bins/xbe/default.xbe
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-00 0x00001000  1728 0x00011000  1728 -r-x .0
-01 0x00002000    24 0x000116c0    24 -r-- .1
-02 0x00003000 28280 0x000116e0 1257188 -rw- .2
-03 0x0000a000    60 0x001445e0    64 -rwx .3
-04 0x0000b000   164 0x00144620  1188 -r-- .4
+nth paddr         size vaddr          vsize perm flags type name
+----------------------------------------------------------------
+0   0x00001000   0x6c0 0x00011000     0x6c0 -r-x 0x0   ---- .0
+1   0x00002000    0x18 0x000116c0      0x18 -r-- 0x0   ---- .1
+2   0x00003000  0x6e78 0x000116e0  0x132ee4 -rw- 0x0   ---- .2
+3   0x0000a000    0x3c 0x001445e0      0x40 -rwx 0x0   ---- .3
+4   0x0000b000    0xa4 0x00144620     0x4a4 -r-- 0x0   ---- .4
 EOF
 RUN
 
 NAME=section header in r2
-BROKEN=1
 FILE=bins/xbe/default.xbe
-CMDS=S
+CMDS=iS*
 EXPECT=<<EOF
-[00:00] * pa=0x00001000 r-x va=0x00011000 sz=0x06c0 vsz=0x06c0 .0
-[00:01] . pa=0x00002000 r-- va=0x000116c0 sz=0x0018 vsz=0x0018 .1
-[00:02] . pa=0x00003000 rw- va=0x000116e0 sz=0x6e78 vsz=0x132ee4 .2
-[00:03] . pa=0x0000a000 rwx va=0x001445e0 sz=0x003c vsz=0x0040 .3
-[00:04] . pa=0x0000b000 r-- va=0x00144620 sz=0x00a4 vsz=0x04a4 .4
+fs sections
+'f section..0 1 0x00011000
+'f section..1 1 0x000116c0
+'f section..2 1 0x000116e0
+'f section..3 1 0x001445e0
+'f section..4 1 0x00144620
 EOF
 RUN
 

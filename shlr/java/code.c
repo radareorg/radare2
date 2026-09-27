@@ -19,12 +19,25 @@ typedef struct current_table_switch_t {
 
 static CurrentTableSwitch enter_switch_op(ut64 addr, const ut8 *bytes, int len) {
 	CurrentTableSwitch sw = { 0 };
-	if (len >= 16) {
+	const int padding = (4 - ((addr + 1) & 3)) & 3;
+	const int header = 1 + padding;
+	sw.sz = 1;
+	if (len >= header + 8) {
 		sw.addr = addr;
-		sw.def_jmp = (UINT (bytes, 4));
-		sw.min_val = (UINT (bytes, 8));
-		sw.max_val = (UINT (bytes, 12));
-		sw.sz = 16;
+		sw.def_jmp = (st32)UINT (bytes, header);
+		if (bytes[0] == 0xaa && len >= header + 12) {
+			sw.min_val = (st32)UINT (bytes, header + 4);
+			sw.max_val = (st32)UINT (bytes, header + 8);
+			const st64 cases = (st64)sw.max_val - sw.min_val + 1;
+			if (cases > 0 && cases <= (len - header - 12) / 4) {
+				sw.sz = header + 12 + cases * 4;
+			}
+		} else if (bytes[0] == 0xab) {
+			const st32 pairs = (st32)UINT (bytes, header + 4);
+			if (pairs >= 0 && pairs <= (len - header - 8) / 8) {
+				sw.sz = header + 8 + pairs * 8;
+			}
+		}
 	}
 	return sw;
 }

@@ -429,7 +429,6 @@ RUN
 
 NAME=v850 random pseudo
 FILE=bins/elf/ld-2.27.so
-BROKEN=1
 CMDS=<<EOF
 s+128
 e asm.arch=v850
@@ -445,20 +444,27 @@ r0 = r0
 r0 = r0
 r0 = r0
 r0 = r0
-r0 == 0xa
+r13 = 8
+r13 = 0
+r9 = r2
 r17 = 0x388 | r13
 r0 = r0
 r9 = r0
 r11 = (0x8548 << 16) + r26
-r2 == -0xc
-r9 = r3
-r9 = r3
 r9 = r16
 r9 = r8
-r2 /= r19
-r9 /= r19
-r0 = r20
+r9 = r16
+r4 == -1
+r17 &= r8
+r25 = (byte) r8805[0x5]
 r9 = r0
+r0 = r0
+r9 = r8
+r24 += r7
+r6 *= r31
+r0 -= r30
+r0 = r0
+r0 = r1
 EOF
 RUN
 

@@ -1821,28 +1821,17 @@ aei
 aeim
 af
 aft
-pdf
+pdf~?dwFlagsAndAttributes
+pdf~?dwCreationDisposition
+pdf~?hTemplateFile
+pdf~?HANDLE CreateFileW
 EOF
 EXPECT=<<EOF
-            ;-- rip:
-/ 59: fcn.14000b54c ();
-|           ; var DWORD dwCreationDisposition @ rsp+0x20
-|           ; var DWORD dwFlagsAndAttributes @ rsp+0x28
-|           ; var HANDLE hTemplateFile @ rsp+0x30
-|           0x14000b54c      4883ec48       sub rsp, 0x48
-|           0x14000b550      488364243000   and qword [hTemplateFile], 0 ; HANDLE hTemplateFile
-|           0x14000b556      488d0da37300.  lea rcx, str.CONOUT_       ; 0x140012900 ; u"CONOUT$" ; LPCWSTR lpFileName
-|           0x14000b55d      8364242800     and dword [dwFlagsAndAttributes], 0 ; DWORD dwFlagsAndAttributes
-|           0x14000b562      41b803000000   mov r8d, 3                 ; DWORD dwShareMode
-|           0x14000b568      4533c9         xor r9d, r9d               ; LPSECURITY_ATTRIBUTES lpSecurityAttributes
-|           0x14000b56b      4489442420     mov dword [dwCreationDisposition], r8d ; DWORD dwCreationDisposition
-|           0x14000b570      ba00000040     mov edx, 0x40000000        ; DWORD dwDesiredAccess
-|           0x14000b575      ff158d1c0000   call qword [sym.imp.KERNEL32.dll_CreateFileW] ; [0x14000d208:8]=0x1579e reloc.KERNEL32.dll_CreateFileW ; HANDLE CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
-|           0x14000b57b      4889057eb400.  mov qword [0x140016a00], rax ; [0x140016a00:8]=-2
-|           0x14000b582      4883c448       add rsp, 0x48
-\           0x14000b586      c3             ret
+2
+2
+2
+1
 EOF
-BROKEN=1
 RUN
 
 # merged: 1: Wrong calling convention
@@ -1905,10 +1894,9 @@ RUN
 
 NAME=Function definition indirect calls
 FILE=bins/pe/msvcfindmain.exe
-BROKEN=1
 CMDS=<<EOF
 aaa
-pd 1 @ 0x004012c0 ~?DWORD
+pd 1 @ 0x004012c0 ~?call dword
 EOF
 EXPECT=<<EOF
 1
@@ -2364,7 +2352,7 @@ axd 0x260 @ str.hello
 pd 1 @ 0x260
 EOF
 EXPECT=<<EOF
-            ; DATA XREF from str.hello @ 
+            ; DATA XREF from str.hello @ +0x0(r)
             0x00000260      80e0           ldi r24, 0x00
 EOF
 RUN

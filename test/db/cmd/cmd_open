@@ -54,12 +54,8 @@ paddr      vaddr       phaddr     vhaddr     type
 EOF
 RUN
 
-## XXX this test was assuming arch was arm when trying an unexistent plugin
-## XXX the reason to mark this as broken is because the mess to get it to
-## XXX work with asm/arch/anal is too much for something that will change soon
-NAME=m1slice.v35
-ARGS=-a arm.404
-BROKEN=1
+NAME=m1slice arm
+ARGS=-a arm
 FILE=bins/mach0/ls-m1
 CMDS=<<EOF
 pd 2
@@ -71,10 +67,9 @@ EXPECT=<<EOF
             ;-- func.100003a90:
             0x100003a90      7f2303d5       pacibsp
             0x100003a94      fc6fbaa9       stp x28, x27, [sp, -0x60]!
-[Entrypoints]
-vaddr=0x100003a90 paddr=0x0001ba90 haddr=0x00000600 type=program
-
-1 entrypoints
+paddr      vaddr       phaddr     vhaddr     type
+-------------------------------------------------
+0x0001ba90 0x100003a90 0x00000600 ---------- program
 EOF
 RUN
 

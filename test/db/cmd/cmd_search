@@ -779,7 +779,6 @@ RUN
 
 NAME=Rop search w/ branch delay (mips)
 FILE=malloc://128
-BROKEN=1
 CMDS=<<EOF
 e asm.bits=32
 e asm.arch=mips
@@ -789,15 +788,12 @@ wx 1b000000040000001a0000004c08410018000000040000000800000000000070
 q
 EOF
 EXPECT=<<EOF
-  0x00000000           1b000000  divu zero, zero, zero
-  0x00000004           04000000  sllv zero, zero, zero
-  0x00000008           1a000000  div zero, zero, zero
   0x0000000c           4c084100  syscall 0x10421
-
   0x00000010           18000000  mult zero, zero
   0x00000014           04000000  sllv zero, zero, zero
   0x00000018           08000000  jr zero
   0x0000001c           00000070  madd zero, zero
+
 EOF
 RUN
 

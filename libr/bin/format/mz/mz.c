@@ -140,7 +140,7 @@ bool r_bin_mz_load_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize, RVe
 	section->vsize = (dh->blocks_in_file * 512) + (dh->bytes_in_last_block);
 	section->size = section->vsize;
 	section->size = R_MIN (filesize - hdroff, section->size); // enforce file size boundaries
-	section->perm = R_PERM_R;
+	section->perm = R_PERM_RWX;
 
 	return true;
 }

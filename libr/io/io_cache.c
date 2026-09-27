@@ -452,6 +452,11 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 }
 
 // this uses closed boundary input
+static bool cache_commit_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
+	return io->va? r_io_bank_write_at (io, io->bank, addr, buf, len)
+		: r_io_pwrite_at (io, addr, buf, len) == len;
+}
+
 R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to, bool many) {
 	R_RETURN_IF_FAIL (io && from <= to);
 	RListIter *iter;
@@ -459,19 +464,23 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to, bool many) {
 	r_list_foreach (io->cache.layers, iter, layer) {
 		if (from == 0LL && to == UT64_MAX) {
 			RRBNode *node = r_crbtree_first_node (layer->tree);
+			bool all_written = true;
 			while (node) {
 				RIOCacheItem *ci = (RIOCacheItem *)node->data;
 				node = r_rbnode_next (node);
-				bool write_ok = r_io_bank_write_at (io, io->bank, r_itv_begin (ci->tree_itv[0]),
+				bool write_ok = cache_commit_write_at (io, r_itv_begin (ci->tree_itv[0]),
 					&ci->data[r_itv_begin (ci->tree_itv[0]) - r_itv_begin (ci->itv)],
 					r_itv_size (ci->tree_itv[0]));
 				if (write_ok) {
 					ci->written = true;
 				} else {
+					all_written = false;
 					R_LOG_ERROR ("cannot write at 0x%08"PFMT64x, r_itv_begin (ci->itv));
 				}
 			}
-			r_crbtree_clear (layer->tree);
+			if (all_written) {
+				r_crbtree_clear (layer->tree);
+			}
 		} else {
 			RInterval itv = (RInterval){from, (to + 1) - from};
 			RRBNode *node = _find_entry_ci_node (layer->tree, &itv);
@@ -479,7 +488,7 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to, bool many) {
 				RIOCacheItem *ci = (RIOCacheItem *)node->data;
 				while (ci && r_itv_overlap (itv, ci->tree_itv[0])) {
 					RInterval its = r_itv_intersect (itv, ci->tree_itv[0]);
-					r_io_bank_write_at (io, io->bank, r_itv_begin (its),
+					cache_commit_write_at (io, r_itv_begin (its),
 						&ci->data[r_itv_begin (its) - r_itv_begin (ci->itv)], r_itv_size (its));
 					node = r_rbnode_next (node);
 					ci = node? (RIOCacheItem *)node->data: NULL;
