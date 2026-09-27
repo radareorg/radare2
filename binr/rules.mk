@@ -139,8 +139,11 @@ endif
 all:: ${BEXE} ${BINS}
 
 ifeq ($(WITH_LIBR),1)
+# libr.a carries every libr symbol, the -lr_* from the deps would link the
+# shared libs next to it and the tool would pay their relocations at startup
+LIBR_LDFLAGS=$(filter-out -lr_%,$(LDFLAGS))
 ${BINS}: ${OBJS}
-	${CC} ${CFLAGS} $@.c ${OBJS} ../../libr/libr.a -o $@ $(LDFLAGS)
+	${CC} ${CFLAGS} $@.c ${OBJS} ../../libr/libr.a -o $@ $(LIBR_LDFLAGS)
 
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
  ifeq ($(COMPILER),wasi)
@@ -150,7 +153,7 @@ ${BEXE}: ${OBJ} ${SHARED_OBJ}
 	${CC} ${CFLAGS} $+ -L.. -o $@ $(LDFLAGS)
   endif
  else
-	${CC} ${CFLAGS} $+ -L.. -o $@ ../../libr/libr.a $(LDFLAGS)
+	${CC} ${CFLAGS} $+ -L.. -o $@ ../../libr/libr.a $(LIBR_LDFLAGS)
  endif
 else
 
