@@ -270,6 +270,41 @@ static ut64 get_import_addr_qdsp6(ELFOBJ *eo, RBinElfReloc *rel) {
 	return (rel->type == R_QDSP6_JUMP_SLOT)? indexed_plt_entry (eo, rel, 3, 16): UT64_MAX;
 }
 
+#define ARM_PLT_LLD_ENTRY 16
+#define ARM_ADD_IP_PC 0xe28fc000
+#define ARM_ADD_IP_IP 0xe28cc000
+#define ARM_LDR_PC_IP_WB 0xe5bcf000
+
+static ut32 arm_rot_imm(ut32 w) {
+	const ut32 imm = w & 0xff;
+	const int rot = ((w >> 8) & 0xf) * 2;
+	return rot? (imm >> rot) | (imm << (32 - rot)): imm;
+}
+
+// the got slot an arm plt entry at va loads through ip, or UT64_MAX
+static ut64 arm_plt_slot(ELFOBJ *eo, ut64 va) {
+	// be8 keeps code little-endian inside a big-endian object
+	const bool be8 = eo->endian && (eo->ehdr.e_flags & EF_ARM_BE8);
+	ut32 ip = 0;
+	int i;
+	for (i = 0; i < 3; i++, va += 4) {
+		const ut32 w = be8? r_swap_ut32 (read32_at (eo, va)): read32_at (eo, va);
+		if (!i) {
+			if ((w & 0xfffff000) != ARM_ADD_IP_PC) {
+				return UT64_MAX;
+			}
+			ip = (ut32)(va + 8) + arm_rot_imm (w);
+		} else if ((w & 0xfffff000) == ARM_ADD_IP_IP) {
+			ip += arm_rot_imm (w);
+		} else if ((w & 0xfffff000) == ARM_LDR_PC_IP_WB) {
+			return ip + (w & 0xfff);
+		} else {
+			return UT64_MAX;
+		}
+	}
+	return UT64_MAX;
+}
+
 static ut64 get_import_addr_arm(ELFOBJ *eo, RBinElfReloc *rel) {
 	ut64 got_addr = eo->dyn_info.dt_pltgot;
 	if (got_addr == R_BIN_ELF_ADDR_MAX) {
@@ -285,11 +320,14 @@ static ut64 get_import_addr_arm(ELFOBJ *eo, RBinElfReloc *rel) {
 
 	switch (rel->type) {
 	case R_ARM_JUMP_SLOT:
-		plt_addr += pos * 12 + 20;
 		if (plt_addr & 1) {
 			plt_addr--;
 		}
-		return plt_addr;
+		// gnu's plt + 32 loads slot 1; only lld loads slot 0 there
+		if (arm_plt_slot (eo, plt_addr + PLT_HDR_SIZE) == got_addr + (3 * R_BIN_ELF_WORDSIZE)) {
+			return plt_addr + PLT_HDR_SIZE + (ARM_PLT_LLD_ENTRY * pos);
+		}
+		return plt_addr + (pos * 12) + 20;
 	case R_ARM_GLOB_DAT:
 	case R_ARM_ABS32:
 		return rel->rva;
