@@ -669,6 +669,7 @@ RUN
 NAME=pdc mips real binary gp global fold
 FILE=bins/elf/boa-mips
 CMDS=<<EOF
+e anal.vars=false
 aaa
 pdc @ sym.updateCurNetworkSpeed~v0 = [obj
 EOF
