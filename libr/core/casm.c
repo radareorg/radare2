@@ -65,11 +65,14 @@ static int asm_search_split_tokens(char *str, char **tokens, int count) {
 	char *dst = str;
 	int n = 1;
 	tokens[0] = dst;
-	while (*src && n < count) {
+	while (*src) {
 		if (*src == '\\' && src[1] == ';') {
 			src++;
 		}
 		if (*src == ';') {
+			if (n == count) {
+				return 0;
+			}
 			*dst++ = 0;
 			r_str_trim (tokens[n - 1]);
 			src++;
@@ -155,6 +158,10 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	tokcount = asm_search_split_tokens (ptr, tokens, R_ARRAY_SIZE (tokens) - 1);
 	tokens[tokcount] = NULL;
 	r_cons_break_push (core->cons, NULL, NULL);
+	if (!tokcount) {
+		R_LOG_ERROR ("Too many instructions in search pattern (maximum %d)", (int)R_ARRAY_SIZE (tokens) - 1);
+		goto beach;
+	}
 	if (regexp) {
 		for (i = 0; i < tokcount; i++) {
 			if (!*tokens[i]) {
