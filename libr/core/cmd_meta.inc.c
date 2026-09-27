@@ -1222,109 +1222,138 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			break;
 		}
 		int len = (!input[1] || input[1] == ' ') ? 2 : 3;
-		if (strlen (input) > len) {
-			char *rep = strchr (input + len, '[');
+		t = strdup (input);
+		if (!t) {
+			return false;
+		}
+		if (strlen (t) > len) {
+			char *rep = strchr (t + len, '[');
 			if (!rep) {
-				rep = strchr (input + len, ' ');
+				rep = strchr (t + len, ' ');
 			}
 			if (*input == 'd') {
 				if (rep) {
-					repeat = r_num_math (core->num, rep + 1);
-				}
-			}
-		}
-		int repcnt = 0;
-		if (repeat < 1) {
-			repeat = 1;
-		}
-		while (repcnt < repeat) {
-			int off = (!input[1] || input[1] == ' ') ? 1 : 2;
-			t = strdup (r_str_trim_head_ro (input + off));
-			p = NULL;
-			n = 0;
-			r_str_ncpy (name, t, sizeof (name));
-			if (type != 'C') {
-				n = r_num_math (core->num, t);
-				if (type == 'f') { // "Cf"
-					p = strchr (t, ' ');
-					if (p) {
-						p = (char *)r_str_trim_head_ro (p);
-						if (*p == '.') {
-							const char *realformat = r_print_format_byname (core->print, p + 1);
-							if (realformat) {
-								p = (char *)realformat;
-							} else {
-								R_LOG_WARN ("Cannot resolve format '%s'", p + 1);
+					char *end = NULL;
+					if (*rep == '[') {
+						size_t depth = 1;
+						char *q;
+						for (q = rep + 1; *q; q++) {
+							if (*q == '[') {
+								depth++;
+							} else if (*q == ']' && !--depth) {
+								end = q;
 								break;
 							}
 						}
-						if (n < 1) {
-							n = r_print_format_struct_size (core->print, p, 0, 0);
-							if (n < 1) {
-								R_LOG_WARN ("Cannot resolve struct size for '%s'", p);
-								n = 32; //
-							}
-						}
-						// make sure we do not overflow on r_print_format
-						if (n > core->blocksize) {
-							n = core->blocksize;
-						}
-						int r = r_print_format (core->print, addr, core->block,
-							n, p, 0, NULL, NULL);
-						if (r < 0) {
-							n  = -1;
-						}
-					} else {
-						r_cons_cmd_help_match (core->cons, help_msg_C, "Cf", 0, true);
-						break;
 					}
-				} else if (type == 's') { // "Cs"
-					if (!cmd_Cs (core, input, &addr, &n, name, sizeof (name))) {
-						return false;
+					if (end) {
+						*end = 0;
+					}
+					repeat = r_num_math (core->num, rep + 1);
+					if (end) {
+						*end = ']';
 					}
 				}
-				if (n < 1) {
-					/* invalid length, do not insert into db */
+			}
+		}
+		if (repeat < 1) {
+			repeat = 1;
+		}
+		int off = (!input[1] || input[1] == ' ') ? 1 : 2;
+		char *args = (char *)r_str_trim_head_ro (t + off);
+		bool use_flag_name = false;
+		p = NULL;
+		n = 0;
+		r_str_ncpy (name, args, sizeof (name));
+		if (type != 'C') {
+			n = r_num_math (core->num, args);
+			if (type == 'f') { // "Cf"
+				p = strchr (args, ' ');
+				if (p) {
+					p = (char *)r_str_trim_head_ro (p);
+					if (*p == '.') {
+						const char *realformat = r_print_format_byname (core->print, p + 1);
+						if (realformat) {
+							p = (char *)realformat;
+						} else {
+							R_LOG_WARN ("Cannot resolve format '%s'", p + 1);
+							free (t);
+							break;
+						}
+					}
+					if (n < 1) {
+						n = r_print_format_struct_size (core->print, p, 0, 0);
+						if (n < 1) {
+							R_LOG_WARN ("Cannot resolve struct size for '%s'", p);
+							n = 32; //
+						}
+					}
+					// make sure we do not overflow on r_print_format
+					if (n > core->blocksize) {
+						n = core->blocksize;
+					}
+					int r = r_print_format (core->print, addr, core->block,
+						n, p, 0, NULL, NULL);
+					if (r < 0) {
+						n  = -1;
+					}
+				} else {
+					r_cons_cmd_help_match (core->cons, help_msg_C, "Cf", 0, true);
+					free (t);
+					break;
+				}
+			} else if (type == 's') { // "Cs"
+				if (!cmd_Cs (core, input, &addr, &n, name, sizeof (name))) {
+					free (t);
 					return false;
 				}
-				if (!*t || n > 0) {
-					p = strchr (t, ' ');
-					if (p) {
-						*p++ = '\0';
-						p = (char *)r_str_trim_head_ro (p);
-						r_str_ncpy (name, p, sizeof (name));
-					} else {
-						if (type != 'b' && type != 's') {
-							RFlagItem *fi = r_flag_get_in (core->flags, addr);
-							if (fi) {
-								r_str_ncpy (name, fi->name, sizeof (name));
-							}
-						}
+			}
+			if (n < 1) {
+				free (t);
+				return false;
+			}
+			if (!*args || n > 0) {
+				p = strchr (args, ' ');
+				if (p) {
+					*p++ = '\0';
+					p = (char *)r_str_trim_head_ro (p);
+					r_str_ncpy (name, p, sizeof (name));
+				} else {
+					use_flag_name = type != 'b' && type != 's';
+				}
+			}
+		}
+		if (!n) {
+			n++;
+		}
+		if (type == 's') {
+			switch (input[1]) {
+			case 'a':
+			case '8':
+			case 'z':
+			case 'w':
+				subtype = input[1];
+				break;
+			default:
+				subtype = R_STRING_ENC_GUESS;
+			}
+			r_meta_set_with_subtype (core->anal, type, subtype, addr, n, name);
+		} else {
+			int repcnt;
+			for (repcnt = 0; repcnt < repeat; repcnt++, addr += n) {
+				const char *meta_name = name;
+				char flag_name[256];
+				if (use_flag_name) {
+					RFlagItem *fi = r_flag_get_in (core->flags, addr);
+					if (fi) {
+						r_str_ncpy (flag_name, fi->name, sizeof (flag_name));
+						meta_name = flag_name;
 					}
 				}
+				r_meta_set (core->anal, type, addr, n, meta_name);
 			}
-			if (!n) {
-				n++;
-			}
-			if (type == 's') {
-				switch (input[1]) {
-				case 'a':
-				case '8':
-				case 'z':
-				case 'w':
-					subtype = input[1];
-					break;
-				default:
-					subtype = R_STRING_ENC_GUESS;
-				}
-				r_meta_set_with_subtype (core->anal, type, subtype, addr, n, name);
-			} else {
-				r_meta_set (core->anal, type, addr, n, name);
-			}
-			free (t);
-			repcnt ++;
-			addr += n;
 		}
+		free (t);
 		// r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 		break;
 	default:

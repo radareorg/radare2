@@ -7,6 +7,97 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Cd repetition preserves names and seek
+FILE=malloc://0x100
+CMDS=<<EOF
+f first 4 @ 0x10
+f third 4 @ 0x18
+s 0x10
+e log.level=6;Cd 4[3];e log.level=0
+Cdj
+s
+Cd-*
+Cd 4 3
+Cdj
+s
+EOF
+EXPECT=<<EOF
+[{"offset":16,"type":"Cd","name":"first","size":4},{"offset":20,"type":"Cd","name":"__3_","size":4},{"offset":24,"type":"Cd","name":"third","size":4}]
+0x10
+[{"offset":16,"type":"Cd","name":"_","size":4},{"offset":20,"type":"Cd","name":"_","size":4},{"offset":24,"type":"Cd","name":"_","size":4}]
+0x10
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=Cd repetition accepts expressions and nested brackets
+FILE=malloc://0x100
+CMDS=<<EOF
+f first 4 @ 0x10
+f third 4 @ 0x18
+s 0x10
+e log.level=6;Cd 2+2[1+2];e log.level=0
+Cdj
+Cd-*
+wx 03000000 @ 0
+e log.level=6;Cd 4[1+[1:0]];e log.level=0
+Cdj
+s
+EOF
+EXPECT=<<EOF
+[{"offset":16,"type":"Cd","name":"first","size":4},{"offset":20,"type":"Cd","name":"_2_12_","size":4},{"offset":24,"type":"Cd","name":"third","size":4}]
+[{"offset":16,"type":"Cd","name":"first","size":4},{"offset":20,"type":"Cd","name":"__1_1:0__","size":4},{"offset":24,"type":"Cd","name":"third","size":4},{"offset":28,"type":"Cd","name":"__1_1:0__","size":4}]
+0x10
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=Cd repetition preserves explicit names with brackets
+FILE=malloc://0x100
+CMDS=<<EOF
+f first 4 @ 0x10
+f third 4 @ 0x18
+s 0x10
+e log.level=6;Cd 4[3] label[extra];e log.level=0
+Cdj
+s
+EOF
+EXPECT=<<EOF
+[{"offset":16,"type":"Cd","name":"label_extra_","size":4},{"offset":20,"type":"Cd","name":"label_extra_","size":4},{"offset":24,"type":"Cd","name":"label_extra_","size":4}]
+0x10
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=Cd clamps nonpositive counts and rejects invalid sizes
+FILE=malloc://0x100
+CMDS=<<EOF
+s 0x80
+Cd 4[0] @ 0x10
+Cd 4[-1] @ 0x20
+Cd 4 0 @ 0x30
+Cd4 @ 0x40
+Cd 4 @ 0x50
+Cd 0[3] @ 0x60
+Cd -4[3] @ 0x70
+Cd*
+s
+EOF
+EXPECT=<<EOF
+Cd 4 @ 0x00000010
+Cd 4 @ 0x00000020
+Cd 4 @ 0x00000030
+Cd 4 @ 0x00000040
+Cd 4 @ 0x00000050
+0x80
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
 NAME=Ct preserves serialized annotation text
 FILE=malloc://0x100
 CMDS=<<EOF
