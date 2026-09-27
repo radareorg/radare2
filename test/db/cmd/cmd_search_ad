@@ -340,6 +340,38 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=/ad/ consumes the last expression at the instruction limit
+FILE=malloc://1023
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+b 1023
+wox 90
+/ad/j "$(1022?en 'nop;')ret"
+/ad/j "$(1022?en 'nop;')nop"~{[0].len}
+EOF
+EXPECT=<<EOF
+[]
+1023
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=/ad/ rejects excess instructions without a partial match
+FILE=malloc://1024
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+b 1024
+wox 90
+/ad/j "$(1023?en 'nop;')ret"
+EOF
+EXPECT=<<EOF
+[]
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Too many instructions in search pattern (maximum 1023)
+EOF
+RUN
+
 NAME=/ad glob search
 ARGS=-a arm -b64
 FILE=bins/mach0/ls-m1
