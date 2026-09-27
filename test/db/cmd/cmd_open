@@ -660,12 +660,12 @@ oa x86 64 bins/elf/ls
 oa x86 64 nonfile
 oa x86 
 EOF
-EXPECT=<<EOF
-More than one file is opened, specify the filename
-Cannot find file nonfile
-Missing argument
+EXPECT=
+EXPECT_ERR=<<EOF
+INFO: More than one file is opened, you must specify the filename
+ERROR: Cannot find file nonfile
+ERROR: Missing argument
 EOF
-BROKEN=1
 RUN
 
 NAME=ob *
