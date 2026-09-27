@@ -6,6 +6,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rabin2 lists exception regions
+FILE=bins/elf/ClassCpp.out
+CMDS=!!rabin2 -w ${R2_FILE}~try.0.
+EXPECT=<<EOF
+f try.0.1269.from=0x000012aa
+f try.0.1269.to=0x00001308
+f try.0.1269.cleanup=0x0000132c
+EOF
+RUN
+
 NAME=ELF Itanium catch-all region
 FILE=bins/elf/demangle-test-cpp
 CMDS=iwj~{[1]}
