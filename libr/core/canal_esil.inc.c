@@ -1105,7 +1105,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		case R_ANAL_OP_TYPE_NULL:
 			if (is_thumb) {
 				R_LOG_DEBUG ("thumb unaligned or invalid instructions at 0x%08"PFMT64x, cur);
-				i++; // codelalign is not always the best option to catch unaligned instructions
+				i += 2;
 				goto repeat;
 			} else {
 				R_LOG_DEBUG ("invalid instructions at 0x%08"PFMT64x, cur);

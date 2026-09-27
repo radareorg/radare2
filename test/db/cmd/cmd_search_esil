@@ -247,3 +247,20 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=ESIL /rs keeps Thumb string references aligned after invalid and null instructions
+FILE=malloc://0x400
+ARGS=-a arm -b 16
+CMDS=<<EOF
+wx ffff00bf0048 @ 0x100
+wv4 0x300 @ 0x108
+wz aligned @ 0x300
+e search.from=0x100
+e search.to=0x106
+/rs
+axq
+EOF
+EXPECT=<<EOF
+0x00000104 -> 0x00000300  STRN:r--
+EOF
+RUN
