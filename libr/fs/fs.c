@@ -148,25 +148,22 @@ R_API RFSRoot *r_fs_mount_with_options(RFS *fs, const char *R_NULLABLE fstype, c
 		heapFsType = r_fs_name (fs, delta);
 		fstype = (const char *)heapFsType;
 	}
-	if (fstype == NULL) {
-		return NULL;
-	}
-	RFSPlugin *p = r_libstore_find_name (fs->libstore, fstype);
+	RFSPlugin *p = fstype? r_libstore_find_name (fs->libstore, fstype): NULL;
 	if (!p) {
-		R_LOG_ERROR ("Invalid filesystem type '%s'", fstype);
-		free (heapFsType);
+		R_LOG_ERROR ("Unknown filesystem type: %s", fstype? fstype: "autodetect");
+	}
+	free (heapFsType);
+	if (!p) {
 		return NULL;
 	}
 	str = strdup (path);
 	if (!str) {
-		free (heapFsType);
 		return NULL;
 	}
 	r_str_trim_path (str);
 	if (*str && strchr (str + 1, '/')) {
 		R_LOG_ERROR ("mountpoint must have no subdirectories");
 		free (str);
-		free (heapFsType);
 		return NULL;
 	}
 	/* Check if path exists */
@@ -182,38 +179,35 @@ R_API RFSRoot *r_fs_mount_with_options(RFS *fs, const char *R_NULLABLE fstype, c
 			}
 			R_LOG_ERROR ("Invalid mount point");
 			free (str);
-			free (heapFsType);
 			return NULL;
 		}
 	}
 	RFSFile *file = r_fs_open (fs, str, false);
 	if (file) {
 		r_fs_close (fs, file);
+		r_fs_file_free (file);
 		R_LOG_ERROR ("Invalid mount point");
-		free (heapFsType);
 		free (str);
 		return NULL;
 	}
 	RList *list = r_fs_dir (fs, str);
 	if (!r_list_empty (list)) {
-		// XXX: list need free??
+		r_list_free (list);
 		R_LOG_ERROR ("r_fs_mount: Invalid mount point");
 		free (str);
-		free (heapFsType);
 		return NULL;
 	}
+	r_list_free (list);
 	// TODO: we should just construct the root with the rfs instance
 	root = r_fs_root_new (str, delta);
 	if (!root) {
 		free (str);
-		free (heapFsType);
 		return NULL;
 	}
 	if (R_STR_ISNOTEMPTY (options)) {
 		root->options = strdup (options);
 		if (!root->options) {
 			free (str);
-			free (heapFsType);
 			r_fs_root_free (root);
 			return NULL;
 		}
@@ -223,14 +217,12 @@ R_API RFSRoot *r_fs_mount_with_options(RFS *fs, const char *R_NULLABLE fstype, c
 	root->cob = fs->cob;
 	if (p->mount && !p->mount (root)) {
 		free (str);
-		free (heapFsType);
 		r_fs_root_free (root);
 		return NULL;
 	}
 	r_list_append (fs->roots, root);
-	R_LOG_DEBUG ("Mounted %s on %s at 0x%" PFMT64x, fstype, str, delta);
+	R_LOG_DEBUG ("Mounted %s on %s at 0x%" PFMT64x, p->meta.name, str, delta);
 	free (str);
-	free (heapFsType);
 	return root;
 }
 
