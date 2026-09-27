@@ -175,3 +175,25 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=Write reanalysis repeatedly merges and recreates consecutive blocks
+FILE=-
+ARGS=-a x86 -b 64 -e anal.onchange=true
+CMDS=<<EOF
+wx 750231c0c3
+af
+afb~?
+wx 31c0
+afbj
+wx 7502
+afb~?
+wx 31c0
+afbj
+EOF
+EXPECT=<<EOF
+3
+[{"addr":0,"size":5,"opaddr":0,"inputs":0,"outputs":0,"ninstr":3,"instrs":[0,2,4],"traced":0}]
+3
+[{"addr":0,"size":5,"opaddr":0,"inputs":0,"outputs":0,"ninstr":3,"instrs":[0,2,4],"traced":0}]
+EOF
+RUN
