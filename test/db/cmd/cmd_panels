@@ -1,0 +1,170 @@
+NAME=Panels cache arbitrary commands with empty output
+FILE=-
+ENV=XDG_DATA_HOME=.tmp/panels-custom
+CMDS=<<EOF
+mkdir -p .tmp/panels-custom/radare2/r2panels
+?e '{"Title":"custom","Cmd":"f hits=hits+1","x":0,"y":2,"w":80,"h":20,"Cache":true}' > .tmp/panels-custom/radare2/r2panels/test
+e scr.interactive=true
+e scr.wheel=false
+f hits=0
+v test
+<jjjq
+v @e:scr.interactive=true > /dev/null
+?vi hits
+rm -r .tmp/panels-custom
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=Panels cache is comma command prefixes
+FILE=-
+ENV=XDG_DATA_HOME=.tmp/panels-symbols
+CMDS=<<EOF
+mkdir -p .tmp/panels-symbols/radare2/r2panels
+?e '{"Title":"symbols","Cmd":"is,;f hits=hits+1","x":0,"y":2,"w":80,"h":20}' > .tmp/panels-symbols/radare2/r2panels/test
+e scr.interactive=true
+e scr.wheel=false
+f hits=0
+v test
+<jjjq
+v @e:scr.interactive=true > /dev/null
+?vi hits
+rm -r .tmp/panels-symbols
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=Panels disable caching independently of command prefixes
+FILE=-
+ENV=XDG_DATA_HOME=.tmp/panels-live-symbols
+CMDS=<<EOF
+mkdir -p .tmp/panels-live-symbols/radare2/r2panels
+?e '{"Title":"live-symbols","Cmd":"is,;f hits=hits+1","x":0,"y":2,"w":80,"h":20,"Cache":false}' > .tmp/panels-live-symbols/radare2/r2panels/test
+e scr.interactive=true
+e scr.wheel=false
+f hits=0
+v test
+<jjjq
+v @e:scr.interactive=true > /dev/null
+?vi hits
+rm -r .tmp/panels-live-symbols
+EOF
+EXPECT=<<EOF
+5
+EOF
+RUN
+
+NAME=Panels cache toggle stays off for cursor lists
+FILE=-
+ENV=XDG_DATA_HOME=.tmp/panels-toggle
+CMDS=<<EOF
+mkdir -p .tmp/panels-toggle/radare2/r2panels
+?e '{"Title":"toggle","Cmd":"afl;f hits=hits+1","x":0,"y":2,"w":80,"h":20}' > .tmp/panels-toggle/radare2/r2panels/test
+e scr.interactive=true
+e scr.wheel=false
+f hits=0
+v test
+<\x26jjjq
+v @e:scr.interactive=true > /dev/null
+?vi hits
+rm -r .tmp/panels-toggle
+EOF
+EXPECT=<<EOF
+5
+EOF
+RUN
+
+NAME=Panels refresh clears empty cached output
+FILE=-
+ENV=XDG_DATA_HOME=.tmp/panels-refresh
+CMDS=<<EOF
+mkdir -p .tmp/panels-refresh/radare2/r2panels
+?e '{"Title":"refresh","Cmd":"f hits=hits+1","x":0,"y":2,"w":80,"h":20,"Cache":true}' > .tmp/panels-refresh/radare2/r2panels/test
+e scr.interactive=true
+e scr.wheel=false
+f hits=0
+v test
+<jjFjjq
+v @e:scr.interactive=true > /dev/null
+?vi hits
+rm -r .tmp/panels-refresh
+EOF
+EXPECT=<<EOF
+2
+EOF
+RUN
+
+NAME=Panels cancelled modal preserves the cache override
+FILE=-
+ENV=XDG_DATA_HOME=.tmp/panels-modal
+CMDS=<<EOF
+mkdir -p .tmp/panels-modal/radare2/r2panels
+?e '{"Title":"modal","Cmd":"is,;f hits=hits+1","x":0,"y":2,"w":80,"h":20,"Cache":false}' > .tmp/panels-modal/radare2/r2panels/test
+e scr.interactive=true
+e scr.wheel=false
+f hits=0
+v test
+<\x22qjjjq
+v @e:scr.interactive=true > /dev/null
+?vi hits
+rm -r .tmp/panels-modal
+EOF
+EXPECT=<<EOF
+6
+EOF
+RUN
+
+NAME=Panels graph cache follows function changes
+FILE=malloc://256
+ENV=XDG_DATA_HOME=.tmp/panels-graph
+CMDS=<<EOF
+mkdir -p .tmp/panels-graph/radare2/r2panels
+?e '{"Title":"Graph probe","Cmd":"agfj;f hits=hits+1;afn second","x":0,"y":2,"w":80,"h":20}' > .tmp/panels-graph/radare2/r2panels/test
+e scr.interactive=true
+e scr.wheel=false
+af+ 0 first
+afb+ 0 0 4
+f hits=0
+v test
+<jjjq
+v @e:scr.interactive=true > /dev/null
+?vi hits
+rm -r .tmp/panels-graph
+EOF
+EXPECT=<<EOF
+2
+EOF
+RUN
+
+NAME=Panels built-in cache default and saved override
+FILE=-
+ENV=XDG_DATA_HOME=.tmp/panels-save
+CMDS=<<EOF
+mkdir -p .tmp/panels-save/radare2/r2panels
+?e '{"Title":"Imports","Cmd":"iiq","x":0,"y":2,"w":80,"h":20}' > .tmp/panels-save/radare2/r2panels/test
+e scr.interactive=true
+e scr.wheel=false
+v test
+<mljljjjjj on\nxq
+v @e:scr.interactive=true > /dev/null
+cat .tmp/panels-save/radare2/r2panels/on~{Cache}
+v on
+<\x26mljljjjjj off\nxq
+v @e:scr.interactive=true > /dev/null
+cat .tmp/panels-save/radare2/r2panels/off~{Cache}
+v off
+<mljljjjjj restored\nxq
+v @e:scr.interactive=true > /dev/null
+cat .tmp/panels-save/radare2/r2panels/restored~{Cache}
+rm -r .tmp/panels-save
+EOF
+EXPECT=<<EOF
+true
+false
+false
+EOF
+RUN
