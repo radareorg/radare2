@@ -46,7 +46,7 @@ typedef struct r_cmd_context_t {
 	void *handler_user;
 	int remaining_depth; // nested core command budget
 	ut32 blocksize; // block size snapshot inherited by nested command contexts
-	bool raw; // command requested verbatim argument handling
+	bool raw; // caller or registration requested verbatim argument handling
 	char *args_storage; // private: owned buffer backing args, do not use
 	RVecRStrs args; // NUL-terminated arguments; slice lengths preserve embedded NULs
 	RStrs subcmd; // command-token remainder after the registered name; slices the
@@ -60,6 +60,28 @@ typedef RCmdResult (*RCmdCtxCb) (RCmdContext *ctx);
 static inline RStrs r_cmdctx_arg(RCmdContext *ctx, size_t index) {
 	RStrs *arg = RVecRStrs_at (&ctx->args, index);
 	return arg? *arg: (RStrs) { NULL, NULL };
+}
+
+// Fill caller-owned storage with borrowed arguments, padding missing entries with NULL.
+static inline void r_cmdctx_args(RCmdContext *ctx, const char **args, size_t count) {
+	size_t i;
+	for (i = 0; i < count; i++) {
+		args[i] = r_cmdctx_arg (ctx, i).a;
+	}
+}
+
+// Optional numeric arguments retain the caller's default when absent.
+static inline bool r_cmdctx_num(RCmdContext *ctx, size_t index, RNum *num, ut64 *value) {
+	const char *arg = r_cmdctx_arg (ctx, index).a;
+	if (arg) {
+		const char *error = NULL;
+		*value = r_num_math_err (num, arg, &error);
+		if (R_STR_ISEMPTY (r_str_trim_head_ro (arg)) || error || num->dbz) {
+			R_LOG_ERROR ("Invalid numeric argument: %s", arg);
+			return false;
+		}
+	}
+	return true;
 }
 
 static inline size_t r_cmdctx_argc(RCmdContext *ctx) {

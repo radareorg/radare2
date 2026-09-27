@@ -11,6 +11,7 @@ typedef struct {
 	RCmdCtxCb callback;
 	void *user;
 	size_t active_calls;
+	RCmdArgFlags flags;
 } RCmdHandler;
 
 typedef struct r_cmd_handler_frame_t {
@@ -268,6 +269,11 @@ R_API void r_cmd_set_data(RCmd *cmd, void *data) {
 
 R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user) {
 	R_RETURN_VAL_IF_FAIL (cmd && name && callback, false);
+	return r_cmd_register_args (cmd, name, callback, handler_user, R_CMD_ARGS_DEFAULT);
+}
+
+R_IPI bool r_cmd_register_args(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user, RCmdArgFlags flags) {
+	R_RETURN_VAL_IF_FAIL (cmd && name && callback, false);
 	RStrs key = r_strs_from (name);
 	r_th_lock_enter (cmd->handlers_lock);
 	if (r_strs_empty (key) || r_trie_find (cmd->handlers, key)) {
@@ -278,6 +284,7 @@ R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void 
 	handler->callback = callback;
 	handler->user = handler_user;
 	handler->active_calls = 0;
+	handler->flags = flags;
 	if (!r_trie_insert (cmd->handlers, key, handler)) {
 		r_th_lock_leave (cmd->handlers_lock);
 		free (handler);
@@ -476,6 +483,9 @@ static bool cmd_context_parse_args(RCmdContext *context, RStrs rest, bool raw) {
 	RVecRStrs_fini (&context->args);
 	free (context->args_storage);
 	context->args_storage = NULL;
+	if (r_strs_empty (rest)) {
+		return true;
+	}
 	char *storage = malloc (r_strs_len (rest) + 1);
 	if (!storage) {
 		return false;
@@ -527,12 +537,9 @@ static bool cmd_context_parse_args(RCmdContext *context, RStrs rest, bool raw) {
 	return true;
 }
 
-static void cmd_context_free(RCmdContext *context) {
-	if (context) {
-		RVecRStrs_fini (&context->args);
-		free (context->args_storage);
-		free (context);
-	}
+static void cmd_context_fini(RCmdContext *context) {
+	RVecRStrs_fini (&context->args);
+	free (context->args_storage);
 }
 
 static RCons *cmd_legacy_capture_begin(RCmd *cmd, RCmdContext *parent) {
@@ -563,48 +570,56 @@ static void cmd_legacy_capture_end(RCmd *cmd, RCmdContext *parent, RCons *cons) 
 
 static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs input, bool raw) {
 	RStrs lookup = input;
-	RCmdContext *context = NULL;
+	RCmdContext storage = {
+		.parent = parent,
+		.cmd = cmd,
+		.cons = parent? parent->cons: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons,
+		.user = cmd->data,
+		.remaining_depth = parent? parent->remaining_depth: 0,
+		.blocksize = parent? parent->blocksize: cmd->get_blocksize? cmd->get_blocksize (cmd->data): 0,
+	};
+	RCmdContext *context = &storage;
 	const char *parsed_from = NULL;
+	RCmdArgFlags parsed_flags = R_CMD_ARGS_DEFAULT;
 	while (!r_strs_empty (lookup)) {
 		size_t matched = 0;
 		RCmdCtxCb callback = NULL;
 		void *handler_user = NULL;
+		RCmdArgFlags flags = R_CMD_ARGS_DEFAULT;
 		r_th_lock_enter (cmd->handlers_lock);
 		RCmdHandler *handler = r_trie_find_longest_prefix (cmd->handlers, lookup, &matched);
 		if (handler && matched) {
 			callback = handler->callback;
 			handler_user = handler->user;
+			flags = handler->flags;
 			handler->active_calls++;
 		}
 		r_th_lock_leave (cmd->handlers_lock);
 		if (!callback) {
 			break;
 		}
-		if (!context) {
-			context = R_NEW0 (RCmdContext);
-			context->parent = parent;
-			context->cmd = cmd;
-			context->cons = parent
-				? parent->cons
-				: cmd->get_cons? cmd->get_cons (cmd->data): cmd->cons;
-			context->user = cmd->data;
-			context->remaining_depth = parent? parent->remaining_depth: 0;
-			context->blocksize = parent
-				? parent->blocksize
-				: cmd->get_blocksize? cmd->get_blocksize (cmd->data): 0;
-			context->raw = raw;
-		}
 		const char *sub_end = input.a + matched;
-		while (sub_end < input.b && !isspace ((ut8)*sub_end)) {
+		if (!(flags & R_CMD_ARGS_ATTACHED)) {
+			while (sub_end < input.b && !isspace ((ut8)*sub_end)) {
+				sub_end++;
+			}
+		} else if (sub_end < input.b && *sub_end == '?' &&
+				(sub_end + 1 == input.b || isspace ((ut8)sub_end[1]))) {
 			sub_end++;
 		}
-		if (parsed_from != sub_end) {
-			if (!cmd_context_parse_args (context, r_strs_new (sub_end, input.b), raw)) {
+		context->raw = raw || (flags & R_CMD_ARGS_VERBATIM);
+		if (parsed_from != sub_end || parsed_flags != flags) {
+			RStrs args = r_strs_new (sub_end, input.b);
+			if (flags & R_CMD_ARGS_VERBATIM) {
+				args.a = args.b;
+			}
+			if (!cmd_context_parse_args (context, args, raw)) {
 				cmd_handler_call_end (cmd, handler);
-				cmd_context_free (context);
+				cmd_context_fini (context);
 				return cmd_result (R_CMD_ACTION_ABORT, 2);
 			}
 			parsed_from = sub_end;
+			parsed_flags = flags;
 		}
 		context->subcmd = r_strs_new (input.a + matched, sub_end);
 		context->handler_user = handler_user;
@@ -617,12 +632,12 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 		current_handler_frame = frame.parent;
 		cmd_handler_call_end (cmd, handler);
 		if (result.action != R_CMD_ACTION_UNHANDLED) {
-			cmd_context_free (context);
+			cmd_context_fini (context);
 			return result;
 		}
 		lookup.b = lookup.a + matched - 1;
 	}
-	cmd_context_free (context);
+	cmd_context_fini (context);
 	return cmd_result (R_CMD_ACTION_UNHANDLED, 127);
 }
 
