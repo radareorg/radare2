@@ -57,7 +57,7 @@ R_API char* r_core_asm_search(RCore *core, const char *input) {
 	return ret;
 }
 
-static int asm_search_split_tokens(char *str, char **tokens, int count) {
+static int asm_search_split_tokens(char *str, char **tokens, int count, bool regexp) {
 	if (count < 1) {
 		return 0;
 	}
@@ -68,6 +68,35 @@ static int asm_search_split_tokens(char *str, char **tokens, int count) {
 	while (*src) {
 		if (*src == '\\' && src[1] == ';') {
 			src++;
+		} else if (regexp && *src == '\\' && src[1]) {
+			*dst++ = *src++;
+			*dst++ = *src++;
+			continue;
+		} else if (regexp && *src == '[') {
+			char *end = src + 1;
+			if (*end == '^') {
+				end++;
+			}
+			if (*end == ']') {
+				end++;
+			}
+			while (*end && *end != ']') {
+				if (*end == '[' && end[1] && strchr (":.=", end[1])) {
+					char closing[] = { end[1], ']', 0 };
+					char *term = strstr (end + 2, closing);
+					if (term) {
+						end = term + 1;
+					}
+				}
+				end++;
+			}
+			if (*end) {
+				end++;
+			}
+			while (src < end) {
+				*dst++ = *src++;
+			}
+			continue;
 		}
 		if (*src == ';') {
 			if (n == count) {
@@ -155,7 +184,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		free (ptr);
 		return NULL;
 	}
-	tokcount = asm_search_split_tokens (ptr, tokens, R_ARRAY_SIZE (tokens) - 1);
+	tokcount = asm_search_split_tokens (ptr, tokens, R_ARRAY_SIZE (tokens) - 1, regexp);
 	tokens[tokcount] = NULL;
 	r_cons_break_push (core->cons, NULL, NULL);
 	if (!tokcount) {
