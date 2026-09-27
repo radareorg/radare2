@@ -193,9 +193,11 @@ static bool anal_esil_set_bits(void *user, int bits) {
 static void cc_changed(Sdb *s, void *user, const char *k, const char *v) {
 	RAnal *anal = user;
 	R_ANAL_PRIV (anal)->cc_generation++;
+	r_anal_cc_cache_reset (anal);
 }
 
 // Take nullable RArchConfig as argument?
+
 R_API RAnal *r_anal_new(void) {
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!r_str_constpool_init (&anal->constpool)) {
@@ -290,6 +292,7 @@ R_API void r_anal_plugin_free(RAnalPlugin *p) {
 void __block_free_rb(RBNode *node, void *user);
 
 static void anal_priv_free(RAnal * R_NONNULL a) {
+	r_anal_cc_cache_reset (a);
 	free (R_ANAL_PRIV (a)->dir_prefix);
 	free (a->priv);
 }
