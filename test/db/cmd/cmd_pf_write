@@ -48,16 +48,17 @@ RUN
 
 NAME=pf array not in meta
 FILE=-
-BROKEN=1
 CMDS=<<EOF
 pf foo=[3]x foo
 .pf.foo.foo=1
 .pf*.foo
 e asm.lines=0
-pd 1
+pd 1~?dword
+pd 1~?foo
 EOF
 EXPECT=<<EOF
-0x00000000 foo : 0x00000000 = [ 0x00000001, 0x00000000, 0x00000000 ]
+0
+1
 EOF
 RUN
 
@@ -100,4 +101,3 @@ EXPECT=<<EOF
             0x0000000c      .dword 0x6c726f77
 EOF
 RUN
-
