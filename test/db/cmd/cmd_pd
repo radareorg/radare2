@@ -1418,6 +1418,54 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pd preserves read and write xrefs from separate functions (24274)
+FILE=malloc://8192
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+omv 1 0x201000
+wx 30c0e806000000e809000000c38a042581212000c388042581212000c3 @ 0x201160
+af @ 0x201160
+axt @ 0x202181
+pd 1 @ 0x202181~XREF
+aar 64 @ 0x201160
+pd 1 @ 0x202181~XREF
+aae 29 @ 0x201160
+pd 1 @ 0x202181~XREF
+EOF
+EXPECT=<<EOF
+fcn.0020116d 0x20116d [DATA:r--] mov al, byte [0x202181]
+fcn.00201175 0x201175 [DATA:-w-] mov byte [0x202181], al
+            ; DATA XREF from fcn.0020116d @ 0x20116d(r)
+            ; DATA XREF from fcn.00201175 @ 0x201175(w)
+            ; DATA XREF from fcn.0020116d @ 0x20116d(r)
+            ; DATA XREF from fcn.00201175 @ 0x201175(w)
+            ; DATA XREF from fcn.0020116d @ 0x20116d(r)
+            ; DATA XREF from fcn.00201175 @ 0x201175(w)
+EOF
+RUN
+
+NAME=pd preserves mixed access xref groups and zero flag offsets
+FILE=malloc://8192
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+omv 1 0x201000
+wx 8a04258121200088042581212000c3880425812120008a042581212000c3 @ 0x201160
+f read_write @ 0x201160
+f write_read @ 0x20116f
+aar 64 @ 0x201160
+pd 1 @ 0x202181~XREF
+af @ 0x201160
+af @ 0x20116f
+pd 1 @ 0x202181~XREF
+EOF
+EXPECT=<<EOF
+            ; DATA XREFS from read_write @ +0x0(r), +0x7(w)
+            ; DATA XREFS from write_read @ +0x0(w), +0x7(r)
+            ; DATA XREFS from read_write @ 0x201160(r), 0x201167(w)
+            ; DATA XREFS from write_read @ 0x20116f(w), 0x201176(r)
+EOF
+RUN
+
 NAME=pdJ escape flagname
 FILE=bins/elf/crackme
 CMDS=pdJ 1 @ 0x0040082f
