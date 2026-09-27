@@ -3144,23 +3144,24 @@ invalid:
 	return false;
 }
 
-static void do_asm_search(RCore *core, RSearchParameters *param, const char *input, int mode, RInterval search_itv) {
+static bool do_asm_search(RCore *core, RSearchParameters *param, const char *input, int mode, RInterval search_itv) {
 	RCoreAsmHit *hit; // WTF LOL must use RSearchHit in here!
 	RListIter *iter, *itermap;
 	int count = 0;
 	RIOMap *map;
 	bool regexp = false;
 	bool everyByte = false;
+	bool success = true;
 	const char *end_cmd = strchr (input, ' ');
 	if (mode == 0 && input[1] == '/' && input[2] == '?' && (!input[3] || input[3] == ' ')) {
 		r_cons_cmd_help_match (core->cons, help_msg_slash_ad, "/ad/", 0, false);
-		return;
+		return true;
 	}
 	if (mode == 0) {
 		int outmode = param->outmode;
 		if (!parse_ad_modifiers (core, input, &regexp, &everyByte, &outmode, &end_cmd)) {
 			param->outmode = 0;
-			return;
+			return false;
 		}
 		param->outmode = outmode;
 	} else {
@@ -3176,7 +3177,7 @@ static void do_asm_search(RCore *core, RSearchParameters *param, const char *inp
 			break;
 		case '?':
 			r_cons_cmd_help (core->cons, help_msg_slash_ad);
-			return;
+			return true;
 		default:
 			break;
 		}
@@ -3188,9 +3189,15 @@ static void do_asm_search(RCore *core, RSearchParameters *param, const char *inp
 	if (mode == 0) {
 		pattern = r_str_trim_dup (end_cmd);
 		if (!pattern) {
-			return;
+			return false;
 		}
 		r_str_unquote (pattern);
+		if (R_STR_ISEMPTY (r_str_trim_head_ro (pattern))) {
+			R_LOG_ERROR ("Missing disassembly search pattern");
+			free (pattern);
+			param->outmode = 0;
+			return false;
+		}
 		end_cmd = pattern;
 	}
 
@@ -3225,6 +3232,9 @@ static void do_asm_search(RCore *core, RSearchParameters *param, const char *inp
 				count++;
 			}
 			r_list_free (hits);
+		} else {
+			success = false;
+			break;
 		}
 	}
 	if (param->outmode == R_MODE_JSON) {
@@ -3234,6 +3244,7 @@ static void do_asm_search(RCore *core, RSearchParameters *param, const char *inp
 	free (pattern);
 	// increment search index
 	r_config_set_i (core->config, "search.kwidx", ++core->search->n_kws);
+	return success;
 }
 
 static void do_string_search(RCore *core, RInterval search_itv, RSearchParameters *param) {
@@ -4281,6 +4292,7 @@ static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	bool dosearch_read = false;
 	int errcode = -1;
+	int status = R_CMD_RC_SUCCESS;
 	RCore *core = (RCore *) data;
 	RSearchParameters param = {
 		.core = core,
@@ -4534,7 +4546,10 @@ reread:
 			if (input[2] == '?' && (!input[3] || input[3] == ' ')) {
 				r_cons_cmd_help_match (core->cons, help_msg_slash_a, "/ad", 0, true);
 			} else {
-				do_asm_search (core, &param, input + 1, 0, search_itv);
+				if (!do_asm_search (core, &param, input + 1, 0, search_itv)) {
+					errcode = status = R_CMD_RC_FAILURE;
+					r_core_return_code (core, status);
+				}
 			}
 			break;
 		case 'e': // "/ae"
@@ -5541,7 +5556,7 @@ beach:
 	pj_free (param.pj);
 	r_list_free (param.boundaries);
 	r_search_kw_reset (search);
-	return R_CMD_RC_SUCCESS;
+	return status;
 }
 
 #endif
