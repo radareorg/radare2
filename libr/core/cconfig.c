@@ -4238,7 +4238,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("arch.codealign", 0, &cb_arch_codealign, "only recognize as valid instructions aligned to this value");
 	SETB ("asm.sub.jmp", "true", "always substitute jump, call and branch targets in disassembly");
 	SETB ("asm.hints", "true", "disable all asm.hint* if false");
-	SETB ("asm.trycatch", "false", "annotate and highlight exception regions (requires asm.lines)");
+	SETB ("asm.trycatch", "true", "annotate and highlight exception regions (requires asm.lines)");
 	SETB ("asm.hint.jmp", "false", "show jump hints [numbers] in disasm");
 	SETB ("asm.hint.call", "true", "show call hints [numbers] in disasm");
 	SETB ("asm.hint.call.indirect", "true", "Hints for indirect call intructions go to the call destination");
