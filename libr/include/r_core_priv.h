@@ -34,6 +34,13 @@ typedef struct r_core_priv_t {
 
 R_IPI bool isVisualDisasm(RCore *core);
 R_IPI R_OWNED char * R_NULLABLE r_core_get_radare2rc(void);
+typedef enum {
+	R_CMD_ARGS_DEFAULT = 0,
+	R_CMD_ARGS_ATTACHED = 1, // Parse arguments immediately after the registered prefix.
+	R_CMD_ARGS_VERBATIM = 2, // Skip decoding; subcmd.b borrows the untouched argument tail.
+} RCmdArgFlags;
+
+R_IPI bool r_cmd_register_args(RCmd *cmd, const char *name, RCmdCtxCb callback, void *user, RCmdArgFlags flags);
 R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *input, bool raw);
 R_IPI int r_cmd_call_context(RCmd *cmd, RCmdContext *parent, const char *input, bool raw);
 
