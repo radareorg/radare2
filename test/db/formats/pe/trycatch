@@ -2,10 +2,10 @@
 NAME=PE64: kernel32.dll - SEH scope table kinds
 FILE=bins/pe/kernel32.dll
 CMDS=<<EOF
-iw~from~?
-iw~catch=~?
-iw~filter=~?
-iw~cleanup=~?
+iw*~from~?
+iw*~catch=~?
+iw*~filter=~?
+iw*~cleanup=~?
 ?e --
 iwj~{[0]}
 iwj~{[3]}
@@ -26,10 +26,10 @@ RUN
 NAME=PE64: dhcpssvc.dll - SEH scope table kinds
 FILE=bins/pe/dhcpssvc.dll
 CMDS=<<EOF
-iw~from~?
-iw~catch=~?
-iw~filter=~?
-iw~cleanup=~?
+iw*~from~?
+iw*~catch=~?
+iw*~filter=~?
+iw*~cleanup=~?
 EOF
 EXPECT=<<EOF
 66

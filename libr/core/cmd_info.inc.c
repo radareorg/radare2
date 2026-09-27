@@ -237,7 +237,7 @@ static RCoreHelpMessage help_msg_i = {
 	"it", "", "file hashes", // hashes in it? wtf, thats a pretty bad subcommand
 	"iT", "", "file signature", // iT for signatures omg thats worst
 	"iv", "", "display file version info", // wtf why not iv
-	"iw", "", "show try/catch blocks", // bad naming..
+	"iw", "[jq*]", "show try/catch blocks",
 	"iz", "[?]", "strings in data sections (in JSON/Base64)",
 	NULL
 };
