@@ -174,6 +174,55 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/ad/ retries overlapping matches across blocks
+FILE=malloc://4100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx cc
+wx 9090909090c3 @ 0xffd
+"/ad/j nop;nop;nop"
+"/ad/j nop;nop;ret"
+EOF
+EXPECT=<<EOF
+[{"addr":4093,"len":3,"code":"nop; nop; nop"},{"addr":4094,"len":3,"code":"nop; nop; nop"},{"addr":4095,"len":3,"code":"nop; nop; nop"}]
+[{"addr":4096,"len":3,"code":"nop; nop; ret"}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=/ad/a resumes after a spanning instruction before retrying each byte
+FILE=malloc://4098
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx cc
+wx 6690c3 @ 0xfff
+"/ad/aj nop;ret"
+EOF
+EXPECT=<<EOF
+[{"addr":4095,"len":3,"code":"nop; ret"},{"addr":4096,"len":2,"code":"nop; ret"}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=/ad/ block retries preserve alignment and maxhits
+FILE=malloc://4100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx cc
+wx 9090909090c3 @ 0xffd
+e search.align=2
+"/ad/j nop;nop;nop"
+e search.align=0
+e search.maxhits=1
+"/ad/j nop;nop;nop"
+EOF
+EXPECT=<<EOF
+[{"addr":4094,"len":3,"code":"nop; nop; nop"}]
+[{"addr":4093,"len":3,"code":"nop; nop; nop"}]
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=/ad obeys global search.maxhits across maps
 FILE=malloc://1
 ARGS=-a x86 -b 64
