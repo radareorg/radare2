@@ -94,15 +94,21 @@ static bool profile_has_duplicate(RReg *reg, const char *name, int count) {
 	const char prefix = name[0];
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		RListIter *iter;
-		RRegItem *ri;
-		r_list_foreach (reg->regset[i].regs, iter, ri) {
-			if (count > 0? vbank_item_match (ri->name, prefix, count): !strcmp (ri->name, name)) {
-				return true;
+		RRegSet *rs = &reg->regset[i];
+		if (count > 0) {
+			// a bank claims every item its prefix and count can name
+			RListIter *iter;
+			RRegItem *ri;
+			r_list_foreach (rs->regs, iter, ri) {
+				if (vbank_item_match (ri->name, prefix, count)) {
+					return true;
+				}
 			}
+		} else if (rs->ht_regs && ht_pp_find (rs->ht_regs, name, NULL)) {
+			return true;
 		}
 		RRegVBank *vb;
-		R_VEC_FOREACH (&reg->regset[i].vbanks, vb) {
+		R_VEC_FOREACH (&rs->vbanks, vb) {
 			if (count > 0? vb->prefix == prefix: vbank_item_match (name, vb->prefix, vb->count)) {
 				return true;
 			}
