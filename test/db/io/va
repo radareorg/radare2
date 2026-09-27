@@ -1,10 +1,9 @@
 NAME=io/va-entry0 linux-arm
 FILE=bins/elf/analysis/hello-android-arm
-BROKEN=1
 CMDS=<<EOF
-ie*~0x[4]
+ie*~entry0 [3]
 e io.va=0
-ie*~0x[4]
+ie*~entry0 [3]
 EOF
 EXPECT=<<EOF
 0x00008300

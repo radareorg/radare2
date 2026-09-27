@@ -168,12 +168,12 @@ RUN
 
 NAME=rep movsb 0x1000 randombytes x86-32
 FILE=-
-BROKEN=1
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
 e asm.bits=32
 aei
+e esil.gotolimit=8192
 aeim
 aer esp=0x00108000
 aeim 0x10000000 0x1000 source
@@ -183,14 +183,15 @@ aer edi=0x20000000
 aer esi=0x10000000
 aer ecx=0x1000
 .aer*
-"wx f3a4"
+wx f3a4
 aes
 .aer*
 s 0x10000000
+b 0x1000
 cX 0x20000000
-aer?edi
-aer?esi
-aer?ecx
+aer edi
+aer esi
+aer ecx
 EOF
 EXPECT=<<EOF
 0x20001000
