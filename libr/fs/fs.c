@@ -363,8 +363,10 @@ R_API int r_fs_read(RFS *fs, RFSFile *file, ut64 addr, int len) {
 	R_RETURN_VAL_IF_FAIL (fs && file && len > 0, -1);
 	if (file->p && file->p->read) {
 		if (!file->data) {
-			free (file->data);
-			file->data = calloc (1, len + 1);
+			file->data = calloc (1, (size_t)len + 1);
+			if (!file->data) {
+				return -1;
+			}
 		}
 		return file->p->read (file, addr, len);
 	}
