@@ -14,126 +14,42 @@ static void addref(RAnal *anal, ut64 from, ut64 to, RAnalRefType type) {
 	r_anal_xrefs_set (anal, from, to, type);
 }
 
-static void add_code_ref_hint(RAnal *anal, ut64 from, ut64 to) {
-	addref (anal, from, to, R_ANAL_REF_TYPE_CODE);
-	r_anal_hint_set_type (anal, from, R_ANAL_OP_TYPE_JMP);
-	r_anal_hint_set_jump (anal, from, to);
-}
-
-static bool is_br_reg(ut32 insn, ut32 reg) {
-	return (insn & 0xfffffc1f) == 0xd61f0000 && ((insn >> 5) & 0x1f) == reg;
-}
-
-static const ut8 *skip_nops(const ut8 *p, const ut8 *e) {
-	while (p < e && r_read_le32 (p) == SIX_ARM64_NOP) {
+static const ut8 *skip_nops(const ut8 *p, const ut8 *end) {
+	while (end - p >= 4 && r_read_le32 (p) == SIX_ARM64_NOP) {
 		p += 4;
 	}
 	return p;
 }
 
-static bool parse_add_imm(ut32 insn, ut32 src_reg, ut64 base, ut32 *dst_reg, ut64 *target, ut32 *off) {
-	if ((insn & 0xff8003e0) != (0x91000000 | (src_reg << 5))) {
-		return false;
+static const ut8 *resolve_stub(const ut8 *p, const ut8 *end, ut32 reg, ut64 *target) {
+	p = skip_nops (p, end);
+	if (reg == 31 || end - p < 4) {
+		return NULL;
 	}
-	ut32 aoff = (insn >> 10) & 0xfff;
-	if (insn & 0x400000) {
-		aoff <<= 12;
-	}
-	*dst_reg = insn & 0x1f;
-	*target = base + aoff;
-	*off = aoff;
-	return true;
-}
-
-static bool parse_movz(ut32 insn, ut32 *dst_reg, ut64 *value) {
-	if ((insn & 0xff800000) != 0xd2800000) {
-		return false;
-	}
-	ut64 imm = (insn >> 5) & 0xffff;
-	ut32 hw = (insn >> 21) & 0x3;
-	*dst_reg = insn & 0x1f;
-	*value = imm << (hw * 16);
-	return true;
-}
-
-static bool parse_add_shift(ut32 insn, ut32 base_reg, ut32 add_reg, ut64 base, ut64 add, ut32 *dst_reg, ut64 *target, ut32 *shift) {
-	if ((insn & 0xffc00000) != 0x8b000000) {
-		return false;
-	}
-	ut32 rd = insn & 0x1f;
-	ut32 rn = (insn >> 5) & 0x1f;
-	ut32 rm = (insn >> 16) & 0x1f;
-	ut32 sh = (insn >> 10) & 0x3f;
-	if (rn != base_reg || rm != add_reg || sh >= 64) {
-		return false;
-	}
-	*dst_reg = rd;
-	*target = base + (add << sh);
-	*shift = sh;
-	return true;
-}
-
-static bool handle_stub_island(RAnal *anal, RStrBuf *sb, bool register_refs, ut64 search, const ut8 *p, const ut8 *e, ut64 addr, bool is_adrp, ut32 reg, ut64 base) {
-	const ut8 *q = skip_nops (p + 4, e);
-	if (q >= e) {
-		return false;
-	}
-	ut32 insn = r_read_le32 (q);
-	ut32 dst_reg = reg;
-	ut64 target = base;
-	if (is_br_reg (insn, dst_reg)) {
-		ut64 br_addr = addr + (ut64)(q - p);
-		if (register_refs) {
-			add_code_ref_hint (anal, br_addr, target);
-			return true;
+	ut32 insn = r_read_le32 (p);
+	if ((insn & 0xff8003e0) == (0x91000000 | (reg << 5))) { // ADD immediate
+		*target += (ut64)((insn >> 10) & 0xfff) << ((insn & 0x400000)? 12: 0);
+		reg = insn & 31;
+		p = skip_nops (p + 4, end);
+	} else if ((insn & 0xff800000) == 0xd2800000) { // MOVZ + ADD shifted register
+		ut32 add_reg = insn & 31;
+		if (add_reg == reg || add_reg == 31) {
+			return NULL;
 		}
-		if (target == search) {
-			r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; br x%u\n", addr, is_adrp? "adrp": "adr", reg, base, dst_reg);
-			return true;
+		ut64 add = (ut64)((insn >> 5) & 0xffff) << (((insn >> 21) & 3) * 16);
+		p = skip_nops (p + 4, end);
+		if (end - p < 4) {
+			return NULL;
 		}
-		return false;
-	}
-
-	ut32 aoff = 0;
-	if (parse_add_imm (insn, reg, base, &dst_reg, &target, &aoff)) {
-		const ut8 *brp = skip_nops (q + 4, e);
-		if (brp < e && is_br_reg (r_read_le32 (brp), dst_reg)) {
-			ut64 br_addr = addr + (ut64)(brp - p);
-			if (register_refs) {
-				add_code_ref_hint (anal, br_addr, target);
-				return true;
-			}
-			if (target == search) {
-				r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; add x%u, x%u, %#x; br x%u\n",
-					addr, is_adrp? "adrp": "adr", reg, base, dst_reg, reg, aoff, dst_reg);
-				return true;
-			}
+		insn = r_read_le32 (p);
+		if ((insn & 0xffff03e0) != (0x8b000000 | (add_reg << 16) | (reg << 5))) {
+			return NULL;
 		}
-		return false;
+		*target += add << ((insn >> 10) & 63);
+		reg = insn & 31;
+		p = skip_nops (p + 4, end);
 	}
-
-	ut32 add_reg = 0;
-	ut64 add = 0;
-	if (parse_movz (insn, &add_reg, &add)) {
-		const ut8 *addp = skip_nops (q + 4, e);
-		ut32 shift = 0;
-		if (addp < e && parse_add_shift (r_read_le32 (addp), reg, add_reg, base, add, &dst_reg, &target, &shift)) {
-			const ut8 *brp = skip_nops (addp + 4, e);
-			if (brp < e && is_br_reg (r_read_le32 (brp), dst_reg)) {
-				ut64 br_addr = addr + (ut64)(brp - p);
-				if (register_refs) {
-					add_code_ref_hint (anal, br_addr, target);
-					return true;
-				}
-				if (target == search) {
-					r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; mov x%u, %#" PFMT64x "; add x%u, x%u, x%u, lsl %u; br x%u\n",
-						addr, is_adrp? "adrp": "adr", reg, base, add_reg, add, dst_reg, reg, add_reg, shift, dst_reg);
-					return true;
-				}
-			}
-		}
-	}
-	return false;
+	return reg != 31 && !(*target & 3) && end - p >= 4 && r_read_le32 (p) == (0xd61f0000 | (reg << 5))? p: NULL;
 }
 
 static const char *lookup_inst_name(uint32_t opc_size) {
@@ -226,19 +142,25 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, bool register_refs, u
 			int64_t base = is_adrp? (addr & 0xfffffffffffff000): addr;
 			int64_t off = (int64_t) ((uint64_t) ((((v >> 5) & 0x7ffff) << 2) | ((v >> 29) & 0x3)) << 43) >> (is_adrp? 31: 43);
 			ut64 target = base + off;
-			bool found_stub = handle_stub_island (anal, sb, register_refs, search, p, e, addr, is_adrp, reg, target);
+			ut64 jump = target;
+			const ut8 *branch = resolve_stub (p + 4, e, reg, &jump);
+			if (branch) {
+				ut64 branch_addr = addr + (branch - p);
+				if (register_refs) {
+					addref (anal, branch_addr, jump, R_ANAL_REF_TYPE_CODE);
+					r_anal_hint_set_type (anal, branch_addr, R_ANAL_OP_TYPE_JMP);
+					r_anal_hint_set_jump (anal, branch_addr, jump);
+				} else if (jump == search) {
+					r_strbuf_appendf (sb, "%#" PFMT64x ": br x%u; %#" PFMT64x "\n", branch_addr, (r_read_le32 (branch) >> 5) & 31, jump);
+				}
+			}
 			if (register_refs) {
 				addref (anal, addr, target, R_ANAL_REF_TYPE_DATA);
-			} else if (found_stub) {
-				continue;
 			} else if (target == search) {
 				r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "\n", addr, is_adrp? "adrp": "adr", reg, target);
 			} else {
 				// More complicated cases - up to 3 instr
-				const ut8 *q = p + 4;
-				while (q < e && r_read_le32 (q) == 0xd503201f) { // nop
-					q += 4;
-				}
+				const ut8 *q = skip_nops (p + 4, e);
 				if (q < e) {
 					v = r_read_le32 (q);
 					ut32 reg2 = reg;
@@ -254,9 +176,7 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, bool register_refs, u
 							r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; add x%u, x%u, %#x\n", addr, is_adrp? "adrp": "adr", reg, target, reg2, reg, aoff);
 							found = true;
 						} else {
-							do {
-								q += 4;
-							} while (q < e && r_read_le32 (q) == 0xd503201f); // nop
+							q = skip_nops (q + 4, e);
 						}
 					}
 					if (!found && q < e) {
@@ -394,24 +314,6 @@ static void siguza_xrefs(RAnal *anal, RStrBuf *sb, bool register_refs, ut64 sear
 	free (buf);
 }
 
-static bool siguza_xrefs_current_map(RAnal *anal, RStrBuf *sb, bool register_refs, ut64 search, ut64 offset, ut64 len, bool has_len) {
-	RIOMap *map = anal->iob.map_get_at? anal->iob.map_get_at (anal->iob.io, offset): NULL;
-	if (!map || ! (map->perm & R_PERM_X)) {
-		return false;
-	}
-	ut64 start = has_len? offset: r_io_map_begin (map);
-	ut64 end = r_io_map_end (map);
-	if (end <= start) {
-		return false;
-	}
-	ut64 max_len = end - start;
-	if (!has_len || len > max_len) {
-		len = max_len;
-	}
-	siguza_xrefs (anal, sb, register_refs, search, start, len);
-	return true;
-}
-
 static bool is_arm64(RAnal *anal) {
 	const char *arch = anal->coreb.cfgGet (anal->coreb.core, "asm.arch");
 	const int bits = anal->coreb.cfgGetI (anal->coreb.core, "asm.bits");
@@ -420,9 +322,9 @@ static bool is_arm64(RAnal *anal) {
 
 static char *six_help(void) {
 	return strdup (
-		"| a:six              find and register all xrefs in arm64 executable sections or current map\n"
-		"| a:six <target>     list xrefs to target address in arm64 executable sections\n"
-		"| a:six <target> <len> list xrefs to target address from $$ in current executable section\n");
+		"| a:six              register xrefs and stub jump hints in arm64 executable sections or current map\n"
+		"| a:six <target>     list xrefs to target address in arm64 executable sections or current map\n"
+		"| a:six <target> <len> list xrefs to target address from $$ in current executable section or map\n");
 }
 
 static bool parse_num(RAnal *anal, RCore *core, const char *arg, const char *name, ut64 *out) {
@@ -506,65 +408,41 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 		return strdup ("");
 	}
 
-	if (!has_len) {
-		bool scanned = false;
-		if (anal->binb.get_sections_vec) {
-			RVecRBinSection *sections = anal->binb.get_sections_vec (anal->binb.bin);
-			if (sections) {
-				RBinSection *s;
-
-				R_VEC_FOREACH (sections, s) {
-					if (s->is_segment || ! (s->perm & R_PERM_X)) {
-						continue;
-					}
-					siguza_xrefs (anal, sb, register_refs, search, s->vaddr, s->vsize);
-					scanned = true;
-				}
+	bool scanned = false;
+	RVecRBinSection *sections = anal->binb.get_sections_vec? anal->binb.get_sections_vec (anal->binb.bin): NULL;
+	if (!has_len && sections) {
+		RBinSection *s;
+		R_VEC_FOREACH (sections, s) {
+			if (!s->is_segment && (s->perm & R_PERM_X)) {
+				siguza_xrefs (anal, sb, register_refs, search, s->vaddr, s->vsize);
+				scanned = true;
 			}
 		}
-		if (!scanned) {
-			ut64 offset = anal->coreb.numGet (anal->coreb.core, "$$");
-			if (!siguza_xrefs_current_map (anal, sb, register_refs, search, offset, 0, false)) {
-				R_LOG_ERROR ("No executable sections found");
-				r_strbuf_free (sb);
-				return strdup ("");
-			}
-		}
-	} else {
+	}
+	if (!scanned) {
 		ut64 offset = anal->coreb.numGet (anal->coreb.core, "$$");
-		if (offset & 3) {
-			offset -= offset % 4;
+		if (has_len && (offset & 3)) {
+			offset &= ~3ULL;
 			R_LOG_INFO ("Current offset is not 4-byte aligned, using 0x%" PFMT64x " instead", offset);
 		}
-
-		RBinSection *s = anal->binb.get_vsect_at? anal->binb.get_vsect_at (anal->binb.bin, offset): NULL;
-		if (!s) {
-			if (!siguza_xrefs_current_map (anal, sb, register_refs, search, offset, len, true)) {
-				R_LOG_WARN ("Current section is not executable");
-				r_strbuf_free (sb);
-				return strdup ("");
-			}
-		} else {
-			if (! (s->perm & R_PERM_X)) {
-				R_LOG_WARN ("Current section is not executable");
-				r_strbuf_free (sb);
-				return strdup ("");
-			}
-
-			ut64 sect_end = s->vaddr + s->vsize;
-			if (sect_end < s->vaddr || offset >= sect_end) {
-				R_LOG_WARN ("Current section has invalid boundaries");
-				r_strbuf_free (sb);
-				return strdup ("");
-			}
-			ut64 max_len = sect_end - offset;
-			if (len > max_len) {
-				len = max_len;
-				R_LOG_WARN ("Length is not within range for this section, using 0x%" PFMT64x " instead", len);
-			}
-
-			siguza_xrefs (anal, sb, register_refs, search, offset, len);
+		RBinSection *s = has_len && anal->binb.get_vsect_at? anal->binb.get_vsect_at (anal->binb.bin, offset): NULL;
+		RIOMap *map = !s && anal->iob.map_get_at? anal->iob.map_get_at (anal->iob.io, offset): NULL;
+		ut64 start = s? s->vaddr: map? r_io_map_begin (map): offset;
+		ut64 end = s? s->vaddr + s->vsize: map? r_io_map_end (map): offset;
+		int perm = s? s->perm: map? map->perm: 0;
+		if (!(perm & R_PERM_X) || end <= start || offset < start || offset >= end) {
+			R_LOG_WARN ("Current section or map is not executable or has invalid boundaries");
+			r_strbuf_free (sb);
+			return strdup ("");
 		}
+		if (!has_len) {
+			offset = start;
+			len = end - start;
+		} else if (len > end - offset) {
+			len = end - offset;
+			R_LOG_WARN ("Length is not within range for this section, using 0x%" PFMT64x " instead", len);
+		}
+		siguza_xrefs (anal, sb, register_refs, search, offset, len);
 	}
 
 	if (register_refs) {
@@ -578,40 +456,6 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 	return result;
 }
 
-static int six_eligible(RAnal *anal) {
-	const char *arch = anal->config? anal->config->arch: NULL;
-	if (!arch || !strstr (arch, "arm") || anal->config->bits != 64) {
-		return -1;
-	}
-	return 0;
-}
-
-static bool six_pre_analysis(RAnal *anal) {
-	if (six_eligible (anal) < 0) {
-		return false;
-	}
-	bool scanned = false;
-	if (anal->binb.get_sections_vec) {
-		RVecRBinSection *sections = anal->binb.get_sections_vec (anal->binb.bin);
-		if (sections) {
-			RBinSection *s;
-
-			R_VEC_FOREACH (sections, s) {
-				if (s->is_segment || ! (s->perm & R_PERM_X)) {
-					continue;
-				}
-				siguza_xrefs (anal, NULL, true, 0, s->vaddr, s->vsize);
-				scanned = true;
-			}
-		}
-	}
-	if (!scanned && anal->coreb.numGet) {
-		ut64 offset = anal->coreb.numGet (anal->coreb.core, "$$");
-		scanned = siguza_xrefs_current_map (anal, NULL, true, 0, offset, 0, false);
-	}
-	return scanned;
-}
-
 RAnalPlugin r_anal_plugin_six = {
 	.meta = {
 		.name = "six",
@@ -620,8 +464,6 @@ RAnalPlugin r_anal_plugin_six = {
 		.license = "MIT",
 	},
 	.cmd = r_cmdsix_call,
-	.eligible = six_eligible,
-	.pre_analysis = six_pre_analysis,
 };
 
 #ifndef R2_PLUGIN_INCORE
