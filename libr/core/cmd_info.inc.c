@@ -3549,6 +3549,9 @@ static void cmd_ie(RCore *core, const char *input, PJ *pj, int mode, bool is_arr
 
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	if (!strcmp (input, "qqc") || !strcmp (input, "qcq")) {
+		input = "cqq";
+	}
 	int i, fd = r_io_fd_get_current (core->io);
 	RIODesc *desc = r_io_desc_get (core->io, fd);
 	const bool va = core->io->va || r_config_get_b (core->config, "cfg.debug");
