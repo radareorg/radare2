@@ -1218,7 +1218,6 @@ EOF
 RUN
 
 NAME=iqqc (file Java)
-BROKEN=1
 FILE=bins/java/Hello.class
 CMDS=iqqc
 EXPECT=<<EOF
@@ -1227,7 +1226,6 @@ EOF
 RUN
 
 NAME=iqqc (file x86)
-BROKEN=1
 FILE=bins/elf/ls
 CMDS=iqqc
 EXPECT=<<EOF
@@ -1235,7 +1233,6 @@ EOF
 RUN
 
 NAME=iqcq (file Java)
-BROKEN=1
 FILE=bins/java/Hello.class
 CMDS=iqcq
 EXPECT=<<EOF
@@ -1244,7 +1241,6 @@ EOF
 RUN
 
 NAME=iqcq (file x86)
-BROKEN=1
 FILE=bins/elf/ls
 CMDS=iqcq
 EXPECT=<<EOF
