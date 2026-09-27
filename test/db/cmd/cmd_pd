@@ -1079,10 +1079,10 @@ pd 1 @ 0x140001010
 EOF
 EXPECT=<<EOF
             0x140001010      488d050150..   lea rax, [0x140016018]     ; "\twide\\esc: \e[0m"
-            0x140001028      488d054150..   lea rax, [0x140016070]     ; str._fFormfeed_at_start
+            0x140001028      488d054150..   lea rax, [0x140016070]     ; "\fFormfeed at start"
             ; "\twide\\esc: \e[0m"
             0x140001010      488d050150..   lea rax, [0x140016018]
-            ; str._fFormfeed_at_start
+            ; "\fFormfeed at start"
             0x140001028      488d054150..   lea rax, [0x140016070]
             0x140001010      488d050150..   lea rax, [0x140016018]     ; "\twide\\esc: \e[0m"
             ; "\twide\\esc: \e[0m"
