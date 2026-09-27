@@ -306,14 +306,12 @@ EOF
 RUN
 
 NAME=rabin2 -e fatmach0
-BROKEN=1
 FILE=bins/mach0/fatmach0-3true
 CMDS=!rabin2 -e ${R2_FILE}
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x100000ef8 paddr=0x00001ef8 baddr=0x100000000 laddr=0x00001000 haddr=0x00000570 type=program
-
-1 entrypoints
+paddr      vaddr       phaddr     vhaddr     type
+-------------------------------------------------
+0x00001ef8 0x100000ef8 0x00000570 ---------- program
 EOF
 RUN
 
@@ -328,14 +326,12 @@ EOF
 RUN
 
 NAME=rabin2 -a x86 -b 32 -e fatmach0
-BROKEN=1
 FILE=bins/mach0/fatmach0-3true
 CMDS=!rabin2 -a x86 -b 32 -e ${R2_FILE}
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x00001f44 paddr=0x00005f44 baddr=0x00001000 laddr=0x00005000 haddr=0x00000420 type=program
-
-1 entrypoints
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00005f44 0x00001f44 0x00000420 ---------- program
 EOF
 RUN
 
@@ -349,12 +345,13 @@ paddr      vaddr      phaddr     vhaddr     type
 EOF
 RUN
 
-NAME=TODO: test on pie fatmach0
-BROKEN=1
+NAME=rabin2 -B 0x2000000 -e fatmach0 without load address
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rabin2 -B 0x2000000 -G 0x1000 -e ${R2_FILE}
+CMDS=!rabin2 -B 0x2000000 -e ${R2_FILE}
 EXPECT=<<EOF
-???
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00001ef8 0x02000ef8 0x00000570 ---------- program
 EOF
 RUN
 
