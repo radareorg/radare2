@@ -73,6 +73,23 @@ paddr      vaddr       phaddr     vhaddr     type
 EOF
 RUN
 
+NAME=m1slice arm with 32-bit host default
+ARGS=-e asm.bits=32 -a arm
+FILE=bins/mach0/ls-m1
+CMDS=<<EOF
+iI~^arch
+iI~^bits
+?v entry0
+p8 8 @ entry0
+EOF
+EXPECT=<<EOF
+arch     arm
+bits     64
+0x100003a90
+7f2303d5fc6fbaa9
+EOF
+RUN
+
 NAME=oon
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
@@ -695,6 +712,7 @@ CMDS=<<EOF
 # pwd
 obf ./bins/mach0/test-arm32
 is~?
+e asm.arch=x86
 obf ./bins/mach0/ls-m1
 is~?
 ob 1

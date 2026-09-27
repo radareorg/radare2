@@ -1533,6 +1533,14 @@ R_API bool r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *nam
 	RBinObject *obj = r_bin_object_find_by_arch_bits (binfile, arch, bits, name);
 	if (!obj && binfile->xtr_data) {
 		RBinXtrData *xtr_data = r_list_get_n (binfile->xtr_data, 0);
+		RListIter *iter;
+		RBinXtrData *candidate;
+		r_list_foreach (binfile->xtr_data, iter, candidate) {
+			if (candidate->metadata && candidate->metadata->arch && !strcmp (candidate->metadata->arch, arch)) {
+				xtr_data = candidate;
+				break;
+			}
+		}
 		if (xtr_data && !xtr_data->loaded) {
 			if (!r_bin_file_object_new_from_xtr_data (bin, binfile, UT64_MAX, r_bin_get_laddr (bin), xtr_data)) {
 				return false;
