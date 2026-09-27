@@ -1853,9 +1853,9 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			ds_pre_xrefs (ds, fcnlines);
 			const char* plural = r_list_length (addrs) > 1 ? "S" : "";
 			const char* plus = fun ? "" : "+";
-			ds_comment (ds, false, "%s%s%s%s XREF%s from %s @ ",
+			ds_comment (ds, false, "%s%s%s%s XREF%s from %s%s",
 				COLOR (ds, pal_comment), ds->cmtoken, keyhint, r_anal_ref_type_tostring (refi->type), plural,
-				realname ? realname : name);
+				realname ? realname : name, r_list_empty (addrs)? "": " @ ");
 			ut64 *addrptr;
 
 			int i = 0;
