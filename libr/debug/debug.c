@@ -1867,7 +1867,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	if (pid < 0 || tid < 0) {
 		return 0LL;
 	}
-	if (!r_debug_attach (dbg, pid)) {
+	if (dbg->pid != pid && !r_debug_attach (dbg, pid)) {
 		return 0LL;
 	}
 #if R2__WINDOWS__
