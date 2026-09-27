@@ -67,3 +67,40 @@ EXPECT=<<EOF
 r0,12,+,[1],r1,=
 EOF
 RUN
+
+# PC-relative string loads from the OWASP validate binary in issue #8245.
+NAME=arm32 validate computed string xrefs
+FILE=malloc://0x2000
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 10309fe503308fe00300a0e1 @ 0x16b0
+wx 10309fe503308fe00300a0e1 @ 0x16d4
+wx 24309fe503308fe00300a0e1 @ 0x1840
+wx 14309fe503308fe00300a0e1 @ 0x1854
+wx c0030000 @ 0x16c8
+wx b8030000 @ 0x16ec
+wx 7002000088020000 @ 0x186c
+"wz Usage: ./validate <serial>" @ 0x1a7c
+wz Incorrect serial (wrong format). @ 0x1a98
+wz Product activation passed. Congratulations! @ 0x1abc
+wz Incorrect serial. @ 0x1ae8
+aae 12 @ 0x16b0
+aae 12 @ 0x16d4
+aae 12 @ 0x1840
+aae 12 @ 0x1854
+axtq 0x1a7c
+axtq 0x1a98
+axtq 0x1abc
+axtq 0x1ae8
+EOF
+EXPECT=<<EOF
+0x16b4
+0x16b8
+0x16d8
+0x16dc
+0x1844
+0x1848
+0x1858
+0x185c
+EOF
+RUN
