@@ -739,7 +739,6 @@ RUN
 NAME=Delete a saved project and used directory (with P-)
 FILE=bins/elf/analysis/main
 ARGS=-n
-BROKEN=1
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
@@ -749,7 +748,6 @@ Pl~lightbulb
 ls -l `e dir.projects`~lightbulb
 EOF
 EXPECT=<<EOF
--drwxr-xr-x  1  501:20    96          .tmp/lightbulb/
 EOF
 RUN
 
