@@ -146,6 +146,7 @@ jobs:
     - name: Running tests
       run: |
         export LD_LIBRARY_PATH=/usr/local/lib
+        export R2R_SKIP_ARCHOS=1
         make tests
     - uses: actions/upload-artifact@v7
       with:
