@@ -2434,21 +2434,13 @@ R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 off)
 
 static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 	RCore *core = user;
-	RCorePriv *priv = core->priv;
 	REventIOWrite *iow = data;
 	if (r_config_get_i (core->config, "anal.onchange")) {
-		// works, but loses varnames and such, but at least is not crashing
-		char *cmd = r_str_newf ("af-0x%08" PFMT64x ";af 0x%08" PFMT64x, iow->addr, iow->addr);
-		r_th_lock_enter (priv->cmdqueue_lock);
-		r_list_append (priv->cmdqueue, cmd);
-		r_th_lock_leave (priv->cmdqueue_lock);
-#if 0
 		r_anal_update_analysis_range (core->anal, iow->addr, iow->len);
 		if (core->cons->event_resize && core->cons->event_data) {
 			// Force a reload of the graph
 			core->cons->event_resize (core->cons->event_data);
 		}
-#endif
 	}
 }
 
