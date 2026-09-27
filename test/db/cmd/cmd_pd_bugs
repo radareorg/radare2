@@ -148,7 +148,6 @@ RUN
 
 NAME=call fcn eip 64bit
 FILE=bins/elf/analysis/ls-alxchk
-BROKEN=1
 CMDS=<<EOF
 s 0x5e50
 e asm.bits=64
@@ -159,7 +158,7 @@ e asm.bytes=0
 e asm.comments=0
 EOF
 EXPECT=<<EOF
-|           0x00005f16      e835ffffff     call fcn.eip
+            0x00005f16      e835ffffff     call eip
 EOF
 RUN
 
