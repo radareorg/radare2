@@ -33,6 +33,44 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=arm lld 16-byte plt: imports land on their entries
+FILE=bins/elf/libarm.so
+CMDS=<<EOF
+ii~__cxa_finalize,__stack_chk_fail
+pi 3 @ sym.imp.__stack_chk_fail
+EOF
+EXPECT=<<EOF
+2   0x0003e110 GLOBAL FUNC     __cxa_finalize
+3   0x0003e140 GLOBAL FUNC     __stack_chk_fail
+add ip, pc, 0, 12
+add ip, ip, 0x3000
+ldr pc, [ip, 0xa4c]!
+EOF
+RUN
+
+NAME=arm lld be8 plt: little-endian code in a big-endian object
+FILE=bins/elf/arm-plt-lld-be8.so
+CMDS=<<EOF
+ii~foo,bar
+EOF
+EXPECT=<<EOF
+1   0x00010210 GLOBAL NOTYPE     foo
+2   0x00010220 GLOBAL NOTYPE     bar
+EOF
+RUN
+
+NAME=arm gnu 12-byte plt keeps its entry math
+FILE=bins/elf/analysis/arm-ls
+CMDS=<<EOF
+ii~abort,strcmp,free$
+EOF
+EXPECT=<<EOF
+6   0x00011994 GLOBAL FUNC       strcmp
+46  0x00011e2c GLOBAL FUNC       abort
+116 0x000119f4 GLOBAL FUNC       free
+EOF
+RUN
+
 NAME=ppc32 be: imports resolve to their plt_pic32 call thunks
 FILE=bins/elf/pltrel/ppc32be-plt.so
 CMDS=<<EOF2
