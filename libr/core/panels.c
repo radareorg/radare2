@@ -22,7 +22,7 @@ R_API void r_core_panels_save(RCore *core, const char *oname) {
 	if (!core->panels) {
 		return;
 	}
-	const char *name = r_str_trim_head_ro (oname); // leading whitespace skipped
+	const char *name = oname? r_str_trim_head_ro (oname): NULL;
 	if (R_STR_ISEMPTY (name)) {
 		name = r_panels_show_status_input (core, "Name for the layout: ");
 		if (R_STR_ISEMPTY (name)) {
@@ -38,6 +38,7 @@ R_API void r_core_panels_save(RCore *core, const char *oname) {
 		pj_o (pj);
 		pj_ks (pj, "Title", panel->model->title);
 		pj_ks (pj, "Cmd", panel->model->cmd);
+		pj_kb (pj, "Cache", panel->model->cache);
 		pj_kn (pj, "x", panel->view->pos.x);
 		pj_kn (pj, "y", panel->view->pos.y);
 		pj_kn (pj, "w", panel->view->pos.w);
@@ -50,7 +51,7 @@ R_API void r_core_panels_save(RCore *core, const char *oname) {
 		fprintf (fd, "%s\n", pjs);
 		free (pjs);
 		fclose (fd);
-		r_panels_update_menu (core, "Settings.Load Layout.Saved..", init_menu_saved_layout);
+		r_panels_update_menu (core, "Edit.Settings.Load Layout.Saved..", init_menu_saved_layout);
 		(void)r_panels_show_status (core, "Panels layout saved!");
 	} else {
 		pj_free (pj);
@@ -106,6 +107,11 @@ R_API bool r_core_panels_load(RCore *core, const char *_name) {
 		}
 		r_panels_set_geometry (&p->view->pos, atoi (x), py, atoi (w), ph);
 		r_panels_init_panel_param (core, p, title, cmd);
+		char *cache = sdb_json_get_str (tmp_cfg, "Cache");
+		if (cache) {
+			p->model->cache = !strcmp (cache, "true");
+			free (cache);
+		}
 		if (r_str_endswith (cmd, "Help")) {
 			r_panels_setup_help_panel(core, p, "Panels Mode", help_msg_panels);
 		}
@@ -147,11 +153,17 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 			panels_root->cur_pdc_cache = sdb;
 		}
 	}
+	RPanels *panels = panels_root->panels[panels_root->cur_panels];
 	const char *layout = r_config_get (core->config, "scr.layout");
 	if (!R_STR_ISEMPTY (layout)) {
-		r_core_cmdf (core, "v %s", layout);
+		RPanels *prev = core->panels;
+		core->panels = panels;
+		if (!r_core_panels_load (core, layout)) {
+			create_default_panels (core);
+			r_panels_layout (core, panels);
+		}
+		core->panels = prev;
 	}
-	RPanels *panels = panels_root->panels[panels_root->cur_panels];
 	if (panels) {
 		size_t i = 0;
 		for (; i < panels->n_panels; i++) {
