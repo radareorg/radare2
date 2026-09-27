@@ -18,6 +18,7 @@ EXPECT=<<EOF
             0x1000029fc      e80301aa       mov x8, x1
             0x100002a00      e82f00b9       str w8, [sp, 0x2c]
             ;-- try.1.10000292c.from:
+            ; try 0x100002a04-0x100002a0c catch (...) -> 0x100002a1c
             0x100002a04      a0a300d1       sub x0, x29, 0x28
             0x100002a08      41000094       bl sym.MyClass.__ZN7MyClassD1Ev
             ;-- try.1.10000292c.to:

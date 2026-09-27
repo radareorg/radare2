@@ -55,7 +55,6 @@ RUN
 NAME=disasm nested SEH regions and filter handler
 FILE=bins/pe/seh_x64.exe
 CMDS=<<EOF
-e asm.trycatch=true
 pd 3 @ 0x14000104c~try 0x
 pd 6 @ 0x140001084~try 0x
 EOF

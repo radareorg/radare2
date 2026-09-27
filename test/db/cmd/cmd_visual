@@ -1,7 +1,6 @@
 NAME=visual exception hint jumps from inside a protected region
 FILE=bins/elf/ClassCpp.out
 CMDS=<<EOF
-e asm.trycatch=true
 e asm.hint.jmp=true
 e asm.hint.call=false
 e scr.wheel=false
@@ -20,7 +19,6 @@ RUN
 NAME=visual exception hints honor asm.hints
 FILE=bins/elf/ClassCpp.out
 CMDS=<<EOF
-e asm.trycatch=true
 e asm.hint.jmp=true
 e asm.hints=false
 e scr.wheel=false
@@ -39,7 +37,6 @@ RUN
 NAME=visual exception hint jumps to a shared catch handler
 FILE=bins/elf/0pack
 CMDS=<<EOF
-e asm.trycatch=true
 e asm.hint.jmp=true
 e asm.hint.call=false
 e scr.wheel=false

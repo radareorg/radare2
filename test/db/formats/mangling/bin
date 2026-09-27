@@ -163,22 +163,26 @@ EXPECT=<<EOF
             0x0804921a      call sym.__x86.get_pc_thunk.si
             0x08049249      call class.QFlags_Qt::WindowType_          ; QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*)
             ;-- try.1.8049206.from:
+            ; try 0x08049278-0x0804927d cleanup -> 0x080492d2
             0x08049278      call method.constructor.QLabel.QLabel_QString_const__QWidget__QFlags_Qt::WindowType__
 
             0x0804921a      call sym.__x86.get_pc_thunk.si
             ; QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*)
             0x08049249      call class.QFlags_Qt::WindowType_
             ;-- try.1.8049206.from:
+            ; try 0x08049278-0x0804927d cleanup -> 0x080492d2
             0x08049278      call method.constructor.QLabel.QLabel_QString_const__QWidget__QFlags_Qt::WindowType__
 
 |           0x0804921a      call sym.__x86.get_pc_thunk.si
 |           0x08049249      call class.QFlags_Qt::WindowType_          ; QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*)
 |           ;-- try.1.8049206.from:
+|           ; try 0x08049278-0x0804927d cleanup -> 0x080492d2
 |           0x08049278      call method.constructor.QLabel.QLabel_QString_const__QWidget__QFlags_Qt::WindowType__
 
 |           0x0804921a      call sym.__x86.get_pc_thunk.si
 |           0x08049249      call class.QFlags_Qt::WindowType_
 |           try.1.8049206.from
+|           ; try 0x08049278-0x0804927d cleanup -> 0x080492d2
 |           0x08049278      call method.constructor.QLabel.QLabel_QString_const__QWidget__QFlags_Qt::WindowType__
 EOF
 RUN
