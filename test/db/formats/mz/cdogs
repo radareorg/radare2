@@ -12,21 +12,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=MZ: corkami cdogs.exe - entrypoint
-BROKEN=1
+NAME=LE: corkami cdogs.exe - entrypoint
 FILE=bins/le/cdogs.exe
 CMDS=s
 EXPECT=<<EOF
-0x3bc
+0x26058
 EOF
 RUN
 
-NAME=MZ: corkami cdogs.exe - pi 1
-BROKEN=1
+NAME=LE: corkami cdogs.exe - pi 1
 FILE=bins/le/cdogs.exe
 CMDS=pi 1
 EXPECT=<<EOF
-jmp 0x465
+jmp 0x260d0
 EOF
 RUN
 
