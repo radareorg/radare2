@@ -1,59 +1,59 @@
-NAME=obj entry
+NAME=relocatable obj has no entry at base zero
 FILE=bins/elf/analysis/test.obj
-BROKEN=1
-CMDS=ie~addr
+ARGS=-B 0
+CMDS=ie~?
 EXPECT=<<EOF
-vaddr=0x00000000 paddr=0x00000040 baddr=0x00000000 laddr=0x00000000 haddr=0x00000018 type=program
+0
 EOF
 EXPECT_ERR=<<EOF
 EOF
 RUN
 
-NAME=obj entry
+NAME=relocatable obj has no entry when rebased
 FILE=bins/elf/analysis/test.obj
-BROKEN=1
-CMDS=ie~addr
+ARGS=-B 0x200000
+CMDS=ie~?
 EXPECT=<<EOF
-vaddr=0x00200000 paddr=0x00000040 baddr=0x00200000 laddr=0x00000000 haddr=0x00000018 type=program
+0
 EOF
 RUN
 
 NAME=obj main address
 FILE=bins/elf/analysis/test.obj
-BROKEN=1
+ARGS=-B 0
 CMDS=?v sym.main
 EXPECT=<<EOF
-0x10
+0x50
 EOF
 RUN
 
-NAME=obj main address
+NAME=obj main address when rebased
 FILE=bins/elf/analysis/test.obj
-BROKEN=1
+ARGS=-B 0x200000
 CMDS=?v sym.main
 EXPECT=<<EOF
-0x200010
+0x200050
 EOF
 RUN
 
 NAME=obj main
 FILE=bins/elf/analysis/test.obj
-BROKEN=1
+ARGS=-B 0
 CMDS=pi 3@ sym.main
 EXPECT=<<EOF
 push rbp
 mov rbp, rsp
-call 0x19
+call 0x59
 EOF
 RUN
 
 NAME=obj main baddr
 FILE=bins/elf/analysis/test.obj
-BROKEN=1
+ARGS=-B 0x200000
 CMDS=pi 3@sym.main
 EXPECT=<<EOF
 push rbp
 mov rbp, rsp
-call 0x200019
+call 0x200059
 EOF
 RUN
