@@ -42,7 +42,6 @@ hello
 0x0
 hello
 0x0
-
 0x0
 EOF2
 EXPECT_ERR=
@@ -61,7 +60,8 @@ EOF2
 EXPECT=<<EOF2
 | mc [file]  cat: Show the contents of the given file
 0x0
-| mg /foo [offset [size]]  dump to disk; size 0 reads to EOF (supports base64:)
+| mg /foo [offset [size]]  dump file to disk; size 0 reads to EOF (supports base64:)
+| mg /directory  recursively dump a directory into the current directory
 0x0
 EOF2
 EXPECT_ERR=
@@ -270,7 +270,7 @@ EOF2
 EXPECT_ERR=
 RUN
 
-NAME=mc and mg reject truncated FAT files without hanging
+NAME=mount reads reject truncated FAT files without changing the clipboard
 FILE=bins/fs/fat.img
 TIMEOUT=10
 CMDS=<<EOF2
@@ -278,10 +278,16 @@ e log.level=0
 e io.cache=true
 # Increase README.md's size beyond its allocated cluster chain.
 wx 00001000 @ 0x71c
+m /tmp tmp
+mw /tmp/original original
+my /tmp/original
 mkdir r2r-mg-truncated
 cd r2r-mg-truncated
 mc /root/README.md || echo read-failed
 mg /root/README.md || echo dump-failed
+my /root/README.md || echo yank-failed
+y8
+mo /root/README.md || echo open-failed
 rm README.md
 cd ..
 rm r2r-mg-truncated
@@ -289,14 +295,228 @@ EOF2
 EXPECT=<<EOF2
 read-failed
 dump-failed
+yank-failed
+6f726967696e616c
+open-failed
 EOF2
 EXPECT_ERR=
 RUN
 
-NAME=host commands return consistent status
+NAME=mount reads use cached filesystem content
+FILE=-
+CMDS=<<EOF2
+m /r2 r2
+s 0x1234
+mc /r2/seek
+my /r2/seek && echo yank-ok
+y8
+mo /r2/seek && echo open-ok
+p8 7 @ 0
+EOF2
+EXPECT=<<EOF2
+0x1234
+
+yank-ok
+3078313233340a
+open-ok
+3078313233340a
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount empty files do not read or replace the clipboard
 FILE=-
 CMDS=<<EOF2
 e log.level=0
+m /tmp tmp
+mw /tmp/original original
+mw /tmp/empty
+my /tmp/original
+mc /tmp/empty
+my /tmp/empty || echo yank-failed
+?v $?
+y8
+mo /tmp/empty || echo open-failed
+?v $?
+EOF2
+EXPECT=<<EOF2
+yank-failed
+0x1
+6f726967696e616c
+open-failed
+0x1
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount metadata handles large sizes without reading the whole file
+FILE=bins/fs/fat.img
+TIMEOUT=10
+CMDS=<<EOF2
+e log.level=0
+e io.cache=true
+wx ffffffff @ 0x71c
+mi /root/README.md
+mis /root/README.md
+s
+mc /root/README.md || echo read-failed
+my /root/README.md || echo yank-failed
+mo /root/README.md || echo open-failed
+EOF2
+EXPECT=<<EOF2
+'f file 4294967295 0x0002ae00
+'f file 4294967295 0x0002ae00
+0x2ae00
+read-failed
+yank-failed
+open-failed
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount context quoted paths, data and escaped spaces
+FILE=-
+CMDS=<<EOF2
+m "/tmp space" tmp
+md+ "/tmp space/dir name"
+mw "/tmp space/dir name/a b" "a  b"
+mc /tmp\ space/dir\ name/a\ b
+mw '/tmp space/empty file' ""
+mc "/tmp space/empty file"
+mdq "/tmp space"
+mdj "/tmp space/dir name"
+m- "/tmp space"
+m
+EOF2
+EXPECT=<<EOF2
+a  b
+dir name/
+empty file
+[{"type":"unknown","size":4,"name":"a b"}]
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount context quoted options and offset expression
+FILE=-
+CMDS=<<EOF2
+m tmp "/quoted mount" "1 + 2" "label=a  b"
+m
+m*
+m- /quoted\ mount
+m /opts tmp "label=c  d"
+m
+m-/opts
+m
+EOF2
+EXPECT=<<EOF2
+tmp	0x3	/quoted mount	label=a  b
+m /quoted\ mount tmp 0x3 label=a\ \ b
+tmp	0x0	/opts	label=c  d
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount context write requires quoting multiple words
+FILE=-
+CMDS=<<EOF2
+m /tmp tmp
+mw /tmp/file original
+mw /tmp/file a b || echo rejected
+mc /tmp/file
+mw /tmp/file "a  b  cd"
+mc /tmp/file
+EOF2
+EXPECT=<<EOF2
+rejected
+original
+a  b  cd
+EOF2
+EXPECT_ERR=<<EOF2
+ERROR: Usage: mw [file] [data]
+EOF2
+RUN
+
+NAME=mount context mg quoted filename and range
+FILE=-
+CMDS=<<EOF2
+m /tmp tmp
+mw "/tmp/r2r-mount space" 0123456789
+b 2
+mg "/tmp/r2r-mount space" "1 + 1" 5
+?v $?
+mwf "r2r-mount space" "/tmp/copied file"
+mc "/tmp/copied file"
+rm r2r-mount space
+EOF2
+EXPECT=<<EOF2
+0x0
+23456
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount context find captures quoted paths
+FILE=-
+CMDS=<<EOF2
+m /tmp tmp
+mw "/tmp/a b" abc
+mfn /tmp "a b" > $found
+$found
+my "/tmp/a b"
+y8
+mi "/tmp/a b"
+EOF2
+EXPECT=<<EOF2
+/tmp/a b
+616263
+'f file 3 0x00000000
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount context binary escapes retain argument length
+FILE=-
+CMDS=<<EOF2
+m /tmp tmp
+'mw /tmp/binary "A\x00B"
+my /tmp/binary
+y8
+mw /tmp/lines "first\nsecond"
+mc /tmp/lines
+EOF2
+EXPECT=<<EOF2
+410042
+first
+second
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount and host commands return consistent status
+FILE=-
+CMDS=<<EOF2
+e log.level=0
+m /tmp tmp 0x1_0000 && echo mounted
+?v $?
+mi /tmp/missing || echo stat-failed
+?v $?
+md /tmp/missing || echo list-failed
+?v $?
+mw || echo write-usage
+?v $?
+m /bad tmp 1/0 || echo bad-offset
+?v $?
+m /bad tmp 0xinvalid || echo bad-offset
+m /bad tmp 0x1g || echo bad-offset
+m /bad tmp 0x1_000g || echo bad-offset
+m /bad tmp 1+missing || echo bad-offset
+m /bad tmp -1 || echo bad-offset
+m /bad tmp extra extra || echo bad-arity
+m:unknown-plugin || echo plugin-failed
+?v $?
+m-/tmp
+m
 mkdir r2r-mount-host-status && echo mkdir-ok
 ?v $?
 echo data > r2r-mount-host-status/src
@@ -312,6 +532,24 @@ rm r2r-mount-host-status/dst
 rm r2r-mount-host-status
 EOF2
 EXPECT=<<EOF2
+mounted
+0x0
+stat-failed
+0x1
+list-failed
+0x1
+write-usage
+0x1
+bad-offset
+0x1
+bad-offset
+bad-offset
+bad-offset
+bad-offset
+bad-offset
+bad-arity
+plugin-failed
+0x1
 mkdir-ok
 0x0
 move-ok
@@ -323,6 +561,30 @@ mkdir-failed
 mkdir-usage
 0x1
 EOF2
+RUN
+
+NAME=mktemp preserves literal arguments and returns the created path
+FILE=-
+REQUIRE=unix
+CMDS=<<EOF2
+m /host posix
+mktemp "r2r-mount-d name" > $temp
+?v $?
+mi "/host`$temp`"
+rm "`$temp`"
+mktemp -d "r2r-mount dir" > $temp
+?v $?
+mkdir "`$temp`/child" && echo directory-created
+rm "`$temp`/child"
+rm "`$temp`"
+EOF2
+EXPECT=<<EOF2
+0x0
+'f file 0 0x00000000
+0x0
+directory-created
+EOF2
+EXPECT_ERR=
 RUN
 
 NAME=mktemp errors update status and take the failure branch
@@ -344,6 +606,122 @@ empty-prefix
 0x1
 create-failed
 0x1
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount attached arguments share quoting and arity rules
+FILE=-
+CMDS=<<EOF2
+e log.level=0
+m "/quoted mount" tmp
+m-"/quoted mount" extra || echo rejected
+m-"/quoted mount" && echo unmounted
+m "/escaped mount" tmp
+m-/escaped\ mount && echo unmounted
+m /help tmp
+?=1
+m-?~umount
+?v $?
+m-/help
+m
+EOF2
+EXPECT=<<EOF2
+rejected
+unmounted
+unmounted
+| m- /  umount given path (also m-/)
+0x0
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount expressions and explicit plugin options are unambiguous
+FILE=-
+CMDS=<<EOF2
+f mount_offset=7
+m /named tmp mount_offset
+m /paren tmp '(mount_offset + 1)'
+m /digit tmp 0 123filename
+m /sign tmp 0 -filename
+m /opts tmp label=a=b
+m
+EOF2
+EXPECT=<<EOF2
+tmp	0x7	/named
+tmp	0x8	/paren
+tmp	0x0	/digit	123filename
+tmp	0x0	/sign	-filename
+tmp	0x0	/opts	label=a=b
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount numeric consumers reject invalid expressions
+FILE=-
+CMDS=<<EOF2
+e log.level=0
+m /tmp tmp
+mw /tmp/a hello
+mfo /tmp missing || echo bad-offset
+mix 1/0 || echo bad-offset
+mp msdos missing || echo bad-offset
+mg /tmp/a 0 missing || echo bad-size
+mg /tmp/a "" || echo empty-offset
+EOF2
+EXPECT=<<EOF2
+bad-offset
+bad-offset
+bad-offset
+bad-size
+empty-offset
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount base64 paths share validation for listing and dumping
+FILE=-
+CMDS=<<EOF2
+e log.level=0
+m /tmp tmp
+md+ '/tmp/a b'
+mw '/tmp/a b/file' hello
+mdq base64:L3RtcC9hIGI=
+mdq base64: || echo rejected-empty
+mdq base64:L3RtcC9hIGIAYw== || echo rejected-nul
+mg base64:L3RtcC9hIGIAYw== || echo rejected-nul
+EOF2
+EXPECT=<<EOF2
+file
+rejected-empty
+rejected-nul
+rejected-nul
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mount plugin commands preserve their own grammar and reset status
+FILE=-
+CMDS=<<EOF2
+e log.level=0
+?=1
+m:~^tmp$
+?v $?
+?=1
+m:l~^tmp$
+?v $?
+m:9fs? && echo plugin-help
+m: 9fs? && echo plugin-help
+m:unknown? || echo plugin-error
+EOF2
+EXPECT=<<EOF2
+tmp
+0x0
+tmp
+0x0
+plugin-help
+plugin-help
+plugin-error
 EOF2
 EXPECT_ERR=
 RUN
