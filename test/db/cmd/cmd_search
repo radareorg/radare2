@@ -374,10 +374,9 @@ RUN
 NAME=/as begin of file
 FILE=bins/pe/a.exe
 ARGS=-n
-BROKEN=1
 CMDS=s/ MZ
 EXPECT=<<EOF
-0x00000000 hit0_0 .MZ.
+0x00000000 hit0_0 "MZ"
 EOF
 RUN
 

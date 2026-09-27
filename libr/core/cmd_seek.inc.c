@@ -820,7 +820,7 @@ static int cmd_seek(void *data, const char *input) {
 		case 'r':
 		case '/':
 		case 'x':
-			r_config_set_i (core->config, "search.from", core->addr + 1);
+			r_config_set_i (core->config, "search.from", core->addr? core->addr + 1: 0);
 			r_config_set_i (core->config, "search.maxhits", 1);
 			r_core_cmdf (core, "s+1; %s; s-1; s %s%d_0; f-%s%d_0",
 				input, pfx, kwidx, pfx, kwidx);
