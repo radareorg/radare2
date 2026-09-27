@@ -713,7 +713,10 @@ static int cmp(RConfigNode *a, RConfigNode *b) {
 }
 
 R_API void r_config_lock(RConfig *cfg, bool lock) {
-	r_list_sort (cfg->nodes, (RListComparator) cmp);
+	R_RETURN_IF_FAIL (cfg);
+	if (lock) {
+		r_list_sort (cfg->nodes, (RListComparator) cmp);
+	}
 	cfg->lock = lock;
 }
 

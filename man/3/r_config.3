@@ -104,8 +104,9 @@ char *r_config_list(RConfig *cfg, const char *str, int rad);
 .Ed
 .Pp
 Behavior and tips:
-- `r_config_lock` sorts nodes and flips a lock flag (useful before
-  serializing a stable snapshot).
+- `r_config_lock(cfg, true)` sorts nodes by name and prevents new keys.
+  Existing values can still be changed and keys removed.
+  `r_config_lock(cfg, false)` allows new keys without sorting.
 - `r_config_eval` understands `key=value` to set keys, `key.` to list
   matching keys, and colon-separated lists when `many` is true; this
   mirrors how CLI handlers parse compact config expressions.
