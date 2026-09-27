@@ -1,0 +1,20 @@
+NAME=RPRJ format detection uses the complete header
+FILE=malloc://8
+CMDS=<<END
+mkdir .tmp
+wx 5250524a05000000
+wtf .tmp/rprj-header.bin 8 2>/dev/null
+!!rabin2 -I .tmp/rprj-header.bin~bintype[1]
+wtf .tmp/rprj-short.bin 4 2>/dev/null
+!!rabin2 -I .tmp/rprj-short.bin~bintype[1]
+wx 00000000
+wtf .tmp/rprj-fake.prj 8 2>/dev/null
+!!rabin2 -I .tmp/rprj-fake.prj~bintype[1]
+rm .tmp/rprj-header.bin
+rm .tmp/rprj-short.bin
+rm .tmp/rprj-fake.prj
+END
+EXPECT=<<END
+prj
+END
+RUN
