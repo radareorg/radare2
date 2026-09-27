@@ -53,3 +53,55 @@ EXPECT=<<EOF
 0 0x004779d0-0x004779d3 catch (std::exception) -> 0x004779d8 (source 0x004779b4)
 EOF
 RUN
+
+NAME=disasm exception region annotations and clipped views
+FILE=bins/elf/ClassCpp.out
+CMDS=<<EOF
+e asm.flags=false
+pd 2 @ 0x12aa~try 0x
+e asm.trycatch=true
+pd 2 @ 0x12aa~try 0x
+pd 1 @ 0x12af~try 0x
+pd 1 @ 0x1308~try 0x
+pdJ 2 @ 0x12aa~try 0x
+e asm.lines=false
+pd 2 @ 0x12aa~try 0x
+e asm.lines=true
+e asm.trycatch=false
+pd 2 @ 0x12aa~try 0x
+EOF
+EXPECT=<<EOF
+            ; try 0x000012aa-0x00001308 cleanup -> 0x0000132c
+            ; try 0x000012aa-0x00001308 cleanup -> 0x0000132c
+EOF
+RUN
+
+NAME=disasm typed and catch-all handlers sharing a region
+FILE=bins/elf/0pack
+CMDS=<<EOF
+e asm.trycatch=true
+pd 2 @ 0x4779d0~try 0x
+EOF
+EXPECT=<<EOF
+            ; try 0x004779d0-0x004779d3 catch (std::exception) -> 0x004779d8
+            ; try 0x004779d0-0x004779d3 catch (...) -> 0x004779d8
+EOF
+RUN
+
+NAME=disasm exception background stops at the exclusive end
+FILE=bins/elf/ClassCpp.out
+CMDS=<<EOF
+f-*
+e asm.trycatch=true
+e asm.comments=false
+e asm.bytes=false
+e asm.addr=false
+e scr.color=1
+ec linehl white blue
+pd 2 @ 0x1303
+EOF
+EXPECT=<<EOF
+            [44m[34m     [1;32mcall[33m [32m0x1110[27;22;24;25;28;39m[0m
+                 [36mmov[37m ebx[0m,[37m [32m0[0m
+EOF
+RUN

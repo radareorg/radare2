@@ -1,3 +1,60 @@
+NAME=visual exception hint jumps from inside a protected region
+FILE=bins/elf/ClassCpp.out
+CMDS=<<EOF
+e asm.trycatch=true
+e asm.hint.jmp=true
+e asm.hint.call=false
+e scr.wheel=false
+e scr.feedback=0
+e cmd.vprompt=f hint_target=$$
+s 0x12af
+<1q
+Vp @e:scr.interactive=true > /dev/null
+?v hint_target
+EOF
+EXPECT=<<EOF
+0x132c
+EOF
+RUN
+
+NAME=visual exception hints honor asm.hints
+FILE=bins/elf/ClassCpp.out
+CMDS=<<EOF
+e asm.trycatch=true
+e asm.hint.jmp=true
+e asm.hints=false
+e scr.wheel=false
+e scr.feedback=0
+e cmd.vprompt=f hint_target=$$
+s 0x12af
+<1q
+Vp @e:scr.interactive=true > /dev/null
+?v hint_target
+EOF
+EXPECT=<<EOF
+0x12af
+EOF
+RUN
+
+NAME=visual exception hint jumps to a shared catch handler
+FILE=bins/elf/0pack
+CMDS=<<EOF
+e asm.trycatch=true
+e asm.hint.jmp=true
+e asm.hint.call=false
+e scr.wheel=false
+e scr.feedback=0
+e cmd.vprompt=f hint_target=$$
+s 0x4779d0
+<1q
+Vp @e:scr.interactive=true > /dev/null
+?v hint_target
+EOF
+EXPECT=<<EOF
+0x4779d8
+EOF
+RUN
+
 NAME=visual_dw
 FILE=-
 CMDS=<<EOF

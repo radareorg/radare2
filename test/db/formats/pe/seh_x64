@@ -51,3 +51,17 @@ EXPECT=<<EOF
 2 0x140001084-0x140001094 filter -> 0x140001094 (source 0x140001010, filter 0x140001d30)
 EOF
 RUN
+
+NAME=disasm nested SEH regions and filter handler
+FILE=bins/pe/seh_x64.exe
+CMDS=<<EOF
+e asm.trycatch=true
+pd 3 @ 0x14000104c~try 0x
+pd 6 @ 0x140001084~try 0x
+EOF
+EXPECT=<<EOF
+            ; try 0x14000104c-0x140001066 catch -> 0x140001066
+            ; try 0x140001022-0x140001076 catch -> 0x140001076
+            ; try 0x140001084-0x140001094 filter -> 0x140001094
+EOF
+RUN
