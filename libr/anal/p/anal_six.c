@@ -128,7 +128,7 @@ static void append_signed_mem_instr(RStrBuf *sb, ut64 addr, bool is_adrp, ut32 r
 	}
 }
 
-static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, bool register_refs, ut64 search, const ut8 *mem, ut64 addr, int process_len, int mem_len) {
+static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, bool register_refs, bool islands, ut64 search, const ut8 *mem, ut64 addr, int process_len, int mem_len) {
 	const ut8 *p = mem;
 	const ut8 *e = mem + (mem_len & ~3);
 	const ut8 *pe = mem + (process_len & ~3);
@@ -143,7 +143,7 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, bool register_refs, u
 			int64_t off = (int64_t) ((uint64_t) ((((v >> 5) & 0x7ffff) << 2) | ((v >> 29) & 0x3)) << 43) >> (is_adrp? 31: 43);
 			ut64 target = base + off;
 			ut64 jump = target;
-			const ut8 *branch = resolve_stub (p + 4, e, reg, &jump);
+			const ut8 *branch = islands? resolve_stub (p + 4, e, reg, &jump): NULL;
 			if (branch) {
 				ut64 branch_addr = addr + (branch - p);
 				if (register_refs) {
@@ -290,14 +290,14 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, bool register_refs, u
  * @param start Address at which to start looking for xrefs.
  * @param lenbytes Reach of the search for xrefs, in bytes.
  */
-static void siguza_xrefs(RAnal *anal, RStrBuf *sb, bool register_refs, ut64 search, ut64 start, ut64 lenbytes) {
+static void siguza_xrefs(RAnal *anal, RStrBuf *sb, bool register_refs, bool islands, ut64 search, ut64 start, ut64 lenbytes) {
 	ut8 *buf = malloc (SIX_CHUNK_SIZE + SIX_LOOKAHEAD_SIZE);
 	if (!buf) {
 		R_LOG_ERROR ("Failed to allocate buffer");
 		return;
 	}
 
-	ut64 pos = 0;
+	ut64 pos = islands? (4 - (start & 3)) & 3: 0;
 	while (pos < lenbytes) {
 		int process_len = (int)R_MIN (lenbytes - pos, SIX_CHUNK_SIZE);
 		ut64 lookahead_rem = lenbytes - pos - process_len;
@@ -308,7 +308,7 @@ static void siguza_xrefs(RAnal *anal, RStrBuf *sb, bool register_refs, ut64 sear
 		if (process_len < 4) {
 			break;
 		}
-		siguza_xrefs_chunked (anal, sb, register_refs, search, buf, start + pos, process_len, to_read);
+		siguza_xrefs_chunked (anal, sb, register_refs, islands, search, buf, start + pos, process_len, to_read);
 		pos += process_len;
 	}
 	free (buf);
@@ -322,9 +322,10 @@ static bool is_arm64(RAnal *anal) {
 
 static char *six_help(void) {
 	return strdup (
-		"| a:six              register xrefs and stub jump hints in arm64 executable sections or current map\n"
-		"| a:six <target>     list xrefs to target address in arm64 executable sections or current map\n"
-		"| a:six <target> <len> list xrefs to target address from $$ in current executable section or map\n");
+		"| a:six                 register xrefs in arm64 executable sections or current map\n"
+		"| a:sixi                also resolve stub islands and install jump hints (opt-in)\n"
+		"| a:six[i] <target>     list xrefs to target address without changing xrefs or hints\n"
+		"| a:six[i] <target> <len> list xrefs to target from $$ in current executable section or map\n");
 }
 
 static bool parse_num(RAnal *anal, RCore *core, const char *arg, const char *name, ut64 *out) {
@@ -352,12 +353,17 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 	if (!r_str_startswith (input, SIX_CMD)) {
 		return NULL;
 	}
-	char ch = input[strlen (SIX_CMD)];
+	size_t cmd_len = strlen (SIX_CMD);
+	bool islands = input[cmd_len] == 'i';
+	if (islands) {
+		cmd_len++;
+	}
+	char ch = input[cmd_len];
 	if (ch && ch != '?' && ch != ' ') {
 		R_LOG_ERROR ("Invalid command 'a:%s'. See 'a:six?' for help", input);
 		return strdup ("");
 	}
-	input = input + strlen (SIX_CMD);
+	input += cmd_len;
 	if (*input == '?' || *r_str_trim_head_ro (input) == '?') {
 		return six_help ();
 	}
@@ -380,7 +386,7 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 			return strdup ("");
 		}
 		if (argc < 1 || argc > 2) {
-			R_LOG_ERROR ("Usage: a:six [target] [len]");
+			R_LOG_ERROR ("Usage: a:six%s [target] [len]", islands? "i": "");
 			r_str_argv_free (argv);
 			return strdup ("");
 		}
@@ -414,7 +420,7 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 		RBinSection *s;
 		R_VEC_FOREACH (sections, s) {
 			if (!s->is_segment && (s->perm & R_PERM_X)) {
-				siguza_xrefs (anal, sb, register_refs, search, s->vaddr, s->vsize);
+				siguza_xrefs (anal, sb, register_refs, islands, search, s->vaddr, s->vsize);
 				scanned = true;
 			}
 		}
@@ -442,7 +448,7 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 			len = end - offset;
 			R_LOG_WARN ("Length is not within range for this section, using 0x%" PFMT64x " instead", len);
 		}
-		siguza_xrefs (anal, sb, register_refs, search, offset, len);
+		siguza_xrefs (anal, sb, register_refs, islands, search, offset, len);
 	}
 
 	if (register_refs) {
