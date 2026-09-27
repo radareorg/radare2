@@ -249,10 +249,15 @@ bool test_r_core_anal_fcn_variadic_marker_requires_unclobbered_al(void) {
 	r_config_set_i (core->config, "asm.bits", 64);
 	r_config_set_b (core->config, "anal.esil", false);
 
+	mu_assert_true (r_anal_cc_set (core->anal, "void amd64 (rdi, rsi, rdx, rcx, r8, r9, stack)"),
+		"must seed amd64 calling convention");
+	r_anal_set_cc_default (core->anal, "amd64");
+
 	mu_assert_true (r_core_anal_fcn (core, addr, UT64_MAX,
 		R_ANAL_REF_TYPE_NULL, 1), "analyze clobbered marker function");
 	RAnalFunction *clobbered = r_anal_get_function_at (core->anal, addr);
 	mu_assert_notnull (clobbered, "analysis creates clobbered marker function");
+	mu_assert_streq (clobbered->callconv, "amd64", "clobbered marker uses amd64 calling convention");
 	mu_assert_false (clobbered->is_variadic,
 		"writing eax invalidates the incoming al variadic marker");
 
@@ -261,6 +266,7 @@ bool test_r_core_anal_fcn_variadic_marker_requires_unclobbered_al(void) {
 		R_ANAL_REF_TYPE_NULL, 1), "analyze preserved marker function");
 	RAnalFunction *preserved = r_anal_get_function_at (core->anal, preserved_addr);
 	mu_assert_notnull (preserved, "analysis creates preserved marker function");
+	mu_assert_streq (preserved->callconv, "amd64", "preserved marker uses amd64 calling convention");
 	mu_assert_true (preserved->is_variadic,
 		"an unclobbered test of al remains a variadic marker");
 
