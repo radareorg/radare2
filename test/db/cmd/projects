@@ -421,18 +421,23 @@ EOF
 RUN
 
 NAME=Save project for a binary without saving its info
-BROKEN=1
 FILE=bins/elf/analysis/main
 ARGS=-n
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
-# Ps blub > /dev/null
-P blub > /dev/null
-i~format
+P- raw_bin_info
+P+ raw_bin_info > /dev/null
+Pc
+o--
+P raw_bin_info > /dev/null
+i~?format
+p8 4
+P- raw_bin_info
 EOF
 EXPECT=<<EOF
-format   elf64
+0
+7f454c46
 EOF
 RUN
 
