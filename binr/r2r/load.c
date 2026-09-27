@@ -577,7 +577,8 @@ static R2RTestFrom test_type_for_path(const char *path) {
 	}
 	res.archos = false;
 	if (strstr (path, R_SYS_DIR "archos" R_SYS_DIR) || !strcmp (path, "archos")) {
-		res.archos = !r_str_endswith (path, R_SYS_ARCHOSBITS);
+		res.archos = !r_str_endswith (path, R_SYS_ARCHOSBITS)
+			&& !strstr (path, R_SYS_DIR R_SYS_ARCHOSBITS R_SYS_DIR);
 	}
 	return res;
 }
