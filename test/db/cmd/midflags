@@ -301,23 +301,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pid asm.flags.middle=2
+NAME=pd asm.flags.middle=1
 FILE=malloc://1024
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 e asm.flags.middle=1
 f mid.flag = 4
 wx 31ed4989d15e4889e2
-pid 3
+pd 4
 EOF
 EXPECT=<<EOF
-0x00000000               31ed  xor ebp, ebp
-0x00000002                 49  dec ecx
-0x00000003               89d1  mov ecx, edx
-0x00000004 mid.flag:
-0x00000004               89d1  mov ecx, edx
+            0x00000000      31ed           xor ebp, ebp
+            0x00000002      49             dec ecx
+            ;-- (0x00000004) mid.flag:
+            0x00000003  ~   89d1           mov ecx, edx
+            0x00000005      5e             pop esi
 EOF
 RUN
 

@@ -43,27 +43,31 @@ EOF
 RUN
 
 NAME=& list
-BROKEN=1
 FILE=-
 CMDS=<<EOF
 & ?e hello
 & ?e world
+&& 1
+&& 2
 &
 ?e --
-&& 2
+&=1
 &=2
 EOF
 EXPECT=<<EOF
 [1] ?e hello
 [2] ?e world
-id mode   fg state        transient cmd
----------------------------------------
-0  coop   *  running      false     -- MAIN TASK --
-1  thread    running      false     ?e hello
-2  thread    before start false     ?e world
+id mode   fg state   transient cmd
+----------------------------------
+0  coop   *  running false     -- MAIN TASK --
+1  thread    done    false     ?e hello
+2  thread    done    false     ?e world
 
-total running: 1
+total running: 0
 --
+hello
+
+world
 
 EOF
 RUN

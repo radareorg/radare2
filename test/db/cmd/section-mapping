@@ -1,11 +1,10 @@
 NAME=map sections correctly
 FILE=bins/dex/Hello.dex
 ARGS=-n -m 0xf0000000
-BROKEN=1
 CMDS=<<EOF
 e io.va=true
-e io.sectonly=true
-S 0xf000022f 0x0 0x100 0x100 test_section r
+om-*
+om $d 0x0 0x100 0x22f r test_section
 x 0x100 @ 0x0
 EOF
 EXPECT=<<EOF
@@ -32,10 +31,9 @@ RUN
 NAME=map sections correctly
 FILE=bins/dex/Hello.dex
 ARGS=-n -m 0xf0000000
-BROKEN=1
 CMDS=<<EOF
 e io.va=true
-S 0xf000022f 0x0 0x100 0x100 test_section r
+om $d 0x0 0x100 0x22f r test_section
 x 0x100 @ 0x0
 EOF
 EXPECT=<<EOF

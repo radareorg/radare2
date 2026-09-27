@@ -38,7 +38,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{2, "sst.b", "2 = (byte) 1" },
 		{2, "stsr", "2 = 1" },
 		{2, "ldsr", "2 = 1" },
-		{2, "and", "3 = 2 & 1" },
+		{2, "and", "2 &= 1" },
 		{3, "andi", "3 = 2 & 1" },
 		{2, "add", "2 += 1" },
 		{3, "addi", "3 = 2 + 1" },

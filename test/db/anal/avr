@@ -36,18 +36,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=avr DISasm: negative baddr
+NAME=avr DISasm: seek into a 4-byte call
 FILE=bins/elf/analysis/bugurtos-avr.elf
-BROKEN=1
 CMDS=<<EOF
-s 0x506
-pd 2~!1
-s+2
-pd 1
+pi 1 @ 0x506
+pi 1 @ 0x508
 EOF
 EXPECT=<<EOF
-call 0x18CE
-call 0x18CE
+call sym.proc_stop_no_resched
+add r6, r7
 EOF
 RUN
 
@@ -363,7 +360,6 @@ EOF
 RUN
 
 NAME=avr functions 1 fail without esil
-BROKEN=1
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
@@ -371,7 +367,7 @@ aaa
 axt 0x28a
 EOF
 EXPECT=<<EOF
-fcn.0000029e 0x328 [CODE] jmp 0x28a
+fcn.0000029e 0x328 [CODE:--x] jmp 0x28a
 EOF
 RUN
 

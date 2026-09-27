@@ -70,9 +70,11 @@ EOF
 RUN
 
 NAME=io.cache: empty file
-FILE=.empty.tmp
-BROKEN=1
+FILE=-
 CMDS=<<EOF
+o++ .empty.tmp
+o=4
+e io.va=false
 ?e
 b 15
 p8
@@ -95,6 +97,8 @@ wci
 p8
 # File was correctly written.
 cat .empty.tmp
+o-.
+rm .empty.tmp
 ?e
 EOF
 EXPECT=<<EOF

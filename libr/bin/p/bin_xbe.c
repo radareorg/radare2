@@ -236,7 +236,7 @@ static bool sections_vec(RBinFile *bf) {
 		}
 		tmp[sizeof (tmp) - 1] = 0;
 		RBinSection *item = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		item->name = r_str_newf ("%s.%i", tmp, i);
+		item->name = r_str_newf ("%s.%i", r_str_is_printable (tmp)? tmp: "", i);
 		item->paddr = sect[i].offset;
 		item->vaddr = sect[i].vaddr;
 		item->size = sect[i].size;

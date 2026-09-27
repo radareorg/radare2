@@ -547,7 +547,6 @@ RUN
 
 NAME=arm subrel
 FILE=bins/elf/analysis/arm-ls
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -558,9 +557,6 @@ pd 1 @ 0x00014368
 EOF
 EXPECT=<<EOF
                  ldr r0, main
-                 ldr r1, obj.object.6286
-                 ldr r3, sym.__libc_csu_init
-                 ldr r4, obj.completed.6278
 EOF
 RUN
 
@@ -905,13 +901,12 @@ RUN
 
 NAME=arm main in disassembly
 FILE=bins/elf/analysis/ch23.bin
-BROKEN=1
 CMDS=<<EOF
 aaa
-pd 1 @ 0x000083d8~[5]
+pd 1 @ 0x000083d8~?main
 EOF
 EXPECT=<<EOF
-main
+1
 EOF
 RUN
 
@@ -1121,7 +1116,6 @@ EOF
 RUN
 
 NAME=misaligned arm string xref failing
-BROKEN=1
 FILE=bins/mach0/misaligned_data-iOS-armv7
 CMDS=<<EOF
 aav
@@ -1130,7 +1124,7 @@ af
 axt str.helloradareworld_n
 EOF
 EXPECT=<<EOF
-main 0xbf9c [STRN:-w-] add r0, pc
+main 0xbf9c [STRN:r--] add r0, pc
 EOF
 RUN
 

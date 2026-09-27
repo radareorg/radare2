@@ -2517,7 +2517,12 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	if (!item) {
 		return r_str_newf ("%s = unknown ()", syscallNumber (snstr, n));
 	}
-	char *res = r_str_newf ("%s = %s (", syscallNumber (snstr, item->num), item->name);
+	// Some syscall tables encode the number in the interrupt vector itself.
+	int display_num = item->num;
+	if (!display_num && N > 0 && item->swi == N && defVector <= 0) {
+		display_num = N;
+	}
+	char *res = r_str_newf ("%s = %s (", syscallNumber (snstr, display_num), item->name);
 	// TODO: move this to r_syscall
 	const char *cc = r_anal_syscc_default (core->anal);
 	//TODO replace the hardcoded CC with the sdb ones
@@ -11401,9 +11406,18 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		}
 		r_list_free (list);
 		break;
-	case '\0':
-		cmd_syscall_do (core, -1, core->addr);
+	case '\0': {
+		st64 num = -1;
+		RAnalOp *op = r_core_anal_op (core, core->addr, R_ARCH_OP_MASK_BASIC);
+		if (op) {
+			if (op->type == R_ANAL_OP_TYPE_SWI && op->val != UT64_MAX) {
+				num = op->val;
+			}
+			r_anal_op_free (op);
+		}
+		cmd_syscall_do (core, num, core->addr);
 		break;
+	}
 	case ' ':
 		cmd_as (core, r_str_trim_head_ro (input + 1));
 		break;

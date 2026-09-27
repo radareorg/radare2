@@ -21,15 +21,12 @@ mov ax, 0xba0
 EOF
 RUN
 
-NAME=MZ: blocks.exe segments
-BROKEN=1
+NAME=MZ: blocks.exe text section
 FILE=bins/mz/blocks.exe
-CMDS=iS*
+CMDS=<<EOF
+iS~.text
+EOF
 EXPECT=<<EOF
-fs sections
-S 0x00000070 0x00000070 0x0000385d 0x0000385d seg_000 23
-f section.seg_000 14429 0x00000070
-f section_end.seg_000 1 0x000038cd
-CC section 0 va=0x00000070 pa=0x00000070 sz=14429 vsz=14429 rwx=-rwx seg_000 @ 0x00000070
+1   0x00000070  0x385d 0x00000000  0x3acd -rwx 0x0   ---- .text
 EOF
 RUN

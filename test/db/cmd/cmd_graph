@@ -144,10 +144,9 @@ RUN
 
 NAME=get graph of a function
 FILE=bins/elf/analysis/hello-linux-x86_64
-BROKEN=1
 CMDS=<<EOF
 af
-aggk $$~nodes=
+agfk $$~nodes=
 EOF
 EXPECT=<<EOF
 agraph.nodes=0x400410

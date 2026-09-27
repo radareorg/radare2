@@ -1017,7 +1017,6 @@ EOF
 RUN
 
 NAME=arm s110 syscalls esil
-BROKEN=1
 FILE=-
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=<<EOF
@@ -1027,13 +1026,12 @@ pd 3
 EOF
 EXPECT=<<EOF
             0x00000000      0522           movs r2, 5
-            0x00000002      0aa1           adr r1, 0x28                ; 0x2c ; ','
-            0x00000004      7cdf           svc 0x7c                    ; '|' ; 124 = sd_ble_gap_device_name_set (0x00000000, 0x00000028, 0x00000005)
+            0x00000002      0aa1           adr r1, 0x28                ; 0x2c
+            0x00000004      7cdf           svc 0x7c                    ; 124 = sd_ble_gap_device_name_set (0, 44, 5)
 EOF
 RUN
 
 NAME=arm s110 syscalls as
-BROKEN=1
 FILE=-
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=<<EOF
@@ -1044,13 +1042,12 @@ as
 pd 1
 EOF
 EXPECT=<<EOF
-124 = sd_ble_gap_device_name_set (0x00000000, 0x00000000, 0x00000000)
-            0x00000004      7cdf           svc 0x7c                    ; '|' ; 124 = sd_ble_gap_device_name_set (0x00000000, 0x00000000, 0x00000000)
+124 = sd_ble_gap_device_name_set (0, 0, 0)
+            0x00000004      7cdf           svc 0x7c                    ; 124 = sd_ble_gap_device_name_set (0, 0, 0)
 EOF
 RUN
 
 NAME=arm s110 syscalls as num
-BROKEN=1
 FILE=-
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=<<EOF
@@ -1061,8 +1058,8 @@ as 123
 pd 1
 EOF
 EXPECT=<<EOF
-123 = sd_ble_gap_ppcp_get (0x00000000)
-            0x00000004      7cdf           svc 0x7c                    ; '|' ; 124 = sd_ble_gap_device_name_set (0x00000000, 0x00000000, 0x00000000)
+123 = sd_ble_gap_ppcp_get (0)
+            0x00000004      7cdf           svc 0x7c                    ; 124 = sd_ble_gap_device_name_set (0, 0, 0)
 EOF
 RUN
 

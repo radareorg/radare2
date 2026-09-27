@@ -6280,16 +6280,13 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						}
 						if (rex) {
 							ao->o |= 1;
+						} else if (strstr (str, "],")) {
+							ao->o |= 4;
+						} else if (strstr (str, "]!")) {
+							ao->o |= 0x2005;
 						} else {
-							if (strstr (str, "],")) {
-								ao->o |= 4;
-							} else if (strstr (str, "]!")) {
-								ao->o |= 0x2005;
-							} else {
-								ao->o |= 5;
-							}
+							ao->o |= 5;
 						}
-						ao->o |= 1;
 						ao->o |= (num & 0xff) << 24;
 						ao->o |= ((num >> 8) & 0xf) << 16;
 					}

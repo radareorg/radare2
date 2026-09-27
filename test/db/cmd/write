@@ -360,7 +360,6 @@ RUN
 
 NAME=wci should commit the changes to the file
 FILE=malloc://1024
-BROKEN=1
 CMDS=<<EOF
 rm -rf .tmp-wci
 mkdir .tmp-wci
@@ -370,12 +369,11 @@ e io.cache=true
 o+ .tmp-wci/.b.exe.new
 wx ff
 wci
-e.src.null=true
 !!radiff2 .tmp-wci/.b.exe.orig .tmp-wci/.b.exe.new
 rm -rf .tmp-wci
 EOF
 EXPECT=<<EOF
-File size
+0x00000680 55 => ff 0x00000680
 EOF
 RUN
 

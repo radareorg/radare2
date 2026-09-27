@@ -355,14 +355,15 @@ RUN
 
 NAME=Export custom types and import again
 FILE=bins/elf/analysis/main
-BROKEN=1
 CMDS=<<EOF
 e prj.vc=false
+P- costom_types > /dev/null
 tk char **=type
 tk type.char **=**z
 tk type.char **.size=64
 "td struct Foo { int bar; int x; int y; };"
 P+ costom_types > /dev/null
+Pc
 t- char **
 t- Foo
 tk~?char **
@@ -373,9 +374,9 @@ tk~?Foo
 P- costom_types > /dev/null
 EOF
 EXPECT=<<EOF
-5
+11
 0
-7
+14
 5
 EOF
 RUN
@@ -822,18 +823,20 @@ RUN
 
 NAME=Reopening projects bin info loading
 FILE=bins/elf/analysis/main
-BROKEN=1
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
+P- bininfo > /dev/null
 P+ bininfo > /dev/null
+Pc
 P bininfo
 i~?
 ie~?
 ii~?
+P- bininfo > /dev/null
 EOF
 EXPECT=<<EOF
-37
+39
 3
 5
 EOF

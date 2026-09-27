@@ -1059,7 +1059,6 @@ RUN
 
 NAME=ARC4 ISA instruction length
 FILE=malloc://64
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=32
@@ -1068,7 +1067,7 @@ wx 0afe5f60 @ 8
 ao 2~size
 EOF
 EXPECT=<<EOF
+size: 2
 size: 8
-size: 4
 EOF
 RUN

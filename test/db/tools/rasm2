@@ -649,10 +649,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rasm2 -a ppc.as -b 64 "std r31, -8(r1)"
+NAME=rasm2 -a ppc -b 64 "std r31, -8(r1)"
 FILE=-
-BROKEN=1
-CMDS=!rasm2 -a ppc.as -b 64 "std r31, -8(r1)"
+CMDS=!rasm2 -a ppc -b 64 "std r31, -8(r1)"
 EXPECT=<<EOF
 f8ffe1fb
 EOF
@@ -666,10 +665,9 @@ std r31, -8(r1)
 EOF
 RUN
 
-NAME=rasm2 -a ppc.as -b 32 -e "mr r10, r4"
+NAME=rasm2 -a ppc -b 32 -e "mr r10, r4"
 FILE=-
-BROKEN=1
-CMDS=!rasm2 -a ppc.as -b 32 -e "mr r10, r4"
+CMDS=!rasm2 -a ppc -b 32 -e "mr r10, r4"
 EXPECT=<<EOF
 7c8a2378
 EOF
@@ -703,37 +701,33 @@ ERROR: Cannot assemble 'ld r3, 0(r1)' at line 1
 EOF
 RUN
 
-NAME=rasm2 -a arm.as -b 16 "wfe"
+NAME=rasm2 -a arm -b 16 "wfe"
 FILE=-
-BROKEN=1
-CMDS=!rasm2 -a arm.as -b 16 "wfe"
+CMDS=!rasm2 -a arm -b 16 "wfe"
 EXPECT=<<EOF
 20bf
 EOF
 RUN
 
-NAME=rasm2 -a arm.as -b 32 "add fp, sp, 0"
+NAME=rasm2 -a arm -b 32 "add fp, sp, 0"
 FILE=-
-BROKEN=1
-CMDS=!rasm2 -a arm.as -b 32 "add fp, sp, 0"
+CMDS=!rasm2 -a arm -b 32 "add fp, sp, 0"
 EXPECT=<<EOF
 00b08de2
 EOF
 RUN
 
-NAME=rasm2 -a arm.as -b 32 -e "ldr fp, [sp], 4"
+NAME=rasm2 -a arm -b 32 -e "ldr fp, [sp], 4"
 FILE=-
-BROKEN=1
-CMDS=!rasm2 -a arm.as -b 32 -e "ldr fp, [sp], 4"
+CMDS=!rasm2 -a arm -b 32 -e "ldr fp, [sp], 4"
 EXPECT=<<EOF
 e49db004
 EOF
 RUN
 
-NAME=rasm2 -a arm.as -b 64 "sub sp, sp, 16"
+NAME=rasm2 -a arm -b 64 "sub sp, sp, 16"
 FILE=-
-BROKEN=1
-CMDS=!rasm2 -a arm.as -b 64 "sub sp, sp, 16"
+CMDS=!rasm2 -a arm -b 64 "sub sp, sp, 16"
 EXPECT=<<EOF
 ff4300d1
 EOF

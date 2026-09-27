@@ -72,18 +72,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=p= 0xff 0x00
+NAME=p=F counts 0xff bytes
 FILE=-
-BROKEN=1
 CMDS=<<EOF
 b 2
 wx 0xff
-p= 2@0
+p=F 2 2@0
 EOF
 EXPECT=<<EOF
-         ___________________________________________________
-00 00ff | __________________________________________________|
-01 0000 ||
+0x00000000 000 0001 |
+0x00000100 001 0000 |
 EOF
 RUN
 
