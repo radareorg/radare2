@@ -835,6 +835,7 @@ static int js_r2pipe_init(JSContext *ctx, JSModuleDef *m) {
 static JSModuleDef *js_init_module_r2pipe(JSContext *ctx) {
 	JSModuleDef *m = JS_NewCModule (ctx, "r2pipe", js_r2pipe_init);
 	if (m) {
+		JS_AddModuleExportList (ctx, m, js_r2pipe_funcs, countof (js_r2pipe_funcs));
 		JSValue global = JS_GetGlobalObject (ctx);
 		JSValue v = JS_NewObject (ctx);
 		JS_SetPropertyFunctionList (ctx, v, js_r2pipe_funcs, countof (js_r2pipe_funcs));
