@@ -563,6 +563,10 @@ repeat:
 	}
 	RBinFile *bf = r_bin_cur (r->bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
+	if (plugin && !strcmp (plugin->meta.name, "prj")) {
+		R_CRITICAL_LEAVE (r);
+		return fd;
+	}
 	if (r_core_bin_set_env (r, bf)) {
 		if (r->anal->verbose && !sdb_const_get (r->anal->sdb_cc, "default.cc", 0)) {
 			R_LOG_WARN ("No calling convention defined for this file, analysis may be inaccurate");
@@ -989,6 +993,22 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		r_config_set (r->config, "bin.str.filter", msg);
 	}
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
+	if (plugin && !strcmp (plugin->meta.name, "prj")) {
+		char *file = r_str_escape (binfile->file);
+		if (!file) {
+			return false;
+		}
+		const bool interactive = r_config_get_b (r->config, "scr.interactive");
+		r_config_set_b (r->config, "scr.interactive", false);
+		bool loaded = r_core_callf (r, "prj open \"%s\"", file) == 0;
+		r_config_set_b (r->config, "scr.interactive", interactive);
+		free (file);
+		if (loaded && !r->io->desc) {
+			r_core_file_open (r, "-", R_PERM_RW, 0);
+		}
+		r_core_block_read (r);
+		return loaded;
+	}
 #if 0
 	//r_core_bin_set_env (r, binfile);
 	if (plugin && plugin->name) {

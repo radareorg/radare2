@@ -872,3 +872,58 @@ reviewcc
 reviewcc
 EOF
 RUN
+
+NAME=newprj direct opening restores maps and analysis without a prj extension
+FILE=hex://b801000000c3
+ARGS=-a x86 -b 64 -m 0x1000
+CMDS=<<END
+mkdir .tmp
+f saved.flag=0x1005
+af+ 0x1000 main
+afb+ 0x1000 0x1000 6
+CC saved.comment @ 0x1000
+e asm.bits=16
+prj save ".tmp/newprj direct.bin"
+!r2 -Nq -c 'fd 0x1005;p8 6 @ 0x1000;e asm.bits;afl;CC. @ 0x1000' '.tmp/newprj direct.bin'
+!r2 -Nnq -c 'p8 4' '.tmp/newprj direct.bin'
+!r2 -Ntq -c aflc ".tmp/newprj direct.bin" 2>/dev/null
+rm ".tmp/newprj direct.bin"
+END
+EXPECT=<<END
+saved.flag
+b801000000c3
+16
+0x00001000    1      6 main
+saved.comment
+5250524a
+1
+END
+RUN
+
+NAME=newprj direct opening executes commands without maps
+FILE=malloc://256
+CMDS=<<END
+mkdir .tmp
+wx 5250524a05000000090000000700000000220000000400000016000000662073617665642e636f6d6d616e643d307831323334
+wtf .tmp/newprj-script.prj 51 2>/dev/null
+!r2 -Nq -c 'fd 0x1234' .tmp/newprj-script.prj
+rm .tmp/newprj-script.prj
+END
+EXPECT=<<END
+saved.command
+END
+RUN
+
+NAME=newprj direct opening rejects unsupported versions
+FILE=malloc://8
+CMDS=<<END
+mkdir .tmp
+wx 5250524aff000000
+wtf .tmp/newprj-version.prj 8 2>/dev/null
+!r2 -Nq -c '?e invalid' .tmp/newprj-version.prj
+rm .tmp/newprj-version.prj
+END
+EXPECT_ERR=<<END
+ERROR: Unsupported project version 255 (this build understands version 5)
+END
+RUN

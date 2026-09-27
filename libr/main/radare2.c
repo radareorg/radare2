@@ -677,14 +677,17 @@ static RThreadFunctionRet th_binload(RThread *th) {
 	return false;
 }
 
-static void binload(RCore *r, const char *filepath, ut64 baddr, bool baddr_set) {
-	(void)r_core_bin_load (r, filepath, baddr);
+static bool binload(RCore *r, const char *filepath, ut64 baddr, bool baddr_set) {
+	if (!r_core_bin_load (r, filepath, baddr)) {
+		return false;
+	}
 	// check if bin info is loaded and complain if -B was used
 	RBinFile *bi = r_bin_cur (r->bin);
 	bool haveBinInfo = bi && bi->bo && bi->bo->info && bi->bo->info->type;
 	if (!haveBinInfo && baddr_set) {
 		R_LOG_WARN ("Don't use -B on unknown files. Consider using -m");
 	}
+	return true;
 }
 
 typedef enum {
@@ -1677,6 +1680,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 							/* the baddr should be set manually here */
 							if (R_STR_ISNOTEMPTY (filepath)) {
 								if (mr.threaded) {
+									RBinPlugin *prj = r_libstore_find_name (r->bin->libstore, "prj");
+									RBuffer *buf = r_buf_new_with_io (&r->bin->iob, mr.iod->fd);
+									if (prj && buf && prj->check (NULL, buf)) {
+										mr.threaded = false;
+									}
+									r_unref (buf);
+								}
+								if (mr.threaded) {
 									ThreadData *td = R_NEW0 (ThreadData);
 									td->filepath = strdup (filepath);
 									td->baddr = mr.baddr;
@@ -1684,7 +1695,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 									mr.th_bin = r_th_new (th_binload, td, false);
 									r_th_start (mr.th_bin);
 								} else {
-									binload (r, filepath, mr.baddr, mr.baddr_set);
+									if (!binload (r, filepath, mr.baddr, mr.baddr_set)) {
+										ret = 1;
+										goto beach;
+									}
+									mr.fh = r->io->desc;
 								}
 							}
 						} else {

@@ -1293,6 +1293,7 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 	}
 	RVecPrjMod_init (&cur.mods);
 	ut8 *modsbuf = NULL;
+	bool valid = false;
 	st.data = rprj_find (b, RPRJ_STRS, &st.size);
 	if (!st.data) {
 		R_LOG_ERROR ("Missing string table (RPRJ_STRS) in project file");
@@ -1303,6 +1304,8 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 		goto done;
 	}
 	if (mode & R_CORE_NEWPRJ_MODE_RIO) {
+		r_core_cmd0 (core, "o--");
+		r_config_set (core->config, "prj.name", "");
 		rprj_restore_io_maps (&cur);
 	}
 	rprj_load_mods (&cur, &modsbuf);
@@ -1315,11 +1318,11 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 		const ut64 entry_at = r_buf_at (b);
 		if (!rprj_entry_read (b, &entry)) {
 			R_LOG_ERROR ("Cannot read entry");
-			break;
+			goto done;
 		}
 		if (entry.size < RPRJ_ENTRY_SIZE || entry.size > bsz - entry_at) {
 			R_LOG_ERROR ("Invalid entry size %u", entry.size);
-			break;
+			goto done;
 		}
 		if (mode & R_CORE_NEWPRJ_MODE_LOG) {
 			r_strbuf_appendf (out, "  Entry<%s> {\n", rprj_entry_type_tostring (entry.type));
@@ -1377,10 +1380,15 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 	if (mode & R_CORE_NEWPRJ_MODE_LOG) {
 		r_strbuf_append (out, "}\n");
 	}
+	valid = true;
 done:
 	free (modsbuf);
 	RVecPrjMod_fini (&cur.mods);
 	free (st.data);
 	r_unref (b);
+	if (!valid) {
+		r_strbuf_free (out);
+		return NULL;
+	}
 	return r_strbuf_drain (out);
 }

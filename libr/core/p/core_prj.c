@@ -58,8 +58,6 @@ static RCmdResult prj_open(RCmdContext *ctx, const char *file) {
 		R_LOG_INFO ("Aborted");
 		return (RCmdResult) { .status = 1 };
 	}
-	r_core_cmd0 (core, "o--");
-	r_config_set (core->config, "prj.name", "");
 	return prj_load (ctx, file, R_CORE_NEWPRJ_MODE_LOAD | R_CORE_NEWPRJ_MODE_CMD | R_CORE_NEWPRJ_MODE_RIO);
 }
 
