@@ -24,7 +24,10 @@ void parse_omap_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stream_file)
 	if (!data) {
 		return;
 	}
-	stream_file_get_data (stream_file, data);
+	if (!stream_file_get_data (stream_file, data)) {
+		free (data);
+		return;
+	}
 
 	SOmapStream *omap_stream = (SOmapStream *)stream;
 	omap_stream->froms = NULL;

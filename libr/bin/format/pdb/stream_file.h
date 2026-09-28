@@ -9,7 +9,7 @@ int init_r_stream_file(R_STREAM_FILE *stream_file, RBuffer *buf, int *pages, int
 void stream_file_read(R_STREAM_FILE *stream_file, int size, char *res);
 void stream_file_seek(R_STREAM_FILE *stream_file, int offset, int whence);
 int stream_file_tell(R_STREAM_FILE *stream_file);
-void stream_file_get_data(R_STREAM_FILE *stream_file, char *data);
+bool stream_file_get_data(R_STREAM_FILE *stream_file, char *data);
 int stream_file_get_size(R_STREAM_FILE *stream_file);
 
 static inline ut16 stream_file_read_le16(R_STREAM_FILE *stream_file) {

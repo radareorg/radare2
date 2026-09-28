@@ -220,7 +220,10 @@ static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_am
 	if (!data) {
 		return 0;
 	}
-	stream_file_get_data (&pdb_stream->stream_file, data);
+	if (!stream_file_get_data (&pdb_stream->stream_file, data)) {
+		free (data);
+		return 0;
+	}
 
 	const ut32 num_streams_u = r_read_le32 (data);
 	if (data_size < 4 || num_streams_u > (ut32)((data_size - 4) / 4)) {
@@ -467,7 +470,7 @@ static int pdb_read_root(RBinPdb *pdb) {
 			}
 
 			pdb_stream = R_NEW0 (R_PDB_STREAM);
-			init_r_pdb_stream (pdb_stream, pdb->buf, (int *)page->stream_pages, root_stream->pdb_stream.pages_amount, i, page->stream_size, root_stream->pdb_stream.page_size);
+			init_r_pdb_stream (pdb_stream, pdb->buf, page->stream_pages, page->num_pages, i, page->stream_size, root_stream->pdb_stream.page_size);
 			r_list_append (pList, pdb_stream);
 			break;
 		}
@@ -514,21 +517,17 @@ static bool pdb7_parse(RBinPdb *pdb) {
 		goto error;
 	}
 
-	if (root_size <= 0) {
-		R_LOG_ERROR ("Invalid root size");
+	if (root_size <= 0 || page_size < 1 || page_size > UT16_MAX) {
+		R_LOG_ERROR ("Invalid root size or page size");
 		goto error;
 	}
 
 	int num_root_pages = count_pages (root_size, page_size);
-	if (num_root_pages < 1) {
+	if (num_root_pages < 1 || num_root_pages > UT16_MAX) {
 		R_LOG_ERROR ("Invalid page count");
 		goto error;
 	}
 	int num_root_index_pages = count_pages ((num_root_pages * 4), page_size);
-	if (num_root_pages > UT16_MAX) {
-		R_LOG_ERROR ("Invalid page count");
-		goto error;
-	}
 	root_index_pages = (int *)calloc (sizeof (int), R_MAX (num_root_index_pages, 1));
 	if (!root_index_pages) {
 		R_LOG_ERROR ("memory allocation");
