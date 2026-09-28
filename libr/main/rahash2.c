@@ -422,7 +422,7 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *hashstr, int hashst
 	const int direction = ro->direction;
 	const char *algo = ro->algorithm;
 	// TODO: generalise this for all non key encoding/decoding.
-	bool no_key_mode = R_STR_CMP_ANY (algo, "base64\0base91\0punycode\0bech32");
+	bool no_key_mode = R_STR_CMP_ANY (algo, "base64", "base91", "punycode", "bech32");
 	if (no_key_mode || ro->s.len > 0) {
 		RMuta *cry = r_muta_new ();
 		RMutaSession *cj = r_muta_use (cry, algo);
@@ -463,7 +463,7 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *filename, cons
 	const int direction = ro->direction;
 	const char *algo = ro->algorithm;
 	// TODO: generalise this for all non key encoding/decoding. aka muta vs encoder plugins after moving all those hash algos to muta plugins
-	bool no_key_mode = R_STR_CMP_ANY (algo, "base64\0base91\0punycode\0bech32");
+	bool no_key_mode = R_STR_CMP_ANY (algo, "base64", "base91", "punycode", "bech32");
 	if (no_key_mode || ro->s.len > 0) {
 		RMuta *cry = r_muta_new ();
 		RMutaSession *cj = r_muta_use (cry, algo);

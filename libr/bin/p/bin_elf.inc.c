@@ -2061,7 +2061,7 @@ static bool has_sanitizers(RBinFile *bf) {
 			continue;
 		}
 		const char *name = iname + 2;
-		if (R_STR_STARTSWITH_ANY (name, "sanitizer_\0asan_\0hwasan_\0ubsan_\0tsan_\0msan_")) {
+		if (R_STR_STARTSWITH_ANY (name, "sanitizer_", "asan_", "hwasan_", "ubsan_", "tsan_", "msan_")) {
 			return true;
 		}
 	}

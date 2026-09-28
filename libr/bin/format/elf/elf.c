@@ -2233,9 +2233,9 @@ static bool has_interp_program_header(ELFOBJ *eo) {
 }
 
 static bool is_known_runtime_export(const char *name) {
-	return R_STR_CMP_ANY (name, "_init\0_fini\0_start\0__libc_csu_init\0"
-		"__libc_csu_fini\0deregister_tm_clones\0register_tm_clones\0"
-		"__do_global_dtors_aux\0frame_dummy");
+	return R_STR_CMP_ANY (name, "_init", "_fini", "_start", "__libc_csu_init",
+		"__libc_csu_fini", "deregister_tm_clones", "register_tm_clones",
+		"__do_global_dtors_aux", "frame_dummy");
 }
 
 static const char *normalized_visibility_name(const char *name) {

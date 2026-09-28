@@ -3324,7 +3324,7 @@ static bool apple_symbol(const char *sym_name) {
 	if (!strcmp (sym_name, "__mh_execute_header")) {
 		return true;
 	}
-	if (R_STR_CMP_ANY (sym_name, "start\0_NXArgc\0_NXArgv\0___progname\0_environ")) {
+	if (R_STR_CMP_ANY (sym_name, "start", "_NXArgc", "_NXArgv", "___progname", "_environ")) {
 		return true;
 	}
 	return false;

@@ -1458,7 +1458,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 					RFlagItem **iter;
 					r_flag_item_vec_foreach (ls, iter, fi) {
 						const char *fsname = R_UNWRAP3 (fi, space, name);
-						if (fsname && R_STR_CMP_ANY (fsname, "format\0segments\0sections")) {
+						if (fsname && R_STR_CMP_ANY (fsname, "format", "segments", "sections")) {
 							// ignore
 						} else {
 							const char *n = (core->flags->realnames) ? fi->realname? fi->realname: fi->name: fi->name;

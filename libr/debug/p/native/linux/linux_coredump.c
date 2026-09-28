@@ -44,7 +44,7 @@ static map_file_t mapping_file = { 0, 0 };
 static note_info_t note_info[NT_LENGHT_T];
 
 static bool is_a_kernel_mapping(const char *name) {
-	return !name || R_STR_CMP_ANY (name, "[vdso]\0[vsyscall]\0[vvar]\0[heap]\0[vectors]")
+	return !name || R_STR_CMP_ANY (name, "[vdso]", "[vsyscall]", "[vvar]", "[heap]", "[vectors]")
 		|| r_str_startswith (name, "[stack");
 }
 

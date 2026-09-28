@@ -92,7 +92,7 @@ R_IPI bool r_bin_name_is_unnamed(const char *name) {
 	if (R_STR_ISEMPTY (name)) {
 		return true;
 	}
-	if (R_STR_CMP_ANY (name, "???\0unknown\0<unknown>\0<null>")) {
+	if (R_STR_CMP_ANY (name, "???", "unknown", "<unknown>", "<null>")) {
 		return true;
 	}
 	if (r_str_isnumber (name)) {

@@ -586,6 +586,7 @@ r_util_files = [
   'include/r_util/r_spaces.h',
   'include/r_util/r_stack.h',
   'include/r_util/r_str.h',
+  'include/r_util/r_str_any.h',
   'include/r_util/r_str_constpool.h',
   'include/r_util/r_str_util.h',
   'include/r_util/r_strbuf.h',

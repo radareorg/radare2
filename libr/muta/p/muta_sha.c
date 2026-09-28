@@ -10,7 +10,7 @@ typedef struct {
 } ShaState;
 
 static bool sha_check(const char *algo) {
-	return R_STR_CMP_ANY (algo, "sha1\0sha256\0sha384\0sha512");
+	return R_STR_CMP_ANY (algo, "sha1", "sha256", "sha384", "sha512");
 }
 
 static RMutaSession *sha_begin(RMuta *muta) {

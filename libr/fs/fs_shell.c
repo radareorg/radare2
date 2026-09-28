@@ -381,7 +381,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		}
 		free (abspath);
 		free (data);
-	} else if (R_STR_STARTSWITH_ANY (buf, "o \0open \0r2 ")) {
+	} else if (R_STR_STARTSWITH_ANY (buf, "o ", "open ", "r2 ")) {
 		bool exit_shell = r_str_startswith (buf, "r2 ");
 		char *data = strdup (buf);
 		const char *input = r_str_nextword (data, ' ');

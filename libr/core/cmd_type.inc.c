@@ -744,7 +744,7 @@ static bool stdifenum(void *p, const char *k, const char *v) {
 }
 
 static bool stdifany(void *p, const char *k, const char *v) {
-	return R_STR_CMP_ANY (v, "struct\0union\0enum\0type\0typedef");
+	return R_STR_CMP_ANY (v, "struct", "union", "enum", "type", "typedef");
 }
 
 static void types_remove_glob(RCore *core, SdbForeachCallback filter, const char *arg) {
