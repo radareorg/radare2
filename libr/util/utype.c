@@ -41,6 +41,38 @@ static const char *type_skip_qualifiers(const char *R_NONNULL type) {
 	return type;
 }
 
+static void type_trim_qualifiers(char *type) {
+	r_str_trim (type);
+	size_t len = strlen (type);
+	int i;
+	do {
+		for (i = 0; type_qualifiers[i]; i++) {
+			size_t qlen = strlen (type_qualifiers[i]);
+			if (len > qlen && IS_WHITESPACE (type[len - qlen - 1])
+					&& !strcmp (type + len - qlen, type_qualifiers[i])) {
+				type[len - qlen] = 0;
+				r_str_trim_tail (type);
+				len = strlen (type);
+				break;
+			}
+		}
+	} while (type_qualifiers[i]);
+}
+
+static bool type_format_is_pointer(const char *type) {
+	int depth = 0;
+	for (; *type; type++) {
+		if (*type == '<') {
+			depth++;
+		} else if (*type == '>' && depth > 0) {
+			depth--;
+		} else if (!depth && (*type == '*' || *type == '&')) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static const char *type_aggregate_prefixed(const char *R_NONNULL type, const char **R_NONNULL name) {
 	const char *kind = r_str_startswith (type, "struct")? "struct": r_str_startswith (type, "union")? "union": NULL;
 	if (kind) {
@@ -654,6 +686,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	RStrBuf *fmt_sb = r_strbuf_new ("");
 	RStrBuf *vars_sb = r_strbuf_new ("");
 	int current_offset = 0;
+	bool complete = true;
 	for (n = 0; (p = sdb_array_get (TDB, nfields, n, NULL)); n++) {
 		char *struct_name = NULL;
 		const char *tfmt = NULL;
@@ -682,7 +715,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 			const char *enum_name = NULL;
 			r_str_trim (type);
 			r_str_ncpy (type_name, type_skip_qualifiers (type), sizeof (type_name));
-			r_str_trim (type_name);
+			type_trim_qualifiers (type_name);
 			char *arr = strchr (type_name, '[');
 			if (arr) {
 				char *arr_end = strchr (arr + 1, ']');
@@ -719,12 +752,13 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 			// a member typed by a scalar typedef formats as the typedef's target
 			char *resolved_member = r_type_resolve_typedef (TDB, base_type);
 			if (resolved_member && !type_aggregate_kind (TDB, resolved_member, &(const char *){ NULL })) {
-				r_str_ncpy (type_name, resolved_member, sizeof (type_name));
+				r_str_ncpy (type_name, type_skip_qualifiers (resolved_member), sizeof (type_name));
+				type_trim_qualifiers (type_name);
 				base_type = type_name;
 			}
 			free (resolved_member);
 			// Handle general pointers except for char *
-			if ((strstr (base_type, "*(") || strstr (base_type, " *")) && !r_str_startswith (base_type, "char *")) {
+			if (type_format_is_pointer (base_type) && strcmp (base_type, "char *") && strcmp (base_type, "char **")) {
 				isfp = true;
 			} else {
 				const char *aggregate_name = NULL;
@@ -743,8 +777,8 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 							tfmt++;
 						}
 					} else {
-						if (r_str_startswith (base_type, "enum ")) {
-							enum_name = base_type + 5;
+						if (r_str_startswith (base_type, "enum ") || r_type_kind (TDB, base_type) == R_TYPE_ENUM) {
+							enum_name = r_str_startswith (base_type, "enum ")? base_type + 5: base_type;
 							snprintf (var3, sizeof (var3), "%.*s",
 									(int)(sizeof (var3) - 1), enum_name);
 							isEnum = true;
@@ -785,7 +819,10 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 				isfp = true;
 				// function pointer
 			}
-			if (isHidden) {
+			if (!tfmt && !isfp) {
+				R_LOG_DEBUG ("Cannot format member '%s' of type '%s'", p, type);
+				complete = false;
+			} else if (isHidden) {
 				// For hidden fields, skip the bytes without displaying
 				// Use [N]. to skip N bytes (. skips 1 byte)
 				int skip_bytes = 0;
@@ -839,21 +876,22 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 					r_strbuf_append (vars_sb, " ");
 				}
 				current_offset += fmt_type_size (tfmt, false, elements);
-			} else {
-#if 1
-				R_LOG_WARN ("Cannot resolve type '%s' assuming pointer", var3);
-				r_strbuf_append (fmt_sb, "p");
-				r_strbuf_appendf (vars_sb, "%s ", p);
-				current_offset += fmt_type_size (NULL, true, elements);
-#else
-				R_LOG_ERROR ("Cannot resolve type '%s'", var3);
-#endif
 			}
 			free (type);
+		} else {
+			complete = false;
 		}
 		free (p);
+		if (!complete) {
+			break;
+		}
 	}
 	free (fields);
+	if (!complete) {
+		r_strbuf_free (fmt_sb);
+		r_strbuf_free (vars_sb);
+		return NULL;
+	}
 	r_strbuf_append (fmt_sb, " ");
 	char *vars_s = r_strbuf_drain (vars_sb);
 	r_strbuf_append (fmt_sb, vars_s);

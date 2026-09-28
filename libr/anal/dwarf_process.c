@@ -778,6 +778,30 @@ cleanup:
 	r_strbuf_fini (&strbuf);
 }
 
+static const char *atomic_type_format(ut64 encoding, ut64 size) {
+	if (encoding == DW_ATE_float) {
+		return size == 32? "f": size == 64? "F": NULL;
+	}
+	switch (encoding) {
+	case DW_ATE_boolean:
+	case DW_ATE_signed:
+	case DW_ATE_signed_char:
+	case DW_ATE_unsigned:
+	case DW_ATE_unsigned_char:
+		switch (size) {
+		case 8:
+			return encoding == DW_ATE_signed_char? "c": "b";
+		case 16:
+			return "w";
+		case 32:
+			return encoding == DW_ATE_unsigned? "i": "d";
+		case 64:
+			return "q";
+		}
+	}
+	return NULL;
+}
+
 static void parse_atomic_type(Context *ctx, ut64 idx) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 	if (!die->attr_values) {
@@ -786,7 +810,7 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 
 	const char *name = NULL;
 	ut64 size = 0;
-	// TODO support endiannity and encoding in future?
+	ut64 encoding = 0;
 	RBinDwarfAttrValue *value;
 	R_VEC_FOREACH(die->attr_values, value) {
 		switch (value->attr_name) {
@@ -809,6 +833,8 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 			size = value->uconstant;
 			break;
 		case DW_AT_encoding:
+			encoding = value->uconstant;
+			break;
 		default:
 			break;
 		}
@@ -822,6 +848,8 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	}
 	base_type->name = strdup (name);
 	base_type->size = size;
+	const char *format = atomic_type_format (encoding, size);
+	base_type->type = format? strdup (format): NULL;
 	r_anal_save_base_type (ctx->anal, base_type);
 	r_anal_base_type_free (base_type);
 }

@@ -808,11 +808,11 @@ static int print_struct_union_list_json(RCore *core, Sdb *TDB, SdbForeachCallbac
 		if (fmt) {
 			r_str_trim (fmt);
 			pj_ks (pj, "format", fmt);
-			const char *typeinfo = sdb_const_get (TDB, k, 0);
-			if (typeinfo && (!strcmp (typeinfo, "struct") || !strcmp (typeinfo, "union"))) {
-				add_type_fields_to_json (core, pj, k, typeinfo);
-			}
 			free (fmt);
+		}
+		const char *typeinfo = sdb_const_get (TDB, k, 0);
+		if (typeinfo && (!strcmp (typeinfo, "struct") || !strcmp (typeinfo, "union"))) {
+			add_type_fields_to_json (core, pj, k, typeinfo);
 		}
 		pj_end (pj);
 	}

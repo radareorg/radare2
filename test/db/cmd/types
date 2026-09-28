@@ -4809,3 +4809,74 @@ EXPECT=<<EOF
 int sym.imp.stat (const char *path, void *buf);
 EOF
 RUN
+
+NAME=DWARF type formats keep scalar encodings and recognize vtable pointers
+FILE=bins/elf/dwarf2_many_comp_units.elf
+ARGS=-e bin.dbginfo=true
+CMDS=<<EOF_CMDS
+tk type.int
+ts Bird
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+d
+'pf [2].p _vptr_Bird
+EOF_EXPECT
+RUN
+
+NAME=C++ qualified members and function pointers have valid formats
+FILE=-
+ARGS=-b 64
+CMDS=<<EOF_CMDS
+t-*
+'tk bool=type
+'tk type.bool=b
+'tk int=type
+'tk type.int=d
+'tk char *=type
+'tk type.char *=z
+'tk Mode=enum
+'tk enum.Mode=Zero
+'tk enum.Mode.Zero=0
+'tk Alias=typedef
+'tk typedef.Alias=const int volatile
+'tk Qualified=struct
+'tk struct.Qualified=flag,value,mode,alias
+'tk struct.Qualified.flag=volatile bool const,0,0
+'tk struct.Qualified.value=int const volatile,1,0
+'tk struct.Qualified.mode=Mode const,5,0
+'tk struct.Qualified.alias=Alias const,9,0
+'tk Pointers=struct
+'tk struct.Pointers=vtable,callback,ptr,ref,rref,text
+'tk struct.Pointers.vtable=int (**)(),0,0
+'tk struct.Pointers.callback=void (*)(),8,0
+'tk struct.Pointers.ptr=int*,16,0
+'tk struct.Pointers.ref=Object &,24,0
+'tk struct.Pointers.rref=Object &&,32,0
+'tk struct.Pointers.text=const char *,40,0
+ts Qualified
+ts Pointers
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+'pf bdEd flag value (Mode)mode alias
+'pf pppppz vtable callback ptr ref rref text
+EOF_EXPECT
+RUN
+
+NAME=JSON type listings retain fields without inventing formats for incomplete types
+FILE=-
+CMDS=<<EOF_CMDS
+t-*
+'tk Incomplete=struct
+'tk struct.Incomplete=value
+'tk struct.Incomplete.value=Missing,0,0
+'tk IncompleteUnion=union
+'tk union.IncompleteUnion=value
+'tk union.IncompleteUnion.value=Missing,0,0
+tsj
+tuj
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+[{"name":"Incomplete","fields":[{"name":"value","type":"Missing","offset":0,"size":1}]}]
+[{"name":"IncompleteUnion","fields":[{"name":"value","type":"Missing","offset":0,"size":1}]}]
+EOF_EXPECT
+RUN
