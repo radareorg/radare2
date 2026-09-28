@@ -39,27 +39,144 @@ bool test_r_str_wrap(void) {
 }
 
 bool test_r_str_startswith_any(void) {
-	static const char prefixes[] = "asan_\0hwasan_\0ubsan_\0";
-	mu_assert (r_str_startswith_any ("asan_report", prefixes), "first prefix");
-	mu_assert (r_str_startswith_any ("hwasan_report", prefixes), "middle prefix");
-	mu_assert (r_str_startswith_any ("ubsan_report", prefixes), "last prefix");
-	mu_assert (!r_str_startswith_any ("asan", prefixes), "short string");
-	mu_assert (!r_str_startswith_any ("msan_report", prefixes), "nonmatching prefix");
-	mu_assert (!r_str_startswith_any ("", prefixes), "empty string");
-	mu_assert (!r_str_startswith_any ("asan_report", ""), "empty prefix list");
+	mu_assert ("first prefix", R_STR_STARTSWITH_ANY ("asan_report", "asan_\0hwasan_\0ubsan_"));
+	mu_assert ("middle prefix", R_STR_STARTSWITH_ANY ("hwasan_report", "asan_\0hwasan_\0ubsan_"));
+	mu_assert ("last prefix", R_STR_STARTSWITH_ANY ("ubsan_report", "asan_\0hwasan_\0ubsan_"));
+	mu_assert ("longer candidate before match", R_STR_STARTSWITH_ANY ("asan_report", "asan_report_extra\0asan_"));
+	mu_assert ("one prefix", R_STR_STARTSWITH_ANY ("asan_report", "asan_"));
+	mu_assert ("eighth prefix", R_STR_STARTSWITH_ANY ("z_last", "a\0b\0c\0d\0e\0f\0g\0z_"));
+	mu_assert ("short string", !R_STR_STARTSWITH_ANY ("asan", "asan_\0hwasan_\0ubsan_"));
+	mu_assert ("nonmatching prefix", !R_STR_STARTSWITH_ANY ("msan_report", "asan_\0hwasan_\0ubsan_"));
+	mu_assert ("empty string", !R_STR_STARTSWITH_ANY ("", "asan_\0hwasan_\0ubsan_"));
+	mu_assert ("null string", !R_STR_STARTSWITH_ANY (NULL, "asan_\0hwasan_"));
+	mu_assert ("empty list", !R_STR_STARTSWITH_ANY ("asan_report", ""));
+	mu_assert ("empty entries", R_STR_STARTSWITH_ANY ("asan_report", "\0\0asan_\0\0"));
+	mu_assert ("entry boundary required", !R_STR_STARTSWITH_ANY ("asan_report", "hwasan_"));
+	mu_assert ("exact prefix", R_STR_STARTSWITH_ANY ("asan_", "asan_"));
+	mu_assert ("word boundary", R_STR_STARTSWITH_ANY ("hwasan_report", "abcdef\0hwasan_"));
+	mu_assert ("one byte prefix", R_STR_STARTSWITH_ANY ("hello", "abcdef\0h"));
 	mu_end;
 }
 
 bool test_r_str_cmp_any(void) {
-	static const char items[] = "asan\0hwasan\0ubsan\0";
-	mu_assert (r_str_cmp_any ("asan", items), "first item");
-	mu_assert (r_str_cmp_any ("hwasan", items), "middle item");
-	mu_assert (r_str_cmp_any ("ubsan", items), "last item");
-	mu_assert (!r_str_cmp_any ("asan_report", items), "prefix is not a full match");
-	mu_assert (!r_str_cmp_any ("asa", items), "short string");
-	mu_assert (!r_str_cmp_any ("msan", items), "nonmatching item");
-	mu_assert (!r_str_cmp_any ("", items), "empty string");
-	mu_assert (!r_str_cmp_any ("asan", ""), "empty item list");
+	mu_assert ("first item", R_STR_CMP_ANY ("asan", "asan\0hwasan\0ubsan"));
+	mu_assert ("middle item", R_STR_CMP_ANY ("hwasan", "asan\0hwasan\0ubsan"));
+	mu_assert ("last item", R_STR_CMP_ANY ("ubsan", "asan\0hwasan\0ubsan"));
+	mu_assert ("suffix inside item", !R_STR_CMP_ANY ("asan", "hwasan"));
+	mu_assert ("interior match before whole item", R_STR_CMP_ANY ("asan", "hwasan\0asan"));
+	mu_assert ("prefix is not a full match", !R_STR_CMP_ANY ("asan_report", "asan\0hwasan\0ubsan"));
+	mu_assert ("short string", !R_STR_CMP_ANY ("asa", "asan\0hwasan\0ubsan"));
+	mu_assert ("nonmatching item", !R_STR_CMP_ANY ("msan", "asan\0hwasan\0ubsan"));
+	mu_assert ("empty string", !R_STR_CMP_ANY ("", "asan\0hwasan\0ubsan"));
+	mu_assert ("empty item list", !R_STR_CMP_ANY ("asan", ""));
+	mu_assert ("null string", !R_STR_CMP_ANY (NULL, "asan\0hwasan"));
+	mu_assert ("empty entries", R_STR_CMP_ANY ("asan", "\0\0asan\0\0"));
+	mu_assert ("word boundary", R_STR_CMP_ANY ("hwasan", "abcdef\0hwasan"));
+	mu_assert ("last single byte", R_STR_CMP_ANY ("h", "abcdef\0h"));
+	const char *next[] = { "asan", "hwasan" };
+	const char **key = next;
+	mu_assert ("evaluate key once", R_STR_CMP_ANY (*key++, "asan\0hwasan") && key == next + 1);
+	key = next;
+	mu_assert ("evaluate prefix once", R_STR_STARTSWITH_ANY (*key++, "asan\0hwasan") && key == next + 1);
+	mu_end;
+}
+
+bool test_r_str_endswith_any(void) {
+	mu_assert ("first entry suffix", R_STR_ENDSWITH_ANY ("bar", "foobar\0quux\0last"));
+	mu_assert ("middle entry suffix", R_STR_ENDSWITH_ANY ("uux", "foobar\0quux\0last"));
+	mu_assert ("last implicit terminator", R_STR_ENDSWITH_ANY ("ast", "foobar\0quux\0last"));
+	mu_assert ("whole entry", R_STR_ENDSWITH_ANY ("quux", "foobar\0quux\0last"));
+	mu_assert ("interior is not a suffix", !R_STR_ENDSWITH_ANY ("oba", "foobar\0quux"));
+	mu_assert ("prefix is not a suffix", !R_STR_ENDSWITH_ANY ("foo", "foobar\0quux"));
+	mu_assert ("do not join entries", !R_STR_ENDSWITH_ANY ("barquux", "foobar\0quux"));
+	mu_assert ("key is searched in entries", !R_STR_ENDSWITH_ANY ("foobar", "bar"));
+	mu_assert ("empty key", !R_STR_ENDSWITH_ANY ("", "foobar\0quux"));
+	mu_assert ("empty list", !R_STR_ENDSWITH_ANY ("bar", ""));
+	const char *null_key = NULL;
+	mu_assert ("null key", !R_STR_ENDSWITH_ANY (null_key, "foobar"));
+	mu_end;
+}
+
+bool test_r_str_strstr_any(void) {
+	mu_assert ("first entry substring", R_STR_STRSTR_ANY ("oba", "foobar\0quux\0last"));
+	mu_assert ("middle entry substring", R_STR_STRSTR_ANY ("uu", "foobar\0quux\0last"));
+	mu_assert ("last entry substring", R_STR_STRSTR_ANY ("as", "foobar\0quux\0last"));
+	mu_assert ("whole entry", R_STR_STRSTR_ANY ("quux", "foobar\0quux\0last"));
+	mu_assert ("entry prefix", R_STR_STRSTR_ANY ("foo", "foobar\0quux"));
+	mu_assert ("entry suffix", R_STR_STRSTR_ANY ("bar", "foobar\0quux"));
+	mu_assert ("do not join entries", !R_STR_STRSTR_ANY ("barquux", "foobar\0quux"));
+	mu_assert ("key is searched in entries", !R_STR_STRSTR_ANY ("foobar", "oba"));
+	mu_assert ("empty key", !R_STR_STRSTR_ANY ("", "foobar\0quux"));
+	mu_assert ("empty list", !R_STR_STRSTR_ANY ("bar", ""));
+	const char *null_key = NULL;
+	mu_assert ("null key", !R_STR_STRSTR_ANY (null_key, "foobar"));
+	mu_end;
+}
+
+bool test_r_str_any_against_loops(void) {
+#define ANY_TEST_ITEMS "\0a\0bb\0aba\0ababa\0\0bab\0\x01\0\x01" "b\0\x80" "a\0\xff\0\xff\x80\0"
+	const char *items[] = {
+		"a", "bb", "aba", "ababa", "bab", "\x01", "\x01" "b", "\x80" "a", "\xff", "\xff\x80"
+	};
+	const char alphabet[] = { 'a', 'b', '\x01', '\x80', '\xff' };
+	size_t length, count = 1;
+	for (length = 0; length <= 5; length++) {
+		size_t number;
+		for (number = 0; number < count; number++) {
+			char *key = malloc (length + 1);
+			mu_assert_notnull (key, "allocate exact key size");
+			size_t i, value = number;
+			for (i = 0; i < length; i++) {
+				key[i] = alphabet[value % sizeof (alphabet)];
+				value /= sizeof (alphabet);
+			}
+			key[length] = 0;
+			bool exact = false, prefix = false, suffix = false, substring = false;
+			for (i = 0; length && i < R_ARRAY_SIZE (items); i++) {
+				exact |= !strcmp (key, items[i]);
+				prefix |= r_str_startswith (key, items[i]);
+				suffix |= r_str_endswith (items[i], key);
+				substring |= strstr (items[i], key) != NULL;
+			}
+			const bool same = R_STR_CMP_ANY (key, ANY_TEST_ITEMS) == exact
+				&& R_STR_STARTSWITH_ANY (key, ANY_TEST_ITEMS) == prefix
+				&& R_STR_ENDSWITH_ANY (key, ANY_TEST_ITEMS) == suffix
+				&& R_STR_STRSTR_ANY (key, ANY_TEST_ITEMS) == substring;
+			free (key);
+			mu_assert ("packed macros agree with individual comparisons", same);
+		}
+		count *= sizeof (alphabet);
+	}
+#undef ANY_TEST_ITEMS
+	size_t padding;
+	for (padding = 0; padding < 288; padding++) {
+		const size_t size = padding + 4;
+		char *packed = malloc (size);
+		mu_assert_notnull (packed, "allocate exact packed size");
+		packed[0] = 0;
+		memset (packed + 1, 'a', padding);
+		packed[padding + 1] = 0;
+		packed[padding + 2] = 'b';
+		packed[padding + 3] = 0;
+		const bool same = r_str_match_any_buf ("b", packed, size, false)
+			&& r_str_match_any_buf ("bc", packed, size, true)
+			&& !r_str_match_any_buf ("bc", packed, size, false)
+			&& !r_str_match_any_buf ("c", packed, size, true);
+		free (packed);
+		mu_assert ("bounded reads at each entry alignment", same);
+	}
+	mu_end;
+}
+
+bool test_r_mem_mem(void) {
+	const ut8 haystack[] = { 'a', 0, 'b', 'c', 'b' };
+	const ut8 needle[] = { 0, 'b' };
+	const ut8 *(*public_mem_mem)(const ut8 *, int, const ut8 *, int) = r_mem_mem;
+	mu_assert ("find binary needle", r_mem_mem (haystack, sizeof (haystack), needle, sizeof (needle)) == haystack + 1);
+	mu_assert ("public API symbol", public_mem_mem (haystack, sizeof (haystack), needle, sizeof (needle)) == haystack + 1);
+	mu_assert ("reject empty needle", !r_mem_mem (haystack, sizeof (haystack), needle, 0));
+	mu_assert ("reject long needle", !r_mem_mem (haystack, 1, needle, sizeof (needle)));
+	mu_assert ("reject negative size", !r_mem_mem (haystack, -1, needle, sizeof (needle)));
 	mu_end;
 }
 
@@ -1035,6 +1152,10 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_wrap);
 	mu_run_test (test_r_str_startswith_any);
 	mu_run_test (test_r_str_cmp_any);
+	mu_run_test (test_r_str_endswith_any);
+	mu_run_test (test_r_str_strstr_any);
+	mu_run_test (test_r_str_any_against_loops);
+	mu_run_test (test_r_mem_mem);
 	mu_run_test (test_r_str_md2txt_rendering);
 	mu_run_test (test_r_str_newf);
 	mu_run_test (test_r_str_replace_char_once);

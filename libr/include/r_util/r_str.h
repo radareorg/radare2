@@ -5,6 +5,9 @@
 #include <r_list.h>
 #include <r_vec.h>
 #include <r_types_base.h>
+#include "r_mem.h"
+#include "r_bits.h"
+#include <limits.h>
 #include <stdarg.h>
 #include <wchar.h>
 
@@ -315,35 +318,79 @@ R_UNUSED static inline bool r_str_startswith_inline(const char *str, const char 
 	return !strncmp (str, needle, strlen (needle));
 }
 #define r_str_startswith r_str_startswith_inline
-// prefixes is a sequence of NUL-terminated strings ending with an empty string.
-static inline bool r_str_startswith_any(const char *str, const char *prefixes) {
-	if (!str || !prefixes) {
+static inline bool r_str_match_any_tail(const char *str, const char *item, bool prefix) {
+	if (!prefix) {
+		return !strcmp (str, item);
+	}
+	while (*item && *item == *str) {
+		item++;
+		str++;
+	}
+	return !*item;
+}
+
+static inline bool r_str_match_any_buf(const char *str, const char *items, size_t items_size, bool prefix) {
+	if (!str || !*str || items_size < 2) {
 		return false;
 	}
-	const size_t str_len = strlen (str);
-	while (*prefixes) {
-		const size_t prefix_len = strlen (prefixes);
-		if (prefix_len <= str_len && !memcmp (str, prefixes, prefix_len)) {
+#if defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 8)
+	// Fold small literal lists into comparisons without runtime delimiter scans.
+	if (__builtin_constant_p (items_size) && items_size <= 256) {
+		size_t i;
+#if defined(__clang__)
+#pragma clang loop unroll(full)
+#else
+#pragma GCC unroll 256
+#endif
+		for (i = 0; i + 1 < items_size; i++) {
+			if (!items[i] && items[i + 1] == *str
+					&& r_str_match_any_tail (str + 1, items + i + 2, prefix)) {
+				return true;
+			}
+		}
+		return false;
+	}
+#endif
+	const ut64 first_bytes = (ut8)*str * 0x0101010101010101ULL;
+	const ut64 low_bits = 0x7f7f7f7f7f7f7f7fULL;
+	size_t offset = 0;
+	while (items_size - offset >= sizeof (ut64)) {
+		// Each zero byte in pairs marks a NUL followed by the key's first byte.
+		const ut64 word = r_read_le64 (items + offset);
+		const ut64 pairs = word | ((word >> 8) ^ first_bytes);
+		ut64 matches = ~(((pairs & low_bits) + low_bits) | pairs | low_bits) & 0x00ffffffffffffffULL;
+		while (matches) {
+			const size_t start = offset + r_bits_ctz64 (matches) / 8 + 2;
+			if (r_str_match_any_tail (str + 1, items + start, prefix)) {
+				return true;
+			}
+			matches &= matches - 1;
+		}
+		// Overlap one byte so pairs spanning words are considered.
+		offset += sizeof (ut64) - 1;
+	}
+	while (offset + 1 < items_size) {
+		if (!items[offset] && items[offset + 1] == *str
+				&& r_str_match_any_tail (str + 1, items + offset + 2, prefix)) {
 			return true;
 		}
-		prefixes += prefix_len + 1;
+		offset++;
 	}
 	return false;
 }
-static inline bool r_str_cmp_any(const char *str, const char *items) {
-	if (!str || !items) {
-		return false;
-	}
-	const size_t str_len = strlen (str);
-	while (*items) {
-		const size_t item_len = strlen (items);
-		if (item_len == str_len && !memcmp (str, items, item_len + 1)) {
-			return true;
-		}
-		items += item_len + 1;
-	}
-	return false;
-}
+
+// items must be a NUL-separated string literal; empty keys and entries do not match.
+#define R_STR_STARTSWITH_ANY(str, items) r_str_match_any_buf ((str), "\0" items, sizeof ("\0" items), true)
+#define R_STR_CMP_ANY(str, items) r_str_match_any_buf ((str), "\0" items, sizeof ("\0" items), false)
+
+// These search for a nonempty key inside any list entry; str must have no side effects.
+#define R_STR_ENDSWITH_ANY(str, items) \
+	((str) && *(const char *)(str) && sizeof ("" items) <= INT_MAX && strlen (str) < sizeof ("" items) && \
+		r_mem_mem ((const ut8 *)("" items), sizeof ("" items), (const ut8 *)(str), strlen (str) + 1) != NULL)
+#define R_STR_STRSTR_ANY(str, items) \
+	((str) && *(const char *)(str) && sizeof ("" items) <= INT_MAX && strlen (str) < sizeof ("" items) && \
+		r_mem_mem ((const ut8 *)("" items), sizeof ("" items), (const ut8 *)(str), strlen (str)) != NULL)
+
 R_UNUSED static const char *r_str_skip_prefix(const char *str, const char *prefix) {
 	if (r_str_startswith (str, prefix)) {
 		str += strlen (prefix);

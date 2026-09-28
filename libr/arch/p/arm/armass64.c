@@ -2368,9 +2368,9 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = bdot (&ops, addr, 0x00000054);
 	} else if (r_str_startswith (str, "b.ne ") || r_str_startswith (str, "bne ")) {
 		*op = bdot (&ops, addr, 0x01000054);
-	} else if (r_str_startswith (str, "b.hs ") || r_str_startswith (str, "bhs ") || r_str_startswith (str, "b.cs ") || r_str_startswith (str, "bcs ")) {
+	} else if (R_STR_STARTSWITH_ANY (str, "b.hs \0bhs \0b.cs \0bcs ")) {
 		*op = bdot (&ops, addr, 0x02000054);
-	} else if (r_str_startswith (str, "b.lo ") || r_str_startswith (str, "blo ") || r_str_startswith (str, "b.cc ") || r_str_startswith (str, "bcc ")) {
+	} else if (R_STR_STARTSWITH_ANY (str, "b.lo \0blo \0b.cc \0bcc ")) {
 		*op = bdot (&ops, addr, 0x03000054);
 	} else if (r_str_startswith (str, "b.mi ") || r_str_startswith (str, "bmi ")) {
 		*op = bdot (&ops, addr, 0x04000054);
@@ -2404,9 +2404,9 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = mem_barrier (&ops, addr, 0x9f3003d5);
 	} else if (r_str_startswith (str, "isb")) {
 		*op = mem_barrier (&ops, addr, 0xdf3f03d5);
-	} else if (r_str_startswith (str, "sbfiz ") || r_str_startswith (str, "sbfm ") || r_str_startswith (str, "sbfx ")) {
+	} else if (R_STR_STARTSWITH_ANY (str, "sbfiz \0sbfm \0sbfx ")) {
 		*op = bitfield (&ops, 0x00000013);
-	} else if (r_str_startswith (str, "ubfiz ") || r_str_startswith (str, "ubfm ") || r_str_startswith (str, "ubfx ")) {
+	} else if (R_STR_STARTSWITH_ANY (str, "ubfiz \0ubfm \0ubfx ")) {
 		*op = bitfield (&ops, 0x00000053);
 	} else {
 		*op = UT32_MAX;

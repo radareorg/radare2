@@ -323,10 +323,10 @@ typedef enum {
 static RBpfDialect get_bpf_dialect2(RArchSession *s) {
 	const char *cpu = s && s->config ? s->config->cpu : NULL;
 	if (cpu) {
-		if (!strcmp (cpu, "classic") || !strcmp (cpu, "cbpf") || !strcmp (cpu, "cBPF")) {
+		if (R_STR_CMP_ANY (cpu, "classic\0cbpf\0cBPF")) {
 			return R_BPF_DIALECT_CLASSIC;
 		}
-		if (!strcmp (cpu, "extended") || !strcmp (cpu, "ebpf") || !strcmp (cpu, "eBPF") || !strcmp (cpu, "64")) {
+		if (R_STR_CMP_ANY (cpu, "extended\0ebpf\0eBPF\0" "64")) {
 			return R_BPF_DIALECT_EXTENDED;
 		}
 	}

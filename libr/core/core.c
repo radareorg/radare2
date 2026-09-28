@@ -1544,7 +1544,7 @@ R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBu
 			ADDARG ("diff.match");
 			ADDARG ("diff.unmatch");
 		}
-	} else if (r_str_startswith (buf->data, "pf.") || r_str_startswith (buf->data, "pf*.") || r_str_startswith (buf->data, "pfd.") || r_str_startswith (buf->data, "pfc.") || r_str_startswith (buf->data, "pfv.") || r_str_startswith (buf->data, "pfj.")) {
+	} else if (R_STR_STARTSWITH_ANY (buf->data, "pf.\0pf*.\0pfd.\0pfc.\0pfv.\0pfj.")) {
 		char pfx[2];
 		int chr = (buf->data[2] == '.')? 3: 4;
 		if (chr == 4) {
@@ -1579,7 +1579,7 @@ R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBu
 		ls_foreach (l, iter, kv) {
 			int len = strlen (buf->data + chr);
 			if (!len || !strncmp (buf->data + chr, sdbkv_key (kv), len)) {
-				if (!strcmp (sdbkv_value (kv), "type") || !strcmp (sdbkv_value (kv), "enum") || !strcmp (sdbkv_value (kv), "struct")) {
+				if (R_STR_CMP_ANY (sdbkv_value (kv), "type\0enum\0struct")) {
 					r_line_completion_push (completion, sdbkv_key (kv));
 				}
 			}
@@ -1601,7 +1601,7 @@ R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBu
 		ls_free (l);
 	} else if (buf->data[0] == '$') {
 		autocomplete_alias (completion, core->rcmd, buf->data + 1, false);
-	} else if (!strncmp (buf->data, "ts ", 3) || !strncmp (buf->data, "ta ", 3) || !strncmp (buf->data, "tp ", 3) || !strncmp (buf->data, "tl ", 3) || !strncmp (buf->data, "tpx ", 4) || !strncmp (buf->data, "tss ", 4) || !strncmp (buf->data, "ts* ", 4)) {
+	} else if (R_STR_STARTSWITH_ANY (buf->data, "ts \0ta \0tp \0tl \0tpx \0tss \0ts* ")) {
 		SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
 		SdbListIter *iter;
 		SdbKv *kv;

@@ -61,7 +61,7 @@ static char *r_egg_cfile_getCompiler(const char *arch, int bits) {
 }
 
 static inline bool r_egg_cfile_armOrMips(const char *arch) {
-	return (!strcmp (arch, "arm") || !strcmp (arch, "arm64") || !strcmp (arch, "aarch64") || !strcmp (arch, "thumb") || !strcmp (arch, "arm32") || !strcmp (arch, "mips") || !strcmp (arch, "mips32") || !strcmp (arch, "mips64"));
+	return R_STR_CMP_ANY (arch, "arm\0arm64\0aarch64\0thumb\0arm32\0mips\0mips32\0mips64");
 }
 
 static void r_egg_cfile_free_cEnv(struct cEnv_t *cEnv) {
@@ -81,7 +81,7 @@ static inline bool r_egg_cfile_check_cEnv(struct cEnv_t *cEnv) {
 }
 
 static inline bool isXNU(const char *os) {
-	return (!strcmp (os, "darwin") || !strcmp (os, "macos") || !strcmp (os, "tvos") || !strcmp (os, "watchos") || !strcmp (os, "ios"));
+	return R_STR_CMP_ANY (os, "darwin\0macos\0tvos\0watchos\0ios");
 }
 
 static struct cEnv_t *r_egg_cfile_set_cEnv(const char *arch, const char *os, int bits) {

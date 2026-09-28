@@ -1845,18 +1845,8 @@ static bool dwarf_type_is_fp(const char *type) {
 	while (r_str_startswith (type, "const ") || r_str_startswith (type, "volatile ")) {
 		type = strchr (type, ' ') + 1;
 	}
-	const char *const names[] = {
-		"float", "double", "long double", "_Float16", "__float128",
-		"f32", "f64", "float32", "float64",
-		"complex64", "complex128", NULL
-	};
-	int i;
-	for (i = 0; names[i]; i++) {
-		if (!strcmp (type, names[i])) {
-			return true;
-		}
-	}
-	return false;
+	return R_STR_CMP_ANY (type, "float\0double\0long double\0_Float16\0__float128\0"
+		"f32\0f64\0float32\0float64\0complex64\0complex128");
 }
 
 /* Place a formal that carries no DW_AT_location (routine at -O2) in the

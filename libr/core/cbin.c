@@ -4690,8 +4690,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 							classdump_java (core, c);
 						} else if (!strcmp (lang, "dart")) {
 							classdump_dart (core, c);
-						} else if (!strcmp (lang, "cil") || !strcmp (lang, "dotnet")
-								|| !strcmp (lang, "csharp") || !strcmp (lang, "c#")) {
+						} else if (R_STR_CMP_ANY (lang, "cil\0dotnet\0csharp\0c#")) {
 							classdump_cil (core, c);
 						} else if (!strcmp (lang, "swift")) {
 							classdump_swift (core, c);

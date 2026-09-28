@@ -341,7 +341,7 @@ static bool sections_vec(RBinFile *bf) {
 		}
 		if ((sec->perm & R_PERM_RW) && !(sec->perm & R_PERM_X) && sec->size > 0) {
 			const char *name = sec->name;
-			if (name && (!strcmp (name, ".rsrc") || !strcmp (name, ".data") || !strcmp (name, ".rdata"))) {
+			if (name && R_STR_CMP_ANY (name, ".rsrc\0.data\0.rdata")) {
 				sec->is_data = true;
 			}
 		}

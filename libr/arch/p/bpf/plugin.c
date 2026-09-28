@@ -559,10 +559,10 @@ static int disassemble(RAnalOp *r_op, const ut8 *buf, int len, bool extended) {
 static RBpfDialect get_bpf_dialect(RArchSession *s) {
 	const char *cpu = s && s->config ? s->config->cpu : NULL;
 	if (cpu) {
-		if (!strcmp (cpu, "extended") || !strcmp (cpu, "ebpf") || !strcmp (cpu, "eBPF") || !strcmp (cpu, "64")) {
+		if (R_STR_CMP_ANY (cpu, "extended\0ebpf\0eBPF\0" "64")) {
 			return R_BPF_DIALECT_EXTENDED;
 		}
-		if (!strcmp (cpu, "classic") || !strcmp (cpu, "cbpf") || !strcmp (cpu, "cBPF")) {
+		if (R_STR_CMP_ANY (cpu, "classic\0cbpf\0cBPF")) {
 			return R_BPF_DIALECT_CLASSIC;
 		}
 	}

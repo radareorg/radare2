@@ -1,6 +1,10 @@
 /* radare - LGPL - Copyright 2007-2024 - pancake */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <r_util.h>
+#undef r_mem_mem
 #if R2__UNIX__
 #include <sys/mman.h>
 #endif
@@ -218,16 +222,21 @@ R_API void r_mem_swap(ut8 *buf, size_t buf_len) {
 // R_DOC r_mem_mem: Finds the needle of nlen size into the haystack of hlen size
 // R_UNIT printf("%s\n", r_mem_mem("food is pure lame", 20, "is", 2));
 R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen) {
-	int i, until = hlen - nlen + 1;
-	if (hlen < 1 || nlen < 1) {
+	if (hlen < 1 || nlen < 1 || nlen > hlen) {
 		return NULL;
 	}
+#if HAVE_MEMMEM
+	return memmem (haystack, hlen, needle, nlen);
+#else
+	const int until = hlen - nlen + 1;
+	int i;
 	for (i = 0; i < until; i++) {
-		if (!memcmp (haystack + i, needle, nlen)) {
+		if (haystack[i] == needle[0] && !memcmp (haystack + i, needle, nlen)) {
 			return haystack + i;
 		}
 	}
 	return NULL;
+#endif
 }
 
 // TODO: rename to r_mem_mem and refactor all calls to this function

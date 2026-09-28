@@ -1,6 +1,8 @@
 #ifndef R_MEM_H
 #define R_MEM_H
 
+#include <string.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,6 +55,16 @@ R_API void r_mem_swapendian(ut8 *dest, const ut8 *orig, int size);
 R_API void r_mem_swap(ut8 *buf, size_t buf_len);
 R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len);
 R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen);
+// Inline only when libc's memmem declaration is visible to this translation unit.
+#if HAVE_MEMMEM && (defined(__APPLE__) || defined(__FreeBSD__) || defined(__USE_GNU))
+R_UNUSED static inline const ut8 *r_mem_mem_inline(const ut8 *haystack, int hlen, const ut8 *needle, int nlen) {
+	if (hlen < 1 || nlen < 1 || nlen > hlen) {
+		return NULL;
+	}
+	return (const ut8 *)memmem (haystack, hlen, needle, nlen);
+}
+#define r_mem_mem(haystack, hlen, needle, nlen) r_mem_mem_inline ((haystack), (hlen), (needle), (nlen))
+#endif
 R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *needle, int nlen, int align);
 R_API int r_mem_count(const ut8 **addr);
 R_API bool r_mem_is_printable(const ut8 *a, int la);

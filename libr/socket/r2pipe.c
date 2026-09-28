@@ -251,7 +251,7 @@ R_API R2Pipe *r2pipe_open(const char *R_NULLABLE cmd) {
 	R2Pipe *r2p = r2pipe_new ();
 	/* HTTP/r2web mode: if the command is a http (s):// or r2web:// URL,
 	 * store it in the r2pipe and use HTTP POST for commands. */
-	if (cmd && (r_str_startswith (cmd, "http://") || r_str_startswith (cmd, "https://") || r_str_startswith (cmd, "r2web://"))) {
+	if (cmd && R_STR_STARTSWITH_ANY (cmd, "http://\0https://\0r2web://")) {
 		char *u = NULL;
 		if (r_str_startswith (cmd, "r2web://")) {
 			u = r_str_newf ("http://%s", cmd + sizeof ("r2web://") - 1);

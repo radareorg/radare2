@@ -44,13 +44,8 @@ static map_file_t mapping_file = { 0, 0 };
 static note_info_t note_info[NT_LENGHT_T];
 
 static bool is_a_kernel_mapping(const char *name) {
-	return !(name
-		&& strcmp (name, "[vdso]")
-		&& strcmp (name, "[vsyscall]")
-		&& strcmp (name, "[vvar]")
-		&& strcmp (name, "[heap]")
-		&& strcmp (name, "[vectors]")
-		&& strncmp (name, "[stack", strlen ("[stack")));
+	return !name || R_STR_CMP_ANY (name, "[vdso]\0[vsyscall]\0[vvar]\0[heap]\0[vectors]")
+		|| r_str_startswith (name, "[stack");
 }
 
 static char *prpsinfo_get_psargs(char *buffer, int len) {

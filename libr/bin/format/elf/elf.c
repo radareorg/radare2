@@ -2233,10 +2233,9 @@ static bool has_interp_program_header(ELFOBJ *eo) {
 }
 
 static bool is_known_runtime_export(const char *name) {
-	return !strcmp (name, "_init") || !strcmp (name, "_fini") || !strcmp (name, "_start") ||
-		!strcmp (name, "__libc_csu_init") || !strcmp (name, "__libc_csu_fini") ||
-		!strcmp (name, "deregister_tm_clones") || !strcmp (name, "register_tm_clones") ||
-		!strcmp (name, "__do_global_dtors_aux") || !strcmp (name, "frame_dummy");
+	return R_STR_CMP_ANY (name, "_init\0_fini\0_start\0__libc_csu_init\0"
+		"__libc_csu_fini\0deregister_tm_clones\0register_tm_clones\0"
+		"__do_global_dtors_aux\0frame_dummy");
 }
 
 static const char *normalized_visibility_name(const char *name) {
