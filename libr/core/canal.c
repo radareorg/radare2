@@ -677,28 +677,26 @@ static void warn_nonexec_map(RCore *core, ut64 at) {
 }
 
 // Analyze exception handlers in their owning function without adding CFG edges.
+static bool anal_trycatch(const RBinTrycatch *tc, void *user) {
+	RAnalFunction *fcn = user;
+	ut64 handler = tc->handler;
+	if (tc->kind == R_BIN_TRYCATCH_CLEANUP || handler == fcn->addr || r_anal_function_contains (fcn, handler)) {
+		return true;
+	}
+	int ret = r_anal_function_bb (fcn->anal, fcn, handler);
+	if (ret < 0 && ret != R_ANAL_RET_END) {
+		R_LOG_DEBUG ("Cannot analyze exception handler at 0x%08"PFMT64x, handler);
+	}
+	return true;
+}
+
 static void core_anal_fcn_trycatch(RCore *core, RAnalFunction *fcn) {
 	if (!core->anal->opt.trycatch) {
 		return;
 	}
 	RBinFile *bf = r_bin_cur (core->bin);
-	RVecRBinTrycatch *trycatch = bf? r_bin_file_get_trycatch (bf): NULL;
-	if (!trycatch) {
-		return;
-	}
-	RBinTrycatch *tc;
-	R_VEC_FOREACH (trycatch, tc) {
-		if (tc->source != fcn->addr || tc->kind == R_BIN_TRYCATCH_CLEANUP) {
-			continue;
-		}
-		ut64 handler = tc->handler;
-		if (handler == fcn->addr || r_anal_function_contains (fcn, handler)) {
-			continue;
-		}
-		int ret = r_anal_function_bb (core->anal, fcn, handler);
-		if (ret < 0 && ret != R_ANAL_RET_END) {
-			R_LOG_DEBUG ("Cannot analyze exception handler at 0x%08"PFMT64x, handler);
-		}
+	if (bf) {
+		r_bin_trycatch_foreach (bf, fcn->addr, anal_trycatch, fcn);
 	}
 }
 

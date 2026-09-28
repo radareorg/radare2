@@ -5,7 +5,7 @@
 
 // R2R db/cmd/cmd_pdc
 
-R_VEC_TYPE (RVecPdcTrycatch, RBinTrycatch *);
+R_VEC_TYPE (RVecPdcTrycatch, const RBinTrycatch *);
 
 typedef struct {
 	ut64 addr;
@@ -35,7 +35,7 @@ typedef struct {
 	const char *r0;
 	ut64 last_addr; // anchor of the last printed line
 	char *transfer; // pending transfer the current block's own jump renders
-	RVecPdcTrycatch trys; // entries touching the function, borrowed from the bin plugin
+	RVecPdcTrycatch trys; // entries touching the function, borrowed from the binary
 	int open_trys; // try braces printed and not yet closed
 	ut64 attached; // handler being rendered attached to its try close
 } PDCState;
@@ -718,10 +718,10 @@ static char *tc_handler_tag(const RBinTrycatch *tc) {
 		: r_str_newf ("%s { // try 0x%08" PFMT64x "..0x%08" PFMT64x, tc_kind_name (tc), tc->from, tc->to);
 }
 
-static RBinTrycatch *trycatch_handler_at(PDCState *state, ut64 addr) {
-	RBinTrycatch **iter;
+static const RBinTrycatch *trycatch_handler_at(PDCState *state, ut64 addr) {
+	const RBinTrycatch **iter;
 	R_VEC_FOREACH (&state->trys, iter) {
-		RBinTrycatch *tc = *iter;
+		const RBinTrycatch *tc = *iter;
 		if (tc->handler == addr) {
 			return tc;
 		}
@@ -731,9 +731,9 @@ static RBinTrycatch *trycatch_handler_at(PDCState *state, ut64 addr) {
 
 // sibling LSDA type entries repeat the same region, which needs one mark only
 static bool tc_region_seen(PDCState *state, const RBinTrycatch *tc) {
-	RBinTrycatch **iter;
+	const RBinTrycatch **iter;
 	R_VEC_FOREACH (&state->trys, iter) {
-		RBinTrycatch *p = *iter;
+		const RBinTrycatch *p = *iter;
 		if (p == tc) {
 			break;
 		}
@@ -748,9 +748,9 @@ static bool tc_region_seen(PDCState *state, const RBinTrycatch *tc) {
 // regions containing the address; print_newline shifts its lines by this
 static int tc_depth(PDCState *state, ut64 addr) {
 	int depth = 0;
-	RBinTrycatch **iter;
+	const RBinTrycatch **iter;
 	R_VEC_FOREACH (&state->trys, iter) {
-		RBinTrycatch *tc = *iter;
+		const RBinTrycatch *tc = *iter;
 		if (addr >= tc->from && addr < tc->to && !tc_region_seen (state, tc)) {
 			depth++;
 		}
@@ -788,9 +788,9 @@ static bool attach_handler(PDCState *state, const RBinTrycatch *tc, int indent) 
 // region boundaries render as real braces; print_newline adds the depth of the
 // anchor, which includes the opening region itself, so the header passes it back
 static void emit_trycatch_marks(PDCState *state, ut64 addr, int indent) {
-	RBinTrycatch **iter;
+	const RBinTrycatch **iter;
 	R_VEC_FOREACH (&state->trys, iter) {
-		RBinTrycatch *tc = *iter;
+		const RBinTrycatch *tc = *iter;
 		if (tc_region_seen (state, tc)) {
 			continue;
 		}
@@ -811,9 +811,9 @@ static void emit_trycatch_marks(PDCState *state, ut64 addr, int indent) {
 // edges of the block that contains them
 static void orphan_trycatch_bounds(PDCState *state, RAnalBlock *bb, bool opening) {
 	const ut64 end = bb->addr + bb->size;
-	RBinTrycatch **iter;
+	const RBinTrycatch **iter;
 	R_VEC_FOREACH (&state->trys, iter) {
-		RBinTrycatch *tc = *iter;
+		const RBinTrycatch *tc = *iter;
 		if (tc_region_seen (state, tc)) {
 			continue;
 		}
@@ -833,11 +833,11 @@ static void pdc_collect_trycatch(RCore *core, RAnalFunction *fcn, RVecPdcTrycatc
 		return;
 	}
 	RBinFile *bf = r_bin_cur (core->bin);
-	RVecRBinTrycatch *all = bf? r_bin_file_get_trycatch (bf): NULL;
+	const RVecRBinTrycatch *all = bf? r_bin_file_get_trycatch (bf): NULL;
 	if (!all) {
 		return;
 	}
-	RBinTrycatch *tc;
+	const RBinTrycatch *tc;
 	R_VEC_FOREACH (all, tc) {
 		if (r_anal_function_contains (fcn, tc->from) || r_anal_function_contains (fcn, tc->handler)) {
 			RVecPdcTrycatch_push_back (res, &tc);
@@ -1255,7 +1255,7 @@ static void emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 	// a region ending on this block head closes before its handler opens; an
 	// attached handler already got its header from its try close
 	emit_trycatch_marks (state, start_addr, indent);
-	RBinTrycatch *h = (start_addr == state->attached)? NULL: trycatch_handler_at (state, start_addr);
+	const RBinTrycatch *h = (start_addr == state->attached)? NULL: trycatch_handler_at (state, start_addr);
 	if (h) {
 		char *tag = tc_handler_tag (h);
 		print_line (state, start_addr, indent, "%s", tag);
@@ -2864,7 +2864,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 			const size_t start = r_strbuf_length (state.codestr);
 			state.last_addr = bb->addr;
 			orphan_trycatch_bounds (&state, bb, true);
-			RBinTrycatch *h = trycatch_handler_at (&state, bb->addr);
+			const RBinTrycatch *h = trycatch_handler_at (&state, bb->addr);
 			if (h) {
 				char *tag = tc_handler_tag (h);
 				print_line (&state, bb->addr, 1, "%s", tag);

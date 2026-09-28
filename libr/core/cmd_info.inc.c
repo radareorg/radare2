@@ -4,11 +4,13 @@
 
 // R2R db/formats/dwarf
 // R2R db/cmd/cmd_i
+// R2R db/cmd/cmd_iw
 
 #include "../bin/format/pdb/pdb_downloader.h"
 
 R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count, int type_filter);
 R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count, int type_filter);
+R_IPI void bin_trycatch_flag(RCore *core, const RBinTrycatch *tc, size_t index, bool set);
 
 // clang-format off
 static RCoreHelpMessage help_msg_ih = {
@@ -34,6 +36,31 @@ static RCoreHelpMessage help_msg_is = {
 	"is*", "", "same as above, but in r2 commands",
 	"isj", "", "in json format",
 	"ise", "", "entrypoints symbols (see 'ies')",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_iw = {
+	"Usage: iw", "[?jq*+-]", "Manage try/catch/finally blocks in the selected binary",
+	"iw", "", "list exception regions",
+	"iwj", "", "list exception regions in JSON",
+	"iwq", "", "list try start, exclusive end and handler addresses",
+	"iw*", "", "print exception region flags as r2 commands",
+	"iw+", " source from to handler [attr ...]", "append an exception region (iw+? for attributes)",
+	"iw-", " index", "delete the region with the given iw index (last region moves to this index)",
+	"iw-*", "", "delete all exception regions in the selected binary",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_iwplus = {
+	"Usage: iw+", " source from to handler [attr ...]", "Append an exception region; addresses accept expressions",
+	"", "source", "function address owning the region",
+	"", "from to", "try start and exclusive end (from < to)",
+	"", "handler", "catch, finally or filter handler address",
+	"", "kind=catch|cleanup|finally|filter", "region kind (default: catch; finally means cleanup)",
+	"", "filter=expr", "filter address (default: 0)",
+	"", "typefilter=expr", "signed type filter value (default: 0)",
+	"", "type=name", "exception type name (quote names containing spaces)",
+	"", "catchall", "mark a catch-all handler",
 	NULL
 };
 
@@ -237,7 +264,7 @@ static RCoreHelpMessage help_msg_i = {
 	"it", "", "file hashes", // hashes in it? wtf, thats a pretty bad subcommand
 	"iT", "", "file signature", // iT for signatures omg thats worst
 	"iv", "", "display file version info", // wtf why not iv
-	"iw", "[jq*]", "show try/catch blocks",
+	"iw", "[?jq*+-]", "list or edit try/catch/finally blocks",
 	"iz", "[?]", "strings in data sections (in JSON/Base64)",
 	NULL
 };
@@ -3547,6 +3574,147 @@ static void cmd_ie(RCore *core, const char *input, PJ *pj, int mode, bool is_arr
 	}
 }
 
+static bool cmd_iw_num(RCore *core, const char *arg, ut64 *value) {
+	const char *err = NULL;
+	*value = r_num_math_err (core->num, arg, &err);
+	if (!*arg || err || core->num->dbz) {
+		R_LOG_ERROR ("Invalid exception region expression: %s", arg);
+		return false;
+	}
+	return true;
+}
+
+static bool cmd_iw_edit(RCore *core, const char *input) {
+	const bool add = *input == '+';
+	const char *arg = r_str_trim_head_ro (input + 1);
+	if (!*arg || *arg == '?') {
+		if (add) {
+			r_cons_cmd_help (core->cons, help_msg_iwplus);
+		} else {
+			r_cons_cmd_help_match (core->cons, help_msg_iw, "iw-", 0, true);
+		}
+		return true;
+	}
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (!bf || !bf->bo || !bf->bo->plugin) {
+		R_LOG_ERROR ("No current binary");
+		return false;
+	}
+	const RVecRBinTrycatch *regions = r_bin_file_get_trycatch (bf);
+	if (!regions) {
+		return false;
+	}
+	if (!add && !strcmp (arg, "*")) {
+		const RBinTrycatch *tc;
+		size_t index = 0;
+		r_flag_space_push (core->flags, R_FLAGS_FS_TRYCATCH);
+		R_VEC_FOREACH (regions, tc) {
+			bin_trycatch_flag (core, tc, index++, false);
+		}
+		r_flag_space_pop (core->flags);
+		return r_bin_trycatch_clear (bf);
+	}
+	int argc;
+	char **argv = r_str_argv (arg, &argc);
+	bool success = false;
+	RBinTrycatch region = { .kind = R_BIN_TRYCATCH_CATCH };
+	if (!argv) {
+		return false;
+	}
+	if (!add) {
+		ut64 index;
+		if (argc != 1) {
+			R_LOG_ERROR ("Usage: iw- index");
+			goto beach;
+		}
+		if (!cmd_iw_num (core, argv[0], &index)) {
+			goto beach;
+		}
+		if (index >= RVecRBinTrycatch_length (regions)) {
+			R_LOG_ERROR ("Invalid exception region index: %"PFMT64u, index);
+			goto beach;
+		}
+		size_t last_index = RVecRBinTrycatch_length (regions) - 1;
+		RBinTrycatch removed = *RVecRBinTrycatch_at (regions, (size_t)index);
+		RBinTrycatch last = *RVecRBinTrycatch_at (regions, last_index);
+		if (!r_bin_trycatch_delete (bf, (size_t)index)) {
+			goto beach;
+		}
+		r_flag_space_push (core->flags, R_FLAGS_FS_TRYCATCH);
+		bin_trycatch_flag (core, &removed, (size_t)index, false);
+		if (index != last_index) {
+			bin_trycatch_flag (core, &last, last_index, false);
+			bin_trycatch_flag (core, &last, (size_t)index, true);
+		}
+		r_flag_space_pop (core->flags);
+	} else {
+		if (argc < 4) {
+			R_LOG_ERROR ("Usage: iw+ source from to handler [attr ...]");
+			goto beach;
+		}
+		ut64 *addresses[] = { &region.source, &region.from, &region.to, &region.handler };
+		int i;
+		for (i = 0; i < 4; i++) {
+			if (!cmd_iw_num (core, argv[i], addresses[i])) {
+				goto beach;
+			}
+		}
+		if (region.from >= region.to) {
+			R_LOG_ERROR ("Exception region start must precede its exclusive end");
+			goto beach;
+		}
+		for (i = 4; i < argc; i++) {
+			const char *attr = argv[i];
+			if (r_str_startswith (attr, "kind=")) {
+				const char *kind = attr + 5;
+				if (!strcmp (kind, "catch")) {
+					region.kind = R_BIN_TRYCATCH_CATCH;
+				} else if (!strcmp (kind, "cleanup") || !strcmp (kind, "finally")) {
+					region.kind = R_BIN_TRYCATCH_CLEANUP;
+				} else if (!strcmp (kind, "filter")) {
+					region.kind = R_BIN_TRYCATCH_FILTER;
+				} else {
+					R_LOG_ERROR ("Invalid exception region kind: %s", kind);
+					goto beach;
+				}
+			} else if (r_str_startswith (attr, "filter=")) {
+				if (!cmd_iw_num (core, attr + 7, &region.filter)) {
+					goto beach;
+				}
+			} else if (r_str_startswith (attr, "typefilter=")) {
+				ut64 value;
+				if (!cmd_iw_num (core, attr + 11, &value)) {
+					goto beach;
+				}
+				region.type_filter = (st64)value;
+			} else if (r_str_startswith (attr, "type=")) {
+				free (region.type);
+				region.type = strdup (attr + 5);
+				if (!region.type) {
+					goto beach;
+				}
+			} else if (!strcmp (attr, "catchall")) {
+				region.catch_all = true;
+			} else {
+				R_LOG_ERROR ("Invalid exception region attribute: %s", attr);
+				goto beach;
+			}
+		}
+		size_t index = RVecRBinTrycatch_length (regions);
+		if (!r_bin_trycatch_insert (bf, &region)) {
+			goto beach;
+		}
+		r_flag_space_push (core->flags, R_FLAGS_FS_TRYCATCH);
+		bin_trycatch_flag (core, &region, index, true);
+		r_flag_space_pop (core->flags);
+	}
+	success = true;
+beach:
+	r_bin_trycatch_fini (&region);
+	r_str_argv_free (argv);
+	return success;
+}
+
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (!strcmp (input, "qqc") || !strcmp (input, "qcq")) {
@@ -3630,6 +3798,9 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'z': // "iz?"
 			r_cons_cmd_help (core->cons, help_msg_iz);
+			break;
+		case 'w': // "iw?"
+			r_cons_cmd_help (core->cons, help_msg_iw);
 			break;
 		case 'c': // "ic?"
 			r_cons_cmd_help (core->cons, help_msg_ic);
@@ -3766,6 +3937,12 @@ static int cmd_info(void *data, const char *input) {
 	break;
 	case 'w': // "iw"
 	{
+		if (input[1] == '+' || input[1] == '-') {
+			if (!cmd_iw_edit (core, input + 1)) {
+				r_core_return_value (core, R_CMD_RC_FAILURE);
+			}
+			break;
+		}
 		RList *objs = r_core_bin_files (core);
 		RListIter *iter;
 		RBinFile *bf;

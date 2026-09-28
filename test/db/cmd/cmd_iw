@@ -1,0 +1,259 @@
+NAME=iw+ exception kinds and expressions
+FILE=bins/elf/ClassCpp.out
+CMDS=<<EOF
+iw-*
+f region.source=0x100
+iw+ region.source 0x110 0x110+0x10 0x130 type="Example Error" typefilter=7
+iw+ 0x100 0x110 0x120 0x140 catchall
+iw+ 0x100 0x110 0x120 0x150 kind=finally
+iw+ 0x100 0x110 0x120 0x160 kind=filter filter=0x170 typefilter=-1
+iwj
+EOF
+EXPECT=<<EOF
+[{"index":0,"source":256,"from":272,"to":288,"handler":304,"filter":0,"kind":"catch","typeFilter":7,"type":"Example Error"},{"index":1,"source":256,"from":272,"to":288,"handler":320,"filter":0,"kind":"catch","typeFilter":0,"catchAll":true},{"index":2,"source":256,"from":272,"to":288,"handler":336,"filter":0,"kind":"cleanup"},{"index":3,"source":256,"from":272,"to":288,"handler":352,"filter":368,"kind":"filter","typeFilter":-1}]
+EOF
+RUN
+
+NAME=iw- moves the last handler and updates only affected flags
+FILE=bins/elf/ClassCpp.out
+CMDS=<<EOF
+iw-*
+iw+ 0x100 0x110 0x120 0x130 type=First
+iw+ 0x100 0x110 0x120 0x140 kind=cleanup
+iw+ 0x100 0x110 0x120 0x150 catchall
+f@F:trycatch~?
+iw- 1-1
+iw*
+?v try.0.100.catch
+?v try.1.100.cleanup
+f@F:trycatch~?
+iw- 1
+iwj
+iw-*
+iwj
+f@F:trycatch~?
+iw-*
+EOF
+EXPECT=<<EOF
+9
+f try.0.100.from=0x00000110
+f try.0.100.to=0x00000120
+f try.0.100.catch=0x00000150
+f try.1.100.from=0x00000110
+f try.1.100.to=0x00000120
+f try.1.100.cleanup=0x00000140
+0x150
+0x140
+6
+[{"index":0,"source":256,"from":272,"to":288,"handler":336,"filter":0,"kind":"catch","typeFilter":0,"catchAll":true}]
+[]
+0
+EOF
+RUN
+
+NAME=iw+ supports binaries without a trycatch plugin callback
+FILE=bins/wasm/basic.wasm
+CMDS=<<EOF
+iwj
+iw+ 0 0 4 8
+iw
+iwq
+iw- 0
+iwj
+iw+ 0x100000000 0x100000010 0x100000020 0x100000030 kind=cleanup
+iwj
+EOF
+EXPECT=<<EOF
+[]
+0 0x00000000-0x00000004 catch -> 0x00000008 (source 0x00000000)
+0x00000000 0x00000004 0x00000008
+[]
+[{"index":0,"source":4294967296,"from":4294967312,"to":4294967328,"handler":4294967344,"filter":0,"kind":"cleanup"}]
+EOF
+RUN
+
+NAME=iw edits only the selected binary
+FILE=bins/elf/ClassCpp.out
+CMDS=<<EOF
+iw-*
+iw+ 0x100 0x110 0x120 0x130
+o bins/wasm/basic.wasm
+iwj
+iw+ 0x200 0x210 0x220 0x230 kind=cleanup
+ob 0
+iwj
+ob 1
+iwj
+iw-*
+ob 0
+iwj
+EOF
+EXPECT=<<EOF
+[]
+[{"index":0,"source":256,"from":272,"to":288,"handler":304,"filter":0,"kind":"catch","typeFilter":0}]
+[{"index":0,"source":512,"from":528,"to":544,"handler":560,"filter":0,"kind":"cleanup"}]
+[{"index":0,"source":256,"from":272,"to":288,"handler":304,"filter":0,"kind":"catch","typeFilter":0}]
+EOF
+RUN
+
+NAME=iw edits refresh disassembly exception annotations
+FILE=bins/elf/ClassCpp.out
+CMDS=<<EOF
+iw-*
+e asm.flags=false
+pd 1 @ 0x12aa~try 0x
+iw+ 0x1269 0x12aa 0x12af 0x132c kind=finally
+pd 1 @ 0x12aa~try 0x
+iw- 0
+pd 1 @ 0x12aa~try 0x
+iw+ 0x1269 0x12aa 0x12af 0x132c kind=finally
+pd 1 @ 0x12aa~try 0x
+iw-*
+pd 1 @ 0x12aa~try 0x
+EOF
+EXPECT=<<EOF
+            ; try 0x000012aa-0x000012af cleanup -> 0x0000132c
+            ; try 0x000012aa-0x000012af cleanup -> 0x0000132c
+EOF
+RUN
+
+NAME=iw edits update cached handler lookups before reanalysis
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3 @ 0
+wx c3 @ 0x10
+wx c3 @ 0x20
+af @ 0
+afbq @ 0
+iw+ 0 0 1 0x10
+af-0
+af @ 0
+afbq @ 0
+iw+ 0 0 1 0x20
+af-0
+af @ 0
+afbq @ 0
+iw-0
+af-0
+af @ 0
+afbq @ 0
+iw-*
+af-0
+af @ 0
+afbq @ 0
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000000
+0x00000010
+0x00000000
+0x00000010
+0x00000020
+0x00000000
+0x00000020
+0x00000000
+EOF
+RUN
+
+NAME=iw rejects invalid edits without changing records
+FILE=bins/elf/ClassCpp.out
+CMDS=<<EOF
+iw-*
+iw+ 0 1 2 3
+iw+ 0 1 2
+iw+ 0 2 2 3
+iw+ 0 3 2 4
+iw+ missing.region 1 2 3
+iw+ 0 1 2 3 kind=invalid
+iw+ 0 1 2 3 filter=missing.region
+iw+ 0 1 2 3 typefilter=missing.region
+iw+ 0 1 2 3 badattr
+iw- missing.region
+iw- -1
+iw- 1
+iw- 0 1
+iwj
+EOF
+EXPECT=<<EOF
+[{"index":0,"source":0,"from":1,"to":2,"handler":3,"filter":0,"kind":"catch","typeFilter":0}]
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Usage: iw+ source from to handler [attr ...]
+ERROR: Exception region start must precede its exclusive end
+ERROR: Exception region start must precede its exclusive end
+ERROR: Invalid exception region expression: missing.region
+ERROR: Invalid exception region kind: invalid
+ERROR: Invalid exception region expression: missing.region
+ERROR: Invalid exception region expression: missing.region
+ERROR: Invalid exception region attribute: badattr
+ERROR: Invalid exception region expression: missing.region
+ERROR: Invalid exception region index: 18446744073709551615
+ERROR: Invalid exception region index: 1
+ERROR: Usage: iw- index
+EOF
+RUN
+
+NAME=iw edits require a selected binary
+FILE=-
+CMDS=<<EOF
+ob-*
+iw+ 0 1 2 3
+iw- 0
+iw-*
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: No current binary
+ERROR: No current binary
+ERROR: No current binary
+EOF
+RUN
+
+NAME=iw edit help is available without a binary
+FILE=-
+CMDS=<<EOF
+iw?~append an exception
+iw+?~finally means
+iw-?~last region moves
+EOF
+EXPECT=<<EOF
+| iw+ source from to handler [attr ...]  append an exception region (iw+? for attributes)
+| kind=catch|cleanup|finally|filter  region kind (default: catch; finally means cleanup)
+| iw- index  delete the region with the given iw index (last region moves to this index)
+EOF
+RUN
+
+NAME=iw- removes plugin metadata without reloading it
+FILE=bins/elf/ClassCpp.out
+CMDS=<<EOF
+iwj
+iw-0
+iwj
+iw*
+f@F:trycatch~?
+EOF
+EXPECT=<<EOF
+[{"index":0,"source":4713,"from":4778,"to":4872,"handler":4908,"filter":0,"kind":"cleanup"}]
+[]
+0
+EOF
+RUN
+
+NAME=iw script definitions in a raw binary
+FILE=-
+CMDS=<<EOF
+iw+ 0 1 2 3 type=Error
+iwj
+iw-*
+iwj
+iw+ 0 1 2 3 catchall
+iw-0
+iwj
+EOF
+EXPECT=<<EOF
+[{"index":0,"source":0,"from":1,"to":2,"handler":3,"filter":0,"kind":"catch","typeFilter":0,"type":"Error"}]
+[]
+[]
+EOF
+RUN

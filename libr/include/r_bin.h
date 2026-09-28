@@ -520,6 +520,7 @@ typedef struct r_bin_object_t {
 	void *bin_obj; // internal pointer used by formats... TODO: RENAME TO internal object or sthg
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 	bool resources_loaded;
+	void *trycatch; // private exception metadata store
 } RBinObject;
 
 typedef struct r_bin_file_options_t {
@@ -791,6 +792,7 @@ typedef struct r_bin_plugin_t {
 	RList/*<RBinField>*/* (*fields)(RBinFile *bf);
 	RList/*<char *>*/* (*libs)(RBinFile *bf);
 	RVecRBinReloc *(*relocs)(RBinFile *bf);
+	// The first getter call transfers the vector contents to RBinObject.
 	R_UNOWNED RVecRBinTrycatch *(*trycatch)(RBinFile *bf);
 	RList/*<RBinClass>*/* (*classes)(RBinFile *bf);
 	RList/*<RBinMem>*/* (*mem)(RBinFile *bf);
@@ -1010,7 +1012,14 @@ R_API RVecRBinSection *r_bin_get_sections_vec(RBin *bin);
 R_API RList *r_bin_get_classes(RBin *bin);
 R_API char* r_bin_get_types(RBin *bin);
 R_API RVecRBinString *r_bin_get_strings(RBin *bin);
-R_API R_UNOWNED RVecRBinTrycatch *r_bin_file_get_trycatch(RBinFile * R_NONNULL bf);
+// Borrowed records are read-only and remain valid until the next mutation.
+R_API R_UNOWNED const RVecRBinTrycatch *r_bin_file_get_trycatch(RBinFile * R_NONNULL bf);
+R_API bool r_bin_trycatch_insert(RBinFile *bf, const RBinTrycatch *tc);
+// Deletion moves the last record into the removed index.
+R_API bool r_bin_trycatch_delete(RBinFile *bf, size_t index);
+R_API bool r_bin_trycatch_clear(RBinFile *bf);
+// Visit one source in insertion order; the callback must not mutate the store.
+R_API bool r_bin_trycatch_foreach(RBinFile *bf, ut64 source, bool (*cb)(const RBinTrycatch *tc, void *user), void *user);
 R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin);
 // O(1) lookup by address (vaddr first, then paddr). Builds a lazy index on the
 // current RBinObject on first call; returns NULL if no symbol matches.
