@@ -297,6 +297,46 @@ CMDS=!printf 414141 | rax2 -s
 EXPECT=AAA
 RUN
 
+NAME=rax2 -s with C escapes on stdin
+FILE=-
+CMDS=!printf '%s' '\x41\x42' | rax2 -s
+EXPECT=AB
+RUN
+
+NAME=rax2 -s mixed plain and C escapes
+FILE=-
+CMDS=!printf '%s' '41\x42' | rax2 -s
+EXPECT=AB
+RUN
+
+NAME=rax2 -s binary C escapes
+FILE=-
+CMDS=!printf '%s' '\x00\xff' | rax2 -s | rax2 -S
+EXPECT=<<EOF
+00ff
+EOF
+RUN
+
+NAME=rax2 -s truncated C escape rejected
+FILE=-
+CMDS=!printf '%s' '\x41\x4' | rax2 -s
+EXPECT=
+RUN
+
+NAME=rax2 -s invalid C escape rejected
+FILE=-
+CMDS=!printf '%s' '\x4\x41' | rax2 -s
+EXPECT=
+RUN
+
+NAME=rax2 -s C escapes with endian swap
+FILE=-
+CMDS=!printf '%s' '\x11\x22\x33\x44\x55\x66\x77\x88' | rax2 -esb 32 | rax2 -S
+EXPECT=<<EOF
+4433221188776655
+EOF
+RUN
+
 NAME=rax2 endian swap hex stream
 FILE=-
 CMDS=!printf 1122334455667788 | rax2 -esb 32 | rax2 -S
