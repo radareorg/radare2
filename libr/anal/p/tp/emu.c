@@ -402,8 +402,7 @@ TPState *tps_init(RAnal *anal) {
 	}
 	tps->tt.enable_rollback = tps->cfg_rollback;
 	tps->tt.be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
-	tps->tt.track_base = tps->stack_base;
-	tps->tt.track_size = tps->cfg_bbstate? tps->stack_size: 0;
+	tps->tt.track.addr = tps->stack_base;
 	return tps;
 }
 
@@ -414,18 +413,55 @@ typedef struct {
 	ut8 *regs;
 	ut8 *mem; // dirty-byte values at block exit, in mem_dirty order
 	size_t nmem;
+	HtUP *types; // mem_types at block exit
 } TPBBSnap;
 
-static void tp_bbstate_kv_free(HtUPKv *kv) {
-	TPBBSnap *s = kv->value;
+static void tp_bbsnap_free(TPBBSnap *s) {
 	if (s) {
 		free (s->regs);
 		free (s->mem);
+		ht_up_free (s->types);
 		free (s);
 	}
 }
 
-// the stack map starts zeroed, so a byte first written after the snapshot goes back to 0
+static void tp_bbstate_kv_free(HtUPKv *kv) {
+	tp_bbsnap_free (kv->value);
+}
+
+static bool tp_mem_types_clone_cb(void *user, const ut64 addr, const void *v) {
+	char *copy = strdup (v);
+	if (copy && !ht_up_insert (user, addr, copy)) {
+		free (copy);
+	}
+	return true;
+}
+
+// a call plants a fact at an address it never writes, so bytes cannot carry it
+static HtUP *tp_mem_types_clone(HtUP *src) {
+	HtUP *dst = ht_up_new (NULL, tp_mem_type_kv_free, NULL);
+	if (dst) {
+		ht_up_foreach (src, tp_mem_types_clone_cb, dst);
+	}
+	return dst;
+}
+
+// no snapshot beats a snapshot that would rewind everything to 0
+static TPBBSnap *tp_bbsnap_new(TPState *tps, ut8 *regs) {
+	TypeTrace *tt = &tps->tt;
+	TPBBSnap *s = R_NEW0 (TPBBSnap);
+	s->regs = regs;
+	s->nmem = RVecBuf_length (&tt->mem_shadow);
+	s->mem = s->nmem? r_mem_dup (R_VEC_START_ITER (&tt->mem_shadow), s->nmem): NULL;
+	s->types = tp_mem_types_clone (tps->mem_types);
+	if ((s->nmem && !s->mem) || !s->types) {
+		tp_bbsnap_free (s);
+		return NULL;
+	}
+	return s;
+}
+
+// the stack map starts zeroed, so bytes unwritten at the snapshot go back to 0
 static void tp_restore_mem(TPState *tps, const TPBBSnap *s) {
 	TypeTrace *tt = &tps->tt;
 	const size_t n = RVecUT64_length (&tt->mem_dirty);
@@ -433,11 +469,24 @@ static void tp_restore_mem(TPState *tps, const TPBBSnap *s) {
 	for (i = 0; i < n; i++) {
 		const ut8 want = i < s->nmem? s->mem[i]: 0;
 		ut8 *live = RVecBuf_at (&tt->mem_shadow, i);
-		if (*live != want) {
+		const ut64 addr = *RVecUT64_at (&tt->mem_dirty, i);
+		if (*live != want && tt_mem_write (tps, addr, &want, 1)) {
 			*live = want;
-			tt_mem_write (tps, *RVecUT64_at (&tt->mem_dirty, i), &want, 1);
 		}
 	}
+}
+
+// a retry starts at the entry again, whose stack is the fresh map
+static void tp_track_reset(TPState *tps) {
+	TypeTrace *tt = &tps->tt;
+	const ut8 zero = 0;
+	ut64 *addr;
+	R_VEC_FOREACH (&tt->mem_dirty, addr) {
+		tt_mem_write (tps, *addr, &zero, 1);
+		ht_uu_delete (tt->mem_dirty_idx, *addr);
+	}
+	RVecUT64_clear (&tt->mem_dirty);
+	RVecBuf_clear (&tt->mem_shadow);
 }
 
 static bool tp_bb_edge_cb(ut64 addr, void *user) {
@@ -682,12 +731,21 @@ static bool tp_restore_pred_state(TPState *tps, RVecUT64 *bblist, int j, ut64 bb
 		TPBBSnap *s = ht_up_find (bbstate, pa, NULL);
 		if (s) {
 			TPLoopHdr *hdr = ht_up_find (loop_headers, pa, NULL);
-			// partial restore only at a loop exit fed by the loop's own live state; a call in the header has untraced effects
-			if (hdr && !hdr->has_call && hdr->members && !set_u_contains (hdr->members, bbat) && set_u_contains (hdr->members, prev)) {
+			const bool loop_exit = hdr && hdr->members && !set_u_contains (hdr->members, bbat) && set_u_contains (hdr->members, prev);
+			// untraced call in header: restore exit whole
+			if (loop_exit && !hdr->has_call) {
 				tp_restore_block_writes (&tps->tt, hdr, s->regs, arena_size);
 			} else {
 				r_reg_arena_poke (tps->tt.reg, s->regs, arena_size);
-				tp_restore_mem (tps, s);
+				// header stack writes are traced: keep them
+				if (!loop_exit) {
+					tp_restore_mem (tps, s);
+					HtUP *types = tp_mem_types_clone (s->types);
+					if (types) {
+						ht_up_free (tps->mem_types);
+						tps->mem_types = types;
+					}
+				}
 			}
 			return true;
 		}
@@ -728,6 +786,11 @@ TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPE
 	RIO *io = anal->iob.io;
 	HtUP *bbstate = (restore_state && tps->cfg_bbstate)? ht_up_new (NULL, tp_bbstate_kv_free, NULL): NULL;
 	HtUP *loop_headers = bbstate? tp_loop_headers (anal, &bblist, reachable): NULL;
+	if (bbstate) {
+		tp_track_reset (tps);
+	}
+	// only a restore reads the shadow; a lone block is never restored
+	etrace->track.size = (bbstate && bblist_size > 1)? tps->stack_size: 0;
 	int arena_size = 0;
 	for (j = 0; j < bblist_size; j++) {
 		const ut64 bbat = *RVecUT64_at (&bblist, j);
@@ -861,17 +924,15 @@ TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPE
 		if (bbstate) {
 			ut8 *snap = r_reg_arena_peek (etrace->reg, &arena_size);
 			if (snap) {
-				TPBBSnap *s = R_NEW0 (TPBBSnap);
-				s->regs = snap;
-				s->nmem = RVecBuf_length (&etrace->mem_shadow);
-				s->mem = s->nmem? r_mem_dup (R_VEC_START_ITER (&etrace->mem_shadow), s->nmem): NULL;
-				if (!ht_up_update (bbstate, bb_addr, s)) {
-					tp_bbstate_kv_free (&(HtUPKv){ .value = s });
+				TPBBSnap *s = tp_bbsnap_new (tps, snap);
+				if (s && !ht_up_update (bbstate, bb_addr, s)) {
+					tp_bbsnap_free (s);
 				}
 			}
 		}
 	}
 beach:
+	etrace->track.size = 0;
 	ht_up_free (loop_headers);
 	ht_up_free (bbstate);
 	r_anal_op_fini (&aop);
